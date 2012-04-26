@@ -4,7 +4,7 @@
 % Distributed under GPL 2 or later
 
 \name{SSweibull}
-\title{Weibull growth curve model}
+\title{Self-Starting Nls Weibull Growth Curve Model}
 \usage{
 SSweibull(x, Asym, Drop, lrc, pwr)
 }
@@ -46,7 +46,7 @@ SSweibull(x, Asym, Drop, lrc, pwr)
 }
 \examples{
 Chick.6 <- subset(ChickWeight, (Chick == 6) & (Time > 0))
-SSweibull(Chick.6$Time, 160, 115, -5.5, 2.5 )  # response only
+SSweibull(Chick.6$Time, 160, 115, -5.5, 2.5)   # response only
 Asym <- 160; Drop <- 115; lrc <- -5.5; pwr <- 2.5
 SSweibull(Chick.6$Time, Asym, Drop, lrc, pwr)  # response and gradient
 getInitial(weight ~ SSweibull(Time, Asym, Drop, lrc, pwr), data = Chick.6)

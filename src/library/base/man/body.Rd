@@ -1,6 +1,6 @@
 % File src/library/base/man/body.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{body}
@@ -23,7 +23,7 @@ body(fun, envir = environment(fun)) <- value
 \details{
   For the first form, \code{fun} can be a character string
   naming the function to be manipulated, which is searched for from the
-  parent environment.  If it is not specified, the function calling
+  parent frame.  If it is not specified, the function calling
   \code{body} is used.
 
   The bodies of all but the simplest are braced expressions, that is
@@ -41,11 +41,6 @@ body(fun, envir = environment(fun)) <- value
   \code{"\link{expression}"} the first element is used as the body:  any
   additional elements are ignored, with a warning.
 }
-\note{
-  Prior to \R 2.9.0, list values of \code{value} needed to be supplied
-  as a single-element list of the list: this was undocumented prior to
-  \R 2.8.1 so is unlikely to actually occur.
-}
 \seealso{
   \code{\link{alist}},
   \code{\link{args}},
@@ -61,7 +56,7 @@ body(f)
 
 ## creating a multi-expression body
 e <- expression(y <- x^2, return(y)) # or a list
-body(f) <- as.call(c(as.name("\{"), e))
+body(f) <- as.call(c(as.name("{"), e))
 f
 f(8)
 }

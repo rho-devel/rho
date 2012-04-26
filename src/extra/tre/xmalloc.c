@@ -17,10 +17,20 @@
 #endif /* HAVE_CONFIG_H */
 
 #include <stdlib.h>
-#include <assert.h>
+//#include <assert.h>
 #include <stdio.h>
 #define XMALLOC_INTERNAL 1
 #include "xmalloc.h"
+
+/* fake definition */
+extern void Rf_error(const char *str);
+#define assert(a) R_assert(a)
+
+static void assert(int expr)
+{
+    if(expr == 0)
+	Rf_error("internal allocation error in TRE");
+}
 
 
 /*
@@ -82,7 +92,12 @@ hash_void_ptr(void *ptr)
   hash = 0;
   for (i = 0; i < (int)sizeof(ptr)*8 / TABLE_BITS; i++)
     {
+/* R change: unsigned long may be shorter than ptr */
+#ifdef WIN64
+      hash ^= (size_t)ptr >> i*8;
+#else
       hash ^= (unsigned long)ptr >> i*8;
+#endif
       hash += i * 17;
       hash &= TABLE_MASK;
     }

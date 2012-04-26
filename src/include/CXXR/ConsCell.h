@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -80,7 +80,7 @@ namespace CXXR {
      *
      * @note This class is used as a base class to implement CR's
      * LISTSXP, LANGSXP, DOTSXP and (for the time being) BCODESXP.
-     * Because what these ::SEXPTYPEs have in common is implementation
+     * Because what these SEXPTYPEs have in common is implementation
      * rather than meaning in the application domain, canons of
      * object-oriented design would argue against their publicly
      * inheriting from a common base class.  Without doing this,
@@ -97,10 +97,91 @@ namespace CXXR {
      */
     class ConsCell : public RObject {
     public:
+	class iterator
+	    : public std::iterator<std::forward_iterator_tag, ConsCell> {
+	public:
+	    explicit iterator(ConsCell* cc = 0)
+		: m_cc(cc)
+	    {}
+
+	    ConsCell& operator*() const
+	    {
+		return *m_cc;
+	    }
+
+	    ConsCell* operator->() const
+	    {
+		return m_cc;
+	    }
+
+	    ConsCell& operator++()
+	    {
+		advance();
+		return *m_cc;
+	    }
+
+	    ConsCell& operator++(int)
+	    {
+		ConsCell& ans = *m_cc;
+		advance();
+		return ans;
+	    }
+	private:
+	    ConsCell* m_cc;
+
+	    void advance();
+	};
+
+	class const_iterator
+	    : public std::iterator<std::forward_iterator_tag, const ConsCell> {
+	public:
+	    explicit const_iterator(const ConsCell* cc = 0)
+		: m_cc(cc)
+	    {}
+
+	    const ConsCell& operator*() const
+	    {
+		return *m_cc;
+	    }
+
+	    const ConsCell* operator->() const
+	    {
+		return m_cc;
+	    }
+
+	    const ConsCell& operator++()
+	    {
+		advance();
+		return *m_cc;
+	    }
+
+	    const ConsCell& operator++(int)
+	    {
+		const ConsCell& ans = *m_cc;
+		advance();
+		return ans;
+	    }
+	private:
+	    const ConsCell* m_cc;
+
+	    void advance();
+	};
+
+	iterator begin()
+	{
+	    return iterator(this);
+	}
+
+	const_iterator begin() const
+	{
+	    return const_iterator(this);
+	}
+
 	/**
 	 * @brief for boost serialization
 	 */
 	ConsCell() { } 
+
 	/**
 	 * @return a const pointer to the 'car' of this ConsCell
 	 * element.
@@ -113,7 +194,7 @@ namespace CXXR {
 	/** @brief Convert a ConsCell to a (possibly) different
 	 * ConsCell type.
 	 *
-	 * @param T A (non-abstract) class derived from ConsCell.
+	 * @tparam T A (non-abstract) class derived from ConsCell.
 	 *
 	 * @param cc Pointer to a ConsCell (possibly null).  The
 	 *          effect of the method on \a cc is undefined;
@@ -124,28 +205,27 @@ namespace CXXR {
 	 * if \a cc is null.  If \a cc is already of the desired type,
 	 * the method simply returns \a cc.
 	 */
-	template <class T> static T* convert(ConsCell* cc)
+	template <class T>
+	static T* convert(ConsCell* cc)
 	{
-	    if (!cc) return 0;
-	    if (T* ccc = dynamic_cast<T*>(cc)) return ccc;
+	    if (!cc)
+		return 0;
+	    if (T* ccc = dynamic_cast<T*>(cc))
+		return ccc;
 	    T* ans = new T(cc->car(), cc->tail(), cc->tag());
 	    ans->setAttributes(cc->attributes());
 	    return expose(ans);
 	}
 
-	/** @brief Number of elements in list.
-	 *
-	 * @param start Pointer to a ConsCell, possibly null.
-	 *
-	 * @return zero if \a start is a null pointer, otherwise the
-	 * number of elements in the list starting at the ConsCell
-	 * pointed to by \a start.
-	 *
-	 * @note This would have been called length(), except that in
-	 * code inherited from CR that would be apt to be
-	 * macro-expanded to Rf_length().
-	 */
-	static size_t listLength(const ConsCell* start);
+	iterator end()
+	{
+	    return iterator();
+	}
+
+	const_iterator end() const
+	{
+	    return const_iterator();
+	}
 
 	/** @brief Set the 'car' value.
 	 *
@@ -260,7 +340,7 @@ namespace CXXR {
 	friend class boost::serialization::access;
 	friend class PairList;
 
-	Handle<> m_car;
+	RHandle<> m_car;
 	GCEdge<PairList> m_tail;
 	GCEdge<const RObject> m_tag;
 
@@ -281,14 +361,30 @@ namespace CXXR {
 	    ar & m_tail;
 	    BSerializer::attrib("m_tag");
 	    ar & m_tag;
-	    ar & m_missing;
 	}
-    public:
-	// 'Scratchpad' field used in handling argument lists,
-	// formerly hosted in the 'gp' field of sxpinfo_struct.  It
-	// would be good to remove this from the class altogether.
-	unsigned char m_missing;
     };
+
+    inline bool operator==(ConsCell::iterator l, ConsCell::iterator r)
+    {
+	return &(*l) == &(*r);
+    }
+
+    inline bool operator!=(ConsCell::iterator l, ConsCell::iterator r)
+    {
+	return !(l == r);
+    }
+
+    inline bool operator==(ConsCell::const_iterator l,
+			   ConsCell::const_iterator r)
+    {
+	return &(*l) == &(*r);
+    }
+
+    inline bool operator!=(ConsCell::const_iterator l,
+			   ConsCell::const_iterator r)
+    {
+	return !(l == r);
+    }
 
     /** @brief <tt>cc ? cc->car() : 0</tt>
      *
@@ -312,6 +408,19 @@ namespace CXXR {
      * @note The name and interface of this function may well change.
      */
     void ccdump(std::ostream& os, const ConsCell& cc, size_t margin = 0);
+
+    /** @brief Number of elements in list.
+     *
+     * @param start Pointer to a ConsCell, possibly null.
+     *
+     * @return zero if \a start is a null pointer, otherwise the
+     * number of elements in the list starting at the ConsCell
+     * pointed to by \a start.
+     */
+    inline size_t listLength(const ConsCell* start)
+    {
+	return (start ? std::distance(start->begin(), start->end()) : 0);
+    }
 
     /** @brief <tt>cc ? cc->tail() : 0</tt>
      *
@@ -352,8 +461,7 @@ namespace CXXR {
 	 */
 	explicit PairList(RObject* cr = 0, PairList* tl = 0,
 			  const RObject* tg = 0)
-	    : ConsCell(LISTSXP, cr, tl, tg), m_argused(0),
-	      m_active_binding(false), m_binding_locked(false)
+	    : ConsCell(LISTSXP, cr, tl, tg)
 	{}
 
 	/** @brief Copy constructor.
@@ -377,17 +485,20 @@ namespace CXXR {
 	 * @param tag Pointer to the tag of the element to be constructed.
 	 *
 	 * @return Pointer to newly created PairList element.
-	 *
-	 * @note This function was previously called PairList::cons(),
-	 * but in code inherited from CR the preprocessor was apt to
-	 * macro-expand this to Rf_cons.
 	 */
-	static PairList* construct(RObject* cr, PairList* tl=0,
-				   const RObject* tag = 0)
+	static PairList* cons(RObject* cr, PairList* tl=0,
+			      const RObject* tag = 0)
 	{
-	    PairList* ans = new (s_cons_pad) PairList(cr, tl, tag);
-	    s_cons_pad = GCNode::operator new(sizeof(PairList));
-	    return expose(ans);
+	    // We call MemoryBank::allocate() directly here, rather
+	    // than GCNode::operator new(), to avoid giving rise to
+	    // any garbage collection, and thus avoiding (a) the need
+	    // to protect the arguments from GC, and (b) the
+	    // possibility of reentrant calls to this function (from
+	    // object destructors).  However, calling code should not
+	    // rely on the fact that no GC will occur, because the
+	    // implementation may change in the future.
+	    void* pad = MemoryBank::allocate(sizeof(PairList));
+	    return expose(new (pad) PairList(cr, tl, tag));
 	}
 
 	/** @brief Create a PairList of a specified length.
@@ -399,7 +510,7 @@ namespace CXXR {
 	 * @param sz Number of elements required in the list.  If
 	 *           zero, the function returns a null pointer.
 	 */
-	static PairList* makeList(size_t sz) throw (std::bad_alloc);
+	static PairList* make(size_t sz) throw (std::bad_alloc);
 
 	/** @brief The name by which this type is known in R.
 	 *
@@ -417,22 +528,21 @@ namespace CXXR {
 	void unpackGPBits(unsigned int gpbits);
     private:
         friend class boost::serialization::access;
-	// Pointer to a preallocated block of memory used by cons():
-	static void* s_cons_pad;
 
 	// Tailless copy constructor.  Copies the node without copying
 	// its tail.  Used in implementing the copy constructor
 	// proper.  The second parameter is simply to provide a
 	// distinct signature, and its value is ignored.
 	PairList(const PairList& pattern, int)
-	    : ConsCell(pattern, 0), m_argused(0),
-	    m_active_binding(pattern.m_active_binding),
-	    m_binding_locked(pattern.m_binding_locked)
+	    : ConsCell(pattern, 0)
 	{}
 
 	// Declared private to ensure that PairList objects are
 	// allocated only using 'new':
-	~PairList() {}
+#ifdef __GNUG__
+	__attribute__((hot))
+#endif
+	~PairList();
 
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated version:
@@ -442,39 +552,34 @@ namespace CXXR {
 	void serialize(Archive & ar, const unsigned int version) {
 	    BSerializer::Frame frame("PairList");
 	    ar & boost::serialization::base_object<ConsCell>(*this);
-	    ar & m_argused;
-	    ar & m_active_binding;
-	    ar & m_binding_locked;
 	}
-    public:
-	// 'Scratchpad' field used in handling argument lists,
-	// formerly hosted in the 'gp' field of sxpinfo_struct.  It
-	// would be good to remove this from the class altogether.
-	unsigned char m_argused;
-
-	// Used when the contents of an Environment are represented as
-	// a PairList, for example during serialization and
-	// deserialization, and formerly hosted in the gp field of
-	// sxpinfo_struct.
-	bool m_active_binding;
-	bool m_binding_locked;
     };
+
+    inline void ConsCell::iterator::advance()
+    {
+	m_cc = m_cc->tail();
+    }
+
+    inline void ConsCell::const_iterator::advance()
+    {
+	m_cc = m_cc->tail();
+    }
 
     inline ConsCell::ConsCell(SEXPTYPE st, RObject* cr,
 			      PairList* tl, const RObject* tg)
-	: RObject(st), m_car(cr), m_tail(tl), m_tag(tg), m_missing(0)
+	: RObject(st), m_car(cr), m_tail(tl), m_tag(tg)
     {
 	// checkST(st);
     }
 
     inline ConsCell::ConsCell(const ConsCell& pattern)
 	: RObject(pattern), m_car(pattern.m_car),
-	  m_tail(clone(pattern.tail())), m_tag(pattern.tag()), m_missing(0)
+	  m_tail(clone(pattern.tail())), m_tag(pattern.tag())
     {}
     
     inline ConsCell::ConsCell(const ConsCell& pattern, int)
 	: RObject(pattern), m_car(pattern.m_car), m_tail(0),
-	  m_tag(pattern.tag()), m_missing(0)
+	  m_tag(pattern.tag())
     {}
     
     inline void ConsCell::setTail(PairList* tl)

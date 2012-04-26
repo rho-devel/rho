@@ -1,6 +1,6 @@
 % File src/library/base/man/complex.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{complex}
@@ -48,7 +48,7 @@ Conj(z)
 
   \code{as.complex} attempts to coerce its argument to be of complex
   type: like \code{\link{as.vector}} it strips attributes including
-  names. All forms of \code{NA} and \code{NaN} are coerced to a complex
+  names.  All forms of \code{NA} and \code{NaN} are coerced to a complex
   \code{NA}, for which both the real and imaginary parts are \code{NA}.
 
   Note that \code{is.complex} and \code{is.numeric} are never both
@@ -57,19 +57,23 @@ Conj(z)
   The functions \code{Re}, \code{Im}, \code{Mod}, \code{Arg} and
   \code{Conj} have their usual interpretation as returning the real
   part, imaginary part, modulus, argument and complex conjugate for
-  complex values.  Modulus and argument are also called the \emph{polar
+  complex values.  The modulus and argument are also called the \emph{polar
   coordinates}.  If \eqn{z = x + i y} with real \eqn{x} and \eqn{y}, for
-  \eqn{r = Mod(z) = \sqrt{x^2 + y^2}}, and \eqn{\phi = Arg(z)},
-  \eqn{x = r*\cos(\phi)} and \eqn{y = r*\sin(\phi)}.  They are all generic
-  functions: methods can be defined for them individually or via the
-  \code{\link[=S3groupGeneric]{Complex}} group generic.
+  \eqn{r = Mod(z) = \sqrt{x^2 + y^2}}{r = Mod(z) = \sqrt(x^2 + y^2)},
+  and \eqn{\phi = Arg(z)}, \eqn{x = r*\cos(\phi)}{x = r*cos(\phi)} and
+  \eqn{y = r*\sin(\phi)}{y = r*sin(\phi)}.  They are all
+  \link{internal generic} \link{primitive} functions: methods can be
+  defined for them
+  individually or \emph{via} the \code{\link[=S3groupGeneric]{Complex}}
+  group generic.
 
-  In addition, the elementary trigonometric, logarithmic and exponential
-  functions are available for complex values.
+  In addition, the elementary trigonometric, logarithmic, exponential,
+  square root and hyperbolic functions are implemented for complex
+  values.
 
-  \code{as.complex} and \code{is.complex} are \link{primitive}, so
-  positional matching is used and any names of supplied arguments are
-  ignored.  This may not be true of methods for \code{as.complex}.
+  Internally, complex numbers are stored as a pair of \link{double}
+  precision numbers, either or both of which can be \code{\link{NaN}} or
+  plus or minus infinity.
 }
 \section{S4 methods}{
   \code{as.complex} is primitive and can have S4 methods set.

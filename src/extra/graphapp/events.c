@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -342,10 +342,19 @@ static void handle_destroy(object obj)
 
 static void handle_focus(object obj, int gained_focus)
 {
-    if (gained_focus)
+    if (gained_focus) {
 	obj->state |= Focus;
-    else
+	if (obj->caretwidth < 0) {
+	    setcaret(obj, 0,0, -obj->caretwidth, obj->caretheight);
+	    showcaret(obj, 1);
+	}
+    } else {
 	obj->state &= ~Focus;
+	if (obj->caretwidth > 0) {
+	    setcaret(obj, 0,0, -obj->caretwidth, obj->caretheight);
+	    showcaret(obj, 0);
+	}
+    }
     if ((! USE_NATIVE_BUTTONS) && (obj->kind == ButtonObject))
 	InvalidateRect(obj->handle, NULL, 0);
     if (obj->call && obj->call->focus)

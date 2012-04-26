@@ -1,6 +1,6 @@
 % File src/library/base/man/file.show.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{file.show}
@@ -15,14 +15,13 @@ file.show(\dots, header = rep("", nfiles),
 }
 \arguments{
   \item{\dots}{one or more character vectors containing the names of the
-    files to be displayed.  These will be tilde-expanded: see
-    \code{\link{path.expand}}.}
+    files to be displayed.  Paths with have \link{tilde expansion}.}
   \item{header}{character vector (of the same length as the number of files
     specified in \code{\dots}) giving a header for each file being
     displayed.  Defaults to empty strings.}
   \item{title}{an overall title for the display.  If a single separate
     window is used for the display, \code{title} will be used as the window
-    title. If multiple windows are used, their titles should combine the title
+    title.  If multiple windows are used, their titles should combine the title
     and the file-specific header.}
   \item{delete.file}{should the files be deleted after display?  Used
     for temporary files.}
@@ -49,8 +48,9 @@ file.show(\dots, header = rep("", nfiles),
   let the user leave it up while \R continues running.  The selection of
   such pagers could either be done using special pager names being
   intercepted by lower-level code (such as \code{"internal"} and
-  \code{"console"} on Windows), or by letting \code{pager} be an R
-  function which will be called with the same first four arguments as
+  \code{"console"} on Windows), or by letting \code{pager} be an \R
+  function which will be called with arguments \code{(files, header,
+    title, delete.file)} corresponding to the first four arguments of
   \code{file.show} and take care of interfacing to the GUI.
 
   The \command{R.app} Mac OS X GUI uses its internal pager irrespective
@@ -66,6 +66,8 @@ file.show(\dots, header = rep("", nfiles),
   \code{\link{files}},
   \code{\link{list.files}},
   \code{\link{help}}.
+
+  \code{\link{file.edit}}.
 }
 \examples{
 file.show(file.path(R.home("doc"), "COPYRIGHTS"))

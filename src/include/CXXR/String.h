@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -94,9 +94,12 @@ namespace CXXR {
 	};
 
 	/** @brief Read-only character access.
+	 *
 	 * @param index Index of required character (counting from
 	 *          zero).  No bounds checking is applied.
+	 *
 	 * @return the specified character.
+	 *
 	 * @note For CXXR internal use only.
 	 */
 	char operator[](unsigned int index) const
@@ -109,12 +112,15 @@ namespace CXXR {
 	 * @return Pointer to the encapsulated C-style (null
 	 * terminated) string.
 	 */
-	virtual const char* c_str() const = 0;
+	const char* c_str() const
+	{
+	    return m_c_str;
+	}
 
 	/** @brief Character encoding.
 	 *
 	 * @return the character encoding.  At present the only types
-	 * of encoding are CE_NATIVE, CE_LATIN1 and CE_UTF8.
+	 * of encoding are CE_NATIVE, CE_UTF8, CE_LATIN1 and CE_BYTES.
 	 */
 	cetype_t encoding() const
 	{
@@ -188,6 +194,7 @@ namespace CXXR {
 	unsigned int packGPBits() const;
     protected:
 	String() { } // vestigial implementation for boost::serialization
+
 	/** @brief Create a string. 
 	 *
 	 * @param sz Number of <tt>char</tt>s in the string.  Zero is
@@ -211,18 +218,24 @@ namespace CXXR {
 	{
 	    m_hash = -1;
 	}
+
+	/** @brief Designate the encapsulated C-style string.
+	 *
+	 * (Used by constructors of derived classes.)
+	 *
+	 * @param c_string Pointer to the C-style string which this
+	 *          object encapsulates.
+	 */
+	void setCString(const char* c_string)
+	{
+	    m_c_str = c_string;
+	}
     private:
 	friend class boost::serialization::access;
 
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("String");
-	    ar & boost::serialization::base_object<VectorBase>(*this);
-	    ar & m_encoding;
-	}
-
 	static GCRoot<String> s_na;
 
+	const char* m_c_str;
 	mutable int m_hash;  // negative signifies invalid
 	cetype_t m_encoding;
 
@@ -230,7 +243,24 @@ namespace CXXR {
 	// compiler-generated versions:
 	String(const String&);
 	String& operator=(const String&);
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("String");
+	    ar & boost::serialization::base_object<VectorBase>(*this);
+	    ar & m_encoding;
+	}
     };
+
+    /** @brief Is a std::string entirely ASCII?
+     *
+     * @param str The string to be examined.
+     *
+     * @return false if str contains at least one non-ASCII character,
+     * otherwise true.  In particular the function returns true for an
+     * empty string.
+     */
+    bool isASCII(const std::string& str);
 }  // namespace CXXR
 
 extern "C" {
@@ -241,7 +271,8 @@ extern "C" {
     extern SEXP R_BlankString;
 
     /**
-     * @param x \c const pointer to a CXXR::String .
+     * @param x \c non-null pointer to a CXXR::String .
+     *
      * @return \c const pointer to character 0 of \a x .
      */
 #ifndef __cplusplus
@@ -249,7 +280,8 @@ extern "C" {
 #else
     inline const char *R_CHAR(SEXP x)
     {
-	return CXXR::SEXP_downcast<CXXR::String*>(x)->c_str();
+	using namespace CXXR;
+	return SEXP_downcast<String*>(x, false)->c_str();
     }
 #endif
 
@@ -264,8 +296,8 @@ extern "C" {
 #else
     inline int ENC_KNOWN(SEXP x)
     {
-	using namespace CXXR;
-	const String& str = *SEXP_downcast<const String*>(x);
+	// Use explicit namespace qualification to prevent ambiguities:
+	const CXXR::String& str = *CXXR::SEXP_downcast<const CXXR::String*>(x);
 	cetype_t enc = str.encoding();
 	return enc == CE_LATIN1 || enc == CE_UTF8;
     }
@@ -273,6 +305,23 @@ extern "C" {
 
     /**
      * @param x Pointer to a CXXR::String.
+     *
+     * @return true iff \a x is marked as having BYTES encoding.
+     */
+#ifndef __cplusplus
+    int IS_BYTES(SEXP x);
+#else
+    inline int IS_BYTES(SEXP x)
+    {
+	// Use explicit namespace qualification to prevent ambiguities:
+	const CXXR::String& str = *CXXR::SEXP_downcast<const CXXR::String*>(x);
+	return Rboolean(str.encoding() == CE_BYTES);
+    }
+#endif
+
+    /**
+     * @param x Pointer to a CXXR::String.
+     *
      * @return true iff \a x is marked as having LATIN1 encoding.
      */
 #ifndef __cplusplus
@@ -280,8 +329,8 @@ extern "C" {
 #else
     inline Rboolean IS_LATIN1(SEXP x)
     {
-	using namespace CXXR;
-	const String& str = *SEXP_downcast<const String*>(x);
+	// Use explicit namespace qualification to prevent ambiguities:
+	const CXXR::String& str = *CXXR::SEXP_downcast<const CXXR::String*>(x);
 	return Rboolean(str.encoding() == CE_LATIN1);
     }
 #endif
@@ -297,8 +346,8 @@ extern "C" {
 #else
     inline Rboolean IS_UTF8(SEXP x)
     {
-	using namespace CXXR;
-	const String& str = *SEXP_downcast<const String*>(x);
+	// Use explicit namespace qualification to prevent ambiguities:
+	const CXXR::String& str = *CXXR::SEXP_downcast<const CXXR::String*>(x);
 	return Rboolean(str.encoding() == CE_UTF8);
     }
 #endif
@@ -322,6 +371,17 @@ extern "C" {
     }
 #endif
 
+    /** @brief Convert contents of a String to UTF8.
+     *
+     * @param x Non-null pointer to a CXXR::String.
+     *
+     * @return The text of \a x rendered in UTF8 encoding.
+     *
+     * @note The result is held in memory allocated using R_alloc().
+     * The calling code must arrange for this memory to be released in
+     * due course.
+     */
+    const char* Rf_translateCharUTF8(SEXP x);
 #ifdef __cplusplus
 }  // extern "C"
 #endif

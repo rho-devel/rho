@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2007  The R Development Core Team
+ *  Copyright (C) 1997--2011  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,6 +49,10 @@
 
 #include "Print.h"
 #include "RBufferUtils.h"
+#include <vector>
+
+using namespace std;
+
 static R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
 
 /*  .Internal(paste(args, sep, collapse))
@@ -68,14 +72,15 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
     cetype_t ienc;
     const char *s, *csep, *cbuf, *u_csep=NULL;
     char *buf;
-    bool allKnown, anyKnown, sepASCII, sepKnown, use_UTF8, sepUTF8;
+    bool allKnown, anyKnown, sepASCII, sepKnown, use_UTF8, sepUTF8,
+	use_Bytes, sepBytes;
+    const void *vmax;
 
     checkArity(op, args);
 
-    /* We use formatting and so we */
-    /* must initialize printing. */
+    /* We use formatting and so we must initialize printing. */
 
-    PrintDefaults(env);
+    PrintDefaults();
 
     /* Check the arguments */
 
@@ -94,6 +99,7 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
     sepASCII = strIsASCII(csep);
     sepKnown = ENC_KNOWN(sep) > 0;
     sepUTF8 = IS_UTF8(sep);
+    sepBytes = IS_BYTES(sep);
 
     collapse = CADDR(args);
     if (!isNull(collapse))
@@ -138,11 +144,12 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 	 * declared encoding, we should mark.
 	 * Need to be careful only to include separator if it is used.
 	 */
-	anyKnown = FALSE; allKnown = TRUE; use_UTF8 = FALSE;
+	anyKnown = FALSE; allKnown = TRUE; use_UTF8 = FALSE; use_Bytes = FALSE;
 	if(nx > 1) {
 	    allKnown = sepKnown || sepASCII;
 	    anyKnown = sepKnown;
 	    use_UTF8 = sepUTF8;
+	    use_Bytes = sepBytes;
 	}
 
 	pwidth = 0;
@@ -151,15 +158,21 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (k > 0) {
 		SEXP cs = STRING_ELT(VECTOR_ELT(x, j), i % k);
 		if(IS_UTF8(cs)) use_UTF8 = TRUE;
+		if(IS_BYTES(cs)) use_Bytes = TRUE;
 	    }
 	}
+	if (use_Bytes) use_UTF8 = FALSE;
+	vmax = vmaxget();
 	for (j = 0; j < nx; j++) {
 	    k = length(VECTOR_ELT(x, j));
 	    if (k > 0) {
-		if(use_UTF8)
+		if(use_Bytes)
+		    pwidth += strlen(CHAR(STRING_ELT(VECTOR_ELT(x, j), i % k)));
+		else if(use_UTF8)
 		    pwidth += strlen(translateCharUTF8(STRING_ELT(VECTOR_ELT(x, j), i % k)));
 		else
 		    pwidth += strlen(translateChar(STRING_ELT(VECTOR_ELT(x, j), i % k)));
+		vmaxset(vmax);
 	    }
 	}
 	if (use_UTF8 && !u_csep) {
@@ -168,6 +181,7 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 	pwidth += (nx - 1) * (use_UTF8 ? u_sepw : sepw);
 	cbuf = buf = static_cast<char*>(R_AllocStringBuffer(pwidth, &cbuff));
+	vmax = vmaxget();
 	for (j = 0; j < nx; j++) {
 	    k = length(VECTOR_ELT(x, j));
 	    if (k > 0) {
@@ -177,7 +191,7 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 		    strcpy(buf, s);
 		    buf += strlen(s);
 		} else {
-		    s = translateChar(cs);
+		    s = use_Bytes ? CHAR(cs) : translateChar(cs);
 		    strcpy(buf, s);
 		    buf += strlen(s);
 		    allKnown = allKnown && (strIsASCII(s) || (ENC_KNOWN(cs)> 0));
@@ -193,9 +207,11 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 		    buf += sepw;
 		}
 	    }
+	    vmax = vmaxget();
 	}
 	ienc = CE_NATIVE;
 	if(use_UTF8) ienc = CE_UTF8;
+	else if(use_Bytes) ienc = CE_BYTES;
 	else if(anyKnown && allKnown) {
 	    if(known_to_be_latin1) ienc = CE_LATIN1;
 	    if(known_to_be_utf8) ienc = CE_UTF8;
@@ -205,12 +221,18 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* Now collapse, if required. */
 
-    if(collapse != R_NilValue && (nx = LENGTH(ans)) > 0) {
+    if(collapse != R_NilValue && (nx = LENGTH(ans)) > 0) {      
 	sep = STRING_ELT(collapse, 0);
 	use_UTF8 = IS_UTF8(sep);
-	for (i = 0; i < nx; i++) 
+	use_Bytes = IS_BYTES(sep);
+	for (i = 0; i < nx; i++) {
 	    if(IS_UTF8(STRING_ELT(ans, i))) use_UTF8 = TRUE;
-	if(use_UTF8)
+	    if(IS_BYTES(STRING_ELT(ans, i))) use_Bytes = TRUE;
+	}
+	if(use_Bytes) {
+	    csep = CHAR(sep);
+	    use_UTF8 = FALSE;
+	} else if(use_UTF8)
 	    csep = translateCharUTF8(sep);
 	else
 	    csep = translateChar(sep);
@@ -218,13 +240,16 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 	anyKnown = ENC_KNOWN(sep) > 0;
 	allKnown = anyKnown || strIsASCII(csep);
 	pwidth = 0;
+	vmax = vmaxget();
 	for (i = 0; i < nx; i++)
-	    if(use_UTF8)
+	    if(use_UTF8) {
 		pwidth += strlen(translateCharUTF8(STRING_ELT(ans, i)));
-	    else
+		vmaxset(vmax);
+	    } else /* already translated */
 		pwidth += strlen(CHAR(STRING_ELT(ans, i)));
 	pwidth += (nx - 1) * sepw;
 	cbuf = buf = static_cast<char*>(R_AllocStringBuffer(pwidth, &cbuff));
+	vmax = vmaxget();
 	for (i = 0; i < nx; i++) {
 	    if(i > 0) {
 		strcpy(buf, csep);
@@ -238,12 +263,14 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 	    while (*buf)
 		buf++;
 	    allKnown = allKnown &&
-		(strIsASCII(s) || (ENC_KNOWN(STRING_ELT(ans, i))> 0));
-	    anyKnown = anyKnown || (ENC_KNOWN(STRING_ELT(ans, i))> 0);
+		(strIsASCII(s) || (ENC_KNOWN(STRING_ELT(ans, i)) > 0));
+	    anyKnown = anyKnown || (ENC_KNOWN(STRING_ELT(ans, i)) > 0);
+	    if(use_UTF8) vmaxset(vmax);
 	}
 	UNPROTECT(1);
 	ienc = CE_NATIVE;
 	if(use_UTF8) ienc = CE_UTF8;
+	else if(use_Bytes) ienc = CE_BYTES;
 	else if(anyKnown && allKnown) {
 	    if(known_to_be_latin1) ienc = CE_LATIN1;
 	    if(known_to_be_utf8) ienc = CE_UTF8;
@@ -340,11 +367,12 @@ SEXP attribute_hidden do_format(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP l, x, y, swd;
     int i, il, n, digits, trim = 0, nsmall = 0, wd = 0, adj = -1, na, sci = 0;
     int w, d, e;
-    int wi, di, ei;
+    int wi, di, ei, scikeep;
     const char *strp;
 
     checkArity(op, args);
-    PrintDefaults(env);
+    PrintDefaults();
+    scikeep = R_print.scipen;
 
     if (isEnvironment(x = CAR(args))) {
 	PROTECT(y = allocVector(STRSXP, 1));
@@ -453,7 +481,8 @@ SEXP attribute_hidden do_format(SEXP call, SEXP op, SEXP args, SEXP env)
 	{
 	    /* this has to be different from formatString/EncodeString as
 	       we don't actually want to encode here */
-	    const char *s; char *buff, *q;
+	    const char *s; 
+	    char *q;
 	    int b, b0, cnt = 0, j;
 	    SEXP s0, xx;
 
@@ -462,7 +491,21 @@ SEXP attribute_hidden do_format(SEXP call, SEXP op, SEXP args, SEXP env)
 	    PROTECT(xx = duplicate(x));
 	    for (i = 0; i < n; i++) {
 		SEXP tmp =  STRING_ELT(xx, i);
-		s = translateChar(tmp);
+		if(IS_BYTES(tmp)) {
+		    const char *p = CHAR(tmp), *q;
+		    char *pp = R_alloc(4*strlen(p)+1, 1), *qq = pp, buf[5];
+		    for (q = p; *q; q++) {
+			unsigned char k = static_cast<unsigned char>( *q);
+			if (k >= 0x20 && k < 0x80) {
+			    *qq++ = *q;
+			} else {
+			    snprintf(buf, 5, "\\x%02x", k);
+			    for(int j = 0; j < 4; j++) *qq++ = buf[j];
+			}
+		    }
+		    *qq = '\0';
+		    s = pp;
+		} else s = translateChar(tmp);
 		if(s != CHAR(tmp)) SET_STRING_ELT(xx, i, mkChar(s));
 	    }
 
@@ -479,7 +522,8 @@ SEXP attribute_hidden do_format(SEXP call, SEXP op, SEXP args, SEXP env)
 		    il = Rstrlen(STRING_ELT(xx, i), 0);
 		    cnt = imax2(cnt, LENGTH(STRING_ELT(xx, i)) + imax2(0, w-il));
 		} else if (na) cnt  = imax2(cnt, R_print.na_width + imax2(0, w-R_print.na_width));
-	    buff = static_cast<char *>( alloca(cnt+1));
+	    vector<char> buffv(cnt+1);
+	    char* buff = &buffv[0];
 	    R_CheckStack();
 	    PROTECT(y = allocVector(STRSXP, n));
 	    for (i = 0; i < n; i++) {
@@ -518,6 +562,9 @@ SEXP attribute_hidden do_format(SEXP call, SEXP op, SEXP args, SEXP env)
     } else if((l = getAttrib(x, R_NamesSymbol)) != R_NilValue)
 	setAttrib(y, R_NamesSymbol, l);
 
+    /* In case something else forgets to set PrintDefaults(), PR#14477 */
+    R_print.scipen = scikeep;
+
     UNPROTECT(1);
     return y;
 }
@@ -539,7 +586,7 @@ SEXP attribute_hidden do_formatinfo(SEXP call, SEXP op, SEXP args, SEXP env)
     checkArity(op, args);
     x = CAR(args);
     n = LENGTH(x);
-    PrintDefaults(env);
+    PrintDefaults();
 
     digits = asInteger(CADR(args));
     if (!isNull(CADR(args))) {

@@ -56,7 +56,7 @@ print.stepfun <- function (x, digits = getOption("digits") - 2, ...)
 {
     numform <- function(x) paste(formatC(x, digits = digits), collapse=", ")
     i1 <- function(n) 1L:min(3, n)
-    i2 <- function(n) if(n >= 4) max(4, n-1):n else integer(0L)
+    i2 <- function(n) if(n >= 4) max(4, n-1):n else integer()
     cat("Step function\nCall: ")
     print(attr(x, "call"), ...)
     env <- environment(x)
@@ -122,7 +122,7 @@ plot.stepfun <-
     if (missing(xlim)) {
         rx <- range(xval)
         dr <-
-            if(length(xval) > 1)
+            if(length(xval) > 1L)
                 max(0.08 * diff(rx), median(diff(xval)))
             else
                 abs(xval)/16
@@ -142,12 +142,13 @@ plot.stepfun <-
 
     ##------------------------ Plotting ----------------------------
 
+    dev.hold(); on.exit(dev.flush())
     ## horizontal segments
     if (add)
 	segments(ti.l, y, ti.r, y, col=col.hor, lty=lty, lwd=lwd, ...)
     else {
         if(missing(ylim)) ylim <- range(c(y,Fn.kn))
-	plot(0,0, type="n", xlim=xlim, ylim=ylim,
+	plot(NA,NA, type="n", xlim=xlim, ylim=ylim,
 	     xlab=xlab, ylab=ylab, main= main, ...)
 	segments(ti.l, y, ti.r, y, col=col.hor, lty=lty, lwd=lwd)
     }

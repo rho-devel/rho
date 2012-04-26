@@ -134,8 +134,8 @@ preferred usage.
 
 Some familiarity with @R{} is assumed.  This is not an introduction to
 @R{} but rather a programmers' reference manual.  Other manuals provide
-complementary information: in particular @ref{Preface, , , R-intro, R
-Introduction} provides an introduction to @R{} and @ref{System and
+complementary information: in particular @ref{Preface, , , R-intro, An
+Introduction to R} provides an introduction to @R{} and @ref{System and
 foreign language interfaces, , , R-exts, Writing R Extensions} details
 how to extend @R{} using compiled code.
 
@@ -504,9 +504,8 @@ their arguments evaluated and passed to the internal function, in
 accordance with @emph{call-by-value}, whereas special functions pass the
 unevaluated arguments to the internal function.
 
-From the @R{} language, these objects are just another kind of function,
-except that their definition cannot be listed.  The @code{typeof}
-function can distinguish them from interpreted
+From the @R{} language, these objects are just another kind of function.
+The @code{is.primitive} function can distinguish them from interpreted
 @cindex function
 functions.
 
@@ -535,13 +534,11 @@ of the expression slot.  This allows the programmer to
 access either the value or the expression associated with the promise.
 
 Within the @R{} language, promise objects are almost only seen
-implicitly.  (In an upcoming release they will never be visible to
-@R{} code, as they will always be evaluated when accessed.) 
-Actual function arguments are of this type.
-There is also a @code{delayedAssign} function
-that will make a promise out of an expression.  There is generally no 
-way in @R{} code to check whether an object is a promise or not, nor is there a
-way to use @R{} code to determine the environment of a promise.
+implicitly: actual function arguments are of this type.  There is also a
+@code{delayedAssign} function that will make a promise out of an
+expression.  There is generally no way in @R{} code to check whether an
+object is a promise or not, nor is there a way to use @R{} code to
+determine the environment of a promise.
 
 @node Dot-dot-dot, Environment objects, Promise objects, Basic types
 @subsection Dot-dot-dot
@@ -741,10 +738,11 @@ printing arrays.
 @node Classes, Time series attributes, Dimnames, Attributes
 @subsection Classes
 
-@R{} has an elaborate class system, controlled via the @code{class}
-attribute.  This attribute is a character vector containing the list of
-classes that an object inherits from.  This forms the basis of the
-``generic methods'' functionality in @R{}.
+@R{} has an elaborate class system@footnote{actually two, but this draft
+manual predates the @pkg{methods} package.}, principally controlled via
+the @code{class} attribute.  This attribute is a character vector
+containing the list of classes that an object inherits from.  This forms
+the basis of the ``generic methods'' functionality in @R{}.
 
 This attribute can be accessed and manipulated virtually without
 restriction by users.  There is no checking that an object actually
@@ -1472,12 +1470,16 @@ NULL
 
 If @var{value} is a character vector then the element of @samp{...} with
 a name that exactly matches @var{value} is evaluated.  If there is no
-match @code{NULL} is returned.
+match a single unnamed argument will be used as a default.  If no
+default is specified, @code{NULL} is returned.
 
 @example
 > y <- "fruit"
-> switch(y, fruit = "banana", vegetable = "broccoli", meat = "beef")
+> switch(y, fruit = "banana", vegetable = "broccoli", "Neither")
 [1] "banana"
+> y <- "meat"
+> switch(y, fruit = "banana", vegetable = "broccoli", "Neither")
+[1] "Neither"
 @end example
 
 A common use of @code{switch} is to branch according to the character
@@ -1709,7 +1711,7 @@ selected values of @code{x} are those for which @code{i} is @code{TRUE}.
 @strong{Character}.  The strings in @code{i} are matched against the
 names attribute of @code{x} and the resulting integers are used.  For
 @code{[[} and @code{$} partial matching is used if exact matching fails,
-so @code{x$aa} will match @code{x$aabb} if @code{x} does not a component
+so @code{x$aa} will match @code{x$aabb} if @code{x} does not contain a component
 named @code{"aa"} and @code{"aabb"} is the only name which has prefix
 @code{"aa"}.  For @code{[[}, partial matching can be controlled via the
 @code{exact} argument which defaults to @code{NA} indicating that
@@ -2887,22 +2889,18 @@ other function calls.  The syntax of a call to it is
 @code{UseMethod(@var{generic}, @var{object})}, where @var{generic} is
 the name of the generic function, @var{object} is the object used to
 determine which method should be chosen.  @code{UseMethod} can only be
-called from inside a function.  The @Sl{} definition of @code{UseMethod}
-contains an additional argument of @samp{...} that can affect the
-default values for subsequent methods.  @R{} produces a warning if there
-are more than two arguments to @code{UseMethod} and ignores these
-additional arguments.
+called from the body of a function.
 
 @cindex evaluation
 @code{UseMethod} changes the evaluation model in two ways.  First, when
 it is invoked it determines the next method (function) to be called.  It
 then invokes that function using the current evaluation
 @cindex environment
-environment;
-this process will be described shortly.  The second way in which
-@code{UseMethod} changes the evaluation environment is that it does not
-return control to the calling function.  This means, that any statements
-after a call to @code{UseMethod} are guaranteed not to be executed.
+environment; this process will be described shortly.  The second way in
+which @code{UseMethod} changes the evaluation environment is that it
+does not return control to the calling function.  This means, that any
+statements after a call to @code{UseMethod} are guaranteed not to be
+executed.
 
 When @code{UseMethod} is invoked the generic function is the specified
 value in the call to @code{UseMethod}.  The object to dispatch on is
@@ -3860,7 +3858,7 @@ compiled code (primarily compiled @C{} code) to manipulate @R{} objects.
 
 The @code{.Internal} and @code{.Primitive} interfaces are used to call
 @C{} code compiled into @R{} at build time.
-@xref{.Internal and .Primitive, , , R-exts, Writing R Extensions}.
+@xref{.Internal vs .Primitive, , , R-ints, R Internals}.
 
 
 @node Exception handling, Debugging, System and foreign language interfaces, Top
@@ -4118,8 +4116,6 @@ function is evaluated the call to it is printed out.  This mechanism is
 removed by calling @code{untrace} with the function as an argument.
 
 @example
-> get("[<-")
-.Primitive("[<-")
 > trace("[<-")
 > x <- 1:10
 > x[3] <- 4
@@ -4291,17 +4287,13 @@ Numeric constants follow a similar syntax to that of the @C{} language.
 They consist of an integer part consisting of zero or more digits,
 followed optionally by @samp{.} and a fractional part of zero or more
 digits optionally followed by an exponent part consisting of an @samp{E}
-or an @samp{e}, an optional sign and a string of zero or more digits.
+or an @samp{e}, an optional sign and a string of one or more digits.
 Either the fractional or the decimal part can be empty, but not both at
 once.
 
 @example
-@r{Valid numeric constants:} 1 10 0.1 .2 1e-7 1.2e+7 2e 3e+
+@r{Valid numeric constants:} 1 10 0.1 .2 1e-7 1.2e+7
 @end example
-
-@noindent
-The two latter examples are hardly useful in practice, but they are
-accepted and treated as @samp{2} and @samp{3}, respectively.
 
 Numeric constants can also be hexadecimal, starting with @samp{0x} or
 @samp{0x} followed by zero or more digits, @samp{a-f} or @samp{A-F}.
@@ -4328,6 +4320,9 @@ decimal point, e.g. @code{1.L}.
 
 Note also that a preceding sign (@code{+} or @code{-}) is treated as a
 unary operator, not as part of the constant.
+
+Up-to-date information on the currently accepted formats can be found by
+@code{?NumericConstants}.
 
 Complex constants have the form of a decimal numeric constant followed
 by @samp{i}.  Notice that only purely imaginary numbers are actual
@@ -4366,7 +4361,7 @@ vertical tab
 backslash itself
 @item \@var{nnn}
 character with given octal code -- sequences of one, two or three digits
-in the range @code{0 ... 8} are accepted.
+in the range @code{0 ... 7} are accepted.
 @item \x@var{nn}
 character with given hex code -- sequences of one or two hex digits
 (with entries @code{0 ... 9 A ... F a ... f}).
@@ -4411,7 +4406,7 @@ are generally accessed via @code{get} and @code{assign}, although they
 can also be represented by text strings in some limited circumstances
 when there is no ambiguity (e.g.@: @code{"x" <- 1}). As @code{get} and
 @code{assign} are not restricted to names that are identifiers they do
-not recognise subscripting operators or assignment functions. The
+not recognise subscripting operators or replacement functions. The
 following pairs are @emph{not} equivalent
 @findex get
 @findex assign

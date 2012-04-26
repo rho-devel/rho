@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2002--2009     the R Development Core Team
+ *  Copyright (C) 2002--2009     The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@
 
 #include <Defn.h>
 #include "RBufferUtils.h"
+#include <R_ext/RS.h> /* for Calloc/Free */
 
 #define MAXLINE MAXELTSIZE
 #define MAXNARGS 100
@@ -260,7 +261,7 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 			}
 			_this = a[nthis];
 			if (has_star) {
-			    int nf; char *p, *q = fmt2;
+			    size_t nf; char *p, *q = fmt2;
 			    for (p = fmt; *p; p++)
 				if (*p == '*') q += sprintf(q, "%d", star_arg);
 				else *q++ = *p;
@@ -325,16 +326,21 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 				break;
 			    case 's':
 				if(TYPEOF(_this) != STRSXP) {
+				    /* as.character method might call sprintf() */
+				    size_t nc = strlen(outputString);
+				    char *z = Calloc(nc+1, char);
+				    strcpy(z, outputString);
 				    PROTECT(tmp = lang2(install("as.character"), _this));
 
 				    COERCE_THIS_TO_A
+				    strcpy(outputString, z);
+				    Free(z);
 				}
 				break;
 			    default:
 				break;
 			    }
 			} /* ns == 0 (first-time only) */
-
 
 			if(!did_this)
 			    CHECK_this_length;
@@ -432,7 +438,7 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 	    else { /* not '%' : handle string part */
 		char *ch = Rf_strchr(curFormat, '%'); /* MBCS-aware version used */
-		chunk = (ch) ? ch - curFormat : strlen(curFormat);
+		chunk = (ch) ? size_t (ch - curFormat) : strlen(curFormat);
 		strncpy(bit, curFormat, chunk);
 		bit[chunk] = '\0';
 	    }

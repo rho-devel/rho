@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -39,15 +39,15 @@
 #ifndef ARGMATCHER_HPP
 #define ARGMATCHER_HPP 1
 
+#include <list>
 #include <map>
 #include <vector>
+#include "CXXR/CachedString.h"
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
-#include "CXXR/String.h"
-#include "CXXR/Symbol.h"
 
 namespace CXXR {
-    class CachedString;
+    class ArgList;
     class Environment;
     class Frame;
     class PairList;
@@ -61,6 +61,9 @@ namespace CXXR {
      * facilities to match the formal arguments to a list of supplied
      * arguments and place the resulting bindings within a specified
      * Frame.
+     *
+     * The class also provides other services relating to the formal
+     * arguments and their default values.
      */
     class ArgMatcher : public GCNode {
     public:
@@ -104,6 +107,44 @@ namespace CXXR {
 	    return m_has_dots;
 	}
 
+	/** @brief Create ArgMatcher with specified formal argument names.
+	 *
+	 * This function creates an ArgMatcher object to match a
+	 * sequence of formal arguments whose names are given by
+	 * Symbols supplied as arguments to the function.  The
+	 * function makes no provision for default values to be
+	 * supplied for the formals.
+	 *
+	 * If any parameter to the function is a null, this signifies
+	 * that there are not that many formal arguments, and all
+	 * subsequent parameters must also be null.
+	 *
+	 * @param fml1 Pointer to the Symbol representing the first
+	 *          formal argument.  (It can be null, but this would
+	 *          probably make the created ArgMatcher pointless.)
+	 *
+	 * @param fml2 Pointer to the Symbol representing the second
+	 *          formal argument, or a null pointer.
+	 *
+	 * @param fml3 Pointer to the Symbol representing the third
+	 *          formal argument, or a null pointer.
+	 *
+	 * @param fml4 Pointer to the Symbol representing the fourth
+	 *          formal argument, or a null pointer.
+	 *
+	 * @param fml5 Pointer to the Symbol representing the fifth
+	 *          formal argument, or a null pointer.
+	 *
+	 * @param fml6 Pointer to the Symbol representing the sixth
+	 *          formal argument, or a null pointer.
+	 *
+	 * @return Pointer to a newly create ArgMatcher object to
+	 * match the specified formals.
+	 */
+	static ArgMatcher* make(Symbol* fml1, Symbol* fml2 = 0,
+				Symbol* fml3 = 0, Symbol* fml4 = 0,
+				Symbol* fml5 = 0, Symbol* fml6 = 0);
+
 	/** @brief Match formal and supplied arguments.
 	 *
 	 * Argument matching is carried out as described in Sec. 4.3.2
@@ -132,21 +173,17 @@ namespace CXXR {
 	 * will have origin MISSING.</li>
 	 * </ol>
 	 *
-	 * @param target_env Pointer to the Environment in whose Frame
-	 *          bindings will be inserted as a result of the
-	 *          argument matching process.  Any default arguments
-	 *          used will be wrapped in Promise objects keyed to
-	 *          this Environment.
+	 * @param target_env Non-null pointer to the Environment in
+	 *          whose Frame bindings will be inserted as a result
+	 *          of the argument matching process.  Any default
+	 *          arguments used will be wrapped in Promise objects
+	 *          keyed to this Environment.
 	 *
-	 * @param supplied PairList, possibly empty, of supplied
-	 *          arguments.  It is not required for the elements of
-	 *          the list to have tags, but if an element does have
-	 *          a tag, the tag must be a Symbol.  (The function
-	 *          does not check this, so strange bugs may ensue if
-	 *          this precondition is not fulfilled.)  Typically
-	 *          this list will be the output of prepareArgs().
+	 * @param supplied Non-null pointer to the ArgList containing
+	 *          the supplied arguments, which must have had
+	 *          ArgList::wrapInPromises() applied.
 	 */
-	void match(Environment* target_env, const PairList* supplied) const;
+	void match(Environment* target_env, const ArgList* supplied) const;
 
 	/** @brief Number of formal arguments.
 	 *
@@ -158,77 +195,57 @@ namespace CXXR {
 	    return m_formal_data.size() + m_has_dots;
 	}
 
-	/** @brief Prepare argument list for matching.
+	/** @brief Copy formal bindings from one Environment to another.
 	 *
-	 * This function takes the argument list \a raw_args, converts
-	 * into a form suitable for argument matching by
-	 * ArgMatcher::match(), and returns the resulting list.
-	 * Basically, any argument whose value is not
-	 * Symbol::missingArgument() is wrapped in a Promise to be
-	 * evaluated in \a env.
+	 * This function is used in dispatching S4 methods to create
+	 * the working environment for the method.  In the
+	 * function, \a fromenv points to an Environment which must
+	 * contain a Binding for every formal argument of this
+	 * ArgMatcher.  \a toenv points to another Environment (which
+	 * will become the working environment of the method).
 	 *
-	 * If any argument in \a raw_args has the value
-	 * CXXR::DotsSymbol, the action depends on what this Symbol is
-	 * bound to within \a env (and its enclosing environments).
-	 * If it is unbound, or bound to a null pointer or to
-	 * Symbol::missingArgument(), then this element of \a raw_args
-	 * is ignored: nothing corresponding to it is added to the
-	 * output list.  If it is bound to a DottedArgs list, then the
-	 * elements of that list are added to the output list as
-	 * arguments in their own right, with each argument value
-	 * being wrapped in a Promise to be evaluated in \a env.  Any
-	 * other binding of DotsSymbol is an error.
+	 * The function works through the Bindings in \a fromenv in
+	 * turn.  If a Binding has Origin EXPLICIT the function will
+	 * simply create a copy of the Binding in \a toenv.
 	 *
-	 * Any tags in \a raw_args or in a DottedArgs list are carried
-	 * across to the corresponding element of the output list, but
-	 * coerced using tagSymbol() into a form suitable for
-	 * argument matching.
+	 * If a Binding has Origin DEFAULTED, it is treated as if it had
+	 * Origin MISSING, as described next.
 	 *
-	 * @param raw_args Pointer (possibly null) to the argument
-	 *          list to be prepared for matching.
+	 * If a Binding has Origin MISSING, then it is handled in the
+	 * same way as a missing argument in ordinary argument
+	 * matching.  That is to say, if this ArgMatcher provides a
+	 * default for the formal argument in question, that default
+	 * is used in created a Binding in \a toenv.  (The value of
+	 * this Binding will be a Promise to be evaluated in \a
+	 * toenv.)  Otherwise the Binding created in \a toenv will
+	 * have Origin MISSING and value Symbol::missingArgument().
 	 *
-	 * @param env Pointer to the Environment to which Promises in
-	 *          the output list are to be keyed.
+	 * @param fromenv non-null pointer to an Environment which
+	 *          must contain a Binding for every formal argument
+	 *          of this ArgMatcher.
 	 *
-	 * @return the list of prepared arguments.
+	 * @param toenv non-null pointer to another (unlocked)
+	 *          Environment.
 	 *
-	 * @note It would be desirable to avoid producing a new
-	 * PairList, and to absorb this functionality directly into
-	 * the match() function.  But at present the output list in
-	 * recorded in the context set up by Closure::apply(), and
-	 * used for other purposes.
+	 * @note If, prior to the call, \a toenv already contains one
+	 * of more Bindings of the formal arguments of this
+	 * ArgMatcher, it is at present undefined whether or not these
+	 * Bindings are replaced by those propagated from \a fromenv.
 	 */
-	static PairList* prepareArgs(const PairList* raw_args, Environment* env);
+	void propagateFormalBindings(const Environment* fromenv,
+				     Environment* toenv) const;
 
-	/** @brief Convert tag of supplied argument to a Symbol.
+	/** @brief Strip formal argument bindings from a Frame.
 	 *
-	 * If \a tag is a null pointer or already points to a Symbol,
-	 * then \a tag itself is returned.
+	 * This function removes from \a input_frame any bindings of
+	 * the formal arguments of this Argmatcher.  It is used in
+	 * creating the working environment of an S3 method from the
+	 * working environment of its generic.
 	 *
-	 * If \a tag points to a StringVector with at least one
-	 * element, and the first element is a String of length at
-	 * least one, then the function returns a pointer to a Symbol
-	 * with that first element, translated in the current locale,
-	 * as its name.
-	 *
-	 * In all other cases the function returns a Symbol whose name
-	 * is obtained by an abbreviated SIMPLEDEPARSE of \a tag.
-	 *
-	 * @param tag Pointer (possibly null) to the tag to be
-	 *          processed.
-	 *
-	 * @return pointer to the representation of \a tag as a
-	 * Symbol.
-	 *
-	 * @todo This function probably ought to be fussier about what
-	 * it accepts as input.
+	 * @param input_frame Non-null pointer to the Frame from which
+	 *          bindings are to be stripped.
 	 */
-	inline static const Symbol* tagSymbol(const RObject* tag)
-	{
-	    return ((!tag || tag->sexptype() == SYMSXP)
-		    ? static_cast<const Symbol*>(tag)
-		    : coerceTag(tag));
-	}
+	void stripFormals(Frame* input_frame) const;
 
 	/** @brief Give warning if tag partially matched?
 	 *
@@ -287,11 +304,8 @@ namespace CXXR {
 	};
 
 	// Data relating to supplied arguments that have not yet been
-	// matched.  Empty except during the operation of match().
+	// matched.
 	typedef std::list<SuppliedData, Allocator<SuppliedData> > SuppliedList;
-
-	// Coerce a tag that is not already a Symbol into Symbol form:
-	static const Symbol* coerceTag(const RObject* tag);
 
 	// Turn remaining arguments, if any, into a DottedArgs object
 	// bound to '...'.  Leave supplied_list empty.
@@ -306,8 +320,8 @@ namespace CXXR {
 	// in fdata, setting its Origin and applying default value
 	// appropriately.  Default values are wrapped in Promises
 	// keyed to target_env.
-	void makeBinding(Environment* target_env, const FormalData& fdata,
-			 RObject* supplied_value) const;
+	static void makeBinding(Environment* target_env, const FormalData& fdata,
+				RObject* supplied_value);
 
 	// Raise an error because there are unused supplied arguments,
 	// as indicated in supplied_list.

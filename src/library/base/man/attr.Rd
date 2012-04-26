@@ -1,6 +1,6 @@
 % File src/library/base/man/attr.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{attr}
@@ -39,14 +39,14 @@ attr(x, which) <- value
   \code{\link{comment}}, \code{\link{dim}}, \code{\link{dimnames}},
   \code{\link{names}}, \code{\link{row.names}} and
   \code{\link{tsp}}) are treated specially and have restrictions on
-  the values which can be set. (Note that this is not true of
+  the values which can be set.  (Note that this is not true of
   \code{\link{levels}} which should be set for factors via the
   \code{levels} replacement function.)
 
   The extractor function allows (and does not match) empty and missing
   values of \code{which}: the replacement function does not.
   
-  These functions are \link{primitive}, so argument names are ignored.  
+  Both are \link{primitive} functions.
 }
 \value{
   For the extractor, the value of the attribute matched, or \code{NULL}

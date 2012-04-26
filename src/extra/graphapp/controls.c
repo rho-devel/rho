@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -956,4 +956,33 @@ void delobj(object obj)
 	decrease_refcount(obj);
 	break;
     }
+}
+
+void setcaret(object obj, int x, int y, int width, int height)
+{
+    if (! obj)
+    	return;
+    if (width != obj->caretwidth || height != obj->caretheight) {
+	if (obj->caretwidth > 0 && (obj->state & Focus)) DestroyCaret();
+	obj->caretwidth = width;
+	obj->caretheight = height;
+	if (width > 0) {
+	    if (obj->state & Focus)
+		CreateCaret(obj->handle, (HBITMAP) NULL, width, height);
+	    obj->caretshowing = 0;
+	}
+    }
+    if (obj->state & Focus)
+    	SetCaretPos(x, y);
+}
+
+void showcaret(object obj, int showing)
+{
+    if (! obj || showing == obj->caretshowing)
+    	return;
+    obj->caretshowing = showing;
+    if (showing)
+    	ShowCaret(obj->handle);
+    else
+    	HideCaret(obj->handle);
 }

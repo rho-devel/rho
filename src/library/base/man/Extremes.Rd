@@ -1,6 +1,6 @@
 % File src/library/base/man/Extremes.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Extremes}
@@ -53,10 +53,10 @@ pmin.int(\dots, na.rm = FALSE)
   maxima (or minima) of the vectors.  The first element of the result is
   the maximum (minimum) of the first elements of all the arguments, the
   second element of the result is the maximum (minimum) of the second
-  elements of all the arguments and so on.  Shorter inputs are recycled
-  if necessary.  \code{\link{attributes}} (such as \code{\link{names}} or
-  \code{\link{dim}}) are transferred from the first argument (if
-  applicable).
+  elements of all the arguments and so on.  Shorter inputs (of non-zero
+  length) are recycled if necessary.  Attributes (see
+  \code{\link{attributes}}: such as \code{\link{names}} or
+  \code{\link{dim}}) are copied from the first argument (if applicable).
 
   \code{pmax.int} and \code{pmin.int} are faster internal versions only
   used when all arguments are atomic vectors and there are no classes:
@@ -71,14 +71,14 @@ pmin.int(\dots, na.rm = FALSE)
 
   By definition the min/max of a numeric vector containing an \code{NaN}
   is \code{NaN}, except that the min/max of any vector containing an
-  \code{NA} is \code{NA} even if it also contains an \code{NaN}.  Note
-  that \code{max(NA, Inf) == NA} even though the maximum would be
+  \code{NA} is \code{NA} even if it also contains an \code{NaN}.
+  Note that \code{max(NA, Inf) == NA} even though the maximum would be
   \code{Inf} whatever the missing value actually is.
   
   Character versions are sorted lexicographically, and this depends on
   the collating sequence of the locale in use: the help for
   \sQuote{\link{Comparison}} gives details.  The max/min of an empty
-  character vector is defined to be a character \code{NA}.  (One could
+  character vector is defined to be character \code{NA}.  (One could
   argue that as \code{""} is the smallest character element, the maximum
   should be \code{""}, but there is no obvious candidate for the
   minimum.)

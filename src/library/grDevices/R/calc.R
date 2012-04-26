@@ -36,7 +36,7 @@ boxplot.stats <- function(x, coef = 1.5, do.conf = TRUE, do.out = TRUE)
     }
     conf <- if(do.conf) stats[3L] + c(-1.58, 1.58) * iqr / sqrt(n)
     list(stats = stats, n = n, conf = conf,
-	 out = if(do.out) x[out & nna] else numeric(0L))
+	 out = if(do.out) x[out & nna] else numeric())
 }
 
 ## Contour lines
@@ -78,7 +78,7 @@ chull <- function(x, y = NULL)
     X <- xy.coords(x, y, recycle = TRUE)
     x <- cbind(X$x, X$y)
     n <- nrow(x)
-    if(n == 0) return(integer(0L))
+    if(n == 0) return(integer())
     z <- .C(R_chull,
 	    n = as.integer(n),
 	    as.double(x),
@@ -130,7 +130,17 @@ xyTable <- function(x, y = NULL, digits)
 	    y <- y[first]
 	    diff(c((1L:n)[first], n + 1L))
 	}
-	else integer(0L)
+	else integer()
 
     list(x = x, y = y, number = number)
+}
+
+axisTicks <- function(usr, log, axp = NULL, nint = 5) {
+    if(is.null(axp))
+	axp <- unlist(.axisPars(usr, log=log, nintLog=nint), use.names=FALSE)
+    .Call(R_CreateAtVector, axp, if(log) 10^usr else usr, nint, log)
+}
+
+.axisPars <- function(usr, log = FALSE, nintLog = 5) {
+    .Call(R_GAxisPars, usr, log, nintLog)
 }

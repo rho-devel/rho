@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -40,13 +40,19 @@
 
 #include "CXXR/Closure.h"
 
-#include "RCNTXT.h"
+#include <cstdlib>
+#include "CXXR/ArgList.hpp"
 #include "CXXR/ArgMatcher.hpp"
-#include "CXXR/Evaluator.h"
+#include "CXXR/BailoutContext.hpp"
+#include "CXXR/ClosureContext.hpp"
 #include "CXXR/Expression.h"
-#include "CXXR/GCStackRoot.h"
-#include "CXXR/JMPException.hpp"
+#include "CXXR/GCStackRoot.hpp"
+#include "CXXR/ListFrame.hpp"
+#include "CXXR/ReturnBailout.hpp"
+#include "CXXR/ReturnException.hpp"
+#include "CXXR/errors.h"
 
+using namespace std;
 using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
@@ -71,57 +77,11 @@ Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
 {
 }
 
-RObject* Closure::apply(const Expression* call, const PairList* args,
-			Environment* env)
+RObject* Closure::apply(ArgList* arglist, Environment* env,
+			const Expression* call) const
 {
-    GCStackRoot<PairList> prepared_args(ArgMatcher::prepareArgs(args, env));
-    // +5 to allow some capacity for local variables:
-    GCStackRoot<Environment>
-	newenv(expose(new Environment(environment(),
-				      m_matcher->numFormals() + 5)));
-    // Set up environment:
-    {
-	RCNTXT cntxt;
-	Rf_begincontext(&cntxt, CTXT_RETURN, const_cast<Expression*>(call),
-			environment(), env, const_cast<PairList*>(args), this);
-	m_matcher->match(newenv, prepared_args);
-	Rf_endcontext(&cntxt);
-    }
-    // Perform evaluation:
-    GCStackRoot<> ans;
-    {
-	RCNTXT cntxt;
-	if (R_GlobalContext->callflag == CTXT_GENERIC)
-	    Rf_begincontext(&cntxt, CTXT_RETURN, const_cast<Expression*>(call),
-			    newenv, R_GlobalContext->sysparent, prepared_args,
-			    this);
-	else
-	    Rf_begincontext(&cntxt, CTXT_RETURN, const_cast<Expression*>(call),
-			    newenv, env, prepared_args, this);
-	newenv->setSingleStepping(m_debug);
-	if (m_debug)
-	    debug(newenv, call, prepared_args, env);
-	bool redo;
-	do {
-	    redo = false;
-	    try {
-		ans = Evaluator::evaluate(m_body, newenv);
-	    }
-	    catch (JMPException& e) {
-		// cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
-		if (e.context != &cntxt)
-		    throw;
-		if (R_ReturnedValue == R_RestartToken) {
-		    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
-		    R_ReturnedValue = 0;  /* remove restart token */
-		    redo = true;
-		}
-		else ans = R_ReturnedValue;
-	    }
-	} while (redo);
-	Rf_endcontext(&cntxt);
-    }
-    return ans;
+    arglist->wrapInPromises(env);
+    return invoke(env, arglist, call);
 }
 
 Closure* Closure::clone() const
@@ -129,8 +89,8 @@ Closure* Closure::clone() const
     return expose(new Closure(*this));
 }
 
-// Implementation of Closure::debug() is in eval.cpp (for the time
-// being).
+// Implementation of class Closure::DebugScope is in eval.cpp (for the
+// time being).
 
 void Closure::detachReferents()
 {
@@ -138,6 +98,74 @@ void Closure::detachReferents()
     m_body.detach();
     m_environment.detach();
     RObject::detachReferents();
+}
+
+RObject* Closure::execute(Environment* env) const
+{
+    RObject* ans;
+    Environment::ReturnScope returnscope(env);
+    Closure::DebugScope debugscope(this); 
+    try {
+	{
+	    BailoutContext boctxt;
+	    ans = Evaluator::evaluate(m_body, env);
+	}
+	if (ans && ans->sexptype() == BAILSXP) {
+	    ReturnBailout* rbo = dynamic_cast<ReturnBailout*>(ans);
+	    if (!rbo || rbo->environment() != env)
+		abort();
+	    R_Visible = Rboolean(rbo->printResult());
+	    ans = rbo->value();
+	}
+    }
+    catch (ReturnException& rx) {
+	if (rx.environment() != env)
+	    throw;
+	ans = rx.value();
+    }
+    Environment::monitorLeaks(ans);
+    env->maybeDetachFrame();
+    return ans;
+}
+
+RObject* Closure::invoke(Environment* env, const ArgList* arglist,
+			 const Expression* call,
+			 const Frame* method_bindings) const
+{
+#ifndef NDEBUG
+    if (arglist->status() != ArgList::PROMISED)
+	Rf_error("Internal error: unwrapped arguments to Closure::invoke");
+#endif
+    GCStackRoot<Frame> newframe(CXXR_NEW(ListFrame));
+    GCStackRoot<Environment>
+	newenv(CXXR_NEW(Environment(environment(), newframe)));
+    // Perform argument matching:
+    {
+        ClosureContext cntxt(const_cast<Expression*>(call), env, this,
+			     environment(), arglist->list());
+	m_matcher->match(newenv, arglist);
+    }
+
+    // Set up context and perform evaluation.  Note that ans needs to
+    // be protected in case the destructor of ClosureContext executes
+    // an on.exit function.
+    GCStackRoot<> ans;
+    {
+	Environment* syspar = env;
+	// If this is a method call, change syspar and merge in
+	// supplementary bindings:
+	if (method_bindings) {
+	    method_bindings->softMergeInto(newenv->frame());
+	    FunctionContext* fctxt = FunctionContext::innermost();
+	    while (fctxt && fctxt->function()->sexptype() == SPECIALSXP)
+		fctxt = FunctionContext::innermost(fctxt->nextOut());
+	    syspar = (fctxt ? fctxt->callEnvironment() : Environment::global());
+	}
+	ClosureContext cntxt(const_cast<Expression*>(call),
+			     syspar, this, newenv, arglist->list());
+	ans = execute(newenv);
+    }
+    return ans;
 }
 
 const char* Closure::typeName() const
@@ -152,9 +180,9 @@ void Closure::visitReferents(const_visitor* v) const
     const GCNode* environment = m_environment;
     RObject::visitReferents(v);
     if (matcher)
-	matcher->conductVisitor(v);
+	(*v)(matcher);
     if (body)
-	body->conductVisitor(v);
+	(*v)(body);
     if (environment)
-	environment->conductVisitor(v);
+	(*v)(environment);
 }

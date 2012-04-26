@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -43,6 +43,7 @@
 #define ROBJECT_H
 
 #include "R_ext/Boolean.h"
+#include "CXXR/SEXPTYPE.h"
 
 #ifdef __cplusplus
 
@@ -50,117 +51,20 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
 #include "CXXR/BSerializer.hpp"
-#include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
+#include "CXXR/RHandle.hpp"
 #include "CXXR/uncxxr.h"
 
-extern "C" {
-#endif
-
-    /* type for length of vectors etc */
-    typedef int R_len_t; /* will be long later, LONG64 or ssize_t on Win64 */
-#define R_LEN_T_MAX INT_MAX
-
-    /* Comment from CR code:
-     * Fundamental Data Types:  These are largely Lisp
-     * influenced structures, with the exception of LGLSXP,
-     * INTSXP, REALSXP, CPLXSXP and STRSXP which are the
-     * element types for S-like data objects.
-
-     * Note that the gap of 11 and 12 below is because of
-     * the withdrawal of native "factor" and "ordered" types.
-     *
-     *			--> TypeTable[] in ../main/util.c for  typeof()
-     */
-
-    /*  These exact numeric values are seldom used, but they are, e.g., in
-     *  ../main/subassign.c
-     */
-
-    /** @enum SEXPTYPE
-     *
-     * @brief CR's object type identification.
-     *
-     * This enumeration is used within CR to identify different types
-     * of R object.  In CXXR the same purpose could be (and sometimes
-     * is) achieved by C++ run-time type information (RTTI), virtual
-     * function despatch etc.  However, a ::SEXPTYPE field is retained
-     * within each CXXR::RObject for backwards compatibility, and indeed
-     * efficiency.
-     */
-    typedef enum {
-	NILSXP	    = 0,    /**< NULL. In CXXR no CXXR::RObject has
-			     * this type, but for backward
-			     * compatibility TYPEOF will return ::NILSXP
-			     * if passed a null pointer.
-			     */
-	SYMSXP	    = 1,    /**< symbols, implemented in class
-			       CXXR::Symbol. */
-	LISTSXP	    = 2,    /**< lists of dotted pairs, implemented in
-			       class CXXR::PairList. */
-	CLOSXP	    = 3,    /**< closures, implemented in class
-			       CXXR::Closure. */
-	ENVSXP	    = 4,    /**< environments, implemented in class
-			       CXXR::Environment. */
-	PROMSXP	    = 5,    /**< promises: [un]evaluated closure
-			       arguments, implemented in class
-			       CXXR::Promise. */
-	LANGSXP	    = 6,    /**< language constructs (special lists),
-			       implemented in class CXXR::Expression. */
-	SPECIALSXP  = 7,    /**< special forms, implemented in class
-			       CXXR::BuiltInFunction. */
-	BUILTINSXP  = 8,    /**< builtin non-special forms, also
-			       implemented in class
-			       CXXR::BuiltInFunction. */
-	CHARSXP	    = 9,    /**< "scalar" string type (internal only),
-			       implemented in class CXXR::String. */
-	LGLSXP	    = 10,   /**< logical vectors, implemented in class
-			       CXXR::LogicalVector. */
-	INTSXP	    = 13,   /**< integer vectors, implemented in class
-			       CXXR::IntVector. */
-	REALSXP	    = 14,   /**< real variables, implemented in class
-			       CXXR::RealVector. */
-	CPLXSXP	    = 15,   /**< complex variables, implemented in
-			       class CXXR::ComplexVector. */
-	STRSXP	    = 16,   /**< string vectors, implemented in class
-			       CXXR::StringVector. */
-	DOTSXP	    = 17,   /**< dot-dot-dot objects, implemented in
-			       class CXXR::DottedArgs. */
-	ANYSXP	    = 18,   /**< Used to make "any" args work.  No
-			       CXXR::RObject has this type. */
-	VECSXP	    = 19,   /**< generic vectors, implemented in class
-			       CXXR::ListVector. */
-	EXPRSXP	    = 20,   /**< expression vectors, implemented in
-			       class CXXR::ExpressionVector. */
-	BCODESXP    = 21,   /**< byte code, implemented in class
-			       CXXR::ByteCode. */
-	EXTPTRSXP   = 22,   /**< external pointers, implemented in
-			       class CXXR::ExternalPointer. */
-	WEAKREFSXP  = 23,   /**< weak references, implemented in class
-			       CXXR::WeakRef. */
-	RAWSXP      = 24,   /**< raw bytes, implemented in class
-			       CXXR::RawVector. */
-	S4SXP       = 25,   /**< S4 object not inheriting from another
-			     *   ::SEXPTYPE, implemented in class
-			     *   CXXR::S4Object.
-			     */
-
-	CXXSXP      = 43,   /**< object types specific to CXXR.*/
-	                    /* (43 = ASCII +) */
-
-	FUNSXP	    = 99    /**< Closure or Builtin.  No CXXR::RObject has
-			       this type. */
-    } SEXPTYPE;
-
-#ifdef __cplusplus
-}  // extern "C"
-
+/** @brief Namespace for the CXXR project.
+ *
+ * CXXR is a project to refactorize the R interpreter into C++.
+ */
 namespace CXXR {
     class Environment;
     class PairList;
     class Symbol;
 
-    /** @brief Replacement for CR's ::SEXPREC.
+    /** @brief Replacement for CR's SEXPREC.
      *
      * This class is the rough equivalent within CXXR of the SEXPREC
      * union within CR.  However, all functionality relating to
@@ -252,10 +156,9 @@ namespace CXXR {
      * follows (b).</li>
      *
      * <li>Since Symbol objects may well need to be evaluated,
-     * Symbol::obtain() returns a non-const pointer, but the Symbol
-     * object is nevertheless immutable because the Symbol object is
-     * frozen. Similarly, CachedString::obtain() returns a non-const
-     * pointer to a frozen CachedString object.</li>
+     * Symbol::obtain() returns a non-const pointer; similarly,
+     * CachedString::obtain() returns a non-const pointer to a
+     * CachedString object.</li>
      * </ol>
      *
      * @todo Incorporate further attribute consistency checks within
@@ -265,107 +168,31 @@ namespace CXXR {
      */
     class RObject : public GCNode {
     public:
-	/** @brief Smart pointer used to control the copying of RObjects.
+	/** @brief Class of function object that does nothing to an RObject.
 	 *
-	 * This class encapsulates a T* pointer, where T is derived
-	 * from RObject, and is used to manage the copying of
-	 * subobjects when an RObject is copied.  For most purposes,
-	 * it behaves essentially like a GCEdge<T>.  However, when a Handle
-	 * is copied, it checks whether the object, \a x say, that it
-	 * points to is clonable.  If it is, then the copied Handle
-	 * will point to a clone of \a x ; if not, then the copy will
-	 * point to \a x itself.
-	 *
-	 * @param T RObject or a class publicly derived from RObject.
+	 * This struct is typically used as a default template
+	 * parameter, for example in FixedVector.
 	 */
-	template <class T = RObject>
-	class Handle : public GCEdge<T> {
-	public:
-	    Handle()
+	struct DoNothing : std::unary_function<RObject*, void> {
+	    /** @brief Does nothing.
+	     */
+	    void operator()(RObject*)
 	    {}
-
-	    /** @brief Primary constructor.
-	     *
-	     * @param target Pointer to the object to which this
-	     *          GCEdge is to refer.
-	     *
-	     * @note Unless \a target is a null pointer, this
-	     * constructor should be called only as part of the
-	     * construction of the object derived from GCNode of which
-	     * this GCEdge forms a part.
-	     */
-	    explicit Handle(T* target)
-		: GCEdge<T>(target)
-	    {}
-
-	    /** @brief Copy constructor.
-	     *
-	     * @param pattern Handle to be copied.  Suppose \a pattern
-	     *          points to an object \a x .  If \a x is clonable
-	     *          object, i.e. an object of a class that
-	     *          non-trivially implements RObject::clone(),
-	     *          then the newly created Handle will point to a
-	     *          clone of \a x ; otherwise it will point to \a
-	     *          x itself.  If \a pattern encapsulates a null
-	     *          pointer, so will the created object.
-	     */
-	    Handle(const Handle<T>& pattern)
-		: GCEdge<T>(cloneOrSelf(pattern))
-	    {}
-
-	    /** @brief Assignment operator.
-	     *
-	     * Note that this does not attempt to clone \a source: it
-	     * merely changes this Handle to point to the same T
-	     * object (if any) as \a source.
-	     */
-	    Handle<T>& operator=(const Handle<T>& source)
-	    {
-		GCEdge<T>::operator=(source);
-		return *this;
-	    }
-
-	    /** @brief Assignment from pointer.
-	     *
-	     * Note that this does not attempt to clone \a newtarget: it
-	     * merely changes this Handle to point to \a newtarget.
-	     */
-	    Handle<T>& operator=(T* newtarget)
-	    {
-		GCEdge<T>::operator=(newtarget);
-		return *this;
-	    }
-	private:
-	    friend class boost::serialization::access;
-
-	    static T* cloneOrSelf(T*);
-
-	    template<class Archive>
-	    void serialize(Archive & ar, const unsigned int version) {
-		BSerializer::Frame frame("Handle");
-		ar & boost::serialization::base_object<GCEdge<T> >(*this);
-	    }
 	};
-		
+
 	/** @brief Get object attributes.
 	 *
 	 * @return Pointer to the attributes of this object.
 	 *
-	 * @deprecated This method allows clients to modify the
-	 * attribute list directly, and thus bypass attribute
-	 * consistency checks.
+	 * @note Callers should beware that derived classes may
+	 * override this function with one that gives rise to garbage
+	 * collection.
 	 */
-	PairList* attributes();
-
-	/** @brief Get object attributes (const variant).
-	 *
-	 * @return const pointer to the attributes of this object.
-	 */
-	const PairList* attributes() const;
+	virtual const PairList* attributes() const;
 
 	/** @brief Remove all attributes.
 	 */
-	void clearAttributes();
+	virtual void clearAttributes();
 
 	/** @brief Return pointer to a copy of this object.
 	 *
@@ -398,22 +225,48 @@ namespace CXXR {
 
 	/** @brief Return a pointer to a copy of an object.
 	 *
-	 * @param T RObject or a type derived from RObject.
+	 * @tparam T RObject or a type derived from RObject.
 	 *
 	 * @param pattern Either a null pointer or a pointer to the
 	 *          object to be cloned.
 	 *
 	 * @return Pointer to a clone of \a pattern, or a null pointer
 	 * if \a pattern cannot be cloned or is itself a null pointer.
-	 * On return, the clone will not normally have yet been
-	 * exposed to the garbage collector; consequently, the calling
-	 * code should arrange for this to happen.
 	 */
 	template <class T>
 	static T* clone(const T* pattern)
 	{
 	    return pattern ? static_cast<T*>(pattern->clone()) : 0;
 	}
+
+	/** @brief Copy an attribute from one RObject to another.
+	 *
+	 * @param name Non-null pointer to the Symbol naming the
+	 *          attribute to be copied.
+	 *
+	 * @param source Non-null pointer to the object from which
+	 *          the attribute are to be copied.  If \a source does
+	 *          not have an attribute named \a name , then the
+	 *          function has no effect.
+	 */
+	void copyAttribute(const Symbol* name, const RObject* source)
+	{
+	    RObject* att = source->getAttribute(name);
+	    if (att)
+		setAttribute(name, att);
+	}
+
+	/** @brief Copy attributes from one RObject to another.
+	 *
+	 * Any existing attributes of \a *this are discarded.
+	 *
+	 * @param source Non-null pointer to the object from which
+	 *          attributes are to be copied.
+	 *
+	 * @param copyS4 If true, the status of \a source as an S4
+	 *          object (or not) is also copied to \a *this .
+	 */
+	void copyAttributes(const RObject* source, bool copyS4);
 
 	/** @brief Evaluate object in a specified Environment.
 	 *
@@ -431,26 +284,24 @@ namespace CXXR {
 	 *
 	 * @return pointer to the value of the attribute with \a name,
 	 * or a null pointer if there is no such attribute.
-	 */
-	RObject* getAttribute(const Symbol* name);
-
-	/** @brief Get the value a particular attribute (const variant).
 	 *
-	 * @param name Pointer to a \c Symbol giving the name of the
-	 *          sought attribute.
-	 *
-	 * @return const pointer to the value of the attribute with \a
-	 * name, or a null pointer if there is no such attribute.
+	 * @note Implementers of derived classes should ensure that
+	 * any function overriding this <em>will not</em> give rise to
+	 * garbage collection.
 	 */
-	const RObject* getAttribute(const Symbol* name) const;
+	virtual RObject* getAttribute(const Symbol* name) const;
 
 	/** @brief Has this object any attributes?
 	 *
 	 * @return true iff this object has any attributes.
+	 *
+	 * @note Implementers of derived classes should ensure that
+	 * any function overriding this <em>will not</em> give rise to
+	 * garbage collection.
 	 */
-	bool hasAttributes() const
+	virtual bool hasAttributes() const
 	{
-	    return attributes() != 0;
+	    return RObject::attributes() != 0;
 	}
 
 	/** @brief Has this object the class attribute?
@@ -459,7 +310,7 @@ namespace CXXR {
 	 */
 	bool hasClass() const
 	{
-	    return m_has_class;
+	    return m_type < 0;
 	}
 
 	/** @brief Is this an S4 object?
@@ -468,7 +319,109 @@ namespace CXXR {
 	 */
 	bool isS4Object() const
 	{
-	    return m_S4_object;
+	    return (m_type & s_S4_mask);
+	}
+
+	/** @brief Carry out memory tracing.
+	 *
+	 * This function is a no-op unless CXXR is built with
+	 * R_MEMORY_PROFILING defined (as will happen if it is
+	 * configured with --enable-memory-profiling).
+	 *
+	 * This function should be called if <tt>this</tt> has been
+	 * created as a copy of \a src, or if <tt>this</tt> has been
+	 * derived in some way from \a src1.  When memory profiling is
+	 * enabled, if \a src points to an RObject with the
+	 * memoryTraced() property set, this property will be
+	 * propagated to <tt>this</tt>.  Also the creation of this
+	 * object will be reported, along with the current context
+	 * stack.
+	 *
+	 * @param src Non-null pointer to an RObject.
+	 */
+	void maybeTraceMemory(const RObject* src)
+	{
+#ifdef R_MEMORY_PROFILING
+	    if (src->memoryTraced())
+		traceMemory(src, 0, 0);
+#endif
+	}
+
+	/** @brief Carry out memory tracing.
+	 *
+	 * This function is a no-op unless CXXR is built with
+	 * R_MEMORY_PROFILING defined (as will happen if it is
+	 * configured with --enable-memory-profiling).
+	 *
+	 * This function should be called if <tt>this</tt> has been
+	 * derived in some way from \a src1 and \a src2.  When memory
+	 * profiling is enabled, if either \a src1 or \a src2 points
+	 * to an RObject with the memoryTraced() property set, this
+	 * property will be propagated to <tt>this</tt>.  Also the
+	 * creation of this object will be reported, along with the
+	 * current context stack.
+	 *
+	 * @param src1 Non-null pointer to an RObject.
+	 *
+	 * @param src2 Non-null pointer to an RObject.
+	 */
+	void maybeTraceMemory(const RObject* src1,
+			      const RObject* src2)
+	{
+#ifdef R_MEMORY_PROFILING
+	    if (src1->memoryTraced() || src2->memoryTraced())
+		traceMemory(src1, src2, 0);
+#endif
+	}
+
+	/** @brief Carry out memory tracing.
+	 *
+	 * This function is a no-op unless CXXR is built with
+	 * R_MEMORY_PROFILING defined (as will happen if it is
+	 * configured with --enable-memory-profiling).
+	 *
+	 * This function should be called if <tt>this</tt> has been
+	 * derived in some way from \a src1, \a src2 and \a src 3.  When
+	 * memory profiling is enabled, if any of \a src1, \a src2 or
+	 * \a src3 points to an RObject with the memoryTraced()
+	 * property set, this property will be propagated to
+	 * <tt>this</tt>.  Also the creation of this object will be
+	 * reported, along with the current context stack.
+	 *
+	 * @param src1 Non-null pointer to an RObject.
+	 *
+	 * @param src2 Non-null pointer to an RObject.
+	 *
+	 * @param src3 Non-null pointer to an RObject.
+	 */
+	void maybeTraceMemory(const RObject* src1,
+			      const RObject* src2,
+			      const RObject* src3)
+	{
+#ifdef R_MEMORY_PROFILING
+	    if (src1->memoryTraced()
+		|| src2->memoryTraced()
+		|| src3->memoryTraced())
+		traceMemory(src1, src2, src3);
+#endif
+	}
+
+	/** @brief Is copying etc. of this object being traced?
+	 *
+	 * The property reported by this function is used by R
+	 * functions such as <tt>tracemem</tt>, and has effect only if
+	 * CXXR is built with R_MEMORY_PROFILING defined (as will
+	 * happen if it is configured with --enable-memory-profiling). 
+	 *
+	 * @return A return value of true signifies that when a copy
+	 * is made of this object, or - more generally - some
+	 * comparably sized object is derived from this object, this
+	 * fact should be reported, and the 'memory traced' property
+	 * propagated to the new object.
+	 */
+	bool memoryTraced() const
+	{
+	    return m_memory_traced;
 	}
 
 	/** @brief Reproduce the \c gp bits field used in CR.
@@ -500,7 +453,7 @@ namespace CXXR {
 	 *          assume ownership of \a value, which should
 	 *          therefore not be subsequently altered externally.
 	 */
-	void setAttribute(const Symbol* name, RObject* value);
+	virtual void setAttribute(const Symbol* name, RObject* value);
 
 	/** @brief Replace the attributes of an object.
 	 *
@@ -520,6 +473,25 @@ namespace CXXR {
 	 */
 	void setAttributes(const PairList* new_attributes);
 
+	/** @brief Enable/disable tracing of copying etc.
+	 *
+	 * The property set by this function is used by R functions
+	 * such as <tt>tracemem</tt>, and has effect only if CXXR is
+	 * built with R_MEMORY_PROFILING defined (as will happen if it
+	 * is configured with --enable-memory-profiling).
+	 *
+	 * @param on A value of true signifies that when a copy
+	 *          is made of this object, or - more generally - some
+	 *          comparably sized object is derived from this
+	 *          object, this fact should be reported, and the
+	 *          'memory traced' property propagated to the new
+	 *          object.
+	 */	 
+	void setMemoryTracing(bool on)
+	{
+	    m_memory_traced = on;
+	}
+
 	/** @brief Set the status of this RObject as an S4 object.
 	 *
 	 * @param on true iff this is to be considered an S4 object.
@@ -534,7 +506,10 @@ namespace CXXR {
 	 *
 	 * @return ::SEXPTYPE of this object.
 	 */
-	SEXPTYPE sexptype() const {return m_type;}
+	SEXPTYPE sexptype() const
+	{
+	    return SEXPTYPE(m_type & s_sexptype_mask);
+	}
 
 	/** @brief Name within R of this type of object.
 	 *
@@ -560,15 +535,21 @@ namespace CXXR {
 	 */
 	virtual void unpackGPBits(unsigned int gpbits);
 
-	// Virtual function of GCNode:
+	// Virtual functions of GCNode:
+	void detachReferents()
+	{
+	    m_attrib.detach();
+	}
+
 	void visitReferents(const_visitor* v) const;
     protected:
 	/**
 	 * @param stype Required type of the RObject.
 	 */
 	explicit RObject(SEXPTYPE stype = CXXSXP)
-	    : m_type(stype), m_named(0), m_has_class(false),
-	      m_S4_object(stype == S4SXP), m_frozen(false)
+	    : m_type(stype & s_sexptype_mask), m_named(0),
+	      m_memory_traced(false), m_missing(0), m_argused(0),
+	      m_active_binding(false), m_binding_locked(false)
 	{}
 
 	/** @brief Copy constructor.
@@ -578,78 +559,89 @@ namespace CXXR {
 	RObject(const RObject& pattern);
 
 	virtual ~RObject() {}
-
-	/** @brief Raise error if object is frozen.
-	 *
-	 * Code inherited from a CR is apt to hand out non-const
-	 * pointers to objects that ought really to be immutable:
-	 * \c R_UnboundValue for example.  CXXR counters this by
-	 * 'freezing' such objects.  Non-const methods of the affected
-	 * classes should call this function, thus preventing such
-	 * objects being altered.
-	 */
-	void errorIfFrozen()
-	{
-	    if (m_frozen) frozenError();
-	}
-
-	/** @brief Prevent alterations to the object.
-	 *
-	 * Code inherited from a CR is apt to hand out non-const
-	 * pointers to objects that ought really to be immutable:
-	 * \c R_UnboundValue for example.  CXXR counters this by
-	 * 'freezing' such objects, and applying run-time checks.  See
-	 * errorIfFrozen().
-	 */
-	void freeze()
-	{
-	    m_frozen = true;
-	}
-
-	// Virtual function of GCNode:
-	void detachReferents()
-	{
-	    m_attrib.detach();
-	}
     private:
 	friend class boost::serialization::access;
-	const SEXPTYPE m_type;
+	static const unsigned char s_sexptype_mask = 0x3f;
+	static const unsigned char s_S4_mask = 0x40;
+	static const unsigned char s_class_mask = 0x80;
+	signed char m_type;  // The least-significant six bits hold
+	  // the SEXPTYPE.  The sign bit is set if the object has a
+	  // class attribute.  Bit 6 is set to denote an S4 object.
     public:
 	// To be private in future:
-	unsigned int m_named  : 2;
+	unsigned char m_named;
     private:
-	bool m_has_class      : 1;
-	bool m_S4_object      : 1;
-	bool m_frozen         : 1;
-	Handle<PairList> m_attrib;
+	// The following field is used in connection with R functions
+	// such as tracemem, and has effect only if CXXR is built with
+	// R_MEMORY_PROFILING defined.  When set, it signifies that
+	// when a copy is made of this object, or - more generally -
+	// some comparably sized object is derived from this object,
+	// this fact should be reported, and the m_memory_traced
+	// property propagated to the new object.
+	bool m_memory_traced : 1;
+    public:
+	// The following field is used only in connection with objects
+	// inheriting from class ConsCell (and fairly rarely then), so
+	// it would more logically be placed in that class (and
+	// formerly was within CXXR).  It is placed here so that the
+	// ubiquitous PairList objects can be squeezed into 32 bytes
+	// (on 32-bit architecture), for improved cache efficiency.
+	// This field is obsolescent in any case, and should be got
+	// rid of entirely in due course:
 
-	static void frozenError();
+	// 'Scratchpad' field used in handling argument lists,
+	// formerly hosted in the 'gp' field of sxpinfo_struct.
+	unsigned m_missing     : 2;
+	
+	// Similarly the following three obsolescent fields squeezed
+	// in here are used only in connection with objects of class
+	// PairList (and only rarely then), so they would more
+	// logically be placed in that class (and formerly were within
+	// CXXR).
+	// 'Scratchpad' field used in handling argument lists,
+	// formerly hosted in the 'gp' field of sxpinfo_struct.
+	unsigned m_argused    : 2;
+
+	// Used when the contents of an Environment are represented as
+	// a PairList, for example during serialization and
+	// deserialization, and formerly hosted in the gp field of
+	// sxpinfo_struct.
+	bool m_active_binding : 1;
+	bool m_binding_locked : 1;
+    private:
+	RHandle<PairList> m_attrib;
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 	    BSerializer::Frame frame("RObject");
 	    ar & boost::serialization::base_object<GCNode>(*this);	
-	    ar & const_cast<SEXPTYPE &>(m_type);
-	    unsigned int named=m_named;
-	    bool has_class=m_has_class;
-	    bool S4_object=m_S4_object;
-	    bool frozen=m_frozen;
+	    ar & m_type;
+	    unsigned int named = m_named;
 	    ar & named;
-	    ar & has_class;
-	    ar & S4_object;
+	    unsigned int missing = m_missing;
+	    ar & missing;
+	    unsigned int argused = m_argused;
+	    ar & argused;
+	    bool active_binding = m_active_binding;
+	    ar & active_binding;
+	    bool binding_locked = m_binding_locked;
+	    ar & binding_locked;
 	    BSerializer::attrib("m_attrib");
 	    ar & m_attrib;
-	    m_named=named; m_has_class=has_class;
-	    m_S4_object=S4_object; m_frozen=frozen;
+	    m_named = named;
+	    m_missing = missing;
+	    m_argused = argused;
+	    m_active_binding = active_binding;
+	    m_binding_locked = binding_locked;
 	}
-    };
 
-    template <class T>
-    T* RObject::Handle<T>::cloneOrSelf(T* pattern)
-    {
-        T* t = clone(pattern);
-	return (t ? t : pattern);
-    }
+#ifdef R_MEMORY_PROFILING
+	// This function implements maybeTraceMemory() (qv.) when
+	// memory profiling is enabled.
+	void traceMemory(const RObject* src1, const RObject* src2,
+			 const RObject* src3);
+#endif	
+    };
 }  // namespace CXXR
 
 /** @brief Pointer to an RObject.
@@ -683,6 +675,8 @@ extern "C" {
 
     /** @brief Replace the attributes of \a to by those of \a from.
      *
+     * The status of \a to as an S4 Object is also copied from \a from .
+     * 
      * @param to Pointer to CXXR::RObject.
      *
      * @param from Pointer to another CXXR::RObject.
@@ -838,17 +832,6 @@ extern "C" {
      */
     void Rf_copyMostAttrib(SEXP inp, SEXP ans);
 
-    /** @brief Evaluate an object in a specified Environment.
-     *
-     * @param e Pointer (possibly null) to the object to be evaluated.
-     *
-     * @param rho Pointer to an Environment (checked unless \a e is null).
-     *
-     * @return Pointer to the result of evaluating \a e in \a rho, or
-     * a null pointer if \a e is null.
-     */
-    SEXP Rf_eval(SEXP e, SEXP rho);
- 
     /** @brief Access a named attribute.
      *
      * @param vec Pointer to the CXXR::RObject whose attributes are to be
@@ -923,6 +906,32 @@ extern "C" {
      *       source code for further details.
      */
     SEXP Rf_setAttrib(SEXP vec, SEXP name, SEXP val);
+
+    /** @brief C interface to RObject::traceMemory().
+     *
+     * This function provides a C language interface to
+     * <tt>dest->maybeTraceMemory(src)</tt>: see the documentation of
+     * that method for details.
+     *
+     * @param dest Non-null pointer to an RObject.
+     *
+     * @param src Non-null pointer to an RObject.
+     */
+    void maybeTraceMemory1(SEXP dest, SEXP src);
+
+    /** @brief C interface to RObject::traceMemory().
+     *
+     * This function provides a C language interface to
+     * <tt>dest->maybeTraceMemory(src1, src2)</tt>: see the documentation
+     * of that method for details.
+     *
+     * @param dest Non-null pointer to an RObject.
+     *
+     * @param src1 Non-null pointer to an RObject.
+     *
+     * @param src2 Non-null pointer to an RObject.
+     */
+    void maybeTraceMemory2(SEXP dest, SEXP src1, SEXP src2);
 
     /** @brief Name of type within R.
      *

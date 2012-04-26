@@ -2,15 +2,19 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.3.0 \n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-10-08 08:29\n"
-"PO-Revision-Date: 2009-10-07 19:29+0900 \n"
+"POT-Creation-Date: 2011-10-12 18:01\n"
+"PO-Revision-Date: 2011-10-22 19:04+0900 \n"
 "Last-Translator: takahashi <takahashi.kohske@gmail.com> \n"
 "Language-Team: RjpWiki Message Translation Team <mokada@md.tsukuba.ac.jp> \n"
+"Language: \n"
 "MIME-Version: 1.0 \n"
 "Content-Type: text/plain; charset=UTF-8 \n"
 "Content-Transfer-Encoding: 8bit \n"
 "Plural-Forms: nplurals=1; plural=0; \n"
 "X-Generator: Pootle 1.1.0 \n"
+
+msgid "models are not all fitted to the same number of observations"
+msgstr " モデルは全て同じサイズの観測値に当てはめられませんでした "
 
 msgid "empty model supplied"
 msgstr " 空のモデルが与えられました "
@@ -29,11 +33,14 @@ msgstr ""
 msgid "'alpha', 'beta' and 'gamma' must be within the unit interval."
 msgstr " 'alpha', 'beta' そして 'gamma' は単位区間の内部にある必要があります "
 
-msgid "data must be strictly non-negative for multiplicative Holt-Winters."
-msgstr " 乗法的 Holt-Winters モデルではデータは正値でなければなりません "
+msgid "data must be non-zero for multiplicative Holt-Winters."
+msgstr " 乗法的 Holt-Winters モデルではデータは非ゼロでなければなりません "
 
 msgid "need at least 2 periods to compute seasonal start values."
 msgstr " 季節的な開始値を計算するには少なくとも 2 期間が必要です "
+
+msgid "optimization failure"
+msgstr " 最適化の失敗 "
 
 msgid "time series has no or less than 2 periods"
 msgstr " 時系列の期間が無いか、2未満です "
@@ -41,8 +48,8 @@ msgstr " 時系列の期間が無いか、2未満です "
 msgid "the series is entirely NA"
 msgstr " 系列は NA 値ばかりです "
 
-msgid "frequency must be a positive integer for BSM"
-msgstr " BSM では頻度は正整数でなければなりません "
+msgid "frequency must be a positive integer >= 2 for BSM"
+msgstr " BSM では頻度は２以上の正整数でなければなりません "
 
 msgid "only implemented for univariate time series"
 msgstr " 一変量時系列にだけ実装されています "
@@ -142,8 +149,14 @@ msgstr " 合体すべき行がありません "
 msgid "'by' must be a list"
 msgstr " 'by' はリストでなければなりません "
 
-msgid "'FUN' must always return a scalar"
-msgstr " 'FUN' は常にスカラを返さねばなりません "
+msgid "arguments must have same length"
+msgstr " 引数は同じ長さでなければなりません "
+
+msgid "'formula' missing or incorrect"
+msgstr " モデル式('formula')が無いか、不正確です "
+
+msgid "'formula' must have both left and right hand sides"
+msgstr " モデル式('formula')は左辺と右辺の双方を持たなければなりません "
 
 msgid "cannot change frequency from %g to %g"
 msgstr " 頻度を %g から %g に変更できません "
@@ -194,9 +207,6 @@ msgstr " タイがあるため、正確な p 値を計算することができ�
 msgid "cannot compute exact confidence intervals with ties"
 msgstr " タイがあるため、正確な信頼区間を計算することができません "
 
-msgid "'formula' missing or incorrect"
-msgstr " モデル式('formula')が無いか、不正確です "
-
 msgid "grouping factor must have exactly 2 levels"
 msgstr " グループ化因子は丁度二つの水準を持たなければなりません "
 
@@ -241,11 +251,11 @@ msgstr " 射影を許容するためにモデルの再当てはめを行いま�
 msgid "columns of 'contrast.obj' must define a contrast(sum to zero)"
 msgstr " 'contrast.obj' の列は対比(総和が 0)を定義しなければなりません "
 
-msgid "invalid interpolation method"
-msgstr " 無効な補間法です "
-
 msgid "collapsing to unique 'x' values"
 msgstr " ユニークな 'x' 値を得るため縮小します "
+
+msgid "invalid interpolation method"
+msgstr " 無効な補間法です "
 
 msgid "need at least two non-NA values to interpolate"
 msgstr " 補間のためには少なくとも 2 つの非 NA 値が必要です "
@@ -268,6 +278,9 @@ msgstr " 'order.max' は 1 以上でなければなりません "
 msgid "'order.max' must be < 'n.used'"
 msgstr " 'order.max' は 'n.used' より小さくなければなりません "
 
+msgid "'n.ahead' must be at least 1"
+msgstr " 'n.ahead' は少なくとも 1 です "
+
 msgid "number of series in 'object' and 'newdata' do not match"
 msgstr " 'object' 中の系列の数と 'newdata' が一致しません "
 
@@ -282,15 +295,6 @@ msgstr " MLE は一変量系列にだけ実装されています "
 
 msgid "'order.max' must be >= 0"
 msgstr " 'order.max' は >= 0 でなければなりません "
-
-msgid "model order:"
-msgstr " モデルの次数: "
-
-msgid "singularities in the computation of the projection matrix"
-msgstr " 特異値が射影行列の計算中に生じました。 "
-
-msgid "results are only valid up to model order"
-msgstr " 結果はモデル次数までしか適正ではありません： "
 
 msgid "'order' must be a non-negative numeric vector of length 3"
 msgstr " 'order' は長さ 3 の非負の数値ベクトルでなければなりません "
@@ -464,14 +468,23 @@ msgstr " 距離は 'dist' の結果であるか、正方行列である必要が
 msgid "'k' must be in {1, 2, ..  n - 1}"
 msgstr " 'k' は {1, 2,.. n - 1} 内にある必要があります "
 
-msgid "some of the first %d eigenvalues are < 0"
-msgstr " 最初の %d 個の固有値のうちいくつかは負です "
+msgid "only %d of the first %d eigenvalues are > 0"
+msgstr " %d 個の固有値(最初の %d 個のうち)だけが正です "
 
-msgid "initial value not feasible"
-msgstr " 実行可能な初期値ではありません "
+msgid "initial value is not in the interior of the feasible region"
+msgstr " 初期値は実行可能な範囲の内部にありません "
+
+msgid "Barrier algorithm ran out of iterations and did not converge"
+msgstr " バリアアルゴリズムは指定回数繰り返しましたが収束しませんでした "
+
+msgid "Objective function increased at outer iteration %d"
+msgstr " 目的関数は外部繰り返し %d で増加しました "
+
+msgid "Objective function decreased at outer iteration %d"
+msgstr "  目的関数は外部繰り返し %d で減少しました "
 
 msgid "contrasts not defined for %d degrees of freedom"
-msgstr " 対比は自由度 %d では定義されません "
+msgstr " 対比は自由度 %d に対しては定義されていません "
 
 msgid ""
 "orthogonal polynomials cannot be represented accurately enough for %d "
@@ -525,8 +538,14 @@ msgstr " 対比を定義するために十分な自由度ではありません "
 msgid "baseline group number out of range"
 msgstr " ベースラインのグループ数が範囲を越えています "
 
+msgid "invalid 'use' argument"
+msgstr " 無効な 'use' 引数です "
+
 msgid "supply both 'x' and 'y' or a matrix-like 'x'"
 msgstr " 'x' to 'y' の両方を与えるか、行列形の 'x' を与えてください "
+
+msgid "'y' must be numeric"
+msgstr " 'y' は数値でなければなりません "
 
 msgid "'x' is empty"
 msgstr " x は空です "
@@ -542,6 +561,12 @@ msgstr " 'V'は数値正方行列ではありません "
 
 msgid "diag(.) had 0 or NA entries; non-finite result is doubtful"
 msgstr " diag(.)が0またはNAを含んでいます; 有限でない結果は疑問です "
+
+msgid "'x' must be a numeric vector"
+msgstr " 'x' は数値ベクトルでなければなりません "
+
+msgid "'y' must be a numeric vector"
+msgstr " 'y' は数値ベクトルでなければなりません "
 
 msgid "not enough finite observations"
 msgstr " 有限な観測値が十分にありません "
@@ -579,21 +604,14 @@ msgstr " 無効な'tree'(merge 成分)です "
 msgid "either 'k' or 'h' must be specified"
 msgstr " 'k' か 'h' が指定されなければなりません "
 
-msgid ""
-"the 'height' component of 'tree' is not sorted\n"
-"(increasingly); consider applying as.hclust() first"
-msgstr ""
-" 'tree' の 'height' 成分は昇順にソートされていません。 \n"
-"最初に as.hclust() を適用することを考慮してください "
+msgid "the 'height' component of 'tree' is not sorted (increasingly)"
+msgstr " 'tree' の 'height' 成分は昇順にソートされていません。 "
 
 msgid "elements of 'k' must be between 1 and %d"
 msgstr " 'k' の要素は 1 と %d の間になければなりません "
 
 msgid "'merge' and 'height' do not fit!"
 msgstr " 'merge' と 'height' が合致していません! "
-
-msgid "we require a dendrogram"
-msgstr " デンドログラムが必要です "
 
 msgid "dendrogram node with non-positive #{branches}"
 msgstr " 枝数が正でないデンドログラムノードです "
@@ -608,11 +626,18 @@ msgstr " 長さ 0 の葉ではないサブツリーです "
 msgid "'order.dendrogram' requires a dendrogram"
 msgstr " 'order.dendrogram' はデンドログラムを必要とします "
 
+msgid "we require a dendrogram"
+msgstr " デンドログラムが必要です "
+
 msgid "invalid (length 0) node in dendrogram"
 msgstr " デンドログラム中に不正な(長さ0)ノードがあります "
 
 msgid "dendrogram non-leaf node with non-positive #{branches}"
 msgstr " 枝数が非負のデンドログラムの葉ではないノードです "
+
+msgid "'height' must be at least %g, the maximal height of its components"
+msgstr ""
+" 'height' は少なくともその成分の最大 height である %g である必要があります "
 
 msgid "'X' is not a dendrogram"
 msgstr " 'X' はデンドログラムではありません "
@@ -821,7 +846,7 @@ msgid ""
 msgstr " もしくは、第一列が成功数、第二列が失敗数である 2 列の行列です "
 
 msgid "cannot simulate from non-integer prior.weights"
-msgstr "整数でない事前重みからはシミュレーションできません "
+msgstr " 整数でない事前重みからはシミュレーションできません "
 
 msgid ""
 "link \"%s\" not available for quasibinomial family; available links are %s"
@@ -841,9 +866,8 @@ msgstr ""
 msgid "non-positive values not allowed for the gamma family"
 msgstr " 正でない値はガンマファミリには許されません "
 
-#, fuzzy
 msgid "using weights as shape parameters"
-msgstr "シェイプパラメータとして重みを使います "
+msgstr " shapeパラメータとして重み(weights)を使います "
 
 msgid ""
 "link \"%s\" not available for inverse.gaussian family; available links are %s"
@@ -859,7 +883,7 @@ msgstr ""
 " 'inverse.gaussian' ファミリには CRAN パッケージ 'SuppDists' が必要です "
 
 msgid "using weights as inverse variances"
-msgstr "逆分散として重みを使いました "
+msgstr " 逆分散として重みを使いました "
 
 msgid ""
 "'variance' \"%s\" is invalid: possible values are \"mu(1-mu)\", \"mu\", "
@@ -950,9 +974,6 @@ msgstr " 'row.vars' の指定が不正確です "
 msgid "incorrect specification for 'col.vars'"
 msgstr " 'col.vars' の指定が不正確です "
 
-msgid "'formula' must have both left and right hand sides"
-msgstr " モデル式('formula')は左辺と右辺の双方を持たなければなりません "
-
 msgid "interactions are not allowed"
 msgstr " 交互作用は許されません "
 
@@ -983,11 +1004,8 @@ msgstr " 'col.vars' が無いか不正確です "
 msgid "'family' not recognized"
 msgstr " 'family' が確認できません "
 
-msgid "invalid 'method': %s"
-msgstr " 無効な 'method' です: %s "
-
-msgid "invalid 'method'"
-msgstr " 無効な 'method' です "
+msgid "invalid 'method' argument"
+msgstr " 無効な 'method' 引数です "
 
 msgid "'weights' must be a numeric vector"
 msgstr " 'weights' は数値ベクトルでなければなりません "
@@ -1032,8 +1050,8 @@ msgstr " D(mu)/d(eta) 中に NA があります "
 msgid "no observations informative at iteration"
 msgstr " 繰り返しにおいて意味のある観測値がありません "
 
-msgid "non-finite coefficients at iteration"
-msgstr " 繰り返しにおいて有限でない係数が得られました "
+msgid "non-finite coefficients at iteration %d"
+msgstr " 繰り返し%dにおいて有限でない係数が得られました "
 
 msgid "X matrix has rank %d, but only %d observations"
 msgstr " X 行列はランク %d を持ちますが、観測値は %d 個だけです　 "
@@ -1054,17 +1072,17 @@ msgstr " ステップサイズの切り詰め: 限界を越えました "
 msgid "inner loop 2; cannot correct step size"
 msgstr " 内部ループ 2; ステップサイズを訂正することができません "
 
-msgid "algorithm did not converge"
-msgstr " アルゴリズムは収束しませんでした "
+msgid "glm.fit: algorithm did not converge"
+msgstr " glm.fit: アルゴリズムは収束しませんでした "
 
-msgid "algorithm stopped at boundary value"
-msgstr " アルゴリズムは境界値で停止しました "
+msgid "glm.fit: algorithm stopped at boundary value"
+msgstr " glm.fit: アルゴリズムは境界値で停止しました "
 
-msgid "fitted probabilities numerically 0 or 1 occurred"
-msgstr " 数値的に 0 か 1 である確率が生じました "
+msgid "glm.fit: fitted probabilities numerically 0 or 1 occurred"
+msgstr " glm.fit: 数値的に 0 か 1 である確率が生じました "
 
-msgid "fitted rates numerically 0 occurred"
-msgstr " 数値的に 0 である当てはめ比率が生じました "
+msgid "glm.fit: fitted rates numerically 0 occurred"
+msgstr " glm.fit: 数値的に 0 である当てはめ比率が生じました "
 
 msgid "the following arguments to 'anova.glm' are invalid and dropped:"
 msgstr " 'anova.glm' への次の引数は無効であり、除去されました： "
@@ -1223,21 +1241,27 @@ msgstr " 'x' データの数が十分ではありません "
 msgid "not enough 'y' data"
 msgstr " 'y' データの数が十分ではありません "
 
-msgid "cannot compute correct p-values with ties"
-msgstr " タイがあるため、正しい p 値を計算することができません "
+msgid "cannot compute exact p-values with ties"
+msgstr " タイがあるため、正確な p 値を計算することができません "
 
-msgid "'y' must be numeric or a string naming a valid function"
-msgstr " 'y' は数値または有効な関数の名前である文字列でなければなりません "
+msgid "p-values will be approximate in the presence of ties"
+msgstr " タイがあるため、p値は近似値になります "
+
+msgid "'y' must be numeric or a function or a string naming a valid function"
+msgstr " 'y' は数値、関数、または有効な関数名の文字列でなければなりません "
+
+msgid "ties should not be present for the Kolmogorov-Smirnov test"
+msgstr " コルモゴロフ・スミノフ検定において、タイは現れるべきではありません "
 
 msgid ""
-"y must be supplied.\n"
+"numeric y must be supplied.\n"
 "For density estimation use density()"
 msgstr ""
-" y を与えなければなりません。 \n"
+" 数値の y を与えなければなりません。 \n"
 " 密度の推定には density() を使いましょう "
 
 msgid "'k' is not an integer"
-msgstr " k は整数でありません "
+msgstr " 'k' は整数でありません "
 
 msgid "method = '%s' is not supported. Using 'qr'"
 msgstr " method = '%s' はサポートされていません。'qr' を使用します "
@@ -1267,17 +1291,32 @@ msgstr " 特異な当てはめに遭遇しました "
 msgid "missing or negative weights not allowed"
 msgstr " 欠損もしくは負の重みは許されません "
 
-msgid "invalid 'lm' object:  no 'terms' nor 'qr' component"
-msgstr " 無効な 'lm' オブジェクト: 項('terms')もしくは 'qr' 成分がありません "
+msgid "invalid 'lm' object:  no 'terms' component"
+msgstr " 無効な 'lm' オブジェクト: 項('terms')成分がありません "
+
+msgid "calling summary.lm(<fake-lm-object>) ..."
+msgstr " summary.lm(<fake-lm-object>) を呼び出し中... "
 
 msgid "residual degrees of freedom in object suggest this is not an \"lm\" fit"
-msgstr " オブジェクト中の残り自由度はこの 'lm'ではないと示唆します "
+msgstr ""
+" オブジェクト中の残り自由度はこれは 'lm' オブジェクトではないことを示唆しま"
+"す "
+
+msgid ""
+"lm object does not have a proper 'qr' component.\n"
+" Rank zero or should not have used lm(.., qr=FALSE)."
+msgstr ""
+" lm オブジェクトは適切な 'qr' 成分を持ちません． \n"
+" ランクがゼロか lm(.., qr=FALSE) を使うべきではありませんでした． "
 
 msgid "family '"
 msgstr " ファミリ ' "
 
 msgid "' not implemented"
-msgstr " 実装されていません "
+msgstr " ’ は実装されていません "
+
+msgid "calling anova.lm(<fake-lm-object>) ..."
+msgstr " anova.lm(<fake-lm-object>) を呼び出し中... "
 
 msgid "ANOVA F-tests on an essentially perfect fit are unreliable"
 msgstr " 完全なフィットに対するANOVA F検定には信頼性がありません "
@@ -1287,6 +1326,9 @@ msgstr " を持つモデルを取り除きました。応答が以下と異な�
 
 msgid "model 1"
 msgstr " モデル 1 "
+
+msgid "calling predict.lm(<fake-lm-object>) ..."
+msgstr " predict.lm(<fake-lm-object>) を呼び出し中... "
 
 msgid "prediction from a rank-deficient fit may be misleading"
 msgstr ""
@@ -1349,6 +1391,15 @@ msgstr " 唯一つの数値予測子を持つ予測子の平方は捨て去る�
 msgid "specified parametric for all predictors"
 msgstr " すべての予測子がパラメトリックと指定されました "
 
+msgid "invalid argument 'span'"
+msgstr " 無効な引数 'span' です "
+
+msgid "invalid argument 'cell'"
+msgstr " 無効な引数 'cell' です "
+
+msgid "invalid argument 'degree'"
+msgstr " 無効な引数 'degree' です "
+
 msgid "first argument must be a \"loess\" object"
 msgstr " 最初の引数は \"loess\" オブジェクトでなければなりません "
 
@@ -1358,11 +1409,20 @@ msgstr " 比較すべきモデルがありません "
 msgid "extra arguments discarded"
 msgstr " 余計な引数は捨てられました "
 
+msgid "no \"nobs\" attribute is available"
+msgstr " いかなる \"nobs\" 属性も利用不能です "
+
+msgid "no 'nobs' method is available"
+msgstr " いかなる 'nobs' メソッドもありません "
+
 msgid "'start' and 'table' must be same length"
 msgstr " 'strat' と 'table' は同じ長さでなければなりません "
 
 msgid "this should not happen"
 msgstr " これはあり得ないことです "
+
+msgid "algorithm did not converge"
+msgstr " アルゴリズムは収束しませんでした "
 
 msgid "incorrect specification of 'table' or 'start'"
 msgstr " 'table' または 'start' の不正確な指定です "
@@ -1490,10 +1550,10 @@ msgid "eff.aovlist: non-orthogonal contrasts would give an incorrect answer"
 msgstr " eff.aovlist：直交しない対比は誤った結果を与えるかもしれません "
 
 msgid "cannot create a formula from a zero-column data frame"
-msgstr "列の無いデータフレームからモデル式を作れません "
+msgstr " 列の無いデータフレームからモデル式を作れません "
 
-msgid "no terms component"
-msgstr " terms 成分がありません "
+msgid "no terms component nor attribute"
+msgstr " terms要素もterms属性もありません "
 
 msgid "'termlabels' must be a character vector of length at least one"
 msgstr " ’termlabels' は少なくとも長さ１の文字ベクトルでなければなりません "
@@ -1627,7 +1687,7 @@ msgstr " 初期値が与えられていません "
 msgid "No starting values specified for some parameters."
 msgstr " いくつかのパラメータに対する初期値が与えられていません "
 
-msgid "Intializing"
+msgid "Initializing"
 msgstr " 初期化中 "
 
 msgid "to '1.'."
@@ -1640,10 +1700,10 @@ msgid "parameters without starting value in 'data':"
 msgstr " 'data' 中に初期値の無いパラメータがあります "
 
 msgid "fitting parameters"
-msgstr "パラメータを当てはめ "
+msgstr " パラメータを当てはめ "
 
 msgid "without any variables"
-msgstr " 変数無しで"
+msgstr " 変数無しで "
 
 msgid "no parameters to fit"
 msgstr " 当てはめるべきパラメータがありません "
@@ -1678,8 +1738,8 @@ msgstr " 両側モデル式が必要です "
 msgid "not enough groups"
 msgstr " 十分なグループがありません "
 
-msgid "bounds can only be used with method L-BFGS-B"
-msgstr " bounds は L-BFGS-B 法でしか使用することができません "
+msgid "bounds can only be used with method L-BFGS-B (or Brent)"
+msgstr " bounds は L-BFGS-B 法（またはBrent法）でしか使用することができません "
 
 msgid "unknown names in control:"
 msgstr " controlの中に未知の名前 "
@@ -1696,10 +1756,17 @@ msgstr ""
 " L-BFGS-B 法は、'reltol' そして 'abstol' の代わりに 'factr'(と 'pgtol')を使用"
 "します "
 
-msgid "one-diml optimization by Nelder-Mead is unreliable: use optimize"
-msgstr ""
-" Nelder-Mead 法による一次元最適化は信頼できません: optimize を使用してくださ"
-"い "
+msgid "one-diml optimization by Nelder-Mead is unreliable:"
+msgstr " Nelder-Mead 法による一次元最適化は信頼できません: "
+
+msgid "use \"Brent\" or optimize() directly"
+msgstr "Brent法を用いるか、optimize()を直接使ってください。 "
+
+msgid "method = \"Brent\" is only available for one-dimensional optimization"
+msgstr " method = \"Brent\"は一次元最適化でのみ使えます。 "
+
+msgid "'lower' and 'upper' must be finite values"
+msgstr " 'lower'と'upper'は有限の値でなければなりません "
 
 msgid "Pooling of SD is incompatible with paired tests"
 msgstr "SDのプールは対応ありの検定では使えません "
@@ -1714,7 +1781,7 @@ msgid "too few groups"
 msgstr " グループが少なすぎます "
 
 msgid "Not plotting observations with leverage one:"
-msgstr "てこ比1の観測データはプロットしません "
+msgstr " てこ比1の観測データはプロットしません "
 
 msgid "use only with \"lm\" objects"
 msgstr " \"lm\" オブジェクトに対してだけ使用してください "
@@ -1838,6 +1905,9 @@ msgstr " 'proj' は \"mlm\" による当てはめに対しては実装されて�
 msgid "'proj' is not implemented for multiple responses"
 msgstr " 'proj' は多重応答に対しては実装されていません "
 
+msgid "table 'x' should have 2 entries"
+msgstr " テーブル'x'には二つのエントリが必要です "
+
 msgid "elements of 'n' must be positive"
 msgstr " 'n' の要素は正でなければなりません "
 
@@ -1865,6 +1935,9 @@ msgstr " 'y', 'groups' 及び 'blocks' は同じ長さでなければなりま�
 msgid "'formula' missing"
 msgstr " モデル式('formula')がありません "
 
+msgid "factors are not allowed"
+msgstr " 要因(factor)は許されません "
+
 msgid "missing values and NaN's not allowed if 'na.rm' is FALSE"
 msgstr " 'na.rm ' が FALSE なら、欠測値及び NaN は許されません "
 
@@ -1886,11 +1959,17 @@ msgstr " 引数 'r' と　'c' は同じ総和を持たなければなりませ�
 msgid "'relevel' only for factors"
 msgstr " 'relevel' は因子専用です "
 
+msgid "'ref' must be of length one"
+msgstr " 'ref' の長さは 1 でなければなりません "
+
 msgid "'ref' must be an existing level"
 msgstr " 'ref' は既存の水準でなければなりません "
 
 msgid "ref = %d must be in 1L:%d"
 msgstr " ref = %d は 1L:%d 中になければなりません: "
+
+msgid "'sep' must be a character string"
+msgstr " 'sep'は文字列でなければなりません "
 
 msgid "Failed to guess time-varying variables from their names"
 msgstr " 時間依存変数を名前から推測できませんでした "
@@ -1958,14 +2037,11 @@ msgstr " NA 値を平滑化しようとしました "
 msgid "wrong endrule"
 msgstr "  誤った端点規則です "
 
-msgid "'nknots' must be numeric <= n"
-msgstr " 'nknots' は n 以下の数値でなければなりません "
-
-msgid "cannot use more inner knots than unique 'x' values"
-msgstr " 相異なる 'x' 値の数より多くの内部結節点を使用することはできません "
-
 msgid "invalid 'control.spar'"
 msgstr " 無効な 'control.spar' です "
+
+msgid "missing or infinite values in inputs are not allowed"
+msgstr " 入力中に欠損値、無限の値は許されません "
 
 msgid "lengths of 'x' and 'w' must match"
 msgstr " 'x' と 'w' の長さは一致しなければなりません "
@@ -1979,9 +2055,27 @@ msgstr " 重みの幾つかは正である必要があります "
 msgid "need at least four unique 'x' values"
 msgstr " 'x' には少なくとも 4 つの異なる値が必要です "
 
+msgid "'cv' must not be NA when 'df' is specified"
+msgstr " 'df' が特定されているので、'cv' は NA になってはいけません "
+
 msgid "crossvalidation with non-unique 'x' values seems doubtful"
 msgstr ""
 " 一意でない 'x' 値によるクロスバリデーションは問題があるかも知れません "
+
+msgid "'all.knots' is TRUE; 'nknots' specification is disregarded"
+msgstr " 'all.knots' が TRUE なので 'nknots' の指定は無視されます "
+
+msgid "'nknots' must be numeric (in {1,..,n})"
+msgstr " 'nknots' は 1...n の数値でなければなりません "
+
+msgid "'nknots' must be at least 1"
+msgstr " 'nknots' は少なくとも 1 でなければなりません "
+
+msgid "cannot use more inner knots than unique 'x' values"
+msgstr " 相異なる 'x' 値の数より多くの内部結節点を使用することはできません "
+
+msgid "specified both 'df' and 'cv'; will disregard the latter"
+msgstr " 'df' と 'cv' の両方が特定されているので、後者は無視されます "
 
 msgid "you must supply 1 < df <= n,  n = #{unique x} ="
 msgstr ""
@@ -2247,14 +2341,14 @@ msgstr " 比率('ratio')は単一の正値でなければなりません "
 msgid "'x' and 'w' must have the same length"
 msgstr " 'x' と 'w' は同じ長さでなければなりません "
 
-msgid "'y' must be numeric"
-msgstr " 'y' は数値でなければなりません "
-
 msgid "not enough (finite) 'x' observations"
 msgstr " (有限な) 'x' の観察値の数が十分ではありません "
 
 msgid "Requested conf.level not achievable"
 msgstr " 要求された conf.level は達成不能です "
+
+msgid "cannot compute confidence interval when all observations are tied"
+msgstr " すべての観測値がタイの場合信頼区間を計算することができません "
 
 msgid "cannot compute exact confidence interval with ties"
 msgstr " タイがあるので、正確な信頼区間を計算することができません "
@@ -2323,13 +2417,38 @@ msgid "there are %d Error terms: only 1 is allowed"
 msgid_plural "there are %d Error terms: only 1 is allowed"
 msgstr[0] " %d 個のエラー項があります。一つだけが許されます "
 
+msgid "extra argument %s is not a \"%s\""
+msgid_plural "extra arguments %s are not \"%s\"s"
+msgstr[0] " 余計な引数 %s は \"%s\" ではありません "
+
 msgid "%d observation deleted due to missingness"
 msgid_plural "%d observations deleted due to missingness"
 msgstr[0] " 欠損値のせいで %d 個の観測値が取り除かれました "
 
 msgid "parameter %s does not occur in the model formula"
 msgid_plural "parameters %s do not occur in the model formula"
-msgstr[0] "モデル式中にパラメータ %s がありません "
+msgstr[0] " モデル式中にパラメータ %s がありません "
+
+#~ msgid "cannot compute correct p-values with ties"
+#~ msgstr " タイがあるため、正しい p 値を計算することができません "
+
+#~ msgid "'FUN' must always return a scalar"
+#~ msgstr " 'FUN' は常にスカラを返さねばなりません "
+
+#~ msgid "model order:"
+#~ msgstr " モデルの次数: "
+
+#~ msgid "singularities in the computation of the projection matrix"
+#~ msgstr " 特異値が射影行列の計算中に生じました。 "
+
+#~ msgid "results are only valid up to model order"
+#~ msgstr " 結果はモデル次数までしか適正ではありません： "
+
+#~ msgid "invalid 'method': %s"
+#~ msgstr " 無効な 'method' です: %s "
+
+#~ msgid "invalid 'method'"
+#~ msgstr " 無効な 'method' です "
 
 #~ msgid "'newdata' does not contain the variables needed"
 #~ msgstr " 'newdata' は必要とされる変数を含んでいません "
@@ -2356,29 +2475,29 @@ msgstr[0] "モデル式中にパラメータ %s がありません "
 #~ msgstr " 対比は自由度 0 では定義されません "
 
 #~ msgid "Convergence failure:"
-#~ msgstr "収束の失敗： "
+#~ msgstr " 収束の失敗： "
 
 #~ msgid ""
 #~ "link \"%s\" not available for binomial family, available links are \"logit"
 #~ "\", \"\"probit\", \"cloglog\", \"cauchit\" and \"log\""
 #~ msgstr ""
-#~ "リンク\"%s\"は二項ファミリに利用できるリンクではありません。利用できるリン"
-#~ "クは \"logit\", \"probit\", \"cloglog\", \"cauchit\" 及び \"log\" です "
+#~ " リンク\"%s\"は二項ファミリに利用できるリンクではありません。利用できるリ"
+#~ "ンクは \"logit\", \"probit\", \"cloglog\", \"cauchit\" 及び \"log\" です "
 
 #, fuzzy
 #~ msgid ""
 #~ "link not available for quasibinomial family, available links are \"logit"
 #~ "\", \"probit\", \"cloglog\", \"cauchit\" and \"log\""
 #~ msgstr ""
-#~ "リンク\"%s\"は二項ファミリに利用できるリンクではありません。利用できるリン"
-#~ "クは \"logit\", \"probit\", \"cloglog\", \"cauchit\" 及び \"log\" です "
+#~ " リンク\"%s\"は二項ファミリに利用できるリンクではありません。利用できるリ"
+#~ "ンクは \"logit\", \"probit\", \"cloglog\", \"cauchit\" 及び \"log\" です "
 
 #~ msgid ""
 #~ "link \"%s\" not available for inverse gauss family, available links are "
 #~ "\"inverse\", \"1/mu^2\", \"log\" and \"identity\""
 #~ msgstr ""
-#~ "リンク\"%s\"は逆正規ファミリのために利用できるリンクではありません。利用で"
-#~ "きるリンクは \"inverse\", \"1/mu^2\", \"log\"  及び \"identity\" です "
+#~ " リンク\"%s\"は逆正規ファミリのために利用できるリンクではありません。利用"
+#~ "できるリンクは \"inverse\", \"1/mu^2\", \"log\"  及び \"identity\" です "
 
 #~ msgid "'k1' is not a kernel"
 #~ msgstr " 'k1' はカーネルではありません "
@@ -2399,5 +2518,5 @@ msgstr[0] "モデル式中にパラメータ %s がありません "
 #~ "link not available for quasibinomial family, available links are \"logit"
 #~ "\", \", \"\"probit\" and \"cloglog\""
 #~ msgstr ""
-#~ "は疑似二項ファミリに利用できるリンクではありません。利用できるリンクは "
+#~ " は疑似二項ファミリに利用できるリンクではありません。利用できるリンクは "
 #~ "\"logit\", \"probit\" 及び \"cloglog\" です "

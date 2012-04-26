@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -196,27 +196,27 @@ static void editorsaveas(editor c)
 
     setuserfilterW(L"R files (*.R)\0*.R\0S files (*.q, *.ssc, *.S)\0*.q;*.ssc;*.S\0All files (*.*)\0*.*\0\0");
     wname = askfilesaveW(G_("Save script as"), "");
-    if (wname == NULL)
-	return;
-    else {
+    if (wname) {
 	char name[4*MAX_PATH+1];
 	const char *tname;
 	wcstoutf8(name, wname, MAX_PATH);
+	/* now check if it has an extension */
+	char *q = strchr(name, '.');
+	if(!q) strncat(name, ".R", 4*MAX_PATH);
 	tname = reEnc(name, CE_UTF8, CE_NATIVE, 3);
 	editor_save_file(c, name, CE_UTF8);
 	p->file = 1;
 	strncpy(p->filename, tname, MAX_PATH+1);
 	gsetmodified(t, 0);
 	editor_set_title(c, tname);
-	show(c);
     }
+    show(c);
 }
 
 static void menueditorsaveas(control m)
 {
     editor c = getdata(m);
     editorsaveas(c);
-    show(c);
 }
 
 static void editorsave(editor c)
@@ -402,7 +402,7 @@ static void editoropen(const char *default_name)
 	}
 	title = reEnc(name, CE_UTF8, CE_NATIVE, 3);
 	Rgui_Edit(name, CE_UTF8, title, 0);
-    }
+    } else show(RConsole);
 }
 
 void menueditoropen(control m)

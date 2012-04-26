@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -956,7 +956,6 @@ gl_hist_init(int size, int beep)
 void
 gl_histadd(const char *buf)
 {
-    static char *prev = 0;
     const char *p = buf;
 
     /* in case we call gl_histadd() before we call getline() */
@@ -968,7 +967,6 @@ gl_histadd(const char *buf)
 	p++;
     if (*p) {
 	hist_buf[hist_last] = hist_save(buf);
-	prev = hist_buf[hist_last];
 	hist_last = hist_last + 1;
 	if(hist_last > HIST_SIZE - 1) {
 	    int i, size = HIST_SIZE + 512;

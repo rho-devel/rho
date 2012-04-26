@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -48,97 +48,44 @@
 
 #ifdef __cplusplus
 
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/export.hpp>
-#include "CXXR/BSerializer.hpp"
-#include "CXXR/HandleVector.hpp"
+#include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-    class ExpressionVector;
-
-    // Template specialization:
+    // Template specializations:
     template <>
-    inline const char* HandleVector<RObject, VECSXP>::staticTypeName()
+    inline const char* FixedVector<RHandle<>, VECSXP>::staticTypeName()
     {
 	return "list";
     }
 
-    /** @brief General vector of RObject::Handle<RObject>.
+    /** @brief General vector of RHandle<RObject>.
      */
-    class ListVector : public HandleVector<RObject, VECSXP> {
-    public:
-	/** @brief Create a ListVector.
-         *
-         * Each element will initially encapsulate a null pointer.
-	 * @param sz Number of elements required.  Zero is
-	 *          permissible.
-	 */
-	explicit ListVector(size_t sz)
-	    : HandleVector<RObject, VECSXP>(sz)
-	{}
-
-	/** @brief Copy constructor.
-	 *
-	 * Copy the ListVector, using the RObject::Handle copying semantics.
-	 *
-	 * @param pattern ListVector to be copied.
-	 */
-	ListVector(const ListVector& pattern)
-	    : HandleVector<RObject, VECSXP>(pattern)
-	{}
-
-	/** @brief Construct from ExpressionVector.
-	 *
-	 * @param ev The ExpressionVector on which the constructed
-	 *          ListVector is to be modelled.  The ListVector
-	 *          created will encapsulate exactly the same sequence of
-	 *          pointers to RObject as \a ev.
-	 *
-	 * @note The objects pointed to by \a pattern are never
-	 * themselves copied in creating the ListVector.  This is
-	 * rather at variance with the general semantics of
-	 * HandleVector, and perhaps ought to be changed.
-	 */
-	explicit ListVector(ExpressionVector& ev);
-
-	// Virtual function of RObject:
-	ListVector* clone() const;
-    protected:
-    	// For boost::serialization
-	ListVector() {}
-    private:
-	friend class boost::serialization::access;
-
-	// Declared private to ensure that ListVectors are
-	// allocated only using 'new'.
-	~ListVector() {}
-
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("ListVector");
-	    ar & boost::serialization::base_object<HandleVector<RObject, VECSXP> >(*this);
-	}
-    };
+    typedef FixedVector<RHandle<>, VECSXP> ListVector;
 }  // namespace CXXR
-
-BOOST_CLASS_EXPORT(CXXR::ListVector)
 
 extern "C" {
 #endif /* __cplusplus */
 
-/** @brief Set element of ListVector.
- * @param x Pointer to a \c ListVector .
+/** @brief Set element of CXXR::ListVector.
+ *
+ * @param x Pointer to a CXXR::ListVector.
+ *
  * @param i Index of the required element.  There is no bounds checking.
- * @param v Pointer to \c RObject representing the new value.
+ *
+ * @param v Pointer, possibly null, to CXXR::RObject representing the
+ *          new value.
+ *
  * @return The new value \a v.
  */
 SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v);
 
-/** @brief Examine element of ListVector.
- * @param x Pointer to a \c ListVector .
+/** @brief Examine element of CXXR::ListVector.
+ *
+ * @param x Non-null pointer to a CXXR::ListVector .
+ *
  * @param i Index of the required element.  There is no bounds checking.
+ *
  * @return The value of the \a i 'th element.
  */
 #ifndef __cplusplus
@@ -147,7 +94,7 @@ SEXP VECTOR_ELT(SEXP x, int i);
 inline SEXP VECTOR_ELT(SEXP x, int i)
 {
     using namespace CXXR;
-    ListVector* lv = SEXP_downcast<ListVector*>(x);
+    ListVector* lv = SEXP_downcast<ListVector*>(x, false);
     return (*lv)[i];
 }
 #endif

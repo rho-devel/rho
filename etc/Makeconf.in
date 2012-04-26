@@ -1,10 +1,17 @@
 # @configure_input@
 #
 # ${R_HOME}/etc/Makeconf
+#
+# R was configured using the following call
+# (not including env. vars and site configuration)
+# configure @R_CONFIG_ARGS@
 
+## This fails if it contains spaces, or if it is quoted
 include $(R_SHARE_DIR)/make/vars.mk
 
 AR = @AR@
+## Used by packages 'maps' and 'mapdata'
+AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
 C_VISIBILITY = @C_VISIBILITY@
 CC = @CC@
@@ -13,7 +20,7 @@ CPICFLAGS = @CPICFLAGS@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
-CXXFLAGS = @CXXFLAGS@
+CXXFLAGS += @CXXFLAGS@
 CXXPICFLAGS = @CXXPICFLAGS@
 DYLIB_EXT = @DYLIB_EXT@
 DYLIB_LD = @DYLIB_LD@
@@ -23,11 +30,14 @@ ECHO = echo
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
-F77 = @F77@
-F77_VISIBILITY = @F77_VISIBILITY@
+## NB, set FC before F77 as on Solaris make, setting FC sets F77
 FC = @FC@
 FCFLAGS = @FCFLAGS@
-FFLAGS = @FFLAGS@
+## additional libs needed when linking with $(FC), e.g. on Solaris
+FCLIBS = @FCLIBS@
+F77 = @F77@
+F77_VISIBILITY = @F77_VISIBILITY@
+FFLAGS = @FFLAGS@ -fexceptions
 FLIBS = @FLIBS@
 FCPICFLAGS = @FCPICFLAGS@
 FPICFLAGS = @FPICFLAGS@
@@ -49,7 +59,7 @@ LIBR = @LIBR@
 LIBS = @LIBS@
 ## needed by R CMD config
 LIBnn = @LIBnn@
-LIBTOOL = $(SHELL) $(R_HOME)/bin/libtool
+LIBTOOL = $(SHELL) "$(R_HOME)/bin/libtool"
 LDFLAGS = @LDFLAGS@
 ## needed to build applications linking to static libR
 MAIN_LD = @MAIN_LD@
@@ -77,13 +87,17 @@ SHLIB_LD = @SHLIB_LD@
 SHLIB_LDFLAGS = @SHLIB_LDFLAGS@
 SHLIB_LIBADD = @SHLIB_LIBADD@
 SHLIB_LINK = $(SHLIB_LD) $(SHLIB_LDFLAGS) $(LDFLAGS)
+SHLIB_OPENMP_CFLAGS = @SHLIB_OPENMP_CFLAGS@
+SHLIB_OPENMP_CXXFLAGS = @SHLIB_OPENMP_CXXFLAGS@
+SHLIB_OPENMP_FCFLAGS = @SHLIB_OPENMP_FCFLAGS@
+SHLIB_OPENMP_FFLAGS = @SHLIB_OPENMP_FFLAGS@
 STRIP_LIBS = @striplib@
 STRIP_STATIC_LIBS = @stripstaticlib@
 TCLTK_CPPFLAGS = @TCLTK_CPPFLAGS@
 TCLTK_LIBS = @TCLTK_LIBS@
 
 ## for linking to libR.a
-STATIC_LIBR = @WANT_R_STATIC_TRUE@ $(R_HOME)/lib$(R_ARCH)/libR.a $(BLAS_LIBS) $(FLIBS) @R_XTRA_LIBS@ $(LIBINTL) @READLINE_LIBS@ $(LIBS)
+STATIC_LIBR = @WANT_R_STATIC_TRUE@ "$(R_HOME)/lib$(R_ARCH)/libR.a" $(BLAS_LIBS) $(FLIBS) @R_XTRA_LIBS@ $(LIBINTL) @READLINE_LIBS@ $(LIBS)
 
 
 R_XTRA_CFLAGS = @R_XTRA_CFLAGS@
@@ -100,7 +114,7 @@ ALL_FFLAGS = $(R_XTRA_FFLAGS) $(PKG_FFLAGS) $(FPICFLAGS) $(SHLIB_FFLAGS) $(FFLAG
 ALL_LIBS = $(PKG_LIBS) $(SHLIB_LIBADD) $(LIBR)@DYLIB_UNDEFINED_ALLOWED_FALSE@ $(LIBINTL)
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .cpp .C .d .f .f90 .f95 .m .mm .M .o
+.SUFFIXES: .c .cc .cpp .d .f .f90 .f95 .m .mm .M .o
 
 @r_cc_rules_frag@
 @r_cxx_rules_frag@

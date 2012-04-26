@@ -14,12 +14,11 @@
 file.access(names, mode = 0)
 }
 \arguments{
-  \item{names}{character vector containing file names.}
-  \item{mode}{integer specifying access mode required.}
+  \item{names}{character vector containing file names.
+    Tilde-expansion will be done: see \code{\link{path.expand}}.}
+  \item{mode}{integer specifying access mode required: see \sQuote{Details}.}
 }
 \details{
-  Tilde-expansion is done on \code{names}: see \code{\link{path.expand}}.
-
   The \code{mode} value can be the exclusive or of the following values
   \describe{
     \item{0}{test for existence.}
@@ -39,13 +38,15 @@ file.access(names, mode = 0)
   this function regards directories and files with extension
   \file{.exe}, \file{.bat}, \file{.cmd} and \file{.com} as executable.
   (\code{\link{system}} and \code{\link{Sys.which}} make the same assumption.)
+  
+  UTF-8-encoded file names not valid in the current locale can be used.
 #endif
 
-  Please note that it is not good to use this function to test before
-  trying to open a file.  On a multi-tasking system, it is possible that
-  the accessibility of a file will change between the time you call
-  \code{file.access()} and the time you try to open the file.  It is
-  better to wrap file open attempts in \code{\link{try}}.
+  Please note that it is not a good idea to use this function to test
+  before trying to open a file.  On a multi-tasking system, it is
+  possible that the accessibility of a file will change between the time
+  you call \code{file.access()} and the time you try to open the file.
+  It is better to wrap file open attempts in \code{\link{try}}.
 }
 \value{
   An integer vector with values \code{0} for success and \code{-1} for failure.

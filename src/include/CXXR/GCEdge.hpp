@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -84,23 +84,18 @@ namespace CXXR {
 	    : m_target(target)
 	{
 	    GCNode::maybeCheckExposed(m_target);
-	    if (m_target) {
-		m_target->incRefCount();
-	    }
+	    GCNode::incRefCount(m_target);
 	}
 
 	GCEdgeBase(const GCEdgeBase& source)
 	    : m_target(source.m_target)
 	{
-	    if (m_target) {
-		m_target->incRefCount();
-	    }
+	    GCNode::incRefCount(m_target);
 	}
 	    
 	~GCEdgeBase()
 	{
-	    if (m_target && m_target->decRefCount() == 0)
-		m_target->makeMoribund();
+	    GCNode::decRefCount(m_target);
 	}
 
 	/** @brief Get target of this edge.
@@ -113,10 +108,10 @@ namespace CXXR {
 	}
     protected:
 	/** @brief Redirect the GCEdge to point at a (possibly) different node.
-        *
-        * @param newtarget Pointer to the object to which reference is now
-        *           to be made.
-        */
+-        *
+         * @param newtarget Pointer to the object to which reference is now
+-        *           to be made.
+-        */
 	void retarget(const GCNode* newtarget)
 	{
 	    GCEdgeBase tmp(newtarget);
@@ -143,7 +138,7 @@ namespace CXXR {
  		ar >> const_cast<GCNode* &>(m_target);
 		if (m_target) {
 		    GCNode::expose(m_target);
-		    m_target->incRefCount();
+		    GCNode::incRefCount(m_target);
 		}
 		break;
 	    }
@@ -201,10 +196,10 @@ namespace CXXR {
      * object, rather than by containing a pointer or reference
      * directly.
      *
-     * @param T GCNode or a type publicly derived from GCNode.  This
-     *          may be qualified by const, so for example a const
-     *          String* may be encapsulated in a GCEdge using the type
-     *          GCEdge<const String>.
+     * @tparam T GCNode or a type publicly derived from GCNode.  This
+     *           may be qualified by const, so for example a const
+     *           String* may be encapsulated in a GCEdge using the type
+     *           GCEdge<const String>.
      */
     template <class T = RObject>
     class GCEdge : public GCEdgeBase {
@@ -264,7 +259,6 @@ namespace CXXR {
 	{
 	    return static_cast<T*>(const_cast<GCNode*>(target()));
 	}
-    private:
         friend class boost::serialization::access;
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {

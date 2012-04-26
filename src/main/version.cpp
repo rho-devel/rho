@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2007   The R Development Core Team
+ *  Copyright (C) 1998--2011  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,21 +43,17 @@
 
 void attribute_hidden PrintGreeting(void)
 {
-    char buf[128];
+    char buf[384];
 
     // To facilitate automated tests, make sure that when lines
     // containing the string "CXXR" are grepped out, you are left with
     // the standard R greeting.
 
     Rprintf("\n");
-    Rprintf("This is CXXR 0.26-2.10.1, based on:\n");
-    PrintVersionString(buf);
-    Rprintf("%s", buf);
-    Rprintf("\nCopyright (C) %s The R Foundation for Statistical Computing\n",
-	    R_YEAR);
-
-    Rprintf("ISBN 3-900051-07-0\n\n");
-    Rprintf(_("CXXR Copyright (C) 2008-10 Andrew Runnalls.  CXXR like\n"));
+    Rprintf("This is CXXR 0.39-2.14.1, based on:\n");
+    PrintVersion_part_1(buf);
+    Rprintf("%s\n", buf);
+    Rprintf(_("CXXR Copyright (C) 2008-12 Andrew R. Runnalls.  CXXR like\n"));
     Rprintf(_("R is free software and comes with ABSOLUTELY NO WARRANTY.\n\
 You are welcome to redistribute it under certain conditions.\n\
 Type 'license()' or 'licence()' for distribution details.\n\n"));
@@ -120,35 +116,44 @@ SEXP attribute_hidden do_version(SEXP call, SEXP op, SEXP args, SEXP env)
 
 void attribute_hidden PrintVersion(char *s)
 {
-    char tmp[128];
+    PrintVersion_part_1(s);
 
-    PrintVersionString(s);
-    sprintf(tmp, "\nCopyright (C) %s The R Foundation for Statistical Computing\n", R_YEAR);
-    strcat(s, tmp);
-    strcat(s, "ISBN 3-900051-07-0\n\n");
-    strcat(s, "R is free software and comes with ABSOLUTELY NO WARRANTY.\n");
-    strcat(s, "You are welcome to redistribute it under the terms of the\n");
-    strcat(s, "GNU General Public License version 2.\n");
-    strcat(s, "For more information about these matters see\n");
-    strcat(s, "http://www.gnu.org/licenses/.\n");
+    strcat(s, "\n"
+	   "R is free software and comes with ABSOLUTELY NO WARRANTY.\n"
+	   "You are welcome to redistribute it under the terms of the\n"
+	   "GNU General Public License version 2.\n"
+	   "For more information about these matters see\n"
+	   "http://www.gnu.org/licenses/.\n");
 }
 
 void attribute_hidden PrintVersionString(char *s)
 {
-    if(strcmp(R_SVN_REVISION, "unknown")==0)
-    {
+    if(strcmp(R_SVN_REVISION, "unknown") == 0) {
 	sprintf(s, "R version %s.%s %s (%s-%s-%s)",
 		R_MAJOR, R_MINOR, R_STATUS, R_YEAR, R_MONTH, R_DAY);
+    } else if(strlen(R_STATUS) == 0) {
+	sprintf(s, "R version %s.%s (%s-%s-%s)",
+		R_MAJOR, R_MINOR, R_YEAR, R_MONTH, R_DAY);
+    } else if(strcmp(R_STATUS, "Under development (unstable)") == 0) {
+	sprintf(s, "R %s (%s-%s-%s r%s)",
+		R_STATUS, R_YEAR, R_MONTH, R_DAY, R_SVN_REVISION);	
+    } else {
+	sprintf(s, "R version %s.%s %s (%s-%s-%s r%s)",
+		R_MAJOR, R_MINOR, R_STATUS, R_YEAR, R_MONTH, R_DAY,
+		R_SVN_REVISION);
     }
-    else{
-	if(strlen(R_STATUS)==0){
-	    sprintf(s, "R version %s.%s (%s-%s-%s)",
-		    R_MAJOR, R_MINOR, R_YEAR, R_MONTH, R_DAY);
-	}
-	else{
-	    sprintf(s, "R version %s.%s %s (%s-%s-%s r%s)",
-		    R_MAJOR, R_MINOR, R_STATUS, R_YEAR, R_MONTH, R_DAY,
-		    R_SVN_REVISION);
-	}
-    }
+}
+
+void attribute_hidden PrintVersion_part_1(char *s)
+{
+#define SPRINTF_2(_FMT, _OBJ) sprintf(tmp, _FMT, _OBJ); strcat(s, tmp)
+    char tmp[128];
+
+    PrintVersionString(s);
+    SPRINTF_2("\nCopyright (C) %s The R Foundation for Statistical Computing\n",
+	      R_YEAR);
+    strcat(s, "ISBN 3-900051-07-0\n");
+    SPRINTF_2("Platform: %s", R_PLATFORM);
+    if(strlen(R_ARCH)) { SPRINTF_2("/%s", R_ARCH); }
+    SPRINTF_2(" (%d-bit)\n", 8*int(sizeof(void *)));
 }

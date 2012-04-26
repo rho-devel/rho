@@ -24,7 +24,8 @@ hist.default <-
 	      main = paste("Histogram of" , xname),
 	      xlim = range(breaks), ylim = NULL,
 	      xlab = xname, ylab,
-	      axes = TRUE, plot = TRUE, labels = FALSE, nclass = NULL, ...)
+	      axes = TRUE, plot = TRUE, labels = FALSE, nclass = NULL,
+	      warn.unused = TRUE, ...)
 {
     if (!is.numeric(x))
 	stop("'x' must be numeric")
@@ -111,7 +112,7 @@ hist.default <-
 	stop("negative 'counts'. Internal Error in C-code for \"bincount\"")
     if (sum(counts) < n)
 	stop("some 'x' not counted; maybe 'breaks' do not span range of 'x'")
-    dens <- counts/(n*h)
+    dens <- counts/(n*diff(breaks)) # use un-fuzzed intervals
     mids <- 0.5 * (breaks[-1L] + breaks[-nB])
     r <- structure(list(breaks = breaks, counts = counts,
 			intensities = dens,
@@ -126,19 +127,21 @@ hist.default <-
 	invisible(r)
     }
     else { ## plot is FALSE
-        ## make an effort to warn about "non sensical" arguments:
-        nf <- names(formals()) ## all formals but those:
-	nf <- nf[is.na(match(nf, c("x", "breaks", "nclass", "plot",
-				   "include.lowest", "right")))]
-        missE <- lapply(nf, function(n)
-                        substitute(missing(.), list(. = as.name(n))))
-        not.miss <- ! sapply(missE, eval, envir = environment())
-        if(any(not.miss))
-            warning(sprintf(ngettext(sum(not.miss),
-                                     "argument %s is not made use of",
-                                     "arguments %s are not made use of"),
-                            paste(sQuote(nf[not.miss]), collapse=", ")),
-		    domain = NA)
+    	if (warn.unused) {
+	    ## make an effort to warn about "non sensical" arguments:
+	    nf <- names(formals()) ## all formals but those:
+	    nf <- nf[is.na(match(nf, c("x", "breaks", "nclass", "plot",
+				       "include.lowest", "right")))]
+	    missE <- lapply(nf, function(n)
+			    substitute(missing(.), list(. = as.name(n))))
+	    not.miss <- ! sapply(missE, eval, envir = environment())
+	    if(any(not.miss))
+		warning(sprintf(ngettext(sum(not.miss),
+					 "argument %s is not made use of",
+					 "arguments %s are not made use of"),
+				paste(sQuote(nf[not.miss]), collapse=", ")),
+			domain = NA)
+	}
         r
     }
 }
@@ -164,6 +167,7 @@ plot.histogram <-
     nB <- length(x$breaks)
     if(is.null(y) || 0 == nB) stop("'x' is wrongly structured")
 
+    dev.hold(); on.exit(dev.flush())
     if(!add) {
 	if(is.null(ylim))
 	    ylim <- range(y, 0)

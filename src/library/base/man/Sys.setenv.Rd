@@ -1,6 +1,6 @@
 % File src/library/base/man/Sys.setenv.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Sys.setenv}
@@ -29,17 +29,12 @@ Sys.unsetenv(x)
   includes attempting to remove a non-existent variable.)
 }
 \details{
-  The names \code{setenv} and \code{putenv} come from different Unix
-  traditions: \R also has \code{Sys.putenv}, but this is now deprecated.
-  The internal code uses \code{setenv} if available, otherwise \code{putenv}.
-  
-  Non-standard \R names must be quoted in \code{Sys.setenv}:
-  see the examples.  Most platforms (and POSIX) do not allow names
-  containing \code{"="}.
-#ifdef Windows
-  (Windows does, but the facilities provided by \R may not handle these
-  correctly so they should be avoided.)
-#endif
+  Non-standard \R names must be quoted in \code{Sys.setenv}: see the
+  examples.  Most platforms (and POSIX) do not allow names containing
+  \code{"="}.  Windows does, but the facilities provided by \R may not
+  handle these correctly so they should be avoided.  Most platforms
+  allow setting an environment variable to \code{""}, but Windows does
+  not, and there \code{Sys.setenv(FOO="")} unsets \env{FOO}.
   
   There may be system-specific limits on the maximum length of the values
   of individual environment variables or of all environment variables.
@@ -52,12 +47,6 @@ Sys.unsetenv(x)
 % http://support.microsoft.com/kb/830473
 
 \note{
-  Not all systems need support \code{Sys.setenv} (although all known
-  current platforms do) nor \code{Sys.unsetenv}.
-#ifdef windows
-  Both are provided on Windows (although C-level \code{unsetenv} is not
-  available).
-#endif
 #ifdef unix
   If \code{Sys.unsetenv} is not supported, it will at least try to
   set the value of the environment variable to \code{""}, with a 

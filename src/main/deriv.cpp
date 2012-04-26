@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2007   The R Development Core Team.
+ *  Copyright (C) 1998-2011   The R Development Core Team.
  *  Copyright (C) 2004-5        The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -48,6 +48,7 @@
 #endif
 
 #include "Defn.h"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 
@@ -446,8 +447,8 @@ static SEXP D(SEXP expr, SEXP var)
 	    UNPROTECT(4);
 	}
 	else if (CAR(expr) == SqrtSymbol) {
-	    GCStackRoot<PairList> tl(PairList::makeList(2));
-	    PROTECT(expr1 = GCNode::expose(new Expression(0, tl)));
+	    GCStackRoot<PairList> tl(PairList::make(2));
+	    PROTECT(expr1 = CXXR_NEW(Expression(0, tl)));
 	    SETCAR(expr1, PowerSymbol);
 	    SETCADR(expr1, CADR(expr));
 	    SETCADDR(expr1, Constant(0.5));
@@ -868,14 +869,6 @@ static SEXP DerivAssign(SEXP name, SEXP expr)
     return ans;
 }
 
-static SEXP lang5(SEXP s, SEXP t, SEXP u, SEXP v, SEXP w)
-{
-    PROTECT(s);
-    s = LCONS(s, list4(t, u, v, w));
-    UNPROTECT(1);
-    return s;
-}
-
 static SEXP HessAssign1(SEXP name, SEXP expr)
 {
     SEXP ans, newname;
@@ -889,18 +882,17 @@ static SEXP HessAssign1(SEXP name, SEXP expr)
 
 static SEXP HessAssign2(SEXP name1, SEXP name2, SEXP expr)
 {
-    SEXP ans, newname1, newname2;
-    PROTECT(newname1 = ScalarString(name1));
-    PROTECT(newname2 = ScalarString(name2));
-    ans = lang3(install("<-"),
-		lang5(install("["), install(".hessian"), R_MissingArg,
-		      newname1, newname2),
-		lang3(install("<-"),
-		      lang5(install("["), install(".hessian"), R_MissingArg,
-			    newname2, newname1),
-		      expr));
-    UNPROTECT(2);
-    return ans;
+    static Symbol* bracksym = Symbol::obtain("[");
+    static Symbol* hesssym = Symbol::obtain(".hessian");
+    static Symbol* assignsym = Symbol::obtain("<-");
+    GCStackRoot<> newname1(ScalarString(name1));
+    GCStackRoot<> newname2(ScalarString(name2));
+    GCStackRoot<> l5a(Rf_lang5(bracksym, hesssym,
+			       R_MissingArg, newname1, newname2));
+    GCStackRoot<> l5b(Rf_lang5(bracksym, hesssym,
+			       R_MissingArg, newname2, newname1));
+    GCStackRoot<> l3(Rf_lang3(assignsym, l5b, expr));
+    return Rf_lang3(assignsym, l5a, l3);
 }
 
 /* attr(.value, "gradient") <- .grad */
@@ -966,31 +958,33 @@ SEXP attribute_hidden do_deriv(SEXP call, SEXP op, SEXP args, SEXP env)
     args = CDR(args);
     /* hessian: */
     hessian = asLogical(CAR(args));
-    /* NOTE: FindSubexprs is destructive, hence the duplication */
+    /* NOTE: FindSubexprs is destructive, hence the duplication.
+       It can allocate, so protect the duplicate.
+     */
     PROTECT(ans = duplicate(expr));
     f_index = FindSubexprs(ans, exprlist, tag);
-    d_index = static_cast<int*>(CXXR_alloc(nderiv, sizeof(int)));
+    d_index = static_cast<int*>(CXXR_alloc(size_t( nderiv), sizeof(int)));
     if (hessian)
-	d2_index = static_cast<int*>(CXXR_alloc((nderiv * (1 + nderiv))/2, sizeof(int)));
+	d2_index = static_cast<int*>(CXXR_alloc(size_t ((nderiv * (1 + nderiv))/2),
+						sizeof(int)));
     else d2_index = d_index;/*-Wall*/
     UNPROTECT(1);
     for(i=0, k=0; i<nderiv ; i++) {
 	PROTECT(ans = duplicate(expr));
 	PROTECT(ans = D(ans, install(translateChar(STRING_ELT(names, i)))));
-	ans2 = duplicate(ans);	/* keep a temporary copy */
+	PROTECT(ans2 = duplicate(ans));	/* keep a temporary copy */
 	d_index[i] = FindSubexprs(ans, exprlist, tag); /* examine the derivative first */
-	ans = duplicate(ans2);	/* restore the copy */
+	PROTECT(ans = duplicate(ans2));	/* restore the copy */
 	if (hessian) {
-	    GCStackRoot<> ansrt(ans);
 	    for(j = i; j < nderiv; j++) {
-		PROTECT(ans2 = duplicate(ans));
+		PROTECT(ans2 = duplicate(ans)); /* install could allocate */
 		PROTECT(ans2 = D(ans2, install(translateChar(STRING_ELT(names, j)))));
 		d2_index[k] = FindSubexprs(ans2, exprlist, tag);
 		k++;
 		UNPROTECT(2);
 	    }
 	}
-	UNPROTECT(2);
+	UNPROTECT(4);
     }
     nexpr = length(exprlist) - 1;
     if (f_index) {
@@ -1054,7 +1048,12 @@ SEXP attribute_hidden do_deriv(SEXP call, SEXP op, SEXP args, SEXP env)
 	    SETCDR(ans, Replace(MakeVariable(i+1, tag), CAR(ans), CDR(ans)));
 	    SETCAR(ans, R_MissingArg);
 	}
-	else SETCAR(ans, lang3(install("<-"), MakeVariable(i+1, tag), AddParens(CAR(ans))));
+	else {
+            SEXP var;
+            PROTECT(var = MakeVariable(i+1, tag));
+            SETCAR(ans, lang3(install("<-"), var, AddParens(CAR(ans))));
+            UNPROTECT(1);
+        }
 	i = i + 1;
 	ans = CDR(ans);
     }

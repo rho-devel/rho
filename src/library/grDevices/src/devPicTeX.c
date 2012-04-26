@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -18,7 +18,7 @@
  *  A PicTeX device, (C) 1996 Valerio Aimale, for
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 2001-8  The R Development Core Team
+ *  Copyright (C) 2001-11  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -175,15 +175,12 @@ static const char * const fontname[] = {
 
 	/* Device driver actions */
 
-static void PicTeX_Activate(pDevDesc dd);
 static void PicTeX_Circle(double x, double y, double r,
 			  const pGEcontext gc,
 			  pDevDesc dd);
 static void PicTeX_Clip(double x0, double x1, double y0, double y1, 
 			pDevDesc dd);
 static void PicTeX_Close(pDevDesc dd);
-static void PicTeX_Deactivate(pDevDesc dd);
-static Rboolean PicTeX_Locator(double *x, double *y, pDevDesc dd);
 static void PicTeX_Line(double x1, double y1, double x2, double y2,
 			const pGEcontext gc,
 			pDevDesc dd);
@@ -191,9 +188,8 @@ static void PicTeX_MetricInfo(int c,
 			      const pGEcontext gc,
 			      double* ascent, double* descent,
 			      double* width, pDevDesc dd);
-static void PicTeX_Mode(int mode, pDevDesc dd);
 static void PicTeX_NewPage(const pGEcontext gc, pDevDesc dd);
-static void PicTeX_Polygon(int n, const double *x, const double *y, 
+static void PicTeX_Polygon(int n, const double *x, const double *y,
 			   const pGEcontext gc,
 			   pDevDesc dd);
 static void PicTeX_Rect(double x0, double y0, double x1, double y1,
@@ -243,14 +239,6 @@ static void SetFont(int face, int size, picTeXDesc *ptd)
 	ptd->fontsize = lsize;
 	ptd->fontface = lface;
     }
-}
-
-static void PicTeX_Activate(pDevDesc dd)
-{
-}
-
-static void PicTeX_Deactivate(pDevDesc dd)
-{
 }
 
 static void PicTeX_MetricInfo(int c, 
@@ -504,8 +492,7 @@ static double PicTeX_StrWidth(const char *str,
 	/* This version at least uses the state of the MBCS */
 	int i, status, ucslen = mbcsToUcs2(str, NULL, 0, CE_NATIVE);
 	if (ucslen != (size_t)-1) {
-	    ucs2_t *ucs;
-	    ucs = (ucs2_t *) alloca(ucslen*sizeof(ucs2_t));
+	    ucs2_t ucs[ucslen];
 	    status = (int) mbcsToUcs2(str, ucs, ucslen, CE_NATIVE);
 	    if (status >= 0) 
 		for (i = 0; i < ucslen; i++)
@@ -536,6 +523,7 @@ static void PicTeX_Rect(double x0, double y0, double x1, double y1,
     x[3] = x1; y[3] = y0;
     PicTeX_Polygon(4, x, y, gc, dd);
 }
+
 
 static void PicTeX_Circle(double x, double y, double r,
 			  const pGEcontext gc,
@@ -648,17 +636,6 @@ static void PicTeX_Text(double x, double y, const char *str,
     fprintf(ptd->texfp," at %.2f %.2f\n", x, y);
 }
 
-/* Pick */
-static Rboolean PicTeX_Locator(double *x, double *y, pDevDesc dd)
-{
-    return FALSE;
-}
-
-
-static void PicTeX_Mode(int mode, pDevDesc dd)
-{
-}
-
 static
 Rboolean PicTeXDeviceDriver(pDevDesc dd, const char *filename, 
 			    const char *bg, const char *fg,
@@ -679,8 +656,6 @@ Rboolean PicTeXDeviceDriver(pDevDesc dd, const char *filename,
     dd->startfont = 1;
     dd->startgamma = 1;
 
-    dd->activate = PicTeX_Activate;
-    dd->deactivate = PicTeX_Deactivate;
     dd->close = PicTeX_Close;
     dd->clip = PicTeX_Clip;
     dd->size = PicTeX_Size;
@@ -690,10 +665,9 @@ Rboolean PicTeXDeviceDriver(pDevDesc dd, const char *filename,
     dd->strWidth = PicTeX_StrWidth;
     dd->rect = PicTeX_Rect;
     dd->circle = PicTeX_Circle;
+    /* dd->path = PicTeX_Path; not implemented */
     dd->polygon = PicTeX_Polygon;
     dd->polyline = PicTeX_Polyline;
-    dd->locator = PicTeX_Locator;
-    dd->mode = PicTeX_Mode;
     dd->metricInfo = PicTeX_MetricInfo;
     dd->hasTextUTF8 = FALSE;
     dd->useRotatedTextInContour = FALSE;
@@ -737,6 +711,9 @@ Rboolean PicTeXDeviceDriver(pDevDesc dd, const char *filename,
     ptd->pageno = 0;
     ptd->debug = debug;
 
+    dd->haveTransparency = 1;
+    dd->haveTransparentBg = 2;
+
     dd->deviceSpecific = (void *) ptd;
     dd->displayListOn = FALSE;
     return TRUE;
@@ -777,7 +754,7 @@ SEXP PicTeX(SEXP args)
 	    return 0;
 	if(!PicTeXDeviceDriver(dev, file, bg, fg, width, height, debug)) {
 	    free(dev);
-	    error(_("unable to start device PicTeX"));
+	    error(_("unable to start %s() device"), "pictex");
 	}
 	dd = GEcreateDevDesc(dev);
 	GEaddDevice2(dd, "pictex");

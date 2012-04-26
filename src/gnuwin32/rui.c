@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1998--2005  Guido Masarotto and Brian Ripley
- *  Copyright (C) 2004--2009  The R Foundation
+ *  Copyright (C) 2004--2011  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,9 +41,6 @@
 
 #include <Defn.h>
 
-#ifdef Win32
-#define USE_MDI 1
-#endif
 /* R user interface based on GraphApp */
 #include "Defn.h"
 #undef append /* defined by graphapp/internal.h */
@@ -53,9 +50,7 @@
 #define GA_EXTERN
 #include "graphapp/internal.h"
 #include "graphapp/ga.h"
-#ifdef USE_MDI
-# include "graphapp/stdimg.h"
-#endif
+#include "graphapp/stdimg.h"
 
 #include "console.h"
 #include "rui.h"
@@ -69,12 +64,10 @@
 extern Rboolean UserBreak;
 
 console RConsole = NULL;
-#ifdef USE_MDI
 int   RguiMDI = RW_MDI | RW_TOOLBAR | RW_STATUSBAR;
 int   MDIset = 0;
 window RFrame = NULL; /* some compilers want initialized for export */
 rect MDIsize;
-#endif
 extern int ConsoleAcceptCmd, R_is_running;
 extern Rboolean DebugMenuitem;
 Rboolean R_LoadRconsole = TRUE; /* used in commandLineArgs */
@@ -84,7 +77,8 @@ static popup RConsolePopup;
 static menuitem msource, mdisplay, mload, msave, mloadhistory,
     msavehistory, mpaste, mpastecmds, mcopy, mcopypaste, mlazy, mcomplete,
     mfncomplete, mconfig, mls, mrm, msearch, mde, mtools, mstatus;
-static int lmanintro, lmanref, lmandata, lmanlang, lmanext, lmanint, lmanadmin;
+static int lmanintro, lmanref, lmandata, lmanlang, lmanext, lmanint, 
+    lmanadmin, lmanSweave;
 static menu m;
 static char cmd[1024];
 static HelpMenuItems hmenu;
@@ -163,7 +157,7 @@ static void menusource(control m)
 	quote_fn(fn, local);
 	snprintf(cmd, 1024, "source(\"%s\")", local);
 	consolecmd(RConsole, cmd);
-    }
+    } else show(RConsole);
 }
 
 static void menudisplay(control m)
@@ -184,7 +178,7 @@ static void menuloadimage(control m)
 	quote_fn(fn, s);
 	snprintf(cmd, 1024, "load(\"%s\")", s);
 	consolecmd(RConsole, cmd);
-    }
+    } else show(RConsole);
 }
 
 static void menusaveimage(control m)
@@ -200,7 +194,7 @@ static void menusaveimage(control m)
 	if (!strcmp(&s[strlen(s) - 2], ".*")) s[strlen(s) - 2] = '\0';
 	snprintf(cmd, 1024, "save.image(\"%s\")", s);
 	consolecmd(RConsole, cmd);
-    }
+    } else show(RConsole);
 }
 
 static void menuloadhistory(control m)
@@ -470,7 +464,7 @@ static void menurm(control m)
     if (!ConsoleAcceptCmd) return;
     if (askyesno(G_("Are you sure?")) == YES)
 	consolecmd(RConsole, "rm(list=ls(all=TRUE))");
-/*    show(RConsole); */
+    else show(RConsole); 
 }
 
 static void menusearch(control m)
@@ -484,33 +478,16 @@ static void menupkgload(control m)
 {
     if (!ConsoleAcceptCmd) return;
     consolecmd(RConsole,
-	       "local({pkg <- select.list(sort(.packages(all.available = TRUE)))\nif(nchar(pkg)) library(pkg, character.only=TRUE)})");
+	       "local({pkg <- select.list(sort(.packages(all.available = TRUE)),graphics=TRUE)\nif(nchar(pkg)) library(pkg, character.only=TRUE)})");
 /*    show(RConsole); */
 }
 
 static void menupkgupdate(control m)
 {
     if (!ConsoleAcceptCmd) return;
-    consolecmd(RConsole, "update.packages(ask='graphics')");
+    consolecmd(RConsole, "update.packages(ask='graphics',checkBuilt=TRUE)");
 /*    show(RConsole); */
 }
-
-#if 0
-static void menupkgupdatebioc(control m)
-{
-    if (!ConsoleAcceptCmd) return;
-    consolecmd(RConsole,
-	       "update.packages(repos=getOption(\"BIOC\"))");
-/*    show(RConsole); */
-}
-
-
-static void menupkginstallbioc(control m)
-{
-    if (!ConsoleAcceptCmd) return;
-    consolecmd(RConsole, "utils:::menuInstallBioc()");
-}
-#endif
 
 static void menupkgcranmirror(control m)
 {
@@ -587,7 +564,7 @@ static void menuhelp(control m)
 	if (strlen(s) > 255) s[255] = '\0';
 	strcpy(olds, s);
 	consolecmd(RConsole, cmd);
-    }
+    } else show(RConsole);
 }
 
 static void menumainman(control m)
@@ -625,6 +602,11 @@ static void menumainadmin(control m)
     internal_shellexec("doc\\manual\\R-admin.pdf");
 }
 
+static void menumainSweave(control m)
+{
+    internal_shellexec("library\\utils\\doc\\Sweave.pdf");
+}
+
 static void menuhelpsearch(control m)
 {
     char *s;
@@ -637,7 +619,7 @@ static void menuhelpsearch(control m)
 	if (strlen(s) > 255) s[255] = '\0';
 	strcpy(olds, s);
 	consolecmd(RConsole, cmd);
-    }
+    } else show(RConsole);
 }
 
 static void menusearchRsite(control m)
@@ -652,7 +634,7 @@ static void menusearchRsite(control m)
 	if (strlen(s) > 255) s[255] = '\0';
 	strcpy(olds, s);
 	consolecmd(RConsole, cmd);
-    }
+    } else show(RConsole);
 }
 
 static void menuapropos(control m)
@@ -668,7 +650,7 @@ static void menuapropos(control m)
 	if (strlen(s) > 255) s[255] = '\0';
 	strcpy(olds, s);
 	consolecmd(RConsole, cmd);
-    }
+    } else show(RConsole);
 }
 
 static void menuhelpstart(control m)
@@ -858,7 +840,7 @@ void readconsolecfg()
 		      gui.cx, gui.cy,
 		      gui.guiColors,
 		      gui.prows, gui.pcols, gui.pagerMultiple, gui.setWidthOnResize,
-		      gui.cbb, gui.cbl, gui.buffered);
+		      gui.cbb, gui.cbl, gui.buffered, gui.cursor_blink);
 }
 
 static void dropconsole(control m, char *fn)
@@ -951,11 +933,6 @@ int RguiPackageMenu(PkgMenuItems pmenu)
     MCHECK(newmenuitem("-", 0, NULL));
     MCHECK(pmenu->mpkgil = newmenuitem(G_("Install package(s) from local zip files..."),
 				0, menupkginstalllocal));
-/*    MCHECK(newmenuitem("-", 0, NULL));
-    MCHECK(mpkgb = newmenuitem(G_("Install package(s) from Bioconductor..."),
-			       0, menupkginstallbioc));
-    MCHECK(mpkgbu = newmenuitem(G_("Update packages from Bioconductor"),
-    0, menupkgupdatebioc)); */
     return 0;
 }
 
@@ -968,6 +945,7 @@ static void CheckForManuals(void)
     lmanext = check_doc_file("doc\\manual\\R-exts.pdf");
     lmanint = check_doc_file("doc\\manual\\R-ints.pdf");
     lmanadmin = check_doc_file("doc\\manual\\R-admin.pdf");
+    lmanSweave = check_doc_file("library\\utils\\doc\\Sweave.pdf");
 }
 
 /* Help functions common to all R windows.
@@ -984,7 +962,7 @@ int RguiCommonHelp(menu m, HelpMenuItems hmenu)
 
 
     if (!lmanintro && !lmanref && !lmandata && !lmanlang && !lmanext
-       && !lmanint && !lmanadmin) {
+       && !lmanint && !lmanadmin && !lmanSweave) {
 	MCHECK(hmenu->mman0 = newmenuitem(G_("Manuals (in PDF)"), 0, NULL));
 	disable(hmenu->mman0);
     } else {
@@ -1010,6 +988,9 @@ int RguiCommonHelp(menu m, HelpMenuItems hmenu)
 	MCHECK(hmenu->mmanadmin = newmenuitem("R Installation and Administration", 0,
 				       menumainadmin));
 	if (!lmanadmin) disable(hmenu->mmanadmin);
+	MCHECK(hmenu->mmanSweave = newmenuitem("Sweave User", 0,
+				       menumainSweave));
+	if (!lmanSweave) disable(hmenu->mmanSweave);
     }
 
 
@@ -1035,12 +1016,9 @@ int RguiCommonHelp(menu m, HelpMenuItems hmenu)
 
 static int RguiWindowMenu()
 {
-#ifdef USE_MDI
     if (ismdi())
 	newmdimenu();
-    else 
-#endif
-    {
+    else {
 	MCHECK(newmenu(G_("Windows")));
 	MCHECK(newmenuitem(G_("Cascade"), 0, menucascade));
 	MCHECK(newmenuitem(G_("Tile &Horizontally"), 0, menutilehoriz));
@@ -1072,22 +1050,34 @@ int setupui(void)
     if(p && isdigit(p[1])) localeCP = atoi(p+1); else localeCP = 1252;
 
     readconsolecfg();
-#ifdef USE_MDI
+    int flags = StandardWindow | Document | Menubar;
+    if(mbcslocale) flags |= UseUnicode;
     if (RguiMDI & RW_MDI) {
 	TRACERUI("Rgui");
-	RFrame = newwindow("RGui", MDIsize,
-			   StandardWindow | Menubar | Workspace);
+	RFrame = newwindow(
+#ifdef WIN64
+	    "RGui (64-bit)",
+#else
+	    "RGui",
+#endif
+	    MDIsize,
+	    StandardWindow | Menubar | Workspace);
 	setclose(RFrame, closeconsole);
 	show(RFrame);
 	TRACERUI("Rgui done");
-    }
+	TRACERUI("Console");
+	if (!(RConsole = newconsole("R Console", flags ))) return 0;
+	TRACERUI("Console done");
+    } else {
+	TRACERUI("Console");
+#ifdef WIN64
+	if (!(RConsole = newconsole("R Console (64-bit)", flags ))) return 0;
+#else
+	if (!(RConsole = newconsole("R Console", flags ))) return 0;
 #endif
-    TRACERUI("Console");
-    int flags = StandardWindow | Document | Menubar;
-    if(mbcslocale) flags |= UseUnicode;
-    if (!(RConsole = newconsole("R Console", flags ))) return 0;
-    TRACERUI("Console done");
-#ifdef USE_MDI
+	TRACERUI("Console done");
+    }
+    
     if (ismdi()) {
 	  int btsize = 24;
 	  rect r = rect(2, 2, btsize, btsize);
@@ -1138,7 +1128,6 @@ int setupui(void)
 	PrintVersionString(s);
 	setstatus(s);
     }
-#endif
     addto(RConsole);
     setclose(RConsole, closeconsole);
     setdrop(RConsole, dropconsole);
@@ -1177,7 +1166,6 @@ int setupui(void)
     MCHECK(mde = newmenuitem(G_("Data editor..."), 0, menude));
     MCHECK(newmenuitem("-", 0, NULL));
     MCHECK(mconfig = newmenuitem(G_("GUI preferences..."), 0, menuconfig));
-#ifdef USE_MDI
     if (ismdi()) {
 	MCHECK(newmenu(G_("View")));
 	MCHECK(mtools = newmenuitem(G_("Toolbar"), 0, menutools));
@@ -1185,7 +1173,6 @@ int setupui(void)
 	if(RguiMDI & RW_TOOLBAR) check(mtools);
 	if(RguiMDI & RW_STATUSBAR) check(mstatus);
     }
-#endif
     MCHECK(newmenu(G_("Misc")));
     MCHECK(newmenuitem(G_("Stop current computation           \tESC"), 0,
 		       menukill));
@@ -1224,7 +1211,6 @@ int setupui(void)
     return 1;
 }
 
-#ifdef USE_MDI
 static RECT RframeRect; /* for use by pagercreate */
 RECT *RgetMDIsize(void)
 {
@@ -1241,7 +1227,6 @@ int RgetMDIheight(void)
 {
     return RgetMDIsize()->bottom;
 }
-#endif
 
 #if 0
 extern int  CharacterMode;

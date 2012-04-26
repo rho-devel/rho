@@ -1,7 +1,8 @@
 
-R version 2.10.0 Under development (unstable) (2009-08-06 r49081)
-Copyright (C) 2009 The R Foundation for Statistical Computing
+R version 2.13.0 Under development (unstable) (2011-03-04 r54667)
+Copyright (C) 2011 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -37,7 +38,8 @@ Type 'q()' to quit R.
 > library(stats)
 > options(digits=5) # to avoid trivial printed differences
 > options(show.signif.stars=FALSE) # avoid fancy quotes in o/p
-> postscript("nls-test.ps")
+> options(show.nls.convergence=FALSE) # avoid non-diffable output
+> pdf("nls-test.pdf")
 > 
 > ## selfStart.default() w/ no parameters:
 > logist <- deriv( ~Asym/(1+exp(-(x-xmid)/scal)), c("Asym", "xmid", "scal"),
@@ -141,9 +143,6 @@ Correlation of Parameter Estimates:
   a    
 b -0.89
 
-Number of iterations to convergence: 1 
-Achieved convergence tolerance: 2.75e-06 
-
 > stopifnot(all.equal(residuals(fit), residuals(fit0), 1e5,
 +                     check.attributes = FALSE))
 > stopifnot(df.residual(fit) == df.residual(fit0))
@@ -195,9 +194,6 @@ scal   1.0385     0.0304    34.1  4.2e-14
 
 Residual standard error: 0.0355 on 13 degrees of freedom
 
-Number of iterations to convergence: 2 
-Achieved convergence tolerance: 2.43e-06 
-
 > 
 > ## directly
 > fm2 <- nls(density ~ Asym/(1 + exp((xmid - log(conc))/scal)),
@@ -214,9 +210,6 @@ xmid   1.4731     0.0947    15.6  8.8e-10
 scal   1.0385     0.0304    34.1  4.2e-14
 
 Residual standard error: 0.0355 on 13 degrees of freedom
-
-Number of iterations to convergence: 6 
-Achieved convergence tolerance: 1.04e-07 
 
 > stopifnot(all.equal(coef(summary(fm2)), coef(summary(fm1)), tol = 1e-6))
 > stopifnot(all.equal(residuals(fm2), residuals(fm1), tol = 1e-5))
@@ -247,9 +240,6 @@ xmid   1.4731     0.0947    15.6  8.8e-10
 scal   1.0385     0.0304    34.1  4.2e-14
 
 Residual standard error: 0.0355 on 13 degrees of freedom
-
-Number of iterations to convergence: 6 
-Achieved convergence tolerance: 1.73e-07 
 
 > stopifnot(all.equal(coef(summary(fm3)), coef(summary(fm1)), tol = 1e-6))
 > ft <- with(DNase1, density - fitted(fm3)/sqrt(wts))
@@ -284,9 +274,6 @@ scal   1.0385     0.0304    34.1  4.2e-14
 .lin   2.3350     0.0966    24.2  3.5e-12
 
 Residual standard error: 0.0355 on 13 degrees of freedom
-
-Number of iterations to convergence: 5 
-Achieved convergence tolerance: 3.73e-08 
 
 > cf <- coef(summary(fm4))[c(3,1,2), ]
 > rownames(cf)[2] <- "Asym"
@@ -334,7 +321,8 @@ Algorithm "port", convergence message: relative convergence (4)
 > pfm3 <- profile(fm3)
 > for(m in names(pfm1)) stopifnot(all.equal(pfm1[[m]], pfm3[[m]], tol=1e-5))
 > pfm5 <- profile(fm5)
-> for(m in names(pfm1)) stopifnot(all.equal(pfm1[[m]], pfm5[[m]], tol=1e-5))
+> for(m in names(pfm1))
++     stopifnot(all.equal(pfm1[[m]], pfm5[[m]], tol=1e-5))
 > (c1 <- confint(fm1))
 Waiting for profiling to be done...
         2.5%  97.5%
@@ -376,9 +364,6 @@ Nonlinear regression model
     b 
 0.695 
  residual sum-of-squares: 2.39
-
-Number of iterations to convergence: 4 
-Achieved convergence tolerance: 2.80e-07 
 Waiting for profiling to be done...
    2.5%   97.5% 
 0.68704 0.70281 
@@ -399,9 +384,6 @@ Nonlinear regression model
     a     b 
 0.502 0.724 
  residual sum-of-squares: 2.51
-
-Number of iterations to convergence: 4 
-Achieved convergence tolerance: 3.64e-06 
 Waiting for profiling to be done...
      2.5%   97.5%
 a 0.49494 0.50893
@@ -424,9 +406,6 @@ Nonlinear regression model
      a      b   logc 
  0.558  0.603 -0.176 
  residual sum-of-squares: 2.44
-
-Number of iterations to convergence: 5 
-Achieved convergence tolerance: 3.16e-06 
 Waiting for profiling to be done...
          2.5%   97.5%
 a     0.35006 0.66057
@@ -556,7 +535,7 @@ Nonlinear regression model
    data:  parent.frame() 
     a     b 
 1.500 0.243 
- residual sum-of-squares: 0.390
+ residual sum-of-squares: 0.39
 
 Algorithm "port", convergence message: relative convergence (4) 
 attr(,"summary")
@@ -594,7 +573,7 @@ b    NA 0.611
 > test()
 8291.9 :  1 1 
 726.02 :  0.80544 2.42971 
-552.85 :  1.2900 2.1290 
+552.85 :  1.290 2.129 
 70.431 :  1.9565 1.9670 
 26.555 :  1.9788 2.0064 
 26.503 :  1.9798 2.0046 
@@ -605,9 +584,6 @@ Nonlinear regression model
    a    b 
 1.98 2.00 
  residual sum-of-squares: 26.5
-
-Number of iterations to convergence: 6 
-Achieved convergence tolerance: 7.17e-07 
 > ## failed to find n in 2.2.x
 > ## found wrong n in 2.3.x
 > ## finally worked in 2.4.0
@@ -640,9 +616,6 @@ sp2 9.99e-01   5.00e-03   199.8   <2e-16
 
 Residual standard error: 0.00205 on 96 degrees of freedom
 
-Number of iterations to convergence: 7 
-Achieved convergence tolerance: 2.08e-06 
-
 > 
 > ## didn't work with port in 2.4.1
 > summary (nls(expsumNoisy ~ getExpmat(k, 1:100) %*% sp, expsum.df,
@@ -674,13 +647,16 @@ Algorithm "port", convergence message: both X-convergence and relative convergen
 > # next failed in 2.8.1
 > fit <- nls(y~b0[fac] + b1*x, start = list(b0=c(1,1), b1=1),
 +            algorithm ="port", upper = c(100, 100, 100))
-> # next did not fail in proposed fix.
-> fit <- try(nls(y~b0[fac] + b1*x, start = list(b0=c(1,1), b1=101),
-+                algorithm ="port", upper = c(100, 100, 100)))
-Error in nls(y ~ b0[fac] + b1 * x, start = list(b0 = c(1, 1), b1 = 101),  : 
+> # next did not "fail" in proposed fix:
+> fit <- nls(y~b0[fac] + b1*x, start = list(b0=c(1,1), b1=101),
++            algorithm ="port", upper = c(100, 100, 100),
++            control = list(warnOnly=TRUE))# warning ..
+Warning message:
+In nls(y ~ b0[fac] + b1 * x, start = list(b0 = c(1, 1), b1 = 101),  :
   Convergence failure: initial par violates constraints
-> stopifnot(inherits(fit, "try-error"))
+> with(fit$convInfo, ## start par. violates constraints
++      stopifnot(isConv == FALSE, stopCode == 300))
 > 
 > cat('Time elapsed: ', proc.time() - .proctime00,'\n')
-Time elapsed:  4.043 0.028 4.073 0 0 
+Time elapsed:  3.564 0.028 3.639 0 0 
 > 

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -52,9 +52,9 @@ double qlogis(double p, double location, double scale, int lower_tail, int log_p
     /* p := logit(p) = log( p / (1-p) )	 : */
     if(log_p) {
 	if(lower_tail)
-	    p = p - log1p(- exp(p));
+	    p = p - R_Log1_Exp(p);
 	else
-	    p = log1p(- exp(p)) - p;
+	    p = R_Log1_Exp(p) - p;
     }
     else
 	p = log(lower_tail ? (p / (1. - p)) : ((1. - p) / p));

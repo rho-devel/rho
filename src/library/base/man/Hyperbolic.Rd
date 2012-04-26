@@ -1,6 +1,6 @@
 % File src/library/base/man/Hyperbolic.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Hyperbolic}
@@ -29,13 +29,15 @@ atanh(x)
    \item{x}{a numeric or complex vector}
 }
 \details{
-   These are generic functions: methods can be defined for them
-   individually or via the \code{\link[=S3groupGeneric]{Math}} group generic.
+   These are \link{internal generic} \link{primitive} functions: methods
+   can be defined for them individually or via the
+   \code{\link[=S3groupGeneric]{Math}} group generic.
 
    Branch cuts are consistent with the inverse trigonometric functions
-   \code{asin()} et seq, and agree with those defined in Abramowitz and
-   Stegun, figure 4.7, page 86.
-
+   \code{asin} \emph{et seq}, and agree with those defined in Abramowitz
+   and Stegun, figure 4.7, page 86.   The behaviour actually on the cuts
+   follows the C99 standard which requires continuity coming round the
+   endpoint in a counter-clockwise direction.
 }
 \section{S4 methods}{
   All are S4 generic functions: methods can be defined

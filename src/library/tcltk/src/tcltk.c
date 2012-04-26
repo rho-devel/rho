@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000--2008  The R Development Core Team
+ *  Copyright (C) 2000--2010  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,16 +54,17 @@ static SEXP makeRTclObject(Tcl_Obj *tclobj)
 {
     SEXP obj;
 
-    obj = R_MakeExternalPtr(tclobj, R_NilValue, R_NilValue);
+    PROTECT(obj = R_MakeExternalPtr(tclobj, R_NilValue, R_NilValue));
     Tcl_IncrRefCount(tclobj);
     R_RegisterCFinalizer(obj, RTcl_dec_refcount);
+    UNPROTECT(1);
     return obj;
 }
 
 static int R_eval(ClientData clientData,
 		  Tcl_Interp *interp,
 		  int argc,
-		  CONST84 char *argv[])
+		  const char *argv[])
 {
     ParseStatus status;
     int i;
@@ -111,7 +112,7 @@ static int R_eval(ClientData clientData,
 static int R_call(ClientData clientData,
 		  Tcl_Interp *interp,
 		  int argc,
-		  CONST84 char *argv[])
+		  const char *argv[])
 {
     int i;
     SEXP expr, alist, ans;
@@ -120,14 +121,14 @@ static int R_call(ClientData clientData,
     alist = R_NilValue;
     for (i = argc - 1 ; i > 1 ; i--){
 	PROTECT(alist);
-	alist = LCONS(mkString(argv[i]), alist);
+	alist = CONS(mkString(argv[i]), alist);
 	UNPROTECT(1);
     }
 
     sscanf(argv[1], "%p", &fun);
 
     expr = LCONS( (SEXP)fun, alist);
-    expr = LCONS(install("try"), LCONS(expr, R_NilValue));
+    expr = LCONS(install("try"), CONS(expr, R_NilValue));
 
     ans = eval(expr, R_GlobalEnv);
 
@@ -141,7 +142,7 @@ static int R_call(ClientData clientData,
 static int R_call_lang(ClientData clientData,
 		       Tcl_Interp *interp,
 		       int argc,
-		       CONST84 char *argv[])
+		       const char *argv[])
 {
     void *expr, *env; 
     SEXP ans;
@@ -149,7 +150,7 @@ static int R_call_lang(ClientData clientData,
     sscanf(argv[1], "%p", &expr);
     sscanf(argv[2], "%p", &env);
 
-    expr = LCONS(install("try"), LCONS(expr, R_NilValue));
+    expr = LCONS(install("try"), CONS(expr, R_NilValue));
 
     ans = eval((SEXP)expr, (SEXP)env);
 
@@ -277,13 +278,11 @@ SEXP RTcl_ObjFromVar(SEXP args)
 
 SEXP RTcl_AssignObjToVar(SEXP args)
 {
-    Tcl_Obj *tclobj;
-
-    tclobj = Tcl_SetVar2Ex(RTcl_interp,
-                           translateChar(STRING_ELT(CADR(args), 0)),
-                           NULL,
-                           (Tcl_Obj *) R_ExternalPtrAddr(CADDR(args)),
-                           0);
+    Tcl_SetVar2Ex(RTcl_interp,
+		  translateChar(STRING_ELT(CADR(args), 0)),
+		  NULL,
+		  (Tcl_Obj *) R_ExternalPtrAddr(CADDR(args)),
+		  0);
     return R_NilValue;
 }
 
@@ -325,6 +324,7 @@ SEXP RTcl_ObjAsCharVector(SEXP args)
 	char *s;
 	Tcl_DString s_ds;
 	Tcl_DStringInit(&s_ds);
+	/* FIXME: could use UTF-8 here */
 	s = Tcl_UtfToExternalDString(NULL,
 				     (Tcl_GetStringFromObj(elem[i], NULL)),
 				     -1, &s_ds);
@@ -334,13 +334,6 @@ SEXP RTcl_ObjAsCharVector(SEXP args)
     UNPROTECT(1);
     return ans;
 }
-
-/* FIXME: we could look at encoding, and send UTF-8 in an
-   MBCS-supporting environment.  In which case, could convert to
-   UTF-8 and not UCS-2 on Windows. */
-#ifdef Win32
-extern wchar_t *wtransChar(SEXP x);
-#endif
 
 SEXP RTcl_ObjFromCharVector(SEXP args)
 {
@@ -358,19 +351,11 @@ SEXP RTcl_ObjFromCharVector(SEXP args)
     tclobj = Tcl_NewObj();
 
     count = length(val);
-#ifdef Win32
-    encoding = Tcl_GetEncoding(RTcl_interp, "unicode");  /* Needs NT */
-#else
-    encoding = NULL;
-#endif
+    encoding = Tcl_GetEncoding(RTcl_interp, "utf-8");
     if (count == 1 && LOGICAL(drop)[0]) {
 	Tcl_DStringInit(&s_ds);
 	s = Tcl_ExternalToUtfDString(encoding,
-#ifdef Win32
-				     (char *) wtransChar(STRING_ELT(val, 0)), 
-#else
-				     translateChar(STRING_ELT(val, 0)), 
-#endif
+				     translateCharUTF8(STRING_ELT(val, 0)), 
 				     -1, &s_ds);
 	Tcl_SetStringObj(tclobj, s, -1);
 	Tcl_DStringFree(&s_ds);
@@ -379,20 +364,14 @@ SEXP RTcl_ObjFromCharVector(SEXP args)
 	    elem = Tcl_NewObj();
 	    Tcl_DStringInit(&s_ds);
 	    s = Tcl_ExternalToUtfDString(encoding, 
-#ifdef Win32
-					 (char *) wtransChar(STRING_ELT(val, i)),
-#else
-					 translateChar(STRING_ELT(val, i)),
-#endif
+					 translateCharUTF8(STRING_ELT(val, i)),
 					 -1, &s_ds);
 	    Tcl_SetStringObj(elem, s, -1);
 	    Tcl_DStringFree(&s_ds);
 	    Tcl_ListObjAppendElement(RTcl_interp, tclobj, elem);
 	}
 
-#ifdef Win32
     Tcl_FreeEncoding(encoding);
-#endif
     return makeRTclObject(tclobj);
 }
 
@@ -656,28 +635,29 @@ SEXP dotTclcallback(SEXP args)
 #include <tk.h>
 
 
-void tcltk_init(void)
+void tcltk_init(int *TkUp)
 {
     int code;
 
+    *TkUp = 0;
+
     /* Absence of the following line is said to be an error with
-     * tcl 8.4 on all platforms, and is known to cause crashes under
+     * tcl >= 8.4 on all platforms, and is known to cause crashes under
      * Windows */
 
     Tcl_FindExecutable(NULL);
 
     RTcl_interp = Tcl_CreateInterp();
-    code = Tcl_Init(RTcl_interp); /* Undocumented... If omitted, you
-				    get the windows but no event
-				    handling. (Update: the
-				    documentation is in the Tcl
-				    sources, just not shipped
-				    w/RedHat) */
-    if (code != TCL_OK)
-	error(Tcl_GetStringResult(RTcl_interp));
+    code = Tcl_Init(RTcl_interp);
+    if (code != TCL_OK) error(Tcl_GetStringResult(RTcl_interp));
 
+/* HAVE_AQUA is not really right here.
+   On Mac OS X we might be using Aqua Tcl/Tk or X11 Tcl/Tk, and that
+   is in principle independent of whether we want quartz() built.
+*/
 #if !defined(Win32) && !defined(HAVE_AQUA)
-    if(getenv("DISPLAY")) 
+    char *p= getenv("DISPLAY");
+    if(p && p[0])  /* exclude DISPLAY = "" */
 #endif
     {
 	code = Tk_Init(RTcl_interp);  /* Load Tk into interpreter */
@@ -687,8 +667,8 @@ void tcltk_init(void)
 	    Tcl_StaticPackage(RTcl_interp, "Tk", Tk_Init, Tk_SafeInit);
 
 	    code = Tcl_Eval(RTcl_interp, "wm withdraw .");  /* Hide window */
-	    if (code != TCL_OK)
-		error(Tcl_GetStringResult(RTcl_interp));
+	    if (code != TCL_OK) error(Tcl_GetStringResult(RTcl_interp));
+	    *TkUp = 1;
 	}
     }
 #if !defined(Win32) && !defined(HAVE_AQUA)

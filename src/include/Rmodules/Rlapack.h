@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-6 The R Development Core Team.
+ *  Copyright (C) 2001-2010 The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -48,6 +48,7 @@ typedef SEXP (*Rf_La_svd)(SEXP jobu, SEXP jobv, SEXP x, SEXP s, SEXP u,
 			  SEXP v, SEXP method);
 typedef SEXP (*Rf_La_rs)(SEXP x, SEXP only_values);
 typedef SEXP (*Rf_La_rg)(SEXP x, SEXP only_values);
+typedef SEXP (*Rf_La_dlange)(SEXP A, SEXP type);
 typedef SEXP (*Rf_La_dtrcon)(SEXP A, SEXP norm);
 typedef SEXP (*Rf_La_dgecon)(SEXP A, SEXP norm);
 typedef SEXP (*Rf_La_zgecon)(SEXP A, SEXP norm);
@@ -71,10 +72,11 @@ typedef struct {
     Rf_La_svd svd;
     Rf_La_rs  rs;
     Rf_La_rg  rg;
+    Rf_La_dlange dlange;
     Rf_La_dgecon dgecon;
-    Rf_La_dgecon dtrcon;
+    Rf_La_dtrcon dtrcon;
     Rf_La_zgecon zgecon;
-    Rf_La_zgecon ztrcon;
+    Rf_La_ztrcon ztrcon;
     Rf_La_zgesv zgesv;
     Rf_La_zgeqp3 zgeqp3;
     Rf_qr_coef_cmplx qr_coef_cmplx;

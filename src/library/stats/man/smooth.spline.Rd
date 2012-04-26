@@ -1,6 +1,6 @@
 % File src/library/stats/man/smooth.spline.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{smooth.spline}
@@ -14,13 +14,14 @@
 smooth.spline(x, y = NULL, w = NULL, df, spar = NULL,
               cv = FALSE, all.knots = FALSE, nknots = NULL,
               keep.data = TRUE, df.offset = 0, penalty = 1,
-              control.spar = list())
+              control.spar = list(), tol = 1e-6 * IQR(x))
 }
 \arguments{
  \item{x}{a vector giving the values of the predictor variable, or  a
-  list or a two-column matrix specifying x and y. }
- \item{y}{responses. If \code{y} is missing, the responses are assumed
-   to be specified by \code{x}.}
+   list or a two-column matrix specifying x and y. }
+ \item{y}{responses. If \code{y} is missing or \code{NULL}, the responses
+   are assumed to be specified by \code{x}, with \code{x} the index
+   vector.}
  \item{w}{optional vector of weights of the same length as \code{x};
    defaults to all 1.}
  \item{df}{the desired equivalent number of degrees of freedom (trace of
@@ -31,7 +32,8 @@ smooth.spline(x, y = NULL, w = NULL, df, spar = NULL,
    criterion is a monotone function of \code{spar}, see the details
    below.}
  \item{cv}{ordinary (\code{TRUE}) or \sQuote{generalized} cross-validation
-   (GCV) when \code{FALSE}.}
+   (GCV) when \code{FALSE}; setting it to \code{NA} skips the evaluation
+   of leverages and any score.}
  \item{all.knots}{if \code{TRUE}, all distinct points in \code{x} are used as
    knots.  If \code{FALSE} (default), a subset of \code{x[]} is used,
    specifically \code{x[j]} where the \code{nknots} indices are evenly
@@ -46,6 +48,7 @@ smooth.spline(x, y = NULL, w = NULL, df, spar = NULL,
    \code{df.offset} in the GCV criterion.}
  \item{penalty}{the coefficient of the penalty for degrees of freedom
    in the GCV criterion.}
+ 
  \item{control.spar}{optional list with named components controlling the
    root finding when the smoothing parameter \code{spar} is computed,
    i.e., missing or \code{NULL}, see below.
@@ -67,22 +70,28 @@ smooth.spline(x, y = NULL, w = NULL, df, spar = NULL,
    }
    Note that \code{spar} is only searched for in the interval
    \eqn{[low, high]}.
- }
+   }
+   
+   \item{tol}{A tolerance for same-ness of the \code{x} values.  The
+     values are binned into bin of size \code{tol} and values which
+     fall into the same bin are regarded as the same.}
 }
 \details{
+  Neither \code{x} nor \code{y} are allowed to containing missing or
+  infinite values.
+  
   The \code{x} vector should contain at least four distinct values.
-  \emph{Distinct} here means \sQuote{distinct after rounding to 6 significant
-  digits}, i.e., \code{x} will be transformed to
-  \code{unique(sort(signif(x, 6)))}, and \code{y} and \code{w} are
-  pooled accordingly.
+  \sQuote{Distinct} here is controlled by \code{tol}: values which are
+  regarded as the same are replaced by the first of their values and the
+  corresponding \code{y} and \code{w} are pooled accordingly.
 
   The computational \eqn{\lambda} used (as a function of
   \eqn{s=spar}{\code{spar}}) is
-  \eqn{\lambda = r * 256^{3 s - 1}}{lambda = r * 256^(3*spar - 1)}
+  \eqn{\lambda = r * 256^{3 s - 1}}{\lambda = r * 256^(3*spar - 1)}
   where
   \eqn{r = tr(X' W X) / tr(\Sigma)},
   \eqn{\Sigma} is the matrix given by
-  \eqn{\Sigma_{ij} = \int B_i''(t) B_j''(t) dt}{Sigma[i,j] = Integral B''[i](t) B''[j](t) dt},
+  \eqn{\Sigma_{ij} = \int B_i''(t) B_j''(t) dt}{\Sigma[i,j] = Integral B''[i](t) B''[j](t) dt},
   \eqn{X} is given by \eqn{X_{ij} = B_j(x_i)}{X[i,j] = B[j](x[i])},
   \eqn{W} is the diagonal matrix of weights (scaled such that
   its trace is \eqn{n}, the original number of observations)
@@ -107,10 +116,10 @@ smooth.spline(x, y = NULL, w = NULL, df, spar = NULL,
 %%   = 1/3 + {log(lam) - log(r)} / {24 log(2)}
 %%   = 1/3 - log(r)/{24 log(2)} +  log(lam) / {24 log(2)}
 %%   =               s0         + 0.0601 * log(lam)
-  \code{spar} is \eqn{s = s0 + 0.0601 * \bold{\log}\lambda}{spar = s0 + 0.0601 * log(lambda)},
+  \code{spar} is \eqn{s = s0 + 0.0601 * \bold{\log}\lambda}{spar = s0 + 0.0601 * log(\lambda)},
   which is intentionally \emph{different} from the S-PLUS implementation
   of \code{smooth.spline} (where \code{spar} is proportional to
-  \eqn{\lambda}).  In \R's (\eqn{\log \lambda}) scale, it makes more
+  \eqn{\lambda}).  In \R's (\eqn{\log \lambda}{log \lambda}) scale, it makes more
   sense to vary \code{spar} linearly.
 
   Note however that currently the results may become very unreliable
@@ -150,7 +159,8 @@ smooth.spline(x, y = NULL, w = NULL, df, spar = NULL,
       i=1,\dots,n}, values where \code{data$x} may have repeated values and
     hence be longer than the above \code{x} component; see details.
     }
-  \item{lev}{leverages, the diagonal values of the smoother matrix.}
+  \item{lev}{(when \code{cv} was not \code{NA}) leverages, the diagonal
+  values of the smoother matrix.}
   \item{cv.crit}{cross-validation score, \sQuote{generalized} or true, depending
     on \code{cv}.}
   \item{pen.crit}{penalized criterion}
@@ -236,30 +246,22 @@ stopifnot(all.equal(cars$dist,
 y18 <- c(1:3,5,4,7:3,2*(2:5),rep(10,4))
 xx  <- seq(1,length(y18), len=201)
 (s2  <- smooth.spline(y18)) # GCV
-(s02 <- smooth.spline(y18, spar = 0.2))
+(s02  <- smooth.spline(y18, spar = 0.2))
+(s02. <- smooth.spline(y18, spar = 0.2, cv=NA))
 plot(y18, main=deparse(s2$call), col.main=2)
 lines(s2, col = "gray"); lines(predict(s2, xx), col = 2)
 lines(predict(s02, xx), col = 3); mtext(deparse(s02$call), col = 3)
 
-## The following shows the problematic behavior of 'spar' searching:
-(s2  <- smooth.spline(y18, control = list(trace=TRUE,tol=1e-6, low= -1.5)))
-(s2m <- smooth.spline(y18, cv = TRUE,
-                      control = list(trace=TRUE,tol=1e-6, low= -1.5)))
-## both above do quite similarly (Df = 8.5 +- 0.2)
-
 \dontshow{
-% not for the user
-  s2. <- smooth.spline(y18, cv=TRUE,
-                       control=list(trace=TRUE, tol=1e-6,low= -3,maxit=20))
-  s2. ## Intel-Linux: Df ~= (even! > ) 18 : interpolating -- much smaller PRESS
-     ## {others, e.g., may end quite differently!}
-  lines(predict(s2., xx), col = 4)
-  mtext(deparse(s2.$call,200), side= 1, line= -1, cex= 0.8, col= 4)
-
-  sdf8 <- smooth.spline(y18, df = 8, control=list(trace=TRUE))
-  sdf8 ; sdf8$df - 8
-
-  try(smooth.spline(y18, spar = 50)) #>> error : spar 'way too large'
+stopifnot(all.equal(predict(s02, xx),
+		    predict(s02., xx), tol= 1e-15))
 }
-}
+\donttest{
+## The following shows the problematic behavior of 'spar' searching:
+(s2  <- smooth.spline(y18, control =
+                      list(trace = TRUE, tol = 1e-6, low = -1.5)))
+(s2m <- smooth.spline(y18, cv = TRUE, control =
+                      list(trace = TRUE, tol = 1e-6, low = -1.5)))
+## both above do quite similarly (Df = 8.5 +- 0.2)
+}}
 \keyword{smooth}

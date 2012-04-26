@@ -1,6 +1,6 @@
 % File src/library/base/man/regex.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{regex}
@@ -17,10 +17,8 @@
 }
 \details{
   A \sQuote{regular expression} is a pattern that describes a set of
-  strings.  Three types of regular expressions are used in \R,
-  \emph{extended} regular expressions, used by
-  \code{extended = TRUE} (the default), \emph{basic} regular
-  expressions, as used by \code{extended = FALSE}, and
+  strings.  Two types of regular expressions are used in \R,
+  \emph{extended} regular expressions (the default) and
   \emph{Perl-like} regular expressions used by \code{perl = TRUE}.
   There is a also \code{fixed = TRUE} which can be considered to use a
   \emph{literal} regular expression.
@@ -43,7 +41,7 @@
 
   Regular expressions are constructed analogously to arithmetic
   expressions, by using various operators to combine smaller
-  expressions. The whole expression matches zero or more characters
+  expressions.  The whole expression matches zero or more characters
   (read \sQuote{character} as \sQuote{byte} if \code{useBytes = TRUE}).
 
   The fundamental building blocks are the regular expressions that match
@@ -71,9 +69,9 @@
   giving the first and last characters, separated by a hyphen.  (Because
   their interpretation is locale- and implementation-dependent, they are
   best avoided.)  The only portable way to specify all ASCII letters is
-  to list them all as the character class
-  \samp{[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]}.  (The
-  current implementation uses numerical order of the encoding: prior to
+  to list them all as the character class\cr
+  \samp{[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]}.\cr
+  (The current implementation uses numerical order of the encoding: prior to
   \R 2.10.0 locale-specific collation was used, and might be again.)
 
   Certain named classes of characters are predefined.  Their
@@ -87,8 +85,9 @@
     \item{\samp{[:alpha:]}}{Alphabetic characters: \samp{[:lower:]} and
       \samp{[:upper:]}.}
 
-    \item{\samp{[:blank:]}}{Blank characters: space and tab. (This is an
-      extension to the POSIX standard.)}
+    \item{\samp{[:blank:]}}{Blank characters: space and tab, and
+      possibly other locale-dependent characters such as non-breaking
+      space.}
 
     \item{\samp{[:cntrl:]}}{
       Control characters.  In ASCII, these characters have octal codes
@@ -105,17 +104,17 @@
     \item{\samp{[:print:]}}{
       Printable characters: \samp{[:alnum:]}, \samp{[:punct:]} and space.}
 
-    \item{\samp{[:punct:]}}{Punctuation characters:
+    \item{\samp{[:punct:]}}{Punctuation characters:\cr
       \samp{! " # $ \% & ' ( ) * + , - . / : ; < = > ? @ [ \\ ] ^ _ ` \{ | \} ~}.}
 %'"`  keep Emacs Rd mode happy
 
     \item{\samp{[:space:]}}{
       Space characters: tab, newline, vertical tab, form feed, carriage
-      return, and space.}
+      return, space and possibly other locale-dependent characters.}
 
     \item{\samp{[:upper:]}}{Upper-case letters in the current locale.}
 
-    \item{\samp{[:xdigit:]}}{Hexadecimal digits:
+    \item{\samp{[:xdigit:]}}{Hexadecimal digits:\cr
       \samp{0 1 2 3 4 5 6 7 8 9 A B C D E F a b c d e f}.}
   }
 
@@ -193,25 +192,7 @@
   extension for extended regular expressions: POSIX defines them only
   for basic ones.)
 }
-\section{Basic Regular Expressions}{
-  Basic regular expressions are used if \code{extended = FALSE} is
-  specified.  These are regarded as obsolete and were deprecated in \R
-  2.10.0; you should not rely on their conformance to the quirks
-  described in POSIX standard.
-
-  In basic regular expressions the metacharacters \samp{?}, \samp{+},
-  \samp{\{}, \samp{|}, \samp{(}, and \samp{)} lose their special meaning;
-  instead use the backslashed versions \samp{\\?}, \samp{\\+},
-  \samp{\\ \{}, \samp{\\|}, \samp{\\(}, and \samp{\\)}.  Thus the
-  metacharacters are \samp{. \\ [ ^ $ *}, and \samp{^ $} only have a
-  special meaning at the beginning/end of an expression or parenthesized
-  subexpression.
-
-  Instead, either use \code{fixed = TRUE} to remove all metacharacters
-  or use extended regular expressions with appropriate escapes for
-  metacharacters.
-}
-\section{Perl Regular Expressions}{
+\section{Perl-like Regular Expressions}{
   The \code{perl = TRUE} argument to \code{grep}, \code{regexpr},
   \code{gregexpr}, \code{sub}, \code{gsub} and \code{strsplit} switches
   to the PCRE library that implements regular expression pattern
@@ -221,7 +202,7 @@
   For complete details please consult the man pages for PCRE, especially
   \command{man pcrepattern} and \command{man pcreapi}), on your system or from
   the sources at \url{http://www.pcre.org}. If PCRE support was compiled
-  from the sources within \R, the PCRE version is 8.0 as described here.
+  from the sources within \R, the PCRE version is 8.12 as described here.
 
   Perl regular expressions can be computed byte-by-byte or
   (UTF-8) character-by-character: the latter is used in all multibyte
@@ -294,7 +275,7 @@
   matches only at end of a subject. and \samp{\\G} matches at first
   matching position in a subject (which is subtly different from Perl's
   end of the previous match).  \samp{\\C} matches a single
-  byte. including a newline, but its use is warned against.  In UTF-8
+  byte, including a newline, but its use is warned against.  In UTF-8
   mode, \samp{\\R} matches any Unicode newline character (not just CR),
   and \samp{\\X} matches any number of Unicode characters that form an
   extended Unicode sequence.
@@ -325,13 +306,19 @@
   Patterns \samp{(?<=...)} and \samp{(?<!...)} are the lookbehind
   equivalents: they do not allow repetition quantifiers nor \samp{\\C}
   in \code{\dots}.
+  
+  As from \R 2.14.0 \code{regexpr} and \code{gregexpr} support
+  \sQuote{named capture}.  If groups are named, e.g.,
+  \code{"(?<first>[A-Z][a-z]+)"} then the positions of the matches are
+  also returned by name.  (Named backreferences are not supported by
+  \code{sub}.)
 
-  Named subpatterns, atomic grouping, possessive qualifiers and conditional
+  Atomic grouping, possessive qualifiers and conditional
   and recursive patterns are not covered here.
 }
 \author{
   This help page is based on the documentation of GNU grep 2.4.2, the
-  TRE documentation and the POSIX standard,  and the \code{pcrepattern}
+  TRE documentation and the POSIX standard, and the \code{pcrepattern}
   man page from PCRE 8.0.
 }
 \seealso{
@@ -343,7 +330,7 @@
   \url{http://laurikari.net/tre/documentation/regex-syntax/}).
 
   The POSIX 1003.2 standard at
-  \url{http://www.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap09.html}
+  \url{http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html#tag_09}
 
   The \code{pcrepattern} can be found as part of
   \url{http://www.pcre.org/pcre.txt}, and details of Perl's own

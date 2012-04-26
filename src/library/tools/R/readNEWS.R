@@ -27,7 +27,13 @@ readNEWS <- function(file = file.path(R.home(), "NEWS"),
 
     rmIniTABs	   <- function(ch) sub("^\t+", "", ch)
     rmTABs	   <- function(ch) gsub("\t+", "", ch)
-    collapseWSpace <- function(ch) gsub("[\t ]+", " ", ch)
+    collapseWSpace <- function(ch) {
+        ## This used to be
+        ##   gsub("[\t ]+", " ", ch)
+        ## which removes sentence-end double spaces.
+        ch <- gsub("[\t ]{2,}", "  ", ch)
+        gsub("\t", " ", ch)
+    }
     "%nIN%" <- function(x,table) is.na(match(x, table))
 
     chop1st <- function(cvec) {
@@ -35,7 +41,7 @@ readNEWS <- function(file = file.path(R.home(), "NEWS"),
 	n <- length(cvec); if(n <= 1L) return(cvec)
 	## else	 n >= 2
 	empty <- grep("^[\t ]*$", cvec)
-	cvec[if(any(!empty)) which(!empty)[1L] else 1]
+	cvec[if(any(!empty)) which(!empty)[1L] else 1L]
     }
 
     chopPara <- function(cvec) {
@@ -90,7 +96,7 @@ readNEWS <- function(file = file.path(R.home(), "NEWS"),
 
 	iS <- c(iS, nl+1L)
 	for(i in seq_along(entries))
-	    entries[[i]] <- parseEntry(ll[iS[i] : (iS[i+1] - 1L)])
+	    entries[[i]] <- parseEntry(ll[iS[i] : (iS[i+1L] - 1L)])
 	entries
     }
 
@@ -100,14 +106,14 @@ readNEWS <- function(file = file.path(R.home(), "NEWS"),
 	## Arguments: ll: lines of text (character vector)
 	##	     ver: version number of version, e.g., '2.2.1 patched'
 	if(trace) cat("	 parseVersion(*, ver =", ver,"),")
-	s.pre <- "^[A-Z]+"
+	s.pre <- "^[A-Z0-9]+"
 	iC <- grep(s.pre, ll)
 	if(trace) cat("	 with ", length(iC), "sections\n")
 	sections <- as.list(iC)
 	names(sections) <- ll[iC]
-	iC <- c(iC, length(ll)+1L) # such that	 iC[i] : (iC[i+1]-1)  makes sense
+	iC <- c(iC, length(ll)+1L) # such that	 iC[i] : (iC[i+1L]-1)  makes sense
 	for(i in seq_along(sections))
-	    sections[[i]] <- parseSection(ll[(iC[i]+ 1L) : (iC[i+1] - 1L)],
+	    sections[[i]] <- parseSection(ll[(iC[i]+ 1L) : (iC[i+1L] - 1L)],
 					  kind = names(sections)[i])
 	sections
     }
@@ -123,19 +129,19 @@ readNEWS <- function(file = file.path(R.home(), "NEWS"),
 	versions <- as.list(iC)
 	names(versions) <- sub(s.pre, "", ll[iC])
 
-	iC <- c(iC, length(ll)+1L) # such that	 iC[i] : (iC[i+1]-1)  makes sense
+	iC <- c(iC, length(ll)+1L) # such that	 iC[i] : (iC[i+1L]-1)  makes sense
 	for(i in seq_along(versions))
-	    versions[[i]] <- parseVersion(ll[(iC[i]+ 1L) : (iC[i+1] - 1L)],
+	    versions[[i]] <- parseVersion(ll[(iC[i]+ 1L) : (iC[i+1L] - 1L)],
 					  ver = names(versions)[i])
 	versions
     }
-    
+
     # Check if the lines are in a native encoding
     # but have a UTF-8 byte-order mark
-    
+
     hasBOM <- function(lines) {
-        length(lines) >= 1 &&
-    	Encoding(line <- lines[1]) == "unknown" && 
+        length(lines) >= 1L &&
+    	Encoding(line <- lines[1L]) == "unknown" &&
     	nchar(line, type="bytes") >= 3 &&
     	identical( as.integer(charToRaw(line)[1:3]),
     	                         c(0xefL, 0xbbL, 0xbfL) )
@@ -143,7 +149,7 @@ readNEWS <- function(file = file.path(R.home(), "NEWS"),
 
     tfile <- file
     if(is.character(file)) {
-        tfile <- normalizePath(file)
+        tfile <- normalizePath(file) # used for trace message.
         file <- file(file, "r")
         on.exit(close(file))
     }
@@ -156,7 +162,7 @@ readNEWS <- function(file = file.path(R.home(), "NEWS"),
     ## We could read in parts ...
     ll <- readLines(file)
     if (hasBOM(ll)) Encoding(ll) <- "UTF-8"
-    
+
     nl <- length(ll)
     if(trace) {
         if(is.character(tfile))
@@ -179,7 +185,7 @@ readNEWS <- function(file = file.path(R.home(), "NEWS"),
         cat("Now parsing each: ...\n")
     }
 
-    iS <- c(iS, nl+1L) # such that  iS[i] : (iS[i+1]-1)  makes sense
+    iS <- c(iS, nl+1L) # such that  iS[i] : (iS[i+1L]-1)  makes sense
     ## At least for 'keepAll', we need to get rid of the whole series
     ## header (could also do this in general, of course):
     if(chop == "keepAll") {
@@ -194,7 +200,7 @@ readNEWS <- function(file = file.path(R.home(), "NEWS"),
     } else {
         for(i in seq_along(series))
             series[[i]] <-
-                parseSeries(ll[(iS[i] + 1L) : (iS[i+1] - 1L)],
+                parseSeries(ll[(iS[i] + 1L) : (iS[i+1L] - 1L)],
                             ver = names(series)[i])
     }
     attr(series, "call") <- cl

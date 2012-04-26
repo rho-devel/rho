@@ -1,6 +1,6 @@
 % File src/library/utils/man/combn.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{combn}
@@ -21,7 +21,7 @@ combn(x, m, FUN = NULL, simplify = TRUE, \dots)
 }
 \arguments{
   \item{x}{vector source for combinations, or integer \code{n} for
-    \code{x <- \link{seq}(n)}.}
+    \code{x <- \link{seq_len}(n)}.}
   \item{m}{number of elements to choose.}
   \item{FUN}{function to be applied to each combination; default
     \code{NULL} means the identity, i.e., to return the combination
@@ -36,8 +36,9 @@ combn(x, m, FUN = NULL, simplify = TRUE, \dots)
   \item{\dots}{optionally, further arguments to \code{FUN}.}
 }
 \value{
-  a \code{\link{list}} or \code{\link{array}} (in nondegenerate cases),
-  see the \code{simplify} argument above.
+  a \code{\link{list}} or \code{\link{array}}, see the \code{simplify}
+  argument above.  In the latter case, the identity
+  \code{dim(combn(n,m)) == c(m, choose(n,m))} holds.
 }
 \references{
   Nijenhuis, A. and Wilf, H.S. (1978)
@@ -68,6 +69,11 @@ combn(c(1,1,1,1,2,2,2,3,3,4), 3, tabulate, nbins = 4)
 ## Compute support points and (scaled) probabilities for a
 ## Multivariate-Hypergeometric(n = 3, N = c(4,3,2,1)) p.f.:
 # table.mat(t(combn(c(1,1,1,1,2,2,2,3,3,4), 3, tabulate,nbins=4)))
+
+## Assuring the identity
+for(n in 1:7)
+ for(m in 0:n) stopifnot(is.array(cc <- combn(n, m)),
+                         dim(cc) == c(m, choose(n,m)))
 }
 \keyword{utilities}
 \keyword{iteration}

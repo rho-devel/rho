@@ -37,7 +37,7 @@ options(stringsAsFactors = TRUE)
 if(!interactive() && is.null(getOption("showErrorCalls")))
     options(showErrorCalls = TRUE)
 
-local({dp <- as.vector(Sys.getenv("R_DEFAULT_PACKAGES"))
+local({dp <- Sys.getenv("R_DEFAULT_PACKAGES")
        if(identical(dp, "")) # marginally faster to do methods last
            dp <- c("datasets", "utils", "grDevices", "graphics",
                    "stats", "methods")
@@ -57,10 +57,10 @@ Sys.setenv(R_LIBS_USER =
 {
     for(pkg in getOption("defaultPackages")) {
         res <- require(pkg, quietly = TRUE, warn.conflicts = FALSE,
-                       character.only = TRUE, save = FALSE)
+                       character.only = TRUE)
         if(!res)
-            warning("package ", pkg,
-                    ' in options("defaultPackages") was not found', call.=FALSE)
+            warning(gettextf('package %s in options("defaultPackages") was not found', sQuote(pkg)),
+                    call.=FALSE, domain = NA)
     }
 }
 
@@ -68,14 +68,13 @@ Sys.setenv(R_LIBS_USER =
 {
       if("methods" %in% getOption("defaultPackages")) {
         res <- require("methods", quietly = TRUE, warn.conflicts = FALSE,
-                       character.only = TRUE, save = FALSE)
+                       character.only = TRUE)
         if(!res)
-            warning("package \"methods\"",
-                    ' in options("defaultPackages") was not found', call.=FALSE)
+            warning('package "methods" in options("defaultPackages") was not found', call.=FALSE)
     }
 }
 
-if(Sys.getenv("R_BATCH") != "") {
+if(nzchar(Sys.getenv("R_BATCH"))) {
     .Last.sys <- function()
     {
         cat("> proc.time()\n")

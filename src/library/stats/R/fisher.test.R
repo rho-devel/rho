@@ -25,7 +25,7 @@ function(x, y = NULL, workspace = 200000, hybrid = FALSE,
     if(is.data.frame(x))
         x <- as.matrix(x)
     if(is.matrix(x)) {
-        if(any(dim(x) < 2))
+        if(any(dim(x) < 2L))
             stop("'x' must have at least 2 rows and columns")
         if(!is.numeric(x) || any(x < 0) || any(is.na(x)))
             stop("all entries of 'x' must be nonnegative and finite")
@@ -46,9 +46,11 @@ function(x, y = NULL, workspace = 200000, hybrid = FALSE,
             stop("'x' and 'y' must have the same length")
         DNAME <- paste(DNAME, "and", deparse(substitute(y)))
         OK <- complete.cases(x, y)
-        x <- factor(x[OK])
-        y <- factor(y[OK])
-        if((nlevels(x) < 2) || (nlevels(y) < 2))
+        ## use as.factor rather than factor here to be consistent with
+        ## pre-tabulated data
+        x <- as.factor(x[OK])
+        y <- as.factor(y[OK])
+        if((nlevels(x) < 2L) || (nlevels(y) < 2L))
             stop("'x' and 'y' must have at least 2 levels")
         x <- table(x, y)
     }
@@ -64,12 +66,12 @@ function(x, y = NULL, workspace = 200000, hybrid = FALSE,
     if((nr == 2) && (nc == 2)) {
         alternative <- char.expand(alternative,
                                    c("two.sided", "less", "greater"))
-        if(length(alternative) > 1 || is.na(alternative))
+        if(length(alternative) > 1L || is.na(alternative))
             stop("alternative must be \"two.sided\", \"less\" or \"greater\"")
-        if(!((length(conf.level) == 1) && is.finite(conf.level) &&
+        if(!((length(conf.level) == 1L) && is.finite(conf.level) &&
              (conf.level > 0) && (conf.level < 1)))
             stop("'conf.level' must be a single number between 0 and 1")
-        if(!missing(or) && (length(or) > 1 || is.na(or) || or < 0))
+        if(!missing(or) && (length(or) > 1L || is.na(or) || or < 0))
             stop("'or' must be a single number between 0 and Inf")
     }
 
@@ -92,7 +94,7 @@ function(x, y = NULL, workspace = 200000, hybrid = FALSE,
             sc <- colSums(x)
             n <- sum(sc)
             STATISTIC <- -sum(lfactorial(x))
-	    tmp <- .C("fisher_sim",
+	    tmp <- .C(C_fisher_sim,
 		      as.integer(nr),
 		      as.integer(nc),
 		      as.integer(sr),
@@ -109,7 +111,7 @@ function(x, y = NULL, workspace = 200000, hybrid = FALSE,
             ## PR#10558: STATISTIC is negative
 	    PVAL <- (1 + sum(tmp <= STATISTIC/almost.1)) / (B + 1)
         } else if(hybrid) {
-            PVAL <- .C("fexact",
+            PVAL <- .C(C_fexact,
                        nr,
                        nc,
                        x,
@@ -124,20 +126,21 @@ function(x, y = NULL, workspace = 200000, hybrid = FALSE,
                        mult = as.integer(mult),
                        PACKAGE = "stats")$p
         } else
-            PVAL <- .C("fexact",
+            PVAL <- .C(C_fexact,
                        nr,
                        nc,
                        x,
                        nr,
                        as.double(-1),#  expect < 0 : exact
                        as.double(100),
-                       as.double(0L),
+                       as.double(0),
                        double(1),#   prt
                        p = double(1),
                        as.integer(workspace),
                        mult = as.integer(mult),
                        PACKAGE = "stats")$p
-        RVAL <- list(p.value = PVAL)
+
+        RVAL <- list(p.value = max(0, min(1, PVAL)))
     }
 
     if((nr == 2) && (nc == 2)) {## conf.int and more only in  2 x 2 case
@@ -173,29 +176,19 @@ function(x, y = NULL, workspace = 200000, hybrid = FALSE,
             sum(support * dnhyper(ncp))
         }
         pnhyper <- function(q, ncp = 1, upper.tail = FALSE) {
-            if(ncp == 1) {
-                if(upper.tail)
-                    return(phyper(x - 1, m, n, k, lower.tail = FALSE))
-                else
-                    return(phyper(x, m, n, k))
-            }
-            if(ncp == 0) {
-                if(upper.tail)
-                    return(as.numeric(q <= lo))
-                else
-                    return(as.numeric(q >= lo))
-            }
-            if(ncp == Inf) {
-                if(upper.tail)
-                    return(as.numeric(q <= hi))
-                else
-                    return(as.numeric(q >= hi))
-            }
-            d <- dnhyper(ncp)
-            if(upper.tail)
-                sum(d[support >= q])
-            else
-                sum(d[support <= q])
+	    if(ncp == 1) {
+		return(if(upper.tail)
+		       phyper(x - 1, m, n, k, lower.tail = FALSE) else
+		       phyper(x,     m, n, k))
+	    }
+	    if(ncp == 0) {
+		return(as.numeric(if(upper.tail) q <= lo else q >= lo))
+	    }
+	    if(ncp == Inf) {
+		return(as.numeric(if(upper.tail) q <= hi else q >= hi))
+	    }
+	    ## else
+	    sum(dnhyper(ncp)[if(upper.tail) support >= q else support <= q])
         }
 
         ## Determine the p-value (if still necessary).

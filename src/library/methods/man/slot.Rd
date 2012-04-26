@@ -1,10 +1,12 @@
 % File src/library/methods/man/slot.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
+% Copyright 2005-2010 The R Foundation
 % Distributed under GPL 2 or later
 
 \name{slot}
 \alias{slot}
+\alias{.hasSlot}
 \alias{slot<-}
 \alias{@<-}
 \alias{slotNames}
@@ -16,15 +18,15 @@
   in an object.
 }
 \usage{
-object@name
+\special{object@name}% @ really is in base.
 object@name <- value
 
 slot(object, name)
 slot(object, name, check = TRUE) <- value
+.hasSlot(object, name)% not saying more; prefer is(), extends(), etc!
 
 slotNames(x)
 getSlots(x)
-
 }
 %% .slotNames(x)
 %%
@@ -105,7 +107,8 @@ getSlots(x)
   \code{\link{@}},
   \code{\link{Classes}},
   \code{\link{Methods}},
-  \code{\link{getClass}}
+  \code{\link{getClass}},
+  \code{\link{names}}.
 }
 \examples{
 \dontshow{if(isClass("track")) removeClass("track")}

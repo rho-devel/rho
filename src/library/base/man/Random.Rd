@@ -1,9 +1,10 @@
 % File src/library/base/man/Random.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Random}
+\alias{Random}
 \alias{RNG}
 \alias{RNGkind}
 \alias{RNGversion}
@@ -24,8 +25,7 @@
   \code{set.seed} is the recommended way to specify seeds.
 }
 \usage{
-.Random.seed <- c(rng.kind, n1, n2, \dots)
-save.seed <- .Random.seed
+\special{.Random.seed <- c(rng.kind, n1, n2, \dots)}
 
 RNGkind(kind = NULL, normal.kind = NULL)
 RNGversion(vstr)
@@ -112,9 +112,25 @@ set.seed(seed, kind = NULL, normal.kind = NULL)
       Initialization of this generator is done in interpreted \R code
       and so takes a short but noticeable time.
     }
+    \item{\code{"L'Ecuyer-CMRG":}}{
+      A \sQuote{combined multiple-recursive generator} from L'Ecuyer
+      (1999), each element of which is a feedback multiplicative
+      generator with three integer elements: thus the seed is a (signed)
+      integer vector of length 6. The period is around
+      \eqn{2^{191}}{2^191}.
+
+      The 6 elements of the seed are internally regarded as 32-bit
+      unsigned integers.  Neither the first three nor the last three
+      should be all zero, and they are limited to less than
+      \code{4294967087} and \code{4294944443} respectively.
+      
+      This is not particularly interesting of itself, but provides the
+      basis for the multiple streams used in package \pkg{parallel}.
+      % See \code{\link{RngStream}}.
+    }
 
     \item{\code{"user-supplied":}}{
-      Use a user-supplied generator. See \code{\link{Random.user}} for
+      Use a user-supplied generator.  See \code{\link{Random.user}} for
       details.
     }
   }
@@ -124,8 +140,8 @@ set.seed(seed, kind = NULL, normal.kind = NULL)
   \code{"Ahrens-Dieter"}, \code{"Box-Muller"}, \code{"Inversion"} (the
   default), or \code{"user-supplied"}.  (For inversion, see the
   reference in \code{\link{qnorm}}.)  The Kinderman-Ramage generator
-  used in versions prior to 1.7.1 (now called \code{"Buggy"} had several
-  approximation errors and should only be used for reproduction of older
+  used in versions prior to 1.7.1 (now called \code{"Buggy"}) had several
+  approximation errors and should only be used for reproduction of old
   results.  The \code{"Box-Muller"} generator is stateful as pairs of
   normals are generated and returned sequentially.  The state is reset
   whenever it is selected (even if it is the current normal generator)
@@ -135,7 +151,9 @@ set.seed(seed, kind = NULL, normal.kind = NULL)
   as are required.  It is intended as a simple way to get quite different
   seeds by specifying small integer arguments, and also as a way to get
   valid seed sets for the more complicated methods (especially
-  \code{"Mersenne-Twister"} and \code{"Knuth-TAOCP"}).
+  \code{"Mersenne-Twister"} and \code{"Knuth-TAOCP"}).  There is no
+  guarantee that different values of \code{seed} will seed the RNG
+  differently, although any exceptions would be extremely rare.
 
   The use of \code{kind=NULL} or \code{normal.kind=NULL} in
   \code{RNGkind} or \code{set.seed} selects the currently-used
@@ -144,11 +162,11 @@ set.seed(seed, kind = NULL, normal.kind = NULL)
   \code{"default"}.
 }
 \note{
-  Initially, there is no seed;  a new one is created from the current
-  time when one is required.  Hence, different sessions started at
-  (sufficiently) different times will give different simulation results,
-  by default.  However, the seed might be restored from a previous
-  session if a previously saved workspace is restored.
+  Initially, there is no seed; a new one is created from the current
+  time (and since \R 2.14.0, the process ID) when one is required.
+  Hence different sessions will give different simulation results, by
+  default.  However, the seed might be restored from a previous session
+  if a previously saved workspace is restored.
 
   \code{.Random.seed} saves the seed set for the uniform random-number
   generator, at least for the system generators.  It does not
@@ -197,10 +215,10 @@ set.seed(seed, kind = NULL, normal.kind = NULL)
 
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth & Brooks/Cole. (\code{set.seed}, storing in \code{.Random.seed}.)
+  Wadsworth & Brooks/Cole.  (\code{set.seed}, storing in \code{.Random.seed}.)
 
   Box, G. E. P. and Muller, M. E. (1958) A note on the generation of normal
-  random deviates. \emph{Annals of Mathematical Statistics} \bold{29},
+  random deviates.  \emph{Annals of Mathematical Statistics} \bold{29},
   610--611.
 
   De Matteis, A. and Pagnutti, S. (1993)
@@ -220,6 +238,10 @@ set.seed(seed, kind = NULL, normal.kind = NULL)
   \emph{The Art of Computer Programming.} Volume 2, third edition, ninth
   printing.\cr
   See \url{http://Sunburn.Stanford.EDU/~knuth/news02.html}.
+  
+  L'Ecuyer, P. (1999) Good parameters and implementations for combined
+  multiple recursive random number generators. \emph{Operations
+  Research} \bold{47}, 159--164.
 
   Marsaglia, G. (1997) \emph{A random number generator for C.} Discussion
   paper, posting on Usenet newsgroup \code{sci.stat.math} on
@@ -247,9 +269,13 @@ set.seed(seed, kind = NULL, normal.kind = NULL)
 }
 \author{of RNGkind: Martin Maechler. Current implementation, B. D. Ripley}
 
-\seealso{\code{\link{runif}}, \code{\link{rnorm}}, \ldots.}
-%       this is ./Uniform.Rd
-\examples{
+\seealso{
+  \code{\link{sample}} for random sampling with and without replacement.
+  
+  \link{Distributions} for functions for random-variate generation from
+  standard distributions.
+}
+\examples{\donttest{
 require(stats)
 
 ## the default random seed is 626 integers, so only print a few
@@ -290,6 +316,6 @@ RNGkind(ok[1])
 sum(duplicated(runif(1e6))) # around 110 for default generator
 ## and we would expect about almost sure duplicates beyond about
 qbirthday(1-1e-6, classes=2e9) # 235,000
-}
+}}
 \keyword{distribution}
 \keyword{sysdata}

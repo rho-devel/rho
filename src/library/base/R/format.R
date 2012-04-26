@@ -30,7 +30,8 @@ format.default <-
 	## do it this way to force evaluation of args
 	if(missing(trim)) trim <- TRUE
 	if(missing(justify)) justify <- "none"
-	res <- lapply(x, FUN=function(xx, ...) format.default(unlist(xx),...),
+	res <- lapply(X = x,
+                      FUN = function(xx, ...) format.default(unlist(xx),...),
 		      trim = trim, digits = digits, nsmall = nsmall,
 		      justify = justify, width = width, na.encode = na.encode,
 		      scientific = scientific,
@@ -62,7 +63,7 @@ format.default <-
 }
 
 format.pval <- function(pv, digits = max(1, getOption("digits")-2),
-			eps = .Machine$double.eps, na.form = "NA")
+			eps = .Machine$double.eps, na.form = "NA", ...)
 {
     ## Format  P values; auxiliary for print.summary.[g]lm(.)
 
@@ -74,8 +75,8 @@ format.pval <- function(pv, digits = max(1, getOption("digits")-2),
 	## be smart -- differ for fixp. and expon. display:
 	expo <- floor(log10(ifelse(pv > 0, pv, 1e-50)))
 	fixp <- expo >= -3 | (expo == -4 & digits>1)
-	if(any( fixp)) rr[ fixp] <- format(pv[ fixp], digits=digits)
-	if(any(!fixp)) rr[!fixp] <- format(pv[!fixp], digits=digits)
+	if(any( fixp)) rr[ fixp] <- format(pv[ fixp], digits=digits, ...)
+	if(any(!fixp)) rr[!fixp] <- format(pv[!fixp], digits=digits, ...)
 	r[!is0]<- rr
     }
     if(any(is0)) {
@@ -86,7 +87,7 @@ format.pval <- function(pv, digits = max(1, getOption("digits")-2),
 		digits <- max(1, nc - 7)
 	    sep <- if(digits==1 && nc <= 6) "" else " "
 	} else sep <- if(digits==1) "" else " "
-	r[is0] <- paste("<", format(eps, digits=digits), sep = sep)
+	r[is0] <- paste("<", format(eps, digits=digits, ...), sep = sep)
     }
     if(has.na) { ## rarely
 	rok <- r
@@ -113,7 +114,7 @@ formatC <- function (x, digits = NULL, width = NULL,
 		       justify = if(flag=="-") "left" else "right")
     }
     blank.chars <- function(no)
-	sapply(no+1L, function(n) paste(character(n), collapse=" "))
+	vapply(no+1L, function(n) paste(character(n), collapse=" "), "")
 
     if (!(n <- length(x))) return("")
     if (is.null(mode))	  mode <- storage.mode(x)
@@ -244,8 +245,12 @@ format.data.frame <- function(x, ..., justify = "none")
 	    oldClass(rval[[i]]) <- "AsIs"
     }
     cn <- names(x)
-    m <- match(c("row.names", "check.rows", "check.names"), cn, 0L)
+    m <- match(c("row.names", "check.rows", "check.names", ""), cn, 0L)
     if(any(m)) cn[m] <- paste("..dfd.", cn[m], sep="")
+    ## This requires valid symbols for the columns, so we need to
+    ## truncate any of more than 256 bytes.
+    long <- nchar(cn, "bytes") > 256L
+    cn[long] <- paste(substr(cn[long], 1L, 250L), "...")
     names(rval) <- cn
     rval$check.names <- FALSE
     rval$row.names <- row.names(x)
@@ -284,7 +289,7 @@ prettyNum <-
 {
     if(!is.character(x)) {
         is.cmplx <- is.complex(x)
-	x <- sapply(x, format, ...)
+	x <- sapply(X = x, FUN = format, ...)
     }
     ## be fast in trivial case (when all options have their default):
     nMark <- big.mark== "" && small.mark== "" && decimal.mark== "."
@@ -300,11 +305,13 @@ prettyNum <-
 	    zero.print <- if(zero.print) "0" else " "
 	if(!is.character(zero.print))
 	    stop("'zero.print' must be character, logical or NULL")
+	blank.chars <- function(no) # as in formatC()
+	    vapply(no+1L, function(n) paste(character(n), collapse=" "), "")
 	nz <- nchar(zero.print, "c")
 	nc <- nchar(x[i0], "c")
 	ind0 <- regexpr("0", x[i0], fixed = TRUE)# first '0' in string
-	substr(x[i0],ind0, ind0+nz-1) <- zero.print
-	substr(x[i0],ind0+nz, nc) <- " "
+	substr(x[i0],ind0, (i1 <- ind0+nz-1L)) <- zero.print
+	substr(x[i0],ind0+nz, nc) <- blank.chars(nc - i1)
     }
     if(nMark && !drop0trailing)# zero.print was only non-default
 	return(x)
@@ -321,20 +328,26 @@ prettyNum <-
 	## should be rare .. taking an easy route
 	z.sp <- strsplit(sub("([0-9] *)([-+])( *[0-9])",
 			     "\\1::\\2::\\3", x), "::", fixed=TRUE)
-	z.im <- sapply(z.sp, `[[`, 3L)
-	## drop ending 'i' (and later re-add it)
-	has.i <- grep("i$", z.im)
-	z.im[has.i] <- sub("i$", '', z.im[has.i])
-	r <- lapply(list(sapply(z.sp, `[[`, 1L), z.im),
-		    function(.)
-		    prettyNum(.,
-			      big.mark=big.mark, big.interval=big.interval,
-			      small.mark=small.mark, small.interval=small.interval,
-			      decimal.mark=decimal.mark, preserve.width=preserve.width,
-			      zero.print=zero.print, drop0trailing=drop0trailing,
-			      is.cmplx=FALSE, ...))
-	r[[2]][has.i] <- P0(r[[2]][has.i], "i")
-	return(paste(r[[1]], r[[2]], sep = sapply(z.sp, `[[`, 2L)))
+	## be careful, if x had an  "	NA":
+	i3 <- vapply(z.sp, length, 0L) == 3L # those are re + im *i
+	if(any(i3)) {
+	    z.sp <- z.sp[i3]
+	    z.im <- sapply(z.sp, `[[`, 3L)
+	    ## drop ending 'i' (and later re-add it)
+	    has.i <- grep("i$", z.im)
+	    z.im[has.i] <- sub("i$", '', z.im[has.i])
+	    r <- lapply(list(sapply(z.sp, `[[`, 1L), z.im),
+			function(.)
+			prettyNum(.,
+				  big.mark=big.mark, big.interval=big.interval,
+				  small.mark=small.mark, small.interval=small.interval,
+				  decimal.mark=decimal.mark, preserve.width=preserve.width,
+				  zero.print=zero.print, drop0trailing=drop0trailing,
+				  is.cmplx=FALSE, ...))
+	    r[[2]][has.i] <- P0(r[[2]][has.i], "i")
+	    x[i3] <- paste(r[[1]], sapply(z.sp, `[[`, 2L), r[[2]], sep="")
+	}
+	return(x)
     }
     preserve.width <- match.arg(preserve.width)
     x.sp <- strsplit(x, ".", fixed=TRUE)
@@ -349,7 +362,7 @@ prettyNum <-
        ) { ## add 'big.mark' in decimals before "." :
 	B.[i.big] <-
 	    revStr(gsub(P0("([0-9]{",big.interval,"})\\B"),
-			P0("\\1",big.mark), revStr(B.[i.big])))
+			P0("\\1",revStr(big.mark)), revStr(B.[i.big])))
     }
     if(nzchar(small.mark) &&
        length(i.sml <- grep(P0("[0-9]{", small.interval + 1L,",}"), A.))

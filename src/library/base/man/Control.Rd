@@ -1,6 +1,6 @@
 % File src/library/base/man/Control.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Control}
@@ -61,17 +61,18 @@ next
   is to always use braces, e.g., for \code{if} clauses.
 
   The \code{seq} in a \code{for} loop is evaluated at the start of
-  the loop; changing it subsequently does not affect the loop. If
+  the loop; changing it subsequently does not affect the loop.  If
   \code{seq} has length zero the body of the loop is skipped. Otherwise the
   variable \code{var} is assigned in turn the value of each element of
   \code{seq}. You can assign to \code{var} within the body of the loop,
-  but this will not affect the next iteration. When the loop terminates,
+  but this will not affect the next iteration.  When the loop terminates,
   \code{var} remains as a variable containing its latest value.
 
 }
 \value{
   \code{if} returns the value of the expression evaluated, or
-  \code{NULL} if none was (which may happen if there is no \code{else}).
+  \code{NULL} invisibly if none was (which may happen if there is no
+  \code{else}).
 
   \code{for}, \code{while} and \code{repeat} return \code{NULL} invisibly.
   \code{for} sets \code{var} to the last used element of \code{seq},
@@ -88,8 +89,9 @@ next
 }
 \seealso{
   \code{\link{Syntax}} for the basic \R syntax and operators,
-  \code{\link{Paren}} for parentheses and braces; further,
-  \code{\link{ifelse}}, \code{\link{switch}}.
+  \code{\link{Paren}} for parentheses and braces.
+  
+  \code{\link{ifelse}}, \code{\link{switch}} for other ways to control flow.
 }
 \examples{
 for(i in 1:5) print(1:i)

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -55,8 +55,7 @@ double pweibull(double x, double shape, double scale, int lower_tail, int log_p)
     if (lower_tail)
 	return (log_p
 		/* log(1 - exp(x))  for x < 0 : */
-		? (x > -M_LN2 ? log(-expm1(x)) : log1p(-exp(x)))
-		: -expm1(x));
+		? R_Log1_Exp(x) : -expm1(x));
     /* else:  !lower_tail */
     return R_D_exp(x);
 }

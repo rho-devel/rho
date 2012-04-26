@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -58,16 +58,18 @@ double pnchisq(double x, double df, double ncp, int lower_tail, int log_p)
     ans = pnchisq_raw(x, df, ncp, 1e-12, 8*DBL_EPSILON, 1000000, lower_tail);
     if(ncp >= 80) {
 	if(lower_tail) {
-	    /* if(ans >= 1-1e-10) have no idea how close to 1 the true value is,
-	     *   but ML_ERROR(ME_PRECISION, "pnchisq") seems too harsh */
 	    ans = fmin2(ans, 1.0);  /* e.g., pchisq(555, 1.01, ncp = 80) */
-	}
-	else { /* !lower_tail */
+	} else { /* !lower_tail */
+	    /* since we computed the other tail cancellation is likely */
 	    if(ans < 1e-10) ML_ERROR(ME_PRECISION, "pnchisq");
 	    ans = fmax2(ans, 0.0);  /* Precaution PR#7099 */
 	}
     }
-    return log_p ? log(ans) : ans;
+    if (!log_p) return ans;
+    /* if ans is near one, we can do better using the other tail */
+    if (ncp >= 80 || ans < 1 - 1e-8) return log(ans);
+    ans = pnchisq_raw(x, df, ncp, 1e-12, 8*DBL_EPSILON, 1000000, !lower_tail);
+    return log1p(-ans);
 }
 
 double attribute_hidden
@@ -78,7 +80,7 @@ pnchisq_raw(double x, double f, double theta,
     double l_lam = -1., l_x = -1.; /* initialized for -Wall */
     int n;
     Rboolean lamSml, tSml, is_r, is_b, is_it;
-    LDOUBLE ans, u, v, t, lt, lu =-1;
+    long double ans, u, v, t, lt, lu =-1;
 
     static const double _dbl_min_exp = M_LN2 * DBL_MIN_EXP;
     /*= -708.3964 for IEEE double precision */
@@ -97,14 +99,14 @@ pnchisq_raw(double x, double f, double theta,
 #endif
 
     if(theta < 80) { /* use 110 for Inf, as ppois(110, 80/2, lower.tail=FALSE) is 2e-20 */
-	LDOUBLE sum = 0, sum2 = 0, lambda = 0.5*theta, pr = exp(-lambda);
+	long double sum = 0, sum2 = 0, lambda = 0.5*theta, pr = exp(-lambda);
 	double ans;
 	int i;
 	/* we need to renormalize here: the result could be very close to 1 */
 	for(i = 0; i < 110;  pr *= lambda/++i) {
 	    sum2 += pr;
-	    /* could break once sum2 is essentially 1 */
 	    sum += pr * pchisq(x, f+2*i, lower_tail, FALSE);
+	    if (sum2 >= 1-1e-15) break;
 	}
 	ans = sum/sum2;
 	return ans;

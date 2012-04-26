@@ -4,7 +4,8 @@
 % Distributed under GPL 2 or later
 
 \name{SSlogis}
-\title{Logistic Model}
+\encoding{UTF-8}
+\title{Self-Starting Nls Logistic Model}
 \usage{
 SSlogis(input, Asym, xmid, scal)
 }
@@ -30,18 +31,19 @@ SSlogis(input, Asym, xmid, scal)
   names of objects the gradient matrix with respect to these names is attached as
   an attribute named \code{gradient}.
 }
-\author{Jose Pinheiro and Douglas Bates}
+\author{\enc{José}{Jose} Pinheiro and Douglas Bates}
 \seealso{\code{\link{nls}}, \code{\link{selfStart}}
 }
-\examples{
+\examples{\donttest{
 Chick.1 <- ChickWeight[ChickWeight$Chick == 1, ]
-SSlogis( Chick.1$Time, 368, 14, 6 )  # response only
+SSlogis(Chick.1$Time, 368, 14, 6)  # response only
 Asym <- 368; xmid <- 14; scal <- 6
-SSlogis( Chick.1$Time, Asym, xmid, scal ) # response and gradient
+SSlogis(Chick.1$Time, Asym, xmid, scal) # response and gradient
 getInitial(weight ~ SSlogis(Time, Asym, xmid, scal), data = Chick.1)
 ## Initial values are in fact the converged values
 fm1 <- nls(weight ~ SSlogis(Time, Asym, xmid, scal), data = Chick.1)
 summary(fm1)
+}
 \dontshow{
 require(graphics)
 
@@ -66,6 +68,5 @@ require(graphics)
   arrows(2.3, 3.8, 2.0, 3.8, length = 0.08, angle = 25)
   arrows(2.7, 3.8, 3.0, 3.8, length = 0.08, angle = 25)
   text(2.5, 3.8, expression(phi[3]), adj = c(0.5, 0.5))
-}
-}
+}}
 \keyword{models}

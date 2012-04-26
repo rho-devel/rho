@@ -48,8 +48,7 @@ checkRd(Rd, defines = .Platform$OS.type, stages = "render",
   level 0.  These include
   \tabular{l}{
     All text must be in a section\cr
-    Only one \verb{\examples} section is allowed: the first will be used\cr
-    Only one \verb{\encoding} section is allowed: the first will be used\cr
+    Only one \var{tag name} section is allowed: the first will be used\cr
     Section \var{name} is unrecognized and will be dropped\cr
     Dropping empty section \var{name}\cr
   }
@@ -62,11 +61,12 @@ checkRd(Rd, defines = .Platform$OS.type, stages = "render",
     7 \tab Must have a \var{tag name}\cr
     7 \tab Only one \var{tag name} is allowed\cr
     7 \tab Tag \var{tag name} must not be empty\cr
-    7 \tab 'docType' must be plain text\cr
+    7 \tab \verb{\docType} must be plain text\cr
     5 \tab Tag \verb{\method} is only valid in \verb{\usage}\cr
     5 \tab Tag \verb{\dontrun} is only valid in \verb{\examples}\cr
     5 \tab Tag \var{tag name} is invalid in a \var{block name} block\cr
     5 \tab Title of \verb{\section} must be non-empty plain text\cr
+    5 \tab \verb{\title} content must be plain text\cr
     3 \tab Empty section \var{tag name}\cr
     -1 \tab Non-ASCII contents without declared encoding\cr
     -1 \tab Non-ASCII contents in second part of \verb{\enc}\cr 

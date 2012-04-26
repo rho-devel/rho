@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -230,6 +230,8 @@ struct xdr_discrim {
  * N.B. and frozen for all time: each data type here uses 4 bytes
  * of external representation.
  */
+
+#ifdef UNUSED
 #define IXDR_GET_LONG(buf)		((long)ntohl((u_long)*(buf)++))
 #define IXDR_PUT_LONG(buf, v)		(*(buf)++ = (long)htonl((u_long)v))
 
@@ -244,6 +246,7 @@ struct xdr_discrim {
 #define IXDR_PUT_U_LONG(buf, v)		IXDR_PUT_LONG((buf), ((long)(v)))
 #define IXDR_PUT_SHORT(buf, v)		IXDR_PUT_LONG((buf), ((long)(v)))
 #define IXDR_PUT_U_SHORT(buf, v)	IXDR_PUT_LONG((buf), ((long)(v)))
+#endif
 
 /*
  * These are the "generic" xdr routines.

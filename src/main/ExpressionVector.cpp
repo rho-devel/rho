@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -39,10 +39,6 @@
 
 #include "CXXR/ExpressionVector.h"
 
-#include "CXXR/ListVector.h"
-#include "CXXR/Symbol.h"
-
-using namespace std;
 using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
@@ -54,29 +50,11 @@ namespace CXXR {
     }
 }
 
-ExpressionVector::ExpressionVector(ListVector& lv)
-    : HandleVector<RObject, EXPRSXP>(lv.size())
-{
-    for (unsigned int i = 0; i < size(); ++i)
-	(*this)[i] = lv[i];
-    SEXP names = Rf_getAttrib(&lv, R_NamesSymbol);
-    if (names) {
-	// Rf_setAttrib protects its args, so we need to expose first:
-	expose();
-	Rf_setAttrib(this, R_NamesSymbol, names);
-    }
-}
-
-ExpressionVector* ExpressionVector::clone() const
-{
-    return expose(new ExpressionVector(*this));
-}
-
 // ***** C interface *****
 
 SEXP SET_XVECTOR_ELT(SEXP x, int i, SEXP v)
 {
-    ExpressionVector* ev = SEXP_downcast<ExpressionVector*>(x);
+    ExpressionVector* ev = SEXP_downcast<ExpressionVector*>(x, false);
     (*ev)[i] = v;
     return v;
 }

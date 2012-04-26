@@ -1,11 +1,11 @@
 % File src/library/base/man/base-defunct.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{base-defunct}
 \alias{base-defunct}
-\title{Defunct Functions in Base Package}
+\title{Defunct Functions in Package \pkg{base}}
 %------ PLEASE: put \alias{.} here for  EACH !
 \alias{Version}
 \alias{provide}
@@ -52,10 +52,15 @@
 \alias{unix}
 \alias{gammaCody}
 \alias{manglePackageName}
+\alias{.Import}
+\alias{.ImportFrom}
+\alias{.Export}
+\alias{.S3method}
+\alias{.First.lib}
 %
 \description{
   The functions or variables listed here are no longer part of \R as
-  they are not needed (any more).
+  they are no longer needed.
 }
 \usage{
 %--- oldfun(.)
@@ -135,6 +140,15 @@ gammaCody(x)
 % Removed in 2.9.0
 manglePackageName(pkgName, pkgVersion)
 % </Removed 2.9.0>
+% Removed in 2.13.0
+.Import(...)
+.ImportFrom(name, ...)
+.Export(...)
+.S3method(generic, class, method)
+% </Removed 2.13.0>
+% Removed in 2.14.0
+.First.lib(lib, pkg)
+% </Removed 2.14.0>
 }
 \details{
   \code{category} has been an old-S function before there were factors;
@@ -159,9 +173,9 @@ manglePackageName(pkgName, pkgVersion)
   faster, but has a slightly different interface.
 
   \code{.Alias} provided an unreliable way to create duplicate
-  references to the same object. There is no direct replacement. Where
+  references to the same object.  There is no direct replacement.  Where
   multiple references to a single object are required for semantic
-  reasons consider using environments or external pointers. There are
+  reasons consider using environments or external pointers.  There are
   some notes on \url{http://developer.r-project.org}.
 
   \code{.Dyn.libs} and \code{.lib.loc} were internal variables used for
@@ -179,14 +193,14 @@ manglePackageName(pkgName, pkgVersion)
   a way that cannot be replaced with \code{try()} then ask for help
   on \code{r-devel}.
 
-  \code{printNoClass} was in package \pkg{methods} and calls directly the
+  \code{printNoClass} was in package \pkg{methods} and called directly the
   internal function \code{print.default}.
 
   \code{codes} was almost always used inappropriately.  To get the
   internal coding of a factor, use \code{unclass}, \code{as.vector} or
   \code{as.integer}.  For \emph{ordered} factors, \code{codes} was
   equivalent to these, but for \emph{unordered} factors it assumed an
-  an alphabetical ordering of the levels in the locale in use.
+  alphabetical ordering of the levels in the locale in use.
 
   \code{La.eigen} has become the default for \code{\link{eigen}}.
 
@@ -210,7 +224,7 @@ manglePackageName(pkgName, pkgVersion)
   \code{La.chol} and \code{La.chol2inv} became the default methods for
   \code{\link{chol}} and \code{\link{chol2inv}}.
 
-  Functions \code{symbol.C} and \code{symbol.For} are for historical
+  Functions \code{symbol.C} and \code{symbol.For} were for historical
   compatibility with S.  \code{symbol.C} just returns its argument
   unchanged, whereas \code{symbol.For} will map to lower case and
   append an underscore on those platforms (almost all) which do so for
@@ -219,14 +233,21 @@ manglePackageName(pkgName, pkgVersion)
   \code{unix} was a \emph{deprecated} (since the 1990s) alternative to
   \code{\link{system}}, available for backwards compatibility.
   
-  \code{gammaCody} is the \eqn{(\Gamma)} function from the Specfun
-  package used at C level in the Bessel code.  It may be
+  \code{gammaCody} was the \eqn{(\Gamma)} function from the Specfun
+  package used at C level in the Bessel code.  It may have been
   somewhat faster but less precise and/or robust than \R's standard
   \code{\link{gamma}}.  The \R-level interface was here for experimental
   purposes.
 
   \code{manglePackageName} was part of the defunct support for versioned
   installs.
+
+  \code{.Import}, \code{.ImportFrom}, \code{.Export} and
+  \code{.S3method} were part of an experimental alternative way to
+  specify namespaces.
+
+  \code{.First.lib} was the load/attach hook for packages without
+  namespaces: use \code{\link{.onLoad}} or \code{\link{.onAttach}} instead.
 }
 \seealso{
   \code{\link{Defunct}}, \code{\link{base-deprecated}}

@@ -30,7 +30,7 @@ rsignrank(nn, n)
     integer, or a vector of such integers.}
   \item{log, log.p}{logical; if TRUE, probabilities p are given as log(p).}
   \item{lower.tail}{logical; if TRUE (default), probabilities are
-    \eqn{P[X \le x]}{P[X <= x]}, otherwise, \eqn{P[X > x]}{P[X > x]}.}
+    \eqn{P[X \le x]}, otherwise, \eqn{P[X > x]}.}
 }
 \value{
   \code{dsignrank} gives the density,
@@ -56,7 +56,8 @@ rsignrank(nn, n)
   \code{\link{wilcox.test}} to calculate the statistic from data, find p
   values and so on.
 
-  \code{\link{dwilcox}} etc, for the distribution of \emph{two-sample}
+  \link{Distributions} for standard distributions, including
+  \code{\link{dwilcox}} for the distribution of \emph{two-sample}
   Wilcoxon rank sum statistic.
 }
 \examples{

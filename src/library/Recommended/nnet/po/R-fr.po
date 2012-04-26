@@ -1,0 +1,89 @@
+# Translation of R-nnet.pot to French
+# Copyright (C) 2005 The R Foundation
+# This file is distributed under the same license as the nnet R package.
+# Philippe Grosjean <phgrosjean@sciviews.org>, 2005.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: nnet 7.2-20\n"
+"Report-Msgid-Bugs-To: bugs@r-project.org\n"
+"POT-Creation-Date: 2005-02-19 12:33\n"
+"PO-Revision-Date: 2005-12-07 23:52+0100\n"
+"Last-Translator: Philippe Grosjean <phgrosjean@sciviews.org>\n"
+"Language-Team: French <R-core@r-project.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ISO-8859-1\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+
+msgid "some case has no observations"
+msgstr "quelques cas n'ont pas d'observations"
+
+msgid "ncol(offset) is wrong"
+msgstr "ncol(offset) est mauvais"
+
+msgid "not a \"multinom\" fit"
+msgstr "ce n'est pas un ajustement \"multinom\""
+
+msgid "'scope' is not a subset of term labels"
+msgstr "'scope' n'est pas un sous-ensemble des étiquettes de termes"
+
+msgid "number of rows in use has changed: remove missing values?"
+msgstr "le nombre de lignes en utilisation a changé : éliminer les valeurs manquantes ?"
+
+msgid "no terms in 'scope' for adding to object"
+msgstr "aucun terme dans 'scope' à ajouter à l'objet"
+
+msgid "anova is not implemented for a single \"multinom\" object"
+msgstr "l'ANOVA n'est pas implémentée pour un seul objet \"multinom\""
+
+msgid "not all objects are of class \"multinom\""
+msgstr "tous les objets doivent être de classe \"multinom\""
+
+msgid "models were not all fitted to the same size of dataset"
+msgstr "tous les modèles n'ont pas été ajustés à la même taille de données"
+
+msgid "missing values in 'x'"
+msgstr "valeurs manquantes dans 'x'"
+
+msgid "missing values in 'y'"
+msgstr "valeurs manquantes dans 'y'"
+
+msgid "nrows of 'x' and 'y' must match"
+msgstr "les nombres de lignes de 'x' et 'y' doivent correspondre"
+
+msgid "entropy fit only for logistic units"
+msgstr "ajustement entropique seulement pour des unités de courbes logistiques"
+
+msgid "no weights to fit"
+msgstr "pas de pondérations à ajuster"
+
+msgid "too many (%d) weights"
+msgstr "trop (%d) de pondérations"
+
+msgid "weights vector of incorrect length"
+msgstr "le vecteur de pondérations est de longueur incorrecte"
+
+msgid "incorrect length of 'mask'"
+msgstr "longueur incorrecte pour 'mask'"
+
+msgid "invalid weights vector"
+msgstr "vecteur de pondérations incorrect"
+
+msgid "object not of class \"nnet\""
+msgstr "l'objet n'est pas de classe \"nnet\""
+
+msgid "inappropriate fit for class"
+msgstr "ajustement inapproprié pour cette classe"
+
+msgid "dims of 'x' and 'y' must match"
+msgstr "les dimensions de 'x' et de 'y' doivent correspondre"
+
+msgid "not a legitimate neural net fit"
+msgstr "ce n'est pas un ajustement de réseau de neurone autorisé"
+
+msgid "group %s is empty"
+msgid_plural "groups %s are empty"
+msgstr[0] "le groupe %s est vide"
+msgstr[1] "les groupes %s sont vides"

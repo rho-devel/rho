@@ -1,6 +1,6 @@
 % File src/library/base/man/format.info.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{format.info}
@@ -32,7 +32,7 @@ format.info(x, digits = NULL, nsmall = 0)
   For numeric vectors:
   \item{r[1]}{width (in characters) used by \code{format(x)}}
   \item{r[2]}{number of digits after decimal point.}
-  \item{r[3]}{in \code{0:2}; if \eqn{\ge}{>=}\code{1}, \emph{exponential}
+  \item{r[3]}{in \code{0:2}; if \eqn{\ge}\code{1}, \emph{exponential}
     representation would be used, with exponent length of \code{r[3]+1}.}
 
   For a complex vector the first three elements refer to the real parts,
@@ -40,7 +40,8 @@ format.info(x, digits = NULL, nsmall = 0)
   parts.
 }
 \seealso{
-  \code{\link{format}}, \code{\link{formatC}}.
+  \code{\link{format}} (notably about \code{digits >= 16}),
+  \code{\link{formatC}}.
 }
 \examples{
 dd <- options("digits") ; options(digits = 7) #-- for the following

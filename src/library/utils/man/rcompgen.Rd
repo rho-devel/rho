@@ -1,6 +1,6 @@
 % File src/library/utils/man/rcompgen.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2008-2009 R Core Development Team
+% Copyright 2008-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{rcompgen}
@@ -13,6 +13,8 @@
 \alias{.DollarNames.default}
 \alias{.DollarNames.list}
 \alias{.DollarNames.environment}
+\alias{completion}
+
 \title{A Completion Generator for R}
 
 \description{
@@ -50,7 +52,7 @@ rc.options(\dots)
       \item{\code{ops}:}{activates completion after the \code{$} and
         \code{@} operators}
 
-      \item{\code{ns}:}{controls name space related completions}
+      \item{\code{ns}:}{controls namespace related completions}
 
       \item{\code{args}:}{enables completion of function arguments}
 
@@ -92,13 +94,15 @@ rc.options(\dots)
         unexported function \code{.addFunctionInfo} (see below).
       }
       
-      \item{\code{files}:}{ enables filename completion in R code.  This
+      \item{\code{files}:}{ enables filename completion in \R code.  This
         is initially set to \code{FALSE}, in which case the underlying
         completion front-end can take over (and hopefully do a better
         job than we would have done).  For systems where no such
         facilities exist, this can be set to \code{TRUE} if file name
-        completion is desired.  This is currently experimental and may
-        not work very well.  }
+        completion is desired.  This is used on Windows (where file
+	paths including spaces do work): on Unix-alikes
+        \code{readline}'s filename completion is normally used.
+      }
 
     }
 
@@ -113,7 +117,7 @@ rc.options(\dots)
       \item{\code{funarg.suffix}:}{ default \code{" = "} }
       \item{\code{package.suffix}}{ default \code{"::"} }
     }
-    See \code{\link{options}} for detailed usage description
+    See \code{\link{options}} for detailed usage description.
   }
 
   \item{x}{ An R object for which valid names after \code{"$"}
@@ -149,20 +153,20 @@ rc.options(\dots)
       provided, and more can be written for custom classes.
     }
 
-    \item{\bold{Completion inside name spaces}:}{
+    \item{\bold{Completion inside namespaces}:}{
       When the \code{ns} setting is turned on, completion inside
-      name spaces is attempted when a token is preceded by the \code{::}
+      namespaces is attempted when a token is preceded by the \code{::}
       or \code{:::} operators.  Additionally, the basic completion
-      mechanism is extended to include attached name spaces, or more
+      mechanism is extended to include attached namespaces, or more
       precisely, \code{foopkg::} becomes a valid completion of
       \code{foo} if the return value of \code{\link{search}()} includes
       the string \code{"package:foopkg"}.
 
-      The completion of package name spaces applies only to attached
+      The completion of package namespaces applies only to attached
       packages, i.e. if \code{MASS} is not attached (whether or not it
       is loaded), \code{MAS} will not complete to \code{MASS::}.
-      However, attempted completion \emph{inside} an apparent name space
-      will attempt to load the name space if it is not already loaded,
+      However, attempted completion \emph{inside} an apparent namespace
+      will attempt to load the namespace if it is not already loaded,
       e.g. trying to complete on \code{MASS::fr} will load \code{MASS}
       (but not necessarily attach it) even if it is not already loaded.
     }
@@ -280,8 +284,7 @@ rc.options(\dots)
   (they are unexported because they are not meant to be called directly
   by users).  The usage of these functions are:
 
-  \preformatted{
-    .assignToken(text)
+\preformatted{    .assignToken(text)
     .assignLinebuffer(line)
     .assignStart(start)
     .assignEnd(end)
@@ -296,7 +299,7 @@ rc.options(\dots)
                             minlength = -1)
 
     .addFunctionInfo(...)
-  }
+}
 
   The first four functions set up a completion attempt by specifying the
   token to be completed (\code{text}), and indicating where

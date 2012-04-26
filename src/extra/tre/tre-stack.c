@@ -10,11 +10,13 @@
 #include <config.h>
 #endif /* HAVE_CONFIG_H */
 #include <stdlib.h>
-#include <assert.h>
+//#include <assert.h>
 
 #include "tre-internal.h"
 #include "tre-stack.h"
 #include "xmalloc.h"
+
+#define assert(a) R_assert(a)
 
 union tre_stack_item {
   void *voidptr_value;

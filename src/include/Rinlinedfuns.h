@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -175,6 +175,14 @@ INLINE_FUN SEXP Rf_list4(SEXP s, SEXP t, SEXP u, SEXP v)
     return s;
 }
 
+INLINE_FUN SEXP Rf_list5(SEXP s, SEXP t, SEXP u, SEXP v, SEXP w)
+{
+    PROTECT(s);
+    s = CONS(s, Rf_list4(t, u, v, w));
+    UNPROTECT(1);
+    return s;
+}
+
 
 /* Destructive list append : See also ``append'' */
 
@@ -225,6 +233,22 @@ INLINE_FUN SEXP Rf_lang4(SEXP s, SEXP t, SEXP u, SEXP v)
     return s;
 }
 
+INLINE_FUN SEXP Rf_lang5(SEXP s, SEXP t, SEXP u, SEXP v, SEXP w)
+{
+    PROTECT(s);
+    s = LCONS(s, Rf_list4(t, u, v, w));
+    UNPROTECT(1);
+    return s;
+}
+
+INLINE_FUN SEXP Rf_lang6(SEXP s, SEXP t, SEXP u, SEXP v, SEXP w, SEXP x)
+{
+    PROTECT(s);
+    s = LCONS(s, Rf_list5(t, u, v, w, x));
+    UNPROTECT(1);
+    return s;
+}
+
 /* from util.c */
 
 /* Check to see if the arrays "x" and "y" have the identical extents */
@@ -243,6 +267,9 @@ INLINE_FUN Rboolean Rf_conformable(SEXP x, SEXP y)
     return TRUE;
 }
 
+/* NOTE: R's inherits() is based on inherits3() in ../main/objects.c
+ * Here, use char / CHAR() instead of the slower more general translateChar()
+ */
 INLINE_FUN Rboolean Rf_inherits(SEXP s, const char *name)
 {
     SEXP klass;
@@ -342,24 +369,6 @@ INLINE_FUN Rboolean Rf_isVectorAtomic(SEXP s)
     }
 }
 
-INLINE_FUN Rboolean Rf_isVector(SEXP s)/* === Rf_isVectorList() or Rf_isVectorAtomic() */
-{
-    switch(TYPEOF(s)) {
-    case LGLSXP:
-    case INTSXP:
-    case REALSXP:
-    case CPLXSXP:
-    case STRSXP:
-    case RAWSXP:
-
-    case VECSXP:
-    case EXPRSXP:
-	return TRUE;
-    default:
-	return FALSE;
-    }
-}
-
 INLINE_FUN Rboolean Rf_isFrame(SEXP s)
 {
     SEXP klass;
@@ -443,11 +452,11 @@ INLINE_FUN Rboolean Rf_isNumeric(SEXP s)
 }
 
 /** Is an object "Numeric" or  complex */
-INLINE_FUN Rboolean isNumber(SEXP s)
+INLINE_FUN Rboolean Rf_isNumber(SEXP s)
 {
     switch(TYPEOF(s)) {
     case INTSXP:
-	if (inherits(s,"factor")) return FALSE;
+	if (Rf_inherits(s,"factor")) return FALSE;
     case LGLSXP:
     case REALSXP:
     case CPLXSXP:
@@ -547,11 +556,11 @@ INLINE_FUN SEXP mkNamed(SEXPTYPE TYP, const char **names)
     int i, n;
 
     for (n = 0; strlen(names[n]) > 0; n++) {}
-    ans = PROTECT(allocVector(TYP, n));
-    nms = PROTECT(allocVector(STRSXP, n));
+    ans = PROTECT(Rf_allocVector(TYP, n));
+    nms = PROTECT(Rf_allocVector(STRSXP, n));
     for (i = 0; i < n; i++)
-	SET_STRING_ELT(nms, i, mkChar(names[i]));
-    setAttrib(ans, R_NamesSymbol, nms);
+	SET_STRING_ELT(nms, i, Rf_mkChar(names[i]));
+    Rf_setAttrib(ans, R_NamesSymbol, nms);
     UNPROTECT(2);
     return ans;
 }

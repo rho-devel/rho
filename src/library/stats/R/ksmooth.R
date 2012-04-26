@@ -19,8 +19,8 @@ ksmooth <-
 	   n.points=max(100, length(x)), x.points)
 {
     ## box is [-0.5, 0.5]. normal is sd = 1.4826/4
-    if(missing(y))
-	stop("y must be supplied.\nFor density estimation use density()")
+    if(missing(y) || is.null(y))
+	stop("numeric y must be supplied.\nFor density estimation use density()")
     kernel <- match.arg(kernel)
     krn <- switch(kernel, "box" = 1, "normal" = 2)
     x.points <-
@@ -31,7 +31,7 @@ ksmooth <-
 	    sort(x.points)
 	}
     ord <- order(x)
-    z <- .C("BDRksmooth",
+    z <- .C(C_BDRksmooth,
 	    as.double(x[ord]),
 	    as.double(y[ord]),
 	    as.integer(length(x)),

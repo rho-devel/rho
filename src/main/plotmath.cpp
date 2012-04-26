@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -44,11 +44,12 @@
 #include <Defn.h>
 
 #include <ctype.h>
-# include <R_ext/rlocale.h>
+#include <R_ext/rlocale.h>
 
 
 #include <Rmath.h>
 #include <R_ext/GraphicsEngine.h>
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 
@@ -1416,11 +1417,10 @@ static BBOX RenderSub(SEXP expr, int draw, mathContext *mc,
     STYLE style = GetStyle(mc);
     double savedX = mc->CurrentX;
     double savedY = mc->CurrentY;
-    double v, s5, s16;
+    double v, s16;
     bodyBBox = RenderElement(body, draw, mc, gc, dd);
     bodyBBox = RenderItalicCorr(bodyBBox, draw, mc, gc, dd);
     v = bboxSimple(bodyBBox) ? 0 : bboxDepth(bodyBBox) + TeX(sigma19, gc, dd);
-    s5 = TeX(sigma5, gc, dd);
     s16 = TeX(sigma16, gc, dd);
     SetSubStyle(style, mc, gc);
     subBBox = RenderElement(sub, 0, mc, gc, dd);
@@ -2446,7 +2446,7 @@ static BBOX RenderRadical(SEXP expr, int draw, mathContext *mc,
     SEXP body = CADR(expr);
     SEXP order = CADDR(expr);
     BBOX bodyBBox, orderBBox;
-    double radWidth, radHeight, radDepth;
+    double radWidth, radHeight;
     double leadWidth, leadHeight, twiddleHeight;
     double hshift, vshift;
     double radGap, radSpace, radTrail;
@@ -2464,7 +2464,6 @@ static BBOX RenderRadical(SEXP expr, int draw, mathContext *mc,
 
     radWidth = 0.6 *XHeight(gc, dd);
     radHeight = bboxHeight(bodyBBox) + radGap;
-    radDepth = bboxDepth(bodyBBox);
     twiddleHeight = CenterShift(bodyBBox);
 
     leadWidth = radWidth;

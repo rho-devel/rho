@@ -1,12 +1,13 @@
 % File src/library/base/man/Encoding.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Encoding}
-\encoding{latin1}
 \alias{Encoding}
 \alias{Encoding<-}
+\alias{enc2native}
+\alias{enc2utf8}
 \concept{encoding}
 \title{Read or Set the Declared Encodings for a Character Vector}
 \description{
@@ -16,6 +17,9 @@
 Encoding(x)
 
 Encoding(x) <- value
+
+enc2native(x)
+enc2utf8(x)
 }
 \arguments{
   \item{x}{A character vector.}
@@ -23,12 +27,20 @@ Encoding(x) <- value
 }
 \details{
   Character strings in \R can be declared to be in \code{"latin1"} or
-  \code{"UTF-8"}.  These declarations can be read by \code{Encoding},
-  which will return a character vector of values \code{"latin1"},
-  \code{"UTF-8"} or \code{"unknown"}, or set, when \code{value} is
-  recycled as needed and other values are silently treated as
-  \code{"unknown"}.  ASCII strings will never be marked with a declared
-  encoding, since their representation is the same in all encodings.
+  \code{"UTF-8"} or \code{"bytes"}.  These declarations can be read by
+  \code{Encoding}, which will return a character vector of values
+  \code{"latin1"}, \code{"UTF-8"} \code{"bytes"} or \code{"unknown"}, or
+  set, when \code{value} is recycled as needed and other values are
+  silently treated as \code{"unknown"}.  ASCII strings will never be
+  marked with a declared encoding, since their representation is the
+  same in all supported encodings.  Strings marked as \code{"bytes"} are
+  intended to be non-ASCII strings which should be manipulated as bytes,
+  and never converted to a character encoding.
+
+  \code{enc2native} and \code{enc2utf8} convert elements of character
+  vectors to the native encoding or UTF-8 respectively, taking any
+  marked encoding into account.  They are \link{primitive} functions,
+  designed to do minimal copying.
   
   There are other ways for character strings to acquire a declared
   encoding apart from explicitly setting it (and these have changed as
@@ -38,7 +50,8 @@ Encoding(x) <- value
   declare encodings, \code{\link{iconv}} declares encodings from its
   \code{from} argument, and console input in suitable locales is also
   declared.  \code{\link{intToUtf8}} declares its output as
-  \code{"UTF-8"}, and output text connections are marked if running in a
+  \code{"UTF-8"}, and output text connections (see
+  \code{\link{textConnection}}) are marked if running in a
   suitable locale.  Under some circumstances (see its help page)
   \code{\link{source}(encoding=)} will mark encodings of character
   strings it outputs.
@@ -60,8 +73,9 @@ Encoding(x) <- value
   \code{\link{sub}} and \code{gsub} will give a marked UTF-8 result if
   any of the inputs are UTF-8.
 
-  \code{\link{paste}} and \code{\link{sprintf}} return a UTF-8 marked
-  element if any of the inputs to that element is marked as UTF-8.
+  \code{\link{paste}} and \code{\link{sprintf}} return elements marked
+  as bytes if any of the corresponding inputs is marked as bytes, and 
+  otherwise marked as UTF-8 of any of the inputs is marked as UTF-8.
 
   \code{\link{match}}, \code{\link{pmatch}}, \code{\link{charmatch}},
   \code{\link{duplicated}} and \code{\link{unique}} all match in UTF-8
@@ -79,6 +93,9 @@ x
 xx <- iconv(x, "latin1", "UTF-8")
 Encoding(c(x, xx))
 c(x, xx)
+Encoding(xx) <- "bytes"
+xx # will be encoded in hex
+cat("xx = ", xx, "\n", sep = "")
 }
 \keyword{utilities}
 \keyword{character}

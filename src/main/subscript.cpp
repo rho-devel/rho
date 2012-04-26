@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2007  Robert Gentleman, Ross Ihaka and the
- *                            R Development Core Team
+ *  Copyright (C) 1997--2010  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,8 +53,20 @@
 
 #include <Defn.h>
 
+#include "CXXR/GCStackRoot.hpp"
+#include "CXXR/Subscripting.hpp"
+
+using namespace std;
+using namespace CXXR;
+
 /* We might get a call with R_NilValue from subassignment code */
 #define ECALL(call, yy) if(call == R_NilValue) error(yy); else errorcall(call, yy);
+
+// Note by arr after analysing code: If x is a vector of length 2,
+// then x[[-1]] and x[[-2]] are legal, and mean the same as x[[2]] and
+// x[[1]] respectively.  Otherwise a negative index is illegal for [[,
+// as is a zero index.  The following function looks after this, as
+// well as rebasing indices off 0 rather than 1.
 
 static int integerOneIndex(int i, int len, SEXP call)
 {
@@ -156,21 +167,24 @@ OneIndex(SEXP x, SEXP s, int len, int partial, SEXP *newname, int pos, SEXP call
     return indx;
 }
 
+// Note by arr after analysing code: if the 'pos' argument is set to
+// -1, this signifies that this is not 'recursive' indexing, i.e. the index
+// is a vector of length 1. A non-negative value signifies that this
+// is recursive indexing, and gives the position (counting from 0)
+// within the index vector which should be used for this call.
+
 int attribute_hidden
 get1index(SEXP s, SEXP names, int len, int pok, int pos, SEXP call)
 {
-/* Get a single index for the [[ operator.
-   Check that only one index is being selected.
-   pok : is "partial ok" ?
-	 if pok is -1, warn if partial matching occurs
-*/
-    int indx, i, warn_pok = 0;
-    double dblind;
-    const char *ss, *cur_name;
-
+    /* Get a single index for the [[ operator.
+       Check that only one index is being selected.
+       pok : is "partial ok" ?
+       if pok is -1, warn if partial matching occurs
+    */
+    bool warn_pok = false;
     if (pok == -1) {
 	pok = 1;
-	warn_pok = 1;
+	warn_pok = true;
     }
 
     if (pos < 0 && length(s) != 1) {
@@ -180,64 +194,73 @@ get1index(SEXP s, SEXP names, int len, int pok, int pos, SEXP call)
 	    ECALL(call, _("attempt to select less than one element"));
 	}
     } else
-	if(pos >= length(s)) {
+	if (pos >= length(s)) {
 	    ECALL(call, _("internal error in use of recursive indexing"));
 	}
-    if(pos < 0) pos = 0;
-    indx = -1;
+    if (pos < 0)
+	pos = 0;
+    int indx = -1;
     switch (TYPEOF(s)) {
     case LGLSXP:
     case INTSXP:
-	i = INTEGER(s)[pos];
-	if(i != NA_INTEGER)
-	    indx = integerOneIndex(i, len, call);
+	{
+	    int i = INTEGER(s)[pos];
+	    if (i != NA_INTEGER)
+		indx = integerOneIndex(i, len, call);
+	}
 	break;
     case REALSXP:
-	dblind = REAL(s)[pos];
-	if(!ISNAN(dblind))
-	    indx = integerOneIndex(int(dblind), len, call);
+	{
+	    double dblind = REAL(s)[pos];
+	    if (!ISNAN(dblind))
+		indx = integerOneIndex(int(dblind), len, call);
+	}
 	break;
     case STRSXP:
-	/* NA matches nothing */
-	if(STRING_ELT(s, pos) == NA_STRING) break;
-	/* "" matches nothing: see names.Rd */
-	if(!CHAR(STRING_ELT(s, pos))[0]) break;
+	{
+	    /* NA matches nothing */
+	    if (STRING_ELT(s, pos) == NA_STRING)
+		break;
+	    /* "" matches nothing: see names.Rd */
+	    if (!CHAR(STRING_ELT(s, pos))[0])
+		break;
 
-	/* Try for exact match */
-	ss = translateChar(STRING_ELT(s, pos));
-	for (i = 0; i < length(names); i++)
-	    if (STRING_ELT(names, i) != NA_STRING) {
-		if (streql(translateChar(STRING_ELT(names, i)), ss)) {
-		    indx = i;
-		    break;
-		}
-	    }
-	/* Try for partial match */
-	if (pok && indx < 0) {
-	    len = strlen(ss);
-	    for(i = 0; i < length(names); i++) {
+	    /* Try for exact match */
+	    const char* ss = translateChar(STRING_ELT(s, pos));
+	    for (int i = 0; i < length(names); i++)
 		if (STRING_ELT(names, i) != NA_STRING) {
-		    cur_name = translateChar(STRING_ELT(names, i));
-		    if(!strncmp(cur_name, ss, len)) {
-			if(indx == -1) {/* first one */
-			    indx = i;
-			    if (warn_pok) {
-				if (call == R_NilValue)
-				    warning(_("partial match of '%s' to '%s'"),
-					    ss, cur_name);
-				else
-				    warningcall(call,
-						_("partial match of '%s' to '%s'"),
+		    if (streql(translateChar(STRING_ELT(names, i)), ss)) {
+			indx = i;
+			break;
+		    }
+		}
+	    /* Try for partial match */
+	    if (pok && indx < 0) {
+		len = strlen(ss);
+		for(int i = 0; i < length(names); i++) {
+		    if (STRING_ELT(names, i) != NA_STRING) {
+			const char* cur_name = translateChar(STRING_ELT(names, i));
+			if (!strncmp(cur_name, ss, len)) {
+			    if (indx == -1) {/* first one */
+				indx = i;
+				if (warn_pok) {
+				    if (call == R_NilValue)
+					warning(_("partial match of '%s' to '%s'"),
 						ss, cur_name);
+				    else
+					warningcall(call,
+						    _("partial match of '%s' to '%s'"),
+						    ss, cur_name);
+				}
 			    }
-			}
-			else {
-			    indx = -2;/* more than one partial match */
-			    if (warn_pok) /* already given context */
-				warningcall(R_NilValue,
-					    _("further partial match of '%s' to '%s'"),
-					    ss, cur_name);
-			    break;
+			    else {
+				indx = -2;/* more than one partial match */
+				if (warn_pok) /* already given context */
+				    warningcall(R_NilValue,
+						_("further partial match of '%s' to '%s'"),
+						ss, cur_name);
+				break;
+			    }
 			}
 		    }
 		}
@@ -245,7 +268,7 @@ get1index(SEXP s, SEXP names, int len, int pok, int pos, SEXP call)
 	}
 	break;
     case SYMSXP:
-	for (i = 0; i < length(names); i++)
+	for (int i = 0; i < length(names); i++)
 	    if (STRING_ELT(names, i) != NA_STRING &&
 		streql(translateChar(STRING_ELT(names, i)),
 		       CHAR(PRINTNAME(s)))) {
@@ -268,8 +291,12 @@ vectorIndex(SEXP x, SEXP thesub, int start, int stop, int pok, SEXP call)
     int i, offset;
 
     for(i = start; i < stop; i++) {
-	if(!isVectorList(x) && !isPairList(x))
-	    errorcall(call, _("recursive indexing failed at level %d\n"), i+1);
+	if(!isVectorList(x) && !isPairList(x)) {
+	    if (i)
+		errorcall(call, _("recursive indexing failed at level %d\n"), i+1);
+	    else
+		errorcall(call, _("attempt to select more than one element"));
+	}
 	offset = get1index(thesub, getAttrib(x, R_NamesSymbol),
 		           length(x), pok, i, call);
 	if(offset < 0 || offset >= length(x))
@@ -336,112 +363,76 @@ SEXP attribute_hidden mat2indsub(SEXP dims, SEXP s, SEXP call)
     return (rvec);
 }
 
+/*
+Special Matrix Subscripting: For the case x[i] where x is an n-way
+array and i is a character matrix with n columns, this code converts i
+to an integer matrix by matching against the dimnames of x. NA values
+in any row of i propagate to the result.  Unmatched entries result in
+a subscript out of bounds error.  */
+
+SEXP attribute_hidden strmat2intmat(SEXP s, SEXP dnamelist, SEXP call)
+{
+    /* XXX: assumes all args are protected */
+    int nr = nrows(s), i, j, v, idx;
+    SEXP dnames, snames, si, sicol, s_elt;
+    PROTECT(snames = allocVector(STRSXP, nr));
+    PROTECT(si = allocVector(INTSXP, length(s)));
+    dimgets(si, getAttrib(s, R_DimSymbol));
+    for (i = 0; i < length(dnamelist); i++) {
+        dnames = VECTOR_ELT(dnamelist, i);
+        for (j = 0; j < nr; j++) {
+            SET_STRING_ELT(snames, j, STRING_ELT(s, j + (i * nr)));
+        }
+        PROTECT(sicol = match(dnames, snames, 0));
+        for (j = 0; j < nr; j++) {
+            v = INTEGER(sicol)[j];
+            idx = j + (i * nr);
+            s_elt = STRING_ELT(s, idx);
+            if (s_elt == NA_STRING) v = NA_INTEGER;
+            if (!CHAR(s_elt)[0]) v = 0; /* disallow "" match */
+            if (v == 0) errorcall(call, _("subscript out of bounds"));
+            INTEGER(si)[idx] = v;
+        }
+        UNPROTECT(1);
+    }
+    UNPROTECT(2);
+    return si;
+}
+
 static SEXP nullSubscript(int n)
 {
-    int i;
-    SEXP indx;
-    indx = allocVector(INTSXP, n);
-    for (i = 0; i < n; i++)
+    SEXP indx = allocVector(INTSXP, n);
+    for (int i = 0; i < n; i++)
 	INTEGER(indx)[i] = i + 1;
     return indx;
 }
 
 static SEXP logicalSubscript(SEXP s, int ns, int nx, int *stretch, SEXP call)
 {
-    int canstretch, count, i, nmax;
-    SEXP indx;
-    canstretch = *stretch;
-    if (!canstretch && ns > nx) {
-	ECALL(call, _("(subscript) logical subscript too long"));
+    bool canstretch = (*stretch != 0);
+    *stretch = 0;
+    pair<const IntVector*, size_t> pr
+	= Subscripting::canonicalize(SEXP_downcast<LogicalVector*>(s), nx);
+    if (int(pr.second) > nx) {
+	if (!canstretch) {
+	    ECALL(call, _("subscript out of bounds"));
+	} else *stretch = pr.second;
     }
-    nmax = (ns > nx) ? ns : nx;
-    *stretch = (ns > nx) ? ns : 0;
-    if (ns == 0)
-	return(allocVector(INTSXP, 0));
-    count = 0;
-    for (i = 0; i < nmax; i++)
-	if (LOGICAL(s)[i%ns])
-	    count++;
-    indx = allocVector(INTSXP, count);
-    count = 0;
-    for (i = 0; i < nmax; i++)
-	if (LOGICAL(s)[i%ns]) {
-	    if (LOGICAL(s)[i%ns] == NA_LOGICAL)
-		INTEGER(indx)[count++] = NA_INTEGER;
-	    else
-		INTEGER(indx)[count++] = i + 1;
-	}
-    return indx;
-}
-
-static SEXP negativeSubscript(SEXP s, int ns, int nx, SEXP call)
-{
-    SEXP indx;
-    int stretch = 0;
-    int i, ix;
-    PROTECT(indx = allocVector(LGLSXP, nx));
-    for (i = 0; i < nx; i++)
-	LOGICAL(indx)[i] = 1;
-    for (i = 0; i < ns; i++) {
-	ix = INTEGER(s)[i];
-	if (ix != 0 && ix != NA_INTEGER && -ix <= nx)
-	    LOGICAL(indx)[-ix - 1] = 0;
-    }
-    s = logicalSubscript(indx, nx, nx, &stretch, call);
-    UNPROTECT(1);
-    return s;
-}
-
-static SEXP positiveSubscript(SEXP s, int ns, int nx)
-{
-    SEXP indx;
-    int i, zct = 0;
-    for (i = 0; i < ns; i++) {
-	if (INTEGER(s)[i] == 0)
-	    zct++;
-    }
-    if (zct) {
-	indx = allocVector(INTSXP, (ns - zct));
-	for (i = 0, zct = 0; i < ns; i++)
-	    if (INTEGER(s)[i] != 0)
-		INTEGER(indx)[zct++] = INTEGER(s)[i];
-	return indx;
-    }
-    else
-	return s;
+    return const_cast<IntVector*>(pr.first);
 }
 
 static SEXP integerSubscript(SEXP s, int ns, int nx, int *stretch, SEXP call)
 {
-    int i, ii, min, max, canstretch;
-    Rboolean isna = FALSE;
-    canstretch = *stretch;
+    bool canstretch = (*stretch != 0);
     *stretch = 0;
-    min = 0;
-    max = 0;
-    for (i = 0; i < ns; i++) {
-	ii = INTEGER(s)[i];
-	if (ii != NA_INTEGER) {
-	    if (ii < min)
-		min = ii;
-	    if (ii > max)
-		max = ii;
-	} else isna = TRUE;
-    }
-    if (max > nx) {
-	if(canstretch) *stretch = max;
-	else {
+    pair<const IntVector*, size_t> pr
+	= Subscripting::canonicalize(SEXP_downcast<IntVector*>(s), nx);
+    if (int(pr.second) > nx) {
+	if (!canstretch) {
 	    ECALL(call, _("subscript out of bounds"));
-	}
+	} else *stretch = pr.second;
     }
-    if (min < 0) {
-	if (max == 0 && !isna) return negativeSubscript(s, ns, nx, call);
-	else {
-	    ECALL(call, _("only 0's may be mixed with negative subscripts"));
-	}
-    }
-    else return positiveSubscript(s, ns, nx);
-    return R_NilValue;
+    return const_cast<IntVector*>(pr.first);
 }
 
 typedef SEXP (*StringEltGetter)(SEXP x, int i);
@@ -450,103 +441,26 @@ typedef SEXP (*StringEltGetter)(SEXP x, int i);
  * VectorAssign (in subassign.c).  If subscripting is used for
  * assignment, it is possible to extend a vector by supplying new
  * names, and we want to give the extended vector those names, so they
- * are returned as the attribute. Also, unset elements of the vector
+ * are returned as the use.names attribute. Also, unset elements of the vector
  * of new names (places where a match was found) are indicated by
- * setting the element of the newnames vector to NULL, even though it
- * is a character vector.
+ * setting the element of the newnames vector to NULL.
 */
 
-/* The original code (pre 2.0.0) used a ns x nx loop that was too
- * slow.  So now we hash.  Hashing is expensive on memory (up to 32nx
- * bytes) so it is only worth doing if ns * nx is large.  If nx is
- * large, then it will be too slow unless ns is very small.
- */
-
 static SEXP
-stringSubscript(SEXP s, int ns, int nx, SEXP names,
-		StringEltGetter strg, int *stretch, Rboolean in, SEXP call)
+stringSubscript(SEXP sarg, int ns, int nx, SEXP namesarg,
+		StringEltGetter strg, int *stretch, SEXP call)
 {
-    SEXP indx, indexnames;
-    int i, j, nnames, sub, extra;
-    int canstretch = *stretch;
-    /* product may overflow, so check factors as well. */
-    Rboolean usehashing = CXXRCONSTRUCT(Rboolean, in && ( ((ns > 1000 && nx) || (nx > 1000 && ns)) || (ns * nx > 15*nx + ns) ));
-
-    PROTECT(s);
-    PROTECT(names);
-    PROTECT(indexnames = allocVector(STRSXP, ns));
-    nnames = nx;
-    extra = nnames;
-
-    /* Process each of the subscripts. First we compare with the names
-     * on the vector and then (if there is no match) with each of the
-     * previous subscripts, since (if assigning) we may have already
-     * added an element of that name. (If we are not assigning, any
-     * nonmatch will have given an error.)
-     */
-
-    if(usehashing) {
-	/* must be internal, so names contains a character vector */
-	/* NB: this does not behave in the same way with respect to ""
-	   and NA names: they will match */
-	PROTECT(indx = match(names, s, 0));
-	/* second pass to correct this */
-	for (i = 0; i < ns; i++)
-	    if(STRING_ELT(s, i) == NA_STRING || !CHAR(STRING_ELT(s, i))[0])
-		INTEGER(indx)[i] = 0;
-	/* FIXME: this should not be allowed, CHARSXPs only */
-	for (i = 0; i < ns; i++) SET_STRING_ELT(indexnames, i, R_NilValue);
-    } else {
-	PROTECT(indx = allocVector(INTSXP, ns));
-	for (i = 0; i < ns; i++) {
-	    sub = 0;
-	    if (names != R_NilValue) {
-		for (j = 0; j < nnames; j++) {
-		    SEXP names_j = strg(names, j);
-		    if (!in && TYPEOF(names_j) != CHARSXP) {
-			ECALL(call, _("character vector element does not have type CHARSXP"));
-		    }
-		    if (NonNullStringMatch(STRING_ELT(s, i), names_j)) {
-			sub = j + 1;
-			/* FIXME: this should not be allowed, CHARSXPs only */
-			SET_STRING_ELT(indexnames, i, R_NilValue);
-			break;
-		    }
-		}
-	    }
-	    INTEGER(indx)[i] = sub;
-	}
+    bool canstretch = (*stretch != 0);
+    *stretch = 0;
+    pair<const IntVector*, size_t> pr
+	= Subscripting::canonicalize(SEXP_downcast<StringVector*>(sarg), nx,
+				     SEXP_downcast<StringVector*>(namesarg));
+    if (int(pr.second) > nx) {
+	if (!canstretch) {
+	    ECALL(call, _("subscript out of bounds"));
+	} else *stretch = pr.second;
     }
-
-
-    for (i = 0; i < ns; i++) {
-	sub = INTEGER(indx)[i];
-	if (sub == 0) {
-	    for (j = 0 ; j < i ; j++)
-		if (NonNullStringMatch(STRING_ELT(s, i), STRING_ELT(s, j))) {
-		    sub = INTEGER(indx)[j];
-		    SET_STRING_ELT(indexnames, i, STRING_ELT(s, j));
-		    break;
-		}
-	}
-	if (sub == 0) {
-	    if (!canstretch) {
-		ECALL(call, _("subscript out of bounds"));
-	    }
-	    extra += 1;
-	    sub = extra;
-	    SET_STRING_ELT(indexnames, i, STRING_ELT(s, i));
-	}
-	INTEGER(indx)[i] = sub;
-    }
-    /* We return the new names as the names attribute of the returned
-       subscript vector. */
-    if (extra != nnames)
-	setAttrib(indx, R_NamesSymbol, indexnames);
-    if (canstretch)
-	*stretch = extra;
-    UNPROTECT(4);
-    return indx;
+    return const_cast<IntVector*>(pr.first);
 }
 
 /* Array Subscripts.
@@ -561,41 +475,39 @@ typedef SEXP AttrGetter(SEXP x, SEXP data);
 
 static SEXP
 int_arraySubscript(int dim, SEXP s, SEXP dims, AttrGetter dng,
-		   StringEltGetter strg, SEXP x, Rboolean in, SEXP call)
+		   StringEltGetter strg, SEXP x)
 {
-    int nd, ns, stretch = 0;
-    SEXP dnames, tmp;
-    ns = length(s);
-    nd = INTEGER(dims)[dim];
+    int stretch = 0;
+    int ns = length(s);
+    int nd = INTEGER(dims)[dim];
 
     switch (TYPEOF(s)) {
     case NILSXP:
 	return allocVector(INTSXP, 0);
     case LGLSXP:
-	return logicalSubscript(s, ns, nd, &stretch, call);
+	return logicalSubscript(s, ns, nd, &stretch, 0);
     case INTSXP:
-	return integerSubscript(s, ns, nd, &stretch, call);
+	return integerSubscript(s, ns, nd, &stretch, 0);
     case REALSXP:
-	PROTECT(tmp = coerceVector(s, INTSXP));
-	tmp = integerSubscript(tmp, ns, nd, &stretch, call);
-	UNPROTECT(1);
-	return tmp;
-    case STRSXP:
-	dnames = dng(x, R_DimNamesSymbol);
-	if (dnames == R_NilValue) {
-	    ECALL(call, _("no 'dimnames' attribute for array"));
+	{
+	    GCStackRoot<> tmp(coerceVector(s, INTSXP));
+	    tmp = integerSubscript(tmp, ns, nd, &stretch, 0);
+	    return tmp;
 	}
-	dnames = VECTOR_ELT(dnames, dim);
-	return stringSubscript(s, ns, nd, dnames, strg, &stretch, in, call);
+    case STRSXP:
+	{
+	    SEXP dnames = dng(x, R_DimNamesSymbol);
+	    if (dnames == R_NilValue) {
+		ECALL(0, _("no 'dimnames' attribute for array"));
+	    }
+	    dnames = VECTOR_ELT(dnames, dim);
+	    return stringSubscript(s, ns, nd, dnames, strg, &stretch, 0);
+	}
     case SYMSXP:
 	if (s == R_MissingArg)
 	    return nullSubscript(nd);
     default:
-	if (call == R_NilValue)
 	    error(_("invalid subscript type '%s'"), type2char(TYPEOF(s)));
-	else
-	    errorcall(call, _("invalid subscript type '%s'"),
-		      type2char(TYPEOF(s)));
     }
     return R_NilValue;
 }
@@ -606,7 +518,7 @@ SEXP
 arraySubscript(int dim, SEXP s, SEXP dims, AttrGetter dng,
 	       StringEltGetter strg, SEXP x)
 {
-    return int_arraySubscript(dim, s, dims, dng, strg, x, TRUE, R_NilValue);
+    return int_arraySubscript(dim, s, dims, dng, strg, x);
 }
 
 /* Subscript creation.  The first thing we do is check to see */
@@ -619,12 +531,9 @@ arraySubscript(int dim, SEXP s, SEXP dims, AttrGetter dng,
 
 SEXP attribute_hidden makeSubscript(SEXP x, SEXP s, int *stretch, SEXP call)
 {
-    int nx;
-    SEXP ans;
-
-    ans = R_NilValue;
+    SEXP ans = R_NilValue;
     if (isVector(x) || isList(x) || isLanguage(x)) {
-	nx = length(x);
+	int nx = length(x);
 
 	ans = vectorSubscript(nx, s, stretch, getAttrib, (STRING_ELT),
 			      x, call);
@@ -643,22 +552,21 @@ SEXP attribute_hidden makeSubscript(SEXP x, SEXP s, int *stretch, SEXP call)
 */
 
 static SEXP
-int_vectorSubscript(int nx, SEXP s, int *stretch, AttrGetter dng,
-		    StringEltGetter strg, SEXP x, Rboolean in, SEXP call)
+int_vectorSubscript(int nx, SEXP sarg, int *stretch, AttrGetter dng,
+		    StringEltGetter strg, SEXP x, SEXP call)
 {
-    int ns;
-    SEXP ans = R_NilValue, tmp;
+    SEXP ans = R_NilValue;
 
-    ns = length(s);
+    int ns = length(sarg);
     /* special case for simple indices -- does not duplicate */
-    if (ns == 1 && TYPEOF(s) == INTSXP && ATTRIB(s) == R_NilValue) {
-	int i = INTEGER(s)[0];
+    if (ns == 1 && TYPEOF(sarg) == INTSXP && ATTRIB(sarg) == R_NilValue) {
+	int i = INTEGER(sarg)[0];
 	if (0 < i && i <= nx) {
 	    *stretch = 0;
-	    return s;
+	    return sarg;
 	}
     }
-    PROTECT(s = duplicate(s));
+    GCStackRoot<> s(duplicate(sarg));
     if (s) {
 	s->clearAttributes();
     }
@@ -675,17 +583,20 @@ int_vectorSubscript(int nx, SEXP s, int *stretch, AttrGetter dng,
 	ans = integerSubscript(s, ns, nx, stretch, call);
 	break;
     case REALSXP:
-	PROTECT(tmp = coerceVector(s, INTSXP));
-	ans = integerSubscript(tmp, ns, nx, stretch, call);
-	UNPROTECT(1);
+	{
+	    GCStackRoot<> tmp(coerceVector(s, INTSXP));
+	    ans = integerSubscript(tmp, ns, nx, stretch, call);
+	}
 	break;
     case STRSXP:
-    {
-	SEXP names = dng(x, R_NamesSymbol);
-	/* *stretch = 0; */
-	ans = stringSubscript(s, ns, nx, names, strg, stretch, in, call);
-    }
-    break;
+	{
+	    // If x is a pairlist, names will be created on the fly,
+	    // and so needs protecting:
+	    GCStackRoot<> names(dng(x, R_NamesSymbol));
+	    /* *stretch = 0; */
+	    ans = stringSubscript(s, ns, nx, names, strg, stretch, call);
+	}
+	break;
     case SYMSXP:
 	*stretch = 0;
 	if (s == R_MissingArg) {
@@ -699,7 +610,6 @@ int_vectorSubscript(int nx, SEXP s, int *stretch, AttrGetter dng,
 	    errorcall(call, _("invalid subscript type '%s'"),
 		      type2char(TYPEOF(s)));
     }
-    UNPROTECT(1);
     return ans;
 }
 
@@ -708,5 +618,5 @@ SEXP attribute_hidden
 vectorSubscript(int nx, SEXP s, int *stretch, AttrGetter dng,
 		StringEltGetter strg, SEXP x, SEXP call)
 {
-    return int_vectorSubscript(nx, s, stretch, dng, strg, x, TRUE, call);
+    return int_vectorSubscript(nx, s, stretch, dng, strg, x, call);
 }

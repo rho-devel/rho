@@ -1,6 +1,6 @@
 % File src/library/base/man/unique.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{unique}
@@ -51,16 +51,26 @@ unique(x, incomparables = FALSE, \dots)
 
   Note that unlike the Unix command \code{uniq} this omits
   \emph{duplicated} and not just \emph{repeated} elements/rows.  That
-  is, an element is omitted if it is identical to any previous element
-  and not just if it is the same as the immediately previous one.
-  (For the latter, see \code{\link{rle}}).
+  is, an element is omitted if it is equal to any previous element and
+  not just if it is equal the immediately previous one.  (For the
+  latter, see \code{\link{rle}}).
 
   Missing values are regarded as equal, but \code{NaN} is not equal to
-  \code{NA_real_}.
+  \code{NA_real_}.  Character strings are regarded as equal if they are
+  in different encodings but would agree when translated to UTF-8.
   
   Values in \code{incomparables} will never be marked as duplicated.
   This is intended to be used for a fairly small set of values and will
   not be efficient for a very large set.
+  
+  When used on a data frame with more than one column, or an array or
+  matrix when comparing dimensions of length greater than one, this
+  tests for identity of character representations.  This will
+  catch people who unwisely rely on exact equality of floating-point
+  numbers!
+
+  Character strings will be compared as byte sequences if any input is
+  marked as \code{"bytes"}.
 }
 \value{
   For a vector, an object of the same type of \code{x}, but with only

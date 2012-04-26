@@ -33,8 +33,10 @@ debugger <- function(dump = last.dump)
 {
     debugger.look <- function(.selection)
     {
+        ## allow e.g. '...' to fail
         for(.obj in ls(envir=dump[[.selection]], all.names=TRUE))
-            assign(.obj, get(.obj, envir=dump[[.selection]]))
+            tryCatch(assign(.obj, get(.obj, envir=dump[[.selection]])),
+                     error=function(e) {})
         cat(gettext("Browsing in the environment with call:\n   "),
             calls[.selection], "\n", sep="")
         rm(.obj, .selection)
@@ -64,15 +66,16 @@ debugger <- function(dump = last.dump)
 }
 
 ## allow for the numbering by menu here
-limitedLabels <- function(value, maxwidth = getOption("width") - 5)
+limitedLabels <- function(value, maxwidth = getOption("width") - 5L)
 {
-    srcrefs <- sapply(value, function(v) if (!is.null(srcref <- attr(v, "srcref"))) {
-				srcfile <- attr(srcref, "srcfile")
-				paste(basename(srcfile$filename), "#", srcref[1L],": ", sep="")
-			     } else "")    
+    srcrefs <- sapply(value, function(v)
+                      if (!is.null(srcref <- attr(v, "srcref"))) {
+                          srcfile <- attr(srcref, "srcfile")
+                          paste(basename(srcfile$filename), "#", srcref[1L],": ", sep="")
+                      } else "")
     value <- paste(srcrefs, as.character(value), sep="")
-    if(is.null(maxwidth) || maxwidth < 40)
-        maxwidth <- 40
+    if(is.null(maxwidth) || maxwidth < 40L) maxwidth <- 40L
+    maxwidth <- min(maxwidth, 1000L)
     strtrim(value, maxwidth)
 }
 
@@ -128,7 +131,8 @@ recover <-
             which <- menu(calls,
                           title="\nEnter a frame number, or 0 to exit  ")
             if(which)
-                eval(quote(browser()), envir = sys.frame(which))
+                eval(substitute(browser(skipCalls=skip),
+                                list(skip=7-which)), envir = sys.frame(which))
             else
                 break
         }

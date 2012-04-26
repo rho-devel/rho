@@ -4,7 +4,6 @@
 namespace CXXR {
     SymbolSerializationType symbolSerializationType(const Symbol* sym) {
 	if (sym==R_MissingArg) return MISSINGARGSYM;
-	if (sym==R_RestartToken) return RESTARTTOKENSYM;
 	if (sym==R_UnboundValue) return UNBOUNDVALUESYM;
 	return OTHERSYM;
     }
@@ -18,7 +17,6 @@ namespace CXXR {
     			  const std::string& str) {
 	switch(type) {
 	case MISSINGARGSYM: return R_MissingArg;
-	case RESTARTTOKENSYM: return R_RestartToken;
 	case UNBOUNDVALUESYM: return R_UnboundValue;
 	default: return Symbol::obtain(str);
 	}

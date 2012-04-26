@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -60,18 +60,13 @@ GCRootBase::GCRootBase(const GCNode* node)
     : m_it(s_roots->insert(s_roots->end(), node))
 {
     GCNode::maybeCheckExposed(node);
-    if (node)
-	node->incRefCount();
-}
-
-void GCRootBase::cleanup()
-{
-    delete s_roots;
+    GCNode::incRefCount(node);
 }
 
 void GCRootBase::initialize()
 {
-    s_roots = new List;
+    static List roots;
+    s_roots = &roots;
 }
 
 void GCRootBase::visitRoots(GCNode::const_visitor* v)
@@ -79,7 +74,8 @@ void GCRootBase::visitRoots(GCNode::const_visitor* v)
     List::iterator end = s_roots->end();
     for (List::iterator it = s_roots->begin(); it != end; ++it) {
 	const GCNode* n = *it;
-	if (n) n->conductVisitor(v);
+	if (n)
+	    (*v)(n);
     }
 }
 

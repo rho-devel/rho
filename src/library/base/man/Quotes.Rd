@@ -1,6 +1,6 @@
 % File src/library/base/man/Quotes.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Quotes}
@@ -17,9 +17,9 @@
   Descriptions of the various uses of quoting in \R.
 }
 \details{
-  Three types of quote are part of the syntax of \R: single and double
+  Three types of quotes are part of the syntax of \R: single and double
   quotation marks and the backtick (or back quote, \samp{`}).  In
-  addition, backslash is used for quoting the following characters
+  addition, backslash is used to escape the following character
   inside character constants.
 }
 \section{Character constants}{
@@ -29,11 +29,9 @@
   normally only used to delimit character constants containing double
   quotes.
 
-  Backslash is used to start an escape sequence inside character constants.
-  Unless specified in the following table, an escaped character is
-  interpreted as the character itself.  (Note that the parser will warn
-  about most such uses, as they are most often erroneous, e.g.
-  using \samp{\\.} where \samp{\\\\.} was intended.)
+  Backslash is used to start an escape sequence inside character
+  constants.  Escaping a character not in the following table is an
+  error.
   
   Single quotes need to be escaped by backslash in single-quoted
   strings, and double quotes in double-quoted strings.
@@ -47,19 +45,22 @@
     \samp{\\f}\tab form feed\cr
     \samp{\\v}\tab vertical tab\cr
     \samp{\\\\}\tab backslash \samp{\\}\cr
+    \samp{\\'}\tab ASCII apostrophe \samp{'}\cr
+    \samp{\\"}\tab ASCII quotation mark \samp{"}\cr
     \samp{\\nnn}\tab character with given octal code (1, 2 or 3 digits)\cr
     \samp{\\xnn}\tab character with given hex code (1 or 2 hex digits)\cr
     \samp{\\unnnn}\tab Unicode character with given code (1--4 hex digits)\cr
     \samp{\\Unnnnnnnn}\tab Unicode character with given code (1--8 hex digits)\cr
   }
-  The last two are only supported on versions of \R built with MBCS
-  support: they are an error on other versions.  Alternative forms are
-  \samp{\\u\{nnnn\}} and \samp{\\U\{nnnnnnnn\}}.  All except the Unicode
-  escape sequences are also supported when reading character strings by
-  \code{\link{scan}} and \code{\link{read.table}} if
-  \code{allowEscapes = TRUE}.  On most platforms they can be used to
-  enter Unicode characters not in the current locale (which will be
-  stored internally in UTF-8).
+  Alternative forms for the last two are \samp{\\u\{nnnn\}} and
+  \samp{\\U\{nnnnnnnn\}}.  All except the Unicode escape sequences are
+  also supported when reading character strings by \code{\link{scan}}
+  and \code{\link{read.table}} if \code{allowEscapes = TRUE}.  Unicode
+  escapes can be used to enter Unicode characters not in the current
+  locale's charset (when the string will be stored internally in UTF-8).
+
+  The parser does not allow the use of both octal/hex and Unicode
+  escapes in a single string.
 
   These forms will also be used by \code{\link{print.default}}
   when outputting non-printable characters (including backslash).

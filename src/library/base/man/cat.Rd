@@ -1,6 +1,6 @@
 % File src/library/base/man/cat.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{cat}
@@ -15,8 +15,9 @@ cat(\dots , file = "", sep = " ", fill = FALSE, labels = NULL,
   performs much less conversion than \code{\link{print}}.
 }
 \arguments{
-  \item{\dots}{\R objects (see \sQuote{Details} for the types of objects allowed).}
-  \item{file}{A connection, or a character string naming the file
+  \item{\dots}{\R objects (see \sQuote{Details} for the types of objects
+    allowed).}
+  \item{file}{A \link{connection}, or a character string naming the file
     to print to.  If \code{""} (the default), \code{cat} prints to the
     standard output connection, the console unless redirected by
     \code{\link{sink}}.
@@ -55,8 +56,9 @@ cat(\dots , file = "", sep = " ", fill = FALSE, labels = NULL,
   its current position.  If it is not open, it is opened for the
   duration of the call in \code{"wt"} mode and then closed again.
 
-  Currently only atomic vectors (and so not lists) and \link{name}s
-  are handled.  Character strings are output \sQuote{as is} (unlike
+  Currently only \link{atomic} vectors and \link{name}s are handled,
+  together with \code{NULL} and other zero-length objects (which produce
+  no output).  Character strings are output \sQuote{as is} (unlike
   \code{\link{print.default}} which escapes non-printable characters and
   backslash --- use \code{\link{encodeString}} if you want to output
   encoded strings using \code{cat}).  Other types of \R object should be

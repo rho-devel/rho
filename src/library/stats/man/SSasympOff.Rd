@@ -1,10 +1,11 @@
 % File src/library/stats/man/SSasympOff.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{SSasympOff}
-\title{Asymptotic Regression Model with an Offset}
+\encoding{UTF-8}
+\title{Self-Starting Nls Asymptotic Regression Model with an Offset}
 \usage{
 SSasympOff(input, Asym, lrc, c0)
 }
@@ -33,20 +34,20 @@ SSasympOff(input, Asym, lrc, c0)
   names of objects, the gradient matrix with respect to these names is
   attached as an attribute named \code{gradient}.
 }
-\author{Jose Pinheiro and Douglas Bates}
+\author{\enc{José}{Jose} Pinheiro and Douglas Bates}
 \seealso{\code{\link{nls}}, \code{\link{selfStart}};
   \code{example(SSasympOff)} gives graph showing the \code{SSasympOff}
-  parametrization, where \eqn{\phi_1} is \code{Asymp},
-  \eqn{\phi_3} is \code{c0}, and \eqn{t_{0.5}} is % FIXME
+  parametrization, where \eqn{\phi_1}{phi_1} is \code{Asymp},
+  \eqn{\phi_3}{phi_3} is \code{c0}.% , and \eqn{t_{0.5}} is FIXME
 }
 \examples{
 CO2.Qn1 <- CO2[CO2$Plant == "Qn1", ]
-SSasympOff( CO2.Qn1$conc, 32, -4, 43 )  # response only
+SSasympOff(CO2.Qn1$conc, 32, -4, 43)  # response only
 Asym <- 32; lrc <- -4; c0 <- 43
-SSasympOff( CO2.Qn1$conc, Asym, lrc, c0 ) # response and gradient
-getInitial(uptake ~ SSasympOff( conc, Asym, lrc, c0), data = CO2.Qn1)
+SSasympOff(CO2.Qn1$conc, Asym, lrc, c0) # response and gradient
+getInitial(uptake ~ SSasympOff(conc, Asym, lrc, c0), data = CO2.Qn1)
 ## Initial values are in fact the converged values
-fm1 <- nls(uptake ~ SSasympOff( conc, Asym, lrc, c0), data = CO2.Qn1)
+fm1 <- nls(uptake ~ SSasympOff(conc, Asym, lrc, c0), data = CO2.Qn1)
 summary(fm1)
 \dontshow{
 require(graphics)

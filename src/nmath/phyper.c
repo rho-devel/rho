@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -77,8 +77,8 @@ static double pdhyper (double x, double NR, double NB, double n, int log_p)
  *     x * (NR + NB) <= n * NR
  *
  */
-    LDOUBLE sum = 0;
-    LDOUBLE term = 1;
+    long double sum = 0;
+    long double term = 1;
 
     while (x > 0 && term >= DBL_EPSILON * sum) {
 	term *= x * (NB - n + x) / (n + 1 - x) / (NR + 1 - x);

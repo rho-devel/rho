@@ -32,11 +32,13 @@ using namespace CXXR;
 namespace {
     double* dptrs[16];
 
-    CellPool pool(1, 5);
+    CellPool pool;
 }
 
 int main() {
-    for (int i = 0; i < 16; ++i) dptrs[i] = 0;
+    pool.initialize(1, 5);
+    for (int i = 0; i < 16; ++i)
+	dptrs[i] = 0;
     pool.check();
     cout << "Cell size: " << pool.cellSize()
 	 << "\nSuperblock size: " << pool.superblockSize() << endl;
@@ -52,12 +54,6 @@ int main() {
     }
     pool.check();
     cout << "Cells allocated: " << pool.cellsAllocated() << endl;
-    for (int i = 1;
-	 (dptrs[i] = static_cast<double*>(pool.easyAllocate()));
-	 i += 2)
-	cout << "Allocated dptrs[" << i << "]\n";
-    cout << "easyAllocate() failed\n";
-    pool.check();
     for (int i = 11; i < 16; i += 2) {
 	cout << "Allocating dptrs[" << i << "]\n";
 	dptrs[i] = static_cast<double*>(pool.allocate());

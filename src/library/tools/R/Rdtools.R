@@ -1,14 +1,41 @@
+#  File src/library/tools/R/Rdtools.R
+#  Part of the R package, http://www.R-project.org
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
+
 RdTextFilter <-
 function(ifile, encoding = "unknown", keepSpacing = TRUE,
          drop = character(), keep = character())
 {
-    if (inherits(ifile, "Rd")) p <- ifile
-    else p <- parse_Rd(ifile, encoding = encoding)
+    if(inherits(ifile, "srcfile"))
+        ifile <- ifile$filename
+    if (inherits(ifile, "Rd")) {
+	# Undo sorting done in prepare2_Rd
+	srcrefs <- sapply(ifile, function(s) attr(s, "srcref"))
+	p <- ifile[ order(srcrefs[1,], srcrefs[2,]) ]
+	class(p) <- class(ifile)
+    } else
+    	p <- parse_Rd(ifile, encoding = encoding)
+
     tags <- RdTags(p)
+
     if ("\\encoding" %in% tags) {
-	encoding <- p[[which(tags=="\\encoding")]][[1L]]
-	if(encoding %in% c("UTF-8", "utf-8", "utf8")) encoding <- "UTF-8"
-	p <- parse_Rd(ifile, encoding=encoding)
+	encoding <- p[[which(tags == "\\encoding")[1L]]][[1L]]
+	if (encoding %in% c("UTF-8", "utf-8", "utf8")) encoding <- "UTF-8"
+	if (!inherits(ifile, "Rd"))
+	    p <- parse_Rd(ifile, encoding=encoding)
     } else
 	encoding <- ""
 
@@ -20,10 +47,10 @@ function(ifile, encoding = "unknown", keepSpacing = TRUE,
     ##     show(p)
     ##     mycat("\n")
     ## })$output
-    
+
     myval <- character()
     mycon <- textConnection("myval", open = "w", local = TRUE,
-                            encoding = "UTF-8") 
+                            encoding = "UTF-8")
     on.exit(close(mycon))
     mycat <- function(...) cat(..., file = mycon)
 
@@ -82,18 +109,19 @@ function(ifile, encoding = "unknown", keepSpacing = TRUE,
 	    prevcol <<- lastcol
 	    prevline <<- lastline
 	},
-	"\\docType"=,
-	"\\encoding"=,
-	"\\keyword"=,
-	"\\email"=,
-	"\\file"=,
-	"\\linkS4class"=,
-	"\\pkg"=,
-	"\\var"=,
-	"\\method"=,
 	"\\S3method"=,
 	"\\S4method"=,
+        "\\command"=,
+	"\\docType"=,
+	"\\email"=,
+	"\\encoding"=,
+	"\\file"=,
+	"\\keyword"=,
 	"\\link"=,
+        "\\linkS4class"=,
+	"\\method"=,
+	"\\pkg"=,
+	"\\var"=,
 	DROP = {},  # do nothing
 
 	"\\tabular"=,
@@ -124,7 +152,7 @@ function(ifile, encoding = "unknown", keepSpacing = TRUE,
 
     show(p)
     mycat("\n")
-    
+
     out <- textConnectionValue(mycon)
 
     ## Ideally, we would always canonicalize to UTF-8.
@@ -136,7 +164,7 @@ function(ifile, encoding = "unknown", keepSpacing = TRUE,
     ##   special dictionary.
     ## but also
     ##   If Aspell is compiled with a version of the curses library that
-    ##   support wide characters then Aspell can also check UTF-8 text. 
+    ##   support wide characters then Aspell can also check UTF-8 text.
     ## So at least until this can be resolved, turn filter results for
     ## Rd files originally in latin1 back to latin1.
     if(encoding == "latin1")

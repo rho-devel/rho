@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -93,7 +93,7 @@ int vsnprintf(char *buffer, size_t bufferSize, const char *format, va_list args)
     return trio_vsnprintf(buffer, bufferSize, format, args);
 }
 
-#ifndef W64
+#ifndef _W64
 /* This is needed as MinGW's stdio.h has an inline vnsprintf mapping to
    _vsnprintf */
 int _vsnprintf(char *buffer, size_t bufferSize, const char *format, va_list args)

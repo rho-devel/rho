@@ -1,6 +1,6 @@
 % File src/library/base/man/setTimeLimit.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{setTimeLimit}
@@ -27,7 +27,7 @@ setSessionTimeLimit(cpu = Inf, elapsed = Inf)
   computation, that is a command line (including any continuation lines)
   entered at the console or from a file.  If it is called from within a
   computation the limits apply to the rest of the computation and
-  (unless \code{transient = TRUE} to subsequent top-level computations.
+  (unless \code{transient = TRUE}) to subsequent top-level computations.
 
   \code{setSessionTimeLimit} sets limits for the rest of the
   session.  Once a session limit is reached it is reset to \code{Inf}.
@@ -37,15 +37,12 @@ setSessionTimeLimit(cpu = Inf, elapsed = Inf)
 
   Time limits are checked whenever a user interrupt could occur.
   This will happen frequently in \R code and during \code{\link{Sys.sleep}},
-  but only at points in compiled C and Foreign code identified by the
+  but only at points in compiled C and Fortran code identified by the
   code author.
-  
 #ifdef unix
+  
   \sQuote{Total cpu time} includes that used by child processes where
   the latter is reported.
-
-  It is possible (but very unusual) to build \R without support for
-  \code{\link{proc.time}}, in which case these functions have no effect.
 #endif
 }
 \keyword{ utilities }

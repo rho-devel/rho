@@ -47,12 +47,12 @@ try <- function(expr, silent = FALSE) {
             cat(msg, file = stderr())
             .Internal(printDeferredWarnings())
         }
-        invisible(structure(msg, class = "try-error"))
+        invisible(structure(msg, class = "try-error", condition = e))
     })
 }
 
 comment <- function(x).Internal(comment(x))
-"comment<-" <- function(x,value).Internal("comment<-"(x, value))
+`comment<-` <- function(x,value).Internal("comment<-"(x, value))
 
 logb <- function(x, base=exp(1)) if(missing(base)) log(x) else log(x, base)
 
@@ -61,7 +61,7 @@ atan2 <- function(y, x).Internal(atan2(y, x))
 beta <- function(a, b).Internal( beta(a, b))
 lbeta <- function(a, b).Internal(lbeta(a, b))
 
-psigamma <- function(x, deriv = 0) .Internal(psigamma(x, deriv))
+psigamma <- function(x, deriv = 0L) .Internal(psigamma(x, deriv))
 
 factorial <- function(x) gamma(x + 1)
 lfactorial <- function(x) lgamma(x + 1)
@@ -76,7 +76,7 @@ commandArgs <- function(trailingOnly = FALSE) {
     args <- .Internal(commandArgs())
     if(trailingOnly) {
         m <- match("--args", args, 0L)
-        if(m) args[-seq_len(m)] else character(0L)
+        if(m) args[-seq_len(m)] else character()
     } else args
 }
 
@@ -126,16 +126,14 @@ do.call <- function(what, args, quote = FALSE, envir = parent.frame())
 {
     if (!is.list(args))
 	stop("second argument must be a list")
-    if (quote) {
-	enquote <- function(x) as.call(list(as.name("quote"), x))
+    if (quote)
 	args <- lapply(args, enquote)
-    }
     .Internal(do.call(what, args, envir))
 }
 
 drop <- function(x).Internal(drop(x))
 
-format.info <- function(x, digits = NULL, nsmall = 0)
+format.info <- function(x, digits = NULL, nsmall = 0L)
     .Internal(format.info(x, digits, nsmall))
 
 gc <- function(verbose = getOption("verbose"),	reset=FALSE)
@@ -148,6 +146,8 @@ gc <- function(verbose = getOption("verbose"),	reset=FALSE)
 }
 gcinfo <- function(verbose) .Internal(gcinfo(verbose))
 gctorture <- function(on=TRUE) invisible(.Internal(gctorture(on)))
+gctorture2 <- function(step, wait = step, inhibit_release = FALSE)
+    .Internal(gctorture2(step, wait, inhibit_release))
 
 is.unsorted <- function(x, na.rm = FALSE, strictly = FALSE)
 {
@@ -161,8 +161,10 @@ is.unsorted <- function(x, na.rm = FALSE, strictly = FALSE)
 }
 
 mem.limits <- function(nsize=NA, vsize=NA)
-    structure(.Internal(mem.limits(as.integer(nsize), as.integer(vsize))),
-              names=c("nsize", "vsize"))
+{
+    .Deprecated("gc")
+    structure(.Internal(mem.limits(nsize, vsize)), names = c("nsize", "vsize"))
+}
 
 nchar <- function(x, type = "chars", allowNA = FALSE)
     .Internal(nchar(x, type, allowNA))
@@ -224,7 +226,7 @@ data.class <- function(x) {
     }
 }
 
-encodeString <- function(x, width = 0, quote = "", na.encode = TRUE,
+encodeString <- function(x, width = 0L, quote = "", na.encode = TRUE,
                          justify = c("left", "right", "centre", "none"))
 {
     at <- attributes(x)
@@ -238,15 +240,16 @@ encodeString <- function(x, width = 0, quote = "", na.encode = TRUE,
 
 l10n_info <- function() .Internal(l10n_info())
 
-iconv <- function(x, from = "", to = "", sub = NA, mark = TRUE)
+iconv <- function(x, from = "", to = "", sub = NA, mark = TRUE, toRaw = FALSE)
 {
-    if(!is.character(x)) x <- as.character(x)
-    .Internal(iconv(x, from, to, as.character(sub), mark))
+    if(! (is.character(x) || (is.list(x) && is.null(oldClass(x)))))
+        x <- as.character(x)
+    .Internal(iconv(x, from, to, as.character(sub), mark, toRaw))
 }
 
 iconvlist <- function()
 {
-    int <- .Internal(iconv(NULL, "", "", "", TRUE))
+    int <- .Internal(iconv(NULL, "", "", "", TRUE, FALSE))
     if(length(int)) return(sort.int(int))
     icfile <- system.file("iconvlist", package="utils")
     if(!nchar(icfile, type="bytes"))

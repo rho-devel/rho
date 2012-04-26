@@ -49,22 +49,17 @@ packageDescription <- function(pkg, lib.loc=NULL, fields=NULL, drop=TRUE,
             }
     }
 
-    ## we no longer have versioned installs:
-##     if(pkgpath == "") {
-##         ## This is slow and does a lot of checking we do here,
-##         ## but is needed for versioned installs
-##         pkgpath <- system.file(package = pkg, lib.loc = lib.loc)
-##     }
     if(pkgpath == "") {
         warning(gettextf("no package '%s' was found", pkg), domain = NA)
         return(NA)
     }
 
     ## New in 2.7.0: look for installed metadata first.
-    ## FIXME: how much longer should be drop back to the file?
+    ## We always need to be able to drop back to the file as this
+    ## is used during package installation.
 
     if(file.exists(file <- file.path(pkgpath, "Meta", "package.rds"))) {
-        desc <- .readRDS(file)$DESCRIPTION
+        desc <- readRDS(file)$DESCRIPTION
         if(length(desc) < 1)
             stop(gettextf("metadata of package '%s' is corrupt", pkg),
                  domain = NA)
@@ -82,14 +77,13 @@ packageDescription <- function(pkg, lib.loc=NULL, fields=NULL, drop=TRUE,
         enc <- desc[["Encoding"]]
         if(!is.null(enc) && !is.na(encoding)) {
             ## Determine encoding and re-encode if necessary and possible.
-            if((encoding != "" || Sys.getlocale("LC_CTYPE") != "C")) {
-                ## might have an invalid encoding ...
-                newdesc <- try(lapply(desc, iconv, from=enc, to=encoding))
-                if(!inherits(newdesc, "try-error")) desc <- newdesc
-                else
-                    warning("'DESCRIPTION' file has 'Encoding' field and re-encoding is not possible", call. = FALSE)
-            } else
-            warning("'DESCRIPTION' file has 'Encoding' field and re-encoding is not possible", call. = FALSE)
+            if (missing(encoding) && Sys.getlocale("LC_CTYPE") == "C")
+                encoding <- "ASCII//TRANSLIT"
+            ## might have an invalid encoding ...
+            newdesc <- try(lapply(desc, iconv, from = enc, to = encoding))
+            if(!inherits(newdesc, "try-error")) desc <- newdesc
+            else
+                warning("'DESCRIPTION' file has an 'Encoding' field and re-encoding is not possible", call. = FALSE)
         }
         if(!is.null(fields)){
             ok <- names(desc) %in% fields
@@ -128,8 +122,42 @@ print.packageDescription <- function(x, ...)
     invisible(x)
 }
 
-index.search <- function(topic, path, file = "AnIndex", type = "help")
-    .Internal(index.search(topic, path, file, .Platform$file.sep, type))
+# Simple convenience functions
+
+maintainer <- function(pkg){
+  pkg # force evaluation
+  return(packageDescription(pkg)$Maintainer)
+}
+
+packageVersion <- function(pkg, lib.loc=NULL)
+{
+    res <- suppressWarnings(packageDescription(pkg, lib.loc=lib.loc,
+                                               fields = "Version"))
+    if (!is.na(res)) package_version(res) else
+    stop("package ", sQuote(pkg), " not found")
+}
+
+## used with firstOnly = TRUE for example()
+## used with firstOnly = FALSE in help()
+index.search <- function(topic, paths, firstOnly = FALSE)
+{
+    res <- character()
+    for (p in paths) {
+        if(file.exists(f <- file.path(p, "help", "aliases.rds")))
+            al <- readRDS(f)
+        else if(file.exists(f <- file.path(p, "help", "AnIndex"))) {
+            ## aliases.rds was introduced before 2.10.0, as can phase this out
+            foo <- scan(f, what = list(a="", b=""), sep = "\t", quote = "",
+                        na.strings = "", quiet = TRUE)
+            al <- structure(foo$b, names = foo$a)
+        } else next
+        f <- al[topic]
+        if(is.na(f)) next
+        res <- c(res, file.path(p, "help", f))
+        if(firstOnly) break
+    }
+    res
+}
 
 print.packageIQR <-
 function(x, ...)

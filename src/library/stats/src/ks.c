@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -29,6 +29,7 @@ static double K(int n, double d);
 static void m_multiply(double *A, double *B, double *C, int m);
 static void m_power(double *A, int eA, double *V, int *eV, int m, int n);
 
+/* Two-sample two-sided asymptotic distribution */
 void
 pkstwo(Sint *n, double *x, double *tol)
 {
@@ -84,6 +85,7 @@ pkstwo(Sint *n, double *x, double *tol)
     }
 }
 
+/* Two-sided two-sample */
 void
 psmirnov2x(double *x, Sint *m, Sint *n)
 {
@@ -95,7 +97,12 @@ psmirnov2x(double *x, Sint *m, Sint *n)
     }
     md = (double) (*m);
     nd = (double) (*n);
-    q = floor(*x * md * nd - 1e-7) / (md * nd);
+    /*
+       q has 0.5/mn added to ensure that rounding error doesn't
+       turn an equality into an inequality, eg abs(1/2-4/5)>3/10 
+
+    */
+    q = (0.5 + floor(*x * md * nd - 1e-7)) / (md * nd);
     u = (double *) R_alloc(*n + 1, sizeof(double));
 
     for(j = 0; j <= *n; j++) {
@@ -108,7 +115,7 @@ psmirnov2x(double *x, Sint *m, Sint *n)
 	else
 	    u[0] = w * u[0];
 	for(j = 1; j <= *n; j++) {
-	    if(fabs(i / md - j / nd) > q)
+	    if(fabs(i / md - j / nd) > q) 
 		u[j] = 0;
 	    else
 		u[j] = w * u[j] + u[j - 1];
@@ -117,6 +124,7 @@ psmirnov2x(double *x, Sint *m, Sint *n)
     *x = u[*n];
 }
 
+/* The two-sided one-sample 'exact' distribution */
 void
 pkolmogorov2x(double *x, Sint *n)
 {
@@ -139,6 +147,12 @@ K(int n, double d)
    int k, m, i, j, g, eH, eQ;
    double h, s, *H, *Q;
 
+   /* 
+      The faster right-tail approximation is omitted here.
+      s = d*d*n; 
+      if(s > 7.24 || (s > 3.76 && n > 99)) 
+          return 1-2*exp(-(2.000071+.331/sqrt(n)+1.409/n)*s);
+   */
    k = (int) (n * d) + 1;
    m = 2 * k - 1;
    h = k - n * d;

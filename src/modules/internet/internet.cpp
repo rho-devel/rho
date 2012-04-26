@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-8   The R Development Core Team.
+ *  Copyright (C) 2000-10   The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,6 +44,9 @@
 #include <Rconnections.h>
 #include <R_ext/R-ftp-http.h>
 #include <errno.h>
+#include <cstdarg>
+
+using namespace std;
 
 static void *in_R_HTTPOpen(const char *url, const char *headers, const int cacheOK);
 static int   in_R_HTTPRead(void *ctx, char *dest, int len);
@@ -266,7 +269,7 @@ typedef struct {
     window wprog;
     progressbar pb;
     label l_url;
-    RCNTXT cntxt;
+    Context cntxt;
     int pc;
 } winprogressbar;
 
@@ -358,6 +361,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 
 	out = R_fopen(R_ExpandFileName(file), mode);
 	if(!out) {
+	    fclose(in);
 	    error(_("cannot open destfile '%s', reason '%s'"),
 		  file, strerror(errno));
 	}
@@ -412,7 +416,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 		setprogressbar(pbar.pb, 0);
 		settext(pbar.wprog, "Download progress");
 		show(pbar.wprog);
-		begincontext(&(pbar.cntxt), CTXT_CCODE, R_NilValue, R_NilValue,
+		begincontext(&(pbar.cntxt), Context::CCODE, R_NilValue, R_NilValue,
 			     R_NilValue, R_NilValue, R_NilValue);
 		pbar.cntxt.cend = &doneprogressbar;
 		pbar.cntxt.cenddata = &pbar;
@@ -447,7 +451,6 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 	    }
 	    in_R_HTTPClose(ctxt);
-	    fclose(out);
 	    if(!quiet) {
 #ifndef Win32
 		REprintf("\n");
@@ -471,6 +474,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 		warning(_("downloaded length %d != reported length %d"),
 			nbytes, total);
 	}
+	fclose(out);
 	R_Busy(0);
 	if (status == 1) error(_("cannot open URL '%s'"), url);
 
@@ -516,7 +520,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 		show(pbar.wprog);
 
 		/* set up a context which will close progressbar on error. */
-		begincontext(&(pbar.cntxt), CTXT_CCODE, R_NilValue, R_NilValue,
+		begincontext(&(pbar.cntxt), Context::CCODE, R_NilValue, R_NilValue,
 			     R_NilValue, R_NilValue, R_NilValue);
 		pbar.cntxt.cend = &doneprogressbar;
 		pbar.cntxt.cenddata = &pbar;
@@ -552,7 +556,6 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 	    }
 	    in_R_FTPClose(ctxt);
-	    fclose(out);
 	    if(!quiet) {
 #ifndef Win32
 		REprintf("\n");
@@ -577,6 +580,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 			nbytes, total);
 	}
 	R_Busy(0);
+	fclose(out);
 	if (status == 1) error(_("cannot open URL '%s'"), url);
 #endif
 
@@ -594,7 +598,7 @@ void *in_R_HTTPOpen(const char *url, const char *headers, const int cacheOK)
 {
     inetconn *con;
     void *ctxt;
-    int timeout = asInteger(GetOption(install("timeout"), R_BaseEnv));
+    int timeout = asInteger(GetOption1(install("timeout")));
     int len = -1;
     char *type = NULL;
 
@@ -654,7 +658,7 @@ static void *in_R_FTPOpen(const char *url)
 {
     inetconn *con;
     void *ctxt;
-    int timeout = asInteger(GetOption(install("timeout"), R_BaseEnv));
+    int timeout = asInteger(GetOption1(install("timeout")));
     int len = 0;
 
     if(timeout == NA_INTEGER || timeout <= 0) timeout = 60;
@@ -758,7 +762,7 @@ static void *in_R_HTTPOpen(const char *url, const char *headers,
     }
 
 #ifdef USE_WININET_ASYNC
-    timeout = asInteger(GetOption(install("timeout"), R_BaseEnv));
+    timeout = asInteger(GetOption1(install("timeout")));
     if(timeout == NA_INTEGER || timeout <= 0) timeout = 60;
     InternetSetStatusCallback(wictxt->hand,
 			      (INTERNET_STATUS_CALLBACK) InternetCallback);
@@ -922,7 +926,7 @@ static void *in_R_FTPOpen(const char *url)
     }
 
 #ifdef USE_WININET_ASYNC
-    timeout = asInteger(GetOption(install("timeout"), R_BaseEnv));
+    timeout = asInteger(GetOption1(install("timeout")));
     if(timeout == NA_INTEGER || timeout <= 0) timeout = 60;
     InternetSetStatusCallback(wictxt->hand,
 			      (INTERNET_STATUS_CALLBACK) InternetCallback);
@@ -1037,7 +1041,7 @@ void RxmlMessage(int level, const char *format, ...)
     char buf[MBUFSIZE], *p;
     va_list(ap);
 
-    clevel = asInteger(GetOption(install("internet.info"), R_BaseEnv));
+    clevel = asInteger(GetOption1(install("internet.info")));
     if(clevel == NA_INTEGER) clevel = 2;
 
     if(level < clevel) return;

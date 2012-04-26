@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2008  Robert Gentleman, Ross Ihaka and the
- *                            R Development Core Team
+ *  Copyright (C) 1997--2008  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,7 +43,7 @@
 static SEXP cumsum(SEXP x, SEXP s)
 {
     int i;
-    LDOUBLE sum = 0.;
+    long double sum = 0.;
     double *rx = REAL(x), *rs = REAL(s);
     for (i = 0 ; i < length(x) ; i++) {
 	if (ISNAN(rx[i])) break;
@@ -89,7 +88,7 @@ static SEXP ccumsum(SEXP x, SEXP s)
 static SEXP cumprod(SEXP x, SEXP s)
 {
     int i;
-    LDOUBLE prod;
+    long double prod;
     double *rx = REAL(x), *rs = REAL(s);
     prod = 1.0;
     for (i = 0 ; i < length(x) ; i++) {

@@ -24,10 +24,14 @@ Sys.Date <- function() as.Date(as.POSIXlt(Sys.time()))
 
 as.Date <- function(x, ...) UseMethod("as.Date")
 
-as.Date.POSIXct <- function(x, ...) {
-    z <- floor(unclass(x)/86400)
-    attr(z, "tzone") <- NULL
-    structure(z, class="Date")
+as.Date.POSIXct <- function(x, tz = "UTC", ...)
+{
+    if(tz == "UTC") {
+        z <- floor(unclass(x)/86400)
+        attr(z, "tzone") <- NULL
+        structure(z, class = "Date")
+    } else
+        as.Date(as.POSIXlt(x, tz = tz))
 }
 
 as.Date.POSIXlt <- function(x, ...) .Internal(POSIXlt2Date(x))
@@ -99,9 +103,15 @@ format.Date <- function(x, ...)
     xx
 }
 
+## could handle arrays for max.print
 print.Date <- function(x, ...)
 {
-    print(format(x), ...)
+    max.print <- getOption("max.print", 9999L)
+    if(max.print < length(x)) {
+        print(format(x[seq_len(max.print)]), ...)
+        cat(' [ reached getOption("max.print") -- omitted',
+            length(x) - max.print, 'entries ]\n')
+    } else print(format(x), ...)
     invisible(x)
 }
 
@@ -112,8 +122,9 @@ summary.Date <- function(object, digits = 12, ...)
     x
 }
 
-"+.Date" <- function(e1, e2)
+`+.Date` <- function(e1, e2)
 {
+    ## need to drop "units" attribute here
     coerceTimeUnit <- function(x)
         as.vector(round(switch(attr(x,"units"),
                                secs = x/86400, mins = x/1440, hours = x/24,
@@ -128,7 +139,7 @@ summary.Date <- function(object, digits = 12, ...)
     structure(unclass(e1) + unclass(e2), class = "Date")
 }
 
-"-.Date" <- function(e1, e2)
+`-.Date` <- function(e1, e2)
 {
     coerceTimeUnit <- function(x)
         as.vector(round(switch(attr(x,"units"),
@@ -170,7 +181,7 @@ Summary.Date <- function (..., na.rm)
     val
 }
 
-"[.Date" <- function(x, ..., drop = TRUE)
+`[.Date` <- function(x, ..., drop = TRUE)
 {
     cl <- oldClass(x)
     class(x) <- NULL
@@ -179,7 +190,7 @@ Summary.Date <- function (..., na.rm)
     val
 }
 
-"[[.Date" <- function(x, ..., drop = TRUE)
+`[[.Date` <- function(x, ..., drop = TRUE)
 {
     cl <- oldClass(x)
     class(x) <- NULL
@@ -188,12 +199,12 @@ Summary.Date <- function (..., na.rm)
     val
 }
 
-"[<-.Date" <- function(x, ..., value)
+`[<-.Date` <- function(x, ..., value)
 {
-    if(!as.logical(length(value))) return(x)
-    value <- as.Date(value)
+    if(!length(value)) return(x)
+    value <- unclass(as.Date(value))
     cl <- oldClass(x)
-    class(x) <- class(value) <- NULL
+    class(x) <- NULL
     x <- NextMethod(.Generic)
     class(x) <- cl
     x
@@ -202,6 +213,9 @@ Summary.Date <- function (..., na.rm)
 as.character.Date <- function(x, ...) format(x, ...)
 
 as.data.frame.Date <- as.data.frame.vector
+
+as.list.Date <- function(x, ...)
+    lapply(seq_along(x), function(i) x[i])
 
 c.Date <- function(..., recursive=FALSE)
     structure(c(unlist(lapply(list(...), unclass))), class="Date")
@@ -254,24 +268,24 @@ seq.Date <- function(from, to, by, length.out=NULL, along.with=NULL, ...)
     } else if(!is.numeric(by)) stop("invalid mode for 'by'")
     if(is.na(by)) stop("'by' is NA")
 
-    if(valid <= 2L) {
+    if(valid <= 2L) { # days or weeks
         from <- unclass(as.Date(from))
         if(!is.null(length.out))
             res <- seq.int(from, by=by, length.out=length.out)
         else {
-            to <- unclass(as.Date(to))
+            to0 <- unclass(as.Date(to))
             ## defeat test in seq.default
-            res <- seq.int(0, to - from, by) + from
+            res <- seq.int(0, to0 - from, by) + from
         }
-        return(structure(res, class="Date"))
+        res <- structure(res, class="Date")
     } else {  # months or years or DSTdays
         r1 <- as.POSIXlt(from)
         if(valid == 4L) {
             if(missing(to)) { # years
                 yr <- seq.int(r1$year, by = by, length.out = length.out)
             } else {
-                to <- as.POSIXlt(to)
-                yr <- seq.int(r1$year, to$year, by)
+                to0 <- as.POSIXlt(to)
+                yr <- seq.int(r1$year, to0$year, by)
             }
             r1$year <- yr
             res <- as.Date(r1)
@@ -279,16 +293,22 @@ seq.Date <- function(from, to, by, length.out=NULL, along.with=NULL, ...)
             if(missing(to)) {
                 mon <- seq.int(r1$mon, by = by, length.out = length.out)
             } else {
-                to <- as.POSIXlt(to)
-                mon <- seq.int(r1$mon, 12*(to$year - r1$year) + to$mon, by)
+                to0 <- as.POSIXlt(to)
+                mon <- seq.int(r1$mon, 12*(to0$year - r1$year) + to0$mon, by)
             }
             r1$mon <- mon
             res <- as.Date(r1)
         }
-        return(res)
     }
+    ## can overshoot
+    if (!missing(to)) {
+        to <- as.Date(to)
+        res <- if (by > 0) res[res <= to] else res[res >= to]
+    }
+    res
 }
 
+## *very* similar to cut.POSIXt [ ./datetime.R ] -- keep in sync!
 cut.Date <-
     function (x, breaks, labels = NULL, start.on.monday = TRUE,
               right = FALSE, ...)
@@ -301,57 +321,73 @@ cut.Date <-
     } else if(is.numeric(breaks) && length(breaks) == 1L) {
 	## specified number of breaks
     } else if(is.character(breaks) && length(breaks) == 1L) {
-        by2 <- strsplit(breaks, " ", fixed=TRUE)[[1L]]
-        if(length(by2) > 2L || length(by2) < 1L)
-            stop("invalid specification of 'breaks'")
+	by2 <- strsplit(breaks, " ", fixed=TRUE)[[1L]]
+	if(length(by2) > 2L || length(by2) < 1L)
+	    stop("invalid specification of 'breaks'")
 	valid <-
-	    pmatch(by2[length(by2)], c("days", "weeks", "months", "years", "quarters"))
+	    pmatch(by2[length(by2)],
+		   c("days", "weeks", "months", "years", "quarters"))
 	if(is.na(valid)) stop("invalid specification of 'breaks'")
 	start <- as.POSIXlt(min(x, na.rm=TRUE))
 	if(valid == 1L) incr <- 1L
-	if(valid == 2L) {
+	if(valid == 2L) {		# weeks
 	    start$mday <- start$mday - start$wday
 	    if(start.on.monday)
 		start$mday <- start$mday + ifelse(start$wday > 0L, 1L, -6L)
+            start$isdst <- -1L
 	    incr <- 7L
 	}
-    if(valid == 3L) {
-        start$mday <- 1L
-        end <- as.POSIXlt(max(x, na.rm = TRUE))
-        step <- ifelse(length(by2) == 2L, as.integer(by2[1L]), 1L)
-        end <- as.POSIXlt(end + (31 * step * 86400))
-        end$mday <- 1L
-        breaks <- as.Date(seq(start, end, breaks))
-    } else if(valid == 4L) {
-        start$mon <- 0L
-        start$mday <- 1L
-        end <- as.POSIXlt(max(x, na.rm = TRUE))
-        step <- ifelse(length(by2) == 2L, as.integer(by2[1L]), 1L)
-        end <- as.POSIXlt(end + (366 * step * 86400))
-        end$mon <- 0L
-        end$mday <- 1L
-        breaks <- as.Date(seq(start, end, breaks))
-    } else if(valid == 5L) {
-        qtr <- rep(c(0L, 3L, 6L, 9L), each = 3L)
-        start$mon <- qtr[start$mon + 1L]
-        start$mday <- 1L
-        end <- as.POSIXlt(max(x, na.rm = TRUE))
-        step <- ifelse(length(by2) == 2L, as.integer(by2[1L]), 1L)
-        end <- as.POSIXlt(end + (93 * step * 86400))
-        end$mon <- qtr[end$mon + 1L]
-        end$mday <- 1L
-        breaks <- as.Date(seq(start, end, paste(step * 3L, "months")))
-    } else {
-        start <- as.Date(start)
-        if (length(by2) == 2L) incr <- incr * as.integer(by2[1L])
-        maxx <- max(x, na.rm = TRUE)
-        breaks <- seq.int(start, maxx + incr, breaks)
-        breaks <- breaks[seq_len(1L+max(which(breaks <= maxx)))]
-      }
+	if(valid == 3L) {		# months
+	    start$mday <- 1L
+            start$isdst <- -1L
+	    end <- as.POSIXlt(max(x, na.rm = TRUE))
+	    step <- ifelse(length(by2) == 2L, as.integer(by2[1L]), 1L)
+	    end <- as.POSIXlt(end + (31 * step * 86400))
+	    end$mday <- 1L
+            end$isdst <- -1L
+	    breaks <- as.Date(seq(start, end, breaks))
+	} else if(valid == 4L) {	# years
+	    start$mon <- 0L
+	    start$mday <- 1L
+            start$isdst <- -1L
+	    end <- as.POSIXlt(max(x, na.rm = TRUE))
+	    step <- ifelse(length(by2) == 2L, as.integer(by2[1L]), 1L)
+	    end <- as.POSIXlt(end + (366 * step * 86400))
+	    end$mon <- 0L
+	    end$mday <- 1L
+            end$isdst <- -1L
+	    breaks <- as.Date(seq(start, end, breaks))
+	} else if(valid == 5L) {	# quarters
+	    qtr <- rep(c(0L, 3L, 6L, 9L), each = 3L)
+	    start$mon <- qtr[start$mon + 1L]
+	    start$mday <- 1L
+            start$isdst <- -1L
+	    maxx <- max(x, na.rm = TRUE)
+	    end <- as.POSIXlt(maxx)
+	    step <- ifelse(length(by2) == 2L, as.integer(by2[1L]), 1L)
+	    end <- as.POSIXlt(end + (93 * step * 86400))
+	    end$mon <- qtr[end$mon + 1L]
+	    end$mday <- 1L
+            end$isdst <- -1L
+	    breaks <- as.Date(seq(start, end, paste(step * 3L, "months")))
+	    ## 93 days ahead could give an empty level, so
+	    lb <- length(breaks)
+	    if(maxx < breaks[lb-1]) breaks <- breaks[-lb]
+	} else {
+	    start <- as.Date(start)
+	    if (length(by2) == 2L) incr <- incr * as.integer(by2[1L])
+	    maxx <- max(x, na.rm = TRUE)
+	    breaks <- seq(start, maxx + incr, breaks)
+	    breaks <- breaks[seq_len(1L+max(which(breaks <= maxx)))]
+	}
     } else stop("invalid specification of 'breaks'")
     res <- cut(unclass(x), unclass(breaks), labels = labels,
-               right = right, ...)
-    if(is.null(labels)) levels(res) <- as.character(breaks[-length(breaks)])
+	       right = right, ...)
+    if(is.null(labels)) {
+	levels(res) <-
+	    as.character(if (is.numeric(breaks)) x[!duplicated(res)]
+			 else breaks[-length(breaks)])
+    }
     res
 }
 
@@ -383,7 +419,7 @@ round.Date <- function(x, ...)
     val
 }
 
-## must avoid truncating forards dates prior to 1970-01-01.
+## must avoid truncating forwards dates prior to 1970-01-01.
 trunc.Date <- function(x, ...) round(x - 0.4999999)
 
 rep.Date <- function(x, ...)
@@ -399,7 +435,7 @@ diff.Date <- function (x, lag = 1L, differences = 1L, ...)
     if (length(lag) > 1L || length(differences) > 1L || lag < 1L || differences < 1L)
         stop("'lag' and 'differences' must be integers >= 1")
     if (lag * differences >= xlen)
-        return(structure(numeric(0L), class="difftime", units="days"))
+        return(structure(numeric(), class="difftime", units="days"))
     r <- x
     i1 <- -seq_len(lag)
     if (ismat)

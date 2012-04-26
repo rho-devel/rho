@@ -142,12 +142,30 @@ block_encoder_end(lzma_coder *coder, lzma_allocator *allocator)
 }
 
 
+static lzma_ret
+block_encoder_update(lzma_coder *coder, lzma_allocator *allocator,
+		const lzma_filter *filters lzma_attribute((__unused__)),
+		const lzma_filter *reversed_filters)
+{
+	if (coder->sequence != SEQ_CODE)
+		return LZMA_PROG_ERROR;
+
+	return lzma_next_filter_update(
+			&coder->next, allocator, reversed_filters);
+}
+
+
 extern lzma_ret
 lzma_block_encoder_init(lzma_next_coder *next, lzma_allocator *allocator,
 		lzma_block *block)
 {
 	lzma_next_coder_init(&lzma_block_encoder_init, next, allocator);
 
+	if (block == NULL)
+		return LZMA_PROG_ERROR;
+
+	// The contents of the structure may depend on the version so
+	// check the version first.
 	if (block->version != 0)
 		return LZMA_OPTIONS_ERROR;
 
@@ -167,6 +185,7 @@ lzma_block_encoder_init(lzma_next_coder *next, lzma_allocator *allocator,
 
 		next->code = &block_encode;
 		next->end = &block_encoder_end;
+		next->update = &block_encoder_update;
 		next->coder->next = LZMA_NEXT_CODER_INIT;
 	}
 

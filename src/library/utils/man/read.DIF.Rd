@@ -1,6 +1,6 @@
 % File src/library/utils/man/read.DIF.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{read.DIF}
@@ -22,13 +22,11 @@ read.DIF(file, header = FALSE,
 }
 \arguments{
   \item{file}{the name of the file which the data are to be read from,
-    or a connection, or a complete URL.
-#ifdef windows
+    or a \link{connection}, or a complete URL.
 
     The name \code{"clipboard"} may also be used on Windows, in which
     case \code{read.DIF("clipboard")} will look for a DIF format entry
     in the Windows clipboard.
-#endif
   }
 
   \item{header}{a logical value indicating whether the spreadsheet contains the
@@ -56,12 +54,15 @@ read.DIF(file, header = FALSE,
     The default is to use \code{"V"} followed by the column number.}
 
   \item{as.is}{the default behavior of \code{read.DIF} is to convert
-    character variables (which are not converted to logical, numeric or
-    complex) to factors.  The variable \code{as.is} controls the
+    character variables to factors.  The variable \code{as.is} controls the
     conversion of columns not otherwise specified by \code{colClasses}.
     Its value is either a vector of logicals (values are recycled if
     necessary), or a vector of numeric or character indices which
     specify which columns should not be converted to factors.
+    
+    Note: In releases prior to \R{} 2.12.1, cells marked as being of
+    character type were converted to logical, numeric or complex using
+    \code{\link{type.convert}} as in \code{\link{read.table}}.
 
     Note: to suppress all conversions including those of numeric
     columns, set \code{colClasses = "character"}.

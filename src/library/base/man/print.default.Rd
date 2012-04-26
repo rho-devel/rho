@@ -1,6 +1,6 @@
 % File src/library/base/man/print.default.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{print.default}
@@ -29,7 +29,7 @@
   \item{na.print}{a character string which is used to indicate
     \code{\link{NA}} values in printed output, or \code{NULL}
     (see \sQuote{Details}).}
-  \item{print.gap}{a non-negative integer \eqn{\le 1024}{<= 1024},
+  \item{print.gap}{a non-negative integer \eqn{\le 1024},
     or \code{NULL} (meaning 1), giving the spacing between adjacent
     columns in printed vectors, matrices and arrays.}
   \item{right}{logical, indicating whether or not strings should be
@@ -65,15 +65,11 @@
   \code{\link{show}} for \R objects with formal classes if called
   with no optional arguments.
 }
-\section{Warning}{
-  Using too large a value of \code{digits} may lead to representation
-  errors in the calculation of the number of significant digits and the
-  decimal representation: these are likely for \code{digits >= 16}, and
-  these possible errors are taken into account in
-  assessing the number of significant digits to be printed in that case.
-
-  Whereas earlier versions of \R might have printed further digits for
-  \code{digits >= 16} on some platforms, they were not necessarily reliable.
+\section{Large number of digits}{
+  Note that for large values of \code{digits}, currently for
+  \code{digits >= 16}, the calculation of the number of significant
+  digits will depend on the platform's internal (C library)
+  implementation of \samp{sprintf()} functionality.
 }
 \section{Single-byte locales}{
   If a non-printable character is encountered during output, it is
@@ -83,11 +79,9 @@
   code: for example the UK currency pound sign in the C locale (if
   implemented correctly) is printed as \samp{\\243}.  Which characters
   are non-printable depends on the locale.
-#ifdef windows
   (Because some versions of Windows get this wrong, all bytes with the
   upper bit set are regarded as printable on Windows in a single-byte
   locale.)
-#endif
 }
 
 #ifdef unix

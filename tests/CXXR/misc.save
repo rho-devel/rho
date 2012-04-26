@@ -1,0 +1,28 @@
+> # Miscellaneous tests
+> 
+> # 'break' in Promise:
+> 
+> quint <- function(arg) {
++     sum <- 0
++     for (i in 1:5) {
++         sum <- sum + 1
++ 	if (i == 3) sum <- sum + arg;
++     }
++     sum
++ }
+> 
+> quint(0)
+[1] 5
+> quint(2)
+[1] 7
+> try(quint(break))
+Error in sum + arg : no loop to break from
+> 
+> # Missing ...
+> 
+> missdots <- function(...) missing(...)
+> missdots()
+[1] TRUE
+> missdots(2)
+[1] FALSE
+> 

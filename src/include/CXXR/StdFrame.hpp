@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -75,7 +75,7 @@ namespace CXXR {
 	 *          but some reconfiguration (and consequent time
 	 *          penalty) may occur if it is exceeded.
 	 */
-	explicit StdFrame(size_t initial_capacity = 15);
+	explicit StdFrame(std::size_t initial_capacity = 15);
 	// Why 15?  Because if the implementation uses a prime number
 	// hash table sizing policy, this will result in the
 	// allocation of a hash table array comprising 31 buckets.  On
@@ -84,15 +84,22 @@ namespace CXXR {
 
 	// Virtual functions of Frame (qv):
 	PairList* asPairList() const;
+
+#ifdef __GNUG__
+	__attribute__((hot,fastcall))
+#endif
 	Binding* binding(const Symbol* symbol);
+
 	const Binding* binding(const Symbol* symbol) const;
 	void clear();
+	StdFrame* clone() const;
 	bool erase(const Symbol* symbol);
 	void import(const Frame* frame);
 	void lockBindings();
-	size_t numBindings() const;
+	std::size_t numBindings() const;
 	Binding* obtainBinding(const Symbol* symbol);
-	size_t size() const;
+	std::size_t size() const;
+	void softMergeInto(Frame* target) const;
 	std::vector<const Symbol*> symbols(bool include_dotsymbols) const;
 
 	// Virtual function of GCNode:
@@ -102,7 +109,6 @@ namespace CXXR {
 	void detachReferents();
     private:
 	friend class boost::serialization::access;
-
 	template<class Archive>
 	void load(Archive & ar, const unsigned int verison) {
 	    ar >> boost::serialization::base_object<Frame>(*this);
@@ -137,7 +143,6 @@ namespace CXXR {
 	    BSerializer::Frame frame("StdFrame");
 	    boost::serialization::split_member(ar, *this, version);
 	}
-
 	map m_map;
 
 	// Declared private to ensure that StdFrame objects are
@@ -146,8 +151,7 @@ namespace CXXR {
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
-	StdFrame(const Frame&);
-	StdFrame& operator=(const Frame&);
+	StdFrame& operator=(const StdFrame&);
     };
 }  // namespace CXXR
 

@@ -20,9 +20,9 @@ my $castscope = "\\s*[~!+&\*-]*(?:$cs(?:->$cs)*|\\[[^\\]]*\\]|$brack2)*";
 #print $castscope;
 
 my $constype1 = "ARITHOP_TYPE|apse_bool_t|apse_size_t|char|double|float";
-my $constype2 = "HINSTANCE|iconv_t|int|Int32|intptr_t|_lli_t|long|N01type";
-my $constype3 = "R_size_t|R_varloc_t|Rboolean|Rbyte|Rconnection|RELOP_TYPE";
-my $constype4 = "RNGtype|Rprt_adj|Rrawconn|SEXPTYPE|short|size_t|time_t";
+my $constype2 = "HINSTANCE|iconv_t|int|int_least64_t|Int32|intptr_t|_lli_t|long|N01type";
+my $constype3 = "R_len_t|R_size_t|R_varloc_t|Rboolean|Rbyte|Rconnection|RELOP_TYPE";
+my $constype4 = "RNGtype|Rprt_adj|Rrawconn|SEXPTYPE|short|size_t|ssize_t|time_t";
 my $constype5 = "uInt|uint64_t|uIntuintptr_t|uintptr_t|uLong|wchar_t|wint_t|z_off_t";
 my $constype = "(?:$constype1|$constype2|$constype3|$constype4|$constype5)";
 
@@ -36,6 +36,7 @@ while (<>) {
   s/\b($constype)(\s*)\(/\($1\)$2\(/g;
 
   # Reinstate C++ reserved words used as identifiers:
+  s/class_str/class/g;
   s/connclass/class/g;
   s/connprivate/private/g;
   s/devnum/this/g;
@@ -51,6 +52,9 @@ while (<>) {
   s/thispath/this/g;
   s/thiss/this/g;
 
+  # Bytecode related stuff:
+  s/NSFROMEND\((\d+)\)/R_BCNodeStackTop[-$1]/g;
+
   # Other changes:
   s/cDUPLICATE_ATTRIB/DUPLICATE_ATTRIB/g;
   s/\(char\*\)R_AllocStringBuffer/R_AllocStringBuffer/g;
@@ -64,6 +68,9 @@ while (<>) {
   s/CXXRNOCAST//g;
   s/CXXRTRUE/1/g;
   s/CXXRUNSIGNED\s*//g;
+  s/NODESTACKEND\[/R_BCNodeStackTop\[/g;
+  s/Rf_//g;
   s/XVECTOR_ELT/VECTOR_ELT/g;
+  s/std:://g;
   print;
 }

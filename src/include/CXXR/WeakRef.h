@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -128,6 +128,12 @@ namespace CXXR {
 	 *
 	 * @param finalize_on_exit True iff the finalizer should be
 	 *          run when CXXR exits.
+	 *
+	 * @note The constructors of WeakRef are unusual in that they
+	 * themselves expose the constructed object to garbage
+	 * collection.  WeakRef objects must therefore be created
+	 * using <tt>new WeakRef(...)</tt> rather than
+	 * <tt>CXXR_NEW(WeakRef(...))</tt>.
 	 */
 	WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer = 0,
 		bool finalize_on_exit = false);
@@ -152,6 +158,12 @@ namespace CXXR {
 	 *
 	 * @param finalize_on_exit True iff the finalizer should be
 	 *          run when CXXR exits.
+	 *
+	 * @note The constructors of WeakRef are unusual in that they
+	 * themselves expose the constructed object to garbage
+	 * collection.  WeakRef objects must therefore be created
+	 * using <tt>new WeakRef(...)</tt> rather than
+	 * <tt>CXXR_NEW(WeakRef(...))</tt>.
 	 */
 	WeakRef(RObject* key, RObject* value, R_CFinalizer_t C_finalizer,
 		bool finalize_on_exit = false);
@@ -208,9 +220,9 @@ namespace CXXR {
 	void detachReferents();
     private:
 	typedef std::list<WeakRef*, Allocator<WeakRef*> > WRList;
-	static WRList s_live;
-	static WRList s_f10n_pending;  // Finalization pending
-	static WRList s_tombstone;
+	static WRList* s_live;
+	static WRList* s_f10n_pending;  // Finalization pending
+	static WRList* s_tombstone;
 
 	static int s_count;  // Count of references in existence (for
 			     // debugging)
@@ -225,7 +237,13 @@ namespace CXXR {
 	bool m_ready_to_finalize;
 	bool m_finalize_on_exit;
 
+	// Clean up static data members:
+	static void cleanup();
+
 	void finalize();
+
+	// Initialize the static data members:
+	static void initialize();
 
 	/** Mark nodes reachable via weak references.
 	 *
@@ -255,8 +273,13 @@ namespace CXXR {
 	WRList* wrList() const;
 
 	friend class GCNode;
+	friend class SchwarzCounter<WeakRef>;
     };
 }  // namespace CXXR
+
+namespace {
+    CXXR::SchwarzCounter<CXXR::WeakRef> weakref_schwarz_ctr;
+}
 
 #endif /* __cplusplus */
 

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -167,7 +167,7 @@ HINSTANCE R_loadLibrary(const char *path, int asLocal, int now,
     dllcw = _controlfp(0,0) & ~_MCW_IC;
     if (dllcw != rcw) {
 	_controlfp(rcw, _MCW_EM | _MCW_IC | _MCW_RC | _MCW_PC);
-	if (LOGICAL(GetOption(install("warn.FPU"), R_BaseEnv))[0])
+	if (LOGICAL(GetOption1(install("warn.FPU")))[0])
 	    warning(_("DLL attempted to change FPU control word from %x to %x"),
 		    rcw,dllcw);
     }
@@ -183,7 +183,8 @@ static DL_FUNC getRoutine(DllInfo *info, char const *name)
 
 static void R_getDLLError(char *buf, int len)
 {
-    LPVOID lpMsgBuf;
+    LPSTR lpMsgBuf, p;
+    char *q;
     FormatMessage(
 	FORMAT_MESSAGE_ALLOCATE_BUFFER |
 	FORMAT_MESSAGE_FROM_SYSTEM |
@@ -191,12 +192,14 @@ static void R_getDLLError(char *buf, int len)
 	NULL,
 	GetLastError(),
 	MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-	(LPTSTR) &lpMsgBuf,
+	(LPSTR) &lpMsgBuf,
 	0,
 	NULL
 	);
     strcpy(buf, "LoadLibrary failure:  ");
-    strcat(buf, lpMsgBuf);
+    q = buf + strlen(buf);
+    /* It seems that Win 7 returns error messages with CRLF terminators */
+    for (p = lpMsgBuf; *p; p++) if (*p != '\r') *q++ = *p;
     LocalFree(lpMsgBuf);
 }
 

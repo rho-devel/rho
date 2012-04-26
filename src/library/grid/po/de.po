@@ -1,18 +1,19 @@
-# # German translation of 
-# # src/library/graphics/po/grid.pot
-# # Copyright (C) 2009 The R Foundation
-# # This file is distributed under the same license as the R package.
-# # Detlef Steuer <steuer@hsu-hh.de>, 2009.
+# German translation of 
+# src/library/graphics/po/grid.pot
+# Copyright (C) 2009-2010 The R Foundation
+# This file is distributed under the same license as the R package.
+# Detlef Steuer <steuer@hsu-hh.de>, 2009-2010.
 #
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: R-2.10.0\n"
+"Project-Id-Version: R-2.12.0\n"
 "Report-Msgid-Bugs-To: bugs@R-project.org\n"
-"POT-Creation-Date: 2009-08-06 09:09+0100\n"
-"PO-Revision-Date: 2009-10-07 14:22+0200\n"
+"POT-Creation-Date: 2011-03-29 21:50+0100\n"
+"PO-Revision-Date: 2010-09-21 14:36+0200\n"
 "Last-Translator: Detlef Steuer <steuer@hsu-hh.de>\n"
 "Language-Team:  <R-core@r-project.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -24,7 +25,9 @@ msgstr "Kann rotierten Viewport nicht beschneiden"
 
 #: grid.c:673 grid.c:678 grid.c:767 grid.c:772
 msgid "Cannot pop the top-level viewport (grid and graphics output mixed?)"
-msgstr "Kann den obersten viewport nicht vom Stack werfen (grid und graphics Ausgaben gemischt?)"
+msgstr ""
+"Kann den obersten viewport nicht vom Stack werfen (grid und graphics "
+"Ausgaben gemischt?)"
 
 #: grid.c:952
 msgid "attempt to plot on null device"
@@ -42,19 +45,23 @@ msgstr "Polygonkante nicht gefunden (Nullbreite oder Nulllänge?)"
 msgid "Polygon edge not found"
 msgstr "Polygonkante nicht gefunden"
 
-#: grid.c:1601
+#: grid.c:1615
 msgid "Require at least two points to draw arrow"
 msgstr "Mindestens zwei Punkte nötig, um einen Pfeil zu zeichnen"
 
-#: grid.c:1915
+#: grid.c:1931
 msgid "Non-finite control point in Xspline"
 msgstr "Nicht-endlicher Kontrollpunkt in Xspline"
 
-#: grid.c:3015
+#: grid.c:2796
+msgid "non-finite x or y in graphics path"
+msgstr "unendliches x oder y im Grafikpfad"
+
+#: grid.c:3286
 msgid "invalid plotting symbol"
 msgstr "unzulässiges Plotsymbol"
 
-#: grid.c:3101
+#: grid.c:3372
 msgid "Unable to clip to rotated rectangle"
 msgstr "Kann nicht auf das rotierte Rechteck zurechtschneiden"
 

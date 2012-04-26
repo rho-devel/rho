@@ -14,6 +14,12 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
+## a few class name definitions needed elsewhere
+.anyClassName <- structure("ANY", package = "methods")
+.signatureClassName <- structure("signature", package = "methods")
+
+
+
 .InitBasicClasses <- function(envir)
 {
     ## setClass won't allow redefining basic classes,
@@ -42,12 +48,17 @@
     .setBaseClass("expression", prototype = expression(), where = envir)
     clList <- c(clList, vClasses)
     nullF <- function()NULL; environment(nullF) <- .GlobalEnv
+    attr(nullF, "source") <- NULL
     .setBaseClass("function", prototype = nullF, where = envir); clList <- c(clList, "function")
 
     setClass("language", where = envir); clList <- c(clList, "language")
     .setBaseClass("environment", prototype = new.env(), where = envir); clList <- c(clList, "environment")
 
     .setBaseClass("externalptr", prototype = .newExternalptr(), where = envir); clList <- c(clList, "externalptr")
+
+    .setBaseClass("builtin", prototype = `<-`, where = envir); clList <- c(clList, "builtin")
+
+    .setBaseClass("special", prototype = `if`, where = envir); clList <- c(clList, "special")
 
     ## S4, S3 are basic classes that are used to define methods related to being S4, S3 object
     for(cl in c("S4", "S3")) {
@@ -198,6 +209,8 @@
 	     },
 	     where = envir)
     setOldClass("factor", S4Class = "factor", where = envir)
+    if(!isGeneric("show", envir))
+        setGeneric("show", where = envir, simpleInheritanceOnly = TRUE)
     setMethod("show", "oldClass", function(object) {
         if(!isS4(object))  {
             print(object)
@@ -208,7 +221,7 @@
         if(length(S3Class)) S3Class <- S3Class[[1L]]
         else S3Class <- "oldClass"      # or error?
         cat("Object of class \"", cl, "\"\n", sep = "")
-        print(S3Part(object, strict = TRUE))
+        print(S3Part(object, strictS3 = TRUE))
         otherSlots <- slotNames(cl)
         S3slots <- slotNames(S3Class)
         otherSlots <- otherSlots[is.na(match(otherSlots, S3slots))]
@@ -245,7 +258,9 @@
                 Classi <- class(obj)
                 defi <- getClassDef(Classi)
                 if(is.null(defi))
-                  stop(gettextf("unnamed argument to initialize() for S3 class must have a class defintion; \"%s\" does not", Classi), domain = NA)
+                  stop(gettextf("unnamed argument to initialize() for S3 class must have a class definition; %s does not",
+                                dQuote(Classi)),
+                       domain = NA)
                 if(is(obj, S3ClassP)) {
                     ## eligible to be the S3 part; merge other slots from prototype;
                     ## obj then becomes the object, with its original class as the S3Class
@@ -257,7 +272,7 @@
                     ## the S3Class stays from the prototype
                     .Object <- .mergeAttrs(obj, .Object)
                 }
-                else stop(gettextf("unnamed argument must extend either the S3 class or the class of the data part; not true of class \"%s\"", Classi), domain = NA)
+                else stop(gettextf("unnamed argument must extend either the S3 class or the class of the data part; not true of class %s", dQuote(Classi)), domain = NA)
 
             }
         }
@@ -274,15 +289,25 @@
     ## Next, miscellaneous S3 classes.
     for(cl in .OldClassesList)
         setOldClass(cl, where = envir)
-    ## some S3 classes have inheritance on an instance basis, that breaks the S4 contains
-    ## model.  To emulate their (unfortunate) behavior requires a setIs with a test.
-    for(cl in .OldIsList)
-        .setOldIs(cl, envir)
+    ## special mess for "maov"; see comment in .OldClassesList
+    setIs("maov", "aov")
     setClassUnion("data.frameRowLabels", c("character", "integer"), where = envir)
     setClass("data.frame",
              representation(names = "character", row.names = "data.frameRowLabels"),
              contains = "list", prototype = unclass(data.frame()), where = envir) # the S4 version
     setOldClass("data.frame", S4Class = "data.frame", where = envir)
+    ## the S3 method for $<- does some stupid things to class()
+    ## This buffers the effect from S4 classes
+    setMethod("$<-", "data.frame", where = envir,
+              function(x, name, value) {
+                  x@.Data <- as.list(`$<-.data.frame`(structure(x@.Data, names = x@names,
+                         row.names = x@row.names, class = "data.frame"),
+                     name, value))
+                  ## Assert:  the only slot/attribute that can change
+                  ## in $<-.data.frame is "names", and the assignment
+                  ## of the .Data "slot" copies in the new names
+                  x
+              })
     ## methods to go from S4 to S3; first, using registered class; second, general S4 object
     setMethod("coerce", c("oldClass", "S3"), function (from, to, strict = TRUE)
               {
@@ -299,7 +324,10 @@
     setMethod("coerce", c("ANY", "S3"), function (from, to, strict = TRUE)
               {
                   switch(typeof(from),
-                         S4 = stop(gettextf("Class \"%s\" does not have an S3 data part, and so is of type \"S4\"; no S3 equivalent",class(from)), domain = NA),
+                         S4 =
+                         stop(gettextf("Class %s does not have an S3 data part, and so is of type \"S4\"; no S3 equivalent",
+                                       dQuote(class(from))),
+                              domain = NA),
                          .notS4(from) )
               },
               where = envir)
@@ -312,14 +340,16 @@
                       cl <- .class1(from)
                       classDef <- getClass(cl)
                       if(identical(classDef@virtual, TRUE))
-                        stop(gettextf("Class \"%s\" is VIRTUAL; not meaningful to create an S4 object from this class", cl), domain = NA)
+                        stop(gettextf("Class %s is VIRTUAL; not meaningful to create an S4 object from this class",
+                                      dQuote(cl)),
+                             domain = NA)
                       pr <- classDef@prototype
                       value <- new(cl)
                       slots <- classDef@slots
                       if(match(".Data", names(slots), 0L) > 0L) {
                           data <- unclass(from)
                           if(!is(data, slots[[".Data"]]))
-                            stop(gettextf("Object must be a valid data part for class \"%s\"; not true of type \"%s\"", cl, class(data)),
+                            stop(gettextf("Object must be a valid data part for class %s; not true of type %s", dQuote(cl), dQuote(class(data))),
                                  domain = NA)
                           value@.Data <- unclass(from)
                       }
@@ -370,61 +400,86 @@
     ## functions of the same name.
 
     ## These methods are designed to be inherited or extended
+    initMatrix <- function(.Object, data = NA, nrow = 1, ncol = 1,
+                           byrow = FALSE, dimnames = NULL, ...) {
+        na <- nargs()
+        if(length(dots <- list(...)) && ".Data" %in% names(dots)) {
+            if(na == 2)
+              .Object <- .mergeAttrs(dots$.Data, .Object)
+            else {
+                dat <- dots$.Data
+                dots <- dots[names(dots) != ".Data"]
+                if(na == 2 + length(dots)) {
+                    .Object <- .mergeAttrs(as.matrix(dat), .Object, dots)
+                }
+                else
+                  stop("Cannot specify matrix() arguments when specifying .Data")
+            }
+        }
+        else if(is.matrix(data) && na == 2 + length(dots))
+          .Object <- .mergeAttrs(data, .Object, dots)
+        else {
+            if (missing(nrow))
+              nrow <- ceiling(length(data)/ncol)
+            else if (missing(ncol))
+              ncol <- ceiling(length(data)/nrow)
+            value <- matrix(data, nrow, ncol, byrow, dimnames)
+            .Object <- .mergeAttrs(value, .Object, dots)
+        }
+        validObject(.Object)
+        .Object
+    }
+    .matrixExtends <- unique(c("matrix", names(getClass("matrix")@contains)))
     setMethod("initialize", "matrix", where = where,
-	      function(.Object, data = NA, nrow = 1, ncol = 1,
-		       byrow = FALSE, dimnames = NULL, ...) {
-		  if((na <- nargs()) < 2) # guaranteed to be called with .Object from new
-		      .Object
-		  else if(length(dots <- list(...)) && ".Data" %in% names(dots)) {
-		      if(na == 2)
-			  .mergeAttrs(dots$.Data, .Object)
-		      else {
-			  dat <- dots$.Data
-			  dots <- dots[names(dots) != ".Data"]
-			  if(na == 2 + length(dots)) {
-			      .mergeAttrs(as.matrix(dat), .Object, dots)
-			  }
-			  else
-			      stop("Cannot specify matrix() arguments when specifying .Data")
-		      }
-		  }
-		  else if(is.matrix(data) && na == 2 + length(dots))
-		      .mergeAttrs(data, .Object, dots)
+              function(.Object, ...) {
+		  if(nargs() < 2) # guaranteed to be called with .Object from new
+                    return(.Object)
 		  else {
-		      if (missing(nrow))
-			  nrow <- ceiling(length(data)/ncol)
-		      else if (missing(ncol))
-			  ncol <- ceiling(length(data)/nrow)
-		      value <- matrix(data, nrow, ncol, byrow, dimnames)
-		      .mergeAttrs(value, .Object, dots)
-		  }
-	      })
-
+                      if(isMixin(getClass(class(.Object)))) # other superclasses
+                          callNextMethod()
+                      else
+                          initMatrix(.Object, ...)
+                  }
+              }
+	      )
+    initArray <- function(.Object, data = NA, dim = length(data),
+                          dimnames = NULL, ...) {
+        na <- nargs()
+        if(length(dots <- list(...)) && ".Data" %in% names(dots)) {
+            if(na == 2)
+              .Object <- .mergeAttrs(dots$.Data, .Object)
+            else {
+                dat <- dots$.Data
+                dots <- dots[names(dots) != ".Data"]
+                if(na == 2 + length(dots)) {
+                    .Object <- .mergeAttrs(as.array(dat), .Object, dots)
+                }
+                else
+                  stop("Cannot specify array() arguments when specifying .Data")
+            }
+        }
+        else if(is.array(data) && na == 2 + length(dots))
+          .Object <- .mergeAttrs(data, .Object, dots)
+        else {
+            value <- array(data, dim, dimnames)
+            .Object <- .mergeAttrs(value, .Object, dots)
+        }
+        validObject(.Object)
+        .Object
+    }
+    .arrayExtends <- unique(c("array", names(getClass("array")@contains)))
     setMethod("initialize", "array", where = where,
-	      function(.Object, data = NA, dim = length(data),
-		       dimnames = NULL, ...) {
-		  if((na <- nargs()) < 2) # guaranteed to be called with .Object from new
-		      .Object
-		  else if(length(dots <- list(...)) && ".Data" %in% names(dots)) {
-		      if(na == 2)
-			  .mergeAttrs(dots$.Data, .Object)
-		      else {
-			  dat <- dots$.Data
-			  dots <- dots[names(dots) != ".Data"]
-			  if(na == 2 + length(dots)) {
-			      .mergeAttrs(as.array(dat), .Object, dots)
-			  }
-			  else
-			      stop("Cannot specify array() arguments when specifying .Data")
-		      }
-		  }
-		  else if(is.array(data) && na == 2 + length(dots))
-		      .mergeAttrs(data, .Object, dots)
+              function(.Object, ...) {
+		  if(nargs() < 2) # guaranteed to be called with .Object from new
+                    .Object
 		  else {
-		      value <- array(data, dim, dimnames)
-		      .mergeAttrs(value, .Object, dots)
-		  }
-	      })
+                      if(isMixin(getClass(class(.Object)))) # other superclasses
+                          callNextMethod()
+                      else
+                          initArray(.Object, ...)
+                  }
+              }
+	      )
     ## following should not be needed if data_class2 returns "array",...
 ##     setMethod("[", # a method to avoid invalid objects from an S4 class
 ##               signature(x = "array"), where = where,
@@ -463,9 +518,13 @@
     list(
          c("anova", "data.frame"),
          c("mlm", "lm"),
-         c("aov", "lm"), # see also .OldIsList
+         c("aov", "lm"),
+         ## note:  definition of "maov" below differs from the
+         ## current S3 attribute, which has an inconsistent combination
+         ## of "aov" and "mlm" (version 2.12 devel, rev. 51984)
          c("maov", "mlm", "lm"),
-         "POSIXt", "POSIXct", "POSIXlt", # see .OldIsList
+         c("POSIXct", "POSIXt"),
+         c("POSIXlt", "POSIXt"),
          "Date",
          "dump.frames",
          c("ordered", "factor"),
@@ -478,6 +537,7 @@
          "packageIQR",
          "mtable",
          "table",
+         c("summaryDefault","table"),
          "summary.table",
          "recordedplot",
          "socket",
@@ -488,22 +548,17 @@
          "rle"
 )
 
-# These relations sometimes hold, sometimes not:  have to look in the S3
-# class attribute to test.
-.OldIsList <- list(
-                   c("POSIXt", "POSIXct"),
-                   c("POSIXt", "POSIXlt"),
-                   c("aov","mlm")
-                   )
-
-.InitSpecialTypes <- function(where) {
+.InitSpecialTypesAndClasses <- function(where) {
     if(!exists(".S3MethodsClasses", envir = where, inherits = FALSE)) {
       S3table <- new.env()
       assign(".S3MethodsClasses", S3table, envir = where)
     }
     else S3table <- get(".S3MethodsClasses", envir = where)
-  for(cl in c("environment", "externalptr", "name", "NULL")) {
-      ncl <- paste(".",cl, sep="")
+    specialClasses <- .indirectAbnormalClasses
+    specialTypes <- .AbnormalTypes # only part matching classes used
+    for(i in seq_along(specialClasses)) {
+        cl <- specialTypes[[i]]
+      ncl <- specialClasses[[i]]
       setClass(ncl, representation(.xData = cl), where = where)
       setIs(ncl, cl, coerce = function(from) from@.xData,
         replace = function(from, value){ from@.xData <- value; from},
@@ -511,16 +566,64 @@
       ## these classes need explicit coercion for S3 methods
       assign(cl, getClass(cl, where), envir = S3table)
     }
-  setMethod("$<-", ".environment", function (x, name, value) {
-    call <- sys.call()
-    call[[2]] <- x@.Data
-    eval.parent(call)
-    x
-  })
-  setMethod("[[<-", ".environment", function (x, i, j, ..., value) {
-    call <- sys.call()
-    call[[2]] <- x@.Data
-    eval.parent(call)
-    x
-  })
+    ## a few other special classes
+    setClass("namedList", representation(names = "character"),
+             contains = "list", where = where)
+    if(!isGeneric("show", where))
+        setGeneric("show", where = where, simpleInheritanceOnly = TRUE)
+    setMethod("show", "namedList", function(object) {
+        cat("An object of class ", dQuote(class(object)), "\n")
+        print(structure(object@.Data, names=object@names))
+        showExtraSlots(object, getClass("namedList"))
+    })
+    setClass("listOfMethods", representation(  arguments = "character",
+                                                 signatures = "list", generic = "genericFunction"), contains = "namedList",
+             where = where)
+    specialClasses <- c(specialClasses, "namedList", "listOfMethods")
+    assign(".SealedClasses", c(get(".SealedClasses", where), specialClasses), where)
+    setMethod("initialize", ".environment", # for simple subclasses of "environment"
+              function(.Object, ...) {
+                  args <- list(...)
+                  objs <- names(args)
+                  hasEnvArg <- length(args) && !all(nzchar(objs))
+                  if(hasEnvArg) {
+                      ii <- seq_along(args)[!nzchar(objs)]
+                      i <- integer()
+                      for(iii in ii) {
+                          if(is(args[[iii]], "environment"))
+                              i <- c(i, iii)
+                      }
+                      if(length(i)>1)
+                          stop("Can't have more than one unnamed argument as environment")
+                      if(length(i) == 1) {
+                          selfEnv <- args[[i]]
+                          args <- args[-i]
+                          objs <- objs[-i]
+                          if(!is(selfEnv, "environment"))
+                              stop("Unnamed argument to new() must be an environment for the new object")
+                          selfEnv <- as.environment(selfEnv)
+                      }
+                      ## else, no environment superclasses
+                      else
+                          selfEnv <- new.env()
+                  }
+                  else
+                      selfEnv <- new.env()
+                  if(length(objs)) {
+                      ## don't assign locally named slots of subclasses
+                      ClassDef <- getClass(class(.Object))
+                      slots <- slotNames(ClassDef)
+                      localObjs <- is.na(match(objs, slots))
+                      if(any(localObjs)) {
+                          for(what in objs[localObjs])
+                              assign(what, elNamed(args, what), envir = selfEnv)
+                          objs <- objs[!localObjs]
+                          args <- args[!localObjs]
+                      }
+                  }
+                  .Object@.xData <- selfEnv
+                  if(length(objs)) # call next method with remaining args
+                      .Object <- do.call(callNextMethod, c(.Object, args))
+                  .Object
+              }, where = where)
 }

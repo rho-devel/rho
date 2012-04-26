@@ -36,10 +36,9 @@ gcinfo(verbose)
 
   In CR, when \code{gcinfo(TRUE)} is in force, messages are sent to the message
   connection at each garbage collection of the form
-  \preformatted{
-    Garbage collection 12 = 10+0+2 (level 0) ...
+\preformatted{    Garbage collection 12 = 10+0+2 (level 0) ...
     2.0 Mbytes used (32\%)
-  }
+}
   Here the last line gives the current memory usage rounded up to the
   next 0.1Mb and as a  percentage of the current trigger value.  The
   first line gives a  breakdown of the number of garbage collections
@@ -70,7 +69,7 @@ gcinfo(verbose)
   \code{\link{reg.finalizer}} for actions to happen at garbage
   collection.
 }
-\examples{
+\examples{\donttest{
 gc() #- do it now
 gcinfo(TRUE) #-- in the future, show when R does it
 x <- integer(100000); for(i in 1:18) x <- c(x,i)
@@ -79,5 +78,5 @@ gcinfo(verbose = FALSE)#-- don't show it anymore
 gc(TRUE)
 
 gc(reset=TRUE)
-}
+}}
 \keyword{environment}

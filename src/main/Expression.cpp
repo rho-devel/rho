@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -42,10 +42,11 @@
 #include <iostream>
 #include "R_ext/Error.h"
 #include "localization.h"
+#include "CXXR/ArgList.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/Evaluator.h"
 #include "CXXR/FunctionBase.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Symbol.h"
 
 using namespace std;
@@ -84,7 +85,8 @@ RObject* Expression::evaluate(Environment* env)
 	func = static_cast<FunctionBase*>(val);
     }
     func->maybeTrace(this);
-    return func->apply(this, tail(), env);
+    ArgList arglist(tail(), ArgList::RAW);
+    return func->apply(&arglist, env, this);
 }
 
 const char* Expression::typeName() const
@@ -103,7 +105,7 @@ SEXP Rf_lcons(SEXP cr, SEXP tl)
 {
     GCStackRoot<> crr(cr);
     GCStackRoot<PairList> tlr(SEXP_downcast<PairList*>(tl));
-    return GCNode::expose(new Expression(crr, tlr));
+    return CXXR_NEW(Expression(crr, tlr));
 }
 
 void Rf_setCurrentExpression(SEXP e)

@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2008  R Development Core Team
+ *  Copyright (C) 2008-10  R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ int main (int argc, char **argv)
 {
     int i, status = 0;
     unsigned int ret;
+    char fn[2001];
 
     if (argc < 2 || strcmp(argv[1], "--help") == 0) {
 	fprintf(stderr, "Usage: Rcmd open file [file ...]\n\n");
@@ -34,13 +35,14 @@ int main (int argc, char **argv)
 	exit(0);
     }
     for(i = 1; i < argc; i++) {
-	ret = (unsigned int) ShellExecute(NULL, "open", argv[i], NULL, 
-					  ".", SW_SHOW);
+	strncpy(fn, argv[i], 2000); fn[2000] = '\0';
+	for(char *p = fn; *p; p++) if(*p == '/') *p = '\\';
+	ret = (size_t) ShellExecute(NULL, "open", fn, NULL, ".", SW_SHOW);
 	if(ret <= 32) { /* an error condition */
 	    status = 32 + ret;
 	    if(ret == ERROR_FILE_NOT_FOUND  || ret == ERROR_PATH_NOT_FOUND
 	       || ret == SE_ERR_FNF || ret == SE_ERR_PNF)
-		fprintf(stderr, "'%s' not found", argv[i]);
+		fprintf(stderr, "'%s' not found\n", argv[i]);
 	    else if(ret == SE_ERR_ASSOCINCOMPLETE || ret == SE_ERR_NOASSOC)
 		fprintf(stderr, 
 			"file association for '%s' not available or invalid\n",

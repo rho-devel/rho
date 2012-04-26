@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.10.1\n"
+"Project-Id-Version: R 2.14.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-12-10 19:18\n"
+"POT-Creation-Date: 2011-07-16 22:46\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,10 +14,7 @@ msgstr ""
 msgid "'a' is overridden by 'reg'"
 msgstr ""
 
-msgid "only using the first two of"
-msgstr ""
-
-msgid "regression coefficients"
+msgid "only using the first two of %d regression coefficients"
 msgstr ""
 
 msgid "'a' and 'b' are overridden by 'coef'"
@@ -36,6 +33,9 @@ msgid "at least one entry of 'x' must be positive"
 msgstr ""
 
 msgid "incorrect 'col': must be length 2"
+msgstr ""
+
+msgid "only for 1-D table"
 msgstr ""
 
 msgid "'side' must be in {1:4}"
@@ -92,9 +92,6 @@ msgstr ""
 msgid "dependent variable should be a factor"
 msgstr ""
 
-msgid "explanatory variable should be numeric"
-msgstr ""
-
 msgid "y axis is on a cumulative probability scale, 'ylim' must be in [0,1]"
 msgstr ""
 
@@ -128,19 +125,34 @@ msgstr ""
 msgid "Missing rows"
 msgstr ""
 
-msgid "'expr' must be a function or an expression containing 'x'"
+msgid "'expr' must be a function, or a call or an expression containing '%s'"
+msgstr ""
+
+msgid "'add' will be ignored as there is no existing plot"
 msgstr ""
 
 msgid "'from' and 'to' must be > 0 with log=\"x\""
 msgstr ""
 
+msgid "'expr' did not evaluate to an object of length 'n'"
+msgstr ""
+
 msgid "wrong method"
+msgstr ""
+
+msgid "Must specify 'breaks' in hist(<POSIXt>)"
 msgstr ""
 
 msgid "invalid specification of 'breaks'"
 msgstr ""
 
+msgid "Must specify 'breaks' in hist(<Date>)"
+msgstr ""
+
 msgid "'x' must be a numeric vector or matrix"
+msgstr ""
+
+msgid "'x' is neither a vector nor a matrix: using as.numeric(x)"
 msgstr ""
 
 msgid "'x' must be an array"
@@ -218,6 +230,9 @@ msgstr ""
 msgid "dimensions of z are not length(x)(-1) times length(y)(-1)"
 msgstr ""
 
+msgid "useRaster=TRUE can only be used with a regular grid"
+msgstr ""
+
 msgid "'respect' must be logical or matrix with same dimension as 'mat'"
 msgstr ""
 
@@ -281,6 +296,9 @@ msgstr ""
 msgid "the 'panel' function made a new plot"
 msgstr ""
 
+msgid "surface extends beyond the box"
+msgstr ""
+
 msgid "'x' values must be positive."
 msgstr ""
 
@@ -318,6 +336,9 @@ msgid "there must be at least one numeric variable!"
 msgstr ""
 
 msgid "cannot hatch with logarithmic scale active"
+msgstr ""
+
+msgid "Invalid fill rule for graphics path"
 msgstr ""
 
 msgid "invalid rectangle specification"

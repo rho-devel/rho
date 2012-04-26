@@ -53,7 +53,8 @@ iNA <- as.integer(NA)
 ## These are "double"s:
 all(!is.nan(c(1.,NA)))
 all(c(FALSE,TRUE,FALSE) == is.nan(c   (1.,NaN,NA)))
-all(c(FALSE,TRUE,FALSE) == is.nan(list(1.,NaN,NA)))
+## lists are no longer allowed
+## all(c(FALSE,TRUE,FALSE) == is.nan(list(1.,NaN,NA)))
 
 
 ##  log() and "pow()" -- POSIX is not specific enough..
@@ -128,6 +129,13 @@ x <- c(-100,-3:2, -99.9, -7.7, seq(-3,3, length=61), 5.1, 77)
 ## Intel icc showed a < 1ulp difference in the second.
 stopifnot(all.equal( digamma(x), psigamma(x,0), 2*Meps),
           all.equal(trigamma(x), psigamma(x,1), 2*Meps))# TRUE (+ NaN warnings)
+## very large x:
+x <- 1e30 ^ (1:10)
+a.relE <- function(appr, true) abs(1 - appr/true)
+stopifnot(a.relE(digamma(x),   log(x)) < 1e-13,
+          a.relE(trigamma(x),     1/x) < 1e-13)
+x <- sqrt(x[2:6]); stopifnot(a.relE(psigamma(x,2), - 1/x^2) < 1e-13)
+x <- 10^(10*(2:6));stopifnot(a.relE(psigamma(x,5), +24/x^5) < 1e-13)
 
 ## fft():
 ok <- TRUE

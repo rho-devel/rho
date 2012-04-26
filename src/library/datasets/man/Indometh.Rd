@@ -1,20 +1,22 @@
 % File src/library/datasets/man/Indometh.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Indometh}
 \docType{data}
 \alias{Indometh}
-\title{Pharmacokinetics of Indomethicin}
+\title{Pharmacokinetics of Indomethacin}
 \description{
   The \code{Indometh} data frame has 66 rows and 3 columns of data on
-  the pharmacokinetics of indomethicin.
+  the pharmacokinetics of indometacin (or, older spelling,
+  \sQuote{indomethacin}).
 }
 \usage{Indometh}
 \format{
-  This data frame contains the following columns:
-  \describe{
+  This object of class \code{c("nfnGroupedData", "nfGroupedData",
+    "groupedData", "data.frame")} containing the following columns:
+ \describe{
     \item{Subject}{
       an ordered factor with containing the subject codes.  The
       ordering is according to increasing maximum response.
@@ -23,31 +25,33 @@
       a numeric vector of times at which blood samples were drawn (hr).
     }
     \item{conc}{
-      a numeric vector of plasma concentrations of indomethicin (mcg/ml).
+      a numeric vector of plasma concentrations of indometacin (mcg/ml).
     }
   }
 }
 \details{
   Each of the six subjects were given an intravenous injection of
-  indomethicin.
+  indometacin.
+  
+  This dataset was originally part of package \code{nlme}, and that has
+  methods (including for \code{[}, \code{as.data.frame}, \code{plot} and
+  \code{print}) for its grouped-data classes. 
 }
 \source{
-  Kwan, Breault, Umbenhauer, McMahon and Duggan (1976),
-  Kinetics of Indomethicin absorption, elimination, and
+  Kwan, Breault, Umbenhauer, McMahon and Duggan (1976)
+  Kinetics of Indomethacin absorption, elimination, and
     enterohepatic circulation in man.
-  \emph{Journal of Pharmacokinetics and Biopharmaceutics}, \bold{4},
+  \emph{Journal of Pharmacokinetics and Biopharmaceutics} \bold{4},
   255--280.
 
-  Davidian, M. and Giltinan, D. M. (1995) \emph{Nonlinear Models for
-    Repeated Measurement Data}, Chapman & Hall (section 5.2.4, p. 134)
+  Davidian, M. and Giltinan, D. M. (1995)
+  \emph{Nonlinear Models for Repeated Measurement Data},
+  Chapman & Hall (section 5.2.4, p. 129)
 
   Pinheiro, J. C. and Bates, D. M. (2000) \emph{Mixed-effects Models in
     S and S-PLUS}, Springer.
 }
-\examples{
-require(stats)
-fm1 <- nls(conc ~ SSbiexp(time, A1, lrc1, A2, lrc2),
-           data = Indometh, subset = Subject == 1)
-summary(fm1)
+\seealso{
+  \code{\link{SSbiexp}} for models fitted to this dataset.
 }
 \keyword{datasets}

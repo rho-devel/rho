@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -33,7 +33,7 @@
 #include "nmath.h"
 #include "dpq.h"
 
-LDOUBLE attribute_hidden
+long double attribute_hidden
 pnbeta_raw(double x, double o_x, double a, double b, double ncp)
 {
     /* o_x  == 1 - x  but maybe more accurate */
@@ -47,7 +47,7 @@ pnbeta_raw(double x, double o_x, double a, double b, double ncp)
     double a0, ax, lbeta, c, errbd, temp, x0, tmp_c;
     int j, ierr;
 
-    LDOUBLE ans, gx, q, sumq;
+    long double ans, gx, q, sumq;
 
     if (ncp < 0. || a <= 0. || b <= 0.) ML_ERR_return_NAN;
 
@@ -101,7 +101,7 @@ pnbeta2(double x, double o_x, double a, double b, double ncp,
 	/* o_x  == 1 - x  but maybe more accurate */
 	int lower_tail, int log_p)
 {
-    LDOUBLE ans= pnbeta_raw(x, o_x, a,b, ncp);
+    long double ans= pnbeta_raw(x, o_x, a,b, ncp);
 
     /* return R_DT_val(ans), but we want to warn about cancellation here */
     if(lower_tail) return log_p	? log(ans) : ans;

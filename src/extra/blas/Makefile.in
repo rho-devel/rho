@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -33,7 +33,9 @@ SOURCES = blas00.c blas.f cmplxblas.f
 
 Rblas_la = libRblas$(DYLIB_EXT)
 ## @RBLAS_LDFLAGS@ is used on Mac OS X
-Rblas_la_LIBADD = @RBLAS_LDFLAGS@ $(FLIBS)
+## first for internal BLAS
+Rblas_la_LIBADD = @RBLAS_LDFLAGS@ $(FLIBS_IN_SO)
+## then external one
 Rblas_la_LIBADD0 = @RBLAS_LDFLAGS@
 
 all: Makefile @BLAS_SHLIB_TRUE@ R

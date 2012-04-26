@@ -1,6 +1,6 @@
 % File src/library/tools/man/vignetteDepends.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{vignetteDepends}
@@ -45,7 +45,8 @@ vignetteDepends(vignette, recursive = TRUE, reduce = TRUE,
 \author{ Jeff Gentry }
 \seealso{\code{\link{pkgDepends}}}
 \examples{
-gridEx <- system.file("doc", "grid.Snw", package = "grid")
+## This may not be installed
+gridEx <- system.file("doc", "grid.Rnw", package = "grid")
 vignetteDepends(gridEx)
 }
 \keyword{utilities}

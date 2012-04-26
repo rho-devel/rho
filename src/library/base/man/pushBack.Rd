@@ -1,6 +1,6 @@
 % File src/library/base/man/pushBack.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{pushBack}
@@ -8,7 +8,7 @@
 \alias{pushBackLength}
 \title{Push Text Back on to a Connection}
 \description{
-  Functions to push back text lines onto a connection, and to enquire
+  Functions to push back text lines onto a \link{connection}, and to enquire
   how many lines are currently pushed back.
 }
 \usage{
@@ -17,8 +17,8 @@ pushBackLength(connection)
 }
 \arguments{
   \item{data}{a character vector.}
-  \item{connection}{A connection.}
-  \item{newLine}{logical. If true, a newline is appended to each string
+  \item{connection}{A \link{connection}.}
+  \item{newLine}{logical.  If true, a newline is appended to each string
     pushed back.}
 }
 \details{
@@ -35,6 +35,11 @@ pushBackLength(connection)
   connection is still wired directly, so for example parsing
   commands from the console and \code{\link{scan}("")} ignore pushbacks on
   \code{\link{stdin}}.
+
+  When character strings with a marked encoding (see
+  \code{\link{Encoding}}) are pushed back they are converted to the
+  current encoding.  This may involve representing characters as
+  \samp{<U+xxxx>} if they cannot be converted.
 }
 \value{
   \code{pushBack} returns nothing.

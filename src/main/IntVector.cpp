@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -41,17 +41,12 @@
 
 #include "CXXR/LogicalVector.h"
 
-using namespace std;
 using namespace CXXR;
 
-int *INTEGER(SEXP x)
-{
-#ifndef USE_TYPE_CHECKING_STRICT
-    // Quicker than dynamic_cast:
-    if (x->sexptype() == LGLSXP) {
-	LogicalVector* lvec = static_cast<LogicalVector*>(x);
-	return &(*lvec)[0];
+// Force the creation of non-inline embodiments of functions callable
+// from C:
+namespace CXXR {
+    namespace ForceNonInline {
+	int* (*INTEGERp)(SEXP) = INTEGER;
     }
-#endif
-    return &(*CXXR::SEXP_downcast<IntVector*>(x))[0];
 }

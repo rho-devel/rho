@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-2008  The R Development Core Team.
+ *  Copyright (C) 2000-2010  The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,23 +36,60 @@
  *      Interfaces to POSIX date and time functions.
  */
 
-/*
-    These use POSIX functions that are not available on all platforms,
-    and where they are they may be partially or incorrectly implemented.
-    A number of lightweight alternatives are supplied, but generally
-    timezone support is only available if the OS supplies it.
-
-    A particular problem is the setting of the timezone TZ on Unix/Linux.
-    POSIX appears to require it, yet many Linux systems do not set it
-    and do not give the correct results/crash strftime if it is not set
-    (or even if it is: see the workaround below).
-    We use unsetenv() to work around this: that is a BSD construct but
-    seems to be available on the affected platforms.
- */
-
 /** @file datetime.cpp
  *
  * Date and time manipulation functions.
+ */
+
+/*
+    These use POSIX functions that are not available on all platforms,
+    and where they are they may be partially or incorrectly
+    implemented.  A number of lightweight alternatives are supplied,
+    but generally timezone support is only available if the OS
+    supplies it.  However, as these are now also mandated by C99, they
+    are almost universally available, albeit with more room for
+    implementation variations.
+
+    A particular problem is the setting of the timezone TZ on
+    Unix/Linux.  POSIX appears to require it, yet older Linux systems
+    do not set it and do not give the correct results/crash strftime
+    if it is not set (or even if it is: see the workaround below).  We
+    use unsetenv() to work around this: that is a BSD construct but
+    seems to be available on the affected platforms.
+
+    Notes on various time functions:
+
+    The current (2008) POSIX recommendation to find the calendar time
+    is to call clock_gettime(), defined in <time.h>.  This may also be
+    used to find time since some unspecified starting point
+    (e.g. machine reboot), but is not currently so used in R.  It
+    returns in second and nanoseconds, although not necessarily to
+    more than clock-tick accuracy.
+
+    The previous POSIX recommendation was gettimeofday(), defined in
+    <sys/time.h>.  This returns in seconds and microseconds (with
+    unspecified granularity).
+
+    Many systems (including AIX, FreeBSD, Linux, Solaris) have
+    clock_gettime().  Mac OS X and Cygwin have gettimeofday().
+
+    Function time() is C99 and defined in <time.h>.  C99 does not
+    mandate the units, but POSIX does (as the number of seconds since
+    the epoch: although not mandated, time_t seems always to be an
+    integer type).
+
+    Function clock() is C99 and defined in <time.h>.  It measures CPU
+    time at CLOCKS_PER_SEC: there is a small danger of integer
+    overflow.
+
+    Function times() is POSIX and defined in <sys/times.h>.  It
+    returns the elapsed time in clock ticks, plus CPU times in a
+    struct tms* argument (also in clock ticks).
+
+    More precise information on CPU times may be available from the
+    POSIX function getrusage() defined in <sys/resource.h>.  This
+    returns the same time structure as gettimeofday() and on some
+    systems offers millisecond resolution.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -77,6 +114,10 @@ extern time_t mktime (struct tm*);
 
 #include <stdlib.h> /* for setenv or putenv */
 #include <Defn.h>
+
+#include <vector>
+
+using namespace std;
 
 /* The glibc in RH8.0 was broken and assumed that dates before
    1970-01-01 do not exist.  So does Windows, but its code was replaced
@@ -128,38 +169,14 @@ namespace {
 }
 
 #ifndef HAVE_POSIX_LEAPSECONDS
-/* There have been 23 leapseconds, the last being on 2005-12-31.
-   But older OSes will not necessarily know about number 23, so we do
-   a run-time test (the OS could have been patched since configure).
-
-   And a 24th on 2008-12-31, but all OSes seem to ignore
-   leap secnds these days.
+/* There have been 24 leapseconds, the last being on 2008-12-31.
  */
-static int n_leapseconds = -1;
+static int n_leapseconds = 24;
 static const time_t leapseconds[] =
 {  78796800, 94694400,126230400,157766400,189302400,220924800,252460800,
   283996800,315532800,362793600,394329600,425865600,489024000,567993600,
   631152000,662688000,709948800,741484800,773020800,820454400,867715200,
   915148800,1136073600,1230768000};
-
-static void set_n_leapseconds(void)
-{
-    struct tm tm;
-    int t1, t2;
-
-    tm.tm_year = 105;
-    tm.tm_mon = 11;
-    tm.tm_mday = 31;
-    tm.tm_hour = 12;
-    tm.tm_min = 0;
-    tm.tm_sec = 0;
-    t1 = mktime(&tm);
-    tm.tm_year = 106;
-    tm.tm_mon = 0;
-    tm.tm_mday = 1;
-    t2 = mktime(&tm);
-    n_leapseconds = t2 - t1 == 84601) ? 24 : 22;
-}
 #endif
 
 /*
@@ -185,6 +202,18 @@ static int validate_tm (struct tm *tm)
 	if(tm->tm_min < 0) {tm->tm_min += 60; tm->tm_hour--;}
     }
 
+    if(tm->tm_hour == 24 && tm->tm_min == 0 && tm->tm_sec == 0) {
+	tm->tm_hour = 0; tm->tm_mday++;
+	if(tm->tm_mon >= 0 && tm->tm_mon <= 11) {
+	    if(tm->tm_mday > days_in_month[tm->tm_mon] +
+	       ((tm->tm_mon==1 && isleap(1900+tm->tm_year) ? 1 : 0))) {
+		   tm->tm_mon++; tm->tm_mday = 1;
+		   if(tm->tm_mon == 12) {
+		       tm->tm_year++; tm->tm_mon = 0;
+		   }
+	       }
+	}
+    }
     if (tm->tm_hour < 0 || tm->tm_hour > 23) {
 	res++;
 	tmp = tm->tm_hour/24;
@@ -252,10 +281,10 @@ static double mktime00 (struct tm *tm)
     /* safety check for unbounded loops */
     if (year0 > 3000) {
 	excess = int(year0/2000) - 1;
-	year0 = int(year0 - excess * 2000);
+	year0 -= excess * 2000;
     } else if (year0 < 0) {
 	excess = -1 - int(-year0/2000);
-	year0 = int(year0 - excess * 2000);
+	year0 -= excess * 2000;
     }
 
     for(i = 0; i < tm->tm_mon; i++) day += days_in_month[i];
@@ -385,7 +414,6 @@ static double mktime0 (struct tm *tm, const int local)
 	res = double( mktime(tm));
 	if (res == double(-1)) return res;
 #ifndef HAVE_POSIX_LEAPSECONDS
-	if (n_leapseconds < 0) set_n_leapseconds();
 	for(i = 0; i < n_leapseconds; i++)
 	    if(res > leapseconds[i]) res -= 1.0;
 #endif
@@ -405,8 +433,11 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
 
     if(d < 2147483647.0 && d > (have_broken_mktime() ? 0. : -2147483647.0)) {
 	t = time_t( d);
+	/* if d is negative and non-integer then t will be off by one day
+	   since we really need floor(). But floor() is slow, so we just
+	   fix t instead as needed. */
+	if (d < 0.0 && double( t) != d) t--;
 #ifndef HAVE_POSIX_LEAPSECONDS
-	if (n_leapseconds < 0) set_n_leapseconds();
 	for(y = 0; y < n_leapseconds; y++) if(t > leapseconds[y] + y - 1) t++;
 #endif
 	return local ? localtime(&t) : gmtime(&t);
@@ -468,58 +499,89 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
 }
 
 
+/* clock_gettime, time are in <time.h>, already included */
 #ifdef HAVE_SYS_TIME_H
+/* gettimeoday, including on Windows */
 # include <sys/time.h>
 #endif
-#ifdef Win32
-# define WIN32_LEAN_AND_MEAN 1
-# include <windows.h>
+
+double currentTime(void)
+{
+    double ans = NA_REAL;
+
+#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_REALTIME)
+    struct timespec tp;
+    int res = clock_gettime(CLOCK_REALTIME, &tp);
+    if(res == 0)
+	ans = double( tp.tv_sec) + 1e-9 * double( tp.tv_nsec);
+
+#elif defined(HAVE_GETTIMEOFDAY)
+    struct timeval tv;
+    int res = gettimeofday(&tv, NULL);
+    if(res == 0)
+	ans = double( tv.tv_sec) + 1e-6 * double( tv.tv_usec);
+
+#else
+    /* No known current OSes */
+    time_t res = time(NULL);
+    if(res != time_t((-1))) /* -1 must be an error as the real value -1 
+			       was ca 1969 */
+	ans = double( res);
 #endif
+
+#ifndef HAVE_POSIX_LEAPSECONDS
+    /* No known current OSes */
+    /* Disallowed by POSIX (1988-):
+       http://www.mail-archive.com/leapsecs@rom.usno.navy.mil/msg00109.html
+       http://en.wikipedia.org/wiki/Unix_time
+    */
+    if (!ISNAN(ans)) {
+	ans -= n_leapseconds;
+    }
+#endif
+    return ans;
+}
 
 SEXP attribute_hidden do_systime(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP ans = allocVector(REALSXP, 1);
-#if defined(HAVE_GETTIMEOFDAY) && !defined(Win32)
-    struct timeval tv;
-    int res = gettimeofday(&tv, NULL);
-    if(res == 0) {
-	double tmp = double( tv.tv_sec) + 1e-6 * double( tv.tv_usec);
-#ifndef HAVE_POSIX_LEAPSECONDS
-	if (n_leapseconds < 0) set_n_leapseconds();
-	tmp -= n_leapseconds;
+    return ScalarReal(currentTime());
+}
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h> /* for getpid */
 #endif
-	REAL(ans)[0] = tmp;
-    } else
-	REAL(ans)[0] = NA_REAL;
-    return ans;
+
+/* For RNG.c, main.c, mkdtemp.c */
+attribute_hidden
+unsigned int TimeToSeed(void)
+{
+    unsigned int seed, pid = getpid();
+#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_REALTIME)
+    {
+	struct timespec tp;
+	clock_gettime(CLOCK_REALTIME, &tp);
+	seed = (uint64_t( tp.tv_nsec) << 16) ^ tp.tv_sec;
+    }
+#elif defined(HAVE_GETTIMEOFDAY)
+    {
+	struct timeval tv;
+	gettimeofday (&tv, NULL);
+	seed = ((uint64_t) tv.tv_usec << 16) ^ tv.tv_sec;
+    }
 #else
-    time_t res = time(NULL);
-    double tmp = res;
-    if(res != (time_t)(-1)) { /* -1 must be an error */
-#ifndef HAVE_POSIX_LEAPSECONDS
-	if (n_leapseconds < 0) set_n_leapseconds();
-	tmp -= n_leapseconds;
+    /* C89, so must work */
+    seed = (Int32) time(NULL);
 #endif
-#ifdef Win32
-	{
-	    SYSTEMTIME st;
-	    GetSystemTime(&st);
-	    tmp += 1e-3 * st.wMilliseconds;
-	}
-#endif
-	REAL(ans)[0] = tmp;
-    } else REAL(ans)[0] = NA_REAL;
-    return ans;
-#endif
+    seed ^= (pid <<16);
+    return seed;
 }
 
 
-#ifdef W64
+#ifdef Win32
 extern void tzset(void);
-/* tzname is in the headers */
-#elif defined Win32
-extern void tzset(void);
-extern char *tzname[2];
+/* tzname is in the headers as an import on MinGW-w64 */
+#define tzname Rtzname
+extern char *Rtzname[2];
 #elif defined(__CYGWIN__)
 extern __declspec(dllimport) char *tzname[2];
 #else
@@ -619,8 +681,12 @@ SEXP attribute_hidden do_asPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* do a direct look up here as this does not otherwise
 	   work on Windows */
 	char *p = getenv("TZ");
-	if(p) tz = p;
+	if(p) {
+	    stz = mkString(p); /* make a copy */
+	    tz = CHAR(STRING_ELT(stz, 0));
+	}
     }
+    PROTECT(stz); /* it might be new */
     if(strcmp(tz, "GMT") == 0  || strcmp(tz, "UTC") == 0) isgmt = 1;
     if(!isgmt && strlen(tz) > 0) settz = set_tz(tz, oldtz);
 
@@ -647,8 +713,8 @@ SEXP attribute_hidden do_asPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     setAttrib(ans, R_NamesSymbol, ansnames);
     PROTECT(klass = allocVector(STRSXP, 2));
-    SET_STRING_ELT(klass, 0, mkChar("POSIXt"));
-    SET_STRING_ELT(klass, 1, mkChar("POSIXlt"));
+    SET_STRING_ELT(klass, 0, mkChar("POSIXlt"));
+    SET_STRING_ELT(klass, 1, mkChar("POSIXt"));
     classgets(ans, klass);
     if (isgmt) {
 	PROTECT(tzone = mkString(tz));
@@ -659,7 +725,7 @@ SEXP attribute_hidden do_asPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	SET_STRING_ELT(tzone, 2, mkChar(tzname[1]));
     }
     setAttrib(ans, install("tzone"), tzone);
-    UNPROTECT(5);
+    UNPROTECT(6);
 
     if(settz) reset_tz(oldtz);
     return ans;
@@ -686,8 +752,12 @@ SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* do a direct look up here as this does not otherwise
 	   work on Windows */
 	char *p = getenv("TZ");
-	if(p) tz = p;
+	if(p) {
+	    stz = mkString(p);
+	    tz = CHAR(STRING_ELT(stz, 0));
+	}
     }
+    PROTECT(stz); /* it might be new */
     if(strcmp(tz, "GMT") == 0  || strcmp(tz, "UTC") == 0) isgmt = 1;
     if(!isgmt && strlen(tz) > 0) settz = set_tz(tz, oldtz);
 
@@ -737,16 +807,17 @@ SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if(settz) reset_tz(oldtz);
 
-    UNPROTECT(2);
+    UNPROTECT(3);
     return ans;
 }
 
 SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP x, sformat, ans, tz;
-    int i, n = 0, m, N, nlen[9], UseTZ;
+    int i, n = 0, m, N, nlen[9], UseTZ, settz = 0;
     char buff[300];
-    const char *p;
+    char oldtz[20] = "";
+    const char *p, *tz1;
     struct tm tm;
 
     checkArity(op, args);
@@ -761,8 +832,19 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("invalid '%s' argument"), "usetz");
     tz = getAttrib(x, install("tzone"));
 
-    /* workaround for glibc & MacOS X bugs in strftime: they have
-       undocumented and non-POSIX/C99 time zone components
+    if (!isNull(tz) && strlen(tz1 = CHAR(STRING_ELT(tz, 0)))) {
+	/* If the format includes %Z or %z 
+	   we need to try to set TZ accordingly */
+	int needTZ = 0;
+	for(i = 0; i < m; i++) {
+	    const char *p = CHAR(STRING_ELT(sformat, i));
+	    if (strstr(p, "%Z") || strstr(p, "%z")) {needTZ = 1; break;}
+	}
+	if(needTZ) settz = set_tz(tz1, oldtz);
+    }
+
+    /* workaround for glibc/FreeBSD/MacOS X bugs in strftime: they have
+       non-POSIX/C99 time zone components
      */
     memset(&tm, 0, sizeof(tm));
 
@@ -795,23 +877,39 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if(validate_tm(&tm) < 0) SET_STRING_ELT(ans, i, NA_STRING);
 	    else {
 		const char *q = CHAR(STRING_ELT(sformat, i%m));
-		char buf2[500];
-		strcpy(buf2,  q);
+		int n = strlen(q) + 50;
+		vector<char> buf2v(n);
+		char* buf2 = &buf2v[0];
+#ifdef Win32
+		/* We want to override Windows' TZ names */
+		p = strstr(q, "%Z");
+		if (p) {
+		    memset(buf2, 0, n);
+		    strncpy(buf2, q, p - q);
+		    strcat(buf2, tm.tm_isdst > 0 ? tzname[1] : tzname[0]);
+		    strcat(buf2, p+2);
+		} else
+#endif		    
+		    strcpy(buf2, q);
+
 		p = strstr(q, "%OS");
 		if(p) {
+		    /* FIXME some of this should be outside the loop */
 		    int ns, nused = 4;
 		    char *p2 = strstr(buf2, "%OS");
 		    *p2 = '\0';
 		    ns = *(p+3) - '0';
 		    if(ns < 0 || ns > 9) { /* not a digit */
-			ns = asInteger(GetOption(install("digits.secs"),
-						 R_BaseEnv));
+			ns = asInteger(GetOption1(install("digits.secs")));
 			if(ns == NA_INTEGER) ns = 0;
 			nused = 3;
 		    }
 		    if(ns > 6) ns = 6;
 		    if(ns > 0) {
-			sprintf(p2, "%0*.*f", ns+3, ns, secs);
+			/* truncate to avoid nuisances such as PR#14579 */
+			double s = secs, t = pow(10.0, double( ns));
+			s = (int( (s*t)))/t;
+			sprintf(p2, "%0*.*f", ns+3, ns, s);
 			strcat(buf2, p+nused);
 		    } else {
 			strcat(p2, "%S");
@@ -837,6 +935,7 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
     UNPROTECT(2);
+    if(settz) reset_tz(oldtz);
     return ans;
 }
 
@@ -851,7 +950,6 @@ static void glibc_fix(struct tm *tm, int *invalid)
     struct tm *tm0;
     int tmp;
 #ifndef HAVE_POSIX_LEAPSECONDS
-    if (n_leapseconds < 0) set_n_leapseconds();
     t -= n_leapseconds;
 #endif
     tm0 = localtime(&t);
@@ -883,8 +981,8 @@ static void glibc_fix(struct tm *tm, int *invalid)
 SEXP attribute_hidden do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP x, sformat, ans, ansnames, klass, stz, tzone;
-    int i, n, m, N, invalid, isgmt = 0, settz = 0;
-    struct tm tm, tm2;
+    int i, n, m, N, invalid, isgmt = 0, settz = 0, offset;
+    struct tm tm, tm2, *ptm = &tm;
     const char *tz = NULL;
     char oldtz[20] = "";
     double psecs = 0.0;
@@ -901,8 +999,12 @@ SEXP attribute_hidden do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* do a direct look up here as this does not otherwise
 	   work on Windows */
 	char *p = getenv("TZ");
-	if(p) tz = p;
+	if(p) {
+	    stz = mkString(p);
+	    tz = CHAR(STRING_ELT(stz, 0));
+	}
     }
+    PROTECT(stz); /* it might be new */
     if(strcmp(tz, "GMT") == 0  || strcmp(tz, "UTC") == 0) isgmt = 1;
     if(!isgmt && strlen(tz) > 0) settz = set_tz(tz, oldtz);
 
@@ -925,9 +1027,10 @@ SEXP attribute_hidden do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
 	tm.tm_year = tm.tm_mon = tm.tm_mday = tm.tm_yday =
 	    tm.tm_wday = NA_INTEGER;
 	tm.tm_isdst = -1;
+	offset = NA_INTEGER;
 	invalid = STRING_ELT(x, i%n) == NA_STRING ||
 	    !R_strptime(CHAR(STRING_ELT(x, i%n)),
-			CHAR(STRING_ELT(sformat, i%m)), &tm, &psecs);
+			CHAR(STRING_ELT(sformat, i%m)), &tm, &psecs, &offset);
 	if(!invalid) {
 	    /* Solaris sets missing fields to 0 */
 	    if(tm.tm_mday == 0) tm.tm_mday = NA_INTEGER;
@@ -935,22 +1038,35 @@ SEXP attribute_hidden do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
 	       || tm.tm_year == NA_INTEGER)
 		glibc_fix(&tm, &invalid);
 	    tm.tm_isdst = -1;
-	    /* we do want to set wday, yday, isdst, but not to
-	       adjust structure at DST boundaries */
-	    memcpy(&tm2, &tm, sizeof(struct tm));
-	    mktime0(&tm2, 1-isgmt); /* set wday, yday, isdst */
-	    tm.tm_wday = tm2.tm_wday;
-	    tm.tm_yday = tm2.tm_yday;
-	    tm.tm_isdst = isgmt ? 0: tm2.tm_isdst;
+	    if (offset != NA_INTEGER) {
+		/* we know the offset, but not the timezone
+		   so all we can do is to convert to time_t, 
+		   adjust and convert back */
+		double t0;
+		memcpy(&tm2, &tm, sizeof(struct tm));
+		t0 = mktime0(&tm2, 0);
+		if (t0 != -1) {
+		    t0 -= offset; /* offset = -0800 is Seattle */
+		    ptm = localtime0(&t0, 1-isgmt, &tm2);
+		} else invalid = 1;
+	    } else {
+		/* we do want to set wday, yday, isdst, but not to
+		   adjust structure at DST boundaries */
+		memcpy(&tm2, &tm, sizeof(struct tm));
+		mktime0(&tm2, 1-isgmt); /* set wday, yday, isdst */
+		tm.tm_wday = tm2.tm_wday;
+		tm.tm_yday = tm2.tm_yday;
+		tm.tm_isdst = isgmt ? 0: tm2.tm_isdst;
+	    }
+	    invalid = validate_tm(&tm) != 0;
 	}
-	invalid = invalid || validate_tm(&tm) != 0;
-	makelt(&tm, ans, i, !invalid, psecs - floor(psecs));
+	makelt(ptm, ans, i, !invalid, psecs - floor(psecs));
     }
 
     setAttrib(ans, R_NamesSymbol, ansnames);
     PROTECT(klass = allocVector(STRSXP, 2));
-    SET_STRING_ELT(klass, 0, mkChar("POSIXt"));
-    SET_STRING_ELT(klass, 1, mkChar("POSIXlt"));
+    SET_STRING_ELT(klass, 0, mkChar("POSIXlt"));
+    SET_STRING_ELT(klass, 1, mkChar("POSIXt"));
     classgets(ans, klass);
     if (isgmt) {
 	PROTECT(tzone = mkString(tz));
@@ -966,7 +1082,7 @@ SEXP attribute_hidden do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     if(settz) reset_tz(oldtz);
 
-    UNPROTECT(3);
+    UNPROTECT(4);
     return ans;
 }
 
@@ -991,7 +1107,7 @@ SEXP attribute_hidden do_D2POSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 
     for(i = 0; i < n; i++) {
 	if(R_FINITE(REAL(x)[i])) {
-	    day = int( REAL(x)[i]);
+	    day = int( floor(REAL(x)[i]));
 	    tm.tm_hour = tm.tm_min = tm.tm_sec = 0;
 	    /* weekday: 1970-01-01 was a Thursday */
 	    if ((tm.tm_wday = ((4 + day) % 7)) < 0) tm.tm_wday += 7;
@@ -1021,8 +1137,8 @@ SEXP attribute_hidden do_D2POSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     setAttrib(ans, R_NamesSymbol, ansnames);
     PROTECT(klass = allocVector(STRSXP, 2));
-    SET_STRING_ELT(klass, 0, mkChar("POSIXt"));
-    SET_STRING_ELT(klass, 1, mkChar("POSIXlt"));
+    SET_STRING_ELT(klass, 0, mkChar("POSIXlt"));
+    SET_STRING_ELT(klass, 1, mkChar("POSIXt"));
     classgets(ans, klass);
     setAttrib(ans, install("tzone"), mkString("UTC"));
     UNPROTECT(4);

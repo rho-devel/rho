@@ -19,7 +19,7 @@ function(topic, package = NULL, lib.loc = NULL,
 	 character.only = FALSE, verbose = getOption("verbose"),
 	 echo = TRUE, ask = getOption("demo.ask"))
 {
-    paths <- .find.package(package, lib.loc, verbose = verbose)
+    paths <- find.package(package, lib.loc, verbose = verbose)
 
     ## Find the directories with a 'demo' subdirectory.
     paths <- paths[file_test("-d", file.path(paths, "demo"))]
@@ -30,12 +30,12 @@ function(topic, package = NULL, lib.loc = NULL,
 	## List all possible demos.
 
 	## Build the demo db.
-	db <- matrix(character(0L), nrow = 0L, ncol = 4L)
+	db <- matrix(character(), nrow = 0L, ncol = 4L)
 	for(path in paths) {
 	    entries <- NULL
 	    ## Check for new-style 'Meta/demo.rds', then for '00Index'.
 	    if(file_test("-f", INDEX <- file.path(path, "Meta", "demo.rds"))) {
-		entries <- .readRDS(INDEX)
+		entries <- readRDS(INDEX)
 	    }
 	    if(NROW(entries)) {
 		db <- rbind(db,
@@ -60,9 +60,16 @@ function(topic, package = NULL, lib.loc = NULL,
 	return(y)
     }
 
-    if(!character.only)
-	topic <- as.character(substitute(topic))
-    available <- character(0L)
+    if(!character.only) {
+    	topic <- substitute(topic)
+    	if (is.call(topic) && (topic[[1L]] == "::" || topic[[1L]] == ":::")) {
+	    package <- as.character(topic[[2L]])
+	    topic <- as.character(topic[[3L]])
+	} else 
+	    topic <- as.character(topic)
+    }
+    
+    available <- character()
     paths <- file.path(paths, "demo")
     for(p in paths) {
 	files <- basename(tools::list_files_with_type(p, "demo"))
@@ -72,16 +79,16 @@ function(topic, package = NULL, lib.loc = NULL,
 	    available <- c(available, file.path(p, files))
     }
     if(length(available) == 0L)
-	stop(gettextf("No demo found for topic '%s'", topic), domain = NA)
+	stop(gettextf("No demo found for topic %s", sQuote(topic)), domain = NA)
     if(length(available) > 1L) {
 	available <- available[1L]
-	warning(gettextf("Demo for topic '%s' found more than once,\nusing the one found in '%s'",
-                topic, dirname(available[1L])), domain = NA)
+	warning(gettextf("Demo for topic %s' found more than once,\nusing the one found in %s",
+                sQuote(topic), sQuote(dirname(available[1L]))), domain = NA)
     }
-    
+
     if(ask == "default")
-        ask <- echo && grDevices::dev.interactive(orNone = TRUE)    
-    
+        ask <- echo && grDevices::dev.interactive(orNone = TRUE)
+
     if(.Device != "null device") {
 	oldask <- grDevices::devAskNewPage(ask = ask)
         on.exit(grDevices::devAskNewPage(oldask), add = TRUE)
@@ -89,16 +96,14 @@ function(topic, package = NULL, lib.loc = NULL,
 
     op <- options(device.ask.default = ask)
     on.exit(options(op), add = TRUE)
-    
+
     if (echo) {
 	cat("\n\n",
 	    "\tdemo(", topic, ")\n",
 	    "\t---- ", rep.int("~", nchar(topic, type="w")), "\n",
 	    sep="")
-	if(ask) {
-	    cat("\nType  <Return>	 to start : ")
-	    readline()
-	}
+	if(ask && interactive())
+	    readline("\nType  <Return>	 to start : ")
     }
     source(available, echo = echo, max.deparse.length = Inf, keep.source=TRUE)
 }

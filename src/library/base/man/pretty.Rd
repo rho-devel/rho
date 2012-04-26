@@ -6,11 +6,14 @@
 \name{pretty}
 \title{Pretty Breakpoints}
 \usage{
-pretty(x, n = 5, min.n = n \%/\% 3,  shrink.sml = 0.75,
+pretty(x, \dots)
+
+\method{pretty}{default}(x, n = 5, min.n = n \%/\% 3,  shrink.sml = 0.75,
        high.u.bias = 1.5, u5.bias = .5 + 1.5*high.u.bias,
-       eps.correct = 0)
+       eps.correct = 0, \dots)
 }
 \alias{pretty}
+\alias{pretty.default}
 \arguments{
   \item{x}{an object coercible to numeric by \code{\link{as.numeric}}.}
   \item{n}{integer giving the \emph{desired} number of
@@ -31,6 +34,7 @@ pretty(x, n = 5, min.n = n \%/\% 3,  shrink.sml = 0.75,
     \emph{epsilon correction} is made at the boundaries such that
     the result boundaries will be outside \code{range(x)}; in the
     \emph{small} case, the correction is only done if \code{eps.correct >=2}.}
+  \item{\dots}{further arguments for methods.}
 }
 \description{
   Compute a  sequence of about \code{n+1} equally spaced \sQuote{round}
@@ -39,19 +43,20 @@ pretty(x, n = 5, min.n = n \%/\% 3,  shrink.sml = 0.75,
 }
 \details{
   \code{pretty} ignores non-finite values in \code{x}.
-  
-  Let \code{d <- max(x) - min(x)} \eqn{\ge 0}{>= 0}.
+
+  Let \code{d <- max(x) - min(x)} \eqn{\ge 0}.
   If \code{d} is not (very close) to 0, we let \code{c <- d/n},
   otherwise more or less \code{c <- max(abs(range(x)))*shrink.sml / min.n}.
   Then, the \emph{10 base} \code{b} is
   \eqn{10^{\lfloor{\log_{10}(c)}\rfloor}}{10^(floor(log10(c)))} such
-  that \eqn{b \le c < 10b}{b <= c < 10b}.
+  that \eqn{b \le c < 10b}.
 
   Now determine the basic \emph{unit} \eqn{u} as one of
-  \eqn{\{1,2,5,10\} b}, depending on \eqn{c/b \in [1,10)} and the two
-  \sQuote{\emph{bias}} coefficients, \eqn{h =}\code{high.u.bias} and
-  \eqn{f =}\code{u5.bias}.
-  
+  \eqn{\{1,2,5,10\} b}{{1,2,5,10} b}, depending on
+  \eqn{c/b \in [1,10)}{c/b in [1,10}
+  and the two \sQuote{\emph{bias}} coefficients, \eqn{h
+  =}\code{high.u.bias} and \eqn{f =}\code{u5.bias}.
+
   \dots\dots\dots
 }
 \seealso{

@@ -18,23 +18,28 @@
  */
 
 #include <iostream>
-#include "RCNTXT.h"
+#include "CXXR/Environment.h"
 #include "CXXR/IntVector.h"
 #include "CXXR/PairList.h"
 #include "CXXR/RealVector.h"
+#include "CXXR/StdFrame.hpp"
 
 using namespace std;
 using namespace CXXR;
-
-RCNTXT* R_GlobalContext;
 
 int main() {
     cout << "sizeof(bool): " << sizeof(bool)
 	 << "\nsizeof(GCNode): " << sizeof(GCNode)
 	 << "\nsizeof(RObject): " << sizeof(RObject)
+	 << "\nsizeof(ConsCell): " << sizeof(ConsCell)
          << "\nsizeof(PairList): " << sizeof(PairList)
+	 << "\nsizeof(VectorBase): " << sizeof(VectorBase)
 	 << "\nsizeof(IntVector): " << sizeof(IntVector)
-	 << "\nsizeof(RealVector): " << sizeof(RealVector) << '\n';
+	 << "\nsizeof(RealVector): " << sizeof(RealVector)
+	 << "\nsizeof(Frame::Binding): " << sizeof(Frame::Binding)
+	 << "\nsizeof(Frame): " << sizeof(Frame)
+	 << "\nsizeof(StdFrame): " << sizeof(StdFrame)
+	 << "\nsizeof(Environment): " << sizeof(Environment) << '\n';
     return 0;
 }
 

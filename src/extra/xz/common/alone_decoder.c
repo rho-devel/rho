@@ -46,7 +46,7 @@ struct lzma_coder_s {
 
 static lzma_ret
 alone_decode(lzma_coder *coder,
-		lzma_allocator *allocator lzma_attribute((unused)),
+		lzma_allocator *allocator lzma_attribute((__unused__)),
 		const uint8_t *restrict in, size_t *restrict in_pos,
 		size_t in_size, uint8_t *restrict out,
 		size_t *restrict out_pos, size_t out_size,
@@ -173,12 +173,15 @@ static lzma_ret
 alone_decoder_memconfig(lzma_coder *coder, uint64_t *memusage,
 		uint64_t *old_memlimit, uint64_t new_memlimit)
 {
-	if (new_memlimit != 0 && new_memlimit < coder->memusage)
-		return LZMA_MEMLIMIT_ERROR;
-
 	*memusage = coder->memusage;
 	*old_memlimit = coder->memlimit;
-	coder->memlimit = new_memlimit;
+
+	if (new_memlimit != 0) {
+		if (new_memlimit < coder->memusage)
+			return LZMA_MEMLIMIT_ERROR;
+
+		coder->memlimit = new_memlimit;
+	}
 
 	return LZMA_OK;
 }

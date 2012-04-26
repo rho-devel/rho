@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-6 The R Development Core Team
+ *  Copyright (C) 2001-2010 The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@
 #include <Defn.h>
 #include <Rdynpriv.h>
 #include <Rmodules/Rlapack.h>
-#include <basedecl.h>
+#include "basedecl.h"
 
 static R_LapackRoutines *ptr;
 
@@ -227,6 +227,17 @@ SEXP La_ztrcon(SEXP A, SEXP norm)
     }
 }
 
+attribute_hidden
+SEXP La_dlange(SEXP A, SEXP type)
+{
+    if(!initialized) La_Init();
+    if(initialized > 0)
+	return (*ptr->dlange)(A, type);
+    else {
+	error(_("lapack routines cannot be loaded"));
+	return R_NilValue;
+    }
+}
 
 attribute_hidden
 SEXP La_zgesv(SEXP A, SEXP B)

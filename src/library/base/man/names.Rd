@@ -1,6 +1,6 @@
 % File src/library/base/man/names.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{names}
@@ -19,7 +19,7 @@ names(x) <- value
 \arguments{
   \item{x}{an \R object.}
   \item{value}{a character vector of up to the same length as \code{x}, or
-    \code{NULL}.} 
+    \code{NULL}.}
 }
 \value{
   For \code{names}, \code{NULL} or a character vector of the same length
@@ -38,7 +38,7 @@ names(x) <- value
 
   If \code{value} is shorter than \code{x}, it is extended by character
   \code{NA}s to the length of \code{x}.
-  
+
   It is possible to update just part of the names attribute via the
   general rules: see the examples.  This works because the expression
   there is evaluated as \code{z <- "names<-"(z, "[<-"(names(z), 3, "c2"))}.
@@ -50,9 +50,8 @@ names(x) <- value
 
   A name can be character \code{NA}, but such a name will never be
   matched and is likely to lead to confusion.
-  
-  These functions are \link{primitive}, so argument names are ignored
-  (but this might not be true of their methods).
+
+  Both are \link{primitive} functions.
 }
 \note{
   For vectors, the names are one of the \link{attributes} with
@@ -61,6 +60,12 @@ names(x) <- value
 
   For a one-dimensional array the \code{names} attribute really is
   \code{\link{dimnames}[[1]]}.
+
+  Formally classed aka \dQuote{S4} objects typically have
+  \code{\link{slotNames}()} (and no \code{names()}).
+}
+\seealso{
+  \code{\link{slotNames}}, \code{\link{dimnames}}.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)

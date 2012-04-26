@@ -132,7 +132,7 @@ methods <- function (generic.function, class)
             genfun <- get(generic.function, mode = "function",
                           envir = parent.frame())
             if(.isMethodsDispatchOn() && methods::is(genfun, "genericFunction"))
-                genfun <- methods::slot(genfun, "default")@methods$ANY
+                genfun <- methods::finalDefaultMethod(genfun@default)
             if (typeof(genfun) == "closure") environment(genfun)
             else .BaseNamespaceEnv
         }
@@ -252,7 +252,26 @@ assignInNamespace <-
             stop("environment specified is not a package")
         ns <- asNamespace(substring(nm, 9L))
     } else ns <- asNamespace(ns)
+    protected <- c("as.Date.numeric", "sample")
+    if (x %in% protected && getNamespaceName(ns) == "base") {
+        warning("locked binding of ", sQuote(x), " will not be changed",
+                call. = FALSE, domain = NA, immediate. = TRUE)
+        return(invisible(NULL))
+    }
     if(exists(x, envir = ns, inherits = FALSE) && bindingIsLocked(x, ns)) {
+        in_load <- Sys.getenv("_R_NS_LOAD_")
+        if (nzchar(in_load)) {
+            ns_name <- getNamespaceName(ns)
+            if(!in_load %in% c("Matrix", "SparseM") && in_load != ns_name)
+                warning(gettextf("changing locked binding for %s in %s whilst loading %s",
+                                 sQuote(x), sQuote(ns_name), sQuote(in_load)),
+                        call. = FALSE, domain = NA, immediate. = TRUE)
+        } else if (nzchar(Sys.getenv("_R_WARN_ON_LOCKED_BINDINGS_"))) {
+            ns_name <- getNamespaceName(ns)
+            warning(gettextf("changing locked binding for %s in %s",
+                             sQuote(x), sQuote(ns_name)),
+                    call. = FALSE, domain = NA, immediate. = TRUE)
+        }
         unlockBinding(x, ns)
         assign(x, value, envir = ns, inherits = FALSE)
         w <- options("warn")
@@ -303,7 +322,7 @@ fixInNamespace <- function (x, ns, pos = -1, envir = as.environment(pos), ...)
 getAnywhere <- function(x)
 {
     x <- as.character(substitute(x))
-    objs <- list(); where <- character(0L); visible <- logical(0L)
+    objs <- list(); where <- character(); visible <- logical()
     ## first look on search path
     if(length(pos <- find(x, numeric = TRUE))) {
         objs <- lapply(pos, function(pos, x) get(x, pos=pos), x=x)
@@ -319,7 +338,7 @@ getAnywhere <- function(x)
             if (gen == "" || cl == "") next
             # f might be a special, not a closure, and not have an environment, so
             # be careful below
-            if(!is.null(f <- getS3method(gen, cl, TRUE)) && !is.null(environment(f))) {    
+            if(!is.null(f <- getS3method(gen, cl, TRUE)) && !is.null(environment(f))) {
                 ev <- topenv(environment(f), baseenv())
                 nmev <- if(isNamespace(ev)) getNamespaceName(ev) else NULL
                 objs <- c(objs, f)
@@ -381,7 +400,7 @@ print.getAnywhere <- function(x, ...)
     invisible(x)
 }
 
-"[.getAnywhere" <- function(x, i)
+`[.getAnywhere` <- function(x, i)
 {
     if(!is.numeric(i)) stop("only numeric indices can be used")
     if(length(i) == 1L) x$objs[[i]]

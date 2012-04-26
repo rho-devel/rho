@@ -18,6 +18,11 @@ sessionInfo <- function(package=NULL)
 {
     z <- list()
     z$R.version <- R.Version()
+    z$platform <- z$R.version$platform
+    if(nzchar(.Platform$r_arch))
+        z$platform <- paste(z$platform, .Platform$r_arch, sep="/")
+    z$platform <- paste(z$platform, " (", 8*.Machine$sizeof.pointer, "-bit)",
+                        sep = "")
     z$locale <- Sys.getlocale()
 
     if(is.null(package)){
@@ -27,10 +32,12 @@ sessionInfo <- function(package=NULL)
         package <- sub("^package:", "", package[keep])
     }
 
-    pkgDesc <- lapply(package, packageDescription)
+    ## no need to re-encode given what we extract.
+    pkgDesc <- lapply(package, packageDescription, encoding = NA)
     if(length(package) == 0) stop("no valid packages were specified")
     basePkgs <- sapply(pkgDesc,
                        function(x) !is.null(x$Priority) && x$Priority=="base")
+    ## Hmm, see tools:::.get_standard_package_names()$base
     z$basePkgs <- package[basePkgs]
     if(any(!basePkgs)){
         z$otherPkgs <- pkgDesc[!basePkgs]
@@ -55,8 +62,8 @@ print.sessionInfo <- function(x, locale=TRUE, ...)
         paste(pkg, vers, sep="_")
     }
 
-    cat(x$R.version$version.string, "\n")
-    cat(x$R.version$platform, "\n\n")
+    cat(x$R.version$version.string, "\n", sep="")
+    cat("Platform: ", x$platform, "\n\n", sep="")
     if(locale){
         cat("locale:\n")
         print(strsplit(x$locale, ";", fixed=TRUE)[[1]], quote=FALSE)
@@ -82,14 +89,14 @@ toLatex.sessionInfo <- function(object, locale=TRUE, ...)
     z <- c("\\begin{itemize}\\raggedright",
            paste("  \\item ", object$R.version$version.string,
                  ", \\verb|", object$R.version$platform, "|", sep=""))
-    
+
     if(locale){
-        z <- c(z, 
+        z <- c(z,
                paste("  \\item Locale: \\verb|",
                      gsub(";","|, \\\\verb|", object$locale)
                      , "|", sep=""))
     }
-    
+
     z <- c(z, strwrap(paste("\\item Base packages: ",
                          paste(sort(object$basePkgs), collapse=", ")),
                    indent=2, exdent=4))

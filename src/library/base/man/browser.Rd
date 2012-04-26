@@ -1,6 +1,6 @@
 % File src/library/base/man/browser.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{browser}
@@ -11,13 +11,16 @@
   the environment where \code{browser} was called from.
 }
 \usage{
-browser(text="", condition=NULL, expr=TRUE)
+browser(text="", condition=NULL, expr=TRUE, skipCalls=0L)
 }
 \arguments{
   \item{text}{a text string that can be retrieved once the browser is invoked.}
-  \item{condition}{a condition that can be retrieved once the browser is invoked.}
+  \item{condition}{a condition that can be retrieved once the browser is
+    invoked.}
   \item{expr}{An expression, which if it evaluates to \code{TRUE} the
     debugger will invoked, otherwise control is returned directly.}
+  \item{skipCalls}{how many previous calls to skip when reporting the
+    calling context.}
 }
 \details{
   A call to \code{browser} can be included in the body of a function.
@@ -35,24 +38,28 @@ browser(text="", condition=NULL, expr=TRUE)
   of conditional debugging. It is an illusion, because execution is
   always paused at the call to browser, but control is only passed
   to the evaluator described below if \code{expr} evaluates to \code{TRUE}.
-  In most cases it is going to be more efficient to use an \code{if} 
+  In most cases it is going to be more efficient to use an \code{if}
   statement in the calling program, but in some cases using this argument
   will be simpler.
 
-  At the browser prompt the user can enter commands or \R expressions.
-  The commands are
+  The \code{skipCalls} argument should be used when the \code{browser()}
+  call is nested within another debugging function:  it will look further
+  up the call stack to report its location.
+
+  At the browser prompt the user can enter commands or \R expressions,
+  followed by a newline.  The commands are
 
   \describe{
-    \item{\code{c}}{(or just return) exit the browser and continue
-      execution at the next statement.}
+    \item{\code{c}}{(or just an empty line, by default) exit the browser
+    and continue execution at the next statement.}
     \item{\code{cont}}{synonym for \code{c}.}
-    \item{\code{n}}{enter the step-through debugger. This changes the
+    \item{\code{n}}{enter the step-through debugger.  This changes the
       meaning of \code{c}: see the documentation for \code{\link{debug}}.}
     \item{\code{where}}{print a stack trace of all active function calls.}
     \item{\code{Q}}{exit the browser and the current evaluation and
       return to the top-level prompt.}
   }
-  (Leading and trailing whitespace is ignored, except for return).
+  (Leading and trailing whitespace is ignored, except for an empty line).
 
   Anything else entered at the browser prompt is interpreted as an
   \R expression to be evaluated in the calling environment: in
@@ -63,6 +70,14 @@ browser(text="", condition=NULL, expr=TRUE)
 
   The number of lines printed for the deparsed call can be limited by
   setting \code{\link{options}(deparse.max.lines)}.
+
+  Setting \link[=options]{option} \code{"browserNLdisabled"} to \code{TRUE}
+  disables the use of an empty line as a synonym for \code{c}.  If this
+  is done, the user will be re-prompted for input until a valid command
+  or an expression is entered.
+
+  This is a primitive function but does argument matching in the
+  standard way.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)

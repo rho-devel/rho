@@ -1,6 +1,6 @@
 % File src/library/datasets/man/ChickWeight.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{ChickWeight}
@@ -13,7 +13,8 @@
 }
 \usage{ChickWeight}
 \format{
-  This data frame contains the following columns:
+  This object of class \code{c("nfnGroupedData", "nfGroupedData",
+    "groupedData", "data.frame")} containing the following columns:
   \describe{
     \item{weight}{
       a numeric vector giving the body weight of the chick (gm).
@@ -40,6 +41,10 @@
   The body weights of the chicks were measured at birth and every
   second day thereafter until day 20.  They were also measured on day
   21.  There were four groups on chicks on different protein diets.
+  
+  This dataset was originally part of package \code{nlme}, and that has
+  methods (including for \code{[}, \code{as.data.frame}, \code{plot} and
+  \code{print}) for its grouped-data classes. 
 }
 \source{
   Crowder, M. and Hand, D. (1990), \emph{Analysis of Repeated Measures},
@@ -51,13 +56,13 @@
   Pinheiro, J. C. and Bates, D. M. (2000) \emph{Mixed-effects Models in
     S and S-PLUS}, Springer.
 }
-\examples{
-require(stats); require(graphics)
-coplot(weight ~ Time | Chick, data = ChickWeight,
-    type = "b", show.given = FALSE)
-## fit a representative chick
-fm1 <- nls(weight ~ SSlogis( Time, Asym, xmid, scal ),
-    data = ChickWeight, subset = Chick == 1)
-summary( fm1 )
+\seealso{
+  \code{\link{SSlogis}} for models fitted to this dataset.
 }
+
+\examples{\donttest{
+require(graphics)
+coplot(weight ~ Time | Chick, data = ChickWeight,
+       type = "b", show.given = FALSE)
+}}
 \keyword{datasets}

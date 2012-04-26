@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  Copyright (C) Martin Maechler, 1994, 1998
- *  Copyright (C) 2001-2008 the R Development Core Team
+ *  Copyright (C) 2001-2011 the R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -106,6 +106,12 @@
 #define _(String) (String)
 #endif
 
+#ifdef Win32
+/* avoid latest MinGW's redefinition in stdio.h */
+int trio_sprintf(char *buffer, const char *format, ...);
+#define sprintf trio_sprintf
+#endif
+
 /*
    The declaration for x is unusual for a .C() but is managed by
    casting in the code itself.  However, it does mean that we cannot
@@ -121,10 +127,11 @@ void str_signif(char *x, int *n, const char **type, int *width, int *digits,
     Rboolean rm_trailing_0 = (*digits) >= 0;
     Rboolean do_fg = !strcmp("fg",*format);/* TRUE  iff  format == "fg" */
     double xx;
-    int iex, j, jL, len_flag = strlen(*flag);
+    int iex, j, len_flag = strlen(*flag);
 
-    char *f0  =	 R_alloc(do_fg ? 1+1+len_flag+3 : 1, sizeof(char));
-    char *form = R_alloc(1+1+len_flag+3 + strlen(*format), sizeof(char));
+    char *f0  =	 R_alloc((size_t) do_fg ? 1+1+len_flag+3 : 1, sizeof(char));
+    char *form = R_alloc((size_t) 1+1+len_flag+3 + strlen(*format),
+			 sizeof(char));
 
     if (wid == 0)
 	error(_(".C(..): Width cannot be zero"));
@@ -196,7 +203,10 @@ void str_signif(char *x, int *n, const char **type, int *width, int *digits,
 #endif
 			    /* Remove trailing  "0"s __ IFF flag has no '#': */
 			    if(rm_trailing_0) {
-				jL = j = strlen(result[i])-1;
+				j = strlen(result[i])-1;
+#ifdef DEBUG
+				int jL = j;
+#endif
 				while(result[i][j] == '0') j--;
 				result[i][j+1] = '\0';
 #ifdef DEBUG

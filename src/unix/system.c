@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2007  Robert Gentleman, Ross Ihaka
- *			      and the R Development Core Team
+ *  Copyright (C) 1997--2011  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,10 +46,7 @@
 
 #include <Defn.h>
 
-/* On most systems libintl.h includes this, but not Fedora Core 1 */
-#ifdef HAVE_LOCALE_H
-# include <locale.h>
-#endif
+#include <locale.h>
 
 /* necessary for some (older, i.e., ~ <= 1997) Linuxen, and apparently
    also some AIX systems.  NB, included unconditionally later on.
@@ -76,7 +72,7 @@
 
 #include "Runix.h"
 
-attribute_hidden FILE *ifp = NULL;
+attribute_hidden FILE *ifp = NULL; /* used in sys-std.c */
 
 attribute_hidden
 Rboolean UsingReadline = TRUE;  /* used in sys-std.c & ../main/platform.c
@@ -241,9 +237,7 @@ int Rf_initialize_R(int ac, char **av)
 
     process_system_Renviron();
 
-#ifdef _R_HAVE_TIMING_
     R_setStartTime();
-#endif
     R_DefParams(Rp);
     /* Store the command line arguments before they are processed
        by the R option handler.
@@ -320,22 +314,40 @@ int Rf_initialize_R(int ac, char **av)
 		ac--; av++;
 		Rp->R_Interactive = FALSE;
 		if(strcmp(*av, "-")) {
-		    ifp = R_fopen(*av, "r");
+		    /* Undo the escaping done in the front end */
+		    char path[PATH_MAX], *p = path, *q;
+		    for(q = *av; *q; q++) {
+			if(*q == '~' && *(q+1) == '+' && *(q+2) == '~') {
+			    q += 2;
+			    *p++ = ' ';
+			} else *p++ = *q;
+		    }
+		    *p = '\0';
+		    ifp = R_fopen(path, "r");
 		    if(!ifp) {
 			snprintf(msg, 1024,
 				 _("cannot open file '%s': %s"),
-				 *av, strerror(errno));
+				 path, strerror(errno));
 			R_Suicide(msg);
 		    }
 		}
 	    } else if(!strncmp(*av, "--file=", 7)) {
 		Rp->R_Interactive = FALSE;
 		if(strcmp((*av)+7, "-")) {
-		    ifp = R_fopen( (*av)+7, "r");
+		    /* Undo the escaping done in the front end */
+		    char path[PATH_MAX], *p = path, *q;
+		    for(q = (*av)+7; *q; q++) {
+			if(*q == '~' && *(q+1) == '+' && *(q+2) == '~') {
+			    q += 2;
+			    *p++ = ' ';
+			} else *p++ = *q;
+		    }
+		    *p = '\0';
+		    ifp = R_fopen(path, "r");
 		    if(!ifp) {
 			snprintf(msg, 1024,
 				 _("cannot open file '%s': %s"),
-				 (*av)+7, strerror(errno));
+				 path, strerror(errno));
 			R_Suicide(msg);
 		    }
 		}
@@ -382,7 +394,7 @@ int Rf_initialize_R(int ac, char **av)
 	ifp = tmpfile();
 	if(!ifp) R_Suicide(_("creating temporary file for '-e' failed"));
 	res = fwrite(cmdlines, strlen(cmdlines)+1, 1, ifp);
-	/* FIXME: do something with res */
+	if(res != 1) error("fwrite error in initialize_R");
 	fflush(ifp);
 	rewind(ifp);
     }

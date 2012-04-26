@@ -27,7 +27,7 @@ void Parentage::Protector::visitReferents(const_visitor* v) const {
 	     it!=p_parentage->end();
 	     ++it) {
 		const GCNode* rent=*it;
-		rent->conductVisitor(v);
+		(*v)(rent);
 	}
 }
 

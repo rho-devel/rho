@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -51,17 +51,22 @@ extern "C" {
 typedef struct {
 
     Rboolean keepSrcRefs;	/* Whether to attach srcrefs to objects as they are parsed */
+    Rboolean didAttach;		/* Record of whether a srcref was attached */
     SEXP SrcFile;		/* The srcfile object currently being parsed */
+    SEXP Original;		/* The underlying srcfile object */
     PROTECT_INDEX SrcFileProt;	/* The SrcFile may change */
-    int xxlineno;		/* Position information about the current parse */
-    int xxcolno;
-    int xxbyteno;
+    PROTECT_INDEX OriginalProt; /* ditto */
+    				/* Position information about the current parse */
+    int xxlineno;		/* Line number according to #line directives */
+    int xxcolno;		/* Character number on line */
+    int xxbyteno;		/* Byte number on line */
+    int xxparseno;              /* Line number ignoring #line directives */
 } SrcRefState;
 
 void R_InitSrcRefState(SrcRefState *state);
 void R_FinalizeSrcRefState(SrcRefState *state);
 
-SEXP R_Parse1Buffer(IoBuffer*, int, ParseStatus *, SrcRefState *); /* in ReplIteration,
+SEXP R_Parse1Buffer(IoBuffer*, int, ParseStatus *); /* in ReplIteration,
 						       R_ReplDLLdo1 */
 SEXP R_ParseBuffer(IoBuffer*, int, ParseStatus *, SEXP, SEXP); /* in source.c */
 SEXP R_Parse1File(FILE*, int, ParseStatus *, SrcRefState *); /* in R_ReplFile */

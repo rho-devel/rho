@@ -74,26 +74,34 @@ static QuartzFunctions_t *qf;
     return [NSColor colorWithCalibratedRed: R_RED(canvas)/255.0 green:R_GREEN(canvas)/255.0 blue:R_BLUE(canvas)/255.0 alpha:R_ALPHA(canvas)/255.0];
 }
 
+/* can return nil on an error */
 + (QuartzCocoaView*) quartzWindowWithRect: (NSRect) rect andInfo: (void*) info
 {
     QuartzCocoaDevice *ci = (QuartzCocoaDevice*) info;
-    QuartzCocoaView* view = [[QuartzCocoaView alloc] initWithFrame: rect andInfo: info];
-    NSWindow* window = [[NSWindow alloc] initWithContentRect: rect
-                                                   styleMask: NSTitledWindowMask|NSClosableWindowMask|
-        NSMiniaturizableWindowMask|NSResizableWindowMask//|NSTexturedBackgroundWindowMask
-                                                     backing:NSBackingStoreBuffered defer:NO];
-    NSColor *canvasColor = [view canvasColor];
-    [window setBackgroundColor:canvasColor ? canvasColor : [NSColor colorWithCalibratedRed:1.0 green:1.0 blue:1.0 alpha:0.5]];
-    [window setOpaque:NO];
-    ci->window = window;
+    QuartzCocoaView* view = nil;
+    NSWindow* window = nil;
+    NSColor* canvasColor = nil;
+
+    /* do everything in a try block -- this is not merely theoretical,
+       for example NSWindow will throw an expection when the supplied
+       rect is too big */
+    @try {
+	view = [[QuartzCocoaView alloc] initWithFrame: rect andInfo: info];
+	window = [[NSWindow alloc] initWithContentRect: rect
+					     styleMask: NSTitledWindowMask|NSClosableWindowMask|
+				   NSMiniaturizableWindowMask|NSResizableWindowMask//|NSTexturedBackgroundWindowMask
+					       backing:NSBackingStoreBuffered defer:NO];
+	NSColor *canvasColor = [view canvasColor];
+	[window setBackgroundColor:canvasColor ? canvasColor : [NSColor colorWithCalibratedRed:1.0 green:1.0 blue:1.0 alpha:0.5]];
+	[window setOpaque:NO];
+	ci->window = window;
 	
-    [window setDelegate: view];
-    [window setContentView: view];
-    [window setInitialFirstResponder: view];
-    /* [window setAcceptsMouseMovedEvents:YES]; not neeed now, maybe later */
-    [window setTitle: [NSString stringWithUTF8String: ((QuartzCocoaDevice*)info)->title]];
-    
-    {
+	[window setDelegate: view];
+	[window setContentView: view];
+	[window setInitialFirstResponder: view];
+	/* [window setAcceptsMouseMovedEvents:YES]; not neeed now, maybe later */
+	[window setTitle: [NSString stringWithUTF8String: ((QuartzCocoaDevice*)info)->title]];
+
         NSMenu *menu, *mainMenu;
         NSMenuItem *menuItem;
 	/* soleMenu is set if we have no menu at all, so we have to create it. Otherwise we are loading into an application that has already some menu, so we need only our specific stuff. */
@@ -192,8 +200,22 @@ static QuartzFunctions_t *qf;
             [menu release];
             [menuItem release];
         }        
+    } @catch (NSException *ex) {
+	/* on error release what we know about, issue a warning and return nil */
+	if (window) {
+	    ci->window = nil;
+	    [window release];
+	}
+	if (view)
+	    [view release];
+	if (ex) {
+	    /* we don't bother localizing this since the exception is likely in English anyway */
+	    warning("Unable to create Cocoa Quartz window: %s (%s)",
+		    [[ex reason] UTF8String], [[ex name] UTF8String]);
+	}
+	return nil;
     }
-    
+
     return view;
 }
 
@@ -501,6 +523,8 @@ static unsigned long el_sleep; /* latency in ms */
 static long el_serial = 0;     /* serial number for the time slice */
 static long el_pe_serial = 0;  /* ProcessEvents serial number, event are
                                   only when the serial number changes */
+static BOOL el_inhibit = NO;   /* this flag is used by special code that
+				  needs to inhibit running the event loop */
 
 /* helper function - sleep X milliseconds */
 static void millisleep(unsigned long tout) {
@@ -512,11 +536,13 @@ static void millisleep(unsigned long tout) {
 
 /* from aqua.c */
 extern void (*ptr_R_ProcessEvents)(void);
+/* from Defn.h */
+extern Rboolean R_isForkedChild;
 
 static void cocoa_process_events() {
     /* this is a precaution if cocoa_process_events is called
        via R_ProcessEvents and the R code calls it too often */
-    if (el_serial != el_pe_serial) {
+    if (!R_isForkedChild && !el_inhibit && el_serial != el_pe_serial) {
         NSEvent *event;
         while ((event = [NSApp nextEventMatchingMask:NSAnyEventMask
                                           untilDate:nil
@@ -600,6 +626,11 @@ void QuartzCocoa_SetupEventLoop(int flags, unsigned long latency) {
 int QuartzCocoa_SetLatency(unsigned long latency) {
     el_sleep = latency;
     return (el_obj)?YES:NO;
+}
+
+/* inhibit Cocoa from running the event loop (e.g., when R is forked) */
+void QuartzCocoa_InhibitEventLoop(int flag) {
+    el_inhibit = flag ? YES : NO;
 }
 
 #pragma mark --- R Quartz interface ---
@@ -742,6 +773,70 @@ static void QuartzCocoa_State(QuartzDesc_t dev, void *userInfo, int state) {
     [[ci->view window] setTitle: title];
 }
 
+static void* QuartzCocoa_Cap(QuartzDesc_t dev, void *userInfo) {
+    QuartzCocoaDevice *ci = (QuartzCocoaDevice*)userInfo;
+    SEXP raster = R_NilValue;
+
+    if (!ci || !ci->view) {
+        return (void*) raster;
+    } else {
+        unsigned int i, pixels, stride, j = 0;
+        unsigned int *rint;
+        SEXP dim;
+        NSSize size = [ci->view frame].size;
+	pixels = size.width * size.height;
+	
+	// make sure the view is up-to-date (fix for PR#14260)
+	[ci->view display];
+
+        if (![ci->view canDraw])
+            warning("View not able to draw!?");
+
+        [ci->view lockFocus];
+        NSBitmapImageRep* rep = [[NSBitmapImageRep alloc] 
+                                    initWithFocusedViewRect:
+                                        NSMakeRect(0, 0, 
+                                                   size.width, size.height)];
+
+	int bpp = (int) [rep bitsPerPixel];
+	NSBitmapFormat bf = [rep bitmapFormat];
+	/* Rprintf("format: bpp=%d, bf=0x%x, bps=%d, planar=%s, colorspace=%s\n", bpp, (int) bf, [rep bitsPerSample], [rep isPlanar] ? "YES" : "NO", [[rep colorSpaceName] UTF8String]); */
+	/* we only support meshed (=interleaved) formats of 8 bits/component with 3 or 4 components. We should really check for RGB/RGBA as well.. */
+	if ([rep isPlanar] || [rep bitsPerSample] != 8 || (bf & NSFloatingPointSamplesBitmapFormat) || (bpp != 24 && bpp != 32)) {
+	    warning("Unsupported image format");
+	    return (void*) raster;
+	}
+
+        unsigned char *screenData = [rep bitmapData];
+
+        PROTECT(raster = allocVector(INTSXP, pixels));
+
+	/* FIXME: the current implementation of rasters seems to be endianness-dependent which is deadly (whether that is intentional or not). It needs to be fixed before it can work properly. The code below is sort of ok in little-endian machines, but the resulting raster is interpreted wrongly on big-endian machines. This needs to be discussed with Paul as all details are missing from his write-up... */
+        /* Copy each byte of screen to an R matrix. 
+         * The ARGB32 needs to be converted to an R ABGR32 */
+        rint = (unsigned int *) INTEGER(raster);
+	stride = (bpp == 24) ? 3 : 4; /* convers bpp to stride in bytes */
+	for (i = 0; i < pixels; i++, j += stride)
+	    rint[i] = ((screenData[j + 0]) |
+		       (screenData[j + 1] << 8) |
+		       (screenData[j + 2] << 16) |
+		       0xFF000000); /* alpha is currently ignored and set to 1.0 (why?) */
+	
+	[rep release];
+	
+	PROTECT(dim = allocVector(INTSXP, 2));
+        INTEGER(dim)[0] = size.height;
+        INTEGER(dim)[1] = size.width;
+        setAttrib(raster, R_DimSymbol, dim);
+	
+        UNPROTECT(2);
+
+        [ci->view unlockFocus];
+    }
+    
+    return (void *) raster;
+}
+
 QuartzDesc_t QuartzCocoa_DeviceCreate(void *dd, QuartzFunctions_t *fn, QuartzParameters_t *par)
 {
     QuartzDesc_t qd;
@@ -783,6 +878,12 @@ QuartzDesc_t QuartzCocoa_DeviceCreate(void *dd, QuartzFunctions_t *fn, QuartzPar
     scalex = dpi[0] / 72.0;
     scaley = dpi[1] / 72.0;
 
+    if (width * height > 20736.0) {
+	warning("Requested on-screen area is too large (%.1f by %.1f inches).", width, height);
+	return NULL;
+    }
+
+    /* FIXME: check allocations [better now, but strdups below are not covered; also check dev->pars] */
     dev = malloc(sizeof(QuartzCocoaDevice));
     memset(dev, 0, sizeof(QuartzCocoaDevice));
 
@@ -797,10 +898,14 @@ QuartzDesc_t QuartzCocoa_DeviceCreate(void *dd, QuartzFunctions_t *fn, QuartzPar
 	QuartzCocoa_State,
 	NULL,/* par */
 	QuartzCocoa_Sync,
+        QuartzCocoa_Cap,
     };
     
     qd = qf->Create(dd, &qdef);
-    if (!qd) return NULL;
+    if (!qd) {
+	free(dev);
+	return NULL;
+    }
     dev->qd = qd;
     
     /* copy parameters for later */
@@ -817,7 +922,12 @@ QuartzDesc_t QuartzCocoa_DeviceCreate(void *dd, QuartzFunctions_t *fn, QuartzPar
                                  qf->GetScaledWidth(qd), qf->GetScaledHeight(qd));
         if (!cocoa_initialized) initialize_cocoa();
         /* Rprintf("scale=%f/%f; size=%f x %f\n", scalex, scaley, rect.size.width, rect.size.height); */
-        [QuartzCocoaView quartzWindowWithRect: rect andInfo: dev];
+        if (![QuartzCocoaView quartzWindowWithRect: rect andInfo: dev]) {
+	    free((char*)dev->title);
+	    free(qd);
+	    free(dev);
+	    return NULL;
+	}
     }
     if (dev->view)
         [[dev->view window] makeKeyAndOrderFront: dev->view];

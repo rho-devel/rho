@@ -23,13 +23,13 @@
 # state for each device.
 # The state structures are stored in here so that they do not
 # get garbage collected.
-assign(".GRID.STATE", vector("list", 64), envir = .GridEvalEnv)
+assign(".GRID.STATE", vector("list", 64L), envir = .GridEvalEnv)
 ## 64 comes from the maximum number of R devices allowed to be open at
 ## one time, see R_MaxDevices in Graphics.h.
 
 .noGenerics <- TRUE
 
-.onLoad <- function(lib, pkg)
+.onLoad <- function(libname, pkgname)
 {
     ## want eval in C code to see unexported objects
     environment(.GridEvalEnv) <- asNamespace("grid")
@@ -45,7 +45,7 @@ assign(".GRID.STATE", vector("list", 64), envir = .GridEvalEnv)
         ## Not very friendly to other registered graphics systems
         ## but its safety first for now
         if(length(.Devices) > 1L)
-            warning("shutting down all devices when unloading 'grid' name space",
+            warning("shutting down all devices when unloading 'grid' namespace",
                     call. = FALSE)
         graphics.off()
         .Call(L_killGrid)

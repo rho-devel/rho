@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -26,7 +26,7 @@ R_HOME = $(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES = Rhttpd.c Rsock.c nanoftp.c nanohttp.c sock.c
+SOURCES_C = Rhttpd.c Rsock.c nanoftp.c nanohttp.c sock.c
 SOURCES_CPP = internet.cpp sockconn.cpp
 HEADERS = sock.h
 DEPENDS = $(SOURCES_C:.c=.d) $(SOURCES_CPP:.cpp=.d)
@@ -41,6 +41,9 @@ internet_la = internet$(SHLIB_EXT)
 internet_la_LIBADD = $(LIBR) @DYLIB_UNDEFINED_ALLOWED_FALSE@ $(LIBINTL)
 
 ALL_CFLAGS = $(ALL_CFLAGS_LO) @C_VISIBILITY@
+# 2010-03-30, with g++ (SUSE Linux) 4.4.1 [gcc-4_4-branch revision 150839],
+# including -fvisibility-hidden among the flags caused an obscure bug.
+ALL_CXXFLAGS = $(ALL_CXXFLAGS_LO) # @C_VISIBILITY@
 
 all: Makefile Makedeps R
 

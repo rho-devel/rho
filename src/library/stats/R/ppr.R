@@ -35,7 +35,7 @@ function(formula, data, weights, subset,
     X <- model.matrix(Terms, m, contrasts)
     Y <- model.response(m)
     w <- model.weights(m)
-    if(length(w) == 0) w <- rep(1, nrow(X))
+    if(length(w) == 0L) w <- rep(1, nrow(X))
     fit <- ppr.default(X, Y, w, ...)
     fit$na.action <- attr(m, "na.action")
     fit$terms <- Terms
@@ -74,11 +74,11 @@ function(x, y, weights=rep(1,n), ww=rep(1,q), nterms, max.terms=nterms,
     msmod <- ml*(p+q+2*n)+q+7+ml+1	# for asr
     nsp <- n*(q+15)+q+3*p
     ndp <- p*(p+1)/2+6*p
-    .Fortran(R_setppr,
+    .Fortran(C_setppr,
 	     as.double(span), as.double(bass), as.integer(optlevel),
 	     as.integer(ism), as.double(df), as.double(gcvpen)
 	     )
-    Z <- .Fortran(R_smart,
+    Z <- .Fortran(C_smart,
 		  as.integer(ml), as.integer(mu),
 		  as.integer(p), as.integer(q), as.integer(n),
 		  as.double(weights),
@@ -97,7 +97,7 @@ function(x, y, weights=rep(1,n), ww=rep(1,q), nterms, max.terms=nterms,
 		    dimnames=list(xnames, tnames))
     beta <- matrix(smod[q+6L+p*ml + 1L:(q*mu)], q, mu,
 		   dimnames=list(ynames, tnames))
-    fitted <- drop(matrix(.Fortran(R_pppred,
+    fitted <- drop(matrix(.Fortran(C_pppred,
 				   as.integer(nrow(x)),
 				   as.double(x),
 				   as.double(smod),
@@ -165,7 +165,7 @@ plot.ppr <- function(x, ask, type="o", ...)
 	## cols for each term
 	p <- obj$p; q <- obj$q
 	sm <- obj$smod
-	n <- sm[4L]; mu <- sm[5]; m <- sm[1L]
+	n <- sm[4L]; mu <- sm[5L]; m <- sm[1L]
 	jf <- q+6+m*(p+q)
 	jt <- jf+m*n
 	f <- matrix(sm[jf+1L:(mu*n)],n, mu)
@@ -200,13 +200,13 @@ predict.ppr <- function(object, newdata, ...)
         x <- model.matrix(Terms, m, contrasts.arg = object$contrasts)
     } else {
         x <- as.matrix(newdata)
-        keep <- 1L:nrow(x)
+        keep <- seq_len(nrow(x))
         rn <- dimnames(x)[[1L]]
     }
     if(ncol(x) != object$p) stop("wrong number of columns in 'x'")
     res <- matrix(NA, length(keep), object$q,
                   dimnames = list(rn, object$ynames))
-    res[keep, ] <- matrix(.Fortran(R_pppred,
+    res[keep, ] <- matrix(.Fortran(C_pppred,
                                    as.integer(nrow(x)),
                                    as.double(x),
                                    as.double(object$smod),

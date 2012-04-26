@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -55,6 +55,8 @@
 #include "CXXR/PairList.h"
 
 namespace CXXR {
+    class ClosureContext;
+
     /** @brief Class representing a functional programming closure.
      *
      * A closure associates a function definition (the body) with a
@@ -118,13 +120,61 @@ namespace CXXR {
 	    return m_environment;
 	}
 
-	/** @brief Access the formal argument list of the Closure.
+	/** @brief Evaluate the Closure's body in a given environment.
 	 *
-	 * @return Pointer to the formal argument list of the Closure.
+	 * This function evaluates the Closure's body with \a env as
+	 * the working environment, handling debugging if currently
+	 * enabled for this Closure.
+	 *
+	 * @param env Non-null pointer to the working environment in
+	 *          which evaluation of the body is to be carried out.
+	 *
+	 * @return the result of evaluation.
+	 *
+	 * @note This is a low-level function that is called by
+	 * invoke() but may also be called directly.  The function
+	 * does not carry out argument matching, nor does it create a
+	 * ClosureContext: both these operations must be handled by
+	 * the calling code.
 	 */
-	const PairList* formalArgs() const
+	RObject* execute(Environment* env) const;
+
+	/** @brief Invoke the function.
+	 *
+	 * This differs from apply() in that it is assumed that any
+	 * required wrapping of the function arguments in Promise
+	 * objects will have been carried out before invoke() is
+	 * called, whereas apply() carries out this wrapping itself.
+	 *
+	 * @param env Non-null pointer to the Environment in which the
+	 *          function is to be evaluated.
+	 *
+	 * @param arglist Non-null pointer to the promise-wrapped
+	 *          ArgList containing the arguments with which the
+	 *          function is to be invoked.
+	 *
+	 * @param call Pointer to the Expression calling the function.
+	 *
+	 * @param method_bindings This pointer will be non-null if and
+	 *          only if this invocation represents a method call,
+	 *          in which case it points to a Frame containing
+	 *          Bindings that should be added to the working
+	 *          environment, for example bindings of the Symbols
+	 *          \c .Generic and \c .Class.
+	 *
+	 * @return The result of applying the function.
+	 */
+	RObject* invoke(Environment* env, const ArgList* arglist,
+			const Expression* call,
+			const Frame* method_bindings = 0) const;
+
+	/** @brief Access the ArgMatcher of this Closure.
+	 *
+	 * @return const pointer to this Closure's ArgMatcher object.
+	 */
+	const ArgMatcher* matcher() const
 	{
-	    return m_matcher->formalArgs();
+	    return m_matcher;
 	}
 
 	/** @brief Set debugging status.
@@ -157,9 +207,24 @@ namespace CXXR {
 	    return "closure";
 	}
 
+	/** @brief Strip formal argument bindings from a Frame.
+	 *
+	 * This function removes from \a input_frame any bindings of
+	 * the formal arguments of this Closure.  It is used in
+	 * creating the working environment of an S3 method from the
+	 * working environment of its generic.
+	 *
+	 * @param input_frame Non-null pointer to the Frame from which
+	 *          bindings are to be stripped.
+	 */
+	void stripFormals(Frame* input_frame) const
+	{
+	    m_matcher->stripFormals(input_frame);
+	}
+
 	// Virtual function of FunctionBase:
-	RObject* apply(const Expression* call,
-		       const PairList* args, Environment* env);
+	RObject* apply(ArgList* arglist, Environment* env,
+		       const Expression* call) const;
 
 	// Virtual functions of RObject:
         Closure* clone() const;
@@ -172,6 +237,50 @@ namespace CXXR {
 	void detachReferents();
     private:
         friend class boost::serialization::access;
+
+		/** @brief Patrol entry and exit if debugging.
+	 *
+	 * DebugScope objects must be declared on the processor stack
+	 * (i.e. as C++ automatic variables).  A DebugScope object
+	 * relates to a particular Closure object.  If debugging is
+	 * enabled for that Closure, then the DebugScope constructor
+	 * will announce that the Closure function has been entered,
+	 * enable single stepping for the working environment, and
+	 * initiate the browser, and the DebugScope destructor will
+	 * announce that the function is exiting.  If debugging is not
+	 * enabled for the Closure, then the constructor and
+	 * destructor do nothing.
+	 */
+	class DebugScope {
+	public:
+	    /** @brief Constructor.
+	     *
+	     * @param closure Non-null pointer to the Closure being
+	     *          executed.
+	     *
+	     * @note If debugging is enabled for \a closure, the class
+	     * uses the innermost ClosureContext to obtain any further
+	     * information it requires.
+	     */
+	    DebugScope(const Closure* closure)
+		: m_closure(closure)
+	    {
+		if (m_closure->debugging())
+		    startDebugging();
+	    }
+
+	    ~DebugScope()
+	    {
+		if (m_closure->debugging())
+		    endDebugging();
+	    }
+	private:
+	    const Closure* m_closure;
+
+	    void startDebugging() const;
+	    void endDebugging() const;
+	};
+
 	bool m_debug;
 	GCEdge<const ArgMatcher> m_matcher;
 	GCEdge<> m_body;
@@ -184,10 +293,6 @@ namespace CXXR {
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
 	Closure& operator=(const Closure&);
-
-	// Called by apply() to handle debugging:
-	void debug(Environment* newenv, const Expression* call,
-		   const PairList* args, Environment* argsenv);
 
 	// Serialization
 	template<class Archive>
@@ -300,8 +405,8 @@ extern "C" {
     inline SEXP FORMALS(SEXP x)
     {
 	using namespace CXXR;
-	const Closure& clos = *SEXP_downcast<Closure*>(x);
-	return const_cast<PairList*>(clos.formalArgs());
+	const Closure* clos = SEXP_downcast<Closure*>(x);
+	return const_cast<PairList*>(clos->matcher()->formalArgs());
     }
 #endif
 

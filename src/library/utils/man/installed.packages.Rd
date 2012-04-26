@@ -1,6 +1,6 @@
 % File src/library/utils/man/installed.packages.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{installed.packages}
@@ -12,7 +12,8 @@
 }
 \usage{
 installed.packages(lib.loc = NULL, priority = NULL,
-                   noCache = FALSE, fields = NULL)
+                   noCache = FALSE, fields = NULL,
+                   subarch = .Platform$r_arch)
 }
 \arguments{
   \item{lib.loc}{
@@ -26,19 +27,21 @@ installed.packages(lib.loc = NULL, priority = NULL,
     \code{c("base", "recommended")}.  To select all packages without an
     assigned priority use \code{priority = "NA"}.
   }
-  \item{noCache}{Do not use cached information.}
+  \item{noCache}{Do not use cached information, nor cache it.}
 
   \item{fields}{a character vector giving the fields to extract from
     each package's \code{DESCRIPTION} file in addition to the default
     ones, or \code{NULL} (default).  Unavailable fields result in
     \code{NA} values.}
+  \item{subarch}{character string or \code{NULL}.  If non-null and
+    non-empty, used to select packages which are installed for that
+    sub-architecture.
+  }
 }
 \details{
   \code{installed.packages} scans the \file{DESCRIPTION} files of each
   package found along \code{lib.loc} and returns a matrix of package
   names, library paths and version numbers.
-
-  \strong{Note:} this works with package names, not bundle names.
 
   The information found is cached (by library) for the \R session and
   specified \code{fields} argument, and updated only if the top-level
@@ -49,10 +52,9 @@ installed.packages(lib.loc = NULL, priority = NULL,
 }
 \value{
   A matrix with one row per package, row names the package names and
-  column names
+  column names (currently)
   \code{"Package"}, \code{"LibPath"},
   \code{"Version"}, \code{"Priority"},
-  \code{"Bundle"}, \code{"Contains"},
   \code{"Depends"}, \code{"Imports"}, \code{"LinkingTo"},
   \code{"Suggests"}, \code{"Enhances"},
   \code{"OS_type"}, \code{"License"} and
@@ -60,8 +62,19 @@ installed.packages(lib.loc = NULL, priority = NULL,
   Additional columns can be specified using the \code{fields}
   argument.
 }
+\note{
+  This can be slow when thousands of packages are installed, so do not
+  use this to find out if a named package is installed (use
+  \code{\link{system.file}} or \code{\link{find.package}} from package
+  \pkg{base}) nor to find details of a small number of packages (use
+  \code{\link{packageDescription}}).  It needs to read several files per
+  installed package, which will be slow on Windows and on some
+  network-mounted file systems.
+}
 \seealso{
-  \code{\link{update.packages}}, \code{\link{INSTALL}}, \code{\link{REMOVE}}.
+  \code{\link{update.packages}},
+  \code{\link{install.packages}},
+  \code{\link{INSTALL}}, \code{\link{REMOVE}}.
 }
 \examples{
 str(ip <- installed.packages(priority = "high"))

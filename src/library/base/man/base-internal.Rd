@@ -1,13 +1,11 @@
 % File src/library/base/man/base-internal.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{base-internal}
 \alias{.subset}
 \alias{.subset2}
-\alias{.find.package}
-\alias{.path.package}
 \alias{.getRequiredPackages}
 \alias{.getRequiredPackages2}
 \alias{testPlatformEquivalence}
@@ -23,22 +21,31 @@
 \alias{.TAOCP1997init}
 \alias{.gt}
 \alias{.gtn}
-\title{Internal Functions in the Base Package}
+%% moved from trace.Rd in 2.11.0
+\alias{.primTrace}
+\alias{.primUntrace}
+\alias{.POSIXct}
+\alias{.POSIXlt}
+\alias{.difftime}
+\alias{.cache_class}
+%% moved from readRDS.Rd in 2.13.0
+% These were introduced in R 1.7.0, post version 2
+\alias{.readRDS}
+\alias{.saveRDS}
+\alias{.Firstlib_as_onLoad}
+
+
+\title{Internal Functions in Package \pkg{base}}
 \description{
   Internal functions in the base package, which are only user-visible
-  because of the special nature of the base name space.
+  because of the special nature of the base namespace.
 }
 \usage{
 .subset(x, \dots)
 .subset2(x, \dots)
 
-.find.package(package, lib.loc = NULL, quiet = FALSE,
-              verbose = getOption("verbose"))
-
-.path.package(package, quiet = FALSE)
-
-.getRequiredPackages(file = "DESCRIPTION", quietly = FALSE,
-                     useImports = FALSE)
+.getRequiredPackages(file = "DESCRIPTION", lib.loc = NULL,
+                     quietly = FALSE, useImports = FALSE)
 .getRequiredPackages2(pkgInfo, quietly = FALSE, lib.loc = NULL,
                       useImports = FALSE)
 
@@ -59,21 +66,33 @@ lazyLoadDBfetch(key, file, compressed, hook)
 .TAOCP1997init(seed)
 
 .gt(x, i, j)
-
 .gtn(x, strictly)
+
+.primTrace(obj)
+.primUntrace(obj)
+
+.POSIXct(xx, tz = NULL)
+.POSIXlt(xx, tz = NULL)
+.difftime(xx, units)
+
+.cache_class(class, extends)
+
+.saveRDS(\dots)
+.readRDS(\dots)
+
+.find.package(\dots)
+.path.package(\dots)
 }
 \arguments{
   \item{x}{object from which to extract elements.}
-  \item{package}{the name of a package.}
+  \item{file}{The full path to the \file{DESCRIPTION} file of a package.}
   \item{lib.loc}{a character vector describing the location of \R
     library trees to search through, or \code{NULL}.  The default value
-    of \code{NULL} corresponds to all libraries currently known.}
+    of \code{NULL} corresponds to all libraries currently known to
+    \code{\link{.libPaths}()}.}
   \item{quiet}{logical.  Should this not give warnings or an error
     if the package(s) are not found?}
   \item{useImports}{logical.  Should  the \code{Imports} field be processed?}
-  \item{verbose}{a logical.  If \code{TRUE}, additional diagnostics are
-    printed.}
-  \item{file}{The full path to the \file{DESCRIPTION} file of a package.}
   \item{quietly}{logical: should message(s) be printed.}
   \item{pkginfo}{A processed \file{DESCRIPTION} file of class
     \code{"packageDescription2"}.}
@@ -81,7 +100,7 @@ lazyLoadDBfetch(key, file, compressed, hook)
   \item{name}{name of image file to save or load.}
   \item{x}{an object with a \code{"row.names"} attribute, typically a
     data frame.}
-  \item{type}{integer. Currently \code{type = 0} returns the internal
+  \item{type}{integer.  Currently \code{type = 0} returns the internal
     \code{"row.names"} attribute (possibly \code{NULL}), \code{type = 2}
     the number of rows implied by the attribute, and \code{type = 1} the
     latter with a negative sign for \sQuote{automatic} row names.}
@@ -94,6 +113,11 @@ lazyLoadDBfetch(key, file, compressed, hook)
   \item{seed}{a length-one integer vector.}
   \item{i, j}{indices.}
   \item{strictly}{logical.}
+  \item{obj}{an \R object.}
+  \item{xx}{a classless object to be placed into the class.}
+  \item{tz}{an optional timezone.}
+  \item{units}{see \code{\link{difftime}}.}
+  \item{\dots}{Arguments passed to non-dot name versions.}
 }
 \details{
   The functions \code{.subset} and \code{.subset2} are essentially
@@ -103,24 +127,6 @@ lazyLoadDBfetch(key, file, compressed, hook)
   should not normally be invoked by end users.  Note that unlike the
   operators they are builtins and not specials (all arguments are
   evaluated) and hence do not allow missing arguments.
-
-  \code{.find.package} returns the paths to the locations where the
-  given packages can be found.  If \code{lib.loc} is \code{NULL}, then
-  attached packages are searched before the libraries.  If a package is
-  found more than once, the first match is used.  Unless \code{quiet =
-  TRUE} a warning will be given about the named packages which are not
-  found, and an error if none are.  If \code{verbose} is true, warnings
-  about packages found more than once are given.  For a package to be
-  returned it must contain a either a \file{Meta} subdirectory on a
-  \file{DESCRIPTION} file containing a valid \code{version} field, but
-  it need not be installed.
-
-  \code{.path.package} returns the paths from which the named packages
-  were loaded, or if none were named, for all currently loaded packages.
-  Unless \code{quiet = TRUE} it will warn if some of the packages named
-  are not loaded, and given an error if none are.  This function is not
-  meant to be called by users, and its interface might change in future
-  versions.
 
   \code{.getRequiredPackages2} attaches all the packages mentioned in the
   \code{Depends} field: failure to find a package is an error.  It also
@@ -134,7 +140,7 @@ lazyLoadDBfetch(key, file, compressed, hook)
   comparing their \sQuote{canonical} \code{"cpu-vendor-os"} descriptions.
   The default function omits the \code{vendor} part and allows small 
   mismatches elsewhere.  Cognoscenti can replace this function in the
-  \code{base} name space.
+  \code{base} namespace.
 
   The function \code{.isMethodsDispatchOn()} returns \code{TRUE} if
   the S4 method dispatch has been turned on in the evaluator (usually by
@@ -174,14 +180,29 @@ lazyLoadDBfetch(key, file, compressed, hook)
 
   \code{.gt} and \code{.gtn} are callbacks from \code{\link{rank}} and
   \code{\link{is.unsorted}} used for classed objects.
+  
+  \code{.primTrace} and \code{.primUntrace} are the \link{primitive}
+  functions underlying \code{\link{trace}} and \code{\link{untrace}}
+  respectively.
+
+  \code{.POSIXct}, \code{.POSIXlt} and \code{.difftime} are class
+  generators added in \R 2.11.0.
+
+  \code{.cache_class} caches the inheritance of an S4 class for use in
+  S3 method dispatch.  With \code{NULL} second argument, returns the
+  cached inheritance, for diagnostic use.
+
+  \code{.readRDS}, \code{.saveRDS}, \code{.find.package} and
+  \code{.path.package} are internal-only versions (and the only versions
+  available prior to \R 2.13.0) of \code{\link{.readRDS}},
+  \code{\link{.saveRDS}}, \code{\link{.find.package}} and
+  \code{\link{.path.package}}.  \code{.readRDS} and \code{.saveRDS} were
+  deprecated in \R 2.14.0.
 }
 \value{
-  \code{.find.package} and \code{.path.packages} return a character
-  vector of paths to installed packages.
-  
   \code{.getRequiredPackages} and \code{.getRequiredPackages2}
   return \code{invisible()}.
 
-  \code{testPlatformEquivalence}: \code{TRUE} or \code{FALSE}.
+  \code{testPlatformEquivalence} returns \code{TRUE} or \code{FALSE}.
 }
 \keyword{internal}

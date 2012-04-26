@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -39,6 +39,8 @@
 
 #include "CXXR/String.h"
 
+#include <algorithm>
+#include "boost/lambda/lambda.hpp"
 #include "R_ext/Error.h"
 #include "CXXR/UncachedString.h"
 
@@ -49,25 +51,27 @@ namespace CXXR {
     namespace ForceNonInline {
 	int (*HASHVALUEp)(SEXP x) = HASHVALUE;
 	int (*ENC_KNOWNp)(const SEXP x) = ENC_KNOWN;
+	int (*IS_BYTESp)(const SEXP x) = IS_BYTES;
 	Rboolean (*IS_LATIN1p)(const SEXP x) = IS_LATIN1;
 	Rboolean (*IS_UTF8p)(const SEXP x) = IS_UTF8;
 	const char* (*R_CHARp)(SEXP x) = R_CHAR;
     }
 }
 
-GCRoot<String> String::s_na(expose(new UncachedString("NA", CE_NATIVE, true)));
+GCRoot<String> String::s_na(expose(new UncachedString("NA", CE_NATIVE)));
 SEXP R_NaString = String::NA();
 
 // String::s_blank and R_BlankString are defined in Symbol.cpp to
 // enforce initialization order.
 
 String::String(size_t sz, cetype_t encoding)
-    : VectorBase(CHARSXP, sz), m_hash(-1)
+    : VectorBase(CHARSXP, sz), m_c_str(0), m_hash(-1)
 {
     switch(encoding) {
     case CE_NATIVE:
     case CE_UTF8:
     case CE_LATIN1:
+    case CE_BYTES:
 	m_encoding = encoding;
 	break;
     default:
@@ -82,6 +86,7 @@ String::String(size_t sz, cetype_t encoding)
 
 namespace {
     // Used in GPBits2Encoding() and packGPBits():
+    const unsigned int BYTES_MASK = 1<<1;
     const unsigned int LATIN1_MASK = 1<<2;
     const unsigned int UTF8_MASK = 1<<3;
 }
@@ -92,6 +97,8 @@ cetype_t String::GPBits2Encoding(unsigned int gpbits)
 	return CE_LATIN1;
     if ((gpbits & UTF8_MASK) != 0)
 	return CE_UTF8;
+    if ((gpbits & BYTES_MASK) != 0)
+	return CE_BYTES;
     return CE_NATIVE;
 }
 
@@ -105,8 +112,21 @@ unsigned int String::packGPBits() const
     case CE_LATIN1:
 	ans |= LATIN1_MASK;
 	break;
+    case CE_BYTES:
+	ans |= BYTES_MASK;
+	break;
     default:
 	break;
     }
     return ans;
+}
+
+bool CXXR::isASCII(const std::string& str)
+{
+    using namespace boost::lambda;
+    // Beware of the iterator dereferencing to a *signed* char, hence
+    // the bitwise test:
+    std::string::const_iterator it
+	= std::find_if(str.begin(), str.end(), _1 & 0x80);
+    return it == str.end();
 }

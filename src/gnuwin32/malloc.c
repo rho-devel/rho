@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -662,7 +662,7 @@ extern "C" {
 
 /* R Specific declarations here */
 
-    extern unsigned int R_max_memory;
+extern size_t R_max_memory;
 extern int R_Is_Running;
 static size_t R_used = 0;
 void Rf_warning(const char *, ...);

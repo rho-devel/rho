@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-2008   The R Development Core Team.
+ *  Copyright (C) 2000-2011   The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -87,24 +87,6 @@ struct Rconn {
     void *connprivate;
 };
 
-/* used in dounzip.c */
-typedef struct fileconn {
-    FILE *fp;
-#if defined(HAVE_OFF_T) && defined(HAVE_FSEEKO)
-    off_t rpos, wpos;
-#else
-#ifdef Win32
-    off64_t rpos, wpos;
-#else
-    long rpos, wpos;
-#endif
-#endif
-    Rboolean last_was_write;
-#ifdef Win32
-    Rboolean anon_file;
-    char name[PATH_MAX+1];
-#endif
-} *Rfileconn;
 
 typedef enum {HTTPsh, FTPsh, HTTPSsh} UrlScheme;
 
@@ -119,6 +101,7 @@ typedef struct sockconn {
     int port;
     int server;
     int fd;
+    int timeout;
     char *host;
     char inbuf[4096], *pstart, *pend;
 } *Rsockconn;
@@ -129,12 +112,6 @@ typedef struct clpconn {
     int pos, len, last, sizeKB;
     Rboolean warned;
 } *Rclpconn;
-
-/* used in dounzip.c */
-typedef struct unzconn {
-    void *uf;
-} *Runzconn;
-
 
 #define init_con	Rf_init_con
 #define con_pushback	Rf_con_pushback
@@ -149,8 +126,8 @@ Rboolean switch_stdout(int icon, int closeOnExit);
 void init_con(Rconnection newconn, const char *description, int enc,
 	      const char * const mode);
 Rconnection R_newurl(const char *description, const char * const mode);
-Rconnection R_newsock(const char *host, int port, int server, const char * const mode);
-Rconnection in_R_newsock(const char *host, int port, int server, const char *const mode);
+Rconnection R_newsock(const char *host, int port, int server, const char * const mode, int timeout);
+Rconnection in_R_newsock(const char *host, int port, int server, const char *const mode, int timeout);
 Rconnection R_newunz(const char *description, const char * const mode);
 int dummy_fgetc(Rconnection con);
 int dummy_vfprintf(Rconnection con, const char *format, va_list ap);

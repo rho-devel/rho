@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -34,7 +34,7 @@ static const double INVEPS = 1/DOUBLE_EPS;
  */
 static R_INLINE double x_d_omx(double x) {
     if (x < 0 || x > 1)
-	error(_("Value %d out of range (0, 1)"), x);
+	error(_("Value %g out of range (0, 1)"), x);
     return x/(1 - x);
 }
 

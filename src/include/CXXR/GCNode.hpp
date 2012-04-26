@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -41,13 +41,30 @@
 #ifndef GCNODE_HPP
 #define GCNODE_HPP
 
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/base_object.hpp>
 #include "CXXR/Allocator.hpp"
-#include "CXXR/BSerializer.hpp"
 #include "CXXR/HeterogeneousList.hpp"
 #include "CXXR/MemoryBank.hpp"
 #include "CXXR/SchwarzCounter.hpp"
+
+/** @def GC_FIND_LOOPS
+ *
+ * If the preprocessor variable GC_FIND_LOOPS is defined, extra code
+ * is inserted which, during a mark-sweep garbage collection, writes
+ * to the standard output information about any cycles encountered in
+ * the GCNode-GCEdge graph.
+ */
+#ifdef DOXYGEN
+#define GC_FIND_LOOPS
+#endif
+
+/** @brief Syntactic sugar for creating CXXR::GCNode objects.
+ *
+ * The argument of this macro must be a constructor expression for an
+ * object of a class derived from CXXR::GCNode.  The macro expansion
+ * returns a pointer to a new object created by that constructor
+ * expression.
+ */
+#define CXXR_NEW(T) CXXR::GCNode::expose(new T)
 
 namespace CXXR {
     /** @brief Base class for objects managed by the garbage collector.
@@ -93,7 +110,9 @@ namespace CXXR {
      *
      * The simplest way of ensuring timely exposure is always to wrap
      * the \c new call in a call to expose():
-     * e.g. <tt>GCNode::expose(new FooNode(<i>args</i>)</tt>.
+     * e.g. <tt>GCNode::expose(new FooNode(<i>args</i>)</tt>.  This
+     * can be further simplified using the CXXR_NEW macro to
+     * CXXR_NEW(FooNode).
      *
      * @note Because this base class is used purely for housekeeping
      * by the garbage collector, and does not contribute to the
@@ -121,14 +140,16 @@ namespace CXXR {
 	struct const_visitor {
 	    virtual ~const_visitor() {}
 
-	    /** @brief Perform visit
+	    /** @brief Perform visit.
+	     *
+	     *
+	     * In the light of what the visitor discovers, it may
+	     * elect also to visit the referents of \a node, by
+	     * calling visitReferents().
 	     *
 	     * @param node Node to be visited.
-	     *
-	     * @return true if the visitor wishes to visit the
-	     * children of this node, otherwise false.
 	     */
-	    virtual bool operator()(const GCNode* node) = 0;
+	    virtual void operator()(const GCNode* node) = 0;
 	};
 
 	/** @brief Not for general use.
@@ -140,10 +161,11 @@ namespace CXXR {
 	 * functions (such as SET_ATTRIB()) in the Rinternals.h
 	 * interface which would not give rise to any memory
 	 * allocations as implemented in CR but may do so as
-	 * implemented in CXXR.  Its use for other purposes is
-	 * deprecated: use instead more selective protection against
-	 * garbage collection such as that provided by class
-	 * GCStackRoot<T>.
+	 * implemented in CXXR.  It is also used within the GCNode
+	 * class to handle reentrant calls to gclite() and gc().  Its
+	 * use for other purposes is deprecated: use instead more
+	 * selective protection against garbage collection such as
+	 * that provided by class GCStackRoot<T>.
 	 *
 	 * @note GC inhibition is implemented as an object type to
 	 * facilitate reinstatement of garbage collection when an
@@ -159,18 +181,27 @@ namespace CXXR {
 	    {
 		--GCNode::s_inhibitor_count;
 	    }
+
+	    /** @brief Is inhibition currently in effect?
+	     *
+	     * @return true iff garbage collection is currently inhibited.
+	     */
+	    static bool active()
+	    {
+		return s_inhibitor_count != 0;
+	    }
 	};
 
 	GCNode()
-            :
+            : HeterogeneousListBase::Link(s_live),
 #ifdef GCID
-	    m_id(++s_last_id),
+	      m_id(++s_last_id),
 #endif
-	    m_bits(s_mark | UNDER_CONSTRUCTION), m_refcount(0)
+	      m_rcmmu(s_mark | s_moribund_mask | 1)
 	{
-	    s_live->splice_back(this);
 	    ++s_num_nodes;
-	    ++s_under_construction;
+	    ++s_inhibitor_count;
+	    s_moribund->push_back(this);
 #ifdef GCID
 	    watch();
 #endif
@@ -188,8 +219,12 @@ namespace CXXR {
 	 * @note This function will often carry out garbage collection
 	 * of some kind before allocating memory.  However, no
 	 * mark-sweep collection will be performed if another GCNode
-	 * object is currently under construction.
+	 * object is currently under construction, or if at least one
+	 * GCInhibitor object is in existence.
 	 */
+#ifdef __GNUC__
+	__attribute__((hot,fastcall))
+#endif
 	static void* operator new(size_t bytes);
 
 	/** @brief Placement new for GCNode.
@@ -223,22 +258,26 @@ namespace CXXR {
 	 */
 	static bool check();
 
-	/** @brief Present this node, and maybe its children, to a
-	 * visitor.
+	/** @brief Null out all references from this node to other nodes.
 	 *
-	 * Present this node to a visitor and, if the visitor so
-	 * requests, conduct the visitor to the children of this node.
-	 * 
-	 * @param v Pointer to the visitor object.
+	 * The referents of this node are those objects (derived from
+	 * GCNode) designated by a GCEdge within this object.  This
+	 * function changes all GCEdges within this object to
+	 * encapsulate a null pointer.  It is used during the sweep
+	 * phase of a mark-sweep garbage collection to break up
+	 * unreachable subgraphs, and in particular to remove
+	 * reference loops from them.  After the application of this
+	 * method, the GCNode should be regarded as a 'zombie', kept
+	 * in existence only so other nodes can detach their
+	 * references to it cleanly (using decRefCount()).
 	 *
-	 * @return the result of applying the visitor to \e this node.
+	 * @note If this method is reimplemented in a derived class,
+	 * the reimplemented version must remember to invoke
+	 * detachReferents() for the immediate base class of the
+	 * derived class, to ensure that \e all referents of the
+	 * object get detached.
 	 */
-	bool conductVisitor(const_visitor* v) const
-	{
-	    if (!(*v)(this)) return false;
-	    visitReferents(v);
-	    return true;
-	}
+	virtual void detachReferents()  {}
 
 	/** @brief Record that construction of a node is complete.
 	 *
@@ -246,17 +285,12 @@ namespace CXXR {
 	 */
 	void expose() const
 	{
-	    s_under_construction -= (m_bits & UNDER_CONSTRUCTION);
-	    m_bits &= ~UNDER_CONSTRUCTION;
-	}
-
-	/** @brief Determine whether a node has been exposed
-	 *
-	 * @ Return true iff a node is exposed to GC
-	 */
-	bool exposed() const
-	{
-	    return !(m_bits & UNDER_CONSTRUCTION);
+#ifndef NDEBUG
+	    if (isExposed())
+		alreadyExposedError();
+#endif
+	    m_rcmmu &= ~1;
+	    --s_inhibitor_count;
 	}
 
 	/** @brief Record that construction of a node is complete.
@@ -272,15 +306,17 @@ namespace CXXR {
 	 * CHECK_EXPOSURE is defined, runtime checks for this are
 	 * inserted into the code.
 	 *
-	 * The simplest way of ensuring timely exposure is always to wrap
-	 * the \c new call in a call to expose():
+	 * The simplest way of ensuring timely exposure is always to
+	 * wrap the \c new call in a call to expose():
 	 * e.g. <tt>GCNode::expose(new FooNode(<i>args</i>)</tt>.
+	 * This can be further simplified using the CXXR_NEW macro to
+	 * CXXR_NEW(FooNode).
 	 *
-	 * It is permissible (but pointless) for a node to be exposed
-	 * more than once.
+	 * It is not permissible for a node to be exposed more than
+	 * once, and this is checked unless \c NDEBUG is defined.
 	 *
-	 * @param T GCNode or any class derived from it, possibly
-	 *          qualified by const.
+	 * @tparam T GCNode or any class derived from it, possibly
+	 *           qualified by const.
 	 *
 	 * @param node Pointer to the node whose construction has been
 	 *          completed.
@@ -317,6 +353,16 @@ namespace CXXR {
 	 */
 	static void gclite();
 
+	/** @brief Has this node been exposed to garbage collection?
+	 *
+	 * @return true iff this node has been exposed to garbage
+	 * collection.
+	 */
+	bool isExposed() const
+	{
+	    return (m_rcmmu & 1) == 0;
+	}
+
 	/** @brief Subject to configuration, check that a GCNode is exposed.
 	 *
 	 * Normally, this function is an inlined no-op.  However, if
@@ -334,21 +380,6 @@ namespace CXXR {
 	    abortIfNotExposed(node);
 #endif
 	}
-
-	/** @brief Perform sanity checks on a GCNode.
-	 *
-	 * This function performs simple sanity checks on a GCNode,
-	 * and is typically used to detect premature garbage
-	 * collection.  In this regard, it is particularly effective
-	 * when MemoryBank.hpp is configured to fill freed blocks with
-	 * 0x55 bytes.  If the sanity check fails, the function aborts
-	 * the program.
-	 *
-	 * @param node Either a null pointer (in which case the check
-	 *          succeeds) or a pointer to the GCNode to be
-	 *          checked.
-	 */
-	static void nodeCheck(const GCNode* node);
 
 	/** @brief Number of GCNode objects in existence.
 	 *
@@ -369,7 +400,7 @@ namespace CXXR {
 	 * the reimplemented version must remember to invoke
 	 * visitReferents() for the immediate base class of the
 	 * derived class, to ensure that \e all referents of the
-	 * object get visited.  It is recommended that implementations
+	 * object get visited.  It is suggested that implementations
 	 * set up stack-based pointers to all the referents of a node
 	 * before visiting any of them; in that case, if the
 	 * (recursive) visiting pushes the node out of the processor
@@ -388,36 +419,16 @@ namespace CXXR {
 #ifdef GCID
 	    watch();
 #endif
-	    s_under_construction -= (m_bits & UNDER_CONSTRUCTION);
+	    // Is the node still under construction?
+	    if (m_rcmmu & 1)
+		destruct_aux();
 	    --s_num_nodes;
 	}
-
-	/** @brief Null out all references from this node to other nodes.
-	 *
-	 * The referents of this node are those objects (derived from
-	 * GCNode) designated by a GCEdge within this object.  This
-	 * function changes all GCEdges within this object to
-	 * encapsulate a null pointer.  It is used during the sweep
-	 * phase of a mark-sweep garbage collection to break up
-	 * unreachable subgraphs, and in particular to remove
-	 * reference loops from them.  After the application of this
-	 * method, the GCNode should be regarded as a 'zombie', kept
-	 * in existence only so other nodes can detach their
-	 * references to it cleanly (using decRefCount()).
-	 *
-	 * @note If this method is reimplemented in a derived class,
-	 * the reimplemented version must remember to invoke
-	 * detachReferents() for the immediate base class of the
-	 * derived class, to ensure that \e all referents of the
-	 * object get detached.
-	 */
-	virtual void detachReferents()  {}
-
     private:
-   	friend class boost::serialization::access;
-	friend class GCInhibitor;
+	friend class boost::serialization::access;
 	friend class GCRootBase;
 	friend class GCStackRootBase;
+	friend class NodeStack;
 	friend class WeakRef;
 
 	/** Visitor class used to mark nodes.
@@ -429,34 +440,47 @@ namespace CXXR {
 	class Marker : public const_visitor {
 	public:
 	    Marker()
+		: m_marks_applied(0)
 	    {}
-	    
+
+	    unsigned int marksApplied() const
+	    {
+		return m_marks_applied;
+	    }
+
 	    // Virtual function of const_visitor:
-	    bool operator()(const GCNode* node);
+	    void operator()(const GCNode* node);
+	private:
+	    unsigned int m_marks_applied;
+#ifdef GC_FIND_LOOPS
+	    std::vector<const GCNode*> m_ariadne;
+#endif
 	};
 
 	typedef HeterogeneousList<GCNode> List;
 
-	static List* s_live;  // List of nodes other than 'moribund'
-		       // nodes.
-	static List* s_moribund;  // List of nodes whose reference
-		       // count has fallen to zero (but may
-		       // subsequently have increased again).
+	static List* s_live;  // Except during mark-sweep garbage
+	  // collection, all existing nodes are threaded on this
+	  // list.
+	static std::vector<const GCNode*>* s_moribund;  // Vector of
+	  // pointers to nodes whose reference count has fallen to
+	  // zero (but may subsequently have increased again).
 	static List* s_reachable;  // During the mark phase of garbage
-		       // collection, if a node is found to be reachable
-		       // from the roots, it is moved to this list.
-		       // Between garbage collections, this list
-		       // should be empty.
-	static unsigned char s_mark;  // During garbage collection, a
-			       // node is considered marked if its
-			       // MARK field matches the corresponding
-			       // bits of s_mark.
+	  // collection, if a node is found to be reachable from the
+	  // roots, it is moved to this list. Between garbage
+	  // collections, this list should be empty.
+	static const size_t s_gclite_margin;  // operator new will
+	  // invoke gclite() when MemoryBank::bytesAllocated() exceeds
+	  // by at least s_gclite_margin the number of bytes that were
+	  // allocated following the previous gclite().  This is a
+	  // tuning parameter.
+	static size_t s_gclite_threshold;  // operator new calls
+	  // gclite() when the number of bytes allocated reaches this
+	  // level.
 	static unsigned int s_num_nodes;  // Number of nodes in existence
-	static unsigned int s_under_construction;  // Number of nodes
-	                      // currently under construction
-	                      // (i.e. not yet exposed).
 	static unsigned int s_inhibitor_count;  // Number of GCInhibitor
-	                      // objects in existence.
+	  // objects in existence, plus the number of nodes currently
+	  // under construction (i.e. not yet exposed).
 #ifdef GCID
 	// If GCID is defined, each GCNode is given an identity
 	// number.  The numbers are not unique: they wrap around
@@ -470,56 +494,82 @@ namespace CXXR {
 	static const GCNode* s_watch_addr;
 	static unsigned int s_watch_id;
 #endif
-
-	// Masks applicable to the m_bits field:
-	enum {UNDER_CONSTRUCTION = 1, MORIBUND = 2, MARK = 4};
-
+	// Bit patterns XORd into m_rcmmu to decrement or increment the
+	// reference count.  Patterns 0, 2, 4, ... are used to
+	// decrement; 1, 3, 5, .. to increment.
+	static const unsigned char s_decinc_refcount[];
+	static unsigned char s_mark;  // During garbage collection, a
+	  // node is considered marked if its s_mark_mask bit matches the
+	  // corresponding bit of s_mark.  (Only this bit will ever be
+	  // set in s_mark.)
 #ifdef GCID
 	unsigned int m_id;
 #endif
-	mutable unsigned char m_bits;
-	mutable unsigned char m_refcount;
+
+	static const unsigned char s_mark_mask = 0x80;
+	static const unsigned char s_moribund_mask = 0x40;
+	static const unsigned char s_refcount_mask = 0x3e;
+	mutable unsigned char m_rcmmu;
+	  // Refcount/moribund/marked/under-construction.  The least
+	  // significant bit is set to signify that the node is under
+	  // construction.  The reference count is held in the next 5
+	  // bits, and saturates at 31.  The 0x40 bit is set to
+	  // signify that the node is on the moribund list.  The most
+	  // significant bit is set to s_mark on construction; this
+	  // bit is then toggled in the mark phase of a mark-sweep
+	  // garbage collection to identify reachable nodes.
 
 	// Not implemented.  Declared to prevent compiler-generated
 	// versions:
 	GCNode(const GCNode&);
 	GCNode& operator=(const GCNode&);
 
+	// Not implemented.  Declared private to prevent clients
+	// allocating arrays of GCNode.
+	//
+	// But boost::serialization doesn't like this.
+	// static void* operator new[](size_t);
+
 	// Abort program if 'node' is not exposed to GC.
 	static void abortIfNotExposed(const GCNode* node);
+
+	// Abort program with an error message if an attempt is made
+	// to expose a node more than once.
+	static void alreadyExposedError();
 
 	// Clean up static data at end of run:
 	static void cleanup();
 
-	// Decrement the reference count (unless it is at its maximum
-	// value), and return the resulting count:
-	unsigned char decRefCount() const
+	// Decrement the reference count (subject to the stickiness of
+	// its MSB).  If as a result the reference count falls to
+	// zero, mark the node as moribund.
+	static void decRefCount(const GCNode* node)
 	{
-	    // The following code is intended to be equivalent to:
-	    //
-	    // if (m_refcount != 255) --m_refcount;
-	    //
-	    // but without using a branch.
-	    unsigned short rc = m_refcount;
-	    ++rc;
-	    rc += (rc >> 8) - 2;
-	    m_refcount = rc;
-	    return m_refcount;
+	    if (node) {
+		unsigned char& rcmmu = node->m_rcmmu;
+		rcmmu ^= s_decinc_refcount[rcmmu & s_refcount_mask];
+		if ((rcmmu & (s_refcount_mask | s_moribund_mask)) == 0)
+		    node->makeMoribund();
+	    }
 	}
 
-	// Increment the reference count, unless it is already at its
-	// maximum value.
-	void incRefCount() const
+	// Helper function for the destructor, handling the case where
+	// the node is still under construction.  This should happen
+	// only in the case where a derived class constructor has
+	// thrown an exception.
+#ifdef __GNUC__
+	__attribute__((cold))
+#endif
+	void destruct_aux();
+
+	// Increment the reference count.  Overflow is handled by the
+	// stickiness of the MSB.
+	static void incRefCount(const GCNode* node)
 	{
-	    // The following code is intended to be equivalent to:
-	    //
-	    // if (m_refcount != 255) ++m_refcount;
-	    //
-	    // but without using a branch.
-	    unsigned short rc = m_refcount;
-	    ++rc;
-	    rc -= (rc >> 8);
-	    m_refcount = rc;
+	    if (node) {
+		unsigned char& rcmmu = node->m_rcmmu;
+		rcmmu ^= s_decinc_refcount[(rcmmu & s_refcount_mask) + 1];
+	    }
 	}
 
 	/** @brief Initialize static members.
@@ -533,31 +583,20 @@ namespace CXXR {
 	 */
 	static void initialize();
 
-	bool isMarked() const {return (m_bits & MARK) == s_mark;}
+	bool isMarked() const
+	{
+	    return (m_rcmmu & s_mark_mask) == s_mark;
+	}
 
-	// Designate a node (whose reference count has fallen to zero)
-	// as 'moribund'.  Such a node will be deleted by the next
-	// call to gclite(), unless by that time its reference count
-	// is non-zero once more, in which case it will be 'resurrected'.
+	// Mark this node as moribund:
+#ifdef __GNUC__
+	__attribute__((hot,fastcall))
+#endif
 	void makeMoribund() const;
 
 	/** @brief Carry out the mark phase of garbage collection.
 	 */
 	static void mark();
-
-	// Some structures, particularly those accessed from C code, have
-	// not been refactored to protect their members using GCRoot<>.
-	// This function is used to provide temporary protection using
-	// PROTECT().  It returns the number of items thus protected.
-	static unsigned int protectCstructs();
-
-	/** @brief Vestigial implementation
-	 */
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) { 
-	    BSerializer::Frame frame("GCNode");
-	    ar & boost::serialization::base_object<HeterogeneousListBase::Link>(*this);
-	}
 
 	/** @brief Carry out the sweep phase of garbage collection.
 	 */

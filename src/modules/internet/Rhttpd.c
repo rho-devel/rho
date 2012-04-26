@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2009 The R Development Core Team.
+ *  Copyright (C) 2009-11 The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -157,12 +157,20 @@ static struct sockaddr *build_sin(struct sockaddr_in *sa, const char *ip, int po
 #define METHOD_HEAD 3
 
 /* attributes of a connection/worker */
-#define CONNECTION_CLOSE 0x01 /* Connection: close response behavior is requested */
-#define HOST_HEADER      0x02 /* headers contained Host: header (required for HTTP/1.1) */
-#define HTTP_1_0         0x04 /* the client requested HTTP/1.0 */
-#define CONTENT_LENGTH   0x08 /* Content-length: was specified in the headers */
-#define THREAD_OWNED     0x10 /* the worker is owned by a thread and cannot removed */
-#define THREAD_DISPOSE   0x20 /* the thread should dispose of the worker */
+#define CONNECTION_CLOSE  0x01 /* Connection: close response behavior is requested */
+#define HOST_HEADER       0x02 /* headers contained Host: header (required for HTTP/1.1) */
+#define HTTP_1_0          0x04 /* the client requested HTTP/1.0 */
+#define CONTENT_LENGTH    0x08 /* Content-length: was specified in the headers */
+#define THREAD_OWNED      0x10 /* the worker is owned by a thread and cannot removed */
+#define THREAD_DISPOSE    0x20 /* the thread should dispose of the worker */
+#define CONTENT_TYPE      0x40 /* message has a specific content type set */
+#define CONTENT_FORM_UENC 0x80 /* message content type is application/x-www-form-urlencoded */
+
+struct buffer {
+    struct buffer *next, *prev;
+    int size, length;
+    char data[1];
+};
 
 /* --- connection/worker structure holding all data for an active connection --- */
 typedef struct httpd_conn {
@@ -175,16 +183,19 @@ typedef struct httpd_conn {
 #endif
     char line_buf[LINE_BUF_SIZE];  /* line buffer (used for request and headers) */
     char *url, *body;              /* URL and request body */
-    unsigned int line_pos, body_pos, content_length; /* positions in the buffers and desired content length */
+    char *content_type;            /* content type (if set) */
+    unsigned int line_pos, body_pos; /* positions in the buffers */
+    long content_length;           /* desired content length */
     char part, method, attr;       /* request part, method and connection attributes */
+    struct buffer *headers;        /* buffer holding header lines */
 } httpd_conn_t;
-
-/* returns the HTTP/x.x string for a given connection - we support 1.0 and 1.1 only */
-#define HTTP_SIG(C) ((((C)->attr & HTTP_1_0) == 0) ? "HTTP/1.1" : "HTTP/1.0")
 
 #define IS_HTTP_1_1(C) (((C)->attr & HTTP_1_0) == 0)
 
-/* --- static list of currently activbe workers --- */
+/* returns the HTTP/x.x string for a given connection - we support 1.0 and 1.1 only */
+#define HTTP_SIG(C) (IS_HTTP_1_1(C) ? "HTTP/1.1" : "HTTP/1.0")
+
+/* --- static list of currently active workers --- */
 static httpd_conn_t *workers[MAX_WORKERS];
 
 /* --- flag determining whether one-time initialization is yet to be performed --- */
@@ -217,6 +228,45 @@ static void first_init()
     needs_init = 0;
 }
 
+/* free buffers starting from the tail(!!) */
+static void free_buffer(struct buffer *buf) {
+    if (!buf) return;
+    if (buf->prev) free_buffer(buf->prev);
+    free(buf);
+}
+
+/* allocate a new buffer */
+static struct buffer *alloc_buffer(int size, struct buffer *parent) {
+    struct buffer *buf = (struct buffer*) malloc(sizeof(struct buffer) + size);
+    if (!buf) return buf;
+    buf->next = 0;
+    buf->prev = parent;
+    if (parent) parent->next = buf;
+    buf->size = size;
+    buf->length = 0;
+    return buf;
+}
+
+/* convert doubly-linked buffers into one big raw vector */
+static SEXP collect_buffers(struct buffer *buf) {
+    SEXP res;
+    char *dst;
+    int len = 0;
+    if (!buf) return allocVector(RAWSXP, 0);
+    while (buf->prev) { /* count the total length and find the root */
+	len += buf->length;
+	buf = buf->prev;
+    }
+    res = allocVector(RAWSXP, len + buf->length);
+    dst = (char*) RAW(res);
+    while (buf) {
+	memcpy(dst, buf->data, buf->length);
+	dst += buf->length;
+	buf = buf->next;
+    }
+    return res;
+}
+
 static void finalize_worker(httpd_conn_t *c)
 {
     DBG(printf("finalizing worker %p\n", (void*) c));
@@ -236,6 +286,14 @@ static void finalize_worker(httpd_conn_t *c)
 	c->body = NULL;
     }
 
+    if (c->content_type) {
+	free(c->content_type);
+	c->content_type = NULL;
+    }
+    if (c->headers) {
+	free_buffer(c->headers);
+	c->headers = NULL;
+    }
     if (c->sock != INVALID_SOCKET) {
 	closesocket(c->sock);
 	c->sock = INVALID_SOCKET;
@@ -287,21 +345,45 @@ static void remove_worker(httpd_conn_t *c)
     free(c);
 }
 
+#ifndef Win32
+extern int R_ignore_SIGPIPE; /* defined in src/main/main.c on unix */
+#else
+static int R_ignore_SIGPIPE; /* for simplicity of the code below */
+#endif
+
 static int send_response(SOCKET s, const char *buf, unsigned int len)
 {
     unsigned int i = 0;
+    /* we have to tell R to ignore SIGPIPE otherwise it can raise an error
+       and get us into deep trouble */
+    R_ignore_SIGPIPE = 1;
     while (i < len) {
 	int n = send(s, buf + i, len - i, 0);
-	if (n < 1) return -1;
+	if (n < 1) {
+	    R_ignore_SIGPIPE = 0;
+	    return -1;
+	}
 	i += n;
     }
+    R_ignore_SIGPIPE = 0;
     return 0;
 }
 
 /* sends HTTP/x.x plus the text (which should be of the form " XXX ...") */
 static int send_http_response(httpd_conn_t *c, const char *text) {
+    char buf[96];
     const char *s = HTTP_SIG(c);
-    if (send(c->sock, s, 8, 0) < 8) return -1;
+    int l = strlen(text), res;
+    /* reduce the number of packets by sending the payload en-block from buf */
+    if (l < sizeof(buf) - 10) {
+	strcpy(buf, s);
+	strcpy(buf + 8, text);
+	return send_response(c->sock, buf, l + 8);
+    }
+    R_ignore_SIGPIPE = 1;
+    res = send(c->sock, s, 8, 0);
+    R_ignore_SIGPIPE = 0;
+    if (res < 8) return -1;
     return send_response(c->sock, text, strlen(text));
 }
 
@@ -383,6 +465,30 @@ static SEXP parse_query(char *query)
     return res;
 }
 
+static SEXP R_ContentTypeName, R_HandlersName;
+
+/* create an object representing the request body. It is NULL if the body is empty (or zero length).
+ * In the case of a URL encoded form it will have the same shape as the query string (named string vector).
+ * In all other cases it will be a raw vector with a "content-type" attribute (if specified in the headers) */
+static SEXP parse_request_body(httpd_conn_t *c) {
+    if (!c || !c->body) return R_NilValue;
+
+    if (c->attr & CONTENT_FORM_UENC) { /* URL encoded form - return parsed form */
+	c->body[c->content_length] = 0; /* the body is guaranteed to have an extra byte for the termination */
+	return parse_query(c->body);
+    } else { /* something else - pass it as a raw vector */
+	SEXP res = PROTECT(Rf_allocVector(RAWSXP, c->content_length));
+	if (c->content_length)
+	    memcpy(RAW(res), c->body, c->content_length);
+	if (c->content_type) { /* attach the content type so it can be interpreted */
+	    if (!R_ContentTypeName) R_ContentTypeName = install("content-type");
+	    setAttrib(res, R_ContentTypeName, mkString(c->content_type));
+	}
+	UNPROTECT(1);
+	return res;
+    }
+}
+
 #ifdef WIN32
 /* on Windows we have to guarantee that process_request is performed
  * on the main thread, so we have to dispatch it through a message */
@@ -406,6 +512,39 @@ static void fin_request(httpd_conn_t *c) {
 	c->attr |= CONNECTION_CLOSE;
 }
 
+static SEXP custom_handlers_env;
+
+/* returns a httpd handler (closure) for a given path. As a special case
+ * it can return a symbol that will be resolved in the "tools" namespace.
+ * currently it allows custom handlers for paths of the form
+ * /custom/<name>[/.*] where <name> must less than 64 characters long
+ * and is matched against closures in tools:::.httpd.handlers.env */
+static SEXP handler_for_path(const char *path) {
+    if (path && !strncmp(path, "/custom/", 8)) { /* starts with /custom/ ? */
+	const char *c = path + 8, *e = c;
+	while (*c && *c != '/') c++; /* find out the name */
+	if (c - e > 0 && c - e < 64) { /* if it's 1..63 chars long, proceed */
+	    char fn[64];
+	    memcpy(fn, e, c - e); /* create a local C string with the name for the install() call */
+	    fn[c - e] = 0;
+	    DBG(Rprintf("handler_for_path('%s'): looking up custom handler '%s'\n", path, fn));
+	    /* we cache custom_handlers_env so in case it has not been loaded yet, fetch it */
+	    if (!custom_handlers_env) {
+		if (!R_HandlersName) R_HandlersName = install(".httpd.handlers.env");
+		custom_handlers_env = eval(R_HandlersName, R_FindNamespace(mkString("tools")));
+	    }
+	    /* we only proceed if .httpd.handlers.env really exists */
+	    if (TYPEOF(custom_handlers_env) == ENVSXP) {
+		SEXP cl = findVarInFrame3(custom_handlers_env, install(fn), TRUE);
+		if (cl != R_UnboundValue && TYPEOF(cl) == CLOSXP) /* we need a closure */
+		    return cl;
+	    }
+	}
+    }
+    DBG(Rprintf(" - falling back to default httpd\n"));
+    return install("httpd");
+}
+
 /* process a request by calling the httpd() function in R */
 static void process_request(httpd_conn_t *c)
 {
@@ -422,11 +561,20 @@ static void process_request(httpd_conn_t *c)
 	query = s;
     }
     uri_decode(c->url); /* decode the path part */
-    { /* construct try(httpd(url, query), silent=TRUE) */
+    {   /* construct "try(httpd(url, query, body), silent=TRUE)" */
 	SEXP sTrue = PROTECT(ScalarLogical(TRUE));
-	SEXP y, x = PROTECT(lang3(install("try"), LCONS(install("httpd"), CONS(mkString(c->url), CONS(query ? parse_query(query) : R_NilValue, R_NilValue))), sTrue));
+	SEXP sBody = PROTECT(parse_request_body(c));
+	SEXP sQuery = PROTECT(query ? parse_query(query) : R_NilValue);
+	SEXP sReqHeaders = PROTECT(c->headers ? collect_buffers(c->headers) : R_NilValue);
+	SEXP sArgs = PROTECT(list4(mkString(c->url), sQuery, sBody, sReqHeaders));
+	SEXP sTry = install("try");
+	SEXP y, x = PROTECT(lang3(sTry,
+				  LCONS(handler_for_path(c->url), sArgs),
+				  sTrue));
 	SET_TAG(CDR(CDR(x)), install("silent"));
 	DBG(Rprintf("eval(try(httpd('%s'),silent=TRUE))\n", c->url));
+	
+	/* evaluate the above in the tools namespace */
 	x = PROTECT(eval(x, R_FindNamespace(mkString("tools"))));
 
 	/* the result is expected to have one of the following forms:
@@ -457,7 +605,7 @@ static void process_request(httpd_conn_t *c)
 	    if (c->method != METHOD_HEAD)
 		send_response(c->sock, s, strlen(s));
 	    c->attr |= CONNECTION_CLOSE; /* force close */
-	    UNPROTECT(3);
+	    UNPROTECT(7);
 	    return;
 	}
 
@@ -506,7 +654,7 @@ static void process_request(httpd_conn_t *c)
 		    long fsz = 0;
 		    if (!f) {
 			send_response(c->sock, "\r\nContent-length: 0\r\n\r\n", 23);
-			UNPROTECT(3);
+			UNPROTECT(7);
 			fin_request(c);
 			return;
 		    }
@@ -517,21 +665,27 @@ static void process_request(httpd_conn_t *c)
 		    send_response(c->sock, buf, strlen(buf));
 		    if (c->method != METHOD_HEAD) {
 			fbuf = (char*) malloc(32768);
-			while (fsz > 0 && !feof(f)) {
-			    int rd = (fsz > 32768) ? 32768 : fsz;
-			    if (fread(fbuf, 1, rd, f) != rd) {
-				free(fbuf);
-				UNPROTECT(3);
-				c->attr |= CONNECTION_CLOSE;
-				return;
+			if (fbuf) {
+			    while (fsz > 0 && !feof(f)) {
+				int rd = (fsz > 32768) ? 32768 : fsz;
+				if (fread(fbuf, 1, rd, f) != rd) {
+				    free(fbuf);
+				    UNPROTECT(7);
+				    c->attr |= CONNECTION_CLOSE;
+				    return;
+				}
+				send_response(c->sock, fbuf, rd);
+				fsz -= rd;
 			    }
-			    send_response(c->sock, fbuf, rd);
-			    fsz -= rd;
+			    free(fbuf);
+			} else { /* allocation error - get out */
+			    UNPROTECT(7);
+			    c->attr |= CONNECTION_CLOSE;
+			    return;
 			}
-			free(fbuf);
 		    }
 		    fclose(f);
-		    UNPROTECT(3);
+		    UNPROTECT(7);
 		    fin_request(c);
 		    return;
 		}
@@ -539,7 +693,7 @@ static void process_request(httpd_conn_t *c)
 		send_response(c->sock, buf, strlen(buf));
 		if (c->method != METHOD_HEAD)
 		    send_response(c->sock, cs, strlen(cs));
-		UNPROTECT(3);
+		UNPROTECT(7);
 		fin_request(c);
 		return;
 	    }
@@ -565,12 +719,12 @@ static void process_request(httpd_conn_t *c)
 		send_response(c->sock, buf, strlen(buf));
 		if (c->method != METHOD_HEAD)
 		    send_response(c->sock, (char*) cs, LENGTH(y));
-		UNPROTECT(3);
+		UNPROTECT(7);
 		fin_request(c);
 		return;
 	    }
 	}
-	UNPROTECT(3);
+	UNPROTECT(7);
     }
     send_http_response(c, " 500 Invalid response from R\r\nConnection: close\r\nContent-type: text/plain\r\n\r\nServer error: invalid response from R\r\n");
     c->attr |= CONNECTION_CLOSE; /* force close */
@@ -626,11 +780,15 @@ static void worker_input_handler(void *data) {
 		    send_http_response(c, " 400 Bad Request (Host: missing)\r\nConnection: close\r\n\r\n");
 		    remove_worker(c);
 		    return;
-
 		}
-		if (c->attr & CONTENT_LENGTH) {
-		    if (c->content_length)
-			c->body = (char*) malloc(c->content_length);
+		if (c->attr & CONTENT_LENGTH && c->content_length) {
+		    if (c->content_length < 0 ||  /* we are parsing signed so negative numbers are bad */
+			c->content_length > 2147483640 || /* R will currently have issues with body around 2Gb or more, so better to not go there */
+			!(c->body = (char*) malloc(c->content_length + 1 /* allocate an extra termination byte */ ))) {
+			send_http_response(c, " 413 Request Entity Too Large (request body too big)\r\nConnection: close\r\n\r\n");
+			remove_worker(c);
+			return;
+		    }
 		}
 		c->body_pos = 0;
 		c->part = PART_BODY;
@@ -641,7 +799,7 @@ static void worker_input_handler(void *data) {
 		memmove(c->line_buf, s, c->line_pos);
 		if (c->method != METHOD_POST) { /* anything but POST can be processed right away */
 		    if (c->attr & CONTENT_LENGTH) {
-			send(c->sock, "HTTP/1.0 400 Bad Request (GET/HEAD with body)\r\n\r\n", 49, 0);
+			send_http_response(c, " 400 Bad Request (GET/HEAD with body)\r\n\r\n");
 			remove_worker(c);
 			return;
 		    }
@@ -653,12 +811,20 @@ static void worker_input_handler(void *data) {
 		    /* keep-alive - reset the worker so it can process a new request */
 		    if (c->url) { free(c->url); c->url = NULL; }
 		    if (c->body) { free(c->body); c->body = NULL; }
+		    if (c->content_type) { free(c->content_type); c->content_type = NULL; }
+		    if (c->headers) { free_buffer(c->headers); c->headers = NULL; }
 		    c->body_pos = 0;
 		    c->method = 0;
 		    c->part = PART_REQUEST;
 		    c->attr = 0;
 		    c->content_length = 0;
 		    return;
+		}
+		/* copy body content (as far as available) */
+		c->body_pos = (c->content_length < c->line_pos) ? c->content_length : c->line_pos;
+		if (c->body_pos) {
+		    memcpy(c->body, c->line_buf, c->body_pos);
+		    c->line_pos -= c->body_pos; /* NOTE: we are NOT moving the buffer since non-zero left-over causes connection close */
 		}
 		/* POST will continue into the BODY part */
 		break;
@@ -671,7 +837,7 @@ static void worker_input_handler(void *data) {
 			if (c->line_pos < LINE_BUF_SIZE) /* one, incomplete line, but the buffer is not full yet, just return */
 			    return;
 			/* the buffer is full yet the line is incomplete - we're in trouble */
-			send(c->sock, "HTTP/1.0 413 Request entity too large\r\nConnection: close\r\n\r\n", 60, 0);
+			send_http_response(c, " 413 Request entity too large\r\nConnection: close\r\n\r\n");
 			remove_worker(c);
 			return;
 		    }
@@ -688,7 +854,7 @@ static void worker_input_handler(void *data) {
 			unsigned int rll = strlen(bol); /* request line length */
 			char *url = bol + 5;
 			if (rll < 14 || strncmp(bol + rll - 9, " HTTP/1.", 8)) { /* each request must have at least 14 characters [GET / HTTP/1.0] and have HTTP/1.x */
-			    send(c->sock, "HTTP/1.0 400 Bad Request\r\n\r\n", 28, 0);
+			    send_response(c->sock, "HTTP/1.0 400 Bad Request\r\n\r\n", 28);
 			    remove_worker(c);
 			    return;
 			}
@@ -697,7 +863,7 @@ static void worker_input_handler(void *data) {
 			if (!strncmp(bol, "POST ", 5)) c->method = METHOD_POST;
 			if (!strncmp(bol, "HEAD ", 5)) c->method = METHOD_HEAD;
 			if (!c->method) {
-			    send(c->sock, "HTTP/1.0 501 Invalid or unimplemented method\r\n\r\n", 48, 0);
+			    send_http_response(c, " 501 Invalid or unimplemented method\r\n\r\n");
 			    remove_worker(c);
 			    return;
 			}
@@ -708,6 +874,27 @@ static void worker_input_handler(void *data) {
 		    } else if (c->part == PART_HEADER) {
 			/* --- process headers --- */
 			char *k = bol;
+			if (!c->headers)
+			    c->headers = alloc_buffer(1024, NULL);
+			if (c->headers) { /* record the header line in the buffer */
+			    int l = strlen(bol);
+			    if (l) { /* this should be really always true */
+				if (c->headers->length + l + 1 > c->headers->size) { /* not enough space? */
+				    int fits = c->headers->size - c->headers->length;
+				    if (fits) memcpy(c->headers->data + c->headers->length, bol, fits);
+				    if (alloc_buffer(2048, c->headers)) {
+					c->headers = c->headers->next;
+					memcpy(c->headers->data, bol + fits, l - fits);
+					c->headers->length = l - fits;
+					c->headers->data[c->headers->length++] = '\n';
+				    }
+				} else {
+				    memcpy(c->headers->data + c->headers->length, bol, l);
+				    c->headers->length += l;	
+				    c->headers->data[c->headers->length++] = '\n';
+				}
+			    }
+			}
 			while (*k && *k != ':') {
 			    if (*k >= 'A' && *k <= 'Z')
 				*k |= 0x20;
@@ -719,7 +906,16 @@ static void worker_input_handler(void *data) {
 			    DBG(printf("header '%s' => '%s'\n", bol, k));
 			    if (!strcmp(bol, "content-length")) {
 				c->attr |= CONTENT_LENGTH;
-				c->content_length = atoi(k);
+				c->content_length = atol(k);
+			    }
+			    if (!strcmp(bol, "content-type")) {
+				char *l = k;
+				while (*l) { if (*l >= 'A' && *l <= 'Z') *l |= 0x20; l++; }
+				c->attr |= CONTENT_TYPE;
+				if (c->content_type) free(c->content_type);
+				c->content_type = strdup(k);
+				if (!strncmp(k, "application/x-www-form-urlencoded", 33))
+				    c->attr |= CONTENT_FORM_UENC;
 			    }
 			    if (!strcmp(bol, "host"))
 				c->attr |= HOST_HEADER;
@@ -727,39 +923,47 @@ static void worker_input_handler(void *data) {
 				char *l = k;
 				while (*l) { if (*l >= 'A' && *l <= 'Z') *l |= 0x20; l++; }
 				if (!strncmp(k, "close", 5))
-				    c->attr = CONNECTION_CLOSE;
+				    c->attr |= CONNECTION_CLOSE;
 			    }
 			}
 		    }
 		}
 	    }
 	}
-	/* we end here if we processed a buffer of exactly one line */
-	c->line_pos = 0;
-	return;
-    } else if (c->part == PART_BODY && c->body) { /* BODY  - this branch always returns */
-	DBG(printf("BODY: body_pos=%d, content_length=%d\n", c->body_pos, c->content_length));
-	n = recv(c->sock, c->body + c->body_pos, c->content_length - c->body_pos, 0);
-	DBG(printf("      [recv n=%d - had %u of %u]\n", n, c->body_pos, c->content_length));
-	if (n < 0) { /* error, scrap this worker */
-	    remove_worker(c);
+	if (c->part < PART_BODY) {
+	    /* we end here if we processed a buffer of exactly one line */
+	    c->line_pos = 0;
 	    return;
 	}
-	if (n == 0) { /* connection closed -> try to process and then remove */
-	    process_request(c);
+    }
+    if (c->part == PART_BODY && c->body) { /* BODY  - this branch always returns */
+	if (c->body_pos < c->content_length) { /* need to receive more ? */
+	    DBG(printf("BODY: body_pos=%d, content_length=%ld\n", c->body_pos, c->content_length));
+	    n = recv(c->sock, c->body + c->body_pos, c->content_length - c->body_pos, 0);
+	    DBG(printf("      [recv n=%d - had %u of %lu]\n", n, c->body_pos, c->content_length));
+	    c->line_pos = 0;
+	    if (n < 0) { /* error, scrap this worker */
+		remove_worker(c);
+		return;
+	    }
+	    if (n == 0) { /* connection closed -> try to process and then remove */
+		process_request(c);
 	    remove_worker(c);
-	    return;
+		return;
+	    }
+	    c->body_pos += n;
 	}
-	c->body_pos += n;
 	if (c->body_pos == c->content_length) { /* yay! we got the whole body */
 	    process_request(c);
-	    if (c->attr & CONNECTION_CLOSE) {
+	    if (c->attr & CONNECTION_CLOSE || c->line_pos) { /* we have to close the connection if there was a double-hit */
 		remove_worker(c);
 		return;
 	    }
 	    /* keep-alive - reset the worker so it can process a new request */
 	    if (c->url) { free(c->url); c->url = NULL; }
 	    if (c->body) { free(c->body); c->body = NULL; }
+	    if (c->content_type) { free(c->content_type); c->content_type = NULL; }
+	    if (c->headers) { free_buffer(c->headers); c->headers = NULL; }
 	    c->line_pos = 0; c->body_pos = 0;
 	    c->method = 0;
 	    c->part = PART_REQUEST;
@@ -795,6 +999,8 @@ static void worker_input_handler(void *data) {
 		/* keep-alive - reset the worker so it can process a new request */
 		if (c->url) { free(c->url); c->url = NULL; }
 		if (c->body) { free(c->body); c->body = NULL; }
+		if (c->content_type) { free(c->content_type); c->content_type = NULL; }
+		if (c->headers) { free_buffer(c->headers); c->headers = NULL; }
 		c->body_pos = 0;
 		c->method = 0;
 		c->part = PART_REQUEST;
@@ -804,7 +1010,7 @@ static void worker_input_handler(void *data) {
 	    }
 	}
 	n = recv(c->sock, c->line_buf + c->line_pos, LINE_BUF_SIZE - c->line_pos - 1, 0);
-	if (n < 0) { /* error, scrape this worker */
+	if (n < 0) { /* error, scrap this worker */
 	    remove_worker(c);
 	    return;
 	}

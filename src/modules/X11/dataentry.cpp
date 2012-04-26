@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2008  Robert Gentleman, Ross Ihaka and the
- *                            R Development Core Team
+ *  Copyright (C) 1998--2011  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -152,7 +151,7 @@ static void find_coords(DEstruct, int, int, int*, int*);
 static int  findcell(DEstruct);
 static char *GetCharP(DEEvent*);
 static KeySym GetKey(DEEvent*);
-static void handlechar(DEstruct, char *);
+static void handlechar(DEstruct, CXXRCONST char *);
 static void highlightrect(DEstruct);
 static Rboolean initwin(DEstruct, const char *);
 static void jumppage(DEstruct, DE_DIRECTION);
@@ -313,18 +312,11 @@ static SEXP ssNewVector(SEXPTYPE type, int vlen)
     return (tvec);
 }
 
-static void closewin_cend(void *data)
-{
-    DEstruct DE = (DEstruct) data;
-    closewin(DE);
-}
-
 SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP colmodes, tnames, tvec, tvec2, work2;
     SEXPTYPE type;
     int i, j, cnt, len, nprotect;
-    RCNTXT cntxt;
     char clab[25];
     CXXRCONST char *title = "R Data Editor";
     destruct DE1;
@@ -397,19 +389,20 @@ SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (initwin(DE, title))
 	errorcall(call, "invalid device");
 
-    /* set up a context which will close the window if there is an error */
-    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		 R_NilValue, R_NilValue);
-    cntxt.cend = &closewin_cend;
-    cntxt.cenddata = (void *) DE;
+    /* use try-catch to close the window if there is an error */
+    try {
+	highlightrect(DE);
 
-    highlightrect(DE);
+	cell_cursor_init(DE);
 
-    cell_cursor_init(DE);
+	eventloop(DE);
+    }
+    catch (...) {
+	closewin(DE);
+	UNPROTECT(nprotect);
+	throw;
+    }
 
-    eventloop(DE);
-
-    endcontext(&cntxt);
     closewin(DE);
     if(nView == 0) {
 	if(fdView >= 0) { /* might be open after viewers, but unlikely */
@@ -466,22 +459,11 @@ SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
     return work2;
 }
 
-static void dv_closewin_cend(void *data)
-{
-    DEstruct DE = (DEstruct) data;
-    R_ReleaseObject(DE->lens);
-    R_ReleaseObject(DE->work);
-    closewin(DE);
-    free(DE);
-    nView--;
-}
-
 SEXP in_R_X11_dataviewer(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP stitle;
     SEXPTYPE type;
     int i, nprotect;
-    RCNTXT cntxt;
     DEstruct DE = (DEstruct) malloc(sizeof(destruct));
 
     nView++;
@@ -532,26 +514,32 @@ SEXP in_R_X11_dataviewer(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (initwin(DE, CHAR(STRING_ELT(stitle, 0))))
 	errorcall(call, "invalid device");
 
-    /* set up a context which will close the window if there is an error */
-    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		 R_NilValue, R_NilValue);
-    cntxt.cend = &dv_closewin_cend;
-    cntxt.cenddata = (void *) DE;
+    /* use try-catch to close the window if there is an error */
+    try {
+	highlightrect(DE);
 
-    highlightrect(DE);
+	cell_cursor_init(DE);
 
-    cell_cursor_init(DE);
+	if(fdView < 0) {
+	    fdView = ConnectionNumber(iodisplay);
+	    addInputHandler(R_InputHandlers, fdView,
+			    R_ProcessX11Events, XActivity);
+	}
 
-    if(fdView < 0) {
-	fdView = ConnectionNumber(iodisplay);
-	addInputHandler(R_InputHandlers, fdView,
-			R_ProcessX11Events, XActivity);
+	drawwindow(DE);
+
+	R_PreserveObject(DE->work); /* also preserves names */
+	R_PreserveObject(DE->lens);
     }
-
-    drawwindow(DE);
-
-    R_PreserveObject(DE->work); /* also preserves names */
-    R_PreserveObject(DE->lens);
+    catch (...) {
+	R_ReleaseObject(DE->lens);
+	R_ReleaseObject(DE->work);
+	closewin(DE);
+	free(DE);
+	nView--;
+	UNPROTECT(nprotect);
+	throw;
+    }
     UNPROTECT(nprotect);
     return R_NilValue;
 }
@@ -776,7 +764,7 @@ static void cell_cursor_init(DEstruct DE)
 	    tmp = VECTOR_ELT(DE->work, whichcol - 1);
 	    if (tmp != R_NilValue &&
 		(i = whichrow - 1) < LENGTH(tmp) ) {
-		PrintDefaults(R_NilValue);
+		PrintDefaults();
 		if (TYPEOF(tmp) == REALSXP) {
 		    strncpy(buf, EncodeElement(tmp, i, 0, '.'),
 			    BOOSTED_BUF_SIZE-1);
@@ -821,7 +809,7 @@ static int get_col_width(DEstruct DE, int col)
 	/* don't use NA labels */
 	lab = STRING_ELT(DE->names, col - 1);
 	if(lab != NA_STRING) strp = CHAR(lab); else strp = "var12";
-	PrintDefaults(R_NilValue);
+	PrintDefaults();
 
 	w = textwidth(DE, strp, strlen(strp));
 	for (i = 0; i < INTEGER(DE->lens)[col - 1]; i++) {
@@ -919,7 +907,7 @@ static void drawrow(DEstruct DE, int whichrow)
 static void printelt(DEstruct DE, SEXP invec, int vrow, int ssrow, int sscol)
 {
     const char *strp;
-    PrintDefaults(R_NilValue);
+    PrintDefaults();
     if (TYPEOF(invec) == REALSXP) {
 	strp = EncodeElement(invec, vrow, 0, '.');
 	printstring(DE ,strp, strlen(strp), ssrow, sscol, 0);
@@ -1067,19 +1055,11 @@ static Rboolean getccol(DEstruct DE)
     return newcol;
 }
 
-static SEXP lang5(SEXP s, SEXP t, SEXP u, SEXP v, SEXP w)
-{
-    PROTECT(s);
-    s = LCONS(s, list4(t, u, v, w));
-    UNPROTECT(1);
-    return s;
-}
-
 static SEXP processEscapes(SEXP x)
 {
     SEXP newval, pattern, replacement, expr;
     ParseStatus status;
-    
+
     /* We process escape sequences in a scalar string by escaping
        unescaped quotes, then quoting the whole thing and parsing it.  This
        is supposed to be equivalent to the R code
@@ -1091,7 +1071,7 @@ static SEXP processEscapes(SEXP x)
        We do it this way to avoid extracting the escape handling
        code from the parser.  We need it in C code because this may be executed
        numerous times from C in dataentry.c */
-    	
+
     PROTECT( pattern = mkString("(?<!\\\\)((\\\\\\\\)*)\"") );
     PROTECT( replacement = mkString("\\1\\\\\"") );
     PROTECT( expr = lang5(install("gsub"), ScalarLogical(1), pattern, replacement, x) );
@@ -1103,10 +1083,10 @@ static SEXP processEscapes(SEXP x)
     PROTECT( expr = lang4(install("sub"), pattern, replacement, newval) );
     PROTECT( newval = eval(expr, R_BaseEnv) );
     PROTECT( expr = R_ParseVector( newval, 1, &status, R_NilValue) );
-    
+
     /* We only handle the first entry. If this were available more generally,
        we'd probably want to loop over all of expr */
-       
+
     if (status == PARSE_OK && length(expr))
 	PROTECT( newval = eval(VECTOR_ELT(expr, 0), R_BaseEnv) );
     else
@@ -1282,7 +1262,7 @@ static void clearrect(DEstruct DE)
 
 /* <FIXME> This is not correct for stateful MBCSs, but that's hard to
    do as we get a char at a time */
-static void handlechar(DEstruct DE, char *text)
+static void handlechar(DEstruct DE, CXXRCONST char *text)
 {
     int c = text[0], j;
     wchar_t wcs[BOOSTED_BUF_SIZE];
@@ -1327,7 +1307,7 @@ static void handlechar(DEstruct DE, char *text)
     }
 
     if (currentexp == 1) {	/* we are parsing a number */
-	char *mbs = text;
+	CXXRCONST char *mbs = text;
 	int i, cnt = mbsrtowcs(wcs, (const char **)&mbs, strlen(text)+1, NULL);
 
 	for(i = 0; i < cnt; i++) {
@@ -1357,7 +1337,7 @@ static void handlechar(DEstruct DE, char *text)
 	}
     }
     if (currentexp == 3) {
-	char *mbs = text;
+	CXXRCONST char *mbs = text;
 	int i, cnt = mbsrtowcs(wcs, (const char **)&mbs, strlen(text)+1, NULL);
 	for(i = 0; i < cnt; i++) {
 	    if (iswspace(wcs[i])) goto donehc;
@@ -1650,7 +1630,7 @@ static int doMouseDown(DEstruct DE, DEEvent * event)
 static void doSpreadKey(DEstruct DE, int key, DEEvent * event)
 {
     KeySym iokey;
-    char *text = "";
+    CXXRCONST char *text = "";
 
     iokey = GetKey(event);
     if(DE->isEditor) text = GetCharP(event);
@@ -1685,7 +1665,7 @@ static void doSpreadKey(DEstruct DE, int key, DEEvent * event)
 	    jumpwin(DE, DE->colmin, DE->rowmax);
 	else {
 	    int i = DE->ymaxused - DE->nhigh + 2;
-            jumpwin(DE, DE->colmin, min(i, DE->rowmax));	    
+            jumpwin(DE, DE->colmin, min(i, DE->rowmax));
 	}
 	cell_cursor_init(DE);
     }
@@ -1695,7 +1675,7 @@ static void doSpreadKey(DEstruct DE, int key, DEEvent * event)
 	    jumpwin(DE, DE->colmin, DE->rowmax);
 	else {
 	    int i = DE->ymaxused - DE->nhigh + 2;
-            jumpwin(DE, DE->colmin, min(i, DE->rowmax));	    
+            jumpwin(DE, DE->colmin, min(i, DE->rowmax));
 	}
 	cell_cursor_init(DE);
     }
@@ -1945,7 +1925,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
 	char opt_fontset_name[512];
 
 	/* options("X11fonts")[1] read font name */
-	SEXP opt = GetOption(install("X11fonts"), R_NilValue);
+	SEXP opt = GetOption1(install("X11fonts"));
 	if(isString(opt)) {
 	    const char *s = CHAR(STRING_ELT(opt, 0));
 	    sprintf(opt_fontset_name, s, "medium", "r", 12);
@@ -1972,7 +1952,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
     /* find out how wide the input boxes should be and set up the
        window size defaults */
 
-    DE->nboxchars = asInteger(GetOption(install("de.cellwidth"), R_GlobalEnv));
+    DE->nboxchars = asInteger(GetOption1(install("de.cellwidth")));
     if (DE->nboxchars == NA_INTEGER || DE->nboxchars < 0) DE->nboxchars = 0;
 
     twidth = textwidth(DE, digits, strlen(digits));
@@ -2194,7 +2174,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
        dimensions as above */
 
     /* font size consideration */
-    for(i = 0; i < int((sizeof(menu_label)/sizeof(char *))); i++)
+    for(i = 0; i < CXXRCONSTRUCT(int, (sizeof(menu_label)/sizeof(char *))); i++)
 	twidth = (twidth<textwidth(DE, menu_label[i],strlen(menu_label[i]))) ?
 	    textwidth(DE, menu_label[i],strlen(menu_label[i])) : twidth;
 
@@ -2455,7 +2435,7 @@ void popupmenu(DEstruct DE, int x_pos, int y_pos, int col, int row)
 	    button = event.xbutton.button;
 	    selected_pane = event.xbutton.window;
 	    for (i = 0; selected_pane != menupanes[i]; i++)
-		if (i >= 4) goto done;
+		if (i >= 3) goto done;
 	    while (1) {
 		while (XCheckTypedEvent(iodisplay, ButtonPress, &event));
 		XMaskEvent(iodisplay, ButtonReleaseMask, &event);
@@ -2537,7 +2517,7 @@ static void copycell(DEstruct DE)
 	    tmp = VECTOR_ELT(DE->work, whichcol - 1);
 	    if (tmp != R_NilValue &&
 		(i = whichrow - 1) < LENGTH(tmp) ) {
-		PrintDefaults(R_NilValue);
+		PrintDefaults();
 		if (TYPEOF(tmp) == REALSXP) {
 			strncpy(copycontents, EncodeElement(tmp, i, 0, '.'),
 				BOOSTED_BUF_SIZE-1);

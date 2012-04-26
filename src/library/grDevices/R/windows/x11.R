@@ -14,5 +14,25 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-x11 <- win.graph
-X11 <- win.graph
+x11 <- X11 <-
+     function(width, height, pointsize, bg, gamma, xpos, ypos, title)
+{
+    new <- list()
+    if(!missing(width)) new$width <- as.double(width)
+    if(!missing(height)) new$height <- as.double(height)
+    if(!missing(pointsize)) new$pointsize <- as.double(pointsize)
+    if(!missing(bg)) new$bg <- bg
+    if(!missing(gamma)) new$gamma <- gamma
+    if(!missing(xpos)) new$xpos <- as.integer(xpos)
+    if(!missing(ypos)) new$ypos <- as.integer(ypos)
+    if(!missing(title)) new$title <- title
+    d <- check.options(new = new, envir = .WindowsEnv,
+                       name.opt = ".Windows.Options",
+                       reset = FALSE, assign.opt = FALSE)
+    invisible(.External(Cdevga, "", d$width, d$height, d$pointsize,
+                        FALSE, 1L, d$xpinch, d$ypinch, "white",
+                        d$gamma, d$xpos, d$ypos, d$buffered,
+                        .PSenv, d$bg, d$restoreConsole, d$title, TRUE,
+                        d$fillOddEven, d$antialias))
+}
+

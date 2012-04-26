@@ -2,10 +2,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.3.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-12-10 19:18\n"
+"POT-Creation-Date: 2011-07-16 22:46\n"
 "PO-Revision-Date: 2005-05-25 16:34+0900\n"
 "Last-Translator: Korean <uiami@hanmail.com>\n"
 "Language-Team: Korean <translation-team-ko@lists.sourceforge.net>\n"
+"Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -38,6 +39,12 @@ msgstr ""
 #, fuzzy
 msgid "'arrow' must be an arrow object or NULL"
 msgstr "'x' 그리고 'y'는 units 또는 NULL가 나오지 않으면 되지 않습니다"
+
+msgid "How did we get here?"
+msgstr ""
+
+msgid "Must start new page if showing leaves separately"
+msgstr ""
 
 msgid "Invalid 'edit' information"
 msgstr "부적절한 'edit'정보입니다"
@@ -81,6 +88,14 @@ msgid ""
 msgstr ""
 "'side=[\"top\",\"bottom\"]\",'row','row.before','row,afer'중에서 1개만을 지정"
 "하지 않으면 안됩니다"
+
+#, fuzzy
+msgid "Invalid 'n'"
+msgstr "부적절한 'origin'입니다"
+
+#, fuzzy
+msgid "Invalid 'f'"
+msgstr "부적절한 'frame'입니다"
 
 msgid "gpar element '%s' must not be length 0"
 msgstr "gpar의 요소 '%s'는 길이 0으로서는 안됩니다"
@@ -442,6 +457,10 @@ msgstr "첨자가 범위를 넘고 있습니다(unit 리스트의 부분집합�
 msgid "It is invalid to combine unit objects with other types"
 msgstr "unit 오브젝트와 그 이외의 형태 오브젝트를 결합할 수 없지 않습니다"
 
+#, fuzzy
+msgid "Invalid unit object"
+msgstr "부적절한 'theta' 입니다"
+
 msgid ""
 "unit.rep has been deprecated in favour of a unit method for the generic rep "
 "function"
@@ -501,20 +520,19 @@ msgstr ""
 msgid "Invalid viewport name(s)"
 msgstr "부적절한 viewport명입니다"
 
-msgid "How did we get here?"
-msgstr ""
-
-msgid "Must start new page if showing leaves separately"
-msgstr ""
-
 msgid "Must specify at least one of 'x' or 'xscale'"
 msgstr "'x' 또는 'xscale' 중 적어도 하나를 지정하지 않으면 되지 않습니다"
 
 msgid "Must specify at least one of 'y' or 'yscale'"
 msgstr "'y' 또는 'yscale' 중 적어도 하나를 지정하지 않으면 되지 않습니다"
 
-msgid "shutting down all devices when unloading 'grid' name space"
+msgid "shutting down all devices when unloading 'grid' namespace"
 msgstr ""
+
+#, fuzzy
+#~ msgid "at least one of 'width' and 'height' must be specified"
+#~ msgstr ""
+#~ "'x','y','width' 그리고 'height'는 모두 units가 나오지 않으면 되지 않습니다"
 
 #~ msgid "Viewport '%s' was not found"
 #~ msgstr "Viewport '%s'가 검색되지 않습니다"

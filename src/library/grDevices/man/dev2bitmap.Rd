@@ -1,12 +1,12 @@
 % File src/library/grDevices/man/dev2bitmap.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{dev2bitmap}
 \alias{dev2bitmap}
 \alias{bitmap}
-\title{Graphics Device for Bitmap Files via GhostScript}
+\title{Graphics Device for Bitmap Files via Ghostscript}
 \usage{
 bitmap(file, type = "png16m", height = 7, width = 7, res = 72,
        units = "in", pointsize, taa = NA, gaa = NA, \dots)
@@ -64,24 +64,27 @@ dev2bitmap(file, type = "png16m", height = 7, width = 7, res = 72,
   \code{"pnm"}, \code{"pnmraw"}, \code{"ppm"}, \code{"ppmraw"},
   \code{"pkm"}, \code{"pkmraw"}, \code{"tiffcrle"}, \code{"tiffg3"},
   \code{"tiffg32d"}, \code{"tiffg4"}, \code{"tifflzw"},
-  \code{"tiffpack"}, \code{"tiff12nc"}, \code{"tiff24nc"},
+  \code{"tiffpack"}, \code{"tiff12nc"}, \code{"tiff24nc"}, \code{"tiff32nc"}
   \code{"psmono"}, \code{"psgray"}, \code{"psrgb"}, \code{"bit"},
   \code{"bitrgb"}, \code{"bitcmyk"}, \code{"pngmono"}, \code{"pnggray"},
   \code{"pngalpha"}, \code{"png16"}, \code{"png256"}, \code{"png16m"},
   \code{"png48"}, \code{"jpeg"}, \code{"jpeggray"}, \code{"pdfwrite"}.
   
-  The default type, \code{"png16m"} supports 24-bit colour and
+  The default type, \code{"png16m"}, supports 24-bit colour and
   anti-aliasing.  Versions of \R prior to 2.7.0 defaulted to
   \code{"png256"}, which uses a palette of 256 colours and could be a
   more compact representation.  Monochrome graphs can use
   \code{"pngmono"}, or \code{"pnggray"} if anti-aliasing is desired.
+  Plots with a transparent background and varying degrees of
+  transparency should use \code{"pngalpha"}.
 
   Note that for a colour TIFF image you probably want \code{"tiff24nc"},
   which is 8-bit per channel RGB (the most common TIFF format).  None of
-  the listed TIFF types support transparency.
+  the listed TIFF types support transparency.  \code{"tiff32nc"} uses
+  8-bit per channel CMYK, which printers might require.
   
   For formats which contain a single image, a file specification like
-  \code{Rplots\%03d.png} can be used: this is interpreted by GhostScript.
+  \code{Rplots\%03d.png} can be used: this is interpreted by Ghostscript.
 
   For \code{dev2bitmap} if just one of \code{width} and \code{height} is
   specified, the other is chosen to preserve aspect ratio of the
@@ -100,14 +103,18 @@ dev2bitmap(file, type = "png16m", height = 7, width = 7, res = 72,
   None.
 }
 
-#ifdef windows
 \note{
+#ifdef windows
   Use of \code{bitmap} will leave a temporary file (with file name
-  starting \code{Rbit}).  Use of the \code{\link{pdf}}, \code{\link{bmp}},
-  \code{\link{png}}, \code{\link{tiff}} and \code{\link{jpeg}} devices
-  may be preferred to using these functions.
-}
+  starting \code{Rbit}).
+  
 #endif
+  Although using \code{type = "pdfwrite"} will work for simple plots, it
+  is not recommended.  Either use \code{\link{pdf}} to produce PDF
+  directly, or call \command{ps2pdf -dAutoRotatePages=/None} on the
+  output of \code{\link{postscript}}: that command is optimized to do
+  the conversion to PDF in ways that these functions are not.
+}
 
 \section{Conventions}{
   This section describes the implementation of the conventions for
@@ -118,7 +125,7 @@ dev2bitmap(file, type = "png16m", height = 7, width = 7, res = 72,
   \itemize{
     \item The default device size is 7 inches square.
     \item Font sizes are in big points.
-    \item The default font family is (for the standard GhostScript
+    \item The default font family is (for the standard Ghostscript
     setup) URW Nimbus Sans.
     \item Line widths are as a multiple of 1/96 inch, with no minimum. 
     \item Circle of any radius are allowed.
@@ -128,7 +135,7 @@ dev2bitmap(file, type = "png16m", height = 7, width = 7, res = 72,
 
 \seealso{
   \code{\link{savePlot}}, which for \code{windows} and
-  \code{X11(type = "Cairo")} provides a simple way to record a PNG
+  \code{X11(type = "cairo")} provides a simple way to record a PNG
   record of the current plot.
   
   \code{\link{postscript}}, \code{\link{pdf}}, \code{\link{png}},

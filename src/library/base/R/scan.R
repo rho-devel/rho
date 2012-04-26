@@ -15,25 +15,31 @@
 #  http://www.r-project.org/Licenses/
 
 scan <-
-function(file = "", what = double(0), nmax = -1, n = -1, sep = "",
+function(file = "", what = double(), nmax = -1L, n = -1L, sep = "",
          quote = if(identical(sep, "\n")) "" else "'\"",
-         dec = ".", skip = 0, nlines = 0,
+         dec = ".", skip = 0L, nlines = 0L,
          na.strings = "NA", flush = FALSE, fill = FALSE,
          strip.white = FALSE, quiet = FALSE, blank.lines.skip = TRUE,
          multi.line = TRUE, comment.char = "", allowEscapes = FALSE,
-         encoding = "unknown")
+         fileEncoding = "", encoding = "unknown", text)
 {
     na.strings <- as.character(na.strings)# allow it to be NULL
     if(!missing(n)) {
         if(missing(nmax))
-            nmax <- n / pmax(length(what), 1)
+            nmax <- n / pmax(length(what), 1L)
         else
             stop("either specify 'nmax' or 'n', but not both.")
     }
+    if (missing(file) && !missing(text)) {
+	file <- textConnection(text)
+	on.exit(close(file))
+    }
+
     if(is.character(file))
         if(file == "") file <- stdin()
         else {
-            file <- file(file, "r")
+            file <- if(nzchar(fileEncoding))
+                file(file, "r", encoding = fileEncoding) else file(file, "r")
             on.exit(close(file))
         }
     if(!inherits(file, "connection"))

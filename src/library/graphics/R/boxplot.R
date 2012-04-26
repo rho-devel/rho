@@ -1,5 +1,4 @@
-
-                                        #  File src/library/graphics/R/boxplot.R
+#  File src/library/graphics/R/boxplot.R
 #  Part of the R package, http://www.R-project.org
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -212,6 +211,7 @@ bxp <- function(z, notch=FALSE, width=NULL, varwidth=FALSE, outline = TRUE,
 
     if(length(border) == 0L) border <- par("fg")
 
+    dev.hold(); on.exit(dev.flush())
     if (!add) {
 	plot.new()
 	## shall we switch log for horizontal with

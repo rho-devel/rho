@@ -164,8 +164,8 @@ colorspaces <-
              denom <- sum(XYZ*c(1,15,3))
              wdenom <- sum(white*c(1,15,3))
 
-             u1 <- ifelse(denom == 0,1,4*XYZ[1L]/denom)
-             v1 <- ifelse(denom == 0,1,9*XYZ[2L]/denom)
+             u1 <- ifelse(denom == 0, 1, 4*XYZ[1L]/denom)
+             v1 <- ifelse(denom == 0, 1, 9*XYZ[2L]/denom)
              ur <- 4*white[1L]/wdenom
              vr <- 9*white[2L]/wdenom
 
@@ -196,7 +196,7 @@ colorspaces <-
          ) # colorspaces
 
 
-"%^%" <- function(a,b) {
+`%^%` <- function(a,b) {
   ifelse(a <= 0, -abs(a)^b, a^b)
 }
 
@@ -280,4 +280,26 @@ convertColor <-
       rval
   else
       rval*scale.out
+}
+
+##' @title Modify a vector of colors by "screwing" any of (r,g,b,alpha)
+##'   by multification by a factor
+##' @param col vector of colors, in any format that col2rgb() accepts
+##' @param alpha.f factor modifying the opacity alpha; typically in [0,1]
+##' @param red.f   factor modifying "red"ness
+##' @param green.f factor modifying "green"ness
+##' @param blue.f  factor modifying "blue"ness
+##' @return From rgb(), a color vector of the same length as 'col'.
+##' @author Thomas Lumley, Luke Tierney, Martin Maechler, Duncan Murdoch...
+adjustcolor <- function(col, alpha.f = 1, red.f = 1, green.f = 1,
+                        blue.f = 1, offset = c(0,0,0,0),
+                        transform = diag(c(red.f, green.f, blue.f, alpha.f)))
+{
+    stopifnot(length(offset) %% 4L == 0L,
+              !is.null(d <- dim(transform)), d == c(4L, 4L))
+    x <- col2rgb(col, alpha = TRUE)/255
+    x[] <- pmax(0, pmin(1,
+                        transform %*% x +
+                        matrix(offset, nrow = 4L, ncol = ncol(x))))
+    rgb(x[1L,], x[2L,], x[3L,], x[4L,])
 }

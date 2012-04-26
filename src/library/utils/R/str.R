@@ -41,11 +41,12 @@ str.data.frame <- function(object, ...)
     else invisible(NextMethod("str", give.length=FALSE,...))
 }
 
-str.POSIXt <- function(object, ...) {
+str.Date <- str.POSIXt <- function(object, ...) {
     cl <- oldClass(object)
     ## be careful to be fast for large object:
     n <- length(object)
-    if(n >= 1000L) object <- object[seq_len(1000L)]
+    if(n == 0L) return(str.default(object))
+    if(n > 1000L) object <- object[seq_len(1000L)]
 
     give.length <- TRUE ## default
     ## use 'give.length' when specified, else default = give.head
@@ -67,7 +68,7 @@ str.POSIXt <- function(object, ...) {
     }
 
     le.str <- if(give.length) paste("[1:",as.character(n),"]", sep="")
-    cat(" ", cl[min(2, length(cl))], le.str,", format: ", sep = "")
+    cat(" ", cl[1L], le.str,", format: ", sep = "")
     do.call(str, c(list(format(object), give.head = FALSE), larg))
 }
 
@@ -86,7 +87,7 @@ str.default <-
 	     indent.str= paste(rep.int(" ", max(0,nest.lev+1)), collapse= ".."),
 	     comp.str="$ ", no.list = FALSE, envir = baseenv(),
 	     strict.width = strO$strict.width,
-	     formatNum = strO$formatNum,
+	     formatNum = strO$formatNum, list.len = 99,
 	     ...)
 {
     ## Purpose: Display STRucture of any R - object (in a compact form).
@@ -145,6 +146,22 @@ str.default <-
     pClass <- function(cls)
 	paste("Class", if(length(cls) > 1) "es",
               " '", paste(cls, collapse = "', '"), "' ", sep="")
+    `%w/o%` <- function(x,y) x[is.na(match(x,y))]
+
+    nfS <- names(fStr <- formals())# names of all formal args to str.default()
+    ##' Purpose: using short strSub() calls instead of long str() ones
+    ##' @title Call str() on sub-parts, with mostly the *same* arguments
+    ##' @param obj R object; always a "part" of the main 'object'
+    ##' @param ... further arguments to str(), [often str.default()]
+    strSub <- function(obj, ...) {
+	## 'give.length', ...etc are *not* automatically passed down:
+	nf <- nfS %w/o% c("object", "give.length", "comp.str", "no.list",
+			  ## drop fn.name & "obj" :
+			  names(match.call())[-(1:2)], "...")
+	aList <- as.list(fStr)[nf]
+	aList[] <- lapply(nf, function(n) eval(as.name(n)))
+	do.call(str, c(list(object=obj), aList, list(...)), quote=TRUE)
+    }
 
     ## le.str: not used for arrays:
     le.str <-
@@ -164,15 +181,52 @@ str.default <-
     if (is.null(object))
 	cat(" NULL\n")
     else if(S4) {
-	a <- sapply(methods::.slotNames(object), methods::slot,
-		    object=object, simplify = FALSE)
-	cat("Formal class", " '", paste(cl, collapse = "', '"),
-	    "' [package \"", attr(cl,"package"), "\"] with ",
-	    length(a)," slots\n", sep="")
-	str(a, no.list = TRUE, comp.str = "@ ", # instead of "$ "
-	    max.level = max.level, vec.len = vec.len, digits.d = digits.d,
-	    indent.str = paste(indent.str,".."), nest.lev = nest.lev + 1,
-	    nchar.max = nchar.max, give.attr = give.attr, width=width)
+	if(isRef <- is(object,"envRefClass")) {
+	    cld <- object$getClass()
+	    nFlds <- names(cld@fieldClasses)
+	    a <- sapply(nFlds, function(ch) object[[ch]],
+			simplify = FALSE)
+	    meths <- ls(cld@refMethods, all.names = TRUE)
+	    dfltMs <- ls(getClassDef("envRefClass")@refMethods, all.names = TRUE)
+	    oMeths <- meths[is.na(match(meths, dfltMs))]
+	    sNms <- names(cld@slots)
+	    if(length(sNms <- sNms[sNms != ".xData"]))
+		sls <- sapply(sNms, methods::slot,
+			      object=object, simplify = FALSE)
+	    cat("Reference class", " '", paste(cl, collapse = "', '"),
+		"' [package \"", attr(cl,"package"), "\"] with ",
+		length(a)," fields\n", sep="")
+	} else {
+	    a <- sapply(methods::.slotNames(object), methods::slot,
+			object=object, simplify = FALSE)
+	    cat("Formal class", " '", paste(cl, collapse = "', '"),
+		"' [package \"", attr(cl,"package"), "\"] with ",
+		length(a)," slots\n", sep="")
+	}
+	if(isRef) {
+	    strSub(a, no.list=TRUE, give.length=give.length,
+		   nest.lev = nest.lev + 1)
+	    cat(indent.str, "and ", length(meths), " methods,", sep="")
+	    if(length(oMeths)) {
+		cat(" of which", length(oMeths), "are possibly relevant")
+		if (is.na(max.level) || nest.lev < max.level)
+		    cat(":",
+			strwrap(paste(oMeths, collapse=", "),
+				indent = 2, exdent = 2,
+				prefix = indent.str, width=width),# exdent = nind),
+			sep="\n")
+		else cat("\n")
+	    }
+	    if(length(sNms)) {
+		cat(" and", length(sNms), "slots\n")
+		strSub(sls, comp.str = "@ ", no.list=TRUE, give.length=give.length,
+		       indent.str = paste(indent.str,".."), nest.lev = nest.lev + 1)
+	    }
+	}
+	else { ## S4
+	    strSub(a, comp.str = "@ ", no.list=TRUE, give.length=give.length,
+		   indent.str = paste(indent.str,".."), nest.lev = nest.lev + 1)
+	}
 	return(invisible())
     }
     else if(is.function(object)) {
@@ -184,7 +238,8 @@ str.default <-
 	##?if(is.d.f) std.attr <- c(std.attr, "class", if(is.d.f) "row.names")
 	if(le == 0) {
 	    if(is.d.f) std.attr <- c(std.attr, "class", "row.names")
-	    else cat(" ", if(i.pl)"pair", "list()\n",sep="")
+	    else cat(" ", if(!is.null(names(object))) "Named ",
+		     if(i.pl)"pair", "list()\n",sep="")
 	} else { # list, length >= 1 :
 	    if(irregCl <- has.class && identical(object[[1L]], object)) {
 		le <- length(object <- unclass(object))
@@ -208,24 +263,25 @@ str.default <-
 		    else { max.ncnam <- max(nchar(nam.ob, type="w"))
 			   format(nam.ob, width = max.ncnam, justify="left")
 		       }
-		for(i in seq_len(le)) {
+		for (i in seq_len(min(list.len,le) ) ) {
 		    cat(indent.str, comp.str, nam.ob[i], ":", sep="")
 		    envir <- # pass envir for 'promise' components:
 			if(typeof(object[[i]]) == "promise") {
 			    structure(object, nam= as.name(nam.ob[i]))
 			} # else NULL
-		    str(object[[i]], nest.lev = nest.lev + 1,
-                        indent.str = paste(indent.str,".."),
-                        nchar.max = nchar.max, max.level = max.level,
-                        vec.len = vec.len, digits.d = digits.d,
-                        give.attr = give.attr, give.head= give.head, give.length = give.length,
-                        width = width, envir = envir)
+		    strSub(object[[i]], give.length=give.length,
+                           nest.lev = nest.lev + 1,
+                           indent.str = paste(indent.str,".."))
 		}
 	    }
+	    if(list.len < le)
+		cat(indent.str, "[list output truncated]\n")
 	}
     } else { #- not function, not list
 	if(is.vector(object)
 	   || (is.array(object) && is.atomic(object))
+           ## FIXME: is.vector is not documented to allow those modes.
+           ## Should this not be is.language?
 	   || is.vector(object, mode= "language")
 	   || is.vector(object, mode= "symbol")## R bug(<=0.50-a4) should be part
 	   ) { ##-- Splus: FALSE for 'named vectors'
@@ -350,10 +406,7 @@ str.default <-
 		} else if(!is.object(object)) "not-object")
 		if(!is.null(xtr)) cat("{",xtr,"} ", sep="")
 	    }
-	    str(uo,
-		max.level = max.level, vec.len = vec.len, digits.d = digits.d,
-		indent.str = paste(indent.str,".."), nest.lev = nest.lev + 1,
-		nchar.max = nchar.max, give.attr = give.attr, width=width)
+	    strSub(uo, indent.str = paste(indent.str,".."), nest.lev = nest.lev + 1)
 	    return(invisible())
 	} else if(is.atomic(object)) {
 	    if((1 == length(a <- attributes(object))) && (names(a) == "names"))
@@ -367,10 +420,7 @@ str.default <-
 	    if (!is.null(envir)) {
 		objExp <- eval(bquote(substitute(.(attr(envir, "nam")), envir)))
 		cat("to ")
-		str(objExp,
-		    max.level= max.level, vec.len= vec.len, digits.d= digits.d,
-		    indent.str = indent.str, nest.lev = nest.lev,
-		    nchar.max = nchar.max, give.attr = give.attr, width=width)
+		strSub(objExp)
 	    } else cat(" <...>\n")
 	    return(invisible())
 	} else {
@@ -487,12 +537,9 @@ str.default <-
 	for (i in seq_along(a))
 	    if (all(nam[i] != std.attr)) {# only `non-standard' attributes:
 		cat(indent.str, P0('- attr(*, "',nam[i],'")='),sep="")
-		str(a[[i]],
-		    indent.str= paste(indent.str,".."), nest.lev= nest.lev+1,
-		    max.level = max.level, digits.d = digits.d,
-		    nchar.max = nchar.max,
-		    vec.len = if(nam[i] == "source") 1 else vec.len,
-		    give.attr= give.attr, give.head= give.head, give.length= give.length, width= width)
+		strSub(a[[i]], give.length=give.length,
+                       indent.str= paste(indent.str,".."), nest.lev= nest.lev+1,
+                       vec.len = if(nam[i] == "source") 1 else vec.len)
 	    }
     }
     invisible()	 ## invisible(object)#-- is SLOOOOW on large objects
@@ -552,7 +599,7 @@ print.ls_str <- function(x, max.level = 1, give.attr = FALSE,
 	}
 	else
 	    do.call(str, c(list(o), strargs),
-		    quote = is.call(o)) # protect calls from evaluation
+		    quote = is.call(o) || is.symbol(o)) # protect calls from evaluation
     }
     invisible(x)
 }

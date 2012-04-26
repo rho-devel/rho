@@ -44,7 +44,7 @@ char *alloca ();
 #endif
 #endif /* TRE_USE_ALLOCA */
 
-#include <assert.h>
+// #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #ifdef HAVE_WCHAR_H
@@ -62,10 +62,10 @@ char *alloca ();
 
 #include "tre-internal.h"
 #include "tre-match-utils.h"
-#include "regex.h"
+#include "tre.h"
 #include "xmalloc.h"
 
-
+#define assert(a) R_assert(a)
 
 typedef struct {
   tre_tnfa_transition_t *state;

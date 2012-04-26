@@ -16,20 +16,23 @@
 
 ## functions principally for testing R and packages
 
-massageExamples <- function(pkg, files, outFile = stdout())
+massageExamples <-
+    function(pkg, files, outFile = stdout(), use_gct = FALSE, addTiming = FALSE)
 {
-    if(file_test("-d", files[1]))
+    if(file_test("-d", files[1L])) {
+        old <- Sys.setlocale("LC_COLLATE", "C")
         files <- sort(Sys.glob(file.path(files, "*.R")))
+        Sys.setlocale("LC_COLLATE", old)
+    }
 
     if(is.character(outFile)) {
         out <- file(outFile, "wt")
         on.exit(close(out))
     } else out <- outFile
 
-#    lines <- readLines(file.path(R.home("share"), "R", "examples-header.R"))
-#    cat(sub("@PKG@", pkg, lines), sep = "\n", file = out)
     lines <- c(paste('pkgname <- "', pkg, '"', sep =""),
                'source(file.path(R.home("share"), "R", "examples-header.R"))',
+               if (use_gct) "gctorture(TRUE)",
                "options(warn = 1)")
     cat(lines, sep = "\n", file = out)
     if(.Platform$OS.type == "windows")
@@ -42,12 +45,26 @@ massageExamples <- function(pkg, files, outFile = stdout())
         cat("library('", pkg, "')\n\n", sep = "", file = out)
 
     cat("assign(\".oldSearch\", search(), pos = 'CheckExEnv')\n", file = out)
-    ##cat("assign(\".oldNS\", loadedNamespaces(), pos = 'CheckExEnv')\n", file = out)
-
+    ## cat("assign(\".oldNS\", loadedNamespaces(), pos = 'CheckExEnv')\n", file = out)
+    if(addTiming) {
+        ## adding timings
+        cat("assign(\".ExTimings\", \"", pkg,
+            "-Ex.timings\", pos = 'CheckExEnv')\n", sep="", file = out)
+        cat("cat(\"name\\tuser\\tsystem\\telapsed\\n\", file=get(\".ExTimings\", pos = 'CheckExEnv'))\n", file = out)
+        cat("assign(\".format_ptime\",",
+            "function(x) {",
+            "  if(!is.na(x[4L])) x[1L] <- x[1L] + x[4L]",
+            "  if(!is.na(x[5L])) x[2L] <- x[2L] + x[5L]",
+            "  format(x[1L:3L])",
+            "},",
+            "pos = 'CheckExEnv')\n", sep = "\n", file = out)
+    }
     for(file in files) {
         nm <- sub("\\.R$", "", basename(file))
         ## make a syntactic name out of the filename
         nm <- gsub("[^- .a-zA-Z0-9_]", ".", nm, perl = TRUE, useBytes = TRUE)
+        if (pkg == "grDevices" && nm == "postscript") next
+        ## Latin-1 examples are treated separat
         if (pkg == "graphics" && nm == "text") next
         if(!file.exists(file)) stop("file ", file, " cannot be opened")
         lines <- readLines(file)
@@ -67,6 +84,9 @@ massageExamples <- function(pkg, files, outFile = stdout())
         cat("### * ", nm, "\n\n", sep = "", file = out)
         cat("flush(stderr()); flush(stdout())\n\n", file = out)
         dont_test <- FALSE
+        if(addTiming)
+            cat("assign(\".ptime\", proc.time(), pos = \"CheckExEnv\")\n",
+                file = out)
         for (line in lines) {
             if(any(grepl("^[[:space:]]*## No test:", line, perl = TRUE, useBytes = TRUE)))
                 dont_test <- TRUE
@@ -76,6 +96,10 @@ massageExamples <- function(pkg, files, outFile = stdout())
                 dont_test <- FALSE
         }
 
+        if(addTiming) {
+            cat("\nassign(\".dptime\", (proc.time() - get(\".ptime\", pos = \"CheckExEnv\")), pos = \"CheckExEnv\")\n", file = out)
+            cat("cat(\"", nm, "\", get(\".format_ptime\", pos = 'CheckExEnv')(get(\".dptime\", pos = \"CheckExEnv\")), \"\\n\", file=get(\".ExTimings\", pos = 'CheckExEnv'), append=TRUE, sep=\"\\t\")\n", sep = "", file = out)
+        }
         if(have_par)
             cat("graphics::par(get(\"par.postscript\", pos = 'CheckExEnv'))\n", file = out)
         if(have_contrasts)
@@ -88,30 +112,37 @@ massageExamples <- function(pkg, files, outFile = stdout())
 }
 
 ## compares 2 files
-Rdiff <- function(from, to, useDiff = FALSE, forEx = FALSE)
+Rdiff <- function(from, to, useDiff = FALSE, forEx = FALSE, nullPointers=TRUE, Log=FALSE)
 {
     clean <- function(txt)
     {
         ## remove R header
-        if(length(top <- grep("^(R version|R : Copyright)", txt,
-                              perl = TRUE, useBytes = TRUE)) &&
+        if(length(top <- grep("^(R version|R : Copyright|R Under development)",
+                              txt, perl = TRUE, useBytes = TRUE)) &&
            length(bot <- grep("quit R.$", txt, perl = TRUE, useBytes = TRUE)))
-            txt <- txt[-(top[1]:bot[1])]
+            txt <- txt[-(top[1L]:bot[1L])]
         ## remove BATCH footer
         nl <- length(txt)
-        if(grepl("^> proc.time()", txt[nl-2])) txt <- txt[1:(nl-3)]
-        ## regularize fancy quotes.
+        if(grepl("^> proc.time()", txt[nl-2L])) txt <- txt[1:(nl-3L)]
+        if (nullPointers)
+        ## remove pointer addresses from listings
+            txt <- gsub("<(environment|bytecode|pointer|promise): [x[:xdigit:]]+>", "<\\1: 0>", txt)
+        ## regularize fancy quotes.  First UTF-8 ones:
         txt <- gsub("(\xe2\x80\x98|\xe2\x80\x99)", "'", txt,
                       perl = TRUE, useBytes = TRUE)
-        if(.Platform$OS.type == "windows") # not entirely safe ...
+        if(.Platform$OS.type == "windows") {
+            ## not entirely safe ...
             txt <- gsub("(\x93|\x94)", "'", txt, perl = TRUE, useBytes = TRUE)
-        pat <- '(^Time |^Loading required package|^Package [A-Za-z][A-Za-z0-9]+ loaded|^<(environment|promise|pointer): |CXXR)'
+            txt <- txt[!grepl('options(pager = "console")', txt,
+                              fixed = TRUE, useBytes = TRUE)]
+        }
+        pat <- '(^Time |^Loading required package|^Package [A-Za-z][A-Za-z0-9]+ loaded|^<(environment|promise|pointer|bytecode):|^/CreationDate|^/ModDate|CXXR )'
         txt[!grepl(pat, txt, perl = TRUE, useBytes = TRUE)]
     }
     clean2 <- function(txt)
     {
         eoh <- grep("^> options\\(warn = 1\\)$", txt)
-        if(length(eoh)) txt[-(1:eoh[1])] else txt
+        if(length(eoh)) txt[-(1L:eoh[1L])] else txt
     }
 
     left <- clean(readLines(from))
@@ -123,31 +154,46 @@ Rdiff <- function(from, to, useDiff = FALSE, forEx = FALSE)
     if (!useDiff && (length(left) == length(right))) {
         bleft <- gsub("[[:space:]]+", " ", left)
         bright <- gsub("[[:space:]]+", " ", right)
-        if(all(bleft == bright)) return(0L)
+        if(all(bleft == bright))
+            return(if(Log) list(status = 0L, out = character()) else 0L)
         cat("\n")
         diff <- bleft != bright
         ## FIXME do run lengths here
-        for(i in which(diff)) {
+        for(i in which(diff))
             cat(i,"c", i, "\n< ", left[i], "\n", "---\n> ", right[i], "\n",
                 sep = "")
-        }
-        return(1L)
+        if (Log) {
+            i <- which(diff)
+            out <- paste(i,"c", i, "\n< ", left[i], "\n", "---\n> ", right[i],
+                         sep = "")
+            list(status = 1L, out = out)
+        } else 1L
     } else {
         ## FIXME: use C code, or something like merge?
         ## The files can be very big.
-        if(!useDiff) cat("\nfiles differ in number of lines:\n")
-        a <- tempfile()
-        b <- tempfile()
+        out <- character()
+        if(!useDiff) {
+            cat("\nfiles differ in number of lines:\n")
+            out <- "files differ in number of lines"
+        }
+        a <- tempfile("Rdiffa")
         writeLines(left, a)
+        b <- tempfile("Rdiffb")
         writeLines(right, b)
-        return(system(paste("diff -bw", shQuote(a), shQuote(b))))
+        if (Log) {
+            tf <- tempfile()
+            status <- system2("diff", c("-bw", shQuote(a), shQuote(b)),
+                              stdout = tf, stderr = tf)
+            list(status=status, out=c(out, readLines(tf)))
+        } else system(paste("diff -bw", shQuote(a), shQuote(b)))
     }
 }
 
 testInstalledPackages <-
     function(outDir = ".", errorsAreFatal = TRUE,
              scope = c("both", "base", "recommended"),
-             types = c("examples", "tests", "vignettes"))
+             types = c("examples", "tests", "vignettes"),
+             srcdir = NULL, Ropts = "")
 {
     ow <- options(warn = 1)
     on.exit(ow)
@@ -161,7 +207,9 @@ testInstalledPackages <-
         pkgs <- c(pkgs, known_packages$recommended)
     ## It *should* be an error if any of these are missing
     for (pkg in pkgs) {
-        res <- testInstalledPackage(pkg, .Library, outDir, types)
+        if(is.null(srcdir) && pkg %in% known_packages$base)
+            srcdir <- R.home("tests/Examples")
+        res <- testInstalledPackage(pkg, .Library, outDir, types, srcdir, Ropts)
         if (res) {
             status <- 1L
             msg <- gettextf("testing '%s' failed", pkg)
@@ -174,41 +222,62 @@ testInstalledPackages <-
 
 testInstalledPackage <-
     function(pkg, lib.loc = NULL, outDir = ".",
-             types = c("examples", "tests", "vignettes"))
+             types = c("examples", "tests", "vignettes"),
+             srcdir = NULL, Ropts = "")
 {
     types <- pmatch(types, c("examples", "tests", "vignettes"))
-    pkgdir <- .find.package(pkg, lib.loc)
+    pkgdir <- find.package(pkg, lib.loc)
     exdir <- file.path(pkgdir, "R-ex")
     owd <- setwd(outDir)
     on.exit(setwd(owd))
+    strict <- as.logical(Sys.getenv("R_STRICT_PACKAGE_CHECK", "FALSE"))
 
-    if (1 %in% types) { # && file_test("-d", exdir)) {
-        message("\nCollecting examples for package ", sQuote(pkg))
-        Rfile <- .createExdotR(pkg, pkgdir)
+    if (1 %in% types) {
+        message("Testing examples for package ", sQuote(pkg))
+        Rfile <- .createExdotR(pkg, pkgdir, silent = TRUE)
         if (length(Rfile)) {
             outfile <- paste(pkg, "-Ex.Rout", sep = "")
             failfile <- paste(outfile, "fail", sep = "." )
             savefile <- paste(outfile, "prev", sep = "." )
             if (file.exists(outfile)) file.rename(outfile, savefile)
             unlink(failfile)
-            message("Running examples in package ", sQuote(pkg))
             ## Create as .fail in case this R session gets killed
-            cmd <- paste(shQuote(file.path(R.home(), "bin", "R")),
-                         "CMD BATCH --vanilla --no-timing",
+            cmd <- paste(shQuote(file.path(R.home("bin"), "R")),
+                         "CMD BATCH --vanilla --no-timing", Ropts,
                          shQuote(Rfile), shQuote(failfile))
             if (.Platform$OS.type == "windows") Sys.setenv(R_LIBS="")
             else cmd <- paste("R_LIBS=", cmd)
             res <- system(cmd)
             if (res) return(invisible(1L)) else file.rename(failfile, outfile)
 
-            savefile <- paste(outfile, "prev", sep = "." )
-            if (file.exists(savefile)) {
-                message("  Comparing ", sQuote(outfile), " to ",
-                        sQuote(basename(savefile)), " ...", appendLF = FALSE)
-                res <- Rdiff(outfile, savefile)
-                if (!res) message(" OK")
+            savefile <- paste(outfile, "save", sep = "." )
+            if (!is.null(srcdir)) savefile <- file.path(srcdir, savefile)
+            else {
+                tfile <- file.path(pkgdir, "tests", "Examples" , savefile)
+                if(!file.exists(savefile) && file.exists(tfile))
+                    savefile <- tfile
             }
-        } else warning("no examples found")
+            if (file.exists(savefile)) {
+               if (file.exists(savefile)) {
+                    message("  comparing ", sQuote(outfile), " to ",
+                            sQuote(basename(savefile)), " ...", appendLF = FALSE)
+                    res <- Rdiff(outfile, savefile)
+                    if (!res) message(" OK")
+                    else if(strict)
+                        stop("  ", "results differ from reference results")
+                }
+            } else {
+                prevfile <- paste(outfile, "prev", sep = "." )
+                if (file.exists(prevfile)) {
+                    message("  comparing ", sQuote(outfile), " to ",
+                            sQuote(basename(prevfile)), " ...", appendLF = FALSE)
+                    res <- Rdiff(outfile, prevfile)
+                    if (!res) message(" OK")
+                }
+            }
+        } else
+            warning(gettextf("no examples found for package %s", sQuote(pkg)),
+                    call. = FALSE, domain = NA)
     }
 
     ## FIXME merge with code in .runPackageTests
@@ -224,8 +293,8 @@ testInstalledPackage <-
         for(f in Rfiles) {
             message("  Running ", sQuote(f))
             outfile <- paste(f, "out", sep = "")
-            cmd <- paste(shQuote(file.path(R.home(), "bin", "R")),
-                         "CMD BATCH --vanilla --no-timing",
+            cmd <- paste(shQuote(file.path(R.home("bin"), "R")),
+                         "CMD BATCH --vanilla --no-timing", Ropts,
                          shQuote(f), shQuote(outfile))
             cmd <- if (.Platform$OS.type == "windows") paste(cmd, "LANGUAGE=C")
             else paste("LANGUAGE=C", cmd)
@@ -236,7 +305,7 @@ testInstalledPackage <-
             }
             savefile <- paste(outfile, "save", sep = "." )
             if (file.exists(savefile)) {
-                message("  Comparing ", sQuote(outfile), " to ",
+                message("  comparing ", sQuote(outfile), " to ",
                         sQuote(savefile), " ...", appendLF = FALSE)
                 res <- Rdiff(outfile, savefile)
                 if (!res) message(" OK")
@@ -256,6 +325,7 @@ testInstalledPackage <-
 ## run all the tests in a directory: for use by R CMD check.
 ## trackObjs has .Rin files
 
+## used by R CMD check
 .runPackageTestsR <- function(...)
 {
     cat("\n");
@@ -263,14 +333,16 @@ testInstalledPackage <-
     q("no", status = status)
 }
 
-## used by R CMD check
-.runPackageTests <- function(use_gct = FALSE, use_valgrind = FALSE)
+.runPackageTests <- function(use_gct = FALSE, use_valgrind = FALSE, Log = NULL)
 {
+    if (!is.null(Log)) Log <- file(Log, "wt")
     runone <- function(f)
     {
         message("  Running ", sQuote(f))
+        if(!is.null(Log))
+            cat("  Running ", sQuote(f), "\n", sep = "", file = Log)
         outfile <- paste(f, "out", sep = "")
-        cmd <- paste(shQuote(file.path(R.home(), "bin", "R")),
+        cmd <- paste(shQuote(file.path(R.home("bin"), "R")),
                      "CMD BATCH --vanilla --no-timing",
                      if(use_valgrind) "--debugger=valgrind",
                      shQuote(f), shQuote(outfile))
@@ -288,8 +360,19 @@ testInstalledPackage <-
         if (file.exists(savefile)) {
             message("  Comparing ", sQuote(outfile), " to ",
                     sQuote(savefile), " ...", appendLF = FALSE)
-            res <- Rdiff(outfile, savefile, TRUE)
-            if (!res) message(" OK")
+            if(!is.null(Log))
+                cat("  Comparing ", sQuote(outfile), " to ",
+                    sQuote(savefile), " ...", sep = "", file = Log)
+            if(!is.null(Log)) {
+                ans <- Rdiff(outfile, savefile, TRUE, Log = TRUE)
+                writeLines(ans$out)
+                writeLines(ans$out, Log)
+                res <- ans$status
+            } else res <- Rdiff(outfile, savefile, TRUE)
+            if (!res) {
+                message(" OK")
+                if(!is.null(Log)) cat(" OK\n", file = Log)
+            }
         }
         0L
     }
@@ -301,11 +384,16 @@ testInstalledPackage <-
     for(f in Rinfiles) {
         Rfile <- sub("\\.Rin$", ".R", f)
         message("  Creating ", sQuote(Rfile), domain = NA)
-        cmd <- paste(shQuote(file.path(R.home(), "bin", "R")),
+        if (!is.null(Log))
+            cat("  Creating ", sQuote(Rfile), "\n", sep = "", file = Log)
+        cmd <- paste(shQuote(file.path(R.home("bin"), "R")),
                      "CMD BATCH --no-timing --vanilla --slave", f)
-        if (system(cmd))
+        if (system(cmd)) {
             warning("creation of ", sQuote(Rfile), " failed")
-        else if (file.exists(Rfile)) nfail <- nfail + runone(Rfile)
+            if (!is.null(Log))
+                cat("Warning: creation of ", sQuote(Rfile), " failed\n",
+                    sep = "", file = Log)
+        } else if (file.exists(Rfile)) nfail <- nfail + runone(Rfile)
         if (nfail > 0) return(nfail)
     }
 
@@ -314,48 +402,45 @@ testInstalledPackage <-
         nfail <- nfail + runone(f)
         if (nfail > 0) return(nfail)
     }
+    if (!is.null(Log)) close(Log)
     return(nfail)
 }
 
-.createExdotR <- function(pkg, pkgdir, silent = FALSE)
+.createExdotR <-
+    function(pkg, pkgdir, silent = FALSE, use_gct = FALSE, addTiming = FALSE)
 {
     Rfile <- paste(pkg, "-Ex.R", sep = "")
     ## might be zipped:
     exdir <- file.path(pkgdir, "R-ex")
-    if (file_test("-d", exdir)) {
-        if (file.exists(fzip <- file.path(exdir, "Rex.zip"))) {
-            filedir <- tempfile()
-            unzip(fzip, exdir = filedir)
-            on.exit(unlink(filedir, recursive = TRUE))
-        } else filedir <- exdir
-    } else {
-        db <- Rd_db(basename(pkgdir), lib.loc = dirname(pkgdir))
-        if (!length(db)) {
-            message("no parsed files found")
-            return(invisible(NULL))
-        }
-        if (!silent) message("  Extracting from parsed Rd's ",
-                             appendLF = FALSE, domain = NA)
-        files <- names(db)
-        filedir <- tempfile()
-        dir.create(filedir)
-        on.exit(unlink(filedir, recursive = TRUE))
-        cnt <- 0L
-        for(f in files) {
-            ## names are 'fullpath.Rd' if from 'man' dir, 'topic' if from RdDB
-            nm <- sub("\\.[Rr]d$", "", basename(f))
-            Rd2ex(db[[f]],
-                  file.path(filedir, paste(nm, "R", sep = ".")),
-                  defines = NULL)
-            cnt <- cnt + 1L
-            if(!silent && cnt %% 10L == 0L)
-                message(".", appendLF = FALSE, domain = NA)
-        }
-        if (!silent) message()
-        nof <- length(Sys.glob(file.path(filedir, "*.R")))
-        if(!nof) return(invisible(NULL))
+
+    db <- Rd_db(basename(pkgdir), lib.loc = dirname(pkgdir))
+    if (!length(db)) {
+        message("no parsed files found")
+        return(invisible(NULL))
     }
-    massageExamples(pkg, filedir, Rfile)
+    if (!silent) message("  Extracting from parsed Rd's ",
+                         appendLF = FALSE, domain = NA)
+    files <- names(db)
+    if (pkg == "grDevices")
+        files <- files[!grepl("/unix|windows/", files)]
+    filedir <- tempfile()
+    dir.create(filedir)
+    on.exit(unlink(filedir, recursive = TRUE))
+    cnt <- 0L
+    for(f in files) {
+        nm <- sub("\\.[Rr]d$", "", basename(f))
+        Rd2ex(db[[f]],
+              file.path(filedir, paste(nm, "R", sep = ".")),
+              defines = NULL)
+        cnt <- cnt + 1L
+        if(!silent && cnt %% 10L == 0L)
+            message(".", appendLF = FALSE, domain = NA)
+    }
+    if (!silent) message()
+    nof <- length(Sys.glob(file.path(filedir, "*.R")))
+    if(!nof) return(invisible(NULL))
+
+    massageExamples(pkg, filedir, Rfile, use_gct, addTiming)
     invisible(Rfile)
 }
 
@@ -368,7 +453,8 @@ testInstalledBasic <- function(scope = c("basic", "devel", "both"))
     tests1 <- c("eval-etc", "simple-true", "arith-true", "lm-tests",
                 "ok-errors", "method-dispatch", "d-p-q-r-tests")
     tests2 <- c("complex", "print-tests", "lapack", "datasets")
-    tests3 <- c("reg-tests-1", "reg-tests-2", "reg-IO", "reg-IO2", "reg-S4")
+    tests3 <- c("reg-tests-1a", "reg-tests-1b", "reg-tests-2",
+                "reg-IO", "reg-IO2", "reg-S4")
 
     runone <- function(f, diffOK = FALSE, inC = TRUE)
     {
@@ -377,7 +463,7 @@ testInstalledBasic <- function(scope = c("basic", "devel", "both"))
             if (!file.exists(fin <- paste(f, "in", sep = "")))
                 stop("file ", sQuote(f), " not found", domain = NA)
             message("creating ", sQuote(f))
-            cmd <- paste(shQuote(file.path(R.home(), "bin", "R")),
+            cmd <- paste(shQuote(file.path(R.home("bin"), "R")),
                          "CMD BATCH --no-timing --vanilla --slave", fin)
             if (system(cmd))
                 stop("creation of ", sQuote(f), " failed")
@@ -385,7 +471,7 @@ testInstalledBasic <- function(scope = c("basic", "devel", "both"))
         }
         message("  running code in ", sQuote(f))
         outfile <- paste(f, "out", sep = "")
-        cmd <- paste(shQuote(file.path(R.home(), "bin", "R")),
+        cmd <- paste(shQuote(file.path(R.home("bin"), "R")),
                      "CMD BATCH --vanilla --no-timing",
                      shQuote(f), shQuote(outfile))
         extra <- paste("LANGUAGE=C", "R_DEFAULT_PACKAGES=", "SRCDIR=.")
@@ -455,4 +541,111 @@ testInstalledBasic <- function(scope = c("basic", "devel", "both"))
     }
 
     invisible(0L)
+}
+
+detachPackages <- function(pkgs, verbose = TRUE)
+{
+    pkgs <- pkgs[pkgs %in% search()]
+    if(!length(pkgs)) return()
+    if(verbose){
+        msg <- paste("detaching", paste(sQuote(pkgs), collapse = ", "))
+        cat("", strwrap(msg, exdent = 2L), "", sep = "\n")
+    }
+
+    ## Normally 'pkgs' will be in reverse order of attachment (latest first)
+    ## but not always (e.g. BioC package CMA attaches at the end).
+
+    ## The items need not all be packages
+    ## and non-packages can be on the list multiple times.
+    isPkg <- grepl("^package:", pkgs)
+    for(item in pkgs[!isPkg]) {
+        pos <- match(item, search())
+        if(!is.na(pos)) .Internal(detach(pos))
+    }
+
+    pkgs <- pkgs[isPkg]
+    if(!length(pkgs)) return()
+
+    deps <- lapply(pkgs, function(x) if(exists(".Depends", x, inherits = FALSE)) get(".Depends", x) else character())
+    names(deps) <- pkgs
+
+    unload <- nzchar(Sys.getenv("_R_CHECK_UNLOAD_NAMESPACES_"))
+    ## unloading 'grid' kills all devices
+    ## tcltk is unhappy to have its DLL unloaded repeatedly
+    exclusions <- c("grid", "tcltk")
+    exclusions <- paste("package", exclusions, sep=":")
+    while(length(deps)) {
+        unl <- unlist(deps)
+        for(i in seq_along(deps)) {
+            this <- names(deps)[i]
+            if(sub("^package:", "", this) %in% unl) next else break
+        }
+        ## hopefully force = TRUE is never needed, but it does ensure
+        ## that progress gets made
+        try(detach(this, character.only = TRUE,
+                   unload = unload && !(this %in% exclusions),
+                   force = TRUE))
+        deps <- deps[-i]
+    }
+}
+
+## Usage: Rscript --vanilla --default-packages=NULL args
+.Rdiff <- function()
+{
+    options(showErrorCalls=FALSE)
+
+    Usage <- function() {
+        cat("Usage: R CMD Rdiff FROM-FILE TO-FILE EXITSTATUS",
+            "",
+            "Diff R output files FROM-FILE and TO-FILE discarding the R startup message,",
+            "where FROM-FILE equal to '-' means stdin.",
+            "",
+            "Options:",
+            "  -h, --help     print this help message and exit",
+            "  -v, --version  print version info and exit",
+            "",
+            "Report bugs to <r-bugs@r-project.org>.",
+            sep = "\n")
+    }
+
+    do_exit <- function(status = 0L)
+        q("no", status = status, runLast = FALSE)
+
+    args <- commandArgs(TRUE)
+    if (!length(args)) {
+        Usage()
+        do_exit(1L)
+    }
+    args <- paste(args, collapse=" ")
+    args <- strsplit(args,'nextArg', fixed = TRUE)[[1L]][-1L]
+    if (length(args) == 1L) {
+        if(args[1L] %in% c("-h", "--help")) { Usage(); do_exit() }
+        if(args[1L] %in% c("-v", "--version")) {
+            cat("R output diff: ",
+                R.version[["major"]], ".",  R.version[["minor"]],
+                " (r", R.version[["svn rev"]], ")\n", sep = "")
+            cat("",
+                "Copyright (C) 2000-2010 The R Core Development Team.",
+                "This is free software; see the GNU General Public License version 2",
+                "or later for copying conditions.  There is NO warranty.",
+                sep="\n")
+            do_exit()
+        }
+        Usage()
+        do_exit(1L)
+    }
+
+
+    if (length(args) < 2L) {
+        Usage()
+        do_exit(1L)
+    }
+    exitstatus <- as.integer(args[3L])
+    if(is.na(exitstatus)) exitstatus <- 0L
+
+    left <- args[1L]
+    if(left == "-") left <- "stdin"
+    status <- tools::Rdiff(left, args[2L], useDiff = TRUE)
+    if(status) status <- exitstatus
+    do_exit(status)
 }

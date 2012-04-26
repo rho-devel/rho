@@ -19,11 +19,16 @@ R.home <- function(component="home")
     rh <- .Internal(R.home())
     switch(component,
            "home" = rh,
-           "share" = if(nzchar(p <- as.vector(Sys.getenv("R_SHARE_DIR")))) p
+           "bin" = if(.Platform$OS.type == "windows" &&
+                      nzchar(p <- .Platform$r_arch)) file.path(rh, component, p)
            else file.path(rh, component),
-	   "doc" = if(nzchar(p <- as.vector(Sys.getenv("R_DOC_DIR")))) p
+           "share" = if(nzchar(p <- Sys.getenv("R_SHARE_DIR"))) p
            else file.path(rh, component),
-           "include" = if(nzchar(p <- as.vector(Sys.getenv("R_INCLUDE_DIR")))) p
+	   "doc" = if(nzchar(p <- Sys.getenv("R_DOC_DIR"))) p
+           else file.path(rh, component),
+           "include" = if(nzchar(p <- Sys.getenv("R_INCLUDE_DIR"))) p
+           else file.path(rh, component),
+           "modules" = if(nzchar(p <- .Platform$r_arch)) file.path(rh, component, p)
            else file.path(rh, component),
            file.path(rh, component))
 }
@@ -34,7 +39,7 @@ file.show <-
 {
     files <- path.expand(c(...))
     nfiles <- length(files)
-    if(nfiles == 0)
+    if(nfiles == 0L)
         return(invisible(NULL))
     ## avoid re-encoding files to the current encoding.
     if(l10n_info()[["UTF-8"]] && encoding == "UTF-8") encoding <- ""
@@ -43,7 +48,7 @@ file.show <-
         for(i in seq_along(files)) {
             f <- files[i]
             tf <- tempfile()
-            tmp <- readLines(f)
+            tmp <- readLines(f, warn = FALSE)
             tmp2 <- try(iconv(tmp, encoding, "", "byte"))
             if(inherits(tmp2, "try-error")) file.copy(f, tf)
             else writeLines(tmp2, tf)
@@ -69,11 +74,15 @@ file.rename <- function(from, to)
 
 list.files <- function(path = ".", pattern = NULL, all.files = FALSE,
                        full.names = FALSE, recursive = FALSE,
-                       ignore.case = FALSE)
+                       ignore.case = FALSE, include.dirs = FALSE)
     .Internal(list.files(path, pattern, all.files, full.names,
-                         recursive, ignore.case))
+                         recursive, ignore.case, include.dirs))
 
 dir <- list.files
+
+list.dirs <- function(path = ".", full.names = TRUE, recursive = TRUE)
+    .Internal(list.dirs(path, full.names, recursive))
+
 
 file.path <-
 function(..., fsep=.Platform$file.sep)
@@ -87,29 +96,35 @@ file.create <- function(..., showWarnings =  TRUE)
 
 file.choose <- function(new=FALSE) .Internal(file.choose(new))
 
-file.copy <- function(from, to, overwrite = recursive, recursive = FALSE)
+file.copy <- function(from, to,
+                      overwrite = recursive, recursive = FALSE,
+                      copy.mode = TRUE)
 {
-    if (!(nf <- length(from))) stop("no files to copy from")
+    if (!(nf <- length(from))) return(logical())
     if (!(nt <- length(to)))   stop("no files to copy to")
     ## we don't use file_test as that is in utils.
-    if (nt == 1 && file.exists(to) && file.info(to)$isdir) {
-        ## on Windows we need \ for compiled code
+    if (nt == 1 && isTRUE(file.info(to)$isdir)) {
+        ## on Windows we need \ for the compiled code (e.g. mkdir).
         if(.Platform$OS.type == "windows") {
             from <- gsub("/", "\\", from, fixed = TRUE)
             to <- gsub("/", "\\", to, fixed = TRUE)
         }
-        return(.Internal(file.copy(from, to, overwrite, recursive)))
-        # to <- file.path(to, basename(from))
+        return(.Internal(file.copy(from, to, overwrite, recursive, copy.mode)))
     } else if (nf > nt) stop("more 'from' files than 'to' files")
-    else if (recursive) warning("'recursive' will be ignored")
+    else if (recursive)
+        warning("'recursive' will be ignored as 'to' is not a single existing directory")
     if(nt > nf) from <- rep(from, length.out = nt)
     okay <- file.exists(from)
     if (!overwrite) okay[file.exists(to)] <- FALSE
     if (any(from[okay] %in% to[okay]))
         stop("file can not be copied both 'from' and 'to'")
-    if (any(okay)) { ## care: create could fail but append work.
+    if (any(okay)) { # care: file.create could fail but file.append work.
     	okay[okay] <- file.create(to[okay])
-    	if(any(okay)) okay[okay] <- file.append(to[okay], from[okay])
+    	if(any(okay)) {
+            okay[okay] <- file.append(to[okay], from[okay])
+            if(copy.mode)
+                Sys.chmod(to[okay], file.info(from[okay])$mode, TRUE)
+        }
     }
     okay
 }
@@ -122,11 +137,18 @@ file.symlink <- function(from, to) {
     .Internal(file.symlink(from, to))
 }
 
+file.link <- function(from, to) {
+    if (!(length(from))) stop("no files to link from")
+    if (!(nt <- length(to)))   stop("no files to link to")
+    .Internal(file.link(from, to))
+}
+
 file.info <- function(...)
 {
     res <- .Internal(file.info(fn <- c(...)))
-    class(res$mtime) <- class(res$ctime) <- class(res$atime) <-
-        c("POSIXt", "POSIXct")
+    res$mtime <- .POSIXct(res$mtime)
+    res$ctime <- .POSIXct(res$ctime)
+    res$atime <- .POSIXct(res$atime)
     class(res) <- "data.frame"
     attr(res, "row.names") <- fn # not row.names<- as that does a length check
     res
@@ -144,121 +166,20 @@ dir.create <- function(path, showWarnings = TRUE, recursive = FALSE,
     invisible(.Internal(dir.create(path, showWarnings, recursive,
                                    as.octmode(mode))))
 
-format.octmode <- function(x, ...)
+system.file <- function(..., package = "base", lib.loc = NULL, mustWork = FALSE)
 {
-    isna <- is.na(x)
-    y <- x[!isna]
-    class(y) <- NULL
-    ans0 <- character(length(y))
-    z <- NULL
-    while(any(y > 0) || is.null(z)) {
-        z <- y%%8
-        y <- floor(y/8)
-        ans0 <- paste(z, ans0, sep="")
-    }
-    ans <- rep.int(NA_character_, length(x))
-    ans[!isna] <- ans0
-    ans
-}
-as.character.octmode <- format.octmode
-
-print.octmode <- function(x, ...)
-{
-    print(format(x), ...)
-    invisible(x)
-}
-
-"[.octmode" <- function (x, i)
-{
-    cl <- oldClass(x)
-    y <- NextMethod("[")
-    oldClass(y) <- cl
-    y
-}
-
-as.octmode <- function(x)
-{
-    if(inherits(x, "octmode")) return(x)
-    if(length(x) != 1L) stop("'x' must have length 1")
-    if(is.double(x) && x == as.integer(x)) x <- as.integer(x)
-    if(is.integer(x)) return(structure(x, class="octmode"))
-    if(is.character(x)) {
-        xx <- strsplit(x, "")[[1L]]
-        if(!all(xx %in% 0:7)) stop("invalid digits")
-        z <- as.numeric(xx) * 8^(rev(seq_along(xx)-1))
-        return(structure(sum(z), class="octmode"))
-    }
-    stop("'x' cannot be coerced to 'octmode'")
-}
-
-format.hexmode <- function(x, upper.case = FALSE, ...)
-{
-    isna <- is.na(x)
-    y <- x[!isna]
-    class(y) <- NULL
-    ans0 <- character(length(y))
-    z <- NULL
-    while(any(y > 0) || is.null(z)) {
-        z <- y%%16
-        y <- floor(y/16)
-        ans0 <- paste(c(0:9, if(upper.case) LETTERS else letters)[1+z],
-                      ans0, sep = "")
-    }
-    ans <- rep.int(NA_character_, length(x))
-    ans[!isna] <- ans0
-    dim(ans) <- dim(x)
-    dimnames(ans) <- dimnames(x)
-    names(ans) <- names(x)
-    ans
-}
-as.character.hexmode <- format.hexmode
-
-print.hexmode <- function(x, ...)
-{
-    print(format(x), ...)
-    invisible(x)
-}
-
-"[.hexmode" <- function (x, i)
-{
-    cl <- oldClass(x)
-    y <- NextMethod("[")
-    oldClass(y) <- cl
-    y
-}
-
-as.hexmode <-
-function(x)
-{
-    if(inherits(x, "hexmode")) return(x)
-    if(length(x) != 1L) stop("'x' must be of length 1")
-    if(is.double(x) && (x == as.integer(x))) x <- as.integer(x)
-    if(is.integer(x)) return(structure(x, class = "hexmode"))
-    if(is.character(x)) {
-        xx <- strsplit(tolower(x), "")[[1L]]
-        pos <- match(xx, c(0L:9L, letters[1L:6L]))
-        if(any(is.na(pos))) stop("invalid digits")
-        z <- (pos - 1L) * 16 ^ (rev(seq_along(xx) - 1))
-        return(structure(as.integer(sum(z)), class = "hexmode"))
-    }
-    stop("'x' cannot be coerced to hexmode")
-}
-
-system.file <-
-function(..., package = "base", lib.loc = NULL)
-{
-    if(nargs() == 0)
+    if(nargs() == 0L)
         return(file.path(.Library, "base"))
     if(length(package) != 1L)
         stop("'package' must be of length 1")
-    packagePath <- .find.package(package, lib.loc, quiet = TRUE)
-    if(length(packagePath) == 0L)
-        return("")
-    FILES <- file.path(packagePath, ...)
-    present <- file.exists(FILES)
-    if(any(present))
-        FILES[present]
-    else ""
+    packagePath <- find.package(package, lib.loc, quiet = TRUE)
+    ans <- if(length(packagePath)) {
+        FILES <- file.path(packagePath, ...)
+        present <- file.exists(FILES)
+        if(any(present)) FILES[present] else ""
+    } else ""
+    if (mustWork && identical(ans, "")) stop("no file found")
+    ans
 }
 
 getwd <- function()
@@ -282,14 +203,29 @@ path.expand <- function(path)
 Sys.glob <- function(paths, dirmark = FALSE)
     .Internal(Sys.glob(path.expand(paths), dirmark))
 
-unlink <- function(x, recursive = FALSE)
-    .Internal(unlink(as.character(x), recursive))
+unlink <- function(x, recursive = FALSE, force = FALSE)
+    .Internal(unlink(as.character(x), recursive, force))
 
-Sys.chmod <- function(paths, mode = "0777")
-    .Internal(Sys.chmod(paths, as.octmode(mode)))
+Sys.chmod <- function(paths, mode = "0777", use_umask= TRUE)
+    .Internal(Sys.chmod(paths, as.octmode(mode), use_umask))
 
-Sys.umask <- function(mode = "0000")
-    .Internal(Sys.umask(as.octmode(mode)))
+Sys.umask <- function(mode = NA)
+    .Internal(Sys.umask(if(is.na(mode)) NA_integer_ else as.octmode(mode)))
 
 Sys.readlink <- function(paths)
     .Internal(Sys.readlink(paths))
+
+readRenviron <- function(path)
+    .Internal(readRenviron(path))
+
+normalizePath <- function(path, winslash = "\\", mustWork = NA)
+    .Internal(normalizePath(path.expand(path), winslash, mustWork))
+
+Sys.setFileTime <- function(path, time)
+{
+    if (!is.character(path) || length(path) != 1L)
+        stop("invalid 'path' argument")
+    time <- as.POSIXct(time)
+    if (is.na(time))  stop("invalid 'time' argument")
+    invisible(.Call("R_setFileTime", path, time, PACKAGE = "base"))
+}

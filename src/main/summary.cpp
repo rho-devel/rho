@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2008   R Development Core Team
+ *  Copyright (C) 1997-2011   The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@
 #endif
 
 #include <Defn.h>
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 
@@ -87,12 +88,12 @@ static Rboolean isum(int *x, int n, int *value, Rboolean narm, SEXP call)
 
 static Rboolean rsum(double *x, int n, double *value, Rboolean narm)
 {
-    LDOUBLE s = 0.0;
+    long double s = 0.0;
     int i;
     Rboolean updated = FALSE;
 
     for (i = 0; i < n; i++) {
-	if (!ISNAN(x[i]) || !narm) {
+	if (!narm || !ISNAN(x[i])) {
 	    if(!updated) updated = TRUE;
 	    s += x[i];
 	}
@@ -104,12 +105,12 @@ static Rboolean rsum(double *x, int n, double *value, Rboolean narm)
 
 static Rboolean csum(Rcomplex *x, int n, Rcomplex *value, Rboolean narm)
 {
-    LDOUBLE sr = 0.0, si = 0.0;
+    long double sr = 0.0, si = 0.0;
     int i;
     Rboolean updated = FALSE;
 
     for (i = 0; i < n; i++) {
-	if ((!ISNAN(x[i].r) && !ISNAN(x[i].i)) || !narm) {
+	if (!narm || (!ISNAN(x[i].r) && !ISNAN(x[i].i))) {
 	    if(!updated) updated = TRUE;
 	    sr += x[i].r;
 	    si += x[i].i;
@@ -146,7 +147,7 @@ static Rboolean imin(int *x, int n, int *value, Rboolean narm)
 
 static Rboolean rmin(double *x, int n, double *value, Rboolean narm)
 {
-    double s = 0.0 /* -Wall */;
+    double s = 0.0; /* -Wall */
     int i;
     Rboolean updated = FALSE;
 
@@ -154,7 +155,7 @@ static Rboolean rmin(double *x, int n, double *value, Rboolean narm)
     for (i = 0; i < n; i++) {
 	if (ISNAN(x[i])) {/* Na(N) */
 	    if (!narm) {
-		if(s != NA_REAL) s = x[i]; /* so any NA trumps all NaNs */
+		if(!ISNA(s)) s = x[i]; /* so any NA trumps all NaNs */
 		if(!updated) updated = TRUE;
 	    }
 	}
@@ -222,7 +223,7 @@ static Rboolean rmax(double *x, int n, double *value, Rboolean narm)
     for (i = 0; i < n; i++) {
 	if (ISNAN(x[i])) {/* Na(N) */
 	    if (!narm) {
-		if(s != NA_REAL) s = x[i]; /* so any NA trumps all NaNs */
+		if(!ISNA(s)) s = x[i]; /* so any NA trumps all NaNs */
 		if(!updated) updated = TRUE;
 	    }
 	}
@@ -289,12 +290,12 @@ static Rboolean iprod(int *x, int n, double *value, Rboolean narm)
 
 static Rboolean rprod(double *x, int n, double *value, Rboolean narm)
 {
-    LDOUBLE s = 1.0;
+    long double s = 1.0;
     int i;
     Rboolean updated = FALSE;
 
     for (i = 0; i < n; i++) {
-	if (!ISNAN(x[i]) || !narm) {
+	if (!narm || !ISNAN(x[i])) {
 	    if(!updated) updated = TRUE;
 	    s *= x[i];
 	}
@@ -306,13 +307,13 @@ static Rboolean rprod(double *x, int n, double *value, Rboolean narm)
 
 static Rboolean cprod(Rcomplex *x, int n, Rcomplex *value, Rboolean narm)
 {
-    LDOUBLE sr, si, tr, ti;
+    long double sr, si, tr, ti;
     int i;
     Rboolean updated = FALSE;
     sr = 1;
     si = 0;
     for (i = 0; i < n; i++) {
-	if ((!ISNAN(x[i].r) && !ISNAN(x[i].i)) || !narm) {
+	if (!narm || (!ISNAN(x[i].r) && !ISNAN(x[i].i))) {
 	    if(!updated) updated = TRUE;
 	    tr = sr;
 	    ti = si;
@@ -369,7 +370,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, a, stmp = NA_STRING /* -Wall */, scum = NA_STRING, call2;
     double tmp = 0.0, s;
-    Rcomplex z, ztmp, zcum={0.0, 0.0} /* -Wall */;
+    Rcomplex z, ztmp, zcum(0.0, 0.0) /* -Wall */;
     int itmp = 0, icum=0, int_a, real_a, empty, warn = 0 /* dummy */;
     short iop;
     SEXPTYPE ans_type;/* only INTEGER, REAL, COMPLEX or STRSXP here */
@@ -380,7 +381,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 	   or *value ([ir]min / max) is assigned */
 
     if(PRIMVAL(op) == 1) { /* mean */
-	LDOUBLE s = 0., si = 0., t = 0., ti = 0.;
+	long double s = 0., si = 0., t = 0., ti = 0.;
 	int i, n = LENGTH(CAR(args));
 	SEXP x = CAR(args);
 	switch(TYPEOF(x)) {
@@ -551,8 +552,10 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 		    } else if(ans_type == REALSXP) {
 			if (int_a) tmp = Int2Real(itmp);
 			DbgP3(" REAL: (old)cum= %g, tmp=%g\n", zcum.r,tmp);
-			if (ISNAN(tmp)) {
-			    zcum.r += tmp;/* NA or NaN */
+			if (ISNA(zcum.r)); /* NA trumps anything */
+			else if (ISNAN(tmp)) {
+			    if (ISNA(tmp)) zcum.r = tmp;
+			    else zcum.r += tmp;/* NA or NaN */
 			} else if(
 			    (iop == 2 && tmp < zcum.r) ||
 			    (iop == 3 && tmp > zcum.r))	zcum.r = tmp;
@@ -755,7 +758,11 @@ SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(prargs = promiseArgs(args, R_GlobalEnv));
     for (a = args, b = prargs; a != R_NilValue; a = CDR(a), b = CDR(b))
 	SET_PRVALUE(CAR(b), CAR(a));
-    ans = applyClosure(call, op, prargs, env, R_BaseEnv);
+    Closure* closure = SEXP_downcast<Closure*>(op);
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    ArgList arglist(SEXP_downcast<PairList*>(prargs), ArgList::PROMISED);
+    Environment* callenv = SEXP_downcast<Environment*>(env);
+    ans = closure->invoke(callenv, &arglist, callx);
     UNPROTECT(3);
     return(ans);
 }
@@ -805,6 +812,42 @@ SEXP attribute_hidden do_first_min(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
+/* which(x) : indices of non-NA TRUE values in x */
+SEXP attribute_hidden do_which(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP v, v_nms, ans, ans_nms = R_NilValue;
+    int i, j = 0, len, *buf;
+
+    checkArity(op, args);
+    v = CAR(args);
+    if (!isLogical(v))
+        error(_("argument to 'which' is not logical"));
+    len = length(v);
+    buf = reinterpret_cast<int *>( R_alloc(len, sizeof(int)));
+
+    for (i = 0; i < len; i++) {
+        if (LOGICAL(v)[i] == TRUE) {
+            buf[j] = i + 1;
+            j++;
+        }
+    }
+
+    len = j;
+    PROTECT(ans = allocVector(INTSXP, len));
+    memcpy(INTEGER(ans), buf, sizeof(int) * len);
+
+    if ((v_nms = getAttrib(v, R_NamesSymbol)) != R_NilValue) {
+        PROTECT(ans_nms = allocVector(STRSXP, len));
+        for (i = 0; i < len; i++) {
+            SET_STRING_ELT(ans_nms, i,
+                           STRING_ELT(v_nms, INTEGER(ans)[i] - 1));
+        }
+        setAttrib(ans, R_NamesSymbol, ans_nms);
+        UNPROTECT(1);
+    }
+    UNPROTECT(1);
+    return ans;
+}
 
 /* complete.cases(.) */
 SEXP attribute_hidden do_compcases(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -994,7 +1037,7 @@ SEXP attribute_hidden do_compcases(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue; /* -Wall */
 }
 
-/* op = 0 is pmin.int, op = 1 is pmax.int
+/* op = 0 is pmin, op = 1 is pmax
    It seems that NULL and logicals are supposed to be handled as
    if they have been coerced to integer.
  */
@@ -1047,6 +1090,14 @@ SEXP attribute_hidden do_pmin(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     if(anstype < INTSXP) anstype = INTSXP;
     if(len == 0) return allocVector(anstype, 0);
+    /* Check for fractional recycling (added in 2.14.0) */
+    for(a = args; a != R_NilValue; a = CDR(a)) {
+	n = length(CAR(a));
+	if (len % n) {
+	    warning(_("an argument will be fractionally recycled"));
+	    break;
+	}
+    }
 
     PROTECT(ans = allocVector(anstype, len));
     switch(anstype) {

@@ -1,6 +1,6 @@
 % File src/library/tools/man/Rd2HTML.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2008-9 R Core Development Team
+% Copyright 2008-10 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Rd2HTML}
@@ -18,14 +18,16 @@
 Rd2HTML(Rd, out = "", package = "", defines = .Platform$OS.type,
         Links = NULL, Links2 = NULL,
         stages = "render", outputEncoding = "UTF-8", 
-        dynamic = FALSE, no_links = FALSE, ...)
+        dynamic = FALSE, no_links = FALSE, fragment = FALSE,
+        stylesheet = "R.css", ...)
 
 Rd2txt(Rd, out = "", package = "", defines = .Platform$OS.type,
        stages = "render", outputEncoding = "",
-       width = getOption("help_text_width", 80L), ...)
+       fragment = FALSE, options, ...)
 
 Rd2latex(Rd, out = "", defines = .Platform$OS.type,
-         stages = "render", outputEncoding = "ASCII", ...)
+         stages = "render", outputEncoding = "ASCII",
+         fragment = FALSE, ..., writeEncoding = TRUE)
 
 Rd2ex(Rd, out = "", defines = .Platform$OS.type,
       stages = "render", outputEncoding = "UTF-8", ...)
@@ -43,28 +45,25 @@ Rd2ex(Rd, out = "", defines = .Platform$OS.type,
       dynamic help system.}
   \item{no_links}{logical: suppress hyperlinks to other help topics.
       Used by \command{R CMD \link{Rdconv}}.}
+  \item{fragment}{logical:  should fragments of Rd files be accepted?  See the
+      notes below.}
+  \item{stylesheet}{character: a URL for a stylesheet to be used in the header
+      of the HTML output page.}
   \item{Links, Links2}{\code{NULL} or a named (by topics) character vector of
     links, as returned by \code{\link{findHTMLlinks}}.}
-  \item{width}{The intended page width (in characters) for which the
-      text rendering should be designed.}
+  \item{options}{An optional named list of options to pass to
+    \code{\link{Rd2txt_options}}.}
   \item{...}{ additional parameters to pass to \code{\link{parse_Rd}} when
     \code{Rd} is a filename. }
+  \item{writeEncoding}{should \verb{\inputencoding} lines be written in
+      the file for non-ASCII encodings?}
 }
 \details{
-  These functions convert help pages: \code{Rd2HTML} produces HTML (or
-  compiled HTML, for Windows), \code{Rd2txt} produces plain text,
-  \code{Rd2latex} produces LaTeX input.  By default,
-  \code{outputEncoding} is set to \code{""} and the native character
-  encoding (shown by \code{\link{localeToCharset}}) is used.
-
+  These functions convert help documents: \code{Rd2HTML} produces HTML,
+  \code{Rd2txt} produces plain text, \code{Rd2latex} produces LaTeX.
   \code{Rd2ex} extracts the examples in the format used by
-  \code{\link{example}} and \R utilities.  it reproduces the previous
-  version up to
-  \itemize{
-    \item The parser does not interpret markup in \R comments: this used
-    to be done.
-    \item Small improvements in layout.
-  }
+  \code{\link{example}} and \R utilities.
+
   Each of the functions accepts a filename for an Rd file, and
   will use \code{\link{parse_Rd}} to parse it before applying the
   conversions or checks.
@@ -72,6 +71,13 @@ Rd2ex(Rd, out = "", defines = .Platform$OS.type,
   The difference between arguments \code{Link} and \code{Link2} is that
   links are looked in them in turn, so lazy-evaluation can be used to
   only do a second-level search for links if required.
+
+  Note that the default for \code{Rd2latex} is to output ASCII,
+  including using the second option of \verb{\enc} markup.  This was
+  chosen because use of UTF-8 in LaTeX requires version
+  \sQuote{2005/12/01} or later, and even with that version the coverage
+  of UTF-8 glyphs is not extensive (and not even as complete as
+  Latin-1).
   
   \code{Rd2txt} will format text paragraphs to a width determined by
   \code{width}, with appropriate margins.  The default is to be close to
@@ -87,6 +93,18 @@ Rd2ex(Rd, out = "", defines = .Platform$OS.type,
   (Directional quotes are not attempted in CJK locales as they are
   usually double-width, which looks wrong with English text.)
 #endif
+
+  Various aspects of formatting by \code{Rd2txt} are controlled by the
+  \code{options} argument, documented with the \code{\link{Rd2txt_options}}
+  function. Changes made using \code{options} are temporary, those
+  made with \code{\link{Rd2txt_options}} are persistent.
+  
+  When \code{fragment = TRUE}, the \code{Rd} file will be rendered
+  with no processing of \verb{\Sexpr} elements or conditional defines
+  using \verb{#ifdef} or \verb{#ifndef}.  Normally a fragment represents
+  text within a section, but if the first element of the fragment
+  is a section macro, the whole fragment will be rendered as 
+  a series of sections, without the usual sorting.
 }
 \section{Encodings}{
   Rd files are normally intended to be rendered on a wide variety of
@@ -97,10 +115,7 @@ Rd2ex(Rd, out = "", defines = .Platform$OS.type,
 
   For output, the \code{outputEncoding} argument will be used:
   \code{outputEncoding = ""} will choose the native encoding for the
-  current system.  The \code{Rd2latex} function is an exception to this
-  rule, because UTF-8 is not a viable universal choice for LaTeX: if an
-  input file contains an \samp{encoding} section, \code{Rd2latex} will
-  use that for the output encoding.
+  current system.
 
   If the text cannot be converted to the \code{outputEncoding}, byte
   substitution will be used (see \code{\link{iconv}}): \code{Rd2latex}
@@ -110,13 +125,10 @@ Rd2ex(Rd, out = "", defines = .Platform$OS.type,
 \note{
   The \verb{\Sexpr} macro is a new addition to Rd files.  It includes
   \R code that will be executed at one of three times: \emph{build} time
-  (when a package's source code is built into a tarball, not yet
-  implemented), \emph{install} time (when the package is installed or
+  (when a package's source code is built into a tarball), 
+  \emph{install} time (when the package is installed or
   built into a binary package), and \emph{render} time (when the man
   page is converted to a readable format).
-
-  Currently only text format man pages render when displayed; all other
-  formats render when installed.
 
   For example, this man page was:
   \enumerate{
@@ -127,11 +139,6 @@ Rd2ex(Rd, out = "", defines = .Platform$OS.type,
     \item rendered on
     \Sexpr[stage=render]{format(Sys.time(), "\%Y-\%m-\%d at \%H:\%M:\%S")}.
   }
-  Because build-time execution is not yet supported, the first of these
-  will display as a macro; the other two may or may not, depending on the
-  build of \R.  (Note that escapes, e.g. for \samp{\%}, may not be
-  identical in this display, but the displayed Rd code should parse to the
-  same object.)
 }
 
 \value{
@@ -147,21 +154,23 @@ Rd2ex(Rd, out = "", defines = .Platform$OS.type,
 \references{ \url{http://developer.r-project.org/parseRd.pdf} }
 \seealso{
   \code{\link{parse_Rd}}, \code{\link{checkRd}},
-  \code{\link{findHTMLlinks}}.
+  \code{\link{findHTMLlinks}}, \code{\link{Rd2txt_options}}.
 }
 \examples{\donttest{
 
 \dontrun{
 ## Simulate install and rendering of this page in HTML and text format:
 
-Rd <- file.path("src/library/tools/Rd2HTML.Rd")
+Rd <- file.path("src/library/tools/man/Rd2HTML.Rd")
 
-outfile <- paste(tempfile(), ".html", sep="")
-browseURL(Rd2HTML(Rd, outfile, package="tools", stages=c("install", "render")))
+outfile <- tempfile(fileext = ".html")
+browseURL(Rd2HTML(Rd, outfile, package = "tools",
+          stages = c("install", "render")))
 
-outfile <- paste(tempfile(), ".txt", sep="")
-file.show(Rd2txt(Rd, outfile, package="tools", stages=c("install", "render")))
+outfile <- tempfile(fileext = ".txt")
+file.show(Rd2txt(Rd, outfile, package = "tools",
+          stages = c("install", "render")))
 
-checkRd(con) # A stricter test than Rd2HTML uses
+checkRd(Rd) # A stricter test than Rd2HTML uses
 }}}
 \keyword{ documentation }

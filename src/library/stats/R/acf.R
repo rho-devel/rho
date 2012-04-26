@@ -42,7 +42,7 @@ acf <-
 	x <- sweep(x, 2, colMeans(x, na.rm = TRUE), check.margin=FALSE)
     lag <- matrix(1, nser, nser)
     lag[lower.tri(lag)] <- -1
-    acf <- array(.C(R_acf,
+    acf <- array(.C(C_acf,
                     as.double(x), as.integer(sampleT), as.integer(nser),
                     as.integer(lag.max), as.integer(type=="correlation"),
                     acf=double((lag.max+1L) * nser * nser), NAOK = TRUE
@@ -86,7 +86,7 @@ pacf.default <- function(x, lag.max = NULL, plot = TRUE,
         x <- scale(x, TRUE, FALSE)
         acf <- drop(acf(x, lag.max = lag.max, plot = FALSE,
                         na.action = na.action)$acf)
-        pacf <- array(.C(R_uni_pacf,
+        pacf <- array(.C(C_uni_pacf,
                          as.double(acf),
                          pacf = double(lag.max),
                          as.integer(lag.max))$pacf,
@@ -119,27 +119,27 @@ plot.acf <-
               ...)
 {
     ci.type <- match.arg(ci.type)
-    if((nser <- ncol(x$lag)) < 1) stop("x$lag must have at least 1 column")
+    if((nser <- ncol(x$lag)) < 1L) stop("x$lag must have at least 1 column")
     if (is.null(ylab))
         ylab <- switch(x$type,
                        correlation = "ACF",
                        covariance = "ACF (cov)",
                        partial = "Partial ACF")
     if (is.null(snames <- x$snames))
-        snames <- paste("Series ", if (nser == 1) x$series else 1L:nser)
+        snames <- paste("Series ", if (nser == 1L) x$series else 1L:nser)
 
     with.ci <- ci > 0 && x$type != "covariance"
     with.ci.ma <- with.ci && ci.type == "ma" && x$type == "correlation"
-    if(with.ci.ma && x$lag[1,1,1] != 0) {
+    if(with.ci.ma && x$lag[1L, 1L, 1L] != 0L) {
         warning("can use ci.type=\"ma\" only if first lag is 0")
         with.ci.ma <- FALSE
     }
     clim0 <- if (with.ci) qnorm((1 + ci)/2)/sqrt(x$n.used) else c(0, 0)
 
-    Npgs <- 1 ## we will do [ Npgs x Npgs ] pages !
+    Npgs <- 1L ## we will do [ Npgs x Npgs ] pages !
     nr <- nser
-    if(nser > 1) { ## at most m x m (m := max.mfrow)  panels per page
-        sn.abbr <- if(nser > 2) abbreviate(snames) else snames
+    if(nser > 1L) { ## at most m x m (m := max.mfrow)  panels per page
+        sn.abbr <- if(nser > 2L) abbreviate(snames) else snames
 
         if(nser > max.mfrow) {
             ##  We need more than one page: The plots are laid out
@@ -149,7 +149,7 @@ plot.acf <-
             Npgs <- ceiling(nser / max.mfrow)
             nr <- ceiling(nser / Npgs)  # <= max.mfrow
         }
-        opar <- par(mfrow = rep(nr, 2), mar = mar, oma = oma, mgp = mgp,
+        opar <- par(mfrow = rep(nr, 2L), mar = mar, oma = oma, mgp = mgp,
                     ask = ask, xpd = xpd, cex.main = cex.main)
         on.exit(par(opar))
         if(verbose) { # FIXME: message() can be suppressed but not str()
@@ -171,6 +171,7 @@ plot.acf <-
     }
 
     for (I in 1L:Npgs) for (J in 1L:Npgs) {
+        dev.hold()
         ## Page [ I , J ] : Now do   nr x nr  'panels' on this page
         iind <- (I-1)*nr + 1L:nr
         jind <- (J-1)*nr + 1L:nr
@@ -206,6 +207,7 @@ plot.acf <-
             mtext(paste("[",I,",",J,"]"), side=1, line = -0.2, adj=1,
                   col = "dark gray", cex = 1, outer = TRUE)
         }
+        dev.flush()
     }
     invisible()
 }
@@ -217,9 +219,10 @@ ccf <- function(x, y, lag.max = NULL,
     type <- match.arg(type)
     if(is.matrix(x) || is.matrix(y))
         stop("univariate time series only")
-    X <- na.action(ts.intersect(as.ts(x), as.ts(y)))
+    X <- ts.intersect(as.ts(x), as.ts(y))
     colnames(X) <- c(deparse(substitute(x))[1L], deparse(substitute(y))[1L])
-    acf.out <- acf(X, lag.max = lag.max, plot = FALSE, type = type)
+    acf.out <- acf(X, lag.max = lag.max, plot = FALSE, type = type,
+                   na.action = na.action)
     lag <- c(rev(acf.out$lag[-1,2,1]), acf.out$lag[,1,2])
     y   <- c(rev(acf.out$acf[-1,2,1]), acf.out$acf[,1,2])
     acf.out$acf <- array(y, dim=c(length(y),1L,1L))
@@ -231,7 +234,7 @@ ccf <- function(x, y, lag.max = NULL,
     } else return(acf.out)
 }
 
-"[.acf" <- function(x, i, j)
+`[.acf` <- function(x, i, j)
 {
     if(missing(j)) j <- seq_len(ncol(x$lag))
     ii <- if(missing(i)) seq_len(nrow(x$lag))

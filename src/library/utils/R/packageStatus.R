@@ -36,7 +36,7 @@ packageStatus <- function(lib.loc = NULL, repositories = NULL, method,
         y <- list()
         for(k in 1L:ncol(x)) y[[k]] <- x[,k]
         attr(y, "names") <- colnames(x)
-        attr(y, "row.names") <- y[[1L]]
+        attr(y, "row.names") <- make.unique(y[[1L]])
         class(y) <- "data.frame"
         y
     }
@@ -57,20 +57,12 @@ packageStatus <- function(lib.loc = NULL, repositories = NULL, method,
 
     z <- cbind(z, Status = "not installed")
     z[z[,"Package"] %in% y$Package, "Status"] <- "installed"
-    ## Careful: bundles can be partially installed!
-    bundles <- which(!is.na(z[,"Bundle"]))
-    for(bundle in bundles) {
-        contains <- z[bundle, "Contains"]
-        contains <- strsplit(contains, "[[:space:]]+")[[1L]]
-        if(all(contains %in% y$Package)) z[bundle, "Status"] <- "installed"
-    }
 
     z <- char2df(z)
-    z$Package <- ifelse(is.na(z$Bundle), z$Package, z$Bundle)
     attr(z, "row.names") <- z$Package
 
     for(k in 1L:nrow(y)){
-        pkg <- ifelse(is.na(y$Bundle[k]), y[k, "Package"], y[k, "Bundle"])
+        pkg <- y[k, "Package"]
         if(pkg %in% z$Package) {
             if(package_version(y[k, "Version"]) <
                package_version(z[pkg, "Version"])) {
@@ -93,31 +85,38 @@ packageStatus <- function(lib.loc = NULL, repositories = NULL, method,
 
 summary.packageStatus <- function(object, ...)
 {
+    Libs <- levels(object$inst$LibPath)
+    Repos <- levels(object$avail$Repository)
+
+    byLib <- split(object$inst, object$inst$LibPath)
+    Libs <- lapply(split(object$inst, object$inst$LibPath),
+                   function(x) tapply(x$Package, x$Status,
+                                      function(x) sort(as.character(x))))
+    Repos <- lapply(split(object$avail, object$avail$Repository),
+                    function(x) tapply(x$Package, x$Status,
+                                       function(x) sort(as.character(x))))
+    object$Libs <- Libs
+    object$Repos <- Repos
+    class(object) <- c("summary.packageStatus", "packageStatus")
+    object
+}
+
+print.summary.packageStatus <- function(x, ...)
+{
     cat("\nInstalled packages:\n")
     cat(  "-------------------\n")
-    for(k in levels(object$inst$LibPath)){
-        ok <- (object$inst$LibPath==k)
-        cat("\n*** Library ", k, "\n", sep="")
-        if(any(ok)){
-            i <- object$inst
-            Package <- ifelse(is.na(i$Bundle), i$Package,
-                              paste(i$Bundle, i$Package, sep=":"))
-            print(tapply(Package[ok], i$Status[ok],
-                         function(x) sort(as.character(x))))
-        }
+    for(k in seq_along(x$Libs)) {
+        cat("\n*** Library ", names(x$Libs)[k], "\n", sep="")
+        print(x$Libs[[k]])
     }
     cat("\n\nAvailable packages:\n")
     cat(    "-------------------\n")
     cat("(each package appears only once)\n")
-    for(k in levels(object$avail$Repository)){
-        cat("\n*** Repository ", k, "\n", sep="")
-        ok <- object$avail$Repository==k
-        if(any(ok))
-            print(tapply(object$avail$Package[ok],
-                         object$avail$Status[ok],
-                         function(x) sort(as.character(x))))
+    for(k in seq_along(x$Repos)){
+        cat("\n*** Repository ", names(x$Repos)[k], "\n", sep="")
+        print(x$Repos[[k]])
     }
-    invisible(object)
+    invisible(x)
 }
 
 print.packageStatus <- function(x, ...)
@@ -125,7 +124,7 @@ print.packageStatus <- function(x, ...)
     cat("Number of installed packages:\n")
     print(table(x$inst$LibPath, x$inst$Status))
 
-    cat("\nNumber of available packages (each package/bundle counted only once):\n")
+    cat("\nNumber of available packages (each package counted only once):\n")
     print(table(x$avail$Repository, x$avail$Status))
     invisible(x)
 }
@@ -155,12 +154,10 @@ upgrade.packageStatus <- function(object, ask=TRUE, ...)
         write.table(x, row.names=FALSE, col.names=FALSE, quote=FALSE,
                     sep=" at ")
 
-    haveasked <- character(0L)
+    haveasked <- character()
     if(ask) {
         for(k in old) {
-            pkg <- ifelse(is.na(object$inst[k, "Bundle"]),
-                          object$inst[k, "Package"],
-                          object$inst[k, "Bundle"])
+            pkg <-  object$inst[k, "Package"]
             tmpstring <- paste(pkg, as.character(object$inst[k, "LibPath"]))
             if(tmpstring %in% haveasked) next
             haveasked <- c(haveasked, tmpstring)
@@ -180,8 +177,7 @@ upgrade.packageStatus <- function(object, ask=TRUE, ...)
                             as.character(object$avail[pkg, "Repository"])))
         }
     } else {
-        pkgs <- ifelse(is.na(object$inst[ ,"Bundle"]),
-                       object$inst[ ,"Package"], object$inst[ ,"Bundle"])
+        pkgs <- object$inst[ ,"Package"]
         update <- cbind(pkgs, as.character(object$inst[ , "LibPath"]),
                         as.character(object$avail[pkgs, "Repository"]))
         update <- update[old, , drop=FALSE]

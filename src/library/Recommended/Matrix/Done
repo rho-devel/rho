@@ -1,0 +1,403 @@
+##-*- mode: org -*-
+
+[[ This file 'Done' lists items that were in file ./TODO at some time ]]
+
+- Sparse matrix methods can now be based on the CHOLMOD package.  We
+   will need to migrate from the current code to CHOLMOD-based code
+   using #ifdef USE_CHOLMOD.  Some of the things to be done
+
+   - Move documentation from subdirectories of src to inst/doc
+
+   - Write utilities to create a cholmod_sparse pointer from a
+   dgCMatrix or lgCMatrix (or zgCMatrix) object without copying and
+   allocating.
+
+   - Start adding simple S4 methods ( %*%, +, cbind, t) for
+     CsparseMatrix using CHOLMOD.
+
+- check to see if the .onLoad function to require the methods package
+  (in the AllClass.R file) is needed
+  -- no, it is not:  "Depends: " in DESCRIPTION suffices.
+
+- Should the uplo and diag slots continue to be stored as character?
+  An alternative is to use a factor as in the enum values for the
+  cblas.
+  -- Leave as character but use care in determining the default cases
+  -- E.g. Checks for diag slot should check for 'U' or 'u' vs. anything else
+
+- Organization of the source code files - right now they are organized
+  according to class (e.g. dgeMatrix.R, dgeMatrix.h, dgeMatrix.c).  Is
+  there a better way?
+  -- This seems ok.
+
+- Fix the calculation of the Dim slot for the crossprod method for
+  dgCMatrix objects (too tired to do that now).
+  -- Done
+
+- spelling style: Should "coersion" be "coercion" ?
+  -- Yes.  Watch for this.
+
+- src/Metis/ : one of the two Makefiles needs fixing, as changing
+	     src/Metis/*.c  does not lead to recompilation.
+  --DB - it seems both Makefiles need fixing.  I think I have the
+	     src/Metis/Makefile fixed but not src/Makefile
+  --DB - now have both working, I believe.
+
+- man/Matrix.Rd :  has example with dimnames, but we just drop them!
+		MM thinks dimnames should be supported (but then ...)
+  -- added 'Dimnames' slot (2005-02-10)
+
+- bCrosstab(): yes, we really do want the diagonal "V:V" crosstabs.
+   -- explained a bit more in man/bCrosstab.Rd
+
+- Clean up vestigial functions (pdFactor, pdMatrix, matrix<-) from the
+  nlme package.
+
+- create a class of permutation matrices for use in expand.  The
+  current expand method for the LU factorization is not complete
+  because it does not provide the permutation.
+
+- tcrossprod() now works: C code now "exported" via init.c
+
+- Fixed: dtpMatrix(... diag = "U") (i.e., unit-diagonal packed triangular)
+         *does* need 'x' entries for the diagonal but these are never looked at.
+    -> changed doc -- Lapack also says they are not referenced but assumed 1.
+
+
+- in lmer.c check all instances of the use of ZtX and XtX and change
+  them so that having a negative last element of nc means use the
+  response only (but look for it in the right place).
+
+- Solved:
+
+   Currently the show() method fail sometime after coercion:
+   e.g. 'sy' show()s wrongly, even though it "str()" fine :
+
+      (po <- crossprod(Matrix(0:3, 2))) # ok
+      (ge <- as(po, "dgeMatrix")) # ok
+      (sy <- as(po, "dsyMatrix")) # BAD
+      str(sy) # looks fine
+
+  or
+      example(expand) # -> ex$L and ex$U look bad, however
+      as(ex$L, "dgeMatrix") # `works'
+
+  {Of course, we don't need a workaround but must understand
+   and solve the problem}
+
+- slot "factors" maybe should move up to "Matrix" -- done, 2005-09-28
+
+- group generics: "Arith", also "Compare", "Math" etc;
+  see ?Math  and the examples in ?SetGeneric
+
+- methods for rbind and cbind where they make sense:
+  R 2.2.0 (and newer) provide cbind2() and rbind2() generics and default
+  methods [following John Chambers's proposition], and we have implemented
+  methods for them.
+
+- arithmetic for sparse matrices:
+     done for    <sparseMatrix>  o  <scalar>
+  {more needed: see TODO}
+
+- rcond() of a singular dpoMatrix gives a LaPack error instead of just 0:
+  MM <- crossprod(M <- Matrix(c(1:4,9:6), 2,4)) ; rcond(MM)
+  Done(2005-10-03): The error message is more helpful now.
+
+- implement diagonal Matrix class  "ddiMatrix" etc
+  using constructor function Diagonal() {and extractor diag()}.
+  Done(2006-01-03)
+
+- new("ltTMatrix") now at least prints
+
+-- Done by version 0.995-1 ---
+
+
+- Migration of lmer from the mer representation to the mer2
+   representation and the use of the CHOLMOD code for the sparse
+   matrix decomposition.  Some of the things that need to be done.
+
+   - Matrices in the mer2 representation are classed matrices, in the
+   mer representation they were unclassed.  Any parts inside the C
+   code that would access, for example,
+    REAL(GET_SLOT(x, Matrix_RXXSym))
+   need to be modified to access
+    REAL(GET_SLOT(GET_SLOT(x, Matrix_RXXSym), Matrix_xSym))
+   This is especially important for Omega but I think I have done
+   those changes already.
+
+   - The components named *X* in an mer object refers to an augmented
+   design matrix of p+1 columns.  In the mer2 object there are
+   separate slots for rZy and rXy.  The scalar y'y is the first
+   element of devComp.
+
+   - Presently nc is of length nf+1 and the last element is n, the
+   number of observations.  This value should be moved to devComp and
+   nc made of length nf.
+
+   - The slot L is a list of length 1 that contains an ExternalPointer
+   to a cholmod_factor object.  This contains a permutation which is
+   most easily accessible through cholmod_solve(CHOLMOD_P,...) or
+   cholmod_solve(CHOLMOD_Pt,...).  The ZtX, Zty, RZX and rZy slots actually
+   contain P%*%RZX and P%*%rZy
+
+- "[<-"  Methods for dgC*  and  dgT* the former building on the latter
+	 using   j = .Call("Matrix_expand_pointers", x@p, PACKAGE = "Matrix")
+	 where needed
+
+- Put the matrix 'mm' and the response vector 'y' into 'KNex', a list.
+  Modified all examples and tests that used them and the Comparisons vignette.
+
+- rowSums(), colSums(), rowMeans & colMeans() now should work for all
+  sparse and dense matrices, via "dgeMatrix", "dgC*" and "dgT*".
+
+- Suitably adjust classes of matrices after subscripting.
+  head(Hilbert(9)) and the equivalent expression Hilbert(9)[1:4,]
+  now work and return "dgeMatrix" (and not ..symmetric..).
+
+  We try to propagate the class to the subscripted matrix
+  but, if that fails its test, fall back on a general matrix class. -- for dense
+  That is, the fallback class for dsyMatrix, etc. is dgeMatrix; the
+  fallback class for dsCMatrix is dgCMatrix, etc.
+
+- tril(), triu()  now return matrices of *triangular* classes.
+
+  Note that these also solve the following former "TODO":
+
+  Things like  M[upper.tri(M)] are not really most useful for  sparse
+  matrices.  --> provide generic functions
+  upperTriMatrix(), lowerTriMatrix()  both with argument  'diag = TRUE'
+  (which can be set to FALSE of course) which are used to extract a
+  triangle from an arbitrary sparse matrix and  return a  "dtCMatrix".
+
+
+- Factorizations: LU and solve() for  *sparse*  Matrices is now done,
+  -----------------  using CSparse (and not UMFPACK as originally thought)
+
+- M[i,j] <- "sub-Matrix"  now works.
+
+- "Compare" for dgC & dgT  --- to be able to do  M[M > 10]  etc
+
+-  new("ltTMatrix", diag = "U", Dim = c(2:2, 2:2))   now works
+
+- Diagonal(3) - toeplitz(c(0,1,0))  or
+  Diagonal(4) >= 0		    now work
+
+- .Call(Csparse_Csparse_crossprod, ...)  for crossprod(x,y) {2-args}
+
+- When 'x' is a symmetric matrix,
+  a)  x[i,i] should return a *symmetric* matrix too (when 'i' has length > 1)
+  b)  x[i,i] <- scalar_value  should ``keep x symmetric'',
+      i.e. also return symmetricM*
+
+- Fully implement "Logic" methods - now (R 2.4.1) that the group is in S4
+
+- when printing sparse matrices column names are suppressed.
+  For matrices *with* non-empty column names, this is now message()d.
+  Alternatively, can now print(<sparseMatrix>, col.names = TRUE, .....)
+
+- Fast colSums(), rowSums() etc : first for dgCMatrix, but then
+  'arules' needs fast colSums() and rowSums() - for ngCMatrix;
+  do it for "nMatrix" and "lMatrix" and return *integer*
+
+- now check for DimNames propagation in coercions, at least by using a
+  "dimnamed" matrix in tstMatrixClass() in tests/Class+Meth.R
+
+- moved alloc3DArray() from ./src/Mutils.c to $(RSRC)/src/main/array.c
+
+- norm() methods for all Matrices, notably sparse "now too".
+
+- check all "Summary" group methods for all matrices in ./tests/Class+Meth.R
+  {this includes  sum() for *all* our matrices}
+
+- log1p(<sparseMatrix>) now gives <dsparseMatrix>
+  simply via "Math" group generic -- only from R 2.6.0 on.
+
+- image(M, aspect= "iso", colorkey = FALSE)
+  is now default; {aspect: non-back comptible for users !!}
+  *and* documented, using man/image-methods.Rd
+
+- rcond methods for sparseMatrix : helpful message about alternatives
+
+- ensuring that M[0], M[FALSE], M[1:2]  now work as for traditional matrices
+
+- [,] indexing: works for sparse, in all cases ((we have seen ..))
+
+- arithmetic for sparse matrices:
+	     <sparseMatrix>  o  <same-dim-sparseMatrix>
+  returns a sparse matrix  for at least "+" and "*" , also %%,
+  and "/" and "%/%" at least when the RHS is a non-zero scalar.
+
+- Schur() now returns a proper class extending "MatrixFactorization".
+
+- added more comprehensive examples and tests for Schur decomposition
+
+- speedup: pass class definition to non0ind() [check all calls ..]
+
+- M[FALSE, FALSE] now works for Matrices M with all(dim(M) > 0)
+  {no longer fails for M <- Diagonal(4), or dgR* }
+
+- band(), triu(), tril()  now work for "matrix" and all "dense*"
+
+- For a square sparse matrix 'b' {typically dgCMatrix or dgTMatrix},
+  we'd want a function  "Mat_plus_t_Mat" <- function(b) {....}
+  which computes the symmetric sparse matrix   b + t(b)
+  in way that never works with size-doubled vectors from  b@i etc..
+
+  2nd version:
+  (A + tr(A))/2  := the symmetric part of A, is needed in several
+  circumstances; unfortunately it's not "smart" (preserving symmetry, ...)
+  --> define a generic and methods for it!
+  Googling around I found that Nick Higham has a GPL contributed Matlab
+  toolbox where he uses  symmpart(A) := (A + A') /. 2 and
+  skewpart(A) := (A - A') /. 2.
+  Hence defined symmpart() and skewpart().
+
+- fixed '*HORRENDOUSLY* slow' in tests/simple.R
+  and do better than
+	unlist(lapply(seq_len(m), function(j) x[i1[j], i2[j]]))
+  in R/Matrix.R
+  --> now fixed for sparseMatrices : 'ss <- slp[ij]' in tests/simple.R
+  denseMatrices have their own method,
+  and m[ <ij-matrix> ] <- value seems more or less ok.
+
+- dtC Matrices now preserve (unit-) triangularity in %*% and crossprod
+
+- Cholesky() generalized: provide R interface cholmod_factorize_p()
+  which factorizes |A + m*I| ==> R interface to fast det|A + m*I|
+
+- chol() and qr() are now longer made into explicit generics
+  (they both had *two* argument signatures: (x,pivot) & (x,tol)
+  respectively, and gave the msg
+  >  New generic for "chol" does not agree with implicit generic from package
+  >  "base"; a new generic will be assigned with package "Matrix"
+  (and ditto for "qr")
+  Now they are *implicit generics* and methods all have just (x= *Matrix)
+  signature and default argument (pivot=FALSE) or (tol=1e-7) respectively.
+
+- summary(<nMatrix>) now only reports the (i,j) locations; no "TRUE".
+
+- data(CAex); determinant(CAex) now works - via lu() decomposition;
+  and effectively, determinant() should now work for all our numeric
+  ("dMatrix") Matrices, of course with an error for non-square ones.
+
+- image(M, ..): now have smart option which keeps "0 |-> transparent"
+  and allows colors to differentiate negative and positive entries.
+
+- Diagonal(n) %*% A   is fast now
+
+- msy <- as(matrix(c(2:1,1:2),2), "dsyMatrix"); str(msy)
+  no longer contains a Cholesky factorization {as we've replaced setIs() by
+  setAs(), for now}.
+
+- determinant() now works {it is checkMatrix()ed}
+
+- dimnames(Mat) <- NULL   now works with a message;
+  unname() is defined equivalently explicitly.
+
+- auxiliary  encodeInd(), encodeInd2() are now done in C and .Call()ed.
+
+- coercing sparse to dense when the denseMatrix is too large
+  (length(@ x) > .Machine$integer.max), gives better error
+  messages; e.g. Lrg == Lrg or  !Lrg in tests/indexing.R
+
+- src/Csparce.c etc:  grep 'AS_.*sparse_diagU2N' src/*.?
+  had several
+     o AS_CHM_SP(Csparse_diagU2N(.)) : as_cholmod_sparse(..)  \ src/chm_common.h
+     o AS_CHM_TR(Tsparse_diagU2N(.)) : as_cholmod_triplet(..) /
+     o AS_CSP   (Csparse_diagU2N(.)) : Matrix_as_cs(..)       > src/cs_utils.h
+
+  all of which are "inefficient", because several "S4 <-> Cholmod" or
+  "S4 <-> CS" coercions happen inside.
+
+  Made these "inner" Csparse_diagU2N()  part of the
+    as_cholmod_sparse() or Matrix_as_cs() functions.
+  In order to not check when not needed, add a new boolean argument
+  'check_Udiag' to the C functions.
+   --> This is an API change however, notably since we export as_cholmod_sparse
+      ( in inst/include/Matrix.h )
+
+- is.na() method for all our matrices [ ==> which(*, arr.ind=TRUE) might work ]
+
+- "sparseVector" : indices, i.e. @i and @length  now changed
+  from class "integer" to "numeric", since we want to be
+  able to coerce large sparse matrices to sparse vectors,
+  where length maybe considerably larger than 2^32.
+
+- Implement expand(.) for the Cholesky() results "dCHMsimpl", "dCHMsuper", etc.
+
+- expand() for lu(<sparse>) is simple too
+
+- setAs(<Mcl>, "[dln]Matrix") now works (and is checked by checkMatrix(.)).
+
+- <diagonalMatrix> o <ddenseMatrix> now returns diagonalMatrix in many more
+  cases: notably commutatively for o in {*, ^, &} and also for {/, %%, %/%}.
+
+- h6 <- Hilbert(6); chol(h6) ; str(h6) # has 'factors'
+  str(H6 <- as(h6, "dspMatrix"))       # no longer lost 'factors'
+  ## and the same in a similar situation involving  "dpo", "dpp"
+
+- Sparse Band(ed) matrices: Define "user-friendly" *constructors*;
+  Considering  bandMatrix()  with an option to construct *symmetric*
+  band-diagonal matrices directly.
+    --> bandSparse()  with a 'symmetric = FALSE' argument
+
+- as(<any Matrix>, "vector")  now works, ditto as(., "numeric")  etc
+
+- Matrix-Multiplication now works when matrices are zero-dimensional
+  ("0 x n", "m x 0").
+
+- determinant(m) should *not* give an error for a singular m;
+  no longer does even when German error messages are active (used to look
+  at tryCatch()$message; this is *not* feasible)
+
+- <symmetric sparse>  o  <symmetric sparse>  now remains *symmetric*
+
+- <symmetric sparse>   o  <diagonal>  now remains *symmetric*, too
+- <triangular sparse>  o  <diagonal>  now remains *triangular* (mostly)
+
+- <sparseMatrix>  o  <sparseVector>  are implemented now.
+
+- sparse.model.matrix( ... ) now works (again!) for lme4a's InstEval data.
+
+- sparse.model.matrix( ~ -1 + ..)  or
+  sparse.model.matrix( ~  0 + ..)  seem to work ok [ tests/spModel.matrix.R ]
+
+- nnzero() is now generic, with methods, including one for
+  "CHMfactor" using as(*, "sparseMatrix").
+
+- det() is "identical" to base::det, but in Matrix namespace and hence
+  calling S4-aware determinant().
+
+- rcond() for *sparse* (currently goes via dense, but that easily blows up)
+ -------- Matlab has condest(),
+  http://www.mathworks.com/access/helpdesk/help/techdoc/ref/condest.html
+  but even better, octave has a version of that, too,
+  written in octave itself, in the octave source, it's in
+  ~/src/octave-3.2.4/scripts/linear-algebra/condest.m
+
+  ==> own condest(), and onenormest() functions
+
+- Think of defining a "choleskyFactorization" class (slot 'Dim', "Virtual")
+  which is basically a class union of  "Cholesky" and "CHMfactor".
+  -> makes sense for "predModule" (which then can contain 'fac')
+  -> also in other (lme4a ?) cases where we may not yet know if we are
+     talking about a dense or sparse cholesky factor.
+
+- base as.matrix() & as.array() are no longer hacked to be correctly S4
+  generic -- instead we provide a S3 method {yuck!}.
+
+-  Note that 'diag(M[,-1]) <- val' is deadly slow (*) for large sparse M,
+  but that's because of the 2nd line assignment in the equivalent
+    tmpM <- `diag<-`(M[,-1], val)
+    M[,-1] <- tmpM
+  (*): gives *error* {about negative integer} when
+       prod(dim(M)) > .Machine$integer.max, e.g. for square (n x n) M when
+       n >= 46341 == ceiling(2^15.5)
+  This is "the same" as Ashley Ford's report (25 Feb 2010),
+  MM @ ~/R/MM/Pkg-ex/Matrix/nsp-2col-index-bug.R
+  --> This no longer happens; Tsparse* now also does .Call(Csparse_subassign, *)
+
+- Fix the bug that our solve("dsCMatrix") uses CHOLMOD's  LDL'  but that
+  typically (but not at all always!) fails when the matrix is *not* pos.def !!
+  ~/R/MM/Pkg-ex/Matrix/solve-Gorjanc-bug.R
+  ==> must fall back to LU (e.g.) in that case.

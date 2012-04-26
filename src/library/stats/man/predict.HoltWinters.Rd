@@ -5,7 +5,7 @@
 
 \name{predict.HoltWinters}
 \alias{predict.HoltWinters}
-\title{prediction function for fitted Holt-Winters models}
+\title{Prediction Function for Fitted Holt-Winters Models}
 \description{
   Computes predictions and prediction intervals for models fitted by
   the Holt-Winters method.
@@ -39,7 +39,7 @@
   \emph{Management Science} \bold{6}, 324--342.
 }
 \author{
-  David Meyer \email{David.Meyer@wu-wien.ac.at}
+  David Meyer \email{David.Meyer@wu.ac.at}
 }
 \seealso{\code{\link{HoltWinters}}}
 

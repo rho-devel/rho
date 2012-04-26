@@ -40,10 +40,33 @@
  *
  * These definitions may in due course be merged into the top-level
  * config.h.
+ *
+ * As distributed, this file represents a configuration suitable for
+ * development, with numerous facilities enable for checking and
+ * debugging.  For maximum speed, it is recommended that this file be
+ * modified by enabling the definitions of NDEBUG and
+ * UNCHECKED_SEXP_DOWNCAST, and disabling all other definitions.
  */
 
 #ifndef CXXR_CONFIG_HPP
 #define CXXR_CONFIG_HPP
+
+/** @def AGGRESSIVE_GC
+ *
+ * By default, GCNode::operator new initiates a reference-count-based
+ * garbage collection (GCNode::gclite()) only when the number of bytes
+ * allocated has risen by a certain margin from the number allocated
+ * after the last such collection.  However, if CXXR is compiled with
+ * the preprocessor variable AGGRESSIVE_GC define, every call to
+ * GCNode::operator new will initiate a reference-count-based garbage
+ * collection.  When used in conjunction with FILL55, GCID and
+ * (optionally) CELLFIFO, this can help to detect and diagnose gaps in
+ * the protection of nodes against garbage collection.
+ */
+#ifdef DOXYGEN
+#define AGGRESSIVE_GC
+#endif
+#define AGGRESSIVE_GC
 
 /** @def CELLFIFO
  *
@@ -81,6 +104,7 @@
 #ifdef DOXYGEN
 #define CHECK_EXPOSURE
 #endif
+#define CHECK_EXPOSURE
 
 /** @def FILL55
  *
@@ -94,6 +118,7 @@
 #ifdef DOXYGEN
 #define FILL55
 #endif
+#define FILL55
 
 /** @def GCID
  *
@@ -108,6 +133,7 @@
 #ifdef DOXYGEN
 #define GCID
 #endif
+#define GCID
 
 /** @def NDEBUG
  *

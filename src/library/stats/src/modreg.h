@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -40,8 +40,13 @@
 #include <R.h>
 /* for Sint .. */
 #include <Rinternals.h>
+/* FIXME: shouldn't we  do the  ENABLE_NLS .. include <libintl.h> part here? */
 
 SEXP R_isoreg(SEXP y);
+
+/* monoSpl.c : */
+SEXP R_monoFC_m(SEXP m, SEXP Sx);
+void monoFC_mod(double *m, double Sx[], int n);
 
 void BDRksmooth(double *x, double *y, int *n,
 		double *xp, double *yp, int *np,
@@ -86,10 +91,10 @@ void Trunmed(Sint *nn,/* = length(data) */
 	     double *window,/* (2k+1) */
 	     Sint   *end_rule,
 	     Sint   *print_level);
-void kmeans_Lloyd(double *x, int *pn, int *pp, double *cen, int *pk, int *cl, 
+void kmeans_Lloyd(double *x, int *pn, int *pp, double *cen, int *pk, int *cl,
 		  int *pmaxiter, int *nc, double *wss);
 
-void kmeans_MacQueen(double *x, int *pn, int *pp, double *cen, int *pk, 
+void kmeans_MacQueen(double *x, int *pn, int *pp, double *cen, int *pk,
 		     int *cl, int *pmaxiter, int *nc, double *wss);
 
 /* Fortran : */

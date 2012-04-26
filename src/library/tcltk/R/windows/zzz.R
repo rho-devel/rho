@@ -14,22 +14,25 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-.onLoad <- function(lib, pkg)
+.TkUp <- TRUE
+
+.onLoad <- function(libname, pkgname)
 {
     packageStartupMessage("Loading Tcl/Tk interface ...",
                           domain = "R-tcltk", appendLF = FALSE)
-    if(nzchar(tclbin <- Sys.getenv("MY_TCLTK"))) {
-        library.dynam("tcltk", pkg, lib, DLLpath = tclbin)
-    } else {
-        if(!file.exists(file.path(R.home(), "Tcl")))
+    if(!nzchar(tclbin <- Sys.getenv("MY_TCLTK"))) {
+        tclbin <- file.path(R.home(), "Tcl",
+                            if(.Machine$sizeof.pointer == 8) "bin64" else "bin")
+        if(!file.exists(tclbin))
             stop("Tcl/Tk support files were not installed", call.=FALSE)
-        tclbin <- file.path(R.home(), "Tcl/bin")
-##        opath <-  Sys.getenv("PATH")
-##        Sys.setenv(PATH=paste(tclbin, opath, sep=";"))
-        library.dynam("tcltk", pkg, lib, DLLpath = tclbin)
-##        Sys.setenv(PATH=opath)
+        if(.Machine$sizeof.pointer == 8) {
+            lib64 <- gsub("\\", "/", file.path(R.home(), "Tcl", "lib64"),
+                          fixed=TRUE)
+            Sys.setenv(TCLLIBPATH = lib64)
+        } else Sys.unsetenv("TCLLIBPATH") # it case called from a 64-bit process
     }
-    .C("tcltk_start", PACKAGE="tcltk")
+    library.dynam("tcltk", pkgname, libname, DLLpath = tclbin)
+    .C("tcltk_start", PACKAGE = "tcltk")
     addTclPath(system.file("exec", package = "tcltk"))
     packageStartupMessage(" ", "done", domain = "R-tcltk")
     invisible()
@@ -40,7 +43,7 @@
     if(is.loaded("tcltk_end", PACKAGE="tcltk")) {
         .C("tcltk_end", PACKAGE="tcltk")
         ## unloading the DLL used to work with 8.3,
-        ## but it seems Tcl/Tk 8.4.x does not like being reinitialized
+        ## but it seems Tcl/Tk >= 8.4 does not like being reinitialized
         ## library.dynam.unload("tcltk", libpath)
     }
 }

@@ -1,12 +1,13 @@
 % File src/library/base/man/options.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{options}
 \alias{options}
 \alias{.Options}
 \alias{getOption}
+\alias{option} % so help files can do 'set \link{} \code{"foo"}'
 \title{Options Settings}
 \description{
   Allow the user to set and examine a variety of global \emph{options}
@@ -61,7 +62,15 @@ getOption(x, default = NULL)
       many (simulated) smooths should be added.  This is currently only
       used by \code{\link{plot.lm}}.}
 
-      \item{\code{check.bounds}:}{logical, defaulting to \code{FALSE}.  If
+    \item{\code{browserNLdisabled}:}{logical: whether newline is
+      disabled as a synonym for \code{"n"} is the browser.}
+
+    \item{\code{checkPackageLicense}:}{logical, not set by default.  If
+      true, \code{\link{library}} asks a user to accept any non-standard
+      license at first use.
+    }
+
+    \item{\code{check.bounds}:}{logical, defaulting to \code{FALSE}.  If
       true, a \link{warning} is produced whenever a
       vector (atomic or \code{\link{list}}) is extended, by something
       like \code{x <- 1:3; x[5] <- 6}.}
@@ -87,12 +96,15 @@ getOption(x, default = NULL)
 
     \item{\code{digits}:}{controls the number of digits to print when
       printing numeric values.  It is a suggestion only.  Valid values
-      are 1\dots{}22 with default 7.  See the warning in
+      are 1\dots{}22 with default 7.  See the note in
       \code{\link{print.default}} about values greater than 15.}
 
     \item{\code{digits.secs}:}{controls the maximum number of digits to
       print when formatting time values in seconds.  Valid values
       are 0\dots6 with default 0.  See \code{\link{strftime}}.}
+
+    \item{\code{download.file.extra}:}{Extra command-line argument(s) for
+      non-default methods: see \code{\link{download.file}}.}
 
     \item{\code{download.file.method}:}{Method to be used for
       \code{download.file}.  Currently download methods
@@ -129,30 +141,18 @@ getOption(x, default = NULL)
       where it is possible you may want to increase that.}
 
     \item{\code{keep.source}:}{When \code{TRUE}, the source code for
-      functions (newly defined or loaded) is stored in their
-      \code{"source"} attribute (see \code{\link{attr}}) allowing
-      comments to be kept in the right places.
+      functions (newly defined or loaded) is stored internally
+      allowing comments to be kept in the right places.  Retrieve the
+      source by printing or using \code{deparse(fn, control =
+      "useSource")}.
 
       The default is \code{\link{interactive}()}, i.e., \code{TRUE} for
       interactive use.}
 
-    \item{\code{keep.source.pkgs}:}{As for \code{keep.source}, for
-      functions in packages loaded by \code{\link{library}} or
-      \code{\link{require}}.  Defaults to \code{FALSE} unless the
-      environment variable \env{R_KEEP_PKG_SOURCE} is set to
-      \code{yes}.
-
-      Note this does not apply to packages using lazy-loading or saved
-      images.  Whether they have kept source is determined when they are
-      installed (and is almost certainly false).}
-
-    \item{\code{mailer}:}{default mailer used by
-      \code{\link{bug.report}()}.  Can be \code{"none"}.}
-
-    \item{\code{max.contour.segments}:}{positive integer, defaulting to
-      \code{250000} and usually not set.  A limit on the number of
-      segments in a single contour line in \code{\link{contour}} or
-      \code{\link{contourLines}}.}
+    %% used by tools::makeLazyLoading
+    \item{\code{keep.source.pkgs}:}{As for \code{keep.source}, used only
+    when packages are installed.  Defaults to \code{FALSE} unless the
+    environment variable \env{R_KEEP_PKG_SOURCE} is set to \code{yes}.}
 
     \item{\code{max.print}:}{integer, defaulting to \code{99999}.
       \code{\link{print}} or \code{\link{show}} methods can make use of
@@ -178,7 +178,8 @@ getOption(x, default = NULL)
       console itself.
 #endif
       Can be a character string or an \R function, in which case it
-      needs to accept the same first four arguments as
+      needs to accept the arguments \code{(files, header,
+	title, delete.file)} corresponding to the first four arguments of
       \code{\link{file.show}}.}
 
     \item{\code{papersize}:}{the default paper format used by
@@ -195,13 +196,13 @@ getOption(x, default = NULL)
     }
 
     \item{\code{pdfviewer}:}{default PDF viewer.
+      The default is set from the environment variable \env{R_PDFVIEWER},
 #ifdef unix
-      The default is set from the environment variable
-      \env{R_PDFVIEWER}, the default value of which is set when \R is
-      configured.
+      the default value of which is set when \R is configured.
 #endif
 #ifdef windows
-      Defaults to the full path to \samp{open.exe}, a utility supplied with \R.
+      which defaults to the full path to \command{open.exe}, a utility
+      supplied with \R.
 #endif
     }
 
@@ -214,7 +215,7 @@ getOption(x, default = NULL)
     \item{\code{prompt}:}{a non-empty string to be used for \R's prompt;
       should usually end in a blank (\code{" "}).}
 
-      % verbatim, for checking " \t\n\"\\'`><=%;,|&{()}"    
+      % verbatim, for checking " \t\n\"\\'`><=%;,|&{()}"
 #ifdef unix
     \item{\code{rl_word_breaks}:}{Used for the readline-based terminal
       interface.  Default value \code{" \\t\\n\\"\\\\'`><=\%;,|&\{()\}"}.%"
@@ -252,8 +253,8 @@ getOption(x, default = NULL)
     \item{\code{stringsAsFactors}:}{The default setting for arguments of
       \code{\link{data.frame}} and \code{\link{read.table}}.}
 
-    \item{\code{texi2dvi}:}{used by function
-      \code{\link{texi2dvi}} in package \pkg{tools}.
+    \item{\code{texi2dvi}:}{used by functions
+      \code{\link{texi2dvi}} and \code{\link{texi2pdf}} in package \pkg{tools}.
 #ifdef unix
       Set at startup from the environment variable \env{R_TEXI2DVICMD}.
 #endif
@@ -266,9 +267,11 @@ getOption(x, default = NULL)
     \item{\code{topLevelEnvironment}:}{see \code{\link{topenv}} and
       \code{\link{sys.source}}.}
 
-    \item{\code{useFancyQuotes}:}{logical: controls the use of
+    \item{\code{useFancyQuotes}:}{controls the use of
       directional quotes in \code{\link{sQuote}}, \code{dQuote} and in
-      rendering text help (see \code{\link{Rd2txt}}).}
+      rendering text help (see \code{\link{Rd2txt}} in package
+      \pkg{tools}).  Can be \code{TRUE}, \code{FALSE}, \code{"TeX"} or
+      \code{"UTF-8"}.}
 
     \item{\code{verbose}:}{logical.  Should \R report extra information
       on progress?  Set to \code{TRUE} by the command-line option
@@ -284,11 +287,6 @@ getOption(x, default = NULL)
       \code{\link{warnings}}.  If \code{warn} is one, warnings are
       printed as they occur.  If \code{warn} is two or larger all
       warnings are turned into errors.}
-
-    \item{\code{warnEscapes}:}{logical.  If true (the default) the parser
-      warns on unrecognized (backslash) escape sequences and there is a
-      truncation warning on any attempt to create a character string
-      containing an embedded nul.}
 
     \item{\code{warnPartialMatchArgs}:}{logical.  If true, warns if
       partial matching is used in argument matching.}
@@ -320,6 +318,9 @@ getOption(x, default = NULL)
       80.  (The limits on valid values are in file \file{Print.h} and can be
       changed by re-compiling \R.)  Some \R consoles automatically change
       the value when they are resized.
+
+      See the examples on \link{Startup} for one way to set this
+      automatically from the terminal width when \R is started.
     }
  }
 
@@ -343,15 +344,22 @@ getOption(x, default = NULL)
     \code{timeout} \tab \code{60}\cr
     \code{verbose} \tab \code{FALSE}\cr
     \code{warn} \tab \code{0}\cr
-    \code{warnings.length} \tab \code{1000}\cr
+    \code{warning.length} \tab \code{1000}\cr
     \code{width}  \tab \code{80}\cr
   }
   Others are set from environment variables or are platform-dependent.
 }
 \section{Options set in package grDevices}{
-  These will be set when package \pkg{grDevices} (or its name space)
+  These will be set when package \pkg{grDevices} (or its namespace)
   is loaded if not already set.
   \describe{
+#ifdef unix
+    \item{\code{bitmapType}:}{(Unix-only) character.  The default type for the
+      bitmap devices such as \code{\link{png}}.  Defaults to
+      \code{"cairo"} on systems where that is available, or to
+      \code{"quartz"} on Mac OS X where that is available.}
+#endif
+
     \item{\code{device}:}{a character string giving
       the name of a function, or the function object itself,
       which when called creates a new graphics device of the default
@@ -369,21 +377,15 @@ getOption(x, default = NULL)
       respectively.
     }
 
+    \item{\code{device.ask.default}:}{logical.  The default for
+      \code{\link{devAskNewPage}("ask")} when a device is opened.}
+
     \item{\code{locatorBell}:}{logical.  Should selection in \code{locator}
       and \code{identify} be confirmed by a bell?  Default \code{TRUE}.
       Honoured at least on \code{X11} and \code{windows} devices.}
 
-    \item{\code{device.ask.default}:}{logical.  The default for
-      \code{\link{devAskNewPage}("ask")} when a device is opened.}
-
-#ifdef unix
-    \item{\code{bitmapType}:}{character.  The default type for the
-      bitmap devices such as \code{\link{png}}.  Defaults to
-      \code{"cairo"} on systems where that is available, or to
-      \code{"quartz"} on Mac OS X where that is available.}
-#endif
 #ifdef windows
-    \item{\code{windowsTimeout}:}{integer vector of length 2
+    \item{\code{windowsTimeout}:}{(Windows-only) integer vector of length 2
       representing two times in milliseconds.  These control the
       double-buffering of \code{\link{windows}} devices when that is
       enabled: the first is the delay after plotting finishes
@@ -393,8 +395,16 @@ getOption(x, default = NULL)
 #endif
   }
 }
+\section{Other options used by package graphics}{
+  \describe{
+    \item{\code{max.contour.segments}:}{positive integer, defaulting to
+      \code{25000} if not set.  A limit on the number of
+      segments in a single contour line in \code{\link{contour}} or
+      \code{\link{contourLines}}.}
+  }
+}
 \section{Options set in package stats}{
-  These will be set when package \pkg{stats} (or its name space)
+  These will be set when package \pkg{stats} (or its namespace)
   is loaded if not already set.
   \describe{
     \item{\code{contrasts}:}{the default \code{\link{contrasts}} used in
@@ -411,6 +421,9 @@ getOption(x, default = NULL)
       values are printed in summary tables of coefficients.  See
       \code{\link{printCoefmat}}.}
 
+    \item{\code{show.nls.convergence}:}{logical, should \code{\link{nls}}
+      convergence messages be printed for successful fits?}
+
     \item{\code{show.signif.stars}:}{logical, should stars be printed on
       summary tables of coefficients?  See \code{\link{printCoefmat}}.}
 
@@ -423,13 +436,24 @@ getOption(x, default = NULL)
   }
 }
 \section{Options set in package utils}{
-  These will be set when package \pkg{utils} (or its name space)
+  These will be set when package \pkg{utils} (or its namespace)
   is loaded if not already set.
   \describe{
+    \item{\code{BioC_mirror}:}{The URL of a Bioconductor mirror
+      for use by \code{\link{setRepositories}},
+      e.g. the default \samp{"http://www.bioconductor.org"}
+      or the European mirror
+      \samp{"http://bioconductor.statistik.tu-dortmund.de"}.  Can be set
+      by \code{\link{chooseBioCmirror}}.}
+
     \item{\code{browser}:}{default HTML browser used by
       \code{\link{help.start}()} and \code{\link{browseURL}} on UNIX, or
       a non-default browser on Windows.  Alternatively, an \R function that
       is called with a URL as its argument.}
+
+    \item{\code{ccaddress}:}{default Cc: address used by
+      \code{\link{create.post}} (and hence\code{\link{bug.report}} and
+      \code{\link{help.request}}).  Can be \code{FALSE} or \code{""}.}
 
     \item{\code{de.cellwidth}:}{integer: the cell widths (number of
       characters) to be used in the data editor \code{\link{dataentry}}.
@@ -448,41 +472,55 @@ getOption(x, default = NULL)
     \item{\code{example.ask}:}{default for the \code{ask} argument of
       \code{\link{example}}.}
 
-    \item{\code{help_text_width}:}{The target pager width when
-      formatting text help.  Usually unset, when the default is 80
-      columns.}
+    \item{\code{help.ports}:}{optional integer vector for setting ports
+      of the internal HTTP server, see \code{\link{startDynamicHelp}}.}
+
+    \item{\code{help.search.types}:}{default types of documentation
+      to be searched by \code{\link{help.search}} and \code{\link{??}}.}
 
     \item{\code{help.try.all.packages}:}{default for an argument of
       \code{\link{help}}.}
-    
-    \item{\code{help_type}:}{default for an argument of \code{\link{help}}.}
+
+    \item{\code{help_type}:}{default for an argument of
+    \code{\link{help}}, used also as the help type by \code{\link{?}}.}
 
     \item{\code{HTTPUserAgent}:}{string used as the user agent in HTTP
       requests.  If \code{NULL}, HTTP requests will be made without a
       user agent header.  The default is \code{R (<version> <platform>
-      <arch> <os>)}}
+	<arch> <os>)}}
+
+    \item{\code{install.lock}:}{logical: should per-directory package
+      locking be used by \code{\link{install.packages}}?  Most useful
+      for binary installs on Mac OS X and Windows, but can be used in a
+      startup file for source installs \emph{via}
+      \command{R CMD \link{INSTALL}}.  For binary installs, can also be
+      the character string \code{"pkgloack"}.}
 
     \item{\code{internet.info}:}{The minimum level of information to be
       printed on URL downloads etc.  Default is 2, for failure causes.
       Set to 1 or 0 to get more information.}
 
-    \item{\code{menu.graphics}:}{Logical: should graphical menus be
-      used if available?.  Defaults to \code{TRUE}.  Currently applies
-      to \code{\link{chooseCRANmirror}}, \code{\link{setRepositories}}
-      and to select from multiple help files in \code{\link{help}}.}
+    \item{\code{mailer}:}{default emailing method used by
+      \code{\link{create.post}} and hence \code{\link{bug.report}} and
+      \code{\link{help.request}}.}
+
+    \item{\code{menu.graphics}:}{Logical: should graphical menus be used
+      if available?.  Defaults to \code{TRUE}.  Currently applies to
+      \code{\link{select.list}}, \code{\link{chooseCRANmirror}},
+      \code{\link{setRepositories}} and to select from multiple (text)
+      help files in \code{\link{help}}.}
 
     \item{\code{pkgType}:}{The default type of packages to be downloaded
       and installed -- see \code{\link{install.packages}}.
 #ifdef windows
       Possible values are \code{"win.binary"} (the default) and
-      \code{"source"}.
+      \code{"source"}.  Some Mac OS X builds use \code{"mac.binary.leopard"}.
 #endif
 #ifdef unix
       Possible values are \code{"source"} (the default except under the
-      CRAN Mac OS X build) and \code{"mac.binary"}. The latter can
-      have a suffix if supported by a special build, such as
-      \code{"mac.binary.leopard"} to access the \code{"leopard"} tree
-      of repositories instead of the default \code{"universal"}.
+      CRAN Mac OS X build) and \code{"mac.binary.leopard"}.  Windows
+      uses  \code{"win.binary"}.  (\code{"mac.binary"} and
+      \code{"mac.binary.universal"} are no longer in use.)
 #endif
     }
 
@@ -513,17 +551,25 @@ getOption(x, default = NULL)
     }
   }
 }
-
-#ifdef unix
-\section{Options used on Unix only}{
-  These will be \code{""} if no suitable path is known.
+\section{Options set in package parallel}{
+  These will be set when package \pkg{parallel} (or its namespace)
+  is loaded if not already set.
   \describe{
-    \item{\code{latexcmd}, \code{dvipscmd}:}{character strings giving
-      commands to be used in off-line printing of help pages.}
+    \item{\code{mc.cores}:}{a integer giving the maximum allowed number
+      of \emph{additional} \R processes allowed to be run in parallel to
+      the current \R process.  Defaults to the setting of the
+      environment variable \env{MC_CORES} if set.  Most applications
+      which use this assume a limit of \code{2} if it is unset.
+    }
   }
 }
-#endif
-#ifdef windows
+\section{Options used on Unix only}{
+  \describe{
+    \item{\code{dvipscmd}:}{character string giving a command to be used in
+    the (deprecated) off-line printing of help pages \emph{via}
+    PostScript.  Defaults to \command{"dvips"}.}
+  }
+}
 \section{Options used on Windows only}{
   \describe{
     \item{\code{warn.FPU}:}{logical, by default undefined.  If true,
@@ -531,7 +577,6 @@ getOption(x, default = NULL)
       control word damaged by a buggy DLL.}
   }
 }
-#endif
 
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)

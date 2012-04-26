@@ -1,7 +1,8 @@
 
-R version 2.6.0 Under development (unstable) (2007-06-27 r42086)
-Copyright (C) 2007 The R Foundation for Statistical Computing
+R version 2.14.0 Under development (unstable) (2011-05-27 r56000)
+Copyright (C) 2011 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: i386-pc-mingw32/i386 (32-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -89,8 +90,8 @@ Type 'q()' to quit R.
 [1] TRUE
 > all(c(FALSE,TRUE,FALSE) == is.nan(c   (1.,NaN,NA)))
 [1] TRUE
-> all(c(FALSE,TRUE,FALSE) == is.nan(list(1.,NaN,NA)))
-[1] TRUE
+> ## lists are no longer allowed
+> ## all(c(FALSE,TRUE,FALSE) == is.nan(list(1.,NaN,NA)))
 > 
 > 
 > ##  log() and "pow()" -- POSIX is not specific enough..
@@ -206,6 +207,13 @@ In gamma(0:-47) : NaNs produced
 Warning messages:
 1: In digamma(x) : NaNs produced
 2: In psigamma(x, deriv) : NaNs produced
+> ## very large x:
+> x <- 1e30 ^ (1:10)
+> a.relE <- function(appr, true) abs(1 - appr/true)
+> stopifnot(a.relE(digamma(x),   log(x)) < 1e-13,
++           a.relE(trigamma(x),     1/x) < 1e-13)
+> x <- sqrt(x[2:6]); stopifnot(a.relE(psigamma(x,2), - 1/x^2) < 1e-13)
+> x <- 10^(10*(2:6));stopifnot(a.relE(psigamma(x,5), +24/x^5) < 1e-13)
 > 
 > ## fft():
 > ok <- TRUE
@@ -307,5 +315,5 @@ Warning messages:
 > 
 > ## Last Line:
 > cat('Time elapsed: ', proc.time() - .proctime00,'\n')
-Time elapsed:  0.86 0 0.88 NA NA 
+Time elapsed:  0.51 0 0.51 NA NA 
 > 

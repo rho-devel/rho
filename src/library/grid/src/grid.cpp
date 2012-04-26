@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -42,7 +42,7 @@
 #include <math.h>
 #include <float.h>
 #include <string.h>
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 
@@ -112,7 +112,7 @@ void dirtyGridDevice(pGEDevDesc dd) {
 	SEXP gsd, griddev;
 	/* Record the fact that this device has now received grid output
 	 */
-	gsd = (SEXP) dd->gesd[gridRegisterIndex]->systemSpecific;
+	gsd = static_cast<SEXP>( dd->gesd[gridRegisterIndex]->systemSpecific);
 	PROTECT(griddev = allocVector(LGLSXP, 1));
 	LOGICAL(griddev)[0] = TRUE;
 	SET_VECTOR_ELT(gsd, GSS_GRIDDEVICE, griddev);
@@ -1231,13 +1231,13 @@ SEXP L_layoutRegion(SEXP layoutPosRow, SEXP layoutPosCol) {
     double vpWidthCM, vpHeightCM;
     double rotationAngle;
     LTransform transform;
-    SEXP currentvp, currentgp;
+    SEXP currentvp;
     /* 
      * Get the current device 
      */
     pGEDevDesc dd = getDevice();
     currentvp = gridStateElement(dd, GSS_VP);
-    currentgp = gridStateElement(dd, GSS_GPAR);
+    //currentgp = gridStateElement(dd, GSS_GPAR);
     /* 
      * We do not need the current transformation, but
      * we need the side effects of calculating it in
@@ -1494,26 +1494,40 @@ static void hullEdge(double *x, double *y, int n,
 		     double theta,
 		     double *edgex, double *edgey) 
 {
-    char *vmax;
+    const void *vmax;
     int i, nh;
     double *hx, *hy;
-    SEXP xin, yin, chullFn, R_fcall, hull;
-    /*
-     * Determine convex hull
-     */
+    SEXP xin, yin, chullFn, R_fcall, hull;   
+    int adjust = 0;
+    double *xkeep, *ykeep;
+    vmax = CXXRSCAST(char*, vmaxget());
+    /* Remove any NA's because chull() can't cope with them */
+    xkeep = (double *) R_alloc(n, sizeof(double));
+    ykeep = (double *) R_alloc(n, sizeof(double));
+    for (i=0; i<n; i++) {
+        if (!R_FINITE(x[i]) || !R_FINITE(y[i])) {
+            adjust--;
+        } else {
+            xkeep[i + adjust] = x[i];
+            ykeep[i + adjust] = y[i];
+        }
+    }
+    n = n + adjust;
     PROTECT(xin = allocVector(REALSXP, n));
     PROTECT(yin = allocVector(REALSXP, n));
     for (i=0; i<n; i++) {
-	REAL(xin)[i] = x[i];
-	REAL(yin)[i] = y[i];
+	REAL(xin)[i] = xkeep[i];
+	REAL(yin)[i] = ykeep[i];
     }
+    /*
+     * Determine convex hull
+     */
     PROTECT(chullFn = findFun(install("chull"), R_gridEvalEnv));
     PROTECT(R_fcall = lang3(chullFn, xin, yin));
     PROTECT(hull = eval(R_fcall, R_gridEvalEnv));
-    vmax = CXXRSCAST(char*, vmaxget());
     nh = LENGTH(hull);
-    hx = (double *) R_alloc(nh, sizeof(double));
-    hy = (double *) R_alloc(nh, sizeof(double));
+    hx = reinterpret_cast<double *>( R_alloc(nh, sizeof(double)));
+    hy = reinterpret_cast<double *>( R_alloc(nh, sizeof(double)));
     for (i=0; i<nh; i++) {
 	hx[i] = x[INTEGER(hull)[i] - 1];
 	hy[i] = y[INTEGER(hull)[i] - 1];
@@ -1766,7 +1780,7 @@ SEXP L_lines(SEXP x, SEXP y, SEXP index, SEXP arrow)
     double xold, yold;
     double vpWidthCM, vpHeightCM;
     double rotationAngle;
-    char *vmax;
+    const void *vmax;
     LViewportContext vpc;
     R_GE_gcontext gc;
     LTransform transform;
@@ -1796,8 +1810,8 @@ SEXP L_lines(SEXP x, SEXP y, SEXP index, SEXP arrow)
 	nx = LENGTH(indices); 
 	/* Convert the x and y values to CM locations */
 	vmax = CXXRSCAST(char*, vmaxget());
-	xx = (double *) R_alloc(nx, sizeof(double));
-	yy = (double *) R_alloc(nx, sizeof(double));
+	xx = reinterpret_cast<double *>( R_alloc(nx, sizeof(double)));
+	yy = reinterpret_cast<double *>( R_alloc(nx, sizeof(double)));
 	xold = NA_REAL;
 	yold = NA_REAL;
 	for (i=0; i<nx; i++) {
@@ -1825,7 +1839,7 @@ SEXP L_lines(SEXP x, SEXP y, SEXP index, SEXP arrow)
 			 * because we have just broken the line for an NA.
 			 */
 		        arrows(xx+start, yy+start, i-start,
-			       arrow, j,  CXXRCONSTRUCT(Rboolean, start == 0), FALSE,
+			       arrow, j, CXXRCONSTRUCT(Rboolean, start == 0), FALSE,
 			       vpc, vpWidthCM, vpHeightCM, &gc, dd);
 		    }
 		}
@@ -1857,7 +1871,7 @@ SEXP L_lines(SEXP x, SEXP y, SEXP index, SEXP arrow)
  * are unit objects 
  */
 SEXP gridXspline(SEXP x, SEXP y, SEXP s, SEXP o, SEXP a, SEXP rep, SEXP index,
-		 double theta, Rboolean draw) 
+		 double theta, Rboolean draw, Rboolean trace) 
 {
     int i, j, nx, np, nloc;
     double *xx, *yy, *ss;
@@ -1867,6 +1881,7 @@ SEXP gridXspline(SEXP x, SEXP y, SEXP s, SEXP o, SEXP a, SEXP rep, SEXP index,
     R_GE_gcontext gc;
     LTransform transform;
     SEXP currentvp, currentgp;
+    SEXP tracePts = R_NilValue;
     SEXP result = R_NilValue;
     double edgex, edgey;
     double xmin = DOUBLE_XMAX;
@@ -1887,9 +1902,10 @@ SEXP gridXspline(SEXP x, SEXP y, SEXP s, SEXP o, SEXP a, SEXP rep, SEXP index,
      * Number of xsplines
      */
     np = LENGTH(index);
+    PROTECT(tracePts = allocVector(VECSXP, np));
     nloc = 0;
     for (i=0; i<np; i++) {
-	char *vmax;
+	const void *vmax;
 	SEXP indices = VECTOR_ELT(index, i);
 	SEXP points;
 	gcontextFromgpar(currentgp, i, &gc, dd);
@@ -1903,9 +1919,9 @@ SEXP gridXspline(SEXP x, SEXP y, SEXP s, SEXP o, SEXP a, SEXP rep, SEXP index,
 	vmax = CXXRSCAST(char*, vmaxget());
 	if (draw)
 	    GEMode(1, dd);
-	xx = (double *) R_alloc(nx, sizeof(double));
-	yy = (double *) R_alloc(nx, sizeof(double));
-	ss = (double *) R_alloc(nx, sizeof(double));
+	xx = reinterpret_cast<double *>( R_alloc(nx, sizeof(double)));
+	yy = reinterpret_cast<double *>( R_alloc(nx, sizeof(double)));
+	ss = reinterpret_cast<double *>( R_alloc(nx, sizeof(double)));
 	for (j=0; j<nx; j++) {
 	    ss[j] = REAL(s)[(INTEGER(indices)[j] - 1) % LENGTH(s)];
 	    /*
@@ -1939,7 +1955,7 @@ SEXP gridXspline(SEXP x, SEXP y, SEXP s, SEXP o, SEXP a, SEXP rep, SEXP index,
 	PROTECT(points = GEXspline(nx, xx, yy, ss,
 				   CXXRCONSTRUCT(Rboolean, LOGICAL(o)[0]), CXXRCONSTRUCT(Rboolean, LOGICAL(rep)[0]),
 				   draw, &gc, dd));
-	if (draw && !isNull(a) && !isNull(points)) {
+	{
 	    /*
 	     * In some cases, GEXspline seems to produce identical points 
 	     * (at least observed at end of spline)
@@ -1971,50 +1987,69 @@ SEXP gridXspline(SEXP x, SEXP y, SEXP s, SEXP o, SEXP a, SEXP rep, SEXP index,
 		end--;
 		np--;
 	    }
-	    /*
-	     * Can draw an arrow at the either end.
-	     */
-	    arrows(&(px[start]), &(py[start]), np,
-		   a, i, TRUE, TRUE,
-		   vpc, vpWidthCM, vpHeightCM, &gc, dd);
-	}
-	if (!draw && !isNull(points)) {
-	    /*
-	     * Update bounds
-	     */
-	    int j, n = LENGTH(VECTOR_ELT(points, 0));
-	    double *px = REAL(VECTOR_ELT(points, 0));
-	    double *py = REAL(VECTOR_ELT(points, 1));
-	    double *pxx = (double *) R_alloc(n, sizeof(double));
-	    double *pyy = (double *) R_alloc(n, sizeof(double));
-	    for (j=0; j<n; j++) {
-		pxx[j] = fromDeviceX(px[j], GE_INCHES, dd);
-		pyy[j] = fromDeviceY(py[j], GE_INCHES, dd);
-		if (R_FINITE(pxx[j]) && R_FINITE(pyy[j])) {
-		    if (pxx[j] < xmin)
-			xmin = pxx[j];
-		    if (pxx[j] > xmax)
-			xmax = pxx[j];
-		    if (pyy[j] < ymin)
-			ymin = pyy[j];
-		    if (pyy[j] > ymax)
-			ymax = pyy[j];
-		    nloc++;
-		}
+            if (trace) {
+                int i;
+                int count = end - start + 1;
+                double *keepXptr, *keepYptr;
+                SEXP keepPoints, keepX, keepY;
+                PROTECT(keepPoints = allocVector(VECSXP, 2));
+                PROTECT(keepX = allocVector(REALSXP, count));
+                PROTECT(keepY = allocVector(REALSXP, count));
+                keepXptr = REAL(keepX);
+                keepYptr = REAL(keepY);
+                for (i=start; i<(end + 1); i++) {
+                    keepXptr[i - start] = fromDeviceX(px[i], GE_INCHES, dd);
+                    keepYptr[i - start] = fromDeviceY(py[i], GE_INCHES, dd);
+                }
+                SET_VECTOR_ELT(keepPoints, 0, keepX);
+                SET_VECTOR_ELT(keepPoints, 1, keepY);
+                SET_VECTOR_ELT(tracePts, 0, keepPoints);
+                UNPROTECT(3); /* keepPoints & keepX & keepY */
+            }
+            if (draw && !isNull(a) && !isNull(points)) {
+		/*
+		 * Can draw an arrow at the either end.
+		 */
+		arrows(&(px[start]), &(py[start]), np,
+		       a, i, TRUE, TRUE,
+		       vpc, vpWidthCM, vpHeightCM, &gc, dd);
 	    }
-	    /*
-	     * Calculate edgex and edgey for case where this is 
-	     * the only xspline
-	     */
-	    hullEdge(pxx, pyy, n, theta, &edgex, &edgey);
-	}
-	UNPROTECT(1);
+	    if (!draw && !trace && !isNull(points)) {
+		/*
+		 * Update bounds
+		 */
+		int j, n = LENGTH(VECTOR_ELT(points, 0));
+                double *pxx = reinterpret_cast<double *>( R_alloc(n, sizeof(double)));
+                double *pyy = reinterpret_cast<double *>( R_alloc(n, sizeof(double)));
+		for (j=0; j<n; j++) {
+		    pxx[j] = fromDeviceX(px[j], GE_INCHES, dd);
+		    pyy[j] = fromDeviceY(py[j], GE_INCHES, dd);
+		    if (R_FINITE(pxx[j]) && R_FINITE(pyy[j])) {
+			if (pxx[j] < xmin)
+			    xmin = pxx[j];
+			if (pxx[j] > xmax)
+			    xmax = pxx[j];
+			if (pyy[j] < ymin)
+			    ymin = pyy[j];
+			if (pyy[j] > ymax)
+			    ymax = pyy[j];
+			nloc++;
+		    }
+		}
+		/*
+		 * Calculate edgex and edgey for case where this is 
+		 * the only xspline
+		 */
+		hullEdge(pxx, pyy, n, theta, &edgex, &edgey);
+	    }
+        } /* End of trimming-redundant-points code */
+	UNPROTECT(1); /* points */
 	if (draw)
 	    GEMode(0, dd);
 	vmaxset(vmax);
     }
-    if (nloc > 0) {
-	result = allocVector(REALSXP, 4);
+    if (!draw && !trace && nloc > 0) {
+	PROTECT(result = allocVector(REALSXP, 4));
 	/*
 	 * If there is more than one xspline, just produce edge
 	 * based on bounding rect of all xsplines
@@ -2035,20 +2070,32 @@ SEXP gridXspline(SEXP x, SEXP y, SEXP s, SEXP o, SEXP a, SEXP rep, SEXP index,
 	    REAL(gridStateElement(dd, GSS_SCALE))[0];
 	REAL(result)[3] = (ymax - ymin) / 
 	    REAL(gridStateElement(dd, GSS_SCALE))[0];
-    } 
+        UNPROTECT(1); /* result */
+    } else if (trace) {
+        result = tracePts;
+    }
+    UNPROTECT(1); /* tracePts */
     return result;
 }
 
 SEXP L_xspline(SEXP x, SEXP y, SEXP s, SEXP o, SEXP a, SEXP rep, SEXP index) 
 {
-    gridXspline(x, y, s, o, a, rep, index, 0, TRUE);
+    gridXspline(x, y, s, o, a, rep, index, 0, TRUE, FALSE);
     return R_NilValue;
 }
 
 SEXP L_xsplineBounds(SEXP x, SEXP y, SEXP s, SEXP o, SEXP a, SEXP rep, 
 		     SEXP index, SEXP theta) 
 {
-    return gridXspline(x, y, s, o, a, rep, index, REAL(theta)[0], FALSE);
+    return gridXspline(x, y, s, o, a, rep, index, REAL(theta)[0], 
+                       FALSE, FALSE);
+}
+
+SEXP L_xsplinePoints(SEXP x, SEXP y, SEXP s, SEXP o, SEXP a, SEXP rep, 
+		     SEXP index, SEXP theta) 
+{
+    return gridXspline(x, y, s, o, a, rep, index, REAL(theta)[0], 
+                       FALSE, TRUE);
 }
 
 SEXP L_segments(SEXP x0, SEXP y0, SEXP x1, SEXP y1, SEXP arrow) 
@@ -2120,16 +2167,12 @@ SEXP L_segments(SEXP x0, SEXP y0, SEXP x1, SEXP y1, SEXP arrow)
 static int getArrowN(SEXP x1, SEXP x2, SEXP xnm1, SEXP xn, 
 		     SEXP y1, SEXP y2, SEXP ynm1, SEXP yn)
 {      
-    int nx1, nx2, nxnm1, nxn, ny1, ny2, nynm1, nyn, maxn;
+    int nx2, nxnm1, nxn, ny1, ny2, nynm1, nyn, maxn;
     maxn = 0;
     /* 
      * x1, y1, xnm1, and ynm1 could be NULL if this is adding
      * arrows to a line.to
      */
-    if (isNull(x1))
-	nx1 = 0;
-    else
-	nx1 = unitLength(x1); 
     if (isNull(y1))
 	ny1 = 0;
     else
@@ -2293,7 +2336,7 @@ SEXP L_polygon(SEXP x, SEXP y, SEXP index)
      */
     np = LENGTH(index);
     for (i=0; i<np; i++) {
-	char *vmax;
+	const void *vmax;
 	SEXP indices = VECTOR_ELT(index, i);
 	gcontextFromgpar(currentgp, i, &gc, dd);
 	/* 
@@ -2304,8 +2347,8 @@ SEXP L_polygon(SEXP x, SEXP y, SEXP index)
 	nx = LENGTH(indices); 
 	/* Convert the x and y values to CM locations */
 	vmax = CXXRSCAST(char*, vmaxget());
-	xx = (double *) R_alloc(nx + 1, sizeof(double));
-	yy = (double *) R_alloc(nx + 1, sizeof(double));
+	xx = reinterpret_cast<double *>( R_alloc(nx + 1, sizeof(double)));
+	yy = reinterpret_cast<double *>( R_alloc(nx + 1, sizeof(double)));
 	xold = NA_REAL;
 	yold = NA_REAL;
 	for (j=0; j<nx; j++) {
@@ -2575,44 +2618,40 @@ static SEXP gridRect(SEXP x, SEXP y, SEXP w, SEXP h,
 		 */
 		double xxx[5], yyy[5], xadj, yadj;
 		double dw, dh;
-		GCStackRoot<> temp(unit(0, L_INCHES));
-		GCStackRoot<> www, hhh;
+		SEXP zeroInches, xadjInches, yadjInches, wwInches, hhInches;
 		int tmpcol;
+                PROTECT(zeroInches = unit(0, L_INCHES));
 		/* Find bottom-left location */
 		justification(ww, hh, 
 			      REAL(hjust)[i % LENGTH(hjust)], 
 			      REAL(vjust)[i % LENGTH(vjust)], 
 			      &xadj, &yadj);
-		www = unit(xadj, L_INCHES);
-		hhh = unit(yadj, L_INCHES);
-		transformDimn(www, hhh, 0, vpc, &gc,
+		PROTECT(xadjInches = unit(xadj, L_INCHES));
+		PROTECT(yadjInches = unit(yadj, L_INCHES));
+		transformDimn(xadjInches, yadjInches, 0, vpc, &gc,
 			      vpWidthCM, vpHeightCM,
 			      dd, rotationAngle,
 			      &dw, &dh);
 		xxx[0] = xx + dw;
 		yyy[0] = yy + dh;
 		/* Find top-left location */
-		www = temp;
-		hhh = unit(hh, L_INCHES);
-		transformDimn(www, hhh, 0, vpc, &gc,
+		PROTECT(hhInches = unit(hh, L_INCHES));
+		transformDimn(zeroInches, hhInches, 0, vpc, &gc,
 			      vpWidthCM, vpHeightCM,
 			      dd, rotationAngle,
 			      &dw, &dh);
 		xxx[1] = xxx[0] + dw;
 		yyy[1] = yyy[0] + dh;
 		/* Find top-right location */
-		www = unit(ww, L_INCHES);
-		hhh = unit(hh, L_INCHES);
-		transformDimn(www, hhh, 0, vpc, &gc,
+		PROTECT(wwInches = unit(ww, L_INCHES));
+		transformDimn(wwInches, hhInches, 0, vpc, &gc,
 			      vpWidthCM, vpHeightCM,
 			      dd, rotationAngle,
 			      &dw, &dh);
 		xxx[2] = xxx[0] + dw;
 		yyy[2] = yyy[0] + dh;
 		/* Find bottom-right location */
-		www = unit(ww, L_INCHES);
-		hhh = temp;
-		transformDimn(www, hhh, 0, vpc, &gc,
+		transformDimn(wwInches, zeroInches, 0, vpc, &gc,
 			      vpWidthCM, vpHeightCM,
 			      dd, rotationAngle,
 			      &dw, &dh);
@@ -2645,6 +2684,7 @@ static SEXP gridRect(SEXP x, SEXP y, SEXP w, SEXP h,
 		    gc.fill = R_TRANWHITE;
 		    GEPolygon(5, xxx, yyy, &gc, dd);
 		}
+                UNPROTECT(5);
 	    }
 	} else { /* Just calculating boundary */
 	    xx = justifyX(xx, ww, REAL(hjust)[i % LENGTH(hjust)]);
@@ -2718,6 +2758,237 @@ SEXP L_rectBounds(SEXP x, SEXP y, SEXP w, SEXP h, SEXP hjust, SEXP vjust,
     return gridRect(x, y, w, h, hjust, vjust, REAL(theta)[0], FALSE);
 }
 
+/* FIXME: need to add L_pathBounds ? */
+
+SEXP L_path(SEXP x, SEXP y, SEXP index, SEXP rule)
+{
+    int i, j, k, npoly, *nper, ntot;
+    double *xx, *yy;
+    const void *vmax;
+    double vpWidthCM, vpHeightCM;
+    double rotationAngle;
+    LViewportContext vpc;
+    R_GE_gcontext gc;
+    LTransform transform;
+    SEXP currentvp, currentgp;
+    /* Get the current device 
+     */
+    pGEDevDesc dd = getDevice();
+    currentvp = gridStateElement(dd, GSS_VP);
+    currentgp = gridStateElement(dd, GSS_GPAR);
+    getViewportTransform(currentvp, dd, 
+			 &vpWidthCM, &vpHeightCM, 
+			 transform, &rotationAngle);
+    getViewportContext(currentvp, &vpc);
+    GEMode(1, dd);
+    vmax = vmaxget();
+    /* 
+     * Number of polygons 
+     */
+    npoly = LENGTH(index);
+    /* 
+     * Total number of points and 
+     * Number of points per polygon
+     */ 
+    ntot = 0;
+    nper = reinterpret_cast<int *>( R_alloc(npoly, sizeof(int)));
+    for (i=0; i < npoly; i++) {
+        nper[i] = LENGTH(VECTOR_ELT(index, i));
+        ntot = ntot + nper[i];
+    }
+    xx = reinterpret_cast<double *>( R_alloc(ntot, sizeof(double)));
+    yy = reinterpret_cast<double *>( R_alloc(ntot, sizeof(double)));
+    k = 0;
+    for (i=0; i < npoly; i++) {
+        SEXP indices = VECTOR_ELT(index, i);
+        for (j=0; j < nper[i]; j++) {            
+	    transformLocn(x, y, INTEGER(indices)[j] - 1, vpc, &gc,
+			  vpWidthCM, vpHeightCM,
+			  dd,
+			  transform,
+			  &(xx[k]), &(yy[k]));
+	    /* The graphics engine only takes device coordinates
+	     */
+	    xx[k] = toDeviceX(xx[k], GE_INCHES, dd);
+	    yy[k] = toDeviceY(yy[k], GE_INCHES, dd);
+            /* NO NA values allowed in 'x' or 'y'
+             */
+            if (!R_FINITE(xx[k]) || !R_FINITE(yy[k]))
+                error(_("non-finite x or y in graphics path"));
+            k++;
+        }
+    }
+    gcontextFromgpar(currentgp, 0, &gc, dd);
+    GEPath(xx, yy, npoly, nper, CXXRCONSTRUCT(Rboolean, INTEGER(rule)[0]), &gc, dd);
+    vmaxset(vmax);
+    GEMode(0, dd);
+    return R_NilValue;
+}
+
+/* FIXME: need to add L_rasterBounds */
+
+/* FIXME:  Add more checks on correct inputs,
+   e.g., Raster should be a matrix of R colors */
+SEXP L_raster(SEXP raster, SEXP x, SEXP y, SEXP w, SEXP h, 
+              SEXP hjust, SEXP vjust, SEXP interpolate)
+{
+    const void *vmax;
+    int i, n, ny, nw, nh, maxn;
+    double xx, yy, ww, hh;
+    double vpWidthCM, vpHeightCM;
+    double rotationAngle;
+    LViewportContext vpc;
+    R_GE_gcontext gc;
+    LTransform transform;
+    SEXP currentvp, currentgp;
+    SEXP dim;
+    /* Get the current device 
+     */
+    pGEDevDesc dd = getDevice();
+    unsigned int *image;
+    currentvp = gridStateElement(dd, GSS_VP);
+    currentgp = gridStateElement(dd, GSS_GPAR);
+    getViewportTransform(currentvp, dd, 
+			 &vpWidthCM, &vpHeightCM, 
+			 transform, &rotationAngle);
+    getViewportContext(currentvp, &vpc);
+    /* Convert the raster matrix to R internal colours */
+    n = LENGTH(raster);
+    vmax = vmaxget();
+    /* raster is rather inefficient so allow a native representation as
+       an integer array which requires no conversion */
+    if (inherits(raster, "nativeRaster") && isInteger(raster)) {
+	image = reinterpret_cast<unsigned int*>( INTEGER(raster));
+    } else {
+	image = reinterpret_cast<unsigned int*>( R_alloc(n, sizeof(unsigned int)));
+	for (i=0; i<n; i++) {
+	    image[i] = RGBpar3(raster, i, R_TRANWHITE);
+        }
+    }
+    dim = getAttrib(raster, R_DimSymbol);
+    maxn = unitLength(x); 
+    ny = unitLength(y); 
+    nw = unitLength(w); 
+    nh = unitLength(h); 
+    if (ny > maxn)
+	maxn = ny;
+    if (nw > maxn)
+	maxn = nw;
+    if (nh > maxn)
+	maxn = nh;
+    GEMode(1, dd);
+    for (i=0; i<maxn; i++) {
+        gcontextFromgpar(currentgp, i, &gc, dd);
+        transformLocn(x, y, i, vpc, &gc,
+                      vpWidthCM, vpHeightCM,
+                      dd,
+                      transform,
+                      &xx, &yy);
+        ww = transformWidthtoINCHES(w, i, vpc, &gc,
+                                    vpWidthCM, vpHeightCM,
+                                    dd);
+        hh = transformHeighttoINCHES(h, i, vpc, &gc,
+                                     vpWidthCM, vpHeightCM,
+                                     dd);
+        if (rotationAngle == 0) {
+            xx = justifyX(xx, ww, REAL(hjust)[i % LENGTH(hjust)]);
+            yy = justifyY(yy, hh, REAL(vjust)[i % LENGTH(vjust)]);
+            /* The graphics engine only takes device coordinates
+             */
+            xx = toDeviceX(xx, GE_INCHES, dd);
+            yy = toDeviceY(yy, GE_INCHES, dd);
+            ww = toDeviceWidth(ww, GE_INCHES, dd);
+            hh = toDeviceHeight(hh, GE_INCHES, dd);
+            if (R_FINITE(xx) && R_FINITE(yy) && 
+                R_FINITE(ww) && R_FINITE(hh))
+                GERaster(image, INTEGER(dim)[1], INTEGER(dim)[0],
+                         xx, yy, ww, hh, rotationAngle, 
+                         CXXRCONSTRUCT(Rboolean, LOGICAL(interpolate)[i % LENGTH(interpolate)]), 
+                         &gc, dd);
+        } else {
+            /* We have to do a little bit of work to figure out where the 
+             * bottom-left corner of the image is.
+             */
+            double xbl, ybl, xadj, yadj;
+            double dw, dh;
+            SEXP xadjInches, yadjInches;
+            /* Find bottom-left location */
+            justification(ww, hh, 
+                          REAL(hjust)[i % LENGTH(hjust)], 
+                          REAL(vjust)[i % LENGTH(vjust)], 
+                          &xadj, &yadj);
+            PROTECT(xadjInches = unit(xadj, L_INCHES));
+            PROTECT(yadjInches = unit(yadj, L_INCHES));
+            transformDimn(xadjInches, yadjInches, 0, vpc, &gc,
+                          vpWidthCM, vpHeightCM,
+                          dd, rotationAngle,
+                          &dw, &dh);
+            xbl = xx + dw;
+            ybl = yy + dh;
+            xbl = toDeviceX(xbl, GE_INCHES, dd);
+            ybl = toDeviceY(ybl, GE_INCHES, dd);
+            ww = toDeviceWidth(ww, GE_INCHES, dd);
+            hh = toDeviceHeight(hh, GE_INCHES, dd);
+            if (R_FINITE(xbl) && R_FINITE(ybl) &&
+                R_FINITE(ww) && R_FINITE(hh)) {
+                /* The graphics engine only takes device coordinates
+                 */
+                GERaster(image, INTEGER(dim)[1], INTEGER(dim)[0],
+                         xbl, ybl, ww, hh, rotationAngle, 
+                         CXXRCONSTRUCT(Rboolean, LOGICAL(interpolate)[i % LENGTH(interpolate)]), 
+                         &gc, dd);
+            }
+            UNPROTECT(2);
+        }
+    }
+    GEMode(0, dd);
+    vmaxset(vmax);
+    return R_NilValue;
+}
+
+SEXP L_cap()
+{
+    int i, col, row, nrow, ncol, size;
+    /* Get the current device 
+     */
+    pGEDevDesc dd = getDevice();
+    int *rint;
+    SEXP raster; 
+    /* The raster is R internal colours, so convert to 
+     * R external colours (strings) 
+     * AND the raster is BY ROW so need to rearrange it
+     * to be BY COLUMN (though the dimensions are correct) */
+    SEXP image, idim;
+    
+    PROTECT(raster = GECap(dd));
+    /* Non-complying devices will return NULL */
+    if (isNull(raster)) {
+        image = raster;
+    } else {
+        size = LENGTH(raster);
+        nrow = INTEGER(getAttrib(raster, R_DimSymbol))[0];
+        ncol = INTEGER(getAttrib(raster, R_DimSymbol))[1];
+        
+        PROTECT(image = allocVector(STRSXP, size));
+        rint = INTEGER(raster);
+        for (i=0; i<size; i++) {
+            col = i % ncol + 1;
+            row = i / ncol + 1;
+            SET_STRING_ELT(image, (col - 1)*nrow + row - 1, 
+                           mkChar(col2name(rint[i])));
+        }
+        
+        PROTECT(idim = allocVector(INTSXP, 2));
+        INTEGER(idim)[0] = nrow;
+        INTEGER(idim)[1] = ncol;
+        setAttrib(image, R_DimSymbol, idim);
+        
+        UNPROTECT(2);
+    }
+    UNPROTECT(1);
+    return image;
+}
+
 /*
  * Code to draw OR size text
  * Combined to avoid code replication
@@ -2746,7 +3017,7 @@ static SEXP gridText(SEXP label, SEXP x, SEXP y, SEXP hjust, SEXP vjust,
     LRect trect;
     int numBounds = 0;
     int overlapChecking = LOGICAL(checkOverlap)[0];
-    char *vmax;
+    const void *vmax;
     SEXP currentvp, currentgp;
     /* Get the current device 
      */
@@ -2762,8 +3033,8 @@ static SEXP gridText(SEXP label, SEXP x, SEXP y, SEXP hjust, SEXP vjust,
     if (ny > nx) 
 	nx = ny;
     vmax = CXXRSCAST(char*, vmaxget());
-    xx = (double *) R_alloc(nx, sizeof(double));
-    yy = (double *) R_alloc(nx, sizeof(double));
+    xx = reinterpret_cast<double *>( R_alloc(nx, sizeof(double)));
+    yy = reinterpret_cast<double *>( R_alloc(nx, sizeof(double)));
     for (i=0; i<nx; i++) {
 	gcontextFromgpar(currentgp, i, &gc, dd);
 	/*
@@ -2793,7 +3064,7 @@ static SEXP gridText(SEXP label, SEXP x, SEXP y, SEXP hjust, SEXP vjust,
     else if (!isExpression(txt))
 	txt = coerceVector(txt, STRSXP);
     if (overlapChecking || !draw) {
-	bounds = (LRect *) R_alloc(nx, sizeof(LRect));
+	bounds = reinterpret_cast<LRect *>( R_alloc(nx, sizeof(LRect)));
     }
     /* 
      * Check we have any text to draw
@@ -2843,7 +3114,7 @@ static SEXP gridText(SEXP label, SEXP x, SEXP y, SEXP hjust, SEXP vjust,
 		    gcontextFromgpar(currentgp, i, &gc, dd);
 		    if (isExpression(txt))
 			GEMathText(xx[i], yy[i],
-				   VECTOR_ELT(txt, i % LENGTH(txt)),
+				   XVECTOR_ELT(txt, i % LENGTH(txt)),
 				   REAL(hjust)[i % LENGTH(hjust)], 
 				   REAL(vjust)[i % LENGTH(vjust)], 
 				   numeric(rot, i % LENGTH(rot)) + 
@@ -2975,7 +3246,7 @@ SEXP L_points(SEXP x, SEXP y, SEXP pch, SEXP size)
     double vpWidthCM, vpHeightCM;
     double rotationAngle;
     double symbolSize;
-    char *vmax;
+    const void *vmax;
     LViewportContext vpc;
     R_GE_gcontext gc;
     LTransform transform;
@@ -2993,8 +3264,8 @@ SEXP L_points(SEXP x, SEXP y, SEXP pch, SEXP size)
     npch = LENGTH(pch);
     /* Convert the x and y values to CM locations */
     vmax = CXXRSCAST(char*, vmaxget());
-    xx = (double *) R_alloc(nx, sizeof(double));
-    yy = (double *) R_alloc(nx, sizeof(double));
+    xx = reinterpret_cast<double *>( R_alloc(nx, sizeof(double)));
+    yy = reinterpret_cast<double *>( R_alloc(nx, sizeof(double)));
     for (i=0; i<nx; i++) {
 	gcontextFromgpar(currentgp, i, &gc, dd);
 	transformLocn(x, y, i, vpc, &gc,
@@ -3186,7 +3457,7 @@ SEXP L_locator() {
      * Get a mouse click
      * Fails if user did not click mouse button 1
      */
-    if (dd->dev->locator(&x, &y, dd->dev)) {
+    if(dd->dev->locator && dd->dev->locator(&x, &y, dd->dev)) {
 	REAL(answer)[0] = fromDeviceX(x, GE_INCHES, dd);
 	REAL(answer)[1] = fromDeviceY(y, GE_INCHES, dd);
     } else {
@@ -3224,7 +3495,7 @@ SEXP L_locnBounds(SEXP x, SEXP y, SEXP theta)
     LTransform transform;
     SEXP currentvp, currentgp;
     SEXP result = R_NilValue;
-    char *vmax;
+    const void *vmax;
     double xmin = DOUBLE_XMAX;
     double xmax = -DOUBLE_XMAX;
     double ymin = DOUBLE_XMAX;
@@ -3246,8 +3517,8 @@ SEXP L_locnBounds(SEXP x, SEXP y, SEXP theta)
     nloc = 0;
     vmax = CXXRSCAST(char*, vmaxget());
     if (nx > 0) {
-	xx = (double *) R_alloc(nx, sizeof(double));
-	yy = (double *) R_alloc(nx, sizeof(double));
+	xx = reinterpret_cast<double *>( R_alloc(nx, sizeof(double)));
+	yy = reinterpret_cast<double *>( R_alloc(nx, sizeof(double)));
 	for (i=0; i<nx; i++) {
 	    gcontextFromgpar(currentgp, i, &gc, dd);
 	    xx[i] = transformXtoINCHES(x, i, vpc, &gc,

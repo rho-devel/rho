@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -39,12 +39,15 @@
 
 #include "CXXR/SEXP_downcast.hpp"
 
+#include <cstdlib>
 #include "localization.h"
 #include "R_ext/Error.h"
 
+using namespace std;
 using namespace CXXR;
 
 void CXXR::SEXP_downcast_error(const char* given, const char* wanted)
 {
     Rf_error(_("'%s' supplied where '%s' expected."), given, wanted);
+    abort();  // To avoid warning about noreturn function returning
 }

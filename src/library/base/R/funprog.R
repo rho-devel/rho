@@ -19,18 +19,18 @@ function(f, x, init, right = FALSE, accumulate = FALSE)
 {
     mis <- missing(init)
     len <- length(x)
-    
+
     if(len == 0L) return(if(mis) NULL else init)
-    
+
     f <- match.fun(f)
 
     ## Try to avoid the "obvious"
     ##   if(!mis) x <- if(right) c(x, init) else c(init, x)
     ## to be more efficient ...
-    
+
     if(!is.vector(x) || is.object(x))
         x <- as.list(x)
-    
+
     ind <- seq_len(len)
 
     if(mis) {
@@ -43,7 +43,7 @@ function(f, x, init, right = FALSE, accumulate = FALSE)
             ind <- ind[-1L]
         }
     }
-            
+
     if(!accumulate) {
         if(right) {
             for(i in rev(ind))
@@ -57,7 +57,7 @@ function(f, x, init, right = FALSE, accumulate = FALSE)
     }
     else {
         len <- length(ind) + 1L
-        ## We need a list to accumulate the results as these do not 
+        ## We need a list to accumulate the results as these do not
         ## necessarily all have length one (e.g., reducing with c()).
         out <- vector("list", len)
         if(mis) {
@@ -109,25 +109,34 @@ function(f, x)
 
 Map <-
 function(f, ...)
-    mapply(f, ..., SIMPLIFY = FALSE)
+{
+    f <- match.fun(f)
+    mapply(FUN = f, ..., SIMPLIFY = FALSE)
+}
 
 Negate <-
 function(f)
-    function(...) ! match.fun(f)(...)
+{
+    f <- match.fun(f) # effectively force f, avoid lazy eval.
+    function(...) ! f(...)
+}
 
 Position <-
 function(f, x, right = FALSE, nomatch = NA_integer_)
 {
-    ind <- which(as.logical(sapply(x, f)))
-    if(len <- length(ind))
-        ind[if(right) len else 1L]
-    else
-        nomatch
+    ind <- if(right) rev(seq_along(x)) else seq_along(x)
+
+    for(i in ind)
+        if(f(x[[i]]))
+            return(i)
+
+    nomatch
 }
 
 Find <-
 function(f, x, right = FALSE, nomatch = NULL)
 {
+    f <- match.fun(f)
     if((pos <- Position(f, x, right, nomatch = 0L)) > 0L)
         x[[pos]]
     else

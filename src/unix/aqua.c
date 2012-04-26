@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1999-2008 The R Development Core Team
+ *  Copyright (C) 1999-2010 The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -63,7 +63,6 @@ DL_FUNC ptr_do_wsbrowser, ptr_GetQuartzParameters,
     ptr_do_packagemanger, ptr_do_flushconsole, ptr_do_hsbrowser,
     ptr_do_selectlist;
 
-DL_FUNC ptr_R_ProcessEvents, ptr_CocoaSystem;
 
 int (*ptr_Raqua_CustomPrint)(const char *, SEXP);
 
@@ -76,7 +75,10 @@ QuartzFunctions_t *getQuartzFunctions(void) {
 	fn = (QuartzFunctions_t *(*)(void)) R_FindSymbol("getQuartzAPI", "grDevices", NULL);
 	if (!fn) {
 	    /* we need to load grDevices - not sure if this is the best way, though ... */
-	    eval(LCONS(install("library"),CONS(install("grDevices"),R_NilValue)),R_GlobalEnv);
+	    SEXP call = lang2(install("library"), install("grDevices"));
+	    PROTECT(call);
+	    eval(call, R_GlobalEnv);
+	    UNPROTECT(1);
 	    fn = (QuartzFunctions_t *(*)(void)) R_FindSymbol("getQuartzAPI", "grDevices", NULL);
 	    if (!fn) error(_("unable to load Quartz"));
 	}
@@ -84,7 +86,6 @@ QuartzFunctions_t *getQuartzFunctions(void) {
     }
 }
 
-void R_ProcessEvents(void);
 
 SEXP do_wsbrowser(SEXP call, SEXP op, SEXP args, SEXP env)
 {
@@ -141,7 +142,7 @@ SEXP do_selectlist(SEXP call, SEXP op, SEXP args, SEXP env)
 
 SEXP do_aqua_custom_print(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    char *vm;
+    const void *vm;
     const char *ct;
     int cpr;
     SEXP rv, objType, obj;
@@ -168,34 +169,5 @@ SEXP do_aqua_custom_print(SEXP call, SEXP op, SEXP args, SEXP env)
     UNPROTECT(1);
 
     return rv;
-}
-
-void R_ProcessEvents(void)
-{
-    if (ptr_R_ProcessEvents)
-	ptr_R_ProcessEvents();
-    if (cpuLimit > 0.0 || elapsedLimit > 0.0) {
-	double cpu, data[5];
-	R_getProcTime(data);
-	cpu = data[0] + data[1] + data[3] + data[4];
-	if (elapsedLimit > 0.0 && data[2] > elapsedLimit) {
-	    cpuLimit = elapsedLimit = -1;
-	    if (elapsedLimit2 > 0.0 && data[2] > elapsedLimit2) {
-		elapsedLimit2 = -1.0;
-		error(_("reached session elapsed time limit"));
-	    } else
-		error(_("reached elapsed time limit"));
-	}
-	if (cpuLimit > 0.0 && cpu > cpuLimit) {
-	    cpuLimit = elapsedLimit = -1;
-	    if (cpuLimit2 > 0.0 && cpu > cpuLimit2) {
-		cpuLimit2 = -1.0;
-		error(_("reached session CPU time limit"));
-	    } else
-		error(_("reached CPU time limit"));
-	}
-    }
-    if (R_interrupts_pending)
-	onintr();
 }
 #endif

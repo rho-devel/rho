@@ -1,6 +1,6 @@
 % File src/library/base/man/gzcon.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{gzcon}
@@ -30,13 +30,19 @@ gzcon(con, level = 6, allowNonCompressed = TRUE)
   header is equivalent to reading from the original connection if
   \code{allowNonCompressed} is true, otherwise an error.
 
+  Compressed output will contain embedded NUL bytes, and so \code{con}
+  is not permitted to be a \code{\link{textConnection}} opened with
+  \code{open="w"}.  Use a writable \code{\link{rawConnection}} to
+  compress data into a variable.
+
   The original connection becomes unusable: any object pointing to it will
-  now refer to the modified connection.
+  now refer to the modified connection.  For this reason, the new
+  connection needs to be closed explicitly.
 }
 \value{
   An object inheriting from class \code{"connection"}.  This is the same
   connection \emph{number} as supplied, but with a modified internal
-  structure. It has binary mode.
+  structure.  It has binary mode.
 }
 \seealso{\code{\link{gzfile}}}
 \examples{
@@ -51,7 +57,7 @@ dat[1:4, ]
 }
 
 ## gzfile and gzcon can inter-work.
-## Of course here one would used gzfile, but file() can be replaced by
+## Of course here one would use gzfile, but file() can be replaced by
 ## any other connection generator.
 zz <- gzfile("ex.gz", "w")
 cat("TITLE extra line", "2 3 5 7", "", "11 13 17", file = zz, sep = "\n")

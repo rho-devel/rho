@@ -1,6 +1,6 @@
 % File src/library/base/man/save.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{save}
@@ -18,7 +18,7 @@
   happens with \code{\link{q}("yes")}.
 }
 \usage{
-save(\dots, list = character(0L),
+save(\dots, list = character(),
      file = stop("'file' must be specified"),
      ascii = FALSE, version = NULL, envir = parent.frame(),
      compress = !ascii, compression_level,
@@ -32,11 +32,12 @@ save.image(file = ".RData", version = NULL, ascii = FALSE,
     character strings).}
   \item{list}{A character vector containing the names of objects to be
     saved.}
-  \item{file}{a connection or the name of the file where the data will be
-    saved.  Must be a file name for workspace format version 1.}
+  \item{file}{a (writable binary-mode) \link{connection} or the name of the
+    file where the data will be saved (when \link{tilde expansion}
+    is done).  Must be a file name for \code{version = 1}.}
   \item{ascii}{if \code{TRUE}, an ASCII representation of the data is
     written.  The default value of \code{ascii} is \code{FALSE} which
-    leads to a more compact binary file being written.}
+    leads to a binary file being written.}
   \item{version}{the workspace format version to use.  \code{NULL}
     specifies the current default format.  The version used from \R
     0.99.0 to \R 1.3.1 was version 1.  The default format as from \R
@@ -72,18 +73,22 @@ save.image(file = ".RData", version = NULL, ascii = FALSE,
 
   All \R platforms use the XDR (bigendian) representation of C ints and
   doubles in binary save-d files, and these are portable across all \R
-  platforms. (ASCII saves used to be useful for moving data between
-  platforms but are now mainly of historical interest.)
+  platforms.  (ASCII saves used to be useful for moving data between
+  platforms but are now mainly of historical interest.  They can be more
+  compact than binary saves where compression is not used, but are
+  almost always slower to both read and write: binary saves compress
+  much better than ASCII ones.)
 
   Default values for the \code{ascii}, \code{compress}, \code{safe} and
-  \code{version} arguments can be modified with the \code{save.defaults}
-  option (used both by \code{save} and \code{save.image}), see also the
-  example section below.  If a \code{save.image.defaults} option is set
-  it overrides \code{save.defaults} for function \code{save.image}
-  (which allows this to have different defaults).
+  \code{version} arguments can be modified with the
+  \code{"save.defaults"} option (used both by \code{save} and
+  \code{save.image}), see also the \sQuote{Examples} section.  If a
+  \code{"save.image.defaults"} option is set it is used in preference to
+  \code{"save.defaults"} for function \code{save.image} (which allows
+  this to have different defaults).
 
   A connection that is not already open will be opened in mode
-  \code{"wb"}.  Only ASCII saves can be written to text-mode connections.
+  \code{"wb"}.
 }
 
 \section{Compression}{
@@ -107,8 +112,7 @@ save.image(file = ".RData", version = NULL, ascii = FALSE,
   The most common reason for failure is lack of write permission in the
   current directory.  For \code{save.image} and for saving at the end of
   a session this will shown by messages like
-\preformatted{
-    Error in gzfile(file, "wb") : unable to open connection
+\preformatted{    Error in gzfile(file, "wb") : unable to open connection
     In addition: Warning message:
     In gzfile(file, "wb") :
       cannot open compressed file '.RDataTmp',
@@ -119,6 +123,11 @@ save.image(file = ".RData", version = NULL, ascii = FALSE,
   2.3.0 and for \code{save.image} in 2.4.0.  Any recent version of \R
   can read compressed save files, and a compressed file can be
   uncompressed (by \code{gzip -d}) for use with very old versions of \R.
+#ifdef windows
+
+  \code{file} can be a UTF-8-encoded filepath that cannot be translated to
+  the current locale.
+#endif
 }
 
 \section{Warnings}{
@@ -141,13 +150,16 @@ save.image(file = ".RData", version = NULL, ascii = FALSE,
 \seealso{
   \code{\link{dput}}, \code{\link{dump}}, \code{\link{load}},
   \code{\link{data}}.
+
+  For other interfaces to the underlying serialization format, see
+  \code{\link{serialize}} and \code{\link{saveRDS}}.
 }
 \examples{
 x <- stats::runif(20)
 y <- list(a = 1, b = TRUE, c = "oops")
-save(x, y, file = "xy.Rdata")
+save(x, y, file = "xy.RData")
 save.image()
-unlink("xy.Rdata")
+unlink("xy.RData")
 unlink(".RData")
 
 # set save defaults using option:

@@ -1,4 +1,4 @@
-/*CXXR $Id:$
+/*CXXR $Id$
  *CXXR
  *CXXR This file is part of CXXR, a project to refactor the R interpreter
  *CXXR into C++.  It may consist in whole or in part of program code and
@@ -78,8 +78,7 @@ SEXP attribute_hidden do_castestfun(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
 	Environment* env=static_cast<Environment*>(rho);
 	// Let's try to get the binding for given symbol...
-	pair<Environment*, Frame::Binding*> bdg=CXXR::findBinding(sym,env);
-	Frame::Binding* binding=CXXR::findBinding(sym,env).second;
+	Frame::Binding* binding = env->findBinding(sym).second;
 	if (binding!=NULL)
 		printf("Binding located :-)\n");
 	GCStackRoot<IntVector> inv(GCNode::expose(new IntVector(3)));
@@ -113,7 +112,7 @@ SEXP attribute_hidden do_hasProvenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 
 	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
 	Environment* env=static_cast<Environment*>(rho);
-	Frame::Binding* bdg=findBinding(sym,env).second;
+	Frame::Binding* bdg = env->findBinding(sym).second;
 	GCStackRoot<LogicalVector> v(GCNode::expose(new LogicalVector(1)));
 	(*v)[0]=bdg->hasProvenance();
 	return v;
@@ -130,7 +129,7 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 		errorcall(call,_("provenance expects Symbol argument"));
 	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
 	Environment* env=static_cast<Environment*>(rho);
-	Frame::Binding* bdg=findBinding(sym,env).second;
+	Frame::Binding* bdg = env->findBinding(sym).second;
 	if (!bdg)
 		errorcall(call,_("invalid Symbol passed to 'provenance'"));
 	Provenance* provenance=const_cast<Provenance*>(bdg->getProvenance());
@@ -177,7 +176,7 @@ SEXP attribute_hidden do_provCommand (SEXP call, SEXP op, SEXP args, SEXP rho)
 
 	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
 	Environment* env=static_cast<Environment*>(rho);
-	Frame::Binding* bdg=findBinding(sym,env).second;
+	Frame::Binding* bdg = env->findBinding(sym).second;
 	return bdg->getProvenance()->getCommand();
 }
 
@@ -193,7 +192,7 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 
 	if (TYPEOF(CAR(args))==SYMSXP) {
 		Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
-		Frame::Binding* bdg=findBinding(sym,env).second;
+		Frame::Binding* bdg = env->findBinding(sym).second;
 		Provenance* prov=const_cast<Provenance*>(bdg->getProvenance());
 		provs=new Provenance::Set();
 		provs->insert(prov);
@@ -207,7 +206,7 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 		StringVector *sv=static_cast<StringVector*>(rc);
 		for (int i=0;i<length(rc);i++) {
 			Symbol *sym=Symbol::obtain((*sv)[i]->c_str());
-			Frame::Binding *bdg=findBinding(sym,env).second;
+			Frame::Binding *bdg = env->findBinding(sym).second;
 			if (bdg) {
 				Provenance *prov=const_cast<Provenance*>(bdg->getProvenance());
 				if (prov)
@@ -238,9 +237,9 @@ SEXP attribute_hidden do_bserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
     if (n>0)
 	errorcall(call,_("%d arguments passed to 'bserialize' which requires 0"),n);
 
-    Environment* env=new Environment(0);
+    GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
+    Environment* env = new Environment(0, frame);
     GCStackRoot<Environment> envProtect(GCNode::expose(env));
-    Frame* frame=env->frame();
 
     if (n==0) {
 	Frame *gEnvFrame=static_cast<Environment*>(R_GlobalEnv)->frame();

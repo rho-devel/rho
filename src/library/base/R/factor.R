@@ -25,7 +25,7 @@ factor <- function(x = character(), levels, labels=levels,
 	y <- as.character(y)
 	levels <- unique(y[ind])
     }
-    force(ordered)
+    force(ordered) # check if original x is an ordered factor
     exclude <- as.vector(exclude, typeof(x))# may result in NA
     x <- as.character(x)
     levels <- levels[is.na(match(levels, exclude))]
@@ -54,16 +54,7 @@ levels <- function(x) UseMethod("levels")
 levels.default <- function(x) attr(x, "levels")
 nlevels <- function(x) length(levels(x))
 
-## now a primitive
-## "levels<-" <- function(x, value) UseMethod("levels<-")
-
-## "levels<-.default" <- function(x, value)
-## {
-##     attr(x, "levels") <- value
-##     x
-## }
-
-"levels<-.factor" <- function(x, value)
+`levels<-.factor` <- function(x, value)
 {
     xlevs <- levels(x)
     if (is.list(value)) {
@@ -87,6 +78,16 @@ nlevels <- function(x) length(levels(x))
     y
 }
 
+droplevels <- function(x, ...) UseMethod("droplevels")
+droplevels.factor <- function(x, ...) factor(x)
+droplevels.data.frame <- function(x, except = NULL, ...)
+  {
+    ix <- vapply(x, is.factor, NA)
+    if (!is.null(except)) ix[except] <- FALSE
+    x[ix] <- lapply(x[ix], factor)
+    x
+  }
+
 as.vector.factor <- function(x, mode="any")
 {
     if(mode=="list") as.list(x)
@@ -97,6 +98,8 @@ as.vector.factor <- function(x, mode="any")
 }
 
 as.character.factor <- function(x,...) levels(x)[x]
+
+as.logical.factor <- function(x,...) as.logical(levels(x))[x]
 
 as.list.factor <- function(x,...)
 {
@@ -146,9 +149,9 @@ print.factor <- function (x, quote = FALSE, max.levels = NULL,
 Math.factor <- function(x, ...) {
     stop(.Generic, " not meaningful for factors")
 }
-Summary.factor <- function(..., na.rm) {
+## The next two have an .ordered method:
+Summary.factor <- function(..., na.rm)
     stop(.Generic, " not meaningful for factors")
-}
 Ops.factor <- function(e1, e2)
 {
     ok <- switch(.Generic, "=="=, "!="=TRUE, FALSE)
@@ -183,23 +186,24 @@ Ops.factor <- function(e1, e2)
     value
 }
 
-"[.factor" <- function(x, ..., drop = FALSE)
+## NB for next four:
+## a factor has levels before class in attribute list (PR#6799)
+`[.factor` <- function(x, ..., drop = FALSE)
 {
     y <- NextMethod("[")
     attr(y,"contrasts")<-attr(x,"contrasts")
-    ## NB factor has levels before class in attribute list (PR#6799)
     attr(y,"levels") <- attr(x,"levels")
     class(y) <- oldClass(x)
-    if ( drop ) factor(y) else y
+    lev <- levels(x)
+    if (drop)
+        factor(y, exclude = if(any(is.na(levels(x)))) NULL else NA ) else y
 }
 
-"[<-.factor" <- function(x, ..., value)
+`[<-.factor` <- function(x, ..., value)
 {
     lx <- levels(x)
     cx <- oldClass(x)
-#    nas <- is.na(x) # unused
-    if (is.factor(value))
-	value <- levels(value)[value]
+    if (is.factor(value)) value <- levels(value)[value]
     m <- match(value, lx)
     if (any(is.na(m) & !is.na(value)))
 	warning("invalid factor level, NAs generated")
@@ -210,15 +214,31 @@ Ops.factor <- function(e1, e2)
     x
 }
 
-"[[.factor" <- function(x, ...)
+`[[.factor` <- function(x, ...)
 {
     y <- NextMethod("[[")
     attr(y,"contrasts") <- attr(x,"contrasts")
-    ## NB factor has levels before class in attribute list (PR#6799)
     attr(y,"levels") <- attr(x,"levels")
     class(y) <- oldClass(x)
     y
 }
+
+## added for 2.12.0
+`[[<-.factor` <- function(x, ..., value)
+{
+    lx <- levels(x)
+    cx <- oldClass(x)
+    if (is.factor(value)) value <- levels(value)[value]
+    m <- match(value, lx)
+    if (any(is.na(m) & !is.na(value)))
+	warning("invalid factor level, NA generated")
+    class(x) <- NULL
+    x[[...]] <- m
+    attr(x,"levels") <- lx
+    class(x) <- cx
+    x
+}
+
 
 ## ordered factors ...
 
@@ -227,8 +247,7 @@ ordered <- function(x, ...) factor(x, ..., ordered=TRUE)
 is.ordered <- function(x) inherits(x, "ordered")
 as.ordered <- function(x) if(is.ordered(x)) x else ordered(x)
 
-Ops.ordered <-
-function (e1, e2)
+Ops.ordered <- function (e1, e2)
 {
     ok <- switch(.Generic,
 		 "<" = , ">" = , "<=" = , ">=" = ,"=="=, "!=" =TRUE,
@@ -271,7 +290,26 @@ function (e1, e2)
     value
 }
 
-"is.na<-.factor" <- function(x, value)
+Summary.ordered <- function(..., na.rm)
+{
+    ok <- switch(.Generic, max = , min = , range = TRUE,
+		 FALSE)
+    if (!ok)
+	stop(gettextf("'%s' not defined for ordered factors", .Generic),
+	     domain = NA)
+    args <- list(...)
+    levl <- lapply(args, levels)
+    levset <- levl[[1]]
+    if (!all(vapply(args, is.ordered, NA)) ||
+	!all(sapply(levl, identical, levset)))
+	stop(gettextf("'%s' is only meaningful for ordered factors if all arguments have the same level sets",
+		      .Generic))
+    codes <- lapply(args, as.integer)
+    ind <- do.call(.Generic, c(codes, na.rm = na.rm))
+    ordered(levset[ind], levels = levset)
+}
+
+`is.na<-.factor` <- function(x, value)
 {
     lx <- levels(x)
     cx <- oldClass(x)
@@ -280,7 +318,7 @@ function (e1, e2)
     structure(x, levels = lx, class = cx)
 }
 
-"length<-.factor" <- function(x, value)
+`length<-.factor` <- function(x, value)
 {
     cl <- class(x)
     levs <- levels(x)

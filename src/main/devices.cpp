@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2008  Robert Gentleman, Ross Ihaka and the
- *			      R Development Core Team
+ *  Copyright (C) 1997--2008  The R Development Core Team
  *  Copyright (C) 2002--2005  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -54,9 +53,11 @@
 
 using namespace CXXR;
 
-static SEXP R_INLINE getSymbolValue(const char *symbolName)
+static SEXP R_INLINE getSymbolValue(SEXP symbol)
 {
-    return findVar(install(symbolName), R_BaseEnv);
+    if (TYPEOF(symbol) != SYMSXP)
+	error("argument to 'getSymbolValue' is not a symbol");
+    return findVar(symbol, R_BaseEnv);
 }
 
 /*
@@ -150,7 +151,7 @@ pGEDevDesc GEcurrentDevice(void)
      * check the options for a "default device".
      * If there is one, start it up. */
     if (NoDevices()) {
-	SEXP defdev = GetOption(install("device"), R_BaseEnv);
+	SEXP defdev = GetOption1(install("device"));
 	if (isString(defdev) && length(defdev) > 0) {
 	    SEXP devName = install(CHAR(STRING_ELT(defdev, 0)));
 	    /*  Not clear where this should be evaluated, since
@@ -273,19 +274,19 @@ int selectDevice(int devNum)
 
 	if (!NoDevices()) {
 	    pGEDevDesc oldd = GEcurrentDevice();
-	    oldd->dev->deactivate(oldd->dev);
+	    if (oldd->dev->deactivate) oldd->dev->deactivate(oldd->dev);
 	}
 
 	R_CurrentDevice = devNum;
 
 	/* maintain .Device */
 	gsetVar(R_DeviceSymbol,
-		elt(getSymbolValue(".Devices"), devNum),
+		elt(getSymbolValue(R_DevicesSymbol), devNum),
 		R_BaseEnv);
 
 	gdd = GEcurrentDevice(); /* will start a device if current is null */
 	if (!NoDevices()) /* which it always will be */
-	    gdd->dev->activate(gdd->dev);
+	    if (gdd->dev->activate) gdd->dev->activate(gdd->dev);
 	return devNum;
     }
     else
@@ -312,7 +313,7 @@ void removeDevice(int devNum, Rboolean findNext)
 
 	if(findNext) {
 	    /* maintain .Devices */
-	    PROTECT(s = getSymbolValue(".Devices"));
+	    PROTECT(s = getSymbolValue(R_DevicesSymbol));
 	    for (i = 0; i < devNum; i++) s = CDR(s);
 	    SETCAR(s, mkString(""));
 	    UNPROTECT(1);
@@ -322,13 +323,13 @@ void removeDevice(int devNum, Rboolean findNext)
 		R_CurrentDevice = nextDevice(R_CurrentDevice);
 		/* maintain .Device */
 		gsetVar(R_DeviceSymbol,
-			elt(getSymbolValue(".Devices"), R_CurrentDevice),
+			elt(getSymbolValue(R_DevicesSymbol), R_CurrentDevice),
 			R_BaseEnv);
 
 		/* activate new current device */
 		if (R_CurrentDevice) {
 		    pGEDevDesc gdd = GEcurrentDevice();
-		    gdd->dev->activate(gdd->dev);
+		    if(gdd->dev->activate) gdd->dev->activate(gdd->dev);
 		}
 	    }
 	}
@@ -470,11 +471,11 @@ void GEaddDevice(pGEDevDesc gdd)
     SEXP s, t;
     pGEDevDesc oldd;
 
-    PROTECT(s = getSymbolValue(".Devices"));
+    PROTECT(s = getSymbolValue(R_DevicesSymbol));
 
     if (!NoDevices())  {
 	oldd = GEcurrentDevice();
-	oldd->dev->deactivate(oldd->dev);
+	if(oldd->dev->deactivate) oldd->dev->deactivate(oldd->dev);
     }
 
     /* find empty slot for new descriptor */
@@ -499,10 +500,10 @@ void GEaddDevice(pGEDevDesc gdd)
     active[i] = TRUE;
 
     GEregisterWithDevice(gdd);
-    gdd->dev->activate(gdd->dev);
+    if(gdd->dev->activate) gdd->dev->activate(gdd->dev);
 
     /* maintain .Devices (.Device has already been set) */
-    PROTECT(t = ScalarString(STRING_ELT(getSymbolValue(".Device"), 0)));
+    PROTECT(t = ScalarString(STRING_ELT(getSymbolValue(R_DeviceSymbol), 0)));
     if (appnd)
 	SETCDR(s, CONS(t, R_NilValue));
     else
@@ -554,6 +555,7 @@ pGEDevDesc GEcreateDevDesc(pDevDesc dev)
     gdd->dirty = FALSE;
     gdd->recordGraphics = TRUE;
     gdd->ask = Rf_GetOptionDeviceAsk();
+    gdd->dev->eventEnv = R_NilValue;  /* gc needs this */
     return gdd;
 }
 
@@ -574,7 +576,7 @@ void attribute_hidden InitGraphics(void)
     PROTECT(s = mkString("null device"));
     gsetVar(R_DeviceSymbol, s, R_BaseEnv);
     PROTECT(t = mkString("null device"));
-    gsetVar(install(".Devices"), CONS(t, R_NilValue), R_BaseEnv);
+    gsetVar(R_DevicesSymbol, CONS(t, R_NilValue), R_BaseEnv);
     UNPROTECT(2);
 
     /* Register the base graphics system with the graphics engine
@@ -596,7 +598,7 @@ void NewFrameConfirm(pDevDesc dd)
 }
 
 /* This needs to manage R_Visible */
-SEXP do_devAskNewPage(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_devAskNewPage(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     int ask;
     pGEDevDesc gdd = GEcurrentDevice();
@@ -614,7 +616,7 @@ SEXP do_devAskNewPage(SEXP call, SEXP op, SEXP args, SEXP env)
     return ScalarLogical(oldask);
 }
 
-SEXP do_devsize(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_devsize(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans;
     pDevDesc dd = GEcurrentDevice()->dev;
@@ -625,6 +627,90 @@ SEXP do_devsize(SEXP call, SEXP op, SEXP args, SEXP env)
     REAL(ans)[0] = fabs(right - left);
     REAL(ans)[1] = fabs(bottom - top);
     return(ans);
+}
+
+SEXP attribute_hidden do_devholdflush(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    pDevDesc dd = GEcurrentDevice()->dev;
+
+    checkArity(op, args);
+    int level = asInteger(CAR(args));
+    if(dd->holdflush && level != NA_INTEGER) level = (dd->holdflush(dd, level));
+    else level = 0;
+    return ScalarInteger(level);
+}
+
+SEXP attribute_hidden do_devcap(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    SEXP ans;
+    int i = 0;
+    pDevDesc dd = GEcurrentDevice()->dev;
+
+    checkArity(op, args);
+
+    PROTECT(ans = allocVector(INTSXP, 9));
+    INTEGER(ans)[i] = dd->haveTransparency;
+    INTEGER(ans)[++i] = dd->haveTransparentBg;
+    /* These will be NULL if the device does not define them */
+    INTEGER(ans)[++i] = (dd->raster != NULL) ? dd->haveRaster : 1;
+    INTEGER(ans)[++i] = (dd->cap != NULL) ? dd->haveCapture : 1;
+    INTEGER(ans)[++i] = (dd->locator != NULL) ? dd->haveLocator : 1;
+    INTEGER(ans)[++i] = int(dd->canGenMouseDown);
+    INTEGER(ans)[++i] = int(dd->canGenMouseMove);
+    INTEGER(ans)[++i] = int(dd->canGenMouseUp);
+    INTEGER(ans)[++i] = int(dd->canGenKeybd);
+    /* FIXME:  there should be a way for a device to declare its own
+               events, and return information on how to set them */
+
+    UNPROTECT(1);
+    return ans;
+}
+
+SEXP attribute_hidden do_devcapture(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    int i, col, row, nrow, ncol, size;
+    Rboolean native;
+    pGEDevDesc gdd = GEcurrentDevice();
+    int *rint;
+    SEXP raster, image, idim;
+    
+    checkArity(op, args);
+
+    native = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));
+    if (native != TRUE) native = FALSE;
+
+    raster = GECap(gdd);
+    if (isNull(raster)) /* NULL = unsupported */
+	return raster;
+
+    PROTECT(raster);
+    if (native) {
+	setAttrib(raster, R_ClassSymbol, mkString("nativeRaster"));
+	UNPROTECT(1);
+	return raster;
+    }
+
+    /* non-native, covert to color strings (this is based on grid.cap) */
+    size = LENGTH(raster);
+    nrow = INTEGER(getAttrib(raster, R_DimSymbol))[0];
+    ncol = INTEGER(getAttrib(raster, R_DimSymbol))[1];
+        
+    PROTECT(image = allocVector(STRSXP, size));
+    rint = INTEGER(raster);
+    for (i = 0; i < size; i++) {
+	col = i % ncol + 1;
+	row = i / ncol + 1;
+	SET_STRING_ELT(image, (col - 1) * nrow + row - 1, 
+		       mkChar(col2name(rint[i])));
+    }
+        
+    PROTECT(idim = allocVector(INTSXP, 2));
+    INTEGER(idim)[0] = nrow;
+    INTEGER(idim)[1] = ncol;
+    setAttrib(image, R_DimSymbol, idim);
+    UNPROTECT(3);
+
+    return image;    
 }
 
 // CXXR mutator functions:

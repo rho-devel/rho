@@ -1,27 +1,39 @@
 #-*- Makefile -*-
 #
-# ${RHOME}/tests/Examples/Makefile.win
+# ${R_HOME}/tests/Examples/Makefile.win
 
-RHOME=../..
+R_HOME=../..
+
+include $(R_HOME)/src/gnuwin32/MkRules
+
+INSTFILES = \
+  datasets-Ex.Rout.save grDevices-Ex.Rout.save graphics-Ex.Rout.save \
+  grid-Ex.Rout.save splines-Ex.Rout.save \
+  stats-Ex.Rout.save stats4-Ex.Rout.save tools-Ex.Rout.save
+
 ECHO = echo
 
-R_EXE = $(RHOME)/bin/Rterm --slave --vanilla
+R_EXE = $(R_HOME)/$(BINDIR)/Rterm --slave --vanilla LANGUAGE=en LC_TIME=C
 
 all: test-Examples-Base
 
 test-Examples: test-Examples-Base
 
-## Used to collate examples in LC_ALL
 test-Examples-Base:
 	@$(ECHO) "tools::testInstalledPackages(scope='base', types='examples')" | $(R_EXE)
 
 
+## nlme suggests 'Hmisc'
 test-Examples-Recommended: test-Examples-Base
-	@$(ECHO) "tools::testInstalledPackages(scope='recommended', types='examples')" | $(R_EXE)
+	@$(ECHO) "tools::testInstalledPackages(scope='recommended', types='examples')" | $(R_EXE) _R_CHECK_FORCE_SUGGESTS_=FALSE
 ## </NOTE>
 
 mostlyclean: clean
 clean:
-	-@rm -f *.R *.Rout *.Rd* *.ps *.tex *.dat* data foo* ex*.gz
+	-@rm -f *.R *.Rout *.Rd* *.pdf *.tex *.dat* data foo* ex*.gz
 distclean: clean
 	-@rm -f *.R*bak *.R*bakk *.R*prev .RData sink-examp.txt
+
+install-tests:
+	@mkdir -p "../$(INST_TO)/Examples"
+	@cp $(INSTFILES) "../$(INST_TO)/Examples"

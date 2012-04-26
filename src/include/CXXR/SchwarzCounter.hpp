@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -57,11 +57,11 @@ namespace CXXR {
      * SchwarzCounter object is destroyed is class \a T itself cleaned
      * up.
      *
-     * @param T class whose initialization and clean-up are to be
-     *          controlled by the Schwarz counter.  This class must
-     *          defined static methods <tt>initialize()</tt> and
-     *          <tt>cleanup()</tt>, capable of being invoked with no
-     *          parameters.
+     * @tparam T class whose initialization and clean-up are to be
+     *           controlled by the Schwarz counter.  This class must
+     *           defined static methods <tt>initialize()</tt> and
+     *           <tt>cleanup()</tt>, capable of being invoked with no
+     *           parameters.
      */
     template <class T> class SchwarzCounter {
     public:

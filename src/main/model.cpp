@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2007   Robert Gentleman, Ross Ihaka and the
- *                            R Development Core Team
+ *  Copyright (C) 1997--2010  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,7 +45,10 @@
 #endif
 
 #include <Defn.h>
+#include <vector>
+#include "CXXR/GCStackRoot.hpp"
 
+using namespace std;
 using namespace CXXR;
 
 /* inline-able versions */
@@ -686,8 +688,7 @@ static SEXP EncodeVars(SEXP formula)
 /* Returns 1 if variable ``whichBit'' in ``thisTerm'' */
 /* is to be encoded by contrasts and 2 if it is to be */
 /* encoded by dummy variables.  This is decided using */
-/* the heuristic of Chambers and Heiberger described */
-/* in Statistical Models in S, Page 38. */
+/* the heuristic described in Statistical Models in S, page 38. */
 
 static int TermCode(SEXP termlist, SEXP thisterm, int whichbit, SEXP term)
 {
@@ -740,7 +741,6 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP a, ans, v, pattern, formula, varnames, term, termlabs, ord;
     SEXP specials, t, data, rhs;
     int i, j, k, l, n, keepOrder, allowDot;
-    char *cbuf;
 
     Rboolean hadFrameNames = FALSE;
 
@@ -970,7 +970,8 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
 		l += strlen(CHAR(STRING_ELT(varnames, i - 1)));
 	    }
 	}
-	cbuf = static_cast<char *>( alloca(l+1));
+	vector<char> cbufv(l+1);
+	char* cbuf = &cbufv[0];
 	cbuf[0] = '\0';
 	l = 0;
 	for (i = 1; i <= nvar; i++) {
@@ -1724,8 +1725,8 @@ SEXP attribute_hidden do_modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     {
 	PROTECT(contr1 = allocVector(VECSXP, nVar));
 	PROTECT(contr2 = allocVector(VECSXP, nVar));
-	GCStackRoot<PairList> tl(PairList::makeList(2));
-	PROTECT(expr = GCNode::expose(new Expression(0, tl)));
+	GCStackRoot<PairList> tl(PairList::make(2));
+	PROTECT(expr = CXXR_NEW(Expression(0, tl)));
 	SETCAR(expr, install("contrasts"));
 	SETCADDR(expr, allocVector(LGLSXP, 1));
     }
@@ -1920,12 +1921,7 @@ SEXP attribute_hidden do_modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     PROTECT(x = allocMatrix(REALSXP, n, nc));
 
-#ifdef R_MEMORY_PROFILING
-    if (RTRACE(vars)){
-       memtrace_report(vars, x);
-       SET_RTRACE(x, 1);
-    }
-#endif
+    x->maybeTraceMemory(vars);
 
     /* a) Begin with a column of 1s for the intercept. */
 
@@ -1944,12 +1940,7 @@ SEXP attribute_hidden do_modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if (INTEGER(columns)[i] == 0)
 		continue;
 	    var_i = VECTOR_ELT(variable, i);
-#ifdef R_MEMORY_PROFILING
-	    if (RTRACE(var_i)){
-	       memtrace_report(var_i, x);
-	       SET_RTRACE(x, 1);
-	    }
-#endif
+	    x->maybeTraceMemory(var_i);
 	    fik = INTEGER(factors)[i + k * nVar];
 	    if (fik) {
 		switch(fik) {

@@ -1,7 +1,7 @@
 #  File src/library/utils/R/fineLineNum.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright 2009 Duncan Murdoch and the R Core Development Team
+#  Copyright 2009-2011 Duncan Murdoch and the R Core Development Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
     	oldwd <- setwd(wd)
     	on.exit(setwd(oldwd))
     }
-    res <- tryCatch(normalizePath(path), error = identity)
-    if (inherits(res, "error")) path
-    else res
+    suppressWarnings(normalizePath(path))
 }
 
 fnLineNum <- function(f, srcfile, line, nameonly=TRUE) {
@@ -33,7 +31,11 @@ fnLineNum <- function(f, srcfile, line, nameonly=TRUE) {
 
     targetfilename <- .normalizePath(srcfile$filename)
 
-    fnsrc <- attr(body(f), "srcfile")
+    fnsrc <- attr(f, "srcref")
+    if (!is.null(fnsrc))
+    	fnsrc <- attr(fnsrc, "srcfile")
+    else
+    	fnsrc <- attr(body(f), "srcfile")
     if (is.null(fnsrc)) return(NULL)
 
     if (missing(srcfile)) {
@@ -46,7 +48,7 @@ fnLineNum <- function(f, srcfile, line, nameonly=TRUE) {
     lineNumInExpr <- function(expr, haveSrcrefs = FALSE) {
 	if (typeof(expr) == "language") {
 	    srcrefs <- attr(expr, "srcref")
-	    for (i in 1:length(expr)) {
+	    for (i in seq_along(expr)) {
 		srcref <- srcrefs[[i]]
 		# Check for non-matching range
 		if (!is.null(srcref) && (srcref[1] > line || line > srcref[3]))  next
@@ -76,7 +78,6 @@ fnLineNum <- function(f, srcfile, line, nameonly=TRUE) {
 	    timediff <- fnsrc$timestamp - srcfile$timestamp
 	else
 	    timediff <- 0
-	source <- attr(f, "source")
 	at <- lineNumInExpr(body(f))
 	if (!is.null(at))
 	  return(list(at=at, filename=.normalizePath(fnsrc$filename, fnsrc$wd), line=line,
@@ -85,7 +86,8 @@ fnLineNum <- function(f, srcfile, line, nameonly=TRUE) {
     return(NULL)
 }
 
-findLineNum <- function(srcfile, line, nameonly=TRUE, envir=parent.frame(), lastenv) {
+findLineNum <- function(srcfile, line, nameonly=TRUE, envir=parent.frame(),
+			lastenv) {
     count <- 0
     result <- list()
 
@@ -103,6 +105,9 @@ findLineNum <- function(srcfile, line, nameonly=TRUE, envir=parent.frame(), last
     	if (missing(envir)) lastenv <- globalenv()
     	else lastenv <- emptyenv()
     }
+    
+    if (!is.environment(envir))
+    	envir <- environment(envir)
 
     fns <- character(0)
     envirs <- list()
@@ -165,7 +170,7 @@ findLineNum <- function(srcfile, line, nameonly=TRUE, envir=parent.frame(), last
     return(structure(result, class="findLineNumResult"))
 }
 
-print.findLineNumResult <- function(x, ...) {
+print.findLineNumResult <- function(x, steps=TRUE, ...) {
     if (!length(x)) cat("No source refs found.\n")
     filename <- NULL
     line <- 0
@@ -176,7 +181,7 @@ print.findLineNumResult <- function(x, ...) {
     	    line <- x[[i]]$line
     	    cat(filename, "#", line, ":\n", sep="")
     	}
-        cat(" ", x[[i]]$name, " step ", paste(x[[i]]$at, collapse=","), sep="")
+        cat(" ", x[[i]]$name, if (steps) paste(" step ", paste(x[[i]]$at, collapse=",")) else "", sep="")
         if (!is.null(x[[i]]$signature))
             cat(" signature ", paste(x[[i]]$signature, collapse=","), sep="")
         cat(" in ", format(x[[i]]$env), "\n", sep="")
@@ -185,7 +190,7 @@ print.findLineNumResult <- function(x, ...) {
 
 
 setBreakpoint <- function(srcfile, line, nameonly=TRUE, envir=parent.frame(), lastenv,
-                          verbose = TRUE, tracer, print=FALSE,
+                          verbose = TRUE, tracer, print=FALSE, clear=FALSE,
                          ...) {
 
     if (missing(lastenv)) {
@@ -193,7 +198,7 @@ setBreakpoint <- function(srcfile, line, nameonly=TRUE, envir=parent.frame(), la
     	else lastenv <- emptyenv()
     }
     locations <- findLineNum(srcfile, line, nameonly, envir, lastenv)
-    if (verbose) print(locations)
+    if (verbose) print(locations, steps=!clear)
     breakpoint <- missing(tracer)
     while (length(locations)) {
     	what <- locations[[1]]$name
@@ -203,7 +208,8 @@ setBreakpoint <- function(srcfile, line, nameonly=TRUE, envir=parent.frame(), la
     	if (breakpoint) {
     	    filename <- basename(locations[[1]]$filename)
     	    linenum <- locations[[1]]$line
-    	    tracer <- bquote({cat(paste(.(filename), "#", .(linenum), "\n", sep="")); browser()})
+    	    tracer <- bquote({cat(paste(.(filename), "#", .(linenum), "\n", sep="")) 
+    	                      browser(skipCalls=4L)})
     	}
     	locations[[1]] <- NULL
         i <- 1
@@ -216,7 +222,12 @@ setBreakpoint <- function(srcfile, line, nameonly=TRUE, envir=parent.frame(), la
     	    } else
     	    	i <- i+1
     	}
-    	if (is.null(signature))
+    	if (clear) {
+    	    if (is.null(signature)) 
+  		untrace(what, where=where)
+    	    else
+    	    	untrace(what, signature=signature, where=where)
+    	} else if (is.null(signature))
     	    trace(what, tracer, at=at, where=where, print=print, ...)
     	else
     	    trace(what, signature=signature, tracer, at=at, where=where, ...)

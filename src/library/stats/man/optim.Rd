@@ -1,6 +1,6 @@
 % File src/library/stats/man/optim.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{optim}
@@ -15,7 +15,7 @@
 }
 \usage{
 optim(par, fn, gr = NULL, \dots,
-      method = c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN"),
+      method = c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN", "Brent"),
       lower = -Inf, upper = Inf,
       control = list(), hessian = FALSE)
 }
@@ -33,7 +33,8 @@ optim(par, fn, gr = NULL, \dots,
    kernel is used.}
  \item{\dots}{Further arguments to be passed to \code{fn} and \code{gr}.}
  \item{method}{The method to be used. See \sQuote{Details}.}
- \item{lower, upper}{Bounds on the variables for the \code{"L-BFGS-B"} method.}
+ \item{lower, upper}{Bounds on the variables for the \code{"L-BFGS-B"}
+   method, or bounds in which to \emph{search} for method \code{"Brent"}.}
  \item{control}{A list of control parameters. See \sQuote{Details}.}
  \item{hessian}{Logical. Should a numerically differentiated Hessian
    matrix be returned?}
@@ -88,6 +89,11 @@ optim(par, fn, gr = NULL, \dots,
   parameters. It is not a general-purpose method but can be very useful
   in getting to a good value on a very rough surface.
 
+  Method \code{"Brent"} is for one-dimensional problems only, using
+  \code{\link{optimize}()}.  It can be useful in cases where
+  \code{optim()} is used inside other functions where only \code{method}
+  can be specified, such as in \code{\link{mle}} from package \pkg{stats4}.
+
   Function \code{fn} can return \code{NA} or \code{Inf} if the function
   cannot be evaluated at the supplied value, but the initial value must
   have a computable finite value of \code{fn}.
@@ -114,7 +120,8 @@ optim(par, fn, gr = NULL, \dots,
     \item{\code{parscale}}{A vector of scaling values for the parameters.
         Optimization is performed on \code{par/parscale} and these should be
         comparable in the sense that a unit change in any element produces
-        about a unit change in the scaled value.}
+        about a unit change in the scaled value.  Not used (nor needed)
+	for \code{method = "Brent"}.}
     \item{\code{ndeps}}{A vector of step sizes for the finite-difference
       approximation to the gradient, on \code{par/parscale}
       scale. Defaults to \code{1e-3}.}
@@ -173,8 +180,8 @@ optim(par, fn, gr = NULL, \dots,
     to compute the Hessian, if requested, and any calls to \code{fn} to
     compute a finite-difference approximation to the gradient.}
   \item{convergence}{An integer code. \code{0} indicates successful
-    completion (which is always the case for \code{"SANN"}). Possible
-  error codes are
+    completion (which is always the case for \code{"SANN"} and
+    \code{"Brent"}).  Possible error codes are
     \describe{
       \item{\code{1}}{indicates that the iteration limit \code{maxit}
       had been reached.}
@@ -194,8 +201,9 @@ optim(par, fn, gr = NULL, \dots,
 }
 \note{
   \code{optim} will work with one-dimensional \code{par}s, but the
-  default method does not work well (and will warn).  Use
-  \code{\link{optimize}} instead.
+  default method does not work well (and will warn).  Method
+  \code{"Brent"} uses \code{\link{optimize}} provided bounds are available;
+  \code{"BFGS"} often works well enough if not.
 }
 \source{
   The code for methods \code{"Nelder-Mead"}, \code{"BFGS"} and
@@ -211,7 +219,7 @@ optim(par, fn, gr = NULL, \dots,
 }
 \references{
   Belisle, C. J. P. (1992) Convergence theorems for a class of simulated
-  annealing algorithms on \eqn{R^d}{Rd}. \emph{J Applied Probability},
+  annealing algorithms on \eqn{R^d}{Rd}. \emph{J. Applied Probability},
   \bold{29}, 885--895.
 
   Byrd, R. H., Lu, P., Nocedal, J. and Zhu, C.  (1995) A limited
@@ -238,7 +246,7 @@ optim(par, fn, gr = NULL, \dots,
   \code{\link{constrOptim}} for constrained optimization.
 }
 
-\examples{
+\examples{\donttest{
 require(graphics)
 
 fr <- function(x) {   ## Rosenbrock Banana function
@@ -255,6 +263,7 @@ grr <- function(x) { ## Gradient of 'fr'
 optim(c(-1.2,1), fr)
 optim(c(-1.2,1), fr, grr, method = "BFGS")
 optim(c(-1.2,1), fr, NULL, method = "BFGS", hessian = TRUE)
+## These do not converge in the default number of steps
 optim(c(-1.2,1), fr, grr, method = "CG")
 optim(c(-1.2,1), fr, grr, method = "CG", control=list(type=2))
 optim(c(-1.2,1), fr, grr, method = "L-BFGS-B")
@@ -284,44 +293,44 @@ eurodistmat <- as.matrix(eurodist)
 
 distance <- function(sq) {  # Target function
     sq2 <- embed(sq, 2)
-    return(sum(eurodistmat[cbind(sq2[,2],sq2[,1])]))
+    sum(eurodistmat[cbind(sq2[,2],sq2[,1])])
 }
 
 genseq <- function(sq) {  # Generate new candidate sequence
-    idx <- seq(2, NROW(eurodistmat)-1, by=1)
+    idx <- seq(2, NROW(eurodistmat)-1)
     changepoints <- sample(idx, size=2, replace=FALSE)
     tmp <- sq[changepoints[1]]
     sq[changepoints[1]] <- sq[changepoints[2]]
     sq[changepoints[2]] <- tmp
-    return(sq)
+    sq
 }
 
-sq <- c(1,2:NROW(eurodistmat),1)  # Initial sequence
+sq <- c(1:nrow(eurodistmat), 1)  # Initial sequence: alphabetic
 distance(sq)
-
-set.seed(123) # chosen to get a good soln relatively quickly
-res <- optim(sq, distance, genseq, method="SANN",
-             control = list(maxit=30000, temp=2000, trace=TRUE, REPORT=500))
-res  # Near optimum distance around 12842
-
-loc <- cmdscale(eurodist)
-rx <- range(x <- loc[,1])
-ry <- range(y <- -loc[,2])
+# rotate for conventional orientation
+loc <- -cmdscale(eurodist, add=TRUE)$points
+x <- loc[,1]; y <- loc[,2]
+s <- seq_len(nrow(eurodistmat))
 tspinit <- loc[sq,]
-tspres <- loc[res$par,]
-s <- seq(NROW(tspres)-1)
 
 plot(x, y, type="n", asp=1, xlab="", ylab="",
-     main="initial solution of traveling salesman problem")
-arrows(tspinit[s,1], -tspinit[s,2], tspinit[s+1,1], -tspinit[s+1,2],
+     main="initial solution of traveling salesman problem", axes = FALSE)
+arrows(tspinit[s,1], tspinit[s,2], tspinit[s+1,1], tspinit[s+1,2],
        angle=10, col="green")
 text(x, y, labels(eurodist), cex=0.8)
 
+set.seed(123) # chosen to get a good soln relatively quickly
+res <- optim(sq, distance, genseq, method = "SANN",
+             control = list(maxit = 30000, temp = 2000, trace = TRUE,
+                            REPORT = 500))
+res  # Near optimum distance around 12842
+
+tspres <- loc[res$par,]
 plot(x, y, type="n", asp=1, xlab="", ylab="",
-     main="optim() 'solving' traveling salesman problem")
-arrows(tspres[s,1], -tspres[s,2], tspres[s+1,1], -tspres[s+1,2],
+     main="optim() 'solving' traveling salesman problem", axes = FALSE)
+arrows(tspres[s,1], tspres[s,2], tspres[s+1,1], tspres[s+1,2],
        angle=10, col="red")
 text(x, y, labels(eurodist), cex=0.8)
-}
+}}
 \keyword{nonlinear}
 \keyword{optimize}

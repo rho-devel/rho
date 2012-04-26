@@ -24,7 +24,7 @@ is.name <- is.symbol
 
     ## include the S3 group generics here
     baseGenerics <- c("Math", "Ops", "Summary", "Complex",
-        "as.character", "as.data.frame", "as.matrix", "as.vector",
+        "as.character", "as.data.frame", "as.environment", "as.matrix", "as.vector",
         "cbind", "labels", "print", "rbind", "rep", "seq", "seq.int",
         "solve", "summary", "t")
 
@@ -50,16 +50,16 @@ is.name <- is.symbol
 .ArgsEnv <- new.env(hash = TRUE, parent = emptyenv())
 
 assign("%*%", function(x, y) NULL, envir = .ArgsEnv)
-assign(".C", function(name, ..., NAOK = FALSE, DUP = TRUE, PACKAGE,
+assign(".C", function(.NAME, ..., NAOK = FALSE, DUP = TRUE, PACKAGE,
                       ENCODING) NULL,
        envir = .ArgsEnv)
-assign(".Fortran", function(name, ..., NAOK = FALSE, DUP = TRUE, PACKAGE,
-                            ENCODING) NULL,
+assign(".Fortran",
+       function(.NAME, ..., NAOK = FALSE, DUP = TRUE, PACKAGE, ENCODING) NULL,
        envir = .ArgsEnv)
-assign(".Call", function(name, ..., PACKAGE) NULL, envir = .ArgsEnv)
-assign(".Call.graphics", function(name, ..., PACKAGE) NULL, envir = .ArgsEnv)
-assign(".External", function(name, ..., PACKAGE) NULL, envir = .ArgsEnv)
-assign(".External.graphics", function(name, ..., PACKAGE) NULL,
+assign(".Call", function(.NAME, ..., PACKAGE) NULL, envir = .ArgsEnv)
+assign(".Call.graphics", function(.NAME, ..., PACKAGE) NULL, envir = .ArgsEnv)
+assign(".External", function(.NAME, ..., PACKAGE) NULL, envir = .ArgsEnv)
+assign(".External.graphics", function(.NAME, ..., PACKAGE) NULL,
        envir = .ArgsEnv)
 assign(".Internal", function(call) NULL, envir = .ArgsEnv)
 assign(".Primitive", function(name) NULL, envir = .ArgsEnv)
@@ -67,19 +67,23 @@ assign(".primTrace", function(obj) NULL, envir = .ArgsEnv)
 assign(".primUntrace", function(obj) NULL, envir = .ArgsEnv)
 assign(".subset", function(x, ...) NULL, envir = .ArgsEnv)
 assign(".subset2", function(x, ...) NULL, envir = .ArgsEnv)
+assign("UseMethod", function(generic, object) NULL, envir = .ArgsEnv)
 assign("as.call", function(x) NULL, envir = .ArgsEnv)
-assign("as.environment", function(object) NULL, envir = .ArgsEnv)
 assign("attr", function(x, which, exact = FALSE) NULL, envir = .ArgsEnv)
 assign("attr<-", function(x, which, value) NULL, envir = .ArgsEnv)
 assign("attributes", function(obj) NULL, envir = .ArgsEnv)
 assign("attributes<-", function(obj, value) NULL, envir = .ArgsEnv)
 assign("baseenv", function() NULL, envir = .ArgsEnv)
-assign("browser", function(text="", condition=NULL, expr = TRUE) NULL, 
+assign("browser",
+       function(text="", condition=NULL, expr = TRUE, skipCalls = 0L) NULL,
        envir = .ArgsEnv)
 assign("call", function(name, ...) NULL, envir = .ArgsEnv)
 assign("class", function(x) NULL, envir = .ArgsEnv)
 assign("class<-", function(x, value) NULL, envir = .ArgsEnv)
+assign(".cache_class", function(class, extends) NULL, envir = .ArgsEnv)
 assign("emptyenv", function() NULL, envir = .ArgsEnv)
+assign("enc2native", function(x) NULL, envir = .ArgsEnv)
+assign("enc2utf8", function(x) NULL, envir = .ArgsEnv)
 assign("environment<-", function(fun, value) NULL, envir = .ArgsEnv)
 assign("expression", function(...) NULL, envir = .ArgsEnv)
 assign("gc.time", function(on = TRUE) NULL, envir = .ArgsEnv)
@@ -115,32 +119,34 @@ assign("nargs", function() NULL, envir = .ArgsEnv)
 assign("nzchar", function(x) NULL, envir = .ArgsEnv)
 assign("oldClass", function(x) NULL, envir = .ArgsEnv)
 assign("oldClass<-", function(x, value) NULL, envir = .ArgsEnv)
-assign("on.exit", function(expr, add = FALSE) NULL, envir = .ArgsEnv)
+assign("on.exit", function(expr = NULL, add = FALSE) NULL, envir = .ArgsEnv)
 assign("pos.to.env", function(x) NULL, envir = .ArgsEnv)
 assign("proc.time", function() NULL, envir = .ArgsEnv)
 assign("quote", function(expr) NULL, envir = .ArgsEnv)
 assign("retracemem", function(x, previous = NULL) NULL, envir = .ArgsEnv)
 assign("seq_along", function(along.with) NULL, envir = .ArgsEnv)
 assign("seq_len", function(length.out) NULL, envir = .ArgsEnv)
-assign("standardGeneric", function(f) NULL, envir = .ArgsEnv)
+assign("standardGeneric", function(f, fdef) NULL, envir = .ArgsEnv)
 assign("storage.mode<-", function(x, value) NULL, envir = .ArgsEnv)
 assign("substitute", function(expr, env) NULL, envir = .ArgsEnv)
+assign("switch", function(EXPR, ...) NULL, envir = .ArgsEnv)
 assign("tracemem", function(x) NULL, envir = .ArgsEnv)
 assign("unclass", function(x) NULL, envir = .ArgsEnv)
 assign("untracemem", function(x) NULL, envir = .ArgsEnv)
-assign("UseMethod", function(generic, object) NULL, envir = .ArgsEnv)
 
 
 .S3PrimitiveGenerics <-
-    c("as.character", "as.complex", "as.double", "as.integer",
-    "as.logical", "as.numeric", "as.raw", "as.real", "c", "dim",
-    "dim<-", "dimnames", "dimnames<-", "is.array", "is.finite",
-    "is.infinite", "is.matrix",
-    "is.na", "is.nan", "is.numeric", "length", "length<-", "levels<-",
-    "names", "names<-", "rep", "seq.int")
+  c("as.character", "as.complex", "as.double", "as.environment",
+    "as.integer", "as.logical", "as.numeric", "as.raw", "as.real",
+    "c", "dim", "dim<-", "dimnames", "dimnames<-",
+    "is.array", "is.finite",
+    "is.infinite", "is.matrix", "is.na", "is.nan", "is.numeric",
+    "length", "length<-", "levels<-", "names", "names<-", "rep",
+    "seq.int", "xtfrm")
 
 .GenericArgsEnv <- local({
     env <- new.env(hash = TRUE, parent = emptyenv())
+    ## those with different arglists are overridden below.
     for(f in .S3PrimitiveGenerics) {
         fx <- function(x) {}
         body(fx) <- substitute(UseMethod(ff), list(ff=f))
@@ -197,10 +203,10 @@ assign("as.integer", function(x, ...) UseMethod("as.integer"),
        envir = .GenericArgsEnv)
 assign("as.logical", function(x, ...) UseMethod("as.logical"),
        envir = .GenericArgsEnv)
-assign("as.raw", function(x) UseMethod("as.raw"), envir = .GenericArgsEnv)
+#assign("as.raw", function(x) UseMethod("as.raw"), envir = .GenericArgsEnv)
 assign("c", function(..., recursive = FALSE) UseMethod("c"),
        envir = .GenericArgsEnv)
-assign("dimnames", function(x) UseMethod("dimnames"), envir = .GenericArgsEnv)
+#assign("dimnames", function(x) UseMethod("dimnames"), envir = .GenericArgsEnv)
 assign("dim<-", function(x, value) UseMethod("dim<-"), envir = .GenericArgsEnv)
 assign("dimnames<-", function(x, value) UseMethod("dimnames<-"),
        envir = .GenericArgsEnv)
@@ -220,6 +226,7 @@ assign("seq.int", function(from, to, by, length.out, along.with, ...)
 assign("signif", function(x, digits=6) UseMethod("signif"),
        envir = .GenericArgsEnv)
 assign("trunc", function(x, ...) UseMethod("trunc"), envir = .GenericArgsEnv)
+#assign("xtfrm", function(x) UseMethod("xtfrm"), envir = .GenericArgsEnv)
 
 ## make these the same object as as.double
 assign("as.numeric", get("as.double", envir = .GenericArgsEnv),

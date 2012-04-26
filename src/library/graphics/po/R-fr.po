@@ -5,25 +5,24 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.2.1\n"
+"Project-Id-Version: R 2.12.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-10-05 14:06\n"
-"PO-Revision-Date: 2009-10-10 13:36+0100\n"
+"POT-Creation-Date: 2011-07-16 22:46\n"
+"PO-Revision-Date: 2011-10-15 15:12+0100\n"
 "Last-Translator: Philippe Grosjean <phgrosjean@sciviews.org>\n"
 "Language-Team: French <R-core@r-project.org>\n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=ISO-8859-1\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Poedit-Language: French\n"
 
 msgid "'a' is overridden by 'reg'"
 msgstr "'a' est ignoré au bénéfice de 'reg'"
 
-msgid "only using the first two of"
-msgstr "utilisation de seulement les deux premiers de"
-
-msgid "regression coefficients"
-msgstr "coefficients de régression"
+msgid "only using the first two of %d regression coefficients"
+msgstr "utilisation des deux premiers des %d coefficients de régression"
 
 msgid "'a' and 'b' are overridden by 'coef'"
 msgstr "'a' et 'b' sont ignorés au bénéfice de 'coef'"
@@ -42,6 +41,9 @@ msgstr "au moins un élément de 'x' doit être positif"
 
 msgid "incorrect 'col': must be length 2"
 msgstr "'col' incorrect : doit être de longueur 2"
+
+msgid "only for 1-D table"
+msgstr "seulement pour des tableaux 1-D"
 
 msgid "'side' must be in {1:4}"
 msgstr "'side' doit être dans {1:4}"
@@ -97,9 +99,6 @@ msgstr "'formula' doit spécifier exactement deux variables"
 msgid "dependent variable should be a factor"
 msgstr "la variable dépendante doit être de type facteur"
 
-msgid "explanatory variable should be numeric"
-msgstr "la variable explicative doit être numérique"
-
 msgid "y axis is on a cumulative probability scale, 'ylim' must be in [0,1]"
 msgstr "l'axe y a une échelle de probabilités cumulées, 'ylim' doit être dans l'intervalle [0,1]"
 
@@ -133,20 +132,35 @@ msgstr "rows * columns trop petit"
 msgid "Missing rows"
 msgstr "Lignes manquantes"
 
-msgid "'expr' must be a function or an expression containing 'x'"
-msgstr "'expr' doit être une fonction ou une expression contenant 'x'"
+msgid "'expr' must be a function, or a call or an expression containing '%s'"
+msgstr "'expr' doit être une fonction, un appel ou une expression contenant '%s'"
+
+msgid "'add' will be ignored as there is no existing plot"
+msgstr "'add' sera ignoré puisqu'il n'y a aucun graphique"
 
 msgid "'from' and 'to' must be > 0 with log=\"x\""
 msgstr "'from' et 'to' doivent être > 0 avec log=\"x\""
 
+msgid "'expr' did not evaluate to an object of length 'n'"
+msgstr "'expr' n'a pas été avalué vers un objet de taille 'n'"
+
 msgid "wrong method"
 msgstr "mauvaise méthode"
+
+msgid "Must specify 'breaks' in hist(<POSIXt>)"
+msgstr "'breaks' doit être spécifié dans hist(<POSIXt>)"
 
 msgid "invalid specification of 'breaks'"
 msgstr "valeur de 'breaks' incorrecte"
 
+msgid "Must specify 'breaks' in hist(<Date>)"
+msgstr "'breaks' doit être spécifié dans hist(<Date>)"
+
 msgid "'x' must be a numeric vector or matrix"
 msgstr "'y' doit être un vecteur numérique ou une matrice"
+
+msgid "'x' is neither a vector nor a matrix: using as.numeric(x)"
+msgstr "'x' n'est ni un vecteur ni une matrice : utilisation de as.numeric(x)"
 
 msgid "'x' must be an array"
 msgstr "'x' doit être un tableau"
@@ -223,6 +237,9 @@ msgstr "toutes les limites de classes doivent être finies"
 msgid "dimensions of z are not length(x)(-1) times length(y)(-1)"
 msgstr "les dimensions de z ne sont pas length(x)(-1) multiplié par length(y)(-1)"
 
+msgid "useRaster=TRUE can only be used with a regular grid"
+msgstr "useRaster = TRUE n'est utilisable qu'avec une grille régulière"
+
 msgid "'respect' must be logical or matrix with same dimension as 'mat'"
 msgstr "'respect' doit être soit une valeur logique soit une matrice de même dimension que 'mat'"
 
@@ -290,6 +307,9 @@ msgstr "seulement une colonne dans l'argument pour 'pairs'"
 msgid "the 'panel' function made a new plot"
 msgstr "la fonction 'panel' a créé un nouveau graphe"
 
+msgid "surface extends beyond the box"
+msgstr "la surface s'étend au delà de la boite"
+
 msgid "'x' values must be positive."
 msgstr "les valeurs de 'x' doivent être positives."
 
@@ -328,6 +348,9 @@ msgstr "il doit y avoir au moins une variable numérique !"
 
 msgid "cannot hatch with logarithmic scale active"
 msgstr "le hachurage n'est pas réalisable avec une échelle logarithmique"
+
+msgid "Invalid fill rule for graphics path"
+msgstr "Règle de remplissage incorrecte pour le chemin graphique"
 
 msgid "invalid rectangle specification"
 msgstr "spécification de rectangle incorrecte"
@@ -414,3 +437,8 @@ msgid_plural "arguments %s are not made use of"
 msgstr[0] "l'argument %s n'est pas utilisé par"
 msgstr[1] "les arguments %s ne sont pas utilisés par"
 
+#~ msgid "explanatory variable should be numeric"
+#~ msgstr "la variable explicative doit être numérique"
+
+#~ msgid "regression coefficients"
+#~ msgstr "coefficients de régression"

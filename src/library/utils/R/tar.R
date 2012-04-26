@@ -58,35 +58,43 @@ untar <- function(tarfile, files = NULL, list = FALSE, exdir = ".",
     }
     tarfile <- path.expand(tarfile)
     if (!gzOK && cflag == "z" && nzchar(ZIP <- Sys.getenv("R_GZIPCMD"))) {
-        TAR <- paste(ZIP, "-dc", tarfile, "|", TAR)
+        TAR <- paste(ZIP, "-dc", shQuote(tarfile), "|", TAR)
         tarfile <- "-"
         cflag <- ""
     }
     if (!gzOK && cflag == "j" && nzchar(ZIP <- Sys.getenv("R_BZIPCMD"))) {
-        TAR <- paste(ZIP,  "-dc", tarfile, "|", TAR)
+        TAR <- paste(ZIP,  "-dc", shQuote(tarfile), "|", TAR)
         tarfile < "-"
         cflag <- ""
     }
     if (cflag == "J") {
-        TAR <- paste("xz -dc", tarfile, "|", TAR)
+        TAR <- paste("xz -dc", shQuote(tarfile), "|", TAR)
         tarfile < "-"
         cflag <- ""
     }
     if (list) {
         cmd <- paste(TAR, " -", cflag, "tf ", shQuote(tarfile), sep = "")
         if (length(extras)) cmd <- paste(cmd, extras, collapse = " ")
-        if (verbose) message("untar: using cmd = ", sQuote(cmd))
+        if (verbose) message("untar: using cmd = ", sQuote(cmd), domain = NA)
         system(cmd, intern = TRUE)
     } else {
         cmd <- paste(TAR, " -", cflag, "xf ", shQuote(tarfile), sep = "")
         if (!missing(exdir)) {
-            dir.create(exdir, showWarnings = FALSE, recursive = TRUE)
-            cmd <- paste(cmd, "-C", shQuote(exdir))
+            if (!file_test("-d", exdir)) {
+                if(!dir.create(exdir, showWarnings = TRUE, recursive = TRUE))
+                    stop(gettextf("failed to create directory %s", sQuote(exdir)),
+                         domain = NA)
+            }
+            cmd <- if(.Platform$OS.type == "windows")
+                ## some versions of tar.exe need / here
+                paste(cmd, "-C", gsub("\\", "/", exdir, fixed=TRUE))
+            else
+                paste(cmd, "-C", shQuote(exdir))
         }
         if (length(extras)) cmd <- paste(cmd, extras, collapse = " ")
         if (length(files))
             cmd <- paste(cmd, paste(shQuote(files), collapse = " "))
-        if (verbose) message("untar: using cmd = ", sQuote(cmd))
+        if (verbose) message("untar: using cmd = ", sQuote(cmd), domain = NA)
         res <- system(cmd)
         if (res) warning(sQuote(cmd), " returned error code ", res,
                          domain = NA)
@@ -112,6 +120,17 @@ untar2 <- function(tarfile, files = NULL, list = FALSE, exdir = ".")
         x
     }
 
+    mydir.create <- function(path, ...) {
+        ## for Windows' sake
+        path <- sub("[\\/]$", "", path)
+        if(file_test("-d", path)) return()
+        if(!dir.create(path, showWarnings = TRUE, recursive = TRUE, ...))
+           stop(gettextf("failed to create directory %s", sQuote(path)),
+                domain = NA)
+    }
+
+    warn1 <- character()
+
     ## A tar file is a set of 512 byte records,
     ## a header record followed by file contents (zero-padded).
     ## See http://en.wikipedia.org/wiki/Tar_%28file_format%29
@@ -121,7 +140,7 @@ untar2 <- function(tarfile, files = NULL, list = FALSE, exdir = ".")
     } else if(inherits(tarfile, "connection")) con <- tarfile
     else stop("'tarfile' must be a character string or a connection")
     if (!missing(exdir)) {
-        dir.create(exdir, showWarnings = FALSE, recursive = TRUE)
+        mydir.create(exdir)
         od <- setwd(exdir)
         on.exit(setwd(od), add = TRUE)
     }
@@ -146,7 +165,7 @@ untar2 <- function(tarfile, files = NULL, list = FALSE, exdir = ".")
         size <- getOct(block, 124, 12)
         ts <- getOct(block, 136, 12)
         ft <- as.POSIXct(as.numeric(ts), origin="1970-01-01", tz="UTC")
-        csum <- getOct(block, 148, 6)
+        csum <- getOct(block, 148, 8)
         block[149:156] <- charToRaw(" ")
         xx <- as.integer(block)
         checksum <- sum(xx) %% 2^24 # 6 bytes
@@ -166,8 +185,7 @@ untar2 <- function(tarfile, files = NULL, list = FALSE, exdir = ".")
             dothis <- !list
             if(dothis && length(files)) dothis <- name %in% files
             if(dothis) {
-                dir.create(dirname(name), showWarnings = FALSE,
-                           recursive = TRUE)
+                mydir.create(dirname(name))
                 out <- file(name, "wb")
             }
             for(i in seq_len(ceiling(size/512L))) {
@@ -181,7 +199,7 @@ untar2 <- function(tarfile, files = NULL, list = FALSE, exdir = ".")
             }
             if(dothis) {
                 close(out)
-                Sys.chmod(name, mode)
+                Sys.chmod(name, mode, FALSE) # override umask
                 .Call("R_setFileTime", name, ft, PACKAGE = "base")
             }
         } else if(ctype %in% c("1", "2")) { # hard and symbolic links
@@ -191,15 +209,39 @@ untar2 <- function(tarfile, files = NULL, list = FALSE, exdir = ".")
             if(!is.null(lname)) {name <- lname; lname <- NULL}
             if(!is.null(llink)) {name2 <- llink; llink <- NULL}
             if(!list) {
-                ## this will not work for links to dirs on Windows
-                if(.Platform$OS.type == "windows") file.copy(name2, name)
-                else file.symlink(name2, name)
+                if(ctype == "1") {
+                    if (!file.link(name2, name)) { # will give a warning
+                        ## link failed, so try a file copy
+                        if(file.copy(name2, name))
+                             warn1 <- c(warn1, "restoring hard link as a file copy")
+                        else
+                            warning(gettextf("failed to copy %s to %s", sQuote(name2), sQuote(name)), domain = NA)
+                    }
+                } else {
+                    if(.Platform$OS.type == "windows") {
+                        ## this will not work for links to dirs
+                        from <- file.path(dirname(name), name2)
+                        if (!file.copy(from, name))
+                            warning(gettextf("failed to copy %s to %s", sQuote(from), sQuote(name)), domain = NA)
+                        else
+                            warn1 <- c(warn1, "restoring symbolic link as a file copy")
+                   } else {
+                       if(!file.symlink(name2, name)) { # will give a warning
+                        ## so try a file copy: will not work for links to dirs
+                        from <- file.path(dirname(name), name2)
+                        if (file.copy(from, name))
+                            warn1 <- c(warn1, "restoring symbolic link as a file copy")
+                           else
+                               warning(gettextf("failed to copy %s to %s", sQuote(from), sQuote(name)), domain = NA)
+                       }
+                   }
+                }
             }
         } else if(ctype == "5") {
             contents <- c(contents, name)
             if(!list) {
-                dir.create(name, showWarnings = FALSE, recursive = TRUE)
-                Sys.chmod(name, mode)
+                mydir.create(name)
+                Sys.chmod(name, mode, TRUE) # FIXME: check result
                 ## not much point, since dir will be populated afterwards
                 ## .Call("R_setFileTime", name, ft)
             }
@@ -217,41 +259,51 @@ untar2 <- function(tarfile, files = NULL, list = FALSE, exdir = ".")
                 llink <- rawToChar(block[seq_len(ns)])
         } else stop("unsupported entry type ", sQuote(ctype))
     }
+    if(length(warn1)) {
+        warn1 <- unique(warn1)
+        for (w in warn1) warning(w, domain = NA)
+    }
     if(list) contents else invisible(0L)
 }
 
 tar <- function(tarfile, files = NULL,
                 compression = c("none", "gzip", "bzip2", "xz"),
-                compression_level = 6, tar = Sys.getenv("tar"))
+                compression_level = 6, tar = Sys.getenv("tar"),
+                extra_flags = "")
 {
     if(is.character(tarfile)) {
-        TAR <- tar
-        if(nzchar(TAR) && TAR != "internal") {
+        if(nzchar(tar) && tar != "internal") {
             ## FIXME: could pipe through gzip etc: might be safer for xz
             ## as -J was lzma in GNU tar 1.20:21
             flags <- switch(match.arg(compression),
-                            "none" = "cf",
-                            "gzip" = "zcf",
-                            "bzip2" = "jcf",
-                            "xz" = "Jcf")
-            cmd <- paste(shQuote(TAR), flags, shQuote(tarfile),
+                            "none" = "-cf",
+                            "gzip" = "-zcf",
+                            "bzip2" = "-jcf",
+                            "xz" = "-Jcf")
+
+            if (grepl("darwin", R.version$os)) {
+                ## precaution for Mac OS X to omit resource forks
+                ## we can't tell the running OS version from R.version$os
+                ## but at least it will not be older
+                tar <- paste("COPYFILE_DISABLE=1", tar) # >= 10.5, Leopard
+                if (grepl("darwin8", R.version$os)) # 10.4, Tiger
+                    tar <- paste("COPY_EXTENDED_ATTRIBUTES_DISABLE=1", tar)
+            }
+            cmd <- paste(tar, extra_flags, flags, shQuote(tarfile),
                          paste(shQuote(files), collapse=" "))
             return(invisible(system(cmd)))
         }
         con <- switch(match.arg(compression),
                       "none" =    file(tarfile, "wb"),
-                      "gzip" =  gzfile(tarfile, "wb", compress = compression_level),
-                      "bzip2" = bzfile(tarfile, "wb", compress = compression_level),
-                      "xz" =    xzfile(tarfile, "wb", compress = compression_level))
+                      "gzip" =  gzfile(tarfile, "wb", compression = compression_level),
+                      "bzip2" = bzfile(tarfile, "wb", compression = compression_level),
+                      "xz" =    xzfile(tarfile, "wb", compression = compression_level))
         on.exit(close(con))
     } else if(inherits(tarfile, "connection")) con <- tarfile
     else stop("'tarfile' must be a character string or a connection")
 
     files <- list.files(files, recursive = TRUE, all.files = TRUE,
-                        full.names = TRUE)
-    ## this omits directories: get back the non-empty ones
-    bf <- unique(dirname(files))
-    files <- c(bf[!bf %in% c(".", files)], files)
+                        full.names = TRUE, include.dirs = TRUE)
 
     for (f in unique(files)) {
         info <- file.info(f)
@@ -269,17 +321,20 @@ tar <- function(tarfile, files = NULL,
             if(is.infinite(s) || s+100 < length(name))
                 stop("file path is too long")
             warning("storing paths of more than 100 bytes is not portable:\n  ",
-                    sQuote(f))
+                    sQuote(f), domain = NA)
             prefix <- name[1:(s-1)]
             name <- name[-(1:s)]
             header[345+seq_along(prefix)] <- prefix
         }
         header[seq_along(name)] <- name
         header[101:107] <- charToRaw(sprintf("%07o", info$mode))
-        if(!is.na(info$uid))
-            header[109:115] <- charToRaw(sprintf("%07o", info$uid))
-        if(!is.na(info$gid))
-            header[117:123] <- charToRaw(sprintf("%07o", info$gid))
+        ## Windows does not have uid, gid: defaults to 0, which isn't great
+        uid <- info$uid
+        if(!is.null(uid) && !is.na(uid))
+            header[109:115] <- charToRaw(sprintf("%07o", uid))
+        gid <- info$gid
+        if(!is.null(gid) && !is.na(gid))
+            header[117:123] <- charToRaw(sprintf("%07o", gid))
         ## size is 0 for directories and it seems for links.
         size <- ifelse(info$isdir, 0, info$size)
         header[137:147] <- charToRaw(sprintf("%011o", as.integer(info$mtime)))
@@ -299,11 +354,14 @@ tar <- function(tarfile, files = NULL,
         ## the next two are what POSIX says, not what GNU tar does.
         header[258:262] <- charToRaw("ustar")
         header[264:265] <- charToRaw("0")
-        if(!is.na(s <- info$uname)) {
+        ## Windows does not have uname, grname
+        s <- info$uname
+        if(!is.null(s) && !is.na(s)) {
             ns <- nchar(s, "b")
             header[265L + (1:ns)] <- charToRaw(s)
         }
-        if(!is.na(s <- info$grname)) {
+        s <- info$grname
+        if(!is.null(s) && !is.na(s)) {
             ns <- nchar(s, "b")
             header[297L + (1:ns)] <- charToRaw(s)
         }

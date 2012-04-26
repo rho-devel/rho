@@ -20,7 +20,7 @@ line <- function(x, y=NULL)
     ok <- complete.cases(xy$x,xy$y)
     n <- length(ok)
     if(n <= 1) stop("insufficient observations")
-    z <- .C("tukeyline",
+    z <- .C(C_tukeyline,
 	    as.double(xy$x[ok]),
 	    as.double(xy$y[ok]),
 	    double(n),
@@ -28,7 +28,7 @@ line <- function(x, y=NULL)
 	    n,
 	    double(2),
 	    DUP=FALSE, PACKAGE="stats")
-    value <- list(call=sys.call(), coefficients = z[[6]],
+    value <- list(call=sys.call(), coefficients = z[[6L]],
                   residuals = z[[3L]], fitted.values = z[[4L]])
     class(value) <- "tukeyline"
     value

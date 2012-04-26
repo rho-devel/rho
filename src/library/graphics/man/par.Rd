@@ -1,6 +1,6 @@
 % File src/library/graphics/man/par.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{par}
@@ -78,7 +78,9 @@
 \concept{ylog}
 \concept{color}
 \concept{colour}
-  
+\alias{graphical parameter}
+\alias{graphical parameters}
+
 \title{Set or Query Graphical Parameters}
 
 %% The 'real documentation' is the code in ../../../main/par.c
@@ -99,8 +101,8 @@ par(\dots, no.readonly = FALSE)
 
 \arguments{
   \item{\dots}{arguments in \code{tag = value} form, or a list of tagged
-    values.  The tags must come from the graphical parameters described
-    below.}
+    values.  The tags must come from the names of graphical parameters
+    described in the \sQuote{Graphical Parameters} section.}
   \item{no.readonly}{logical; if \code{TRUE} and there are no other
     arguments, only parameters are returned which can be set by a
     subsequent \code{par()} call \emph{on the same device}.}
@@ -112,19 +114,20 @@ par(\dots, no.readonly = FALSE)
   querying/setting parameters.  (What device is controlled by
   \code{\link{options}("device")}.)
   
-  Parameters are queried by giving one or more character vectors to
-  \code{par}.
+  Parameters are queried by giving one or more character vectors of
+  parameter names to \code{par}.
 
   \code{par()} (no arguments) or \code{par(no.readonly=TRUE)} is used to
   get \emph{all} the graphical parameters (as a named list).  Their
-  names are currently taken from the unexported variable \code{.Pars}.
+  names are currently taken from the unexported variable
+  \code{graphics:::.Pars}.
 
   \emph{\bold{R.O.}} indicates \emph{\bold{read-only arguments}}: These
   may only be used in queries and cannot be set.  (\code{"cin"},
   \code{"cra"}, \code{"csi"}, \code{"cxy"} and \code{"din"} are always
   read-only.)
 
-  There are several parameters can only be set by a call to \code{par()}:
+  Several parameters can only be set by a call to \code{par()}:
   \itemize{
     \item \code{"ask"},
     \item \code{"fig"}, \code{"fin"},
@@ -135,7 +138,8 @@ par(\dots, no.readonly = FALSE)
     \item \code{"oma"}, \code{"omd"}, \code{"omi"},
     \item \code{"pin"}, \code{"plt"}, \code{"ps"}, \code{"pty"},
     \item \code{"usr"},
-    \item \code{"xlog"}, \code{"ylog"}
+    \item \code{"xlog"}, \code{"ylog"},
+    \item \code{"ylbias"}
   }
   The remaining parameters can also be set as arguments (often via
   \code{\dots}) to high-level plot functions such as
@@ -147,8 +151,8 @@ par(\dots, no.readonly = FALSE)
   \code{\link{box}}, \code{\link{contour}}, \code{\link{filled.contour}}
   and \code{\link{image}}.  Such settings will be active during the
   execution of the function, only.  However, see the comments on
-  \code{bg} and \code{cex}, which may be taken as arguments to certain
-  plot functions rather than as graphical parameters.
+  \code{bg} and \code{cex}, which may be taken as \emph{arguments}
+  to certain plot functions rather than as graphical parameters.
 
   The meaning of \sQuote{character size} is not well-defined: this is
   set up for the device taking \code{pointsize} into account but often
@@ -161,15 +165,12 @@ par(\dots, no.readonly = FALSE)
 }
 
 \value{
-  When parameters are set, their former values are returned in an
+  When parameters are set, their previous values are returned in an
   invisible named list.  Such a list can be passed as an argument to
-  \code{par} to restore the parameter values.
-  Use \code{par(no.readonly = TRUE)} for the full list of parameters
-  that can be restored.  However, restoring all of these is not wise
-  since they contain several ways to set the same quantities, and these
-  can have conflicting effects if the graphics device has been resized
-  since the parameters were saved.  You will reset all of \code{mfrow},
-  \code{mfcol} and \code{mfg} and will find \code{mfrow} wins.
+  \code{par} to restore the parameter values.  Use \code{par(no.readonly
+  = TRUE)} for the full list of parameters that can be restored.
+  However, restoring all of these is not wise: see the \sQuote{Note}
+  section.
 
   When just one parameter is queried, the value of that parameter
   is returned as (atomic) vector.  When two or more parameters are
@@ -188,7 +189,8 @@ par(\dots, no.readonly = FALSE)
       left-justified text, \code{0.5} (the default) centered text and \code{1}
       right-justified text.  (Any value in \eqn{[0, 1]} is allowed, and
       on most devices values outside that interval will also work.)
-      Note that the \code{adj} argument of \code{\link{text}} also
+      
+      Note that the \code{adj} \emph{argument} of \code{\link{text}} also
       allows \code{adj = c(x, y)} for different adjustment in x- and y-
       directions.  Note that whereas for \code{text} it refers to
       positioning of text about a point, for \code{mtext} and
@@ -224,15 +226,15 @@ par(\dots, no.readonly = FALSE)
       suppresses the box.}
     \item{\code{cex}}{A numerical value giving the amount by which
       plotting text and symbols should be magnified relative to the
-      default.  Note that some graphics functions such as
+      default.  This starts as \code{1} when a device is opened, and is
+      reset when the layout is changed, e.g. by setting \code{mfrow}.
+
+      Note that some graphics functions such as
       \code{\link{plot.default}} have an \emph{argument} of this name
       which \emph{multiplies} this graphical parameter, and some
       functions such as \code{\link{points}} accept a vector of values
       which are recycled.  Other uses will take just the first value if
       a vector of length greater than one is supplied.
-
-      This starts as \code{1} when a device is opened, and is reset when
-      the layout is changed, e.g. by setting \code{mfrow}.
     }
     \item{\code{cex.axis}}{The magnification to be used for axis
       annotation relative to the current setting of \code{cex}.}
@@ -277,7 +279,9 @@ par(\dots, no.readonly = FALSE)
       Note that \code{c(\link{strwidth}(ch), \link{strheight}(ch))} for
       a given string \code{ch} is usually much more precise.}
     \item{\code{din}}{\emph{\bold{R.O.}}; the device dimensions,
-      \code{(width,height)}, in inches.}
+      \code{(width,height)}, in inches.  See also
+      \code{\link{dev.size}}, which is updated immediately when an
+      on-screen device windows is re-sized.}
     \item{\code{err}}{(\emph{Unimplemented}; \R is silent when points
       outside the plot region are \emph{not} plotted.)
       The degree of error reporting desired.}
@@ -331,8 +335,8 @@ par(\dots, no.readonly = FALSE)
         \item{2:}{always perpendicular to the axis,}
         \item{3:}{always vertical.}
       }
-      Also supported by \code{\link{mtext}}.  Note that other
-      string/character rotation (via argument \code{srt} to \code{par})
+      Also supported by \code{\link{mtext}}.  Note that
+      string/character rotation \emph{via} argument \code{srt} to \code{par}
       does \emph{not} affect the axis labels.
     }
     \item{\code{lend}}{The line end style.  This can be specified as an
@@ -359,12 +363,10 @@ par(\dots, no.readonly = FALSE)
         \item{\code{2}}{and \code{"bevel"} mean bevelled line joins.}
       }
     }
-    \item{\code{lmitre}}{The line mitre limit.
-      This controls when mitred line joins are automatically
-      converted into bevelled line joins.  The
-      value must be larger than 1 and the default is 10.  Not all
-      devices will honour this setting.
-    }
+    \item{\code{lmitre}}{The line mitre limit.  This controls when
+      mitred line joins are automatically converted into bevelled line
+      joins.  The value must be larger than 1 and the default is 10.
+      Not all devices will honour this setting.}
     \item{\code{lty}}{The line type.
       Line types can either be specified as an integer (0=blank, 1=solid
       (default), 2=dashed, 3=dotted, 4=dotdash, 5=longdash, 6=twodash)
@@ -393,7 +395,10 @@ par(\dots, no.readonly = FALSE)
     }
     \item{\code{mai}}{A numerical vector of the form \code{c(bottom,
         left, top, right)} which gives the margin size specified in
-      inches.}
+      inches.\cr
+      \if{html}{\figure{mai.png}{options: width=35\% alt="Figure: mai.png"}}
+      \if{latex}{\figure{mai.pdf}{options: width=7cm}}
+    }
     \item{\code{mar}}{A numerical vector of the form \code{c(bottom,
         left, top, right)} which gives the number of lines of margin to be
       specified on the four sides of the plot.
@@ -421,7 +426,7 @@ par(\dots, no.readonly = FALSE)
       \code{mex} to \code{1}.
 
       If either of these is queried it will give the current layout, so
-      querying cannot tell you the order the array will be filled.
+      querying cannot tell you the order in which the array will be filled.
 
       Consider the alternatives, \code{\link{layout}} and
       \code{\link{split.screen}}.
@@ -446,14 +451,17 @@ par(\dots, no.readonly = FALSE)
     \item{\code{new}}{logical, defaulting to \code{FALSE}.  If set to
       \code{TRUE}, the next high-level plotting command (actually
       \code{\link{plot.new}}) should \emph{not clean} the frame before
-      drawing \emph{as if it was on a \bold{\emph{new}} device}.  It is
-      an error (ignored with a warning) to try to use \code{new=TRUE}
+      drawing \emph{as if it were on a \bold{\emph{new}} device}.  It is
+      an error (ignored with a warning) to try to use \code{new = TRUE}
       on a device that does not currently contain a high-level plot.}
     \item{\code{oma}}{A vector of the form \code{c(bottom, left, top,
-        right)} giving the size of the outer margins in lines of text.}
+        right)} giving the size of the outer margins in lines of text.\cr
+      \if{html}{\figure{oma.png}{options: width=25\% alt="Figure: oma.png"}}
+      \if{latex}{\figure{oma.pdf}{options: width=6cm}}
+    }
     \item{\code{omd}}{A vector of the form \code{c(x1, x2, y1, y2)}
       giving the region \emph{inside} outer margins in NDC (=
-      normalized device coordinates), i.e., as fraction (in \eqn{[0,1]})
+      normalized device coordinates), i.e., as a fraction (in \eqn{[0, 1]})
       of the device region.}
     \item{\code{omi}}{A vector of the form \code{c(bottom, left, top,
         right)} giving the size of the outer margins in inches.}
@@ -489,9 +497,8 @@ par(\dots, no.readonly = FALSE)
     \item{\code{tck}}{The length of tick marks as a fraction of the
       smaller of the width or height of the plotting region.
       If \code{tck >= 0.5} it is interpreted as a fraction of the
-      relevant side, so if
-      \code{tck = 1} grid lines are drawn.  The default setting
-      (\code{tck = NA}) is to use \code{tcl = -0.5}.}
+      relevant side, so if \code{tck = 1} grid lines are drawn.  The
+      default setting (\code{tck = NA}) is to use \code{tcl = -0.5}.}
     \item{\code{tcl}}{The length of tick marks as a fraction of the
       height of a line of text.  The default value is \code{-0.5};
       setting \code{tcl = NA} sets \code{tck = -0.01} which is S' default.}
@@ -513,10 +520,11 @@ par(\dots, no.readonly = FALSE)
       \code{"usr"} coordinates are log10-transformed here!)
 
       \describe{
-        \item{n=1}{will produce tick marks at \eqn{10^j} for
-          integer \eqn{j},}
-        \item{n=2}{gives marks  \eqn{k 10^j} with \eqn{k \in \{1, 5\}},}
-        \item{n=3}{gives marks  \eqn{k 10^j} with \eqn{k \in \{1, 2, 5\}}.}
+        \item{n=1}{will produce tick marks at \eqn{10^j} for integer \eqn{j},}
+        \item{n=2}{gives marks  \eqn{k 10^j} with
+	  \eqn{k \in \{1, 5\}}{k in {1,5}},}
+        \item{n=3}{gives marks  \eqn{k 10^j} with
+	  \eqn{k \in \{1, 2, 5\}}{k in {1,2,5}}.}
       }
       See \code{\link{axTicks}()} for a pure \R implementation of this.
 
@@ -529,21 +537,21 @@ par(\dots, no.readonly = FALSE)
     \item{\code{xaxs}}{The style of axis interval calculation to be used
       for the x-axis.  Possible values are \code{"r"}, \code{"i"},
       \code{"e"}, \code{"s"}, \code{"d"}.  The styles are generally
-      controlled by the range of data or \code{xlim}, if given.
+      controlled by the range of data or \code{xlim}, if given.\cr
       Style \code{"r"} (regular) first extends the data range by 4
       percent at each end and then finds an axis with pretty labels
-      that fits within the extended range.
+      that fits within the extended range.\cr
       Style \code{"i"} (internal) just finds an axis with pretty labels
-      that fits within the original data range.
+      that fits within the original data range.\cr
       Style \code{"s"} (standard) finds an axis with pretty labels
-      within which the original data range fits.
+      within which the original data range fits.\cr
       Style \code{"e"} (extended) is like style \code{"s"}, except that
       it is also ensures that there is room for plotting symbols within
-      the bounding box.
+      the bounding box.\cr
       Style \code{"d"} (direct) specifies that the current axis should
-      be used on subsequent plots.
-      (\emph{Only \code{"r"} and \code{"i"} styles are currently
-        implemented})}
+      be used on subsequent plots.\cr
+      (\emph{Only \code{"r"} and \code{"i"} styles have been
+        implemented in \R.})}
     \item{\code{xaxt}}{A character which specifies the x axis type.
       Specifying \code{"n"} suppresses plotting of the axis.  The
       standard value is \code{"s"}: for compatibility with S values
@@ -556,7 +564,7 @@ par(\dots, no.readonly = FALSE)
     \item{\code{xpd}}{A logical value or \code{NA}.
       If \code{FALSE}, all plotting is clipped to the plot region, if
       \code{TRUE}, all plotting is clipped to the figure region, and if
-      \code{NA}, all plotting is clipped to the device region. See also
+      \code{NA}, all plotting is clipped to the device region.  See also
       \code{\link{clip}}.}
     \item{\code{yaxp}}{A vector of the form \code{c(y1, y2, n)} giving
       the coordinates of the extreme tick marks and the number of
@@ -566,6 +574,12 @@ par(\dots, no.readonly = FALSE)
       for the y-axis.  See \code{xaxs} above.}
     \item{\code{yaxt}}{A character which specifies the y axis type.
       Specifying \code{"n"} suppresses plotting.}
+    \item{\code{ylbias}}{A positive real value used in the positioning
+      of text in the margins by \code{\link{axis}} and
+      \code{\link{mtext}}.  The default is in principle device-specific,
+      but currently \code{0.2} for all of \R's own devices.  Set this to
+      \code{0.2} for compatibility with \R < 2.14.0 on \code{x11} and
+      \code{windows()} devices.}
     \item{\code{ylog}}{A logical value; see \code{xlog} above.}
   }
 }

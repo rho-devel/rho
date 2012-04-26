@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -40,11 +40,11 @@
 
 #include "CXXR/Promise.h"
 
-#include "RCNTXT.h"
 #include "localization.h"
 #include "R_ext/Error.h"
-#include "CXXR/Evaluator.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/Bailout.hpp"
+#include "CXXR/GCStackRoot.hpp"
+#include "CXXR/PlainContext.hpp"
 
 using namespace CXXR;
 
@@ -70,33 +70,58 @@ RObject* Promise::evaluate(Environment* /*env*/)
 {
     if (m_value == Symbol::unboundValue()) {
 	// Force promise:
-	RPRSTACK prstack;
-	if (evaluationInterrupted()) {
+	if (m_interrupted) {
 	    Rf_warning(_("restarting interrupted promise evaluation"));
-	    markEvaluationInterrupted(false);
+	    m_interrupted = false;
 	}
-	else if (underEvaluation())
+	else if (m_under_evaluation)
 	    Rf_error(_("promise already under evaluation: "
 		       "recursive default argument reference "
 		       "or earlier problems?"));
-	/* Mark the promise as under evaluation and push it on a stack
-	   that can be used to unmark pending promises if a jump out
-	   of the evaluation occurs. */
-        markUnderEvaluation(true);
-	prstack.promise = this;
-	prstack.next = R_PendingPromises;
-	R_PendingPromises = &prstack;
-	RObject* val = Evaluator::evaluate(m_valgen, environment());
-
-	/* Pop the stack, unmark the promise and set its value field.
-	   Also set the environment to R_NilValue to allow GC to
-	   reclaim the promise environment; this is also useful for
-	   fancy games with delayedAssign() */
-	R_PendingPromises = prstack.next;
-	markUnderEvaluation(false);
-	setValue(val);
+	m_under_evaluation = true;
+	try {
+	    PlainContext cntxt;
+	    RObject* val = Evaluator::evaluate(m_valgen, environment());
+	    setValue(val);
+	}
+	catch (...) {
+	    m_interrupted = true;
+	    throw;
+	}
+	m_under_evaluation = false;
     }
     return value();
+}
+
+bool Promise::isMissingSymbol() const
+{
+    bool ans = false;
+    /* This is wrong but I'm not clear why - arr
+    if (m_value == Symbol::missingArgument())
+     	return true;
+    */
+    if (m_value == Symbol::unboundValue() && m_valgen) {
+	RObject* prexpr = PREXPR(const_cast<Promise*>(this));
+	if (prexpr->sexptype() == SYMSXP) {
+	    // According to Luke Tierney's comment to R_isMissing() in CR,
+	    // if a cycle is found then a missing argument has been
+	    // encountered, so the return value is true.
+	    if (m_under_evaluation)
+		return true;
+	    try {
+		const Symbol* promsym
+		    = static_cast<const Symbol*>(prexpr);
+		m_under_evaluation = true;
+		ans = isMissingArgument(promsym, environment()->frame());
+	    }
+	    catch (...) {
+		m_under_evaluation = false;
+		throw;
+	    }
+	    m_under_evaluation = false;
+	}
+    }
+    return ans;
 }
 
 void Promise::setValue(RObject* val)
@@ -117,9 +142,12 @@ void Promise::visitReferents(const_visitor* v) const
     const GCNode* valgen = m_valgen;
     const GCNode* env = m_environment;
     RObject::visitReferents(v);
-    if (value) value->conductVisitor(v);
-    if (valgen) valgen->conductVisitor(v);
-    if (env) env->conductVisitor(v);
+    if (value)
+	(*v)(value);
+    if (valgen)
+	(*v)(valgen);
+    if (env)
+	(*v)(env);
 }
 
 // ***** C interface *****
@@ -128,7 +156,7 @@ SEXP Rf_mkPROMISE(SEXP expr, SEXP rho)
 {
     GCStackRoot<> exprt(expr);
     GCStackRoot<Environment> rhort(SEXP_downcast<Environment*>(rho));
-    return GCNode::expose(new Promise(exprt, rhort));
+    return CXXR_NEW(Promise(exprt, rhort));
 }
 
 void SET_PRVALUE(SEXP x, SEXP v)

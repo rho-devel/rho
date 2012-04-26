@@ -19,7 +19,7 @@ StructTS <- function(x, type = c("level", "trend", "BSM"),
 {
     KalmanLike2 <- function (y, mod, nit = 0)
     {
-        x <- .Call(R_KalmanLike, y, mod$Z, mod$a, mod$P, mod$T, mod$V,
+        x <- .Call(C_KalmanLike, y, mod$Z, mod$a, mod$P, mod$T, mod$V,
                    mod$h, mod$Pn, as.integer(nit), FALSE, fast=TRUE)
         0.5 * sum(x)/length(y)
     }
@@ -49,12 +49,15 @@ StructTS <- function(x, type = c("level", "trend", "BSM"),
     }
     makeBSM <- function(x, nf)
     {
-        if(nf <= 1L) stop("frequency must be a positive integer for BSM")
+        ## See Harvey (1993, p.143)
+        if(nf <= 1L) stop("frequency must be a positive integer >= 2 for BSM")
         T <- matrix(0., nf + 1L, nf + 1L)
         T[1L:2L, 1L:2L] <- c(1, 0, 1, 1)
         T[3L, ] <- c(0, 0, rep(-1, nf - 1L))
-        ind <- 3:nf
-        T[cbind(ind+1L, ind)] <- 1
+        if(nf >= 3L) {
+            ind <- 3:nf
+            T[cbind(ind+1L, ind)] <- 1
+        }
         Z <- c(1., 0., 1., rep(0., nf - 2L))
         xm <- if(is.na(x[1L])) mean(x, na.rm = TRUE) else x[1L]
         if(is.na(xm)) stop("the series is entirely NA")
@@ -132,7 +135,7 @@ StructTS <- function(x, type = c("level", "trend", "BSM"),
     dimnames(states) <- list(time(x), cn)
     states <- ts(states, start = xtsp[1L], frequency = nf)
 
-    coef <- coef*vx
+    coef <- pmax(coef*vx, 0) # computed values just below 0 are possible
     names(coef) <- switch(type,
                           "level" = c("level", "epsilon"),
                           "trend" = c("level", "slope", "epsilon"),

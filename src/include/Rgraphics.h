@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -95,10 +95,12 @@ typedef enum {
 #define GMode			Rf_GMode
 #define GMtext			Rf_GMtext
 #define GNewPlot		Rf_GNewPlot
+#define GPath   		Rf_GPath
 #define GPolygon		Rf_GPolygon
 #define GPolyline		Rf_GPolyline
 #define GPretty			Rf_GPretty
 #define GRect			Rf_GRect
+#define GRaster			Rf_GRaster
 #define GReset			Rf_GReset
 #define GRestore		Rf_GRestore
 #define GRestorePars		Rf_GRestorePars
@@ -194,12 +196,18 @@ void GMetricInfo(int, double*, double*, double*, GUnit, pGEDevDesc);
 /* Set device "mode" (drawing or not drawing) here for windows and mac drivers.
  */
 void GMode(int, pGEDevDesc);
+/* Draw a path using the specified lists of x and y values: */
+void GPath(double*, double*, int, int*, Rboolean, int, int, pGEDevDesc);
 /* Draw a polygon using the specified lists of x and y values: */
 void GPolygon(int, double*, double*, GUnit, int, int, pGEDevDesc);
 /* Draw series of straight lines using the specified lists of x and y values: */
 void GPolyline(int, double*, double*, GUnit, pGEDevDesc);
 /* Draw a rectangle given two opposite corners: */
 void GRect(double, double, double, double, GUnit, int, int, pGEDevDesc);
+/* Draw a raster image given two opposite corners: */
+void GRaster(unsigned int*, int, int,
+             double, double, double, double,
+             double, Rboolean, pGEDevDesc);
 /* Return the height of the specified string in the specified units: */
 double GStrHeight(const char *, cetype_t, GUnit, pGEDevDesc);
 /* Return the width of the specified string in the specified units */

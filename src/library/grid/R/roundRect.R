@@ -1,3 +1,19 @@
+#  File src/library/grid/R/roundrect.R
+#  Part of the R package, http://www.R-project.org
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
 
 # Good idea to choose r as absolute unit or "snpc"
 roundrectGrob <- function(x=0.5, y=0.5, width=1, height=1,
@@ -13,7 +29,7 @@ roundrectGrob <- function(x=0.5, y=0.5, width=1, height=1,
         width <- unit(width, default.units)
     if (!is.unit(height))
         height <- unit(height, default.units)
-    grob(x=x, y=y, width=width, height=height, r=r,
+    grob(x=x, y=y, width=width, height=height, r=r, just=just,
          name=name, gp=gp, vp=vp, cl="roundrect")
 }
 
@@ -98,13 +114,13 @@ rrpoints <- function(x) {
 
 drawDetails.roundrect <- function(x, recording) {
     boundary <- rrpoints(x)
-    grid.Call.graphics("L_polygon", boundary$x, boundary$y,
+    grid.Call.graphics(L_polygon, boundary$x, boundary$y,
                        list(as.integer(seq_along(boundary$x))))
 }
 
 xDetails.roundrect <- function(x, theta) {
     boundary <- rrpoints(x)
-    bounds <- grid.Call("L_locnBounds", boundary$x, boundary$y, theta)
+    bounds <- grid.Call(L_locnBounds, boundary$x, boundary$y, theta)
     if (is.null(bounds))
         unit(0.5, "npc")
     else
@@ -113,7 +129,7 @@ xDetails.roundrect <- function(x, theta) {
 
 yDetails.roundrect <- function(x, theta) {
     boundary <- rrpoints(x)
-    bounds <- grid.Call("L_locnBounds", boundary$x, boundary$y, theta)
+    bounds <- grid.Call(L_locnBounds, boundary$x, boundary$y, theta)
     if (is.null(bounds))
         unit(0.5, "npc")
     else
@@ -122,7 +138,7 @@ yDetails.roundrect <- function(x, theta) {
 
 widthDetails.roundrect <- function(x) {
     boundary <- rrpoints(x)
-    bounds <- grid.Call("L_locnBounds", boundary$x, boundary$y, 0)
+    bounds <- grid.Call(L_locnBounds, boundary$x, boundary$y, 0)
     if (is.null(bounds))
         unit(0, "inches")
     else
@@ -131,7 +147,7 @@ widthDetails.roundrect <- function(x) {
 
 heightDetails.roundrect <- function(x) {
     boundary <- rrpoints(x)
-    bounds <- grid.Call("L_locnBounds", boundary$x, boundary$y, 0)
+    bounds <- grid.Call(L_locnBounds, boundary$x, boundary$y, 0)
     if (is.null(bounds))
         unit(0, "inches")
     else

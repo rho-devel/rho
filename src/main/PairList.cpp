@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -65,8 +65,6 @@ namespace CXXR {
    }
 }
 
-void* PairList::s_cons_pad = GCNode::operator new(sizeof(PairList));
-
 namespace {
     // Used in {,un}packGPBits():
     const unsigned int BINDING_LOCK_MASK = 1<<14;
@@ -74,9 +72,7 @@ namespace {
 }
 
 PairList::PairList(const PairList& pattern)
-    : ConsCell(pattern, 0), m_argused(0),
-      m_active_binding(pattern.m_active_binding),
-      m_binding_locked(pattern.m_binding_locked)
+    : ConsCell(pattern, 0)
 {
     // Clone the tail:
     PairList* c = this;
@@ -87,25 +83,31 @@ PairList::PairList(const PairList& pattern)
 	pl = pl->m_tail;
     }
 }
-    
+
+// Non-inlined so it can get put in .text.hot :
+PairList::~PairList()
+{}
+
 PairList* PairList::clone() const
 {
     return expose(new PairList(*this));
 }
 
-PairList* PairList::makeList(size_t sz) throw (std::bad_alloc)
+PairList* PairList::make(size_t sz) throw (std::bad_alloc)
 {
     PairList* ans = 0;
     while (sz--)
-	ans = construct(0, ans);
+	ans = cons(0, ans);
     return ans;
 }
 
 unsigned int PairList::packGPBits() const
 {
     unsigned int ans = ConsCell::packGPBits();
-    if (m_binding_locked) ans |= BINDING_LOCK_MASK;
-    if (m_active_binding) ans |= ACTIVE_BINDING_MASK;
+    if (m_binding_locked)
+	ans |= BINDING_LOCK_MASK;
+    if (m_active_binding)
+	ans |= ACTIVE_BINDING_MASK;
     return ans;
 }
 
@@ -125,12 +127,12 @@ void PairList::unpackGPBits(unsigned int gpbits)
 
 SEXP Rf_allocList(unsigned int n)
 {
-    return PairList::makeList(n);
+    return PairList::make(n);
 }
 
 SEXP Rf_cons(SEXP cr, SEXP tl)
 {
-    return PairList::construct(cr, SEXP_downcast<PairList*>(tl));
+    return PairList::cons(cr, SEXP_downcast<PairList*>(tl));
 }
 
 Rboolean IS_ACTIVE_BINDING(SEXP b)
@@ -144,7 +146,8 @@ Rboolean IS_ACTIVE_BINDING(SEXP b)
 
 SEXP SETCDR(SEXP x, SEXP y)
 {
-    if (!x) Rf_error(_("bad value"));
+    if (!x)
+	Rf_error(_("bad value"));
     ConsCell& cc = *SEXP_downcast<ConsCell*>(x);
     PairList* tl = SEXP_downcast<PairList*>(y);
     cc.setTail(tl);
@@ -153,52 +156,66 @@ SEXP SETCDR(SEXP x, SEXP y)
 
 SEXP SETCADR(SEXP x, SEXP y)
 {
-    if (!x) Rf_error(_("bad value"));
+    if (!x)
+	Rf_error(_("bad value"));
     ConsCell* cc = SEXP_downcast<ConsCell*>(x);
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc->setCar(y);
     return y;
 }
 
 SEXP SETCADDR(SEXP x, SEXP y)
 {
-    if (!x) Rf_error(_("bad value"));
+    if (!x)
+	Rf_error(_("bad value"));
     ConsCell* cc = SEXP_downcast<ConsCell*>(x);
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc->setCar(y);
     return y;
 }
 
 SEXP SETCADDDR(SEXP x, SEXP y)
 {
-    if (!x) Rf_error(_("bad value"));
+    if (!x)
+	Rf_error(_("bad value"));
     ConsCell* cc = SEXP_downcast<ConsCell*>(x);
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc->setCar(y);
     return y;
 }
 
 SEXP SETCAD4R(SEXP x, SEXP y)
 {
-    if (!x) Rf_error(_("bad value"));
+    if (!x)
+	Rf_error(_("bad value"));
     ConsCell* cc = SEXP_downcast<ConsCell*>(x);
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc->setCar(y);
     return y;
 }

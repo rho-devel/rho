@@ -1,11 +1,13 @@
 % File src/library/graphics/man/plot.table.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{plot.table}
 \alias{plot.table}
-\title{Plot Methods for `table' Objects}
+\alias{lines.table}
+\alias{points.table}
+\title{Plot Methods for \code{table} Objects}
 \description{
   This is a method of the generic \code{plot} function for
   (contingency) \code{\link{table}} objects.  Whereas for two- and more
@@ -13,12 +15,14 @@
   one-dimensional ones are plotted as bars.
 }
 \usage{
-%% Improvement ideas: see code definition, currently in ../R/plot.R
 \method{plot}{table}(x, type = "h", ylim = c(0, max(x)), lwd = 2,
      xlab = NULL, ylab = NULL, frame.plot = is.num, \dots)
+\method{points}{table}(x, y = NULL, type = "h", lwd = 2, \dots)
+\method{lines}{table}(x, y = NULL, type = "h", lwd = 2, \dots)
 }
 \arguments{
   \item{x}{a \code{\link{table}} (like) object.}
+  \item{y}{Must be \code{NULL}: there to protect against incorrect calls.}
   \item{type}{plotting type.}
   \item{ylim}{range of y-axis.}
   \item{lwd}{line width for bars when \code{type = "h"} is used in the 1D case.}

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -34,42 +34,34 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is either ASCII or handled as a whole */
-
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
 #include "Defn.h"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 
 R_len_t Rf_length(SEXP s)
 {
-    int i;
+    if (Rf_isVector(s))
+	return LENGTH(s);
     switch (TYPEOF(s)) {
     case NILSXP:
 	return 0;
-    case LGLSXP:
-    case INTSXP:
-    case REALSXP:
-    case CPLXSXP:
-    case STRSXP:
-    case CHARSXP:
-    case VECSXP:
-    case EXPRSXP:
-    case RAWSXP:
-	return LENGTH(s);
     case LISTSXP:
     case LANGSXP:
     case DOTSXP:
-	i = 0;
-	while (s != NULL && s != R_NilValue) {
-	    i++;
-	    s = CDR(s);
+	{
+	    int i = 0;
+	    while (s != NULL && s != R_NilValue) {
+		i++;
+		s = CDR(s);
+	    }
+	    return i;
 	}
-	return i;
     case ENVSXP:
 	return Rf_envlength(s);
     default:
@@ -91,13 +83,16 @@ SEXP attribute_hidden Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
     GCStackRoot<> bodyrt(body);
     GCStackRoot<Environment> envrt(rho ? SEXP_downcast<Environment*>(rho)
 				   : Environment::global());
-    if (!isList(body) && !isLanguage(body) && !isSymbol(body)
-	&& !isExpression(body) && !isVector(body)
-#ifdef BYTECODE
-	&& !isByteCode(body)
-#endif
-	)
-	Rf_error(_("invalid body argument for \"function\"\n"
-		   "Should NEVER happen; please bug.report() [mkCLOSXP]"));
-    return GCNode::expose(new Closure(formrt, bodyrt, envrt));
+    switch (TYPEOF(body)) {
+    case CLOSXP:
+    case BUILTINSXP:
+    case SPECIALSXP:
+    case DOTSXP:
+    case ANYSXP:
+	Rf_error(_("invalid body argument for 'function'"));
+	break;
+    default:
+	break;
+    }
+    return CXXR_NEW(Closure(formrt, bodyrt, envrt));
 }

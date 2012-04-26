@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,8 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1995-2006	Robert Gentleman, Ross Ihaka and the
- *				R Development Core Team
+ *  Copyright (C) 1995-2011	The R Development Core Team
  *  Copyright (C) 2003		The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -50,13 +49,19 @@
 			ysd += ym * ym;		\
 		    }
 
+#define ANS(I,J)  ans[I + J * ncx]
+
 /* Note that "if (kendall)" and	 "if (cor)" are used inside a double for() loop;
    which makes the code better readable -- and is hopefully dealt with
    by a smartly optimizing compiler
 */
 
+/** Compute   Cov(xx[], yy[])  or  Cor(.,.)  with n = length(xx)
+ */
 #define COV_PAIRWISE_BODY						\
-	    xx = &x[i * n];						\
+	long double sum, xmean =0., ymean =0., xsd, ysd, xm, ym;		\
+        int k, nobs, n1 = -1;	/* -Wall initializing */		\
+									\
 	    nobs = 0;							\
 	    if(!kendall) {						\
 		xmean = ymean = 0.;					\
@@ -116,27 +121,24 @@
 		else if(!kendall)					\
 		    sum /= n1;						\
 									\
-		ans[i + j * ncx] = sum;					\
+		ANS(i,j) = sum;						\
 	    }								\
 	    else							\
-		ans[i + j * ncx] = NA_REAL;
+		ANS(i,j) = NA_REAL;
 
 
 static void cov_pairwise1(int n, int ncx, double *x,
 			  double *ans, Rboolean *sd_0, Rboolean cor,
 			  Rboolean kendall)
 {
-    LDOUBLE sum, xmean =0., ymean =0., xsd, ysd, xm, ym;
-    double *xx, *yy;
-    int i, j, k, nobs, n1 = -1;	/* -Wall initializing */
-
-    for (i = 0 ; i < ncx ; i++) {
-	for (j = 0 ; j <= i ; j++) {
-	    yy = &x[j * n];
+    for (int i = 0 ; i < ncx ; i++) {
+	double *xx = &x[i * n];
+	for (int j = 0 ; j <= i ; j++) {
+	    double *yy = &x[j * n];
 
 	    COV_PAIRWISE_BODY
 
-	    ans[j + i * ncx] = ans[i + j * ncx];
+	    ANS(j,i) = ANS(i,j);
 	}
     }
 }
@@ -145,13 +147,10 @@ static void cov_pairwise2(int n, int ncx, int ncy, double *x, double *y,
 			  double *ans, Rboolean *sd_0, Rboolean cor,
 			  Rboolean kendall)
 {
-    LDOUBLE sum, xmean =0., ymean =0., xsd, ysd, xm, ym;
-    double *xx, *yy;
-    int i, j, k, nobs, n1 = -1;	/* -Wall initializing */
-
-    for (i = 0 ; i < ncx ; i++) {
-	for (j = 0 ; j < ncy ; j++) {
-	    yy = &y[j * n];
+    for (int i = 0 ; i < ncx ; i++) {
+	double *xx = &x[i * n];
+	for (int j = 0 ; j < ncy ; j++) {
+	    double *yy = &y[j * n];
 
 	    COV_PAIRWISE_BODY
 	}
@@ -163,10 +162,8 @@ static void cov_pairwise2(int n, int ncx, int ncy, double *x, double *y,
 /* method = "complete" or "all.obs" (only difference: na_fail):
  *           --------      -------
 */
-#define ANS(I,J)  ans[I + J * ncx]
-
 #define COV_ini_0				\
-    LDOUBLE sum, tmp, xxm, yym;			\
+    long double sum, tmp, xxm, yym;			\
     double *xx, *yy;				\
     int i, j, k, n1=-1/* -Wall */
 
@@ -634,7 +631,7 @@ SEXP attribute_hidden do_cov(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* compute correlations if PRIMVAL(op) == 0,
 	       covariances  if PRIMVAL(op) != 0 */
-    cor = Rboolean(PRIMVAL(op));
+    cor = CXXRCONSTRUCT(Rboolean, PRIMVAL(op));
 
     /* Arg.1: x */
     if(isNull(CAR(args))) /* never allowed */
@@ -675,7 +672,7 @@ SEXP attribute_hidden do_cov(SEXP call, SEXP op, SEXP args, SEXP env)
 
     args = CDR(args);
     /* Arg.4:  kendall */
-    kendall = Rboolean(asLogical(CAR(args)));
+    kendall = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));
 
     /* "default: complete" (easier for -Wall) */
     na_fail = FALSE; everything = FALSE; empty_err = TRUE;
@@ -685,6 +682,8 @@ SEXP attribute_hidden do_cov(SEXP call, SEXP op, SEXP args, SEXP env)
 	na_fail = TRUE;
 	break;
     case 2:		/* complete */
+	/* did na.omit in R */
+	if (!LENGTH(x)) error(_("no complete element pairs"));
 	break;
     case 3:		/* pairwise.complete */
 	pair = TRUE;
@@ -781,12 +780,12 @@ SEXP attribute_hidden do_cov(SEXP call, SEXP op, SEXP args, SEXP env)
 	else {
 	    x = getAttrib(x, R_DimNamesSymbol);
 	    y = getAttrib(y, R_DimNamesSymbol);
-	    if ((!isNull(x) && !isNull(VECTOR_ELT(x, 1))) ||
-		(!isNull(y) && !isNull(VECTOR_ELT(y, 1)))) {
+	    if ((length(x) >= 2 && !isNull(VECTOR_ELT(x, 1))) ||
+		(length(y) >= 2 && !isNull(VECTOR_ELT(y, 1)))) {
 		PROTECT(ind = allocVector(VECSXP, 2));
-		if (!isNull(x) && !isNull(VECTOR_ELT(x, 1)))
+		if (length(x) >= 2 && !isNull(VECTOR_ELT(x, 1)))
 		    SET_VECTOR_ELT(ind, 0, duplicate(VECTOR_ELT(x, 1)));
-		if (!isNull(y) && !isNull(VECTOR_ELT(y, 1)))
+		if (length(y) >= 2 && !isNull(VECTOR_ELT(y, 1)))
 		    SET_VECTOR_ELT(ind, 1, duplicate(VECTOR_ELT(y, 1)));
 		setAttrib(ans, R_DimNamesSymbol, ind);
 		UNPROTECT(1);

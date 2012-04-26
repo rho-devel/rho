@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -37,10 +37,15 @@
  * @brief Implementation of class VectorBase and related functions.
  */
 
-#include "R_ext/Error.h"
 #include "CXXR/VectorBase.h"
 
-using namespace std;
+#include "R_ext/Error.h"
+#include "CXXR/IntVector.h"
+#include "CXXR/ListVector.h"
+#include "CXXR/PairList.h"
+#include "CXXR/StringVector.h"
+#include "CXXR/Symbol.h"
+
 using namespace CXXR;
 
 namespace CXXR {
@@ -51,19 +56,111 @@ namespace CXXR {
     }
 }
 
-void VectorBase::resize(size_t new_size)
+const ListVector* VectorBase::dimensionNames() const
 {
-    errorIfFrozen();
-    if (new_size > m_size)
-	error("VectorBase::resize() : requested size exceeds current size.");
-    m_size = new_size;
+    return static_cast<const ListVector*>(getAttribute(DimNamesSymbol));
+}
+
+const StringVector* VectorBase::dimensionNames(unsigned int d) const
+{
+    const ListVector* lv = dimensionNames();
+    if (!lv || d > lv->size())
+	return 0;
+    return static_cast<const StringVector*>((*lv)[d - 1].get());
+}
+
+const IntVector* VectorBase::dimensions() const
+{
+    return static_cast<const IntVector*>(getAttribute(DimSymbol));
+}
+
+const StringVector* VectorBase::names() const
+{
+    return static_cast<const StringVector*>(getAttribute(NamesSymbol));
+}
+
+PairList* VectorBase::resizeAttributes(const PairList* attributes,
+				       std::size_t new_size)
+{
+    GCStackRoot<PairList> ans(PairList::cons(0));  // dummy first link
+    PairList* op = ans;
+    for (const PairList* ip = attributes; ip; ip = ip->tail()) {
+	const RObject* tag = ip->tag();
+	if (tag == NamesSymbol) {
+	    const StringVector* names
+		= SEXP_downcast<const StringVector*>(ip->car());
+	    op->setTail(PairList::cons(VectorBase::resize(names, new_size),
+				       0, tag));
+	    op = op->tail();
+	} else if (tag != DimSymbol && tag != DimNamesSymbol) {
+	    op->setTail(PairList::cons(ip->car(), 0, tag));
+	    op = op->tail();
+	}
+    }
+    return ans->tail();
+}
+	
+void VectorBase::setDimensionNames(ListVector* names)
+{
+    setAttribute(DimNamesSymbol, names);
+}
+
+void VectorBase::setDimensionNames(unsigned int d, StringVector* names)
+{
+    unsigned int ndims = dimensions()->size();
+    if (d == 0 || d > ndims)
+	Rf_error(_("Attempt to associate dimnames"
+		   " with a non-existent dimension"));
+    ListVector* lv
+	= static_cast<ListVector*>(getAttribute(DimNamesSymbol));
+    if (!lv) {
+	lv = CXXR_NEW(ListVector(ndims));
+	setAttribute(DimNamesSymbol, lv);
+    }
+    (*lv)[d - 1] = names;
+}
+
+void VectorBase::setDimensions(IntVector* dims)
+{
+    setAttribute(DimSymbol, dims);
+}
+
+void VectorBase::setNames(StringVector* names)
+{
+    setAttribute(NamesSymbol, names);
+}
+
+void VectorBase::setSize(std::size_t)
+{
+    Rf_error(_("this object cannot be resized"));
 }
 
 // Rf_allocVector is still in memory.cpp (for the time being).
 
+Rboolean Rf_isVector(SEXP s)
+{
+    switch(TYPEOF(s)) {
+    case LGLSXP:
+    case INTSXP:
+    case REALSXP:
+    case CPLXSXP:
+    case STRSXP:
+    case RAWSXP:
+
+    case VECSXP:
+    case EXPRSXP:
+	return TRUE;
+    case CXXSXP:
+	return Rboolean(dynamic_cast<const VectorBase*>(s) != 0);
+    default:
+	return FALSE;
+    }
+}
+
 void SETLENGTH(SEXP x, int v)
 {
     CXXR::VectorBase* vb = dynamic_cast<CXXR::VectorBase*>(x);
-    if (!vb) error("SETLENGTH invoked for a non-vector.");
-    vb->resize(v);
+    if (!vb)
+	Rf_error("SETLENGTH invoked for a non-vector.");
+    vb->setSize(v);
 }

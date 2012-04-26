@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -27,33 +27,30 @@ R_HOME=$(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES_C = complex.c gram.c gramRd.c inlined.c unzip.c
+SOURCES_C = complex.c inlined.c
 
 SOURCES_CXX = \
-	ArgMatcher.cpp \
-	BSerializer.cpp BuiltInFunction.cpp ByteCode.cpp \
-	CConverters.cpp CachedString.cpp CachedString_serialization.cpp \
-	CellPool.cpp \
-	Closure.cpp CommandLineArgs.cpp ComplexVector.cpp ConsCell.cpp \
+	ArgList.cpp ArgMatcher.cpp \
+	BSerializer.cpp BinaryFunction.cpp Browser.cpp BuiltInFunction.cpp ByteCode.cpp \
+	CConverters.cpp CachedString.cpp CachedString_serialization.cpp CellPool.cpp Closure.cpp \
+	ClosureContext.cpp CommandLineArgs.cpp ComplexVector.cpp ConsCell.cpp \
 	DotInternal.cpp DottedArgs.cpp \
-	Environment.cpp Environment_serialization.cpp \
-	Evaluator.cpp Expression.cpp ExpressionVector.cpp \
-        ExternalPointer.cpp \
-        Frame.cpp FunctionBase.cpp \
+	Environment.cpp Environment_serialization.cpp Evaluator.cpp Evaluator_Context.cpp Expression.cpp \
+	ExpressionVector.cpp ExternalPointer.cpp \
+        Frame.cpp FunctionBase.cpp FunctionContext.cpp \
         GCEdge.cpp GCManager.cpp GCNode.cpp GCRoot.cpp GCStackRoot.cpp \
 	HeterogeneousList.cpp \
         inspect.cpp IntVector.cpp \
-	ListVector.cpp LogicalVector.cpp \
+	ListFrame.cpp ListVector.cpp LogicalVector.cpp LoopBailout.cpp \
 	MemoryBank.cpp \
-	PStream.cpp \
-        PairList.cpp Parentage.cpp Promise.cpp Provenance.cpp \
-	ProvenanceSet.cpp ProvenanceTracker.cpp \
+	NodeStack.cpp \
+        PStream.cpp PairList.cpp Parentage.cpp Promise.cpp ProtectStack.cpp \
+	Provenance.cpp ProvenanceSet.cpp ProvenanceTracker.cpp \
         RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
-        RealVector.cpp Renviron.cpp \
-        S4Object.cpp SEXP_downcast.cpp StdFrame.cpp \
-        String.cpp StringVector.cpp Symbol.cpp \
-	Symbol_serialization.cpp \
-	UncachedString.cpp \
+        RealVector.cpp Renviron.cpp ReturnBailout.cpp \
+        S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp StdFrame.cpp \
+        String.cpp StringVector.cpp Subscripting.cpp Symbol.cpp Symbol_serialization.cpp \
+	UnaryFunction.cpp UncachedString.cpp \
         VectorBase.cpp \
         WeakRef.cpp \
 	apply.cpp agrep.cpp arithmetic.cpp array.cpp attrib.cpp \
@@ -64,13 +61,13 @@ SOURCES_CXX = \
 	dotcode.cpp dounzip.cpp dstruct.cpp duplicate.cpp \
 	engine.cpp envir.cpp errors.cpp eval.cpp \
 	format.cpp fourier.cpp \
-	gevents.cpp gram-ex.cpp graphics.cpp grep.cpp \
+	gevents.cpp gram-ex.cpp gram.cpp gramLatex.cpp gramRd.cpp graphics.cpp \
+	grep.cpp \
 	identical.cpp internet.cpp iosupport.cpp \
 	lapack.cpp list.cpp localecharset.cpp logic.cpp \
 	main.cpp mapply.cpp match.cpp memory.cpp model.cpp \
 	names.cpp objects.cpp optim.cpp optimize.cpp options.cpp \
-	par.cpp paste.cpp pcre.cpp platform.cpp \
-	plot.cpp plot3d.cpp plotmath.cpp \
+	par.cpp paste.cpp platform.cpp plot.cpp plot3d.cpp plotmath.cpp \
 	print.cpp printarray.cpp printvector.cpp printutils.cpp qsort.cpp \
 	provenance.cpp \
 	random.cpp raw.cpp registration.cpp relop.cpp rlocale.cpp \
@@ -85,11 +82,7 @@ SOURCES_F =  xxxpr.f
 ## If the substitutes are needed, the corresponding objects are put by
 ## configure in @LIBOBJS@ @ALLOCA@
 EXTRA_SOURCES_CXX = \
-	Rmain.cpp \
-	alloca.cpp acosh.cpp asinh.cpp atanh.cpp \
-	mkdtemp.cpp \
-	snprintf.cpp strdup.cpp strncasecmp.cpp \
-	vsnprintf.cpp xspline.cpp
+	Rmain.cpp alloca.cpp mkdtemp.cpp strdup.cpp strncasecmp.cpp
 
 DEPENDS = $(SOURCES_C:.c=.d) $(SOURCES_CXX:.cpp=.d) \
           $(EXTRA_SOURCES_CXX:.cpp=.d)
@@ -100,10 +93,12 @@ HEADERS = \
 	RBufferUtils.h Rstrptime.h \
 	arithmetic.h \
 	basedecl.h \
+	gzio.h \
 	par-common.c \
 	qsort-body.c \
 	rlocale_data.h \
-	unzip.h
+	unzip.h \
+	xspline.c
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 DISTFILES = Makefile.in Makefile.win \
@@ -113,13 +108,15 @@ DISTFILES = Makefile.in Makefile.win \
 	$(EXTRA_SOURCES_CXX) \
 	$(SOURCES_F) \
 	gram.y \
-	gramRd.y
+	gramRd.y \
+	gramLatex.y
 
 ZLIB_CPPFLAGS = @BUILD_ZLIB_TRUE@ -I$(top_srcdir)/src/extra/zlib
 BZLIB_CPPFLAGS = @BUILD_BZLIB_TRUE@ -I$(top_srcdir)/src/extra/bzip2
 PCRE_CPPFLAGS = @BUILD_PCRE_TRUE@ -I$(top_srcdir)/src/extra/pcre
 TRE_CPPFLAGS = -I$(top_srcdir)/src/extra
 XDR_CPPFLAGS = @BUILD_XDR_TRUE@ -I$(top_srcdir)/src/extra/xdr
+@BUILD_XDR_FALSE@XDR_CPPFLAGS = @TIRPC_CPPFLAGS@
 XZ_CPPFLAGS = @BUILD_XZ_TRUE@  -I$(top_srcdir)/src/extra/xz/api
 
 ALL_CPPFLAGS = $(ZLIB_CPPFLAGS) $(BZLIB_CPPFLAGS) $(PCRE_CPPFLAGS) \
@@ -145,7 +142,11 @@ STATIC_LIBS = $(MAIN_LIBS) $(EXTRA_STATIC_LIBS)
 EXTRA_LIBS = $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS) @LIBINTL@ $(READLINE_LIBS) $(LIBS)
 
 R_binary = R.bin
-R_bin_OBJECTS = Rmain.o VectorBase.o
+
+## CXXR: LogicalVector.o must be forced in, because it defines
+## non-inlined versions of some functions called from C, but defines
+## nothing that would cause its automatic inclusion.
+R_bin_OBJECTS = Rmain.o LogicalVector.o
 @WANT_R_SHLIB_FALSE@R_bin_LDADD = libR.a $(EXTRA_LIBS)
 ## Linked against -lRblas becasue -lR is and otherwise ld complains.
 @WANT_R_SHLIB_TRUE@R_bin_LDADD = -L../../lib@R_ARCH@ -lR @BLAS_SHLIB_TRUE@-lRblas
@@ -231,37 +232,45 @@ install-lib-local: $(libR_la)
 
 
 # suppress #line directives
-YFLAGS=-l
+#YFLAGS=-l
 
-$(srcdir)/gram.c: @MAINTAINER_MODE_TRUE@ $(srcdir)/gram.y
-	@$(ECHO) "re-making gram.c"
-	$(YACC) $(YFLAGS) $(srcdir)/gram.y
-	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gram.c
-$(srcdir)/gramRd.c: @MAINTAINER_MODE_TRUE@ $(srcdir)/gramRd.y
-	@$(ECHO) "re-making gramRd.c"
-	$(YACC) $(YFLAGS) $(srcdir)/gramRd.y
-	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gramRd.c	
+$(srcdir)/gram.cpp: @MAINTAINER_MODE_TRUE@ $(srcdir)/gram.y
+	@$(ECHO) "re-making gram.cpp"
+	$(YACC) $(YFLAGS) -p gram_ $(srcdir)/gram.y
+	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gram.cpp
+$(srcdir)/gramRd.cpp: @MAINTAINER_MODE_TRUE@ $(srcdir)/gramRd.y
+	@$(ECHO) "re-making gramRd.cpp"
+	$(YACC) $(YFLAGS) -p gramRd_ $(srcdir)/gramRd.y
+	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gramRd.cpp
+$(srcdir)/gramLatex.cpp: @MAINTAINER_MODE_TRUE@ $(srcdir)/gramLatex.y
+	@$(ECHO) "re-making gramLatex.cpp"
+	$(YACC) $(YFLAGS) -p gramLatex_ $(srcdir)/gramLatex.y
+	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gramLatex.cpp	
 
 install: installdirs
 	@$(MAKE) install-bin
 	@if test -f $(libR_la); then $(MAKE) install-lib; fi
 @WANT_R_STATIC_TRUE@	@$(MAKE) install-static
+## may not need $(rhome)/lib if not static/shared libR, external blas and lapack.
 installdirs:
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(Rexecbindir2)"
-	@$(MKINSTALLDIRS) "$(DESTDIR)$(Rexeclibdir)"
 install-bin: installdirs
 	@$(SHELL) $(top_srcdir)/tools/copy-if-change $(R_binary) "$(DESTDIR)$(Rexecbindir2)/R"
 install-lib: installdirs
+	@$(MKINSTALLDIRS) "$(DESTDIR)$(Rexeclibdir)"
 	@$(SHELL) $(top_srcdir)/tools/copy-if-change $(libR_la) "$(DESTDIR)$(Rexeclibdir)/$(libR_la)"
 install-static: installdirs
+	@$(MKINSTALLDIRS) "$(DESTDIR)$(Rexeclibdir)"
 	@$(SHELL) $(top_srcdir)/tools/copy-if-change libR.a "$(DESTDIR)$(Rexeclibdir)/libR.a"
 install-strip: installdirs
 	@${INSTALL_PROGRAM} -s $(R_binary) "$(DESTDIR)$(Rexecbindir2)/R"
 	@if test -f $(libR_la); then $(MAKE) install-lib; fi
-@WANT_R_STATIC_TRUE@	@$(MAKE) install-static
 	@if test -n "$(STRIP_LIBS)"; then \
 	  if test -f $(libR_la); then $(STRIP_LIBS) "$(DESTDIR)$(Rexeclibdir)/$(libR_la)"; fi; \
 	fi
+@WANT_R_STATIC_TRUE@	@$(MAKE) install-strip-static
+install-strip-static: installdirs
+	@$(MAKE) install-static
 	@if test -n "$(STRIP_STATIC_LIBS)"; then \
 	  if test -f libR.a; then $(STRIP_STATIC_LIBS) "$(DESTDIR)$(Rexeclibdir)/libR.a"; fi; \
 	fi

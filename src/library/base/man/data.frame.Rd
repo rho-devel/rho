@@ -1,6 +1,6 @@
 % File src/library/base/man/data.frame.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{data.frame}
@@ -42,14 +42,14 @@ default.stringsAsFactors()
 \value{
   A data frame, a matrix-like structure whose columns may be of
   differing types (numeric, logical, factor and character and so on).
-  
+
   How the names of the data frame are created is complex, and the rest
   of this paragraph is only the basic story.  If the arguments are all
   named and simple objects (not lists, matrices of data frames) then the
   argument names give the column names.  For an unnamed simple argument,
   a deparsed version of the argument is used as the name (with an
   enclosing \code{I(...)} removed).  For a named matrix/list/data frame
-  argument with ore than one named column, the names of the columns are
+  argument with more than one named column, the names of the columns are
   the name of the argument followed by a dot and the column name inside
   the argument: if the argument is unnamed, the argument's column names
   are used.  For a named or unnamed matrix/list/data frame argument that
@@ -62,7 +62,7 @@ default.stringsAsFactors()
   A data frame is a list of variables of the same number of rows with
   unique row names, given class \code{"data.frame"}.  If no variables
   are included, the row names determine the number of rows.
-  
+
   The column names should be non-empty, and attempts to use empty names
   will have unsupported results.  Duplicate column names are allowed,
   but you need to use \code{check.names = FALSE} for \code{data.frame}
@@ -85,7 +85,7 @@ default.stringsAsFactors()
   Objects passed to \code{data.frame} should have the same number of
   rows, but atomic vectors, factors and character vectors protected by
   \code{\link{I}} will be recycled a whole number of times if necessary
-  (including as from \R 2.9.0, elements of list arguments).
+  (including as elements of list arguments).
 
   If row names are not supplied in the call to \code{data.frame}, the
   row names are taken from the first component that has suitable names,
@@ -123,7 +123,7 @@ default.stringsAsFactors()
   \code{\link{plot.data.frame}},
   \code{\link{print.data.frame}},
   \code{\link{row.names}}, \code{\link{names}} (for the column names),
-  \code{\link{[.data.frame}} for subsetting methods,
+  \code{\link{[.data.frame}} for subsetting methods,% ./Extract.data.frame.Rd
   \code{\link{Math.data.frame}} etc, about
   \emph{Group} methods for \code{data.frame}s;
   \code{\link{read.table}},

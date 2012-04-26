@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -58,7 +58,7 @@ struct structConsoleData {
     int   w, h;			/* dimensions in pixel */
 
     font  f;			/* font */
-    int   fw, fh;
+    int   fw, fh;  
     int   top, right;           /* borders */
     rgb   guiColors[numGuiColors]; /* colours */
     int   fv, fc;		/* first line and first char visible */
@@ -82,6 +82,8 @@ struct structConsoleData {
 
     char  chbrk, modbrk;	/* hook for user's break */
     void  (*fbrk) ();
+    
+    int cursor_blink;
 
     menuitem mcopy, mpaste, mpastecmds, mpopcopy, mpoppaste, mpoppastecmds;
 };
@@ -117,7 +119,7 @@ typedef struct structConsoleData *ConsoleData;
 #define CURROW  (p->r)  /* row of cursor */
 #define CURCOL  (p->c)  /* column of cursor on whole line */
 
-#define WRITELINE(i, j) writeline(p, i, j)
+#define WRITELINE(i, j) writeline(c, p, i, j)
 
 #define REDRAW drawconsole(c, getrect(c))
 
@@ -126,7 +128,7 @@ typedef struct structConsoleData *ConsoleData;
 
 ConsoleData newconsoledata(font f, int rows, int cols,
     int bufbytes, int buflines,
-    rgb *guiColors, int kind, int buffered);
+    rgb *guiColors, int kind, int buffered, int cursor_blink);
 
 void freeConsoleData(ConsoleData p);
 void setfirstvisible(control c, int fv);

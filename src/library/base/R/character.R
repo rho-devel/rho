@@ -14,13 +14,6 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-strsplit <-
-    function(x, split, extended = TRUE, fixed = FALSE, perl = FALSE,
-             useBytes = FALSE)
-    .Internal(strsplit(x, as.character(split), as.logical(extended),
-                       as.logical(fixed), as.logical(perl),
-                       as.logical(useBytes)))
-
 substr <- function(x, start, stop)
 {
     if(!is.character(x)) x <- as.character(x)
@@ -42,11 +35,11 @@ substring <- function(text, first, last=1000000L)
     .Internal(`substr<-`(text, as.integer(first), as.integer(last), value))
 
 abbreviate <-
-    function(names.arg, minlength = 4, use.classes = TRUE, dot = FALSE,
+    function(names.arg, minlength = 4L, use.classes = TRUE, dot = FALSE,
              strict = FALSE, method = c("left.kept", "both.sides"))
 {
     ## we just ignore use.classes
-    if(minlength <= 0)
+    if(minlength <= 0L)
 	return(rep.int("", length(names.arg)))
     ## need to remove leading/trailing spaces before we check for dups
     ## This is inefficient but easier than modifying do_abbrev (=> FIXME !)
@@ -181,4 +174,10 @@ dQuote <- function(x) {
         Encoding(before) <- Encoding(after) <- "unknown"
     }
     paste(before, x, after, sep = "")
+}
+
+strtoi <-
+function(x, base = 0L)
+{
+    .Internal(strtoi(as.character(x), as.integer(base)))
 }

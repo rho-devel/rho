@@ -1,6 +1,6 @@
 % File src/library/base/man/connections.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{connections}
@@ -39,7 +39,7 @@
 }
 \usage{
 file(description = "", open = "", blocking = TRUE,
-     encoding = getOption("encoding"))
+     encoding = getOption("encoding"), raw = FALSE)
 
 url(description, open = "", blocking = TRUE,
     encoding = getOption("encoding"))
@@ -63,7 +63,8 @@ fifo(description, open = "", blocking = FALSE,
 
 socketConnection(host = "localhost", port, server = FALSE,
                  blocking = FALSE, open = "a+",
-                 encoding = getOption("encoding"))
+                 encoding = getOption("encoding"),
+                 timeout = getOption("timeout"))
 
 open(con, \dots)
 \method{open}{connection}(con, open = "r", blocking = TRUE, \dots)
@@ -77,7 +78,7 @@ isOpen(con, rw = "")
 isIncomplete(con)
 }
 \arguments{
-  \item{description}{character string. A description of the connection:
+  \item{description}{character string.  A description of the connection:
     see \sQuote{Details}.}
   \item{open}{character.  A description of how to open the connection
     (if it should be opened initially).  See section \sQuote{Modes} for
@@ -85,16 +86,25 @@ isIncomplete(con)
   \item{blocking}{logical.  See the \sQuote{Blocking} section.}
   \item{encoding}{The name of the encoding to be used.  See the
     \sQuote{Encoding} section.}
+  \item{raw}{logical.  If true, a \sQuote{raw} interface is used which
+    will be more suitable for arguments which are not regular files,
+    e.g. character devices.  This suppresses the check for a compressed
+    file when opening for text-mode reading, and asserts that the
+    \sQuote{file} may not be seekable.}
   \item{compression}{integer in 0--9.  The amount of compression to be
     applied when writing, from none to maximal available.  For
     \code{xzfile} can also be negative: see the \sQuote{Compression}
     section.}
+  \item{timeout}{numeric: the timeout (in seconds) to be used for this
+    connection.  Beware that some OSes may treat very large values as
+    zero: however the POSIX standard requires values up to 31 days to be
+    supported.}
   \item{filename}{a filename within a zip file.}
   \item{host}{character.  Host name for port.}
   \item{port}{integer.  The TCP port number.}
   \item{server}{logical.  Should the socket be a client or a server?}
   \item{con}{a connection.}
-  \item{type}{character. Currently ignored.}
+  \item{type}{character.  Currently ignored.}
   \item{rw}{character.  Empty or \code{"read"} or \code{"write"},
     partial matches allowed.}
   \item{\dots}{arguments passed to or from other methods.}
@@ -111,14 +121,13 @@ isIncomplete(con)
   C-level \sQuote{standard input} of the process (which need not be
   connected to anything
 #ifdef unix
-  in a console or embedded version of \R), provided the C99 function
-  \code{fdopen} is supported on the platform.
+  in a console or embedded version of \R).
 #endif
 #ifdef windows
   in a console or embedded version of \R, and is not in \code{RGui}).
 #endif
-  (See also \code{\link{stdin}} for the subtly different R-level concept
-  of \code{stdin}.)
+  See also \code{\link{stdin}()} for the subtly different R-level concept
+  of \code{stdin}.
 
   For \code{url} the description is a complete URL, including scheme
   (such as \samp{http://}, \samp{ftp://} or \samp{file://}).  Proxies
@@ -142,23 +151,20 @@ isIncomplete(con)
   extension if required.
 
   For \code{pipe} the description is the command line to be piped to or
-  from.
-#ifdef windows
-  (This command line is run in the shell specified by the \env{COMSPEC}
-  environment variable.)
-#endif
+  from.  This is run in a shell, on Windows that specified by the
+  \env{COMSPEC} environment variable.
 
-  For \code{fifo} the description is the path of the fifo.
-#ifdef windows
-  (Windows does not have fifos, so attempts to use this function are an
-  error.)
-#endif
+  For \code{fifo} the description is the path of the fifo.  (Windows
+  does not have fifos, so attempts to use this function there are an
+  error.  It was possible to use \code{file} with fifos prior to \R
+  2.10.0, but \code{raw=TRUE} is now required for reading, and
+  \code{fifo} was always the documented interface.) % PR#14366
 
-  All platforms support \code{file}, \code{gzfile}, \code{bzfile},
-  \code{xzfile} \code{unz} and \code{url("file://")} connections.  The
-  other types may be partially implemented or not implemented at all.
-  (They do work on most Unix platforms, and all but \code{fifo} on
-  Windows.)
+  All platforms support \code{file}, \code{pipe}, \code{gzfile},
+  \code{bzfile}, \code{xzfile}, \code{unz} and \code{url("file://")}
+  connections.  The other connections may be partially implemented or
+  not implemented at all.  (They do work on most Unix platforms, and all
+  but \code{fifo} on Windows.)
 
   The intention is that \code{file} and \code{gzfile} can be used
   generally for text input (from files and URLs) and binary input
@@ -181,7 +187,8 @@ isIncomplete(con)
   connections of various types, but these are usually larger than 125.
 
   \code{flush} flushes the output stream of a connection open for
-  write/append (where implemented).
+  write/append (where implemented, currently for file and clipboard
+  connections, \code{\link{stdout}} and \code{\link{stderr}}).
 
   If for a \code{file} or \code{fifo} connection the description is
   \code{""}, the file/fifo is immediately opened (in \code{"w+"} mode
@@ -191,6 +198,9 @@ isIncomplete(con)
 }
 
 \section{URLs}{
+  \code{url} and \code{file} support URL schemes \samp{http://},
+  \samp{ftp://} and \samp{file://}.
+  
   A note on \samp{file://} URLs.  The most general form (from RFC1738) is
   \samp{file://host/path/to/file}, but \R only accepts the form with an
   empty \code{host} field referring to the local machine.
@@ -215,7 +225,7 @@ isIncomplete(con)
 
   Note that \samp{https://} connections are
 #ifdef unix
-  not supported.
+  not supported (with some exceptions on Windows).
 #endif
 #ifdef windows
   only supported if \option{--internet2} or
@@ -224,6 +234,9 @@ isIncomplete(con)
   be valid.  With that option only, the \samp{http://user:pass@site}
   notation for sites requiring authentication is also accepted.
 #endif
+
+  Contributed package \pkg{RCurl} provides more comprehensive facilities
+  to download from URLs.
 }
 
 \value{
@@ -235,16 +248,16 @@ isIncomplete(con)
   \code{isOpen} returns a logical value, whether the connection is
   currently open.
 
-  \code{isIncomplete} returns a logical value, whether last read attempt
-  was blocked, or for an output text connection whether there is
+  \code{isIncomplete} returns a logical value, whether the last read
+  attempt was blocked, or for an output text connection whether there is
   unflushed output.
 }
 
 \section{Modes}{
   Possible values for the argument \code{open} are
   \describe{
-    \item{\code{"r"} or \code{"rt"}}{Open for reading in (usually) text mode.}
-    \item{\code{"w"} or \code{"wt"}}{Open for writing in (usually) text mode.}
+    \item{\code{"r"} or \code{"rt"}}{Open for reading in text mode.}
+    \item{\code{"w"} or \code{"wt"}}{Open for writing in text mode.}
     \item{\code{"a"} or \code{"at"}}{Open for appending in text mode.}
     \item{\code{"rb"}}{Open for reading in binary mode.}
     \item{\code{"wb"}}{Open for writing in binary mode.}
@@ -256,7 +269,8 @@ isIncomplete(con)
   }
   Not all modes are applicable to all connections: for example URLs can
   only be opened for reading.  Only file and socket connections can be
-  opened for both reading and writing/appending.
+  opened for both reading and writing.  An unsupported mode is usually
+  silently substituted.
   
 #ifdef unix
   If a file or fifo is created on a Unix-alike, its permissions will be
@@ -265,9 +279,9 @@ isIncomplete(con)
 #endif
 
   For many connections there is little or no difference between text and
-  binary modes. For file-like connections on Windows, translation of
+  binary modes.  For file-like connections on Windows, translation of
   line endings (between LF and CRLF) is done in text mode only (but text
-  read operations on connectiions such as \code{\link{readLines}},
+  read operations on connections such as \code{\link{readLines}},
   \code{\link{scan}} and \code{\link{source}} work for any form of line
   ending).  Various \R operations are possible in only one of the modes:
   for example \code{\link{pushBack}} is text-oriented and is only
@@ -279,23 +293,31 @@ isIncomplete(con)
   The mode of a connection is determined when actually opened, which is
   deferred if \code{open = ""} is given (the default for all but socket
   connections).  An explicit call to \code{open} can specify the mode,
-  but otherwise the mode will be \code{"r"}.  \code{gzfile},
+  but otherwise the mode will be \code{"r"}.  (\code{gzfile},
   \code{bzfile} and \code{xzfile} connections are exceptions, as the
   compressed file always has to be opened in binary mode and no
-  conversion of line-endings is done even on Windows.  Most operations
-  that need write access or text-only or binary-only mode will override
-  the default mode of a non-yet-open connection.
+  conversion of line-endings is done even on Windows, so the default
+  mode is interpreted as \code{"rb"}.)  Most operations that need write
+  access or text-only or binary-only mode will override the default mode
+  of a non-yet-open connection.
+
+  Append modes need to be considered carefully for compressed-file
+  connections.  They do \strong{not} produce a single compressed stream
+  on the file, but rather append a new compressed stream to the file.
+  Readers (including \R) may or may not read beyond end of the first
+  stream: currently \R does so for \code{gzfile}, \code{bzfile} and
+  \code{xzfile} connections, but earlier versions did not.
 }
 
 \section{Compression}{
   \R has for a long time supported \command{gzip} and \command{bzip2}
-  compression, and support for \command{xz} compresssion (and read-only
+  compression, and support for \command{xz} compression (and read-only
   support for its precursor \code{lzma} compression) was added in \R
   2.10.0.
 
   For reading, the type of compression (if any) can be determined from
   the first few bytes of the file, and this is exploited as from \R
-  2.10.0.  Thus for \code{file} connections, if \code{open} is
+  2.10.0.  Thus for \code{file(raw = FALSE)} connections, if \code{open} is
   \code{""}, \code{"r"} or \code{"rt"} the connection can read any of
   the compressed file types as well as uncompressed files.  (Using
   \code{"rb"} will allow compressed files to be read byte-by-byte.)
@@ -303,7 +325,7 @@ isIncomplete(con)
   compression and uncompressed files in any read mode.
 
   (The type of compression is determined when the connection is created
-  if \code{open} is unspecifed and a file of that name exists.  If the
+  if \code{open} is unspecified and a file of that name exists.  If the
   intention is to open the connection to write a file with a
   \emph{different} form of compression under that name, specify
   \code{open = "w"} when the connection is created or
@@ -342,28 +364,30 @@ isIncomplete(con)
   encoding, that is the internal encoding of the current locale and
   hence no translation is done.
 
-  Re-encoding only works for connections in text mode.
+  Re-encoding only works for connections in text mode: reading from a
+  connection with re-encoding specified in binary mode will read the
+  stream of bytes, but mixing text and binary mode reads (e.g. mixing
+  calls to \code{\link{readLines}} and \code{\link{readChar}}) is likely
+  to lead to incorrect results.
 
-  The encoding \code{"UCS-2LE"} is treated specially, as it is the
-  appropriate value for Windows \sQuote{Unicode} text files.  If the
-  first two bytes are the Byte Order Mark \code{0xFFFE} then these are
-  removed as most implementations of \code{\link{iconv}} do not accept
-  BOMs.  Note that some implementations
-#ifdef windows
-  (including that used on Windows)
-#endif
-  will handle BOMs using encoding \code{"UCS-2"} but many
-#ifdef windows
-  (including that in \code{glibc})
-#endif
-  will not.
+  The encodings \code{"UCS-2LE"} and \code{"UTF-16LE"} are treated
+  specially, as they are appropriate values for Windows \sQuote{Unicode}
+  text files.  If the first two bytes are the Byte Order Mark
+  \code{0xFFFE} then these are removed as some implementations of
+  \code{\link{iconv}} do not accept BOMs.  Note that whereas most
+  implementations will handle BOMs using encoding \code{"UCS-2"} and
+  choose the appropriate byte order, some (including earlier versions of
+  \code{glibc}) will not.  There is a subtle distinction between
+  \code{"UTF-16"} and \code{"UCS-2"} (see
+  \url{http://en.wikipedia.org/wiki/UTF-16/UCS-2}: the use of surrogate
+  pairs is very rare so \code{"UCS-2LE"} is an appropriate first choice.
   
   Requesting a conversion that is not supported is an error, reported
   when the connection is opened.  Exactly what happens when the
-  requested translation cannot be done is in general undocumented.  On
-  output the result is likely to be that up to the error, with a
-  warning.  On input, it will most likely be all or some of the input up
-  to the error.
+  requested translation cannot be done for invalid input is in general
+  undocumented.  On output the result is likely to be that up to the
+  error, with a warning.  On input, it will most likely be all or some
+  of the input up to the error.
 }
 
 \section{Blocking}{
@@ -423,7 +447,7 @@ isIncomplete(con)
 #ifdef windows
   When writing to the clipboard, the output is copied to the clipboard
   only when the connection is closed or flushed.  There is a 32Kb limit
-  on the text to be written to the clipboard. This can be raised by
+  on the text to be written to the clipboard.  This can be raised by
   using e.g. \code{file("clipboard-128")} to give 128Kb.
 
   The clipboard works in Unicode wide characters, so encodings might
@@ -450,27 +474,30 @@ isIncomplete(con)
   known as \code{"*"}.
 
   On (rare) platforms where \code{vsnprintf} does not return the needed length
-  of output there is a 100,000 character output limit on
-  the length of line for \code{fifo}, \code{gzfile}, \code{bzfile} and
+  of output there is a 100,000 byte output limit on the length of
+  line for text output on \code{fifo}, \code{gzfile}, \code{bzfile} and
   \code{xzfile} connections: longer lines will be truncated with a
   warning.
 }
 \references{
   Chambers, J. M. (1998)
   \emph{Programming with Data.  A Guide to the S Language.} Springer.
+
+  Ripley, B. D. (2001) Connections. \emph{R News}, \bold{1/1}, 16--7.
+  \url{http://www.r-project.org/doc/Rnews/Rnews_2001-1.pdf}
 }
 
 \seealso{
   \code{\link{textConnection}}, \code{\link{seek}},
   \code{\link{showConnections}}, \code{\link{pushBack}}.
   
-  Functions making direct use of connections are \code{\link{readLines}},
-  \code{\link{readBin}}, \code{\link{readChar}},
-  \code{\link{writeLines}}, \code{\link{writeBin}},
-  \code{\link{writeChar}}, \code{\link{cat}}, \code{\link{sink}},
-  \code{\link{scan}}, \code{\link{parse}}, \code{\link{read.dcf}},
-  \code{\link{load}}, \code{\link{save}}, \code{\link{dput}} and
-  \code{\link{dump}}.
+  Functions making direct use of connections are (text-mode)
+  \code{\link{readLines}}, \code{\link{writeLines}}, \code{\link{cat}},
+  \code{\link{sink}}, \code{\link{scan}}, \code{\link{parse}},
+  \code{\link{read.dcf}}, \code{\link{dput}}, \code{\link{dump}} and
+  (binary-mode) \code{\link{readBin}}, \code{\link{readChar}},
+  \code{\link{writeBin}}, \code{\link{writeChar}}, \code{\link{load}}
+  and \code{\link{save}}.
   
   \code{\link{capabilities}} to see if HTTP/FTP \code{url},
   \code{fifo} and \code{socketConnection} are supported by this build of \R.
@@ -526,7 +553,7 @@ cat("abc\ndef\n", file=Tfile)
 readLines(Tfile)
 close(Tfile)
 
-\donttest{## fifo example -- may fail, e.g. on Cygwin, even with OS support for fifos
+\donttest{## fifo example -- may fail even with OS support for fifos
 if(capabilities("fifo")) {
   zz <- fifo("foo-fifo", "w+")
   writeLines("abc", zz)
@@ -541,7 +568,7 @@ if(capabilities("fifo")) {
 # read listing of current directory
 readLines(pipe("ls -1"))
 
-# remove trailing commas. Suppose
+# remove trailing commas.  Suppose
 \dontshow{
 writeLines(c("450, 390, 467, 654,  30, 542, 334, 432, 421,",
 "357, 497, 493, 550, 549, 467, 575, 578, 342,",
@@ -571,7 +598,7 @@ close(con)
 #endif
 
 \dontrun{
-## two R processes communicating via non-blocking sockets
+## Two R processes communicating via non-blocking sockets
 # R process 1
 con1 <- socketConnection(port = 6011, server=TRUE)
 writeLines(LETTERS, con1)

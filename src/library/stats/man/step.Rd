@@ -118,6 +118,9 @@ step(object, scope, scale = 0,
   may be a problem if there are missing values and \R's default of
   \code{na.action = na.omit} is used.  We suggest you remove the
   missing values first.
+
+  Calls to the function \code{\link{nobs}} are used to check that the
+  number of observations involved in the fitting process remains unchanged.
 }
 \seealso{
   \code{\link[MASS]{stepAIC}} in \pkg{MASS}, \code{\link{add1}},
@@ -141,13 +144,14 @@ step(object, scope, scale = 0,
   The idea of a \code{step} function follows that described in Hastie &
   Pregibon (1992); but the implementation in \R is more general.
 }
-\examples{
-utils::example(lm)
+\examples{\donttest{
+## following on from example(lm)
+\dontshow{utils::example("lm", echo = FALSE)}
 step(lm.D9)  
 
 summary(lm1 <- lm(Fertility ~ ., data = swiss))
 slm1 <- step(lm1)
 summary(slm1)
 slm1$anova
-}
+}}
 \keyword{models}

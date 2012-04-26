@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -88,9 +88,9 @@ static int  EdFileUsed = 0;
 void attribute_hidden InitEd()
 {
 #ifdef Win32
-    DefaultFileName = R_tmpnam("Redit", R_TempDir);
+    DefaultFileName = R_tmpnam2("Redit", R_TempDir, ".R");
 #else
-    DefaultFileName = R_tmpnam(NULL, R_TempDir);
+    DefaultFileName = R_tmpnam2(NULL, R_TempDir, ".R");
 #endif
 }
 
@@ -103,11 +103,13 @@ SEXP attribute_hidden do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int   i, rc;
     ParseStatus status;
-    SEXP  x, fn, envir, ti, ed, src, srcfile, Rfn;
-    char *filename, *editcmd, *vmaxsave;
+    SEXP  x, fn, envir, ed, src, srcfile, Rfn;
+    char *filename, *editcmd;
     const char *cmd;
+    const void *vmaxsave;
     FILE *fp;
 #ifdef Win32
+    SEXP ti;
     char *title;
 #endif
 
@@ -149,7 +151,10 @@ SEXP attribute_hidden do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	UNPROTECT(4);
     }
     PROTECT(srcfile);
-    ti = CAR(args); args = CDR(args);
+#ifdef Win32
+    ti = CAR(args);
+#endif
+    args = CDR(args);
     ed = CAR(args);
     if (!isString(ed)) errorcall(call, _("argument 'editor' type not valid"));
     cmd = translateChar(STRING_ELT(ed, 0));
@@ -174,7 +179,7 @@ SEXP attribute_hidden do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    sprintf(editcmd, "\"%s\" \"%s\"", cmd, filename);
 	else
 	    sprintf(editcmd, "%s \"%s\"", cmd, filename);
-	rc = runcmd(editcmd, CE_NATIVE, 1, 1, "");
+	rc = runcmd(editcmd, CE_NATIVE, 1, 1, NULL, NULL, NULL);
 	if (rc == NOLAUNCH)
 	    errorcall(call, _("unable to run editor '%s'"), cmd);
 	if (rc != 0)

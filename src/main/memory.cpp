@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2008  The R Development Core Team.
+ *  Copyright (C) 1998--2011  The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,10 +39,6 @@
  * Memory management, garbage collection, and memory profiling.
  */
 
-#define USE_RINTERNALS
-
-#include "Rvalgrind.h"
-
 // For debugging:
 #include <iostream>
 
@@ -51,17 +47,17 @@
 #endif
 
 #include <R_ext/RS.h> /* for S4 allocation */
+#include "CXXR/ByteCode.hpp"
+#include "CXXR/FunctionContext.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/MemoryBank.hpp"
-#include "CXXR/JMPException.hpp"
-
-using namespace std;
-using namespace CXXR;
 
 #include <Defn.h>
 #include <R_ext/GraphicsEngine.h> /* GEDevDesc, GEgetDevice */
 #include <R_ext/Rdynload.h>
 #include "Rdynpriv.h"
+
+using namespace CXXR;
 
 #if defined(Win32) && defined(LEA_MALLOC)
 /*#include <stddef.h> */
@@ -84,13 +80,10 @@ extern void *Rm_realloc(void * p, size_t n);
 #define GC_TORTURE
 
 #ifdef GC_TORTURE
-# define FORCE_GC !gc_inhibit_torture
-#else
-# define FORCE_GC 0
+// The following are 'loose wheels' in CXXR: they have no effect.
+static int gc_force_wait = 0;
+static int gc_force_gap = 0;
 #endif
-
-#define GC_PROT(X) {int __t = gc_inhibit_torture; \
-	gc_inhibit_torture = 1 ; X ; gc_inhibit_torture = __t;}
 
 /* Miscellaneous Globals. */
 
@@ -134,41 +127,60 @@ SEXP attribute_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* The Generational Collector. */
 
-unsigned int GCNode::protectCstructs()
+/* public interface for controlling GC torture settings */
+// NB: all these are loose wheels in CXXR.
+void R_gc_torture(int gap, int wait, Rboolean inhibit)
 {
-    unsigned int protect_count = 0;
-#ifdef BYTECODE
-    // Bytecode stack:
-    {
-	SEXP *sp;
-	for (sp = R_BCNodeStackBase; sp < R_BCNodeStackTop; sp++) {
-	    PROTECT(*sp);
-	    ++protect_count;
-	}
+    if (gap != NA_INTEGER && gap >= 0)
+	gc_force_wait = gc_force_gap = gap;
+    if (gap > 0) {
+	if (wait != NA_INTEGER && wait > 0)
+	    gc_force_wait = wait;
     }
-#endif
-    return protect_count;
 }
 
 SEXP attribute_hidden do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    int i;
-    SEXP old = ScalarLogical(!gc_inhibit_torture);
+    int gap;
+    SEXP old = ScalarLogical(gc_force_wait > 0);
 
     checkArity(op, args);
-    i = asLogical(CAR(args));
-    if (i != NA_LOGICAL)
-	gc_inhibit_torture = !i;
+
+    if (isLogical(CAR(args))) {
+	Rboolean on = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));
+	if (on == NA_LOGICAL) gap = NA_INTEGER;
+	else if (on) gap = 1;
+	else gap = 0;
+    }
+    else gap = asInteger(CAR(args));
+
+    R_gc_torture(gap, 0, FALSE);
+
+    return old;
+}
+
+SEXP attribute_hidden do_gctorture2(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    int gap, wait;
+    Rboolean inhibit;
+    SEXP old = ScalarInteger(gc_force_gap);
+
+    checkArity(op, args);
+    gap = asInteger(CAR(args));
+    wait = asInteger(CADR(args));
+    inhibit = CXXRCONSTRUCT(Rboolean, asLogical(CADDR(args)));
+    R_gc_torture(gap, wait, inhibit);
+
     return old;
 }
 
 SEXP attribute_hidden do_gcinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
-    ostream* report_os = GCManager::setReporting(0);
+    std::ostream* report_os = GCManager::setReporting(0);
     bool want_reporting = asLogical(CAR(args));
     if (want_reporting != NA_LOGICAL)
-	GCManager::setReporting(want_reporting ? &cerr : 0);
+	GCManager::setReporting(want_reporting ? &std::cerr : 0);
     else
 	GCManager::setReporting(report_os);
     return ScalarLogical(report_os != 0);
@@ -190,8 +202,8 @@ void attribute_hidden get_current_mem(unsigned long *smallvsize,
 SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
-    ostream* report_os
-	= GCManager::setReporting(asLogical(CAR(args)) ? &cerr : 0);
+    std::ostream* report_os
+	= GCManager::setReporting(asLogical(CAR(args)) ? &std::cerr : 0);
     bool reset_max = asLogical(CADR(args));
     GCManager::gc();
     GCManager::setReporting(report_os);
@@ -274,25 +286,11 @@ void InitMemory()
 #ifdef _R_HAVE_TIMING_
     GCManager::setMonitors(gc_start_timing, gc_end_timing);
 #endif
-    GCManager::setReporting(R_Verbose ? &cerr : 0);
+    GCManager::setReporting(R_Verbose ? &std::cerr : 0);
     GCManager::setGCThreshold(R_VSize);
 
 #ifdef BYTECODE
-    R_BCNodeStackBase = static_cast<SEXP *>( malloc(R_BCNODESTACKSIZE * sizeof(SEXP)));
-    if (R_BCNodeStackBase == NULL)
-	R_Suicide("couldn't allocate node stack");
-# ifdef BC_INT_STACK
-    R_BCIntStackBase =
-      (IStackval *) malloc(R_BCINTSTACKSIZE * sizeof(IStackval));
-    if (R_BCIntStackBase == NULL)
-	R_Suicide("couldn't allocate integer stack");
-# endif
-    R_BCNodeStackTop = R_BCNodeStackBase;
-    R_BCNodeStackEnd = R_BCNodeStackBase + R_BCNODESTACKSIZE;
-# ifdef BC_INT_STACK
-    R_BCIntStackTop = R_BCIntStackBase;
-    R_BCIntStackEnd = R_BCIntStackBase + R_BCINTSTACKSIZE;
-# endif
+    ByteCode::initialize();
 #endif
 }
 
@@ -324,9 +322,9 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
     GCStackRoot<PairList> namevalr(SEXP_downcast<PairList*>(valuelist));
     GCStackRoot<Environment> rhor(SEXP_downcast<Environment*>(rho));
     // +5 to leave some room for local variables:
-    Environment* ans = new Environment(rhor, Rf_length(namevalr) + 5);
-    frameReadPairList(ans->frame(), namevalr);
-    return GCNode::expose(ans);
+    GCStackRoot<Frame> frame(CXXR_NEW(StdFrame(Rf_length(namevalr) + 5)));
+    frameReadPairList(frame, namevalr);
+    return CXXR_NEW(Environment(rhor, frame));
 }
 
 /* Allocate a vector object (and also list-like objects).
@@ -334,11 +332,13 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 
 SEXP allocVector(SEXPTYPE type, R_len_t length)
 {
-    SEXP s;
+    SEXP s = 0;  // -Wall
 
-    if (length < 0 )
-	errorcall(R_GlobalContext->call,
+    if (length < 0 ) {
+	FunctionContext* ctxt = FunctionContext::innermost();
+	errorcall(ctxt ? CXXRCCAST(Expression*, ctxt->call()) : static_cast<RObject*>(0),
 		  _("negative length vectors are not allowed"));
+    }
     /* number of vector cells to allocate */
     switch (type) {
     case NILSXP:
@@ -372,8 +372,9 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	break;
     case LANGSXP:
 	{
-	    if(length == 0) return 0;
-	    GCStackRoot<PairList> tl(PairList::makeList(length - 1));
+	    if (length == 0)
+		return 0;
+	    GCStackRoot<PairList> tl(PairList::make(length - 1));
 	    s = new Expression(0, tl);
 	    break;
 	}
@@ -427,7 +428,7 @@ SEXP attribute_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
 /* S-like wrappers for calloc, realloc and free that check for error
    conditions */
 
-void *R_chk_calloc(size_t nelem, size_t elsize)
+void *R_chk_calloc(std::size_t nelem, std::size_t elsize)
 {
     void *p;
 #ifndef HAVE_WORKING_CALLOC
@@ -435,17 +436,20 @@ void *R_chk_calloc(size_t nelem, size_t elsize)
 	return(NULL);
 #endif
     p = calloc(nelem, elsize);
-    if(!p) error(_("Calloc could not allocate (%d of %d) memory"),
-		 nelem, elsize);
+    if(!p) /* problem here is that we don't have a format for size_t. */
+	error(_("Calloc could not allocate memory (%.0f of %u bytes)"),
+	      double( nelem), elsize);
     return(p);
 }
 
-void *R_chk_realloc(void *ptr, size_t size)
+void *R_chk_realloc(void *ptr, std::size_t size)
 {
     void *p;
     /* Protect against broken realloc */
     if(ptr) p = realloc(ptr, size); else p = malloc(size);
-    if(!p) error(_("Realloc could not re-allocate (size %d) memory"), size);
+    if(!p)
+	error(_("Realloc could not re-allocate memory (%.0f bytes)"), 
+	      double( size));
     return(p);
 }
 
@@ -479,26 +483,6 @@ DL_FUNC R_ExternalPtrAddrFn(SEXP s)
 }
 
 
-
-/* The following functions are replacements for the accessor macros.
-   They are used by code that does not have direct access to the
-   internal representation of objects.  The assignment functions
-   implement the write barrier. */
-
-/* General Cons Cell Attributes */
-
-void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
-    GCStackRoot<> attributes(duplicate(ATTRIB(from)));
-    SET_ATTRIB(to, attributes);
-    IS_S4_OBJECT(from) ?  SET_S4_OBJECT(to) : UNSET_S4_OBJECT(to);
-}
-
-
-/* R_FunTab accessors */
-/* Not used:
-void (SET_PRIMFUN)(SEXP x, CCODE f) { PRIMFUN(x) = f; }
-*/
-
 /*******************************************/
 /* Non-sampling memory use profiler
    reports all large vector heap
@@ -519,12 +503,14 @@ static FILE *R_MemReportingOutfile;
 static void R_OutputStackTrace(FILE *file)
 {
     int newline = 0;
-    RCNTXT *cptr;
+    Evaluator::Context *cptr;
 
-    for (cptr = R_GlobalContext; cptr; cptr = cptr->nextcontext) {
-	if ((cptr->callflag & (CTXT_FUNCTION | CTXT_BUILTIN))
-	    && TYPEOF(cptr->call) == LANGSXP) {
-	    SEXP fun = CAR(cptr->call);
+    for (cptr = Evaluator::Context::innermost(); cptr; cptr = cptr->nextOut()) {
+	Evaluator::Context::Type type = cptr->type();
+	if (type == Evaluator::Context::FUNCTION
+	    || type == Evaluator::Context::CLOSURE) {
+	    FunctionContext* fctxt = static_cast<FunctionContext*>(cptr);
+	    SEXP fun = fctxt->call()->car();
 	    if (!newline) newline = 1;
 	    fprintf(file, "\"%s\" ",
 		    TYPEOF(fun) == SYMSXP ? CHAR(PRINTNAME(fun)) :
@@ -588,12 +574,12 @@ SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 #include "RBufferUtils.h"
 
 attribute_hidden
-void *R_AllocStringBuffer(size_t blen, R_StringBuffer *buf)
+void *R_AllocStringBuffer(std::size_t blen, R_StringBuffer *buf)
 {
-    size_t blen1, bsize = buf->defaultSize;
+    std::size_t blen1, bsize = buf->defaultSize;
 
     /* for backwards compatibility, probably no longer needed */
-    if(blen == size_t(-1)) {
+    if(blen == std::size_t(-1)) {
 	warning("R_AllocStringBuffer(-1) used: please report");
 	R_FreeStringBufferL(buf);
 	return NULL;
@@ -652,11 +638,12 @@ int Seql(SEXP a, SEXP b)
       as unknown. */
     if (a == b) return 1;
     /* Leave this to compiler to optimize */
-    if (IS_CACHED(a) && IS_CACHED(b) && ENC_KNOWN(a) == ENC_KNOWN(b)) {
-	CachedString* csa = static_cast<CachedString*>(a);
-	CachedString* csb = static_cast<CachedString*>(b);
-	if (csa->encoding() == csb->encoding())
-	    return 0;
+    if (IS_CACHED(a) && IS_CACHED(b) && ENC_KNOWN(a) == ENC_KNOWN(b))
+	return 0;
+    else {
+	const void* vmax = vmaxget();
+    	int result = !strcmp(translateCharUTF8(a), translateCharUTF8(b));
+    	vmaxset(vmax); /* discard any memory used by translateCharUTF8 */
+    	return result;
     }
-    return !strcmp(translateChar(a), translateChar(b));
 }

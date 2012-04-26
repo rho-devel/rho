@@ -1,12 +1,10 @@
 ## being a 'builtin' function is not the same as being in base
-## and what about objects starting with '.'?
 ls.base <- ls("package:base", all=TRUE)
 base.is.f <- sapply(ls.base, function(x) is.function(get(x)))
-bi <- ls.base[base.is.f]
 cat("\nNumber of base objects:\t\t", length(ls.base),
     "\nNumber of functions in base:\t", sum(base.is.f),
     "\n\t starting with 'is.' :\t  ",
-    length(is.bi <- bi[substring(bi,1,3) == "is."]), "\n")
+    sum(grepl("^is\\.", ls.base[base.is.f])), "\n", sep = "")
 ## 0.14  : 31
 ## 0.50  : 33
 ## 0.60  : 34
@@ -19,13 +17,13 @@ cat("\nNumber of base objects:\t\t", length(ls.base),
 ## Do we have a method (probably)?
 is.method <- function(fname) {
     isFun <- function(name) (exists(name, mode="function") &&
-                        is.na(match(name, c("is", "as"))))
+                             is.na(match(name, c("is", "as"))))
     np <- length(sp <- strsplit(fname, split = "\\.")[[1]])
     if(np <= 1 )
         FALSE
     else
         (isFun(paste(sp[1:(np-1)], collapse = '.')) ||
-         (np>=3 &&
+         (np >= 3 &&
           isFun(paste(sp[1:(np-2)], collapse = '.'))))
 }
 
@@ -52,6 +50,12 @@ is.ALL <- function(obj, func.names = ls(pos=length(search())),
 	    if(!is.list(obj) && !is.vector(obj) && !is.array(obj)) {
 		if(!true.only) r[[f]] <- NA
 		next
+	    }
+	}
+	if(any(f == c("is.nan", "is.finite", "is.infinite"))) {
+	    if(!is.atomic(obj)) {
+	    	if(!true.only) r[[f]] <- NA
+	    	next
 	    }
 	}
 	if(debug) cat(f,"")

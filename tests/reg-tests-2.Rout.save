@@ -1,8 +1,11 @@
 
-R version 2.10.0 Under development (unstable) (2009-08-05 r49069)
-Copyright (C) 2009 The R Foundation for Statistical Computing
+This is CXXR 0.39-2.14.1, based on:
+R version 2.14.1 (2011-12-22)
+Copyright (C) 2011 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: i686-pc-linux-gnu (32-bit)
 
+CXXR Copyright (C) 2008-12 Andrew R. Runnalls.  CXXR like
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
 Type 'license()' or 'licence()' for distribution details.
@@ -15,10 +18,12 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+CXXR is not part of the R project, so please do not report bugs
+via r-bugs or the R website; instead refer to the CXXR website.
 > ## Regression tests for which the printed output is the issue
 > ### _and_ must work (no Recommended packages, please)
 > 
-> postscript("reg-tests-2.ps", encoding = "ISOLatin1.enc")
+> pdf("reg-tests-2.pdf", encoding = "ISOLatin1.enc")
 > 
 > ## force standard handling for data frames
 > options(stringsAsFactors=TRUE)
@@ -336,12 +341,12 @@ c  203  215  227  239
 > for(nu in nus){xx <- x[x > .6*nu]; lines(xx,besselY(xx,nu=nu), col = nu+2)}
 > summary(bY <- besselY(2,nu = nu <- seq(0,100,len=501)))
        Min.     1st Qu.      Median        Mean     3rd Qu.        Max. 
--3.001e+155 -1.067e+107  -1.976e+62 -9.961e+152  -2.059e+23   5.104e-01 
+-3.001e+155 -1.067e+107  -1.976e+62 -9.961e+152  -2.059e+23   1.000e+00 
 > which(bY >= 0)
 [1] 1 2 3 4 5
 > summary(bY <- besselY(2,nu = nu <- seq(3,300,len=51)))
        Min.     1st Qu.      Median        Mean     3rd Qu.        Max. 
-       -Inf        -Inf -2.248e+263        -Inf -3.777e+116  -1.128e+00 
+       -Inf        -Inf -2.248e+263        -Inf -3.777e+116  -1.000e+00 
 There were 22 warnings (use warnings() to see them)
 > summary(bI <- besselI(x = x <- 10:700, 1))
       Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
@@ -463,7 +468,7 @@ numeric(0)
    100 -1e-13    Inf   -Inf    NaN   3.14     NA 
    100      0     NA     NA     NA      3     NA 
 Warning message:
-In structure(as.integer(x), names = names(x)) : NAs introduced by coercion
+In as.integer(x) : NAs introduced by coercion
 > ##-   100 -1e-13    Inf   -Inf    NaN   3.14     NA
 > ##-   100      0     NA     NA     NA      3     NA
 > all(is.na(ix) != is.finite(ix) | is.infinite(ix)) # TRUE (still)
@@ -747,8 +752,28 @@ logical(0)
 > ll <- list(pi,"C",NaN,Inf, 1:3, c(0,NA), NA)
 > is.na (ll)
 [1] FALSE FALSE  TRUE FALSE FALSE FALSE  TRUE
-> is.nan(ll)
-[1] FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+> lapply(ll, is.nan)  # is.nan no longer works on lists
+[[1]]
+[1] FALSE
+
+[[2]]
+[1] FALSE
+
+[[3]]
+[1] TRUE
+
+[[4]]
+[1] FALSE
+
+[[5]]
+[1] FALSE FALSE FALSE
+
+[[6]]
+[1] FALSE FALSE
+
+[[7]]
+[1] FALSE
+
 > ## end of moved from NA.Rd
 > 
 > ## is.na was returning unset values on nested lists
@@ -985,7 +1010,7 @@ $B$subset
 > detg1.m0 <- glm(cbind(X,M)~1,binomial,detg1)
 > detg1.m0
 
-Call:  glm(formula = cbind(X, M) ~ 1, family = binomial, data = detg1) 
+Call:  glm(formula = cbind(X, M) ~ 1, family = binomial, data = detg1)
 
 Coefficients:
 (Intercept)  
@@ -1031,7 +1056,8 @@ cbind(X, M) ~ M.user + Temp + M.user:Temp
 - M.user:Temp  1   8.4440 72.142
 + Soft         2   5.4952 75.193
 
-Call:  glm(formula = cbind(X, M) ~ M.user + Temp + M.user:Temp, family = binomial,      data = detg1) 
+Call:  glm(formula = cbind(X, M) ~ M.user + Temp + M.user:Temp, family = binomial, 
+    data = detg1)
 
 Coefficients:
     (Intercept)          M.userY          TempLow  M.userY:TempLow  
@@ -1416,10 +1442,8 @@ Y    4   10   16   22
 > 
 > ## PR#1115 (saving strings with ascii=TRUE)
 > x <- y <- unlist(as.list(
-+     parse(text=paste("\"\\",
-+           as.character(structure(1:255,class="octmode")),
-+              "\"",sep=""))))
-> save(x, ascii=T, file=(fn <- tempfile()))
++     parse(text=paste("\"\\", as.character(as.octmode(1:255)), "\"",sep=""))))
+> save(x, ascii=TRUE, file=(fn <- tempfile()))
 > load(fn)
 > all(x==y)
 [1] TRUE
@@ -1741,7 +1765,8 @@ In log(ifelse(y == 0, 1, y/mu)) : NaNs produced
 > ## now gives useful error message
 > glm(y ~ x, family = poisson(identity), start = c(1,0))
 
-Call:  glm(formula = y ~ x, family = poisson(identity), start = c(1,      0)) 
+Call:  glm(formula = y ~ x, family = poisson(identity), start = c(1, 
+    0))
 
 Coefficients:
 (Intercept)            x  
@@ -1758,7 +1783,8 @@ Warning messages:
 > y <- rpois(100, pmax(3*x, 0))
 > glm(y ~ x, family = poisson(identity), start = c(1,0))
 
-Call:  glm(formula = y ~ x, family = poisson(identity), start = c(1,      0)) 
+Call:  glm(formula = y ~ x, family = poisson(identity), start = c(1, 
+    0))
 
 Coefficients:
 (Intercept)            x  
@@ -1795,10 +1821,8 @@ Warning messages:
 23: step size truncated: out of bounds
 24: step size truncated: out of bounds
 25: step size truncated: out of bounds
-26: In glm.fit(x = X, y = Y, weights = weights, start = start,  ... :
-  algorithm did not converge
-27: In glm.fit(x = X, y = Y, weights = weights, start = start,  ... :
-  algorithm stopped at boundary value
+26: glm.fit: algorithm did not converge
+27: glm.fit: algorithm stopped at boundary value
 > 
 > 
 > ## extending char arrrays
@@ -2369,7 +2393,7 @@ x3  0.81       -0.97
 
 > (fit <- glm(y ~ x1 + x2 + x3))
 
-Call:  glm(formula = y ~ x1 + x2 + x3) 
+Call:  glm(formula = y ~ x1 + x2 + x3)
 
 Coefficients:
 (Intercept)           x1           x2           x3  
@@ -2562,8 +2586,8 @@ Call:
 lm(formula = y ~ 0)
 
 Residuals:
-      Min        1Q    Median        3Q       Max 
--1.369192 -0.210726  0.008405  0.084366  0.552922 
+     Min       1Q   Median       3Q      Max 
+-1.36919 -0.21073  0.00840  0.08437  0.55292 
 
 No Coefficients
 
@@ -2658,8 +2682,8 @@ Call:
 lm(formula = y ~ x + 0)
 
 Residuals:
-      Min        1Q    Median        3Q       Max 
--1.369192 -0.210726  0.008405  0.084366  0.552922 
+     Min       1Q   Median       3Q      Max 
+-1.36919 -0.21073  0.00840  0.08437  0.55292 
 
 Coefficients: (1 not defined because of singularities)
   Estimate Std. Error t value Pr(>|t|)
@@ -2747,7 +2771,7 @@ attr(,"assign")
 > 
 > (fit <- glm(y ~ 0))
 
-Call:  glm(formula = y ~ 0) 
+Call:  glm(formula = y ~ 0)
 
 No coefficients
 
@@ -2761,8 +2785,8 @@ Call:
 glm(formula = y ~ 0)
 
 Deviance Residuals: 
-      Min         1Q     Median         3Q        Max  
--1.369192  -0.210726   0.008405   0.084366   0.552922  
+     Min        1Q    Median        3Q       Max  
+-1.36919  -0.21073   0.00840   0.08437   0.55292  
 
 No Coefficients
 
@@ -2834,7 +2858,7 @@ $residual.scale
 > 
 > (fit <- glm(y ~ x + 0))
 
-Call:  glm(formula = y ~ x + 0) 
+Call:  glm(formula = y ~ x + 0)
 
 Coefficients:
  x  
@@ -2849,8 +2873,8 @@ Call:
 glm(formula = y ~ x + 0)
 
 Deviance Residuals: 
-      Min         1Q     Median         3Q        Max  
--1.369192  -0.210726   0.008405   0.084366   0.552922  
+     Min        1Q    Median        3Q       Max  
+-1.36919  -0.21073   0.00840   0.08437   0.55292  
 
 Coefficients: (1 not defined because of singularities)
   Estimate Std. Error t value Pr(>|t|)
@@ -3005,7 +3029,7 @@ j
 
 $sigma
         b         d         e         f         g         h         i         j 
-0.8830622 0.8830622 0.8830622 0.8830622 0.8830622 0.8830622 0.8830622 0.8830622 
+0.9366289 0.9366289 0.9366289 0.9366289 0.9366289 0.9366289 0.9366289 0.9366289 
 
 $wt.res
          b          d          e          f          g          h          i 
@@ -3032,9 +3056,9 @@ j
 
 $sigma
         b         d         c         e         f         g         h         i 
-0.8830622 0.8830622 0.8830622 0.8830622 0.8830622 0.8830622 0.8830622 0.8830622 
+0.9366289 0.9366289 0.9366289 0.9366289 0.9366289 0.9366289 0.9366289 0.9366289 
         j 
-0.8830622 
+0.9366289 
 
 $wt.res
          b          d          c          e          f          g          h 
@@ -3175,16 +3199,16 @@ Error in `[.data.frame`(x, 1, c("a", "c")) : undefined columns selected
  [1] $<-           Math          Ops           Summary       [            
  [6] [<-           [[            [[<-          aggregate     anyDuplicated
 [11] as.data.frame as.list       as.matrix     by            cbind        
-[16] dim           dimnames      dimnames<-    duplicated    edit         
-[21] format        formula       head          is.na         mean         
-[26] merge         na.exclude    na.omit       plot          print        
-[31] prompt        rbind         row.names     row.names<-   rowsum       
-[36] split         split<-       stack         str           subset       
-[41] summary       t             tail          transform     unique       
-[46] unstack       within       
+[16] dim           dimnames      dimnames<-    droplevels    duplicated   
+[21] edit          format        formula       head          is.na        
+[26] mean          merge         na.exclude    na.omit       plot         
+[31] print         prompt        rbind         row.names     row.names<-  
+[36] rowsum        split         split<-       stack         str          
+[41] subset        summary       t             tail          transform    
+[46] unique        unstack       within       
 > meth2gen("dendrogram")
-[1] [[         cophenetic cut        labels     plot       print      reorder   
-[8] rev        str       
+ [1] [[         as.hclust  cophenetic cut        labels     merge     
+ [7] plot       print      reorder    rev        str       
 > ## --> the output may need somewhat frequent updating..
 > 
 > 
@@ -3202,7 +3226,9 @@ NULL
 [1] 1
 > dimnames(x) <- list(some=letters[1:5])
 > x[]
-[1] 1 2 3 4 5
+some
+a b c d e 
+1 2 3 4 5 
 > x[2:3]
 some
 b c 
@@ -3636,8 +3662,12 @@ probability of success
 > 
 > ## Misleading error messages on integer overflow
 > ## Uwe Ligges, R-devel, 2004-02-19
-> try(numeric(2^31))
-Error in vector("double", length) : vector size specified is too large
+> ## (modified to make printed result the same whether numeric() is
+> ##  compiled or interpreted)
+> ## try(numeric(2^31))
+> tryCatch(numeric(2^31),
++          error = function(e) paste("Error:", conditionMessage(e)))
+[1] "Error: vector size specified is too large"
 > try(matrix( , 2^31, 1))
 Error in matrix(, 2^31, 1) : invalid 'nrow' value (too large or NA)
 In addition: Warning message:
@@ -3711,12 +3741,12 @@ f1:f2  2 100371   50185
 
 Error: subject:f1
       Df Sum Sq Mean Sq
-f1     2 483.96  241.98
-f1:f2  4 869.69  217.42
+f1     2  484.0   242.0
+f1:f2  4  869.7   217.4
 
 Error: Within
           Df Sum Sq Mean Sq F value Pr(>F)
-Residuals 42  29204  695.34               
+Residuals 42  29204   695.3               
 > sample.aov <- aov(dep.variable ~ f1 * f2 + Error(subject/(f2+f1)), data=sample.df)
 Warning message:
 In aov(dep.variable ~ f1 * f2 + Error(subject/(f2 + f1)), data = sample.df) :
@@ -3766,12 +3796,12 @@ f1:f2  2 100371   50185
 
 Error: subject:f1
       Df Sum Sq Mean Sq
-f1     2 483.96  241.98
-f1:f2  4 869.69  217.42
+f1     2  484.0   242.0
+f1:f2  4  869.7   217.4
 
 Error: Within
           Df Sum Sq Mean Sq F value Pr(>F)
-Residuals 42  29204  695.34               
+Residuals 42  29204   695.3               
 > ## failed in 1.8.1
 > 
 > 
@@ -4123,7 +4153,7 @@ Warning message:
 3  3  c  C 2004-03-01 2004-03-01 12:00:00
 > unlist(sapply(.Last.value, class))
          V1          V2          V4          V5         V61         V62 
-  "integer"    "factor" "character"      "Date"    "POSIXt"   "POSIXct" 
+  "integer"    "factor" "character"      "Date"   "POSIXct"    "POSIXt" 
 > read.table(foo, colClasses = c("factor",NA,"NULL","factor","Date","POSIXct"))
   V1 V2 V4         V5                  V6
 1  1  a  A 2004-01-01 2004-01-01 12:00:00
@@ -4131,7 +4161,7 @@ Warning message:
 3  3  c  C 2004-03-01 2004-03-01 12:00:00
 > unlist(sapply(.Last.value, class))
        V1        V2        V4        V5       V61       V62 
- "factor"  "factor"  "factor"    "Date"  "POSIXt" "POSIXct" 
+ "factor"  "factor"  "factor"    "Date" "POSIXct"  "POSIXt" 
 > read.table(foo, colClasses = c(V4="character"))
   V1 V2 V3 V4         V5               V6
 1  1  a  1  A 2004-01-01 2004-01-01 12:00
@@ -4310,10 +4340,10 @@ Levels: a a " test b
 [1] a        <NA>     b        a " test
 Levels: a a " test b <NA>
 > print(factor(x), quote=TRUE)
-[1] "a"         NA          "b"         "a \" test"
+[1] "a"        NA         "b"        "a \" test"
 Levels: "a" "a \" test" "b"
 > print(factor(x, exclude=""), quote=TRUE)
-[1] "a"         NA          "b"         "a \" test"
+[1] "a"        NA         "b"        "a \" test"
 Levels: "a" "a \" test" "b" NA
 > ## last two printed levels differently from values in 2.0.1
 > 
@@ -4653,9 +4683,9 @@ Analysis of Variance Table
 
 Model 1: y ~ 1
 Model 2: y ~ z
-  Res.Df    RSS Df Sum of Sq      F    Pr(>F)    
-1      9 89.130                                  
-2      8  6.316  1    82.814 104.90 7.099e-06 ***
+  Res.Df    RSS Df Sum of Sq     F    Pr(>F)    
+1      9 89.130                                 
+2      8  6.316  1    82.814 104.9 7.099e-06 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
 > add1(lm1, scope = ~ z)
@@ -4681,11 +4711,12 @@ z       1    82.814 89.130 23.8751
 > as.raw(1234)
 [1] 00
 Warning message:
-out-of-range values treated as 0 in coercion to raw 
+In as.raw(1234) : out-of-range values treated as 0 in coercion to raw
 > as.raw(list(a=1234))
 [1] 00
 Warning message:
-out-of-range values treated as 0 in coercion to raw 
+In as.raw(list(a = 1234)) :
+  out-of-range values treated as 0 in coercion to raw
 > ## 2.1.1: spurious and missing messages, wrong result for second.
 > 
 > 
@@ -4725,12 +4756,16 @@ out-of-range values treated as 0 in coercion to raw
 > df3[df3 == 2]            # had spurious names
 [1] 2 2
 > # but not allowed
-> try(df2[df2 == 2] <- 1:2)
-Error in x[[v]][thisvar] <- if (N > 1L) value[n + seq_len(nv)] else value : 
-  NAs are not allowed in subscripted assignments
-> try(m2[m2 == 2] <- 1:2)
-Error in m2[m2 == 2] <- 1:2 : 
-  NAs are not allowed in subscripted assignments
+> ## (modified to make printed result the same whether numeric() is
+> ##  compiled or interpreted)
+> ## try(df2[df2 == 2] <- 1:2)
+> ## try(m2[m2 == 2] <- 1:2)
+> tryCatch(df2[df2 == 2] <- 1:2,
++          error = function(e) paste("Error:", conditionMessage(e)))
+[1] "Error: NA subscripts are not allowed in this context"
+> tryCatch(m2[m2 == 2] <- 1:2,
++          error = function(e) paste("Error:", conditionMessage(e)))
+[1] "Error: NA subscripts are not allowed in this context"
 > ##
 > 
 > 
@@ -4790,7 +4825,7 @@ $foo
 > 
 > 
 > ## printing of a kernel:
-> kernel(1, 0)
+> kernel(1)
 unknown 
 coef[0] = 1
 > ## printed wrongly in R <= 2.1.1
@@ -5332,10 +5367,10 @@ Levels: A B C D E
 [1] D
 Levels: A B C D E
 
-> unlist(as.list(x))
+> (xx <- unlist(as.list(x)))
 [1] B C D
 Levels: A B C D E
-> stopifnot(identical(x, unlist(as.list(x))))
+> stopifnot(identical(x, xx))
 > as.vector(x, "list")
 [[1]]
 [1] B
@@ -5349,10 +5384,10 @@ Levels: A B C D E
 [1] D
 Levels: A B C D E
 
-> sapply(x, na.pass)
+> (sx <- sapply(x, function(.).))
 [1] B C D
 Levels: A B C D E
-> stopifnot(identical(x, sapply(x, na.pass)))
+> stopifnot(identical(x, sx))
 > ## changed in 2.4.0
 > 
 > 
@@ -5515,8 +5550,8 @@ Call:
 lm(formula = y1 ~ 1, na.action = "na.exclude")
 
 Residuals:
-     Min       1Q   Median       3Q      Max 
--3.28057 -0.90572  0.04996  0.80200  2.54584 
+    Min      1Q  Median      3Q     Max 
+-3.2806 -0.9057  0.0500  0.8020  2.5458 
 
 Coefficients:
             Estimate Std. Error t value Pr(>|t|)    
@@ -5549,6 +5584,7 @@ Residual standard error: 1.735 on 44 degrees of freedom
 
 > ## failed < 2.4.0
 > 
+> RNGkind("default","default")## reset to default - ease  R core
 > 
 > ## prettyNum lost attributes (PR#8695)
 > format(matrix(1:16, 4), big.mark = ",")
@@ -5781,8 +5817,9 @@ structure(list(X1.4 = 1:4), .Names = "X1.4", row.names = c("1",
 > ## tests of deparsing
 > # if we run this from stdin, we will have no source, so fake it
 > f <- function(x, xm  = max(1L, x)) {xx <- 0L; yy <- NA_real_}
-> attr(f, "source") <-
-+     "function(x, xm  = max(1L, x)) {xx <- 0L; yy <- NA_real_}"
+> attr(f, "srcref") <- srcref(srcfilecopy("",
++     "function(x, xm  = max(1L, x)) {xx <- 0L; yy <- NA_real_}"),
++     c(1L, 1L, 1L, 56L))
 > f # uses the source
 function(x, xm  = max(1L, x)) {xx <- 0L; yy <- NA_real_}
 > dput(f) # not source
@@ -5793,7 +5830,6 @@ function (x, xm = max(1L, x))
 }
 > dput(f, control="all") # uses the source
 function(x, xm  = max(1L, x)) {xx <- 0L; yy <- NA_real_}
-
 > cat(deparse(f), sep="\n")
 function (x, xm = max(1L, x)) 
 {
@@ -5803,9 +5839,8 @@ function (x, xm = max(1L, x))
 > dump("f", file="")
 f <-
 function(x, xm  = max(1L, x)) {xx <- 0L; yy <- NA_real_}
-
 > # remove the source
-> attr(f, "source") <- NULL
+> attr(f, "srcref") <- NULL
 > f
 function (x, xm = max(1L, x)) 
 {
@@ -5855,7 +5890,8 @@ integer(0)
 > pmin(integer(0), NULL)
 integer(0)
 > try(pmin(NULL, 1:3))
-Error in pmin(NULL, 1:3) : cannot mix 0-length vectors with others
+Error in mmm <- .Internal(pmin(na.rm, ...)) : 
+  cannot mix 0-length vectors with others
 > 
 > x <- c(1, NA, NA, 4, 5)
 > y <- c(2, NA, 4, NA, 3)
@@ -5910,7 +5946,7 @@ Error in pmin(NULL, 1:3) : cannot mix 0-length vectors with others
 [16] "1979-01-01" "1978-01-01" "1977-01-01" "1976-01-01" "1975-01-01"
 [21] "1974-01-01" "1973-01-01" "1972-07-01"
 > class(pmin(x, y))
-[1] "POSIXt"  "POSIXct"
+[1] "POSIXct" "POSIXt" 
 > stopifnot(identical(pmin(x, y), pmin(y, x)))
 > format(pmin(x, y, na.rm=TRUE), tz="GMT")
  [1] "1972-07-01" NA           "1997-07-01" "1975-01-01" "1976-01-01"
@@ -5942,7 +5978,7 @@ Error in pmin(NULL, 1:3) : cannot mix 0-length vectors with others
 [16] "1979-01-01" "1978-01-01" "1977-01-01" "1976-01-01" "1975-01-01"
 [21] "1974-01-01" "1973-01-01" "1972-07-01"
 > class(pmin(x, y))
-[1] "POSIXt"  "POSIXlt"
+[1] "POSIXlt" "POSIXt" 
 > stopifnot(identical(pmin(x, y), pmin(y, x)))
 > format(pmin(x, y, na.rm=TRUE), tz="GMT")
  [1] "1972-07-01" NA           "1997-07-01" "1975-01-01" "1976-01-01"
@@ -6018,7 +6054,7 @@ $`NA`
 > attr(x, NA_character_)
 NULL
 > try(attr(x, NA_character_) <- 5)
-Error in attr(x, NA_character_) <- 5 : 
+Error in `attr<-`(`*tmp*`, NA_character_, value = 5) : 
   'name' must be non-null character string
 > ## prior to 2.5.0 NA was treated as "NA"
 > 
@@ -6068,8 +6104,8 @@ Error in cor(X, use = "complete", method = "kendall") :
 > cor(X, use = "pair")
      [,1]       [,2]       [,3]
 [1,]   NA         NA         NA
-[2,]   NA  1.0000000 -0.2784939
-[3,]   NA -0.2784939  1.0000000
+[2,]   NA  1.0000000 -0.1942739
+[3,]   NA -0.1942739  1.0000000
 > cor(X, use = "pair", method="spearman")
      [,1] [,2] [,3]
 [1,]   NA   NA   NA
@@ -6100,8 +6136,8 @@ Error in cor(X, use = "complete", method = "kendall") :
 > cor(X, use = "pair")
      [,1]       [,2]       [,3]
 [1,]   NA         NA         NA
-[2,]   NA  1.0000000 -0.2784939
-[3,]   NA -0.2784939  1.0000000
+[2,]   NA  1.0000000 -0.1942739
+[3,]   NA -0.1942739  1.0000000
 > cor(X, use = "pair", method="spearman")
      [,1] [,2] [,3]
 [1,]   NA   NA   NA
@@ -6121,15 +6157,15 @@ Error in cor(X, use = "complete", method = "kendall") :
 +                    ans = rnorm(10))
 > fit <-  lm(ans ~ x + u, data = junk)
 > confint(fit)
-                2.5 %   97.5 %
-(Intercept) -1.442871 1.553126
-x                  NA       NA
-uY          -2.548846 1.688133
+                 2.5 %    97.5 %
+(Intercept) -0.4634457 1.6198116
+x                   NA        NA
+uY          -2.3607073 0.5854635
 > confint.default(fit)
-                2.5 %   97.5 %
-(Intercept) -1.218080 1.328335
-x                  NA       NA
-uY          -2.230944 1.370232
+                 2.5 %    97.5 %
+(Intercept) -0.3071384 1.4635043
+x                   NA        NA
+uY          -2.1396554 0.3644116
 > ## Mismatch gave NA for 'u' in 2.6.1
 > 
 > 
@@ -6235,22 +6271,22 @@ foo(1, bar = 2)
 > ## https://stat.ethz.ch/pipermail/r-devel/2008-December/051669.html
 > try(.Call("R_GD_nullDevice", NULL))
 Error in .Call("R_GD_nullDevice", NULL) : 
-  Incorrect number of arguments (1), expecting 0 for R_GD_nullDevice
+  Incorrect number of arguments (1), expecting 0 for 'R_GD_nullDevice'
 > sym <- getDLLRegisteredRoutines("grDevices")$.Call[["R_GD_nullDevice"]]
 > try(.Call(sym, NULL))
 Error in .Call(sym, NULL) : 
-  Incorrect number of arguments (1), expecting 0 for R_GD_nullDevice
+  Incorrect number of arguments (1), expecting 0 for 'R_GD_nullDevice'
 > try(.Call(sym$address, NULL))
 Error in .Call(sym$address, NULL) : 
-  Incorrect number of arguments (1), expecting 0 for R_GD_nullDevice
+  Incorrect number of arguments (1), expecting 0 for 'R_GD_nullDevice'
 > ## wrong error in 2.8.1
 > sym <- getDLLRegisteredRoutines("stats")$.C$prho
 > try(.C(sym, NULL))
 Error in .C(sym, NULL) : 
-  Incorrect number of arguments (1), expecting 5 for prho
+  Incorrect number of arguments (1), expecting 5 for 'prho'
 > try(.C(sym$address, NULL))
 Error in .C(sym$address, NULL) : 
-  Incorrect number of arguments (1), expecting 5 for prho
+  Incorrect number of arguments (1), expecting 5 for 'prho'
 > ## were OK
 > 
 > options(keep.source = TRUE)
@@ -6266,11 +6302,11 @@ Error in .C(sym$address, NULL) :
 > foo()
 callFunc(default = TRUE)
 > foo(given = TRUE)
-callFunc(default = TRUE, given = TRUE)
+callFunc(given = TRUE)
 > foo("blah blah")
-callFunc(default = TRUE, given = "blah blah")
+callFunc(given = "blah blah")
 > foo(given = TRUE)
-callFunc(default = TRUE, given = TRUE)
+callFunc(given = TRUE)
 > foo()
 callFunc(default = TRUE)
 > ## altered foo() in 2.8.1.
@@ -6302,18 +6338,18 @@ function(given = NULL) {
 > print(foo, useSource = FALSE)
 function (given = NULL) 
 {
-    callObj <- quote(callFunc(default = TRUE))
+    callObj <- quote(callFunc())
     if (!is.null(given)) 
         callObj$given <- given
     if (is.null(given)) 
         callObj$default <- TRUE
     callObj
 }
-> attr(foo, "source") <- NULL
+> attr(foo, "srcref") <- NULL
 > foo
 function (given = NULL) 
 {
-    callObj <- quote(callFunc(default = TRUE))
+    callObj <- quote(callFunc())
     if (!is.null(given)) 
         callObj$given <- given
     if (is.null(given)) 
@@ -6340,13 +6376,16 @@ function ()
 > print.function <- function(x, ...) { str(x,...); invisible(x) }
 > print.function
 function (x, ...)  
- - attr(*, "source")= chr "function(x, ...) { str(x,...); invisible(x) }"
+ - attr(*, "srcref")=Class 'srcref'  atomic [1:8] 1 19 1 63 19 63 1 1
+  .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x8adb230> 
 > f
 function ()  
- - attr(*, "source")= chr "function(){}"
+ - attr(*, "srcref")=Class 'srcref'  atomic [1:8] 1 17 1 28 17 28 1 1
+  .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x8acdf00> 
  - attr(*, "note")= chr "just a note"
  - attr(*, "yada")=function ()  
-  ..- attr(*, "source")= chr "function() \"not the same\""
+  ..- attr(*, "srcref")=Class 'srcref'  atomic [1:8] 2 24 2 48 24 48 2 2
+  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x8acdf00> 
 > rm(print.function)
 > ## auto-printing and printing differed up to R 2.9.x
 > 
@@ -6475,4 +6514,311 @@ Error in `[[<-.data.frame`(`*tmp*`, "NewCol", value = integer(0)) :
 > update(`a: b` ~ x, ~ . + y)
 `a: b` ~ x + y
 > ## 2.9.1 dropped backticks
+> 
+> 
+> ## print(ls.str(.)) did evaluate calls
+> E <- new.env(); E$cl <- call("print", "Boo !")
+> ls.str(E)
+cl :  language print("Boo !")
+> ## 2.10.0 did print..
+> 
+> 
+> ## complete.cases with no input
+> try(complete.cases())
+Error in complete.cases() : no input has determined the number of cases
+> try(complete.cases(list(), list()))
+Error in complete.cases(list(), list()) : 
+  no input has determined the number of cases
+> ## gave unhelpful messages in 2.10.0, silly results in pre-2.10.1
+> 
+> 
+> ## error messages from (C-level) evalList
+> tst <- function(y) { stopifnot(is.numeric(y)); y+ 1 }
+> try(tst())
+Error in is.numeric(y) : 'y' is missing
+> try(c(1,,2))
+Error in c(1, , 2) : argument 2 is empty
+> ## change in 2.8.0 made these less clear
+> 
+> 
+> ## empty levels from cut.Date (cosmetic, PR#14162)
+> x <- as.Date(c("2009-03-21","2009-03-31"))
+> cut(x, breaks= "quarter") # had two levels in 2.10.1
+[1] 2009-01-01 2009-01-01
+Levels: 2009-01-01
+> cut(as.POSIXlt(x), breaks= "quarter")
+[1] 2009-01-01 2009-01-01
+Levels: 2009-01-01
+> ## remove empty final level
+> 
+> 
+> ## tests of error conditions in switch()
+> switch("a", a=, b=, c=, 4)
+[1] 4
+> switch("a", a=, b=, c=, )
+> .Last.value
+NULL
+> switch("a", a=, b=, c=, invisible(4))
+> .Last.value
+[1] 4
+> ## visiblilty changed in 2.11.0
+> 
+> 
+> ## rounding error in aggregate.ts
+> ## https://stat.ethz.ch/pipermail/r-devel/2010-April/057225.html
+> x <- rep(6:10, 1:5)
+> aggregate(as.ts(x), FUN = mean, ndeltat = 5)
+Time Series:
+Start = 1 
+End = 11 
+Frequency = 0.2 
+[1]  7.2  8.8 10.0
+> x <- rep(6:10, 1:5)
+> aggregate(as.ts(x), FUN = mean, nfrequency = 0.2)
+Time Series:
+Start = 1 
+End = 11 
+Frequency = 0.2 
+[1]  7.2  8.8 10.0
+> ## platform-dependent in 2.10.1
+> 
+> 
+> ## wish of PR#9574
+> a <- c(0.1, 0.3, 0.4, 0.5, 0.3, 0.0001)
+> format.pval(a, eps=0.01)
+[1] "0.1"   "0.3"   "0.4"   "0.5"   "0.3"   "<0.01"
+> format.pval(a, eps=0.01, nsmall =2)
+[1] "0.10"  "0.30"  "0.40"  "0.50"  "0.30"  "<0.01"
+> ## granted in 2.12.0
+> 
+> 
+> ## printing fractional dates
+> as.Date(0.5, origin="1969-12-31")
+[1] "1969-12-31"
+> ## changed to round down in 2.12.1
+> 
+> 
+> ## printing data frames with  ""  colnames
+> dfr <- data.frame(x=1:6, CC=11:16, f = gl(3,2)); colnames(dfr)[2] <- ""
+> dfr
+  x    f
+1 1 11 1
+2 2 12 1
+3 3 13 2
+4 4 14 2
+5 5 15 3
+6 6 16 3
+> ## now prints the same as data.matrix(dfr) does here
+> 
+> 
+> ## format(., zero.print) --> prettyNum()
+> set.seed(9); m <- matrix(local({x <- rnorm(40)
++                                 sign(x)*round(exp(2*x))/10}), 8,5)
+> noquote(format(m, zero.print= "."))
+     [,1] [,2] [,3] [,4] [,5]
+[1,]  .   -0.1 -0.1  .    0.8
+[2,]  .    .    .   21.4  0.1
+[3,] -0.1  1.3  0.6  0.2  0.1
+[4,] -0.1  .    .    .    .  
+[5,]  0.2  0.1  3.4  0.2  0.2
+[6,]  .   -0.1  0.1  0.2  .  
+[7,]  1.1  4.0 -0.1  .    0.2
+[8,] -0.1  .    0.6 -0.1  0.1
+> ## used to print  ". 0" instead of ".  "
+> 
+> 
+> ## tests of NA having precedence over NaN -- all must print "NA"
+> min(c(NaN, NA))
+[1] NA
+> min(c(NA, NaN)) # NaN in 2.12.2
+[1] NA
+> min(NaN, NA_real_)  # NaN in 2.12.2
+[1] NA
+> min(NA_real_, NaN)
+[1] NA
+> max(c(NaN, NA))
+[1] NA
+> max(c(NA, NaN))  # NaN in 2.12.2
+[1] NA
+> max(NaN, NA_real_)  # NaN in 2.12.2
+[1] NA
+> max(NA_real_, NaN)
+[1] NA
+> ## might depend on compiler < 2.13.0
+> 
+> 
+> ## PR#14514
+> # Data are from Conover, "Nonparametric Statistics", 3rd Ed, p. 197,
+> # re-arranged to make a lower-tail test the issue of relevance:  we
+> # want to see if pregnant nurses exposed to nitrous oxide have higher
+> # rates of miscarriage, stratifying on the type of nurse.
+> Nitrous <- array(c(32,210,8,26,18,21,3,3,7,75,0,10), dim = c(2,2,3),
++                  dimnames = list(c("Exposed","NotExposed"),
++                  c("FullTerm","Miscarriage"),
++                  c("DentalAsst","OperRoomNurse","OutpatientNurse")))
+> mantelhaen.test(Nitrous, exact=TRUE, alternative="less")
+
+	Exact conditional test of independence in 2 x 2 x k tables
+
+data:  Nitrous 
+S = 57, p-value = 0.1959
+alternative hypothesis: true common odds ratio is less than 1 
+95 percent confidence interval:
+ 0.000000 1.388197 
+sample estimates:
+common odds ratio 
+        0.6652418 
+
+> mantelhaen.test(Nitrous, exact=FALSE, alternative="less")
+
+	Mantel-Haenszel chi-squared test with continuity correction
+
+data:  Nitrous 
+Mantel-Haenszel X-squared = 0.7143, df = 1, p-value = 0.199
+alternative hypothesis: true common odds ratio is less than 1 
+95 percent confidence interval:
+ 0.000000 1.260053 
+sample estimates:
+common odds ratio 
+        0.6645374 
+
+> ## exact = FALSE gave the wrong tail in 2.12.2.
+> 
+> 
+> ## scan(strip.white=TRUE) could strip trailing (but not leading) space
+> ## inside quoted strings.
+> writeLines(' "  A  "; "B" ;"C";" D ";"E ";  F  ;G  ', "foo")
+> cat(readLines("foo"), sep = "\n")
+ "  A  "; "B" ;"C";" D ";"E ";  F  ;G  
+> scan('foo', list(""), sep=";")[[1]]
+Read 7 records
+[1] "   A  " " B "    "C"      " D "    "E "     "  F  "  "G  "   
+> scan('foo', "", sep=";")
+Read 7 items
+[1] "   A  " " B "    "C"      " D "    "E "     "  F  "  "G  "   
+> scan('foo', list(""), sep=";", strip.white = TRUE)[[1]]
+Read 7 records
+[1] "  A  " "B"     "C"     " D "   "E "    "F"     "G"    
+> scan('foo', "", sep=";", strip.white = TRUE)
+Read 7 items
+[1] "  A  " "B"     "C"     " D "   "E "    "F"     "G"    
+> unlink('foo')
+> 
+> writeLines(' "  A  "\n "B" \n"C"\n" D "\n"E "\n  F  \nG  ', "foo2")
+> scan('foo2', "")
+Read 7 items
+[1] "  A  " "B"     "C"     " D "   "E "    "F"     "G"    
+> scan('foo2', "", strip.white=TRUE) # documented to be ignored ...
+Read 7 items
+[1] "  A  " "B"     "C"     " D "   "E "    "F"     "G"    
+> unlink('foo2')
+> ## Changed for 2.13.0, found when investigating non-bug PR#14522.
+> 
+> 
+> ## PR#14488: missing values in rank correlations
+> set.seed(1)
+> x <- runif(10)
+> y <- runif(10)
+> x[3] <- NA; y[5] <- NA
+> xy <- cbind(x, y)
+> 
+> cor(x, y, method = "spearman", use = "complete.obs")
+[1] 0.2380952
+> cor(x, y, method = "spearman", use = "pairwise.complete.obs")
+[1] 0.2380952
+> cor(na.omit(xy),  method = "spearman", use = "complete.obs")
+          x         y
+x 1.0000000 0.2380952
+y 0.2380952 1.0000000
+> cor(xy,  method = "spearman", use = "complete.obs")
+          x         y
+x 1.0000000 0.2380952
+y 0.2380952 1.0000000
+> cor(xy,  method = "spearman", use = "pairwise.complete.obs")
+          x         y
+x 1.0000000 0.2380952
+y 0.2380952 1.0000000
+> ## inconsistent in R < 2.13.0
+> 
+> 
+> ## integer overflow in rowsum() went undetected
+> # https://stat.ethz.ch/pipermail/r-devel/2011-March/060304.html
+> x <- 2e9L
+> rowsum(c(x, x), c("a", "a"))
+  [,1]
+a   NA
+> rowsum(data.frame(z = c(x, x)), c("a", "a"))
+   z
+a NA
+> ## overflow in R < 2.13.0.
+> 
+> 
+> ## method dispatch in [[.data.frame:
+> ## https://stat.ethz.ch/pipermail/r-devel/2011-April/060409.html
+> d <- data.frame(num = 1:4,
++           fac = factor(letters[11:14], levels = letters[1:15]),
++           date = as.Date("2011-04-01") + (0:3),
++           pv = package_version(c("1.2-3", "4.5", "6.7", "8.9-10")))
+> for (i in seq_along(d)) print(d[[1, i]])
+[1] 1
+[1] k
+Levels: a b c d e f g h i j k l m n o
+[1] "2011-04-01"
+[1] '1.2.3'
+> ## did not dispatch in R < 2.14.0
+> 
+> 
+> ## some tests of 24:00 as midnight
+> as.POSIXlt("2011-05-16 24:00:00", tz = "GMT")
+[1] "2011-05-17 GMT"
+> as.POSIXlt("2010-01-31 24:00:00", tz = "GMT")
+[1] "2010-02-01 GMT"
+> as.POSIXlt("2011-02-28 24:00:00", tz = "GMT")
+[1] "2011-03-01 GMT"
+> as.POSIXlt("2008-02-28 24:00:00", tz = "GMT")
+[1] "2008-02-29 GMT"
+> as.POSIXlt("2008-02-29 24:00:00", tz = "GMT")
+[1] "2008-03-01 GMT"
+> as.POSIXlt("2010-12-31 24:00:00", tz = "GMT")
+[1] "2011-01-01 GMT"
+> ## new in 2.14.0
+> 
+> 
+> ## Unwarranted conversion of logical values
+> try(double(FALSE))
+Error in double(FALSE) : invalid 'length' argument
+> x <- 1:3
+> try(length(x) <- TRUE)
+Error in `length<-`(`*tmp*`, value = TRUE) : invalid value
+> ## coerced to integer in 2.13.x
+> 
+> 
+> ## filter(recursive = TRUE) on input with NAs
+> # https://stat.ethz.ch/pipermail/r-devel/2011-July/061547.html
+> x <- c(1:4, NA, 6:9)
+> cbind(x, "1"=filter(x, 0.5, method="recursive"),
++          "2"=filter(x, c(0.5, 0.0), method="recursive"),
++          "3"=filter(x, c(0.5, 0.0, 0.0), method="recursive"))
+Time Series:
+Start = 1 
+End = 9 
+Frequency = 1 
+   x     1     2     3
+1  1 1.000 1.000 1.000
+2  2 2.500 2.500 2.500
+3  3 4.250 4.250 4.250
+4  4 6.125 6.125 6.125
+5 NA    NA    NA    NA
+6  6    NA    NA    NA
+7  7    NA    NA    NA
+8  8    NA    NA    NA
+9  9    NA    NA    NA
+> ## NAs in wrong place in R <= 2.13.1.
+> 
+> 
+> ## PR#14679.  Format depends if TZ is set.
+> x <- as.POSIXlt(c("2010-02-27 22:30:33", "2009-08-09 06:01:03",
++                   "2010-07-23 17:29:59"))
+> stopifnot(!is.na(trunc(x, units = "days")[1:3]))
+> ## gave NAs after the first in R < 2.13.2
 > 

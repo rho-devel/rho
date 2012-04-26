@@ -23,7 +23,8 @@
     if(missing(where)) {
         where <- match(paste("package:", pkgname, sep=""), search())
         if(is.na(where)) {
-            warning(gettextf("not a package name: \"%s\"", pkgname), domain = NA)
+            warning(gettextf("not a package name: %s", sQuote(pkgname)),
+                    domain = NA)
             return()
         }
         where <- as.environment(where)
@@ -37,6 +38,11 @@
               else
               NA)
     if(identical(saved, FALSE)) {
+        ## optionally turn off old-style mlists
+        mopt <- Sys.getenv("R_MLIST")
+        .noMlistsFlag <<- (is.character(mopt) && all(mopt != "YES"))
+        if(!.noMlistsFlag)
+            cat("Initializing with support for old-style methods list objects\n")
         cat("initializing class and method definitions ...")
         on.exit(assign(".saveImage", NA, envir = where))
         ## set up default prototype (uses .Call so has be at load time)
@@ -56,6 +62,7 @@
         assign("newClassRepresentation", .newClassRepresentation, envir = where)
         assign(".mergeClassDefSlots", ..mergeClassDefSlots, envir = where)
         assign(".addToMetaTable", ..addToMetaTable, envir = where)
+        assign(".extendsForS3", ..extendsForS3, envir = where)
         .makeBasicFuns(where)
         rm(.makeGeneric, .newClassRepresentation, .possibleExtends,
            ..mergeClassDefSlots, envir = where)
@@ -64,7 +71,9 @@
         assign(".isPrototype", ..isPrototype, envir = where)
         .InitClassUnion(where)
         .InitS3Classes(where)
-        .InitSpecialTypes(where)
+        .InitSpecialTypesAndClasses(where)
+        .InitTraceFunctions(where)
+        .InitRefClasses(where)
         ## now seal the classes defined in the package
         for(cl in get(".SealedClasses", where))
             sealClass(cl, where)
@@ -77,6 +86,7 @@
         assign("implicitGeneric", .implicitGeneric, envir = where)
         cacheMetaData(where, TRUE, searchWhere = .GlobalEnv, FALSE)
         assign(".checkRequiredGenerics", ..checkRequiredGenerics,envir = where)
+        assign(".methodPackageSlots", ..methodPackageSlots, envir = where)
         ## unlock some bindings that must be modifiable
         unlockBinding(".BasicFunsList", where)
          assign(".saveImage", TRUE, envir = where)
@@ -92,18 +102,20 @@
         ## package-- the namespace of the methods package, if it has
         ## one, or the global environment
 
-        assign(".methodsNamespace",
-               environment(get("setGeneric", where)), where)
+        mns <- environment(get("setGeneric", where))
+        assign(".methodsNamespace", mns, where)
+        ## assign to baseenv also, signalling methods loaded
+        assign(".methodsNamespace", mns, baseenv())
     }
 }
 
-.onLoad <- function(libname, pkgName) {
+.onLoad <- function(libname, pkgname) {
     env <- environment(sys.function())
     doSave <- identical(get(".saveImage", envir = env), FALSE)
-    ..First.lib(libname, pkgName, env)
+    ..First.lib(libname, pkgname, env)
     if(doSave) {
-        dbbase <- file.path(libname, pkgName, "R", pkgName)
-        ns <- asNamespace(pkgName)
+        dbbase <- file.path(libname, pkgname, "R", pkgname)
+        ns <- asNamespace(pkgname)
         tools:::makeLazyLoadDB(ns, dbbase)
     }
     if(Sys.getenv("R_S4_BIND") == "active")
@@ -118,7 +130,7 @@
 }
 
 
-.onAttach <- function(libname, pkgName) {
+.onAttach <- function(libname, pkgname) {
     env <- environment(sys.function())
     ## unlock some bindings that must be modifiable
     unlockBinding(".BasicFunsList", env)
@@ -140,3 +152,6 @@
 
 .saveImage <- FALSE
 ## cat("Saving namespace image ...\n")
+
+## want ASCII quotes, not fancy nor translated ones
+.dQ <- function (x) paste('"', x, '"', sep = '')

@@ -17,9 +17,11 @@
 vignette <-
     function(topic, package = NULL, lib.loc = NULL, all = TRUE)
 {
-    if(is.null(package))
+    if (is.null(package)) {
         package <- .packages(all.available = all, lib.loc)
-    paths <- .find.package(package, lib.loc)
+        ## allow for misnamed dirs
+        paths <- find.package(package, lib.loc, quiet = TRUE)
+    } else paths <- find.package(package, lib.loc)
 
     ## Find the directories with a 'doc' subdirectory *possibly*
     ## containing vignettes.
@@ -48,7 +50,8 @@ vignette <-
                 if(sum(ok)>1){
                     ## <FIXME>
                     ## Should really offer a menu to select from.
-                    warning(gettextf("vignette '%s' found more than once,\nusing the one found in '%s'", topic, dirname(pdf[idx])),
+                    warning(gettextf("vignette %s found more than once,\nusing the one found in %s",
+                                     sQuote(topic), sQuote(dirname(pdf[idx]))),
                             call. = FALSE, domain = NA)
                     ## </FIXME>
                 }
@@ -63,7 +66,7 @@ vignette <-
             return(z)
         }
         else
-            warning(gettextf("vignette '%s' *not* found", topic),
+            warning(gettextf("vignette %s not found", sQuote(topic)),
                     call. = FALSE, domain = NA)
     }
 
@@ -79,7 +82,7 @@ vignette <-
             ## Check for new-style 'Meta/vignette.rds' ...
             if(file.exists(INDEX <-
                            file.path(dir, "Meta", "vignette.rds")))
-                entries <- .readRDS(INDEX)
+                entries <- readRDS(INDEX)
             if(NROW(entries) > 0)
                 vDB <- rbind(vDB,
                              cbind(dir,
@@ -123,14 +126,15 @@ print.vignette <- function(x, ...){
         ## <FIXME>
         ## Should really abstract this into a BioC style
         ## openPDF() along the lines of browseURL() ...
-        if(.Platform$OS.type == "windows")
+        pdfviewer <- getOption("pdfviewer")
+        if(identical(pdfviewer, "false")) {
+        } else if(.Platform$OS.type == "windows" &&
+                  identical(pdfviewer, file.path(R.home("bin"), "open.exe")))
             shell.exec(x$pdf)
-        else
-            system(paste(shQuote(getOption("pdfviewer")), shQuote(x$pdf)),
-                   wait = FALSE)
+        else system2(pdfviewer, shQuote(x$pdf), wait = FALSE)
         ## </FIXME>
     } else {
-        warning(gettextf("vignette '%s' has no PDF", x$topic),
+        warning(gettextf("vignette %s has no PDF", sQuote(x$topic)),
                 call. = FALSE, domain = NA)
     }
     invisible(x)
@@ -139,7 +143,7 @@ print.vignette <- function(x, ...){
 edit.vignette <- function(name, ...)
 {
 
-    f <- paste(tempfile(name$topic), ".R", sep="")
+    f <- tempfile(name$topic, fileext=".R")
     Stangle(name$file, output=f, quiet=TRUE)
     file.edit(file=f, ...)
 }

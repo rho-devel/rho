@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -41,36 +41,55 @@
 #include "CXXR/RObject.h"
 
 namespace CXXR {
+#ifdef __GNUC__
+    __attribute__((noreturn))
+#endif
+    /** @brief Not for general use.
+     *
+     * (Used by SEXP_downcast() to report an erroneous cast.)
+     */
     void SEXP_downcast_error(const char* given, const char* wanted);
 
-#ifdef UNCHECKED_SEXP_DOWNCAST
-    template <typename PtrOut, typename PtrIn>
-    inline PtrOut SEXP_downcast(PtrIn s)
-    {
-	return static_cast<PtrOut>(s);
-    }
-#else
     /** Down cast within the RObject class tree.
      *
-     * @param PtrOut Cast the pointer to type \a PtrOut, where \a
+     * @tparam PtrOut Cast the pointer to type \a PtrOut, where \a
      *          PtrOut is a pointer or const pointer to RObject or a
      *          class derived from RObject.
      *
-     * @param PtrIn Cast the pointer from type \a PtrIn, where \a
+     * @tparam PtrIn Cast the pointer from type \a PtrIn, where \a
      *          PtrIn is a pointer or const pointer to RObject or a
      *          class derived from RObject.  This type is usually
      *          inferred from the supplied parameter \a s.
      *
      * @param s The pointer to be cast.
      *
+     * @param allow_null true iff \a s is permitted to be a null pointer.
+     *
      * @return The cast pointer.
      */
+#ifdef UNCHECKED_SEXP_DOWNCAST
     template <typename PtrOut, typename PtrIn>
-    PtrOut SEXP_downcast(PtrIn s)
+    inline PtrOut SEXP_downcast(PtrIn s, bool allow_null = true)
     {
-	if (!s) return 0;
-	PtrOut ans = dynamic_cast<PtrOut>(s);
-	if (!ans) SEXP_downcast_error(s->typeName(), ans->staticTypeName());
+	if (!s && !allow_null) {
+	    PtrOut exemplar;
+	    SEXP_downcast_error("NULL", exemplar->staticTypeName());
+	}
+	return static_cast<PtrOut>(s);
+    }
+#else
+    template <typename PtrOut, typename PtrIn>
+    PtrOut SEXP_downcast(PtrIn s, bool allow_null = true)
+    {
+	PtrOut ans;
+	if (!s) {
+	    if (allow_null)
+		return 0;
+	    else SEXP_downcast_error("NULL", ans->staticTypeName());
+	}
+	ans = dynamic_cast<PtrOut>(s);
+	if (!ans)
+	    SEXP_downcast_error(s->typeName(), ans->staticTypeName());
 	return ans;
     }
 #endif

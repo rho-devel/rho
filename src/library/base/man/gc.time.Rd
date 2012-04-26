@@ -1,6 +1,6 @@
 % File src/library/base/man/gc.time.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{gc.time}
@@ -8,7 +8,7 @@
 \title{Report Time Spent in Garbage Collection}
 \description{
   This function reports the time spent in garbage collection so far in
-  the \R session while GC timing was enabled.
+  the \R session while GC timing was enabled.  Not implemented in CXXR.
 }
 \usage{
 gc.time(on = TRUE)
@@ -21,26 +21,21 @@ gc.time(on = TRUE)
   CPU time, the elapsed time and children's user and system CPU times
   (normally both zero), of time spent doing garbage collection whilst
   GC timing was enabled.
+  
+  Times of child processes are not available on Windows and will always
+  be given as \code{NA}.
 }
-#ifdef windows
-\note{
-  Times of child processes are not available and will always be given as
-  \code{NA}.
-}
-#endif
-\section{Warnings}{
-  This is experimental functionality, likely to be removed as soon as
-  the next release.
-
+\details{
   The timings are rounded up by the sampling interval for timing
   processes, and so are likely to be over-estimates.
   
-  It is a \link{primitive} and so ignores any argument name.
+  It is a \link{primitive}.
 }
 \seealso{\code{\link{gc}},
   \code{\link{proc.time}} for the timings for the session.}
 
 \examples{
-gc.time()
+## Not implemented in CXXR
+## gc.time()
 }
 \keyword{utilities}

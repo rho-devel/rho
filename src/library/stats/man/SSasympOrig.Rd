@@ -1,10 +1,11 @@
 % File src/library/stats/man/SSasympOrig.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{SSasympOrig}
-\title{Asymptotic Regression Model through the Origin}
+\encoding{UTF-8}
+\title{Self-Starting Nls Asymptotic Regression Model through the Origin}
 \usage{
 SSasympOrig(input, Asym, lrc)
 }
@@ -28,18 +29,19 @@ SSasympOrig(input, Asym, lrc)
   names of objects, the gradient matrix with respect to these names is
   attached as an attribute named \code{gradient}.
 }
-\author{Jose Pinheiro and Douglas Bates}
+\author{\enc{José}{Jose} Pinheiro and Douglas Bates}
 \seealso{\code{\link{nls}}, \code{\link{selfStart}}
 }
-\examples{
+\examples{\donttest{
 Lob.329 <- Loblolly[ Loblolly$Seed == "329", ]
-SSasympOrig( Lob.329$age, 100, -3.2 )  # response only
+SSasympOrig(Lob.329$age, 100, -3.2)  # response only
 Asym <- 100; lrc <- -3.2
-SSasympOrig( Lob.329$age, Asym, lrc ) # response and gradient
+SSasympOrig(Lob.329$age, Asym, lrc) # response and gradient
 getInitial(height ~ SSasympOrig(age, Asym, lrc), data = Lob.329)
 ## Initial values are in fact the converged values
-fm1 <- nls(height ~ SSasympOrig( age, Asym, lrc), data = Lob.329)
+fm1 <- nls(height ~ SSasympOrig(age, Asym, lrc), data = Lob.329)
 summary(fm1)
+}
 \dontshow{
 require(graphics)
 

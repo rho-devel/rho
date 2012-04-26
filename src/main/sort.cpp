@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2008   R Development Core Team
+ *  Copyright (C) 1998-2009   The R Development Core Team
  *  Copyright (C) 2004        The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -41,6 +41,7 @@
 
 #include <Defn.h> /* => Utils.h with the protos from here */
 #include <Rmath.h>
+#include <R_ext/RS.h>  /* for Calloc/Free */
 
 // 'using namespace std' causes ambiguity of 'greater'
 using namespace CXXR;
@@ -340,9 +341,10 @@ SEXP attribute_hidden do_sort(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("raw vectors cannot be sorted"));
     /* we need consistent behaviour here, including dropping attibutes,
        so as from 2.3.0 we always duplicate. */
-    ans = duplicate(CAR(args));
+    PROTECT(ans = duplicate(CAR(args)));
     ans->clearAttributes();  /* this is never called with names */
     sortVector(ans, decreasing);
+    UNPROTECT(1);
     return(ans);
 }
 
@@ -607,6 +609,7 @@ SEXP attribute_hidden do_psort(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     SETCAR(args, duplicate(CAR(args)));
     CAR(args)->clearAttributes();  /* remove all attributes */
+                                   /* and the object bit    */
     Psort0(CAR(args), 0, n - 1, l, k);
     return CAR(args);
 }
@@ -620,12 +623,11 @@ static int equal(int i, int j, SEXP x, Rboolean nalast, SEXP rho)
 
     if (isObject(x) && !isNull(rho)) { /* so never any NAs */
 	/* evaluate .gt(x, i, j) */
-	SEXP si, sj, call;
+	GCStackRoot<> si, sj, call;
 	si = ScalarInteger(i+1);
 	sj = ScalarInteger(j+1);
-	PROTECT(call = lang4(install(".gt"), x, si, sj));
+	call = lang4(install(".gt"), x, si, sj);
 	c = asInteger(eval(call, rho));
-	UNPROTECT(1);
     } else {
 	switch (TYPEOF(x)) {
 	case LGLSXP:
@@ -658,12 +660,11 @@ static int greater(int i, int j, SEXP x, Rboolean nalast, Rboolean decreasing,
 
     if (isObject(x) && !isNull(rho)) { /* so never any NAs */
 	/* evaluate .gt(x, i, j) */
-	SEXP si, sj, call;
+	GCStackRoot<> si, sj, call;
 	si = ScalarInteger(i+1);
 	sj = ScalarInteger(j+1);
-	PROTECT(call = lang4(install(".gt"), x, si, sj));
+	call = lang4(install(".gt"), x, si, sj);
 	c = asInteger(eval(call, rho));
-	UNPROTECT(1);
     } else {
 	switch (TYPEOF(x)) {
 	case LGLSXP:
@@ -792,7 +793,7 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
 
     if(isNull(rho)) {
 	/* First sort NAs to one end */
-	isna = static_cast<int *>( malloc(n * sizeof(int)));
+	isna = Calloc(n, int);
 	switch (TYPEOF(key)) {
 	case LGLSXP:
 	case INTSXP:
@@ -891,7 +892,7 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
 #undef less
 	}
     }
-    if(isna) free(isna);
+    if(isna) Free(isna);
 }
 
 /* FUNCTION order(...) */
@@ -995,8 +996,8 @@ SEXP attribute_hidden do_radixsort(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP x, ans;
     Rboolean nalast, decreasing;
-    unsigned int *cnts;
-    int i, n, tmp, xmax = NA_INTEGER, xmin = NA_INTEGER, off, napos;
+    R_len_t i, n;
+    int tmp, xmax = NA_INTEGER, xmin = NA_INTEGER, off, napos;
 
     checkArity(op, args);
 
@@ -1027,9 +1028,9 @@ SEXP attribute_hidden do_radixsort(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(xmax > 100000) error(_("too large a range of values in 'x'"));
     napos = off ? 0 : xmax + 1;
     off -= xmin;
-    /* alloca is fine here: we know this is small */
-    cnts = static_cast<unsigned int *>( alloca((xmax+1)*sizeof(unsigned int)));
-    R_CheckStack();
+    /* automatic allocation is fine here: we know this is small */
+    std::vector<unsigned int> cntsv(xmax+1);
+    unsigned int* cnts = &cntsv[0];
 
     for(i = 0; i <= xmax+1; i++) cnts[i] = 0;
     for(i = 0; i < n; i++) {
@@ -1051,4 +1052,26 @@ SEXP attribute_hidden do_radixsort(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     UNPROTECT(1);
     return ans;
+}
+
+SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP fn, prargs, ans;
+
+    checkArity(op, args);
+    check1arg(args, call, "x");
+
+    if(DispatchOrEval(call, op, "xtfrm", args, rho, &ans, 0, 1)) return ans;
+    /* otherwise dispatch the default method */
+    PROTECT(fn = findFun(install("xtfrm.default"), rho));
+    PROTECT(prargs = promiseArgs(args, R_GlobalEnv));
+    SET_PRVALUE(CAR(prargs), CAR(args));
+    Closure* closure = SEXP_downcast<Closure*>(fn);
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    ArgList arglist(SEXP_downcast<PairList*>(prargs), ArgList::PROMISED);
+    Environment* callenv = SEXP_downcast<Environment*>(rho);
+    ans = closure->invoke(callenv, &arglist, callx);
+    UNPROTECT(2);
+    return ans;
+    
 }

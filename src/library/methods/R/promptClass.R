@@ -18,41 +18,33 @@ promptClass <-
 function (clName, filename = NULL, type = "class",
 	  keywords = "classes", where = topenv(parent.frame()))
 {
-    classesInSig <- function(g, where) {
-    ## given a generic g, obtain list of all classes
-    ## named among its signatures
-	mlist <- getMethods(g, where) # TODO: change this to findMethods()
-	if(is.null(mlist))
-	    return(NULL)
-	tmp <- listFromMlist(mlist)
-	if ((lt <- length(tmp[[1L]])) == 0L)
-	    NULL
-	else if (lt == 1)
-	    unlist(tmp[[1L]])
-	else { ## lt >= 2
-	    lapply(tmp[[1L]], unlist)
-	}
+    classInSig <- function(g, where, cl) {
+        ## given a generic g, is class cl in one of the method
+        ## signatures for the class?
+	cl %in% unique(unlist(findMethods(g, where)@signatures))
     }
     genWithClass <- function(cl, where) {
     ## given a class cl
     ## obtain list of all generics with cl in
     ## one of its signatures
 	allgen <- getGenerics(where = where)
-	o <- sapply(allgen, classesInSig, where = where, simplify = FALSE)
-	genl <- NULL
-	nmok <- names(o)
-	for (i in seq_along(o)) {
-	    if (!all(is.na(match(unlist(o[[i]]), cl))))
-		genl <- c(genl, nmok[i])
-	}
-	genl
+	ok <- as.logical(unlist(lapply(allgen, classInSig, cl = cl, where = where)))
+	allgen[ok]
     }
 
     sigsList <- function (g, where)
-    ## given a generic g, obtain list with one element per signature
+      ## given a generic g, obtain list with one element per signature,
+      ## with argument names inserted
     {
-	tmp <- listFromMlist(getMethods(g, where)) # TODO: change this to findMethods()
-	if (length(tmp[[1L]])) tmp[[1L]] # else NULL
+        methods <- findMethods(g, where)
+	value <- methods@signatures
+        args <- methods@arguments
+        if(length(value)) {
+            ## name the individual signature elements for output
+            length(args) <- length(value[[1]]) # all sigs are same length
+            value <- lapply(value, function(x){names(x) <- args; x})
+        }
+        value
     }
     slotClassWithSource <- function(clname) {
 	clDef <- getClassDef(clname)
@@ -72,7 +64,8 @@ function (clName, filename = NULL, type = "class",
     }
     paste0 <- function(...) paste(..., sep = "")
     pastePar <- function(x) {
-	xn <- names(x); x <- as.character(x)
+        xn <- names(x)
+	x <- as.character(x)
 	xn <- if(length(xn) == length(x)) paste(xn, "= ") else ""
 	paste("(", paste(xn, "\"", x, "\"", sep = "", collapse = ", "),
 	")", sep = "")
@@ -86,7 +79,8 @@ function (clName, filename = NULL, type = "class",
     else {
         whereClass <- find(classMetaName(clName))
         if(length(whereClass) == 0L)
-          stop(gettextf("no definition of class \"%s\" found", clName),
+          stop(gettextf("no definition of class %s found",
+                        dQuote(clName)),
                domain = NA)
         else if(length(whereClass) > 1L) {
             if(identical(where, topenv(parent.frame()))) {
@@ -98,8 +92,8 @@ function (clName, filename = NULL, type = "class",
                 if(exists(classMetaName(clName), where, inherits = FALSE))
                   whereClass <- where
                 else
-                  stop(gettextf("no definition of class \"%s\" in the specified position, %s, definition(s) on : %s",
-                                clName, where,
+                  stop(gettextf("no definition of class %s in the specified position, %s, definition(s) on : %s",
+                                dQuote(clName), where,
                                 paste(whereClass, collapse = ", ")),
                        domain = NA)
             }
@@ -110,9 +104,10 @@ function (clName, filename = NULL, type = "class",
     .name <- paste0("\\name{", fullName, "}")
     .type <- paste0("\\docType{", type, "}")
     .alias <- paste0("\\alias{", fullName, "}")
-    .title <- paste0("\\title{Class \"", clName, "\" ~~~ }")
-    .desc <- paste0("\\description{", "	 ~~ A concise (1-5 lines) description of what the class is.  ~~",
-	"}")
+    .title <- sprintf("\\title{Class \\code{\"%s\"}}", clName)
+    .desc <- paste0("\\description{",
+                    "\n%%  ~~ A concise (1-5 lines) description of what the class is. ~~",
+                    "\n}")
     slotclasses <- getSlots(clDef)
     slotnames <- names(slotclasses)
     slotclasses <- as.character(slotclasses)
@@ -127,10 +122,13 @@ function (clName, filename = NULL, type = "class",
 	argNames <- formalArgs(initMethod)
 	## but for new() the first argument is the class name
 	argNames[[1L]] <- clNameQ
-	.usage <- c(paste0(.usage,"{"),
-		    paste0("Objects can be created by calls of the form \\code{",
-                           .makeCallString(initMethod, "new", argNames), "}."),
-		    "	 ~~ describe objects here ~~ ", "}")
+	.usage <-
+            c(paste0(.usage,"{"),
+              paste0("Objects can be created by calls of the form \\code{",
+                     .makeCallString(initMethod, "new", argNames),
+                     "}."),
+              "%%  ~~ describe objects here ~~ ",
+              "}")
     }
     .slots <- if (nslots > 0) {
 	slotclasses <- slotClassWithSource(clName)
@@ -205,26 +203,29 @@ function (clName, filename = NULL, type = "class",
 	     "section{Extends}" = .extends,
 	     "section{Methods}" =
 	     c(.meths.head, .meths.body, .meths.tail),
-	     references = paste("\\references{ ~put references to the",
-	     "literature/web site here ~ }"),
-	     author = "\\author{ ~~who you are~~ }",
+	     references = paste("\\references{\n%%  ~~put references to the",
+	     "literature/web site here~~\n}"),
+	     author = "\\author{\n%%  ~~who you are~~\n}",
 	     note =
-	     c("\\note{ ~~further notes~~ }",
+	     c("\\note{\n%%  ~~further notes~~\n}",
 	       "",
-	       paste(" ~Make other sections like Warning with",
+	       paste("%% ~Make other sections like Warning with",
 		     "\\section{Warning }{....} ~"),
 	       ""),
 	     seealso =
 	     c("\\seealso{",
-	       paste("	~~objects to See Also as",
+	       paste("%%  ~~objects to See Also as",
 		     "\\code{\\link{~~fun~~}}, ~~~"),
-	       paste("	or \\code{\\linkS4class{CLASSNAME}}",
-		     "for links to other classes"),
+	       paste("%%  ~~or \\code{\\linkS4class{CLASSNAME}}",
+		     "for links to other classes ~~~"),
 	       "}"),
 	     examples = c("\\examples{",
 	     paste0("showClass(", clNameQ, ")"),
 	     "}"),
 	     keywords = .keywords)
+
+    if(is(clDef, "refClassRepresentation"))
+        Rdtxt <- refClassPrompt(clDef, Rdtxt, nmeths, nslots, .meths.head)
 
     if(is.na(filename)) return(Rdtxt)
 
@@ -248,6 +249,86 @@ function (clName, filename = NULL, type = "class",
     else "" # what, indeed?
 }
 
+refClassPrompt <- function(clDef, Rdtxt, nmeths, nslots, .meths.head) {
+    ## exclude some sections that are usually irrelevant
+    sections <- names(Rdtxt)
+    envRefX <- paste("{",extends("envRefClass"), "}", sep="")
+    exclude <- grep("Objects from the Class", sections)
+    if(nmeths < 1)
+        exclude <- c(exclude, grep("Methods", sections))
+    else
+        .meths.head <- "\\section{Class-Based Methods}{"
+    if(nslots < 2) # just the data slot, usually
+        exclude <- c(exclude, grep("Slots", sections))
+    Rdtxt <- Rdtxt[-exclude]
+    extdsthead <- "section{Extends}" # has to be there
+    extds <- Rdtxt[[extdsthead]]
+    drop <- rep(FALSE, length(extds))
+    for(class in envRefX) #drop the envRefClass & its superclasses
+        drop <- drop | grepl(class, extds, fixed = TRUE)
+    extds <- extds[!drop]
+    extds <- append(extds, "\nAll reference classes extend and inherit methods from \\code{\"\\linkS4class{envRefClass}\"}.\n", length(extds)-1)
+    Rdtxt[[extdsthead]] <- extds
+    paste0 <- function(...) paste(..., sep = "")
+    fieldClasses <- refClassFields(clDef)
+    nfields <- length(fieldClasses)
+    .fields <- if (nfields > 0) {
+	fieldnames <- names(fieldClasses)
+	.fields.head <- c("\\section{Fields}{", "  \\describe{")
+	.fields.body <-	paste0("    \\item{\\code{", fieldnames,
+                               "}:}", "{Object of class \\code{",
+                               fieldClasses, "} ~~ }")
+	.fields.tail <- c("  }","}")
+	c(.fields.head,  .fields.body,	.fields.tail)
+    } else character()
+    methodDefs <- as.list(clDef@refMethods)
+    nmethods <- length(methodDefs)
+    if(nmethods > 0) {
+        thisClassDefs <- match(sapply(methodDefs, function(x) x@refClassName), clDef@className, 0) > 0
+        otherMethods <- methodDefs[!thisClassDefs]
+        methodDefs <- methodDefs[thisClassDefs]
+        .methods <-
+            c(.meths.head, .refMethodDescription(methodDefs, fieldnames, otherMethods), "}")
+    }
+    else
+        .methods <- character()
+    c(Rdtxt,
+      list("section{Fields}" = .fields,
+           "section{ClassMethods}" = .methods)
+      )
+}
+
+.refMethodDescription <- function(methodDefs, fieldnames, otherMethods) {
+    paste0 <- function(...) paste(..., sep = "")
+    methodnames <- names(methodDefs)
+    methodargs <- sapply(methodDefs, function(x)paste("(", paste(formalArgs(x), collapse=", "), ")", sep=""))
+    if(length(methodnames) > 0) {
+        .methods.head <- "  \\describe{"
+        .methods.body <-
+            paste0("    \\item{\\code{",
+                   methodnames, methodargs,
+                   "}:}", "{ ~~ }")
+        .methods <- c(.methods.head,  .methods.body, "  }")
+    }
+    else
+        .methods <- character()
+    methodclasses <- sapply(otherMethods,
+              function(x) if(is(x, "refMethodDef")) x@refClassName else "<unknown>")
+    ## don't report the standard methods from envRefClass
+    superclass <- methodclasses != "envRefClass"
+    otherMethods <- otherMethods[superclass]
+    methodclasses <- methodclasses[superclass]
+    if(length(otherMethods)) {
+        methodnames <- names(otherMethods)
+        methodnames <- gsub("[#].*","", methodnames)
+        .methods <- c(.methods,
+                      "\nThe following methods are inherited (from the corresponding class):",
+                      paste0(methodnames, ' ("', methodclasses,
+                             '")', collapse = ", ")
+                      )
+    }
+    .methods
+}
 
 .makeCallString <- function (def, name = substitute(def), args = formalArgs(def))
 {

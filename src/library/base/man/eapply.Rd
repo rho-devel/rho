@@ -1,6 +1,6 @@
 % File src/library/base/man/eapply.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{eapply}
@@ -19,30 +19,33 @@ eapply(env, FUN, \dots, all.names = FALSE, USE.NAMES = TRUE)
   \item{all.names}{a logical indicating whether to apply the function to
     all values.}
   \item{USE.NAMES}{logical indicating whether the resulting list should
-    have \code{\link{names}}.  Setting this to \code{FALSE} is faster,
-    useful however typically only when \code{\link{ls}(env)} is already
-    given.}
+    have \code{\link{names}}.}
 }
 \description{
   \code{eapply} applies \code{FUN} to the named values from an
   \code{\link{environment}} and returns the results as a list.  The user
-  can request that all named objects are used (normally names that begin with a
-  dot are not). The output is not sorted and no parent environments are
-  searched.
+  can request that all named objects are used (normally names that begin
+  with a dot are not).  The output is not sorted and no enclosing
+  environments are searched.
+  
+  This is a \link{primitive} function.
+}
+\value{
+  A named (unless \code{USE.NAMES = FALSE}) list.  Note that the order of
+  the components is arbitrary for hashed environments.
 }
 \seealso{
   \code{\link{environment}}, \code{\link{lapply}}.
 }
 \examples{
-require(utils); require(stats)
+require(stats)
 
-env <- new.env()
+env <- new.env(hash = FALSE) # so the order is fixed
 env$a <- 1:10
 env$beta <- exp(-3:3)
-env$logic <- c(TRUE,FALSE,FALSE,TRUE)
+env$logic <- c(TRUE, FALSE, FALSE, TRUE)
 # what have we there?
-eapply(env, str)
-## note however, that  'ls.str(env)' is slightly nicer ..
+utils::ls.str(env)
 
 # compute the mean for each list element
        eapply(env, mean)

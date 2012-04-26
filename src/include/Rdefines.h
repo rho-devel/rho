@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -36,10 +36,6 @@
 #ifndef R_DEFINES_H
 #define R_DEFINES_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if !defined(R_R_H) && !defined(R_S_H)
 /* user forgot to include R.h or S.h */
 # include <R_ext/Memory.h>
@@ -47,6 +43,10 @@ extern "C" {
 #endif
 
 #include <Rinternals.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  *  Much is from John Chambers' "Programming With Data".
@@ -101,10 +101,6 @@ extern "C" {
 #define INTEGER_POINTER(x)	INTEGER(x)
 #define NUMERIC_POINTER(x)	REAL(x)
 #define COMPLEX_POINTER(x)	COMPLEX(x)
-/* Use of VECTOR_PTR will fail unless USE_RINTERNALS is in use
-   This is probably unused.
-*/
-#define LIST_POINTER(x)		VECTOR_PTR(x)
 #define RAW_POINTER(x)		RAW(x)
 
 /* The following are not defined in `Programming with Data' but are
@@ -120,12 +116,6 @@ extern "C" {
 #define DOUBLE_DATA(x)		(REAL(x))
 #define NUMERIC_DATA(x)		(REAL(x))
 #define COMPLEX_DATA(x)		(COMPLEX(x))
-/* Use of VECTOR_PTR will fail unless USE_RINTERNALS is in use
-   VECTOR_DATA seems unused, and RECURSIVE_DATA is used only in
-   the Expat part of XML.
-*/
-#define RECURSIVE_DATA(x)	(VECTOR_PTR(x))
-#define VECTOR_DATA(x)		(VECTOR_PTR(x))
 
 #define LOGICAL_VALUE(x)	asLogical(x)
 #define INTEGER_VALUE(x)	asInteger(x)

@@ -1,6 +1,6 @@
 % File src/library/base/man/sort.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{sort}
@@ -11,7 +11,7 @@
 \title{Sorting or Ordering Vectors}
 \description{
   Sort (or \emph{order}) a vector or factor (partially) into
-  ascending (or descending) order.  For ordering along more than one
+  ascending or descending order.  For ordering along more than one
   variable, e.g., for sorting data frames, see \code{\link{order}}.
 }
 \usage{
@@ -24,8 +24,8 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
 }
 \arguments{
   \item{x}{for \code{sort} an \R object with a class or a numeric,
-         complex, character or logical vector.  For \code{sort.int}, a
-         numeric, complex, character or logical vector, or a factor.}
+    complex, character or logical vector.  For \code{sort.int}, a
+    numeric, complex, character or logical vector, or a factor.}
   \item{decreasing}{logical.  Should the sort be increasing or decreasing?
      Not available for partial sorting.}
   \item{\dots}{arguments to be passed to or from methods or (for the
@@ -35,7 +35,8 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
     \code{FALSE}, they are put first; if \code{NA}, they are removed.}
   \item{partial}{\code{NULL} or an integer vector of indices for
     partial sorting.}
-  \item{method}{character string specifying the algorithm used.}
+  \item{method}{character string specifying the algorithm used.  Not
+    available for partial sorting.}
   \item{index.return}{logical indicating if the ordering index vector should
     be returned as well; this is only available for a few cases, the default
     \code{na.last = NA} and full sorting of non-factors.}
@@ -46,8 +47,9 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
   with S if only the first three arguments are used.
   
   The default \code{sort} method makes use of \code{\link{order}} for
-  objects with classes, which in turn makes use of the generic function
-  \code{\link{xtfrm}}.
+  classed objects, which in turn makes use of the generic function
+  \code{\link{xtfrm}} (and can be slow unless a \code{xtfrm} method has
+  been defined unless \code{\link{is.numeric}(x)} is true).
 
   If \code{partial} is not \code{NULL}, it is taken to contain indices
   of elements of the result which are to be placed in their correct
@@ -58,8 +60,8 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
   sorted array.  (This is included for efficiency, and many of the
   options are not available for partial sorting.  It is only
   substantially more efficient if \code{partial} has a handful of
-  elements, and a full sort is done if there are more than 10.)  Names
-  are discarded for partial sorting.
+  elements, and a full sort is done (a quick sort if possible) if there
+  are more than 10.)  Names are discarded for partial sorting.
 
   Complex values are sorted first by the real part, then the imaginary
   part.
@@ -78,7 +80,7 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
   \code{partial} is \code{NULL}.  (For other types of \code{x} Shellsort
   is used, silently.)  It is normally somewhat faster than Shellsort
   (perhaps twice as fast on vectors of length a million) but has poor
-  performance in the rare worst case. (Peto's modification using a
+  performance in the rare worst case.  (Peto's modification using a
   pseudo-random midpoint is used to make the worst case rarer.)  This is
   not a stable sort, and ties may be reordered.
 }
@@ -92,15 +94,16 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
   the case for a class based on a list).
 
   For \code{sort.int} the value is the sorted vector unless
-  \code{index.return} is true, when the result is
-  a list with components named \code{x} and \code{ix} containing the
-  sorted numbers and the ordering index vector.  In the latter case,
-  if \code{method == "quick"} ties may be reversed in the ordering,
-  unlike \code{sort.list}, as quicksort is not stable.
+  \code{index.return} is true, when the result is a list with components
+  named \code{x} and \code{ix} containing the sorted numbers and the
+  ordering index vector.  In the latter case, if \code{method ==
+    "quick"} ties may be reversed in the ordering, unlike
+  \code{sort.list}, as quicksort is not stable.  NB: the index vector
+  refers to element numbers \emph{after removal of \code{NA}s}. 
 
   All attributes are removed from the return value (see Becker \emph{et
     al}, 1988, p.146) except names, which are sorted.  (If
-  \code{partial} is specified even the names are removed.)  Note that
+  \code{partial} is specified even the names are removed.)   Note that
   this means that the returned value has no class, except for factors
   and ordered factors (which are treated specially and whose result is
   transformed back to the original class).
@@ -114,7 +117,7 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
   A new upper bound for Shell sort.
   \emph{J. Algorithms} \bold{7}, 159--173.
 
-  Singleton, R. C. (1969) An efficient algorithm for sorting with
+  Singleton, R. C. (1969)  An efficient algorithm for sorting with
   minimal storage: Algorithm 347.
   \emph{Communications of the ACM} \bold{12}, 185--187.
 }
@@ -142,9 +145,9 @@ sort(c(10:3,2:12), method = "qu", index.return=TRUE) # is not
 ##        ^^^^^
 
 x <- c(1:3, 3:5, 10)
-is.unsorted(x)                #-> FALSE: is sorted
-is.unsorted(x, strictly=TRUE) #-> TRUE : is not (and cannot be) sorted strictly
-
+is.unsorted(x)                # FALSE: is sorted
+is.unsorted(x, strictly=TRUE) # TRUE : is not (and cannot be)
+                              # sorted strictly
 \dontrun{
 ## Small speed comparison simulation:
 N <- 2000

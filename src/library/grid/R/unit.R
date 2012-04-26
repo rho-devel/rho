@@ -59,7 +59,7 @@ convertUnit <- function(x, unitTo, axisFrom="x", typeFrom="location",
     stop("'x' argument must be a unit object")
   if (is.na(whatfrom) || is.na(whatto))
     stop("Invalid 'axis' or 'type'")
-  value <- grid.Call("L_convert", x, as.integer(whatfrom),
+  value <- grid.Call(L_convert, x, as.integer(whatfrom),
                  as.integer(whatto), valid.units(unitTo))
   if (!valueOnly)
     unit(value, unitTo)
@@ -280,44 +280,46 @@ as.character.unit.arithmetic <- function(x, ...) {
 unit.pmax <- function(...) {
 
   select.i <- function(unit, i) {
-    "["(unit, i, top=FALSE)
+    `[`(unit, i, top=FALSE)
   }
 
   x <- list(...)
   numargs <- length(x)
-  if (numargs == 0)
+  if (numargs == 0L)
     stop("Zero arguments where at least one expected")
   # how long will the result be?
-  maxlength <- 0
-  for (i in 1L:numargs)
+  maxlength <- 0L
+  for (i in seq_len(numargs))
     if (length(x[[i]]) > maxlength)
       maxlength <- length(x[[i]])
   # maxlength guaranteed >= 1
-  result <- max(unit.list.from.list(lapply(x, select.i, 1)))
-  for (i in 2:maxlength)
-    result <- unit.c(result, max(unit.list.from.list(lapply(x, select.i, i))))
+  result <- max(unit.list.from.list(lapply(x, select.i, 1L)))
+  if (maxlength > 1L)
+      for (i in 2L:maxlength)
+          result <- unit.c(result, max(unit.list.from.list(lapply(x, select.i, i))))
   result
 }
 
 unit.pmin <- function(...) {
 
   select.i <- function(unit, i) {
-    "["(unit, i, top=FALSE)
+    `[`(unit, i, top=FALSE)
   }
 
   x <- list(...)
   numargs <- length(x)
-  if (numargs == 0)
+  if (numargs == 0L)
     stop("Zero arguments where at least one expected")
   # how long will the result be?
-  maxlength <- 0
-  for (i in 1L:numargs)
+  maxlength <- 0L
+  for (i in seq_len(numargs))
     if (length(x[[i]]) > maxlength)
       maxlength <- length(x[[i]])
   # maxlength guaranteed >= 1
-  result <- min(unit.list.from.list(lapply(x, select.i, 1)))
-  for (i in 2:maxlength)
-    result <- unit.c(result, min(unit.list.from.list(lapply(x, select.i, i))))
+  result <- min(unit.list.from.list(lapply(x, select.i, 1L)))
+  if (maxlength > 1L)
+      for (i in 2L:maxlength)
+          result <- unit.c(result, min(unit.list.from.list(lapply(x, select.i, i))))
   result
 }
 
@@ -377,7 +379,7 @@ print.unit <- function(x, ...) {
 # except at the top level
 
 # NOTE that "unit" and "data" attributes will be recycled
-"[.unit" <- function(x, index, top=TRUE, ...) {
+`[.unit` <- function(x, index, top=TRUE, ...) {
   this.length <- length(x)
   if (is.logical(index))
     index <- (1L:this.length)[index]
@@ -409,7 +411,7 @@ print.unit <- function(x, ...) {
 
 # NOTE that units will be recycled to the length of the largest
 # of the arguments
-"[.unit.arithmetic" <- function(x, index, top=TRUE, ...) {
+`[.unit.arithmetic` <- function(x, index, top=TRUE, ...) {
   this.length <- length(x)
   if (is.logical(index))
     index <- (1L:this.length)[index]
@@ -422,20 +424,27 @@ print.unit <- function(x, ...) {
   }
   if (top && any(index > this.length))
     stop("Index out of bounds (unit arithmetic subsetting)")
+
+  repSummaryUnit <- function(x, n) {
+      newUnits <- lapply(seq_len(n), function(z) { get(x$fname)(x$arg1) })
+      class(newUnits) <- c("unit.list", "unit")
+      newUnits
+  }
+
   switch(x$fname,
-         "+"="["(x$arg1, (index - 1) %% this.length + 1, top=FALSE) +
-             "["(x$arg2, (index - 1) %% this.length + 1, top=FALSE),
-         "-"="["(x$arg1, (index - 1) %% this.length + 1, top=FALSE) -
-             "["(x$arg2, (index - 1) %% this.length + 1, top=FALSE),
+         "+"=`[`(x$arg1, (index - 1) %% this.length + 1, top=FALSE) +
+             `[`(x$arg2, (index - 1) %% this.length + 1, top=FALSE),
+         "-"=`[`(x$arg1, (index - 1) %% this.length + 1, top=FALSE) -
+             `[`(x$arg2, (index - 1) %% this.length + 1, top=FALSE),
          # Recycle multiplier if necessary
          "*"=x$arg1[(index - 1) %% length(x$arg1) + 1] *
-             "["(x$arg2, (index - 1) %% this.length + 1, top=FALSE),
-         "min"=x,
-         "max"=x,
-         "sum"=x)
+             `[`(x$arg2, (index - 1) %% this.length + 1, top=FALSE),
+         "min"=repSummaryUnit(x, length(index)),
+         "max"=repSummaryUnit(x, length(index)),
+         "sum"=repSummaryUnit(x, length(index)))
 }
 
-"[.unit.list" <- function(x, index, top=TRUE, ...) {
+`[.unit.list` <- function(x, index, top=TRUE, ...) {
   this.length <- length(x)
   if (is.logical(index))
     index <- (1L:this.length)[index]
@@ -454,7 +463,7 @@ print.unit <- function(x, ...) {
   result
 }
 
-# Write "[<-.unit" methods too ??
+# Write `[<-.unit` methods too ??
 
 #########################
 # "c"ombining unit objects
@@ -510,44 +519,13 @@ unit.list.from.list <- function(x) {
 # rep'ing unit objects
 #########################
 
-rep.unit.arithmetic <- function(x, times=1, length.out, ...) {
+rep.unit <- function(x, times=1, length.out=NA, each=1, ...) {
     if (length(x) == 0)
-        return(x)
-    if (!missing(length.out))
-        times <- ceiling(length.out/length(x))
+        stop("Invalid unit object")
 
-    switch(x$fname,
-           "+"=rep(x$arg1, times) + rep(x$arg2, times),
-           "-"=rep(x$arg1, times) - rep(x$arg2, times),
-           "*"=x$arg1 * rep(x$arg2, times),
-           "min"=rep(unit.list(x), times),
-           "max"=rep(unit.list(x), times),
-           "sum"=rep(unit.list(x), times))
-}
-
-rep.unit.list <- function(x, times=1, length.out, ...) {
-    if (length(x) == 0)
-        return(x)
-    if (!missing(length.out))
-        times <- ceiling(length.out/length(x))
-
-    # Make use of the subsetting code to replicate the unit list
-    # top=FALSE allows the subsetting to go beyond the original length
-    "["(x, 1L:(length(x)*times), top=FALSE)
-}
-
-rep.unit <- function(x, ...) {
-    if (length(x) == 0)
-        return(x)
-    values <- rep(unclass(x), ...)
-    # Do I need to replicate the "unit"s?
-    units <- attr(x, "unit")
-    # If there are any data then they must be explicitly replicated
-    # because the list of data must be the same length as the
-    # vector of values
-    data <- recycle.data(attr(x, "data"), TRUE, length(values), units)
-    unit <- unit(values, units, data=data)
-    unit
+    # Determine an approprite index, then call subsetting code
+    repIndex <- rep(seq_along(x), times=times, length.out=length.out, each=each)
+    x[repIndex, top=FALSE]
 }
 
 # Vestige from when rep() was not generic

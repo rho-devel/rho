@@ -1,6 +1,6 @@
 % File src/library/grDevices/man/embedFonts.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{embedFonts}
@@ -46,13 +46,17 @@ embedFonts(file, format, outfile = file, fontpaths = "",
   This defaults to \code{"gs"}.
 #endif
 #ifdef windows
-  For Windows users, this should be the path to \code{gswin32c.exe}.
-  If unset, environment variable \env{GSC} is tried and then
-  \code{"gswin32c.exe"}.
+  For Windows users, this should be the path to \code{gswin32c.exe} or
+  \code{gswin64c.exe}.  If unset, environment variable \env{GSC} is
+  tried and then \code{"gswin32c.exe"}.
 #endif
 
   Note that Ghostscript may do font substitution, so the font embedded
   may differ from that specified in the original file.
+  
+  Some other options which can be useful (see your Ghostscript
+  documentation) are \option{-dMaxSubsetPct=100},
+  \option{-dSubsetFonts=true} and  \option{-dEmbedAllFonts=true}.
 }
 \value{
   The shell command used to invoke Ghostscript is returned

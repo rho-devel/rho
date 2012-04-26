@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000--2007  The R Development Core Team
+ *  Copyright (C) 2000--2010  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,15 +33,12 @@
  *  http://www.r-project.org/Licenses/
  */
 
+/* Ouch! - do we *really* need this? */
 #define _GNU_SOURCE
+
 #include <tcl.h>
 #include <stdio.h>
 #include <string.h>
-
-/* TclCmdProc was redefined to include const in Tcl 8.4 */
-#ifndef CONST84
-#define CONST84
-#endif
 
 #include <Rinternals.h>
 #include <R_ext/PrtUtil.h>
@@ -55,7 +52,7 @@ void Tcl_unix_setup(void);
 /* Globals exported from  ./tcltk.c : */
 
 Tcl_Interp *RTcl_interp;      /* Interpreter for this application. */
-void tcltk_init(void);
+void tcltk_init(int *);
 
 SEXP dotTcl(SEXP args);
 SEXP dotTclObjv(SEXP args);

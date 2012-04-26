@@ -1,7 +1,7 @@
 \name{classesToAM}
 \alias{classesToAM}
 \title{
-Compute an Adjacency Matrix for Superclasses of one or more Class Definitions
+Compute an Adjacency Matrix for Superclasses of Class Definitions
 }
 \description{
 Given a vector of class names or a list of class definitions, the
@@ -75,7 +75,8 @@ classesToAM(classes, includeSubclasses = FALSE,
 }
 \examples{
 
-## the super- and subclasses of "standardGeneric" and "derivedDefaultMethod"
+## the super- and subclasses of "standardGeneric"
+## and "derivedDefaultMethod"
 am <- classesToAM(list(class(show), class(getMethod(show))), TRUE)
 am
 

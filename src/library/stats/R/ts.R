@@ -84,7 +84,7 @@ ts <- function(data = NA, start = 1, end = numeric(0), frequency = 1,
 
 tsp <- function(x) attr(x, "tsp")
 
-"tsp<-" <- function(x, value)
+`tsp<-` <- function(x, value)
 {
     cl <- oldClass(x)
     attr(x, "tsp") <- value # does error-checking internally
@@ -244,7 +244,7 @@ diff.ts <- function (x, lag = 1, differences = 1, ...)
 {
     if (lag < 1 | differences < 1)
         stop("bad value for 'lag' or 'differences'")
-    if (lag * differences >= NROW(x)) return(x[0])
+    if (lag * differences >= NROW(x)) return(x[0L])
     ## <FIXME>
     ## lag() and its default method are defined in package ts, so we
     ## need to provide our own implementation.
@@ -271,7 +271,7 @@ na.omit.ts <- function(object, ...)
         good <- which(apply(!is.na(object), 1L, all))
     else  good <- which(!is.na(object))
     if(!length(good)) stop("all times contain an NA")
-    omit <- integer(0L)
+    omit <- integer()
     n <- NROW(object)
     st <- min(good)
     if(st > 1) omit <- c(omit, 1L:(st-1))
@@ -525,6 +525,7 @@ plot.ts <-
 		do.lab <- TRUE
 	    } else do.lab <- xy.labels
 
+            dev.hold(); on.exit(dev.flush())
 	    ptype <-
 		if(do.lab) "n" else if(missing(type)) "p" else type
 	    plot.default(xy, type = ptype,
@@ -687,9 +688,9 @@ window.default <- function(x, start = NULL, end = NULL,
 
 window.ts <- function (x, ...) as.ts(window.default(x, ...))
 
-"window<-" <- function(x, ..., value) UseMethod("window<-")
+`window<-` <- function(x, ..., value) UseMethod("window<-")
 
-"window<-.ts" <- function(x, start, end, frequency, deltat, ..., value)
+`window<-.ts` <- function(x, start, end, frequency, deltat, ..., value)
 {
     xtsp <- tsp(x)
     m <- match.call(expand.dots = FALSE)
@@ -721,35 +722,14 @@ window.ts <- function (x, ...) as.ts(window.default(x, ...))
     x
 }
 
-"[.ts" <- function (x, i, j, drop = TRUE) {
+`[.ts` <- function (x, i, j, drop = TRUE) {
     y <- NextMethod("[")
     if (missing(i))
 	ts(y, start = start(x), frequency = frequency(x))
-#     else {
-#         if(is.matrix(i)) return(y)
-# 	n <- if (is.matrix(x)) nrow(x) else length(x)
-# 	li <- length(ind <- (1L:n)[i])
-#         if(li == 0) return(numeric(0))
-#         if(li == 1) {
-#             tsp(y) <- c(start(x), start(x), frequency(x))
-#             class(y) <- class(x)
-#             return(y)
-#         }
-# 	if (length(unique(ind[-1L] - ind[-li])) != 1) {
-# 	    warning("Not returning a time series object")
-# 	} else {
-# 	    xtsp <- tsp(x)
-# 	    xtimes <- seq(from = xtsp[1L], to = xtsp[2L], by = 1 / xtsp[3L])
-# 	    ytsp <- xtimes[range(ind)]
-# 	    tsp(y) <- c(ytsp, (li - 1) / (ytsp[2L] - ytsp[1L]))
-#             class(y) <- class(x)
-# 	}
-# 	y
-#     }
     else y
 }
 
-"[<-.ts" <- function (x, i, j, value) {
+`[<-.ts` <- function (x, i, j, value) {
     y <- NextMethod("[<-")
     if (NROW(y) != NROW(x)) stop("only replacement of elements is allowed")
     y
@@ -806,7 +786,10 @@ arima.sim <- function(model, n, rand.gen = rnorm,
         stop(gettextf("'start.innov' is too short: need %d points", n.start),
              domain = NA)
     x <- ts(c(start.innov[1L:n.start], innov[1L:n]), start = 1 - n.start)
-    if(length(model$ma)) x <- filter(x, c(1, model$ma), sides = 1)
+    if(length(model$ma)) {
+        x <- filter(x, c(1, model$ma), sides = 1L)
+        x[seq_along(model$ma)] <- 0 # rather than NA
+    }
     if(length(model$ar)) x <- filter(x, model$ar, method = "recursive")
     if(n.start > 0) x <- x[-(1L:n.start)]
     if(d > 0) x <- diffinv(x, differences = d)

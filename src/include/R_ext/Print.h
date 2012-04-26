@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1998-2008    Robert Gentleman, Ross Ihaka
+ *  Copyright (C) 1998-2010    Robert Gentleman, Ross Ihaka
  *                             and the R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -36,12 +36,20 @@
 #ifndef R_EXT_PRINT_H_
 #define R_EXT_PRINT_H_
 
-#ifndef NO_C_HEADERS
-# include <stdarg.h>
-#endif
-
 #ifdef  __cplusplus
+/* If the vprintf interface is defined at all in C++ it may only be
+   defined in namespace std. */
+/* CXXR comment 2011-07-28: ISO14882:2003 specifies that vprintf() be
+   included in cstdio. */
+# ifdef R_USE_C99_IN_CXX
+#  include <cstdarg>
+#  ifdef __SUNPRO_CC
+using _STLP_VENDOR_CSTD::va_list;
+#  endif
+# endif
 extern "C" {
+#else
+# include <stdarg.h>
 #endif
 
 void Rprintf(const char *, ...);

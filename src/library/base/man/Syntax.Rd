@@ -1,6 +1,6 @@
 % File src/library/base/man/Syntax.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Syntax}
@@ -13,9 +13,9 @@
   The following unary and binary operators are defined.  They are listed
   in precedence groups, from highest to lowest.
   \tabular{ll}{
-    \code{[ [[}\tab indexing\cr
-    \code{:: :::}\tab access variables in a name space\cr
+    \code{:: :::}\tab access variables in a namespace\cr
     \code{$ @}\tab component / slot extraction\cr
+    \code{[ [[}\tab indexing\cr
     \code{^}\tab exponentiation (right to left)\cr
     \code{- +}\tab unary minus and plus\cr
     \code{:}\tab sequence operator\cr
@@ -34,6 +34,10 @@
   }
   Within an expression operators of equal precedence are evaluated
   from left to right except where indicated.
+
+  The binary operators \code{::}, \code{:::}, \code{$} and \code{@} require
+  names or string constants on the right hand side, and the first two
+  also require them on the left.
 
   The links in the \bold{See Also} section cover most other aspects of
   the basic syntax.

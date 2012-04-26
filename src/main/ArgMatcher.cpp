@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -21,11 +21,13 @@
 
 #include "CXXR/ArgMatcher.hpp"
 
+#include "CXXR/ArgList.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/Environment.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/Promise.h"
+#include "CXXR/Symbol.h"
 #include "CXXR/errors.h"
 
 using namespace std;
@@ -58,8 +60,6 @@ ArgMatcher::ArgMatcher(const PairList* formals)
     }
 }
 
-// Implementation of ArgMatcher::coerceTag() is in coerce.cpp
-
 void ArgMatcher::detachReferents()
 {
     m_formals.detach();
@@ -70,9 +70,7 @@ void ArgMatcher::detachReferents()
 void ArgMatcher::handleDots(Frame* frame, SuppliedList* supplied_list)
 {
     Frame::Binding* bdg = frame->obtainBinding(DotsSymbol);
-    if (supplied_list->empty())
-	bdg->setValue(0, Frame::Binding::EXPLICIT);
-    else {
+    if (!supplied_list->empty()) {
 	SuppliedList::iterator first = supplied_list->begin();
 	DottedArgs* dotted_args
 	    = expose(new DottedArgs((*first).value, 0, (*first).tag));
@@ -81,7 +79,7 @@ void ArgMatcher::handleDots(Frame* frame, SuppliedList* supplied_list)
 	GCStackRoot<PairList> tail;
 	for (SuppliedList::const_reverse_iterator rit = supplied_list->rbegin();
 	     rit != supplied_list->rend(); ++rit)
-	    tail = PairList::construct((*rit).value, tail, (*rit).tag);
+	    tail = PairList::cons((*rit).value, tail, (*rit).tag);
 	dotted_args->setTail(tail);
 	supplied_list->clear();
     }
@@ -95,8 +93,27 @@ bool ArgMatcher::isPrefix(const CachedString* shorter,
     return longstr.compare(0, shortstr.size(), shortstr) == 0;
 }
 
+ArgMatcher* ArgMatcher::make(Symbol* fml1, Symbol* fml2, Symbol* fml3,
+			     Symbol* fml4, Symbol* fml5, Symbol* fml6)
+{
+    GCStackRoot<PairList> formals;
+    if (fml6)
+	formals = PairList::cons(Symbol::missingArgument(), formals, fml6);
+    if (fml5)
+	formals = PairList::cons(Symbol::missingArgument(), formals, fml5);
+    if (fml4)
+	formals = PairList::cons(Symbol::missingArgument(), formals, fml4);
+    if (fml3)
+	formals = PairList::cons(Symbol::missingArgument(), formals, fml3);
+    if (fml2)
+	formals = PairList::cons(Symbol::missingArgument(), formals, fml2);
+    if (fml1)
+	formals = PairList::cons(Symbol::missingArgument(), formals, fml1);
+    return expose(new ArgMatcher(formals));
+}
+
 void ArgMatcher::makeBinding(Environment* target_env, const FormalData& fdata,
-			     RObject* supplied_value) const
+			     RObject* supplied_value)
 {
     RObject* value = supplied_value;
     Frame::Binding::Origin origin = Frame::Binding::EXPLICIT;
@@ -111,7 +128,7 @@ void ArgMatcher::makeBinding(Environment* target_env, const FormalData& fdata,
 	bdg->setValue(value, origin);
 }
     
-void ArgMatcher::match(Environment* target_env, const PairList* supplied) const
+void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const
 {
     Frame* frame = target_env->frame();
     vector<MatchStatus, Allocator<MatchStatus> >
@@ -120,10 +137,9 @@ void ArgMatcher::match(Environment* target_env, const PairList* supplied) const
     // Exact matches by tag:
     {
 	unsigned int sindex = 0;
-	for (const PairList* s = supplied; s; s = s->tail()) {
+	for (const PairList* s = supplied->list(); s; s = s->tail()) {
 	    ++sindex;
-	    GCStackRoot<const Symbol>
-		tag(static_cast<const Symbol*>(s->tag()));
+	    const Symbol* tag = static_cast<const Symbol*>(s->tag());
 	    const CachedString* name = (tag ? tag->name() : 0);
 	    RObject* value = s->car();
 	    FormalMap::const_iterator fmit 
@@ -220,42 +236,40 @@ void ArgMatcher::match(Environment* target_env, const PairList* supplied) const
 	unusedArgsError(supplied_list);
 }
 
-PairList* ArgMatcher::prepareArgs(const PairList* raw_args, Environment* env)
+void ArgMatcher::propagateFormalBindings(const Environment* fromenv,
+					 Environment* toenv) const
 {
-    // args has a dummy element at the front, to simplify coding:
-    GCStackRoot<PairList> args(GCNode::expose(new PairList));
-    PairList* last = args;
-    while (raw_args) {
-	RObject* rawvalue = raw_args->car();
-	if (rawvalue == DotsSymbol) {
-	    pair<Environment*, Frame::Binding*> pr
-		= findBinding(DotsSymbol, env);
-	    if (pr.first) {
-		RObject* dval = pr.second->value();
-		if (!dval || dval->sexptype() == DOTSXP) {
-		    ConsCell* dotlist = static_cast<ConsCell*>(dval);
-		    while (dotlist) {
-			Promise* prom
-			    = GCNode::expose(new Promise(dotlist->car(), env));
-			const Symbol* tag = tagSymbol(dotlist->tag());
-			last->setTail(PairList::construct(prom, 0, tag));
-			last = last->tail();
-			dotlist = dotlist->tail();
-		    }
-		} else if (dval != Symbol::missingArgument())
-		    Rf_error(_("'...' used in an incorrect context"));
-	    }
-	} else {
-	    const Symbol* tag = tagSymbol(raw_args->tag());
-	    RObject* value = Symbol::missingArgument();
-	    if (rawvalue != Symbol::missingArgument())
-		value = GCNode::expose(new Promise(rawvalue, env));
-	    last->setTail(PairList::construct(value, 0, tag));
-	    last = last->tail();
-	}
-	raw_args = raw_args->tail();
+    const Frame* fromf = fromenv->frame();
+    for (FormalVector::const_iterator it = m_formal_data.begin();
+	 it != m_formal_data.end(); ++it) {
+	const FormalData& fdata = *it;
+	const Symbol* symbol = fdata.symbol;
+	const Frame::Binding* frombdg = fromf->binding(symbol);
+	if (!frombdg)
+	    Rf_error(_("could not find symbol \"%s\" "
+		       "in environment of the generic function"),
+		     symbol->name()->c_str());
+	RObject* val = frombdg->value();
+	// Discard generic's defaults:
+	if (frombdg->origin() != Frame::Binding::EXPLICIT)
+	    val = Symbol::missingArgument();
+	makeBinding(toenv, fdata, val);
     }
-    return args->tail();
+    // m_formal_data excludes '...', so:
+    if (m_has_dots) {
+	const Frame::Binding* frombdg = fromf->binding(DotsSymbol);
+	Frame::Binding* tobdg = toenv->frame()->obtainBinding(DotsSymbol);
+	tobdg->setValue(frombdg->value(), frombdg->origin());
+    }
+}
+	    
+void ArgMatcher::stripFormals(Frame* input_frame) const
+{
+    const PairList* fcell = m_formals;
+    while (fcell) {
+	input_frame->erase(static_cast<const Symbol*>(fcell->tag()));
+	fcell = fcell->tail();
+    }
 }
 
 // Implementation of ArgMatcher::unusedArgsError() is in match.cpp
@@ -263,5 +277,5 @@ PairList* ArgMatcher::prepareArgs(const PairList* raw_args, Environment* env)
 void ArgMatcher::visitReferents(const_visitor* v) const
 {
     if (m_formals)
-	m_formals->conductVisitor(v);
+	(*v)(m_formals);
 }

@@ -8,38 +8,35 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.10.0\n"
 "Report-Msgid-Bugs-To: bugs@R-project.org\n"
-"POT-Creation-Date: 2009-10-08 08:34+0100\n"
-"PO-Revision-Date: 2009-10-11 05:33-0500\n"
-"Last-Translator: Alexey Shipunov <dactylorhiza at gmail>\n"
+"POT-Creation-Date: 2011-10-17 10:13+0100\n"
+"PO-Revision-Date: 2010-09-30 01:27-0600\n"
+"Last-Translator: Alexey Shipunov <dactylorhiza@gmail.com>\n"
 "Language-Team: Russian <dactylorhiza at gmail>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=koi8-r\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: console.c:1132
-#: console.c:1174
+#: console.c:1159 console.c:1201
 msgid "Not enough memory"
 msgstr "Недостаточно памяти"
 
-#: console.c:1221
-#: console.c:1225
+#: console.c:1248 console.c:1252
 msgid "Insufficient memory: text not copied to the clipboard"
 msgstr "Недостаточно памяти: текст не скопирован в буфер обмена"
 
-#: console.c:1261
-#: ../extra/graphapp/clipboard.c:53
+#: console.c:1288 ../extra/graphapp/clipboard.c:53
 #: ../extra/graphapp/clipboard.c:79
 msgid "Unable to open the clipboard"
 msgstr "Не могу открыть буфер обмена"
 
-#: console.c:1877
+#: console.c:1906
 msgid "Insufficient memory. Please close the console"
 msgstr "Недостаточно памяти. Пожалуйста, закройте консоль"
 
-#: console.c:1931
-#: console.c:1983
-#: preferences.c:322
+#: console.c:1961 console.c:2014 preferences.c:333
 #, c-format
 msgid ""
 "Font %s-%d-%d  not found.\n"
@@ -48,23 +45,23 @@ msgstr ""
 "Шрифт %s-%d-%d  не найден.\n"
 "Используется системный шрифт"
 
-#: console.c:2088
+#: console.c:2119
 msgid "Save selection to"
 msgstr "Сохранить выделение в"
 
-#: console.c:2090
+#: console.c:2121
 msgid "Save console contents to"
 msgstr "Сохранить содержимое консоли в"
 
-#: console.c:2189
+#: console.c:2220
 msgid "Scrolling.\n"
 msgstr "Прокрутка.\n"
 
-#: console.c:2190
+#: console.c:2221
 msgid "  Keyboard: PgUp, PgDown, Ctrl+Arrows, Ctrl+Home, Ctrl+End,\n"
 msgstr "Клавиатура: PgUp, PgDown, Ctrl+Arrows, Ctrl+Home, Ctrl+End,\n"
 
-#: console.c:2191
+#: console.c:2222
 msgid ""
 "  Mouse: use the scrollbar(s).\n"
 "\n"
@@ -72,91 +69,102 @@ msgstr ""
 "  Мышь: использовать полос(ы) прокрутки.\n"
 "\n"
 
-#: console.c:2192
+#: console.c:2223
 msgid "Editing.\n"
 msgstr "Редактирование.\n"
 
-#: console.c:2193
+#: console.c:2224
 msgid "  Moving the cursor: \n"
 msgstr "  Перемещение курсора: \n"
 
-#: console.c:2194
+#: console.c:2225
 msgid "     Left arrow or Ctrl+B: move backward one character;\n"
 msgstr "     Левая стрелка или Ctrl+B: назад на один символ;\n"
 
-#: console.c:2195
+#: console.c:2226
 msgid "     Right arrow or Ctrl+F: move forward one character;\n"
 msgstr "     Стрелка вправо или Ctrl+F: вперед на один символ;\n"
 
-#: console.c:2196
+#: console.c:2227
 msgid "     Home or Ctrl+A: go to beginning of line;\n"
 msgstr "     Home или Ctrl+A: к началу строки;\n"
 
-#: console.c:2197
+#: console.c:2228
 msgid "     End or Ctrl+E: go to end of line;\n"
 msgstr "     End или Ctrl+E: в конец строки;\n"
 
-#: console.c:2198
+#: console.c:2229
 msgid "  History: Up and Down Arrows, Ctrl+P, Ctrl+N\n"
 msgstr "  История: стрелки вверх и вниз, Ctrl+P, Ctrl+N\n"
 
-#: console.c:2199
+#: console.c:2230
 msgid "  Deleting:\n"
 msgstr "  Удаление:\n"
 
-#: console.c:2200
+#: console.c:2231
 msgid "     Del or Ctrl+D: delete current character or selection;\n"
 msgstr "     Del или Ctrl+D: удалить текущий символ или выделение;\n"
 
-#: console.c:2201
+#: console.c:2232
 msgid "     Backspace: delete preceding character;\n"
 msgstr "     Backspace: удалить предыдущий символ;\n"
 
-#: console.c:2202
-msgid "     Ctrl+Del or Ctrl+K: delete text from current character to end of line.\n"
-msgstr "     Ctrl+Del или Ctrl+K: удалить текст от текущего символа до конца строки.\n"
+#: console.c:2233
+msgid ""
+"     Ctrl+Del or Ctrl+K: delete text from current character to end of line.\n"
+msgstr ""
+"     Ctrl+Del или Ctrl+K: удалить текст от текущего символа до конца "
+"строки.\n"
 
-#: console.c:2203
+#: console.c:2234
 msgid "     Ctrl+U: delete all text from current line.\n"
 msgstr "     Ctrl+U: удалить весь текст текущей строки.\n"
 
-#: console.c:2204
+#: console.c:2235
 msgid "  Copy and paste.\n"
 msgstr "  Копирование и вставка:\n"
 
-#: console.c:2205
-msgid "     Use the mouse (with the left button held down) to mark (select) text.\n"
-msgstr "     Использовать мышь (с нажатой левой кнопкой) для выделения текста.\n"
+#: console.c:2236
+msgid ""
+"     Use the mouse (with the left button held down) to mark (select) text.\n"
+msgstr ""
+"     Использовать мышь (с нажатой левой кнопкой) для выделения текста.\n"
 
-#: console.c:2206
-msgid "     Use Shift+Del (or Ctrl+C) to copy the marked text to the clipboard and\n"
-msgstr "     Использовать Shift+Del (или Ctrl+C) для копирования выделения в буфер\n"
+#: console.c:2237
+msgid ""
+"     Use Shift+Del (or Ctrl+C) to copy the marked text to the clipboard and\n"
+msgstr ""
+"     Использовать Shift+Del (или Ctrl+C) для копирования выделения в буфер\n"
 
-#: console.c:2207
-msgid "     Shift+Ins (or Ctrl+V or Ctrl+Y) to paste the content of the clipboard (if any)  \n"
-msgstr "     Shift+Ins (или Ctrl+V или Ctrl+Y) для вставки содержимого буфера (если есть)  \n"
+#: console.c:2238
+msgid ""
+"     Shift+Ins (or Ctrl+V or Ctrl+Y) to paste the content of the clipboard "
+"(if any)  \n"
+msgstr ""
+"     Shift+Ins (или Ctrl+V или Ctrl+Y) для вставки содержимого буфера (если "
+"есть)  \n"
 
-#: console.c:2208
+#: console.c:2239
 msgid "     to the console, Ctrl+X first copy then paste\n"
 msgstr "     на консоль, Ctrl+X сначала копирует, потом вставляет.\n"
 
-#: console.c:2209
+#: console.c:2240
 msgid "  Misc:\n"
 msgstr "  Разное:\n"
 
-#: console.c:2210
+#: console.c:2241
 msgid "     Ctrl+L: Clear the console.\n"
 msgstr "     Ctrl+L: Очистить консоль.\n"
 
-#: console.c:2211
+#: console.c:2242
 msgid "     Ctrl+O or INS: Toggle overwrite mode: initially off.\n"
 msgstr "     Ctrl+O: Переключить замену/вставку символов: вначале отключена.\n"
 
-#: console.c:2212
+#: console.c:2243
 msgid "     Ctrl+T: Interchange current char with one to the left.\n"
 msgstr "     Ctrl+T: Поменять текущий символ с предыдущим.\n"
 
-#: console.c:2213
+#: console.c:2244
 msgid ""
 "\n"
 "Note: Console is updated only when some input is required.\n"
@@ -164,7 +172,7 @@ msgstr ""
 "\n"
 "Внимание: Консоль обновляется только когда нужен ввод.\n"
 
-#: console.c:2214
+#: console.c:2245
 msgid ""
 "  Use Ctrl+W to toggle this feature off/on.\n"
 "\n"
@@ -172,7 +180,7 @@ msgstr ""
 "  Используйте Ctrl+W для включения/выключения этого свойства.\n"
 "\n"
 
-#: console.c:2215
+#: console.c:2246
 msgid ""
 "Use ESC to stop the interpreter.\n"
 "\n"
@@ -180,7 +188,7 @@ msgstr ""
 "Используйте Esc для остановки интерпретатора.\n"
 "\n"
 
-#: console.c:2216
+#: console.c:2247
 msgid ""
 "TAB starts completion of the current word.\n"
 "\n"
@@ -188,85 +196,79 @@ msgstr ""
 "TAB осуществляет дополнение текущего слова.\n"
 "\n"
 
-#: console.c:2217
+#: console.c:2248
 msgid "Standard Windows hotkeys can be used to switch to the\n"
 msgstr "Стандартные клавиши Windows можно использовать для перехода к\n"
 
-#: console.c:2218
+#: console.c:2249
 msgid "graphics device (Ctrl+Tab or Ctrl+F6 in MDI, Alt+Tab in SDI)"
 msgstr "окну графики (Ctrl+Tab или Ctrl+F6 в MDI, Alt+Tab в SDI)"
 
-#: dataentry.c:223
-#: dataentry.c:1859
-#: dataentry.c:1862
-#: dataentry.c:1893
+#: dataentry.c:222 dataentry.c:1850 dataentry.c:1853 dataentry.c:1884
 msgid "invalid argument"
 msgstr "неправильный аргумент"
 
-#: dataentry.c:270
+#: dataentry.c:269
 msgid "invalid type for value"
 msgstr "неправильный тип данных"
 
-#: dataentry.c:281
+#: dataentry.c:280
 msgid "Data Editor"
 msgstr "Редактор данных"
 
-#: dataentry.c:282
-#: dataentry.c:1900
+#: dataentry.c:281 dataentry.c:1891
 msgid "invalid device"
 msgstr "неправильное устройство"
 
-#: dataentry.c:331
+#: dataentry.c:330
 msgid "dataentry: internal memory problem"
 msgstr "редактор данных: проблемы с памятью"
 
-#: dataentry.c:634
-#: dataentry.c:1229
+#: dataentry.c:633 dataentry.c:1220
 msgid "dataentry: internal memory error"
 msgstr "редактор данных: ошибка памяти"
 
-#: dataentry.c:757
-#: dataentry.c:770
+#: dataentry.c:756 dataentry.c:769
 msgid "internal type error in dataentry"
 msgstr "внутренняя ошибка в редакторе данных"
 
-#: dataentry.c:860
+#: dataentry.c:851
 msgid "dataentry: parse error on string"
 msgstr "редактор данных: ошибка обработки строки"
 
-#: dataentry.c:1003
+#: dataentry.c:994
 msgid "dataentry: expression too long"
 msgstr "редактор данных: слишком длинное выражение"
 
-#: dataentry.c:1480
+#: dataentry.c:1471
 msgid "column names cannot be blank"
 msgstr "имена колонок не могут быть пустыми"
 
-#: dataentry.c:1526
+#: dataentry.c:1517
 msgid "Variable editor"
 msgstr "Редактор переменной"
 
-#: dataentry.c:1531
+#: dataentry.c:1522
 msgid "variable name"
 msgstr "имя переменной"
 
-#: dataentry.c:1533
+#: dataentry.c:1524
 msgid "type"
 msgstr "тип"
 
-#: dataentry.c:1647
+#: dataentry.c:1638
 msgid "Cell width(s)"
 msgstr "Ширина ячейки (ячеек)"
 
-#: dataentry.c:1653
+#: dataentry.c:1644
 msgid "Cell width"
 msgstr "Ширина ячейки"
 
-#: dataentry.c:1656
+#: dataentry.c:1647
 msgid "variable"
 msgstr "переменная"
 
-#: dataentry.c:1699
+#: dataentry.c:1690
 msgid ""
 "Navigation.\n"
 "  Keyboard: cursor keys move selection\n"
@@ -308,76 +310,61 @@ msgstr ""
 "  Right-click меню для копирования, вставки и подбора ширины колонки\n"
 "\n"
 
-#: dataentry.c:1705
-#: dataentry.c:1815
-#: editor.c:781
-#: rui.c:1197
+#: dataentry.c:1696 dataentry.c:1806 editor.c:778 rui.c:1184
 msgid "Help"
 msgstr "Справка"
 
-#: dataentry.c:1707
+#: dataentry.c:1698
 msgid "Copy selected cell"
 msgstr "Копировать выделенную ячейку"
 
-#: dataentry.c:1708
+#: dataentry.c:1699
 msgid "Paste to selected cell"
 msgstr "Вставить в выделенную ячейку"
 
-#: dataentry.c:1709
+#: dataentry.c:1700
 msgid "Autosize column"
 msgstr "Автоподбор ширины колонки"
 
-#: dataentry.c:1711
-#: pager.c:310
-#: rui.c:885
-#: ../library/grDevices/src/devWindows.c:1623
+#: dataentry.c:1702 pager.c:310 rui.c:867
+#: ../library/grDevices/src/devWindows.c:1676
 msgid "Stay on top"
 msgstr "Расположить сверху"
 
-#: dataentry.c:1713
-#: dataentry.c:1800
-#: pager.c:312
-#: pager.c:475
+#: dataentry.c:1704 dataentry.c:1791 pager.c:312 pager.c:475
 msgid "Close"
 msgstr "Закрыть"
 
-#: dataentry.c:1798
-#: editor.c:727
-#: pager.c:467
-#: rui.c:1131
-#: ../library/grDevices/src/devWindows.c:1563
+#: dataentry.c:1789 editor.c:724 pager.c:467 rui.c:1120
+#: ../library/grDevices/src/devWindows.c:1616
 msgid "File"
 msgstr "Файл"
 
-#: dataentry.c:1804
-#: editor.c:745
-#: pager.c:477
-#: rui.c:1152
+#: dataentry.c:1795 editor.c:742 pager.c:477 rui.c:1141
 msgid "Edit"
 msgstr "Правка"
 
-#: dataentry.c:1805
+#: dataentry.c:1796
 msgid "Copy  \tCTRL+C"
 msgstr "Копировать \tCTRL+C"
 
-#: dataentry.c:1807
+#: dataentry.c:1798
 msgid "Paste \tCTRL+V"
 msgstr "Вставить \tCTRL+V"
 
-#: dataentry.c:1809
+#: dataentry.c:1800
 msgid "Delete\tDEL"
 msgstr "Удалить\tDEL"
 
-#: dataentry.c:1812
+#: dataentry.c:1803
 msgid "Cell widths ..."
 msgstr "Ширина ячеек..."
 
-#: dataentry.c:1816
+#: dataentry.c:1807
 msgid "Data editor"
 msgstr "Редактор данных"
 
-#: editor.c:88
-#: editor.c:90
+#: editor.c:88 editor.c:90
 msgid "R Editor"
 msgstr "Редактор R"
 
@@ -400,215 +387,175 @@ msgstr "Не могу сохранить файл '%s'"
 msgid "Save script as"
 msgstr "Сохранить скрипт как"
 
-#: editor.c:375
-#: editor.c:692
-#: pager.c:431
-#: rui.c:1084
+#: editor.c:372 editor.c:689 pager.c:431 rui.c:1074
 msgid "Open script"
 msgstr "Открыть скрипт"
 
-#: editor.c:498
-#: pager.c:185
-#: pager.c:205
+#: editor.c:495 pager.c:185 pager.c:205
 msgid "No RGui console to paste to"
 msgstr "Нет графической консоли для вставки"
 
-#: editor.c:600
+#: editor.c:597
 msgid "R EDITOR\n"
 msgstr "РЕДАКТОР R\n"
 
-#: editor.c:602
+#: editor.c:599
 msgid "A standard text editor for editing and running R code.\n"
 msgstr "Простой текстовый редактор для правки и запуска кода R.\n"
 
-#: editor.c:604
+#: editor.c:601
 msgid "RUNNING COMMANDS\n"
 msgstr "КОМАНДЫ ЗАПУСКА\n"
 
-#: editor.c:605
+#: editor.c:602
 msgid "To run a line or section of R code, select the code and either\n"
 msgstr "Чтобы запустить строку или блок кода R, выделите текст и или\n"
 
-#: editor.c:606
+#: editor.c:603
 msgid "     Press Ctrl-R\n"
 msgstr "     Нажмите Ctrl-R\n"
 
-#: editor.c:607
+#: editor.c:604
 msgid "     Select \"Run line or selection\" from the \"Edit\" menu\n"
 msgstr "     Выберите \"Запустить строку или блок\" из меню \"Правка\"\n"
 
-#: editor.c:608
+#: editor.c:605
 msgid "     Press the \"Run line or selection\" icon on the toolbar\n"
 msgstr "     Нажмите на панели кнопку \"Запустить строку или блок\"\n"
 
-#: editor.c:609
-msgid "This will copy the selected commands to the console and evaluate them.\n"
-msgstr "В результате выбранные команды скопируются на консоль и запустятся там.\n"
+#: editor.c:606
+msgid ""
+"This will copy the selected commands to the console and evaluate them.\n"
+msgstr ""
+"В результате выбранные команды скопируются на консоль и запустятся там.\n"
 
-#: editor.c:610
-msgid "If there is no selection, this will just run the current line and advance\n"
+#: editor.c:607
+msgid ""
+"If there is no selection, this will just run the current line and advance\n"
 msgstr "Если выделения нет, будет запущена текущая строка, а курсор\n"
 
-#: editor.c:611
+#: editor.c:608
 msgid "the cursor by one line.\n"
 msgstr "переместится на строку вниз.\n"
 
-#: editor.c:623
-#: editor.c:700
-#: editor.c:761
+#: editor.c:620 editor.c:697 editor.c:758
 msgid "Run line or selection"
 msgstr "Запустить строку или блок"
 
-#: editor.c:625
-#: editor.c:746
+#: editor.c:622 editor.c:743
 msgid "Undo"
 msgstr "Отменить"
 
-#: editor.c:627
-#: editor.c:749
+#: editor.c:624 editor.c:746
 msgid "Cut"
 msgstr "Вырезать"
 
-#: editor.c:628
-#: editor.c:751
-#: pager.c:305
-#: pager.c:478
-#: rui.c:875
-#: rui.c:1096
-#: rui.c:1153
+#: editor.c:625 editor.c:748 pager.c:305 pager.c:478 rui.c:857 rui.c:1086
+#: rui.c:1142
 msgid "Copy"
 msgstr "Копировать"
 
-#: editor.c:629
-#: editor.c:753
-#: rui.c:876
-#: rui.c:1100
-#: rui.c:1154
+#: editor.c:626 editor.c:750 rui.c:858 rui.c:1090 rui.c:1143
 msgid "Paste"
 msgstr "Вставить"
 
-#: editor.c:630
-#: editor.c:755
+#: editor.c:627 editor.c:752
 msgid "Delete"
 msgstr "Удалить"
 
-#: editor.c:632
-#: editor.c:757
-#: pager.c:308
-#: pager.c:484
-#: rui.c:882
-#: rui.c:1158
+#: editor.c:629 editor.c:754 pager.c:308 pager.c:484 rui.c:864 rui.c:1147
 msgid "Select all"
 msgstr "Выделить все"
 
-#: editor.c:696
+#: editor.c:693
 msgid "Save script"
 msgstr "Сохранить скрипт"
 
-#: editor.c:704
-#: pager.c:451
-#: ../library/grDevices/src/devWindows.c:1531
+#: editor.c:701 pager.c:451 ../library/grDevices/src/devWindows.c:1584
 msgid "Return focus to Console"
 msgstr "Вернуть фокус в консоль"
 
-#: editor.c:707
+#: editor.c:704
 msgid "Print script"
 msgstr "Печатать скрипт"
 
-#: editor.c:709
-#: pager.c:446
-#: rui.c:1112
-#: ../library/grDevices/src/devWindows.c:1525
+#: editor.c:706 pager.c:446 rui.c:1102
+#: ../library/grDevices/src/devWindows.c:1578
 msgid "Print"
 msgstr "Печать"
 
-#: editor.c:728
-#: pager.c:468
-#: rui.c:1133
+#: editor.c:725 pager.c:468 rui.c:1122
 msgid "New script"
 msgstr "Новый скрипт"
 
-#: editor.c:730
-#: pager.c:469
-#: rui.c:1134
+#: editor.c:727 pager.c:469 rui.c:1123
 msgid "Open script..."
 msgstr "Открыть скрипт..."
 
-#: editor.c:732
+#: editor.c:729
 msgid "Save"
 msgstr "Сохранить"
 
-#: editor.c:734
+#: editor.c:731
 msgid "Save as..."
 msgstr "Сохранить как..."
 
-#: editor.c:737
-#: pager.c:470
-#: rui.c:1147
-#: ../library/grDevices/src/devWindows.c:1626
+#: editor.c:734 pager.c:470 rui.c:1136
+#: ../library/grDevices/src/devWindows.c:1679
 msgid "Print..."
 msgstr "Печать..."
 
-#: editor.c:740
+#: editor.c:737
 msgid "Close script"
 msgstr "Закрыть скрипт"
 
-#: editor.c:759
-#: rui.c:1159
+#: editor.c:756 rui.c:1148
 msgid "Clear console"
 msgstr "Очистить консоль"
 
-#: editor.c:763
+#: editor.c:760
 msgid "Run all"
 msgstr "Запустить все"
 
-#: editor.c:766
+#: editor.c:763
 msgid "Find..."
 msgstr "Найти..."
 
-#: editor.c:768
+#: editor.c:765
 msgid "Replace..."
 msgstr "Заменить..."
 
-#: editor.c:771
-#: rui.c:1163
+#: editor.c:768 rui.c:1152
 msgid "GUI preferences..."
 msgstr "Настройки интерфейса..."
 
-#: editor.c:782
+#: editor.c:779
 msgid "Editor"
 msgstr "Редактор"
 
-#: editor.c:841
+#: editor.c:838
 msgid "Maximum number of editors reached"
 msgstr "Достигнуто максимальное количество редакторов"
 
-#: editor.c:846
+#: editor.c:843
 msgid "Unable to create editor window"
 msgstr "Не могу создать окно редактора"
 
-#: editor.c:854
+#: editor.c:851
 msgid "Untitled"
 msgstr "Безымянный"
 
-#: extra.c:872
-#: ../extra/graphapp/dialogs.c:618
-#: ../extra/graphapp/dialogs.c:737
+#: extra.c:902 ../extra/graphapp/dialogs.c:618 ../extra/graphapp/dialogs.c:737
 msgid "OK"
 msgstr "OK"
 
-#: extra.c:873
-#: ../extra/graphapp/dialogs.c:598
-#: ../extra/graphapp/dialogs.c:616
-#: ../extra/graphapp/dialogs.c:622
-#: ../extra/graphapp/dialogs.c:721
-#: ../extra/graphapp/dialogs.c:735
-#: ../extra/graphapp/dialogs.c:741
+#: extra.c:903 ../extra/graphapp/dialogs.c:598 ../extra/graphapp/dialogs.c:616
+#: ../extra/graphapp/dialogs.c:622 ../extra/graphapp/dialogs.c:721
+#: ../extra/graphapp/dialogs.c:735 ../extra/graphapp/dialogs.c:741
 msgid "Cancel"
 msgstr "Отменить"
 
-#: extra.c:2049
-#: rui.c:1237
+#: extra.c:2163 rui.c:1222
 msgid "Select file"
 msgstr "Выбрать файл"
 
@@ -620,33 +567,23 @@ msgstr "Ошибка открытия файла"
 msgid "Insufficient memory to display file in internal pager"
 msgstr "Не хватает памяти для отражения файла во внутреннем просмотрщике"
 
-#: pager.c:177
-#: pager.c:189
-#: pager.c:209
-#: rui.c:242
-#: rui.c:269
+#: pager.c:177 pager.c:189 pager.c:209 rui.c:236 rui.c:263
 msgid "No selection"
 msgstr "Нет выделения"
 
-#: pager.c:306
-#: pager.c:436
-#: pager.c:480
+#: pager.c:306 pager.c:436 pager.c:480
 msgid "Paste to console"
 msgstr "Вставить на консоль"
 
-#: pager.c:307
-#: pager.c:441
-#: pager.c:482
+#: pager.c:307 pager.c:441 pager.c:482
 msgid "Paste commands to console"
 msgstr "Вставить команды на консоль"
 
-#: pager.c:472
-#: rui.c:1148
+#: pager.c:472 rui.c:1137
 msgid "Save to File..."
 msgstr "Сохранить в файл..."
 
-#: pager.c:487
-#: rui.c:1166
+#: pager.c:487 rui.c:1154
 msgid "View"
 msgstr "Вид"
 
@@ -654,7 +591,7 @@ msgstr "Вид"
 msgid "Unable to create pager window"
 msgstr "Не могу создать окно просмотрщика"
 
-#: preferences.c:291
+#: preferences.c:302
 msgid ""
 "The overall console properties cannot be changed\n"
 "on a running console.\n"
@@ -666,7 +603,7 @@ msgstr ""
 "\n"
 "Сохраните настройки и перезапустите Rgui для их применения.\n"
 
-#: preferences.c:295
+#: preferences.c:306
 msgid ""
 "The language for menus cannot be changed on a\n"
 " running console.\n"
@@ -678,11 +615,11 @@ msgstr ""
 "\n"
 "Сохраните настройки и перезапустите Rgui для изменения меню.\n"
 
-#: preferences.c:360
+#: preferences.c:371
 msgid "Changes in pager size will not apply to any open pagers"
 msgstr "Изменения размера просмотрщика не отразятся на его уже открытых окнах"
 
-#: preferences.c:366
+#: preferences.c:377
 msgid ""
 "Do not change pager type if any pager is open\n"
 "Proceed?"
@@ -690,357 +627,342 @@ msgstr ""
 "Тип просмотрщика не изменится, если хотя бы один открыт\n"
 "Продолжить?"
 
-#: preferences.c:397
+#: preferences.c:410
 msgid "Select directory for file 'Rconsole'"
 msgstr "Выбрать папку для файла 'Rconsole'"
 
-#: preferences.c:487
+#: preferences.c:503
 msgid "Select 'Rconsole' file"
 msgstr "Выбрать файл 'Rconsole'"
 
-#: preferences.c:662
+#: preferences.c:688
 #, c-format
-msgid "Error at line %d of file %s"
-msgstr "Ошибка на строке %d файла %s"
+msgid "Ignored '%s' at line %d of file %s"
+msgstr "Проигнорировано '%s' на строке %d файла %s"
 
-#: preferences.c:766
+#: preferences.c:789
 msgid "Rgui Configuration Editor"
 msgstr "Редактор конфигурации Rgui"
 
-#: rui.c:145
+#: rui.c:139
 msgid "Select file to source"
 msgstr "Выбрать файл для загрузки"
 
-#: rui.c:166
+#: rui.c:160
 msgid "Select image to load"
 msgstr "Выбрать образ для загрузки"
 
-#: rui.c:181
+#: rui.c:175
 msgid "Save image in"
 msgstr "Сохранить образ в"
 
-#: rui.c:195
+#: rui.c:189
 msgid "Load history from"
 msgstr "Загрузить историю команд из"
 
-#: rui.c:204
+#: rui.c:198
 msgid "Save history in"
 msgstr "Сохранить историю команд в"
 
-#: rui.c:251
-#: rui.c:260
+#: rui.c:245 rui.c:254
 msgid "No text available"
 msgstr "Нет доступного текста"
 
-#: rui.c:309
+#: rui.c:303
 msgid "Name of data frame or matrix"
 msgstr "Имя таблицы данных или матрицы"
 
-#: rui.c:316
+#: rui.c:310
 #, c-format
 msgid "'%s' cannot be found"
 msgstr "'%s' не найден"
 
-#: rui.c:455
+#: rui.c:449
 msgid "Are you sure?"
 msgstr "Вы уверены?"
 
-#: rui.c:567
+#: rui.c:544
 msgid "Help on"
 msgstr "Справка по"
 
-#: rui.c:618
+#: rui.c:600
 msgid "Search help"
 msgstr "Искать помощь"
 
-#: rui.c:633
+#: rui.c:615
 msgid "Search for words in help list archives and documentation"
 msgstr "Искать слова в архивах списков рассылки и в документации"
 
-#: rui.c:648
+#: rui.c:630
 msgid "Apropos"
 msgstr "Подсказать команды"
 
-#: rui.c:871
+#: rui.c:853
 msgid "Can only drag-and-drop .R, .RData and .rda files"
 msgstr "Можно перетащить только файлы .R, .Rdata и .rda"
 
-#: rui.c:877
-#: rui.c:1155
+#: rui.c:859 rui.c:1144
 msgid "Paste commands only"
 msgstr "Вставить только команды"
 
-#: rui.c:878
-#: rui.c:1104
+#: rui.c:860 rui.c:1094
 msgid "Copy and paste"
 msgstr "Копировать и вставить"
 
-#: rui.c:880
+#: rui.c:862
 msgid "Clear window"
 msgstr "Очистить окно"
 
-#: rui.c:884
-#: rui.c:1180
+#: rui.c:866 rui.c:1167
 msgid "Buffered output"
 msgstr "Буферизованный вывод"
 
-#: rui.c:924
+#: rui.c:906
 msgid "Packages"
 msgstr "Пакеты"
 
-#: rui.c:925
+#: rui.c:907
 msgid "Load package..."
 msgstr "Включить пакет..."
 
-#: rui.c:927
+#: rui.c:909
 msgid "Set CRAN mirror..."
 msgstr "Определить зеркало CRAN..."
 
-#: rui.c:929
+#: rui.c:911
 msgid "Select repositories..."
 msgstr "Определить хранилища..."
 
-#: rui.c:931
+#: rui.c:913
 msgid "Install package(s)..."
 msgstr "Установить пакет(ы)..."
 
-#: rui.c:933
+#: rui.c:915
 msgid "Update packages..."
 msgstr "Обновить пакеты..."
 
-#: rui.c:936
+#: rui.c:918
 msgid "Install package(s) from local zip files..."
 msgstr "Установить пакет(ы) из локальных zip-файлов..."
 
-#: rui.c:964
+#: rui.c:942
 msgid "FAQ on R"
 msgstr "ЧаВО по R"
 
-#: rui.c:966
+#: rui.c:944
 msgid "FAQ on R for &Windows"
 msgstr "ЧаВО по R для Windows"
 
-#: rui.c:972
-#: rui.c:975
+#: rui.c:950 rui.c:953
 msgid "Manuals (in PDF)"
 msgstr "Руководства (в PDF)"
 
-#: rui.c:1002
+#: rui.c:983
 msgid "R functions (text)..."
 msgstr "Функции R (текст)..."
 
-#: rui.c:1004
+#: rui.c:985
 msgid "Html help"
 msgstr "Гипертекстовая справка"
 
-#: rui.c:1006
+#: rui.c:987
 msgid "Search help..."
 msgstr "Искать помощь..."
 
-#: rui.c:1011
+#: rui.c:992
 msgid "Apropos..."
 msgstr "Подсказка команд..."
 
-#: rui.c:1013
+#: rui.c:994
 msgid "R Project home page"
 msgstr "Домашняя страница проекта R"
 
-#: rui.c:1014
+#: rui.c:995
 msgid "CRAN home page"
 msgstr "Домашняя страница архива CRAN"
 
-#: rui.c:1016
+#: rui.c:997
 msgid "About"
 msgstr "О программе"
 
-#: rui.c:1028
-#: ../extra/graphapp/gmenus.c:52
+#: rui.c:1006 ../extra/graphapp/gmenus.c:52
 msgid "Windows"
 msgstr "Окна"
 
-#: rui.c:1029
-#: ../extra/graphapp/gmenus.c:53
+#: rui.c:1007 ../extra/graphapp/gmenus.c:53
 msgid "Cascade"
 msgstr "Лесенкой"
 
-#: rui.c:1030
-#: ../extra/graphapp/gmenus.c:54
+#: rui.c:1008 ../extra/graphapp/gmenus.c:54
 msgid "Tile &Horizontally"
 msgstr "Слева направо"
 
-#: rui.c:1031
-#: ../extra/graphapp/gmenus.c:55
+#: rui.c:1009 ../extra/graphapp/gmenus.c:55
 msgid "Tile &Vertically"
 msgstr "Сверху вниз"
 
-#: rui.c:1032
+#: rui.c:1010
 msgid "Minimize group"
 msgstr "Минимизировать группу"
 
-#: rui.c:1033
+#: rui.c:1011
 msgid "Restore group"
 msgstr "Восстановить группу"
 
-#: rui.c:1088
+#: rui.c:1078
 msgid "Load workspace"
 msgstr "Загрузить рабочее пространство"
 
-#: rui.c:1092
+#: rui.c:1082
 msgid "Save workspace"
 msgstr "Сохранить рабочее пространство"
 
-#: rui.c:1108
+#: rui.c:1098
 msgid "Stop current computation"
 msgstr "Остановить текущую процедуру"
 
-#: rui.c:1132
+#: rui.c:1121
 msgid "Source R code..."
 msgstr "Загрузить код R..."
 
-#: rui.c:1135
+#: rui.c:1124
 msgid "Display file(s)..."
 msgstr "Показать файл(ы)..."
 
-#: rui.c:1137
+#: rui.c:1126
 msgid "Load Workspace..."
 msgstr "Загрузить рабочее пространство..."
 
-#: rui.c:1138
+#: rui.c:1127
 msgid "Save Workspace..."
 msgstr "Сохранить рабочее пространство..."
 
-#: rui.c:1140
+#: rui.c:1129
 msgid "Load History..."
 msgstr "Загрузить историю команд..."
 
-#: rui.c:1142
+#: rui.c:1131
 msgid "Save History..."
 msgstr "Сохранить историю команд..."
 
-#: rui.c:1145
+#: rui.c:1134
 msgid "Change dir..."
 msgstr "Изменить папку..."
 
-#: rui.c:1150
+#: rui.c:1139
 msgid "Exit"
 msgstr "Выйти"
 
-#: rui.c:1157
+#: rui.c:1146
 msgid "Copy and Paste"
 msgstr "Копировать и вставить"
 
-#: rui.c:1161
+#: rui.c:1150
 msgid "Data editor..."
 msgstr "Редактор данных..."
 
-#: rui.c:1167
+#: rui.c:1155
 msgid "Toolbar"
 msgstr "Панель инструментов"
 
-#: rui.c:1168
+#: rui.c:1156
 msgid "Statusbar"
 msgstr "Строка состояния"
 
-#: rui.c:1173
+#: rui.c:1160
 msgid "Misc"
 msgstr "Разное"
 
-#: rui.c:1174
+#: rui.c:1161
 msgid "Stop current computation           \tESC"
 msgstr "Остановить текущую процедуру       \tESC"
 
-#: rui.c:1176
+#: rui.c:1163
 msgid "Stop all computations"
 msgstr "Остановить все вычисления"
 
-#: rui.c:1178
+#: rui.c:1165
 msgid "Break to debugger"
 msgstr "Прерывание для отладчика"
 
-#: rui.c:1181
+#: rui.c:1168
 msgid "Word completion"
 msgstr "Дополнение слов"
 
-#: rui.c:1183
+#: rui.c:1170
 msgid "Filename completion"
 msgstr "Дополнение имен файлов"
 
-#: rui.c:1190
+#: rui.c:1177
 msgid "List objects"
 msgstr "Перечислить объекты"
 
-#: rui.c:1191
+#: rui.c:1178
 msgid "Remove all objects"
 msgstr "Удалить все объекты"
 
-#: rui.c:1192
+#: rui.c:1179
 msgid "List search &path"
 msgstr "Отразить путь поиска"
 
-#: rui.c:1198
+#: rui.c:1185
 msgid "Console"
 msgstr "Консоль"
 
-#: rui.c:1281
+#: rui.c:1266
 msgid "'mname' is limited to 1000 bytes"
 msgstr "'mname' ограничено: 1000 знаков"
 
-#: rui.c:1323
+#: rui.c:1308
 #, c-format
 msgid "menu %s does not exist"
 msgstr "меню %s не существует"
 
-#: rui.c:1376
+#: rui.c:1361
 msgid "'menu' is limited to 500 bytes"
 msgstr "'menu' ограничено: 500 знаков"
 
-#: rui.c:1386
+#: rui.c:1371
 msgid "base menu does not exist"
 msgstr "базовое меню не существует"
 
-#: rui.c:1401
+#: rui.c:1386
 msgid "failed to allocate menu"
 msgstr "не получилось разместить меню"
 
-#: rui.c:1418
-#: rui.c:1542
+#: rui.c:1403 rui.c:1527
 msgid "menu + item is limited to 1000 bytes"
 msgstr "меню + пункт меню ограничены: 1000 знаков"
 
-#: rui.c:1426
-#: rui.c:1509
+#: rui.c:1411 rui.c:1494
 msgid "menu does not exist"
 msgstr "меню не существует"
 
-#: rui.c:1444
-#: rui.c:1467
-#: rui.c:1472
+#: rui.c:1429 rui.c:1452 rui.c:1457
 msgid "failed to allocate char storage"
 msgstr "не получилось разместить хранилище знаков"
 
-#: rui.c:1480
+#: rui.c:1465
 msgid "failed to allocate menuitem"
 msgstr "не получилось разместить пункт меню"
 
-#: rui.c:1532
+#: rui.c:1517
 msgid "menu not found"
 msgstr "меню не найдено"
 
-#: rui.c:1550
+#: rui.c:1535
 msgid "menu or item does not exist"
 msgstr "меню или пункт меню не существует"
 
-#: system.c:439
+#: system.c:440
 msgid "Save workspace image?"
 msgstr "Сохранить рабочее пространство?"
 
-#: ../extra/graphapp/clipboard.c:69
-#: ../extra/graphapp/clipboard.c:73
+#: ../extra/graphapp/clipboard.c:69 ../extra/graphapp/clipboard.c:73
 msgid "Insufficient memory: cell not copied to the clipboard"
 msgstr "Мало памяти: ячейки не скопировались в буфер"
 
-#: ../extra/graphapp/dialogs.c:143
-#: ../extra/graphapp/dialogs.c:160
+#: ../extra/graphapp/dialogs.c:143 ../extra/graphapp/dialogs.c:160
 #: ../extra/graphapp/dialogs.c:177
 msgid "Question"
 msgstr "Вопрос"
@@ -1062,8 +984,7 @@ msgstr "Пользователь"
 msgid "Password"
 msgstr "Пароль"
 
-#: ../extra/graphapp/dialogs.c:896
-#: ../extra/graphapp/dialogs.c:902
+#: ../extra/graphapp/dialogs.c:896 ../extra/graphapp/dialogs.c:902
 #, c-format
 msgid "\"%s\" not found"
 msgstr "\"%s\" не найден"
@@ -1072,250 +993,272 @@ msgstr "\"%s\" не найден"
 msgid "Arrange Icons"
 msgstr "Упорядочить пиктограммы"
 
-#: ../library/grDevices/src/devWindows.c:870
+#: ../library/grDevices/src/devWindows.c:923
 msgid "Portable network graphics file"
 msgstr "Файл PNG"
 
-#: ../library/grDevices/src/devWindows.c:873
+#: ../library/grDevices/src/devWindows.c:926
 msgid "Windows bitmap file"
 msgstr "Растровый файл Windows"
 
-#: ../library/grDevices/src/devWindows.c:876
+#: ../library/grDevices/src/devWindows.c:929
 msgid "TIFF file"
 msgstr "Файл TIFF"
 
-#: ../library/grDevices/src/devWindows.c:879
+#: ../library/grDevices/src/devWindows.c:932
 msgid "Jpeg file"
 msgstr "Файл JPEG"
 
-#: ../library/grDevices/src/devWindows.c:901
+#: ../library/grDevices/src/devWindows.c:954
 msgid "Postscript file"
 msgstr "Файл PostScript"
 
-#: ../library/grDevices/src/devWindows.c:913
+#: ../library/grDevices/src/devWindows.c:966
 msgid "PDF file"
 msgstr "Файл PDF"
 
-#: ../library/grDevices/src/devWindows.c:925
+#: ../library/grDevices/src/devWindows.c:978
 msgid "Enhanced metafiles"
 msgstr "Улучшенные метафайлы Windows"
 
-#: ../library/grDevices/src/devWindows.c:928
-#: ../library/grDevices/src/devWindows.c:3016
+#: ../library/grDevices/src/devWindows.c:981
+#: ../library/grDevices/src/devWindows.c:3369
 msgid "file path selected is too long: only 512 bytes are allowed"
 msgstr "выбранный файловый путь слишком длинный: можно только 512 байт"
 
-#: ../library/grDevices/src/devWindows.c:1139
+#: ../library/grDevices/src/devWindows.c:1192
 msgid "No plot to replace!"
 msgstr "Нет графика для замены!"
 
-#: ../library/grDevices/src/devWindows.c:1187
+#: ../library/grDevices/src/devWindows.c:1240
 msgid "Variable name"
 msgstr "Имя переменной"
 
-#: ../library/grDevices/src/devWindows.c:1194
+#: ../library/grDevices/src/devWindows.c:1247
 msgid "Variable doesn't exist or doesn't contain any plots!"
 msgstr "Переменная не существует или не содержит графиков!"
 
-#: ../library/grDevices/src/devWindows.c:1210
+#: ../library/grDevices/src/devWindows.c:1263
 msgid "Name of variable to save to"
 msgstr "Имя переменной для сохранения в"
 
-#: ../library/grDevices/src/devWindows.c:1519
+#: ../library/grDevices/src/devWindows.c:1572
 msgid "Copy to the clipboard as a metafile"
 msgstr "Копировать в буфер обмена как метафайл"
 
-#: ../library/grDevices/src/devWindows.c:1537
-#: ../library/grDevices/src/devWindows.c:1548
+#: ../library/grDevices/src/devWindows.c:1590
+#: ../library/grDevices/src/devWindows.c:1601
 msgid "Stop locator"
 msgstr "Остановить локатор"
 
-#: ../library/grDevices/src/devWindows.c:1547
-#: ../library/grDevices/src/devWindows.c:1551
+#: ../library/grDevices/src/devWindows.c:1600
+#: ../library/grDevices/src/devWindows.c:1604
 msgid "Stop"
 msgstr "Остановить"
 
-#: ../library/grDevices/src/devWindows.c:1553
+#: ../library/grDevices/src/devWindows.c:1606
 msgid "Continue"
 msgstr "Продолжить"
 
-#: ../library/grDevices/src/devWindows.c:1557
+#: ../library/grDevices/src/devWindows.c:1610
 msgid "Next"
 msgstr "Следующий"
 
-#: ../library/grDevices/src/devWindows.c:1558
+#: ../library/grDevices/src/devWindows.c:1611
 msgid "Next plot"
 msgstr "Следующий график"
 
-#: ../library/grDevices/src/devWindows.c:1564
+#: ../library/grDevices/src/devWindows.c:1617
 msgid "Save as"
 msgstr "Сохранить как"
 
-#: ../library/grDevices/src/devWindows.c:1573
-#: ../library/grDevices/src/devWindows.c:1575
-#: ../library/grDevices/src/devWindows.c:1577
+#: ../library/grDevices/src/devWindows.c:1626
+#: ../library/grDevices/src/devWindows.c:1628
+#: ../library/grDevices/src/devWindows.c:1630
 #, c-format
 msgid "%s quality..."
 msgstr "качество %s..."
 
-#: ../library/grDevices/src/devWindows.c:1579
+#: ../library/grDevices/src/devWindows.c:1632
 msgid "Copy to the clipboard"
 msgstr "Копировать в буфер обмена"
 
-#: ../library/grDevices/src/devWindows.c:1580
+#: ../library/grDevices/src/devWindows.c:1633
 msgid "as a Bitmap\tCTRL+C"
 msgstr "как растровый файл Windows\tCTRL+C"
 
-#: ../library/grDevices/src/devWindows.c:1581
+#: ../library/grDevices/src/devWindows.c:1634
 msgid "as a Metafile\tCTRL+W"
 msgstr "как метафайл\tCTRL+W"
 
-#: ../library/grDevices/src/devWindows.c:1584
+#: ../library/grDevices/src/devWindows.c:1637
 msgid "Print...\tCTRL+P"
 msgstr "Печатать...\tCTRL+P"
 
-#: ../library/grDevices/src/devWindows.c:1586
+#: ../library/grDevices/src/devWindows.c:1639
 msgid "close Device"
 msgstr "закрыть устройство"
 
-#: ../library/grDevices/src/devWindows.c:1587
+#: ../library/grDevices/src/devWindows.c:1640
 msgid "History"
 msgstr "История команд"
 
-#: ../library/grDevices/src/devWindows.c:1588
+#: ../library/grDevices/src/devWindows.c:1641
 msgid "Recording"
 msgstr "Запись"
 
-#: ../library/grDevices/src/devWindows.c:1591
+#: ../library/grDevices/src/devWindows.c:1644
 msgid "Add\tINS"
 msgstr "Добавлять\tINS"
 
-#: ../library/grDevices/src/devWindows.c:1592
+#: ../library/grDevices/src/devWindows.c:1645
 msgid "Replace"
 msgstr "Заменять"
 
-#: ../library/grDevices/src/devWindows.c:1594
+#: ../library/grDevices/src/devWindows.c:1647
 msgid "Previous\tPgUp"
 msgstr "Предыдущий\tPgUp"
 
-#: ../library/grDevices/src/devWindows.c:1595
+#: ../library/grDevices/src/devWindows.c:1648
 msgid "Next\tPgDown"
 msgstr "Следующий\tPgDn"
 
-#: ../library/grDevices/src/devWindows.c:1597
+#: ../library/grDevices/src/devWindows.c:1650
 msgid "Save to variable..."
 msgstr "Сохранить в переменную..."
 
-#: ../library/grDevices/src/devWindows.c:1598
+#: ../library/grDevices/src/devWindows.c:1651
 msgid "Get from variable..."
 msgstr "Взять из переменной..."
 
-#: ../library/grDevices/src/devWindows.c:1600
+#: ../library/grDevices/src/devWindows.c:1653
 msgid "Clear history"
 msgstr "Очистить историю"
 
-#: ../library/grDevices/src/devWindows.c:1601
+#: ../library/grDevices/src/devWindows.c:1654
 msgid "Resize"
 msgstr "Изменить размер"
 
-#: ../library/grDevices/src/devWindows.c:1602
+#: ../library/grDevices/src/devWindows.c:1655
 msgid "R mode"
 msgstr "Режим R"
 
-#: ../library/grDevices/src/devWindows.c:1604
+#: ../library/grDevices/src/devWindows.c:1657
 msgid "Fit to window"
 msgstr "Подогнать под окно"
 
-#: ../library/grDevices/src/devWindows.c:1606
+#: ../library/grDevices/src/devWindows.c:1659
 msgid "Fixed size"
 msgstr "Фиксированный размер"
 
-#: ../library/grDevices/src/devWindows.c:1613
+#: ../library/grDevices/src/devWindows.c:1666
 msgid "Copy as metafile"
 msgstr "Скопировать как метафайл"
 
-#: ../library/grDevices/src/devWindows.c:1615
+#: ../library/grDevices/src/devWindows.c:1668
 msgid "Copy as bitmap"
 msgstr "Скопировать как растровый файл Windows"
 
-#: ../library/grDevices/src/devWindows.c:1618
+#: ../library/grDevices/src/devWindows.c:1671
 msgid "Save as metafile..."
 msgstr "Сохранить как метафайл..."
 
-#: ../library/grDevices/src/devWindows.c:1620
+#: ../library/grDevices/src/devWindows.c:1673
 msgid "Save as postscript..."
 msgstr "Сохранить как PostScript..."
 
-#: ../library/grDevices/src/devWindows.c:2740
+#: ../library/grDevices/src/devWindows.c:3069
 msgid "Locator is active"
 msgstr "Локатор активен"
 
-#: ../library/grDevices/src/devWindows.c:3360
+#: ../library/grDevices/src/devWindows.c:3692
 msgid "Waiting to confirm page change..."
 msgstr "Ожидаю подтверждения смены страницы..."
 
-#: ../library/grDevices/src/devWindows.c:3372
+#: ../library/grDevices/src/devWindows.c:3704
 msgid "Click or hit ENTER for next page"
 msgstr "Следующая страница: щелкните или нажмите ENTER "
 
 #~ msgid "Html search page"
 #~ msgstr "Страница HTML-поиска"
+
 #~ msgid "Tile"
 #~ msgstr "Заполнить"
+
 #~ msgid "Postscript files (*.ps)"
 #~ msgstr "Файлы PostScript (*.ps)"
+
 #~ msgid "PDF files (*.pdf)"
 #~ msgstr "Файлы PDF (*.pdf)"
+
 #~ msgid "Enhanced metafiles (*.emf)"
 #~ msgstr "Улучшенные метафайлы Windows (*.emf)"
 
 #, fuzzy
 #~ msgid "Install source package from local folder..."
 #~ msgstr "Установить пакет(ы) из локальных zip-файлов..."
+
 #~ msgid "Png files (*.png)"
 #~ msgstr "PNG-файлы (*.png)"
+
 #~ msgid "Windows bitmap files (*.bmp)"
 #~ msgstr "Растровые файлы Windows (*.bmp)"
 
 #, fuzzy
 #~ msgid "TIFF files (*.tiff,*tif)"
 #~ msgstr "Файлы PDF (*.pdf)"
+
 #~ msgid "Jpeg files (*.jpeg,*jpg)"
 #~ msgstr "Файлы JPEG (*.jpeg, *.jpg)"
+
 #~ msgid "Metafile..."
 #~ msgstr "Метафайл..."
+
 #~ msgid "Postscript..."
 #~ msgstr "PostScript..."
+
 #~ msgid "PDF..."
 #~ msgstr "PDF..."
+
 #~ msgid "Png..."
 #~ msgstr "PNG..."
+
 #~ msgid "Bmp..."
 #~ msgstr "BMP..."
 
 #, fuzzy
 #~ msgid "TIFF..."
 #~ msgstr "PDF..."
+
 #~ msgid "Jpeg"
 #~ msgstr "JPEG..."
+
 #~ msgid "Choose a folder"
 #~ msgstr "Выбрать папку"
+
 #~ msgid "Browse"
 #~ msgstr "Просмотр"
+
 #~ msgid "Load image"
 #~ msgstr "Загрузить образ"
+
 #~ msgid "Save image"
 #~ msgstr "Сохранить образ"
+
 #~ msgid "Apply"
 #~ msgstr "Применить"
+
 #~ msgid "Save..."
 #~ msgstr "Сохранить..."
+
 #~ msgid "Load..."
 #~ msgstr "Загрузить..."
+
 #~ msgid "75% quality..."
 #~ msgstr "Качество 75%..."
+
 #~ msgid "100% quality..."
 #~ msgstr "Качество 100%..."
+
 #~ msgid "Select working directory"
 #~ msgstr "Выбрать рабочую папку"
-

@@ -1,5 +1,21 @@
+\usepackage{graphicx}
 \usepackage{makeidx}
 \pagestyle{headings}
+
+%% Set PDF 1.5 and compression, including object compression
+%% Needed for MiKTeX -- most other distributions default to this
+\ifx\pdfoutput\undefined
+\else
+  \ifx\pdfoutput\relax
+  \else
+    \ifnum\pdfoutput>0
+      % PDF output
+      \pdfminorversion=5
+      \pdfcompresslevel=9
+      \pdfobjcompresslevel=2
+    \fi
+  \fi
+\fi
 
 \makeatletter
 \renewcommand\@pnumwidth{2.05em} % over 1000 pages
@@ -33,7 +49,7 @@
   \vfill
   \vfill
   \noindent
-  Copyright ({\copyright}) 1999--2009 R Foundation for Statistical Computing.
+  Copyright ({\copyright}) 1999--2010 R Foundation for Statistical Computing.
   
   \noindent
   Permission is granted to make and distribute verbatim copies of this

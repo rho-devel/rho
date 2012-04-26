@@ -49,7 +49,7 @@ TukeyHSD.aov <-
     for (nm in names(tabs)) {
         tab <- tabs[[nm]]
         means <- as.vector(tab)
-        nms <- if(length(d <- dim(tab)) > 1) {
+        nms <- if(length(d <- dim(tab)) > 1L) {
             dn <- dimnames(tab)
             apply(do.call("expand.grid", dn), 1L, paste, collapse=":")
         } else names(tab)
@@ -103,13 +103,14 @@ plot.TukeyHSD <- function (x, ...)
     for (i in seq_along(x)) {
         xi <- x[[i]][, -4, drop=FALSE] # drop p-values
         yvals <- nrow(xi):1
+        dev.hold(); on.exit(dev.flush())
         plot(c(xi[, "lwr"], xi[, "upr"]), rep.int(yvals, 2), type = "n",
              axes = FALSE, xlab = "", ylab = "", ...)
         axis(1, ...)
         axis(2, at = nrow(xi):1, labels = dimnames(xi)[[1L]],
              srt = 0, ...)
-        abline(h = yvals, lty = 1, lwd = 0, col = "lightgray")
-        abline(v = 0, lty = 2, lwd = 0, ...)
+        abline(h = yvals, lty = 1, lwd = 0.5, col = "lightgray")
+        abline(v = 0, lty = 2, lwd = 0.5, ...)
         segments(xi[, "lwr"], yvals, xi[, "upr"], yvals, ...)
         segments(as.vector(xi), rep.int(yvals - 0.1, 3), as.vector(xi),
                  rep.int(yvals + 0.1, 3), ...)

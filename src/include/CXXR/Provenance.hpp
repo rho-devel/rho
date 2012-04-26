@@ -14,7 +14,7 @@
 #include "CXXR/Expression.h"
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Parentage.hpp"
 #include "CXXR/RObject.h"
 #include "CXXR/StringVector.h"

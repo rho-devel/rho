@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -35,11 +35,13 @@
 /** @file CellPool.cpp
  *
  * Implementation of class CellPool
- *
- * @todo Include valgrind instrumentation (conditionally compiled).
  */
 
 #include "CXXR/CellPool.hpp"
+
+#ifndef __APPLE__
+#include <features.h>
+#endif
 
 #include <algorithm>
 #include <cstdlib>
@@ -50,12 +52,22 @@ using namespace CXXR;
 
 CellPool::~CellPool()
 {
-#if VALGRIND_LEVEL >= 2
-    VALGRIND_DESTROY_MEMPOOL(this);
-#endif
-    for (vector<void*>::iterator it = m_superblocks.begin();
-	 it != m_superblocks.end(); ++it)
+    for (vector<void*>::iterator it = m_admin->m_superblocks.begin();
+	 it != m_admin->m_superblocks.end(); ++it)
+#if _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600
+	free(*it);
+#else
 	::operator delete(*it);
+#endif
+    delete m_admin;
+}
+
+unsigned int CellPool::cellsFree() const
+{
+    unsigned int ans = 0;
+    for (const Cell* c = m_free_cells; c; c = c->m_next)
+	++ans;
+    return ans;
 }
 
 bool CellPool::check() const
@@ -65,8 +77,7 @@ bool CellPool::check() const
 	checkCell(c);
 	++free_cells;
     }
-    if (m_cells_allocated + free_cells
-	!= m_cells_per_superblock*m_superblocks.size()) {
+    if (free_cells > m_admin->cellsExisting()) {
 	cerr << "CellPool::check(): internal inconsistency\n";
 	abort();
     }
@@ -92,12 +103,13 @@ void CellPool::checkCell(const void* p) const
     if (!p) return;
     const char* pc = static_cast<const char*>(p);
     bool found = false;
-    for (vector<void*>::const_iterator it = m_superblocks.begin();
-	 !found && it != m_superblocks.end(); ++it) {
+    for (vector<void*>::const_iterator it = m_admin->m_superblocks.begin();
+	 !found && it != m_admin->m_superblocks.end(); ++it) {
 	ptrdiff_t offset = pc - static_cast<const char*>(*it);
-	if (offset >= 0 && offset < static_cast<long>(m_superblocksize)) {
+	if (offset >= 0
+	    && offset < static_cast<long>(m_admin->m_superblocksize)) {
 	    found = true;
-	    if (offset%m_cellsize != 0) {
+	    if (offset%m_admin->m_cellsize != 0) {
 		cerr << "CellPool::checkCell : designated block"
 		        " is misaligned\n";
 		abort();
@@ -113,9 +125,7 @@ void CellPool::checkCell(const void* p) const
 
 void CellPool::defragment()
 {
-    size_t num_free_cells
-	= m_superblocks.size()*m_cells_per_superblock - m_cells_allocated;
-    vector<Cell*> vf(num_free_cells);
+    vector<Cell*> vf(cellsFree());
     // Assemble vector of pointers to free cells:
     {
 	Cell* c = m_free_cells;
@@ -143,27 +153,35 @@ void CellPool::defragment()
     // check();
 }
 
-void CellPool::seekMemory() throw (std::bad_alloc)
+void CellPool::initialize(size_t dbls_per_cell, size_t cells_per_superblock)
 {
-    if (!m_free_cells) {
-	char* superblock
-	    = static_cast<char*>(::operator new(m_superblocksize));
-	m_superblocks.push_back(superblock);
-	// Initialise cells:
-	{
-	    int offset = m_superblocksize - m_cellsize;
+    m_admin = new Admin(dbls_per_cell, cells_per_superblock);
+}
+
+CellPool::Cell* CellPool::seekMemory() throw (std::bad_alloc)
+{
+#if _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600
+    void* memblock;
+    // We assume the memory page size is some multiple of 4096 bytes:
+    if (0 != posix_memalign(&memblock, 4096, m_admin->m_superblocksize))
+	throw bad_alloc();
+    char* superblock = static_cast<char*>(memblock);
+#else
+    char* superblock
+	= static_cast<char*>(::operator new(m_admin->m_superblocksize));
+#endif
+    m_admin->m_superblocks.push_back(superblock);
+    // Initialise cells:
+    {
+	int offset = m_admin->m_superblocksize - m_admin->m_cellsize;
 #ifdef CELLFIFO
-	    m_last_free_cell = reinterpret_cast<Cell*>(superblock + offset);
+	m_last_free_cell = reinterpret_cast<Cell*>(superblock + offset);
 #endif
-	    Cell* next = 0;
-	    while (offset >= 0) {
-		next = new (superblock + offset) Cell(next);
-#if VALGRIND_LEVEL >= 2
-		VALGRIND_MAKE_NOACCESS(next + 1, m_cellsize - sizeof(Cell));
-#endif
-		offset -= m_cellsize;
-	    }
-	    m_free_cells = next;
+	Cell* next = 0;
+	while (offset >= 0) {
+	    next = new (superblock + offset) Cell(next);
+	    offset -= m_admin->m_cellsize;
 	}
+	return next;
     }
 }

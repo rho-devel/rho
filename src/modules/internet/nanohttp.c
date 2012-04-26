@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -70,6 +70,7 @@
 #define _(String) (String)
 #endif
 
+extern void R_ProcessEvents(void);
 #if !defined(Unix) || defined(HAVE_BSD_NETWORKING)
 
 #ifdef Win32
@@ -79,7 +80,6 @@
 #define EINPROGRESS             WSAEINPROGRESS
 #define EALREADY                WSAEALREADY
 #define _WINSOCKAPI_
-extern void R_ProcessEvents(void);
 extern void R_FlushConsole(void);
 #define R_SelectEx(n,rfd,wrd,efd,tv,ih) select(n,rfd,wrd,efd,tv)
 #endif
@@ -647,11 +647,10 @@ RxmlNanoHTTPRecv(RxmlNanoHTTPCtxtPtr ctxt)
 
 	while(1) {
 	    int maxfd = 0, howmany;
+	    struct timeval tv_save; /* select() is destructive on Linux, so save tv */
+	    R_ProcessEvents();
 #ifdef Unix
-	    InputHandler *what;
-
 	    if(R_wait_usec > 0) {
-		R_PolledEvents();
 		tv.tv_sec = 0;
 		tv.tv_usec = R_wait_usec;
 	    } else {
@@ -661,12 +660,12 @@ RxmlNanoHTTPRecv(RxmlNanoHTTPCtxtPtr ctxt)
 #elif defined(Win32)
 	    tv.tv_sec = 0;
 	    tv.tv_usec = 2e5;
-	    R_ProcessEvents();
 #else
 	    tv.tv_sec = timeout;
 	    tv.tv_usec = 0;
 #endif
 
+	    tv_save = tv;
 
 #ifdef Unix
 	    maxfd = setSelectMask(R_InputHandlers, &rfd);
@@ -685,7 +684,7 @@ RxmlNanoHTTPRecv(RxmlNanoHTTPCtxtPtr ctxt)
 		return(0);
 	    }
 	    if (howmany == 0) {
-		used += tv.tv_sec + 1e-6 * tv.tv_usec;
+		used += tv_save.tv_sec + 1e-6 * tv_save.tv_usec;
 		if(used >= timeout) return(0);
 		continue;
 	    }
@@ -693,6 +692,7 @@ RxmlNanoHTTPRecv(RxmlNanoHTTPCtxtPtr ctxt)
 #ifdef Unix
 	    if(!FD_ISSET(ctxt->fd, &rfd) || howmany > 1) {
 		/* was one of the extras */
+		InputHandler *what;
 		what = getSelectedHandler(R_InputHandlers, &rfd);
 		if(what != NULL) what->handler((void*) NULL);
 		continue;
@@ -1008,11 +1008,10 @@ RxmlNanoHTTPConnectAttempt(struct sockaddr *addr)
 
     while(1) {
 	int maxfd = 0;
+	struct timeval tv_save; /* select() is destructive on Linux, so save tv */
+	R_ProcessEvents();
 #ifdef Unix
-	InputHandler *what;
-
 	if(R_wait_usec > 0) {
-	    R_PolledEvents();
 	    tv.tv_sec = 0;
 	    tv.tv_usec = R_wait_usec;
 	} else {
@@ -1022,12 +1021,12 @@ RxmlNanoHTTPConnectAttempt(struct sockaddr *addr)
 #elif defined(Win32)
 	tv.tv_sec = 0;
 	tv.tv_usec = 2e5;
-	R_ProcessEvents();
 #else
 	tv.tv_sec = timeout;
 	tv.tv_usec = 0;
 #endif
 
+	tv_save = tv;
 
 #ifdef Unix
 	maxfd = setSelectMask(R_InputHandlers, &rfd);
@@ -1043,7 +1042,7 @@ RxmlNanoHTTPConnectAttempt(struct sockaddr *addr)
 	case 0:
 	    /* Time out */
 	    RxmlMessage(0, "Connect attempt timed out");
-	    used += tv.tv_sec + 1e-6 * tv.tv_usec;
+	    used += tv_save.tv_sec + 1e-6 * tv_save.tv_usec;
 	    if(used < timeout) continue;
 	    closesocket(s);
 	    return(-1);
@@ -1069,6 +1068,7 @@ RxmlNanoHTTPConnectAttempt(struct sockaddr *addr)
 	    } else return(s);
 #ifdef Unix
 	} else { /* some other handler needed */
+	    InputHandler *what;
 	    what = getSelectedHandler(R_InputHandlers, &rfd);
 	    if(what != NULL) what->handler((void*) NULL);
 	    continue;

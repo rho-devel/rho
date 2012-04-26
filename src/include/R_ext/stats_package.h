@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -35,7 +35,6 @@
 
 #ifndef R_STATS_PACKAGE_H
 #define R_STATS_PACKAGE_H
-/* #include <Rdefines.h>  Why was this here?: nothing here depends on it */
 #include <Rconfig.h>
 
 #ifdef HAVE_VISIBILITY_ATTRIBUTE

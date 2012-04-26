@@ -10,7 +10,7 @@
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/StringVector.h"
 #include "CXXR/RObject.h"
 

@@ -7,17 +7,9 @@ top_srcdir = ../../..
 
 top_builddir = ../../..
 
+include $(top_builddir)/Makeconf
+
 pkg = datasets
-
-RSRC = $(srcdir)/R/zzz.R
-
-R_EXE = $(top_builddir)/bin/Rterm.exe --vanilla --slave
-
-ECHO = echo
-MKINSTALLDIRS = mkdir -p
-INSTALL_DATA = cp
-SHELL = sh
-USE_NLS =yes
 
 all:
 	@$(ECHO) "building package '$(pkg)'"
@@ -33,5 +25,11 @@ all:
 	@$(INSTALL_DATA) $(srcdir)/data/morley.tab \
 	  $(top_builddir)/library/$(pkg)/data
 
-
 include $(top_srcdir)/share/make/basepkg.mk
+
+mkR:
+	@$(INSTALL_DATA) $(srcdir)/NAMESPACE $(top_builddir)/library/$(pkg)
+	@rm -f $(top_builddir)/library/$(pkg)/Meta/nsInfo.rds
+
+# dummy targets
+Rsimple Rlazy Rlazycomp:

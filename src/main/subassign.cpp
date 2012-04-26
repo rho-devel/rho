@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -52,7 +52,7 @@
  *  the side.  (Note: the lack of 11 and 12 indices here is due to the
  *  removal of built-in factors).
  *
- *  NB these tables are out of date, and exclude tupes 21, 22, 23, 24 ...
+ *  NB these tables are out of date, and exclude types 21, 22, 23, 24 ...
  *
  x \ y   NIL  SYM CLOS  ENV PROM LANG SPE- BUI-  LGL  INT REAL CPLX  STR  VEC EXPR  FUN
 				      CIAL LTIN
@@ -102,8 +102,9 @@
 
 #include "Defn.h"
 #include <R_ext/RS.h> /* for test of S4 objects */
+#include "CXXR/GCStackRoot.hpp"
+#include "CXXR/Subscripting.hpp"
 
-using namespace std;
 using namespace CXXR;
 
 #if 0
@@ -125,7 +126,7 @@ static SEXP EnlargeVector(SEXP x, R_len_t newlen)
 
     /* Enlarge the vector itself. */
     len = length(x);
-    if (LOGICAL(GetOption(install("check.bounds"), R_BaseEnv))[0])
+    if (LOGICAL(GetOption1(install("check.bounds")))[0])
 	warning(_("assignment outside vector/list limits (extending from %d to %d)"),
 		len, newlen);
     PROTECT(x);
@@ -210,19 +211,15 @@ static SEXP embedInVector(SEXP v)
     return (ans);
 }
 
-/* Level 1 is used in VectorAssign, MatrixAssign, ArrayAssign.
+/* Level 1 is used in VectorAssign, ArrayAssign.
    That coerces RHS to a list or expression.
 
    Level 2 is used in do_subassign2_dflt.
    This does not coerce when assigning into a list.
 */
 
-static int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level,
-			    SEXP call)
+static int SubassignTypeFix(SEXP *x, SEXP *y, int level, SEXP call)
 {
-    /* A rather pointless optimization, but level 2 used to be handled
-       differently */
-    Rboolean redo_which = TRUE;
     int which = 100 * TYPEOF(*x) + TYPEOF(*y);
 
     switch (which) {
@@ -250,7 +247,6 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level,
     case 2020:	/* expression <- expression */
     case 2424:	/* raw        <- raw        */
 
-	redo_which = FALSE;
 	break;
 
     case 1013:	/* logical    <- integer    */
@@ -311,7 +307,6 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level,
 	    *y = coerceVector(*y, VECSXP);
 	} else {
 	    /* Nothing to do here: duplicate when used (if needed) */
-	    redo_which = FALSE;
 	}
 	break;
 
@@ -322,7 +317,6 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level,
 	    *y = embedInVector(*y);
 	} else {
 	    /* Nothing to do here: duplicate when used (if needed) */
-	    redo_which = FALSE;
 	}
 	break;
 
@@ -360,7 +354,6 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level,
 	} else {
 	    /* Note : No coercion is needed here. */
 	    /* We just insert the RHS into the LHS. */
-	    redo_which = FALSE;
 	}
 	break;
 
@@ -371,7 +364,6 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level,
 	    *y = embedInVector(*y);
 	} else {
 	    /* Nothing to do here: duplicate when used (if needed) */
-	    redo_which = FALSE;
 	}
 	break;
 
@@ -380,16 +372,7 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level,
 	      type2char(CXXRCONSTRUCT(SEXPTYPE, which%100)), type2char(CXXRCONSTRUCT(SEXPTYPE, which/100)));
     }
 
-    if (stretch) {
-	PROTECT(*y);
-	*x = EnlargeVector(*x, stretch);
-	UNPROTECT(1);
-    }
-
-    if(redo_which)
-	return(100 * TYPEOF(*x) + TYPEOF(*y));
-    else
-	return(which);
+    return(100 * TYPEOF(*x) + TYPEOF(*y));
 }
 
 static SEXP DeleteListElements(SEXP x, SEXP which)
@@ -414,13 +397,27 @@ static SEXP DeleteListElements(SEXP x, SEXP which)
 	UNPROTECT(1);
 	return x;
     }
-    PROTECT(xnew = allocVector(VECSXP, ii));
+    PROTECT(xnew = allocVector(TYPEOF(x), ii));
     ii = 0;
-    for (i = 0; i < len; i++) {
-	if (INTEGER(include)[i] == 1) {
-	    SET_VECTOR_ELT(xnew, ii, VECTOR_ELT(x, i));
-	    ii++;
+    switch (TYPEOF(x)) {
+    case VECSXP:
+	for (i = 0; i < len; i++) {
+	    if (INTEGER(include)[i] == 1) {
+		SET_VECTOR_ELT(xnew, ii, VECTOR_ELT(x, i));
+		ii++;
+	    }
 	}
+	break;
+    case EXPRSXP:
+	for (i = 0; i < len; i++) {
+	    if (INTEGER(include)[i] == 1) {
+		SET_XVECTOR_ELT(xnew, ii, XVECTOR_ELT(x, i));
+		ii++;
+	    }
+	}
+	break;
+    default:
+	Rf_error(_("Internal error: unexpected type in DeleteListElements"));
     }
     xnames = getAttrib(x, R_NamesSymbol);
     if (xnames != R_NilValue) {
@@ -440,11 +437,11 @@ static SEXP DeleteListElements(SEXP x, SEXP which)
     return xnew;
 }
 
-static SEXP VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
+static SEXP VectorAssign(SEXP call, SEXP xarg, SEXP sarg, SEXP yarg)
 {
-    SEXP dim, indx, newnames;
-    int i, ii, iy, n, nx, ny, stretch, which;
-    double ry;
+    GCStackRoot<> x(xarg);
+    GCStackRoot<> s(sarg);
+    GCStackRoot<> y(yarg);
 
     if (isNull(x) && isNull(y)) {
 	return R_NilValue;
@@ -453,193 +450,94 @@ static SEXP VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
     /* Check to see if we have special matrix subscripting. */
     /* If so, we manufacture a real subscript vector. */
 
-    dim = getAttrib(x, R_DimSymbol);
-    if (isMatrix(s) && isArray(x) &&
-	    (isInteger(s) || isReal(s)) &&
-	    ncols(s) == length(dim)) {
-	s = mat2indsub(dim, s, R_NilValue);
+    SEXP dim = getAttrib(x, R_DimSymbol);
+    if (isMatrix(s) && isArray(x) && ncols(s) == length(dim)) {
+        if (isString(s))
+            s = strmat2intmat(s, GetArrayDimnames(x), call);
+        if (isInteger(s) || isReal(s))
+            s = mat2indsub(dim, s, R_NilValue);
     }
-    PROTECT(s);
-
-    stretch = 1;
-    PROTECT(indx = makeSubscript(x, s, &stretch, R_NilValue));
-    n = length(indx);
-    if(length(y) > 1)
-	for(i = 0; i < n; i++)
-	    if(INTEGER(indx)[i] == NA_INTEGER)
-		error(_("NAs are not allowed in subscripted assignments"));
 
     /* Here we make sure that the LHS has */
     /* been coerced into a form which can */
     /* accept elements from the RHS. */
-    which = SubassignTypeFix(&x, &y, stretch, 1, call);
-    /* = 100 * TYPEOF(x) + TYPEOF(y);*/
-    if (n == 0) {
-	UNPROTECT(2);
-	return x;
+    int which; /* = 100 * TYPEOF(x) + TYPEOF(y);*/
+    {
+	SEXP xtmp = x;
+	SEXP ytmp = y;
+	which = SubassignTypeFix(&xtmp, &ytmp, 1, call);
+	x = xtmp;
+	y = ytmp;
     }
-    ny = length(y);
-    nx = length(x);
-
-    PROTECT(x);
-
-    if ((TYPEOF(x) != VECSXP && TYPEOF(x) != EXPRSXP) || y != R_NilValue) {
-	if (n > 0 && ny == 0)
-	    error(_("replacement has length zero"));
-	if (n > 0 && n % ny)
-	    warning(_("number of items to replace is not a multiple of replacement length"));
-    }
-
-
-    /* When array elements are being permuted the RHS */
-    /* must be duplicated or the elements get trashed. */
-    /* FIXME : this should be a shallow copy for list */
-    /* objects.  A full duplication is wasteful. */
-
-    if (x == y)
-	PROTECT(y = duplicate(y));
-    else
-	PROTECT(y);
 
     /* Note that we are now committed. */
     /* Since we are mutating existing objects, */
     /* any changes we make now are (likely to be) permanent.  Beware! */
-
     switch(which) {
 	/* because we have called SubassignTypeFix the commented
 	   values cannot occur (and would be unsafe) */
 
     case 1010:	/* logical   <- logical	  */
-    case 1310:	/* integer   <- logical	  */
+	return Subscripting::vectorSubassign(static_cast<LogicalVector*>(x.get()), s,
+					     static_cast<const LogicalVector*>(y.get()));
     /* case 1013:  logical   <- integer	  */
-    case 1313:	/* integer   <- integer	  */
-
-	for (i = 0; i < n; i++) {
-	    ii = INTEGER(indx)[i];
-	    if (ii == NA_INTEGER) continue;
-	    ii = ii - 1;
-	    INTEGER(x)[ii] = INTEGER(y)[i % ny];
-	}
-	break;
-
-    case 1410:	/* real	     <- logical	  */
-    case 1413:	/* real	     <- integer	  */
-
-	for (i = 0; i < n; i++) {
-	    ii = INTEGER(indx)[i];
-	    if (ii == NA_INTEGER) continue;
-	    ii = ii - 1;
-	    iy = INTEGER(y)[i % ny];
-	    if (iy == NA_INTEGER)
-		REAL(x)[ii] = NA_REAL;
-	    else
-		REAL(x)[ii] = iy;
-	}
-	break;
-
     /* case 1014:  logical   <- real	  */
-    /* case 1314:  integer   <- real	  */
-    case 1414:	/* real	     <- real	  */
-
-	for (i = 0; i < n; i++) {
-	    ii = INTEGER(indx)[i];
-	    if (ii == NA_INTEGER) continue;
-	    ii = ii - 1;
-	    REAL(x)[ii] = REAL(y)[i % ny];
-	}
-	break;
-
-    case 1510:	/* complex   <- logical	  */
-    case 1513:	/* complex   <- integer	  */
-
-	for (i = 0; i < n; i++) {
-	    ii = INTEGER(indx)[i];
-	    if (ii == NA_INTEGER) continue;
-	    ii = ii - 1;
-	    iy = INTEGER(y)[i % ny];
-	    if (iy == NA_INTEGER) {
-		COMPLEX(x)[ii].r = NA_REAL;
-		COMPLEX(x)[ii].i = NA_REAL;
-	    }
-	    else {
-		COMPLEX(x)[ii].r = iy;
-		COMPLEX(x)[ii].i = 0.0;
-	    }
-	}
-	break;
-
-    case 1514:	/* complex   <- real	  */
-
-	for (i = 0; i < n; i++) {
-	    ii = INTEGER(indx)[i];
-	    if (ii == NA_INTEGER) continue;
-	    ii = ii - 1;
-	    ry = REAL(y)[i % ny];
-	    if (ISNA(ry)) {
-		COMPLEX(x)[ii].r = NA_REAL;
-		COMPLEX(x)[ii].i = NA_REAL;
-	    }
-	    else {
-		COMPLEX(x)[ii].r = ry;
-		COMPLEX(x)[ii].i = 0.0;
-	    }
-	}
-	break;
-
     /* case 1015:  logical   <- complex	  */
-    /* case 1315:  integer   <- complex	  */
-    /* case 1415:  real	     <- complex	  */
-    case 1515:	/* complex   <- complex	  */
-
-	for (i = 0; i < n; i++) {
-	    ii = INTEGER(indx)[i];
-	    if (ii == NA_INTEGER) continue;
-	    ii = ii - 1;
-	    COMPLEX(x)[ii] = COMPLEX(y)[i % ny];
-	}
-	break;
-
-    case 1610:	/* character <- logical	  */
-    case 1613:	/* character <- integer	  */
-    case 1614:	/* character <- real	  */
-    case 1615:	/* character <- complex	  */
-    case 1616:	/* character <- character */
     /* case 1016:  logical   <- character */
+    /* case 1019:  logical   <- vector   */
+    case 1310:	/* integer   <- logical	  */
+	return Subscripting::vectorSubassign(static_cast<IntVector*>(x.get()), s,
+					     static_cast<const LogicalVector*>(y.get()));
+    case 1313:	/* integer   <- integer	  */
+	return Subscripting::vectorSubassign(static_cast<IntVector*>(x.get()), s,
+					     static_cast<const IntVector*>(y.get()));
+    /* case 1314:  integer   <- real	  */
+    /* case 1315:  integer   <- complex	  */
     /* case 1316:  integer   <- character */
-    /* case 1416:  real	     <- character */
-    /* case 1516:  complex   <- character */
-
-	for (i = 0; i < n; i++) {
-	    ii = INTEGER(indx)[i];
-	    if (ii == NA_INTEGER) continue;
-	    ii = ii - 1;
-	    SET_STRING_ELT(x, ii, STRING_ELT(y, i % ny));
-	}
-	break;
-
-    /* case 1019:  logial     <- vector   */
     /* case 1319:  integer    <- vector   */
+    case 1410:	/* real	     <- logical	  */
+	return Subscripting::vectorSubassign(static_cast<RealVector*>(x.get()), s,
+					     static_cast<const LogicalVector*>(y.get()));
+    case 1413:	/* real	     <- integer	  */
+	return Subscripting::vectorSubassign(static_cast<RealVector*>(x.get()), s,
+					     static_cast<const IntVector*>(y.get()));
+    case 1414:	/* real	     <- real	  */
+	return Subscripting::vectorSubassign(static_cast<RealVector*>(x.get()), s,
+					     static_cast<const RealVector*>(y.get()));
+    /* case 1415:  real	     <- complex	  */
+    /* case 1416:  real	     <- character */
     /* case 1419:  real       <- vector   */
+    case 1510:	/* complex   <- logical	  */
+	return Subscripting::vectorSubassign(static_cast<ComplexVector*>(x.get()), s,
+					     static_cast<const LogicalVector*>(y.get()));
+    case 1513:	/* complex   <- integer	  */
+	return Subscripting::vectorSubassign(static_cast<ComplexVector*>(x.get()), s,
+					     static_cast<const IntVector*>(y.get()));
+    case 1514:	/* complex   <- real	  */
+	return Subscripting::vectorSubassign(static_cast<ComplexVector*>(x.get()), s,
+					     static_cast<const RealVector*>(y.get()));
+    case 1515:	/* complex   <- complex	  */
+	return Subscripting::vectorSubassign(static_cast<ComplexVector*>(x.get()), s,
+					     static_cast<const ComplexVector*>(y.get()));
+    /* case 1516:  complex   <- character */
     /* case 1519:  complex    <- vector   */
+    /* case 1610:  character <- logical	  */
+    /* case 1613:  character <- integer	  */
+    /* case 1614:  character <- real	  */
+    /* case 1615:  character <- complex	  */
+    case 1616:	/* character <- character */
+	return Subscripting::vectorSubassign(static_cast<StringVector*>(x.get()), s,
+					     static_cast<const StringVector*>(y.get()));
     /* case 1619:  character  <- vector   */
-
     /* case 1910:  vector     <- logical    */
     /* case 1913:  vector     <- integer    */
     /* case 1914:  vector     <- real       */
     /* case 1915:  vector     <- complex    */
     /* case 1916:  vector     <- character  */
-
     case 1919:  /* vector     <- vector     */
-
-	for (i = 0; i < n; i++) {
-	    ii = INTEGER(indx)[i];
-	    if (ii == NA_INTEGER) continue;
-	    ii = ii - 1;
-	    SET_VECTOR_ELT(x, ii, VECTOR_ELT(y, i % ny));
-	}
-	break;
-
-    /* case 2001: */
+	return Subscripting::vectorSubassign(static_cast<ListVector*>(x.get()), s,
+					     static_cast<const ListVector*>(y.get()));
+    /* case 2001:  expression <- symbol	    */
     /* case 2006:  expression <- language   */
     /* case 2010:  expression <- logical    */
     /* case 2013:  expression <- integer    */
@@ -648,551 +546,125 @@ static SEXP VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
     /* case 2016:  expression <- character  */
     case 2019:	/* expression <- vector, needed if we have promoted a
 		   RHS  to a list */
-
-	for (i = 0; i < n; i++) {
-	    ii = INTEGER(indx)[i];
-	    if (ii == NA_INTEGER) continue;
-	    ii = ii - 1;
-	    SET_XVECTOR_ELT(x, ii, VECTOR_ELT(y, i % ny));
-	}
-	break;
-
+	return Subscripting::vectorSubassign(static_cast<ExpressionVector*>(x.get()), s,
+					     static_cast<const ListVector*>(y.get()));
     case 2020:	/* expression <- expression */
-
-	for (i = 0; i < n; i++) {
-	    ii = INTEGER(indx)[i];
-	    if (ii == NA_INTEGER) continue;
-	    ii = ii - 1;
-	    SET_XVECTOR_ELT(x, ii, XVECTOR_ELT(y, i % ny));
-	}
-	break;
-
+	return Subscripting::vectorSubassign(static_cast<ExpressionVector*>(x.get()), s,
+					     static_cast<const ExpressionVector*>(y.get()));
     case 1900:  /* vector     <- null       */
     case 2000:  /* expression <- null       */
-
-	x = DeleteListElements(x, indx);
-	UNPROTECT(4);
-	return x;
-	break;
-
-    case 2424:	/* raw   <- raw	  */
-
-	for (i = 0; i < n; i++) {
-	    ii = INTEGER(indx)[i];
-	    if (ii == NA_INTEGER) continue;
-	    ii = ii - 1;
-	    RAW(x)[ii] = RAW(y)[i % ny];
+	{
+	    int stretch = 1;
+	    GCStackRoot<> indx(makeSubscript(x, s, &stretch, R_NilValue));
+	    return DeleteListElements(x, indx);
 	}
-	break;
-
+    case 2424:	/* raw   <- raw	  */
+	return Subscripting::vectorSubassign(static_cast<RawVector*>(x.get()), s,
+					     static_cast<const RawVector*>(y.get()));
     default:
 	warningcall(call, "sub assignment (*[*] <- *) not done; __bug?__");
     }
-    /* Check for additional named elements. */
-    /* Note makeSubscript passes the additional names back as the names
-       attribute of the generated subscript vector */
-    newnames = getAttrib(indx, R_NamesSymbol);
-    if (newnames != R_NilValue) {
-	SEXP oldnames = getAttrib(x, R_NamesSymbol);
-	if (oldnames != R_NilValue) {
-	    for (i = 0; i < n; i++) {
-		if (STRING_ELT(newnames, i) != R_NilValue) {
-		    ii = INTEGER(indx)[i];
-		    if (ii == NA_INTEGER) continue;
-		    ii = ii - 1;
-		    SET_STRING_ELT(oldnames, ii, STRING_ELT(newnames, i));
-		}
-	    }
-	}
-	else {
-	    PROTECT(oldnames = allocVector(STRSXP, nx));
-	    for (i = 0; i < nx; i++)
-		SET_STRING_ELT(oldnames, i, R_BlankString);
-	    for (i = 0; i < n; i++) {
-		if (STRING_ELT(newnames, i) != R_NilValue) {
-		    ii = INTEGER(indx)[i];
-		    if (ii == NA_INTEGER) continue;
-		    ii = ii - 1;
-		    SET_STRING_ELT(oldnames, ii, STRING_ELT(newnames, i));
-		}
-	    }
-	    setAttrib(x, R_NamesSymbol, oldnames);
-	    UNPROTECT(1);
-	}
-    }
-    UNPROTECT(4);
-    return x;
-}
-
-static SEXP MatrixAssign(SEXP call, SEXP x, SEXP s, SEXP y)
-{
-    int i, j, ii, jj, ij, iy, k, n, which;
-    double ry;
-    int nr, ny;
-    int nrs, ncs;
-    SEXP sr, sc, dim;
-
-    if (!isMatrix(x))
-	error(_("incorrect number of subscripts on matrix"));
-
-    nr = nrows(x);
-    ny = LENGTH(y);
-
-    /* Note that "s" has been protected. */
-    /* No GC problems here. */
-
-    dim = getAttrib(x, R_DimSymbol);
-    sr = SETCAR(s, arraySubscript(0, CAR(s), dim, getAttrib,
-				  (STRING_ELT), x));
-    sc = SETCADR(s, arraySubscript(1, CADR(s), dim, getAttrib,
-				   (STRING_ELT), x));
-    nrs = LENGTH(sr);
-    ncs = LENGTH(sc);
-    if(ny > 1) {
-	for(i = 0; i < nrs; i++)
-	    if(INTEGER(sr)[i] == NA_INTEGER)
-		error(_("NAs are not allowed in subscripted assignments"));
-	for(i = 0; i < ncs; i++)
-	    if(INTEGER(sc)[i] == NA_INTEGER)
-		error(_("NAs are not allowed in subscripted assignments"));
-    }
-
-    n = nrs * ncs;
-
-    /* <TSL> 21Oct97
-       if (length(y) == 0)
-       error("Replacement length is zero");
-       </TSL>  */
-
-    if (n > 0 && ny == 0)
-	error(_("replacement has length zero"));
-    if (n > 0 && n % ny)
-	error(_("number of items to replace is not a multiple of replacement length"));
-
-    which = SubassignTypeFix(&x, &y, 0, 1, call);
-    if (n == 0) return x;
-
-    PROTECT(x);
-
-    /* When array elements are being permuted the RHS */
-    /* must be duplicated or the elements get trashed. */
-    /* FIXME : this should be a shallow copy for list */
-    /* objects.  A full duplication is wasteful. */
-
-    if (x == y)
-	PROTECT(y = duplicate(y));
-    else
-	PROTECT(y);
-
-    /* Note that we are now committed.  Since we are mutating */
-    /* existing objects any changes we make now are permanent. */
-    /* Beware! */
-
-    k = 0;
-    switch (which) {
-	/* because we have called SubassignTypeFix the commented
-	   values cannot occur (and would be unsafe) */
-
-    case 1010:	/* logical   <- logical	  */
-    case 1310:	/* integer   <- logical	  */
-    /* case 1013: logical   <- integer	  */
-    case 1313:	/* integer   <- integer	  */
-
-	for (j = 0; j < ncs; j++) {
-	    jj = INTEGER(sc)[j];
-	    if (jj == NA_INTEGER) continue;
-	    jj = jj - 1;
-	    for (i = 0; i < nrs; i++) {
-		ii = INTEGER(sr)[i];
-		if (ii == NA_INTEGER) continue;
-		ii = ii - 1;
-		ij = ii + jj * nr;
-		INTEGER(x)[ij] = INTEGER(y)[k];
-		k = (k + 1) % ny;
-	    }
-	}
-	break;
-
-    case 1410:	/* real	     <- logical	  */
-    case 1413:	/* real	     <- integer	  */
-
-	for (j = 0; j < ncs; j++) {
-	    jj = INTEGER(sc)[j];
-	    if (jj == NA_INTEGER) continue;
-	    jj = jj - 1;
-	    for (i = 0; i < nrs; i++) {
-		ii = INTEGER(sr)[i];
-		if (ii == NA_INTEGER) continue;
-		ii = ii - 1;
-		ij = ii + jj * nr;
-		iy = INTEGER(y)[k];
-		if (iy == NA_INTEGER)
-		    REAL(x)[ij] = NA_REAL;
-		else
-		    REAL(x)[ij] = iy;
-		k = (k + 1) % ny;
-	    }
-	}
-	break;
-
-    /* case 1014:  logical   <- real	  */
-    /* case 1314:  integer   <- real	  */
-    case 1414:	/* real	     <- real	  */
-
-	for (j = 0; j < ncs; j++) {
-	    jj = INTEGER(sc)[j];
-	    if (jj == NA_INTEGER) continue;
-	    jj = jj - 1;
-	    for (i = 0; i < nrs; i++) {
-		ii = INTEGER(sr)[i];
-		if (ii == NA_INTEGER) continue;
-		ii = ii - 1;
-		ij = ii + jj * nr;
-		REAL(x)[ij] = REAL(y)[k];
-		k = (k + 1) % ny;
-	    }
-	}
-	break;
-
-    case 1510:	/* complex   <- logical	  */
-    case 1513:	/* complex   <- integer	  */
-
-	for (j = 0; j < ncs; j++) {
-	    jj = INTEGER(sc)[j];
-	    if (jj == NA_INTEGER) continue;
-	    jj = jj - 1;
-	    for (i = 0; i < nrs; i++) {
-		ii = INTEGER(sr)[i];
-		if (ii == NA_INTEGER) continue;
-		ii = ii - 1;
-		ij = ii + jj * nr;
-		iy = INTEGER(y)[k];
-		if (iy == NA_INTEGER) {
-		    COMPLEX(x)[ij].r = NA_REAL;
-		    COMPLEX(x)[ij].i = NA_REAL;
-		}
-		else {
-		    COMPLEX(x)[ij].r = iy;
-		    COMPLEX(x)[ij].i = 0.0;
-		}
-		k = (k + 1) % ny;
-	    }
-	}
-	break;
-
-    case 1514:	/* complex   <- real	  */
-
-	for (j = 0; j < ncs; j++) {
-	    jj = INTEGER(sc)[j];
-	    if (jj == NA_INTEGER) continue;
-	    jj = jj - 1;
-	    for (i = 0; i < nrs; i++) {
-		ii = INTEGER(sr)[i];
-		if (ii == NA_INTEGER) continue;
-		ii = ii - 1;
-		ij = ii + jj * nr;
-		ry = REAL(y)[k];
-		if (ISNA(ry)) {
-		    COMPLEX(x)[ij].r = NA_REAL;
-		    COMPLEX(x)[ij].i = NA_REAL;
-		}
-		else {
-		    COMPLEX(x)[ij].r = ry;
-		    COMPLEX(x)[ij].i = 0.0;
-		}
-		k = (k + 1) % ny;
-	    }
-	}
-	break;
-
-    /* case 1015:  logical   <- complex	  */
-    /* case 1315:  integer   <- complex	  */
-    /* case 1415:  real	     <- complex	  */
-    case 1515:	/* complex   <- complex	  */
-
-	for (j = 0; j < ncs; j++) {
-	    jj = INTEGER(sc)[j];
-	    if (jj == NA_INTEGER) continue;
-	    jj = jj - 1;
-	    for (i = 0; i < nrs; i++) {
-		ii = INTEGER(sr)[i];
-		if (ii == NA_INTEGER) continue;
-		ii = ii - 1;
-		ij = ii + jj * nr;
-		COMPLEX(x)[ij] = COMPLEX(y)[k];
-		k = (k + 1) % ny;
-	    }
-	}
-	break;
-
-    case 1610:	/* character <- logical	  */
-    case 1613:	/* character <- integer	  */
-    case 1614:	/* character <- real	  */
-    case 1615:	/* character <- complex	  */
-    case 1616:	/* character <- character */
-    /* case 1016:  logical   <- character */
-    /* case 1316:  integer   <- character */
-    /* case 1416:  real	     <- character */
-    /* case 1516:  complex   <- character */
-
-	for (j = 0; j < ncs; j++) {
-	    jj = INTEGER(sc)[j];
-	    if (jj == NA_INTEGER) continue;
-	    jj = jj - 1;
-	    for (i = 0; i < nrs; i++) {
-		ii = INTEGER(sr)[i];
-		if (ii == NA_INTEGER) continue;
-		ii = ii - 1;
-		ij = ii + jj * nr;
-		SET_STRING_ELT(x, ij, STRING_ELT(y, k));
-		k = (k + 1) % ny;
-	    }
-	}
-	break;
-    case 1919: /* vector <- vector */
-
-	for (j = 0; j < ncs; j++) {
-	    jj = INTEGER(sc)[j];
-	    if (jj == NA_INTEGER) continue;
-	    jj = jj - 1;
-	    for (i = 0; i < nrs; i++) {
-		ii = INTEGER(sr)[i];
-		if (ii == NA_INTEGER) continue;
-		ii = ii - 1;
-		ij = ii + jj * nr;
-		SET_VECTOR_ELT(x, ij, VECTOR_ELT(y, k));
-		k = (k + 1) % ny;
-	    }
-	}
-	break;
-
-    case 2424: /* raw   <- raw   */
-
-	for (j = 0; j < ncs; j++) {
-	    jj = INTEGER(sc)[j];
-	    if (jj == NA_INTEGER) continue;
-	    jj = jj - 1;
-	    for (i = 0; i < nrs; i++) {
-		ii = INTEGER(sr)[i];
-		if (ii == NA_INTEGER) continue;
-		ii = ii - 1;
-		ij = ii + jj * nr;
-		RAW(x)[ij] = RAW(y)[k];
-		k = (k + 1) % ny;
-	    }
-	}
-	break;
-
-    default:
-	error(_("incompatible types (from %s to %s) in matrix subset assignment"),
-	          type2char(CXXRCONSTRUCT(SEXPTYPE, which%100)), type2char(CXXRCONSTRUCT(SEXPTYPE, which/100)));
-    }
-    UNPROTECT(2);
-    return x;
+    return 0;  // -Wall
 }
 
 
-static SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
+static SEXP ArrayAssign(SEXP call, SEXP xarg, PairList* subscripts, SEXP yarg)
 {
-    int i, j, ii, iy, jj, k=0, n, ny, which;
-    int **subs, *indx, *bound, *offset;
-    SEXP dims, tmp;
-    double ry;
-    void *vmax = vmaxget();
-
-    PROTECT(dims = getAttrib(x, R_DimSymbol));
-    if (dims == R_NilValue || (k = LENGTH(dims)) != length(s))
-	error(_("incorrect number of subscripts"));
-
-    subs = static_cast<int**>(CXXR_alloc(k, sizeof(int*)));
-    indx = static_cast<int*>(CXXR_alloc(k, sizeof(int)));
-    bound = static_cast<int*>(CXXR_alloc(k, sizeof(int)));
-    offset = static_cast<int*>(CXXR_alloc(k, sizeof(int)));
-
-    ny = LENGTH(y);
-
-    /* Expand the list of subscripts. */
-    /* s is protected, so no GC problems here */
-
-    tmp = s;
-    for (i = 0; i < k; i++) {
-	SETCAR(tmp, arraySubscript(i, CAR(tmp), dims, getAttrib,
-				   (STRING_ELT), x));
-	tmp = CDR(tmp);
-    }
-
-    n = 1;
-    tmp = s;
-    for (i = 0; i < k; i++) {
-	indx[i] = 0;
-	subs[i] = INTEGER(CAR(tmp));
-	bound[i] = LENGTH(CAR(tmp));
-	n *= bound[i];
-	tmp = CDR(tmp);
-    }
-
-    if (n > 0 && ny == 0)
-	error(_("replacement has length zero"));
-    if (n > 0 && n % ny)
-	error(_("number of items to replace is not a multiple of replacement length"));
-
-    if (ny > 1) { /* check for NAs in indices */
-	for (i = 0; i < k; i++)
-	    for (j = 0; j < bound[i]; j++)
-		if (subs[i][j] == NA_INTEGER)
-		    error(_("NAs are not allowed in subscripted assignments"));
-    }
-
-    offset[0] = 1;
-    for (i = 1; i < k; i++)
-	offset[i] = offset[i - 1] * INTEGER(dims)[i - 1];
-
+    GCStackRoot<> x(xarg);
+    GCStackRoot<> y(yarg);
 
     /* Here we make sure that the LHS has been coerced into */
     /* a form which can accept elements from the RHS. */
-
-    which = SubassignTypeFix(&x, &y, 0, 1, call);/* = 100 * TYPEOF(x) + TYPEOF(y);*/
-
-    if (n == 0) {
-	UNPROTECT(1);
-	return(x);
+    int which;  /* = 100 * TYPEOF(x) + TYPEOF(y);*/
+    {
+	SEXP xtmp = x;
+	SEXP ytmp = y;
+	which = SubassignTypeFix(&xtmp, &ytmp, 1, call);
+	x = xtmp;
+	y = ytmp;
     }
 
-    PROTECT(x);
-
-    /* When array elements are being permuted the RHS */
-    /* must be duplicated or the elements get trashed. */
-    /* FIXME : this should be a shallow copy for list */
-    /* objects.  A full duplication is wasteful. */
-
-    if (x == y)
-	PROTECT(y = duplicate(y));
-    else
-	PROTECT(y);
-
-    /* Note that we are now committed.  Since we are mutating */
-    /* existing objects any changes we make now are permanent. */
-    /* Beware! */
-
-    for (i = 0; i < n; i++) {
-	ii = 0;
-	for (j = 0; j < k; j++) {
-	    jj = subs[j][indx[j]];
-	    if (jj == NA_INTEGER) goto next_i;
-	    ii += (jj - 1) * offset[j];
-	}
-
-	switch (which) {
-
-	case 1010:	/* logical   <- logical	  */
-	case 1310:	/* integer   <- logical	  */
-	/* case 1013:	   logical   <- integer	  */
-	case 1313:	/* integer   <- integer	  */
-
-	    INTEGER(x)[ii] = INTEGER(y)[i % ny];
-	    break;
-
-	case 1410:	/* real	     <- logical	  */
-	case 1413:	/* real	     <- integer	  */
-
-	    iy = INTEGER(y)[i % ny];
-	    if (iy == NA_INTEGER)
-		REAL(x)[ii] = NA_REAL;
-	    else
-		REAL(x)[ii] = iy;
-	    break;
-
-	/* case 1014:	   logical   <- real	  */
-	/* case 1314:	   integer   <- real	  */
-	case 1414:	/* real	     <- real	  */
-
-	    REAL(x)[ii] = REAL(y)[i % ny];
-	    break;
-
-	case 1510:	/* complex   <- logical	  */
-	case 1513:	/* complex   <- integer	  */
-
-	    iy = INTEGER(y)[i % ny];
-	    if (iy == NA_INTEGER) {
-		COMPLEX(x)[ii].r = NA_REAL;
-		COMPLEX(x)[ii].i = NA_REAL;
-	    }
-	    else {
-		COMPLEX(x)[ii].r = iy;
-		COMPLEX(x)[ii].i = 0.0;
-	    }
-	    break;
-
-	case 1514:	/* complex   <- real	  */
-
-	    ry = REAL(y)[i % ny];
-	    if (ISNA(ry)) {
-		COMPLEX(x)[ii].r = NA_REAL;
-		COMPLEX(x)[ii].i = NA_REAL;
-	    }
-	    else {
-		COMPLEX(x)[ii].r = ry;
-		COMPLEX(x)[ii].i = 0.0;
-	    }
-	    break;
-
-	/* case 1015:	   logical   <- complex	  */
-	/* case 1315:	   integer   <- complex	  */
-	/* case 1415:	   real	     <- complex	  */
-	case 1515:	/* complex   <- complex	  */
-
-	    COMPLEX(x)[ii] = COMPLEX(y)[i % ny];
-	    break;
-
-	case 1610:	/* character <- logical	  */
-	case 1613:	/* character <- integer	  */
-	case 1614:	/* character <- real	  */
-	case 1615:	/* character <- complex	  */
-	case 1616:	/* character <- character */
-	/* case 1016:	   logical   <- character */
-	/* case 1316:	   integer   <- character */
-	/* case 1416:	   real	     <- character */
-	/* case 1516:	   complex   <- character */
-
-	    SET_STRING_ELT(x, ii, STRING_ELT(y, i % ny));
-	    break;
-
-	case 1919: /* vector <- vector */
-
-	    SET_VECTOR_ELT(x, ii, VECTOR_ELT(y, i % ny));
-	    break;
-
-	case 2424: /* raw <- raw */
-
-	    RAW(x)[ii] = RAW(y)[i % ny];
-	    break;
-
-	default:
-	error(_("incompatible types (from %s to %s) in array subset assignment"),
-	          type2char(CXXRCONSTRUCT(SEXPTYPE, which%100)), type2char(CXXRCONSTRUCT(SEXPTYPE, which/100)));
-	}
-    next_i:
-	;
-	if (n > 1) {
-	    j = 0;
-	    while (++indx[j] >= bound[j]) {
-		indx[j] = 0;
-		j = (j + 1) % k;
-	    }
-	}
+    switch (which) {
+    case 1010:	/* logical   <- logical	  */
+	return Subscripting::arraySubassign(static_cast<LogicalVector*>(x.get()),
+					    subscripts,
+					    static_cast<LogicalVector*>(y.get()));
+    /* case 1013:  logical   <- integer	  */
+    /* case 1014:  logical   <- real	  */
+    /* case 1015:  logical   <- complex	  */
+    /* case 1016:  logical   <- character */
+    case 1310:	/* integer   <- logical	  */
+	return Subscripting::arraySubassign(static_cast<IntVector*>(x.get()),
+					    subscripts,
+					    static_cast<LogicalVector*>(y.get()));
+    case 1313:	/* integer   <- integer	  */
+	return Subscripting::arraySubassign(static_cast<IntVector*>(x.get()),
+					    subscripts,
+					    static_cast<IntVector*>(y.get()));
+    /* case 1314:  integer   <- real	  */
+    /* case 1315:  integer   <- complex	  */
+    /* case 1316:  integer   <- character */
+    case 1410:	/* real	     <- logical	  */
+	return Subscripting::arraySubassign(static_cast<RealVector*>(x.get()),
+					    subscripts,
+					    static_cast<LogicalVector*>(y.get()));
+    case 1413:	/* real	     <- integer	  */
+	return Subscripting::arraySubassign(static_cast<RealVector*>(x.get()),
+					    subscripts,
+					    static_cast<IntVector*>(y.get()));
+    case 1414:	/* real	     <- real	  */
+	return Subscripting::arraySubassign(static_cast<RealVector*>(x.get()),
+					    subscripts,
+					    static_cast<RealVector*>(y.get()));
+    /* case 1415:  real	     <- complex	  */
+    /* case 1416:  real	     <- character */
+    case 1510:	/* complex   <- logical	  */
+	return Subscripting::arraySubassign(static_cast<ComplexVector*>(x.get()),
+					    subscripts,
+					    static_cast<LogicalVector*>(y.get()));
+    case 1513:	/* complex   <- integer	  */
+	return Subscripting::arraySubassign(static_cast<ComplexVector*>(x.get()),
+					    subscripts,
+					    static_cast<IntVector*>(y.get()));
+    case 1514:	/* complex   <- real	  */
+	return Subscripting::arraySubassign(static_cast<ComplexVector*>(x.get()),
+					    subscripts,
+					    static_cast<RealVector*>(y.get()));
+    case 1515:	/* complex   <- complex	  */
+	return Subscripting::arraySubassign(static_cast<ComplexVector*>(x.get()),
+					    subscripts,
+					    static_cast<ComplexVector*>(y.get()));
+    /* case 1516:  complex   <- character */
+    /* case 1610:  character <- logical	  */
+    /* case 1613:  character <- integer	  */
+    /* case 1614:  character <- real	  */
+    /* case 1615:  character <- complex	  */
+    case 1616:	/* character <- character */
+	return Subscripting::arraySubassign(static_cast<StringVector*>(x.get()),
+					    subscripts,
+					    static_cast<StringVector*>(y.get()));
+    case 1919: /* vector <- vector */
+	return Subscripting::arraySubassign(static_cast<ListVector*>(x.get()),
+					    subscripts,
+					    static_cast<ListVector*>(y.get()));
+    case 2424: /* raw <- raw */
+	return Subscripting::arraySubassign(static_cast<RawVector*>(x.get()),
+					    subscripts,
+					    static_cast<RawVector*>(y.get()));
+    default:
+	Rf_error(_("incompatible types (from %s to %s) in array subset assignment"),
+		 type2char(SEXPTYPE(which%100)), type2char(SEXPTYPE(which/100)));
     }
-    UNPROTECT(3);
-    vmaxset(vmax);
-    return x;
+    return 0;  // -Wall
 }
 
-static SEXP GetOneIndex(SEXP sub, int ind) 
+static SEXP GetOneIndex(SEXP sub, int ind)
 {
     if (ind < 0 || ind+1 > length(sub))
     	error("internal error: index %d from length %d", ind, length(sub));
     if (length(sub) > 1) {
     	switch (TYPEOF(sub)) {
-    	case INTSXP: 
+    	case INTSXP:
     	    sub = ScalarInteger(INTEGER(sub)[ind]);
     	    break;
     	case REALSXP:
@@ -1203,7 +675,7 @@ static SEXP GetOneIndex(SEXP sub, int ind)
     	    break;
     	default:
     	    error(_("invalid subscript in list assign"));
-    	}    
+    	}
     }
     return sub;
 }
@@ -1211,25 +683,24 @@ static SEXP GetOneIndex(SEXP sub, int ind)
 /* This is only used for [[<-, so only adding one element */
 static SEXP SimpleListAssign(SEXP call, SEXP x, SEXP s, SEXP y, int ind)
 {
-    SEXP indx, xi, yi, sub = CAR(s);
-    int ii, n, nx, ny, stretch=1;
+    SEXP indx, xi, sub = CAR(s);
+    int ii, n, nx, stretch=1;
 
     if (length(s) > 1)
 	error(_("invalid number of subscripts to list assign"));
 
     PROTECT(sub = GetOneIndex(sub, ind));
     PROTECT(indx = makeSubscript(x, sub, &stretch, R_NilValue));
-    	
+
     n = length(indx);
     if (n > 1)
     	error(_("invalid subscript in list assign"));
 
-    ny = length(y);
     nx = length(x);
 
     if (stretch) {
 	SEXP t = CAR(s);
-	yi = allocList(stretch - nx);
+	GCStackRoot<> yi(allocList(stretch - nx));
 	/* This is general enough for only usage */
 	if(isString(t) && length(t) == stretch - nx) {
 	    SEXP z = yi;
@@ -1259,7 +730,7 @@ static SEXP SimpleListAssign(SEXP call, SEXP x, SEXP s, SEXP y, int ind)
 
 static SEXP listRemove(SEXP x, SEXP s, int ind)
 {
-    vector<ConsCell*, Allocator<ConsCell*> > vcc;
+    std::vector<ConsCell*, Allocator<ConsCell*> > vcc;
     // Assemble vector of pointers to list elements:
     for (ConsCell* xp = SEXP_downcast<ConsCell*>(x);
 	 xp; xp = xp->tail())
@@ -1292,22 +763,26 @@ static SEXP listRemove(SEXP x, SEXP s, int ind)
 }
 
 
-static void SubAssignArgs(SEXP args, SEXP *x, SEXP *s, SEXP *y)
+static void SubAssignArgs(PairList* args, SEXP *x, PairList** s, SEXP *y)
 {
-    SEXP p;
-    if (length(args) < 2)
-	error(_("SubAssignArgs: invalid number of arguments"));
-    *x = CAR(args);
-    if(length(args) == 2) {
-	*s = R_NilValue;
-	*y = CADR(args);
+    size_t numargs = listLength(args);
+    if (numargs < 2)
+	Rf_error(_("SubAssignArgs: invalid number of arguments"));
+    *x = args->car();
+    if(numargs == 2) {
+	*s = 0;
+	*y = args->tail()->car();
     }
     else {
-	*s = p = CDR(args);
-	while (CDDR(p) != R_NilValue)
-	    p = CDR(p);
-	*y = CADR(p);
-	SETCDR(p, R_NilValue);
+	PairList* p = args->tail();
+	*s = p;
+	PairList* ptail = p->tail();
+	while (ptail->tail()) {
+	    p = ptail;
+	    ptail = p->tail();
+	}
+	*y = ptail->car();
+	p->setTail(0);
     }
 }
 
@@ -1328,50 +803,41 @@ SEXP attribute_hidden do_subassign(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* If the dispatch fails, we "drop through" to the default code below. */
 
     if(DispatchOrEval(call, op, "[<-", args, rho, &ans, 0, 0))
+/*     if(DispatchAnyOrEval(call, op, "[<-", args, rho, &ans, 0, 0)) */
       return(ans);
 
     return do_subassign_dflt(call, op, ans, rho);
 }
 
-SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP argsarg,
+					SEXP rho)
 {
-    SEXP subs, x, y;
-    int nsubs, oldtype; Rboolean S4;
-
-    PROTECT(args);
+    GCStackRoot<PairList> args(SEXP_downcast<PairList*>(argsarg));
 
     /* If there are multiple references to an object we must */
     /* duplicate it so that only the local version is mutated. */
     /* This will duplicate more often than necessary, but saves */
     /* over always duplicating. */
-    /* Shouldn't x be protected?  It is (as args is)! */
-
-    if (NAMED(CAR(args)) == 2)
-	x = SETCAR(args, duplicate(CAR(args)));
-
-    SubAssignArgs(args, &x, &subs, &y);
-    S4 = CXXRCONSTRUCT(Rboolean, IS_S4_OBJECT(x));
-    nsubs = length(subs);
-
-    oldtype = 0;
-    if (TYPEOF(x) == LISTSXP || TYPEOF(x) == LANGSXP) {
-	oldtype = TYPEOF(x);
-	PROTECT(x = PairToVectorList(x));
+    GCStackRoot<> x(CAR(args));
+    if (NAMED(x) == 2) {
+	x = Rf_duplicate(x);
+	args->setCar(x);
     }
-    else if (length(x) == 0) {
-	if (length(y) == 0) {
-	    UNPROTECT(1);
-	    return(x);
-	}
-	else {
-	    /* bug PR#2590 coerce only if null */
-	    if(isNull(x)) PROTECT(x = coerceVector(x, TYPEOF(y)));
-	    else PROTECT(x);
-	}
+    PairList* subs;
+    SEXP y;
+    {
+	SEXP xtmp;
+	SubAssignArgs(args, &xtmp, &subs, &y);
+	x = xtmp;
     }
-    else {
-	PROTECT(x);
-    }
+    bool S4 = IS_S4_OBJECT(x);
+    SEXPTYPE xorigtype = TYPEOF(x);
+    if (xorigtype == LISTSXP || xorigtype == LANGSXP)
+	x = PairToVectorList(x);
+
+    /* bug PR#2590 coerce only if null */
+    if (!x)
+	x = coerceVector(x, TYPEOF(y));
 
     switch (TYPEOF(x)) {
     case LGLSXP:
@@ -1382,27 +848,30 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     case EXPRSXP:
     case VECSXP:
     case RAWSXP:
-	switch (nsubs) {
-	case 0:
-	    x = VectorAssign(call, x, R_MissingArg, y);
-	    break;
-	case 1:
-	    x = VectorAssign(call, x, CAR(subs), y);
-	    break;
-	case 2:
-	    x = MatrixAssign(call, x, subs, y);
-	    break;
-	default:
-	    x = ArrayAssign(call, x, subs, y);
-	    break;
+	{
+	    VectorBase* xv = static_cast<VectorBase*>(x.get());
+	    if (xv->size() == 0 && Rf_length(y) == 0)
+		return x;
+	    size_t nsubs = listLength(subs);
+	    switch (nsubs) {
+	    case 0:
+		x = VectorAssign(call, x, R_MissingArg, y);
+		break;
+	    case 1:
+		x = VectorAssign(call, x, subs->car(), y);
+		break;
+	    default:
+		x = ArrayAssign(call, x, subs, y);
+		break;
+	    }
 	}
 	break;
     default:
-	error(R_MSG_ob_nonsub, type2char(TYPEOF(x)));
+	error(R_MSG_ob_nonsub, TYPEOF(x));
 	break;
     }
 
-    if (oldtype == LANGSXP) {
+    if (xorigtype == LANGSXP) {
 	if(length(x)) {
 	    GCStackRoot<PairList> xlr(static_cast<PairList*>(VectorToPairList(x)));
 	    GCStackRoot<Expression> xr(ConsCell::convert<Expression>(xlr));
@@ -1418,9 +887,9 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* will be multiple reference problems if "[<-" is used */
     /* in a naked fashion. */
 
-    UNPROTECT(2);
     SET_NAMED(x, 0);
-    if(S4) SET_S4_OBJECT(x);
+    if (S4)
+	SET_S4_OBJECT(x);
     return x;
 }
 
@@ -1430,11 +899,23 @@ static SEXP DeleteOneVectorListItem(SEXP x, int which)
     int i, k, n;
     n = length(x);
     if (0 <= which && which < n) {
-	PROTECT(y = allocVector(VECSXP, n - 1));
+	PROTECT(y = allocVector(TYPEOF(x), n - 1));
 	k = 0;
-	for (i = 0 ; i < n; i++)
-	    if(i != which)
-		SET_VECTOR_ELT(y, k++, VECTOR_ELT(x, i));
+	switch (TYPEOF(x)) {
+	case VECSXP:
+	    for (i = 0 ; i < n; i++)
+		if(i != which)
+		    SET_VECTOR_ELT(y, k++, VECTOR_ELT(x, i));
+	    break;
+	case EXPRSXP:
+	    for (i = 0 ; i < n; i++)
+		if(i != which)
+		    SET_XVECTOR_ELT(y, k++, XVECTOR_ELT(x, i));
+	    break;
+	default:
+	    Rf_error(_("Internal error:"
+		       " unexpected type in DeleteOneVectorListItem"));
+	}
 	xnames = getAttrib(x, R_NamesSymbol);
 	if (xnames != R_NilValue) {
 	    PROTECT(ynames = allocVector(STRSXP, n - 1));
@@ -1462,20 +943,23 @@ SEXP attribute_hidden do_subassign2(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP ans;
 
     if(DispatchOrEval(call, op, "[[<-", args, rho, &ans, 0, 0))
+/*     if(DispatchAnyOrEval(call, op, "[[<-", args, rho, &ans, 0, 0)) */
       return(ans);
 
     return do_subassign2_dflt(call, op, ans, rho);
 }
 
 SEXP attribute_hidden
-do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
+do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 {
-    SEXP dims, indx, names, newname, subs, x, xtop, xup, y, thesub = R_NilValue;
+    PairList* args = SEXP_downcast<PairList*>(argsarg);
+    SEXP dims, indx, names, newname, x, xtop, xup, y, thesub = R_NilValue, xOrig = R_NilValue;
     int i, ndims, nsubs, offset, off = -1 /* -Wall */, stretch, which, len = 0 /* -Wall */;
     Rboolean S4, recursed=FALSE;
 
     PROTECT(args);
 
+    PairList* subs;
     SubAssignArgs(args, &x, &subs, &y);
     S4 = CXXRCONSTRUCT(Rboolean, IS_S4_OBJECT(x));
 
@@ -1508,18 +992,19 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* code to allow classes to extend ENVSXP */
     if(TYPEOF(x) == S4SXP) {
+	xOrig = x; /* will be an S4 object */
         x = R_getS4DataSlot(x, ANYSXP);
-	if(x == R_NilValue)
-	  errorcall(call, _("no method for assigning subsets of this S4 class"));
+	if(TYPEOF(x) != ENVSXP)
+	  errorcall(call, _("[[<- defined for objects of type \"S4\" only for subclasses of environment"));
     }
 
     /* ENVSXP special case first */
     if( TYPEOF(x) == ENVSXP) {
-      if( nsubs!=1 || !isString(CAR(subs)) || length(CAR(subs)) != 1 )
-	error(_("wrong args for environment subassignment"));
-      defineVar(install(translateChar(STRING_ELT(CAR(subs), 0))), y, x);
-      UNPROTECT(1);
-      return(x);
+	if( nsubs!=1 || !isString(CAR(subs)) || length(CAR(subs)) != 1 )
+	    error(_("wrong args for environment subassignment"));
+	defineVar(install(translateChar(STRING_ELT(CAR(subs), 0))), y, x);
+	UNPROTECT(1);
+	return(S4 ? xOrig : x);
     }
 
     /* new case in 1.7.0, one vector index for a list, more general as of 2.10.0 */
@@ -1534,9 +1019,11 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    recursed = TRUE;
 	}
     }
-    
+
     stretch = 0;
     if (isVector(x)) {
+	if (!isVectorList(x) && LENGTH(y) == 0)
+	    error(_("replacement has length zero"));
 	if (!isVectorList(x) && LENGTH(y) > 1)
 	    error(_("more elements supplied than there are to replace"));
 	if (nsubs == 0 || CAR(subs) == R_MissingArg)
@@ -1565,7 +1052,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 					      R_NilValue : VECTOR_ELT(names, i),
 					      INTEGER(dims)[i],
 					      /*partial ok*/FALSE, -1, call);
-		subs = CDR(subs);
+		subs = subs->tail();
 		if (INTEGER(indx)[i] < 0 ||
 		    INTEGER(indx)[i] >= INTEGER(dims)[i])
 		    error(_("[[ ]] subscript out of bounds"));
@@ -1577,7 +1064,13 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    UNPROTECT(1);
 	}
 
-	which = SubassignTypeFix(&x, &y, stretch, 2, call);
+	which = SubassignTypeFix(&x, &y, 2, call);
+	if (stretch) {
+	    PROTECT(x);
+	    PROTECT(y);
+	    x = EnlargeVector(x, stretch);
+	    UNPROTECT(2);
+	}
 	PROTECT(x);
 
 	switch (which) {
@@ -1668,6 +1161,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	case 1914:  /* vector     <- real       */
 	case 1915:  /* vector     <- complex    */
 	case 1916:  /* vector     <- character  */
+	case 1919:      /* vector     <- vector     */
 	case 1920:  /* vector     <- expression */
 #ifdef BYTECODE
 	case 1921:  /* vector     <- bytecode   */
@@ -1678,9 +1172,10 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	case 1925:  /* vector     <- S4 */
 	case 1903: case 1907: case 1908: case 1999: /* functions */
 
-	    /* drop through: vectors and expressions are treated the same */
+	    if( NAMED(y) ) y = duplicate(y);
+	    SET_VECTOR_ELT(x, offset, y);
+	    break;
 
-	case 2001:	/* expression <- symbol	    */
 	case 2002:	/* expression <- pairlist   */
 	case 2006:	/* expression <- language   */
 	case 2010:	/* expression <- logical    */
@@ -1690,11 +1185,10 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	case 2016:	/* expression <- character  */
 	case 2024:  /* expression     <- raw */
 	case 2025:  /* expression     <- S4 */
-	case 1919:      /* vector     <- vector     */
 	case 2020:	/* expression <- expression */
 
 	    if( NAMED(y) ) y = duplicate(y);
-	    SET_VECTOR_ELT(x, offset, y);
+	    SET_XVECTOR_ELT(x, offset, y);
 	    break;
 
 	case 2424:      /* raw <- raw */
@@ -1744,7 +1238,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 		INTEGER(indx)[i] = get1index(CAR(subs), CAR(names),
 					     INTEGER(dims)[i],
 					     /*partial ok*/FALSE, -1, call);
-		subs = CDR(subs);
+		subs = subs->tail();
 		if (INTEGER(indx)[i] < 0 ||
 		    INTEGER(indx)[i] >= INTEGER(dims)[i])
 		    error(_("[[ ]] subscript (%d) out of bounds"), i+1);
@@ -1767,7 +1261,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	} else {
 	    xup = SimpleListAssign(call, xup, subs, x, len-2);
 	}
-	if (len == 2) 
+	if (len == 2)
 	    xtop = xup;
     }
     else xtop = x;
@@ -1817,13 +1311,13 @@ SEXP attribute_hidden do_subassign3(SEXP call, SEXP op, SEXP args, SEXP env)
     return R_subassign3_dflt(call, CAR(ans), nlist, CADDR(ans));
 }
 
-/* used in methods_list_dispatch.c */
+/* used in "$<-" (above) and methods_list_dispatch.c */
 SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 {
     SEXP t;
     PROTECT_INDEX pvalidx, pxidx;
     Rboolean maybe_duplicate=FALSE;
-    Rboolean S4;
+    Rboolean S4; SEXP xS4 = R_NilValue;
 
     PROTECT_WITH_INDEX(x, &pxidx);
     PROTECT_WITH_INDEX(val, &pvalidx);
@@ -1843,6 +1337,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 	REPROTECT(val = duplicate(val), pvalidx);
     /* code to allow classes to extend ENVSXP */
     if(TYPEOF(x) == S4SXP) {
+	xS4 = x;
         x = R_getS4DataSlot(x, ANYSXP);
 	if(x == R_NilValue)
 	  errorcall(call, _("no method for assigning subsets of this S4 class"));
@@ -1872,7 +1367,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 		    break;
 		}
 		else if (CDR(t) == R_NilValue && val != R_NilValue) {
-		    SETCDR(t, GCNode::expose(new CXXR::PairList));
+		    SETCDR(t, CXXR_NEW(CXXR::PairList));
 		    SET_TAG(CDR(t), nlist);
 		    SETCADR(t, val);
 		    break;
@@ -1886,7 +1381,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
     }
     /* cannot use isEnvironment since we do not want NULL here */
     else if( TYPEOF(x) == ENVSXP ) {
-      defineVar(nlist, val, x);
+	defineVar(nlist, val, x);
     }
     else if( TYPEOF(x) == SYMSXP || /* Used to 'work' in R < 2.8.0 */
 	     TYPEOF(x) == CLOSXP ||
@@ -1897,8 +1392,11 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
     else {
 	int i, imatch, nx;
 	SEXP names;
+	SEXPTYPE type = VECSXP;
 
-	if (!(isNewList(x) || isExpression(x))) {
+	if (isExpression(x)) 
+	    type = EXPRSXP;
+	else if (!isNewList(x)) {
 	    warning(_("Coercing LHS to a list"));
 	    REPROTECT(x = coerceVector(x, VECSXP), pxidx);
 	}
@@ -1919,11 +1417,13 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 		if (imatch >= 0) {
 		    SEXP ans, ansnames;
 		    int ii;
-		    PROTECT(ans = allocVector(VECSXP, nx - 1));
+		    PROTECT(ans = allocVector(type, nx - 1));
 		    PROTECT(ansnames = allocVector(STRSXP, nx - 1));
 		    for (i = 0, ii = 0; i < nx; i++)
 			if (i != imatch) {
-			    SET_VECTOR_ELT(ans, ii, VECTOR_ELT(x, i));
+			    if (type == EXPRSXP)
+				SET_XVECTOR_ELT(ans, ii, XVECTOR_ELT(x, i));
+			    else SET_VECTOR_ELT(ans, ii, VECTOR_ELT(x, i));
 			    SET_STRING_ELT(ansnames, ii, STRING_ELT(names, i));
 			    ii++;
 			}
@@ -1954,7 +1454,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 		SET_VECTOR_ELT(x, imatch, val);
 	    }
 	    else {
-		/* We are introducing a new element. */
+		/* We are introducing a new element (=> *no* duplication) */
 		/* Enlarge the list, add the new element */
 		/* and finally, adjust the attributes. */
 		SEXP ans, ansnames;
@@ -1980,6 +1480,8 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 	}
     }
     UNPROTECT(2);
+    if(xS4 != R_NilValue)
+	x = xS4; /* x was an env't, the data slot of xS4 */
     SET_NAMED(x, 0);
     if(S4) SET_S4_OBJECT(x);
     return x;

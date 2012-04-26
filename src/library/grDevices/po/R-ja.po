@@ -2,15 +2,19 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.1.0 \n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-05-10 11:36\n"
-"PO-Revision-Date: 2009-10-07 19:18+0900 \n"
+"POT-Creation-Date: 2011-09-05 08:24\n"
+"PO-Revision-Date: 2011-10-22 19:11+0900 \n"
 "Last-Translator: takahashi <takahashi.kohske@gmail.com> \n"
 "Language-Team: RjpWiki Message Translation Team <mokada@md.tsukuba.ac.jp> \n"
+"Language: \n"
 "MIME-Version: 1.0 \n"
 "Content-Type: text/plain; charset=UTF-8 \n"
 "Content-Transfer-Encoding: 8bit \n"
 "Plural-Forms: nplurals=1; plural=0; \n"
 "X-Generator: Pootle 1.1.0 \n"
+
+msgid "invalid 'filename'"
+msgstr " 不正な 'filename' 引数です "
 
 msgid "'coef' must not be negative"
 msgstr " 'coef' は負にはなれません "
@@ -148,8 +152,8 @@ msgstr " '%s' 中に不正なオプションがあります  "
 msgid "NOT changing"
 msgstr " 変更しません "
 
-msgid "argment 'append' is for back-compatibility and will be ignored"
-msgstr " 上位互換のための引数 'append' は無視されます "
+msgid "argument 'append' is for back-compatibility and will be ignored"
+msgstr " 引数 'append' は下位互換のためのもので、今後は無視されます "
 
 msgid "unknown family '%s'"
 msgstr " フォントファミリー'%s'は未知です "
@@ -159,6 +163,9 @@ msgstr " 不正な 'family' 引数です "
 
 msgid "invalid 'file'"
 msgstr " 不正な 'file' です "
+
+msgid "'maxRasters' is no longer needed, and will be ignored"
+msgstr " 'maxRasters'はもう不要です。今後は無視されます。 "
 
 msgid "invalid PDF version"
 msgstr " 不正な PDF のバージョンです "
@@ -211,6 +218,33 @@ msgstr " 不正な出力書式です "
 msgid "status %d in running command '%s'"
 msgstr " 状態 %d が命令 '%s' 実行中に起きました "
 
+msgid "range too small for min.n"
+msgstr " min.n に対しては小さすぎるレンジです "
+
+msgid "A raster matrix must be character, or numeric, or logical"
+msgstr " ラスター行列は文字、数値もしくは論理値でなければなりません "
+
+msgid "A raster array must be numeric"
+msgstr " ラスター配列は数値でなければなりません "
+
+msgid "A raster array must have exactly 3 dimensions"
+msgstr " ラスター配列は丁度3つの次元を持つ必要があります "
+
+msgid "A raster array must have exactly 3 or 4 planes"
+msgstr " ラスター配列は丁度3か4の平面(plane)を持つ必要があります "
+
+msgid "'drop' is always implicitly FALSE in '[.raster'"
+msgstr " '[.raster' では引数 'drop' は常に暗黙のうちに FALSE です "
+
+msgid "invalid raster subsetting"
+msgstr " 無効なラスターの部分設定 "
+
+msgid "invalid raster subassignment"
+msgstr " 無効なラスターの部分代入 "
+
+msgid "Operator not meaningful for raster objects"
+msgstr " ラスターオブジェクトには無意味な操作です "
+
 msgid "no current device to record from"
 msgstr " 現在，以下のものから記録することが出来るデバイスはありません:  "
 
@@ -238,6 +272,9 @@ msgstr " 'r' は範囲でなければなりません. 従って長さは2です 
 msgid "invalid first argument"
 msgstr " 最初の引数が無効です "
 
+msgid "'x' is a list, but does not have components 'x' and 'y'"
+msgstr " 'x' はリストですが，成分 'x' と 'y' を持ちません "
+
 msgid "'x' and 'y' lengths differ"
 msgstr " 'x' と 'y' の長さが異なります "
 
@@ -246,6 +283,9 @@ msgstr " 最初の引数が無効です [誤った言語オブジェクトです
 
 msgid "at least 2 columns needed"
 msgstr " 少なくとも二つの列が必要です "
+
+msgid "'x' is a list, but does not have components 'x', 'y'  and 'z'"
+msgstr " 'x' はリストですが，成分 'x' と 'y' そして 'z' を持ちません "
 
 msgid "'x', 'y' and 'z' lengths differ"
 msgstr " 'x','y' そして 'z' の長さが異なります "
@@ -256,11 +296,17 @@ msgstr " 'file' はデフォルトなしで欠損となっています "
 msgid "sorry, 'gs' cannot be found"
 msgstr " すみません，'gs' が見つかりません "
 
+msgid "unrecognized format of gs -help"
+msgstr " gs -help の意味不明な書式です "
+
 msgid "device '%s' is not available"
-msgstr " デバイス '%s' は有効ではありません "
+msgstr " デバイス '%s' は利用可能ではありません "
 
 msgid "Available devices are %s"
 msgstr " 利用可能なデバイスは %s です "
+
+msgid "'res' must be specified unless 'units = \"px\"'"
+msgstr " 'res' は 'units = \"px\"' で無い限り指定される必要があります "
 
 msgid "invalid 'title'"
 msgstr " 不正な 'title' です "
@@ -274,11 +320,13 @@ msgstr " quartzFonts 中の不正な引数です（フォント名が必要で�
 msgid "invalid arguments in quartzFonts (need named args)"
 msgstr " quartzFonts 中の不正な引数です（名前がついた引数が必要です） "
 
-msgid "invalid 'filename'"
-msgstr " 不正な 'filename' 引数です "
+msgid "cairo-based types are not supported on this build - using \"Xlib\""
+msgstr ""
+" このビルドではcarioベースのデバイスはサポートされていません。Xlibを使いま"
+"す。 "
 
-msgid "'res' must be specified unless 'units = \"px\"'"
-msgstr " 'res' は 'units = \"px\"' で無い限り指定される必要があります "
+msgid "unknown family for X11(type = \"XLib\")"
+msgstr "X11(type = \"XLib\")に対して、未知のファミリーです "
 
 msgid "invalid X11 font specification:"
 msgstr " 不正な X11 フォントの指定方法です "
@@ -323,7 +371,7 @@ msgstr[0] " %2$s 中の %1$s は不正な引数名です "
 
 msgid "differs between new and previous"
 msgid_plural "differ between new and previous"
-msgstr[0] "が新しいものと前のもので異なります "
+msgstr[0] " が新しいものと前のもので異なります "
 
 msgid "%d x value <= 0 omitted from logarithmic plot"
 msgid_plural "%d x values <= 0 omitted from logarithmic plot"
@@ -336,6 +384,9 @@ msgstr[0] " %d 個の正でない y の値が対数プロットから除かれ�
 msgid "%d z value <= 0 omitted from logarithmic plot"
 msgid_plural "%d z values <= 0 omitted from logarithmic plot"
 msgstr[0] " %d 個の正でない x の値が対数プロットから除かれました "
+
+#~ msgid "The 'gamma' argument is deprecated and has no effect"
+#~ msgstr " 引数 'gamma' は廃止予定です、適用されません "
 
 #~ msgid "invalid value for 'antialias'"
 #~ msgstr " 'antialias'の値が不正です "

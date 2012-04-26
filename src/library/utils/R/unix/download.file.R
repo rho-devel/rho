@@ -14,15 +14,17 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-download.file <- function(url, destfile, method,
-                          quiet = FALSE, mode = "w", cacheOK = TRUE)
+download.file <-
+    function(url, destfile, method, quiet = FALSE, mode = "w",
+             cacheOK = TRUE, extra = getOption("download.file.extra"))
 {
+    destfile # check supplied
     method <- if (missing(method))
         ifelse(!is.null(getOption("download.file.method")),
                getOption("download.file.method"),
                "auto")
     else
-        match.arg(method, c("auto", "internal", "wget", "lynx"))
+        match.arg(method, c("auto", "internal", "wget", "curl", "lynx"))
 
     if(method == "auto") {
         if(capabilities("http/ftp"))
@@ -30,9 +32,11 @@ download.file <- function(url, destfile, method,
         else if(length(grep("^file:", url))) {
             method <- "internal"
             url <- URLdecode(url)
-        } else if(system("wget --help > /dev/null")==0)
+        } else if(system("wget --help > /dev/null") == 0L)
             method <- "wget"
-        else if(system("lynx -help > /dev/null")==0)
+        else if(system("curl --help > /dev/null") == 0L)
+            method <- "curl"
+        else if(system("lynx -help > /dev/null") == 0L)
             method <- "lynx"
         else
             stop("no download method found")
@@ -42,13 +46,24 @@ download.file <- function(url, destfile, method,
         ## needed for Mac GUI from download.packages etc
         if(!quiet) flush.console()
     } else if(method == "wget") {
-        extra <- if(quiet) " --quiet" else ""
-        if(!cacheOK) extra <- paste(extra, "--cache=off")
-        status <- system(paste("wget", extra, " ", shQuote(url),
-                               " -O ", path.expand(destfile), sep=""))
+        if(quiet) extra <- c(extra, "--quiet")
+        if(!cacheOK) extra <- c(extra, "--cache=off")
+        status <- system(paste("wget",
+                               paste(extra, collapse = " "),
+                               shQuote(url),
+                               "-O", shQuote(path.expand(destfile))))
+    } else if(method == "curl") {
+        if(quiet) extra <- c(extra, "-s -S")
+        if(!cacheOK) extra <- c(extra, "-H 'Pragma: no-cache'")
+        status <- system(paste("curl",
+                               paste(extra, collapse = " "),
+                               shQuote(url),
+                               " -o", shQuote(path.expand(destfile))))
     } else if(method == "lynx")
-        status <- system(paste("lynx -dump ", shQuote(url), " > ",
-                               path.expand(destfile), sep=""))
+        status <- system(paste("lynx -dump",
+                               paste(extra, collapse = " "),
+                               shQuote(url),
+                               ">", shQuote(path.expand(destfile))))
 
     if(status) warning("download had nonzero exit status")
 

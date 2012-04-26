@@ -17,6 +17,8 @@
 /** @file Test of class ArgMatcher.
  */
 
+#define R_NO_REMAP
+
 #include "CXXR/ArgMatcher.hpp"
 
 #define R_INTERFACE_PTRS
@@ -36,7 +38,8 @@
 #undef match
 
 #include "CXXR/CachedString.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
+#include "CXXR/ListFrame.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/Symbol.h"
 
@@ -71,7 +74,7 @@ namespace {
 	    while (getline(astrm, line)) {
 		boost::smatch kv_match;
 		if (!boost::regex_match(line, kv_match, kv_regex)) {
-		    cerr << "Lines must matchÂ " << kv_regex_string << '\n';
+		    cerr << "Lines must match " << kv_regex_string << '\n';
 		    exit(1);
 		}
 		cout << kv_match[1] << " : " << kv_match[2] << endl;
@@ -84,12 +87,12 @@ namespace {
 	}
 	// Construct result:
 	{
-	    PairList* ans = 0;
+	    GCStackRoot<PairList> ans;
 	    for (Vps::const_reverse_iterator rit = keyvals.rbegin();
 		 rit != keyvals.rend(); ++rit) {
 		const string& namestr = (*rit).first;
 		const string& valstr = (*rit).second;
-		RObject* value;
+		GCStackRoot<> value;
 		if (valstr.empty())
 		    value = Symbol::missingArgument();
 		else value
@@ -97,8 +100,7 @@ namespace {
 		const RObject* tag = 0;
 		if (!namestr.empty())
 		    tag = Symbol::obtain(namestr.c_str());
-		ans = PairList::construct(value, ans,
-					  const_cast<RObject*>(tag));
+		ans = PairList::cons(value, ans, const_cast<RObject*>(tag));
 	    }
 	    return ans;
 	}
@@ -227,13 +229,15 @@ namespace {
 }
 
 int main(int argc, char* argv[]) {
+    Evaluator evalr;
     if (argc < 3 || argc > 4)
 	usage(argv[0]);
     // Set up error reporting:
     ptr_R_WriteConsoleEx = WriteConsoleEx;
     Rf_InitOptions();
     // Set up Environments:
-    GCStackRoot<Environment> fenvrt(GCNode::expose(new Environment(0)));
+    GCStackRoot<Frame> ff(CXXR_NEW(ListFrame));
+    GCStackRoot<Environment> fenvrt(CXXR_NEW(Environment(0, ff)));
     fenv = fenvrt;
     // Process formals:
     cout << "Formal arguments:\n\n";
@@ -242,7 +246,7 @@ int main(int argc, char* argv[]) {
 	matcher(GCNode::expose(new ArgMatcher(formals)));
     // Process supplied arguments:
     cout << "\nSupplied arguments:\n\n";
-    GCStackRoot<PairList> supplied(getArgs(argv[2]));
+    ArgList supplied(getArgs(argv[2]), ArgList::RAW);
     // Set up frame and prior bindings (if any):
     Frame* frame = fenv->frame();
     if (argc == 4) {
@@ -255,7 +259,7 @@ int main(int argc, char* argv[]) {
 	}
     }
     // Perform match and show result:
-    matcher->match(fenv, supplied);
+    matcher->match(fenv, &supplied);
     cout << "\nMatch result:\n\n";
     showFrame(frame);
     return 0;

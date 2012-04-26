@@ -1,18 +1,19 @@
 % File src/library/datasets/man/Theoph.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Theoph}
 \docType{data}
 \alias{Theoph}
-\title{Pharmacokinetics of theophylline}
+\title{Pharmacokinetics of Theophylline}
 \description{
   The \code{Theoph} data frame has 132 rows and 5 columns of data from
   an experiment on the pharmacokinetics of theophylline.}
 \usage{Theoph}
 \format{
-  This data frame contains the following columns:
+  This object of class \code{c("nfnGroupedData", "nfGroupedData",
+    "groupedData", "data.frame")} containing the following columns:
   \describe{
     \item{Subject}{
       an ordered factor with levels \code{1}, \dots, \code{12}
@@ -45,6 +46,9 @@
   and Bates (2000) using a two-compartment open pharmacokinetic model,
   for which a self-starting model function, \code{SSfol}, is available.
 
+  This dataset was originally part of package \code{nlme}, and that has
+  methods (including for \code{[}, \code{as.data.frame}, \code{plot} and
+  \code{print}) for its grouped-data classes. 
 }
 \source{
   Boeckmann, A. J., Sheiner, L. B. and Beal, S. L. (1994), \emph{NONMEM
@@ -61,6 +65,7 @@
 \seealso{\code{\link{SSfol}}}
 \examples{
 require(stats); require(graphics)
+\testonly{options(show.nls.convergence=FALSE)}
 coplot(conc ~ Time | Subject, data = Theoph, show.given = FALSE)
 Theoph.4 <- subset(Theoph, Subject == 4)
 fm1 <- nls(conc ~ SSfol(Dose, Time, lKe, lKa, lCl),

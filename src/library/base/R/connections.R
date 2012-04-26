@@ -18,6 +18,11 @@ stdin <- function() .Internal(stdin())
 stdout <- function() .Internal(stdout())
 stderr <- function() .Internal(stderr())
 
+isatty <- function(con) {
+    if (!inherits(con, "terminal")) FALSE
+    else .Internal(isatty(con))
+}
+
 readLines <- function(con = stdin(), n = -1L, ok = TRUE, warn = TRUE,
                       encoding = "unknown")
 {
@@ -70,8 +75,8 @@ flush.connection <- function (con)
     invisible(.Internal(flush(con)))
 
 file <- function(description = "", open = "", blocking = TRUE,
-                 encoding = getOption("encoding"))
-    .Internal(file(description, open, blocking, encoding))
+                 encoding = getOption("encoding"), raw = FALSE)
+    .Internal(file(description, open, blocking, encoding, raw))
 
 pipe <- function(description, open = "", encoding = getOption("encoding"))
     .Internal(pipe(description, open, encoding))
@@ -102,8 +107,10 @@ xzfile <- function(description, open = "", encoding = getOption("encoding"),
 
 socketConnection <- function(host = "localhost", port, server = FALSE,
                              blocking = FALSE, open = "a+",
-                             encoding = getOption("encoding"))
-    .Internal(socketConnection(host, port, server, blocking, open, encoding))
+                             encoding = getOption("encoding"),
+                             timeout = getOption("timeout"))
+    .Internal(socketConnection(host, port, server, blocking, open, encoding,
+                               timeout))
 
 rawConnection <- function(object, open = "r") {
     .Internal(rawConnection(deparse(substitute(object)), object, open))
@@ -116,8 +123,10 @@ textConnection <- function(object, open = "r", local = FALSE,
 {
     env <- if (local) parent.frame() else .GlobalEnv
     type <- match(match.arg(encoding), c("", "bytes", "UTF-8"))
-    .Internal(textConnection(deparse(substitute(object)), object, open,
-                             env, type))
+    nm <- deparse(substitute(object))
+    if(length(nm) != 1)
+        stop("argument 'object' must deparse to a single character string")
+    .Internal(textConnection(nm, object, open, env, type))
 }
 
 textConnectionValue <- function(con) .Internal(textConnectionValue(con))

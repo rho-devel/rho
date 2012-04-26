@@ -34,6 +34,7 @@ dumpMethods(f, file, signature, methods, where)
 signature(\dots)
 
 removeMethods(f, where = topenv(parent.frame()), all = missing(where))
+
 setReplaceMethod(f, \dots, where = topenv(parent.frame()))
 
 getGenerics(where, searchForm = FALSE)
@@ -121,20 +122,23 @@ getGenerics(where, searchForm = FALSE)
 
 \arguments{
   \item{f}{ The character string naming the function. }
-  \item{where}{ The environment, name space, or search-list position
+  \item{where}{ The environment, namespace, or search-list position
   from which to search for objects.  By default, start at the
   top-level environment of the calling function, typically the global
-  environment (i.e., use the search list), or the name space of a
+  environment (i.e., use the search list), or the namespace of a
   package from which the call came.  It is important to supply this
   argument when calling any of these functions indirectly.  With
-  package name spaces, the default is likely to be wrong in such calls.}
+  package namespaces, the default is likely to be wrong in such calls.}
 
   \item{signature}{ The class signature of the relevant method.  A
     signature is a named or unnamed vector of character strings.  If
     named, the names must be formal argument names for the generic
-    function.  If \code{signature} is unnamed, the default is to use
-    the first \code{length(signature)} formal arguments of the
-    function. }
+    function.  Signatures are matched to the arguments specified in
+    the signature slot of the generic function (see the Details
+    section of the \code{\link{setMethod}} documentation). 
+
+  The \code{signature} argument to \code{dumpMethods} is ignored (it
+  was used internally in previous implementations).}
 
   \item{file}{ The file or connection on which to dump method definitions. }
 

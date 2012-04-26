@@ -138,15 +138,45 @@ evalWithOpt <- function(expr, options, env)
     return(res)
 }
 
+# The parser doesn't distinguish between types of Sexprs, we do
+expandDynamicFlags <- function(block, options = RweaveRdDefaults) {
+    recurse <- function(block) {
+	flags <- getDynamicFlags(block)
+	if (flags["\\Sexpr"]) {
+	    if (identical(tag <- attr(block, "Rd_tag"), "\\Sexpr")) {
+		if (is.null(opts <- attr(block, "Rd_option"))) opts <- ""
+		# modify locally
+                options <- utils:::SweaveParseOptions(opts, options, RweaveRdOptions)
+                flags[options$stage] <- TRUE
+	    } else if (identical(tag, "\\RdOpts")) {
+	        # modify globally
+	    	options <<- utils:::SweaveParseOptions(block, options, RweaveRdOptions)
+	    } else { # Has \Sexpr flag, so must be a list
+		for (i in seq_along(block)) {
+		    block[[i]] <- recurse(block[[i]])
+		    flags <- flags | getDynamicFlags(block[[i]])
+		}
+	    }
+	    block <- setDynamicFlags(block, flags)
+	}
+	block
+    }
+    recurse(block)
+}
+
 getDynamicFlags <- function(block) {
     flag <- attr(block, "dynamicFlag")
-    if (is.null(flag)) c("#ifdef"=FALSE, "\\Sexpr"=FALSE)
-    else c("#ifdef" = flag %% 2 > 0, "\\Sexpr" = flag %/% 2 > 0)
+    if (is.null(flag)) c("#ifdef"=FALSE, "\\Sexpr"=FALSE, build=FALSE, install=FALSE, render=FALSE)
+    else c("#ifdef" = flag %% 2L > 0L,               # 1
+           "\\Sexpr" = (flag %/% 2L) %% 2L > 0L,     # 2
+           build = (flag %/% 4L) %% 2L > 0L,         # 4
+           install = (flag %/% 8L) %% 2L > 0L,       # 8
+           render = (flag %/% 16L) %% 2L > 0L)       # 16
 }
 
 setDynamicFlags <- function(block, flags) {  # flags in format coming from getDynamicFlags
-    flag <- sum(flags * c(1,2))
-    if (flag == 0) flag <- NULL
+    flag <- sum(flags * c(1L,2L,4L,8L,16L))
+    if (flag == 0L) flag <- NULL
     attr(block, "dynamicFlag") <- flag
     block
 }
@@ -230,16 +260,51 @@ processRdChunk <- function(code, stage, options, env, Rdfile)
 	    }
 	}
 	if (options$results == "rd") {
-	    res <- err   # The last value of the chunk
+	    res <- as.character(err)   # The last value of the chunk
 	    tmpcon <- file()
 	    writeLines(res, tmpcon, useBytes = TRUE)
-	    res <- parse_Rd(tmpcon, fragment=TRUE)
+	    parseFragment <- function(cond) {
+	    	               seek(tmpcon, 0)
+	    	               parse_Rd(tmpcon, fragment=TRUE)
+	    	            }
+	    res <- tryCatch(parse_Rd(tmpcon, fragment=FALSE), 
+	    	            warning = parseFragment, error = parseFragment,
+	    	            finally = close(tmpcon))
+	    # Now remove that extra newline added by the writeLines
+	    last <- res[[length(res)]]
+	    if (attr(last, "Rd_tag") == "TEXT" && (len <- length(last)))
+	        res[[length(res)]][len] <- gsub("\\n$", "", last[len])
 	    flag <- getDynamicFlags(res)
-	    res <- tagged(res, "LIST")
-	    res <- setDynamicFlags(res, flag)
-	    close(tmpcon)
-	    res <- prepare_Rd(res, defines = .Platform$OS.type, options=options,
+	    # We may have multiple chunks now.  If they are in 
+	    # a section, we can wrap them in LIST, but at top
+	    # level we can't, so we disallow multiple sections.
+	    
+	    # First clear out the junk.
+	    tags <- RdTags(res)
+	    keep <- rep(TRUE, length(tags))
+	    for (i in seq_along(tags)) {
+	        if (tags[i] == "TEXT" && res[[i]] == "")
+	            keep[i] <- FALSE
+	    }
+	    res <- res[keep]
+	    tags <- tags[keep]
+	    if (length(res) > 1) {
+	    	is_section <- !is.na(sectionOrder[tags])
+	    	if (!any(is_section)) 
+	    	    res <- tagged(res, "LIST")
+	    	else {
+	    	    if (sum(is_section) > 1) 
+	    		stop("Only one Rd section per \\Sexpr is supported.")
+	    	    res <- res[[which(is_section)]]
+	    	}
+	    } else if (length(res) == 1) res <- res[[1]]
+	    else res <- tagged("", "TEXT")
+	    
+	    if (is.list(res)) {
+	    	res <- setDynamicFlags(res, flag)
+	    	res <- prepare_Rd(res, defines = .Platform$OS.type, options=options,
 	                           stage2 = FALSE, stage3 = FALSE)
+	    }
 	} else if (options$results == "text")
 	    res <- tagged(err, "TEXT")
 	else if (length(res)) {
@@ -281,7 +346,8 @@ processRdIfdefs <- function(blocks, defines)
 	    	    all <- seq_along(block)
 	    	    before <- all[all < i]
 	    	    after <- all[all > i]
-	    	    block <- tagged(c(block[before], newval, block[after]), tag)
+	    	    block <- structure(tagged(c(block[before], newval, block[after]),
+	    	    			      tag), srcref = attr(block, "srcref"))
 	    	} else {
 	    	    flags <- flags | getDynamicFlags(newval)
 		    block[[i]] <- newval
@@ -298,10 +364,10 @@ processRdIfdefs <- function(blocks, defines)
 
 processRdSexprs <-
     function(block, stage, options = RweaveRdDefaults,
-             env = new.env(parent=globalenv()))
+             env = new.env(hash = TRUE, parent = globalenv()))
 {
     recurse <- function(block) {
-    	if (!getDynamicFlags(block)["\\Sexpr"]) return(block)
+    	if (!any(getDynamicFlags(block)[stage])) return(block)
 
         if (is.list(block)) {
             if (!is.null(tag <- attr(block, "Rd_tag"))) {
@@ -311,49 +377,57 @@ processRdSexprs <-
     	    	    options <<-
                         utils:::SweaveParseOptions(block, options, RweaveRdOptions)
     	    }
-	    for (i in seq_along(block))
-		block[[i]] <- recurse(block[[i]])
+    	    if (is.list(block)) {
+		for (i in seq_along(block))
+		    block[[i]] <- recurse(block[[i]])
+	    }
 	}
 	block
     }
-    recurse(block)
+
+    if (!any(getDynamicFlags(block)[stage])) return(block)
+    expandDynamicFlags(recurse(block), options)
 }
 
 prepare_Rd <-
     function(Rd, encoding = "unknown", defines = NULL, stages = NULL,
-             options = RweaveRdDefaults,
+             fragment = FALSE, options = RweaveRdDefaults,
              stage2 = TRUE, stage3 = TRUE, ..., msglevel = 0)
 {
     if (is.character(Rd)) {
         Rdfile <- Rd
         ## do it this way to get info in internal warnings
-        Rd <- eval(substitute(parse_Rd(f, encoding = enc, ...),
-                              list(f = Rd, enc = encoding)))
+        Rd <- eval(substitute(parse_Rd(f, encoding = enc, fragment = frag, ...),
+                              list(f = Rd, enc = encoding, frag = fragment)))
     } else if(inherits(Rd, "connection")) {
         Rdfile <- summary(Rd)
-        Rd <- parse_Rd(Rd, encoding = encoding, ...)
+        Rd <- parse_Rd(Rd, encoding = encoding, fragment=fragment, ...)
     } else Rdfile <- attr(Rd, "Rdfile")
-    if (is.null(Rdfile) && !is.null(srcref <- attr(Rd, "srcref")))
+    srcref <- attr(Rd, "srcref")
+    if (is.null(Rdfile) && !is.null(srcref))
     	Rdfile <- attr(srcref, "srcfile")$filename
-    pratt <- attr(Rd, "prepared")
-    if (is.null(pratt)) pratt <- 0L
-    if ("build" %in% stages)
-    	Rd <- processRdSexprs(Rd, "build", options)
-    if (!is.null(defines))
-    	Rd <- processRdIfdefs(Rd, defines)
-    for (stage in c("install", "render"))
-    	if (stage %in% stages)
-    	    Rd <- processRdSexprs(Rd, stage, options)
-    if (pratt < 2L && stage2)
-        Rd <- prepare2_Rd(Rd, Rdfile)
-    meta <- attr(Rd, "meta")
-    if (pratt < 3L && stage3)
-        Rd <- prepare3_Rd(Rd, Rdfile, msglevel = msglevel)
+    if (fragment) meta <- NULL
+    else {
+	pratt <- attr(Rd, "prepared")
+	if (is.null(pratt)) pratt <- 0L
+	if ("build" %in% stages)
+	    Rd <- processRdSexprs(Rd, "build", options)
+	if (!is.null(defines))
+	    Rd <- processRdIfdefs(Rd, defines)
+	for (stage in c("install", "render"))
+	    if (stage %in% stages)
+		Rd <- processRdSexprs(Rd, stage, options)
+	if (pratt < 2L && stage2)
+	    Rd <- prepare2_Rd(Rd, Rdfile)
+	meta <- attr(Rd, "meta")
+	if (pratt < 3L && stage3)
+	    Rd <- prepare3_Rd(Rd, Rdfile, msglevel = msglevel)
 
-    # Restore flags from any sections that are left
-    Rd <- setDynamicFlags(Rd, apply(sapply(Rd, getDynamicFlags), 1, any))
-
-    structure(Rd, Rdfile = Rdfile, class = "Rd", meta = meta)
+	# Restore flags from any sections that are left
+	Rd <- setDynamicFlags(Rd, apply(sapply(Rd, getDynamicFlags), 1, any))
+    }
+    structure(Rd, Rdfile = Rdfile, class = "Rd", meta = meta,
+              srcref = srcref)
 }
 
 prepare2_Rd <- function(Rd, Rdfile)
@@ -376,21 +450,24 @@ prepare2_Rd <- function(Rd, Rdfile)
 
     drop <- rep.int(FALSE, length(sections))
 
-    where <- which(sections == "\\examples")
-    if(length(where) > 1L) {
-        warnRd(Rd[where[[2L]]], Rdfile,
-               "Only one \\examples section is allowed: the first will be used")
-        drop[where[-1L]] <- TRUE
+    ## Check other sections are unique
+    unique_tags <-
+        paste("\\",
+              c("usage", "arguments", "synopsis",
+                "format", "details", "value", "references", "source",
+                "seealso", "examples", "author", "encoding"),
+              sep = "")
+    for (tag in unique_tags) {
+        where <- which(sections == tag)
+        if(length(where) > 1L) {
+            warnRd(Rd[where[[2L]]], Rdfile,
+                   sprintf("Only one %s section is allowed: the first will be used", tag))
+            drop[where[-1L]] <- TRUE
+        }
     }
 
     enc <- which(sections == "\\encoding")
     if (length(enc)) {
-    	if (length(enc) > 1L) {
-    	    warnRd(Rd[[enc[2L]]], Rdfile,
-                   "Only one \\encoding declaration is allowed: the first will be used")
-            drop[enc[-1L]] <- TRUE
-            enc <- enc[[1L]]
-        }
     	encoding <- Rd[[enc]]
     	if (!identical(RdTags(encoding), "TEXT"))
     	    stopRd(encoding, Rdfile, "'encoding' must be plain text")
@@ -399,16 +476,25 @@ prepare2_Rd <- function(Rd, Rdfile)
     dt <- which(sections == "\\docType")
     docTypes <- character(length(dt))
     if(length(dt)) {
+        if(length(dt) > 1L)
+            warnRd(dt[[1L]], Rdfile,
+                   "Multiple \\docType sections are not supported")
         for(i in seq_along(dt)) {
             docType <- Rd[[dt[i]]]
             if(!identical(RdTags(docType), "TEXT"))
         	stopRd(docType, Rdfile, "'docType' must be plain text")
-            docTypes[i] <- docType[[1L]]
+            ## Some people have \docType{ package } and similar.
+            docTypes[i] <- sub("^ *", "", sub(" *$", "", docType[[1L]]))
+            if (! docTypes[i] %in%
+                c("data", "package", "methods", "class"))
+                warnRd(dt[i], Rdfile, "docType ", sQuote(docTypes[i]),
+                       " is unrecognized")
          }
     }
 
     ## Drop all the parts that are not rendered
-    extras <- c("COMMENT", "TEXT", "\\docType", "\\Rdversion", "\\RdOpts")
+    extras <- c("COMMENT", "TEXT", "\\docType", "\\Rdversion", "\\RdOpts",
+                "USERMACRO", "\\newcommand", "\\renewcommand")
     drop <- drop | (sections %in% extras)
     bad <- ! sections %in% c(names(sectionOrder), extras)
     if (any(bad)) {
@@ -428,6 +514,12 @@ prepare2_Rd <- function(Rd, Rdfile)
     if (length(RdTags(Rd[[2L]])) > 1L)
         stopRd(RdTags(Rd[[2L]]), Rdfile,"\\name must only contain simple text")
 
+    ## R-exts points out that ! | @ cause problems in \name:
+    ## ggplot2 demonstrated it
+    name_text <- as.character(Rd[[2L]])
+    if(grepl("[!|@]", name_text))
+        warnRd(RdTags(Rd[[2L]]), Rdfile,"\\name should not contain !, | or @")
+    ## is this really what we want?  docTypes is a vector.
     structure(Rd, meta = list(docType = docTypes))
 }
 
@@ -443,7 +535,10 @@ prepare3_Rd <- function(Rd, Rdfile, msglevel = 0)
         else {
             tag <- attr(x, "Rd_tag")
             switch(tag,
-                   COMMENT = {},
+		   USERMACRO =,
+		   "\\newcommand" =,
+		   "\\renewcommand" =,
+		   COMMENT = {},
                    VERB =,
                    RCODE =,
                    TEXT = if(any(grepl("[^[:space:]]", s, perl = TRUE, useBytes=TRUE))) return(TRUE),
@@ -484,19 +579,19 @@ sectionTitles <-
 
 psub <- function(pattern, replacement, x)
 ##    gsub(pattern, replacement, x, perl = TRUE, useBytes = TRUE)
-    .Internal(gsub(pattern, replacement, x, FALSE, TRUE, TRUE, FALSE, TRUE))
+    .Internal(gsub(pattern, replacement, x, FALSE, TRUE, FALSE, TRUE))
 
 psub1 <- function(pattern, replacement, x)
 ##    sub(pattern, replacement, x, perl = TRUE, useBytes = TRUE)
-    .Internal(sub(pattern, replacement, x, FALSE, TRUE, TRUE, FALSE, TRUE))
+    .Internal(sub(pattern, replacement, x, FALSE, TRUE, FALSE, TRUE))
 
 fsub <- function(pattern, replacement, x)
 ##    gsub(pattern, replacement, x, fixed = TRUE, useBytes = TRUE)
-    .Internal(gsub(pattern, replacement, x, FALSE, TRUE, FALSE, TRUE, TRUE))
+    .Internal(gsub(pattern, replacement, x, FALSE, FALSE, TRUE, TRUE))
 
 fsub1 <- function(pattern, replacement, x)
 ##    sub(pattern, replacement, x, fixed = TRUE, useBytes = TRUE)
-    .Internal(sub(pattern, replacement, x, FALSE, TRUE, FALSE, TRUE, TRUE))
+    .Internal(sub(pattern, replacement, x, FALSE, FALSE, TRUE, TRUE))
 
 
 ## for lists of messages, see ../man/checkRd.Rd
@@ -550,6 +645,9 @@ checkRd <- function(Rd, defines=.Platform$OS.type, stages="render",
                    ## check if this renders as non-whitespace
                    if(!grepl("^[[:space:]]*$", block)) has_text <<- TRUE
                },
+               USERMACRO =,
+               "\\newcommand" =,
+               "\\renewcommand" =,
                COMMENT = {},
                LIST = if (length(block)) {
                    deparse <- sQuote(paste(as.character.Rd(block), collapse=""))
@@ -607,26 +705,33 @@ checkRd <- function(Rd, defines=.Platform$OS.type, stages="render",
                    inEnc2 <<- FALSE
                },
                "\\eqn" =,
-               "\\deqn" = {
+               "\\deqn" =,
+               "\\figure" = {
                    checkContent(block[[1L]])
                    if (length(block) > 1L) checkContent(block[[2L]])
                },
                "\\tabular" = checkTabular(block),
+               "\\subsection" = checkSection(block, tag),
                "\\if" =,
                "\\ifelse" = {
     		   condition <- block[[1L]]
     		   tags <- RdTags(condition)
-    		   if (!all(tags %in% c("TEXT", "\\Sexpr"))) 
+    		   if (!all(tags %in% c("TEXT", "\\Sexpr")))
     		       stopRd(block, Rdfile, "Condition must be \\Sexpr or plain text")
     		   condition <- condition[tags == "TEXT"]
     		   allow <- .strip_whitespace(strsplit(paste(condition, collapse=""), ",")[[1L]])
-    		   unknown <- allow[!(allow %in% 
+    		   unknown <- allow[!(allow %in%
     		          c("", "latex", "example", "text", "html", "TRUE", "FALSE"))]
-    		   if (length(unknown)) 
+    		   if (length(unknown))
     		       warnRd(block, Rdfile, "Unrecognized format: ", unknown)
                    checkContent(block[[2L]])
                    if (tag == "\\ifelse")
                        checkContent(block[[3L]])
+               },
+               "\\href" = {
+                   if (!identical(RdTags(block[[1L]]), "VERB"))
+                   	stopRd(block, Rdfile, "First argument to \\href must be verbatim URL")
+               	   checkContent(block[[2L]], tag)
                },
                "\\out" = {
                	   tags <- RdTags(block)
@@ -661,6 +766,9 @@ checkRd <- function(Rd, defines=.Platform$OS.type, stages="render",
                        ## check if this renders as non-whitespace
                        if(!grepl("^[[:space:]]*$", block)) has_text <<- TRUE
                    },
+		   USERMACRO =,
+		   "\\newcommand" =,
+		   "\\renewcommand" =,
                    COMMENT = {},
                    "\\var" = checkCodeBlock(block, blocktag), # not preformatted, but the parser checks that
                    "\\special" = checkCodeBlock(block, blocktag),
@@ -679,17 +787,17 @@ checkRd <- function(Rd, defines=.Platform$OS.type, stages="render",
                    "\\S4method" = if(blocktag == "\\usage") {
                        checkContent(block[[1L]], tag) # generic
                        checkContent(block[[2L]], tag) # class
-                   } else warnRd(block, Rdfile, level = 5,
+                   } else warnRd(block, Rdfile, level = 7,
                                  "Tag ", tag, " is only valid in \\usage"),
                    "\\dontrun" =,
                    "\\donttest" =,
                    "\\dontshow" =,
                    "\\testonly" = if(blocktag == "\\examples")
                    checkCodeBlock(block, blocktag)
-                   else warnRd(block, Rdfile, level = 5,
+                   else warnRd(block, Rdfile, level = 7,
                                "Tag ", tag, " is only valid in \\examples"),
                    {
-                       warnRd(block, Rdfile, level = 5,
+                       warnRd(block, Rdfile, level = 7,
                               "Tag ", tag, " is invalid in a ",
                               blocktag, " block")
                        has_text <<- TRUE  # likely, e.g. \url
@@ -772,13 +880,8 @@ checkRd <- function(Rd, defines=.Platform$OS.type, stages="render",
 
     has_text <- FALSE
     checkSection <- function(section, tag) {
-    	if (tag == "\\section") {
+    	if (tag == "\\section" || tag == "\\subsection") {
     	    title <- section[[1L]]
-            ## should be simple text
-            if(length(title) < 1L || attr(title[[1L]], "Rd_tag") != "TEXT") {
-                warnRd(section, Rdfile, level = 5,
-                       "Title of \\section must be non-empty plain text")
-            }
     	    checkContent(title, tag)
     	    section <- section[[2L]]
             ## replace 'tag' in message below
@@ -792,23 +895,23 @@ checkRd <- function(Rd, defines=.Platform$OS.type, stages="render",
                              "Empty section ", tagtitle)
     }
 
-    checkUnique <- function(tag) {
+    checkUnique <- function(tag) { # currently only used for \description
     	which <- which(sections == tag)
     	if (length(which) < 1L)
-    	    warnRd(Rd, Rdfile, level = 7, "Must have a ", tag)
+    	    warnRd(Rd, Rdfile, level = 5, "Must have a ", tag)
     	else {
             if (length(which) > 1L)
-    	    warnRd(Rd[[which[2L]]], Rdfile, level = 7,
+    	    	warnRd(Rd[[which[2L]]], Rdfile, level = 5,
                    "Only one ", tag, " is allowed")
             empty <- TRUE
-            for(block in Rd[[which]]) {
+            for(block in Rd[which]) {
                 switch(attr(block, "Rd_tag"),
                        TEXT = if(!grepl("^[[:space:]]*$", block))
                        empty <- FALSE,
                        empty <- FALSE)
             }
             if(empty)
-                warnRd(Rd[[which]], Rdfile, level = 5,
+                warnRd(Rd[[which[1L]]], Rdfile, level = 5,
                        "Tag ", tag, " must not be empty")
         }
     }
@@ -821,7 +924,8 @@ checkRd <- function(Rd, defines=.Platform$OS.type, stages="render",
             if(!identical(RdTags(docType), "TEXT"))
         	warnRd(docType, Rdfile, level = 7,
                        "'docType' must be plain text")
-            docTypes[i] <- docType[[1L]]
+            ## Some people have \docType{ package } and similar.
+            docTypes[i] <- sub("^ *", "", sub(" *$", "", docType[[1L]]))
          }
     }
 
@@ -845,6 +949,21 @@ checkRd <- function(Rd, defines=.Platform$OS.type, stages="render",
     inEnc2 <- FALSE
     if(!identical("package", docTypes))
         checkUnique("\\description")
+
+    ## Check other standard sections are unique
+    ## \alias, \keyword and \note are allowed to be repeated
+    ## Normally prepare_Rd will have dropped duplicates already
+    unique_tags <-
+        paste("\\",
+              c("name", "title", # "description" checked above
+                "usage", "arguments",  "synopsis",
+                "format", "details", "value", "references", "source",
+                "seealso", "examples", "author", "encoding"),
+              sep = "")
+    for(tag in intersect(sections[duplicated(sections)], unique_tags))
+        warnRd(Rd, Rdfile, level = 5,
+               sprintf("multiple sections named '%s' are not allowed", tag))
+
     for (i in seq_along(sections))
         checkSection(Rd[[i]], sections[i])
 
@@ -866,9 +985,18 @@ testRdConditional <- function(format, conditional, Rdfile) {
     condition <- conditional[[1L]]
     tags <- RdTags(condition)
     if (!all(tags == "TEXT")) stopRd(conditional, Rdfile, "condition must be plain text")
-    
+
     allow <- .strip_whitespace(strsplit(paste(condition, collapse=""), ",")[[1L]])
     any(c("TRUE", format) %in% allow)
 }
 
+toRd <- function(obj, ...)
+    UseMethod("toRd")
 
+toRd.default <- function(obj, ...) {
+    obj <- as.character(obj)
+    obj <- gsub("\\", "\\\\", obj, fixed = TRUE)
+    obj <- gsub("{", "\\{", obj, fixed = TRUE)
+    obj <- gsub("}", "\\}", obj, fixed = TRUE)
+    gsub("%", "\\%", obj, fixed = TRUE)
+}

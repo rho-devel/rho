@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -37,27 +37,19 @@
  * Implementation of class CXXR::UncachedString and related functions.
  */
 
-#include <cstring>
 #include "CXXR/UncachedString.h"
 
 using namespace std;
 using namespace CXXR;
 
-namespace CXXR {
-    namespace ForceNonInline {
-	SEXP (*Rf_mkCharLenp)(const char*, int) = Rf_mkCharLen;
-    }
-}
-
-UncachedString::UncachedString(const std::string& str, cetype_t encoding,
-			       bool frozen)
+UncachedString::UncachedString(const std::string& str, cetype_t encoding)
     : String(str.size(), encoding), m_databytes(str.size() + 1),
       m_data(m_short_string)
 {
     size_t sz = str.size();
     allocData(sz);
     memcpy(m_data, str.data(), sz);
-    if (frozen) freeze();
+    setCString(m_data);
 }
 
 void UncachedString::allocData(size_t sz)
@@ -68,20 +60,7 @@ void UncachedString::allocData(size_t sz)
     m_data[sz] = 0;
 }
 
-const char* UncachedString::c_str() const
-{
-    return m_data;
-}
-
 const char* UncachedString::typeName() const
 {
     return UncachedString::staticTypeName();
-}
-
-// ***** C interface *****
-
-SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding)
-{
-    string str(text, length);
-    return GCNode::expose(new UncachedString(str, encoding));
 }

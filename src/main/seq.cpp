@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1998  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2006   The R Development Core Team.
+ *  Copyright (C) 1998-2011   The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,9 +43,11 @@
 #endif
 
 #include <Defn.h>
+#include <float.h>  /* for DBL_EPSILON */
 #include <Rmath.h>
 
 #include "RBufferUtils.h"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 
@@ -158,11 +160,11 @@ SEXP attribute_hidden do_colon(SEXP call, SEXP op, SEXP args, SEXP rho)
     s2 = CADR(args);
     n1 = length(s1);
     n2 = length(s2);
-    if( n1 > 1 )
+    if (n1 > 1)
 	warningcall(call, _("numerical expression has %d elements: only the first used"), int( n1));
     else if (n1 == 0 || n2 == 0)
 	errorcall(call, _("argument of length 0"));
-    if( n2 > 1 )
+    if (n2 > 1)
 	warningcall(call, _("numerical expression has %d elements: only the first used"), int( n2));
     n1 = asReal(s1);
     n2 = asReal(s2);
@@ -365,6 +367,8 @@ SEXP attribute_hidden do_rep_int(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* We are careful to use evalListKeepMissing here (inside
    DispatchOrEval) to avoid dropping missing arguments so e.g.
    rep(1:3,,8) matches length.out */
+
+/* This is a primitive SPECIALSXP with internal argument matching */
 SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans, x, ap, times = R_NilValue /* -Wall */, ind;
@@ -395,16 +399,24 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
     len = asInteger(CADDR(args));
     if(len != NA_INTEGER && len < 0)
 	errorcall(call, _("invalid '%s' argument"), "length.out");
+    if(length(CADDR(args)) != 1)
+	warningcall(call, _("first element used of '%s' argument"), 
+		    "length.out");
 
     each = asInteger(CADDDR(args));
     if(each != NA_INTEGER && each < 0)
 	errorcall(call, _("invalid '%s' argument"), "each");
+    if(length(CADDDR(args)) != 1)
+	warningcall(call, _("first element used of '%s' argument"), "each");
     if(each == NA_INTEGER) each = 1;
 
     if(lx == 0) {
 	UNPROTECT(3);
 	if(len == NA_INTEGER) return x;
-	else return lengthgets(duplicate(x), len);
+	else {
+	    GCStackRoot<> xd(duplicate(x));
+	    return lengthgets(xd, len);
+	}
     }
 
     if(len != NA_INTEGER) { /* takes precedence over times */
@@ -466,20 +478,26 @@ done:
 
 
 /*
+  This is a primitive SPECIALSXP with internal argument matching,
+  implementing seq.int.
+
    'along' has to be used on an unevaluated argument, and evalList
    tries to evaluate language objects.
  */
+
+#define FEPS 1e-10
+/* to match seq.default */
 SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans = R_NilValue /* -Wall */, ap, tmp, from, to, by, len, along;
     int i, nargs = length(args), lf, lout = NA_INTEGER;
     Rboolean One = CXXRCONSTRUCT(Rboolean, nargs == 1);
 
-    if (DispatchOrEval(call, op, "seq", args, rho, &ans, 0, 0))
+    if (DispatchOrEval(call, op, "seq", args, rho, &ans, 0, 1))
 	return(ans);
 
-    /* This is a primitive and we have not dispatched to a method
-       so we manage the argument matching ourselves.  We pretend this is
+    /* This is a primitive and we manage argument matching ourselves.
+       We pretend this is
        seq(from, to, by, length.out, along.with, ...)
     */
     PROTECT(ap = CONS(R_NilValue,
@@ -494,12 +512,6 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
     SET_TAG(tmp, install("along.with")); tmp = CDR(tmp);
     SET_TAG(tmp, R_DotsSymbol);
     PROTECT(args = matchArgs(ap, args, call));
-
-    /* Manage 'along.with' prior to evaluation */
-    ap = CDDR(CDDR(args));
-    if(CAR(ap) != R_MissingArg)
-	SETCAR(ap, ScalarInteger(length(eval(CAR(ap), rho))));
-    PROTECT(args = evalListKeepMissing(args, rho));
 
     from = CAR(args); args = CDR(args);
     to = CAR(args); args = CDR(args);
@@ -518,7 +530,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	goto done;
     }
     if(along != R_MissingArg) {
-	lout = INTEGER(along)[0];
+	lout = LENGTH(along);
 	if(One) {
 	    ans = lout ? seq_colon(1.0, double(lout), call) : allocVector(INTSXP, 0);
 	    goto done;
@@ -527,6 +539,9 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	double rout = asReal(len);
 	if(ISNAN(rout) || rout <= -0.5)
 	    errorcall(call, _("'length.out' must be a non-negative number"));
+	if(length(len) != 1)
+	    warningcall(call, _("first element used of '%s' argument"), 
+			"length.out");
 	lout = int( ceil(rout));
     }
 
@@ -563,17 +578,35 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    if(n > double( INT_MAX))
 		errorcall(call, _("'by' argument is much too small"));
-	    if(n < -FLT_EPSILON)
+	    if(n < - FEPS)
 		errorcall(call, _("wrong sign in 'by' argument"));
-	    nn = int(n + FLT_EPSILON);
-	    ans = allocVector(REALSXP, nn+1);
-	    ra = REAL(ans);
-	    for(i = 0; i <= nn; i++)
-		ra[i] = rfrom + i * rby;
-	    /* Added in 2.9.0 */
-	    if (nn > 0)
-		if((rby > 0 && ra[nn] > rto) || (rby < 0 && ra[nn] < rto))
-		    ra[nn] = rto;
+	    if(TYPEOF(from) == INTSXP &&
+	       TYPEOF(to) == INTSXP &&
+	       TYPEOF(by) == INTSXP) {
+		int *ia, ifrom = asInteger(from), iby = asInteger(by);
+		/* With the current limits on integers and FEPS
+		   reduced below 1/INT_MAX this is the same as the
+		   next, so this is future-proofing against longer integers.
+		*/
+		nn = int(n);
+		/* seq.default gives integer result from
+		   from + (0:n)*by
+		*/
+		ans = allocVector(INTSXP, nn+1);
+		ia = INTEGER(ans);
+		for(i = 0; i <= nn; i++)
+		    ia[i] = ifrom + i * iby;
+	    } else {
+		nn = int(n + FEPS);
+		ans = allocVector(REALSXP, nn+1);
+		ra = REAL(ans);
+		for(i = 0; i <= nn; i++)
+		    ra[i] = rfrom + i * rby;
+		/* Added in 2.9.0 */
+		if (nn > 0)
+		    if((rby > 0 && ra[nn] > rto) || (rby < 0 && ra[nn] < rto))
+			ra[nn] = rto;
+	    }
 	}
     } else if (lout == 0) {
 	ans = allocVector(INTSXP, 0);
@@ -633,7 +666,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, _("too many arguments"));
 
 done:
-    UNPROTECT(3);
+    UNPROTECT(2);
     return ans;
 }
 
@@ -641,21 +674,30 @@ SEXP attribute_hidden do_seq_along(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans;
     int i, len, *p;
+    static SEXP length_op = NULL;
+
+    /* Store the .Primitive for 'length' for DispatchOrEval to use. */
+    if (length_op == NULL) {
+	SEXP R_lengthSymbol = install("length");
+	length_op = eval(R_lengthSymbol, R_BaseEnv);
+	if (TYPEOF(length_op) != BUILTINSXP) {
+	    length_op = NULL;
+	    error("'length' is not a BUILTIN");
+	}
+	R_PreserveObject(length_op);
+    }
 
     checkArity(op, args);
-#ifdef R_291_and_less
-    len = length(CAR(args));
-#else
-    static RObject* length_func
-	= Environment::base()->frame()->binding(Symbol::obtain("length"))->forcedValue().first;
-    if(isObject(CAR(args)) &&
-       DispatchOrEval(call, length_func,
-		      "length", args, rho, &ans, 0, 1)) {
+    check1arg(args, call, "along.with");
+    /* Try to dispatch to S3 or S4 metods for 'length'.  For cases
+       where no methods are defined this is more efficient than an
+       unconditional callback to R */
+    if (isObject(CAR(args)) &&
+	DispatchOrEval(call, length_op, "length", args, rho, &ans, 0, 1)) {
 	len = asInteger(ans);
     }
     else
 	len = length(CAR(args));
-#endif
 
     ans = allocVector(INTSXP, len);
     p = INTEGER(ans);
@@ -669,9 +711,13 @@ SEXP attribute_hidden do_seq_len(SEXP call, SEXP op, SEXP args, SEXP rho)
     int i, len, *p;
 
     checkArity(op, args);
+    check1arg(args, call, "length.out");
     len = asInteger(CAR(args));
     if(len == NA_INTEGER || len < 0)
-	errorcall(call, _("argument must be non-negative"));
+	errorcall(call, _("argument must be coercible to non-negative integer"));
+    if(length(CAR(args)) != 1)
+	warningcall(call, _("first element used of '%s' argument"),
+		    "length.out");
     ans = allocVector(INTSXP, len);
     p = INTEGER(ans);
     for(i = 0; i < len; i++) p[i] = i+1;

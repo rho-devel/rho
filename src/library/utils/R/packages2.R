@@ -28,16 +28,14 @@ getDependencies <-
         warning("Do not know which element of 'lib' to install dependencies into\nskipping dependencies")
         depends <- FALSE
     }
-    bundles <- .find_bundles(available)
-    for(bundle in names(bundles))
-        pkgs[ pkgs %in% bundles[[bundle]] ] <- bundle
     p0 <- unique(pkgs)
     miss <-  !p0 %in% row.names(available)
     if(sum(miss)) {
-        warning(sprintf(ngettext(sum(miss),
-                                 "package %s is not available",
-                                 "packages %s are not available"),
-                        paste(sQuote(p0[miss]), collapse=", ")),
+	warning(sprintf(ngettext(sum(miss),
+				 "package %s is not available (for %s)",
+				 "packages %s are not available (for %s)"),
+			paste(sQuote(p0[miss]), collapse=", "),
+			sub(" *\\(.*","", R.version.string)),
                 domain = NA)
         if (sum(miss) == 1L &&
             !is.na(w <- match(tolower(p0[miss]),
@@ -81,8 +79,6 @@ getDependencies <-
             flush.console()
         }
 
-        for(bundle in names(bundles))
-            pkgs[ pkgs %in% bundles[[bundle]] ] <- bundle
         pkgs <- unique(pkgs)
         pkgs <- pkgs[pkgs %in% row.names(available)]
         if(length(pkgs) > length(p0)) {
@@ -106,7 +102,8 @@ install.packages <-
              type = getOption("pkgType"),
              configure.args = getOption("configure.args"),
              configure.vars = getOption("configure.vars"),
-             clean = FALSE, Ncpus = getOption("Ncpus"), ...)
+             clean = FALSE, Ncpus = getOption("Ncpus", 1L),
+             libs_only = FALSE, INSTALL_opts, ...)
 {
     if (is.logical(clean) && clean)
         clean <- "--clean"
@@ -173,11 +170,10 @@ install.packages <-
 
     if(missing(pkgs) || !length(pkgs)) {
         ## if no packages were specified, use a menu
-	if(.Platform$OS.type == "windows" || .Platform$GUI == "AQUA") {
-	    SelectList <- select.list
-	} else if(.Platform$OS.type == "unix" &&
-		  capabilities("tcltk") && capabilities("X11")) {
-	    SelectList <- tcltk::tk_select.list
+	if(.Platform$OS.type == "windows" || .Platform$GUI == "AQUA"
+           || (capabilities("tcltk")
+               && capabilities("X11")&& suppressWarnings(tcltk:::.TkUp)) ) {
+            ## this is the condition for a graphical select.list()
 	} else
 	    stop("no packages were specified")
 
@@ -185,53 +181,34 @@ install.packages <-
 	    available <- available.packages(contriburl = contriburl,
 					    method = method)
 	if(NROW(available)) {
-            explode_bundles <- function(a)
-            {
-                contains <- .find_bundles(a, FALSE)
-                extras <- unlist(lapply(names(contains), function(x)
-                                        paste(contains[[x]], " (", x, ")", sep="")))
-                sort(as.vector(c(a[, 1L], extras)))
-            }
-
-            implode_bundles <- function(pkgs)
-            {
-                bundled <- grep(".* \\(.*\\)$", pkgs)
-                if (length(bundled)) {
-                    bundles <- unique(gsub(".* \\((.*)\\)$", "\\1",
-                                           pkgs[bundled]))
-                    pkgs <- c(pkgs[-bundled], bundles)
-                }
-                pkgs
-            }
-
-	    a <- explode_bundles(available)
-	    pkgs <- implode_bundles(SelectList(a, multiple = TRUE,
-					       title = "Packages"))
-            ## avoid duplicate entries in menus, since the latest will
-            ## be picked up
-            pkgs <- unique(pkgs)
+            ## avoid duplicate entries in menus, since the latest available
+            ## will be picked up
+            ## sort in the locale, as R <= 2.10.1 did so
+	    pkgs <- select.list(sort(unique(rownames(available))),
+                                multiple = TRUE,
+                                title = "Packages", graphics = TRUE)
 	}
 	if(!length(pkgs)) stop("no packages were specified")
     }
 
     if(missing(lib) || is.null(lib)) {
         lib <- .libPaths()[1L]
-        if(length(.libPaths()) > 1L)
-            warning(gettextf("argument 'lib' is missing: using '%s'", lib),
-                    immediate. = TRUE, domain = NA)
+	if(length(.libPaths()) > 1L)
+	    message(gettextf("Installing package(s) into %s\n(as %s is unspecified)",
+			     sQuote(lib), sQuote("lib")), domain = NA)
     }
 
     ## check for writability by user
     ok <- file.info(lib)$isdir & (file.access(lib, 2) == 0)
     if(length(lib) > 1 && any(!ok))
         stop(sprintf(ngettext(sum(!ok),
-                              "'lib' element '%s'  is not a writable directory",
-                              "'lib' elements '%s' are not writable directories"),
-                     paste(lib[!ok], collapse=", ")), domain = NA)
-    if(length(lib) == 1 && .Platform$OS.type == "windows") {
-        ## file.access is unreliable on Windows, especially Vista.
+                              "'lib' element %s is not a writable directory",
+                              "'lib' elements %s are not writable directories"),
+                     paste(sQuote(lib[!ok]), collapse=", ")), domain = NA)
+    if(length(lib) == 1L && .Platform$OS.type == "windows") {
+        ## file.access is unreliable on Windows, especially >= Vista.
         ## the only known reliable way is to try it
-        ok <- file.info(lib)$isdir
+        ok <- file.info(lib)$isdir %in% TRUE # dir might not exist, PR#14311
         if(ok) {
             fn <- file.path(lib, paste("_test_dir", Sys.getpid(), sep="_"))
             unlink(fn, recursive = TRUE) # precaution
@@ -246,9 +223,9 @@ install.packages <-
         userdir <- unlist(strsplit(Sys.getenv("R_LIBS_USER"),
                                    .Platform$path.sep))[1L]
         if(interactive() && !file.exists(userdir)) {
-            msg <- gettext("Would you like to create a personal library\n'%s'\nto install packages into?")
+            msg <- gettext("Would you like to create a personal library\n%s\nto install packages into?")
             if(.Platform$OS.type == "windows") {
-                ans <- winDialog("yesno", sprintf(msg, userdir))
+                ans <- winDialog("yesno", sprintf(msg, sQuote(userdir)))
                 if(ans != "YES") stop("unable to install packages")
             } else {
                 ans <- readline(paste(sprintf(msg, userdir), " (y/n) "))
@@ -265,11 +242,12 @@ install.packages <-
     ## check if we should infer repos=NULL
     if(length(pkgs) == 1L && missing(repos) && missing(contriburl)) {
         if((type == "source" && length(grep("\\.tar.gz$", pkgs))) ||
-           (type == "win.binary" && length(grep("\\.zip$", pkgs))) ||
+           (type %in% "win.binary" && length(grep("\\.zip$", pkgs))) ||
            (substr(type, 1L, 10L) == "mac.binary"
             && length(grep("\\.tgz$", pkgs)))) {
             repos <- NULL
             message("inferring 'repos = NULL' from the file name")
+
         }
     }
 
@@ -277,11 +255,13 @@ install.packages <-
         if(type == "mac.binary")
             stop("cannot install MacOS X binary packages on Windows")
 
-        if(type == "win.binary") {      # include local .zip files
+        if(type %in% "win.binary") {
+            ## include local .zip files
             .install.winbinary(pkgs = pkgs, lib = lib, contriburl = contriburl,
                                method = method, available = available,
                                destdir = destdir,
-                               dependencies = dependencies, ...)
+                               dependencies = dependencies,
+                               libs_only = libs_only, ...)
             return(invisible())
         }
         ## Avoid problems with spaces in pathnames.
@@ -299,7 +279,7 @@ install.packages <-
     } else {
         if(substr(type, 1L, 10L) == "mac.binary") {
             if(!length(grep("darwin", R.version$platform)))
-                stop("cannot install MacOS X binary packages on this plaform")
+                stop("cannot install MacOS X binary packages on this platform")
             .install.macbinary(pkgs = pkgs, lib = lib, contriburl = contriburl,
                                method = method, available = available,
                                destdir = destdir,
@@ -307,8 +287,8 @@ install.packages <-
             return(invisible())
         }
 
-        if(type == "win.binary")
-            stop("cannot install Windows binary packages on this plaform")
+        if(type %in% "win.binary")
+            stop("cannot install Windows binary packages on this platform")
 
         if(!file.exists(file.path(R.home("bin"), "INSTALL")))
             stop("This version of R is not set up to install source packages\nIf it was installed from an RPM, you may need the R-devel RPM")
@@ -332,11 +312,16 @@ install.packages <-
         } else
             cmd0 <- paste(paste("R_LIBS", shQuote(libpath), sep="="), cmd0)
 
+    if (is.character(clean))
+        cmd0 <- paste(cmd0, clean)
+    if (libs_only)
+        cmd0 <- paste(cmd0, "--libs-only")
+    if (!missing(INSTALL_opts))
+        cmd0 <- paste(cmd0, paste(INSTALL_opts, collapse = " "))
+
     if(is.null(repos) & missing(contriburl)) {
-        ## install from local source tarballs
+        ## install from local source tarball(s)
         update <- cbind(path.expand(pkgs), lib) # for side-effect of recycling to same length
-        if (is.character(clean))
-            cmd0 <- paste(cmd0, clean)
 
         for(i in seq_len(nrow(update))) {
             cmd <- paste(cmd0, "-l", shQuote(update[i, 2L]),
@@ -345,18 +330,20 @@ install.packages <-
                          shQuote(update[i, 1L]))
             if(system(cmd) > 0L)
                 warning(gettextf(
-                 "installation of package '%s' had non-zero exit status",
-                                update[i, 1L]), domain = NA)
+                 "installation of package %s had non-zero exit status",
+                                sQuote(update[i, 1L])),
+                        domain = NA)
         }
         return(invisible())
     }
 
     tmpd <- destdir
-    nonlocalcran <- length(grep("^file:", contriburl)) < length(contriburl)
-    if(is.null(destdir) && nonlocalcran) {
+    nonlocalrepos <- length(grep("^file:", contriburl)) < length(contriburl)
+    if(is.null(destdir) && nonlocalrepos) {
         tmpd <- file.path(tempdir(), "downloaded_packages")
         if (!file.exists(tmpd) && !dir.create(tmpd))
-            stop(gettextf("unable to create temporary directory '%s'", tmpd),
+            stop(gettextf("unable to create temporary directory %s",
+                          sQuote(tmpd)),
                  domain = NA)
     }
 
@@ -384,34 +371,48 @@ install.packages <-
             ## can't use update[p0, ] due to possible multiple matches
             update <- update[sort.list(match(pkgs, p0)), ]
         }
-        if (is.character(clean))
-            cmd0 <- paste(cmd0, clean)
 
-        if (is.null(Ncpus)) Ncpus <- 1L
         if (Ncpus > 1L && nrow(update) > 1L) {
+            ## if --no-lock or --lock was specified in INSTALL_opts
+            ## that will override this.
             cmd0 <- paste(cmd0, "--pkglock")
             tmpd <- file.path(tempdir(), "make_packages")
             if (!file.exists(tmpd) && !dir.create(tmpd))
-                stop(gettextf("unable to create temporary directory '%s'", tmpd),
+                stop(gettextf("unable to create temporary directory %s",
+                              sQuote(tmpd)),
                      domain = NA)
             mfile <- file.path(tmpd, "Makefile")
             conn <- file(mfile, "wt")
-            cat("all: ", paste(paste(update[, 1L], ".ts", sep=""),
-                               collapse=" "),
-                "\n", sep = "", file = conn)
+            deps <- paste(paste(update[, 1L], ".ts", sep=""), collapse=" ")
+            deps <- strwrap(deps, width = 75, exdent = 2)
+            deps <- paste(deps, collapse=" \\\n")
+            cat("all: ", deps, "\n", sep = "", file = conn)
+            nms <- rownames(available)
+            aDL <- vector("list", length(nms))
+            names(aDL) <- nms
+            for (i in seq_along(nms)) aDL[[i]] <- .clean_up_dependencies(available[i, c("Depends", "Imports", "LinkingTo"), drop = FALSE])
             for(i in seq_len(nrow(update))) {
                 pkg <- update[i, 1L]
                 cmd <- paste(cmd0, "-l", shQuote(update[i, 2L]),
                              getConfigureArgs(update[i, 3L]),
                              getConfigureVars(update[i, 3L]),
-                             update[i, 3L],
+                             shQuote(update[i, 3L]),
                              ">", paste(pkg, ".out", sep=""), "2>&1")
-                deps <- DL[[pkg]]
+                ## We need recursive dependencies, not just direct ones
+                p <- DL[[pkg]]
+                repeat {
+                    extra <- unlist(aDL[p[p %in% nms]])
+                    extra <- extra[extra != pkg]
+                    deps <- unique(c(p, extra))
+                    if (length(deps) <= length(p)) break
+                    p <- deps
+                }
                 deps <- deps[deps %in% pkgs]
+                ## very unlikely to be too long
                 deps <- if(length(deps))
                     paste(paste(deps, ".ts", sep=""), collapse=" ") else ""
                 cat(paste(pkg, ".ts: ", deps, sep=""),
-                    paste("\t@echo installing package", pkg),
+                    paste("\t@echo begin installing package", sQuote(pkg)),
                     paste("\t@", cmd, " && touch ", pkg, ".ts", sep=""),
                     paste("\t@cat ", pkg, ".out", sep=""),
                     "", sep="\n", file = conn)
@@ -420,10 +421,8 @@ install.packages <-
             ## system(paste("cat ", mfile))
             cwd <- setwd(tmpd)
             on.exit(setwd(cwd))
-            ## MAKE will be set by sourcing Renviron, but in case not
-            make <- Sys.getenv("MAKE")
-            if(!nzchar(make)) make <- "make"
-            status <- system(paste(make, "-k -j", Ncpus))
+            ## MAKE will be set by sourcing Renviron
+            status <- system(paste(Sys.getenv("MAKE", "make"), "-k -j", Ncpus))
             if(status > 0L) {
                 ## Try to figure out which
                 pkgs <- update[, 1L]
@@ -444,17 +443,20 @@ install.packages <-
                              update[i, 3L])
                 status <- system(cmd)
                 if(status > 0L)
-                    warning(gettextf("installation of package '%s' had non-zero exit status",
-                                     update[i, 1L]), domain = NA)
+                    warning(gettextf("installation of package %s had non-zero exit status",
+                                     sQuote(update[i, 1L])), domain = NA)
             }
         }
-        if(!is.null(tmpd) && is.null(destdir))
+        if(nonlocalrepos && !is.null(tmpd) && is.null(destdir))
             cat("\n", gettextf("The downloaded packages are in\n\t%s",
-                               sQuote(normalizePath(tmpd))), "\n", sep = "")
+                               sQuote(normalizePath(tmpd, mustWork = FALSE))),
+                "\n", sep = "")
         ## update packages.html on Unix only if .Library was installed into
         libs_used <- unique(update[, 2L])
-        if(.Platform$OS.type == "unix" && .Library %in% libs_used)
-            link.html.help(verbose = TRUE)
+        if(.Platform$OS.type == "unix" && .Library %in% libs_used) {
+            message("Updating HTML index of packages in '.Library'")
+            make.packages.html(.Library)
+        }
     } else if(!is.null(tmpd) && is.null(destdir)) unlink(tmpd, TRUE)
 
     invisible()

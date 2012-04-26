@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -41,6 +41,7 @@
 #include "Defn.h"
 #include "basedecl.h"
 #include "CXXR/FunctionBase.h"
+#include "CXXR/FunctionContext.hpp"
 
 using namespace CXXR;
 
@@ -80,9 +81,11 @@ SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
+/* primitives .primTrace and .primUntrace */
 SEXP attribute_hidden do_trace(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
+    check1arg(args, call, "x");
 
     find_char_fun
 
@@ -125,31 +128,27 @@ R_current_trace_state() { return Rboolean(FunctionBase::tracingEnabled()); }
 /* memory tracing */
 /* report when a traced object is duplicated */
 
-SEXP attribute_hidden do_memtrace(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_tracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 #ifdef R_MEMORY_PROFILING
     SEXP object;
     char buffer[20];
 
     checkArity(op, args);
+    check1arg(args, call, "x");
 
     object = CAR(args);
-    if (TYPEOF(object) == CLOSXP ||
-	TYPEOF(object) == BUILTINSXP ||
-	TYPEOF(object) == SPECIALSXP)
-	errorcall(call, _("argument must not be a function"));
-
     if(object == R_NilValue)
 	errorcall(call, _("cannot trace NULL"));
 
     if(TYPEOF(object) == ENVSXP || TYPEOF(object) == PROMSXP)
-	errorcall(call,
-		  _("'tracemem' is not useful for promise and environment objects"));
+	warningcall(call,
+		    _("'tracemem' is not useful for promise and environment objects"));
     if(TYPEOF(object) == EXTPTRSXP || TYPEOF(object) == WEAKREFSXP)
-	errorcall(call,
-		  _("'tracemem' is not useful for weak reference or external pointer objects"));
+	warningcall(call,
+		    _("'tracemem' is not useful for weak reference or external pointer objects"));
 
-    SET_RTRACE(object, 1);
+    object->setMemoryTracing(true);
     snprintf(buffer, 20, "<%p>", (void *) object);
     return mkString(buffer);
 #else
@@ -159,21 +158,16 @@ SEXP attribute_hidden do_memtrace(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP attribute_hidden do_memuntrace(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_untracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 #ifdef R_MEMORY_PROFILING
     SEXP object;
 
     checkArity(op, args);
+    check1arg(args, call, "x");
 
     object=CAR(args);
-    if (TYPEOF(object) == CLOSXP ||
-	TYPEOF(object) == BUILTINSXP ||
-	TYPEOF(object) == SPECIALSXP)
-	errorcall(call, _("argument must not be a function"));
-
-    if (RTRACE(object))
-	SET_RTRACE(object, 0);
+    object->setMemoryTracing(false);
 #else
     errorcall(call, _("R was not compiled with support for memory profiling"));
 #endif
@@ -181,19 +175,18 @@ SEXP attribute_hidden do_memuntrace(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-#ifndef R_MEMORY_PROFILING
-void attribute_hidden memtrace_report(void* old, void *_new) {
-    return;
-}
-#else
+#ifdef R_MEMORY_PROFILING
 static void memtrace_stack_dump(void)
 {
-    RCNTXT *cptr;
+    Evaluator::Context *cptr;
 
-    for (cptr = R_GlobalContext; cptr; cptr = cptr->nextcontext) {
-	if ((cptr->callflag & (CTXT_FUNCTION | CTXT_BUILTIN))
-	    && TYPEOF(cptr->call) == LANGSXP) {
-	    SEXP fun = CAR(cptr->call);
+    for (cptr = Evaluator::Context::innermost();
+	 cptr; cptr = cptr->nextOut()) {
+	Evaluator::Context::Type type = cptr->type();
+	if (type == Evaluator::Context::FUNCTION
+	    || type == Evaluator::Context::CLOSURE) {
+	    FunctionContext* fctxt = static_cast<FunctionContext*>(cptr);
+	    SEXP fun = fctxt->call()->car();
 	    Rprintf("%s ",
 		    TYPEOF(fun) == SYMSXP ? translateChar(PRINTNAME(fun)) :
 		    "<Anonymous>");
@@ -202,50 +195,70 @@ static void memtrace_stack_dump(void)
     Rprintf("\n");
 }
 
-void attribute_hidden memtrace_report(void * old, void * _new)
+void RObject::traceMemory(const RObject* src1, const RObject* src2,
+			  const RObject* src3)
 {
-    if (!R_current_trace_state()) return;
-    Rprintf("tracemem[%p -> %p]: ", (void *) old, _new);
+    setMemoryTracing(true);
+    Rprintf("tracemem[");
+    bool needs_comma = false;
+    if (src1->memoryTraced()) {
+	Rprintf("%p", src1);
+	needs_comma = true;
+    }
+    if (src2 && src2->memoryTraced()) {
+	if (needs_comma)
+	    Rprintf(", ");
+	Rprintf("%p", src2);
+	needs_comma = true;
+    }
+    if (src3 && src3->memoryTraced()) {
+	if (needs_comma)
+	    Rprintf(", ");
+	Rprintf("%p", src3);
+    }
+    Rprintf(" -> %p]: ", this);
     memtrace_stack_dump();
 }
 
 #endif /* R_MEMORY_PROFILING */
 
-SEXP attribute_hidden do_memretrace(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_retracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 #ifdef R_MEMORY_PROFILING
-    SEXP object, origin, ans;
+    SEXP object, previous, ans, ap, argList;
     char buffer[20];
 
-    /* checkArity(op, args); */
-    if(length(args) < 1 || length(args) > 2)
-	errorcall(call, _("invalid number of arguments"));
+    PROTECT(ap = list2(R_NilValue, R_NilValue));
+    SET_TAG(ap,  install("x"));
+    SET_TAG(CDR(ap), install("previous"));
+    PROTECT(argList =  matchArgs(ap, args, call));
+    if(CAR(argList) == R_MissingArg) SETCAR(argList, R_NilValue);
+    if(CADR(argList) == R_MissingArg) SETCAR(CDR(argList), R_NilValue);
 
-    object = CAR(args);
-    if (TYPEOF(object) == CLOSXP ||
-	TYPEOF(object) == BUILTINSXP ||
-	TYPEOF(object) == SPECIALSXP)
-	errorcall(call, _("argument must not be a function"));
+    object = CAR(ap);
+    previous = CADR(ap);
+    if(!isNull(previous) && !isString(previous))
+	    errorcall(call, _("invalid '%s' argument"), "previous");
 
-    if(length(args) >= 2) {
-	origin = CADR(args);
-	if(!isString(origin))
-	    errorcall(call, _("invalid '%s' argument"), "origin");
-    } else origin = R_NilValue;
-
-    if (RTRACE(object)){
+    if (object->memoryTraced()){
 	snprintf(buffer, 20, "<%p>", (void *) object);
 	ans = mkString(buffer);
-    } else ans = R_NilValue;
+    } else {
+	R_Visible = CXXRFALSE;
+	ans = R_NilValue;
+    }
 
-    if (origin != R_NilValue){
-	SET_RTRACE(object, 1);
+    if (previous != R_NilValue){
+	object->setMemoryTracing(true);
 	if (R_current_trace_state()) {
+	    /* FIXME: previous will have <0x....> whereas other values are
+	       without the < > */
 	    Rprintf("tracemem[%s -> %p]: ",
-		    translateChar(STRING_ELT(origin, 0)), (void *) object);
+		    translateChar(STRING_ELT(previous, 0)), (void *) object);
 	    memtrace_stack_dump();
 	}
     }
+    UNPROTECT(2);
     return ans;
 #else
     return R_NilValue;

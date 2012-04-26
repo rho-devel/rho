@@ -1,6 +1,6 @@
 % File src/library/base/man/expression.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{expression}
@@ -28,13 +28,15 @@ as.expression(x, \dots)
   \sQuote{Expression} here is not being used in its colloquial sense,
   that of mathematical expressions.  Those are calls (see
   \code{\link{call}}) in \R, and an \R expression vector is a list of
-  calls, symbols etc, typically as returned by \code{\link{parse}}.
+  calls, symbols etc, for example as returned by \code{\link{parse}}.
 
   As an object of mode \code{"expression"} is a list, it can be
-  subsetted by both \code{[} and by \code{[[}, the latter extracting
-  individual calls etc.
+  subsetted by \code{[}, \code{[[} or \code{$}, the latter two extracting
+  individual calls etc.  The replacement forms of these operators can be
+  used to replace or delete elements.
   
   \code{expression} and \code{is.expression} are \link{primitive} functions.
+  \code{expression} is \sQuote{special}: it does not evaluate its arguments.
 }
 \value{
   \code{expression} returns a vector of type \code{"expression"}
@@ -45,11 +47,14 @@ as.expression(x, \dots)
 
   \code{as.expression} attempts to coerce its argument into an
   expression object.  It is generic, and only the default method is
-  described here.  \code{NULL}, calls, symbols (see
+  described here.  (The default method calls
+  \code{as.vector(type="expression")} and so may dispatch methods for
+  \code{\link{as.vector}}.)  \code{NULL}, calls, symbols (see
   \code{\link{as.symbol}}) and pairlists are returned as the element of
-  a length-one expression vector.  Vectors (including lists) are placed
-  element-by-element into an expression vector.  Other types are not
-  currently supported.
+  a length-one expression vector.  Atomic vectors are placed
+  element-by-element into an expression vector (without using any
+  names): lists are changed type to an expression vector (keeping all
+  attributes).  Other types are not currently supported.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)

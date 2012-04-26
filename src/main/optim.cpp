@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1999-2007  the R Development Core Team
+ *  Copyright (C) 1999-2007  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,6 +41,10 @@
 #include <R_ext/Random.h>	/* for the random number generation in
 				   samin() */
 #include <R_ext/Applic.h>	/* setulb() */
+
+#include "CXXR/GCStackRoot.hpp"
+
+using namespace CXXR;
 
 static SEXP getListElement(SEXP list, CXXRCONST char *str)
 {
@@ -243,7 +247,8 @@ SEXP attribute_hidden do_optim(SEXP call, SEXP op, SEXP args, SEXP rho)
     args = CDR(args); options = CAR(args);
     PROTECT(OS->R_fcall = lang2(fn, R_NilValue));
     /* I don't think duplication is needed here */
-    PROTECT(par = coerceVector(duplicate(par), REALSXP));
+    GCStackRoot<> pardup(duplicate(par));
+    PROTECT(par = coerceVector(pardup, REALSXP));
     npar = LENGTH(par);
     dpar = vect(npar);
     opar = vect(npar);
@@ -1114,7 +1119,7 @@ void samin(int n, double *pb, double *yb, optimfn fminfn, int maxit,
     long j;
     int k, its, itdoc;
     double t, y, dy, ytry, scale;
-    double *p, *dp, *ptry;
+    double *p, *ptry;
 
     /* Above have: if(trace != 0) trace := REPORT control argument = STEPS */
     if (trace < 0)
@@ -1124,7 +1129,7 @@ void samin(int n, double *pb, double *yb, optimfn fminfn, int maxit,
 	*yb = fminfn(n, pb, ex);
 	return;
     }
-    p = vect (n); dp = vect (n); ptry = vect (n);
+    p = vect (n); ptry = vect (n);
     GetRNGstate();
     *yb = fminfn (n, pb, ex);  /* init best system state pb, *yb */
     if (!R_FINITE(*yb)) *yb = big;

@@ -1,29 +1,28 @@
-
-### Copyright (C) 2006  Deepayan Sarkar <Deepayan.Sarkar@R-project.org>
-###
-### This file is part of the utils package for R.
-### It is made available under the terms of the GNU General Public
-### License, version 2, or at your option, any later version,
-### incorporated herein by reference.
-###
-### This program is distributed in the hope that it will be
-### useful, but WITHOUT ANY WARRANTY; without even the implied
-### warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-### PURPOSE.  See the GNU General Public License for more
-### details.
-###
-### You should have received a copy of the GNU General Public
-### License along with this program; if not, write to the Free
-### Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-### MA 02110-1301, USA
-
-
+#  File src/library/utils/R/completion.R
+#  Part of the R package, http://www.R-project.org
+#
+# Copyright (C) 2006  Deepayan Sarkar <Deepayan.Sarkar@R-project.org>
+# Copyright (C) 2006-2009  The R Development Core Team
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
 
 
 
-### Note: try not to do things that might be slow due to network
-### latency (think NFS).  For example, retrieving a list of available
-### packages is potentially slow for this reason.
+### Note: By default, we try not to do things that might be slow due
+### to network latency (think NFS).  For example, retrieving a list of
+### available packages is potentially slow, and is thus disabled
+### initially.
 
 
 ### Status: I'm mostly happy with things.  The only obvious
@@ -181,7 +180,7 @@ rc.status <- function()
 {
     ## special rules apply when we are inside quotes (see fileCompletionPreferred() below)
     insideQuotes <- {
-        lbss <- head(unlist(strsplit(linebuffer, "")), .CompletionEnv[["end"]])
+        lbss <- head.default(unlist(strsplit(linebuffer, "")), .CompletionEnv[["end"]])
         ((sum(lbss == "'") %% 2 == 1) ||
          (sum(lbss == '"') %% 2 == 1))
     }
@@ -200,7 +199,7 @@ rc.status <- function()
                                       perl = TRUE))[[1L]]
     start <- ## 0-indexed
         if (all(start < 0L)) 0L
-        else tail(start + attr(start, "match.length"), 1L) - 1L
+        else tail.default(start + attr(start, "match.length"), 1L) - 1L
     .CompletionEnv[["start"]] <- start
     .CompletionEnv[["token"]] <- substr(linebuffer, start + 1L, end)
     .CompletionEnv[["token"]]
@@ -256,35 +255,31 @@ specialOpLocs <- function(text)
                function(s) gregexpr(s, text, fixed = TRUE)[[1L]],
                simplify = FALSE)
     ## this gets the last ones
-    ge <- sapply(ge, tail, 1)
+    ge <- sapply(ge, tail.default, 1)
     ge <- ge[ge > 0]
 }
 
 
 
 ## accessing the help system: should allow anything with an index entry
+## this just looks at packages on the search path.
 
-matchAvailableTopics <-
-    function(text)
+matchAvailableTopics <- function(text)
 {
-    if (length(text) != 1L || text == "") return (character(0L))
-    ll <- installed.packages()
-    ll <- ll[intersect(rownames(ll), .packages()), "LibPath"]
-    indexFiles <- file.path(ll, names(ll), "help", "AnIndex")
-    unique(unlist(lapply(indexFiles,
-                         function(f) {
-                             if (!file.exists(f)) return (character(0L))
-                             foo <-
-                                 scan(f, what = list("", ""),
-                                      sep = "\t",
-                                      quote = "",
-                                      na.strings = "",
-                                      quiet = TRUE)[[1L]]
-                             grep(sprintf("^%s", makeRegexpSafe(text)),
-                                  foo, value = TRUE)
-                         })))
+    .readAliases <- function(path) {
+        if(file.exists(f <- file.path(path, "help", "aliases.rds")))
+            names(readRDS(f))
+        else if(file.exists(f <- file.path(path, "help", "AnIndex")))
+            ## aliases.rds was introduced before 2.10.0, as can phase this out
+            scan(f, what = list("", ""), sep = "\t", quote = "",
+                 na.strings = "", quiet = TRUE)[[1L]]
+        else character()
+    }
+    if (length(text) != 1L || text == "") return (character())
+    pkgpaths <- searchpaths()[substr(search(), 1L, 8L) == "package:"]
+    aliases <- unique(unlist(lapply(pkgpaths, .readAliases)))
+    grep(sprintf("^%s", makeRegexpSafe(text)), aliases, value = TRUE)
 }
-
 
 
 
@@ -303,7 +298,7 @@ helpCompletions <- function(prefix, suffix)
         else
             normalCompletions(suffix, check.mode = FALSE)
     if (length(nc)) sprintf("%s?%s", prefix, nc)
-    else character(0L)
+    else character()
 }
 
 
@@ -329,13 +324,13 @@ specialCompletions <- function(text, spl)
     opStart <- spl[wm]
     opEnd <- opStart + nchar(op)
 
-    if (opStart < 1) return(character(0L)) # shouldn't happen
+    if (opStart < 1) return(character()) # shouldn't happen
     prefix <- substr(text, 1L, opStart - 1L)
     suffix <- substr(text, opEnd, 1000000L)
 
     if (op == "?") return(helpCompletions(prefix, suffix))
 
-    if (opStart <= 1) return(character(0L)) # not meaningful
+    if (opStart <= 1) return(character()) # not meaningful
 
     ## ( breaks words, so prefix should not involve function calls,
     ## and thus, hopefully no side-effects.
@@ -462,7 +457,7 @@ attachedPackageCompletions <- function(text, add = rc.getOption("package.suffix"
         else
             comps
     }
-    else character(0L)
+    else character()
 }
 
 
@@ -503,7 +498,7 @@ normalCompletions <-
 ## whatever-the-opposite-of-caution-is (our justification being that
 ## erring on the side of caution is practically useless and not erring
 ## at all is expensive to the point of being impossible (we really
-## don't want to evaluate the dotlot() call in "print(dotplot(x),
+## don't want to evaluate the dotplot() call in "print(dotplot(x),
 ## positi[TAB] )" ))))
 
 
@@ -559,7 +554,7 @@ inFunction <-
     temp <-
         data.frame(i = c(parens[["("]], parens[[")"]]),
                    c = rep(c(1, -1), sapply(parens, length)))
-    if (nrow(temp) == 0) return(character(0L))
+    if (nrow(temp) == 0) return(character())
     temp <- temp[order(-temp$i), , drop = FALSE] ## order backwards
     wp <- which(cumsum(temp$c) > 0)
     if (length(wp)) # inside a function
@@ -581,24 +576,24 @@ inFunction <-
 
         if ((length(grep("=", suffix, fixed = TRUE))) &&
             (length(grep(",", substr(suffix,
-                                     tail(gregexpr("=", suffix, fixed = TRUE)[[1L]], 1L),
+                                     tail.default(gregexpr("=", suffix, fixed = TRUE)[[1L]], 1L),
                                      1000000L), fixed = TRUE)) == 0L))
         {
             ## we are on the wrong side of a = to be an argument, so
             ## we don't care even if we are inside a function
-            return(character(0L))
+            return(character())
         }
         else ## guess function name
         {
             possible <- suppressWarnings(strsplit(prefix, breakRE, perl = TRUE))[[1L]]
             possible <- possible[possible != ""]
-            if (length(possible)) return(tail(possible, 1))
-            else return(character(0L))
+            if (length(possible)) return(tail.default(possible, 1))
+            else return(character())
         }
     }
     else # not inside function
     {
-        return(character(0L))
+        return(character())
     }
 }
 
@@ -611,7 +606,7 @@ argNames <-
     ## else
     args <- do.call(argsAnywhere, list(fname))
     if (is.null(args))
-        character(0L)
+        character()
     else if (is.list(args))
         unlist(lapply(args, function(f) names(formals(f))))
     else
@@ -638,7 +633,7 @@ specialFunctionArgs <- function(fun, text)
                    grep(sprintf("^%s", makeRegexpSafe(text)),
                         rownames(installed.packages()), value = TRUE)
                }
-               else character(0L)
+               else character()
            },
 
            data = {
@@ -647,11 +642,11 @@ specialFunctionArgs <- function(fun, text)
                    grep(sprintf("^%s", makeRegexpSafe(text)),
                         data()$results[, "Item"], value = TRUE)
                }
-               else character(0L)
+               else character()
            },
 
            ## otherwise,
-           character(0L))
+           character())
 }
 
 
@@ -662,7 +657,7 @@ functionArgs <-
              S4methods = FALSE,
              add.args = rc.getOption("funarg.suffix"))
 {
-    if (length(fun) < 1L || any(fun == "")) return(character(0L))
+    if (length(fun) < 1L || any(fun == "")) return(character())
     specialFunArgs <- specialFunctionArgs(fun, text)
     if (S3methods && exists(fun, mode = "function"))
         fun <-
@@ -720,7 +715,7 @@ fileCompletionPreferred <- function()
 
         ## yes if the number of quote signs to the left is odd
         linebuffer <- .CompletionEnv[["linebuffer"]]
-        lbss <- head(unlist(strsplit(linebuffer, "")), .CompletionEnv[["end"]])
+        lbss <- head.default(unlist(strsplit(linebuffer, "")), .CompletionEnv[["end"]])
         ((sum(lbss == "'") %% 2 == 1) ||
          (sum(lbss == '"') %% 2 == 1))
 
@@ -732,20 +727,62 @@ fileCompletionPreferred <- function()
 ## that can do filename completion themselves should probably not use
 ## this as they will do a better job.
 
+correctFilenameToken <- function()
+{
+    ## Helper function
+
+    ## If a file name contains spaces, the token will only have the
+    ## part after the last space.  This function tries to recover the
+    ## complete initial part.
+
+    ## Find part between last " or ' 
+    linebuffer <- .CompletionEnv[["linebuffer"]]
+    lbss <- head.default(unlist(strsplit(linebuffer, "")), .CompletionEnv[["end"]])
+    whichDoubleQuote <- lbss == '"'
+    whichSingleQuote <- lbss == "'"
+    insideDoubleQuote <- (sum(whichDoubleQuote) %% 2 == 1)
+    insideSingleQuote <- (sum(whichSingleQuote) %% 2 == 1)
+    loc.start <- 
+        if (insideDoubleQuote && insideSingleQuote)
+        {
+            ## Should not happen, but if it does, should take whichever comes later
+            max(which(whichDoubleQuote), which(whichSingleQuote))
+        }
+        else if (insideDoubleQuote)
+            max(which(whichDoubleQuote))
+        else if (insideSingleQuote)
+            max(which(whichSingleQuote))
+        else ## should not happen, abort non-intrusively
+            .CompletionEnv[["start"]]
+    substring(linebuffer, loc.start + 1L, .CompletionEnv[["end"]])
+}
+
+
+
 
 fileCompletions <- function(token)
 {
     ## uses Sys.glob (conveniently introduced in 2.5.0)
-    ## assume token starts just after the begin quote
+
+    ## token may not start just after the begin quote, e.g., if spaces
+    ## are included.  Get 'correct' partial file name by looking back
+    ## to begin quote
+    pfilename <- correctFilenameToken()
 
     ## Sys.glob doesn't work without expansion.  Is that intended?
-    token.expanded <- path.expand(token)
-    comps <- Sys.glob(sprintf("%s*", token.expanded), dirmark = TRUE)
+    pfilename.expanded <- path.expand(pfilename)
+    comps <- Sys.glob(sprintf("%s*", pfilename.expanded), dirmark = TRUE)
 
     ## for things that only extend beyond the cursor, need to
     ## 'unexpand' path
-    if (token.expanded != token)
+    if (pfilename.expanded != pfilename)
         comps <- sub(path.expand("~"), "~", comps, fixed = TRUE)
+
+    ## for tokens that were non-trivially corrected by adding prefix,
+    ## need to delete extra part
+    if (pfilename != token)
+        comps <- substring(comps, nchar(pfilename) - nchar(token) + 1L, 1000L)
+
     comps
 }
 
@@ -797,13 +834,13 @@ fileCompletions <- function(token)
             ## 'foo[[' part.
 
             .CompletionEnv[["comps"]] <-
-                if (probablyNotFilename) character(0L)
+                if (probablyNotFilename) character()
                 else fileCompletions(text)
             .setFileComp(FALSE)
         }
         else
         {
-            .CompletionEnv[["comps"]] <- character(0L)
+            .CompletionEnv[["comps"]] <- character()
             .setFileComp(TRUE)
         }
 
@@ -821,7 +858,7 @@ fileCompletions <- function(token)
         .CompletionEnv[["fguess"]] <- guessedFunction
 
         ## if this is not "", then we want to add possible arguments
-        ## of that function(s) (methods etc).  Should be character(0L)
+        ## of that function(s) (methods etc).  Should be character()
         ## if nothing matches
 
         fargComps <- functionArgs(guessedFunction, text)
@@ -842,7 +879,7 @@ fileCompletions <- function(token)
         ## filename completion.
 
         ## lastArithOp <- tail(gregexpr("/", text, fixed = TRUE)[[1L]], 1)
-        lastArithOp <- tail(gregexpr("[\"'^/*+-]", text)[[1L]], 1)
+        lastArithOp <- tail.default(gregexpr("[\"'^/*+-]", text)[[1L]], 1)
         if (haveArithOp <- (lastArithOp > 0))
         {
             prefix <- substr(text, 1L, lastArithOp)
@@ -905,7 +942,7 @@ fileCompletions <- function(token)
     .guessTokenFromLine()
     token <- .CompletionEnv[["token"]]
     comps <-
-        if (nchar(token, type = "chars") < minlength) character(0L)
+        if (nchar(token, type = "chars") < minlength) character()
         else
         {
             .completeToken()
@@ -918,7 +955,7 @@ fileCompletions <- function(token)
     {
         ## no completions
         addition <- ""
-        possible <- character(0L)
+        possible <- character()
     }
     else if (length(comps) == 1L)
     {
@@ -934,7 +971,7 @@ fileCompletions <- function(token)
         ## completion was found.
 
         addition <- substr(comps, nchar(token, type = "chars") + 1L, 100000L)
-        possible <- character(0L)
+        possible <- character()
     }
     else if (length(comps) > 1L)
     {
@@ -949,7 +986,7 @@ fileCompletions <- function(token)
             addition <- ""
             possible <-
                 if (isRepeat) capture.output(cat(format(comps, justify = "left"), fill = TRUE))
-                else character(0L)
+                else character()
         }
         else
         {
@@ -958,7 +995,7 @@ fileCompletions <- function(token)
             while (length(table(substr(additions, 1L, keepUpto))) == 1L)
                 keepUpto <- keepUpto + 1L
             addition <- substr(additions[1L], 1L, keepUpto - 1L)
-            possible <- character(0L)
+            possible <- character()
         }
     }
     list(addition = addition,
@@ -1048,15 +1085,16 @@ fileCompletions <- function(token)
     options <- c("add.smooth", "browser", "check.bounds", "continue",
 	"contrasts", "defaultPackages", "demo.ask", "device",
 	"digits", "dvipscmd", "echo", "editor", "encoding",
-	"example.ask", "expressions", "help.try.all.packages",
-	"htmlhelp", "HTTPUserAgent", "internet.info", "keep.source",
-	"keep.source.pkgs", "latexcmd", "locatorBell", "mailer",
-	"max.print", "menu.graphics", "na.action", "OutDec", "pager",
-	"papersize", "par.ask.default", "pdfviewer", "pkgType",
-	"printcmd", "prompt", "repos", "scipen", "show.coef.Pvalues",
+	"example.ask", "expressions", "help.search.types",
+	"help.try.all.packages", "htmlhelp", "HTTPUserAgent",
+	"internet.info", "keep.source", "keep.source.pkgs",
+	"locatorBell", "mailer", "max.print", "menu.graphics",
+	"na.action", "OutDec", "pager", "papersize",
+	"par.ask.default", "pdfviewer", "pkgType", "printcmd",
+	"prompt", "repos", "scipen", "show.coef.Pvalues",
 	"show.error.messages", "show.signif.stars", "str",
 	"stringsAsFactors", "timeout", "ts.eps", "ts.S.compat",
-	"unzip", "verbose", "warn", "warnings.length", "width")
+	"unzip", "verbose", "warn", "warning.length", "width")
 
     .addFunctionInfo(par = par, options = options)
 
@@ -1066,7 +1104,7 @@ fileCompletions <- function(token)
 
 
 
-.CompletionEnv <- new.env()
+.CompletionEnv <- new.env(hash = FALSE)
 
 ## needed to save some overhead in .win32consoleCompletion
 assign("linebuffer", "", env = .CompletionEnv)

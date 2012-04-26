@@ -72,7 +72,7 @@ addmargins <-
     ## we could figure them out, empty strings otherwise
 
     if(length(FUN) != n.sid) {
-	if(length(FUN) == 1)
+	if(length(FUN) == 1L)
 	    FUN <- rep(FUN, n.sid)
 	else
 	    stop(gettextf("length of FUN, %d,\n does not match the length of the margins, %d",
@@ -141,7 +141,7 @@ addmargins <-
 		    n.new/(skip+n.mar*runl))
 
 	## Define a vector to hold all the values of the new table
-	values <- numeric(apos)
+	values <- double(length(apos))
 
 	## First fill in the body of the table
 	values[apos] <- as.vector(A)

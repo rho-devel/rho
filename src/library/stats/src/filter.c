@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -93,6 +93,7 @@ filter1(double *x, int *n, double *filter, int *nfilt, int *sides,
     }
 }
 
+/* recursive filtering */
 void
 filter2(double *x, int *n, double *filter, int *nfilt, double *out)
 {
@@ -104,7 +105,7 @@ filter2(double *x, int *n, double *filter, int *nfilt, double *out)
 	for (j = 0; j < nf; j++) {
 	    tmp = out[nf + i - j - 1];
 	    if(my_isok(tmp)) sum += tmp * filter[j];
-	    else { out[i] = NA_REAL; goto bad3; }
+	    else { out[nf + i] = NA_REAL; goto bad3; }
 	}
 	out[nf + i] = sum;
     bad3:

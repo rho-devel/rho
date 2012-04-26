@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2006-8  The R Development Core Team
+ *  Copyright (C) 2006-10  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -55,11 +55,18 @@ R --slave --no-restore --vanilla --file=foo [script_args]
 # include <config.h>
 #endif
 
+#ifdef WIN32
+#include <psignal.h>
+/* on some systems needs to be included before <sys/types.h> */
+#endif
+
 #include <stdio.h>
 #include <limits.h> /* for PATH_MAX */
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h> /* for execv */
+
+#include <Rversion.h>
 
 
 /* Maximal length of an entire file name */
@@ -82,10 +89,12 @@ R --slave --no-restore --vanilla --file=foo [script_args]
 #ifndef WIN32
 static char rhome[] = R_HOME;
 #else
+# ifndef BINDIR
+#  define BINDIR "bin"
+# endif
+# define FOR_Rscript
 # include "rterm.c"
 #endif
-
-#define RSVERSION "$Rev: 49838 $"
 
 #ifdef HAVE_EXECV
 static int verbose = 0;
@@ -109,6 +118,7 @@ void usage(void)
     fprintf(stderr, "  --restore           Do restore previously saved objects at startup\n");
     fprintf(stderr, "  --vanilla           Combine --no-save, --no-restore, --no-site-file\n");
     fprintf(stderr, "                        --no-init-file and --no-environ\n");
+    fprintf(stderr, "\n'file' may contain spaces but not shell metacharacters\n");
 }
 
 
@@ -123,7 +133,7 @@ int main(int argc, char *argv[])
 	usage();
 	exit(1);
     }
-    av = (char **) malloc((argc+4)*sizeof(char *));
+    av = (char **) malloc((size_t) (argc+4)*sizeof(char *));
     if(!av) {
 	fprintf(stderr, "malloc failure\n");
 	exit(1);
@@ -131,8 +141,8 @@ int main(int argc, char *argv[])
 
     p = getenv("RHOME");
 #ifdef WIN32
-    if(p && strlen(p))
-	snprintf(cmd, PATH_MAX+1, "%s\\bin\\Rterm.exe",  p);
+    if(p && *p)
+	snprintf(cmd, PATH_MAX+1, "%s\\%s\\Rterm.exe",  p, BINDIR);
     else {
 	char rhome[MAX_PATH];
 	GetModuleFileName(NULL, rhome, MAX_PATH);
@@ -142,8 +152,8 @@ int main(int argc, char *argv[])
 	snprintf(cmd, PATH_MAX+1, "%s\\Rterm.exe",  rhome);
     }
 #else
-    if(!(p && strlen(p))) p = rhome;
-    /* we cannot assume snprintf here */
+    if(!(p && *p)) p = rhome;
+    /* avoid snprintf here */
     if(strlen(p) + 6 > PATH_MAX) {
 	fprintf(stderr, "impossibly long path for RHOME\n");
 	exit(1);
@@ -160,10 +170,13 @@ int main(int argc, char *argv[])
 	    exit(0);
 	}
 	if(strcmp(argv[1], "--version") == 0) {
-	    char buf[20];
-	    strcpy(buf, RSVERSION+6);
-	    buf[strlen(buf) - 2] = '\0';
-	    fprintf(stderr, "R scripting front-end version %s\n", buf);
+	    if(strlen(R_STATUS) == 0)
+		fprintf(stderr, "R scripting front-end version %s.%s (%s-%s-%s)\n", 
+			R_MAJOR, R_MINOR, R_YEAR, R_MONTH, R_DAY);
+	    else 
+		fprintf(stderr, "R scripting front-end version %s.%s %s (%s-%s-%s r%s)\n", 
+			R_MAJOR, R_MINOR, R_STATUS, R_YEAR, R_MONTH, R_DAY,
+			R_SVN_REVISION);
 	    exit(0);
 	}
     }

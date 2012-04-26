@@ -44,13 +44,11 @@ axis.POSIXct <- function(side, x, at, format, labels = TRUE, ...)
     if(d < 60*60*24*50) {
         zz <- pretty(z/sc)
         z <- zz*sc
-        class(z) <- c("POSIXt", "POSIXct")
-        attr(z, "tzone") <- attr(x, "tzone")
+        z <- .POSIXct(z,  attr(x, "tzone"))
         if(sc == 60*60*24) z <- as.POSIXct(round(z, "days"))
         if(missing(format)) format <- "%b %d"
     } else if(d < 1.1*60*60*24*365) { # months
-        class(z) <- c("POSIXt", "POSIXct")
-        attr(z, "tzone") <- attr(x, "tzone")
+        z <- .POSIXct(z,  attr(x, "tzone"))
         zz <- as.POSIXlt(z)
         zz$mday <- zz$wday <- zz$yday <- 1
         zz$isdst <- -1; zz$hour <- zz$min <- zz$sec <- 0
@@ -59,20 +57,17 @@ axis.POSIXct <- function(side, x, at, format, labels = TRUE, ...)
         m <- rep.int(zz$year[1L], m)
         zz$year <- c(m, m+1)
         zz <- lapply(zz, function(x) rep(x, length.out = M))
-        class(zz) <- c("POSIXt", "POSIXlt")
-        attr(z, "tzone") <- attr(x, "tzone")
+        zz <- .POSIXlt(zz, attr(x, "tzone"))
         z <- as.POSIXct(zz)
         if(missing(format)) format <- "%b"
     } else { # years
-        class(z) <- c("POSIXt", "POSIXct")
-        attr(z, "tzone") <- attr(x, "tzone")
+        z <- .POSIXct(z,  attr(x, "tzone"))
         zz <- as.POSIXlt(z)
         zz$mday <- zz$wday <- zz$yday <- 1
         zz$isdst <- -1; zz$mon <- zz$hour <- zz$min <- zz$sec <- 0
         zz$year <- pretty(zz$year); M <- length(zz$year)
         zz <- lapply(zz, function(x) rep(x, length.out = M))
-        class(zz) <- c("POSIXt", "POSIXlt")
-        z <- as.POSIXct(zz)
+        z <- as.POSIXct(.POSIXlt(zz))
         if(missing(format)) format <- "%Y"
     }
     if(!mat) z <- x[is.finite(x)] # override changes
@@ -86,42 +81,6 @@ axis.POSIXct <- function(side, x, at, format, labels = TRUE, ...)
     axis(side, at = z, labels = labels, ...)
 }
 
-plot.POSIXct <- function(x, y, xlab = "", ...)
-{
-    ## trick to remove arguments intended for title() or plot.default()
-    axisInt <- function(x, type, main, sub, xlab, ylab, col, lty, lwd,
-                        xlim, ylim, bg, pch, log, asp, axes, frame.plot, ...)
-        axis.POSIXct(1, x, ...)
-
-    dots <- list(...)
-    Call <- match.call()
-    Call[[1L]] <- as.name("plot.default")
-    Call$xaxt <- "n"
-    Call$xlab <- xlab
-    eval.parent(Call)
-    axes <- if("axes" %in% names(dots)) dots$axes else TRUE
-    xaxt <- if("xaxt" %in% names(dots)) dots$xaxt else par("xaxt")
-    if(axes && xaxt != "n") axisInt(x, ...)
-}
-
-plot.POSIXlt <- function(x, y, xlab = "", ...)
-{
-    ## trick to remove arguments intended for title() or plot.default()
-    axisInt <- function(x, type, main, sub, xlab, ylab, col, lty, lwd,
-                        xlim, ylim, bg, pch, log, asp, axes, frame.plot, ...)
-        axis.POSIXct(1, x, ...)
-    dots <- list(...)
-    Call <- match.call()
-    Call[[1L]] <- as.name("plot.default")
-    Call$x <- as.POSIXct(x)
-    Call$xaxt <- "n"
-    Call$xlab <- xlab
-    eval.parent(Call)
-    axes <- if("axes" %in% names(dots)) dots$axes else TRUE
-    xaxt <- if("xaxt" %in% names(dots)) dots$xaxt else par("xaxt")
-    if(axes && xaxt != "n") axisInt(x, ...)
-}
-
 hist.POSIXt <- function(x, breaks, ..., xlab = deparse(substitute(x)),
                         plot = TRUE, freq = FALSE,
                         start.on.monday = TRUE, format)
@@ -131,6 +90,8 @@ hist.POSIXt <- function(x, breaks, ..., xlab = deparse(substitute(x)),
     x <- as.POSIXct(x)
     incr <- 1
     ## handle breaks ourselves
+    if(missing(breaks))
+	stop("Must specify 'breaks' in hist(<POSIXt>)")
     if (inherits(breaks, "POSIXt")) {
         breaks <- as.POSIXct(breaks)
         d <- min(abs(diff(unclass(breaks))))
@@ -188,13 +149,13 @@ hist.POSIXt <- function(x, breaks, ..., xlab = deparse(substitute(x)),
                 breaks <- seq(start, end, "3 months") - 86400
             } else { # "days" or "weeks"
                 maxx <- max(x, na.rm = TRUE)
-                breaks <- seq.int(start, maxx + incr, breaks)
+                breaks <- seq(start, maxx + incr, breaks)
                 breaks <- breaks[seq_len(1L + max(which(breaks < maxx)))]
             }
         }
         else stop("invalid specification of 'breaks'")
     }
-    res <- hist.default(unclass(x), unclass(breaks), plot = FALSE, ...)
+    res <- hist.default(unclass(x), unclass(breaks), plot = FALSE, warn.unused=FALSE, ...)
     res$equidist <- TRUE # years are of uneven lengths
     res$intensities <- res$intensities*incr
     res$xname <- xlab
@@ -267,23 +228,6 @@ axis.Date <- function(side, x, at, format, labels = TRUE, ...)
     axis(side, at = z, labels = labels, ...)
 }
 
-plot.Date <- function(x, y, xlab = "", ...)
-{
-    ## trick to remove arguments intended for title() or plot.default()
-    axisInt <- function(x, type, main, sub, xlab, ylab, col, lty, lwd,
-                        xlim, ylim, bg, pch, log, asp, axes, frame.plot, ...)
-        axis.Date(1, x, ...)
-
-    dots <- list(...)
-    Call <- match.call()
-    Call[[1L]] <- as.name("plot.default")
-    Call$xaxt <- "n"
-    Call$xlab <- xlab
-    eval.parent(Call)
-    axes <- if("axes" %in% names(dots)) dots$axes else TRUE
-    xaxt <- if("xaxt" %in% names(dots)) dots$xaxt else par("xaxt")
-    if(axes && xaxt != "n") axisInt(x, ...)
-}
 
 hist.Date <- function(x, breaks, ..., xlab = deparse(substitute(x)),
                       plot = TRUE, freq = FALSE,
@@ -293,6 +237,8 @@ hist.Date <- function(x, breaks, ..., xlab = deparse(substitute(x)),
     force(xlab)
     incr <- 1
     ## handle breaks ourselves
+    if(missing(breaks))
+        stop("Must specify 'breaks' in hist(<Date>)")
     if (inherits(breaks, "Date")) {
         breaks <- as.Date(breaks)
         d <- min(abs(diff(unclass(breaks))))
@@ -345,12 +291,12 @@ hist.Date <- function(x, breaks, ..., xlab = deparse(substitute(x)),
             } else { ## "days" (or "weeks")
                 start <- as.Date(start)
                 maxx <- max(x, na.rm = TRUE)
-                breaks <- seq.int(start, maxx + incr, breaks)
+                breaks <- seq(start, maxx + incr, breaks)
                 breaks <- breaks[seq_len(1L + max(which(breaks < maxx)))]
             }
         } else stop("invalid specification of 'breaks'")
     }
-    res <- hist.default(unclass(x), unclass(breaks), plot = FALSE, ...)
+    res <- hist.default(unclass(x), unclass(breaks), plot = FALSE, warn.unused = FALSE, ...)
     res$equidist <- TRUE # years are of uneven lengths
     res$intensities <- res$intensities*incr
     res$xname <- xlab
@@ -376,12 +322,6 @@ hist.Date <- function(x, breaks, ..., xlab = deparse(substitute(x)),
 Axis.Date <- function(x=NULL, at=NULL, ..., side, labels=TRUE)
     axis.Date(side=side, x=x, at=at, labels=labels, ...)
 
-Axis.POSIXct <- function(x=NULL, at=NULL, ..., side, labels=TRUE)
+Axis.POSIXt <- function(x=NULL, at=NULL, ..., side, labels=TRUE)
     axis.POSIXct(side=side, x=x, at=at, labels=labels, ...)
 
-Axis.POSIXlt <- function(x=NULL, at=NULL, ..., side, labels=TRUE)
-{
-    if(inherits(x, "POSIXlt")) x <- as.POSIXct(x)
-    if(inherits(at, "POSIXlt")) at <- as.POSIXct(at)
-    axis.POSIXct(side=side, x=x, at=at, labels=labels, ...)
-}

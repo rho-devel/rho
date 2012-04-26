@@ -218,6 +218,7 @@ coplot <-
     opar <- par(mfrow = c(total.rows, total.columns),
 		oma = oma, mar = mar, xaxs = "r", yaxs = "r")
     on.exit(par(opar))
+    dev.hold(); on.exit(dev.flush(), add = TRUE)
     plot.new()
     ## as.numeric() allowing factors for x & y:
     if(missing(xlim))
@@ -345,7 +346,8 @@ coplot <-
 	}
     }
     if (length(missingrows)) {
-	cat("\n", gettext("Missing rows"), ": ",  missingrows, "\n", sep ="")
+	cat("\n", gettext("Missing rows"), ": ",
+            paste(missingrows, collapse = ", "), "\n", sep ="")
 	invisible(missingrows)
-    }
+    } else invisible()
 }

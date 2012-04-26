@@ -1,6 +1,6 @@
 % File src/library/base/man/try.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{try}
@@ -20,7 +20,7 @@ try(expr, silent = FALSE)
 \details{
   \code{try} evaluates an expression and traps any errors that occur
   during the evaluation.  If an error occurs then the error
-  message is printed to the \code{stderr} connection unless
+  message is printed to the \code{\link{stderr}} connection unless
   \code{options("show.error.messages")} is false or
   the call includes \code{silent = TRUE}.  The error message is also
   stored in a buffer where it can be retrieved by
@@ -35,7 +35,8 @@ try(expr, silent = FALSE)
 \value{
   The value of the expression if \code{expr} is evaluated without error,
   but an invisible object of class \code{"try-error"} containing the
-  error message if it fails.
+  error message, and the error condition as the \code{"condition"}
+  attribute, if it fails.
 }
 \seealso{
   \code{\link{options}} for setting error handlers and suppressing the

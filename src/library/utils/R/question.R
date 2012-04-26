@@ -14,7 +14,7 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-"?" <- function(e1, e2)
+`?` <- function(e1, e2)
 {
     if (missing(e2)) {
         type <- NULL
@@ -84,7 +84,8 @@
 	    if(inherits(doHelp, "try-error")) {
                 if(is.language(topicExpr))
                   topicExpr <- deparse(topicExpr)
-		stop(gettextf("no documentation of type '%s' and topic '%s' (or error in processing help)", type, topicExpr), domain = NA)
+		stop(gettextf("no documentation of type %s and topic %s (or error in processing help)",
+                              sQuote(type), sQuote(topicExpr)), domain = NA)
             }
         }
     }
@@ -98,18 +99,22 @@ topicName <- function(type, topic)
         paste(paste(topic, collapse = ","), type, sep = "-")
 }
 
-.helpForCall <- function(expr, envir, doEval = TRUE) {
-    f <- expr[[1L]]                      # the function specifier
+.helpForCall <- function(expr, envir, doEval = TRUE)
+{
+    ## want ASCII quotes, not fancy nor translated ones
+    dQ <- function (x) paste('"', x, '"', sep = '')
+
+    f <- expr[[1L]]                     # the function specifier
     where <- topenv(envir)              # typically .GlobalEnv
     if(is.name(f))
         f <- as.character(f)
     if(!.isMethodsDispatchOn() || !methods::isGeneric(f, where = where)) {
         if(!is.character(f) || length(f) != 1L)
-            stop(gettextf("the object of class \"%s\" in the function call '%s' could not be used as a documentation topic",
-                          class(f), deparse(expr)), domain = NA)
+            stop(gettextf("the object of class \"%s\" in the function call %s could not be used as a documentation topic",
+                          class(f), sQuote(deparse(expr))), domain = NA)
         h <- .tryHelp(f)
         if(inherits(h, "try-error"))
-            stop(gettextf("no methods for '%s' and no documentation for it as a function", f), domain = NA)
+            stop(gettextf("no methods for %s and no documentation for it as a function", sQuote(f)), domain = NA)
     }
     else {
         ## allow generic function objects or names
@@ -139,8 +144,8 @@ topicName <- function(type, topic)
                 if(doEval || !simple) {
                     argVal <- try(eval(argExpr, envir))
                     if(methods::is(argVal, "try-error"))
-                        stop(gettextf("error in trying to evaluate the expression for argument '%s' (%s)",
-                                      arg, deparse(argExpr)),
+                        stop(gettextf("error in trying to evaluate the expression for argument %s (%s)",
+                                      sQuote(arg), deparse(argExpr)),
                              domain = NA)
                     sigClasses[[arg]] <- class(argVal)
                 }
@@ -153,18 +158,22 @@ topicName <- function(type, topic)
         if(methods::is(method, "MethodDefinition")) {
             sigClasses <- method@defined
             if(length(sigClasses) < length(sigNames))
-              sigClasses<- c(sigClasses, rep("ANY", length(sigNames)-length(sigClasses)))
+                sigClasses<- c(sigClasses, rep("ANY", length(sigNames)-length(sigClasses)))
         }
         else
-            warning(gettextf("no method defined for function '%s' and signature '%s'",
-                             f, paste(sigNames, " = ", dQuote(sigClasses),
-                                      sep = "", collapse = ", ")), domain = NA)
+            warning(gettextf("no method defined for function %s and signature %s",
+                             sQuote(f),
+                             sQuote(paste(sigNames, " = ", dQ(sigClasses),
+                                          sep = "", collapse = ", "))),
+                    domain = NA)
         topic <- topicName("method", c(f,sigClasses))
         h <- .tryHelp(topic)
         if(methods::is(h, "try-error"))
-            stop(gettextf("no documentation for function '%s' and signature '%s'",
-                 f, paste(sigNames, " = ", dQuote(sigClasses), sep = "",
-                          collapse = ", ")), domain = NA)
+            stop(gettextf("no documentation for function %s and signature %s",
+                          sQuote(f),
+                          sQuote(paste(sigNames, " = ", dQ(sigClasses),
+                                       sep = "", collapse = ", "))),
+                 domain = NA)
     }
 }
 

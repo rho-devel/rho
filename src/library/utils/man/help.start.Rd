@@ -22,12 +22,8 @@ help.start(update = FALSE, gui = "irrelevant",
   \item{browser}{the name of the program to be used as hypertext
     browser.  It should be in the \env{PATH}, or a full path specified.
     Alternatively, it can be an \R function which will be called with a
-    URL as its only argument.
-#ifdef windows
-    This option is normally unset on Windows, when the file-association
-    mechanism will be used.
-#endif
-  }
+    URL as its only argument. This option is normally unset on Windows,
+    when the file-association mechanism will be used.}
   \item{remote}{A character string giving a valid URL for the
     \file{\var{\link{R_HOME}}} directory on a remote location.}
 }
@@ -38,7 +34,7 @@ help.start(update = FALSE, gui = "irrelevant",
 
   One of the links on the index page is the HTML package index,
   \file{R.home("docs")/html/packages.html}, which can be remade by
-  \code{\link{make.packages.html}(temp = FALSE)}.  For local operation,
+  \code{\link{make.packages.html}()}.  For local operation,
   the HTTP server will remake a temporary version of this list when the
   link is first clicked, and each time thereafter check if updating is
   needed (if \code{\link{.libPaths}} has changed or any of the

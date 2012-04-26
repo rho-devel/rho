@@ -5,7 +5,7 @@
 
 \name{numericDeriv}
 \alias{numericDeriv}
-\title{Evaluate derivatives numerically}
+\title{Evaluate Derivatives Numerically}
 \description{
     \code{numericDeriv} numerically evaluates the gradient of an expression.
 }
@@ -36,11 +36,13 @@ numericDeriv(expr, theta, rho = parent.frame(), dir = 1.0)
 }
 \author{Saikat DebRoy \email{saikat@stat.wisc.edu}}
 \examples{
+\testonly{od <- options(digits=4)}
 myenv <- new.env()
 assign("mean", 0., envir = myenv)
 assign("sd", 1., envir = myenv)
 assign("x", seq(-3., 3., len = 31), envir = myenv)
 numericDeriv(quote(pnorm(x, mean, sd)), c("mean", "sd"), myenv)
+\testonly{options(od)}
 }
 \keyword{models}
 

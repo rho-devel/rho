@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -70,9 +70,8 @@ static char sccsid[] = "@(#)xdr.c 1.35 87/08/12";
 
 #include <stdlib.h>
 #include <stdio.h>
-/*char *malloc();*/
 #include <string.h> /* strlen */
-
+#include <stdint.h>
 
 #include <rpc/types.h>
 #include <rpc/xdr.h>
@@ -81,19 +80,21 @@ static char sccsid[] = "@(#)xdr.c 1.35 87/08/12";
 void REprintf(char*, ...);
 #define fprintf(a, b) REprintf(b)
 
-
+#ifdef UNUSED
 /*
  * constants specific to the xdr "protocol"
  */
-#define XDR_FALSE	((long) 0)
-#define XDR_TRUE	((long) 1)
+#define XDR_FALSE	((int32_t) 0)
+#define XDR_TRUE	((int32_t) 1)
 #define LASTUNSIGNED	((u_int) 0-1)
+#endif
 
 /*
  * for unit alignment
  */
 static char xdr_zero[BYTES_PER_XDR_UNIT] = { 0, 0, 0, 0 };
 
+#ifdef UNUSED
 /*
  * Free a data structure using XDR
  * Not a filter, but a convenient utility nonetheless
@@ -108,7 +109,9 @@ xdr_free(proc, objp)
 	x.x_op = XDR_FREE;
 	(*proc)(&x, objp);
 }
+#endif
 
+#ifdef UNUSED
 /*
  * XDR nothing
  */
@@ -120,49 +123,48 @@ xdr_void(/* xdrs, addr */)
 
 	return (TRUE);
 }
+#endif
 
 /*
- * XDR integers
+ * XDR integers: always 32-bit in R
  */
 bool_t
 xdr_int(xdrs, ip)
 	XDR *xdrs;
 	int *ip;
 {
+//    return (xdr_long(xdrs, (int32_t *)ip));
 
-#ifdef lint
-	(void) (xdr_short(xdrs, (short *)ip));
-	return (xdr_long(xdrs, (long *)ip));
-#else
-	if (sizeof (int) == sizeof (long)) {
-		return (xdr_long(xdrs, (long *)ip));
-	} else {
-		return (xdr_short(xdrs, (short *)ip));
-	}
-#endif
+	if (xdrs->x_op == XDR_DECODE)
+		return (XDR_GETLONG(xdrs, (int32_t *)ip));
+	if (xdrs->x_op == XDR_ENCODE)
+		return (XDR_PUTLONG(xdrs, (int32_t *)ip));
+	if (xdrs->x_op == XDR_FREE)
+		return (TRUE);
+	return (FALSE);
 }
 
 /*
- * XDR unsigned integers
+ * XDR unsigned integers: always 32-bit in R
  */
 bool_t
 xdr_u_int(xdrs, up)
 	XDR *xdrs;
 	u_int *up;
 {
+//    return (xdr_u_long(xdrs, (uint32_t *)up));
 
-#ifdef lint
-	(void) (xdr_short(xdrs, (short *)up));
-	return (xdr_u_long(xdrs, (u_long *)up));
-#else
-	if (sizeof (u_int) == sizeof (u_long)) {
-		return (xdr_u_long(xdrs, (u_long *)up));
-	} else {
-		return (xdr_short(xdrs, (short *)up));
-	}
-#endif
+	if (xdrs->x_op == XDR_DECODE)
+		return (XDR_GETLONG(xdrs, (int32_t *)up));
+	if (xdrs->x_op == XDR_ENCODE)
+		return (XDR_PUTLONG(xdrs, (int32_t *)up));
+	if (xdrs->x_op == XDR_FREE)
+		return (TRUE);
+	return (FALSE);
+
 }
 
+#ifdef UNUSED
 /*
  * XDR long integers
  * same as xdr_u_long - open coded to save a proc call!
@@ -170,7 +172,7 @@ xdr_u_int(xdrs, up)
 bool_t
 xdr_long(xdrs, lp)
 	register XDR *xdrs;
-	long *lp;
+	int32_t *lp;
 {
 
 	if (xdrs->x_op == XDR_ENCODE)
@@ -192,13 +194,13 @@ xdr_long(xdrs, lp)
 bool_t
 xdr_u_long(xdrs, ulp)
 	register XDR *xdrs;
-	u_long *ulp;
+	uint32_t *ulp;
 {
 
 	if (xdrs->x_op == XDR_DECODE)
-		return (XDR_GETLONG(xdrs, (long *)ulp));
+		return (XDR_GETLONG(xdrs, (int32_t *)ulp));
 	if (xdrs->x_op == XDR_ENCODE)
-		return (XDR_PUTLONG(xdrs, (long *)ulp));
+		return (XDR_PUTLONG(xdrs, (int32_t *)ulp));
 	if (xdrs->x_op == XDR_FREE)
 		return (TRUE);
 	return (FALSE);
@@ -212,12 +214,12 @@ xdr_short(xdrs, sp)
 	register XDR *xdrs;
 	short *sp;
 {
-	long l;
+	int32_t l;
 
 	switch (xdrs->x_op) {
 
 	case XDR_ENCODE:
-		l = (long) *sp;
+		l = (int32_t) *sp;
 		return (XDR_PUTLONG(xdrs, &l));
 
 	case XDR_DECODE:
@@ -241,12 +243,12 @@ xdr_u_short(xdrs, usp)
 	register XDR *xdrs;
 	u_short *usp;
 {
-	u_long l;
+	uint32_t l;
 
 	switch (xdrs->x_op) {
 
 	case XDR_ENCODE:
-		l = (u_long) *usp;
+		l = (uint32_t) *usp;
 		return (XDR_PUTLONG(xdrs, &l));
 
 	case XDR_DECODE:
@@ -261,7 +263,6 @@ xdr_u_short(xdrs, usp)
 	}
 	return (FALSE);
 }
-
 
 /*
  * XDR a char
@@ -307,7 +308,7 @@ xdr_bool(xdrs, bp)
 	register XDR *xdrs;
 	bool_t *bp;
 {
-	long lb;
+	int32_t lb;
 
 	switch (xdrs->x_op) {
 
@@ -342,8 +343,8 @@ xdr_enum(xdrs, ep)
 	/*
 	 * enums are treated as ints
 	 */
-	if (sizeof (enum sizecheck) == sizeof (long)) {
-		return (xdr_long(xdrs, (long *)ep));
+	if (sizeof (enum sizecheck) == sizeof (int32_t)) {
+		return (xdr_long(xdrs, (int32_t *)ep));
 	} else if (sizeof (enum sizecheck) == sizeof (short)) {
 		return (xdr_short(xdrs, (short *)ep));
 	} else {
@@ -351,9 +352,10 @@ xdr_enum(xdrs, ep)
 	}
 #else
 	(void) (xdr_short(xdrs, (short *)ep));
-	return (xdr_long(xdrs, (long *)ep));
+	return (xdr_long(xdrs, (int32_t *)ep));
 #endif
 }
+#endif
 
 /*
  * XDR opaque data
@@ -464,6 +466,7 @@ xdr_bytes(xdrs, cpp, sizep, maxsize)
 	return (FALSE);
 }
 
+#ifdef UNUSED
 /*
  * Implemented here due to commonality of the object.
  */
@@ -520,7 +523,7 @@ xdr_union(xdrs, dscmp, unp, choices, dfault)
 	return ((dfault == NULL_xdrproc_t) ? FALSE :
 	    (*dfault)(xdrs, unp, LASTUNSIGNED));
 }
-
+#endif
 
 /*
  * Non-portable xdr primitives.
@@ -599,6 +602,7 @@ xdr_string(xdrs, cpp, maxsize)
 	return (FALSE);
 }
 
+#ifdef UNUSED
 /*
  * Wrapper for xdr_string that can be called directly from
  * routines like clnt_call
@@ -613,3 +617,4 @@ xdr_wrapstring(xdrs, cpp)
 	}
 	return (FALSE);
 }
+#endif

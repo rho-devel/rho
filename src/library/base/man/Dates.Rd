@@ -14,6 +14,7 @@
 \alias{[<-.Date}
 \alias{[[.Date}
 \alias{as.data.frame.Date}
+\alias{as.list.Date}
 \alias{c.Date}
 \alias{mean.Date}
 \alias{split.Date}
@@ -42,6 +43,8 @@
   ignored when printing.  It is possible to produce fractional days via
   the \code{mean} method or by adding or subtracting (see
   \code{\link{Ops.Date}}).
+  
+  The print methods respect \code{\link{options}("max.print")}.
 }
 \seealso{
   \code{\link{Sys.Date}} for the current date.
@@ -50,7 +53,7 @@
   
   \code{\link{format.Date}} for conversion to and from character strings.
 
-  \code{\link{plot.Date}} and
+  \code{\link{axis.Date}} and
   \code{\link{hist.Date}} for plotting.
 
   \code{\link{weekdays}} for convenience extraction functions.
@@ -60,13 +63,13 @@
 
   \code{\link{DateTimeClasses}} for date-time classes.
 }
-\examples{
+\examples{\dontrun{
 (today <- Sys.Date())
 format(today, "\%d \%b \%Y")  # with month as a word
 (tenweeks <- seq(today, length.out=10, by="1 week")) # next ten weeks
 weekdays(today)
 months(tenweeks)
 as.Date(.leap.seconds)
-}
+}}
 \keyword{utilities}
 \keyword{chron}

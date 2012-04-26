@@ -1,6 +1,6 @@
 % File src/library/utils/man/browseURL.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{browseURL}
@@ -18,11 +18,9 @@ browseURL(url, browser = getOption("browser"), encodeIfNeeded = FALSE)
     program to be used as hypertext browser.  It should be in the PATH,
     or a full path specified.  Alternatively, an \R function to be
     called to invoke the browser.
-#ifdef windows
     
     Under Windows \code{NULL} is also allowed (and is the default), and
     implies that the file association mechanism will be used.
-#endif
   }
   \item{encodeIfNeeded}{Should the URL be encoded by
     \code{\link{URLencode}} before passing to the browser?  This is not
@@ -38,6 +36,7 @@ browseURL(url, browser = getOption("browser"), encodeIfNeeded = FALSE)
   file \file{\var{\link{R_HOME}}/etc/Renviron} to a choice
   made manually or automatically when \R was configured.  (See
   \code{\link{Startup}} for where to override that default value.)
+  To suppress showing URLs altogether, use the value \code{"false"}.
   
   If \code{browser} supports remote control and \R knows how to perform
   it, the URL is opened in any already running browser or a new one if
@@ -58,25 +57,32 @@ browseURL(url, browser = getOption("browser"), encodeIfNeeded = FALSE)
   It is the caller's responsibility to encode \code{url} if necessary
   (see \code{\link{URLencode}}).  This can be tricky for file URLs,
   where the format accepted can depend on the browser and OS.
-#ifdef windows
-  Some browsers have required \code{:} be replaced by \code{|} in file
-  paths: others do not accept that.  All seem to accept \code{\\} as a
-  path separator even though the RFC1738 standard requires \code{/}.
-#endif
+
+  To suppress showing URLs altogether, set \code{browser="false"}.
 }
-#endif
-#ifdef windows
-\examples{
-\dontrun{browseURL("http://www.r-project.org")
-browseURL("file://d:/R/R-2.5.1/doc/html/index.html",
-          browser="C:/Program Files/Mozilla Firefox/firefox.exe")
-}}
-#endif
-#ifdef unix
 \examples{
 \dontrun{## for KDE users who want to open files in a new tab
 options(browser="kfmclient newTab") 
 browseURL("http://www.r-project.org")
+}}
+#endif
+#ifdef windows
+\details{
+  The default browser is set by option \code{"browser"}, in turn set by
+  the environment variable \env{R_BROWSER} if that is set, otherwise to
+  \code{NULL}.
+  To suppress showing URLs altogether, use the value \code{"false"}.
+
+  Some browsers have required \code{:} be replaced by \code{|} in file
+  paths: others do not accept that.  All seem to accept \code{\\} as a
+  path separator even though the RFC1738 standard requires \code{/}.
+
+  To suppress showing URLs altogether, set \code{browser="false"}.
+}
+\examples{
+\dontrun{browseURL("http://www.r-project.org")
+browseURL("file://d:/R/R-2.5.1/doc/html/index.html",
+          browser="C:/Program Files/Mozilla Firefox/firefox.exe")
 }}
 #endif
 \keyword{file}

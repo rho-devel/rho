@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -42,8 +42,8 @@
 #include <config.h>
 #endif
 
-#ifdef Win32
 extern void R_ProcessEvents(void);
+#ifdef Win32
 #define R_SelectEx(n,rfd,wrd,efd,tv,ih) select(n,rfd,wrd,efd,tv)
 #endif
 
@@ -214,9 +214,7 @@ setSelectMask(InputHandler *handlers, fd_set *readMask)
 }
 #endif
 
-static unsigned int timeout = 60;
-
-static int R_SocketWait(int sockfd, int write)
+static int R_SocketWait(int sockfd, int write, int timeout)
 {
     fd_set rfd, wfd;
     struct timeval tv;
@@ -224,11 +222,9 @@ static int R_SocketWait(int sockfd, int write)
 
     while(1) {
 	int maxfd = 0, howmany;
+	R_ProcessEvents();
 #ifdef Unix
-	InputHandler *what;
-
 	if(R_wait_usec > 0) {
-	    R_PolledEvents();
 	    tv.tv_sec = 0;
 	    tv.tv_usec = R_wait_usec;
 	} else {
@@ -238,7 +234,6 @@ static int R_SocketWait(int sockfd, int write)
 #elif defined(Win32)
 	tv.tv_sec = 0;
 	tv.tv_usec = 2e5;
-	R_ProcessEvents();
 #else
 	tv.tv_sec = timeout;
 	tv.tv_usec = 0;
@@ -270,9 +265,9 @@ static int R_SocketWait(int sockfd, int write)
 
 #ifdef Unix
 	if((!write && !FD_ISSET(sockfd, &rfd)) ||
-	   (write && !FD_ISSET(sockfd, &wfd)) ||
-	   howmany > 1) {
+	   (write && !FD_ISSET(sockfd, &wfd)) || howmany > 1) {
 	    /* was one of the extras */
+	    InputHandler *what;
 	    what = getSelectedHandler(R_InputHandlers, &rfd);
 	    if(what != NULL) what->handler((void*) NULL);
 	    continue;
@@ -296,34 +291,31 @@ int R_SocketWaitMultiple(int nsock, int *insockfd, int *ready, int *write,
 
     while(1) {
 	int maxfd = 0, howmany, i;
+	R_ProcessEvents();
 #ifdef Unix
-	InputHandler *what;
-
 	if(R_wait_usec > 0) {
 	    int delta;
 	    if (mytimeout < 0 || R_wait_usec / 1e-6 < mytimeout - used)
 		delta = R_wait_usec;
 	    else
 		delta = 1e6 * (mytimeout - used);
-	    R_PolledEvents();
 	    tv.tv_sec = 0;
 	    tv.tv_usec = delta;
 	} else if (mytimeout >= 0) {
 	    tv.tv_sec = mytimeout - used;
 	    tv.tv_usec = 1e6 * (mytimeout - used - tv.tv_sec);
 	} else {  /* always poll occationally--not really necessary */
-	    tv.tv_sec = timeout;
+	    tv.tv_sec = 60;
 	    tv.tv_usec = 0;
 	}
 #elif defined(Win32)
 	tv.tv_sec = 0;
 	tv.tv_usec = 2e5;
-	R_ProcessEvents();
 #else
 	if (mytimeout >= 0) {
 	    tv.tv_sec = mytimeout - used;
 	    tv.tv_usec = 1e6 * (mytimeout - used - tv.tv_sec);
-	} else {  /* always poll occationally--not really necessary */
+	} else {  /* always poll occasionally--not really necessary */
 	    tv.tv_sec = timeout;
 	    tv.tv_usec = 0;
 	}
@@ -371,6 +363,7 @@ int R_SocketWaitMultiple(int nsock, int *insockfd, int *ready, int *write,
 #ifdef Unix
 	if(howmany > nready) {
 	    /* one of the extras is ready */
+	    InputHandler *what;
 	    what = getSelectedHandler(R_InputHandlers, &rfd);
 	    if(what != NULL) what->handler((void*) NULL);
 	    continue;
@@ -388,12 +381,7 @@ int in_Rsockselect(int nsock, int *insockfd, int *ready, int *write,
     return R_SocketWaitMultiple(nsock, insockfd, ready, write, timeout);
 }
 
-void R_SockTimeout(int delay)
-{
-    timeout = (unsigned int) delay;
-}
-
-int R_SockConnect(int port, char *host)
+int R_SockConnect(int port, char *host, int timeout)
 {
     SOCKET s;
     fd_set wfd, rfd;
@@ -452,9 +440,8 @@ int R_SockConnect(int port, char *host)
 
     while(1) {
 	int maxfd = 0;
+	R_ProcessEvents();
 #ifdef Unix
-	InputHandler *what;
-
 	if(R_wait_usec > 0) {
 	    R_PolledEvents();
 	    tv.tv_sec = 0;
@@ -466,7 +453,6 @@ int R_SockConnect(int port, char *host)
 #elif defined(Win32)
 	tv.tv_sec = 0;
 	tv.tv_usec = 2e5;
-	R_ProcessEvents();
 #else
 	tv.tv_sec = timeout;
 	tv.tv_usec = 0;
@@ -510,6 +496,7 @@ int R_SockConnect(int port, char *host)
 	    } else return(s);
 #ifdef Unix
 	} else { /* some other handler needed */
+	    InputHandler *what;
 	    what = getSelectedHandler(R_InputHandlers, &rfd);
 	    if(what != NULL) what->handler((void*) NULL);
 	    continue;
@@ -525,11 +512,11 @@ int R_SockClose(int sockp)
     return closesocket(sockp);
 }
 
-int R_SockRead(int sockp, void *buf, int len, int blocking)
+int R_SockRead(int sockp, void *buf, int len, int blocking, int timeout)
 {
     int res;
 
-    if(blocking && R_SocketWait(sockp, 0) != 0) return 0;
+    if(blocking && R_SocketWait(sockp, 0, timeout) != 0) return 0;
     res = (int) recv(sockp, buf, len, 0);
     return (res >= 0) ? res : -socket_errno();
 }
@@ -540,17 +527,17 @@ int R_SockOpen(int port)
     return Sock_open(port, NULL);
 }
 
-int R_SockListen(int sockp, char *buf, int len)
+int R_SockListen(int sockp, char *buf, int len, int timeout)
 {
     check_init();
     /* inserting a wait here will eliminate most blocking, but there
        are scenarios under which the Sock_listen call might block
        after the wait has completed. LT */
-    R_SocketWait(sockp, 0);
+    R_SocketWait(sockp, 0, timeout);
     return Sock_listen(sockp, buf, len, NULL);
 }
 
-int R_SockWrite(int sockp, const void *buf, int len)
+int R_SockWrite(int sockp, const void *buf, int len, int timeout)
 {
     int res, out = 0;
 
@@ -561,7 +548,7 @@ int R_SockWrite(int sockp, const void *buf, int len)
        interface since there is no way to tell how much, if anything,
        has been written.  LT */
     do {
-	if(/*blocking && */R_SocketWait(sockp, 1) != 0) return out;
+	if(R_SocketWait(sockp, 1, timeout) != 0) return out;
 	res = (int) send(sockp, buf, len, 0);
 	if (res < 0 && socket_errno() != EWOULDBLOCK)
 	    return -socket_errno();

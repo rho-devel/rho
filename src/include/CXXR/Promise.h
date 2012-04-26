@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -42,6 +42,8 @@
 #define RPROMISE_H
 
 #include "CXXR/RObject.h"
+// Just to pick up define of BYTECODE:
+#include "CXXR/Evaluator.h"
 
 #ifdef __cplusplus
 
@@ -53,23 +55,30 @@
 #include "CXXR/Environment.h"
 #include "CXXR/Symbol.h"
 
-// Stack entry and stack top for pending promises, to be moved inside
-// the Promise class in due course:
-extern "C" {
-    typedef struct RPRSTACK {
-	SEXP promise;
-	struct RPRSTACK *next;
-    } RPRSTACK;
-
-    extern RPRSTACK* R_PendingPromises;
-}
-
 namespace CXXR {
-    /** @brief Placeholder for function argument.
+    /** @brief Mechanism for deferred evaluation.
      *
      * This class is used to handle function arguments within R's lazy
-     * evaluation scheme.  (I'll document it better when I understand
-     * it better!)
+     * evaluation scheme.  A Promise object encapsulates a pointer to
+     * an arbitrary RObject (typically a Symbol or an Expression), and
+     * a pointer to an Environment.  When the Promise is first
+     * evaluated, the RObject is evaluated within the Environment, and
+     * the result of evaluation returned as the value of the Promise.
+     *
+     * After the first evaluation, the result of evaluation is cached
+     * within the Promise object, and the Environment pointer is set
+     * null (thus possibly allowing the Environment to be
+     * garbage-collected).  Subsequent evaluations of the Promise
+     * object simply return the cached value.
+     *
+     * @note When a Promise is evaluated \e via a call to evaluate()
+     * (the virtual function defined in class RObject), the \a env
+     * parameter to evaluate() is ignored: evaluation uses only the
+     * Environment encapsulated within the Promise object.  When an
+     * RObject is known to be a Promise, it is suggested that
+     * evaluation be carried out using the function Promise::force(),
+     * which lacks the redundant parameter and is consequently clearer
+     * to readers of the code.
      */
     class Promise : public RObject {
     public:
@@ -78,11 +87,13 @@ namespace CXXR {
 	 *          the value of the Promise.  Can be null.
 	 *
 	 * @param env pointer to the Environment in which \a valgen is
-	 *          to be evaluated.
+	 *          to be evaluated.  If this pointer is null, the
+	 *          value of the Promise is immediately set to be \a
+	 *          valgen itself.
 	 */
 	Promise(RObject* valgen, Environment* env)
-	    : RObject(PROMSXP), m_value(Symbol::unboundValue()),
-	      m_valgen(valgen), m_environment(env), m_seen(false),
+	    : RObject(PROMSXP), m_value(env ? Symbol::unboundValue() : valgen),
+	      m_valgen(valgen), m_environment(env), m_under_evaluation(false),
 	      m_interrupted(false)
 	{}
 
@@ -97,52 +108,33 @@ namespace CXXR {
 	    return m_environment;
 	}
 
-	/** @brief Has evaluation been interrupted by a jump?
-	 *
-	 * @return true iff evaluation of this Promise has been
-	 * interrupted by a jump (JMPException).
-	 */
-	bool evaluationInterrupted() const
-	{
-	    return m_interrupted;
-	}
-
 	/** @brief Force the Promise.
 	 *
-	 * i.e. evaluate the Promise within its environment.
-	 * Following this, the environment pointer is set null, thus
-	 * possibly allowing the Environment to be garbage-collected.
+	 * i.e. evaluate the value generator of the Promise within the
+	 * Environment of the Promise.  Following this, the
+	 * environment pointer is set null, thus possibly allowing the
+	 * Environment to be garbage-collected.
 	 *
-	 * @return The result of evaluating the promise.
+	 * If this function is used on a Promise that has already been
+	 * forced, it simply returns the previously computed value.
+	 *
+	 * @return The value of the Promise, i.e. the result of
+	 * evaluating the value generator.
 	 */
 	RObject* force()
 	{
 	    return evaluate(0);
 	}
 
-	/** @brief Indicate whether evaluation has been interrupted.
+	/** @brief Not for general use.
 	 *
-	 * @param on true to indicate that evaluation of this promise
-	 *           has been interrupted by a JMPException.
+	 * This function is used by ::isMissingArgument().  It
+	 * implements some logic from CR's R_isMissing() which I don't
+	 * fully understand.
 	 *
-	 * @note To be removed from public interface in due course.
+	 * @return true iff ... well, read the code!
 	 */
-	void markEvaluationInterrupted(bool on)
-	{
-	    m_interrupted = on;
-	}
-
-	/** @brief Indicate whether this promise is under evaluation.
-	 *
-	 * @param on true to indicate that this promise is currently
-	 *           under evaluation; otherwise false.
-	 *
-	 * @note To be removed from public interface in due course.
-	 */
-	void markUnderEvaluation(bool on)
-	{
-	    m_seen = on;
-	}
+	bool isMissingSymbol() const;
 
 	/** @brief Set value of the Promise.
 	 *
@@ -152,7 +144,7 @@ namespace CXXR {
 	 *
 	 * @param val Value to be associated with the Promise.
 	 *
-	 * @todo Should be private (or removed entirely), but current
+	 * @todo Should be private (or removed entirely), but currently
 	 * still used in saveload.cpp.
 	 */
 	void setValue(RObject* val);
@@ -164,15 +156,6 @@ namespace CXXR {
 	static const char* staticTypeName()
 	{
 	    return "promise";
-	}
-
-	/** @brief Is this promise currently under evaluation?
-	 *
-	 * @return true iff this promise is currently under evaluation.
-	 */
-	bool underEvaluation() const
-	{
-	    return m_seen;
 	}
 
 	/** @brief Access the value of a Promise.
@@ -195,7 +178,6 @@ namespace CXXR {
 	    return m_valgen;
 	}
 
-	// Virtual functions of RObject:
 	RObject* evaluate(Environment* env);
 	const char* typeName() const;
 
@@ -204,10 +186,12 @@ namespace CXXR {
     protected:
 	// Virtual function of GCNode:
 	void detachReferents();
+
 	// For boost::serialization
 	Promise() {} 
     private:
 	friend class boost::serialization::access;
+
 	template <class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 	    BSerializer::Frame frame("Promise");
@@ -219,8 +203,8 @@ namespace CXXR {
 	    ar & m_valgen;
 	    BSerializer::attrib("m_environment");
 	    ar & m_environment;
-	    BSerializer::attrib("m_seen");
-	    ar & m_seen;
+	    BSerializer::attrib("m_under_evaluation");
+	    ar & m_under_evaluation;
 	    BSerializer::attrib("m_interrupted");
 	    ar & m_interrupted;
 	}
@@ -228,8 +212,8 @@ namespace CXXR {
 	GCEdge<> m_value;
 	GCEdge<RObject> m_valgen;
 	GCEdge<Environment> m_environment;
-	bool m_seen;
-	bool m_interrupted;
+	mutable bool m_under_evaluation;
+	mutable bool m_interrupted;
 
 	// Declared private to ensure that Environment objects are
 	// created only using 'new':
@@ -240,6 +224,21 @@ namespace CXXR {
 	Promise(const Promise&);
 	Promise& operator=(const Promise&);
     };
+
+    /** @brief Use forced value if RObject is a Promise.
+     *
+     * @param object Pointer, possibly null, to an RObject.
+     *
+     * @return If \a object points to a Promise, the Promise is forced
+     * and the value of the Promise returned.  Otherwise \a object
+     * itself is returned.
+     */
+    inline RObject* forceIfPromise(RObject* object)
+    {
+	if (object && object->sexptype() == PROMSXP)
+	    object = static_cast<Promise*>(object)->force();
+	return object;
+    }
 }  // namespace CXXR
 
 BOOST_CLASS_EXPORT(CXXR::Promise)
@@ -323,6 +322,17 @@ extern "C" {
      * @todo Replace this with a method call to evaluate the promise.
      */
     void SET_PRVALUE(SEXP x, SEXP v);
+
+    // PREXPR() behaves similarly to valueGenerator(), but has special
+    // (but apparently undocumented) behaviour if m_valgen (PRCODE) is
+    // bytecode.  My guess is that if the bytecode evaluates to a
+    // symbol, PREXPR returns that symbol, otherwise R_NilValue.
+#ifdef BYTECODE
+    SEXP R_PromiseExpr(SEXP);
+#define PREXPR(e) R_PromiseExpr(e)
+#else
+#define PREXPR(e) PRCODE(e)
+#endif
 
 #ifdef __cplusplus
 }

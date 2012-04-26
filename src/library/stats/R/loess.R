@@ -129,7 +129,10 @@ simpleLoess <-
 	    statistics <- if(trace.hat == "exact") "1.approx"
             else "2.approx" # trace.hat == "approximate"
 	surf.stat <- paste(surface, statistics, sep="/")
-	z <- .C(R_loess_raw, # ../src/loessc.c
+        if (length(span) != 1L) stop("invalid argument 'span'")
+        if (length(cell) != 1L) stop("invalid argument 'cell'")
+        if (length(degree) != 1L) stop("invalid argument 'degree'")
+	z <- .C(C_loess_raw, # ../src/loessc.c
 		as.double(y),
 		as.double(x),
 		as.double(weights),
@@ -161,7 +164,7 @@ simpleLoess <-
 	}
 	fitted.residuals <- y - z$fitted.values
 	if(j < iterations)
-	    robust <- .Fortran(R_lowesw,
+	    robust <- .Fortran(C_lowesw,
 			       as.double(fitted.residuals),
 			       as.integer(N),
 			       robust = double(N),
@@ -176,7 +179,7 @@ simpleLoess <-
 		       vert=z$vert, vval=z$vval[1L:enough])
     }
     if(iterations > 1) {
-	pseudovalues <- .Fortran(R_lowesp,
+	pseudovalues <- .Fortran(C_lowesp,
 				 as.integer(N),
 				 as.double(y),
 				 as.double(z$fitted.values),
@@ -184,7 +187,7 @@ simpleLoess <-
 				 as.double(robust),
 				 integer(N),
 				 pseudovalues = double(N))$pseudovalues
-	zz <- .C(R_loess_raw,
+	zz <- .C(C_loess_raw,
 		as.double(pseudovalues),
 		as.double(x),
 		as.double(weights),
@@ -199,16 +202,16 @@ simpleLoess <-
 		as.double(span*cell),
 		as.character(surf.stat),
 		temp = double(N),
-		parameter = integer(7),
+		parameter = integer(7L),
 		a = integer(max.kd),
 		xi = double(max.kd),
-		vert = double(2*D),
-		vval = double((D+1)*max.kd),
+		vert = double(2L*D),
+		vval = double((D+1L)*max.kd),
 		diagonal = double(N),
-		trL = double(1),
-		delta1 = double(1),
-		delta2 = double(1),
-		as.integer(0L))
+		trL = double(1L),
+		delta1 = double(1L),
+		delta2 = double(1L),
+		0L)
 	pseudo.resid <- pseudovalues - zz$temp
     }
     sum.squares <- if(iterations <= 1) sum(weights * fitted.residuals^2)
@@ -229,7 +232,8 @@ simpleLoess <-
     fit
 }
 
-predict.loess <- function(object, newdata = NULL, se = FALSE, ...)
+predict.loess <-
+    function(object, newdata = NULL, se = FALSE, na.action = na.pass, ...)
 {
     if(!inherits(object, "loess"))
 	stop("first argument must be a \"loess\" object")
@@ -238,8 +242,9 @@ predict.loess <- function(object, newdata = NULL, se = FALSE, ...)
 
     newx <- if(is.null(newdata)) object$x
     else if(is.data.frame(newdata))
-        as.matrix(model.frame(delete.response(terms(object)), newdata))
-    else as.matrix(newdata)
+        as.matrix(model.frame(delete.response(terms(object)), newdata,
+                              na.action = na.action))
+    else as.matrix(newdata) # this case is undocumented
     res <- predLoess(object$y, object$x, newx, object$s, object$weights,
 		     object$pars$robust, object$pars$span, object$pars$degree,
 		     object$pars$normalize, object$pars$parametric,
@@ -274,8 +279,13 @@ predLoess <-
     x.evaluate <- newx[, order.parametric, drop=FALSE]
     order.drop.sqr <- (2 - drop.square)[order.parametric]
     if(surface == "direct") {
+        nas <- rowSums(is.na(newx)) > 0L
+        fit <- rep(NA_real_, length(nas))
+        x.evaluate <- x.evaluate[!nas,, drop = FALSE]
+        M <- nrow(x.evaluate)
 	if(se) {
-	    z <- .C(R_loess_dfitse,
+            se.fit <- fit
+	    z <- .C(C_loess_dfitse,
 		    as.double(y),
 		    as.double(x),
 		    as.double(x.evaluate),
@@ -292,24 +302,24 @@ predLoess <-
 		    as.integer(M),
 		    fit = double(M),
 		    L = double(N*M))[c("fit", "L")]
-	    fit <- z$fit
-	    se.fit <- (matrix(z$L^2, M, N)/rep(weights, rep(M,N))) %*% rep(1,N)
-	    se.fit <- drop(s * sqrt(se.fit))
+	    fit[!nas] <- z$fit
+	    ses <- (matrix(z$L^2, M, N)/rep(weights, rep(M,N))) %*% rep(1,N)
+	    se.fit[!nas] <- drop(s * sqrt(ses))
 	} else {
-	    fit <- .C(R_loess_dfit,
-		      as.double(y),
-		      as.double(x),
-		      as.double(x.evaluate),
-		      as.double(weights*robust),
-		      as.double(span),
-		      as.integer(degree),
-		      as.integer(nonparametric),
-		      as.integer(order.drop.sqr),
-		      as.integer(sum.drop.sqr),
-		      as.integer(D),
-		      as.integer(N),
-		      as.integer(M),
-		      fit = double(M))$fit
+	    fit[!nas] <- .C(C_loess_dfit,
+                            as.double(y),
+                            as.double(x),
+                            as.double(x.evaluate),
+                            as.double(weights*robust),
+                            as.double(span),
+                            as.integer(degree),
+                            as.integer(nonparametric),
+                            as.integer(order.drop.sqr),
+                            as.integer(sum.drop.sqr),
+                            as.integer(D),
+                            as.integer(N),
+                            as.integer(M),
+                            fit = double(M))$fit
 	}
     }
     else { ## interpolate
@@ -319,10 +329,11 @@ predLoess <-
 	inside <- (x.evaluate <= rep(ranges[2,], rep(M, D))) &
 	(x.evaluate >= rep(ranges[1,], rep(M, D)))
 	inside <- inside %*% rep(1, D) == D
+        inside[is.na(inside)] <- FALSE
 	M1 <- sum(inside)
 	fit <- rep(NA_real_, M)
 	if(any(inside))
-	    fit[inside] <- .C(R_loess_ifit,
+	    fit[inside] <- .C(C_loess_ifit,
 			      as.integer(kd$parameter),
 			      as.integer(kd$a), as.double(kd$xi),
 			      as.double(kd$vert), as.double(kd$vval),
@@ -332,7 +343,7 @@ predLoess <-
 	if(se) {
 	    se.fit <- rep(NA_real_, M)
 	    if(any(inside)) {
-		L <- .C(R_loess_ise,
+		L <- .C(C_loess_ise,
 			as.double(y),
 			as.double(x),
 			as.double(x.evaluate[inside, ]),
@@ -354,7 +365,14 @@ predLoess <-
 	    }
 	}
     }
-    if(se) list(fit = fit, se.fit = drop(se.fit), residual.scale = s) else fit
+    rn <- rownames(newx)
+    if(se) {
+        if(!is.null(rn)) names(fit) <- names(se.fit) <- rn
+        list(fit = fit, se.fit = drop(se.fit), residual.scale = s)
+    } else {
+        if(!is.null(rn)) names(fit) <- rn
+        fit
+    }
 }
 
 pointwise <- function(results, coverage)
@@ -448,7 +466,7 @@ loess.smooth <-
 		       normalize=FALSE, "none", "interpolate",
 		       control$cell, iterations, control$trace.hat)
     kd <- fit$kd
-    z <- .C(R_loess_ifit,
+    z <- .C(C_loess_ifit,
 	    as.integer(kd$parameter),
 	    as.integer(kd$a), as.double(kd$xi),
 	    as.double(kd$vert), as.double(kd$vval),

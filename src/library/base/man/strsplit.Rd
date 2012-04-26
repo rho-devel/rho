@@ -1,6 +1,6 @@
 % File src/library/base/man/strsplit.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{strsplit}
@@ -11,8 +11,7 @@
   according to the matches to substring \code{split} within them.
 }
 \usage{
-strsplit(x, split, extended = TRUE, fixed = FALSE, perl = FALSE,
-         useBytes = FALSE)
+strsplit(x, split, fixed = FALSE, perl = FALSE, useBytes = FALSE)
 }
 \arguments{
   \item{x}{
@@ -27,23 +26,15 @@ strsplit(x, split, extended = TRUE, fixed = FALSE, perl = FALSE,
     If \code{split} has length greater than 1, it is re-cycled along
     \code{x}.
   }
-  \item{extended}{
-    logical.  If \code{TRUE} (the default), extended regular expression
-    matching is used, and if \code{FALSE} basic regular expressions are
-    used (these are deprecated).
-  }
   \item{fixed}{
     logical.  If \code{TRUE} match \code{split} exactly, otherwise
-    use regular expressions.  Has priority over \code{perl} and
-    \code{extended}.
+    use regular expressions.  Has priority over \code{perl}.
   }
-  \item{perl}{
-    logical.  Should perl-compatible regexps be used?
-    Has priority over \code{extended}.
-  }
+  \item{perl}{logical.  Should perl-compatible regexps be used?}
   \item{useBytes}{logical.  If \code{TRUE} the matching is done
     byte-by-byte rather than character-by-character, and inputs with
-    marked encodings are not converted.}
+    marked encodings are not converted.  This is forced (with a warning)
+    if any input is found which is marked as \code{"bytes"}.}
 }
 \details{
   Argument \code{split} will be coerced to character, so
@@ -52,17 +43,16 @@ strsplit(x, split, extended = TRUE, fixed = FALSE, perl = FALSE,
 
   Note that splitting into single characters can be done \emph{via}
   \code{split = character(0)} or \code{split = ""}; the two are
-  equivalent. The definition of \sQuote{character} here depends on the
+  equivalent.  The definition of \sQuote{character} here depends on the
   locale: in a single-byte locale it is a byte, and in a multi-byte
   locale it is the unit represented by a \sQuote{wide character} (almost
   always a Unicode point).
-  
 
   A missing value of \code{split} does not split the corresponding
   element(s) of \code{x} at all.
 
   The algorithm applied to each input string is
-  \preformatted{
+\preformatted{
     repeat \{
         if the string is empty
             break.
@@ -73,22 +63,32 @@ strsplit(x, split, extended = TRUE, fixed = FALSE, perl = FALSE,
             add the string to the output.
             break.
     \}
-  }
+}
   Note that this means that if there is a match at the beginning of a
   (non-empty) string, the first element of the output is \code{""}, but
   if there is a match at the end of the string, the output is the same
-  as with the match removed. 
+  as with the match removed.
 }
 \value{
   A list of the same length as \code{x}, the \code{i}-th element of which
   contains the vector of splits of \code{x[i]}.
 
   If any element of \code{x} or \code{split} is declared to be in UTF-8
-  (see \code{\link{Encoding}}, non-ASCII character strings in the result
-  will be in UTF-8 and have their encoding declared as UTF-8.  As from
-  \R 2.10.0, for \code{perl = TRUE, useBytes = FALSE} all strings in a
-  multibyte locale are translated to UTF-8.
+  (see \code{\link{Encoding}}), all non-ASCII character strings in the
+  result will be in UTF-8 and have their encoding declared as UTF-8.  As
+  from \R 2.10.0, for \code{perl = TRUE, useBytes = FALSE} all non-ASCII
+  strings in a multibyte locale are translated to UTF-8.
 }
+
+\note{
+  Prior to \R 2.11.0 there was an argument \code{extended} which could
+  be used to select \sQuote{basic} regular expressions: this was often
+  used when \code{fixed = TRUE} would be preferable.  In the actual
+  implementation (as distinct from the POSIX standard) the only
+  difference was that \samp{?}, \samp{+}, \samp{\{}, \samp{|}, \samp{(},
+  and \samp{)} were not interpreted as metacharacters.
+}
+
 \seealso{
   \code{\link{paste}} for the reverse,
   \code{\link{grep}} and \code{\link{sub}} for string search and

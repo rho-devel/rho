@@ -1,3 +1,8 @@
+% File src/library/graphics/man/smoothscatter.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2011 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{smoothScatter}
 \alias{smoothScatter}
 \title{Scatterplots with Smoothed Densities Color Representation}
@@ -77,7 +82,8 @@ smoothScatter(x, y = NULL, nbin = 128, bandwidth,
   smoothScatter(x)
 
   ## a different color scheme:
-  Lab.palette <- colorRampPalette(c("blue", "orange", "red"), space = "Lab")
+  Lab.palette <-
+      colorRampPalette(c("blue", "orange", "red"), space = "Lab")
   smoothScatter(x, colramp = Lab.palette)
 
   ## somewhat similar, using identical smoothing computations,
@@ -88,7 +94,8 @@ smoothScatter(x, y = NULL, nbin = 128, bandwidth,
   par(mfrow=c(1,1))
   y <- matrix(rnorm(40000), ncol=4) + 3*rnorm(10000)
   y[, c(2,4)] <-  -y[, c(2,4)]
-  pairs(y, panel=function(...) {par(new=TRUE);smoothScatter(..., nrpoints=0)})
+  pairs(y,
+        panel = function(...) smoothScatter(..., nrpoints=0, add=TRUE))
 
   par(oldpar)
 }

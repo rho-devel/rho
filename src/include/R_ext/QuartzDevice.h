@@ -87,6 +87,8 @@
 #ifndef R_EXT_QUARTZDEVICE_H_
 #define R_EXT_QUARTZDEVICE_H_
 
+/* FIXME: this is installed, but can it really work without config.h */
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -128,6 +130,7 @@ typedef struct QuartzBackend_s {
     void         (*state)(QuartzDesc_t dev, void*userInfo, int state);
     void*        (*par)(QuartzDesc_t dev, void*userInfo, int set, const char *key, void *value);
     void         (*sync)(QuartzDesc_t dev, void*userInfo);
+    void*        (*cap)(QuartzDesc_t dev, void*userInfo);
 } QuartzBackend_t;
 
 /* parameters that are passed to functions that create backends */

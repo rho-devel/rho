@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2007   The R Development Core Team.
+ *  Copyright (C) 1998-2011   The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ using namespace CXXR;
  *
  *   2) Those used (and sometimes set) from C code;
  *	Either accessing and/or setting a global C variable,
- *	or just accessed by e.g.  GetOption(install("pager"), ..)
+ *	or just accessed by e.g.  GetOption1(install("pager"))
  *
  * A (complete?!) list of these (2):
  *
@@ -69,6 +69,7 @@ using namespace CXXR;
  *	"verbose"
  *	"keep.source"
  *	"keep.source.pkgs"
+ *	"browserNLdisabled"
 
  *	"de.cellwidth"		../unix/X11/ & ../gnuwin32/dataentry.c
  *	"device"
@@ -110,9 +111,8 @@ static SEXP FindTaggedItem(SEXP lst, SEXP tag)
 
 static SEXP makeErrorCall(SEXP fun)
 {
-    using namespace CXXR;
     SEXP call;
-    PROTECT(call = GCNode::expose(new Expression));
+    PROTECT(call = CXXR_NEW(Expression));
     SETCAR(call, fun);
     UNPROTECT(1);
     return call;
@@ -120,17 +120,22 @@ static SEXP makeErrorCall(SEXP fun)
 
 SEXP GetOption(SEXP tag, SEXP rho)
 {
+    return GetOption1(tag);
+}
+
+
+SEXP GetOption1(SEXP tag)
+{
     SEXP opt = findVar(Options(), R_BaseEnv);
-    if (!isList(opt))
-	error(_("corrupted options list"));
+    if (!isList(opt)) error(_("corrupted options list"));
     opt = FindTaggedItem(opt, tag);
     return CAR(opt);
 }
 
-int GetOptionWidth(SEXP rho)
+int GetOptionWidth(void)
 {
     int w;
-    w = asInteger(GetOption(install("width"), rho));
+    w = asInteger(GetOption1(install("width")));
     if (w < R_MIN_WIDTH_OPT || w > R_MAX_WIDTH_OPT) {
 	warning(_("invalid printing width, used 80"));
 	return 80;
@@ -138,10 +143,10 @@ int GetOptionWidth(SEXP rho)
     return w;
 }
 
-int GetOptionDigits(SEXP rho)
+int GetOptionDigits(void)
 {
     int d;
-    d = asInteger(GetOption(install("digits"), rho));
+    d = asInteger(GetOption1(install("digits")));
     if (d < R_MIN_DIGITS_OPT || d > R_MAX_DIGITS_OPT) {
 	warning(_("invalid printing digits, used 7"));
 	return 7;
@@ -153,7 +158,7 @@ int GetOptionDigits(SEXP rho)
 Rboolean Rf_GetOptionDeviceAsk(void)
 {
     int ask;
-    ask = asLogical(GetOption(install("device.ask.default"), R_BaseEnv));
+    ask = asLogical(GetOption1(install("device.ask.default")));
     if(ask == NA_LOGICAL) {
 	warning(_("invalid value for \"device.ask.default\", using FALSE"));
 	return FALSE;
@@ -234,9 +239,9 @@ void attribute_hidden InitOptions(void)
     char *p;
 
 #ifdef HAVE_RL_COMPLETION_MATCHES
-    PROTECT(v = val = allocList(13));
+    PROTECT(v = val = allocList(14));
 #else
-    PROTECT(v = val = allocList(12));
+    PROTECT(v = val = allocList(13));
 #endif
 
     SET_TAG(v, install("prompt"));
@@ -272,7 +277,7 @@ void attribute_hidden InitOptions(void)
     v = CDR(v);
 
     p = getenv("R_KEEP_PKG_SOURCE");
-    R_KeepSource = (p && (strcmp(p, "yes") == 0)) ? TRUE : FALSE;
+    R_KeepSource = (p && (strcmp(p, "yes") == 0)) ? CXXRTRUE : CXXRFALSE;
 
     SET_TAG(v, install("keep.source")); /* overridden in common.R */
     SETCAR(v, ScalarLogical(R_KeepSource));
@@ -282,12 +287,16 @@ void attribute_hidden InitOptions(void)
     SETCAR(v, ScalarLogical(R_KeepSource));
     v = CDR(v);
 
-    SET_TAG(v, install("warnings.length"));
+    SET_TAG(v, install("warning.length"));
     SETCAR(v, ScalarInteger(1000));
     v = CDR(v);
 
     SET_TAG(v, install("OutDec"));
     SETCAR(v, mkString("."));
+    v = CDR(v);
+
+    SET_TAG(v, install("browserNLdisabled"));
+    SETCAR(v, ScalarLogical(FALSE));
     v = CDR(v);
 
 #ifdef HAVE_RL_COMPLETION_MATCHES
@@ -380,12 +389,12 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 	switch (TYPEOF(args)) {
 	case LISTSXP:
 	    argi = CAR(args);
-	    namei = EnsureString(TAG(args));
+	    namei = EnsureString(TAG(args)); /* gives "" for no tag */
 	    args = CDR(args);
 	    break;
 	case VECSXP:
 	    argi = VECTOR_ELT(args, i);
-	    namei = EnsureString(STRING_ELT(argnames, i));
+	    namei = STRING_ELT(argnames, i);
 	    break;
 	default: /* already checked, but be safe here */
 	    UNIMPLEMENTED_TYPE("options", args);
@@ -508,13 +517,6 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 		max_contour_segments = k;
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarInteger(k)));
 	    }
-	    else if (streql(CHAR(namei), "warnEscapes")) {
-		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
-		    error(_("invalid value for '%s'"), CHAR(namei));
-		k = asLogical(argi);
-		R_WarnEscapes = CXXRCONSTRUCT(Rboolean, k);
-		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
-	    }
 	    else if (streql(CHAR(namei), "rl_word_breaks")) {
 		if (TYPEOF(argi) != STRSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
@@ -567,6 +569,15 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    else if (streql(CHAR(namei), "par.ask.default")) {
 		error(_("\"par.ask.default\" has been replaced by \"device.ask.default\""));
+	    }
+	    else if (streql(CHAR(namei), "browserNLdisabled")) {
+		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
+		    error(_("invalid value for '%s'"), CHAR(namei));
+		k = asLogical(argi);
+		if (k == NA_LOGICAL)
+		    error(_("invalid value for '%s'"), CHAR(namei));
+		R_DisableNLinBrowser = CXXRCONSTRUCT(Rboolean, k);
+		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else {
 		SET_VECTOR_ELT(value, i, SetOption(tag, duplicate(argi)));

@@ -1,10 +1,11 @@
 % File src/library/stats/man/sortedXyData.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{sortedXyData}
-\title{Create a sortedXyData object}
+\encoding{UTF-8}
+\title{Create a \code{sortedXyData} Object}
 \alias{sortedXyData}
 \alias{sortedXyData.default}
 \usage{
@@ -31,7 +32,7 @@ sortedXyData(x, y, data)
   \code{x} values are eliminated by averaging the corresponding \code{y}
   values.
 }
-\author{Jose Pinheiro and Douglas Bates}
+\author{\enc{José}{Jose} Pinheiro and Douglas Bates}
 \seealso{\code{\link{selfStart}}, \code{\link{NLSstClosestX}},
   \code{\link{NLSstLfAsymptote}}, \code{\link{NLSstRtAsymptote}}
 }

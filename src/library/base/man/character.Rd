@@ -1,6 +1,6 @@
 % File src/library/base/man/character.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{character}
@@ -19,7 +19,9 @@ as.character(x, \dots)
 is.character(x)
 }
 \arguments{
-  \item{length}{desired length.}
+  \item{length}{A non-negative integer specifying the desired length.
+    Double values will be coerced to integer:
+    supplying an argument of length other than one is an error.}
   \item{x}{object to be coerced or tested.}
   \item{\dots}{further arguments passed to or from other methods.}
 }
@@ -39,10 +41,6 @@ is.character(x)
   back to numeric may change the number.  If you want to convert numbers
   to character with the maximum possible precision, use
   \code{\link{format}}.
-
-  \code{as.character} and \code{is.character} are \link{primitive}, so
-  positional matching is used and any names of supplied arguments are
-  ignored.  This may not be true of their methods.
 }
 \value{
   \code{character} creates a character vector of the specified length.

@@ -1,6 +1,6 @@
 % File src/library/base/man/matrix.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{matrix}
@@ -27,7 +27,9 @@ as.matrix(x, \dots)
 is.matrix(x)
 }
 \arguments{
-  \item{data}{an optional data vector.}
+  \item{data}{an optional data vector (including a list or
+    \code{\link{expression}} vector).  Other \R objects are coerced by
+    \code{\link{as.vector}}.}
   \item{nrow}{the desired number of rows.}
   \item{ncol}{the desired number of columns.}
   \item{byrow}{logical. If \code{FALSE} (the default) the matrix is
@@ -50,15 +52,15 @@ is.matrix(x)
   made to infer it from the length of \code{data} and the other
   parameter.  If neither is given, a one-column matrix is returned.
 
-  If there are too few elements in \code{data} to fill the array,
+  If there are too few elements in \code{data} to fill the matrix,
   then the elements in \code{data} are recycled.  If \code{data} has
   length zero, \code{NA} of an appropriate type is used for atomic
   vectors (\code{0} for raw vectors) and \code{NULL} for lists.
 
-  \code{is.matrix} returns \code{TRUE} if \code{x} is a matrix and has a
-  \code{\link{dim}} attribute of length 2) and \code{FALSE} otherwise.
+  \code{is.matrix} returns \code{TRUE} if \code{x} is a vector and has a
+  \code{"\link{dim}"} attribute of length 2) and \code{FALSE} otherwise.
   Note that a \code{\link{data.frame}} is \strong{not} a matrix by this
-  test.  It is generic: you can write methods to handle
+  test.  The function is generic: you can write methods to handle
   specific classes of objects, see \link{InternalMethods}.
 
   \code{as.matrix} is a generic function.  The method for data frames
@@ -72,8 +74,14 @@ is.matrix(x)
   When coercing a vector, it produces a one-column matrix, and
   promotes the names (if any) of the vector to the rownames of the matrix.
   
-  \code{is.matrix} is a \link{primitive} function so any argument name is
-  ignored.    
+  \code{is.matrix} is a \link{primitive} function.
+}
+\note{
+  If you just want to convert a vector to a matrix, something like
+\preformatted{  dim(x) <- c(nx, ny)
+  dimnames(x) <- list(row_names, col_names)
+}
+will avoid duplicating \code{x}.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
@@ -81,7 +89,10 @@ is.matrix(x)
   Wadsworth & Brooks/Cole.
 }
 \seealso{
-  \code{\link{data.matrix}}, which attempts to convert to a numeric matrix.
+  \code{\link{data.matrix}}, which attempts to convert to a numeric
+  matrix.
+
+  A matrix is the special case of a two-dimensional \code{\link{array}}.
 }
 \examples{
 is.matrix(as.matrix(1:10))

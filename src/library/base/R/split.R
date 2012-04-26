@@ -35,19 +35,32 @@ split.default <- function(x, f, drop = FALSE, ...)
     y
 }
 
+## This is documented to work for matrices too
 split.data.frame <- function(x, f, drop = FALSE, ...)
-    lapply(split(seq_len(nrow(x)), f, drop = drop, ...),
+    lapply(split(x = seq_len(nrow(x)), f = f, drop = drop, ...),
            function(ind) x[ind, , drop = FALSE])
 
-"split<-" <- function(x, f, drop = FALSE, ..., value) UseMethod("split<-")
+## split.data.frame <- function(x, f, drop = FALSE, ...)
+## {
+##     inds <- split(seq_len(nrow(x)), f, drop = drop, ...)
+##     rn <- row.names(x)
+##     cl <- class(x)
+##     class(x) <- NULL
+##     a <- attributes(x)
+##     a <- a[names(a) != "row.names"]
+##     lapply(inds, function(i) {
+##         z <- lapply(x, "[", i)
+##         if(length(a)) attributes(z) <- a
+##         class(z) <- cl
+##         attr(z, "row.names") <- rn[i]
+##         z
+##     })
+## }
 
-#"split<-.default" <- function(x, f, value)
-#{
-#    x[unlist(split(seq_along(x), f))] <- unlist(value)
-#    x
-#}
 
-"split<-.default" <- function(x, f, drop = FALSE, ..., value)
+`split<-` <- function(x, f, drop = FALSE, ..., value) UseMethod("split<-")
+
+`split<-.default` <- function(x, f, drop = FALSE, ..., value)
 {
     ix <- split(seq_along(x), f, drop = drop, ...)
     n <- length(value)
@@ -59,7 +72,8 @@ split.data.frame <- function(x, f, drop = FALSE, ...)
     x
 }
 
-"split<-.data.frame" <- function(x, f, drop = FALSE, ..., value)
+## This is documented to work for matrices too
+`split<-.data.frame` <- function(x, f, drop = FALSE, ..., value)
 {
     ix <- split(seq_len(nrow(x)), f, drop = drop, ...)
     n <- length(value)

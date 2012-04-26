@@ -2,10 +2,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.3.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-10-05 14:06\n"
+"POT-Creation-Date: 2011-07-16 22:46\n"
 "PO-Revision-Date: 2005-05-25 15:04+0900\n"
 "Last-Translator: Korean <uiami@hanmail.com>\n"
 "Language-Team: Korean <translation-team-ko@lists.sourceforge.net>\n"
+"Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -14,10 +15,7 @@ msgstr ""
 msgid "'a' is overridden by 'reg'"
 msgstr ""
 
-msgid "only using the first two of"
-msgstr ""
-
-msgid "regression coefficients"
+msgid "only using the first two of %d regression coefficients"
 msgstr ""
 
 msgid "'a' and 'b' are overridden by 'coef'"
@@ -37,6 +35,9 @@ msgstr "'x'가 적어도 하나의 항목은 positive가 아니면 되지 않습
 
 msgid "incorrect 'col': must be length 2"
 msgstr "'col'이 잘못되었습니다: 2의 길이 이어야만 합니다"
+
+msgid "only for 1-D table"
+msgstr ""
 
 #, fuzzy
 msgid "'side' must be in {1:4}"
@@ -94,10 +95,6 @@ msgstr ""
 msgid "dependent variable should be a factor"
 msgstr ""
 
-#, fuzzy
-msgid "explanatory variable should be numeric"
-msgstr "'y'의 변수에서 수치가 아닌것이 있습니다"
-
 msgid "y axis is on a cumulative probability scale, 'ylim' must be in [0,1]"
 msgstr ""
 
@@ -132,21 +129,37 @@ msgstr "행수 * 열수가 너무 작습니다"
 msgid "Missing rows"
 msgstr "행이 이상합니다"
 
-msgid "'expr' must be a function or an expression containing 'x'"
+#, fuzzy
+msgid "'expr' must be a function, or a call or an expression containing '%s'"
 msgstr "'expr'는 'x'를 포함한 함수 또는 표현식이 아니면 되지 않습니다"
+
+msgid "'add' will be ignored as there is no existing plot"
+msgstr ""
 
 msgid "'from' and 'to' must be > 0 with log=\"x\""
 msgstr "'from'와 'to'는 정확한 값이 되어어야만 합니다. 그리고 log=\"x\"입니다"
 
+msgid "'expr' did not evaluate to an object of length 'n'"
+msgstr ""
+
 msgid "wrong method"
 msgstr "잘못된 메소드입니다"
+
+msgid "Must specify 'breaks' in hist(<POSIXt>)"
+msgstr ""
 
 msgid "invalid specification of 'breaks'"
 msgstr "'breaks'의 지정이 무효입니다"
 
+msgid "Must specify 'breaks' in hist(<Date>)"
+msgstr ""
+
 #, fuzzy
 msgid "'x' must be a numeric vector or matrix"
 msgstr "'y'는 수치 벡터가 아니면 되지 않습니다"
+
+msgid "'x' is neither a vector nor a matrix: using as.numeric(x)"
+msgstr ""
 
 msgid "'x' must be an array"
 msgstr "'x'는 배열이 아니면 되지 않습니다"
@@ -227,6 +240,9 @@ msgstr "분할점은 모두 유한하지 않으면 되지 않습니다"
 msgid "dimensions of z are not length(x)(-1) times length(y)(-1)"
 msgstr "z의 차원이 length(x)(+1) x length(y)(+1)가 아닙니다"
 
+msgid "useRaster=TRUE can only be used with a regular grid"
+msgstr ""
+
 msgid "'respect' must be logical or matrix with same dimension as 'mat'"
 msgstr ""
 "'respect'는 'mat'와 동일 차원의 논리값 또는 행렬이 아니면 되지 않습니다"
@@ -295,6 +311,9 @@ msgstr "'pairs'의 인수는 다만 하나의 열만 가지지 않습니다"
 msgid "the 'panel' function made a new plot"
 msgstr "'panel' 함수는 신규의 plot로 작성했습니다"
 
+msgid "surface extends beyond the box"
+msgstr ""
+
 msgid "'x' values must be positive."
 msgstr "'x'의 값은 positive가 아니면 되지 않습니다"
 
@@ -333,6 +352,9 @@ msgstr "적어도 하나의 수치 변수가 없으면 되지 않습니다!"
 
 msgid "cannot hatch with logarithmic scale active"
 msgstr "활성화 대수적 scale로 해치할수가 없습니다 "
+
+msgid "Invalid fill rule for graphics path"
+msgstr ""
 
 msgid "invalid rectangle specification"
 msgstr "무효인 직사각형의 지정입니다"
@@ -420,3 +442,7 @@ msgid "argument %s is not made use of"
 msgid_plural "arguments %s are not made use of"
 msgstr[0] ""
 msgstr[1] ""
+
+#, fuzzy
+#~ msgid "explanatory variable should be numeric"
+#~ msgstr "'y'의 변수에서 수치가 아닌것이 있습니다"

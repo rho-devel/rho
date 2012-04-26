@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -49,7 +49,7 @@ SEXP R_isoreg(SEXP y)
 
     PROTECT(ans = mkNamed(VECSXP, anms));
 
-    SET_VECTOR_ELT(ans, 0, y = y);
+    SET_VECTOR_ELT(ans, 0, y);
     SET_VECTOR_ELT(ans, 1, yc = allocVector(REALSXP, n+1));
     SET_VECTOR_ELT(ans, 2, yf = allocVector(REALSXP, n));
     SET_VECTOR_ELT(ans, 3, iKnots= allocVector(INTSXP, n));

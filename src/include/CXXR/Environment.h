@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -48,9 +48,31 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
+
 #include "CXXR/BSerializer.hpp"
-#include "CXXR/StdFrame.hpp"
+#include "CXXR/Frame.hpp"
+#include "CXXR/GCStackRoot.hpp"
+#include <boost/serialization/export.hpp>
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/Symbol.h"
+
+/** @def DETACH_LOCAL_FRAMES
+ *
+ * If the preprocessor variable DETACH_LOCAL_FRAMES is defined, then
+ * code is inserted which keeps track of whether the local Environment
+ * of a Closure application may continue to be reachable after the
+ * Closure application returns.  If not, then just before the Closure
+ * application returns, the Environment is detached from its Frame.
+ * This breaks possible loops in the GCNode/GCEdge graph, thus enabling
+ * the Environment to be garbage-collected immediately.
+ *
+ * Unfortunately, enabling this extra code slows CXXR down very
+ * slightly; however, it may prove beneficial in the future when
+ * combined with provenance tracking.
+ */
+#ifdef DOXYGEN
+#define DETACH_LOCAL_FRAMES
+#endif
 
 namespace CXXR {
     class FunctionBase;
@@ -59,16 +81,25 @@ namespace CXXR {
      *
      * An Environment has an associated Frame, which defines a mapping
      * from (pointers to) CXXR::Symbol objects to (pointers to)
-     * arbitrary objects of classes derived from RObject.  Each
-     * Environment (except for the standard empty environment) has an
-     * 'enclosing environment', and the Environment class provides
-     * facilities for searching for a binding for a Symbol first in
-     * the Environment's own Frame, and then successively in enclosing
-     * frames.
+     * arbitrary objects of classes derived from RObject.  An
+     * Environment will normally have an 'enclosing environment', and
+     * the Environment class provides facilities for searching for a
+     * binding for a Symbol first in the Environment's own Frame, and
+     * then successively in the Frames of enclosing Environments.
+     *
+     * @note CR accords a special status to the empty environment,
+     * R_EmptyEnv, which is an Environment whose Frame contains no
+     * Bindings, and which has no enclosing Environment.  In CR the
+     * search for a Symbol Binding terminates when it reaches the
+     * empty environment, without looking inside it.  In CXXR,
+     * although R_EmptyEnv still exists (at least for the time being),
+     * it is not handled specially.  If the search for a Symbol
+     * reaches the empty environment, CXXR will look for the Symbol
+     * inside it - unsuccessfully of course - and the search then
+     * terminates because there is no enclosing Environment.
      *
      * @note This class does not in itself enforce the requirement
-     * that working up the enclosing relationship will always lead to
-     * the empty environment.
+     * that the enclosing relationship must be acyclic.
      *
      * @todo For provenance-tracking, there ought to be some way of
      * monitoring the event that the program \e fails to find a
@@ -76,36 +107,73 @@ namespace CXXR {
      */
     class Environment : public RObject {
     public:
-	/**
-	 * @param enclosing Pointer to the enclosing environment.
-	 */
-	explicit Environment(Environment* enclosing)
-	    : RObject(ENVSXP), m_enclosing(enclosing),
-	      m_frame(expose(new StdFrame)), m_single_stepping(false)
-	{}
-
-	/**
-	 * @param enclosing Pointer to the enclosing environment.
+	/** @brief Object authorising R 'break' and 'next' commands.
 	 *
-	 * @param initial_capacity A hint to the implementation that
-	 *          the Frame of the constructed Environment should be
-	 *          configured to have capacity for at least \a
-	 *          initial_capacity Bindings.  This does not impose an
-	 *          upper limit on the capacity of the Frame,
-	 *          but some reconfiguration (and consequent time
-	 *          penalty) may occur if it is exceeded.
+	 * LoopScope objects must be declared on the processor stack
+	 * (i.e. as C++ automatic variables).  Each Environment object
+	 * keeps track of the number of LoopScope objects associated
+	 * with it.  The R commands 'break' and 'next' are legal only
+	 * when the evaluation Environment has at least one LoopScope
+	 * in existence; this can be determined by calling
+	 * Environment::loopActive().
 	 */
-	Environment(Environment* enclosing, size_t initial_capacity)
-	    : RObject(ENVSXP), m_enclosing(enclosing),
-	      m_frame(expose(new StdFrame(initial_capacity))),
-	      m_single_stepping(false)
-	{}
+	class LoopScope {
+	public:
+	    /** @brief Constructor.
+	     *
+	     * @param env Pointer to the Environment with which this
+	     *          LoopScope is to be associated.
+	     */
+	    LoopScope(Environment* env)
+		: m_environment(env), m_prev_state(env->m_in_loop)
+	    {
+		env->m_in_loop = true;
+	    }
 
-	/** @brief Constructor with specified Frame.
+	    ~LoopScope()
+	    {
+		m_environment->m_in_loop = m_prev_state;
+	    }
+	private:
+	    GCStackRoot<Environment> m_environment;
+	    bool m_prev_state;
+	};
+
+	/** @brief Object authorising R 'return' command.
 	 *
-	 * This constructor is used, for example, in constructing the
-	 * base namespace, which shares the Frame of the base
-	 * environment.
+	 * ReturnScope objects must be declared on the processor stack
+	 * (i.e. as C++ automatic variables).  Each Environment object
+	 * keeps track of the number of ReturnScope objects associated
+	 * with it.  The R command 'return' is legal only when the
+	 * evaluation Environment has at least one ReturnScope in
+	 * existence; this can be determined by calling
+	 * Environment::canReturn().  More generally, a transfer of
+	 * control to a specified Environment using ReturnException
+	 * will succeed only if canReturn() is true.
+	 */
+	class ReturnScope {
+	public:
+	    /** @brief Constructor.
+	     *
+	     * @param env Pointer to the Environment with which this
+	     *          ReturnScope is to be associated.
+	     */
+	    ReturnScope(Environment* env)
+		: m_environment(env), m_prev_state(env->m_can_return)
+	    {
+		env->m_can_return = true;
+	    }
+
+	    ~ReturnScope()
+	    {
+		m_environment->m_can_return = m_prev_state;
+	    }
+	private:
+	    GCStackRoot<Environment> m_environment;
+	    bool m_prev_state;
+	};
+
+	/** @brief Constructor.
 	 *
 	 * @param enclosing Pointer to the enclosing environment.
 	 *
@@ -114,7 +182,8 @@ namespace CXXR {
 	 */
 	Environment(Environment* enclosing, Frame* frame)
 	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(frame),
-	      m_single_stepping(false)
+	      m_single_stepping(false), m_locked(false), m_cached(false),
+	      m_leaked(false), m_in_loop(false), m_can_return(false)
 	{}
 
 	/** @brief Environment constructor for serialization
@@ -139,6 +208,18 @@ namespace CXXR {
 	    return s_base_namespace;
 	}
 
+	/** @brief Is R 'return' currently legal?
+	 *
+	 * @return true iff there is currently at least one ReturnScope
+	 * object in existence associated with this Environment, so
+	 * that a transfer of control using ReturnException will
+	 * succeed.
+	 */
+	bool canReturn() const
+	{
+	    return m_can_return;
+	}
+
 	/** @brief Access the enclosing Environment.
 	 *
 	 * @return pointer to the enclosing Environment.
@@ -146,6 +227,50 @@ namespace CXXR {
 	Environment* enclosingEnvironment() const
 	{
 	    return m_enclosing;
+	}
+
+	/** @brief Search for a Binding for a Symbol.
+	 *
+	 * The search starts in this Environment; if no Binding is
+	 * found there, the search will proceed through successive
+	 * enclosing Environments.
+
+	 * @param symbol Pointer to the Symbol for which a Binding is
+	 *          sought.
+	 *
+	 * @return The first element of the pair is a pointer to the
+	 * sought Binding, or a null pointer if no Binding was found.
+	 * The second element of the pair is a pointer to the
+	 * Environment in whose frame the Binding was found, or a null
+	 * pointer if no Binding was found.
+	 */
+#ifdef __GNUC__
+	__attribute__((hot,fastcall))
+#endif
+	std::pair<Environment*, Frame::Binding*>
+	findBinding(const Symbol* symbol);
+
+	/** @brief Search for a Binding for a Symbol (const variant).
+	 *
+	 * The search starts in this Environment; if no Binding is
+	 * found there, the search will proceed through successive
+	 * enclosing Environments.
+
+	 * @param symbol Pointer to the Symbol for which a Binding is
+	 *          sought.
+	 *
+	 * @return The first element of the pair is a pointer to the
+	 * Environment in whose frame the Binding was found, or a null
+	 * pointer if no Binding was found.  The second element of the
+	 * pair is a pointer to the sought Binding, or a null pointer
+	 * if no Binding was found.
+	 */
+	std::pair<const Environment*, const Frame::Binding*>
+	findBinding(const Symbol* symbol) const
+	{
+	    EBPair ebpr = const_cast<Environment*>(this)->findBinding(symbol);
+	    return std::pair<const Environment*,
+		             const Frame::Binding*>(ebpr.first, ebpr.second);
 	}
 
 	/** @brief Access the Environment's Frame.
@@ -175,18 +300,78 @@ namespace CXXR {
 	    return s_global;
 	}
 
+	/** @brief Is R 'break' or 'next' currently legal?
+	 *
+	 * @return true iff there is currently at least one LoopScope
+	 * object in existence associated with this Environment.
+	 */
+	bool loopActive() const
+	{
+	    return m_in_loop;
+	}
+
+	/** @brief Disconnect the Environment from its Frame, if safe.
+	 *
+	 * Just before the application of a Closure returns, this
+	 * function is called on the local Environment of the Closure.
+	 * If it appears that the Environment will no longer be
+	 * reachable after the Closure returns (i.e., the Environment
+	 * is not 'leaked'), it detaches the Environment from its
+	 * Frame.  This breaks possible loops in the GCNode/GCEdge
+	 * graph, thus enabling the Environment to be
+	 * garbage-collected immediately.
+	 *
+	 * @note This function is an inlined no-op unless the
+	 * preprocessor variable DETACH_LOCAL_FRAMES is defined in
+	 * Environment.h.
+	 */
+	void maybeDetachFrame()
+	{
+#ifdef DETACH_LOCAL_FRAMES
+	    if (!m_leaked)
+		detachFrame();
+#endif
+	}
+
+	/** @brief Look for Environment objects that may have
+	 *  'leaked'.
+	 *
+	 * This function determines if any Environment objects are
+	 * reachable from \a node, and if so marks them as 'leaked'.
+	 * It is called in respect of any objects that are 'exported'
+	 * from a Closure call, for example the return value of the
+	 * call, and the objects of any non-local assignments within
+	 * the call.
+	 *
+	 * @param node Pointer (possibly null) to the object to be
+	 * scrutinised.
+	 *
+	 * @note This function is an inlined no-op unless the
+	 * preprocessor variable DETACH_LOCAL_FRAMES is defined in
+	 * Environment.h.
+	 */
+	static void monitorLeaks(const GCNode* node)
+	{
+#ifdef DETACH_LOCAL_FRAMES
+	    if (node) {
+		LeakMonitor monitor;
+		monitor(node);
+	    }
+#endif
+	}
+
 	/** @brief Replace the enclosing environment.
 	 *
 	 * @param new_enclos Pointer to the environment now to be
 	 *          considered to enclose this Environment.
 	 *
-	 * @todo This ought to check that the chain of ancestors
-	 * is free of loops and terminates with the empty environment.
+	 * @deprecated Retained for use in deserialization and in the
+	 * R function \c parent.env<- (itself deprecated).  For other
+	 * purposes, use instead slotBehind() and skipEnclosing(),
+	 * which ensure that the 'enclosing' relationship remains
+	 * acyclic.
 	 */
-	void setEnclosingEnvironment(Environment* new_enclos)
-	{
-	    m_enclosing = new_enclos;
-	}
+	void setEnclosingEnvironment(Environment* new_enclos);
 
 	/** @brief Set single-stepping status
 	 *
@@ -208,6 +393,33 @@ namespace CXXR {
 	    return m_single_stepping;
 	}
 
+	/** @brief Interpolate this Environment between a given
+	 * Environment and its enclosing Environment.
+	 *
+	 * This causes this Environment T to be interpolated between
+	 * \a anchor and the current enclosing Environment of \a
+	 * anchor.  Suppose that prior to the call E (possibly null)
+	 * is the enclosing Environment of \a anchor.  Then after the
+	 * call, E will be the enclosing Environment of T, and T will
+	 * be the enclosing Environment of \a anchor.
+	 *
+	 * @param anchor Pointer to the Environment 'behind' which this
+	 *          Environment is to be interpolated.  Must not
+	 *          be a null pointer.
+	 */
+	void slotBehind(Environment* anchor);
+
+	/** @brief Grandparent becomes parent.
+	 *
+	 * Suppose that prior to the call, E is the enclosing
+	 * Environment of this Environment (it is an error for E to be
+	 * null), and that EE (possibly null) is the enclosing
+	 * Environment of E.  Then after the call EE will be the
+	 * enclosing Environment both of this Environment and of E.
+	 * (However, this change may expose E to garbage collection.)
+	 */
+	void skipEnclosing();
+	    
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return The name by which this type is known in R.
@@ -225,26 +437,34 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
     protected:
-	// Declared protected to ensure that Environment objects are
-	// created only using 'new':
-	~Environment() {}
-
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
 	friend class boost::serialization::access;
+	friend class SchwarzCounter<Environment>;
+	friend class Frame;
 
-	template<class Archive>
-	void serialize (Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("Environment");
-	    ar & boost::serialization::base_object<RObject>(*this);
-	    BSerializer::attrib("m_enclosing");
-    	    ar & m_enclosing;
-	    BSerializer::attrib("m_frame");
-	    ar & m_frame;
-	    ar & m_single_stepping;
-	    ar & m_locked;
-	}
+	struct LeakMonitor : public GCNode::const_visitor {
+	    LeakMonitor()
+	    {}
+
+	    // Virtual function of const_visitor:
+	    void operator()(const GCNode* node);
+	};
+
+	// The class maintains a cache of Symbol Bindings found along
+	// the search path:
+
+	typedef std::pair<Environment*, Frame::Binding*> EBPair;
+	typedef
+	std::tr1::unordered_map<const Symbol*, EBPair,
+				std::tr1::hash<const Symbol*>,
+				std::equal_to<const Symbol*>,
+				CXXR::Allocator<std::pair<const Symbol*,
+							  EBPair> >
+	                        > Cache;
+
+	static Cache* s_cache;
 
 	// Predefined environments.  R_EmptyEnvironment has no special
 	// significance in CXXR, and may be abolished, so is not
@@ -257,58 +477,59 @@ namespace CXXR {
 	GCEdge<Frame> m_frame;
 	bool m_single_stepping;
 	bool m_locked;
+	bool m_cached;
+	// For local environments, m_leaked is set to true to signify
+	// that the environment may continue to be reachable after the
+	// return of the Closure call that created it.  It has no
+	// particular meaning for non-local environments.
+	mutable bool m_leaked;
+	bool m_in_loop;
+	bool m_can_return;
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
 	Environment(const Environment&);
 	Environment& operator=(const Environment&);
 
-	static void cleanup() {}
+	// Declared private to ensure that Environment objects are
+	// created only using 'new':
+	~Environment()
+	{
+	    if (m_cached && m_frame)
+		m_frame->decCacheCount();
+	}
+
+	static void cleanup();
+
+	void detachFrame();
+
+	// Remove any mapping of 'sym' from the cache.  If called with
+	// a null pointer, clear the cache entirely.
+	static void flushFromCache(const Symbol* sym);
 
 	static void initialize();
 
-	friend class SchwarzCounter<Environment>;
+	bool isCachePortal() const
+	{
+	    return (this == s_global);
+	}
+
+	// Designate this Environment as a participant in the search
+	// list cache:
+	void makeCached();
+
+	template<class Archive>
+	void serialize (Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("Environment");
+	    ar & boost::serialization::base_object<RObject>(*this);
+	    BSerializer::attrib("m_enclosing");
+    	    ar & m_enclosing;
+	    BSerializer::attrib("m_frame");
+	    ar & m_frame;
+	    ar & m_single_stepping;
+	    ar & m_locked;
+	}
     };
-
-    /** @brief Search for a Binding for a Symbol.
-     *
-     * @param symbol Pointer to the Symbol for which a Binding is
-     *          sought.
-     *
-     * @param env Environment in whose Frame a Binding is first to be
-     *          sought; if no Binding is found there, the search will
-     *          proceed through successive enclosing Environments.  It
-     *          is permissible for \a env to be a null pointer, in
-     *          which case (of course) no Binding will be found.
-     *
-     * @return The first element of the pair is a pointer to the
-     * sought Binding, or a null pointer if no Binding was found.  The
-     * second element of the pair is a pointer to the Environment in
-     * whose frame the Binding was found, or a null pointer if no
-     * Binding was found.
-     */
-    std::pair<Environment*, Frame::Binding*>
-    findBinding(const Symbol* symbol, Environment* env);
-
-    /** @brief Search for a Binding for a Symbol (const variant).
-     *
-     * @param symbol Pointer to the Symbol for which a Binding is
-     *          sought.
-     *
-     * @param env Environment in whose Frame a Binding is first to be
-     *          sought; if no Binding is found there, the search will
-     *          proceed through successive enclosing Environments.  It
-     *          is permissible for \a env to be a null pointer, in
-     *          which case (of course) no Binding will be found.
-     *
-     * @return The first element of the pair is a pointer to the
-     * sought Binding, or a null pointer if no Binding was found.  The
-     * second element of the pair is a pointer to the Environment in
-     * whose Frame the Binding was found, or a null pointer if no
-     * Binding was found.
-     */
-    std::pair<const Environment*, const Frame::Binding*>
-    findBinding(const Symbol* symbol, const Environment* env);
 
     /** @brief Search for a Binding of a Symbol to a FunctionBase.
      *
@@ -316,24 +537,24 @@ namespace CXXR {
      * whether the Binding's value is a FunctionBase.
      *
      * If a Binding of \a symbol to a Promise is encountered, the
-     * Promise is forced (within the Binding's environment) before
-     * testing whether the value of the Promise is a FunctionBase.  In
-     * this case, if the predicate is satisfied, the result of
-     * evaluating the Promise is part of the returned value.
+     * Promise is forced before testing whether the value of the
+     * Promise is a FunctionBase.  In this case, if the predicate is
+     * satisfied, the result of evaluating the Promise is part of the
+     * returned value.
      *
      * If, in the course of searching for a suitable Binding, a
-     * Binding of \a symbol to R_MissingArg is encountered, an error
-     * is raised.
+     * Binding of \a symbol to Symbol::missingArgument()
+     * (R_MissingArg) is encountered, an error is raised.
      *
      * Read/write monitors are invoked in the following circumstances:
      * (i) If a Promise is forced, any read monitor for the relevant
      * Binding is called before forcing it, and any write monitor for
      * the symbol's Binding is called immediately afterwards.  (ii) If
-     * this function succeeds in finding a Binding to a FunctionBas,
+     * this function succeeds in finding a Binding to a FunctionBase,
      * then any read monitor for that Binding is called.
      *
-     * @param symbol Pointer to the Symbol for which a Binding is
-     *          sought.
+     * @param symbol Non-null pointer to the Symbol for which a
+     *          Binding is sought.
      *
      * @param env Pointer to the Environment in which the search for a
      *          Binding is to start.  Must not be null.
@@ -344,13 +565,13 @@ namespace CXXR {
      *          Binding to a FunctionBase is found, or the chain of
      *          enclosing environments is exhausted.
      *
-     * @return If a Binding to a FunctionBase was found, the
-     * first element of of the pair is a pointer to the Environment in
-     * which it was found, and the second element is the value of the
-     * Binding, except that if the value was a Promise, the second
-     * element is the result of evaluating the Promise.  If no Binding
-     * satisfying the predicate was found, both elements of the pair
-     * are null pointers.
+     * @return If a Binding to a FunctionBase was found, the first
+     * element of the pair is a pointer to the Environment in which it
+     * was found, and the second element is the value of the Binding,
+     * except that if the value was a Promise, the second element is
+     * the result of evaluating the Promise.  If no Binding to a
+     * FunctionBase was found, both elements of the pair are null
+     * pointers.
      */
     std::pair<Environment*, FunctionBase*>
     findFunction(const Symbol* symbol, Environment* env, bool inherits = true);
@@ -361,10 +582,10 @@ namespace CXXR {
      * whether the Binding's value satisfies a predicate \a pred.
      *
      * If a Binding of \a symbol to a Promise is encountered, the
-     * Promise is forced (within the Binding's environment) before
-     * applying the predicate to the result of evaluating the Promise.
-     * In this case, if the predicate is satisfied, the result of
-     * evaluating the Promise is part of the returned value.
+     * Promise is forced before applying the predicate to the result
+     * of evaluating the Promise.  In this case, if the predicate is
+     * satisfied, the result of evaluating the Promise is part of the
+     * returned value.
      *
      * Read/write monitors are invoked in the following circumstances:
      * (i) If a Promise is forced, any read monitor for the relevant
@@ -373,9 +594,9 @@ namespace CXXR {
      * this function succeeds in finding a Binding satisfying the
      * predicate, then any read monitor for that Binding is called.
      *
-     * @param UnaryPredicate A type of function or function object
-     *          capable of accepting const RObject* and returning
-     *          bool.
+     * @tparam UnaryPredicate A type of function or function object
+     *           capable of accepting const RObject* and returning
+     *           bool.
      *
      * @param symbol Pointer to the Symbol for which a Binding is
      *          sought.
@@ -406,35 +627,37 @@ namespace CXXR {
 		    UnaryPredicate pred, bool inherits)
     {
 	using namespace std;
-	RObject* val = 0;
-	Frame::Binding* bdg;
+	pair<Environment*, RObject*> ans(0, 0);
 	bool found = false;
 	do {
-	    bdg = env->frame()->binding(symbol);
-	    if (bdg) {
-		pair<RObject*, bool> pr = bdg->forcedValue();
-		// If a Promise was forced, this may have invalidated
-		// 'bdg' (Um, is this actually possible?), so we look
-		// it up again.  However, beware that in this event,
-		// the subsequent call to monitorRead() will be
-		// applied to the wrong Binding, i.e. not the one from
-		// which 'val' was derived.  It's hard to see how to
-		// avoid this, because by the time that we've verified
-		// that 'val' satisfies the predicate, the original
-		// binding may have been destroyed.
-		if (pr.second)
-		    bdg = env->frame()->binding(symbol);
-		val = pr.first;
-		found = pred(val);
+	    Frame::Binding* bdg;
+	    if (!inherits) {
+		// Note that the cache is not updated in this case:
+		bdg = env->frame()->binding(symbol);
+	    } else {
+		pair<Environment*, Frame::Binding*> pr
+		    = env->findBinding(symbol);
+		env = pr.first;
+		bdg = pr.second;
 	    }
-	} while (!found && inherits
-		 && (env = env->enclosingEnvironment()));
-	if (found) {
-	    // Invoke read monitor (if any);
-	    bdg->rawValue();
-	    return make_pair(env, val);
-	}
-	return pair<Environment*, RObject*>(0, 0);
+	    if (bdg) {
+		pair<RObject*, bool> fpr = bdg->forcedValue();
+		RObject* val = fpr.first;
+		found = pred(val);
+		if (found) {
+		    // Invoke read monitor (if any) only if
+		    // forcedValue() did not force a Promise.  (If a
+		    // Promise was forced, the read monitor will have
+		    // been invoked anyway, and 'bdg' may now be
+		    // junk.)
+		    if (!fpr.second)
+			bdg->rawValue();
+		    ans = make_pair(env, val);
+		}
+		env = env->enclosingEnvironment();
+	    }
+	} while (!found && inherits && env);
+	return ans;
     }
 }  // namespace CXXR
 
@@ -530,25 +753,6 @@ extern "C" {
 	using namespace CXXR;
 	Environment* env = SEXP_downcast<Environment*>(x);
 	return env->frame()->asPairList();
-    }
-#endif
-
-    /** @brief Set an environment's enclosing environment.
-     *
-     * @param x Pointer to a CXXR::Environment (checked).
-     *
-     * @param v Pointer to a CXXR::Environment (checked) intended to be
-     *          the new enclosing environment of \a x.
-     */
-#ifndef __cplusplus
-    void SET_ENCLOS(SEXP x, SEXP v);
-#else
-    inline void SET_ENCLOS(SEXP x, SEXP v)
-    {
-	using namespace CXXR;
-	Environment* env = SEXP_downcast<Environment*>(x);
-	Environment* enc = SEXP_downcast<Environment*>(v);
-	env->setEnclosingEnvironment(enc);
     }
 #endif
 

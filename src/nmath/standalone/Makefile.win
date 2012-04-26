@@ -1,11 +1,11 @@
 #-*- Makefile -*-
 include ../../gnuwin32/MkRules
 
+CFLAGS=-O3 -Wall -pedantic $(EOPTS)
 ifdef DEBUG
- OPTFLAGS=$(G_FLAG) -O3 -Wall
+ CFLAGS+=$(G_FLAG)
  DLLFLAGS=
 else
- OPTFLAGS=-O3 -Wall -pedantic
  DLLFLAGS=-s
 endif
 
@@ -29,7 +29,11 @@ stamp-src: $(SOURCES_NMATH)
 	$(CP) -p ../*.c .
 	touch $@
 
-test: test.exe test-static.exe
+ifdef USE_IMPLIBS
+test: test-static.exe
+else
+test: test-static.exe test.exe
+endif
 
 ## see R-admin for alternatives
 test.exe: test.c
@@ -46,7 +50,6 @@ distclean: clean
 
 DEFS = -DHAVE_CONFIG_H -DMATHLIB_STANDALONE
 CPPFLAGS=-I.. -I../../include $(DEFS)
-CFLAGS=$(OPTFLAGS)
 
 SOURCES_NMATH = \
 	mlutils.c \
@@ -88,7 +91,7 @@ DEPENDS = $(SOURCES_NMATH:.c=.d)
 libRmath.a: sunif.o $(SOURCES_NMATH:.c=.o)
 Rmath.def: sunif.o $(SOURCES_NMATH:.c=.o)
 	$(ECHO) EXPORTS > $@
-	$(NM) $^ | $(SED) -n 's/^........ [BCDRT] _/ /p' >> $@
+	$(NM) $^ | $(SED) -n $(SYMPAT) >> $@
 Rmath.dll: libRmath.a Rmath.def
 	$(DLL) $(DLLFLAGS) --shared -o $@ Rmath.def $^
 libRmath.dll.a: Rmath.def

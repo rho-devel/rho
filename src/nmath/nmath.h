@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  Mathlib : A C Library of Special Functions
- *  Copyright (C) 1998-2004  The R Development Core Team
+ *  Copyright (C) 1998-2011  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,12 +39,6 @@
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
-#endif
-
-#ifdef HAVE_LONG_DOUBLE
-#  define LDOUBLE long double
-#else
-#  define LDOUBLE double
 #endif
 
 #include <math.h>
@@ -145,19 +139,19 @@ int R_finite(double);
        char *msg = ""; \
        switch(x) { \
        case ME_DOMAIN: \
-	   msg = "argument out of domain in '%s'\n"; \
+	   msg = _("argument out of domain in '%s'\n");	\
 	   break; \
        case ME_RANGE: \
-	   msg = "value out of range in '%s'\n"; \
+	   msg = _("value out of range in '%s'\n");	\
 	   break; \
        case ME_NOCONV: \
-	   msg = "convergence failed in '%s'\n"; \
+	   msg = _("convergence failed in '%s'\n");	\
 	   break; \
        case ME_PRECISION: \
-	   msg = "full precision may not have been achieved in '%s'\n"; \
+	   msg = _("full precision may not have been achieved in '%s'\n"); \
 	   break; \
        case ME_UNDERFLOW: \
-	   msg = "underflow occurred in '%s'\n"; \
+	   msg = _("underflow occurred in '%s'\n");	\
 	   break; \
        } \
        MATHLIB_WARNING(msg, s); \
@@ -209,7 +203,7 @@ double  attribute_hidden pnchisq_raw(double, double, double, double, double, int
 double  attribute_hidden pgamma_raw(double, double, int, int);
 double	attribute_hidden pbeta_raw(double, double, double, int, int);
 double  attribute_hidden qchisq_appr(double, double, double, int, int, double tol);
-LDOUBLE	attribute_hidden pnbeta_raw(double, double, double, double, double);
+long double attribute_hidden pnbeta_raw(double, double, double, double, double);
 double	attribute_hidden pnbeta2(double, double, double, double, double, int, int);
 
 int	Rf_i1mach(int);

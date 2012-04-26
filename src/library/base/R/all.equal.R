@@ -20,7 +20,7 @@ all.equal.default <-
     function(target, current, ...)
 {
     ## Really a dispatcher given mode() of args :
-    ## use data.class as unlike class it does not give "Integer"
+    ## use data.class as unlike class it does not give "integer"
     if(is.language(target) || is.function(target) || is.environment(target))
 	return(all.equal.language(target, current, ...))
     if(is.recursive(target))
@@ -35,8 +35,8 @@ all.equal.default <-
 		   ## assumes that slots are implemented as attributes :
 		   S4 = attr.all.equal(target, current, ...),
                    if(data.class(target) != data.class(current)) {
-                       paste("target is ", data.class(target), ", current is ",
-                             data.class(current), sep = "")
+                       gettextf("target is %s, current is %s",
+                                data.class(target), data.class(current))
                    } else NULL)
     if(is.null(msg)) TRUE else msg
 }
@@ -45,7 +45,8 @@ all.equal.numeric <-
     function(target, current, tolerance = .Machine$double.eps ^ .5,
              scale = NULL, check.attributes = TRUE, ...)
 {
-    msg <- if(check.attributes) attr.all.equal(target, current, ...)
+    msg <- if(check.attributes)
+	attr.all.equal(target, current, tolerance=tolerance, scale=scale, ...)
     if(data.class(target) != data.class(current)) {
 	msg <- c(msg, paste("target is ", data.class(target), ", current is ",
 			    data.class(current), sep = ""))
@@ -54,7 +55,7 @@ all.equal.numeric <-
 
     lt <- length(target)
     lc <- length(current)
-    cplx <- is.complex(target)
+    cplx <- is.complex(target) # and so current must be too.
     if(lt != lc) {
 	## *replace* the 'Lengths' msg[] from attr.all.equal():
 	if(!is.null(msg)) msg <- msg[- grep("\\bLengths\\b", msg)]
@@ -62,6 +63,8 @@ all.equal.numeric <-
 			    ": lengths (", lt, ", ", lc, ") differ", sep = ""))
 	return(msg)
     }
+    ## remove atttributes (remember these are both numeric or complex vectors)
+    ## one place this is needed is to unclass Surv objects in the rpart test suite.
     target <- as.vector(target)
     current <- as.vector(current)
     out <- is.na(target)
@@ -76,7 +79,7 @@ all.equal.numeric <-
     target <- target[!out]
     current <- current[!out]
     if(is.integer(target) && is.integer(current)) target <- as.double(target)
-    xy <- mean((if(cplx)Mod else abs)(target - current))
+    xy <- mean((if(cplx) Mod else abs)(target - current))
     what <-
 	if(is.null(scale)) {
 	    xn <- mean(abs(target))
@@ -129,26 +132,17 @@ all.equal.character <-
     else msg
 }
 
+## visible, so need to test both args
 all.equal.factor <- function(target, current, check.attributes = TRUE, ...)
 {
+    if(!inherits(target, "factor"))
+	return("'target' is not a factor")
     if(!inherits(current, "factor"))
 	return("'current' is not a factor")
     msg <-  if(check.attributes) attr.all.equal(target, current, ...)
-    class(target) <- class(current) <- NULL
-    nax <- is.na(target)
-    nay <- is.na(current)
-    n <- sum(nax != nay)
-    if(n > 1L)
-	msg <- c(msg, paste(n, "NA mismatches"))
-    else if (n == 1L)
-        msg <- c(msg, paste("1, NA mismatch"))
-    else {
-	target <- levels(target)[target[!nax]]
-	current <- levels(current)[current[!nay]]
-        n <- all.equal(target, current, check.attributes = check.attributes,
-                       ...)
-	if(is.character(n)) msg <- c(msg, n)
-    }
+    n <- all.equal(as.character(target), as.character(current),
+                   check.attributes = check.attributes, ...)
+    if(is.character(n)) msg <- c(msg, n)
     if(is.null(msg)) TRUE else msg
 }
 
@@ -158,7 +152,13 @@ all.equal.formula <- function(target, current, ...)
 	return(paste("target, current differ in having response: ",
 		     length(target) == 3L, ", ",
                      length(current) == 3L, sep=""))
-    if(all(deparse(target) != deparse(current)))
+    ## <NOTE>
+    ## This takes same-length formulas as all equal if they deparse
+    ## identically.  As of 2010-02-24, deparsing strips attributes; if
+    ## this is changed, the all equal behavior will change unless the
+    ## test is changed.
+    ## </NOTE>
+    if(!identical(deparse(target), deparse(current)))
 	"formulas differ in contents"
     else TRUE
 }
@@ -188,6 +188,10 @@ all.equal.list <- function(target, current, check.attributes = TRUE, ...)
     msg <- if(check.attributes) attr.all.equal(target, current, ...)
 ##    nt <- names(target)
 ##    nc <- names(current)
+    ## Unclass to ensure we get the low-level components (see the
+    ## comment below).
+    target <- unclass(target)
+    current <- unclass(current)
     iseq <-
 	## <FIXME>
 	## Commenting this eliminates PR#674, and assumes that lists are
@@ -220,6 +224,7 @@ all.equal.list <- function(target, current, check.attributes = TRUE, ...)
     if(is.null(msg)) TRUE else msg
 }
 
+## also used for logical
 all.equal.raw <-
     function(target, current, check.attributes = TRUE, ...)
 {

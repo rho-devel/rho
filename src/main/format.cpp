@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,8 +17,8 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2005  The R Development Core Team.
- *  Copyright (C) 2003        The R Foundation
+ *  Copyright (C) 1997--2011  The R Development Core Team.
+ *  Copyright (C) 2003--2011  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@
  *  See ./print.c  for do_printdefault, do_prmatrix, etc.
  *
  * Exports
- *	formatString
+ *	formatString  (not in CXXR)
  *	formatLogical
  *	formatInteger
  *	formatReal
@@ -56,7 +56,8 @@
 #endif
 
 #include <Defn.h>
-#include <Rcomplex.h>
+#include <float.h> /* for DBL_EPSILON */
+#include "Rcomplex.h"
 #include <Rmath.h>
 #include <Print.h>
 
@@ -145,12 +146,61 @@ void formatInteger(int *x, int n, int *fieldwidth)
  * Using GLOBAL	 R_print.digits	 -- had	 #define MAXDIG R_print.digits
 */
 
-static const double tbl[] =
+/* long double is C99, so should always be defined */
+#if SIZEOF_LONG_DOUBLE > SIZEOF_DOUBLE
+# ifdef HAVE_NEARBYINTL
+# define R_nearbyintl nearbyintl
+/* Cygwin had rintl but not nearbyintl */
+# elif defined(HAVE_RINTL)
+# define R_nearbyintl rintl
+# else
+# define R_nearbyintl private_nearbyintl
+long double private_nearbyintl(long double x)
 {
-    0.e0, 1.e0, 1.e1, 1.e2, 1.e3, 1.e4, 1.e5, 1.e6, 1.e7, 1.e8, 1.e9
+    long double x1;
+    x1 = - floorl(-x + 0.5);
+    x = floorl(x + 0.5);
+    if (x == x1) return(x);
+    else {
+	/* FIXME: we should really test for floorl, also C99.
+	   But FreeBSD 7.x does have it, but not nearbyintl */
+        if (x/2.0 == floorl(x/2.0)) return(x); else return(x1);
+    }
+}
+# endif
+# else /* no long double */
+# ifdef HAVE_NEARBYINT
+#  define R_nearbyint nearbyint
+# elif defined(HAVE_RINTL)
+#  define R_nearbyint rint
+# else
+#  define R_nearbyint private_rint
+extern double private_rint(double x);/* in ../nmath/fround.c  */
+# endif
+#endif
+
+#define NB 1000
+static void format_via_sprintf(double r, int d, int *kpower, int *nsig)
+{
+    static char buff[NB];
+    int i;
+    snprintf(buff, NB, "%#.*e", d - 1, r);
+    *kpower = strtol(buff + (d + 2), NULL, 10);
+    for (i = d; i >= 2; i--)
+        if (buff[i] != '0') break;
+    *nsig = i;
+}
+
+
+static const long double tbl[] =
+{
+    /* Powers exactly representable with 64 bit mantissa */
+    1e00, 1e01, 1e02, 1e03, 1e04, 1e05, 1e06, 1e07, 1e08, 1e09,
+    1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
+    1e20, 1e21, 1e22, 1e23, 1e24, 1e25, 1e26, 1e27
 };
 
-static void scientific(double *x, int *sgn, int *kpower, int *nsig, double eps)
+static void scientific(double *x, int *sgn, int *kpower, int *nsig)
 {
     /* for a number x , determine
      *	sgn    = 1_{x < 0}  {0/1}
@@ -168,49 +218,76 @@ static void scientific(double *x, int *sgn, int *kpower, int *nsig, double eps)
 	*kpower = 0;
 	*nsig = 1;
 	*sgn = 0;
-    }
-    else {
+    } else {
 	if(*x < 0.0) {
 	    *sgn = 1; r = -*x;
 	} else {
 	    *sgn = 0; r = *x;
 	}
-	kp = CXXRCONSTRUCT(int, floor(log10(r)));/*-->	 r = |x| ;  10^k <= r */
-	if (abs(kp) < 10) {
-	    if (kp >= 0)
-		alpha = r / tbl[kp + 1]; /* division slow ? */
-	    else
-		alpha = r * tbl[-kp + 1];
-	}
-	/* on IEEE 1e-308 is not representable except by gradual underflow.
-	   shifting by 30 allows for any potential denormalized numbers x,
-	   and makes the reasonable assumption that R_dec_min_exponent+30
-	   is in range.
-	 */
-	else if (kp <= R_dec_min_exponent) {
-	    alpha = (r * 1e+30)/pow(10.0, double(kp+30));
-	}
+        if (R_print.digits >= DBL_DIG + 1) {
+            format_via_sprintf(r, R_print.digits, kpower, nsig);
+            return;
+        }
+        kp = floor(log10(r)) - R_print.digits + 1;/* r = |x|; 10^(kp + digits - 1) <= r */
+#if SIZEOF_LONG_DOUBLE > SIZEOF_DOUBLE
+        long double r_prec = r;
+        /* use exact scaling factor in long double precision, if possible */
+        if (abs(kp) <= 27) {
+            if (kp > 0) r_prec /= tbl[kp]; else if (kp < 0) r_prec *= tbl[ -kp];
+        }
+#ifdef HAVE_POWL
 	else
-	    alpha = r / pow(10.0, double(kp));
-
-	/* make sure that alpha is in [1,10) AFTER rounding */
-
-	if (10.0 - alpha < eps*alpha) {
-	    alpha /= 10.0;
-	    kp += 1;
-	}
-	*kpower = kp;
-
-	/* compute number of digits */
-
-	*nsig = R_print.digits;
-	for (j = 1; j <= *nsig; j++) {
-	    if (fabs(alpha - floor(alpha+0.5)) < eps * alpha) {
-		*nsig = j;
-		break;
-	    }
-	    alpha *= 10.0;
-	}
+            r_prec /= powl(10.0, static_cast<long double>( kp));
+#else
+        else if (kp <= R_dec_min_exponent)
+            r_prec = (r_prec * 1e+303)/pow(10.0, (double)(kp+303));
+        else
+            r_prec /= pow(10.0, (double) kp);
+#endif
+        if (r_prec < tbl[R_print.digits - 1]) {
+            r_prec *= 10.0;
+            kp--;
+        }
+        /* round alpha to integer, 10^(digits-1) <= alpha <= 10^digits
+	   accuracy limited by double rounding problem,
+	   alpha already rounded to 64 bits */
+        alpha = R_nearbyintl(r_prec);
+#else
+        /* use exact scaling factor in double precision, if possible */
+        if (abs(kp) <= 22) {
+            if (kp >= 0) r /= tbl[kp]; else r *= tbl[ -kp];
+        }
+        /* on IEEE 1e-308 is not representable except by gradual underflow.
+           Shifting by 303 allows for any potential denormalized numbers x,
+           and makes the reasonable assumption that R_dec_min_exponent+303
+           is in range. Representation of 1e+303 has low error.
+         */
+        else if (kp <= R_dec_min_exponent)
+            r = (r * 1e+303)/pow(10.0, (double)(kp+303));
+        else
+            r /= pow(10.0, (double)kp);
+        if (r < tbl[R_print.digits - 1]) {
+            r *= 10.0;
+            kp--;
+        }
+        /* round alpha to integer, 10^(digits-1) <= alpha <= 10^digits */
+        /* accuracy limited by double rounding problem, alpha already rounded to 53 bits */
+        alpha = R_nearbyint(r);
+#endif
+        *nsig = R_print.digits;
+        for (j = 1; j <= R_print.digits; j++) {
+            alpha /= 10.0;
+            if (alpha == floor(alpha)) {
+                (*nsig)--;
+            } else {
+                break;
+            }
+        }
+        if (*nsig == 0) {
+            *nsig = 1;
+            kp += 1;
+        }
+        *kpower = kp + R_print.digits - 1;
     }
 }
 
@@ -231,11 +308,6 @@ void formatReal(double *x, int n, int *w, int *d, int *e, int nsmall)
     int neg, sgn, kpower, nsig;
     int i, naflag, nanflag, posinf, neginf;
 
-    double eps = pow(10.0, -double(R_print.digits));
-    /* better to err on the side of too few signif digits rather than
-       far too many */
-    if(eps < 2*DBL_EPSILON) eps = 2*DBL_EPSILON;
-
     nanflag = 0;
     naflag = 0;
     posinf = 0;
@@ -251,7 +323,7 @@ void formatReal(double *x, int n, int *w, int *d, int *e, int nsmall)
 	    else if(x[i] > 0) posinf = 1;
 	    else neginf = 1;
 	} else {
-	    scientific(&x[i], &sgn, &kpower, &nsig, eps);
+	    scientific(&x[i], &sgn, &kpower, &nsig);
 
 	    left = kpower + 1;
 	    sleft = sgn + ((left <= 0) ? 1 : left); /* >= 1 */
@@ -331,9 +403,6 @@ void formatComplex(Rcomplex *x, int n, int *wr, int *dr, int *er,
     Rcomplex tmp;
     Rboolean all_re_zero = TRUE, all_im_zero = TRUE;
 
-    double eps = pow(10.0, -double(R_print.digits));
-    if(eps < 2*DBL_EPSILON) eps = 2*DBL_EPSILON;
-
     naflag = 0;
     rnanflag = 0;
     rposinf = 0;
@@ -360,7 +429,7 @@ void formatComplex(Rcomplex *x, int n, int *wr, int *dr, int *er,
 		else rneginf = 1;
 	    } else {
 		if(x[i].r != 0) all_re_zero = FALSE;
-		scientific(&(tmp.r), &sgn, &kpower, &nsig, eps);
+		scientific(&(tmp.r), &sgn, &kpower, &nsig);
 
 		left = kpower + 1;
 		sleft = sgn + ((left <= 0) ? 1 : left); /* >= 1 */
@@ -384,7 +453,7 @@ void formatComplex(Rcomplex *x, int n, int *wr, int *dr, int *er,
 		else iposinf = 1;
 	    } else {
 		if(x[i].i != 0) all_im_zero = FALSE;
-		scientific(&(tmp.i), &sgn, &kpower, &nsig, eps);
+		scientific(&(tmp.i), &sgn, &kpower, &nsig);
 
 		left = kpower + 1;
 		sleft = ((left <= 0) ? 1 : left);

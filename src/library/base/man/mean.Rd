@@ -1,6 +1,6 @@
 % File src/library/base/man/mean.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{mean}
@@ -12,7 +12,7 @@ mean(x, \dots)
 }
 \alias{mean}
 \alias{mean.default}
-\alias{mean.data.frame}
+\alias{mean.data.frame}% <- deprecated!
 \arguments{
   \item{x}{An \R object.  Currently there are methods for
     numeric/logical vectors and \link[=Dates]{date},
@@ -31,13 +31,13 @@ mean(x, \dots)
   Generic function for the (trimmed) arithmetic mean.
 }
 \value{
-  For a data frame, a named vector with the appropriate method being
-  applied column by column.
-  
+  % For a data frame, a named vector with the appropriate method being
+  % applied column by column.
+
   If \code{trim} is zero (the default), the arithmetic mean of the
   values in \code{x} is computed, as a numeric or complex vector of
   length one.  If \code{x} is not logical (coerced to numeric), numeric
-  (including integer) or complex, \code{NA} is returned, with a warning.
+  (including integer) or complex, \code{NA_real_} is returned, with a warning.
 
   If \code{trim} is non-zero, a symmetrically trimmed mean is computed
   with a fraction of \code{trim} observations deleted from each end
@@ -56,8 +56,6 @@ mean(x, \dots)
 x <- c(0:10, 50)
 xm <- mean(x)
 c(xm, mean(x, trim = 0.10))
-
-mean(USArrests, trim = 0.2)
 }
 \keyword{univar}
 

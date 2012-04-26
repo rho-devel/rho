@@ -31,7 +31,7 @@ spec.taper <- function (x, p = 0.1)
     a <- attributes(x)
     x <- as.matrix(x)
     nc <- ncol(x)
-    if (length(p) == 1)
+    if (length(p) == 1L)
         p <- rep(p, nc)
     else if (length(p) != nc)
         stop("length of 'p' must be 1 or equal the number of columns of 'x'")
@@ -56,7 +56,7 @@ spec.ar <- function(x, n.freq, order = NULL, plot = TRUE,
         xfreq <- frequency(x)
         nser <- NCOL(x)
         x <- ar(x, is.null(order), order, na.action=na.action, method=method)
-    } else {
+    } else { ## result of ar()
         cn <- match(c("ar", "var.pred", "order"), names(x))
         if(any(is.na(cn)))
             stop("'x' must be a time series or an ar() fit")
@@ -69,12 +69,13 @@ spec.ar <- function(x, n.freq, order = NULL, plot = TRUE,
     freq <- seq.int(0, 0.5, length.out = n.freq)
     if (nser == 1) {
         coh <- phase <- NULL
-        if(order >= 1) {
-            cs <- outer(freq, 1L:order, function(x, y) cos(2*pi*x*y)) %*% x$ar
-            sn <- outer(freq, 1L:order, function(x, y) sin(2*pi*x*y)) %*% x$ar
-            spec <- x$var.pred/(xfreq*((1 - cs)^2 + sn^2))
-        } else
-            spec <- rep(x$var.pred/(xfreq), length(freq))
+        var.p <- as.vector(x$var.pred)
+        spec <-
+            if(order >= 1) {
+                cs <- outer(freq, 1L:order, function(x, y) cos(2*pi*x*y)) %*% x$ar
+                sn <- outer(freq, 1L:order, function(x, y) sin(2*pi*x*y)) %*% x$ar
+                var.p/(xfreq*((1 - cs)^2 + sn^2))
+            } else rep.int(var.p/xfreq, length(freq))
     } else .NotYetImplemented()
     spg.out <- list(freq = freq*xfreq, spec = spec, coh = coh, phase = phase,
                     n.used = nrow(x), series = series,
@@ -83,8 +84,8 @@ spec.ar <- function(x, n.freq, order = NULL, plot = TRUE,
     class(spg.out) <- "spec"
     if(plot) {
 	plot(spg.out, ci = 0, ...)
-        return(invisible(spg.out))
-    } else return(spg.out)
+        invisible(spg.out)
+    } else spg.out
 }
 
 spec.pgram <-
@@ -229,6 +230,7 @@ plot.spec <-
     ylog <- ""
     if(log=="dB") x$spec <- 10 * log10(x$spec)
     if(log=="yes") ylog <- "y"
+    dev.hold(); on.exit(dev.flush())
     if(add) {
         matplot(x$freq, x$spec, type = type, add=TRUE, ...)
     } else {
@@ -295,9 +297,10 @@ plot.spec.coherency <-
               lty=ci.lty, col=ci.col)
         title(main)
     } else {
+        dev.hold(); on.exit(dev.flush())
         opar <- par(mfrow = c(nser-1, nser-1), mar = c(1.5, 1.5, 0.5, 0.5),
                     oma = c(4, 4, 6, 4))
-        on.exit(par(opar))
+        on.exit(par(opar), add = TRUE)
         plot.new()
         for (j in 2:nser) for (i in 1L:(j-1)) {
             par(mfg=c(j-1,i, nser-1, nser-1))
@@ -344,9 +347,10 @@ plot.spec.phase <-
         lines(x$freq, x$phase - cl, lty=ci.lty, col=ci.col)
         title(main)
     } else {
+        dev.hold(); on.exit(dev.flush())
         opar <- par(mfrow = c(nser-1, nser-1), mar = c(1.5, 1.5, 0.5, 0.5),
                     oma = c(4, 4, 6, 4))
-        on.exit(par(opar))
+        on.exit(par(opar), add = TRUE)
         plot.new()
         for (j in 2:nser) for (i in 1L:(j-1)) {
             par(mfg=c(j-1,i, nser-1, nser-1))

@@ -10,9 +10,9 @@
 \usage{
 \method{plot}{lm}(x, which = c(1:3,5), %% was which = 1:4
      caption = list("Residuals vs Fitted", "Normal Q-Q",
-          "Scale-Location", "Cook's distance",
-          "Residuals vs Leverage",
-          expression("Cook's dist vs Leverage  " * h[ii] / (1 - h[ii]))),
+       "Scale-Location", "Cook's distance",
+       "Residuals vs Leverage",
+       expression("Cook's dist vs Leverage  " * h[ii] / (1 - h[ii]))),
      panel = if(add.smooth) panel.smooth else points,
      sub.caption = NULL, main = "",
      ask = prod(par("mfcol")) < length(which) && dev.interactive(),
@@ -61,7 +61,8 @@
 \description{
   Six plots (selectable by \code{which}) are currently available: a plot
   of residuals against fitted values, a Scale-Location plot of
-  \eqn{\sqrt{| residuals |}} against fitted values, a Normal Q-Q plot, a
+  \eqn{\sqrt{| residuals |}}{sqrt(| residuals |)}
+  against fitted values, a Normal Q-Q plot, a
   plot of Cook's distances versus row labels, a plot of residuals
   against leverages, and a plot of Cook's distances against
   leverage/(1-leverage).  By default, the first three and \code{5} are provided.
@@ -74,13 +75,13 @@
 
   The \sQuote{Scale-Location} plot, also called \sQuote{Spread-Location} or
   \sQuote{S-L} plot, takes the square root of the absolute residuals in
-  order to diminish skewness (\eqn{\sqrt{| E |}} is much less skewed
+  order to diminish skewness (\eqn{\sqrt{| E |}}{sqrt(|E|)}) is much less skewed
   than \eqn{| E |} for Gaussian zero-mean \eqn{E}).
 
   The \sQuote{S-L}, the Q-Q, and the Residual-Leverage plot, use
   \emph{standardized} residuals which have identical variance (under the
   hypothesis).  They are given as
-  \eqn{R_i / (s \times \sqrt{1 - h_{ii}})}{R[i] / (s*sqrt(1 - h.ii))}
+  \eqn{R_i / (s \times \sqrt{1 - h_{ii}})}{R[i] / (s * sqrt(1 - h.ii))}
   where \eqn{h_{ii}}{h.ii} are the diagonal entries of the hat matrix,
   \code{\link{influence}()$hat} (see also \code{\link{hat}}), and
   where the Residual-Leverage plot uses standardized Pearson residuals
@@ -127,7 +128,8 @@ require(graphics)
 
 ## Analysis of the life-cycle savings data
 ## given in Belsley, Kuh and Welsch.
-plot(lm.SR <- lm(sr ~ pop15 + pop75 + dpi + ddpi, data = LifeCycleSavings))
+lm.SR <- lm(sr ~ pop15 + pop75 + dpi + ddpi, data = LifeCycleSavings)
+plot(lm.SR)
 
 ## 4 plots on 1 page;
 ## allow room for printing model formula in outer margin:

@@ -10,7 +10,9 @@ test-src-gct = \
 	arith.R \
 	lm-tests.R \
 	ok-errors.R \
-	method-dispatch.R
+	method-dispatch.R \
+	array-subset.R \
+	any-all.R
 test-src-strict-1 = \
 	$(test-src-gct) \
 	d-p-q-r-tests.R
@@ -37,12 +39,13 @@ test-src-random = p-r-random-tests.R
 test-src-regexp = utf8-regex.R
 test-src-segfault = no-segfault.R
 
-## added to on Windows
-test-src-reg-1 = reg-tests-1.R reg-tests-2.R reg-IO.R reg-IO2.R \
-  reg-plot.R reg-S4.R
-test-src-reg-auto =
-test-src-reg = $(test-src-reg-1) $(test-src-reg-auto)
-test-src-reg3 = reg-tests-3.R reg-plot-latin1.R 
+test-src-reg-1 = reg-tests-1a.R reg-tests-1b.R reg-tests-2.R \
+  reg-examples1.R reg-examples2.R reg-packages.R \
+  reg-IO.R reg-IO2.R reg-plot.R reg-S4.R reg-BLAS.R
+## set on Windows
+test-src-reg-1e =
+test-src-reg = $(test-src-reg-1) $(test-src-reg-1e)
+test-src-reg3 = reg-tests-3.R reg-plot-latin1.R
 
 test-out-strict = $(test-src-strict:.R=.Rout)
 test-out-sloppy = $(test-src-sloppy:.R=.Rout)
@@ -86,38 +89,39 @@ FORCE:
 	@if test -f $(srcdir)/$@.save ; then \
 	  mv $@ $@.fail; \
 	  $(ECHO) $(ECHO_N) \
-	    "comparing '$@' to '$(srcdir)/$@.save' ...$(ECHO_C)"; \
+	    "  comparing '$@' to '$(srcdir)/$@.save' ...$(ECHO_C)"; \
 	  $(RDIFF) $@.fail $(srcdir)/$@.save $(RVAL_IF_DIFF) || exit 1; \
 	  mv $@.fail $@; \
 	  $(ECHO) "$(ECHO_T) OK"; \
 	fi
 
-## diff -b may be needed on Windows because of CRLF line endings.
+## We could use Rdiff now this is in R.
+## An attempt to use pdf(compress=FALSE) in Sept 2011 failed, as 
+## Win32 gave sligtly different answers (rounding error).
 reg-plot.Rout: reg-plot.R
 	@rm -f $@ $@.fail
 	@$(ECHO) $(ECHO_N) "running code in '$<' ...$(ECHO_C)"
 	@$(R) < $< > $@ 2>&1 || (mv $@ $@.fail && exit 1)
 	@$(ECHO) "$(ECHO_T) OK"
 	@$(ECHO) $(ECHO_N) \
-	  "comparing 'reg-plot.ps' to '$(srcdir)/reg-plot.ps.save' ...$(ECHO_C)"
-	-@diff -b reg-plot.ps $(srcdir)/reg-plot.ps.save
+	  "  comparing 'reg-plot.ps' to '$(srcdir)/reg-plot.ps.save' ...$(ECHO_C)"
+	@$(RDIFF) reg-plot.ps $(srcdir)/reg-plot.ps.save
 	@$(ECHO) "$(ECHO_T) OK"
 
-## allow this to fail, as it must if the locale does not support Latin-1 chars
-## we can't use Rdiff as MacOS tr crashes on latin-1 chars in a UTF-8 locale
+## allow this to fail, as it may if the locale does not support Latin-1 chars
 reg-plot-latin1.Rout: reg-plot-latin1.R
 	@rm -f $@ $@.fail
 	@$(ECHO) "running tests of plotting Latin-1"
-	@$(ECHO) "  expect failure or some differences if not in a Latin or UTF-8 locale"
+	@$(ECHO) "  expect failure or some differences if not in a Latin-1 or UTF-8 locale"
 	@$(ECHO) $(ECHO_N) "running code in '$<' ...$(ECHO_C)"
 	@$(R2) < $< > $@ 2>&1 || mv $@ $@.fail
-	@if test -e $@.fail; then \
+	@if test -f $@.fail; then \
 	  $(ECHO) "$(ECHO_T) FAILED"; \
 	else \
 	  $(ECHO) "$(ECHO_T) OK"; \
 	  $(ECHO) $(ECHO_N) \
-	  "comparing 'reg-plot-latin1.ps' to '$(srcdir)/reg-plot-latin1.ps.save' ...$(ECHO_C)"; \
-	  diff -b reg-plot-latin1.ps $(srcdir)/reg-plot-latin1.ps.save && exitstatus=0; \
+	  "  comparing 'reg-plot-latin1.ps' to '$(srcdir)/reg-plot-latin1.ps.save' ...$(ECHO_C)"; \
+	  $(RDIFF) reg-plot-latin1.ps $(srcdir)/reg-plot-latin1.ps.save; \
 	  $(ECHO) "$(ECHO_T) OK"; \
 	fi
 
@@ -127,7 +131,7 @@ reg-plot-latin1.Rout: reg-plot-latin1.R
 	  cat $< $(srcdir)/gct-foot.R) | $(R) > $@ 2>&1
 	@mv $@ $@.fail; Ro=`basename $@ .Rout-gct`.Rout; \
 	  if test ! -r $${Ro}; then $(MAKE) $${Ro}; fi; \
-	  $(ECHO) $(ECHO_N) "comparing '$@' to '$${Ro}' ...$(ECHO_C)"; \
+	  $(ECHO) $(ECHO_N) "  comparing '$@' to '$${Ro}' ...$(ECHO_C)"; \
 	  grep -v 'gctorture()' $@.fail | $(RDIFF) - $${Ro} 1 || exit 1; \
 	  mv $@.fail $@; \
 	  $(ECHO) "$(ECHO_T) OK"
@@ -168,6 +172,7 @@ test-Packages:
 	@for p in $(R_PKGS_BASE); do \
 	  $(ECHO) "checking package '$${p}'"; \
 	  $(top_builddir)/bin/R CMD check --install=skip \
+	    --no-rebuild-vignettes \
 	    $(top_srcdir)/src/library/$${p} || $(ECHO); \
 	done
 
@@ -219,20 +224,20 @@ test-Segfault:
 test-Rd: $(srcdir)/testit.Rd $(srcdir)/ver20.Rd
 	@$(ECHO) "testing Rd conversion"
 	@$(RDCONV) -t txt $(srcdir)/testit.Rd > testit.txt
-	@diff -bw testit.txt $(srcdir)/testit.txt.save
 	@$(RDCONV) -t html $(srcdir)/testit.Rd > testit.html 2> /dev/null
-	@diff -bw testit.html $(srcdir)/testit.html.save
 	@$(RDCONV) -t latex $(srcdir)/testit.Rd > testit.tex
-	@diff -bw testit.tex $(srcdir)/testit.tex.save
 	@$(RDCONV) -t example $(srcdir)/testit.Rd > testit-Ex.R
+	@diff -bw testit.txt $(srcdir)/testit.txt.save
+	@diff -bw testit.html $(srcdir)/testit.html.save
+	@diff -bw testit.tex $(srcdir)/testit.tex.save
 	@diff -bw testit-Ex.R $(srcdir)/testit-Ex.R.save
 	@$(RDCONV) -t txt $(srcdir)/ver20.Rd > ver20.txt
-	@diff -bw ver20.txt $(srcdir)/ver20.txt.save
 	@$(RDCONV) -t html $(srcdir)/ver20.Rd > ver20.html
-	@diff -bw ver20.html $(srcdir)/ver20.html.save
 	@$(RDCONV) -t latex $(srcdir)/ver20.Rd > ver20.tex
-	@diff -bw ver20.tex $(srcdir)/ver20.tex.save
 	@$(RDCONV) -t example $(srcdir)/ver20.Rd > ver20-Ex.R
+	@diff -bw ver20.txt $(srcdir)/ver20.txt.save
+	@diff -bw ver20.html $(srcdir)/ver20.html.save
+	@diff -bw ver20.tex $(srcdir)/ver20.tex.save
 	@diff -bw ver20-Ex.R $(srcdir)/ver20-Ex.R.save
 
 test-DocFiles:
@@ -332,7 +337,7 @@ test-undoc:
 	  fi; \
 	done
 
-## There is a potential name clash here on case-insensitive OS
+## There is a potential name clash here on a case-insensitive FS
 test-Packages-Recommended:
 	-@rm -rf PACKAGES
 	@test -d Packages || mkdir Packages
@@ -340,7 +345,7 @@ test-Packages-Recommended:
 	  gzip -dc "$(top_srcdir)/src/library/Recommended/$${p}.tgz" | \
 	    (cd Packages && $(TAR) xf -) ; \
 	  $(ECHO) "checking package '$${p}'"; \
-	  R_LIBS="$(top_builddir)/library:$${R_LIBS}" $(R3) --install=skip \
+	  R_LIBS="$(top_builddir)/library:$${R_LIBS}" _R_CHECK_FORCE_SUGGESTS_=FALSE $(R3) --install=skip \
 	    --library="$(top_builddir)/library" Packages/$${p} || $(ECHO); \
 	done
 
@@ -358,4 +363,4 @@ INSTFILES = README \
 	  reg-plot.ps.save reg-tests-2.Rout.save reg-tests-3.Rout.save \
 	  reg-plot-latin1.ps.save \
 	  encodings.R utf8-regex.R \
-	nanbug.rda WinUnicode.dat
+	  nanbug.rda WinUnicode.dat

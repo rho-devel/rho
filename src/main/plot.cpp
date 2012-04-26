@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2009  Robert Gentleman, Ross Ihaka and the
- *			      R Development Core Team
+ *  Copyright (C) 1997--2011  The R Development Core Team
  *  Copyright (C) 2002--2009  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -41,9 +40,11 @@
 #endif
 
 #include <Defn.h>
+#include <float.h>  /* for DBL_MAX */
 #include <Graphics.h>
 #include <Colors.h> /* for isNAcol */
 #include <Print.h>
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 
@@ -270,13 +271,14 @@ static SEXP FixupCex(SEXP cex, double dflt)
 		    REAL(ans)[i] = NA_REAL;
 	    }
 	else if (isInteger(cex) || isLogical(cex))
-
 	    for (i = 0; i < n; i++) {
 		c = INTEGER(cex)[i];
 		if (c == NA_INTEGER || c <= 0)
 		    c = NA_REAL;
 		REAL(ans)[i] = c;
 	    }
+	else
+	    error(_("invalid '%s' value"), "cex");
     }
     return ans;
 }
@@ -720,6 +722,9 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
 			"usr[0] = %g > %g = usr[1] !", umin, umax);
 	    }
 	}
+	/* allow a fuzz since we will do things like 0.2*dn >= umin */
+	umin *= 1 - 1e-12;
+	umax *= 1 + 1e-12;
 
 	dn = axp[0];
 	if (dn < DBL_MIN) {/* was 1e-300; now seems too cautious */
@@ -903,7 +908,7 @@ static void getylimits(double *y, pGEDevDesc dd) {
 SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     /* axis(side, at, labels, tick, line, pos,
-            outer, font, lty, lwd, lwd.ticks, col, col.ticks, 
+            outer, font, lty, lwd, lwd.ticks, col, col.ticks,
 	    hadj, padj, ...)
     */
 
@@ -929,6 +934,8 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     if (length(args) < 15)
 	error(_("too few arguments"));
     GCheckState(dd);
+
+    PrintDefaults(); /* prepare for labelformat */
 
     /* Required argument: "side" */
     /* Which side of the plot the axis is to appear on. */
@@ -1010,7 +1017,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     args = CDR(args);
 
     /* Optional argument: "lty" */
-    fu = FixupLty(CAR(args), NA_INTEGER); 
+    fu = FixupLty(CAR(args), 0); 
     lty = asInteger(fu);
     args = CDR(args);
 
@@ -1412,7 +1419,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 		/* Clip tick labels to user coordinates. */
 		if (y > low && y < high) {
 		    if (isExpression(lab)) {
-			GMMathText(VECTOR_ELT(lab, ind[i]), side,
+			GMMathText(XVECTOR_ELT(lab, ind[i]), side,
 				   axis_lab, 0, y, gpptr(dd)->las,
 				   padjval, dd);
 		    }
@@ -1448,9 +1455,6 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     return at;
 }/* do_axis */
 
-#ifndef HAVE_HYPOT
-# define hypot pythag
-#endif
 
 SEXP attribute_hidden do_plot_xy(SEXP call, SEXP op, SEXP args, SEXP env)
 {
@@ -1462,7 +1466,7 @@ SEXP attribute_hidden do_plot_xy(SEXP call, SEXP op, SEXP args, SEXP env)
     double *x, *y, xold, yold, xx, yy, thiscex, thislwd;
     int i, n, npch, ncex, ncol, nbg, nlwd, type=0, start=0, thispch;
     rcolor thiscol, thisbg;
-    void *vmax = NULL /* -Wall */;
+    const void *vmax = NULL /* -Wall */;
 
     SEXP originalArgs = args;
     pGEDevDesc dd = GEcurrentDevice();
@@ -1923,6 +1927,150 @@ SEXP attribute_hidden do_rect(SEXP call, SEXP op, SEXP args, SEXP env)
     /* NOTE: only record operation if no "error"  */
     if (GRecording(call, dd))
 	GErecordGraphicOperation(op, originalArgs, dd);
+    return R_NilValue;
+}
+
+SEXP attribute_hidden do_path(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    /* path(x, y, col, border, lty, ...) */
+    SEXP sx, sy, nper, rule, col, border, lty;
+    int i, nx, npoly;
+    double *xx, *yy;
+    const void *vmax = NULL /* -Wall */;
+
+    SEXP originalArgs = args;
+    pGEDevDesc dd = GEcurrentDevice();
+
+    GCheckState(dd);
+
+    if (length(args) < 2) error(_("too few arguments"));
+    /* (x,y) is checked in R via xy.coords() ; no need here : */
+    sx = SETCAR(args, coerceVector(CAR(args), REALSXP));  args = CDR(args);
+    sy = SETCAR(args, coerceVector(CAR(args), REALSXP));  args = CDR(args);
+    nx = LENGTH(sx);
+
+    PROTECT(nper = CAR(args)); args = CDR(args);
+    npoly = LENGTH(nper);
+
+    PROTECT(rule = CAR(args)); args = CDR(args);
+
+    PROTECT(col = FixupCol(CAR(args), R_TRANWHITE));	args = CDR(args);
+    PROTECT(border = FixupCol(CAR(args), gpptr(dd)->fg)); args = CDR(args);
+    PROTECT(lty = FixupLty(CAR(args), gpptr(dd)->lty)); args = CDR(args);
+
+    GSavePars(dd);
+    ProcessInlinePars(args, dd, call);
+
+    GMode(1, dd);
+
+    vmax = vmaxget();
+
+    /*
+     * Work in device coordinates because that is what the
+     * graphics engine needs.
+     */
+    xx = static_cast<double*>( CXXR_alloc(nx, sizeof(double)));
+    yy = static_cast<double*>( CXXR_alloc(nx, sizeof(double)));
+    if (!xx || !yy)
+	error(_("unable to allocate memory (in GPath)"));
+    for (i=0; i<nx; i++) {
+        xx[i] = REAL(sx)[i];
+        yy[i] = REAL(sy)[i];
+        GConvert(&(xx[i]), &(yy[i]), USER, DEVICE, dd);
+        if (!(R_FINITE(xx[i]) && R_FINITE(yy[i])))
+            error(_("invalid x or y (in GPath)"));
+    }
+
+    if (INTEGER(lty)[0] == NA_INTEGER)
+	gpptr(dd)->lty = dpptr(dd)->lty;
+    else
+	gpptr(dd)->lty = INTEGER(lty)[0];
+
+    GPath(xx, yy, npoly, INTEGER(nper), CXXRCONSTRUCT(Rboolean, INTEGER(rule)[0] == 1),
+          INTEGER(col)[0], INTEGER(border)[0], dd);
+
+    GMode(0, dd);
+
+    GRestorePars(dd);
+    UNPROTECT(5);
+    /* NOTE: only record operation if no "error"  */
+    if (GRecording(call, dd))
+	GErecordGraphicOperation(op, originalArgs, dd);
+
+    vmaxset(vmax);
+    return R_NilValue;
+}
+
+SEXP attribute_hidden do_raster(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    /* raster(image, xl, yb, xr, yt, angle, interpolate, ...) */
+    const void *vmax;
+    unsigned int *image;
+    SEXP raster, dim, sxl, sxr, syb, syt, angle, interpolate;
+    double *xl, *xr, *yb, *yt, x0, y0, x1, y1;
+    int i, n, nxl, nxr, nyb, nyt;
+    SEXP originalArgs = args;
+    pGEDevDesc dd = GEcurrentDevice();
+
+    if (length(args) < 7) error(_("too few arguments"));
+    GCheckState(dd);
+
+    raster = CAR(args); args = CDR(args);
+    n = LENGTH(raster);
+    dim = getAttrib(raster, R_DimSymbol);
+
+    vmax = vmaxget();
+    /* raster is rather inefficient so allow a native representation as
+       an integer array which requires no conversion */
+    if (inherits(raster, "nativeRaster") && isInteger(raster))
+	image = reinterpret_cast<unsigned int*>( INTEGER(raster));
+    else {
+	image = reinterpret_cast<unsigned int*>( R_alloc(n, sizeof(unsigned int)));
+	for (i=0; i<n; i++)
+	    image[i] = RGBpar3(raster, i, R_TRANWHITE);
+    }
+
+    xypoints(call, args, &n);
+    if(n == 0) return R_NilValue;
+
+    sxl = CAR(args); nxl = length(sxl); args = CDR(args);/* x_left */
+    syb = CAR(args); nyb = length(syb); args = CDR(args);/* y_bottom */
+    sxr = CAR(args); nxr = length(sxr); args = CDR(args);/* x_right */
+    syt = CAR(args); nyt = length(syt); args = CDR(args);/* y_top */
+
+    angle = CAR(args); args = CDR(args);
+    interpolate = CAR(args); args = CDR(args);
+
+    GSavePars(dd);
+    ProcessInlinePars(args, dd, call);
+
+    xl = REAL(sxl);
+    xr = REAL(sxr);
+    yb = REAL(syb);
+    yt = REAL(syt);
+
+    GMode(1, dd);
+    for (i = 0; i < n; i++) {
+	x0 = xl[i%nxl];
+	y0 = yb[i%nyb];
+	x1 = xr[i%nxr];
+	y1 = yt[i%nyt];
+	GConvert(&x0, &y0, USER, DEVICE, dd);
+	GConvert(&x1, &y1, USER, DEVICE, dd);
+	if (R_FINITE(x0) && R_FINITE(y0) && R_FINITE(x1) && R_FINITE(y1))
+           GRaster(image, INTEGER(dim)[1], INTEGER(dim)[0],
+                   x0, y0, x1 - x0, y1 - y0,
+                   REAL(angle)[i % LENGTH(angle)],
+                   CXXRCONSTRUCT(Rboolean, LOGICAL(interpolate)[i % LENGTH(interpolate)]), dd);
+    }
+    GMode(0, dd);
+
+    GRestorePars(dd);
+    /* NOTE: only record operation if no "error"  */
+    if (GRecording(call, dd))
+	GErecordGraphicOperation(op, originalArgs, dd);
+
+    vmaxset(vmax);
     return R_NilValue;
 }
 
@@ -2905,9 +3053,9 @@ SEXP attribute_hidden do_abline(SEXP call, SEXP op, SEXP args, SEXP env)
 		GPolyline(lstop-lstart+1, xx+lstart, yy+lstart, USER, dd);
 #undef NS
 	    } else { /* non-log plots, possibly with log scales */
+
 		y[0] = aa + (xlog ? log10(x[0]) : x[0]) * bb;
 		y[1] = aa + (xlog ? log10(x[1]) : x[1]) * bb;
-
 		if (ylog) {
 		    y[0] = pow(10., y[0]);
 		    y[1] = pow(10., y[1]);
@@ -3257,7 +3405,7 @@ SEXP attribute_hidden do_identify(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 	    /* can't use warning because we want to print immediately  */
 	    /* might want to handle warn=2? */
-	    warn = asInteger(GetOption(install("warn"), R_BaseEnv));
+	    warn = asInteger(GetOption1(install("warn")));
 	    if (dmin > tol) {
 		if(warn >= 0) {
 		    REprintf(_("warning: no point within %.2f inches\n"), tol);
@@ -3538,7 +3686,7 @@ SEXP attribute_hidden do_dendwindow(SEXP call, SEXP op, SEXP args, SEXP env)
     int i, imax, n;
     double pin, *ll, tmp, yval, *y, ymin, ymax, yrange, m;
     SEXP originalArgs, merge, height, llabels, str;
-    void *vmax;
+    const void *vmax;
     pGEDevDesc dd;
 
     dd = GEcurrentDevice();
@@ -3647,11 +3795,9 @@ SEXP attribute_hidden do_dendwindow(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_erase(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP col;
-    int ncol;
     pGEDevDesc dd = GEcurrentDevice();
     checkArity(op, args);
     PROTECT(col = FixupCol(CAR(args), R_TRANWHITE));
-    ncol = LENGTH(col);
     GSavePars(dd);
     GMode(1, dd);
     GRect(0.0, 0.0, 1.0, 1.0, NDC, INTEGER(col)[0], R_TRANWHITE, dd);
@@ -3709,7 +3855,7 @@ SEXP attribute_hidden do_symbols(SEXP call, SEXP op, SEXP args, SEXP env)
     double pmax, pmin, inches, rx, ry;
     double xx, yy, p0, p1, p2, p3, p4;
     double *pp, *xp, *yp;
-    void *vmax;
+    const void *vmax;
 
     SEXP originalArgs = args;
     pGEDevDesc dd = GEcurrentDevice();
@@ -3985,7 +4131,7 @@ SEXP attribute_hidden do_xspline(SEXP call, SEXP op, SEXP args, SEXP env)
     Rboolean open, repEnds, draw;
     double *xx;
     double *yy;
-    void *vmaxsave;
+    const void *vmaxsave;
     R_GE_gcontext gc;
 
     SEXP originalArgs = args;

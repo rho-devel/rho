@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -54,71 +54,79 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
+
 #include "CXXR/BSerializer.hpp"
-#include "CXXR/HandleVector.hpp"
+#include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-    // Template specialization:
+    // Template specializations:
+    namespace ElementTraits {
+	template <>
+	struct NAFunc<RHandle<String> > {
+	    const RHandle<String>& operator()() const
+	    {
+		static RHandle<String> na(String::NA());
+		return na;
+	    }
+	};
+
+	template <>
+	struct IsNA<RHandle<String> > {
+	    bool operator()(const RHandle<String>& t) const
+	    {
+		typedef RHandle<String> T;
+		return t == NA<T>();
+	    }
+	};
+    }
+
+    // Make the default handle for a String point to a blank string:
     template <>
-    inline const char* HandleVector<String, STRSXP>::staticTypeName()
+    inline RHandle<String>::RHandle()
+	: GCEdge<String>(CachedString::blank())
+    {}
+
+    template <>
+    inline const char* FixedVector<RHandle<String>, STRSXP>::staticTypeName()
     {
 	return "character";
     }
 
     /** @brief Vector of strings.
+     *
+     * Note that the <tt>StringVector(size_t)</tt> constructor will
+     * fill the constructed vector with blank strings rather than
+     * with NULL.
      */
-    class StringVector : public CXXR::HandleVector<String, STRSXP> {
-    public:
-	/** @brief Create a StringVector.
-	 *
-	 * @param sz Number of elements required.  Zero is
-	 *          permissible.
-	 */
-	explicit StringVector(size_t sz)
-	    : HandleVector<String, STRSXP>(sz, CachedString::blank())
-	{}
+    typedef FixedVector<RHandle<String>, STRSXP> StringVector;
 
-	/** @brief Copy constructor.
-	 *
-	 * Copy the StringVector, using the RObject::Handle copying
-	 * semantics.
-	 *
-	 * @param pattern StringVector to be copied.
-	 */
-	StringVector(const StringVector& pattern)
-	    : HandleVector<String, STRSXP>(pattern)
-	{}
+    /** @brief Create a StringVector containing a single std::string.
+     *
+     * This constructor constructs a StringVector containing a single
+     * element, and initializes that element to represent a specified
+     * string and encoding.
+     *
+     * @param str The required text of the single vector element.
+     *
+     * @param encoding The required encoding of the single vector
+     *          element.  Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are
+     *          permitted in this context (checked).
 
-	/** @brief Default constructor
-	 *
-	 * For Boost Serialization
-	 */
-	StringVector() { }
-
-	// Virtual function of RObject:
-	StringVector* clone() const;
-    protected:
-	/**
-	 * Declared private to ensure that StringVector objects are
-	 * allocated only using 'new'.
-	 */
-	~StringVector() {}
-    private:
-	friend class boost::serialization::access;
-
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("StringVector");
-	    ar & boost::serialization::base_object<HandleVector<String, STRSXP> >(*this);
-	}
-    };
+     */
+    inline StringVector* asStringVector(const std::string& str,
+					cetype_t encoding = CE_NATIVE)
+    {
+	GCStackRoot<CachedString> cs(CachedString::obtain(str, encoding));
+	return CXXR_NEW(StringVector(1, cs));
+    }
 
     /** @brief (For debugging.)
      *
      * @note The name and interface of this function may well change.
      */
-    void strdump(std::ostream& os, const StringVector& sv, size_t margin = 0);
+    void strdump(std::ostream& os, const StringVector& sv,
+		 std::size_t margin = 0);
 }  // namespace CXXR
 
 //typedef CXXR::HandleVector<String, STRSXP> hv;
@@ -142,17 +150,23 @@ extern "C" {
 
 /** @brief Set element of CXXR::StringVector.
  * 
- * @param x Pointer to a CXXR::StringVector .
+ * @param x Non-null pointer to a CXXR::StringVector .
+ *
  * @param i Index of the required element.  There is no bounds checking.
- * @param v Pointer to CXXR::RObject representing the new value.
+ *
+ * @param v Non-null pointer to CXXR::String representing the new value.
  */
 void SET_STRING_ELT(SEXP x, int i, SEXP v);
 
 /**
  * @brief Examine element of a CXXR::StringVector.
- * @param x Pointer to a CXXR::StringVector.  An error is raised if \a x
- *          is not a pointer to a StringVector.
- * @param i Index of the required element.  There is no bounds checking.
+ *
+ * @param x Non-null pointer to a CXXR::StringVector.  An error is
+ *          raised if \a x is not a pointer to a CXXR::StringVector.
+ *
+ * @param i Index of the required element.  There is no bounds
+ *          checking.
+ *
  * @return Pointer to extracted \a i 'th element.
  */
 #ifndef __cplusplus
@@ -160,7 +174,8 @@ SEXP STRING_ELT(SEXP x, int i);
 #else
 inline SEXP STRING_ELT(SEXP x, int i)
 {
-    return (*CXXR::SEXP_downcast<CXXR::StringVector*>(x))[i];
+    using namespace CXXR;
+    return (*SEXP_downcast<StringVector*>(x, false))[i];
 }
 #endif
 

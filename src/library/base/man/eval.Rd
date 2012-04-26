@@ -1,6 +1,6 @@
 % File src/library/base/man/eval.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{eval}
@@ -28,7 +28,7 @@ local(expr, envir = new.env())
   \item{enclos}{Relevant when \code{envir} is a (pair)list or a data frame.
     Specifies the enclosure, i.e., where \R looks for objects not found
     in \code{envir}.  This can be \code{NULL} (interpreted as the base
-    package environment) or an environment.}
+    package environment, \code{\link{baseenv}()}) or an environment.}
   \item{n}{number of parent generations to go back}
 }
 \details{
@@ -64,17 +64,17 @@ local(expr, envir = new.env())
   \code{local} evaluates an expression in a local environment.  It is
   equivalent to \code{evalq} except that its default argument creates a
   new, empty environment.  This is useful to create anonymous recursive
-  functions and as a kind of limited name space feature since variables
+  functions and as a kind of limited namespace feature since variables
   defined in the environment are not visible from the outside.
 }
 \value{
-  The result of evaluating the object: for an expression vector this it
-  the result of evaluating the last elements.
+  The result of evaluating the object: for an expression vector this is
+  the result of evaluating the last element.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth & Brooks/Cole. (\code{eval} only.)
+  Wadsworth & Brooks/Cole.  (\code{eval} only.)
 }
 \seealso{
   \code{\link{expression}}, \code{\link{quote}}, \code{\link{sys.frame}},
@@ -88,7 +88,7 @@ local(expr, envir = new.env())
   between \R and S in this area.  In particular, the default enclosure
   in S is the global environment.
 
-  When evaluating expressions in data frames that has been passed as
+  When evaluating expressions in a data frame that has been passed as an
   argument to a function, the relevant enclosure is often the caller's
   environment, i.e., one needs
   \code{eval(x, data, parent.frame())}.
@@ -147,7 +147,7 @@ gg <- local({
 gg(10)
 sapply(1:5, gg)
 
-# Nesting locals. a is private storage accessible to k
+# Nesting locals: a is private storage accessible to k
 gg <- local({
     k <- local({
         a <- 1

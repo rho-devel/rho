@@ -1,6 +1,6 @@
 % File src/library/base/man/colSums.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{colSums}
@@ -21,7 +21,7 @@ rowMeans(x, na.rm = FALSE, dims = 1)
 \arguments{
   \item{x}{an array of two or more dimensions, containing numeric,
     complex, integer or logical values, or a numeric data frame.}
-  \item{na.rm}{logical. Should missing values (including \code{NaN})
+  \item{na.rm}{logical.  Should missing values (including \code{NaN})
     be omitted from the calculations?}
   \item{dims}{integer: Which dimensions are regarded as \sQuote{rows} or
     \sQuote{columns} to sum over.  For \code{row*}, the sum or mean is
@@ -38,6 +38,12 @@ rowMeans(x, na.rm = FALSE, dims = 1)
     FALSE} and either \code{NaN} or \code{NA} appears in a sum, the
   result will be one of \code{NaN} or \code{NA}, but which might be
   platform-dependent.
+
+  Notice that omission of missing values is done on a per-column or
+  per-row basis, so column means may not be over the same set of rows,
+  and vice versa.  To use only complete rows or columns, first select
+  them with \code{\link{na.omit}} or \code{\link{complete.cases}}
+  (possibly on the transpose of \code{x}). 
 }
 \value{
   A numeric or complex array of suitable size, or a vector if the result is
@@ -46,7 +52,7 @@ rowMeans(x, na.rm = FALSE, dims = 1)
 
   If there are no values in a range to be summed over (after removing
   missing values with \code{na.rm = TRUE}), that
-  component of the output is set to \code{0} (\code{*Sums}) or \code{NA}
+  component of the output is set to \code{0} (\code{*Sums}) or \code{NaN}
   (\code{*Means}), consistent with \code{\link{sum}} and
   \code{\link{mean}}.
 }

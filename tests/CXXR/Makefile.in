@@ -12,6 +12,8 @@ maindir = $(top_srcdir)/src/main
 
 #ALL_CPPFLAGS = $(CPPFLAGS) -I../../include
 
+EXTRA_LIBS = $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS)  $(READLINE_LIBS) $(LIBS)
+
 # Thanks to Jochen Laubrock for suggestions about the handling of
 # valgrind on non-Linux platforms.
 
@@ -28,10 +30,13 @@ sources_cxx = ArgMatchertest.cpp Allocatortest.cpp CellPooltest.cpp \
 
 depends = $(sources_cxx:.cpp=.d)
 
-tests = CellPooltest CellHeaptest MemoryBanktest Allocatortest \
-	splice_test ArgMatchertest0 ArgMatchertest1 \
-	ArgMatchertest2 ArgMatchertest3 ArgMatchertest4 ArgMatchertest5 \
-        ArgMatchertest6 ArgMatchertest7 ArgMatchertest8
+# CellHeaptest omitted: CellHeap is no longer used, and it needs
+# fixing on 64-bit Linux (reported by Sam Nicholls 2010-03-18).
+
+tests = CellPooltest MemoryBanktest Allocatortest \
+        HeterogeneousListtest splice_test SETLENGTHtest ArgMatchertest0 \
+        ArgMatchertest1 ArgMatchertest2 ArgMatchertest3 ArgMatchertest4 \
+        ArgMatchertest5 ArgMatchertest6 ArgMatchertest7 ArgMatchertest8 miscR
 
         #HeterogeneousListtest 
 check : $(tests:=.ts)
@@ -42,12 +47,12 @@ ArgMatchertest.o : ArgMatchertest.cpp
 ifeq ($(uname),Darwin)
 ArgMatchertest : ArgMatchertest.o ../../lib/libR.dylib
 	ln -sf ../../lib/libR.dylib ../../lib/libRblas.dylib .
-	$(LINK.cc) -o $@ $< -L../../lib -lR -lRblas -lreadline \
-	           $(MAIN_LDFLAGS)
+	$(LINK.cc) -o $@ $< -L../../lib -lR \
+	           $(MAIN_LDFLAGS) $(EXTRA_LIBS)
 else
 ArgMatchertest : ArgMatchertest.o #../../src/main/libR.a
 	$(LINK.cc) -o $@ $< -L../../lib -L../../src/main -Wl,-rpath,../../lib \
-                   -lR -lRblas -lreadline -ldl $(MAIN_LDFLAGS)
+                   -lR -ldl $(MAIN_LDFLAGS) $(EXTRA_LIBS)
 endif
 
 # OK match:
@@ -118,7 +123,7 @@ ArgMatchertest8.ts : ArgMatchertest formals_ok.txt supplied_surplus.txt \
 	touch $@
  
 Allocatortest.o : Allocatortest.cpp
-	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -DR_MEMORY_PROFILING -c -o $@ $<
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -c -o $@ $<
 
 Allocatortest_objs = Allocatortest.o MemoryBank.o CellPool.o
 
@@ -191,7 +196,11 @@ HeterogeneousListtest.o : HeterogeneousListtest.cpp
 HeterogeneousList.o : $(maindir)/HeterogeneousList.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c -o $@ $<
 
-HeterogeneousListtest_objs =  HeterogeneousListtest.o HeterogeneousList.o
+BSerializer.o : $(maindir)/BSerializer.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c -o $@ $<
+
+HeterogeneousListtest_objs =  HeterogeneousListtest.o HeterogeneousList.o \
+                              BSerializer.o
 
 HeterogeneousListtest : $(HeterogeneousListtest_objs)
 	$(LINK.cc) -o $@ $(HeterogeneousListtest_objs)
@@ -219,11 +228,32 @@ MemoryBanktest.ts : MemoryBanktest MemoryBanktest.save
 	rm MemoryBanktest.out
 	touch $@
 
-RObject_sizer_objs = RObject_sizer.o CellHeap.o GCNode.o GCRoot.o \
-                     MemoryBank.o
+ifeq ($(uname),Darwin)
+SETLENGTHtest : SETLENGTHtest.o ../../lib/libR.dylib
+	ln -sf ../../lib/libR.dylib ../../lib/libRblas.dylib .
+	$(LINK.cc) -o $@ $< -L../../lib -lR \
+	           $(MAIN_LDFLAGS) $(EXTRA_LIBS)
+else
+SETLENGTHtest : SETLENGTHtest.o #../../src/main/libR.a
+	$(LINK.cc) -o $@ $< -L../../lib -L../../src/main -Wl,-rpath,../../lib \
+                   -lR -ldl $(MAIN_LDFLAGS) $(EXTRA_LIBS)
+endif
 
-RObject_sizer : $(RObject_sizer_objs)
-	$(LINK.cc) -o $@ $(RObject_sizer_objs)
+SETLENGTHtest.ts : SETLENGTHtest SETLENGTHtest.save
+	-./$< > SETLENGTHtest.out 2>&1
+	diff SETLENGTHtest.save SETLENGTHtest.out
+	rm SETLENGTHtest.out
+	touch $@
+
+miscR.ts : ../../bin/exec/R misc.R misc.save
+	../../bin/R --vanilla --quiet < misc.R > misc.Rout 2>&1
+	diff misc.save misc.Rout
+	rm misc.Rout
+	touch $@
+ 
+RObject_sizer : RObject_sizer.o #../../src/main/libR.a
+	$(LINK.cc) -o $@ $< -L../../lib -L../../src/main -Wl,-rpath,../../lib \
+                   -lR -ldl $(MAIN_LDFLAGS) $(EXTRA_LIBS)
 
 splice_test : splice_test.o
 	$(LINK.cc) -o $@ $<

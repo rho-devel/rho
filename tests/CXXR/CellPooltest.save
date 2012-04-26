@@ -16,12 +16,7 @@ Deallocating dptrs[5]
 Deallocating dptrs[7]
 Deallocating dptrs[9]
 Cells allocated: 6
-Allocated dptrs[1]
-Allocated dptrs[3]
-Allocated dptrs[5]
-Allocated dptrs[7]
-easyAllocate() failed
 Allocating dptrs[11]
 Allocating dptrs[13]
 Allocating dptrs[15]
-Cells allocated: 13
+Cells allocated: 9

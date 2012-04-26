@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -15,7 +15,7 @@
  *CXXR */
 
 /* compress.c -- compress a memory buffer
- * Copyright (C) 1995-2003 Jean-loup Gailly.
+ * Copyright (C) 1995-2005 Jean-loup Gailly.
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -35,15 +35,12 @@
    memory, Z_BUF_ERROR if there was not enough room in the output buffer,
    Z_STREAM_ERROR if the level parameter is invalid.
 */
-int ZEXPORT compress2 (Bytef *dest, uLongf *destLen, const Bytef *source, 
-		       uLong sourceLen, int level)
-/*
+int ZEXPORT compress2 (dest, destLen, source, sourceLen, level)
     Bytef *dest;
     uLongf *destLen;
     const Bytef *source;
     uLong sourceLen;
     int level;
-*/
 {
     z_stream stream;
     int err;
@@ -78,13 +75,11 @@ int ZEXPORT compress2 (Bytef *dest, uLongf *destLen, const Bytef *source,
 
 /* ===========================================================================
  */
-int ZEXPORT compress (Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLen)
-/*
+int ZEXPORT compress (dest, destLen, source, sourceLen)
     Bytef *dest;
     uLongf *destLen;
     const Bytef *source;
     uLong sourceLen;
-*/
 {
     return compress2(dest, destLen, source, sourceLen, Z_DEFAULT_COMPRESSION);
 }
@@ -93,8 +88,9 @@ int ZEXPORT compress (Bytef *dest, uLongf *destLen, const Bytef *source, uLong s
      If the default memLevel or windowBits for deflateInit() is changed, then
    this function needs to be updated.
  */
-uLong ZEXPORT compressBound (uLong sourceLen)
-/*    uLong sourceLen; */
+uLong ZEXPORT compressBound (sourceLen)
+    uLong sourceLen;
 {
-    return sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + 11;
+    return sourceLen + (sourceLen >> 12) + (sourceLen >> 14) +
+           (sourceLen >> 25) + 13;
 }

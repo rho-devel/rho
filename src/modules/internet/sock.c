@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -163,7 +163,7 @@ int Sock_open(Sock_port_t port, Sock_error_t perr)
 
        This would be less of an issue, but would not entirely
        disappear as an issue. if the R interface separated the
-       `socket'/`bind'/`listen' part of setting up a server socked,
+       `socket'/`bind'/`listen' part of setting up a server socket,
        which is only needed once per server instance, from the
        `accept' part, which is needed for each connection.  LT */
     {

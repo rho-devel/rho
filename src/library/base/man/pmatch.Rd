@@ -1,6 +1,6 @@
 % File src/library/base/man/pmatch.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{pmatch}
@@ -27,7 +27,7 @@ pmatch(x, table, nomatch = NA_integer_, duplicates.ok = FALSE)
   The behaviour differs by the value of \code{duplicates.ok}. Consider
   first the case if this is true.  First exact matches are considered,
   and the positions of the first exact matches are recorded. Then unique
-  partial matches are considered, and if found recorded. (A partial
+  partial matches are considered, and if found recorded.  (A partial
   match occurs if the whole of the element of \code{x} matches the
   beginning of the element of \code{table}.)  Finally,
   all remaining elements of \code{x} are regarded as unmatched.
@@ -47,7 +47,8 @@ pmatch(x, table, nomatch = NA_integer_, duplicates.ok = FALSE)
   differentiates between no match and an ambiguous partial match,  it
   does match empty strings, and it does not allow multiple exact matches.
 
-  \code{NA} values are treated as if they were the string constant \code{"NA"}.
+  \code{NA} values are treated as if they were the string constant
+  \code{"NA"}.
 }
 \value{
   An integer vector (possibly including \code{NA} if \code{nomatch =

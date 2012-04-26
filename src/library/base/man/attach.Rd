@@ -1,6 +1,6 @@
 % File src/library/base/man/attach.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{attach}
@@ -42,9 +42,9 @@ attach(what, pos = 2, name = deparse(substitute(what)),
 
   By default the database is attached in position 2 in the search path,
   immediately after the user's workspace and before all previously
-  loaded packages and previously attached databases.  This can be altered
-  to attach later in the search path with the \code{pos} option, but you
-  cannot attach at \code{pos=1}.
+  attached packages and previously attached databases.  This can be
+  altered to attach later in the search path with the \code{pos} option,
+  but you cannot attach at \code{pos = 1}.
 
   The database is not actually attached.  Rather, a new environment is
   created on the search path and the elements of a list (including
@@ -53,8 +53,8 @@ attach(what, pos = 2, name = deparse(substitute(what)),
   \code{\link{<<-}} or \code{\link{assign}} to assign to an attached
   database, you only alter the attached copy, not the original object.
   (Normal assignment will place a modified version in the user's
-  workspace: see the examples.)
-  For this reason \code{attach} can lead to confusion.
+  workspace: see the examples.)  For this reason \code{attach} can lead
+  to confusion.
 
   One useful \sQuote{trick} is to use \code{what = NULL} (or equivalently a
   length-zero list) to create a new environment on the search path into
@@ -63,8 +63,11 @@ attach(what, pos = 2, name = deparse(substitute(what)),
 
   Names starting \code{"package:"} are reserved for
   \code{\link{library}} and should not be used by end users.  The name
-  given for the attached environment will be used by \code{\link{search}}
-  and can be used as the argument to \code{\link{as.environment}}.
+  for an attached file is always of the form \code{file:\var{what}},
+  even if \code{name} is supplied.  Otherwise the \code{name} argument
+  given for the attached environment will be used by
+  \code{\link{search}} and can be used as the argument to
+  \code{\link{as.environment}}.
 
   CXXR does not support user-defined table objects of class
   \code{"UserDefinedDatabase"}, associated with the Omegahat package

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2008  Robert Gentleman, Ross Ihaka and the
- *			      R Development Core Team
+ *  Copyright (C) 1997--2011  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,7 +36,7 @@
  *
  *  IMPLEMENTATION NOTES:
  *
- *  Deparsing, has 3 layers.  The user interface, do_deparse, should
+ *  Deparsing has 3 layers.  The user interface, do_deparse, should
  *  not be called from an internal function, the actual deparsing needs
  *  to be done twice, once to count things up and a second time to put
  *  them into the string vector for return.  Printing this to a file
@@ -107,6 +106,7 @@
 #endif
 
 #include <Defn.h>
+#include <float.h> /* for DBL_DIG */
 #include <Print.h>
 #include <Fileio.h>
 
@@ -119,6 +119,7 @@
 
 #include "RBufferUtils.h"
 #include "CXXR/BuiltInFunction.h"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -154,6 +155,7 @@ static void print2buff(const char *, LocalParseData *);
 static void printtab2buff(int, LocalParseData *);
 static void writeline(LocalParseData *);
 static void vector2buff(SEXP, LocalParseData *);
+static void src2buff1(SEXP, LocalParseData *);
 static Rboolean src2buff(SEXP, int, LocalParseData *);
 static void vec2buff(SEXP, LocalParseData *);
 static void linebreak(Rboolean *lbreak, LocalParseData *);
@@ -199,12 +201,18 @@ SEXP deparse1(SEXP call, Rboolean abbrev, int opts)
 			      opts, -1);
 }
 
-SEXP DEPARSE(SEXP s)
-{
-    GCStackRoot<Expression> e(SEXP_downcast<Expression*>(s));
-    GCStackRoot<StringVector>
-	sv(static_cast<StringVector*>(deparse1(e, FALSE, DEFAULTDEPARSE)));
-    return (*sv)[0];
+// Utility intended to be called from a debugger.  Prints out the
+// deparse of an RObject.
+namespace CXXR {
+    void DEPARSE(SEXP s)
+    {
+	GCNode::GCInhibitor gci;
+	GCStackRoot<> srt(s);
+	GCStackRoot<StringVector>
+	    sv(static_cast<StringVector*>(deparse1(s, FALSE, DEFAULTDEPARSE)));
+	for (unsigned int i = 0; i < sv->size(); ++i)
+	    cout << (*sv)[i]->c_str() << '\n';
+    }
 }
 	
 static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
@@ -228,7 +236,7 @@ static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
     localData.opts = opts;
     localData.strvec = R_NilValue;
 
-    PrintDefaults(R_NilValue);/* from global options() */
+    PrintDefaults(); /* from global options() */
     savedigits = R_print.digits;
     R_print.digits = DBL_DIG;/* MAX precision */
 
@@ -256,7 +264,8 @@ static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
     }
     if(nlines > 0 && localData.linenumber < nlines)
 	svec = lengthgets(svec, localData.linenumber);
-    UNPROTECT(1); /* new version does not need to be protected */
+    UNPROTECT(1);
+    PROTECT(svec); /* protect from warning() allocating, PR#14356 */
     R_print.digits = savedigits;
     if ((opts & WARNINCOMPLETE) && localData.isS4)
 	warning(_("deparse of an S4 object will not be source()able"));
@@ -266,6 +275,7 @@ static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
 	warning(_("deparse may be not be source()able in R < 2.7.0"));
     /* somewhere lower down might have allocated ... */
     R_FreeStringBuffer(&(localData.buffer));
+    UNPROTECT(1);
     return svec;
 }
 
@@ -323,33 +333,35 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
     ifile = asInteger(CADR(args));
 
     wasopen = CXXRTRUE;
-    if (ifile != 1) {
-	con = getConnection(ifile);
-	wasopen = con->isopen;
-	if(!wasopen) {
-	    char mode[5];	
-	    strcpy(mode, con->mode);
-	    strcpy(con->mode, "w");
-	    if(!con->open(con)) error(_("cannot open the connection"));
-	    strcpy(con->mode, mode);
-	    if(!con->canwrite) {
-		con->close(con);
-		error(_("cannot write to this connection"));
+    try {
+	if (ifile != 1) {
+	    con = getConnection(ifile);
+	    wasopen = con->isopen;
+	    if(!wasopen) {
+		char mode[5];	
+		strcpy(mode, con->mode);
+		strcpy(con->mode, "w");
+		if(!con->open(con)) error(_("cannot open the connection"));
+		strcpy(con->mode, mode);
 	    }
-	} else if(!con->canwrite)
-	    error(_("cannot write to this connection"));
-    }/* else: "Stdout" */
-    for (i = 0; i < LENGTH(tval); i++)
-	if (ifile == 1)
-	    Rprintf("%s\n", CHAR(STRING_ELT(tval, i)));
-	else {
-	    res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, i)));
-	    if(!havewarned &&
-	       res < CXXRCONSTRUCT(int, strlen(CHAR(STRING_ELT(tval, i)))) + 1)
-		warning(_("wrote too few characters"));
-	}
-    UNPROTECT(1); /* tval */
-    if (!wasopen) con->close(con);
+	    if(!con->canwrite) error(_("cannot write to this connection"));
+	}/* else: "Stdout" */
+	for (i = 0; i < LENGTH(tval); i++)
+	    if (ifile == 1)
+		Rprintf("%s\n", CHAR(STRING_ELT(tval, i)));
+	    else {
+		res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, i)));
+		if(!havewarned &&
+		   res < CXXRCONSTRUCT(int, strlen(CHAR(STRING_ELT(tval, i)))) + 1)
+		    warning(_("wrote too few characters"));
+	    }
+	UNPROTECT(1); /* tval */
+	if (!wasopen) con->close(con);
+    } catch (...) {
+	if (!wasopen && con->isopen)
+	    con->close(con);
+	throw;
+    }
     return (CAR(args));
 }
 
@@ -416,37 +428,39 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 		strcpy(con->mode, "w");
 		if(!con->open(con)) error(_("cannot open the connection"));
 		strcpy(con->mode, mode);
-		if(!con->canwrite) {
-		    con->close(con);
-		    error(_("cannot write to this connection"));
-		}
-	    } else if(!con->canwrite)
-		error(_("cannot write to this connection"));
-	    for (i = 0, nout = 0; i < nobjs; i++) {
-		const char *s;
-		int extra = 6;
-		if (CAR(o) == R_UnboundValue) continue;
-		SET_STRING_ELT(outnames, nout++, STRING_ELT(names, i));
-		s = translateChar(STRING_ELT(names, i));
-		if(isValidName(s)) {
-		    extra = 4;
-		    res = Rconn_printf(con, "%s <-\n", s);
-		} else if(opts & S_COMPAT)
-		    res = Rconn_printf(con, "\"%s\" <-\n", s);
-		else
-		    res = Rconn_printf(con, "`%s` <-\n", s);
-		if(!havewarned && res < CXXRCONSTRUCT(int, strlen(s)) + extra)
-		    warning(_("wrote too few characters"));
-		tval = deparse1(CAR(o), CXXRFALSE, opts);
-		for (j = 0; j < LENGTH(tval); j++) {
-		    res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, j)));
-		    if(!havewarned &&
-		       res < CXXRCONSTRUCT(int, strlen(CHAR(STRING_ELT(tval, j)))) + 1)
-			warning(_("wrote too few characters"));
-		}
-		o = CDR(o);
 	    }
-	    if (!wasopen) con->close(con);
+	    try {
+		if(!con->canwrite) error(_("cannot write to this connection"));
+		for (i = 0, nout = 0; i < nobjs; i++) {
+		    const char *s;
+		    int extra = 6;
+		    if (CAR(o) == R_UnboundValue) continue;
+		    SET_STRING_ELT(outnames, nout++, STRING_ELT(names, i));
+		    s = translateChar(STRING_ELT(names, i));
+		    if(isValidName(s)) {
+			extra = 4;
+			res = Rconn_printf(con, "%s <-\n", s);
+		    } else if(opts & S_COMPAT)
+			res = Rconn_printf(con, "\"%s\" <-\n", s);
+		    else
+			res = Rconn_printf(con, "`%s` <-\n", s);
+		    if(!havewarned && res < CXXRCONSTRUCT(int, strlen(s)) + extra)
+			warning(_("wrote too few characters"));
+		    tval = deparse1(CAR(o), CXXRFALSE, opts);
+		    for (j = 0; j < LENGTH(tval); j++) {
+			res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, j)));
+			if(!havewarned &&
+			   res < CXXRCONSTRUCT(int, strlen(CHAR(STRING_ELT(tval, j)))) + 1)
+			    warning(_("wrote too few characters"));
+		    }
+		    o = CDR(o);
+		}
+		if (!wasopen) con->close(con);
+	    } catch (...) {
+		if (!wasopen && con->isopen)
+		    con->close(con);
+		throw;
+	    }
 	}
     }
 
@@ -765,14 +779,10 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	break;
     case CLOSXP:
 	if (localOpts & SHOWATTRIBUTES) attr1(s, d);
-	if ((d->opts & USESOURCE) &&
-	    (n = length(t = getAttrib(s, R_SourceSymbol))) > 0
-	    && isString(t)) {
-	    for(i = 0 ; i < n ; i++) {
-		print2buff(translateChar(STRING_ELT(t, i)), d);
-		writeline(d);
-	    }
-	} else {
+	if ((d->opts & USESOURCE)
+	    && !isNull(t = getAttrib(s, R_SrcrefSymbol))) 
+	    	src2buff1(t, d);
+	else {
 	    /* We have established that we don't want to use the
 	       source for this function */
 	    d->opts &= SIMPLE_OPTS & ~USESOURCE;
@@ -1231,7 +1241,7 @@ static void writeline(LocalParseData *d)
 
 static void print2buff(const char *strng, LocalParseData *d)
 {
-    int tlen, bufflen;
+    size_t tlen, bufflen;
 
     if (d->startline) {
 	d->startline = FALSE;
@@ -1386,24 +1396,31 @@ static void vector2buff(SEXP vector, LocalParseData *d)
     }
 }
 
+/* src2buff1: Deparse one source ref to buffer */
+
+static void src2buff1(SEXP srcref, LocalParseData *d)
+{
+    int i,n;
+    PROTECT(srcref);
+
+    PROTECT(srcref = lang2(install("as.character"), srcref));
+    PROTECT(srcref = eval(srcref, R_BaseEnv));
+    n = length(srcref);
+    for(i = 0 ; i < n ; i++) {
+	print2buff(translateChar(STRING_ELT(srcref, i)), d);
+	if(i < n-1) writeline(d);
+    }
+    UNPROTECT(3);
+}
+
 /* src2buff : Deparse source element k to buffer, if possible; return FALSE on failure */
 
 static Rboolean src2buff(SEXP sv, int k, LocalParseData *d)
 {
     SEXP t;
-    int i, n;
 
     if (TYPEOF(sv) == VECSXP && length(sv) > k && !isNull(t = VECTOR_ELT(sv, k))) {
-	PROTECT(t);
-
-	PROTECT(t = lang2(install("as.character"), t));
-	PROTECT(t = eval(t, R_BaseEnv));
-	n = length(t);
-	for(i = 0 ; i < n ; i++) {
-	    print2buff(translateChar(STRING_ELT(t, i)), d);
-	    if(i < n-1) writeline(d);
-	}
-	UNPROTECT(3);
+	src2buff1(t, d);
 	return TRUE;
     }
     else return FALSE;

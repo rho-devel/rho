@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -28,11 +28,13 @@ R_HOME = $(top_builddir)
 R_SHARE_DIR = $(R_HOME)/share
 R_INCLUDE_DIR = $(R_HOME)/include
 
-SOURCES_C = text.c init.c Rmd5.c md5.c
+SOURCES_C = text.c init.c Rmd5.c md5.c signals.c
 SOURCES_F =
 DEPENDS = $(SOURCES_C:.c=.d)
 OBJECTS = $(SOURCES_C:.c=.o) $(SOURCES_F:.f=.o)
 
+# need config.h
+PKG_CPPFLAGS = -I../../../include -I$(top_srcdir)/src/include -DHAVE_CONFIG_H
 PKG_CFLAGS=$(C_VISIBILITY)
 
 SHLIB = $(pkg)@SHLIB_EXT@
@@ -54,6 +56,7 @@ shlib: $(SHLIB)
 	@$(SHELL) $(top_srcdir)/tools/copy-if-change $(SHLIB) \
 	  $(top_builddir)/library/$(pkg)/libs@R_ARCH@/$(SHLIB)
 
+include $(R_HOME)/etc${R_ARCH}/Makeconf
 include $(top_srcdir)/share/make/shlib.mk
 
 mostlyclean: clean

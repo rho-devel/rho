@@ -1,4 +1,4 @@
-#  File src/library/utils/R/aqua/install.packages.R
+#  File src/library/utils/R/unix/mac.install.R
 #  Part of the R package, http://www.R-project.org
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -20,7 +20,9 @@ if(substr(R.version$os, 1L, 6L) != "darwin") {
     function(pkgs, lib, repos = getOption("repos"),
              contriburl = contrib.url(repos, type="mac.binary"),
              method, available = NULL, destdir = NULL,
-             dependencies = FALSE, ...)
+             lock = getOption("install.lock", FALSE),
+             dependencies = FALSE,
+             ...)
     {}
 } else {
 ## edited from windows/.install.winbinary
@@ -29,22 +31,14 @@ if(substr(R.version$os, 1L, 6L) != "darwin") {
     function(pkgs, lib, repos = getOption("repos"),
              contriburl = contrib.url(repos, type="mac.binary"),
              method, available = NULL, destdir = NULL,
-             dependencies = FALSE, ...)
+             dependencies = FALSE,
+             lock = getOption("install.lock", FALSE),
+             ...)
 {
-    link.html.help<-function(verbose = FALSE, ...)
+    untar <- function(what, where)
     {
-        html <- getOption("htmlhelp")
-        htype <- getOption("help_type")
-        # update only if temporary help files exist
-        if((!is.null(html) && html) || (!is.null(htype) && htype == "html")
-            && file.exists(paste(tempdir(),"/.R/doc",sep=''))) {
-            #.Script("sh", "help-links.sh", paste(tempdir(), paste(.libPaths(),
-            #                                                      collapse = " ")))
-            make.packages.html()
-        }
-    }
-    untar<-function(what, where)
-    {
+        ## FIXME: should this look for Sys.getenv('TAR')?
+        ## Leopard has GNU tar, SL has BSD tar.
         xcode <- system(paste("tar zxf \"", path.expand(what), "\" -C \"",
                               path.expand(where), "\"", sep=''), intern=FALSE)
         if (xcode)
@@ -52,15 +46,15 @@ if(substr(R.version$os, 1L, 6L) != "darwin") {
                     domain = NA, call. = FALSE)
     }
 
-    unpackPkg <- function(pkg, pkgname, lib)
+    unpackPkg <- function(pkg, pkgname, lib, lock = FALSE)
     {
         ## Create a temporary directory and unpack the zip to it
         ## then get the real package & version name, copying the
         ## dir over to the appropriate install dir.
         tmpDir <- tempfile(, lib)
         if (!dir.create(tmpDir))
-            stop(gettextf("unable to create temporary directory '%s'",
-                          tmpDir),
+            stop(gettextf("unable to create temporary directory %s",
+                          sQuote(tmpDir)),
                  domain = NA, call. = FALSE)
         cDir <- getwd()
         on.exit(setwd(cDir), add = TRUE)
@@ -68,51 +62,57 @@ if(substr(R.version$os, 1L, 6L) != "darwin") {
         setwd(tmpDir)
         res <- tools::checkMD5sums(pkgname, file.path(tmpDir, pkgname))
         if(!is.na(res) && res) {
-            cat(gettextf("package '%s' successfully unpacked and MD5 sums checked\n",
-                         pkgname))
+            cat(gettextf("package %s successfully unpacked and MD5 sums checked\n",
+                         sQuote(pkgname)))
             flush.console()
         }
 
-        ## Check to see if this is a bundle or a single package
-        if (file.exists("DESCRIPTION")) {
-            ## Bundle
-            conts <- read.dcf("DESCRIPTION", fields="Contains")[1,]
-            if (is.na(conts))
-                stop("malformed bundle DESCRIPTION file, no Contains field")
-            else
-                pkgs <- strsplit(conts," ")[[1L]]
-            ## now check the MD5 sums
-            res <- TRUE
-            for (curPkg in pkgs) res <- res &
-            tools::checkMD5sums(pkgname, file.path(tmpDir, curPkg))
-            if(!is.na(res) && res) {
-                cat(gettextf("bundle '%s' successfully unpacked and MD5 sums checked\n",
-                             pkgname))
-                flush.console()
+        instPath <- file.path(lib, pkgname)
+        if(identical(lock, "pkglock") || isTRUE(lock)) {
+            dir.exists <- function(x) !is.na(isdir <- file.info(x)$isdir) & isdir
+	    lockdir <- if(identical(lock, "pkglock"))
+                file.path(lib, paste("00LOCK", pkgname, sep="-"))
+            else file.path(lib, "00LOCK")
+	    if (file.exists(lockdir)) {
+		stop("ERROR: failed to lock directory ", sQuote(lib),
+			" for modifying\nTry removing ", sQuote(lockdir))
+	    }
+	    dir.create(lockdir, recursive = TRUE)
+	    if (!dir.exists(lockdir))
+		stop("ERROR: failed to create lock directory ", sQuote(lockdir))
+            ## Back up a previous version
+            if (file.exists(instPath)) {
+                file.copy(instPath, lockdir, recursive = TRUE)
+        	on.exit({
+         	    if (restorePrevious) {
+                        try(unlink(instPath, recursive = TRUE))
+        	    	savedcopy <- file.path(lockdir, pkgname)
+        	    	file.copy(savedcopy, lib, recursive = TRUE)
+        	    	warning(gettextf("restored %s", sQuote(pkgname)),
+                                domain = NA, call. = FALSE, immediate. = TRUE)
+        	    }
+        	}, add=TRUE)
+        	restorePrevious <- FALSE
             }
-        } else pkgs <- pkgname
-
-        for (curPkg in pkgs) {
-            desc <- read.dcf(file.path(curPkg, "DESCRIPTION"),
-                             c("Package", "Version"))
-            instPath <- file.path(lib, desc[1L,1L])
-
-            ## If the package is already installed w/ this
-            ## instName, remove it.  If it isn't there, the unlink call will
-            ## still return success.
-            ret <- unlink(instPath, recursive=TRUE)
-            if (ret == 0L) {
-                ## Move the new package to the install lib and
-                ## remove our temp dir
-                ret <- file.rename(file.path(tmpDir, curPkg), instPath)
-                if(!ret)
-                    warning(gettextf("unable to move temporary installation '%s' to '%s'",
-                                     file.path(tmpDir, curPkg), instPath),
-                            domain = NA, call. = FALSE)
-            } else
-                stop("cannot remove prior installation of package ",
-                     sQuote(curPkg), call. = FALSE)
+	    on.exit(unlink(lockdir, recursive = TRUE), add=TRUE)
         }
+        ## If the package is already installed, remove it.  If it
+        ## isn't there, the unlink call will still return success.
+        ret <- unlink(instPath, recursive=TRUE)
+        if (ret == 0L) {
+            ## Move the new package to the install lib and
+            ## remove our temp dir
+            ret <- file.rename(file.path(tmpDir, pkgname), instPath)
+            if(!ret) {
+                warning(gettextf("unable to move temporary installation %s to %s",
+                                 sQuote(file.path(tmpDir, pkgname)),
+                                 sQuote(instPath)),
+                        domain = NA, call. = FALSE)
+                restorePrevious <- TRUE # Might not be used
+            }
+        } else
+            stop("cannot remove prior installation of package ",
+                 sQuote(pkgname), call. = FALSE)
         setwd(cDir)
         unlink(tmpDir, recursive=TRUE)
     }
@@ -128,8 +128,7 @@ if(substr(R.version$os, 1L, 6L) != "darwin") {
         ## foo.zip might contain package bar or Foo or FOO or ....
         ## but we can't tell without trying to unpack it.
         for(i in seq_along(pkgs))
-            unpackPkg(pkgs[i], pkgnames[i], lib)
-        link.html.help(verbose=TRUE)
+            unpackPkg(pkgs[i], pkgnames[i], lib, lock = lock)
         return(invisible())
     }
     tmpd <- destdir
@@ -137,7 +136,8 @@ if(substr(R.version$os, 1L, 6L) != "darwin") {
     if(is.null(destdir) && nonlocalcran) {
         tmpd <- file.path(tempdir(), "downloaded_packages")
         if (!file.exists(tmpd) && !dir.create(tmpd))
-            stop(gettextf("unable to create temporary directory '%s'", tmpd),
+            stop(gettextf("unable to create temporary directory %s",
+                          sQuote(tmpd)),
                  domain = NA)
     }
 
@@ -159,14 +159,14 @@ if(substr(R.version$os, 1L, 6L) != "darwin") {
             {
                 okp <- p == foundpkgs[, 1L]
                 if(any(okp))
-                    unpackPkg(foundpkgs[okp, 2L], foundpkgs[okp, 1L], lib)
+                    unpackPkg(foundpkgs[okp, 2L], foundpkgs[okp, 1L], lib,
+                              lock = lock)
             }
         }
         if(!is.null(tmpd) && is.null(destdir))
             cat("\n", gettextf("The downloaded packages are in\n\t%s", tmpd),
                 "\n", sep = "")
-        link.html.help(verbose = TRUE)
-    } else if(!is.null(tmpd) && is.null(destdir)) unlink(tmpd, TRUE)
+    } else if(!is.null(tmpd) && is.null(destdir)) unlink(tmpd, recursive = TRUE)
 
     invisible()
 }

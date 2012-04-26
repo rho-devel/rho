@@ -28,7 +28,7 @@
 \details{
   The time is rounded or truncated to the second, minute, hour or day.
   Timezones are only relevant to days, when midnight in the current
-  timezone is used.
+  \link{timezone} is used.
 
   The methods for class \code{"Date"} are of little use except to remove
   fractional days.
@@ -44,6 +44,6 @@
 
 \examples{
 round(.leap.seconds + 1000, "hour")
-trunc(Sys.time(), "day")
+\donttest{trunc(Sys.time(), "day")}
 }
 \keyword{chron}

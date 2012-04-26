@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -80,6 +80,7 @@ namespace CXXR {
 	    : String(sz, encoding), m_databytes(sz + 1), m_data(m_short_string)
 	{
 	    allocData(sz);
+	    setCString(m_data);
 	}
 
 	/** @brief Create an UncachedString object from a std::string.
@@ -91,13 +92,9 @@ namespace CXXR {
 	 * @param encoding The encoding of the required CachedString.
 	 *          Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are permitted
 	 *          in this context (checked).
-	 *
-	 * @param frozen true iff the string must not be altered after
-	 *          creation.
 	 */
 	explicit UncachedString(const std::string& str,
-				cetype_t encoding = CE_NATIVE,
-				bool frozen = false);
+				cetype_t encoding = CE_NATIVE);
 
 	/** @brief Provide read-write access to the string.
 	 *
@@ -108,7 +105,6 @@ namespace CXXR {
 	 */
 	char* ptr()
 	{
-	    errorIfFrozen();
 	    invalidateHash();
 	    return m_data;
 	}
@@ -121,9 +117,6 @@ namespace CXXR {
 	{
 	    return "char (uncached)";
 	}
-
-	// Virtual function of String:
-	const char* c_str() const;
 
 	// Virtual function of RObject:
 	const char* typeName() const;
@@ -213,46 +206,6 @@ extern "C" {
     {
 	using namespace CXXR;
 	return SEXP_downcast<UncachedString*>(x)->ptr();
-    }
-#endif
-
-    /** @brief Create a CXXR::UncachedString object for specified text
-     * and encoding.
-     *
-     * @param text The text of the string to be created, possibly
-     *          including embedded null characters.  The encoding is
-     *          assumed to be CE_NATIVE.
-     *
-     * @param length The length of the string pointed to by \a text.
-     *          Must be nonnegative.  The created string will comprise
-     *          the text plus an appended null byte.
-     *
-     * @param encoding The encoding of the required CachedString.
-     *          Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are permitted in
-     *          this context (checked).
-     *
-     * @return Pointer to the created string.
-     */
-    SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding);
-
-    /** @brief Create a CXXR::UncachedString object for specified text.
-     *
-     * @param text The text of the string to be created, possibly
-     *          including embedded null characters.  The encoding is
-     *          assumed to be CE_NATIVE.
-     *
-     * @param length The length of the string pointed to by \a text.
-     *          Must be nonnegative.  The created string will comprise
-     *          the text plus an appended null byte.
-     *
-     * @return Pointer to the created string.
-     */
-#ifndef __cplusplus
-    SEXP Rf_mkCharLen(const char* text, int length);
-#else
-    inline SEXP Rf_mkCharLen(const char* text, int length)
-    {
-	return Rf_mkCharLenCE(text, length, CE_NATIVE);
     }
 #endif
 

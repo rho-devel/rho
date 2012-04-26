@@ -31,7 +31,7 @@ rlogis(n, location = 0, scale = 1)
   \item{location, scale}{location and scale parameters.}
   \item{log, log.p}{logical; if TRUE, probabilities p are given as log(p).}
   \item{lower.tail}{logical; if TRUE (default), probabilities are
-    \eqn{P[X \le x]}{P[X <= x]}, otherwise, \eqn{P[X > x]}{P[X > x]}.}
+    \eqn{P[X \le x]}, otherwise, \eqn{P[X > x]}.}
 }
 
 \value{
@@ -54,12 +54,12 @@ rlogis(n, location = 0, scale = 1)
   }{f(x) = 1/s exp((x-m)/s) (1 + exp((x-m)/s))^-2.}
 
   It is a long-tailed distribution with mean \eqn{\mu}{m} and variance
-  \eqn{\pi^2/3 \sigma^2}{pi^2 /3 s^2}.
+  \eqn{\pi^2/3 \sigma^2}{\pi^2 /3 s^2}.
 }
 \note{
   \code{qlogis(p)} is the same as the well known \sQuote{\emph{logit}}
-  function, \eqn{logit(p) = \log(p/(1-p))}, and \code{plogis(x)} has
-  consequently been called the \sQuote{inverse logit}.
+  function, \eqn{logit(p) = \log p/(1-p)}{logit(p) = log(p/(1-p))},
+  and \code{plogis(x)} has consequently been called the \sQuote{inverse logit}.
 
   The distribution function is a rescaled hyperbolic tangent,
   \code{plogis(x) == (1+ \link{tanh}(x/2))/2}, and it is called a
@@ -67,7 +67,7 @@ rlogis(n, location = 0, scale = 1)
 }
 \source{
   \code{[dpr]logis} are calculated directly from the definitions.
-  
+
   \code{rlogis} uses inversion.
 }
 \references{
@@ -78,6 +78,9 @@ rlogis(n, location = 0, scale = 1)
   Johnson, N. L., Kotz, S. and Balakrishnan, N. (1995)
   \emph{Continuous Univariate Distributions}, volume 2, chapter 23.
   Wiley, New York.
+}
+\seealso{
+  \link{Distributions} for other standard distributions.
 }
 \examples{
 var(rlogis(4000, 0, scale = 5))# approximately (+/- 3)

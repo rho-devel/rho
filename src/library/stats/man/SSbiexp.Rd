@@ -1,10 +1,11 @@
 % File src/library/stats/man/SSbiexp.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{SSbiexp}
-\title{Biexponential model}
+\encoding{UTF-8}
+\title{Self-Starting Nls Biexponential model}
 \usage{
 SSbiexp(input, A1, lrc1, A2, lrc2)
 }
@@ -34,7 +35,7 @@ SSbiexp(input, A1, lrc1, A2, lrc2)
   \code{lrc2} are names of objects, the gradient matrix with respect to
   these names is attached as an attribute named \code{gradient}.
 }
-\author{Jose Pinheiro and Douglas Bates}
+\author{\enc{José}{Jose} Pinheiro and Douglas Bates}
 \seealso{\code{\link{nls}}, \code{\link{selfStart}}
 }
 \examples{
@@ -42,7 +43,8 @@ Indo.1 <- Indometh[Indometh$Subject == 1, ]
 SSbiexp( Indo.1$time, 3, 1, 0.6, -1.3 )  # response only
 A1 <- 3; lrc1 <- 1; A2 <- 0.6; lrc2 <- -1.3
 SSbiexp( Indo.1$time, A1, lrc1, A2, lrc2 ) # response and gradient
-getInitial(conc ~ SSbiexp(time, A1, lrc1, A2, lrc2), data = Indo.1)
+print(getInitial(conc ~ SSbiexp(time, A1, lrc1, A2, lrc2), data = Indo.1),
+      digits = 5)
 ## Initial values are in fact the converged values
 fm1 <- nls(conc ~ SSbiexp(time, A1, lrc1, A2, lrc2), data = Indo.1)
 summary(fm1)

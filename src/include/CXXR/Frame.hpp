@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -272,7 +272,7 @@ namespace CXXR {
 	     */
 	    Origin origin() const
 	    {
-		return m_origin;
+		return Origin(m_origin);
 	    }
 
 	    /** @brief Get raw value bound to the Symbol.
@@ -368,6 +368,7 @@ namespace CXXR {
 	    void visitReferents(const_visitor* v) const;
 	private:
 	    friend class boost::serialization::access;
+
 	    template<class Archive>
 	    void serialize(Archive & ar, const unsigned int version) {
 		BSerializer::Frame frame("Frame::Binding");
@@ -382,16 +383,16 @@ namespace CXXR {
 		BSerializer::attrib("m_provenance");
 		ar & m_provenance;
 		BSerializer::attrib("m_symbol");
-		ar & m_symbol;
+		// FIXME FIXME ar & m_symbol;
 		BSerializer::attrib("m_value");
 		ar & m_value;
 	    }
 
 	    Frame* m_frame;
-	    GCEdge<const Symbol> m_symbol;
+	    const Symbol* m_symbol;
 	    GCEdge<const Provenance> m_provenance;
 	    GCEdge<> m_value;
-	    Origin m_origin;
+	    unsigned char m_origin;
 	    bool m_active;
 	    bool m_locked;
 	};
@@ -399,7 +400,22 @@ namespace CXXR {
 	typedef void (*monitor)(const Binding&);
 
 	Frame()
-	    : m_locked(false), m_read_monitor(0), m_write_monitor(0)
+	    : m_cache_count(0), m_locked(false),
+	      m_read_monitored(false), m_write_monitored(false)
+	{}
+
+	/** @brief Copy constructor.
+	 *
+	 * The copy will define the same mapping from Symbols to R
+	 * objects as \a source; neither the R objects, nor of course
+	 * the Symbols, are copied as part of the cloning.
+	 *
+	 * The copy will be locked if \a source is locked.  However,
+	 * the copy will not have a read or write monitor.
+	 */
+	Frame(const Frame& source)
+	    : m_cache_count(0), m_locked(source.m_locked),
+	      m_read_monitored(false), m_write_monitored(false)
 	{}
 
 	/** @brief Get contents as a PairList.
@@ -419,6 +435,27 @@ namespace CXXR {
 	 */
 	virtual PairList* asPairList() const = 0;
 
+	/** @brief Bind a Symbol to a specified value.
+	 *
+	 * @param symbol Non-null pointer to the Symbol to be bound or
+	 *          rebound.
+	 *
+	 * @param value Pointer, possibly null, to the RObject to
+	 *          which \a symbol is now to be bound.  Any previous
+	 *          binding of \a symbol is overwritten.
+	 *
+	 * @param origin Origin of the newly bound value.
+	 *
+	 * @return Pointer to the resulting Binding.
+	 */
+	Binding* bind(const Symbol* symbol, RObject* value,
+		      Frame::Binding::Origin origin = Frame::Binding::EXPLICIT)
+	{
+	    Binding* bdg = obtainBinding(symbol);
+	    bdg->setValue(value, origin);
+	    return bdg;
+	}
+
 	/** @brief Access binding of an already-defined Symbol.
 	 *
 	 * This function provides a pointer to the Binding of a
@@ -431,6 +468,9 @@ namespace CXXR {
 	 * @return A pointer to the required binding, or a null
 	 * pointer if it was not found.
 	 */
+#ifdef __GNUG__
+	__attribute__((fastcall))
+#endif
 	virtual Binding* binding(const Symbol* symbol) = 0;
 
 	/** @brief Access const binding of an already-defined Symbol.
@@ -453,6 +493,25 @@ namespace CXXR {
 	 */
 	virtual void clear() = 0;
 
+	/** @brief Return pointer to a copy of this Frame.
+	 *
+	 * This function creates a copy of this Frame, and returns a
+	 * pointer to that copy.  The copy will define the same
+	 * mapping from Symbols to R objects as this Frame; neither
+	 * the R objects, nor of course the Symbols, are copied as
+	 * part of the cloning.
+	 *
+	 * The created copy will be locked if this Frame is locked.
+	 * However, it will not have a read or write monitor.
+	 *
+	 * @return a pointer to a clone of this Frame.
+	 *
+	 * @note Derived classes should exploit the covariant return
+	 * type facility to return a pointer to the type of object
+	 * being cloned.
+	 */
+	virtual Frame* clone() const = 0;
+
 	/** @brief Remove the Binding (if any) of a Symbol.
 	 *
 	 * This function causes any Binding for a specified Symbol to
@@ -474,33 +533,6 @@ namespace CXXR {
 	 * @param frame Source frame from which to 'copy' bindings
 	 */
 	virtual void import(const Frame* frame) = 0;
-
-
-	/** @brief Look up bound value, forcing Promises if necessary.
-	 *
-	 * If a Symbol is bound to anything other than a Promise, this
-	 * function returns a pointer to that bound value.  However,
-	 * if the symbol is bound to a Promise, the function forces
-	 * the Promise if necessary, and returns a pointer to the
-	 * value of the Promise.
-	 *
-	 * @param symbol The Symbol for which a mapping is sought.
-	 *
-	 * @param env The Environment within which Promises are to be
-	 *          forced.
-	 *
-	 * @return If the Frame does not bind \a symbol, both elements
-	 * of the returned pair will be null pointers.  Otherwise the
-	 * first element will be a pointer to the Binding of \a symbol and the
-	 * second element a pointer to the bound value (or the Promise
-	 * value if the bound value is a Promise).
-	 *
-	 * @note If a Promise is forced, the Binding pointer returned
-	 * as the first part of the return value will be the binding
-	 * of \a symbol (if any) \e after the Promise is forced.
-	 */
-	std::pair<Frame::Binding*, RObject*>
-	forcedValue(const Symbol* symbol, const Environment* env);
 
 	/** @brief Is the Frame locked?
 	 *
@@ -545,7 +577,7 @@ namespace CXXR {
 	 *
 	 * @return The number of Bindings currently in this Frame.
 	 */
-	virtual size_t numBindings() const = 0;
+	virtual std::size_t numBindings() const = 0;
 
 	/** @brief Get or create a Binding for a Symbol.
 	 *
@@ -586,10 +618,10 @@ namespace CXXR {
 	 * considered to be part of the state of a Frame object, and
 	 * hence this function is const.
 	 */
-	monitor setReadMonitor(monitor new_monitor) const
+	static monitor setReadMonitor(monitor new_monitor)
 	{
-	    monitor old = m_read_monitor;
-	    m_read_monitor = new_monitor;
+	    monitor old = s_read_monitor;
+	    s_read_monitor = new_monitor;
 	    return old;
 	}
 
@@ -620,10 +652,10 @@ namespace CXXR {
 	 * considered to be part of the state of a Frame object, and
 	 * hence this function is const.
 	 */
-	monitor setWriteMonitor(monitor new_monitor) const
+	static monitor setWriteMonitor(monitor new_monitor)
 	{
-	    monitor old = m_write_monitor;
-	    m_write_monitor = new_monitor;
+	    monitor old = s_write_monitor;
+	    s_write_monitor = new_monitor;
 	    return old;
 	}
 
@@ -632,7 +664,20 @@ namespace CXXR {
 	 * @return the number of Symbols for which Bindings exist in
 	 * this Frame.
 	 */
-	virtual size_t size() const = 0;
+	virtual std::size_t size() const = 0;
+
+	/** @brief Merge this Frame's Bindings into another Frame.
+	 *
+	 * This function copies each Binding in this Frame into \a
+	 * target, unless \a target already contains a Binding for the
+	 * Symbol concerned.
+	 *
+	 * @param target Non-null pointer to the Frame into which
+	 *          Bindings are to be merged.  An error is raised if
+	 *          a new Binding needs to be created and \a target is
+	 *          locked.
+	 */
+	virtual void softMergeInto(Frame* target) const = 0;
 
 	/** @brief Symbols bound by this Frame.
 	 *
@@ -647,37 +692,76 @@ namespace CXXR {
     protected:
 	// Declared protected to ensure that Frame objects are created
 	// only using 'new':
-	~Frame() {}
-    private:
-	friend class boost::serialization::access;
+	~Frame()
+	{
+	    statusChanged(0);
+	}
 
 	template<class Archive>
 	void serialize (Archive & ar, const unsigned int version) {
 	    BSerializer::Frame frame("Frame");
 	    ar & boost::serialization::base_object<GCNode>(*this);
-	    ar & m_locked;
+	    bool locked = m_locked;
+	    ar & locked;
+	    m_locked = locked;
 	}
 
-	bool m_locked;
-	mutable monitor m_read_monitor;
-	mutable monitor m_write_monitor;
+	/** @brief Report change in the bound/unbound status of Symbol
+	 *         objects.
+	 *
+	 * This function should be called when a Symbol that was not
+	 * formerly bound within this Frame becomes bound, or <em>vice
+	 * versa</em>.  If called with a null pointer, this signifies
+	 * that all bindings are about to be removed from the Frame.
+	 */
+	void statusChanged(const Symbol* sym)
+	{
+	    if (m_cache_count > 0)
+		flush(sym);
+	}
+	friend class Environment;
+
+	static monitor s_read_monitor, s_write_monitor;
+
+	unsigned char m_cache_count;  // Number of cached Environments
+			// of which this is the Frame.  Normally
+			// either 0 or 1.
+	bool m_locked                  : 1;
+	mutable bool m_read_monitored  : 1;
+	mutable bool m_write_monitored : 1;
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
-	Frame(const Frame&);
 	Frame& operator=(const Frame&);
 
 	// Monitoring functions:
 	friend class Binding;
     public:
+	void decCacheCount()
+	{
+	    --m_cache_count;
+	}
+
+	// Flush symbol(s) from search list cache:
+	void flush(const Symbol* sym);
+
+	void incCacheCount()
+	{
+	    ++m_cache_count;
+	}
+
 	void monitorRead(const Binding& bdg) const
 	{
-	    if (m_read_monitor) m_read_monitor(bdg);
+	    if (m_read_monitored)
+		s_read_monitor(bdg);
 	}
     private:
+	friend class boost::serialization::access;
+
 	void monitorWrite(const Binding& bdg) const
 	{
-	    if (m_write_monitor) m_write_monitor(bdg);
+	    if (m_write_monitored)
+		s_write_monitor(bdg);
 	}
     };
 
@@ -686,7 +770,7 @@ namespace CXXR {
      * Raises an error if the Frame is locked, or an attempt is made
      * to modify a binding that is locked.
      *
-     * @param env Pointer to the Frame into which new or
+     * @param frame Pointer to the Frame into which new or
      *          modified bindings are to be incorporated.
      *
      * @param bindings List of symbol-value pairs defining bindings to
@@ -699,6 +783,42 @@ namespace CXXR {
      *          fields of the corresponding PairList element.
      */
     void frameReadPairList(Frame* frame, PairList* bindings);
+
+    /** @brief Does a Symbol correspond to a missing argument?
+     *
+     * Within a Frame \a frame, a Symbol \a sym is considered to
+     * correspond to a missing argument if any of the following
+     * criteria is satisfied:
+     *
+     * <ol>
+     * <li>\a sym is itself Symbol::missingArgument()
+     * (R_MissingArg).</li>
+     *
+     * <li>The binding of \a sym within \a frame is flagged as having
+     * origin Frame::Binding::MISSING.</li>
+     *
+     * <li>\a sym is bound to Symbol::missingArgument().</li>
+     *
+     * <li>\a sym is bound to a unforced Promise, and forcing the
+     * Promise would consist in evaluating a Symbol which - by a
+     * recursive application of these criteria - is missing with
+     * respect to the Frame of the Environment of the Promise.</li>
+     *
+     * </ol>
+     *
+     * Note that unless Criterion 1 applies, \a sym is not considered
+     * missing if it is not bound at all within \a frame, or if it has
+     * an active binding.
+     *
+     * @param sym Non-null pointer to the Symbol whose missing status
+     *          is to be determined.
+     *
+     * @param frame Non-null pointer to the Frame with respect to
+     *          which missingness is to be determined.
+     *
+     * @return true iff \a sym is missing with respect to \a frame.
+     */
+    bool isMissingArgument(const Symbol* sym, Frame* frame);
 }  // namespace CXXR
 
 // This definition is visible only in C++; C code sees instead a

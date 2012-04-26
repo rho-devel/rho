@@ -1,6 +1,6 @@
 % File src/library/base/man/Logic.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Logic}
@@ -46,8 +46,9 @@ isTRUE(x)
   \code{xor} indicates elementwise exclusive OR.
 
   \code{isTRUE(x)} is an abbreviation of \code{identical(TRUE, x)}, and
-  so is true if and only if \code{x} is a length-one logical vector with
-  no attributes (not even names).
+  so is true if and only if \code{x} is a length-one logical vector
+  whose only element is \code{TRUE} and which has no attributes (not even
+  names).
 
   Numeric and complex vectors will be coerced to logical values, with
   zero being false and all non-zero values being true.  Raw vectors are
@@ -72,7 +73,8 @@ isTRUE(x)
   same precedence (the AND operators are higher than the OR operators).
 }
 \value{
-  For \code{!}, a logical or raw vector of the same length as \code{x}.
+  For \code{!}, a logical or raw vector of the same length as \code{x}:
+  names, dims and dimnames are copied from \code{x}.
 
   For \code{|}, \code{&} and \code{xor} a logical or raw vector. The
   elements of shorter vectors are recycled as necessary (with a

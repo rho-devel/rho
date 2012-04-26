@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -88,37 +88,51 @@ namespace CXXR {
      * @note Following the practice with CR's symbol table, Symbol
      * objects, once created, are permanently preserved against
      * garbage collection.  There is no inherent reason for this in
-     * CXXR, but some packages may rely on it.
-     *
-     * @todo It would be desirable if Symbol objects were frozen by
-     * the constructor.  But this is not feasible at present because,
-     * for example, the methods package attempts to set a class
-     * attribute on the Symbol "<UNDEFINED>".
+     * CXXR, but some packages may rely on it.  Consequently there is
+     * no need to use smart pointers such as GCStackRoot<Symbol> or
+     * GCEdge<Symbol>: plain pointers will do fine.
      */
     class Symbol : public RObject {
     private:
-	// A table is used to ensure that, for standard symbols,
-	// there is at most one Symbol object with a particular name.
-	typedef
-	std::tr1::unordered_map<const CachedString*, GCRoot<Symbol>,
-				std::tr1::hash<const CachedString*>,
-				std::equal_to<const CachedString*>,
-				CXXR::Allocator<std::pair<const CachedString* const,
-							  GCRoot<Symbol> > >
-	                        > map;
+	typedef std::vector<GCRoot<Symbol> > Table;
     public:
-	// It is assumed that this dereferences to
-	// const std::pair<const CachedString*, Symbol*>.
-	typedef map::const_iterator const_iterator;
+	/** @brief const_iterator for iterating over all standard Symbols.
+	 *
+	 * This is currently only a rudimentary implementation of a
+	 * forward iterator.  It is used in BuiltInSize() and
+	 * BuiltInNames().
+	 */
+	class const_iterator {
+	public:
+	    const_iterator(Table::const_iterator tblit)
+		: m_tblit(tblit)
+	    {}
+
+	    const Symbol* operator*() {
+		return *m_tblit;
+	    }
+
+	    const_iterator& operator++() {
+		++m_tblit;
+		return *this;
+	    }
+
+	    bool operator!=(const_iterator other) const
+	    {
+		return (m_tblit != other.m_tblit);
+	    }
+	private:
+	    Table::const_iterator m_tblit;
+	};
 
 	static const_iterator begin()
 	{
-	    return s_table->begin();
+	    return const_iterator(s_table->begin());
 	}
 
 	static const_iterator end()
 	{
-	    return s_table->end();
+	    return const_iterator(s_table->end());
 	}
 
 	/** @brief Index of a double-dot symbol.
@@ -180,14 +194,15 @@ namespace CXXR {
 	 * will be created, and a pointer to it returned.  Otherwise a
 	 * pointer to the existing Symbol will be returned.
 	 *
-	 * @param name The name of the required Symbol.  At present no
-	 *          check is made that the supplied string is a valid
-	 *          symbol name.
+	 * @param name The name of the required Symbol.
 	 *
 	 * @return Pointer to a Symbol (preexisting or newly
 	 * created) with the required name.
 	 */
-	static Symbol* obtain(const CachedString* name);
+	static Symbol* obtain(const CachedString* name)
+	{
+	    return (name->m_symbol ? name->m_symbol : make(name));
+	}
 
 	/** @brief Get a pointer to a regular Symbol object.
 	 *
@@ -213,15 +228,6 @@ namespace CXXR {
 	 * <tt>..</tt><i>n</i>.
 	 */
 	static Symbol* obtainDotDotSymbol(unsigned int n);
-
-	/** @brief Restart token.
-	 *
-	 * @return a pointer to the 'restart token' pseudo-object.
-	 */
-	static Symbol* restartToken()
-	{
-	    return s_restart_token;
-	}
 
 	/** @brief The name by which this type is known in R.
 	 *
@@ -255,9 +261,11 @@ namespace CXXR {
 	void detachReferents();
     private:
 	static const size_t s_max_length = 256;
-	static map* s_table;
+	static Table* s_table;  // Vector of
+	  // pointers to all Symbol objects in existence, other than
+	  // special Symbols, used to protect them against garbage
+	  // collection.
 	static Symbol* s_missing_arg;
-	static Symbol* s_restart_token;
 	static Symbol* s_unbound_value;
 
 	GCEdge<const CachedString> m_name;
@@ -277,17 +285,25 @@ namespace CXXR {
 
 	// Declared private to ensure that Symbol objects are
 	// allocated only using 'new':
-	~Symbol();
+	~Symbol()
+	{}
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
 	Symbol(const Symbol&);
 	Symbol& operator=(const Symbol&);
 
-	static void cleanup() {}
+	static void cleanup();
 
 	// Initialize the static data members:
 	static void initialize();
+
+	// Precondition: there is not already a Symbol identified by
+	// 'name'.
+	//
+	// Creates a new Symbol identified by 'name', enters it into
+	// the table of standard Symbols, and returns a pointer to it.
+	static Symbol* make(const CachedString* name);
 
 	friend class SchwarzCounter<Symbol>;
     };
@@ -317,37 +333,53 @@ namespace CXXR {
     }
 
     // Predefined Symbols visible in 'namespace CXXR':
-    extern Symbol* const Bracket2Symbol;   // "[["
-    extern Symbol* const BracketSymbol;    // "["
-    extern Symbol* const BraceSymbol;      // "{"
-    extern Symbol* const ClassSymbol;	   // "class"
-    extern Symbol* const DeviceSymbol;     // ".Device"
-    extern Symbol* const DimNamesSymbol;   // "dimnames"
-    extern Symbol* const DimSymbol;	   // "dim"
-    extern Symbol* const DollarSymbol;	   // "$"
-    extern Symbol* const DotsSymbol;	   // "..."
-    extern Symbol* const DropSymbol;	   // "drop"
-    extern Symbol* const ExactSymbol;      // "exact"
-    extern Symbol* const LastvalueSymbol;  // ".Last.value"
-    extern Symbol* const LevelsSymbol;	   // "levels"
-    extern Symbol* const ModeSymbol;	   // "mode"
-    extern Symbol* const NameSymbol;       // "name"
-    extern Symbol* const NamesSymbol;	   // "names"
-    extern Symbol* const NaRmSymbol;       // "na.rm"
-    extern Symbol* const PackageSymbol;    // "package"
-    extern Symbol* const QuoteSymbol;      // "quote"
-    extern Symbol* const RowNamesSymbol;   // "row.names"
-    extern Symbol* const SeedsSymbol;	   // ".Random.seed"
-    extern Symbol* const LastvalueSymbol;  // ".Last.value"
-    extern Symbol* const TspSymbol;	   // "tsp"
-    extern Symbol* const CommentSymbol;    // "comment"
-    extern Symbol* const SourceSymbol;     // "source"
-    extern Symbol* const DotEnvSymbol;     // ".Environment"
-    extern Symbol* const RecursiveSymbol;  // "recursive"
-    extern Symbol* const SrcfileSymbol;    // "srcfile"
-    extern Symbol* const SrcrefSymbol;     // "srcref"
-    extern Symbol* const TmpvalSymbol;     // "*tmp*"
-    extern Symbol* const UseNamesSymbol;   // "use.names"
+    extern Symbol* const Bracket2Symbol;   	  // "[["
+    extern Symbol* const BracketSymbol;    	  // "["
+    extern Symbol* const BraceSymbol;      	  // "{"
+    extern Symbol* const ClassSymbol;	   	  // "class"
+    extern Symbol* const ConnIdSymbol;            // "conn_id"
+    extern Symbol* const DimNamesSymbol;   	  // "dimnames"
+    extern Symbol* const DimSymbol;	   	  // "dim"
+    extern Symbol* const DollarSymbol;	   	  // "$"
+    extern Symbol* const DotClassSymbol;   	  // ".Class"
+    extern Symbol* const DotDeviceSymbol;     	  // ".Device"
+    extern Symbol* const DotDevicesSymbol;        // ".Devices"
+    extern Symbol* const DotGenericSymbol; 	  // ".Generic"
+    extern Symbol* const DotGenericCallEnvSymbol; // ".GenericCallEnv"
+    extern Symbol* const DotGenericDefEnvSymbol;  // ".GenericDefEnv"
+    extern Symbol* const DotGroupSymbol;   	  // ".Group"
+    extern Symbol* const DotMethodSymbol;  	  // ".Method"
+    extern Symbol* const DotMethodsSymbol; 	  // ".Methods"
+    extern Symbol* const DotdefinedSymbol; 	  // ".defined"
+    extern Symbol* const DotsSymbol;	   	  // "..."
+    extern Symbol* const DottargetSymbol;  	  // ".target"
+    extern Symbol* const DoubleColonSymbol;       // "::"
+    extern Symbol* const DropSymbol;	   	  // "drop"
+    extern Symbol* const ExactSymbol;      	  // "exact"
+    extern Symbol* const LastvalueSymbol;  	  // ".Last.value"
+    extern Symbol* const LevelsSymbol;	   	  // "levels"
+    extern Symbol* const ModeSymbol;	   	  // "mode"
+    extern Symbol* const NameSymbol;       	  // "name"
+    extern Symbol* const NamesSymbol;	   	  // "names"
+    extern Symbol* const NaRmSymbol;       	  // "na.rm"
+    extern Symbol* const PackageSymbol;    	  // "package"
+    extern Symbol* const PreviousSymbol;   	  // "previous"
+    extern Symbol* const QuoteSymbol;      	  // "quote"
+    extern Symbol* const RowNamesSymbol;   	  // "row.names"
+    extern Symbol* const S3MethodsTableSymbol;    // ".__S3MethodsTable__."
+    extern Symbol* const SeedsSymbol;	   	  // ".Random.seed"
+    extern Symbol* const LastvalueSymbol;  	  // ".Last.value"
+    extern Symbol* const TripleColonSymbol;       // ":::"
+    extern Symbol* const TspSymbol;	   	  // "tsp"
+    extern Symbol* const CommentSymbol;    	  // "comment"
+    extern Symbol* const SourceSymbol;     	  // "source"
+    extern Symbol* const DotEnvSymbol;     	  // ".Environment"
+    extern Symbol* const RecursiveSymbol;  	  // "recursive"
+    extern Symbol* const SrcfileSymbol;    	  // "srcfile"
+    extern Symbol* const SrcrefSymbol;     	  // "srcref"
+    extern Symbol* const WholeSrcrefSymbol;       // "wholeSrcref"
+    extern Symbol* const TmpvalSymbol;     	  // "*tmp*"
+    extern Symbol* const UseNamesSymbol;   	  // "use.names"
 }  // namespace CXXR
 
 namespace {
@@ -363,28 +395,37 @@ extern "C" {
     extern SEXP R_UnboundValue;
 
     /* Symbol Table Shortcuts */
-    extern SEXP R_Bracket2Symbol;  /* "[[" */
-    extern SEXP R_BracketSymbol;   /* "[" */
-    extern SEXP R_BraceSymbol;     /* "{" */
-    extern SEXP R_ClassSymbol;	   /* "class" */
-    extern SEXP	R_DeviceSymbol;    /* ".Device" */
-    extern SEXP R_DimNamesSymbol;  /* "dimnames" */
-    extern SEXP R_DimSymbol;	   /* "dim" */
-    extern SEXP R_DollarSymbol;	   /* "$" */
-    extern SEXP R_DotsSymbol;	   /* "..." */
-    extern SEXP R_DropSymbol;	   /* "drop" */
-    extern SEXP	R_LastvalueSymbol; /* ".Last.value" */
-    extern SEXP R_LevelsSymbol;	   /* "levels" */
-    extern SEXP R_ModeSymbol;	   /* "mode" */
-    extern SEXP	R_NameSymbol;	   /* "name" */
-    extern SEXP R_NamesSymbol;	   /* "names" */
-    extern SEXP	R_NaRmSymbol;	   /* "na.rm" */
-    extern SEXP R_PackageSymbol;   /* "package" */
-    extern SEXP R_QuoteSymbol;	   /* "quote" */
-    extern SEXP R_RowNamesSymbol;  /* "row.names" */
-    extern SEXP R_SeedsSymbol;	   /* ".Random.seed" */
-    extern SEXP	R_SourceSymbol;    /* "source" */
-    extern SEXP R_TspSymbol;	   /* "tsp" */
+    extern SEXP R_Bracket2Symbol;    /* "[[" */
+    extern SEXP R_BracketSymbol;     /* "[" */
+    extern SEXP R_BraceSymbol;       /* "{" */
+    extern SEXP R_ClassSymbol;	     /* "class" */
+    extern SEXP R_ConnIdSymbol;      /* "conn_id" */
+    extern SEXP	R_DeviceSymbol;      /* ".Device" */
+    extern SEXP R_DevicesSymbol;     /* ".Devices" */
+    extern SEXP R_DimNamesSymbol;    /* "dimnames" */
+    extern SEXP R_DimSymbol;	     /* "dim" */
+    extern SEXP R_DollarSymbol;	     /* "$" */
+    extern SEXP R_DotsSymbol;	     /* "..." */
+    extern SEXP R_DoubleColonSymbol; /* "::" */
+    extern SEXP R_DropSymbol;	     /* "drop" */
+    extern SEXP	R_LastvalueSymbol;   /* ".Last.value" */
+    extern SEXP R_LevelsSymbol;	     /* "levels" */
+    extern SEXP R_ModeSymbol;	     /* "mode" */
+    extern SEXP	R_NameSymbol;	     /* "name" */
+    extern SEXP R_NamesSymbol;	     /* "names" */
+    extern SEXP	R_NaRmSymbol;	     /* "na.rm" */
+    extern SEXP R_PackageSymbol;     /* "package" */
+    extern SEXP R_QuoteSymbol;	     /* "quote" */
+    extern SEXP R_RowNamesSymbol;    /* "row.names" */
+    extern SEXP R_SeedsSymbol;	     /* ".Random.seed" */
+    extern SEXP	R_SourceSymbol;      /* "source" */
+    extern SEXP R_TripleColonSymbol; /* ":::" */
+    extern SEXP R_TspSymbol;	     /* "tsp" */
+
+    extern SEXP R_dot_Generic;       /* ".Generic" */
+    extern SEXP R_dot_Method;        /* ".Method" */
+    extern SEXP R_dot_defined;       /* ".defined" */
+    extern SEXP R_dot_target;        /* ".target" */
 
     /** @brief Does symbol relate to a <tt>...</tt> expression?
      *

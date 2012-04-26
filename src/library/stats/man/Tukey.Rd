@@ -27,7 +27,7 @@ qtukey(p, nmeans, df, nranges = 1, lower.tail = TRUE, log.p = FALSE)
     considered.}
   \item{log.p}{logical; if TRUE, probabilities p are given as log(p).}
   \item{lower.tail}{logical; if TRUE (default), probabilities are
-    \eqn{P[X \le x]}{P[X <= x]}, otherwise, \eqn{P[X > x]}{P[X > x]}.}
+    \eqn{P[X \le x]}, otherwise, \eqn{P[X > x]}.}
 }
 \details{
   If \eqn{n_g =}{ng =}\code{nranges} is greater than one, \eqn{R} is
@@ -52,6 +52,7 @@ qtukey(p, nmeans, df, nranges = 1, lower.tail = TRUE, log.p = FALSE)
   \emph{Journal of Statistical Computation and Simulation}, \bold{30}, 1--15.
 }
 \seealso{
+  \link{Distributions} for standard distributions, including
   \code{\link{pnorm}} and \code{\link{qnorm}} for the corresponding
   functions for the normal distribution.
 }
@@ -61,6 +62,6 @@ if(interactive())
 (ptt <- ptukey(0:10, 2, df= 5))
 (qtt <- qtukey(.95, 2, df= 2:11))
 ## The precision may be not much more than about 8 digits:
-summary(abs(.95 - ptukey(qtt,2, df = 2:11)))
+\donttest{summary(abs(.95 - ptukey(qtt,2, df = 2:11)))}
 }
 \keyword{distribution}

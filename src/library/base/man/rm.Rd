@@ -1,15 +1,15 @@
 % File src/library/base/man/rm.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{remove}
 \title{Remove Objects from a Specified Environment}
 \usage{
-remove(\dots, list = character(0L), pos = -1,
+remove(\dots, list = character(), pos = -1,
        envir = as.environment(pos), inherits = FALSE)
 
-rm    (\dots, list = character(0L), pos = -1,
+rm    (\dots, list = character(), pos = -1,
        envir = as.environment(pos), inherits = FALSE)
 }
 \alias{rm}
@@ -19,8 +19,8 @@ rm    (\dots, list = character(0L), pos = -1,
     character strings (quoted).}
   \item{list}{a character vector naming objects to be removed.}
   \item{pos}{where to do the removal.  By default, uses the
-    current environment.  See the details for other possibilities.}
-  \item{envir}{the \code{\link{environment}} to use. See the details section.}
+    current environment.  See \sQuote{details} for other possibilities.}
+  \item{envir}{the \code{\link{environment}} to use.  See \sQuote{details}.}
   \item{inherits}{should the enclosing frames of the environment be
     inspected?}
 }
@@ -49,7 +49,7 @@ rm    (\dots, list = character(0L), pos = -1,
   environment, but is primarily there for back compatibility.
 
   It is not allowed to remove variables from the base environment and
-  base name space, nor from any environment which is locked (see
+  base namespace, nor from any environment which is locked (see
   \code{\link{lockEnvironment}}).
 
   Earlier versions of \R incorrectly claimed that supplying a character

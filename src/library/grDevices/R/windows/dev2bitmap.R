@@ -34,13 +34,17 @@ dev2bitmap <- function(file, type="png16m", height = 7, width = 7, res = 72,
     gshelp <- system(paste(gsexe, "-help"), intern=TRUE, invisible=TRUE)
     st <- grep("^Available", gshelp)
     en <- grep("^Search", gshelp)
-    gsdevs <- gshelp[(st+1):(en-1)]
-    devs <- c(strsplit(gsdevs, " "), recursive=TRUE)
-    if(match(type, devs, 0) == 0)
-        stop(gettextf("device '%s' is not available\n", type),
-             gettextf("Available devices are %s",
-                      paste(gsdevs, collapse="\n")),
-             domain = NA)
+    if(!length(st) || !length(en))
+        warning("unrecognized format of gs -help")
+    else {
+        gsdevs <- gshelp[(st+1):(en-1)]
+        devs <- c(strsplit(gsdevs, " "), recursive=TRUE)
+        if(match(type, devs, 0) == 0)
+            stop(gettextf("device '%s' is not available\n", type),
+                 gettextf("Available devices are %s",
+                          paste(gsdevs, collapse="\n")),
+                 domain = NA)
+    }
     if(missing(pointsize)) pointsize <- 1.5*min(width, height)
     tmp <- tempfile("Rbit")
     on.exit(unlink(tmp))
@@ -64,7 +68,7 @@ dev2bitmap <- function(file, type="png16m", height = 7, width = 7, res = 72,
     if (!is.na(gaa)) extra <- paste(extra, " -dGraphicsAlphaBits=", gaa, sep="")
     cmd <- paste(gsexe, " -dNOPAUSE -dBATCH -q -sDEVICE=", type,
                  " -r", res,
-                 "-dAutoRotatePages=/None",
+                 " -dAutoRotatePages=/None",
                  " -g", ceiling(res*width), "x", ceiling(res*height),
                   extra,
                  " -sOutputFile=", file, " ", tmp, sep="")
@@ -90,13 +94,17 @@ bitmap <- function(file, type="png16m", height = 7, width = 7, res = 72,
     gshelp <- system(paste(gsexe, "-help"), intern=TRUE, invisible=TRUE)
     st <- grep("^Available", gshelp)
     en <- grep("^Search", gshelp)
-    gsdevs <- gshelp[(st+1):(en-1)]
-    devs <- c(strsplit(gsdevs, " "), recursive=TRUE)
-    if(match(type, devs, 0) == 0)
-        stop(gettextf("device '%s' is not available\n", type),
-             gettextf("Available devices are %s",
-                      paste(gsdevs, collapse="\n")),
-             domain = NA)
+    if(!length(st) || !length(en))
+        warning("unrecognized format of gs -help")
+    else {
+        gsdevs <- gshelp[(st+1):(en-1)]
+        devs <- c(strsplit(gsdevs, " "), recursive=TRUE)
+        if(match(type, devs, 0) == 0)
+            stop(gettextf("device '%s' is not available\n", type),
+                 gettextf("Available devices are %s",
+                          paste(gsdevs, collapse="\n")),
+                 domain = NA)
+    }
     if(missing(pointsize)) pointsize <- 1.5*min(width, height)
     extra <- ""
     if (!is.na(taa)) extra <- paste(" -dTextAlphaBits=", taa, sep="")
@@ -104,7 +112,7 @@ bitmap <- function(file, type="png16m", height = 7, width = 7, res = 72,
     tmp <- tempfile("Rbit")
     cmd <- paste(gsexe, " -dNOPAUSE -dBATCH -q -sDEVICE=", type,
                  " -r", res,
-                 "-dAutoRotatePages=/None",
+                 " -dAutoRotatePages=/None",
                  " -g", ceiling(res*width), "x", ceiling(res*height),
                  extra,
                  " -sOutputFile=", file, sep="")

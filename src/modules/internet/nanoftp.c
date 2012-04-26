@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -55,13 +55,13 @@
 #define _(String) (String)
 #endif
 
+extern void R_ProcessEvents(void);
 #if !defined(Unix) || defined(HAVE_BSD_NETWORKING)
 
 #ifdef Win32
 #include <io.h>
 #include <winsock2.h>
 #define _WINSOCKAPI_
-extern void R_ProcessEvents(void);
 #define R_SelectEx(n,rfd,wrd,efd,tv,ih) select(n,rfd,wrd,efd,tv)
 #endif
 
@@ -803,14 +803,14 @@ static int
 RxmlNanoFTPQuit(void *ctx) {
     RxmlNanoFTPCtxtPtr ctxt = (RxmlNanoFTPCtxtPtr) ctx;
     char buf[200];
-    int len, res;
+    int len;
 
     if ((ctxt == NULL) || (ctxt->controlFd < 0)) return(-1);
 
     snprintf(buf, sizeof(buf), "QUIT\r\n");
     len = strlen(buf);
     RxmlMessage(0, "%s", buf);
-    res = send(ctxt->controlFd, buf, len, 0);
+    send(ctxt->controlFd, buf, len, 0);
     return(0);
 }
 
@@ -1333,11 +1333,9 @@ RxmlNanoFTPRead(void *ctx, void *dest, int len)
     if (len <= 0) return(0);
     while(1) {
 	int maxfd = 0;
+	R_ProcessEvents();
 #ifdef Unix
-	InputHandler *what;
-
 	if(R_wait_usec > 0) {
-	    R_PolledEvents();
 	    tv.tv_sec = 0;
 	    tv.tv_usec = R_wait_usec;
 	} else {
@@ -1347,7 +1345,6 @@ RxmlNanoFTPRead(void *ctx, void *dest, int len)
 #elif defined(Win32)
 	tv.tv_sec = 0;
 	tv.tv_usec = 2e5;
-	R_ProcessEvents();
 #else
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
@@ -1386,6 +1383,7 @@ RxmlNanoFTPRead(void *ctx, void *dest, int len)
 #ifdef Unix
 	if(!FD_ISSET(ctxt->dataFd, &rfd) || res > 1) {
 	    /* was one of the extras */
+	    InputHandler *what;
 	    what = getSelectedHandler(R_InputHandlers, &rfd);
 	    if(what != NULL) what->handler((void*) NULL);
 	    continue;

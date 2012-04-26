@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -43,12 +43,14 @@
 #include "R_ext/Error.h"
 #include "CXXR/Evaluator.h"
 #include "CXXR/FunctionBase.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Promise.h"
 
 using namespace std;
 using namespace CXXR;
 
+Frame::monitor Frame::s_read_monitor = 0;
+Frame::monitor Frame::s_write_monitor = 0;
 
 // ***** Class Frame::Binding *****
 
@@ -140,9 +142,15 @@ void Frame::Binding::visitReferents(const_visitor* v) const
 {
     // We assume the visitor has just come from m_frame, so we don't
     // visit that.
-    if (m_symbol) m_symbol->conductVisitor(v);
-    if (m_value) m_value->conductVisitor(v);
-    if (m_provenance) m_provenance->conductVisitor(v);
+    if (m_value)
+	(*v)(m_value);
+    if (m_provenance)
+	(*v)(m_provenance);
+}
+
+void Frame::flush(const Symbol* sym)
+{
+    Environment::flushFromCache(sym);
 }
 
 namespace CXXR {
@@ -156,5 +164,42 @@ namespace CXXR {
 	    Frame::Binding* bdg = frame->obtainBinding(symbol);
 	    bdg->fromPairList(pl);
 	}
+    }
+
+    bool isMissingArgument(const Symbol* sym, Frame* frame)
+    {
+	RObject* rawval;
+	if (sym->isDotDotSymbol()) {
+	    unsigned int ddv = sym->dotDotIndex();
+	    Frame::Binding* bdg = frame->binding(CXXR::DotsSymbol);
+	    if (!bdg)
+		return false;  // This is what CR does.  Is it really right?
+	    ConsCell* cc = SEXP_downcast<ConsCell*>(bdg->rawValue());
+	    while (cc && ddv > 1) {
+		cc = cc->tail();
+		--ddv;
+	    }
+	    if (!cc)
+		return true;
+	    rawval = cc->car();
+	} else {
+	    // Not a ..n symbol:
+	    if (sym == Symbol::missingArgument())
+		return true;
+	    Frame::Binding* bdg = frame->binding(sym);
+	    if (!bdg)
+		return false;
+	    rawval = bdg->rawValue();
+	    if (bdg->origin() == Frame::Binding::MISSING
+		|| rawval == Symbol::missingArgument())
+		return  true;
+	    if (bdg->isActive())
+		return false;
+	}
+	if (rawval && rawval->sexptype() == PROMSXP) {
+	    Promise* prom = static_cast<Promise*>(rawval);
+	    return prom->isMissingSymbol();
+	}
+	return false;
     }
 }

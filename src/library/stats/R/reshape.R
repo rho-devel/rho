@@ -19,12 +19,13 @@ reshape <-
              ids = 1L:NROW(data), times = seq_along(varying[[1L]]),
              drop = NULL, direction, new.row.names = NULL,
              sep = ".",
-             split = if (sep==""){
-                 list(regexp="[A-Za-z][0-9]",include=TRUE)
-             } else {
-                 list(regexp=sep, include= FALSE, fixed=TRUE)}
-             )
+             split = if (sep == "") {
+                 list(regexp = "[A-Za-z][0-9]", include = TRUE)
+             } else {list(regexp = sep, include = FALSE, fixed = TRUE)})
 {
+
+    if (!is.character(sep) || length(sep) != 1L)
+        stop("'sep' must be a character string")
 
     ix2names <- function(ix)
         if (is.character(ix)) ix else names(data)[ix]
@@ -46,7 +47,7 @@ reshape <-
         v.names <- split(nms, factor(nn[,1], levels=vn))
         times <- unique(nn[,2])
         attr(v.names,"v.names") <- vn
-        tt <- tryCatch({as.numeric(times)}, warning=function(w) times)
+        tt <- tryCatch(as.numeric(times), warning=function(w) times)
         attr(v.names,"times") <- tt
         v.names
     }
@@ -55,81 +56,81 @@ reshape <-
         function(data,varying,v.names = NULL,timevar,idvar,
                  ids = 1L:NROW(data), times,drop = NULL,new.row.names = NULL) {
 
-        ll <- unlist(lapply(varying,length))
-        if (any(ll != ll[1L])) stop("'varying' arguments must be the same length")
-        if (ll[1L] != length(times)) stop("'times' is wrong length")
+            ll <- unlist(lapply(varying,length))
+            if (any(ll != ll[1L])) stop("'varying' arguments must be the same length")
+            if (ll[1L] != length(times)) stop("'times' is wrong length")
 
-        if (!is.null(drop)) {
-            if (is.character(drop))
-                drop <- names(data) %in% drop
-            data <- data[,if (is.logical(drop)) !drop else -drop, drop = FALSE]
-        }
+            if (!is.null(drop)) {
+                if (is.character(drop))
+                    drop <- names(data) %in% drop
+                data <- data[,if (is.logical(drop)) !drop else -drop, drop = FALSE]
+            }
 
-        ## store information for back-transformation.
-        undoInfo <- list(varying = varying,v.names = v.names,
-                                         idvar = idvar,timevar = timevar)
+            ## store information for back-transformation.
+            undoInfo <- list(varying = varying,v.names = v.names,
+                             idvar = idvar,timevar = timevar)
 
-        ## multiple id variables
-        if (length(idvar)>1){
-               repeat({
-                   tempidname<-basename(tempfile("tempID"))
-                   if (!(tempidname %in% names(data))) break
-               })
-               data[,tempidname]<-interaction(data[,idvar],drop=TRUE)
-               idvar<-tempidname
-               drop.idvar<-TRUE
-           } else drop.idvar<-FALSE
+            ## multiple id variables
+            if (length(idvar) > 1L) {
+                repeat({
+                    tempidname <- basename(tempfile("tempID"))
+                    if (!(tempidname %in% names(data))) break
+                })
+                data[,tempidname] <- interaction(data[,idvar],drop=TRUE)
+                idvar <- tempidname
+                drop.idvar <- TRUE
+            } else drop.idvar <- FALSE
 
 
-        d <- data
-        all.varying <- unlist(varying)
-        d <- d[,!(names(data) %in% all.varying),drop = FALSE]
-        d[,timevar] <- times[1L]
+            d <- data
+            all.varying <- unlist(varying)
+            d <- d[,!(names(data) %in% all.varying),drop = FALSE]
+            d[,timevar] <- times[1L]
 
-        if (is.null(v.names))
-            v.names <- unlist(lapply(varying,function(x) x[1L]))
+            if (is.null(v.names))
+                v.names <- unlist(lapply(varying,function(x) x[1L]))
 
-        for(i in seq_along(v.names))
-            d[, v.names[i]] <- data[, varying[[i]][1L] ]
+            for(i in seq_along(v.names))
+                d[, v.names[i]] <- data[, varying[[i]][1L] ]
 
-        if (!(idvar %in% names(data)))
-            d[,idvar] <- ids
+            if (!(idvar %in% names(data)))
+                d[,idvar] <- ids
 
-        rval <- d
+            rval <- d
 
-        if (length(times) == 1) {
+            if (length(times) == 1L) {
+                if (drop.idvar)
+                    rval[,idvar]<-NULL
+                return(rval)
+            }
+            if (is.null(new.row.names))
+                row.names(rval) <- paste(d[,idvar], times[1L], sep = ".")
+            else
+                row.names(rval) <- new.row.names[1L:NROW(rval)]
+
+            for(i in 2:length(times)) {
+                d[,timevar] <- times[i]
+                for(j in seq_along(v.names))
+                    d[ ,v.names[j]] <- data[, varying[[j]][i]]
+
+                if (is.null(new.row.names))
+                    row.names(d) <- paste(d[,idvar], times[i], sep = ".")
+                else
+                    row.names(d) <- new.row.names[NROW(rval)+1L:NROW(d)]
+                rval <- rbind(rval,d) ##inefficient. So sue me.
+            }
+
+            ## if we created a temporary id variable, drop it
             if (drop.idvar)
                 rval[,idvar]<-NULL
+
+            attr(rval,"reshapeLong") <- undoInfo
             return(rval)
-        }
-        if (is.null(new.row.names))
-            row.names(rval) <- paste(d[,idvar],times[1L],sep = ".")
-        else
-            row.names(rval) <- new.row.names[1L:NROW(rval)]
-
-        for(i in 2:length(times)) {
-            d[,timevar] <- times[i]
-            for(j in seq_along(v.names))
-                d[ ,v.names[j]] <- data[ ,varying[[j]][i]]
-
-            if (is.null(new.row.names))
-                row.names(d) <- paste(d[,idvar],times[i],sep = ".")
-            else
-                row.names(d) <- new.row.names[NROW(rval)+1L:NROW(d)]
-            rval <- rbind(rval,d)  ##inefficient. So sue me.
-        }
-
-        ## if we created a temporary id variable, drop it
-        if (drop.idvar)
-            rval[,idvar]<-NULL
-
-        attr(rval,"reshapeLong") <- undoInfo
-        return(rval)
-    } ## re..Long()
+        } ## re..Long()
 
     reshapeWide <- function(data,timevar,idvar,varying = NULL,v.names = NULL,
-                            drop = NULL,new.row.names = NULL) {
-
+                            drop = NULL,new.row.names = NULL)
+    {
         if (!is.null(drop)) {
             if (is.character(drop))
                 drop <- names(data) %in% drop
@@ -138,16 +139,16 @@ reshape <-
 
         undoInfo <- list(v.names = v.names,  timevar = timevar,idvar = idvar)
 
-        orig.idvar<-idvar
-        if (length(idvar)>1){
+        orig.idvar <- idvar
+        if (length(idvar) > 1L) {
             repeat({
-                tempidname<-basename(tempfile("tempID"))
+                tempidname <- basename(tempfile("tempID"))
                 if (!(tempidname %in% names(data))) break
             })
-            data[,tempidname]<-interaction(data[,idvar],drop=TRUE)
-            idvar<-tempidname
-            drop.idvar<-TRUE
-        } else drop.idvar<-FALSE
+            data[,tempidname] <- interaction(data[,idvar],drop=TRUE)
+            idvar <- tempidname
+            drop.idvar <- TRUE
+        } else drop.idvar <- FALSE
 
         ## times <- sort(unique(data[,timevar]))
         ## varying and times must have the same order
@@ -160,27 +161,23 @@ reshape <-
             v.names <- names(data)[!(names(data) %in% c(timevar,idvar,orig.idvar))]
 
         if (is.null(varying))
-            varying <- outer(v.names,times,paste,sep = ".")
+            varying <- outer(v.names,times,paste,sep =sep)
         if (is.list(varying))
             varying <- do.call("rbind",varying)
 
-        undoInfo$varying<-varying
+        undoInfo$varying <- varying
 
-
-        CHECK <- TRUE
-        if (CHECK) {
-            keep <- !(names(data) %in% c(timevar,v.names,idvar,orig.idvar))
-            if(any(keep)) {
-                rval <- data[keep]
-                tmp <- data[,idvar]
-                really.constant <-
-                    unlist(lapply(rval,
-                                  function(a) all(tapply(a, as.vector(tmp),
-                                                         function(b) length(unique(b)) == 1))))
-                if (!all(really.constant))
-                    warning(gettextf("some constant variables (%s) are really varying",
-                                     paste(names(rval)[!really.constant],collapse = ",")), domain = NA)
-            }
+        keep <- !(names(data) %in% c(timevar, v.names, idvar, orig.idvar))
+        if(any(keep)) {
+            rval <- data[keep]
+            tmp <- data[, idvar]
+            really.constant <-
+                unlist(lapply(rval,
+                              function(a) all(tapply(a, as.vector(tmp),
+                                                     function(b) length(unique(b)) == 1L))))
+            if (!all(really.constant))
+                warning(gettextf("some constant variables (%s) are really varying",
+                                 paste(names(rval)[!really.constant],collapse = ",")), domain = NA)
         }
 
 
@@ -188,16 +185,16 @@ reshape <-
                      !(names(data) %in% c(timevar,v.names)), drop = FALSE]
 
         for(i in seq_along(times)) {
-            thistime <- data[data[,timevar] %in% times[i],]
-            rval[,varying[,i]] <- thistime[match(rval[,idvar],thistime[,idvar]),
-                                           v.names]
+            thistime <- data[data[, timevar] %in% times[i], ]
+            rval[, varying[, i]] <-
+                thistime[match(rval[, idvar], thistime[, idvar]), v.names]
         }
 
         if (!is.null(new.row.names))
             row.names(rval) <- new.row.names
 
         ## temporary id variable to be dropped.
-        if (drop.idvar) rval[,idvar]<-NULL
+        if (drop.idvar) rval[,idvar] <- NULL
 
         ## information for back-transformation
         attr(rval,"reshapeWide") <- undoInfo
@@ -207,9 +204,9 @@ reshape <-
 
     ## Begin reshape()
 
-    if (missing(direction)){
+    if (missing(direction)) {
         undo <- c("wide","long")[c("reshapeLong","reshapeWide")%in% names(attributes(data))]
-        if (length(undo)==1) direction<-undo
+        if (length(undo)==1L) direction <- undo
     }
     direction <- match.arg(direction, c("wide", "long"))
 
@@ -246,7 +243,7 @@ reshape <-
                varying <- split(varying,row(varying))
            if (is.null(varying))
                stop("'varying' must be nonempty list or vector")
-           if(is.atomic(varying)){
+           if(is.atomic(varying)) {
                varying <- ix2names(varying) # normalize
                if (missing(v.names))
                    varying <- guess(varying)

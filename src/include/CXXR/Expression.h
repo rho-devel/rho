@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -114,25 +114,12 @@ namespace CXXR {
 } // namespace CXXR
 
 BOOST_CLASS_EXPORT(CXXR::Expression)
-
     /** @brief Pointer to expression currently being evaluated.
      */
     extern CXXR::GCRoot<> R_CurrentExpr;
 
 extern "C" {
 #endif
-
-    /** @brief Deparse an Expression.
-     *
-     * This function is added in CXXR, mainly to facilitate debugging:
-     * from within gdb, <tt>p R_CHAR(DEPARSE(e))</tt> is useful.
-     *
-     * @param e Pointer to a CXXR::Expression (checked) to be deparsed.
-     *
-     * @return pointer to CXXR::String representing the deparsed
-     * expression.
-     */
-    SEXP DEPARSE(SEXP e);
 
     /** @brief Expression currently being evaluated.
      *
@@ -156,7 +143,7 @@ extern "C" {
     /** @brief Designate the Expression currently being evaluated.
      *
      * @param e Pointer to the Expression now to be evaluated.  (Not
-     * currently checked in any way.)
+     *          currently checked in any way.)
      */
     void Rf_setCurrentExpression(SEXP e);
 #ifdef __cplusplus

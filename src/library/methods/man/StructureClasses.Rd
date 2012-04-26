@@ -1,6 +1,6 @@
 % File src/library/methods/man/StructureClasses.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{StructureClasses}
@@ -51,13 +51,15 @@
   for multiple classes, perhaps with the class name and the arguments
   passed in.
 
-  Objects created from the classes \code{"matrix"} and \code{"array"} are unusual, to put
-  it mildly, and have been for some time.  Although they may appear to
-  be objects from these classes, they do not have the internal
-  structure of either an S3 or S4 class object.  In particular, they
-  have no \code{"class"} attribute and are not recognized as objects
-  with classes (that is, both \code{\link{is.object}} and
+  Objects created from the classes \code{"matrix"} and \code{"array"}
+  are unusual, to put it mildly, and have been for some time.  Although
+  they may appear to be objects from these classes, they do not have the
+  internal structure of either an S3 or S4 class object.  In particular,
+  they have no \code{"class"} attribute and are not recognized as
+  objects with classes (that is, both \code{\link{is.object}} and
   \code{\link{isS4}} will return \code{FALSE} for such objects).
+  However, methods (both S4 and S3) can be defined for these
+  pseudo-classes and new classes (both S4 and S3) can inherit from them.
 
   That the objects still behave as if they came from the corresponding
   class (most of the time, anyway) results from special code
@@ -71,6 +73,13 @@
   perfectly, but a number of classes have been written in this form
   successfully.
 
+  Note that a class containing \code{"matrix"} or \code{"array"} will
+  have a  \code{.Data} slot with that class.  This is the only use of
+  \code{.Data} other than as a pseudo-class indicating the type of the
+  object.  In this case the type of the object will be the type of the
+  contained matrix or array. See \code{\link{Classes}} for a general
+  discussion.
+
   The class \code{"ts"}  is basically an S3 class
   that has been registered with S4, using the
   \code{\link{setOldClass}} mechanism.  Versions of \R through 2.7.0
@@ -83,8 +92,8 @@
   prevented the correct specification of the S3 inheritance for class
   \code{"mts"}.)
 
-  The current behavior (beginning with version 2.8.0 of \R) registers
-  \code{"ts"} as an S3 class,  using an S4-style definition (see the
+  Time-series objects, in contrast to matrices and arrays, have a valid
+  S3 class, \code{"ts"}, registered  using an S4-style definition (see the
   documentation for \code{\link{setOldClass}} in the examples section
   for an abbreviated listing of how this is done.  The S3
   inheritance of \code{"mts"} in package \pkg{stats} is also
@@ -93,8 +102,16 @@
   be valid in most examples as superclasses for new S4 class
   definitions.
 
+  All of these classes have special S4 methods for
+  \code{\link{initialize}} that accept the same arguments as the basic
+  generator functions, \code{\link{matrix}},
+  \code{\link{array}}, and \code{\link{ts}}, in so far as possible.
+  The limitation is that a class that has more than one non-virtual
+  superclass must accept objects from that superclass in the call to
+  \code{\link{new}}; therefore, a such a class (what is called a
+  \dQuote{mixin} in some languages) uses the default method for
+  \code{\link{initialize}}, with no special arguments.
 
-  
 }
 \section{Extends}{
   The specific classes all extend class \code{"structure"}, directly, and
@@ -127,8 +144,8 @@
 }
 \seealso{Class \linkS4class{nonStructure}, which enforces the
   alternative model, in which all slots are dropped if any math
-  transformation or operation is applied to an object from a class extending one of
-  the basic classes.
+  transformation or operation is applied to an object from a class
+  extending one of the basic classes.
 }
 \references{
  Chambers, John M. (2008)

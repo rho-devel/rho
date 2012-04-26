@@ -1,6 +1,6 @@
 % File src/library/base/man/tracemem.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{tracemem}
@@ -26,7 +26,7 @@ retracemem(x, previous = NULL)
 \details{
   This functionality is optional, determined at compilation, because it
   makes R run a little more slowly even when no objects are being
-  traced. \code{tracemem} and \code{untracemem} give errors when R is not
+  traced.  \code{tracemem} and \code{untracemem} give errors when R is not
   compiled with memory profiling; \code{retracemem} does not (so it can be
   left in code during development).
 #ifdef Windows
@@ -36,7 +36,7 @@ retracemem(x, previous = NULL)
   When an object is traced any copying of the object by the C function
   \code{duplicate} or by arithmetic or mathematical operations produces a
   message to standard output.  The message consists of the string
-  \code{tracemem}, the identifying strings for the object being copied and
+  \code{tracemem}, the identifying strings for the object(s) being copied and
   the new object being created, and a stack trace showing where the
   duplication occurred.  \code{retracemem()} is used to indicate that a
   variable should be considered a copy of a previous variable (e.g. after
@@ -44,18 +44,18 @@ retracemem(x, previous = NULL)
 
   The messages can be turned off with \code{\link{tracingState}}.
 
-  It is not possible to trace functions, as this would conflict with
-  \code{\link{trace}} and it is not useful to trace \code{NULL},
-  environments, promises, weak references, or external pointer objects, as
-  these are not duplicated.
+  In CXXR any R object (other than NULL) can be traced in this way;
+  however (as in CR) it is not useful to trace environments, promises,
+  weak references, or external pointer objects, as these are not
+  duplicated, and CXXR gives a warning in this case.  On the other hand
+  CXXR (unlike CR) does not track copying into and out of the arguments
+  of \code{.C} and \code{.Fortran}.
   
-  These functions are \link{primitive} and use positional matching of
-  arguments.
+  These functions are \link{primitive}.
 }
 \value{
   A character string for identifying the object in the trace output (an
-  address in hex enclosed in angle brackets), or \code{NULL} (invisibly
-  for \code{untracemem}).
+  address in hex enclosed in angle brackets), or \code{NULL} (invisibly).
 }
 
 \seealso{

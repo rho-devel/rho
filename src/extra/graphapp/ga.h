@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -166,6 +166,7 @@ void  gdrawrect(drawing d, int width, int style, rgb c, rect r, int fast,
 void  gfillrect(drawing d, rgb fill, rect r);
 void  gcopy(drawing d, drawing d2, rect r);
 void  gcopyalpha(drawing d, drawing d2, rect r, int alpha);
+void  gcopyalpha2(drawing d, image src, rect r);
 void  gdrawellipse(drawing d, int width, rgb border, rect r, int fast,
 		   int lend, int ljoin, float lmitre);
 void  gfillellipse(drawing d, rgb fill, rect r);
@@ -175,6 +176,9 @@ void  gdrawpolyline(drawing d, int width, int style, rgb c,
 #define gdrawpolygon(d,w,s,c,p,n,f,e,j,m) gdrawpolyline(d,w,s,c,p,n,1,f,e,j,m)
 void  gsetpolyfillmode(drawing d, int oddeven);
 void  gfillpolygon(drawing d, rgb fill, point *p, int n);
+void  gfillpolypolygon(drawing d, rgb fill, point *p, int npoly, int *nper);
+void  gdrawimage(drawing d, image img, rect dr, rect sr);
+void  gmaskimage(drawing d, image img, rect dr, rect sr, image mask);
 int   gdrawstr(drawing d, font f, rgb c, point p, const char *s);
 void  gdrawstr1(drawing d, font f, rgb c, point p, const char *s, double hadj);
 rect  gstrrect(drawing d, font f, const char *s);
@@ -184,6 +188,8 @@ void  gcharmetric(drawing d, font f, int c, int *ascent, int *descent,
 		  int *width);
 font  gnewfont(drawing d, const char *face, int style, int size,
 	       double rot, int usePoints);
+font  gnewfont2(drawing d, const char *face, int style, int size,
+		double rot, int usePoints, int quality);
 int   ghasfixedwidth(font f);
 field newfield_no_border(const char *text, rect r);
 

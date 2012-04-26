@@ -18,7 +18,7 @@
 #endif /* !HAVE_WCTYPE_H */
 
 #include <ctype.h>
-#include "regex.h"
+#include "tre.h"
 
 #ifdef TRE_DEBUG
 #include <stdio.h>
@@ -106,6 +106,7 @@ typedef short tre_cint_t;
 
 #endif /* !TRE_WCHAR */
 
+/* WIN32 opt-out is R addition - iswctype is missing "blank" */
 #if !defined(WIN32) && defined(TRE_WCHAR) && defined(HAVE_ISWCTYPE) && defined(HAVE_WCTYPE)
 #define TRE_USE_SYSTEM_WCTYPE 1
 #endif
@@ -126,9 +127,10 @@ typedef enum { STR_WIDE, STR_BYTE, STR_MBS, STR_USER } tre_str_type_t;
 
 /* Returns number of bytes to add to (char *)ptr to make it
    properly aligned for the type. */
+/* R change:  was (long) but that is shorter than pointer on Win64 */
 #define ALIGN(ptr, type) \
-  ((((long)ptr) % sizeof(type)) \
-   ? (sizeof(type) - (((long)ptr) % sizeof(type))) \
+  ((((size_t)ptr) % sizeof(type)) \
+   ? (sizeof(type) - (((size_t)ptr) % sizeof(type))) \
    : 0)
 
 #undef MAX
@@ -184,6 +186,18 @@ struct tnfa_transition {
 #define ASSERT_AT_WB_NEG	128   /* Not a word boundary. */
 #define ASSERT_BACKREF		256   /* A back reference in `backref'. */
 #define ASSERT_LAST		256
+
+/* define R_assert() which can replace assert() */
+
+/* fake definition (important: jsut const char* str is not enough!) */
+extern void Rf_error(const char *str, ...);
+
+#ifdef NDEBUG
+#define R_assert(e) ((void) 0)
+#else
+/* The line below requires an ANSI C preprocessor (stringify operator) */
+#define R_assert(e) ((e) ? (void) 0 : Rf_error("assertion '%s' failed in executing regexp: file '%s', line %d\n", #e, __FILE__, __LINE__))
+#endif /* NDEBUG */
 
 /* Tag directions. */
 typedef enum {

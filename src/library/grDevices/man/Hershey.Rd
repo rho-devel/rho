@@ -1,6 +1,6 @@
 % File src/library/grDevices/man/Hershey.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Hershey}
@@ -136,9 +136,8 @@ You cannot use mathematical expressions (\code{\link{plotmath}}) with
       The third table in \code{demo(Hershey)} shows all of the ISO
       Latin-1 escape sequences.
 
-      These characters can be used directly in a Latin-1 locale or on
-      a system with MBCS support.  (In the latter, characters not in
-      Latin-1 are replaced by a dot.)
+      These characters can be used directly.  (Characters not in Latin-1
+      are replaced by a dot.)
 
       Several characters are missing, c-cedilla has no cedilla and
       \sQuote{sharp s} (\samp{U+00DF}, also known as \sQuote{esszett})
@@ -199,10 +198,18 @@ You cannot use mathematical expressions (\code{\link{plotmath}}) with
       be accessed via an escape sequence of the form \samp{\\\\#H1234}.
       For example, the fleur-de-lys is produced by \samp{\\\\#H0746}.
       The sixth and seventh tables of \code{demo(Hershey)} shows all of
-      the available raw glyphs.  } } } \references{
-      \url{http://www.gnu.org/software/plotutils/plotutils.html} }
-      \seealso{ \code{\link{demo}(Hershey)}, \code{\link{par}},
-      \code{\link{text}}, \code{\link{contour}}.
+      the available raw glyphs.
+    }
+  }
+}
+
+\references{
+  \url{http://www.gnu.org/software/plotutils/plotutils.html}
+}
+
+\seealso{
+  \code{\link{demo}(Hershey)}, \code{\link{par}},
+  \code{\link{text}}, \code{\link{contour}}.
 
   \code{\link{Japanese}} for the Japanese characters in the Hershey fonts.
 }

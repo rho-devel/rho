@@ -2,14 +2,19 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.3.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-05-08 17:33\n"
+"POT-Creation-Date: 2011-09-05 08:24\n"
 "PO-Revision-Date: 2005-05-25 14:17+0900\n"
 "Last-Translator: Korean <uiami@hanmail.com>\n"
 "Language-Team: Korean <translation-team-ko@lists.sourceforge.net>\n"
+"Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+
+#, fuzzy
+msgid "invalid 'filename'"
+msgstr "부적절한 'family' 인수입니다"
 
 msgid "'coef' must not be negative"
 msgstr "'coef'는 negative로는 될수 없습니다"
@@ -155,7 +160,7 @@ msgstr "이하의 부적절한 옵션입니다"
 msgid "NOT changing"
 msgstr "변경하지 않습니다"
 
-msgid "argment 'append' is for back-compatibility and will be ignored"
+msgid "argument 'append' is for back-compatibility and will be ignored"
 msgstr ""
 
 msgid "unknown family '%s'"
@@ -167,6 +172,9 @@ msgstr "부적절한 'family' 인수입니다"
 #, fuzzy
 msgid "invalid 'file'"
 msgstr "부적절한 'family' 인수입니다"
+
+msgid "'maxRasters' is no longer needed, and will be ignored"
+msgstr ""
 
 msgid "invalid PDF version"
 msgstr "부적절한 PDF의 버전입니다"
@@ -226,6 +234,35 @@ msgstr ""
 msgid "status %d in running command '%s'"
 msgstr ""
 
+msgid "range too small for min.n"
+msgstr ""
+
+msgid "A raster matrix must be character, or numeric, or logical"
+msgstr ""
+
+#, fuzzy
+msgid "A raster array must be numeric"
+msgstr "rgb행렬은 수치가 아니면 되지 않습니다"
+
+msgid "A raster array must have exactly 3 dimensions"
+msgstr ""
+
+msgid "A raster array must have exactly 3 or 4 planes"
+msgstr ""
+
+msgid "'drop' is always implicitly FALSE in '[.raster'"
+msgstr ""
+
+msgid "invalid raster subsetting"
+msgstr ""
+
+#, fuzzy
+msgid "invalid raster subassignment"
+msgstr "부적절한 'family' 인수입니다"
+
+msgid "Operator not meaningful for raster objects"
+msgstr ""
+
 msgid "no current device to record from"
 msgstr "현재 이하의 것으로부터 기록할수가 있는 디바이스는 없습니다:"
 
@@ -255,6 +292,9 @@ msgstr ""
 msgid "invalid first argument"
 msgstr ""
 
+msgid "'x' is a list, but does not have components 'x' and 'y'"
+msgstr ""
+
 msgid "'x' and 'y' lengths differ"
 msgstr "'x' 그리고 'y'의 길이가 다릅니다"
 
@@ -263,6 +303,9 @@ msgstr ""
 
 msgid "at least 2 columns needed"
 msgstr "적어도 두개의 열이 필요합니다"
+
+msgid "'x' is a list, but does not have components 'x', 'y'  and 'z'"
+msgstr ""
 
 msgid "'x', 'y' and 'z' lengths differ"
 msgstr "'x', 'y' 그리고 'z'의 길이가 다릅니다"
@@ -273,11 +316,17 @@ msgstr "'file'는 default가 없음으로 결손이 되고 있습니다"
 msgid "sorry, 'gs' cannot be found"
 msgstr "죄송합니다.'gs'가 검색되지 않습니다"
 
+msgid "unrecognized format of gs -help"
+msgstr ""
+
 msgid "device '%s' is not available"
 msgstr "디바이스 '%s'는 유효하지는 않습니다"
 
 msgid "Available devices are %s"
 msgstr "이용 가능한 디바이스는 %s입니다"
+
+msgid "'res' must be specified unless 'units = \"px\"'"
+msgstr ""
 
 #, fuzzy
 msgid "invalid 'title'"
@@ -292,11 +341,10 @@ msgstr "quartzFonts에서 부적절한 인수입니다(font명이 필요합니�
 msgid "invalid arguments in quartzFonts (need named args)"
 msgstr "quartFonts에서 부적절한 인수입니다(이름이 붙은 인수가 필요합니다)"
 
-#, fuzzy
-msgid "invalid 'filename'"
-msgstr "부적절한 'family' 인수입니다"
+msgid "cairo-based types are not supported on this build - using \"Xlib\""
+msgstr ""
 
-msgid "'res' must be specified unless 'units = \"px\"'"
+msgid "unknown family for X11(type = \"XLib\")"
 msgstr ""
 
 msgid "invalid X11 font specification:"

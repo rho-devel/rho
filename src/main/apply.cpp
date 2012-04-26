@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-7  the R Development Core Team
+ *  Copyright (C) 2000-10  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,9 +41,8 @@
 
 /* .Internal(lapply(X, FUN)) */
 
-/* This is a special, so has unevaluated arguments.  It is called from a
-   closure wrapper, so X and FUN are promises. */
-
+/* This is a special .Internal, so has unevaluated arguments.  It is
+   called from a closure wrapper, so X and FUN are promises. */
 SEXP attribute_hidden do_lapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP R_fcall, ans, names, X, XX, FUN;
@@ -92,6 +91,155 @@ SEXP attribute_hidden do_lapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
     UNPROTECT(3); /* X, XX, ans */
+    return ans;
+}
+
+/* .Internal(vapply(X, FUN, FUN.VALUE, USE.NAMES)) */
+
+/* This is a special .Internal */
+SEXP attribute_hidden do_vapply(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP R_fcall, ans, names=R_NilValue, rowNames=R_NilValue, X, XX, FUN, value, dim_v;
+    int i, n, commonLen, useNames,
+	rnk_v = -1; // = array_rank(value) := length(dim(value))
+    Rboolean array_value;
+    SEXPTYPE commonType;
+    PROTECT_INDEX index = 0;  // -Wall
+
+    checkArity(op, args);
+    PROTECT(X = CAR(args));
+    PROTECT(XX = eval(CAR(args), rho));
+    FUN = CADR(args);  /* must be unevaluated for use in e.g. bquote */
+    PROTECT(value = eval(CADDR(args), rho));
+    if (!isVector(value)) error(_("FUN.VALUE must be a vector"));
+    useNames = asLogical(eval(CADDDR(args), rho));
+    if (useNames == NA_LOGICAL) error(_("invalid USE.NAMES value"));
+
+    n = length(XX);
+    if (n == NA_INTEGER) error(_("invalid length"));
+
+    commonLen = length(value);
+    commonType = TYPEOF(value);
+    dim_v = getAttrib(value, R_DimSymbol);
+    array_value = (TYPEOF(dim_v) == INTSXP && LENGTH(dim_v) >= 1) ? TRUE : FALSE;
+    PROTECT(ans = allocVector(commonType, n*commonLen));
+    if (useNames) {
+    	PROTECT(names = getAttrib(XX, R_NamesSymbol));
+    	if (isNull(names) && TYPEOF(XX) == STRSXP) {
+    	    UNPROTECT(1);
+    	    PROTECT(names = XX);
+    	}
+    	PROTECT_WITH_INDEX(rowNames = getAttrib(value,
+						array_value ? R_DimNamesSymbol
+						: R_NamesSymbol),
+			   &index);
+    }
+    /* The R level code has ensured that XX is a vector.
+       If it is atomic we can speed things up slightly by
+       using the evaluated version.
+    */
+    {
+	SEXP ind, tmp;
+	/* Build call: FUN(XX[[<ind>]], ...) */
+
+	/* Notice that it is OK to have one arg to LCONS do memory
+	   allocation and not PROTECT the result (LCONS does memory
+	   protection of its args internally), but not both of them,
+	   since the computation of one may destroy the other */
+
+	PROTECT(ind = allocVector(INTSXP, 1));
+	if(isVectorAtomic(XX))
+	    PROTECT(tmp = LCONS(R_Bracket2Symbol,
+				CONS(XX, CONS(ind, R_NilValue))));
+	else
+	    PROTECT(tmp = LCONS(R_Bracket2Symbol,
+				CONS(X, CONS(ind, R_NilValue))));
+	PROTECT(R_fcall = LCONS(FUN,
+				CONS(tmp, CONS(R_DotsSymbol, R_NilValue))));
+
+	for(i = 0; i < n; i++) {
+	    int j;
+	    SEXPTYPE tmpType;
+	    INTEGER(ind)[0] = i + 1;
+	    tmp = eval(R_fcall, rho);
+	    if (length(tmp) != commonLen)
+	    	error(_("values must be length %d,\n but FUN(X[[%d]]) result is length %d"),
+	               commonLen, i+1, length(tmp));
+	    tmpType = TYPEOF(tmp);
+	    if (tmpType != commonType) {
+	    	bool okay = FALSE;
+	    	switch (commonType) {
+	    	case CPLXSXP: okay = (tmpType == REALSXP) || (tmpType == INTSXP)
+	    	                    || (tmpType == LGLSXP); break;
+	    	case REALSXP: okay = (tmpType == INTSXP) || (tmpType == LGLSXP); break;
+	    	case INTSXP:  okay = (tmpType == LGLSXP); break;
+		default:
+		    Rf_error(_("Internal error: unexpected SEXPTYPE"));
+	        }
+	        if (!okay)
+	            error(_("values must be type '%s',\n but FUN(X[[%d]]) result is type '%s'"),
+	            	  type2char(commonType), i+1, type2char(tmpType));
+	        tmp = coerceVector(tmp, commonType);
+	    }
+	    /* Take row names from the first result only */
+	    if (i == 0 && useNames && isNull(rowNames))
+	    	REPROTECT(rowNames = getAttrib(tmp,
+					       array_value ? R_DimNamesSymbol : R_NamesSymbol),
+			  index);
+	    for (j = 0; j < commonLen; j++) {
+	    	switch (commonType) {
+	    	case CPLXSXP: COMPLEX(ans)[i*commonLen + j] = COMPLEX(tmp)[j]; break;
+	    	case REALSXP: REAL(ans)[i*commonLen + j] = REAL(tmp)[j]; break;
+	    	case INTSXP:  INTEGER(ans)[i*commonLen + j] = INTEGER(tmp)[j]; break;
+	    	case LGLSXP:  LOGICAL(ans)[i*commonLen + j] = LOGICAL(tmp)[j]; break;
+	    	case RAWSXP:  RAW(ans)[i*commonLen + j] = RAW(tmp)[j]; break;
+	    	case STRSXP:  SET_STRING_ELT(ans, i*commonLen + j, STRING_ELT(tmp, j)); break;
+	    	case VECSXP:  SET_VECTOR_ELT(ans, i*commonLen + j, VECTOR_ELT(tmp, j)); break;
+	    	default:
+	    	    error(_("type '%s' is not supported"), type2char(commonType));
+	    	}
+	    }
+	}
+	UNPROTECT(3);
+    }
+
+    if (commonLen != 1) {
+	SEXP dim;
+	rnk_v = array_value ? LENGTH(dim_v) : 1;
+	PROTECT(dim = allocVector(INTSXP, rnk_v+1));
+	if(array_value)
+	    for(int j=0; j < rnk_v; j++)
+		INTEGER(dim)[j] = INTEGER(dim_v)[j];
+	else
+	    INTEGER(dim)[0] = commonLen;
+	INTEGER(dim)[rnk_v] = n;
+	setAttrib(ans, R_DimSymbol, dim);
+	UNPROTECT(1);
+    }
+
+    if (useNames) {
+	if (commonLen == 1) {
+	    if(!isNull(names)) setAttrib(ans, R_NamesSymbol, names);
+	} else {
+	    if (!isNull(names) || !isNull(rowNames)) {
+		SEXP dimnames;
+		PROTECT(dimnames = allocVector(VECSXP, rnk_v+1));
+		if(array_value && !isNull(rowNames)) {
+		    if(TYPEOF(rowNames) != VECSXP || LENGTH(rowNames) != rnk_v)
+			// should never happen ..
+			error(_("dimnames(<value>) is neither NULL nor list of length %d"),
+			      rnk_v);
+		    for(int j=0; j < rnk_v; j++)
+			SET_VECTOR_ELT(dimnames, j, VECTOR_ELT(rowNames, j));
+		} else
+		    SET_VECTOR_ELT(dimnames, 0, rowNames);
+		SET_VECTOR_ELT(dimnames, rnk_v, names);
+		setAttrib(ans, R_DimNamesSymbol, dimnames);
+		UNPROTECT(1);
+	    }
+	}
+    }
+    UNPROTECT(useNames ? 6 : 4); /* X, XX, value, ans, and maybe names and rowNames */
     return ans;
 }
 

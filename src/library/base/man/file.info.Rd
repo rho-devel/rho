@@ -1,6 +1,6 @@
 % File src/library/base/man/file.info.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{file.info}
@@ -14,10 +14,13 @@
 file.info(\dots)
 }
 \arguments{
-  \item{\dots}{character vectors containing file paths.}
+  \item{\dots}{character vectors containing file paths.  Tilde-expansion
+    is done: see \code{\link{path.expand}}.}
 }
 \details{
-  The file paths are tilde-expanded: see \code{\link{path.expand}}.
+  What constitutes a \sQuote{file} is OS-dependent but includes
+  directories.  (However, directory names must not include a trailing
+  backslash or slash on Windows.)
 
   The file \sQuote{mode} follows POSIX conventions, giving three octal
   digits summarizing the permissions for the file owner, the owner's
@@ -35,6 +38,8 @@ file.info(\dots)
   on their extensions (e.g., \file{.exe}, \file{.com}, \file{.cmd}
   and \file{.bat} files).  \code{\link{file.access}} will give a more
   reliable view of read/write access availability to the \R process.
+  
+  UTF-8-encoded file names not valid in the current locale can be used.
 #endif
 }
 \value{
@@ -63,13 +68,20 @@ file.info(\dots)
   Entries for non-existent or non-readable files will be \code{NA}.
 #ifdef unix
   The \code{uid}, \code{gid}, \code{uname} and \code{grname} columns
-  may not be supplied on a non-POSIX Unix-alike system.
+  may not be supplied on a non-POSIX Unix-alike system, and will not be
+  on Windows.
 #endif
 
   What is meant by the three file times depends on the OS and file
   system.  On Windows native file systems \code{ctime} is the file
-  creation time.  What is meant by \sQuote{file access} and hence the
+  creation time (something which is not recorded on most Unix-alike file
+  systems).  What is meant by \sQuote{file access} and hence the
   \sQuote{last access time} is system-dependent.
+  
+  The times are reported to an accuracy of seconds, and perhaps more on
+  some systems.  However, many file systems only record times in
+  seconds, and some (e.g. modification time on FAT systems) are recorded
+  in increments of 2 or more seconds.
 }
 #ifdef unix
 \note{

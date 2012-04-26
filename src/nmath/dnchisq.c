@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -48,7 +48,7 @@ double dnchisq(double x, double df, double ncp, int give_log)
     const static double eps = 5e-15;
 
     double i, ncp2, q, mid, dfmid, imax;
-    LDOUBLE sum, term;
+    long double sum, term;
 
 #ifdef IEEE_754
     if (ISNAN(x) || ISNAN(df) || ISNAN(ncp))
@@ -95,18 +95,19 @@ double dnchisq(double x, double df, double ncp, int give_log)
 
     /* upper tail */
     term = mid; df = dfmid; i = imax;
+    double x2 = x * ncp2;
     do {
 	i++;
-	q = x * ncp2 / i / df;
+	q = x2 / i / df;
 	df += 2;
 	term *= q;
 	sum += term;
-    } while (q >= 1 || term * q > (1-q)*eps);
+    } while (q >= 1 || term * q > (1-q)*eps || term > 1e-10*sum);
     /* lower tail */
     term = mid; df = dfmid; i = imax;
-    while ( i ){
+    while (i) {
 	df -= 2;
-	q = i * df / x / ncp2;
+	q = i * df / x2;
 	i--;
 	term *= q;
 	sum += term;

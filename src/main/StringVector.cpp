@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -41,7 +41,6 @@
 
 #include <iostream>
 
-using namespace std;
 using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
@@ -53,19 +52,15 @@ namespace CXXR {
     }
 }
 
-StringVector* StringVector::clone() const
-{
-    return expose(new StringVector(*this));
-}
-
 namespace {
-    void indent(ostream& os, size_t margin)
+    void indent(std::ostream& os, std::size_t margin)
     {
-	while (margin--) os << ' ';
+	while (margin--)
+	    os << ' ';
     }
 }
 
-void CXXR::strdump(ostream& os, const StringVector& sv, size_t margin)
+void CXXR::strdump(std::ostream& os, const StringVector& sv, std::size_t margin)
 {
     indent(os, margin);
     os << "character:\n";
@@ -79,7 +74,7 @@ void CXXR::strdump(ostream& os, const StringVector& sv, size_t margin)
 
 void SET_STRING_ELT(SEXP x, int i, SEXP v)
 {
-    StringVector* sv = SEXP_downcast<StringVector*>(x);
-    String* s = SEXP_downcast<String*>(v);
+    StringVector* sv = SEXP_downcast<StringVector*>(x, false);
+    String* s = SEXP_downcast<String*>(v, false);
     (*sv)[i] = s;
 }

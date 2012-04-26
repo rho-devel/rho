@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1998	Robert Gentleman and Ross Ihaka.
- *  Copyright (C) 2000-2009	The R Development Core Team.
+ *  Copyright (C) 2000-2011	The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -82,6 +82,7 @@
 #include "Fileio.h"
 #include "Rconnections.h"
 #include <S.h>
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 
@@ -99,7 +100,8 @@ static char tagbuf[TAGBUFLEN + 5];
 static GCRoot<> na_string_noquote(mkChar("<NA>"));
 
 /* Used in X11 module for dataentry */
-void PrintDefaults(SEXP rho)
+/* 'rho' is unused */
+void PrintDefaults(void)
 {
     R_print.na_string = NA_STRING;
     R_print.na_string_noquote = na_string_noquote;
@@ -107,13 +109,13 @@ void PrintDefaults(SEXP rho)
     R_print.na_width_noquote = strlen(CHAR(R_print.na_string_noquote));
     R_print.quote = 1;
     R_print.right = Rprt_adj_left;
-    R_print.digits = GetOptionDigits(rho);
-    R_print.scipen = asInteger(GetOption(install("scipen"), rho));
+    R_print.digits = GetOptionDigits();
+    R_print.scipen = asInteger(GetOption1(install("scipen")));
     if (R_print.scipen == NA_INTEGER) R_print.scipen = 0;
-    R_print.max = asInteger(GetOption(install("max.print"), rho));
+    R_print.max = asInteger(GetOption1(install("max.print")));
     if (R_print.max == NA_INTEGER) R_print.max = 99999;
     R_print.gap = 1;
-    R_print.width = GetOptionWidth(rho);
+    R_print.width = GetOptionWidth();
     R_print.useSource = USESOURCE;
 }
 
@@ -123,9 +125,10 @@ SEXP attribute_hidden do_invisible(SEXP call, SEXP op, SEXP args, SEXP rho)
     case 0:
 	return R_NilValue;
     case 1:
+	check1arg(args, call, "x");
 	return CAR(args);
     default:
-	checkArity(op, args);
+	checkArity(op, args); /* must fail */
 	return call;/* never used, just for -Wall */
     }
 }
@@ -145,7 +148,7 @@ SEXP attribute_hidden do_prmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     char *rowname = NULL, *colname = NULL;
 
     checkArity(op,args);
-    PrintDefaults(rho);
+    PrintDefaults();
     a = args;
     x = CAR(a); a = CDR(a);
     rowlab = CAR(a); a = CDR(a);
@@ -171,7 +174,7 @@ SEXP attribute_hidden do_prmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     printMatrix(x, 0, getAttrib(x, R_DimSymbol), quote, R_print.right,
 		rowlab, collab, rowname, colname);
-    PrintDefaults(rho); /* reset, as na.print.etc may have been set */
+    PrintDefaults(); /* reset, as na.print.etc may have been set */
     return x;
 }/* do_prmatrix */
 
@@ -200,11 +203,18 @@ SEXP attribute_hidden do_printfunction(SEXP call, SEXP op, SEXP args, SEXP rho)
 static void PrintLanguageEtc(SEXP s, Rboolean useSource, Rboolean isClosure)
 {
     int i;
-    SEXP t = getAttrib(s, R_SourceSymbol);
-    if (!isString(t) || !useSource)
+    SEXP t = getAttrib(s, R_SrcrefSymbol);
+    if (!isInteger(t) || !useSource)
 	t = deparse1(s, CXXRFALSE, useSource | DEFAULTDEPARSE);
+    else {
+        PROTECT(t = lang2(install("as.character"), t));
+        t = eval(t, R_BaseEnv);
+        UNPROTECT(1);
+    }
+    PROTECT(t);
     for (i = 0; i < LENGTH(t); i++)
 	Rprintf("%s\n", CHAR(STRING_ELT(t, i))); /* translated */
+    UNPROTECT(1);
     if (isClosure) {
 #ifdef BYTECODE
 	if (isByteCode(BODY(s)))
@@ -235,7 +245,7 @@ SEXP attribute_hidden do_printdefault(SEXP call, SEXP op, SEXP args, SEXP rho)
     Rboolean callShow = FALSE;
 
     checkArity(op, args);
-    PrintDefaults(rho);
+    PrintDefaults();
 
     x = CAR(args); args = CDR(args);
 
@@ -315,7 +325,7 @@ SEXP attribute_hidden do_printdefault(SEXP call, SEXP op, SEXP args, SEXP rho)
 	CustomPrintValue(x, rho);
     }
 
-    PrintDefaults(rho); /* reset, as na.print etc may have been set */
+    PrintDefaults(); /* reset, as na.print etc may have been set */
     return x;
 }/* do_printdefault */
 
@@ -437,8 +447,8 @@ static void PrintGenericVector(SEXP s, SEXP env)
 	taglen = strlen(tagbuf);
 	ptag = tagbuf + taglen;
 	{
-	    GCStackRoot<PairList> tl(GCNode::expose(new PairList));
-	    PROTECT(newcall = GCNode::expose(new Expression(0, tl)));
+	    GCStackRoot<PairList> tl(CXXR_NEW(PairList));
+	    PROTECT(newcall = CXXR_NEW(Expression(0, tl)));
 	}
 	SETCAR(newcall, install("print"));
 
@@ -508,8 +518,11 @@ static void PrintGenericVector(SEXP s, SEXP env)
 		UNPROTECT(1);
 		printAttributes(s, env, TRUE);
 		return;
-	    } else
+	    }
+	    else {
+		if(names != R_NilValue) Rprintf("named ");
 		Rprintf("list()\n");
+	    }
 	}
 	UNPROTECT(1);
     }
@@ -589,8 +602,8 @@ static void printList(SEXP s, SEXP env)
 	taglen = strlen(tagbuf);
 	ptag = tagbuf + taglen;
 	{
-	    GCStackRoot<PairList> tl(GCNode::expose(new PairList));
-	    PROTECT(newcall = GCNode::expose(new Expression(0, tl)));
+	    GCStackRoot<PairList> tl(CXXR_NEW(PairList));
+	    PROTECT(newcall = CXXR_NEW(Expression(0, tl)));
 	}
 	SETCAR(newcall, install("print"));
 	while (TYPEOF(s) == LISTSXP) {
@@ -866,7 +879,8 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 		if (TAG(a) == R_NamesSymbol)
 		    goto nextattr;
 	    }
-	    if(TAG(a) == R_CommentSymbol || TAG(a) == R_SourceSymbol || TAG(a) == R_SrcrefSymbol)
+	    if(TAG(a) == R_CommentSymbol || TAG(a) == R_SourceSymbol || TAG(a) == R_SrcrefSymbol
+	       || TAG(a) == R_WholeSrcrefSymbol || TAG(a) == R_SrcfileSymbol)
 		goto nextattr;
 	    if(useSlots)
 		sprintf(ptag, "Slot \"%s\":",
@@ -918,8 +932,8 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 		Rprt_adj right = CXXRCONSTRUCT(Rprt_adj, R_print.right);
 
 		{
-		    GCStackRoot<PairList> tl(PairList::makeList(2));
-		    PROTECT(t = s = GCNode::expose(new Expression(0, tl)));
+		    GCStackRoot<PairList> tl(PairList::make(2));
+		    PROTECT(t = s = CXXR_NEW(Expression(0, tl)));
 		}
 		SETCAR(t, install("print")); t = CDR(t);
 		SETCAR(t,  CAR(a)); t = CDR(t);
@@ -951,7 +965,7 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 
 void attribute_hidden PrintValueEnv(SEXP s, SEXP env)
 {
-    PrintDefaults(env);
+    PrintDefaults();
     tagbuf[0] = '\0';
     PROTECT(s);
     if(isObject(s) || isFunction(s)) {

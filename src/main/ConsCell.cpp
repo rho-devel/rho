@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -47,7 +47,6 @@
 #include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
 
-using namespace std;
 using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
@@ -72,7 +71,7 @@ void ConsCell::checkST(SEXPTYPE st)
     case BCODESXP:
 	break;
     default:
-	throw invalid_argument("Inappropriate SEXPTYPE for ConsCell.");
+	throw std::invalid_argument("Inappropriate SEXPTYPE for ConsCell.");
     }
 }
 
@@ -84,44 +83,36 @@ void ConsCell::detachReferents()
     RObject::detachReferents();
 }
 
-size_t ConsCell::listLength(const ConsCell* start)
-{
-    size_t ans = 0;
-    while (start) {
-	++ans;
-	start = start->tail();
-    }
-    return ans;
-}
-
 void ConsCell::visitReferents(const_visitor* v) const
 {
-    const ConsCell* p = this;
-    do {
-	const GCNode* car = p->m_car;
-	const GCNode* tag = p->m_tag;
-	const ConsCell* tail = p->m_tail;
-	p->RObject::visitReferents(v);
-	if (car) car->conductVisitor(v);
-	if (tag) tag->conductVisitor(v);
-	p = tail;
-    } while (p && (*v)(p));
+    const GCNode* car = m_car;
+    const GCNode* tag = m_tag;
+    const GCNode* tail = m_tail;
+    RObject::visitReferents(v);
+    if (tag)
+	(*v)(tag);
+    if (car)
+	(*v)(car);
+    if (tail)
+	(*v)(tail);
 }
 
 namespace {
-    void indent(ostream& os, size_t margin)
+    void indent(std::ostream& os, std::size_t margin)
     {
-	while (margin--) os << ' ';
+	while (margin--)
+	    os << ' ';
     }
 
     const char* sympname(const RObject* sym) {
 	const Symbol* symb = dynamic_cast<const Symbol*>(sym);
-	if (!symb) return "(SYMSXP is not a Symbol)";
+	if (!symb)
+	    return "(SYMSXP is not a Symbol)";
 	return symb->name()->c_str();
     }
 }
 
-void CXXR::ccdump(ostream& os, const ConsCell& cc, size_t margin)
+void CXXR::ccdump(std::ostream& os, const ConsCell& cc, std::size_t margin)
 {
     indent(os, margin);
     os << Rf_type2char(cc.sexptype()) << '\n';
@@ -130,8 +121,10 @@ void CXXR::ccdump(ostream& os, const ConsCell& cc, size_t margin)
 	indent(os, margin);
 	os << "- ";
 	const RObject* tag = p->tag();
-	if (!tag) os << "(No tag):\n";
-	else if (tag->sexptype() != SYMSXP) os << "(Tag not a SYMSXP):\n";
+	if (!tag)
+	    os << "(No tag):\n";
+	else if (tag->sexptype() != SYMSXP)
+	    os << "(Tag not a SYMSXP):\n";
 	else os << sympname(tag) << ":\n";
 	// Print car:
 	const RObject* car = p->car();
@@ -142,7 +135,8 @@ void CXXR::ccdump(ostream& os, const ConsCell& cc, size_t margin)
 	    strdump(os, *sv, margin + 2);
 	else {
 	    indent(os, margin + 2);
-	    if (!car) os << "NILSXP\n";
+	    if (!car)
+		os << "NILSXP\n";
 	    else {
 		SEXPTYPE st = car->sexptype();
 		os << Rf_type2char(st);
@@ -158,14 +152,16 @@ void CXXR::ccdump(ostream& os, const ConsCell& cc, size_t margin)
 
 void SET_TAG(SEXP x, SEXP y)
 {
-    if (!x) Rf_error(_("bad value"));
+    if (!x)
+	Rf_error(_("bad value"));
     ConsCell& cc = *SEXP_downcast<ConsCell*>(x);
     cc.setTag(y);
 }
 
 SEXP SETCAR(SEXP x, SEXP y)
 {
-    if (!x) Rf_error(_("bad value"));
+    if (!x)
+	Rf_error(_("bad value"));
     ConsCell& cc = *SEXP_downcast<ConsCell*>(x);
     cc.setCar(y);
     return y;
@@ -184,11 +180,8 @@ SEXP Rf_allocSExp(SEXPTYPE t)
     case DOTSXP:
 	ans = new DottedArgs;
 	break;
-    case BCODESXP:
-	ans = new ByteCode;
-	break;
     default:
-	throw invalid_argument("Inappropriate SEXPTYPE for ConsCell.");
+	throw std::invalid_argument("Inappropriate SEXPTYPE for ConsCell.");
     }
     return GCNode::expose(ans);
 }

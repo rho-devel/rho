@@ -1,6 +1,6 @@
 % File src/library/base/man/Extract.data.frame.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Extract.data.frame}
@@ -52,19 +52,22 @@
 
   Note that there is no \code{data.frame} method for \code{$}, so
   \code{x$name} uses the default method which treats \code{x} as a
-  list.  There is a method for replacement which checks \code{value} for
-  the corrupt number of row, and replicates it if necessary.
+  list.  There is a replacement method which checks \code{value} for
+  the correct number of rows, and replicates it if necessary.
 
   When \code{[} and \code{[[} are used with two indices (\code{x[i, j]}
   and \code{x[[i, j]]}) they act like indexing a matrix:  \code{[[} can
-  only be used to select one element.
+  only be used to select one element.  Note that for each selected
+  column, \code{xj} say, typically (if it is not matrix-like), the
+  resulting column will be \code{xj[i]}, and hence rely on the
+  corresponding \code{[} method, see the examples section.
 
   If \code{[} returns a data frame it will have unique (and non-missing)
   row names, if necessary transforming the row names using
   \code{\link{make.unique}}.  Similarly, if columns are selected column
   names will be transformed to be unique if necessary (e.g. if columns
   are selected more than once, or if more than one column of a given
-  name is selected if the data frame has duplicate columns).
+  name is selected if the data frame has duplicate column names).
 
   When \code{drop = TRUE}, this is applied to the subsetting of any
   matrices contained in the data frame as well as to the data frame itself.
@@ -85,9 +88,10 @@
   contain \code{NULL} elements which will cause the corresponding
   columns to be deleted.  (See the Examples.)
 
-  Matrix indexing using \code{[} is not recommended, and barely
+  Matrix indexing (\code{x[i]} with a logical or a 2-column integer
+  matrix \code{i}) using \code{[} is not recommended, and barely
   supported.  For extraction, \code{x} is first coerced to a matrix.
-  For replacement a logical matrix (only) can be used to select the
+  For replacement, a logical matrix (only) can be used to select the
   elements to be replaced in the same way as for a matrix.
 
   Both \code{[} and \code{[[} extraction methods partially match row
@@ -123,7 +127,7 @@
 
   Arguments other than \code{drop} and \code{exact} should not be named:
   there is a warning if they are and the behaviour differs from the
-  description here. 
+  description here.
 }
 \value{
   For \code{[} a data frame, list or a single column (the latter two
@@ -161,7 +165,7 @@ sw[1,, drop=TRUE]  # a list
 
 sw["C", ] # partially matches
 sw[match("C", row.names(sw)), ] # no exact match
-
+try(sw[, "Ferti"]) # column names must match exactly
 
 \dontshow{
 stopifnot(identical(sw[,1], sw[[1]]),
@@ -185,7 +189,7 @@ sapply(sw, class)
 sw$new4 <- NULL              # delete the column
 sw
 sw[6:8] <- list(letters[10:14], NULL, aa=1:5)
-# delete col7, update 6, append
+# update col. 6, delete 7, append
 sw
 
 ## matrices in a data frame
@@ -193,5 +197,25 @@ A <- data.frame(x=1:3, y=I(matrix(4:6)), z=I(matrix(letters[1:9],3,3)))
 A[1:3, "y"] # a matrix
 A[1:3, "z"] # a matrix
 A[, "y"]    # a matrix
+
+## keeping special attributes: use a class with a
+## "as.data.frame" and "[" method:
+% "avector" := vector that keeps attributes and we could provide a constructor
+%  avector <- function(x) { class(x) <- c("avector", class(x)); x }
+as.data.frame.avector <- as.data.frame.vector
+
+`[.avector` <- function(x,i,...) {
+  r <- NextMethod("[")
+  mostattributes(r) <- attributes(x)
+  r
+}
+
+d <- data.frame(i= 0:7, f= gl(2,4),
+                u= structure(11:18, unit = "kg", class="avector"))
+str(d[2:4, -1]) # 'u' keeps its "unit"
+\dontshow{
+stopifnot(identical(d[2:4,-1][,"u"],
+       structure(12:14, unit = "kg", class = "avector")))
+}
 }
 \keyword{array}

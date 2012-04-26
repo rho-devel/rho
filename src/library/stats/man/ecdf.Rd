@@ -1,6 +1,7 @@
 % File src/library/stats/man/ecdf.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
+% Copyright 2002-2011 The R Foundation
 % Distributed under GPL 2 or later
 
 \name{ecdf}
@@ -8,6 +9,7 @@
 \alias{plot.ecdf}
 \alias{print.ecdf}
 \alias{summary.ecdf}
+\alias{quantile.ecdf}
 \title{Empirical Cumulative Distribution Function}
 \usage{
 ecdf(x)
@@ -18,6 +20,7 @@ ecdf(x)
 \method{print}{ecdf}(x, digits= getOption("digits") - 2, \dots)
 
 \method{summary}{ecdf}(object, \dots)
+\method{quantile}{ecdf}(x, \dots)
 }
 \arguments{
   \item{x, object}{numeric vector of the observations for \code{ecdf};  for
@@ -33,7 +36,9 @@ ecdf(x)
     \code{\link{print}}.}
 }
 \description{
-  Compute or plot an empirical cumulative distribution function.
+  Compute an empirical cumulative distribution function, with several
+  methods for plotting, printing and computing with a such an
+  \dQuote{ecdf} object.
 }
 \details{
   The e.c.d.f. (empirical cumulative distribution function)
@@ -47,7 +52,7 @@ ecdf(x)
   i.e.,
   \deqn{F_n(t) = \#\{x_i\le t\}\ / n
                = \frac1 n\sum_{i=1}^n \mathbf{1}_{[x_i \le t]}.}{
-    Fn(t) = #\{x_i \le t\} / n  =  1/n sum(i=1,n) Indicator(xi <= t).}
+    Fn(t) = #{xi <= t}/n  =  1/n sum(i=1,n) Indicator(xi <= t).}
 
   The function \code{plot.ecdf} which implements the \code{\link{plot}}
   method for \code{ecdf} objects, is implemented via a call to
@@ -55,10 +60,14 @@ ecdf(x)
 }
 \value{
   For \code{ecdf}, a function of class \code{"ecdf"}, inheriting from the
-  \code{"\link{stepfun}"} class.
+  \code{"\link{stepfun}"} class, and hence inheriting a
+  \code{\link{knots}()} method.
 
   For the \code{summary} method, a summary of the knots of \code{object}
   with a \code{"header"} attribute.
+
+  The \code{\link{quantile}(obj, ...)} method computes the same quantiles as
+  \code{quantile(x, ...)} would where \code{x} is the original sample.
 }
 \author{
   Martin Maechler, \email{maechler@stat.math.ethz.ch}.\cr
@@ -90,7 +99,7 @@ summary.stepfun(Fn12)
 print(ls.Fn12 <- ls(environment(Fn12)))
 ##[1] "f"  "method"  "n"  "x"  "y"  "yleft"  "yright"
 utils::ls.str(environment(Fn12))
-
+stopifnot(all.equal(quantile(Fn12), quantile(y)))
 
 ###----------------- Plotting --------------------------
 require(graphics)
@@ -123,4 +132,3 @@ par(op)
 }
 \keyword{dplot}
 \keyword{hplot}
-

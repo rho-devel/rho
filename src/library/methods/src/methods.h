@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -41,6 +41,8 @@
 #define _(String) (String)
 #endif
 
+#define DUPLICATE_CLASS_CASE(method) TYPEOF(method) == ENVSXP
+
 
 SEXP R_M_setPrimitiveMethods(SEXP fname, SEXP op, SEXP code_vec,
 			     SEXP fundef, SEXP mlist);
@@ -50,6 +52,8 @@ SEXP R_el_named(SEXP object, SEXP what);
 SEXP R_externalptr_prototype_object();
 SEXP R_getGeneric(SEXP name, SEXP mustFind, SEXP env, SEXP package);
 SEXP R_get_slot(SEXP obj, SEXP name);
+SEXP R_getClassFromCache(SEXP class, SEXP table);
+SEXP R_hasSlot(SEXP obj, SEXP name);
 SEXP R_identC(SEXP e1, SEXP e2);
 SEXP R_initMethodDispatch(SEXP envir);
 SEXP R_methodsPackageMetaName(SEXP prefix, SEXP name, SEXP pkg);

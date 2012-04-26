@@ -14,7 +14,9 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-.onLoad <- function(lib, pkg)
+.TkUp <- FALSE
+
+.onLoad <- function(libname, pkgname)
 {
     ## This will get interrupted if there is no display,
     ## so we choose to have the space here.
@@ -22,10 +24,11 @@
                           domain = "R-tcltk", appendLF = FALSE)
 
     ## Use local = FALSE to allow easy loading of Tcl extensions
-    library.dynam("tcltk", pkg, lib, local = FALSE)
-    .C("tcltk_init", PACKAGE="tcltk")
+    library.dynam("tcltk", pkgname, libname, local = FALSE)
+    .TkUp <<- .C("tcltk_init", 0L, PACKAGE="tcltk")[[1L]] == 1L
     addTclPath(system.file("exec", package = "tcltk"))
     packageStartupMessage("done", domain = "R-tcltk")
+    invisible()
 }
 
 .onUnload <- function(libpath) {

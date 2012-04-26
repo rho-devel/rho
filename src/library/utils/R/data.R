@@ -15,7 +15,7 @@
 #  http://www.r-project.org/Licenses/
 
 data <-
-function(..., list = character(0L), package = NULL, lib.loc = NULL,
+function(..., list = character(), package = NULL, lib.loc = NULL,
          verbose = getOption("verbose"), envir = .GlobalEnv)
 {
     fileExt <- function(x) {
@@ -38,10 +38,10 @@ function(..., list = character(0L), package = NULL, lib.loc = NULL,
            warning("datasets have been moved from package 'stats' to package 'datasets'")
         package[package %in% c("base", "stats")] <- "datasets"
     }
-    paths <- .find.package(package, lib.loc, verbose = verbose)
+    paths <- find.package(package, lib.loc, verbose = verbose)
     if(is.null(lib.loc))
-        paths <- c(.path.package(package, TRUE),
-                   if(!length(package)) getwd(),
+        paths <- c(path.package(package, TRUE),
+                   if(!length(package)) getwd(), # ignored if NULL
                    paths)
     paths <- unique(paths[file.exists(paths)])
 
@@ -54,7 +54,7 @@ function(..., list = character(0L), package = NULL, lib.loc = NULL,
         ## List all possible data sets.
 
         ## Build the data db.
-        db <- matrix(character(0L), nrow = 0L, ncol = 4L)
+        db <- matrix(character(), nrow = 0L, ncol = 4L)
         for(path in paths) {
             entries <- NULL
             ## Use "." as the 'package name' of the working directory.
@@ -65,7 +65,7 @@ function(..., list = character(0L), package = NULL, lib.loc = NULL,
                     "."
             ## Check for new-style 'Meta/data.rds'
             if(file_test("-f", INDEX <- file.path(path, "Meta", "data.rds"))) {
-                entries <- .readRDS(INDEX)
+                entries <- readRDS(INDEX)
             } else {
                 ## No index: should only be true for ./data >= 2.0.0
                 dataDir <- file.path(path, "data")
@@ -80,7 +80,9 @@ function(..., list = character(0L), package = NULL, lib.loc = NULL,
                 if(is.matrix(entries) && ncol(entries) == 2L)
                     db <- rbind(db, cbind(packageName, dirname(path), entries))
                 else
-                    warning(gettextf("data index for package '%s' is invalid and will be ignored", packageName), domain=NA, call.=FALSE)
+                    warning(gettextf("data index for package %s is invalid and will be ignored",
+                                     sQuote(packageName)),
+                            domain=NA, call.=FALSE)
             }
         }
         colnames(db) <- c("Package", "LibPath", "Item", "Title")
@@ -106,12 +108,12 @@ function(..., list = character(0L), package = NULL, lib.loc = NULL,
         for(p in paths) {
             ## does this package have "Rdata" databases?
             if(file_test("-f", file.path(p, "Rdata.rds"))) {
-                rds <- .readRDS(file.path(p, "Rdata.rds"))
+                rds <- readRDS(file.path(p, "Rdata.rds"))
                 if(name %in% names(rds)) {
                     ## found it, so copy objects from database
                     found <- TRUE
                     if(verbose)
-                        message(sprintf("name=%s:\t found in Rdata.rdb", name),
+                        message(sprintf("name=%s:\t found in Rdata.rds", name),
                                 domain=NA)
                     thispkg <- sub(".*/([^/]*)/data$", "\\1", p)
                     thispkg <- sub("_.*$", "", thispkg) # versioned installs.
@@ -120,14 +122,21 @@ function(..., list = character(0L), package = NULL, lib.loc = NULL,
                     lazyLoad(file.path(p, "Rdata"), envir = envir,
                              filter = function(x) x %in% objs)
                     break
-                }
+		} else if(verbose)
+		    message(sprintf("name=%s:\t NOT found in names() of Rdata.rds, i.e.,\n\t%s\n",
+				    name, paste(names(rds), collapse=",")),
+				domain=NA)
             }
             ## check for zipped data dir
             if(file_test("-f", file.path(p, "Rdata.zip"))) {
+                warning("zipped data found for package ",
+                        sQuote(basename(dirname(p))),
+                        ".\nThat is defunct, so please re-install the package.",
+                        domain = NA)
                 if(file_test("-f", fp <- file.path(p, "filelist")))
                     files <- file.path(p, scan(fp, what="", quiet = TRUE))
                 else {
-                    warning(gettextf("file 'filelist' is missing for directory '%s'", p), domain = NA)
+                    warning(gettextf("file 'filelist' is missing for directory %s", sQuote(p)), domain = NA)
                     next
                 }
             } else {
@@ -155,9 +164,15 @@ function(..., list = character(0L), package = NULL, lib.loc = NULL,
                         found <- FALSE
                     else {
                         found <- TRUE
-                        Rdatadir <- file.path(tempdir(), "Rdata")
-                        dir.create(Rdatadir, showWarnings=FALSE)
-                        zfile <- zip.file.extract(file, "Rdata.zip", dir=Rdatadir)
+                        zfile <- file
+                        zipname <- file.path(dirname(file), "Rdata.zip")
+                        if(file.exists(zipname)) {
+                            Rdatadir <- tempfile("Rdata")
+                            dir.create(Rdatadir, showWarnings=FALSE)
+                            topic <- basename(file)
+                            rc <- .Internal(unzip(zipname, topic, Rdatadir, FALSE, TRUE, FALSE))
+                            if(rc==0L) zfile <- file.path(Rdatadir, topic)
+                        }
                         if(zfile != file) on.exit(unlink(zfile))
                         switch(ext,
                                R = , r = {
@@ -192,7 +207,8 @@ function(..., list = character(0L), package = NULL, lib.loc = NULL,
         }
 
         if(!found)
-            warning(gettextf("data set '%s' not found", name), domain = NA)
+            warning(gettextf("data set %s not found", sQuote(name)),
+                    domain = NA)
     }
     invisible(names)
 }

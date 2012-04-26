@@ -53,12 +53,7 @@ namespace {
 	ilv.push_back(ilist.insert(ilist.end(), serial++));
     }
 
-    void monitor(size_t bytes)
-    {
-	cout << "Monitored allocation of " << bytes << " bytes\n";
-    }
-
-    // Crude congruential generator in range 0 to 1023; repeatability
+	// Crude congruential generator in range 0 to 1023; repeatability
     // on different platforms is more important than randomness!
     // Deliberately the first value returned is 0.
     size_t qrnd()
@@ -85,15 +80,13 @@ int main(int argc, char* argv[]) {
     }
     // Carry out initial allocations:
     {
-	MemoryBank::setMonitor(monitor, 100);
-	for (unsigned int i = 0; i < num_init_allocs; ++i) alloc();
+	for (unsigned int i = 0; i < num_init_allocs; ++i)
+		alloc();
 	MemoryBank::check();
-	cout << "Blocks allocated: " << MemoryBank::blocksAllocated()
-	     << "\nBytes allocated: " << MemoryBank::bytesAllocated() << endl;
+	cout << "Blocks allocated: " << MemoryBank::blocksAllocated() << endl;
     }
     // Carry out churns:
     {
-	MemoryBank::setMonitor(0);
 	for (unsigned int i = 0; i < num_churns; ++i) {
 	    long rnd = qrnd();
 	    if (rnd & 2 || ilv.empty()) alloc();
@@ -108,8 +101,7 @@ int main(int argc, char* argv[]) {
 	    }
 	}
 	MemoryBank::check();
-	cout << "Blocks allocated: " << MemoryBank::blocksAllocated()
-	     << "\nBytes allocated: " << MemoryBank::bytesAllocated() << endl;
+	cout << "Blocks allocated: " << MemoryBank::blocksAllocated() << endl;
     }
     // Clear up:
     {

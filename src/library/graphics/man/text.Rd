@@ -1,11 +1,11 @@
 % File src/library/graphics/man/text.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{text}
 \title{Add Text to a Plot}
-\encoding{latin1}
+\encoding{UTF-8}
 \usage{
 text(x, \dots)
 
@@ -25,7 +25,7 @@ text(x, \dots)
     other classed objects to character vectors by \code{\link{as.character}}.
     If \code{labels} is longer than \code{x} and
     \code{y}, the coordinates are recycled to the length of \code{labels}.}
-  \item{adj}{one or two values in \eqn{[0,1]} which specify the x
+  \item{adj}{one or two values in \eqn{[0, 1]} which specify the x
     (and optionally y) adjustment of the labels.  On most devices values
     outside that interval will also work.}
   \item{pos}{a position specifier for the text.  If specified this
@@ -45,8 +45,8 @@ text(x, \dots)
     \code{NULL} and \code{NA} are equivalent to \code{1.0}.}
   \item{col, font}{the color and (if \code{vfont = NULL}) font to be
     used, possibly vectors. These default to the values of the global
-    graphical parameters in \code{\link{par}()}.}
-  \item{\dots}{further graphical parameters (from \code{\link{par}}),
+    \link{graphical parameters} in \code{\link{par}()}.}
+  \item{\dots}{further \link{graphical parameters} (from \code{\link{par}}),
     such as \code{srt}, \code{family} and \code{xpd}.}
 }
 \description{
@@ -78,8 +78,9 @@ text(x, \dots)
   with values returned by \code{identify} to recreate an interactively
   labelled plot.
 
-  Text can be rotated by using graphical parameters \code{srt} (see
-  \code{\link{par}}); this rotates about the centre set by \code{adj}.
+  Text can be rotated by using \link{graphical parameters} \code{srt}
+  (see \code{\link{par}}); this rotates about the centre set by
+  \code{adj}.
 
   Graphical parameters \code{col}, \code{cex} and \code{font} can be
   vectors and will then be applied cyclically to the \code{labels} (and
@@ -125,6 +126,7 @@ text(x, \dots)
   Murrell, P. (2005) \emph{R Graphics}. Chapman & Hall/CRC Press.
 }
 \seealso{
+  \code{\link{text.formula}} for the formula method;
   \code{\link{mtext}}, \code{\link{title}},
   \code{\link{Hershey}} for details on Hershey vector fonts,
   \code{\link{plotmath}} for details and more examples on
@@ -137,8 +139,8 @@ K <- 16; text(exp(1i * 2 * pi * (1:K) / K), col = 2)
 ## The following two examples use latin1 characters: these may not
 ## appear correctly (or be omitted entirely).
 plot(1:10, 1:10, main = "text(...) examples\n~~~~~~~~~~~~~~",
-     sub = "R is GNU ©, but not ® ...")
-mtext("«Latin-1 accented chars»: éè øØ å<Å æ<Æ", side=3)
+     sub = "R is GNU Â©, but not Â® ...")
+mtext("Â«Latin-1 accented charsÂ»: Ã©Ã¨ Ã¸Ã˜ Ã¥<Ã… Ã¦<Ã†", side=3)
 points(c(6,2), c(2,1), pch = 3, cex = 4, col = "red")
 text(6, 2, "the text is CENTERED around (x,y) = (6,2) by default",
      cex = .8)
@@ -151,8 +153,8 @@ text(4, 7, expression(bar(x) == sum(frac(x[i], n), i==1, n)))
 
 ## Two more latin1 examples
 text(5,10.2,
-     "Le français, c'est façile: Règles, Liberté, Egalité, Fraternité...")
+     "Le franÃ§ais, c'est faÃ§ile: RÃ¨gles, LibertÃ©, EgalitÃ©, FraternitÃ©...")
 text(5,9.8,
-     "Jetz no chli züritüütsch: (noch ein bißchen Zürcher deutsch)")
+     "Jetz no chli zÃ¼ritÃ¼Ã¼tsch: (noch ein biÃŸchen ZÃ¼rcher deutsch)")
 }
 \keyword{aplot}

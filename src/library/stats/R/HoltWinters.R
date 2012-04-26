@@ -44,8 +44,8 @@ function (x,
         any(c(alpha, beta, gamma) < 0 || c(alpha, beta, gamma) > 1))
         stop ("'alpha', 'beta' and 'gamma' must be within the unit interval.")
     if((is.null(gamma) || gamma > 0)) {
-        if (seasonal == "multiplicative" && any(x <= 0))
-            stop ("data must be strictly non-negative for multiplicative Holt-Winters.")
+        if (seasonal == "multiplicative" && any(x == 0))
+            stop ("data must be non-zero for multiplicative Holt-Winters.")
         if (start.periods < 2)
             stop ("need at least 2 periods to compute seasonal start values.")
     }
@@ -82,12 +82,12 @@ function (x,
     ## Call to filtering loop
     len <- length(x) - start.time + 1
     hw <- function(alpha, beta, gamma)
-        .C("HoltWinters",
+        .C(C_HoltWinters,
            as.double(x),
            as.integer(length(x)),
-           as.double(alpha),
-           as.double(beta),
-           as.double(gamma),
+           as.double(max(min(alpha,1),0)),
+           as.double(max(min(beta,1),0)),
+           as.double(max(min(gamma,1),0)),
            as.integer(start.time),
            as.integer(! + (seasonal == "multiplicative")),
            as.integer(f),
@@ -99,9 +99,9 @@ function (x,
            s = as.double(s.start),
 
 	   ## return values
-           SSE = as.double(0L),
-           level = double(len + 1),
-           trend = double(len + 1),
+           SSE = as.double(0),
+           level = double(len + 1L),
+           trend = double(len + 1L),
            seasonal = double(len + f),
 
 	   PACKAGE = "stats"
@@ -120,6 +120,12 @@ function (x,
                 sol   <- optim(optim.start, error, method = "L-BFGS-B",
                                lower = c(0, 0, 0), upper = c(1, 1, 1),
                                control = optim.control)
+                if(sol$convergence || any(sol$par < 0 | sol$par > 1)) {
+                    if (sol$convergence > 50) {
+                        warning(gettextf("optimization difficulties: %s",
+                                         sol$message), domain = NA)
+                    } else stop("optimization failure")
+                }
                 alpha <- sol$par[1L]
                 beta  <- sol$par[2L]
                 gamma <- sol$par[3L]
@@ -131,6 +137,12 @@ function (x,
                                error, method = "L-BFGS-B",
                                lower = c(0, 0), upper = c(1, 1),
                                control = optim.control)
+                if(sol$convergence || any(sol$par < 0 | sol$par > 1)) {
+                    if (sol$convergence > 50) {
+                        warning(gettextf("optimization difficulties: %s",
+                                         sol$message), domain = NA)
+                    } else stop("optimization failure")
+                }
                 alpha <- sol$par[1L]
                 gamma <- sol$par[2L]
             }
@@ -144,6 +156,12 @@ function (x,
                                error, method = "L-BFGS-B",
                                lower = c(0, 0), upper = c(1, 1),
                                control = optim.control)
+                if(sol$convergence || any(sol$par < 0 | sol$par > 1)) {
+                    if (sol$convergence > 50) {
+                        warning(gettextf("optimization difficulties: %s",
+                                         sol$message), domain = NA)
+                    } else stop("optimization failure")
+                }
                 beta  <- sol$par[1L]
                 gamma <- sol$par[2L]
             } else {
@@ -165,6 +183,12 @@ function (x,
                                error, method = "L-BFGS-B",
                                lower = c(0, 0), upper = c(1, 1),
                                control = optim.control)
+                if(sol$convergence || any(sol$par < 0 | sol$par > 1)) {
+                    if (sol$convergence > 50) {
+                        warning(gettextf("optimization difficulties: %s",
+                                         sol$message), domain = NA)
+                    } else stop("optimization failure")
+                }
                 alpha <- sol$par[1L]
                 beta  <- sol$par[2L]
             } else {
@@ -280,6 +304,7 @@ plot.HoltWinters <-
 
     preds <- length(predicted.values) > 1 || !is.na(predicted.values)
 
+    dev.hold(); on.exit(dev.flush())
     ## plot fitted/predicted values
     plot(ts(c(fitted(x)[,1], if(preds) predicted.values[,1]),
             start = start(fitted(x)[,1]),
@@ -348,30 +373,24 @@ function (x, type = c("additive", "multiplicative"), filter = NULL)
     else
         x / trend
 
-    ## rearrange seasons at beginning/end
-    season <- na.omit(c(as.numeric(window(season,
-                                          start(x) + c(1, 0),
-                                          end(x))),
-                        as.numeric(window(season,
-                                          start(x),
-                                          start(x) + c(0, f))))
-                      )
-
     ## average seasonal figures
-    periods <- l%/%f
-    index <- c(0, cumsum(rep(f, periods - 2)))
+    periods <- l %/% f
+    index <- seq.int(1L, l, by = f) - 1L
     figure <- numeric(f)
-    for (i in 1L:f) figure[i] <- mean(season[index + i])
+    for (i in 1L:f)
+        figure[i] <- mean(season[index + i], na.rm = TRUE)
 
     ## normalize figure
     figure <- if (type == "additive")
         figure - mean(figure)
     else figure / mean(figure)
 
-    seasonal <- ts(rep(figure, periods), start = start(x), frequency = f)
+    seasonal <- ts(rep(figure, periods+1)[seq_len(l)],
+                   start = start(x), frequency = f)
 
     ## return values
-    structure(list(seasonal = seasonal,
+    structure(list(x = x,
+                   seasonal = seasonal,
                    trend = trend,
                    random = if (type == "additive")
                        x - seasonal - trend
@@ -384,11 +403,11 @@ function (x, type = c("additive", "multiplicative"), filter = NULL)
 
 plot.decomposed.ts <- function(x, ...)
 {
-    plot(cbind(
-               observed = if (x$type == "additive")
-                 x$random + x$trend + x$seasonal
-               else
-                 x$random * x$trend * x$seasonal,
+    xx <- x$x # added in 2.14.0
+    if(is.null(xx))
+        xx <- with(x,  if (type == "additive") random + trend + seasonal
+                       else random * trend * seasonal)
+    plot(cbind(observed = xx,
                trend    = x$trend,
                seasonal = x$seasonal,
                random   = x$random

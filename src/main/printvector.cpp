@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1997, 1998  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2004  the R Development Core Team.
+ *  Copyright (C) 1998-2004  The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,6 +47,7 @@
 #include <config.h>
 #endif
 
+#include <cstdarg>
 #include "Print.h"
 
 #include <numeric>
@@ -161,7 +162,7 @@ static void printStringVector(const StringVector* sv, int n, int quote,
     w = accumulate(beg, beg + n, 0, (quote ? stringWidthQuote : stringWidth));
 
     for (i = 0; i < n; i++) {
-	String* str = const_cast<String*>((*sv)[i]);
+	String* str = const_cast<String*>((*sv)[i].get());
 	if (i > 0 && width + w + R_print.gap > R_print.width) {
 	    DO_newline;
 	}

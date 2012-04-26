@@ -1,6 +1,6 @@
 % File src/library/base/man/list.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{list}
@@ -45,7 +45,7 @@ alist(\dots)
   but rarely seen by users (except as \code{\link{formals}} of functions).
 
   The arguments to \code{list} or \code{pairlist} are of the form
-  \code{value} or \code{tag=value}.  The functions return a list or
+  \code{value} or \code{tag = value}.  The functions return a list or
   dotted pair list composed of its arguments with each value either
   tagged or untagged, depending on how the argument was specified.
 
@@ -57,13 +57,14 @@ alist(\dots)
   \code{as.list} attempts to coerce its argument to a list.  For
   functions, this returns the concatenation of the list of formal
   arguments and the function body.  For expressions, the list of
-  constituent elements is returned.  \code{as.list} is generic, and as the
-  default method calls \code{\link{as.vector}(mode="list")} methods for
-  \code{as.vector} may be invoked.  \code{as.list}
-  turns a factor into a list of one-element factors.  All attributes
-  will be dropped unless the argument already is a list.  (This is
-  inconsistent with functions such as \code{\link{as.character}}, and is
-  for efficiency since lists can be expensive to copy.)
+  constituent elements is returned.  \code{as.list} is generic, and as
+  the default method calls \code{\link{as.vector}(mode="list")} for a
+  non-list, methods for \code{as.vector} may be invoked.  \code{as.list}
+  turns a factor into a list of one-element factors.  Attributes may
+  be dropped unless the argument already is a list or expression.  (This
+  is inconsistent with functions such as \code{\link{as.character}}
+  which always drop attributes, and is for efficiency since lists can be
+  expensive to copy.)
 
   \code{is.list} returns \code{TRUE} if and only if its argument
   is a \code{list} \emph{or} a \code{pairlist} of \code{length} \eqn{> 0}.
@@ -75,15 +76,20 @@ alist(\dots)
   environment to a named list.  The user can request that all named
   objects are copied.  The list is in no particular order (the order
   depends on the order of creation of objects and whether the
-  environment is hashed).  No parent environments are searched.  (Objects
-  copied are duplicated so this can be an expensive operation.)
+  environment is hashed).  No enclosing environments are searched.
+  (Objects copied are duplicated so this can be an expensive operation.)
+  Note that there is an inverse operation, the
+  \code{\link{as.environment}()} method for list objects.
 
   An empty pairlist, \code{pairlist()} is the same as \code{NULL}.  This
   is different from \code{list()}.
 
-  \code{as.pairlist} is implemented as \code{\link{as.vector}(x, "pairlist")},
-  and hence will dispatch methods for the generic function \code{as.vector}.
-  
+  \code{as.pairlist} is implemented as \code{\link{as.vector}(x,
+  "pairlist")}, and hence will dispatch methods for the generic function
+  \code{as.vector}.  Lists are copied element-by-element into a pairlist
+  and the names of the list used as tags for the pairlist: the return
+  value for other types of argument is undocumented.
+
   \code{list}, \code{is.list} and \code{is.pairlist} are
   \link{primitive} functions.
 }

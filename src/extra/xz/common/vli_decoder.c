@@ -14,7 +14,7 @@
 
 
 extern LZMA_API(lzma_ret)
-lzma_vli_decode(lzma_vli *restrict vli, size_t *restrict vli_pos,
+lzma_vli_decode(lzma_vli *restrict vli, size_t *vli_pos,
 		const uint8_t *restrict in, size_t *restrict in_pos,
 		size_t in_size)
 {
@@ -47,7 +47,7 @@ lzma_vli_decode(lzma_vli *restrict vli, size_t *restrict vli_pos,
 
 	do {
 		// Read the next byte. Use a temporary variable so that we
-		// can update *in_pos immediatelly.
+		// can update *in_pos immediately.
 		const uint8_t byte = in[*in_pos];
 		++*in_pos;
 

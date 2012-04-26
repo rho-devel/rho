@@ -43,8 +43,12 @@ function(file, header = FALSE, sep = "", quote = "\"'", dec = ".",
          strip.white = FALSE, blank.lines.skip = TRUE,
          comment.char = "#", allowEscapes = FALSE, flush = FALSE,
          stringsAsFactors = default.stringsAsFactors(),
-         fileEncoding = "", encoding = "unknown")
+         fileEncoding = "", encoding = "unknown", text)
 {
+    if (missing(file) && !missing(text)) {
+	file <- textConnection(text)
+	on.exit(close(file))
+    }
     if(is.character(file)) {
         file <- if(nzchar(fileEncoding))
             file(file, "rt", encoding = fileEncoding) else file(file, "rt")
@@ -102,7 +106,9 @@ function(file, header = FALSE, sep = "", quote = "\"'", dec = ".",
         if(!header) rlabp <- FALSE
 
         if (header) {
-            readLines(file, 1L)          # skip over header
+            ## skip over header
+           .Internal(readTableHead(file, 1L, comment.char,
+                                   blank.lines.skip, quote, sep))
             if(missing(col.names)) col.names <- first
             else if(length(first) != length(col.names))
                 warning("header and 'col.names' are of different lengths")
@@ -143,8 +149,8 @@ function(file, header = FALSE, sep = "", quote = "\"'", dec = ".",
     names(what) <- col.names
 
     colClasses[colClasses %in% c("real", "double")] <- "numeric"
-    known <- colClasses %in%
-                c("logical", "integer", "numeric", "complex", "character")
+    known <- colClasses %in% c("logical", "integer", "numeric", "complex",
+                               "character", "raw")
     what[known] <- sapply(colClasses[known], do.call, list(0))
     what[colClasses %in% "NULL"] <- list(NULL)
     keep <- !sapply(what, is.null)

@@ -23,14 +23,21 @@ seq.default <-
     if((One <- nargs() == 1L) && !missing(from)) {
 	lf <- length(from)
 	return(if(mode(from) == "numeric" && lf == 1L) 1L:from else
-	       if(lf) 1L:lf else integer(0L))
+	       if(lf) 1L:lf else integer())
     }
     if(!missing(along.with)) {
 	length.out <- length(along.with)
-	if(One) return(if(length.out) seq_len(length.out) else integer(0L))
+	if(One) return(if(length.out) seq_len(length.out) else integer())
     }
-    else if(!missing(length.out))
+    else if(!missing(length.out)) {
+        len <- length(length.out)
+        if(!len) stop("argument 'length.out' must be of length 1")
+        if(len > 1L) {
+            warning("first element used of 'length.out' argument")
+            length.out <- length.out[1L]
+        }
 	length.out <- ceiling(length.out)
+    }
     if(is.null(length.out))
 	if(missing(by))
 	    from:to
@@ -50,15 +57,19 @@ seq.default <-
 
 	    dd <- abs(del)/max(abs(to), abs(from))
 	    if (dd < 100*.Machine$double.eps) return(from)
-	    n <- as.integer(n + 1e-7)
-	    x <- from + (0L:n) * by
-            ## correct for overshot because of fuzz
-            if(by > 0) pmin(x, to) else pmax(x, to)
+            if (is.integer(del) && is.integer(by)) {
+                n <- as.integer(n) # truncates
+                from + (0L:n) * by
+            } else {
+                n <- as.integer(n + 1e-10)
+                x <- from + (0L:n) * by
+                ## correct for possible overshot because of fuzz
+                if(by > 0) pmin(x, to) else pmax(x, to)
+            }
 	}
     else if(!is.finite(length.out) || length.out < 0L)
 	stop("length must be non-negative number")
-    else if(length.out == 0L)
-	integer(0L)
+    else if(length.out == 0L) integer()
     else if (One) seq_len(length.out)
     else if(missing(by)) {
 	# if(from == to || length.out < 2) by <- 1
@@ -66,9 +77,8 @@ seq.default <-
 	    to <- from + length.out - 1L
 	if(missing(from))
 	    from <- to - length.out + 1L
-	if(length.out > 2L)
-	    if(from == to)
-		rep.int(from, length.out)
+	if(length.out > 2L) # not clear why these have as.vector, and not others
+	    if(from == to) rep.int(from, length.out)
 	    else as.vector(c(from, from + seq_len(length.out - 2L) * by, to))
 	else as.vector(c(from, to))[seq_len(length.out)]
     }

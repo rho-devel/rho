@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -96,12 +96,12 @@ w_init_maybe(int m, int n)
     if (!w) { /* initialize w[][] */
 	m = imax2(m, WILCOX_MAX);
 	n = imax2(n, WILCOX_MAX);
-	w = (double ***) calloc(m + 1, sizeof(double **));
+	w = (double ***) calloc((size_t) m + 1, sizeof(double **));
 #ifdef MATHLIB_STANDALONE
 	if (!w) MATHLIB_ERROR(_("wilcox allocation error %d"), 1);
 #endif
 	for (i = 0; i <= m; i++) {
-	    w[i] = (double **) calloc(n + 1, sizeof(double *));
+	    w[i] = (double **) calloc((size_t) n + 1, sizeof(double *));
 #ifdef MATHLIB_STANDALONE
 	    /* the apparent leak here in the in-R case should be
 	       swept up by the on.exit action */
@@ -159,7 +159,7 @@ cwilcox(int k, int m, int n)
     if (j > 0 && k < j) return cwilcox(k, i, k);    
     
     if (w[i][j] == 0) {
-	w[i][j] = (double *) calloc(c + 1, sizeof(double));
+	w[i][j] = (double *) calloc((size_t) c + 1, sizeof(double));
 #ifdef MATHLIB_STANDALONE
 	if (!w[i][j]) MATHLIB_ERROR(_("wilcox allocation error %d"), 3);
 #endif
@@ -321,7 +321,7 @@ double rwilcox(double m, double n)
 
     r = 0.0;
     k = (int) (m + n);
-    x = (int *) calloc(k, sizeof(int));
+    x = (int *) calloc((size_t) k, sizeof(int));
 #ifdef MATHLIB_STANDALONE
     if (!x) MATHLIB_ERROR(_("wilcox allocation error %d"), 4);
 #endif

@@ -1,6 +1,6 @@
 % File src/library/base/man/readBin.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{readBin}
@@ -18,7 +18,7 @@ writeBin(object, con, size = NA_integer_,
          endian = .Platform$endian, useBytes = FALSE)
 }
 \arguments{
-  \item{con}{A connection object or a character string naming a file or
+  \item{con}{A \link{connection} object or a character string naming a file or
     a raw vector.}
   \item{what}{Either an object whose mode will give the mode of the
     vector to be read, or a character vector of length one describing
@@ -31,7 +31,7 @@ writeBin(object, con, size = NA_integer_,
   \item{size}{integer.  The number of bytes per element in the byte
     stream.  The default, \code{NA_integer_}, uses the natural size.
     Size changing is not supported for raw and complex vectors.}
-  \item{signed}{logical. Only used for integers of sizes 1 and 2,
+  \item{signed}{logical.  Only used for integers of sizes 1 and 2,
     when it determines if the quantity on file
     should be regarded as a signed or unsigned integer.}
   \item{endian}{The endian-ness (\code{"big"} or \code{"little"} of the
@@ -41,9 +41,10 @@ writeBin(object, con, size = NA_integer_,
   \item{useBytes}{See \code{\link{writeLines}}.} 
 }
 \details{
+  These functions are intended to be used with binary-mode connections.
   If \code{con} is a character string, the functions call
-  \code{\link{file}} to obtain an file connection which is opened for
-  the duration of the function call.
+  \code{\link{file}} to obtain a binary-mode file connection which is
+  opened for the duration of the function call.
 
   If the connection is open it is read/written from its current
   position.  If it is not open, it is opened for the duration of the
@@ -72,6 +73,9 @@ writeBin(object, con, size = NA_integer_,
   
   Handling \R's missing and special (\code{Inf}, \code{-Inf} and
   \code{NaN}) values is discussed in the \emph{R Data Import/Export} manual.
+  
+  Only \eqn{2^{31}-1}{2^31 - 1} bytes can be written in a single
+  call (and that is the maximum capacity of a raw vector).
 }
 
 \note{
@@ -87,6 +91,10 @@ writeBin(object, con, size = NA_integer_,
   which does not contain C-style character strings, warnings (usually
   many) are given.  From a file or connection, the input will be broken
   into pieces of length 10000 with any final part being discarded.
+  
+  Using these functions on a text-mode connection may work but should
+  not be mixed with text-mode access to the connection, especially if
+  the connection was opened with an \code{encoding} argument. 
 }
 
 \value{
@@ -161,7 +169,6 @@ unlink("testbin")
 z <- writeBin(pi^{1:5}, raw(), size = 4)
 readBin(z, numeric(), 5, size = 4)
 z <- writeBin(c("a", "test", "of", "character"), raw())
-rawToChar(z)
 readBin(z, character(), 4)
 }
 \keyword{file}

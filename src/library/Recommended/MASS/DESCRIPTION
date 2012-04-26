@@ -1,0 +1,20 @@
+Package: MASS
+Priority: recommended
+Version: 7.3-16
+Date: 2011-10-06
+Revision: $Rev: 3048 $
+Depends: R (>= 2.14.0), grDevices, graphics, stats, utils
+Suggests: lattice, nlme, nnet, survival
+Author: S original by Venables & Ripley.  R port by Brian Ripley,
+        following partial ports by Kurt Hornik and Albrecht Gebhardt
+        around 1998.
+Maintainer: Brian Ripley <ripley@stats.ox.ac.uk>
+Description: Functions and datasets to support Venables and Ripley,
+        'Modern Applied Statistics with S' (4th edition, 2002).
+Title: Support Functions and Datasets for Venables and Ripley's MASS
+License: GPL-2 | GPL-3
+URL: http://www.stats.ox.ac.uk/pub/MASS4/
+LazyData: yes
+Packaged: 2011-10-08 10:56:01 UTC; ripley
+Repository: CRAN
+Date/Publication: 2011-10-09 13:56:56

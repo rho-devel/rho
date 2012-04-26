@@ -1,11 +1,11 @@
 % File src/library/base/man/match.fun.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{match.fun}
 \alias{match.fun}
-\title{Function Verification for ``Function Variables''}
+\title{Extract a Function Specified by Name}
 \description{
   When called inside functions that take a function as argument, extract
   the desired function object while avoiding undesired matching to
@@ -52,7 +52,7 @@ match.fun(FUN, descend = TRUE)
 
   It is impossible to fully foolproof this.  If one \code{attach}es a
   list or data frame containing a length-one character vector with the
-  same name as a function, it may be used (although name spaces
+  same name as a function, it may be used (although namespaces
   will help).
 }
 \seealso{

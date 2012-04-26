@@ -29,6 +29,8 @@ function(package, dir, lib.loc = NULL,
 
     workdir <- match.arg(workdir)
     wd <- getwd()
+    if (is.null(wd))
+        stop("current working directory cannot be ascertained")
     if(workdir == "tmp") {
         tmpd <- tempfile("Sweave")
         if(!dir.create(tmpd))
@@ -49,6 +51,7 @@ function(package, dir, lib.loc = NULL,
     result <- list(tangle = list(), weave = list(),
                    source = list(), latex = list())
 
+    startdir <- getwd()
     for(f in vigns$docs) {
         if(tangle)
             .eval_with_capture(tryCatch(utils::Stangle(f, quiet = TRUE),
@@ -60,20 +63,29 @@ function(package, dir, lib.loc = NULL,
                                         error = function(e)
                                         result$weave[[f]] <<-
                                         conditionMessage(e)))
+        setwd(startdir) # in case a vignette changes the working dir
     }
 
     if(tangle) {
-        ## Tangling can create several source files if splitting is on.
-        sources <- list_files_with_exts(getwd(), c("r", "s", "R", "S"))
+        ## Tangling can create several source files if splitting is on,
+        ## and these can be .R or .S (at least).  However, there is
+        ## no guarantee that running them in alphabetical order in a
+        ## session will work -- with named chunks it normally will not.
+        cwd <- getwd()
+        if (is.null(cwd))
+            stop("current working directory cannot be ascertained")
+        sources <- list_files_with_exts(cwd, c("r", "s", "R", "S"))
         sources <- sources[file_test("-nt", sources, ".check.timestamp")]
-        for(f in sources)
+        for(f in sources) {
             .eval_with_capture(tryCatch(source(f),
                                         error = function(e)
                                         result$source[[f]] <<-
                                         conditionMessage(e)))
+            setwd(startdir)
+        }
     }
     if(weave && latex) {
-        if(!("makefile" %in% tolower(list.files(vigns$dir)))) {
+        if(!("Makefile" %in% list.files(vigns$dir))) {
             ## <NOTE>
             ## This used to run texi2dvi on *all* vignettes, including
             ## the ones already known from the above to give trouble.
@@ -94,8 +106,7 @@ function(package, dir, lib.loc = NULL,
                 bf <- file_path_sans_ext(basename(f))
                 if(bf %in% bad_vignettes) break
                 bft <- paste(bf, ".tex", sep = "")
-                .eval_with_capture(tryCatch(texi2dvi(file = bft, pdf = TRUE,
-                                                     clean = FALSE,
+                .eval_with_capture(tryCatch(texi2pdf(file = bft, clean = FALSE,
                                                      quiet = TRUE),
                                             error = function(e)
                                             result$latex[[f]] <<-
@@ -122,9 +133,9 @@ function(x, ...)
         }
     }
 
-    mycat(x$weave,  "*** Weave Errors ***")
     mycat(x$tangle, "*** Tangle Errors ***")
     mycat(x$source, "*** Source Errors ***")
+    mycat(x$weave,  "*** Weave Errors ***")
     mycat(x$latex,  "*** PDFLaTeX Errors ***")
 
     invisible(x)
@@ -142,19 +153,19 @@ function(package, dir, lib.loc = NULL)
     if(!missing(package)) {
         if(length(package) != 1L)
             stop("argument 'package' must be of length 1")
-        docdir <- file.path(.find.package(package, lib.loc), "doc")
+        docdir <- file.path(find.package(package, lib.loc), "doc")
         ## Using package installed in @code{dir} ...
-    }
-    else {
+    } else {
         if(missing(dir))
             stop("you must specify 'package' or 'dir'")
         ## Using sources from directory @code{dir} ...
         if(!file_test("-d", dir))
-            stop(gettextf("directory '%s' does not exist", dir),
-                 domain = NA)
-        else
-            docdir <- file.path(file_path_as_absolute(dir), "inst",
-                                "doc")
+            stop(gettextf("directory '%s' does not exist", dir), domain = NA)
+        else {
+            docdir <- file.path(file_path_as_absolute(dir), "vignettes")
+            if(!file_test("-d", docdir))
+                docdir <- file.path(file_path_as_absolute(dir), "inst", "doc")
+        }
     }
 
     if(!file_test("-d", docdir)) return(NULL)
@@ -177,16 +188,31 @@ function(package, dir, lib.loc = NULL, quiet = TRUE, clean = TRUE)
     vigns <- pkgVignettes(package = package, dir = dir, lib.loc = lib.loc)
     if(is.null(vigns)) return(invisible())
 
+    ## unset SWEAVE_STYLEPATH_DEFAULT here to avoid problems
+    Sys.unsetenv("SWEAVE_STYLEPATH_DEFAULT")
+
+    op <- options(warn = 1) # we run vignettes in this process
     wd <- getwd()
-    on.exit(setwd(wd))
+    if (is.null(wd))
+        stop("current working directory cannot be ascertained")
+    on.exit({
+        setwd(wd)
+        options(op)
+    })
+
     setwd(vigns$dir)
 
-    ## should this recurse into subdirs?
+    ## FIXME: should this recurse into subdirs?
     origfiles <- list.files(all.files = TRUE)
-    have.makefile <- "makefile" %in% tolower(origfiles)
+
+    ## Note, as from 2.13.0, only this case
+    have.makefile <- "Makefile" %in% origfiles
+    WINDOWS <- .Platform$OS.type == "windows"
+
     file.create(".build.timestamp")
 
     pdfs <- character()
+    startdir <- getwd()
     for(f in vigns$docs) {
         f <- basename(f)
         bf <- file_path_sans_ext(f)
@@ -199,29 +225,98 @@ function(package, dir, lib.loc = NULL, quiet = TRUE, clean = TRUE)
                                    f, conditionMessage(e)),
                           domain = NA, call. = FALSE)
                  })
+        setwd(startdir)
+        ## This can fail if run in a directory whose path contains spaces.
         if(!have.makefile)
-            texi2dvi(file = bft, pdf = TRUE, clean = FALSE, quiet = quiet)
+            texi2pdf(file = bft, clean = FALSE, quiet = quiet)
     }
 
     if(have.makefile) {
-    	make <- Sys.getenv("MAKE")
+        if (WINDOWS) {
+            ## Some people have *assumed* that R_HOME uses / in Makefiles
+            ## Spaces in paths might still cause trouble.
+            rhome <- chartr("\\", "/", R.home())
+            Sys.setenv(R_HOME = rhome)
+        }
+    	make <- Sys.getenv("MAKE", "make")
         if(!nzchar(make)) make <- "make"
         yy <- system(make)
-        if(make == "" || yy > 0) stop("running 'make' failed")
+        if(yy > 0) stop("running 'make' failed")
+        ## See if Makefile has a clean: target, and if so run it.
+        if(clean &&
+           any(grepl("^clean:", readLines("Makefile", warn = FALSE))))
+            system(paste(make, "clean"))
     } else {
+        ## Badly-written vignettes open a pdf() device on Rplots.pdf and
+        ## fail to close it.
+        graphics.off()
         if(clean) {
             f <- list.files(all.files = TRUE) %w/o% c(".", "..", pdfs)
             newer <- file_test("-nt", f, ".build.timestamp")
-            file.remove(f[newer])
+            ## some packages, e.g. SOAR, create directories
+            unlink(f[newer], recursive = TRUE)
         }
         f <- list.files(all.files = TRUE)
         file.remove(f %w/o% c(".", "..", pdfs, origfiles))
     }
 
-    file.remove(".build.timestamp")
+    if(file.exists(".build.timestamp")) file.remove(".build.timestamp")
     ## Might have been in origfiles ...
 
     invisible(NULL)
+}
+
+### * .getVignetteEncoding
+
+getVignetteEncoding <-  function(file, ...)
+{
+    lines <- readLines(file, warn = FALSE)
+    .getVignetteEncoding(lines, ...)
+}
+
+.getVignetteEncoding <- function(lines, convert = FALSE)
+{
+    ## Look for input enc lines using inputenc or inputenx
+    ## Note, multiple encodings are excluded.
+
+    poss <-
+        grep("^[[:space:]]*\\\\usepackage\\[([[:alnum:]]+)\\]\\{inputen[cx]\\}",
+             lines, useBytes = TRUE)
+    ## Check it is in the preamble
+    start <- grep("^[[:space:]]*\\\\begin\\{document\\}",
+                  lines, useBytes = TRUE)
+    if(length(start)) poss <- poss[poss < start[1L]]
+    if(!length(poss)) {
+        asc <- iconv(lines, "latin1", "ASCII")
+        ind <- is.na(asc) | asc != lines
+        if(any(ind)) return("non-ASCII")
+        return("") # or "ASCII"
+    }
+    poss <- lines[poss[1L]]
+    res <- gsub("^[[:space:]]*\\\\usepackage\\[([[:alnum:]]+)\\].*", "\\1",
+                poss) # This line should be ASCII.
+    if (convert) {
+        ## see Rd2latex.R.
+        ## Currently utf8, utf8x, latin1, latin9 and ansinew are in use.
+        switch(res,
+               "utf8" =, "utf8x" = "UTF-8",
+               "latin1" =, "iso-8859-1" = "latin1",
+               "latin2" =, "iso-8859-2" = "latin2",
+               "latin9" =, "iso-8859-15" = "latin-9", # only form known to GNU libiconv
+               "latin10" =, "iso-8859-16" = "latin10",
+               "cyrillic" =, "iso-8859-5" =  "ISO-8859-5", # inputenx
+               "koi8-r" =  "KOI8-R", # inputenx
+               "arabic" = "ISO-8859-6", # Not clear next 3 are known to latex
+               "greek" =, "iso-8859-7" = "ISO-8859-7",
+               "hebrew" =, "iso-8859-8" = "ISO-8859-8",
+               "ansinew" = "CP1252",
+               "applemac" = "macroman",
+               ## assume these only get used on Windows
+               "cp1250" = "CP1250",
+               "cp1252" = "CP1252",
+               "cp1257" = "CP1257",
+               "unknown")
+    } else res
 }
 
 ### * .build_vignette_index
@@ -231,7 +326,7 @@ function(lines, tag)
 {
     meta_RE <- paste("[[:space:]]*%+[[:space:]]*\\\\Vignette", tag,
                      "\\{([^}]*)\\}", sep = "")
-    meta <- grep(meta_RE, lines, value = TRUE)
+    meta <- grep(meta_RE, lines, value = TRUE, useBytes = TRUE)
     .strip_whitespace(gsub(meta_RE, "\\1", meta))
 }
 
@@ -241,7 +336,7 @@ function(file)
     lines <- readLines(file, warn = FALSE)
 
     ## <FIXME>
-    ## Can only proceed with lines with are valid in the current locale.
+    ## Can only proceed with lines which are valid in the current locale.
     ## Unfortunately, vignette encodings are a mess: package encodings
     ## might apply, but be overridden by \inputencoding commands.
     ## For now, assume that vignette metadata occur in all ASCII lines.
@@ -260,10 +355,10 @@ function(file)
     keywords <- if(!length(keywords)) {
         ## No old-style \VignetteKeywords entries found.
         .get_vignette_metadata(lines, "Keyword")
-    }
-    else
-        unlist(strsplit(keywords[1L], ", *"))
-    list(file = file, title = title, depends = depends,
+    } else unlist(strsplit(keywords[1L], ", *"))
+    ## no point in recording the file path since this is called on
+    ## package installation.
+    list(file = basename(file), title = title, depends = depends,
          keywords = keywords)
 }
 
@@ -307,6 +402,15 @@ function(vignetteDir)
                       row.names = NULL, # avoid trying to compute row
                                         # names
                       stringsAsFactors = FALSE)
+
+    if (any(dups <- duplicated(names <- file_path_sans_ext(out$File)))) {
+    	dup <- out$File[dups][1]
+    	dupname <- names[dups][1]
+    	orig <- out$File[ names == dupname ][1]
+    	stop(gettextf("In '%s' vignettes '%s' and '%s' have the same vignette name",
+    		      basename(dirname(vignetteDir)), orig, dup),
+             domain = NA)
+    }
     out$Depends <- contents[, "Depends"]
     out$Keywords <- contents[, "Keywords"]
     out
@@ -345,25 +449,18 @@ function(x, ...)
 .writeVignetteHtmlIndex <-
 function(pkg, con, vignetteIndex = NULL)
 {
-    html <- c('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">',
-              paste("<html><head><title>R:", pkg, "vignettes</title>"),
-              "<link rel=\"stylesheet\" type=\"text/css\" href=\"../../R.css\">",
-              "</head><body>",
-              paste("<h2>Vignettes of package", pkg,"</h2>"))
+    ## FIXME: in principle we could need to set an encoding here
+    html <- c(HTMLheader("Vignettes"),
+              paste("<h2>Vignettes from package '", pkg,"'</h2>", sep = ""))
 
     if(is.null(vignetteIndex) || nrow(vignetteIndex) == 0L) {
-        html <- c(html, "Sorry, the package contains no vignette meta-information or index.",
-                  "Please browse the <a href=\".\">directory</a>.")
-    }
-    else{
-        html <- c(html, "<dl>")
-        for(k in seq_len(nrow(vignetteIndex))){
-            html <- c(html,
-                      paste("<dt><a href=\"", vignetteIndex[k, "PDF"], "\">",
-                            vignetteIndex[k, "PDF"], "</a>:", sep=""),
-                      paste("<dd>", vignetteIndex[k, "Title"]))
-        }
-        html <- c(html, "</dl>")
+        html <-
+            c(html,
+              "Sorry, the package contains no vignette meta-information nor an index.",
+              'Please browse the <a href=".">directory</a>.')
+    } else {
+    	vignetteIndex <- cbind(Package=pkg, as.matrix(vignetteIndex[,c("File", "Title", "PDF", "R")]))
+        html <- c(html, makeVignetteTable(vignetteIndex, depth=3))
     }
     html <- c(html, "</body></html>")
     writeLines(html, con=con)
@@ -375,6 +472,7 @@ function(vignette, recursive = TRUE, reduce = TRUE,
 {
     if (length(vignette) != 1L)
         stop("argument 'vignette' must be of length 1")
+    if (!nzchar(vignette)) return(invisible()) # lets examples work.
     if (!file.exists(vignette))
         stop(gettextf("file '%s' not found", vignette),
              domain = NA)
@@ -411,6 +509,35 @@ function(vigDeps)
         NA
 }
 
+### * .run_one_vignette
+### helper for R CMD check
+
+.run_one_vignette <-
+    function(vig_name, docDir, encoding = "")
+{
+    ## The idea about encodings here is that Stangle reads the
+    ## file, converts on read and outputs in the current encoding.
+    ## Then source() can assume the current encoding.
+    td <- tempfile()
+    dir.create(td)
+    file.copy(docDir, td, recursive = TRUE)
+    setwd(file.path(td, basename(docDir)))
+    result <- NULL
+    tryCatch(utils::Stangle(vig_name, quiet = TRUE, encoding = encoding),
+             error = function(e) result <<- conditionMessage(e))
+    if(length(result)) {
+        cat("\n  When tangling ", sQuote(vig_name), ":\n", sep="")
+        stop(result, call. = FALSE, domain = NA)
+    }
+    f <- sub("\\.[RrSs](nw|tex)$", ".R", vig_name)
+    tryCatch(source(f, echo = TRUE),
+             error = function(e) result <<- conditionMessage(e))
+    if(length(result)) {
+        cat("\n  When sourcing ", sQuote(f), ":\n", sep="")
+        stop(result, call. = FALSE, domain = NA)
+    }
+    cat("\n *** Run successfully completed ***\n")
+}
 
 ### Local variables: ***
 ### mode: outline-minor ***

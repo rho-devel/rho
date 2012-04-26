@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -47,20 +47,41 @@
 #ifdef __cplusplus
 
 #include <boost/serialization/export.hpp>
-#include "CXXR/DumbVector.hpp"
+
+#include "R_ext/Arith.h"
+#include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-    // Template specialization:
+    // Template specializations:
+    namespace ElementTraits {
+	template <>
+	struct NAFunc<double> {
+	    const double& operator()() const
+	    {
+		static double na = NA_REAL;
+		return na;
+	    }
+	};
+
+	template <>
+	struct IsNA<double> {
+	    bool operator()(const double& t)
+	    {
+		return R_IsNA(t);
+	    }
+	};
+    }
+
     template <>
-    inline const char* DumbVector<double, REALSXP>::staticTypeName()
+    inline const char* FixedVector<double, REALSXP>::staticTypeName()
     {
 	return "numeric";
     }
 
     /** @brief Vector of real numbers.
      */
-    typedef CXXR::DumbVector<double, REALSXP> RealVector;
+    typedef CXXR::FixedVector<double, REALSXP> RealVector;
 }  // namespace CXXR
 
 /* boost::serialization */
@@ -93,7 +114,8 @@ double *REAL(SEXP x);
 #else
 inline double *REAL(SEXP x)
 {
-    return &(*CXXR::SEXP_downcast<CXXR::RealVector*>(x))[0];
+    using namespace CXXR;
+    return &(*SEXP_downcast<RealVector*>(x, false))[0];
 }
 #endif
 

@@ -1,3 +1,20 @@
+#  File src/library/stats/R/poisson.tests.R
+#  Part of the R package, http://www.R-project.org
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
+
 poisson.test <- function(x, T = 1, r = 1, alternative =
                          c("two.sided", "less", "greater"),
                          conf.level = 0.95)
@@ -6,7 +23,7 @@ poisson.test <- function(x, T = 1, r = 1, alternative =
     DNAME <- deparse(substitute(x))
     DNAME <- paste(DNAME, "time base:", deparse(substitute(T)))
     if ((l <- length(x)) != length(T))
-        if (length(T) == 1)
+        if (length(T) == 1L)
             T <- rep(T, l)
         else
             stop("'x' and 'T' have incompatible length")
@@ -20,10 +37,10 @@ poisson.test <- function(x, T = 1, r = 1, alternative =
         stop("'T' must be nonnegative")
 
 
-    if ((k <- length(x)) < 1)
+    if ((k <- length(x)) < 1L)
         stop("not enough data")
 
-    if (k > 2)
+    if (k > 2L)
         stop("The case k > 2 is unimplemented")
 
     if(!missing(r) && (length(r) > 1 || is.na(r) || r < 0 ))
@@ -33,18 +50,18 @@ poisson.test <- function(x, T = 1, r = 1, alternative =
 
     if (k == 2) {
 
-        RVAL <- binom.test(x, sum(x), r * T[1]/(r * T[1] + T[2]),
-                           alternative=alternative)
+        RVAL <- binom.test(x, sum(x), r * T[1L]/(r * T[1L] + T[2L]),
+                           alternative=alternative, conf.level=conf.level)
 
         RVAL$data.name <- DNAME
-        RVAL$statistic <- x[1]
-        RVAL$parameter <- sum(x) * r * T[1]/sum(T * c(1, r))
+        RVAL$statistic <- x[1L]
+        RVAL$parameter <- sum(x) * r * T[1L]/sum(T * c(1, r))
         names(RVAL$statistic) <- c("count1")
         names(RVAL$parameter) <- c("expected count1")
-        RVAL$estimate <- (x[1]/T[1])/(x[2]/T[2])
+        RVAL$estimate <- (x[1L]/T[1L])/(x[2L]/T[2L])
         names(RVAL$estimate) <- "rate ratio"
         pp <- RVAL$conf.int
-        RVAL$conf.int <- pp/(1 - pp)*T[2]/T[1]
+        RVAL$conf.int <- pp/(1 - pp)*T[2L]/T[1L]
         names(r) <- "rate ratio"
         RVAL$null.value <- r
 

@@ -22,7 +22,7 @@
 
 bw.nrd0 <- function (x)
 {
-    if(length(x) < 2) stop("need at least 2 data points")
+    if(length(x) < 2L) stop("need at least 2 data points")
     hi <- sd(x)
     if(!(lo <- min(hi, IQR(x)/1.34)))# qnorm(.75) - qnorm(.25) = 1.34898
         (lo <- hi) || (lo <- abs(x[1L])) || (lo <- 1.)
@@ -31,7 +31,7 @@ bw.nrd0 <- function (x)
 
 bw.nrd <- function (x)
 {
-    if(length(x) < 2) stop("need at least 2 data points")
+    if(length(x) < 2L) stop("need at least 2 data points")
     r <- quantile(x, c(0.25, 0.75))
     h <- (r[2L] - r[1L])/1.34
     1.06 * min(sqrt(var(x)), h) * length(x)^(-1/5)
@@ -40,7 +40,7 @@ bw.nrd <- function (x)
 bw.SJ <- function(x, nb = 1000, lower = 0.1*hmax, upper = hmax,
                   method = c("ste", "dpi"), tol = 0.1*lower)
 {
-    if((n <- length(x)) < 2) stop("need at least 2 data points")
+    if((n <- length(x)) < 2L) stop("need at least 2 data points")
     if(!is.numeric(x)) stop("invalid 'x'")
     storage.mode(x) <- "double"
     method <- match.arg(method)
@@ -48,7 +48,7 @@ bw.SJ <- function(x, nb = 1000, lower = 0.1*hmax, upper = hmax,
     fSD <- function(h, x, alph2, c1, n, d)
         (c1/SDh(x, alph2 * h^(5/7), n, d))^(1/5) - h
     SDh <- function(x, h, n, d)
-        .C(R_band_phi4_bin,
+        .C(C_band_phi4_bin,
            as.integer(n),
            as.integer(length(x)),
            as.double(d),
@@ -56,7 +56,7 @@ bw.SJ <- function(x, nb = 1000, lower = 0.1*hmax, upper = hmax,
            as.double(h),
            u = double(1))$u
     TDh <- function(x, h, n, d)
-        .C(R_band_phi6_bin,
+        .C(C_band_phi6_bin,
            as.integer(n),
            as.integer(length(x)),
            as.double(d),
@@ -64,7 +64,7 @@ bw.SJ <- function(x, nb = 1000, lower = 0.1*hmax, upper = hmax,
            as.double(h),
            u = double(1))$u
 
-    Z <- .C(R_band_den_bin,
+    Z <- .C(C_band_den_bin,
             as.integer(n),
             as.integer(nb),
             d = double(1),
@@ -112,11 +112,11 @@ bw.SJ <- function(x, nb = 1000, lower = 0.1*hmax, upper = hmax,
 bw.ucv <- function(x, nb = 1000, lower = 0.1*hmax, upper = hmax,
                    tol = 0.1*lower)
 {
-    if((n <- length(x)) < 2) stop("need at least 2 data points")
+    if((n <- length(x)) < 2L) stop("need at least 2 data points")
     if(!is.numeric(x)) stop("invalid 'x'")
 
     fucv <- function(h, x, n, d)
-        .C(R_band_ucv_bin,
+        .C(C_band_ucv_bin,
            as.integer(n),
            as.integer(length(x)),
            as.double(d),
@@ -126,7 +126,7 @@ bw.ucv <- function(x, nb = 1000, lower = 0.1*hmax, upper = hmax,
 
     hmax <- 1.144 * sqrt(var(x)) * n^(-1/5)
     storage.mode(x) <- "double"
-    Z <- .C(R_band_den_bin,
+    Z <- .C(C_band_den_bin,
             as.integer(n),
             as.integer(nb),
             d = double(1),
@@ -143,11 +143,11 @@ bw.ucv <- function(x, nb = 1000, lower = 0.1*hmax, upper = hmax,
 bw.bcv <- function(x, nb = 1000, lower = 0.1*hmax, upper = hmax,
                    tol = 0.1*lower)
 {
-    if((n <- length(x)) < 2) stop("need at least 2 data points")
+    if((n <- length(x)) < 2L) stop("need at least 2 data points")
     if(!is.numeric(x)) stop("invalid 'x'")
 
     fbcv <- function(h, x, n, d)
-        .C(R_band_bcv_bin,
+        .C(C_band_bcv_bin,
            as.integer(n),
            as.integer(length(x)),
            as.double(d),
@@ -157,7 +157,7 @@ bw.bcv <- function(x, nb = 1000, lower = 0.1*hmax, upper = hmax,
 
     hmax <- 1.144 * sqrt(var(x)) * n^(-1/5)
     storage.mode(x) <- "double"
-    Z <- .C(R_band_den_bin,
+    Z <- .C(C_band_den_bin,
             as.integer(n),
             as.integer(nb),
             d = double(1),

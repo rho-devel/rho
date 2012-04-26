@@ -1,6 +1,22 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2009    The R Development Core Team.
+ *  Copyright (C) 2009,2011 The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,179 +44,39 @@
 
 #include <Defn.h>
 
-#ifdef LATERMAYBE
-
-/* print prefix */
-static void pp(int pre) {
-    /* this is sort of silly, I know, but it saves at least some output
-       calls (and we can replace \t by spaces if desired) ... */
-    while (pre >= 8) { Rprintf("\t"); pre -= 8; }
-    while (pre-- > 0) Rprintf(" ");
-}
-
-static const char *typename(SEXP v) {
-    switch (TYPEOF(v)) {
-    case NILSXP:	return "NILSXP";
-    case SYMSXP:	return "SYMSXP";
-    case LISTSXP:	return "LISTSXP";
-    case CLOSXP:	return "CLOSXP";
-    case ENVSXP:	return "ENVSXP";
-    case PROMSXP:	return "PROMSXP";
-    case LANGSXP:	return "LANGSXP";
-    case SPECIALSXP:	return "SPECIALSXP";
-    case BUILTINSXP:	return "BUILTINSXP";
-    case CHARSXP:	return "CHARSXP";
-    case LGLSXP:	return "LGLSXP";
-    case INTSXP:	return "INTSXP";
-    case REALSXP:	return "REALSXP";
-    case CPLXSXP:	return "CPLXSXP";
-    case STRSXP:	return "STRSXP";
-    case DOTSXP:	return "DOTSXP";
-    case ANYSXP:	return "ANYSXP";
-    case VECSXP:	return "VECSXP";
-    case EXPRSXP:	return "EXPRSXP";
-    case BCODESXP:	return "BCODESXP";
-    case EXTPTRSXP:	return "EXTPTRSXP";
-    case WEAKREFSXP:	return "WEAKREFSXP";
-    case S4SXP:		return "S4SXP";
-    default:
-	return "<unknown>";
-    }
-}
-
-/* this could be made configurable by some means or even become a
-   parameter to the function ..  */
-static unsigned int pvec = 5;
-
-/* pre is the prefix, v is the object to inspect and deep specifies
+// This is currently a no-op in CXXR (and quite likely always will be):
+/* pre is the prefix, v is the object to inspect, deep specifies
    the recursion behavior (0 = no recursion, -1 = [sort of] unlimited
-   recursion, positive numbers define the maximum recursion depth) */
-static void inspect(int pre, SEXP v, int deep) {
-    int a = 0;
-    pp(pre);
-    /* the use of %lx is deliberate because I hate the output of %p,
-       but if this causes portability issues, it could be changed. */
-    Rprintf("@%lx %02d %s g%dc%d [", (long) v, TYPEOF(v), typename(v), v->sxpinfo.gcgen, v->sxpinfo.gccls);
-    if (OBJECT(v)) { a = 1; Rprintf("OBJ"); }
-    if (MARK(v)) { if (a) Rprintf(","); Rprintf("MARK"); a = 1; }
-    if (NAMED(v)) { if (a) Rprintf(","); Rprintf("NAM(%d)",NAMED(v)); a = 1; }
-    if (RDEBUG(v)) { if (a) Rprintf(","); Rprintf("DBG"); a = 1; }
-    if (RTRACE(v)) { if (a) Rprintf(","); Rprintf("TR"); a = 1; }
-    if (RSTEP(v)) { if (a) Rprintf(","); Rprintf("STP"); a = 1; }
-    if (LEVELS(v)) { if (a) Rprintf(","); Rprintf("gp=0x%x", LEVELS(v)); a = 1; }
-    if (ATTRIB(v) && ATTRIB(v) != R_NilValue) { if (a) Rprintf(","); Rprintf("ATT"); a = 1; }
-    Rprintf("] ");
-    switch (TYPEOF(v)) {
-    case VECSXP: case STRSXP: case LGLSXP: case INTSXP:
-    case REALSXP: case CPLXSXP: case EXPRSXP:
-	Rprintf("(len=%d, tl=%d)", LENGTH(v), TRUELENGTH(v));
-    }
-    if (TYPEOF(v) == CHARSXP)
-	Rprintf("\"%s\"", CHAR(v));
-    if (TYPEOF(v) == SYMSXP)
-	Rprintf("\"%s\"", CHAR(PRINTNAME(v)));
-    switch (TYPEOF(v)) { /* for native vectors print the first elements in-line */
-    case LGLSXP:
-	if (LENGTH(v) > 0) {
-		unsigned int i = 0;
-		while (i < LENGTH(v) && i < pvec) {
-		    Rprintf("%s%d", (i > 0) ? "," : " ", (int) LOGICAL(v)[i]);
-		    i++;
-		}
-		if (i < LENGTH(v)) Rprintf(",...");
-	}
-	break;
-    case INTSXP:
-	if (LENGTH(v) > 0) {
-	    unsigned int i = 0;
-	    while (i < LENGTH(v) && i < pvec) {
-		Rprintf("%s%d", (i > 0) ? "," : " ", INTEGER(v)[i]);
-		i++;
-	    }
-	    if (i < LENGTH(v)) Rprintf(",...");
-	}
-	break;
-    case REALSXP:
-	if (LENGTH(v) > 0) {
-	    unsigned int i = 0;
-	    while (i < LENGTH(v) && i < pvec) {
-		Rprintf("%s%g", (i > 0) ? "," : " ", REAL(v)[i]);
-		i++;
-	    }
-	    if (i < LENGTH(v)) Rprintf(",...");
-	}
-	break;
-    }
-    Rprintf("\n");
-    if (deep) switch (TYPEOF(v)) {
-	case VECSXP: case EXPRSXP:
-	    {
-		unsigned int i = 0;
-		while (i<LENGTH(v) && i < pvec) {
-		    inspect(pre+2, VECTOR_ELT(v, i), deep - 1);
-		    i++;
-		}
-		if (i<LENGTH(v)) { pp(pre+2); Rprintf("...\n"); }
-	    }
-	    break;
-	case STRSXP:
-	    {
-		unsigned int i = 0;
-		while (i < LENGTH(v) && i < pvec) {
-		    inspect(pre+2, STRING_ELT(v, i), deep - 1);
-		    i++;
-		}
-		if (i < LENGTH(v)) { pp(pre+2); Rprintf("...\n"); }
-	    }
-	    break;
-	case LISTSXP: case LANGSXP:
-	    {
-		SEXP lc = v;
-		while (lc != R_NilValue) {
-		    if (TAG(lc) && TAG(lc) != R_NilValue) {
-			pp(pre + 2);
-			Rprintf("TAG: "); /* TAG should be a one-liner since it's a symbol so we don't put it on an extra line*/
-			inspect(0, TAG(lc), deep - 1);
-		    }		  
-		    inspect(pre + 2, CAR(lc), deep - 1);
-		    lc=CDR(lc);
-		}
-	    }
-	    break;
-	case ENVSXP:
-	    pp(pre); Rprintf("FRAME:\n");
-	    inspect(pre+2, FRAME(v), deep - 1);
-	    pp(pre); Rprintf("ENCLOS:\n");
-	    inspect(pre+2, ENCLOS(v), 0);
-	    pp(pre); Rprintf("HASHTAB:\n");
-	    inspect(pre+2, HASHTAB(v), deep - 1);
-	    break;
-	    
-	case CLOSXP:
-	    pp(pre); Rprintf("FORMALS:\n");
-	    inspect(pre+2, FORMALS(v), deep - 1);
-	    pp(pre); Rprintf("BODY:\n");
-	    inspect(pre+2, BODY(v), deep - 1);
-	    pp(pre); Rprintf("CLOENV:\n");
-	    inspect(pre+2, CLOENV(v), 0);
-	    break;
-	}
-    
-    if (ATTRIB(v) && ATTRIB(v) != R_NilValue) {
-	pp(pre); Rprintf("ATTRIB:\n"); inspect(pre+2, ATTRIB(v), deep);
-    }
+   recursion, positive numbers define the maximum recursion depth)
+   and pvec is the max. number of vector elements to show  */
+static void inspect_tree(int pre, SEXP v, int deep, int pvec) {
 }
-
-#endif // LATERMAYBE
 
 /* internal API - takes one mandatory argument (object to inspect) and
-   one optional argument (deep - see above), positional argument
+   two optional arguments (deep and pvec - see above), positional argument
    matching only */
 SEXP attribute_hidden do_inspect(SEXP call, SEXP op, SEXP args, SEXP env) {
     SEXP obj = CAR(args);
     int deep = -1;
-    if (CDR(args) != R_NilValue)
+    int pvec = 5;
+    if (CDR(args) != R_NilValue) {
 	deep = asInteger(CADR(args));
-    // inspect(0, CAR(args), deep);
+	if (CDDR(args) != R_NilValue)
+	    pvec = asInteger(CADDR(args));
+    }
+	
+    inspect_tree(0, CAR(args), deep, pvec);
     return obj;
+}
+
+/* the following functions can be use internally and for debugging purposes -
+   so far they are not used in any actual code */
+SEXP attribute_hidden R_inspect(SEXP x) {
+    inspect_tree(0, x, -1, 5);
+    return x;
+}
+
+SEXP attribute_hidden R_inspect3(SEXP x, int deep, int pvec) {
+    inspect_tree(0, x, deep, pvec);
+    return x;
 }

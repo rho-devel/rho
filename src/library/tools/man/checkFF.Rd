@@ -38,7 +38,7 @@ checkFF(package, dir, file, lib.loc = NULL,
   a character string, not what class of object the symbol resolves to
   at run-time.
   
-  \emph{If} the package has a name space and \emph{if} that contains a
+  \emph{If} the package has a namespace and \emph{if} that contains a
   \code{useDynLib} directive, calls in top-level functions in the
   package are not reported as their symbols will be preferentially
   looked up in the DLL named in the first \code{useDynLib} directive.
@@ -56,12 +56,8 @@ checkFF(package, dir, file, lib.loc = NULL,
   \code{\link{.Fortran}};
   \code{\link{Foreign}}.
 }
-\section{Warning}{
-  This function is still experimental.  Both name and interface might
-  change in future versions.
-}
-\examples{
+\examples{\donttest{ # order is pretty much random
 checkFF(package = "stats", verbose = TRUE)
-}
+}}
 \keyword{programming}
 \keyword{utilities}

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -67,7 +67,7 @@ void rmultinom(int n, double* prob, int K, int* rN)
 {
     int k;
     double pp;
-    LDOUBLE p_tot = 0.;
+    long double p_tot = 0.;
     /* This calculation is sensitive to exact values, so we try to
        ensure that the calculations are as accurate as possible
        so different platforms are more likely to give the same

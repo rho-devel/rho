@@ -1,6 +1,6 @@
 % File src/library/base/man/UseMethod.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{UseMethod}
@@ -53,12 +53,12 @@ NextMethod(generic = NULL, object = NULL, \dots)
   Function \code{\link{methods}} can be used to find out about the
   methods for a particular generic function or class.
 
-  \code{UseMethod} is a primitive function so positional matching is
-  used and names of supplied arguments are ignored.  It is not the only
-  means of dispatch of methods, for there are \link{internal generic}
-  and \link{group generic} functions.  \code{UseMethod} currently
-  dispatches on the implicit class even for arguments that are not
-  objects, but the other means of dispatch do not.
+  \code{UseMethod} is a primitive function but (as from \R 2.11.0) uses
+  standard argument matching.  It is not the only means of dispatch of
+  methods, for there are \link{internal generic} and \link{group generic}
+  functions.  \code{UseMethod} currently dispatches on the implicit
+  class even for arguments that are not objects, but the other means of
+  dispatch do not.
 
   \code{NextMethod} invokes the next method (determined by the
   class vector, either of the object supplied to the generic, or of
@@ -72,11 +72,11 @@ NextMethod(generic = NULL, object = NULL, \dots)
   \link{InternalGenerics}).  In particular it will not work inside
   anonymous calling functions (e.g. \code{get("print.ts")(AirPassengers)}).
 
-  Name spaces can register methods for generic functions.  To support
+  Namespaces can register methods for generic functions.  To support
   this, \code{UseMethod} and \code{NextMethod} search for methods in
   two places: first in the environment in which the generic function
   is called, and then in the registration data base for the
-  environment in which the generic is defined (typically a name space).
+  environment in which the generic is defined (typically a namespace).
   So methods for a generic function need to be available in the
   environment of the call to the generic, or they must be registered.
   (It does not matter whether they are visible in the environment in
@@ -106,7 +106,7 @@ NextMethod(generic = NULL, object = NULL, \dots)
   are handled specially: they either replace existing arguments of the
   same name or are appended to the argument list.  They are passed on as
   the promise that was supplied as an argument to the current
-  environment. (S does this differently!)  If they have been evaluated
+  environment.  (S does this differently!)  If they have been evaluated
   in the current (or a previous environment) they remain evaluated.
   (This is a complex area, and subject to change: see the draft
   \sQuote{R Language Definition}.)
@@ -114,7 +114,7 @@ NextMethod(generic = NULL, object = NULL, \dots)
   The search for methods for \code{NextMethod} is slightly different
   from that for \code{UseMethod}.   Finding no \code{fun.default} is not
   necessarily an error, as the search continues to the generic
-  itself. This is to pick up an \link{internal generic} like \code{[}
+  itself.  This is to pick up an \link{internal generic} like \code{[}
   which has no separate default method, and succeeds only if the generic
   is a \link{primitive} function or a wrapper for a
   \code{\link{.Internal}} function of the same name.  (When a primitive

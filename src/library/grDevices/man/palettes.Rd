@@ -1,6 +1,6 @@
 % File src/library/grDevices/man/palettes.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Palettes}
@@ -14,31 +14,27 @@
   Create a vector of \code{n} contiguous colors.
 }
 \usage{
-rainbow(n, s = 1, v = 1, start = 0, end = max(1,n - 1)/n,
-        gamma = 1, alpha = 1)
+rainbow(n, s = 1, v = 1, start = 0, end = max(1,n - 1)/n, alpha = 1)
 heat.colors(n, alpha = 1)
 terrain.colors(n, alpha = 1)
 topo.colors(n, alpha = 1)
 cm.colors(n, alpha = 1)
 }
 \arguments{
-  \item{n}{the number of colors (\eqn{\ge 1}{>= 1}) to be in the
+  \item{n}{the number of colors (\eqn{\ge 1}) to be in the
     palette.}
   \item{s,v}{the \sQuote{saturation} and \sQuote{value} to be used
     to complete the HSV color descriptions.}
   \item{start}{the (corrected) hue in [0,1] at which the rainbow
     begins.}
   \item{end}{the (corrected) hue in [0,1] at which the rainbow ends.}
-  \item{gamma}{the gamma correction, see argument \code{gamma} in
-    \code{\link{hsv}}.}
   \item{alpha}{the alpha transparency, a number in [0,1], see argument
     \code{alpha} in \code{\link{hsv}}.}
 }
 \details{
   Conceptually, all of these functions actually use (parts of) a line
   cut out of the 3-dimensional color space, parametrized by
-  \code{\link{hsv}(h,s,v, gamma)}, where \code{gamma}\eqn{=1} for the
-  \emph{foo}\code{.colors} function, and hence,
+  \code{\link{hsv}(h,s,v)}, and hence,
   equispaced hues in RGB space tend to cluster at
   the red, green and blue primaries.
 

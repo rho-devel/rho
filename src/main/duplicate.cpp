@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -18,7 +18,7 @@
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *            (C) 2004  The R Foundation
- *  Copyright (C) 1998-2007 the R Development Core Group.
+ *  Copyright (C) 1998-2009 The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@
 #include "Defn.h"
 
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -72,14 +73,6 @@ SEXP duplicate(SEXP s){
 #endif
     SEXP t = RObject::clone(s);
     if (!t) return s;
-#ifdef R_MEMORY_PROFILING
-    if R(TRACE(s) && !(TYPEOF(s) == CLOSXP || TYPEOF(s) == BUILTINSXP ||
-		      TYPEOF(s) == SPECIALSXP || TYPEOF(s) == PROMSXP ||
-		      TYPEOF(s) == ENVSXP)){
-	    memtrace_report(s,t);
-	    SET_RTRACE(t,1);
-    }
-#endif
     return t;
 }
 

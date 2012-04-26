@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -172,8 +172,8 @@ static int computeDLOpenFlag(int asLocal, int now)
        call time.
     */
 # define DL_WARN(i) \
-    if(asInteger(GetOption(install("warn"), R_BaseEnv)) == 1 || \
-       asInteger(GetOption(install("verbose"), R_BaseEnv)) > 0) \
+    if(asInteger(GetOption1(install("warn"))) == 1 || \
+       asInteger(GetOption1(install("verbose"))) > 0) \
 	warning(_(warningMessages[i]))
 #endif
 
@@ -223,7 +223,7 @@ static int computeDLOpenFlag(int asLocal, int now)
 
 /*
   This is the system/OS-specific version for resolving a
-  symbol in a shared library.  A cast would not be legal C.
+  symbol in a shared object.  A cast would not be legal C.
  */
 typedef union {void *p; DL_FUNC fn;} fn_ptr;
 static DL_FUNC R_local_dlsym(DllInfo *info, char const *name)

@@ -1,6 +1,6 @@
 % File src/library/utils/man/download.file.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{download.file}
@@ -14,7 +14,7 @@
 }
 \usage{
 download.file(url, destfile, method, quiet = FALSE, mode = "w",
-              cacheOK = TRUE)
+              cacheOK = TRUE, extra = getOption("download.file.extra"))
 }
 \arguments{
   \item{url}{A character string naming the URL of a resource to be
@@ -24,15 +24,15 @@ download.file(url, destfile, method, quiet = FALSE, mode = "w",
     file is saved.  Tilde-expansion is performed.}
 
   \item{method}{Method to be used for downloading files.  Currently
-    download methods \code{"internal"}, \code{"wget"} and \code{"lynx"}
-    are available, and there is a value \code{"auto"}: see
+    download methods \code{"internal"}, \code{"wget"}, \code{"curl"}
+    and \code{"lynx"} are available, and there is a value \code{"auto"}: see
     \sQuote{Details}.  The method can also be set through the option
     \code{"download.file.method"}: see \code{\link{options}()}.}
 
   \item{quiet}{If \code{TRUE}, suppress status messages (if any), and
     the progress bar.}
 
-  \item{mode}{character.  The mode with which to write the file. Useful
+  \item{mode}{character.  The mode with which to write the file.  Useful
     values are \code{"w"}, \code{"wb"} (binary), \code{"a"} (append) and
     \code{"ab"}.  Only used for the \code{"internal"} method.
 #ifdef windows
@@ -41,7 +41,11 @@ download.file(url, destfile, method, quiet = FALSE, mode = "w",
   }
 
   \item{cacheOK}{logical.  Is a server-side cached value acceptable?
-    Implemented for the \code{"internal"} and \code{"wget"} methods.}
+    Implemented for the \code{"internal"}, \code{"wget"} and
+    \code{"curl"} methods.}
+
+  \item{extra}{character vector of additional command-line arguments for
+    the \code{"wget"}, \code{"curl"} and \code{"lynx"} methods.}
 }
 \details{
   The function \code{download.file} can be used to download a single
@@ -54,7 +58,8 @@ download.file(url, destfile, method, quiet = FALSE, mode = "w",
   If \code{method = "auto"} is chosen (the default), the internal method
   is chosen for \samp{file://} URLs, and for the others provided
   \code{\link{capabilities}("http/ftp")} is true (which it almost always
-  is).  Otherwise methods \code{"wget"} and \code{"lynx"} are tried in turn.
+  is).  Otherwise methods \code{"wget"}, \code{"curl"} and \code{"lynx"}
+  are tried in turn.
 #endif
 #ifdef windows
   If \code{method = "auto"} is chosen (the default), the internal method
@@ -68,7 +73,7 @@ download.file(url, destfile, method, quiet = FALSE, mode = "w",
 
   The remaining details apply to method \code{"internal"} only.
 
-  Note that \samp{https://} connections are
+  Note that \samp{https://} URLs are
 #ifdef unix
   not supported.
 #endif
@@ -89,30 +94,36 @@ download.file(url, destfile, method, quiet = FALSE, mode = "w",
   \code{quiet} argument and the \code{internet.info} option.  The
   details depend on the platform and scheme, but setting
   \code{internet.info} to 0 gives all available details, including
-  all server responses. Using 2 (the default) gives only serious
+  all server responses.  Using 2 (the default) gives only serious
   messages, and 3 or more suppresses all messages.
 
 #ifdef windows
-  A progress bar tracks the transfer. If the file length is known, the
+  A progress bar tracks the transfer.  If the file length is known, the
   full width of the bar is the known length.  Otherwise the initial
   width represents 100 Kbytes and is doubled whenever the current width
   is exceeded.
 
   If \code{mode} is not supplied and \code{url} ends in one of
-  \code{.gz}, \code{.bz2}, \code{.tgz} or \code{.zip} a binary transfer
-  is done.
+  \code{.gz}, \code{.bz2}, \code{.xz}, \code{.tgz}, \code{.zip},
+  \code{.rda} or \code{.RData} a binary transfer is done.  Since Windows
+  (unlike Unix-alikes) does distinguish between text and binary files,
+  care is needed that other binary file types are transferred with
+  \code{mode = "wb"}.
 
   There is an alternative method if you have Internet Explorer 4 or
   later installed.   You can use the command line flag \option{--internet2}, 
   or call \code{\link{setInternet2}(TRUE)} and then 
   the \sQuote{Internet Options} of the system are used to choose proxies
   and so on; these are set in the Control Panel and are those used for
-  Internet Explorer.  This version does not support \code{cacheOK = FALSE}.
+  Internet Explorer.  That version does not support \code{cacheOK = FALSE}.
 #endif
 #ifdef unix
-  A progress bar tracks the transfer. If the file length is known, an
-  equals represents 2\% of the transfer completed: otherwise a dot
+  A progress bar tracks the transfer.  If the file length is known, an
+  equals sign represents 2\% of the transfer completed: otherwise a dot
   represents 10Kb.
+
+  Code written to download binary files must use \code{mode = "wb"}, but
+  the problems incurred by a text transfer will only be seen on Windows.
 #endif
 
   Method \code{"wget"} can be used with proxy firewalls which require
@@ -120,12 +131,16 @@ download.file(url, destfile, method, quiet = FALSE, mode = "w",
   configuration file for \code{wget}.
 }
 \note{
-  Methods \code{"wget"} and \code{"lynx"} are for historical
-  compatibility.  They will block all other activity on the \R process.
+  Methods \code{"wget"} and \code{"lynx"} are mainly for historical
+  compatibility, but they and \code{"curl"} can be used for URLs
+  (e.g. \samp{https://} URLs or those than use cookies) which the
+  internal method does not support.  They will block all other activity
+  on the \R process.
 
-  For methods \code{"wget"} and \code{"lynx"} a system call is made to
-  the tool given by \code{method}, and the respective program must be
-  installed on your system and be in the search path for executables.
+  For methods \code{"wget"}, \code{"curl"}and \code{"lynx"} a system
+  call is made to the tool given by \code{method}, and the respective
+  program must be installed on your system and be in the search path for
+  executables.
 }
 \section{Setting Proxies}{
   This applies to the internal code only.
@@ -173,5 +188,8 @@ download.file(url, destfile, method, quiet = FALSE, mode = "w",
 
   \code{\link{url.show}}, \code{\link{available.packages}},
   \code{\link{download.packages}} for applications.
+
+  Contributed package \pkg{RCurl} provides more comprehensive facilities
+  to download from URLs.
 }
 \keyword{utilities}

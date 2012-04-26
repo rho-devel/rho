@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -47,8 +47,10 @@ static const R_CallMethodDef CallEntries[] = {
     CALLDEF(R_dummy_extern_place, 0),
     CALLDEF(R_el_named, 2),
     CALLDEF(R_externalptr_prototype_object, 0),
+    CALLDEF(R_getClassFromCache, 2),
     CALLDEF(R_getGeneric, 4),
     CALLDEF(R_get_slot, 2),
+    CALLDEF(R_hasSlot, 2),
     CALLDEF(R_identC, 2),
     CALLDEF(R_initMethodDispatch, 1),
     CALLDEF(R_methodsPackageMetaName, 3),

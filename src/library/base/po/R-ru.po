@@ -7,18 +7,19 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.10.0\n"
+"Project-Id-Version: R 2.11.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-12-10 19:18\n"
-"PO-Revision-Date: 2009-10-15 02:15-0500\n"
-"Last-Translator: Alexey Shipunov <dactylorhiza at gmail>\n"
+"POT-Creation-Date: 2011-10-23 14:54\n"
+"PO-Revision-Date: 2011-10-18 19:27-0600\n"
+"Last-Translator: Alexey Shipunov <dactylorhiza@gmail.com>\n"
 "Language-Team: Russian\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=koi8-r\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Poedit-Language: Russian\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
-"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 msgid "'%s' is defunct."
 msgstr "'%s' больше не существует."
@@ -89,8 +90,17 @@ msgstr "Ошибочная версия генератора Kinderman-Ramage не разрешена"
 msgid "malformed version string"
 msgstr "неправильно сформирована строка версии"
 
+msgid "target is %s, current is %s"
+msgstr "цель %s, текущая %s"
+
 msgid "dim(X) must have a positive length"
 msgstr "dim(X) должен иметь положительную длину"
+
+msgid "'X' must have named dimnames"
+msgstr "'x' должен иметь именованные измерения"
+
+msgid "not all elements of 'MARGIN' are names of dimensions"
+msgstr "не все элементы 'MARGIN' есть имена измерений"
 
 msgid "'dim' specifies too large an array"
 msgstr "'dim' определяет слишком большую многомерную матрицу"
@@ -110,17 +120,29 @@ msgstr "*** Заметьте, что в будущем 'pos=1' будет приводить к ошибке"
 msgid "file '%s' not found"
 msgstr "файл '%s' не найден"
 
-msgid "invalid name"
-msgstr "неправильное имя"
+msgid "invalid 'name' argument"
+msgstr "неправильный аргумент 'name'"
 
-msgid "is required by"
-msgstr "требуется для"
+msgid "package %s is required by %s, which may no longer work correctly"
+msgstr "пакет '%s' требуется для %s, что может не работать правильно"
 
-msgid "(still attached)"
-msgstr "(по-прежнему присоединен)"
+msgid "package %s is required by %s so will not be detached"
+msgstr "пакет '%s' требуется для '%s', и поэтому не будет отсоединен"
 
-msgid "namespace cannot be unloaded"
-msgstr "пространство имен  нельзя выгрузить"
+msgid ""
+"%s failed in %s() for '%s', details:\n"
+"  call: %s\n"
+"  error: %s"
+msgstr ""
+"%s не удалось в %s() для '%s', подробности:\n"
+"  вызов: %s\n"
+"  ошибка: %s"
+
+msgid "namespace cannot be unloaded:"
+msgstr "пространство имен нельзя выгрузить:"
+
+msgid "converted to character string"
+msgstr "конвертирован в текстовую строку"
 
 msgid "replaced regular expression pattern '[' by  '\\\\['"
 msgstr "образец регулярного выражения '[' заменен на  '\\\\['"
@@ -191,6 +213,9 @@ msgstr "неправильное указание 'restart'"
 msgid "argument 'where' of length 0"
 msgstr "аргумент 'where' нулевой длины"
 
+msgid "argument 'object' must deparse to a single character string"
+msgstr "аргумент 'object' должно быть возможно сконвертировать в строку"
+
 msgid "'origin' must be one of 'start', 'current' or 'end'"
 msgstr "'origin' должен быть одним из: 'start', 'current' или 'end'"
 
@@ -233,8 +258,8 @@ msgstr "пропущенные значения в 'row.names' не разрешены"
 msgid "invalid 'dimnames' given for data frame"
 msgstr "для таблицы данных предложены неправильные 'dimnames'"
 
-msgid "cannot coerce class %s into a data.frame"
-msgstr "не могу поместить класс \"%s\" в data.frame"
+msgid "cannot coerce class '%s' into a data.frame"
+msgstr "не могу перевести класс '%s' в data.frame"
 
 msgid "invalid 'row.names', length %d for a data frame with %d rows"
 msgstr "неправильные 'row.names', длиной %d для таблицы данных с %d строками"
@@ -465,6 +490,9 @@ msgstr "'lag' и 'differences' должны быть целыми >= 1"
 msgid "do not know how to convert '%s' to class \"POSIXlt\""
 msgstr "не знаю как конвертировать '%s' в класс \"POSIXlt\""
 
+msgid "do not know how to convert '%s' to class \"POSIXct\""
+msgstr "не знаю как конвертировать '%s' в класс \"POSIXct\""
+
 msgid "wrong class"
 msgstr "неправильный класс"
 
@@ -559,9 +587,6 @@ msgstr "только диагонали матрицы могут быть заменены"
 msgid "replacement diagonal has wrong length"
 msgstr "у замены диагонали -- неправильная длина"
 
-msgid "'fromLast' must be TRUE or FALSE"
-msgstr "'fromLast' должен быть TRUE или FALSE"
-
 msgid "MARGIN ="
 msgstr "MARGIN ="
 
@@ -621,11 +646,21 @@ msgstr "установки уровней для факторов различны"
 msgid "invalid factor level, NAs generated"
 msgstr "неправильный уровень фактора, получились NA"
 
+msgid "invalid factor level, NA generated"
+msgstr "неправильный уровень фактора, получились NA"
+
 msgid "'%s' is not meaningful for ordered factors"
 msgstr "'%s' не значим для упорядоченных факторов"
 
-msgid "no files to copy from"
-msgstr "нет файлов, чтобы скопировать с"
+msgid "'%s' not defined for ordered factors"
+msgstr "'%s' не определен для упорядоченных факторов"
+
+msgid ""
+"'%s' is only meaningful for ordered factors if all arguments have the same "
+"level sets"
+msgstr ""
+"'%s' имеет смысл только для упорядоченных факторов если все аргументы имеют "
+"одинаковые наборы градаций"
 
 msgid "no files to copy to"
 msgstr "нет файлов, чтобы скопировать на"
@@ -633,8 +668,10 @@ msgstr "нет файлов, чтобы скопировать на"
 msgid "more 'from' files than 'to' files"
 msgstr "больше файлов 'from', чем 'to'"
 
-msgid "'recursive' will be ignored"
-msgstr "'recursive' будет проигнорирован"
+msgid "'recursive' will be ignored as 'to' is not a single existing directory"
+msgstr ""
+"'recursive' будет проигнорирован, так как 'to' не является одиночным "
+"каталогом"
 
 msgid "file can not be copied both 'from' and 'to'"
 msgstr "файл не может быть скопирован одновременно 'from' и 'to'"
@@ -645,23 +682,20 @@ msgstr "нет файлов для ссылки с"
 msgid "no files/directory to link to"
 msgstr "нет файлов/папок для ссылки на"
 
-msgid "'x' must have length 1"
-msgstr "'x' должен иметь длину 1"
-
-msgid "invalid digits"
-msgstr "неправильное количество знаков после запятой"
-
-msgid "'x' cannot be coerced to 'octmode'"
-msgstr "'x' нельзя преобразовать в 'octmode'"
-
-msgid "'x' must be of length 1"
-msgstr "'x' должен быть длиной 1"
-
-msgid "'x' cannot be coerced to hexmode"
-msgstr "'x' нельзя преобразовать в 'hexmode'"
+msgid "no files to link to"
+msgstr "нет файлов для ссылки на"
 
 msgid "'package' must be of length 1"
 msgstr "'пакет' должен быть длиной 1"
+
+msgid "no file found"
+msgstr "файл не найден"
+
+msgid "invalid 'path' argument"
+msgstr "неправильный аргумент 'path'"
+
+msgid "invalid 'time' argument"
+msgstr "неправильный аргумент 'time'"
 
 msgid "'vec' contains NAs"
 msgstr "'vec' содержит NA"
@@ -713,20 +747,38 @@ msgstr "' не найдено"
 msgid "all arguments must be named"
 msgstr "все аргументы должны быть именованы"
 
-msgid "'pattern' must be a non-empty character string"
-msgstr "'pattern' должен быть непустой текстовой строкой"
-
-msgid "invalid multibyte string for 'pattern'"
-msgstr "неправильная многобайтная строка для 'pattern'"
-
-msgid "'max.distance' must be non-negative"
-msgstr "'max.distance' должна быть неотрицательной"
+msgid "match distance components must be non-negative"
+msgstr "компоненты соответствий расстояний должны быть неотрицательными"
 
 msgid "unknown match distance components ignored"
 msgstr "компоненты расстояния с неизвестным соответствием пропущены"
 
-msgid "'max.distance' components must be non-negative"
-msgstr "компоненты 'max.distance' должны быть неотрицательными"
+msgid "unknown cost components ignored"
+msgstr "неизвестные компоненты платы пропущены"
+
+msgid "cost components must be non-negative"
+msgstr "компоненты платы должны быть неотрицательными"
+
+msgid "%s and %s must have the same length"
+msgstr "%s и %s должны иметь одинаковую длину"
+
+msgid "need non-overlapping matches for %s"
+msgstr "для %s нужны неперекрывающиеся соответствия"
+
+msgid "missing replacement values are not allowed"
+msgstr "пропущенные значения для замены не разрешены"
+
+msgid "must have replacement values for matches"
+msgstr "для соответствий нужны значения на замену"
+
+msgid "value does not provide any replacement values"
+msgstr "значение не дает никаких замен"
+
+msgid "must have replacements for non-matches"
+msgstr "нужны замены для несоответствующих значений"
+
+msgid "must have replacements for matches"
+msgstr "нужны замены для соответствий"
 
 msgid "norm '%s' currently always uses exact = FALSE"
 msgstr "norm '%s' сейчас всегда использует exact = FALSE"
@@ -737,99 +789,84 @@ msgstr "треугольная матрица должна быть квадратной"
 msgid "'object' must be a list"
 msgstr "'object' должен быть списком"
 
-msgid "This is R %s, package '%s' needs %s %s"
-msgstr "Это -- R %s, а пакету '%s' нужен %s %s"
+msgid "'keep.source' is deprecated and will be ignored"
+msgstr ""
 
-msgid "package '%s' was built before R 2.0.0: please re-install it"
-msgstr "пакет '%s' был собран до R 2.0.0: пожалуйста, инсталлируйте его заново"
+msgid "package %s has not been installed properly"
+msgstr "пакет %s как следует не установлен"
 
-msgid "package '%s' was built under R version %s"
-msgstr "пакет '%s' был собран под R версии %s"
+msgid "package %s was built before R 2.10.0: please re-install it"
+msgstr "пакет %s был собран до R 2.10.0: пожалуйста, инсталлируйте его заново"
+
+msgid "This is R %s, package %s needs %s %s"
+msgstr "Это -- R версии %s, а пакету %s нужен %s %s"
+
+msgid "package %s was built under R version %s"
+msgstr "пакет %s был собран под R версии %s"
+
+msgid "package %s was built for %s"
+msgstr "пакет %s был собран для %s"
+
+msgid "package %s is not installed for 'arch=%s'"
+msgstr "пакет %s не установлен для 'arch=%s'"
 
 msgid ""
-"package '%s' was built under R version %s and help will not work correctly\n"
-"Please re-install it"
+"package %s has a license that you need to accept in an interactive session"
 msgstr ""
-"пакет '%s' был собран до версии R %s и помощь не будет правильно работать\n"
-"Пожалуйста, переустановите его"
+"у пакета %s есть лицензия, которую Вам нужно принять в инерактивной сессии"
+
+msgid "Package %s has a license that you need to accept after viewing"
+msgstr "Пакет %s имеет лицензию, которую Вам нужно принять после просмотра"
 
 msgid ""
-"package '%s' was built under R version %s and help may not work correctly"
+"Package %s has a license that you need to accept:\n"
+"according to the DESCRIPTION file it is"
 msgstr ""
-"пакет '%s' был собран под R версии %s и помощь не будет правильно работать"
+"Пакет %s имеет лицензию, которую надо принять::\n"
+"в соответствии с файлом DESCRIPTION это"
 
-msgid ""
-"package '%s' claims to be built under R version %s but is missing some help "
-"files and needs to be re-installed"
-msgstr ""
-"пакет '%s' сообщает, что он был собран для версии R %s, но у него нет "
-"некоторых файлов помощи и поэтому его надо переустановить"
+msgid "License"
+msgstr "Лицензия"
 
-msgid "package '%s' was built for %s"
-msgstr "пакет '%s' был собран для %s"
+msgid "License for package %s not accepted"
+msgstr "Лицензия для пакета %s не принята"
 
-msgid "package '%s' is not installed for 'arch=%s'"
-msgstr "пакет '%s' не установлен для 'arch=%s'"
+msgid "Attaching package: %s"
+msgstr "Присоединяю пакет: %s"
 
-msgid "package '%s' has not been installed properly"
-msgstr "пакет '%s' как следует не установлен"
-
-msgid "See the Note in ?library"
-msgstr "См. 'Note' в ?library"
-
-msgid "Attaching package: '%s'"
-msgstr "Присоединяю пакет: '%s'"
-
-msgid "The following object(s) are masked"
-msgstr "Следующие объект(ы) скрыты"
-
-msgid "_by_"
-msgstr "_по_"
-
-msgid "from"
-msgstr "из"
-
-msgid ":"
-msgstr ":"
+msgid "'verbose' and 'quietly' are both true; being verbose then .."
+msgstr "'verbose' и 'quietly' -- оба true; значит, будем verbose..."
 
 msgid "invalid package name"
 msgstr "неправильное имя пакета"
 
-msgid "there is no package called '%s'"
-msgstr "нет пакета под названием '%s'"
+msgid "there is no package called %s"
+msgstr "нет пакета под названием %s"
 
 msgid "no library trees found in 'lib.loc'"
 msgstr "деревья библиотеки не найдены в 'lib.loc'"
 
-msgid "'%s' is not a valid installed package"
-msgstr "'%s' не является правильным установленным пакетом"
+msgid "%s is not a valid installed package"
+msgstr "%s не является правильным установленным пакетом"
 
-msgid "'%s' not found on search path, using pos = 2"
-msgstr "'%s' не найден в пути поиска, использую pos = 2"
+msgid "%s not found on search path, using pos = 2"
+msgstr "%s не найден в пути поиска, использую pos = 2"
 
-msgid "package/namespace load failed for '%s'"
-msgstr "не удалась загрузка пакета/пространства имен для '%s'"
+msgid "package/namespace load failed for %s"
+msgstr "не удалась загрузка пакета/пространства имен для %s"
 
-msgid "package was installed prior to 2.4.0 and must be re-installed"
-msgstr "пакет был установлен до R 2.4.0 и должен быть переустановлен"
+msgid "package %s does not have a NAMESPACE and should be re-installed"
+msgstr ""
+"пакет '%s' не имеет пространства имен и должен быть инсталлирован заново"
 
-msgid "unable to load R code in package '%s'"
-msgstr "не могу загрузить код R пакета '%s'"
-
-msgid "package '%s' contains no R code"
-msgstr "пакет '%s' не содержит кода R"
-
-msgid ".First.lib failed for '%s'"
-msgstr ".First.lib не загрузилась для '%s'"
-
-msgid "package '%s' already present in search()"
-msgstr "пакет '%s' уже есть в search()"
+msgid "package %s already present in search()"
+msgstr "пакет %s уже есть в search()"
 
 msgid "'DESCRIPTION' has 'Encoding' field and re-encoding is not possible"
 msgstr "У 'DESCRIPTION' есть поле 'Encoding', перекодировка невозможна"
 
-msgid "%sPackages in library '%s':"
-msgstr "%sПакеты в библиотеке '%s':"
+msgid "%sPackages in library %s:"
+msgstr "%sПакеты в библиотеке %s:"
 
 msgid "no packages found"
 msgstr "пакеты не найдены"
@@ -837,20 +874,38 @@ msgstr "пакеты не найдены"
 msgid "R packages available"
 msgstr "доступные R-пакеты"
 
-msgid "shared library '%s' not found"
-msgstr "разделяемая библиотека '%s' не найдена"
+msgid "DLL %s not found: maybe not installed for this architecture?"
+msgstr "DLL %s не найден: может быть, не установлен в этой архитектуре?"
 
-msgid "shared library '%s' already loaded"
-msgstr "разделяемая библиотека '%s' уже загружена"
+msgid "shared object %s not found"
+msgstr "разделяемый объект %s не найден"
+
+msgid "DLL %s already loaded"
+msgstr "DLL %s уже загружена"
+
+msgid "shared object '%s' already loaded"
+msgstr "разделяемый объект '%s' уже загружен"
 
 msgid "now dyn.load(\"%s\") ..."
 msgstr "сейчас dyn.load(\"%s\") ..."
 
-msgid "no shared library was specified"
-msgstr "разделяемая библиотека не указана"
+msgid "no DLL was specified"
+msgstr "не определена DLL"
 
-msgid "shared library '%s' was not loaded"
-msgstr "разделяемая библиотека '%s' не загружена"
+msgid "no shared object was specified"
+msgstr "разделяемый объект не указан"
+
+msgid "DLL %s was not loaded"
+msgstr "DLL %s не загружен"
+
+msgid "shared object %s was not loaded"
+msgstr "разделяемый объект %s не загружен"
+
+msgid "DLL %s not found"
+msgstr "DLL %s не найден"
+
+msgid "shared object '%s' not found"
+msgstr "разделяемый объект '%s' не найден"
 
 msgid "now dyn.unload(\"%s\") ..."
 msgstr "сейчас dyn.unload(\"%s\") ..."
@@ -862,16 +917,15 @@ msgid "none of the packages are loaded"
 msgstr "ни один из пакетов не загружен"
 
 msgid ""
-"package '%s' found more than once,\n"
-"using the one found in '%s'"
+"package %s found more than once,\n"
+"using the one found in %s"
 msgstr ""
-"пакет '%s' найден более чем однажды,\n"
-"использую тот, который найден в '%s'"
+"пакет %s найден больше одного раза,\n"
+"использую тот, который найден в %s"
 
 msgid ""
-"Further information is available in the following vignettes in directory '%"
-"s':"
-msgstr "Дальнейшая информация доступна в следующих миниатюрах из папки '%s':"
+"Further information is available in the following vignettes in directory %s:"
+msgstr "Дальнейшая информация доступна в следующих миниатюрах из папки %s:"
 
 msgid "doc"
 msgstr "документ"
@@ -882,32 +936,35 @@ msgstr "Определение:"
 msgid "Index:"
 msgstr "Индекс:"
 
-msgid "Information on package '%s'"
-msgstr "Информация по пакету '%s'"
+msgid "Information on package %s"
+msgstr "Информация по пакету %s"
 
-msgid "Documentation for package '%s'"
-msgstr "Документация для пакета '%s'"
+msgid "Documentation for package %s"
+msgstr "Документация для пакета %s"
 
-msgid "package '%s' required by '%s' could not be found"
-msgstr "пакет '%s', требуемый для '%s', не найден"
+msgid "package %s required by %s could not be found"
+msgstr "пакет %s, требуемый для %s, не найден"
 
-msgid "package '%s' %s was found, but %s %s is required by '%s'"
-msgstr "пакет '%s' %s найден, но %s %s требуется для '%s'"
+msgid "package %s %s was found, but %s %s is required by %s"
+msgstr "пакет %s %s найден, но %s %s требуется для %s"
 
-msgid "package '%s' could not be loaded"
-msgstr "пакет '%s' нельзя загрузить"
+msgid "package %s could not be loaded"
+msgstr "пакет %s нельзя загрузить"
 
-msgid "package '%s' %s is loaded, but %s %s is required by '%s'"
-msgstr "пакет '%s' %s загружен, но %s %s требуется для '%s'"
+msgid "package %s %s is loaded, but %s %s is required by %s"
+msgstr "пакет %s %s загружен, но %s %s требуется для %s"
+
+msgid "empty (zero-byte) input file"
+msgstr "пустой (ноль бит) входной файл"
 
 msgid "input has been corrupted, with LF replaced by CR"
 msgstr "ввод поврежден, LF заменен на CR"
 
 msgid ""
-"file '%s' has magic number '%s'\n"
+"file %s has magic number '%s'\n"
 "   Use of save versions prior to 2 is deprecated"
 msgstr ""
-"файл '%s' имеет магическое число '%s'\n"
+"файл %s имеет магическое число '%s'\n"
 "   Использование сохраненных версий, более ранних чем 2, не одобряется"
 
 msgid "bad 'file' argument"
@@ -922,6 +979,12 @@ msgstr "Использование сохраненных версий, более ранних чем 2, не одобряется"
 msgid "'file' must be non-empty string"
 msgstr "'file' должен быть непустой строкой"
 
+msgid "'compress' must be logical or character"
+msgstr "'compress' должен быть логическим либо текстовой строкой"
+
+msgid "'compress = \"%s\"' is invalid"
+msgstr "'compress = \"%s\"' неправилен"
+
 msgid "bad file argument"
 msgstr "неправильный файловый аргумент"
 
@@ -934,8 +997,8 @@ msgstr "изображение нельзя переименовать; оставлено в"
 msgid "[Previously saved workspace restored]"
 msgstr "[Загружено ранее сохраненное рабочее пространство]"
 
-msgid "Attempting to load the environment '%s'"
-msgstr "Пытаюсь загрузить окружение '%s'"
+msgid "Attempting to load the environment %s"
+msgstr "Пытаюсь загрузить окружение %s"
 
 msgid "not found: using .GlobalEnv instead"
 msgstr "не найдено: использую .GlobalEnv"
@@ -1024,35 +1087,26 @@ msgstr ""
 msgid "Expected a single logical value for the S4 state flag"
 msgstr "Ожидается простое логическое значение для флага состояния S4"
 
+msgid "Expected a single logical value for the S3 state flag"
+msgstr "Ожидается простое логическое значение для флага состояния S3"
+
 msgid "invalid to change the storage mode of a factor"
 msgstr "неправильно менять тип хранения фактора"
 
 msgid "'%s' is not an exported object from 'namespace:%s'"
 msgstr "'%s' не является объектом, экспортированным из 'namespace:%s'"
 
-msgid "package '%s' has no name space and"
-msgstr "пакет '%s' не имеет пространства имен и"
+msgid "running .First.lib() for package %s as .onLoad/.onAttach were not found"
+msgstr "запущенная .First.lib() для пакета %s в .onLoad/.onAttach не найдена"
 
-msgid "is not on the search path"
-msgstr "не найден в пути поиска"
-
-msgid "%s failed in 'attachNamespace'"
-msgstr "%s не удалось в 'attachNamespace'"
-
-msgid "name space is already attached"
+msgid "namespace is already attached"
 msgstr "пространство имен уже присоединено"
 
 msgid "%s not found"
 msgstr "%s не найден"
 
-msgid "cyclic name space dependencies are not supported"
-msgstr "циклические зависимости в пространстве имен не поддерживаются"
-
-msgid "%s failed in 'loadNamespace' for '%s'"
-msgstr "%s не удалось в 'loadNamespace' для '%s'"
-
-msgid "namespace '%s' is already sealed in loadNamespace"
-msgstr "пространство имен '%s' уже включено в loadNamespace"
+msgid "namespace %s is already sealed in loadNamespace"
+msgstr "пространство имен %s уже запечатано в loadNamespace"
 
 msgid "failed to assign RegisteredNativeSymbol for"
 msgstr "не удалось присвоить RegisteredNativeSymbol для"
@@ -1072,104 +1126,87 @@ msgstr "пространство имен"
 msgid "failed to assign NativeSymbolInfo for"
 msgstr "не удалось присвоить NativeSymbolInfo для"
 
-msgid "package '%s' does not have a name space"
-msgstr "пакет '%s' не имеет пространства имен"
+msgid "package %s does not have a namespace"
+msgstr "пакет %s не имеет пространства имен"
 
-#, fuzzy
+msgid "unable to load R code in package %s"
+msgstr "не могу загрузить код R пакета %s"
+
 msgid ""
 "exportClassPattern specified in NAMESPACE but no matching classes in package "
-"'%s'"
+"%s"
 msgstr ""
-"Указан 'exportClassPattern', но отсутствуют соответствующие классы в %s"
+"в NAMESPACE указан 'exportClassPattern', но отсутствуют соответствующие "
+"классы в %s"
 
-#, fuzzy
-msgid "in package '%s' classes for export not defined: %s"
-msgstr "в '%s' классы для экспорта не определены: %s"
+msgid "in package %s classes %s were specified for export but not defined"
+msgstr "в пакете '%s' классы %s указаны для экспорта, но не определены"
 
-msgid "in '%s' methods for export not found: %s"
-msgstr "в '%s' методы для экспорта не найдены: %s"
+msgid "in %s methods for export not found: %s"
+msgstr "в %s не найдены методы для экспорта: %s"
 
-msgid "Multiple methods tables found for '"
-msgstr "Множественные таблицы методов найдены для '"
+msgid "multiple methods tables found for %s"
+msgstr "множественные таблицы методов найдены для %s"
 
-msgid "'"
-msgstr "'"
+msgid "failed to find metadata object for %s"
+msgstr "не удалось найти объект метаданных для %s"
 
-msgid "Failed to find metadata object for \"%s\""
-msgstr "Не удалось найти объект метаданных для \"%s\""
+msgid "in package %s methods %s were specified for export but not defined"
+msgstr "в пакете '%s' указаны методы %s для экспорта, но не определены"
 
-msgid "in '%s' methods specified for export, but none defined: %s"
-msgstr "в '%s' указаны методы для экспорта, но ни один не определен: %s"
+msgid "Loading required namespace: %s"
+msgstr "Загрузка требуемого пакета: %s"
 
 msgid "not found"
 msgstr "не найден"
 
-msgid "not loading a name space"
+msgid "not loading a namespace"
 msgstr "не загружаю пространство имен"
 
-#, fuzzy
-msgid ""
-"%s failed in unloadNamespace(\"%s\"), details:\n"
-"  call: %s\n"
-"  message: %s"
-msgstr "%s не удалось в unloadNamespace(%s)"
+msgid "namespace %s is imported by %s so cannot be unloaded"
+msgstr "пространство имен %s импортировано из %s и потому его нельзя выгрузить"
 
-msgid "name space '%s' is still used by: %s"
-msgstr "пространство имен '%s' еще используется в: '%s'"
+msgid "not a namespace"
+msgstr "это не пространство имен"
 
-msgid "imperative name space directives are disabled"
-msgstr "императивные директивы пространства имен отменены"
-
-msgid "all objects in base name space are currently exported."
-msgstr "все объекты в базовом пространстве имен экспортированы."
-
-msgid "can only export from a name space"
-msgstr "могу экспортировать только из пространства имен"
-
-msgid "not a name space"
-msgstr "не пространство имен"
-
-msgid "operation not allowed on base name space"
+msgid "operation not allowed on base namespace"
 msgstr "в базовом пространстве имен эта операция не разрешена"
 
 msgid "duplicate import names"
 msgstr "одинаковые импортированные имена"
 
-msgid "cannot import into a sealed name space"
-msgstr "не могу импортировать во включенное пространство имен"
+msgid "replacing local value with import %s when loading %s"
+msgstr "заменяю локальное значение на импортированное %s во время загрузки %s"
+
+msgid "cannot import into a sealed namespace"
+msgstr "не могу импортировать в запечатанное пространство имен"
+
+msgid "replacing previous import %s when loading %s"
+msgstr "заменяю предыдущий импорт %s во время загрузки %s"
 
 msgid "invalid import target"
 msgstr "неправильное место назначения для импорта"
 
-msgid "got invalid index for importing"
-msgstr "получен неправильный индекс для импорта"
+msgid "found methods to import for function %s but not the generic itself"
+msgstr "найдены методы импорта для функции %s но они сами не общие"
 
-msgid "Found methods to import for function \"%s\" but not the generic itself"
-msgstr "Найдены методы импорта для функции \"%s\", но они сами не общие"
+msgid "requested methods not found in environment/package %s: %s"
+msgstr "запрошенные методы не найдены в окружении/пакете %s: %s"
 
-msgid "requested 'methods' objects not found in environment/package '%s': %s"
-msgstr "запрошенные объекты 'methods' не найдены в окружении/пакете '%s': %s"
-
-msgid "cannot add to exports of a sealed name space"
-msgstr "не могу добавить к экспорту из включенного пространства имен"
+msgid "cannot add to exports of a sealed namespace"
+msgstr "не могу добавить к экспорту из запечатанного пространства имен"
 
 msgid "undefined exports:"
 msgstr "неопределенные экспорты:"
 
-msgid "package '%s' has no NAMESPACE file"
-msgstr "у пакета '%s' нет файла NAMESPACE"
+msgid "package %s has no NAMESPACE file"
+msgstr "у пакета %s нет файла NAMESPACE"
 
 msgid "empty name in directive '%s' in NAMESPACE file"
 msgstr "пустое имя в директиве '%s' из файла NAMESPACE"
 
-msgid "duplicated symbol names"
-msgstr "одинаковые имена символов"
-
-msgid "in useDynLib("
-msgstr "в useDynLib("
-
-msgid ")"
-msgstr ")"
+msgid "duplicated symbol names %s in useDynlib(\"%s\")"
+msgstr "повторяющиеся имена символов %s в useDynlib(\"%s\")"
 
 msgid "bad 'S3method' directive: %s"
 msgstr "неправильная директива 'S3method': %s"
@@ -1180,8 +1217,8 @@ msgstr "слишком много директив 'S3method'"
 msgid "unknown namespace directive: %s"
 msgstr "неизвестная директива пространства имен: %s"
 
-msgid "S3 method '%s' was declared in NAMESPACE but not found"
-msgstr "S3-метод '%s' объявлен в NAMESPACE, но не найден"
+msgid "S3 method %s was declared but not found"
+msgstr "S3 метод %s объявлен, но не найден"
 
 msgid "bad method"
 msgstr "неправильный метод"
@@ -1189,8 +1226,8 @@ msgstr "неправильный метод"
 msgid "object '%s' not found whilst loading namespace '%s'"
 msgstr "в процессе загрузки пространства имен '%s' объект '%s' не найден"
 
-msgid "found an S4 version of '%s' so it has not been imported correctly"
-msgstr "найдена S4-версия '%s' и поэтому она не загружена правильно"
+msgid "found an S4 version of %s so it has not been imported correctly"
+msgstr "найдена S4-версия %s и поэтому она не загружена правильно"
 
 msgid "'%s' is not implemented yet"
 msgstr "'%s' пока не разработан"
@@ -1198,8 +1235,17 @@ msgstr "'%s' пока не разработан"
 msgid "argument '%s' is not used (yet)"
 msgstr "аргумент '%s' не используется (пока)"
 
+msgid "'x' cannot be coerced to 'octmode'"
+msgstr "'x' нельзя преобразовать в 'octmode'"
+
+msgid "'x' cannot be coerced to hexmode"
+msgstr "'x' нельзя преобразовать в 'hexmode'"
+
 msgid "no arguments"
 msgstr "нет аргументов"
+
+msgid "an argument will be fractionally recycled"
+msgstr "аргумент будет частично зациклен"
 
 msgid "invalid 'n' value"
 msgstr "неправильное значение 'n'"
@@ -1271,6 +1317,12 @@ msgstr "длина 'scale' должна равняться числу колонок 'x'"
 msgid "either specify 'nmax' or 'n', but not both."
 msgstr "укажите либо 'nmax', либо 'n', но не оба."
 
+msgid "argument 'length.out' must be of length 1"
+msgstr "аргумент 'length.out' должен быть длиной 1"
+
+msgid "first element used of 'length.out' argument"
+msgstr "только первый элемент аргумента 'length.out' использован"
+
 msgid "invalid (to - from)/by in seq(.)"
 msgstr "неправильный (to - from)/by в seq(.)"
 
@@ -1285,6 +1337,9 @@ msgstr "длина должна быть неотрицательным числом"
 
 msgid "too many arguments"
 msgstr "слишком много аргументов"
+
+msgid "'compress' is ignored unless 'file' is a file name"
+msgstr "'compress' игнорируется если 'file' не является именем файла"
 
 msgid "'connection' must be a connection"
 msgstr "'connection' должно быть соединением"
@@ -1354,6 +1409,9 @@ msgstr "method=\"quick\" -- только для числовых 'x'"
 msgid "method=\"radix\" is only for integer 'x'"
 msgstr "method=\"radix\" -- только для целых 'x'"
 
+msgid "'local' must be TRUE, FALSE or an environment"
+msgstr "'local' должен быть TRUE, FALSE, или environment"
+
 msgid "'echo' must be logical"
 msgstr "'echo' должно быть логическим"
 
@@ -1363,6 +1421,9 @@ msgstr ""
 
 msgid "unable to find a plausible encoding"
 msgstr "не могу найти правдоподобную кодировку"
+
+msgid "encoding = \"%s\" chosen"
+msgstr "выбрана кодировка = \"%s\""
 
 msgid "'chdir = TRUE' makes no sense for a URL"
 msgstr "'chdir = TRUE' не имеет смысла для URL"
@@ -1406,6 +1467,9 @@ msgstr "'x' и 'y' должны иметь одинаковую длину"
 msgid "incorrect values of 'indent' and 'width'"
 msgstr "неправильные значения 'indent' и 'width'"
 
+msgid "probably wrong encoding in names(.) of column"
+msgstr "возможно, неправильная кодировка в names(.) колонки"
+
 msgid "'nv' must be 0 or ncol(x)"
 msgstr "'nv' должен быть 0 или ncol(x)"
 
@@ -1426,6 +1490,9 @@ msgstr "нечего табулировать"
 
 msgid "all arguments must have the same length"
 msgstr "все аргументы должны иметь одинаковую длину"
+
+msgid "attempt to make a table with >= 2^31 elements"
+msgstr "попытка создания таблицы с >= 2^31 элементов"
 
 msgid "'object' must inherit from class \"table\""
 msgstr "'объект' должен наследовать классу \"table\""
@@ -1490,8 +1557,8 @@ msgstr "'%s' не определено для объектов \"numeric_version\""
 msgid "not defined for numeric_version objects"
 msgstr "не определено для объектов numeric_version"
 
-msgid "argument to 'which' is not logical"
-msgstr "аргумент 'which' не является логическим"
+msgid "<0 elements>"
+msgstr "<0 элементов>"
 
 msgid "invalid 'digits'"
 msgstr "неправильные 'digits'"
@@ -1503,8 +1570,44 @@ msgstr ""
 "аргументы у 'show.output.on.console', 'minimized' и 'invisible' только для "
 "Windows"
 
+msgid "'intern' must be TRUE or FALSE"
+msgstr "'intern' должен быть TRUE или FALSE"
+
+msgid "'ignore.stdout' must be TRUE or FALSE"
+msgstr "'ignore.stdout' должен быть TRUE или FALSE"
+
+msgid "'ignore.stderr' must be TRUE or FALSE"
+msgstr "'ignore.stderr' должен быть TRUE или FALSE"
+
+msgid "'wait' must be TRUE or FALSE"
+msgstr "'wait' должен быть TRUE или FALSE"
+
 msgid "'input' must be a character vector or 'NULL'"
 msgstr "'input' должен быть текстовым вектором либо 'NULL'"
+
+msgid "arguments 'minimized' and 'invisible' are for Windows only"
+msgstr "аргументы у 'minimized' и 'invisible' -- только для Windows"
+
+msgid "setting stdout = TRUE"
+msgstr "устанавливаем stdout = TRUE"
+
+msgid "'stdout' must be of length 1"
+msgstr "'stdout' должен быть длиной 1"
+
+msgid "'stderr' must be of length 1"
+msgstr "'stderr' должен быть длиной 1"
+
+msgid "'which' was not found on this platform"
+msgstr "'which' для этой платформы не найдена"
+
+msgid "'show.output.on.console' must be TRUE or FALSE"
+msgstr "'show.output.on.console' должен быть TRUE или FALSE"
+
+msgid "'minimized' must be TRUE or FALSE"
+msgstr "'minimized' должен быть TRUE или FALSE"
+
+msgid "'invisible' must be TRUE or FALSE"
+msgstr "'invisible' должен быть TRUE или FALSE"
 
 msgid "'%s' could not be run"
 msgstr "'%s' не запускается"
@@ -1539,11 +1642,9 @@ msgstr "элементы"
 msgid "have been removed from the search path"
 msgstr "удален из пути поиска"
 
-msgid "cannot find name space environment"
+#, fuzzy
+msgid "cannot find namespace environment"
 msgstr "не могу найти окружение пространства имен"
-
-msgid "package '%s' has a non-function '.First.lib'"
-msgstr "пакет '%s' имеет не-функцию '.First.lib'"
 
 msgid "deparse option %s is not recognized"
 msgid_plural "deparse options %s are not recognized"
@@ -1575,11 +1676,17 @@ msgstr[0] "%s не найден"
 msgstr[1] "%s не найден"
 msgstr[2] "%s не найден"
 
-msgid "object '%s' is not exported by 'namespace:%s'"
-msgid_plural "objects '%s' are not exported by 'namespace:%s'"
-msgstr[0] "объект %s не экспортирован 'namespace:%s'"
-msgstr[1] "объекты %s не экспортированы 'namespace:%s'"
-msgstr[2] "объекты %s не экспортированы 'namespace:%s'"
+msgid "class %s is not exported by 'namespace:%s'"
+msgid_plural "classes %s are not exported by 'namespace:%s'"
+msgstr[0] "класс %s не экспортирован из 'namespace:%s'"
+msgstr[1] "классы %s не экспортированы из 'namespace:%s'"
+msgstr[2] "классы %s не экспортированы из 'namespace:%s'"
+
+msgid "object %s is not exported by 'namespace:%s'"
+msgid_plural "objects %s are not exported by 'namespace:%s'"
+msgstr[0] "объект %s не экспортирован из 'namespace:%s'"
+msgstr[1] "объекты %s не экспортированы из 'namespace:%s'"
+msgstr[2] "объекты %s не экспортированы из 'namespace:%s'"
 
 msgid "previous export '%s' is being replaced"
 msgid_plural "previous exports '%s' are being replaced"
@@ -1599,8 +1706,152 @@ msgstr[0] "Предупреждение:\n"
 msgstr[1] "Предупреждения:\n"
 msgstr[2] "Предупреждения:\n"
 
+#~ msgid "'pattern' must be a non-empty character string"
+#~ msgstr "'pattern' должен быть непустой текстовой строкой"
+
+#~ msgid "invalid multibyte string for 'pattern'"
+#~ msgstr "неправильная многобайтная строка для 'pattern'"
+
+#~ msgid "'max.distance' must be non-negative"
+#~ msgstr "'max.distance' должна быть неотрицательной"
+
+#, fuzzy
+#~ msgid "%s must be a character vector"
+#~ msgstr "'arg' должен быть NULL либо текстовой строкой"
+
+#, fuzzy
+#~ msgid "%s must be a list of character vectors"
+#~ msgstr "'arg' должен быть NULL либо текстовой строкой"
+
+#, fuzzy
+#~ msgid "package %s has no namespace and is not on the search path"
+#~ msgstr "пакет '%s' не имеет пространства имен и не находится в пути поиска"
+
+#, fuzzy
+#~ msgid "package %s contains no R code"
+#~ msgstr "пакет '%s' не содержит кода R"
+
+#, fuzzy
+#~ msgid ".First.lib failed for %s"
+#~ msgstr ".First.lib не загрузилась для '%s'"
+
+#~ msgid "package '%s' has a non-function '.First.lib'"
+#~ msgstr "пакет '%s' имеет не-функцию '.First.lib'"
+
+#~ msgid "no files to copy from"
+#~ msgstr "нет файлов, чтобы скопировать с"
+
+#~ msgid "use of 'save' is deprecated"
+#~ msgstr "использование 'save' не рекомендуется"
+
+#~ msgid "save != FALSE is defunct"
+#~ msgstr "save != FALSE больше не работает"
+
+#~ msgid "got invalid index for importing"
+#~ msgstr "получен неправильный индекс для импорта"
+
+#~ msgid "cyclic name space dependencies are not supported"
+#~ msgstr "циклические зависимости в пространстве имен не поддерживаются"
+
+#~ msgid "'recursive' will be ignored"
+#~ msgstr "'recursive' будет проигнорирован"
+
+#~ msgid "imperative name space directives are disabled"
+#~ msgstr "императивные директивы пространства имен отменены"
+
+#~ msgid "all objects in base name space are currently exported."
+#~ msgstr "все объекты в базовом пространстве имен экспортированы."
+
+#~ msgid "can only export from a name space"
+#~ msgstr "могу экспортировать только из пространства имен"
+
+#~ msgid "'fromLast' must be TRUE or FALSE"
+#~ msgstr "'fromLast' должен быть TRUE или FALSE"
+
+#~ msgid "shared library '%s' not found"
+#~ msgstr "разделяемая библиотека '%s' не найдена"
+
+#~ msgid ""
+#~ "package '%s' claims to be built under R version %s but is missing some "
+#~ "help files and needs to be re-installed"
+#~ msgstr ""
+#~ "пакет '%s' сообщает, что он был собран для версии R %s, но у него нет "
+#~ "некоторых файлов помощи и поэтому его надо переустановить"
+
+#~ msgid "invalid digits"
+#~ msgstr "неправильное количество знаков после запятой"
+
+#~ msgid "'x' must be of length 1"
+#~ msgstr "'x' должен быть длиной 1"
+
+#~ msgid "The following object(s) are masked"
+#~ msgstr "Следующие объект(ы) скрыты"
+
+#~ msgid "_by_"
+#~ msgstr "_по_"
+
+#~ msgid "from"
+#~ msgstr "из"
+
+#~ msgid ":"
+#~ msgstr ":"
+
+#~ msgid "argument to 'which' is not logical"
+#~ msgstr "аргумент 'which' не является логическим"
+
+#~ msgid "is not on the search path"
+#~ msgstr "не найден в пути поиска"
+
+#~ msgid "'"
+#~ msgstr "'"
+
+#~ msgid "in useDynLib("
+#~ msgstr "в useDynLib("
+
+#~ msgid ")"
+#~ msgstr ")"
+
+#~ msgid "S3 method '%s' was declared in NAMESPACE but not found"
+#~ msgstr "S3-метод '%s' объявлен в NAMESPACE, но не найден"
+
+#~ msgid "invalid name"
+#~ msgstr "неправильное имя"
+
+#~ msgid "is required by"
+#~ msgstr "требуется для"
+
+#~ msgid "(still attached)"
+#~ msgstr "(по-прежнему присоединен)"
+
+#~ msgid "name space '%s' is still used by: %s"
+#~ msgstr "пространство имен '%s' еще используется в: '%s'"
+
+#~ msgid "See the Note in ?library"
+#~ msgstr "См. 'Note' в ?library"
+
+#~ msgid "package was installed prior to 2.4.0 and must be re-installed"
+#~ msgstr "пакет был установлен до R 2.4.0 и должен быть переустановлен"
+
+#~ msgid "%s failed in 'attachNamespace'"
+#~ msgstr "%s не удалось в 'attachNamespace'"
+
+#~ msgid "%s failed in 'loadNamespace' for '%s'"
+#~ msgstr "%s не удалось в 'loadNamespace' для '%s'"
+
 #~ msgid "name space '%s' is loaded"
 #~ msgstr "пространство имен '%s' загружено"
+
+#~ msgid "%s failed in unloadNamespace(%s)"
+#~ msgstr "%s не удалось в unloadNamespace(%s)"
+
+#~ msgid ""
+#~ "package '%s' was built under R version %s and help will not work "
+#~ "correctly\n"
+#~ "Please re-install it"
+#~ msgstr ""
+#~ "пакет '%s' был собран до версии R %s и помощь не будет правильно "
+#~ "работать\n"
+#~ "Пожалуйста, переустановите его"
 
 #~ msgid "extra arguments ignored:"
 #~ msgstr "дополнительные аргументы проигнорированы"

@@ -1,11 +1,12 @@
 % File src/library/base/man/logical.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{logical}
 \alias{logical}
 \alias{as.logical}
+\alias{as.logical.factor}
 \alias{is.logical}
 \alias{TRUE}
 \alias{FALSE}
@@ -33,15 +34,12 @@ is.logical(x)
 
   Logical vectors are coerced to integer vectors in contexts where a
   numerical value is required, with \code{TRUE} being mapped to
-  \code{1L}, \code{FALSE} to \code{0L} and \code{NA_LOGICAL_} to
-  \code{NA_INTEGER_}.
-
-  \code{as.logical} and \code{is.logical} are \link{primitive}, so
-  positional matching is used and any names of supplied arguments are
-  ignored. This may not be true of methods for \code{is.logical}. 
+  \code{1L}, \code{FALSE} to \code{0L} and \code{NA} to \code{NA_integer_}.
 }
 \arguments{
-  \item{length}{desired length.}
+  \item{length}{A non-negative integer specifying the desired length.
+    Double values will be coerced to integer:
+    supplying an argument of length other than one is an error.}
   \item{x}{object to be coerced or tested.}
   \item{\dots}{further arguments passed to or from other methods.}
 }
@@ -52,7 +50,9 @@ is.logical(x)
   \code{as.logical} attempts to coerce its argument to be of logical
   type.  For \code{\link{factor}}s, this uses the \code{\link{levels}}
   (labels).  Like \code{\link{as.vector}} it strips attributes including
-  names.
+  names.  Character strings \code{c("T", "TRUE", "True", "true")} are
+  regarded as true, \code{c("F", "FALSE", "False", "false")} as false,
+  and all others as \code{NA}.
 
   \code{is.logical} returns \code{TRUE} or \code{FALSE} depending on
   whether its argument is of logical type or not.

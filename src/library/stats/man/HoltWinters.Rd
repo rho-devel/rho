@@ -1,6 +1,6 @@
 % File src/library/stats/man/HoltWinters.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{HoltWinters}
@@ -37,7 +37,7 @@ HoltWinters(x, alpha = NULL, beta = NULL, gamma = NULL,
   \item{l.start}{Start value for level (a[0]).}
   \item{b.start}{Start value for trend (b[0]).}
   \item{s.start}{Vector of start values for the seasonal component
-    (\eqn{s_1[0]...s_p[0]}{s_1[0]...s_p[0]})}
+    (\eqn{s_1[0] \ldots s_p[0]}{s_1[0] \dots s_p[0]})}
   \item{optim.start}{Vector with named components \code{alpha},
     \code{beta}, and \code{gamma} containing the starting values for the
     optimizer. Only the values needed must be specified.  Ignored in the
@@ -49,8 +49,8 @@ HoltWinters(x, alpha = NULL, beta = NULL, gamma = NULL,
 \details{
   The additive Holt-Winters prediction function (for time series with
   period length p) is
-  \deqn{\hat Y[t+h] = a[t] + h b[t] + s[t + 1 + (h - 1) \bmod p],}{
-    Yhat[t+h] = a[t] + h * b[t] + s[t + 1 + (h - 1) mod p],}
+  \deqn{\hat Y[t+h] = a[t] + h b[t] + s[t - p + 1 + (h - 1) \bmod p],}{
+    Yhat[t+h] = a[t] + h * b[t] + s[t - p + 1 + (h - 1) mod p],}
   where \eqn{a[t]}, \eqn{b[t]} and \eqn{s[t]} are given by
   \deqn{a[t] = \alpha (Y[t] - s[t-p])  + (1-\alpha) (a[t-1] + b[t-1])}{
   a[t] = \alpha (Y[t] - s[t-p])  + (1-\alpha) (a[t-1] + b[t-1])}
@@ -61,8 +61,8 @@ HoltWinters(x, alpha = NULL, beta = NULL, gamma = NULL,
 
   The multiplicative Holt-Winters prediction function (for time series
   with period length p) is
-  \deqn{\hat Y[t+h] = (a[t] + h b[t]) \times s[t + 1 + (h - 1) \bmod p].}{
-    Yhat[t+h] = (a[t] + h * b[t]) * s[t + 1 + (h - 1) mod p],}
+  \deqn{\hat Y[t+h] = (a[t] + h b[t]) \times s[t - p + 1 + (h - 1) \bmod p].}{
+    Yhat[t+h] = (a[t] + h * b[t]) * s[t - p + 1 + (h - 1) mod p],}
   where \eqn{a[t]}, \eqn{b[t]} and \eqn{s[t]} are given by
   \deqn{a[t] = \alpha (Y[t] / s[t-p])  + (1-\alpha) (a[t-1] + b[t-1])}{
   a[t] = \alpha (Y[t] / s[t-p])  + (1-\alpha) (a[t-1] + b[t-1])}
@@ -70,21 +70,23 @@ HoltWinters(x, alpha = NULL, beta = NULL, gamma = NULL,
   b[t] = \beta (a[t] - a[t-1]) + (1-\beta) b[t-1]}
   \deqn{s[t] = \gamma (Y[t] / a[t])   + (1-\gamma) s[t-p]}{
   s[t] = \gamma  (Y[t] / a[t])  + (1-\gamma) s[t-p]}
+  The data in \code{x} are required to be non-zero for a multiplicative
+  model, but it makes most sense if they are all positive.
 
   The function tries to find the optimal values of \eqn{\alpha} and/or
-  \eqn{\beta} and/or \eqn{\gamma} by minimizing the squared
-  one-step prediction error if they are omitted. \code{optimize} will be
-  used for the univariate case, and \code{optim} else.
+  \eqn{\beta} and/or \eqn{\gamma} by minimizing the squared one-step
+  prediction error if they are \code{NULL} (the default). \code{optimize}
+  will be used for the single-parameter case, and \code{optim} otherwise.
 
   For seasonal models, start values for \code{a}, \code{b} and \code{s}
-  are detected by
-  performing a simple decomposition in trend and seasonal component using
-  moving averages (see function \code{decompose}) on the
-  \code{start.periods} first periods (a simple linear regression on the
-  trend component is used for starting level and trend.). For
-  level/trend-models (no seasonal component), start values for a and b
-  are x[2] and x[2] - x[1], respectively. For level-only models
-  (ordinary exponential smoothing), the start value for a is x[1].
+  are inferred by performing a simple decomposition in trend and
+  seasonal component using moving averages (see function
+  \code{\link{decompose}}) on the \code{start.periods} first periods (a simple
+  linear regression on the trend component is used for starting level
+  and trend.). For level/trend-models (no seasonal component), start
+  values for \code{a} and \code{b} are \code{x[2]} and \code{x[2] -
+  x[1]}, respectively. For level-only models (ordinary exponential
+  smoothing), the start value for \code{a} is \code{x[1]}.
 }
 \value{
   An object of class \code{"HoltWinters"}, a list with components:
@@ -99,7 +101,7 @@ HoltWinters(x, alpha = NULL, beta = NULL, gamma = NULL,
   \item{coefficients}{A vector with named components \code{a, b, s1, ..., sp}
     containing the estimated values for the level, trend and seasonal
     components}
-  \item{seasonal}{The specified \code{seasonal}-parameter}
+  \item{seasonal}{The specified \code{seasonal} parameter}
   \item{SSE}{The final sum of squared errors achieved in optimizing}
   \item{call}{The call used}
 }
@@ -114,13 +116,15 @@ HoltWinters(x, alpha = NULL, beta = NULL, gamma = NULL,
   \emph{Management Science} \bold{6}, 324--342.
 }
 \author{
-  David Meyer \email{David.Meyer@wu-wien.ac.at}
+  David Meyer \email{David.Meyer@wu.ac.at}
 }
 \seealso{
-  \code{\link{predict.HoltWinters}},\code{\link{optim}}
+  \code{\link{predict.HoltWinters}}, \code{\link{optim}}.
 }
 
+% Differences seen on 32-bit Linux at -O3
 \examples{
+\testonly{od <- options(digits=5)}
 require(graphics)
 
 ## Seasonal Holt-Winters
@@ -139,5 +143,6 @@ plot(m)
 ## Exponential Smoothing
 m2 <- HoltWinters(x, gamma = FALSE, beta = FALSE)
 lines(fitted(m2)[,1], col = 3)
+\testonly{options(od)}
 }
 \keyword{ts}

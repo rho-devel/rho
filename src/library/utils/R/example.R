@@ -14,53 +14,41 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
+## Examples as from 2.11.0 will always be new-style and hence in UTF-8
 example <-
-function(topic, package = NULL, lib.loc = NULL, local = FALSE,
+function(topic, package = NULL, lib.loc = NULL,
+         character.only = FALSE, give.lines = FALSE, local = FALSE,
 	 echo = TRUE, verbose = getOption("verbose"), setRNG = FALSE,
          ask = getOption("example.ask"),
 	 prompt.prefix = abbreviate(topic, 6))
 {
-    topic <- substitute(topic)
-    if(!is.character(topic))
-	topic <- deparse(topic)[1L]
-    INDICES <- .find.package(package, lib.loc, verbose = verbose)
-    file <- index.search(topic, INDICES, "AnIndex", "R-ex")
-    if(file == "") {
-	warning(gettextf("no help file found for '%s'", topic), domain = NA)
+    if (!character.only) {
+        topic <- substitute(topic)
+        if(!is.character(topic)) topic <- deparse(topic)[1L]
+    }
+    pkgpaths <- find.package(package, lib.loc, verbose = verbose)
+    ## will only return at most one path
+    file <- index.search(topic, pkgpaths, TRUE)
+    if(!length(file)) {
+	warning(gettextf("no help found for %s", sQuote(topic)), domain = NA)
 	return(invisible())
     }
     packagePath <- dirname(dirname(file))
-    if(length(file) > 1L) {
-	packagePath <- packagePath[1L]
-	warning(gettextf("more than one help file found: using package '%s'",
-		basename(packagePath)), domain = NA)
-	file <- file[1L]
-    }
-    pkg <- basename(packagePath)
+    pkgname <- basename(packagePath)
     lib <- dirname(packagePath)
-    encoding <- NULL
-    ## first step, on-demand conversion, then look for (possibly zipped) file
-    RdDB <- file.path(packagePath, "help", pkg)
-    if(file.exists(paste(RdDB, "rdx", sep="."))) {
-        zfile <- tempfile("Rex")
-        encoding <- "UTF-8"
-        ## FIXME: use outputEncoding="" ?
-        ## FUTURE: we already have the parsed file ....
-        tools::Rd2ex(tools:::fetchRdDB(RdDB, sub("\\.R$", "", basename(file))),
-                     zfile)
-    } else {
-	Rexdir <- file.path(tempdir(), "Rex")
-	dir.create(Rexdir, showWarnings=FALSE)
-	zfile <- zip.file.extract(file, "Rex.zip", dir=Rexdir)
-    }
-    if(!file.exists(zfile)) {
-        warning(gettextf("'%s' has a help file but no examples", topic),
+    tf <- tempfile("Rex")
+    tools::Rd2ex(.getHelpFile(file), tf)
+    if (!file.exists(tf)) {
+	if(give.lines) return(character(0))
+        warning(gettextf("%s has a help file but no examples", sQuote(topic)),
                 domain = NA)
         return(invisible())
     }
-    if(zfile != file) on.exit(unlink(zfile))
-    if(pkg != "base")
-	library(pkg, lib.loc = lib, character.only = TRUE)
+    on.exit(unlink(tf))
+    if(give.lines)
+	return(readLines(tf))
+    if(pkgname != "base")
+        library(pkgname, lib.loc = lib, character.only = TRUE)
     if(!is.logical(setRNG) || setRNG) {
 	## save current RNG state:
 	if((exists(".Random.seed", envir = .GlobalEnv))) {
@@ -78,21 +66,11 @@ function(topic, package = NULL, lib.loc = NULL, local = FALSE,
 	    set.seed(1)
 	} else eval(setRNG)
     }
-    zz <- readLines(zfile, n=1L)
-    if(is.null(encoding)) {
-        encoding <-
-            if(length(enc <- localeToCharset()) > 1L)
-                c(enc[-length(enc)], "latin1")
-            else ""
-        ## peek at the file, but note we can't usefully translate to C.
-        if(length(grep("^### Encoding: ", zz))  &&
-           !identical(Sys.getlocale("LC_CTYPE"), "C"))
-            encoding <- substring(zz, 15L)
-    }
+    zz <- readLines(tf, n = 1L)
     skips <- 0L
     if (echo) {
 	## skip over header
-	zcon <- file(zfile, open="rt")
+	zcon <- file(tf, open="rt")
 	while(length(zz) && !length(grep("^### \\*\\*", zz))) {
 	    skips <- skips + 1L
 	    zz <- readLines(zcon, n=1L)
@@ -114,9 +92,9 @@ function(topic, package = NULL, lib.loc = NULL, local = FALSE,
         op <- options(device.ask.default = TRUE)
         on.exit(options(op), add = TRUE)
     }
-    source(zfile, local, echo = echo,
+    source(tf, local, echo = echo,
            prompt.echo = paste(prompt.prefix, getOption("prompt"), sep=""),
            continue.echo = paste(prompt.prefix, getOption("continue"), sep=""),
-           verbose = verbose, max.deparse.length = Inf, encoding = encoding,
+           verbose = verbose, max.deparse.length = Inf, encoding = "UTF-8",
     	   skip.echo = skips, keep.source=TRUE)
 }

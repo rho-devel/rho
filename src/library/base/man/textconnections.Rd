@@ -1,6 +1,6 @@
 % File src/library/base/man/textconnections.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{textConnection}
@@ -17,7 +17,7 @@ textConnection(object, open = "r", local = FALSE,
 textConnectionValue(con)
 }
 \arguments{
-  \item{object}{character.  A description of the connection. 
+  \item{object}{character.  A description of the \link{connection}. 
     For an input this is an \R character vector object, and for an output
     connection the name for the \R character vector to receive the
     output, or \code{NULL} (for none).
@@ -35,8 +35,10 @@ textConnectionValue(con)
 }
 \details{
   An input text connection is opened and the character vector is copied
-  at time the connection object is created, and \code{close}
-  destroys the copy.
+  at time the connection object is created, and \code{close} destroys
+  the copy.  \code{object} should be the name of a character vector:
+  however, short expressions will be accepted provided they \link{deparse} to
+  less than 60 bytes.
 
   An output text connection is opened and creates an \R character vector
   of the given name in the user's workspace or in the calling environment,
@@ -61,6 +63,10 @@ textConnectionValue(con)
 
   You cannot \code{seek} on a text connection, and \code{seek} will
   always return zero as the position.
+
+  Text connections have slightly unusual semantics: they are always
+  open, and throwing away an input text connection without closing it
+  (so it get garbage-collected) does not give a warning.
 }
 
 \value{
@@ -84,7 +90,7 @@ textConnectionValue(con)
  
 \references{
   Chambers, J. M. (1998)
-  \emph{Programming with Data. A Guide to the S Language.} Springer.\cr
+  \emph{Programming with Data.  A Guide to the S Language.} Springer.\cr
 [S has input text connections only.]
 }
 

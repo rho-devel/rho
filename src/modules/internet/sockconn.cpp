@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -50,21 +50,14 @@
 #include "sock.h"
 #include <errno.h>
 
-static void listencleanup(void *data)
-{
-    int *psock = CXXRSCAST(int*, data);
-    R_SockClose(*psock);
-}
-
 static Rboolean sock_open(Rconnection con)
 {
     Rsockconn thisconn = (Rsockconn)con->connprivate;
     int sock, sock1, mlen;
-    int timeout = asInteger(GetOption(install("timeout"), R_BaseEnv));
+    int timeout = thisconn->timeout;
     char buf[256];
 
     if(timeout == NA_INTEGER || timeout <= 0) timeout = 60;
-    R_SockTimeout(timeout);
     thisconn->pend = thisconn->pstart = thisconn->inbuf;
 
     if(thisconn->server) {
@@ -73,17 +66,15 @@ static Rboolean sock_open(Rconnection con)
 	    warning("port %d cannot be opened", thisconn->port);
 	    return FALSE;
 	}
-	{
-	    RCNTXT cntxt;
-
-	    /* set up a context which will close socket on jump. */
-	    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv,
-			 R_BaseEnv, R_NilValue, R_NilValue);
-	    cntxt.cend = &listencleanup;
-	    cntxt.cenddata = &sock1;
-	    sock = R_SockListen(sock1, buf, 256);
-	    endcontext(&cntxt);
+	/* use try-catch to close socket on jump. */
+	try {
+	    sock = R_SockListen(sock1, buf, 256, timeout);
 	}
+	catch (...) {
+	    R_SockClose(sock1);
+	    throw;
+	}
+
 	if(sock < 0) {
 	    warning("problem in listening on this socket");
 	    R_SockClose(sock1);
@@ -94,7 +85,7 @@ static Rboolean sock_open(Rconnection con)
 	sprintf(con->description, "<-%s:%d", buf, thisconn->port);
 	R_SockClose(sock1);
     } else {
-	sock = R_SockConnect(thisconn->port, con->description);
+	sock = R_SockConnect(thisconn->port, con->description, timeout);
 	if(sock < 0) {
 	    warning("%s:%d cannot be opened", con->description, thisconn->port);
 	    return FALSE;
@@ -126,18 +117,20 @@ static int sock_read_helper(Rconnection con, void *ptr, size_t size)
     int res;
     int nread = 0, n;
 
+    con->incomplete = FALSE;
     do {
 	/* read data into the buffer if it's empty and size > 0 */
 	if (size > 0 && thisconn->pstart == thisconn->pend) {
 	    thisconn->pstart = thisconn->pend = thisconn->inbuf;
 	    do
-		res = R_SockRead(thisconn->fd, thisconn->inbuf, 4096, con->blocking);
+		res = R_SockRead(thisconn->fd, thisconn->inbuf, 4096, 
+				 con->blocking, thisconn->timeout);
 	    while (-res == EINTR);
 	    if (! con->blocking && -res == EAGAIN) {
 		con->incomplete = TRUE;
 		return nread;
 	    }
-	    else if (con->blocking && res == 0) /* should mean EOF */
+	    else if (res == 0) /* should mean EOF */
 		return nread;
 	    else if (res < 0) return res;
 	    else thisconn->pend = thisconn->inbuf + res;
@@ -155,7 +148,6 @@ static int sock_read_helper(Rconnection con, void *ptr, size_t size)
 	nread += n;
     } while (size > 0);
 
-    con->incomplete = FALSE;
     return nread;
 }
 
@@ -180,11 +172,11 @@ static size_t sock_write(const void *ptr, size_t size, size_t nitems,
 {
     Rsockconn thisconn = (Rsockconn)con->connprivate;
 
-    return R_SockWrite(thisconn->fd, ptr, size * nitems)/size;
+    return R_SockWrite(thisconn->fd, ptr, size * nitems, thisconn->timeout)/size;
 }
 
 Rconnection in_R_newsock(const char *host, int port, int server,
-			 const char * const mode)
+			 const char * const mode, int timeout)
 {
     Rconnection newconn;
 
@@ -216,6 +208,7 @@ Rconnection in_R_newsock(const char *host, int port, int server,
     }
     ((Rsockconn)newconn->connprivate)-> port = port;
     ((Rsockconn)newconn->connprivate)-> server = server;
+    ((Rsockconn)newconn->connprivate)-> timeout = timeout;
     return newconn;
 }
 

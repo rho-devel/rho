@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-8 The R Development Core Team.
+ *  Copyright (C) 2001-11 The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -159,7 +159,7 @@ struct _DevDesc {
      * Event handling entries
      ********************************************************/
 
-    /* These determine whether getGraphicsEvent will try to set an event handler */
+    /* Used in do_setGraphicsEventEnv */
 
     Rboolean canGenMouseDown; /* can the device generate mousedown events */
     Rboolean canGenMouseMove; /* can the device generate mousemove events */
@@ -168,7 +168,7 @@ struct _DevDesc {
 
     Rboolean gettingEvent;    /* This is set while getGraphicsEvent
 				 is actively looking for events */
-
+    
     /********************************************************
      * Device procedures.
      ********************************************************/
@@ -202,6 +202,7 @@ struct _DevDesc {
      *
      * static void   X11_Activate(pDevDesc dd);
      *
+     * As from R 2.14.0 this can be omitted or set to NULL.
      */
 #if R_USE_PROTOTYPES
     void (*activate)(const pDevDesc );
@@ -279,6 +280,7 @@ struct _DevDesc {
      *
      * static void X11_Deactivate(pDevDesc dd)
      *
+     * As from R 2.14.0 this can be omitted or set to NULL.
      */
 #if R_USE_PROTOTYPES
     void (*deactivate)(pDevDesc );
@@ -295,6 +297,7 @@ struct _DevDesc {
      *
      * static Rboolean X11_Locator(double *x, double *y, pDevDesc dd)
      *
+     * As from R 2.14.0 this can be omitted or set to NULL.
      */
 #if R_USE_PROTOTYPES
     Rboolean (*locator)(double *x, double *y, pDevDesc dd);
@@ -350,13 +353,14 @@ struct _DevDesc {
     /*
      * device_Mode is called whenever the graphics engine
      * starts drawing (mode=1) or stops drawing (mode=0)
-     * GMode (in graphics.c) also ways that 
+     * GMode (in graphics.c) also says that 
      * mode = 2 (graphical input on) exists.
      * The device is not required to do anything
      * An example is ...
      *
      * static void X11_Mode(int mode, pDevDesc dd);
      *
+     * As from R 2.14.0 this can be omitted or set to NULL.
      */
 #if R_USE_PROTOTYPES
     void (*mode)(int mode, pDevDesc dd);
@@ -442,6 +446,77 @@ struct _DevDesc {
 #else
     void (*rect)();
 #endif
+    /* 
+     * device_Path should draw one or more sets of points 
+     * as a single path
+     * 
+     * 'x' and 'y' give the points
+     *
+     * 'npoly' gives the number of polygons in the path
+     * MUST be at least 1
+     *
+     * 'nper' gives the number of points in each polygon
+     * each value MUST be at least 2
+     *
+     * 'winding' says whether to fill using the nonzero 
+     * winding rule or the even-odd rule
+     *
+     * Added 2010-06-27
+     *
+     * As from R 2.13.2 this can be left unimplemented as NULL.
+     */
+#if R_USE_PROTOTYPES
+    void (*path)(double *x, double *y, 
+                 int npoly, int *nper,
+                 Rboolean winding,
+                 const pGEcontext gc, pDevDesc dd);
+#else
+    void (*path)();
+#endif
+    /* 
+     * device_Raster should draw a raster image justified 
+     * at the given location,
+     * size, and rotation (not all devices may be able to rotate?)
+     * 
+     * 'raster' gives the image data BY ROW, with every four bytes
+     * giving one R colour (ABGR).
+     *
+     * 'x and 'y' give the bottom-left corner.
+     *
+     * 'rot' is in degrees (as per device_Text), with positive
+     * rotation anticlockwise from the positive x-axis.
+     *
+     * As from R 2.13.2 this can be left unimplemented as NULL.
+     */
+#if R_USE_PROTOTYPES
+    void (*raster)(unsigned int *raster, int w, int h,
+                   double x, double y, 
+                   double width, double height,
+                   double rot, 
+                   Rboolean interpolate,
+                   const pGEcontext gc, pDevDesc dd);
+#else
+    void (*raster)();
+#endif
+    /* 
+     * device_Cap should return an integer matrix (R colors)
+     * representing the current contents of the device display.
+     * 
+     * The result is expected to be ROW FIRST.
+     *
+     * This will only make sense for raster devices and can 
+     * probably only be implemented for screen devices.
+     *
+     * added 2010-06-27
+     *
+     * As from R 2.13.2 this can be left unimplemented as NULL.
+     * For earlier versions of R it should return R_NilValue.
+     */
+#if R_USE_PROTOTYPES
+    SEXP (*cap)(pDevDesc dd);
+#else
+    SEXP (*cap)();
+#endif
     /*
      * device_Size is called whenever the device is
      * resized.
@@ -459,6 +534,8 @@ struct _DevDesc {
      *
      * R_GE_gcontext parameters that should be honoured (if possible):
      *   col, fill, gamma, lty, lwd
+     *
+     * As from R 2.13.2 this can be left unimplemented as NULL.
      */
 #if R_USE_PROTOTYPES
     void (*size)(double *left, double *right, double *bottom, double *top,
@@ -518,13 +595,8 @@ struct _DevDesc {
     void (*onExit)(struct _NewDevDesc*);
 #endif
     /*
-     * device_getEvent is called by do_getGraphicsEvent to get a modal
-     * graphics event.  It should call R_ProcessEvents() until one
-     * of the event handlers sets eventResult to a non-null value,
-     * and then return it
-     * An example is ...
-     *
-     * static SEXP GA_getEvent(SEXP eventRho, const char *prompt);
+     * device_getEvent is no longer used, but the slot is kept for back
+     * compatibility of the structure.
      */
     SEXP (*getEvent)(SEXP, const char *);
 
@@ -537,6 +609,8 @@ struct _DevDesc {
        FALSE if it wants the engine to do so. 
 
        There is an example in the windows() device.
+
+       Can be left unimplemented as NULL.
     */
 #if R_USE_PROTOTYPES
     Rboolean (*newFrameConfirm)(pDevDesc dd);
@@ -571,6 +645,49 @@ struct _DevDesc {
     Rboolean useRotatedTextInContour;
 
     /* --------- Post-2.7.0 features --------- */
+
+    /* Added in 2.12.0:  Changed graphics event handling. */
+    
+    SEXP eventEnv;   /* This is an environment holding event handlers. */
+    /*
+     * eventHelper(dd, 1) is called by do_getGraphicsEvent before looking for a 
+     * graphics event.  It will then call R_ProcessEvents() and eventHelper(dd, 2)
+     * until this or another device returns sets a non-null result value in eventEnv,
+     * at which time eventHelper(dd, 0) will be called.
+     * 
+     * An example is ...
+     *
+     * static SEXP GA_eventHelper(pDevDesc dd, int code);
+
+     * Can be left unimplemented as NULL
+     */
+#if R_USE_PROTOTYPES
+    void (*eventHelper)(pDevDesc dd, int code);
+#else
+    void (*eventHelper)();
+#endif
+
+    /* added in 2.14.0, only used by screen devices.
+
+       Allows graphics devices to have multiple levels of suspension: 
+       when this reaches zero output is flushed.
+
+       Can be left unimplemented as NULL.
+     */
+#if R_USE_PROTOTYPES
+    int (*holdflush)(pDevDesc dd, int level);
+#else
+    int (*holdflush)();
+#endif
+
+    /* added in 2.14.0, for dev.capabilities.
+       In all cases 0 means NA (unset).
+    */
+    int haveTransparency; /* 1 = no, 2 = yes */
+    int haveTransparentBg; /* 1 = no, 2 = fully, 3 = semi */
+    int haveRaster; /* 1 = no, 2 = yes, 3 = except for missing values */
+    int haveCapture, haveLocator;  /* 1 = no, 2 = yes */
+
 
     /* Area for future expansion.
        By zeroing this, devices are more likely to work if loaded
@@ -724,9 +841,9 @@ typedef enum {meMouseDown = 0,
 #define doKeybd			Rf_doKeybd
 #define doMouseEvent		Rf_doMouseEvent
 
-SEXP doMouseEvent(SEXP eventRho, pDevDesc dd, R_MouseEvent event,
+void doMouseEvent(pDevDesc dd, R_MouseEvent event,
                   int buttons, double x, double y);
-SEXP doKeybd(SEXP eventRho, pDevDesc dd, R_KeyName rkey,
+void doKeybd(pDevDesc dd, R_KeyName rkey,
 	     const char *keyname);
 
 

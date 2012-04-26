@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -62,8 +62,7 @@ SEXP attribute_hidden do_charToRaw(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_rawToChar(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, x = CAR(args);
-    int i, nc = LENGTH(x), multiple, len;
-    char buf[2];
+    int i, j, nc = LENGTH(x), multiple;
 
     checkArity(op, args);
     if (!isRaw(x))
@@ -72,6 +71,7 @@ SEXP attribute_hidden do_rawToChar(SEXP call, SEXP op, SEXP args, SEXP env)
     if (multiple == NA_LOGICAL)
 	error(_("argument 'multiple' must be TRUE or FALSE"));
     if (multiple) {
+	char buf[2];
 	buf[1] = '\0';
 	PROTECT(ans = allocVector(STRSXP, nc));
 	for (i = 0; i < nc; i++) {
@@ -80,12 +80,13 @@ SEXP attribute_hidden do_rawToChar(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 	/* do we want to copy e.g. names here? */
     } else {
-	len = LENGTH(x);
+	/* String is not necessarily 0-terminated and may contain nuls.
+	   Strip trailing nuls */
+	for (i = 0, j = -1; i < nc; i++) if(RAW(x)[i]) j = i;
+	nc = j + 1;
 	PROTECT(ans = allocVector(STRSXP, 1));
-	/* String is not necessarily 0-terminated and may contain nuls
-	   so don't use mkString */
 	SET_STRING_ELT(ans, 0,
-		       mkCharLenCE(reinterpret_cast<const char *>(RAW(x)), len, CE_NATIVE));
+		       mkCharLenCE(reinterpret_cast<const char *>(RAW(x)), j+1, CE_NATIVE));
     }
     UNPROTECT(1);
     return ans;
@@ -204,7 +205,7 @@ SEXP attribute_hidden do_packBits(SEXP call, SEXP op, SEXP args, SEXP env)
 static int mbrtoint(int *w, const char *s)
 {
     unsigned int byte;
-    byte = *(reinterpret_cast<unsigned char *>(const_cast<char*>(s)));
+    byte = *(reinterpret_cast<unsigned char *>(CXXRCCAST(char*, s)));
 
     if (byte == 0) {
 	*w = 0;
@@ -213,13 +214,13 @@ static int mbrtoint(int *w, const char *s)
 	*w = int( byte);
 	return 1;
     } else if (byte < 0xE0) {
-	if (strlen(s) < 2) return -2;
+	if (!s[1]) return -2;
 	if ((s[1] & 0xC0) == 0x80) {
-	    *w = int (((byte & 0x1F) << 6) | (s[1] & 0x3F));
+	    *w = int ((((byte & 0x1F) << 6) | (s[1] & 0x3F)));
 	    return 2;
 	} else return -1;
     } else if (byte < 0xF0) {
-	if (strlen(s) < 3) return -2;
+	if (!s[1] || !s[2]) return -2;
 	if (((s[1] & 0xC0) == 0x80) && ((s[2] & 0xC0) == 0x80)) {
 	    *w = int (((byte & 0x0F) << 12)
 			| ((s[1] & 0x3F) << 6) | (s[2] & 0x3F));
@@ -229,7 +230,7 @@ static int mbrtoint(int *w, const char *s)
 	    return 3;
 	} else return -1;
     } else if (byte < 0xF8) {
-	if (strlen(s) < 4) return -2;
+	if (!s[1] || !s[2] || !s[3]) return -2;
 	if (((s[1] & 0xC0) == 0x80)
 	    && ((s[2] & 0xC0) == 0x80)
 	    && ((s[3] & 0xC0) == 0x80)) {
@@ -241,7 +242,7 @@ static int mbrtoint(int *w, const char *s)
 	    return 4;
 	} else return -1;
     } else if (byte < 0xFC) {
-	if (strlen(s) < 5) return -2;
+	if (!s[1] || !s[2] || !s[3] || !s[4]) return -2;
 	if (((s[1] & 0xC0) == 0x80)
 	    && ((s[2] & 0xC0) == 0x80)
 	    && ((s[3] & 0xC0) == 0x80)
@@ -255,7 +256,7 @@ static int mbrtoint(int *w, const char *s)
 	    return 5;
 	} else return -1;
     } else {
-	if (strlen(s) < 6) return -2;
+	if (!s[1] || !s[2] || !s[3] || !s[4] || !s[5]) return -2;
 	if (((s[1] & 0xC0) == 0x80)
 	    && ((s[2] & 0xC0) == 0x80)
 	    && ((s[3] & 0xC0) == 0x80)
@@ -285,18 +286,19 @@ SEXP attribute_hidden do_utf8ToInt(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("argument must be a character vector of length 1"));
     if (LENGTH(x) > 1)
 	warning(_("argument should be a character vector of length 1\nall but the first element will be ignored"));
+    if (STRING_ELT(x, 0) == NA_STRING) return ScalarInteger(NA_INTEGER);
     s = CHAR(STRING_ELT(x, 0));
     nc = LENGTH(STRING_ELT(x, 0)); /* ints will be shorter */
-    ians = reinterpret_cast<int *>( R_alloc(nc,  sizeof(int *)));
+    ians = reinterpret_cast<int *>( R_alloc(nc, sizeof(int)));
     for (i = 0, j = 0; i < nc; i++) {
 	used = mbrtoint(&tmp, s);
 	if (used <= 0) break;
 	ians[j++] = tmp;
 	s += used;
     }
-    if (used < 0) error("invalid UTF-8 string");
+    if (used < 0) error(_("invalid UTF-8 string"));
     ans = allocVector(INTSXP, j);
-    for (i = 0; i < j; i++) INTEGER(ans)[i] = ians[i];
+    memcpy(INTEGER(ans), ians, sizeof(int) * j);
     return ans;
 }
 
@@ -343,16 +345,29 @@ SEXP attribute_hidden do_intToUtf8(SEXP call, SEXP op, SEXP args, SEXP env)
     if (multiple) {
 	PROTECT(ans = allocVector(STRSXP, nc));
 	for (i = 0; i < nc; i++) {
-	    used = inttomb(buf, INTEGER(x)[i]);
-	    buf[used] = '\0';
-	    SET_STRING_ELT(ans, i, mkCharCE(buf, CE_UTF8));
+	    if (INTEGER(x)[i] == NA_INTEGER)
+		SET_STRING_ELT(ans, i, NA_STRING);
+	    else {
+		used = inttomb(buf, INTEGER(x)[i]);
+		buf[used] = '\0';
+		SET_STRING_ELT(ans, i, mkCharCE(buf, CE_UTF8));
+	    }
 	}
 	/* do we want to copy e.g. names here? */
     } else {
+	Rboolean haveNA = FALSE;
 	/* Note that this gives zero length for input '0', so it is omitted */
-	for (i = 0, len = 0; i < nc; i++)
+	for (i = 0, len = 0; i < nc; i++) {
+	    if (INTEGER(x)[i] == NA_INTEGER) { haveNA = TRUE; break; }
 	    len += inttomb(NULL, INTEGER(x)[i]);
-	if(len >= 10000) {
+	}
+	if (haveNA) {
+	    PROTECT(ans = allocVector(STRSXP, 1));
+	    SET_STRING_ELT(ans, 0, NA_STRING);
+	    UNPROTECT(2);
+	    return ans;
+	}
+	if (len >= 10000) {
 	    tmp = Calloc(len+1, char);
 	} else {
 	    tmp = CXXRSCAST(char*, alloca(len+1)); tmp[len] = '\0';

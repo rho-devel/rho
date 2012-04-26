@@ -457,7 +457,8 @@ be used in @R{} packages) only A--Za--z0--9 should be used.} (and in
 some countries this includes accented letters) plus @samp{@code{.}} and
 @samp{@code{_}}, with the restriction that a name must start with
 @samp{@code{.}} or a letter, and if it starts with @samp{@code{.}} the
-second character must not be a digit.
+second character must not be a digit.  Names are currently effectively
+unlimited, but were limited to 256 bytes prior to @R{} 2.13.0
 
 Elementary commands consist of either @emph{expressions} or
 @emph{assignments}.  If an expression is given as a command, it is
@@ -573,7 +574,7 @@ To remove objects the function @code{rm} is available:
 @findex rm
 @cindex Removing objects
 
-All objects created during an @R{} sessions can be stored permanently in
+All objects created during an @R{} session can be stored permanently in
 a file for use in future @R{} sessions.  At the end of each @R{} session
 you are given the opportunity to save all the currently available
 objects.  If you indicate that you want to do this, the objects are
@@ -637,7 +638,7 @@ Notice that the assignment operator (@samp{@code{<-}}), which consists
 of the two characters @samp{@code{<}} (``less than'') and
 @samp{@code{-}} (``minus'') occurring strictly side-by-side and it
 `points' to the object receiving the value of the expression.
-In most contexts the @samp{@code{=}} operator can be used as a alternative.
+In most contexts the @samp{@code{=}} operator can be used as an alternative.
 @c In this text, the assignment operator is printed as @samp{<-}, rather
 @c than ``@code{<-}''.
 @cindex Assignment
@@ -2583,7 +2584,7 @@ files}.
 @findex attach
 @findex detach
 
-The @code{$} notation, such as @code{accountants$statef}, for list
+The @code{$} notation, such as @code{accountants$home}, for list
 components is not always very convenient.  A useful facility would be
 somehow to make the components of a list or data frame temporarily
 visible as variables under their component name, without the need to
@@ -2997,6 +2998,7 @@ and to simulate from the distribution.
 @item negative binomial @tab @code{nbinom} @tab @code{size, prob}
 @item normal @tab @code{norm} @tab @code{mean, sd}
 @item Poisson @tab @code{pois} @tab @code{lambda}
+@item signed rank @tab @code{signrank} @tab @code{n}
 @item Student's t @tab @code{t} @tab @code{df, ncp}
 @item uniform @tab @code{unif} @tab @code{min, max}
 @item Weibull @tab @code{weibull} @tab @code{shape, scale}
@@ -3010,9 +3012,9 @@ CDF, @samp{q} for the quantile function and @samp{r} for simulation
 (@emph{r}andom deviates).  The first argument is @code{x} for
 @code{d@var{xxx}}, @code{q} for @code{p@var{xxx}}, @code{p} for
 @code{q@var{xxx}} and @code{n} for @code{r@var{xxx}} (except for
-@code{rhyper} and @code{rwilcox}, for which it is @code{nn}).  In not
-quite all cases is the non-centrality parameter @code{ncp} are currently
-available: see the on-line help for details.
+@code{rhyper}, @code{rsignrank} and @code{rwilcox}, for which it is
+@code{nn}).  In not quite all cases is the non-centrality parameter
+@code{ncp} currently available: see the on-line help for details.
 
 The @code{p@var{xxx}} and @code{q@var{xxx}} functions all have logical
 arguments @code{lower.tail} and @code{log.p} and the @code{d@var{xxx}}
@@ -3030,7 +3032,9 @@ TRUE)}), directly.
 
 In addition there are functions @code{ptukey} and @code{qtukey} for the
 distribution of the studentized range of samples from a normal
-distribution.
+distribution, and @code{dmultinom} and @code{rmultinom} for the
+multinomial distribution. Further distributions are available in
+contributed packages, notably @pkg{SuppDists}.
 
 Here are some examples
 
@@ -3040,6 +3044,9 @@ Here are some examples
 > ## @r{upper 1% point for an F(2, 7) distribution}
 > qf(0.01, 2, 7, lower.tail = FALSE)
 @end example
+
+See the on-line help on @code{RNG} for how random-number generation is
+done in @R{}.
 
 @node  Examining the distribution of a set of data, One- and two-sample tests, R as a set of statistical tables, Probability distributions
 @section Examining the distribution of a set of data
@@ -6485,16 +6492,17 @@ packages, R-FAQ, R FAQ}, for a complete list.
 @section Contributed packages and @acronym{CRAN}
 @cindex CRAN
 
-There are hundreds of contributed packages for @R{}, written by many
+There are thousands of contributed packages for @R{}, written by many
 different authors.  Some of these packages implement specialized
 statistical methods, others give access to data or hardware, and others
 are designed to complement textbooks.  Some (the @emph{recommended}
 packages) are distributed with every binary distribution of @R{}.  Most
 are available for download from @acronym{CRAN}
-(@uref{http://CRAN.R-project.org/} and its mirrors), and other
-repositories such as Bioconductor (@uref{http://www.bioconductor.org/}).
-The @emph{R FAQ} contains a list that was current at the time of
-release, but the collection of available packages changes frequently.
+(@uref{http://CRAN.R-project.org/} and its mirrors) and other
+repositories such as Bioconductor (@uref{http://www.bioconductor.org/})
+and Omegahat (@uref{http://www.omegahat.org/}).  The @emph{R FAQ}
+contains a list of CRAN packages current at the time of release, but the
+collection of available packages changes very frequently.
 
 @node Namespaces,  , Contributed packages and CRAN, Packages
 @section Namespaces
@@ -6546,13 +6554,11 @@ disappear.
 
 @table @code
 @item
-Login, start your windowing system.
-@item $ R
-Start @R{} as appropriate for your platform.
+Start @R{} appropriately for your platform (@pxref{Invoking R}).
 
 The @R{} program begins, with a banner.
 
-(Within @R{}, the prompt on the left hand side will not be shown to
+(Within @R{} code, the prompt on the left hand side will not be shown to
 avoid confusion.)
 
 @item help.start()
@@ -6774,6 +6780,9 @@ want to save it.
 @node Invoking R, The command-line editor, A sample session, Top
 @appendix Invoking R
 
+Users of @R{} on Windows or Mac OS X should read the OS-specific section
+first, but command-line use is also supported.
+
 @menu
 * Invoking R from the command line::  
 * Invoking R under Windows::    
@@ -6784,9 +6793,8 @@ want to save it.
 @node Invoking R from the command line, Invoking R under Windows, Invoking R, Invoking R
 @appendixsec Invoking R from the command line
 
-When working in UNIX or at a command line in Windows,
-the command @samp{R} can be used both for starting the main @R{} program
-in the form
+When working at a command line on UNIX or Windows, the command @samp{R}
+can be used both for starting the main @R{} program in the form
 
 @display
 @code{R} [@var{options}] [@code{<}@var{infile}] [@code{>}@var{outfile}],
@@ -6796,6 +6804,9 @@ in the form
 or, via the @code{R CMD} interface, as a wrapper to various @R{} tools
 (e.g., for processing files in @R{} documentation format or manipulating
 add-on packages) which are not intended to be called ``directly''.
+
+At the Windows command-line, @command{Rterm.exe} is preferred to
+@command{R}.
 
 You need to ensure that either the environment variable @env{TMPDIR} is
 unset or it points to a valid place to create temporary files and
@@ -6837,12 +6848,13 @@ environment variable @env{R_PROFILE_USER}; if unset, a file called
 directory (in that order) is searched for.
 
 @item
-It also loads a saved image from @file{.RData} if there is one (unless
-@option{--no-restore} or @option{--no-restore-data} was specified).
+It also loads a saved workspace from file @file{.RData} in the current
+directory if there is one (unless @option{--no-restore} or
+@option{--no-restore-data} was specified).
 
 @item
-Finally, if a function @code{.First} exists, it is executed.  This
-function (as well as @code{.Last} which is executed at the end of the
+Finally, if a function @code{.First()} exists, it is executed.  This
+function (as well as @code{.Last()} which is executed at the end of the
 @R{} session) can be defined in the appropriate startup profiles, or
 reside in @file{.RData}.
 @end itemize
@@ -6865,7 +6877,7 @@ Print version information to standard output and exit successfully.
 @item --encoding=@var{enc}
 Specify the encoding to be assumed for input from the console or
 @code{stdin}.  This needs to be an encoding known to @code{iconv}: see
-its help page.
+its help page.  (@code{--encoding @var{enc}} is also accepted.)
 
 @item RHOME
 Print the path to the @R{} ``home directory'' to standard output and
@@ -6915,15 +6927,18 @@ Combine @option{--no-save}, @option{--no-environ},
 
 @item -f @var{file}
 @itemx --file=@var{file}
-Take input from @var{file}: @samp{-} means @code{stdin}.
-Implies @option{--no-save} unless @option{--save} has been set.
+(not @command{Rgui.exe}) Take input from @var{file}: @samp{-} means
+@code{stdin}.  Implies @option{--no-save} unless @option{--save} has
+been set.  On a Unix-alike, shell metacharacters should be avoided in
+@var{file} (but as from @R{} 2.14.0 spaces are allowed).
 
 @item -e @var{expression}
-Use @var{expression} as an input line.  One or more @option{-e} options
-can be used, but not together with @option{-f} or @option{--file}.
-Implies @option{--no-save} unless @option{--save} has been set.  (There
-is a limit of 10,000 bytes on the total length of expressions used in
-this way.)
+(not @command{Rgui.exe}) Use @var{expression} as an input line.  One or
+more @option{-e} options can be used, but not together with @option{-f}
+or @option{--file}.  Implies @option{--no-save} unless @option{--save}
+has been set.  (There is a limit of 10,000 bytes on the total length of
+expressions used in this way.  Expressions containing spaces or shell
+metacharacters will need to be quoted.)
 
 @item --no-readline
 (UNIX only) Turn off command-line editing via @strong{readline}.  This
@@ -6931,22 +6946,14 @@ is useful when running @R{} from within Emacs using the @acronym{ESS}
 (``Emacs Speaks Statistics'') package.  @xref{The command-line editor},
 for more information.  Command-line editing is enabled by default
 interactive use (see @option{--interactive}).  This option also affects
-tilde-epansion: see the help for @code{path.expand}.
+tilde-expansion: see the help for @code{path.expand}.
 
 @item --min-vsize=@var{N}
 @itemx --max-vsize=@var{N}
-Specify the minimum or maximum amount of memory used for variable size
-objects by setting the ``vector heap'' size to @var{N} bytes.  Here,
-@var{N} must either be an integer or an integer ending with @samp{G},
-@samp{M}, @samp{K}, or @samp{k}, meaning `Giga' (2^30), `Mega' (2^20),
-(computer) `Kilo' (2^10), or regular `kilo' (1000).
-
-@item --min-nsize=@var{N}
+@itemx --min-nsize=@var{N}
 @itemx --max-nsize=@var{N}
-Specify the amount of memory used for fixed size objects by setting the
-number of ``cons cells'' to @var{N}.  See the previous option for
-details on @var{N}.  A cons cell takes 28 bytes on a 32-bit machine, and
-usually 56 bytes on a 64-bit machine.
+Deprecated, and almost entirely of historical interest: see
+@code{?Memory} in @R{}.
 
 @item --max-ppsize=@var{N}
 Specify the maximum size of the pointer protection stack as @var{N}
@@ -6957,11 +6964,11 @@ value accepted is 100000.
 @item --max-mem-size=@var{N}
 (Windows only) Specify a limit for the amount of memory to be used both
 for @R{} objects and working areas.  This is set by default to the
-smaller of 1.5Gb@footnote{2.5Gb on versions of Windows that support 3Gb
-per process and have the support enabled: see the @file{rw-FAQ} Q2.9;
-3.5Gb on some 64-bit versions of Windows.}  and the amount of physical
-RAM in the machine, and must be between 32Mb and the maximum allowed
-on that version of Windows.
+smaller of the amount of physical RAM in the machine and for 32-bit
+@R{}, 1.5Gb@footnote{2.5Gb on versions of Windows that support 3Gb per
+process and have the support enabled: see the @file{rw-FAQ} Q2.9; 3.5Gb
+on some 64-bit versions of Windows.}, and must be between 32Mb and the
+maximum allowed on that version of Windows.
 
 @item --quiet
 @itemx --silent
@@ -7008,6 +7015,11 @@ also includes interactive graphics).  Currently, possible values for
 support is available, @samp{Tk}. (For back-compatibility, @samp{x11} and
 @samp{tk} are accepted.)
 
+@item --arch=@var{name}
+(UNIX only) Run the specified sub-architecture.  Most commonly used on
+Mac OS X, where the possible values are @samp{i386}, @samp{x86_64} and
+@samp{ppc}.
+
 @item --args
 This flag does nothing except cause the rest of the command line to be
 skipped: this can be useful to retrieve values from it with
@@ -7035,9 +7047,10 @@ Currently, the following tools are available.
 
 @table @code
 @item BATCH
-Run @R{} in batch mode.
+Run @R{} in batch mode.  Runs @command{R --restore --save} with possibly
+further options (see @code{?BATCH}).
 @item COMPILE
-(UNIX only) Compile files for use with @R{}.
+(UNIX only) Compile C, C++, Fortran @dots{} files for use with @R{}.
 @item SHLIB
 Build shared library for dynamic loading.
 @item INSTALL
@@ -7056,13 +7069,9 @@ Post-process @R{} profiling files.
 @itemx Rd2txt
 Convert Rd format to various other formats, including @HTML{}, @LaTeX{},
 plain text, and extracting the examples.  @code{Rd2txt} can be used as
-shorthand for @code{Rd2txt -t txt}.
-@item Rd2dvi
+shorthand for @code{Rd2conv -t txt}.
 @itemx Rd2pdf
-Convert Rd format to DVI/PDF.  @code{Rd2pdf} can be used as shorthand
-for @code{Rd2dvi --pdf}.
-@item Sd2Rd
-Convert S documentation to Rd format.
+Convert Rd format to PDF.
 @item Stangle
 Extract S/R code from Sweave documentation
 @item Sweave
@@ -7070,9 +7079,15 @@ Process Sweave documentation
 @item Rdiff
 Diff @R{} output ignoring headers etc
 @item config
-Obtain configuration information.
+Obtain configuration information
 @item javareconf
 (Unix only) Update the Java configuration variables
+@item rtags
+(Unix only) Create Emacs-style tag files from C, R, and Rd files
+@item open
+(Windows only) Open a file via Windows' file associations
+@item texify
+(Windows only) Process (La)TeX files with R's style files
 @end table
 
 Use
@@ -7085,28 +7100,39 @@ R CMD @var{command} --help
 to obtain usage information for each of the tools accessible via the
 @code{R CMD} interface.
 
-In addition, you can use
+In addition, you can use@footnote{as from @R{} 2.13.0.}  options
+@option{--arch=}, @option{--no-environ}, @option{--no-init-file},
+@option{--no-site-file} and @option{--vanilla} between @command{R} and
+@command{CMD}: these affect any @R{} processes run by the tools.  (Here
+@option{--vanilla} is equivalent to @option{--no-environ --no-site-file
+--no-init-file}.)  However, note that @command{R CMD} does not of itself
+use any @R{} startup files (in particular, neither user nor site
+@file{Renviron} files), and all of the @R{} processes run by these tools
+(except @command{BATCH}) use @option{--no-restore}.  Most use
+@option{--vanilla} and so invoke no @R{} startup files: the current
+exceptions are @command{INSTALL}, @command{REMOVE}, @command{Sweave} and
+@command{SHLIB} (which uses @option{--no-site-file --no-init-file}).
 
 @example
 R CMD @var{cmd} @var{args}
 @end example
 
 @noindent
-for any other executable @command{@var{cmd}} on the path: this is useful
-to have the same environment as @R{} or the specific commands run under,
-for example to run @command{ldd} or @command{pdflatex}.  Under a
-Unix-alike, if @var{cmd} is @samp{perl} or @samp{awk} it is replaced by
-the full path to the Perl or AWK command found when @R{} was configured.
+for any other executable @command{@var{cmd}} on the path or given by an
+absolute filepath: this is useful to have the same environment as @R{}
+or the specific commands run under, for example to run @command{ldd} or
+@command{pdflatex}.  Under Windows @var{cmd} can be an executable or a
+batch file, or if it has extension @code{.sh} or @code{.pl} the
+appropriate interpreter (if available) is called to run it.
 
 
 @node Invoking R under Windows, Invoking R under Mac OS X, Invoking R from the command line, Invoking R
 @appendixsec Invoking R under Windows
 
 There are two ways to run @R{} under Windows.  Within a terminal window
-(e.g.@ @code{cmd.exe} or @code{command.com} or a more capable shell), the
-methods described in the previous section may be used, invoking by
-@code{R.exe} or more directly by @code{Rterm.exe}.  (These are
-principally intended for batch use.)  For interactive use, there is a
+(e.g.@ @code{cmd.exe} or a more capable shell), the methods described in
+the previous section may be used, invoking by @code{R.exe} or more
+directly by @code{Rterm.exe}.  For interactive use, there is a
 console-based GUI (@code{Rgui.exe}).
 
 The startup procedure under Windows is very similar to that under
@@ -7154,13 +7180,12 @@ Enable the ``Break to debugger'' menu item in @code{Rgui}, and trigger
 a break to the debugger during command line processing.
 @end table
 
-In Windows with @code{R CMD} you may also specify your own @file{.bat},
-@file{.exe}, @file{.sh} or @file{.pl} file.  It will be run under the
-appropriate interpreter (Perl for @file{.pl}) with several environment
-variables set appropriately, including @env{R_HOME}, @env{R_VERSION},
-@env{R_CMD}, @env{R_OSTYPE}, @env{PATH}, @env{PERL5LIB}, and
-@env{TEXINPUTS}.  For example, if you already have @file{latex.exe} on
-your path, then
+Under Windows with @code{R CMD} you may also specify your own
+@file{.bat}, @file{.exe}, @file{.sh} or @file{.pl} file.  It will be run
+under the appropriate interpreter (Perl for @file{.pl}) with several
+environment variables set appropriately, including @env{R_HOME},
+@env{R_OSTYPE}, @env{PATH}, @env{BSTINPUTS} and @env{TEXINPUTS}.  For
+example, if you already have @file{latex.exe} on your path, then
 
 @example
 R CMD latex.exe mydoc
@@ -7168,7 +7193,8 @@ R CMD latex.exe mydoc
 @noindent
 will run @LaTeX{} on @file{mydoc.tex}, with the path to @R{}'s
 @file{share/texmf} macros appended to @env{TEXINPUTS}.  (Unfortunately,
-this does not help with the MiKTeX build of @LaTeX{}.)
+this does not help with the MiKTeX build of @LaTeX{}, but
+@command{R CMD texify mydoc} will work in that case.)
 
 @node Invoking R under Mac OS X, Scripting with R, Invoking R under Windows, Invoking R
 @appendixsec Invoking R under Mac OS X
@@ -7243,7 +7269,8 @@ the usual way for the shell running the command.
 
 If you do not wish to hardcode the path to @command{Rscript} but have it
 in your path (which is normally the case for an installed @R{} except on
-Windows), use
+Windows, but e.g.@: Mac OS X users may need to add @file{/usr/local/bin}
+to their path), use
 
 @example
 #! /usr/bin/env Rscript
@@ -7289,6 +7316,9 @@ but here @code{stdin()} refers to the program source and
 Very short scripts can be passed to @command{Rscript} on the
 command-line via the @option{-e} flag.
 
+Note that on a Unix-alike the input filename (such as @file{foo.R})
+should not contain spaces nor shell metacharacters.
+
 
 @node The command-line editor, Function and variable index, Invoking R, Top
 @appendix The command-line editor
@@ -7299,7 +7329,7 @@ When the @acronym{GNU} @strong{readline} library is available at the
 time @R{} is configured for compilation under UNIX, an inbuilt command
 line editor allowing recall, editing and re-submission of prior commands
 is used.  Note that other versions of @strong{readline} exist and may be
-used by the inbuilt command line editor: this may happen on Mac OS X.
+used by the inbuilt command line editor: this used to happen on Mac OS X.
 
 It can be disabled (useful for usage with @acronym{ESS} @footnote{The
 `Emacs Speaks Statistics' package; see the @acronym{URL}
@@ -7312,16 +7342,18 @@ file @file{README.Rterm} for command-line editing under
 @code{Rterm.exe}.
 
 When using @R{} with @strong{readline} capabilities, the functions
-described below are available.
+described below are available, as well as others (probably) documented
+in @command{man readline} or @command{info readline} on your system.
 
 Many of these use either Control or Meta characters.  Control
 characters, such as @kbd{Control-m}, are obtained by holding the
 @key{CTRL} down while you press the @key{m} key, and are written as
 @kbd{C-m} below.  Meta characters, such as @kbd{Meta-b}, are typed by
 holding down @key{META}@footnote{On a PC keyboard this is usually the
-Alt key, occasionally the `Windows' key.} and pressing @key{b}, and
-written as @kbd{M-b} in the following.  If your terminal does not have a
-@key{META} key, you can still type Meta characters using two-character
+Alt key, occasionally the `Windows' key.  On a Mac keyboard normally no
+meta key is available.} and pressing @key{b}, and written as @kbd{M-b}
+in the following.  If your terminal does not have a @key{META} key
+enabled, you can still type Meta characters using two-character
 sequences starting with @kbd{ESC}.  Thus, to enter @kbd{M-b}, you could
 type @key{ESC}@key{b}.  The @kbd{ESC} character sequences are also
 allowed on terminals with real Meta keys.  Note that case is significant
@@ -7337,15 +7369,14 @@ this editing phase causes the characters to be inserted in the command
 you are editing, displacing any characters to the right of the cursor.
 In @emph{vi} mode character insertion mode is started by @kbd{M-i} or
 @kbd{M-a}, characters are typed and insertion mode is finished by typing
-a further @key{ESC}.
+a further @key{ESC}.  (The default is Emacs-style, and only that is
+described here: for @emph{vi} mode see the @strong{readline}
+documentation.)
 
 Pressing the @key{RET} command at any time causes the command to be
 re-submitted.
 
 Other editing actions are summarized in the following table.
-
-@c Unfortunately it does not seem to be possible to bind the motion keys,
-@c for example, to the arrow keys, which is something of a nuisance.
 
 @appendixsection Command-line editor summary
 
@@ -7411,6 +7442,17 @@ Re-submit the command to @R{}.
 @end table
 
 The final @key{RET} terminates the command line editing sequence.
+
+The @strong{readline} key bindings can be customized in the usual way
+@emph{via} a @file{~/.inputrc} file.  As from @R{} 2.12.0, these
+customizations can be conditioned on application @code{R}, that is
+by including a section like
+
+@example
+$if R
+  "\C-xd": "q('no')\n"
+$endif
+@end example
 
 @node Function and variable index, Concept index, The command-line editor, Top
 @appendix Function and variable index

@@ -19,9 +19,9 @@ labels(object, \dots)
   plotting, for example.  A generic function.
 }
 \value{
-  A character vector or list of such vectors. For a vector the results
-  is the names or \code{seq(along=x)} and  for a data frame or array it is
-  the dimnames (with \code{NULL} expanded to \code{seq(len=d[i])}.
+  A character vector or list of such vectors.  For a vector the results
+  is the names or \code{seq_along(x)} and for a data frame or array it
+  is the dimnames (with \code{NULL} expanded to \code{seq_len(d[i])}.
 }
 \references{
   Chambers, J. M. and Hastie, T. J. (1992)

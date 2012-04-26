@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -50,17 +50,14 @@
 namespace CXXR {
     /** @brief Class for managing garbage collection.
      * 
-     * This class only has static members.  When CXXR::MemoryBank indicates
-     * that it is on the point of requesting additional memory from
-     * the operating system, the class decides whether to initiate a
-     * garbage collection.
-     *
-     * In the current implementation of GCManager, when cued by CXXR
-     * as above, a garbage collection will be carried out if the
-     * number of bytes currently allocated via CXXR::MemoryBank, plus
-     * the number of bytes now required, is at least as great as a
-     * threshold value.  This threshold value varies during the run,
-     * subject to a minimum value specified in the enableGC() method.
+     * This class only has static members.  A mark-sweep garbage
+     * collection can be initiated explicitly by calling
+     * GCManager::gc().  Also, GCNode::operator new() will
+     * automatically initiate a mark-sweep GC if the number of bytes
+     * allocated via CXXR::MemoryBank exceeds a threshold level
+     * supplied by GCManager::triggerLevel() This threshold value
+     * varies during the run, subject to a minimum value specified in
+     * the enableGC() method.
      */
     class GCManager {
     public:
@@ -70,6 +67,43 @@ namespace CXXR {
 	 * collection while a GCNode object is under construction.
 	 */
 	static void gc();
+
+	/** @brief Maximum number of bytes used.
+	 *
+	 * @return the maximum number of bytes used (up to the time of
+	 *         the most recent garbage collection.)
+	 *
+	 * @note In CXXR, the record of the maximum number of bytes
+	 * used is reviewed (and updated if necessary) only at the
+	 * start of a mark-sweep garbage collection, and so will almost
+	 * certainly underestimate the true maximum.
+	 */
+	static size_t maxBytes() {return s_max_bytes;}
+
+	/** @brief Maximum number of GCNode objects allocated.
+	 * 
+	 * @return the maximum number of GCNode objects allocated (up
+	 * to the time of the most recent garbage collection.)
+	 *
+	 * @note This method is provided for compatibility with CR.
+	 * The number of GCNode objects doesn't directly affect the
+	 * operation of garbage collection in CXXR.
+	 *
+	 * @note In CXXR, the record of the maximum number of GCNode
+	 * objects allocated is reviewed (and updated if necessary)
+	 * only at the start of a mark-sweep garbage collection, and
+	 * so will almost certainly underestimate the true maximum.
+	 */
+	static size_t maxNodes() {return s_max_nodes;}
+
+	/** @brief Reset the tallies of the maximum numbers of bytes and
+	 *  GCNode objects.
+	 *
+	 * This method resets the record of the maximum number of
+	 * bytes allocated to the current number of bytes allocated,
+	 * and similarly for the maximum number of GCNode objects.
+	 */
+	static void resetMaxTallies();
 
 	/** @brief Enable mark-sweep garbage collection.
 	 *
@@ -84,34 +118,11 @@ namespace CXXR {
 	 */
 	static void setGCThreshold(size_t initial_threshold);
 
-	/** @brief Maximum number of bytes used.
+	/** @brief Set/unset monitors on mark-sweep garbage collection.
 	 *
-	 * @return the maximum number of bytes used (up to the time of
-	 *         the most recent garbage collection.)
-	 */
-	static size_t maxBytes() {return s_max_bytes;}
-
-	/** @brief Maximum number of GCNode objects allocated.
-	 * 
-	 * @return the maximum number of GCNode objects allocated (up
-	 * to the time of the most recent garbage collection.)
-	 *
-	 * @note This method is provided for compatibility with CR.
-	 * The number of GCNode objects doesn't directly affect the operation
-	 * of garbage collection in CXXR.
-	 */
-	static size_t maxNodes() {return s_max_nodes;}
-
-	/** @brief Reset the tallies of the maximum numbers of bytes and
-	 *  GCNode objects.
-	 *
-	 * This method resets the record of the maximum number of
-	 * bytes allocated to the current number of bytes allocated,
-	 * and similarly for the maximum number of GCNode objects.
-	 */
-	static void resetMaxTallies();
-
-	/** @brief Set/unset monitors on garbage collection.
+	 * No garbage collection of GCNode objects will take place
+	 * until this method has been called.  The effect of calling
+	 * it more than once during a single program run is undefined.
 	 *
 	 * @param pre_gc If not a null pointer, this function will be
 	 *          called just before garbage collection begins,
@@ -141,10 +152,6 @@ namespace CXXR {
 
 	/** @brief Turn garbage collection torture on or off.
 	 *
-	 * If enabled, every time that CXXR::MemoryBank indicates that it is
-	 * about to request additional memory from the operating
-	 * system, a garbage collection is carried out.
-	 *
 	 * @param on The required torturing status.
 	 *
 	 * @note GC torture is no longer implemented in CXXR, so this
@@ -152,13 +159,14 @@ namespace CXXR {
 	 */
 	static void torture(bool on) {}
 
-	/** @brief Current GC threshold level.
+	/** @brief Current threshold level for mark-sweep garbage
+	 * collection.
 	 *
-	 * @return The current threshold level.  When CXXR::MemoryBank
-	 * indicates that it is on the point of requesting additional
-	 * memory from the operating system, garbage collection will
-	 * be triggered if the number of bytes currently allocated via
-	 * CXXR::MemoryBank is at least as great as this level.
+	 * @return The current threshold level.  When GCNode::operator
+	 * new is on the point of requesting memory from MemoryBank,
+	 * if it finds that the number of bytes already allocated via
+	 * MemoryBank is at least as great as this threshold level, it
+	 * may initiate a mark-sweep garbage collection.
 	 */
 	static size_t triggerLevel() {return s_threshold;}
     private:

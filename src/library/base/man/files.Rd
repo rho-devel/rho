@@ -1,6 +1,6 @@
 % File src/library/base/man/files.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{files}
@@ -9,10 +9,10 @@
 \alias{file.copy}
 \alias{file.create}
 \alias{file.exists}
-\alias{file.rcopy}
 \alias{file.remove}
 \alias{file.rename}
 \alias{file.symlink}
+\alias{file.link}
 \title{File Manipulation}
 \usage{
 file.create(\dots, showWarnings = TRUE)
@@ -20,16 +20,22 @@ file.exists(\dots)
 file.remove(\dots)
 file.rename(from, to)
 file.append(file1, file2)
-file.copy(from, to, overwrite = recursive, recursive = FALSE)
+file.copy(from, to, overwrite = recursive, recursive = FALSE,
+          copy.mode = TRUE)
 file.symlink(from, to)
+file.link(from, to)
 }
 \arguments{
-  \item{\dots, file1, file2, from, to}{character vectors,
-    containing file names or paths.}
-  \item{overwrite}{logical; should the destination files be overwritten?}
+  \item{\dots, file1, file2}{character vectors, containing file names or paths.}
+  \item{from, to}{character vectors, containing file names or paths.
+    For \code{file.copy} and \code{file.symlink} \code{to} can
+    alternatively be the path to a single existing directory.}
+  \item{overwrite}{logical; should existing destination files be overwritten?}
   \item{showWarnings}{logical; should the warnings on failure be shown?}
-  \item{recursive}{logical. If \code{to} is a directory, should
-    directories in \code{from} be copied (and their contents).}
+  \item{recursive}{logical.  If \code{to} is a directory, should
+    directories in \code{from} be copied (and their contents)?}
+  \item{copy.mode}{logical:  should file permission bits be copied where
+    possible?  This applies to both files and directories.}
 }
 \description{
   These functions provide a low-level interface to the computer's
@@ -41,33 +47,38 @@ file.symlink(from, to)
   All of these functions expand path names: see \code{\link{path.expand}}.
 
   \code{file.create} creates files with the given names if they do not
-  already exist and truncates them if they do.  They are created with the
-  maximal permissions allowed by the \code{umask} setting.
+  already exist and truncates them if they do.  They are created with
+  the maximal read/write permissions allowed by the
+  \sQuote{\link{umask}} setting (where relevant).  By default a warning
+  is given (with the reason) if the operation fails.
 
-  \code{file.exists} returns a logical vector indicating whether
-  the files named by its argument exist.  (Here \sQuote{exists} is in the
+  \code{file.exists} returns a logical vector indicating whether the
+  files named by its argument exist.  (Here \sQuote{exists} is in the
   sense of the system's \code{stat} call: a file will be reported as
   existing only if you have the permissions needed by \code{stat}.
   Existence can also be checked by \code{\link{file.access}}, which
   might use different permissions and so obtain a different result.
   Note that the existence of a file does not imply that it is readable:
-  for that use \code{\link{file.access}}.)
-#ifdef unix
-  Note that if the file is a symbolic link, the result indicates if the
-  link points to an actual file, not just if the link exists.
-#endif
+  for that use \code{\link{file.access}}.)  What constitutes a
+  \sQuote{file} is system-dependent, but should include directories.
+  (However, directory names must not include a trailing backslash or
+  slash on Windows.)  Note that if the file is a symbolic link on a
+  Unix-alike, the result indicates if the link points to an actual file,
+  not just if the link exists.
 
   \code{file.remove} attempts to remove the files named in its argument.
   On most Unix platforms \sQuote{file} includes \emph{empty}
   directories, symbolic links, fifos and sockets.  On Windows,
   \sQuote{file} means a regular file and not, say, an empty directory.
 
-  
-  \code{file.rename} attempts to rename a single file.  Where file
-  permissions allow this will first remove an existing file \code{to}.
-  This is subject to the limitations of the OS's corresponding system
-  call: in particular in the interpretation of \sQuote{file}: also most
-  platforms will not rename files across file systems.
+  \code{file.rename} attempts to rename files (and \code{from} and
+  \code{to} must be of the same length).  Where file permissions allow
+  this will overwrite an existing element of \code{to}.  This is subject
+  to the limitations of the OS's corresponding system call (see
+  something like \command{man 2 rename} on a Unix-alike): in particular
+  in the interpretation of \sQuote{file}: most platforms will not rename
+  files across file systems.  (On Windows, \code{file.rename} nowadays
+  works for files (but not directories) across volumes.)
 
   \code{file.append} attempts to append the files named by its
   second argument to those named by its first.  The \R subscript
@@ -76,21 +87,23 @@ file.symlink(from, to)
 
   \code{file.copy} works in a similar way to \code{file.append} but with
   the arguments in the natural order for copying.  Copying to existing
-  destination files is skipped unless \code{overwrite = TRUE}.
-  The \code{to} argument can specify a single existing directory.
-
-  \code{file.symlink} makes symbolic links on those Unix-like platforms
-  which support them.  The \code{to} argument can specify a single
-  existing directory.
-#ifdef windows
-  (Windows Vista/Server 2008 have a version of symbolic links on NTFS
-  filesystems, but this seems too limited to be worth implementing.)
-#endif
+  destination files is skipped unless \code{overwrite = TRUE}.  The
+  \code{to} argument can specify a single existing directory.  If
+  \code{copy.mode = TRUE} (added in \R 2.13.0) file read/write/execute
+  permissions are copied where possible, restricted by
+  \sQuote{\link{umask}}.  Other security attributes such as ACLs are not
+  copied.
+  
+  \code{file.symlink} and \code{file.link} make symbolic and hard links
+  on those file systems which support them.  For \code{file.symlink} the
+  \code{to} argument can specify a single existing directory.  (Unix and
+  Mac OS X native filesystems support both.  Windows has hard links on
+  NTFS file systems.  What happens on a FAT or SMB-mounted file system is
+  OS-specific.)
 }
-\value{
-  \code{file.rename} returns a logical value, true for success.
 
-  The remaining functions return a logical vector indicating which
+\value{
+  These functions return a logical vector indicating which
   operation succeeded for each of the files attempted.  Using a missing
   value for a file or path name will always be regarded as a failure.
 
@@ -102,6 +115,18 @@ file.symlink(from, to)
   There is no guarantee that these functions will handle Windows
   relative paths of the form \file{d:path}: try \file{d:./path}
   instead.  In particular, \file{d:} is not recognized as a directory.
+  Nor are \samp{\\\\?\\} prefixes (and similar) supported.
+  
+  Recent versions of Windows have a limited version of symbolic links on
+  NTFS filesystems, but this has not be implemented in
+  \code{file.symlink}, not least because \R is still widely used on
+  Windows XP.
+
+  Most of these functions accept UTF-8 filepaths not valid in the
+  current locale.
+
+  User error in supplying invalid file names (and note that \file{foo/}
+  \emph{is} invalid on Windows) has undefined consequences.
 }
 #endif
 
@@ -117,8 +142,12 @@ file.symlink(from, to)
   \code{\link{dir.create}}.
 
   \code{\link{Sys.glob}} to expand wildcards in file specifications.
-  
+
   \code{\link{file_test}}, \code{\link{Sys.readlink}}.
+
+  \url{http://en.wikipedia.org/wiki/Hard_link} and
+  \url{http://en.wikipedia.org/wiki/Symbolic_link} for the concepts of
+  links and their limitations. 
 }
 
 \examples{

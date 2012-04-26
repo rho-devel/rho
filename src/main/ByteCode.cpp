@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -39,12 +39,70 @@
 
 #include "CXXR/ByteCode.hpp"
 
-using namespace std;
+#include "CXXR/IntVector.h"
+#include "CXXR/errors.h"
+
 using namespace CXXR;
 
-// ByteCode::evaluate() is defined in eval.cpp
+NodeStack* ByteCode::s_nodestack = 0;
+std::vector<Frame::Binding*>* ByteCode::s_loopvar_stack = 0;
+
+void ByteCode::detachReferents()
+{
+    m_code.detach();
+    m_constants.detach();
+    RObject::detachReferents();
+}
+
+RObject* ByteCode::evaluate(Environment* env)
+{
+#ifdef BYTECODE
+    return interpret(this, env);
+#else
+    Rf_error(_("bytecode evaluation not enabled"));
+    return 0;
+#endif
+}
+
+void ByteCode::initialize()
+{
+    if (!s_nodestack) {
+	s_nodestack = new NodeStack(512);
+	s_loopvar_stack = new std::vector<Frame::Binding*>;
+#ifdef THREADED_CODE
+	interpret(0, 0);
+#endif
+    }
+}
+
+// ByteCode::interpret() is in eval.cpp
+
+void ByteCode::protectAll()
+{
+    if (s_nodestack)
+	s_nodestack->protectAll();
+}
+
+// ByteCode::thread() is in eval.cpp
 
 const char* ByteCode::typeName() const
 {
     return staticTypeName();
+}
+
+void ByteCode::visitReferents(const_visitor* v) const
+{
+    const GCNode* code = m_code;
+    const GCNode* constants = m_constants;
+    RObject::visitReferents(v);
+    if (code)
+	(*v)(code);
+    if (constants)
+	(*v)(constants);
+}
+
+void ByteCode::visitRoots(GCNode::const_visitor* v)
+{
+    if (s_nodestack)
+	s_nodestack->visitRoots(v);
 }

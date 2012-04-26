@@ -19,8 +19,9 @@ md5sum <- function(files)
 
 .installMD5sums <- function(pkgDir, outDir = pkgDir)
 {
-    ## <FIXME> what if dot == NULL?
     dot <- getwd()
+    if (is.null(dot))
+        stop("current working directory cannot be ascertained")
     setwd(pkgDir)
     x <- md5sum(dir(pkgDir, recursive=TRUE))
     setwd(dot)
@@ -31,7 +32,7 @@ md5sum <- function(files)
 
 checkMD5sums <- function(package, dir)
 {
-    if(missing(dir)) dir <- .find.package(package, quiet=TRUE)
+    if(missing(dir)) dir <- find.package(package, quiet=TRUE)
     if(!length(dir)) return(NA)
     md5file <- file.path(dir, "MD5")
     if(!file.exists(md5file)) return(NA)
@@ -39,8 +40,9 @@ checkMD5sums <- function(package, dir)
     ## now split on the first space.
     xx <- sub("^([0-9a-fA-F]*)(.*)", "\\1", inlines)
     nmxx <- names(xx) <- sub("^[0-9a-fA-F]* [ |*](.*)", "\\1", inlines)
-    ## <FIXME> what if dot == NULL?
     dot <- getwd()
+    if (is.null(dot))
+        stop("current working directory cannot be ascertained")
     setwd(dir)
     x <- md5sum(dir(dir, recursive=TRUE))
     setwd(dot)

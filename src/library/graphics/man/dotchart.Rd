@@ -1,11 +1,11 @@
 % File src/library/graphics/man/dotchart.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{dotchart}
 \alias{dotchart}
-\title{Cleveland Dot Plots}
+\title{Cleveland's Dot Plots}
 \description{
   Draw a Cleveland dot plot.
 }
@@ -19,7 +19,10 @@ dotchart(x, labels = NULL, groups = NULL, gdata = NULL,
 \arguments{
   \item{x}{either a vector or matrix of numeric values (\code{NA}s are
     allowed).  If \code{x} is a matrix the overall plot consists of
-    juxtaposed dotplots for each row.}
+    juxtaposed dotplots for each row.  Inputs which satisfy
+    \code{\link{is.numeric}(x)} but not
+    \code{is.vector(x) || is.matrix(x)} are coerced by
+    \code{\link{as.numeric}}, with a warning.}
   \item{labels}{a vector of labels for each point.
     For vectors the default is to use \code{names(x)} and for matrices
     the row labels \code{dimnames(x)[[1]]}.}
@@ -48,7 +51,7 @@ dotchart(x, labels = NULL, groups = NULL, gdata = NULL,
     \code{\link{plot.window}}, e.g.}
   \item{main}{overall title for the plot, see \code{\link{title}}.}
   \item{xlab, ylab}{axis annotations as in \code{title}.}
-  \item{\dots}{graphical parameters can also be specified as arguments.}
+  \item{\dots}{\link{graphical parameters} can also be specified as arguments.}
 }
 \value{
   This function is invoked for its side effect, which is to produce two

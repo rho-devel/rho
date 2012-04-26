@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -40,7 +40,7 @@
 #include "CXXR/ExternalPointer.h"
 
 #include "localization.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -73,13 +73,15 @@ void ExternalPointer::visitReferents(const_visitor* v) const
     const GCNode* protege = m_protege;
     const GCNode* tag = m_tag;
     RObject::visitReferents(v);
-    if (protege) protege->conductVisitor(v);
-    if (tag) tag->conductVisitor(v);
+    if (protege)
+	(*v)(protege);
+    if (tag)
+	(*v)(tag);
 }
 
 SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)
 {
-    return GCNode::expose(new ExternalPointer(p, tag, prot));
+    return CXXR_NEW(ExternalPointer(p, tag, prot));
 }
 
 void R_SetExternalPtrAddr(SEXP s, void *p)

@@ -30,6 +30,7 @@ mean.default <- function(x, trim = 0, na.rm = FALSE, ...)
     if(trim > 0 && n) {
 	if(is.complex(x))
 	    stop("trimmed means are not defined for complex data")
+        if(any(is.na(x))) return(NA_real_)
 	if(trim >= 0.5) return(stats::median(x, na.rm=FALSE))
 	lo <- floor(n*trim)+1
 	hi <- n+1-lo
@@ -38,4 +39,9 @@ mean.default <- function(x, trim = 0, na.rm = FALSE, ...)
     .Internal(mean(x))
 }
 
-mean.data.frame <- function(x, ...) sapply(x, mean, ...)
+mean.data.frame <- function(x, ...) {
+    ## cannot use .Deprecated("sapply( <data>, mean)")
+    msg <- "mean(<data.frame>) is deprecated.\n Use colMeans() or sapply(*, mean) instead."
+    warning(paste(msg, collapse = ""), call. = FALSE, domain = NA)
+    sapply(X = x, FUN = mean, ...)
+}

@@ -12,6 +12,7 @@ void ProvenanceSet::visitReferents(const_visitor* v) const {
 	     it!=end();
 	     ++it) {
 		GCNode* prov=(*it);
-		if (prov) prov->conductVisitor(v);
+		if (prov)
+		    (*v)(prov);
 	}
 }

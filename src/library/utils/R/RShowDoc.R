@@ -18,15 +18,20 @@ RShowDoc <- function(what, type=c("pdf", "html", "txt"), package)
 {
     paste. <- function(x, ext) paste(x, ext, sep=".")
     pdf_viewer <- function(path) {
-        if(.Platform$OS.type == "windows") shell.exec(path)
-        else system(paste(shQuote(getOption("pdfviewer")), shQuote(path)),
-                    wait = FALSE)
+        pdfviewer <- getOption("pdfviewer")
+        if(identical(pdfviewer, "false")) {
+        } else if(.Platform$OS.type == "windows" &&
+                  identical(pdfviewer, file.path(R.home("bin"), "open.exe")))
+            shell.exec(path)
+        else system2(pdfviewer, shQuote(path), wait = FALSE)
     }
 
     html_viewer <- function(path) {
         ## we don't use browseURL under Windows as shell.exec does
         ## not want an encoded URL.
-        if(.Platform$OS.type == "windows") shell.exec(chartr("/", "\\", path))
+        browser <- getOption("browser")
+        if(is.null(browser) && .Platform$OS.type == "windows")
+            shell.exec(chartr("/", "\\", path))
         else browseURL(paste("file://", URLencode(path), sep=""))
     }
 
@@ -36,7 +41,7 @@ RShowDoc <- function(what, type=c("pdf", "html", "txt"), package)
         return(invisible())
     }
     if(!missing(package)) {
-        pkgpath <- .find.package(package)
+        pkgpath <- find.package(package)
         if(type == "pdf") {
             path <- file.path(pkgpath, "doc", paste.(what, "pdf"))
             if(file.exists(path)) {
@@ -72,11 +77,19 @@ RShowDoc <- function(what, type=c("pdf", "html", "txt"), package)
             file.show(path)
             return(invisible(path))
         }
-        stop(gettextf("no documentation for '%s' found in package '%s'",
-                      what, package), domain = NA)
+        stop(gettextf("no documentation for %s found in package %s",
+                      sQuote(what), sQuote(package)), domain = NA)
     }
     if(what == "FAQ") what <- "R-FAQ"
     if(what == "NEWS") {
+        if(type == "pdf") type <- "html"
+        if(type == "html") {
+            path <- file.path(R.home("doc"), "html", paste.(what, "html"))
+            if(file.exists(path)) {
+                html_viewer(path)
+                return(invisible(path))
+            }
+        }
         ## This is in UTF-8 and has a BOM on the first line
         path <- file.path(R.home(), what)
         tf <- tempfile()
@@ -87,6 +100,10 @@ RShowDoc <- function(what, type=c("pdf", "html", "txt"), package)
         return(invisible(path))
     } else if(what == "COPYING") {
         path <- file.path(R.home(), what)
+        file.show(path)
+        return(invisible(path))
+    } else if(what %in% dir(file.path(R.home("share"), "licenses"))) {
+        path <- file.path(R.home("share"), "licenses", what)
         file.show(path)
         return(invisible(path))
     } else if(what %in% c("R-admin", "R-data", "R-exts", "R-FAQ", "R-intro",
@@ -116,7 +133,7 @@ RShowDoc <- function(what, type=c("pdf", "html", "txt"), package)
         if(type == "html") {
             path <- file.path(R.home("doc"), "html", paste.(what, "html"))
             if(file.exists(path)) {
-                shell.exec(chartr("/", "\\", path))
+                html_viewer(path)
                 return(invisible(path))
             }
         }

@@ -15,12 +15,12 @@
   Assign a value to a name.
 }
 \usage{
-x <- value
-x <<- value
-value -> x
-value ->> x
+\special{x <- value}
+\special{x <<- value}
+\special{value -> x}
+\special{value ->> x}
 
-x = value
+\special{x = value}
 }
 \arguments{
   \item{x}{a variable name (possibly quoted).}
@@ -62,12 +62,13 @@ x = value
   Wadsworth & Brooks/Cole.
 
   Chamber, J. M. (1998)
-  \emph{Programming with Data. A Guide to the S Language}.
+  \emph{Programming with Data.  A Guide to the S Language}.
   Springer (for \code{=}).
 }
 
 \seealso{
-  \code{\link{assign}},
+  \code{\link{assign}}, for \dQuote{subassignment} such
+  as \code{x[i] <- v}, \code{\link{[<-}}; % ./Extract.Rd
   \code{\link{environment}}.
 }
 \keyword{data}

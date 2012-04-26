@@ -17,7 +17,7 @@
 predict.princomp <- function(object, newdata, ...)
 {
     if (missing(newdata)) return(object$scores)
-    if(length(dim(newdata)) != 2)
+    if(length(dim(newdata)) != 2L)
         stop("'newdata' must be a matrix or data frame")
     p <- NCOL(object$loadings)
     nm <- rownames(object$loadings)
@@ -75,7 +75,8 @@ function(x, npcs = min(10, length(x$sdev)),
     type <- match.arg(type)
     pcs <- x$sdev^2
     xp <- seq_len(npcs)
-    if(type=="barplot")
+    dev.hold(); on.exit(dev.flush())
+    if(type == "barplot")
         barplot(pcs[xp], names.arg = names(pcs[xp]), main = main,
                 ylab = "Variances", ...)
     else {

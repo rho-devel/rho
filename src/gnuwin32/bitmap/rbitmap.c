@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1999-2008  Guido Masarotto and the R Development Core Team
+ *  Copyright (C) 1999-2011  Guido Masarotto and the R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -81,7 +81,11 @@
 static void my_png_error(png_structp png_ptr, png_const_charp msg)
 {
     R_ShowMessage((char *) msg);
+#if PNG_LIBPNG_VER < 10400
     longjmp(png_ptr->jmpbuf,1);
+#else
+    longjmp(png_jmpbuf(png_ptr),1);
+#endif
 }
 
 static void my_png_warning(png_structp png_ptr, png_const_charp msg)
@@ -98,15 +102,21 @@ int R_SaveAsPng(void  *d, int width, int height,
     png_infop info_ptr;
     unsigned int  col, palette[256];
     png_color pngpalette[256];
-    png_bytep pscanline, scanline = (png_bytep) calloc(3*width,sizeof(png_byte));
+    png_bytep pscanline;
+    png_bytep scanline = (png_bytep) calloc((size_t)(4*width),sizeof(png_byte));
     png_byte trans[256];
     png_color_16 trans_values[1];
-    int i, j, r, ncols, mid, high, low, withpalette;
-    DECLARESHIFTS;
+    int i, j, r, ncols, mid, high, low, withpalette, have_alpha;
+    volatile DECLARESHIFTS;
 
     /* Have we enough memory?*/
     if (scanline == NULL)
 	return 0;
+
+    if (fp == NULL) {
+	free(scanline);
+	return 0;
+    }
 
     /* Create and initialize the png_struct with the desired error handler
      * functions.  If you want to use the default stderr and longjump method,
@@ -131,7 +141,12 @@ int R_SaveAsPng(void  *d, int width, int height,
     /* Set error handling.  REQUIRED if you aren't supplying your own
      * error handling functions in the png_create_write_struct() call.
      */
-    if (setjmp(png_ptr->jmpbuf)) {
+#if PNG_LIBPNG_VER < 10400
+    if (setjmp(png_ptr->jmpbuf))
+#else
+    if (setjmp(png_jmpbuf(png_ptr)))
+#endif
+{
 	/* If we get here, we had a problem writing the file */
 	free(scanline);
 	png_destroy_write_struct(&png_ptr, &info_ptr);
@@ -146,9 +161,11 @@ int R_SaveAsPng(void  *d, int width, int height,
     if(transparent) palette[ncols++] = transparent & 0xFFFFFF;
     mid = ncols;
     withpalette = 1;
+    have_alpha = 0;
     for (i = 0; (i < height) && withpalette ; i++) {
 	for (j = 0; (j < width) && withpalette ; j++) {
-	    col = gp(d,i,j) & 0xFFFFFF ;
+	    col = gp(d,i,j);
+	    if (GETALPHA(col) < 255) have_alpha = 1;
 	    /* binary search the palette: */
 	    low = 0;
 	    high = ncols - 1;
@@ -171,6 +188,8 @@ int R_SaveAsPng(void  *d, int width, int height,
 	    }
 	}
     }
+    col = gp(d,0,0);
+    //have_alpha &= (transparent == 0);
 
     /* Set the image information here.  Width and height are up to 2^31,
      * bit_depth is one of 1, 2, 4, 8, or 16, but valid values also depend on
@@ -181,29 +200,44 @@ int R_SaveAsPng(void  *d, int width, int height,
      * currently be PNG_COMPRESSION_TYPE_BASE and PNG_FILTER_TYPE_BASE. REQUIRED
      */
     png_set_IHDR(png_ptr, info_ptr, width, height, 8,
-		 withpalette ? PNG_COLOR_TYPE_PALETTE : PNG_COLOR_TYPE_RGB,
+		 withpalette ? PNG_COLOR_TYPE_PALETTE :
+		 (have_alpha ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB),
 		 PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE,
 		 PNG_FILTER_TYPE_BASE);
 
     if (withpalette) {
 	for (i = 0; i < ncols ; i++) {
 	    col = palette[i];
-	    pngpalette[i].red = GETRED(col);
-	    pngpalette[i].green = GETGREEN(col);
-	    pngpalette[i].blue = GETBLUE(col);
+	    if(transparent) {
+		trans[i] = (col == transparent) ? 0:255;
+		pngpalette[i].red = GETRED(col);
+		pngpalette[i].green = GETGREEN(col);
+		pngpalette[i].blue = GETBLUE(col);
+	    } else {
+		/* PNG needs NON-premultiplied alpha */
+		int a = GETALPHA(col);
+		trans[i] = a;
+		if(a == 255 || a == 0) {
+		    pngpalette[i].red = GETRED(col);
+		    pngpalette[i].green = GETGREEN(col);
+		    pngpalette[i].blue = GETBLUE(col);
+		} else {
+		    pngpalette[i].red = 0.49 + 255.0*GETRED(col)/a;
+		    pngpalette[i].green = 0.49 + 255.0*GETGREEN(col)/a;
+		    pngpalette[i].blue = 0.49 + 255.0*GETBLUE(col)/a;
+
+		}
+	    }
 	}
 	png_set_PLTE(png_ptr, info_ptr, pngpalette, ncols);
+	if (transparent || have_alpha)
+	    png_set_tRNS(png_ptr, info_ptr, trans, ncols, trans_values);
     }
     /* Deal with transparency */
-    if(transparent) {
-	if(withpalette) {
-	    for (i = 0; i < ncols ; i++)
-		trans[i] = (palette[i] == (transparent & 0xFFFFFF)) ? 0:255;
-	} else {
-	    trans_values[0].red = GETRED(transparent);
-	    trans_values[0].blue = GETBLUE(transparent);
-	    trans_values[0].green = GETGREEN(transparent);
-	}
+    if(transparent && !withpalette) {
+	trans_values[0].red = GETRED(transparent);
+	trans_values[0].blue = GETBLUE(transparent);
+	trans_values[0].green = GETGREEN(transparent);
 	png_set_tRNS(png_ptr, info_ptr, trans, ncols, trans_values);
     }
 
@@ -221,7 +255,7 @@ int R_SaveAsPng(void  *d, int width, int height,
 	/* Build the scanline */
 	pscanline = scanline;
 	for (j = 0 ; j < width ; j++) {
-	    col = gp(d, i, j) & 0xFFFFFF;
+	    col = gp(d, i, j);
 	    if (withpalette) {
 		/* binary search the palette (the colour must be there): */
 		low = 0;  high = ncols - 1;
@@ -233,9 +267,25 @@ int R_SaveAsPng(void  *d, int width, int height,
 		}
 		*pscanline++ = mid;
 	    } else {
-		*pscanline++ = GETRED(col) ;
-		*pscanline++ = GETGREEN(col) ;
-		*pscanline++ = GETBLUE(col) ;
+		if(have_alpha) {
+		    /* PNG needs NON-premultiplied alpha */
+		    int a = GETALPHA(col);
+		    if(a == 255 || a == 0) {
+			*pscanline++ = GETRED(col) ;
+			*pscanline++ = GETGREEN(col) ;
+			*pscanline++ = GETBLUE(col) ;
+			*pscanline++ =  a;
+		    } else {
+			*pscanline++ = 0.49 + 255.0*GETRED(col)/a ;
+			*pscanline++ = 0.49 + 255.0*GETGREEN(col)/a ;
+			*pscanline++ = 0.49 + 255.0*GETBLUE(col)/a ;
+			*pscanline++ =  a;
+		    }
+		} else {
+		    *pscanline++ = GETRED(col) ;
+		    *pscanline++ = GETGREEN(col) ;
+		    *pscanline++ = GETBLUE(col) ;
+		}
 	    }
 	}
 	png_write_row(png_ptr, scanline);
@@ -257,6 +307,9 @@ int R_SaveAsPng(void  *d, int width, int height,
 
 #ifdef HAVE_JPEG
 
+/* jconfig.h included by jpeglib.h may define these unconditionally */
+#undef HAVE_STDDEF_H
+#undef HAVE_STDLIB_H
 #include <jpeglib.h>
 
 /* Here's the extended error handler struct */
@@ -315,6 +368,11 @@ int R_SaveAsJpeg(void  *d, int width, int height,
     if (scanline == NULL)
 	return 0;
 
+    if (outfile == NULL) {
+	free(scanline);
+	return 0;
+    }
+
     /* Step 1: allocate and initialize JPEG compression object */
 
     /*
@@ -344,10 +402,10 @@ int R_SaveAsJpeg(void  *d, int width, int height,
     /* First we supply a description of the input image.
      * Four fields of the cinfo struct must be filled in:
      */
-    cinfo.image_width = width; 	/* image width and height, in pixels */
+    cinfo.image_width = width;	/* image width and height, in pixels */
     cinfo.image_height = height;
     cinfo.input_components = 3;		/* # of color components per pixel */
-    cinfo.in_color_space = JCS_RGB; 	/* colorspace of input image */
+    cinfo.in_color_space = JCS_RGB;	/* colorspace of input image */
     jpeg_set_defaults(&cinfo);
     if(res > 0) {
 	cinfo.density_unit = 1;  /* pixels per inch */
@@ -406,7 +464,6 @@ int R_SaveAsTIFF(void  *d, int width, int height,
 
     DECLARESHIFTS;
 
-#if 0
     for (i = 0; i < height; i++)
 	for (j = 0; j < width; j++) {
 	    col = gp(d,i,j);
@@ -415,9 +472,8 @@ int R_SaveAsTIFF(void  *d, int width, int height,
 		break;
 	    }
 	}
-#endif
     sampleperpixel = 3 + have_alpha;
-    
+
     out = TIFFOpen(outfile, "w");
     if (!out) {
 	warning("unable to open TIFF file '%s'", outfile);
@@ -439,7 +495,7 @@ int R_SaveAsTIFF(void  *d, int width, int height,
        COMPRESSION_LZW = 5;
        COMPRESSION_JPEG = 7;
        COMPRESSION_DEFLATE = 32946;
-       COMPRESSION_ADOBE_DEFLATE = 8;  
+       COMPRESSION_ADOBE_DEFLATE = 8;
     */
     TIFFSetField(out, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
 #endif
@@ -457,7 +513,7 @@ int R_SaveAsTIFF(void  *d, int width, int height,
 	buf =(unsigned char *)_TIFFmalloc(linebytes);
     else
 	buf = (unsigned char *)_TIFFmalloc(TIFFScanlineSize(out));
- 
+
     for (i = 0; i < height; i++) {
 	pscanline = buf;
 	for(j = 0; j < width; j++) {
@@ -500,6 +556,9 @@ int R_SaveAsBmp(void  *d, int width, int height,
     unsigned int dwrd;
     int lres;
     DECLARESHIFTS;
+
+    if (fp == NULL)
+	return 0;
 
     /* Have we less than 256 different colors? */
     ncols = mid = 0;
@@ -544,7 +603,7 @@ int R_SaveAsBmp(void  *d, int width, int height,
     }
 
     /* write the header */
-    
+
     BMPPUTC('B');BMPPUTC('M');
     BMPDW(bfSize); /*bfSize*/
     BMPW(0);BMPW(0); /* bfReserved1 and bfReserved2 must be 0*/

@@ -46,7 +46,7 @@ nlminb(start, objective, gradient = NULL, hessian = NULL, \dots,
   }
 }
 \details{
-  Any names of \code{start} are (as from \R 2.8.1) passed
+  Any names of \code{start} are passed
   on to \code{objective} and where applicable, \code{gradient} and
   \code{hessian}.  The parameter vector will be coerced to double.
 
@@ -72,16 +72,28 @@ nlminb(start, objective, gradient = NULL, hessian = NULL, \dots,
   are:
   \describe{
     \item{\code{eval.max}}{Maximum number of evaluations of the objective
-      function allowed.  Defaults to 200.}
+      function allowed.  Defaults to 200.}% MXFCAL
     \item{\code{iter.max}}{Maximum number of iterations allowed.
-      Defaults to 150.}
+      Defaults to 150.}% MXITER
     \item{\code{trace}}{The value of the objective function and the parameters
       is printed every trace'th iteration.  Defaults to 0 which
       indicates no trace information is to be printed.}
-    \item{\code{abs.tol}}{Absolute tolerance.  Defaults to \code{1e-20}.}
-    \item{\code{rel.tol}}{Relative tolerance.  Defaults to \code{1e-10}.}
-    \item{\code{x.tol}}{X tolerance.  Defaults to \code{1.5e-8}.}
-    \item{\code{step.min}}{Minimum step size.  Defaults to \code{2.2e-14}.}
+    \item{\code{abs.tol}}{Absolute tolerance.  As from \R{} 2.12.0, defaults
+      to 0 so the absolute convergence test is not used.  If the objective
+      function is known to be non-negative, the previous default of
+      \code{1e-20} would be more appropriate.}% AFCTOL  31
+    \item{\code{rel.tol}}{Relative tolerance.  Defaults to
+      \code{1e-10}.}% RFCTOL  32
+    \item{\code{x.tol}}{X tolerance.  Defaults to \code{1.5e-8}.}% XCTOL  33
+    \item{\code{xf.tol}}{false convergence tolerance.  Defaults to
+      \code{2.2e-14}.}% XFTOL  34
+    \item{\code{step.min, step.max}}{Minimum and maximum step size.  Both
+      default to \code{1.}.}% LMAX0 35  /  LMAXS 36
+    \item{sing.tol}{singular convergence tolerance; defaults to
+      \code{rel.tol}.}% SCTOL  37
+    \item{scale.init}{...}% DINIT  38
+    \item{diff.g}{an estimated bound on the relative error in the
+      objective function value.}% ETA0  42
   }
 }
 \references{ \url{http://netlib.bell-labs.com/netlib/port/} }
@@ -94,7 +106,8 @@ nlminb(start, objective, gradient = NULL, hessian = NULL, \dots,
   \code{\link{optimize}} for one-dimensional minimization and
   \code{\link{constrOptim}} for constrained optimization.
 }
-\examples{
+% Lots of near-zeros, platform-specific results.
+\examples{\donttest{
 x <- rnbinom(100, mu = 10, size = 10)
 hdev <- function(par) {
     -sum(dnbinom(x, mu = par[1], size = par[2], log = TRUE))
@@ -148,6 +161,6 @@ nlminb(rep(3, 25), flb,
 ## trying to use a too small tolerance:
 r <- nlminb(rep(3, 25), flb, control = list(rel.tol=1e-16))
 stopifnot(grepl("rel.tol", r$message))
-}
+}}
 \keyword{optimize}
 

@@ -1,12 +1,12 @@
 % File src/library/base/man/taskCallback.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{taskCallback}
 \alias{addTaskCallback}
 \alias{removeTaskCallback}
-\title{Add or remove a top-level task callback}
+\title{Add or Remove a Top-Level Task Callback}
 \description{
   \code{addTaskCallback} registers an R function
   that is to be called each time a top-level task
@@ -23,12 +23,12 @@
   This is easier and more direct.
 }
 \usage{
-addTaskCallback(f, data = NULL, name = character(0))
+addTaskCallback(f, data = NULL, name = character())
 removeTaskCallback(id)
 }
 \arguments{
   \item{f}{the function that is to be invoked each time a top-level task
-    is successfully completed. This is called with 5 or 4 arguments
+    is successfully completed.  This is called with 5 or 4 arguments
     depending on whether \code{data} is specified or not, respectively.
     The return value should be a logical value indicating whether to
     keep the callback in the list of active callbacks or discard it.}
@@ -60,7 +60,7 @@ removeTaskCallback(id)
 }
 \details{
 Top-level tasks are individual expressions
-rather than entire lines of input. Thus an input
+rather than entire lines of input.  Thus an input
 line of the form \code{expression1 ; expression2}
 will give rise to 2 top-level tasks.
   
@@ -68,7 +68,7 @@ A top-level task callback is called with the expression for the
 top-level task, the result of the top-level task, a logical value
 indicating whether it was successfully completed or not (always TRUE
 at present), and a logical value indicating whether the result was
-printed or not. If the \code{data} argument was specified in the call
+printed or not.  If the \code{data} argument was specified in the call
 to \code{addTaskCallback}, that value is given as the fifth argument.
 
 The callback function should return a logical value.
@@ -78,9 +78,6 @@ If the function returns TRUE, it is kept in the list and
 will be called on the completion of the next top-level task.
 }
 \note{
-  This is an experimental feature and the interface may be changed
-  in the future.
-
   There is also C-level access to top-level task callbacks
   to allow C routines rather than R functions be used.
 }

@@ -1,15 +1,14 @@
 % File src/library/grDevices/man/convertColor.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{convertColor}
 \alias{convertColor}
 \alias{colorspaces}
-\title{Convert between colour spaces}
+\title{Convert between Colour Spaces}
 \description{
-  Convert colours between standard colour space representations. This
-  function is experimental.
+  Convert colours between their representations in standard colour spaces.
 }
 \usage{
 convertColor(color, from, to, from.ref.white, to.ref.white,
@@ -31,16 +30,15 @@ convertColor(color, from, to, from.ref.white, to.ref.white,
 }
 \details{
   Color spaces are specified by objects of class \code{colorConverter},
-  created by \code{\link{colorConverter}} or
-  \code{\link{make.rgb}}. Built-in color spaces may be referenced by
-  strings: \code{"XYZ"}, \code{"sRGB"}, \code{"Apple RGB"}, \code{"CIE RGB"},
-  \code{"Lab"}, \code{"Luv"}. The converters for these colour spaces are
-  in the object \code{colorspaces}.
+  created by \code{\link{colorConverter}} or \code{\link{make.rgb}}.
+  Built-in color spaces may be referenced by strings: \code{"XYZ"},
+  \code{"sRGB"}, \code{"Apple RGB"}, \code{"CIE RGB"}, \code{"Lab"},
+  \code{"Luv"}. The converters for these colour spaces are in the object
+  \code{colorspaces}.
 
   The \code{"sRGB"} color space is that used by standard PC monitors.
   \code{"Apple RGB"} is used by Apple monitors. \code{"Lab"} and
-  \code{"Luv"}
-  are approximately perceptually uniform
+  \code{"Luv"} are approximately perceptually uniform
   spaces standardized by the Commission Internationale
   d'Eclairage. \code{XYZ} is a 1931 CIE standard capable of representing
   all visible colors (and then some), but not in a perceptually uniform
@@ -66,11 +64,10 @@ convertColor(color, from, to, from.ref.white, to.ref.white,
 }
 
 \references{
-  For all the conversion equations
-  \url{http://www.brucelindbloom.com/}
+  For all the conversion equations \url{http://www.brucelindbloom.com/}.
 
   For the white points
-  \url{http://www.efg2.com/Lab/Graphics/Colors/Chromaticity.htm}
+  \url{http://www.efg2.com/Lab/Graphics/Colors/Chromaticity.htm}.
 }
 
 \seealso{
@@ -117,9 +114,8 @@ cols <- rgb(srgb[,1],srgb[,2],srgb[,3])
 image((-10:15)*10,(-15:10)*10,matrix(1:(26*26),ncol=26),col=cols,
   xlab="a",ylab="b",main="Lab: L=80")
 
-
 (cols <- t(col2rgb(palette())))
-(lab <- convertColor(cols,from="sRGB",to="Lab",scale.in=255))
+zapsmall(lab <- convertColor(cols,from="sRGB",to="Lab",scale.in=255))
 round(convertColor(lab,from="Lab",to="sRGB",scale.out=255))
 }
 \keyword{color}

@@ -16,6 +16,17 @@
 
 ### * File utilities.
 
+### ** file_ext
+
+file_ext <-
+function(x)
+{
+    ## Return the file extensions.
+    ## (Only purely alphanumeric extensions are recognized.)
+    pos <- regexpr("\\.([[:alnum:]]+)$", x)
+    ifelse(pos > -1L, substring(x, pos + 1L), "")
+}
+
 ### ** file_path_as_absolute
 
 file_path_as_absolute <-
@@ -23,33 +34,23 @@ function(x)
 {
     ## Turn a possibly relative file path absolute, performing tilde
     ## expansion if necessary.
-    ## Seems the only way we can do this is 'temporarily' change the
-    ## working dir and see where this takes us.
+    if(length(x) != 1L)
+        stop("'x' must be a single character string")
     if(!file.exists(epath <- path.expand(x)))
         stop(gettextf("file '%s' does not exist", x),
              domain = NA)
-    cwd <- getwd()
-    on.exit(setwd(cwd))
-    if(file_test("-d", epath)) {
-        ## Combining dirname and basename does not work for e.g. '.' or
-        ## '..' on Unix ...
-        setwd(epath)
-        getwd()
-    }
-    else {
-        setwd(dirname(epath))
-        ## getwd() can be "/" or "d:/"
-        file.path(sub("/$", "", getwd()), basename(epath))
-    }
+    normalizePath(epath, "/", TRUE)
 }
 
 ### ** file_path_sans_ext
 
 file_path_sans_ext <-
-function(x)
+function(x, compression = FALSE)
 {
     ## Return the file paths without extensions.
     ## (Only purely alphanumeric extensions are recognized.)
+    if(compression)
+        x <- sub("[.](gz|bz2|xz)$", "", x)
     sub("([^.]+)\\.[[:alnum:]]+$", "\\1", x)
 }
 
@@ -154,13 +155,20 @@ function(x)
 {
     ## All that is needed here is an 8-bit encoding that includes ASCII.
     ## The only one we guarantee to exist is 'latin1'.
-    ## The default sub=NA is faster.
-    ind <- is.na(iconv(x, "latin1", "ASCII"))
+    ## The default sub=NA is faster, but on some platforms
+    ## some characters used just to lose their accents, so two tests.
+    asc <- iconv(x, "latin1", "ASCII")
+    ind <- is.na(asc) | asc != x
     if(any(ind))
         cat(paste(which(ind), ": ",
                   iconv(x[ind], "latin1", "ASCII", sub="byte"), sep=""),
             sep="\n")
+    invisible(x[ind])
 }
+
+showNonASCIIfile <-
+function(file)
+    showNonASCII(readLines(file, warn = FALSE))
 
 ### * Text utilities.
 
@@ -183,24 +191,53 @@ function(x, delim = c("{", "}"), syntax = "Rd")
 
 ### * LaTeX utilities
 
+### ** texi2pdf
+texi2pdf <-
+function(file, clean = FALSE, quiet = TRUE,
+         texi2dvi = getOption("texi2dvi"),
+         texinputs = NULL, index = TRUE)
+    texi2dvi(file = file, pdf = TRUE, clean = clean, quiet = quiet,
+             texi2dvi = texi2dvi, texinputs = texinputs, index = index)
+
 ### ** texi2dvi
 
 texi2dvi <-
 function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
-         texi2dvi = getOption("texi2dvi"), texinputs = NULL)
+         texi2dvi = getOption("texi2dvi"),
+         texinputs = NULL, index = TRUE)
 {
+    do_cleanup <- function(clean)
+        if(clean) {
+            ## output file will be created in the current directory
+            out_file <- paste(basename(file_path_sans_ext(file)),
+                              if(pdf) "pdf" else "dvi",
+                              sep = ".")
+            files <- list.files(all.files = TRUE) %w/o% c(".", "..", out_file)
+            file.remove(files[file_test("-nt", files, ".timestamp")])
+        }
+
+
     ## Run texi2dvi on a latex file, or emulate it.
 
-    if(is.null(texi2dvi) || !nzchar(texi2dvi))
+    if(is.null(texi2dvi) || !nzchar(texi2dvi) || texi2dvi == "texi2dvi")
         texi2dvi <- Sys.which("texi2dvi")
 
     envSep <- .Platform$path.sep
+    texinputs0 <- texinputs
     Rtexmf <- file.path(R.home("share"), "texmf")
+    Rtexinputs <- file.path(Rtexmf, "tex", "latex")
     ## "" forces use of default paths.
-    texinputs <- paste(c(texinputs, Rtexmf, ""), collapse = envSep)
+    texinputs <- paste(c(texinputs0, Rtexinputs, ""),
+                       collapse = envSep)
     ## not clear if this is needed, but works
     if(.Platform$OS.type == "windows")
-        texinputs <- gsub("\\\\", "/", texinputs)
+        texinputs <- gsub("\\", "/", texinputs, fixed = TRUE)
+    Rbibinputs <- file.path(Rtexmf, "bibtex", "bib")
+    bibinputs <- paste(c(texinputs0, Rbibinputs, ""),
+                       collapse = envSep)
+    Rbstinputs <- file.path(Rtexmf, "bibtex", "bst")
+    bstinputs <- paste(c(texinputs0, Rbstinputs, ""),
+                       collapse = envSep)
 
     otexinputs <- Sys.getenv("TEXINPUTS", unset = NA)
     if(is.na(otexinputs)) {
@@ -208,20 +245,28 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
         otexinputs <- "."
     } else on.exit(Sys.setenv(TEXINPUTS = otexinputs))
     Sys.setenv(TEXINPUTS = paste(otexinputs, texinputs, sep = envSep))
-    bibinputs <- Sys.getenv("BIBINPUTS", unset = NA)
-    if(is.na(bibinputs)) {
+    obibinputs <- Sys.getenv("BIBINPUTS", unset = NA)
+    if(is.na(obibinputs)) {
         on.exit(Sys.unsetenv("BIBINPUTS"), add = TRUE)
-        bibinputs <- "."
-    } else on.exit(Sys.setenv(BIBINPUTS = bibinputs, add = TRUE))
-    Sys.setenv(BIBINPUTS = paste(bibinputs, texinputs, sep = envSep))
-    bstinputs <- Sys.getenv("BSTINPUTS", unset = NA)
-    if(is.na(bstinputs)) {
+        obibinputs <- "."
+    } else on.exit(Sys.setenv(BIBINPUTS = obibinputs, add = TRUE))
+    Sys.setenv(BIBINPUTS = paste(obibinputs, bibinputs, sep = envSep))
+    obstinputs <- Sys.getenv("BSTINPUTS", unset = NA)
+    if(is.na(obstinputs)) {
         on.exit(Sys.unsetenv("BSTINPUTS"), add = TRUE)
-        bstinputs <- "."
-    } else on.exit(Sys.setenv(BSTINPUTS = bstinputs), add = TRUE)
-    Sys.setenv(BSTINPUTS = paste(bstinputs, texinputs, sep = envSep))
+        obstinputs <- "."
+    } else on.exit(Sys.setenv(BSTINPUTS = obstinputs), add = TRUE)
+    Sys.setenv(BSTINPUTS = paste(obstinputs, bstinputs, sep = envSep))
 
-    if(nzchar(texi2dvi) && .Platform$OS.type != "windows") {
+    if (clean) {
+        file.create(".timestamp")
+        on.exit(file.remove(".timestamp"), add = TRUE)
+        Sys.sleep(0.1) # wait long enough for files to be after the timestamp
+    }
+    if(index && nzchar(texi2dvi) && .Platform$OS.type != "windows") {
+        ## switch off the use of texindy in texi2dvi >= 1.157
+        Sys.setenv(TEXINDY = "false")
+        on.exit(Sys.unsetenv("TEXINDY"), add = TRUE)
         opt_pdf <- if(pdf) "--pdf" else ""
         opt_quiet <- if(quiet) "--quiet" else ""
         opt_extra <- ""
@@ -232,8 +277,12 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
         ## error messages in log files should work for both regular and
         ## file line error indicators.)
 
-        file.create(".timestamp")
-        out <- .shell_with_capture(paste(shQuote(texi2dvi), opt_pdf,
+        ## and work around a bug in texi2dvi
+        ## https://stat.ethz.ch/pipermail/r-devel/2011-March/060262.html
+        ## That has [A-Za-z], earlier versions [A-z], both of which may be
+        ## invalid in some locales.
+        out <- .shell_with_capture(paste("LC_COLLATE=C",
+                                         shQuote(texi2dvi), opt_pdf,
                                          opt_quiet, opt_extra,
                                          shQuote(file)))
 
@@ -282,16 +331,7 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
                              sep = "\n")
         }
 
-        ## Clean up as needed.
-        if(clean) {
-            out_file <- paste(file_path_sans_ext(file),
-                              if(pdf) "pdf" else "dvi",
-                              sep = ".")
-            files <- list.files(all.files = TRUE) %w/o% c(".", "..",
-                                                          out_file)
-            file.remove(files[file_test("-nt", files, ".timestamp")])
-        }
-        file.remove(".timestamp")
+        do_cleanup(clean)
 
         if(nzchar(msg))
             stop(msg, domain = NA)
@@ -299,88 +339,87 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
             message(paste(paste(out$stderr, collapse = "\n"),
                           paste(out$stdout, collapse = "\n"),
                           sep = "\n"))
-    } else if(nzchar(texi2dvi)) {       # Windows
+    } else if(index && nzchar(texi2dvi)) { # MiKTeX on Windows
         extra <- ""
-        ext <- if(pdf) "pdf" else "dvi"
-        pdf <- if(pdf) "--pdf" else ""
-        file.create(".timestamp")
-        quiet <- if(quiet) "--quiet" else ""
 
         ## look for MiKTeX (which this almost certainly is)
         ## and set the path to R's style files.
         ## -I works in MiKTeX >= 2.4, at least
+        ## http://docs.miktex.org/manual/texify.html
         ver <- system(paste(shQuote(texi2dvi), "--version"), intern = TRUE)
         if(length(grep("MiKTeX", ver[1L]))) {
-            paths <- paste ("-I", shQuote(texinputs))
+            ## AFAICS need separate -I for each element of texinputs.
+            texinputs <- c(texinputs0, Rtexinputs, Rbstinputs)
+	    texinputs <- gsub("\\", "/", texinputs, fixed = TRUE)
+	    paths <- paste ("-I", shQuote(texinputs))
             extra <- paste(extra, paste(paths, collapse = " "))
         }
+        ## 'file' could be a file path
+        base <- basename(file_path_sans_ext(file))
         ## this only gives a failure in some cases, e.g. not for bibtex errors.
-        system(paste(shQuote(texi2dvi), quiet, pdf,
+        system(paste(shQuote(texi2dvi),
+                     if(quiet) "--quiet" else "",
+                     if(pdf) "--pdf" else "",
                      shQuote(file), extra),
                intern=TRUE, ignore.stderr=TRUE)
         msg <- ""
         ## (La)TeX errors.
-        log <- paste(file_path_sans_ext(file), "log", sep = ".")
-        if(file_test("-f", log)) {
-            lines <- .get_LaTeX_errors_from_log_file(log)
+        logfile <- paste(base, "log", sep = ".")
+        if(file_test("-f", logfile)) {
+            lines <- .get_LaTeX_errors_from_log_file(logfile)
             if(length(lines))
                 msg <- paste(msg, "LaTeX errors:",
                              paste(lines, collapse = "\n"),
                              sep = "\n")
         }
         ## BibTeX errors.
-        log <- paste(file_path_sans_ext(file), "blg", sep = ".")
-        if(file_test("-f", log)) {
-            lines <- .get_BibTeX_errors_from_blg_file(log)
+        logfile <- paste(base, "blg", sep = ".")
+        if(file_test("-f", logfile)) {
+            lines <- .get_BibTeX_errors_from_blg_file(logfile)
             if(length(lines))
                 msg <- paste(msg, "BibTeX errors:",
                              paste(lines, collapse = "\n"),
                              sep = "\n")
         }
 
-        if(nzchar(msg))
+        do_cleanup(clean)
+        if(nzchar(msg)) {
             msg <- paste(gettextf("running 'texi2dvi' on '%s' failed", file),
                          msg, "", sep = "\n")
-        if(clean) {
-            out_file <- paste(file_path_sans_ext(file), ext, sep = ".")
-            files <- list.files(all.files = TRUE) %w/o% c(".", "..",
-                                                          out_file)
-            file.remove(files[file_test("-nt", files, ".timestamp")])
+            stop(msg, call. = FALSE, domain = NA)
         }
-        file.remove(".timestamp")
-
-        if(nzchar(msg)) stop(msg, domain = NA)
     } else {
-        ## Do not have texi2dvi
-        ## Needed at least on Windows except for MiKTeX
+        ## Do not have texi2dvi or don't want to index
+        ## Needed on Windows except for MiKTeX
         ## Note that this does not do anything about running quietly,
         ## nor cleaning, but is probably not used much anymore.
 
+        ## If it is called with MiKTeX then TEXINPUTS etc will be ignored.
+
         texfile <- shQuote(file)
-        base <- file_path_sans_ext(file)
+        ## 'file' could be a file path
+        base <- basename(file_path_sans_ext(file))
         idxfile <- paste(base, ".idx", sep="")
-        if(pdf) {
-            latex <- Sys.getenv("PDFLATEX")
-            if(!nzchar(latex)) latex <- "pdflatex"
-        } else {
-            latex <- Sys.getenv("LATEX")
-            if(!nzchar(latex)) latex <- "latex"
-        }
-        bibtex <- Sys.getenv("BIBTEX")
-        if(!nzchar(bibtex)) bibtex <- "bibtex"
-        makeindex <- Sys.getenv("MAKEINDEX")
-        if(!nzchar(makeindex)) makeindex <- "makeindex"
+        latex <- if(pdf) Sys.getenv("PDFLATEX", "pdflatex")
+        else  Sys.getenv("LATEX", "latex")
+        if(!nzchar(Sys.which(latex)))
+            stop(if(pdf) "pdflatex" else "latex", " is not available",
+                 domain = NA)
+        bibtex <- Sys.getenv("BIBTEX", "bibtex")
+        makeindex <- Sys.getenv("MAKEINDEX", "makeindex")
         if(system(paste(shQuote(latex), "-interaction=nonstopmode", texfile)))
-            stop(gettextf("unable to run %s on '%s'", latex, file), domain = NA)
+            stop(gettextf("unable to run '%s' on '%s'", latex, file),
+                 domain = NA)
         nmiss <- length(grep("^LaTeX Warning:.*Citation.*undefined",
                              readLines(paste(base, ".log", sep = ""))))
         for(iter in 1L:10L) { ## safety check
             ## This might fail as the citations have been included in the Rnw
             if(nmiss) system(paste(shQuote(bibtex), shQuote(base)))
             nmiss_prev <- nmiss
-            if(file.exists(idxfile)) {
+            if(index && file.exists(idxfile)) {
                 if(system(paste(shQuote(makeindex), shQuote(idxfile))))
-                    stop(gettextf("unable to run %s on '%s'", makeindex, idxfile),
+                    stop(gettextf("unable to run '%s' on '%s'",
+                                  makeindex, idxfile),
                          domain = NA)
             }
             if(system(paste(shQuote(latex), "-interaction=nonstopmode", texfile)))
@@ -390,7 +429,9 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
             if(nmiss == nmiss_prev &&
                !length(grep("Rerun to get", Log)) ) break
         }
+        do_cleanup(clean)
     }
+    invisible(NULL)
 }
 
 ### * Internal utility variables.
@@ -398,10 +439,24 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
 ### ** .BioC_version_associated_with_R_version
 
 .BioC_version_associated_with_R_version <-
-    numeric_version("2.5")
+    numeric_version("2.9")
 ## (Could also use something programmatically mapping (R) 2.10.x to
 ## (BioC) 2.5, 2.9.x to 2.4, ..., 2.1.x to 1.6, but what if R 3.0.0
-## comes out?)
+## comes out? Also, pre-2.12.0 is out weeks before all of BioC 2.7)
+## E.g. pre-2.13.0 was out ca Sept 20, BioC 2.8 was ready Nov 17.
+
+### ** .vc_dir_names
+
+## Version control directory names: CVS, .svn (Subversion), .arch-ids
+## (arch), .bzr, .git, .hg (mercurial) and _darcs (Darcs)
+
+.vc_dir_names <-
+    c("CVS", ".svn", ".arch-ids", ".bzr", ".git", ".hg", "_darcs")
+
+## and RE version (beware of the need for escapes if amending)
+
+.vc_dir_names_re <-
+    "/(CVS|\\.svn|\\.arch-ids|\\.bzr|\\.git|\\.hg|_darcs)(/|$)"
 
 ### * Internal utility functions.
 
@@ -441,6 +496,21 @@ function() {
 ##   .R_top_srcdir <- .R_top_srcdir_from_Rd()
 ## does not work because when tools is installed there are no Rd pages
 ## yet ...
+
+### ** config_val_to_logical
+
+config_val_to_logical <-
+function(val) {
+    v <- tolower(val)
+    if (v %in% c("1", "yes", "true")) TRUE
+    else if (v %in% c("0", "no", "false")) FALSE
+    else {
+        warning("cannot coerce ", sQuote(val), " to logical")
+        NA
+    }
+}
+
+
 
 ### ** .eval_with_capture
 
@@ -491,6 +561,30 @@ function(file1, file2)
     ## Use a fast version of file.append() that ensures LF between
     ## files.
     .Internal(codeFiles.append(file1, file2))
+}
+
+### ** .find_calls
+
+.find_calls <-
+function(x, f = NULL, recursive = FALSE)
+{
+    x <- as.list(x)
+    
+    predicate <- if(is.null(f))
+        function(e) is.call(e)
+    else
+        function(e) is.call(e) && f(e)
+
+    if(!recursive) return(Filter(predicate, x))
+
+    calls <- list()
+    gatherer <- function(e) {
+        if(predicate(e)) calls <<- c(calls, list(e))
+        if(is.recursive(e))
+            for(i in seq_along(e)) gatherer(e[[i]])
+    }
+    gatherer(x)
+    calls
 }
 
 ### ** .find_owner_env
@@ -544,22 +638,18 @@ function(con, n = 4L)
 
     ## Try matching both the regular error indicator ('!') as well as
     ## the file line error indicator ('file:line:').
-    pos <- grep("^(!|.*:[0123456789]+:)", lines)
+    pos <- grep("(^! |^!pdfTeX error:|:[0123456789]+:.*[Ee]rror)", lines)
+    ## unforunately that was too general and caught false positives
+    ## Errors are typically of the form
+    ## ! LaTeX Error:
+    ## !pdfTeX error:
+    ## ! Emergency stop
+    ## !  ==> Fatal error occurred, no output PDF file produced!
+    ## .../pegas.Rcheck/inst/doc/ReadingFiles.tex:395: Package inputenc Error:
     if(!length(pos)) return(character())
     ## Error chunk extends to at most the next error line.
     mapply(function(from, to) paste(lines[from : to], collapse = "\n"),
            pos, pmin(pos + n, c(pos[-1L], length(lines))))
-}
-
-### ** .get_contains_from_package_db
-
-.get_contains_from_package_db <-
-function(db)
-{
-    if("Contains" %in% names(db))
-        unlist(strsplit(db["Contains"], "[[:space:]]+"))
-    else
-        character()
 }
 
 ### ** .get_internal_S3_generics
@@ -577,7 +667,7 @@ function(primitive = TRUE) # primitive means 'include primitives'
           ## groupGeneric.Rd.
           )
     if(!primitive)
-        out <- out[!sapply(out, .is_primitive_in_base)]
+        out <- out[!vapply(out, .is_primitive_in_base, NA)]
     out
 }
 
@@ -619,9 +709,7 @@ function(dir, installed = FALSE)
     ## Get the package DESCRIPTION metadata for a package with root
     ## directory 'dir'.  If an unpacked source (uninstalled) package,
     ## base packages (have only a DESCRIPTION.in file with priority
-    ## "base") and bundle packages (have a DESCRIPTION.in file and need
-    ## additional metadata from the the bundle DESCRIPTION file) need
-    ## special attention.
+    ## "base") need special attention.
     dir <- file_path_as_absolute(dir)
     dfile <- file.path(dir, "DESCRIPTION")
     if(file_test("-f", dfile)) return(.read_description(dfile))
@@ -632,23 +720,7 @@ function(dir, installed = FALSE)
     else
         stop("Files 'DESCRIPTION' and 'DESCRIPTION.in' are missing.")
     if(identical(as.character(meta["Priority"]), "base")) return(meta)
-    ## Otherwise, this must be a bundle package.
-    bdfile <- file.path(dirname(dir), "DESCRIPTION")
-    if(file_test("-f", bdfile)) {
-        file <- tempfile()
-        on.exit(unlink(file))
-        writeLines(c(readLines(bdfile), readLines(dfile)), file)
-        .read_description(file)
-        ## Using an anonymous tempfile (con <- file()) would work too
-        ## for accumulating, e.g.,
-        ##   con <- file(open = "w+")
-        ##   on.exit(close(con))
-        ##   writeLines(c(readLines(bdfile), readLines(dfile)), con)
-        ## but .read_description() insists on an existing file (maybe
-        ## this should be changed?).
-    }
-    else
-        stop("Bundle 'DESCRIPTION' is missing.")
+    stop("invalid package layout")
 }
 
 ### ** .get_requires_from_package_db
@@ -718,7 +790,6 @@ function(dir, installed = TRUE, primitive = FALSE)
             reqs <- intersect(c(depends, imports), loadedNamespaces())
             if(length(reqs))
                 env_list <- c(env_list, lapply(reqs, getNamespace))
-            ## note .packages give versioned names.
             reqs <- intersect(depends %w/o% loadedNamespaces(),
                               .packages())
             if(length(reqs))
@@ -794,21 +865,24 @@ local({
 ### ** .get_standard_repository_URLs
 
 .get_standard_repository_URLs <-
-function() {
+function()
+{
     repos <- Sys.getenv("_R_CHECK_XREFS_REPOSITORIES_", "")
-    repos <- if(nzchar(repos)) {
-        .expand_BioC_repository_URLs(strsplit(repos, " +")[[1L]])
+    if(nzchar(repos)) {
+        repos <-
+            .expand_BioC_repository_URLs(strsplit(repos, " +")[[1L]])
     } else {
+        nms <- c("CRAN", "Omegahat", "BioCsoft", "BioCann", "BioCexp")
         p <- file.path(Sys.getenv("HOME"), ".R", "repositories")
-        if(file_test("-f", p)) {
+        repos <- if(file_test("-f", p)) {
             a <- .read_repositories(p)
-            a[c("CRAN", "Omegahat", "BioCsoft", "BioCann", "BioCexp"),
-              "URL"]
+            a[nms, "URL"]
         } else {
             a <- .read_repositories(file.path(R.home("etc"),
                                               "repositories"))
-            c("http://cran.r-project.org", a[3:6, "URL"])
+            c("http://cran.r-project.org", a[nms[-1L], "URL"])
         }
+        names(repos) <- nms
     }
     repos
 }
@@ -818,9 +892,8 @@ function() {
 .get_standard_repository_db_fields <-
 function()
     c("Package", "Version", "Priority",
-      "Bundle", "Contains",
       "Depends", "Imports", "LinkingTo", "Suggests", "Enhances",
-      "OS_type", "License")
+      "OS_type", "License", "Archs")
 
 ### ** .is_ASCII
 
@@ -829,9 +902,8 @@ function(x)
 {
     ## Determine whether the strings in a character vector are ASCII or
     ## not.
-    as.logical(sapply(as.character(x),
-                      function(txt)
-                      all(charToRaw(txt) <= as.raw(127))))
+    vapply(as.character(x), function(txt)
+           all(charToRaw(txt) <= as.raw(127)), NA)
 }
 
 ### ** .is_ISO_8859
@@ -843,11 +915,10 @@ function(x)
     ## some ISO 8859 character set or not.
     raw_ub <- charToRaw("\x7f")
     raw_lb <- charToRaw("\xa0")
-    as.logical(sapply(as.character(x),
-                      function(txt) {
-                          raw <- charToRaw(txt)
-                          all(raw <= raw_ub | raw >= raw_lb)
-                      }))
+    vapply(as.character(x), function(txt) {
+	    raw <- charToRaw(txt)
+	    all(raw <= raw_ub | raw >= raw_lb)
+	}, NA)
 }
 
 ### ** .is_primitive_in_base
@@ -975,7 +1046,7 @@ function(parent = parent.frame())
 {
     ## Create an environment with pseudo-definitions for the S3 group
     ## methods.
-    env <- new.env(parent = parent)
+    env <- new.env(parent = parent) # small
     assign("Math", function(x, ...) UseMethod("Math"),
            envir = env)
     assign("Ops", function(e1, e2) UseMethod("Ops"),
@@ -994,7 +1065,7 @@ function(parent = parent.frame(), fixup = FALSE)
 {
     ## Create an environment with pseudo-definitions for the S3 primitive
     ## generics
-    env <- new.env(parent = parent)
+    env <- new.env(hash = TRUE, parent = parent)
     for(f in ls(base::.GenericArgsEnv))
         assign(f, get(f, envir=base::.GenericArgsEnv), envir = env)
     if(fixup) {
@@ -1016,7 +1087,7 @@ function(parent = parent.frame())
 {
     ## Create an environment with pseudo-definitions
     ## for the S3 primitive non-generics
-    env <- new.env(parent = parent)
+    env <- new.env(hash = TRUE, parent = parent)
     for(f in ls(base::.ArgsEnv))
         assign(f, get(f, envir=base::.ArgsEnv), envir = env)
     env
@@ -1031,8 +1102,6 @@ function(package)
     ## @code{package} which 'look' like S3 methods, but are not.
     ## Using package=NULL returns all known examples
 
-    ## round.POSIXt is a method for S3 and S4 group generics with
-    ## deliberately different arg names.
     stopList <-
         list(base = c("all.equal", "all.names", "all.vars",
              "format.char", "format.info", "format.pval",
@@ -1041,17 +1110,28 @@ function(package)
              "print.atomic", "print.coefmat",
              "qr.Q", "qr.R", "qr.X", "qr.coef", "qr.fitted", "qr.qty",
              "qr.qy", "qr.resid", "qr.solve",
+             ## round.POSIXt is a method for S3 and S4 group generics with
+             ## deliberately different arg names.
              "rep.int", "round.POSIXt",
              "seq.int", "sort.int", "sort.list"),
+             AMORE = "sim.MLPnet",
              BSDA = "sign.test",
-             Hmisc = c("abs.error.pred", "t.test.cluster"),
+             ElectoGraph = "plot.wedding.cake",
+             FrF2 = "all.2fis.clear.catlg",
+             GLDEX = c("hist.su", "pretty.su"),
+             Hmisc = c("abs.error.pred", "all.digits", "all.is.numeric",
+                       "format.df", "format.pval", "t.test.cluster"),
              HyperbolicDist = "log.hist",
              MASS = c("frequency.polygon",
-             "gamma.dispersion", "gamma.shape",
-             "hist.FD", "hist.scott"),
+                      "gamma.dispersion", "gamma.shape",
+                      "hist.FD", "hist.scott"),
              ## FIXME: since these are already listed with 'base',
              ##        they should not need to be repeated here:
-             Matrix = c("qr.Q", "qr.R", "qr.coef", "qr.fitted", "qr.qty", "qr.qy", "qr.resid"),
+             Matrix = c("qr.Q", "qr.R", "qr.coef", "qr.fitted",
+                        "qr.qty", "qr.qy", "qr.resid"),
+             RCurl = "merge.list",
+             RNetCDF = c("close.nc", "dim.def.nc", "dim.inq.nc",
+                         "dim.rename.nc", "open.nc", "print.nc"),
              SMPracticals = "exp.gibbs",
              XML = "text.SAX",
              ape = "sort.index",
@@ -1059,22 +1139,36 @@ function(package)
              boot = "exp.tilt",
              car = "scatterplot.matrix",
 	     calibrator = "t.fun",
+             clusterfly = "ggobi.som",
+             coda = "as.mcmc.list",
+             crossdes = "all.combn",
              ctv = "update.views",
+             deSolve = "plot.1D",
              equivalence = "sign.boot",
              fields = c("qr.q2ty", "qr.yq2"),
+             gbm = c("pretty.gbm.tree", "quantile.rug"),
+             gpclib = "scale.poly",
              grDevices = "boxplot.stats",
              graphics = c("close.screen",
              "plot.design", "plot.new", "plot.window", "plot.xy",
              "split.screen"),
+             ic.infer = "all.R2",
              hier.part = "all.regs",
              lasso2 = "qr.rtr.inv",
-             mratios = c("t.test.ratio.default", "t.test.ratio.formula"),
+             moments = c("all.cumulants", "all.moments"),
+             mratios = c("t.test.ration", "t.test.ratio.default",
+                         "t.test.ratio.formula"),
+             ncdf = c("open.ncdf", "close.ncdf",
+                      "dim.create.ncdf", "dim.def.ncdf",
+                      "dim.inq.ncdf", "dim.same.ncdf"),
              quadprog = c("solve.QP", "solve.QP.compact"),
              reposTools = "update.packages2",
+             rgeos = "scale.poly",
              sac = "cumsum.test",
              sm = "print.graph",
              stats = c("anova.lmlist", "fitted.values", "lag.plot",
-             "influence.measures", "t.test"),
+             "influence.measures", "t.test",
+             "plot.spec.phase", "plot.spec.coherency"),
              supclust = c("sign.change", "sign.flip"),
 	     tensorA = "chol.tensor",
              utils = c("close.socket", "flush.console", "update.packages")
@@ -1136,6 +1230,9 @@ function(txt)
 
 ### ** .read_description
 
+.keep_white_description_fields <-
+    c("Description", "Author", "Built", "Packaged")
+
 .read_description <-
 function(dfile)
 {
@@ -1148,7 +1245,9 @@ function(dfile)
     ## </NOTE>
     if(!file_test("-f", dfile))
         stop(gettextf("file '%s' does not exist", dfile), domain = NA)
-    out <- tryCatch(read.dcf(dfile)[1L, ],
+    out <- tryCatch(read.dcf(dfile,
+                             keep.white =
+                             .keep_white_description_fields)[1L, ],
                     error = function(e)
                     stop(gettextf("file '%s' is not in valid DCF format",
                                   dfile),
@@ -1162,6 +1261,37 @@ function(dfile)
     out
 }
 
+.write_description <-
+function(x, dfile)
+{
+    ## Invert how .read_description() handles package encodings.
+    if(!is.na(encoding <- x["Encoding"])) {
+        ## For UTF-8 or latin1 encodings, .read_description() would
+        ## simply have marked the encoding.  But we might have added
+        ## fields encoded differently ...
+        ind <- is.na(match(Encoding(x), c(encoding, "unknown")))
+        if(any(ind))
+            x[ind] <- mapply(iconv, x[ind], Encoding(x)[ind], encoding,
+                             sub = "byte")
+    } else {
+        ## If there is no declared encoding, we cannot have non-ASCII
+        ## content.
+        ## Cf. tools::showNonASCII():
+        asc <- iconv(x, "latin1", "ASCII")
+        ind <- is.na(asc) | (asc != x)
+        if(any(ind)) {
+            warning(gettext("Unknown encoding with non-ASCII data: converting to ASCII"),
+                    domain = NA)
+            x[ind] <- iconv(x[ind], "latin1", "ASCII", sub = "byte")
+        }
+    }
+    ## Avoid declared encodings when writing out.
+    Encoding(x) <- "unknown"
+    ## Avoid folding for Description, Author, Built, and Packaged.
+    write.dcf(rbind(x), dfile,
+              keep.white = .keep_white_description_fields)
+}
+
 ### ** .read_repositories
 
 .read_repositories <-
@@ -1170,13 +1300,14 @@ function(file)
     db <- utils::read.delim(file, header = TRUE, comment.char = "#",
                             colClasses =
                             c(rep.int("character", 3L),
-                              rep.int("logical", 4L)))
+                              rep.int("logical", 4L))) # allow for win64.binary
     db[, "URL"] <- .expand_BioC_repository_URLs(db[, "URL"])
     db
 }
 
 .expand_BioC_repository_URLs <-
-function(x) {
+function(x)
+{
     x <- sub("%bm",
              as.character(getOption("BioC_mirror",
                                     "http://www.bioconductor.org")),
@@ -1184,6 +1315,22 @@ function(x) {
     sub("%v",
         as.character(.BioC_version_associated_with_R_version),
         x, fixed = TRUE)
+}
+
+.expand_package_description_db_R_fields <-
+function(x)
+{
+    y <- character()
+    if(!is.na(aar <- x["Authors@R"])) {
+        aar <- utils:::.read_authors_at_R_field(aar)
+        if(is.na(x["Author"]))
+            y["Author"] <-
+                utils:::.format_authors_at_R_field_for_author(aar)
+        if(is.na(x["Maintainer"]))
+            y["Maintainer"] <-
+                utils:::.format_authors_at_R_field_for_maintainer(aar)
+    }
+    y
 }
 
 ### ** .shell_with_capture
@@ -1296,8 +1443,9 @@ function(x)
     x2 <- sub(pat, "\\2", x)
     if(x2 != x1) {
         pat <- "[[:space:]]*([[<>=!]+)[[:space:]]+(.*)"
-        list(name = x1, op = sub(pat, "\\1", x2),
-             version = package_version(sub(pat, "\\2", x2)))
+        version <- sub(pat, "\\2", x2)
+        if (!grepl("^r", version)) version <- package_version(version)
+        list(name = x1, op = sub(pat, "\\1", x2), version = version)
     } else list(name = x1)
 }
 
@@ -1371,6 +1519,18 @@ function(args, msg)
 }
 
 
+### ** pskill
+
+pskill <- function(pid, signal = SIGTERM)
+    invisible(.Call(ps_kill, pid, signal, PACKAGE = "tools"))
+
+### ** psnice
+
+psnice <- function(pid = Sys.getpid(), value = NA_integer_)
+{
+    res <- .Call(ps_priority, pid, value,  PACKAGE = "tools")
+    if(is.na(value)) res else invisible(res)
+}
 ### Local variables: ***
 ### mode: outline-minor ***
 ### outline-regexp: "### [*]+" ***

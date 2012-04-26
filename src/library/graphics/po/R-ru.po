@@ -9,10 +9,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.10.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-10-05 14:06\n"
-"PO-Revision-Date: 2009-10-15 02:17-0500\n"
-"Last-Translator: Alexey Shipunov <dactylorhiza at gmail>\n"
+"POT-Creation-Date: 2011-07-16 22:46\n"
+"PO-Revision-Date: 2011-10-18 19:34-0600\n"
+"Last-Translator: Alexey Shipunov <dactylorhiza@gmail.com>\n"
 "Language-Team: Russian\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=KOI8-R\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -24,11 +25,8 @@ msgstr ""
 msgid "'a' is overridden by 'reg'"
 msgstr "'a' отвергнут в пользу 'reg'"
 
-msgid "only using the first two of"
-msgstr "использую только первые два из"
-
-msgid "regression coefficients"
-msgstr "коэффициенты регресии"
+msgid "only using the first two of %d regression coefficients"
+msgstr "использую только первые два из %d коэффециентов регрессии"
 
 msgid "'a' and 'b' are overridden by 'coef'"
 msgstr "'a' и 'b' отвергнуты в пользу 'coef'"
@@ -47,6 +45,9 @@ msgstr "как минимум одна запись в 'x' должна быть положительной"
 
 msgid "incorrect 'col': must be length 2"
 msgstr "неправильный параметр 'col': должен быть длиной 2"
+
+msgid "only for 1-D table"
+msgstr "только для одномерной таблицы"
 
 msgid "'side' must be in {1:4}"
 msgstr "'side' должен быть в пределах {1:4}"
@@ -102,9 +103,6 @@ msgstr "'formula' должна определять в точности две переменные"
 msgid "dependent variable should be a factor"
 msgstr "зависимая переменная должна быть фактором"
 
-msgid "explanatory variable should be numeric"
-msgstr "независимая переменная должна быть числовой"
-
 msgid "y axis is on a cumulative probability scale, 'ylim' must be in [0,1]"
 msgstr "ось y -- в шкале суммарной вероятности, 'ylim' должен быть в пределах [0,1]"
 
@@ -138,20 +136,35 @@ msgstr "слишком маленькое произведение строки * колонки"
 msgid "Missing rows"
 msgstr "Пропущенные строки"
 
-msgid "'expr' must be a function or an expression containing 'x'"
-msgstr "'expr' должен быть функцией или выражением содержащим 'x'"
+msgid "'expr' must be a function, or a call or an expression containing '%s'"
+msgstr "'expr' должен быть функцией, вызовом или выражением содержащим '%s'"
+
+msgid "'add' will be ignored as there is no existing plot"
+msgstr "'add' будут пропущена, потому что графика нет"
 
 msgid "'from' and 'to' must be > 0 with log=\"x\""
 msgstr "'from' и 'to' должны быть > 0 и log=\"x\""
 
+msgid "'expr' did not evaluate to an object of length 'n'"
+msgstr "'expr' не раскрывается в объект длины 'n'"
+
 msgid "wrong method"
 msgstr "неправильный метод"
+
+msgid "Must specify 'breaks' in hist(<POSIXt>)"
+msgstr "'breaks' должны быть указаны в hist(<POSIXt>)"
 
 msgid "invalid specification of 'breaks'"
 msgstr "неправильное указание 'breaks'"
 
+msgid "Must specify 'breaks' in hist(<Date>)"
+msgstr "'breaks' должны быть указаны в hist(<Date>)"
+
 msgid "'x' must be a numeric vector or matrix"
 msgstr "'y' должен быть числовым вектором или матрицей"
+
+msgid "'x' is neither a vector nor a matrix: using as.numeric(x)"
+msgstr "'x' не является ни матрицей, ни вектором: использую as.numeric(x)"
 
 msgid "'x' must be an array"
 msgstr "'x' должен быть многомерной матрицей"
@@ -228,6 +241,9 @@ msgstr "все 'breaks' должны быть конечными"
 msgid "dimensions of z are not length(x)(-1) times length(y)(-1)"
 msgstr "размерность z не является произведением length(x)(-1) на length(y)(-1)"
 
+msgid "useRaster=TRUE can only be used with a regular grid"
+msgstr "useRaster = TRUE можно использовать только с регулярной сеткой"
+
 msgid "'respect' must be logical or matrix with same dimension as 'mat'"
 msgstr "'respect' должен быть логическим или матрицей с той же размерностью, что и 'mat'"
 
@@ -295,6 +311,9 @@ msgstr "только одна колонка в аргументе pairs'"
 msgid "the 'panel' function made a new plot"
 msgstr "функция 'panel' создала новый график"
 
+msgid "surface extends beyond the box"
+msgstr "поверхность продолжается за область графика"
+
 msgid "'x' values must be positive."
 msgstr "значения 'x' должны быть положительными."
 
@@ -333,6 +352,9 @@ msgstr "тут должна быть по крайней мере одна числовая переменная!"
 
 msgid "cannot hatch with logarithmic scale active"
 msgstr "не могу зачерчивать, когда активна логарифмическая шкала"
+
+msgid "Invalid fill rule for graphics path"
+msgstr "Неправильное правило заполнения для графического пути"
 
 msgid "invalid rectangle specification"
 msgstr "неправильное указание прямоугольника"
@@ -421,6 +443,10 @@ msgstr[0] "аргумент %s не для использования"
 msgstr[1] "аргументы %s не для использования"
 msgstr[2] "аргументы %s не для использования"
 
+#~ msgid "explanatory variable should be numeric"
+#~ msgstr "независимая переменная должна быть числовой"
+#~ msgid "regression coefficients"
+#~ msgstr "коэффициенты регресии"
 #~ msgid "argument 'col' is deprecated in favour of 'boxfill'"
 #~ msgstr "аргумент 'col' не одобряется, пользуйтесь 'boxfill'"
 

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -38,24 +38,12 @@
  * @brief Implementation of class CXXR:StdFrame.
  */
 
-// A StdFrame is implemented using two data structures.  First
-// there is a PairList, each of whose elements represents a binding,
-// and so maps a symbol (held as the tag) to a value (held as the
-// 'car'), and also contains information about locking, active binding
-// etc.  Secondly there is an unordered_map (i.e. hash table) which
-// maps symbols to elements of the PairList.  Operations on the
-// PairList are always done via the unordered_map.  When a symbol is
-// erased from the enviroment, the continuity of the PairList will be
-// broken, and in this event the PairList is marked as stale.  The
-// private function refreshFrameList() is invoked when necessary to
-// restring the PairList by iterating over the hash table.
-
 #include "CXXR/StdFrame.hpp"
 
 #include <cmath>
 #include "localization.h"
 #include "R_ext/Error.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 #include "CXXR/Symbol.h"
 
@@ -103,7 +91,13 @@ const Frame::Binding* StdFrame::binding(const Symbol* symbol) const
 
 void StdFrame::clear()
 {
+    statusChanged(0);
     m_map.clear();
+}
+
+StdFrame* StdFrame::clone() const
+{
+    return expose(new StdFrame(*this));
 }
 
 void StdFrame::detachReferents()
@@ -116,7 +110,10 @@ bool StdFrame::erase(const Symbol* symbol)
 {
     if (isLocked())
 	Rf_error(_("cannot remove bindings from a locked frame"));
-    return m_map.erase(symbol);
+    bool ans = m_map.erase(symbol);
+    if (ans)
+	statusChanged(symbol);
+    return ans;
 }
 
 void StdFrame::import(const Frame* frame) {
@@ -152,6 +149,7 @@ Frame::Binding* StdFrame::obtainBinding(const Symbol* symbol)
 	    Rf_error(_("cannot add bindings to a locked frame"));
 	}
 	bdg.initialize(this, symbol);
+	statusChanged(symbol);
     }
     return &bdg;
 }
@@ -159,6 +157,18 @@ Frame::Binding* StdFrame::obtainBinding(const Symbol* symbol)
 size_t StdFrame::size() const
 {
     return m_map.size();
+}
+
+void StdFrame::softMergeInto(Frame* target) const
+{
+    for (map::const_iterator it = m_map.begin(); it != m_map.end(); ++it) {
+	const Symbol* symbol = (*it).first;
+	if (!target->binding(symbol)) {
+	    const Binding& mybdg = (*it).second;
+	    Binding* yourbdg = target->obtainBinding(symbol);
+	    yourbdg->setValue(mybdg.value(), mybdg.origin());
+	}
+    }
 }
 
 vector<const Symbol*> StdFrame::symbols(bool include_dotsymbols) const

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -46,21 +46,38 @@
 
 #ifdef __cplusplus
 
+#include "R_ext/Arith.h"
 #include <boost/serialization/export.hpp>
-#include "CXXR/DumbVector.hpp"
+
+#include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
+#ifndef USE_TYPE_CHECKING_STRICT
+#include "CXXR/LogicalVector.h"
+#endif
+
 namespace CXXR {
-    // Template specialization:
+    // Template specializations:
+    namespace ElementTraits {
+	template <>
+	struct NAFunc<int> {
+	    const int& operator()() const
+	    {
+		static int na = NA_INTEGER;
+		return na;
+	    }
+	};
+    }
+
     template <>
-    inline const char* DumbVector<int, INTSXP>::staticTypeName()
+    inline const char* FixedVector<int, INTSXP>::staticTypeName()
     {
 	return "integer";
     }
 
-    /** @brief Vector of truth values.
+    /** @brief Vector of integer values.
      */
-    typedef CXXR::DumbVector<int, INTSXP> IntVector;
+    typedef FixedVector<int, INTSXP> IntVector;
 }  // namespace CXXR
 
 BOOST_CLASS_EXPORT(CXXR::IntVector)
@@ -70,12 +87,28 @@ extern "C" {
 
 /**
  * @param x Pointer to an \c IntVector or a \c LogicalVector (i.e. an
- *          R integer or logical vector).
- *          An error is generated if \a x is not pointer to an \c
- *          IntVector or a \c LogicalVector .
+ *          R integer or logical vector).  An error is generated if \a
+ *          x is not a non-null pointer to an \c IntVector or a \c
+ *          LogicalVector .
+ *
  * @return Pointer to element 0 of \a x .
  */
+#ifndef __cplusplus
 int *INTEGER(SEXP x);
+#else
+inline int* INTEGER(SEXP x)
+{
+    using namespace CXXR;
+#ifndef USE_TYPE_CHECKING_STRICT
+    // Quicker than dynamic_cast:
+    if (x && x->sexptype() == LGLSXP) {
+	LogicalVector* lvec = static_cast<LogicalVector*>(x);
+	return &(*lvec)[0];
+    }
+#endif
+    return &(*SEXP_downcast<IntVector*>(x, false))[0];
+}
+#endif
 
 #ifdef __cplusplus
 }

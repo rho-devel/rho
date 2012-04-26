@@ -30,7 +30,7 @@ bindtextdomain(domain, dirname = NULL)
 }
 \details{
   If \code{domain} is \code{NULL} or \code{""}, a domain is searched for
-  based on the name space which contains the function calling
+  based on the namespace which contains the function calling
   \code{gettext} or \code{ngettext}.  If a suitable domain can be found,
   each character string is offered for translation, and replaced by its
   translation into the current language if one is found.
@@ -74,7 +74,8 @@ for(n in 0:3)
                               "\%d variables have missing values"),
                   n))
 
-\dontrun{## for translation, those strings should appear in R-pkg.pot as
+\dontrun{
+## for translation, those strings should appear in R-pkg.pot as
 msgid        "\%d variable has missing values"
 msgid_plural "\%d variables have missing values"
 msgstr[0] ""

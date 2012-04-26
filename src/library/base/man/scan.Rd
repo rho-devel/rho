@@ -1,6 +1,6 @@
 % File src/library/base/man/scan.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{scan}
@@ -10,13 +10,13 @@
   Read data into a vector or list from the console or file.
 }
 \usage{
-scan(file = "", what = double(0), nmax = -1, n = -1, sep = "",
+scan(file = "", what = double(), nmax = -1, n = -1, sep = "",
      quote = if(identical(sep, "\n")) "" else "'\"", dec = ".",
      skip = 0, nlines = 0, na.strings = "NA",
      flush = FALSE, fill = FALSE, strip.white = FALSE,
      quiet = FALSE, blank.lines.skip = TRUE, multi.line = TRUE,
      comment.char = "", allowEscapes = FALSE,
-     encoding = "unknown")
+     fileEncoding = "", encoding = "unknown", text)
 }
 \arguments{
   \item{file}{the name of a file to read data values from.  If the
@@ -32,7 +32,7 @@ scan(file = "", what = double(0), nmax = -1, n = -1, sep = "",
     Tilde-expansion is performed where supported.
     When running \R from a script, \code{file="stdin"} can be used to
     refer to the process's \code{stdin} file stream.
-    
+
     As from \R 2.10.0 this can be a compressed file (see \code{\link{file}}).
 
     Alternatively, \code{file} can be a \code{\link{connection}},
@@ -41,11 +41,14 @@ scan(file = "", what = double(0), nmax = -1, n = -1, sep = "",
     any of LF, CRLF or CR will be accepted as the EOL marker for a line
     and so will match \code{sep = "\n"}.
 
-    \code{file} can also be a complete URL.
+    \code{file} can also be a complete URL.  (For the supported URL
+    schemes, see the \sQuote{URLs} section of the help for
+    \code{\link{url}}.)
 
     To read a data file not in the current encoding (for example a
     Latin-1 file in a UTF-8 locale or conversely) use a
-    \code{\link{file}} connection setting the \code{encoding} argument.
+    \code{\link{file}} connection setting its \code{encoding} argument
+    (or \code{scan}'s \code{fileEncoding} argument).
   }
 
   \item{what}{the type of \code{what} gives the type of data to be read.
@@ -66,10 +69,10 @@ scan(file = "", what = double(0), nmax = -1, n = -1, sep = "",
   \item{n}{integer: the maximum number of data values to be read, defaulting to
     no limit.  Invalid values will be ignored.}
 
-  \item{sep}{by default, scan expects to read white-space delimited
-    input fields.  Alternatively, \code{sep} can be used to specify a
-    character which delimits fields.  A field is always delimited by an
-    end-of-line marker unless it is quoted.
+  \item{sep}{by default, scan expects to read \sQuote{white-space}
+    delimited input fields.  Alternatively, \code{sep} can be used to
+    specify a character which delimits fields.  A field is always
+    delimited by an end-of-line marker unless it is quoted.
 
     If specified this should be the empty character string (the default)
     or \code{NULL} or a character string containing just one single-byte
@@ -91,7 +94,7 @@ scan(file = "", what = double(0), nmax = -1, n = -1, sep = "",
   \item{nlines}{if positive, the maximum number of lines of data to be read.}
 
   \item{na.strings}{character vector.  Elements of this vector are to be
-    interpreted as missing (\code{\link{NA}}) values. Blank fields are
+    interpreted as missing (\code{\link{NA}}) values.  Blank fields are
     also considered to be missing values in logical, integer, numeric
     and complex fields.}
 
@@ -105,16 +108,18 @@ scan(file = "", what = double(0), nmax = -1, n = -1, sep = "",
     \code{what}.}
 
   \item{strip.white}{vector of logical value(s) corresponding to items
-    in the \code{what} argument. It is used only when \code{sep} has
+    in the \code{what} argument.  It is used only when \code{sep} has
     been specified, and allows the stripping of leading and trailing
-    white space from \code{character} fields (\code{numeric} fields
-    are always stripped).
+    \sQuote{white space} from \code{character} fields (\code{numeric} fields
+    are always stripped).  Note: white space inside quoted strings is
+    not stripped.
 
     If \code{strip.white} is of length 1, it applies to all fields;
     otherwise, if \code{strip.white[i]} is \code{TRUE} \emph{and} the
     \code{i}-th field is of mode character (because \code{what[i]} is)
-    then the leading and trailing white space from field \code{i} is
-    stripped.}
+    then the leading and trailing unquoted white space from field \code{i} is
+    stripped.
+  }
 
   \item{quiet}{logical: if \code{FALSE} (default), scan() will print a
     line, saying how many items have been read.}
@@ -122,11 +127,10 @@ scan(file = "", what = double(0), nmax = -1, n = -1, sep = "",
   \item{blank.lines.skip}{logical: if \code{TRUE} blank lines in the
     input are ignored, except when counting \code{skip} and \code{nlines}.}
 
-  \item{multi.line}{logical. Only used if \code{what} is a list.
-    If \code{FALSE}, all of a record must appear on one line (but more
-    than one record can appear on a single line).  Note that using
-    \code{fill = TRUE} implies that a record will terminated at the end
-    of a line.}
+  \item{multi.line}{logical.  Only used if \code{what} is a list.  If
+    \code{FALSE}, all of a record must appear on one line (but more than
+    one record can appear on a single line).  Note that using \code{fill = TRUE}
+    implies that a record will be terminated at the end of a line.}
 
   \item{comment.char}{character: a character vector of length one
     containing a single character or an empty string.  Use \code{""} to
@@ -141,18 +145,27 @@ scan(file = "", what = double(0), nmax = -1, n = -1, sep = "",
     \samp{\\a, \\b, \\f, \\n, \\r, \\t, \\v} and octal and
     hexadecimal representations like \samp{\\040} and \samp{\\0x2A}.  Any
     other escaped character is treated as itself, including backslash.
+    Note that Unicode escapes (starting \samp{\\u} or \samp{\\U}: see
+    \link{Quotes}) are never processed.
   }
+
+  \item{fileEncoding}{character string: if non-empty declares the
+    encoding used on a file (not a connection nor the keyboard) so the
+    character data can be re-encoded.  See the \sQuote{Encoding} section
+    of the help for \code{\link{file}}, and the \sQuote{R Data
+      Import/Export Manual}.
+  }
+
   \item{encoding}{encoding to be assumed for input strings.  If the
     value is \code{"latin1"} or \code{"UTF-8"} it is used to mark
     character strings as known to be in Latin-1 or UTF-8: it is not used
-    to re-encode the input.  To do the latter, specify the encoding as
-    part of the connection \code{con} or \emph{via}
-    \code{\link{options}(encoding=)}: see the example under
-    \code{\link{file}}.
-#ifdef windows
-    See also \sQuote{Details}.
-#endif
+    to re-encode the input (see \code{fileEncoding}.  See also \sQuote{Details}.
   }
+
+  \item{text}{character string: if \code{file} is not supplied and this is, 
+    then data are read from the value of \code{text} via a text connection.
+  }
+
 }
 \details{
   The value of \code{what} can be a list of types, in which case
@@ -206,10 +219,10 @@ scan(file = "", what = double(0), nmax = -1, n = -1, sep = "",
   \code{\link{readLines}}.
 
   If \code{comment.char} occurs (except inside a quoted character
-  field), it signals that the rest of the line
-  should be regarded as a comment and be discarded.  Lines beginning
-  with a comment character (possibly after white space with the default
-  separator) are treated as blank lines.
+  field), it signals that the rest of the line should be regarded as a
+  comment and be discarded.  Lines beginning with a comment character
+  (possibly after white space with the default separator) are treated as
+  blank lines.
 
   There is a line-length limit of 4095 bytes when reading from the
   console (which may impose a lower limit: see \sQuote{An Introduction
@@ -217,13 +230,12 @@ scan(file = "", what = double(0), nmax = -1, n = -1, sep = "",
 
   There is a check for a user interrupt every 1000 lines if \code{what}
   is a list, otherwise every 10000 items.
-#ifdef windows
 
-  If \code{con} is a not-already-open \link{connection} with a non-default
-  \code{encoding} argument, the text is converted to UTF-8 and declared
-  as such (and the encoding argument to \code{scan} is ignored).
-  See the examples of \code{\link{readLines}}.
-#endif
+  If \code{file} is a character string and \code{fileEncoding} is
+  non-default, or it it is a not-already-open \link{connection} with a
+  non-default \code{encoding} argument, the text is converted to UTF-8
+  and declared as such (and the \code{encoding} argument to \code{scan}
+  is ignored).  See the examples of \code{\link{readLines}}.
 }
 \value{
   if \code{what} is a list, a list of the same length and same names (as
@@ -279,6 +291,10 @@ scan("ex.data", skip = 1, nlines=1) # only 1 line after the skipped one
 scan("ex.data", what = list("","","")) # flush is F -> read "7"
 scan("ex.data", what = list("","",""), flush = TRUE)
 unlink("ex.data") # tidy up
+
+## "inline" usage
+scan(text="1 2 3")
+
 }
 \keyword{file}
 \keyword{connection}

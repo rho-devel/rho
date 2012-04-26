@@ -1,10 +1,11 @@
 % File src/library/stats/man/SSmicmen.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{SSmicmen}
-\title{Michaelis-Menten Model}
+\encoding{UTF-8}
+\title{Self-Starting Nls Michaelis-Menten Model}
 \usage{
 SSmicmen(input, Vm, K)
 }
@@ -28,18 +29,18 @@ SSmicmen(input, Vm, K)
   names of objects, the gradient matrix with respect to these names is
   attached as an attribute named \code{gradient}.
 }
-\author{Jose Pinheiro and Douglas Bates}
+\author{\enc{José}{Jose} Pinheiro and Douglas Bates}
 \seealso{\code{\link{nls}}, \code{\link{selfStart}}
 }
 \examples{
 PurTrt <- Puromycin[ Puromycin$state == "treated", ]
-SSmicmen( PurTrt$conc, 200, 0.05 )  # response only
+SSmicmen(PurTrt$conc, 200, 0.05)  # response only
 Vm <- 200; K <- 0.05
-SSmicmen( PurTrt$conc, Vm, K ) # response and gradient
-getInitial(rate ~ SSmicmen(conc, Vm, K), data = PurTrt)
+SSmicmen(PurTrt$conc, Vm, K)      # response and gradient
+print(getInitial(rate ~ SSmicmen(conc, Vm, K), data = PurTrt), digits=3)
 ## Initial values are in fact the converged values
 fm1 <- nls(rate ~ SSmicmen(conc, Vm, K), data = PurTrt)
-summary( fm1 )
+summary(fm1)
 ## Alternative call using the subset argument
 fm2 <- nls(rate ~ SSmicmen(conc, Vm, K), data = Puromycin,
            subset = state == "treated")

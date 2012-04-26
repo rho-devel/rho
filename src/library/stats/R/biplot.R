@@ -65,6 +65,7 @@ biplot.default <-
          xlab = xlab, ylab = ylab, sub = sub, main = main, ...)
     text(x, xlabs, cex = cex[1L], col = col[1L], ...)
     par(new = TRUE)
+    dev.hold(); on.exit(dev.flush())
     plot(y, axes = FALSE, type = "n", xlim = xlim*ratio, ylim = ylim*ratio,
 	 xlab = "", ylab = "", col = col[1L], ...)
     axis(3, col = col[2L], ...)
@@ -78,7 +79,7 @@ biplot.default <-
 
 biplot.princomp <- function(x, choices = 1L:2L, scale = 1, pc.biplot=FALSE, ...)
 {
-    if(length(choices) != 2) stop("length of choices must be 2")
+    if(length(choices) != 2L) stop("length of choices must be 2")
     if(!length(scores <- x$scores))
 	stop(gettextf("object '%s' has no scores", deparse(substitute(x))),
              domain = NA)
@@ -95,7 +96,7 @@ biplot.princomp <- function(x, choices = 1L:2L, scale = 1, pc.biplot=FALSE, ...)
 
 biplot.prcomp <- function(x, choices = 1L:2L, scale = 1, pc.biplot=FALSE, ...)
 {
-    if(length(choices) != 2) stop("length of choices must be 2")
+    if(length(choices) != 2L) stop("length of choices must be 2")
     if(!length(scores <- x$x))
 	stop(gettextf("object '%s' has no scores", deparse(substitute(x))),
              domain = NA)

@@ -53,21 +53,21 @@
         value <- ".Data"
    value
 }
-.dataPartReplace <- function(from, to, value){
+.dataPartReplace <- list(f1 = function(from, to, value){
     from@.Data <- value
     from
-}
+},
 
-.dataPartReplace2 <- function(from, to, value){
+f2 = function(from, to, value){
     from@.Data <- as(value, THISCLASS, strict = FALSE)
     from
-}
+},
 
 ## and a version of dataPartReplace w/o the unused `to' argument
-.dataPartReplace2args <- function(from, value) {
+f2args = function(from, value) {
     from@.Data <- value
     from
-}
+})
 
 S3Part <- function(object, strictS3 = FALSE, S3Class) {
     if(!isS4(object))
@@ -82,7 +82,7 @@ S3Part <- function(object, strictS3 = FALSE, S3Class) {
      }
     else {
         if(all(is.na(match(extends(classDef), .BasicClasses))))
-          stop(gettextf("S3Part() is only defined for classes set up by setOldCLass(), basic classes or subclasses of these:  not true of class \"%s\"", class(object)), domain = NA)
+          stop(gettextf("S3Part() is only defined for classes set up by setOldCLass(), basic classes or subclasses of these:  not true of class %s", dQuote(class(object))), domain = NA)
         if(missing(S3Class)) {
             S3Class <- classDef@slots$.Data
             if(is.null(S3Class)) # is this an error?
@@ -93,7 +93,7 @@ S3Part <- function(object, strictS3 = FALSE, S3Class) {
           keepSlots <- slotNames(S3Class[[1L]])
     }
     if(!(defltS3Class || extends(classDef, S3Class)))
-      stop(gettextf("The S3Class argument must be a superclass of \"%s\":  not true of class \"%s\"", class(object), S3Class), domain = NA)
+      stop(gettextf("The S3Class argument must be a superclass of %s:  not true of class %s", dQuote(class(object)), dQuote(S3Class)), domain = NA)
     if(strictS3)
       keepSlots <- keepSlots[is.na(match(keepSlots, ".S3Class"))]
     deleteSlots = slotNames(classDef)
@@ -113,7 +113,7 @@ S3Part <- function(object, strictS3 = FALSE, S3Class) {
     S3Class <- .S3Class(value)
     def <- getClassDef(S3Class[[1L]])
     if(is.null(def) || !extends(def, needClass[[1L]]))
-      stop(gettextf("Replacement value must extend class \"%s\", got  \"%s\"", needClass, S3Class[[1L]]), domain = NA)
+      stop(gettextf("Replacement value must extend class %s, got %s", dQuote(needClass), dQuote(S3Class[[1L]])), domain = NA)
     slots <- slotNames(class(object))
     if(!strictS3) {
         fromValue <- names(attributes(value))
@@ -130,27 +130,29 @@ S3Part <- function(object, strictS3 = FALSE, S3Class) {
 }
 
 ## templates for replacement methods for S3 classes in classes that extend oldClass
-.S3replace1 <- function(from, to, value) {
+.S3replace <-
+    list( e1  = quote( {
     S3Part(from, needClass = NEED) <- value
     from
-}
+}),
 
-.S3replace2 <- function(from, to, value) {
+e2= quote( {
     if(is(value, CLASS)) {
         S3Part(from,  needClass = NEED) <- value
         from
     }
     else
       stop("Replacement value must be of class \"", CLASS, "\", got one of class \"", class(value)[[1L]], "\"")
-}
+})
+   )
 
 .S3coerce <- function(from, to) {
     S3Part(from)
 }
 
 .ErrorReplace <- function(from, to, value)
-    stop(gettextf("no 'replace' method was defined for as(x, \"%s\") <- value for class \"%s\"",
-                  to, class(from)), domain = NA)
+    stop(gettextf("no 'replace' method was defined for as(x, \"%s\") <- value for class %s",
+                  to, dQuote(class(from))), domain = NA)
 
 .objectSlotNames <- function(object) {
     ## a quick version that makes no attempt to check the class definition
@@ -215,8 +217,8 @@ makeExtends <- function(Class, to,
             coerce <- .ChangeFormals(coerce, .simpleExtCoerce, "'coerce' argument to setIs ")
 
     }
-    else stop(gettextf("the 'coerce' argument to 'setIs' should be a function of one argument, got an object of class \"%s\"",
-                       class(coerce)), domain = NA)
+    else stop(gettextf("the 'coerce' argument to 'setIs' should be a function of one argument, got an object of class %s",
+                       dQuote(class(coerce))), domain = NA)
     if(is.null(test)) {
         test <- .simpleExtTest
         extClass <- "SClassExtension"
@@ -233,9 +235,9 @@ makeExtends <- function(Class, to,
             else
                 easy <- FALSE
             if(easy)
-                replace <- .dataPartReplace
+                replace <- .dataPartReplace$f1
             else {
-                replace <- .dataPartReplace2
+                replace <- .dataPartReplace$f2
                 bdy <- body(replace)
                 body(replace, envir = environment(replace)) <-
                     substituteDirect(bdy, list(THISCLASS = dataPartClass))
@@ -257,8 +259,8 @@ makeExtends <- function(Class, to,
                 body(replace, envir = packageEnv) <-
                     substitute({
                         if(!is(value, TO))
-                            stop(gettextf("the computation: as(object,\"%s\") <- value is valid when object has class \"%s\" only if is(value, \"%s\") is TRUE (class(value) was \"%s\")\n",
-                                 TO, FROM, TO, class(value)), domain = NA)
+                            stop(gettextf("the computation: as(object,\"%s\") <- value is valid when object has class %s only if is(value, \"%s\") is TRUE (class(value) was %s)\n",
+                                 TO, dQuote(FROM), TO, dQuote(class(value))), domain = NA)
                         value
                     }, list(FROM = Class, TO = to))
             }
@@ -291,13 +293,13 @@ makeExtends <- function(Class, to,
         else
             replace <- .ErrorReplace
         if(identical(replace, .ErrorReplace))
-            warning(gettextf("there is no automatic definition for as(object, \"%s\") <- value when object has class \"%s\" and no 'replace' argument was supplied; replacement will be an error",
-                             to, Class), domain = NA)
+            warning(gettextf("there is no automatic definition for as(object, \"%s\") <- value when object has class %s and no 'replace' argument was supplied; replacement will be an error",
+                             to, dQuote(Class)), domain = NA)
     }
     else if(is(replace, "function")) {
         ## turn function of two or three arguments into correct 3-arg form
         if(length(formals(replace)) == 2) {
-            replace <- .ChangeFormals(replace, .dataPartReplace2args, "'replace' argument to setIs ")
+            replace <- .ChangeFormals(replace, .dataPartReplace$f2args, "'replace' argument to setIs ")
             tmp  <- .ErrorReplace
             body(tmp, envir = environment(replace)) <- body(replace)
             replace <- tmp
@@ -306,8 +308,8 @@ makeExtends <- function(Class, to,
             replace <- .ChangeFormals(replace, .ErrorReplace, "'replace' argument to setIs ")
     }
     else
-        stop(gettextf("the 'replace' argument to setIs() should be a function of 2 or 3 arguments, got an object of class \"%s\"",
-                      class(replace)), domain = NA)
+        stop(gettextf("the 'replace' argument to setIs() should be a function of 2 or 3 arguments, got an object of class %s",
+                      dQuote(class(replace))), domain = NA)
 
     new(extClass, subClass = Class, superClass = to, package = package,
 	coerce = coerce, test = test, replace = replace, simple = simple,
@@ -316,29 +318,44 @@ makeExtends <- function(Class, to,
 
 .findAll <- function(what, where = topenv(parent.frame())) {
     ## search in envir. & parents thereof
-    ## must avoid R's find() function because it uses
-    ## regular expressions
+    ## For namespaces, this follows R's soft namespace policy
+    ## by not stopping when it reaches the basenamespace
+    ## The code used to do so and then had a kludge for looking
+    ## in the methods namespace.  But that failed anyway on
+    ## non-namespace (package) environments and was inconsistent
+    ## with the normal R lookup with namespace environments.
     value <- list()
-    if(is.environment(where))
-        repeat {
+    if(is.environment(where)) {
+        if(isNamespace(where)) repeat {
             if(exists(what, where, inherits = FALSE))
                 value <- c(value, list(where))
-            ## two forms of test for the end of the parent env. chain
-            if(isBaseNamespace(where) || identical(where, emptyenv()))
+            if(identical(where, emptyenv()))
                 break
             where <- parent.env(where)
         }
+        else {  # typically, a package environment: look here, then in the search list
+            if(exists(what, where, inherits = FALSE))
+                value <- c(value, list(where))
+            for(i in seq_along(search())) {
+                if(exists(what, i, inherits = FALSE)) {
+                    evi <- as.environment(i)
+                    addMe<- TRUE
+                    for(other in value)
+                        if(identical(other, evi)) {
+                            addMe <- FALSE
+                            break
+                        }
+                    if(addMe)
+                        value <- c(value, list(evi))
+                }
+            }
+        }
+    }
     else
         for(i in where) {
             if(exists(what, i, inherits = FALSE))
                 value <- c(value, list(i))
         }
-    ## FIXME:  namespaces don't seem to include methods package
-    ## objects in their parent env., but they must be importing
-    ## methods to get to this code
-    if(length(value)== 0 && isNamespace(where) &&
-       exists(what, .methodsNamespace, inherits = FALSE))
-	value <- list(.methodsNamespace)
     value
 }
 
@@ -372,10 +389,10 @@ makeExtends <- function(Class, to,
         pos <- match(what, S3Class, 0L)
         if(pos > 1) # not the complete S3 class, probably an error
           body(replace, environment(replace)) <-
-            substituteDirect(body(.S3replace2), list(CLASS = what, NEED = need))
+            substituteDirect(.S3replace$e2, list(CLASS = what, NEED = need))
         else
           body(replace, environment(replace))  <-
-            substituteDirect(body(.S3replace1), list(NEED = need))
+            substituteDirect(.S3replace$e1, list(NEED = need))
         exti@replace <- replace
         exts[[i]] <- exti
     }

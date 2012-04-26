@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,9 +17,8 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2008  Robert Gentleman, Ross Ihaka and the
- *			      R Development Core Team
- *  Copyright (C) 2002--2005  The R Foundation
+ *  Copyright (C) 1997--2011  The R Development Core Team
+ *  Copyright (C) 2002--2011  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,7 +45,9 @@
 #endif
 
 #include <Defn.h>
+#include <float.h> /* for DBL_EPSILON etc */
 #include <Graphics.h>
+// --> R_ext/GraphicsEngine.h + Rgraphics.h
 #include <GraphicsBase.h>       /* setBaseDevice */
 #include <Rmath.h>		/* eg. fmax2() */
 
@@ -1708,6 +1709,7 @@ void GReset(pGEDevDesc dd)
 
 /*  Is the figure region too big ? */
 
+/* Why is this FLT_EPSILON? */
 static Rboolean validFigureRegion(pGEDevDesc dd)
 {
     return Rboolean((gpptr(dd)->fig[0] > 0-FLT_EPSILON) &&
@@ -1866,6 +1868,55 @@ pGEDevDesc GNewPlot(Rboolean recording)
 }
 #undef G_ERR_MSG
 
+// used in GScale(), but also ../library/grDevices/src/axis_scales.c :
+// (usr, log, n_inp) |--> (axp, n_out) :
+void GAxisPars(double *min, double *max, int *n, Rboolean log, int axis)
+{
+#define EPS_FAC_2 100
+    Rboolean swap = CXXRCONSTRUCT(Rboolean, *min > *max);
+    double t_, min_o, max_o;
+
+    if(swap) { /* Feature: in R, something like  xlim = c(100,0)  just works */
+	t_ = *min; *min = *max; *max = t_;
+    }
+    /* save only for the extreme case (EPS_FAC_2): */
+    min_o = *min; max_o = *max;
+
+    if(log) {
+	/* Avoid infinities */
+	if(*max > 308) *max = 308;
+	if(*min < -307) *min = -307;
+	*min = pow(10., *min);
+	*max = pow(10., *max);
+	GLPretty(min, max, n);
+    }
+    else GPretty(min, max, n);
+
+    double tmp2 = EPS_FAC_2 * DBL_EPSILON;/* << prevent overflow in product below */
+    if(fabs(*max - *min) < (t_ = fmax2(fabs(*max), fabs(*min)))* tmp2) {
+	/* Treat this case somewhat similar to the (min ~= max) case above */
+	/* Too much accuracy here just shows machine differences */
+	warning(_("relative range of values =%4.0f * EPS, is small (axis %d)")
+		/*"to compute accurately"*/,
+		fabs(*max - *min) / (t_*DBL_EPSILON), axis);
+
+	/* No pretty()ing anymore */
+	*min = min_o;
+	*max = max_o;
+	double eps = .005 * fabs(*max - *min);/* .005: not to go to DBL_MIN/MAX */
+	*min += eps;
+	*max -= eps;
+	if(log) {
+	    *min = pow(10., *min);
+	    *max = pow(10., *max);
+	}
+	*n = 1;
+    }
+    if(swap) {
+	t_ = *min; *min = *max; *max = t_;
+    }
+}
+
 void GScale(double min, double max, int axis, pGEDevDesc dd)
 {
 /* GScale: used to default axis information
@@ -1873,9 +1924,8 @@ void GScale(double min, double max, int axis, pGEDevDesc dd)
  * NB: can have min > max !
  */
 #define EPS_FAC_1  16
-#define EPS_FAC_2 100
 
-    Rboolean swap, is_xaxis = CXXRCONSTRUCT(Rboolean, (axis == 1 || axis == 3));
+    Rboolean is_xaxis = CXXRCONSTRUCT(Rboolean, (axis == 1 || axis == 3));
     int log, n, style;
     double temp, min_o = 0., max_o = 0., tmp2 = 0.;/*-Wall*/
 
@@ -1935,10 +1985,10 @@ void GScale(double min, double max, int axis, pGEDevDesc dd)
 	    temp = fmin2(min_o, 1.01* DBL_MIN); /* allow smaller non 0 */
 	    min = log10(temp);
 	}
-	if((tmp2 = pow(10., max)) == R_PosInf) { /* or  > .95*DBL_MAX */
+	if(max >= 308.25) { /* overflows */
 	    tmp2 = fmax2(max_o, .99 * DBL_MAX);
 	    max = log10(tmp2);
-	}
+	} else tmp2 = pow(10., max);
     }
     if(is_xaxis) {
 	if (log) {
@@ -1962,57 +2012,14 @@ void GScale(double min, double max, int axis, pGEDevDesc dd)
 	}
     }
 
-    /* ------  The following : Only computation of [xy]axp[0:2] ------- */
-
     /* This is not directly needed when [xy]axt = "n",
      * but may later be different in another call to axis(), e.g.:
       > plot(1, xaxt = "n");  axis(1)
-     * In that case, do_axis() should do the following.
-     * MM: May be we should modularize and put the following into another
-     * subroutine which could be called by do_axis {when [xy]axt != 'n'} ..
+     * In that case, do_axis() should do the following:
      */
 
-    swap = CXXRCONSTRUCT(Rboolean, min > max);
-    if(swap) { /* Feature: in R, something like  xlim = c(100,0)  just works */
-	temp = min; min = max; max = temp;
-    }
-    /* save only for the extreme case (EPS_FAC_2): */
-    min_o = min; max_o = max;
-
-    if(log) {
-	/* Avoid infinities */
-	if(max > 308) max = 308;
-	if(min < -307) min = -307;
-	min = pow(10., min);
-	max = pow(10., max);
-	GLPretty(&min, &max, &n);
-    }
-    else GPretty(&min, &max, &n);
-
-    tmp2 = EPS_FAC_2 * DBL_EPSILON;/* << prevent overflow in product below */
-    if(fabs(max - min) < (temp = fmax2(fabs(max), fabs(min)))* tmp2) {
-	/* Treat this case somewhat similar to the (min ~= max) case above */
-	/* Too much accuracy here just shows machine differences */
-	warning(_("relative range of values =%4.0f * EPS, is small (axis %d)")
-		/*"to compute accurately"*/,
-		fabs(max - min) / (temp*DBL_EPSILON), axis);
-
-	/* No pretty()ing anymore */
-	min = min_o;
-	max = max_o;
-	temp = .005 * fabs(max - min);/* .005: not to go to DBL_MIN/MAX */
-	min += temp;
-	max -= temp;
-	if(log) {
-	    min = pow(10., min);
-	    max = pow(10., max);
-	}
-	n = 1;
-    }
-
-    if(swap) {
-	temp = min; min = max; max = temp;
-    }
+    // Computation of [xy]axp[0:2] == (min,max,n) :
+    GAxisPars(&min, &max, &n, CXXRCONSTRUCT(Rboolean, log), axis);
 
 #define G_Store_AXP(is_X)			\
     if(is_X) {					\
@@ -2539,14 +2546,10 @@ void GLine(double x1, double y1, double x2, double y2, GUnit coords, pGEDevDesc 
 /* Read the current "pen" position. */
 Rboolean GLocator(double *x, double *y, GUnit coords, pGEDevDesc dd)
 {
-    if(!dd->dev->locator)
-	error(_("no locator capability in device driver"));
-    if(dd->dev->locator(x, y, dd->dev)) {
+    if(dd->dev->locator && dd->dev->locator(x, y, dd->dev)) {
 	GConvert(x, y, DEVICE, coords, dd);
 	return TRUE;
-    }
-    else
-	return FALSE;
+    } else return FALSE;
 }
 
 /* Access character font metric information.  */
@@ -2799,7 +2802,7 @@ void GPolygon(int n, double *x, double *y, GUnit coords,
     int i;
     double *xx;
     double *yy;
-    void *vmaxsave = vmaxget();
+    const void *vmaxsave = vmaxget();
     R_GE_gcontext gc; gcontextFromGP(&gc, dd);
 
     if (gpptr(dd)->lty == LTY_BLANK)
@@ -2838,7 +2841,7 @@ void GPolyline(int n, double *x, double *y, GUnit coords, pGEDevDesc dd)
     int i;
     double *xx;
     double *yy;
-    void *vmaxsave = vmaxget();
+    const void *vmaxsave = vmaxget();
     R_GE_gcontext gc; gcontextFromGP(&gc, dd);
 
     /*
@@ -2922,6 +2925,41 @@ void GRect(double x0, double y0, double x1, double y1, GUnit coords,
     GERect(x0, y0, x1, y1, &gc, dd);
 }
 
+void GPath(double *x, double *y,
+           int npoly, int *nper,
+           Rboolean winding,
+           int bg, int fg, pGEDevDesc dd)
+{
+    R_GE_gcontext gc; gcontextFromGP(&gc, dd);
+
+    if (gpptr(dd)->lty == LTY_BLANK)
+	fg = R_TRANWHITE; /* transparent for the border */
+
+    /*
+     * Ensure that the base clipping region is set on the device
+     */
+    GClip(dd);
+    gc.col = fg;
+    gc.fill = bg;
+    GEPath(x, y, npoly, nper, winding, &gc, dd);
+}
+
+void GRaster(unsigned int* image, int w, int h,
+             double x0, double y0, double x1, double y1,
+             double angle, Rboolean interpolate,
+             pGEDevDesc dd)
+{
+    R_GE_gcontext gc; gcontextFromGP(&gc, dd);
+
+    /*
+     * Ensure that the base clipping region is set on the device
+     */
+    GClip(dd);
+
+    GERaster(image, w, h, x0, y0, x1, y1, angle, interpolate,
+             &gc, dd);
+}
+
 /* Compute string width. */
 double GStrWidth(const char *str, cetype_t enc, GUnit units, pGEDevDesc dd)
 {
@@ -2993,11 +3031,7 @@ void GArrow(double xfrom, double yfrom, double xto, double yto, GUnit coords,
     if((code & 3) == 0) return; /* no arrows specified */
     if(length == 0) return; /* zero-length arrow heads */
 
-#ifdef HAVE_HYPOT
     if(hypot(xfromInch - xtoInch, yfromInch - ytoInch) < eps) {
-#else
-    if(pythag(xfromInch - xtoInch, yfromInch - ytoInch) < eps) {
-#endif
 	/* effectively 0-length arrow */
 	warning(_("zero-length arrow is of indeterminate angle and so skipped"));
 	return;
@@ -3197,7 +3231,7 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
 	 3 = always vertical.
 */
     double angle, xadj;
-    GUnit coords, subcoords;
+    GUnit coords;
 
     /* Init to keep -Wall happy: */
     angle = 0.;
@@ -3211,7 +3245,6 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
 	case 3:	    coords = OMA3;	break;
 	case 4:	    coords = OMA4;	break;
 	}
-	subcoords = NIC;
     }
     else {
 	switch(side) {
@@ -3220,7 +3253,6 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
 	case 3:	    coords = MAR3;	break;
 	case 4:	    coords = MAR4;	break;
 	}
-	subcoords = USER;
     }
     /* Note: I changed gpptr(dd)->yLineBias to 0.3 here. */
     /* Purely visual tuning. RI */
@@ -3229,13 +3261,21 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
        a somehow fuzzy manner with respect to current side and las settings.
        Uwe L.
     */
+    /* Note from PR#14532:
+       yLineBias is the proportion of line height that is white
+       space. The manipulation of "line" below is pure visual tuning
+       such that when we plot horizontal text on side 1 (or vertical
+       text on side 4) with padj=0 (i.e. text written *above* the
+       specified y-value), it is symmetric w.r.t text written on sides
+       1 and 2 with padj=0.
+    */
     switch(side) {
     case 1:
 	if(las == 2 || las == 3) {
 	    angle = 90;
 	}
 	else {
-	    line = line + 1 - dd->dev->yLineBias;
+	    line += (1/gpptr(dd)->mex)*(1 - dd->dev->yLineBias);
 	    angle = 0;
 	}
 	break;
@@ -3244,7 +3284,7 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
 	    angle = 0;
 	}
 	else {
-	    line = line + dd->dev->yLineBias;
+	    line += (1/gpptr(dd)->mex)*dd->dev->yLineBias;
 	    angle = 90;
 	}
 	break;
@@ -3253,7 +3293,7 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
 	    angle = 90;
 	}
 	else {
-	    line = line + dd->dev->yLineBias;
+	    line += (1/gpptr(dd)->mex)*dd->dev->yLineBias;
 	    angle = 0;
 	}
 	break;
@@ -3262,7 +3302,7 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
 	    angle = 0;
 	}
 	else {
-	    line = line + 1 - dd->dev->yLineBias;
+	    line += (1/gpptr(dd)->mex)*(1 - dd->dev->yLineBias);
 	    angle = 90;
 	}
 	break;
@@ -3327,7 +3367,7 @@ void GMathText(double x, double y, int coords, SEXP expr,
 void GMMathText(SEXP str, int side, double line, int outer,
 		double at, int las, double yadj, pGEDevDesc dd)
 {
-    int coords = 0, subcoords;
+    int coords = 0;
     double xadj, angle = 0;
 
     /* IF font metric information is not available for device */
@@ -3352,7 +3392,6 @@ void GMMathText(SEXP str, int side, double line, int outer,
 	case 3:	    coords = OMA3;	break;
 	case 4:	    coords = OMA4;	break;
 	}
-	subcoords = NIC;
     }
     else {
 	switch(side) {
@@ -3361,7 +3400,6 @@ void GMMathText(SEXP str, int side, double line, int outer,
 	case 3:	    coords = MAR3;	break;
 	case 4:	    coords = MAR4;	break;
 	}
-	subcoords = USER;
     }
     switch(side) {
     case 1:
@@ -3372,7 +3410,7 @@ void GMMathText(SEXP str, int side, double line, int outer,
 	    /*	    line = line + 1 - gpptr(dd)->yLineBias;
 		    angle = 0;
 		    yadj = NA_REAL; */
-	    line = line + 1;
+	    line += (1/gpptr(dd)->mex)*(1 - dd->dev->yLineBias);
 	    angle = 0;
 	}
 	break;
@@ -3384,6 +3422,9 @@ void GMMathText(SEXP str, int side, double line, int outer,
 	    /*	    line = line + gpptr(dd)->yLineBias;
 		    angle = 90;
 		    yadj = NA_REAL; */
+	    /* The following line is needed for symmetry with plain text
+	       but changes existing output */
+	    line += (1/gpptr(dd)->mex)*dd->dev->yLineBias;
 	    angle = 90;
 	}
 	break;
@@ -3395,6 +3436,9 @@ void GMMathText(SEXP str, int side, double line, int outer,
 	    /*   line = line + gpptr(dd)->yLineBias;
 		 angle = 0;
 		 yadj = NA_REAL; */
+	    /* The following line is needed for symmetry with plain text
+	       but changes existing output */
+	    line += (1/gpptr(dd)->mex)*dd->dev->yLineBias;
 	    angle = 0;
 	}
 	break;
@@ -3406,7 +3450,7 @@ void GMMathText(SEXP str, int side, double line, int outer,
 	    /*   line = line + 1 - gpptr(dd)->yLineBias;
 		 angle = 90;
 		 yadj = NA_REAL; */
-	    line = line + 1;
+	    line += (1/gpptr(dd)->mex)*(1 - dd->dev->yLineBias);
 	    angle = 90;
 	}
 	break;

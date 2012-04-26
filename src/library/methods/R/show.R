@@ -72,6 +72,22 @@ showDefault <- function(object, oldMethods = TRUE)
     invisible() # documented return for show().
 }
 
+.extraSlotsDone <- new.env() # any unique reference value would do
+
+showExtraSlots <- function(object, ignore) {
+    if(is(ignore, "classRepresentation"))
+      ignore <- slotNames(ignore)
+    else if(!is(ignore, "character"))
+      stop(gettextf("invalid ignore= argument; should be a class definition or a character vector, got an object of class %s", dQuote(class(ignore))),
+           domain = NA)
+    slots <- slotNames(class(object))
+    for(s in slots[is.na(match(slots, ignore))]) {
+        cat("Slot ",s, ":\n", sep="")
+        show(slot(object, s))
+    }
+    .extraSlotsDone # a signal not to call this function (again)
+}
+
 ## temporary definition of show, to become the default method
 ## when .InitShowMethods is called
 show <- function(object)
@@ -141,28 +157,34 @@ show <- function(object)
               where = envir)
 }
 
+.showPackage <- function(className) {
+    if(is.logical(opt <- getOption("showPackageForClass")))
+        opt
+    else
+        is.list(.Call("R_getClassFromCache", as.character(className), .classTable, PACKAGE = "methods"))
+}
 ## an informative string label for a class
 classLabel <- function(Class) {
     if(is.character(Class) && length(Class)) {
         className <- Class[[1L]]
         packageName <- attr(Class, "package")
+        if(is.null(packageName))
+            packageName <- ""
     }
     else {
         if(is(Class, "classRepresentation")) {
             className <- Class@className
             packageName <- Class@package
         }
-        else stop(gettextf("invalid call to 'classLabel': expected a name or a class definition, got an object of class \"%s\"", classLabel(class(Class))), domain = NA)
+        else stop(gettextf("invalid call to 'classLabel': expected a name or a class definition, got an object of class %s", classLabel(class(Class))), domain = NA)
     }
-### TODO:  implement a test for the class NOT directly visible OR multiple versions
-### and include the from... phrase in this case
-#     if(....) {
-#         if(identical(packageName, ".GlobalEnv"))
-#             fromString <- " (from the global environment)"
-#         else
-#             fromString <- paste(" (from package \"", packageName, "\")", sep="")
-#         className <- paste("\"", className, "\"", fromString, sep="")
-#     }
-#     else
-    dQuote(className)
+    if(.showPackage(className)) {
+       if(identical(packageName, ".GlobalEnv"))
+           packageName <- " (from the global environment)"
+        else
+            packageName <- paste(" (from package \"", packageName, "\")", sep="")
+       paste('"', className, '"', packageName, sep = "")
+   }
+   else
+       paste('"', className, '"', sep = "")
 }

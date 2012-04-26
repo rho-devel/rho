@@ -1,6 +1,6 @@
 % File src/library/base/man/apply.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{apply}
@@ -8,31 +8,33 @@
 \title{Apply Functions Over Array Margins}
 \description{
   Returns a vector or array or list of values obtained by applying a
-  function to margins of an array.
+  function to margins of an array or matrix.
 }
 \usage{
 apply(X, MARGIN, FUN, \dots)
 }
 \arguments{
-  \item{X}{the array to be used.}
+  \item{X}{an array, including a matrix.}
   \item{MARGIN}{a vector giving the subscripts which the function will
-    be applied over.
-    \code{1} indicates rows, \code{2} indicates columns,
-    \code{c(1,2)} indicates rows and columns.}
+    be applied over.  E.g., for a matrix \code{1} indicates rows,
+    \code{2} indicates columns, \code{c(1, 2)} indicates rows and
+    columns. Where \code{X} has named dimnames, it can be a character
+    vector selecting dimension names.}
   \item{FUN}{the function to be applied: see \sQuote{Details}.
     In the case of functions like \code{+}, \code{\%*\%}, etc., the
     function name must be backquoted or quoted.}
   \item{\dots}{optional arguments to \code{FUN}.}
 }
 \details{
-  If \code{X} is not an array but has a dimension attribute,
-  \code{apply} attempts to coerce it to an array via \code{as.matrix}
-  if it is two-dimensional (e.g., data frames) or via \code{as.array}.
+  If \code{X} is not an array but an object of a class with a non-null
+  \code{\link{dim}} value (such as a data frame), \code{apply} attempts
+  to coerce it to an array via \code{as.matrix} if it is two-dimensional
+  (e.g., a data frame) or via \code{as.array}.
 
   \code{FUN} is found by a call to \code{\link{match.fun}} and typically
   is either a function or a symbol (e.g. a backquoted name) or a
-  character string specifying a function to be searched for from the 
-  environment of the call to \code{apply}. 
+  character string specifying a function to be searched for from the
+  environment of the call to \code{apply}.
 }
 \value{
   If each call to \code{FUN} returns a vector of length \code{n}, then
@@ -57,7 +59,8 @@ apply(X, MARGIN, FUN, \dots)
   Wadsworth & Brooks/Cole.
 }
 \seealso{
-  \code{\link{lapply}}, \code{\link{tapply}}, and convenience functions
+  \code{\link{lapply}} and there, \code{\link{simplify2array}};
+  \code{\link{tapply}}, and convenience functions
   \code{\link{sweep}} and \code{\link{aggregate}}.
 }
 \examples{

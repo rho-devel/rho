@@ -19,10 +19,12 @@
   \emph{Time Series Analysis and its Applications}.
   Second Edition.  Springer.  Example 1.1.
 }
-\examples{
+\examples{\donttest{
 require(stats); require(graphics)
 JJ <- log10(JohnsonJohnson)
 plot(JJ)
+## This example gives a possible-non-convergence warning on some
+## platforms, but does seem to converge on x86 Linux and Windows.
 (fit <- StructTS(JJ, type="BSM"))
 tsdiag(fit)
 sm <- tsSmooth(fit)
@@ -31,5 +33,5 @@ plot(cbind(JJ, sm[, 1], sm[, 3]-0.5), plot.type = "single",
 abline(h = -0.5, col = "grey60")
 
 monthplot(fit)
-}
+}}
 \keyword{datasets}

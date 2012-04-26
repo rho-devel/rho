@@ -10,12 +10,12 @@
   \code{package.skeleton} automates some of the setup for a new source
   package.  It creates directories, saves functions, data, and R code files to
   appropriate places, and creates skeleton help files and a
-  \file{Read-and-delete-me} file describing further steps in packaging. 
+  \file{Read-and-delete-me} file describing further steps in packaging.
 }
 \usage{
 package.skeleton(name = "anRpackage", list,
                  environment = .GlobalEnv,
-                 path = ".", force = FALSE, namespace = FALSE,
+                 path = ".", force = FALSE, namespace = TRUE,
                  code_files = character())
 }
 \arguments{
@@ -28,10 +28,9 @@ package.skeleton(name = "anRpackage", list,
     \sQuote{Details}.}
   \item{path}{path to put the package directory in.}
   \item{force}{If \code{FALSE} will not overwrite an existing directory.}
-  \item{namespace}{a logical indicating whether to add a name space for
-    the package.  If \code{TRUE}, a \code{NAMESPACE} file is created
-    to export all objects whose names begin with a letter, plus all S4
-    methods and classes.}
+  \item{namespace}{a logical, no longer used, and hence deprecated.  A
+    \code{NAMESPACE} file is always created to export all objects whose
+    names begin with a letter, plus all S4 methods and classes.}
   \item{code_files}{a character vector with the paths to R code files to
     build the package around.  See \sQuote{Details}.}
 }
@@ -58,15 +57,17 @@ package.skeleton(name = "anRpackage", list,
   files.
   The file names in \code{code_files} should  have suffix \code{".R"} and
   be in the current working directory.
-  
-  The  filenames created for source and documentation try to be valid
-  for all OSes known to run R.  Invalid characters are replaced by
-  \samp{_}, invalid names are preceded by \samp{zz}, and finally the
-  converted names are made unique by \code{\link{make.unique}(sep =
-    "_")}.  This can be done for code and help files but not data files
-  (which are looked for by name). Also, the code and help files should
-  have names starting with an ASCII letter or digit, and this is
-  checked and if necessary \code{z} prepended.
+
+  The filenames created for source and documentation try to be valid for
+  all OSes known to run R.  Invalid characters are replaced by \samp{_},
+  invalid names are preceded by \samp{zz}, names are converted to lower
+  case (to avoid case collisions on case-insensitive file systems) and
+  finally the converted names are made unique by
+  \code{\link{make.unique}(sep = "_")}.  This can be done for code and
+  help files but not data files (which are looked for by name). Also,
+  the code and help files should have names starting with an ASCII
+  letter or digit, and this is checked and if necessary \code{z}
+  prepended.
 
   When you are done, delete the \file{Read-and-delete-me} file, as it
   should not be distributed.

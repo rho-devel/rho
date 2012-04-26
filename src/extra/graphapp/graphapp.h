@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -393,6 +393,7 @@ typedef void (*imfn)(control c, font *f, point *xy);
 #define ginvert		GA_ginvert
 #define gmenubar		GA_gmenubar
 #define gnewfont		GA_gnewfont
+#define gnewfont2		GA_gnewfont2
 #define goldfillellipse		GA_goldfillellipse
 #define gpopup		GA_gpopup
 #define gprintf		GA_gprintf
@@ -543,6 +544,7 @@ typedef void (*imfn)(control c, font *f, point *xy);
 #define setaction		GA_setaction
 #define setbackground		GA_setbackground
 #define setbitmapdata		GA_setbitmapdata
+#define setcaret		GA_setcaret
 #define setcliprect		GA_setcliprect
 #define setclose		GA_setclose
 #define setcursor		GA_setcursor
@@ -583,6 +585,7 @@ typedef void (*imfn)(control c, font *f, point *xy);
 #define setuserfilter		GA_setuserfilter
 #define setvalue		GA_setvalue
 #define show		GA_show
+#define showcaret	GA_showcaret
 #define show_window		GAI_show_window
 #define simple_window		GAI_simple_window
 #define sortpalette		GA_sortpalette
@@ -939,6 +942,10 @@ image	newimage(int width, int height, int depth);
 image	copyimage(image img);
 void	delimage(image img);
 
+int     imagedepth(image img);
+int     imagewidth(image img);
+int     imageheight(image img);
+
 void	setpixels(image img, byte pixels[]);
 byte *	getpixels(image img);
 
@@ -1218,6 +1225,12 @@ void	setdrawstate(drawstate saved_state);
 void	restoredrawstate(drawstate saved_state);
 void	resetdrawstate(void);
 
+/*
+ *  Caret-related functions.
+ */
+ 
+void 	setcaret(control c, int x, int y, int width, int height);
+void	showcaret(control c, int showing);
 
 /*
  *  Library supplied variables.

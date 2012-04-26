@@ -1,6 +1,6 @@
 % File src/library/stats/man/predict.lm.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{predict.lm}
@@ -12,7 +12,7 @@
   Predicted values based on linear model object.
 }
 \usage{
-\method{predict}{lm}(object, newdata, se.fit = FALSE, scale = NULL, df = Inf, 
+\method{predict}{lm}(object, newdata, se.fit = FALSE, scale = NULL, df = Inf,
         interval = c("none", "confidence", "prediction"),
         level = 0.95, type = c("response", "terms"),
         terms = NULL, na.action = na.pass,
@@ -47,7 +47,7 @@
   is used as the residual standard deviation in the computation of the
   standard errors, otherwise this is extracted from the model fit.
   Setting \code{intervals} specifies computation of confidence or
-  prediction (tolerance) intervals at the specified \code{level}, sometimes 
+  prediction (tolerance) intervals at the specified \code{level}, sometimes
   referred to as narrow vs. wide intervals.
 
   If the fit is rank-deficient, some of the columns of the design matrix
@@ -67,20 +67,20 @@
   \code{newdata} (or by default, the data used for the fit) with error
   variance(s) \code{pred.var}. This can be a multiple of \code{res.var},
   the estimated
-  value of \eqn{\sigma^2}{sigma^2}: the default is to assume that future
+  value of \eqn{\sigma^2}: the default is to assume that future
   observations have the same error variance as those
   used for fitting. If \code{weights} is supplied, the inverse of this
   is used as a scale factor. For a weighted fit, if the prediction
   is for the original data frame, \code{weights} defaults to the weights
   used for the  model fit, with a warning since it might not be the
-  intended result. If the fit was weighted and newdata is given, the
+  intended result. If the fit was weighted and \code{newdata} is given, the
   default is to assume constant prediction variance, with a warning.
 }
 \value{
   \code{predict.lm} produces a vector of predictions or a matrix of
   predictions and bounds with column names \code{fit}, \code{lwr}, and
   \code{upr} if \code{interval} is set.  If \code{se.fit} is
-  \code{TRUE}, a list with the following components is returned: 
+  \code{TRUE}, a list with the following components is returned:
   \item{fit}{vector or matrix as above}
   \item{se.fit}{standard error of predicted means}
   \item{residual.scale}{residual standard deviations}
@@ -92,20 +92,21 @@
   used in the fit).  A warning will be given if the
   variables found are not of the same length as those in \code{newdata}
   if it was supplied.
-  
+
   Notice that prediction variances and prediction intervals always refer
   to \emph{future} observations, possibly corresponding to the same
   predictors as used for the fit. The variance of the \emph{residuals}
   will be smaller.
-  
+
   Strictly speaking, the formula used for prediction limits assumes that
   the degrees of freedom for the fit are the same as those for the
   residual variance.  This may not be the case if \code{res.var} is
-  not obtained from the fit. 
+  not obtained from the fit.
 }
 \seealso{
-  The model fitting function \code{\link{lm}}, \code{\link{predict}},
-  \code{\link{SafePrediction}}
+  The model fitting function \code{\link{lm}}, \code{\link{predict}}.
+
+  \link{SafePrediction} for prediction from polynomial and spline fits.
 }
 \examples{
 require(graphics)
@@ -134,4 +135,3 @@ predict(wfit, new, interval = "prediction", weights = ~x^2)
 }
 
 \keyword{regression}
-

@@ -2,6 +2,8 @@
 #
 # ${R_HOME}/src/library/Recommended/Makefile.win
 
+top_builddir = ../../..
+
 include ../../../share/make/vars.mk
 
 include ../../gnuwin32/MkRules
@@ -26,21 +28,34 @@ stamp-recommended: $(OBJECTS)
 	@touch $@
 
 ## allow parallel installs, modulo dependencies below
-INSTALL_OPTS=--pkglock --install-tests --data-compress="xz"
+INSTALL_OPTS=--pkglock --install-tests --data-compress=xz
 
+RCMD = $(top_builddir)/$(BINDIR)/Rcmd
 
-RCMD = ../../../bin/Rcmd
-
+## force tar.exe, as internal tar gets wrong permissions on >= Vista
+## when run from Cygwin
 .tgz.ts:
 	@echo
 	@echo "----- installing recommended package" `basename $< .tgz`
-	@$(RCMD) INSTALL $(INSTALL_OPTS) -l $(RHOME)/library `basename $< .tgz`_*.tar.gz
+	@if test -n "$(R_NO_BASE_COMPILE)"; then \
+	R_INSTALL_TAR='tar.exe --no-same-owner --no-same-permissions' \
+	  R_LIBS_USER= R_LIBS_SITE= \
+	  $(RCMD) INSTALL $(INSTALL_OPTS) -l $(top_builddir)/library `basename $< .tgz`_*.tar.gz; \
+	else \
+	R_INSTALL_TAR='tar.exe --no-same-owner --no-same-permissions' \
+	  R_LIBS_USER= R_LIBS_SITE= \
+	  $(RCMD) INSTALL $(INSTALL_OPTS) --byte-compile -l $(top_builddir)/library `basename $< .tgz`_*.tar.gz; \
+	fi
 	@touch $@
 
 clean:
 	@rm -f $(CLEANFILES)
 
 ## Hardcoded dependencies (see '../../../share/make/vars.mk')
+Matrix.ts: lattice.ts
 mgcv.ts: nlme.ts MASS.ts Matrix.ts
 nlme.ts: lattice.ts
 class.ts: MASS.ts
+## and for static html links
+boot.ts: MASS.ts survival.ts
+cluster.ts: MASS.ts

@@ -55,12 +55,8 @@ function(dir, outDir)
                 call. = FALSE)
     }
 
-    OS <- Sys.getenv("R_OSTYPE")
-    OStype <- if(nzchar(OS) && OS == "windows")
-        "i386-pc-mingw32"
-    else
-        R.version$platform
-    if (length(grep("-apple-darwin",R.version$platform)) &&
+    OStype <- R.version$platform
+    if (length(grep("-apple-darwin", R.version$platform)) &&
         nzchar(Sys.getenv("R_ARCH")))
         OStype <- sub(".*-apple-darwin", "universal-apple-darwin", OStype)
     Built <-
@@ -84,15 +80,14 @@ function(dir, outDir)
     ## simplified to
     ##   db["Built"] <- Built
     ##   write.dcf(rbind(db), file.path(outDir, "DESCRIPTION"))
+    ## But in any case, it is true for fields obtained from expanding R
+    ## fields (Authors@R): these should not be reformatted.
 
-    ## Avoid declared encodings
-    dbn <- db; Encoding(dbn) <- "unknown"
-    outConn <- file(file.path(outDir, "DESCRIPTION"), open = "w")
-    write.dcf(rbind(dbn), outConn)
-    writeLines(paste("Built", Built, sep = ": "), outConn)
-    close(outConn)
-
-    db["Built"] <- Built
+    db <- c(db,     
+            .expand_package_description_db_R_fields(db),
+            Built = Built)
+    
+    .write_description(db, file.path(outDir, "DESCRIPTION"))
 
     outMetaDir <- file.path(outDir, "Meta")
     if(!file_test("-d", outMetaDir) && !dir.create(outMetaDir))
@@ -100,7 +95,7 @@ function(dir, outDir)
                        outMetaDir),
               domain = NA)
     saveInfo <- .split_description(db)
-    .saveRDS(saveInfo, file.path(outMetaDir, "package.rds"))
+    saveRDS(saveInfo, file.path(outMetaDir, "package.rds"))
 
     invisible()
 }
@@ -127,21 +122,15 @@ function(db, verbose = FALSE)
     } else Built <- NULL
     ## might perhaps have multiple entries
     Depends <- .split_dependencies(db[names(db) %in% "Depends"])
+    ## several packages 'Depends' on base!
+    ind <- match("base", names(Depends), 0L)
+    if(ind) Depends <- Depends[-ind]
     ## We only need Rdepends for R < 2.7.0, but we still need to be
     ## able to check that someone is not trying to load this into a
     ## very old version of R.
     if("R" %in% names(Depends)) {
         Rdeps2 <- Depends["R" == names(Depends)]
         names(Rdeps2) <- NULL
-        if(verbose && !all(sapply(Rdeps2[-1L], function(x)
-            		   x$op %in% c("<", "<=")
-            		&& x$version >= package_version("2.7.0")))) {
-            entries <- lapply(Rdeps2, function(x)
-                paste(lapply(x, as.character), collapse=""))
-            message("WARNING: 'Depends' entry has multiple dependencies on R: ",
-                    paste(unlist(entries), collapse=", "),
-                    "\n\tonly the first will be used in R < 2.7.0")
-        }
         Rdeps <- Depends[["R", exact = TRUE]] # the first one
         Depends <- Depends[names(Depends) != "R"]
         ## several packages have 'Depends: R', which is a noop.
@@ -180,7 +169,7 @@ function(dir, packages)
                      package_info_rds_file,
                      package_info_dcf_file))
             next
-        .saveRDS(.split_description(.read_description(package_info_dcf_file)),
+        saveRDS(.split_description(.read_description(package_info_dcf_file)),
                  package_info_rds_file)
     }
     invisible()
@@ -308,9 +297,13 @@ function(dir, outDir)
         on.exit(close(con))  # Windows does not like files left open
         for(f in codeFiles) {
             tmp <- iconv(readLines(f, warn = FALSE), from = enc, to = "")
-            if(any(is.na(tmp)))
-               stop(gettextf("unable to re-encode '%s'", basename(f)),
+            if(length(bad <- which(is.na(tmp)))) {
+               warning(gettextf("unable to re-encode '%s' line(s) %s",
+                                basename(f), paste(bad, collapse=",")),
                     domain = NA, call. = FALSE)
+               tmp <- iconv(readLines(f, warn = FALSE), from = enc, to = "",
+                            sub = "byte")
+            }
             writeLines(paste("#line 1 \"", f, "\"", sep=""), con)
             writeLines(tmp, con)
         }
@@ -336,9 +329,10 @@ function(dir, outDir)
 
 
 ### * .install_package_indices
+## called from R CMD INSTALL
 
 .install_package_indices <-
-function(dir, outDir)
+function(dir, outDir, encoding = "")
 {
     options(warn = 1)                   # to ensure warnings get seen
     if(!file_test("-d", dir))
@@ -363,7 +357,7 @@ function(dir, outDir)
          stop(gettextf("cannot open directory '%s'", outMetaDir),
               domain = NA)
     .install_package_Rd_indices(dir, outDir)
-    .install_package_vignette_index(dir, outDir)
+    .install_package_vignette_index(dir, outDir, encoding)
     .install_package_demo_index(dir, outDir)
     invisible()
 }
@@ -413,7 +407,7 @@ function(dir, outDir)
         RdsFile <- file.path("Meta", "Rd.rds")
         if(file.exists(RdsFile)) { ## for Rd files
             ## this has file names without path
-            files <- .readRDS(RdsFile)$File
+            files <- readRDS(RdsFile)$File
             if(!identical(basename(allRd), files)) upToDate <- FALSE
         }
         ## we want to proceed if any is NA.
@@ -429,12 +423,12 @@ function(dir, outDir)
         .write_Rd_contents_as_RDS(contents,
                                   file.path(outDir, "Meta", "Rd.rds"))
 
-        defaultEncoding <- as.vector(.readRDS(file.path(outDir, "Meta", "package.rds"))$DESCRIPTION["Encoding"])
+        defaultEncoding <- as.vector(readRDS(file.path(outDir, "Meta", "package.rds"))$DESCRIPTION["Encoding"])
         if(is.na(defaultEncoding)) defaultEncoding <- NULL
-        .saveRDS(.build_hsearch_index(contents, packageName, defaultEncoding),
+        saveRDS(.build_hsearch_index(contents, packageName, defaultEncoding),
                  file.path(outDir, "Meta", "hsearch.rds"))
 
-        .saveRDS(.build_links_index(contents, packageName),
+        saveRDS(.build_links_index(contents, packageName),
                  file.path(outDir, "Meta", "links.rds"))
 
         ## If there is no @file{INDEX} file in the package sources, we
@@ -442,55 +436,49 @@ function(dir, outDir)
         ## <NOTE>
         ## We currently do not also save this in RDS format, as we can
         ## always do
-        ##   .build_Rd_index(.readRDS(file.path(outDir, "Meta", "Rd.rds"))
+        ##   .build_Rd_index(readRDS(file.path(outDir, "Meta", "Rd.rds"))
         if(!file_test("-f", file.path(dir, "INDEX")))
             writeLines(formatDL(.build_Rd_index(contents)),
                        file.path(outDir, "INDEX"))
         ## </NOTE>
     } else {
         contents <- NULL
-        .saveRDS(.build_hsearch_index(contents, packageName, defaultEncoding),
+        saveRDS(.build_hsearch_index(contents, packageName, defaultEncoding),
                  file.path(outDir, "Meta", "hsearch.rds"))
 
-        .saveRDS(.build_links_index(contents, packageName),
+        saveRDS(.build_links_index(contents, packageName),
                  file.path(outDir, "Meta", "links.rds"))
 
     }
     if(file_test("-d", dataDir))
-        .saveRDS(.build_data_index(dataDir, contents),
+        saveRDS(.build_data_index(dataDir, contents),
                  file.path(outDir, "Meta", "data.rds"))
     invisible()
 }
 
 ### * .install_package_vignette_index
+## only called from .install_package_indices
 
 .install_package_vignette_index <-
-function(dir, outDir)
+function(dir, outDir, encoding = "")
 {
     dir <- file_path_as_absolute(dir)
-    vignetteDir <- file.path(dir, "inst", "doc")
-    ## Create a vignette index only if the vignette dir exists.
+    vignetteDir <- file.path(dir, "vignettes")
     if(!file_test("-d", vignetteDir))
-        return(invisible())
+        vignetteDir <- file.path(dir, "inst", "doc")
+    ## Create a vignette index only if the vignette dir exists.
+    if(!file_test("-d", vignetteDir)) return(invisible())
 
     outDir <- file_path_as_absolute(outDir)
-    ## <FIXME>
-    ## Not clear whether we should use the basename of the directory we
-    ## install to, or the package name as obtained from the DESCRIPTION
-    ## file in the directory we install from (different for versioned
-    ## installs).  We definitely do not want the basename of the dir we
-    ## install from.
     packageName <- basename(outDir)
-    ## </FIXME>
     outVignetteDir <- file.path(outDir, "doc")
-    if(!file_test("-d", outVignetteDir) && !dir.create(outVignetteDir))
-        stop(gettextf("cannot open directory '%s'", outVignetteDir),
-             domain = NA)
+    ## --fake  and --no-inst installs do not have a outVignetteDir.
+    if(!file_test("-d", outVignetteDir)) return(invisible())
 
     ## If there is an HTML index in the @file{inst/doc} subdirectory of
     ## the package source directory (@code{dir}), we do not overwrite it
     ## (similar to top-level @file{INDEX} files).  Installation already
-    ## copies/d this over.
+    ## copied this over.
     hasHtmlIndex <- file_test("-f", file.path(vignetteDir, "index.html"))
     htmlIndex <- file.path(outDir, "doc", "index.html")
 
@@ -503,34 +491,51 @@ function(dir, outDir)
         return(invisible())
     }
 
-    vignetteIndex <- .build_vignette_index(vignetteDir)
-    ## For base package vignettes there is no PDF in @file{vignetteDir}
-    ## but there might/should be one in @file{outVignetteDir}.
+    if (basename(vignetteDir) == "vignettes") {
+        ## copy vignette sources over.
+        vigns <- list_files_with_type(vignetteDir, "vignette")
+        file.copy(vigns, outVignetteDir)
+    }
+    vignetteIndex <- .build_vignette_index(outVignetteDir)
     if(NROW(vignetteIndex) > 0L) {
+        cwd <- getwd()
+        if (is.null(cwd))
+            stop("current working directory cannot be ascertained")
+        setwd(outVignetteDir)
         vignettePDFs <-
             sub("$", ".pdf",
                 basename(file_path_sans_ext(vignetteIndex$File)))
-        ind <- file_test("-f", file.path(outVignetteDir, vignettePDFs))
+        ind <- file_test("-f", vignettePDFs)
         vignetteIndex$PDF[ind] <- vignettePDFs[ind]
 
         ## install tangled versions of all vignettes
-        cwd <- getwd()
-        setwd(outVignetteDir)
-        for(srcfile in vignetteIndex$File)
-            tryCatch(utils::Stangle(srcfile, quiet = TRUE),
+        cat("*** tangling vignette sources ...\n")
+        for(srcfile in vignetteIndex$File) {
+            enc <- getVignetteEncoding(srcfile, TRUE)
+            if(enc %in% c("non-ASCII", "unknown")) enc <- encoding
+            cat("  ", sQuote(basename(srcfile)),
+                if(nzchar(enc)) paste("using", sQuote(enc)), "\n")
+           tryCatch(utils::Stangle(srcfile, quiet = TRUE, encoding = enc),
                      error = function(e)
                      stop(gettextf("running Stangle on vignette '%s' failed with message:\n%s",
                                    srcfile, conditionMessage(e)),
                           domain = NA, call. = FALSE))
-        vignetteIndex$R <-
-            sub("$", ".R", basename(file_path_sans_ext(vignetteIndex$File)))
+        }
+        Rfiles <- sub("\\.[RrSs](nw|tex)$", ".R", basename(vignetteIndex$File))
+        ## remove any files with no R code (they will have header comments).
+        ## if not correctly declared they might not be in the current encoding
+        for(f in Rfiles)
+            if(all(grepl("(^###|^[[:space:]]*$)",
+                         readLines(f, warn = FALSE)), useBytes = TRUE))
+                unlink(f)
+        vignetteIndex$R <- ifelse(file.exists(Rfiles), Rfiles, "")
         setwd(cwd)
     }
 
     if(!hasHtmlIndex)
         .writeVignetteHtmlIndex(packageName, htmlIndex, vignetteIndex)
 
-    .saveRDS(vignetteIndex,
+    saveRDS(vignetteIndex,
              file = file.path(outDir, "Meta", "vignette.rds"))
 
     invisible()
@@ -544,7 +549,7 @@ function(dir, outDir)
     demoDir <- file.path(dir, "demo")
     if(!file_test("-d", demoDir)) return(invisible())
     demoIndex <- .build_demo_index(demoDir)
-    .saveRDS(demoIndex,
+    saveRDS(demoIndex,
              file = file.path(outDir, "Meta", "demo.rds"))
     invisible()
 }
@@ -560,60 +565,54 @@ function(src_dir, out_dir, packages)
     ## indices.
     ## Really only useful for base packages under Unix.
     ## See @file{src/library/Makefile.in}.
-    ## These days this is mostly installing the metadata
 
     for(p in unlist(strsplit(packages, "[[:space:]]+")))
-        .install_package_indices(file.path(src_dir, p),
-                                         file.path(out_dir, p))
-    unix.packages.html(.Library)
+        .install_package_indices(file.path(src_dir, p), file.path(out_dir, p))
+    utils::make.packages.html(.Library, verbose = FALSE)
     invisible()
 }
 
 ### * .install_package_vignettes
 
-## called from src/library/Makefile
-## this is only used when building R, to build the 'grid' vignettes.
+## called from src/library/Makefile[.win]
+## this is only used when building R, to build the 'grid' and 'utils' vignettes.
 .install_package_vignettes <-
-function(dir, outDir, keep.source = FALSE)
+function(dir, outDir, keep.source = TRUE)
 {
     dir <- file_path_as_absolute(dir)
-    vignetteDir <- file.path(dir, "inst", "doc")
-    if(!file_test("-d", vignetteDir))
-        return(invisible())
-    vignetteFiles <- list_files_with_type(vignetteDir, "vignette")
-    if(!length(vignetteFiles))
-        return(invisible())
+    vigns <- pkgVignettes(dir = dir)
+    if(is.null(vigns) || !length(vigns$docs)) return(invisible())
 
     outDir <- file_path_as_absolute(outDir)
     outVignetteDir <- file.path(outDir, "doc")
     if(!file_test("-d", outVignetteDir) && !dir.create(outVignetteDir))
         stop(gettextf("cannot open directory '%s'", outVignetteDir),
              domain = NA)
-    ## For the time being, assume that no PDFs are available in
-    ## vignetteDir.
+
     vignettePDFs <-
         file.path(outVignetteDir,
                   sub("$", ".pdf",
-                      basename(file_path_sans_ext(vignetteFiles))))
-    upToDate <- file_test("-nt", vignettePDFs, vignetteFiles)
-    if(all(upToDate))
-        return(invisible())
+                      basename(file_path_sans_ext(vigns$docs))))
+    upToDate <- file_test("-nt", vignettePDFs, vigns$docs)
+    if(all(upToDate)) return(invisible())
 
-    ## For the time being, the primary use of this function is to
-    ## build and install vignettes in base packages (which means grid).
-    ## Hence, we build in a subdir of the current directory rather than
-    ## a temp dir:
-    ## this allows inspection of problems and automatic cleanup via Make.
+    ## The primary use of this function is to build and install
+    ## vignettes in base packages.
+    ## Hence, we build in a subdir of the current directory rather
+    ## than a temp dir: this allows inspection of problems and
+    ## automatic cleanup via Make.
     cwd <- getwd()
+    if (is.null(cwd))
+        stop("current working directory cannot be ascertained")
     buildDir <- file.path(cwd, ".vignettes")
     if(!file_test("-d", buildDir) && !dir.create(buildDir))
         stop(gettextf("cannot create directory '%s'", buildDir), domain = NA)
     on.exit(setwd(cwd))
     setwd(buildDir)
 
-    for(srcfile in vignetteFiles[!upToDate]) {
+    for(srcfile in vigns$docs[!upToDate]) {
         base <- basename(file_path_sans_ext(srcfile))
-        message("processing '", basename(srcfile), "'")
+        message("processing ", sQuote(basename(srcfile)))
         texfile <- paste(base, ".tex", sep = "")
         tryCatch(utils::Sweave(srcfile, pdf = TRUE, eps = FALSE,
                                quiet = TRUE, keep.source = keep.source,
@@ -627,7 +626,7 @@ function(dir, outDir, keep.source = FALSE)
         ## We need to ensure that vignetteDir is in TEXINPUTS and BIBINPUTS.
         ## <FIXME>
         ## What if this fails?
-        texi2dvi(texfile, pdf = TRUE, quiet = TRUE, texinputs = vignetteDir)
+        texi2pdf(texfile, quiet = TRUE, texinputs = vigns$dir)
         ## </FIXME>
         pdffile <-
             paste(basename(file_path_sans_ext(srcfile)), ".pdf", sep = "")
@@ -645,6 +644,7 @@ function(dir, outDir, keep.source = FALSE)
     setwd(cwd)
     unlink(buildDir, recursive = TRUE)
     ## Now you need to update the HTML index!
+    ## This also creates the .R files
     .install_package_vignette_index(dir, outDir)
     invisible()
 }
@@ -664,7 +664,7 @@ function(dir, outDir)
     if(!file_test("-d", outMetaDir) && !dir.create(outMetaDir))
         stop(gettextf("cannot open directory '%s'", outMetaDir),
              domain = NA)
-    .saveRDS(nsInfo, nsInfoFilePath)
+    saveRDS(nsInfo, nsInfoFilePath)
     invisible()
 }
 
@@ -691,6 +691,7 @@ function(dir, packages)
 .install_package_Rd_objects <-
 function(dir, outDir, encoding = "unknown")
 {
+    dir <- file_path_as_absolute(dir)
     mandir <- file.path(dir, "man")
     manfiles <- if(!file_test("-d", mandir)) character()
     else list_files_with_type(mandir, "docs")
@@ -698,16 +699,17 @@ function(dir, outDir, encoding = "unknown")
     dir.create(manOutDir, FALSE)
     db_file <- file.path(manOutDir,
                          paste(basename(outDir), ".rdx", sep = ""))
+    built_file <- file.path(dir, "build", "partial.rdb")
     ## Avoid (costly) rebuilding if not needed.
     ## Actually, it seems no more costly than these tests, which it also does
     pathsFile <- file.path(manOutDir, "paths.rds")
     if(!file_test("-f", db_file) || !file.exists(pathsFile) ||
-       !identical(sort(manfiles), sort(.readRDS(pathsFile))) ||
+       !identical(sort(manfiles), sort(readRDS(pathsFile))) ||
        !all(file_test("-nt", db_file, manfiles))) {
         db <- .build_Rd_db(dir, manfiles, db_file = db_file,
-                           encoding = encoding)
-        nm <- names(db)
-        .saveRDS(nm, pathsFile)
+                           encoding = encoding, built_file = built_file)
+        nm <- as.character(names(db)) # Might be NULL
+        saveRDS(nm, pathsFile)
         names(db) <- sub("\\.[Rr]d$", "", basename(nm))
         makeLazyLoadDB(db, file.path(manOutDir, basename(outDir)))
     }
@@ -747,59 +749,10 @@ function(pkgs, lib.loc = NULL, file = NULL)
         pkgs <- tmp
     }
     pkgs <- strsplit(pkgs[1L], ",[[:blank:]]*")[[1L]]
-    paths <- .find.package(pkgs, lib.loc, quiet=TRUE)
+    paths <- find.package(pkgs, lib.loc, quiet=TRUE)
     if(length(paths))
         cat(paste(paste('-I"', paths, '/include"', sep=""), collapse=" "))
     return(invisible())
-}
-
-### * .vcreate_bundle_package_descriptions
-
-## called from .install_packages
-.vcreate_bundle_package_descriptions <-
-function(dir, packages)
-{
-    .canonicalize_metadata <- function(m) {
-        ## Drop entries which are NA or empty.
-        m[!is.na(m) & (regexpr("^[[:space:]]*$", m) < 0L)]
-    }
-
-    dir <- file_path_as_absolute(dir)
-
-    ## Bundle level metadata.
-    meta <- .read_description(file.path(dir, "DESCRIPTION"))
-    meta <- .canonicalize_metadata(meta)
-    if(missing(packages)) packages <- meta[["Contains"]]
-
-    for(p in unlist(strsplit(.strip_whitespace(packages), "[[:space:]]+"))) {
-        bmeta <- meta
-        ## Package metadata.
-        this <- file.path(dir, p, "DESCRIPTION.in")
-        if(file_test("-f", this)) {
-            pmeta <- .read_description(this)
-            pmeta <- .canonicalize_metadata(pmeta)
-            ## Need to merge dependency fields in *both* metadata.
-            fields_to_merge <-
-                c("Depends", "Imports", "LinkingTo", "Suggests", "Enhances")
-            fields <- intersect(intersect(names(bmeta), fields_to_merge),
-                                intersect(names(pmeta), fields_to_merge))
-            if(length(fields)) {
-                bmeta[fields] <-
-                    paste(bmeta[fields], pmeta[fields], sep = ", ")
-                pmeta <- pmeta[!(names(pmeta) %in% fields)]
-            }
-        } else {
-            warning(gettextf("missing 'DESCRIPTION.in' for package '%s'", p),
-                    domain = NA)
-            d <- sprintf("Package '%s' from bundle '%s'", p, meta[["Bundle"]])
-            pmeta <- c(p, d, d)
-            names(pmeta) <- c("Package", "Description", "Title")
-        }
-        write.dcf(rbind(c(bmeta, pmeta)),
-                  file.path(dir, p, "DESCRIPTION"))
-    }
-
-    invisible()
 }
 
 ### * .test_package_depends_R_version
@@ -819,23 +772,27 @@ function(dir)
             ## .check_package_description will insist on these operators
             if(!depends$op %in% c("<=", ">=", "<", ">", "==", "!="))
                 message("WARNING: malformed 'Depends' field in 'DESCRIPTION'")
-            else
-                status <- !do.call(depends$op,
-                                   list(current, depends$version))
+            else {
+                status <- if(inherits(depends$version, "numeric_version"))
+                    !do.call(depends$op, list(current, depends$version))
+                else {
+                    ver <- R.version
+                    if (ver$status %in% c("", "Patched")) FALSE
+                    else !do.call(depends$op,
+                                 list(ver[["svn rev"]],
+                                      as.numeric(sub("^r", "", depends$version))))
+                }
+            }
             if(status != 0) {
                 package <- Sys.getenv("R_PACKAGE_NAME")
                 if(!nzchar(package))
                     package <- meta["Package"]
-                if(nzchar(package))
-                    msg <- gettextf("ERROR: this R is version %s, package '%s' requires R %s %s",
+                msg <- if(nzchar(package))
+                    gettextf("ERROR: this R is version %s, package '%s' requires R %s %s",
                                     current, package,
                                     depends$op, depends$version)
-                else if (nzchar(bundle <-  meta["Bundle"]) && !is.na(bundle))
-                    msg <- gettextf("ERROR: this R is version %s, bundle '%s' requires R %s %s",
-                                    current, bundle,
-                                    depends$op, depends$version)
                 else
-                    msg <- gettextf("ERROR: this R is version %s, required is R %s %s",
+                    gettextf("ERROR: this R is version %s, required is R %s %s",
                                     current, depends$op, depends$version)
                 message(strwrap(msg, exdent = 2L))
                 break
@@ -849,6 +806,16 @@ function(dir)
 .test_package_depends_R_version <-
 function(dir)
     q(status = .Rtest_package_depends_R_version(dir))
+
+
+### * .test_load_package
+
+.test_load_package <- function(pkg_name, lib)
+{
+    res <- try(suppressPackageStartupMessages(library(pkg_name, lib.loc = lib, character.only = TRUE, logical.return = TRUE)))
+    if (inherits(res, "try-error") || !res)
+        stop("loading failed", call. = FALSE)
+}
 
 
 ### * checkRdaFiles
@@ -869,7 +836,7 @@ checkRdaFiles <- function(paths)
         magic <- readBin(p, "raw", n = 5)
         res[p, "compress"] <- if(all(magic[1:2] == c(0x1f, 0x8b))) "gzip"
         else if(rawToChar(magic[1:3]) == "BZh") "bzip2"
-        else if(magic[1] == 0xFD && rawToChar(magic[2:5]) == "7zXZ") "xz"
+        else if(magic[1L] == 0xFD && rawToChar(magic[2:5]) == "7zXZ") "xz"
         else if(grepl("RD[ABX][12]", rawToChar(magic), useBytes = TRUE)) "none"
         else "unknown"
         con <- gzfile(p)
@@ -896,19 +863,21 @@ resaveRdaFiles <- function(paths,
     if (missing(compression_level))
         compression_level <- switch(compress, "gzip" = 6, 9)
     for(p in paths) {
-        env <- new.env()
-        load(p, envir = env)
+        env <- new.env(hash = TRUE) # probably small, need not be
+#        sink(tempfile()) ## suppress startup messages to stdout, for BARD
+        suppressPackageStartupMessages(load(p, envir = env))
+#        sink()
         if(compress == "auto") {
             f1 <- tempfile()
-            save(file = f1, list = ls(env, all=TRUE), envir = env)
+            save(file = f1, list = ls(env, all.names = TRUE), envir = env)
             f2 <- tempfile()
-            save(file = f2, list = ls(env, all=TRUE), envir = env,
+            save(file = f2, list = ls(env, all.names = TRUE), envir = env,
                  compress = "bzip2")
             ss <- file.info(c(f1, f2))$size * c(0.9, 1.0)
             names(ss) <- c(f1, f2)
             if(ss[1L] > 10240) {
                 f3 <- tempfile()
-                save(file = f3, list = ls(env, all=TRUE), envir = env,
+                save(file = f3, list = ls(env, all.names = TRUE), envir = env,
                      compress = "xz")
                 ss <- c(ss, file.info(f3)$size)
 		names(ss) <- c(f1, f2, f3)
@@ -918,10 +887,92 @@ resaveRdaFiles <- function(paths,
             file.copy(nm[ind], p, overwrite = TRUE)
             unlink(nm)
         } else
-            save(file = p, list = ls(env, all=TRUE), envir = env,
+            save(file = p, list = ls(env, all.names = TRUE), envir = env,
                  compress = compress, compression_level = compression_level)
     }
 }
+
+### * compactPDF
+
+compactPDF <-
+    function(paths, qpdf = Sys.getenv("R_QPDF", "qpdf"),
+             gs_cmd = Sys.getenv("R_GSCMD", ""),
+             gs_quality = c("printer", "ebook", "screen"),
+             gs_extras = character())
+{
+    if(!nzchar(Sys.which(qpdf)) && !nzchar(Sys.which(gs_cmd)))
+    	return()
+    if(length(paths) == 1L && isTRUE(file.info(paths)$isdir))
+        paths <- Sys.glob(file.path(paths, "*.pdf"))
+    gs_quality <- match.arg(gs_quality)
+    tf <- tempfile("pdf")
+    dummy <- rep.int(NA_real_, length(paths))
+    ans <- data.frame(old = dummy, new = dummy, row.names = paths)
+    for (p in paths) {
+        res <- if (nzchar(gs_cmd))
+            system2(gs_cmd,
+                    c("-q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite",
+                      sprintf("-dPDFSETTINGS=/%s", gs_quality),
+                      "-dCompatibilityLevel=1.5",
+                      "-dAutoRotatePages=/None",
+                      sprintf("-sOutputFile=%s", tf),
+                      gs_extras,
+                      p), FALSE, FALSE)
+        else
+            system2(qpdf, c("--stream-data=compress",
+			    "--object-streams=generate", p, tf), FALSE, FALSE)
+        if(!res && file.exists(tf)) {
+            old <- file.info(p)$size; new <-  file.info(tf)$size
+            if(new/old < 0.9 && new < old - 1e4) {
+                file.copy(tf, p, overwrite = TRUE)
+                ans[p, ] <- c(old, new)
+            }
+        }
+        unlink(tf)
+    }
+    structure(na.omit(ans), class = c("compactPDF", "data.frame"))
+}
+
+format.compactPDF <- function(x, ratio = 0.9, diff = 1e4, ...)
+{
+    if(!nrow(x)) return(character())
+    z <- y <- x[with(x, new/old < ratio & new < old - diff), ]
+    if(!nrow(z)) return(character())
+    z[] <- lapply(y, function(x) sprintf("%.0fKb", x/1024))
+    large <- y$new >= 1024^2
+    z[large, ] <- lapply(y[large, ], function(x) sprintf("%.1fMb", x/1024^2))
+    paste('  compacted', sQuote(basename(row.names(y))),
+          'from', z[, 1L], 'to', z[, 2L])
+}
+
+print.compactPDF <- function(x, ...)
+{
+    writeLines(format(x, ...))
+    x
+}
+
+### * add_datalist
+
+add_datalist <- function(pkgpath, force = FALSE)
+{
+    dlist <- file.path(pkgpath, "data", "datalist")
+    if (!force && file.exists(dlist)) return()
+    fi <- file.info(Sys.glob(file.path(pkgpath, "data", "*")))
+    size <- sum(fi$size)
+    if(size <= 1024^2) return()
+    z <- suppressPackageStartupMessages(list_data_in_pkg(dataDir = file.path(pkgpath, "data"))) # for BARD
+    if(!length(z)) return()
+    con <- file(dlist, "w")
+    for (nm in names(z)) {
+        zz <- z[[nm]]
+        if (length(zz) == 1L && zz == nm) writeLines(nm, con)
+        else cat(nm, ": ", paste(zz, collapse = " "), "\n",
+                 sep = "", file = con)
+    }
+    close(con)
+    invisible()
+}
+
 
 ### Local variables: ***
 ### mode: outline-minor ***

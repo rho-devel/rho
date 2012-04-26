@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -40,16 +40,19 @@
 
 #include "CXXR/BuiltInFunction.h"
 
-#include "RCNTXT.h"
+#include <cstdarg>
+#include "Internal.h"
+#include "CXXR/ArgList.hpp"
 #include "CXXR/DotInternal.h"
-#include "CXXR/Evaluator.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/FunctionContext.hpp"
+#include "CXXR/PlainContext.hpp"
+#include "CXXR/ProtectStack.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/RAllocStack.h"
 #include "CXXR/Symbol.h"
 #include "CXXR/errors.h"
 #include "R_ext/Print.h"
 
-using namespace std;
 using namespace CXXR;
 
 namespace CXXR {
@@ -61,38 +64,83 @@ namespace CXXR {
 }
 
 BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = 0;
+BuiltInFunction::map* BuiltInFunction::s_cache = 0;
 
-RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
-				Environment* env)
+// BuiltInFunction::apply() creates a FunctionContext only if
+// m_transparent is false.  This affects the location at which
+// Rf_error() reports an error as having occurred, and also determines
+// whether a function is reported within traceback().
+//
+// Since functions called via .Internal are not visible to the R user,
+// it seems clear that such functions should be 'transparent'.  One
+// approach would be to leave it at that, so that errors within
+// internal functions would be attributed to the surrounding call of
+// .Internal.  However, CXXR (currently at least) goes further than
+// this, with a view to attributing an error arising within an
+// internal function to the documented R function which it implements.
+// To this end do_internal itself and various 'syntactical' functions
+// such as do_begin are also flagged as transparent.
+//
+// The flip side of this is that if an error really does occur within
+// one of the 'syntactical' functions (rather than within some inner
+// but transparent scope), it may be desirable to report the error
+// using Rf_errorcall() rather than Rf_error(), so that it can
+// specifically be attributed to the 'syntactical' function.
+
+BuiltInFunction::BuiltInFunction(unsigned int offset)
+    : FunctionBase(s_function_table[offset].flags%10
+		   ? BUILTINSXP : SPECIALSXP),
+      m_offset(offset), m_function(s_function_table[offset].cfun)
 {
-    size_t pps_size = GCStackRootBase::ppsSize();
-    size_t ralloc_size = RAllocStack::size();
+    unsigned int pmdigit = (s_function_table[offset].flags/100)%10;
+    m_result_printing_mode = ResultPrintingMode(pmdigit);
+    m_transparent = (viaDotInternal()
+		     || m_function == do_begin
+		     || m_function == do_break
+		     || m_function == do_for
+		     || m_function == do_if
+		     || m_function == do_internal
+		     || m_function == do_paren
+		     || m_function == do_repeat
+		     || m_function == do_return
+		     || m_function == do_while);
+}
+
+BuiltInFunction::~BuiltInFunction()
+{
+    // During program exit, s_cache may already have been deleted:
+    if (s_cache)
+	s_cache->erase(name());
+}
+
+RObject* BuiltInFunction::apply(ArgList* arglist, Environment* env,
+				const Expression* call) const
+{
+    RAllocStack::Scope ras_scope;
+    ProtectStack::Scope ps_scope;
+#ifndef NDEBUG
+    size_t pps_size = ProtectStack::size();
+#endif
     Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
     GCStackRoot<> ans;
-    if (sexptype() == SPECIALSXP)
-	ans = invoke(call, args, env);
-    else {
-	pair<unsigned int, PairList*> pr = Evaluator::mapEvaluate(args, env);
-	if (pr.first != 0)
-	    missingArgumentError(this, args, pr.first);
-	GCStackRoot<const PairList> evaluated_args(pr.second);
-	if (Evaluator::profiling() || kind() == PP_FOREIGN) {
-	    RCNTXT cntxt;
-	    Rf_begincontext(&cntxt, CTXT_BUILTIN,
-			    const_cast<Expression*>(call), Environment::base(),
-			    Environment::base(), 0, 0);
-	    ans = invoke(call, evaluated_args, env);
-	    Rf_endcontext(&cntxt);
-	} else {
-	    ans = invoke(call, evaluated_args, env);
-	}
+    if (m_transparent) {
+	PlainContext cntxt;
+	if (arglist->status() != ArgList::EVALUATED && sexptype() == BUILTINSXP)
+	    arglist->evaluate(env);
+	ans = invoke(env, arglist, call);
+    } else {
+	FunctionContext cntxt(const_cast<Expression*>(call), env, this);
+	if (arglist->status() != ArgList::EVALUATED && sexptype() == BUILTINSXP)
+	    arglist->evaluate(env);
+	ans = invoke(env, arglist, call);
     }
     if (m_result_printing_mode != SOFT_ON)
 	Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
-    if (pps_size != GCStackRootBase::ppsSize())
+#ifndef NDEBUG
+    if (pps_size != ProtectStack::size())
 	REprintf("Warning: stack imbalance in '%s', %d then %d\n",
-		 name(), pps_size, GCStackRootBase::ppsSize());
-    RAllocStack::restoreSize(ralloc_size);
+		 name(), pps_size, ProtectStack::size());
+#endif
     return ans;
 }
 
@@ -100,7 +148,7 @@ void BuiltInFunction::checkNumArgs(const PairList* args,
 				   const Expression* call) const
 {
     if (arity() >= 0) {
-	size_t nargs = ConsCell::listLength(args);
+	size_t nargs = listLength(args);
 	if (int(nargs) != arity()) {
 	    if (viaDotInternal())
 		Rf_error(_("%d arguments passed to .Internal(%s)"
@@ -113,6 +161,13 @@ void BuiltInFunction::checkNumArgs(const PairList* args,
     }
 }
 
+void BuiltInFunction::cleanup()
+{
+    // Clearing s_cache avoids valgrind 'possibly lost' reports on exit:
+    s_cache->clear();
+    s_cache = 0;
+}
+
 int BuiltInFunction::indexInTable(const char* name)
 {
     for (int i = 0; s_function_table[i].name; ++i)
@@ -123,8 +178,28 @@ int BuiltInFunction::indexInTable(const char* name)
 
 // BuiltInFunction::initialize() is in names.cpp
 
-// BuiltInFunction::missingArgumentError() is in eval.cpp (for the
-// time being).
+BuiltInFunction* BuiltInFunction::obtain(const std::string& name)
+{
+    int offset = indexInTable(name.c_str());
+    if (offset < 0) {
+	Rf_warning(_("%s is not the name of a built-in or special function"),
+		   name.c_str());
+	return 0;
+    }
+    std::pair<map::iterator, bool> pr
+	= s_cache->insert(map::value_type(name, 0));
+    map::iterator it = pr.first;
+    if (pr.second) {
+	try {
+	    map::value_type& val = *it;
+	    val.second = CXXR_NEW(BuiltInFunction(offset));
+	} catch (...) {
+	    s_cache->erase(it);
+	    throw;
+	}
+    }
+    return (*it).second;
+}
 
 const char* BuiltInFunction::typeName() const
 {

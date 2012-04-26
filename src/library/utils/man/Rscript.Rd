@@ -1,6 +1,6 @@
 % File src/library/utils/man/Rscript.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Rscript}
@@ -30,11 +30,8 @@
   front-end is convenient for writing \samp{#!} scripts since it is an
   executable and takes \code{file} directly as an argument.  Options
   \option{--slave --no-restore} are always supplied: these imply
-  \option{--no-save}.
-#ifdef windows
-  The standard Windows command line has no concept of \samp{#!} scripts,
-  but Cygwin shells do.
-#endif
+  \option{--no-save}.  (The standard Windows command line has no concept
+  of \samp{#!} scripts, but Cygwin shells do.)
 
   \emph{Either} one or more \option{-e} options or \code{file} should
   be supplied.  When using \option{-e} options be aware of the quoting
@@ -51,7 +48,11 @@
       omits \pkg{methods} as it takes about 60\% of the startup time.
     }
   }
-
+  
+  Spaces are allowed in \code{expression} and \code{file} (but will need
+  to be protected from the shell in use, if any, for example by
+  enclosing the argument in quotes).
+  
 #ifdef unix
   Normally the version of \R is determined at installation, but this can
   be overridden by setting the environment variable \env{RHOME}.

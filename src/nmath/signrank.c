@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -88,7 +88,7 @@ w_init_maybe(int n)
     }
 
     if(!w) {
-	w = (double *) calloc(c + 1, sizeof(double));
+	w = (double *) calloc((size_t) c + 1, sizeof(double));
 #ifdef MATHLIB_STANDALONE
 	if (!w) MATHLIB_ERROR("%s", _("signrank allocation error"));
 #endif

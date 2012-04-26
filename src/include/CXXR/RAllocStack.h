@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -46,6 +46,8 @@
 
 #include <stack>
 #include <vector>
+#include "CXXR/config.hpp"
+#include "CXXR/SchwarzCounter.hpp"
 
 namespace CXXR {
     /** @brief Class for implementing R_alloc() and kindred functions.
@@ -55,6 +57,55 @@ namespace CXXR {
      */
     class RAllocStack {
     public:
+	/** @brief Object constraining lifetime of R_alloc() blocks.
+	 *
+	 * Scope objects must be declared on the processor stack
+	 * (i.e. as C++ automatic variables).  Any R_alloc() block
+	 * allocated during the lifetime of a Scope object will be
+	 * automatically deallocated when that lifetime comes to an
+	 * end, i.e. when the Scope object itself goes out of scope.
+	 */
+	class Scope {
+	public:
+	    Scope()
+#ifndef NDEBUG
+		: m_next_scope(RAllocStack::s_innermost_scope),
+		  m_saved_size(RAllocStack::size())
+#else
+		: m_saved_size(RAllocStack::size())
+#endif
+	    {
+#ifndef NDEBUG
+		RAllocStack::s_innermost_scope = this;
+#endif
+	    }
+
+	    ~Scope()
+	    {
+		if (RAllocStack::size() != m_saved_size)
+		    RAllocStack::trim(m_saved_size);
+#ifndef NDEBUG
+		RAllocStack::s_innermost_scope = m_next_scope;
+#endif
+	    }
+
+	    /** @brief RAllocStack size at construction.
+	     *
+	     * @return The size of the RAllocStack at the time this
+	     * Scope object was constructed.  The RAllocStack will be
+	     * restored to this size by the Scope destructor.
+	     */
+	    size_t startSize() const
+	    {
+		return m_saved_size;
+	    }
+	private:
+#ifndef NDEBUG
+	    Scope* m_next_scope;
+#endif
+	    size_t m_saved_size;
+	};
+
 	/** @brief Allocate a new block of memory.
 	 *
 	 * The block will be aligned on a multiple of
@@ -69,12 +120,14 @@ namespace CXXR {
 	 *
 	 * Restore the stack to a previous size by popping elements
 	 * off the top.
+	 *
 	 * @param new_size The size to which the stack is to be
 	 *          restored.  Must not be greater than the current
 	 *          size.
-	 * @note In future this method will probably cease to be
-	 * public, and be accessible only by a class encapsulating R
-	 * contexts.
+	 *
+	 * @note In future this method may cease to be available,
+	 * since the use of the RAllocStack::Scope class is
+	 * preferable.
 	 */
 	static void restoreSize(size_t new_size);
 
@@ -83,23 +136,41 @@ namespace CXXR {
 	 * @return the current size of the stack.
 	 *
 	 * @note This method is intended for use in conjunction with
-	 * restoreSize(), and like it may cease to be public in
-	 * future.
+	 * restoreSize(), and may cease to be public in future.
 	 */
 	static size_t size()
 	{
-	    return s_stack.size();
+	    return s_stack->size();
 	}
     private:
 	typedef std::pair<size_t, void*> Pair;
 	typedef std::stack<Pair, std::vector<Pair> > Stack;
-	static Stack s_stack;
+	static Stack* s_stack;
+#ifndef NDEBUG
+	static Scope* s_innermost_scope;
+#endif
 
 	// Not implemented.  Declared to stop the compiler generating
 	// a constructor.
 	RAllocStack();
+
+	// Clean up static data members:
+	static void cleanup();
+
+	// Initialize the static data members:
+	static void initialize();
+
+	// Pop entries off the stack to reduce its size to new_size,
+	// which must be no greater than the current size.
+	static void trim(size_t new_size);
+
+	friend class SchwarzCounter<RAllocStack>;
     };
 }  // namespace CXXR
+
+namespace {
+    CXXR::SchwarzCounter<CXXR::RAllocStack> rallocstack_schwarz_ctr;
+}
 
 extern "C" {
 #endif /* __cplusplus */
@@ -198,7 +269,9 @@ extern "C" {
      *         compatibility with CR.  (This function and vmaxset()
      *         are declared in the R.h API.)
      *
-     * @note C++ code should preferably use CXXR::RAllocStack::size() directly.
+     * @note C++ code should preferably use the
+     * CXXR::RAllocStack::Scope class instead.  It is possible that in
+     * the future this function will always return a null pointer.
      */
 #ifndef __cplusplus
     void* vmaxget(void);
@@ -218,7 +291,8 @@ extern "C" {
      *          vmaxget().
      *
      * @deprecated For expert use only.  C++ code should preferably
-     * use CXXR::RAllocStack::restoreSize() directly.
+     * use the CXXR::RAllocStack::Scope class instead.  It is possible
+     * that in the future this function will become a no-op.
      */
 #ifndef __cplusplus
     void vmaxset(const void* stack_sizep);

@@ -1,6 +1,6 @@
 % File src/library/base/man/Sys.glob.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Sys.glob}
@@ -28,9 +28,9 @@ Sys.glob(paths, dirmark = FALSE)
   This expands wildcards in file paths.  For precise details, see your
   system's documentation on the \code{glob} system call.  There is a
   POSIX 1003.2 standard (see
-  \url{http://www.opengroup.org/onlinepubs/009695399/functions/glob.html})
+  \url{http://pubs.opengroup.org/onlinepubs/9699919799/functions/glob.html})
   but some OSes will go beyond this.  The \R implementation will always
-  do tilde-expansion (see \code{\link{path.expand}}).
+  do \link{tilde expansion}.
 
   All systems should interpret \code{*} (match zero or more characters),
   \code{?} (match a single character) and (probably) \code{[} (begin a
@@ -85,20 +85,18 @@ Sys.glob(paths, dirmark = FALSE)
 
   File paths in Windows are interpreted with separator \code{\\} or
   \code{/}.  Paths with a drive but relative (such as \code{c:foo\\bar})
-  are tricky, but an attempt is made to handle them correctly.  As from
-  \R 2.9.2 an attempt is made to handle UNC paths starting with a double
-  backslash.
+  are tricky, but an attempt is made to handle them correctly.  An
+  attempt is made to handle UNC paths starting with a double
+  backslash. UTF-8-encoded paths not valid in the current locale can be
+  used.
 #endif
 }
 \value{
   A character vector of matched file paths.  The order is
-  system-specific (but in the order of the elements of \code{paths}):
-#ifdef unix
-  it is normally collated in either the current locale or in byte (ASCII) order.
-#endif
-#ifdef windows
-  on Windows collation is in the order of Unicode points.
-#endif
+  system-specific (but in the order of the elements of \code{paths}): it
+  is normally collated in either the current locale or in byte (ASCII)
+  order; however, on Windows collation is in the order of Unicode
+  points.
   
   Directory errors are normally ignored, so the matches are to
   accessible file paths (but not necessarily accessible files).

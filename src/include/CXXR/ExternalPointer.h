@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -185,6 +185,10 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
     protected:
+	// Declared protected to ensure that ExternalPointer objects are
+	// allocated only using 'new':
+	~ExternalPointer() {}
+
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
@@ -203,10 +207,6 @@ namespace CXXR {
 	void* m_ptr;
 	GCEdge<> m_tag;
 	GCEdge<> m_protege;
-
-	// Declared private to ensure that ExternalPointer objects are
-	// allocated only using 'new':
-	~ExternalPointer() {}
 
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated versions:

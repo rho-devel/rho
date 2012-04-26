@@ -18,7 +18,7 @@ setClass(Class, representation, prototype, contains=character(),
   \item{Class}{character string name for the class.}
   \item{representation}{ a named list of the slots that the new class should have, the names giving the names of the slots and the corresponding elements being the character string names of  the corresponding classes.
      Usually a call to
-    the \code{\link{representation}} function. 
+    the \code{\link{representation}} function.
 
 Backward compatibility and compatibility with S-Plus allows unnamed
 elements for superclasses, but the recommended style is to use the
@@ -34,7 +34,7 @@ elements for superclasses, but the recommended style is to use the
     environment in which to store or remove the
     definition.  Defaults to the top-level environment of the calling function
     (the global environment for ordinary computations, and the
-    environment or name space of a package in the source code for that package).
+    environment or namespace of a package in the source code for that package).
   }
   \item{validity}{ if supplied, should be a validity-checking method
     for objects from this class (a function that returns \code{TRUE} if
@@ -53,7 +53,7 @@ elements for superclasses, but the recommended style is to use the
       class.  S3 generic functions and primitives will
       dispatch an S3 method defined for this class, given an S4 object
       from the class or from a subclass of it, provided no S4
-      method and no more 
+      method and no more
       direct S3 method is found.  Writing S3 methods for S4 classes is
       somewhat deprecated (see \link{Methods}), but if you do write
       them, the class should be created with this argument
@@ -72,7 +72,7 @@ all the information in an object from this class; that is, the names
 of all the slots and the classes required for each of them.
 
 The name of the class determines
-which methods apply directly to objects from this class.  The 
+which methods apply directly to objects from this class.  The
 inheritance information specifies which methods apply indirectly,
 through inheritance.  See \link{Methods}.
 
@@ -90,11 +90,11 @@ object types or one of a few other special \R types (\code{matrix} and
 See the section on inheriting from object types, below.
 
 
-  Certain slot names are not allowed in the current implementation, as
-  they correspond to \link{attributes} which are treated
-  specially.  These are \code{class}, \code{comment}, \code{dim},
-  \code{dimnames}, \code{names}, \code{row.names} and \code{tsp}.
-  Some other slot names have special meaning; these names start with
+  Slot name \code{"class"} is not allowed in the current implementation but
+  reserved. \code{"Class"} is valid, but undesirable, as it cannot be
+  used in \code{\link{new}(<cl>, Class = <slot-value>)} (because of
+  argument name matching).
+  There are other slot names with a special meaning; these names start with
   the \code{"."} character.  To be safe, you should define all of
   your own slots with names starting with an alphabetic character.
 }
@@ -191,13 +191,13 @@ different packages, for most purposes.
 
 When a class name is supplied for a slot or a superclass, a
 corresponding class definition will be found, looking from the
-name space or environment of the current package, assuming the call to
+namespace or environment of the current package, assuming the call to
 \code{setClass} in question appears directly in the source for the
 package.  That's where it should appear, to avoid ambiguity.
 
-In particular, if the current package has a name space then the  class
+In particular, if the current package has a namespace then the  class
 must be found in the current package itself, in the imports defined by that
-name space, or in the base package.
+namespace, or in the base package.
 
 When this rule does not identify a class uniquely (because it appears
 in more than one imported package) then the \code{\link{packageSlot}}
@@ -212,7 +212,7 @@ This should be a rare occurrence.
 
  Chambers, John M. (1998)
  \emph{Programming with Data}
- Springer (For the original S4 version.) 
+ Springer (For the original S4 version.)
 }
 \seealso{
 \code{\link{Classes}} for a general discussion of classes,
@@ -269,7 +269,7 @@ new("numWithId", 1:3, id = "An Example")
 setClass("stampedEnv", contains = "environment",
       representation(update = "POSIXct"))
 
-e1 <- new("stampedEnv", new.env(), update = Sys.time())
+e1 <- new("stampedEnv",  update = Sys.time())
 
 setMethod("[[<-", c("stampedEnv", "character", "missing"),
    function(x, i, j, ..., value) {

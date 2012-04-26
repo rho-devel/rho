@@ -12,6 +12,9 @@ R_HOME=$(top_builddir)
 R_SHARE_DIR=$(R_HOME)/share
 R_INCLUDE_DIR=$(R_HOME)/include
 include $(top_builddir)/etc/Makeconf
+BUILDDIR_IS_SRCDIR = @BUILDDIR_IS_SRCDIR@
+INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL_DATA@
 
 PACKAGE = @PACKAGE@
 VERSION = @VERSION@
@@ -95,7 +98,7 @@ clean:
 	  rm -f $(SOURCES_R); \
 	fi
 	@-rm -rf .libs _libs
-	@-rm -f *.o $(PROGRAMS) Rplots.pdf
+	@-rm -f *.o $(PROGRAMS) Rplots.pdf Rplots.ps
 distclean: clean
 	@-rm -f Makefile
 maintainer-clean: distclean

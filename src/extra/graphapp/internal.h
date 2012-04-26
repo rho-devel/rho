@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -247,6 +247,10 @@ struct objinfo
 #if USE_NATIVE_CONTROLS
     HBRUSH  bgbrush; /* background brush */
 #endif
+    int caretwidth;  /* Caret (blinking cursor) is set here. caretwidth=0 for none, 
+                        negative for not focussed */
+    int caretheight;
+    int caretshowing;
 };
 
 struct callinfo

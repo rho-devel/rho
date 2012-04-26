@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -40,8 +40,8 @@
  *	------------------------------=#----	Martin Maechler, ETH Zurich
  * Additional code for nu == alpha < 0  MM
  */
-#include "bessel.h"
 #include "nmath.h"
+#include "bessel.h"
 
 #ifndef MATHLIB_STANDALONE
 #include <R_ext/Memory.h>
@@ -55,7 +55,7 @@ double bessel_j(double x, double alpha)
     long nb, ncalc;
     double na, *bj;
 #ifndef MATHLIB_STANDALONE
-    char *vmax;
+    const void *vmax;
 #endif
 
 #ifdef IEEE_754
@@ -81,7 +81,7 @@ double bessel_j(double x, double alpha)
     if (!bj) MATHLIB_ERROR("%s", _("bessel_j allocation error"));
 #else
     vmax = vmaxget();
-    bj = (double *) R_alloc(nb, sizeof(double));
+    bj = (double *) R_alloc((size_t) nb, sizeof(double));
 #endif
     J_bessel(&x, &alpha, &nb, bj, &ncalc);
     if(ncalc != nb) {/* error input */
@@ -98,6 +98,44 @@ double bessel_j(double x, double alpha)
 #else
     vmaxset(vmax);
 #endif
+    return x;
+}
+
+/* modified version of bessel_j that accepts a work array instead of
+   allocating one. */
+double bessel_j_ex(double x, double alpha, double *bj)
+{
+    long nb, ncalc;
+    double na;
+
+#ifdef IEEE_754
+    /* NaNs propagated correctly */
+    if (ISNAN(x) || ISNAN(alpha)) return x + alpha;
+#endif
+    if (x < 0) {
+	ML_ERROR(ME_RANGE, "bessel_j");
+	return ML_NAN;
+    }
+    na = floor(alpha);
+    if (alpha < 0) {
+	/* Using Abramowitz & Stegun  9.1.2
+	 * this may not be quite optimal (CPU and accuracy wise) */
+	return(bessel_j_ex(x, -alpha, bj) * cos(M_PI * alpha) +
+	       ((alpha == na) ? 0 :
+		bessel_y_ex(x, -alpha, bj) * sin(M_PI * alpha)));
+    }
+    nb = 1 + (long)na; /* nb-1 <= alpha < nb */
+    alpha -= (nb-1);
+    J_bessel(&x, &alpha, &nb, bj, &ncalc);
+    if(ncalc != nb) {/* error input */
+      if(ncalc < 0)
+	MATHLIB_WARNING4(_("bessel_j(%g): ncalc (=%ld) != nb (=%ld); alpha=%g. Arg. out of range?\n"),
+			 x, ncalc, nb, alpha);
+      else
+	MATHLIB_WARNING2(_("bessel_j(%g,nu=%g): precision lost in result\n"),
+			 x, alpha+nb-1);
+    }
+    x = bj[nb-1];
     return x;
 }
 

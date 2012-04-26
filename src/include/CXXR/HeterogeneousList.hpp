@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -65,6 +65,19 @@ namespace CXXR {
 	    Link()
 		: m_prev(this), m_next(this)
 	    {}
+
+	    /** @brief Appending constructor
+	     *
+	     * @param list Non-null pointer to a list inheriting from
+	     *          HeterogeneousListBase.  The constructed link
+	     *          will be inserted at the end of \a list.
+	     */
+	    Link(HeterogeneousListBase* list)
+		: m_prev(list->m_peg->m_prev), m_next(m_prev->m_next)
+	    {
+		m_prev->m_next = this;
+		m_next->m_prev = this;
+	    }
 
 	    /** @brief Detach Link from any list.
 	     *
@@ -198,8 +211,8 @@ namespace CXXR {
     /** @brief Doubly-linked list of objects derived from a class \a
      *  Node.
      *
-     * @param Node Base class for object on the list.  \a Node must
-     *          itself be derived from HeterogeneousListBase::Link.
+     * @tparam Node Base class for object on the list.  \a Node must
+     *           itself be derived from HeterogeneousListBase::Link.
      */
     template <class Node>
     class HeterogeneousList : public HeterogeneousListBase {

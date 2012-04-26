@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.10.1\n"
+"Project-Id-Version: R 2.14.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-12-10 19:18\n"
+"POT-Creation-Date: 2011-07-16 22:46\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -38,6 +38,12 @@ msgstr ""
 msgid "'arrow' must be an arrow object or NULL"
 msgstr ""
 
+msgid "How did we get here?"
+msgstr ""
+
+msgid "Must start new page if showing leaves separately"
+msgstr ""
+
 msgid "Invalid 'edit' information"
 msgstr ""
 
@@ -69,6 +75,12 @@ msgid "Cannot specify more than one of 'side=[\"left\", \"right\"]', 'col', 'col
 msgstr ""
 
 msgid "Must specify exactly one of 'side=[\"top\", \"bottom\"]', 'row', 'row.before', or 'row.after'"
+msgstr ""
+
+msgid "Invalid 'n'"
+msgstr ""
+
+msgid "Invalid 'f'"
 msgstr ""
 
 msgid "gpar element '%s' must not be length 0"
@@ -401,6 +413,9 @@ msgstr ""
 msgid "It is invalid to combine unit objects with other types"
 msgstr ""
 
+msgid "Invalid unit object"
+msgstr ""
+
 msgid "unit.rep has been deprecated in favour of a unit method for the generic rep function"
 msgstr ""
 
@@ -452,17 +467,11 @@ msgstr ""
 msgid "Invalid viewport name(s)"
 msgstr ""
 
-msgid "How did we get here?"
-msgstr ""
-
-msgid "Must start new page if showing leaves separately"
-msgstr ""
-
 msgid "Must specify at least one of 'x' or 'xscale'"
 msgstr ""
 
 msgid "Must specify at least one of 'y' or 'yscale'"
 msgstr ""
 
-msgid "shutting down all devices when unloading 'grid' name space"
+msgid "shutting down all devices when unloading 'grid' namespace"
 msgstr ""

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -46,6 +46,7 @@
 #ifdef __cplusplus
 
 #include <list>
+#include <tr1/unordered_map>
 #include "CXXR/GCNode.hpp"
 
 namespace CXXR {
@@ -74,26 +75,22 @@ namespace CXXR {
 	GCRootBase(const GCRootBase& source)
 	    : m_it(s_roots->insert(s_roots->end(), *source.m_it))
 	{
-	    if (*m_it)
-		(*m_it)->incRefCount();
+	    GCNode::incRefCount(*m_it);
 	}
 
 	~GCRootBase()
 	{
 	    const GCNode* node = *m_it;
-	    if (node && node->decRefCount() == 0)
-		node->makeMoribund();
+	    GCNode::decRefCount(node);
 	    s_roots->erase(m_it);
 	}
 
 	GCRootBase& operator=(const GCRootBase& source)
 	{
 	    const GCNode* newnode = *source.m_it;
-	    if (newnode)
-		newnode->incRefCount();
+	    GCNode::incRefCount(newnode);
 	    const GCNode* oldnode = *m_it;
-	    if (oldnode && oldnode->decRefCount() == 0)
-		oldnode->makeMoribund();
+	    GCNode::decRefCount(oldnode);
 	    *m_it = newnode;
 	    return *this;
 	}
@@ -106,11 +103,9 @@ namespace CXXR {
 	void redirect(const GCNode* node)
 	{
 	    GCNode::maybeCheckExposed(node);
-	    if (node)
-		node->incRefCount();
+	    GCNode::incRefCount(node);
 	    const GCNode* oldnode = *m_it;
-	    if (oldnode && oldnode->decRefCount() == 0)
-		oldnode->makeMoribund();
+	    GCNode::decRefCount(oldnode);
 	    *m_it = node;
 	}
 
@@ -126,18 +121,13 @@ namespace CXXR {
 	friend class GCNode;
 
 	typedef std::list<const GCNode*, Allocator<const GCNode*> > List;
-
-	// There may be a case, at least in some C++ library
-	// implementations, for using a deque instead of a vector in
-	// the following, so that memory is released as the stack
-	// shrinks.
 	static List* s_roots;
 
 	List::iterator m_it;
 
 	// Clean up static data at end of run (called by
 	// GCNode::SchwarzCtr destructor:
-	static void cleanup();
+	static void cleanup() {}
 
 	// Initialize static data (called by GCNode::SchwarzCtr
 	// constructor):
@@ -165,10 +155,10 @@ namespace CXXR {
      * <tt>Environment::s_base</tt> is declared and initialised in
      * Environment.cpp for a preferable approach.
      *
-     * @param T GCNode or a type publicly derived from GCNode.  This
-     *          may be qualified by const, so for example a const
-     *          String* may be encapsulated in a GCRoot using the type
-     *          GCRoot<const String>.
+     * @tparam T GCNode or a type publicly derived from GCNode.  This
+     *           may be qualified by const, so for example a const
+     *           String* may be encapsulated in a GCRoot using the type
+     *           GCRoot<const String>.
      */
     template <class T = RObject>
     class GCRoot : public GCRootBase {
@@ -255,6 +245,20 @@ namespace CXXR {
 	    return static_cast<T*>(const_cast<GCNode*>(ptr()));
 	}
     };
+}  // namespace CXXR
+
+// For hashing, simply hash the encapsulated pointer:
+namespace std {
+    namespace tr1 {
+	template <class T>
+	struct hash<CXXR::GCRoot<T> > {
+	    std::size_t operator()(const CXXR::GCRoot<T>& gcrt) const
+	    {
+		std::tr1::hash<T*> make_hash;
+		return make_hash(gcrt);
+	    }
+	};
+    }
 }
 
 extern "C" {

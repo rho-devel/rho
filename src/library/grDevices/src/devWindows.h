@@ -33,6 +33,7 @@ typedef struct {
 				      fontsize has been adjusted
 				      for dpi diffs, basefontsize has not */
     double fontangle;
+    char basefontfamily[500];           /* Initial font family */
 
     /* devga Driver Specific */
     /* parameters with copy per devga device */
@@ -73,7 +74,8 @@ typedef struct {
     rgb   outcolor;		/* Outside canvas color */
     rect  clip;			/* The clipping rectangle */
     font  font;
-    char fontfamily[50];
+    char fontfamily[100];
+    int  fontquality;
 
     Rboolean locator;
     Rboolean confirmation;
@@ -91,8 +93,6 @@ typedef struct {
     R_GE_linejoin ljoin;
     float lmitre;
     Rboolean enterkey; /* Set true when enter key is hit */
-    SEXP eventRho;     /* Environment during event handling */
-    SEXP eventResult;  /* Result of event handler */
     double lwdscale;   /* scale factor for lwd */
     RCNTXT *cntxt;     /* context for unwinding on error */
     Rboolean have_alpha; /* support for AlphaBlend */
@@ -100,4 +100,5 @@ typedef struct {
     char title[101];
     Rboolean clickToConfirm; /* for NewFrameConfirm */
     Rboolean doSetPolyFill, fillOddEven; /* polygon fill mode */
+    int holdlevel;
 } gadesc;

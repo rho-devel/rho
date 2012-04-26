@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2007  Robert Gentleman, Ross Ihaka
- *                            and the R Development Core Team
+ *  Copyright (C) 1997--2010  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,7 +75,7 @@
 
 extern SA_TYPE SaveAction;
 extern Rboolean UsingReadline;
-extern FILE* ifp;
+extern FILE* ifp; /* from system.c */
 
 /*
  *  1) FATAL MESSAGES AT STARTUP
@@ -208,9 +207,9 @@ InputHandler * initStdinHandler(void)
   This sets the global variable InputHandlers if it is not already set.
   In the standard interactive case, this will have been set to be the
   BasicInputHandler object.
+
   Returns the newly created handler which can be used in a call to
-  removeInputHandler (prior to R 2.10.0 it returned the handler root [never
-  used] which made it impossible to identify the new handler).
+  removeInputHandler.
  */
 InputHandler *
 addInputHandler(InputHandler *handlers, int fd, InputHandlerProc handler,
@@ -300,11 +299,10 @@ getInputHandler(InputHandler *handlers, int fd)
  calls and change it only when a listener is added or deleted.
  Later.
 
-
- This replaces the previous version which looked only on stdin and the X11
- device connection.  This allows more than one X11 device to be open on a different
- connection. Also, it allows connections a la S4 to be developed on top of this
- mechanism. The return type of this routine has changed.
+ This replaces the previous version which looked only on stdin and the
+ X11 device connection.  This allows more than one X11 device to be
+ open on a different connection. Also, it allows connections a la S4
+ to be developed on top of this mechanism.
 */
 
 /* A package can enable polled event handling by making R_PolledEvents
@@ -314,8 +312,12 @@ getInputHandler(InputHandler *handlers, int fd)
 static void nop(void){}
 
 void (* R_PolledEvents)(void) = nop;
-
 int R_wait_usec = 0; /* 0 means no timeout */
+
+/* For X11 devices */
+void (* Rg_PolledEvents)(void) = nop;
+int Rg_wait_usec = 0;
+
 
 static int setSelectMask(InputHandler *, fd_set *);
 
@@ -386,9 +388,10 @@ void R_runHandlers(InputHandler *handlers, fd_set *readMask)
 {
     InputHandler *tmp = handlers, *next;
 
-    if (readMask == NULL)
+    if (readMask == NULL) {
+	Rg_PolledEvents();
 	R_PolledEvents();
-    else
+    } else
 	while(tmp) {
 	    /* Do this way as the handler function might call 
 	       removeInputHandlers */
@@ -444,10 +447,6 @@ extern void rl_callback_handler_remove(void);
 extern void rl_callback_read_char(void);
 extern char *tilde_expand (const char *);
 # endif
-
-#ifdef HAVE_RL_COMPLETION_MATCHES
-static void initialize_rlcompletion(void); /* forward declaration */
-#endif
 
 attribute_hidden
 char *R_ExpandFileName_readline(const char *s, char *buff)
@@ -559,7 +558,8 @@ static void popReadline(void)
 
 static void readline_handler(char *line)
 {
-    int l, buflen = rl_top->readline_len;
+    int l;
+    R_size_t buflen = rl_top->readline_len;
 
     popReadline();
 
@@ -653,7 +653,7 @@ static void initialize_rlcompletion(void)
 {
     if(rcompgen_active >= 0) return;
 
-    /* Find if package rcompgen is around */
+    /* Find if package utils is around */
     if(rcompgen_active < 0) {
 	char *p = getenv("R_COMPLETION");
 	if(p && streql(p, "FALSE")) {
@@ -695,11 +695,14 @@ static void initialize_rlcompletion(void)
     RComp_getFileCompSym   = install(".getFileComp");
     RComp_retrieveCompsSym = install(".retrieveCompletions");
 
-    /* Allow conditional parsing of the ~/.inputrc file. */
-    rl_readline_name = "RCustomCompletion";
-
     /* Tell the completer that we want a crack first. */
     rl_attempted_completion_function = R_custom_completion;
+
+    /* Disable sorting of possible completions; only readline >= 6 */
+#if RL_READLINE_VERSION >= 0x0600
+    /* if (rl_readline_version >= 0x0600) */
+    rl_sort_completion_matches = 0;
+#endif
 
     /* token boundaries.  Includes *,+ etc, but not $,@ because those
        are easier to handle at the R level if the whole thing is
@@ -754,9 +757,10 @@ R_custom_completion(const char *text, int start, int end)
 				       mkString(rl_line_buffer))),
 	startCall = PROTECT(lang2(RComp_assignStartSym, ScalarInteger(start))),
 	endCall = PROTECT(lang2(RComp_assignEndSym,ScalarInteger(end)));
+    SEXP filecompCall;
 
     /* Don't want spaces appended at the end.  Need to do this
-       everytime because readline (>5) resets it to space. */
+       everytime, as readline>=6 resets it to ' ' */
     rl_completion_append_character = '\0';
 
     eval(linebufferCall, rcompgen_rho);
@@ -764,9 +768,10 @@ R_custom_completion(const char *text, int start, int end)
     eval(endCall, rcompgen_rho);
     UNPROTECT(3);
     matches = rl_completion_matches(text, R_completion_generator);
-    infile = PROTECT(eval(lang1(RComp_getFileCompSym), rcompgen_rho));
+    filecompCall = PROTECT(lang1(RComp_getFileCompSym));
+    infile = PROTECT(eval(filecompCall, rcompgen_rho));
     if (!asLogical(infile)) rl_attempted_completion_over = 1;
-    UNPROTECT(1);
+    UNPROTECT(2);
     return matches;
 }
 
@@ -802,6 +807,7 @@ static char *R_completion_generator(const char *text, int state)
 	ncomp = length(completions);
 	if (ncomp > 0) {
 	    compstrings = (char **) malloc(ncomp * sizeof(char*));
+	    if (!compstrings)  return (char *)NULL;
 	    for (i = 0; i < ncomp; i++)
 		compstrings[i] = strdup(translateChar(STRING_ELT(completions, i)));
 	}
@@ -899,6 +905,8 @@ Rstd_ReadConsole(const char *prompt, unsigned char *buf, int len,
 	    rl_data.readline_eof = 0;
 	    rl_data.prev = rl_top;
 	    rl_top = &rl_data;
+	    /* Allow conditional parsing of the ~/.inputrc file. */
+	    rl_readline_name = "R";
 	    pushReadline(prompt, readline_handler);
 #ifdef HAVE_RL_COMPLETION_MATCHES
 	    initialize_rlcompletion();
@@ -917,8 +925,11 @@ Rstd_ReadConsole(const char *prompt, unsigned char *buf, int len,
 	for (;;) {
 	    fd_set *what;
 
-	    what = R_checkActivityEx(R_wait_usec ? R_wait_usec : -1, 0,
-				     handleInterrupt);
+	    int wt = -1;
+	    if (R_wait_usec > 0) wt = R_wait_usec;
+	    if (Rg_wait_usec > 0 && (wt < 0 || wt > Rg_wait_usec))
+		wt = Rg_wait_usec;
+	    what = R_checkActivityEx(wt, 0, handleInterrupt);
 	    /* This is slightly clumsy. We have advertised the
 	     * convention that R_wait_usec == 0 means "wait forever",
 	     * but we also need to enable R_checkActivity to return
@@ -1022,6 +1033,10 @@ void R_CleanTempDir(void)
     char buf[1024];
 
     if((Sys_TempDir)) {
+#if defined(sun) || defined(__sun)
+	/* On Solaris the working directory must be outside this one */
+	chdir(R_HomeDir());
+#endif
 	snprintf(buf, 1024, "rm -rf %s", Sys_TempDir);
 	buf[1023] = '\0';
 	R_system(buf);
@@ -1041,24 +1056,26 @@ void attribute_hidden Rstd_CleanUp(SA_TYPE saveact, int status, int runLast)
 
 	    R_ClearerrConsole();
 	    R_FlushConsole();
-	    R_ReadConsole("Save workspace image? [y/n/c]: ",
-			  buf, 128, 0);
-	    switch (buf[0]) {
-	    case 'y':
-	    case 'Y':
-		saveact = SA_SAVE;
-		break;
-	    case 'n':
-	    case 'N':
-		saveact = SA_NOSAVE;
-		break;
-	    case 'c':
-	    case 'C':
-		jump_to_toplevel();
-		break;
-	    default:
-		goto qask;
-	    }
+	    int res = R_ReadConsole("Save workspace image? [y/n/c]: ",
+				    buf, 128, 0);
+	    if(res) {
+		switch (buf[0]) {
+		case 'y':
+		case 'Y':
+		    saveact = SA_SAVE;
+		    break;
+		case 'n':
+		case 'N':
+		    saveact = SA_NOSAVE;
+		    break;
+		case 'c':
+		case 'C':
+		    jump_to_toplevel();
+		    break;
+		default:
+		    goto qask;
+		}
+	    } else saveact = SA_NOSAVE; /* probably EOF */
 	} else
 	    saveact = SaveAction;
     }
@@ -1091,8 +1108,8 @@ void attribute_hidden Rstd_CleanUp(SA_TYPE saveact, int status, int runLast)
     if(saveact != SA_SUICIDE) KillAllDevices();
     R_CleanTempDir();
     if(saveact != SA_SUICIDE && R_CollectWarnings)
-	PrintWarnings();	/* from device close and .Last */
-    if(ifp) fclose(ifp);
+	PrintWarnings();	/* from device close and (if run) .Last */
+    if(ifp) fclose(ifp);        /* input file from -f or --file= */
     fpu_setup(FALSE);
 
     exit(status);
@@ -1102,9 +1119,8 @@ void attribute_hidden Rstd_CleanUp(SA_TYPE saveact, int status, int runLast)
  *  7) PLATFORM DEPENDENT FUNCTIONS
  */
 
-#ifdef HAVE_ERRNO_H
 # include <errno.h>
-#endif
+
 int attribute_hidden
 Rstd_ShowFiles(int nfile,		/* number of files */
 	       const char **file,		/* array of filenames */
@@ -1272,40 +1288,13 @@ void attribute_hidden Rstd_addhistory(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 
-
-#ifdef _R_HAVE_TIMING_
-# include <time.h>
-# ifdef HAVE_SYS_TIMES_H
-#  include <sys/times.h>
-# endif
-# ifndef CLK_TCK
-/* this is in ticks/second, generally 60 on BSD style Unix, 100? on SysV
- */
-#  ifdef HZ
-#   define CLK_TCK HZ
-#  else
-#   define CLK_TCK 60
-#  endif
-# endif /* not CLK_TCK */
-
-
-
 #define R_MIN(a, b) ((a) < (b) ? (a) : (b))
 
-/* This could in principle overflow times.  It is of type clock_t,
-   typically long int.  So use gettimeofday if you have it, which
-   is also more accurate.
- */
+double currentTime(void); /* from datetime.c */
 SEXP attribute_hidden do_syssleep(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int Timeout;
-    double tm;
-#ifdef HAVE_GETTIMEOFDAY
-    struct timeval tv;
-#else
-    struct tms timeinfo;
-#endif
-    double timeint, start, elapsed;
+    double tm, timeint, start, elapsed;
 
     checkArity(op, args);
     timeint = asReal(CAR(args));
@@ -1313,51 +1302,33 @@ SEXP attribute_hidden do_syssleep(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, _("invalid '%s' value"), "time");
     tm = timeint * 1e6;
 
-#ifdef HAVE_GETTIMEOFDAY
-    gettimeofday(&tv, NULL);
-    start = (double) tv.tv_sec + 1e-6 * (double) tv.tv_usec;
-#else
-    start = times(&timeinfo);
-#endif
+    start = currentTime();
     for (;;) {
 	fd_set *what;
 	tm = R_MIN(tm, 2e9); /* avoid integer overflow */
-	Timeout = (int) (R_wait_usec ? R_MIN(tm, R_wait_usec) : tm);
+	
+	int wt = -1;
+	if (R_wait_usec > 0) wt = R_wait_usec;
+	if (Rg_wait_usec > 0 && (wt < 0 || wt > Rg_wait_usec))
+	    wt = Rg_wait_usec;
+	Timeout = (int) (wt > 0 ? R_MIN(tm, wt) : tm);
 	what = R_checkActivity(Timeout, 1);
 
 	/* For polling, elapsed time limit ... */
 	R_CheckUserInterrupt();
 	/* Time up? */
-#ifdef HAVE_GETTIMEOFDAY
-	gettimeofday(&tv, NULL);
-	elapsed = (double) tv.tv_sec + 1e-6 * (double) tv.tv_usec - start;
-#else
-	elapsed = (times(&timeinfo) - start) / (double)CLK_TCK;
-#endif
+	elapsed = currentTime() - start;
 	if(elapsed >= timeint) break;
 
 	/* Nope, service pending events */
 	R_runHandlers(R_InputHandlers, what);
 
 	/* Servicing events might take some time, so recheck: */
-#ifdef HAVE_GETTIMEOFDAY
-	gettimeofday(&tv, NULL);
-	elapsed = (double) tv.tv_sec + 1e-6 * (double) tv.tv_usec - start;
-#else
-	elapsed = (times(&timeinfo) - start) / (double)CLK_TCK;
-#endif
+	elapsed = currentTime() - start;
 	if(elapsed >= timeint) break;
 
-	tm = 1e6*(timeint - elapsed); /* old code had "+ 10000;" */
+	tm = 1e6*(timeint - elapsed);
     }
 
     return R_NilValue;
 }
-
-#else /* not _R_HAVE_TIMING_ */
-SEXP attribute_hidden do_syssleep(SEXP call, SEXP op, SEXP args, SEXP rho)
-{
-    error(_("Sys.sleep is not implemented on this system"));
-    return R_NilValue;		/* -Wall */
-}
-#endif /* not _R_HAVE_TIMING_ */

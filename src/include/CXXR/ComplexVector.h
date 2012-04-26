@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -48,20 +48,33 @@
 #ifdef __cplusplus
 
 #include <boost/serialization/export.hpp>
-#include "CXXR/DumbVector.hpp"
+
+#include "R_ext/Arith.h"
+#include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-    // Template specialization:
+    // Template specializations:
+    namespace ElementTraits {
+	template <>
+	struct NAFunc<Rcomplex> {
+	    const Rcomplex& operator()() const
+	    {
+		static Rcomplex na(NA_REAL, NA_REAL);
+		return na;
+	    }
+	};
+    }
+
     template <>
-    inline const char* DumbVector<Rcomplex, CPLXSXP>::staticTypeName()
+    inline const char* FixedVector<Rcomplex, CPLXSXP>::staticTypeName()
     {
 	return "complex";
     }
 
     /** @brief Vector of complex numbers.
      */
-    typedef CXXR::DumbVector<Rcomplex, CPLXSXP> ComplexVector;
+    typedef CXXR::FixedVector<Rcomplex, CPLXSXP> ComplexVector;
 }  // namespace CXXR
 
 /* boost::serialization */
@@ -85,8 +98,9 @@ extern "C" {
 
 /**
  * @param x Pointer to a CXXR::ComplexVector (i.e. an R complex vector).
- *          An error is generated if \a x is not pointer to a
+ *          An error is generated if \a x is not a non-null pointer to a
  *          CXXR::ComplexVector .
+ *
  * @return Pointer to element 0 of \a x .
  */
 #ifndef __cplusplus
@@ -94,7 +108,8 @@ Rcomplex *COMPLEX(SEXP x);
 #else
 inline Rcomplex *COMPLEX(SEXP x)
 {
-    return &(*CXXR::SEXP_downcast<CXXR::ComplexVector*>(x))[0];
+    using namespace CXXR;
+    return &(*SEXP_downcast<ComplexVector*>(x, false))[0];
 }
 #endif
 

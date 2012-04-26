@@ -14,14 +14,17 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-pretty <- function(x, n=5, min.n= n %/% 3, shrink.sml = 0.75,
-                   high.u.bias = 1.5, u5.bias = .5 + 1.5*high.u.bias,
-                   eps.correct = 0)
+pretty <- function(x, ...) UseMethod("pretty")
+
+
+pretty.default <-
+    function(x, n=5, min.n= n %/% 3, shrink.sml = 0.75,
+             high.u.bias = 1.5, u5.bias = .5 + 1.5*high.u.bias,
+             eps.correct = 0, ...)
 {
-    x <- as.numeric(x)
+    x <- x[is.finite(x <- as.numeric(x))]
     if(length(x)==0L)
 	return(x)
-    x <- x[is.finite(x)]
     if(is.na(n <- as.integer(n[1L])) || n < 0L)# n=0 !!
 	stop("invalid 'n' value")
     if(!is.numeric(shrink.sml) || shrink.sml <= 0)

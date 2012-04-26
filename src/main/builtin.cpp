@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1998  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2009  The R Development Core Team.
+ *  Copyright (C) 1999-2011  The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,36 +43,34 @@
 #include <Print.h>
 #include <Fileio.h>
 #include <Rconnections.h>
+#include "CXXR/ClosureContext.hpp"
 
 using namespace CXXR;
 
 static R_len_t asVecSize(SEXP x)
 {
-    int warn = 0, res;
-    double d;
-
     if (isVectorAtomic(x) && LENGTH(x) >= 1) {
 	switch (TYPEOF(x)) {
-	case LGLSXP:
-	    res = IntegerFromLogical(LOGICAL(x)[0], &warn);
-	    if(res == NA_INTEGER) error(_("vector size cannot be NA"));
-	    return res;
 	case INTSXP:
-	    res = INTEGER(x)[0];
+	{
+	    int res = INTEGER(x)[0];
 	    if(res == NA_INTEGER) error(_("vector size cannot be NA"));
 	    return res;
+	}
 	case REALSXP:
-	    d = REAL(x)[0];
+	{
+	    double d = REAL(x)[0];
 	    if(ISNAN(d)) error(_("vector size cannot be NA/NaN"));
 	    if(!R_FINITE(d)) error(_("vector size cannot be infinite"));
 	    if(d < 0) error(_("vector size cannot be negative"));
 	    if(d > R_LEN_T_MAX) error(_("vector size specified is too large"));
-	    return R_len_t(d);
+	    return R_len_t( d);
+	}
 	default:
-	    UNIMPLEMENTED_TYPE("asVecSize", x);
+	    ;  // -Wswitch
 	}
     }
-    return -1;
+    return -1;  /* which gives error in the caller */
 }
 
 SEXP attribute_hidden do_delayed(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -94,7 +92,7 @@ SEXP attribute_hidden do_delayed(SEXP call, SEXP op, SEXP args, SEXP rho)
 	eenv = R_BaseEnv;
     } else
     if (!isEnvironment(eenv))
-	errorcall(call,_("invalid '%s' argument"), "eval.env");
+	errorcall(call, _("invalid '%s' argument"), "eval.env");
 
     args = CDR(args);
     aenv = CAR(args);
@@ -103,7 +101,7 @@ SEXP attribute_hidden do_delayed(SEXP call, SEXP op, SEXP args, SEXP rho)
 	aenv = R_BaseEnv;
     } else
     if (!isEnvironment(aenv))
-	errorcall(call,_("invalid '%s' argument"), "assign.env");
+	errorcall(call, _("invalid '%s' argument"), "assign.env");
 
     defineVar(name, mkPROMISE(expr, eenv), aenv);
     return R_NilValue;
@@ -137,62 +135,57 @@ SEXP attribute_hidden do_makelazy(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue;
 }
 
+/* This is a primitive SPECIALSXP */
 SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    RCNTXT *ctxt;
-    SEXP code, add, oldcode, tmp;
+    ClosureContext *ctxt;
+    SEXP code, oldcode, tmp, ap, argList;
     int addit = 0;
 
-    switch (length(args)) {
-    case 0:
-	code = R_NilValue;
-	break;
-    case 1:
-	code = CAR(args);
-	break;
-    case 2:
-	code = CAR(args);
-	add = eval(CADR(args), rho);
-	if ( TYPEOF(add) != LGLSXP || length(add) != 1 ||
-	     LOGICAL(add)[0] == NA_INTEGER)
+    PROTECT(ap = list2(R_NilValue, R_NilValue));
+    SET_TAG(ap,  install("expr"));
+    SET_TAG(CDR(ap), install("add"));
+    PROTECT(argList =  matchArgs(ap, args, call));
+    if (CAR(argList) == R_MissingArg) code = R_NilValue;
+    else code = CAR(argList);
+    if (CADR(argList) != R_MissingArg) {
+	addit = asLogical(eval(CADR(args), rho));
+	if (addit == NA_INTEGER)
 	    errorcall(call, _("invalid '%s' argument"), "add");
-	addit = (LOGICAL(add)[0] == 1);
-	break;
-    default:
-	errorcall_return(call, _("invalid number of arguments"));
     }
-    ctxt = R_GlobalContext;
+
+    ctxt = ClosureContext::innermost();
     /* Search for the context to which the on.exit action is to be
        attached. Lexical scoping is implemented by searching for the
        first closure call context with an environment matching the
        expression evaluation environment. */
-    while (ctxt != R_ToplevelContext &&
-	   !((ctxt->callflag & CTXT_FUNCTION) && ctxt->cloenv == rho) )
-	ctxt = ctxt->nextcontext;
-    if (ctxt->callflag & CTXT_FUNCTION)
+    while (ctxt && ctxt->workingEnvironment() != rho)
+	ctxt = ClosureContext::innermost(ctxt->nextOut());
+    if (ctxt)
     {
-	if (addit && (oldcode = ctxt->conexit) != R_NilValue ) {
+	if (addit && (oldcode = ctxt->onExit()) != R_NilValue ) {
 	    if ( CAR(oldcode) != R_BraceSymbol )
 	    {
-		GCStackRoot<PairList> tl(PairList::makeList(2));
-		PROTECT(tmp = GCNode::expose(new Expression(0, tl)));
+		GCStackRoot<PairList> tl(PairList::make(2));
+		PROTECT(tmp = CXXR_NEW(Expression(0, tl)));
 		SETCAR(tmp, R_BraceSymbol);
 		SETCADR(tmp, oldcode);
 		SETCADDR(tmp, code);
-		ctxt->conexit = tmp;
+		ctxt->setOnExit(tmp);
 		UNPROTECT(1);
 	    }
 	    else
 	    {
-		PROTECT(tmp=allocList(1));
+		PROTECT(tmp = allocList(1));
 		SETCAR(tmp, code);
-		ctxt->conexit = listAppend(duplicate(oldcode),tmp);
+		ctxt->setOnExit(listAppend(duplicate(oldcode),tmp));
 		UNPROTECT(1);
 	    }
 	}
 	else
-	    ctxt->conexit = code;
+	    ctxt->setOnExit(code);
     }
+    UNPROTECT(2);
     return R_NilValue;
 }
 
@@ -268,34 +261,52 @@ SEXP attribute_hidden do_bodyCode(SEXP call, SEXP op, SEXP args, SEXP rho)
     else return R_NilValue;
 }
 
+/* get environment from a subclass if possible; else return NULL */
+#define simple_as_environment(arg) (IS_S4_OBJECT(arg) && (TYPEOF(arg) == S4SXP) ? R_getS4DataSlot(arg, ENVSXP) : arg)
+
+
 SEXP attribute_hidden do_envir(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     if (TYPEOF(CAR(args)) == CLOSXP)
 	return CLOENV(CAR(args));
     else if (CAR(args) == R_NilValue)
-	return R_GlobalContext->sysparent;
+	return ClosureContext::innermost()->callEnvironment();
     else return getAttrib(CAR(args), R_DotEnvSymbol);
 }
 
 SEXP attribute_hidden do_envirgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP env, s = CAR(args);
+    SEXP env;
+    GCStackRoot<> s(CAR(args));
+
     checkArity(op, args);
+    check1arg(args, call, "x");
+
     env = CADR(args);
 
     if (TYPEOF(CAR(args)) == CLOSXP
-	&& (isEnvironment(env) || isNull(env))) {
+	&& (isEnvironment(env) || 
+	    isEnvironment(env = simple_as_environment(env)) ||
+	    isNull(env))) {
 	if (isNull(env))
 	    error(_("use of NULL environment is defunct"));
-	if(NAMED(s) > 1) {
-	    /* partial duplicate */
-	    s = mkCLOSXP(FORMALS(CAR(args)), BODY(CAR(args)), env);
-	} else {
-	    SET_CLOENV(s, env);
+	if(NAMED(s) > 1)
+	    /* this copies but does not duplicate args or code */
+	    s = duplicate(s);
+#ifdef BYTECODE
+	if (TYPEOF(BODY(s)) == BCODESXP) {
+	    /* switch to interpreted version if compiled */
+	    Closure* clos = static_cast<Closure*>(s.get());
+	    s = CXXR_NEW(Closure(clos->matcher()->formalArgs(),
+				 R_ClosureExpr(clos),
+				 clos->environment()));
 	}
+#endif
+	SET_CLOENV(s, env);
     }
-    else if (isNull(env) || isEnvironment(env))
+    else if (isNull(env) || isEnvironment(env) ||
+	isEnvironment(env = simple_as_environment(env)))
 	setAttrib(s, R_DotEnvSymbol, env);
     else
 	error(_("replacement object is not an environment"));
@@ -303,6 +314,10 @@ SEXP attribute_hidden do_envirgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
+/** do_newenv() :  .Internal(new.env(hash, parent, size))
+ *
+ * @return a newly created environment()
+ */
 SEXP attribute_hidden do_newenv(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP enclos, size, ans;
@@ -317,7 +332,8 @@ SEXP attribute_hidden do_newenv(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("use of NULL environment is defunct"));
 	enclos = R_BaseEnv;
     } else
-    if( !isEnvironment(enclos) )
+    if( !isEnvironment(enclos)   &&
+	!isEnvironment((enclos = simple_as_environment(enclos))))
 	error(_("'enclos' must be an environment"));
 
     if( hash ) {
@@ -330,18 +346,19 @@ SEXP attribute_hidden do_newenv(SEXP call, SEXP op, SEXP args, SEXP rho)
     } else
 	ans = NewEnvironment(R_NilValue, R_NilValue, enclos);
     return ans;
-
 }
 
 SEXP attribute_hidden do_parentenv(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
+    SEXP arg = CAR(args);
 
-    if( !isEnvironment(CAR(args)) )
+    if( !isEnvironment(arg)  &&
+	!isEnvironment((arg = simple_as_environment(arg))))
 	error( _("argument is not an environment"));
-    if( CAR(args) == R_EmptyEnv )
+    if( arg == R_EmptyEnv )
 	error(_("the empty environment has no parent"));
-    return( ENCLOS(CAR(args)) );
+    return( ENCLOS(arg) );
 }
 
 SEXP attribute_hidden do_parentenvgets(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -354,7 +371,8 @@ SEXP attribute_hidden do_parentenvgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("use of NULL environment is defunct"));
 	env = R_BaseEnv;
     } else
-    if( !isEnvironment(env) )
+    if( !isEnvironment(env) &&
+	!isEnvironment((env = simple_as_environment(env))))
 	error(_("argument is not an environment"));
     if( env == R_EmptyEnv )
 	error(_("can not set parent of the empty environment"));
@@ -363,12 +381,14 @@ SEXP attribute_hidden do_parentenvgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("use of NULL environment is defunct"));
 	parent = R_BaseEnv;
     } else
-    if( !isEnvironment(parent) )
+    if( !isEnvironment(parent) &&
+	!isEnvironment((parent = simple_as_environment(parent))))
 	error(_("'parent' is not an environment"));
 
-    SET_ENCLOS(env, parent);
+    Environment* parenv = static_cast<Environment*>(parent);
+    static_cast<Environment*>(env)->setEnclosingEnvironment(parenv);
 
-    return( env );
+    return( CAR(args) );
 }
 
 SEXP attribute_hidden do_envirName(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -376,7 +396,8 @@ SEXP attribute_hidden do_envirName(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP env = CAR(args), ans=mkString(""), res;
 
     checkArity(op, args);
-    if (TYPEOF(env) == ENVSXP) {
+    if (TYPEOF(env) == ENVSXP ||
+	TYPEOF((env = simple_as_environment(env))) == ENVSXP) {
 	if (env == R_GlobalEnv) ans = mkString("R_GlobalEnv");
 	else if (env == R_BaseEnv) ans = mkString("base");
 	else if (env == R_EmptyEnv) ans = mkString("R_EmptyEnv");
@@ -391,23 +412,41 @@ SEXP attribute_hidden do_envirName(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 #ifdef Win32
 # include "rgui_UTF8.h"
+#endif
 static const char *trChar(SEXP x)
 {
-    char *p;
-    static char buf[106];
-    int n = strlen(CHAR(x));
-    /* Long strings will be rare, and few per cat() call so we
-       can afford to be profligate here: translateChar is */
-    if (n < 100) p = buf; else p = R_alloc(n+7, 1);
-    if (WinUTF8out && getCharCE(x) == CE_UTF8) {
-	strcpy(p, UTF8in); strcat(p, CHAR(x)); strcat(p, UTF8out);
-	return p;
-    } else
-	return translateChar(x);
-}
-#else
-# define trChar(x) translateChar(x)
+    size_t n = strlen(CHAR(x));
+    cetype_t ienc = getCharCE(x);
+
+    if (ienc == CE_BYTES) {
+	const char *p = CHAR(x), *q;
+	char *pp = R_alloc(4*n+1, 1), *qq = pp, buf[5];
+	for (q = p; *q; q++) {
+	    unsigned char k = static_cast<unsigned char>( *q);
+	    if (k >= 0x20 && k < 0x80) {
+		*qq++ = *q;
+	    } else {
+		snprintf(buf, 5, "\\x%02x", k);
+		for(int j = 0; j < 4; j++) *qq++ = buf[j];
+	    }
+	}
+	*qq = '\0';
+	return pp;
+    } else {
+#ifdef Win32
+	static char buf[106];
+	char *p;
+	/* Long strings will be rare, and few per cat() call so we
+	   can afford to be profligate here: translateChar is */
+	if (n < 100) p = buf; else p = R_alloc(n+7, 1);
+	if (WinUTF8out && ienc == CE_UTF8) {
+	    strcpy(p, UTF8in); strcat(p, CHAR(x)); strcat(p, UTF8out);
+	    return p;
+	} else
 #endif
+	    return translateChar(x);
+    }
+}
 
 static void cat_newline(SEXP labels, int *width, int lablen, int ntot)
 {
@@ -445,9 +484,8 @@ typedef struct cat_info {
     Rconnection con;
 } cat_info;
 
-static void cat_cleanup(void *data)
+static void cat_cleanup(cat_info* pci)
 {
-    cat_info *pci = static_cast<cat_info *>( data);
     Rconnection con = pci->con;
     Rboolean wasopen = pci->wasopen;
     int changedcon = pci->changedcon;
@@ -464,7 +502,6 @@ static void cat_cleanup(void *data)
 SEXP attribute_hidden do_cat(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     cat_info ci;
-    RCNTXT cntxt;
     SEXP objs, file, fill, sepr, labs, s;
     int ifile;
     Rconnection con;
@@ -476,7 +513,7 @@ SEXP attribute_hidden do_cat(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
 
     /* Use standard printing defaults */
-    PrintDefaults(rho);
+    PrintDefaults();
 
     objs = CAR(args);
     args = CDR(args);
@@ -533,93 +570,91 @@ SEXP attribute_hidden do_cat(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     ci.con = con;
 
-    /* set up a context which will close the connection if there is an error */
-    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		 R_NilValue, R_NilValue);
-    cntxt.cend = &cat_cleanup;
-    cntxt.cenddata = &ci;
-
-    nobjs = length(objs);
-    width = 0;
-    ntot = 0;
-    nlines = 0;
-    for (iobj = 0; iobj < nobjs; iobj++) {
-	s = VECTOR_ELT(objs, iobj);
-	if (iobj != 0 && !isNull(s))
-	    cat_printsep(sepr, 0);
-	n = length(s);
-	if (n > 0) {
-	    if (labs != R_NilValue && (iobj == 0)
-		&& (asInteger(fill) > 0)) {
-		Rprintf("%s ", trChar(STRING_ELT(labs, nlines % lablen)));
-		/* FIXME -- Rstrlen allows for embedded nuls, double-width chars */
-		width += Rstrlen(STRING_ELT(labs, nlines % lablen), 0) + 1;
-		nlines++;
-	    }
-	    if (isString(s))
-		p = trChar(STRING_ELT(s, 0));
-	    else if (isSymbol(s)) /* length 1 */
-		p = CHAR(PRINTNAME(s));
-	    else if (isVectorAtomic(s)) {
-		/* Not a string, as that is covered above.
-		   Thus the maximum size is about 60.
-		   The copy is needed as cat_newline might reuse the buffer.
-		   Use strncpy is in case these assumptions change.
-		*/
-		p = EncodeElement(s, 0, 0, OutDec);
-		strncpy(buf, p, 512); buf[511] = '\0';
-		p = buf;
-	    }
+    /* use try-catch to close the connection if there is an error */
+    try {
+	nobjs = length(objs);
+	width = 0;
+	ntot = 0;
+	nlines = 0;
+	for (iobj = 0; iobj < nobjs; iobj++) {
+	    s = VECTOR_ELT(objs, iobj);
+	    if (iobj != 0 && !isNull(s))
+		cat_printsep(sepr, 0);
+	    n = length(s);
+	    /* 0-length objects are ignored */
+	    if (n > 0) {
+		if (labs != R_NilValue && (iobj == 0)
+		    && (asInteger(fill) > 0)) {
+		    Rprintf("%s ", trChar(STRING_ELT(labs, nlines % lablen)));
+		    /* FIXME -- Rstrlen allows for double-width chars */
+		    width += Rstrlen(STRING_ELT(labs, nlines % lablen), 0) + 1;
+		    nlines++;
+		}
+		if (isString(s))
+		    p = trChar(STRING_ELT(s, 0));
+		else if (isSymbol(s)) /* length 1 */
+		    p = CHAR(PRINTNAME(s));
+		else if (isVectorAtomic(s)) {
+		    /* Not a string, as that is covered above.
+		       Thus the maximum size is about 60.
+		       The copy is needed as cat_newline might reuse the buffer.
+		       Use strncpy is in case these assumptions change.
+		    */
+		    p = EncodeElement(s, 0, 0, OutDec);
+		    strncpy(buf, p, 512); buf[511] = '\0';
+		    p = buf;
+		}
 #ifdef fixed_cat
-	    else if (isVectorList(s)) {
-	      /* FIXME:	 call EncodeElement() for every element of  s.
+		else if (isVectorList(s)) {
+		    /* FIXME:	 call EncodeElement() for every element of  s.
 
-		 Real Problem: `s' can be large;
-		 should do line breaking etc.. (buf is of limited size)
-	      */
-	    }
+		    Real Problem: `s' can be large;
+		    should do line breaking etc.. (buf is of limited size)
+		    */
+		}
 #endif
-	    else
-		errorcall(call,
-			  _("argument %d (type '%s') cannot be handled by 'cat'"),
-			  1+iobj, type2char(TYPEOF(s)));
-	    /* FIXME : cat(...) should handle ANYTHING */
-	    w = strlen(p);
-	    cat_sepwidth(sepr, &sepw, ntot);
-	    if ((iobj > 0) && (width + w + sepw > pwidth)) {
-		cat_newline(labs, &width, lablen, nlines);
-		nlines++;
-	    }
-	    for (i = 0; i < n; i++, ntot++) {
-		Rprintf("%s", p);
-		width += w + sepw;
-		if (i < (n - 1)) {
-		    cat_printsep(sepr, ntot);
-		    if (isString(s))
-			p = trChar(STRING_ELT(s, i+1));
-		    else {
-			p = EncodeElement(s, i+1, 0, OutDec);
-			strncpy(buf, p, 512); buf[511] = '\0';
-			p = buf;
-		    }
-		    w = strlen(p);
-		    cat_sepwidth(sepr, &sepw, ntot);
-		    /* This is inconsistent with the version above.
-		       As from R 2.3.0, fill <= 0 is ignored. */
-		    if ((width + w + sepw > pwidth) && pwidth) {
-			cat_newline(labs, &width, lablen, nlines);
-			nlines++;
+		else
+		    errorcall(call,
+			      _("argument %d (type '%s') cannot be handled by 'cat'"),
+			      1+iobj, type2char(TYPEOF(s)));
+		/* FIXME : cat(...) should handle ANYTHING */
+		w = strlen(p);
+		cat_sepwidth(sepr, &sepw, ntot);
+		if ((iobj > 0) && (width + w + sepw > pwidth)) {
+		    cat_newline(labs, &width, lablen, nlines);
+		    nlines++;
+		}
+		for (i = 0; i < n; i++, ntot++) {
+		    Rprintf("%s", p);
+		    width += w + sepw;
+		    if (i < (n - 1)) {
+			cat_printsep(sepr, ntot);
+			if (isString(s))
+			    p = trChar(STRING_ELT(s, i+1));
+			else {
+			    p = EncodeElement(s, i+1, 0, OutDec);
+			    strncpy(buf, p, 512); buf[511] = '\0';
+			    p = buf;
+			}
+			w = strlen(p);
+			cat_sepwidth(sepr, &sepw, ntot);
+			/* This is inconsistent with the version above.
+			   As from R 2.3.0, fill <= 0 is ignored. */
+			if ((width + w + sepw > pwidth) && pwidth) {
+			    cat_newline(labs, &width, lablen, nlines);
+			    nlines++;
+			}
 		    }
 		}
 	    }
 	}
+	if ((pwidth != INT_MAX) || nlsep)
+	    Rprintf("\n");
     }
-    if ((pwidth != INT_MAX) || nlsep)
-	Rprintf("\n");
-
-    /* end the context after anything that could raise an error but before
-       doing the cleanup so the cleanup doesn't get done twice */
-    endcontext(&cntxt);
+    catch (...) {
+	cat_cleanup(&ci);
+	throw;
+    }
 
     cat_cleanup(&ci);
 
@@ -655,6 +690,7 @@ SEXP attribute_hidden do_makelist(SEXP call, SEXP op, SEXP args, SEXP rho)
     return list;
 }
 
+/* This is a primitive SPECIALSXP */
 SEXP attribute_hidden do_expression(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP a, ans, nms;
@@ -695,11 +731,11 @@ SEXP attribute_hidden do_makevector(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP s;
     SEXPTYPE mode;
     checkArity(op, args);
+    if (length(CADR(args)) != 1) error(_("invalid '%s' argument"), "length");
     len = asVecSize(CADR(args));
     if (len < 0) error(_("invalid '%s' argument"), "length");
     s = coerceVector(CAR(args), STRSXP);
-    if (length(s) == 0)
-	error(_("vector: zero-length 'type' argument"));
+    if (length(s) != 1) error(_("invalid '%s' argument"), "mode");
     mode = str2type(CHAR(STRING_ELT(s, 0))); /* ASCII */
     if (CXXRCONSTRUCT(int, mode) == -1 && streql(CHAR(STRING_ELT(s, 0)), "double"))
 	mode = REALSXP;
@@ -728,7 +764,7 @@ SEXP attribute_hidden do_makevector(SEXP call, SEXP op, SEXP args, SEXP rho)
     else if (mode == CPLXSXP)
 	memset(COMPLEX(s), 0, len*sizeof(Rcomplex));
     else if (mode == RAWSXP)
-	memset(RAW(s), 0, len);
+	memset(RAW(s), 0, size_t( len));
     /* other cases: list/expression have "NULL", ok */
     return s;
 }
@@ -837,9 +873,11 @@ SEXP attribute_hidden do_lengthgets(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP x, ans;
 
     checkArity(op, args);
+    check1arg(args, call, "x");
+
     x = CAR(args);
-    if( isObject(x) && DispatchOrEval(call, op, "length<-", args,
-				      rho, &ans, 0, 1))
+    if(isObject(x) && DispatchOrEval(call, op, "length<-", args,
+				     rho, &ans, 0, 1))
 	return(ans);
     if (!isVector(x) && !isVectorizable(x))
        error(_("invalid argument"));
@@ -852,70 +890,140 @@ SEXP attribute_hidden do_lengthgets(SEXP call, SEXP op, SEXP args, SEXP rho)
     return lengthgets(x, len);
 }
 
-
-
-/* For switch, evaluate the first arg, if it is a character then try */
-/* to match the name with the remaining args, and evaluate the match, */
-/* if there is no match then evaluate the first unnamed arg.  If the */
-/* value of the first arg is not a character string then coerce it to */
-/* an integer k and choose the kth argument from those that remain */
-/* provided 0 < k < (nargs-1). For character matching, if the value */
-/* is missing then take the next non-missing arg as the value. Then */
-/* things like switch(as.character(answer), yes=, YES=1, no=, NO=2, 3) */
-/* will work. */
-
-static SEXP switchList(SEXP el, SEXP rho)
+/* Expand dots in args, but do not evaluate */
+static SEXP expandDots(SEXP el, SEXP rho)
 {
-    SEXP h;
-    if (CAR(el) == R_DotsSymbol) {
-	h = findVar(CAR(el), rho);
-	if (h == R_NilValue)
-	    return R_NilValue;
-	if (TYPEOF(h) != DOTSXP) {
-	    if (h == R_MissingArg)
-		return R_MissingArg;
-	    error(_("... used in an incorrect context"));
+    SEXP ans, tail;
+
+    PROTECT(el); /* in do_switch, this is already protected */
+    PROTECT(ans = tail = CONS(R_NilValue, R_NilValue));
+
+    while (el != R_NilValue) {
+	if (CAR(el) == R_DotsSymbol) {
+	    SEXP h = findVar(CAR(el), rho);
+	    if (TYPEOF(h) == DOTSXP || h == R_NilValue) {
+		while (h != R_NilValue) {
+		    SETCDR(tail, CONS(CAR(h), R_NilValue));
+		    tail = CDR(tail);
+		    if(TAG(h) != R_NilValue) SET_TAG(tail, TAG(h));
+		    h = CDR(h);
+		}
+	    } else if (h != R_MissingArg)
+		error(_("'...' used in an incorrect context"));
+	} else {
+	    SETCDR(tail, CONS(CAR(el), R_NilValue));
+	    tail = CDR(tail);
+	    if(TAG(el) != R_NilValue) SET_TAG(tail, TAG(el));
 	}
-	return h;
+	el = CDR(el);
     }
-    else {
-	error(_("invalid parameter in 'switch()'"));
-	return R_NilValue;/* for -Wall */
-    }
+    UNPROTECT(2);
+    return CDR(ans);
 }
+
+/* This function is used in do_switch to record the default value and
+   to detect multiple defaults, which are not allowed as of 2.13.x */
+   
+static SEXP setDflt(SEXP arg, SEXP dflt) 
+{
+    if (dflt) {
+    	SEXP dflt1, dflt2;
+    	PROTECT(dflt1 = deparse1line(dflt, TRUE));
+    	PROTECT(dflt2 = deparse1line(CAR(arg), TRUE));
+    	error(_("duplicate switch defaults: '%s' and '%s'"), CHAR(STRING_ELT(dflt1, 0)),
+    	                                                   CHAR(STRING_ELT(dflt2, 0)));
+    	UNPROTECT(2); /* won't get here, but just for good form */
+    }
+    return(CAR(arg));
+}
+
+/* For switch, evaluate the first arg, if it is a character then try
+ to match the name with the remaining args, and evaluate the match. If
+ the value is missing then take the next non-missing arg as the value.
+ Then things like switch(as.character(answer), yes=, YES=1, no=, NO=2,
+ 3) will work.  But if there is no 'next', return NULL. One arg beyond
+ the first is allowed to be unnamed; it becomes the default value if
+ there is no match.
+ 
+ If the value of the first arg is not a character string
+ then coerce it to an integer k and choose the kth argument from those
+ that remain provided 1 < k < nargs.  
+
+ Changed in 2.11.0 to be primitive, so the wrapper does not partially
+ match to EXPR, and to return NULL invisibly if it is an error
+ condition.
+
+ This is a SPECIALSXP, so arguments need to be evaluated as needed.
+  And (see names.c) X=2, so it defaults to a visible value.
+*/
+
 
 SEXP attribute_hidden do_switch(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    int argval;
-    SEXP x, y, w;
-    x = eval(CAR(args), rho);
+    int argval, nargs = length(args);
+    SEXP x, y, z, w, ans, dflt = NULL;
+
+    if (nargs < 1) errorcall(call, _("'EXPR' is missing"));
+    check1arg(args, call, "EXPR");
+    PROTECT(x = eval(CAR(args), rho));
     if (!isVector(x) || length(x) != 1)
-	error(_("switch: EXPR must return a length 1 vector"));
-    PROTECT(w = switchList(CDR(args), rho));
-#define Return_NULL    UNPROTECT(1); return R_NilValue
-    if(w == R_MissingArg) {
-	Return_NULL;
-    }
-    if (isString(x)) {
-	for (y = w; y != R_NilValue; y = CDR(y))
-	    if (TAG(y) != R_NilValue && pmatch(STRING_ELT(x, 0), TAG(y), CXXRTRUE)) {
-		while (CAR(y) == R_MissingArg && y != R_NilValue)
-		    y = CDR(y);
-		UNPROTECT(1);
-		return (eval(CAR(y), rho));
+	errorcall(call, _("EXPR must be a length 1 vector"));
+    if (nargs > 1) {
+	/* There is a complication: if called from lapply
+	   there may be a ... argument */
+	PROTECT(w = expandDots(CDR(args), rho));
+	if (isString(x)) {
+	    for (y = w; y != R_NilValue; y = CDR(y)) {
+		if (TAG(y) != R_NilValue) {
+		    if (pmatch(STRING_ELT(x, 0), TAG(y), CXXRTRUE /* exact */)) {
+			/* Find the next non-missing argument.
+			   (If there is none, return NULL.) */
+			while (CAR(y) == R_MissingArg) {
+			    y = CDR(y);
+			    if (y == R_NilValue) break;
+			    if (TAG(y) == R_NilValue) dflt = setDflt(y, dflt);
+			}
+			if (y == R_NilValue) {
+			    R_Visible = FALSE;
+			    UNPROTECT(2);
+			    return R_NilValue;
+			}
+			/* Check for multiple defaults following y.  This loop
+			   is not necessary to determine the value of the
+			   switch(), but it should be fast and will detect
+			   typos. */
+			for (z = CDR(y); z != R_NilValue; z = CDR(z)) 
+			    if (TAG(z) == R_NilValue) dflt = setDflt(z, dflt);
+			    
+			ans =  eval(CAR(y), rho);
+			UNPROTECT(2);
+			return ans;
+		    }
+		} else
+		    dflt = setDflt(y, dflt);
 	    }
-	for (y = w; y != R_NilValue; y = CDR(y))
-	    if (TAG(y) == R_NilValue) {
-		UNPROTECT(1);
-		return (eval(CAR(y), rho));
+ 	    if (dflt) {
+		ans =  eval(dflt, rho);
+		UNPROTECT(2);
+		return ans;
 	    }
-	Return_NULL;
+	    /* fall through to error */
+	} else { /* Treat as numeric */
+	    argval = asInteger(x);
+	    if (argval != NA_INTEGER && argval >= 1 && argval <= length(w)) {
+		SEXP alt = CAR(nthcdr(w, argval - 1));
+		if (alt == R_MissingArg)
+		    error("empty alternative in numeric switch");
+		ans =  eval(alt, rho);
+		UNPROTECT(2);
+		return ans;
+	    }
+	    /* fall through to error */
+	}
+	UNPROTECT(1); /* w */
     }
-    argval = asInteger(x);
-    if (argval <= 0 || argval > length(w)) {
-	Return_NULL;
-    }
-    x = eval(CAR(nthcdr(w, argval - 1)), rho);
-    UNPROTECT(1);
-    return x;
+    /* an error */
+    UNPROTECT(1); /* x */
+    R_Visible = FALSE;
+    return R_NilValue;
 }

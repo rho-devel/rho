@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -83,7 +83,7 @@ R: Makefile
 	@$(MAKE) $(lapack_la)
 
 $(lapack_la): $(lapack_la_OBJECTS)
-	$(SHLIB_LINK) -o $@ $(lapack_la_LDFLAGS) $(lapack_la_OBJECTS) $(lapack_la_LIBADD) @LAPACK_LIBS@ @BLAS_LIBS@ $(FLIBS)
+	$(SHLIB_LINK) -o $@ $(lapack_la_LDFLAGS) $(lapack_la_OBJECTS) $(lapack_la_LIBADD) @LAPACK_LIBS@ @BLAS_LIBS@ $(FLIBS_IN_SO)
 ## <FIXME>
 ## Not sure if we want to do this ...
 	@$(MAKE) rhome="$(abs_top_builddir)" install
@@ -95,7 +95,7 @@ $(Rlapack_la): $(LIBOBJECTS)
 	$(DYLIB_LINK) -o $@ $(LIBOBJECTS) @RLAPACK_LDFLAGS@ @BLAS_LIBS@ $(Rlapack_la_LIBADD)
 
 Rlapack_install: $(Rlapack_la) 
-	@$(MKINSTALLDIRS) $(Rexeclibdir)
+	@$(MKINSTALLDIRS) "$(DESTDIR)$(Rexeclibdir)"
 	@$(SHELL) $(top_srcdir)/tools/copy-if-change $(Rlapack_la) \
 	  $(Rexeclibdir)/$(Rlapack_la)
 

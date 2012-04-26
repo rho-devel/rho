@@ -17,19 +17,20 @@
 ## utility for anova.FOO(), FOO in "lmlist", "glm", "glmlist"
 ## depending on the ordering of the models this might get called with
 ## negative deviance and df changes.
-stat.anova <- function(table, test=c("Chisq", "F", "Cp"), scale, df.scale, n)
+stat.anova <- function(table, test=c("Rao","LRT","Chisq", "F", "Cp"), scale, df.scale, n)
 {
     test <- match.arg(test)
     dev.col <- match("Deviance", colnames(table))
-    if(is.na(dev.col)) dev.col <- match("Sum of Sq", colnames(table))
+    if (test=="Rao") dev.col <- match("Rao", colnames(table))
+    if (is.na(dev.col)) dev.col <- match("Sum of Sq", colnames(table))
     switch(test,
-	   "Chisq" = {
+	   "Rao"=,"LRT"=,"Chisq" = {
                dfs <- table[, "Df"]
                vals <- table[, dev.col]/scale * sign(dfs)
 	       vals[dfs %in% 0] <- NA
                vals[!is.na(vals) & vals < 0] <- NA # rather than p = 0
 	       cbind(table,
-                     "P(>|Chi|)" = pchisq(vals, abs(dfs), lower.tail=FALSE)
+                     "Pr(>Chi)" = pchisq(vals, abs(dfs), lower.tail=FALSE)
                      )
 	   },
 	   "F" = {
@@ -68,7 +69,7 @@ printCoefmat <-
     ##	  columns {cs.ind}= numbers, such as coefficients & std.err  [def.: 1L:k]
     ##	  columns {tst.ind}= test-statistics (as "z", "t", or "F")  [def.: k+1]
 
-    if(is.null(d <- dim(x)) || length(d) != 2)
+    if(is.null(d <- dim(x)) || length(d) != 2L)
 	stop("'x' must be coefficient matrix/data frame")
     nc <- d[2L]
     if(is.null(P.values)) {
@@ -112,6 +113,7 @@ printCoefmat <-
     if(any(r.ind <- !((1L:nc) %in%
                       c(cs.ind, tst.ind, if(has.Pvalue) nc))))
 	for(i in which(r.ind)) Cf[, i] <- format(xm[, i], digits=digits)
+    ok[, tst.ind] <- FALSE
     okP <- if(has.Pvalue) ok[, -nc] else ok
     ## we need to find out where Cf is zero.  We can't use as.numeric
     ## directly as OutDec could have been set.
@@ -161,15 +163,13 @@ print.anova <- function(x, digits = max(getOption("digits") - 2, 3),
     zap.i <- 1L:(if(has.P) nc-1 else nc)
     i <- which(substr(cn,2,7) == " value")
     i <- c(i, which(!is.na(match(cn, c("F", "Cp", "Chisq")))))
-    if(length(i))
-	zap.i <- zap.i[!(zap.i %in% i)]
+    if(length(i)) zap.i <- zap.i[!(zap.i %in% i)]
     tst.i <- i
-    if(length(i <- grep("Df$", cn)))
-	zap.i <- zap.i[!(zap.i %in% i)]
+    if(length(i <- grep("Df$", cn))) zap.i <- zap.i[!(zap.i %in% i)]
 
     printCoefmat(x, digits = digits, signif.stars = signif.stars,
                  has.Pvalue = has.P, P.values = has.P,
-                 cs.ind = NULL, zap.ind = zap.i, tst.ind= tst.i,
+                 cs.ind = NULL, zap.ind = zap.i, tst.ind = tst.i,
                  na.print = "", # not yet in print.matrix:  print.gap = 2,
                  ...)
     invisible(x)

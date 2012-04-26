@@ -1,6 +1,6 @@
 % File src/library/base/man/nchar.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{nchar}
@@ -25,8 +25,9 @@ nzchar(x)
     vector.}
   \item{type}{character string: partial matching to one of
     \code{c("bytes", "chars", "width")}.  See \sQuote{Details}.}
-  \item{allowNA}{logical: show \code{NA} be returned for invalid
-    multibyte strings (rather than throwing an error)?}
+  \item{allowNA}{logical: should \code{NA} be returned for invalid
+    multibyte strings or \code{"bytes"}-encoded strings (rather than
+    throwing an error)?}
 }
 \details{
   The \sQuote{size} of a character string can be measured in one of
@@ -42,13 +43,11 @@ nzchar(x)
   These will often be the same, and almost always will be in single-byte
   locales.  There will be differences between the first two with
   multibyte character sequences, e.g. in UTF-8 locales.
-  
+
   The internal equivalent of the default method of
   \code{\link{as.character}} is performed on \code{x} (so there is no
   method dispatch).  If you want to operate on non-vector objects
   passing them through \code{\link{deparse}} first will be required.
-  
-  \code{nzchar} is \link{primitive} and so will ignore any argument name.
 }
 \value{
   For \code{nchar}, an integer vector giving the sizes of each element,
@@ -59,6 +58,11 @@ nzchar(x)
   will be \code{NA}.  Otherwise the number of characters will be
   non-negative, so \code{!is.na(nchar(x, "chars", TRUE))} is a test of
   validity.
+
+  A character string marked with \code{"bytes"} encoding has a number of
+  bytes, but neither a known number of characters nor a width, so the
+  latter two types are \code{NA} if \code{allowNA = TRUE}, otherwise an
+  error.
 
   Names, dims and dimnames are copied from the input.
 

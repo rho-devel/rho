@@ -1,6 +1,6 @@
 % File src/library/utils/man/read.table.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{read.table}
@@ -24,7 +24,7 @@ read.table(file, header = FALSE, sep = "", quote = "\"'",
            comment.char = "#",
            allowEscapes = FALSE, flush = FALSE,
            stringsAsFactors = default.stringsAsFactors(),
-           fileEncoding = "", encoding = "unknown")
+           fileEncoding = "", encoding = "unknown", text)
 
 read.csv(file, header = TRUE, sep = ",", quote="\"", dec=".",
          fill = TRUE, comment.char="", \dots)
@@ -47,7 +47,7 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
     As from \R 2.10.0 this can be a compressed file (see \code{\link{file}}).
     
     Alternatively, \code{file} can be a readable text-mode
-    \code{\link{connection}} (which will be opened for reading if
+    \link{connection} (which will be opened for reading if
     necessary, and if so \code{\link{close}}d (and hence destroyed) at
     the end of the function call).  (If \code{\link{stdin}()} is used,
     the prompts for lines may be somewhat confusing.  Terminate input
@@ -55,7 +55,9 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
     \code{Ctrl-Z} on Windows.  Any pushback on \code{stdin()} will be
     cleared before return.)
 
-    \code{file} can also be a complete URL.
+    \code{file} can also be a complete URL.  (For the supported URL
+    schemes, see the \sQuote{URLs} section of the help for
+    \code{\link{url}}.)
   }
 
   \item{header}{a logical value indicating whether the file contains the
@@ -120,13 +122,13 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
     the columns.  Recycled as necessary, or if the character vector is
     named, unspecified values are taken to be \code{NA}.
 
-    Possible values are \code{NA} (when \code{\link{type.convert}} is
-    used), \code{"NULL"} (when the column is skipped), one of the atomic
-    vector classes (logical, integer, numeric, complex, character, raw),
-    or \code{"factor"}, \code{"Date"} or \code{"POSIXct"}.  Otherwise
-    there needs to be an \code{as} method (from package \pkg{methods})
-    for conversion from \code{"character"} to the specified formal
-    class.
+    Possible values are \code{NA} (the default, when
+    \code{\link{type.convert}} is used), \code{"NULL"} (when the column
+    is skipped), one of the atomic vector classes (logical, integer,
+    numeric, complex, character, raw), or \code{"factor"}, \code{"Date"}
+    or \code{"POSIXct"}.  Otherwise there needs to be an \code{as}
+    method (from package \pkg{methods}) for conversion from
+    \code{"character"} to the specified formal class.
 
     Note that \code{colClasses} is specified per column (not per
     variable) and so includes the column of row names (if any).
@@ -149,8 +151,9 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
 
   \item{strip.white}{logical. Used only when \code{sep} has
     been specified, and allows the stripping of leading and trailing
-    white space from \code{character} fields (\code{numeric} fields
-    are always stripped).  See \code{\link{scan}} for further details,
+    white space from unquoted \code{character} fields (\code{numeric} fields
+    are always stripped).  See \code{\link{scan}} for further details
+    (including the exact meaning of \sQuote{white space}),
     remembering that the columns may include the row names.}
 
   \item{blank.lines.skip}{logical: if \code{TRUE} blank lines in the
@@ -170,39 +173,41 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
     This allows putting comments after the last field.}
 
   \item{stringsAsFactors}{logical: should character vectors be converted
-    to factors?  Note that this is overridden bu \code{as.is} and
+    to factors?  Note that this is overridden by \code{as.is} and
     \code{colClasses}, both of which allow finer control.}
   
   \item{fileEncoding}{character string: if non-empty declares the
     encoding used on a file (not a connection) so the character data can
-    be re-encoded.  See \code{\link{file}}.
+    be re-encoded.  See the \sQuote{Encoding} section of the help for
+    \code{\link{file}}, the \sQuote{R Data Import/Export Manual} and
+    \sQuote{Note}.
   }
   
   \item{encoding}{encoding to be assumed for input strings.  It is
     used to mark character strings as known to be in
-    Latin-1 or UTF-8: it is not used to re-encode the input, but allows
-    \R to handle encoded strings in their native encoding (if one of
-    those two).  See \sQuote{Value}.
+    Latin-1 or UTF-8 (see \code{\link{Encoding}}): it is not used to
+    re-encode the input, but allows \R to handle encoded strings in
+    their native encoding (if one of those two).  See \sQuote{Value}.
+  }
+
+  \item{text}{character string: if \code{file} is not supplied and this is, 
+    then data are read from the value of \code{text} via a text connection.
+    Notice that a literal string can be used to include (small) data sets 
+    within R code. 
   }
 
   \item{\dots}{Further arguments to be passed to \code{read.table}.}
 }
-\value{
-  A data frame (\code{\link{data.frame}}) containing a representation of
-  the data in the file.
 
-  Empty input is an error unless \code{col.names} is specified, when a
-  0-row data frame is returned: similarly giving just a header line if
-  \code{header = TRUE} results in a 0-row data frame.  Note that in
-  either case the columns will be logical unless \code{colClasses} was
-  supplied.
-
-  Character strings in the result (including factor levels) will have a
-  declared encoding if \code{encoding} is \code{"latin1"} or
-  \code{"UTF-8"}.
-}
 \details{
   This function is the principal means of reading tabular data into \R.
+
+  Unless \code{colClasses} is specified, all columns are read as
+  character columns and then converted using \code{\link{type.convert}}
+  to logical, integer, numeric, complex or (depending on \code{as.is})
+  factor as appropriate.  Quotes are (by default) interpreted in all
+  fields, so a column of values like \code{"42"} will result in an
+  integer column.
 
   A field or line is \sQuote{blank} if it contains nothing (except
   whitespace if no separator is specified) before a comment character or
@@ -218,18 +223,18 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
   of input (or the whole file if it has less than five lines), or from
   the length of \code{col.names} if it is specified and
   is longer.  This could conceivably be wrong if \code{fill} or
-  \code{blank.lines.skip} are true, so specify \code{col.names} if necessary.
+  \code{blank.lines.skip} are true, so specify \code{col.names} if
+  necessary (as in the \sQuote{Examples}).
 
   \code{read.csv} and \code{read.csv2} are identical to
   \code{read.table} except for the defaults.  They are intended for
   reading \sQuote{comma separated value} files (\file{.csv}) or
-  (\code{read.csv2}) the variant
-  used in countries that use a comma as decimal point and a semicolon
-  as field separator.  Similarly, \code{read.delim} and
-  \code{read.delim2} are for reading delimited files, defaulting to the
-  TAB character for the delimiter.  Notice that \code{header = TRUE} and
-  \code{fill = TRUE} in these variants, and that the comment character
-  is disabled.
+  (\code{read.csv2}) the variant used in countries that use a comma as
+  decimal point and a semicolon as field separator.  Similarly,
+  \code{read.delim} and \code{read.delim2} are for reading delimited
+  files, defaulting to the TAB character for the delimiter.  Notice that
+  \code{header = TRUE} and \code{fill = TRUE} in these variants, and
+  that the comment character is disabled.
 
   The rest of the line after a comment character is skipped; quotes
   are not processed in comments.  Complete comment lines are allowed
@@ -239,16 +244,28 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
 
   Quoted fields with embedded newlines are supported except after a
   comment character.
-
-  Note that unless \code{colClasses} is specified, all columns are read
-  as character columns and then converted.  This means that quotes are
-  interpreted in all fields and that a column of values like \code{"42"}
-  will result in an integer column.
 }
-\note{
-  The columns referred to in \code{as.is} and \code{colClasses} include
-  the column of row names (if any).
 
+\value{
+  A data frame (\code{\link{data.frame}}) containing a representation of
+  the data in the file.
+
+  Empty input is an error unless \code{col.names} is specified, when a
+  0-row data frame is returned: similarly giving just a header line if
+  \code{header = TRUE} results in a 0-row data frame.  Note that in
+  either case the columns will be logical unless \code{colClasses} was
+  supplied.
+
+  Character strings in the result (including factor levels) will have a
+  declared encoding if \code{encoding} is \code{"latin1"} or
+  \code{"UTF-8"}.
+}
+
+\section{Memory usage}{
+  These functions can use a surprising amount of memory when reading
+  large files.  There is extensive discussion in the \sQuote{R Data
+  Import/Export} manual, supplementing the notes here.
+  
   Less memory will be used if \code{colClasses} is specified as one of
   the six \link{atomic} vector classes.  This can be particularly so when
   reading a column that takes many distinct numeric values, as storing
@@ -264,11 +281,25 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
   \code{read.table} is not the right tool for reading large matrices,
   especially those with many columns: it is designed to read
   \emph{data frames} which may have columns of very different classes.
-  Use \code{\link{scan}} instead.
+  Use \code{\link{scan}} instead for matrices.
+}
+
+\note{
+  The columns referred to in \code{as.is} and \code{colClasses} include
+  the column of row names (if any).
+  
+  Because this function uses \code{\link{pushBack}} it can only handle
+  character strings which can be represented in the current locale.  So
+  although \code{fileEncoding} can be used to specify the encoding of
+  the input file (or a connection can be specified which re-encodes),
+  the implied re-encoding must be possible.  This is not a problem in
+  UTF-8 locales, but it can be on Windows --- \code{\link{readLines}} or
+  \code{\link{scan}} can be used to avoid this limitation since they have
+  special provisions to convert input to UTF-8.
 }
 
 \seealso{
-  The \emph{R Data Import/Export} manual.
+  The \sQuote{R Data Import/Export} manual.
 
   \code{\link{scan}}, \code{\link{type.convert}},
   \code{\link{read.fwf}} for reading \emph{f}ixed \emph{w}idth
@@ -277,16 +308,43 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
   \code{\link{data.frame}}.
 
   \code{\link{count.fields}} can be useful to determine problems with
-  reading files which result in reports of incorrect record lengths.
+  reading files which result in reports of incorrect record lengths (see
+  the \sQuote{Examples} below).
   
   \url{http://tools.ietf.org/html/rfc4180} for the IANA definition of
   CSV files (which requires comma as separator and CRLF line endings).
 }
+
 \references{
   Chambers, J. M. (1992)
   \emph{Data for models.}
   Chapter 3 of \emph{Statistical Models in S}
   eds J. M. Chambers and T. J. Hastie, Wadsworth & Brooks/Cole.
 }
+
+\examples{
+## using count.fields to handle unknown maximum number of fields
+## when fill=TRUE
+test1 <- c(1:5, "6,7", "8,9,10")
+tf <- tempfile()
+writeLines(test1, tf)
+
+read.csv(tf, fill = TRUE) # 1 column
+ncol <- max(count.fields(tf, sep = ","))
+read.csv(tf, fill = TRUE, header = FALSE,
+         col.names = paste("V", seq_len(ncol), sep = ""))
+unlink(tf)
+
+## "Inline" data set, using text=
+## Notice that leading and trailing empty lines are auto-trimmed
+
+read.table(header=TRUE, text="
+a b
+1 2
+3 4
+")
+}
+
+
 \keyword{file}
 \keyword{connection}

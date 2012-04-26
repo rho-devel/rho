@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -85,11 +85,6 @@
 # define attribute_hidden __attribute__ ((visibility ("hidden")))
 #else
 # define attribute_hidden
-#endif
-
-
-#ifndef HAVE_HYPOT
-# define hypot pythag
 #endif
 
 static void calct(Rboolean *);
@@ -177,7 +172,7 @@ void R_cpolyroot(double *opr, double *opi, int *degree,
     if (nn == 1) return;
 
     /* Use a single allocation as these as small */
-    tmp = (double *) R_alloc(10*nn, sizeof(double));
+    tmp = (double *) R_alloc((size_t) (10*nn), sizeof(double));
     pr = tmp; pi = tmp + nn; hr = tmp + 2*nn; hi = tmp + 3*nn;
     qpr = tmp + 4*nn; qpi = tmp + 5*nn; qhr = tmp + 6*nn; qhi = tmp + 7*nn;
     shr = tmp + 8*nn; shi = tmp + 9*nn;

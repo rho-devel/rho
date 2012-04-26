@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -27,9 +27,10 @@ R_HOME = $(top_builddir)
 include $(top_builddir)/Makeconf
 
 ZLIB_CPPFLAGS = -I$(srcdir) @USE_MMAP_ZLIB_TRUE@ -DUSE_MMAP
-ALL_CPPFLAGS = $(ZLIB_CPPFLAGS) $(R_XTRA_CPPFLAGS) $(CPPFLAGS) $(DEFS)
+## need to be PIC for use in grDevices
+ALL_CPPFLAGS = $(ZLIB_CPPFLAGS) $(R_XTRA_CPPFLAGS) $(CPPFLAGS) $(DEFS) $(CPICFLAGS)
 
-SOURCES = adler32.c compress.c crc32.c deflate.c gzio.c infback.c \
+SOURCES = adler32.c compress.c crc32.c deflate.c infback.c \
   inffast.c inflate.c inftrees.c trees.c uncompr.c zutil.c
 HEADERS = crc32.h deflate.h inffast.h inffixed.h inflate.h inftrees.h \
   trees.h zconf.h zlib.h zutil.h
@@ -39,7 +40,7 @@ OBJECTS = $(SOURCES:.c=.o)
 
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
-DISTFILES = R_changes README Makefile.in Makefile.win \
+DISTFILES = R_changes README Makefile.in Makefile.win Rzlib.def \
   $(SOURCES) $(HEADERS)
 noinst_LIBRARIES = @BUILD_ZLIB_TRUE@ libz.a
 libz_a_SOURCES = $(SOURCES)

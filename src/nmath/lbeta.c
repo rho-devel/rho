@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -55,23 +55,21 @@ double lbeta(double a, double b)
 {
     double corr, p, q;
 
-    p = q = a;
-    if(b < p) p = b;/* := min(a,b) */
-    if(b > q) q = b;/* := max(a,b) */
-
 #ifdef IEEE_754
     if(ISNAN(a) || ISNAN(b))
 	return a + b;
 #endif
+    p = q = a;
+    if(b < p) p = b;/* := min(a,b) */
+    if(b > q) q = b;/* := max(a,b) */
 
     /* both arguments must be >= 0 */
-
     if (p < 0)
 	ML_ERR_return_NAN
     else if (p == 0) {
 	return ML_POSINF;
     }
-    else if (!R_FINITE(q)) {
+    else if (!R_FINITE(q)) { /* q == +Inf */
 	return ML_NEGINF;
     }
 

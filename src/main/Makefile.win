@@ -6,9 +6,7 @@ include ../gnuwin32/MkRules
 all: makeMakedeps libmain.a
 
 ## there are headers and include files in this directory
-CPPFLAGS=-I. -I../include -DHAVE_CONFIG_H -DR_DLL_BUILD
-CFLAGS=$(OPTFLAGS)
-FFLAGS=-O2
+CPPFLAGS=-I. -I../include -DHAVE_CONFIG_H -DR_DLL_BUILD $(arch_DEFS)
 
 CSOURCES=\
 	CConverters.c CommandLineArgs.c \
@@ -21,14 +19,13 @@ CSOURCES=\
 	dotcode.c dounzip.c dstruct.c duplicate.c \
 	engine.c envir.c errors.c eval.c \
 	format.c fourier.c \
-	gevents.c gram.c gram-ex.c gramRd.c graphics.c grep.c \
+	gevents.c gram.c gram-ex.c gramLatex.c gramRd.c graphics.c grep.c \
 	identical.c inlined.c inspect.c internet.c iosupport.c \
 	lapack.c list.c localecharset.c logic.c \
 	main.c mapply.c match.c memory.c mkdtemp.c model.c \
 	names.c \
 	objects.c optim.c optimize.c options.c \
-	par.c paste.c pcre.c platform.c \
-	plot.c plot3d.c plotmath.c \
+	par.c paste.c platform.c plot.c plot3d.c plotmath.c \
 	print.c printarray.c printvector.c printutils.c qsort.c \
 	random.c raw.c registration.c relop.c rlocale.c \
 	saveload.c scan.c seq.c serialize.c size.c sort.c source.c split.c \
@@ -37,7 +34,7 @@ CSOURCES=\
 	version.c vfonts.c
 
 FSOURCES=xxxpr.f
-OBJS=$(CSOURCES:.c=.o) $(FSOURCES:.f=.o) 
+OBJS=$(CSOURCES:.c=.o) $(FSOURCES:.f=.o)
 
 ifdef RUN_BISON
 gram.c: gram.y
@@ -48,21 +45,29 @@ gram.c: gram.y
 gramRd.c: gramRd.y
 	bison gramRd.y
 	$(SED) -e "s/gramRd.tab.c/gramRd.c/" gramRd.tab.c > gramRd.c
-	$(RM) gramRd.tab.c	
+	$(RM) gramRd.tab.c
+
+gramLatex.c: gramLatex.y
+	bison gramLatex.y
+	$(SED) -e "s/gramLatex.tab.c/gramLatex.c/" gramLatex.tab.c > gramLatex.c
+	$(RM) gramLatex.tab.c
 endif
+
+platform-CPPFLAGS=-I../gnuwin32 -I../extra -DPLATFORM_PKGTYPE='"win.binary"'
 
 agrep-CPPFLAGS=-I../extra
 builtin-CPPFLAGS=-I../gnuwin32
 connections-CPPFLAGS=-I../extra/zlib -I../extra/bzip2
 connections-CPPFLAGS+=-DLZMA_API_STATIC -I../extra/xz/api
 dcf-CPPFLAGS=-I../extra
-dounzip-CPPFLAGS=-I../extra/zlib
+dounzip-CPPFLAGS=-I../extra/zlib -I../extra/bzip2
 grep-CPPFLAGS=-I../extra -I../extra/pcre -I../gnuwin32 -DPCRE_STATIC
-pcre-CPPFLAGS=-I../extra/pcre -DPCRE_STATIC
-platform-CPPFLAGS=-I../gnuwin32 -I../extra
+memory-CPPFLAGS=$(malloc-DEFS)
 printutils-CPPFLAGS=-I../gnuwin32
 saveload-CPPFLAGS=-I../extra/xdr
 sysutils-CPPFLAGS=-I../gnuwin32
+util-CPPFLAGS=-I../extra/pcre -DPCRE_STATIC
+util-CPPFLAGS+=-DLZMA_API_STATIC -I../extra/xz/api
 
 ifdef USE_ICU
 util-CPPFLAGS=-DUSE_ICU -I"$(ICU_PATH)"/include

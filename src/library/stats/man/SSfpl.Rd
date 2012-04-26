@@ -1,10 +1,11 @@
 % File src/library/stats/man/SSfpl.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{SSfpl}
-\title{Four-parameter Logistic Model}
+\encoding{UTF-8}
+\title{Self-Starting Nls Four-Parameter Logistic Model}
 \usage{
 SSfpl(input, A, B, xmid, scal)
 }
@@ -33,15 +34,16 @@ SSfpl(input, A, B, xmid, scal)
   names of objects, the gradient matrix with respect to these names is
   attached as an attribute named \code{gradient}.
 }
-\author{Jose Pinheiro and Douglas Bates}
+\author{\enc{José}{Jose} Pinheiro and Douglas Bates}
 \seealso{\code{\link{nls}}, \code{\link{selfStart}}
 }
 \examples{
 Chick.1 <- ChickWeight[ChickWeight$Chick == 1, ]
-SSfpl( Chick.1$Time, 13, 368, 14, 6 )  # response only
+SSfpl(Chick.1$Time, 13, 368, 14, 6)  # response only
 A <- 13; B <- 368; xmid <- 14; scal <- 6
-SSfpl( Chick.1$Time, A, B, xmid, scal ) # response and gradient
-getInitial(weight ~ SSfpl(Time, A, B, xmid, scal), data = Chick.1)
+SSfpl(Chick.1$Time, A, B, xmid, scal) # response and gradient
+print(getInitial(weight ~ SSfpl(Time, A, B, xmid, scal), data = Chick.1),
+      digits = 5)
 ## Initial values are in fact the converged values
 fm1 <- nls(weight ~ SSfpl(Time, A, B, xmid, scal), data = Chick.1)
 summary(fm1)

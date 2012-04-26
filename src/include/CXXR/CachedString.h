@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -87,7 +87,10 @@ namespace CXXR {
 	 *
 	 * @param encoding The encoding of the required CachedString.
 	 *          Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are permitted
-	 *          in this context (checked).
+	 *          in this context (checked).  Note that if \a str
+	 *          contains no non-ASCII characters, then the
+	 *          encoding is set to CE_NATIVE regardless of the
+	 *          value of the \a encoding parameter.
 	 *
 	 * @return Pointer to a CachedString (preexisting or newly
 	 * created) representing the specified text in the specified
@@ -113,9 +116,6 @@ namespace CXXR {
 	{
 	    return m_key_val_pr->first.first;
 	}
-
-	// Virtual function of String:
-	const char* c_str() const;
 
 	// Virtual function of RObject:
 	const char* typeName() const;
@@ -146,16 +146,18 @@ namespace CXXR {
 							  CachedString*> >
 	                        > map;
 
-	map::value_type* m_key_val_pr;
-
 	static map* s_cache;
 	static CachedString* s_blank;
 
+	map::value_type* m_key_val_pr;
+	mutable Symbol* m_symbol;  // Pointer to the Symbol object identified
+	  // by this CachedString, or a null pointer if none.
+
 	explicit CachedString(map::value_type* key_val_pr)
 	    : String(key_val_pr->first.first.size(), key_val_pr->first.second),
-	      m_key_val_pr(key_val_pr)
+	    m_key_val_pr(key_val_pr), m_symbol(0)
 	{
-	    freeze();
+	    setCString(key_val_pr->first.first.c_str());
 	}
 
 	// Not implemented.  Declared to prevent
@@ -165,28 +167,15 @@ namespace CXXR {
 
 	// Declared private to ensure that CachedString objects are
 	// allocated only using 'new'.
-	~CachedString()
-	{
-	    // Must copy the key, because some implementations may,
-	    // having deleted the cache entry pointed to by
-	    // m_key_val_pr, continue looking for other entries with
-	    // the given key.
-	    key k = m_key_val_pr->first;
-	    cache()->erase(k);
-	}
+	~CachedString();
 
-	// Return pointer to the cache:
-	static map* cache()
-	{
-	    return s_cache;
-	}
-
-	static void cleanup() {}
+	static void cleanup();
 
 	// Initialize the static data members:
 	static void initialize();
 
 	friend class SchwarzCounter<CachedString>;
+	friend class Symbol;
     };
 }  // namespace CXXR
 
@@ -209,9 +198,9 @@ extern "C" {
 #else
     inline int IS_CACHED(SEXP x)
     {
-	using namespace CXXR;
-	const String* str = SEXP_downcast<const String*>(x);
-	return (dynamic_cast<const CachedString*>(str) != 0);
+	// Use explicit namespace qualification to avoid ambiguities:
+	const CXXR::String* str = CXXR::SEXP_downcast<const CXXR::String*>(x);
+	return (dynamic_cast<const CXXR::CachedString*>(str) != 0);
     }
 #endif
 
@@ -256,6 +245,46 @@ extern "C" {
     inline SEXP Rf_mkCharCE(const char * str, cetype_t encoding)
     {
 	return CXXR::CachedString::obtain(str, encoding);
+    }
+#endif
+
+    /** @brief Create a CXXR::UncachedString object for specified text
+     * and encoding.
+     *
+     * @param text The text of the string to be created, possibly
+     *          including embedded null characters.  The encoding is
+     *          assumed to be CE_NATIVE.
+     *
+     * @param length The length of the string pointed to by \a text.
+     *          Must be nonnegative.  The created string will comprise
+     *          the text plus an appended null byte.
+     *
+     * @param encoding The encoding of the required CachedString.
+     *          Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are permitted in
+     *          this context (checked).
+     *
+     * @return Pointer to the created string.
+     */
+    SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding);
+
+    /** @brief Create a CXXR::UncachedString object for specified text.
+     *
+     * @param text The text of the string to be created, possibly
+     *          including embedded null characters.  The encoding is
+     *          assumed to be CE_NATIVE.
+     *
+     * @param length The length of the string pointed to by \a text.
+     *          Must be nonnegative.  The created string will comprise
+     *          the text plus an appended null byte.
+     *
+     * @return Pointer to the created string.
+     */
+#ifndef __cplusplus
+    SEXP Rf_mkCharLen(const char* text, int length);
+#else
+    inline SEXP Rf_mkCharLen(const char* text, int length)
+    {
+	return Rf_mkCharLenCE(text, length, CE_NATIVE);
     }
 #endif
 

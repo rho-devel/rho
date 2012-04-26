@@ -1,6 +1,6 @@
 % File src/library/tools/man/writePACKAGES.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{write_PACKAGES}
@@ -27,10 +27,10 @@ write_PACKAGES(dir = ".", fields = NULL,
     default ones, or \code{NULL} (default).  The default corresponds to
     the fields needed by \code{\link{available.packages}}:
     \code{"Package"}, \code{"Version"}, \code{"Priority"},
-    \code{"Bundle"}, \code{"Contains"},
     \code{"Depends"}, \code{"Imports"}, \code{"LinkingTo"},
     \code{"Suggests"}, \code{"Enhances"}, \code{"OS_type"},
-    and \code{"License"} and those fields will always be included, plus
+    \code{"License"} and \code{"Archs"}, and those fields will always
+    be included, plus
     the file name in field \code{"File"} if \code{addFile = TRUE}
     and the path to the subdirectory in field \code{"Path"} if subdirectories
     are used.
@@ -54,6 +54,11 @@ write_PACKAGES(dir = ".", fields = NULL,
     \samp{File} in the \file{PACKAGES} file.}
 }
 \details{
+  \code{write_PACKAGES} scans the named directory for R packages,
+  extracts information from each package's \file{DESCRIPTION} file, and
+  writes this information into the \file{PACKAGES} and
+  \file{PACKAGES.gz} files.
+  
   Including non-latest versions of packages is only useful if they have
   less constraining version requirements, so for example
   \code{latestOnly = FALSE} could be used for a source repository when
@@ -77,8 +82,8 @@ write_PACKAGES(dir = ".", fields = NULL,
 }
 \value{
   Invisibly returns the number of packages described in the resulting
-  \file{PACKAGES} and \file{PACKAGES.gz} files.  If \code{0}, no packages were
-  found and no files were written.
+  \file{PACKAGES} and \file{PACKAGES.gz} files.  If \code{0}, no
+  packages were found and no files were written.
 }
 \note{
   Processing \file{.tar.gz} archives to extract the \file{DESCRIPTION}

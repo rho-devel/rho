@@ -16,14 +16,17 @@
 ## add other languages for the R domain to LINGUAS
 ## add both RGui-ll.po and RGui-ll.gmo files to RGUI_CATALOGS
 RGUI_CATALOGS = \
+  RGui-da.po RGui-da.gmo \
   RGui-de.po RGui-de.gmo \
   RGui-es.po RGui-es.gmo \
   RGui-fr.po RGui-fr.gmo \
   RGui-it.po RGui-it.gmo \
   RGui-ja.po RGui-ja.gmo \
   RGui-ko.po RGui-ko.gmo \
+  RGui-nn.po RGui-nn.gmo \
   RGui-pt_BR.po RGui-pt_BR.gmo \
   RGui-ru.po RGui-ru.gmo \
+  RGui-tr.po RGui-tr.gmo \
   RGui-zh_CN.po RGui-zh_CN.gmo \
   RGui-zh_TW.po RGui-zh_TW.gmo
 
@@ -35,8 +38,8 @@ top_builddir = ..
 
 include $(top_builddir)/Makeconf
 
-Rsharedir = $(DESTDIR)${rsharedir}
-Rlocaledir = $(Rsharedir)/locale
+Rsharedir = "$(DESTDIR)${rsharedir}"
+Rlocaledir = "$(Rsharedir)/locale"
 
 mkinstalldirs = $(MKINSTALLDIRS)
 
@@ -331,7 +334,7 @@ update-po: Makefile
 	$(MAKE) update-gmo
 
 ## NB datasets does not have any po, tcltk has src but no tcltk.pot
-R_PKGS_PO = base grDevices graphics grid methods splines stats stats4 tcltk tools utils
+R_PKGS_PO = base compiler grDevices graphics grid methods parallel splines stats stats4 tcltk tools utils
 
 update-pkg-po: Makefile remove-potcdate.sed en@quot.insert-header
 	@for pkg in $(R_PKGS_PO); do \

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -153,7 +153,27 @@ enum {
   ucp_Rejang,
   ucp_Saurashtra,
   ucp_Sundanese,
-  ucp_Vai
+  ucp_Vai,
+  /* New for Unicode 5.2: */
+  ucp_Avestan,
+  ucp_Bamum,
+  ucp_Egyptian_Hieroglyphs,
+  ucp_Imperial_Aramaic,
+  ucp_Inscriptional_Pahlavi,
+  ucp_Inscriptional_Parthian,
+  ucp_Javanese,
+  ucp_Kaithi,
+  ucp_Lisu,
+  ucp_Meetei_Mayek,
+  ucp_Old_South_Arabian,
+  ucp_Old_Turkic,
+  ucp_Samaritan,
+  ucp_Tai_Tham,
+  ucp_Tai_Viet,
+  /* New for Unicode 6.0.0: */
+  ucp_Batak,
+  ucp_Brahmi,
+  ucp_Mandaic
 };
 
 #endif

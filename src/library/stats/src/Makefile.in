@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -32,7 +32,7 @@ SOURCES_C = init.c kmeans.c \
   ansari.c bandwidths.c chisqsim.c d2x2xk.c fexact.c kendall.c ks.c \
   line.c smooth.c \
   prho.c swilk.c \
-  ksmooth.c loessc.c isoreg.c Srunmed.c Trunmed.c \
+  ksmooth.c loessc.c monoSpl.c isoreg.c Srunmed.c Trunmed.c \
   dblcen.c distance.c hclust-utils.c \
   nls.c \
   HoltWinters.c PPsum.c arima.c burg.c filter.c \
@@ -47,9 +47,9 @@ DEPENDS = $(SOURCES_C:.c=.d)
 OBJECTS = $(SOURCES_C:.c=.o) $(SOURCES_F:.f=.o)
 
 # need config.h
-PKG_CPPFLAGS =-I../../../include -I$(top_srcdir)/src/include -DHAVE_CONFIG_H
-PKG_CFLAGS=$(C_VISIBILITY)
-PKG_FFLAGS=$(F77_VISIBILITY)
+PKG_CPPFLAGS = -I../../../include -I$(top_srcdir)/src/include -DHAVE_CONFIG_H
+PKG_CFLAGS = @R_OPENMP_CFLAGS@ $(C_VISIBILITY)
+PKG_FFLAGS = $(F77_VISIBILITY)
 
 SHLIB = $(pkg)@SHLIB_EXT@
 
@@ -57,8 +57,9 @@ SHLIB = $(pkg)@SHLIB_EXT@
 ## We should really add FLIBS to SHLIB_LIBADD, but we need to include
 ## the shlib Makeconf at a later stage, and its default value would
 ## override our setting.
-PKG_LIBS = @BLAS_LIBS@ @FLIBS@
+PKG_LIBS = @R_OPENMP_CFLAGS@ $(BLAS_LIBS) $(FLIBS)
 ## </FIXME>
+
 
 all: Makefile Makedeps
 	@$(MAKE) Makedeps
@@ -77,7 +78,13 @@ shlib: $(SHLIB)
 	@$(SHELL) $(top_srcdir)/tools/copy-if-change $(SHLIB) \
 	  $(top_builddir)/library/$(pkg)/libs@R_ARCH@/$(SHLIB)
 
+include $(R_HOME)/etc${R_ARCH}/Makeconf
 include $(top_srcdir)/share/make/shlib.mk
+
+## Meeded with i386 gcc 4.5.0 -- PR#14427
+portsrc_FFLAGS=$(FPICFLAGS) $(SHLIB_FFLAGS) @SAFE_FFLAGS@
+portsrc.o: portsrc.f
+	$(F77) $(portsrc_FFLAGS) -c $< -o $@
 
 mostlyclean: clean
 clean:

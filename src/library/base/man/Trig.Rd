@@ -1,6 +1,6 @@
 % File src/library/base/man/Trig.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Trig}
@@ -38,28 +38,25 @@ atan2(y, x)
   Angles are in radians, not degrees (i.e., a right angle is
   \eqn{\pi/2}).
 
-  All except \code{atan2} are generic functions: methods can be defined
-  for them individually or via the \code{\link[=S3groupGeneric]{Math}}
-  group generic.
+  All except \code{atan2} are \link{internal generic} \link{primitive}
+  functions: methods can be defined for them individually or via the
+  \code{\link[=S3groupGeneric]{Math}} group generic.
 }
 \section{Complex values}{
    For the inverse trigonometric functions, branch cuts are defined as in
-   Abramowitz and Stegun, figure 4.4, page 79.  Continuity on the
-   branch cuts is standard.
+   Abramowitz and Stegun, figure 4.4, page 79.
 
-   For \code{asin()} and \code{acos()}, there are two cuts, both along
+   For \code{asin} and \code{acos}, there are two cuts, both along
    the real axis: \eqn{\left(-\infty, -1\right]}{(-Inf, -1]} and
-   \eqn{\left[1, \infty\right)}{[1, Inf)}.  Functions \code{asin()}
-   and \code{acos()} are continuous from above on the interval
-   \eqn{\left(-\infty, -1\right]}{(-Inf, -1]} and continuous from
-   below on \eqn{\left[1, \infty\right)}{[1, Inf)}.
+   \eqn{\left[1, \infty\right)}{[1, Inf)}.
 
-   For \code{atan()} there are two cuts, both along the pure imaginary
+   For \code{atan} there are two cuts, both along the pure imaginary
    axis: \eqn{\left(-\infty i, -1i\right]}{(-1i*Inf, -1i]} and
-   \eqn{\left[1i, \infty i\right)}{[1i, 1i*Inf)}.  It is continuous
-   from the left on the interval
-   \eqn{\left(-\infty i, -1i\right]}{(-1i*Inf, -1i]} and from the
-   right on the interval \eqn{\left[1i, \infty i\right)}{[1i, 1i*Inf)}.
+   \eqn{\left[1i, \infty i\right)}{[1i, 1i*Inf)}.
+
+   The behaviour actually on the cuts follows the C99 standard which
+   requires continuity coming round the endpoint in a counter-clockwise
+   direction.
 }
 \section{S4 methods}{
   All except \code{atan2} are S4 generic functions: methods can be defined

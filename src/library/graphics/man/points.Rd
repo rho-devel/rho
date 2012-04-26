@@ -1,6 +1,6 @@
 % File src/library/graphics/man/points.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{points}
@@ -22,7 +22,7 @@ points(x, \dots)
   \item{x, y}{coordinate vectors of points to plot.}
   \item{type}{character indicating the type of plotting; actually any of
     the \code{type}s as in \code{\link{plot.default}}.}
-  \item{\dots}{Further graphical parameters may also be supplied as
+  \item{\dots}{Further \link{graphical parameters} may also be supplied as
     arguments.  See \sQuote{Details}.}
 }
 \details{
@@ -60,10 +60,11 @@ points(x, \dots)
   Others less commonly used are \code{lty} and \code{lwd} for
   types such as \code{"b"} and \code{"l"}.
 
-  Graphical parameters \code{pch}, \code{col}, \code{bg}, \code{cex} and
-  \code{lwd} can be vectors (which will be recycled as needed) giving a
-  value for each point plotted.  If lines are to be plotted (e.g. for
-  \code{type = "b"}/ the first element of \code{lwd} is used.
+  The \link{graphical parameters} \code{pch}, \code{col}, \code{bg},
+  \code{cex} and \code{lwd} can be vectors (which will be recycled as
+  needed) giving a value for each point plotted.  If lines are to be
+  plotted (e.g. for \code{type = "b"}) the first element of \code{lwd}
+  is used.
 
   Points whose \code{x}, \code{y}, \code{pch}, \code{col} or \code{cex}
   value is \code{NA} are omitted from the plot.
@@ -85,14 +86,22 @@ points(x, \dots)
   Note that unlike S (which uses octagons), symbols \code{1}, \code{10},
   \code{13} and \code{16} use circles.  The filled shapes \code{15:18}
   do not include a border.
-  
+
+% SVG support in browsers is patchy, e.g. not Konqueror
+%  \if{html}{\figure{pch.svg}{options: width=100\%}}
+  \if{html}{\figure{pch.png}{Illustration of pch=0:25}}
+  \if{latex}{\figure{pch.pdf}{options: width=15cm}}
+
   The following  \R plotting symbols are can be obtained with
   \code{pch=19:25}: those with \code{21:25} can be colored and
   filled with different colors: \code{col} gives the border color
-  and \code{bg} the background color.
+  and \code{bg} the background color
+  \if{html}{(which is \samp{"grey"} in the figure)}
+  \if{latex}{(which is \samp{"grey"} in the figure)}
   \itemize{
     \item \code{pch=19}: solid circle,
-    \item \code{pch=20}: bullet (smaller solid circle, 2/3 the size of 19),
+    \item \code{pch=20}: bullet (smaller solid circle,
+    2/3 the size of \code{19}),
     \item \code{pch=21}: filled circle,
     \item \code{pch=22}: filled square,
     \item \code{pch=23}: filled diamond,
@@ -107,7 +116,7 @@ points(x, \dots)
   The difference between \code{pch=16} and \code{pch=19} is that the
   latter uses a border and so is perceptibly larger when \code{lty} is
   large relative to \code{cex}.
-      
+
   Values \code{pch=26:31} are currently unused and \code{pch=32:127}
   give the ASCII characters.  In a single-byte locale
   \code{pch=128:255} give the corresponding character (if any) in
@@ -148,6 +157,7 @@ points(x, \dots)
   Wadsworth & Brooks/Cole.
 }
 \seealso{
+  \code{\link{points.formula}} for the formula method;
   \code{\link{plot}}, \code{\link{lines}}, and the underlying
   workhorse function \code{\link{plot.xy}}.
 }
@@ -163,6 +173,15 @@ x <- seq(0,2*pi, len=51)
 plot(x, sin(x), type="o", pch=21, bg=par("bg"), col = "blue", cex=.6,
  main='plot(..., type="o", pch=21, bg=par("bg"))')
 par(op)
+
+\dontrun{
+## The figure was produced by calls like
+png("pch.png", height=0.7, width = 7, res = 100, units="in")
+par(mar = rep(0,4))
+plot(c(-1, 26), 0:1, type="n", axes= FALSE)
+text(0:25, 0.6, 0:25, cex = 0.5)
+points(0:25, rep(0.3, 26), pch = 0:25, bg = "grey")
+}
 
 ##-------- Showing all the extra & some char graphics symbols ---------
 pchShow <-
@@ -214,7 +233,7 @@ TestChars <- function(sign=1, font=1, ...)
    for(i in r) try(points(i\%\%16, i\%/\%16, pch=sign*i, font=font,...))
 }
 TestChars()
-try(TestChars(sign=-1)) # needs MBCS support
+try(TestChars(sign=-1))
 TestChars(font=5) # Euro might be at 160.  Mac OS has apple at 240.
 }}
 \keyword{aplot}

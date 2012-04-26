@@ -14,15 +14,18 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
+## quote() is .Primitive
 
-
-bquote<-function(expr, where=parent.frame())
+bquote <- function(expr, where=parent.frame())
 {
-    unquote<-function(e)
+    unquote <- function(e)
         if (length(e) <= 1L) e
         else if (e[[1L]] == as.name(".")) eval(e[[2L]], where)
+        else if (is.pairlist(e)) as.pairlist(lapply(e,unquote))
         else as.call(lapply(e,unquote))
 
     unquote(substitute(expr))
 }
 
+## utility we've used ourselves
+enquote <- function(cl) as.call(list(as.name("quote"), cl))

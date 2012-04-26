@@ -56,10 +56,10 @@ rgb <- function(red, green, blue, alpha, names = NULL, maxColorValue = 1)
     else result
 }
 
-hsv <- function(h=1, s=1, v=1, gamma = 1, alpha = 1)
+hsv <- function(h=1, s=1, v=1, alpha = 1)
 {
     alphaspec <- !missing(alpha)
-    result <- .Internal(hsv(h, s, v, gamma, alpha))
+    result <- .Internal(hsv(h, s, v, alpha))
     ## If alpha not specified only return #RRGGBB
     if (!alphaspec)
         structure(substr(result, 1L, 7L), names=names(result))
@@ -76,7 +76,7 @@ function (h = 0, c = 35, l = 85, alpha = 1, fixup = TRUE)
     else result
 }
 
-rgb2hsv <- function(r, g = NULL, b = NULL, gamma = 1, maxColorValue = 255)
+rgb2hsv <- function(r, g = NULL, b = NULL, maxColorValue = 255)
 {
     rgb <-
         if(is.null(g) && is.null(b)) as.matrix(r)
@@ -85,12 +85,10 @@ rgb2hsv <- function(r, g = NULL, b = NULL, gamma = 1, maxColorValue = 255)
     d <- dim(rgb)
     if(d[1L] != 3) stop("rgb matrix must have 3 rows")
     n <- d[2L]
-    if(n == 0)
-        return(cbind(c(h=1,s=1,v=1))[,0])
+    if(n == 0L)
+        return(cbind(c(h = 1, s = 1, v = 1))[, 0L])
     ## else:
     rgb <- rgb/maxColorValue
-    if(gamma != 1)# revert gamma corrected hsv values
-        rgb <- rgb ^ (1/gamma)
     if(any(0 > rgb) || any(rgb > 1))
         stop("rgb values must be in [0, maxColorValue]")
 
@@ -106,14 +104,14 @@ palette <- function(value)
 ## A quick little ''rainbow'' function -- improved by MM
 ## doc in	../man/palettes.Rd
 rainbow <-
-    function (n, s = 1, v = 1, start = 0, end = max(1,n - 1)/n, gamma = 1, alpha = 1)
+    function (n, s = 1, v = 1, start = 0, end = max(1,n - 1)/n, alpha = 1)
 {
     if ((n <- as.integer(n[1L])) > 0) {
 	if(start == end || any(c(start,end) < 0)|| any(c(start,end) > 1))
 	    stop("'start' and 'end' must be distinct and in [0, 1].")
 	hsv(h = seq.int(start, ifelse(start > end, 1, 0) + end,
-                        length.out = n) %% 1, s, v, gamma, alpha)
-    } else character(0L)
+                        length.out = n) %% 1, s, v, alpha)
+    } else character()
 }
 
 topo.colors <- function (n, alpha = 1)
@@ -126,7 +124,7 @@ topo.colors <- function (n, alpha = 1)
 	  if(j > 0) hsv(h= seq.int(from= 23/60, to= 11/60, length.out = j), alpha=alpha),
 	  if(k > 0) hsv(h= seq.int(from= 10/60, to=  6/60, length.out = k), alpha=alpha,
 			s= seq.int(from= 1,	to= 0.3,   length.out = k), v = 1))
-    } else character(0L)
+    } else character()
 }
 
 terrain.colors <- function (n, alpha = 1)
@@ -142,7 +140,7 @@ terrain.colors <- function (n, alpha = 1)
 	  hsv(h = seq.int(h[2L], h[3L], length.out = n - k + 1)[-1L],
 	      s = seq.int(s[2L], s[3L], length.out = n - k + 1)[-1L],
 	      v = seq.int(v[2L], v[3L], length.out = n - k + 1)[-1L], alpha = alpha))
-    } else character(0L)
+    } else character()
 }
 
 heat.colors <- function (n, alpha = 1)
@@ -154,23 +152,23 @@ heat.colors <- function (n, alpha = 1)
 	  if (j > 0)
 	  hsv(h = 1/6, s = seq.int(from= 1-1/(2*j), to= 1/(2*j), length.out = j),
 	      v = 1, alpha = alpha))
-    } else character(0L)
+    } else character()
 }
 
 cm.colors <- function (n, alpha = 1)
 {
-    if ((n <- as.integer(n[1L])) > 0) {
-	even.n <- n %% 2 == 0
-	k <- n%/%2
-	l1 <- k + 1 - even.n
+    if ((n <- as.integer(n[1L])) > 0L) {
+	even.n <- n %% 2L == 0L
+	k <- n %/% 2L
+	l1 <- k + 1L - even.n
 	l2 <- n - k + even.n
-	c(if(l1 > 0)
+	c(if(l1 > 0L)
 	  hsv(h =  6/12, s = seq.int(.5, ifelse(even.n,.5/k,0), length.out = l1),
 	      v = 1, alpha = alpha),
 	  if(l2 > 1)
 	  hsv(h = 10/12, s = seq.int(0, 0.5, length.out = l2)[-1L],
 	      v = 1, alpha = alpha))
-    } else character(0L)
+    } else character()
 }
 
 gray.colors <- ## FIXME: add 'alpha = 1'

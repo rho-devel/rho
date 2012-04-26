@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -37,37 +37,54 @@
 #ifndef R_COMPLEX_H
 #define R_COMPLEX_H
 
-#ifdef  __cplusplus
-#include <cstdio>
-#include <boost/serialization/access.hpp>
-
-typedef struct {
-	double r;
-	double i;
-
-	template<class Archive>
-	void serialize (Archive & ar, const unsigned int version) {
-		printf("Serialize RComplex");
-		ar & r;
-		ar & i;
-	}
-} Rcomplex;
-
-extern "C" {
-#endif
-
-
 #ifndef  __cplusplus
 
 typedef struct {
-	double r;
-	double i;
+    double r;
+    double i;
 } Rcomplex;
 
-#endif /* ifndef __cplusplus */
+#else
 
-#ifdef __cplusplus
-} // extern C
-#endif
+#include <cstdio>
+#include <boost/serialization/access.hpp>
+
+struct Rcomplex {
+    double r;
+    double i;
+
+    Rcomplex()
+    {}
+
+    Rcomplex(double rl, double im = 0.0)
+	: r(rl), i(im)
+    {}
+
+    Rcomplex& operator=(double rhs)
+    {
+	r = rhs;
+	i = 0;
+	return *this;
+    }
+
+    template<class Archive>
+    void serialize (Archive & ar, const unsigned int version) {
+	std::printf("Serialize RComplex");
+	ar & r;
+	ar & i;
+    }
+};
+
+inline bool operator==(const Rcomplex& l, const Rcomplex& r)
+{
+    return (l.r == r.r) && (l.i == r.i);
+}
+
+inline bool operator!=(const Rcomplex& l, const Rcomplex& r)
+{
+    return !(l==r);
+}
+
+#endif // __cplusplus
 
 #endif /* R_COMPLEX_H */

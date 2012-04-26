@@ -1,11 +1,11 @@
 % File src/library/grDevices/man/pdf.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{pdf}
 \alias{pdf}
-\encoding{latin1}
+\encoding{UTF-8}
 
 \title{PDF Graphics Device}
 %% The definitive doc is the source :-)
@@ -18,13 +18,19 @@
 pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
     width, height, onefile, family, title, fonts, version,
     paper, encoding, bg, fg, pointsize, pagecentre, colormodel,
-    useDingbats, useKerning, fillOddEven)
+    useDingbats, useKerning, fillOddEven, maxRasters, compress)
 }
 \arguments{
   \item{file}{a character string giving the name of the file.
-    For use with \code{onefile=FALSE} give a C integer format such
+    If it is of the form \code{"|cmd"}, the output is piped to the
+    command given by \command{cmd}.  If it is \code{NULL},
+    then no external file is created (effectively, no drawing occurs),
+    but the device may still be queried (e.g., for size of text).
+    For use with \code{onefile = FALSE} give a C integer format such
     as \code{"Rplot\%03d.pdf"} (the default in that case).
     (See \code{\link{postscript}} for further details.)
+
+    Tilde expansion (see \code{\link{path.expand}}) is done.
   }
   \item{width, height}{the width and height of the graphics region in
     inches.  The default values are \code{7}.}
@@ -36,8 +42,8 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   \item{title}{title string to embed as the \samp{/Title} field in the
     file.  Defaults to \code{"R Graphics Output"}.}
   \item{fonts}{a character vector specifying \R graphics font family
-    names for fonts which will be included in the PDF file.  Defaults to
-    \code{NULL}.}
+    names for additional fonts which will be included in the PDF file.
+    Defaults to \code{NULL}.}
   \item{version}{a string describing the PDF version that will be
     required to view the output.  This is a minimum, and will be
     increased (with a warning) if necessary.  Defaults to \code{"1.4"},
@@ -51,7 +57,7 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
     \code{"default"}; if this is selected, the
     papersize is taken from the option \code{"papersize"}
     if that is set and as \code{"a4"} if it is unset or empty.
-    Defaults \code{"special"}.
+    Defaults to \code{"special"}.
   }
   \item{encoding}{the name of an encoding file.  See
     \code{\link{postscript}} for details.  Defaults to \code{"default"}.}
@@ -63,15 +69,18 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
     speaking, in bp, that is 1/72 of an inch, but approximately in
     points.  Defaults to \code{12}.}
   \item{pagecentre}{logical: should the device region be centred on the
-    page? -- is only relevant for \code{paper != "special"}.  Defaults
-    to true.}
+    page? -- is only relevant for \code{paper != "special"}.  
+    Defaults to \code{TRUE}.}
   \item{colormodel}{a character string describing the color model:
-    currently allowed values are \code{"rgb"}, \code{"gray"} and
-    \code{"cmyk"}.  Defaults to \code{"rgb"}.}
+    currently allowed values are \code{"srgb"}, \code{"gray"} (or
+    \code{"grey"}) and \code{"cmyk"}.  Defaults to \code{"srgb"}.  See section
+    \sQuote{Color models}.}
   \item{useDingbats}{logical.  Should small circles be rendered
     \emph{via} the Dingbats font?  Defaults to \code{TRUE}, which produces
-    smaller and better output. Setting this to \code{FALSE} can work
-    around font display problems in broken PDF viewers.
+    smaller and better output.  Setting this to \code{FALSE} can work
+    around font display problems in broken PDF viewers: although this
+    font is one of the 14 guaranteed to be available in all PDF viewers,
+    that guarantee is not always honoured.
 #ifdef unix
     See the \sQuote{Note} for a possible fix for such viewers.
 #endif
@@ -79,7 +88,12 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   \item{useKerning}{logical.  Should kerning corrections be included in
     setting text and calculating string widths?  Defaults to \code{TRUE}.}
   \item{fillOddEven}{logical controlling the polygon fill mode:  see
-      \code{\link{polygon}} for details.  Default \code{FALSE}.}
+    \code{\link{polygon}} for details.  Defaults to \code{FALSE}.}
+  \item{maxRasters}{integer.  Unused in \R >= 2.14.0, previously the
+    maximum number of raster images to be stored in this PDF document
+    (default \code{64} in \R < 2.13.2).}
+  \item{compress}{logical.  Should PDF streams be generated with Flate
+    compression?  Defaults to \code{TRUE}.}
 }
 \details{
   All arguments except \code{file} default to values given by
@@ -95,7 +109,9 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   \file{Rplot1000.pdf}, \dots.
   
   The \code{family} argument can be used to specify a PDF-specific
-  font family as the initial/default font for the device.
+  font family as the initial/default font for the device.  If additional
+  font families are to be used they should be included in the
+  \code{fonts} argument.
 
   If a device-independent \R graphics font family is specified (e.g., via
   \code{par(family=)} in the graphics package), the PDF device makes use
@@ -103,14 +119,14 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   to a PDF-specific font family description.  (See the
   documentation for \code{\link{pdfFonts}}.)
 
-  \R does \emph{not} embed fonts in the PDF file, so it is only
+  This device does \emph{not} embed fonts in the PDF file, so it is only
   straightforward to use mappings to the font families that can be
   assumed to be available in any PDF viewer: \code{"Times"}
   (equivalently \code{"serif"}), \code{"Helvetica"} (equivalently
   \code{"sans"}) and \code{"Courier"} (equivalently \code{"mono"}).
   Other families may be specified, but it is the user's responsibility
   to ensure that these fonts are available on the system and third-party
-  software, e.g., Ghostscript, may be required to embed the fonts so
+  software (e.g., Ghostscript) may be required to embed the fonts so
   that the PDF can be included in other documents (e.g., LaTeX): see
   \code{\link{embedFonts}}.  The URW-based families described for
   \code{\link{postscript}} can be used with viewers
@@ -128,23 +144,18 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   code is shared between the drivers.  The native PDF encoding is given
   in file \file{PDFDoc.enc}.
 
-  \code{pdf} writes uncompressed PDF.  It is primarily intended for
-  producing PDF graphics for inclusion in other documents, and
-  PDF-includers such as \code{pdftex} are usually able to handle
-  compression: there are a large number of PDF compression utilities
-  such as \samp{pdftk}.
-
-  The PDF produced is fairly simple, with each page being represented
-  as a single stream.  The \R graphics model does not distinguish
-  graphics objects at the level of the driver interface.
+  The PDF produced is fairly simple, with each page being represented as
+  a single stream (by default compressed and possibly with references to
+  raster images).  The \R graphics model does not distinguish graphics
+  objects at the level of the driver interface.
 
   The \code{version} argument declares the version of PDF that gets
-  produced.  The version must be at least 1.4 for semi-transparent
-  output to be understood, and at least 1.3 if CID fonts are to be used:
-  if these features are used the version number will be increased (with
-  a warning).  Specifying a low version number is useful if you want to
-  produce PDF output that can be viewed on older or non-Adobe PDF
-  viewers.  (PDF 1.4 requires Acrobat 5 or later.)
+  produced.  The version must be at least 1.2 when compression is used,
+  1.4 for semi-transparent output to be understood, and at least 1.3 if
+  CID fonts are to be used: if any of these features are used the
+  version number will be increased (with a warning).  (PDF 1.4 was first
+  supported by Acrobat 5 in 2001; it is very unlikely not to be
+  supported in a current viewer.)
 
   Line widths as controlled by \code{par(lwd=)} are in multiples of
   1/96 inch.  Multiples less than 1 are allowed.  \code{pch="."} with
@@ -164,19 +175,27 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   on a landscape A4 page with 0.25 inch margins.
 
   When the background colour is fully transparent (as is the initial
-  default value), the PDF produced does not paint the background.
-  Almost all PDF viewers will use a white canvas so the visual effect is
-  if the background were white.  This will not be the case when printing
-  onto coloured paper, though.
+  default value), the PDF produced does not paint the background.  Most
+  PDF viewers will use a white canvas so the visual effect is if the
+  background were white.  This will not be the case when printing onto
+  coloured paper, though.
 }
+
 \section{Color models}{
-  The default color model is RGB, and model \code{"gray"} maps RGB
-  colors to greyscale using perceived luminosity (biased towards green).
-  \code{"cmyk"} outputs in CMYK colorspace.  Nothing in \R specifies the
-  interpretation of the RGB or CMYK color spaces, and the simplest
-  possible conversion to CMYK is used
-  (\url{http://en.wikipedia.org/wiki/CMYK_color_model#Mapping_RGB_to_CMYK}).
+  The default color model (\code{"srgb"}) is sRGB.  Model \code{"gray"}
+  (or \code{"grey"}) maps sRGB colors to greyscale using perceived
+  luminosity (biased towards green).  \code{"cmyk"} outputs in CMYK
+  colorspace.  The simplest possible conversion from sRGB to CMYK is
+  used
+  (\url{http://en.wikipedia.org/wiki/CMYK_color_model#Mapping_RGB_to_CMYK}),
+  and raster images are output in RGB.
+
+  Also available for backwards compatibility is model \code{"rgb"} which
+  uses uncalibrated RGB and corresponds to the model used with that name
+  in \R prior to 2.13.0.  Some viewers may render some plots in that
+  colorspace faster than in sRGB, and the plot files will be smaller.
 }
+
 \section{Conventions}{
   This section describes the implementation of the conventions for
   graphics devices set out in the \dQuote{R Internals Manual}.
@@ -185,22 +204,26 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
     \item The default device size is 7 inches square.
     \item Font sizes are in big points.
     \item The default font family is Helvetica.
-    \item Line widths are as a multiple of 1/96 inch, with no minimum. 
+    \item Line widths are as a multiple of 1/96 inch, with a minimum
+    of 0.01 enforced.
     \item Circles of any radius are allowed.  Unless \code{useDingbats =
-    FALSE}, opaque circles of less than 10 big
-    points radius are rendered using char 108 in the Dingbats font:
-    all semi-transparent and larger circles using a \enc{Bézier}{Bezier}
-    curve for each quadrant.
-    \item Colours are interpreted by the viewing/printing application.
+      FALSE}, opaque circles of less than 10 big points radius are
+    rendered using char 108 in the Dingbats font: all semi-transparent
+    and larger circles using a \enc{BÃ©zier}{Bezier} curve for each
+    quadrant.
+    \item Colours are by default specified as sRGB.
   }
+
+  At very small line widths, the line type may be forced to solid.
 }
+
 \note{
-  If you see problems with PDF output, do remember that the
-  problem is much more likely to be in your viewer than in \R.  Try
-  another viewer if possible.  Symptoms for which the viewer has been at
-  fault are apparent grids on image plots (turn off graphics
-  anti-aliasing in your viewer if you) and missing or incorrect glyphs
-  in text (viewers silently doing font substitution).
+  If you see problems with PDF output, do remember that the problem is
+  much more likely to be in your viewer than in \R.  Try another
+  viewer if possible.  Symptoms for which the viewer has been at fault
+  are apparent grids on image plots (turn off graphics anti-aliasing
+  in your viewer if you can) and missing or incorrect glyphs in text
+  (viewers silently doing font substitution).
 
   Unfortunately the default viewers on most Linux and Mac OS X systems
   have these problems, and no obvious way to turn off graphics anti-aliasing.
@@ -213,36 +236,53 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   standard Helvetica and Times fonts, and these too often have different
   font metrics from the true fonts.
 
-  Acrobat Reader 5.x and later can be extended by support for Asian and
-  (so-called) Central European fonts, and these will be needed for the
-  full use of encodings other than Latin-1.  See
+  Acrobat Reader can be extended by \sQuote{font packs}, and these will
+  be needed for the full use of encodings other than Latin-1 (although
+  they may be downloaded as needed).  See
+  \url{http://www.adobe.com/downloads/updates} for Reader 9 and X, and
   \url{http://www.adobe.com/products/acrobat/acrrasianfontpack.html} for
-  Reader 6.x to 8.x, and \url{http://www.adobe.com/downloads/updates}
-  for 9.x.
+  Reader 6 to 8.
 
 #ifdef unix
   On some systems the default plotting character \code{pch = 1} is
   displayed in some PDF viewers incorrectly as a \code{"q"}
   character.  (These seem to be viewers based on the \samp{poppler} PDF
-  rendering library). This may be due to incorrect or incomplete mapping
+  rendering library).  This may be due to incorrect or incomplete mapping
   of font names to those used by the system.  Adding the following lines
   to \file{~/.fonts.conf} or \file{/etc/fonts/local.conf} may circumvent
   this problem.
-  \preformatted{
+\preformatted{<fontconfig>    
 <alias binding="same">
-       <family>ZapfDingbats</family>
-       <accept><family>Dingbats</family></accept>
+  <family>ZapfDingbats</family>
+  <accept><family>Dingbats</family></accept>
 </alias>
-  }
+</fontconfig>  
+}
+  Some further workarounds for problems with symbol fonts on
+  viewers using \sQuote{fontconfig} are given in the \sQuote{Cairo Fonts}
+  section of the help for \code{\link{X11}}.
+#endif
+#ifdef windows
+  The TeXworks PDF viewer is one of those which has been seen to fail to
+  display Dingbats correctly.  Whereas on other platforms the problems
+  seen are incorrect output, on Windows points are silently omitted.  One
+  workaround is to use the argument \code{useDingbats = FALSE}: another
+  it to use a better PDF viewer.
 #endif
 }
+
 \seealso{
   \code{\link{pdfFonts}}, \code{\link{pdf.options}},
   \code{\link{embedFonts}},
   \code{\link{Devices}},
   \code{\link{postscript}}.
-#ifdef unix
+
+#ifdef unix  
   \code{\link{cairo_pdf}} and (on Mac OS X only) \code{\link{quartz}}
+  for other devices that can produce PDF.
+#endif
+#ifdef windows  
+  \code{\link{cairo_pdf}} and (on Mac OS X only) \code{quartz}
   for other devices that can produce PDF.
 #endif
 

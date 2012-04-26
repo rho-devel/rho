@@ -1,3 +1,53 @@
+Changes from grid_2.12.0 to grid_2.13.0:
+--------------------------------------
+
+1.  Added grid.function() for drawing lines to represent functions.
+
+2.  Fixed bug in calculation of x, y, width, and height of segments
+    grobs.
+
+3.  Fixed bug in grid.grab(wrap=TRUE) when the scene includes 
+    downViewport()s.
+
+4.  Added showGrob() function.
+
+
+Changes from grid_2.11.0 to grid_2.12.0:
+--------------------------------------
+
+1.  Neither width nor height need to be specified in 
+    grid.raster().  The image aspect ratio will be used
+    to calculate an appropriate image size for the 
+    current viewport.
+
+2.  Added [x|y|width|height]Details() methods for "rastergrob"s
+
+3.  "roundrect" grobs now obey their 'just' setting
+    (bug reported by Beau Benjamin Bruce)
+
+4.  Added grid.path() for rendering paths with holes.
+
+
+Changes from grid_2.10.0 to grid_2.11.0:
+--------------------------------------
+
+1.  Added xsplinePoints() function to return the (x, y) 
+    locations that an Xspline would be drawn through.
+    Useful for, e.g., clipping an Xspline against a
+    boundary.
+
+2.  Added grid.raster() function for rendering raster images.
+
+3.  Added grid.cap() function for capturing output on
+    current graphics device as a raster image.
+
+4.  Fixed PROTECT() bug in grid.rect() PR#14199
+    Thanks to Andrew Runnalls for the bug report.
+
+5.  Fixed multiple problems in rep.unit() and unit subsetting.
+    Motivated by PR#14170.  Thanks to Bert Gunter.
+    
+
 Changes from grid_2.9.0 to grid_2.10.0:
 --------------------------------------
 

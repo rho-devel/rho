@@ -43,11 +43,11 @@ quasipoisson(link = "log")
     \code{cloglog} (complementary log-log);
     the \code{Gamma} family the links \code{inverse}, \code{identity}
      and \code{log};
-    the \code{poisson} family the links \code{log}, \code{identity}, 
+    the \code{poisson} family the links \code{log}, \code{identity},
     and \code{sqrt} and the \code{inverse.gaussian} family the links
     \code{1/mu^2}, \code{inverse}, \code{identity}
     and \code{log}.
-    
+
     The \code{quasi} family accepts the links \code{logit}, \code{probit},
     \code{cloglog},  \code{identity}, \code{inverse},
     \code{log}, \code{1/mu^2} and \code{sqrt}, and
@@ -86,7 +86,7 @@ quasipoisson(link = "log")
   restrictions) a model with
   variance proportional to mean as in the quasi-binomial model, note
   that \code{glm} does not compute maximum-likelihood estimates in that
-  model.  The behaviour of S is closer to the quasi- variants. 
+  model.  The behaviour of S is closer to the quasi- variants.
 }
 \note{
   The \code{link} and \code{variance} arguments have rather awkward
@@ -119,7 +119,7 @@ quasipoisson(link = "log")
     for the quasi- families).  See \code{\link{logLik}} for the assumptions
       made about the dispersion parameter.}
   \item{mu.eta}{function: derivative \code{function(eta)}
-    \eqn{d\mu / d\eta}{dmu/deta}.}
+    \eqn{d\mu/d\eta}.}
   \item{initialize}{expression.  This needs to set up whatever data
     objects are needed for the family as well as \code{n} (needed for
     AIC in the binomial family) and \code{mustart} (see \code{\link{glm}}.}
@@ -158,6 +158,10 @@ quasipoisson(link = "log")
 }
 \seealso{
   \code{\link{glm}}, \code{\link{power}}, \code{\link{make.link}}.
+
+  For binomial \emph{coefficients}, \code{\link{choose}};
+  the binomial and negative binomial \emph{distributions},
+  \code{\link{Binomial}}, and \code{\link{NegBinomial}}.
 }
 \examples{
 require(utils) # for str
@@ -179,13 +183,14 @@ outcome <- gl(3,1,9)
 treatment <- gl(3,3)
 d.AD <- data.frame(treatment, outcome, counts)
 glm.qD93 <- glm(counts ~ outcome + treatment, family=quasipoisson())
+\donttest{
 glm.qD93
 anova(glm.qD93, test="F")
 summary(glm.qD93)
 ## for Poisson results use
 anova(glm.qD93, dispersion = 1, test="Chisq")
 summary(glm.qD93, dispersion = 1)
-
+}
 
 ## Example of user-specified link, a logit model for p^days
 ## See Shaffer, T.  2004. Auk 121(2): 526-540.

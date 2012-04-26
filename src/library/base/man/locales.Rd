@@ -1,6 +1,6 @@
 % File src/library/base/man/locales.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{locales}
@@ -30,14 +30,10 @@ Sys.setlocale(category = "LC_ALL", locale = "")
 }
 \arguments{
   \item{category}{character string.  The following categories should
-    always be supported: \code{"LC_ALL"},
-    \code{"LC_COLLATE"}, \code{"LC_CTYPE"}, \code{"LC_MONETARY"},
-    \code{"LC_NUMERIC"} and \code{"LC_TIME"}.  Some systems
-#ifdef windows
-    (not Windows)
-#endif
-    will also support \code{"LC_MESSAGES"}, \code{"LC_PAPER"}
-    and \code{"LC_MEASUREMENT"}.
+    always be supported: \code{"LC_ALL"}, \code{"LC_COLLATE"},
+    \code{"LC_CTYPE"}, \code{"LC_MONETARY"}, \code{"LC_NUMERIC"} and
+    \code{"LC_TIME"}.  Some systems (not Windows) will also support
+    \code{"LC_MESSAGES"}, \code{"LC_PAPER"} and \code{"LC_MEASUREMENT"}.
   }
   \item{locale}{character string.  A valid locale name on the system in
     use.  Normally \code{""} (the default) will pick up the default
@@ -55,16 +51,14 @@ Sys.setlocale(category = "LC_ALL", locale = "")
   the behaviour of \code{\link{as.POSIXlt}} and \code{\link{strptime}}
   and functions which use them (but not \code{\link{date}}).
 
-  \R can be built with no support for locales, but it is normally
-  available on Unix and is available on Windows.
-
   The first seven categories described here are those specified by
   POSIX.  \code{"LC_MESSAGES"} will be \code{"C"} on systems that do not
   support message translation, and is not supported on Windows.  Trying
   to use an unsupported category is an error for \code{Sys.setlocale}.
 
-  Note that setting \code{"LC_ALL"} sets only \code{"LC_COLLATE"},
-  \code{"LC_CTYPE"}, \code{"LC_MONETARY"} and \code{"LC_TIME"}.
+  Note that setting category \code{"LC_ALL"} sets only
+  \code{"LC_COLLATE"}, \code{"LC_CTYPE"}, \code{"LC_MONETARY"} and
+  \code{"LC_TIME"}.
 
   Attempts to set an invalid locale are ignored.  There may or may not
   be a warning, depending on the OS.
@@ -119,18 +113,23 @@ Sys.setlocale(category = "LC_ALL", locale = "")
 
   \code{\link{l10n_info}} gives some summary facts about the locale and
   its encoding.
+
+  The \sQuote{R Installation and Administration} manual for background
+  on locales and how to find out locale names on your system.
 }
 \examples{
 Sys.getlocale()
 Sys.getlocale("LC_TIME")
 \dontrun{
 Sys.setlocale("LC_TIME", "de")     # Solaris: details are OS-dependent
-Sys.setlocale("LC_TIME", "de_DE.utf8")  # Modern Linux etc.
-Sys.setlocale("LC_TIME", "de_DE")  # Mac OS X
+Sys.setlocale("LC_TIME", "de_DE.utf8")   # Modern Linux etc.
+Sys.setlocale("LC_TIME", "de_DE.UTF-8")  # ditto
+Sys.setlocale("LC_TIME", "de_DE")  # Mac OS X, in UTF-8
 Sys.setlocale("LC_TIME", "German") # Windows
 }
 Sys.getlocale("LC_PAPER")          # may or may not be set
 
-Sys.setlocale("LC_COLLATE", "C")   # turn off locale-specific sorting, usually
+Sys.setlocale("LC_COLLATE", "C")   # turn off locale-specific sorting,
+                                   #  usually
 }
 \keyword{utilities}

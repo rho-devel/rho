@@ -1,6 +1,6 @@
 % File src/library/base/man/real.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{real}
@@ -18,16 +18,14 @@ is.real(x)
   and are provided for backwards compatibility only.
 }
 \arguments{
-  \item{length}{desired length.}
+  \item{length}{A non-negative integer specifying the desired length.
+    Double values will be coerced to integer:
+    supplying an argument of length other than one is an error.}
   \item{x}{object to be coerced or tested.}
   \item{\dots}{further arguments passed to or from other methods.}
 }
 \details{
   \code{as.real} is a generic function, but S3 methods must be
   written for \code{\link{as.double}}.  
-  
-  \code{as.real} and \code{is.real} are \link{primitive}, so
-  positional matching is used and any names of supplied arguments are
-  ignored.  This may not be true of methods for \code{as.real}.  
 }
 \keyword{classes}

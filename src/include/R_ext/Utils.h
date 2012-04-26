@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -97,6 +97,7 @@ double R_atof(const char *str);
 double R_strtod(const char *c, char **end);
 
 char *R_tmpnam(const char *prefix, const char *tempdir);
+char *R_tmpnam2(const char *prefix, const char *tempdir, const char *fileext);
 
 void	hsv2rgb(double h, double s, double v,
 		double *r, double *g, double *b);

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -41,6 +41,7 @@
 #define MEMORYBANK_HPP
 
 #include <cstring>
+#include "config.h"
 #include "CXXR/CellPool.hpp"
 #include "CXXR/SchwarzCounter.hpp"
 
@@ -55,8 +56,8 @@ namespace CXXR {
      * (though some of these may be overwritten by data used for free
      * list management).  This can be useful to show up premature
      * deallocation of memory block, especially if used in conjunction
-     * with the CELLFIFO preprocessor variable documented in class
-     * CellPool.
+     * with the CELLFIFO preprocessor variable documented in
+     * config.hpp .
      */
     class MemoryBank {
     public:
@@ -68,6 +69,9 @@ namespace CXXR {
 	 *
 	 * @throws bad_alloc if a cell cannot be allocated.
 	 */
+#ifdef __GNUC__
+	__attribute__((hot,fastcall))
+#endif
 	static void* allocate(size_t bytes) throw (std::bad_alloc);
 
 	/** @brief Number of blocks currently allocated.
@@ -85,10 +89,6 @@ namespace CXXR {
 	 * deallocated.  Actual utilisation of memory in the main heap
 	 * may be greater than this, possibly by as much as a factor
 	 * of 2.
-	 *
-	 * @note If redzoning is operation (<tt>VALGRIND_LEVEL >=
-	 * 3</tt>), the value returned does not include the size of the
-	 * redzones.
 	 */
 	static size_t bytesAllocated() {return s_bytes_allocated;}
 
@@ -116,20 +116,21 @@ namespace CXXR {
 	    // This helps to diagnose premature GC:
 	    memset(p, 0x55, bytes);
 #endif
-#if VALGRIND_LEVEL >= 3
-	    size_t blockbytes = bytes + 1;  // trailing redzone
-	    char* c = static_cast<char*>(p);
-	    VALGRIND_MAKE_MEM_UNDEFINED(c + bytes, 1);
-#else
-	    size_t blockbytes = bytes;
-#endif
 	    // Assumes sizeof(double) == 8:
-	    if (blockbytes > s_max_cell_size)
+	    if (bytes > s_max_cell_size)
 		::operator delete(p);
-	    else s_pools[s_pooltab[blockbytes]]->deallocate(p);
+	    else s_pools[s_pooltab[(bytes + 7) >> 3]].deallocate(p);
 	    --s_blocks_allocated;
 	    s_bytes_allocated -= bytes;
 	}
+
+	/** @brief Reorganise lists of free cells.
+	 *
+	 * This is done with a view to increasing the probability that
+	 * successive allocations will lie within the same cache line
+	 * or (less importantly nowadays) memory page.
+	 */
+	static void defragment();
 
 #ifdef R_MEMORY_PROFILING
 	/** Set a callback to monitor allocations exceeding a threshold size.
@@ -155,11 +156,11 @@ namespace CXXR {
     private:
 	typedef CellPool Pool;
 	static const size_t s_num_pools = 10;
-	static const size_t s_max_cell_size = 128;
+	static const size_t s_max_cell_size;
 	static size_t s_blocks_allocated;
 	static size_t s_bytes_allocated;
-	static Pool* s_pools[];
-	static const unsigned int s_pooltab[];
+	static Pool* s_pools;
+	static const unsigned char s_pooltab[];
 #ifdef R_MEMORY_PROFILING
 	static void (*s_monitor)(size_t);
 	static size_t s_monitor_threshold;
@@ -170,7 +171,7 @@ namespace CXXR {
 	MemoryBank();
 
 	// Free memory used by the static data members:
-	static void cleanup();
+	static void cleanup() {}
 
 	// Initialize the static data members:
 	static void initialize();

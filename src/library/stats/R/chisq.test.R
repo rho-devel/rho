@@ -21,21 +21,21 @@ chisq.test <- function(x, y = NULL, correct = TRUE,
     DNAME <- deparse(substitute(x))
     if (is.data.frame(x))
 	x <- as.matrix(x)
-    if (is.matrix(x)) {
-	if (min(dim(x)) == 1)
+    if (is.matrix(x)) { # why not just drop()?
+	if (min(dim(x)) == 1L)
 	    x <- as.vector(x)
     }
     if (!is.matrix(x) && !is.null(y)) {
 	if (length(x) != length(y))
 	    stop("'x' and 'y' must have the same length")
         DNAME2 <- deparse(substitute(y))
-        ## omit names on dims if too long (and 1 line might already too long)
+        ## omit names on dims if too long (and 1 line might already be too long)
         xname <- if(length(DNAME) > 1L || nchar(DNAME, "w") > 30) "" else DNAME
         yname <- if(length(DNAME2) > 1L || nchar(DNAME2, "w") > 30) "" else DNAME2
 	OK <- complete.cases(x, y)
 	x <- factor(x[OK])
 	y <- factor(y[OK])
-	if ((nlevels(x) < 2) || (nlevels(y) < 2))
+	if ((nlevels(x) < 2L) || (nlevels(y) < 2L))
 	    stop("'x' and 'y' must have at least 2 levels")
 	## Could also call table() with 'deparse.level = 2', but we need
 	## to deparse ourselves for DNAME anyway ...
@@ -66,10 +66,16 @@ chisq.test <- function(x, y = NULL, correct = TRUE,
 	sr <- rowSums(x)
 	sc <- colSums(x)
 	E <- outer(sr, sc, "*") / n
+
+        ## Cell residual variance. Essentially formula (2.9) in Agresti(2007).
+        v <- function(r, c, n) c * r * (n - r) * (n - c)/n^3
+
+        V <- outer(sr, sc, v, n)
+
 	dimnames(E) <- dimnames(x)
 	if (simulate.p.value && all(sr > 0) && all(sc > 0)) {
 	    setMETH()
-	    tmp <- .C(R_chisqsim,
+	    tmp <- .C(C_chisqsim,
 		      as.integer(nr),
 		      as.integer(nc),
 		      as.integer(sr),
@@ -103,7 +109,7 @@ chisq.test <- function(x, y = NULL, correct = TRUE,
 	}
     }
     else {
-	if (length(x) == 1)
+	if (length(x) == 1L)
 	    stop("'x' must at least have 2 elements")
 	if (length(x) != length(p))
 	    stop("'x' and 'p' must have the same number of elements")
@@ -114,6 +120,7 @@ chisq.test <- function(x, y = NULL, correct = TRUE,
 	}
 	METHOD <- "Chi-squared test for given probabilities"
 	E <- n * p
+        V <- n * p * (1 - p)
 	names(E) <- names(x)
 	STATISTIC <- sum((x - E) ^ 2 / E)
 	if(simulate.p.value) {
@@ -143,6 +150,7 @@ chisq.test <- function(x, y = NULL, correct = TRUE,
 		   data.name = DNAME,
 		   observed = x,
 		   expected = E,
-		   residuals = (x - E) / sqrt(E)),
+		   residuals = (x - E) / sqrt(E),
+                   stdres = (x - E) / sqrt(V) ),
 	      class = "htest")
 }

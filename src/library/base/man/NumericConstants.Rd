@@ -1,10 +1,13 @@
 % File src/library/base/man/NumericConstants.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{NumericConstants}
 \alias{NumericConstants}
+\alias{1L}
+\alias{0x1}
+\alias{1i}
 \title{Numeric Constants}
 \description{
   How \R parses numeric constants.
@@ -25,7 +28,7 @@
   Hexadecimal constants start with \code{0x} or \code{0X} followed by
   a nonempty sequence from \code{0-9 a-f A-F .} which is interpreted as a
   hexadecimal number, optionally followed by a binary exponent.  A binary
-  exponent consists of an \code{P} or \code{p} followed by an optional
+  exponent consists of a \code{P} or \code{p} followed by an optional
   plus or minus sign followed by a non-empty sequence of (decimal)
   digits, and indicates multiplication by a power of two.  Thus
   \code{0x123p456} is \eqn{291 \times 2^{456}}{291 * 2^456}.
@@ -54,7 +57,16 @@
   Note that a leading plus or minus is not regarded by the parser as
   part of a numeric constant but as a unary operator applied to the constant.
 }
-\seealso{
+\note{
+  When a string is parsed to input a numeric constant, the number may or
+  may not be representable exactly in the C double type used.  If not
+  one of the nearest representable numbers will be returned.
+  
+  \R's own C code is used to convert constants to binary numbers, so the
+  effect can be expected to be the same on all platforms implementing
+  full IEC 600559 arithmetic (the most likely area of difference being
+  the handling of numbers less than \code{\link{.Machine}$double.xmin}).
+  The same code is used by \code{\link{scan}}.  } \seealso{
   \code{\link{Syntax}}.
 
   \code{\link{Quotes}} for the parsing of character constants,
@@ -67,6 +79,6 @@ utils::str(0xA0)
 identical(1L, as.integer(1))
 
 ## You can combine the "0x" prefix with the "L" suffix :
-identical(0xFL, as.integer(15)) # (with a regard to Fritz :-)
+identical(0xFL, as.integer(15))
 }
 \keyword{documentation}

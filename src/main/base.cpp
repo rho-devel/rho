@@ -6,13 +6,32 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
  *CXXR not be reported via r-bugs or other R project channels; instead refer
  *CXXR to the CXXR website.
  *CXXR */
+
+/*
+ *  R : A Computer Language for Statistical Data Analysis
+ *  Copyright (C) 2001-8   The R Development Core Team.
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
+ */
 
 /* The beginning of code which represents an R base graphics system
  * separate from an R graphics engine (separate from R devices)
@@ -31,7 +50,7 @@ int attribute_hidden baseRegisterIndex = -1;
 
 static R_INLINE GPar* dpSavedptr(pGEDevDesc dd) {
     baseSystemState *bss
-	= static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	= CXXRSCAST(baseSystemState*, dd->gesd[baseRegisterIndex]->systemSpecific);
     return &(bss->dpSaved);
 }
 
@@ -201,12 +220,15 @@ static SEXP baseCallback(GEevent task, pGEDevDesc dd, SEXP data)
 	GPar *ddp;
 	sd = dd->gesd[baseRegisterIndex];
 	dev = dd->dev;
-	sd->systemSpecific = bss = static_cast<baseSystemState*>(malloc(sizeof(baseSystemState)));
+	sd->systemSpecific = bss = CXXRSCAST(baseSystemState*, malloc(sizeof(baseSystemState)));
+        /* Bail out if necessary */
+        if (!bss)
+            return result;
 	ddp = &(bss->dp);
 	GInit(ddp);
 	/* For some things, the device sets the starting value at least.
 	 */
-	ddp->ps = int(dev->startps);
+	ddp->ps = CXXRCONSTRUCT(int, dev->startps);
 	ddp->col = ddp->fg = dev->startcol;
 	ddp->bg = dev->startfill;
 	ddp->font = dev->startfont;
@@ -219,14 +241,16 @@ static SEXP baseCallback(GEevent task, pGEDevDesc dd, SEXP data)
 	 * The device has not yet received any base output
 	 */
 	bss->baseDevice = FALSE;
+        /* Indicate success */
+        result = R_BlankString;
 	break;
     }
     case GE_CopyState:
     {
 	/* called from GEcopyDisplayList */
 	pGEDevDesc curdd = GEcurrentDevice();
-	bss = static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
-	bss2 = static_cast<baseSystemState*>(curdd->gesd[baseRegisterIndex]->systemSpecific);
+	bss = CXXRSCAST(baseSystemState*, dd->gesd[baseRegisterIndex]->systemSpecific);
+	bss2 = CXXRSCAST(baseSystemState*, curdd->gesd[baseRegisterIndex]->systemSpecific);
 	copyGPar(&(bss->dpSaved), &(bss2->dpSaved));
 	restoredpSaved(curdd);
 	copyGPar(&(bss2->dp), &(bss2->gp));
@@ -235,29 +259,29 @@ static SEXP baseCallback(GEevent task, pGEDevDesc dd, SEXP data)
     }
     case GE_SaveState:
 	/* called from GEinitDisplayList */
-	bss = static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	bss = CXXRSCAST(baseSystemState*, dd->gesd[baseRegisterIndex]->systemSpecific);
 	copyGPar(&(bss->dp), &(bss->dpSaved));
 	break;
     case GE_RestoreState:
 	/* called from GEplayDisplayList */
-	bss = static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	bss = CXXRSCAST(baseSystemState*, dd->gesd[baseRegisterIndex]->systemSpecific);
 	restoredpSaved(dd);
 	copyGPar(&(bss->dp), &(bss->gp));
 	GReset(dd);
 	break;
     case GE_SaveSnapshotState:
 	/* called from GEcreateSnapshot */
-	bss = static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	bss = CXXRSCAST(baseSystemState*, dd->gesd[baseRegisterIndex]->systemSpecific);
 	/* Changed from INTSXP in 2.7.0: but saved graphics lists
 	   are protected by an R version number */
 	PROTECT(result = allocVector(RAWSXP, sizeof(GPar)));
-	copyGPar(&(bss->dpSaved), reinterpret_cast<GPar*>(RAW(result)));
+	copyGPar(&(bss->dpSaved), reinterpret_cast<GPar*>( RAW(result)));
 	UNPROTECT(1);
 	break;
     case GE_RestoreSnapshotState:
 	/* called from GEplaySnapshot */
-	bss = static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
-	copyGPar(reinterpret_cast<GPar*>(RAW(data)), &(bss->dpSaved));
+	bss = CXXRSCAST(baseSystemState*, dd->gesd[baseRegisterIndex]->systemSpecific);
+	copyGPar(reinterpret_cast<GPar*>( RAW(data)), &(bss->dpSaved));
 	restoredpSaved(dd);
 	copyGPar(&(bss->dp), &(bss->gp));
 	GReset(dd);
@@ -266,7 +290,7 @@ static SEXP baseCallback(GEevent task, pGEDevDesc dd, SEXP data)
 	/* called from GEcheckState:
 	   Check that the current plotting state is "valid"
 	 */
-	bss = static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	bss = CXXRSCAST(baseSystemState*, dd->gesd[baseRegisterIndex]->systemSpecific);
 	result = ScalarLogical(bss->baseDevice ?
 			       (bss->gp.state == 1) && bss->gp.valid :
 			       TRUE);
@@ -275,7 +299,7 @@ static SEXP baseCallback(GEevent task, pGEDevDesc dd, SEXP data)
     {
 	/* called from GEhandleEvent in devWindows.c */
 	GPar *ddp, *ddpSaved;
-	bss = static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	bss = CXXRSCAST(baseSystemState*, dd->gesd[baseRegisterIndex]->systemSpecific);
 	ddp = &(bss->dp);
 	ddpSaved = &(bss->dpSaved);
 	if (isReal(data) && LENGTH(data) == 1) {
@@ -309,21 +333,18 @@ unregisterBase(void) {
  */
 attribute_hidden
 GPar* gpptr(pGEDevDesc dd) {
-    baseSystemState *bss
-	= static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+    baseSystemState *bss = CXXRSCAST(baseSystemState*, dd->gesd[baseRegisterIndex]->systemSpecific);
     return &(bss->gp);
 }
 
 attribute_hidden
 GPar* dpptr(pGEDevDesc dd) {
-    baseSystemState *bss
-	= static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+    baseSystemState *bss = CXXRSCAST(baseSystemState*, dd->gesd[baseRegisterIndex]->systemSpecific);
     return &(bss->dp);
 }
 
 attribute_hidden /* used in GNewPlot */
 void Rf_setBaseDevice(Rboolean val, pGEDevDesc dd) {
-    baseSystemState *bss
-	= static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+    baseSystemState *bss = CXXRSCAST(baseSystemState*, dd->gesd[baseRegisterIndex]->systemSpecific);
     bss->baseDevice = val;
 }

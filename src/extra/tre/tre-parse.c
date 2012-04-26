@@ -17,7 +17,7 @@
 #include <config.h>
 #endif /* HAVE_CONFIG_H */
 #include <string.h>
-#include <assert.h>
+// #include <assert.h>
 #include <limits.h>
 
 #include "xmalloc.h"
@@ -26,6 +26,7 @@
 #include "tre-stack.h"
 #include "tre-parse.h"
 
+#define assert(a) R_assert(a)
 
 /* Characters with special meanings in regexp syntax. */
 #define CHAR_PIPE	   L'|'
@@ -183,6 +184,7 @@ int tre_isascii_func(tre_cint_t c) { return tre_isascii(c); }
 #else /* !tre_isascii */
 int tre_isascii_func(tre_cint_t c) { return !(c >> 7); }
 #endif /* !tre_isascii */
+
 
 #ifdef tre_isblank
 int tre_isblank_func(tre_cint_t c) { return tre_isblank(c); }

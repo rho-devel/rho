@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -42,7 +42,6 @@
 #include <cstring>
 #include <stdexcept>
 #include "R_ext/Error.h"
-#include "Rvalgrind.h"
 #include "localization.h"
 #include "CXXR/MemoryBank.hpp"
 
@@ -58,29 +57,48 @@ namespace CXXR {
     }
 }
 
-RAllocStack::Stack RAllocStack::s_stack;
+RAllocStack::Stack* RAllocStack::s_stack;
+#ifndef NDEBUG
+RAllocStack::Scope* RAllocStack::s_innermost_scope = 0;
+#endif
 
 void* RAllocStack::allocate(size_t sz)
 {
     Pair pr(sz, MemoryBank::allocate(sz));
-    s_stack.push(pr);
-    void* ans = s_stack.top().second;
-#if VALGRIND_LEVEL == 1
-    // If VALGRIND_LEVEL > 1 this will be done by CXXR::MemoryBank.
-    VALGRIND_MAKE_MEM_UNDEFINED(ans, sz);
-#endif
-    return ans;
+    s_stack->push(pr);
+    return s_stack->top().second;
+}
+
+void RAllocStack::cleanup()
+{
+    trim(0);
+}
+
+void RAllocStack::initialize()
+{
+    static Stack stack;
+    s_stack = &stack;
 }
 
 void RAllocStack::restoreSize(size_t new_size)
 {
-    if (new_size > s_stack.size())
+    if (new_size > s_stack->size())
 	throw out_of_range("RAllocStack::restoreSize: requested size"
 			   " greater than current size.");
-    while (s_stack.size() > new_size) {
-	Pair& top = s_stack.top();
+#ifndef NDEBUG
+    if (s_innermost_scope && new_size < s_innermost_scope->startSize())
+	throw out_of_range("RAllocStack::restoreSize: requested size"
+			   " too small for current scope.");
+#endif
+    trim(new_size);
+}
+
+void RAllocStack::trim(size_t new_size)
+{
+    while (s_stack->size() > new_size) {
+	Pair& top = s_stack->top();
 	MemoryBank::deallocate(top.second, top.first);
-	s_stack.pop();
+	s_stack->pop();
     }
 }
 

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -42,6 +42,11 @@
 #include "internal.h"
 extern unsigned int TopmostDialogs; /* from dialogs.c */
 #include <winbase.h>
+
+#ifndef W64
+WINGDIAPI BOOL WINAPI AlphaBlend(HDC,int,int,int,int,HDC,int,int,int,int,BLENDFUNCTION);
+#endif
+
 #include <wchar.h>
 #ifdef __GNUC__
 # define alloca(x) __builtin_alloca((x))
@@ -52,29 +57,6 @@ extern unsigned int TopmostDialogs; /* from dialogs.c */
 /* from extra.c */
 extern size_t Rf_utf8towcs(wchar_t *wc, const char *s, size_t n);
 
-/* Some of the ideas in haveAlpha are borrowed from Cairo */
-typedef BOOL
-(WINAPI *alpha_blend_t) (HDC, int, int, int, int, HDC, int, int, int, int,
-			 BLENDFUNCTION);
-
-static alpha_blend_t pAlphaBlend;
-
-static int haveAlpha(void)
-{
-    static int haveAlphaBlend = -1;
-
-    if(haveAlphaBlend < 0) {
-	/* AlphaBlend is in msimg32.dll.  */
-	HMODULE msimg32 = LoadLibrary("msimg32");
-	if (msimg32) {
-	    pAlphaBlend =
-		(alpha_blend_t) GetProcAddress(msimg32, "AlphaBlend");
-	    haveAlphaBlend = 1;
-	    /* printf("loaded AlphaBlend %p\n", (void *) AlphaBlend); */
-	} else haveAlphaBlend = 0;
-    }
-    return haveAlphaBlend;
-}
 
 static HDC GETHDC(drawing d)
 {
@@ -370,20 +352,31 @@ void gcopy(drawing d, drawing d2, rect r)
     BitBlt(dc, r.x, r.y, r.width, r.height, sdc, r.x, r.y, SRCCOPY);
 }
 
-void gcopyalpha(drawing d, drawing d2, rect r, int alpha)
+void gcopyalpha(drawing d, drawing d2, rect r, int alpha) 
 {
-    if(alpha <= 0 || !haveAlpha()) return;
+    if(alpha <= 0) return;
     {
-	HDC dc = GETHDC(d), sdc = GETHDC(d2);
 	BLENDFUNCTION bl;
 	bl.BlendOp = AC_SRC_OVER;
 	bl.BlendFlags = 0;
 	bl.SourceConstantAlpha = alpha;
 	bl.AlphaFormat = 0;
-	pAlphaBlend(dc, r.x, r.y, r.width, r.height,
-		    sdc, r.x, r.y, r.width, r.height,
-		    bl);
+        AlphaBlend(GETHDC(d), r.x, r.y, r.width, r.height,
+		   GETHDC(d2), r.x, r.y, r.width, r.height, bl);
     }
+}
+
+void gcopyalpha2(drawing d, image src, rect r) 
+{
+    BLENDFUNCTION bl;
+    bl.BlendOp = AC_SRC_OVER;
+    bl.BlendFlags = 0;
+    bl.SourceConstantAlpha = 255; /* per-pixel alpha only */
+    bl.AlphaFormat = AC_SRC_ALPHA;
+    bitmap bm = imagetobitmap(src);
+    AlphaBlend(GETHDC(d), r.x, r.y, r.width, r.height,
+	       GETHDC(bm), 0, 0, r.width, r.height, bl);
+    del(bm);
 }
 
 void gdrawellipse(drawing d, int width, rgb border, rect r, int fast,
@@ -538,6 +531,103 @@ void gfillpolygon(drawing d, rgb fill, point *p, int n)
     Polygon(dc, (POINT FAR *) p, n);
     SelectObject(dc, GetStockObject(NULL_BRUSH));
     DeleteObject(br);
+}
+
+void gfillpolypolygon(drawing d, rgb fill, point *p, int npoly, int *nper)
+{
+    HDC dc = GETHDC(d);
+    HBRUSH br = CreateSolidBrush(getwinrgb(d,fill));
+    fix_brush(dc, d, br);
+    SelectObject(dc, br);
+    PolyPolygon(dc, (POINT FAR *) p, nper, npoly);
+    SelectObject(dc, GetStockObject(NULL_BRUSH));
+    DeleteObject(br);
+}
+
+/* Assumes all pixels in image are opaque 
+ */
+void gdrawimage(drawing d, image img, rect dr, rect sr)
+{
+    HDC dc = GETHDC(d);
+    HDC bc;
+    bitmap b;
+    image i = img;
+
+    if (! img)
+	return;
+    dr = rcanon(dr);
+    if ((dr.width != img->width) || (dr.height != img->height)) {
+	i = scaleimage(img, rect(0, 0, dr.width, dr.height), sr);
+    }
+
+    b = imagetobitmap(i);
+    /* The next line assumes that the context returned is a NEW
+       context, but that should be ok because the object 'b'
+       has just been created in the line above, which means
+       that get_context() should create a new context. */
+    bc = get_context(b);
+
+    BitBlt(dc, dr.x, dr.y, dr.width, dr.height,
+           bc, sr.x, sr.y, SRCCOPY);
+
+    /* DO NOT rely on the del() mechanism to (eventually) clean up
+       the context 'bc' (via deletion_traversal() in objects.c).
+       That leads to running out of contexts (see MAX_CONTEXTS
+       in contexts.c).  Instead, explicitly dispose of the context here */
+    del_context(b);
+
+    if (i != img)
+	del(i);
+    del(b);
+}
+
+/* Use this to draw an image containing fully transparent pixels
+ * by using a mask based on the transparent pixels
+ * (you need to create the mask)
+ */
+void gmaskimage(drawing d, image img, rect dr, rect sr, image mask)
+{
+    HDC dc = GETHDC(d);
+    HDC bc, mbc, mbwc;
+    bitmap b, mb, mbw;
+    image i = img;
+    image m = mask;
+
+    if (! img  || ! mask)
+	return;
+    dr = rcanon(dr);
+    if ((dr.width != img->width) || (dr.height != img->height)) {
+	i = scaleimage(img, rect(0, 0, dr.width, dr.height), sr);
+        m = scaleimage(mask, rect(0, 0, dr.width, dr.height), sr);
+    }
+
+    b = imagetobitmap(i);
+    mb = imagetobitmap(m);
+    mbw = newbitmap(dr.width, dr.height, 1);
+
+    bc = get_context(b);
+    mbc = get_context(mb);
+    mbwc = get_context(mbw);
+
+    BitBlt(mbwc, sr.x, sr.y, sr.width, sr.height,
+           mbc, sr.x, sr.y, SRCCOPY);
+
+    MaskBlt(dc, dr.x, dr.y, dr.width, dr.height,
+            bc, sr.x, sr.y,
+            (HBITMAP) mbw->handle, 0, 0,
+            MAKEROP4(SRCCOPY, SRCAND));
+
+    del_context(b);
+    del_context(mb);
+    del_context(mbw);
+
+    if (i != img)
+	del(i);
+    if (m != mask)
+        del(m);
+    del(b);
+    del(mb);
+    del(mbw);
 }
 
 /* For ordinary text, e.g. in console */
@@ -828,8 +918,8 @@ void gwcharmetric(drawing d, font f, int c, int *ascent, int *descent,
     SelectObject(dc, old);
 }
 
-font gnewfont(drawing d, const char *face, int style, int size,
-	      double rot, int usePoints)
+font gnewfont2(drawing d, const char *face, int style, int size,
+	       double rot, int usePoints, int quality)
 {
     font obj;
     HFONT hf;
@@ -851,7 +941,7 @@ font gnewfont(drawing d, const char *face, int style, int size,
     else
 	lf.lfCharSet = DEFAULT_CHARSET;
     lf.lfClipPrecision = CLIP_DEFAULT_PRECIS;
-    lf.lfQuality = DEFAULT_QUALITY;
+    lf.lfQuality = quality;
     lf.lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
     if ((strlen(face) > 1) && (face[0] == 'T') && (face[1] == 'T')) {
 	const char *pf;
@@ -891,6 +981,13 @@ font gnewfont(drawing d, const char *face, int style, int size,
     }
 
     return (font) obj;
+}
+
+font gnewfont(drawing d, const char *face, int style, int size,
+	      double rot, int usePoints)
+{
+    return gnewfont2(d, face, style, size, rot, usePoints,
+		     DEFAULT_QUALITY);
 }
 
 

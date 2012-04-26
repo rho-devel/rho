@@ -21,30 +21,10 @@ splinefun <- function(x, y=NULL,
                       method = c("fmm", "periodic", "natural", "monoH.FC"),
                       ties = mean)
 {
-    x <- xy.coords(x, y)
+    x <- regularize.values(x, y, ties) # -> (x,y) numeric of same length
     y <- x$y
     x <- x$x
     nx <- length(x)
-    if(any(o <- is.na(x) | is.na(y))) {
-	o <- !o
-	x <- x[o]
-	y <- y[o]
-	nx <- length(x)
-    }
-    if (!identical(ties, "ordered")) {
-	if (length(ux <- unique(x)) < nx) {
-	    if (missing(ties))
-		warning("collapsing to unique 'x' values")
-	    y <- as.vector(tapply(y,x,ties))# as.v: drop dim & dimn.
-	    x <- sort(ux)
-	    nx <- length(x)
-	} else {
-	    o <- order(x)
-	    x <- x[o]
-	    y <- y[o]
-	}
-        rm(ux)
-    }
     if(nx == 0) stop("zero non-NA points")
     method <- match.arg(method)
     if(method == "periodic" && y[1L] != y[nx]) {
@@ -55,35 +35,20 @@ splinefun <- function(x, y=NULL,
         n1 <- nx - 1L
         ## - - - "Data preprocessing" - - -
 
-        dy <- y[-1L] - y[-nx]            # = diff(y)
-        i0 <- dy == 0                   # or |dy| < eps ?? fixme ??
-        dx <- x[-1L] - x[-nx]            # = diff(x)
-        Sx <- dy / dx # 2. \Delta_k = (y_{k+1} - y_k)/(x_{k+1} - x_k), k=1L:n1
+        dy <- y[-1L] - y[-nx]           # = diff(y)
+        dx <- x[-1L] - x[-nx]           # = diff(x)
+        Sx <- dy / dx # Sx[k] =  \Delta_k = (y_{k+1} - y_k)/(x_{k+1} - x_k), k=1:n1
         m <- c(Sx[1L], (Sx[-1L] + Sx[-n1])/2, Sx[n1]) ## 1.
-        if(any(i0)) {
-            ## m0[k] := i0[k] or i0[k-1]
-            m0 <- c(i0,FALSE) | c(FALSE,i0)
-            m[m0] <- 0
-        }
-        if(any(ip <- !i0)) {
-            alpha <- m[-nx][ip] / Sx[ip]
-            beta  <- m[-1L][ip] / Sx[ip]
-            a2b3 <- 2*alpha + beta - 3
-            ab23 <- alpha + 2*beta - 3
-            if(any(ok <- (a2b3 > 0 & ab23 > 0)) &&
-               any(ok <- ok & (alpha * (a2b3 + ab23) < a2b3^2))) {
-                ## correcting sum(ok) slopes m[] for monotonicity
-                tau <- 3 / sqrt(alpha[ok]^2 + beta[ok]^2)
-                m[-nx][ip][ok] <- tau * alpha[ok] * Sx[ip][ok]
-                m[-1L][ip][ok] <- tau *  beta[ok] * Sx[ip][ok]
-            }
-        }
+
+        ## use C, as we need to "serially" progress from left to right:
+        m <- .Call(C_R_monoFC_m, m, Sx, PACKAGE="stats")
+
         ## Hermite spline with (x,y,m) :
         return(splinefunH0(x = x, y = y, m = m, dx = dx))
     }
     ## else
     iMeth <- match(method, c("periodic", "natural", "fmm", "monoH.FC"))
-    z <- .C("spline_coef",
+    z <- .C(C_spline_coef,
 	    method=as.integer(iMeth),
 	    n=as.integer(nx),
 	    x=x,
@@ -93,7 +58,7 @@ splinefun <- function(x, y=NULL,
 	    d=double(nx),
 	    e=double(if(iMeth == 1) nx else 0),
 	    PACKAGE="stats")
-    rm(x,y,nx,o,method,iMeth)
+    rm(x,y,nx,method,iMeth,ties)
     z$e <- NULL
     function(x, deriv = 0) {
 	deriv <- as.integer(deriv)
@@ -114,7 +79,7 @@ splinefun <- function(x, y=NULL,
         ##           where dx := (u[j]-x[i]); i such that x[i] <= u[j] <= x[i+1},
         ##                u[j]:= xout[j] (unless sometimes for periodic spl.)
         ##           and  d_i := d[i] unless for natural splines at left
-	res <- .C("spline_eval",
+	res <- .C(C_spline_eval,
                   z$method,
                   as.integer(length(x)),
                   x=as.double(x),

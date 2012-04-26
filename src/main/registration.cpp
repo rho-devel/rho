@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2002-2009	The R Development Core Team.
+ *  Copyright (C) 2002-2011	The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -182,6 +182,7 @@ static R_CallMethodDef callMethods [] = {
     CALLDEF(La_svd, 7),
     CALLDEF(La_rs, 2),
     CALLDEF(La_rg, 2),
+    CALLDEF(La_dlange, 2),
     CALLDEF(La_dgecon, 2),
     CALLDEF(La_dtrcon, 2),
     CALLDEF(La_zgecon, 2),
@@ -236,8 +237,8 @@ static R_CallMethodDef callMethods [] = {
     /* compression and serialization routines */
     CALLDEF(R_compress1, 1),
     CALLDEF(R_decompress1, 1),
-    CALLDEF(R_serializeb, 3),
-    CALLDEF(R_serialize, 4),
+    CALLDEF(R_serializeb, 4),
+    CALLDEF(R_serialize, 5),
     CALLDEF(R_unserialize, 2),
     CALLDEF(R_setFileTime, 2),
 
@@ -254,7 +255,13 @@ static R_CallMethodDef callMethods [] = {
 
     /* base graphics */
     CALLDEF(Rg_contourDef, 0),
-    CALLDEF(Rg_readonlypars, 0),
+
+    CALLDEF(bitwiseNot, 1),
+    CALLDEF(bitwiseAnd, 2),
+    CALLDEF(bitwiseOr,  2),
+    CALLDEF(bitwiseXor, 2),
+
+    CALLDEF(crc64ToString, 1),
 
     {NULL, NULL, 0}
 };

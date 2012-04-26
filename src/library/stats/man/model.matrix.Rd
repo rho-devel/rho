@@ -1,6 +1,6 @@
 % File src/library/stats/man/model.matrix.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{model.matrix}
@@ -16,7 +16,7 @@ model.matrix(object, \dots)
 }
 \arguments{
   \item{object}{an object of an appropriate class.  For the default
-    method, a model formula or terms object.}
+    method, a model \link{formula} or a \code{\link{terms}} object.}
   \item{data}{a data frame created with \code{\link{model.frame}}.  If
     another sort of object, \code{model.frame} is called first.}
   \item{contrasts.arg}{A list, whose entries are values (numeric
@@ -25,22 +25,22 @@ model.matrix(object, \dots)
     replacement function and whose names are the names of
     columns of \code{data} containing \code{\link{factor}}s.}   
   \item{xlev}{to be used as argument of \code{\link{model.frame}} if
-    \code{data} has no \code{"terms"} attribute.}
+    \code{data} is such that \code{model.frame} is called.}
   \item{\dots}{further arguments passed to or from other methods.}
 }
 \description{
-  \code{model.matrix} creates a design matrix.
+  \code{model.matrix} creates a design (or model) matrix.
 }
 \details{
   \code{model.matrix} creates a design matrix from the description given
   in \code{terms(object)}, using the data in \code{data} which must
-  contain variables with the same names as would be created by a call to
+  supply variables with the same names as would be created by a call to
   \code{model.frame(object)} or, more precisely, by evaluating
-  \code{attr(terms(object), "variables")}.  If it is a data frame,
-  there may be other columns and the order of columns is not important.
-  Any character variables are coerced to factors, with a warning.
-  After coercion, all the variables used in RHD of the formula must be
-  logical, integer, numeric or factor.
+  \code{attr(terms(object), "variables")}.  If \code{data} is a data
+  frame, there may be other columns and the order of columns is not
+  important.  Any character variables are coerced to factors, with a
+  warning.  After coercion, all the variables used on the right-hand
+  side of the formula must be logical, integer, numeric or factor.
   
   If \code{contrasts.arg} is specified for a factor it overrides the
   default factor coding for that variable and any \code{"contrasts"}
@@ -56,14 +56,14 @@ model.matrix(object, \dots)
   although interactions involving the term are retained.
 }
 \value{
-  The design matrix for a regression model with the specified formula
+  The design matrix for a regression-like model with the specified formula
   and data.
 
   There is an attribute \code{"assign"}, an integer vector with an entry
   for each column in the matrix giving the term in the formula which
   gave rise to the column.  Value \code{0} corresponds to the intercept
   (if any), and positive values to terms in the order given by the
-  \code{terms.labels} attribute of the \code{terms} structure
+  \code{term.labels} attribute of the \code{terms} structure
   corresponding to \code{object}.
   
   If there are any factors in terms in the model, there is an attribute
@@ -87,12 +87,12 @@ ff <- log(Volume) ~ log(Height) + log(Girth)
 utils::str(m <- model.frame(ff, trees))
 mat <- model.matrix(ff, m)
 
-dd <- data.frame(a = gl(3,4), b = gl(4,1,12))# balanced 2-way
+dd <- data.frame(a = gl(3,4), b = gl(4,1,12)) # balanced 2-way
 options("contrasts")
 model.matrix(~ a + b, dd)
 model.matrix(~ a + b, dd, contrasts = list(a="contr.sum"))
 model.matrix(~ a + b, dd, contrasts = list(a="contr.sum", b="contr.poly"))
 m.orth <- model.matrix(~a+b, dd, contrasts = list(a="contr.helmert"))
-crossprod(m.orth)# m.orth is  ALMOST  orthogonal
+crossprod(m.orth) # m.orth is  ALMOST  orthogonal
 }
 \keyword{models}

@@ -1,11 +1,11 @@
 % File src/library/stats/man/factanal.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{factanal}
 \alias{factanal}
-\encoding{latin1}
+\encoding{UTF-8}
 \title{Factor Analysis}
 \description{
   Perform maximum-likelihood factor analysis on a covariance matrix or
@@ -60,29 +60,32 @@ factanal(x, factors, data = NULL, covmat = NULL, n.obs = NA,
 }
 \details{
   The factor analysis model is
-  \deqn{x = \Lambda f + e}{ x = Lambda f + e}
+  \deqn{x = \Lambda f + e}
   for a \eqn{p}--element row-vector \eqn{x}, a \eqn{p \times k}{p x k}
-  matrix of \emph{loadings}, a \eqn{k}--element vector of \emph{scores}
-  and a \eqn{p}--element vector of errors.  None of the components
-  other than \eqn{x} is observed, but the major restriction is that the
-  scores be uncorrelated and of unit variance, and that the errors be
-  independent with variances \eqn{\Phi}{Phi}, the
-  \emph{uniquenesses}.  Thus factor analysis is in essence a model for
-  the covariance matrix of \eqn{x},
-  \deqn{\Sigma = \Lambda^\prime\Lambda + \Psi}{Sigma = Lambda'Lambda + Psi}
+  matrix \eqn{\Lambda} of \emph{loadings}, a \eqn{k}--element vector
+  \eqn{f} of \emph{scores} and a \eqn{p}--element vector \eqn{e}of
+  errors.  None of the components other than \eqn{x} is observed, but
+  the major restriction is that the scores be uncorrelated and of unit
+  variance, and that the errors be independent with variances
+  \eqn{\Psi}{Psi}, the \emph{uniquenesses}.  It is also common to
+  scale the observed variables to unit variance, and done in this function.
+  
+  Thus factor analysis is in essence a model for the correlation matrix
+  of \eqn{x},
+  \deqn{\Sigma = \Lambda^\prime\Lambda + \Psi}{\Sigma = \Lambda'\Lambda + \Psi}
   There is still some indeterminacy in the model for it is unchanged
-  if \eqn{\Lambda}{Lambda} is replaced by \eqn{G\Lambda}{G Lambda} for
+  if \eqn{\Lambda} is replaced by \eqn{G \Lambda} for
   any orthogonal matrix \eqn{G}.  Such matrices \eqn{G} are known as
   \emph{rotations} (although the term is applied also to non-orthogonal
   invertible matrices).
   
-  If \code{covmat} is supplied it is used.  Otherwise \code{x} is used if
-  it is a matrix, or a formula \code{x} is used with \code{data} to
+  If \code{covmat} is supplied it is used.  Otherwise \code{x} is used
+  if it is a matrix, or a formula \code{x} is used with \code{data} to
   construct a model matrix, and that is used to construct a covariance
-  matrix.  (It makes no sense for the formula to have a response,
-  and all the variables must be numeric.)  Once a covariance matrix is found or
-  calculated from \code{x}, it is converted to a correlation matrix for
-  analysis.  The correlation matrix is returned as component
+  matrix.  (It makes no sense for the formula to have a response, and
+  all the variables must be numeric.)  Once a covariance matrix is found
+  or calculated from \code{x}, it is converted to a correlation matrix
+  for analysis.  The correlation matrix is returned as component
   \code{correlation} of the result.
 
   The fit is done by optimizing the log likelihood assuming multivariate
@@ -91,7 +94,7 @@ factanal(x, factors, data = NULL, covmat = NULL, n.obs = NA,
   p. 27).)  All the starting values supplied in \code{start} are tried
   in turn and the best fit obtained is used.  If \code{start = NULL}
   then the first fit is started at the value suggested by
-  \enc{Jöreskog}{Joreskog} (1963) and given by Lawley & Maxwell
+  \enc{JÃ¶reskog}{Joreskog} (1963) and given by Lawley & Maxwell
   (1971, p. 31), and then \code{control$nstart - 1} other values are
   tried, randomly selected as equal values of the uniquenesses.
 
@@ -105,17 +108,17 @@ factanal(x, factors, data = NULL, covmat = NULL, n.obs = NA,
   second the weighted least squares method of Bartlett (1937, 8).
   Both are estimates of the unobserved scores \eqn{f}.  Thomson's method
   regresses (in the population) the unknown \eqn{f} on \eqn{x} to yield
-  \deqn{\hat f = \Lambda^\prime \Sigma^{-1} x}{hat f = Lambda' Sigma^-1 x}
+  \deqn{\hat f = \Lambda^\prime \Sigma^{-1} x}{hat f = \Lambda' \Sigma^-1 x}
   and then substitutes the sample estimates of the quantities on the
   right-hand side.  Bartlett's method minimizes the sum of squares of
   standardized errors over the choice of \eqn{f}, given (the fitted)
-  \eqn{\Lambda}{Lambda}.
+  \eqn{\Lambda}.
 
-  If \code{x} is a formula then the standard NA-handling is applied to
-  the scores (if requested): see \code{\link{napredict}}.
+  If \code{x} is a formula then the standard \code{NA}-handling is
+  applied to the scores (if requested): see \code{\link{napredict}}.
 
   The \code{print} method (documented under \code{\link{loadings}})
-  follows the facter analysis convention of drawing attention to the
+  follows the factor analysis convention of drawing attention to the
   patterns of the results, so the default precision is three decimal
   places, and small loadings are suppressed.
 }
@@ -133,6 +136,7 @@ factanal(x, factors, data = NULL, covmat = NULL, n.obs = NA,
   \item{factors}{The argument \code{factors}.}
   \item{dof}{The number of degrees of freedom of the factor analysis model.}
   \item{method}{The method: always \code{"mle"}.}
+  \item{rotmat}{The rotation matrix if relevant.}
   \item{scores}{If requested, a matrix of scores.  \code{napredict} is
     applied to handle the treatment of values omitted by the \code{na.action}.}
   \item{n.obs}{The number of observations if available, or \code{NA}.}
@@ -147,7 +151,7 @@ factanal(x, factors, data = NULL, covmat = NULL, n.obs = NA,
   compare output from different programs.  Further, the optimization in
   maximum likelihood factor analysis is hard, and many other examples we
   compared had less good fits than produced by this function.  In
-  particular, solutions which are Heywood cases (with one or more
+  particular, solutions which are \sQuote{Heywood cases} (with one or more
   uniquenesses essentially zero) are much often common than most texts
   and some other programs would lead one to believe.
 }
@@ -159,7 +163,7 @@ factanal(x, factors, data = NULL, covmat = NULL, n.obs = NA,
   Bartlett, M. S. (1938) Methods of estimating mental
   factors. \emph{Nature}, \bold{141}, 609--610.
   
-  \enc{Jöreskog}{Joreskog}, K. G. (1963)
+  \enc{JÃ¶reskog}{Joreskog}, K. G. (1963)
   \emph{Statistical Estimation in Factor Analysis.}  Almqvist and Wicksell.
   
   Lawley, D. N. and Maxwell, A. E. (1971) \emph{Factor Analysis as a
@@ -174,6 +178,9 @@ factanal(x, factors, data = NULL, covmat = NULL, n.obs = NA,
   \code{print} method), \code{\link{varimax}}, \code{\link{princomp}},
   \code{\link{ability.cov}}, \code{\link{Harman23.cor}},
   \code{\link{Harman74.cor}}.
+  
+  Other rotation methods are available in various contributed packages,
+  including \pkg{GPArotation} and \pkg{psych}.
 }
 
 \examples{
@@ -189,8 +196,8 @@ v5 <- c(1,1,1,1,1,3,3,3,3,3,1,1,1,1,1,6,4,5)
 v6 <- c(1,1,1,2,1,3,3,3,4,3,1,1,1,2,1,6,5,4)
 m1 <- cbind(v1,v2,v3,v4,v5,v6)
 cor(m1)
-factanal(m1, factors=3) # varimax is the default
-factanal(m1, factors=3, rotation="promax")
+factanal(m1, factors = 3) # varimax is the default
+\donttest{factanal(m1, factors = 3, rotation = "promax")}
 # The following shows the g factor as PC1
 prcomp(m1)
 
@@ -198,7 +205,7 @@ prcomp(m1)
 factanal(~v1+v2+v3+v4+v5+v6, factors = 3,
          scores = "Bartlett")$scores
 
-## a realistic example from Bartholomew (1987, pp. 61-65)
+\donttest{## a realistic example from Bartholomew (1987, pp. 61-65)
 utils::example(ability.cov)
-}
+}}
 \keyword{multivariate}

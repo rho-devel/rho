@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -163,23 +163,6 @@ static void getappname(HANDLE Instance)
     setappname(title);
 }
 
-#if 0
-/*
- *  Special function for making printf work on Windows systems.
- *  This function is never called, it merely tricks the compiler into
- *  including printf and scanf support.
- */
-void app_init_printf(void)
-{
-#ifdef __BORLANDC__
-#if __BORLANDC__ <= 0x410
-    _InitEasyWin();
-#endif
-#else
-    printf(" ");
-#endif
-}
-#endif
 
 /*
  *  The main Windows entry point is the WinMain function.

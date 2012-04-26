@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -20,7 +20,7 @@
  *
  * $Id$
  *
- * Copyright (C) 1998 Bjorn Reese and Daniel Stenberg.
+ * Copyright (C) 1998, 2009 Bjorn Reese and Daniel Stenberg.
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -202,7 +202,12 @@
 # define NDEBUG
 #endif
 
-#include <assert.h>
+// #include <assert.h>
+/* fake definition */
+extern void Rf_error(const char *str);
+#define assert(a) if(!(a)) Rf_error("internal error in trio library")
+
+
 #include <ctype.h>
 #if defined(PREDEF_STANDARD_C99) && !defined(isascii)
 # define isascii(x) ((x) & 0x7F)
@@ -1306,6 +1311,7 @@ TRIO_ARGS2((number, base),
  * TrioLogarithmBase
  */
 #if TRIO_FEATURE_FLOAT
+# if TRIO_FEATURE_ROUNDING
 TRIO_PRIVATE double
 TrioLogarithmBase
 TRIO_ARGS1((base),
@@ -1320,6 +1326,7 @@ TRIO_ARGS1((base),
     default          : return TrioLogarithm((double)base, 2);
     }
 }
+# endif
 #endif /* TRIO_FEATURE_FLOAT */
 
 /*************************************************************************
@@ -2878,7 +2885,9 @@ TRIO_ARGS6((self, number, flags, width, precision, base),
   int fractionDigits;
   int exponentDigits;
   int workDigits;
+# if TRIO_FEATURE_ROUNDING
   int baseDigits;
+#endif
   int integerThreshold;
   int fractionThreshold;
   int expectedWidth;
@@ -2954,23 +2963,29 @@ TRIO_ARGS6((self, number, flags, width, precision, base),
   /* Normal numbers */
   if (flags & FLAGS_LONGDOUBLE)
     {
+# if TRIO_FEATURE_ROUNDING
       baseDigits = (base == 10)
 	? LDBL_DIG
 	: (int)trio_floor(LDBL_MANT_DIG / TrioLogarithmBase(base));
+# endif
       epsilon = LDBL_EPSILON;
     }
   else if (flags & FLAGS_SHORT)
     {
+# if TRIO_FEATURE_ROUNDING
       baseDigits = (base == BASE_DECIMAL)
 	? FLT_DIG
 	: (int)trio_floor(FLT_MANT_DIG / TrioLogarithmBase(base));
+# endif
       epsilon = FLT_EPSILON;
     }
   else
     {
+# if TRIO_FEATURE_ROUNDING
       baseDigits = (base == BASE_DECIMAL)
 	? DBL_DIG
 	: (int)trio_floor(DBL_MANT_DIG / TrioLogarithmBase(base));
+# endif
       epsilon = DBL_EPSILON;
     }
 
@@ -3062,7 +3077,16 @@ TRIO_ARGS6((self, number, flags, width, precision, base),
 	  workNumber = number * trio_pow(dblBase, (trio_long_double_t)-exponent);
 	  if (trio_isinf(workNumber))
 	    {
-	      workNumber = number / trio_pow(dblBase, (trio_long_double_t)exponent);
+	      /*
+	       * Ported from trio 1.14:
+	       *
+	       * Scaling is done in two steps to avoid problems with subnormal
+	       * numbers.
+	       */
+	      workNumber = number;
+	      workNumber /= trio_pow(dblBase, (trio_long_double_t)(exponent / 2));
+	      workNumber /= trio_pow(dblBase, (trio_long_double_t)(exponent - (exponent / 2)));
+	      //workNumber = number / trio_pow(dblBase, (trio_long_double_t)exponent);
 	    }
 	  number = workNumber;
 	  isExponentNegative = (exponent < 0);

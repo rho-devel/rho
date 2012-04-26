@@ -1,6 +1,7 @@
 % File src/library/base/man/merge.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
+% Copyright 2002-2011 The R Foundation
 % Distributed under GPL 2 or later
 
 \name{merge}
@@ -20,14 +21,15 @@ merge(x, y, \dots)
 
 \method{merge}{data.frame}(x, y, by = intersect(names(x), names(y)),
       by.x = by, by.y = by, all = FALSE, all.x = all, all.y = all,
-      sort = TRUE, suffixes = c(".x",".y"), incomparables = NULL, \dots)
+      sort = TRUE, suffixes = c(".x",".y"),
+      incomparables = NULL, \dots)
 }
 \arguments{
   \item{x, y}{data frames, or objects to be coerced to one.}
   \item{by, by.x, by.y}{specifications of the common columns.  See
     \sQuote{Details}.}
   \item{all}{logical; \code{all = L} is shorthand for \code{all.x = L} and
-    \code{all.y = L}.}
+    \code{all.y = L}, where \code{L} is either \code{\link{TRUE}} or \code{FALSE}.}
   \item{all.x}{logical; if \code{TRUE}, then extra rows will be added to
     the output, one for each row in \code{x} that has no matching row in
     \code{y}.  These rows will have \code{NA}s in those columns that are

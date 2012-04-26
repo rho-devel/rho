@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -26,11 +26,9 @@ subdir = src/library/datasets
 include $(top_builddir)/Makeconf
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
-DISTFILES = DESCRIPTION.in Makefile.in Makefile.win
+DISTFILES = DESCRIPTION.in Makefile.in Makefile.win NAMESPACE
 
 pkg = datasets
-
-RSRC = $(srcdir)/R/zzz.R
 
 R_EXE = $(top_builddir)/bin/R --vanilla --slave
 
@@ -43,9 +41,17 @@ all: Makefile DESCRIPTION
 	  $(INSTALL_DATA) $${f} $(top_builddir)/library/$(pkg)/data; \
 	done
 	@rm -f $(top_builddir)/library/$(pkg)/data/Rdata.*
-	@$(ECHO) "tools:::data2LazyLoadDB(\"$(pkg)\")" | \
+	@$(ECHO) "tools:::data2LazyLoadDB(\"$(pkg)\", compress=3)" | \
 	  R_DEFAULT_PACKAGES=NULL LC_ALL=C $(R_EXE) > /dev/null
 	@$(INSTALL_DATA) $(srcdir)/data/morley.tab \
 	  $(top_builddir)/library/$(pkg)/data
 
 include $(top_srcdir)/share/make/basepkg.mk
+
+mkR:
+	@$(INSTALL_DATA) $(srcdir)/NAMESPACE $(top_builddir)/library/$(pkg)
+	@rm -f $(top_builddir)/library/$(pkg)/Meta/nsInfo.rds
+
+
+# dummy targets
+Rsimple Rlazy Rlazycomp:

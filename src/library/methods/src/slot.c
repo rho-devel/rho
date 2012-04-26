@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -46,6 +46,11 @@ SEXP R_get_slot(SEXP obj, SEXP name)
 SEXP R_set_slot(SEXP obj, SEXP name, SEXP value)
 {
     return R_do_slot_assign(obj, name, value);
+}
+
+SEXP R_hasSlot(SEXP obj, SEXP name)
+{
+    return ScalarLogical(R_has_slot(obj, name));
 }
 
 

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2008 Robert Gentleman, Ross Ihaka and the R core team.
+ *  Copyright (C) 1997--2010  The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -62,8 +62,6 @@
 #include <Rmath.h>
 #include <Graphics.h>		/* "GPar" structure + COMMENTS */
 #include "basedecl.h"
-
-using namespace CXXR;
 
 typedef struct {
     CXXRCONST char *name;
@@ -144,6 +142,7 @@ ParTable  [] = {
     { "yaxp",		 0 },
     { "yaxs",		 0 },
     { "yaxt",		 0 },
+    { "ylbias",		 1 },
     { "ylog",		 1 },
     /* Obsolete pars */
     { "gamma",		-2},
@@ -266,6 +265,7 @@ static void Specify(const char *what, SEXP value, pGEDevDesc dd, SEXP call)
  *	"pin", "plt", "ps", "pty"
  *	"usr",
  *	"xlog", "ylog"
+ *	"ylbias",
  */
     double x;
     int ix = 0;
@@ -661,6 +661,10 @@ static void Specify(const char *what, SEXP value, pGEDevDesc dd, SEXP call)
 	if (ix == NA_LOGICAL)
 	    par_error(what);
 	R_DEV__(ylog) = CXXRCONSTRUCT(Rboolean, (ix != 0));
+    }
+    else if (streql(what, "ylbias")) {
+	lengthCheck(what, value, 1, call);
+	dd->dev->yLineBias = asReal(value);
     }
     /* We do not need these as Query will already have warned.
     else if (streql(what, "type")) {
@@ -1103,6 +1107,10 @@ static SEXP Query(const char *what, pGEDevDesc dd)
 	buf[1] = '\0';
 	value = mkString(buf);
     }
+    else if (streql(what, "ylbias")) {
+	value = allocVector(REALSXP, 1);
+	REAL(value)[0] = dd->dev->yLineBias;
+    }
     else if (streql(what, "ylog")) {
 	value = allocVector(LGLSXP, 1);
 	LOGICAL(value)[0] = dpptr(dd)->ylog;
@@ -1120,7 +1128,7 @@ static SEXP Query(const char *what, pGEDevDesc dd)
 
 SEXP attribute_hidden do_par(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    GCStackRoot<> value;
+    SEXP value;
     SEXP originalArgs = args;
     pGEDevDesc dd;
     int new_spec, nargs;
@@ -1135,7 +1143,7 @@ SEXP attribute_hidden do_par(SEXP call, SEXP op, SEXP args, SEXP env)
 	SEXP oldnames, newnames, tag, val;
 	int i;
 	PROTECT(newnames = allocVector(STRSXP, nargs));
-	value = allocVector(VECSXP, nargs);
+	PROTECT(value = allocVector(VECSXP, nargs));
 	oldnames = getAttrib(args, R_NamesSymbol);
 	for (i = 0 ; i < nargs ; i++) {
 	    if (oldnames != R_NilValue)
@@ -1163,30 +1171,18 @@ SEXP attribute_hidden do_par(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 	}
 	setAttrib(value, R_NamesSymbol, newnames);
-	UNPROTECT(1);
     }
     else {
 	error(_("invalid argument passed to par()"));
 	return R_NilValue/* -Wall */;
     }
     /* should really only do this if specifying new pars ?  yes! [MM] */
+    
     if (new_spec && GRecording(call, dd))
 	GErecordGraphicOperation(op, originalArgs, dd);
+    
+    UNPROTECT(2);
     return value;
-}
-
-SEXP attribute_hidden Rg_readonlypars(void)
-{
-    SEXP result;
-
-    PROTECT(result = allocVector(STRSXP, 5));
-    SET_STRING_ELT(result, 0, mkChar("cin"));
-    SET_STRING_ELT(result, 1, mkChar("cra"));
-    SET_STRING_ELT(result, 2, mkChar("csi"));
-    SET_STRING_ELT(result, 3, mkChar("cxy"));
-    SET_STRING_ELT(result, 4, mkChar("din"));
-    UNPROTECT(1);
-    return result;
 }
 
 /*

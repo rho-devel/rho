@@ -1,6 +1,6 @@
 % File src/library/base/man/NA.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{NA}
@@ -13,10 +13,10 @@
 \alias{is.na.data.frame}
 \alias{is.na<-}
 \alias{is.na<-.default}
-\title{Not Available / ``Missing'' Values}
+\title{\sQuote{Not Available} / Missing Values}
 \description{
   \code{NA} is a logical constant of length 1 which contains a missing
-  value indicator.  \code{NA} can be freely coerced to any other vector
+  value indicator.  \code{NA} can be coerced to any other vector
   type except raw.  There are also constants \code{NA_integer_},
   \code{NA_real_}, \code{NA_complex_} and \code{NA_character_} of the
   other atomic vector types which support missing values: all of these
@@ -34,7 +34,8 @@ is.na(x)
 is.na(x) <- value
 }
 \arguments{
-  \item{x}{an \R object to be tested.}
+  \item{x}{an \R object to be tested: the default method handles atomic
+    vectors, lists and pairlists.}
   \item{value}{a suitable index vector for use with \code{x}.}
 }
 %% Next par on character NAs taken from R-lang.texi:
@@ -52,17 +53,22 @@ is.na(x) <- value
 
   Function \code{is.na<-} may provide a safer way to set missingness.
   It behaves differently for factors, for example.
-
-  \code{is.na} (but not the replacement function nor the
-  \code{data.frame} method) is a \link{primitive} function so any
-  argument name is ignored.
+  
+  Computations using \code{NA} will normally result in \code{NA}: a
+  possible exception is where \code{\link{NaN}} is also involved, in
+  which case either might result.
 }
 \value{
-  The default method for \code{is.na} returns a logical vector of the same
-  length as its argument \code{x}, containing \code{TRUE} for those
-  elements marked \code{NA} or \code{\link{NaN}} (!) and \code{FALSE}
+  The default method for \code{is.na} applied to an atomic vector
+  returns a logical vector of the same length as its argument \code{x},
+  containing \code{TRUE} for those elements marked \code{NA} or, for
+  numeric or complex vectors, \code{\link{NaN}} (!) and \code{FALSE}
   otherwise.  \code{dim}, \code{dimnames} and \code{names} attributes
   are preserved.
+
+  The default method also works for lists and pairlists: the result for an
+  element is false unless that element is a length-one atomic vector and
+  the single element of that vector is regarded as \code{NA} or \code{NaN}.
 
   The method \code{is.na.data.frame} returns a logical matrix with the
   same dimensions as the data frame, and with dimnames taken from the
@@ -74,7 +80,7 @@ is.na(x) <- value
   Wadsworth & Brooks/Cole.
 
   Chambers, J. M. (1998)
-  \emph{Programming with Data. A Guide to the S Language}.
+  \emph{Programming with Data.  A Guide to the S Language}.
   Springer.
 }
 \seealso{

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -69,6 +69,6 @@ void spline_eval(int *method, int *nu, double *u, double *v,
 		 double *b, double *c, double *d);
 
 void F77_NAME(lminfl)(double *x, int *ldx, int *n, int *k, int *docoef,
-		      double *qraux, double *resid, double *hat, 
+		      double *qraux, double *resid, double *hat,
 		      double *coef, double *sigma, double *tol);
 #endif

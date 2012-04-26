@@ -153,14 +153,16 @@ GCStackRoot<StringVector> Provenance::setAsStringVector(Set* s) {
 void Provenance::visitReferents(const_visitor* v) const {
 	const GCNode* exp=m_expression;
 	const GCNode* sym=m_symbol;
-	if (exp) exp->conductVisitor(v);
-	if (sym) sym->conductVisitor(v);
+	if (exp)
+	    (*v)(exp);
+	if (sym)
+	    (*v)(sym);
 	if (m_parentage) { // cas : manually conduct to parents
 		for (unsigned int i=0;
 		     i<m_parentage->size();
 		     i++) {
 			const GCNode* rent=m_parentage->at(i);
-			rent->conductVisitor(v);
+			(*v)(rent);
 		}
 	}
 }

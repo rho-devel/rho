@@ -22,25 +22,23 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.10.1\n"
+"Project-Id-Version: R 2.14.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-12-10 19:18\n"
-"PO-Revision-Date: 2009-12-10 19:18\n"
+"POT-Creation-Date: 2011-07-16 22:46\n"
+"PO-Revision-Date: 2011-07-16 22:46\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgid "'a' is overridden by 'reg'"
 msgstr "‘a’ is overridden by ‘reg’"
 
-msgid "only using the first two of"
-msgstr "only using the first two of"
-
-msgid "regression coefficients"
-msgstr "regression coefficients"
+msgid "only using the first two of %d regression coefficients"
+msgstr "only using the first two of %d regression coefficients"
 
 msgid "'a' and 'b' are overridden by 'coef'"
 msgstr "‘a’ and ‘b’ are overridden by ‘coef’"
@@ -59,6 +57,9 @@ msgstr "at least one entry of ‘x’ must be positive"
 
 msgid "incorrect 'col': must be length 2"
 msgstr "incorrect 'col': must be length 2"
+
+msgid "only for 1-D table"
+msgstr "only for 1-D table"
 
 msgid "'side' must be in {1:4}"
 msgstr "‘side’ must be in {1:4}"
@@ -114,9 +115,6 @@ msgstr "‘formula’ should specify exactly two variables"
 msgid "dependent variable should be a factor"
 msgstr "dependent variable should be a factor"
 
-msgid "explanatory variable should be numeric"
-msgstr "explanatory variable should be numeric"
-
 msgid "y axis is on a cumulative probability scale, 'ylim' must be in [0,1]"
 msgstr "y axis is on a cumulative probability scale, ‘ylim’ must be in [0,1]"
 
@@ -150,20 +148,35 @@ msgstr "rows * columns too small"
 msgid "Missing rows"
 msgstr "Missing rows"
 
-msgid "'expr' must be a function or an expression containing 'x'"
-msgstr "‘expr’ must be a function or an expression containing ‘x’"
+msgid "'expr' must be a function, or a call or an expression containing '%s'"
+msgstr "‘expr’ must be a function, or a call or an expression containing ‘%s’"
+
+msgid "'add' will be ignored as there is no existing plot"
+msgstr "‘add’ will be ignored as there is no existing plot"
 
 msgid "'from' and 'to' must be > 0 with log=\"x\""
 msgstr "‘from’ and ‘to’ must be > 0 with log=“x”"
 
+msgid "'expr' did not evaluate to an object of length 'n'"
+msgstr "‘expr’ did not evaluate to an object of length ‘n’"
+
 msgid "wrong method"
 msgstr "wrong method"
+
+msgid "Must specify 'breaks' in hist(<POSIXt>)"
+msgstr "Must specify ‘breaks’ in hist(<POSIXt>)"
 
 msgid "invalid specification of 'breaks'"
 msgstr "invalid specification of ‘breaks’"
 
+msgid "Must specify 'breaks' in hist(<Date>)"
+msgstr "Must specify ‘breaks’ in hist(<Date>)"
+
 msgid "'x' must be a numeric vector or matrix"
 msgstr "‘x’ must be a numeric vector or matrix"
+
+msgid "'x' is neither a vector nor a matrix: using as.numeric(x)"
+msgstr "‘x’ is neither a vector nor a matrix: using as.numeric(x)"
 
 msgid "'x' must be an array"
 msgstr "‘x’ must be an array"
@@ -240,6 +253,9 @@ msgstr "breaks must all be finite"
 msgid "dimensions of z are not length(x)(-1) times length(y)(-1)"
 msgstr "dimensions of z are not length(x)(-1) times length(y)(-1)"
 
+msgid "useRaster=TRUE can only be used with a regular grid"
+msgstr "useRaster=TRUE can only be used with a regular grid"
+
 msgid "'respect' must be logical or matrix with same dimension as 'mat'"
 msgstr "‘respect’ must be logical or matrix with same dimension as ‘mat’"
 
@@ -307,6 +323,9 @@ msgstr "only one column in the argument to ‘pairs’"
 msgid "the 'panel' function made a new plot"
 msgstr "the ‘panel’ function made a new plot"
 
+msgid "surface extends beyond the box"
+msgstr "surface extends beyond the box"
+
 msgid "'x' values must be positive."
 msgstr "‘x’ values must be positive."
 
@@ -345,6 +364,9 @@ msgstr "there must be at least one numeric variable!"
 
 msgid "cannot hatch with logarithmic scale active"
 msgstr "cannot hatch with logarithmic scale active"
+
+msgid "Invalid fill rule for graphics path"
+msgstr "Invalid fill rule for graphics path"
 
 msgid "invalid rectangle specification"
 msgstr "invalid rectangle specification"

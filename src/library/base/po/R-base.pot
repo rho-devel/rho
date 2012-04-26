@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.10.1\n"
+"Project-Id-Version: R 2.14.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-12-10 19:18\n"
+"POT-Creation-Date: 2011-10-23 14:54\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -80,7 +80,16 @@ msgstr ""
 msgid "malformed version string"
 msgstr ""
 
+msgid "target is %s, current is %s"
+msgstr ""
+
 msgid "dim(X) must have a positive length"
+msgstr ""
+
+msgid "'X' must have named dimnames"
+msgstr ""
+
+msgid "not all elements of 'MARGIN' are names of dimensions"
 msgstr ""
 
 msgid "'dim' specifies too large an array"
@@ -101,16 +110,22 @@ msgstr ""
 msgid "file '%s' not found"
 msgstr ""
 
-msgid "invalid name"
+msgid "invalid 'name' argument"
 msgstr ""
 
-msgid "is required by"
+msgid "package %s is required by %s, which may no longer work correctly"
 msgstr ""
 
-msgid "(still attached)"
+msgid "package %s is required by %s so will not be detached"
 msgstr ""
 
-msgid "namespace cannot be unloaded"
+msgid "%s failed in %s() for '%s', details:\n  call: %s\n  error: %s"
+msgstr ""
+
+msgid "namespace cannot be unloaded:"
+msgstr ""
+
+msgid "converted to character string"
 msgstr ""
 
 msgid "replaced regular expression pattern '[' by  '\\\\['"
@@ -182,6 +197,9 @@ msgstr ""
 msgid "argument 'where' of length 0"
 msgstr ""
 
+msgid "argument 'object' must deparse to a single character string"
+msgstr ""
+
 msgid "'origin' must be one of 'start', 'current' or 'end'"
 msgstr ""
 
@@ -224,7 +242,7 @@ msgstr ""
 msgid "invalid 'dimnames' given for data frame"
 msgstr ""
 
-msgid "cannot coerce class %s into a data.frame"
+msgid "cannot coerce class '%s' into a data.frame"
 msgstr ""
 
 msgid "invalid 'row.names', length %d for a data frame with %d rows"
@@ -449,6 +467,9 @@ msgstr ""
 msgid "do not know how to convert '%s' to class \"POSIXlt\""
 msgstr ""
 
+msgid "do not know how to convert '%s' to class \"POSIXct\""
+msgstr ""
+
 msgid "wrong class"
 msgstr ""
 
@@ -527,9 +548,6 @@ msgstr ""
 msgid "replacement diagonal has wrong length"
 msgstr ""
 
-msgid "'fromLast' must be TRUE or FALSE"
-msgstr ""
-
 msgid "MARGIN ="
 msgstr ""
 
@@ -587,10 +605,16 @@ msgstr ""
 msgid "invalid factor level, NAs generated"
 msgstr ""
 
+msgid "invalid factor level, NA generated"
+msgstr ""
+
 msgid "'%s' is not meaningful for ordered factors"
 msgstr ""
 
-msgid "no files to copy from"
+msgid "'%s' not defined for ordered factors"
+msgstr ""
+
+msgid "'%s' is only meaningful for ordered factors if all arguments have the same level sets"
 msgstr ""
 
 msgid "no files to copy to"
@@ -599,7 +623,7 @@ msgstr ""
 msgid "more 'from' files than 'to' files"
 msgstr ""
 
-msgid "'recursive' will be ignored"
+msgid "'recursive' will be ignored as 'to' is not a single existing directory"
 msgstr ""
 
 msgid "file can not be copied both 'from' and 'to'"
@@ -611,22 +635,19 @@ msgstr ""
 msgid "no files/directory to link to"
 msgstr ""
 
-msgid "'x' must have length 1"
-msgstr ""
-
-msgid "invalid digits"
-msgstr ""
-
-msgid "'x' cannot be coerced to 'octmode'"
-msgstr ""
-
-msgid "'x' must be of length 1"
-msgstr ""
-
-msgid "'x' cannot be coerced to hexmode"
+msgid "no files to link to"
 msgstr ""
 
 msgid "'package' must be of length 1"
+msgstr ""
+
+msgid "no file found"
+msgstr ""
+
+msgid "invalid 'path' argument"
+msgstr ""
+
+msgid "invalid 'time' argument"
 msgstr ""
 
 msgid "'vec' contains NAs"
@@ -677,19 +698,37 @@ msgstr ""
 msgid "all arguments must be named"
 msgstr ""
 
-msgid "'pattern' must be a non-empty character string"
-msgstr ""
-
-msgid "invalid multibyte string for 'pattern'"
-msgstr ""
-
-msgid "'max.distance' must be non-negative"
+msgid "match distance components must be non-negative"
 msgstr ""
 
 msgid "unknown match distance components ignored"
 msgstr ""
 
-msgid "'max.distance' components must be non-negative"
+msgid "unknown cost components ignored"
+msgstr ""
+
+msgid "cost components must be non-negative"
+msgstr ""
+
+msgid "%s and %s must have the same length"
+msgstr ""
+
+msgid "need non-overlapping matches for %s"
+msgstr ""
+
+msgid "missing replacement values are not allowed"
+msgstr ""
+
+msgid "must have replacement values for matches"
+msgstr ""
+
+msgid "value does not provide any replacement values"
+msgstr ""
+
+msgid "must have replacements for non-matches"
+msgstr ""
+
+msgid "must have replacements for matches"
 msgstr ""
 
 msgid "norm '%s' currently always uses exact = FALSE"
@@ -701,88 +740,76 @@ msgstr ""
 msgid "'object' must be a list"
 msgstr ""
 
-msgid "This is R %s, package '%s' needs %s %s"
+msgid "'keep.source' is deprecated and will be ignored"
 msgstr ""
 
-msgid "package '%s' was built before R 2.0.0: please re-install it"
+msgid "package %s has not been installed properly"
 msgstr ""
 
-msgid "package '%s' was built under R version %s"
+msgid "package %s was built before R 2.10.0: please re-install it"
 msgstr ""
 
-msgid "package '%s' was built under R version %s and help will not work correctly\nPlease re-install it"
+msgid "This is R %s, package %s needs %s %s"
 msgstr ""
 
-msgid "package '%s' was built under R version %s and help may not work correctly"
+msgid "package %s was built under R version %s"
 msgstr ""
 
-msgid "package '%s' claims to be built under R version %s but is missing some help files and needs to be re-installed"
+msgid "package %s was built for %s"
 msgstr ""
 
-msgid "package '%s' was built for %s"
+msgid "package %s is not installed for 'arch=%s'"
 msgstr ""
 
-msgid "package '%s' is not installed for 'arch=%s'"
+msgid "package %s has a license that you need to accept in an interactive session"
 msgstr ""
 
-msgid "package '%s' has not been installed properly"
+msgid "Package %s has a license that you need to accept after viewing"
 msgstr ""
 
-msgid "See the Note in ?library"
+msgid "Package %s has a license that you need to accept:\naccording to the DESCRIPTION file it is"
 msgstr ""
 
-msgid "Attaching package: '%s'"
+msgid "License"
 msgstr ""
 
-msgid "The following object(s) are masked"
+msgid "License for package %s not accepted"
 msgstr ""
 
-msgid "_by_"
+msgid "Attaching package: %s"
 msgstr ""
 
-msgid "from"
-msgstr ""
-
-msgid ":"
+msgid "'verbose' and 'quietly' are both true; being verbose then .."
 msgstr ""
 
 msgid "invalid package name"
 msgstr ""
 
-msgid "there is no package called '%s'"
+msgid "there is no package called %s"
 msgstr ""
 
 msgid "no library trees found in 'lib.loc'"
 msgstr ""
 
-msgid "'%s' is not a valid installed package"
+msgid "%s is not a valid installed package"
 msgstr ""
 
-msgid "'%s' not found on search path, using pos = 2"
+msgid "%s not found on search path, using pos = 2"
 msgstr ""
 
-msgid "package/namespace load failed for '%s'"
+msgid "package/namespace load failed for %s"
 msgstr ""
 
-msgid "package was installed prior to 2.4.0 and must be re-installed"
+msgid "package %s does not have a NAMESPACE and should be re-installed"
 msgstr ""
 
-msgid "unable to load R code in package '%s'"
-msgstr ""
-
-msgid "package '%s' contains no R code"
-msgstr ""
-
-msgid ".First.lib failed for '%s'"
-msgstr ""
-
-msgid "package '%s' already present in search()"
+msgid "package %s already present in search()"
 msgstr ""
 
 msgid "'DESCRIPTION' has 'Encoding' field and re-encoding is not possible"
 msgstr ""
 
-msgid "%sPackages in library '%s':"
+msgid "%sPackages in library %s:"
 msgstr ""
 
 msgid "no packages found"
@@ -791,19 +818,37 @@ msgstr ""
 msgid "R packages available"
 msgstr ""
 
-msgid "shared library '%s' not found"
+msgid "DLL %s not found: maybe not installed for this architecture?"
 msgstr ""
 
-msgid "shared library '%s' already loaded"
+msgid "shared object %s not found"
+msgstr ""
+
+msgid "DLL %s already loaded"
+msgstr ""
+
+msgid "shared object '%s' already loaded"
 msgstr ""
 
 msgid "now dyn.load(\"%s\") ..."
 msgstr ""
 
-msgid "no shared library was specified"
+msgid "no DLL was specified"
 msgstr ""
 
-msgid "shared library '%s' was not loaded"
+msgid "no shared object was specified"
+msgstr ""
+
+msgid "DLL %s was not loaded"
+msgstr ""
+
+msgid "shared object %s was not loaded"
+msgstr ""
+
+msgid "DLL %s not found"
+msgstr ""
+
+msgid "shared object '%s' not found"
 msgstr ""
 
 msgid "now dyn.unload(\"%s\") ..."
@@ -815,10 +860,10 @@ msgstr ""
 msgid "none of the packages are loaded"
 msgstr ""
 
-msgid "package '%s' found more than once,\nusing the one found in '%s'"
+msgid "package %s found more than once,\nusing the one found in %s"
 msgstr ""
 
-msgid "Further information is available in the following vignettes in directory '%s':"
+msgid "Further information is available in the following vignettes in directory %s:"
 msgstr ""
 
 msgid "doc"
@@ -830,28 +875,31 @@ msgstr ""
 msgid "Index:"
 msgstr ""
 
-msgid "Information on package '%s'"
+msgid "Information on package %s"
 msgstr ""
 
-msgid "Documentation for package '%s'"
+msgid "Documentation for package %s"
 msgstr ""
 
-msgid "package '%s' required by '%s' could not be found"
+msgid "package %s required by %s could not be found"
 msgstr ""
 
-msgid "package '%s' %s was found, but %s %s is required by '%s'"
+msgid "package %s %s was found, but %s %s is required by %s"
 msgstr ""
 
-msgid "package '%s' could not be loaded"
+msgid "package %s could not be loaded"
 msgstr ""
 
-msgid "package '%s' %s is loaded, but %s %s is required by '%s'"
+msgid "package %s %s is loaded, but %s %s is required by %s"
+msgstr ""
+
+msgid "empty (zero-byte) input file"
 msgstr ""
 
 msgid "input has been corrupted, with LF replaced by CR"
 msgstr ""
 
-msgid "file '%s' has magic number '%s'\n   Use of save versions prior to 2 is deprecated"
+msgid "file %s has magic number '%s'\n   Use of save versions prior to 2 is deprecated"
 msgstr ""
 
 msgid "bad 'file' argument"
@@ -866,6 +914,12 @@ msgstr ""
 msgid "'file' must be non-empty string"
 msgstr ""
 
+msgid "'compress' must be logical or character"
+msgstr ""
+
+msgid "'compress = \"%s\"' is invalid"
+msgstr ""
+
 msgid "bad file argument"
 msgstr ""
 
@@ -878,7 +932,7 @@ msgstr ""
 msgid "[Previously saved workspace restored]"
 msgstr ""
 
-msgid "Attempting to load the environment '%s'"
+msgid "Attempting to load the environment %s"
 msgstr ""
 
 msgid "not found: using .GlobalEnv instead"
@@ -962,34 +1016,25 @@ msgstr ""
 msgid "Expected a single logical value for the S4 state flag"
 msgstr ""
 
+msgid "Expected a single logical value for the S3 state flag"
+msgstr ""
+
 msgid "invalid to change the storage mode of a factor"
 msgstr ""
 
 msgid "'%s' is not an exported object from 'namespace:%s'"
 msgstr ""
 
-msgid "package '%s' has no name space and"
+msgid "running .First.lib() for package %s as .onLoad/.onAttach were not found"
 msgstr ""
 
-msgid "is not on the search path"
-msgstr ""
-
-msgid "%s failed in 'attachNamespace'"
-msgstr ""
-
-msgid "name space is already attached"
+msgid "namespace is already attached"
 msgstr ""
 
 msgid "%s not found"
 msgstr ""
 
-msgid "cyclic name space dependencies are not supported"
-msgstr ""
-
-msgid "%s failed in 'loadNamespace' for '%s'"
-msgstr ""
-
-msgid "namespace '%s' is already sealed in loadNamespace"
+msgid "namespace %s is already sealed in loadNamespace"
 msgstr ""
 
 msgid "failed to assign RegisteredNativeSymbol for"
@@ -1010,94 +1055,82 @@ msgstr ""
 msgid "failed to assign NativeSymbolInfo for"
 msgstr ""
 
-msgid "package '%s' does not have a name space"
+msgid "package %s does not have a namespace"
 msgstr ""
 
-msgid "exportClassPattern specified in NAMESPACE but no matching classes in package '%s'"
+msgid "unable to load R code in package %s"
 msgstr ""
 
-msgid "in package '%s' classes for export not defined: %s"
+msgid "exportClassPattern specified in NAMESPACE but no matching classes in package %s"
 msgstr ""
 
-msgid "in '%s' methods for export not found: %s"
+msgid "in package %s classes %s were specified for export but not defined"
 msgstr ""
 
-msgid "Multiple methods tables found for '"
+msgid "in %s methods for export not found: %s"
 msgstr ""
 
-msgid "'"
+msgid "multiple methods tables found for %s"
 msgstr ""
 
-msgid "Failed to find metadata object for \"%s\""
+msgid "failed to find metadata object for %s"
 msgstr ""
 
-msgid "in '%s' methods specified for export, but none defined: %s"
+msgid "in package %s methods %s were specified for export but not defined"
+msgstr ""
+
+msgid "Loading required namespace: %s"
 msgstr ""
 
 msgid "not found"
 msgstr ""
 
-msgid "not loading a name space"
+msgid "not loading a namespace"
 msgstr ""
 
-msgid "%s failed in unloadNamespace(\"%s\"), details:\n  call: %s\n  message: %s"
+msgid "namespace %s is imported by %s so cannot be unloaded"
 msgstr ""
 
-msgid "name space '%s' is still used by: %s"
+msgid "not a namespace"
 msgstr ""
 
-msgid "imperative name space directives are disabled"
-msgstr ""
-
-msgid "all objects in base name space are currently exported."
-msgstr ""
-
-msgid "can only export from a name space"
-msgstr ""
-
-msgid "not a name space"
-msgstr ""
-
-msgid "operation not allowed on base name space"
+msgid "operation not allowed on base namespace"
 msgstr ""
 
 msgid "duplicate import names"
 msgstr ""
 
-msgid "cannot import into a sealed name space"
+msgid "replacing local value with import %s when loading %s"
+msgstr ""
+
+msgid "cannot import into a sealed namespace"
+msgstr ""
+
+msgid "replacing previous import %s when loading %s"
 msgstr ""
 
 msgid "invalid import target"
 msgstr ""
 
-msgid "got invalid index for importing"
+msgid "found methods to import for function %s but not the generic itself"
 msgstr ""
 
-msgid "Found methods to import for function \"%s\" but not the generic itself"
+msgid "requested methods not found in environment/package %s: %s"
 msgstr ""
 
-msgid "requested 'methods' objects not found in environment/package '%s': %s"
-msgstr ""
-
-msgid "cannot add to exports of a sealed name space"
+msgid "cannot add to exports of a sealed namespace"
 msgstr ""
 
 msgid "undefined exports:"
 msgstr ""
 
-msgid "package '%s' has no NAMESPACE file"
+msgid "package %s has no NAMESPACE file"
 msgstr ""
 
 msgid "empty name in directive '%s' in NAMESPACE file"
 msgstr ""
 
-msgid "duplicated symbol names"
-msgstr ""
-
-msgid "in useDynLib("
-msgstr ""
-
-msgid ")"
+msgid "duplicated symbol names %s in useDynlib(\"%s\")"
 msgstr ""
 
 msgid "bad 'S3method' directive: %s"
@@ -1109,7 +1142,7 @@ msgstr ""
 msgid "unknown namespace directive: %s"
 msgstr ""
 
-msgid "S3 method '%s' was declared in NAMESPACE but not found"
+msgid "S3 method %s was declared but not found"
 msgstr ""
 
 msgid "bad method"
@@ -1118,7 +1151,7 @@ msgstr ""
 msgid "object '%s' not found whilst loading namespace '%s'"
 msgstr ""
 
-msgid "found an S4 version of '%s' so it has not been imported correctly"
+msgid "found an S4 version of %s so it has not been imported correctly"
 msgstr ""
 
 msgid "'%s' is not implemented yet"
@@ -1127,7 +1160,16 @@ msgstr ""
 msgid "argument '%s' is not used (yet)"
 msgstr ""
 
+msgid "'x' cannot be coerced to 'octmode'"
+msgstr ""
+
+msgid "'x' cannot be coerced to hexmode"
+msgstr ""
+
 msgid "no arguments"
+msgstr ""
+
+msgid "an argument will be fractionally recycled"
 msgstr ""
 
 msgid "invalid 'n' value"
@@ -1199,6 +1241,12 @@ msgstr ""
 msgid "either specify 'nmax' or 'n', but not both."
 msgstr ""
 
+msgid "argument 'length.out' must be of length 1"
+msgstr ""
+
+msgid "first element used of 'length.out' argument"
+msgstr ""
+
 msgid "invalid (to - from)/by in seq(.)"
 msgstr ""
 
@@ -1212,6 +1260,9 @@ msgid "length must be non-negative number"
 msgstr ""
 
 msgid "too many arguments"
+msgstr ""
+
+msgid "'compress' is ignored unless 'file' is a file name"
 msgstr ""
 
 msgid "'connection' must be a connection"
@@ -1274,6 +1325,9 @@ msgstr ""
 msgid "method=\"radix\" is only for integer 'x'"
 msgstr ""
 
+msgid "'local' must be TRUE, FALSE or an environment"
+msgstr ""
+
 msgid "'echo' must be logical"
 msgstr ""
 
@@ -1281,6 +1335,9 @@ msgid "'verbose' is TRUE, 'echo' not; ... coercing 'echo <- TRUE'"
 msgstr ""
 
 msgid "unable to find a plausible encoding"
+msgstr ""
+
+msgid "encoding = \"%s\" chosen"
 msgstr ""
 
 msgid "'chdir = TRUE' makes no sense for a URL"
@@ -1325,6 +1382,9 @@ msgstr ""
 msgid "incorrect values of 'indent' and 'width'"
 msgstr ""
 
+msgid "probably wrong encoding in names(.) of column"
+msgstr ""
+
 msgid "'nv' must be 0 or ncol(x)"
 msgstr ""
 
@@ -1344,6 +1404,9 @@ msgid "nothing to tabulate"
 msgstr ""
 
 msgid "all arguments must have the same length"
+msgstr ""
+
+msgid "attempt to make a table with >= 2^31 elements"
 msgstr ""
 
 msgid "'object' must inherit from class \"table\""
@@ -1409,7 +1472,7 @@ msgstr ""
 msgid "not defined for numeric_version objects"
 msgstr ""
 
-msgid "argument to 'which' is not logical"
+msgid "<0 elements>"
 msgstr ""
 
 msgid "invalid 'digits'"
@@ -1418,7 +1481,43 @@ msgstr ""
 msgid "arguments 'show.output.on.console', 'minimized' and 'invisible' are for Windows only"
 msgstr ""
 
+msgid "'intern' must be TRUE or FALSE"
+msgstr ""
+
+msgid "'ignore.stdout' must be TRUE or FALSE"
+msgstr ""
+
+msgid "'ignore.stderr' must be TRUE or FALSE"
+msgstr ""
+
+msgid "'wait' must be TRUE or FALSE"
+msgstr ""
+
 msgid "'input' must be a character vector or 'NULL'"
+msgstr ""
+
+msgid "arguments 'minimized' and 'invisible' are for Windows only"
+msgstr ""
+
+msgid "setting stdout = TRUE"
+msgstr ""
+
+msgid "'stdout' must be of length 1"
+msgstr ""
+
+msgid "'stderr' must be of length 1"
+msgstr ""
+
+msgid "'which' was not found on this platform"
+msgstr ""
+
+msgid "'show.output.on.console' must be TRUE or FALSE"
+msgstr ""
+
+msgid "'minimized' must be TRUE or FALSE"
+msgstr ""
+
+msgid "'invisible' must be TRUE or FALSE"
 msgstr ""
 
 msgid "'%s' could not be run"
@@ -1454,10 +1553,7 @@ msgstr ""
 msgid "have been removed from the search path"
 msgstr ""
 
-msgid "cannot find name space environment"
-msgstr ""
-
-msgid "package '%s' has a non-function '.First.lib'"
+msgid "cannot find namespace environment"
 msgstr ""
 
 msgid        "deparse option %s is not recognized"
@@ -1485,8 +1581,13 @@ msgid_plural "objects %s not found"
 msgstr[0]    ""
 msgstr[1]    ""
 
-msgid        "object '%s' is not exported by 'namespace:%s'"
-msgid_plural "objects '%s' are not exported by 'namespace:%s'"
+msgid        "class %s is not exported by 'namespace:%s'"
+msgid_plural "classes %s are not exported by 'namespace:%s'"
+msgstr[0]    ""
+msgstr[1]    ""
+
+msgid        "object %s is not exported by 'namespace:%s'"
+msgid_plural "objects %s are not exported by 'namespace:%s'"
 msgstr[0]    ""
 msgstr[1]    ""
 

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -179,7 +179,7 @@ static double R_VF_VStrWidth (const char *s,
      vmaxget() ... vmaxset() instead of free()
   */
 
-  char *vmax = vmaxget();
+  const void *vmax = vmaxget();
 
   /* convert string to a codestring, including annotations */
   codestring = _controlify (dd, (const unsigned char *) s,
@@ -209,7 +209,7 @@ static double R_VF_VStrHeight (const char *s, const pGEcontext gc, pGEDevDesc dd
   double label_height;
   unsigned short *codestring;
 
-  char *vmax = vmaxget();
+  const void *vmax = vmaxget();
 
   /* convert string to a codestring, including annotations */
   codestring = _controlify (dd, (const unsigned char *) s,
@@ -242,13 +242,13 @@ static void R_VF_VText (double x, double y, const char *s,
   unsigned short *codestring;
   double label_width, label_height;
   double x_offset, y_offset;
-  double x_displacement;
+/*  double x_displacement; */
 
   /* PAUL MURRELL
      _controlify using R_alloc instead of xmalloc so need to do
      vmaxget() ... vmaxset() instead of free()
   */
-  char *vmax = vmaxget();
+  const void *vmax = vmaxget();
 
   /* PAUL MURRELL
      initialise the local currX and currY
@@ -292,7 +292,7 @@ static void R_VF_VText (double x, double y, const char *s,
       y_justify = 0.5;
 
   x_offset = 0 - x_justify;
-  x_displacement = 1 - 2 * x_justify;
+  /* x_displacement = 1 - 2 * x_justify; */
 
   y_offset = 0 - y_justify * 1.0;
 

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,8 +16,8 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001--2008  The R Development Core Team.
- *  Copyright (C) 2003--2008  The R Foundation
+ *  Copyright (C) 2001--2010  The R Development Core Team.
+ *  Copyright (C) 2003--2010  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,7 +41,9 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+
 #include <Defn.h>
+#include <ctype.h> /* for toupper */
 
 #include "Lapack.h"
 
@@ -93,13 +95,11 @@ static SEXP modLa_svd(SEXP jobu, SEXP jobv, SEXP x, SEXP s, SEXP u, SEXP v,
     int *xdims, n, p, lwork, info = 0;
     double *work, *xvals, tmp;
     SEXP val, nm;
-    const char *meth;
 
     if (!(isString(jobu) && isString(jobv)))
 	error(_("'jobu' and 'jobv' must be character strings"));
     if (!isString(method))
 	error(_("'method' must be a character string"));
-    meth = CHAR(STRING_ELT(method, 0));
     xdims = INTEGER(coerceVector(getAttrib(x, R_DimSymbol), INTSXP));
     n = xdims[0]; p = xdims[1];
     xvals = (double *) R_alloc(n * p, sizeof(double));
@@ -315,6 +315,39 @@ static SEXP modLa_rg(SEXP x, SEXP only_values)
     UNPROTECT(2);
     return ret;
 }
+
+static SEXP modLa_dlange(SEXP A, SEXP type)
+{
+    SEXP x, val;
+    int *xdims, m, n, nprot = 0;
+    double *work = NULL;
+    char typNorm[] = {'\0', '\0'};
+
+    if (!isString(type))
+	error(_("'type' must be a character string"));
+    if (!isReal(A) && isNumeric(A)) {
+	x = PROTECT(coerceVector(A, REALSXP)); nprot++;
+    } else
+	x = A;
+    if (!(isMatrix(x) && isReal(x))) {
+	UNPROTECT(nprot);
+	error(_("'A' must be a numeric matrix"));
+    }
+
+    xdims = INTEGER(coerceVector(getAttrib(x, R_DimSymbol), INTSXP));
+    m = xdims[0];
+    n = xdims[1]; /* m x n  matrix {using Lapack naming convention} */
+
+    typNorm[0] = La_norm_type(CHAR(asChar(type)));
+
+    val = PROTECT(allocVector(REALSXP, 1)); nprot++;
+    if(*typNorm == 'I') work = (double *) R_alloc(m, sizeof(double));
+    REAL(val)[0] = F77_CALL(dlange)(typNorm, &m, &n, REAL(x), &m, work);
+
+    UNPROTECT(nprot);
+    return val;
+}
+
 
 /* ------------------------------------------------------------ */
 static SEXP modLa_dgecon(SEXP A, SEXP norm)
@@ -1083,6 +1116,7 @@ static SEXP modqr_qy_real(SEXP Q, SEXP Bin, SEXP trans)
     return B;
 }
 
+/* TODO : add  a *complex* version, using  LAPACK ZGETRF() */
 static SEXP moddet_ge_real(SEXP Ain, SEXP logarithm)
 {
     int i, n, *Adims, info, *jpvt, sign, useLog;
@@ -1105,7 +1139,12 @@ static SEXP moddet_ge_real(SEXP Ain, SEXP logarithm)
 	error(_("error code %d from Lapack routine '%s'"), info, "dgetrf");
     else if (info > 0) { /* Singular matrix:  U[i,i] (i := info) is 0 */
 	/*warning("Lapack dgetrf(): singular matrix: U[%d,%d]=0", info,info);*/
-	modulus = (useLog ? R_NegInf : 0.);
+	modulus =
+#ifdef _not_quite_/* unfortunately does not work -- FIXME */
+	    (ISNAN(REAL(A)[(info-1)*n + (info-1)])) /* pivot is NA/NaN */
+	    ? R_NaN :
+#endif
+	    (useLog ? R_NegInf : 0.);
     }
     else {
 	for (i = 0; i < n; i++) if (jpvt[i] != (i + 1))
@@ -1154,6 +1193,7 @@ R_init_lapack(DllInfo *info)
     tmp->svd = modLa_svd;
     tmp->rs = modLa_rs;
     tmp->rg = modLa_rg;
+    tmp->dlange = modLa_dlange;
     tmp->dgecon = modLa_dgecon;
     tmp->dtrcon = modLa_dtrcon;
     tmp->zgecon = modLa_zgecon;

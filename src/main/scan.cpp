@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2008   The R Development Core Team.
+ *  Copyright (C) 1998-2011   The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,9 +54,11 @@
 #endif
 
 #include <Defn.h>
+#include <float.h>  /* for DBL_DIG */
 #include <Fileio.h>
 #include <Rconnections.h>
 #include <errno.h>
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 
@@ -314,14 +316,6 @@ static int scanchar(Rboolean inQuote, LocalData *d)
     return next;
 }
 
-/* utility to close connections after interrupts */
-static void scan_cleanup(void *data)
-{
-    LocalData *ld = CXXRCONSTRUCT(static_cast<LocalData*>, data);
-    if(!ld->ttyflag && !ld->wasopen) ld->con->close(ld->con);
-    if (ld->quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, ld->quoteset));
-}
-
 #include "RBufferUtils.h"
 
 /*XX  Can we pass this routine an R_StringBuffer? appears so.
@@ -340,13 +334,14 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
    bch is used to distinguish \r, \n and EOF from more input available.
 */
     char *bufp;
-    int c, quote, filled, nbuf = MAXELTSIZE, m;
+    int c, quote, filled, nbuf = MAXELTSIZE, m, mm = 0;
     Rboolean dbcslocale = CXXRCONSTRUCT(Rboolean, (MB_CUR_MAX == 2));
 
     m = 0;
     filled = 1;
     if (d->sepchar == 0) {
 	/* skip all space or tabs: only look at lead bytes here */
+	strip = 0; /* documented to be ignored in this case */
 	while ((c = scanchar(FALSE, d)) == ' ' || c == '\t') ;
 	if (c == '\n' || c == '\r' || c == R_EOF) {
 	    filled = c;
@@ -371,6 +366,7 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 		    buffer->data[m++] = scanchar2(d);
 	    }
 	    c = scanchar(FALSE, d);
+	    mm = m;
 	}
 	else { /* not a quoted char string */
 	    do {
@@ -427,6 +423,7 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 			buffer->data[m++] = quote;
 			goto inquote; /* FIXME: Ick! Clean up logic */
 		    }
+		    mm = m;
 		    if (c == d->sepchar || c == '\n' || c == '\r' || c == R_EOF){
 			filled = c;
 			goto donefill;
@@ -451,8 +448,8 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
  donefill:
     /* strip trailing white space, if desired and if item is non-null */
     bufp = &buffer->data[m];
-   if (strip && m > 0) {
-	do {c = int(*--bufp);} while(Rspace(c));
+   if (strip && m > mm) {
+	do {c = int(*--bufp);} while(m-- > mm && Rspace(c));
 	bufp++;
     }
     *bufp = '\0';
@@ -821,7 +818,6 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP ans, file, sep, what, stripwhite, dec, quotes, comstr;
     int i, c, nlines, nmax, nskip, flush, fill, blskip, multiline, escapes;
     const char *p, *encoding;
-    RCNTXT cntxt;
     LocalData data = {NULL, 0, 0, '.', NULL, NO_COMCHAR, 0, NULL, FALSE,
 		      FALSE, 0, FALSE, FALSE};
     data.NAstrings = R_NilValue;
@@ -936,32 +932,33 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     ans = R_NilValue;		/* -Wall */
     data.save = 0;
 
-    /* set up a context which will close the connection if there is
+    /* Use try-catch to close the connection if there is
        an error or user interrupt */
-    begincontext(&cntxt, CTXT_CCODE, call, R_BaseEnv, R_BaseEnv,
-		 R_NilValue, R_NilValue);
-    cntxt.cend = &scan_cleanup;
-    cntxt.cenddata = &data;
+    try {
+	switch (TYPEOF(what)) {
+	case LGLSXP:
+	case INTSXP:
+	case REALSXP:
+	case CPLXSXP:
+	case STRSXP:
+	case RAWSXP:
+	    ans = scanVector(TYPEOF(what), nmax, nlines, flush, stripwhite,
+			     blskip, &data);
+	    break;
 
-    switch (TYPEOF(what)) {
-    case LGLSXP:
-    case INTSXP:
-    case REALSXP:
-    case CPLXSXP:
-    case STRSXP:
-    case RAWSXP:
-	ans = scanVector(TYPEOF(what), nmax, nlines, flush, stripwhite,
-			 blskip, &data);
-	break;
-
-    case VECSXP:
-	ans = scanFrame(what, nmax, nlines, flush, fill, stripwhite,
-			blskip, multiline, &data);
-	break;
-    default:
-	error(_("invalid '%s' argument"), "what");
+	case VECSXP:
+	    ans = scanFrame(what, nmax, nlines, flush, fill, stripwhite,
+			    blskip, multiline, &data);
+	    break;
+	default:
+	    error(_("invalid '%s' argument"), "what");
+	}
     }
-    endcontext(&cntxt);
+    catch (...) {
+	if(!data.ttyflag && !data.wasopen) data.con->close(data.con);
+	if (data.quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, data.quoteset));
+	throw;
+    }
 
     /* we might have a character that was unscanchar-ed.
        So pushback if possible */
@@ -1204,7 +1201,7 @@ SEXP attribute_hidden do_typecvt(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP cvec, a, dup, levs, dims, names, dec;
     SEXP rval = R_NilValue; /* -Wall */
-    int i, j, len, numeric, asIs;
+    int i, j, len, asIs;
     Rboolean done = FALSE;
     char *endp;
     const char *tmp = NULL;
@@ -1240,8 +1237,6 @@ SEXP attribute_hidden do_typecvt(SEXP call, SEXP op, SEXP args, SEXP env)
 
     cvec = CAR(args);
     len = length(cvec);
-
-    numeric = 1;
 
     /* save the dim/dimnames attributes */
 
@@ -1370,14 +1365,14 @@ SEXP attribute_hidden do_typecvt(SEXP call, SEXP op, SEXP args, SEXP env)
 	    /* CR avoided an allocation by reusing dup,
 	     * a LGLSXP of the right length.  CXXR doesn't!
 	     */
-	    GCStackRoot<IntVector> rvalr(GCNode::expose(new IntVector(LENGTH(dup))));
+	    GCStackRoot<IntVector> rvalr(CXXR_NEW(IntVector(LENGTH(dup))));
 	    rval = rvalr;
 
 	    /* put the levels in lexicographic order */
 
 	    sortVector(levs, FALSE);
 
-	    PROTECT(a = match(levs, cvec, NA_INTEGER));
+	    PROTECT(a = matchE(levs, cvec, NA_INTEGER, env));
 	    for (i = 0; i < len; i++)
 		INTEGER(rval)[i] = INTEGER(a)[i];
 
@@ -1389,10 +1384,7 @@ SEXP attribute_hidden do_typecvt(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     setAttrib(rval, R_DimSymbol, dims);
-    if (isArray(cvec))
-	setAttrib(rval, R_DimNamesSymbol, names);
-    else
-	setAttrib(rval, R_NamesSymbol, names);
+    setAttrib(rval, isArray(cvec) ? R_DimNamesSymbol : R_NamesSymbol, names);
     UNPROTECT(3);
     return rval;
 }
@@ -1406,33 +1398,39 @@ SEXP attribute_hidden do_readln(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op,args);
 
     prompt = CAR(args);
-    if (prompt == R_NilValue)
+    if (prompt == R_NilValue) {
+	ConsolePrompt[0] = '\0'; /* precaution */
 	PROTECT(prompt);
-    else {
+    } else {
 	PROTECT(prompt = coerceVector(prompt, STRSXP));
 	if(length(prompt) > 0)
 	    strncpy(ConsolePrompt, translateChar(STRING_ELT(prompt, 0)),
 		    CONSOLE_PROMPT_SIZE - 1);
     }
 
-    /* skip space or tab */
-    while ((c = ConsoleGetchar()) == ' ' || c == '\t') ;
-    if (c != '\n' && c != R_EOF) {
-	*bufp++ = c;
-	while ((c = ConsoleGetchar())!= '\n' && c != R_EOF) {
-	    if (bufp >= &buffer[MAXELTSIZE - 2]) continue;
+    if(R_Interactive) {
+	/* skip space or tab */
+	while ((c = ConsoleGetchar()) == ' ' || c == '\t') ;
+	if (c != '\n' && c != R_EOF) {
 	    *bufp++ = c;
+	    while ((c = ConsoleGetchar())!= '\n' && c != R_EOF) {
+		if (bufp >= &buffer[MAXELTSIZE - 2]) continue;
+		*bufp++ = c;
+	    }
 	}
-    }
-    /* now strip white space off the end as well */
-    while (--bufp >= buffer && (*bufp == ' ' || *bufp == '\t'))
-	;
-    *++bufp = '\0';
-    ConsolePrompt[0] = '\0';
+	/* now strip white space off the end as well */
+	while (--bufp >= buffer && (*bufp == ' ' || *bufp == '\t'))
+	    ;
+	*++bufp = '\0';
+	ConsolePrompt[0] = '\0';
 
-    PROTECT(ans = allocVector(STRSXP,1));
-    SET_STRING_ELT(ans, 0, mkChar(buffer));
-    UNPROTECT(2);
+	ans = mkString(buffer);
+    } else {
+	/* simulate CR as response */
+	Rprintf("%s\n", ConsolePrompt);
+	ans = mkString("");
+    }
+    UNPROTECT(1);
     return ans;
 }
 
@@ -1549,9 +1547,11 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
 	while((c = scanchar(TRUE, &data)) != R_EOF) {
 	    if(nbuf >= buf_size -1) {
 		buf_size *= 2;
-		buf = static_cast<char *>( realloc(buf, buf_size));
-		if(!buf)
+		char *tmp = static_cast<char *>( realloc(buf, buf_size));
+		if(!tmp) {
+		    free(buf);
 		    error(_("cannot allocate buffer in 'readTableHead'"));
+		} else buf = tmp;
 	    }
 	    /* Need to handle escaped embedded quotes, and how they are
 	       escaped depends on 'sep' */
@@ -1691,9 +1691,8 @@ typedef struct wt_info {
 } wt_info;
 
 /* utility to cleanup e.g. after interrpts */
-static void wt_cleanup(void *data)
+static void wt_cleanup(wt_info *ld)
 {
-    wt_info *ld = CXXRCONSTRUCT(static_cast<wt_info*>, data);
     if(!ld->wasopen) ld->con->close(ld->con);
     R_FreeStringBuffer(ld->buf);
     R_print.digits = ld->savedigits;
@@ -1710,7 +1709,6 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP *levels;
     R_StringBuffer strBuf = {NULL, 0, MAXELTSIZE};
     wt_info wi;
-    RCNTXT cntxt;
 
     checkArity(op, args);
 
@@ -1760,92 +1758,93 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if(thiss >  0) quote_col[thiss - 1] = TRUE;
     }
     R_AllocStringBuffer(0, &strBuf);
-    PrintDefaults(R_NilValue);
+    PrintDefaults();
     wi.savedigits = R_print.digits; R_print.digits = DBL_DIG;/* MAX precision */
     wi.con = con;
     wi.wasopen = wasopen;
     wi.buf = &strBuf;
-    begincontext(&cntxt, CTXT_CCODE, call, R_BaseEnv, R_BaseEnv,
-		 R_NilValue, R_NilValue);
-    cntxt.cend = &wt_cleanup;
-    cntxt.cenddata = &wi;
 
-    if(isVectorList(x)) { /* A data frame */
+    try {
+	if(isVectorList(x)) { /* A data frame */
 
-	/* handle factors internally, check integrity */
-	levels = static_cast<SEXP *>( CXXR_alloc(nc, sizeof(SEXP)));
-	for(j = 0; j < nc; j++) {
-	    xj = VECTOR_ELT(x, j);
-	    if(LENGTH(xj) != nr)
-		error(_("corrupt data frame -- length of column %d does not not match nrows"), j+1);
-	    if(inherits(xj, "factor")) {
-		levels[j] = getAttrib(xj, R_LevelsSymbol);
-	    } else levels[j] = R_NilValue;
-	}
-
-	for(i = 0; i < nr; i++) {
-	    if(i % 1000 == 999) R_CheckUserInterrupt();
-	    if(!isNull(rnames))
-		Rconn_printf(con, "%s%s",
-			     EncodeElement2(rnames, i, quote_rn, CXXRCONSTRUCT(Rboolean, qmethod),
-					    &strBuf, cdec), csep);
+	    /* handle factors internally, check integrity */
+	    levels = static_cast<SEXP *>( CXXR_alloc(nc, sizeof(SEXP)));
 	    for(j = 0; j < nc; j++) {
 		xj = VECTOR_ELT(x, j);
-		if(j > 0) Rconn_printf(con, "%s", csep);
-		if(isna(xj, i)) tmp = cna;
-		else {
-		    if(!isNull(levels[j])) {
-			/* We cannot assume factors have integer levels */
-			if(TYPEOF(xj) == INTSXP)
-			    tmp = EncodeElement2(levels[j], INTEGER(xj)[i] - 1,
-						 quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
+		if(LENGTH(xj) != nr)
+		    error(_("corrupt data frame -- length of column %d does not not match nrows"), j+1);
+		if(inherits(xj, "factor")) {
+		    levels[j] = getAttrib(xj, R_LevelsSymbol);
+		} else levels[j] = R_NilValue;
+	    }
+
+	    for(i = 0; i < nr; i++) {
+		if(i % 1000 == 999) R_CheckUserInterrupt();
+		if(!isNull(rnames))
+		    Rconn_printf(con, "%s%s",
+				 EncodeElement2(rnames, i, quote_rn, CXXRCONSTRUCT(Rboolean, qmethod),
+						&strBuf, cdec), csep);
+		for(j = 0; j < nc; j++) {
+		    xj = VECTOR_ELT(x, j);
+		    if(j > 0) Rconn_printf(con, "%s", csep);
+		    if(isna(xj, i)) tmp = cna;
+		    else {
+			if(!isNull(levels[j])) {
+			    /* We cannot assume factors have integer levels */
+			    if(TYPEOF(xj) == INTSXP)
+				tmp = EncodeElement2(levels[j], INTEGER(xj)[i] - 1,
+						     quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
+						     &strBuf, cdec);
+			    else if(TYPEOF(xj) == REALSXP)
+				tmp = EncodeElement2(levels[j], CXXRCONSTRUCT(int, REAL(xj)[i] - 1),
+						     quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
+						     &strBuf, cdec);
+			    else
+				error("column %s claims to be a factor but does not have numeric codes", j+1);
+			} else {
+			    tmp = EncodeElement2(xj, i, quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
 						 &strBuf, cdec);
-			else if(TYPEOF(xj) == REALSXP)
-			    tmp = EncodeElement2(levels[j], CXXRCONSTRUCT(int, REAL(xj)[i] - 1),
-						 quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
-						 &strBuf, cdec);
-			else
-			    error("column %s claims to be a factor but does not have numeric codes", j+1);
-		    } else {
-			tmp = EncodeElement2(xj, i, quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
-					     &strBuf, cdec);
+			}
+			/* if(cdec) change_dec(tmp, cdec, TYPEOF(xj)); */
 		    }
-		    /* if(cdec) change_dec(tmp, cdec, TYPEOF(xj)); */
+		    Rconn_printf(con, "%s", tmp);
 		}
-		Rconn_printf(con, "%s", tmp);
+		Rconn_printf(con, "%s", ceol);
 	    }
-	    Rconn_printf(con, "%s", ceol);
-	}
 
-    } else { /* A matrix */
+	} else { /* A matrix */
 
-	if(!isVectorAtomic(x))
-	    UNIMPLEMENTED_TYPE("write.table, matrix method", x);
-	/* quick integrity check */
-	if(LENGTH(x) != nr * nc)
-	    error(_("corrupt matrix -- dims not not match length"));
+	    if(!isVectorAtomic(x))
+		UNIMPLEMENTED_TYPE("write.table, matrix method", x);
+	    /* quick integrity check */
+	    if(LENGTH(x) != nr * nc)
+		error(_("corrupt matrix -- dims not not match length"));
 
-	for(i = 0; i < nr; i++) {
-	    if(i % 1000 == 999) R_CheckUserInterrupt();
-	    if(!isNull(rnames))
-		Rconn_printf(con, "%s%s",
-			     EncodeElement2(rnames, i, quote_rn, CXXRCONSTRUCT(Rboolean, qmethod),
-					    &strBuf, cdec), csep);
-	    for(j = 0; j < nc; j++) {
-		if(j > 0) Rconn_printf(con, "%s", csep);
-		if(isna(x, i + j*nr)) tmp = cna;
-		else {
-		    tmp = EncodeElement2(x, i + j*nr, quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
-					&strBuf, cdec);
-		    /* if(cdec) change_dec(tmp, cdec, TYPEOF(x)); */
+	    for(i = 0; i < nr; i++) {
+		if(i % 1000 == 999) R_CheckUserInterrupt();
+		if(!isNull(rnames))
+		    Rconn_printf(con, "%s%s",
+				 EncodeElement2(rnames, i, quote_rn, CXXRCONSTRUCT(Rboolean, qmethod),
+						&strBuf, cdec), csep);
+		for(j = 0; j < nc; j++) {
+		    if(j > 0) Rconn_printf(con, "%s", csep);
+		    if(isna(x, i + j*nr)) tmp = cna;
+		    else {
+			tmp = EncodeElement2(x, i + j*nr, quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
+					     &strBuf, cdec);
+			/* if(cdec) change_dec(tmp, cdec, TYPEOF(x)); */
+		    }
+		    Rconn_printf(con, "%s", tmp);
 		}
-		Rconn_printf(con, "%s", tmp);
+		Rconn_printf(con, "%s", ceol);
 	    }
-	    Rconn_printf(con, "%s", ceol);
-	}
 
+	}
     }
-    endcontext(&cntxt);
+    catch (...) {
+	wt_cleanup(&wi);
+	throw;
+    }
     wt_cleanup(&wi);
     return R_NilValue;
 }

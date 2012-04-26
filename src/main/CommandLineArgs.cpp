@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,8 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1997-2007   Robert Gentleman, Ross Ihaka
- *                            and the R Development Core Team
+ *  Copyright (C) 1997-2008   The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -73,7 +72,7 @@ R_set_command_line_arguments(int argc, char **argv)
     int i;
 
     NumCommandLineArgs = argc;
-    CommandLineArgs = static_cast<char**>( calloc(argc, sizeof(char*)));
+    CommandLineArgs = static_cast<char**>( calloc(size_t( argc), sizeof(char*)));
 
     for(i = 0; i < argc; i++)
 	CommandLineArgs[i] = strdup(argv[i]);
@@ -152,10 +151,10 @@ R_common_command_line(int *pac, char **argv, Rstart Rp)
 	    else if (!strcmp(*av, "--vanilla")) {
 		Rp->SaveAction = SA_NOSAVE; /* --no-save */
 		Rp->RestoreAction = SA_NORESTORE; /* --no-restore */
+		R_RestoreHistory = 0;     // --no-restore-history (= part of --no-restore)
 		Rp->LoadSiteFile = FALSE; /* --no-site-file */
 		Rp->LoadInitFile = FALSE; /* --no-init-file */
-		R_RestoreHistory = 0;     /* --no-restore-history */
-		Rp->NoRenviron = TRUE;
+		Rp->NoRenviron = TRUE;    // --no-environ
 #ifdef Win32
 		R_LoadRconsole = FALSE;
 #endif
@@ -183,10 +182,10 @@ R_common_command_line(int *pac, char **argv, Rstart Rp)
 	    }
 	    else if (!strncmp(*av, "--encoding", 10)) {
 		if(strlen(*av) < 12) {
-		    ac--; av++; p = *av;
+		    if(ac > 1) {ac--; av++; p = *av;} else p = NULL;
 		} else p = &(*av)[11];
 		if (p == NULL) {
-		    R_ShowMessage(_("WARNING: no value given for --encoding given\n"));
+		    R_ShowMessage(_("WARNING: no value given for --encoding"));
 		} else {
 		    strncpy(R_StdinEnc, p, 30);
 		    R_StdinEnc[30] = '\0';
@@ -209,18 +208,24 @@ R_common_command_line(int *pac, char **argv, Rstart Rp)
 		     !strcmp(*av, "-n") ||
 		     !strcmp(*av, "-v")) {
 		snprintf(msg, 1024,
-			 _("WARNING: option '%s' no longer supported\n"), *av);
+			 _("WARNING: option '%s' no longer supported"), *av);
 		R_ShowMessage(msg);
 	    }
 	    /* mop up --max/min/-n/vsize */
-	    else if(strncmp(*av+7, "size", 4) == 0) {
+	    else if( !strncmp(*av, "--min-nsize", 11) ||
+		     !strncmp(*av, "--max-nsize", 11) ||
+		     !strncmp(*av, "--min-vsize", 11) ||
+		     !strncmp(*av, "--max-vsize", 11) ) {
+		snprintf(msg, 1024,
+			 "WARNING: option '%s' is deprecated", *av);
+		R_ShowMessage(msg);
 		if(strlen(*av) < 13) {
-		    ac--; av++; p = *av;
+		    if(ac > 1) {ac--; av++; p = *av;} else p = NULL;
 		}
 		else p = &(*av)[12];
 		if (p == NULL) {
 		    snprintf(msg, 1024,
-			     _("WARNING: no value given for '%s'\n"), *av);
+			     _("WARNING: no value given for '%s'"), *av);
 		    R_ShowMessage(msg);
 		    break;
 		}
@@ -228,11 +233,11 @@ R_common_command_line(int *pac, char **argv, Rstart Rp)
 		if(ierr) {
 		    if(ierr < 0)
 			snprintf(msg, 1024,
-				 _("WARNING: '%s' value is invalid: ignored\n"),
+				 _("WARNING: '%s' value is invalid: ignored"),
 				 *av);
 		    else
 			sprintf(msg,
-				_("WARNING: %s: too large and ignored\n"),
+				_("WARNING: %s: too large and ignored"),
 				*av);
 		    R_ShowMessage(msg);
 
@@ -246,21 +251,21 @@ R_common_command_line(int *pac, char **argv, Rstart Rp)
 	    }
 	    else if(strncmp(*av, "--max-ppsize", 12) == 0) {
 		if(strlen(*av) < 14) {
-		    ac--; av++; p = *av;
+		    if(ac > 1) {ac--; av++; p = *av;} else p = NULL;
 		} else p = &(*av)[13];
 		if (p == NULL) {
-		    R_ShowMessage(_("WARNING: no value given for '--max-ppsize'\n"));
+		    R_ShowMessage(_("WARNING: no value given for '--max-ppsize'"));
 		    break;
 		}
 		lval = strtol(p, &p, 10);
 		if (lval < 0)
-		    R_ShowMessage(_("WARNING: '-max-ppsize' value is negative: ignored\n"));
+		    R_ShowMessage(_("WARNING: '--max-ppsize' value is negative: ignored"));
 		else if (lval < 10000)
-		    R_ShowMessage(_("WARNING: '-max-ppsize' value is too small: ignored\n"));
+		    R_ShowMessage(_("WARNING: '--max-ppsize' value is too small: ignored"));
 
 		else if (lval > 500000)
-		    R_ShowMessage(_("WARNING: '-max-ppsize' value is too large: ignored\n"));
-		else Rp->ppsize = lval;
+		    R_ShowMessage(_("WARNING: '--max-ppsize' value is too large: ignored"));
+		else Rp->ppsize = size_t( lval);
 	    }
 	    else { /* unknown -option */
 		argv[newac++] = *av;

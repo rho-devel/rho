@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -27,7 +27,8 @@ include $(top_builddir)/Makeconf
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 DISTFILES = Makefile.in Makefile.win .cvsignore
-R = R_LIBS= $(top_builddir)/bin/R
+# avoid user's startup files
+R = R_LIBS= $(top_builddir)/bin/R --vanilla
 
 ## foo.ts is the timestamp for package foo;
 ## foo.tgz is a symlink to foo_x.y-z.tar.gz in the source dir.
@@ -42,7 +43,7 @@ CLEANFILES = $(OBJECTS) Makedeps stamp-recommended
 DISTCLEANFILES = Makefile
 
 .SUFFIXES:
-.SUFFIXES: .tgz .ts
+.SUFFIXES: .ts
 
 all: Makefile R @USE_RECOMMENDED_PACKAGES_TRUE@ recommended-packages
 
@@ -55,19 +56,25 @@ stamp-recommended: $(OBJECTS)
 	@touch $@
 
 ## need to allow parallel installs
-INSTALL_OPTS=--no-lock --install-tests
+INSTALL_OPTS = --pkglock --data-compress=xz --install-tests
+INSTALL_OPTS2 =@BYTE_COMPILE_PACKAGES_TRUE@ --byte-compile
 
-.tgz.ts:
-	@$(ECHO) "begin installing recommended package" `basename $< .tgz`
-	@rm -f $@.out
-## <FIXME>
-## RG says that with FreeBSD Make calling INSTALL does not work without
-## explicitly passing down MAKE ('unrecognized option -w ...').  But
-## what is really going on?
-	@MAKE="$(MAKE)" $(R) CMD INSTALL $(INSTALL_OPTS) -l "$(top_builddir)/library" $< > $@.out 2>&1 || (cat $@.out && exit 1)
-## </FIXME>
-	@cat $@.out; rm $@.out
-	@touch $@
+## On e.g. Solaris/FreeBSD if the top-level make is GNU make it will
+## pass flags such as -j and -w down: so need to ensure that INSTALL
+## uses the same make.
+%.ts : %
+	@$(ECHO) "begin installing recommended package " $<
+	rm -f $@.out
+## Avoid user/site libraries, pass down MAKE
+	if test -n "$(R_NO_BASE_COMPILE)"; then \
+	  MAKE="$(MAKE)" R_LIBS_USER= R_LIBS_SITE= \
+	  $(R) CMD INSTALL $(INSTALL_OPTS) -l "$(top_builddir)/library" $< > $@.out 2>&1 || (cat $@.out && exit 1); \
+	else \
+	  MAKE="$(MAKE)" R_LIBS_USER= R_LIBS_SITE= \
+	  $(R) CMD INSTALL $(INSTALL_OPTS) $(INSTALL_OPTS2) -l "$(top_builddir)/library" $< > $@.out 2>&1 || (cat $@.out && exit 1); \
+	fi
+	cat $@.out; rm $@.out
+	touch $@
 
 R docs:
 
@@ -83,14 +90,9 @@ install-tests:
 	 abs_MKINSTALLDIRS=`echo "$(MKINSTALLDIRS)" | sed "s:$(top_srcdir):$${abs_top_srcdir}:"` ; \
 	 cd $${tmp}; \
 	 for pkg in $(R_PKGS_RECOMMENDED); do \
-	   gzip -dc "$(abs_top_srcdir)/src/library/Recommended/$${pkg}.tgz" | $(TAR) xf - ; \
-	 done ; \
-	 for pkg in $(R_PKGS_RECOMMENDED); do \
 	  if test -d $${pkg}/tests; then \
 	    $${abs_MKINSTALLDIRS} "$(DESTDIR)$(rhome)/library/$${pkg}/tests" ; \
-	    for f in $${pkg}/tests/*; do \
-	      $(INSTALL_DATA) $${f} "$(DESTDIR)$(rhome)/library/$${pkg}/tests"; \
-	    done; \
+	    cp -r $${pkg}/tests/* "$(DESTDIR)$(rhome)/library/$${pkg}/tests"; \
 	  fi; \
 	 done)
 
@@ -120,6 +122,10 @@ distdir: $(DISTFILES)
 
 
 ## Hardcoded dependencies (see '../../../share/make/vars.mk')
+Matrix.ts: lattice.ts
 mgcv.ts: nlme.ts MASS.ts Matrix.ts
 nlme.ts: lattice.ts
 class.ts: MASS.ts
+## and for static html links
+boot.ts: MASS.ts survival.ts
+cluster.ts: MASS.ts

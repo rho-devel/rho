@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -43,7 +43,10 @@
 #define RINTERFACE_H_
 
 #ifdef __cplusplus
+#include <cstdio>
 extern "C" {
+#else
+#include <stdio.h>
 #endif
 
 #include <R_ext/Boolean.h>
@@ -77,15 +80,11 @@ extern char *R_Home;		    /* Root of the R tree */
 void jump_to_toplevel(void);
 void mainloop(void);
 void onintr(void);
-#ifndef DEFN_H_
-extern void* R_GlobalContext;    /* Need opaque pointer type for export */
-#endif
 
 void process_site_Renviron(void);
 void process_system_Renviron(void);
 void process_user_Renviron(void);
 
-#include <stdio.h>
 extern FILE * R_Consolefile;
 extern FILE * R_Outputfile;
 

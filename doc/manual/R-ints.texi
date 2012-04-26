@@ -70,10 +70,13 @@ The current version of this document is @value{VERSION}.
 * .Internal vs .Primitive::     
 * Internationalization in the R sources::  
 * Package Structure::           
+* Files::                       
 * Graphics Devices::            
 * Tools::                       
 * R coding standards::          
 * Testing R code::              
+* Use of TeX dialects::         
+* Future directions::           
 * Function and variable index::  
 * Concept index::               
 @end menu
@@ -81,7 +84,7 @@ The current version of this document is @value{VERSION}.
 @chapter R Internal Structures
 
 This chapter is the beginnings of documentation about @R{} internal
-structures.  It is written for the R core team and others studying the
+structures.  It is written for the core team and others studying the
 code in the @file{src/main} directory.
 
 It is a work-in-progress, first begun for @R{} 2.4.0, and should be
@@ -121,8 +124,8 @@ So the basic building blocks of @R{} objects are often called
 @emph{nodes}, meaning @code{SEXPREC}s or @code{VECTOR_SEXPREC}s.
 
 Note that the internal structure of the @code{SEXPREC} is not made
-available to R Extensions: rather @code{SEXP} is an opaque pointer, and
-the internals can only be accessed by the functions provided.
+available to @R{} Extensions: rather @code{SEXP} is an opaque pointer,
+and the internals can only be accessed by the functions provided.
 
 @cindex node
 Both types of node structure have as their first three fields a 32-bit
@@ -147,11 +150,11 @@ The first five bits of the @code{sxpinfo} header specify one of up to 32
 @subsection SEXPTYPEs
 
 @cindex SEXPTYPE
-Currently @code{SEXPTYPE}s 0:10 and 13:25 are in use.  Values 11 and 12 were
-used for internal factors and ordered factors and have since been
-withdrawn.  Note that the @code{SEXPTYPE}s are stored in @code{save}d
-objects and that the ordering of the types is used, so the gap cannot
-easily be reused.
+Currently @code{SEXPTYPE}s 0:10 and 13:25 are in use.  Values 11 and 12
+were used for internal factors and ordered factors and have since been
+withdrawn.  Note that the @code{SEXPTYPE} numbers are stored in
+@code{save}d objects and that the ordering of the types is used, so the
+gap cannot easily be reused.
 
 @cindex SEXPTYPE table
 @quotation
@@ -218,10 +221,9 @@ these are sometimes lumped into a pseudo-type @code{FUNSXP} with code
 have formals, body and environment.
 
 @cindex S4 type
-The @code{SEXPTYPE} @code{S4SXP} was introduced in @R{} 2.4.0 for S4
-classes which were previously represented as empty lists, that is
-objects which do not consist solely of a simple type such as an atomic
-vector or function.
+The @code{SEXPTYPE} @code{S4SXP} is for S4 objects which do not consist
+solely of a simple type such as an atomic vector or function.  Prior to
+@R{} 2.4.0 these were represented as empty lists.
 
 
 @node Rest of header, The 'data', SEXPTYPEs, SEXPs
@@ -297,9 +299,8 @@ but for no longer, and so some primitive functions can be optimized to
 avoid a copy in this case.
 
 The @code{gp} bits are by definition `general purpose'.  We label these
-from 0 to 15.  As of version 2.4.0 of R, bit 4 is turned on to mark S4
-objects.  Bits 0-3 and bits 14-15 have been used previously as described
-below (from detective work on the sources).
+from 0 to 15.  Bits 0--5 and bits 14--15 have been used as described below
+(mainly from detective work on the sources).
 
 @findex gp bits
 @findex LEVELS
@@ -357,25 +358,18 @@ finalize', 'finalize on exit').
 Bit 0 is used by the condition handling system (on a @code{VECSXP}) to
 indicate a calling handler.
 
-As from @R{} 2.5.0, bits 2 and 3 for a @code{CHARSXP} are used to note
-that it is known to be in Latin-1 and UTF-8 respectively.  (These are not
-usually set if it is also known to be in ASCII, since code does not need
-to know the charset to handle ASCII strings.  From @R{} 2.8.0
-it is guaranteed that they will not be set for CHARSXPs created by @R{}
-itself.)  As from @R{} 2.8.0 bit 5 is used to indicate that a CHARSXP
-is hashed by its address, that is NA_STRING or in the CHARSXP cache.
+Bit 4 is turned on to mark S4 objects.
 
+Bits 1, 2, 3 and 5 are used for a @code{CHARSXP} to denote its encoding.
+Bit 1 indicates the @code{CHARSXP} should be treated as a set of bytes,
+not necessarily representing a character in any known encoding.  Bits 2
+and 3 are used to indicate that it is known to be in Latin-1 and UTF-8
+respectively.
 
-As for @R{} 2.6.0, but 5 is for a @code{CHARSXP} is used to indicate
-that it is part of the @code{CHARSXP} cache.
-
-@c Finally, @code{SETLEVELS} and @code{LEVELS} are used by that name for
-@c the internal code for @code{terms.formula} to compute the @code{order}
-@c attribute of the result.  This is computed on an internal pairlist, and
-@c marks the order of the interaction.  This is in principle unlimited
-@c (although no test is done) and could in principle exceed 15.  (This
-@c usage could easily be replaced by one not making use of @code{gp}.)
-
+Bit 5 for a @code{CHARSXP} indicates that it is hashed by its address,
+that is @code{NA_STRING} or in the @code{CHARSXP} cache (this is not
+serialized).  Only exceptionally is a @code{CHARSXP} not hashed, and
+this should never happen in end-user code.
 
 @node The 'data', Allocation classes, Rest of header, SEXPs
 @subsection The `data'
@@ -422,7 +416,6 @@ this is interpretation, i.e. the types are not checked.
 
 @table @code
 @item NILSXP
-
 There is only one object of type @code{NILSXP}, @code{R_NilValue}, with
 no data.
 
@@ -434,8 +427,8 @@ the last is a pointer to the appropriate @code{SEXPREC}.)  Many symbols
 have @code{SYMVALUE} @code{R_UnboundValue}.
 
 @item LISTSXP
-Pointers to the CAR, CDR (usually a @code{LISTSXP} or @code{NULL}) and TAG
-(usually a @code{SYMSXP}).
+Pointers to the CAR, CDR (usually a @code{LISTSXP} or @code{NULL}) and
+TAG (a @code{SYMSXP} or @code{NULL}).
 
 @item CLOSXP
 Pointers to the formals (a pairlist), the body and the environment.
@@ -577,10 +570,11 @@ the global environment (possibly as part of a recursive search).
 
 @menu
 * Search paths::                
-* Name spaces::                 
+* Namespaces::                 
+* Hash table::                  
 @end menu
 
-@node Search paths, Name spaces, Environments and variable lookup, Environments and variable lookup
+@node Search paths, Namespaces, Environments and variable lookup, Environments and variable lookup
 @subsection Search paths
 
 @cindex search path
@@ -602,21 +596,20 @@ However, the notion of variable lookup is more general in @R{}, hence
 the plural in the title of this subsection.  Since environments have
 enclosures, from any environment there is a search path found by looking
 in the frame, then the frame of its enclosure and so on.  Since loops
-are not allowed, this process will eventually terminate: until @R{}
-2.2.0 it always terminated at the base environment, but nowadays it can
+are not allowed, this process will eventually terminate: it can
 terminate at either the base environment or the empty environment.  (It
 can be conceptually simpler to think of the search always terminating at
 the empty environment, but with an optimization to stop at the base
 environment.)  So the `search path' describes the chain of environments
-which is taken once the search reaches the global environment.
+which is traversed once the search reaches the global environment.
 
-@node Name spaces,  , Search paths, Environments and variable lookup
-@subsection Name spaces
+@node Namespaces, Hash table, Search paths, Environments and variable lookup
+@subsection Namespaces
 
-@cindex name space
-Name spaces are environments associated with packages (and once again
+@cindex namespace
+Namespaces are environments associated with packages (and once again
 the base package is special and will be considered separately).  A
-package @code{@var{pkg}} with a name space defines two environments
+package @code{@var{pkg}} with a namespace defines two environments
 @code{namespace:@var{pkg}} and @code{package:@var{pkg}}: it is
 @code{package:@var{pkg}} that can be @code{attach}ed and form part of
 the search path.
@@ -626,22 +619,47 @@ bindings in the @code{namespace:@var{pkg}} environment.  The
 @code{package:@var{pkg}} environment is populated by selected symbols
 from the @code{namespace:@var{pkg}} environment (the exports).  The
 enclosure of this environment is an environment populated with the
-explicit imports from other name spaces, and the enclosure of
-@emph{that} environment is the base name space.  (So the illusion of the
-imports being in the name space environment is created via the
-environment tree.)  The enclosure of the base name space is the global
-environment, so the search from a package name space goes via the
+explicit imports from other namespaces, and the enclosure of
+@emph{that} environment is the base namespace.  (So the illusion of the
+imports being in the namespace environment is created via the
+environment tree.)  The enclosure of the base namespace is the global
+environment, so the search from a package namespace goes via the
 (explicit and implicit) imports to the standard `search path'.
 
-@cindex base name space
-@cindex name space, base
+@cindex base namespace
+@cindex namespace, base
 @findex R_BaseNamespace
-The base name space environment @code{R_BaseNamespace} is another
+The base namespace environment @code{R_BaseNamespace} is another
 @code{ENVSXP} that is special-cased.  It is effectively the same thing
 as the base environment @code{R_BaseEnv} @emph{except} that its
 enclosure is the global environment rather than the empty environment:
 the internal code diverts lookups in its frame to the global symbol
 table.
+
+@node Hash table,  , Namespaces, Environments and variable lookup
+@subsection Hash table
+
+Environments in @R{} usually have a hash table, although that is not the
+default in @code{new.env()}.  It is stored as a @code{VECSXP} where
+@code{length} is used for the allocated size of the table and
+@code{truelength} is the number of primary slots in use---the pointer to
+the @code{VECSXP} is part of the header of a @code{SEXP} of type
+@code{ENVSXP}, and this points to @code{R_NilValue} if the environment
+is not hashed.
+
+For the pros and cons of hashing, see a basic text on Computer Science.
+
+The code to implement hashed environments is in @file{src/main/envir.c}.
+Unless set otherwise (e.g.@: by the @code{size} argument of
+@code{new.env()}) the initial table size is @code{29}.  The table will
+be resized by a factor of 1.2 once the load factor (the proportion of
+primary slots in use) reaches 85%.
+
+The hash chains are stored as pairlist elements of the @code{VECSXP}:
+items are inserted at the front of the pairlist.  Hashing is principally
+designed for fast searching of environments, which are from time to time
+added to but rarely deleted from, so items are not actually deleted but
+have their value set to @code{R_UnboundValue}.
 
 
 @node Attributes, Contexts, Environments and variable lookup, R Internal Structures
@@ -815,9 +833,8 @@ jump to a specific context via @code{R_JumpToContext}.
 @code{R_ToplevelContext} is the `idle' state (normally the command
 prompt), and @code{R_GlobalContext} is the top of the stack.
 
-Note that whilst all calls to closures set a context, those to special
-internal functions never do, and those to builtin internal functions
-have done so only recently (and prior to that only when profiling).
+Note that whilst calls to closures and builtins set a context, those to special
+internal functions never do.
 
 @findex UseMethod
 @cindex method dispatch
@@ -827,9 +844,9 @@ equivalent) or calling @code{NextMethod} sets the context type to
 method call to that of the @code{generic}, so the method appears to have
 been called in place of the generic rather than from the generic.
 
-The @R{} @code{sys.frame} and @code{sys.call} work by counting calls to
-closures (type @code{CTXT_FUNCTION}) from either end of the context
-stack.
+The @R{} @code{sys.frame} and @code{sys.call} functions work by counting
+calls to closures (type @code{CTXT_FUNCTION}) from either end of the
+context stack.
 
 Note that the @code{sysparent} element of the structure is not the same
 thing as @code{sys.parent()}.  Element @code{sysparent} is primarily
@@ -851,7 +868,7 @@ As we have seen, functions in @R{} come in three types, closures
 (@code{SEXPTYPE} @code{CLOSXP}), specials (@code{SPECIALSXP}) and
 builtins (@code{BUILTINSXP}).  In this section we consider when (and if)
 the actual arguments of function calls are evaluated.  The rules are
-different for the internal (special/builtin) and R-level functions
+different for the internal (special/builtin) and @R{}-level functions
 (closures).
 
 For a call to a closure, the actual and formal arguments are matched and
@@ -881,9 +898,9 @@ the values of the formal arguments in the body of the generic are
 discarded when calling the method, but @emph{actual} argument promises
 which have been forced retain the values found when they were forced.
 On the other hand, missing arguments have values which are promises to
-use the default supplied by the method and not the generic.)  If the
-method found is a special or builtin it is called with the matched
-argument list of promises (possibly already forced) used for the generic.
+use the default supplied by the method and not by the generic.)  If the
+method found is a primitive it is called with the matched argument list
+of promises (possibly already forced) used for the generic.
 
 @cindex builtin function
 @cindex special function
@@ -893,11 +910,10 @@ The essential difference@footnote{There is currently one other
 difference: when profiling builtin functions are counted as function
 calls but specials are not.} between special and builtin functions is
 that the arguments of specials are not evaluated before the C code is
-called, and those of builtins are.  In each case positional matching of
-arguments is used.  Note that being a special/builtin is separate from
-being primitive or @code{.Internal}: @code{function} is a special
-primitive, @code{+} is a builtin primitive, @code{switch} is a special
-@code{.Internal} and @code{grep} is a builtin @code{.Internal}.
+called, and those of builtins are.  Note that being a special/builtin is
+separate from being primitive or @code{.Internal}: @code{quote} is a
+special primitive, @code{+} is a builtin primitive, @code{cbind} is a
+special @code{.Internal} and @code{grep} is a builtin @code{.Internal}.
 
 @cindex generic, internal
 @findex DispatchOrEval
@@ -914,12 +930,12 @@ generic.
 @cindex generic, generic
 @findex DispatchGeneric
 The other way that internal functions can be generic is to be group
-generic.  All such functions are builtins (so immediately evaluate all
-their arguments), and contain a call to the C function
+generic.  Most such functions are builtins (so immediately evaluate all
+their arguments), and all contain a call to the C function
 @code{DispatchGeneric}.  There are some peculiarities over the number of
 arguments for the @code{"Math"} group generic, with some members
 allowing only one argument, some having two (with a default for the
-second) and @code{trunc} allows one or more but the default only
+second) and @code{trunc} allows one or more but the default method only
 accepts one.
 
 @menu
@@ -967,6 +983,11 @@ argument in a function call does not count as evaluation.  So
 non-yet-evaluated formal argument to see if it might be missing, which
 might involve investigating a promise and so on @dots{}.
 
+Special primitives also need to handle missing arguments, and in some
+case (e.g.@: @code{log}) that is why they are special and not
+builtin.  This is usually done by testing if an argument's value is
+@code{R_MissingArg}.
+
 @node Dot-dot-dot arguments,  , Missingness, Argument evaluation
 @subsection Dot-dot-dot arguments
 
@@ -991,6 +1012,10 @@ in the value of the @code{...} symbol in the evaluation frame.
 
 Values of arguments matched to a @code{...} argument can be missing.
 
+Special primitives may need to handle @code{...} arguments: see for
+example the internal code of @code{switch} in file
+@file{src/main/builtin.c}.
+
 @node Autoprinting, The write barrier, Argument evaluation, R Internal Structures
 @section Autoprinting
 
@@ -1000,8 +1025,9 @@ Values of arguments matched to a @code{...} argument can be missing.
 Whether the returned value of a top-level @R{} expression is printed is
 controlled by the global boolean variable @code{R_Visible}.  This is set
 (to true or false) on entry to all primitive and internal functions
-based on the @code{eval} column of the table in @file{names.c}: the
-appropriate setting can be extracted by the macro @code{PRIMPRINT}.
+based on the @code{eval} column of the table in file
+@file{src/main/names.c}: the appropriate setting can be extracted by the
+macro @code{PRIMPRINT}.
 @findex PRIMPRINT
 
 @findex invisible
@@ -1039,14 +1065,12 @@ a function, with comments in the code about @code{warning},
 (Since the C-level function @code{eval} sets @code{R_Visible}, this
 could apply to any function calling it.  Since it is called when
 evaluating promises, even object lookup can change @code{R_Visible}.)
-From @R{} 2.1.0 internal functions that were marked to set
-@code{R_Visible = FALSE} enforced this when the function returned.  As
-from @R{} 2.5.0 both internal and primitive functions force the
-documented setting of @code{R_Visible} on return, unless the C code is
-allowed to change it (the exceptions above are indicated by
-@code{PRIMPRINT} having value 2).
+As from @R{} 2.5.0 internal and primitive functions force the documented
+setting of @code{R_Visible} on return, unless the C code is allowed to
+change it (the exceptions above are indicated by @code{PRIMPRINT} having
+value 2).
 
-The actual autoprinting is done by @code{PrintValueEnv} in
+The actual autoprinting is done by @code{PrintValueEnv} in file
 @file{print.c}.  If the object to be printed has the S4 bit set and S4
 methods dispatch is on, @code{show} is called to print the object.
 Otherwise, if the object bit is set (so the object has a
@@ -1071,8 +1095,8 @@ level 2 collects all generations.  After 20 level-0 collections the next
 collection is at level 1, and after 5 level-1 collections at level 2.
 Further, if a level-@var{n} collection fails to provide 20% free space
 (for each of nodes and the vector heap), the next collection will be at
-level @var{n+1}.  (The R-level function @code{gc()} performs a level-2
-collection.)
+level @var{n+1}.  (The @R{}-level function @code{gc()} performs a
+level-2 collection.)
 
 A generational collector needs to efficiently `age' the objects,
 especially list-like objects (including @code{STRSXP}s).  This is done
@@ -1086,15 +1110,15 @@ be used as lvalues in assignments in C).
 
 All code in @R{} extensions is by default behind the write barrier.  The
 only way to obtain direct access to the internals of the @code{SEXPREC}s
-is to define @samp{USE_RINTERNALS} before including @file{Rinternals.h},
-which is normally defined in @file{Defn.h}.  To enable a check on the
-way that the access is used, @R{} can be compiled with flag
-@option{--enable-strict-barrier} which ensures that @file{Defn.h} does
-not define @samp{USE_RINTERNALS} and hence that @code{SEXP} is opaque in
-most of @R{} itself.  (There are some necessary exceptions: foremost
-@file{memory.c} where the accessor functions are defined and also
-@file{size.c} which needs access to the sizes of the internal
-structures.)
+is to define @samp{USE_RINTERNALS} before including header file
+@file{Rinternals.h}, which is normally defined in @file{Defn.h}.  To
+enable a check on the way that the access is used, @R{} can be compiled
+with flag @option{--enable-strict-barrier} which ensures that header
+@file{Defn.h} does not define @samp{USE_RINTERNALS} and hence that
+@code{SEXP} is opaque in most of @R{} itself.  (There are some necessary
+exceptions: foremost in file @file{memory.c} where the accessor
+functions are defined and also in file @file{size.c} which needs access
+to the sizes of the internal structures.)
 
 For background papers see
 @uref{http://www.stat.uiowa.edu/~luke/R/barrier.html} and
@@ -1105,45 +1129,63 @@ For background papers see
 
 @cindex serialization
 Serialized versions of @R{} objects are used by @code{load}/@code{save}
-and also at a lower level by @code{.saveRDS}/@code{.readRDS} and
+and also at a slightly lower level by @code{saveRDS}/@code{readRDS} (and
+their earlier `internal' dot-name versions) and
 @code{serialize}/@code{unserialize}.  These differ in what they
 serialize to (a file, a connection, a raw vector) and whether they are
 intended to serialize a single object or a collection of objects
-(typically a workspace).  @code{save} writes a header indicating the
-format at the beginning of the file (a single LF-terminated line) which
-the lower-level versions do not.
+(typically the workspace).  @code{save} writes a header at the beginning
+of the file (a single LF-terminated line) which the lower-level versions
+do not.
+
+@code{save} and @code{saveRDS} allow various forms of compression, and
+@command{gzip} compression has been the default (except for ASCII saves)
+since @R{} 2.4.0.  Compression is applied to the whole file stream,
+including the headers, so serialized files can be uncompressed or
+re-compressed by external programs.  Since @R{} 2.10.0 both @code{load}
+and @code{readRDS} can read @command{gzip}, @command{bzip2} and
+@command{xz} forms of compression when reading from a file, and
+@command{gzip} compression when reading from a connection.
 
 @R{} has used the same serialization format since @R{} 1.4.0 in December
-2001.  Reading of earlier formats is still supported via @code{load},
-but they are not described here.  (Files of most of these formats can
-still be found in @file{data} directories of packages.) The current
-serialization format is called `version 2', and has been expanded in
-back-compatible ways since @R{} 1.4.0, for example to support additional
-@code{SEXPTYPE}s.
+2001.  Earlier formats are still supported via @code{load} and
+@code{save} but such formats are not described here.  (Files of some of
+these formats can still be found in @file{data} directories of
+packages.) The current serialization format is called `version 2', and
+has been expanded in back-compatible ways since @R{} 1.4.0, for example
+to support additional @code{SEXPTYPE}s.
 
-@code{save()} works by first creating a tagged pairlist of objects to be
-saved, and then saving that single object preceded by a single-line
-header (typically @code{RDX2\n} for a binary save).  @code{load()} reads
-the header line, unserializes a single object (a pairlist or a vector
-list) and assigns the elements of the list in the appropriate
-environment.
+@code{save} works by writing a single-line header (typically
+@code{RDX2\n} for a binary save: the only other current value is
+@code{RDA2\n} for @code{save(files=TRUE)}), then creating a tagged
+pairlist of the objects to be saved and serializing that single object.
+@code{load} reads the header line, unserializes a single object (a
+pairlist or a vector list) and assigns the elements of the object in the
+specified environment.  The header line serves two purposes in @R{}: it
+identifies the serialization format so @code{load} can switch to the
+appropriate reader code, and the linefeed allows the detection of files
+which have been subjected to a non-binary transfer which re-mapped line
+endings.  It can also be thought of as a `magic number' in the sense
+used by the @command{file} program (although @R{} save files are not yet
+by default known to that program).
 
 Serialization in @R{} needs to take into account that objects may
 contain references to environments, which then have enclosing
 environments and so on.  (Environments recognized as package or name
-space environments are saved by name.)  Further, there are `reference
-objects' which are not duplicated on copy and should remain
-shared on unserialization.  These are weak references, external pointers
-and environments other than those associated with packages, name spaces
-and the global environment.  These are handled via a hash table, and
+space environments are saved by name.)  There are `reference objects'
+which are not duplicated on copy and should remain shared on
+unserialization.  These are weak references, external pointers and
+environments other than those associated with packages, namespaces and
+the global environment.  These are handled via a hash table, and
 references after the first are written out as a reference marker indexed
 by the table entry.
 
-Serialization first writes a header indicating the format (normally
-@samp{X\n} for an XDR format binary save, but @samp{A\n}, ASCII, and
-@samp{B\n}, native word-order binary@footnote{there is no R-level
-interface to this format}, can also occur) and the version number of the
-format and of two @R{} versions (as integers).  (Unserialization
+Version-2 serialization first writes a header indicating the format
+(normally @samp{X\n} for an XDR format binary save, but @samp{A\n},
+ASCII, and @samp{B\n}, native word-order binary@footnote{there is no
+@R{}-level interface to this format}, can also occur) and then three
+integers giving the version of the format and two @R{} versions (packed
+by the @code{R_Version} macro from @file{Rversion.h}).  (Unserialization
 interprets the two versions as the version of @R{} which wrote the file
 followed by the minimal version of @R{} needed to read the format.)
 Serialization then writes out the object recursively using function
@@ -1156,22 +1198,22 @@ pseudo-@code{SEXPTYPE}s cover @code{R_NilValue}, @code{R_EmptyEnv},
 
 For all @code{SEXPTYPE}s except @code{NILSXP}, @code{SYMSXP} and
 @code{ENVSXP} serialization starts with an integer with the
-@code{SEXPTYPE} in bits 0:7@footnote{only 0:4 will currently be used for
-@code{SEXPTYPE}s but values 241:255 are used for pseudo-@code{SEXPTYPE}s.}
-followed by the object bit, two bits indicating if there are any
-attributes and if there is a tag (for the pairlist types), an unused bit
-and then the @code{gp} field@footnote{Currently the only relevant bits
-are 0:1, 4, 14:15.} in bits 12:27.  Pairlist-like objects write their
-attributes (if any), tag (if any), CAR and then CDR (using tail
-recursion): other objects write their attributes after themselves.
-Atomic vector objects write their length followed by the data: generic
-vector-list objects write the length followed by a call to
-@code{WriteItem} for each element.  The code for @code{CHARSXP}s
-special-cases @code{NA_STRING} and writes it as length @code{-1} with no
-data.
+@code{SEXPTYPE} in bits 0:7@footnote{only bits 0:4 are currently used
+for @code{SEXPTYPE}s but values 241:255 are used for
+pseudo-@code{SEXPTYPE}s.} followed by the object bit, two bits
+indicating if there are any attributes and if there is a tag (for the
+pairlist types), an unused bit and then the @code{gp}
+field@footnote{Currently the only relevant bits are 0:1, 4, 14:15.} in
+bits 12:27.  Pairlist-like objects write their attributes (if any), tag
+(if any), CAR and then CDR (using tail recursion): other objects write
+their attributes after themselves.  Atomic vector objects write their
+length followed by the data: generic vector-list objects write their
+length followed by a call to @code{WriteItem} for each element.  The
+code for @code{CHARSXP}s special-cases @code{NA_STRING} and writes it as
+length @code{-1} with no data.
 
 Environments are treated in several ways: as we have seen, some are
-written as specific pseudo-@code{SEXPTYPE}s.  Package and name space
+written as specific pseudo-@code{SEXPTYPE}s.  Package and namespace
 environments are written with pseudo-@code{SEXPTYPE}s followed by the
 name.  `Normal' environments are written out as @code{ENVSXP}s with an
 integer indicating if the environment is locked followed by the
@@ -1195,7 +1237,7 @@ non-ASCII bytes.
 Character data in @R{} are stored in the sexptype @code{CHARSXP}.  Until
 @R{} 2.1.0 it was assumed that the data were in the platform's native
 8-bit encoding, and furthermore it was quite often assumed that the
-encoding was ISO Latin-1 or a superset (such as Windows' CP1252 or
+encoding was ISO Latin-1 or a near-superset (such as Windows' CP1252 or
 Latin-9).
 
 As from @R{} 2.1.0 there was support for other encodings, in particular
@@ -1229,9 +1271,9 @@ the @R{} command line.  (Other ways are recorded on the help page for
 @code{Encoding}.)
 
 It is not necessary to declare the encoding of ASCII strings as they
-will work in any locale.  As from @R{} 2.8.0, ASCII strings should never
-have a marked encoding, as any encoding will be ignored when entering
-such strings into the @code{CHARSXP} cache.
+will work in any locale.  ASCII strings should never have a marked
+encoding, as any encoding will be ignored when entering such strings
+into the @code{CHARSXP} cache.
 
 The rationale behind considering only UTF-8 and Latin-1 is that most
 systems are capable of producing UTF-8 strings and this is the nearest
@@ -1243,37 +1285,38 @@ This was taken further in @R{} 2.7.0.  There the parser can return a
 UTF-8-encoded string if it encounters a @samp{\uxxx} escape for a
 Unicode point that cannot be represented in the current charset.  (This
 needs MBCS support, and was only enabled@footnote{See define
-@code{USE_UTF8_IF_POSSIBLE} in @file{gram.c}.} on Windows.)  This was
-taken further in @R{} 2.10.0, where it is enabled for all platforms with
-MBCS support, and a @samp{\uxxx} or @samp{\Uxxxxxxxx} escape ensures
-that the parsed string will be marked as UTF-8.
+@code{USE_UTF8_IF_POSSIBLE} in file @file{src/main/gram.c}.} on
+Windows.)  From @R{} 2.10.0 it is enabled for all platforms with MBCS
+support, and a @samp{\uxxx} or @samp{\Uxxxxxxxx} escape ensures that the
+parsed string will be marked as UTF-8.
 
 Most of the character manipulation functions now preserve UTF-8
-encodings: there are some notes as to which at the top of
-@file{src/main/character.c} and in
+encodings: there are some notes as to which at the top of file
+@file{src/main/character.c} and in file
 @file{src/library/base/man/Encoding.Rd}.
 
 Graphics devices are offered the possibility of handing UTF-8-encoded
 strings without re-encoding to the native character set, by setting
-@code{hasTextUTF8} to be @samp{TRUE}@footnote{To maximize
-back-compatibility with devices installed prior to @R{} 2.7.0 it has to
-be exactly that value: all others are equivalent to @samp{FALSE}.} and
-supplying functions @code{textUTF8} and @code{strWidthUTF8} that expect
-UTF-8-encoded inputs.  Normally the symbol font is encoded in Adobe
-Symbol encoding, but that can be re-encoded to UTF-8 by setting
-@code{wantSymbolUTF8} to @samp{TRUE}.
+@code{hasTextUTF8} to be @samp{TRUE} and supplying functions
+@code{textUTF8} and @code{strWidthUTF8} that expect UTF-8-encoded
+inputs.  Normally the symbol font is encoded in Adobe Symbol encoding,
+but that can be re-encoded to UTF-8 by setting @code{wantSymbolUTF8} to
+@samp{TRUE}.  The Windows' port of cairographics has a rather peculiar
+assumption: it wants the symbol font to be encoded in UTF-8 as if it
+were encoded in Latin-1 rather than Adobe Symbol: this is selected by
+@code{wantSymbolUTF8 = NA_LOGICAL} (as from @R{} 2.13.1).
 
 Windows has no UTF-8 locales, but rather expects to work with
 UCS-2@footnote{or UTF-16 if support for surrogates is enabled in the OS,
-which it is not normally at least for Western versions of Windows,
-despite some claims to the contrary on the Microsoft site.} strings.
+which it is not normally so at least for Western versions of Windows,
+despite some claims to the contrary on the Microsoft website.} strings.
 @R{} (being written in standard C) would not work internally with UCS-2
-without extensive changes.  As from @R{} 2.7.0 the @file{Rgui}
-console@footnote{but not the GraphApp toolkit.} uses UCS-2 internally,
-but communicates with the @R{} engine in the native encoding.  To allow
-UTF-8 strings to be printed in UTF-8 in @file{Rgui.exe}, an escape
-convention is used (see header @file{rgui_UTF8.h}) which is used by
-@code{cat}, @code{print} and autoprinting.
+without extensive changes.  The @file{Rgui} console@footnote{but not the
+GraphApp toolkit.} uses UCS-2 internally, but communicates with the @R{}
+engine in the native encoding.  To allow UTF-8 strings to be printed in
+UTF-8 in @file{Rgui.exe}, an escape convention is used (see header file
+@file{rgui_UTF8.h}) which is used by @code{cat}, @code{print} and
+autoprinting.
 
 `Unicode' (UCS-2LE) files are common in the Windows world, and
 @code{readLines} and @code{scan} will read them into UTF-8 strings on
@@ -1288,29 +1331,15 @@ A global cache for @code{CHARSXP}s created by @code{mkChar} was
 introduced in @R{} 2.6.0 -- the cache ensures that most @code{CHARSXP}s
 with the same contents share storage (`contents' including any declared
 encoding).  Not all @code{CHARSXP}s are part of the cache -- notably
-@samp{NA_STRING} is not.
-
-In @R{} 2.6.x and 2.7.x character strings created by @code{mkCharLen}
-were not part of the cache: these were intended to be those containing
-embedded nuls.  As from @R{} 2.8.0 the cache can handle any content,
-although embedded nuls are now disallowed.
-
-There are a few other ways in which @code{CHARSXP}s could or can escape
-the cache.  @code{CHARSXP}s reloaded from the @code{save} formats of
-@R{} prior to 0.99.0 are not cached (since the code used is frozen and
-few examples still exist).  Prior to @R{} 2.8.0, @code{CHARSXP}s were
-used to hold the finalizer function of a C finalizer (uncached) -- now
-@code{RAWSXP}s are used.  Finally, user code could create uncached
-@code{CHARSXP}s via @code{allocString} (removed in @R{} 2.8.0) and
-@code{allocVector(CHARSXP ...)} (deprecated in @R{} 2.8.0, removed in @R{}
-2.9.0).
+@samp{NA_STRING} is not. @code{CHARSXP}s reloaded from the @code{save}
+formats of @R{} prior to 0.99.0 are not cached (since the code used is
+frozen and few examples still exist).
 
 @findex mkCharLenCE
 The cache records the encoding of the string as well as the bytes: all
 requests to create a @code{CHARSXP} should be @emph{via} a call to
-@code{mkCharLenCE}.  As from @R{} 2.8.0 any encoding given in
-@code{mkCharLenCE} call will be ignored if the string's bytes are all
-ASCII characters.
+@code{mkCharLenCE}.  Any encoding given in @code{mkCharLenCE} call will
+be ignored if the string's bytes are all ASCII characters.
 
 
 @node Warnings and errors, S4 objects, The CHARSXP cache, R Internal Structures
@@ -1333,7 +1362,7 @@ R_NilValue}.
 @code{warning} and @code{error} look at the context stack.  If the
 topmost context is not of type @code{CTXT_BUILTIN}, it is used to
 provide the call, otherwise the next context provides the call.
-This means that when these function are called from a primitive or
+This means that when these functions are called from a primitive or
 @code{.Internal}, the imputed call will not be to
 primitive/@code{.Internal} but to the function calling the
 primitive/@code{.Internal} .  This is exactly what one wants for a
@@ -1381,12 +1410,6 @@ has not been set.]
 @node Representation of S4 objects, S4 classes, S4 objects, S4 objects
 @subsection Representation of S4 objects
 
-[The internal representation of objects from S4 classes changed in @R{}
-2.4.0.  It is possible that objects from earlier representations still
-exist, but there is no guarantee that they will be handled correctly.
-An attempt is made to detect old-style S4 objects and warn when binary
-objects are @code{load}ed or a workspace is restored.]
-
 S4 objects can be of any @code{SEXPTYPE}.  They are either an object of
 a simple type (such as an atomic vector or function) with S4 class
 information or of type @code{S4SXP}.  In all cases, the `S4 bit' (bit 4
@@ -1416,7 +1439,7 @@ The objects are S4 objects of class @code{"classRepresentation"} which
 is defined in the @pkg{methods} package.
 
 Since these are just objects, they are subject to the normal scoping
-rules and can be imported and exported from name spaces like other
+rules and can be imported and exported from namespaces like other
 objects.  The directives @code{importClassesFrom} and
 @code{exportClasses} are merely convenient ways to refer to class
 objects without needing to know their internal `metaname' (although
@@ -1436,7 +1459,7 @@ has names the signatures of the methods defined, and values the
 corresponding method functions.  This is often referred to as a `methods
 table'.
 
-When a package without a name space is attached these objects become
+When a package without a namespace is attached these objects become
 visible on the search path.  @code{library} calls
 @code{methods:::cacheMetaData} to update the internal tables.
 
@@ -1447,10 +1470,10 @@ non-primitive generic containing objects @code{.AllMTable},
 methods tables containing all the methods defined directly and via
 inheritance respectively.  @code{.Methods} is a merged methods list.
 
-Exporting methods from a name space is more complicated than exporting a
+Exporting methods from a namespace is more complicated than exporting a
 class.  Note first that you do not export a method, but rather the
 directive @code{exportMethods} will export all the methods defined in
-the name space for a specified generic: the code also adds to the list
+the namespace for a specified generic: the code also adds to the list
 of generics any that are exported directly.  For generics which are
 listed via @code{exportMethods} or exported themselves, the
 corresponding @code{"MethodsList"} and environment are exported and so
@@ -1468,7 +1491,7 @@ methods defined on generics in other packages.  Since methods for a
 generic could be imported from several different packages, the methods
 tables are merged.
 
-When a package with a name space is attached
+When a package with a namespace is attached
 @code{methods:::cacheMetaData} is called to update the internal tables:
 only the visible methods will be cached.
 
@@ -1486,13 +1509,13 @@ old definition as the default method.  Such S4 generics can also be
 created @emph{via} a call to @code{setGeneric}@footnote{although this is
 not recommended as it is less future-proof.} and are standard closures
 in the @R{} language, with environment the environment within which they
-are created.  With the advent of name spaces this is somewhat
+are created.  With the advent of namespaces this is somewhat
 problematic: if @code{myfn} was previously in a package with a name
 space there will be two functions called @code{myfn} on the search
 paths, and which will be called depends on which search path is in use.
-This is starkest for functions in the base name space, where the
+This is starkest for functions in the base namespace, where the
 original will be found ahead of the newly created function from any
-other package with a name space.
+other package with a namespace.
 
 Primitive functions are treated quite differently, for efficiency
 reasons: this results in different semantics.  @code{setGeneric} is
@@ -1508,28 +1531,27 @@ Actual dispatch of S4 methods for almost all primitives piggy-backs on
 the S3 dispatch mechanism, so S4 methods can only be dispatched for
 primitives which are internally S3 generic.  When a primitive that is
 internally S3 generic is called with a first argument which is an S4
-object and S4 dispatch is on (that is, the @pkg{methods} name space is
+object and S4 dispatch is on (that is, the @pkg{methods} namespace is
 loaded), @code{DispatchOrEval} calls @code{R_possible_dispatch} (defined
-in @file{src/main/objects.c}).  (Members of the S3 group generics, which
-includes all the generic operators, are treated slightly differently:
-the first two arguments are checked and @code{DispatchGroup} is called.)
-@code{R_possible_dispatch} first checks an internal table to see if any
-S4 methods are set for that generic (and S4 dispatch is currently
-enabled for that generic), and if so proceeds to S4 dispatch using
-methods stored in another internal table.  All primitives are in the
-base name space, and this mechanism means that S4 methods can be set for
-(some) primitives and will always be used, in contrast to setting
-methods on non-primitives.
+in file @file{src/main/objects.c}).  (Members of the S3 group generics,
+which includes all the generic operators, are treated slightly
+differently: the first two arguments are checked and
+@code{DispatchGroup} is called.)  @code{R_possible_dispatch} first
+checks an internal table to see if any S4 methods are set for that
+generic (and S4 dispatch is currently enabled for that generic), and if
+so proceeds to S4 dispatch using methods stored in another internal
+table.  All primitives are in the base namespace, and this mechanism
+means that S4 methods can be set for (some) primitives and will always
+be used, in contrast to setting methods on non-primitives.
 
 The exception is @code{%*%}, which is S4 generic but not S3 generic as
 its C code contains a direct call to @code{R_possible_dispatch}.
 
 The primitive @code{as.double} is special, as @code{as.numeric} and
 @code{as.real} are copies of it.  The @pkg{methods} package code partly
-refers to generics by name and partly by function, and was modified in
-@R{} 2.6.0 to map @code{as.double} and @code{as.real} to
-@code{as.numeric} (since that is the name used by packages exporting
-methods for it).
+refers to generics by name and partly by function, and maps
+@code{as.double} and @code{as.real} to @code{as.numeric} (since that is
+the name used by packages exporting methods for it).
 
 Some elements of the language are implemented as primitives, for example
 @code{@}}.  This includes the subset and subassignment `functions' and
@@ -1538,34 +1560,33 @@ they are S4 generic, again piggybacking on S3 dispatch.
 @code{.BasicFunsList} is generated when @pkg{methods} is installed, by
 computing all primitives, initially disallowing methods on all and then
 setting generics for members of @code{.GenericArgsEnv}, the S4 group
-generics and a short exceptions list in @file{BasicFunsList.R}: this
+generics and a short exceptions list in file @file{BasicFunsList.R}: this
 currently contains the subsetting and subassignment operators and an
 override for @code{c}.
 
 @node Memory allocators, Internal use of global and base environments, S4 objects, R Internal Structures
 @section Memory allocators
 
-@R{}'s memory allocation is almost all done via routines in
+@R{}'s memory allocation is almost all done via routines in file
 @file{src/main/memory.c}.  It is important to keep track of where memory
 is allocated, as the Windows port (by default) makes use of a memory
 allocator that differs from @code{malloc} etc as provided by MinGW.
 Specifically, there are entry points @code{Rm_malloc}, @code{Rm_free},
-@code{Rm_calloc} and @code{Rm_free} provided by
+@code{Rm_calloc} and @code{Rm_free} provided by file
 @file{src/gnuwin32/malloc.c}.  This was done for two reasons.  The
 primary motivation was performance: the allocator provided by MSVCRT
 @emph{via} MinGW was far too slow at handling the many small allocations
-that the current (since @R{} 1.2.0) allocation system for
-@code{SEXPREC}s uses.  As a side benefit, we can set a limit on the
-amount of allocated memory: this is useful as whereas Windows does
-provide virtual memory it is relatively far slower than many other @R{}
-platforms and so limiting @R{}'s use of swapping is highly advantageous.
-The high-performance allocator is only called from
+that the allocation system for @code{SEXPREC}s uses.  As a side benefit,
+we can set a limit on the amount of allocated memory: this is useful as
+whereas Windows does provide virtual memory it is relatively far slower
+than many other @R{} platforms and so limiting @R{}'s use of swapping is
+highly advantageous.  The high-performance allocator is only called from
 @file{src/main/memory.c}, @file{src/main/regex.c}, @file{src/extra/pcre}
 and @file{src/extra/xdr}: note that this means that it is not used in
 packages.
 
 The rest of @R{} should where possible make use of the allocators made
-available by @file{src/main/memory.c}, which are also the methods
+available by file @file{src/main/memory.c}, which are also the methods
 recommended in 
 @ifset UseExternalXrefs
 @ref{Memory allocation, , Memory allocation, R-exts, Writing R Extensions}
@@ -1611,7 +1632,7 @@ that
 @noindent
 is called immediately after the allocation (as @R{}'s stack checking
 mechanism will warn far enough from the stack limit to allow for modest
-use of alloca).  (@code{do_makeunique} in @file{src/main/unique.c}
+use of alloca).  (@code{do_makeunique} in file @file{src/main/unique.c}
 provides an example of both points.)
 
 An alternative strategy has been used for various functions which
@@ -1642,7 +1663,7 @@ static R_StringBuffer ex_buff = @{NULL, 0, MAXELTSIZE@};
 
 @noindent
 which uses a default size of @code{MAXELTSIZE = 8192} bytes.  Most
-current uses have a static @code{ R_StringBuffer} structure, which
+current uses have a static @code{R_StringBuffer} structure, which
 allows the (default-sized) buffer to be shared between calls to e.g.@:
 @code{grep} and even between functions: this will need to be changed if
 @R{} ever allows concurrent evaluation threads.  So the idiom is
@@ -1673,10 +1694,7 @@ The memory used by @code{R_alloc} is allocated as @R{} vectors, of type
 @code{RAWSXP} for `small' allocations (less than 2^31 - 1 bytes) and of
 type @code{REALSXP} for allocations up to 2^34 - 1 bytes on 64-bit
 machines.  Thus the allocation is in units of 8 bytes, and is rounded
-up.  (Prior to @R{} 2.6.0 @code{CHARSXP}s were used, and so one byte was
-added prior to rounding up.  This had the effect of over-allocating
-areas for @code{double}s by one and thereby masked several subtle
-programming errors.)
+up.
 
 The vectors allocated are protected via the setting of @code{R_VStack},
 as the garbage collector marks everything that can be reached from that
@@ -1781,20 +1799,6 @@ The Hershey font databases and the code to draw with them.
 the @code{X11}, @code{pango}, @code{cairo}, @code{jpeg}, @code{libpng}
 and @code{libtiff} libraries.
 
-@item @file{Rbitmap.dll}
-(Windows only.)  The code for the BMP, JPEG, PNG and TIFF devices and
-for saving on-screen graphs to those formats. This is technically
-optional, and needs source code not in the tarball.
-
-@c @item @file{Rchtml.dll}
-@c (Windows only, up to @R{} 2.9.x.)  A link to an ActiveX control that
-@c displays Compiled @HTML{} help.  This is optional, and only compiled if
-@c CHTML is specified.
-
-@c @item @file{iconv.dll}
-@c (Windows only.)  A DLL compiled via Visual C++ which contains the
-@c routines to convert between character sets.
-
 @item @file{internet2.dll}
 (Windows only.)  An alternative version of the internet access routines,
 compiled against Internet Explorer internals (and so loads
@@ -1830,13 +1834,13 @@ possibility of linking to the wrong entry points of the same name.  In
 addition, on some platforms reducing the number of entry points allows
 more efficient versions of PIC to be used: somewhat over half the entry
 points are hidden.  A convenient way to hide variables (as distinct from
-functions) is to declare them @code{extern0} in @file{Defn.h}.
+functions) is to declare them @code{extern0} in header file @file{Defn.h}.
 
 The visibility mechanism used is only available with some compilers and
-platforms, and in particular not on Windows, where are alternative
+platforms, and in particular not on Windows, where an alternative
 mechanism is used.  Entry points will not be made available in
 @file{R.dll} if they are listed in the file
-@file{src/gnuwin32/Rdll.hide}.  
+@file{src/gnuwin32/Rdll.hide}.
 @findex Rdll.hide
 Entries in that file start with a space and must be strictly in
 alphabetic order in the C locale (use @command{sort} on the file to
@@ -1853,9 +1857,9 @@ Note that this only has an effect on a shared-R-library build, and so
 care is needed not to hide entry points that are legitimately used by
 packages.  So it is best if the decision on visibility is made when a
 new entry point is created, including the decision if it should be
-included in @file{Rinternals.h}.  A list of the visible entry points on
-shared-R-library build on a reasonably standard Unix-alike can be made
-by something like
+included in header file @file{Rinternals.h}.  A list of the visible
+entry points on shared-R-library build on a reasonably standard
+Unix-alike can be made by something like
 
 @example
 nm -g libR.so | grep ' [BCDT] ' | cut -b20-
@@ -1870,7 +1874,7 @@ to be specified  by a prefix (often @samp{_imp_}) when being linked to
 (`imported') but not when being linked from (`exported').  The details
 depend on the compiler system, and have changed for MinGW during the
 lifetime of that port.  They are in the main hidden behind some macros
-defined in header @file{R_ext/libextern.h}.
+defined in header file @file{R_ext/libextern.h}.
 
 A (non-function) variable in the main @R{} sources that needs to be
 referred to outside @file{R.dll} (in a package, module or another DLL
@@ -1892,10 +1896,11 @@ compiling the @R{} sources on Windows.
 @section Lazy loading
 
 Lazy loading was introduced in @R{} 2.0.0, for code in packages and for
-datasets in packages (both are optional).  When a package/name space
-which uses it is loaded, the package/name space environment is populated
-with promises for all the named objects: when these promises are
-evaluated they load the actual code from a database.
+datasets in packages (the latter is still optional, but code is always
+lazy-loaded as from @R{} 2.14.0).  When a package/namespace which uses it
+is loaded, the package/namespace environment is populated with promises
+for all the named objects: when these promises are evaluated they load
+the actual code from a database.
 
 There are separate databases for code and data, stored in the @file{R}
 and @file{data} subdirectories.  The database consists of two files,
@@ -1906,10 +1911,10 @@ contains an index.  The objects are stored in (usually) a
 uncompressed serialized length (in XDR, that is big-endian, byte order)
 and read by a call to the primitive @code{lazyLoadDBfetch}.  (Note that
 this makes lazy-loading unsuitable for really large objects: the
-unserialized length of an R object can exceed 4GB.)
+unserialized length of an @R{} object can exceed 4GB.)
 
 The index or `map' file @file{@var{name}.rdx} is a compressed serialized
-@R{} object to be read by @code{.readRDS}.  It is a list with three
+@R{} object to be read by @code{readRDS}.  It is a list with three
 elements @code{variables}, @code{references} and @code{compressed}.  The
 first two are named lists of integer vectors of length 2 giving the
 offset and length of the serialized object in the @file{@var{name}.rdb}
@@ -1917,15 +1922,16 @@ file.  Element @code{variables} has an entry for each named object:
 @code{references} serializes a temporary environment used when named
 environments are added to the database.  @code{compressed} is a logical
 indicating if the serialized objects were compressed: compression is
-always used nowadays. @R{} 2.10.0 adds the values @code{compressed = 2}
+always used nowadays. @R{} 2.10.0 added the values @code{compressed = 2}
 and @code{3} for @command{bzip2} and @command{xz} compression (with the
 possibility of future expansion to other methods): these formats add a
 fifth byte to the header for the type of compression, and stores
 serialized objects uncompressed if compression expands them.
 
-The loader for a lazy-load database of code or data is @code{lazyLoad}
-in base, but note that there is a separate copy to load @pkg{base}
-itself in @file{R_HOME/base/R/base}.
+The loader for a lazy-load database of code or data is function
+@code{lazyLoad} in the @pkg{base} package, but note that there is a
+separate copy to load @pkg{base} itself in file
+@file{R_HOME/base/R/base}.
 
 Lazy-load databases are created by the code in
 @file{src/library/tools/R/makeLazyLoad.R}: the main tool is the
@@ -1937,32 +1943,30 @@ Lazy-load databases of less than 10MB are cached in memory at first use:
 this was found necessary when using file systems with high latency
 (removable devices and network-mounted file systems on Windows).
 
-The same database mechanism is used to store parsed @file{Rd} files as
-from @R{} 2.10.0.  One or all of the parsed objects is fetched by a call
-to @code{tools:::fetchRdDB}.
+The same database mechanism is used to store parsed @file{Rd} files.
+One or all of the parsed objects is fetched by a call to
+@code{tools:::fetchRdDB}.
 
 @node .Internal vs .Primitive, Internationalization in the R sources, R Internal Structures, Top
 @chapter @code{.Internal} vs @code{.Primitive}
 
 @findex .Internal
 @findex .Primitive
-C code compiled into @R{} at build time can be called ``directly'' or
-via the @code{.Internal} interface, which is very similar to the
-@code{.External} interface except in syntax.  More precisely, @R{}
-maintains a table of R function names and corresponding C functions to
-call, which by convention all start with @samp{do_} and return a SEXP.
-Via this table (@code{R_FunTab} in file @file{src/main/names.c}) one can
-also specify how many arguments to a function are required or allowed,
-whether the arguments are to be evaluated before calling or not, and
-whether the function is ``internal'' in the sense that it must be
-accessed via the @code{.Internal} interface, or directly accessible in
-which case it is printed in @R{} as @code{.Primitive}.
+C code compiled into @R{} at build time can be called directly in what
+are termed @emph{primitives} or via the @code{.Internal} interface,
+which is very similar to the @code{.External} interface except in
+syntax.  More precisely, @R{} maintains a table of @R{} function names and
+corresponding C functions to call, which by convention all start with
+@samp{do_} and return a @code{SEXP}.  This table (@code{R_FunTab} in
+file @file{src/main/names.c}) also specifies how many arguments to a
+function are required or allowed, whether or not the arguments are to be
+evaluated before calling, and whether the function is `internal' in
+the sense that it must be accessed via the @code{.Internal} interface,
+or directly accessible in which case it is printed in @R{} as
+@code{.Primitive}.
 
-@R{}'s functionality can also be extended by providing corresponding C
-code and adding to this function table.
-
-In general, all such functions use @code{.Internal()} as this is safer
-and in particular allows for transparent handling of named and default
+Functions using @code{.Internal()} wrapped in a closure are in general
+preferred as this ensures standard handling of named and default
 arguments.  For example, @code{axis} is defined as
 
 @example
@@ -1975,11 +1979,15 @@ axis <- function(side, at = NULL, labels = NULL, ...)
 However, for reasons of convenience and also efficiency (as there is
 some overhead in using the @code{.Internal} interface wrapped in a
 function closure), the primitive functions are exceptions that can be
-accessed directly.  Note that primitive functions make no use of @R{}
-code, and hence are very different from the usual interpreted functions.
-In particular, @code{args}, @code{formals} and @code{body} return
-@code{NULL} for such objects, and argument matching is purely positional
-(with two exceptions described below).  
+accessed directly.  And of course, primitive functions are needed for
+basic operations---for example @code{.Internal} is itself a primitive.
+Note that primitive functions make no use of @R{} code, and hence are
+very different from the usual interpreted functions.  In particular,
+@code{formals} and @code{body} return @code{NULL} for such objects, and
+argument matching can be handled differently.  For some primitives
+(including @code{call}, @code{switch}, @code{.C} and @code{.subset})
+positional matching is important to avoid partial matching of the first
+argument.
 
 The list of primitive functions is subject to change; currently, it
 includes the following.
@@ -1987,21 +1995,20 @@ includes the following.
 @enumerate
 
 @item
-``Special functions'' which really are @emph{language} elements, however
-exist as ``primitive'' functions in @R{}:
+``Special functions'' which really are @emph{language} elements, but
+implemented as primitive functions:
 
 @example
 @group
 @{       (         if     for      while  repeat  break  next
-return  function  quote  on.exit
+return  function  quote  switch
 @end group
 @end example
 
 @item
 Language elements and basic @emph{operator}s (i.e., functions usually
 @emph{not} called as @code{foo(a, b, ...)}) for subsetting, assignment,
-arithmetic and logic.  These are the following 1-, 2-, and
-@math{N}-argument functions:
+arithmetic and logic:
 
 @example
 @group
@@ -2015,7 +2022,7 @@ arithmetic and logic.  These are the following 1-, 2-, and
 @end example
 
 @item
-``Low level'' 0- and 1-argument functions which belong to one of the
+``Low level'' 0-- and 1--argument functions which belong to one of the
 following groups of functions:
 
 @enumerate a
@@ -2041,7 +2048,6 @@ acosh   asinh   atanh
 gamma   lgamma  digamma trigamma
 @end group
 
-
 @group
 cumsum  cumprod cummax  cummin
 @end group
@@ -2051,11 +2057,10 @@ Im  Re  Arg  Conj  Mod
 @end group
 @end example
 
-@code{log} is a function of one or two arguments, but was made
-primitive as from @R{} 2.6.0 and so has named rather than positional
-matching for back compatibility.
+@code{log} is a primitive function of one or two arguments with named
+argument matching.
 
-@code{trunc} is a difficult case: it is a primitive that can have zero
+@code{trunc} is a difficult case: it is a primitive that can have one
 or more arguments: the default method handled in the primitive has
 only one.
 
@@ -2065,30 +2070,27 @@ inside other functions), such as
 
 @example
 @group
-nargs        missing
-interactive  is.@var{xxx}
-as.call      as.character as.complex  as.double
-as.environment
-as.integer   as.logical   as.raw
-.Primitive   .Internal
-globalenv    baseenv      emptyenv     pos.to.env
-unclass      invisible
-seq_along    seq_len
+nargs          missing        on.exit        interactive
+as.call        as.character   as.complex     as.double
+as.environment as.integer     as.logical     as.raw
+is.array       is.atomic      is.call        is.character  
+is.complex     is.double      is.environment is.expression 
+is.finite      is.function    is.infinite    is.integer    
+is.language    is.list        is.logical     is.matrix     
+is.na          is.name        is.nan         is.null       
+is.numeric     is.object      is.pairlist    is.raw        
+is.real        is.recursive   is.single      is.symbol     
+baseenv        emptyenv       globalenv      pos.to.env
+unclass        invisible      seq_along      seq_len
 @end group
 @end example
-
-@noindent
-(where @emph{xxx} stands for 27 different notions, such as
-@code{function}, @code{vector}, @code{numeric}, and so forth, but not
-@code{is.loaded}).
 
 @item
 The programming and session management utilities
 
 @example
 @group
-browser  proc.time  gc.time
-tracemem retracemem untracemem
+browser  proc.time  gc.time tracemem retracemem untracemem
 @end group
 @end example
 
@@ -2122,8 +2124,7 @@ hence replacement functions should where possible be primitive to avoid
 copying (at least in their default methods).
 
 @item
-The following few @math{N}-argument functions are ``primitive'' for
-efficiency reasons:
+The following functions are primitive for efficiency reasons:
 
 @example
 @group
@@ -2131,18 +2132,59 @@ efficiency reasons:
 call       expression substitute
 UseMethod  standardGeneric
 .C         .Fortran   .Call       .External
-.Call.graphics        .External.graphics
-.subset    .subset2   .primTrace  .primUntrace
 round      signif      rep        seq.int
-lazyLoadDBfetch
 @end group
 @end example
 
 @noindent
-@code{round}, @code{signif}, @code{rep} and @code{seq.int} manage their
-own argument matching and so do work in the standard way.
+as well as the following internal-use-only functions
+
+@example
+@group
+.Primitive     .Internal
+.Call.graphics .External.graphics
+.subset        .subset2
+.primTrace     .primUntrace
+lazyLoadDBfetch
+@end group
+@end example
 
 @end enumerate
+
+
+The multi-argument primitives
+@example
+@group
+call       switch
+.C         .Fortran   .Call       .External
+@end group
+@end example
+
+@noindent
+intentionally use positional matching, and need to do so to avoid
+partial matching to their first argument.  They do check that the first
+argument (partially) matched the formal argument name.  On the other
+hand,
+
+@example
+@group
+attr       attr<-     browser     rememtrace substitute  UseMethod
+log        round      signif      rep        seq.int
+@end group
+@end example
+
+@noindent
+manage their own argument matching and do work in the standard way.
+
+All the one-argument primitives check that if they are called with a
+named argument that this (partially) matches the name given in the
+documentation: this is also done for replacement functions with one
+argument plus @code{value}.
+
+The net effect is that from @R{} 2.11.0 argument matching for primitives
+intended for end-user use is done in the same way as for interpreted
+functions except for the six exceptions where positional matching is
+required.
 
 @menu
 * Special primitives::          
@@ -2156,13 +2198,17 @@ own argument matching and so do work in the standard way.
 A small number of primitives are @emph{specials} rather than
 @emph{builtins}, that is they are entered with unevaluated arguments.
 This is clearly necessary for the language constructs and the assignment
-operators.  @code{&&} and @code{||} conditionally evaluate their second
-argument, and  @code{~}, @code{.Internal}, @code{call}, @code{expression}
-and @code{missing} do not evaluate their arguments.
+operators, as well as for @code{&&} and @code{||} which conditionally
+evaluate their second argument, and @code{~}, @code{.Internal},
+@code{call}, @code{expression}, @code{missing}, @code{on.exit},
+@code{quote} and @code{substitute} which do not evaluate some of their
+arguments.
 
 @code{rep} and @code{seq.int} are special as they evaluate some of their
-arguments conditional on which are non-missing.  @code{c} is special to
-allow it to be used with language objects.
+arguments conditional on which are non-missing.
+
+@code{log}, @code{round} and @code{signif} are special to allow default
+values to be given to missing arguments.
 
 The subsetting, subassignment and @code{@@} operators are all special.
 (For both extraction and replacement forms, @code{$} and @code{@@}
@@ -2170,29 +2216,28 @@ take a symbol argument, and @code{[} and @code{[[} allow missing
 arguments.)
 
 @code{UseMethod} is special to avoid the additional contexts added to
-calls to builtins when profiling (via @code{Rprof}).
+calls to builtins.
 
 @node Special internals, Prototypes for primitives, Special primitives, .Internal vs .Primitive
 @section Special internals
 
-There are also special @code{.Internal} functions: @code{switch},
-@code{Recall}, @code{cbind}, @code{rbind} (to allow for the
-@code{deparse.level} argument), @code{lapply}, @code{eapply} and
-@code{NextMethod}.
+There are also special @code{.Internal} functions: @code{NextMethod},
+@code{Recall}, @code{withVisible}, @code{cbind}, @code{rbind} (to allow
+for the @code{deparse.level} argument), @code{eapply}, @code{lapply} and
+@code{vapply}.
 
 @node Prototypes for primitives,  , Special internals, .Internal vs .Primitive
 @section Prototypes for primitives
 
-As from @R{} 2.5.0, prototypes are available for the primitive functions
-and operators, and there are used for printing, @code{args} and package
-checking (e.g.@: by @code{tools::checkS3methods} and by package
-@pkg{codetools}).  There are two environments in the @pkg{base} package
-(and name space), @samp{.GenericArgsEnv} for those primitives which are
-internal S3 generics, and @samp{.ArgsEnv} for the rest.  Those
-environments contain closures with the same names as the primitives,
-formal arguments derived (manually) from the help pages, a body which
-is a suitable call to @code{UseMethod} or @code{NULL} and environment the
-base name space.
+Prototypes are available for the primitive functions and operators, and
+these are used for printing, @code{args} and package checking (e.g.@: by
+@code{tools::checkS3methods} and by package @pkg{codetools}).  There are
+two environments in the @pkg{base} package (and namespace),
+@samp{.GenericArgsEnv} for those primitives which are internal S3
+generics, and @samp{.ArgsEnv} for the rest.  Those environments contain
+closures with the same names as the primitives, formal arguments derived
+(manually) from the help pages, a body which is a suitable call to
+@code{UseMethod} or @code{NULL} and environment the base namespace.
 
 The C code for @code{print.default} and @code{args} uses the closures in
 these environments in preference to the definitions in base (as
@@ -2209,7 +2254,7 @@ break  for function  if  next  repeat  return  while
 @end example
 
 @noindent
-.  One could argue about @code{~}, but it is known to the parser and has
+).  One could argue about @code{~}, but it is known to the parser and has
 semantics quite unlike a normal function.  And @code{:} is documented
 with different argument names in its two meanings.)
 
@@ -2233,7 +2278,7 @@ allow one argument when used as the default method (and @code{round} and
 @code{signif} allow two as default methods): again fix-ups are used.
 
 Those primitives which are in @code{.GenericArgsEnv} are checked (via
-@file{tests/primitives.R} to be generic @emph{via} defining methods for
+@file{tests/primitives.R}) to be generic @emph{via} defining methods for
 them, and a check is made that the remaining primitives are probably not
 generic, by setting a method and checking it is not dispatched to (but
 this can fail for other reasons).  However, there is no certain way to
@@ -2275,15 +2320,15 @@ constructed @emph{via} @code{gettextf}, @code{gettext} or
 @code{ngettext}.
 
 For each package, the extracted messages and translation sources are
-stored under package directory @file{po} in the source package, and compiled
-translations under @file{inst/po} for installation to package directory
-@file{po} in the installed package.  This also applies to C code in
-packages.
+stored under package directory @file{po} in the source package, and
+compiled translations under @file{inst/po} for installation to package
+directory @file{po} in the installed package.  This also applies to C
+code in packages.
 
 @node Main C code, Windows-GUI-specific code, R code, Internationalization in the R sources
 @section Main C code
 
-The main C code (e.g.@: that in @file{src/*/*.c} and in
+The main C code (e.g.@: that in files @file{src/*/*.c} and in
 the modules) is where @R{} is closest to the sort of application for
 which @samp{gettext} was written.  Messages in the main C code are in
 domain @code{R} and stored in the top-level directory @file{po} with
@@ -2303,7 +2348,7 @@ macro, for example
 @end example
 
 @noindent
-from @file{src/main/errors.c}.
+from file @file{src/main/errors.c}.
 
 The @code{P_} macro
 
@@ -2321,9 +2366,9 @@ as a wrapper for @code{ngettext}: however in some cases the preferred
 approach has been to conditionalize (on @code{ENABLE_NLS}) code using
 @code{ngettext}.
 
-The macro @code{_("msg")} can safely be used in @file{src/appl}; the
-header for standalone @samp{nmath} skips possible translation.  (This
-does not apply to @code{N_} or @code{P_}).
+The macro @code{_("msg")} can safely be used in directory
+@file{src/appl}; the header for standalone @samp{nmath} skips possible
+translation.  (This does not apply to @code{N_} or @code{P_}).
 
 
 @node Windows-GUI-specific code, Mac OS X GUI, Main C code, Internationalization in the R sources
@@ -2345,12 +2390,12 @@ works well under Windows, this is less important than anticipated.)
 @end itemize
 
 Messages for the @samp{RGui} domain are marked by @code{G_("msg")}, a
-macro that is defined in @file{src/gnuwin32/win-nls.h}.  The list of
-files that are considered is hardcoded in the @code{RGui.pot-update}
-target of @file{po/Makefile.in.in}: note that this includes
-@file{devWindows.c} as the menus on the @code{windows} device are
-considered to be part of the GUI.  (There is also @code{GN_("msg")}, the
-analogue of @code{N_("msg")}.)
+macro that is defined in header file @file{src/gnuwin32/win-nls.h}.  The
+list of files that are considered is hardcoded in the
+@code{RGui.pot-update} target of file @file{po/Makefile.in.in}: note
+that this includes @file{devWindows.c} as the menus on the
+@code{windows} device are considered to be part of the GUI.  (There is
+also @code{GN_("msg")}, the analogue of @code{N_("msg")}.)
 
 The template and message catalogs for the @samp{RGui} domain are in the
 top-level @file{po} directory.
@@ -2366,9 +2411,9 @@ This is handled separately: see
 @node Updating,  , Mac OS X GUI, Internationalization in the R sources
 @section Updating
 
-See @file{po/README} for how to update the message templates and catalogs.
+See file @file{po/README} for how to update the message templates and catalogs.
 
-@node Package Structure, Graphics Devices, Internationalization in the R sources, Top
+@node Package Structure, Files, Internationalization in the R sources, Top
 @chapter Structure of an Installed Package
 
 @menu
@@ -2380,48 +2425,44 @@ The structure of a @emph{source} packages is described in @ref{Creating
 R packages, , Creating R packages, R-exts, Writing R Extensions}: this
 chapter is concerned with the structure of @emph{installed} packages.
 
-The description here is for @R{} 2.10.0 and later: the way help was
-installed differed in earlier versions.
-
 An installed package has a top-level file @file{DESCRIPTION}, a copy of
 the file of that name in the package sources with a @samp{Built} field
 appended, and file @file{INDEX}, usually describing the objects on which
-help is available, a file @file{NAMESPACE} is the package has a name
-space, files such as @file{CITATION}, @file{LICENCE} and @file{NEWS},
-and any other files copied in from @file{inst}.  It will have
-directories @file{Meta}, @file{help} and @file{html} (even if the
-package has no help), almost always has a directory @file{R} and often
-has a directory @file{libs} to contain compiled code.  Other
+help is available, a file @file{NAMESPACE} if the package has a name
+space, optional files such as @file{CITATION}, @file{LICENCE} and
+@file{NEWS}, and any other files copied in from @file{inst}.  It will
+have directories @file{Meta}, @file{help} and @file{html} (even if the
+package has no help pages), almost always has a directory @file{R} and
+often has a directory @file{libs} to contain compiled code.  Other
 directories with known meaning to @R{} are @file{data}, @file{demo},
 @file{doc} and @file{po}.
 
-Function @code{library} looks for a name space and if one is found
+Function @code{library} looks for a namespace and if one is found
 passes control to @code{loadNamespace}.  Then @code{library} or
 @code{loadNamespace} looks for file @file{R/@var{pkgname}}, warns if it
 is not found and otherwise sources the code (using @code{sys.source})
-into the package's environment, then lazy-load a database
+into the package's environment, then lazy-loads a database
 @file{R/sysdata} if present.  So how @R{} code gets loaded depends on
-the contents of  @file{R/@var{pkgname}}: standard templates to load
-lazy-load databases are provided in @file{share/R/[ns]packloader.R}.
+the contents of  @file{R/@var{pkgname}}: a standard template to load
+lazy-load databases are provided in @file{share/R/nspackloader.R}.
 
-How (and if) compiled code is loaded is down to the package's start-code
-such as @code{.First.lib} or @code{.onLoad}, although a @code{useDynlib}
-directive in a name space provides an alternative.
-Conventionally compiled code is loaded by a call to
-@code{library.dynam} and this looks in directory @file{libs} (and in an
-appropriate sub-directory if sub-architectures are in use) for a shared
-object (Unix-alike) or DLL (Windows).
+How (and if) compiled code is loaded is down to the package's startup
+code such as @code{.First.lib} or @code{.onLoad}, although a
+@code{useDynlib} directive in a namespace provides an alternative.
+Conventionally compiled code is loaded by a call to @code{library.dynam}
+and this looks in directory @file{libs} (and in an appropriate
+sub-directory if sub-architectures are in use) for a shared object
+(Unix-alike) or DLL (Windows).
 
 Subdirectory @file{data} serves two purposes. In a package using
 lazy-loading of data, it contains a lazy-load database @file{Rdata},
 plus a file @file{Rdata.rds} which contain a named character vector used
-by @code{data} in the (unusual) event that it is used for such a
-package.  Otherwise it is copy of the @file{data} directory in the
+by @code{data()} in the (unusual) event that it is used for such a
+package.  Otherwise it is a copy of the @file{data} directory in the
 sources, with saved images re-compressed if @command{R CMD INSTALL
---resave-data} was used.  If @command{R CMD INSTALL --use-data-zip} was
-specified or selected @emph{via} @option{--auto-zip}, the contents of
-the directory are moved to a zip file @file{Rdata.zip} and a listing
-written in file @file{filelist}.
+--resave-data} was used.  Prior to @R{} 2.12.0 the contents of the
+directory could be moved to a zip file @file{Rdata.zip} and a listing
+written in file @file{filelist}: this was principally done on Windows.
 
 Subdirectory @file{demo} supports the @code{demo} function, and is
 copied from the sources.
@@ -2433,11 +2474,11 @@ catalogs.
 @section Metadata
 
 Directory @file{Meta} contains several files in @code{.rds} format, that
-is saved @R{} objects.  All packages have @file{Rd.rds},
-@file{hsearch.rds}, @file{links.rds} and @file{package.rds}.  Packages
-with name spaces have a file @file{nsInfo.rds}, and those with data,
-demos or vignettes have @file{data.rds}, @file{demo.rds} or
-@file{vignette.rds} files.
+is serialized @R{} objects written by @code{saveRDS}.  All packages
+have files @file{Rd.rds}, @file{hsearch.rds}, @file{links.rds} and
+@file{package.rds}.  Packages with namespaces have a file
+@file{nsInfo.rds}, and those with data, demos or vignettes have
+@file{data.rds}, @file{demo.rds} or @file{vignette.rds} files.
 
 The structure of these files (and their existence and names) is private
 to @R{}, so the description here is for those trying to follow the @R{}
@@ -2445,9 +2486,9 @@ sources: there should be no reference to these files in non-base
 packages.
 
 File @file{package.rds} is a dump of information extracted from the
-@file{DESCRIPTION} file. It is a list of several components.  The first,
-@samp{DESCRIPTION}, is a character vector, the @file{DESCRIPTION} file
-as read by @code{read.dcf}.  Further elements @samp{Depends},
+@file{DESCRIPTION} file.  It is a list of several components.  The
+first, @samp{DESCRIPTION}, is a character vector, the @file{DESCRIPTION}
+file as read by @code{read.dcf}.  Further elements @samp{Depends},
 @samp{Suggests}, @samp{Imports}, @samp{Rdepends} and @samp{Rdepends2}
 record the @samp{Depends}, @samp{Suggests} and @samp{Imports} fields.
 These are all lists, and can be empty.  The first three have an entry
@@ -2458,8 +2499,8 @@ element @samp{name} (the package name) and optional elements @samp{op}
 first version dependency on @R{}, and @samp{Rdepends2} is a list of zero
 or more @R{} version dependencies---each is a three-element list of the
 form described for packages.  Element @samp{Rdepends} is no longer used,
-but it is still needed so @R{} < 2.7.0 can detect that the package was not
-installed for it.
+but it is still potentially needed so @R{} < 2.7.0 can detect that the
+package was not installed for it.
 
 File @file{nsInfo.rds} records a list, a parsed version of the
 @file{NAMESPACE} file.
@@ -2496,13 +2537,13 @@ File @file{vignette.rds} records a dataframe with one row for each
 @samp{File} (the full file path in the sources), @samp{Title},
 @samp{PDF} (the pathless file name of the installed PDF version, if
 present), @samp{Depends}, @samp{Keywords} and @samp{R} (the pathless
-file name of the installed R code, if present).
+file name of the installed @R{} code, if present).
  
 
 @node Help,  , Metadata, Package Structure
 @section Help
 
-All installed packages, whether they had an @file{.Rd} files or not,
+All installed packages, whether they had any @file{.Rd} files or not,
 have @file{help} and @file{html} directories. The latter normally only
 contains the single file @file{00Index.html}, the package index which
 has hyperlinks to the help topics (if any).
@@ -2523,17 +2564,102 @@ search for files matching a topic (alias), and read by @code{scan} in
 
 File @file{aliases.rds} is the same information as @file{AnIndex} as a
 named character vector (names the topics, values the file basename), for
-faster access by @R{} >= 2.11.0.
+faster access.
+
+@node Files, Graphics Devices, Package Structure, Top
+@chapter Files
+
+@R{} provides many functions to work with files and directories: many of
+these have been added relatively recently to facilitate scripting in
+@R{} and in particular the replacement of Perl scripts by @R{} scripts
+in the management of @R{} itself.
+
+These functions are implemented by standard C/POSIX library calls,
+except on Windows.  That means that filenames must be encoded in the
+current locale as the OS provides no other means to access the file
+system: increasingly filenames are stored in UTF-8 and the OS will
+translate filenames to UTF-8 in other locales.  So using a UTF-8 locale
+gives transparent access to the whole file system.
+
+Windows is another story.  There the internal view of filenames is in
+UTF-16LE (so-called `Unicode'), and standard C library calls can only
+access files whose names can be expressed in the current codepage.  To
+circumvent that restriction, there is a parallel set of Windows-specific
+calls which take wide-character arguments for filepaths.  Much of the
+file-handling in @R{} has been moved over to using these functions, so
+filenames can be manipulated in @R{} as UTF-8 encoded character strings,
+converted to wide characters (which on Windows are UTF-16LE) and passed
+to the OS.  The utilities @code{RC_fopen} and @code{filenameToWchar}
+help this process.  Currently @code{file.copy} to a directory,
+@code{list.files}, @code{list.dirs} and @code{path.expand} work only
+with filepaths encoded in the current codepage.
+
+All these functions do tilde expansion, in the same way as
+@code{path.expand}, with the deliberate exception of @code{Sys.glob}.
+
+File names may be case sensitive or not: the latter is the norm on
+Windows and Mac OS X, the former on other Unix-alikes.  Note that this
+is a property of both the OS and the file system: it is often possible
+to map names to upper or lower case when mounting the file system.  This
+can affect the matching of patterns in @code{list.files} and
+@code{Sys.glob}.
+
+File names commonly contain spaces on Windows and Mac OS X but not
+elsewhere.  As file names are handled as character strings by @R{},
+spaces are not usually a concern unless file names are passed to other
+process, e.g.@: by a @code{system} call.
+
+Windows has another couple of peculiarities.  Whereas a POSIX file
+system has a single root directory (and other physical file systems are
+mounted onto logical directories under that root), Windows has separate
+roots for each physical or logical file system (`volume'), organized
+under @emph{drives} (with file paths starting @code{D:} for an ASCII
+letter, case-insensitively) and @emph{network shares} (with paths like
+@code{\netname\topdir\myfiles\a file}.  There is a current drive, and
+path names without a drive part are relative to the current drive.
+Further, each drive has a current directory, and relative paths are
+relative to that current directory, on a particular drive if one is
+specified.  So @file{D:dir\file} and @file{D:} are valid path
+specifications (the last being the current directory on drive
+@file{D:}).
+
+@c basename        Wchar   na
+@c dir.create      Wchar   ~
+@c dirname         Wchar   ~
+@c getwd
+@c file.access     Wchar   ~
+@c file.append     RC_fopen
+@c file.copy       no      ~ (+ file.append)
+@c file.create     RC_fopen
+@c file.edit       UTF-8   in R code
+@c file.exists     Wchar   ~
+@c file.info       Wchar   ~
+@c file.link       8-bit   ~
+@c file.remove     Wchar   ~
+@c file.rename     Wchar   ~
+@c file.show       UTF-8   in R code
+@c file.symlink    not     ~
+@c file_test
+@c list.dirs       no      ~
+@c list.files      no      ~
+@c normalizePath   Wchar   ~
+@c path.expand     no
+@c setwd           Wchar   ~
+@c Sys.chmod       Wchar   ~
+@c Sys.glob        Wchar   not
+@c Sys.readlink    not     ~
+@c Sys.umask
+@c unlink          Wchar   ~
 
 
-@node Graphics Devices, Tools, Package Structure, Top
+@node Graphics Devices, Tools, Files, Top
 @chapter Graphics
 
 @R{}'s graphics internals were revised for version 1.4.0 (and tidied up
 for 2.7.0).  This was to enable multiple graphics systems to be
 installed on top on the graphics `engine' -- currently there are two
 such systems, one supporting `base' graphics (based on that in S and
-whose @R{} code@footnote{The C code is in files @file{base.c},
+whose @R{} code@footnote{The C code is in files @code{base.c},
 @code{graphics.c}, @code{par.c}, @code{plot.c} and @code{plot3d.c} in
 directory @file{src/main}.} is in package @pkg{graphics}) and one
 implemented in package @pkg{grid}.
@@ -2552,7 +2678,9 @@ This implements a set of graphics primitives, to `draw'
 @item a line
 @item a set of connected lines
 @item a polygon, optionally filled
+@item a paths, optionally filled using a winding rule
 @item text
+@item a raster image (optional)
 @item and to set a clipping rectangle
 @end itemize
 
@@ -2580,6 +2708,7 @@ the screen when drawing stops).
 @item wait for an event, for example a mouse click or keypress.
 @item an `onexit' action, to clean up if plotting is interrupted (by an
 error or by the user).
+@item capture the current contents of the device as a raster image.
 @item close the device.
 @end itemize
 
@@ -2595,11 +2724,11 @@ as in the x units).} in the @samp{x} and @samp{y} directions.
 @c think of the engine as colors.c, devices.c, engine.c, plotmath.c, vfonts.c
 The next layer up is the graphics `engine' that is the main interface to
 the device (although the graphics subsystems do talk directly to
-devices).  This is responsible for clipping, converting the @code{pch}
-values @code{0...26} to sets of lines/circles, centring (and otherwise
-adjusting) text, rendering mathematical expressions (`plotmath') and
-mapping colour descriptions such as names to the internal
-representation.
+devices).  This is responsible for clipping lines, rectangles and
+polygons, converting the @code{pch} values @code{0...26} to sets of
+lines/circles, centring (and otherwise adjusting) text, rendering
+mathematical expressions (`plotmath') and mapping colour descriptions
+such as names to the internal representation.
 
 @c graphics.c looks at device dimensions, locator, metricinfo
 @c par.c looks at various device pars
@@ -2611,7 +2740,7 @@ Some but not all instances of graphics devices maintain display lists, a
 `list' of operations that have been performed on the device to produce
 the current plot (since the device was opened or the plot was last
 cleared, e.g.@: by @code{plot.new}).  Screen devices generally maintain
-a display list to handle repaint and resize events where as file-based
+a display list to handle repaint and resize events whereas file-based
 formats do not---display lists are also used to implement
 @code{dev.copy()} and friends.  The display list is a pairlist of
 @code{.Internal} (base graphics) or @code{.Call.graphics} (grid
@@ -2664,6 +2793,7 @@ of a would-be writer of a graphics device.
 * Handling text::               
 * Conventions::                 
 * 'Mode'::                      
+* Graphics events::             
 * Specific devices::            
 @end menu
 
@@ -2673,8 +2803,7 @@ of a would-be writer of a graphics device.
 There are two types used internally which are pointers to structures
 related to graphics devices.
 
-The @code{DevDesc} type@footnote{@code{NewDevDesc} from @R{} 1.4.0,
-renamed in @R{} 2.8.0.} is a structure defined in the header file
+The @code{DevDesc} type is a structure defined in the header file
 @file{R_ext/GraphicsDevice.h} (which is included by
 @file{R_ext/GraphicsEngine.h}).  This describes the physical
 characteristics of a device, the capabilities of the device driver and
@@ -2682,6 +2811,15 @@ contains a set of callback functions that will be used by the graphics
 engine to obtain information about the device and initiate actions
 (e.g.@: a new page, plotting a line or some text).  Type @code{pDevDesc}
 is a pointer to this type.
+
+Prior to @R{} 2.14.0 all of the callback functions need to be set, to
+dummy functions if the capability (such as a locator) is not available.
+In devices which will only be used in @R{} 2.14.0 or later the following
+callbacks can be omitted (or set to the null pointer, their default
+value) when appropriate default behaviour will be taken by the graphics
+engine: @code{activate}, @code{cap}, @code{deactivate}, @code{locator},
+@code{holdflush} (API version 9), @code{mode}, @code{newFrameConfirm},
+@code{path}, @code{raster} and @code{size}.
 
 The relationship of device units to physical dimensions is set by the
 element @code{ipr} of the @code{DevDesc} structure: a @samp{double}
@@ -2777,32 +2915,50 @@ The following `capabilities' can be defined for the device's
 @code{DevDesc} structure.
 
 @itemize
-@item canChangeGamma --
-@code{Rboolean}: can the display gamma be adjusted?  This is not true
-for any current device, and as from @R{} 2.8.0 there is no user-level
-function to change gamma.  So @samp{FALSE} is the only useful value.
-@item canHadj --
+@item @code{canChangeGamma} --
+@code{Rboolean}: can the display gamma be adjusted?  This is now
+ignored, as gamma support has been removed.
+@item @code{canHadj} --
 @code{integer}: can the device do horizontal adjustment of text
 @emph{via} the @code{text} callback, and if so, how precisely? 0 = no
 adjustment, 1 = @{0, 0.5, 1@} (left, centre, right justification) or 2 =
 continuously variable (in [0,1]) between left and right justification.
-@item canGenMouseDown -- 
-@code{Rboolean}: should mouse down events be sent to the @code{getEvent}
-callback?
-@item canGenMouseMove -- 
+@item @code{canGenMouseDown} -- 
+@code{Rboolean}: can the device handle mouse down events?  This
+flag and the next three are not currently used by R, but are maintained
+for back compatibility.
+@item @code{canGenMouseMove} -- 
 @code{Rboolean}: ditto for mouse move events.
-@item canGenMouseUp -- 
+@item @code{canGenMouseUp} -- 
 @code{Rboolean}: ditto for mouse up events.
-@item canGenKeybd -- 
+@item @code{canGenKeybd} -- 
 @code{Rboolean}: ditto for keyboard events.
-@item hasTextUTF8 --
+@item @code{hasTextUTF8} --
 @code{Rboolean}: should non-symbol text be sent (in UTF-8) to the
 @code{textUTF8} and @code{strWidthUTF8} callbacks, and sent as Unicode
 points (negative values) to the @code{metricInfo} callback?
-@item wantSymbolUTF8 --
+@item @code{wantSymbolUTF8} --
 @code{Rboolean}: should symbol text be handled in UTF-8 in the same way
 as other text?  Requires @code{textUTF8 = TRUE}.
 @end itemize
+
+Several more were added at @R{} 2.14.0 to support the
+@code{dev.capabilities} function: these are all small integers.
+@itemize
+@item @code{haveTransparency}:
+does the device support semi-transparent colours?
+@item @code{haveTransparentBg}:
+can the background be fully or semi-transparent?
+@item @code{haveRaster}:
+is there support for rendering raster images?
+@item @code{haveCapture}:
+is there support for @code{grid::grid.cap}?
+@item @code{haveLocator}:
+is there an interactive locator?
+@end itemize
+
+The last three can often be deduced to be false from the presence of
+@code{NULL} entries instead of the corresponding functions.
 
 @node Handling text, Conventions, Device capabilities, Graphics devices
 @subsection Handling text
@@ -2855,16 +3011,14 @@ text (it needs to be for e.g. @code{hat(beta)} to work correctly).
 However, the @code{width} is used in plotmath to advance to the next
 character, and so needs to include left and right bearings.
  
-The @emph{interpretation} of @samp{c} depends on the locale.  Using
-@code{c = 0} used to give an indication of the size of the font: it
-often returned the measurements for character @code{"M"}---however it is
-no longer used as from @R{} 2.7.0.  In a single-byte locale values
-@code{32...255} indicate the corresponding character in the locale (if
-present).  For the symbol font (as used by @samp{graphics::par(font=5)},
-@samp{grid::gpar(fontface=5}) and by `plotmath'), values @code{32...126,
-161...239, 241...254} indicate glyphs in the Adobe Symbol encoding.  In
-a multibyte locale, @code{c} represents a Unicode point (except in the
-symbol font).  So the function needs to include code like
+The @emph{interpretation} of @samp{c} depends on the locale.  In a
+single-byte locale values @code{32...255} indicate the corresponding
+character in the locale (if present).  For the symbol font (as used by
+@samp{graphics::par(font=5)}, @samp{grid::gpar(fontface=5}) and by
+`plotmath'), values @code{32...126, 161...239, 241...254} indicate
+glyphs in the Adobe Symbol encoding.  In a multibyte locale, @code{c}
+represents a Unicode point (except in the symbol font).  So the function
+needs to include code like
 
 @example
     Rboolean Unicode = mbcslocale && (gc->fontface != 5);
@@ -2892,7 +3046,7 @@ one, argument @samp{hadj} to @code{text} will be called as @code{0 ,0.5,
 position.  If it is two, continuous values in the range @code{[0, 1]}
 are assumed to be supported.
 
-A new capability in @R{} 2.7.0 (graphics API version 4) is
+A new capability in @R{} 2.7.0 (graphics API version 4) was
 @code{hasTextUTF8}.  If this is true, it has two consequences.  First,
 there are callbacks @code{textUTF8} and @code{strWidthUTF8} that should
 behave identically to @code{text} and @code{strWidth} except that
@@ -2971,9 +3125,8 @@ for multi-line strings.
 @subsection Conventions
 
 The aim is to make the (default) output from graphics devices as similar
-as possible, and further steps were taken in that direction in @R{}
-2.7.0.  Generally people follow the model of the @code{postscript} and
-@code{pdf} devices (which share most of their internal code).
+as possible.  Generally people follow the model of the @code{postscript}
+and @code{pdf} devices (which share most of their internal code).
 
 The following conventions have become established:
 
@@ -3023,7 +3176,7 @@ in the header @file{GraphicsEngine.h} and in the help for @code{par}: note that 
 least for widths above the default).
 
 
-@node 'Mode', Specific devices, Conventions, Graphics devices
+@node 'Mode', Graphics events, Conventions, Graphics devices
 @subsection `Mode'
 
 One of the device callbacks is a function @code{mode}, documented in
@@ -3032,7 +3185,7 @@ the header as
 @example
      * device_Mode is called whenever the graphics engine
      * starts drawing (mode=1) or stops drawing (mode=0)
-     * GMode (in graphics.c) also ways that 
+     * GMode (in graphics.c) also says that 
      * mode = 2 (graphical input on) exists.
      * The device is not required to do anything
 @end example
@@ -3050,9 +3203,38 @@ Many devices do indeed do nothing on this call, but some screen devices
 ensure that drawing is flushed to the screen when called with @code{mode
 = 0}.  It is tempting to use it for some sort of buffering, but note
 that `drawing' is interpreted at quite a low level and a typical single
-figure will stop and start drawing many times.
+figure will stop and start drawing many times.  The buffering introduced
+in the @code{X11()} device makes use of @code{mode = 0} to indicate
+activity: it updates the screen after @emph{ca} 100ms of inactivity.
 
-@node Specific devices,  , 'Mode', Graphics devices
+As from @R{} 2.14.0 this callback need not be supplied if it does nothing.
+
+@node Graphics events, Specific devices, 'Mode', Graphics devices
+@subsection Graphics events
+
+Graphics devices may be designed to handle user interaction.  
+The current model is similar to the one introduced in R 2.1.0 for
+the Windows screen device, but the design was changed in R 2.12.0 to 
+be more open ended.
+
+Users may use @code{grDevices::setGraphicsEventEnv} to set the
+@code{eventEnv} environment in the device driver to hold event
+handlers. When the user calls @code{grDevices::getGraphicsEvent}, R will
+take three steps.  First, it sets the device driver member
+@code{gettingEvent} to @code{true} for each device with a
+non-@code{NULL} @code{eventEnv} entry, and calls @code{initEvent(dd,
+true)} if the callback is defined.  It then enters an event loop.  Each
+time through the loop R will process events once, then check whether any
+device has set the @code{result} member of @code{eventEnv} to a
+non-@code{NULL} value, and will save the first such value found to be
+returned.  C functions @code{doMouseEvent} and @code{doKeybd} are
+provided to call the R event handlers @code{onMouseDown},
+@code{onMouseMove}, @code{onMouseUp}, and @code{onKeybd} and set
+@code{eventEnv$result} during this step.  Finally, @code{initEvent} is
+called again with @code{init=false} to inform the the devices that the
+loop is done, and the result is returned to the user.
+
+@node Specific devices,  , Graphics events, Graphics devices
 @subsection Specific devices
 
 Specific devices are mostly documented by comments in their sources,
@@ -3101,7 +3283,7 @@ low coverage apart from a few monospaced fonts in a few sizes (which are
 not suitable for graph annotation), and where glyphs are missing what is
 plotted is often quite unsatisfactory.
 
-The approach being taken for @R{} 2.7.0 is to make use of more modern
+The approach being taken as from @R{} 2.7.0 is to make use of more modern
 toolkits, namely @code{cairo} for rendering and @code{Pango} for font
 management---because these are associated with @code{Gtk+2} they are
 widely available.  Cairo supports translucent colours and alpha-blending
@@ -3205,7 +3387,7 @@ Colors can be created in C via the macro @code{R_RGBA}, and a set of
 macros are defined in @file{R_ext/GraphicsDevice.h} to extract the
 various components.
 
-Colours in the base graphics system were originally borrowed from S (and
+Colours in the base graphics system were originally adopted from S (and
 before that the GRZ library from Bell Labs), with the concept of a
 (variable-sized) palette of colours referenced by numbers
 @samp{1...@var{N}} plus @samp{0} (the background colour).  @R{}
@@ -3217,12 +3399,12 @@ file @file{colors.c}.  Note that semi-transparent colours are not
 `premultiplied', so 50% transparent white is @samp{#ffffff80}.
 
 What is not clear is how the RGB values are to be mapped to display
-colours in the graphics device.  There is a proposal
+colours in the graphics device.  There was a proposal
 (@uref{http://developer.r-project.org/sRGB-RFC.html}) to regard the
-mapping as the colorspace `sRGB', but this is not currently done.
-The sRGB colorspace is an industry standard: it is used by Web browsers
-and JPEGs from all but high-end digital cameras.  The interpretation is
-a matter for graphics devices and for code that manipulates colours, but
+mapping as the colorspace `sRGB', which was adopted in @R{} 2.13.0.  The
+sRGB colorspace is an industry standard: it is used by Web browsers and
+JPEGs from all but high-end digital cameras.  The interpretation is a
+matter for graphics devices and for code that manipulates colours, but
 not for the graphics engine or subsystems.
 
 @R{} uses a painting model similar to PostScript and PDF.  This means
@@ -3303,8 +3485,7 @@ package @pkg{grDevices}.
 @chapter Tools
 
 The behavior of @command{R CMD check} can be controlled through a
-variety of command line arguments, Perl configuration variables, and
-internal environment variables.
+variety of command line arguments and environment variables.
 
 There is an internal @option{--install=@var{value}} command line
 argument not shown by @command{R CMD check --help}, with possible values
@@ -3324,59 +3505,57 @@ Fake installation, and turn off the run-time tests.
 Skip installation, e.g., when testing recommended packages bundled with
 R.
 @item no
-The same as @option{--no-install}: turns off installation and the tests
+The same as @option{--no-install} : turns off installation and the tests
 which require the package to be installed.
 @end table
 
-The following internal environment variables are used for initializing
-the corresponding public Perl configuration variables
-(@pxref{Customizing checking and building, , Customizing checking and
-building, R-exts, Writing R Extensions}):
+The following environment variables can be used to customize the
+operation of @command{check}: a convenient place to set these is the
+file @file{~/.R/check.Renviron}.
 
-@quotation
-@multitable {@code{_R_CHECK_LATEX_VIGNETTES_}} {@code{$R_check_latex_vignettes}}
-@item Environment variable
-@tab Configuration variable
-@item @code{_R_CHECK_ALL_NON_ISO_C_}
-@vindex _R_CHECK_ALL_NON_ISO_C_
-@tab @code{$R_check_all_non_ISO_C} 
-@item @code{_R_CHECK_FORCE_SUGGESTS_}
-@vindex_R_CHECK_FORCE_SUGGESTS_
-@tab @code{$R_check_force_suggests}
-@item @code{_R_CHECK_LATEX_VIGNETTES_}
-@vindex_R_CHECK_LATEX_VIGNETTES_
-@tab @code{$R_check_latex_vignettes}
-@item @code{_R_CHECK_RD_STYLE_}
-@vindex_R_CHECK_RD_STYLE_
-@tab @code{$R_check_Rd_style}
-@item @code{_R_CHECK_RD_XREFS_}
-@vindex_R_CHECK_RD_XREFS_
-@tab @code{$R_check_Rd_xrefs}
-@item @code{_R_CHECK_SUBDIRS_NOCASE_}
-@vindex_R_CHECK_SUBDIRS_NOCASE_
-@tab @code{$R_check_subdirs_nocase}
-@item @code{_R_CHECK_SUBDIRS_STRICT_}
-@vindex_R_CHECK_SUBDIRS_STRICT_
-@tab @code{$R_check_subdirs_strict}
-@item @code{_R_CHECK_USE_INSTALL_LOG_}
-@vindex_R_CHECK_USE_INSTALL_LOG_
-@tab @code{$R_check_use_install_log}
-@item @code{_R_CHECK_WEAVE_VIGNETTES_}
-@vindex_R_CHECK_WEAVE_VIGNETTES_
-@tab @code{$R_check_weave_vignettes}
-@item @code{_R_CHECK_USE_CODETOOLS_}
-@vindex_R_CHECK_USE_CODETOOLS_
-@tab @code{$R_check_use_codetools}
-@end multitable
-@end quotation
-
-The following internal environment variables have no corresponding
-configuration variable.
 @vtable @code
+@item _R_CHECK_ALL_NON_ISO_C_
+If true, do not ignore compiler (typically GCC) warnings about non ISO C
+code in @emph{system} headers.  Note that this may also show additional
+ISO C++ warnings.
+Default: false.
+@item _R_CHECK_FORCE_SUGGESTS_
+If true, give an error if suggested packages are not available.
+Default: true.
+@item _R_CHECK_RD_CONTENTS_
+If true, check @file{Rd} files for auto-generated content which needs editing,
+and missing argument documentation.
+Default: true.
+@item _R_CHECK_RD_STYLE_
+If true, check whether @file{Rd} usage entries for S3 methods use the full
+function name rather than the appropriate @code{\method} markup.
+Default: true.
+@item _R_CHECK_RD_XREFS_
+If true, check the cross-references in @file{.Rd} files.
+Default: true.
+@item _R_CHECK_SUBDIRS_NOCASE_
+If true, check the case of directories such as @file{R} and @file{man}.
+Default: false.
+@item _R_CHECK_SUBDIRS_STRICT_
+Initial setting for @option{--check-subdirs}.
+Default: @samp{default} (which checks only tarballs, and checks in the
+@file{src} only if there is no @file{configure} file).
+@item _R_CHECK_USE_CODETOOLS_
+If true, make use of the @pkg{codetools} package, which provides a
+detailed analysis of visibility of objects (but may give false
+positives).
+Default: true.
+@item _R_CHECK_USE_INSTALL_LOG_
+If true, record the output from installing a package as part of its
+check to a log file (@file{00install.out} by default), even when running
+interactively.
+Default: true.
+@item _R_CHECK_VIGNETTES_NLINES_
+Maximum number of lines to show of the bottom of the output when reporting
+errors in running vignettes.
+Default: 10.
 @item _R_CHECK_CODOC_S4_METHODS_
 Control whether @code{codoc()} testing is also performed on S4 methods.
-This was off by default in R versions prior to 2.10.0 as it gave false
-positives.
 Default: true.
 @item _R_CHECK_DOT_INTERNAL_
 Control whether the package code is scanned for @code{.Internal} calls.
@@ -3390,6 +3569,9 @@ listed in the package's @file{BinaryFiles} file.
 Default: true.
 However, most likely this package-level override mechanism will be
 removed eventually.
+@item _R_CHECK_PERMISSIONS_
+Control whether permissions of files should be checked.
+Default: true iff @code{.Platform$OS.type == "unix"}.
 @item _R_CHECK_FF_CALLS_
 Allows turning off @code{checkFF()} testing.  Legacy mostly.
 Default: true.
@@ -3402,46 +3584,79 @@ Control whether @code{check_T_and_F()} also looks for ``bad'' (global)
 @samp{T}/@samp{F} uses in examples.
 Off by default because this can result in false positives.
 @item _R_CHECK_RD_CHECKRD_MINLEVEL_
-New in @R{} 2.10.0.  Controls the minimum level for reporting warnings
-from @code{checkRd}.
+Controls the minimum level for reporting warnings from @code{checkRd}.
 Default: -1.
-@item _R_CHECK_RD_USAGE_METHOD_BINOPS_
-Control whether binops generics are considered as allowing useful S3
-method markup. 
-Default: true (as this Rd feature was added some time ago).
-OBSOLETE.
-@item _R_CHECK_RD_USAGE_METHOD_SUBSET_
-Control whether subset generics are considered as allowing useful S3
-method markup.
-Default: true (as this Rd feature was added some time ago).
-OBSOLETE.
 @item _R_CHECK_XREFS_REPOSITORIES_
-New in @R{} 2.10.0.  If set to a non-empty value, a space-separated list
-of repositories to use to determine known packages.
-Default: empty, when the CRAN, Omegahat and
-Bioconductor repositories known to @R{} is used.
+If set to a non-empty value, a space-separated list of repositories to
+use to determine known packages.  Default: empty, when the CRAN,
+Omegahat and Bioconductor repositories known to @R{} is used.
 @item _R_CHECK_SRC_MINUS_W_IMPLICIT_
 Control whether installation output is checked for compilation warnings
 about implicit function declarations (as spotted by GCC with command
 line option @option{-Wimplicit-function-declaration}, which is implied
 by @option{-Wall}).
 Default: false.
-This should really be a configuration variable, but we need a better
-name.
 @item _R_CHECK_SRC_MINUS_W_UNUSED_
 Control whether installation output is checked for compilation warnings
 about unused code constituents (as spotted by GCC with command line
 option @option{-Wunused}, which is implied by @option{-Wall}).
+Default: true.
 @item _R_CHECK_WALL_FORTRAN_
-Control whether gfortran 4.0 or better @option{-Wall} warnings are used in
+Control whether gfortran 4.0 or later @option{-Wall} warnings are used in
 the analysis of installation output.
 Default: false, even though the warnings are justifiable.
-This should really be a configuration variable, but we need a better name.
-@item _R_CHECK_WARN_BAD_USAGE_LINES_
-Control whether @code{checkDocFiles()} warns about bad Rd @code{\usage}
-lines.
-Default: true (as @code{\special} was rolled out a long time ago).
-OBSOLETE.
+@item _R_CHECK_ASCII_CODE_
+If true, check @R{} code for non-ascii characters.
+Default: true.
+@item _R_CHECK_ASCII_DATA_
+If true, check data for non-ascii characters.
+Default: true.
+@item _R_CHECK_COMPACT_DATA_
+If true, check data for ascii and uncompressed saves.
+Default: true.
+@item _R_CHECK_COMPACT_DATA2_
+If true, check data for ascii and uncompressed saves, and also check if
+using @command{bzip2} or @code{xz} compression would be significantly
+better.  Implies @env{_R_CHECK_COMPACT_DATA_} is true.
+Default: true.
+@item _R_CHECK_SKIP_ARCH_
+Comma-separated list of architectures that will be omitted from
+checking in a multi-arch setup.
+Default: none.
+@item _R_CHECK_SKIP_TESTS_ARCH_
+Comma-separated list of architectures that will be omitted from
+running tests in a multi-arch setup.
+Default: none.
+@item _R_CHECK_SKIP_EXAMPLES_ARCH_
+Comma-separated list of architectures that will be omitted from
+running examples in a multi-arch setup.
+Default: none.
+@item _R_CHECK_VC_DIRS_
+Should the unpacked package directory be checked for version-control
+directories (@file{CVS}, @file{.svn} @dots{})?
+Default: true for tarballs.
+@item _R_CHECK_PKG_SIZES_
+Should @command{du} be used to find the installed sizes of packages?
+@command{R CMD check} does check for the availability of @command{du}.
+but this option allows the check to be overruled if an unsuitable
+command is found (including one that does not respect the @option{-k}
+flag to report in units of 1Kb, or reports in a different format -- the
+GNU, Mac OS X and Solaris @command{du} commands have been tested).
+Default: true if @command{du} is found.
+@item _R_CHECK_DOC_SIZES_
+Should @command{qpdf} be used to find the installed sizes of PDFs?
+Default: true if @command{qpdf} is found.
+@item _R_CHECK_ALWAYS_LOG_VIGNETTE_OUTPUT_
+By default the output from running the @R{} code in the vignettes is
+kept only if there is an error.
+Default: false
+@item _R_CHECK_CLEAN_VIGN_TEST_
+Should the @file{vign_test} directory be removed if the test is successful?
+Default: true.
+@item _R_CHECK_REPLACING_IMPORTS_
+Should warnings about replacing imports be reported?  These mainly come
+from auto-generated @file{NAMESPACE} files in other packages.
+Default: false
 @end vtable
 
 @node R coding standards, Testing R code, Tools, Top
@@ -3449,7 +3664,7 @@ OBSOLETE.
 
 @cindex coding standards
 @R{} is meant to run on a wide variety of platforms, including Linux and
-most variants of Unix as well as 32-bit Windows versions and on Mac OS X.
+most variants of Unix as well as Windows and Mac OS X.
 Therefore, when extending @R{} by either adding to the @R{} base
 distribution or by providing an add-on package, one should not rely on
 features specific to only a few supported platforms, if this can be
@@ -3467,9 +3682,9 @@ The following tools can ``safely be assumed'' for @R{} extensions.
 An ISO C99 C compiler.  Note that extensions such as @acronym{POSIX}
 1003.1 must be tested for, typically using Autoconf unless you are sure
 they are supported on all mainstream @R{} platforms (including Windows
-and Mac OS X).  Packages will be more portable if written assuming only
-C89, but this should not be done where using C99 features will make for
-cleaner or more robust code.
+and Mac OS X).  Packages will be more portable to @R{} < 2.12.0 if
+written assuming only C89, but this should not be done where using C99
+features will make for cleaner or more robust code.
 
 @item
 A FORTRAN 77 compiler (but not Fortran 9x).
@@ -3496,14 +3711,14 @@ A Bourne shell and the ``traditional'' Unix programming tools, including
 @command{grep}, @command{sed}, and @command{awk}.
 
 There are @acronym{POSIX} standards for these tools, but these may not
-fully be supported.  Baseline features could be determined from a book
+be fully supported.  Baseline features could be determined from a book
 such as @cite{The UNIX Programming Environment} by Brian W. Kernighan &
 Rob Pike.  Note in particular that @samp{|} in a regexp is an extended
 regexp, and is not supported by all versions of @command{grep} or
-@command{sed}.  The Open Group Base Specifications, Issue 6, which is
-technically identical to ISO/IEC 9945 and IEEE Std 1003.1 (POSIX), 2004,
+@command{sed}.  The Open Group Base Specifications, Issue 7, which are
+technically identical to  IEEE Std 1003.1 (POSIX), 2008,
 are available at
-@uref{http://www.opengroup.org/onlinepubs/009695399/mindex.html}.
+@uref{http://pubs.opengroup.org/onlinepubs/9699919799/mindex.html}.
 @end itemize
 
 Under Windows, most users will not have these tools installed, and you
@@ -3520,22 +3735,15 @@ In addition, the following tools are needed for certain tasks.
 
 @itemize @bullet
 @item
-Perl version 5 is needed for converting documentation written in Rd
-format to plain text, @HTML{}, @LaTeX{}, and to extract the examples.
-In addition, several other tools, in particular @command{check} and
-@command{build} require Perl.
+Perl version 5 is only needed for a few uncommonly-used tools: @command{make
+install-info} needs Perl installed if there is no command
+@command{install-info} on the system, and for the maintainer-only script
+@file{tools/help2man.pl}.
 @findex Perl
-
-The @R{} Core Team has decided that Perl (version 5) can safely be
-assumed for building @R{} from source, building and checking add-on
-packages, and for installing add-on packages from source.  On the other
-hand, Perl cannot be assumed at all for installing @emph{binary}
-(pre-built) versions of add-on packages, or at run time.
 
 @item
 Makeinfo version 4.7 or later is needed to build the Info files for the
-@R{} manuals written in the @acronym{GNU} Texinfo system.  (Future
-distributions of @R{} may contain the Info files.)
+@R{} manuals written in the @acronym{GNU} Texinfo system.
 @findex makeinfo
 @end itemize
 
@@ -3585,7 +3793,7 @@ their startup files, and using customization to set the
 which has been determined not to display the structure clearly enough
 when using narrow fonts.)
 
-@node Testing R code, Function and variable index, R coding standards, Top
+@node Testing R code, Use of TeX dialects, R coding standards, Top
 @chapter Testing R code
 
 When you (as @R{} developer) add new functions to the R base (all the
@@ -3599,7 +3807,187 @@ list'' in @file{tests/no-segfault.Rin}.
 [To be revised: use @command{make check-devel}, check the write barrier
 if you change internal structures.]
 
-@node Function and variable index, Concept index, Testing R code, Top
+@node Use of TeX dialects, Future directions, Testing R code, Top
+@chapter Use of TeX dialects
+
+Various dialects of TeX and used for different purposes in @R{}.  The
+policy is that manuals be written in @samp{texinfo}, and for convenience
+the main and Windows FAQs are also.  This has the advantage that is is
+easy to produce HTML and plain text versions as well as typeset manuals.
+
+LaTeX is not used directly, but rather as an intermediate format for
+typeset help documents and for vignettes.
+
+Care needs to be taken about the assumptions made about the @R{} user's
+system: it may not have either @samp{texinfo} or a TeX system
+installed.  We have attempted to abstract out the cross-platform
+differences, and almost all the setting of typeset documents is done by
+@code{tools::texi2dvi}.  This is used for offline printing of help
+documents, preparing vignettes and for package manuals via @command{R
+CMD Rd2pdf}.  It is not currently used for the @R{} manuals created in
+directory @file{doc/manual}.
+
+@code{tools::texi2dvi} makes use of a system command @command{texi2dvi}
+where available.  On a Unix-alike this is usually part of
+@samp{texinfo}, whereas on Windows if it exists at all it would be an
+executable, part of MiKTeX.  If none is available, the @R{} code runs
+a sequence of @command{(pdf)latex}, @command{bibtex} and
+@command{makeindex} commands.
+
+This process has been rather vulnerable to the versions of the external
+software used: particular issues have been @command{texi2dvi} and
+@file{texinfo.tex} updates, mismatches between the two@footnote{Linux
+distributions tend to unbundle @file{texinfo.tex} from @samp{texinfo}.},
+versions of the LaTeX package @samp{hyperref} and quirks in index
+production.  The licenses used for LaTeX and latterly @samp{texinfo}
+prohibit us from including `known good' versions in the @R{} distribution.
+
+On a Unix-alike @command{configure} looks for the executables for TeX and
+friends and if found records the absolute paths in the system
+@file{Renviron} file.  This used to record @samp{false} if no command
+was found, but it nowadays records the name for looking up on the path
+at run time.  The latter can be important for binary distributions: one
+does not want to be tied to, for example, TeXLive 2007.
+
+
+@node Future directions, Function and variable index, Use of TeX dialects, Top
+@chapter Future directions
+
+This chapter is for notes about possible future changes to @R{}: there
+is no commitment to make such changes, let alone to a timescale.
+
+@menu
+* 64-bit types::                
+@end menu
+
+@node 64-bit types,  , Future directions, Future directions
+@section 64-bit types
+
+Vectors in @R{} are limited to a length of 2^31 - 1 elements (about 2
+billion), as the length is stored in the @code{SEXPREC} as a C
+@code{int}, and that type is used extensively to record lengths and
+element numbers, including in packages.  (It is the latter that
+precludes a simple change to @code{unsigned int}).
+
+There is also some desire to be able to store larger integers in @R{},
+although the possibility of storing these as @code{double} is often
+overlooked (and e.g.@: file pointers as returned by @code{seek} are
+already stored as @code{double}).
+
+A single object with 2^31 or more elements will take up at least 8GB of
+memory if integer or logical and 16GB if numeric or character, so
+routine use of such objects is in 2010 still some way off, but it is
+time to start to note some of the considerations in allowing longer
+vectors.  Note that longer vectors are impossible under 32-bit
+platforms, so one possibility is to make changes only on 64-bit platforms.
+
+@itemize
+
+@item
+The most obvious next step is 64-bit lengths, but note that current
+64-bit OSes do not even theoretically offer 64-bit address spaces and it
+is likely that a 48-bit length would suffice for another 25 years or
+more.  Thus an alternative is to use C @code{double} to store lengths
+and element numbers, since this can hold integers up to 2^53 exactly.
+
+@item
+Simply changing the internal format of a @code{VECTOR_SEXPREC} has a
+number of consequences.  Most immediately, the serialization format
+would have to be changed to accommodate longer lengths -- and it might
+well be prudent to store lengths up to 2^31-1 in the same way as before
+to avoid unnecessary padding and for backwards compatibility.  (Note that
+the XDR format has a type @samp{hyper} for 64-bit integers, but it is
+not currently implemented in the code in @file{src/extra/xdr}.)
+
+@item
+Another immediate consequence is that there would need to be a C type to
+hold vector lengths and element numbers, say @code{Rlongint}.  It would
+be cleanest if this were a type defined by @R{}, and it may need to be.
+C99 guarantees @emph{via} @file{stdint.h} a number of types which are at
+least 64-bit (the types of exactly 64 bits are not required to be
+implemented) and which would be suitable, but regrettably people try to
+use @R{} internals in C++, whereas C99 is not a subset of C++98 and
+C++98 compilers are not required to support these types (and there are
+currently no C++11 compilers).  It would need to be tested if
+@file{stdint.h} was widely enough usable.
+
+@item
+There would need to be a way to refer to the length of longer vectors
+and to create indices to subset them: @R{}'s @code{integer} type is no
+longer necessarily suitable.  Much code has been written assuming that
+it is!  Different routes have been proposed:
+
+@itemize
+
+@item
+Add a new type to @R{} and use that for lengths and indices---most likely
+this would be a 64-bit signed type, say @code{longint}.  @R{}'s usual
+implicit coercion rules would ensure that supplying an @code{integer}
+vector for indexing or @code{length<-} would work.
+
+@item
+A more radical alternative is to change the existing @code{integer} type
+to be 64-bit on 64-bit platforms (which was the approach taken by S-PLUS
+for DEC/Compaq Alpha systems).  Or even on all platforms.
+
+@item
+Allow either @code{integer} or @code{double} values for lengths and
+indices, and return @code{double} only when necessary.
+
+@end itemize
+
+@noindent
+The third has the advantages of minimal disruption to existing code and
+not increasing memory requirements, but the disadvantage that the code
+branches for long vectors would be tested rarely.  In the first and
+third scenarios both @R{}'s own code and user code would have to be
+adapted for lengths that were not of type @code{integer}.
+
+@item
+Matrices are stored as vectors and so also limited to 2^31-1 elements.
+If longer vectors are allowed, this raises the question if larger
+matrices should be either allowed or supported.  The main problem is
+matrix algebra which is almost entirely done by FORTRAN code, not
+uncommonly calling external BLAS or LAPACK routines.  For FORTRAN code
+compiled as part of @R{} it may be possible simply to set the default
+integer size to be 64-bit (it is not clear if this can be done
+portably), and some external software (e.g.@: AMD's ACML) is available
+in versions compiled with 64-bit integers.
+
+Some (but not all) FORTRAN compilers (e.g.@: @command{gfortran}) have
+flags to compile code with @code{INTEGER} as 64-bit, and even amongst
+those which do, care is needed that any external functions which are
+called have versions for 64-bit integers and the correct versions are
+called.
+
+However, it does seem that for the foreseeable future anything but the
+most trivial matrix algebra on gigabyte matrices will be too slow to be
+contemplated, not least under the single-thread implementation supplied by
+@R{}.
+
+@item
+The @code{.C}, @code{.Fortran}, @code{.Call} and @code{.External}
+interfaces need consideration (as well as the @code{.Internal} and
+@code{.Primitive} interfaces used by @R{} itself).
+
+Most users of the @code{.C} and @code{.Fortran} interfaces use
+@code{as.integer} for lengths and element numbers, but a few omit these
+in the knowledge that these were of type @code{integer}.  It might be
+reasonable to suppose that these interfaces were not intended to be used
+with long vectors and make passing a long vector to them an error.
+
+The remaining interfaces will need to cope with the changed
+@code{VECTOR_SEXPREC} types.  It seems likely that in most cases lengths
+are accessed by the @code{length} and @code{LENGTH}
+functions@footnote{but @code{LENGTH} is a macro under some internal
+uses.}  So one approach is to keep these returning 32-bit lengths and
+introduce `long' versions.
+
+@end itemize
+
+See also @uref{http://www.cs.uiowa.edu/~luke/talks/useR10.pdf}.
+
+@node Function and variable index, Concept index, Future directions, Top
 @unnumbered Function and variable index
 
 @printindex vr

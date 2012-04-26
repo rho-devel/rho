@@ -3,8 +3,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2008  Robert Gentleman, Ross Ihaka and the
- *                            R Development Core Team
+ *  Copyright (C) 1997--2011  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,9 +25,16 @@
 #endif
 
 #include <Defn.h>
-#include "Parse.h"
+#include <Parse.h>
 #define STRICT_R_HEADERS
 #include <R_ext/RS.h>           /* for R_chk_* allocation */
+#include <ctype.h>
+#include <Rmath.h> /* for imax2(.),..*/
+
+/* bison creates a non-static symbol yylloc in both gramLatex.o and gramRd.o,
+   so remap */
+// 2011-12-09: In CXXR this #define appears deleterious.
+//#define yylloc yyllocR
 
 #define DEBUGVALS 0		/* 1 causes detailed internal state output to R console */	
 #define DEBUGMODE 0		/* 1 causes Bison output of parse state, to stdout or stderr */
@@ -86,10 +92,12 @@ typedef struct yyltype
 
 static SEXP	GrowList(SEXP, SEXP);
 static int	KeywordLookup(const char *);
+static SEXP	UserMacroLookup(const char *);
+static SEXP	InstallKeywords();
 static SEXP	NewList(void);
 static SEXP     makeSrcref(YYLTYPE *, SEXP);
 
-/* Flags used to mark presence of IFDEF or Sexpr in the dynamicFlag attribute */
+/* Flags used to mark need for postprocessing in the dynamicFlag attribute */
 
 #define STATIC 0
 #define HAS_IFDEF 1
@@ -109,6 +117,8 @@ static const char* xxBasename;     /* basename of file for error messages */
 static SEXP	Value;
 static int	xxinitvalue;
 static char const yyunknown[] = "unknown macro"; /* our message, not bison's */
+static SEXP	xxMacroList;/* A hashed environment containing all the standard and user-defined macro names */
+
 
 
 #define RLIKE 1		/* Includes R strings; xxinRString holds the opening quote char, or 0 outside a string */
@@ -125,6 +135,15 @@ static SEXP     SrcFile;  /* parse_Rd will *always* supply a srcfile */
 static SEXP	xxpushMode(int, int, int);
 static void	xxpopMode(SEXP);
 static SEXP	xxnewlist(SEXP);
+static SEXP	xxnewlist2(SEXP, SEXP);
+static SEXP	xxnewlist3(SEXP, SEXP, SEXP);
+static SEXP	xxnewlist4(SEXP, SEXP, SEXP, SEXP);
+static SEXP	xxnewlist5(SEXP, SEXP, SEXP, SEXP, SEXP);
+static SEXP	xxnewlist6(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+static SEXP	xxnewlist7(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+static SEXP	xxnewlist8(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+static SEXP	xxnewlist9(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+
 static SEXP	xxlist(SEXP, SEXP);
 static SEXP	xxmarkup(SEXP, SEXP, int, YYLTYPE *);
 static SEXP	xxmarkup2(SEXP, SEXP, SEXP, int, int, YYLTYPE *);
@@ -133,7 +152,8 @@ static SEXP	xxOptionmarkup(SEXP, SEXP, SEXP, int, YYLTYPE *);
 static SEXP	xxtag(SEXP, int, YYLTYPE *);
 static void	xxsavevalue(SEXP, YYLTYPE *);
 static void	xxWarnNewline();
-
+static SEXP	xxnewcommand(SEXP, SEXP, SEXP, YYLTYPE *);
+static SEXP	xxusermacro(SEXP, SEXP, YYLTYPE *);
 static int	mkMarkup(int);
 static int      mkIfdef(int);
 static int	mkCode(int);
@@ -152,8 +172,10 @@ static int 	mkComment(int);
 %token		SECTIONHEADER2
 %token		RCODEMACRO SEXPR RDOPTS LATEXMACRO VERBMACRO OPTMACRO ESCAPE
 %token		LISTSECTION ITEMIZE DESCRIPTION NOITEM
-%token		LATEXMACRO2 VERBMACRO2
+%token		LATEXMACRO2 VERBMACRO2 VERBLATEX
 %token		LATEXMACRO3
+%token		NEWCOMMAND USERMACRO USERMACRO1 USERMACRO2 USERMACRO3 USERMACRO4
+%token		USERMACRO5 USERMACRO6 USERMACRO7 USERMACRO8 USERMACRO9
 %token		IFDEF ENDIF
 %token		TEXT RCODE VERB COMMENT UNKNOWN
 %token		STARTFILE STARTFRAGMENT	/* fake tokens to have two entry points */
@@ -167,7 +189,9 @@ static int 	mkComment(int);
 %destructor { UNPROTECT_PTR($$); } SECTIONHEADER RSECTIONHEADER
 VSECTIONHEADER SECTIONHEADER2 RCODEMACRO SEXPR LATEXMACRO VERBMACRO
 OPTMACRO ESCAPE LISTSECTION ITEMIZE DESCRIPTION NOITEM LATEXMACRO2
-VERBMACRO2 LATEXMACRO3 IFDEF ENDIF TEXT RCODE VERB COMMENT UNKNOWN
+VERBMACRO2 VERBLATEX LATEXMACRO3 IFDEF ENDIF TEXT RCODE VERB COMMENT UNKNOWN
+NEWCOMMAND USERMACRO USERMACRO1 USERMACRO2 USERMACRO3 USERMACRO4
+USERMACRO5 USERMACRO6 USERMACRO7 USERMACRO8 USERMACRO9
 STARTFILE STARTFRAGMENT goLatexLike goRLike goRLike2 goOption
 goVerbatim goVerbatim1 goVerbatim2 goItem0 goItem2 LatexArg RLikeArg2
 VerbatimArg1 VerbatimArg2 IfDefTarget ArgItems Option
@@ -196,9 +220,10 @@ Section:	VSECTIONHEADER VerbatimArg	{ $$ = xxmarkup($1, $2, STATIC, &@$); }
 	|	SECTIONHEADER2 LatexArg LatexArg2 { $$ = xxmarkup2($1, $2, $3, 2, STATIC, &@$); }
 	|	IFDEF IfDefTarget SectionList ENDIF { $$ = xxmarkup2($1, $2, $3, 2, HAS_IFDEF, &@$); UNPROTECT_PTR($4); } 
 	|	SEXPR       goOption RLikeArg2   { $$ = xxmarkup($1, $3, HAS_SEXPR, &@$); xxpopMode($2); }
-	|	SEXPR       goOption Option RLikeArg2 { $$ = xxOptionmarkup($1, $3, $4, STATIC, &@$); xxpopMode($2); }
+	|	SEXPR       goOption Option RLikeArg2 { $$ = xxOptionmarkup($1, $3, $4, HAS_SEXPR, &@$); xxpopMode($2); }
 	|	COMMENT				{ $$ = xxtag($1, COMMENT, &@$); }
 	|	TEXT				{ $$ = xxtag($1, TEXT, &@$); } /* must be whitespace */
+	|	UserMacro			{ $$ = $1; }
 	|	error Section			{ $$ = $2; }
 
 ArgItems:	Item				{ $$ = xxnewlist($1); }
@@ -211,6 +236,7 @@ Item:		TEXT				{ $$ = xxtag($1, TEXT, &@$); }
 	|	UNKNOWN				{ $$ = xxtag($1, UNKNOWN, &@$); yyerror(yyunknown); }
 	|	Arg				{ $$ = xxmarkup(R_NilValue, $1, STATIC, &@$); }
 	|	Markup				{ $$ = $1; }	
+	|	UserMacro			{ $$ = $1; }
 	|	error Item			{ $$ = $2; }
 
 Markup:		LATEXMACRO  LatexArg 		{ $$ = xxmarkup($1, $2, STATIC, &@$); }
@@ -227,7 +253,32 @@ Markup:		LATEXMACRO  LatexArg 		{ $$ = xxmarkup($1, $2, STATIC, &@$); }
 	|	VERBMACRO2  VerbatimArg1	{ $$ = xxmarkup2($1, $2, R_NilValue, 1, STATIC, &@$); }
 	|       VERBMACRO2  VerbatimArg1 VerbatimArg2 { $$ = xxmarkup2($1, $2, $3, 2, STATIC, &@$); }
 	|	ESCAPE				{ $$ = xxmarkup($1, R_NilValue, STATIC, &@$); }
-	|	IFDEF IfDefTarget ArgItems ENDIF { $$ = xxmarkup2($1, $2, $3, 2, HAS_IFDEF, &@$); UNPROTECT_PTR($4); } 
+	|	IFDEF IfDefTarget ArgItems ENDIF { $$ = xxmarkup2($1, $2, $3, 2, HAS_IFDEF, &@$); UNPROTECT_PTR($4); }
+	|	VERBLATEX   VerbatimArg1 LatexArg2 { $$ = xxmarkup2($1, $2, $3, 2, STATIC, &@$); }
+	
+UserMacro:	NEWCOMMAND  VerbatimArg1 VerbatimArg { $$ = xxnewcommand($1, $2, $3, &@$); }
+	|	USERMACRO			{ $$ = xxusermacro($1, xxnewlist(NULL), &@$); }
+	|	USERMACRO1  VerbatimArg		{ $$ = xxusermacro($1, xxnewlist($2), &@$); }
+	|	USERMACRO2  VerbatimArg VerbatimArg
+						{ $$ = xxusermacro($1, xxnewlist2($2, $3), &@$); }
+	|	USERMACRO3  VerbatimArg VerbatimArg VerbatimArg
+						{ $$ = xxusermacro($1, xxnewlist3($2, $3, $4), &@$); }
+	|	USERMACRO4  VerbatimArg VerbatimArg VerbatimArg VerbatimArg 
+						{ $$ = xxusermacro($1, xxnewlist4($2, $3, $4, $5), &@$); }
+	|	USERMACRO5  VerbatimArg VerbatimArg VerbatimArg VerbatimArg VerbatimArg
+						{ $$ = xxusermacro($1, xxnewlist5($2, $3, $4, $5, $6), &@$); }
+	|	USERMACRO6  VerbatimArg VerbatimArg VerbatimArg VerbatimArg VerbatimArg 
+			    VerbatimArg		{ $$ = xxusermacro($1, xxnewlist6($2, $3, $4, $5, $6, $7), &@$); }
+	|	USERMACRO7  VerbatimArg VerbatimArg VerbatimArg VerbatimArg VerbatimArg VerbatimArg
+			    VerbatimArg VerbatimArg 
+			    			{ $$ = xxusermacro($1, xxnewlist7($2, $3, $4, $5, $6, $7, $8), &@$); }
+	|	USERMACRO8  VerbatimArg VerbatimArg VerbatimArg VerbatimArg VerbatimArg VerbatimArg
+			    VerbatimArg VerbatimArg VerbatimArg
+			    			{ $$ = xxusermacro($1, xxnewlist8($2, $3, $4, $5, $6, $7, $8, $9), &@$); }
+	|	USERMACRO9  VerbatimArg VerbatimArg VerbatimArg VerbatimArg VerbatimArg VerbatimArg
+			    VerbatimArg VerbatimArg VerbatimArg VerbatimArg
+			    			{ $$ = xxusermacro($1, xxnewlist9($2, $3, $4, $5, $6, $7, $8, $9, $10), &@$); }
+						
 	
 LatexArg:	goLatexLike Arg		 	{ xxpopMode($1); $$ = $2; }
 
@@ -261,7 +312,7 @@ VerbatimArg1:	goVerbatim1 Arg			{ xxpopMode($1); $$ = $2; }
 VerbatimArg2:   '{' goVerbatim2 ArgItems '}'    { xxpopMode($2); $$ = $3; }
 	|	'{' goVerbatim2 '}'		{ xxpopMode($2); $$ = xxnewlist(NULL); }
 
-IfDefTarget:	goLatexLike TEXT	{ xxpopMode($1); $$ = xxnewlist($2); }
+IfDefTarget:	goLatexLike TEXT	{ xxpopMode($1); $$ = xxnewlist(xxtag($2, TEXT, &@$)); }
 
 
 goLatexLike:	/* empty */			{ $$ = xxpushMode(LATEXLIKE, UNKNOWN, FALSE); }
@@ -368,6 +419,51 @@ static SEXP xxnewlist(SEXP item)
     return ans;
 }
 
+static SEXP xxnewlist2(SEXP item1, SEXP item2)
+{
+    return xxlist(xxnewlist(item1), item2);
+}
+
+static SEXP xxnewlist3(SEXP item1, SEXP item2, SEXP item3)
+{
+    return xxlist(xxnewlist2(item1, item2), item3);
+}
+
+static SEXP xxnewlist4(SEXP item1, SEXP item2, SEXP item3, SEXP item4)
+{
+    return xxlist(xxnewlist3(item1, item2, item3), item4);
+}
+
+static SEXP xxnewlist5(SEXP item1, SEXP item2, SEXP item3, SEXP item4, SEXP item5)
+{
+    return xxlist(xxnewlist4(item1, item2, item3, item4), item5);
+}
+
+static SEXP xxnewlist6(SEXP item1, SEXP item2, SEXP item3, SEXP item4, SEXP item5, 
+		       SEXP item6)
+{
+    return xxlist(xxnewlist5(item1, item2, item3, item4, item5), item6);
+}
+
+static SEXP xxnewlist7(SEXP item1, SEXP item2, SEXP item3, SEXP item4, SEXP item5, 
+		       SEXP item6, SEXP item7)
+{
+    return xxlist(xxnewlist6(item1, item2, item3, item4, item5, item6), item7);
+}
+
+static SEXP xxnewlist8(SEXP item1, SEXP item2, SEXP item3, SEXP item4, SEXP item5, 
+		       SEXP item6, SEXP item7, SEXP item8)
+{
+    return xxlist(xxnewlist7(item1, item2, item3, item4, item5, item6, item7), item8);
+}
+
+static SEXP xxnewlist9(SEXP item1, SEXP item2, SEXP item3, SEXP item4, SEXP item5, 
+		       SEXP item6, SEXP item7, SEXP item8, SEXP item9)
+{
+    return xxlist(xxnewlist8(item1, item2, item3, item4, item5, item6, item7, item8), 
+                  item9);
+}
+
 static SEXP xxlist(SEXP oldlist, SEXP item)
 {
     SEXP ans;
@@ -411,6 +507,100 @@ static SEXP xxmarkup(SEXP header, SEXP body, int flag, YYLTYPE *lloc)
     return ans;
 }
 
+static SEXP xxnewcommand(SEXP cmd, SEXP name, SEXP defn, YYLTYPE *lloc)
+{
+    SEXP ans, prev, thename, thedefn;
+    char buffer[128];
+    const char *c;
+    int maxarg = 0;
+#if DEBUGVALS
+    Rprintf("xxnewcommand(cmd=%p, name=%p, defn=%p)", cmd, name, defn);
+#endif
+    thename = CADR(name);
+    thedefn = CADR(defn);
+    if (TYPEOF(thedefn) == STRSXP)
+    	PROTECT(thedefn = mkString(CHAR(STRING_ELT(thedefn,0))));
+    else
+    	PROTECT(thedefn = mkString(""));
+    prev = findVar(install(CHAR(STRING_ELT(thename, 0))), xxMacroList);
+    if (prev != R_UnboundValue && !strcmp(CHAR(STRING_ELT(cmd,0)), "\renewcommand")) {
+        snprintf(buffer, sizeof(buffer), _("Macro '%s' previously defined."), 
+                 CHAR(STRING_ELT(thename, 0)));
+        yyerror(buffer);
+    }
+    for (c = CHAR(STRING_ELT(thedefn, 0)); *c; c++) {
+    	if (*c == '#' && isdigit(*(c+1))) 
+    	    maxarg = imax2(maxarg, *(c+1) - '0');
+    }
+    if (maxarg > 4) {
+    	snprintf(buffer, sizeof(buffer), _("At most 4 arguments are allowed for user defined macros."));
+	yyerror(buffer);
+    }
+    PROTECT(ans = ScalarInteger(USERMACRO + maxarg));
+    setAttrib(ans, install("Rd_tag"), cmd);
+    setAttrib(ans, install("definition"), thedefn);
+    setAttrib(ans, R_SrcrefSymbol, makeSrcref(lloc, SrcFile));
+    defineVar(install(CHAR(STRING_ELT(thename, 0))), ans, xxMacroList);
+
+    UNPROTECT_PTR(thedefn);
+    UNPROTECT_PTR(cmd);
+    UNPROTECT_PTR(name);
+    UNPROTECT_PTR(defn); 
+    return ans;
+}
+
+#define START_MACRO -2
+#define END_MACRO -3
+    	
+static SEXP xxusermacro(SEXP macro, SEXP args, YYLTYPE *lloc)
+{
+    SEXP ans, value, nextarg;
+    int i,len;
+    const char *c, *start ;
+    
+#if DEBUGVALS
+    Rprintf("xxusermacro(macro=%p, args=%p)", macro, args);
+#endif
+    len = length(args)-1;
+    PROTECT(ans = allocVector(STRSXP, len + 1));
+    value = UserMacroLookup(CHAR(STRING_ELT(macro,0)));
+    if (TYPEOF(value) == STRSXP)
+    	SET_STRING_ELT(ans, 0, STRING_ELT(value, 0));
+    else
+    	error(_("No macro definition for '%s'."), CHAR(STRING_ELT(macro,0)));
+/*    Rprintf("len = %d", len); */
+    for (i = 0, nextarg=args; i < len; i++, nextarg = CDR(nextarg)) {
+/*        Rprintf("arg i is");
+        PrintValue(CADR(CADR(nextarg))); */
+	SET_STRING_ELT(ans, i+1, STRING_ELT(CADR(CADR(nextarg)), 0));
+    }	
+    UNPROTECT_PTR(args);
+    UNPROTECT_PTR(macro);    
+    /* Now push the expanded macro onto the input stream, in reverse order */
+    xxungetc(END_MACRO);
+    start = CHAR(STRING_ELT(ans, 0));
+    for (c = start + strlen(start); c > start; c--) {
+    	if (c > start + 1 && *(c-2) == '#' && isdigit(*(c-1))) {
+    	    int which = *(c-1) - '0';
+    	    const char *arg = CHAR(STRING_ELT(ans, which));
+    	    for (i = strlen(arg); i > 0; i--) {
+    	    	xxungetc(arg[i-1]);
+    	    }
+    	    c--;
+    	} else {
+    	    xxungetc(*(c-1));
+    	}
+    }
+    xxungetc(START_MACRO);
+    
+    setAttrib(ans, install("Rd_tag"), mkString("USERMACRO"));
+    setAttrib(ans, R_SrcrefSymbol, makeSrcref(lloc, SrcFile));
+#if DEBUGVALS
+    Rprintf(" result: %p\n", ans);
+#endif
+    return ans;
+}
+    
 static SEXP xxOptionmarkup(SEXP header, SEXP option, SEXP body, int flag, YYLTYPE *lloc)
 {
     SEXP ans;
@@ -550,70 +740,102 @@ static void xxWarnNewline()
 static int (*ptr_getc)(void);
 
 /* Private pushback, since file ungetc only guarantees one byte.
-   We need up to one MBCS-worth and one failed #ifdef or one numeric
-   garbage markup match */
+   We need arbitrarily large size, since this is how macros are expanded. */
+   
+#define PUSH_BACK(c) do {                  \
+	if (npush >= pushsize - 1) {             \
+	    int *old = pushbase;              \
+            pushsize *= 2;                    \
+	    pushbase = CXXRSCAST(int*, malloc(pushsize*sizeof(int)));	\
+	    if(!pushbase) error(_("unable to allocate buffer for long macro at line %d"), xxlineno);\
+	    memmove(pushbase, old, npush*sizeof(int));        \
+	    if(old != pushback) free(old); }	    \
+	pushbase[npush++] = (c);                        \
+} while(0)
 
-#define PUSHBACK_BUFSIZE 30
+   
+
+#define PUSHBACK_BUFSIZE 32
 
 static int pushback[PUSHBACK_BUFSIZE];
-static unsigned int npush = 0;
-
+static int *pushbase;
+static unsigned int npush, pushsize;
+static int macrolevel;
 static int prevpos = 0;
 static int prevlines[PUSHBACK_BUFSIZE];
 static int prevcols[PUSHBACK_BUFSIZE];
 static int prevbytes[PUSHBACK_BUFSIZE];
 
+
 static int xxgetc(void)
 {
-    int c;
+    int c, oldpos;
     
-    if(npush) c = pushback[--npush]; else  c = ptr_getc();
+    do {
+    	if(npush) {    	
+    	    c = pushbase[--npush]; 
+    	    if (c == START_MACRO) {
+    	    	macrolevel++;
+    	    	if (macrolevel > 1000) 
+    	    	    error(_("macros nested too deeply: infinite recursion?"));
+    	    } else if (c == END_MACRO) macrolevel--;
+    	} else  c = ptr_getc();
+    } while (c == START_MACRO || c == END_MACRO);
+    
+    if (!macrolevel) {
+	oldpos = prevpos;
+	prevpos = (prevpos + 1) % PUSHBACK_BUFSIZE;
+	prevbytes[prevpos] = xxbyteno;
+	prevlines[prevpos] = xxlineno;    
+	/* We only advance the column for the 1st byte in UTF-8, so handle later bytes specially */
+	if (0x80 <= (unsigned char)c && (unsigned char)c <= 0xBF) {
+	    xxcolno--;   
+	    prevcols[prevpos] = prevcols[oldpos];
+	} else 
+	    prevcols[prevpos] = xxcolno;
 
-    prevpos = (prevpos + 1) % PUSHBACK_BUFSIZE;
-    prevcols[prevpos] = xxcolno;
-    prevbytes[prevpos] = xxbyteno;
-    prevlines[prevpos] = xxlineno;    
-    
-    if (c == EOF) return R_EOF;
-    
-    R_ParseContextLast = (R_ParseContextLast + 1) % PARSE_CONTEXT_SIZE;
-    R_ParseContext[R_ParseContextLast] = c;
-    
-    if (c == '\n') {
-    	xxlineno += 1;
-    	xxcolno = 1;
-    	xxbyteno = 1;
-    } else {
-        xxcolno++;
-    	xxbyteno++;
+	if (c == EOF) return R_EOF;
+
+	R_ParseContextLast = (R_ParseContextLast + 1) % PARSE_CONTEXT_SIZE;
+	R_ParseContext[R_ParseContextLast] = c;
+
+	if (c == '\n') {
+	    xxlineno += 1;
+	    xxcolno = 1;
+	    xxbyteno = 1;
+	} else {
+	    xxcolno++;
+	    xxbyteno++;
+	}
+
+	if (c == '\t') xxcolno = ((xxcolno + 6) & ~7) + 1;
+
+	R_ParseContextLine = xxlineno;
     }
-    /* only advance column for 1st byte in UTF-8 */
-    if (0x80 <= (unsigned char)c && (unsigned char)c <= 0xBF)
-    	xxcolno--;
-
-    if (c == '\t') xxcolno = ((xxcolno + 6) & ~7) + 1;
-    
-    R_ParseContextLine = xxlineno;
-    
+    /* Rprintf("get %c\n", c); */
     return c;
 }
 
 static int xxungetc(int c)
 {
     /* this assumes that c was the result of xxgetc; if not, some edits will be needed */
-    xxlineno = prevlines[prevpos];
-    xxbyteno = prevbytes[prevpos];
-    xxcolno  = prevcols[prevpos];
-    prevpos = (prevpos + PUSHBACK_BUFSIZE - 1) % PUSHBACK_BUFSIZE;
+    if (c == END_MACRO) macrolevel++;
+    if (!macrolevel) {
+    	xxlineno = prevlines[prevpos];
+    	xxbyteno = prevbytes[prevpos];
+    	xxcolno  = prevcols[prevpos];
+    	prevpos = (prevpos + PUSHBACK_BUFSIZE - 1) % PUSHBACK_BUFSIZE;
     
-    R_ParseContextLine = xxlineno;
+    	R_ParseContextLine = xxlineno;
     
-    R_ParseContext[R_ParseContextLast] = '\0';
-    /* Mac OS X requires us to keep this non-negative */
-    R_ParseContextLast = (R_ParseContextLast + PARSE_CONTEXT_SIZE - 1) 
-	% PARSE_CONTEXT_SIZE;
-    if(npush >= PUSHBACK_BUFSIZE - 2) return EOF;
-    pushback[npush++] = c;
+    	R_ParseContext[R_ParseContextLast] = '\0';
+    	/* Mac OS X requires us to keep this non-negative */
+    	R_ParseContextLast = (R_ParseContextLast + PARSE_CONTEXT_SIZE - 1) 
+		% PARSE_CONTEXT_SIZE;
+    }
+    if (c == START_MACRO) macrolevel--;
+    PUSH_BACK(c);
+    /* Rprintf("unget %c;", c); */
     return c;
 }
 
@@ -698,6 +920,10 @@ static SEXP ParseRd(ParseStatus *status, SEXP srcfile, Rboolean fragment)
     SrcFile = srcfile;
     
     npush = 0;
+    pushbase = pushback;
+    pushsize = PUSHBACK_BUFSIZE;
+    macrolevel = 0;
+    
     xxmode = LATEXLIKE; 
     xxitemType = UNKNOWN;
     xxbraceDepth = 0;
@@ -706,6 +932,8 @@ static SEXP ParseRd(ParseStatus *status, SEXP srcfile, Rboolean fragment)
     xxinEqn = 0;
     if (fragment) xxinitvalue = STARTFRAGMENT;
     else	  xxinitvalue = STARTFILE;
+    
+    xxMacroList = InstallKeywords();
     
     Value = R_NilValue;
     
@@ -716,6 +944,10 @@ static SEXP ParseRd(ParseStatus *status, SEXP srcfile, Rboolean fragment)
     Rprintf("ParseRd result: %p\n", Value);    
 #endif    
     UNPROTECT_PTR(Value);
+    UNPROTECT_PTR(xxMacroList);
+    
+    if (pushbase != pushback) free(pushbase);
+    
     return Value;
 }
 
@@ -758,9 +990,13 @@ SEXP R_ParseRd(Rconnection con, ParseStatus *status, SEXP srcfile, Rboolean frag
 /* Section and R code headers */
 
 struct {
-    char *name;
+    const char *name;
     int token;
 }
+
+/* When adding keywords here, make sure all the handlers 
+   are also modified:  checkRd, Rd2HTML, Rd2latex, Rd2txt, any other new ones... */
+   
 static keywords[] = {
     /* These sections contain Latex-like text */
     
@@ -841,6 +1077,11 @@ static keywords[] = {
     { "\\S3method",LATEXMACRO2 },
     { "\\S4method",LATEXMACRO2 },
     { "\\tabular", LATEXMACRO2 },
+    { "\\subsection", LATEXMACRO2 },
+    
+    /* This macro takes one verbatim and one LaTeX-like argument. */
+    
+    { "\\href",    VERBLATEX },
     
     /* This macro takes three LaTeX-like arguments. */
     
@@ -858,7 +1099,7 @@ static keywords[] = {
     { "\\donttest",RCODEMACRO },
     { "\\testonly",RCODEMACRO },
     
-    /* This macro take one optional bracketed option and one R-like argument */
+    /* This macro takes one optional bracketed option and one R-like argument */
     
     { "\\Sexpr",   SEXPR },
     
@@ -884,12 +1125,17 @@ static keywords[] = {
     
     { "\\eqn",     VERBMACRO2 },
     { "\\deqn",    VERBMACRO2 },
+    { "\\figure",  VERBMACRO2 },
     
-    /* We parse IFDEF/IFNDEF as markup, not as a separate preprocessor step */
+    /* We parse IFDEF/IFNDEF as markup, not as a separate preprocessor step */ 
     
     { "#ifdef",    IFDEF },
     { "#ifndef",   IFDEF },
     { "#endif",    ENDIF },
+    
+    /* These allow user defined macros */
+    { "\\newcommand", NEWCOMMAND },
+    { "\\renewcommand", NEWCOMMAND },
     
     { 0,	   0	      }
     /* All other markup macros are rejected. */
@@ -898,15 +1144,33 @@ static keywords[] = {
 /* Record the longest # directive here */
 #define DIRECTIVE_LEN 7   
 
+static SEXP InstallKeywords()
+{
+    int i, num;
+    SEXP result, name, val;
+    num = sizeof(keywords)/sizeof(keywords[0]);
+    PROTECT(result = R_NewHashedEnv(R_EmptyEnv, ScalarInteger(num)));
+    for (i = 0; keywords[i].name; i++) {
+        PROTECT(name = install(keywords[i].name));
+        PROTECT(val = ScalarInteger(keywords[i].token));
+    	defineVar(name, val, result);
+    	UNPROTECT(2);
+    }
+    return result;
+}
+    	
 static int KeywordLookup(const char *s)
 {
-    int i;
-    for (i = 0; keywords[i].name; i++) {
-	if (strcmp(keywords[i].name, s) == 0) {
-	    return keywords[i].token;
-	}
-    }
-    return UNKNOWN;
+    SEXP rec = findVar(install(s), xxMacroList);
+    if (rec == R_UnboundValue) return UNKNOWN;
+    else return INTEGER(rec)[0];
+}
+
+static SEXP UserMacroLookup(const char *s)
+{
+    SEXP rec = findVar(install(s), xxMacroList);
+    if (rec == R_UnboundValue) error(_("Unable to find macro %s"), s);
+    return getAttrib(rec, install("definition"));
 }
 
 static void yyerror(const char *s)
@@ -970,7 +1234,7 @@ static void yyerror(const char *s)
     if (!strncmp(s, yyunexpected, sizeof yyunexpected -1)) {
 	int i, translated = FALSE;
     	/* Edit the error message */    
-    	expecting = strstr(s + sizeof yyunexpected -1, yyexpecting);
+    	expecting = CXXRCCAST(char*, strstr(s + sizeof yyunexpected -1, yyexpecting));
     	if (expecting) *expecting = '\0';
     	for (i = 0; yytname_translations[i]; i += 2) {
     	    if (!strcmp(s + sizeof yyunexpected - 1, yytname_translations[i])) {
@@ -1006,7 +1270,7 @@ static void yyerror(const char *s)
     	sprintf(ParseErrorMsg, "%s", s);
     }
     filename = findVar(install("filename"), SrcFile);
-    if (!isNull(filename))
+    if (isString(filename) && length(filename))
     	strncpy(ParseErrorFilename, CHAR(STRING_ELT(filename, 0)), PARSE_ERROR_SIZE - 1);
     else
         ParseErrorFilename[0] = '\0';
@@ -1032,7 +1296,7 @@ static void yyerror(const char *s)
 	if (nc >= nstext - 1) {             \
 	    char *old = stext;              \
             nstext *= 2;                    \
-	    stext = malloc(nstext);         \
+	    stext = CXXRSCAST(char*, malloc(nstext));			\
 	    if(!stext) error(_("unable to allocate buffer for long string at line %d"), xxlineno);\
 	    memmove(stext, old, nc);        \
 	    if(old != st0) free(old);	    \
@@ -1336,6 +1600,7 @@ static int mkIfdef(int c)
     while (isalpha((c = xxgetc())) && bp - stext <= DIRECTIVE_LEN) TEXT_PUSH(c);
     TEXT_PUSH('\0');
     xxungetc(c);
+    
     retval = KeywordLookup(stext);
     PROTECT(yylval = mkString2(stext, bp - stext - 1));
     
@@ -1433,7 +1698,6 @@ SEXP attribute_hidden do_parseRd(SEXP call, SEXP op, SEXP args, SEXP env)
     Rconnection con;
     Rboolean wasopen, fragment;
     int ifile, wcall;
-    const char *encoding;
     ParseStatus status;
 
 #if DEBUGMODE
@@ -1449,30 +1713,29 @@ SEXP attribute_hidden do_parseRd(SEXP call, SEXP op, SEXP args, SEXP env)
     con = getConnection(ifile);
     wasopen = con->isopen;
     source = CAR(args);					args = CDR(args);
-    if(!isString(CAR(args)) || LENGTH(CAR(args)) != 1)
-	error(_("invalid '%s' value"), "encoding");
-    encoding = CHAR(STRING_ELT(CAR(args), 0)); /* ASCII */ args = CDR(args);
+    /* encoding is unused */
+    args = CDR(args);
     if(!isLogical(CAR(args)) || LENGTH(CAR(args)) != 1)
     	error(_("invalid '%s' value"), "verbose");
     xxDebugTokens = asInteger(CAR(args));		args = CDR(args);
     xxBasename = CHAR(STRING_ELT(CAR(args), 0));	args = CDR(args);
-    fragment = asLogical(CAR(args));			args = CDR(args);
+    fragment = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));			args = CDR(args);
     wcall = asLogical(CAR(args));
     if (wcall == NA_LOGICAL)
     	error(_("invalid '%s' value"), "warningCalls");
-    wCalls = wcall;
+    wCalls = CXXRCONSTRUCT(Rboolean, wcall);
 
     if (ifile >= 3) {/* file != "" */
-	if(!wasopen) {
-	    if(!con->open(con)) error(_("cannot open the connection"));
-	    if(!con->canread) {
+	try {
+	    if(!wasopen && !con->open(con))
+		error(_("cannot open the connection"));
+	    if(!con->canread) error(_("cannot read from this connection"));
+	    s = R_ParseRd(con, &status, source, fragment);
+	} catch (...) {
+	    if (!wasopen && con->isopen)
 		con->close(con);
-		error(_("cannot read from this connection"));
-	    }
-	} else if(!con->canread)
-	    error(_("cannot read from this connection"));
-	s = R_ParseRd(con, &status, source, fragment);
-	if(!wasopen) con->close(con);
+	    throw;
+	}
 	if (status != PARSE_OK) parseError(call, R_ParseError);
     }
     else error(_("invalid Rd file"));
@@ -1517,7 +1780,7 @@ SEXP attribute_hidden do_deparseRd(SEXP call, SEXP op, SEXP args, SEXP env)
     	/* any special char might be escaped */
     	if (*c == '{' || *c == '}' || *c == '%' || *c == '\\') outlen++;
     }
-    out = outbuf = R_chk_calloc(outlen+1, sizeof(char));
+    out = outbuf = CXXRSCAST(char*, R_chk_calloc(outlen+1, sizeof(char)));
     inRComment = FALSE;
     for (c = CHAR(e); *c; c++) {
     	escape = FALSE;

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -74,10 +74,13 @@ static const R_CallMethodDef callMethods[] = {
     {"L_lines", (DL_FUNC) &L_lines, 4}, 
     {"L_segments", (DL_FUNC) &L_segments, 5}, 
     {"L_arrows", (DL_FUNC) &L_arrows, 12}, 
+    {"L_path", (DL_FUNC) &L_path, 4},
     {"L_polygon", (DL_FUNC) &L_polygon, 3},
     {"L_xspline", (DL_FUNC) &L_xspline, 7},
     {"L_circle", (DL_FUNC) &L_circle, 3},
     {"L_rect", (DL_FUNC) &L_rect, 6},
+    {"L_raster", (DL_FUNC) &L_raster, 8},
+    {"L_cap", (DL_FUNC) &L_cap, 0},
     {"L_text", (DL_FUNC) &L_text, 7},
     {"L_points", (DL_FUNC) &L_points, 4},
     {"L_clip", (DL_FUNC) &L_clip, 6},
@@ -93,6 +96,7 @@ static const R_CallMethodDef callMethods[] = {
     {"L_rectBounds", (DL_FUNC) &L_rectBounds, 7},
     {"L_textBounds", (DL_FUNC) &L_textBounds, 7},
     {"L_xsplineBounds", (DL_FUNC) &L_xsplineBounds, 8},
+    {"L_xsplinePoints", (DL_FUNC) &L_xsplinePoints, 8},
     { NULL, NULL, 0 }
 };
 

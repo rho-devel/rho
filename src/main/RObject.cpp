@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -45,7 +45,7 @@
 #include <iostream>
 #include "localization.h"
 #include "R_ext/Error.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/Symbol.h"
 
@@ -56,6 +56,7 @@ using namespace CXXR;
 // from C:
 namespace CXXR {
     namespace ForceNonInline {
+	void (*DUPLICATE_ATTRIBptr)(SEXP, SEXP) = DUPLICATE_ATTRIB;
 	Rboolean (*isNullptr)(SEXP s) = Rf_isNull;
 	Rboolean (*isObjectptr)(SEXP s) = Rf_isObject;
 	Rboolean (*IS_S4_OBJECTptr)(SEXP x) = IS_S4_OBJECT;
@@ -73,15 +74,17 @@ namespace {
     const unsigned int S4_OBJECT_MASK = 1<<4;
 }
 
-RObject::RObject(const RObject& pattern)
-    : m_type(pattern.m_type), m_named(0), m_has_class(pattern.m_has_class),
-      m_S4_object(pattern.m_S4_object), m_frozen(false),
-      m_attrib(pattern.m_attrib)
-{}
+const unsigned char RObject::s_sexptype_mask;
+const unsigned char RObject::s_S4_mask;
+const unsigned char RObject::s_class_mask;
 
-PairList* RObject::attributes()
+RObject::RObject(const RObject& pattern)
+    : m_type(pattern.m_type), m_named(0),
+      m_memory_traced(pattern.m_memory_traced), m_missing(pattern.m_missing),
+      m_argused(pattern.m_argused), m_active_binding(pattern.m_active_binding),
+      m_binding_locked(pattern.m_binding_locked), m_attrib(pattern.m_attrib)
 {
-    return m_attrib;
+    maybeTraceMemory(&pattern);
 }
 
 const PairList* RObject::attributes() const
@@ -92,10 +95,18 @@ const PairList* RObject::attributes() const
 void RObject::clearAttributes()
 {
     if (m_attrib) {
-	errorIfFrozen();
 	m_attrib = 0;
-	m_has_class = false;
+	m_type &= ~s_class_mask;
     }
+}
+
+void RObject::copyAttributes(const RObject* source, bool copyS4)
+{
+    const PairList* srcatts = source->attributes();
+    GCStackRoot<const PairList> attribs(srcatts ? srcatts->clone() : 0);
+    setAttributes(attribs);
+    if (copyS4)
+	setS4Object(source->isS4Object());
 }
 
 RObject* RObject::evaluate(Environment* env)
@@ -105,29 +116,19 @@ RObject* RObject::evaluate(Environment* env)
     return this;
 }
 
-void RObject::frozenError()
-{
-    Rf_error(_("attempt to modify frozen object"));
-}
-
-RObject* RObject::getAttribute(const Symbol* name)
+RObject* RObject::getAttribute(const Symbol* name) const
 {
     for (PairList* node = m_attrib; node; node = node->tail())
-	if (node->tag() == name) return node->car();
-    return 0;
-}
-
-const RObject* RObject::getAttribute(const Symbol* name) const
-{
-    for (PairList* node = m_attrib; node; node = node->tail())
-	if (node->tag() == name) return node->car();
+	if (node->tag() == name)
+	    return node->car();
     return 0;
 }
 
 unsigned int RObject::packGPBits() const
 {
     unsigned int ans = 0;
-    if (isS4Object()) ans |= S4_OBJECT_MASK;
+    if (isS4Object())
+	ans |= S4_OBJECT_MASK;
     return ans;
 }
 
@@ -135,12 +136,14 @@ unsigned int RObject::packGPBits() const
 // though it would be easier to add them at the beginning.
 void RObject::setAttribute(const Symbol* name, RObject* value)
 {
-    errorIfFrozen();
     if (!name)
-	Rf_error(_("attempt to set an attribute on NULL"));
-    // Update m_has_class if necessary:
-    if (name == R_ClassSymbol)
-	m_has_class = (value != 0);
+	Rf_error(_("attributes must be named"));
+    // Update 'has class' bit if necessary:
+    if (name == R_ClassSymbol) {
+	if (value == 0)
+	    m_type &= ~s_class_mask;
+	else m_type |= s_class_mask;
+    }
     // Find attribute:
     PairList* prev = 0;
     PairList* node = m_attrib;
@@ -150,14 +153,17 @@ void RObject::setAttribute(const Symbol* name, RObject* value)
     }
     if (node) {  // Attribute already present
 	// Update existing attribute:
-	if (value) node->setCar(value);
+	if (value)
+	    node->setCar(value);
 	// Delete existing attribute:
-	else if (prev) prev->setTail(node->tail());
+	else if (prev)
+	    prev->setTail(node->tail());
 	else m_attrib = node->tail();
     } else if (value) {  
 	// Create new node:
-	PairList* newnode = expose(new PairList(value, 0, name));
-	if (prev) prev->setTail(newnode);
+	PairList* newnode = PairList::cons(value, 0, name);
+	if (prev)
+	    prev->setTail(newnode);
 	else { // No preexisting attributes at all:
 	    m_attrib = newnode;
 	}
@@ -179,12 +185,15 @@ void RObject::setAttributes(const PairList* new_attributes)
 
 void RObject::setS4Object(bool on)
 {
-    errorIfFrozen();
     // Check suppressed (temporarily I hope) during upgrade to R 2.8.1:
     // if (!on && sexptype() == S4SXP)
     //      Rf_error("S4 object (S4SXP) cannot cease to be an S4 object.");
-    m_S4_object = on;
+    if (on)
+	m_type |= s_S4_mask;
+    else m_type &= ~s_S4_mask;
 }
+
+// The implementation of RObject::traceMemory() is in debug.cpp
 
 const char* RObject::typeName() const
 {
@@ -193,21 +202,32 @@ const char* RObject::typeName() const
 
 void RObject::unpackGPBits(unsigned int gpbits)
 {
-    errorIfFrozen();
     // Be careful with precedence!
-    m_S4_object = ((gpbits & S4_OBJECT_MASK) != 0);
+    setS4Object((gpbits & S4_OBJECT_MASK) != 0);
 }
 
 void RObject::visitReferents(const_visitor* v) const
 {
-    if (m_attrib) m_attrib->conductVisitor(v);
+    if (m_attrib)
+	(*v)(m_attrib);
 }
 
 // ***** C interface *****
 
 SEXP ATTRIB(SEXP x)
 {
-    return x ? x->attributes() : 0;
+    GCNode::GCInhibitor inhibitor;
+    return x ? const_cast<PairList*>(x->attributes()) : 0;
+}
+
+void DUPLICATE_ATTRIB(SEXP to, SEXP from)
+{
+    if (from) 
+	to->copyAttributes(from, true);
+    else {
+	to->clearAttributes();
+	to->setS4Object(false);
+    }
 }
 
 void SET_ATTRIB(SEXP x, SEXP v)
@@ -215,4 +235,18 @@ void SET_ATTRIB(SEXP x, SEXP v)
     GCStackRoot<PairList> pl(SEXP_downcast<PairList*>(v));
     GCNode::GCInhibitor inhibitor;
     x->setAttributes(pl);
+}
+
+void maybeTraceMemory1(SEXP dest, SEXP src)
+{
+#ifdef R_MEMORY_PROFILING
+    dest->maybeTraceMemory(src);
+#endif
+}
+
+void maybeTraceMemory2(SEXP dest, SEXP src1, SEXP src2)
+{
+#ifdef R_MEMORY_PROFILING
+    dest->maybeTraceMemory(src1, src2);
+#endif
 }

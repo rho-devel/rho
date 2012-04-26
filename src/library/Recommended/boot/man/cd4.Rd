@@ -1,0 +1,45 @@
+\name{cd4}
+\alias{cd4}
+\title{
+CD4 Counts for HIV-Positive Patients
+}
+\description{
+The \code{cd4} data frame has 20 rows and 2 columns.
+
+
+CD4 cells are carried in the blood as part of the human immune system.  One of
+the effects of the HIV virus is that these cells die.  The count of CD4 cells is
+used in determining the onset of full-blown AIDS in a patient.  In this study of
+the effectiveness of a new anti-viral drug on HIV, 20 HIV-positive patients had
+their CD4 counts recorded and then were put on a course of treatment with this
+drug.  After using the drug for one year, their CD4 counts were again recorded.
+The aim of the experiment was to show that patients taking the drug had
+increased CD4 counts which is not generally seen in HIV-positive patients.
+}
+\usage{
+cd4
+}
+\format{
+This data frame contains the following columns:
+
+
+\describe{
+\item{\code{baseline}}{
+The CD4 counts (in 100's) on admission to the trial.
+}
+\item{\code{oneyear }}{
+The CD4 counts (in 100's) after one year of treatment with the new drug.
+}}}
+\source{
+The data were obtained from
+
+
+DiCiccio, T.J. and Efron  B. (1996) Bootstrap confidence intervals (with 
+Discussion). \emph{Statistical Science}, \bold{11}, 189--228.
+}
+\references{
+Davison, A.C. and Hinkley, D.V. (1997) 
+\emph{Bootstrap Methods and Their Application}. Cambridge University Press.
+}
+\keyword{datasets}
+% Converted by Sd2Rd version 1.15.

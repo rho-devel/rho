@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -40,8 +40,8 @@
 /* From http://www.netlib.org/specfun/rkbesl	Fortran translated by f2c,...
  *	------------------------------=#----	Martin Maechler, ETH Zurich
  */
-#include "bessel.h"
 #include "nmath.h"
+#include "bessel.h"
 
 #ifndef MATHLIB_STANDALONE
 #include <R_ext/Memory.h>
@@ -55,7 +55,7 @@ double bessel_k(double x, double alpha, double expo)
     long nb, ncalc, ize;
     double *bk;
 #ifndef MATHLIB_STANDALONE
-    char *vmax;
+    const void *vmax;
 #endif
 
 #ifdef IEEE_754
@@ -76,7 +76,7 @@ double bessel_k(double x, double alpha, double expo)
     if (!bk) MATHLIB_ERROR("%s", _("bessel_k allocation error"));
 #else
     vmax = vmaxget();
-    bk = (double *) R_alloc(nb, sizeof(double));
+    bk = (double *) R_alloc((size_t) nb, sizeof(double));
 #endif
     K_bessel(&x, &alpha, &nb, &ize, bk, &ncalc);
     if(ncalc != nb) {/* error input */
@@ -93,6 +93,38 @@ double bessel_k(double x, double alpha, double expo)
 #else
     vmaxset(vmax);
 #endif
+    return x;
+}
+
+/* modified version of bessel_k that accepts a work array instead of
+   allocating one. */
+double bessel_k_ex(double x, double alpha, double expo, double *bk)
+{
+    long nb, ncalc, ize;
+
+#ifdef IEEE_754
+    /* NaNs propagated correctly */
+    if (ISNAN(x) || ISNAN(alpha)) return x + alpha;
+#endif
+    if (x < 0) {
+	ML_ERROR(ME_RANGE, "bessel_k");
+	return ML_NAN;
+    }
+    ize = (long)expo;
+    if(alpha < 0)
+	alpha = -alpha;
+    nb = 1+ (long)floor(alpha);/* nb-1 <= |alpha| < nb */
+    alpha -= (nb-1);
+    K_bessel(&x, &alpha, &nb, &ize, bk, &ncalc);
+    if(ncalc != nb) {/* error input */
+      if(ncalc < 0)
+	MATHLIB_WARNING4(_("bessel_k(%g): ncalc (=%ld) != nb (=%ld); alpha=%g. Arg. out of range?\n"),
+			 x, ncalc, nb, alpha);
+      else
+	MATHLIB_WARNING2(_("bessel_k(%g,nu=%g): precision lost in result\n"),
+			 x, alpha+nb-1);
+    }
+    x = bk[nb-1];
     return x;
 }
 

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -15,7 +15,7 @@
  *CXXR */
 
 /* deflate.h -- internal compression state
- * Copyright (C) 1995-2004 Jean-loup Gailly
+ * Copyright (C) 1995-2010 Jean-loup Gailly
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -276,6 +276,13 @@ typedef struct internal_state {
      * are always zero.
      */
 
+    ulg high_water;
+    /* High water mark offset in window for initialized bytes -- bytes above
+     * this are set to zero in order to avoid memory check warnings when
+     * longest match routines access bytes past the input.  This is then
+     * updated to the new high water mark.
+     */
+
 } FAR deflate_state;
 
 /* Output a byte on the stream.
@@ -294,14 +301,18 @@ typedef struct internal_state {
  * distances are limited to MAX_DIST instead of WSIZE.
  */
 
+#define WIN_INIT MAX_MATCH
+/* Number of bytes after end of data in window to initialize in order to avoid
+   memory checker errors from longest match routines */
+
         /* in trees.c */
-void _tr_init         OF((deflate_state *s));
-int  _tr_tally        OF((deflate_state *s, unsigned dist, unsigned lc));
-void _tr_flush_block  OF((deflate_state *s, charf *buf, ulg stored_len,
-                          int eof));
-void _tr_align        OF((deflate_state *s));
-void _tr_stored_block OF((deflate_state *s, charf *buf, ulg stored_len,
-                          int eof));
+void ZLIB_INTERNAL _tr_init OF((deflate_state *s));
+int ZLIB_INTERNAL _tr_tally OF((deflate_state *s, unsigned dist, unsigned lc));
+void ZLIB_INTERNAL _tr_flush_block OF((deflate_state *s, charf *buf,
+                        ulg stored_len, int last));
+void ZLIB_INTERNAL _tr_align OF((deflate_state *s));
+void ZLIB_INTERNAL _tr_stored_block OF((deflate_state *s, charf *buf,
+                        ulg stored_len, int last));
 
 #define d_code(dist) \
    ((dist) < 256 ? _dist_code[dist] : _dist_code[256+((dist)>>7)])
@@ -314,11 +325,11 @@ void _tr_stored_block OF((deflate_state *s, charf *buf, ulg stored_len,
 /* Inline versions of _tr_tally for speed: */
 
 #if defined(GEN_TREES_H) || !defined(STDC)
-  extern uch _length_code[];
-  extern uch _dist_code[];
+  extern uch ZLIB_INTERNAL _length_code[];
+  extern uch ZLIB_INTERNAL _dist_code[];
 #else
-  extern const uch _length_code[];
-  extern const uch _dist_code[];
+  extern const uch ZLIB_INTERNAL _length_code[];
+  extern const uch ZLIB_INTERNAL _dist_code[];
 #endif
 
 # define _tr_tally_lit(s, c, flush) \

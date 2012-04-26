@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2006  Robert Gentleman, Ross Ihaka
- *                            and the R Development Core Team
+ *  Copyright (C) 1997--2011  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,19 +49,22 @@
 
 #include <Defn.h>
 #include <Fileio.h>
-#include <Rmath.h> /* for rround */
+#include <Rmath.h> /* for fround */
 #include "Runix.h"
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
 
-#ifdef HAVE_SYS_TIME_H
-# include <sys/time.h>		/* for struct timeval */
+#ifndef HAVE_GETRUSAGE
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/times.h>
+# endif
 #endif
 
 #if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRUSAGE)
 /* on MacOS X it seems sys/resource.h needs sys/time.h first */
+# include <sys/time.h>
 # include <sys/resource.h>
 #endif
 
@@ -77,18 +79,20 @@ extern Rboolean LoadInitFile;
 attribute_hidden
 FILE *R_OpenInitFile(void)
 {
-    char buf[256], *home, *p = getenv("R_PROFILE_USER");
+    char buf[PATH_MAX], *home, *p = getenv("R_PROFILE_USER");
     FILE *fp;
 
     fp = NULL;
     if (LoadInitFile) {
-	if(p && strlen(p))
+	if(p) {
+	    if(!*p) return NULL;  /* set to "" */
 	    return R_fopen(R_ExpandFileName(p), "r");
+	}
 	if((fp = R_fopen(".Rprofile", "r")))
 	    return fp;
 	if((home = getenv("HOME")) == NULL)
 	    return NULL;
-	sprintf(buf, "%s/.Rprofile", home);
+	snprintf(buf, PATH_MAX, "%s/.Rprofile", home);
 	if((fp = R_fopen(buf, "r")))
 	    return fp;
     }
@@ -126,7 +130,7 @@ static const char *R_ExpandFileName_unix(const char *s, char *buff)
     if(strlen(s) > 1 && s[1] != '/') return s;
     if(HaveHOME < 0) {
 	p = getenv("HOME");
-	if(p && strlen(p) && (strlen(p) < PATH_MAX)) {
+	if(p && *p && (strlen(p) < PATH_MAX)) {
 	    strcpy(UserHOME, p);
 	    HaveHOME = 1;
 	} else
@@ -175,25 +179,16 @@ SEXP attribute_hidden do_machine(SEXP call, SEXP op, SEXP args, SEXP env)
     return mkString("Unix");
 }
 
-#ifdef _R_HAVE_TIMING_
-# include <time.h>
 # ifdef HAVE_SYS_TIMES_H
-#  include <sys/times.h>
+#  include <sys/times.h> /* times */
 # endif
 
-static clock_t StartTime;
-static struct tms timeinfo;
-#ifdef HAVE_GETTIMEOFDAY
-static double StartTime2;
-#endif
-static double clk_tck;
+static double clk_tck, StartTime;
+
+extern double currentTime(void); /* from datetime.c */
 
 void R_setStartTime(void)
 {
-#ifdef HAVE_GETTIMEOFDAY
-    struct timeval tv;
-#endif
-
 #ifdef HAVE_SYSCONF
     clk_tck = (double) sysconf(_SC_CLK_TCK);
 #else
@@ -209,29 +204,22 @@ void R_setStartTime(void)
     clk_tck = (double) CLK_TCK;
 #endif
     /* printf("CLK_TCK = %d\n", CLK_TCK); */
-    StartTime = times(&timeinfo);
-#ifdef HAVE_GETTIMEOFDAY
-    gettimeofday(&tv, NULL);
-    StartTime2 = (double) tv.tv_sec + 1e-6 * (double) tv.tv_usec;
-#endif
+    StartTime = currentTime();
 }
 
+/* NOTE
+   This used to use times() for elapsed times, which is measured in
+   clock ticks (which can overflow).  It is possible this version uses
+   time() and so is in seconds.  But even Cygwin has gettimeofday.
+ */
 attribute_hidden
 void R_getProcTime(double *data)
 {
-#ifdef HAVE_GETTIMEOFDAY
-    struct timeval tv;
-    double now;
-#endif
+    /* docs say this is rounded to the nearest ms */
+    double et = currentTime() - StartTime;
+    data[2] = 1e-3 * rint(1000*et);
 #ifdef HAVE_GETRUSAGE
     struct rusage self, children;
-#endif
-
-#if !defined(HAVE_GETTIMEOFDAY) || !defined(HAVE_GETRUSAGE)
-    data[2] = (times(&timeinfo) - StartTime) / clk_tck;
-#endif
-
-#ifdef HAVE_GETRUSAGE
     getrusage(RUSAGE_SELF, &self);
     getrusage(RUSAGE_CHILDREN, &children);
     data[0] = (double) self.ru_utime.tv_sec +
@@ -240,60 +228,57 @@ void R_getProcTime(double *data)
 	1e-3 * (self.ru_stime.tv_usec/1000);
     data[3] = (double) children.ru_utime.tv_sec +
 	1e-3 * (children.ru_utime.tv_usec/1000);
-    data[4] = (double) children.ru_utime.tv_sec +
-	1e-3 * (children.ru_utime.tv_usec/1000);
+    data[4] = (double) children.ru_stime.tv_sec +
+	1e-3 * (children.ru_stime.tv_usec/1000);
 #else
-    data[0] = rround(timeinfo.tms_utime / clk_tck, 3);
-    data[1] = rround(timeinfo.tms_stime / clk_tck, 3);
-    data[3] = rround(timeinfo.tms_cutime / clk_tck, 3);
-    data[4] = rround(timeinfo.tms_cstime / clk_tck, 3);
+    struct tms timeinfo;
+    times(&timeinfo);
+    data[0] = fround(timeinfo.tms_utime / clk_tck, 3);
+    data[1] = fround(timeinfo.tms_stime / clk_tck, 3);
+    data[3] = fround(timeinfo.tms_cutime / clk_tck, 3);
+    data[4] = fround(timeinfo.tms_cstime / clk_tck, 3);
 #endif
-#ifdef HAVE_GETTIMEOFDAY
-    gettimeofday(&tv, NULL);
-    now = (double) tv.tv_sec + 1e-6 * (double) tv.tv_usec;
-    data[2] = now - StartTime2;
-#endif
-    data[2] = rround(data[2], 3);
 }
 
+/* used in memory.c */
 attribute_hidden
 double R_getClockIncrement(void)
 {
     return 1.0 / clk_tck;
 }
-#else /* not _R_HAVE_TIMING_ */
-void R_setStartTime(void) {}
-#endif /* not _R_HAVE_TIMING_ */
 
+
+#ifdef HAVE_SYS_WAIT_H
+# include <sys/wait.h>
+#endif
 
 #define INTERN_BUFSIZE 8096
 SEXP attribute_hidden do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP tlist = R_NilValue;
-    int read=0;
+    int intern = 0;
 
     checkArity(op, args);
     if (!isValidStringF(CAR(args)))
-	errorcall(call, _("non-empty character argument expected"));
-    if (isLogical(CADR(args)) && (read = LOGICAL(CADR(args))[0]) != NA_INTEGER)
-	;
-    else
-	errorcall(call, _("'intern' must be logical and not NA"));
-    if (read) {
-#ifdef HAVE_POPEN
+	error(_("non-empty character argument expected"));
+    intern = asLogical(CADR(args));
+    if (intern == NA_INTEGER)
+	error(_("'intern' must be logical and not NA"));
+    if (intern) { /* intern = TRUE */
 	FILE *fp;
 	char *x = "r", buf[INTERN_BUFSIZE];
 	const char *cmd;
-	int i, j;
+	int i, j, res;
 	SEXP tchar, rval;
 
 	PROTECT(tlist);
 	cmd = translateChar(STRING_ELT(CAR(args), 0));
+	errno = 0; /* precaution */
 	if(!(fp = R_popen(cmd, x)))
 	    error(_("cannot popen '%s', probable reason '%s'"),
 		  cmd, strerror(errno));
 	for (i = 0; fgets(buf, INTERN_BUFSIZE, fp); i++) {
-	    read = strlen(buf);
+	    int read = strlen(buf);
 	    if(read >= INTERN_BUFSIZE - 1)
 		warning(_("line %d may be truncated in call to system(, intern = TRUE)"), i + 1);
 	    if (read > 0 && buf[read-1] == '\n')
@@ -302,20 +287,40 @@ SEXP attribute_hidden do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    UNPROTECT(1);
 	    PROTECT(tlist = CONS(tchar, tlist));
 	}
-	pclose(fp);
-	rval = allocVector(STRSXP, i);;
+	res = pclose(fp);
+#ifdef HAVE_SYS_WAIT_H
+	if (WIFEXITED(res)) res = WEXITSTATUS(res);
+	else res = 0;
+#else
+	/* assume that this is shifted if a multiple of 256 */
+	if ((res % 256) == 0) res = res/256;
+#endif
+	if ((res & 0xff)  == 127) {/* 127, aka -1 */
+	    if (errno)
+		error(_("error in running command: '%s'"), strerror(errno));
+	    else
+		error(_("error in running command"));
+	} else if (res) {
+	    if (errno)
+		warningcall(R_NilValue, 
+			    _("running command '%s' had status %d and error message '%s'"), 
+			    cmd, res, 
+			    strerror(errno));
+	    else 
+		warningcall(R_NilValue, 
+			    _("running command '%s' had status %d"), 
+			    cmd, res);
+	}
+	
+	rval = allocVector(STRSXP, i);
 	for (j = (i - 1); j >= 0; j--) {
 	    SET_STRING_ELT(rval, j, CAR(tlist));
 	    tlist = CDR(tlist);
 	}
 	UNPROTECT(1);
-	return (rval);
-#else /* not HAVE_POPEN */
-	errorcall(call, _("'intern=TRUE' is not implemented on this platform"));
-	return R_NilValue;
-#endif /* not HAVE_POPEN */
+	return rval;
     }
-    else {
+    else { /* intern =  FALSE */
 #ifdef HAVE_AQUA
 	R_Busy(1);
 #endif
@@ -348,7 +353,7 @@ SEXP attribute_hidden do_sysinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
     char *login;
 
     checkArity(op, args);
-    PROTECT(ans = allocVector(STRSXP, 7));
+    PROTECT(ans = allocVector(STRSXP, 8));
     if(uname(&name) == -1) {
 	UNPROTECT(1);
 	return R_NilValue;
@@ -369,7 +374,16 @@ SEXP attribute_hidden do_sysinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 #else
     SET_STRING_ELT(ans, 6, mkChar("unknown"));
 #endif
-    PROTECT(ansnames = allocVector(STRSXP, 7));
+#if defined(HAVE_PWD_H) && defined(HAVE_GETPWUID) && defined(HAVE_GETEUID)
+    {
+	struct passwd *stpwd;
+	stpwd = getpwuid(geteuid());
+	SET_STRING_ELT(ans, 7, stpwd ? mkChar(stpwd->pw_name) : mkChar("unknown"));
+    }
+#else
+    SET_STRING_ELT(ans, 7, mkChar("unknown"));
+#endif
+    PROTECT(ansnames = allocVector(STRSXP, 8));
     SET_STRING_ELT(ansnames, 0, mkChar("sysname"));
     SET_STRING_ELT(ansnames, 1, mkChar("release"));
     SET_STRING_ELT(ansnames, 2, mkChar("version"));
@@ -377,6 +391,7 @@ SEXP attribute_hidden do_sysinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
     SET_STRING_ELT(ansnames, 4, mkChar("machine"));
     SET_STRING_ELT(ansnames, 5, mkChar("login"));
     SET_STRING_ELT(ansnames, 6, mkChar("user"));
+    SET_STRING_ELT(ansnames, 7, mkChar("effective_user"));
     setAttrib(ans, R_NamesSymbol, ansnames);
     UNPROTECT(2);
     return ans;
@@ -388,6 +403,45 @@ SEXP do_sysinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue;		/* -Wall */
 }
 #endif /* not HAVE_SYS_UTSNAME_H */
+
+/* The pointer here is used in the Mac GUI */
+#include <R_ext/eventloop.h> /* for R_PolledEvents */
+#include <R_ext/Rdynload.h>
+DL_FUNC ptr_R_ProcessEvents;
+void R_ProcessEvents(void)
+{
+#if HAVE_AQUA
+    /* disable ProcessEvents in child,
+       since we can't call CoreFoundation there. */
+    if (ptr_R_ProcessEvents && !R_isForkedChild) ptr_R_ProcessEvents();
+#else
+    /* We might in due course want to always inhibit in a child */
+    if (ptr_R_ProcessEvents) ptr_R_ProcessEvents();
+#endif
+    R_PolledEvents();
+    if (cpuLimit > 0.0 || elapsedLimit > 0.0) {
+	double cpu, data[5];
+	R_getProcTime(data);
+	cpu = data[0] + data[1] + data[3] + data[4];
+	if (elapsedLimit > 0.0 && data[2] > elapsedLimit) {
+	    cpuLimit = elapsedLimit = -1;
+	    if (elapsedLimit2 > 0.0 && data[2] > elapsedLimit2) {
+		elapsedLimit2 = -1.0;
+		error(_("reached session elapsed time limit"));
+	    } else
+		error(_("reached elapsed time limit"));
+	}
+	if (cpuLimit > 0.0 && cpu > cpuLimit) {
+	    cpuLimit = elapsedLimit = -1;
+	    if (cpuLimit2 > 0.0 && cpu > cpuLimit2) {
+		cpuLimit2 = -1.0;
+		error(_("reached session CPU time limit"));
+	    } else
+		error(_("reached CPU time limit"));
+	}
+    }
+}
+
 
 /*
  *  helpers for start-up code

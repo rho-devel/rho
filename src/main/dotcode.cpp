@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2007  The R Development Core Team
+ *  Copyright (C) 1997--2010  The R Development Core Team
  *  Copyright (C) 2003	      The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -45,7 +45,7 @@
 #endif
 
 #include <Defn.h>
-
+#include <ctype.h> /* for tolower */
 #include <string.h>
 #include <errno.h>
 
@@ -55,6 +55,7 @@
 
 #include <R_ext/RConverters.h>
 #include <R_ext/Riconv.h>
+#include "CXXR/ClosureContext.hpp"
 
 #ifndef max
 #define max(a, b) ((a > b)?(a):(b))
@@ -279,9 +280,9 @@ checkNativeType(int targetType, int actualType)
 {
     if(targetType > 0) {
 	if(targetType == INTSXP || targetType == LGLSXP) {
-	    return CXXRCONSTRUCT(Rboolean, (actualType == INTSXP || actualType == LGLSXP));
+	    return(CXXRCONSTRUCT(Rboolean, actualType == INTSXP || actualType == LGLSXP));
 	}
-	return CXXRCONSTRUCT(Rboolean, (targetType == actualType));
+	return(CXXRCONSTRUCT(Rboolean, targetType == actualType));
     }
 
     return(TRUE);
@@ -408,7 +409,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 	    if(strlen(encname)) {
 		char *outbuf;
 		const char *inbuf;
-		size_t inb, outb, outb0, res;
+		std::size_t inb, outb, outb0, res;
 		void *obj = Riconv_open("", encname); /* (to, from) */
 		if(obj == reinterpret_cast<void *>(-1))
 		    error(_("unsupported encoding '%s'"), encname);
@@ -420,12 +421,13 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		    cptr[i] = outbuf = static_cast<char*>(R_alloc(outb0 + 1, sizeof(char)));
 		    outb = 3*inb;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
+		    errno = 0; /* precaution */
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-		    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
+		    if(res == CXXRCONSTRUCT(std::size_t, -1) && errno == E2BIG) {
 			outb0 *= 3;
 			goto restart_in;
 		    }
-		    if(res == CXXRCONSTRUCT(size_t, -1))
+		    if(res == CXXRCONSTRUCT(std::size_t, -1))
 			error(_("conversion problem in re-encoding to '%s'"),
 			      encname);
 		    *outbuf = '\0';
@@ -490,32 +492,35 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
     case RAWSXP:
     s = allocVector(stype, n);
     rawptr = static_cast<Rbyte *>(p);
-    for (i = 0; i < n; i++)
-	RAW(s)[i] = rawptr[i];
+    for (i = 0; i < n; i++) RAW(s)[i] = rawptr[i];
     break;
     case LGLSXP:
+	s = allocVector(stype, n);
+	iptr = static_cast<int*>(p);
+	for(i = 0 ; i < n ; i++) {
+	    int tmp =  iptr[i];
+	    LOGICAL(s)[i] = (tmp == NA_INTEGER || tmp == 0) ? tmp : 1;
+	}
+	break;
     case INTSXP:
 	s = allocVector(stype, n);
 	iptr = static_cast<int*>(p);
-	for(i=0 ; i<n ; i++)
-	    INTEGER(s)[i] = iptr[i];
+	for(i = 0 ; i < n ; i++) INTEGER(s)[i] = iptr[i];
 	break;
     case REALSXP:
 	s = allocVector(REALSXP, n);
 	if(type == SINGLESXP || asLogical(getAttrib(arg, CSingSymbol)) == 1) {
 	    sptr = static_cast<float*>( p);
-	    for(i=0 ; i<n ; i++) REAL(s)[i] = double( sptr[i]);
+	    for(i = 0 ; i < n ; i++) REAL(s)[i] = double( sptr[i]);
 	} else {
 	    rptr = static_cast<double*>( p);
-	    for(i=0 ; i<n ; i++) REAL(s)[i] = rptr[i];
+	    for(i = 0 ; i < n ; i++) REAL(s)[i] = rptr[i];
 	}
 	break;
     case CPLXSXP:
 	s = allocVector(stype, n);
 	zptr = static_cast<Rcomplex*>(p);
-	for(i=0 ; i<n ; i++) {
-	    COMPLEX(s)[i] = zptr[i];
-	}
+	for(i=0 ; i<n ; i++) COMPLEX(s)[i] = zptr[i];
 	break;
     case STRSXP:
 	if(Fort) {
@@ -531,7 +536,7 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 	    if(strlen(encname)) {
 		const char *inbuf;
 		char *outbuf, *p;
-		size_t inb, outb, outb0, res;
+		std::size_t inb, outb, outb0, res;
 		void *obj = Riconv_open(encname, ""); /* (to, from) */
 		if(obj == reinterpret_cast<void *>((-1)))
 		    error(_("unsupported encoding '%s'"), encname);
@@ -542,12 +547,13 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 		    p = outbuf = static_cast<char*>(R_alloc(outb0 + 1, sizeof(char)));
 		    outb = outb0;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
+		    errno = 0; /* precaution */
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-		    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
+		    if(res == CXXRCONSTRUCT(std::size_t, -1) && errno == E2BIG) {
 			outb0 *= 3;
 			goto restart_out;
 		    }
-		    if(res == CXXRCONSTRUCT(size_t, -1))
+		    if(res == CXXRCONSTRUCT(std::size_t, -1))
 			error(_("conversion problem in re-encoding from '%s'"),
 			      encname);
 		    *outbuf = '\0';
@@ -564,15 +570,13 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
     case VECSXP:
 	PROTECT(s = allocVector(VECSXP, n));
 	lptr = static_cast<SEXP*>(p);
-	for (i = 0 ; i < n ; i++) {
-	    SET_VECTOR_ELT(s, i, lptr[i]);
-	}
+	for (i = 0 ; i < n ; i++) SET_VECTOR_ELT(s, i, lptr[i]);
 	UNPROTECT(1);
 	break;
     case LISTSXP:
 	PROTECT(t = s = allocList(n));
 	lptr = static_cast<SEXP*>(p);
-	for(i=0 ; i<n ; i++) {
+	for(i = 0 ; i < n ; i++) {
 	    SETCAR(t, lptr[i]);
 	    t = CDR(t);
 	}
@@ -781,9 +785,11 @@ SEXP attribute_hidden do_External(SEXP call, SEXP op, SEXP args, SEXP env)
     R_ExternalRoutine fun = NULL;
     SEXP retval;
     R_RegisteredNativeSymbol symbol = {R_EXTERNAL_SYM, {NULL}, NULL};
-    void *vmax = vmaxget();
+    const void *vmax = vmaxget();
     char buf[MaxSymbolBytes];
 
+    if (length(args) < 1) errorcall(call, _("'name' is missing"));
+    check1arg(args, call, "name");
     args = resolveNativeRoutine(args, &ofun, &symbol, buf, NULL, NULL,
 				NULL, call);
     fun = reinterpret_cast<R_ExternalRoutine>( ofun);
@@ -798,7 +804,7 @@ SEXP attribute_hidden do_External(SEXP call, SEXP op, SEXP args, SEXP env)
     if(symbol.symbol.external && symbol.symbol.external->numArgs > -1) {
 	if(symbol.symbol.external->numArgs != length(args))
 	    errorcall(call,
-		      _("Incorrect number of arguments (%d), expecting %d for %s"),
+		      _("Incorrect number of arguments (%d), expecting %d for '%s'"),
 		      length(args), symbol.symbol.external->numArgs, buf);
     }
 #endif
@@ -815,13 +821,14 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     DL_FUNC ofun = NULL;
     VarFun fun = NULL;
-    SEXP retval, nm, cargs[MAX_ARGS], pargs;
+    SEXP retval, cargs[MAX_ARGS], pargs;
     R_RegisteredNativeSymbol symbol = {R_CALL_SYM, {NULL}, NULL};
     int nargs;
-    void *vmax = vmaxget();
+    const void *vmax = vmaxget();
     char buf[MaxSymbolBytes];
 
-    nm = CAR(args);
+    if (length(args) < 1) errorcall(call, _("'name' is missing"));
+    check1arg(args, call, "name");
     args = resolveNativeRoutine(args, &ofun, &symbol, buf, NULL, NULL,
 				NULL, call);
     args = CDR(args);
@@ -836,7 +843,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
     if(symbol.symbol.call && symbol.symbol.call->numArgs > -1) {
 	if(symbol.symbol.call->numArgs != nargs)
 	    errorcall(call,
-		      _("Incorrect number of arguments (%d), expecting %d for %s"),
+		      _("Incorrect number of arguments (%d), expecting %d for '%s'"),
 		      nargs, symbol.symbol.call->numArgs, buf);
     }
 
@@ -1501,6 +1508,18 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 
 /*  Call dynamically loaded "internal" graphics functions
     .External.graphics (unused) and  .Call.graphics (used in grid).
+
+    If there is an error or user-interrupt in the above
+    evaluation, dd->recordGraphics is set to TRUE
+    on all graphics devices (see GEonExit(); called in errors.c)
+
+    NOTE: if someone uses try() around this call and there
+    is an error, then dd->recordGraphics stays FALSE, so
+    subsequent pages of graphics output are NOT saved on
+    the display list.  A workaround is to deliberately
+    force an error in a graphics call (e.g., a grid popViewport()
+    while in the ROOT viewport) which will reset dd->recordGraphics
+    to TRUE as per the comment above.
 */
 
 SEXP attribute_hidden do_Externalgr(SEXP call, SEXP op, SEXP args, SEXP env)
@@ -1510,19 +1529,6 @@ SEXP attribute_hidden do_Externalgr(SEXP call, SEXP op, SEXP args, SEXP env)
     Rboolean record = dd->recordGraphics;
     dd->recordGraphics = FALSE;
     PROTECT(retval = do_External(call, op, args, env));
-    /*
-     * If there is an error or user-interrupt in the above
-     * evaluation, dd->recordGraphics is set to TRUE
-     * on all graphics devices (see GEonExit(); called in errors.c)
-     * 
-     * NOTE: if someone uses try() around this call and there
-     * is an error, then dd->recordGraphics stays FALSE, so
-     * subsequent pages of graphics output are NOT saved on
-     * the display list.  A workaround is to deliberately
-     * force an error in a graphics call (e.g., a grid popViewport()
-     * while in the ROOT viewport) which will reset dd->recordGraphics
-     * to TRUE as per the comment above.
-     */
     dd->recordGraphics = record;
     if (GErecording(call, dd)) {
 	if (!GEcheckState(dd))
@@ -1540,19 +1546,6 @@ SEXP attribute_hidden do_dotcallgr(SEXP call, SEXP op, SEXP args, SEXP env)
     Rboolean record = dd->recordGraphics;
     dd->recordGraphics = FALSE;
     PROTECT(retval = do_dotcall(call, op, args, env));
-    /*
-     * If there is an error or user-interrupt in the above
-     * evaluation, dd->recordGraphics is set to TRUE
-     * on all graphics devices (see GEonExit(); called in errors.c)
-     * 
-     * NOTE: if someone uses try() around this call and there
-     * is an error, then dd->recordGraphics stays FALSE, so
-     * subsequent pages of graphics output are NOT saved on
-     * the display list.  A workaround is to deliberately
-     * force an error in a graphics call (e.g., a grid popViewport()
-     * while in the ROOT viewport) which will reset dd->recordGraphics
-     * to TRUE as per the comment above.
-     */
     dd->recordGraphics = record;
     if (GErecording(call, dd)) {
 	if (!GEcheckState(dd))
@@ -1567,21 +1560,18 @@ static SEXP
 Rf_getCallingDLL(void)
 {
     SEXP e, ans;
-    RCNTXT *cptr;
     SEXP rho = R_NilValue;
     Rboolean found = FALSE;
 
     /* First find the environment of the caller.
        Testing shows this is the right caller, despite the .C/.Call ...
      */
-    for (cptr = R_GlobalContext;
-	 cptr != NULL && cptr->callflag != CTXT_TOPLEVEL;
-	 cptr = cptr->nextcontext)
-	    if (cptr->callflag & CTXT_FUNCTION) {
-		/* PrintValue(cptr->call); */
-		rho = cptr->cloenv;
-		break;
-	    }
+    {
+	ClosureContext* cptr = ClosureContext::innermost();
+	if (cptr)
+	    rho = cptr->workingEnvironment();
+    }
+
     /* Then search up until we hit a namespace or globalenv.
        The idea is that we will not find a namespace unless the caller
        was defined in one. */
@@ -1657,6 +1647,8 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     void *vmax;
     char symName[MaxSymbolBytes], encname[101];
 
+    if (length(args) < 1) errorcall(call, _("'name' is missing"));
+    check1arg(args, call, "name");
     if (NaokSymbol == NULL || DupSymbol == NULL || PkgSymbol == NULL) {
 	NaokSymbol = install("NAOK");
 	DupSymbol = install("DUP");
@@ -1676,7 +1668,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     if(symbol.symbol.c && symbol.symbol.c->numArgs > -1) {
 	if(symbol.symbol.c->numArgs != nargs)
 	    errorcall(call,
-		      _("Incorrect number of arguments (%d), expecting %d for %s"),
+		      _("Incorrect number of arguments (%d), expecting %d for '%s'"),
 		      nargs, symbol.symbol.c->numArgs, symName);
 
 	checkTypes = symbol.symbol.c->types;
@@ -1708,7 +1700,8 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 				  which, symName, argConverters + nargs,
 				  checkTypes ? CXXRCONSTRUCT(SEXPTYPE, checkTypes[nargs]) : NILSXP,
 				  encname);
-#ifdef R_MEMORY_PROFILING
+    // In CR this reads #ifdef R_MEMORY_PROFILING :
+#if 0
 	if (RTRACE(CAR(pargs)) && dup)
 		memtrace_report(CAR(pargs), cargs[nargs]);
 #endif
@@ -2335,7 +2328,8 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		PROTECT(s = CPtrToRObj(cargs[nargs], CAR(pargs), which,
 				       checkTypes ? checkTypes[nargs] : TYPEOF(CAR(pargs)),
 				       encname));
-#if R_MEMORY_PROFILING
+    // In CR this reads #if R_MEMORY_PROFILING :
+#if 0
 		if (RTRACE(CAR(pargs)) && dup){
 			memtrace_report(cargs[nargs], s);
 			SET_RTRACE(s, 1);
@@ -2382,7 +2376,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 
 static const struct {
     const char *name;
-    SEXPTYPE type;
+    const SEXPTYPE type;
 }
 typeinfo[] = {
     {"logical",	  LGLSXP },
@@ -2419,8 +2413,8 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
 	error(_("invalid argument count in call_R"));
     if (nres < 0)
 	error(_("invalid return value count in call_R"));
-    GCStackRoot<PairList> tl(PairList::makeList(nargs));
-    PROTECT(pcall = call = GCNode::expose(new Expression(0, tl)));
+    GCStackRoot<PairList> tl(PairList::make(nargs));
+    PROTECT(pcall = call = CXXR_NEW(Expression(0, tl)));
     SETCAR(pcall, reinterpret_cast<SEXP>(func));
     s = R_NilValue;		/* -Wall */
     for (i = 0 ; i < nargs ; i++) {
@@ -2451,15 +2445,6 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
 		SET_STRING_ELT(CAR(pcall), i, mkChar(str));
 	    }
 	    break;
-	    /* FIXME : This copy is unnecessary! */
-	    /* FIXME : This is obviously incorrect so disable
-	case VECSXP:
-	    n = lengths[i];
-	    SETCAR(pcall, allocVector(VECSXP, n));
-	    for (j = 0 ; j < n ; j++) {
-		SET_VECTOR_ELT(s, i, (SEXP)(arguments[i]));
-	    }
-	    break; */
 	default:
 	    error(_("mode '%s' is not supported in call_R"), modes[i]);
 	}

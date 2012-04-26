@@ -24,8 +24,8 @@ ARMAacf(ar = numeric(0), ma = numeric(0), lag.max = r, pacf = FALSE)
 \details{
   The methods used follow Brockwell & Davis (1991, section 3.3).  Their
   equations (3.3.8) are solved for the autocovariances at lags
-  \eqn{0, \dots, \max(p, q+1)}, and the remaining autocorrelations are
-  given by a recursive filter.
+  \eqn{0, \dots, \max(p, q+1)}{0, \dots, max(p, q+1)},
+  and the remaining autocorrelations are given by a recursive filter.
 }
 \value{
   A vector of (partial) autocorrelations, named by the lags.
@@ -46,7 +46,7 @@ ARMAacf(c(1.0, -0.25), 1.0, lag.max = 10)
 ## answer 2^(-n) * (32/3 + 8 * n) /(32/3)
 n <- 1:10; 2^(-n) * (32/3 + 8 * n) /(32/3)
 ARMAacf(c(1.0, -0.25), 1.0, lag.max = 10, pacf = TRUE)
-ARMAacf(c(1.0, -0.25), lag.max = 10, pacf = TRUE)
+zapsmall(ARMAacf(c(1.0, -0.25), lag.max = 10, pacf = TRUE))
 
 ## Cov-Matrix of length-7 sub-sample of AR(1) example:
 toeplitz(ARMAacf(0.8, lag.max = 7))

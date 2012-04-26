@@ -1,6 +1,6 @@
 % File src/library/base/man/system.time.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{system.time}
@@ -27,7 +27,7 @@ unix.time(expr, gcFirst = TRUE)
   compatibility with S.
 
   Timings of evaluations of the same expression can vary considerably
-  depending on whether the evaluation triggers a garbage collection. When
+  depending on whether the evaluation triggers a garbage collection.  When
   \code{gcFirst} is \code{TRUE} a garbage collection (\code{\link{gc}})
   will be performed immediately before the evaluation of \code{expr}.
   This will usually produce more consistent timings.
@@ -36,25 +36,19 @@ unix.time(expr, gcFirst = TRUE)
   A object of class \code{"proc_time"}: see
   \code{\link{proc.time}} for details.
 }
-#ifdef unix
-\note{
-  It is possible to compile \R without support for \code{system.time},
-  when the function will throw an error.
-}
-#endif
 \seealso{
   \code{\link{proc.time}}, \code{\link{time}} which is for time series.
 }
 \examples{
 require(stats)
-system.time(for(i in 1:100) mad(runif(1000)))
+\donttest{system.time(for(i in 1:100) mad(runif(1000)))}
 \dontrun{
-exT <- function(n = 1000) {
+exT <- function(n = 10000) {
   # Purpose: Test if system.time works ok;   n: loop size
   system.time(for(i in 1:n) x <- mean(rt(1000, df=4)))
 }
 #-- Try to interrupt one of the following (using Ctrl-C / Escape):
-exT()                 #- about 3 secs on a 1GHz PIII
+exT()                 #- about 4 secs on a 2.5GHz Xeon
 system.time(exT())    #~ +/- same
 }}
 \keyword{utilities}

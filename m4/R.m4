@@ -1,6 +1,6 @@
 ### R.m4 -- extra macros for configuring R		-*- Autoconf -*-
 ###
-### Copyright (C) 1998-2009 R Core Team
+### Copyright (C) 1998-2010 R Core Team
 ###
 ### This file is part of R.
 ###
@@ -124,85 +124,25 @@ if test "${PAGER}" = false; then
 fi
 ])# R_PROG_PAGER
 
-## R_PROG_PERL
-## -----------
-AC_DEFUN([R_PROG_PERL],
-[AC_PATH_PROGS(PERL, [${PERL} perl])
-if test -n "${PERL}"; then
-  _R_PROG_PERL_VERSION
-fi
-if test "${r_cv_prog_perl_v5}" != yes; then
-  AC_MSG_WARN([Using 'R CMD build|check|Rprof' requires Perl >= 5.8.0])
-  ## in case available at runtime: 'false' is an alternative
-  PERL="/usr/bin/env perl"
-fi
-])# R_PROG_PERL
-
-## _R_PROG_PERL_VERSION
-## --------------------
-
-## Building the R documentation system (Rdconv and friends) requires
-## Perl version 5.8.0 or better.
-## [2.10.0: probably no longer true, but 5.8.0 is ancient now.]
-## Set shell variable r_cv_prog_perl_v5 to 'yes' if a recent enough
-## Perl is found, and to 'no' otherwise.
-AC_DEFUN([_R_PROG_PERL_VERSION],
-[AC_CACHE_CHECK([whether perl version is at least 5.8.0],
-                [r_cv_prog_perl_v5],
-[if ${PERL} -e 'require 5.8.0 or exit 1'; then
-  r_cv_prog_perl_v5=yes
-else
-  r_cv_prog_perl_v5=no
-fi])
-])# _R_PROG_PERL_VERSION
 
 ## R_PROG_TEXMF
 ## ------------
 AC_DEFUN([R_PROG_TEXMF],
-[AC_REQUIRE([R_PROG_PERL])
-## dvips is not used to make manuals, only in Rd2dvi and help-print.sh
-## the latter via options("dvipscmd"). Also sets R_DVIPSCMD.
-AC_PATH_PROGS(DVIPS, [${DVIPS} dvips], dvips)
-DVIPSCMD=${ac_cv_path_DVIPS}
-if test -z "${DVIPSCMD}"; then
-  DVIPSCMD=dvips
-fi
-AC_SUBST(DVIPSCMD)
+[
 ## TEX PDFTEX LATEX PDFLATEX MAKEINDEX TEXI2DVI are used to make manuals
-## LATEXCMD is used for options("latexcmd") (used in help-print.sh).
-## LATEXCMD PDFLATEXCMD MAKEINDEXCMD TEXI2DVICMD set default for R_<foo> in etc/Renviron
+## TEXI2DVICMD sets default for R_TEXI2DVICMD, used for options('texi2dvi')
 AC_PATH_PROGS(TEX, [${TEX} tex], )
-if test -z "${ac_cv_path_TEX}" ; then
-  warn_dvi1="you cannot build DVI versions of the R manuals"
-  AC_MSG_WARN([${warn_dvi1}])
-fi
-AC_PATH_PROGS(LATEX, [${LATEX} latex], )
-LATEXCMD=${ac_cv_path_LATEX}
-if test -z "${ac_cv_path_LATEX}"; then
-  warn_dvi2="you cannot build DVI versions of all the help pages"
-  AC_MSG_WARN([${warn_dvi2}])
-  LATEXCMD=latex
-fi
-AC_SUBST(LATEXCMD)
-AC_PATH_PROGS(MAKEINDEX, [${MAKEINDEX} makeindex], )
-MAKEINDEXCMD=${ac_cv_path_MAKEINDEX}
-if test -z "${MAKEINDEXCMD}"; then
-  MAKEINDEXCMD=makeindex
-fi
-AC_SUBST(MAKEINDEXCMD)
 AC_PATH_PROGS(PDFTEX, [${PDFTEX} pdftex], )
 if test -z "${ac_cv_path_PDFTEX}" ; then
   warn_pdf1="you cannot build PDF versions of the R manuals"
   AC_MSG_WARN([${warn_pdf1}])
 fi
 AC_PATH_PROGS(PDFLATEX, [${PDFLATEX} pdflatex], )
-PDFLATEXCMD=${ac_cv_path_PDFLATEX}
 if test -z "${ac_cv_path_PDFLATEX}" ; then
-  warn_pdf2="you cannot build PDF versions of all the help pages"
+  warn_pdf2="you cannot build PDF versions of vignettes and help pages"
   AC_MSG_WARN([${warn_pdf2}])
-  PDFLATEXCMD=pdflatex
 fi
-AC_SUBST(PDFLATEXCMD)
+AC_PATH_PROGS(MAKEINDEX, [${MAKEINDEX} makeindex], )
 R_PROG_MAKEINFO
 AC_PATH_PROGS(TEXI2DVI, [${TEXI2DVI} texi2dvi], )
 TEXI2DVICMD=${ac_cv_path_TEXI2DVI}
@@ -212,7 +152,18 @@ fi
 AC_SUBST(TEXI2DVICMD)
 : ${R_RD4DVI="ae"}
 AC_SUBST(R_RD4DVI)
-: ${R_RD4PDF="times,hyper"}
+AC_PATH_PROGS(KPSEWHICH, [${KPSEWHICH} kpsewhich], "")
+r_rd4pdf="times,inconsolata,hyper"
+if test -n "${KPSEWHICH}"; then
+  if test -z `${KPSEWHICH} inconsolata.sty`; then
+     r_rd4pdf="times,hyper"
+     if test -z "${R_RD4PDF}" ;  then
+       warn_pdf3="inconsolata.sty not found: PDF vignettes and package manuals will not be rendered optimally"
+       AC_MSG_WARN([${warn_pdf3}])
+     fi
+  fi
+fi
+: ${R_RD4PDF=${r_rd4pdf}}
 AC_SUBST(R_RD4PDF)
 ])# R_PROG_TEXMF
 
@@ -222,13 +173,13 @@ AC_DEFUN([R_PROG_MAKEINFO],
 [AC_PATH_PROGS(MAKEINFO, [${MAKEINFO} makeinfo])
 if test -n "${MAKEINFO}"; then
   _R_PROG_MAKEINFO_VERSION
-  ## This test admittedly looks a bit strange ... see R_PROG_PERL.
-  if test "${PERL}" = "${FALSE}"; then
-    AC_PATH_PROGS(INSTALL_INFO, [${INSTALL_INFO} install-info], false)
-  else
-    INSTALL_INFO="\$(PERL) \$(top_srcdir)/tools/install-info.pl"
-    AC_SUBST(INSTALL_INFO)
+  AC_PATH_PROGS(INSTALL_INFO, [${INSTALL_INFO} install-info], false)
+  if test "ac_cv_path_INSTALL_INFO" = "false"; then
+    if test "${r_cv_prog_perl_v5}" = yes; then
+      INSTALL_INFO="perl \$(top_srcdir)/tools/install-info.pl"
+    fi
   fi
+  AC_SUBST(INSTALL_INFO)
 fi
 if test "${r_cv_prog_makeinfo_v4}" != yes; then
   warn_info="you cannot build info or HTML versions of the R manuals"
@@ -598,8 +549,6 @@ cat << \EOF > ${r_cxx_rules_frag}
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c $< -o $[@]
 .cpp.o:
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c $< -o $[@]
-.C.o:
-	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c $< -o $[@]
 EOF
 if test "${r_cv_prog_cxx_m}" = yes; then
   cat << \EOF >> ${r_cxx_rules_frag}
@@ -609,17 +558,12 @@ if test "${r_cv_prog_cxx_m}" = yes; then
 .cpp.d:
 	@echo "making $[@] from $<"
 	@$(CXX) -M $(ALL_CPPFLAGS) $< > $[@]
-.C.d:
-	@echo "making $[@] from $<"
-	@$(CXX) -M $(ALL_CPPFLAGS) $< > $[@]
 EOF
 else
   cat << \EOF >> ${r_cxx_rules_frag}
 .cc.d:
 	@echo > $[@]
 .cpp.d:
-	@echo > $[@]
-.C.d:
 	@echo > $[@]
 EOF
 fi
@@ -990,7 +934,8 @@ if ${CC} ${CFLAGS} -c conftest.c 1>&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD; then
   ## Also, to be defensive there should be a similar test with SHLIB_LD
   ## and SHLIB_LDFLAGS (and note that on HPUX with native cc we have to
   ## use ld for SHLIB_LD) ...
-  if ${CC} ${LDFLAGS} ${MAIN_LDFLAGS} -o conftest${ac_exeext} \
+  ## Be nice to people who put compiler architecture opts in CFLAGS
+  if ${CC} ${CFLAGS} ${LDFLAGS} ${MAIN_LDFLAGS} -o conftest${ac_exeext} \
        conftest.${ac_objext} conftestf.${ac_objext} ${FLIBS} \
        ${LIBM} 1>&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD;
   ## </NOTE>
@@ -1079,7 +1024,7 @@ if ${CC} ${CFLAGS} -c conftest.c 1>&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD; then
   ## Also, to be defensive there should be a similar test with SHLIB_LD
   ## and SHLIB_LDFLAGS (and note that on HPUX with native cc we have to
   ## use ld for SHLIB_LD) ...
-  if ${CC} ${LDFLAGS} ${MAIN_LDFLAGS} -o conftest${ac_exeext} \
+  if ${CC} ${CFLAGS} ${LDFLAGS} ${MAIN_LDFLAGS} -o conftest${ac_exeext} \
        conftest.${ac_objext} conftestf.${ac_objext} ${FLIBS} \
        ${LIBM} 1>&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD;
   ## </NOTE>
@@ -1166,7 +1111,7 @@ if ${CC} ${CFLAGS} -c conftest.c 1>&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD; then
   ## Also, to be defensive there should be a similar test with SHLIB_LD
   ## and SHLIB_LDFLAGS (and note that on HPUX with native cc we have to
   ## use ld for SHLIB_LD) ...
-  if ${CC} ${LDFLAGS} ${MAIN_LDFLAGS} -o conftest${ac_exeext} \
+  if ${CC} ${CFLAGS} ${LDFLAGS} ${MAIN_LDFLAGS} -o conftest${ac_exeext} \
        conftest.${ac_objext} conftestf.${ac_objext} ${FLIBS} \
        ${LIBM} 1>&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD;
   ## </NOTE>
@@ -1264,6 +1209,39 @@ EOF
 fi
 AC_SUBST_FILE(r_objc_rules_frag)
 ])# R_PROG_OBJC_MAKEFRAG
+
+## R_PROG_OBJC_FLAG(FLAG, [ACTION-IF-TRUE])
+## ---------------------------------------
+## Check whether the Obj-C compiler handles command line option FLAG,
+## and set shell variable r_cv_prog_objc_flag_SFLAG accordingly (where
+## SFLAG is a shell-safe transliteration of FLAG).
+## In addition, execute ACTION-IF-TRUE in case of success.
+AC_DEFUN([R_PROG_OBJC_FLAG],
+[ac_safe=AS_TR_SH($1)
+
+  if test -z "${OBJC}"; then
+    eval r_cv_prog_objc_flag_${ac_safe}=no
+  else
+    AC_MSG_CHECKING([whether ${OBJC} accepts $1])
+    AC_CACHE_VAL([r_cv_prog_objc_flag_${ac_safe}],
+    [AC_LANG_PUSH([Objective C])
+    r_save_OBJCFLAGS="${OBJCFLAGS}"
+    OBJCFLAGS="${OBJCFLAGS} $1"
+    AC_LINK_IFELSE([AC_LANG_PROGRAM()],
+               [eval "r_cv_prog_objc_flag_${ac_safe}=yes"],
+               [eval "r_cv_prog_objc_flag_${ac_safe}=no"])
+	       OBJCFLAGS="${r_save_OBJCFLAGS}"
+	       AC_LANG_POP([Objective C])
+	       ])
+    if eval "test \"`echo '$r_cv_prog_objc_flag_'$ac_safe`\" = yes"; then
+      AC_MSG_RESULT([yes])
+      [$2]
+    else
+      AC_MSG_RESULT([no])
+    fi
+  fi
+])# R_PROG_OBJC_FLAG
+
 
 ## R_PROG_OBJC_RUNTIME
 ## -------------------
@@ -2027,6 +2005,17 @@ if test "${use_libpng}" = yes; then
 	      [Define if you have the PNG headers and libraries.])
   fi
 fi
+AC_CHECK_HEADERS(tiffio.h)
+# may need to resolve jpeg routines
+AC_CHECK_LIB(tiff, TIFFOpen, [have_tiff=yes], [have_tiff=no], [${BITMAP_LIBS}])
+if test "x${ac_cv_header_tiffio_h}" = xyes ; then
+  if test "x${have_tiff}" = xyes; then
+    AC_DEFINE(HAVE_TIFF, 1, [Define this if libtiff is available.])
+    BITMAP_LIBS="-ltiff ${BITMAP_LIBS}"
+  else
+    have_tiff=no
+  fi
+fi
 AC_SUBST(BITMAP_LIBS)
 ])# R_BITMAPS
 
@@ -2052,11 +2041,11 @@ AC_EGREP_CPP([yes],
 ## Set shell variable r_cv_header_png_h to 'yes' if a recent enough
 ## 'png.h' is found, and to 'no' otherwise.
 AC_DEFUN([_R_HEADER_PNG],
-[AC_CACHE_CHECK([if libpng version >= 1.0.5],
+[AC_CACHE_CHECK([if libpng version >= 1.2.7],
                 [r_cv_header_png_h],
 AC_EGREP_CPP([yes],
 [#include <png.h>
-#if (PNG_LIBPNG_VER >= 10005)
+#if (PNG_LIBPNG_VER >= 10207)
   yes
 #endif
 ],
@@ -2072,6 +2061,7 @@ AC_EGREP_CPP([yes],
 ## otherwise.
 ## /opt/csw/lib and /usr/sfw/lib are for Solaris (blastwave and sunfreeware
 ## respectively).
+## /opt/freeware/lib is for 'IBM AIX Toolbox for Linux Applications'
 ## We want to look in LIBnn only here.
 AC_DEFUN([_R_PATH_TCL_CONFIG],
 [AC_MSG_CHECKING([for tclConfig.sh in library (sub)directories])
@@ -2190,7 +2180,7 @@ AC_DEFUN([_R_HEADER_TCL],
 [#include <tcl.h>
 /* Revise if 9.x ever appears (and 8.x seems to increment only
    every few years). */
-#if (TCL_MAJOR_VERSION >= 8) && (TCL_MINOR_VERSION >= 3)
+#if (TCL_MAJOR_VERSION >= 8) && (TCL_MINOR_VERSION >= 4)
   yes
 #endif
 ],
@@ -2208,7 +2198,7 @@ AC_DEFUN([_R_HEADER_TK],
 [#include <tk.h>
 /* Revise if 9.x ever appears (and 8.x seems to increment only
    every few years). */
-#if (TK_MAJOR_VERSION >= 8) && (TK_MINOR_VERSION >= 3)
+#if (TK_MAJOR_VERSION >= 8) && (TK_MINOR_VERSION >= 4)
   yes
 #endif
 ],
@@ -2669,7 +2659,7 @@ if ${CC} ${CFLAGS} -c conftest.c 1>&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD; then
   ## Also, to be defensive there should be a similar test with SHLIB_LD
   ## and SHLIB_LDFLAGS (and note that on HPUX with native cc we have to
   ## use ld for SHLIB_LD) ...
-  if ${CC} ${LDFLAGS} ${MAIN_LDFLAGS} -o conftest${ac_exeext} \
+  if ${CC} ${CFLAGS} ${LDFLAGS} ${MAIN_LDFLAGS} -o conftest${ac_exeext} \
        conftest.${ac_objext} conftestf.${ac_objext} ${FLIBS} \
        ${LIBM} ${BLAS_LIBS} 1>&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD;
   ## </NOTE>
@@ -2809,7 +2799,7 @@ if ${CC} ${CFLAGS} -c conftest.c 1>&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD; then
   ## Also, to be defensive there should be a similar test with SHLIB_LD
   ## and SHLIB_LDFLAGS (and note that on HPUX with native cc we have to
   ## use ld for SHLIB_LD) ...
-  if ${CC} ${LDFLAGS} ${MAIN_LDFLAGS} -o conftest${ac_exeext} \
+  if ${CC} ${CFLAGS} ${LDFLAGS} ${MAIN_LDFLAGS} -o conftest${ac_exeext} \
        conftest.${ac_objext} ${FLIBS} \
        ${LIBM} ${BLAS_LIBS} 1>&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD;
   ## </NOTE>
@@ -2922,32 +2912,47 @@ AC_SUBST(LAPACK_LIBS)
 ## Try finding XDR library functions and headers.
 ## FreeBSD in particular needs rpc/types.h before rpc/xdr.h.
 AC_DEFUN([R_XDR],
+[AC_CACHE_CHECK([for XDR support], [r_cv_xdr],
+save_CPPFLAGS=${CPPFLAGS}
 [AC_CHECK_HEADER(rpc/types.h)
 if test "${ac_cv_header_rpc_types_h}" = yes ; then
   AC_CHECK_HEADER(rpc/xdr.h, , , [#include <rpc/types.h>])
 fi
-AC_CACHE_CHECK([for XDR support],
-                [r_cv_xdr],
-[if test "${ac_cv_header_rpc_types_h}" = yes \
-     && test "${ac_cv_header_rpc_xdr_h}" = yes \
-     && test "${ac_cv_search_xdr_string}" != no ; then
+if test "${ac_cv_header_rpc_types_h}" = yes && \
+   test "${ac_cv_header_rpc_xdr_h}" = yes && \
+   test "${ac_cv_search_xdr_string}" != no ; then
   r_cv_xdr=yes
 else
   r_cv_xdr=no
 fi
+## No RPC headers, so try for TI-RPC headers: do need /usr/include/tirpc
+## on include path to find /usr/include/tirpc/netconfig.h
+if test "${r_cv_xdr}" = no ; then
+  CPPFLAGS="${CPPFLAGS} -I/usr/include/tirpc"
+  AC_CHECK_HEADER(tirpc/rpc/types.h)
+  if test "${ac_cv_header_tirpc_rpc_types_h}" = yes ; then
+    AC_CHECK_HEADER(tirpc/rpc/xdr.h, , , [#include <tirpc/rpc/types.h>])
+  fi
+  if test "${ac_cv_header_tirpc_rpc_types_h}" = yes && \
+    test "${ac_cv_header_tirpc_rpc_xdr_h}" = yes &&
+    test "${ac_cv_search_xdr_string}" != no ; then
+    TIRPC_CPPFLAGS=-I/usr/include/tirpc
+    r_cv_xdr=yes
+  fi
+  CPPFLAGS="${save_CPPFLAGS}"
+fi
 ])
 AM_CONDITIONAL(BUILD_XDR, [test "x${r_cv_xdr}" = xno])
+AC_SUBST(TIRPC_CPPFLAGS)
 ])# R_XDR
 
 ## R_ZLIB
 ## ------
 ## Try finding zlib library and headers.
 ## We check that both are installed, and that the header >= 1.2.3
-## and that gzeof is in the library (which suggests the library
-## is also recent enough).
 AC_DEFUN([R_ZLIB],
 [if test "x${use_system_zlib}" = xyes; then
-  AC_CHECK_LIB(z, gzeof, [have_zlib=yes], [have_zlib=no])
+  AC_CHECK_LIB(z, inflateInit2_, [have_zlib=yes], [have_zlib=no])
   if test "${have_zlib}" = yes; then
     AC_CHECK_HEADER(zlib.h, [have_zlib=yes], [have_zlib=no])
   fi
@@ -2984,7 +2989,9 @@ AC_DEFUN([_R_HEADER_ZLIB],
 #include <zlib.h>
 int main() {
 #ifdef ZLIB_VERSION
-  exit(strcmp(ZLIB_VERSION, "1.2.3") < 0);
+/* Workaround Debian bug: it uses 1.2.3.4 even though there is no such
+   version on the master site zlib.net */
+  exit(strncmp(ZLIB_VERSION, "1.2.3", 5) < 0);
 #else
   exit(1);
 #endif
@@ -3083,7 +3090,7 @@ else
   have_bzlib=no
 fi
 if test "x${have_bzlib}" = xyes; then
-AC_CACHE_CHECK([if bzip2 version >= 1.0.5], [r_cv_have_bzlib],
+AC_CACHE_CHECK([if bzip2 version >= 1.0.6], [r_cv_have_bzlib],
 [AC_LANG_PUSH(C)
 r_save_LIBS="${LIBS}"
 LIBS="-lbz2 ${LIBS}"
@@ -3093,7 +3100,7 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #endif
 int main() {
     char *ver = BZ2_bzlibVersion();
-    exit(strcmp(ver, "1.0.5") < 0);
+    exit(strcmp(ver, "1.0.6") < 0);
 }
 ]])], [r_cv_have_bzlib=yes], [r_cv_have_bzlib=no], [r_cv_have_bzlib=no])
 LIBS="${r_save_LIBS}"
@@ -3199,8 +3206,7 @@ AC_DEFUN([R_RECOMMENDED_PACKAGES],
 recommended_pkgs=`grep '^R_PKGS_RECOMMENDED *=' \
   ${srcdir}/share/make/vars.mk | sed 's/.*=//'`
 for pkg in ${recommended_pkgs}; do
-  n_pkg=`ls ${srcdir}/src/library/Recommended/${pkg}_*.tar.gz | wc -l`
-  if test ${n_pkg} -ne 1; then
+  if test ! -d ${srcdir}/src/library/Recommended/${pkg}; then
     r_cv_misc_recommended_packages=no
     break
   fi
@@ -3215,8 +3221,8 @@ fi
 ## R_SIZE_MAX
 ## ----------
 ## Look for a definition of SIZE_MAX (the maximum of size_t).
-## C99 has it declared in <inttypes.h>, glibc in <stdint.h>
-## and Solaris 8 in <limits.h>!
+## C99 has it declared in <stdint.h>, pre-C99 POSIX in <inttypes.h>, 
+## glibc in <stdint.h> and Solaris 8 in <limits.h>!
 ## autoconf tests for inttypes.h and stdint.h by default
 AC_DEFUN([R_SIZE_MAX],
 [AC_CACHE_CHECK([whether SIZE_MAX is declared],
@@ -3291,7 +3297,7 @@ AC_CACHE_CHECK(for iconv, ac_cv_func_iconv, [
 if test "$ac_cv_func_iconv" != no; then
   AC_DEFINE(HAVE_ICONV, 1, [Define if you have the `iconv' function.])
 
-  AC_CACHE_CHECK([whether iconv accepts "UTF-8", "latin1" and "UCS-*"],
+  AC_CACHE_CHECK([whether iconv accepts "UTF-8", "latin1", "ASCII" and "UCS-*"],
   [r_cv_iconv_latin1],
   [AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include "confdefs.h"
@@ -3318,6 +3324,9 @@ int main () {
   if(cd == (iconv_t)(-1)) exit(1);
   iconv_close(cd);
   cd = iconv_open("UTF-8","");
+  if(cd == (iconv_t)(-1)) exit(1);
+  iconv_close(cd);
+  cd = iconv_open("ASCII","");
   if(cd == (iconv_t)(-1)) exit(1);
   iconv_close(cd);
   cd = iconv_open("UCS-2LE","");
@@ -3374,6 +3383,7 @@ static int count_one (unsigned int namescount, char * *names, void *data)
 if test "$ac_cv_func_iconvlist" = yes; then
   AC_DEFINE(HAVE_ICONVLIST, 1, [Define if you have the `iconvlist' function.])
 fi
+AM_ICONV dnl from gettext.m4
 ])# R_ICONV
 
 
@@ -3397,7 +3407,9 @@ if test "$want_mbcs_support" = yes ; then
 ## These are all C99, but Cygwin lacks wcsftime & wcstod
   R_CHECK_FUNCS([mbrtowc wcrtomb wcscoll wcsftime wcstod], [#include <wchar.h>])
   R_CHECK_FUNCS([mbstowcs wcstombs], [#include <stdlib.h>])
-  R_CHECK_FUNCS([wctrans iswblank wctype iswctype], [#include <wctype.h>])
+  R_CHECK_FUNCS([wctrans iswblank wctype iswctype], 
+[#include <wchar.h>
+#include <wctype.h>])
   for ac_func in mbrtowc mbstowcs wcrtomb wcscoll wcstombs \
                  wctrans wctype iswctype
   do
@@ -3440,50 +3452,13 @@ AC_DEFUN([R_C99_COMPLEX],
     AC_CHECK_TYPE([double complex], , r_cv_c99_complex=no,
                   [#include <complex.h>])
   fi
-  if test "${r_cv_c99_complex}" = "yes"; then
-    for ac_func in cexp clog csqrt cpow ccos csin ctan cacos casin catan \
-	 	   ccosh csinh ctanh cacosh casinh catanh
-    do
-      R_CHECK_DECL($ac_func, , [r_cv_c99_complex=no], [#include<complex.h>])
-    done
-  fi
-  dnl Now check if the representation is the same as Rcomplex
-  if test "${r_cv_c99_complex}" = "yes"; then
-  AC_MSG_CHECKING([whether C99 double complex is compatible with Rcomplex])
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include "confdefs.h"
-#include <complex.h>
-#include <stdlib.h>
-typedef struct {
-        double r;
-        double i;
-} Rcomplex;
-
-void set_it(Rcomplex *z)
-{
-    z[0].r = 3.14159265;
-    z[0].i = 2.172;
-    z[1].i = 3.14159265;
-    z[1].r = 2.172;
-    z[2].r = 123.456;
-    z[2].i = 0.123456;
-}
-int main () {
-    double complex z[3];
-
-    set_it(z);
-    if(cabs(z[2] - 123.456 - 0.123456 * _Complex_I) < 1e-4) exit(0);
-    else exit(1);
-}
-]])], [r_c99_complex=yes], [r_c99_complex=no], [r_c99_complex=no])
-  AC_MSG_RESULT(${r_c99_complex})
-  r_cv_c99_complex=${r_c99_complex}
+  dnl we are supposed to have a C99 compiler, so fail at this point.
+  if test "${r_cv_c99_complex}" = "no"; then
+    AC_MSG_ERROR([Support for C99 double complex type is required.])
   fi
 ])
-if test "${r_cv_c99_complex}" = "yes"; then
-AC_DEFINE(HAVE_C99_COMPLEX, 1, [Define this if you have support for C99 complex types.])
-AC_SUBST(HAVE_C99_COMPLEX)
-fi
+R_CHECK_FUNCS([cabs carg cexp clog csqrt cpow ccos csin ctan \
+	       cacos casin catan ccosh csinh ctanh], [#include <complex.h>])
 ])# R_COMPLEX
 
 ## R_CHECK_DECL(SYMBOL,
@@ -3804,7 +3779,13 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main () {
     UErrorCode  status = U_ZERO_ERROR;
     UCollator *collator;
+    UCharIterator aIter;
+
     collator = ucol_open(NULL, &status);
+    if (U_FAILURE(status))  exit(1);
+    /* check if ICU is complete enough */
+    uiter_setUTF8(&aIter, "abc", 3);
+    int result = ucol_strcollIter(collator, &aIter, &aIter, &status);
     if (U_FAILURE(status))  exit(1);
     exit(0);
 }
@@ -3820,6 +3801,86 @@ else
 fi
 ])# R_ICU
 
+## R_ABI
+## ------------
+AC_DEFUN([R_ABI],
+[## System type.
+case "${host_os}" in
+  linux*)
+    R_SYSTEM_ABI="linux"
+    ;;
+  solaris*)    
+    R_SYSTEM_ABI="solaris"
+    ;;
+  darwin*)
+    R_SYSTEM_ABI="osx"
+    ;;
+  *)
+    R_SYSTEM_ABI="?"
+    ;;
+esac
+## Compiler types
+## C: AC_PROG_CC does
+##   If using the GNU C compiler, set shell variable `GCC' to `yes'.
+##   Alternatively, could use ac_cv_c_compiler_gnu (undocumented).
+if test "${GCC}" = yes; then
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},gcc"
+else
+case "${host_os}" in
+  solaris*)
+  ## we assume native compilers elsewhere (e.g. for -KPIC), so do so here too.
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},solcc"
+  ;;
+  *)
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},?"
+esac
+fi
+## C++: AC_PROG_CXX does
+##   If using the GNU C++ compiler, set shell variable `GXX' to `yes'.
+##   Alternatively, could use ac_cv_cxx_compiler_gnu (undocumented).
+if test "${GXX}" = yes; then
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},gxx"
+else
+case "${host_os}" in
+  solaris*)
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},solCC"
+  ;;
+  *)
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},?"
+esac
+fi
+## Fortran 77: AC_PROG_F77 does
+##   If using `g77' (the GNU Fortran 77 compiler), then set the shell
+##   variable `G77' to `yes' (and also seems to do so for gfortran, which
+##   is what we really need).
+##   Alternatively, could use ac_cv_f77_compiler_gnu (undocumented).
+if test "${G77}" = yes; then
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},gfortran"
+else
+case "${host_os}" in
+  solaris*)
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},solf95"
+  ;;
+  *)
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},?"
+esac
+fi
+## Fortran 90/95: AC_PROG_FC does not seem to set a shell variable
+##   indicating the GNU Fortran 90/95 compiler.
+##   Hence, need to use ac_cv_fc_compiler_gnu (undocumented).
+if test "${ac_cv_fc_compiler_gnu}" = yes; then
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},gfortran"
+else
+case "${host_os}" in
+  solaris*)
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},solf95"
+  ;;
+  *)
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},?"
+esac
+fi
+AC_SUBST(R_SYSTEM_ABI)
+]) # R_ABI
 
 ### Local variables: ***
 ### mode: outline-minor ***

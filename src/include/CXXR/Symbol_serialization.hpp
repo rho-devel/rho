@@ -9,9 +9,8 @@ namespace CXXR {
     class RObject;
     class Symbol;
 
-    // For distinguishing 'Special' symbols
-    enum SymbolSerializationType {OTHERSYM=0, MISSINGARGSYM,
-                                  RESTARTTOKENSYM, UNBOUNDVALUESYM};
+    // For distinguishing 'Special' symbols.
+    enum SymbolSerializationType {OTHERSYM=0, MISSINGARGSYM, UNBOUNDVALUESYM};
 
     // Forward declarations, defined in .cpp
     GCNode* composeSymbol(const SymbolSerializationType, const std::string&);

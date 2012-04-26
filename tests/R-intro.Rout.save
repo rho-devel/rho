@@ -1,7 +1,8 @@
 
-R version 2.9.0 Under development (unstable) (2008-12-02 r47034)
-Copyright (C) 2008 The R Foundation for Statistical Computing
+R Under development (unstable) (2011-08-04 r56621)
+Copyright (C) 2011 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -560,7 +561,7 @@ alternative hypothesis: two-sided
 
 Warning message:
 In ks.test(long, "pnorm", mean = mean(long), sd = sqrt(var(long))) :
-  cannot compute correct p-values with ties
+  ties should not be present for the Kolmogorov-Smirnov test
 > 
 > ##@section One- and two-sample tests
 > 
@@ -584,7 +585,7 @@ In ks.test(long, "pnorm", mean = mean(long), sd = sqrt(var(long))) :
 	Welch Two Sample t-test
 
 data:  A and B 
-t = 3.2499, df = 12.027, p-value = 0.00694
+t = 3.2499, df = 12.027, p-value = 0.006939
 alternative hypothesis: true difference in means is not equal to 0 
 95 percent confidence interval:
  0.013855 0.070183 
@@ -693,8 +694,8 @@ Call:
 lm(formula = y ~ x, data = dummy)
 
 Residuals:
-    Min      1Q  Median      3Q     Max 
--3.5401 -1.1026 -0.0541  1.1525  3.2623 
+   Min     1Q Median     3Q    Max 
+-3.540 -1.103 -0.054  1.152  3.262 
 
 Coefficients:
             Estimate Std. Error t value Pr(>|t|)    
@@ -714,8 +715,8 @@ Call:
 lm(formula = y ~ x, data = dummy, weights = 1/w^2)
 
 Residuals:
-     Min       1Q   Median       3Q      Max 
--1.32054 -0.44924 -0.00879  0.50876  1.26555 
+    Min      1Q  Median      3Q     Max 
+-1.3205 -0.4492 -0.0088  0.5088  1.2656 
 
 Coefficients:
             Estimate Std. Error t value Pr(>|t|)    
@@ -729,11 +730,9 @@ Multiple R-squared: 0.922,	Adjusted R-squared: 0.918
 F-statistic:  214 on 1 and 18 DF,  p-value: 1.94e-11 
 
 > attach(dummy)
+The following object(s) are masked _by_ '.GlobalEnv':
 
-	The following object(s) are masked _by_ .GlobalEnv :
-
-	 x 
-
+    x
 > lrf <- lowess(x, y)
 > plot(x, y)
 > lines(x, lrf$y)

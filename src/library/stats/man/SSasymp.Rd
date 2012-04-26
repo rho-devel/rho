@@ -1,10 +1,11 @@
 % File src/library/stats/man/SSasymp.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{SSasymp}
-\title{Asymptotic Regression Model}
+\encoding{UTF-8}
+\title{Self-Starting Nls Asymptotic Regression Model}
 \usage{
 SSasymp(input, Asym, R0, lrc)
 }
@@ -31,10 +32,12 @@ SSasymp(input, Asym, R0, lrc)
   names of objects, the gradient matrix with respect to these names is
   attached as an attribute named \code{gradient}.
 }
-\author{Jose Pinheiro and Douglas Bates}
-\seealso{\code{\link{nls}}, \code{\link{selfStart}}
+\author{\enc{José}{Jose} Pinheiro and Douglas Bates}
+\seealso{
+  \code{\link{nls}}, \code{\link{selfStart}}
 }
 \examples{
+\testonly{options(show.nls.convergence=FALSE)}
 Lob.329 <- Loblolly[ Loblolly$Seed == "329", ]
 SSasymp( Lob.329$age, 100, -8.5, -3.2 )  # response only
 Asym <- 100

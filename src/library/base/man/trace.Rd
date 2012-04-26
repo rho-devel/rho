@@ -1,6 +1,6 @@
 % File src/library/base/man/trace.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{trace}
@@ -9,9 +9,6 @@
 \alias{untrace}
 \alias{tracingState}
 \alias{.doTrace}
-%% internal
-\alias{.primTrace}
-\alias{.primUntrace}
 \description{
   A call to \code{trace} allows you to insert debugging code (e.g., a
   call to \code{\link{browser}} or \code{\link{recover}}) at chosen
@@ -56,7 +53,7 @@ tracingState(on = NULL)
     editing the body of the function.  If so, supply the \code{edit}
     argument either as \code{TRUE}, or as the name of the editor you
     want to use.  Then \code{trace()} will call \code{\link{edit}} and
-    use the version of the function after you edit it. See the details
+    use the version of the function after you edit it.  See the details
     section for additional information.
     }
   \item{where}{where to look for the function to be
@@ -64,17 +61,17 @@ tracingState(on = NULL)
     \code{trace}.
 
     An important use of this argument is to trace a function when it
-  is called from a package with a name space.  The current name space mechanism
+  is called from a package with a namespace.  The current namespace mechanism
   imports the functions to be called (with the exception of functions
   in the base package).  The functions being called are \emph{not} the
   same objects seen from the top-level (in general, the imported
   packages may not even be attached).  Therefore, you must ensure that
   the correct versions are being traced.  The way to do this is to set
-  argument \code{where} to a function in the name space.  The tracing
+  argument \code{where} to a function in the namespace.  The tracing
   computations will then start looking in the environment of that
-  function (which will be the name space of the corresponding package).
+  function (which will be the namespace of the corresponding package).
   (Yes, it's subtle, but the semantics here are central to how
-  name spaces work in R.)
+  namespaces work in R.)
   }
   \item{on}{logical; a call to  the support function \code{tracingState} returns \code{TRUE}
     if tracing is globally turned on, \code{FALSE} otherwise.  An
@@ -126,12 +123,15 @@ tracingState(on = NULL)
   you don't want to try to count the steps in the printed version of a
   function; instead, look at \code{as.list(body(f))} to get the numbers
   associated with the steps in function \code{f}.)
-  
+
   The \code{at} argument can also be a list of integer vectors.  In
   this case, each vector refers to a step nested within another step of
   the function.  For example, \code{at = list(c(3,4))}
   will call the tracer just before the fourth step of the third step
   of the function.  See the example below.
+
+  Using \code{\link{setBreakpoint}} (from package \pkg{utils}) may be an
+  alternative, calling \code{trace(...., at, ...)}.
 
   An intrinsic limitation in the \code{exit} argument is that it won't
   work if the function itself uses \code{on.exit}, since the existing
@@ -146,7 +146,7 @@ tracingState(on = NULL)
 
   When the \code{edit} argument is used repeatedly with no call to
   \code{untrace} on the same function or method in between, the
-  previously edited version is retained. If you want to throw away
+  previously edited version is retained.  If you want to throw away
   all the previous tracing and then edit, call \code{untrace} before the next
   call to \code{trace}.  Editing may be combined with automatic
   tracing; just supply the other arguments such as \code{tracer}, and
@@ -193,7 +193,7 @@ tracingState(on = NULL)
   versions of the traced functions).
 
   If methods dispatch is not currently on, \code{trace} will load the
-  methods name space, but will not put the methods package on the search
+  methods namespace, but will not put the methods package on the search
   list.
 }
 \value{
@@ -229,15 +229,16 @@ f <- function(x, y) {
 
 ## arrange to call the browser on entering and exiting
 ## function f
-trace("f", browser, exit = browser)
+trace("f", quote(browser(skipCalls=4)),
+      exit = quote(browser(skipCalls=4)))
 
 ## instead, conditionally assign some data, and then browse
 ## on exit, but only then.  Don't bother me otherwise
 
 trace("f", quote(if(any(y < 0)) yOrig <- y),
-      exit = quote(if(exists("yOrig")) browser()),
+      exit = quote(if(exists("yOrig")) browser(skipCalls=4)),
       print = FALSE)
-      
+
 ## Enter the browser just before stop() is called.  First, find
 ## the step numbers
 
@@ -246,7 +247,7 @@ as.list(body(f)[[3]])
 
 ## Now call the browser there
 
-trace("f", quote(browser()), at=list(c(3,4)))
+trace("f", quote(browser(skipCalls=4)), at=list(c(3,4)))
 
 ## trace a utility function, with recover so we
 ## can browse in the calling functions as well.
@@ -261,7 +262,7 @@ untrace(c("f", "as.matrix"))
 ## trace calls to the function lm() that come from
 ## the nlme package.
 ## (The function nlme is in that package, and the package
-## has a name space, so the where= argument must be used
+## has a namespace, so the where= argument must be used
 ## to get the right version of lm)
 
 trace(lm, exit = recover, where = nlme)

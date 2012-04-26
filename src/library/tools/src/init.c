@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2003-6   The R Development Core Team.
+ *  Copyright (C) 2003-11   The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,7 +47,11 @@ static const R_CallMethodDef callMethods[] = {
     {"delim_match", (DL_FUNC) &delim_match, 2},
     {"Rmd5", (DL_FUNC) &Rmd5, 1},
     {"check_nonASCII", (DL_FUNC) &check_nonASCII, 2},
+    {"check_nonASCII2", (DL_FUNC) &check_nonASCII2, 1},
     {"doTabExpand", (DL_FUNC) &doTabExpand, 2},
+    {"ps_kill", (DL_FUNC) &ps_kill, 2},
+    {"ps_sigs", (DL_FUNC) &ps_sigs, 1},
+    {"ps_priority", (DL_FUNC) &ps_priority, 2},
     {NULL, NULL, 0}
 };
 

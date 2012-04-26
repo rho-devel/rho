@@ -49,7 +49,7 @@ selfStart.formula <-
         }
         template <- function() {}
         argNams <- c( nm[ is.na( match(nm, parameters) ) ], parameters )
-        args <- rep( alist( a = , b = 3 )[-2], length( argNams ) )
+	args <- rep(alist(a = ), length(argNams))
         names(args) <- argNams
         formals(template) <- args
     }
@@ -129,11 +129,11 @@ sortedXyData.default <-
     ## works for x and y either numeric or language elements
     ## that can be evaluated in data
     #data <- as.data.frame(data)
-    if (is.language(x) || ((length(x) == 1) && is.character(x))) {
+    if (is.language(x) || ((length(x) == 1L) && is.character(x))) {
         x <- eval(asOneSidedFormula(x)[[2L]], data)
     }
     x <- as.numeric(x)
-    if (is.language(y) || ((length(y) == 1) && is.character(y))) {
+    if (is.language(y) || ((length(y) == 1L) && is.character(y))) {
         y <- eval(asOneSidedFormula(y)[[2L]], data)
     }
     y <- as.numeric(y)
@@ -156,19 +156,17 @@ NLSstClosestX.sortedXyData <-
     function(xy, yval)
 {
     deviations <- xy$y - yval
+    if (any(deviations==0)) # PR#14384
+        return(xy$x[match(0, deviations)])
     if (any(deviations <= 0)) {
         dev1 <- max(deviations[deviations <= 0])
         lim1 <- xy$x[match(dev1, deviations)]
-        if (all(deviations <= 0)) {
-            return(lim1)
-        }
+        if (all(deviations <= 0)) return(lim1)
     }
     if (any(deviations >= 0)) {
         dev2 <- min(deviations[deviations >= 0])
         lim2 <- xy$x[match(dev2, deviations)]
-        if (all(deviations >= 0)) {
-            return(lim2)
-        }
+        if (all(deviations >= 0)) return(lim2)
     }
     dev1 <- abs(dev1)
     dev2 <- abs(dev2)

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 2001-7      The R Development Core Team
+ *  Copyright (C) 2001-11      The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ SEXP attribute_hidden getParseContext(void)
     char context[PARSE_CONTEXT_SIZE+1];
 
     SEXP ans = R_NilValue, ans2;
-    int nn, nnn, nread;
+    int nn, nread;
     char c;
 
     context[last] = '\0';
@@ -66,7 +66,6 @@ SEXP attribute_hidden getParseContext(void)
     }
 
     nn = 16; /* initially allocate space for 16 lines */
-    nnn = nn;
     PROTECT(ans = allocVector(STRSXP, nn));
     c = context[last];
     nread = 0;
@@ -100,13 +99,13 @@ SEXP attribute_hidden getParseContext(void)
     return ans2;
 }
 
-void attribute_hidden getParseFilename(char* buffer, int buflen)
+static void getParseFilename(char* buffer, size_t buflen)
 {
     buffer[0] = '\0';
     if (R_ParseErrorFile && !isNull(R_ParseErrorFile)) {
 	SEXP filename;
 	PROTECT(filename = findVar(install("filename"), R_ParseErrorFile));
-	if (!isNull(filename))
+	if (isString(filename) && length(filename))
 	    strncpy(buffer, CHAR(STRING_ELT(filename, 0)), buflen - 1);
 	UNPROTECT(1);
     }
@@ -122,7 +121,7 @@ static SEXP tabExpand(SEXP strings)
     PROTECT(result = allocVector(STRSXP, length(strings)));
     for (i = 0; i < length(strings); i++) {
     	input = CHAR(STRING_ELT(strings, i));
-    	for (b = buffer; input && b-buffer < 192; input++) {
+    	for (b = buffer; *input && (b-buffer < 192); input++) {
     	    if (*input == '\t') do {
     	    	*b++ = ' ';
     	    } while (((b-buffer) & 7) != 0);
@@ -190,15 +189,15 @@ void attribute_hidden parseError(SEXP call, int linenum)
 
  The internal R_Parse.. functions are defined in ./gram.y (-> gram.c)
 
- .Internal( parse(file, n, text, prompt, srcfile) )
+ .Internal( parse(file, n, text, prompt, srcfile, encoding) )
  If there is text then that is read and the other arguments are ignored.
 */
 SEXP attribute_hidden do_parse(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP text, prompt, s, source;
     Rconnection con;
-    Rboolean wasopen, old_latin1=known_to_be_latin1,
-	old_utf8=known_to_be_utf8, allKnown = TRUE;
+    Rboolean wasopen, old_latin1 = known_to_be_latin1,
+	old_utf8 = known_to_be_utf8, allKnown = TRUE;
     int ifile, num, i;
     const char *encoding;
     ParseStatus status;
@@ -214,7 +213,11 @@ SEXP attribute_hidden do_parse(SEXP call, SEXP op, SEXP args, SEXP env)
     num = asInteger(CAR(args));				args = CDR(args);
     if (num == 0)
 	return(allocVector(EXPRSXP, 0));
-    PROTECT(text = coerceVector(CAR(args), STRSXP));	args = CDR(args);
+
+    PROTECT(text = coerceVector(CAR(args), STRSXP));
+    if(length(CAR(args)) && !length(text))
+	errorcall(call, _("coercion of 'text' to character was unsuccessful"));
+    args = CDR(args);
     prompt = CAR(args);					args = CDR(args);
     source = CAR(args);					args = CDR(args);
     if(!isString(CAR(args)) || LENGTH(CAR(args)) != 1)
@@ -258,26 +261,27 @@ SEXP attribute_hidden do_parse(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 	if (num == NA_INTEGER) num = -1;
 	s = R_ParseVector(text, num, &status, source);
-	if (status != PARSE_OK) parseError(call, 0);
+	if (status != PARSE_OK) parseError(call, R_ParseError);
     }
     else if (ifile >= 3) {/* file != "" */
 	if (num == NA_INTEGER) num = -1;
-	if(!wasopen) {
-	    if(!con->open(con)) error(_("cannot open the connection"));
-	    if(!con->canread) {
+	try {
+	    if(!wasopen && !con->open(con))
+		error(_("cannot open the connection"));
+	    if(!con->canread) error(_("cannot read from this connection"));
+	    s = R_ParseConn(con, num, &status, source);
+	    if(!wasopen) con->close(con);
+	} catch (...) {
+	    if (!wasopen && con->isopen)
 		con->close(con);
-		error(_("cannot read from this connection"));
-	    }
-	} else if(!con->canread)
-	    error(_("cannot read from this connection"));
-	s = R_ParseConn(con, num, &status, source);
-	if(!wasopen) con->close(con);
+	    throw;
+	}
 	if (status != PARSE_OK) parseError(call, R_ParseError);
     }
     else {
 	if (num == NA_INTEGER) num = 1;
 	s = R_ParseBuffer(&R_ConsoleIob, num, &status, prompt, source);
-	if (status != PARSE_OK) parseError(call, 0);
+	if (status != PARSE_OK) parseError(call, R_ParseError);
     }
     UNPROTECT(2);
     known_to_be_latin1 = old_latin1;

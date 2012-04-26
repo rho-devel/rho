@@ -17,19 +17,25 @@
 parse <- function(file = "", n = NULL, text = NULL, prompt = "?",
                   srcfile = NULL, encoding = "unknown")
 {
+    keep.source <- isTRUE(getOption("keep.source"))
     if(!is.null(text)) {
-    	if (length(as.character(text)) == 0L)
+    	if (length(text) == 0L)
 	    return(expression())
-	if (missing(srcfile) && isTRUE(getOption("keep.source")))
+	if (missing(srcfile) && keep.source)
 	    srcfile <- srcfilecopy("<text>", text)
     }
     if(is.character(file))
         if(file == "") file <- stdin()
         else {
-            if (missing(srcfile) && isTRUE(getOption("keep.source")))
-        	srcfile <- srcfile(file, encoding)
-            file <- file(file, "r")
-            on.exit(close(file))
+            filename <- file
+            file <- file(filename, "r")
+            if (missing(srcfile) && keep.source) {
+            	text <- readLines(file)
+            	close(file)
+            	file <- stdin()
+        	srcfile <- srcfilecopy(filename, text, file.info(filename)[1,"mtime"])
+            } else 	
+                on.exit(close(file))
         }
     .Internal(parse(file, n, text, prompt, srcfile, encoding))
 }

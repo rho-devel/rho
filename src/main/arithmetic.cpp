@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2007	    The R Development Core Team.
+ *  Copyright (C) 1998--2011	    The R Development Core Team.
  *  Copyright (C) 2003-4	    The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -73,8 +73,14 @@ extern "C" {
 #include "arithmetic.h"
 
 #include <errno.h>
+#include <math.h>
+
+#include "CXXR/BinaryFunction.hpp"
+#include "CXXR/GCStackRoot.hpp"
+#include "CXXR/UnaryFunction.hpp"
 
 using namespace CXXR;
+using namespace VectorOps;
 
 #ifdef HAVE_MATHERR
 
@@ -168,13 +174,12 @@ Rboolean R_IsNaN(double x)
 
 
 /* Mainly for use in packages */
-Rboolean R_finite(double x)
-{
-#ifdef HAVE_WORKING_ISFINITE
-    return CXXRCONSTRUCT(Rboolean, isfinite(x));
-#else
-    return CXXRCONSTRUCT(Rboolean, !isnan(x) && (x != R_PosInf) && (x != R_NegInf));
-#endif
+
+// Force a non-inline embodiment of R_finite():
+namespace CXXR {
+    namespace ForceNonInline{
+	Rboolean (*R_finitep)(double) = R_finite;
+    }
 }
 
 
@@ -190,6 +195,9 @@ void attribute_hidden InitArithmetic()
 }
 
 /* Keep these two in step */
+/* FIXME: consider using
+    tmp = (long double)x1 - floor(q) * (long double)x2;
+ */
 static double myfmod(double x1, double x2)
 {
     double q = x1 / x2, tmp;
@@ -213,11 +221,17 @@ static double myfloor(double x1, double x2)
 
 /* some systems get this wrong, possibly depend on what libs are loaded */
 static R_INLINE double R_log(double x) {
+    if (isnan(x))
+	return x;
     return x > 0 ? log(x) : x < 0 ? R_NaN : R_NegInf;
 }
 
 double R_pow(double x, double y) /* = x ^ y */
 {
+    /* squaring is the most common of the specially handled cases so
+       check for it first. */
+    if(y == 2.0)
+	return x * x;
     if(x == 1. || y == 0.)
 	return(1.);
     if(x == 0.) {
@@ -232,6 +246,9 @@ double R_pow(double x, double y) /* = x ^ y */
    100^0.5 as 3.162278.  -g is needed, as well as -O2 or higher.
    example(pbirthday) will fail.
  */
+/* FIXME: with the y == 2.0 test now at the top that case isn't
+   reached here, but i have left it for someone who understands the
+   bug fix issue here to remove. LT */
 #if __GNUC__ == 4 && __GNUC_MINOR__ >= 3
 	return (y == 2.0) ? x*x : pow(x, y);
 #else
@@ -260,6 +277,11 @@ double R_pow(double x, double y) /* = x ^ y */
 				   non-int}; (neg)^{+-Inf} */
 }
 
+static R_INLINE double R_POW(double x, double y) /* handle x ^ 2 inline */
+{
+    return y == 2.0 ? x * x : R_pow(x, y);
+}
+
 double R_pow_di(double x, int n)
 {
     double xn = 1.0;
@@ -267,7 +289,7 @@ double R_pow_di(double x, int n)
     if (ISNAN(x)) return x;
     if (n == NA_INTEGER) return NA_REAL;
     if (n != 0) {
-	if (!R_FINITE(x)) return R_pow(x, double(n));
+	if (!R_FINITE(x)) return R_POW(x, double(n));
 	if (n < 0) { n = -n; x = 1/x; }
 	for(;;) {
 	    if(n & 01) xn *= x;
@@ -297,6 +319,7 @@ static double logbase(double x, double base)
 }
 
 static SEXP integer_unary(ARITHOP_TYPE, SEXP, SEXP);
+static SEXP logical_unary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP real_unary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP real_binary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP integer_binary(ARITHOP_TYPE, SEXP, SEXP, SEXP);
@@ -327,51 +350,54 @@ SEXP attribute_hidden do_arith(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;			/* never used; to keep -Wall happy */
 }
 
-#define COERCE_IF_NEEDED(v, tp, vpi) do { \
-    if (TYPEOF(v) != (tp)) { \
-	REPROTECT(v = coerceVector(v, (tp)), vpi); \
-    } \
-} while (0)
+namespace {
+    VectorBase* COERCE_IF_NEEDED(SEXP v, SEXPTYPE tp) {
+	if (v->sexptype() != tp)
+	    v = coerceVector(v, tp);
+	return static_cast<VectorBase*>(v);
+    }
 
-#define FIXUP_NULL_AND_CHECK_TYPES(v, vpi) do { \
-    switch (TYPEOF(v)) { \
-    case NILSXP: REPROTECT(v = allocVector(REALSXP,0), vpi); break; \
-    case CPLXSXP: case REALSXP: case INTSXP: case LGLSXP: break; \
-    default: errorcall(lcall, _("non-numeric argument to binary operator")); \
-    } \
-} while (0)
+    VectorBase* FIXUP_NULL_AND_CHECK_TYPES(SEXP v)
+    {
+	if (!v)
+	    return CXXR_NEW(RealVector(0));
+	switch (v->sexptype()) {
+	case CPLXSXP:
+	case REALSXP:
+	case INTSXP:
+	case LGLSXP:
+	    break;
+	default:
+	    Rf_error(_("non-numeric argument to binary operator"));
+	}
+	return static_cast<VectorBase*>(v);
+    }
+}
 
-SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP x, SEXP y)
+SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 {
-    SEXP klass, dims, tsp, xnames, ynames, val;
-    int mismatch = 0, nx, ny, xarray, yarray, xts, yts;
-    int xattr, yattr;
     SEXP lcall = call;
-    PROTECT_INDEX xpi, ypi;
     ARITHOP_TYPE oper = ARITHOP_TYPE( PRIMVAL(op));
-    int nprotect = 2; /* x and y */
 
+    GCStackRoot<VectorBase> x(FIXUP_NULL_AND_CHECK_TYPES(xarg));
+    GCStackRoot<VectorBase> y(FIXUP_NULL_AND_CHECK_TYPES(yarg));
+    checkOperandsConformable(x, y);
 
-    PROTECT_WITH_INDEX(x, &xpi);
-    PROTECT_WITH_INDEX(y, &ypi);
-
-    FIXUP_NULL_AND_CHECK_TYPES(x, xpi);
-    FIXUP_NULL_AND_CHECK_TYPES(y, ypi);
-
-    nx = LENGTH(x);
+    int nx = LENGTH(x);
+    bool xattr = false;
+    bool xarray = false;
     if (ATTRIB(x) != R_NilValue) {
 	xattr = TRUE;
 	xarray = isArray(x);
-	xts = isTs(x);
     }
-    else xarray = xts = xattr = FALSE;
-    ny = LENGTH(y);
+
+    int ny = LENGTH(y);
+    bool yattr = false;
+    bool yarray = false;
     if (ATTRIB(y) != R_NilValue) {
 	yattr = TRUE;
 	yarray = isArray(y);
-	yts = isTs(y);
     }
-    else yarray = yts = yattr = FALSE;
 
     /* If either x or y is a matrix with length 1 and the other is a
        vector, we want to coerce the matrix to be a vector.
@@ -384,110 +410,62 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP x, SEXP y)
      */
     if (xarray != yarray) {
 	if (xarray && nx==1 && ny!=1) {
-	    REPROTECT(x = duplicate(x), xpi);
+	    x = x->clone();
 	    setAttrib(x, R_DimSymbol, R_NilValue);
 	}
 	if (yarray && ny==1 && nx!=1) {
-	    REPROTECT(y = duplicate(y), ypi);
+	    y = y->clone();
 	    setAttrib(y, R_DimSymbol, R_NilValue);
 	}
     }
 
-    if (xarray || yarray) {
-	if (xarray && yarray) {
-	    if (!conformable(x, y))
-		errorcall(lcall, _("non-conformable arrays"));
-	    PROTECT(dims = getAttrib(x, R_DimSymbol));
-	}
-	else if (xarray) {
-	    PROTECT(dims = getAttrib(x, R_DimSymbol));
-	}
-	else {			/* (yarray) */
-	    PROTECT(dims = getAttrib(y, R_DimSymbol));
-	}
-	nprotect++;
-	if (xattr) {
-	    PROTECT(xnames = getAttrib(x, R_DimNamesSymbol));
-	    nprotect++;
-	}
-	else xnames = R_NilValue;
-	if (yattr) {
-	    PROTECT(ynames = getAttrib(y, R_DimNamesSymbol));
-	    nprotect++;
-	}
-	else ynames = R_NilValue;
-    }
-    else {
-	dims = R_NilValue;
-	if (xattr) {
-	    PROTECT(xnames = getAttrib(x, R_NamesSymbol));
-	    nprotect++;
-	}
-	else xnames = R_NilValue;
-	if (yattr) {
-	    PROTECT(ynames = getAttrib(y, R_NamesSymbol));
-	    nprotect++;
-	}
-	else ynames = R_NilValue;
-    }
-    if (nx == ny || nx == 1 || ny == 1) mismatch = 0;
+    bool mismatch = false;  // -Wall
+    if (nx == ny || nx == 1 || ny == 1) mismatch = false;
     else if (nx > 0 && ny > 0) {
-	if (nx > ny) mismatch = nx % ny;
-	else mismatch = ny % nx;
+	if (nx > ny) mismatch = (nx % ny != 0);
+	else mismatch = (ny % nx != 0);
     }
-
-    if (xts || yts) {
-	if (xts && yts) {
-	    if (!tsConform(x, y))
-		errorcall(lcall, _("non-conformable time-series"));
-	    PROTECT(tsp = getAttrib(x, R_TspSymbol));
-	    PROTECT(klass = getAttrib(x, R_ClassSymbol));
-	}
-	else if (xts) {
-	    if (nx < ny)
-		ErrorMessage(lcall, ERROR_TSVEC_MISMATCH);
-	    PROTECT(tsp = getAttrib(x, R_TspSymbol));
-	    PROTECT(klass = getAttrib(x, R_ClassSymbol));
-	}
-	else {			/* (yts) */
-	    if (ny < nx)
-		ErrorMessage(lcall, ERROR_TSVEC_MISMATCH);
-	    PROTECT(tsp = getAttrib(y, R_TspSymbol));
-	    PROTECT(klass = getAttrib(y, R_ClassSymbol));
-	}
-	nprotect += 2;
-    }
-    else klass = tsp = NULL; /* -Wall */
 
     if (mismatch)
 	warningcall(lcall,
 		    _("longer object length is not a multiple of shorter object length"));
 
+    GCStackRoot<> val;
     /* need to preserve object here, as *_binary copies class attributes */
     if (TYPEOF(x) == CPLXSXP || TYPEOF(y) == CPLXSXP) {
-	COERCE_IF_NEEDED(x, CPLXSXP, xpi);
-	COERCE_IF_NEEDED(y, CPLXSXP, ypi);
+	x = COERCE_IF_NEEDED(x, CPLXSXP);
+	y = COERCE_IF_NEEDED(y, CPLXSXP);
 	val = complex_binary(oper, x, y);
     }
     else if (TYPEOF(x) == REALSXP || TYPEOF(y) == REALSXP) {
 	if(!(TYPEOF(x) == INTSXP || TYPEOF(y) == INTSXP
 	     /* || TYPEOF(x) == LGLSXP || TYPEOF(y) == LGLSXP*/)) {
 	    /* Can get a LGLSXP. In base-Ex.R on 24 Oct '06, got 8 of these. */
-	    COERCE_IF_NEEDED(x, REALSXP, xpi);
-	    COERCE_IF_NEEDED(y, REALSXP, ypi);
+	    x = COERCE_IF_NEEDED(x, REALSXP);
+	    y = COERCE_IF_NEEDED(y, REALSXP);
 	}
 	val = real_binary(oper, x, y);
     }
     else val = integer_binary(oper, x, y, lcall);
 
     /* quick return if there are no attributes */
-    if (! xattr && ! yattr) {
-	UNPROTECT(nprotect);
+    if (! xattr && ! yattr)
 	return val;
-    }
 
-    PROTECT(val);
-    nprotect++;
+    GCStackRoot<> dims, xnames, ynames;
+
+    if (xarray) {
+	dims = getAttrib(x, R_DimSymbol);
+	xnames = getAttrib(x, R_DimNamesSymbol);
+    }
+    if (yarray) {
+	dims = getAttrib(y, R_DimSymbol);
+	ynames = getAttrib(y, R_DimNamesSymbol);
+    } else if (!xarray) {
+	// Neither operand is an array:
+	xnames = getAttrib(x, R_NamesSymbol);
+	ynames = getAttrib(y, R_NamesSymbol);
+    }
 
     /* Don't set the dims if one argument is an array of size 0 and the
        other isn't of size zero, cos they're wrong */
@@ -509,12 +487,28 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP x, SEXP y)
 	    setAttrib(val, R_NamesSymbol, ynames);
     }
 
+    GCStackRoot<> klass, tsp;
+
+    bool yts = isTs(y);
+    if (yts) {
+	tsp = getAttrib(y, R_TspSymbol);
+	klass = getAttrib(y, R_ClassSymbol);
+    }
+
+    bool xts = isTs(x);
+    if (xts) {
+	tsp = getAttrib(x, R_TspSymbol);
+	klass = getAttrib(x, R_ClassSymbol);
+    }
+
     if (xts || yts) {		/* must set *after* dims! */
 	setAttrib(val, R_TspSymbol, tsp);
 	setAttrib(val, R_ClassSymbol, klass);
     }
 
-    UNPROTECT(nprotect);
+    if(isS4(x) || isS4(y)) {   /* Only set the bit:  no method defined! */
+        val = asS4(val, TRUE, TRUE);
+    }
     return val;
 }
 
@@ -523,6 +517,7 @@ SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
     ARITHOP_TYPE operation = ARITHOP_TYPE( PRIMVAL(op));
     switch (TYPEOF(s1)) {
     case LGLSXP:
+	return logical_unary(operation, s1, call);
     case INTSXP:
 	return integer_unary(operation, s1, call);
     case REALSXP:
@@ -542,13 +537,30 @@ static SEXP integer_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
 	return s1;
     case MINUSOP:
 	{
-	    int n = LENGTH(s1);
-	    GCStackRoot<IntVector> ans(GCNode::expose(new IntVector(n)));
-	    for (int i = 0; i < n; i++) {
-		int x = INTEGER(s1)[i];
-		INTEGER(ans)[i] = (x == NA_INTEGER) ? NA_INTEGER : -x;
-	    }
-	    return ans;
+	    using namespace VectorOps;
+	    IntVector* iv = SEXP_downcast<IntVector*>(s1);
+	    return
+		UnaryFunction<CopyAllAttributes, std::negate<int> >()
+		.apply<IntVector>(iv);
+	}
+    default:
+	errorcall(call, _("invalid unary operator"));
+    }
+    return s1;			/* never used; to keep -Wall happy */
+}
+
+static SEXP logical_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
+{
+    switch (code) {
+    case PLUSOP:
+	return s1;
+    case MINUSOP:
+	{
+	    using namespace VectorOps;
+	    LogicalVector* lv = SEXP_downcast<LogicalVector*>(s1);
+	    return
+		makeUnaryFunction<CopyAllAttributes>(std::negate<int>())
+		.apply<IntVector>(lv);
 	}
     default:
 	errorcall(call, _("invalid unary operator"));
@@ -558,17 +570,16 @@ static SEXP integer_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
 
 static SEXP real_unary(ARITHOP_TYPE code, SEXP s1, SEXP lcall)
 {
-    int i, n;
-    SEXP ans;
-
     switch (code) {
     case PLUSOP: return s1;
     case MINUSOP:
-	ans = duplicate(s1);
-	n = LENGTH(s1);
-	for (i = 0; i < n; i++)
-	    REAL(ans)[i] = -REAL(s1)[i];
-	return ans;
+	{
+	    using namespace VectorOps;
+	    RealVector* rv = SEXP_downcast<RealVector*>(s1);
+	    return
+		makeUnaryFunction<CopyAllAttributes>(std::negate<double>())
+		.apply<RealVector>(rv);
+	}
     default:
 	errorcall(lcall, _("invalid unary operator"));
     }
@@ -665,20 +676,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	    INTEGER(ans)[i] = NA_INTEGER;
 	return ans;
 	} */
-#ifdef R_MEMORY_PROFILING
-    if (RTRACE(s1) || RTRACE(s2)){
-       if (RTRACE(s1) && RTRACE(s2)){
-	  if (n1>n2)
-	      memtrace_report(s1,ans);
-	  else
-	      memtrace_report(s2, ans);
-       } else if (RTRACE(s1))
-	   memtrace_report(s1,ans);
-       else /* only s2 */
-	   memtrace_report(s2, ans);
-       SET_RTRACE(ans, 1);
-    }
-#endif
+    ans->maybeTraceMemory(s1, s2);
 
     switch (code) {
     case PLUSOP:
@@ -755,7 +753,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
 		REAL(ans)[i] = NA_REAL;
 	    else {
-		REAL(ans)[i] = R_pow(double( x1), double( x2));
+		REAL(ans)[i] = R_POW(double( x1), double( x2));
 	    }
 	}
 	break;
@@ -827,20 +825,7 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 
     n = (n1 > n2) ? n1 : n2;
     PROTECT(ans = allocVector(REALSXP, n));
-#ifdef R_MEMORY_PROFILING
-    if (RTRACE(s1) || RTRACE(s2)){
-       if (RTRACE(s1) && RTRACE(s2)){
-	  if (n1>n2)
-	      memtrace_report(s1,ans);
-	  else
-	      memtrace_report(s2, ans);
-       } else if (RTRACE(s1))
-	   memtrace_report(s1,ans);
-       else /* only s2 */
-	   memtrace_report(s2, ans);
-       SET_RTRACE(ans, 1);
-    }
-#endif
+    ans->maybeTraceMemory(s1, s2);
 
 /*    if (n1 < 1 || n2 < 1) {
       for (i = 0; i < n; i++)
@@ -851,9 +836,22 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
     switch (code) {
     case PLUSOP:
 	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-	   mod_iterate(n1, n2, i1, i2) {
-		 REAL(ans)[i] = REAL(s1)[i1] + REAL(s2)[i2];
-	     }
+            if (n2 == 1) {
+                double tmp = REAL(s2)[0];
+                for (i = 0; i < n; i++)
+		    REAL(ans)[i] = REAL(s1)[i] + tmp;
+            }
+            else if (n1 == 1) {
+                double tmp = REAL(s1)[0];
+                for (i = 0; i < n; i++)
+		    REAL(ans)[i] = tmp + REAL(s2)[i];
+            }
+            else if (n1 == n2)            
+                for (i = 0; i < n; i++)
+		    REAL(ans)[i] = REAL(s1)[i] + REAL(s2)[i];
+            else
+                mod_iterate(n1, n2, i1, i2)
+		    REAL(ans)[i] = REAL(s1)[i1] + REAL(s2)[i2];
 	} else	if(TYPEOF(s1) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = R_INTEGER(s1, i1) + REAL(s2)[i2];
@@ -863,13 +861,25 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 	       REAL(ans)[i] = REAL(s1)[i1] + R_INTEGER(s2, i2);
 	     }
 	}
-
 	break;
     case MINUSOP:
 	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-	   mod_iterate(n1, n2, i1, i2) {
-	      REAL(ans)[i] = REAL(s1)[i1] - REAL(s2)[i2];
-	   }
+            if (n2 == 1) {
+                double tmp = REAL(s2)[0];
+                for (i = 0; i < n; i++)
+		    REAL(ans)[i] = REAL(s1)[i] - tmp;
+            }
+            else if (n1 == 1) {
+                double tmp = REAL(s1)[0];
+                for (i = 0; i < n; i++)
+		    REAL(ans)[i] = tmp - REAL(s2)[i];
+            }
+            else if (n1 == n2)            
+                for (i = 0; i < n; i++)
+		    REAL(ans)[i] = REAL(s1)[i] - REAL(s2)[i];
+            else
+                mod_iterate(n1, n2, i1, i2)
+		    REAL(ans)[i] = REAL(s1)[i1] - REAL(s2)[i2];
 	} else	if(TYPEOF(s1) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = R_INTEGER(s1, i1) - REAL(s2)[i2];
@@ -882,9 +892,22 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 	break;
     case TIMESOP:
 	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-	   mod_iterate(n1, n2, i1, i2) {
-		REAL(ans)[i] = REAL(s1)[i1] * REAL(s2)[i2];
-	    }
+            if (n2 == 1) {
+                double tmp = REAL(s2)[0];
+                for (i = 0; i < n; i++)
+		    REAL(ans)[i] = REAL(s1)[i] * tmp;
+            }
+            else if (n1 == 1) {
+                double tmp = REAL(s1)[0];
+                for (i = 0; i < n; i++)
+		    REAL(ans)[i] = tmp * REAL(s2)[i];
+            }
+            else if (n1 == n2)            
+                for (i = 0; i < n; i++)
+		    REAL(ans)[i] = REAL(s1)[i] * REAL(s2)[i];
+            else
+                mod_iterate(n1, n2, i1, i2)
+		    REAL(ans)[i] = REAL(s1)[i1] * REAL(s2)[i2];
 	} else if(TYPEOF(s1) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = R_INTEGER(s1, i1) * REAL(s2)[i2];
@@ -897,9 +920,22 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 	break;
     case DIVOP:
 	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-	   mod_iterate(n1, n2, i1, i2) {
-		REAL(ans)[i] = REAL(s1)[i1] / REAL(s2)[i2];
-	    }
+            if (n2 == 1) {
+                double tmp = REAL(s2)[0];
+                for (i = 0; i < n; i++)
+		    REAL(ans)[i] = REAL(s1)[i] / tmp; 
+            }
+            else if (n1 == 1) {
+                double tmp = REAL(s1)[0];
+                for (i = 0; i < n; i++)
+		    REAL(ans)[i] = tmp / REAL(s2)[i];
+            }
+            else if (n1 == n2)            
+                for (i = 0; i < n; i++)
+		    REAL(ans)[i] = REAL(s1)[i] / REAL(s2)[i];
+            else
+                mod_iterate(n1, n2, i1, i2)
+		    REAL(ans)[i] = REAL(s1)[i1] / REAL(s2)[i2];
 	} else if(TYPEOF(s1) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = R_INTEGER(s1, i1) / REAL(s2)[i2];
@@ -912,16 +948,30 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 	break;
     case POWOP:
 	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
+            if (n2 == 1) {
+                double tmp = REAL(s2)[0];
+                for (i = 0; i < n; i++)
+		    REAL(ans)[i] = R_POW(REAL(s1)[i], tmp); 
+            }
+            else if (n1 == 1) {
+                double tmp = REAL(s1)[0];
+                for (i = 0; i < n; i++)
+		    REAL(ans)[i] = R_POW(tmp, REAL(s2)[i]);
+            }
+            else if (n1 == n2)            
+                for (i = 0; i < n; i++)
+		    REAL(ans)[i] = R_POW(REAL(s1)[i], REAL(s2)[i]);
+            else
 	   mod_iterate(n1, n2, i1, i2) {
-	       REAL(ans)[i] = R_pow(REAL(s1)[i1], REAL(s2)[i2]);
+	       REAL(ans)[i] = R_POW(REAL(s1)[i1], REAL(s2)[i2]);
 	    }
 	} else if(TYPEOF(s1) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
-	       REAL(ans)[i] = R_pow( R_INTEGER(s1, i1), REAL(s2)[i2]);
+	       REAL(ans)[i] = R_POW( R_INTEGER(s1, i1), REAL(s2)[i2]);
 	   }
 	} else	if(TYPEOF(s2) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
-	       REAL(ans)[i] = R_pow(REAL(s1)[i1], R_INTEGER(s2, i2));
+	       REAL(ans)[i] = R_POW(REAL(s1)[i1], R_INTEGER(s2, i2));
 	   }
 	}
 	break;
@@ -981,51 +1031,55 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 
 /* Mathematical Functions of One Argument */
 
+// FunctorWrapper for VectorOps::UnaryFunction.  Warns if function
+// application gives rise to any new NaNs.
+template <typename, typename, typename> class NaNWarner;
+
+template <>
+class NaNWarner<double, double, double (*)(double)> {
+public:
+    NaNWarner(double (*f)(double))
+	: m_f(f), m_any_NaN(false)
+    {}
+
+    double operator()(double in)
+    {
+	if (isNA(in))
+	    return NA<double>();
+	double ans = m_f(in);
+	if (isnan(ans) && !isnan(in))
+	    m_any_NaN = true;
+	return ans;
+    }
+
+    void warnings()
+    {
+	if (m_any_NaN)
+	    Rf_warning(R_MSG_NA);
+    }
+private:
+    double (*m_f)(double);
+    bool m_any_NaN;
+};
+
 static SEXP math1(SEXP sa, double (*f)(double), SEXP lcall)
 {
-    SEXP sy;
-    double *y, *a;
-    int i, n;
-    int naflag;
-
+    using namespace VectorOps;
     if (!isNumeric(sa))
 	errorcall(lcall, R_MSG_NONNUM_MATH);
-
-    n = length(sa);
     /* coercion can lose the object bit */
-    PROTECT(sa = coerceVector(sa, REALSXP));
-    PROTECT(sy = allocVector(REALSXP, n));
-#ifdef R_MEMORY_PROFILING
-    if (RTRACE(sa)){
-       memtrace_report(sa, sy);
-       SET_RTRACE(sy, 1);
-    }
-#endif
-    a = REAL(sa);
-    y = REAL(sy);
-    naflag = 0;
-    for (i = 0; i < n; i++) {
-	if (ISNAN(a[i]))
-	    y[i] = a[i];
-	else {
-	    y[i] = f(a[i]);
-	    if (ISNAN(y[i])) naflag = 1;
-	}
-    }
-    if(naflag)
-	warningcall(lcall, R_MSG_NA);
-
-    DUPLICATE_ATTRIB(sy, sa);
-    UNPROTECT(2);
-    return sy;
+    GCStackRoot<RealVector>
+	rv(static_cast<RealVector*>(coerceVector(sa, REALSXP)));
+    UnaryFunction<CopyAllAttributes, double (*)(double), NaNWarner> uf(f);
+    return uf.apply<RealVector>(rv.get());
 }
-
 
 SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s;
 
     checkArity(op, args);
+    check1arg(args, call, "x");
 
     if (DispatchGroup("Math", call, op, args, env, &s))
 	return s;
@@ -1049,6 +1103,7 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
     case 22: return MATH1(tan);
     case 23: return MATH1(acos);
     case 24: return MATH1(asin);
+    case 25: return MATH1(atan);
 
     case 30: return MATH1(cosh);
     case 31: return MATH1(sinh);
@@ -1075,37 +1130,55 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
     return s; /* never used; to keep -Wall happy */
 }
 
+/* methods are allowed to have more than one arg */
 SEXP attribute_hidden do_trunc(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s;
     if (DispatchGroup("Math", call, op, args, env, &s))
 	return s;
-    checkArity(op, args);
+    checkArity(op, args); /* but is -1 in names.c */
+    check1arg(args, call, "x");
     if (isComplex(CAR(args)))
 	errorcall(call, _("unimplemented complex function"));
     return math1(CAR(args), trunc, call);
 }
 
+/*
+   Note that this is slightly different from the do_math1 set, 
+   both for integer/logical inputs and what it dispatches to for complex ones.
+*/
+
 SEXP attribute_hidden do_abs(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP s;
+    SEXP x, s = R_NilValue /* -Wall */;
+
+    checkArity(op, args);
+    check1arg(args, call, "x");
+    x = CAR(args);
+
     if (DispatchGroup("Math", call, op, args, env, &s))
 	return s;
-    checkArity(op, args);
-    if (isComplex(CAR(args)) || !(isInteger(CAR(args)) || isLogical(CAR(args))))
-	return do_cmathfuns(call, op, args, env);
-    else { /* integer or logical ==> return integer */
-	SEXP x = CAR(args);
-	int i, n;
-	n = length(x);
+
+    if (isInteger(x) || isLogical(x)) {
+	/* integer or logical ==> return integer,
+	   factor was covered by Math.factor. */
+	int i, n = length(x);
 	PROTECT(s = allocVector(INTSXP, n));
 	/* Note: relying on INTEGER(.) === LOGICAL(.) : */
 	for(i = 0 ; i < n ; i++)
 	    INTEGER(s)[i] = abs(INTEGER(x)[i]);
-	DUPLICATE_ATTRIB(s, x);
-	UNPROTECT(1);
-	return s;
-    }
+    } else if (TYPEOF(x) == REALSXP) {
+	int i, n = length(x);
+	PROTECT(s = allocVector(REALSXP, n));
+	for(i = 0 ; i < n ; i++)
+	    REAL(s)[i] = fabs(REAL(x)[i]);
+    } else if (isComplex(x)) {
+	return do_cmathfuns(call, op, args, env);
+    } else
+	errorcall(call, R_MSG_NONNUM_MATH);
+    DUPLICATE_ATTRIB(s, x);
+    UNPROTECT(1);
+    return s;
 }
 
 /* Mathematical Functions of Two Numeric Arguments (plus 1 int) */
@@ -1132,9 +1205,7 @@ static SEXP math2(SEXP sa, SEXP sb, double (*f)(double, double),
     nb = LENGTH(sb);				\
     if ((na == 0) || (nb == 0))	{		\
 	PROTECT(sy = allocVector(REALSXP, 0));	\
-	if (na == 0) {				\
-	    DUPLICATE_ATTRIB(sy, sa);\
-	}					\
+	if (na == 0) DUPLICATE_ATTRIB(sy, sa);  \
 	UNPROTECT(1);				\
 	return(sy);				\
     }						\
@@ -1149,20 +1220,7 @@ static SEXP math2(SEXP sa, SEXP sb, double (*f)(double, double),
 
     SETUP_Math2;
 
-#ifdef R_MEMORY_PROFILING
-    if (RTRACE(sa) || RTRACE(sb)){
-       if (RTRACE(sa) && RTRACE(sb)){
-	  if (na>nb)
-	      memtrace_report(sa, sy);
-	  else
-	      memtrace_report(sb, sy);
-       } else if (RTRACE(sa))
-	   memtrace_report(sa, sy);
-       else /* only s2 */
-	   memtrace_report(sb, sy);
-       SET_RTRACE(sy, 1);
-    }
-#endif
+    sy->maybeTraceMemory(sa, sb);
 
     mod_iterate(na, nb, ia, ib) {
 	ai = a[ia];
@@ -1177,13 +1235,8 @@ static SEXP math2(SEXP sa, SEXP sb, double (*f)(double, double),
 #define FINISH_Math2				\
     if(naflag)					\
 	warningcall(lcall, R_MSG_NA);		\
-						\
-    if (n == na) {				\
-	DUPLICATE_ATTRIB(sy, sa);	\
-    }						\
-    else if (n == nb) {				\
-	DUPLICATE_ATTRIB(sy, sb);	\
-    }						\
+    if (n == na)  DUPLICATE_ATTRIB(sy, sa);	\
+    else if (n == nb) DUPLICATE_ATTRIB(sy, sb);	\
     UNPROTECT(3)
 
     FINISH_Math2;
@@ -1206,20 +1259,7 @@ static SEXP math2_1(SEXP sa, SEXP sb, SEXP sI,
     SETUP_Math2;
     m_opt = asInteger(sI);
 
-#ifdef R_MEMORY_PROFILING
-    if (RTRACE(sa) || RTRACE(sb)){
-       if (RTRACE(sa) && RTRACE(sb)){
-	  if (na>nb)
-	      memtrace_report(sa, sy);
-	  else
-	      memtrace_report(sb, sy);
-       } else if (RTRACE(sa))
-	   memtrace_report(sa, sy);
-       else /* only s2 */
-	   memtrace_report(sb, sy);
-       SET_RTRACE(sy, 1);
-    }
-#endif
+    sy->maybeTraceMemory(sa, sb);
 
     mod_iterate(na, nb, ia, ib) {
 	ai = a[ia];
@@ -1249,20 +1289,7 @@ static SEXP math2_2(SEXP sa, SEXP sb, SEXP sI1, SEXP sI2,
     i_1 = asInteger(sI1);
     i_2 = asInteger(sI2);
 
-#ifdef R_MEMORY_PROFILING
-    if (RTRACE(sa) || RTRACE(sb)){
-       if (RTRACE(sa) && RTRACE(sb)){
-	  if (na>nb)
-	      memtrace_report(sa, sy);
-	  else
-	      memtrace_report(sb, sy);
-       } else if (RTRACE(sa))
-	   memtrace_report(sa, sy);
-       else /* only s2 */
-	   memtrace_report(sb, sy);
-       SET_RTRACE(sy, 1);
-    }
-#endif
+    sy->maybeTraceMemory(sa, sb);
 
     mod_iterate(na, nb, ia, ib) {
 	ai = a[ia];
@@ -1277,9 +1304,55 @@ static SEXP math2_2(SEXP sa, SEXP sb, SEXP sI1, SEXP sI2,
     return sy;
 } /* math2_2() */
 
+static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
+		   SEXP lcall)
+{
+    SEXP sy;
+    int i, ia, ib, n, na, nb;
+    double ai, bi, *a, *b, *y;
+    int naflag;
+    double amax, *work;
+    long nw;
+
+    if (!isNumeric(sa) || !isNumeric(sb))
+	errorcall(lcall, R_MSG_NONNUM_MATH);
+
+    /* for 0-length a we want the attributes of a, not those of b
+       as no recycling will occur */
+    SETUP_Math2;
+
+    sy->maybeTraceMemory(sa, sb);
+    
+    /* allocate work array for BesselJ, BesselY large enough for all
+       arguments */
+    amax = 0.0;
+    for (i = 0; i < nb; i++) {
+	double av = b[i] < 0 ? -b[i] : b[i];
+	if (av > amax) amax = av;
+    }
+    nw = 1 + long(floor(amax));
+    work = static_cast<double *>( CXXR_alloc(size_t( nw), sizeof(double)));
+
+    mod_iterate(na, nb, ia, ib) {
+	ai = a[ia];
+	bi = b[ib];
+	if_NA_Math2_set(y[i], ai, bi)
+	else {
+	    y[i] = f(ai, bi, work);
+	    if (ISNAN(y[i])) naflag = 1;
+	}
+    }
+
+
+    FINISH_Math2;
+
+    return sy;
+} /* math2B() */
+
 #define Math2(A, FUN)	  math2(CAR(A), CADR(A), FUN, call);
 #define Math2_1(A, FUN)	math2_1(CAR(A), CADR(A), CADDR(A), FUN, call);
 #define Math2_2(A, FUN) math2_2(CAR(A), CADR(A), CADDR(A), CADDDR(A), FUN, call)
+#define Math2B(A, FUN)	  math2B(CAR(A), CADR(A), FUN, call);
 
 SEXP attribute_hidden do_math2(SEXP call, SEXP op, SEXP args, SEXP env)
 {
@@ -1293,8 +1366,8 @@ SEXP attribute_hidden do_math2(SEXP call, SEXP op, SEXP args, SEXP env)
     switch (PRIMVAL(op)) {
 
     case  0: return Math2(args, atan2);
-    case 10001: return Math2(args, rround); /* #defined to fround in Rmath.h */
-    case 10004: return Math2(args, prec);/* signif() #defined to fprec in Rmath.h */
+    case 10001: return Math2(args, fround);/* round(), src/nmath/fround.c */
+    case 10004: return Math2(args, fprec); /* signif(), src/nmath/fprec.c */
 
     case  2: return Math2(args, lbeta);
     case  3: return Math2(args, beta);
@@ -1325,8 +1398,8 @@ SEXP attribute_hidden do_math2(SEXP call, SEXP op, SEXP args, SEXP env)
     case 22: return Math2_2(args, psignrank);
     case 23: return Math2_2(args, qsignrank);
 
-    case 24: return Math2(args, bessel_j);
-    case 25: return Math2(args, bessel_y);
+    case 24: return Math2B(args, bessel_j_ex);
+    case 25: return Math2B(args, bessel_y_ex);
     case 26: return Math2(args, psigamma);
 
     default:
@@ -1337,29 +1410,8 @@ SEXP attribute_hidden do_math2(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 
-SEXP attribute_hidden do_atan(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    SEXP s;
-    int n;
-    if (DispatchGroup("Math", call, op, args, env, &s))
-	return s;
-
-    switch (n = length(args)) {
-    case 1:
-	if (isComplex(CAR(args)))
-	    return complex_math1(call, op, args, env);
-	else
-	    return math1(CAR(args), atan, call);
-    /* prior to 2.3.0, 2 args were allowed,
-       but this was never documented */
-    default:
-	errorcall(call,_("%d arguments passed to 'atan' which requires 1"), n);
-    }
-    return s;			/* never used; to keep -Wall happy */
-}
-
-
 /* The S4 Math2 group, round and signif */
+/* This is a primitive SPECIALSXP with internal argument matching */
 SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP res, ap, call2;
@@ -1409,24 +1461,33 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
     return res;
 }
 
+/* log{2,10} are builtins */
 SEXP attribute_hidden do_log1arg(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP res, Call, tmp = R_NilValue /* -Wall */;
+    SEXP res, call2, args2, tmp = R_NilValue /* -Wall */;
 
     checkArity(op, args);
+    check1arg(args, call, "x");
 
     if (DispatchGroup("Math", call, op, args, env, &res)) return res;
 
     if(PRIMVAL(op) == 10) tmp = ScalarReal(10.0);
     if(PRIMVAL(op) == 2)  tmp = ScalarReal(2.0);
 
-    PROTECT(Call = lang3(install("log"), CAR(args), tmp));
-    res = eval(Call, env);
-    UNPROTECT(1);
+    PROTECT(call2 = lang3(install("log"), CAR(args), tmp));
+    PROTECT(args2 = list2(CAR(args), tmp));
+    if (! DispatchGroup("Math", call2, op, args2, env, &res)) {
+	if (isComplex(CAR(args)))
+	    res = complex_math2(call2, op, args2, env);
+	else
+	    res = math2(CAR(args), tmp, logbase, call);
+    }
+    UNPROTECT(2);
     return res;
-
 }
 
+
+/* This is a primitive SPECIALSXP with internal argument matching */
 SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP res, ap = args, call2;
@@ -1490,14 +1551,6 @@ SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
 	i3 = (++i3==n3) ? 0 : i3,				\
 	++i)
 
-static SEXP math3(SEXP sa, SEXP sb, SEXP sc,
-		  double (*f)(double, double, double), SEXP lcall)
-{
-    SEXP sy;
-    int i, ia, ib, ic, n, na, nb, nc;
-    double ai, bi, ci, *a, *b, *c, *y;
-    int naflag;
-
 #define SETUP_Math3						\
     if (!isNumeric(sa) || !isNumeric(sb) || !isNumeric(sc))	\
 	errorcall(lcall, R_MSG_NONNUM_MATH);			\
@@ -1520,50 +1573,14 @@ static SEXP math3(SEXP sa, SEXP sb, SEXP sc,
     y = REAL(sy);						\
     naflag = 0
 
-    SETUP_Math3;
-
-#ifdef R_MEMORY_PROFILING
-    if (RTRACE(sa) || RTRACE(sb) || RTRACE(sc)){
-       if (RTRACE(sa))
-	  memtrace_report(sa,sy);
-       else if (RTRACE(sb))
-	  memtrace_report(sb, sy);
-       else if (RTRACE(sc))
-	  memtrace_report(sc,sy);
-       SET_RTRACE(sy, 1);
-    }
-#endif
-
-    mod_iterate3 (na, nb, nc, ia, ib, ic) {
-	ai = a[ia];
-	bi = b[ib];
-	ci = c[ic];
-	if_NA_Math3_set(y[i], ai,bi,ci)
-	else {
-	    y[i] = f(ai, bi, ci);
-	    if (ISNAN(y[i])) naflag = 1;
-	}
-    }
-
 #define FINISH_Math3				\
     if(naflag)					\
 	warningcall(lcall, R_MSG_NA);		\
 						\
-    if (n == na) {				\
-	DUPLICATE_ATTRIB(sy, sa);	\
-    }						\
-    else if (n == nb) {				\
-	DUPLICATE_ATTRIB(sy, sb);	\
-    }						\
-    else if (n == nc) {				\
-	DUPLICATE_ATTRIB(sy, sc);	\
-    }						\
+    if (n == na) DUPLICATE_ATTRIB(sy, sa);	\
+    else if (n == nb) DUPLICATE_ATTRIB(sy, sb);	\
+    else if (n == nc) DUPLICATE_ATTRIB(sy, sc);	\
     UNPROTECT(4)
-
-    FINISH_Math3;
-
-    return sy;
-} /* math3 */
 
 static SEXP math3_1(SEXP sa, SEXP sb, SEXP sc, SEXP sI,
 		    double (*f)(double, double, double, int), SEXP lcall)
@@ -1577,17 +1594,7 @@ static SEXP math3_1(SEXP sa, SEXP sb, SEXP sc, SEXP sI,
     SETUP_Math3;
     i_1 = asInteger(sI);
 
-#ifdef R_MEMORY_PROFILING
-    if (RTRACE(sa) || RTRACE(sb) || RTRACE(sc)){
-       if (RTRACE(sa))
-	  memtrace_report(sa,sy);
-       else if (RTRACE(sb))
-	  memtrace_report(sb, sy);
-       else if (RTRACE(sc))
-	  memtrace_report(sc,sy);
-       SET_RTRACE(sy, 1);
-    }
-#endif
+    sy->maybeTraceMemory(sa, sb, sc);
 
     mod_iterate3 (na, nb, nc, ia, ib, ic) {
 	ai = a[ia];
@@ -1617,18 +1624,7 @@ static SEXP math3_2(SEXP sa, SEXP sb, SEXP sc, SEXP sI, SEXP sJ,
     i_1 = asInteger(sI);
     i_2 = asInteger(sJ);
 
-#ifdef R_MEMORY_PROFILING
-    if (RTRACE(sa) || RTRACE(sb) || RTRACE(sc)){
-       if (RTRACE(sa))
-	  memtrace_report(sa,sy);
-       else if (RTRACE(sb))
-	  memtrace_report(sb, sy);
-       else if (RTRACE(sc))
-	  memtrace_report(sc,sy);
-       SET_RTRACE(sy, 1);
-    }
-#endif
-
+    sy->maybeTraceMemory(sa, sb, sc);
 
     mod_iterate3 (na, nb, nc, ia, ib, ic) {
 	ai = a[ia];
@@ -1645,9 +1641,49 @@ static SEXP math3_2(SEXP sa, SEXP sb, SEXP sc, SEXP sI, SEXP sJ,
     return sy;
 } /* math3_2 */
 
-#define Math3(A, FUN)   math3  (CAR(A), CADR(A), CADDR(A), FUN, call);
+static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
+		   double (*f)(double, double, double, double *), SEXP lcall)
+{
+    SEXP sy;
+    int i, ia, ib, ic, n, na, nb, nc;
+    double ai, bi, ci, *a, *b, *c, *y;
+    int naflag;
+    double amax, *work;
+    long nw;
+
+    SETUP_Math3;
+
+    sy->maybeTraceMemory(sa, sb, sc);
+
+    /* allocate work array for BesselI, BesselK large enough for all
+       arguments */
+    amax = 0.0;
+    for (i = 0; i < nb; i++) {
+	double av = b[i] < 0 ? -b[i] : b[i];
+	if (av > amax) amax = av;
+    }
+    nw = 1 + long(floor(amax));
+    work = static_cast<double *>( CXXR_alloc(size_t( nw), sizeof(double)));
+
+    mod_iterate3 (na, nb, nc, ia, ib, ic) {
+	ai = a[ia];
+	bi = b[ib];
+	ci = c[ic];
+	if_NA_Math3_set(y[i], ai,bi,ci)
+	else {
+	    y[i] = f(ai, bi, ci, work);
+	    if (ISNAN(y[i])) naflag = 1;
+	}
+    }
+
+    FINISH_Math3;
+
+    return sy;
+} /* math3B */
+
 #define Math3_1(A, FUN)	math3_1(CAR(A), CADR(A), CADDR(A), CADDDR(A), FUN, call);
 #define Math3_2(A, FUN) math3_2(CAR(A), CADR(A), CADDR(A), CADDDR(A), CAD4R(A), FUN, call)
+#define Math3B(A, FUN)  math3B (CAR(A), CADR(A), CADDR(A), FUN, call);
 
 SEXP attribute_hidden do_math3(SEXP call, SEXP op, SEXP args, SEXP env)
 {
@@ -1711,8 +1747,8 @@ SEXP attribute_hidden do_math3(SEXP call, SEXP op, SEXP args, SEXP env)
     case 41:  return Math3_2(args, pwilcox);
     case 42:  return Math3_2(args, qwilcox);
 
-    case 43:  return Math3(args, bessel_i);
-    case 44:  return Math3(args, bessel_k);
+    case 43:  return Math3B(args, bessel_i_ex);
+    case 44:  return Math3B(args, bessel_k_ex);
 
     case 45:  return Math3_1(args, dnbinom_mu);
     case 46:  return Math3_2(args, pnbinom_mu);
@@ -1790,18 +1826,10 @@ static SEXP math4(SEXP sa, SEXP sb, SEXP sc, SEXP sd,
     if(naflag)					\
 	warningcall(lcall, R_MSG_NA);		\
 						\
-    if (n == na) {				\
-	DUPLICATE_ATTRIB(sy, sa);	\
-    }						\
-    else if (n == nb) {				\
-	DUPLICATE_ATTRIB(sy, sb);	\
-    }						\
-    else if (n == nc) {				\
-	DUPLICATE_ATTRIB(sy, sc);	\
-    }						\
-    else if (n == nd) {				\
-	DUPLICATE_ATTRIB(sy, sd);	\
-    }						\
+    if (n == na) DUPLICATE_ATTRIB(sy, sa);	\
+    else if (n == nb) DUPLICATE_ATTRIB(sy, sb);	\
+    else if (n == nc) DUPLICATE_ATTRIB(sy, sc);	\
+    else if (n == nd) DUPLICATE_ATTRIB(sy, sd);	\
     UNPROTECT(5)
 
     FINISH_Math4;
@@ -1986,21 +2014,11 @@ static SEXP math5(SEXP sa, SEXP sb, SEXP sc, SEXP sd, SEXP se, double (*f)())
     if(naflag)					\
 	warningcall(lcall, R_MSG_NA);		\
 						\
-    if (n == na) {				\
-	DUPLICATE_ATTRIB(sy, sa);	\
-    }						\
-    else if (n == nb) {				\
-	DUPLICATE_ATTRIB(sy, sb);	\
-    }						\
-    else if (n == nc) {				\
-	DUPLICATE_ATTRIB(sy, sc);	\
-    }						\
-    else if (n == nd) {				\
-	DUPLICATE_ATTRIB(sy, sd);	\
-    }						\
-    else if (n == ne) {				\
-	DUPLICATE_ATTRIB(sy, se);	\
-    }						\
+    if (n == na) DUPLICATE_ATTRIB(sy, sa);	\
+    else if (n == nb) DUPLICATE_ATTRIB(sy, sb);	\
+    else if (n == nc) DUPLICATE_ATTRIB(sy, sc);	\
+    else if (n == nd) DUPLICATE_ATTRIB(sy, sd);	\
+    else if (n == ne) DUPLICATE_ATTRIB(sy, se);	\
     UNPROTECT(6)
 
     FINISH_Math5;

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2007  Robert Gentleman, Ross Ihaka and the
- *                            R Development Core Team
+ *  Copyright (C) 1998--2011  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -540,7 +539,7 @@ static int get_col_width(DEstruct DE, int col)
 	/* don't use NA labels */
 	lab = STRING_ELT(DE->names, col - 1);
 	if(lab != NA_STRING) w = strlen(CHAR(lab)); else w = fw;
-	PrintDefaults(R_NilValue);
+	PrintDefaults();
 	for (i = 0; i < INTEGER(DE->lens)[col - 1]; i++) {
 	    strp = EncodeElement(tmp, i, 0, '.');
 	    w1 = strlen(strp);
@@ -635,7 +634,7 @@ static void drawrow(DEstruct DE, int whichrow)
 static void printelt(DEstruct DE, SEXP invec, int vrow, int ssrow, int sscol)
 {
     const char *strp;
-    PrintDefaults(R_NilValue);
+    PrintDefaults();
     if (TYPEOF(invec) == REALSXP) {
 	strp = EncodeElement(invec, vrow, 0, '.');
 	printstring(DE, strp, strlen(strp), ssrow, sscol, 0);
@@ -787,14 +786,6 @@ static Rboolean getccol(DEstruct DE)
 	SET_VECTOR_ELT(DE->work, wcol - 1, tmp2);
     }
     return newcol;
-}
-
-static SEXP lang5(SEXP s, SEXP t, SEXP u, SEXP v, SEXP w)
-{
-    PROTECT(s);
-    s = LCONS(s, list4(t, u, v, w));
-    UNPROTECT(1);
-    return s;
 }
 
 static SEXP processEscapes(SEXP x)
@@ -1236,7 +1227,7 @@ static const char *get_cell_text(DEstruct DE)
     if (wcol <= DE->xmaxused) {
 	tvec = VECTOR_ELT(DE->work, wcol - 1);
 	if (!isNull(tvec) && wrow < INTEGER(DE->lens)[wcol - 1]) {
-	    PrintDefaults(R_NilValue);
+	    PrintDefaults();
 	    if (TYPEOF(tvec) == REALSXP) {
 		prev = EncodeElement(tvec, wrow, 0, '.');
 	    } else if (TYPEOF(tvec) == STRSXP) {
@@ -1433,7 +1424,7 @@ static Rboolean initwin(DEstruct DE, const char *title)
     DE->oldWIDTH = DE->oldHEIGHT = 0;
     DE->nboxchars = 5;
 
-    DE->nboxchars = asInteger(GetOption(install("de.cellwidth"), R_GlobalEnv));
+    DE->nboxchars = asInteger(GetOption1(install("de.cellwidth")));
     if (DE->nboxchars == NA_INTEGER || DE->nboxchars < 0) DE->nboxchars = 0;
     if (DE->nboxchars > 0) check(DE->de_mvw);
     DE->box_w = ((DE->nboxchars >0)?DE->nboxchars:FIELDWIDTH)*(DE->p->fw) + 8;
@@ -1764,7 +1755,7 @@ static dataeditor newdataeditor(DEstruct DE, const char *title)
     DE->p = newconsoledata((consolefn) ? consolefn : FixedFont,
 			   pagerrow, pagercol, 0, 0,
 			   guiColors,
-			   DATAEDITOR, 0);
+			   DATAEDITOR, 0, 0);
     if (!DE->p) return NULL;
 
     w = DE->p->w ;

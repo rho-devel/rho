@@ -1,0 +1,203 @@
+# English translations for R package.
+# Copyright (C) 2005 The R Foundation
+# This file is distributed under the same license as the R package.
+# Automatically generated, 2005.
+#
+# All this catalog "translates" are quotation characters.
+# The msgids must be ASCII and therefore cannot contain real quotation
+# characters, only substitutes like grave accent (0x60), apostrophe (0x27)
+# and double quote (0x22). These substitutes look strange; see
+# http://www.cl.cam.ac.uk/~mgk25/ucs/quotes.html
+#
+# This catalog translates grave accent (0x60) and apostrophe (0x27) to
+# left single quotation mark (U+2018) and right single quotation mark (U+2019).
+# It also translates pairs of apostrophe (0x27) to
+# left single quotation mark (U+2018) and right single quotation mark (U+2019)
+# and pairs of quotation mark (0x22) to
+# left double quotation mark (U+201C) and right double quotation mark (U+201D).
+#
+# When output to an UTF-8 terminal, the quotation characters appear perfectly.
+# When output to an ISO-8859-1 terminal, the single quotation marks are
+# transliterated to apostrophes (by iconv in glibc 2.2 or newer) or to
+# grave/acute accent (by libiconv), and the double quotation marks are
+# transliterated to 0x22.
+# When output to an ASCII terminal, the single quotation marks are
+# transliterated to apostrophes, and the double quotation marks are
+# transliterated to 0x22.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: R 2.3.0\n"
+"Report-Msgid-Bugs-To: bugs@R-project.org\n"
+"POT-Creation-Date: 2005-12-09 07:31+0000\n"
+"PO-Revision-Date: 2005-12-09 07:31+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: gcv.c:290
+#, c-format
+msgid ""
+"Overall smoothing parameter estimate on upper boundary.\n"
+"Boundary GCV score change: %g. Largest change: %g"
+msgstr ""
+"Overall smoothing parameter estimate on upper boundary.\n"
+"Boundary GCV score change: %g. Largest change: %g"
+
+#: gcv.c:875
+msgid "resetting -ve inf"
+msgstr "resetting -ve inf"
+
+#: gcv.c:877
+msgid "resetting +ve inf"
+msgstr "resetting +ve inf"
+
+#: gcv.c:1014
+msgid ""
+"Multiple GCV didn't improve autoinitialized relative smoothing parameters"
+msgstr ""
+"Multiple GCV didn't improve autoinitialized relative smoothing parameters"
+
+#: magic.c:809
+msgid "magic, the gcv/ubre optimizer, failed to converge after 400 iterations."
+msgstr ""
+"magic, the gcv/ubre optimizer, failed to converge after 400 iterations."
+
+#: matrix.c:85
+msgid "Failed to initialize memory for matrix."
+msgstr "Failed to initialize memory for matrix."
+
+#: matrix.c:147 matrix.c:210
+msgid "An out of bound write to matrix has occurred!"
+msgstr "An out of bound write to matrix has occurred!"
+
+#: matrix.c:153
+msgid "INTEGRITY PROBLEM in the extant matrix list."
+msgstr "INTEGRITY PROBLEM in the extant matrix list."
+
+#: matrix.c:186
+msgid "You are trying to check matrix integrity without defining RANGECHECK."
+msgstr "You are trying to check matrix integrity without defining RANGECHECK."
+
+#: matrix.c:255
+#, c-format
+msgid ""
+"\n"
+"%s not found, nothing read ! "
+msgstr ""
+"\n"
+"%s not found, nothing read ! "
+
+#: matrix.c:325
+msgid "Target matrix too small in mcopy"
+msgstr "Target matrix too small in mcopy"
+
+#: matrix.c:345 matrix.c:353 matrix.c:366 matrix.c:374
+msgid "Incompatible matrices in matmult."
+msgstr "Incompatible matrices in matmult."
+
+#: matrix.c:480
+msgid "Attempt to invert() non-square matrix"
+msgstr "Attempt to invert() non-square matrix"
+
+#: matrix.c:502
+msgid "Singular Matrix passed to invert()"
+msgstr "Singular Matrix passed to invert()"
+
+#: matrix.c:655
+msgid "Not a +ve def. matrix in choleski()."
+msgstr "Not a +ve def. matrix in choleski()."
+
+#: matrix.c:873
+msgid "Error in Covariance(a,b) - a,b not same length."
+msgstr "Error in Covariance(a,b) - a,b not same length."
+
+#: matrix.c:1812
+msgid "svd() not converged"
+msgstr "svd() not converged"
+
+#: matrix.c:1968
+#, c-format
+msgid "%s not found by routine gettextmatrix().\n"
+msgstr "%s not found by routine gettextmatrix().\n"
+
+#: matrix.c:2190
+#, c-format
+msgid "svdroot matrix not +ve semi def. %g"
+msgstr "svdroot matrix not +ve semi def. %g"
+
+#: matrix.c:2414
+msgid "Sort failed"
+msgstr "Sort failed"
+
+#: matrix.c:2542
+msgid "eigen_tri() failed to converge"
+msgstr "eigen_tri() failed to converge"
+
+#: matrix.c:2698
+#, c-format
+msgid "eigenvv_tri() Eigen vector %d of %d failure. Error = %g > %g"
+msgstr "eigenvv_tri() Eigen vector %d of %d failure. Error = %g > %g"
+
+#: matrix.c:2832
+msgid "Lanczos failed"
+msgstr "Lanczos failed"
+
+#: mgcv.c:868
+msgid ""
+"Numerical difficulties obtaining tr(A) - apparently resolved. Apply some "
+"caution to results."
+msgstr ""
+"Numerical difficulties obtaining tr(A) - apparently resolved. Apply some "
+"caution to results."
+
+#: mgcv.c:872
+msgid "tr(A) utter garbage and situation un-resolvable."
+msgstr "tr(A) utter garbage and situation un-resolvable."
+
+#: mgcv.c:873
+msgid ""
+"Numerical difficulties calculating tr(A). Not completely resolved. Use "
+"results with care!"
+msgstr ""
+"Numerical difficulties calculating tr(A). Not completely resolved. Use "
+"results with care!"
+
+#: mgcv.c:958
+msgid "Termwise estimate degrees of freedom are unreliable"
+msgstr "Termwise estimate degrees of freedom are unreliable"
+
+#: qp.c:59
+msgid "ERROR in addconQT."
+msgstr "ERROR in addconQT."
+
+#: qp.c:465
+msgid "QPCLS - Rank deficiency in model"
+msgstr "QPCLS - Rank deficiency in model"
+
+#: tprs.c:45
+msgid "You must have 2m>d for a thin plate spline."
+msgstr "You must have 2m>d for a thin plate spline."
+
+#: tprs.c:99
+msgid "You must have 2m > d"
+msgstr "You must have 2m > d"
+
+#: tprs.c:357 tprs.c:367
+msgid ""
+"A term has fewer unique covariate combinations than specified maximum "
+"degrees of freedom"
+msgstr ""
+"A term has fewer unique covariate combinations than specified maximum "
+"degrees of freedom"
+
+#: tprs.c:359
+msgid ""
+"Too many knots for t.p.r.s term: see `gam.control' to increase limit, or use "
+"a different basis, or see large data set help for `gam'."
+msgstr ""
+"Too many knots for t.p.r.s term: see ‘gam.control’ to increase limit, or use "
+"a different basis, or see large data set help for ‘gam’."

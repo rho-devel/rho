@@ -2,10 +2,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.3.0 \n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-10-05 14:06\n"
-"PO-Revision-Date: 2009-10-07 19:20+0900 \n"
-"Last-Translator: takahashi <takahashi.kohske@gmail.com> \n"
+"POT-Creation-Date: 2011-07-16 22:46\n"
+"PO-Revision-Date: 2011-10-22 08:06+0900 \n"
+"Last-Translator: Masafumi OKADA <mokada@mail.ne.jp> \n"
 "Language-Team: RjpWiki Message Translation Team <mokada@md.tsukuba.ac.jp> \n"
+"Language: \n"
 "MIME-Version: 1.0 \n"
 "Content-Type: text/plain; charset=UTF-8 \n"
 "Content-Transfer-Encoding: 8bit \n"
@@ -16,14 +17,11 @@ msgstr ""
 msgid "'a' is overridden by 'reg'"
 msgstr " 'a' は 'reg\" により無効にされます "
 
-msgid "only using the first two of"
-msgstr " 以下のうち最初の二つだけ使います "
-
-msgid "regression coefficients"
-msgstr " 回帰係数 "
+msgid "only using the first two of %d regression coefficients"
+msgstr " %d 個の怪奇係数のうち最初の二つだけを使います "
 
 msgid "'a' and 'b' are overridden by 'coef'"
-msgstr " 'a' と 'b' は 'reg\" により無効にされます "
+msgstr " 'a' と 'b' は 'coef' により置き換えられます "
 
 msgid "one of 'x1' and 'y1' must be given"
 msgstr " 'x1'と'y1'のどちらかは必要です "
@@ -39,6 +37,9 @@ msgstr " 'x' の少なくとも一つの項目は正値でなければなりま�
 
 msgid "incorrect 'col': must be length 2"
 msgstr " 誤った 'col'：長さは2でなければなりません "
+
+msgid "only for 1-D table"
+msgstr " １次元のテーブル専用です "
 
 msgid "'side' must be in {1:4}"
 msgstr " 'side' は範囲 {1:4} 中になければなりません "
@@ -96,9 +97,6 @@ msgstr " 'formula' は丁度二つの変数を特定すべきです "
 msgid "dependent variable should be a factor"
 msgstr " 従属変数は因子でなければなりません "
 
-msgid "explanatory variable should be numeric"
-msgstr " 説明変数は数値でなければなりません "
-
 msgid "y axis is on a cumulative probability scale, 'ylim' must be in [0,1]"
 msgstr ""
 " y 軸のメモリは累積確率のスケールです、 'ylim' は区間 [0,1] 中になければなり"
@@ -134,20 +132,36 @@ msgstr " 行数 * 列数が小さすぎます "
 msgid "Missing rows"
 msgstr " 行が欠けています "
 
-msgid "'expr' must be a function or an expression containing 'x'"
-msgstr " 'expr' は 'x' を含む関数か表現式でなければなりません "
+msgid "'expr' must be a function, or a call or an expression containing '%s'"
+msgstr " 'expr' は '%s' を含む関数、呼び出しまたは表現式でなければなりません "
+
+msgid "'add' will be ignored as there is no existing plot"
+msgstr " 既存のプロットがないので、'add' は無視されます "
 
 msgid "'from' and 'to' must be > 0 with log=\"x\""
 msgstr " log=\"x\" ならば 'from' と 'to' は正値でなければなりません "
 
+msgid "'expr' did not evaluate to an object of length 'n'"
+msgstr " 'expr' は長さ'n'のオブジェクトを評価しませんでした "
+
 msgid "wrong method"
 msgstr " 間違ったメソッドです "
+
+msgid "Must specify 'breaks' in hist(<POSIXt>)"
+msgstr " hist.POSIXt メソッドでは 'breaks' を指定しなければなりません "
 
 msgid "invalid specification of 'breaks'"
 msgstr " 'breaks' の指定が無効です "
 
+msgid "Must specify 'breaks' in hist(<Date>)"
+msgstr " hist(<Date>) メソッドでは 'breaks' を指定しなければなりません "
+
 msgid "'x' must be a numeric vector or matrix"
 msgstr " 'x' は数値ベクトル又は行列でなければなりません "
+
+msgid "'x' is neither a vector nor a matrix: using as.numeric(x)"
+msgstr ""
+" 'x' はベクトルでも行列でもありません: as.numeric(x) を使用してください "
 
 msgid "'x' must be an array"
 msgstr " 'x' は配列でなければなりません "
@@ -226,6 +240,9 @@ msgstr " 分割点はすべて有限でなければなりません "
 msgid "dimensions of z are not length(x)(-1) times length(y)(-1)"
 msgstr " z の次元が length(x)(-1) × length(y)(-1) ではありません "
 
+msgid "useRaster=TRUE can only be used with a regular grid"
+msgstr " useRaster=TRUE は規則的なグリッドと共にのみ使用することができます "
+
 msgid "'respect' must be logical or matrix with same dimension as 'mat'"
 msgstr ""
 " 'respect' は 'mat' と同じ次元の、論理値または行列でなければなりません "
@@ -268,7 +285,7 @@ msgid "'x' and 'y' must have only 1 or the same number of columns"
 msgstr " 'x' と 'y' は一つだけか、または同じ数の列を持たなければなりません "
 
 msgid "default 'pch' is smaller than number of columns and hence recycled"
-msgstr "既定の'pch'は列数よりも少ないため繰り返されます "
+msgstr " 既定の'pch'は列数よりも少ないため繰り返されます "
 
 msgid "missing values in contingency table"
 msgstr " 分割表中に欠測値があります "
@@ -293,6 +310,9 @@ msgstr " 'pairs' の引数はただ一つの列しか持ちません "
 
 msgid "the 'panel' function made a new plot"
 msgstr " 'panel' 関数は新規のプロットを行いました "
+
+msgid "surface extends beyond the box"
+msgstr " サーフェイスがボックスを越えて拡大しています "
 
 msgid "'x' values must be positive."
 msgstr " 'x' の値は正でなければなりません "
@@ -332,6 +352,9 @@ msgstr " 少なくとも一つの数値変数がなければなりません！ "
 
 msgid "cannot hatch with logarithmic scale active"
 msgstr " 対数スケール使用中は網掛けできません "
+
+msgid "Invalid fill rule for graphics path"
+msgstr " グラフィックスパスに対する不正な補完規則です "
 
 msgid "invalid rectangle specification"
 msgstr " 無効な長方形の指定です "
@@ -415,3 +438,9 @@ msgstr[0] " 外れ値 (%s) は描かれません 箱型図 %d 中では "
 msgid "argument %s is not made use of"
 msgid_plural "arguments %s are not made use of"
 msgstr[0] " 引数 %s は使用されていません "
+
+#~ msgid "explanatory variable should be numeric"
+#~ msgstr " 説明変数は数値でなければなりません "
+
+#~ msgid "regression coefficients"
+#~ msgstr " 回帰係数 "

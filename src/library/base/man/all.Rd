@@ -1,6 +1,6 @@
 % File src/library/base/man/all.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{all}
@@ -27,6 +27,8 @@ all(\dots, na.rm = FALSE)
 
   Coercion of types other than integer (raw, double, complex, character,
   list) gives a warning as this is often unintentional.
+
+  This is a \link{primitive} function.
 }
 \value{
   The value is a logical vector of length one.
@@ -45,9 +47,8 @@ all(\dots, na.rm = FALSE)
 \note{
   That \code{all(logical(0))} is true is a useful convention:
   it ensures that
-  \preformatted{
-  all(all(x), all(y)) == all(x,y)
-  }
+\preformatted{all(all(x), all(y)) == all(x,y)
+}
   even if \code{x} has length zero.
 }
 \section{S4 methods}{

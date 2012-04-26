@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -194,18 +194,26 @@ static void free_context(contextinfo *c)
 }
 
 /*
- *  Add a new DC into our list of DCs.
+ *  Add a new DC into our list of DCs.  This is kind of ugly:  num_contexts just keeps growing, unless
+ *  del_all_contexts is called, when it is set to 0.  The free ones will be scattered through the list.
  */
 PROTECTED
 void add_context(object obj, HDC dc, HGDIOBJ old)
 {
     contextinfo *c;
 
-    /* Clear a spot for the new DC if the array is full. */
+    /* Search for or clear a spot for the new DC if the array is full. */
     if (num_contexts == MAX_CONTEXTS) {
-	c = & context[empty_slot];
-	free_context(c);
-	empty_slot = (empty_slot+1) % MAX_CONTEXTS;
+        int i = empty_slot;
+        while ( context[i].dc ) {
+             i = (i+1) % MAX_CONTEXTS;
+             if (i == empty_slot) {
+		 free_context(&context[i]);
+		 break;
+	     }
+	}
+        c = & context[i];
+	empty_slot = (i+1) % MAX_CONTEXTS;
     } else {
 	c = & context[num_contexts];
 	num_contexts++;
@@ -275,7 +283,12 @@ void remove_context(object obj)
 	    c->obj = NULL;
 	    c->dc = 0;
 	    c->old_bitmap = 0;
-	    empty_slot = i;
+	    /* If we delete the last one, reduce the count:  avoid 
+	       a search next time. */
+	    if (i == num_contexts - 1)
+	    	num_contexts--;
+	    else
+	    	empty_slot = i;
 	}
     }
 }
@@ -296,7 +309,13 @@ void del_context(object obj)
 	    c->obj = NULL;
 	    c->dc = 0;
 	    c->old_bitmap = 0;
-	    empty_slot = i;
+	    /* If we delete the last one, reduce the count:  avoid 
+	       a search next time. */
+	    if (i == num_contexts - 1)
+	    	num_contexts--;
+	    else
+	    	empty_slot = i;
+
 	}
     }
 }

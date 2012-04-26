@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  Mathlib : A C Library of Special Functions
  *  Copyright (C) 1998 Ross Ihaka
- *  Copyright (C) 2000, 2001, 2005-2006 The R Development Core Team
+ *  Copyright (C) 2000-11 The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,16 +54,17 @@
 #include <config.h>
 #include "nmath.h"
 
-#ifndef HAVE_RINT
-#define USE_BUILTIN_RINT
+
+/*  nearbyint is C99, so all platforms should have it (and AFAIK, all do) */
+#ifdef HAVE_NEARBYINT
+# define R_rint nearbyint
+#elif defined(HAVE_RINT)
+# define R_rint rint
+#else
+# define R_rint private_rint
+extern double private_rint(double x);
 #endif
 
-#ifdef USE_BUILTIN_RINT
-#define R_rint private_rint
-extern double private_rint(double x);
-#else
-#define R_rint rint
-#endif
 /* Improvements by Martin Maechler, May 1997;
    further ones, Feb.2000:
    Replace  pow(x, (double)i) by  R_pow_di(x, i) {and use  int dig} */
@@ -88,15 +89,13 @@ double fprec(double x, double digits)
     /* Max.expon. of 10 (=308.2547) */
     const static int max10e = DBL_MAX_EXP * M_LOG10_2;
 
-#ifdef IEEE_754
     if (ISNAN(x) || ISNAN(digits))
 	return x + digits;
     if (!R_FINITE(x)) return x;
     if (!R_FINITE(digits)) {
-	if(digits > 0) return x;
-	else return 0;
+	if(digits > 0.0) return x;
+	else digits = 1.0;
     }
-#endif
     if(x == 0) return x;
     dig = (int)floor(digits+0.5);
     if (dig > MAX_DIGITS) {

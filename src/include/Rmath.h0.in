@@ -1,6 +1,6 @@
 /* -*- C -*-
  *  Mathlib : A C Library of Special Functions
- *  Copyright (C) 1998-2007  The R Development Core Team
+ *  Copyright (C) 1998-2011  The R Development Core Team
  *  Copyright (C) 2004       The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -39,25 +39,21 @@
 
 #define R_VERSION_STRING "@PACKAGE_VERSION@"
 
-#ifndef HAVE_LOG1P
-@RMATH_HAVE_LOG1P@
-#endif
-
 #ifndef HAVE_EXPM1
 @RMATH_HAVE_EXPM1@
+#endif
+
+#ifndef HAVE_HYPOT
+@RMATH_HAVE_HYPOT@
+#endif
+
+#ifndef HAVE_LOG1P
+@RMATH_HAVE_LOG1P@
 #endif
 
 #ifndef HAVE_WORKING_LOG1P
 @RMATH_HAVE_WORKING_LOG1P@
 #endif
-
-/* not really appropriate
-#include <errno.h>
-#include <limits.h>
-#include <float.h>
-#include <math.h>
-#include <stdlib.h>
-*/
 
 #if defined(HAVE_LOG1P) && !defined(HAVE_WORKING_LOG1P)
 /* remap to avoid problems with getting the right entry point */
@@ -203,6 +199,10 @@ double  Rlog1p(double);
 #define bessel_j	Rf_bessel_j
 #define bessel_k	Rf_bessel_k
 #define bessel_y	Rf_bessel_y
+#define bessel_i_ex	Rf_bessel_i_ex
+#define bessel_j_ex	Rf_bessel_j_ex
+#define bessel_k_ex	Rf_bessel_k_ex
+#define bessel_y_ex	Rf_bessel_y_ex
 #define beta		Rf_beta
 #define choose		Rf_choose
 #define dbeta		Rf_dbeta
@@ -560,10 +560,17 @@ double	bessel_i(double, double, double);
 double	bessel_j(double, double);
 double	bessel_k(double, double, double);
 double	bessel_y(double, double);
+double	bessel_i_ex(double, double, double, double *);
+double	bessel_j_ex(double, double, double *);
+double	bessel_k_ex(double, double, double, double *);
+double	bessel_y_ex(double, double, double *);
 
 
 	/* General Support Functions */
 
+#ifndef HAVE_HYPOT
+double 	hypot(double, double);
+#endif
 double 	pythag(double, double);
 #ifndef HAVE_EXPM1
 double  expm1(double); /* = exp(x)-1 {care for small x} */
@@ -633,6 +640,8 @@ R_EXTERN double R_PosInf;
 R_EXTERN double R_NegInf;
 R_EXTERN int N01_kind;
 #  undef R_EXTERN
+#else
+extern int N01_kind;
 # endif
 
 #endif /* MATHLIB_STANDALONE */

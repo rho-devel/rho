@@ -1,12 +1,12 @@
 % File src/library/datasets/man/zCO2.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-20011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{CO2}
 \docType{data}
 \alias{CO2}
-\title{Carbon Dioxide uptake in grass plants}
+\title{Carbon Dioxide Uptake in Grass Plants}
 \description{
   The \code{CO2} data frame has 84 rows and 5 columns of data from an
   experiment on the cold tolerance of the grass species
@@ -14,7 +14,8 @@
 }
 \usage{CO2}
 \format{
-  This data frame contains the following columns:
+  This object of class \code{c("nfnGroupedData", "nfGroupedData",
+    "groupedData", "data.frame")} containing the following columns:
   \describe{
     \item{Plant}{
       an ordered factor with levels
@@ -46,6 +47,10 @@
   from Mississippi was measured at several levels of ambient
   \eqn{CO_2}{CO2} concentration.  Half the plants of each type were
   chilled overnight before the experiment was conducted.
+  
+  This dataset was originally part of package \code{nlme}, and that has
+  methods (including for \code{[}, \code{as.data.frame}, \code{plot} and
+  \code{print}) for its grouped-data classes. 
 }
 \source{
   Potvin, C., Lechowicz, M. J. and Tardif, S. (1990)
@@ -58,6 +63,7 @@
 }
 \examples{
 require(stats); require(graphics)
+\testonly{options(show.nls.convergence=FALSE)}
 coplot(uptake ~ conc | Plant, data = CO2, show.given = FALSE, type = "b")
 ## fit the data for the first plant
 fm1 <- nls(uptake ~ SSasymp(conc, Asym, lrc, c0),
@@ -70,6 +76,6 @@ for (pp in levels(CO2$Plant)) {
       data = CO2, subset = Plant == pp)
 }
 ## check the coefficients by plant
-sapply(fmlist, coef)
+print(sapply(fmlist, coef), digits=3)
 }
 \keyword{datasets}

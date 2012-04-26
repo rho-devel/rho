@@ -95,6 +95,12 @@ Position(f, x, right = FALSE, nomatch = NA_integer_)
   (predicate) function \code{f}, it creates a function which returns the
   logical negation of what \code{f} returns.
 }
+
+\seealso{
+  \code{\link{clusterMap}} in package \pkg{parallel} provides a parallel
+  version of \code{Map}.
+}
+
 \examples{
 ## A general-purpose adder:
 add <- function(x) Reduce("+", x)
@@ -143,8 +149,8 @@ names(Filter(function(f) length(formals(args(f))) > 10, funs))
 length(Filter(function(f)
               any(names(formals(args(f))) \%in\% "..."),
               funs))
-
+\donttest{
 ## Find all objects in the base environment which are *not* functions:
 Filter(Negate(is.function),  sapply(ls(baseenv()), get, baseenv()))
-}
+}}
 \keyword{programming}

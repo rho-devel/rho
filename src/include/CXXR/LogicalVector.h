@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -46,21 +46,23 @@
 
 #ifdef __cplusplus
 
+
 #include <boost/serialization/export.hpp>
-#include "CXXR/DumbVector.hpp"
+#include "R_ext/Arith.h"
+#include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
     // Template specialization:
     template <>
-    inline const char* DumbVector<int, LGLSXP>::staticTypeName()
+    inline const char* FixedVector<int, LGLSXP>::staticTypeName()
     {
 	return "logical";
     }
 
     /** @brief Vector of truth values.
      */
-    typedef CXXR::DumbVector<int, LGLSXP> LogicalVector;
+    typedef CXXR::FixedVector<int, LGLSXP> LogicalVector;
 }  // namespace CXXR
 
 /* boost serialization */
@@ -94,9 +96,21 @@ int* LOGICAL(SEXP x);
 inline int* LOGICAL(SEXP x)
 {
     using namespace CXXR;
-    return &(*SEXP_downcast<LogicalVector*>(x))[0];
+    return &(*SEXP_downcast<LogicalVector*>(x, false))[0];
 }
 #endif
+
+    /** @brief Create a unit-length LogicalVector containing FALSE.
+     *
+     * @return a unit-length LogicalVector containing FALSE.
+     */
+    SEXP Rf_mkFalse();
+
+    /** @brief Create a unit-length LogicalVector containing TRUE.
+     *
+     * @return a unit-length LogicalVector containing TRUE.
+     */
+    SEXP Rf_mkTrue();
 
 #ifdef __cplusplus
 }

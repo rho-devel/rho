@@ -1,11 +1,11 @@
 % File src/library/base/man/seq.POSIXt.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{seq.POSIXt}
 \alias{seq.POSIXt}
-\title{Generate Regular Sequences of Dates}
+\title{Generate Regular Sequences of Times}
 \description{
   The method for \code{\link{seq}} for date-time classes.
 }
@@ -13,10 +13,10 @@
 \method{seq}{POSIXt}(from, to, by, length.out = NULL, along.with = NULL, \dots)
 }
 \arguments{
-  \item{from}{starting date. Required.}
-  \item{to}{end date. Optional.}
-  \item{by}{increment of the sequence. Optional.  See \sQuote{Details}.}
-  \item{length.out}{integer, optional. desired length of the sequence.}
+  \item{from}{starting date.  Required.}
+  \item{to}{end date.  Optional.}
+  \item{by}{increment of the sequence.  Optional.  See \sQuote{Details}.}
+  \item{length.out}{integer, optional.  Desired length of the sequence.}
   \item{along.with}{take the length from the length of this argument.}
   \item{\dots}{arguments passed to or from other methods.}
 }
@@ -37,8 +37,9 @@
   period of 144 hours), but \code{"7 DSTdays"}) can be used as an
   alternative.  \code{"month"} and \code{"year"} allow for DST.)
 
-  The timezone of the result is taken from \code{from}: remember than
-  GMT does not have daylight savings time.
+  The \link{timezone} of the result is taken from \code{from}: remember
+  that GMT means UTC (and not the timezone of Greenwich, England) and so
+  does not have daylight savings time.
 
   Using \code{"month"} first advances the month without changing the
   day: if this results in an invalid day of the month, it is counted

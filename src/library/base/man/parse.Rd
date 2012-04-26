@@ -1,6 +1,6 @@
 % File src/library/base/man/parse.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{parse}
@@ -15,7 +15,7 @@ parse(file = "", n = NULL, text = NULL, prompt = "?", srcfile,
       encoding = "unknown")
 }
 \arguments{
-  \item{file}{a connection, or a character string giving the name of a
+  \item{file}{a \link{connection}, or a character string giving the name of a
     file or a URL to read the expressions from.
     If \code{file} is \code{""} and \code{text} is missing or \code{NULL}
     then input is taken from the console.}
@@ -24,7 +24,7 @@ parse(file = "", n = NULL, text = NULL, prompt = "?", srcfile,
     \code{NA} the input is parsed in its entirety.}
   \item{text}{character vector.  The text to parse.  Elements are treated
     as if they were lines of a file.  Other \R objects will be coerced
-    to character (without method dispatch) if possible.}
+    to character if possible.}
   \item{prompt}{the prompt to print when parsing from the keyboard.
     \code{NULL} means to use \R's prompt, \code{getOption("prompt")}.}
   \item{srcfile}{\code{NULL}, or a \code{\link{srcfile}} object.  See
@@ -76,9 +76,12 @@ parse(file = "", n = NULL, text = NULL, prompt = "?", srcfile,
   elements if specified as a non-negative integer.
 
   When \code{srcfile} is non-\code{NULL}, a \code{"srcref"} attribute
-  will be attached to the result containing a list of \code{\link{srcref}}
-  records corresponding to each element, and a \code{"srcfile"} attribute
-  will be attached containing a copy of \code{srcfile}.
+  will be attached to the result containing a list of
+  \code{\link{srcref}} records corresponding to each element, a
+  \code{"srcfile"} attribute will be attached containing a copy of
+  \code{srcfile}, and a \code{"wholeSrcref"} attribute will be
+  attached containing a \code{\link{srcref}} record corresponding to
+  all of the parsed text.
   
   A syntax error (including an incomplete expression) will throw an error.
 

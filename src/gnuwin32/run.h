@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  A simple 'reading' pipe (and a command executor)
  *  Copyright (C) 1999  Guido Masarotto
- *            (C) 2004-8  The R Development Core Team
+ *            (C) 2004-10  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,7 +39,8 @@
 #include <windows.h>
 
 struct structRPIPE {
-    HANDLE process;
+    PROCESS_INFORMATION pi;
+    HANDLE thread;
     HANDLE read, write;
     int exitcode, active;
 };
@@ -48,16 +49,20 @@ typedef struct structRPIPE rpipe;
 
 /*
  * runcmd and rpipeClose return the exit code of the process
- * if runcmd return -1, problems in process start
+ * if runcmd return NOLAUNCH, problems in process start
 */
 #define runcmd Rf_runcmd
-int   runcmd(const char *cmd, cetype_t enc, int wait, int visible, const char *finput);
+int   runcmd(const char *cmd, cetype_t enc, int wait, int visible, 
+	     const char *fin, const char *fout, const char *ferr);
 
-rpipe *rpipeOpen(const char *cmd, cetype_t enc, int visible, const char *finput, int io);
+rpipe *rpipeOpen(const char *cmd, cetype_t enc, int visible, 
+		 const char *finput, int io,
+		 const char *fout, const char *ferr);
 char  *rpipeGets(rpipe *r, char *buf, int len);
 int rpipeGetc(rpipe *r);
 int rpipeClose(rpipe *r);
 
 char *runerror(void);
 
-#define NOLAUNCH -1
+/* Changed in R 2.12.0 to be the conventional Unix value -- previously -1 */
+#define NOLAUNCH 127

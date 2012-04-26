@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -19,6 +19,7 @@
  *  file console.c
  *  Copyright (C) 1998--2003  Guido Masarotto and Brian Ripley
  *  Copyright (C) 2004-8      The R Foundation
+ *  Copyright (C) 2004-11     The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,6 +54,7 @@ extern void R_ProcessEvents(void);
 #include <wchar.h>
 #include <limits.h>
 #include <R_ext/rlocale.h>
+#include <R_ext/Memory.h>
 #include "graphapp/ga.h"
 #ifdef USE_MDI
 #include "graphapp/stdimg.h"
@@ -64,10 +66,7 @@ extern void R_ProcessEvents(void);
 #include "Startup.h" /* for UImode */
 #include <Fileio.h>
 
-#ifdef W64
-typedef unsigned short uint16_t;
-typedef unsigned int uint32_t;
-#endif
+#include <stdint.h>
 
 /* Surrogate Pairs Macro */
 #define SURROGATE_PAIRS_HI_MIN  ((uint16_t)0xd800)
@@ -296,20 +295,26 @@ static size_t enctowcs(wchar_t *wc, char *s, int n)
 static void xbufadds(xbuf p, const char *s, int user)
 {
     int n = strlen(s) + 1; /* UCS-2 must be shorter */
-    wchar_t *tmp;
-
-    tmp = (wchar_t *) alloca(n * sizeof(wchar_t));
-    enctowcs(tmp, (char *) s, n);
-    xbufaddxs(p, tmp, user);
+    if (n < 1000) {
+	wchar_t tmp[n];
+	enctowcs(tmp, (char *) s, n);
+	xbufaddxs(p, tmp, user);
+    } else {
+	/* very long line */
+	void *vmax = vmaxget();
+	wchar_t *tmp = (wchar_t*) R_alloc(n, sizeof(wchar_t));
+	enctowcs(tmp, (char *) s, n);
+	xbufaddxs(p, tmp, user);
+	vmaxset(vmax);
+    }
 }
 
 static void xbuffixl(xbuf p)
 {
-    wchar_t *ps, *old;
+    wchar_t *ps;
 
     if (!p->ns) return;
     ps = p->s[p->ns - 1];
-    old = p->free;
     p->free = ps + wcslen(ps);
     p->av = p->dim - (p->free - p->b);
 }
@@ -328,7 +333,7 @@ extern int R_HistorySize;  /* from Defn.h */
 
 ConsoleData
 newconsoledata(font f, int rows, int cols, int bufbytes, int buflines,
-	       rgb *guiColors, int kind, int buffered)
+	       rgb *guiColors, int kind, int buffered, int cursor_blink)
 {
     ConsoleData p;
 
@@ -337,6 +342,8 @@ newconsoledata(font f, int rows, int cols, int bufbytes, int buflines,
     if (!p)
 	return NULL;
     p->kind = kind;
+    /* PR#14624 claimed this was needed, with no example */
+    p->chbrk = p->modbrk = '\0';
     if (kind == CONSOLE) {
 	p->lbuf = newxbuf(bufbytes, buflines, SLBUF);
 	if (!p->lbuf) {
@@ -378,6 +385,7 @@ newconsoledata(font f, int rows, int cols, int bufbytes, int buflines,
     p->sel = 0;
     p->input = 0;
     p->lazyupdate = buffered;
+    p->cursor_blink = cursor_blink;
     return (p);
 }
 
@@ -444,11 +452,12 @@ static void writelineHelper(ConsoleData p, int fch, int lch,
 	/* Some of the string is visible: */
 	if(mbcslocale) {
 	    int i, w0, nc;
-	    wchar_t *buff, *P = s, *q;
+	    wchar_t *P = s, *q;
 	    Rboolean leftedge;
 
 	    nc = (wcslen(s) + 1) * sizeof(wchar_t); /* overkill */
-	    q = buff = (wchar_t *) alloca(nc);
+	    wchar_t *buff = (wchar_t*) R_alloc(nc, sizeof(wchar_t));
+	    q = buff;
 	    leftedge = FC && (fch == 0);
 	    if(leftedge) fch++;
 	    for (w0 = -FC; w0 < fch && *P; P++) /* should have enough ... */
@@ -494,7 +503,7 @@ static void writelineHelper(ConsoleData p, int fch, int lch,
 #define WLHELPER(a, b, c, d) writelineHelper(p, a, b, c, d, j, len, s)
 
 /* write line i of the buffer at row j on bitmap */
-static int writeline(ConsoleData p, int i, int j)
+static int writeline(control c, ConsoleData p, int i, int j)
 {
     wchar_t *s, *stmp, *p0;
     int   insel, len, col1, d;
@@ -532,6 +541,13 @@ static int writeline(ConsoleData p, int i, int j)
 	if(l1 > l) l = l1;
 	s[l] = L'\0';
 	len = l; /* for redraw that uses len */
+	/* and reset cursor position */
+	{
+	    wchar_t *P = s;
+	    int w0;
+	    for (w0 = 0; *P; P++) w0 += wcwidth(*P);
+	    CURCOL = w0;
+	}
     }
     col1 = COLS - 1;
     insel = p->sel ? ((i - p->my0) * (i - p->my1)) : 1;
@@ -555,8 +571,16 @@ static int writeline(ConsoleData p, int i, int j)
     if ((p->r >= 0) && (CURCOL >= FC) && (CURCOL < FC + COLS) &&
 	(i == NUMLINES - 1) && (p->sel == 0 || !intersect_input(p, 0))) {
 	if (!p->overwrite) {
-	    r = rect(BORDERX + (CURCOL - FC) * FW, BORDERY + j * FH, FW/4, FH);
-	    gfillrect(p->bm, highlight, r);
+	    if (p->cursor_blink) {
+	    	setcaret(c, BORDERX + (CURCOL - FC) * FW, BORDERY + j * FH, 
+	    	            p->cursor_blink == 1 ? 1 : FW/4, FH);
+	    	showcaret(c, 1);
+	    } else showcaret(c, 0);
+	    
+	    if (p->cursor_blink < 2) {
+	    	r = rect(BORDERX + (CURCOL - FC) * FW, BORDERY + j * FH, FW/4, FH);
+	    	gfillrect(p->bm, highlight, r);
+	    }
 	} else if(mbcslocale) { /* determine the width of the current char */
 	    int w0;
 	    wchar_t *P = s, wc = 0, nn[2] = L" ";
@@ -568,12 +592,26 @@ static int writeline(ConsoleData p, int i, int j)
 	    /* term string '\0' box width = 1 fix */
 	    w0 = wc ? Ri18n_wcwidth(wc) : 1;
 	    nn[0] = wc;
-	    r = rect(BORDERX + (CURCOL - FC) * FW, BORDERY + j * FH,
-		     w0 * FW, FH);
-	    gfillrect(p->bm, highlight, r);
-	    gdrawwcs(p->bm, p->f, bg, pt(r.x, r.y), nn);
-	} else
-	    WLHELPER(CURCOL - FC, CURCOL - FC, bg, highlight);
+	    if (p->cursor_blink) {
+	    	setcaret(c, BORDERX + (CURCOL - FC) * FW, BORDERY + j * FH, 
+	    		    p->cursor_blink == 1 ? 1 : FW/4, FH);
+	    	showcaret(c, 1);
+	    } else showcaret(c, 0);
+	    if (p->cursor_blink < 2) {
+	    	r = rect(BORDERX + (CURCOL - FC) * FW, BORDERY + j * FH,
+		         w0 * FW, FH);
+	    	gfillrect(p->bm, highlight, r);
+	    	gdrawwcs(p->bm, p->f, bg, pt(r.x, r.y), nn);
+	    }
+	} else {
+	    if (p->cursor_blink) {
+		setcaret(c, BORDERX + (CURCOL - FC) * FW, BORDERY + j * FH, 
+		            p->cursor_blink == 1 ? 1 : FW, FH);
+	    	showcaret(c, 1);
+	    } else showcaret(c, 0);
+	    if (p->cursor_blink < 2) 
+	    	WLHELPER(CURCOL - FC, CURCOL - FC, bg, highlight); 
+	}
     }
     if (insel != 0) return len;
     c1 = (p->my0 < p->my1);
@@ -668,7 +706,7 @@ void setfirstvisible(control c, int fv)
     if (p->needredraw) {
 	ww = min(NUMLINES, ROWS) - 1;
 	rw = FV + ww;
-	writeline(p, rw, ww);
+	writeline(c, p, rw, ww);
 	if (ds == 0) {
 	    RSHOW(RLINE(ww));
 	    return;;
@@ -890,8 +928,6 @@ static void performCompletion(control c)
     int i, alen, alen2, max_show = 10, cursor_position = p->c - prompt_wid;
     wchar_t *partial_line = LINE(NUMLINES - 1) + prompt_wid;
     const char *additional_text;
-    wchar_t *pline;
-    char *cmd;
     SEXP cmdSexp, cmdexpr, ans = R_NilValue;
     ParseStatus status;
 
@@ -929,14 +965,14 @@ static void performCompletion(control c)
     }
 
     /* FIXME: need to escape quotes properly */
-    pline = (wchar_t *) alloca((wcslen(partial_line) + 1) * sizeof(wchar_t));
+    wchar_t *pline = (wchar_t*) R_alloc(wcslen(partial_line) + 1, sizeof(wchar_t));
     wcscpy(pline, partial_line);
     /* poor attempt at escaping quotes that sort of works */
     alen = wcslen(pline);
     for (i = 0; i < alen; i++)
 	if (pline[i] == '"') pline[i] = L'\'';
 
-    cmd = alloca((wcslen(pline) + 100));
+    char cmd[wcslen(pline) + 100];
     sprintf(cmd, "utils:::.win32consoleCompletion(\"%ls\", %d)",
 	    pline, cursor_position);
     PROTECT(cmdSexp = mkString(cmd));
@@ -969,10 +1005,9 @@ static void performCompletion(control c)
     alen2 = strlen(additional_text);
     if (alen) {
 	/* make a copy of the current string first */
-	char *buf1;
 	wchar_t *p1 = LINE(NUMLINES - 1);
 	checkpointpos(p->lbuf, 1);
-	buf1 = alloca(MB_CUR_MAX * wcslen(p1) + 1);
+	char buf1[MB_CUR_MAX * wcslen(p1) + 1];
 	sprintf(buf1,"%ls\n", p1);
 	consolewrites(c, buf1);
 
@@ -1029,7 +1064,7 @@ void consolecmd(control c, const char *cmd)
     storekey(c, KILLRESTOFLINE);
     if(isUnicodeWindow(c)) {
 	size_t sz = (strlen(cmd) + 1) * sizeof(wchar_t);
-	wchar_t *wcs = (wchar_t *) alloca(sz);
+	wchar_t *wcs = (wchar_t*) R_alloc(strlen(cmd) + 1, sizeof(wchar_t));
 	memset(wcs, 0, sz);
 	mbstowcs(wcs, cmd, sz-1);
 	for(i = 0; wcs[i]; i++) storekey(c, wcs[i]);
@@ -1708,6 +1743,7 @@ int consolereads(control c, const char *prompt, char *buf, int len,
     max_pos = 0;
     cur_line = &aLine[prompt_len];
     cur_line[0] = L'\0';
+    showcaret(c, 1);
     REDRAW;
     for(;;) {
 	wchar_t cur_char;
@@ -1824,6 +1860,7 @@ int consolereads(control c, const char *prompt, char *buf, int len,
 		    if (max_pos && addtohistory) wgl_histadd(cur_line);
 		    xbuffixl(p->lbuf);
 		    consolewrites(c, "\n");
+		    showcaret(c, 0);
 		    REDRAW;
 		    return cur_char == EOFKEY;
 		}
@@ -1924,13 +1961,14 @@ int consoler = 25, consolec = 80, consolex = 0, consoley = 0;
 int pagerrow = 25, pagercol = 80;
 int pagerMultiple = 1, haveusedapager = 0;
 int consolebufb = DIMLBUF, consolebufl = MLBUF, consolebuffered = 1;
+int consoleblink = 1;
 
 void
 setconsoleoptions(const char *fnname,int fnsty, int fnpoints,
 		  int rows, int cols, int consx, int consy,
 		  rgb *nguiColors,
 		  int pgr, int pgc, int multiplewindows, int widthonresize,
-		  int bufbytes, int buflines, int buffered)
+		  int bufbytes, int buflines, int buffered, int cursor_blink)
 {
     char msg[LF_FACESIZE + 128];
     strncpy(fontname, fnname, LF_FACESIZE);
@@ -1970,6 +2008,7 @@ setconsoleoptions(const char *fnname,int fnsty, int fnpoints,
     consolebufb = bufbytes;
     consolebufl = buflines;
     consolebuffered = buffered;
+    consoleblink = cursor_blink;
 }
 
 void consoleprint(console c)
@@ -2164,7 +2203,7 @@ console newconsole(char *name, int flags)
     p = newconsoledata((consolefn) ? consolefn : FixedFont,
 		       consoler, consolec, consolebufb, consolebufl,
 		       guiColors,
-		       CONSOLE, consolebuffered);
+		       CONSOLE, consolebuffered, consoleblink);
     if (!p) return NULL;
     c = (console) newwindow(name, rect(consolex, consoley, WIDTH, HEIGHT),
 			    flags | TrackMouse | VScrollbar | HScrollbar);

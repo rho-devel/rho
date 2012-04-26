@@ -1,16 +1,35 @@
+#  File src/library/utils/R/news.R
+#  Part of the R package, http://www.R-project.org
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
+
 news <-
 function(query, package = "R", lib.loc = NULL,
          format = NULL, reader = NULL, db = NULL)
 {
     if(is.null(db)) {
         db <- if(package == "R")
-            tools:::.build_news_db_from_R_NEWS()
+            tools:::.build_news_db_from_R_NEWS_Rd()
         else
             tools:::.build_news_db(package, lib.loc, format, reader)
     }
     if(is.null(db))
         return(invisible())
-            
+
+    attr(db, "package") <- package
+
     ## Is there a way to directly call/use subset.data.frame?
     ## E.g.,
     ##   subset(db, query)
@@ -57,9 +76,10 @@ function(query, package = "R", lib.loc = NULL,
 print.news_db <-
 function(x, ...)
 {
-    if(!(is.null(bad <- attr(x, "bad")))
-       && (length(bad) == NROW(x))
-       && all(!bad)) {
+    if(inherits(x, "news_db_from_Rd") ||
+       (!(is.null(bad <- attr(x, "bad")))
+        && (length(bad) == NROW(x))
+        && all(!bad))) {
         ## Output news in the preferred input format:
         ##   Changes in $VERSION [($DATE)]:
         ##   [$CATEGORY$]
@@ -78,16 +98,23 @@ function(x, ...)
             vchunks[order(as.numeric_version(sub(" *patched", ".1",
                                                  names(vchunks))),
                                  decreasing = TRUE)]
-        vheaders <-
-            sprintf("%sChanges in version %s:\n\n",
-                    c("", rep.int("\n", length(vchunks) - 1L)),
-                    names(vchunks))
+	if(length(vchunks)) {
+            dates <- sapply(vchunks, function(v) v$Date[1L])
+            vheaders <-
+                sprintf("%sChanges in version %s%s:\n\n",
+                        c("", rep.int("\n", length(vchunks) - 1L)),
+                        names(vchunks),
+                        ifelse(is.na(dates), "",
+                               sprintf(" (%s)", dates)))
+        }
         for(i in seq_along(vchunks)) {
             cat(vheaders[i])
             vchunk <- vchunks[[i]]
             if(all(!is.na(category <- vchunk$Category)
                    & nzchar(category))) {
-                cchunks <- split(vchunk, category)
+                ## need to preserve order of headings.
+                cchunks <- split(vchunk,
+                                 factor(category, levels=unique(category)))
                 cheaders <-
                     sprintf("%s%s\n\n",
                             c("", rep.int("\n", length(cchunks) - 1L)),

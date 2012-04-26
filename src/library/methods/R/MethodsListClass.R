@@ -30,8 +30,19 @@
     ## functions (esp. primitives) are methods
     setIs("function", "PossibleMethod", where = envir)
 
-    ## signatures -- used mainly as named character vectors
-    setClass("signature", representation("character", names = "character"), where = envir); clList <- c(clList, "signature")
+    ## the default slot of a generic function can be a method, primitive or NULL
+    setClass("optionalMethod", where = envir); clList <- c(clList, "optionalMethod")
+    setIs("PossibleMethod", "optionalMethod", where = envir)
+    setIs("NULL", "optionalMethod", where = envir)
+    ## prior to 2.11.0, the default slot in generic function objects was a MethodsList or NULL
+    setIs("MethodsList", "optionalMethod", where = envir) #only until MethodsList class is defunct
+
+    ## signatures -- multiple class names w. package slot in ||
+    setClass("signature", representation("character", names = "character", package = "character"), where = envir); clList <- c(clList, "signature")
+
+    ## className -- a single class name with package
+    setClass("className", contains = "character",
+             representation(package = "character"))
 
     ## formal method definition for all but primitives
     setClass("MethodDefinition", contains = "function",
@@ -46,7 +57,7 @@
     setClass("genericFunction", contains = "function",
              representation( generic = "character", package = "character",
                             group = "list", valueClass = "character",
-                            signature = "character", default = "MethodsList",
+                            signature = "character", default = "optionalMethod",
                             skeleton = "call"), where = envir); clList <- c(clList, "genericFunction")
     ## standard generic function -- allows immediate dispatch
     setClass("standardGeneric",  contains = "genericFunction")
@@ -73,7 +84,7 @@
 ## some initializations that need to be done late
 .InitMethodDefinitions <- function(envir) {
     assign("asMethodDefinition",
-           function(def, signature = list(), sealed = FALSE, fdef = def) {
+           function(def, signature = list(.anyClassName), sealed = FALSE, fdef = def) {
         ## primitives can't take slots, but they are only legal as default methods
         ## and the code will just have to accomodate them in that role, w/o the
         ## MethodDefinition information.
@@ -84,17 +95,20 @@
                stop(gettextf("invalid object for formal method definition: type \"%s\"",
                              typeof(def)), domain = NA)
                )
-        if(is(def, "MethodDefinition"))
+        if(is(def, "MethodDefinition")) {
             value <- def
+            if(missing(signature))
+                signature <- value@defined
+        }
         else
             value <- new("MethodDefinition", def)
 
         if(sealed)
             value <- new("SealedMethodDefinition", value)
-        ## this is really new("signature",  def, signature)
-        ## but bootstrapping problems force us to make
-        ## the initialize method explicit here
-        classes <- .MakeSignature(new("signature"),  def, signature, fdef)
+        if(is(signature, "signature"))
+            classes <- signature
+        else
+            classes <- .MakeSignature(new("signature"),  def, signature, fdef)
         value@target <- classes
         value@defined <- classes
         value
@@ -134,7 +148,9 @@
                   ## ignore S3 with multiple classes  or basic classes
                     if(is.na(match(cv, .BasicClasses)) &&
                        length(cv) == 1L) {
-                        warning(gettextf("missing package slot (%s) in object of class \"%s\" (package info added)", packageSlot(co), class(.Object)),
+                        warning(gettextf("missing package slot (%s) in object of class %s (package info added)",
+                                         packageSlot(co),
+                                         dQuote(class(.Object))),
                                 domain = NA)
                         class(value) <- class(.Object)
                     }
@@ -142,15 +158,18 @@
                         return(value)
                 }
                 else
-                    stop(gettextf("initialize method returned an object of class \"%s\" instead of the required class \"%s\"",
-                                  paste(class(value), collapse=", "), class(.Object)), domain = NA)
+                    stop(gettextf("initialize method returned an object of class %s instead of the required class %s",
+                                  paste(dQuote(class(value)), collapse=", "),
+                                  dQuote(class(.Object))),
+                         domain = NA)
             }
             value
         }
     if(!isGeneric("initialize", envir)) {
+        ## save the default method
+        assign(".initialize", initialize, envir)
         setGeneric("initialize",  .initGeneric, where = envir, useAsDefault = TRUE, simpleInheritanceOnly = TRUE)
     }
-    .InitTraceFunctions(envir)
     setMethod("initialize", "signature",
               function(.Object, functionDef, ...) {
                   if(nargs() < 2)
@@ -162,7 +181,7 @@
                   else
                       .MakeSignature(.Object, functionDef, list(...))
               }, where = envir)
-    setMethod("initialize", "environment",
+    setMethod("initialize", "environment", # only for new("environment",...); see .InitSpecialTypesAndClasses for subclasses
               function(.Object, ...) {
                   value <- new.env()
                   args <- list(...)
@@ -171,6 +190,12 @@
                       assign(what, elNamed(args, what), envir = value)
                   value
               }, where = envir)
+    ## from 2.11.0, the MethodsList classs is deprecated
+    setMethod("initialize", "MethodsList", function(.Object, ...) {
+        .MlistDeprecated()
+        callNextMethod()
+    }, where = envir)
+
     ## make sure body(m) <- .... leaves a method as a method
     setGeneric("body<-", where = envir)
     setMethod("body<-", "MethodDefinition", function (fun, envir, value) {
@@ -180,6 +205,8 @@
         fun
     }, where = envir)
     ## a show method for lists of generic functions, etc; see metaNameUndo
+    if(!isGeneric("show", envir))
+        setGeneric("show", where = envir, simpleInheritanceOnly = TRUE)
     setMethod("show", "ObjectsWithPackage",
               function(object) {
                   pkg <- object@package
@@ -240,16 +267,17 @@
 .InitStructureMethods <- function(where) {
     ## these methods need to be cached (for the sake of the primitive
     ## functions in the group) if a class is loaded that extends
-    ## one of the classes structure, vector, or array.
+    ## one of the classes in `needed` (other classes than "structure" now
+    ## also require generics for some primitives).
     if(!exists(".NeedPrimitiveMethods", where))
       needed <- list()
     else
       needed <- get(".NeedPrimitiveMethods", where)
     needed <- c(needed, list(structure = "Ops", vector = "Ops",
-          array = "Ops", nonStructure = "Ops",
-          .environment = "$<-", .environment = "[[<-"),
+          array = "Ops", nonStructure = "Ops"),
           array = "[", structure = "[", nonStructure = "[",
-          structure = "Math", nonStructure = "Math"
+          structure = "Math", nonStructure = "Math",
+          refClass = "$", data.frame = "$<-"
                 )
     assign(".NeedPrimitiveMethods", needed, where)
     setMethod("Ops", c("structure", "vector"), where = where,
@@ -342,10 +370,17 @@
 
 
 .MakeSignature <- function(object, def = NULL, signature, fdef = def) {
+    ## fill in the signature information in object
+    ## In effect, object must come from class "signature" or a subclass
+    ## but the only explicit requirement is that it has compatible
+    ## .Data and "package" slots
     signature <- unlist(signature)
     if(length(signature)>0) {
         classes <- as.character(signature)
         sigArgs <- names(signature)
+        pkgs <- attr(signature, "package")
+        if(is.null(pkgs))
+            pkgs <- character(length(signature))
         if(is(fdef, "genericFunction"))
             formalNames <- fdef@signature
         else if(is.function(def)) {
@@ -366,10 +401,8 @@
                             paste(formalNames, collapse = ", ")),
                    domain = NA)
         }
-        ## the named classes become the signature object
-        class(signature) <- class(object)
-        signature
+        object@.Data <- signature
+        object@package <- pkgs
     }
-    else
-        object
+    object
 }

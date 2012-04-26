@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,8 +16,7 @@
 
 /*
  *   R : A Computer Language for Statistical Data Analysis
- *   Copyright (C) 1997-2007   Robert Gentleman, Ross Ihaka
- *                             and the R Development Core Team
+ *   Copyright (C) 1997-2010   The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,6 +47,11 @@
 #include <Defn.h> /* for PATH_MAX */
 #include <Rinterface.h>
 #include <Fileio.h>
+#include <ctype.h>		/* for isspace */
+
+#include <vector>
+
+using namespace std;
 
 /* remove leading and trailing space */
 static char *rmspace(char *s)
@@ -103,14 +107,14 @@ static char *findRbrace(char *s)
     return pr;
 }
 
-
+#define BUF_SIZE 10000
 static CXXRCONST char *findterm(CXXRCONST char *s)
 {
-    char *p, *q, *r;
-    const char *ss=s;
+    char *p, *q;
+    const char* ss=s;
     const char* r2;
-    static char ans[1000];
-    int nans;
+    static char ans[BUF_SIZE];
+    size_t nans;
 
     if(!strlen(s)) return "";
     ans[0] = '\0';
@@ -122,16 +126,17 @@ static CXXRCONST char *findterm(CXXRCONST char *s)
 	if(!q) break;
 	/* copy over leading part */
 	nans = strlen(ans);
-	strncat(ans, s, p-s); ans[nans + p - s] = '\0';
-	r = static_cast<char *>( alloca(q - p + 2));
-	strncpy(r, p, q - p + 1);
+	strncat(ans, s, size_t (p - s)); ans[nans + p - s] = '\0';
+	vector<char> rv(q - p + 2);
+	char* r = &rv[0];
+	strncpy(r, p, size_t (q - p + 1));
 	r[q - p + 1] = '\0';
 	r2 = subterm(r);
-	if(strlen(ans) + strlen(r2) < 1000) strcat(ans, r2); else return ss;
+	if(strlen(ans) + strlen(r2) < BUF_SIZE) strcat(ans, r2); else return ss;
 	/* now repeat on the tail */
 	s = q+1;
     }
-    if(strlen(ans) + strlen(s) < 1000) strcat(ans, s); else return ss;
+    if(strlen(ans) + strlen(s) < BUF_SIZE) strcat(ans, s); else return ss;
     return ans;
 }
 
@@ -190,7 +195,6 @@ static void Putenv(char *a, CXXRCONST char *b)
 }
 
 
-#define BUF_SIZE 255
 #define MSG_SIZE 2000
 static int process_Renviron(const char *filename)
 {
@@ -255,15 +259,30 @@ void process_system_Renviron()
 	R_ShowMessage("cannot find system Renviron");
 }
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h> /* for access, R_OK */
+#endif
+
 /* try site Renviron: R_ENVIRON, then R_HOME/etc/Renviron.site. */
 void process_site_Renviron ()
 {
     char buf[PATH_MAX], *p = getenv("R_ENVIRON");
 
-    if(p && strlen(p)) {
-	process_Renviron(p);
+    if(p) {
+	if(*p) process_Renviron(p);
 	return;
     }
+#ifdef R_ARCH
+    if(strlen(R_Home) + strlen("/etc/Renviron.site") + strlen(R_ARCH) > PATH_MAX - 2) {
+	R_ShowMessage("path to arch-specific Renviron.site is too long: skipping");
+    } else {
+	snprintf(buf, PATH_MAX, "%s/etc/%s/Renviron.site", R_Home, R_ARCH);
+	if(access(buf, R_OK) == 0) {
+	    process_Renviron(buf);
+	    return;
+	}
+    }
+#endif
     if(strlen(R_Home) + strlen("/etc/Renviron.site") > PATH_MAX - 1) {
 	R_ShowMessage("path to Renviron.site is too long: skipping");
 	return;
@@ -277,18 +296,23 @@ void process_user_Renviron()
 {
     const char *s = getenv("R_ENVIRON_USER");
 
-    if(s && strlen(s)) {
-	process_Renviron(R_ExpandFileName(s));
+    if(s) {
+	if (*s) process_Renviron(R_ExpandFileName(s));
 	return;
     }
 
+#ifdef R_ARCH
+    char buff[100];
+    snprintf(buff, 100, ".Renviron.%s", R_ARCH);
+    if( process_Renviron(buff)) return;
+#endif
     if(process_Renviron(".Renviron")) return;
 #ifdef Unix
     s = R_ExpandFileName("~/.Renviron");
 #endif
 #ifdef Win32
     {
-	char buf[1024];
+	char buf[1024]; /* MAX_PATH is less than this */
 	/* R_USER is not necessarily set yet, so we have to work harder */
 	s = getenv("R_USER");
 	if(!s) s = getenv("HOME");
@@ -297,5 +321,23 @@ void process_user_Renviron()
 	s = buf;
     }
 #endif
+#ifdef R_ARCH
+    snprintf(buff, 100, "%s.%s", s, R_ARCH);
+    if( process_Renviron(buff)) return;
+#endif
     process_Renviron(s);
+}
+
+SEXP attribute_hidden do_readEnviron(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+
+    checkArity(op, args);
+    SEXP x = CAR(args);
+    if (length(x) != 1 || !isString(x))
+	errorcall(call, _("argument 'x' must be a character string"));
+    const char *fn = R_ExpandFileName(translateChar(STRING_ELT(x, 0)));
+    int res = process_Renviron(fn);
+    if (!res)
+	warningcall(call, _("file '%s' cannot be opened for reading"), fn);
+    return ScalarLogical(res != 0);
 }

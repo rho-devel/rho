@@ -30,7 +30,7 @@ rbinom(n, size, prob)
   \item{prob}{probability of success on each trial.}
   \item{log, log.p}{logical; if TRUE, probabilities p are given as log(p).}
   \item{lower.tail}{logical; if TRUE (default), probabilities are
-    \eqn{P[X \le x]}{P[X <= x]}, otherwise, \eqn{P[X > x]}{P[X > x]}.}
+    \eqn{P[X \le x]}, otherwise, \eqn{P[X > x]}.}
 }
 \value{
   \code{dbinom} gives the density, \code{pbinom} gives the distribution
@@ -45,15 +45,18 @@ rbinom(n, size, prob)
   \deqn{p(x) = {n \choose x} {p}^{x} {(1-p)}^{n-x}}{
     p(x) = choose(n,x) p^x (1-p)^(n-x)}
   for \eqn{x = 0, \ldots, n}.
+  Note that binomial \emph{coefficients} can be computed by
+  \code{\link{choose}} in \R.
 
   If an element of \code{x} is not integer, the result of \code{dbinom}
   is zero, with a warning.
   \eqn{p(x)} is computed using Loader's algorithm, see the reference below.
 
   The quantile is defined as the smallest value \eqn{x} such that
-  \eqn{F(x) \ge p}{F(x) >= p}, where \eqn{F} is the distribution function.
+  \eqn{F(x) \ge p}, where \eqn{F} is the distribution function.
 }
 \seealso{
+  \link{Distributions} for other standard distributions, including
   \code{\link{dnbinom}} for the negative binomial, and
   \code{\link{dpois}} for the Poisson distribution.
 }
@@ -74,6 +77,8 @@ rbinom(n, size, prob)
   Kachitvichyanukul, V. and Schmeiser, B. W. (1988)
   Binomial random variate generation.
   \emph{Communications of the ACM}, \bold{31}, 216--222.
+
+  For larger values it uses inversion.
 }
 \examples{
 require(graphics)

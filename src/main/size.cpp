@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000, 2001, 2004-6  the R Development Core Team
+ *  Copyright (C) 2000, 2001, 2004-6  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,8 @@
 #endif
 
 #include "Defn.h"
+#include "CXXR/ByteCode.hpp"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 
@@ -75,6 +77,13 @@ static R_size_t objectsize(SEXP s)
 	cnt += objectsize(CAR(s));
 	cnt += objectsize(CDR(s));
 	break;
+    case BCODESXP:
+	{
+	    ByteCode* bc = SEXP_downcast<ByteCode*>(s);
+	    cnt += objectsize(bc->code());
+	    cnt += objectsize(bc->constants());
+	    break;
+	}
     case CLOSXP:
 	cnt += objectsize(FORMALS(s));
 	cnt += objectsize(BODY(s));
@@ -119,15 +128,20 @@ static R_size_t objectsize(SEXP s)
 	/* we don't know about these */
 	break;
     case VECSXP:
-    case EXPRSXP:
-    case WEAKREFSXP:
 	/* Generic Vector Objects */
 	vcnt = PTR2VEC(length(s));
 	for (i = 0; i < length(s); i++)
 	    cnt += objectsize(VECTOR_ELT(s, i));
 	isVec = TRUE;
 	break;
-    case BCODESXP:
+    case EXPRSXP:
+	vcnt = PTR2VEC(length(s));
+	for (i = 0; i < length(s); i++)
+	    cnt += objectsize(XVECTOR_ELT(s, i));
+	isVec = TRUE;
+	break;
+    case WEAKREFSXP:
+	// Not properly addressed in CXXR:
 	break;
     case EXTPTRSXP:
 	cnt += sizeof(void *);  /* the actual pointer */
@@ -165,5 +179,5 @@ static R_size_t objectsize(SEXP s)
 SEXP attribute_hidden do_objectsize(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     checkArity(op, args);
-    return ScalarReal( double(objectsize(CAR(args))) );
+    return ScalarReal( double( objectsize(CAR(args))) );
 }
