@@ -38,7 +38,6 @@ tests = CellPooltest MemoryBanktest Allocatortest \
         ArgMatchertest1 ArgMatchertest2 ArgMatchertest3 ArgMatchertest4 \
         ArgMatchertest5 ArgMatchertest6 ArgMatchertest7 ArgMatchertest8 miscR
 
-        #HeterogeneousListtest 
 check : $(tests:=.ts)
 
 ArgMatchertest.o : ArgMatchertest.cpp

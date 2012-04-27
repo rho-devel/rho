@@ -49,6 +49,7 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/export.hpp>
 #include <boost/serialization/split_member.hpp>
+
 #include "CXXR/BSerializer.hpp"
 
 namespace CXXR {
@@ -86,7 +87,7 @@ namespace CXXR {
 	/** @brief Create an UncachedString object from a std::string.
 	 *
 	 * @param str The std::string whose text is to be copied into
-	           the constructed UncachedString.  (Embedded null
+	 *          the constructed UncachedString.  (Embedded null
 	 *          characters are permissible.)
 	 *
 	 * @param encoding The encoding of the required CachedString.

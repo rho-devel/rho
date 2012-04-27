@@ -120,10 +120,6 @@ namespace CXXR {
 
 	/** @brief Set/unset monitors on mark-sweep garbage collection.
 	 *
-	 * No garbage collection of GCNode objects will take place
-	 * until this method has been called.  The effect of calling
-	 * it more than once during a single program run is undefined.
-	 *
 	 * @param pre_gc If not a null pointer, this function will be
 	 *          called just before garbage collection begins,
 	 *          e.g. to carry out timing.  It must not itself give

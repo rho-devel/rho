@@ -44,7 +44,7 @@ SOURCES_CXX = \
 	ListFrame.cpp ListVector.cpp LogicalVector.cpp LoopBailout.cpp \
 	MemoryBank.cpp \
 	NodeStack.cpp \
-        PStream.cpp PairList.cpp Parentage.cpp Promise.cpp ProtectStack.cpp \
+        PairList.cpp Parentage.cpp Promise.cpp ProtectStack.cpp \
 	Provenance.cpp ProvenanceSet.cpp ProvenanceTracker.cpp \
         RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
         RealVector.cpp Renviron.cpp ReturnBailout.cpp \

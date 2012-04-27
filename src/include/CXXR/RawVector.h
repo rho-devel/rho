@@ -48,7 +48,6 @@ typedef unsigned char Rbyte;
 
 #ifdef __cplusplus
 
-#include <boost/serialization/export.hpp>
 #include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
@@ -85,9 +84,6 @@ namespace CXXR {
      */
     typedef CXXR::FixedVector<Rbyte, RAWSXP> RawVector;
 }  // namespace CXXR
-
-/* boost serialization */
-BOOST_CLASS_EXPORT(CXXR::RawVector)
 
 extern "C" {
 #endif /* __cplusplus */

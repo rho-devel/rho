@@ -46,8 +46,6 @@
 
 #ifdef __cplusplus
 
-
-#include <boost/serialization/export.hpp>
 #include "R_ext/Arith.h"
 #include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
@@ -64,9 +62,6 @@ namespace CXXR {
      */
     typedef CXXR::FixedVector<int, LGLSXP> LogicalVector;
 }  // namespace CXXR
-
-/* boost serialization */
-BOOST_CLASS_EXPORT(CXXR::LogicalVector)
 
 extern "C" {
 #endif /* __cplusplus */

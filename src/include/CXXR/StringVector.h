@@ -50,12 +50,6 @@
 #ifdef __cplusplus
 
 #include <iostream>
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/export.hpp>
-
-#include "CXXR/BSerializer.hpp"
 #include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
@@ -112,7 +106,6 @@ namespace CXXR {
      * @param encoding The required encoding of the single vector
      *          element.  Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are
      *          permitted in this context (checked).
-
      */
     inline StringVector* asStringVector(const std::string& str,
 					cetype_t encoding = CE_NATIVE)
@@ -129,8 +122,6 @@ namespace CXXR {
 		 std::size_t margin = 0);
 }  // namespace CXXR
 
-//typedef CXXR::HandleVector<String, STRSXP> hv;
-BOOST_CLASS_EXPORT(CXXR::StringVector)
 extern "C" {
 #endif /* __cplusplus */
 

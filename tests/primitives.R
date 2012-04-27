@@ -59,7 +59,7 @@ lang_elements <-
 known <- c(ls(.GenericArgsEnv, all.names=TRUE),
            ls(.ArgsEnv, all.names=TRUE),
            lang_elements)
-#stopifnot(ff %in% known, known %in% ff)
+stopifnot(ff %in% known, known %in% ff)
 
 
 ## check which are not considered as possibles for S4 generic

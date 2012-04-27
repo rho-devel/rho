@@ -1681,7 +1681,7 @@ SEXP attribute_hidden do_getRestart(SEXP call, SEXP op, SEXP args, SEXP rho)
 	return CAR(list);
     else if (i == 1) {
 	/**** need to pre-allocate */
-        GCStackRoot<> name(ScalarString(mkChar("abort")));
+        GCStackRoot<> name(mkString("abort"));
 	GCStackRoot<> entry(allocVector(VECSXP, 2));
 	SET_VECTOR_ELT(entry, 0, name);
 	SET_VECTOR_ELT(entry, 1, R_NilValue);

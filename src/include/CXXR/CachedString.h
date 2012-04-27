@@ -67,14 +67,6 @@ namespace CXXR {
 	    return s_blank;
 	}
 
-	/** @brief Access encapsulated encoding cetype_t.
-	 *
-	 * @return Encapsulated encoding
-	 */
-	const cetype_t encoding() const
-	{
-	    return m_key_val_pr->first.second;
-	}
 	/** @brief Get a pointer to a CachedString object.
 	 *
 	 * If no CachedString with the specified text and encoding
