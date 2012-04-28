@@ -182,50 +182,55 @@ SEXP attribute_hidden do_provCommand (SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-	int n;
-	if ((n=length(args))!=1)
-		errorcall(call,_("%d arguments passed to 'pedigree' which requires 1"),n);
+    int n;
+    if ((n=length(args))!=1)
+	errorcall(call,_("%d arguments passed to 'pedigree' which requires 1"),n);
 
-	Environment* env=static_cast<Environment*>(rho);
+    Environment* env=static_cast<Environment*>(rho);
 	
-	Provenance::Set *provs;
+    Provenance::Set *provs;
 
-	if (TYPEOF(CAR(args))==SYMSXP) {
-		Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
-		Frame::Binding* bdg = env->findBinding(sym).second;
-		Provenance* prov=const_cast<Provenance*>(bdg->getProvenance());
-		provs=new Provenance::Set();
-		provs->insert(prov);
-	} else if (TYPEOF(CAR(args))==LANGSXP) {
-		SEXP rc;
-		rc=eval(CAR(args),rho);
-		if (TYPEOF(rc)!=STRSXP)
-			errorcall(call,_("Expression supplied to pedigree does not yield a String vector"));
+    if (TYPEOF(CAR(args))==SYMSXP) {
+	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
+	Frame::Binding* bdg = env->findBinding(sym).second;
+	Provenance* prov=const_cast<Provenance*>(bdg->getProvenance());
+	provs=new Provenance::Set();
+	if (!prov)
+	    Rf_warning(_("'%s' does not have provenance information"),
+		       sym->name()->c_str());
+	else provs->insert(prov);
+    } else if (TYPEOF(CAR(args))==LANGSXP) {
+	SEXP rc;
+	rc=eval(CAR(args),rho);
+	if (TYPEOF(rc)!=STRSXP)
+	    errorcall(call,_("Expression supplied to pedigree does not yield a String vector"));
 
-		provs=new Provenance::Set();
-		StringVector *sv=static_cast<StringVector*>(rc);
-		for (int i=0;i<length(rc);i++) {
-			Symbol *sym=Symbol::obtain((*sv)[i]->c_str());
-			Frame::Binding *bdg = env->findBinding(sym).second;
-			if (bdg) {
-				Provenance *prov=const_cast<Provenance*>(bdg->getProvenance());
-				if (prov)
-					provs->insert(prov);
-			}
-		}
-	} else
-		errorcall(call,_("pedigree expects a Symbol or Expression that evaluates to a String vector"));
-
-	Provenance::Set *ancestors=Provenance::ancestors(provs);
-	for (Provenance::Set::iterator it=ancestors->begin();
-	     it!=ancestors->end();
-	     it++) {
-		Provenance* p=(*it);
-		PrintValue(p->getCommand());
+	provs=new Provenance::Set();
+	StringVector *sv=static_cast<StringVector*>(rc);
+	for (int i=0;i<length(rc);i++) {
+	    Symbol *sym=Symbol::obtain((*sv)[i]->c_str());
+	    Frame::Binding *bdg = env->findBinding(sym).second;
+	    if (bdg) {
+		Provenance *prov=const_cast<Provenance*>(bdg->getProvenance());
+		if (!prov)
+		    Rf_warning(_("'%s' does not have provenance information"),
+			       sym->name()->c_str());
+		else provs->insert(prov);
+	    }
 	}
-	delete provs;
-	delete ancestors;
-	return R_NilValue;
+    } else
+	errorcall(call,_("pedigree expects a Symbol or Expression that evaluates to a String vector"));
+
+    Provenance::Set *ancestors=Provenance::ancestors(provs);
+    for (Provenance::Set::iterator it=ancestors->begin();
+	 it!=ancestors->end();
+	 it++) {
+	Provenance* p=(*it);
+	PrintValue(p->getCommand());
+    }
+    delete provs;
+    delete ancestors;
+    return R_NilValue;
 }
 
 

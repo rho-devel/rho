@@ -515,6 +515,51 @@ namespace CXXR {
 	 */
 	virtual Frame* clone() const = 0;
 
+	/** @brief Enable monitored reading of Symbol values.
+	 *
+	 * This function determines whether the read monitor function
+	 * set with setReadMonitor() will be called whenever a
+	 * Symbol's value is read from a Binding within this Frame.
+	 *
+	 * In the case of an active Binding, the monitor is called
+	 * whenever the encapsulated function is accessed: note that
+	 * this includes calls to Binding::assign().
+	 *
+	 * @param on True if monitoring is be enabled (in which case a
+	 *          read monitor must already have been set), false if
+	 *          it is to be disabled.
+	 *
+	 * @note Whether or not monitoring is enabled is not
+	 * considered to be part of the state of a Frame object, and
+	 * hence this function is const.
+	 */
+	void enableReadMonitoring(bool on) const;
+
+	/** @brief Enable monitored writing of Symbol values.
+	 *
+	 * This function determines whether the write monitor function
+	 * set with setWriteMonitor() will be called whenever a
+	 * Symbol's value is modified a Binding within this Frame.
+	 *
+	 * In the case of an active Binding, the monitor is called
+	 * only when the encapsulated function is initially set or
+	 * changed: in particular the monitor is \e not invoked by
+	 * calls to Binding::assign().
+	 *
+	 * The monitor is not called when a Binding is newly created
+	 * within a Frame (with the Symbol bound by default to a null
+	 * pointer).
+	 *
+	 * @param on True if monitoring is be enabled (in which case a
+	 *          write monitor must already have been set), false if
+	 *          it is to be disabled.
+	 *
+	 * @note Whether or not monitoring is enabled is not
+	 * considered to be part of the state of a Frame object, and
+	 * hence this function is const.
+	 */
+	void enableWriteMonitoring(bool on) const;
+
 	/** @brief Remove the Binding (if any) of a Symbol.
 	 *
 	 * This function causes any Binding for a specified Symbol to
@@ -599,15 +644,15 @@ namespace CXXR {
 	 */
 	virtual Binding* obtainBinding(const Symbol* symbol) = 0;
 
-	/** @brief Monitor reading of Symbol values.
+	/** @brief Define function to monitor reading of Symbol values.
 	 *
 	 * This function allows the user to define a function to be
 	 * called whenever a Symbol's value is read from a Binding
-	 * within this Frame.
-	 *
-	 * In the case of an active Binding, the monitor is called
-	 * whenever the encapsulated function is accessed: note that
-	 * this includes calls to Binding::assign().
+	 * within a Frame.  Even if such a function has been defined,
+	 * the monitoring is off by default: it must be enabled for
+	 * particular Frame objects by calling enableReadMonitoring().
+	 * See the description of enableReadMonitoring() for further
+	 * information.
 	 *
 	 * @param new_monitor Pointer, possibly null, to the new
 	 *          monitor function.  A null pointer signifies that
@@ -616,10 +661,6 @@ namespace CXXR {
 	 *
 	 * @return Pointer, possibly null, to the monitor being
 	 * displaced by \a new_monitor.
-	 *
-	 * @note The presence or absence of a monitor is not
-	 * considered to be part of the state of a Frame object, and
-	 * hence this function is const.
 	 */
 	static monitor setReadMonitor(monitor new_monitor)
 	{
@@ -628,32 +669,23 @@ namespace CXXR {
 	    return old;
 	}
 
-	/** @brief Monitor writing of Symbol values.
+	/** @brief Define function to monitor writing of Symbol values.
 	 *
 	 * This function allows the user to define a function to be
 	 * called whenever a Symbol's value is modified in a Binding
-	 * within this Frame.
-	 *
-	 * In the case of an active Binding, the monitor is called
-	 * only when the encapsulated function is initially set or
-	 * changed: in particular the monitor is \e not invoked by
-	 * calls to Binding::assign().
-	 *
-	 * The monitor is not called when a Binding is newly created
-	 * within a Frame (with the Symbol bound by default to a null
-	 * pointer).
+	 * within a Frame.  Even if such a function has been defined,
+	 * the monitoring is off by default: it must be enabled for
+	 * particular Frame objects by calling enableWriteMonitoring().
+	 * See the description of enableWriteMonitoring() for further
+	 * information.
 	 *
 	 * @param new_monitor Pointer, possibly null, to the new
 	 *          monitor function.  A null pointer signifies that
-	 *          no write monitoring is to take place, which is the
+	 *          no read monitoring is to take place, which is the
 	 *          default state.
 	 *
 	 * @return Pointer, possibly null, to the monitor being
 	 * displaced by \a new_monitor.
-	 *
-	 * @note The presence or absence of a monitor is not
-	 * considered to be part of the state of a Frame object, and
-	 * hence this function is const.
 	 */
 	static monitor setWriteMonitor(monitor new_monitor)
 	{

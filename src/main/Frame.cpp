@@ -148,6 +148,20 @@ void Frame::Binding::visitReferents(const_visitor* v) const
 	(*v)(m_provenance);
 }
 
+void Frame::enableReadMonitoring(bool on) const
+{
+    if (on && !s_read_monitor)
+	Rf_error("Internal error: Frame::s_read_monitor not set");
+    m_read_monitored = on;
+}
+
+void Frame::enableWriteMonitoring(bool on) const
+{
+    if (on && !s_write_monitor)
+	Rf_error("Internal error: Frame::s_write_monitor not set");
+    m_write_monitored = on;
+}
+
 void Frame::flush(const Symbol* sym)
 {
     Environment::flushFromCache(sym);

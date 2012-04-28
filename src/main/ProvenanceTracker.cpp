@@ -36,10 +36,12 @@ void ProvenanceTracker::setExpression(RObject* expr) {
 	e_current=expr;
 }
 
-void ProvenanceTracker::initEnv(Environment* env) {
-	Frame* frame=env->frame();
-	frame->setReadMonitor(ProvenanceTracker::readMonitor);
-	frame->setWriteMonitor(ProvenanceTracker::writeMonitor);
+void ProvenanceTracker::initEnvs() {
+    Frame::setReadMonitor(ProvenanceTracker::readMonitor);
+    Frame::setWriteMonitor(ProvenanceTracker::writeMonitor);
+    Frame* global_frame = Environment::global()->frame();
+    global_frame->enableReadMonitoring(true);
+    global_frame->enableWriteMonitoring(true);
 }
 
 Parentage* ProvenanceTracker::parentage() {
