@@ -39,11 +39,8 @@ namespace CXXR {
 	Environment* tmp=NULL;
 
 	ar >> type;
-	if (type==OTHERENV) {
+	if (type==OTHERENV)
 	    ar >> tmp;
-	    GCNode::expose(tmp);
-	}
-
 	return const_cast<GCNode*>(composeEnvironment(type, tmp));
     }
 }

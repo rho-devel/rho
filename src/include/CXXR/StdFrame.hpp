@@ -109,40 +109,7 @@ namespace CXXR {
 	void detachReferents();
     private:
 	friend class boost::serialization::access;
-	template<class Archive>
-	void load(Archive & ar, const unsigned int verison) {
-	    ar >> boost::serialization::base_object<Frame>(*this);
-	    size_t numberOfBindings;
-	    ar >> numberOfBindings;
-	    for (size_t i=0; i<numberOfBindings; i++ ) {
-		const Symbol* symbol=static_cast<Symbol*>(loadSymbol(ar));
-		const Binding* binding;
-		ar >> binding;
-		m_map.insert(map::value_type(symbol, *binding));
-		delete binding;
-	    }
-	}
-	
-	template<class Archive>
-	void save(Archive & ar, const unsigned int version) const {
-	    ar << boost::serialization::base_object<Frame>(*this);
-	    size_t numberOfBindings = size();
-	    ar << numberOfBindings;
-	    for (map::const_iterator it=m_map.begin();
-	         it!=m_map.end();
-		 ++it) {
-		const Symbol* symbol=(*it).first;
-		const Binding* binding=&(*it).second;
-		saveSymbol(ar, symbol);
-		ar << binding;
-	    }
-	}
 
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("StdFrame");
-	    boost::serialization::split_member(ar, *this, version);
-	}
 	map m_map;
 
 	// Declared private to ensure that StdFrame objects are
@@ -152,6 +119,38 @@ namespace CXXR {
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
 	StdFrame& operator=(const StdFrame&);
+
+	template<class Archive>
+	void load(Archive& ar, const unsigned int verison) {
+	    ar >> boost::serialization::base_object<Frame>(*this);
+	    size_t numberOfBindings;
+	    ar >> numberOfBindings;
+	    for (size_t i = 0; i < numberOfBindings; ++i) {
+		const Symbol* symbol = loadSymbol(ar);
+		Binding* binding = obtainBinding(symbol);
+		ar >> *binding;
+	    }
+	}
+	
+	template<class Archive>
+	void save(Archive& ar, const unsigned int version) const {
+	    ar << boost::serialization::base_object<Frame>(*this);
+	    size_t numberOfBindings = size();
+	    ar << numberOfBindings;
+	    for (map::const_iterator it = m_map.begin();
+	         it != m_map.end(); ++it) {
+		const Symbol* symbol = (*it).first;
+		const Binding& binding = (*it).second;
+		saveSymbol(ar, symbol);
+		ar << binding;
+	    }
+	}
+
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version) {
+	    BSerializer::Frame frame("StdFrame");
+	    boost::serialization::split_member(ar, *this, version);
+	}
     };
 }  // namespace CXXR
 

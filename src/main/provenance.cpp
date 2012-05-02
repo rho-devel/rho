@@ -45,12 +45,18 @@
 #include <config.h>
 #endif
 
-#include <Defn.h>
 #include <set>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
+
 #include "CXXR/Provenance.hpp"
 #include "CXXR/Parentage.hpp"
+
+// So that BOOST_CLASS_EXPORT is visible:
+#include "CXXR/ListFrame.hpp"
+
+// Try to get rid of this:
+#include "Defn.h"
 
 using namespace std;
 using namespace CXXR;

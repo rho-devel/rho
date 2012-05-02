@@ -111,8 +111,9 @@ namespace CXXR {
 	     * can be used.
 	     */
 	    Binding()
-		: m_frame(0), m_symbol(0), m_provenance(0), m_value(Symbol::missingArgument()),
-		  m_origin(MISSING), m_active(false), m_locked(false)
+		: m_frame(0), m_symbol(0), m_value(Symbol::missingArgument()),
+		  m_provenance(0), m_origin(MISSING), m_active(false),
+		  m_locked(false)
 	    {}
 
 	    /** @brief Represent this Binding as a PairList element.
@@ -222,7 +223,7 @@ namespace CXXR {
 	     */
 	    bool hasProvenance() const
 	    {
-		return (m_provenance!=NULL);
+		return (m_provenance != 0);
 	    }
 
 	    /** @brief Initialize the Binding.
@@ -372,33 +373,21 @@ namespace CXXR {
 	private:
 	    friend class boost::serialization::access;
 
-	    template<class Archive>
-	    void serialize(Archive & ar, const unsigned int version) {
-		BSerializer::Frame frame("Frame::Binding");
-		BSerializer::attrib("m_frame");
-		ar & m_frame;
-		BSerializer::attrib("m_active");
-	    	ar & m_active;
-		BSerializer::attrib("m_locked");
-		ar & m_locked;
-		BSerializer::attrib("m_origin");
-		ar & m_origin;
-		BSerializer::attrib("m_provenance");
-		ar & m_provenance;
-		BSerializer::attrib("m_symbol");
-		// FIXME FIXME ar & m_symbol;
-		BSerializer::attrib("m_value");
-		ar & m_value;
-	    }
-
 	    Frame* m_frame;
 	    const Symbol* m_symbol;
-	    GCEdge<const Provenance> m_provenance;
 	    GCEdge<> m_value;
+	    GCEdge<const Provenance> m_provenance;
 	    unsigned char m_origin;
 	    bool m_active;
 	    bool m_locked;
-	};
+
+	    // Note that serialisation does not save the m_frame or
+	    // m_symbol fields, because deserialisation assumes that a
+	    // Binding object will already have been initialised (by
+	    // calling initialize()).
+	    template<class Archive>
+	    void serialize(Archive & ar, const unsigned int version);
+	};  // Frame::Binding
 
 	typedef void (*monitor)(const Binding&);
 
@@ -733,13 +722,7 @@ namespace CXXR {
 	}
 
 	template<class Archive>
-	void serialize (Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("Frame");
-	    ar & boost::serialization::base_object<GCNode>(*this);
-	    bool locked = m_locked;
-	    ar & locked;
-	    m_locked = locked;
-	}
+	void serialize (Archive & ar, const unsigned int version);
 
 	/** @brief Report change in the bound/unbound status of Symbol
 	 *         objects.
@@ -860,5 +843,32 @@ namespace CXXR {
 // This definition is visible only in C++; C code sees instead a
 // definition (in Environment.h) as an opaque pointer.
 typedef CXXR::Frame::Binding* R_varloc_t;
+
+// ***** Implementation of non-inlined templated members *****
+
+template<class Archive>
+void CXXR::Frame::Binding::serialize(Archive & ar, const unsigned int version)
+{
+    BSerializer::Frame frame("Frame::Binding");
+    BSerializer::attrib("m_value");
+    ar & m_value;
+    BSerializer::attrib("m_provenance");
+    ar & m_provenance;
+    BSerializer::attrib("m_origin");
+    ar & m_origin;
+    BSerializer::attrib("m_active");
+    ar & m_active;
+    BSerializer::attrib("m_locked");
+    ar & m_locked;
+}
+
+template<class Archive>
+void CXXR::Frame::serialize (Archive & ar, const unsigned int version) {
+    BSerializer::Frame frame("Frame");
+    ar & boost::serialization::base_object<GCNode>(*this);
+    bool locked = m_locked;
+    ar & locked;
+    m_locked = locked;
+}
 
 #endif // RFRAME_HPP

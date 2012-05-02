@@ -188,7 +188,10 @@ namespace CXXR {
 
 	/** @brief Environment constructor for serialization
 	 */
-	Environment() { }
+	Environment()
+	    : m_cached(false), m_leaked(false), m_in_loop(false),
+	      m_can_return(false)
+	{}
 
 	/** @brief Base environment.
 	 *

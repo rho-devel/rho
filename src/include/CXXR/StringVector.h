@@ -50,6 +50,8 @@
 #ifdef __cplusplus
 
 #include <iostream>
+#include <boost/serialization/export.hpp>
+
 #include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
@@ -121,6 +123,8 @@ namespace CXXR {
     void strdump(std::ostream& os, const StringVector& sv,
 		 std::size_t margin = 0);
 }  // namespace CXXR
+
+BOOST_CLASS_EXPORT(CXXR::StringVector)
 
 extern "C" {
 #endif /* __cplusplus */

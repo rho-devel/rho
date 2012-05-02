@@ -2,6 +2,7 @@
 #define SYMBOL_SERIALIZATION_HPP
 
 #include <string>
+
 #include "CXXR/BSerializer.hpp"
 
 namespace CXXR {
@@ -13,7 +14,7 @@ namespace CXXR {
     enum SymbolSerializationType {OTHERSYM=0, MISSINGARGSYM, UNBOUNDVALUESYM};
 
     // Forward declarations, defined in .cpp
-    GCNode* composeSymbol(const SymbolSerializationType, const std::string&);
+    Symbol* composeSymbol(const SymbolSerializationType, const std::string&);
     const char* decomposeSymbol(const Symbol*);
     SymbolSerializationType symbolSerializationType(const Symbol*);
 
@@ -29,7 +30,7 @@ namespace CXXR {
     }
 
     template<class Archive>
-    GCNode* loadSymbol(Archive & ar) {
+    Symbol* loadSymbol(Archive & ar) {
 	BSerializer::Frame frame("Symbol");
 	SymbolSerializationType type;
 	std::string tmp;

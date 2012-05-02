@@ -13,12 +13,15 @@ namespace CXXR {
 	return sym->name()->c_str();
     }
 
-    GCNode* composeSymbol(const SymbolSerializationType type,
+    Symbol* composeSymbol(const SymbolSerializationType type,
     			  const std::string& str) {
 	switch(type) {
-	case MISSINGARGSYM: return R_MissingArg;
-	case UNBOUNDVALUESYM: return R_UnboundValue;
-	default: return Symbol::obtain(str);
+	case MISSINGARGSYM:
+	    return Symbol::missingArgument();
+	case UNBOUNDVALUESYM:
+	    return Symbol::unboundValue();
+	default:
+	    return Symbol::obtain(str);
 	}
     }
 }

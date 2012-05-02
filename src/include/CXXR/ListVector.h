@@ -48,6 +48,8 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/export.hpp>
+
 #include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
@@ -63,6 +65,8 @@ namespace CXXR {
      */
     typedef FixedVector<RHandle<>, VECSXP> ListVector;
 }  // namespace CXXR
+
+BOOST_CLASS_EXPORT(CXXR::ListVector)
 
 extern "C" {
 #endif /* __cplusplus */

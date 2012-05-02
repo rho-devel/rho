@@ -47,6 +47,8 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/export.hpp>
+
 #include "R_ext/Arith.h"
 #include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
@@ -74,6 +76,8 @@ namespace CXXR {
      */
     typedef CXXR::FixedVector<Rcomplex, CPLXSXP> ComplexVector;
 }  // namespace CXXR
+
+BOOST_CLASS_EXPORT(CXXR::ComplexVector)
 
 extern "C" {
 #endif /* __cplusplus */

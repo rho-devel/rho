@@ -43,6 +43,8 @@
 #define LISTFRAME_HPP
 
 #include <list>
+#include <boost/serialization/export.hpp>
+
 #include "CXXR/Allocator.hpp"
 #include "CXXR/Frame.hpp"
 
@@ -84,6 +86,8 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	friend class boost::serialization::access;
+
 	List m_list;
 
 	// Declared private to ensure that ListFrame objects are
@@ -93,7 +97,43 @@ namespace CXXR {
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
 	ListFrame& operator=(const ListFrame&);
+
+	template<class Archive>
+	void load(Archive& ar, const unsigned int version) {
+	    ar >> boost::serialization::base_object<Frame>(*this);
+	    size_t numberOfBindings;
+	    ar >> numberOfBindings;
+	    for (size_t i = 0; i < numberOfBindings; ++i) {
+		const Symbol* symbol = loadSymbol(ar);
+		m_list.push_back(Binding());
+		Binding& binding = m_list.back();
+		binding.initialize(this, symbol);
+		statusChanged(symbol);
+		ar >> binding;
+	    }
+	}
+
+	template<class Archive>
+	void save(Archive& ar, const unsigned int version) const {
+	    ar << boost::serialization::base_object<Frame>(*this);
+	    size_t numberOfBindings = size();
+	    ar << numberOfBindings;
+	    for (List::const_iterator it = m_list.begin();
+		 it != m_list.end(); ++it) {
+		const Binding& binding = *it;
+		saveSymbol(ar, binding.symbol());
+		ar << binding;
+	    }
+	}
+
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version) {
+	    BSerializer::Frame frame("ListFrame");
+	    boost::serialization::split_member(ar, *this, version);
+	}
     };
 }  // namespace CXXR
+
+BOOST_CLASS_EXPORT(CXXR::ListFrame)
 
 #endif // LISTFRAME_HPP

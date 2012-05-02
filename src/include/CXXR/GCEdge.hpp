@@ -120,28 +120,35 @@ namespace CXXR {
     private:
         friend class boost::serialization::access;
 
+	const GCNode* m_target;
+
+	static void abortIfNotExposed(const GCNode* target);
+
 	template<class Archive>
-	void load(Archive & ar, const unsigned int version) {
+	void load(Archive& ar, const unsigned int version) {
 	    EdgeSerializationType type;
+	    GCNode* target;
 	    ar >> type;
 	    switch(type) {
 	    case CACHEDSTRINGEDGE:
-		retarget(loadCachedString(ar));
+		target = loadCachedString(ar);
 		break;
 	    case ENVIRONMENTEDGE:
-		retarget(loadEnvironment(ar));
+		target = loadEnvironment(ar);
 		break;
 	    case SYMBOLEDGE:
-		retarget(loadSymbol(ar));
+		target = loadSymbol(ar);
 		break;
 	    case OTHEREDGE:
- 		ar >> const_cast<GCNode* &>(m_target);
-		if (m_target) {
-		    GCNode::expose(m_target);
-		    GCNode::incRefCount(m_target);
-		}
+ 		ar >> target;
 		break;
 	    }
+	    // Note that the target may already have been exposed,
+	    // e.g. as a result of deserialising another GCEdge
+	    // pointing to it.
+	    if (target && !target->isExposed())
+		target->expose();
+	    retarget(target);
 	}
 
 	template<class Archive>
@@ -165,7 +172,7 @@ namespace CXXR {
 		saveSymbol(ar, m_target);
 		break;
 	    case OTHEREDGE:
-		ar << const_cast<GCNode* &>(m_target);
+		ar << m_target;
 		break;
 	    }
 	}
@@ -175,12 +182,6 @@ namespace CXXR {
 	    BSerializer::Frame frame("GCEdgeBase");
 	    boost::serialization::split_member(ar, *this, version);
 	}
-
-
-	const GCNode* m_target;
-
-	static void abortIfNotExposed(const GCNode* target);
-
     };
 
     /** @brief Directed edge in the graph whose nodes are GCNode objects.

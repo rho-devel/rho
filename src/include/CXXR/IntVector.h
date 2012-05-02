@@ -46,6 +46,8 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/export.hpp>
+
 #include "R_ext/Arith.h"
 #include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
@@ -77,6 +79,8 @@ namespace CXXR {
      */
     typedef FixedVector<int, INTSXP> IntVector;
 }  // namespace CXXR
+
+BOOST_CLASS_EXPORT(CXXR::IntVector)
 
 extern "C" {
 #endif /* __cplusplus */

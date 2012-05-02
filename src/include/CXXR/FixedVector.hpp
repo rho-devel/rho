@@ -84,8 +84,7 @@ namespace CXXR {
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
 	 */
-	// Default value for sz is for the benefit of boost::serialization
-	FixedVector(std::size_t sz = 0)
+	FixedVector(std::size_t sz)
 	    : VectorBase(ST, sz), m_data(singleton())
 	{
 	    if (sz > 1)
@@ -281,6 +280,27 @@ namespace CXXR {
 	// Helper function for detachReferents():
 	void detachElements();
 
+	template<class Archive>
+	void load(Archive & ar, const unsigned int version) {
+	    ar >> boost::serialization::base_object<VectorBase>(*this);
+	    for (unsigned int i = 0; i < size(); i++)
+		ar >> m_data[i];
+	}
+
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const {
+	    ar << boost::serialization::base_object<VectorBase>(*this);
+	    for (unsigned int i = 0; i < size(); i++)
+		ar << m_data[i];
+	}
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("FixedVector");
+	    boost::serialization::split_member(ar, *this, version);
+	}
+
+
 	T* singleton()
 	{
 	    return static_cast<T*>(static_cast<void*>(&m_singleton_buf));
@@ -291,6 +311,28 @@ namespace CXXR {
     };
 }  // namespace CXXR
 
+namespace boost {
+    namespace serialization {
+	template<class Archive, class T, SEXPTYPE ST, typename Initr>
+	void load_construct_data(Archive& ar,
+				 CXXR::FixedVector<T, ST, Initr>* t,
+				 const unsigned int version)
+	{
+	    std::size_t size;
+	    ar >> size;
+	    new (t) CXXR::FixedVector<T, ST, Initr>(size);
+	}
+
+	template<class Archive, class T, SEXPTYPE ST, typename Initr>
+	void save_construct_data(Archive& ar,
+				 const CXXR::FixedVector<T, ST, Initr>* t,
+				 const unsigned int version)
+	{
+	    std::size_t sz = t->size();
+	    ar << sz;
+	}
+    }  // namespace serialization
+}  // namespace boost
 
 // ***** Implementation of non-inlined members *****
 
