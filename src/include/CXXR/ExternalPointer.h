@@ -194,16 +194,6 @@ namespace CXXR {
     private:
 	friend class boost::serialization::access;
 
-	template <class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("ExternalPointer");
-	    ar & boost::serialization::base_object<RObject>(*this);
-	    BSerializer::attrib("m_tag");
-	    ar & m_tag;
-	    BSerializer::attrib("m_tag");
-	    ar & m_protege;
-	}
-
 	void* m_ptr;
 	GCEdge<> m_tag;
 	GCEdge<> m_protege;
@@ -212,11 +202,28 @@ namespace CXXR {
 	// compiler-generated versions:
 	ExternalPointer(const ExternalPointer&);
 	ExternalPointer& operator=(const ExternalPointer&);
+
+	// FIXME: note that this doesn't at present serialise the
+	// encapsulated pointer!
+	template <class Archive>
+	void serialize(Archive& ar, const unsigned int version);
     };
 } // namespace CXXR
 
 // Export as serializable for boost::serialization
 BOOST_CLASS_EXPORT(CXXR::ExternalPointer)
+
+// ***** Implementation of non-inlined templated members *****
+
+template <class Archive>
+void CXXR::ExternalPointer::serialize(Archive& ar, const unsigned int version) {
+    BSerializer::Frame frame("ExternalPointer");
+    ar & boost::serialization::base_object<RObject>(*this);
+    BSerializer::attrib("m_tag");
+    ar & m_tag;
+    BSerializer::attrib("m_tag");
+    ar & m_protege;
+}
 
 extern "C" {
 #endif  /* __cplusplus */

@@ -1,8 +1,6 @@
 #ifndef PROVENANCE_HPP
 #define PROVENANCE_HPP
 
-#ifdef __cplusplus
-
 #include <sys/time.h>
 #include <ctime>
 #include <set>
@@ -65,38 +63,13 @@ namespace CXXR {
 		void announceDeath();
 		void deregisterChild(Provenance*);
 		void registerChild(Provenance*);
-		template <class Archive>
-		void load(Archive & ar, const unsigned int version) {
-			ar >> boost::serialization::base_object<GCNode>(*this);
-			ar >> m_timestamp.tv_sec;
-			ar >> m_timestamp.tv_usec;
-			BSerializer::attrib("m_expression");
-			ar >> m_expression;
-			ar >> m_parentpos;
-			BSerializer::attrib("m_symbol");
-			ar >> m_symbol;
-			BSerializer::attrib("m_parentage");
-			ar >> m_parentage;
-			m_children=new Set();
 
-			m_parentage->incRefCount();
-			announceBirth();
-		}
+		template <class Archive>
+		void load(Archive& ar, const unsigned int version);
 		
 		template <class Archive>
-		void save(Archive & ar, const unsigned int version) const {
-			ar << boost::serialization::base_object<GCNode>(*this);
+		void save(Archive& ar, const unsigned int version) const;
 
-			ar << m_timestamp.tv_sec;
-			ar << m_timestamp.tv_usec;
-			BSerializer::attrib("m_expression");
-			ar << m_expression;
-			ar << m_parentpos;
-			BSerializer::attrib("m_symbol");
-			ar << m_symbol;
-			BSerializer::attrib("m_parentage");
-			ar << m_parentage;
-		}
 		template <class Archive>
 		void serialize(Archive & ar, const unsigned int version) {
 			BSerializer::Frame frame("Provenance");
@@ -108,5 +81,40 @@ namespace CXXR {
 
 BOOST_CLASS_EXPORT(CXXR::Provenance)
 
-#endif
+// ***** Implementation of non-inlined templated members *****
+
+template <class Archive>
+void CXXR::Provenance::load(Archive& ar, const unsigned int version)
+{
+    ar >> boost::serialization::base_object<GCNode>(*this);
+    ar >> m_timestamp.tv_sec;
+    ar >> m_timestamp.tv_usec;
+    BSerializer::attrib("m_expression");
+    ar >> m_expression;
+    ar >> m_parentpos;
+    BSerializer::attrib("m_symbol");
+    ar >> m_symbol;
+    BSerializer::attrib("m_parentage");
+    ar >> m_parentage;
+    m_children=new Set();
+
+    m_parentage->incRefCount();
+    announceBirth();
+}
+		
+template <class Archive>
+void CXXR::Provenance::save(Archive& ar, const unsigned int version) const
+{
+    ar << boost::serialization::base_object<GCNode>(*this);
+    ar << m_timestamp.tv_sec;
+    ar << m_timestamp.tv_usec;
+    BSerializer::attrib("m_expression");
+    ar << m_expression;
+    ar << m_parentpos;
+    BSerializer::attrib("m_symbol");
+    ar << m_symbol;
+    BSerializer::attrib("m_parentage");
+    ar << m_parentage;
+}
+
 #endif

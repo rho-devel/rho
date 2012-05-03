@@ -105,10 +105,13 @@ namespace CXXR {
 		m_next->m_prev = m_prev;
 	    }
 	private:
+	    friend class boost::serialization::access;
+
 	    Link* m_prev;
 	    Link* m_next;
 
-	    friend class boost::serialization::access;
+	    // This serves as a backstop at the bottom of the
+	    // inheritance hierarchy, but is effectively a no-op:
 	    template <class Archive>
 	    void serialize(Archive & ar, const unsigned int version) {
 		BSerializer::Frame frame("HeterogeneousList::Link");

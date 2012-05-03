@@ -57,7 +57,6 @@ typedef int R_len_t; /* will be long later, LONG64 or ssize_t on Win64 */
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/ElementTraits.hpp"
 #include "CXXR/GCStackRoot.hpp"
-#include "CXXR/BSerializer.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
@@ -88,11 +87,6 @@ namespace CXXR {
 	    : RObject(pattern), m_truelength(pattern.m_truelength),
 	      m_size(pattern.m_size)
 	{}
-
-	/** @brief default constructor for boost::serialization
-	 *
-	 */
-	VectorBase() { }
 
 	/** @brief Names associated with the rows, columns or other
 	 *  dimensions of an R matrix or array.
@@ -329,12 +323,13 @@ namespace CXXR {
 
 	size_t m_size;
 
+	// m_size will always be passed in by the constructor, and so
+	// is not serialised.
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 	    BSerializer::Frame frame("VectorBase");
 	    ar & boost::serialization::base_object<RObject>(*this);
 	    ar & m_truelength;
-	    ar & m_size;
 	}
     };
 

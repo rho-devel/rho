@@ -186,13 +186,6 @@ namespace CXXR {
 	      m_leaked(false), m_in_loop(false), m_can_return(false)
 	{}
 
-	/** @brief Environment constructor for serialization
-	 */
-	Environment()
-	    : m_cached(false), m_leaked(false), m_in_loop(false),
-	      m_can_return(false)
-	{}
-
 	/** @brief Base environment.
 	 *
 	 * @return Pointer to the base environment.
@@ -664,8 +657,18 @@ namespace CXXR {
     }
 }  // namespace CXXR
 
-// Export Environment as a boost::serialization-isable class
 BOOST_CLASS_EXPORT(CXXR::Environment)
+
+namespace boost {
+    namespace serialization {
+	template<class Archive>
+	void load_construct_data(Archive& ar, CXXR::Environment* t,
+				 const unsigned int version)
+	{
+	    new (t) CXXR::Environment(0, 0);
+	}
+    }  // namespace serialization
+}  // namespace boost
 
 namespace {
     CXXR::SchwarzCounter<CXXR::Environment> env_schwartz_ctr;

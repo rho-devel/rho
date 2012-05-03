@@ -281,18 +281,10 @@ namespace CXXR {
 	void detachElements();
 
 	template<class Archive>
-	void load(Archive & ar, const unsigned int version) {
-	    ar >> boost::serialization::base_object<VectorBase>(*this);
-	    for (unsigned int i = 0; i < size(); i++)
-		ar >> m_data[i];
-	}
+	void load(Archive & ar, const unsigned int version); 
 
 	template<class Archive>
-	void save(Archive & ar, const unsigned int version) const {
-	    ar << boost::serialization::base_object<VectorBase>(*this);
-	    for (unsigned int i = 0; i < size(); i++)
-		ar << m_data[i];
-	}
+	void save(Archive & ar, const unsigned int version) const;
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
@@ -310,6 +302,8 @@ namespace CXXR {
 	void visitElements(const_visitor* v) const;
     };
 }  // namespace CXXR
+
+// ***** boost serialization object construction *****
 
 namespace boost {
     namespace serialization {
@@ -425,6 +419,26 @@ void CXXR::FixedVector<T, ST, Initr>::detachReferents()
     if (ElementTraits::HasReferents<T>::value)  // known at compile-time
 	detachElements();
     VectorBase::detachReferents();
+}
+
+template <typename T, SEXPTYPE ST, typename Initr>
+template<class Archive>
+void CXXR::FixedVector<T, ST, Initr>::load(Archive & ar,
+					   const unsigned int version)
+{
+    ar >> boost::serialization::base_object<VectorBase>(*this);
+    for (unsigned int i = 0; i < size(); i++)
+	ar >> m_data[i];
+}
+
+template <typename T, SEXPTYPE ST, typename Initr>
+template<class Archive>
+void CXXR::FixedVector<T, ST, Initr>::save(Archive & ar,
+					   const unsigned int version) const
+{
+    ar << boost::serialization::base_object<VectorBase>(*this);
+    for (unsigned int i = 0; i < size(); i++)
+	ar << m_data[i];
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>

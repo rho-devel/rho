@@ -178,11 +178,6 @@ namespace CXXR {
 	}
 
 	/**
-	 * @brief for boost serialization
-	 */
-	ConsCell() { } 
-
-	/**
 	 * @return a const pointer to the 'car' of this ConsCell
 	 * element.
 	 */
@@ -352,17 +347,20 @@ namespace CXXR {
 	static void checkST(SEXPTYPE st);
 
 	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("ConsCell");
-	    ar & boost::serialization::base_object<RObject>(*this);
-	    BSerializer::attrib("m_car");
-	    ar & m_car;
-	    BSerializer::attrib("m_tail");
-	    ar & m_tail;
-	    BSerializer::attrib("m_tag");
-	    ar & m_tag;
-	}
+	void serialize(Archive & ar, const unsigned int version);
     };
+
+    template<class Archive>
+    void CXXR::ConsCell::serialize(Archive & ar, const unsigned int version) {
+	BSerializer::Frame frame("ConsCell");
+	ar & boost::serialization::base_object<RObject>(*this);
+	BSerializer::attrib("m_car");
+	ar & m_car;
+	BSerializer::attrib("m_tail");
+	ar & m_tail;
+	BSerializer::attrib("m_tag");
+	ar & m_tag;
+    }
 
     inline bool operator==(ConsCell::iterator l, ConsCell::iterator r)
     {
@@ -597,7 +595,7 @@ namespace CXXR {
 	return m_tail;
     }
 } // namespace CXXR
-BOOST_CLASS_EXPORT(CXXR::ConsCell)
+
 BOOST_CLASS_EXPORT(CXXR::PairList)
 
 extern "C" {

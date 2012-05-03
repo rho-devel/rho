@@ -186,28 +186,8 @@ namespace CXXR {
     protected:
 	// Virtual function of GCNode:
 	void detachReferents();
-
-	// For boost::serialization
-	Promise() {} 
     private:
 	friend class boost::serialization::access;
-
-	template <class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("Promise");
-	    ar & boost::serialization::base_object<RObject>(*this);
-
-	    BSerializer::attrib("m_value");
-	    ar & m_value;
-	    BSerializer::attrib("m_valgen");
-	    ar & m_valgen;
-	    BSerializer::attrib("m_environment");
-	    ar & m_environment;
-	    BSerializer::attrib("m_under_evaluation");
-	    ar & m_under_evaluation;
-	    BSerializer::attrib("m_interrupted");
-	    ar & m_interrupted;
-	}
 
 	GCEdge<> m_value;
 	GCEdge<RObject> m_valgen;
@@ -223,6 +203,15 @@ namespace CXXR {
 	// compiler-generated versions:
 	Promise(const Promise&);
 	Promise& operator=(const Promise&);
+	template <class Archive>
+
+	// Fields not serialised here are set up by the constructor:
+	void serialize(Archive& ar, const unsigned int version) {
+	    BSerializer::Frame frame("Promise");
+	    ar & boost::serialization::base_object<RObject>(*this);
+	    BSerializer::attrib("m_value");
+	    ar & m_value;
+	}
     };
 
     /** @brief Use forced value if RObject is a Promise.
@@ -242,6 +231,31 @@ namespace CXXR {
 }  // namespace CXXR
 
 BOOST_CLASS_EXPORT(CXXR::Promise)
+
+namespace boost {
+    namespace serialization {
+	template<class Archive>
+	void load_construct_data(Archive& ar, CXXR::Promise* t,
+				 const unsigned int version)
+	{
+	    CXXR::GCEdge<> valgen;
+	    ar >> valgen;
+	    CXXR::GCStackRoot<> valgenrt(valgen);
+	    CXXR::GCEdge<CXXR::Environment> env;
+	    ar >> env;
+	    CXXR::GCStackRoot<> envrt(env);
+	    new (t) CXXR::Promise(valgen, env);
+	}
+	template<class Archive>
+
+	void save_construct_data(Archive& ar, CXXR::Promise* t,
+				 const unsigned int version)
+	{
+	    ar << t->m_valgen;
+	    ar << t->m_environment;
+	}
+    }  // namespace serialization
+}  // namespace boost
 
 extern "C" {
 #endif

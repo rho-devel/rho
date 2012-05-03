@@ -48,7 +48,6 @@
 #include <string>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/export.hpp>
-#include <boost/serialization/split_member.hpp>
 
 #include "CXXR/BSerializer.hpp"
 
@@ -121,9 +120,6 @@ namespace CXXR {
 
 	// Virtual function of RObject:
 	const char* typeName() const;
-    protected:
-	// For boost::serialization
-	UncachedString() {}
     private:
 	friend class boost::serialization::access;
 
@@ -157,35 +153,33 @@ namespace CXXR {
 	// from MemoryBank:
 	void allocData(size_t sz);
 
-	template<class Archive>
-	void load(Archive & ar, const unsigned int version) {
-	    ar >> boost::serialization::base_object<CXXR::String>(*this);
-	    std::string str;
-	    ar >> m_databytes;
-	    ar >> str;
-	    
-	    m_data=m_short_string; // next few lines taken from constructor
-	    size_t sz = str.size(); 
-	    allocData(sz);
-	    memcpy(m_data, str.data(), sz);
-	}
-
-	template<class Archive>
-	void save(Archive & ar, const unsigned int version) const {
-	    ar << boost::serialization::base_object<CXXR::String>(*this);
-	    std::string str(m_data);
-	    ar << m_databytes;
-	    ar << str;
-	}
-
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("UncachedString");
-	    boost::serialization::split_member(ar, *this, version);	    
-	}
+	// No serialize() function: everything necessary is done by
+	// {load,save}_construct_data().
     };
 }  // namespace CXXR
+
 BOOST_CLASS_EXPORT(CXXR::UncachedString)
+
+namespace boost {
+    namespace serialization {
+	template<class Archive>
+	void load_construct_data(Archive& ar, CXXR::UncachedString* t,
+				 const unsigned int version)
+	{
+	    std::string string;
+	    cetype_t encoding;
+	    ar >> string >> encoding;
+	    new (t) CXXR::UncachedString(string, encoding);
+	}
+
+	template<class Archive>
+	void save_construct_data(Archive& ar, CXXR::UncachedString* t,
+				 const unsigned int version)
+	{
+	    ar << std::string(t->m_data, t->size()) << t->encoding();
+	}
+    }  // namespace serialization
+}  // namespace boost
 
 extern "C" {
 

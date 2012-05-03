@@ -47,9 +47,6 @@
 
 #ifdef __cplusplus
 
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/base_object.hpp>
-#include "CXXR/BSerializer.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
@@ -193,8 +190,6 @@ namespace CXXR {
 	// Virtual functions of RObject:
 	unsigned int packGPBits() const;
     protected:
-	String() { } // vestigial implementation for boost::serialization
-
 	/** @brief Create a string. 
 	 *
 	 * @param sz Number of <tt>char</tt>s in the string.  Zero is
@@ -231,8 +226,6 @@ namespace CXXR {
 	    m_c_str = c_string;
 	}
     private:
-	friend class boost::serialization::access;
-
 	static GCRoot<String> s_na;
 
 	const char* m_c_str;
@@ -243,13 +236,6 @@ namespace CXXR {
 	// compiler-generated versions:
 	String(const String&);
 	String& operator=(const String&);
-
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("String");
-	    ar & boost::serialization::base_object<VectorBase>(*this);
-	    ar & m_encoding;
-	}
     };
 
     /** @brief Is a std::string entirely ASCII?

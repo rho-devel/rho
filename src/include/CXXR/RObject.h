@@ -561,6 +561,7 @@ namespace CXXR {
 	virtual ~RObject() {}
     private:
 	friend class boost::serialization::access;
+
 	static const unsigned char s_sexptype_mask = 0x3f;
 	static const unsigned char s_S4_mask = 0x40;
 	static const unsigned char s_class_mask = 0x80;
@@ -612,28 +613,7 @@ namespace CXXR {
 	RHandle<PairList> m_attrib;
 
 	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("RObject");
-	    ar & boost::serialization::base_object<GCNode>(*this);	
-	    ar & m_type;
-	    unsigned int named = m_named;
-	    ar & named;
-	    unsigned int missing = m_missing;
-	    ar & missing;
-	    unsigned int argused = m_argused;
-	    ar & argused;
-	    bool active_binding = m_active_binding;
-	    ar & active_binding;
-	    bool binding_locked = m_binding_locked;
-	    ar & binding_locked;
-	    BSerializer::attrib("m_attrib");
-	    ar & m_attrib;
-	    m_named = named;
-	    m_missing = missing;
-	    m_argused = argused;
-	    m_active_binding = active_binding;
-	    m_binding_locked = binding_locked;
-	}
+	void serialize(Archive& ar, const unsigned int version);
 
 #ifdef R_MEMORY_PROFILING
 	// This function implements maybeTraceMemory() (qv.) when
@@ -643,6 +623,29 @@ namespace CXXR {
 #endif	
     };
 }  // namespace CXXR
+
+// ***** Implementation of non-inlined templated members *****
+
+// Fields not serialized here are handled in the constructor:
+template<class Archive>
+void CXXR::RObject::serialize(Archive& ar, const unsigned int version) {
+    BSerializer::Frame frame("RObject");
+    ar & boost::serialization::base_object<GCNode>(*this);	
+    unsigned int missing = m_missing;
+    ar & missing;
+    unsigned int argused = m_argused;
+    ar & argused;
+    bool active_binding = m_active_binding;
+    ar & active_binding;
+    bool binding_locked = m_binding_locked;
+    ar & binding_locked;
+    BSerializer::attrib("m_attrib");
+    ar & m_attrib;
+    m_missing = missing;
+    m_argused = argused;
+    m_active_binding = active_binding;
+    m_binding_locked = binding_locked;
+}
 
 /** @brief Pointer to an RObject.
  *

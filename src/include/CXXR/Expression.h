@@ -114,8 +114,9 @@ namespace CXXR {
 } // namespace CXXR
 
 BOOST_CLASS_EXPORT(CXXR::Expression)
-    /** @brief Pointer to expression currently being evaluated.
-     */
+
+/** @brief Pointer to expression currently being evaluated.
+ */
     extern CXXR::GCRoot<> R_CurrentExpr;
 
 extern "C" {

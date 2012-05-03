@@ -238,7 +238,7 @@ namespace CXXR {
     private:
         friend class boost::serialization::access;
 
-		/** @brief Patrol entry and exit if debugging.
+	/** @brief Patrol entry and exit if debugging.
 	 *
 	 * DebugScope objects must be declared on the processor stack
 	 * (i.e. as C++ automatic variables).  A DebugScope object
@@ -294,53 +294,68 @@ namespace CXXR {
 	// compiler-generated versions:
 	Closure& operator=(const Closure&);
 
-	// Serialization
 	template<class Archive>
-	void load(Archive & ar, const unsigned int version) {
-	    ar & boost::serialization::base_object<RObject>(*this);
-	    GCEdge<const PairList> fargs; // For deserialization
-	    BSerializer::attrib("formal_args");
-	    ar >> fargs;
-	    // Protect from GC
-	    GCStackRoot<const PairList> formal_args(fargs);
-	    m_matcher=expose(new ArgMatcher(formal_args));
-	    BSerializer::attrib("m_body");
-	    ar >> m_body;
-	    BSerializer::attrib("m_environment");
-	    ar >> m_environment;
-	}
+	void load(Archive & ar, const unsigned int version);
 
 	template<class Archive>
-	void save(Archive & ar, const unsigned int version) const {
-	    ar & boost::serialization::base_object<RObject>(*this);
-	    GCEdge<const PairList> formal_args(m_matcher->formalArgs());
-	    BSerializer::attrib("formal_args");
-	    ar << formal_args;
-	    BSerializer::attrib("m_body");
-	    ar << m_body;
-	    BSerializer::attrib("m_environment");
-	    ar << m_environment;
-	}
+	void save(Archive & ar, const unsigned int version) const;
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 	    BSerializer::Frame frame("Closure");
 	    boost::serialization::split_member(ar, *this, version);
 	}
-
-	// Used by boost::serialization
-	// Initialises fields not serialized
-	Closure()
-	    : FunctionBase(CLOSXP), m_debug(false) {}
-	
-
     };
 }  // namespace CXXR
 
 BOOST_CLASS_EXPORT(CXXR::Closure)
 
+// ***** Implementation of non-inlined templated members *****
+
+template<class Archive>
+void CXXR::Closure::load(Archive& ar, const unsigned int version)
+{
+    ar & boost::serialization::base_object<RObject>(*this);
+    GCEdge<const CXXR::PairList> fargs; // For deserialization
+    BSerializer::attrib("formal_args");
+    ar >> fargs;
+    // Protect from GC
+    GCStackRoot<const PairList> formal_args(fargs);
+    m_matcher=expose(new ArgMatcher(formal_args));
+    BSerializer::attrib("m_body");
+    ar >> m_body;
+    BSerializer::attrib("m_environment");
+    ar >> m_environment;
+}
+
+template<class Archive>
+void CXXR::Closure::save(Archive& ar, const unsigned int version) const
+{
+    ar & boost::serialization::base_object<RObject>(*this);
+    GCEdge<const PairList> formal_args(m_matcher->formalArgs());
+    BSerializer::attrib("formal_args");
+    ar << formal_args;
+    BSerializer::attrib("m_body");
+    ar << m_body;
+    BSerializer::attrib("m_environment");
+    ar << m_environment;
+}
+
+// ***** boost serialization object construction *****
+
+namespace boost {
+    namespace serialization {
+	template<class Archive>
+	void load_construct_data(Archive& ar, CXXR::Closure* t,
+				 const unsigned int version)
+	{
+	    new (t) CXXR::Closure(0, 0);
+	}
+    }  // namespace serialization
+}  // namespace boost
+
 extern "C" {
-#endif
+#endif  /* __cplusplus */
 
     /** @brief Create a CXXR::Closure object.
      *
