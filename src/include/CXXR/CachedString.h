@@ -151,7 +151,8 @@ namespace CXXR {
 	map::value_type* m_key_val_pr;
 	mutable Symbol* m_symbol;  // Pointer to the Symbol object identified
 	  // by this CachedString, or a null pointer if none.
-	std::string* m_s11n_string;
+	std::string* m_s11n_string;  // Used only in temporary objects
+	  // created during deserialisation.
 
 	// This is used during (boost) deserialisation to construct a
 	// bodged-up temporary object.  The subsequent call to

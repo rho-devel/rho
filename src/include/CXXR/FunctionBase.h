@@ -167,10 +167,19 @@ namespace CXXR {
 
 	virtual ~FunctionBase() {}
     private:
+	friend class boost::serialization::access;
+
 	static bool s_tracing_enabled;
 	bool m_traced;
 
 	static void reportCall(const Expression* call);
+
+	// Fields not serialised here are set up by the constructor.
+	template <class Archive>
+	void serialize(Archive& ar, const unsigned int version) {
+	    BSerializer::Frame frame("FunctionBase");
+	    ar & boost::serialization::base_object<RObject>(*this);
+	}
     };
 }  // namespace CXXR
 

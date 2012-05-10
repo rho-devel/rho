@@ -87,10 +87,21 @@ BuiltInFunction::map* BuiltInFunction::s_cache = 0;
 // using Rf_errorcall() rather than Rf_error(), so that it can
 // specifically be attributed to the 'syntactical' function.
 
+// (The argument to the FunctionBase base-class constructor is
+// arbitrary, but will not be used during the lifetime of this
+// temporary object.)
+BuiltInFunction::BuiltInFunction()
+    : FunctionBase(BUILTINSXP), m_offset(0), m_function(0),
+      m_s11n_name(0)
+{
+    m_s11n_name = new std::string;
+}
+
 BuiltInFunction::BuiltInFunction(unsigned int offset)
     : FunctionBase(s_function_table[offset].flags%10
 		   ? BUILTINSXP : SPECIALSXP),
-      m_offset(offset), m_function(s_function_table[offset].cfun)
+      m_offset(offset), m_function(s_function_table[offset].cfun),
+      m_s11n_name(0)
 {
     unsigned int pmdigit = (s_function_table[offset].flags/100)%10;
     m_result_printing_mode = ResultPrintingMode(pmdigit);
@@ -108,8 +119,10 @@ BuiltInFunction::BuiltInFunction(unsigned int offset)
 
 BuiltInFunction::~BuiltInFunction()
 {
+    if (m_s11n_name)
+	delete m_s11n_name;
     // During program exit, s_cache may already have been deleted:
-    if (s_cache)
+    else if (s_cache)
 	s_cache->erase(name());
 }
 
@@ -199,6 +212,13 @@ BuiltInFunction* BuiltInFunction::obtain(const std::string& name)
 	}
     }
     return (*it).second;
+}
+
+BuiltInFunction* BuiltInFunction::s11n_relocate() const 
+{
+    if (!m_s11n_name)
+	return 0;
+    return BuiltInFunction::obtain(*m_s11n_name);
 }
 
 const char* BuiltInFunction::typeName() const
