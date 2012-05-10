@@ -388,10 +388,47 @@ namespace CXXR {
 	 */
 	static size_t numNodes() {return s_num_nodes;}
 
-	virtual GCNode* s11n_relocate() const
-	{
-	    return 0;
-	}
+	/** @brief Not for general use.
+	 *
+	 * boost::serialization includes mechanisms for ensuring that
+	 * if, before serialisation, several pointers to be serialised
+	 * point to the same object of a class type, then after
+	 * deserialisation, the deserialised pointers will also all
+	 * point to a single object.  During deserialisation,
+	 * boost::serialization creates this object using the
+	 * appropriate <tt>operator new</tt> when the first pointer of
+	 * the group is deserialised; subsequent pointers of the group
+	 * are then simply set to point to that object.
+	 *
+	 * For most classes inheriting from GCNode this works fine,
+	 * and in such cases this function returns a null pointer.
+	 * However, there is a problem if a pointer points to some
+	 * object which may have been set up in a R session before
+	 * deserialisation of an earlier session takes place: this
+	 * can be a problem, for example, with CachedString, Symbol
+	 * and BuiltInFunction objects.  In such case, left to its own
+	 * devices, boost::serialization would create a duplicate of
+	 * that object, and in doing so possibly violate a class
+	 * invariant.
+	 *
+	 * The mechanism used in CXXR is that after a pointer to an
+	 * object of a class inheriting from GCNode has been
+	 * deserialised, the deserialisation code calls the function
+	 * s11n_relocate() on the deserialised object O1.  If this
+	 * function returns a non-null pointer (which will point to
+	 * another object O2 of the same class), then CXXR uses the
+	 * reset_object_address() mechanism to tell
+	 * boost::serialization to regard O2 and not O1 as the result
+	 * of the deserialisation, and to set up the pointers
+	 * accordingly.  O1 is then abandoned to the garbage
+	 * collector.
+	 *
+	 * @return See function description.
+	 */
+	 virtual GCNode* s11n_relocate() const
+	 {
+	     return 0;
+	 }
 
 	/** @brief Conduct a visitor to the nodes referred to by this
 	 * one.

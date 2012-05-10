@@ -239,11 +239,13 @@ namespace CXXR {
 	String(const String&);
 	String& operator=(const String&);
 
-	// Fields not serialised here are set up by the constructor:
+	// Fields not serialised here are set up by the constructor or
+	// by a derived class.
 	template <class Archive>
 	void serialize(Archive& ar, const unsigned int version) {
 	    BSerializer::Frame frame("String");
 	    ar & boost::serialization::base_object<RObject>(*this);
+	    ar & m_encoding;
 	}
     };
 

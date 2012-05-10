@@ -152,14 +152,20 @@ namespace CXXR {
 	mutable Symbol* m_symbol;  // Pointer to the Symbol object identified
 	  // by this CachedString, or a null pointer if none.
 	std::string* m_s11n_string;
-    public:
+
 	// This is used during (boost) deserialisation to construct a
-	// bodged-up temporary object which GCEdgeBase::load() then
-	// replaces by a pukka object returned by CachedString::obtain(). 
-	CachedString(const std::string& str, cetype_t encoding)
-	    : String(str.size(), encoding), m_s11n_string(new std::string(str))
-	{}
-    private:
+	// bodged-up temporary object.  The subsequent call to
+	// s11n_relocate() will then request that this be replaced by
+	// a pukka object returned by CachedString::obtain().  (The
+	// arguments to the String base-class constructor are
+	// arbitrary, but will not be used during the lifetime of this
+	// temporary object.)
+	CachedString()
+	    : String(0, CE_NATIVE), m_key_val_pr(0), m_s11n_string(0)
+	{
+	    m_s11n_string = new std::string;
+	}
+
 	explicit CachedString(map::value_type* key_val_pr)
 	    : String(key_val_pr->first.first.size(), key_val_pr->first.second),
 	    m_key_val_pr(key_val_pr), m_symbol(0), m_s11n_string(0)
@@ -181,11 +187,17 @@ namespace CXXR {
 	// Initialize the static data members:
 	static void initialize();
 
+	template<class Archive>
+	void load(Archive & ar, const unsigned int version);
+
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const;
+
 	// Fields not serialised here are set up by the constructor:
 	template <class Archive>
 	void serialize(Archive& ar, const unsigned int version) {
 	    BSerializer::Frame frame("CachedString");
-	    ar & boost::serialization::base_object<String>(*this);
+	    boost::serialization::split_member(ar, *this, version);
 	}
     };
 }  // namespace CXXR
@@ -196,32 +208,24 @@ namespace {
     CXXR::SchwarzCounter<CXXR::CachedString> cachedstring_schwarz_ctr;
 }
 
-// ***** boost serialization object construction *****
+// ***** Implementation of non-inlined templated members *****
 
-namespace boost {
-    namespace serialization {
-	template<class Archive>
-	void load_construct_data(Archive& ar, CXXR::CachedString* t,
-				 const unsigned int version)
-	{
-	    std::string str;
-	    cetype_t encoding;
-	    ar >> str;
-	    ar >> encoding;
-	    new (t) CXXR::CachedString(str, encoding);
-	}
+template<class Archive>
+void CXXR::CachedString::load(Archive& ar, const unsigned int version)
+{
+    // This will only ever be applied to a 'temporary' CachedString
+    // created by the default constructor.
+    ar & boost::serialization::base_object<String>(*this);
+    ar >> *m_s11n_string;
+}
 
-	template<class Archive>
-	void save_construct_data(Archive& ar, const CXXR::CachedString* t,
-				 const unsigned int version)
-	{
-	    std::string str = t->stdstring();
-	    ar << str;
-	    cetype_t encoding = t->encoding();
-	    ar << encoding;
-	}
-    }  // namespace serialization
-}  // namespace boost
+template<class Archive>
+void CXXR::CachedString::save(Archive& ar, const unsigned int version) const
+{
+    ar & boost::serialization::base_object<String>(*this);
+    std::string str = stdstring();
+    ar << str;
+}
 
 extern "C" {
 #endif /* __cplusplus */
