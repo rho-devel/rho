@@ -60,8 +60,10 @@ SEXP R_BlankString = 0;
 
 CachedString::~CachedString()
 {
+    if (m_s11n_string)
+	delete m_s11n_string;
     // During program exit, s_cache may already have been deleted:
-    if (s_cache) {
+    else if (s_cache) {
 	// Must copy the key, because some implementations may,
 	// having deleted the cache entry pointed to by
 	// m_key_val_pr, continue looking for other entries with
@@ -117,7 +119,14 @@ void CachedString::initialize()
     s_blank = blank.get();
     R_BlankString = s_blank;
 }
-    
+
+CachedString* CachedString::s11n_relocate() const 
+{
+    if (!m_s11n_string)
+	return 0;
+    return CachedString::obtain(*m_s11n_string, encoding());
+}
+
 const char* CachedString::typeName() const
 {
     return CachedString::staticTypeName();

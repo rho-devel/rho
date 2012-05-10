@@ -109,9 +109,16 @@ namespace CXXR {
 	    return m_key_val_pr->first.first;
 	}
 
+	// Virtual function of GCNode:
+	CachedString* s11n_relocate() const;
+
 	// Virtual function of RObject:
 	const char* typeName() const;
     private:
+	friend class boost::serialization::access;
+	friend class SchwarzCounter<CachedString>;
+	friend class Symbol;
+
 	// The first element of the key is the text, the second
 	// element the encoding:
 	typedef std::pair<std::string, cetype_t> key;
@@ -144,10 +151,18 @@ namespace CXXR {
 	map::value_type* m_key_val_pr;
 	mutable Symbol* m_symbol;  // Pointer to the Symbol object identified
 	  // by this CachedString, or a null pointer if none.
-
+	std::string* m_s11n_string;
+    public:
+	// This is used during (boost) deserialisation to construct a
+	// bodged-up temporary object which GCEdgeBase::load() then
+	// replaces by a pukka object returned by CachedString::obtain(). 
+	CachedString(const std::string& str, cetype_t encoding)
+	    : String(str.size(), encoding), m_s11n_string(new std::string(str))
+	{}
+    private:
 	explicit CachedString(map::value_type* key_val_pr)
 	    : String(key_val_pr->first.first.size(), key_val_pr->first.second),
-	    m_key_val_pr(key_val_pr), m_symbol(0)
+	    m_key_val_pr(key_val_pr), m_symbol(0), m_s11n_string(0)
 	{
 	    setCString(key_val_pr->first.first.c_str());
 	}
@@ -166,17 +181,49 @@ namespace CXXR {
 	// Initialize the static data members:
 	static void initialize();
 
-	friend class SchwarzCounter<CachedString>;
-	friend class Symbol;
+	// Fields not serialised here are set up by the constructor:
+	template <class Archive>
+	void serialize(Archive& ar, const unsigned int version) {
+	    BSerializer::Frame frame("CachedString");
+	    ar & boost::serialization::base_object<String>(*this);
+	}
     };
 }  // namespace CXXR
+
+BOOST_CLASS_EXPORT(CXXR::CachedString)
 
 namespace {
     CXXR::SchwarzCounter<CXXR::CachedString> cachedstring_schwarz_ctr;
 }
 
-extern "C" {
+// ***** boost serialization object construction *****
 
+namespace boost {
+    namespace serialization {
+	template<class Archive>
+	void load_construct_data(Archive& ar, CXXR::CachedString* t,
+				 const unsigned int version)
+	{
+	    std::string str;
+	    cetype_t encoding;
+	    ar >> str;
+	    ar >> encoding;
+	    new (t) CXXR::CachedString(str, encoding);
+	}
+
+	template<class Archive>
+	void save_construct_data(Archive& ar, const CXXR::CachedString* t,
+				 const unsigned int version)
+	{
+	    std::string str = t->stdstring();
+	    ar << str;
+	    cetype_t encoding = t->encoding();
+	    ar << encoding;
+	}
+    }  // namespace serialization
+}  // namespace boost
+
+extern "C" {
 #endif /* __cplusplus */
 
     /** @brief Is a String cached?

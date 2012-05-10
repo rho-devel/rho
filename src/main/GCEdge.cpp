@@ -59,9 +59,6 @@ GCEdgeBase::EdgeSerializationType GCEdgeBase::serializationType() const {
     if (typeid(*m_target)==typeid(Symbol))
 	return SYMBOLEDGE;
 
-    if (typeid(*m_target)==typeid(CachedString))
-	return CACHEDSTRINGEDGE;
-
     if (typeid(*m_target)==typeid(Environment))
 	return ENVIRONMENTEDGE;
 

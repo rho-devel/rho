@@ -226,6 +226,8 @@ namespace CXXR {
 	    m_c_str = c_string;
 	}
     private:
+	friend class boost::serialization::access;
+
 	static GCRoot<String> s_na;
 
 	const char* m_c_str;
@@ -236,6 +238,13 @@ namespace CXXR {
 	// compiler-generated versions:
 	String(const String&);
 	String& operator=(const String&);
+
+	// Fields not serialised here are set up by the constructor:
+	template <class Archive>
+	void serialize(Archive& ar, const unsigned int version) {
+	    BSerializer::Frame frame("String");
+	    ar & boost::serialization::base_object<RObject>(*this);
+	}
     };
 
     /** @brief Is a std::string entirely ASCII?

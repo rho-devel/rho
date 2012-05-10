@@ -388,6 +388,11 @@ namespace CXXR {
 	 */
 	static size_t numNodes() {return s_num_nodes;}
 
+	virtual GCNode* s11n_relocate() const
+	{
+	    return 0;
+	}
+
 	/** @brief Conduct a visitor to the nodes referred to by this
 	 * one.
 	 *

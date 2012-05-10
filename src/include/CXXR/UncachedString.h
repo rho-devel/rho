@@ -48,6 +48,7 @@
 #include <string>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/export.hpp>
+#include <boost/serialization/string.hpp>
 
 #include "CXXR/BSerializer.hpp"
 
@@ -166,17 +167,19 @@ namespace boost {
 	void load_construct_data(Archive& ar, CXXR::UncachedString* t,
 				 const unsigned int version)
 	{
-	    std::string string;
+	    std::string str;
 	    cetype_t encoding;
-	    ar >> string >> encoding;
-	    new (t) CXXR::UncachedString(string, encoding);
+	    ar >> str >> encoding;
+	    new (t) CXXR::UncachedString(str, encoding);
 	}
 
 	template<class Archive>
-	void save_construct_data(Archive& ar, CXXR::UncachedString* t,
+	void save_construct_data(Archive& ar, const CXXR::UncachedString* t,
 				 const unsigned int version)
 	{
-	    ar << std::string(t->m_data, t->size()) << t->encoding();
+	    std::string str(t->c_str(), t->size());
+	    cetype_t encoding = t->encoding();
+	    ar << str << encoding;
 	}
     }  // namespace serialization
 }  // namespace boost

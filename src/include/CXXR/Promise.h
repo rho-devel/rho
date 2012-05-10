@@ -203,10 +203,11 @@ namespace CXXR {
 	// compiler-generated versions:
 	Promise(const Promise&);
 	Promise& operator=(const Promise&);
-	template <class Archive>
 
 	// Fields not serialised here are set up by the constructor:
-	void serialize(Archive& ar, const unsigned int version) {
+	template <class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
 	    BSerializer::Frame frame("Promise");
 	    ar & boost::serialization::base_object<RObject>(*this);
 	    BSerializer::attrib("m_value");
@@ -246,13 +247,15 @@ namespace boost {
 	    CXXR::GCStackRoot<> envrt(env);
 	    new (t) CXXR::Promise(valgen, env);
 	}
-	template<class Archive>
 
-	void save_construct_data(Archive& ar, CXXR::Promise* t,
+	template<class Archive>
+	void save_construct_data(Archive& ar, const CXXR::Promise* t,
 				 const unsigned int version)
 	{
-	    ar << t->m_valgen;
-	    ar << t->m_environment;
+	    const CXXR::RObject* valgen = t->valueGenerator();
+	    ar << valgen;
+	    CXXR::Environment* env = t->environment();
+	    ar << env;
 	}
     }  // namespace serialization
 }  // namespace boost

@@ -45,9 +45,10 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/split_member.hpp>
+
 #include "CXXR/BSerializer.hpp"
-#include "CXXR/CachedString_serialization.hpp"
 #include "CXXR/Environment_serialization.hpp"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Symbol_serialization.hpp"
 #include "CXXR/GCNode.hpp"
 
@@ -60,8 +61,7 @@ namespace CXXR {
     public:
 	/** Used for representing the type of target
 	 */
-	enum EdgeSerializationType {OTHEREDGE=0, SYMBOLEDGE,
-	                            CACHEDSTRINGEDGE, ENVIRONMENTEDGE};
+	enum EdgeSerializationType {OTHEREDGE=0, SYMBOLEDGE, ENVIRONMENTEDGE};
 
 	/** @brief Null the encapsulated pointer.
 	 */
@@ -130,9 +130,6 @@ namespace CXXR {
 	    GCNode* target;
 	    ar >> type;
 	    switch(type) {
-	    case CACHEDSTRINGEDGE:
-		target = loadCachedString(ar);
-		break;
 	    case ENVIRONMENTEDGE:
 		target = loadEnvironment(ar);
 		break;
@@ -148,6 +145,14 @@ namespace CXXR {
 	    // pointing to it.
 	    if (target && !target->isExposed())
 		target->expose();
+	    if (target) {
+		GCStackRoot<GCNode> tgtrt(target);
+		GCNode* reloc = target->s11n_relocate();
+		if (reloc) {
+		    ar.reset_object_address(reloc, target);
+		    target = reloc;
+		}
+	    }
 	    retarget(target);
 	}
 
@@ -162,9 +167,6 @@ namespace CXXR {
 	    EdgeSerializationType type=serializationType();
 	    ar << type;
 	    switch(type) {
-	    case CACHEDSTRINGEDGE:
-		saveCachedString(ar, m_target);
-		break;
 	    case ENVIRONMENTEDGE:
 		saveEnvironment(ar, m_target);
 		break;
