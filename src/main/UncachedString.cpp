@@ -44,7 +44,7 @@ using namespace CXXR;
 
 UncachedString::UncachedString(const std::string& str, cetype_t encoding)
     : String(str.size(), encoding), m_databytes(str.size() + 1),
-      m_data(m_short_string)
+      m_data(m_short_string), m_s11n_isna(false)
 {
     size_t sz = str.size();
     allocData(sz);
@@ -58,6 +58,11 @@ void UncachedString::allocData(size_t sz)
 	m_data = static_cast<char*>(MemoryBank::allocate(m_databytes));
     // Insert trailing null byte:
     m_data[sz] = 0;
+}
+
+UncachedString* UncachedString::s11n_relocate() const
+{
+    return (m_s11n_isna ? static_cast<UncachedString*>(NA()) : 0);
 }
 
 const char* UncachedString::typeName() const

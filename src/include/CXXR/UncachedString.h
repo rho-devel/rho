@@ -78,7 +78,8 @@ namespace CXXR {
 	 *          in this context (checked).
 	 */
 	explicit UncachedString(size_t sz, cetype_t encoding = CE_NATIVE)
-	    : String(sz, encoding), m_databytes(sz + 1), m_data(m_short_string)
+	    : String(sz, encoding), m_databytes(sz + 1),
+	      m_data(m_short_string), m_s11n_isna(false)
 	{
 	    allocData(sz);
 	    setCString(m_data);
@@ -119,16 +120,22 @@ namespace CXXR {
 	    return "char (uncached)";
 	}
 
+	// Virtual function of GCNode:
+	UncachedString* s11n_relocate() const;
+
 	// Virtual function of RObject:
 	const char* typeName() const;
     private:
 	friend class boost::serialization::access;
 
 	// Max. strlen stored internally:
-	static const size_t s_short_strlen = 7;
+	static const size_t s_short_strlen = 6;
 
 	size_t m_databytes;  // includes trailing null byte
 	char* m_data;  // pointer to the string's data block.
+
+	bool m_s11n_isna;  // used only during deserialisation to
+	  // provide special handling for the NA string.
 
 	// If there are fewer than s_short_strlen+1 chars in the
 	// string (including the trailing null), it is stored here,
@@ -154,8 +161,18 @@ namespace CXXR {
 	// from MemoryBank:
 	void allocData(size_t sz);
 
-	// No serialize() function: everything necessary is done by
-	// {load,save}_construct_data().
+	template<class Archive>
+	void load(Archive & ar, const unsigned int version);
+
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const;
+
+	// Fields not handled here are set up by the constructor.
+	template <class Archive>
+	void serialize(Archive& ar, const unsigned int version) {
+	    BSerializer::Frame frame("UncachedString");
+	    boost::serialization::split_member(ar, *this, version);
+	}
     };
 }  // namespace CXXR
 
@@ -177,6 +194,9 @@ namespace boost {
 	void save_construct_data(Archive& ar, const CXXR::UncachedString* t,
 				 const unsigned int version)
 	{
+	    // Note that the encoding gets serialised twice, once here
+	    // and again in String::serialize().  This duplication,
+	    // though annoying, is harmless.
 	    std::string str(t->c_str(), t->size());
 	    cetype_t encoding = t->encoding();
 	    ar << str << encoding;
@@ -184,8 +204,27 @@ namespace boost {
     }  // namespace serialization
 }  // namespace boost
 
-extern "C" {
+// ***** Implementation of non-inlined templated members *****
 
+// The issue here is to record whether or not a serialised
+// UncachedString was the 'NA' string.
+
+template<class Archive>
+void CXXR::UncachedString::load(Archive& ar, const unsigned int version)
+{
+    ar & boost::serialization::base_object<String>(*this);
+    ar >> m_s11n_isna;
+}
+
+template<class Archive>
+void CXXR::UncachedString::save(Archive& ar, const unsigned int version) const
+{
+    ar & boost::serialization::base_object<String>(*this);
+    bool isna = (this == NA());
+    ar << isna;
+}
+
+extern "C" {
 #endif /* __cplusplus */
 
     /** @brief Read-write character access.
