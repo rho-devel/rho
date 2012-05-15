@@ -50,6 +50,8 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
+#include <boost/serialization/nvp.hpp>
+
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/GCNode.hpp"
 #include "CXXR/RHandle.hpp"
@@ -628,19 +630,20 @@ namespace CXXR {
 
 // Fields not serialized here are handled in the constructor:
 template<class Archive>
-void CXXR::RObject::serialize(Archive& ar, const unsigned int version) {
+void CXXR::RObject::serialize(Archive& ar, const unsigned int version)
+{
     BSerializer::Frame frame("RObject");
-    ar & boost::serialization::base_object<GCNode>(*this);	
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);	
     unsigned int missing = m_missing;
-    ar & missing;
+    ar & BOOST_SERIALIZATION_NVP(missing);
     unsigned int argused = m_argused;
-    ar & argused;
+    ar & BOOST_SERIALIZATION_NVP(argused);
     bool active_binding = m_active_binding;
-    ar & active_binding;
+    ar & BOOST_SERIALIZATION_NVP(active_binding);
     bool binding_locked = m_binding_locked;
-    ar & binding_locked;
+    ar & BOOST_SERIALIZATION_NVP(binding_locked);
     BSerializer::attrib("m_attrib");
-    ar & m_attrib;
+    ar & BOOST_SERIALIZATION_NVP(m_attrib);
     m_missing = missing;
     m_argused = argused;
     m_active_binding = active_binding;

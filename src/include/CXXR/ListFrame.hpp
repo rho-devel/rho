@@ -99,30 +99,32 @@ namespace CXXR {
 	ListFrame& operator=(const ListFrame&);
 
 	template<class Archive>
-	void load(Archive& ar, const unsigned int version) {
-	    ar >> boost::serialization::base_object<Frame>(*this);
+	void load(Archive& ar, const unsigned int version)
+	{
+	    ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(Frame);
 	    size_t numberOfBindings;
-	    ar >> numberOfBindings;
+	    ar >> BOOST_SERIALIZATION_NVP(numberOfBindings);
 	    for (size_t i = 0; i < numberOfBindings; ++i) {
 		const Symbol* symbol = loadSymbol(ar);
 		m_list.push_back(Binding());
 		Binding& binding = m_list.back();
 		binding.initialize(this, symbol);
 		statusChanged(symbol);
-		ar >> binding;
+		ar >> BOOST_SERIALIZATION_NVP(binding);
 	    }
 	}
 
 	template<class Archive>
-	void save(Archive& ar, const unsigned int version) const {
-	    ar << boost::serialization::base_object<Frame>(*this);
+	void save(Archive& ar, const unsigned int version) const
+	{
+	    ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(Frame);
 	    size_t numberOfBindings = size();
-	    ar << numberOfBindings;
+	    ar << BOOST_SERIALIZATION_NVP(numberOfBindings);
 	    for (List::const_iterator it = m_list.begin();
 		 it != m_list.end(); ++it) {
 		const Binding& binding = *it;
 		saveSymbol(ar, binding.symbol());
-		ar << binding;
+		ar << BOOST_SERIALIZATION_NVP(binding);
 	    }
 	}
 

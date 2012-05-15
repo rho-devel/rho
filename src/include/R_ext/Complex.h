@@ -48,6 +48,7 @@ typedef struct {
 
 #include <cstdio>
 #include <boost/serialization/access.hpp>
+#include <boost/serialization/nvp.hpp>
 
 struct Rcomplex {
     double r;
@@ -70,8 +71,8 @@ struct Rcomplex {
     template<class Archive>
     void serialize (Archive & ar, const unsigned int version) {
 	std::printf("Serialize RComplex");
-	ar & r;
-	ar & i;
+	ar & BOOST_SERIALIZATION_NVP(r);
+	ar & BOOST_SERIALIZATION_NVP(i);
     }
 };
 

@@ -2,6 +2,7 @@
 #define SYMBOL_SERIALIZATION_HPP
 
 #include <string>
+#include <boost/serialization/nvp.hpp>
 
 #include "CXXR/BSerializer.hpp"
 
@@ -25,19 +26,19 @@ namespace CXXR {
 	SymbolSerializationType type=symbolSerializationType(sym);
 	std::string strSym(decomposeSymbol(sym));
 
-	ar << type;
-	ar << strSym;
+	ar << BOOST_SERIALIZATION_NVP(type);
+	ar << BOOST_SERIALIZATION_NVP(strSym);
     }
 
     template<class Archive>
     Symbol* loadSymbol(Archive & ar) {
 	BSerializer::Frame frame("Symbol");
 	SymbolSerializationType type;
-	std::string tmp;
+	std::string strSym;
 
-	ar >> type;
-	ar >> tmp;
-	return composeSymbol(type, tmp);
+	ar >> BOOST_SERIALIZATION_NVP(type);
+	ar >> BOOST_SERIALIZATION_NVP(strSym);
+	return composeSymbol(type, strSym);
     }
 }
 

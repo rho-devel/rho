@@ -48,7 +48,9 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
+#include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_member.hpp>
+
 #include "CXXR/ArgMatcher.hpp"
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/Environment.h"
@@ -315,30 +317,30 @@ BOOST_CLASS_EXPORT(CXXR::Closure)
 template<class Archive>
 void CXXR::Closure::load(Archive& ar, const unsigned int version)
 {
-    ar & boost::serialization::base_object<RObject>(*this);
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
     GCEdge<const CXXR::PairList> fargs; // For deserialization
     BSerializer::attrib("formal_args");
-    ar >> fargs;
+    ar >> boost::serialization::make_nvp("formal_args", fargs);
     // Protect from GC
     GCStackRoot<const PairList> formal_args(fargs);
     m_matcher=expose(new ArgMatcher(formal_args));
     BSerializer::attrib("m_body");
-    ar >> m_body;
+    ar >> BOOST_SERIALIZATION_NVP(m_body);
     BSerializer::attrib("m_environment");
-    ar >> m_environment;
+    ar >> BOOST_SERIALIZATION_NVP(m_environment);
 }
 
 template<class Archive>
 void CXXR::Closure::save(Archive& ar, const unsigned int version) const
 {
-    ar & boost::serialization::base_object<RObject>(*this);
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
     GCEdge<const PairList> formal_args(m_matcher->formalArgs());
     BSerializer::attrib("formal_args");
-    ar << formal_args;
+    ar << BOOST_SERIALIZATION_NVP(formal_args);
     BSerializer::attrib("m_body");
-    ar << m_body;
+    ar << BOOST_SERIALIZATION_NVP(m_body);
     BSerializer::attrib("m_environment");
-    ar << m_environment;
+    ar << BOOST_SERIALIZATION_NVP(m_environment);
 }
 
 // ***** boost serialization object construction *****

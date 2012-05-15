@@ -57,6 +57,8 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
+#include <boost/serialization/nvp.hpp>
+
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/GCRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
@@ -353,13 +355,13 @@ namespace CXXR {
     template<class Archive>
     void CXXR::ConsCell::serialize(Archive & ar, const unsigned int version) {
 	BSerializer::Frame frame("ConsCell");
-	ar & boost::serialization::base_object<RObject>(*this);
+	ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
 	BSerializer::attrib("m_car");
-	ar & m_car;
+	ar & BOOST_SERIALIZATION_NVP(m_car);
 	BSerializer::attrib("m_tail");
-	ar & m_tail;
+	ar & BOOST_SERIALIZATION_NVP(m_tail);
 	BSerializer::attrib("m_tag");
-	ar & m_tag;
+	ar & BOOST_SERIALIZATION_NVP(m_tag);
     }
 
     inline bool operator==(ConsCell::iterator l, ConsCell::iterator r)
@@ -549,7 +551,7 @@ namespace CXXR {
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 	    BSerializer::Frame frame("PairList");
-	    ar & boost::serialization::base_object<ConsCell>(*this);
+	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(ConsCell);
 	}
     };
 

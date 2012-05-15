@@ -46,6 +46,8 @@
 #ifdef __cplusplus
 
 #include <boost/serialization/access.hpp>
+#include <boost/serialization/nvp.hpp>
+
 #include "CXXR/BSerializer.hpp"
 
 namespace CXXR {
@@ -108,7 +110,7 @@ namespace CXXR {
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 	    BSerializer::Frame frame("Expression");
-	    ar & boost::serialization::base_object<ConsCell>(*this);
+	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(ConsCell);
 	}
     };
 } // namespace CXXR

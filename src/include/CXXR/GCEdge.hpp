@@ -44,6 +44,7 @@
 #include <typeinfo>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
+#include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_member.hpp>
 
 #include "CXXR/BSerializer.hpp"
@@ -128,7 +129,7 @@ namespace CXXR {
 	void load(Archive& ar, const unsigned int version) {
 	    EdgeSerializationType type;
 	    GCNode* target;
-	    ar >> type;
+	    ar >> BOOST_SERIALIZATION_NVP(type);
 	    switch(type) {
 	    case ENVIRONMENTEDGE:
 		target = loadEnvironment(ar);
@@ -137,7 +138,7 @@ namespace CXXR {
 		target = loadSymbol(ar);
 		break;
 	    case OTHEREDGE:
- 		ar >> target;
+ 		ar >> BOOST_SERIALIZATION_NVP(target);
 		break;
 	    }
 	    // Note that the target may already have been exposed,
@@ -165,7 +166,7 @@ namespace CXXR {
 		BSerializer::debug(tmp);
 	    }
 	    EdgeSerializationType type=serializationType();
-	    ar << type;
+	    ar << BOOST_SERIALIZATION_NVP(type);
 	    switch(type) {
 	    case ENVIRONMENTEDGE:
 		saveEnvironment(ar, m_target);
@@ -174,13 +175,14 @@ namespace CXXR {
 		saveSymbol(ar, m_target);
 		break;
 	    case OTHEREDGE:
-		ar << m_target;
+		ar << boost::serialization::make_nvp("target", m_target);
 		break;
 	    }
 	}
 
 	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
+	void serialize(Archive & ar, const unsigned int version)
+	{
 	    BSerializer::Frame frame("GCEdgeBase");
 	    boost::serialization::split_member(ar, *this, version);
 	}
@@ -266,7 +268,7 @@ namespace CXXR {
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 	    BSerializer::Frame frame("GCEdge");
-	    ar & boost::serialization::base_object<GCEdgeBase>(*this);
+	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCEdgeBase);
 	}
     };
 } // Namespace CXXR

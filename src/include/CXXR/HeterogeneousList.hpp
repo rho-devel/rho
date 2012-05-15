@@ -45,6 +45,7 @@
 
 #include <iterator>
 #include <boost/serialization/access.hpp>
+
 #include "CXXR/BSerializer.hpp"
 
 namespace CXXR {

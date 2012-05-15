@@ -45,8 +45,9 @@
 
 #ifdef __cplusplus
 
-#include <tr1/unordered_map>
 #include <string>
+#include <tr1/unordered_map>
+#include <boost/serialization/nvp.hpp>
 
 #include "CXXR/Allocator.hpp"
 #include "CXXR/SchwarzCounter.hpp"
@@ -216,16 +217,16 @@ void CXXR::CachedString::load(Archive& ar, const unsigned int version)
 {
     // This will only ever be applied to a 'temporary' CachedString
     // created by the default constructor.
-    ar & boost::serialization::base_object<String>(*this);
-    ar >> *m_s11n_string;
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(String);
+    ar >> boost::serialization::make_nvp("string", *m_s11n_string);
 }
 
 template<class Archive>
 void CXXR::CachedString::save(Archive& ar, const unsigned int version) const
 {
-    ar & boost::serialization::base_object<String>(*this);
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(String);
     std::string str = stdstring();
-    ar << str;
+    ar << boost::serialization::make_nvp("string", str);
 }
 
 extern "C" {

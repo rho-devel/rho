@@ -43,6 +43,7 @@
 
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
+#include <boost/serialization/nvp.hpp>
 
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/GCNode.hpp"
@@ -851,23 +852,23 @@ void CXXR::Frame::Binding::serialize(Archive & ar, const unsigned int version)
 {
     BSerializer::Frame frame("Frame::Binding");
     BSerializer::attrib("m_value");
-    ar & m_value;
+    ar & BOOST_SERIALIZATION_NVP(m_value);
     BSerializer::attrib("m_provenance");
-    ar & m_provenance;
+    ar & BOOST_SERIALIZATION_NVP(m_provenance);
     BSerializer::attrib("m_origin");
-    ar & m_origin;
+    ar & BOOST_SERIALIZATION_NVP(m_origin);
     BSerializer::attrib("m_active");
-    ar & m_active;
+    ar & BOOST_SERIALIZATION_NVP(m_active);
     BSerializer::attrib("m_locked");
-    ar & m_locked;
+    ar & BOOST_SERIALIZATION_NVP(m_locked);
 }
 
 template<class Archive>
 void CXXR::Frame::serialize (Archive & ar, const unsigned int version) {
     BSerializer::Frame frame("Frame");
-    ar & boost::serialization::base_object<GCNode>(*this);
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
     bool locked = m_locked;
-    ar & locked;
+    ar & BOOST_SERIALIZATION_NVP(locked);
     m_locked = locked;
 }
 

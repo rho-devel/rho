@@ -47,6 +47,8 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/nvp.hpp>
+
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
@@ -242,10 +244,11 @@ namespace CXXR {
 	// Fields not serialised here are set up by the constructor or
 	// by a derived class.
 	template <class Archive>
-	void serialize(Archive& ar, const unsigned int version) {
+	void serialize(Archive& ar, const unsigned int version)
+	{
 	    BSerializer::Frame frame("String");
-	    ar & boost::serialization::base_object<RObject>(*this);
-	    ar & m_encoding;
+	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
+	    ar & BOOST_SERIALIZATION_NVP(m_encoding);
 	}
     };
 

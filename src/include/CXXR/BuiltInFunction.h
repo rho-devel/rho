@@ -47,6 +47,7 @@
 #ifdef __cplusplus
 
 #include <map>
+#include <boost/serialization/nvp.hpp>
 
 #include "CXXR/ArgList.hpp"
 #include "CXXR/Environment.h"
@@ -425,16 +426,16 @@ void CXXR::BuiltInFunction::load(Archive& ar, const unsigned int version)
 {
     // This will only ever be applied to a 'temporary' BuiltInFunction
     // created by the default constructor.
-    ar & boost::serialization::base_object<FunctionBase>(*this);
-    ar >> *m_s11n_name;
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(FunctionBase);
+    ar >> boost::serialization::make_nvp("name", *m_s11n_name);
 }
 
 template<class Archive>
 void CXXR::BuiltInFunction::save(Archive& ar, const unsigned int version) const
 {
-    ar & boost::serialization::base_object<FunctionBase>(*this);
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(FunctionBase);
     std::string namestr(name());
-    ar << namestr;
+    ar << boost::serialization::make_nvp("name", namestr);
 }
 
 // Old-style accessor functions.  Get rid of these in due course.

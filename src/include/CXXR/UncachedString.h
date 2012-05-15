@@ -48,6 +48,7 @@
 #include <string>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/export.hpp>
+#include <boost/serialization/nvp.hpp>
 #include <boost/serialization/string.hpp>
 
 #include "CXXR/BSerializer.hpp"
@@ -134,7 +135,7 @@ namespace CXXR {
 	size_t m_databytes;  // includes trailing null byte
 	char* m_data;  // pointer to the string's data block.
 
-	bool m_s11n_isna;  // used only during deserialisation to
+	bool m_s11n_isna;  // used only during (de)serialisation to
 	  // provide special handling for the NA string.
 
 	// If there are fewer than s_short_strlen+1 chars in the
@@ -169,7 +170,8 @@ namespace CXXR {
 
 	// Fields not handled here are set up by the constructor.
 	template <class Archive>
-	void serialize(Archive& ar, const unsigned int version) {
+	void serialize(Archive& ar, const unsigned int version)
+	{
 	    BSerializer::Frame frame("UncachedString");
 	    boost::serialization::split_member(ar, *this, version);
 	}
@@ -186,7 +188,8 @@ namespace boost {
 	{
 	    std::string str;
 	    cetype_t encoding;
-	    ar >> str >> encoding;
+	    ar >> BOOST_SERIALIZATION_NVP(str)
+	       >> BOOST_SERIALIZATION_NVP(encoding);
 	    new (t) CXXR::UncachedString(str, encoding);
 	}
 
@@ -199,7 +202,8 @@ namespace boost {
 	    // though annoying, is harmless.
 	    std::string str(t->c_str(), t->size());
 	    cetype_t encoding = t->encoding();
-	    ar << str << encoding;
+	    ar << BOOST_SERIALIZATION_NVP(str)
+	       << BOOST_SERIALIZATION_NVP(encoding);
 	}
     }  // namespace serialization
 }  // namespace boost
@@ -212,16 +216,16 @@ namespace boost {
 template<class Archive>
 void CXXR::UncachedString::load(Archive& ar, const unsigned int version)
 {
-    ar & boost::serialization::base_object<String>(*this);
-    ar >> m_s11n_isna;
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(String);
+    ar >> BOOST_SERIALIZATION_NVP(m_s11n_isna);
 }
 
 template<class Archive>
 void CXXR::UncachedString::save(Archive& ar, const unsigned int version) const
 {
-    ar & boost::serialization::base_object<String>(*this);
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(String);
     bool isna = (this == NA());
-    ar << isna;
+    ar << boost::serialization::make_nvp("m_s11n_isna", isna);
 }
 
 extern "C" {

@@ -46,8 +46,8 @@
 #endif
 
 #include <set>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
 
 #include "CXXR/Provenance.hpp"
 #include "CXXR/Parentage.hpp"
@@ -242,7 +242,7 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_bserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    std::ofstream ofs("bserialize.out");
+    std::ofstream ofs("bserialize.xml");
 	
     const int n=length(args);
     if (n>0)
@@ -258,18 +258,18 @@ SEXP attribute_hidden do_bserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
 
-    boost::archive::text_oarchive oa(ofs);
-    oa << env;
+    boost::archive::xml_oarchive oa(ofs);
+    oa << BOOST_SERIALIZATION_NVP(env);
 
     return R_NilValue;
 }
 
 SEXP attribute_hidden do_bdeserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-	std::ifstream ifs("bserialize.out");
-	boost::archive::text_iarchive ia(ifs);
+	std::ifstream ifs("bserialize.xml");
+	boost::archive::xml_iarchive ia(ifs);
 	Environment* env;
-	ia >> env;
+	ia >> BOOST_SERIALIZATION_NVP(env);
 
 	GCStackRoot<Environment> envProtect(GCNode::expose(env)); // Protect from GC
 

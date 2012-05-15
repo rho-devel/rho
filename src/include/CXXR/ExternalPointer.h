@@ -48,6 +48,8 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
+#include <boost/serialization/nvp.hpp>
+
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
@@ -216,13 +218,14 @@ BOOST_CLASS_EXPORT(CXXR::ExternalPointer)
 // ***** Implementation of non-inlined templated members *****
 
 template <class Archive>
-void CXXR::ExternalPointer::serialize(Archive& ar, const unsigned int version) {
+void CXXR::ExternalPointer::serialize(Archive& ar, const unsigned int version)
+{
     BSerializer::Frame frame("ExternalPointer");
-    ar & boost::serialization::base_object<RObject>(*this);
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
     BSerializer::attrib("m_tag");
-    ar & m_tag;
+    ar & BOOST_SERIALIZATION_NVP(m_tag);
     BSerializer::attrib("m_tag");
-    ar & m_protege;
+    ar & BOOST_SERIALIZATION_NVP(m_protege);
 }
 
 extern "C" {

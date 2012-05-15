@@ -2,6 +2,7 @@
 #define ENVIRONMENT_SERIALIZATION_HPP
 
 #include <string>
+#include <boost/serialization/nvp.hpp>
 
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/GCNode.hpp"
@@ -27,21 +28,21 @@ namespace CXXR {
 	);
 	EnvironmentSerializationType type=environmentSerializationType(env);
 
-	ar << type;
+	ar << BOOST_SERIALIZATION_NVP(type);
 	if (type==OTHERENV)
-	    ar << env;
+	    ar << BOOST_SERIALIZATION_NVP(env);
     }
 
     template<class Archive>
     GCNode* loadEnvironment(Archive & ar) {
 	BSerializer::Frame frame("Environment(Wrapper)");
 	EnvironmentSerializationType type;
-	Environment* tmp=NULL;
+	Environment* env=NULL;
 
-	ar >> type;
+	ar >> BOOST_SERIALIZATION_NVP(type);
 	if (type==OTHERENV)
-	    ar >> tmp;
-	return const_cast<GCNode*>(composeEnvironment(type, tmp));
+	    ar >> BOOST_SERIALIZATION_NVP(env);
+	return const_cast<GCNode*>(composeEnvironment(type, env));
     }
 }
 

@@ -41,6 +41,8 @@
 #define FIXEDVECTOR_HPP 1
 
 #include <boost/aligned_storage.hpp>
+#include <boost/serialization/nvp.hpp>
+
 #include "CXXR/VectorBase.h"
 
 namespace CXXR {
@@ -287,7 +289,8 @@ namespace CXXR {
 	void save(Archive & ar, const unsigned int version) const;
 
 	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
+	void serialize(Archive & ar, const unsigned int version)
+	{
 	    BSerializer::Frame frame("FixedVector");
 	    boost::serialization::split_member(ar, *this, version);
 	}
@@ -313,7 +316,7 @@ namespace boost {
 				 const unsigned int version)
 	{
 	    std::size_t size;
-	    ar >> size;
+	    ar >> BOOST_SERIALIZATION_NVP(size);
 	    new (t) CXXR::FixedVector<T, ST, Initr>(size);
 	}
 
@@ -322,8 +325,8 @@ namespace boost {
 				 const CXXR::FixedVector<T, ST, Initr>* t,
 				 const unsigned int version)
 	{
-	    std::size_t sz = t->size();
-	    ar << sz;
+	    std::size_t size = t->size();
+	    ar << BOOST_SERIALIZATION_NVP(size);
 	}
     }  // namespace serialization
 }  // namespace boost
@@ -426,9 +429,9 @@ template<class Archive>
 void CXXR::FixedVector<T, ST, Initr>::load(Archive & ar,
 					   const unsigned int version)
 {
-    ar >> boost::serialization::base_object<VectorBase>(*this);
+    ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(VectorBase);
     for (unsigned int i = 0; i < size(); i++)
-	ar >> m_data[i];
+	ar >> boost::serialization::make_nvp("item", m_data[i]);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
@@ -436,9 +439,9 @@ template<class Archive>
 void CXXR::FixedVector<T, ST, Initr>::save(Archive & ar,
 					   const unsigned int version) const
 {
-    ar << boost::serialization::base_object<VectorBase>(*this);
+    ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(VectorBase);
     for (unsigned int i = 0; i < size(); i++)
-	ar << m_data[i];
+	ar << boost::serialization::make_nvp("item", m_data[i]);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>

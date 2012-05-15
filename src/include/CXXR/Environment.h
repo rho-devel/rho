@@ -48,6 +48,7 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
+#include <boost/serialization/nvp.hpp>
 
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/Frame.hpp"
@@ -517,13 +518,13 @@ namespace CXXR {
 	template<class Archive>
 	void serialize (Archive & ar, const unsigned int version) {
 	    BSerializer::Frame frame("Environment");
-	    ar & boost::serialization::base_object<RObject>(*this);
+	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
 	    BSerializer::attrib("m_enclosing");
-    	    ar & m_enclosing;
+    	    ar & BOOST_SERIALIZATION_NVP(m_enclosing);
 	    BSerializer::attrib("m_frame");
-	    ar & m_frame;
-	    ar & m_single_stepping;
-	    ar & m_locked;
+	    ar & BOOST_SERIALIZATION_NVP(m_frame);
+	    ar & BOOST_SERIALIZATION_NVP(m_single_stepping);
+	    ar & BOOST_SERIALIZATION_NVP(m_locked);
 	}
     };
 

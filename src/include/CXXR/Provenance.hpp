@@ -7,6 +7,7 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
+#include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_member.hpp>
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/Expression.h"
@@ -86,16 +87,16 @@ BOOST_CLASS_EXPORT(CXXR::Provenance)
 template <class Archive>
 void CXXR::Provenance::load(Archive& ar, const unsigned int version)
 {
-    ar >> boost::serialization::base_object<GCNode>(*this);
-    ar >> m_timestamp.tv_sec;
-    ar >> m_timestamp.tv_usec;
+    ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
+    ar >> boost::serialization::make_nvp("sec", m_timestamp.tv_sec);
+    ar >> boost::serialization::make_nvp("usec", m_timestamp.tv_usec);
     BSerializer::attrib("m_expression");
-    ar >> m_expression;
-    ar >> m_parentpos;
+    ar >> BOOST_SERIALIZATION_NVP(m_expression);
+    ar >> BOOST_SERIALIZATION_NVP(m_parentpos);
     BSerializer::attrib("m_symbol");
-    ar >> m_symbol;
+    ar >> BOOST_SERIALIZATION_NVP(m_symbol);
     BSerializer::attrib("m_parentage");
-    ar >> m_parentage;
+    ar >> BOOST_SERIALIZATION_NVP(m_parentage);
     m_children=new Set();
 
     m_parentage->incRefCount();
@@ -105,16 +106,16 @@ void CXXR::Provenance::load(Archive& ar, const unsigned int version)
 template <class Archive>
 void CXXR::Provenance::save(Archive& ar, const unsigned int version) const
 {
-    ar << boost::serialization::base_object<GCNode>(*this);
-    ar << m_timestamp.tv_sec;
-    ar << m_timestamp.tv_usec;
+    ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
+    ar << boost::serialization::make_nvp("sec", m_timestamp.tv_sec);
+    ar << boost::serialization::make_nvp("usec", m_timestamp.tv_usec);
     BSerializer::attrib("m_expression");
-    ar << m_expression;
-    ar << m_parentpos;
+    ar << BOOST_SERIALIZATION_NVP(m_expression);
+    ar << BOOST_SERIALIZATION_NVP(m_parentpos);
     BSerializer::attrib("m_symbol");
-    ar << m_symbol;
+    ar << BOOST_SERIALIZATION_NVP(m_symbol);
     BSerializer::attrib("m_parentage");
-    ar << m_parentage;
+    ar << BOOST_SERIALIZATION_NVP(m_parentage);
 }
 
 #endif

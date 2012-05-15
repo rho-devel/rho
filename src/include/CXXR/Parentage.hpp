@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <boost/serialization/access.hpp>
+#include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/vector.hpp>
 
@@ -62,19 +63,19 @@ template<class Archive>
 void CXXR::Parentage::load(Archive& ar, const unsigned int version)
 {
     size_t sz;
-    ar >> sz;
+    ar >> BOOST_SERIALIZATION_NVP(sz);
     resize(sz);
     for (size_t i = 0; i < sz; ++i)
-	ar >> (*this)[i];
+	ar >> boost::serialization::make_nvp("parent", (*this)[i]);
 }
 
 template<class Archive>
 void CXXR::Parentage::save(Archive& ar, const unsigned int version) const
 {
     size_t sz = size();
-    ar << sz;
+    ar << BOOST_SERIALIZATION_NVP(sz);
     for (size_t i = 0; i < sz; ++i)
-	ar << (*this)[i];
+	ar << boost::serialization::make_nvp("parent", (*this)[i]);
 }
 
 #endif // PARENTAGE_HPP

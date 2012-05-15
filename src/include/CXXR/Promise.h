@@ -50,6 +50,8 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
+#include <boost/serialization/nvp.hpp>
+
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/Expression.h"
 #include "CXXR/Environment.h"
@@ -209,9 +211,9 @@ namespace CXXR {
 	void serialize(Archive& ar, const unsigned int version)
 	{
 	    BSerializer::Frame frame("Promise");
-	    ar & boost::serialization::base_object<RObject>(*this);
+	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
 	    BSerializer::attrib("m_value");
-	    ar & m_value;
+	    ar & BOOST_SERIALIZATION_NVP(m_value);
 	}
     };
 
@@ -240,10 +242,10 @@ namespace boost {
 				 const unsigned int version)
 	{
 	    CXXR::GCEdge<> valgen;
-	    ar >> valgen;
+	    ar >> BOOST_SERIALIZATION_NVP(valgen);
 	    CXXR::GCStackRoot<> valgenrt(valgen);
 	    CXXR::GCEdge<CXXR::Environment> env;
-	    ar >> env;
+	    ar >> BOOST_SERIALIZATION_NVP(env);
 	    CXXR::GCStackRoot<> envrt(env);
 	    new (t) CXXR::Promise(valgen, env);
 	}
@@ -253,9 +255,9 @@ namespace boost {
 				 const unsigned int version)
 	{
 	    const CXXR::RObject* valgen = t->valueGenerator();
-	    ar << valgen;
+	    ar << BOOST_SERIALIZATION_NVP(valgen);
 	    CXXR::Environment* env = t->environment();
-	    ar << env;
+	    ar << BOOST_SERIALIZATION_NVP(env);
 	}
     }  // namespace serialization
 }  // namespace boost
