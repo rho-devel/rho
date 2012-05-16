@@ -241,22 +241,24 @@ namespace boost {
 	void load_construct_data(Archive& ar, CXXR::Promise* t,
 				 const unsigned int version)
 	{
-	    CXXR::GCEdge<> valgen;
+	    using namespace CXXR;
+	    GCEdge<> valgen;
 	    ar >> BOOST_SERIALIZATION_NVP(valgen);
-	    CXXR::GCStackRoot<> valgenrt(valgen);
-	    CXXR::GCEdge<CXXR::Environment> env;
+	    GCStackRoot<> valgenrt(valgen);
+	    GCEdge<Environment> env;
 	    ar >> BOOST_SERIALIZATION_NVP(env);
-	    CXXR::GCStackRoot<> envrt(env);
-	    new (t) CXXR::Promise(valgen, env);
+	    GCStackRoot<> envrt(env);
+	    new (t) Promise(valgen, env);
 	}
 
 	template<class Archive>
 	void save_construct_data(Archive& ar, const CXXR::Promise* t,
 				 const unsigned int version)
 	{
-	    const CXXR::RObject* valgen = t->valueGenerator();
+	    using namespace CXXR;
+	    GCEdge<const RObject> valgen(t->valueGenerator());
 	    ar << BOOST_SERIALIZATION_NVP(valgen);
-	    CXXR::Environment* env = t->environment();
+	    GCEdge<const Environment> env(t->environment());
 	    ar << BOOST_SERIALIZATION_NVP(env);
 	}
     }  // namespace serialization

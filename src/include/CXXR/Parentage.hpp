@@ -44,38 +44,16 @@ namespace CXXR {
 	unsigned long p_refcount;
 
 	template<class Archive>
-	void load(Archive& ar, const unsigned int version);
-
-	template<class Archive>
-	void save(Archive& ar, const unsigned int version) const;
-
-	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
+	    using namespace boost::serialization;
 	    BSerializer::Frame frame("Parentage");
-	    boost::serialization::split_member(ar, *this, version);
+	    ar & make_nvp("StdVec",
+			  base_object<std::vector<GCEdge<Provenance> > >(*this));
 	}
     };
 }
 
-// ***** Implementation of non-inlined templated members *****
-
-template<class Archive>
-void CXXR::Parentage::load(Archive& ar, const unsigned int version)
-{
-    size_t sz;
-    ar >> BOOST_SERIALIZATION_NVP(sz);
-    resize(sz);
-    for (size_t i = 0; i < sz; ++i)
-	ar >> boost::serialization::make_nvp("parent", (*this)[i]);
-}
-
-template<class Archive>
-void CXXR::Parentage::save(Archive& ar, const unsigned int version) const
-{
-    size_t sz = size();
-    ar << BOOST_SERIALIZATION_NVP(sz);
-    for (size_t i = 0; i < sz; ++i)
-	ar << boost::serialization::make_nvp("parent", (*this)[i]);
-}
+// Not needed, because never serialised via base class pointer:
+//BOOST_CLASS_EXPORT(CXXR::Parentage)
 
 #endif // PARENTAGE_HPP
