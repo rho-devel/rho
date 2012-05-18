@@ -333,15 +333,20 @@ namespace CXXR {
 	bool m_transparent;  // if true, do not create a
 			     // FunctionContext when this function is
 			     // applied.
-	std::string* m_s11n_name;  // Used only in temporary objects
-	  // created during deserialisation.
+	GCEdge<BuiltInFunction> m_s11n_reloc; // Used only in
+	  // temporary objects created during deserialisation.
 
 	// This default constructor is used only during (boost)
 	// deserialisation, and constructs a bodged-up temporary
-	// object.  The subsequent call to s11n_relocate() will then
-	// request that this be replaced by a pukka object returned by
-	// BuiltInFunction::obtain().
-	BuiltInFunction();
+	// object, with m_s11n_relocate pointing to the corresponding
+	// pukka object returned by BuiltInFunction::obtain().
+
+	// (The argument to the FunctionBase base-class constructor is
+	// arbitrary, but will not be used during the lifetime of this
+	// temporary object.)
+	BuiltInFunction()
+	    : FunctionBase(BUILTINSXP), m_offset(0), m_function(0)
+	{}
 
 	/** @brief Constructor.
 	 *
@@ -427,7 +432,9 @@ void CXXR::BuiltInFunction::load(Archive& ar, const unsigned int version)
     // This will only ever be applied to a 'temporary' BuiltInFunction
     // created by the default constructor.
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(FunctionBase);
-    ar >> boost::serialization::make_nvp("name", *m_s11n_name);
+    std::string namestr;
+    ar >> boost::serialization::make_nvp("name", namestr);
+    m_s11n_reloc = obtain(namestr);
 }
 
 template<class Archive>

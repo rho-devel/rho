@@ -152,7 +152,7 @@ namespace CXXR {
 	map::value_type* m_key_val_pr;
 	mutable Symbol* m_symbol;  // Pointer to the Symbol object identified
 	  // by this CachedString, or a null pointer if none.
-	std::string* m_s11n_string;  // Used only in temporary objects
+	GCEdge<CachedString> m_s11n_reloc;  // Used only in temporary objects
 	  // created during deserialisation.
 
 	// This is used during (boost) deserialisation to construct a
@@ -163,14 +163,12 @@ namespace CXXR {
 	// arbitrary, but will not be used during the lifetime of this
 	// temporary object.)
 	CachedString()
-	    : String(0, CE_NATIVE), m_key_val_pr(0), m_s11n_string(0)
-	{
-	    m_s11n_string = new std::string;
-	}
+	    : String(0, CE_NATIVE), m_key_val_pr(0)
+	{}
 
 	explicit CachedString(map::value_type* key_val_pr)
 	    : String(key_val_pr->first.first.size(), key_val_pr->first.second),
-	    m_key_val_pr(key_val_pr), m_symbol(0), m_s11n_string(0)
+	    m_key_val_pr(key_val_pr), m_symbol(0)
 	{
 	    setCString(key_val_pr->first.first.c_str());
 	}
@@ -218,7 +216,9 @@ void CXXR::CachedString::load(Archive& ar, const unsigned int version)
     // This will only ever be applied to a 'temporary' CachedString
     // created by the default constructor.
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(String);
-    ar >> boost::serialization::make_nvp("string", *m_s11n_string);
+    std::string str;
+    ar >> boost::serialization::make_nvp("string", str);
+    m_s11n_reloc = obtain(str, encoding());
 }
 
 template<class Archive>

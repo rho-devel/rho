@@ -80,7 +80,7 @@ namespace CXXR {
 	 */
 	explicit UncachedString(size_t sz, cetype_t encoding = CE_NATIVE)
 	    : String(sz, encoding), m_databytes(sz + 1),
-	      m_data(m_short_string), m_s11n_isna(false)
+	      m_data(m_short_string)
 	{
 	    allocData(sz);
 	    setCString(m_data);
@@ -135,8 +135,9 @@ namespace CXXR {
 	size_t m_databytes;  // includes trailing null byte
 	char* m_data;  // pointer to the string's data block.
 
-	bool m_s11n_isna;  // used only during (de)serialisation to
-	  // provide special handling for the NA string.
+	GCEdge<UncachedString> m_s11n_reloc;  // used only during
+	  // (de)serialisation to provide special handling for the NA
+	  // string.
 
 	// If there are fewer than s_short_strlen+1 chars in the
 	// string (including the trailing null), it is stored here,
@@ -217,7 +218,10 @@ template<class Archive>
 void CXXR::UncachedString::load(Archive& ar, const unsigned int version)
 {
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(String);
-    ar >> BOOST_SERIALIZATION_NVP(m_s11n_isna);
+    bool isna;
+    ar >> BOOST_SERIALIZATION_NVP(isna);
+    if (isna)
+	m_s11n_reloc = static_cast<UncachedString*>(NA());
 }
 
 template<class Archive>
@@ -225,7 +229,7 @@ void CXXR::UncachedString::save(Archive& ar, const unsigned int version) const
 {
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(String);
     bool isna = (this == NA());
-    ar << boost::serialization::make_nvp("m_s11n_isna", isna);
+    ar << BOOST_SERIALIZATION_NVP(isna);
 }
 
 extern "C" {

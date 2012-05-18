@@ -44,7 +44,7 @@ using namespace CXXR;
 
 UncachedString::UncachedString(const std::string& str, cetype_t encoding)
     : String(str.size(), encoding), m_databytes(str.size() + 1),
-      m_data(m_short_string), m_s11n_isna(false)
+      m_data(m_short_string)
 {
     size_t sz = str.size();
     allocData(sz);
@@ -62,7 +62,7 @@ void UncachedString::allocData(size_t sz)
 
 UncachedString* UncachedString::s11n_relocate() const
 {
-    return (m_s11n_isna ? static_cast<UncachedString*>(NA()) : 0);
+    return m_s11n_reloc;
 }
 
 const char* UncachedString::typeName() const
