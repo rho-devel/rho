@@ -37,20 +37,32 @@
  * Implementation of class GCEdgeBase.
  */
 
-#include "CXXR/Environment.h"
 #include "CXXR/GCEdge.hpp"
-#include "CXXR/Symbol.h"
 
 #include <cstdlib>
 #include <iostream>
+#include <vector>
+
+#include "CXXR/Environment.h"
+#include "CXXR/GCRoot.h"
+#include "CXXR/Symbol.h"
 
 using namespace std;
 using namespace CXXR;
+
+namespace {
+    std::vector<GCRoot<GCNode> > s11n_temporaries;
+}
 
 void GCEdgeBase::detach()
 {
     GCNode::decRefCount(m_target);
     m_target = 0;
+}
+
+void GCEdgeBase::preserveS11nTemporary(GCNode* target)
+{
+    s11n_temporaries.push_back(GCRoot<GCNode>(target));
 }
 
 GCEdgeBase::EdgeSerializationType GCEdgeBase::serializationType() const {

@@ -125,6 +125,8 @@ namespace CXXR {
 
 	static void abortIfNotExposed(const GCNode* target);
 
+	static void preserveS11nTemporary(GCNode* target);
+
 	template<class Archive>
 	void load(Archive& ar, const unsigned int version) {
 	    EdgeSerializationType type;
@@ -133,26 +135,30 @@ namespace CXXR {
 	    switch(type) {
 	    case ENVIRONMENTEDGE:
 		target = loadEnvironment(ar);
+		if (!target->isExposed())
+		    target->expose();
 		break;
 	    case SYMBOLEDGE:
 		target = loadSymbol(ar);
+		if (!target->isExposed())
+		    target->expose();
 		break;
 	    case OTHEREDGE:
  		ar >> BOOST_SERIALIZATION_NVP(target);
-		break;
-	    }
-	    // Note that the target may already have been exposed,
-	    // e.g. as a result of deserialising another GCEdge
-	    // pointing to it.
-	    if (target && !target->isExposed())
-		target->expose();
-	    if (target) {
-		GCStackRoot<GCNode> tgtrt(target);
-		GCNode* reloc = target->s11n_relocate();
-		if (reloc) {
-		    ar.reset_object_address(reloc, target);
-		    target = reloc;
+		if (target) {
+		    GCNode* reloc = target->s11n_relocate();
+		    // Note that the target may already have been
+		    // exposed, e.g. as a result of deserialising
+		    // another GCEdge pointing to it.
+		    if (!target->isExposed()) {
+			target->expose();
+			if (reloc)
+			    preserveS11nTemporary(target);
+		    }
+		    if (reloc)
+			target = reloc;
 		}
+		break;
 	    }
 	    retarget(target);
 	}
