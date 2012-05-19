@@ -48,7 +48,6 @@
 #include <boost/serialization/split_member.hpp>
 
 #include "CXXR/BSerializer.hpp"
-#include "CXXR/Environment_serialization.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Symbol_serialization.hpp"
 #include "CXXR/GCNode.hpp"
@@ -62,7 +61,7 @@ namespace CXXR {
     public:
 	/** Used for representing the type of target
 	 */
-	enum EdgeSerializationType {OTHEREDGE=0, SYMBOLEDGE, ENVIRONMENTEDGE};
+	enum EdgeSerializationType {OTHEREDGE=0, SYMBOLEDGE};
 
 	/** @brief Null the encapsulated pointer.
 	 */
@@ -133,11 +132,6 @@ namespace CXXR {
 	    GCNode* target;
 	    ar >> BOOST_SERIALIZATION_NVP(type);
 	    switch(type) {
-	    case ENVIRONMENTEDGE:
-		target = loadEnvironment(ar);
-		if (!target->isExposed())
-		    target->expose();
-		break;
 	    case SYMBOLEDGE:
 		target = loadSymbol(ar);
 		if (!target->isExposed())
@@ -174,9 +168,6 @@ namespace CXXR {
 	    EdgeSerializationType type=serializationType();
 	    ar << BOOST_SERIALIZATION_NVP(type);
 	    switch(type) {
-	    case ENVIRONMENTEDGE:
-		saveEnvironment(ar, m_target);
-		break;
 	    case SYMBOLEDGE:
 		saveSymbol(ar, m_target);
 		break;

@@ -53,7 +53,6 @@
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/Frame.hpp"
 #include "CXXR/GCStackRoot.hpp"
-#include <boost/serialization/export.hpp>
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/Symbol.h"
 
@@ -431,7 +430,8 @@ namespace CXXR {
 	const char* typeName() const;
 	void unpackGPBits(unsigned int gpbits);
 
-	// Virtual function of GCNode:
+	// Virtual functions of GCNode:
+	Environment* s11n_relocate() const;
 	void visitReferents(const_visitor* v) const;
     protected:
 	// Virtual function of GCNode:
@@ -440,6 +440,8 @@ namespace CXXR {
 	friend class boost::serialization::access;
 	friend class SchwarzCounter<Environment>;
 	friend class Frame;
+
+	enum S11nType {NORMAL = 0, GLOBAL, BASE};
 
 	struct LeakMonitor : public GCNode::const_visitor {
 	    LeakMonitor()
@@ -472,6 +474,7 @@ namespace CXXR {
 
 	GCEdge<Environment> m_enclosing;
 	GCEdge<Frame> m_frame;
+	GCEdge<Environment> m_s11n_reloc;  // Used only during deserialization
 	bool m_single_stepping;
 	bool m_locked;
 	bool m_cached;
@@ -511,20 +514,20 @@ namespace CXXR {
 	    return (this == s_global);
 	}
 
+	template<class Archive>
+	void load(Archive& ar, const unsigned int version);
+
 	// Designate this Environment as a participant in the search
 	// list cache:
 	void makeCached();
 
 	template<class Archive>
+	void save(Archive& ar, const unsigned int version) const;
+
+	template<class Archive>
 	void serialize (Archive & ar, const unsigned int version) {
 	    BSerializer::Frame frame("Environment");
-	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-	    BSerializer::attrib("m_enclosing");
-    	    ar & BOOST_SERIALIZATION_NVP(m_enclosing);
-	    BSerializer::attrib("m_frame");
-	    ar & BOOST_SERIALIZATION_NVP(m_frame);
-	    ar & BOOST_SERIALIZATION_NVP(m_single_stepping);
-	    ar & BOOST_SERIALIZATION_NVP(m_locked);
+	    boost::serialization::split_member(ar, *this, version);
 	}
     };
 
@@ -674,6 +677,51 @@ namespace boost {
 namespace {
     CXXR::SchwarzCounter<CXXR::Environment> env_schwartz_ctr;
 }
+
+// ***** Implementation of non-inlined templated members *****
+
+template<class Archive>
+void CXXR::Environment::load(Archive& ar, const unsigned int version)
+{
+    ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
+    S11nType envtype;
+    ar >> BOOST_SERIALIZATION_NVP(envtype);
+    switch(envtype) {
+    case NORMAL:
+	{
+	    ar >> BOOST_SERIALIZATION_NVP(m_enclosing);
+	    ar >> BOOST_SERIALIZATION_NVP(m_frame);
+	    ar >> BOOST_SERIALIZATION_NVP(m_single_stepping);
+	    ar >> BOOST_SERIALIZATION_NVP(m_locked);
+	}
+	break;
+    case GLOBAL:
+	m_s11n_reloc = s_global;
+	break;
+    case BASE:
+	m_s11n_reloc = s_base;
+	break;
+    }
+}
+
+template<class Archive>
+void CXXR::Environment::save(Archive& ar, const unsigned int version) const
+{
+    ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
+    S11nType envtype = NORMAL;
+    if (this == s_global)
+	envtype = GLOBAL;
+    else if (this == s_base)
+	envtype = BASE;
+    ar << BOOST_SERIALIZATION_NVP(envtype);
+    if (envtype == NORMAL) {
+	ar << BOOST_SERIALIZATION_NVP(m_enclosing);
+	ar << BOOST_SERIALIZATION_NVP(m_frame);
+	ar << BOOST_SERIALIZATION_NVP(m_single_stepping);
+	ar << BOOST_SERIALIZATION_NVP(m_locked);
+    }
+}
+
 
 extern "C" {
 #else /* if not __cplusplus */
