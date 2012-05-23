@@ -1019,12 +1019,12 @@ void BuiltInFunction::initialize()
 {"memDecompress",do_memDecompress,0,	11,     2,      {PP_FUNCALL, PREC_FN,	0}},
 
 /* Provenance Functions */
-{"provenance", do_provenance, 0, 0, 1, {PP_FUNCALL, PREC_FN, 0}},
-{"pedigree", do_pedigree, 0, 100, 1, {PP_FUNCALL, PREC_FN, 0}},
+{"provenance", do_provenance,   0,       0,     1,      {PP_FUNCALL, PREC_FN, 0}},
+{"pedigree", do_pedigree,       0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
 
 /* and my serialization function */
-{"bserialize", do_bserialize, 0, 100, 1, {PP_FUNCALL, PREC_FN, 0}},
-{"bdeserialize", do_bdeserialize, 0, 100, 1, {PP_FUNCALL, PREC_FN, 0}},
+{"bserialize", do_bserialize,   0,     100,     1,      {PP_FUNCALL, PREC_FN, 0}},
+{"bdeserialize", do_bdeserialize, 0,   100,     1,      {PP_FUNCALL, PREC_FN, 0}},
 
 {"readDCF",	do_readDCF,	0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
 

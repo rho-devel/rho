@@ -190,45 +190,30 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int nargs = length(args);
     if (nargs != 1)
-	Rf_errorcall(call,_("%d arguments passed to 'pedigree' which requires 1"), nargs);
+	Rf_error(_("%d arguments passed to 'pedigree' which requires 1"), nargs);
+    SEXP arg1 = CAR(args);
+    if (arg1->sexptype() != STRSXP)
+	    Rf_error(_("invalid 'names' argument"));
 
     Environment* env = static_cast<Environment*>(rho);
-	
-    Provenance::Set* provs;
-
-    if (TYPEOF(CAR(args)) == SYMSXP) {
-	Symbol* sym = SEXP_downcast<Symbol*>(CAR(args));
+    Provenance::Set provs;
+    StringVector* sv = static_cast<StringVector*>(arg1);
+    for (size_t i = 0; i < sv->size(); i++) {
+	const char* name = (*sv)[i]->c_str();
+	Symbol* sym = Symbol::obtain(name);
 	Frame::Binding* bdg = env->findBinding(sym).second;
-	Provenance* prov = const_cast<Provenance*>(bdg->getProvenance());
-	provs = new Provenance::Set();
-	if (!prov)
-	    Rf_warning(_("'%s' does not have provenance information"),
-		       sym->name()->c_str());
-	else provs->insert(prov);
-    } else if (TYPEOF(CAR(args))==LANGSXP) {
-	SEXP rc = eval(CAR(args),rho);
-	if (TYPEOF(rc) != STRSXP)
-	    Rf_errorcall(call,_("Expression supplied to pedigree"
-				" does not yield a String vector"));
-
-	provs = new Provenance::Set();
-	StringVector* sv = static_cast<StringVector*>(rc);
-	for (int i = 0; i < length(rc); i++) {
-	    Symbol* sym = Symbol::obtain((*sv)[i]->c_str());
-	    Frame::Binding* bdg = env->findBinding(sym).second;
-	    if (bdg) {
-		Provenance *prov = const_cast<Provenance*>(bdg->getProvenance());
-		if (!prov)
-		    Rf_warning(_("'%s' does not have provenance information"),
-			       sym->name()->c_str());
-		else provs->insert(prov);
+	if (!bdg)
+	    Rf_error(_("symbol '%s' not found"), name);
+	else {
+	    Provenance* prov = const_cast<Provenance*>(bdg->getProvenance());
+	    if (!prov)
+		Rf_warning(_("'%s' does not have provenance information"),
+			   name);
+	    else provs.insert(prov);
 	    }
 	}
-    } else
-	Rf_errorcall(call,_("pedigree expects a Symbol or Expression"
-			    " that evaluates to a String vector"));
 
-    Provenance::Set* ancestors = Provenance::ancestors(provs);
+    Provenance::Set* ancestors = Provenance::ancestors(&provs);
 
     GCStackRoot<ListVector> ans(CXXR_NEW(ListVector(3)));
 
@@ -236,22 +221,21 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
     {
 	size_t n = ancestors->size();
 	GCStackRoot<ListVector> commands(CXXR_NEW(ListVector(n)));
-	GCStackRoot<StringVector> timetags(CXXR_NEW(StringVector(n)));
+	GCStackRoot<RealVector> timestamps(CXXR_NEW(RealVector(n)));
 	GCStackRoot<ListVector> symbols(CXXR_NEW(ListVector(n)));
 	size_t i = 0;
 	for (Provenance::Set::iterator it = ancestors->begin();
 	     it != ancestors->end(); ++it) {
 	    Provenance* p = *it;
 	    (*commands)[i] = p->getCommand();
-	    (*timetags)[i] = const_cast<CachedString*>(p->getTime());
+	    (*timestamps)[i] = p->timestamp();
 	    (*symbols)[i] = p->getSymbol();
 	    ++i;
 	}
 	(*ans)[0] = commands;
-	(*ans)[1] = timetags;
+	(*ans)[1] = timestamps;
 	(*ans)[2] = symbols;
     }
-    delete provs;
     delete ancestors;
     return ans;
 }

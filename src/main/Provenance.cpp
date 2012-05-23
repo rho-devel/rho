@@ -128,6 +128,11 @@ const CachedString* Provenance::getTime() const{
 	return CachedString::obtain(buffer);
 }
 
+double Provenance::timestamp() const
+{
+    return m_timestamp.tv_sec + 1.0E-6*m_timestamp.tv_usec;
+}
+
 void Provenance::detachReferents() {
 	m_expression.detach();
 	m_symbol.detach();

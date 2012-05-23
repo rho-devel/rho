@@ -48,6 +48,7 @@ namespace CXXR {
 		Parentage* getParentage() const;
 		const CachedString* getTime() const;
 		Set* pedigree();
+	        double timestamp() const;
 		void visitReferents(const_visitor*) const;
 	private:
 		friend class boost::serialization::access;
