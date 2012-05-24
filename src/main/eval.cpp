@@ -1540,15 +1540,6 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
     if (Rf_isNull(encl)) {
-    /* cas 14/01/10
-     * *eval.with.vis*
-     * (probably?) from a call to source
-     */
-    if (PRIMVAL(op)==1) {
-	ProvenanceTracker::setExpression(static_cast<Expression*>(expr));
-	ProvenanceTracker::resetParentage();
-    }
-
 	/* This is supposed to be defunct, but has been kept here
 	   (and documented as such) */
 	encl = R_BaseEnv;
