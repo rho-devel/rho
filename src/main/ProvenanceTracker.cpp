@@ -9,11 +9,13 @@
 using namespace std;
 using namespace CXXR;
 
-RObject* ProvenanceTracker::e_current;
+const Expression* ProvenanceTracker::e_current;
 GCRoot<Parentage::Protector>* ProvenanceTracker::p_current;
 GCRoot<ProvenanceSet>* ProvenanceTracker::p_seen;
 
-Expression* ProvenanceTracker::expression() {
+const Expression* ProvenanceTracker::expression() {
+    return e_current;
+#if 0
 	RObject* exp=R_CurrentExpr;
 	if (!e_current)
 		return static_cast<Expression*>(exp);
@@ -26,14 +28,28 @@ Expression* ProvenanceTracker::expression() {
 	}
 	
 	return static_cast<Expression*>(exp);
+#endif
 }
 
 void ProvenanceTracker::resetExpression() {
 	setExpression(NULL);
 }
 
-void ProvenanceTracker::setExpression(RObject* expr) {
-	e_current=expr;
+void ProvenanceTracker::setExpression(const RObject* arg) {
+    if (arg && arg->sexptype() == EXPRSXP) {
+	const ExpressionVector* ev = static_cast<const ExpressionVector*>(arg);
+	arg = (*ev)[0];
+    }
+    // 'arg' could be anything presented for evaluation on the command
+    // line, so is not necessarily an Expression.  It could for
+    // example be a bare Symbol, or a literal number.  For the moment
+    // we treat these odd cases as null expressions, because no
+    // bindings should result from evaluating them..  (Oh, but what
+    // happens if Promises are forced in the search for a Symbol? -
+    // FIXME)
+    if (arg && arg->sexptype() != LANGSXP)
+	arg = 0;
+    e_current = static_cast<const Expression*>(arg);
 }
 
 void ProvenanceTracker::initEnvs() {
@@ -95,8 +111,7 @@ void ProvenanceTracker::writeMonitor(const Frame::Binding &bind, bool beenSeen) 
 #ifdef VERBOSEMONITOR
 	cout<<"Write '"<<bdg.symbol()->name()->c_str()<<"'"<<endl;
 #endif
-	RObject* e=expression();
-        Expression* expr=static_cast<Expression*>(e);
+        const Expression* expr = expression();
         Symbol* sym=const_cast<Symbol*>(bind.symbol());
 
         bdg.setProvenance(GCNode::expose(

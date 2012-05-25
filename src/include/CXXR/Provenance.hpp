@@ -34,7 +34,7 @@ namespace CXXR {
 		typedef std::set<Provenance*,Provenance::CompTime> Set;
 
 		Provenance(); // sort of for boost::serialization
-		Provenance(Expression*,Symbol*,Parentage*);
+		Provenance(const Expression*,Symbol*,Parentage*);
 		~Provenance();
 
 		static Set* ancestors(Set*);

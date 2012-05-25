@@ -1535,7 +1535,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
      * (probably?) from a call to source
      */
     if (PRIMVAL(op)==1) {
-	ProvenanceTracker::setExpression(static_cast<Expression*>(expr));
+	ProvenanceTracker::setExpression(expr);
 	ProvenanceTracker::resetParentage();
     }
 
