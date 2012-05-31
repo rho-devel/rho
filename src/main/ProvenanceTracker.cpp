@@ -1,4 +1,5 @@
-#include "CXXR/ProvenanceTracker.hpp"
+#include "CXXR/ProvenanceTracker.h"
+
 #include "CXXR/Parentage.hpp"
 #include "CXXR/Provenance.hpp"
 #include "CXXR/ProvenanceSet.hpp"
@@ -12,6 +13,7 @@ using namespace CXXR;
 const Expression* ProvenanceTracker::e_current;
 GCRoot<Parentage::Protector>* ProvenanceTracker::p_current;
 GCRoot<ProvenanceSet>* ProvenanceTracker::p_seen;
+bool ProvenanceTracker::s_xenogenous = false;
 
 const Expression* ProvenanceTracker::expression() {
     return e_current;
@@ -71,6 +73,7 @@ ProvenanceSet* ProvenanceTracker::seen() {
 void ProvenanceTracker::resetParentage() {
 	(*p_seen)=GCNode::expose(new ProvenanceSet);
 	(*p_current)->set(new Parentage());
+	s_xenogenous = false;
 	return;
 }
 
@@ -118,7 +121,8 @@ void ProvenanceTracker::writeMonitor(const Frame::Binding &bind, bool beenSeen) 
                 new Provenance(expr,sym,parentage())
         ));
 	Provenance* prov=const_cast<Provenance*>(bdg.getProvenance());
-
+	if (s_xenogenous)
+	    prov->setXenogenous(bdg.rawValue());  // Maybe ought to clone value
 	if (beenSeen) {
 		GCEdge<Provenance> tmp(prov);
 		seen()->insert(tmp);
@@ -135,4 +139,11 @@ void ProvenanceTracker::initialize() {
 	p_current=new GCRoot<Parentage::Protector>(GCNode::expose(new Parentage::Protector()));
 	(*p_current)->set(new Parentage());
 	p_seen=new GCRoot<ProvenanceSet>(GCNode::expose(new ProvenanceSet()));
+}
+
+// ***** C interface *****
+
+void flagXenogenous()
+{
+    ProvenanceTracker::flagXenogenous();
 }

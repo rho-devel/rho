@@ -111,7 +111,7 @@
 #include <iostream>
 #include "Defn.h"
 #include <R_ext/Callbacks.h>
-#include "CXXR/ProvenanceTracker.hpp"
+#include "CXXR/ProvenanceTracker.h"
 #include "CXXR/ClosureContext.hpp"
 
 using namespace CXXR;

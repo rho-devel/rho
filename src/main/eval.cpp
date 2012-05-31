@@ -65,7 +65,7 @@
 #include "CXXR/LoopBailout.hpp"
 #include "CXXR/LoopException.hpp"
 #include "CXXR/PlainContext.hpp"
-#include "CXXR/ProvenanceTracker.hpp"
+#include "CXXR/ProvenanceTracker.h"
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
 #include "CXXR/S3Launcher.hpp"

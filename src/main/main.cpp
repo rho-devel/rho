@@ -68,7 +68,7 @@
 #include "CXXR/Browser.hpp"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/CommandTerminated.hpp"
-#include "CXXR/ProvenanceTracker.hpp"
+#include "CXXR/ProvenanceTracker.h"
 #include "CXXR/ReturnException.hpp"
 
 using namespace CXXR;

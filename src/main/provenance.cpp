@@ -215,7 +215,7 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 
     Provenance::Set* ancestors = Provenance::ancestors(&provs);
 
-    GCStackRoot<ListVector> ans(CXXR_NEW(ListVector(3)));
+    GCStackRoot<ListVector> ans(CXXR_NEW(ListVector(5)));
 
     // Assemble result:
     {
@@ -223,6 +223,8 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 	GCStackRoot<ListVector> commands(CXXR_NEW(ListVector(n)));
 	GCStackRoot<RealVector> timestamps(CXXR_NEW(RealVector(n)));
 	GCStackRoot<ListVector> symbols(CXXR_NEW(ListVector(n)));
+	GCStackRoot<LogicalVector> xenogenous(CXXR_NEW(LogicalVector(n)));
+	GCStackRoot<ListVector> values(CXXR_NEW(ListVector(n)));
 	size_t i = 0;
 	for (Provenance::Set::iterator it = ancestors->begin();
 	     it != ancestors->end(); ++it) {
@@ -230,11 +232,18 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 	    (*commands)[i] = p->getCommand();
 	    (*timestamps)[i] = p->timestamp();
 	    (*symbols)[i] = p->getSymbol();
+	    (*xenogenous)[i] = FALSE;
+	    if (p->isXenogenous()) {
+		(*xenogenous)[i] = TRUE;
+		(*values)[i] = const_cast<RObject*>(p->getValue());
+	    }
 	    ++i;
 	}
 	(*ans)[0] = commands;
 	(*ans)[1] = timestamps;
 	(*ans)[2] = symbols;
+	(*ans)[3] = xenogenous;
+	(*ans)[4] = values;
     }
     delete ancestors;
     return ans;

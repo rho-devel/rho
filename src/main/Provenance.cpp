@@ -10,11 +10,10 @@ using namespace CXXR;
 
 Provenance::Provenance() { }
 
-Provenance::Provenance(const Expression* exp, Symbol* sym, Parentage* par) {
+Provenance::Provenance(const Expression* exp, Symbol* sym, Parentage* par)
+    : m_symbol(sym), m_parentage(par), m_xenogenous(false)
+{
 	m_expression=(exp)?exp->clone():NULL;
-	m_symbol=sym;
-
-	m_parentage=par;
 	if (m_parentage) {
 		m_parentage->incRefCount(); // Increment reference count
 		m_parentpos=m_parentage->size();
@@ -126,6 +125,12 @@ const CachedString* Provenance::getTime() const{
 	p=strftime(buffer,32,"%x %X",lt);
 	sprintf(&buffer[p],".%ld",m_timestamp.tv_usec);
 	return CachedString::obtain(buffer);
+}
+
+void Provenance::setXenogenous(const RObject* value)
+{
+    m_value = value;
+    m_xenogenous = true;
 }
 
 double Provenance::timestamp() const
