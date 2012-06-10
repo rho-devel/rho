@@ -49,6 +49,8 @@
 
 #include "Runix.h"
 
+#include "CXXR/ProvenanceTracker.h"
+
 #include <stdio.h>
 #ifdef Win32
 # include "run.h"
@@ -229,5 +231,6 @@ SEXP attribute_hidden do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SET_CLOENV(x, envir);
     UNPROTECT(3);
     vmaxset(vmaxsave);
+    flagXenogenous();
     return (x);
 }

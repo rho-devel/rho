@@ -51,6 +51,7 @@
 #include "CXXR/BuiltInFunction.h"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/ProvenanceTracker.h"
 #include "CXXR/WeakRef.h"
 
 using namespace CXXR;
@@ -2022,6 +2023,7 @@ static SEXP RestoreToEnv(SEXP ans, SEXP aenv)
 	PROTECT(names = getAttrib(ans, R_NamesSymbol)); /* PROTECT needed?? */
 	if (TYPEOF(names) != STRSXP || LENGTH(names) != LENGTH(ans))
 	    error(_("not a valid named list"));
+	ProvenanceTracker::flagXenogenous();
 	for (i = 0; i < LENGTH(ans); i++) {
 	    SEXP sym = install(CHAR(STRING_ELT(names, i)));
 	    obj = VECTOR_ELT(ans, i);
@@ -2044,6 +2046,7 @@ static SEXP RestoreToEnv(SEXP ans, SEXP aenv)
     PROTECT(names = allocVector(STRSXP, cnt));
     cnt = 0;
     a = ans;
+    ProvenanceTracker::flagXenogenous();
     while (a != R_NilValue) {
 	SET_STRING_ELT(names, cnt++, PRINTNAME(TAG(a)));
 	defineVar(TAG(a), CAR(a), aenv);

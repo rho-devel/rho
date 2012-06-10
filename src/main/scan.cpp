@@ -59,6 +59,7 @@
 #include <Rconnections.h>
 #include <errno.h>
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/ProvenanceTracker.h"
 
 using namespace CXXR;
 
@@ -970,6 +971,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!data.ttyflag && !data.wasopen)
 	data.con->close(data.con);
     if (data.quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, data.quoteset));
+    ProvenanceTracker::flagXenogenous();
     return ans;
 }
 

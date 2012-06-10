@@ -70,7 +70,7 @@ SOURCES_CXX = \
 	names.cpp objects.cpp optim.cpp optimize.cpp options.cpp \
 	par.cpp paste.cpp platform.cpp plot.cpp plot3d.cpp plotmath.cpp \
 	print.cpp printarray.cpp printvector.cpp printutils.cpp qsort.cpp \
-	provenance.cpp \
+	provenance_do.cpp \
 	random.cpp raw.cpp registration.cpp relop.cpp rlocale.cpp \
 	saveload.cpp scan.cpp seq.cpp serialize.cpp size.cpp sort.cpp \
         source.cpp split.cpp sprintf.cpp startup.cpp subassign.cpp \
