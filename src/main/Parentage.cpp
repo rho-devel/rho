@@ -48,12 +48,12 @@ unsigned long Parentage::decRefCount() {
 }
 
 void Parentage::Display() const {
-    printf("Printing Parentage..size() = %d\n",size());
+    std::cout << "Printing Parentage..size() = " << size() << '\n';
     for (unsigned int i=0;i<size();i++) {
 	GCRoot<Provenance> p(at(i));
 	Provenance* p2=p;
-	printf("Symbol Name : %s, ",p->getSymbol()->name()->c_str());
-	printf("Prov addr : 0x%x\n", (unsigned int)p2);
+	std::cout << "Symbol Name : " << p->getSymbol()->name()->c_str()
+	     << "Prov addr : " << p2 << endl;
     }
 }
 
