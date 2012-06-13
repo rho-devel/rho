@@ -68,7 +68,7 @@ namespace CXXR {
      */
     class String : public VectorBase {
     public:
-	/* @brief Comparison object for CXXR::String.
+	/** @brief Comparison object for CXXR::String.
 	 *
 	 * STL-compatible comparison class for comparing CXXR::String
 	 * objects.

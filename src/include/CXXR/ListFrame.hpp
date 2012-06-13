@@ -71,7 +71,6 @@ namespace CXXR {
 	ListFrame* clone() const;
 	bool erase(const Symbol* symbol);
 	void lockBindings();
-	std::size_t numBindings() const;
 	Binding* obtainBinding(const Symbol* symbol);
 	std::size_t size() const;
 	void softMergeInto(Frame* target) const;

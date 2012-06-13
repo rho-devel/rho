@@ -122,11 +122,6 @@ void StdFrame::lockBindings()
 	(*it).second.setLocking(true);
 }
 
-size_t StdFrame::numBindings() const
-{
-    return m_map.size();
-}
-
 Frame::Binding* StdFrame::obtainBinding(const Symbol* symbol)
 {
     Binding& bdg = m_map[symbol];
