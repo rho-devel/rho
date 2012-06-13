@@ -99,6 +99,8 @@ namespace CXXR {
      */
     class ConsCell : public RObject {
     public:
+	/** @brief iterator for iterating over a HeterogeneousList.
+	 */
 	class iterator
 	    : public std::iterator<std::forward_iterator_tag, ConsCell> {
 	public:
@@ -134,6 +136,8 @@ namespace CXXR {
 	    void advance();
 	};
 
+	/** @brief const_iterator for iterating over a ConsCell list.
+	 */
 	class const_iterator
 	    : public std::iterator<std::forward_iterator_tag, const ConsCell> {
 	public:

@@ -539,8 +539,9 @@ INLINE_FUN Rboolean Rf_isVectorizable(SEXP s)
 }
 
 
-/**
- * Create a named vector of type TYP
+/** @fn SEXP mkNamed(SEXPTYPE TYP, const char **names)
+ *
+ * @brief Create a named vector of type TYP
  *
  * @example const char *nms[] = {"xi", "yi", "zi", ""};
  *          mkNamed(VECSXP, nms);  =~= R  list(xi=, yi=, zi=)

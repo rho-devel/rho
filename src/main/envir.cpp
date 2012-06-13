@@ -1555,7 +1555,7 @@ SEXP attribute_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 int envlength(SEXP rho)
 {
     const Environment* env = SEXP_downcast<Environment*>(rho);
-    return env->frame()->numBindings();
+    return env->frame()->size();
 }
 
 /*----------------------------------------------------------------------

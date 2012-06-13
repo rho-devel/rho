@@ -124,11 +124,6 @@ void ListFrame::lockBindings()
 	(*it).setLocking(true);
 }
 
-size_t ListFrame::numBindings() const
-{
-    return m_list.size();
-}
-
 Frame::Binding* ListFrame::obtainBinding(const Symbol* symbol)
 {
     List::iterator end = m_list.end();

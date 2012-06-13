@@ -221,6 +221,8 @@ namespace CXXR {
     template <class Node>
     class HeterogeneousList : public HeterogeneousListBase {
     public:
+	/** @brief const_iterator for iterating over a HeterogeneousList.
+	 */
 	class const_iterator
 	    : public std::iterator<std::bidirectional_iterator_tag,
 				   const Node*>

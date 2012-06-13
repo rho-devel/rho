@@ -611,12 +611,6 @@ namespace CXXR {
 	 */
 	virtual void lockBindings() = 0;
 
-	/** @brief Number of Bindings in this Frame.
-	 *
-	 * @return The number of Bindings currently in this Frame.
-	 */
-	virtual std::size_t numBindings() const = 0;
-
 	/** @brief Get or create a Binding for a Symbol.
 	 *
 	 * If the Frame already contains a Binding for a specified
@@ -684,7 +678,7 @@ namespace CXXR {
 	    return old;
 	}
 
-	/** @brief Number of Symbols bound.
+	/** @brief Number of Bindings in Frame.
 	 *
 	 * @return the number of Symbols for which Bindings exist in
 	 * this Frame.

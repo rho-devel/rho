@@ -47,7 +47,7 @@
 #include "CXXR/config.hpp"
 
 namespace CXXR {
-    /** Class to manage a pool of memory cells of a fixed size.
+    /** @brief Class to manage a pool of memory cells of a fixed size.
      * 
      * This class, based closely on Item 10 of Scott Meyers' 'Effective
      * C++ (2nd edition)' manages a collection of memory cells of a
