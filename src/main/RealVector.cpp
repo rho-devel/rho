@@ -49,3 +49,5 @@ namespace CXXR {
 	double* (*REALp)(SEXP) = REAL;
     }
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::RealVector)

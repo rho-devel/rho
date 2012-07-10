@@ -69,3 +69,5 @@ const char* UncachedString::typeName() const
 {
     return UncachedString::staticTypeName();
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::UncachedString)

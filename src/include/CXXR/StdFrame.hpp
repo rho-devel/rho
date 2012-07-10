@@ -135,7 +135,7 @@ namespace CXXR {
     };
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT(CXXR::StdFrame)
+BOOST_CLASS_EXPORT_KEY(CXXR::StdFrame)
 
 // ***** Implementation of non-inlined templated members *****
 

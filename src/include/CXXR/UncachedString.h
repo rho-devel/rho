@@ -179,7 +179,7 @@ namespace CXXR {
     };
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT(CXXR::UncachedString)
+BOOST_CLASS_EXPORT_KEY(CXXR::UncachedString)
 
 namespace boost {
     namespace serialization {

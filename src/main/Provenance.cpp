@@ -184,3 +184,5 @@ Provenance::Set *Provenance::pedigree() {
 	delete open;
 	return rc;
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::Provenance)

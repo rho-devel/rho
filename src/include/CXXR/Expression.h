@@ -115,7 +115,7 @@ namespace CXXR {
     };
 } // namespace CXXR
 
-BOOST_CLASS_EXPORT(CXXR::Expression)
+BOOST_CLASS_EXPORT_KEY(CXXR::Expression)
 
 /** @brief Pointer to expression currently being evaluated.
  */

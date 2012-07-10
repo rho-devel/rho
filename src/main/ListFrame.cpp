@@ -178,3 +178,5 @@ void ListFrame::visitReferents(const_visitor* v) const
 	 it != m_list.end(); ++it)
 	(*it).visitReferents(v);
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::ListFrame)

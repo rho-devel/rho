@@ -87,7 +87,7 @@ namespace CXXR {
     typedef CXXR::FixedVector<Rbyte, RAWSXP> RawVector;
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT(CXXR::RawVector)
+BOOST_CLASS_EXPORT_KEY(CXXR::RawVector)
 
 extern "C" {
 #endif /* __cplusplus */

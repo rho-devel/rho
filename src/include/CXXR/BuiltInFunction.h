@@ -415,7 +415,7 @@ namespace CXXR {
     };
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT(CXXR::BuiltInFunction)
+BOOST_CLASS_EXPORT_KEY(CXXR::BuiltInFunction)
 
 // Force Environment and Symbol classes to be initialised first:
 #include "CXXR/Environment.h"

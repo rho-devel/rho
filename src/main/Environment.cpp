@@ -275,6 +275,8 @@ void Environment::visitReferents(const_visitor* v) const
 	(*v)(frame);
 }
 
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::Environment)
+
 // ***** Free-standing functions *****
 
 namespace {

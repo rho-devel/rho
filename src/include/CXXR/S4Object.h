@@ -114,8 +114,7 @@ namespace CXXR {
     };
 } // namespace CXXR
 
-// Export class as serializable with boost::serialization
-BOOST_CLASS_EXPORT(CXXR::S4Object)
+BOOST_CLASS_EXPORT_KEY(CXXR::S4Object)
 
 extern "C" {
 #endif  /* __cplusplus */

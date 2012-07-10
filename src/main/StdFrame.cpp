@@ -183,3 +183,5 @@ void StdFrame::visitReferents(const_visitor* v) const
     for (map::const_iterator it = m_map.begin(); it != m_map.end(); ++it)
 	(*it).second.visitReferents(v);
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::StdFrame)

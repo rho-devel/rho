@@ -52,3 +52,5 @@ namespace CXXR {
 	int* (*LOGICALp)(SEXP) = LOGICAL;
     }
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::LogicalVector)

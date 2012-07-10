@@ -79,6 +79,10 @@ void ExternalPointer::visitReferents(const_visitor* v) const
 	(*v)(tag);
 }
 
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::ExternalPointer)
+
+// ***** C interface *****
+
 SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)
 {
     return CXXR_NEW(ExternalPointer(p, tag, prot));

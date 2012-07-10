@@ -212,3 +212,5 @@ const char* BuiltInFunction::typeName() const
 {
     return sexptype() == SPECIALSXP ? "special" : "builtin";
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::BuiltInFunction)

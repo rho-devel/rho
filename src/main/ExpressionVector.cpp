@@ -50,6 +50,8 @@ namespace CXXR {
     }
 }
 
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::ExpressionVector)
+
 // ***** C interface *****
 
 SEXP SET_XVECTOR_ELT(SEXP x, int i, SEXP v)

@@ -58,3 +58,5 @@ SEXP Rf_allocS4Object()
 {
     return CXXR_NEW(S4Object());
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::S4Object)

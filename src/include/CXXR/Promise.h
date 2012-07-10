@@ -233,7 +233,7 @@ namespace CXXR {
     }
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT(CXXR::Promise)
+BOOST_CLASS_EXPORT_KEY(CXXR::Promise)
 
 namespace boost {
     namespace serialization {

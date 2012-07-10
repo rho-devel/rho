@@ -130,6 +130,8 @@ const char* CachedString::typeName() const
     return CachedString::staticTypeName();
 }
 
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::CachedString)
+
 // ***** C interface *****
 
 SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding)

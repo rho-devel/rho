@@ -661,7 +661,7 @@ namespace CXXR {
     }
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT(CXXR::Environment)
+BOOST_CLASS_EXPORT_KEY(CXXR::Environment)
 
 namespace boost {
     namespace serialization {

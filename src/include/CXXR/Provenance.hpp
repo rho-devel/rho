@@ -95,7 +95,7 @@ namespace CXXR {
     };
 } // Namespace CXXR
 
-BOOST_CLASS_EXPORT(CXXR::Provenance)
+BOOST_CLASS_EXPORT_KEY(CXXR::Provenance)
 
 // ***** Implementation of non-inlined templated members *****
 

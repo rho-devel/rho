@@ -202,7 +202,7 @@ namespace CXXR {
     };
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT(CXXR::CachedString)
+BOOST_CLASS_EXPORT_KEY(CXXR::CachedString)
 
 namespace {
     CXXR::SchwarzCounter<CXXR::CachedString> cachedstring_schwarz_ctr;

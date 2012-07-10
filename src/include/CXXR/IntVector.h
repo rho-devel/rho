@@ -80,7 +80,7 @@ namespace CXXR {
     typedef FixedVector<int, INTSXP> IntVector;
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT(CXXR::IntVector)
+BOOST_CLASS_EXPORT_KEY(CXXR::IntVector)
 
 extern "C" {
 #endif /* __cplusplus */

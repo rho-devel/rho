@@ -50,3 +50,5 @@ namespace CXXR {
 	int* (*INTEGERp)(SEXP) = INTEGER;
     }
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::IntVector)

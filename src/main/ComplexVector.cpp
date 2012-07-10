@@ -50,3 +50,5 @@ namespace CXXR {
 	Rcomplex* (*COMPLEXp)(SEXP) = COMPLEX;
     }
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::ComplexVector)

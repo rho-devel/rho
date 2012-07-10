@@ -602,7 +602,7 @@ namespace CXXR {
     }
 } // namespace CXXR
 
-BOOST_CLASS_EXPORT(CXXR::PairList)
+BOOST_CLASS_EXPORT_KEY(CXXR::PairList)
 
 extern "C" {
 

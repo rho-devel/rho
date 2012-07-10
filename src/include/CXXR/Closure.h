@@ -310,7 +310,7 @@ namespace CXXR {
     };
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT(CXXR::Closure)
+BOOST_CLASS_EXPORT_KEY(CXXR::Closure)
 
 // ***** Implementation of non-inlined templated members *****
 

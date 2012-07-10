@@ -135,6 +135,6 @@ namespace CXXR {
     };
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT(CXXR::ListFrame)
+BOOST_CLASS_EXPORT_KEY(CXXR::ListFrame)
 
 #endif // LISTFRAME_HPP

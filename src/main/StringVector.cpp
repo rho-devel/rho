@@ -78,3 +78,5 @@ void SET_STRING_ELT(SEXP x, int i, SEXP v)
     String* s = SEXP_downcast<String*>(v, false);
     (*sv)[i] = s;
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::StringVector)

@@ -50,3 +50,5 @@ namespace CXXR {
 }
 
 Rbyte ElementTraits::NAFunc<Rbyte>::s_na = 0;
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::RawVector)

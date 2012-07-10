@@ -212,8 +212,7 @@ namespace CXXR {
     };
 } // namespace CXXR
 
-// Export as serializable for boost::serialization
-BOOST_CLASS_EXPORT(CXXR::ExternalPointer)
+BOOST_CLASS_EXPORT_KEY(CXXR::ExternalPointer)
 
 // ***** Implementation of non-inlined templated members *****
 
