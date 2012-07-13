@@ -46,6 +46,14 @@
 #include "CXXR/MemoryBank.hpp"
 #include "CXXR/SchwarzCounter.hpp"
 
+// According to various web postings (and arr's experience) it is
+// necessary for the compiler to have seen the headers for the archive
+// types in use before it encounters any of the BOOST_CLASS_EXPORT_*
+// macros.  So we include them here, along with export.hpp itself.
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/serialization/export.hpp>
+
 /** @def GC_FIND_LOOPS
  *
  * If the preprocessor variable GC_FIND_LOOPS is defined, extra code

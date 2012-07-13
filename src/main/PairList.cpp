@@ -123,6 +123,9 @@ void PairList::unpackGPBits(unsigned int gpbits)
     m_active_binding = ((gpbits & ACTIVE_BINDING_MASK) != 0);
 }
 
+// CXXR FIXME: Try to get rid of this in due course:
+#include "CXXR/Symbol.h"
+
 BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::PairList)
 
 // ***** C interface *****

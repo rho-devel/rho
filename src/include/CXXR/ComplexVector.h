@@ -47,8 +47,6 @@
 
 #ifdef __cplusplus
 
-#include <boost/serialization/export.hpp>
-
 #include "R_ext/Arith.h"
 #include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"

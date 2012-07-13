@@ -79,6 +79,9 @@ void ExternalPointer::visitReferents(const_visitor* v) const
 	(*v)(tag);
 }
 
+// CXXR FIXME: Try to get rid of this in due course:
+#include "CXXR/Symbol.h"
+
 BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::ExternalPointer)
 
 // ***** C interface *****

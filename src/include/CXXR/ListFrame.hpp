@@ -43,7 +43,6 @@
 #define LISTFRAME_HPP
 
 #include <list>
-#include <boost/serialization/export.hpp>
 
 #include "CXXR/Allocator.hpp"
 #include "CXXR/Frame.hpp"

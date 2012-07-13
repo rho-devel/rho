@@ -46,8 +46,6 @@
 #endif
 
 #include <set>
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/archive/xml_iarchive.hpp>
 
 #include "CXXR/Provenance.hpp"
 #include "CXXR/Parentage.hpp"

@@ -52,6 +52,9 @@ namespace CXXR {
     }
 }
 
+// CXXR FIXME: Try to get rid of this in due course:
+#include "CXXR/Symbol.h"
+
 BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::ListVector)
 
 // ***** C interface *****

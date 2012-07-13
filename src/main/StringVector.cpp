@@ -79,4 +79,7 @@ void SET_STRING_ELT(SEXP x, int i, SEXP v)
     (*sv)[i] = s;
 }
 
+// CXXR FIXME: Try to get rid of this in due course:
+#include "CXXR/Symbol.h"
+
 BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::StringVector)

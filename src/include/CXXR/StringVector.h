@@ -50,7 +50,6 @@
 #ifdef __cplusplus
 
 #include <iostream>
-#include <boost/serialization/export.hpp>
 
 #include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"

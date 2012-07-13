@@ -41,7 +41,7 @@ SOURCES_CXX = \
         Frame.cpp FunctionBase.cpp FunctionContext.cpp \
         GCEdge.cpp GCManager.cpp GCNode.cpp GCRoot.cpp GCStackRoot.cpp \
 	HeterogeneousList.cpp \
-        inspect.cpp IntVector.cpp \
+        IntVector.cpp inspect.cpp \
 	ListFrame.cpp ListVector.cpp LogicalVector.cpp LoopBailout.cpp \
 	MemoryBank.cpp \
 	NodeStack.cpp \
@@ -144,10 +144,14 @@ EXTRA_LIBS = $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS) @LIBINTL@ $(READLINE_LIBS) $(L
 
 R_binary = R.bin
 
-## CXXR: LogicalVector.o must be forced in, because it defines
-## non-inlined versions of some functions called from C, but defines
-## nothing that would cause its automatic inclusion.
-R_bin_OBJECTS = Rmain.o LogicalVector.o
+## CXXR: Certain object files (e.g. IntVector.o) must be linked in
+## explicitly, because they define nothing that would cause their
+## automatic inclusion, but are needed e.g. because they define
+## non-inlined versions of functions called from C, or constructs
+## related to serialization. 
+R_bin_OBJECTS = Rmain.o ComplexVector.o IntVector.o LogicalVector.o \
+                RealVector.o
+
 @WANT_R_SHLIB_FALSE@R_bin_LDADD = libR.a $(EXTRA_LIBS)
 ## Linked against -lRblas becasue -lR is and otherwise ld complains.
 @WANT_R_SHLIB_TRUE@R_bin_LDADD = -L../../lib@R_ARCH@ -lR @BLAS_SHLIB_TRUE@-lRblas

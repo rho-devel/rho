@@ -48,8 +48,6 @@
 
 #ifdef __cplusplus
 
-#include <boost/serialization/export.hpp>
-
 #include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
