@@ -641,8 +641,7 @@ void CXXR::RObject::serialize(Archive& ar, const unsigned int version)
     ar & BOOST_SERIALIZATION_NVP(active_binding);
     bool binding_locked = m_binding_locked;
     ar & BOOST_SERIALIZATION_NVP(binding_locked);
-    BSerializer::attrib("m_attrib");
-    ar & BOOST_SERIALIZATION_NVP(m_attrib);
+    GCEDGE_SERIALIZE(ar, m_attrib);
     m_missing = missing;
     m_argused = argused;
     m_active_binding = active_binding;

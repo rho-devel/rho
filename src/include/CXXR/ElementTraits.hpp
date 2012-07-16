@@ -175,6 +175,31 @@ namespace CXXR {
 	struct MustDestruct : boost::mpl::false_
 	{};
 
+	/** @brief Function object for serialization/deserialization.
+	 *
+	 * @tparam T A type capable of being used as the element type
+	 *           of an R data vector. 
+	 */	 
+	template <typename T>
+	struct Serialize {
+	    /** @brief Serialize/deserialize an element.
+	     *
+	     * @tparam Archive boost::serialization archive type.
+	     *           Serialization or deserialization will take
+	     *           place according to whether this is an output
+	     *           or an input archive type.
+	     *
+	     * @param ar Archive to be used.
+	     *
+	     * @param item Object to be serialized/deserialized.
+	     */
+	    template <class Archive>
+	    void operator()(Archive& ar, T& item)
+	    {
+		ar & BOOST_SERIALIZATION_NVP(item);
+	    }
+	};
+	    
 	/** @brief Function object for visiting referents.
 	 *
 	 * For element types for which \c HasReferents::TruthType is

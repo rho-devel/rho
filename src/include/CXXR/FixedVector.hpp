@@ -431,7 +431,7 @@ void CXXR::FixedVector<T, ST, Initr>::load(Archive & ar,
 {
     ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(VectorBase);
     for (unsigned int i = 0; i < size(); i++)
-	ar >> boost::serialization::make_nvp("item", m_data[i]);
+	ElementTraits::Serialize<T>()(ar, m_data[i]);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
@@ -441,7 +441,7 @@ void CXXR::FixedVector<T, ST, Initr>::save(Archive & ar,
 {
     ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(VectorBase);
     for (unsigned int i = 0; i < size(); i++)
-	ar << boost::serialization::make_nvp("item", m_data[i]);
+	ElementTraits::Serialize<T>()(ar, m_data[i]);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>

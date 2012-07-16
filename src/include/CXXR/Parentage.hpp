@@ -46,9 +46,13 @@ namespace CXXR {
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 	    using namespace boost::serialization;
-	    BSerializer::Frame frame("Parentage");
-	    ar & make_nvp("StdVec",
-			  base_object<std::vector<GCEdge<Provenance> > >(*this));
+	    size_t sz = size();
+	    ar & boost::serialization::make_nvp("size", sz);
+	    resize(sz);
+	    for (size_t i = 0; i < sz; ++i) {
+		GCEdge<Provenance>& parent = (*this)[i];
+		GCEDGE_SERIALIZE(ar, parent);
+	    }
 	}
     };
 }

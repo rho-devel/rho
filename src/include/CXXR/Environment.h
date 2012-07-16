@@ -688,8 +688,8 @@ void CXXR::Environment::load(Archive& ar, const unsigned int version)
     switch(envtype) {
     case NORMAL:
 	{
-	    ar >> BOOST_SERIALIZATION_NVP(m_enclosing);
-	    ar >> BOOST_SERIALIZATION_NVP(m_frame);
+	    GCEDGE_SERIALIZE(ar, m_enclosing);
+	    GCEDGE_SERIALIZE(ar, m_frame);
 	    ar >> BOOST_SERIALIZATION_NVP(m_single_stepping);
 	    ar >> BOOST_SERIALIZATION_NVP(m_locked);
 	}
@@ -714,8 +714,8 @@ void CXXR::Environment::save(Archive& ar, const unsigned int version) const
 	envtype = BASE;
     ar << BOOST_SERIALIZATION_NVP(envtype);
     if (envtype == NORMAL) {
-	ar << BOOST_SERIALIZATION_NVP(m_enclosing);
-	ar << BOOST_SERIALIZATION_NVP(m_frame);
+	GCEDGE_SERIALIZE(ar, m_enclosing);
+	GCEDGE_SERIALIZE(ar, m_frame);
 	ar << BOOST_SERIALIZATION_NVP(m_single_stepping);
 	ar << BOOST_SERIALIZATION_NVP(m_locked);
     }

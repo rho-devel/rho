@@ -220,10 +220,8 @@ void CXXR::ExternalPointer::serialize(Archive& ar, const unsigned int version)
 {
     BSerializer::Frame frame("ExternalPointer");
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-    BSerializer::attrib("m_tag");
-    ar & BOOST_SERIALIZATION_NVP(m_tag);
-    BSerializer::attrib("m_tag");
-    ar & BOOST_SERIALIZATION_NVP(m_protege);
+    GCEDGE_SERIALIZE(ar, m_tag);
+    GCEDGE_SERIALIZE(ar, m_protege);
 }
 
 extern "C" {

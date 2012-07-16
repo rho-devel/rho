@@ -42,6 +42,8 @@
 
 #include <iostream>
 #include <typeinfo>
+#include <boost/mpl/eval_if.hpp>
+#include <boost/mpl/identity.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
@@ -127,63 +129,74 @@ namespace CXXR {
 	static void preserveS11nTemporary(GCNode* target);
 
 	template<class Archive>
-	void load(Archive& ar, const unsigned int version) {
-	    EdgeSerializationType type;
-	    GCNode* target;
-	    ar >> BOOST_SERIALIZATION_NVP(type);
-	    switch(type) {
-	    case SYMBOLEDGE:
-		target = loadSymbol(ar);
-		if (!target->isExposed())
-		    target->expose();
-		break;
-	    case OTHEREDGE:
- 		ar >> BOOST_SERIALIZATION_NVP(target);
-		if (target) {
-		    GCNode* reloc = target->s11n_relocate();
-		    // Note that the target may already have been
-		    // exposed, e.g. as a result of deserialising
-		    // another GCEdge pointing to it.
-		    if (!target->isExposed()) {
+	struct targetLoader {
+	    static void invoke(Archive& ar, GCEdgeBase* edge,
+			       const char* name,
+			       const unsigned int version)
+	    {
+		EdgeSerializationType type;
+		GCNode* target;
+		ar >> BOOST_SERIALIZATION_NVP(type);
+		switch(type) {
+		case SYMBOLEDGE:
+		    target = loadSymbol(ar);
+		    if (!target->isExposed())
 			target->expose();
+		    break;
+		case OTHEREDGE:
+		    ar >> boost::serialization::make_nvp(name, target);
+		    if (target) {
+			GCNode* reloc = target->s11n_relocate();
+			// Note that the target may already have been
+			// exposed, e.g. as a result of deserialising
+			// another GCEdge pointing to it.
+			if (!target->isExposed()) {
+			    target->expose();
+			    if (reloc)
+				preserveS11nTemporary(target);
+			}
 			if (reloc)
-			    preserveS11nTemporary(target);
+			    target = reloc;
 		    }
-		    if (reloc)
-			target = reloc;
+		    break;
 		}
-		break;
+		edge->retarget(target);
 	    }
-	    retarget(target);
-	}
+	};
 
 	template<class Archive>
-	void save(Archive & ar, const unsigned int version) const {
-	    // debugging unregistered class
-	    if (m_target) {
-	    	std::string tmp("Target class type: ");
-		tmp.append(typeid(*m_target).name());
-		BSerializer::debug(tmp);
+	struct targetSaver {
+	    static void invoke(Archive& ar, const GCEdgeBase* edge,
+			       const char* name,
+			       const unsigned int version)
+	    {
+		EdgeSerializationType type = edge->serializationType();
+		ar << BOOST_SERIALIZATION_NVP(type);
+		switch(type) {
+		case SYMBOLEDGE:
+		    saveSymbol(ar, edge->m_target);
+		    break;
+		case OTHEREDGE:
+		    ar << boost::serialization::make_nvp(name, edge->m_target);
+		    break;
+		}
 	    }
-	    EdgeSerializationType type=serializationType();
-	    ar << BOOST_SERIALIZATION_NVP(type);
-	    switch(type) {
-	    case SYMBOLEDGE:
-		saveSymbol(ar, m_target);
-		break;
-	    case OTHEREDGE:
-		ar << boost::serialization::make_nvp("target", m_target);
-		break;
-	    }
-	}
-
+	};
+    public:
 	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version)
+	void tgtSerialize(Archive& ar, const char* name,
+			  const unsigned int version = 0) const
 	{
-	    BSerializer::Frame frame("GCEdgeBase");
-	    boost::serialization::split_member(ar, *this, version);
+	    using namespace boost::mpl;
+	    typedef typename eval_if<typename Archive::is_saving,
+		identity<targetSaver<Archive> >,
+		identity<targetLoader<Archive> > >::type typex;
+	    typex::invoke(ar, const_cast<GCEdgeBase*>(this), name, version);
 	}
     };
+
+#define GCEDGE_SERIALIZE(ar, name) \
+    name.tgtSerialize(ar, #name )
 
     /** @brief Directed edge in the graph whose nodes are GCNode objects.
      *
@@ -260,12 +273,6 @@ namespace CXXR {
 	T* get() const
 	{
 	    return static_cast<T*>(const_cast<GCNode*>(target()));
-	}
-        friend class boost::serialization::access;
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("GCEdge");
-	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCEdgeBase);
 	}
     };
 } // Namespace CXXR

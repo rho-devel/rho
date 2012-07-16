@@ -209,10 +209,8 @@ namespace CXXR {
 	template <class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
-	    BSerializer::Frame frame("Promise");
 	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-	    BSerializer::attrib("m_value");
-	    ar & BOOST_SERIALIZATION_NVP(m_value);
+	    GCEDGE_SERIALIZE(ar, m_value);
 	}
     };
 
@@ -242,10 +240,10 @@ namespace boost {
 	{
 	    using namespace CXXR;
 	    GCEdge<> valgen;
-	    ar >> BOOST_SERIALIZATION_NVP(valgen);
+	    GCEDGE_SERIALIZE(ar, valgen);
 	    GCStackRoot<> valgenrt(valgen);
 	    GCEdge<Environment> env;
-	    ar >> BOOST_SERIALIZATION_NVP(env);
+	    GCEDGE_SERIALIZE(ar, env);
 	    GCStackRoot<> envrt(env);
 	    new (t) Promise(valgen, env);
 	}
@@ -256,9 +254,9 @@ namespace boost {
 	{
 	    using namespace CXXR;
 	    GCEdge<const RObject> valgen(t->valueGenerator());
-	    ar << BOOST_SERIALIZATION_NVP(valgen);
+	    GCEDGE_SERIALIZE(ar, valgen);
 	    GCEdge<const Environment> env(t->environment());
-	    ar << BOOST_SERIALIZATION_NVP(env);
+	    GCEDGE_SERIALIZE(ar, env);
 	}
     }  // namespace serialization
 }  // namespace boost

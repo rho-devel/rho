@@ -845,15 +845,10 @@ template<class Archive>
 void CXXR::Frame::Binding::serialize(Archive & ar, const unsigned int version)
 {
     BSerializer::Frame frame("Frame::Binding");
-    BSerializer::attrib("m_value");
-    ar & BOOST_SERIALIZATION_NVP(m_value);
-    BSerializer::attrib("m_provenance");
-    ar & BOOST_SERIALIZATION_NVP(m_provenance);
-    BSerializer::attrib("m_origin");
+    GCEDGE_SERIALIZE(ar, m_value);
+    GCEDGE_SERIALIZE(ar, m_provenance);
     ar & BOOST_SERIALIZATION_NVP(m_origin);
-    BSerializer::attrib("m_active");
     ar & BOOST_SERIALIZATION_NVP(m_active);
-    BSerializer::attrib("m_locked");
     ar & BOOST_SERIALIZATION_NVP(m_locked);
 }
 

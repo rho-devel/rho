@@ -137,6 +137,15 @@ namespace CXXR {
 	{};
 
 	template <class T>
+	struct Serialize<RHandle<T> > {
+	    template <class Archive>
+	    void operator()(Archive& ar, RHandle<T>& item)
+	    {
+		GCEDGE_SERIALIZE(ar, item);
+	    }
+	};
+
+	template <class T>
 	class VisitReferents<RHandle<T> >
 	    : public std::unary_function<T, void> {
 	public:

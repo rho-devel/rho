@@ -104,13 +104,10 @@ void CXXR::Provenance::load(Archive& ar, const unsigned int version)
     ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
     ar >> boost::serialization::make_nvp("sec", m_timestamp.tv_sec);
     ar >> boost::serialization::make_nvp("usec", m_timestamp.tv_usec);
-    BSerializer::attrib("m_expression");
-    ar >> BOOST_SERIALIZATION_NVP(m_expression);
     ar >> BOOST_SERIALIZATION_NVP(m_parentpos);
-    BSerializer::attrib("m_symbol");
-    ar >> BOOST_SERIALIZATION_NVP(m_symbol);
-    ar >> BOOST_SERIALIZATION_NVP(m_value);
-    BSerializer::attrib("m_parentage");
+    GCEDGE_SERIALIZE(ar, m_expression);
+    GCEDGE_SERIALIZE(ar, m_symbol);
+    GCEDGE_SERIALIZE(ar, m_value);
     ar >> BOOST_SERIALIZATION_NVP(m_parentage);
     ar >> BOOST_SERIALIZATION_NVP(m_xenogenous);
     m_children=new Set();
@@ -125,13 +122,10 @@ void CXXR::Provenance::save(Archive& ar, const unsigned int version) const
     ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
     ar << boost::serialization::make_nvp("sec", m_timestamp.tv_sec);
     ar << boost::serialization::make_nvp("usec", m_timestamp.tv_usec);
-    BSerializer::attrib("m_expression");
-    ar << BOOST_SERIALIZATION_NVP(m_expression);
     ar << BOOST_SERIALIZATION_NVP(m_parentpos);
-    BSerializer::attrib("m_symbol");
-    ar << BOOST_SERIALIZATION_NVP(m_symbol);
-    ar << BOOST_SERIALIZATION_NVP(m_value);
-    BSerializer::attrib("m_parentage");
+    GCEDGE_SERIALIZE(ar, m_expression);
+    GCEDGE_SERIALIZE(ar, m_symbol);
+    GCEDGE_SERIALIZE(ar, m_value);
     ar << BOOST_SERIALIZATION_NVP(m_parentage);
     ar << BOOST_SERIALIZATION_NVP(m_xenogenous);
 }

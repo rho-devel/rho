@@ -318,15 +318,12 @@ void CXXR::Closure::load(Archive& ar, const unsigned int version)
 {
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
     GCEdge<const CXXR::PairList> fargs; // For deserialization
-    BSerializer::attrib("formal_args");
-    ar >> boost::serialization::make_nvp("formal_args", fargs);
+    fargs.tgtSerialize(ar, "formal_args");
     // Protect from GC
     GCStackRoot<const PairList> formal_args(fargs);
     m_matcher=expose(new ArgMatcher(formal_args));
-    BSerializer::attrib("m_body");
-    ar >> BOOST_SERIALIZATION_NVP(m_body);
-    BSerializer::attrib("m_environment");
-    ar >> BOOST_SERIALIZATION_NVP(m_environment);
+    GCEDGE_SERIALIZE(ar, m_body);
+    GCEDGE_SERIALIZE(ar, m_environment);
 }
 
 template<class Archive>
@@ -334,12 +331,9 @@ void CXXR::Closure::save(Archive& ar, const unsigned int version) const
 {
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
     GCEdge<const PairList> formal_args(m_matcher->formalArgs());
-    BSerializer::attrib("formal_args");
-    ar << BOOST_SERIALIZATION_NVP(formal_args);
-    BSerializer::attrib("m_body");
-    ar << BOOST_SERIALIZATION_NVP(m_body);
-    BSerializer::attrib("m_environment");
-    ar << BOOST_SERIALIZATION_NVP(m_environment);
+    formal_args.tgtSerialize(ar, "formal_args");
+    GCEDGE_SERIALIZE(ar, m_body);
+    GCEDGE_SERIALIZE(ar, m_environment);
 }
 
 // ***** boost serialization object construction *****
