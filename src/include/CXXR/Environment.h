@@ -49,10 +49,8 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
 
-#include "CXXR/BSerializer.hpp"
 #include "CXXR/Frame.hpp"
 #include "CXXR/GCStackRoot.hpp"
-#include "CXXR/BSerializer.hpp"
 #include "CXXR/Symbol.h"
 
 /** @def DETACH_LOCAL_FRAMES
@@ -525,7 +523,6 @@ namespace CXXR {
 
 	template<class Archive>
 	void serialize (Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("Environment");
 	    boost::serialization::split_member(ar, *this, version);
 	}
     };

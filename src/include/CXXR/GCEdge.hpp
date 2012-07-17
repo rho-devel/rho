@@ -49,7 +49,6 @@
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_member.hpp>
 
-#include "CXXR/BSerializer.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/GCNode.hpp"
 

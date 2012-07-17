@@ -51,7 +51,6 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
 
-#include "CXXR/BSerializer.hpp"
 #include "CXXR/GCNode.hpp"
 #include "CXXR/RHandle.hpp"
 #include "CXXR/uncxxr.h"
@@ -579,7 +578,8 @@ namespace CXXR {
 	// when a copy is made of this object, or - more generally -
 	// some comparably sized object is derived from this object,
 	// this fact should be reported, and the m_memory_traced
-	// property propagated to the new object.
+	// property propagated to the new object.  Setting of this
+	// field is not preserved in CXXR-style serialization.
 	bool m_memory_traced : 1;
     public:
 	// The following field is used only in connection with objects
@@ -593,6 +593,8 @@ namespace CXXR {
 
 	// 'Scratchpad' field used in handling argument lists,
 	// formerly hosted in the 'gp' field of sxpinfo_struct.
+	// Setting of this field is not preserved in CXXR-style
+	// serialization.
 	unsigned m_missing     : 2;
 	
 	// Similarly the following three obsolescent fields squeezed
@@ -602,12 +604,15 @@ namespace CXXR {
 	// CXXR).
 	// 'Scratchpad' field used in handling argument lists,
 	// formerly hosted in the 'gp' field of sxpinfo_struct.
+	// Setting of this field is not preserved in CXXR-style
+	// serialization.
 	unsigned m_argused    : 2;
 
 	// Used when the contents of an Environment are represented as
 	// a PairList, for example during serialization and
 	// deserialization, and formerly hosted in the gp field of
-	// sxpinfo_struct.
+	// sxpinfo_struct.  Setting of these fields is not preserved
+	// in CXXR-style serialization.
 	bool m_active_binding : 1;
 	bool m_binding_locked : 1;
     private:
@@ -631,21 +636,11 @@ namespace CXXR {
 template<class Archive>
 void CXXR::RObject::serialize(Archive& ar, const unsigned int version)
 {
-    BSerializer::Frame frame("RObject");
-    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);	
-    unsigned int missing = m_missing;
-    ar & BOOST_SERIALIZATION_NVP(missing);
-    unsigned int argused = m_argused;
-    ar & BOOST_SERIALIZATION_NVP(argused);
-    bool active_binding = m_active_binding;
-    ar & BOOST_SERIALIZATION_NVP(active_binding);
-    bool binding_locked = m_binding_locked;
-    ar & BOOST_SERIALIZATION_NVP(binding_locked);
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
+    bool s4 = isS4Object();
+    ar & BOOST_SERIALIZATION_NVP(s4);
+    setS4Object(s4);
     GCEDGE_SERIALIZE(ar, m_attrib);
-    m_missing = missing;
-    m_argused = argused;
-    m_active_binding = active_binding;
-    m_binding_locked = binding_locked;
 }
 
 /** @brief Pointer to an RObject.

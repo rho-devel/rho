@@ -50,8 +50,6 @@
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/string.hpp>
 
-#include "CXXR/BSerializer.hpp"
-
 namespace CXXR {
     /** @brief String object not held in a cache.
      *
@@ -172,7 +170,6 @@ namespace CXXR {
 	template <class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
-	    BSerializer::Frame frame("UncachedString");
 	    boost::serialization::split_member(ar, *this, version);
 	}
     };

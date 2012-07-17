@@ -180,7 +180,6 @@ namespace CXXR {
 	template <class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
-	    BSerializer::Frame frame("FunctionBase");
 	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
 	}
     };

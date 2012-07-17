@@ -51,7 +51,6 @@
 #include <boost/serialization/split_member.hpp>
 
 #include "CXXR/ArgMatcher.hpp"
-#include "CXXR/BSerializer.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/PairList.h"
 
@@ -303,7 +302,6 @@ namespace CXXR {
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("Closure");
 	    boost::serialization::split_member(ar, *this, version);
 	}
     };

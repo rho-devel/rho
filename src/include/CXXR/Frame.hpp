@@ -45,7 +45,6 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
 
-#include "CXXR/BSerializer.hpp"
 #include "CXXR/GCNode.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/Provenance.hpp"
@@ -844,7 +843,6 @@ typedef CXXR::Frame::Binding* R_varloc_t;
 template<class Archive>
 void CXXR::Frame::Binding::serialize(Archive & ar, const unsigned int version)
 {
-    BSerializer::Frame frame("Frame::Binding");
     GCEDGE_SERIALIZE(ar, m_value);
     GCEDGE_SERIALIZE(ar, m_provenance);
     ar & BOOST_SERIALIZATION_NVP(m_origin);
@@ -854,7 +852,6 @@ void CXXR::Frame::Binding::serialize(Archive & ar, const unsigned int version)
 
 template<class Archive>
 void CXXR::Frame::serialize (Archive & ar, const unsigned int version) {
-    BSerializer::Frame frame("Frame");
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
     bool locked = m_locked;
     ar & BOOST_SERIALIZATION_NVP(locked);

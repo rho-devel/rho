@@ -291,7 +291,6 @@ namespace CXXR {
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version)
 	{
-	    BSerializer::Frame frame("FixedVector");
 	    boost::serialization::split_member(ar, *this, version);
 	}
 

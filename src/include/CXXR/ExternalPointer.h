@@ -49,7 +49,6 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
 
-#include "CXXR/BSerializer.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
@@ -218,7 +217,6 @@ BOOST_CLASS_EXPORT_KEY(CXXR::ExternalPointer)
 template <class Archive>
 void CXXR::ExternalPointer::serialize(Archive& ar, const unsigned int version)
 {
-    BSerializer::Frame frame("ExternalPointer");
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
     GCEDGE_SERIALIZE(ar, m_tag);
     GCEDGE_SERIALIZE(ar, m_protege);

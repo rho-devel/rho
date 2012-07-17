@@ -8,7 +8,7 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_member.hpp>
-#include "CXXR/BSerializer.hpp"
+
 #include "CXXR/Expression.h"
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
@@ -87,8 +87,6 @@ namespace CXXR {
 
 	template <class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("Provenance");
-		
 	    boost::serialization::split_member(ar, *this, version);
 	}
     };

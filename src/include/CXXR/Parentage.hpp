@@ -7,7 +7,6 @@
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/vector.hpp>
 
-#include "CXXR/BSerializer.hpp"
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
 #include "CXXR/GCStackRoot.hpp"

@@ -58,7 +58,6 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
 
-#include "CXXR/BSerializer.hpp"
 #include "CXXR/GCRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
 
@@ -549,7 +548,6 @@ namespace CXXR {
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
-	    BSerializer::Frame frame("PairList");
 	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(ConsCell);
 	}
     };

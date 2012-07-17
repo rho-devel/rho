@@ -46,8 +46,6 @@
 #include <iterator>
 #include <boost/serialization/access.hpp>
 
-#include "CXXR/BSerializer.hpp"
-
 namespace CXXR {
     template <class Node> class HeterogeneousList;
 
@@ -115,7 +113,6 @@ namespace CXXR {
 	    // inheritance hierarchy, but is effectively a no-op:
 	    template <class Archive>
 	    void serialize(Archive & ar, const unsigned int version) {
-		BSerializer::Frame frame("HeterogeneousList::Link");
 	    }
 	};
 

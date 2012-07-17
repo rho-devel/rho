@@ -246,7 +246,6 @@ namespace CXXR {
 	template <class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
-	    BSerializer::Frame frame("String");
 	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
 	    ar & BOOST_SERIALIZATION_NVP(m_encoding);
 	}

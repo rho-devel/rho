@@ -409,7 +409,6 @@ namespace CXXR {
 	// Fields not serialised here are set up by the constructor:
 	template <class Archive>
 	void serialize(Archive& ar, const unsigned int version) {
-	    BSerializer::Frame frame("BuiltInFunction");
 	    boost::serialization::split_member(ar, *this, version);
 	}
     };

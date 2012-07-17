@@ -195,11 +195,7 @@ HeterogeneousListtest.o : HeterogeneousListtest.cpp
 HeterogeneousList.o : $(maindir)/HeterogeneousList.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c -o $@ $<
 
-BSerializer.o : $(maindir)/BSerializer.cpp
-	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c -o $@ $<
-
-HeterogeneousListtest_objs =  HeterogeneousListtest.o HeterogeneousList.o \
-                              BSerializer.o
+HeterogeneousListtest_objs =  HeterogeneousListtest.o HeterogeneousList.o
 
 HeterogeneousListtest : $(HeterogeneousListtest_objs)
 	$(LINK.cc) -o $@ $(HeterogeneousListtest_objs)

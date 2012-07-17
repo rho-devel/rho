@@ -50,7 +50,6 @@
 #include <boost/serialization/unordered_map.hpp>
 
 #include "CXXR/Allocator.hpp"
-#include "CXXR/BSerializer.hpp"
 #include "CXXR/Frame.hpp"
 
 namespace CXXR {
@@ -127,7 +126,6 @@ namespace CXXR {
 
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version) {
-	    BSerializer::Frame frame("StdFrame");
 	    boost::serialization::split_member(ar, *this, version);
 	}
     };
