@@ -184,6 +184,11 @@ Symbol* Symbol::obtainDotDotSymbol(unsigned int n)
     return obtain(name);
 }
 
+Symbol* Symbol::s11n_relocate() const
+{
+    return m_s11n_reloc;
+}
+
 const char* Symbol::typeName() const
 {
     return staticTypeName();
@@ -196,6 +201,8 @@ void Symbol::visitReferents(const_visitor* v) const
     if (name)
 	(*v)(name);
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::Symbol)
 
 // Predefined Symbols:
 namespace CXXR {

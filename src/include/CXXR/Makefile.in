@@ -46,7 +46,6 @@ CXXR_HPPS = \
   HeterogeneousList.hpp MemoryBank.hpp NAAugment.hpp NodeStack.hpp \
   Parentage.hpp Provenance.hpp RHandle.hpp \
   SEXP_downcast.hpp SchwarzCounter.hpp StdFrame.hpp Subscripting.hpp \
-  Symbol_serialization.hpp \
   UnaryFunction.hpp config.hpp
 
 CXXR_HEADERS = $(CXXR_HS) $(CXXR_HPPS)

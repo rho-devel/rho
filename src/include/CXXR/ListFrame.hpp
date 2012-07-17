@@ -103,7 +103,9 @@ namespace CXXR {
 	    size_t numberOfBindings;
 	    ar >> BOOST_SERIALIZATION_NVP(numberOfBindings);
 	    for (size_t i = 0; i < numberOfBindings; ++i) {
-		const Symbol* symbol = loadSymbol(ar);
+		GCEdge<Symbol> symbol;
+		GCEDGE_SERIALIZE(ar, symbol);
+		GCStackRoot<Symbol> symbolrt(symbol);
 		m_list.push_back(Binding());
 		Binding& binding = m_list.back();
 		binding.initialize(this, symbol);
@@ -121,14 +123,14 @@ namespace CXXR {
 	    for (List::const_iterator it = m_list.begin();
 		 it != m_list.end(); ++it) {
 		const Binding& binding = *it;
-		saveSymbol(ar, binding.symbol());
+		GCEdge<const Symbol> symbol(binding.symbol());
+		GCEDGE_SERIALIZE(ar, symbol);
 		ar << BOOST_SERIALIZATION_NVP(binding);
 	    }
 	}
 
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version) {
-	    BSerializer::Frame frame("ListFrame");
 	    boost::serialization::split_member(ar, *this, version);
 	}
     };

@@ -52,7 +52,6 @@
 #include "CXXR/Allocator.hpp"
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/Frame.hpp"
-#include "CXXR/Symbol_serialization.hpp"
 
 namespace CXXR {
     /** @brief General-purpose implementation of CXXR::Frame.
@@ -145,7 +144,9 @@ void CXXR::StdFrame::load(Archive& ar, const unsigned int version)
     size_t numberOfBindings;
     ar >> BOOST_SERIALIZATION_NVP(numberOfBindings);
     for (size_t i = 0; i < numberOfBindings; ++i) {
-	const Symbol* symbol = loadSymbol(ar);
+	GCEdge<Symbol> symbol;
+	GCEDGE_SERIALIZE(ar, symbol);
+	GCStackRoot<Symbol> symbolrt(symbol);
 	Binding* binding = obtainBinding(symbol);
 	ar >> boost::serialization::make_nvp("binding", *binding);
     }
@@ -159,9 +160,9 @@ void CXXR::StdFrame::save(Archive& ar, const unsigned int version) const
     ar << BOOST_SERIALIZATION_NVP(numberOfBindings);
     for (map::const_iterator it = m_map.begin();
 	 it != m_map.end(); ++it) {
-	const Symbol* symbol = (*it).first;
+	GCEdge<const Symbol> symbol((*it).first);
 	const Binding& binding = (*it).second;
-	saveSymbol(ar, symbol);
+	GCEDGE_SERIALIZE(ar, symbol);
 	ar << BOOST_SERIALIZATION_NVP(binding);
     }
 }

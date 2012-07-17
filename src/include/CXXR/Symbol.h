@@ -80,10 +80,9 @@ namespace CXXR {
      * dot-dot symbols; CXXR does.)
      *
      * Special symbols are used to implement certain pseudo-objects
-     * (::R_MissingArg, ::R_RestartToken and ::R_UnboundValue) that CR
-     * expects to have ::SEXPTYPE SYMSXP.  Each special symbol has a
-     * blank string as its name, but despite this each of them is a
-     * distinct symbol.
+     * (::R_MissingArg and ::R_UnboundValue) that CR expects to have
+     * ::SEXPTYPE SYMSXP.  Each special symbol has a blank string as
+     * its name, but despite this each of them is a distinct symbol.
      *
      * @note Following the practice with CR's symbol table, Symbol
      * objects, once created, are permanently preserved against
@@ -250,6 +249,9 @@ namespace CXXR {
 	    return s_unbound_value;
 	}
 
+	// Virtual function of GCNode:
+	Symbol* s11n_relocate() const;
+
 	// Virtual functions of RObject:
 	RObject* evaluate(Environment* env);
 	const char* typeName() const;
@@ -260,16 +262,24 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	friend class boost::serialization::access;
+	friend class SchwarzCounter<Symbol>;
+
 	static const size_t s_max_length = 256;
 	static Table* s_table;  // Vector of
 	  // pointers to all Symbol objects in existence, other than
-	  // special Symbols, used to protect them against garbage
-	  // collection.
+	  // special Symbols and deserialization temporaries, used to
+	  // protect them against garbage collection.
 	static Symbol* s_missing_arg;
 	static Symbol* s_unbound_value;
 
 	GCEdge<const CachedString> m_name;
+
+	GCEdge<Symbol> m_s11n_reloc;  // Used only during deserialization
+ 
 	unsigned int m_dd_index;
+
+	enum S11nType {NORMAL = 0, MISSINGARG, UNBOUNDVALUE};
 
 	/**
 	 * @param name Pointer to String object representing the name
@@ -298,6 +308,9 @@ namespace CXXR {
 	// Initialize the static data members:
 	static void initialize();
 
+	template<class Archive>
+	void load(Archive & ar, const unsigned int version);
+
 	// Precondition: there is not already a Symbol identified by
 	// 'name'.
 	//
@@ -305,7 +318,16 @@ namespace CXXR {
 	// the table of standard Symbols, and returns a pointer to it.
 	static Symbol* make(const CachedString* name);
 
-	friend class SchwarzCounter<Symbol>;
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const;
+
+	// Fields not serialised here are set up by the constructor:
+	template <class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+	    BSerializer::Frame frame("Symbol");
+	    boost::serialization::split_member(ar, *this, version);
+	}
     };
 
     /** @brief Does Symbol's name start with '.'?
@@ -382,12 +404,61 @@ namespace CXXR {
     extern Symbol* const UseNamesSymbol;   	  // "use.names"
 }  // namespace CXXR
 
+BOOST_CLASS_EXPORT_KEY(CXXR::Symbol)
+
 namespace {
     CXXR::SchwarzCounter<CXXR::Symbol> symbol_schwarz_ctr;
 }
 
+// ***** Implementation of non-inlined templated members *****
+
+template<class Archive>
+void CXXR::Symbol::load(Archive& ar, const unsigned int version)
+{
+    // This will only ever be applied to a 'temporary' Symbol created
+    // by the default constructor.
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
+    S11nType symtype;
+    ar >> BOOST_SERIALIZATION_NVP(symtype);
+    switch(symtype) {
+    case NORMAL:
+	{
+	    std::string name;
+	    ar >> BOOST_SERIALIZATION_NVP(name);
+	    m_s11n_reloc = obtain(name);
+	}
+	break;
+    case MISSINGARG:
+	m_s11n_reloc = s_missing_arg;
+	break;
+    case UNBOUNDVALUE:
+	m_s11n_reloc = s_unbound_value;
+	break;
+    }
+}
+
+template<class Archive>
+void CXXR::Symbol::save(Archive& ar, const unsigned int version) const
+{
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
+    S11nType symtype = NORMAL;
+    if (this == s_missing_arg)
+	symtype = MISSINGARG;
+    else if (this == s_unbound_value)
+	symtype = UNBOUNDVALUE;
+    ar << BOOST_SERIALIZATION_NVP(symtype);
+    if (symtype == NORMAL) {
+	// We deliberately don't serialise the CachedString pointed to
+	// by m_name, because this would make us hostage to the
+	// current implementation.  Instead we serialise the
+	// std::string represented by that CachedString.
+	std::string name = m_name->stdstring();
+	ar << BOOST_SERIALIZATION_NVP(name);
+    }
+}
+
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
     /* Pseudo-objects */
     extern SEXP R_MissingArg;

@@ -64,12 +64,3 @@ void GCEdgeBase::preserveS11nTemporary(GCNode* target)
 {
     s11n_temporaries.push_back(GCRoot<GCNode>(target));
 }
-
-GCEdgeBase::EdgeSerializationType GCEdgeBase::serializationType() const {
-    if (!m_target) return OTHEREDGE;
-
-    if (typeid(*m_target)==typeid(Symbol))
-	return SYMBOLEDGE;
-
-    return OTHEREDGE;
-}

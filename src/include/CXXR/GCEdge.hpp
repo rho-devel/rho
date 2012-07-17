@@ -51,7 +51,6 @@
 
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/GCStackRoot.hpp"
-#include "CXXR/Symbol_serialization.hpp"
 #include "CXXR/GCNode.hpp"
 
 namespace CXXR {
@@ -61,17 +60,9 @@ namespace CXXR {
      */
     class GCEdgeBase {
     public:
-	/** Used for representing the type of target
-	 */
-	enum EdgeSerializationType {OTHEREDGE=0, SYMBOLEDGE};
-
 	/** @brief Null the encapsulated pointer.
 	 */
 	void detach();
-
-	/** @brief return the EdgeSerializationType for this edge
-	 */
-	EdgeSerializationType serializationType() const;
     protected:
 	GCEdgeBase()
 	    : m_target(0)
@@ -134,31 +125,20 @@ namespace CXXR {
 			       const char* name,
 			       const unsigned int version)
 	    {
-		EdgeSerializationType type;
 		GCNode* target;
-		ar >> BOOST_SERIALIZATION_NVP(type);
-		switch(type) {
-		case SYMBOLEDGE:
-		    target = loadSymbol(ar);
-		    if (!target->isExposed())
+		ar >> boost::serialization::make_nvp(name, target);
+		if (target) {
+		    GCNode* reloc = target->s11n_relocate();
+		    // Note that the target may already have been
+		    // exposed, e.g. as a result of deserialising
+		    // another GCEdge pointing to it.
+		    if (!target->isExposed()) {
 			target->expose();
-		    break;
-		case OTHEREDGE:
-		    ar >> boost::serialization::make_nvp(name, target);
-		    if (target) {
-			GCNode* reloc = target->s11n_relocate();
-			// Note that the target may already have been
-			// exposed, e.g. as a result of deserialising
-			// another GCEdge pointing to it.
-			if (!target->isExposed()) {
-			    target->expose();
-			    if (reloc)
-				preserveS11nTemporary(target);
-			}
 			if (reloc)
-			    target = reloc;
+			    preserveS11nTemporary(target);
 		    }
-		    break;
+		    if (reloc)
+			target = reloc;
 		}
 		edge->retarget(target);
 	    }
@@ -170,16 +150,7 @@ namespace CXXR {
 			       const char* name,
 			       const unsigned int version)
 	    {
-		EdgeSerializationType type = edge->serializationType();
-		ar << BOOST_SERIALIZATION_NVP(type);
-		switch(type) {
-		case SYMBOLEDGE:
-		    saveSymbol(ar, edge->m_target);
-		    break;
-		case OTHEREDGE:
 		    ar << boost::serialization::make_nvp(name, edge->m_target);
-		    break;
-		}
 	    }
 	};
     public:
@@ -275,6 +246,6 @@ namespace CXXR {
 	    return static_cast<T*>(const_cast<GCNode*>(target()));
 	}
     };
-} // Namespace CXXR
+} // namespace CXXR
 
 #endif  // GCEDGE_HPP

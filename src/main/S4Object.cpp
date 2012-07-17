@@ -51,6 +51,7 @@ const char* S4Object::typeName() const
     return S4Object::staticTypeName();
 }
 
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::S4Object)
 
 // ***** C interface *****
 
@@ -58,8 +59,3 @@ SEXP Rf_allocS4Object()
 {
     return CXXR_NEW(S4Object());
 }
-
-// CXXR FIXME: Try to get rid of this in due course:
-#include "CXXR/Symbol.h"
-
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::S4Object)
