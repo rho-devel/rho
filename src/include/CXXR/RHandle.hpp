@@ -141,7 +141,7 @@ namespace CXXR {
 	    template <class Archive>
 	    void operator()(Archive& ar, RHandle<T>& item)
 	    {
-		GCEDGE_SERIALIZE(ar, item);
+		GCNPTR_SERIALIZE(ar, item);
 	    }
 	};
 

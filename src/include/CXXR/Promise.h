@@ -209,7 +209,7 @@ namespace CXXR {
 	void serialize(Archive& ar, const unsigned int version)
 	{
 	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-	    GCEDGE_SERIALIZE(ar, m_value);
+	    GCNPTR_SERIALIZE(ar, m_value);
 	}
     };
 
@@ -238,12 +238,10 @@ namespace boost {
 				 const unsigned int version)
 	{
 	    using namespace CXXR;
-	    GCEdge<> valgen;
-	    GCEDGE_SERIALIZE(ar, valgen);
-	    GCStackRoot<> valgenrt(valgen);
-	    GCEdge<Environment> env;
-	    GCEDGE_SERIALIZE(ar, env);
-	    GCStackRoot<> envrt(env);
+	    GCStackRoot<> valgen;
+	    GCNPTR_SERIALIZE(ar, valgen);
+	    GCStackRoot<Environment> env;
+	    GCNPTR_SERIALIZE(ar, env);
 	    new (t) Promise(valgen, env);
 	}
 
@@ -252,10 +250,10 @@ namespace boost {
 				 const unsigned int version)
 	{
 	    using namespace CXXR;
-	    GCEdge<const RObject> valgen(t->valueGenerator());
-	    GCEDGE_SERIALIZE(ar, valgen);
-	    GCEdge<const Environment> env(t->environment());
-	    GCEDGE_SERIALIZE(ar, env);
+	    const RObject* valgen = t->valueGenerator();
+	    GCNPTR_SERIALIZE(ar, valgen);
+	    const Environment* env = t->environment();
+	    GCNPTR_SERIALIZE(ar, env);
 	}
     }  // namespace serialization
 }  // namespace boost

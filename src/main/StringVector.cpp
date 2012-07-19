@@ -70,8 +70,6 @@ void CXXR::strdump(std::ostream& os, const StringVector& sv, std::size_t margin)
     }
 }
 
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::StringVector)
-
 // ***** C interface *****
 
 void SET_STRING_ELT(SEXP x, int i, SEXP v)
@@ -80,3 +78,8 @@ void SET_STRING_ELT(SEXP x, int i, SEXP v)
     String* s = SEXP_downcast<String*>(v, false);
     (*sv)[i] = s;
 }
+
+// Needed for the instantiation in BOOST_CLASS_EXPORT_IMPLEMENT:
+#include "CXXR/PairList.h"
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::StringVector)

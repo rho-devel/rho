@@ -843,8 +843,8 @@ typedef CXXR::Frame::Binding* R_varloc_t;
 template<class Archive>
 void CXXR::Frame::Binding::serialize(Archive & ar, const unsigned int version)
 {
-    GCEDGE_SERIALIZE(ar, m_value);
-    GCEDGE_SERIALIZE(ar, m_provenance);
+    GCNPTR_SERIALIZE(ar, m_value);
+    GCNPTR_SERIALIZE(ar, m_provenance);
     ar & BOOST_SERIALIZATION_NVP(m_origin);
     ar & BOOST_SERIALIZATION_NVP(m_active);
     ar & BOOST_SERIALIZATION_NVP(m_locked);

@@ -142,9 +142,8 @@ void CXXR::StdFrame::load(Archive& ar, const unsigned int version)
     size_t numberOfBindings;
     ar >> BOOST_SERIALIZATION_NVP(numberOfBindings);
     for (size_t i = 0; i < numberOfBindings; ++i) {
-	GCEdge<Symbol> symbol;
-	GCEDGE_SERIALIZE(ar, symbol);
-	GCStackRoot<Symbol> symbolrt(symbol);
+	GCStackRoot<Symbol> symbol;
+	GCNPTR_SERIALIZE(ar, symbol);
 	Binding* binding = obtainBinding(symbol);
 	ar >> boost::serialization::make_nvp("binding", *binding);
     }
@@ -158,9 +157,9 @@ void CXXR::StdFrame::save(Archive& ar, const unsigned int version) const
     ar << BOOST_SERIALIZATION_NVP(numberOfBindings);
     for (map::const_iterator it = m_map.begin();
 	 it != m_map.end(); ++it) {
-	GCEdge<const Symbol> symbol((*it).first);
+	const Symbol* symbol = (*it).first;
 	const Binding& binding = (*it).second;
-	GCEDGE_SERIALIZE(ar, symbol);
+	GCNPTR_SERIALIZE(ar, symbol);
 	ar << BOOST_SERIALIZATION_NVP(binding);
     }
 }

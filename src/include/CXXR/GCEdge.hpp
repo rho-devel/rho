@@ -40,17 +40,8 @@
 #ifndef GCEDGE_HPP
 #define GCEDGE_HPP 1
 
-#include <iostream>
-#include <typeinfo>
-#include <boost/mpl/eval_if.hpp>
-#include <boost/mpl/identity.hpp>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/split_member.hpp>
-
-#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/GCNode.hpp"
+#include "CXXR/GCStackRoot.hpp"
 
 namespace CXXR {
     class RObject;
@@ -100,73 +91,20 @@ namespace CXXR {
 	}
     protected:
 	/** @brief Redirect the GCEdge to point at a (possibly) different node.
--        *
+         *
          * @param newtarget Pointer to the object to which reference is now
--        *           to be made.
--        */
+         *           to be made.
+         */
 	void retarget(const GCNode* newtarget)
 	{
 	    GCEdgeBase tmp(newtarget);
 	    std::swap(m_target, tmp.m_target);
 	}
     private:
-        friend class boost::serialization::access;
-
 	const GCNode* m_target;
 
 	static void abortIfNotExposed(const GCNode* target);
-
-	static void preserveS11nTemporary(GCNode* target);
-
-	template<class Archive>
-	struct targetLoader {
-	    static void invoke(Archive& ar, GCEdgeBase* edge,
-			       const char* name,
-			       const unsigned int version)
-	    {
-		GCNode* target;
-		ar >> boost::serialization::make_nvp(name, target);
-		if (target) {
-		    GCNode* reloc = target->s11n_relocate();
-		    // Note that the target may already have been
-		    // exposed, e.g. as a result of deserialising
-		    // another GCEdge pointing to it.
-		    if (!target->isExposed()) {
-			target->expose();
-			if (reloc)
-			    preserveS11nTemporary(target);
-		    }
-		    if (reloc)
-			target = reloc;
-		}
-		edge->retarget(target);
-	    }
-	};
-
-	template<class Archive>
-	struct targetSaver {
-	    static void invoke(Archive& ar, const GCEdgeBase* edge,
-			       const char* name,
-			       const unsigned int version)
-	    {
-		    ar << boost::serialization::make_nvp(name, edge->m_target);
-	    }
-	};
-    public:
-	template<class Archive>
-	void tgtSerialize(Archive& ar, const char* name,
-			  const unsigned int version = 0) const
-	{
-	    using namespace boost::mpl;
-	    typedef typename eval_if<typename Archive::is_saving,
-		identity<targetSaver<Archive> >,
-		identity<targetLoader<Archive> > >::type typex;
-	    typex::invoke(ar, const_cast<GCEdgeBase*>(this), name, version);
-	}
     };
-
-#define GCEDGE_SERIALIZE(ar, name) \
-    name.tgtSerialize(ar, #name )
 
     /** @brief Directed edge in the graph whose nodes are GCNode objects.
      *
@@ -189,6 +127,8 @@ namespace CXXR {
     template <class T = RObject>
     class GCEdge : public GCEdgeBase {
     public:
+	typedef T type;
+
 	GCEdge()
 	{}
 

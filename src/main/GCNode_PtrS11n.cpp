@@ -32,45 +32,35 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file UncachedString.cpp
+/** @file GCNode_PtrS11n.cpp
  *
- * Implementation of class CXXR::UncachedString and related functions.
+ * Implementation of class GCNode::PtrS11n.
  */
 
-#include "CXXR/UncachedString.h"
+#include "CXXR/GCNode_PtrS11n.hpp"
 
-using namespace std;
+#include <vector>
+
+#include "CXXR/GCRoot.h"
+
 using namespace CXXR;
 
-UncachedString::UncachedString(const std::string& str, cetype_t encoding)
-    : String(str.size(), encoding), m_databytes(str.size() + 1),
-      m_data(m_short_string)
-{
-    size_t sz = str.size();
-    allocData(sz);
-    memcpy(m_data, str.data(), sz);
-    setCString(m_data);
+namespace {
+    std::vector<GCRoot<const GCNode> >* proxies;
 }
 
-void UncachedString::allocData(size_t sz)
+void GCNode::PtrS11n::freeProxies()
 {
-    if (sz > s_short_strlen)
-	m_data = static_cast<char*>(MemoryBank::allocate(m_databytes));
-    // Insert trailing null byte:
-    m_data[sz] = 0;
+    proxies->clear();
 }
 
-UncachedString* UncachedString::s11n_relocate() const
+void GCNode::PtrS11n::initialize()
 {
-    return m_s11n_reloc;
+    static std::vector<GCRoot<const GCNode> > temps;
+    proxies = &temps;
 }
 
-const char* UncachedString::typeName() const
+void GCNode::PtrS11n::preserveProxy(const GCNode* target)
 {
-    return UncachedString::staticTypeName();
+    proxies->push_back(GCRoot<const GCNode>(target));
 }
-
-// Needed for the instantiation in BOOST_CLASS_EXPORT_IMPLEMENT:
-#include "CXXR/PairList.h"
-
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::UncachedString)

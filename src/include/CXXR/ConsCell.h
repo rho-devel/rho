@@ -357,9 +357,9 @@ namespace CXXR {
     template<class Archive>
     void CXXR::ConsCell::serialize(Archive & ar, const unsigned int version) {
 	ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-	GCEDGE_SERIALIZE(ar, m_tag);
-	GCEDGE_SERIALIZE(ar, m_car);
-	GCEDGE_SERIALIZE(ar, m_tail);
+	GCNPTR_SERIALIZE(ar, m_tag);
+	GCNPTR_SERIALIZE(ar, m_car);
+	GCNPTR_SERIALIZE(ar, m_tail);
     }
 
     inline bool operator==(ConsCell::iterator l, ConsCell::iterator r)

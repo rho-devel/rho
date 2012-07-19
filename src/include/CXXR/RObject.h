@@ -51,7 +51,7 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
 
-#include "CXXR/GCNode.hpp"
+#include "CXXR/GCNode_PtrS11n.hpp"
 #include "CXXR/RHandle.hpp"
 #include "CXXR/uncxxr.h"
 
@@ -640,7 +640,7 @@ void CXXR::RObject::serialize(Archive& ar, const unsigned int version)
     bool s4 = isS4Object();
     ar & BOOST_SERIALIZATION_NVP(s4);
     setS4Object(s4);
-    GCEDGE_SERIALIZE(ar, m_attrib);
+    GCNPTR_SERIALIZE(ar, m_attrib);
 }
 
 /** @brief Pointer to an RObject.

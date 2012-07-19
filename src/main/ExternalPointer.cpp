@@ -79,8 +79,6 @@ void ExternalPointer::visitReferents(const_visitor* v) const
 	(*v)(tag);
 }
 
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::ExternalPointer)
-
 // ***** C interface *****
 
 SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)
@@ -108,3 +106,8 @@ void R_SetExternalPtrProtected(SEXP s, SEXP p)
 	= *CXXR::SEXP_downcast<CXXR::ExternalPointer*>(s);
     ep.setProtege(p);
 }
+
+// Needed for the instantiation in BOOST_CLASS_EXPORT_IMPLEMENT:
+#include "CXXR/PairList.h"
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::ExternalPointer)

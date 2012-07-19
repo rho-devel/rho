@@ -50,7 +50,7 @@ namespace CXXR {
 	    resize(sz);
 	    for (size_t i = 0; i < sz; ++i) {
 		GCEdge<Provenance>& parent = (*this)[i];
-		GCEDGE_SERIALIZE(ar, parent);
+		GCNPTR_SERIALIZE(ar, parent);
 	    }
 	}
     };

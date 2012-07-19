@@ -38,7 +38,8 @@ SOURCES_CXX = \
 	Environment.cpp Evaluator.cpp Evaluator_Context.cpp Expression.cpp \
 	ExpressionVector.cpp ExternalPointer.cpp \
         Frame.cpp FunctionBase.cpp FunctionContext.cpp \
-        GCEdge.cpp GCManager.cpp GCNode.cpp GCRoot.cpp GCStackRoot.cpp \
+        GCEdge.cpp GCManager.cpp GCNode.cpp GCNode_PtrS11n.cpp GCRoot.cpp \
+	GCStackRoot.cpp \
 	HeterogeneousList.cpp \
         IntVector.cpp inspect.cpp \
 	ListFrame.cpp ListVector.cpp LogicalVector.cpp LoopBailout.cpp \

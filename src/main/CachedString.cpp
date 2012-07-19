@@ -130,8 +130,6 @@ const char* CachedString::typeName() const
     return CachedString::staticTypeName();
 }
 
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::CachedString)
-
 // ***** C interface *****
 
 SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding)
@@ -150,3 +148,8 @@ SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding)
     string str(text, length);
     return CachedString::obtain(str, encoding);
 }
+
+// Needed for the instantiation in BOOST_CLASS_EXPORT_IMPLEMENT:
+#include "CXXR/PairList.h"
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::CachedString)

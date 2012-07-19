@@ -218,8 +218,8 @@ template <class Archive>
 void CXXR::ExternalPointer::serialize(Archive& ar, const unsigned int version)
 {
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-    GCEDGE_SERIALIZE(ar, m_tag);
-    GCEDGE_SERIALIZE(ar, m_protege);
+    GCNPTR_SERIALIZE(ar, m_tag);
+    GCNPTR_SERIALIZE(ar, m_protege);
 }
 
 extern "C" {

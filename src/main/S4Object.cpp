@@ -51,11 +51,14 @@ const char* S4Object::typeName() const
     return S4Object::staticTypeName();
 }
 
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::S4Object)
-
 // ***** C interface *****
 
 SEXP Rf_allocS4Object()
 {
     return CXXR_NEW(S4Object());
 }
+
+// Needed for the instantiation in BOOST_CLASS_EXPORT_IMPLEMENT:
+#include "CXXR/PairList.h"
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::S4Object)

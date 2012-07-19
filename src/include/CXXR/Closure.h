@@ -315,23 +315,21 @@ template<class Archive>
 void CXXR::Closure::load(Archive& ar, const unsigned int version)
 {
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-    GCEdge<const CXXR::PairList> fargs; // For deserialization
-    fargs.tgtSerialize(ar, "formal_args");
-    // Protect from GC
-    GCStackRoot<const PairList> formal_args(fargs);
+    GCStackRoot<const PairList> formal_args;
+    GCNPTR_SERIALIZE(ar, formal_args);
     m_matcher=expose(new ArgMatcher(formal_args));
-    GCEDGE_SERIALIZE(ar, m_body);
-    GCEDGE_SERIALIZE(ar, m_environment);
+    GCNPTR_SERIALIZE(ar, m_body);
+    GCNPTR_SERIALIZE(ar, m_environment);
 }
 
 template<class Archive>
 void CXXR::Closure::save(Archive& ar, const unsigned int version) const
 {
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-    GCEdge<const PairList> formal_args(m_matcher->formalArgs());
-    formal_args.tgtSerialize(ar, "formal_args");
-    GCEDGE_SERIALIZE(ar, m_body);
-    GCEDGE_SERIALIZE(ar, m_environment);
+    GCStackRoot<const PairList> formal_args(m_matcher->formalArgs());
+    GCNPTR_SERIALIZE(ar, formal_args);
+    GCNPTR_SERIALIZE(ar, m_body);
+    GCNPTR_SERIALIZE(ar, m_environment);
 }
 
 // ***** boost serialization object construction *****
