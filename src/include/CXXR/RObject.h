@@ -637,9 +637,9 @@ template<class Archive>
 void CXXR::RObject::serialize(Archive& ar, const unsigned int version)
 {
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
-    bool s4 = isS4Object();
-    ar & BOOST_SERIALIZATION_NVP(s4);
-    setS4Object(s4);
+    unsigned int type = m_type;
+    ar & BOOST_SERIALIZATION_NVP(type);
+    m_type = type;
     GCNPTR_SERIALIZE(ar, m_attrib);
 }
 

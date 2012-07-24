@@ -151,7 +151,7 @@ namespace CXXR {
 	template<class Archive>
 	struct Saver {
 	    template <typename Ptr>
-	    static void invoke(Archive& ar, Ptr ptr, const char* name)
+	    static void invoke(Archive& ar, const Ptr& ptr, const char* name)
 	    {
 		const GCNode* target
 		    = static_cast<typename Payload<Ptr>::type*>(ptr);

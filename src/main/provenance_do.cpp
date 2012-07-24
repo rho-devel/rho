@@ -253,37 +253,28 @@ SEXP attribute_hidden do_bserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
     std::ofstream ofs("bserialize.xml");
 	
     const int n=length(args);
-    if (n>0)
-	errorcall(call,_("%d arguments passed to 'bserialize' which requires 0"),n);
+    if (n > 0)
+	Rf_errorcall(call,_("%d arguments passed to 'bserialize'"
+			    " which requires 0"), n);
 
     GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
-    Environment* env = new Environment(0, frame);
-    GCStackRoot<Environment> envProtect(GCNode::expose(env));
-
-    if (n==0) {
-	Frame *gEnvFrame=static_cast<Environment*>(R_GlobalEnv)->frame();
-	frame->import(gEnvFrame);
-    }
-
+    GCStackRoot<Environment> env(CXXR_NEW(Environment(0, frame)));
+    frame->import(Environment::global()->frame());
 
     boost::archive::xml_oarchive oa(ofs);
-    oa << BOOST_SERIALIZATION_NVP(env);
+    GCNPTR_SERIALIZE(oa, env);
 
-    return R_NilValue;
+    return 0;
 }
 
 SEXP attribute_hidden do_bdeserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-	std::ifstream ifs("bserialize.xml");
-	boost::archive::xml_iarchive ia(ifs);
-	Environment* env;
-	ia >> BOOST_SERIALIZATION_NVP(env);
+    std::ifstream ifs("bserialize.xml");
+    boost::archive::xml_iarchive ia(ifs);
+    GCStackRoot<Environment> env;
+    GCNPTR_SERIALIZE(ia, env);
+    Frame* frame = Environment::global()->frame();
+    frame->import(env->frame());
 
-	GCStackRoot<Environment> envProtect(GCNode::expose(env)); // Protect from GC
-
-	Environment* envGlobal = static_cast<Environment*>(R_GlobalEnv);
-	Frame* frame = envGlobal->frame();
-	frame->import(env->frame());
-
-	return R_NilValue;
+    return 0;
 }

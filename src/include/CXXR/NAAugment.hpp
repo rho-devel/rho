@@ -108,6 +108,20 @@ namespace CXXR {
 	    return na;
 	}
 
+	/** @brief boost::serialization function.
+	 *
+	 * @tparam Archive archive class compatible with
+	 *           boost::serialization.  Serialization or
+	 *           deserialization will be performed according to
+	 *           whether this is an output or an input archive.
+	 *
+	 * @param ar The archive to be read/written.
+	 *
+	 * @param file_version Ignored.
+	 */
+	template <class Archive>
+	void serialize(Archive& ar, const unsigned int file_version);
+
 	/** @brief Data value.
 	 *
 	 * @return The data value embedded within the object.
@@ -142,7 +156,18 @@ namespace CXXR {
 	bool m_na;
     };
 
-    // Template specializations:
+    // ***** Implementation of non-inlined templated members *****
+
+    template <class T>
+    template <class Archive>
+    void CXXR::NAAugment<T>::serialize(Archive& ar,
+				       const unsigned int file_version)
+    {
+	ar & BOOST_SERIALIZATION_NVP(m_value);
+	ar & BOOST_SERIALIZATION_NVP(m_na);
+    }
+
+    // ***** Template specializations *****
     namespace ElementTraits {
 	template <class T>
 	struct Data<NAAugment<T> > {
