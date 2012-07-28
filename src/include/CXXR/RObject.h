@@ -173,10 +173,10 @@ namespace CXXR {
 	 * This struct is typically used as a default template
 	 * parameter, for example in FixedVector.
 	 */
-	struct DoNothing : std::unary_function<RObject*, void> {
+	struct DoNothing {
 	    /** @brief Does nothing.
 	     */
-	    void operator()(RObject*)
+	    static void initialize(RObject*)
 	    {}
 	};
 

@@ -64,13 +64,14 @@ namespace CXXR {
      * @tparam ST The required ::SEXPTYPE of the vector.
      *
      * @tparam Initializer (optional).  Class of function object
-     *           defining <code>operator()(RObject*)</code>. (Any
-     *           return value is discarded.)  When a FixedVector
-     *           object is constructed, a default-constructed
-     *           Initializer object is applied to it.  This can be
-     *           used, for example, to apply an R class attribute
-     *           etc.  The default is to do nothing.
+     *           defining a static member function
+     *           <code>initialize(RObject*)</code>. (Any return value
+     *           is discarded.)  When a FixedVector object is
+     *           constructed, this member function is applied to it.
+     *           This can be used, for example, to apply an R class
+     *           attribute etc.  The default is to do nothing.
      */
+    // (Default binding of Initializer already defined in VectorBase.h)
     template <typename T, SEXPTYPE ST,
 	      typename Initializer /* = RObject::DoNothing */>
     class FixedVector : public VectorBase {
@@ -93,7 +94,7 @@ namespace CXXR {
 		m_data = allocData(sz);
 	    if (ElementTraits::MustConstruct<T>::value)  // known at compile-time
 		constructElements(begin(), end());
-	    Initializer()(this);
+	    Initializer::initialize(this);
 	}
 
 	/** @brief Create a vector, and fill with a specified initial
@@ -131,7 +132,7 @@ namespace CXXR {
 	    : VectorBase(ST, 1), m_data(singleton())
 	{
 	    new (m_data) T(source[index]);
-	    Initializer()(this);
+	    Initializer::initialize(this);
 	}
 
 	/** @brief Copy constructor.
@@ -346,7 +347,7 @@ CXXR::FixedVector<T, ST, Initr>::FixedVector(std::size_t sz,
 	m_data = allocData(sz);
     for (T *p = m_data, *pend = m_data + sz; p != pend; ++p)
 	new (p) T(fill_value);
-    Initr()(this);
+    Initr::initialize(this);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
@@ -360,7 +361,7 @@ CXXR::FixedVector<T, ST, Initr>::FixedVector(const FixedVector<T, ST, Initr>& pa
     for (const_iterator it = pattern.begin(), end = pattern.end();
 	 it != end; ++it)
 	new (p++) T(*it);
-    Initr()(this);
+    Initr::initialize(this);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
@@ -373,7 +374,7 @@ CXXR::FixedVector<T, ST, Initr>::FixedVector(FwdIter from, FwdIter to)
     T* p = m_data;
     for (const_iterator it = from; it != to; ++it)
 	new (p++) T(*it);
-    Initr()(this);
+    Initr::initialize(this);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
