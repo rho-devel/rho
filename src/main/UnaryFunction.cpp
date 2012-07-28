@@ -44,8 +44,8 @@
 using namespace CXXR;
 using namespace VectorOps;
 
-void CopyLayoutAttributes::operator()(VectorBase* to,
-				      const VectorBase* from) const
+void CopyLayoutAttributes::copyAttributes(VectorBase* to,
+					  const VectorBase* from)
 {
     RObject* names = from->getAttribute(NamesSymbol);
     if (names)
