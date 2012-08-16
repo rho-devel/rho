@@ -304,7 +304,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (!generic || generic->size() != 1)
 		Rf_errorcall(call,
 			     _("'generic' argument must be a character string"));
-	    if ((*generic)[0] == CachedString::blank())
+	    if ((*generic)[0] == String::blank())
 		Rf_errorcall(call, _("first argument must be a generic name"));
 	}
 
@@ -753,7 +753,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    // For Ops we need `method' to be a vector
 	    for (unsigned int j = 0; j < dotmethod->size(); ++j) {
 		if (!(*dotmethod)[j])
-		    (*dotmethod)[j] = CachedString::obtain(nextmethodname);
+		    (*dotmethod)[j] = String::obtain(nextmethodname);
 	    }
 	}
 	method_bindings->bind(DotMethodSymbol, dotmethod);

@@ -195,13 +195,6 @@ int attribute_hidden R_Newhashpjw(const char *s)
     return h;
 }
 
-int CXXR::String::hash() const
-{
-    if (m_hash < 0)
-	m_hash = R_Newhashpjw(c_str());
-    return m_hash;
-}
-
 /*----------------------------------------------------------------------
 
   R_NewHashedEnv
@@ -1404,7 +1397,7 @@ BuiltinNames(int all, int intern, SEXP names, int *indx)
 	 it != Symbol::end(); ++it) {
 	const Symbol* sym = *it;
 	if (BuiltinTest(sym, all, intern))
-	    (*sv)[(*indx)++] = const_cast<CachedString*>(sym->name());
+	    (*sv)[(*indx)++] = const_cast<String*>(sym->name());
     }
 }
 
@@ -1434,7 +1427,7 @@ SEXP R_lsInternal(SEXP env, Rboolean all)
     std::size_t sz = syms.size();
     GCStackRoot<StringVector> ans(CXXR_NEW(StringVector(sz)));
     for (unsigned int i = 0; i < sz; ++i)
-	(*ans)[i] = const_cast<CachedString*>(syms[i]->name());
+	(*ans)[i] = const_cast<String*>(syms[i]->name());
     sortVector(ans, FALSE);
     return ans;
 }

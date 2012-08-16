@@ -32,7 +32,7 @@ SOURCES_C = complex.c inlined.c
 SOURCES_CXX = \
 	ArgList.cpp ArgMatcher.cpp \
 	BinaryFunction.cpp Browser.cpp BuiltInFunction.cpp ByteCode.cpp \
-	CConverters.cpp CachedString.cpp CellPool.cpp Closure.cpp \
+	CConverters.cpp CellPool.cpp Closure.cpp \
 	ClosureContext.cpp CommandLineArgs.cpp ComplexVector.cpp ConsCell.cpp \
 	DotInternal.cpp DottedArgs.cpp \
 	Environment.cpp Evaluator.cpp Evaluator_Context.cpp Expression.cpp \
@@ -49,7 +49,7 @@ SOURCES_CXX = \
         RealVector.cpp Renviron.cpp ReturnBailout.cpp \
         S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp StdFrame.cpp \
         String.cpp StringVector.cpp Subscripting.cpp Symbol.cpp \
-	UnaryFunction.cpp UncachedString.cpp \
+	UnaryFunction.cpp \
         VectorBase.cpp \
         WeakRef.cpp \
 	apply.cpp agrep.cpp arithmetic.cpp array.cpp attrib.cpp \

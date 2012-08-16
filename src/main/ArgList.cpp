@@ -85,7 +85,8 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
 		} else if (isMissingArgument(sym, env->frame())) {
 		    if (allow_missing)
 			cell = PairList::cons(Symbol::missingArgument(), 0, tag);
-		    else Rf_error(_("'%s' is missing"), sym->name()->c_str());
+		    else Rf_error(_("'%s' is missing"),
+				  sym->name()->c_str());
 		}
 	    }
 	    if (!cell) {

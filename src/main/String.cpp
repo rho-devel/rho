@@ -40,49 +40,73 @@
 #include "CXXR/String.h"
 
 #include <algorithm>
-#include "boost/lambda/lambda.hpp"
-#include "R_ext/Error.h"
-#include "CXXR/UncachedString.h"
+#include <boost/lambda/lambda.hpp>
 
-using namespace std;
+#include "CXXR/errors.h"
+
 using namespace CXXR;
 
 namespace CXXR {
     namespace ForceNonInline {
-	int (*HASHVALUEp)(SEXP x) = HASHVALUE;
 	int (*ENC_KNOWNp)(const SEXP x) = ENC_KNOWN;
 	int (*IS_BYTESp)(const SEXP x) = IS_BYTES;
 	Rboolean (*IS_LATIN1p)(const SEXP x) = IS_LATIN1;
 	Rboolean (*IS_UTF8p)(const SEXP x) = IS_UTF8;
 	const char* (*R_CHARp)(SEXP x) = R_CHAR;
+	SEXP (*mkCharp)(const char*) = Rf_mkChar;
+	SEXP (*mkCharCEp)(const char*, cetype_t) = Rf_mkCharCE;
+	SEXP (*mkCharLenp)(const char*, int) = Rf_mkCharLen;
     }
 }
 
-GCRoot<String> String::s_na(expose(new UncachedString("NA", CE_NATIVE)));
+std::tr1::hash<std::string> String::Hasher::s_string_hasher;
+
+String::map* String::s_cache = 0;
+std::string* String::s_na_string;
+String* String::s_na;
+String* String::s_blank;
+
 SEXP R_NaString = String::NA();
+SEXP R_BlankString = 0;
 
 // String::s_blank and R_BlankString are defined in Symbol.cpp to
 // enforce initialization order.
 
-String::String(size_t sz, cetype_t encoding)
-    : VectorBase(CHARSXP, sz), m_c_str(0), m_hash(-1)
-{
-    switch(encoding) {
-    case CE_NATIVE:
-    case CE_UTF8:
-    case CE_LATIN1:
-    case CE_BYTES:
-	m_encoding = encoding;
-	break;
-    default:
-	error("character encoding %d not permitted here", encoding);
-    }
-}
-
 // String::Comparator::operator()(const String*, const String*) is in
 // sort.cpp
 
-// int hash() const is in envir.cpp (for the time being)
+String::String(map::value_type* key_val_pr)
+    : VectorBase(CHARSXP, key_val_pr ? key_val_pr->first.first.size() : 2),
+      m_key_val_pr(key_val_pr), m_string(s_na_string), m_encoding(CE_NATIVE),
+      m_symbol(0)
+{
+    if (key_val_pr) {
+	m_string = &key_val_pr->first.first;
+	m_encoding = key_val_pr->first.second;
+	switch(m_encoding) {
+	case CE_NATIVE:
+	case CE_UTF8:
+	case CE_LATIN1:
+	case CE_BYTES:
+	    break;
+	default:
+	    Rf_error("character encoding %d not permitted here", m_encoding);
+	}
+    }
+}
+
+String::~String()
+{
+    // During program exit, s_cache may already have been deleted:
+    if (s_cache) {
+	// Must copy the key, because some implementations may,
+	// having deleted the cache entry pointed to by
+	// m_key_val_pr, continue looking for other entries with
+	// the given key.
+	key k = m_key_val_pr->first;
+	s_cache->erase(k);
+    }
+}
 
 namespace {
     // Used in GPBits2Encoding() and packGPBits():
@@ -100,6 +124,67 @@ cetype_t String::GPBits2Encoding(unsigned int gpbits)
     if ((gpbits & BYTES_MASK) != 0)
 	return CE_BYTES;
     return CE_NATIVE;
+}
+
+void String::cleanup()
+{
+    // Clearing s_cache avoids valgrind 'possibly lost' reports on exit:
+    s_cache->clear();
+    s_cache = 0;
+}
+
+void String::initialize()
+{
+    static map the_map;
+    s_cache = &the_map;
+    static std::string na_string("NA");
+    s_na_string = &na_string;
+    static GCRoot<String> na(CXXR_NEW(String(0)));
+    s_na = na.get();
+    static GCRoot<String> blank(String::obtain(""));
+    s_blank = blank.get();
+    R_BlankString = s_blank;
+}
+    
+bool CXXR::isASCII(const std::string& str)
+{
+    using namespace boost::lambda;
+    // Beware of the iterator dereferencing to a *signed* char, hence
+    // the bitwise test:
+    std::string::const_iterator it
+	= std::find_if(str.begin(), str.end(), _1 & 0x80);
+    return it == str.end();
+}
+
+String* String::obtain(const std::string& str, cetype_t encoding)
+{
+    // This will be checked again when we actually construct the
+    // String, but we precheck now so that we don't create an
+    // invalid cache key:
+    switch(encoding) {
+    case CE_NATIVE:
+    case CE_UTF8:
+    case CE_LATIN1:
+    case CE_BYTES:
+	break;
+    default:
+        Rf_error("unknown encoding: %d", encoding);
+    }
+    if (CXXR::isASCII(str))
+	encoding = CE_NATIVE;
+    std::pair<map::iterator, bool> pr
+	= s_cache->insert(map::value_type(key(str, encoding), 0));
+    map::iterator it = pr.first;
+    if (pr.second) {
+	try {
+	    map::value_type& val = *it;
+	    val.second = expose(new String(&val));
+	} catch (...) {
+	    s_cache->erase(it);
+	    throw;
+	}
+    }
+    return (*it).second;
 }
 
 unsigned int String::packGPBits() const
@@ -121,12 +206,26 @@ unsigned int String::packGPBits() const
     return ans;
 }
 
-bool CXXR::isASCII(const std::string& str)
+const char* String::typeName() const
 {
-    using namespace boost::lambda;
-    // Beware of the iterator dereferencing to a *signed* char, hence
-    // the bitwise test:
-    std::string::const_iterator it
-	= std::find_if(str.begin(), str.end(), _1 & 0x80);
-    return it == str.end();
+    return String::staticTypeName();
+}
+
+// ***** C interface *****
+
+SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding)
+{
+    switch(encoding) {
+    case CE_NATIVE:
+    case CE_UTF8:
+    case CE_LATIN1:
+    case CE_BYTES:
+    case CE_SYMBOL:
+    case CE_ANY:
+	break;
+    default:
+	Rf_error(_("unknown encoding: %d"), encoding);
+    }
+    std::string str(text, length);
+    return String::obtain(str, encoding);
 }

@@ -49,14 +49,14 @@ namespace {
 int main()
 {
     GCStackRoot<StringVector> sv(CXXR_NEW(StringVector(4)));
-    (*sv)[0] = CachedString::obtain("fee");
-    (*sv)[1] = CachedString::obtain("fie");
-    (*sv)[2] = CachedString::obtain("fo");
-    (*sv)[3] = CachedString::obtain("fum");
+    (*sv)[0] = String::obtain("fee");
+    (*sv)[1] = String::obtain("fie");
+    (*sv)[2] = String::obtain("fo");
+    (*sv)[3] = String::obtain("fum");
     const char* names[] = {"I", "II", "III", "IV"};
     GCStackRoot<StringVector> namesv(CXXR_NEW(StringVector(4)));
     for (size_t i = 0; i < 4; ++i)
-	(*namesv)[i] = CachedString::obtain(names[i]);
+	(*namesv)[i] = String::obtain(names[i]);
     sv->setNames(namesv);
     show(sv);
     SETLENGTH(sv, 6);
@@ -69,7 +69,7 @@ int main()
     show(sv);
     SETLENGTH(sv, 3);
     show(sv);
-    (*sv)[1] = CachedString::obtain("foo");
+    (*sv)[1] = String::obtain("foo");
     show(sv);
     return 0;
 }

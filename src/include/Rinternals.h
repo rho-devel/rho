@@ -75,7 +75,6 @@ using std::FILE;
 
 #include <R_ext/libextern.h>
 
-#include "CXXR/CachedString.h"
 #include "CXXR/Closure.h"
 #include "CXXR/ComplexVector.h"
 #include "CXXR/DotInternal.h"
@@ -93,9 +92,9 @@ using std::FILE;
 #include "CXXR/RawVector.h"
 #include "CXXR/RealVector.h"
 #include "CXXR/S4Object.h"
+#include "CXXR/String.h"
 #include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
-#include "CXXR/UncachedString.h"
 #include "CXXR/WeakRef.h"
 /* used for detecting PROTECT issues in memory.c */
 #define NEWSXP      30    /* fresh node creaed in new page */

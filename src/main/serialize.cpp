@@ -1331,15 +1331,8 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    char* cbuf = CallocCharBuf(length);
 	    InString(stream, cbuf, length);
 	    GCStackRoot<> attributes(hasattr ? ReadItem(ref_table, stream) : 0);
-	    if (length > int(strlen(cbuf))) {
-		std::string sstr(cbuf, length);
-		str = CXXR_NEW(UncachedString(sstr, enc));
-		str->unpackGPBits(levs);
-		SET_ATTRIB(str, attributes);
-	    } else {
-		// levs and attributes are ignored for cached strings:
-		str = Rf_mkCharCE(cbuf, enc);
-	    }
+	    // levs and attributes are ignored for cached strings:
+	    str = Rf_mkCharLenCE(cbuf, length, enc);
 	    Free(cbuf);
 	    return str;
 	}

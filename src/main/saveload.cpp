@@ -546,10 +546,8 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	break;
     case CHARSXP:
 	len = m->InInteger(fp, d);
-	s = CXXR_NEW(UncachedString(len)); /* This is not longer correct */
 	R_AllocStringBuffer(len, &(d->buffer));
-	/* skip over the string */
-	/* string = */ m->InString(fp, d);
+	s = String::obtain(m->InString(fp, d));
 	break;
     case REALSXP:
 	len = m->InInteger(fp, d);
@@ -623,7 +621,9 @@ static void RestoreSEXP(SEXP s, FILE *fp, InputRoutines *m, NodeInfo *node, int 
 	len = m->InInteger(fp, d);
 	R_AllocStringBuffer(len, &(d->buffer));
 	/* Better to use a fresh copy in the cache */
-	strcpy(CHAR_RW(s), m->InString(fp, d));
+	// CXXR FIXME
+	// strcpy(CHAR_RW(s), m->InString(fp, d));
+	m->InString(fp, d);  // Just skip the string for the mo.
 	break;
     case REALSXP:
 	len = m->InInteger(fp, d);

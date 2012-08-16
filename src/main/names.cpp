@@ -40,7 +40,7 @@
 #endif
 
 #include <iostream>
-#include "CXXR/CachedString.h"
+
 #include "CXXR/Evaluator_Context.hpp"
 #include "CXXR/GCStackRoot.hpp"
 

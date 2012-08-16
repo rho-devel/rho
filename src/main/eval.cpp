@@ -1923,11 +1923,11 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	// Rebind .Method:
 	GCStackRoot<StringVector> dotmethod(CXXR_NEW(StringVector(2)));
 	(*dotmethod)[0] = (l 
-			   ? const_cast<CachedString*>(l->symbol()->name())
-			   : CachedString::blank());
+			   ? const_cast<String*>(l->symbol()->name())
+			   : String::blank());
 	(*dotmethod)[1] = (r
-			   ? const_cast<CachedString*>(r->symbol()->name())
-			   : CachedString::blank());
+			   ? const_cast<String*>(r->symbol()->name())
+			   : String::blank());
 	supp_frame->bind(DotMethodSymbol, dotmethod);
     }
 

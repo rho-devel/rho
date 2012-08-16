@@ -638,7 +638,7 @@ int Seql(SEXP a, SEXP b)
       as unknown. */
     if (a == b) return 1;
     /* Leave this to compiler to optimize */
-    if (IS_CACHED(a) && IS_CACHED(b) && ENC_KNOWN(a) == ENC_KNOWN(b))
+    if (ENC_KNOWN(a) == ENC_KNOWN(b))
 	return 0;
     else {
 	const void* vmax = vmaxget();

@@ -140,7 +140,6 @@ extern0 SEXP    R_dot_GenericDefEnv;  /* ".GenericDefEnv" */
 
 int IS_BYTES(SEXP x);
 void SET_BYTES(SEXP x);
-int IS_CACHED(SEXP x);
 /* macros and declarations for managing CHARSXP cache */
 /* Not implemented within CXXR: */
 /*#define USE_ATTRIB_FIELD_FOR_CHARSXP_CACHE_CHAINS */

@@ -85,8 +85,7 @@ void ArgMatcher::handleDots(Frame* frame, SuppliedList* supplied_list)
     }
 }
 	     
-bool ArgMatcher::isPrefix(const CachedString* shorter,
-			  const CachedString* longer)
+bool ArgMatcher::isPrefix(const String* shorter, const String* longer)
 {
     const string& shortstr = shorter->stdstring();
     const string& longstr = longer->stdstring();
@@ -140,7 +139,7 @@ void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const
 	for (const PairList* s = supplied->list(); s; s = s->tail()) {
 	    ++sindex;
 	    const Symbol* tag = static_cast<const Symbol*>(s->tag());
-	    const CachedString* name = (tag ? tag->name() : 0);
+	    const String* name = (tag ? tag->name() : 0);
 	    RObject* value = s->car();
 	    FormalMap::const_iterator fmit 
 		= (name ? m_formal_index.lower_bound(name)
@@ -166,7 +165,7 @@ void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const
 	    SuppliedList::iterator next = slit;
 	    ++next;
 	    const SuppliedData& supplied_data = *slit;
-	    const CachedString* supplied_name
+	    const String* supplied_name
 		= (supplied_data.tag ? supplied_data.tag->name() : 0);
 	    FormalMap::const_iterator fmit = supplied_data.fm_iter;
 	    // Within m_formal_index, skip formals formals following
@@ -196,7 +195,8 @@ void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const
 		// Partial match is OK:
 		if (s_warn_on_partial_match)
 		    Rf_warning(_("partial argument match of '%s' to '%s'"),
-			       supplied_name->c_str(), (*fmit).first->c_str());
+			       supplied_name->c_str(),
+			       (*fmit).first->c_str());
 		const FormalData& fdata = m_formal_data[findex];
 		formals_status[findex] = PARTIAL_TAG;
 		makeBinding(target_env, fdata, supplied_data.value);

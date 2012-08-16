@@ -38,10 +38,10 @@
  */
 
 #include "CXXR/DotInternal.h"
+
 #include "Internal.h"
 
 #include "CXXR/BuiltInFunction.h"
-#include "CXXR/CachedString.h"
 #include "CXXR/Expression.h"
 #include "CXXR/errors.h"
 

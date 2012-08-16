@@ -28,14 +28,14 @@ include $(top_builddir)/Makeconf
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 CXXR_HS = \
-  BuiltInFunction.h CachedString.h Closure.h ComplexVector.h ConsCell.h \
+  BuiltInFunction.h Closure.h ComplexVector.h ConsCell.h \
   DotInternal.h \
   Environment.h Evaluator.h Expression.h ExpressionVector.h ExternalPointer.h \
   FunctionBase.h GCRoot.h IntVector.h \
   ListVector.h LogicalVector.h PairList.h Promise.h ProtectStack.h \
   RAllocStack.h RObject.h RawVector.h RealVector.h \
   S4Object.h SEXPTYPE.h String.h StringVector.h Symbol.h \
-  UncachedString.h VectorBase.h WeakRef.h errors.h uncxxr.h
+  VectorBase.h WeakRef.h errors.h uncxxr.h
 
 CXXR_HPPS = \
   Allocator.hpp ArgList.hpp ArgMatcher.hpp BinaryFunction.hpp CellPool.hpp \
