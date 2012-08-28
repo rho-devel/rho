@@ -91,6 +91,10 @@ sparseMatrix(i = ep, j = ep, p, x, dims, dimnames,
   \code{\link{Diagonal}} for (block-)diagonal and
   \code{\link{bandSparse}} for banded sparse matrix constructors.
 
+  The standard \R \code{\link{xtabs}(*, sparse=TRUE)}, for sparse tables
+  and \code{\link{sparse.model.matrix}()} for building sparse model
+  matrices.
+
   Consider \code{\linkS4class{CsparseMatrix}} and similar class
   definition help files.
 }

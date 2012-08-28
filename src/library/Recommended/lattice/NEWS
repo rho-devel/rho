@@ -21,6 +21,13 @@ Changes in lattice 0.20
  o "spline" added as a possibly 'type' in panel.xyplot(), following a
    suggestion from Patrick Breheny.
 
+ o Support for traditional graphics-like log scale annotation, using
+   'scales=list(equispaced.log = FALSE)'.
+
+ o parallel() deprecated in favour of parallelplot(), to avoid
+   potential confusion with the parallel package.
+
+
 Changes in lattice 0.19
 =======================
 

@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2011   The R Development Core Team
+ *  Copyright (C) 1998-2011   The R Core Team
  *  Copyright (C) 2002-2005  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -51,6 +51,7 @@
 #include <float.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <string.h>
 
 #define __MAIN__
@@ -160,6 +161,7 @@ attribute_hidden SEXP	R_FreeSEXP;	    /* Cons cell free list */
 attribute_hidden int	R_BrowseLines	= 0;	/* lines/per call in browser */
 attribute_hidden Rboolean R_KeepSource	= FALSE;	/* options(keep.source) */
 attribute_hidden int	R_WarnLength	= 1000;	/* Error/warning max length */
+attribute_hidden int    R_nwarnings     = 50;
 attribute_hidden int	R_CStackDir	= 1;	/* C stack direction */
 attribute_hidden Rboolean R_WarnEscapes  = TRUE;   /* Warn on unrecognized escapes */
 attribute_hidden Rboolean R_Quiet	= FALSE;	/* Be as quiet as possible */
@@ -466,12 +468,14 @@ void R_ReplDLLinit(void)
     DLLbufp = DLLbuf;
 }
 
-
+/* FIXME: this should be re-written to use Rf_ReplIteration
+   since it gets out of sync with it over time */
 int R_ReplDLLdo1(void)
 {
     int c;
     ParseStatus status;
-    SEXP rho = R_GlobalEnv;
+    SEXP rho = R_GlobalEnv, lastExpr;
+    Rboolean wasDisplayed = FALSE;
 
     if(!*DLLbufp) {
 	R_Busy(0);
@@ -500,13 +504,16 @@ int R_ReplDLLdo1(void)
 	resetTimeLimits();
 	PROTECT(R_CurrentExpr);
 	R_Busy(1);
+	lastExpr = R_CurrentExpr;
 	R_CurrentExpr = eval(R_CurrentExpr, rho);
 	SET_SYMVALUE(R_LastvalueSymbol, R_CurrentExpr);
-	UNPROTECT(1);
+	wasDisplayed = R_Visible;
 	if (R_Visible)
 	    PrintValueEnv(R_CurrentExpr, rho);
 	if (R_CollectWarnings)
 	    PrintWarnings();
+	Rf_callToplevelHandlers(lastExpr, R_CurrentExpr, TRUE, wasDisplayed);
+	UNPROTECT(1);
 	R_IoBufferWriteReset(&R_ConsoleIob);
 	R_Busy(0);
 	prompt_type = 1;
@@ -820,7 +827,7 @@ void setup_Rmainloop(void)
 #ifdef ENABLE_NLS
     char localedir[PATH_MAX+20];
 #endif
-    char deferred_warnings[6][250];
+    char deferred_warnings[11][250];
     volatile int ndeferred_warnings = 0;
 
     InitConnections(); /* needed to get any output at all */
@@ -1067,10 +1074,8 @@ void setup_Rmainloop(void)
 	PrintWarnings();
     }
 
-#ifdef BYTECODE
     /* trying to do this earlier seems to run into bootstrapping issues. */
     R_init_jit_enabled();
-#endif
 }
 
 extern SA_TYPE SaveAction; /* from src/main/startup.c */

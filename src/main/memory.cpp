@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2011  The R Development Core Team.
+ *  Copyright (C) 1998--2012  The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -261,7 +261,10 @@ static void gc_end_timing(void)
 	R_getProcTime(times);
 	delta = R_getClockIncrement();
 
-	/* add delta to compensate for timer resolution */
+	/* add delta to compensate for timer resolution:
+	   NB: as all current Unix-alike systems use getrusage, 
+	   this may over-compensate.
+	 */
 	gctimes[0] += times[0] - gcstarttimes[0] + delta;
 	gctimes[1] += times[1] - gcstarttimes[1] + delta;
 	gctimes[2] += times[2] - gcstarttimes[2] + delta;

@@ -14,7 +14,7 @@
   applied to models constructed using any smooths, including user defined smooths.
 }
 \usage{
-gam.side(sm,Xp,tol=.Machine$double.eps^.5)
+gam.side(sm,Xp,tol=.Machine$double.eps^.5,with.pen=FALSE)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -22,6 +22,8 @@ gam.side(sm,Xp,tol=.Machine$double.eps^.5)
   \code{\link{smooth.construct}}.}
   \item{Xp}{The model matrix for the strictly parametric model components.}
   \item{tol}{The tolerance to use when assessing linear dependence of smooths.}
+  \item{with.pen}{Should the computation of dependence consider the penalties or not. 
+   Doing so will lead to fewer constraints.}
 }
 \details{ Models such as  \code{y~s(x)+s(z)+s(x,z)} can be estimated by
   \code{\link{gam}}, but require identifiability constraints to be applied, to

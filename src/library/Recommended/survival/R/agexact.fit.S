@@ -1,4 +1,4 @@
-# $Id: agexact.fit.S 11166 2008-11-24 22:10:34Z therneau $
+# $Id: agexact.fit.S 11516 2012-04-24 12:49:14Z therneau $
 agexact.fit <- function(x, y, strata, offset, init, control,
 			  weights, method, rownames)
     {
@@ -49,7 +49,7 @@ agexact.fit <- function(x, y, strata, offset, init, control,
 		   as.integer(nvar), sstart, sstop,
 		   sstat,
 		   x= x[sorted,],
-		   as.double(offset[sorted] - mean(offset)),
+		   as.double(offset[sorted]),
 		   newstrat,
 		   means = double(nvar),
 		   coef= as.double(init),

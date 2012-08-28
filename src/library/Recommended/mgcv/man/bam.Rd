@@ -15,9 +15,10 @@ for large datasets. \code{bam} can also compute on a cluster set up by the \link
 }
 \usage{
 bam(formula,family=gaussian(),data=list(),weights=NULL,subset=NULL,
-    na.action=na.omit, offset=NULL,method="REML",control=list(),
+    na.action=na.omit, offset=NULL,method="fREML",control=list(),
     scale=0,gamma=1,knots=NULL,sp=NULL,min.sp=NULL,paraPen=NULL,
-    chunk.size=10000,rho=0,sparse=FALSE,cluster=NULL,gc.level=1,...)
+    chunk.size=10000,rho=0,sparse=FALSE,cluster=NULL,gc.level=1,
+    use.chol=FALSE,samfrac=1,...)
 }
 %- maybe also `usage' for other objects documented here.
 
@@ -60,7 +61,8 @@ included in \code{formula}: this conforms to the behaviour of
 \item{method}{The smoothing parameter estimation method. \code{"GCV.Cp"} to use GCV for unknown scale parameter and
 Mallows' Cp/UBRE/AIC for known scale. \code{"GACV.Cp"} is equivalent, but using GACV in place of GCV. \code{"REML"} 
 for REML estimation, including of unknown scale, \code{"P-REML"} for REML estimation, but using a Pearson estimate 
-of the scale. \code{"ML"} and \code{"P-ML"} are similar, but using maximum likelihood in place of REML. }
+of the scale. \code{"ML"} and \code{"P-ML"} are similar, but using maximum likelihood in place of REML. Default 
+\code{"fREML"} uses fast REML computation.}
 
 \item{control}{A list of fit control parameters to replace defaults returned by 
 \code{\link{gam.control}}. Any control parameters not supplied stay at their default values.}
@@ -116,6 +118,14 @@ single machine). See details and example code.
 }
 \item{gc.level}{to keep the memory footprint down, it helps to call the garbage collector often, but this takes 
 a substatial amount of time. Setting this to zero means that garbage collection only happens when R decides it should. Setting to 2 gives frequent garbage collection. 1 is in between.}
+
+\item{use.chol}{By default \code{bam} uses a very stable QR update approach to obtaining the QR decomposition
+of the model matrix. For well conditioned models an alternative accumulates the crossproduct of the model matrix
+and then finds its Choleski decomposition, at the end. This is somewhat more efficient, computationally.}
+
+\item{samfrac}{For very large sample size Generalized additive models the number of iterations needed for the model fit can 
+be reduced by first fitting a model to a random sample of the data, and using the results to supply starting values. This initial fit is run with sloppy convergence tolerances, so is typically very low cost. \code{samfrac} is the sampling fraction to use. 0.1 is often reasonable. }
+
 \item{...}{further arguments for 
 passing on e.g. to \code{gam.fit} (such as \code{mustart}). }
 
@@ -174,7 +184,7 @@ You must have more unique combinations of covariates than the model has total
 parameters. (Total parameters is sum of basis dimensions plus sum of non-spline 
 terms less the number of spline terms). 
 
-This routine is less stable than `gam' for a the same dataset.
+This routine is less stable than `gam' for the same dataset.
 
 The negbin family is only supported for the *known theta* case.
 
@@ -184,18 +194,18 @@ The negbin family is only supported for the *known theta* case.
 \code{\link{linear.functional.terms}}, \code{\link{s}},
 \code{\link{te}} \code{\link{predict.gam}},
 \code{\link{plot.gam}}, \code{\link{summary.gam}}, \code{\link{gam.side}},
-\code{\link{gam.selection}},\code{\link{mgcv}}, \code{\link{gam.control}}
+\code{\link{gam.selection}}, \code{\link{gam.control}}
 \code{\link{gam.check}}, \code{\link{linear.functional.terms}} \code{\link{negbin}}, \code{\link{magic}},\code{\link{vis.gam}}
  }
 
 \examples{
 library(mgcv)
-## following is not *very* large, for obvious reasons...
+## Some not very large examples...
 
-dat <- gamSim(1,n=15000,dist="normal",scale=20)
-bs <- "ps";k <- 20
+dat <- gamSim(1,n=40000,dist="normal",scale=20)
+bs <- "cr";k <- 20
 b <- bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
-           s(x3,bs=bs,k=k),data=dat,method="REML")
+           s(x3,bs=bs,k=k),data=dat)
 summary(b)
 plot(b,pages=1,rug=FALSE)  ## plot smooths, but not rug
 plot(b,pages=1,rug=FALSE,seWithMean=TRUE) ## `with intercept' CIs
@@ -206,12 +216,13 @@ summary(ba)
 
 ## A Poisson example...
 
+k <- 15
 dat <- gamSim(1,n=15000,dist="poisson",scale=.1)
 system.time(b1 <- bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
-            s(x3,bs=bs,k=k),data=dat,method="ML",family=poisson()))
+            s(x3,bs=bs,k=k),data=dat,family=poisson()))
 b1
 
-## repeat on a cluster
+## repeat on a cluster (need much larger n to be worthwhile!)
 require(parallel)  
 nc <- 2   ## cluster size, set for example portability
 if (detectCores()>1) { ## no point otherwise
@@ -220,20 +231,23 @@ if (detectCores()>1) { ## no point otherwise
 } else cl <- NULL
   
 system.time(b2 <- bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
-       s(x3,bs=bs,k=k),data=dat,method="ML",family=poisson(),cluster=cl))
+       s(x3,bs=bs,k=k),data=dat,family=poisson(),cluster=cl))
 
 ## ... first call has startup overheads, repeat shows speed up...
 
 system.time(b2 <- bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
-       s(x3,bs=bs,k=k),data=dat,method="ML",family=poisson(),cluster=cl))
+       s(x3,bs=bs,k=k),data=dat,family=poisson(),cluster=cl))
+
+fv <- predict(b2,cluster=cl) ## parallel prediction
 
 if (!is.null(cl)) stopCluster(cl)
 b2
 
-## Sparse smoothers example...
-b3 <- bam(y ~ te(x0,x1,bs="ps",k=10,np=FALSE)+s(x2,bs="ps",k=30)+
-            s(x3,bs="ps",k=30),data=dat,method="ML",
-            family=poisson(),sparse=TRUE)
+## Sparse smoother example...
+dat <- gamSim(1,n=10000,dist="poisson",scale=.1)
+system.time( b3 <- bam(y ~ te(x0,x1,bs="ps",k=10,np=FALSE)+
+             s(x2,bs="ps",k=30)+s(x3,bs="ps",k=30),data=dat,
+             method="REML",family=poisson(),sparse=TRUE))
 b3
 
 }

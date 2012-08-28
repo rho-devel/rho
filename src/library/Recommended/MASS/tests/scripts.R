@@ -13,10 +13,9 @@ runone <- function(f)
     outfile <- paste(basename(f), "out", sep = "")
     failfile <- paste(outfile, "fail", sep=".")
     unlink(c(outfile, failfile))
-    cmd <- paste(shQuote(file.path(R.home(), "bin", "R")),
-                 "CMD BATCH --no-save",
-                 shQuote(f), shQuote(outfile))
-    res <- system(cmd)
+    res <- system2(file.path(R.home("bin"), "R"),
+                   c("CMD BATCH --vanilla", shQuote(f), shQuote(outfile)),
+                   env = paste("R_LIBS", Sys.getenv("R_LIBS"), sep = "="))
     if (res) {
         cat(tail(readLines(outfile), 20), sep="\n")
         file.rename(outfile, failfile)

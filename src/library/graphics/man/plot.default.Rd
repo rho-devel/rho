@@ -1,6 +1,6 @@
 % File src/library/graphics/man/plotdefault.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{plot.default}
@@ -24,8 +24,9 @@
   \item{type}{1-character string giving the type of plot desired.  The
     following values are possible, for details, see \code{\link{plot}}:
     \code{"p"} for points, \code{"l"} for lines,
+    \code{"b"} for both points and lines,
+    \code{"c"} for empty points joined by lines,    
     \code{"o"} for overplotted points and lines,
-    \code{"b"}, \code{"c"}) for (empty if \code{"c"}) points joined by lines,
     \code{"s"} and \code{"S"} for stair steps and
     \code{"h"} for histogram-like vertical lines.  Finally,
     \code{"n"} does not produce any points or lines.}
@@ -84,13 +85,25 @@
       default.  This works as a multiple of \code{\link{par}("cex")}.
       \code{NULL} and \code{NA} are equivalent to \code{1.0}.  Note that
       this does not affect annotation: see below.}
-    \item{\code{lty}}{the line type, see \code{\link{par}}.}
+    \item{\code{lty}}{a vector of line types, see \code{\link{par}}.}
     \item{\code{cex.main}, \code{col.lab}, \code{font.sub},
       etc}{settings for main- and sub-title and axis annotation, see
       \code{\link{title}} and \code{\link{par}}.}
-    \item{\code{lwd}}{the line width, see \code{\link{par}}.}
+    \item{\code{lwd}}{a vector of line widths, see \code{\link{par}}.}
   }
 }
+\note{
+  The presence of \code{panel.first} and \code{panel.last} is a
+  historical anomaly: default plots do not have \sQuote{panels}, unlike
+  e.g. \code{\link{pairs}} plots.  For more control, use lower-level
+  plotting functions: \code{plot.default} calls in turn some of
+  \code{\link{plot.new}}, \code{\link{plot.window}},
+  \code{\link{plot.xy}}, \code{\link{axis}}, \code{\link{box}} and
+  \code{\link{title}}, and plots can be built up by calling these
+  individually, or by calling \code{plot(type = "n")} and adding further
+  elements.
+}
+
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.

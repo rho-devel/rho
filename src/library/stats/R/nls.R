@@ -4,7 +4,7 @@
 #  Copyright 1999-1999 Saikat DebRoy <saikat$stat.wisc.edu>,
 #                      Douglas M. Bates <bates$stat.wisc.edu>,
 #                      Jose C. Pinheiro <jcp$research.bell-labs.com>
-#  Copyright 2005-7    The R Development Core Team
+#  Copyright 2005-7    The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -723,8 +723,8 @@ print.summary.nls <-
             symbolic.cor = x$symbolic.cor,
             signif.stars = getOption("show.signif.stars"), ...)
 {
-    cat("\nFormula: ")
-    cat(paste(deparse(x$formula), sep = "\n", collapse = "\n"), "\n", sep = "")
+    cat("\nFormula: ",
+	paste(deparse(x$formula), sep = "\n", collapse = "\n"), "\n", sep = "")
     df <- x$df
     rdf <- df[2L]
     cat("\nParameters:\n")

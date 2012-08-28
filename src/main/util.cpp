@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2011  The R Development Core Team
+ *  Copyright (C) 1997--2012  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -234,7 +234,7 @@ TypeTable[] = {
     { "expression",	EXPRSXP	   },
     { "list",		VECSXP	   },
     { "externalptr",	EXTPTRSXP  },
-    { "bytecode",	BCODESXP   }, // CR (2.13.1-) has ifdef BYTECODE here
+    { "bytecode",	BCODESXP   },
     { "weakref",	WEAKREFSXP },
     { "raw",		RAWSXP },
     { "S4",		S4SXP },
@@ -291,7 +291,7 @@ SEXP type2symbol(SEXPTYPE t)
        character string and to the symbol would be better */
     for (i = 0; TypeTable[i].str; i++) {
 	if (TypeTable[i].type == CXXRCONSTRUCT(int, t))
-	    return install(CXXRNOCAST(char *) TypeTable[i].str);
+	    return install(CXXRNOCAST(const char *) TypeTable[i].str);
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2symbol");
     return R_NilValue; /* for -Wall */
@@ -519,7 +519,7 @@ void attribute_hidden setRVector(double * vec, int len, double val)
 	vec[i] = val;
 }
 
-
+/* unused in R, in Rinternals.h */
 void setSVector(SEXP * vec, int len, SEXP val)
 {
     int i;
@@ -1283,28 +1283,11 @@ Rboolean mbcsValid(const char *str)
     return  CXXRCONSTRUCT(Rboolean, (int(mbstowcs(NULL, str, 0)) >= 0));
 }
 
-#include "pcre.h"
-/* This changed at 8.13: we don't allow < 8.0 */
-#if  PCRE_MAJOR > 8 || PCRE_MINOR >= 13
-extern "C" {
-    extern int _pcre_valid_utf8(const char *string, int length, int *erroroffset);
-}
-
+#include "valid_utf8.h"
 Rboolean utf8Valid(const char *str)
 {
-    int errp;
-    return  CXXRCONSTRUCT(Rboolean, (_pcre_valid_utf8(str, int( strlen(str)), &errp) == 0));
+    return  CXXRCONSTRUCT(Rboolean, valid_utf8(str, strlen(str)) == 0);
 }
-#else
-extern "C" {
-    extern int _pcre_valid_utf8(const char *string, int length);
-}
-
-Rboolean utf8Valid(const char *str)
-{
-    return  CXXRCONSTRUCT(Rboolean, (_pcre_valid_utf8(str, int( strlen(str))) < 0));
-}
-#endif
 
 
 /* MBCS-aware versions of common comparisons.  Only used for ASCII c */
@@ -1532,14 +1515,14 @@ double R_strtod4(const char *str, char **endptr, char dec, Rboolean NA)
 	ans = R_NaN;
 	p += 3;
 	goto done;
-    } else if (strncasecmp(p, "Inf", 3) == 0) {
-	ans = R_PosInf;
-	p += 3;
-	goto done;
-    /* C99 specifies this */
+    /* C99 specifies this: must come first to avoid 'inf' match */
     } else if (strncasecmp(p, "infinity", 8) == 0) {
 	ans = R_PosInf;
 	p += 8;
+	goto done;
+    } else if (strncasecmp(p, "Inf", 3) == 0) {
+	ans = R_PosInf;
+	p += 3;
 	goto done;
     }
 
@@ -1652,7 +1635,7 @@ SEXP attribute_hidden do_enc2(SEXP call, SEXP op, SEXP args, SEXP env)
     for (i = 0; i < LENGTH(ans); i++) {
 	el = STRING_ELT(ans, i);
 	if(PRIMVAL(op) && !known_to_be_utf8) { /* enc2utf8 */
-	    if(!IS_UTF8(el) && !strIsASCII(CHAR(el))) {
+	    if(!IS_UTF8(el) && !IS_ASCII(el)) {
 		if (!duped) { PROTECT(ans = duplicate(ans)); duped = TRUE; }
 		SET_STRING_ELT(ans, i, 
 			       mkCharCE(translateCharUTF8(el), CE_UTF8));
@@ -1797,8 +1780,7 @@ SEXP attribute_hidden do_ICUset(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     for (; args != R_NilValue; args = CDR(args)) {
 	SEXP tag = TAG(args);
-	if (!tag)
-	    error(_("invalid argument"));
+	if (isNull(tag)) error(_("all arguments must be named"));
 	const char *thiss = CHAR(PRINTNAME(tag));
 	const char *s;
 

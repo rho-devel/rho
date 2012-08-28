@@ -1,7 +1,9 @@
 % File src/library/stats/man/dist.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Development Team
+% Copyright 1995-2010 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{dist}
 \alias{dist}
@@ -140,7 +142,7 @@ as.dist(m, diag = FALSE, upper = FALSE)
   Springer.
 }
 \seealso{
-  \code{\link[cluster]{daisy}} in the \pkg{cluster} package with more
+  \code{\link[cluster]{daisy}} in the \CRANpkg{cluster} package with more
   possibilities in the case of \emph{mixed} (continuous / categorical)
   variables.
   \code{\link{hclust}}.

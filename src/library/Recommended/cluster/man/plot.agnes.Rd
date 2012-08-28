@@ -84,7 +84,7 @@
 
   Struyf, A., Hubert, M. and Rousseeuw, P.J. (1997)
   Integrating Robust Clustering Techniques in S-PLUS,
-  \emph{Computational Statistics and Data Analysis}, \bold{26}, 17-37.
+  \emph{Computational Statistics and Data Analysis}, \bold{26}, 17--37.
 }
 \seealso{
   \code{\link{agnes}} and \code{\link{agnes.object}};

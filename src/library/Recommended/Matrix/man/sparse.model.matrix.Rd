@@ -8,7 +8,8 @@
 \usage{
 sparse.model.matrix(object, data = environment(object),
                     contrasts.arg = NULL, xlev = NULL, transpose = FALSE,
-                    drop.unused.levels = FALSE, row.names=TRUE, ...)
+                    drop.unused.levels = FALSE, row.names = TRUE,
+                    verbose = FALSE, \dots)
 }
 \arguments{
   \item{object}{an object of an appropriate class.  For the default
@@ -30,6 +31,8 @@ sparse.model.matrix(object, data = environment(object),
     \R's standard (dense) \code{\link{model.matrix}()}.
   }
   \item{row.names}{logical indicating if row names should be used.}
+  \item{verbose}{logical or integer indicating if (and how much)
+    progress output should be printed.}
   \item{\dots}{further arguments passed to or from other methods.}
 }
 \value{
@@ -41,11 +44,6 @@ sparse.model.matrix(object, data = environment(object),
   returns \code{\link[MatrixModels:modelMatrix-class]{modelMatrix}}
   objects with additional slots \code{assign} and \code{contrasts} which
   relate back to the variables used.
-
-  %% FIXME: Drop this eventually (say in early Fall, 2011):
-  As \code{model.Matrix()} used to be part of the \pkg{Matrix} package
-  for a few months in summer 2010, it is currently provided as a stub
-  which loads the \pkg{MatrixModels} package and uses its \code{model.Matrix}.
 }
 \author{Doug Bates and Martin Maechler, with initial suggestions from Tim
   Hesterberg.

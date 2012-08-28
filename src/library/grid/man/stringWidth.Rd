@@ -1,11 +1,13 @@
 % File src/library/grid/man/stringWidth.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
 
 \name{stringWidth}
 \alias{stringWidth}
 \alias{stringHeight}
+\alias{stringAscent}
+\alias{stringDescent}
 \title{Create a Unit Describing the Width and Height of a String or Math
   Expression}
 \description{
@@ -15,6 +17,8 @@
 \usage{
 stringWidth(string)
 stringHeight(string)
+stringAscent(string)
+stringDescent(string)
 }
 \arguments{
   \item{string}{A character vector or a language object (as used for

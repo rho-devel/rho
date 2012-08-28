@@ -49,6 +49,7 @@ using namespace CXXR;
 namespace CXXR {
     namespace ForceNonInline {
 	int (*ENC_KNOWNp)(const SEXP x) = ENC_KNOWN;
+	int (*IS_ASCIIp)(const SEXP x) = IS_ASCII;
 	int (*IS_BYTESp)(const SEXP x) = IS_BYTES;
 	Rboolean (*IS_LATIN1p)(const SEXP x) = IS_LATIN1;
 	Rboolean (*IS_UTF8p)(const SEXP x) = IS_UTF8;
@@ -170,7 +171,8 @@ String* String::obtain(const std::string& str, cetype_t encoding)
     default:
         Rf_error("unknown encoding: %d", encoding);
     }
-    if (CXXR::isASCII(str))
+    bool ascii = CXXR::isASCII(str);
+    if (ascii)
 	encoding = CE_NATIVE;
     std::pair<map::iterator, bool> pr
 	= s_cache->insert(map::value_type(key(str, encoding), 0));
@@ -179,6 +181,7 @@ String* String::obtain(const std::string& str, cetype_t encoding)
 	try {
 	    map::value_type& val = *it;
 	    val.second = expose(new String(&val));
+	    val.second->m_ascii = ascii;
 	} catch (...) {
 	    s_cache->erase(it);
 	    throw;

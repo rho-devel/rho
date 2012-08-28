@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998, 2000, 2003-4  The R Development Core Team
+ *  Copyright (C) 1998, 2000, 2003-4  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -133,9 +133,7 @@ SEXP attribute_hidden do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     else filename = DefaultFileName;
 
-    srcfile = R_NilValue;
     if (x != R_NilValue) {
-
 	if((fp=R_fopen(R_ExpandFileName(filename), "w")) == NULL)
 	    errorcall(call, _("unable to open file"));
 	if (LENGTH(STRING_ELT(fn, 0)) == 0) EdFileUsed++;
@@ -145,12 +143,8 @@ SEXP attribute_hidden do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	for (i = 0; i < LENGTH(src); i++)
 	    fprintf(fp, "%s\n", translateChar(STRING_ELT(src, i)));
 	fclose(fp);
-	PROTECT(Rfn = findFun(install("srcfilecopy"), R_BaseEnv));
-	PROTECT(srcfile = lang3(Rfn, ScalarString(mkChar("<tmp>")), src));
-	PROTECT(srcfile = eval(srcfile, R_BaseEnv));
-	UNPROTECT(4);
+	UNPROTECT(1);
     }
-    PROTECT(srcfile);
 #ifdef Win32
     ti = CAR(args);
 #endif
@@ -196,13 +190,18 @@ SEXP attribute_hidden do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, _("problem with running editor %s"), cmd);
 #endif
 
-    if (!isNull(srcfile)) {
+    if (asLogical(GetOption1(install("keep.source")))) {
 	PROTECT(Rfn = findFun(install("readLines"), R_BaseEnv));
 	PROTECT(src = lang2(Rfn, ScalarString(mkChar(R_ExpandFileName(filename)))));
 	PROTECT(src = eval(src, R_BaseEnv));
-	defineVar(install("lines"), src, srcfile);
-	UNPROTECT(3);
-    }
+	PROTECT(Rfn = findFun(install("srcfilecopy"), R_BaseEnv));
+	PROTECT(srcfile = lang3(Rfn, ScalarString(mkChar("<tmp>")), src));
+	srcfile = eval(srcfile, R_BaseEnv);
+	UNPROTECT(5);
+    } else
+    	srcfile = R_NilValue;
+    PROTECT(srcfile);
+    
     /* <FIXME> setup a context to close the file, and parse and eval
        line by line */
     if((fp = R_fopen(R_ExpandFileName(filename), "r")) == NULL)
@@ -210,7 +209,6 @@ SEXP attribute_hidden do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     x = PROTECT(R_ParseFile(fp, -1, &status, srcfile));
     fclose(fp);
-
 
     if (status != PARSE_OK)
 	errorcall(call,

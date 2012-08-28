@@ -23,9 +23,10 @@ echo -n "Moving file from $iDir .. "
 (cd $iDir && chmod a+r cs.h && mv  cs.h   $MatrixDir)
 tar zxf $tarFile $sDir
 if [ ! -d $sDir ]; then echo "no directory $sDir .. exiting"; exit 2 ; fi
-echo -n "cat'ing files from $sDir ..	 "
+echo -n "cat (and sed)'ing files from $sDir ..	 "
 cd $sDir
-cat cs_*.c | sed -e '1 p' -e '/^#include/d' > $MatrixDir/cs.c
+cat cs_*.c | sed -e '1 p' -e '/^#include/d' -e 's/\bprintf/Rprintf/g' > $MatrixDir/cs.c
+patch -p0 < scripts/cs.patch
 echo '[Ok]'
 echo -n "cleaning up $iDir $sDir ..			 "
 ## keep the [TAB]s here               ^^

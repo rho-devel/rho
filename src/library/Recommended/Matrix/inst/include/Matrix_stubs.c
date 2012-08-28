@@ -1,6 +1,7 @@
 #include <Rconfig.h>
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
+#include <Rversion.h>
 #include "cholmod.h"
 #include "Matrix.h"
 
@@ -612,13 +613,18 @@ M_cholmod_scale(const_CHM_DN S, int scale, CHM_SP A,
 }
 
 
+// for now still *export*  M_Matrix_check_class_etc() -- deprecate it later__FIXME__
 int M_Matrix_check_class_etc(SEXP x, const char **valid)
 {
+#if R_VERSION < R_Version(2, 15, 0) // || R_SVN_REVISION < 57849
     static int(*fun)(SEXP, const char**) = NULL;
     if (fun == NULL)
 	fun = (int(*)(SEXP, const char**))
 	    R_GetCCallable("Matrix", "Matrix_check_class_etc");
     return fun(x, valid);
+#else
+    return R_check_class_etc(x, valid);
+#endif
 }
 
 const char *Matrix_valid_Csparse[] = { MATRIX_VALID_Csparse, ""};

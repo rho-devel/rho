@@ -1,6 +1,6 @@
 % File src/library/methods/man/setClassUnion.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
 
 \name{setClassUnion}
@@ -35,6 +35,12 @@ isClassUnion(Class)
       union.  However, members can be added later on to an existing
       union, as shown in the example below. Class unions can be
       members of other class unions.
+
+      The prototype object in the class union definition will be
+      \code{NULL} if class \code{"NULL"} is a member of the union and
+      the prototype object of the first member class otherwise (as of
+      version 2.15.0 of R; earlier versions had a \code{NULL} prototype even if
+      that was not valid).
 
   Class unions are the only way to create a class that is extended by
       a class whose definition is sealed (for example, the
@@ -96,6 +102,8 @@ is(quote(sqrt(1:10)), "maybeCode")  ## TRUE
 ## strict coerce to "numeric" on the way to satisfying
 ## is(ttt, "maybeNumber").
 stopifnot(identical(w1@.Data, 1:10))
+removeClass("withId")
+removeClass("maybeNumber")
 }
 
 }

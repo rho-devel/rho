@@ -163,6 +163,15 @@ namespace CXXR {
 	 */
 	static cetype_t GPBits2Encoding(unsigned int gpbits);
 
+	/** @brief Is this Stringpure ASCII?
+	 *
+	 * @return true iff the String contains only ASCII characters.
+	 */
+	bool isASCII() const
+	{
+	    return m_ascii;
+	}
+
 	/** @brief Test if 'not available'.
 	 *
 	 * @return true iff this is the 'not available' string.
@@ -269,6 +278,7 @@ namespace CXXR {
 	cetype_t m_encoding;
 	mutable Symbol* m_symbol;  // Pointer to the Symbol object identified
 	  // by this String, or a null pointer if none.
+	bool m_ascii;
 
 	// A null value of key_val_pr is used to designate the NA string:
 	explicit String(map::value_type* key_val_pr);
@@ -329,6 +339,23 @@ extern "C" {
 	const CXXR::String& str = *CXXR::SEXP_downcast<const CXXR::String*>(x);
 	cetype_t enc = str.encoding();
 	return enc == CE_LATIN1 || enc == CE_UTF8;
+    }
+#endif
+
+    /** @brief Is a CXXR::String pure ASCII?
+     *
+     * @param x Pointer to a CXXR::String.
+     *
+     * @return true iff \a x contains only ASCII characters..
+     */
+#ifndef __cplusplus
+    int IS_ASCII(SEXP x);
+#else
+    inline int IS_ASCII(SEXP x)
+    {
+	// Use explicit namespace qualification to prevent ambiguities:
+	const CXXR::String& str = *CXXR::SEXP_downcast<const CXXR::String*>(x);
+	return Rboolean(str.isASCII());
     }
 #endif
 

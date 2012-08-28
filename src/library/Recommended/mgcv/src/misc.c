@@ -109,7 +109,6 @@ void in_out(double *bx, double *by, double *break_code, double *x,double *y,int 
 
 
 
-
 /******************************/
 /* Tweedie distribution stuff */
 /******************************/

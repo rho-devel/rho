@@ -1,6 +1,6 @@
 % File src/library/base/man/library.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
 
 \name{library}
@@ -47,8 +47,7 @@ require(package, lib.loc = NULL, quietly = FALSE,
     \code{TRUE} is returned to indicate success.}
   \item{warn.conflicts}{logical.  If \code{TRUE}, warnings are
     printed about \code{\link{conflicts}} from attaching the new
-    package, unless that package contains an object
-    \code{.conflicts.OK}.  A conflict is a function masking a function,
+    package.  A conflict is a function masking a function,
     or a non-function masking a non-function.
   }
   \item{keep.source}{logical. Now ignored.
@@ -109,12 +108,11 @@ require(package, lib.loc = NULL, quietly = FALSE,
   class \code{"packageInfo"}.
 
   \code{require} returns (invisibly) a logical indicating whether the required
-  package is available.  (Before \R 2.12.0 it could also fail with an
-  error.)
+  package is available.
 }
 \section{Licenses}{
-  Some packages have restrictive licenses, and as from \R 2.11.0 there
-  is a mechanism to ensure that users are aware of such licenses.  If
+  Some packages have restrictive licenses, and there is a mechanism to
+  allow users to be aware of such licenses.  If
   \code{\link{getOption}("checkPackageLicense") == TRUE}, then at first
   use of a package with a not-known-to-be-FOSS (see below) license the
   user is asked to view and accept the license: a list of accepted

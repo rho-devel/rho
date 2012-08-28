@@ -127,91 +127,11 @@ panel.parallel <-
                            ...,
                            identifier = paste(identifier, i, sep = "."))
     }
-
-##     if (is.null(groups))
-##     {
-##         for (i in seq_len(n.r-1))
-##         {
-##             x0 <- (as.numeric(z[subscripts, i]) - lower[i])/dif[i]
-##             x1 <- (as.numeric(z[subscripts, i+1]) - lower[i+1])/dif[i+1]
-##             panel.segments(x0 = x0, y0 = i, x1 = x1, y1 = i + 1,
-##                            col = col,
-##                            lty = lty,
-##                            lwd = lwd,
-##                            alpha = alpha,
-##                            ...)
-##         }        
-##     }
-##     else
-##     {
-##         for (i in seq_along(subscripts))
-##         {
-##             x <- (as.numeric(z[subscripts[i],])-lower)/dif
-##             grid.lines(x = x,
-##                        y = 1:n.r, 
-##                        gp =
-##                        gpar(col = col[gnum[subscripts[i]]],
-##                             lty = lty[gnum[subscripts[i]]],
-##                             lwd = lwd[gnum[subscripts[i]]],
-##                             alpha = alpha[gnum[subscripts[i]]]),
-##                        default.units="native")
-##         }
-##     }
-
     invisible()
 }
 
 
-
-
-
-
-# panel.parallel.old <- function(z, subscripts,
-#                                col=superpose.line$col,
-#                                lwd=superpose.line$lwd,
-#                                lty=superpose.line$lty, ...)
-# {
-
-#     superpose.line <- trellis.par.get("superpose.line")
-#     reference.line <- trellis.par.get("reference.line")
-
-#     n.r <- ncol(z)
-#     n.c <- length(subscripts)
-#     col <- rep(col, length=n.c)
-#     lty <- rep(lty, length=n.c)
-#     lwd <- rep(lwd, length=n.c)
-
-#     llim <- numeric(n.r)
-#     ulim <- numeric(n.r)
-#     dif <- numeric(n.r)
-#     if (n.r > 0)
-#         for(i in 1:n.r) {
-#             grid.lines(x = c(0,1), y = c(i,i),
-#                        default.units = "native",
-#                        gp = gpar(col = reference.line$col,
-#                        lwd = reference.line$lwd,
-#                        lty = reference.line$lty))
-#             llim[i] <- range(as.numeric(z[,i]))[1]
-#             ulim[i] <- range(as.numeric(z[,i]))[2]
-#             dif[i] <- ulim[i] - llim[i]
-#         }
-   
-
-#     for (i in seq(along=subscripts))
-#     {
-#         x <- (as.numeric(z[subscripts[i],,])-llim)/dif
-#         grid.lines(x = x,
-#                    y=1:n.r, 
-#                    gp = gpar(col=col[i], lty=lty[i], lwd=lwd[i]),
-#                    default.units="native")
-#     }
-    
-# }
-
-
-
-
-parallel <- function(x, data, ...) UseMethod("parallel")
+parallelplot <- function(x, data, ...) UseMethod("parallelplot")
 
 ## {
 ##     ocall <- sys.call(sys.parent())
@@ -223,13 +143,13 @@ parallel <- function(x, data, ...) UseMethod("parallel")
 ##         if (!("x" %in% names(ocall))) ocall$x <- formula else warning("'formula' overridden by 'x'")
 ##         eval(ocall, parent.frame())
 ##     }
-##     else UseMethod("parallel")
+##     else UseMethod("parallelplot")
 ## }
 
 
 
-parallel.matrix <-
-parallel.data.frame <-
+parallelplot.matrix <-
+parallelplot.data.frame <-
     function(x, data = NULL, ..., groups = NULL, subset = TRUE)
 {
     ccall <- match.call()
@@ -241,12 +161,12 @@ parallel.data.frame <-
     ##         list(x = x, groups = groups, subset = subset)
     ##     ccall$groups <- groups
     ##     ccall$subset <- subset
-    ccall[[1]] <- quote(lattice::parallel)
+    ccall[[1]] <- quote(lattice::parallelplot)
     eval.parent(ccall)
 }
 
 
-parallel.formula <-
+parallelplot.formula <-
     function(x,
              data = NULL,
              auto.key = FALSE,
@@ -339,7 +259,7 @@ parallel.formula <-
 
     dots <- foo$dots # arguments not processed by trellis.skeleton
     foo <- foo$foo
-    foo$call <- sys.call(sys.parent()); foo$call[[1]] <- quote(parallel)
+    foo$call <- sys.call(sys.parent()); foo$call[[1]] <- quote(parallelplot)
 
     ## Step 2: Compute scales.common (leaving out limits for now)
 
@@ -478,5 +398,21 @@ parallel.formula <-
     foo
 }
 
+
+
+
+parallel <- function(x, data, ...)
+{
+    .Deprecated("parallelplot")
+    ## ccall <- match.call()
+    ## ccall[[1]] <- quote(lattice::parallelplot)
+    ## eval.parent(ccall)
+    UseMethod("parallel")
+}
+
+
+parallel.formula <- parallelplot.formula
+parallel.matrix <- parallelplot.matrix
+parallel.data.frame <- parallelplot.data.frame
 
 

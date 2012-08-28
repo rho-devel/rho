@@ -119,6 +119,8 @@ panel.levelplot <-
              lty = add.line$lty,
              lwd = add.line$lwd,
              border = "transparent",
+             border.lty = 1,
+             border.lwd = 0.1,
              ...,
              col.regions = regions$col,
              alpha.regions = regions$alpha,
@@ -244,8 +246,9 @@ panel.levelplot <-
                     type = "panel", group = group),
                   gp =
                   gpar(fill = zcol,
-                       lwd = 0.00001,
                        col = border,
+                       lwd = border.lwd,
+                       lty = border.lty,
                        alpha = alpha.regions))
 
     if (contour)

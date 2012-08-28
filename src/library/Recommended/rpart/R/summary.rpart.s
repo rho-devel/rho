@@ -60,7 +60,7 @@ summary.rpart <- function(object, cp=0, digits=getOption("digits"), file,  ...)
         tprint <- x$functions$summary(ff$yval[rows], ff$dev[rows],
                                       ff$wt[rows], ylevel, digits)
     else
-        tprint <- x$functions$summary(ff$yval2[rows,,drop=TRUE], ff$dev[rows],
+        tprint <- x$functions$summary(ff$yval2[rows,,drop=FALSE], ff$dev[rows],
                                       ff$wt[rows], ylevel, digits)
 
     for (ii in 1L:length(rows)) {

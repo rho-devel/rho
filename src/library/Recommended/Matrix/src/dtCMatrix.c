@@ -74,8 +74,6 @@ SEXP tRMatrix_validate(SEXP x)
     }
 }
 
-#undef RETURN
-
 SEXP dtCMatrix_matrix_solve(SEXP a, SEXP b, SEXP classed)
 {
     int cl = asLogical(classed);
@@ -96,24 +94,25 @@ SEXP dtCMatrix_matrix_solve(SEXP a, SEXP b, SEXP classed)
 		REAL(cl ? GET_SLOT(b, Matrix_xSym):b), n * nrhs);
     for (j = 0; j < nrhs; j++)
 	lo ? cs_lsolve(A, bx + n * j) : cs_usolve(A, bx + n * j);
-    UNPROTECT(1);
-    return ans;
+    RETURN(ans);
 }
 
 SEXP dtCMatrix_sparse_solve(SEXP a, SEXP b)
 {
     SEXP ans = PROTECT(NEW_OBJECT(MAKE_CLASS("dgCMatrix")));
     CSP A = AS_CSP(a), B = AS_CSP(b);
+    R_CheckStack();
+    if (A->m != A->n || B->n < 1 || A->n < 1 || A->n != B->m)
+	error(_("Dimensions of system to be solved are inconsistent"));
+    // *before* Calloc()ing below [memory leak]!
+
     int *xp = INTEGER(ALLOC_SLOT(ans, Matrix_pSym, INTSXP, (B->n) + 1)),
 	xnz = 10 * B->p[B->n];	/* initial estimate of nnz in x */
     int *ti = Calloc(xnz, int), k, lo = uplo_P(a)[0] == 'L', pos = 0;
     double *tx = Calloc(xnz, double);
-    double  *wrk = Alloca(A->n, double);
-    int *xi = Alloca(2*A->n, int);	/* for cs_reach */
-    R_CheckStack();
+    double  *wrk = Calloc(A->n, double);
+    int *xi = Calloc(2*A->n, int);	/* for cs_reach */
 
-    if (A->m != A->n || B->n < 1 || A->n < 1 || A->n != B->m)
-	error(_("Dimensions of system to be solved are inconsistent"));
     slot_dup(ans, b, Matrix_DimSym);
     SET_DimNames(ans, b);
     xp[0] = 0;
@@ -143,6 +142,9 @@ SEXP dtCMatrix_sparse_solve(SEXP a, SEXP b)
     Memcpy(   REAL(ALLOC_SLOT(ans, Matrix_xSym, REALSXP, xnz)), tx, xnz);
 
     Free(ti); Free(tx);
-    UNPROTECT(1);
-    return ans;
+    Free(wrk); Free(xi);
+
+    RETURN(ans);
 }
+#undef RETURN
+

@@ -1,6 +1,6 @@
 % File src/library/base/man/EnvVar.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2007-2011 R Core Development Team
+% Copyright 2007-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{EnvVar}
@@ -11,7 +11,6 @@
 \alias{R_BROWSER}
 \alias{R_COMPLETION}
 \alias{R_DOC_DIR}
-\alias{DVIPS}
 \alias{R_GSCMD}
 \alias{R_HISTFILE}
 \alias{R_HISTSIZE}
@@ -56,12 +55,6 @@
   some of the more important ones.  Those that set the defaults for
   options are consulted only at startup (as are some of the others).
   \describe{
-#ifdef unix
-    \item{\env{DVIPS}:}{The path to \command{dvips}.  Used at startup to
-      set the default for \code{\link{options}("dvipscmd")} which used
-      by the deprecated \code{\link{help}(help_type="ps")}.
-    }
-#endif
     \item{\env{HOME}:}{The user's \sQuote{home} directory.}
     \item{\env{LANGUAGE}:}{Optional.  The language(s) to be used for
       message translations.  This is consulted when needed.}
@@ -87,7 +80,9 @@
       file: see \link{Startup}.  Consulted at startup.}
     \item{\env{R_GSCMD}:}{Optional.  The path to Ghostscript, used by
       \code{\link{dev2bitmap}}, \code{\link{bitmap}} and
-      \code{\link{embedFonts}}.  Consulted when those functions are invoked.}
+      \code{\link{embedFonts}}.  Consulted when those functions are
+      invoked.  Since it will be treated as if passed to
+      \code{\link{system}}, spaces and shell metacharacters should be escaped.}
     \item{\env{R_HISTFILE}:}{Optional.  The path of the history file:
       see \link{Startup}.  Consulted at startup and when the history is
       saved.}

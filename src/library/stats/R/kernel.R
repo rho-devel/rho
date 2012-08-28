@@ -15,14 +15,14 @@
 #  http://www.r-project.org/Licenses/
 
 ## Copyright (C) 1997-1999  Adrian Trapletti
-## Copyright (C) 1999-2010  The R Development Core Team
+## Copyright (C) 1999-2010  The R Core Team
 ## This version distributed under LGPL (version 2 or later)
 
 
 kernel <- function (coef, m = 2, r, name="unknown")
 {
     mkName <- function(name, args)
-        paste(name,"(", paste(args, collapse=","), ")", sep="")
+        paste0(name,"(", paste(args, collapse=","), ")")
 
     modified.daniell.kernel <- function (m)
     {
@@ -106,7 +106,7 @@ print.tskernel <- function (x, digits = max(3,getOption("digits")-3), ...)
     m <- x$m
     y <- x[i <- -m:m]
     cat(attr(x, "name"), "\n")
-    cat(paste("coef[", format(i), "] = ", format(y, digits = digits), sep = ""),
+    cat(paste0("coef[", format(i), "] = ", format(y, digits = digits)),
         sep = "\n")
     invisible(x)
 }

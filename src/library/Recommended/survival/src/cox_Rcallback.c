@@ -26,7 +26,7 @@ double *penalty;
 int *flag,p; 
 SEXP fexpr,rho;
 {
-    SEXP coxlist, temp,data,index, l2;
+    SEXP coxlist, temp,data,index;
     int i;
 
     /** copy coef into R vector */
@@ -37,8 +37,8 @@ SEXP fexpr,rho;
 	}
 
     /** eval function */
-    PROTECT(l2 = lang2(fexpr,data));
-    PROTECT(coxlist=eval(l2,rho));
+    PROTECT(temp=lang2(fexpr, data));
+    PROTECT(coxlist=eval(temp,rho));
     UNPROTECT(3);
     PROTECT(coxlist);
     /* stick it back in the calling frame */

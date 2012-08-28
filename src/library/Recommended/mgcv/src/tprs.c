@@ -1,4 +1,4 @@
-/* Copyright (C) 2000-2005 Simon N. Wood  simon.wood@r-project.org
+/* Copyright (C) 2000-20012 Simon N. Wood  simon.wood@r-project.org
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License   
@@ -22,6 +22,7 @@ USA.*/
 #include "mgcv.h"
 #include "matrix.h"
 #include "general.h"
+#include <R_ext/BLAS.h>
 /* Code for thin plate regression splines */
 
 #define ROUND(a) ((a)-(int)floor(a)>0.5) ? ((int)floor(a)+1):((int)floor(a))
@@ -30,28 +31,28 @@ void ErrorMessage(char *msg, int fatal);
 
 static inline double eta(int m,int d,double r)
 
-/* the basis functions for a thin plate spline for d- dimensional data, with an mth order 
-   wiggliness penalty. */
+/* The basis functions for a thin plate spline for d- dimensional data, with an mth order 
+   wiggliness penalty. 
+   Note that r is really r^2 (saves a sqrt when d even, and some flops )
+*/
 
-{ /*static int first=1;*/
-  double pi=PI,Ghalf=1.772453850905515881919; /* Gamma function of 0.5 = sqrt(pi) */
+{ double pi=PI,Ghalf=1.772453850905515881919; /* Gamma function of 0.5 = sqrt(pi) */
   double f;
-  int i,k;
-  /*if (first)
-  { first=0;
-    pi=asin(1.0)*2.0; 
-    Ghalf=sqrt(pi);  
-    }*/
-  if (2*m<=d) ErrorMessage(_("You must have 2m>d for a thin plate spline."),1);
+  int i,k,d2,m2;
+
+  d2 = d/2;m2 = 2*m;
+  if (m2 <= d) ErrorMessage(_("You must have 2m>d for a thin plate spline."),1);
   if (r<=0.0) return(0.0); /* this is safe: even if eta() gets inlined so that r comes in in an fp register! */
   if (d%2==0) /* then d even */
-  { if ((m+1+d/2)%2) f= -1.0; else f=1.0; /* finding (-1)^{m+1+d/2} */
-    for (i=0;i<2*m-1;i++) f/=2;  /* dividing by 2^{2m-1} */
-    for (i=0;i<d/2;i++) f/=pi;  /* dividing by pi^{d/2} */
+  { if ((m+1+d2)%2) f= -1.0; else f=1.0; /* finding (-1)^{m+1+d/2} */
+    for (i=0;i<m2-1;i++) f/=2;  /* dividing by 2^{2m-1} */
+    for (i=0;i<d2;i++) f/=pi;  /* dividing by pi^{d/2} */
     for (i=2;i<m;i++) f/=i; /* dividing by (m-1)! */
-    for (i=2;i<=m-d/2;i++) f/=i; /* dividing by (m-d/2)! */
-    f*=log(r);
-    for (i=0;i<2*m-d;i++) f*=r; /* r^2m-d */
+    for (i=2;i<=m-d2;i++) f/=i; /* dividing by (m-d/2)! */
+    /*f*=log(r);*/
+    f *= log(r) * .5; /* since r is really r^2 */
+    /* for (i=0;i<2*m-d;i++) f*=r;*/
+    for (i=0;i<m-d2;i++) f *= r; /* r^2m-d (noting r is really r^2) */
   } else /* d odd */
   { f=Ghalf;
     k=m-(d-1)/2; /* 1/2 - d = d/2 -m */
@@ -60,26 +61,75 @@ static inline double eta(int m,int d,double r)
     for (i=0;i<d-1;i++) f/=pi;
     f /= Ghalf;                /* dividing by (pi^{d/2}) */
     for (i=2;i<m;i++) f/=i;  /* divide by (m-1)! */
-    for (i=0;i<2*m-d;i++) f*=r; 
+    /* for (i=0;i<2*m-d;i++) f*=r;*/
+    for (i=0;i<m-d2-1 ;i++) f *= r; /* note r really r^2 */
+    f *= sqrt(r); 
   } 
   return(f);
 }
 
+
+double eta_const(int m,int d) {
+  /* compute the irrelevant constant for TPS basis */
+  double pi=PI,Ghalf; 
+  double f;
+  int i,k,d2,m2;
+  Ghalf = sqrt(pi); /* Gamma function of 0.5 = sqrt(pi) */
+  d2 = d/2;m2 = 2*m;
+  if (m2 <= d) ErrorMessage(_("You must have 2m>d for a thin plate spline."),1);
+  if (d%2==0) /* then d even */
+  { if ((m+1+d2)%2) f= -1.0; else f=1.0; /* finding (-1)^{m+1+d/2} */
+    for (i=0;i<m2-1;i++) f/=2;  /* dividing by 2^{2m-1} */
+    for (i=0;i<d2;i++) f/=pi;  /* dividing by pi^{d/2} */
+    for (i=2;i<m;i++) f/=i; /* dividing by (m-1)! */
+    for (i=2;i<=m-d2;i++) f/=i; /* dividing by (m-d/2)! */
+  } else /* d odd */
+  { f=Ghalf;
+    k=m-(d-1)/2; /* 1/2 - d = d/2 -m */
+    for (i=0;i<k;i++) f/= -0.5-i; /* f = gamma function of d/2-m */
+    for (i=0;i<m;i++) f/= 4; /* divide by 2^{2m} */
+    for (i=0;i<d-1;i++) f/=pi;
+    f /= Ghalf;                /* dividing by (pi^{d/2}) */
+    for (i=2;i<m;i++) f/=i;  /* divide by (m-1)! */
+  } 
+  return(f);
+}
+
+static inline double fast_eta(int m,int d,double r,double f) {
+  int d2,i;
+  /* computation of eta given constant already in f and r^2 in r */
+  d2 = d/2;
+  if (r<=0.0) return(0.0); /* this is safe: even if eta() gets inlined so that r comes in in an fp register! */
+  if (d%2==0) { /* then d even */
+    f *= log(r) * .5; /* since r is really r^2 */
+    for (i=0;i<m-d2;i++) f *= r; /* r^2m-d (noting r is really r^2) */
+  } else { /* d odd */
+    for (i=0;i<m-d2-1 ;i++) f *= r; /* note r really r^2 */
+    f *= sqrt(r); 
+  } 
+  return(f);
+}
 
 void tpsE(matrix *E,matrix *X,int m,int d)
 
 /* obtains E the tps penalty matrix (and all round weird object). It is assumed that the ith
    row of X contains the co-ordinates of the ith datum. */
 
-{ int i,j,k;
-  double r,x;
+{ int i,j,k,Xr,Xc;
+  double r,x,eta0,**EM,**XMi,**XMj,*xi,*xj;
   (*E)=initmat(X->r,X->r);
-  for (i=0;i<X->r;i++) for (j=0;j<i;j++)
+  EM = E->M;
+  eta0 = eta_const(m,d);
+  XMi = X->M;Xr = X->r;Xc = X->c;
+  for (i=0;i<Xr;i++,XMi++) for (XMj = X->M,j=0;j<i;j++,XMj++)
   { r=0.0;
-    for (k=0;k<X->c;k++) 
-    { x=X->M[i][k]-X->M[j][k];r+=x*x; } 
-    r=sqrt(r);                       /* r= ||x_j-x_i|| where x_k is kth location vector */
-    E->M[i][j]=E->M[j][i]=eta(m,d,r);
+    for (xi= *XMi,xj= *XMj,k=0;k<Xc;k++,xi++,xj++) { 
+      /*x=X->M[i][k]-X->M[j][k];*/
+      x = *xi - *xj;
+      r+=x*x; 
+    } 
+    /*r=sqrt(r);*/                       /* r= ||x_j-x_i||^2 where x_k is kth location vector */
+    EM[i][j]=EM[j][i]=fast_eta(m,d,r,eta0);
   } 
 }
 
@@ -165,7 +215,7 @@ int null_space_dimension(int d, int m)
 }
 
 
-double tps_g(matrix *X,matrix *p,double *x,int d,int m,matrix *b,int constant)
+double tps_g(matrix *X,matrix *p,double *x,int d,int m,double *b,int constant)
 
 /* Evaluates the thin plate spline of dimension d with wiggliness penalty of 
    order m, at location x, g(x), say. Also returns vector b such that g(x)=b'p. 
@@ -188,11 +238,12 @@ double tps_g(matrix *X,matrix *p,double *x,int d,int m,matrix *b,int constant)
 */
 
 { static int sd=0,sm=0,*pin,M;
-  double r,g,z,**XM,*dum,*XMi;
-  int i,j,k,off;
+  static double eta0=1.0;
+  double r,g,z,**XM,*dum,*XMi,*pb;
+  int i,j,k,off,n;
   if (sd==0&&d==0) return(0.0); /* There is nothing to clear up and nothing to calculate */
   if (2*m<=d&&d>0) { m=0;while (2*m<d+2) m++;} 
-  if (sd!=d||sm!=m) /* then re-calculate the penalty null space basis */
+  if (sd!=d||sm!=m) /* then re-calculate the penalty null space basis and eta constant */
   { if (sd>0&&sm>0) 
     { /*for (i=0;i<M;i++) free(pin[i]);*/ free(pin);}
     sd=d;sm=m;
@@ -204,26 +255,25 @@ double tps_g(matrix *X,matrix *p,double *x,int d,int m,matrix *b,int constant)
          for (i=0;i<M;i++) pin[i]=(int *)calloc((size_t)d,sizeof(int));*/
       pin=(int *)calloc((size_t)M*d,sizeof(int)); 
       gen_tps_poly_powers(pin, &M, &m, &d);
+      eta0 = eta_const(m,d); /* constant multiplying eta */
     } else return(0.0);
-  }
-  g=0.0;XM=X->M;
-  for (i=0;i<X->r;i++)
+  } /* end of change specific setup */
+  g=0.0;XM=X->M;n = X->r;
+  for (pb=b,i=0;i<n;i++,pb++)
   { r=0.0;XMi=XM[i];
     for (dum=x;dum<x+d;dum++) { z= *XMi - *dum;XMi++;r+=z*z;}
-    r=sqrt(r);
-    r=eta(m,d,r);
-    if (p->r) g+=r*p->V[i];
-    b->V[i]=r;
+    /* r = sqrt(r); */ /* eta set up to expect squared dist */ 
+    *pb = fast_eta(m,d,r,eta0);
+    if (p->r) g += *pb *p->V[i];
   } 
   off=1-constant;
-  for (i=off;i<M;i++) /* work through null space */
+  for (i=off;i<M;i++,pb++) /* work through null space */
   { r=1.0;
     /* for (j=0;j<d;j++) for (k=0;k<pin[i][j];k++) r*=x[j];*/
     
     for (j=0;j<d;j++) for (k=0;k<pin[i+M*j];k++)  r*=x[j];
-    
-    b->V[i+X->r-off]=r;
-    if (p->r) g+=p->V[i+X->r-off]*r;
+    *pb = r; /* b->V[i+X->r-off]=r;*/
+    if (p->r) g+=p->V[i+n-off]*r;
   } 
   return(g);
 }
@@ -343,9 +393,9 @@ void tprs_setup(double **x,double **knt,int m,int d,int n,int k,int constant,mat
 */
 
 { matrix X1,E,U,v,TU,T,Z,p;
- 
-  int l,i,j,M,*yxindex,pure_knot=0,nk,minus=-1,kk;
-  double w,*xc,*XMi,**UZM,*X1V,*Ea,*Ua,tol=DOUBLE_EPS;
+  const char trans='T'; 
+  int l,i,j,M,*yxindex,pure_knot=0,nk,minus=-1,kk,one=1;
+  double w,*xc,*XMi,*Ea,*Ua,tol=DOUBLE_EPS,*b,*a,*uz,alpha=1.0,beta=0.0,*p0,*p1;
   tol = pow(tol,.7);
 
   if (n_knots<k) /* then use the covariate points as knots */
@@ -374,8 +424,6 @@ void tprs_setup(double **x,double **knt,int m,int d,int n,int k,int constant,mat
   }
   if (Xu->r==k) pure_knot=1; /* basis dimension is number of knots - don't need eigen step */
 
-
-  /*i=lanczos_spd(&E,&U,&v,ek,d+1);*/      /* error - was keeping -ve's under all circumstances */
   if (pure_knot) /* don't need the lanczos step, but need to "fake" various matrices to make up for it! */
   { *UZ=initmat(T.r+M-1+constant,T.r);
     UZ->r=T.r;
@@ -388,8 +436,7 @@ void tprs_setup(double **x,double **knt,int m,int d,int n,int k,int constant,mat
   } else
   { v=initmat((long)k,1L);    /* eigen-value matrix for E */
 
-    /* code to enable use of Rlanczos, in place of lanczos_spd */ 
-    if (1) { /* use newer Lanczos routine */
+  
       nk = E.r;
       Ea = (double *) calloc((size_t) nk*nk,sizeof(double));
       Ua = (double *) calloc((size_t) nk*k,sizeof(double));
@@ -400,11 +447,7 @@ void tprs_setup(double **x,double **knt,int m,int d,int n,int k,int constant,mat
 
       U = Rmatrix(Ua,E.r,k);free(Ea);free(Ua);
     
-      } else { /* older Lanczos routine */
-
-      U=initmat(E.r,(long)k);   /* eigen-vector matrix for E */
-      i=lanczos_spd(&E,&U,&v,k,-1);      /* get k largest magnitude  eigen-values/vectors of E */
-    }
+  
     /* Now form the constraint matrix for the truncated problem T'U */
     TU=initmat((long)M,k);
     matmult(TU,T,U,1,0);
@@ -446,19 +489,32 @@ void tprs_setup(double **x,double **knt,int m,int d,int n,int k,int constant,mat
   } else /* the user supplied a set of knots to generate the original un-truncated basis */
   { p.r=0L; /* don't want a value from tps_g() */
     xc=(double *)calloc((size_t)d,sizeof(double));
-    X1=initmat((long)UZ->r,1L);*X=initmat((long)n,(long)k);
-    for (i=0;i<n;i++)
-    { for (j=0;j<d;j++) xc[j]=x[j][i];
-      tps_g(Xu,&p,xc,d,m,&X1,constant);
+    kk = (int) UZ->r;
+    b=(double *)calloc((size_t)kk,sizeof(double));  /* initmat((long)UZ->r,1L);*/
+    *X=initmat((long)n,(long)k);
+    a = (double *)calloc((size_t)k,sizeof(double));
+    /* following loop can dominate computational cost, so it is worth 
+       using BLAS routines and paying some attention to efficiency */
+    uz = (double *) calloc((size_t)kk*k,sizeof(double));
+    RArrayFromMatrix(uz,kk,UZ);
+    for (i=0;i<n;i++) { 
+      for (j=0;j<d;j++) xc[j]=x[j][i];
+      tps_g(Xu,&p,xc,d,m,b,constant);
       /* now X1'[UZ] p_k evaluates to the correct thing */
-      XMi=X->M[i]; UZM=UZ->M;X1V=X1.V;
-      for (j=0;j<k;j++) /* form [UZ]'X1 */
-      { for (l=0;l<X1.r;l++) *XMi += UZM[l][j]*X1V[l];
+      
+      /* UZ is kk by k */
+      F77_NAME(dgemv)(&trans,&kk,&k,&alpha,uz,&kk, b, &one,&beta, a, &one); /* BLAS call for (UZ)'b */
+      XMi = X->M[i];
+      for (p0=a,p1=a+k;p0<p1;p0++,XMi++) *XMi = *p0;
+
+      /* XMi=X->M[i]; UZM=UZ->M;
+      for (j=0;j<k;j++) // form [UZ]'X1 
+      { for (l=0;l<kk;l++) *XMi += UZM[l][j]*b[l];
         XMi++;      
-      } 
+      } */
     }
-    tps_g(Xu,&p,xc,0,0,&X1,constant); /* tell tps_g to clear up its internally allocated memory - only d=0 matters here*/
-    free(xc);freemat(X1);
+    tps_g(Xu,&p,xc,0,0,b,constant); /* tell tps_g to clear up its internally allocated memory - only d=0 matters here*/
+    free(xc);free(b);free(a);free(uz);
   }
   /* Next, create the penalty matrix...... */
   *S=initmat((long)k,(long)k); /* form Z'SZ */
@@ -539,34 +595,67 @@ void predict_tprs(double *x, int *d,int *n,int *m,int *k,int *M,double *Xu,int *
 
    returns the n by k matrix X mapping the parameters to the predicted values.
 */
-{ matrix Xm,UZm,Xum,b,p;
-  double by_mult,*xx;
-  int i,j,l;
-  p.r=0L;
-  Xum=Rmatrix(Xu,*nXu,*d);
-  UZm=Rmatrix(UZ,*nXu + *M,*k);
-  b=initmat(UZm.r,1L);
-  Xm=initmat((long)*n,(long)*k);
+{ double *b,by_mult,*xx,*a,*xp,*xxp,*xxp1,*xp1,*Xp,alpha=1.0,beta=0.0,*Xup,*Xup1,r,z,*pb,
+         eta0;
+  int i,j,l,kk,one=1,nobsM,*pin; 
+  const char trans='T'; 
+
+  if (2 * *m <= *d && *d > 0) { *m = 0;while ( 2 * *m < *d+2) (*m)++;} 
+  /* get null space polynomial powers */
+  pin=(int *)calloc((size_t) *M * *d,sizeof(int)); 
+  gen_tps_poly_powers(pin, M, m, d);
+  eta0 = eta_const(*m,*d);
+
+  /*Xum=Rmatrix(Xu,*nXu,*d);*/
+  nobsM = *nXu + *M;
+  /* UZm=Rmatrix(UZ,nobsM,*k);*/
+  b=(double *)calloc((size_t)nobsM,sizeof(double)); /* initmat(UZm.r,1L);*/
+  a=(double *)calloc((size_t)*k,sizeof(double));
+  /* Xm=initmat((long)*n,(long)*k);*/
   xx=(double*)calloc((size_t) *d,sizeof(double));
-  for (i=0;i< *n;i++) 
+  for (Xp=X,xp=x,i=0;i< *n;i++,xp++,Xp++) 
   { if (*by_exists) by_mult=by[i]; else by_mult=1.0;
-    if (by_mult==0.0)         /* then don't waste flops on calculating stuff that will only be zeroed */
-    { for (j=0;j<UZm.c;j++) Xm.M[i][j]=0.0;
-    } else                    /* proceed as normal */
-    { for (j=0;j< *d;j++) xx[j]=x[j * *n + i];
-      tps_g(&Xum,&p,xx,*d,*m,&b,1);             
-      for (j=0;j<UZm.c;j++) 
+    if (by_mult==0.0) {         /* then don't waste flops on calculating stuff that will only be zeroed */
+      /*for (j=0;j< *k ;j++) Xm.M[i][j]=0.0;*/
+      for (xxp=Xp,j=0;j < *k;j++,xxp+= *n) *xxp = 0.0; 
+    } else {                   /* proceed as normal */
+      for (xxp=xx,xxp1=xx + *d,xp1=xp;xxp < xxp1;xxp++,xp1 += *n) *xxp = *xp1; /*xx[j]=x[j * *n + i];*/
+      /* evaluate radial basis */    
+      for (Xup=Xu,Xup1=Xu+*nXu,pb=b;Xup<Xup1;Xup++,pb++) { /* work through unique original locations */
+        r=0.0;
+        for (xxp=xx,xxp1=xx + *d,xp1=Xup;xxp<xxp1;xxp++,xp1+= *nXu) { z = *xp1 - *xxp;r += z*z;}
+        /* r = sqrt(r); */ /* eta set up to expect squared dist */ 
+        *pb = fast_eta(*m,*d,r,eta0);
+      } 
+      /* now deal with null space */
+      for (l=0;l< *M;l++,pb++) { /* work through null space */
+        r=1.0;
+        for (j=0;j<*d;j++) for (kk=0;kk<pin[l + *M * j];kk++)  r *= xx[j];
+        *pb = r; 
+      } 
+      /*tps_g(&Xum,&p,xx,*d,*m,b,1);*/             
+      /*j=0;
+        mgcv_mmult(a,UZ,b,&one,&j,k,&one,&nobsM);*/ /* get a=(UZ)'b */
+      F77_NAME(dgemv)(&trans,&nobsM,k,&alpha,UZ,&nobsM, b, &one,&beta, a, &one); /* BLAS call for (UZ)'b */
+      if (*by_exists)
+      for (xp1=Xp,xxp=a,xxp1=a + *k;xxp<xxp1;xxp++,xp1+= *n) *xp1 = *xxp * by_mult; 
+      else 
+      for (xp1=Xp,xxp=a,xxp1=a + *k;xxp<xxp1;xxp++,xp1+= *n) *xp1 = *xxp;
+      
+      /* for (j=0;j< *k;j++) 
       { Xm.M[i][j]=0.0;
-        for (l=0;l<b.r;l++) Xm.M[i][j] += b.V[l]*UZm.M[l][j]; /* forming b'UZ */
+        for (l=0;l<UZm.r;l++) Xm.M[i][j] += b[l]*UZm.M[l][j];  // forming b'UZ 
         Xm.M[i][j] *= by_mult;
-      }
+      }*/
     }
   }
   /* Now clean up and copy X back.*/
-  RArrayFromMatrix(X,Xm.r,&Xm);
-  tps_g(&Xum,&p,x,0,0,&b,1); /* have tps_g clear up */ 
-  freemat(Xm);freemat(Xum);freemat(UZm);freemat(b);
-  free(xx);
+  /* RArrayFromMatrix(X,Xm.r,&Xm); freemat(Xm);*/
+  /*tps_g(&Xum,&p,x,0,0,b,1);*/ /* have tps_g clear up */ 
+  /*freemat(Xum);*/
+  /*freemat(UZm);*/
+  free(b);free(a);
+  free(xx);free(pin);
 }
 
 

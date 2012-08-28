@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-10  The R Development Core Team
+ *  Copyright (C) 2000-10  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -85,7 +85,10 @@ SEXP attribute_hidden do_lapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 	for(i = 0; i < n; i++) {
 	    INTEGER(ind)[0] = i + 1;
-	    SET_VECTOR_ELT(ans, i, eval(R_fcall, rho));
+	    tmp = eval(R_fcall, rho);
+	    if (NAMED(tmp))
+		tmp = duplicate(tmp);
+	    SET_VECTOR_ELT(ans, i, tmp);
 	}
 	UNPROTECT(3);
     }

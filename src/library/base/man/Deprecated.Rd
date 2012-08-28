@@ -1,19 +1,21 @@
 % File src/library/base/man/Deprecated.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Development Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Deprecated}
 \title{Marking Objects as Deprecated}
 \alias{Deprecated}
 \alias{.Deprecated}
+\alias{deprecated}
 
 \description{
-  When an object is about removed from \R it is first deprecated and
+  When an object is about to be removed from \R it is first deprecated and
   should include a call to \code{.Deprecated}.
 }
 \usage{
-.Deprecated(new, package=NULL, msg)
+.Deprecated(new, package=NULL, msg,
+            old = as.character(sys.call(sys.parent()))[1L])
 }
 \arguments{
   \item{new}{
@@ -25,15 +27,16 @@
   }
   \item{msg}{
     character string: A message to be printed, if missing a default
-    message is used.
- }
+    message is used.}
+  \item{old}{character string specifying the function (default) or usage
+    which is being deprecated.}
 }
 \details{
   \code{.Deprecated("<new name>")} is called from deprecated
   functions.  The original help page for these functions is often
   available at \code{help("oldName-deprecated")} (note the quotes).
   Functions should be listed in \code{help("pkg-deprecated")} for an
-  appropriate \code{pkg}, including \code{base}. 
+  appropriate \code{pkg}, including \code{base}.
 }
 \seealso{
   \code{\link{Defunct}}

@@ -161,7 +161,7 @@ as.data.frame.list <-
     m <- match(c("row.names", "check.rows", "check.names", "stringsAsFactors"),
                cn, 0L)
     if(any(m)) {
-        cn[m] <- paste("..adfl.", cn[m], sep="")
+        cn[m] <- paste0("..adfl.", cn[m])
         names(x) <- cn
     }
     x <- eval(as.call(c(expression(data.frame), x, check.names = !optional,
@@ -244,7 +244,7 @@ as.data.frame.matrix <- function(x, row.names = NULL, optional = FALSE, ...,
     if(is.null(row.names)) row.names <- dn[[1L]]
     collabs <- dn[[2L]]
     if(any(empty <- !nzchar(collabs)))
-	collabs[empty] <- paste("V", ic, sep = "")[empty]
+	collabs[empty] <- paste0("V", ic)[empty]
     value <- vector("list", ncols)
     if(mode(x) == "character" && stringsAsFactors) {
 	for(i in ic)
@@ -258,7 +258,7 @@ as.data.frame.matrix <- function(x, row.names = NULL, optional = FALSE, ...,
     if(length(collabs) == ncols)
 	names(value) <- collabs
     else if(!optional)
-	names(value) <- paste("V", ic, sep="")
+	names(value) <- paste0("V", ic)
     attr(value, "row.names") <- row.names
     class(value) <- "data.frame"
     value
@@ -686,7 +686,8 @@ data.frame <-
     }
     else if(nA == 3L) {
         ## this collects both df[] and df[ind]
-        if(is.atomic(value)) names(value) <- NULL
+        if (is.atomic(value) && !is.null(names(value)))
+            names(value) <- NULL
         if(missing(i) && missing(j)) { # case df[]
             i <- j <- NULL
             has.i <- has.j <- FALSE
@@ -794,8 +795,8 @@ data.frame <-
 	else {
 	    jseq <- j
 	    if(max(jseq) > nvars) {
-		new.cols <- paste("V", seq.int(from = nvars + 1L, to = max(jseq)),
-                                  sep = "")
+		new.cols <- paste0("V",
+                                   seq.int(from = nvars + 1L, to = max(jseq)))
 		if(length(new.cols)  != sum(jseq > nvars))
 		    stop("new columns would leave holes after existing columns")
                 ## try to use the names of a list `value'
@@ -828,7 +829,7 @@ data.frame <-
                 else
                     stop(gettextf("replacement has %d rows, data has %d", N, n),
                          domain = NA)
-            names(value) <- NULL
+            if (!is.null(names(value))) names(value) <- NULL
             value <- list(value)
          } else {
             if(m < n*p && (m == 0L || (n*p) %% m))
@@ -923,7 +924,8 @@ data.frame <-
         ## [[<- and $<- (which throw an error).  But both are plausible.
         if (nrows > 0L && !length(v)) length(v) <- nrows
 	x[[jj]] <- v
-        if(!is.null(v) && is.atomic(x[[jj]])) names(x[[jj]]) <- NULL
+        if (!is.null(v) && is.atomic(x[[jj]]) && !is.null(names(x[[jj]])))
+            names(x[[jj]]) <- NULL
     }
     if(length(new.cols) > 0L) {
         new.cols <- names(x) # we might delete columns with NULL
@@ -944,7 +946,7 @@ data.frame <-
     ## to avoid any special methods for [[<-
     class(x) <- NULL
     nrows <- .row_names_info(x, 2L)
-    if(is.atomic(value)) names(value) <- NULL
+    if(is.atomic(value) && !is.null(names(value))) names(value) <- NULL
     if(nargs() < 4L) {
 	## really ambiguous, but follow common use as if list
         nc <- length(x)
@@ -964,7 +966,7 @@ data.frame <-
         ## added in 1.8.0 -- make sure there is a name
         if(length(x) > nc) {
             nc <- length(x)
-            if(names(x)[nc] == "") names(x)[nc] <- paste("V", nc, sep="")
+            if(names(x)[nc] == "") names(x)[nc] <- paste0("V", nc)
             names(x) <- make.unique(names(x))
         }
 	class(x) <- cl
@@ -1047,7 +1049,7 @@ data.frame <-
             else
                 stop(gettextf("replacement has %d rows, data has %d", N, nrows),
                      domain = NA)
-        if(is.atomic(value)) names(value) <- NULL
+        if(is.atomic(value) && !is.null(names(value))) names(value) <- NULL
     }
     x[[name]] <- value
     class(x) <- cl

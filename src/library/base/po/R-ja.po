@@ -2,16 +2,16 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.4.0 \n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-10-23 14:54\n"
-"PO-Revision-Date: 2011-10-22 18:27+0900 \n"
-"Last-Translator: takahashi <takahashi.kohske@gmail.com> \n"
+"POT-Creation-Date: 2012-06-07 15:52\n"
+"PO-Revision-Date: 2012-02-26 14:09+0200 \n"
+"Last-Translator: Shigeru Mase <maseshigeru@gmail.com> \n"
 "Language-Team: RjpWiki Message Translation Team <mokada@md.tsukuba.ac.jp> \n"
-"Language: \n"
+"Language: ja \n"
 "MIME-Version: 1.0 \n"
 "Content-Type: text/plain; charset=UTF-8 \n"
 "Content-Transfer-Encoding: 8bit \n"
 "Plural-Forms: nplurals=1; plural=0; \n"
-"X-Generator: Pootle 1.1.0 \n"
+"X-Generator: Pootle 2.0.5 \n"
 
 msgid "'%s' is defunct."
 msgstr " '%s' は廃止されました。 "
@@ -24,12 +24,6 @@ msgstr " help(\"Defunct\") と help(\"%s-defunct\") を見て下さい "
 
 msgid "See help(\"Defunct\")"
 msgstr " help(\"Defunct\") を見て下さい "
-
-msgid "'symbol.C' is not needed: please remove it"
-msgstr " 'symbol.C' は必要ありません: 取り除いてください "
-
-msgid "'symbol.For' is not needed: please remove it"
-msgstr " 'symbol.For' は必要ありません: 取り除いてください "
 
 msgid "'%s' is deprecated."
 msgstr " '%s' は廃止予定です "
@@ -156,6 +150,10 @@ msgstr " 自動ローダーは '%s' を '%s' 中に見つけられませんで�
 msgid "invalid argument values in 'backsolve'"
 msgstr " 'backsolve' に無効な引数値が与えられました "
 
+#, fuzzy
+msgid "invalid value of ncol(x)"
+msgstr " 無効な値です "
+
 msgid "singular matrix in 'backsolve'. First zero in diagonal [%d]"
 msgstr " 'backsolve' に特異行列。対角線 [%d] の最初の要素がゼロです "
 
@@ -170,6 +168,10 @@ msgstr " 'chol' 中に非正方行列 "
 
 msgid "non-matrix argument to 'chol'"
 msgstr " 'chol' へ行列でない引数 "
+
+#, fuzzy
+msgid "invalid nrow(x)"
+msgstr " 不当な名前です "
 
 msgid "matrix not positive definite"
 msgstr " 行列は正定値符号ではありません "
@@ -240,6 +242,10 @@ msgstr " 'breaks' が一意的ではありません "
 
 msgid "labels/breaks length conflict"
 msgstr " ラベルまたは分割点の長さが矛盾しています "
+
+#, fuzzy
+msgid "invalid value of length(x)"
+msgstr " 無効な値です "
 
 msgid "invalid 'row.names' length"
 msgstr " 無効な 'row.names' 長です "
@@ -705,6 +711,14 @@ msgstr " 'vec' は NA 値を含んでいます "
 msgid "'vec' must be sorted non-decreasingly"
 msgstr " 'vec' は非減少順にソートされていなければいけません "
 
+#, fuzzy
+msgid "invalid length(x)"
+msgstr " 不当な名前です "
+
+#, fuzzy
+msgid "invalid length(vec)"
+msgstr " 不当な名前です "
+
 msgid "using the first element of 'value' of type expression"
 msgstr " タイプ表現 'value' の最初の要素だけを使います "
 
@@ -870,7 +884,7 @@ msgstr ""
 msgid "package %s already present in search()"
 msgstr " パッケージ '%s' は既に search() 中に存在します "
 
-msgid "'DESCRIPTION' has 'Encoding' field and re-encoding is not possible"
+msgid "'DESCRIPTION' has an 'Encoding' field and re-encoding is not possible"
 msgstr ""
 " 'DESCRIPTION' は 'Encoding' フィールドを持っているので再エンコーディングは出"
 "来ません "
@@ -992,6 +1006,9 @@ msgstr " 'file' が指定されなければなりません "
 msgid "Use of save versions prior to 2 is deprecated"
 msgstr " 二回以前の保存バージョンの使用は廃止予定です "
 
+msgid "nothing specified to be save()d"
+msgstr " save()されるべきものがありません "
+
 msgid "'file' must be non-empty string"
 msgstr " 'file' は空でない文字列でなければなりません "
 
@@ -1069,6 +1086,10 @@ msgstr " 'trim' は長さ 1 の数値でなければなりません "
 
 msgid "trimmed means are not defined for complex data"
 msgstr " 複素数データに対しては刈込み平均は定義されません "
+
+#, fuzzy
+msgid "'by' must specify uniquely valid column(s)"
+msgstr " 'by' は有効な列を指定しなければなりません "
 
 msgid "'by' must match numbers of columns"
 msgstr " 'by' は列数にマッチしなければなりません "
@@ -1161,6 +1182,9 @@ msgstr ""
 " パッケージ '%s' 中のクラス %s をエクスポートするように指定されていますが定義"
 "されていません "
 
+msgid "No function found corresponding to methods exports from %s for: %s"
+msgstr " %s から %s へエクスポートされるメソッドに対応する関数がありません "
+
 msgid "in %s methods for export not found: %s"
 msgstr " '%s' 中にはエクスポートされるメソッドがありません： %s "
 
@@ -1214,10 +1238,20 @@ msgstr ""
 " 関数 \"%s\" に対するインポートメソッドをみつけましたが、総称的ではありませ"
 "ん "
 
+msgid "No methods found in \"%s\" for requests: %s"
+msgstr " \"%s\" 中には要求に対するメソッドが見つかりません: %s "
+
 msgid "requested methods not found in environment/package %s: %s"
 msgstr ""
 " 要求された 'methods' オブジェクトは環境もしくはパッケージ '%s'中に見付かりま"
 "せん： %s "
+
+msgid ""
+"No generic function found corresponding to requested imported methods for "
+"\"%s\" from package \"%s\" (malformed exports?)"
+msgstr ""
+" \"%s\" に対して要求されたインポートされたメソッド（パッケージ \"%s\" から"
+"の）に対応する総称的関数がありません (不正確なエクスポート？) "
 
 msgid "cannot add to exports of a sealed namespace"
 msgstr " 封印された名前空間のエクスポートへ加えることができません "
@@ -1295,8 +1329,22 @@ msgstr " 'u5.bias' は非負の数値でなければなりません "
 msgid "'eps.correct' must be 0, 1, or 2"
 msgstr " 'eps.correct' は 0, 1 または 2 でなければなりません "
 
+#, fuzzy
+msgid "invalid ncol(x)"
+msgstr " 不当な名前です "
+
 msgid "first argument must be a QR decomposition"
 msgstr " 最初の引数は QR 分解でなければなりません "
+
+msgid "invalid nrow(qr$qr)"
+msgstr ""
+
+msgid "invalid ncol(qr$qr)"
+msgstr ""
+
+#, fuzzy
+msgid "invalid ncol(y)"
+msgstr " 不当な名前です "
 
 msgid "'qr' and 'y' must have the same number of rows"
 msgstr " 'qr' そして 'y' は同じ行数を持たなければなりません "
@@ -1306,6 +1354,9 @@ msgstr " 'qr.coef' は正確に特異です "
 
 msgid "argument is not a QR decomposition"
 msgstr " 引数は QR 分解ではありません "
+
+msgid "invalid NCOL(y)"
+msgstr ""
 
 msgid "not implemented for complex 'qr'"
 msgstr " 複素数の 'qr' に対しては実装されていません "
@@ -1318,6 +1369,9 @@ msgstr " 'k' は大きすぎます "
 
 msgid "need larger value of 'ncol' as pivoting occurred"
 msgstr " ピボット操作が起きたので、より大きな 'ncol' 値が必要です "
+
+msgid "invalid NCOL(R)"
+msgstr ""
 
 msgid "'x' must be an atomic vector"
 msgstr " 'x' はベクトルでなければなりません "
@@ -1351,6 +1405,9 @@ msgstr " 引数 'length.out' は長さ 1 でなければなりません "
 
 msgid "first element used of 'length.out' argument"
 msgstr " 最初の要素は 引数 'length.out' として使われます "
+
+msgid "extra argument(s) %s will be disregarded"
+msgstr "  余分な引数 %s は無視されます "
 
 msgid "invalid (to - from)/by in seq(.)"
 msgstr " seq(.) 中の (to - from)/by が不正です "
@@ -1540,6 +1597,14 @@ msgstr " 'x' は配列ではありません "
 msgid "'bin' must be numeric or a factor"
 msgstr " 'bin' は数値または因子でなければなりません "
 
+#, fuzzy
+msgid "invalid value of length(bin)"
+msgstr " 無効な値です "
+
+#, fuzzy
+msgid "invalid value of nbins"
+msgstr " 無効な値です "
+
 msgid "arguments must have same length"
 msgstr " 引数は同じ長さでなければなりません "
 
@@ -1631,6 +1696,15 @@ msgstr " 'stderr' は長さ 1 でなければなりません "
 msgid "'which' was not found on this platform"
 msgstr " このプラットホームでは'which'が見つかりません "
 
+msgid "fewer 'from' files than 'to' files"
+msgstr " コピー先ファイルよりもコピー元ファイルが少ないです "
+
+msgid "link '%s' already exists"
+msgstr " リンク '%s' はすでに存在します "
+
+msgid "failed to create directory for link '%s"
+msgstr " リンク \"%s\" に対するディレクトリを作成できませんでした "
+
 msgid "'show.output.on.console' must be TRUE or FALSE"
 msgstr " 'show.output.on.console' は 'TRUE' か 'FALSE' でなければなりません "
 
@@ -1673,7 +1747,6 @@ msgstr " 項目 "
 msgid "have been removed from the search path"
 msgstr " 検索パスから抹消されています "
 
-#, fuzzy
 msgid "cannot find namespace environment"
 msgstr " 名前空間環境を見つけられません "
 
@@ -1697,6 +1770,14 @@ msgid "object %s not found"
 msgid_plural "objects %s not found"
 msgstr[0] " %s を見付けることができません "
 
+msgid ""
+"Function found when exporting methods from the namespace %s which is not S4 "
+"generic: %s"
+msgid_plural ""
+"Functions found when exporting methods from the namespace %s which are not "
+"S4 generic: %s"
+msgstr[0] ""
+
 msgid "class %s is not exported by 'namespace:%s'"
 msgid_plural "classes %s are not exported by 'namespace:%s'"
 msgstr[0] " クラス '%s' は 'namespace:%s' によってエクスポートされていません "
@@ -1718,6 +1799,19 @@ msgstr[0] ""
 msgid "Warning message:\n"
 msgid_plural "Warning messages:\n"
 msgstr[0] " 警告メッセージ： \n"
+
+#~ msgid ""
+#~ "Functions for exporting methods must have been made generic, explicitly "
+#~ "or implicitly; not true when loading %s for %s"
+#~ msgstr ""
+#~ " メッソドのエクスポートに対する関数は明示的もしくは暗黙に総称的にされてい"
+#~ "た必要があります； %s を %s に対してロードする場合はそうではありません "
+
+#~ msgid "'symbol.C' is not needed: please remove it"
+#~ msgstr " 'symbol.C' は必要ありません: 取り除いてください "
+
+#~ msgid "'symbol.For' is not needed: please remove it"
+#~ msgstr " 'symbol.For' は必要ありません: 取り除いてください "
 
 #~ msgid "'pattern' must be a non-empty character string"
 #~ msgstr " 'pattern' は空でない文字列でなければなりません "
@@ -1830,9 +1924,6 @@ msgstr[0] " 警告メッセージ： \n"
 
 #~ msgid "S3 method '%s' was declared in NAMESPACE but not found"
 #~ msgstr " S3 メソッド '%s' が名前空間中で宣言されましたが、見付かりません "
-
-#~ msgid "invalid name"
-#~ msgstr " 不当な名前です "
 
 #~ msgid "is required by"
 #~ msgstr " が以下により要求されました： "

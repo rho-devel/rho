@@ -1,7 +1,9 @@
 % File src/library/parallel/man/clusterApply.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2003-11 R Core Development Team
+% Copyright 2003-12 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{clusterApply}
 
@@ -17,7 +19,8 @@
 \alias{parLapply}
 \alias{parRapply}
 \alias{parSapply}
-\alias{parlapply}
+\alias{parLapplyLB}
+\alias{parSapplyLB}
 
 \title{Apply Operations using Clusters}
 \description{
@@ -25,23 +28,28 @@
   a cluster.
 }
 \usage{
-clusterCall(cl, fun, ...)
-clusterApply(cl, x, fun, ...)
-clusterApplyLB(cl, x, fun, ...)
-clusterEvalQ(cl, expr)
-clusterExport(cl, varlist, envir = .GlobalEnv)
-clusterMap(cl, fun, ..., MoreArgs = NULL, RECYCLE = TRUE,
-           SIMPLIFY = FALSE, USE.NAMES = TRUE)
-clusterSplit(cl, seq)
+clusterCall(cl = NULL, fun, ...)
+clusterApply(cl = NULL, x, fun, ...)
+clusterApplyLB(cl = NULL, x, fun, ...)
+clusterEvalQ(cl = NULL, expr)
+clusterExport(cl = NULL, varlist, envir = .GlobalEnv)
+clusterMap(cl = NULL, fun, ..., MoreArgs = NULL, RECYCLE = TRUE,
+           SIMPLIFY = FALSE, USE.NAMES = TRUE,
+           .scheduling = c("static", "dynamic"))
+clusterSplit(cl = NULL, seq)
 
-parLapply(cl, X, fun, ...)
-parSapply(cl, X, FUN, ..., simplify = TRUE, USE.NAMES = TRUE) 
-parApply(cl, X, MARGIN, FUN, ...)
-parRapply(cl, x, FUN, ...)
-parCapply(cl, x, FUN, ...)
+parLapply(cl = NULL, X, fun, ...)
+parSapply(cl = NULL, X, FUN, ..., simplify = TRUE, USE.NAMES = TRUE) 
+parApply(cl = NULL, X, MARGIN, FUN, ...)
+parRapply(cl = NULL, x, FUN, ...)
+parCapply(cl = NULL, x, FUN, ...)
+
+parLapplyLB(cl = NULL, X, fun, ...)
+parSapplyLB(cl = NULL, X, FUN, ..., simplify = TRUE, USE.NAMES = TRUE) 
 }
 \arguments{
-  \item{cl}{a cluster object, created by this package or by package \pkg{snow}.}
+  \item{cl}{a cluster object, created by this package or by package
+    \CRANpkg{snow}.  If \code{NULL}, use the registered default cluster.}
   \item{fun, FUN}{function or character string naming a function.}
   \item{expr}{expression to evaluate.}
   \item{seq}{vector to split.}
@@ -58,6 +66,8 @@ parCapply(cl, x, FUN, ...)
   \item{MARGIN}{vector specifying the dimensions to use.}
   \item{simplify, USE.NAMES}{logical; see \code{\link{sapply}}.}
   \item{SIMPLIFY}{logical; see \code{\link{mapply}}.}
+  \item{.scheduling}{should tasks be statically allocated to nodes or
+    dynamic load-balancing used?}
 }
 \details{
   \code{clusterCall} calls a function \code{fun} with identical
@@ -104,10 +114,15 @@ parCapply(cl, x, FUN, ...)
   
   \code{parLapply}, \code{parSapply}, and \code{parApply} are parallel
   versions of \code{lapply}, \code{sapply} and \code{apply}.
+  \code{parLapplyLB}, \code{parSapplyLB} are load-balancing versions,
+  intended for use when applying \code{FUN} to different elements of
+  \code{X} takes quite variable amounts of time, and either the function
+  is deterministic or reproducible results are not required.
 
   \code{parRapply} and \code{parCapply} are parallel row and column
   \code{apply} functions for a matrix \code{x}; they may be slightly
-  more efficient than \code{parApply}.
+  more efficient than \code{parApply} but do less post-processing of the
+  result.
 }
 \value{
   For \code{clusterCall}, \code{clusterEvalQ} and \code{clusterSplit}, a
@@ -124,12 +139,17 @@ parCapply(cl, x, FUN, ...)
 
   \code{parSapply} and \code{parApply} follow \code{\link{sapply}} and
   \code{\link{apply}} respectively.
+
+  \code{parRapply} and \code{parCapply} always return a vector.  If
+  \code{FUN} always returns a scalar result this will be of length the
+  number of rows or columns: otherwise it will be the concatenation of
+  the returned values.
   
   An error is signalled on the master if any of the workers produces an
   error.
 }
 \note{
-  These functions are almost identical to those in package \pkg{snow}.
+  These functions are almost identical to those in package \CRANpkg{snow}.
 
   Two exceptions: \code{parLapply} has argument \code{X}
   not \code{x} for consistency with \code{\link{lapply}}, and
@@ -138,7 +158,7 @@ parCapply(cl, x, FUN, ...)
 \author{
   Luke Tierney and R Core.
 
-  Derived from the \pkg{snow} package.
+  Derived from the \CRANpkg{snow} package.
 }
 % donttest, as access to ports might be denied.  Tested in the 'tests' directory
 \examples{\donttest{
@@ -156,10 +176,8 @@ clusterMap(cl, function(x,y) seq_len(x) + y,
 
 
 parSapply(cl, 1:20, get("+"), 3)
-stopCluster(cl)
 
 ## A bootstrapping example, which can be done in many ways:
-cl <- makeCluster(getOption("cl.cores", 2))
 clusterEvalQ(cl, {
   ## set up each worker.  Could also use clusterExport()
   library(boot)

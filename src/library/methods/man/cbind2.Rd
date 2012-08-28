@@ -1,8 +1,10 @@
 % File src/library/methods/man/cbind2.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Copyright 2001-2011 The R Foundation
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{cbind2}
 \alias{cbind2}
@@ -36,13 +38,14 @@
   \code{cbind2}, see the examples.
 }
 \usage{
-cbind2(x, y)
-rbind2(x, y)
+cbind2(x, y, ...)
+rbind2(x, y, ...)
 }
 \arguments{
   \item{x}{any \R object, typically matrix-like.}
   \item{y}{any \R object, typically similar to \code{x}, or missing
     completely.}
+  \item{\dots}{optional arguments for methods.}
 }
 \section{Methods}{
   \describe{
@@ -59,7 +62,7 @@ rbind2(x, y)
 }
 \seealso{\code{\link{cbind}}, \code{\link{rbind}};
   further, \code{\link[Matrix]{cBind}}, \code{\link[Matrix]{rBind}} in
-  the \pkg{Matrix} package.
+  the \CRANpkg{Matrix} package.
 }
 \examples{
 cbind2(1:3, 4)

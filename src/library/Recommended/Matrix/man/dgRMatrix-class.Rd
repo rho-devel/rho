@@ -11,7 +11,7 @@
   implementation the non-zero elements in the rows are sorted into
   increasing column order.
 
-  \bold{Note:} Currently, the column-oriented sparse classes, e.g.,
+  \bold{Note:} The column-oriented sparse classes, e.g.,
   \code{\linkS4class{dgCMatrix}}, are preferred and better supported in
   the \pkg{Matrix} package.
 }
@@ -46,7 +46,10 @@
   }
 }
 \seealso{
-  the \code{\linkS4class{dgCMatrix}} class.
+  the \code{\linkS4class{RsparseMatrix}} class, the virtual class of all
+  sparse compressed \bold{r}ow-oriented matrices, with its methods.
+  The \code{\linkS4class{dgCMatrix}} class (\bold{c}olumn compressed
+  sparse) is really preferred.
 }
 \keyword{classes}
 \keyword{algebra}

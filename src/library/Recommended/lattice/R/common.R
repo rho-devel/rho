@@ -368,7 +368,7 @@ latticeParseFormula <-
     else if (outer) {
         if (!is.null(groups)) ans$groups <- rep(groups, nLHS * nRHS)
         if (!is.null(newFactor)) {
-            if (is.null(ans$cond))
+            if (is.null(ans$condition))
                 ans$condition <- list(newFactor)
             else
                 ans$condition[[length(ans$condition) + 1]] <- newFactor

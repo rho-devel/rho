@@ -45,7 +45,6 @@ VR_sammon(double *dd, Sint *nn, Sint *kd, double *Y, Sint *niter,
     e2 = Calloc(nd, double);
 
     epast = eprev = 1.0;
-    magic = magic;
 
     /* Error in distances */
     e = tot = 0.0;

@@ -17,7 +17,9 @@ of parametric random effects. It can not be used for models with more coefficien
 than \code{gamm} or \code{gamm4}, when the number of random effects is modest.
 
 To facilitate the use of random effects with \code{gam}, \code{\link{gam.vcomp}} is a utility routine for converting 
-smoothing parameters to variance components. It also provides confidence intervals, if smoothness estimation is by ML or REML.
+smoothing parameters to variance components. It also provides confidence intervals, if smoothness estimation is by ML or REML. 
+
+Note that treating random effects as smooths does not remove the usual problems associated with testing variance components for equality to zero: see \code{\link{summary.gam}} and \code{\link{anova.gam}}.   
 
 }
 

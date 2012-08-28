@@ -1,6 +1,6 @@
 % File src/library/base/man/regex.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
 
 \name{regex}
@@ -31,6 +31,9 @@
   Patterns are described here as they would be printed by \code{cat}:
   (\emph{do remember that backslashes need to be doubled when entering \R
     character strings}, e.g. from the keyboard).
+
+  Do not assume that long regular expressions will be accepted: the
+  POSIX standard only requires up to 256 \emph{bytes}.
 }
 \section{Extended Regular Expressions}{
   This section covers the regular expressions allowed in the default

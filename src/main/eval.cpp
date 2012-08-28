@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996	Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2011	The R Development Core Team.
+ *  Copyright (C) 1998--2011	The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -347,7 +347,8 @@ void Rf_SrcrefPrompt(const char * prefix, SEXP srcref)
     Rprintf("%s: ", prefix);
 }
 
-#ifdef BYTECODE
+/* Apply SEXP op of type CLOSXP to actuals */
+
 static void loadCompilerNamespace(void)
 {
     SEXP fun, arg, expr;
@@ -410,6 +411,7 @@ SEXP attribute_hidden R_cmpfun(SEXP fun)
     return val;
 }
 
+/* Unused in CXXR pending FIXMEs
 static SEXP R_compileExpr(SEXP expr, SEXP rho)
 {
     SEXP packsym, funsym, quotesym;
@@ -443,6 +445,7 @@ static SEXP R_compileAndExecute(SEXP call, SEXP rho)
     UNPROTECT(3);
     return val;
 }
+*/
 
 SEXP attribute_hidden do_enablejit(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
@@ -468,7 +471,31 @@ SEXP attribute_hidden do_compilepkgs(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* forward declaration */
 static SEXP bytecodeExpr(SEXP);
-#endif
+
+/* this function gets the srcref attribute from a statement block, 
+   and confirms it's in the expected format */
+   
+static R_INLINE SEXP getBlockSrcrefs(SEXP call)
+{
+    SEXP srcrefs = Rf_getAttrib(call, R_SrcrefSymbol);
+    if (TYPEOF(srcrefs) == VECSXP) return srcrefs;
+    return R_NilValue;
+}
+
+/* this function extracts one srcref, and confirms the format */
+/* It assumes srcrefs has already been validated to be a VECSXP or NULL */
+
+static R_INLINE SEXP getSrcref(SEXP srcrefs, int ind)
+{
+    SEXP result;
+    if (!Rf_isNull(srcrefs)
+        && length(srcrefs) > ind
+        && !Rf_isNull(result = VECTOR_ELT(srcrefs, ind))
+	&& TYPEOF(result) == INTSXP
+	&& length(result) >= 6)
+	return result;
+    return R_NilValue;
+}
 
 void Closure::DebugScope::startDebugging() const
 {
@@ -476,13 +503,11 @@ void Closure::DebugScope::startDebugging() const
     const Expression* call = ctxt->call();
     Environment* working_env = ctxt->workingEnvironment();
     working_env->setSingleStepping(true);
-#ifdef BYTECODE
     /* switch to interpreted version when debugging compiled code */
     if (m_closure->body()->sexptype() == BCODESXP) {
 	Closure* closure = const_cast<Closure*>(m_closure);
 	closure->m_body = bytecodeExpr(closure->m_body);
     }
-#endif
     Rprintf("debugging in: ");
     // Print call:
     {
@@ -682,47 +707,6 @@ static R_INLINE Rboolean asLogicalNoNA(SEXP s, SEXP call)
 }
 
 
-SEXP attribute_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
-{
-    SEXP Cond, Stmt=R_NilValue;
-    int vis=0;
-
-    PROTECT(Cond = Rf_eval(CAR(args), rho));
-    if (asLogicalNoNA(Cond, call)) 
-        Stmt = CAR(CDR(args));
-    else {
-        if (length(args) > 2) 
-           Stmt = CAR(CDR(CDR(args)));
-        else
-           vis = 1;
-    } 
-    if( ENV_DEBUG(rho) ) {
-	Rf_SrcrefPrompt("debug", R_Srcref);
-        Rf_PrintValue(Stmt);
-        do_browser(call, op, R_NilValue, rho);
-    } 
-    UNPROTECT(1);
-    if( vis ) {
-        R_Visible = FALSE; /* case of no 'else' so return invisible NULL */
-        return Stmt;
-    }
-
-    {
-	RObject* ans;
-	{
-	    BailoutContext bcntxt;
-	    ans = Rf_eval(Stmt, rho);
-	}
-	if (ans && ans->sexptype() == BAILSXP) {
-	    Evaluator::Context* callctxt
-		= Evaluator::Context::innermost()->nextOut();
-	    if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
-		static_cast<Bailout*>(ans)->throwException();
-	}
-	return ans;
-    }
-}
-
 namespace {
     inline int BodyHasBraces(SEXP body)
     {
@@ -750,6 +734,47 @@ namespace {
     }
 }
 
+SEXP attribute_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP Cond, Stmt=R_NilValue;
+    int vis=0;
+
+    PROTECT(Cond = Rf_eval(CAR(args), rho));
+    if (asLogicalNoNA(Cond, call)) 
+        Stmt = CAR(CDR(args));
+    else {
+        if (length(args) > 2) 
+           Stmt = CAR(CDR(CDR(args)));
+        else
+           vis = 1;
+    } 
+    if( ENV_DEBUG(rho) && !BodyHasBraces(Stmt)) {
+	Rf_SrcrefPrompt("debug", R_Srcref);
+        Rf_PrintValue(Stmt);
+        do_browser(call, op, R_NilValue, rho);
+    } 
+    UNPROTECT(1);
+    if( vis ) {
+        R_Visible = FALSE; /* case of no 'else' so return invisible NULL */
+        return Stmt;
+    }
+
+    {
+	RObject* ans;
+	{
+	    BailoutContext bcntxt;
+	    ans = Rf_eval(Stmt, rho);
+	}
+	if (ans && ans->sexptype() == BAILSXP) {
+	    Evaluator::Context* callctxt
+		= Evaluator::Context::innermost()->nextOut();
+	    if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
+		static_cast<Bailout*>(ans)->throwException();
+	}
+	return ans;
+    }
+}
+
 SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     volatile int i, n, bgn;
@@ -765,12 +790,12 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if ( !Rf_isSymbol(sym) ) Rf_errorcall(call, _("non-symbol loop variable"));
 
-#ifdef BYTECODE
-    if (R_jit_enabled > 2) {
+    /* CXXR FIXME
+    if (R_jit_enabled > 2 && ! R_PendingPromises) {
 	R_compileAndExecute(call, rho);
 	return R_NilValue;
     }
-#endif
+    */
 
     val = Rf_eval(val, rho);
     Rf_defineVar(sym, R_NilValue, rho);
@@ -901,12 +926,12 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     checkArity(op, args);
 
-#ifdef BYTECODE
-    if (R_jit_enabled > 2) {
+    /* CXXR FIXME
+    if (R_jit_enabled > 2 && ! R_PendingPromises) {
 	R_compileAndExecute(call, rho);
 	return R_NilValue;
     }
-#endif
+    */
 
     dbg = ENV_DEBUG(rho);
     body = CADR(args);
@@ -962,12 +987,12 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     checkArity(op, args);
 
-#ifdef BYTECODE
-    if (R_jit_enabled > 2) {
+    /* CXXR FIXME
+    if (R_jit_enabled > 2 && ! R_PendingPromises) {
 	R_compileAndExecute(call, rho);
 	return R_NilValue;
     }
-#endif
+    */
 
     dbg = ENV_DEBUG(rho);
     body = CAR(args);
@@ -1033,32 +1058,14 @@ SEXP attribute_hidden do_paren(SEXP call, SEXP op, SEXP args, SEXP rho)
     return CAR(args);
 }
 
-/* this function gets the srcref attribute from a statement block, 
-   and confirms it's in the expected format */
-   
-static R_INLINE SEXP getSrcrefs(SEXP call, SEXP args)
-{
-    SEXP srcrefs = Rf_getAttrib(call, R_SrcrefSymbol);
-    if (   TYPEOF(srcrefs) == VECSXP
-        && length(srcrefs) == length(args)+1 ) return srcrefs;
-    return R_NilValue;
-}
-
 SEXP attribute_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP s = R_NilValue;
     if (args != R_NilValue) {
-    	GCStackRoot<> srcrefs(getSrcrefs(call, args));
+    	GCStackRoot<> srcrefs(getBlockSrcrefs(call));
     	int i = 1;
-    	R_Srcref = R_NilValue;
 	while (args != R_NilValue) {
-	    if (srcrefs != R_NilValue) {
-	    	R_Srcref = VECTOR_ELT(srcrefs, i++);
-	    	if (  TYPEOF(R_Srcref) != INTSXP
-	    	    || length(R_Srcref) < 6) {  /* old code will have length 6; new code length 8 */
-	    	    srcrefs = R_Srcref = R_NilValue;
-	    	}
-	    }
+	    R_Srcref = getSrcref(srcrefs, i++);
 	    if (ENV_DEBUG(rho)) {
 	    	Rf_SrcrefPrompt("debug", R_Srcref);
 		Rf_PrintValue(CAR(args));
@@ -1107,7 +1114,7 @@ SEXP attribute_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
     return rbo;
 }
 
-
+/* Declated with a variable number of args in names.c */
 SEXP attribute_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     GCStackRoot<> rval;
@@ -1116,15 +1123,13 @@ SEXP attribute_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
 	op = forcePromise(op);
 	SET_NAMED(op, 2);
     }
-    if (length(args) < 2)
-	WrongArgCount("lambda");
+    if (length(args) < 2) WrongArgCount("function");
     SEXP formals = CAR(args);
     if (formals && formals->sexptype() != LISTSXP)
 	Rf_error(_("invalid formal argument list for 'function'"));
     rval = Rf_mkCLOSXP(formals, CADR(args), rho);
     SEXP srcref = CADDR(args);
-    if (!Rf_isNull(srcref))
-	Rf_setAttrib(rval, R_SrcrefSymbol, srcref);
+    if (!Rf_isNull(srcref)) Rf_setAttrib(rval, R_SrcrefSymbol, srcref);
     return rval;
 }
 
@@ -1526,6 +1531,10 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
     int frame;
 
     checkArity(op, args);
+
+    if (PRIMVAL(op)) {
+	Rf_warning(".Internal(eval.with.vis) should not be used and will be removed soon");
+    }
     expr = CAR(args);
     env = CADR(args);
     encl = CADDR(args);
@@ -1543,7 +1552,6 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	env = encl;     /* soeval(expr, NULL, encl) works */
 	/* falls through */
     case ENVSXP:
-	/* This usage requires all the pairlist to be named */
 	PROTECT(env);	/* so we can unprotect 2 at the end */
 	break;
     case LISTSXP:
@@ -1598,6 +1606,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     else if (TYPEOF(expr) == EXPRSXP) {
 	int i, n;
+	SEXP srcrefs = getBlockSrcrefs(expr);
 	PROTECT(expr);
 	n = LENGTH(expr);
 	tmp = R_NilValue;
@@ -1610,8 +1619,10 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    ClosureContext cntxt(callx, call_env, func, working_env, promargs);
 	    Environment::ReturnScope returnscope(working_env);
 	    try {
-		for (i = 0 ; i < n ; i++)
+		for (i = 0 ; i < n ; i++) {
+		    R_Srcref = getSrcref(srcrefs, i); 
 		    tmp = Rf_eval(XVECTOR_ELT(expr, i), env);
+		}
 	    }
 	    catch (ReturnException& rx) {
 		if (rx.environment() != working_env)
@@ -1948,7 +1959,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     return 1;
 }
 
-#ifdef BYTECODE
+/* start of bytecode section */
 static int R_bcVersion = 7;
 static int R_bcMinVersion = 6;
 
@@ -3635,7 +3646,8 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	SEXP symbol = (*constants)[GETOP()];
 	value = INTERNAL(symbol);
 	if (TYPEOF(value) != BUILTINSXP)
-	  Rf_error(_("not a BUILTIN function"));
+	  Rf_error(_("there is no .Internal function '%s'"),
+		CHAR(PRINTNAME(symbol)));
 
 	/* push the function and push space for creating the argument list. */
 	ftype = TYPEOF(value);
@@ -4578,7 +4590,8 @@ SEXP R_getbcprofcounts() { return R_NilValue; }
 SEXP R_startbcprof() { return R_NilValue; }
 SEXP R_stopbcprof() { return R_NilValue; }
 #endif
-#endif
+
+/* end of byte code section */
 
 SEXP attribute_hidden do_setnumthreads(SEXP call, SEXP op, SEXP args, SEXP rho)
 {

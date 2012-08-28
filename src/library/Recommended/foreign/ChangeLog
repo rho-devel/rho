@@ -1,3 +1,17 @@
+2011-05-21  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* DESCRIPTION: Version is 0.8-50.
+
+2012-05-08  Kurt Hornik <Kurt.Hornik@R-project.org>
+
+	* DESCRIPTION: Improve Authors@R
+
+2012-02-10  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* DESCRIPTION: Version is 0.8-49.
+	* R/read.dta.R, src/stataread: patch from PR#14799
+	* tests/spss.Rout.save: update output for R 2.15.0
+
 2011-12-06  Brian Ripley <Brian.Ripley@R-project.org>
 
 	* DESCRIPTION: Version is 0.8-48.

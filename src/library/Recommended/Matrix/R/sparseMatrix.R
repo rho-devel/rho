@@ -7,6 +7,13 @@
 
 setAs("ANY", "sparseMatrix", function(from) as(from, "CsparseMatrix"))
 
+## If people did not use xtabs(), but table():
+setAs("table", "sparseMatrix", function(from) {
+    if(length(d <- dim(from)) != 2)
+        stop("only 2-dimensional tables can be directly coerced to sparse matrices")
+    as(unclass(from), "CsparseMatrix")
+})
+
 setAs("sparseMatrix", "generalMatrix", as_gSparse)
 
 setAs("sparseMatrix", "symmetricMatrix", as_sSparse)
@@ -799,76 +806,4 @@ setMethod("all.equal", c(target = "ANY", current = "sparseMatrix"),
 
 ### --- sparse model matrix,  fac2sparse, etc ----> ./spModels.R
 
-
-###--- TODO: Remove, once we require  R >= 2.10.0 ---- :
-
-## xtabs returning a sparse matrix.  This is cut'n'paste
-## of xtabs() in <Rsrc>/src/library/stats/R/xtabs.R ;
-## with the new argument 'sparse'
-xtabs <- function(formula = ~., data = parent.frame(), subset, sparse = FALSE,
-		  na.action, exclude = c(NA, NaN), drop.unused.levels = FALSE)
-{
-    if (missing(formula) && missing(data))
-	stop("must supply either 'formula' or 'data'")
-    if(!missing(formula)){
-	## We need to coerce the formula argument now, but model.frame
-	## will coerce the original version later.
-	formula <- as.formula(formula)
-	if (!inherits(formula, "formula"))
-	    stop("'formula' missing or incorrect")
-    }
-    if (any(attr(terms(formula, data = data), "order") > 1))
-	stop("interactions are not allowed")
-    m <- match.call(expand.dots = FALSE)
-    if (is.matrix(eval(m$data, parent.frame())))
-	m$data <- as.data.frame(data)
-    m$... <- m$exclude <- m$drop.unused.levels <- m$sparse <- NULL
-    m[[1]] <- as.name("model.frame")
-    mf <- eval(m, parent.frame())
-    if(length(formula) == 2) {
-	by <- mf
-	y <- NULL
-    }
-    else {
-	i <- attr(attr(mf, "terms"), "response")
-	by <- mf[-i]
-	y <- mf[[i]]
-    }
-    by <- lapply(by, function(u) {
-	if(!is.factor(u)) u <- factor(u, exclude = exclude)
-	u[ , drop = drop.unused.levels]
-    })
-    if(!sparse) { ## identical to stats::xtabs
-	x <-
-	    if(is.null(y))
-		do.call("table", by)
-	    else if(NCOL(y) == 1)
-		tapply(y, by, sum)
-	    else {
-		z <- lapply(as.data.frame(y), tapply, by, sum)
-		array(unlist(z),
-		      dim = c(dim(z[[1]]), length(z)),
-		      dimnames = c(dimnames(z[[1]]), list(names(z))))
-	    }
-	x[is.na(x)] <- 0
-	class(x) <- c("xtabs", "table")
-	attr(x, "call") <- match.call()
-	x
-
-    } else { ## sparse
-	if (length(by) != 2)
-	    stop("xtabs(*, sparse=TRUE) applies only to two-way tables")
-	rows <- by[[1]]
-	cols <- by[[2]]
-	rl <- levels(rows)
-	cl <- levels(cols)
-	if (is.null(y))
-	    y <- rep.int(1, length(rows))
-	as(new("dgTMatrix",
-	       i = as.integer(rows) - 1L,
-	       j = as.integer(cols) - 1L,
-	       x = as.double(y),
-	       Dim = c(length(rl), length(cl)),
-	       Dimnames = list(rl, cl)), "CsparseMatrix")
-    }
-}
+###  xtabs(*, sparse = TRUE) ---> part of standard package 'stats' since R 2.10.0

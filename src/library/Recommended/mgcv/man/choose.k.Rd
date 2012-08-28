@@ -42,6 +42,10 @@ doing this, then \code{k} was large enough. (Change in the smoothness selection 
 and/or the effective degrees of freedom, when \code{k} is increased, provide the obvious 
 numerical measures for whether the fit has changed substantially.)
 
+\code{\link{gam.check}} runs a simple simulation based check on the basis dimensions, which can 
+help to flag up terms for which \code{k} is too low. Grossly too small \code{k}
+will also be visible from partial residuals available with \code{\link{plot.gam}}.
+
 One scenario that can cause confusion is this: a model is fitted with
 \code{k=10} for a smooth term, and the EDF for the term is estimated as 7.6,
 some way below the maximum of 9. The model is then refitted with \code{k=20}
@@ -68,14 +72,17 @@ Wood, S.N. (2006) Generalized Additive Models: An Introduction with R. CRC.
 \examples{
 ## Simulate some data ....
 library(mgcv)
-set.seed(0) 
+set.seed(1) 
 dat <- gamSim(1,n=400,scale=2)
 
 ## fit a GAM with quite low `k'
 b<-gam(y~s(x0,k=6)+s(x1,k=6)+s(x2,k=6)+s(x3,k=6),data=dat)
-plot(b,pages=1)
+plot(b,pages=1,residuals=TRUE) ## hint of a problem in s(x2)
 
-## Economical tactic (see below for more obvious approach)....
+## the following suggests a problem with s(x2)
+gam.check(b)
+
+## Another approach (see below for more obvious method)....
 ## check for residual pattern, removeable by increasing `k'
 ## typically `k', below, chould be substantially larger than 
 ## the original, `k' but certainly less than n/2.
@@ -87,13 +94,19 @@ gam(rsd~s(x1,k=40,bs="cs"),gamma=1.4,data=dat) ## fine
 gam(rsd~s(x2,k=40,bs="cs"),gamma=1.4,data=dat) ## `k' too low
 gam(rsd~s(x3,k=40,bs="cs"),gamma=1.4,data=dat) ## fine
 
+## refit...
+b <- gam(y~s(x0,k=6)+s(x1,k=6)+s(x2,k=20)+s(x3,k=6),data=dat)
+gam.check(b) ## better
+
 ## similar example with multi-dimensional smooth
 b1 <- gam(y~s(x0)+s(x1,x2,k=15)+s(x3),data=dat)
 rsd <- residuals(b1)
 gam(rsd~s(x0,k=40,bs="cs"),gamma=1.4,data=dat) ## fine
 gam(rsd~s(x1,x2,k=100,bs="ts"),gamma=1.4,data=dat) ## `k' too low
 gam(rsd~s(x3,k=40,bs="cs"),gamma=1.4,data=dat) ## fine
- 
+
+gam.check(b1) ## shows same problem
+
 ## and a `te' example
 b2 <- gam(y~s(x0)+te(x1,x2,k=4)+s(x3),data=dat)
 rsd <- residuals(b2)
@@ -101,10 +114,15 @@ gam(rsd~s(x0,k=40,bs="cs"),gamma=1.4,data=dat) ## fine
 gam(rsd~te(x1,x2,k=10,bs="cs"),gamma=1.4,data=dat) ## `k' too low
 gam(rsd~s(x3,k=40,bs="cs"),gamma=1.4,data=dat) ## fine
 
+gam.check(b2) ## shows same problem
+
 ## same approach works with other families in the original model
 dat <- gamSim(1,n=400,scale=.25,dist="poisson")
-bp<-gam(y~s(x0,k=6)+s(x1,k=6)+s(x2,k=6)+s(x3,k=6),
-        family=poisson,data=dat)
+bp<-gam(y~s(x0,k=5)+s(x1,k=5)+s(x2,k=5)+s(x3,k=5),
+        family=poisson,data=dat,method="ML")
+
+gam.check(bp)
+
 rsd <- residuals(bp)
 gam(rsd~s(x0,k=40,bs="cs"),gamma=1.4,data=dat) ## fine
 gam(rsd~s(x1,k=40,bs="cs"),gamma=1.4,data=dat) ## fine

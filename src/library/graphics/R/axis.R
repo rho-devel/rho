@@ -54,10 +54,7 @@ Axis.table <- function(x, at, ..., side = 1, labels)
          x0 <- if (is.num) xx else seq.int(x)
          if(missing(at)) at <- x0
          if(missing(labels)) labels <- nx
-         xaxt <- if (length(as <- list(...))) {
-             if (!is.null(as$axes) && !as$axes) "n" else as$xaxt
-         }## else NULL
-         axis(side, at = at, labels = labels, xaxt = xaxt)
+         axis(side, at = at, labels = labels, ...)
      }
      else stop("only for 1-D table")
 }
@@ -74,7 +71,7 @@ axTicks <- function(side, axp = NULL, usr = NULL, log = NULL, nintLog = NULL)
     if(!(side <- as.integer(side)) %in% 1L:4L)
         stop("'side' must be in {1:4}")
     is.x <- side %% 2 == 1
-    XY <- function(ch) paste(if(is.x) "x" else "y", ch, sep="")
+    XY <- function(ch) paste0(if(is.x) "x" else "y", ch)
     if(is.null(axp)) axp <- par(XY("axp"))
     else if(!is.numeric(axp) || length(axp) != 3) stop("invalid 'axp'")
     if(is.null(log)) log <- par(XY("log"))

@@ -729,7 +729,7 @@ void mgcv_trisymeig(double *d,double *g,double *v,int *n,int getvec,int descendi
 
 
 void Rlanczos(double *A,double *U,double *D,int *n, int *m, int *lm,double *tol) {
-/* Prototype faster lanczos_spd for calling from R.
+/* Faster version of lanczos_spd for calling from R.
    A is n by n symmetric matrix. Let k = m + max(0,lm).
    U is n by k and D is a k-vector.
    m is the number of upper eigenvalues required and lm the number of lower.
@@ -738,18 +738,16 @@ void Rlanczos(double *A,double *U,double *D,int *n, int *m, int *lm,double *tol)
 
    Matrices are stored in R (and LAPACK) format (1 column after another).
 
-   ISSUE: 1. eps_stop tolerance is set *very* tight.
-          2. Currently all eigenvectors of Tj are found, although only the next unconverged one
+   ISSUE: 1. Currently all eigenvectors of Tj are found, although only the next unconverged one
              is really needed. Might be better to be more selective using dstein from LAPACK. 
-          3. Basing whole thing on dstevx might be faster
-          4. Is random start vector really best? convergence seems very slow. Might be better to 
-             use e.g. a sine wave, and simply change its frequency if it seems to be in null space.
-             Demmel (1997) suggests using a random vector, to avoid any chance of orthogonality with
-             an eigenvector!
-        
+          2. Basing whole thing on dstevx might be faster
+          3. Is random start vector really best? Actually Demmel (1997) suggests using a random vector, 
+             to avoid any chance of orthogonality with an eigenvector!
+          4. Could use selective orthogonalization, but cost of full orth is only 2nj, while n^2 of method is
+             unavoidable, so probably not worth it.  
 */
-  int biggest=0,f_check,i,k,kk,ok,l,j,vlength=0,neg_conv,pos_conv,ni,pi,neg_closed,pos_closed,converged,incx=1;
-  double **q,*v=NULL,bt,xx,yy,*a,*b,*d,*g,*z,*err,*p0,*p1,*zp,*qp,normTj,eps_stop=DOUBLE_EPS,max_err,alpha=1.0,beta=0.0;
+  int biggest=0,f_check,i,k,kk,ok,l,j,vlength=0,ni,pi,converged,incx=1;
+  double **q,*v=NULL,bt,xx,yy,*a,*b,*d,*g,*z,*err,*p0,*p1,*zp,*qp,normTj,eps_stop,max_err,alpha=1.0,beta=0.0;
   unsigned long jran=1,ia=106,ic=1283,im=6075; /* simple RNG constants */
   const char uplo='U';
   eps_stop = *tol; 
@@ -806,8 +804,6 @@ void Rlanczos(double *A,double *U,double *D,int *n, int *m, int *lm,double *tol)
   
       /* Now stabilize by full re-orthogonalization.... */
       
-
-
       for (i=0;i<=j;i++) 
       { /* form xx= z'q[i] */
         /*for (xx=0.0,qp=q[i],p0=qp + *n,zp=z;qp<p0;zp++,qp++) xx += *zp * *qp;*/
@@ -867,34 +863,23 @@ void Rlanczos(double *A,double *U,double *D,int *n, int *m, int *lm,double *tol)
       if (j >= *m + *lm)
       { max_err=normTj*eps_stop;
         if (biggest) { /* getting m largest magnitude eigen values */
-          /* Finished only when the smallest element of the positive converged set and the 
-             smallest element of the negative converged set are both not in the largest magnitude 
-             set, or these sets are finished, and the largest magnitude set is of size *m, or when the total number 
-             converged equals the matrix dimension */
-	  pos_closed=neg_closed=0;
-          neg_conv=0;i=j; while (i>=0&&err[i]<max_err&&d[i]<0.0) { neg_conv++;i--;}
-          if (i>=0&&err[i]<max_err) neg_closed=1; /* all negatives found */
-	  pos_conv=0;i=0; while (i<=j&&err[i]<max_err&&d[i]>=0.0) { i++;pos_conv++;}
-          if (i<=j&&err[i]<max_err) pos_closed=1; /* all positives found */
- 
-          if (neg_conv+pos_conv >= *m) { /* some chance of having finished */
-            pi=0;ni=0; /* counters for how many of neg and pos converged to include in largest set */
-            while (pi+ni < *m) {
-              if ((d[pi] > -d[j-ni]&&pi<pos_conv)||ni>=neg_conv) pi++; else ni++;
+	  /* only one convergence test is sane here:
+             1. Find the *m largest magnitude elements of d. (*lm is 0)
+             2. When all these have converged, we are done.
+          */   
+          pi=ni=0;converged=1;
+          while (pi+ni < *m) if (fabs(d[pi])>= fabs(d[j-ni])) { /* include d[pi] in largest set */
+              if (err[pi]>max_err) {converged=0;break;} else pi++;
+	    } else { /* include d[j-ni] in largest set */
+              if (err[ni]>max_err) {converged=0;break;} else ni++;
             }
-            /* now pi and ni are the number of terms to include in the largest m 
-               from the +ve and -ve converged sets */
-            converged=1;
-            if (!pos_closed&&pi==pos_conv) converged=0; /* don't know that there is not a larger value to come */            
-            if (!neg_closed&&ni==neg_conv) converged=0; /* ditto */
-          } else converged = 0;
- 
+   
           if (converged) {
             *m = pi;
             *lm = ni;
             j++;break;
           }
-        } else
+        } else /* number of largest and smallest supplied */
         { ok=1;
           for (i=0;i < *m;i++) if (err[i]>max_err) ok=0;
           for (i=j;i > j - *lm;i--) if (err[i]>max_err) ok=0;

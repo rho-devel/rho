@@ -1,26 +1,39 @@
 Package: foreign
 Priority: recommended
-Version: 0.8-48
-Date: 2011-12-06
+Version: 0.8-50
+Date: 2012-05-21
 Title: Read Data Stored by Minitab, S, SAS, SPSS, Stata, Systat, dBase,
         ...
-Depends: R (>= 2.13.0), stats
+Depends: R (>= 2.14.0), stats
 Imports: methods, utils
-Authors@R: c(person("R-core", email = "R-core@R-project.org", role =
-        c("aut", "cre")), person("Saikat", "DebRoy", role = "ctb"),
-        person("Roger", "Bivand", role = "ctb", email =
-        "Roger.Bivand@nhh.no"), person("others", role = "ctb", comment
-        = "see COPYRIGHTS file in the sources"))
-Maintainer: R-core <R-core@r-project.org>
-Author: R-core members, Saikat DebRoy,
-	Roger Bivand <Roger.Bivand@nhh.no> and others:
-	see COPYRIGHTS file in the sources.
-Description: Functions for reading and writing data stored by statistical
-        packages such as Minitab, S, SAS, SPSS, Stata, Systat, ...,
-	and for reading and writing dBase files.
+Authors@R: structure( c(person("R Core Team", email =
+        "R-core@R-project.org", role = c("aut", "cph", "cre")),
+        person("Roger", "Bivand", role = c("ctb", "cph")),
+        person(c("Vincent", "J."), "Carey", role = c("ctb", "cph")),
+        person("Saikat", "DebRoy", role = c("ctb", "cph")),
+        person("Stephen", "Eglen", role = c("ctb", "cph")),
+        person("Rajarshi", "Guha", role = c("ctb", "cph")),
+        person("Nicholas", "Lewin-Koh", role = c("ctb", "cph")),
+        person("Mark", "Myatt", role = c("ctb", "cph")), person("Ben",
+        "Pfaff", role = "ctb"), person("Frank", "Warmerdam", role =
+        c("ctb", "cph")), person("Stephen", "Weigand", role = c("ctb",
+        "cph")), person("Free Software Foundation, Inc.", role =
+        "cph")), footer = "See the COPYRIGHTS file in the sources for
+        details on contributions and copyrights.")
+Description: Functions for reading and writing data stored by
+        statistical packages such as Minitab, S, SAS, SPSS, Stata,
+        Systat, ..., and for reading and writing dBase files.
 LazyLoad: yes
 License: GPL (>= 2)
 BugReports: http://bugs.r-project.org
-Packaged: 2011-12-06 07:33:06 UTC; ripley
+Packaged: 2012-05-23 07:28:56 UTC; ripley
+Author: R Core Team [aut, cph, cre], Roger Bivand [ctb, cph], Vincent
+        J. Carey [ctb, cph], Saikat DebRoy [ctb, cph], Stephen Eglen
+        [ctb, cph], Rajarshi Guha [ctb, cph], Nicholas Lewin-Koh [ctb,
+        cph], Mark Myatt [ctb, cph], Ben Pfaff [ctb], Frank Warmerdam
+        [ctb, cph], Stephen Weigand [ctb, cph], Free Software
+        Foundation, Inc. [cph].  See the COPYRIGHTS file in the sources
+        for details on contributions and copyrights.
+Maintainer: R Core Team <R-core@R-project.org>
 Repository: CRAN
-Date/Publication: 2011-12-07 13:57:17
+Date/Publication: 2012-05-23 07:39:12

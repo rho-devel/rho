@@ -14,7 +14,7 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-ARMAacf <- function(ar = numeric(0), ma = numeric(0), lag.max = r,
+ARMAacf <- function(ar = numeric(), ma = numeric(), lag.max = r,
                     pacf = FALSE)
 {
     p <- length(ar)
@@ -67,9 +67,9 @@ acf2AR <- function(acf)
     z <- .Fortran(C_eureka, as.integer(order.max), r, r,
                   coefs = double(order.max^2), vars = double(order.max),
                   double(order.max))
-    nm <- paste("ar(",1L:order.max, ")", sep="")
+    nm <- paste0("ar(",1L:order.max, ")")
     matrix(z$coefs, order.max, order.max, dimnames=list(nm, 1L:order.max))
 }
 
-ARMAtoMA <- function(ar = numeric(0), ma = numeric(0), lag.max)
+ARMAtoMA <- function(ar = numeric(), ma = numeric(), lag.max)
     .Call(C_ARMAtoMA, as.double(ar), as.double(ma), as.integer(lag.max))

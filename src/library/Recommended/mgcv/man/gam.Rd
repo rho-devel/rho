@@ -17,22 +17,9 @@ with smoothing parameters selected by GCV/UBRE/AIC/REML or by regression splines
 fixed degrees of freedom (mixtures of the two are permitted). Multi-dimensional smooths are 
 available using penalized thin plate regression splines (isotropic) or tensor product splines 
 (when an isotropic smooth is inappropriate). For an overview of the smooths available see \code{\link{smooth.terms}}. 
-For more on specifying models see \code{\link{gam.models}}, \code{\link{random.effects}} and \code{\link{linear.functional.terms}}. 
-For more on model selection see \code{\link{gam.selection}}. 
+For more on specifying models see \code{\link{gam.models}}, \code{\link{random.effects}} and \code{\link{linear.functional.terms}}. For more on model selection see \code{\link{gam.selection}}. Do read \code{\link{gam.check}} and \code{\link{choose.k}}.
 
-\code{gam()} is not a clone of what S-PLUS provides: the major
-differences are (i) that by default estimation of the
-degree of smoothness of model terms is part of model fitting, (ii) a
-Bayesian approach to variance estimation is employed that makes for easier
-confidence interval calculation (with good coverage probabilities), (iii) that the model
-can depend on any (bounded) linear functional of smooth terms,
-and, (iv) the parametric part of the model can be penalized, (v) simple random effects can be incorporated, and 
-(vi) the facilities for incorporating smooths of more than one variable are
-different: specifically there are no \code{lo} smooths, but instead (a) \code{s}
-terms can have more than one argument, implying an isotropic smooth and (b) \code{te} smooths are
-provided as an effective means for modelling smooth interactions of any
-number of variables via scale invariant tensor product smooths. If you want
-a clone of what S-PLUS provides use \link[gam]{gam} from package \code{gam}.
+See \link[gam]{gam} from package \code{gam}, for GAMs via the original Hastie and Tibshirani approach (see details for differences to this implementation).
 
 For very large datasets see \code{\link{bam}}, for mixed GAM see \code{\link{gamm}} and \code{\link{random.effects}}.
 }
@@ -256,7 +243,21 @@ general linear functionals of smooths, via the summation convention mechanism de
 Details of the default underlying fitting methods are given in Wood (2011
 and 2004). Some alternative methods are discussed in Wood (2000 and 2006). 
 
- }
+\code{gam()} is not a clone of Trevor Hastie's oroginal (as supplied in S-PLUS or package \link[gam]{gam}) The major
+differences are (i) that by default estimation of the
+degree of smoothness of model terms is part of model fitting, (ii) a
+Bayesian approach to variance estimation is employed that makes for easier
+confidence interval calculation (with good coverage probabilities), (iii) that the model
+can depend on any (bounded) linear functional of smooth terms, (iv) the parametric part of the model can be penalized, 
+(v) simple random effects can be incorporated, and 
+(vi) the facilities for incorporating smooths of more than one variable are
+different: specifically there are no \code{lo} smooths, but instead (a) \code{\link{s}}
+terms can have more than one argument, implying an isotropic smooth and (b) \code{\link{te}} or \code{\link{t2}} smooths are
+provided as an effective means for modelling smooth interactions of any
+number of variables via scale invariant tensor product smooths. Splines on the sphere, Duchon splines 
+and Gaussian Markov Random Fields are also available. See \link[gam]{gam} 
+from package \code{gam}, for GAMs via the original Hastie and Tibshirani approach.
+}
 
 
 \references{
@@ -279,7 +280,11 @@ generalized additive mixed models. Biometrics 62(4):1025-1036
 Wood S.N. (2006b) Generalized Additive Models: An Introduction with R. Chapman
 and Hall/CRC Press.
 
-Wood, S.N. (2006c) On confidence intervals for generalized additive models based on penalized regression splines. Australian and New Zealand Journal of Statistics. 48(4): 445-464.
+Wood S.N., F. Scheipl and J.J. Faraway (2012) Straightforward intermediate rank tensor product smoothing
+in mixed models. Statistical Computing.
+
+Marra, G and S.N. Wood (2012) Coverage Properties of Confidence Intervals for Generalized Additive
+Model Components. Scandinavian Journal of Statistics, 39(1), 53-74.
 
 
 Key Reference on GAMs and related models:
@@ -327,6 +332,10 @@ Wahba (e.g. 1990) and Gu (e.g. 2002).
 
 \section{WARNINGS }{
 
+The default basis dimensions used for smooth terms are essentially arbitrary, and 
+it should be checked that they are not too small. See \code{\link{choose.k}} and
+\code{\link{gam.check}}. 
+
 You must have more unique combinations of covariates than the model has total
 parameters. (Total parameters is sum of basis dimensions plus sum of non-spline 
 terms less the number of spline terms). 
@@ -344,18 +353,21 @@ an infinite range on the linear predictor scale.
 \code{\link{linear.functional.terms}}, \code{\link{s}},
 \code{\link{te}} \code{\link{predict.gam}},
 \code{\link{plot.gam}}, \code{\link{summary.gam}}, \code{\link{gam.side}},
-\code{\link{gam.selection}},\code{\link{mgcv}}, \code{\link{gam.control}}
+\code{\link{gam.selection}}, \code{\link{gam.control}}
 \code{\link{gam.check}}, \code{\link{linear.functional.terms}} \code{\link{negbin}}, \code{\link{magic}},\code{\link{vis.gam}}
  }
 
 \examples{
 library(mgcv)
-set.seed(0) ## simulate some data... 
+set.seed(2) ## simulate some data... 
 dat <- gamSim(1,n=400,dist="normal",scale=2)
 b <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),data=dat)
 summary(b)
 plot(b,pages=1,residuals=TRUE)  ## show partial residuals
 plot(b,pages=1,seWithMean=TRUE) ## `with intercept' CIs
+## run some basic model checks, including checking
+## smoothing basis dimensions...
+gam.check(b)
 
 ## same fit in two parts .....
 G <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),fit=FALSE,data=dat)

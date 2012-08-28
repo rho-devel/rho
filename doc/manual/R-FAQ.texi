@@ -3,11 +3,11 @@
 @setfilename R-FAQ.info
 @settitle R FAQ
 @setchapternewpage on
-@set FAQ_YEAR 2011
-@set FAQ_DATE @value{FAQ_YEAR}-12-16
-@set REL_YEAR 2011
+@set FAQ_YEAR 2012
+@set FAQ_DATE @value{FAQ_YEAR}-09-19
+@set REL_YEAR 2012
 @set REL_MAJOR 2
-@set REL_MINOR 14
+@set REL_MINOR 15
 @set REL_PATCHLEVEL 1
 @set REL_VERSION @value{REL_MAJOR}.@value{REL_MINOR}.@value{REL_PATCHLEVEL}
 @set FAQ_VERSION @value{REL_MAJOR}.@value{REL_MINOR}.@value{FAQ_DATE}
@@ -212,7 +212,7 @@ described in the
 @url{http://CRAN.R-project.org/bin/windows/base/rw-FAQ.html, ``R for
 Windows @acronym{FAQ}''} and the
 @url{http://CRAN.R-project.org/bin/macosx/RMacOSX-FAQ.html, ``R for Mac
-OS X @acronym{FAQ}}.  If you have information on Macintosh or Windows
+OS X @acronym{FAQ}''}.  If you have information on Macintosh or Windows
 systems that you think should be added to this document, please let me
 know.
 
@@ -550,11 +550,11 @@ The @file{bin/linux} directory of a @CRAN{} site contains the following
 packages.
 
 @quotation
-@multitable {Red Hat} {i386/x86_64} {hardy/karmic/lucid/maverick} {Martyn Plummer}
+@multitable {Red Hat} {i386/x86_64} {hardy/lucid/natty/oneiric/precise} {Martyn Plummer}
 @headitem @tab CPU @tab Versions @tab Provider
 @item Debian   @tab i386/amd64 @tab etch/lenny/squeeze @tab Johannes Ranke
 @item Red Hat  @tab i386/x86_64 @tab fedora10/fedora11 @tab Martyn Plummer
-@item Ubuntu   @tab i386/amd64 @tab hardy/lucid/maverick/natty @tab Michael Rutter
+@item Ubuntu   @tab i386/amd64 @tab hardy/lucid/natty/oneiric/precise @tab Michael Rutter
 @end multitable
 @end quotation
 
@@ -720,7 +720,7 @@ To cite R in publications, use
 @@Manual@{,
   title        = @{R: A Language and Environment for Statistical
                   Computing@},
-  author       = @{@{R Development Core Team@}@},
+  author       = @{@{R Core Team@}@},
   organization = @{R Foundation for Statistical Computing@},
   address      = @{Vienna, Austria@},
   year         = @value{REL_YEAR},
@@ -873,12 +873,13 @@ Mac OS X, and MS Windows).  @CRAN{} also provides access to
 documentation on R, existing mailing lists and the R Bug Tracking
 system.
 
-To ``submit'' to @CRAN{}, simply upload to
-@url{ftp://CRAN.R-project.org/incoming/} and send an email to
-@email{CRAN@@R-project.org}.  Note that @CRAN{} generally does not
-accept submissions of precompiled binaries due to security reasons.  In
-particular, binary packages for Windows and Mac OS X are provided by the
-respective binary package maintainers.
+To ``submit'' to @CRAN{}, check that your submission meets the
+@url{http://CRAN.R-project.org/web/packages/policies.html, CRAN
+Repository Policy}, upload to @url{ftp://CRAN.R-project.org/incoming/}
+and send an email to @email{CRAN@@R-project.org}.  Note that @CRAN{}
+generally does not accept submissions of precompiled binaries due to
+security reasons.  In particular, binary packages for Windows and Mac OS
+X are provided by the respective binary package maintainers.
 
 @quotation Note
 It is very important that you indicate the copyright (license)
@@ -1735,6 +1736,9 @@ relies on the popular and reliable open-source elements such as MySQL
 server (exchange and storage of the data), @uref{http://rstudio.org/,
 Rstudio} (R code designing and testing, file management), CKEditor
 (@HTML{} Layer design), and PHP.
+
+See @url{http://rwiki.sciviews.org/doku.php?id=faq-r#web_interfaces} for
+additional information.
 
 
 @node R Add-On Packages, R and Emacs, R Web Interfaces, Top
@@ -3641,9 +3645,7 @@ bugs new-to-old'' or the search facility on
 @url{http://bugs.R-project.org/}.  Second, consult
 @url{https://svn.R-project.org/@/R/@/trunk/@/doc/@/NEWS.Rd}, which
 records changes that will appear in the @emph{next} release of R,
-including bug fixes that do not appear on the Bug Tracker.  (Windows
-users should additionally consult
-@url{https://svn.R-project.org/@/R/@/trunk/@/src/@/gnuwin32/@/CHANGES.Rd}.)
+including bug fixes that do not appear on the Bug Tracker.  
 Third, if possible try the current r-patched or r-devel version of R.
 If a bug has already been reported or fixed, please do not submit
 further bug reports on it.  Finally, check carefully whether the bug is

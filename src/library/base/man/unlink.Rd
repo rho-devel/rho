@@ -1,6 +1,6 @@
 % File src/library/base/man/unlink.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
 
 \name{unlink}
@@ -19,14 +19,17 @@
   \code{unlink} deletes the file(s) or directories specified by \code{x}.
 }
 \details{
-  Tilde-expansion (see \code{\link{path.expand}}) is done on \code{x} as
-  from \R 2.13.0.
+  Tilde-expansion (see \code{\link{path.expand}}) is done on \code{x}.
   
   If \code{recursive = FALSE} directories are not deleted,
   not even empty ones.
 
 #ifdef unix
-  On most platforms \sQuote{file} includes symbolic links, fifos and sockets.
+  On most platforms \sQuote{file} includes symbolic links, fifos and
+  sockets.  Prior to \R 2.15.0 \code{unlink(x, recursive = TRUE)} would
+  delete the contents of a directory target of a symbolic link: it now
+  only deletes the symbolic link (as \code{unlink(x, recursive = FALSE)}
+  always has).
   
 #endif  
   Wildcard expansion is done by the internal code of
@@ -44,8 +47,9 @@
   a metacharacter matches nothing it is considered as a literal
   character.
 
-  \code{recursive = TRUE} may not be supported on a platforms, when it
-  will be ignored, with a warning.
+  \code{recursive = TRUE} might not be supported on all platforms, when it
+  will be ignored, with a warning: however there are no known current
+  examples.
 #endif
 #ifdef Windows
   Character classes such as \file{[a-z]} are supported.  The

@@ -26,7 +26,7 @@ mona <- function(x)
                     as.integer(n),
                     as.integer(jp),
                     x2 = x2,# x[,]
-                    error = as.integer(0),
+                    error = 0L,
                     nban = integer(n),
                     ner = integer(n),
                     integer(n),

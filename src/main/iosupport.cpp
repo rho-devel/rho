@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997,  Robert Gentleman and Ross Ihaka
- *                2007 The R Development Core Team
+ *                2007 The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -178,7 +178,20 @@ int attribute_hidden R_IoBufferGetc(IoBuffer *iob)
     return *(iob->read_ptr)++;
 }
 
-	/* Initialization code for text buffers */
+/* What is our current offset, taking all blocks into account? */
+
+int attribute_hidden R_IoBufferReadOffset(IoBuffer *iob)
+{
+    int result = iob->read_offset;
+    BufferListItem* buf = iob->start_buf;
+    while(buf && buf != iob->read_buf) {
+    	result += IOBSIZE;
+    	buf = buf->next;
+    }
+    return result;
+}
+    
+/* Initialization code for text buffers */
 
 static void transferChars(unsigned char *p, const char *q)
 {

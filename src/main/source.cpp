@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 2001-11      The R Development Core Team
+ *  Copyright (C) 2001-11      The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -150,15 +150,15 @@ void attribute_hidden parseError(SEXP call, int linenum)
 	    error(_("%s%d:%d: %s"),
 		  filename, linenum, R_ParseErrorCol, R_ParseErrorMsg);
 	    break;
-	case 1:
-	    sprintf(buffer, "%d: %n", R_ParseContextLine, &width); 
+	case 1: // replaces use of %n
+	    width = sprintf(buffer, "%d: ", R_ParseContextLine); 
 	    error(_("%s%d:%d: %s\n%d: %s\n%*s"),
 		  filename, linenum, R_ParseErrorCol, R_ParseErrorMsg,
 		  R_ParseContextLine, CHAR(STRING_ELT(context, 0)), 
 		  width+R_ParseErrorCol, "^");
 	    break;
 	default:
-	    sprintf(buffer, "%d: %n", R_ParseContextLine, &width);
+	    width = sprintf(buffer, "%d:", R_ParseContextLine);
 	    error(_("%s%d:%d: %s\n%d: %s\n%d: %s\n%*s"),
 		  filename, linenum, R_ParseErrorCol, R_ParseErrorMsg,
 		  R_ParseContextLine-1, CHAR(STRING_ELT(context, len-2)),
@@ -251,7 +251,7 @@ SEXP attribute_hidden do_parse(SEXP call, SEXP op, SEXP args, SEXP env)
 	*/
 	for(i = 0; i < length(text); i++)
 	    if(!ENC_KNOWN(STRING_ELT(text, i)) &&
-	       !strIsASCII(CHAR(STRING_ELT(text, i)))) {
+	       !IS_ASCII(STRING_ELT(text, i))) {
 		allKnown = FALSE;
 		break;
 	    }

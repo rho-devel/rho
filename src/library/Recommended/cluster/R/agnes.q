@@ -1,4 +1,4 @@
-#### $Id: agnes.q 5763 2011-04-25 16:06:09Z maechler $
+#### $Id: agnes.q 6015 2012-01-18 11:03:38Z maechler $
 agnes <- function(x, diss = inherits(x, "dist"), metric = "euclidean",
 		  stand = FALSE, method = "average", par.method,
                   keep.diss = n < 100, keep.data = !diss)
@@ -45,7 +45,6 @@ agnes <- function(x, diss = inherits(x, "dist"), metric = "euclidean",
 	mdata <- FALSE
 	ndyst <- 0
 	x2 <- double(1)
-	jdyss <- 1 # distances on _input_
     }
     else {
 	## check input matrix and standardize, if necessary
@@ -64,33 +63,31 @@ agnes <- function(x, diss = inherits(x, "dist"), metric = "euclidean",
 	    valmd <- rep(valmisdat, jp)
 	}
 	dv <- double(1 + (n * (n - 1))/2)
-	jdyss <- 0 # distances to be computed
     }
     if(n <= 1) stop("need at least 2 objects to cluster")
-    if(keep.diss) jdyss <- jdyss + 10
-    ## call Fortran routine
-    res <- .Fortran(twins,
+    C.keep.diss <- keep.diss && !diss
+    res <- .C(twins,
 		    as.integer(n),
 		    as.integer(jp),
 		    x2,
 		    dv,
-		    dis = double(if(keep.diss) length(dv) else 1),
-		    ok = as.integer(jdyss),
+		    dis = double(if(C.keep.diss) length(dv) else 1),
+		    jdyss = if(C.keep.diss) diss + 10L else as.integer(diss),
 		    if(mdata) valmd else double(1),
 		    if(mdata) jtmd else integer(jp),
 		    as.integer(ndyst),
-		    as.integer(1),# jalg = 1 <==> AGNES
+		    1L,# jalg = 1 <==> AGNES
 		    meth,# integer
 		    integer(n),
 		    ner = integer(n),
 		    ban = double(n),
-		    ac = as.double(0),
+		    ac = as.double(0), ## as.double(trace.lev),# in / out
                     par.method,
-		    merge = matrix(0:0, n - 1, 2), # integer
+		    merge = matrix(0L, n - 1, 2), # integer
                     DUP = FALSE)
     if(!diss) {
 	##give warning if some dissimilarities are missing.
-	if(res$ok == -1)
+	if(res$jdyss == -1)
 	    stop("No clustering performed, NA-values in the dissimilarity matrix.\n" )
         if(keep.diss) {
             ## adapt Fortran output to S:
@@ -161,5 +158,5 @@ print.summary.agnes <- function(x, ...)
     invisible(x)
 }
 
-as.dendrogram.agnes <- function(object, ...) ## ... : really only 'hang'
+as.dendrogram.twins <- function(object, ...) ## ... : really only 'hang'
     as.dendrogram(as.hclust(object), ...)

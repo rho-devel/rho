@@ -876,6 +876,7 @@ int Matrix_check_class_and_super(SEXP x, const char **valid, SEXP rho)
 }
 #endif
 
+#if R_VERSION < R_Version(2, 15, 0)
 /**
  * Return the 0-based index of an is() match in a vector of class-name
  * strings terminated by an empty string.  Returns -1 for no match.
@@ -914,3 +915,4 @@ int Matrix_check_class_etc(SEXP x, const char **valid)
 /*     UNPROTECT(1); */
     return Matrix_check_class_and_super(x, valid, rho);
 }
+#endif // R version < 2.15.0

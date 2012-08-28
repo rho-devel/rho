@@ -1,8 +1,8 @@
 
-R version 2.13.0 Under development (unstable) (2011-03-05 r54672)
-Copyright (C) 2011 The R Foundation for Statistical Computing
+R Under development (unstable) (2012-02-09 r58309)
+Copyright (C) 2012 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
-Platform: x86_64-unknown-linux-gnu (64-bit)
+Platform: i386-apple-darwin9.8.0/i386 (32-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -279,7 +279,7 @@ List of 20
  Mean   : 572.94   FATAL   MI   :  9   Mean   :47.8   Mean   : 88.79  
  3rd Qu.:1042.25   OTHER   CHD  :  3   3rd Qu.:51.0   3rd Qu.: 96.50  
  Max.   :2098.00                       Max.   :54.0   Max.   :160.00  
-                                                      NA's   :  1.00  
+                                                      NA's   :1       
      EDUYR           CHOL58          CGT58            HT58      
  Min.   : 6.00   Min.   :106.0   Min.   : 0.00   Min.   :60.90  
  1st Qu.: 9.75   1st Qu.:228.8   1st Qu.: 0.00   1st Qu.:66.50  
@@ -287,7 +287,7 @@ List of 20
  Mean   :11.66   Mean   :264.1   Mean   :11.58   Mean   :68.51  
  3rd Qu.:14.00   3rd Qu.:293.2   3rd Qu.:20.00   3rd Qu.:70.20  
  Max.   :18.00   Max.   :515.0   Max.   :60.00   Max.   :77.00  
- NA's   :28.00                   NA's   : 1.00                  
+ NA's   :28                      NA's   :1                      
       WT58           DAYOFWK     VITAL10    FAMHXCVR       CHD     
  Min.   :123.0   SUNDAY  : 19   ALIVE:179   NO :178   Min.   :0.0  
  1st Qu.:156.0   TUESDAY : 19   DEAD : 61   YES: 62   1st Qu.:0.0  
@@ -322,3 +322,6 @@ List of 20
 > stopifnot(identical(nms,  c("variable1", "variable2")),
 + 	  identical(nnms, attr(ldat, "variable.labels")))
 > 
+> proc.time()
+   user  system elapsed 
+  0.732   0.076   0.785 

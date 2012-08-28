@@ -1,7 +1,7 @@
 /* Source code for mgcv.dll/.so multiple smoothing parameter estimation code,
 suitable for interfacing to R 
 
-Copyright (C) 2000-2005 Simon N. Wood  simon.wood@r-project.org
+Copyright (C) 2000-2012 Simon N. Wood  simon.wood@r-project.org
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -31,12 +31,13 @@ USA. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "gcv.h"
 #include "tprs.h"
 #include "mgcv.h"
 #include "matrix.h"
 #include "qp.h"
 #include "general.h"
+#include <R_ext/Lapack.h>
+#include <R_ext/BLAS.h>
 
 #define round(a) ((a)-floor(a) <0.5 ? (int)floor(a):(int) floor(a)+1)
 
@@ -111,71 +112,6 @@ void RPackSarray(int m,matrix *S,double *RS)
   }
 
 }
-
-
-
-
-/********** The following are from spline.c (rather plodding coding) ***********/
-
-/* The next 4 functions are basis functions for the 1st derivative
-   representation of a cubic spline */
-
-double b0(x0,x1,x) double x0,x1,x;
-
-/* multiplies function value at x0 */
-
-{ double res,h,xx1;
-  if (x<x0) return(1.0);
-  if (x>x1) return(0.0);
-  h=x1-x0;xx1=x-x1;
-  res=2.0*(x-x0+0.5*h)*xx1*xx1/(h*h*h);
-  return(res);
-}
-
-
-double b1(x0,x1,x) double x0,x1,x;
-
-/* multiplies function value at x1 */
-
-{ double res,h,xx0;
-  if (x<x0) return(0.0);
-  if (x>x1) return(1.0);
-  h=x1-x0;xx0=x-x0;
-  res= -2.0*(x-x1-0.5*h)*xx0*xx0/(h*h*h);
-  return(res);
-}
-
-double d0(x0,x1,x) double x0,x1,x;
-
-/* multiplies gradient at x0 */
-
-{ double res,h,xx1;
-  if (x<x0) res=x-x0;  /* before start of interval - use linear extrapolation */
-  else 
-  if (x>x1) res=0.0;  /* after end of interval - d0 plays no part */
-  else                /* within interval */
-  { h=x1-x0;xx1=x-x1;
-    res=(x-x0)*xx1*xx1/(h*h);
-  }
-  return(res);
-}
-
-double d1(x0,x1,x) double x0,x1,x;
-
-/* multiplies gradient at x1 */
-
-{ double res,h,xx0;
-  if (x<x0) res=0.0; /* d1 plays no part */
-  else
-  if (x>x1) res=x-x1; /* linear extrapolation after end of interval */
-  else                /* in interval */
-  { h=x1-x0;xx0=x-x0;
-    res=xx0*xx0*(x-x1)/(h*h);
-  }
-  return(res);
-}
-
-
 
 
 matrix getD(h,nak) matrix h;int nak;
@@ -287,589 +223,147 @@ void MonoCon(matrix *A,matrix *b,matrix *x,int control,double lower,double upper
 }
 
 
-void tmap(matrix tm,matrix t,double time,int kill)
- /* to release static matrix allocation set kill to 1 otherwise 0 and
-	     prepare for a new sequence of knot positions in t*/
+void getFS(double *x,int n,double *S,double *F) {
+/* x contains ascending knot sequence for a cubic regression spline
+   Routine finds wigglness penalty S and F such that F' maps function 
+   values at knots to second derivatives. See Wood 2006 section 4.1.2.
+   F and S are n by n. F is F' in 4.1.2 notation.
+*/
+  double *D,*ldB,*sdB,*h,*Di,*Di1,*Di2,*Fp,*Sp,a,b,c;
+  int i,j,n1,n2;
+  /* create knot spacing vector h */
+  h = (double *)calloc((size_t)(n-1),sizeof(double));
+  for (i=1;i<n;i++) h[i-1] = x[i]-x[i-1];
 
-/* tm maps values of a function at the t values contained in vector t to
-   the value of a spline through those points at 'time' ;tgm does the same
-   for the gradient of the spline */
-
-{ static matrix D;static char first=1;
-  matrix h;
-  double **DM,*dum,*tmV,*DMi,*DMi1,d0v,d1v,x,xx0,xx1,xx02,xx12,h1,h2,h3,b0v,b1v,x0,x1;
-  long i,k,tr;
-  if (first)
-  { first=0;h=initmat(t.r-1,1L);
-    for (i=0L;i<t.r-1;i++) h.V[i]=t.V[i+1]-t.V[i];
-    D=getD(h,0); /* time trajectories always have natural end conditions */
-    freemat(h);
+  /* create n-2 by n matrix D: D[i,i] = 1/h[i], D[i,i+1] = -1/h[i]-1/h[i+1]
+     D[i,i+2] = 1/h[i+1], for i=0..(n-3). D is n-2 by n. */
+  D = (double *)calloc((size_t)(n*(n-2)),sizeof(double));
+  n1 = n-1;n2=n-2;
+  for (Di=D,Di1=D+n2,Di2=Di1+n2,i=0;i<n2;i++,Di+=n1,Di1+=n1,Di2+=n1) {
+    *Di = 1/h[i];*Di2 = 1/h[i+1];*Di1 = - *Di - *Di2;
   }
-  if (t.r==1L)
-  { tm.V[0]=1.0;}
-  else
-  { DM=D.M;dum=t.V;
-    i=0L;tr=t.r-2;dum++;
-    while ((time > *dum)&&(i<tr)) {i++;dum++;}
-    tr=t.r;tmV=tm.V;
-    DMi=DM[i];DMi1=DM[i+1];
-    x0=t.V[i];x1=t.V[i+1];
-    x=time;
-    h1=x1-x0;h2=h1*h1;h3=h2*h1;
-    xx0=x-x0;xx1=x-x1;
-    xx02=xx0*xx0;xx12=xx1*xx1;
-   
-    if (x<x0) 
-    { d0v=xx0;  
-      d1v=0.0;
-      b0v=1.0;
-      b1v=0.0;
+  /* create leading diagonal of B*/
+  ldB = (double *)calloc((size_t)(n2),sizeof(double));
+  for (i=0;i<n2;i++) ldB[i] = (h[i]+h[i+1])/3;
+  sdB = (double *)calloc((size_t)(n2-1),sizeof(double));
+  for (i=1;i<n2;i++) sdB[i-1] = h[i]/6;
+  /* Now find B^{-1}D using LAPACK routine DPTSV (result in D) */
+  F77_NAME(dptsv)(&n2,&n,ldB,sdB,D,&n2,&i);
+
+  /* copy B^{-1}D into appropriate part of F */
+  Di=D;
+  for (i=0;i<n;i++) {
+    Fp = F+i; /* point to row i of F */
+    *Fp=0.0;Fp+=n;
+    /* col i of D copied to row i of F */
+    for (j=0;j<n2;j++,Fp+=n,Di++) *Fp = *Di; 
+    *Fp=0.0;
+  }
+
+  /* now create D'B^{-1}D efficiently */
+  a = 1/h[0];  /* row 0 */
+  for (Sp=S,Di=D,i=0;i<n;i++,Sp+=n,Di+=n2) *Sp = *Di * a;
+  if (n>3) {
+    a = -1/h[0] - 1/h[1];b = 1/h[1]; /* row 1 */
+    for (Sp=S+1,Di1=D+1,Di=D,i=0;i<n;i++,Sp+=n,Di+=n2,Di1+=n2) *Sp = *Di * a + *Di1 * b;
+    for (j=2;j<n2;j++) { /* rows 2 to n-3 */
+      a = 1/h[j-1];c = 1/h[j];b = -a -c; 
+      for (Sp=S+j,Di=D+j-2,Di1 = D +j-1,Di2=D + j,i=0;i<n;i++,Sp+=n,Di+=n2,Di1+=n2,Di2+=n2) 
+        *Sp = *Di * a + *Di1 * b + *Di2 * c;
     }
-    else if (x>x1) 
-    { d0v=0.0;  
-      d1v=xx1;
-      b0v=0.0;
-      b1v=1.0;
-    }else                /* within interval */
-    { d0v=xx0*xx12/h2;d1v=xx02*xx1/h2;
-      b0v=2.0*(xx0+0.5*h1)*xx12/h3;
-      b1v= -2.0*(xx1-0.5*h1)*xx02/h3;
-    }
+    j = n2; /* n-2 */
+    a = 1/h[j-1]; b = -1/h[j-1] - 1/h[j]; /* row n-2 */
+    for (Sp=S+n2,Di1=D+n2-1,Di=D+n2-2,i=0;i<n;i++,Sp+=n,Di+=n2,Di1+=n2) *Sp = *Di * a + *Di1 * b;
+  } else { /* D' has only one column */
+    a = -1/h[0] - 1/h[1]; 
+    for (Sp=S+1,Di=D,i=0;i<n;i++,Sp+=n,Di+=n2) *Sp = *Di * a;
+  }
+  j = n2;
+  a = 1/h[j]; /* row n-1 */
+  for (Sp=S+n1,Di=D+n2-1,i=0;i<n;i++,Sp+=n,Di+=n2) *Sp = *Di * a;
+
+  free(ldB);free(sdB);free(h);free(D);
+} /* end of getFS*/
+
+
+void crspl(double *x,int *n,double *xk, int *nk,double *X,double *S, double *F,int *Fsupplied) {
+/* Routine to compute model matrix and optionally penalty matrix for cubic regression spline.
+   * nk knots are supplied in an increasing sequence in xk. 
+   * n data are in x (arbitrary order).
+   * If Fsupplied!=0 then F' is matrix mapping function values at knots to second derivs,
+     otherwise F and the penalty matrix S are computed and returned, along with X.         
+*/
+  int i,j,k,extrapolate,jup,jmid;
+  double xlast=0.0,h,xi,kmax,kmin,ajm,ajp,cjm,cjp,*Fp,*Fp1,*Xp,xj,xj1,xik;
+  if (! *Fsupplied) getFS(xk,*nk,S,F);
+  kmax = xk[*nk-1];kmin = xk[0];
+  for (i=0;i<*n;i++) { /* loop through x */
+    xi = x[i];extrapolate=0;
+    /* find interval containing x[i] */
+    if (xi < kmin||xi>kmax) {
+      extrapolate=1;
+    } else if (i>0 && fabs(xlast-xi) < 2*h) { /* use simple direct search */
+      while (xi<xk[j]&&j>0) j--;
+      while (xi>xk[j+1] && j+1 < *nk-1) j++;
+      /* now xk[j] <= x[i] <= xk[j+1] */ 
+    } else { /* bisection search required */ 
+      j=0;jup=*nk-1;
+      while (jup-j>1) {
+        jmid = (jup+j) >> 1; /* a midpoint */
+        if (xi > xk[jmid]) j = jmid; else jup = jmid;
+      }
+      /* now xk[j] <= x[i] <= xk[j+1] */ 
+    } /* end of bisection */
     
-    for (k=0;k<t.r;k++,tmV++,DMi++,DMi1++)
-    { *tmV = *DMi * d0v + *DMi1 * d1v;
-    }
-    tm.V[i] += b0v;
-    tm.V[i+1] += b1v;
-   
-  }
-  if (kill)
-  { first=1;
-   freemat(D);
-  }
-}
-
-void tmap2(matrix tm,matrix t,double time,int kill)
- /* to release static matrix allocation set kill to 1 otherwise 0 and
-	     prepare for a new sequence of knot positions in t*/
-
-/* tm maps values of a function at the t values contained in vector t to
-   the value of a spline through those points at 'time' ;tgm does the same
-   for the gradient of the spline */
-
-{ static matrix D;static char first=1;
-  matrix h;
-  long i,k;
-  if (first)
-  { first=0;h=initmat(t.r-1,1L);
-    for (i=0L;i<t.r-1;i++) h.V[i]=t.V[i+1]-t.V[i];
-    D=getD(h,0); /* time trajectories always have natural end conditions */
-    freemat(h);
-  }
-  if (t.r==1L)
-  { tm.V[0]=1.0;}
-  else
-  { i=0L;while((time>t.V[i+1])&&(i<t.r-2)) i++;
-    for (k=0;k<t.r;k++)
-    tm.V[k]=D.M[i][k]*d0(t.V[i],t.V[i+1],time)+
-	    D.M[i+1][k]*d1(t.V[i],t.V[i+1],time);
-    tm.V[i]+=b0(t.V[i],t.V[i+1],time);
-    tm.V[i+1]+=b1(t.V[i],t.V[i+1],time);
-   
-  }
-  if (kill)
-  { first=1;
-    freemat(D);
-  }
-}
-
-void getHBH(HBH,h,nak,rescale) matrix *HBH,h;int nak,rescale;
-
-/* Generates the wiggliness measure matrix for vector h; nak=0 for natural
-   end conditions or nak=1 to use the not a knot condition at the lower end;
-   set rescale=1 to produce a measure rescaled for the unit interval, set to
-   zero otherwise */
-
-{ long n,i,j;
-  matrix C,B,BI,H,hn;
-  double interval=0.0;
-  n=h.r;
-  if (rescale)
-  { for (i=0;i<h.r;i++) interval+=h.V[i];
-    hn=initmat(h.r,1L);
-    for (i=0;i<h.r;i++) hn.V[i]=h.V[i]/interval;
-  } else hn=h;
-  (*HBH)=initmat(n+1,n+1);
-  if (!nak)
-  { C=initmat(n-1,n+1);
-    B=initmat(n-1,n-1);
-    H=initmat(n-1,n+1);
-    for (i=0;i<n-1;i++)
-    { for (j=0;j<n-1;j++)
-      { B.M[i][j]=0.0;
-	     H.M[i][j]=0.0;
+    /* knot interval containing x[i] now known. Compute spline basis */ 
+    if (extrapolate) { /* x[i] is outside knot range */
+      if (xi<kmin) {
+        j = 0;
+        h = xk[1] - kmin;
+        xik = xi - kmin;
+        cjm = -xik*h/3;
+        cjp = -xik*h/6;
+        Xp = X + i; /* ith row of X */
+        for (Fp = F,Fp1 = F + *nk,k=0;k < *nk;k++,Xp += *n,Fp++,Fp1++) *Xp = cjm * *Fp + cjp * *Fp1 ;
+        X[i] += 1 - xik/h;
+        X[i + *n] += xik/h;
+      } else { /* xi>kmax */
+        j = *nk-1;
+        h = kmax - xk[j-1];
+        xik = xi - kmax;
+        cjm= xik*h/6;
+        cjp = xik*h/3;
+        Xp = X + i; /* ith row of X */
+        for (Fp1 = F+ j * *nk,Fp = Fp1 - *nk,k=0;k < *nk;k++,Xp += *n,Fp++) 
+             *Xp = cjm * *Fp + cjp * *Fp1  ;
+        X[i + *n * (*nk-2)] += - xik/h;
+        X[i + *n * (*nk-1)] += 1+ xik/h;
       }
-      H.M[i][n-1]=0.0;
-      H.M[i][n]=0.0;
-    }
-    for (i=0;i<n-1;i++)
-    { B.M[i][i]=(hn.V[i]+hn.V[i+1])/3.0;
-      H.M[i][i]=1.0/hn.V[i];
-      H.M[i][i+1]= -1.0/hn.V[i]-1.0/hn.V[i+1];
-      H.M[i][i+2]=1.0/hn.V[i+1];
-    }
-    for (i=0;i<n-2;i++)
-    { B.M[i][i+1]=hn.V[i+1]/6.0;
-      B.M[i+1][i]=hn.V[i+1]/6.0;
-    }
-    invert(&B);
-    matmult(C,B,H,0,0);
-    matmult((*HBH),H,C,1,0);
-    freemat(C);freemat(B);freemat(H);
-  } else
-  { H=initmat(n,n+1);
-    BI=initmat(n,n);B=initmat(n,n);
-    for (i=0;i<H.r;i++) for (j=0;j<H.c;j++) H.M[i][j]=0.0;
-    for (i=1;i<n;i++)
-    { H.M[i][i-1]=1.0/hn.V[i-1];H.M[i][i]= -1.0/hn.V[i-1]-1.0/hn.V[i];
-      H.M[i][i+1]=1.0/hn.V[i];
-    }
-    for (i=0;i<n;i++) for (j=0;j<n;j++)
-    { BI.M[i][j]=0.0;B.M[i][j]=0.0;}
-    for (i=1;i<n;i++)
-    { B.M[i][i-1]=hn.V[i-1]/6.0;B.M[i][i]=(hn.V[i-1]+hn.V[i])/3.0;
-      if (i<(n-1))
-      { B.M[i][i+1]=hn.V[i]/6.0;
-	BI.M[i][i+1]=B.M[i][i+1];
-      }
-      for (j=0;j<2;j++) BI.M[i][j+i-1]=B.M[i][j+i-1];
-    }
-    B.M[0][0]= -hn.V[1];B.M[0][1]=hn.V[0]+hn.V[1];
-    B.M[0][2]= -hn.V[0];
-    BI.M[0][0]=hn.V[0]/3.0;BI.M[0][1]=hn.V[0]/6.0;
-    C=initmat(n,n);
-    invert(&B);
-    matmult(C,BI,B,0,0);
-    matmult(BI,B,C,1,0);
-    freemat(B);freemat(C);
-    C=initmat(n,n+1);
-    matmult(C,BI,H,0,0);
-    matmult((*HBH),H,C,1,0);
-    freemat(C);freemat(BI);freemat(H);
-  }
-  if (rescale) freemat(hn);
-}
-
-
-void getSmooth(S,x,rescale) matrix *S,x;int rescale;
-
-/* gets a natural wiggliness measure for a spline with knots at the elements
-   of vector x. Set rescale not zero to pretend that the domain is the unit
-   interval. */
-
-{ matrix h;
-  long i;
-  h=initmat(x.r-1L,1L);
-  for (i=0;i<x.r-1;i++) h.V[i]=x.V[i+1]-x.V[i];
-  getHBH(S,h,0,rescale);
-  freemat(h);
-}
-
-
-void crspline(double *x,int n,int knots,matrix *X,matrix *S, matrix *C, matrix *xp,int control)
-
-/* Sets up a cubic regression spline, by specifying a set of knot locations 
-   spread evenly throughout the covariate values, and using cubic hermite
-   polynomials to represent the spline.
-
-   This is a very fast way of setting up 1-d regression splines, but the
-   basis provided by tprs() will be better. This code gives the basis used
-   in mgcv prior to version 0.6.
-
-   The inputs are:
-   x - the array of covariate values
-   n - the length of x
-   knots - the number of knots
-
-   The outputs are:
-
-   X - design matrix 
-   S - wiggliness penalty matrix
-   C - constraint matrix 
-   xp - knot position vector - can also be supplied as input
-
-   control 0 indicates full call as above
-   control 1 indicates prediction call: xp *must* be supplied and only X 
-             calculated
-
-   so that a penalized regression spline could be fitted by minimising:
-
-       ||Xb-y||^2 + \lambda b'Sb
-
-   subject to Cb=0 if the sum of the values of the spline at the xp values 
-   is to be zero - a constraint that is useful in GAM modelling, to ensure
-   model identifiability.
-*/
-
-{ int j,i,k;
-  matrix y,my;
-  double dx,xx;
-  /* sort x values into order and get list of unique x values .... */
-  if (control==0)
-  { if (xp->V[0]>=xp->V[1]) /* then knot positions have not been supplied */
-    { y=initmat((long)n,1L);
-      for (j=0;j<n;j++) y.V[j]=x[j];
-      y.r=(long)n;
-      sort(y); /* next reduce to list of unique values..... */
-      k=0;for (i=0;i<n;i++) if (y.V[k]!=y.V[i]) { k++;y.V[k]=y.V[i];} y.r=(long)k+1;
-      dx=(y.r-1)/(knots-1.0);
-      /* now place the knots..... */
-      xp->V[0]=y.V[0];
-      for (i=1;i<knots-1;i++)  /* place knots */
-      { xx=dx*i;
-        k=(int)floor(xx);
-        xx -= k;
-        xp->V[i]=(1-xx)*y.V[k]+xx*y.V[k+1];
-      } 
-      xp->V[knots-1]=y.V[y.r-1];
-      freemat(y);
-    }
- 
-    /* create the wiggliness measure matrix...... */
-    getSmooth(S,*xp,0);
- 
-    /* create the constraint matrix ...... */
-    *C=initmat(1L,(long)knots);
-    for (i=0;i<knots;i++) C->M[0][i]=1.0;
-    /* and finally, create the design matrix ...... */
-  }
-  *X=initmat((long)n,xp->r);
-  my=initmat(xp->r,1L);
-  for (j=0;j<n;j++)
-  { tmap(my,*xp,x[j],0);
-    for (i=0;i<my.r;i++) X->M[j][i]=my.V[i];
-  }   
-  tmap(my,*xp,x[0],1); /* kill matrix allocation in tmap */
- 
-  freemat(my);
-}
-
-void construct_cr(double *x,int *nx,double *k,int *nk,double *X,double *S,double *C,int *control)
-
-/* Routine to be called from R to set up a cubic regression spline basis given
-   x - array of x values (un-ordered)
-   nx - number of x values
-   k - array of/for knot locations. Should be in ascending order - if first two are not then 
-       locations are generated automatically
-   nk - number of knots
-   The routine returns the knot locations in k plus
-   X - the model matrix       n by nk
-   S - the penalty matrix     nk by nk
-   C - the constraint matrix  1 by nk
-   
-   control is an array of control constant:
-   0 indicates full set up as above
-   1 indicates prediction call, in which case k *must* be supplied and only X is returned
-   
-*/
-
-{ matrix Xm,Sm,Cm,xp;
-  int i;
-  xp=initmat((long)*nk,1L);
-  for (i=0;i<xp.r;i++) xp.V[i]=k[i];
-  /* following initializes Xm and also Sm and Cm if *control ==0 */
-  crspline(x,*nx,*nk,&Xm,&Sm,&Cm,&xp,*control);
-  for (i=0;i<xp.r;i++) k[i]=xp.V[i];
-  RArrayFromMatrix(X,Xm.r,&Xm);
-  freemat(Xm);freemat(xp);
-  if (*control==0)
-  { RArrayFromMatrix(S,Sm.r,&Sm);
-    RArrayFromMatrix(C,Cm.r,&Cm);
-    freemat(Sm);freemat(Cm);
-  }
-} 
-
-
-
-
-
-void mgcv(double *yd,double *Xd,double *Cd,double *wd,double *Sd,
-          double *pd, double *sp,int *offd,int *dimd,int *md,
-          int *nd,int *qd,int *rd,double *sig2d,double *Vpd,double *edf,
-          double *conv_tol,int *ms_max_half,double *ddiag, int *idiag,double *sdiag,
-          int *direct_mesh,double *min_edf,double *gcvubre,double *target_edf,
-          int *fixed_sp,double *hat)
-
-
-/* Solves :
-
-   minimise || W^{0.5} (Xp-y) ||^2 + \sum_i sp[i] p'S_i p subject to Cp=b
-
-   selecting sp[] by GCV (sig2<=0.0) or UBRE (sig2>0.0) - W=diag(w).
-
-   y is n by 1 data vector
-   w is n by 1 weight vector (W above)
-   X is n by q design matrix
-   p is q by 1 parameter vector
-   C is r by q constraint matrix
-   S is contains m square matrices S[i] each of dimension dim[i] by dim[i]: 
-     S is actually a 1-d array, let start_k=sum_{i=0}^{k-1} S[i].r*S[i].c
-     S[k].M[i][j]= S[start_k+i+S[k].r*j] - use RUnpackSarray() above
-   sp is m dimensional array of smoothing parameters
-   off[i] is m dimensional array of offsets specifiying row and column of
-          overall penalty matrix which will contain S[i][0][0]
-   Vp the q by q cov matrix for p set Vpd[0]<= 0.0 for now cov matrix calc
-      and to > 0.0 for cov matrix to be returned
-   edf is an array of estimated degrees of freedom for each smooth - need 
-       Vp to be calculated to work these out.
-
-   The routine is an interface routine suitable for calling from the
-   R and Splus.
-
-  
-   direct_mesh controls the number of steps in the direct search for the 
-   overall smoothing parameter: 100 is reasonable.
-
-   min_edf is the minimum possible estimated degrees of freedom - useful
-   for setting limits on overall smoothing parameter: <=0 => ignore.
-
-   fixed_sp should be set to 1 if the supplied smoothing parameters are to be 
-            treated as fixed, in which case model is fitted as an augmented 
-            least squares problem. 
-   
-   hat is an array of elements from the leading diagonal of the hat/influence matrix
-
-   gcvubre is the minimum GCV or UBRE score achieved.
-
-   There are 3 arrays of convergence diagnostics returned:
-
-   ddiag[] is a 3*m array of doubles - first m are gradients of gcv/ubre
-           score at convergence, next m is leading diagonal of Hessian, last
-		   m are eigenvalues of Hessian.
-   idiag[] is a length 3 array of integers. idiag[0] is iterations taken to 
-           converg, idiag[1] is 1/0 if second guess was/wasn't good, idiag[2]
-		   is 1/0 if terminated/not on step failure.
-   sdiag[] is a 2*direct_mesh array of doubles. The first half are model edf's, 
-           the second half corresponding GCV/UBRE scores. Useful for checking 
-           for multiple minima (but not conclusive, of course). 
-  
-*/
-
-{ long n,q,r,*dim,*off,dimmax;
-  int m,i,j,k,gcv,ok;
-  msctrl_type msctrl;
-  msrep_type msrep;
-  matrix *S,y,X,p,C,rS,Z,w,Vp,L,ya,wa;
-  double sig2,xx,trA,trA_check,inv_tol;
-  /*char msg[100]; */
-  sig2= *sig2d;
-  if (sig2<=0) gcv=1; else gcv=0;
-  m=(int)*md;
-  n=(long)*nd;
-  q=(long)*qd;
-  r=(long)*rd;
-  if (m)
-  { dim=(long *)calloc((size_t)m,sizeof(long));
-    off=(long *)calloc((size_t)m,sizeof(long));
-    S=(matrix *)calloc((size_t)m,sizeof(matrix));
-  } else { dim=off=&n;S=&y;} /* purely to avoid compiler warning */
-  for (i=0;i<m;i++) off[i]=(long)offd[i];
-  for (i=0;i<m;i++) dim[i]=(long)dimd[i];
-  /* set up matrices for MultiSmooth */
-
-  X=Rmatrix(Xd,n,q);p=Rmatrix(pd,q,1L);y=Rmatrix(yd,n,1L);w=Rmatrix(wd,n,1L);
-  if (r) C=Rmatrix(Cd,r,q); else C.r=C.c=0L;
-  dimmax=0;for (i=0;i<m;i++) if (dim[i]>dimmax) dimmax=dim[i];
-  
-  for (k=0;k<m;k++) S[k]=initmat(dim[k],dim[k]);
-  RUnpackSarray(m,S,Sd);  
-
-  if (C.r) {Z=initmat(q,q);QT(Z,C,0);}
-  Z.r=C.r; /* finding null space of constraints */
-  if (m&&!*fixed_sp) /* then there are some penalties with unknown smoothing parameters */
-  { init_msrep(&msrep,m,*direct_mesh);
-    msctrl.conv_tol= *conv_tol;
-    msctrl.max_step_half= *ms_max_half;
-    msctrl.min_edf= *min_edf;
-    msctrl.target_edf= *target_edf;
-    *gcvubre=MultiSmooth(&y,&X,&Z,&w,S,&p,sp,off,m,&sig2,&msctrl,&msrep,*direct_mesh,&trA);
-    for (i=0;i<m;i++) /* copy out diagnostics for return */
-    { ddiag[i]=msrep.g[i];
-      ddiag[m+i]=msrep.h[i];
-      ddiag[2*m+i]=msrep.e[i];
-    }
-    for (i=0;i< *direct_mesh;i++)
-    { sdiag[i]=msrep.edf[i];
-      sdiag[i+ *direct_mesh]=msrep.score[i];
-    }
-    idiag[0]=msrep.iter;idiag[1]=msrep.inok;idiag[2]=msrep.step_fail;
-    free_msrep(&msrep);
-    if (gcv) *sig2d=sig2;   
-  } else /* no unknown smoothing parameters , just solve the least squares problem */
-  { if (m&& *fixed_sp) /* then there are penalties with fixed smoothing parameters to contend with */
-    { Vp=initmat(p.r,p.r); /* temporary storage for sum of smooths */     
-      for (k=0;k<m;k++) /* add up penalty terms */
-      { for (i=0;i<S[k].r;i++) for (j=0;j<S[k].c;j++)
-        Vp.M[i+off[k]][j+off[k]]+=sp[k]*S[k].M[i][j];
-      }
-      /* now project into null space */
-      HQmult(Vp,Z,1,1);
-      HQmult(Vp,Z,0,0);  
-      Vp.r -=Z.r;Vp.c -= Z.r;
-      /* Now find square root of total penalty: rS */
-      root(&Vp,&rS,8*DOUBLE_EPS);
-      freemat(Vp);
-      L=initmat(X.r+rS.c,X.c); /* augmented design matrix */
-      L.r=X.r;
-      mcopy(&X,&L);     /* design matrix part */ 
-      HQmult(L,Z,0,0);  /* L=XZ */
-      L.c -= Z.r;
-      /* now add on penalty */
-      for (i=X.r;i<X.r+rS.c;i++) for (j=0;j<L.c;j++) L.M[i][j]=rS.M[j][i-X.r];
-      L.r=X.r+rS.c;freemat(rS);
-      /* create augmented y and w vectors */
-      ya=initmat(L.r,1L);wa=initmat(ya.r,1L);
-      for (i=0;i<y.r;i++) { ya.V[i]=y.V[i];wa.V[i]=sqrt(w.V[i]);}
-      for (i=y.r;i<L.r;i++) { wa.V[i]=1.0;ya.V[i]=0.0;}
-      /* get tr(A) */
-      ok=1;inv_tol=DOUBLE_EPS;
-      while (ok) /* may have to repeat this loop if trA calculation unstable */
-      { Vp=initmat(X.c,X.c);Vp.c=Vp.r=L.c;
-        rS=initmat(L.r,L.c); /* temporary storage for [X'W,rS]' */
-        mcopy(&L,&rS);
-        for (i=0;i<X.r;i++) for (j=0;j<L.c;j++) rS.M[i][j]*=w.V[i];  
-        matmult(Vp,L,rS,1,0); /* X'WX+S, basically */
-        freemat(rS);
-        rS=initmat(Vp.r,Vp.c); /* dummy */  
-        pinv(&Vp,inv_tol);     /* Use svd inversion for maximal stability (since there is no backup check) */
-        Vp.r+=Z.r;Vp.c+=Z.r;    /* get image in full space */
-        HQmult(Vp,Z,1,0);HQmult(Vp,Z,0,1);  
-        freemat(rS);
-        rS=initmat(Vp.r,X.r);
-        matmult(rS,Vp,X,0,1); /* basically (X'WX+S)^{-1}X' */
-        freemat(Vp); 
-        for (i=0;i<rS.r;i++) for (j=0;j<rS.c;j++) rS.M[i][j]*=w.V[j]; /* (X'WX+S)^{-1}X'W */
-        trA=0.0;for (j=0;j<X.r;j++) for (k=0;k<X.c;k++) trA+=X.M[j][k]*rS.M[k][j];
-        freemat(rS);
-        /* check that trA is sensible */
-        if (trA>L.c+0.001||trA< *min_edf-0.001) /* then trA is impossibly large or small */
-	{ ok++;inv_tol*=2; /* change svd truncation tolerance and repeat */
-        } else 
-	{ if (ok>1)
-          ErrorMessage(_("Numerical difficulties obtaining tr(A) - apparently resolved. Apply some caution to results."),0); 
-          ok=0;
-        }
-        if (ok>15)
-	{ if (trA>n||trA<0) ErrorMessage(_("tr(A) utter garbage and situation un-resolvable."),1);
-	  else ErrorMessage(_("Numerical difficulties calculating tr(A). Not completely resolved. Use results with care!"),0);
-	  ok=0;
-        } 
-      }
-    } else /* no penalties to consider */
-    { L=initmat(X.r,X.c); 
-      mcopy(&X,&L);
-      HQmult(L,Z,0,0);  /* L=XZ */
-      L.c -= Z.r;
-      wa=initmat(w.r,1L);
-      for (i=0;i<w.r;i++) wa.V[i]=sqrt(w.V[i]);
-      ya=y;
-      trA=p.r-Z.r;
-    }
-    p.r -= Z.r;        /* solving in null space */
-    leastsq(L,p,ya,wa);  /* Solve min ||wa(Lp-ya)||^2 */
-    Vp=initmat(ya.r,1L); /* temp for fitted values */
-    matmult(Vp,L,p,0,0); /* oversized if penalties used, but latter elements ignored below */
-    sig2=0.0;for (i=0;i<y.r;i++) { xx=(Vp.V[i]-y.V[i])*wa.V[i];sig2+=xx*xx;}
-    if (n==p.r) sig2=0.0; else sig2/=(n-trA);
-    if (gcv) 
-    { *sig2d=sig2;
-      *gcvubre=n*sig2/(n-trA);
-    } else /* UBRE */
-    { *gcvubre = sig2 / n * (n-trA)-2.0 / n * *sig2d  * ( n - trA) + *sig2d;  
-    } 
-    p.r+=Z.r;
-    HQmult(p,Z,1,0); /* back out of null space */
-    freemat(L);freemat(Vp);freemat(wa);
-    if (m&& *fixed_sp) freemat(ya);
-  }
-  for (i=0;i<q;i++) pd[i]=p.V[i];
-  if (Vpd[0]>0.0)
-  /* calculate an estimate of the cov. matrix for the parameters: */
-  /* Z[Z'(X'WX + \sum_i sp_i S[i])Z]^{-1}Z' */
-  { ok=1;inv_tol=DOUBLE_EPS/2;
-    while (ok) /* loop until edf's good enough or have to give up*/
-    { Vp=initmat(p.r,p.r);
-      for (i=0;i<p.r;i++) for (j=0;j<=i;j++) /* form X'WX */
-      { xx=0.0;
-        for (k=0;k<X.r;k++) xx+=X.M[k][i]*w.V[k]*X.M[k][j];
-        Vp.M[i][j]=Vp.M[j][i]=xx;
-      }
-      for (k=0;k<m;k++) /* add on penalty terms */
-      { for (i=0;i<S[k].r;i++) for (j=0;j<S[k].c;j++)
-        Vp.M[i+off[k]][j+off[k]]+=sp[k]*S[k].M[i][j];
-      }
-      /* now project into null space */
-      HQmult(Vp,Z,1,1);
-      HQmult(Vp,Z,0,0);  
-      for (j=0;j<Z.r;j++)
-      for (i=0;i<p.r;i++) Vp.M[p.r-j-1][i]=Vp.M[i][p.r-j-1]=0.0;
-      Vp.r -=Z.r;Vp.c -= Z.r;
-      L=initmat(Vp.r,Vp.c);
-      if (ok>1||!chol(Vp,L,1,1)) /* try cheap inversion by choleski */  
-      { pinv(&Vp,inv_tol);     /* but use svd if this fails */
-      }
-      Vp.r+=Z.r;Vp.c+=Z.r;    /* get image in full space */
-      HQmult(Vp,Z,1,0);
-      HQmult(Vp,Z,0,1);  
-      freemat(L);
-      /* now work out edf per parameter */
-      L=initmat(Vp.r,X.r);
-      matmult(L,Vp,X,0,1);
-      for (i=0;i<L.r;i++) for (j=0;j<L.c;j++) L.M[i][j]*=w.V[j]; 
-      for (i=0;i<L.r;i++)
-      { edf[i]=0.0;
-        for (j=0;j<X.r;j++)  
-        edf[i]+=L.M[i][j]*X.M[j][i];
-      } 
-      /* work out elements on leading diagonal of hat matrix */
-      trA_check=0.0;
-      for (i=0;i<X.r;i++)
-      { hat[i]=0.0;
-        for (j=0;j<X.c;j++) hat[i]+=X.M[i][j]*L.M[j][i];
-        trA_check+=hat[i]; 
-      }
-      /* check at this point whether sum_i hat[i] == TrA - if not, then there is a numerical problem, which 
-         needs to be resolved.
-      */
-      if (fabs(trA_check-trA)>0.01) /* then there is a definite numerical problem with edf's */ 
-      { ok++;inv_tol*= 2; 
-      } else ok=0;
+    } else { /* routine evaluation */
+      xj = xk[j];xj1=xk[j+1];
+      h = xj1-xj; /* interval width */
+      ajm = (xj1 - xi);ajp = (xi-xj);
+      cjm = (ajm*(ajm*ajm/h - h))/6;
+      cjp = (ajp*(ajp*ajp/h - h))/6;
+      ajm /= h;ajp /= h;
       
-      if (ok>15) /* failed */
-      { ErrorMessage(_("Termwise estimate degrees of freedom are unreliable"),0);
-        ok=0;
-      } 
-      /* multiply Vp by estimated scale parameter so that it is proper covariance matrix estimate */
-      for (i=0;i<Vp.r;i++) for (j=0;j<Vp.c;j++) Vp.M[i][j] *= *sig2d;
-      freemat(L);
-      RArrayFromMatrix(Vpd,Vp.r,&Vp); /* convert to R format */
-      freemat(Vp);
-    }
-  } else { Vpd[0]=0.0;hat[0]=0.0;}
+      Xp = X + i; /* ith row of X */
 
-  /* tidy up */
+      for (Fp = F+ j * *nk, Fp1 = F+(j+1)* *nk,k=0;k < *nk;k++,Xp += *n,Fp++,Fp1++) 
+        *Xp = cjm * *Fp + cjp * *Fp1;
 
-  freemat(y);freemat(X);freemat(p);freemat(w);
-  if (C.r) freemat(C);
+      Xp = X + i + j * *n;
+      *Xp += ajm; Xp += *n; *Xp += ajp;
+    } 
+    /* basis computation complete */
+    xlast=xi;
+  }
 
-  for (k=0;k<m;k++) freemat(S[k]);
+} /* end crspl */
 
-  if (Z.r) freemat(Z);
-  if (m) {free(dim);free(off);free(S);}
-#ifdef MEM_CHECK
-  dmalloc_log_unfreed(); dmalloc_verify(NULL);
-#endif
-}
+
+
+
 
 void MinimumSeparation(double *gx,double *gy,int *gn,double *dx,double *dy, int *dn,double *dist)
 /* For each point gx[i],gy[i] calculates the minimum  Euclidian distance to a point in dx[], dy[].
@@ -944,28 +438,6 @@ void RMonoCon(double *Ad,double *bd,double *xd,int *control,double *lower,double
 #ifdef MEM_CHECK
   dmalloc_log_unfreed();  dmalloc_verify(NULL);
 #endif 
-}
-
-
-void Rlanczos1(double *A,double *U,double *D,int *n, int *m, int *lm) {
-/* interface to lanczos_spd for calling from R.
-   A is n by n symmetric matrix. Let k = m + max(0,lm).
-   U is n by k and D is a k-vector.
-   m is the number of upper eigenvalues required and lm the number of lower.
-   If lm<0 then the m largest magnitude eigenvalues (and their eigenvectors)
-   are returned. Superceded. See Rlanczos in matrix.c. 
-*/
-  matrix Am,V,va;  
-  int k;
-  Am = Rmatrix(A,*n,*n);
-  k = *m;if (*lm>0) k += *lm;
-  V = initmat(*n,k);
-  va = initmat(k,1);
-  k = lanczos_spd(&Am,&V,&va,*m,*lm);
-  RArrayFromMatrix(U,*n,&V);
-  RArrayFromMatrix(D,k,&va);
-  freemat(va);freemat(V);freemat(Am);
-  *n = k; /* number of iterations taken */
 }
 
 
@@ -1104,8 +576,6 @@ void  RPCLS(double *Xd,double *pd,double *yd, double *wd,double *Aind,double *bd
    that when df for a term was close to the number of data, a non-existent covariate value
    (i.e. out of array bound). New code also yields more regular placement, and now deals with 
    repeat values of covariates.
-2. 20/10/00: Modified mgcv() to cope with problems with no penalties, by call to leastsq() -
-   this is needed to allow gam() to fit models with fixed degrees of freedom.
 3. 5/1/01: Modified RGAMsetup(), GAMsetup(), gam_map() and RGAMpredict() so that nsdf is now
    total number of non-spline parameters including any constant. Hence R code must now provide 
    column for constant explicitly.

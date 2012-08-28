@@ -1,7 +1,7 @@
 #  File src/library/utils/R/fineLineNum.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright 2009-2011 Duncan Murdoch and the R Core Development Team
+#  Copyright 2009-2012 Duncan Murdoch and the R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -105,11 +105,11 @@ findLineNum <- function(srcfile, line, nameonly=TRUE, envir=parent.frame(),
     	if (missing(envir)) lastenv <- globalenv()
     	else lastenv <- emptyenv()
     }
-    
+
     if (!is.environment(envir))
     	envir <- environment(envir)
 
-    fns <- character(0)
+    fns <- character()
     envirs <- list()
     e <- envir
     repeat {
@@ -208,7 +208,7 @@ setBreakpoint <- function(srcfile, line, nameonly=TRUE, envir=parent.frame(), la
     	if (breakpoint) {
     	    filename <- basename(locations[[1]]$filename)
     	    linenum <- locations[[1]]$line
-    	    tracer <- bquote({cat(paste(.(filename), "#", .(linenum), "\n", sep="")) 
+	    tracer <- bquote({cat(paste0(.(filename), "#", .(linenum), "\n"))
     	                      browser(skipCalls=4L)})
     	}
     	locations[[1]] <- NULL
@@ -223,7 +223,7 @@ setBreakpoint <- function(srcfile, line, nameonly=TRUE, envir=parent.frame(), la
     	    	i <- i+1
     	}
     	if (clear) {
-    	    if (is.null(signature)) 
+    	    if (is.null(signature))
   		untrace(what, where=where)
     	    else
     	    	untrace(what, signature=signature, where=where)

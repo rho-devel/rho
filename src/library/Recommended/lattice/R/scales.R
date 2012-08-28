@@ -43,7 +43,8 @@ construct.scales <-
              at = FALSE, labels = FALSE, log = FALSE,
              alternating = TRUE, relation = "same",
              abbreviate = FALSE, minlength = 4,
-             limits = NULL, format = NULL, 
+             limits = NULL, format = NULL,
+             equispaced.log = TRUE,
 
              lty = FALSE, lwd = FALSE, cex = FALSE, rot = FALSE,
              col = FALSE, col.line = col, alpha = FALSE, alpha.line = alpha,
@@ -58,7 +59,7 @@ construct.scales <-
              at = at, labels = labels, log = log,
              alternating = alternating, relation = relation,
              abbreviate = abbreviate, minlength = minlength,
-             limits = limits, format = format, 
+             limits = limits, format = format, equispaced.log = equispaced.log,
              lty = lty, lwd = lwd, cex = cex, rot = rot,
              col = col, col.line = col.line, alpha = alpha, alpha.line = alpha.line,
              font = font, fontfamily = fontfamily, fontface = fontface, lineheight = lineheight)

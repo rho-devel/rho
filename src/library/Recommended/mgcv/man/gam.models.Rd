@@ -230,6 +230,10 @@ inverse of the penalty matrix multiplied by the estimated scale parameter and di
 smoothing parameter for the penalty. For example, if you use an identity matrix to penalize some coefficients that are to be viewed as i.i.d. 
 Gaussian random effects, then their estimated variance will be the estimated scale parameter divided by the estimate of the 
 smoothing parameter, for this penalty. See the `rail' example below. 
+
+P-values for penalized parametric terms should be treated with caution. If you must have them, then use the option \code{freq=TRUE} in 
+\code{\link{anova.gam}} and \code{\link{summary.gam}}, which will tend to give reasonable results for random effects implemented this way, 
+but not for terms with a rank defficient penalty (or penalties with a wide eigen-spectrum). 
 }
 
 

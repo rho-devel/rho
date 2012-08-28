@@ -333,7 +333,7 @@ loadNamespace <- function (package, lib.loc = NULL,
                       function(type) {
                           lapply(type,
                                  function(sym) {
-                                     varName <- paste(fixes[1L], sym$name, fixes[2L], sep = "")
+                                     varName <- paste0(fixes[1L], sym$name, fixes[2L])
                                      if(exists(varName, envir = env))
                                        warning("failed to assign RegisteredNativeSymbol for ",
                                                sym$name,
@@ -478,11 +478,11 @@ loadNamespace <- function (package, lib.loc = NULL,
 
         ## lazy-load any sysdata
         dbbase <- file.path(pkgpath, "R", "sysdata")
-        if (file.exists(paste(dbbase, ".rdb", sep = ""))) lazyLoad(dbbase, env)
+        if (file.exists(paste0(dbbase, ".rdb"))) lazyLoad(dbbase, env)
 
         ## load any lazydata into a separate environment
         dbbase <- file.path(pkgpath, "data", "Rdata")
-        if(file.exists(paste(dbbase, ".rdb", sep = "")))
+        if(file.exists(paste0(dbbase, ".rdb")))
             lazyLoad(dbbase, getNamespaceInfo(ns, "lazydata"))
 
         ## register any S3 methods
@@ -520,19 +520,19 @@ loadNamespace <- function (package, lib.loc = NULL,
 
         for (p in nsInfo$exportPatterns)
             exports <- c(ls(env, pattern = p, all.names = TRUE), exports)
-        ## certain things should never be exported.
-        if (length(exports)) {
-            stoplist <- c(".__NAMESPACE__.", ".__S3MethodsTable__.",
-                          ".packageName", ".First.lib", ".onLoad",
-                          ".onAttach", ".conflicts.OK", ".noGenerics")
-            exports <- exports[! exports %in% stoplist]
-        }
         ##
         if(.isMethodsDispatchOn() && methods:::.hasS4MetaData(ns) &&
            !identical(package, "methods") ) {
             ## cache generics, classes in this namespace (but not methods itself,
             ## which pre-cached at install time
             methods:::cacheMetaData(ns, TRUE, ns)
+            ## load actions may have added objects matching patterns
+            for (p in nsInfo$exportPatterns) {
+                expp <- ls(ns, pattern = p, all.names = TRUE)
+                newEx <- !(expp %in% exports)
+                if(any(newEx))
+                    exports <- c(expp[newEx], exports)
+            }
             ## process class definition objects
             expClasses <- nsInfo$exportClasses
             ##we take any pattern, but check to see if the matches are classes
@@ -570,6 +570,47 @@ loadNamespace <- function (package, lib.loc = NULL,
             allGenerics <- unique(c(methods:::.getGenerics(ns),
                                    methods:::.getGenerics(parent.env(ns))))
             expMethods <- nsInfo$exportMethods
+            ## check for generic functions corresponding to exported methods
+            addGenerics <- expMethods[is.na(match(expMethods, exports))]
+            if(length(addGenerics)) {
+                nowhere <- sapply(addGenerics, function(what) !exists(what, mode = "function", envir = ns))
+                if(any(nowhere)) {
+                    warning(gettextf("No function found corresponding to methods exports from %s for: %s",
+                                     sQuote(package),
+                                     paste(sQuote(sort(unique(addGenerics[nowhere]))), collapse = ", ")),
+                         domain = NA, call. = FALSE)
+                    addGenerics <- addGenerics[!nowhere]
+                }
+                if(length(addGenerics)) {
+                    ## skip primitives
+                    addGenerics <- addGenerics[sapply(addGenerics, function(what) ! is.primitive(get(what, mode = "function", envir = ns)))]
+                    ## the rest must be generic functions, implicit or local
+                    ## or have been cached via a DEPENDS package
+                    ok <- sapply(addGenerics, methods:::.findsGeneric, ns)
+                    if(!all(ok)) {
+                        bad <- sort(unique(addGenerics[!ok]))
+                        msg <-
+                            ngettext(length(bad),
+                                     "Function found when exporting methods from the namespace %s which is not S4 generic: %s",
+                                     "Functions found when exporting methods from the namespace %s which are not S4 generic: %s", domain = "R-base")
+                        stop(sprintf(msg, sQuote(package),
+                                     paste(sQuote(bad), collapse = ", ")),
+                             domain = NA, call. = FALSE)
+                    }
+                    else if(any(ok > 1L))  #from the cache, don't add
+                        addGenerics <- addGenerics[ok < 2L]
+                }
+### <note> Uncomment following to report any local generic functions
+### that should have been exported explicitly.  But would be reported
+### whenever the package is loaded, which is not when it is relevant.
+### </note>
+                ## local <- sapply(addGenerics, function(what) identical(as.character(get(what, envir = ns)@package), package))
+                ## if(any(local))
+                ##     message(gettextf("export(%s) from package %s generated by exportMethods()",
+                ##        paste(addGenerics[local], collapse = ", ")),
+                ##             domain = NA)
+                exports <- c(exports, addGenerics)
+            }
             expTables <- character()
             if(length(allGenerics)) {
                 expMethods <-
@@ -609,7 +650,7 @@ loadNamespace <- function (package, lib.loc = NULL,
                        exists(mi, envir = ns, mode = "function",
                               inherits = FALSE))
                         exports <- c(exports, mi)
-                    pattern <- paste(tPrefix, mi, ":", sep="")
+                    pattern <- paste0(tPrefix, mi, ":")
                     ii <- grep(pattern, allMethodTables, fixed = TRUE)
                     if(length(ii)) {
 			if(length(ii) > 1L) {
@@ -631,6 +672,13 @@ loadNamespace <- function (package, lib.loc = NULL,
                               paste(expMethods, collapse = ", ")),
                      domain = NA)
             exports <- c(exports, expClasses,  expTables)
+        }
+        ## certain things should never be exported.
+        if (length(exports)) {
+            stoplist <- c(".__NAMESPACE__.", ".__S3MethodsTable__.",
+                          ".packageName", ".First.lib", ".onLoad",
+                          ".onAttach", ".conflicts.OK", ".noGenerics")
+            exports <- exports[! exports %in% stoplist]
         }
         namespaceExport(ns, exports)
         sealNamespace(ns)
@@ -730,7 +778,7 @@ unloadNamespace <- function(ns)
     if(.isMethodsDispatchOn() && methods:::.hasS4MetaData(ns))
         methods:::cacheMetaData(ns, FALSE, ns)
     .Call("R_lazyLoadDBflush",
-          paste(nspath, "/R/", nsname, ".rdb", sep=""),
+          paste0(nspath, "/R/", nsname, ".rdb"),
           PACKAGE="base")
     invisible()
 }
@@ -860,10 +908,15 @@ namespaceImportFrom <- function(self, ns, vars, generics, packages)
 		## warn only if generic overwrites a function which
 		## it was not derived from
 		genNs <- get(n, envir = ns)@package
-		genImpenv <- environmentName(environment(get(n, envir = impenv)))
+                genImp <- get(n, envir = impenv)
+                if(methods::is(genImp, "genericFunction") &&
+                   identical(genNs, genImp@package)) next # same generic
+		genImpenv <- environmentName(environment(genImp))
+                ## May call environment() on a non-function--an undocumented
+                ## "feature" of environment() is that it returns a special
+                ## attribute for non-functions, usually NULL
 		if (!identical(genNs, genImpenv) ||
-		    ## warning if generic overwrites another generic
-		    methods:::isGeneric(n, impenv)) {}
+                    methods:::isGeneric(n, impenv)) {}
                 else next
 	    }
             ## this is always called from another function, so reporting call
@@ -884,10 +937,16 @@ namespaceImportClasses <- function(self, ns, vars) {
 
 namespaceImportMethods <- function(self, ns, vars) {
     allVars <- character()
-    allFuns <- methods:::.getGenerics(ns)
+    allFuns <- methods:::.getGenerics(ns) # all the methods tables in ns
     packages <- attr(allFuns, "package")
-    tPrefix <- methods:::.TableMetaPrefix()
     pkg <- methods:::getPackageName(ns)
+    if(!all(vars %in% allFuns)) {
+        message(gettextf("No methods found in \"%s\" for requests: %s",
+                         pkg, paste(vars[is.na(match(vars, allFuns))], collapse = ", ")),
+                domain = NA)
+        vars <- vars[vars %in% allFuns]
+    }
+    tPrefix <- methods:::.TableMetaPrefix()
     allMethodTables <- methods:::.getGenerics(ns, tPrefix)
     if(any(is.na(match(vars, allFuns))))
         stop(gettextf("requested methods not found in environment/package %s: %s",
@@ -904,10 +963,19 @@ namespaceImportMethods <- function(self, ns, vars) {
             if(is.null(.mergeImportMethods(self, ns, tbl))) # a new methods table
                allVars <- c(allVars, tbl) # import it;else, was merged
         }
-        if(g %in% vars && !exists(g, envir = self, inherits = FALSE) &&
-           exists(g, envir = ns, inherits = FALSE) &&
-           methods:::is(get(g, envir = ns), "genericFunction"))
-            allVars <- c(allVars, g)
+        if(g %in% vars && !exists(g, envir = self, inherits = FALSE)) {
+            if(exists(g, envir = ns) &&
+               methods:::is(get(g, envir = ns), "genericFunction"))
+                allVars <- c(allVars, g)
+            else { # should be primitive
+                fun <- methods::getFunction(g, mustFind = FALSE, where = self)
+                if(is.primitive(fun) || methods::is(fun, "genericFunction")) {}
+                else
+                    warning(gettextf("No generic function found corresponding to requested imported methods for \"%s\" from package \"%s\" (malformed exports?)",
+                                 g, pkg),
+                        domain = NA)
+            }
+        }
     }
     namespaceImportFrom(self, asNamespace(ns), allVars, allFuns, packages)
 }
@@ -924,8 +992,7 @@ importIntoEnv <- function(impenv, impnames, expenv, expnames) {
             stop(sprintf(ngettext(length(miss),
                                   "class %s is not exported by 'namespace:%s'",
                                   "classes %s are not exported by 'namespace:%s'"),
-                         paste(paste('"', miss, '"', sep = ""),
-                               collapse = ", "),
+                         paste(paste0('"', miss, '"'), collapse = ", "),
                          getNamespaceName(expenv)),
                  call. = FALSE, domain = NA)
         } else {
@@ -1034,7 +1101,7 @@ parseNamespaceFile <- function(package, package.lib, mustExist = TRUE)
         function(map, useRegistration, symbolNames, fixes) {
             if(!useRegistration)
                 names(symbolNames) <-
-                    paste(fixes[1L],  names(symbolNames), fixes[2L], sep = "")
+                    paste0(fixes[1L],  names(symbolNames), fixes[2L])
             else
                 map$registrationFixes <- fixes
             map$useRegistration <- map$useRegistration || useRegistration

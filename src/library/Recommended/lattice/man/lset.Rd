@@ -1,6 +1,6 @@
 \name{I_lset}
 \alias{lset}
-\title{Interface to modify Trellis Settings - Deprecated}
+\title{Interface to modify Trellis Settings - Defunct}
 \description{
   A (hopefully) simpler alternative to \code{trellis.par.get/set}.  This
   is deprecated, and the same functionality is now available with

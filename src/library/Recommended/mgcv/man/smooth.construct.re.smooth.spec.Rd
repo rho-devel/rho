@@ -47,8 +47,9 @@ while  \code{s(x,v,w,bs="re")} would result in  \code{model.matrix(~x:v:w-1)} be
 matrix. In both cases the corresponding model coefficients are assumed i.i.d. normal, and are hence 
 subject to ridge penalties.
   
-Note that smooth \code{id}s are not supported for random effect terms, and that \code{"re"} terms are
- not suitable for use as marginal smooths in a tensor product smooth.
+Note that smooth \code{id}s are not supported for random effect terms. Unlike most smooth terms, side 
+conditions are never applied to random effect terms in the event of nesting (since they are identifiable 
+without side conditions).
 
 Random effects implemented in this way do not exploit the sparse structure of many random effects, and 
 may therefore be relatively inefficient for models with large numbers of random effects, when \code{gamm4}

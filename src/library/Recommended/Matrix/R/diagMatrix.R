@@ -78,13 +78,13 @@ Diagonal <- function(n, x = NULL)
     .sparseDiagonal(n, x, uplo, shape = "t")
 
 
-### This is modified from a post of Bert Gunter to R-help on  1 Sep 2005.
-### Bert's code built on a post by Andy Liaw who most probably was influenced
-### by earlier posts, notably one by Scott Chasalow on S-news, 16 Jan 2002
-### who posted his bdiag() function written in December 1995.
+## This is modified from a post of Bert Gunter to R-help on  1 Sep 2005.
+## Bert's code built on a post by Andy Liaw who most probably was influenced
+## by earlier posts, notably one by Scott Chasalow on S-news, 16 Jan 2002
+## who posted his bdiag() function written in December 1995.
 if(FALSE)##--- no longer used:
 .bdiag <- function(lst) {
-    ### block-diagonal matrix [a dgTMatrix] from list of matrices
+    ## block-diagonal matrix [a dgTMatrix] from list of matrices
     stopifnot(is.list(lst), length(lst) >= 1)
     dims <- sapply(lst, dim, USE.NAMES=FALSE)
     ## make sure we had all matrices:
@@ -119,12 +119,16 @@ if(FALSE)##--- no longer used:
     j_off <- c(0L, cumsum(sapply(Tlst, ncol)))
 
     clss <- sapply(Tlst, class)
-    knds <- substr(clss, 2, 2)
-    sym	 <- knds == "s" # symmetric ones
-    tri	 <- knds == "t" # triangular ones
-    use.n <- any(is.n <- substr(clss,1,1) == "n")
-    if(use.n && !(use.n <- all(is.n)))
+    typ <- substr(clss, 2, 2)
+    knd <- substr(clss, 1, 1)
+    sym <- typ == "s" # symmetric ones
+    tri <- typ == "t" # triangular ones
+    use.n <- any(is.n <- knd == "n")
+    if(use.n && !(use.n <- all(is.n))) {
 	Tlst[is.n] <- lapply(Tlst[is.n], as, "lMatrix")
+	knd [is.n] <- "l"
+    }
+    use.l <- !use.n && all(knd == "l")
     if(all(sym)) { ## result should be *symmetric*
 	uplos <- sapply(Tlst, slot, "uplo") ## either "U" or "L"
 	tLU <- table(uplos)# of length 1 or 2 ..
@@ -140,7 +144,7 @@ if(FALSE)##--- no longer used:
 	if(use.n) { ## return nsparseMatrix :
 	    r <- new("nsTMatrix")
 	} else {
-	    r <- new("dsTMatrix")
+	    r <- new(paste0(if(use.l) "l" else "d", "sTMatrix"))
 	    r@x <- unlist(lapply(Tlst, slot, "x"))
 	}
 	r@uplo <- if(useU) "U" else "L"
@@ -152,7 +156,7 @@ if(FALSE)##--- no longer used:
 	if(use.n) { ## return nsparseMatrix :
 	    r <- new("ntTMatrix")
 	} else {
-	    r <- new("dtTMatrix")
+	    r <- new(paste0(if(use.l) "l" else "d", "tTMatrix"))
 	    r@x <- unlist(lapply(Tlst, slot, "x"))
 	}
 	r@uplo <- ULs[1L]
@@ -163,7 +167,7 @@ if(FALSE)##--- no longer used:
 	if(use.n) { ## return nsparseMatrix :
 	    r <- new("ngTMatrix")
 	} else {
-	    r <- new("dgTMatrix")
+	    r <- new(paste0(if(use.l) "l" else "d", "gTMatrix"))
 	    r@x <- unlist(lapply(Tlst, slot, "x"))
 	}
     }

@@ -25,21 +25,19 @@ coef.hclust <- function(object, ...)
     1 - sum(rowSums(mrg < 0) * ht) / max(ht) / (nh+1)
 }
 
-if(FALSE){ ##-- experiments
 
 ## Note this is (the only!) direct interface to   bncoef(),
 ## ---- which is used internally both in agnes() and diana() :
-coef2.hclust <- function(object, ...)
+coefHier <- function(object)
 {
-    ## Purpose: Compute agglomerative coefficient from hclust
+    ## Purpose: Compute agglomerative *or* divisive  coefficient from hclust/agnes/diana
     ## ----------------------------------------------------------------------
     ## Author: Martin Maechler, Date: 27 Nov 2004
     nh <- length(ht <- object$height)
     stopifnot(nh > 0, is.numeric(ht))
-    .Fortran(bncoef,
-	     n =  as.integer(nh + 1),
-	     ban= as.double(c(0., ht)),
-	     cf = double(1))$cf
+    .C(R_bncoef,
+       n =  as.integer(nh + 1L),
+       ban= as.double(c(0., ht)),# <-- is this really tbe  ban[]nner, as in ../src/twins.c ?
+       cf = double(1))$cf
 }
 
-}

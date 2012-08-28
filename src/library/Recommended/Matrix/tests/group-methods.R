@@ -56,6 +56,23 @@ stopifnot(is(x2, "sparseMatrix"),
 stopifnot(px@i == c(3,4,1,4),
           px@x == c(3,26,-2,3))
 
+## From: "Florent D." .. Thu, 23 Feb 2012 -- bug report
+##---> MM:  Make a regression test:
+tst <- function(n, i = 1) {
+    stopifnot(i >= 1, n >= i)
+    D <- .sparseDiagonal(n)
+    ee <- numeric(n) ; ee[i] <- 1
+    stopifnot(all(D - ee == diag(n) - ee),
+              all(D * ee == diag(n) * ee),
+              all(ee - D == ee - diag(n)),
+              {C <- (ee / D == ee / diag(n)); all(is.na(C) | C)},
+              TRUE)
+}
+tmp <- sapply(1:16, tst)
+i <- sapply(1:16, function(i) sample(i,1))
+tmp <- mapply(tst, n= 1:16, i= i)
+
+
 ###----- Compare methods ---> logical Matrices ------------
 l3 <- upper.tri(matrix(, 3, 3))
 (ll3 <- Matrix(l3))
@@ -97,10 +114,13 @@ dsc + 1 # -> no longer sparse
 Tsc <- as(dsc, "TsparseMatrix")
 dsc. <- drop0(dsc)
 stopifnot(identical(dsc., Matrix((dsc + 1) -1)),
-          identical(dsc., Matrix((Tsc + 1) -1)), # ok (exact arithmetic)
+	  identical(as(-Tsc,"CsparseMatrix"), (-1) * Tsc),
+	  identical(-dsc., (-1) * dsc.),
+	  identical3(-Diagonal(3), Diagonal(3, -1), (-1) * Diagonal(3)),
+	  identical(dsc., Matrix((Tsc + 1) -1)), # ok (exact arithmetic)
 	  Q.eq(0 != dsc, dsc != Matrix(0, 3, 3)),
 	  Q.eq(0 != dsc, dsc != c(0,0)) # with a warning ("not multiple ..")
-          )
+	  )
 str(lm1 <- dsc >= 1) # now ok (NA in proper place, however:
 lm1 ## NA used to print as ' ' , now 'N'
 (lm2 <- dsc == 1)# ditto

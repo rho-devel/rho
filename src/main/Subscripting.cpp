@@ -253,11 +253,15 @@ std::size_t Subscripting::createDimIndexers(DimIndexerVector* dimindexers,
 				       const ListVector* indices)
 {
     std::size_t ndims = source_dims->size();
+    double dresultsize = 1.0;
     std::size_t resultsize = 1;
     for (unsigned int d = 0; d < ndims; ++d) {
 	DimIndexer& di = (*dimindexers)[d];
 	const IntVector* iv = static_cast<IntVector*>((*indices)[d].get());
 	di.nindices = iv->size();
+	dresultsize *= di.nindices;
+	if (dresultsize > std::numeric_limits<size_t>::max())
+	    Rf_error(_("dimensions would exceed maximum size of array"));
 	resultsize *= di.nindices;
 	di.indices = iv;
 	di.indexnum = 0;
@@ -282,7 +286,8 @@ bool Subscripting::dropDimensions(VectorBase* v)
 	    ++ngooddims;
     if (ngooddims == ndims)
 	return false;
-    ListVector* dimnames = const_cast<ListVector*>(v->dimensionNames());
+    GCStackRoot<ListVector> dimnames(const_cast<ListVector*>(v->dimensionNames()));
+    v->setDimensionNames(0);
     if (ngooddims > 1) {
 	// The result will still be an array/matrix.
 	bool havenames = false;
@@ -322,7 +327,6 @@ bool Subscripting::dropDimensions(VectorBase* v)
     } else if (ngooddims == 1) {
 	// Reduce to a vector.
 	v->setDimensions(0);
-	v->setDimensionNames(0);
 	if (dimnames) {
 	    unsigned int d = 0;
 	    while ((*dims)[d] == 1)

@@ -1,3 +1,29 @@
+2012-05-23  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* DESCRIPTION: version is 3.1-104
+	* src/gnls.c, src/nlme.c, src/nlmefit.[ch]:
+	type mismatches shown by clang's -Wconversion
+
+2012-04-25  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* src/nlmefit.c: type mismatch shown by -Wconversion
+
+2012-03-29  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* src/nlOptimizer.c: increase PROTECTion (reported by Andrew Runnalls).
+
+2012-02-15  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* inst/CITATION: protect against TRE bug in UTF-8 locales.
+
+2012-01-14  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* DESCRIPTION: version is 3.1-103
+
+2011-12-25  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* DESCRIPTION: needs Suggests: MASS for data(package=)
+	
 2011-07-19  Brian Ripley <Brian.Ripley@R-project.org>
 
 	* DESCRIPTION: version is 3.1-102

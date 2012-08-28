@@ -1,7 +1,9 @@
 % File src/library/stats/man/isoreg.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2008 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{isoreg}
 \title{Isotonic / Monotone Regression}
@@ -58,7 +60,7 @@ isoreg(x, y = NULL)
 }
 %%\author{Original C code by Brian Ripley; all else: Martin Maechler}
 \seealso{the plotting method \code{\link{plot.isoreg}} with more examples;
-  \code{\link[MASS]{isoMDS}()} from the \pkg{MASS} package internally
+  \code{\link[MASS]{isoMDS}()} from the \CRANpkg{MASS} package internally
   uses isotonic regression.
 }
 \examples{

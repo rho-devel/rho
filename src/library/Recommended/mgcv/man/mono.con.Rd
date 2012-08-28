@@ -43,7 +43,7 @@ mono.con(x,up=TRUE,lower=NA,upper=NA)
 }
 \author{ Simon N. Wood \email{simon.wood@r-project.org} }
 
-\seealso{  \code{\link{mgcv}}, \code{\link{pcls}}
+\seealso{  \code{\link{magic}}, \code{\link{pcls}}
 }
 \examples{
 ## see ?pcls

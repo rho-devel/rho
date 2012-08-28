@@ -42,7 +42,7 @@ Applies to compressed trees only.  The default is the value of
 \code{branch}.
 }
 \item{margin}{
-an extra percentage of white space to leave around the borders of the tree.
+an extra fraction of white space to leave around the borders of the tree.
 (Long labels sometimes get cut off by the default computation).
 }
 \item{minbranch}{

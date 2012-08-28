@@ -1,6 +1,6 @@
 % File src/library/base/man/files.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
 
 \name{files2}
@@ -67,7 +67,10 @@ Sys.umask(mode = NA)
   Changing mode on a symbolic link is unlikely to work (nor be
   necessary).  For more details see your OS's documentation on the
   system call \code{chmod}, e.g. \command{man 2 chmod} (and not that on
-  the command-line utility of that name).
+  the command-line utility of that name).  Whether this changes the
+  permission of a symbolic link or its target is OS-dependent (although
+  to change the target is more common, and POSIX does not support modes
+  for symbolic links: BSD-based Unixes do, though).
 #endif
 #ifdef windows
   The interpretation of \code{mode} in the Windows system functions is
@@ -110,6 +113,10 @@ Sys.umask(mode = NA)
   \code{Sys.umask} returns the previous value of the \code{umask},
   as a length-one object of class \code{"\link{octmode}"}: the
   visibility flag is off unless \code{mode} is \code{NA}.
+  
+  See also the section in the help for \code{\link{file.exists}} on
+  case-insensitive file systems for the interpretation of \code{path}
+  and \code{paths}.
 }
 #ifdef windows
 \note{
@@ -134,8 +141,7 @@ Sys.umask(mode = NA)
 \examples{\dontrun{
 ## Fix up maximal allowed permissions in a file tree
 Sys.chmod(list.dirs("."), "777")
-f <- list.files(".", all.files = TRUE, full.names = TRUE,
-                recursive =TRUE)
+f <- list.files(".", all.files = TRUE, full.names = TRUE, recursive = TRUE)
 Sys.chmod(f, (file.info(f)$mode | "664"))
 }}
 \keyword{file}

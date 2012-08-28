@@ -10,15 +10,6 @@
 #define _(String) (String)
 #endif
 
-
-/* in ./meet.f --- called from most source files: */
-/* NO LONGER:
- * int F77_NAME(meet)(int *, int *);
-
- * Instead include *inline" definition in
- * ./ind_2.h
- *   ~~~~~~~ */
-
 /* --------- ./clara.c ------------------*/
 
 double randm(int *nrun);
@@ -95,12 +86,13 @@ void cl_pam(int *nn, int *jpp, int *kk, double *x, double *dys,
 	    int *ndyst, int *nsend, int *nrepr, int *nelem,
 	    double *radus, double *damer, double *ttd, double *separ,
 	    double *ttsyl, double *obj, int *med, int *ncluv,
-	    double *clusinf, double *sylinf, int *nisol);
+	    double *clusinf, double *sylinf, int *nisol, int* optim);
 
 void bswap(int kk, int nsam, int *nrepr,
+	   /* nrepr[]: here is boolean (0/1): 1 = "is representative object"  */
 	   Rboolean med_given, Rboolean do_swap, int trace_lev,
 	   double *dysma, double *dysmb, double *beter,
-	   double *dys, double *sky, double s, double *obj);
+	   double *dys, double s, double *obj, int *pamonce);
 
 void cstat(int *kk, int *nn, int *nsend, int *nrepr, Rboolean all_stats,
 	   double *radus, double *damer, double *ttd, double *separ, double *s,
@@ -161,21 +153,18 @@ int F77_NAME(cldaisy)(int *nn, int *jpp, double *x,
 void dysta3(int *nn, int *p, double *x, double *dys,
 	    int *ndyst, int *jtmd, double *valmd, int *jhalt);
 
-/* -------- ./meet.f ---------------------------------- */
-int F77_NAME(meet)(int *l, int *j);
-
 /* -------- ./mona.f ---------------------------------- */
 int F77_NAME(clmona)(int *nn, int *pp, int *x, int *jerr,
 		      int *nban, int *ner, int *kwan, int *lava, int *jlack);
 
-/* -------- ./twins.f ---------------------------------- */
-int F77_NAME(bncoef)(int *nn, int *jpp, double *x, double *dys, int *ndyst,
-		    int *jtmd, double *valmd, int *jhalt);
+/* -------- ./twins.c ---------------------------------- */
+void R_bncoef(int *nn, double *ban, double *cf);
+double bncoef(int  nn, double *ban);
 
-int F77_NAME(twins)(int *nn, int *jpp, double *x,
-		    double *dys, double *dys2, int *jdyss, double *valmd,
-		    int *jtmd, int *ndyst, int *jalg, int *method,
-		    int *kwan, int *ner, double *ban, double *coef,
-		    double *alpha, int *merge);
+void twins(int *nn, int *jpp, double *x,
+	   double *dys, double *dys2, int *jdyss, double *valmd,
+	   int *jtmd, int *ndyst, int *jalg, int *method,
+	   int *kwan, int *ner, double *ban, double *coef,
+	   double *alpha, int *merge);
 
 

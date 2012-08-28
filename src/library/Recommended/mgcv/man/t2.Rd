@@ -155,10 +155,10 @@ values (defualt).}
 \author{ Simon N. Wood \email{simon.wood@r-project.org} and Fabian Scheipl}
 \references{
 
-Gu, C. (2002) Smoothing Spline ANOVA, Springer.
+Wood S.N., F. Scheipl and J.J. Faraway (2012) Straightforward intermediate rank tensor product smoothing
+in mixed models. Statistical Computing.
 
-Wood, S.N. (2004) Stable and efficient multiple smoothing parameter estimation for
-generalized additive models. J. Amer. Statist. Ass. 99:673-686. 
+Gu, C. (2002) Smoothing Spline ANOVA, Springer.
 
 \url{http://people.bath.ac.uk/sw283/}
 

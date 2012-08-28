@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.14.0 / matrix 1.0-0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-10-14 21:52\n"
+"POT-Creation-Date: 2012-03-06 17:05\n"
 "PO-Revision-Date: 2011-10-14 15:23+0200\n"
 "Last-Translator: Chris Leick <c.leick@vollbio.de>\n"
 "Language-Team: German <debian-l10n-german@lists.debian.org>\n"
@@ -306,16 +306,6 @@ msgid "internal bug in \"Logic\" method (.Logic.Mat.atomic); please report"
 msgstr ""
 "interner Fehler in der \"Logic\"-Methode (.Logic.Mat.atomic). Bitte berichten"
 
-msgid "numeric(<too-long>)"
-msgstr "numeric(<zu lang>)"
-
-msgid ""
-"longer object length\n"
-"\tis not a multiple of shorter object length"
-msgstr ""
-"längere Objektlänge\n"
-"\tist kein Vielfaches der kürzeren Objektlänge"
-
 msgid "(0)"
 msgstr "(0)"
 
@@ -431,6 +421,13 @@ msgstr "prod(<abIndex>) ist noch nicht implementiert"
 
 msgid "not yet implemented"
 msgstr "noch nicht implementiert"
+
+msgid ""
+"longer object length\n"
+"\tis not a multiple of shorter object length"
+msgstr ""
+"längere Objektlänge\n"
+"\tist kein Vielfaches der kürzeren Objektlänge"
 
 msgid "x / 0 for an <abIndex> x with sign-change"
 msgstr "x / 0 für ein <abIndex> x mit Vorzeichenwechsel"
@@ -611,6 +608,9 @@ msgstr ""
 msgid "not-yet-implemented method for <%s> %%*%% <%s>"
 msgstr "noch nicht implementierte Methode für <%s> %%*%% <%s>"
 
+msgid "method '%s' not applicable for qr() result class '%s'"
+msgstr ""
+
 msgid "model frame and formula mismatch in model.matrix()"
 msgstr "Model-Frame und Formel passen nicht zusammen in model.matrix()"
 
@@ -622,6 +622,9 @@ msgstr "unzulässiges 'contrasts.arg' Argument"
 
 msgid "variable '%s' is absent, its contrast will be ignored"
 msgstr "Variable '%s' fehlt, ihr Kontrast wird irgnoriert"
+
+msgid "only 2-dimensional tables can be directly coerced to sparse matrices"
+msgstr ""
 
 msgid "exactly one of 'i', 'j', or 'p' must be missing from call"
 msgstr "exakt eins von 'i', 'j' oder 'p' muss vom Aufruf fehlen"
@@ -661,18 +664,6 @@ msgstr "rcond(.) über Umwandlung dünn besetzt -> dicht besetzt"
 msgid "'V' is not a *square* matrix"
 msgstr "»V« ist keine *quadratische* Matrix"
 
-msgid "must supply either 'formula' or 'data'"
-msgstr "entweder »formula« oder »data« muss angegeben werden"
-
-msgid "'formula' missing or incorrect"
-msgstr "»formula« fehlt oder ist falsch"
-
-msgid "interactions are not allowed"
-msgstr "Wechselwirkungen sind nicht erlaubt"
-
-msgid "xtabs(*, sparse=TRUE) applies only to two-way tables"
-msgstr "xtabs(*, sparse=TRUE) liefert nur wechselseitige Tabellen"
-
 msgid "qr.R(<sparse>) may differ from qr.R(<dense>) because of permutations"
 msgstr ""
 "qr.R(<sparse>) könnte von qr.R(<dense>) aufgrund von Permutationen abweichen"
@@ -706,6 +697,21 @@ msgstr ""
 
 msgid "'times >= 0' is required"
 msgstr "'times >= 0' wird benötigt"
+
+#~ msgid "numeric(<too-long>)"
+#~ msgstr "numeric(<zu lang>)"
+
+#~ msgid "must supply either 'formula' or 'data'"
+#~ msgstr "entweder »formula« oder »data« muss angegeben werden"
+
+#~ msgid "'formula' missing or incorrect"
+#~ msgstr "»formula« fehlt oder ist falsch"
+
+#~ msgid "interactions are not allowed"
+#~ msgstr "Wechselwirkungen sind nicht erlaubt"
+
+#~ msgid "xtabs(*, sparse=TRUE) applies only to two-way tables"
+#~ msgstr "xtabs(*, sparse=TRUE) liefert nur wechselseitige Tabellen"
 
 #~ msgid "cbind2() method for (%s,%s) not-yet defined"
 #~ msgstr "cbind2()-Methode für (%s,%s) noch nicht definiert"

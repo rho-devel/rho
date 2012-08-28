@@ -18,7 +18,7 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  file run.c: a simple 'reading' pipe (and a command executor)
  *  Copyright  (C) 1999-2001  Guido Masarotto  and Brian Ripley
- *             (C) 2007-10    The R Development Core Team
+ *             (C) 2007-10    The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,8 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#define R_USE_SIGNALS 1
 #include <Defn.h>
 #include "win-nls.h"
 

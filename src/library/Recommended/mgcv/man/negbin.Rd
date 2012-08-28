@@ -112,7 +112,10 @@ b1 <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),family=negbin(c(1,10)),
 plot(b1,pages=1)
 print(b1)
 
-## unknown theta via outer iteration and AIC search...
+## unknown theta via outer iteration and AIC search
+## (quite slow, which is why it's commented out for 
+## checking)...
+\dontrun{
 b2<-gam(y~s(x0)+s(x1)+s(x2)+s(x3),family=negbin(c(1,10)),
         data=dat)
 plot(b2,pages=1)
@@ -124,9 +127,9 @@ b2a <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),family=negbin(c(1,10)),
 plot(b2a,pages=1)
 print(b2a)
 
-
 ## how to retrieve Theta...
 b2a$family$getTheta()
+}
 
 ## unknown theta via outer iteration and AIC search
 ## over a discrete set of values...

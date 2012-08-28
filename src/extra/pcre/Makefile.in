@@ -30,9 +30,9 @@ PCRE_CPPFLAGS = -I$(srcdir)
 ALL_CPPFLAGS = $(PCRE_CPPFLAGS) $(R_XTRA_CPPFLAGS) $(CPPFLAGS) $(DEFS)
 
 SOURCES = pcre_chartables.c pcre_compile.c pcre_config.c pcre_exec.c \
-	pcre_fullinfo.c pcre_get.c pcre_globals.c pcre_info.c \
+	pcre_fullinfo.c pcre_get.c pcre_globals.c pcre_jit_compile.c \
 	pcre_maketables.c pcre_newline.c pcre_ord2utf8.c pcre_refcount.c \
-	pcre_study.c pcre_tables.c pcre_try_flipped.c pcre_ucd.c \
+	pcre_study.c pcre_tables.c pcre_ucd.c \
 	pcre_valid_utf8.c pcre_version.c pcre_xclass.c
 
 HEADERS = pcre_internal.h pcre.h ucp.h
@@ -43,6 +43,10 @@ OBJECTS = $(SOURCES:.c=.o)
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 DISTFILES = LICENCE Makefile.in Makefile.win R_changes \
   $(SOURCES) $(HEADERS)
+
+SUBDIRS_WITH_NO_BUILD = sljit
+
+
 noinst_LIBRARIES = @BUILD_PCRE_TRUE@ libpcre.a
 libpcre_a_SOURCES = $(SOURCES)
 libpcre_a_OBJECTS = $(OBJECTS)
@@ -72,7 +76,7 @@ mostlyclean: clean
 clean:
 	@-rm -f Makedeps *.d *.o *.lo *.a
 distclean: clean
-	@-rm -f Makefile dftables chartables.h
+	@-rm -f Makefile
 maintainer-clean: distclean
 
 install install-strip uninstall TAGS info dvi check:
@@ -82,6 +86,11 @@ distdir: $(DISTFILES)
 	  test -f $(distdir)/$${f} \
 	    || ln $(srcdir)/$${f} $(distdir)/$${f} 2>/dev/null \
 	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
+	done
+	@for d in $(SUBDIRS_WITH_NO_BUILD); do \
+	  ((cd $(srcdir); $(TAR) -c -f - --exclude=.svn --exclude=CVS $${d}) \
+	      | (cd $(distdir); $(TAR) -x -f -)) \
+	    || exit 1; \
 	done
 
 ## Automagically generated dependencies:

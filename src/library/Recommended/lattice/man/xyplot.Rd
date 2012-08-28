@@ -590,15 +590,14 @@ bwplot(x, data, \dots)
         necessary).
       }
       \item{\code{tick.number}}{
-        An integer, giving the suggested number of ticks.  This is
-        ignored for a factor, shingle or character vector, in which case
-        there is no natural rule for leaving out some of the labels. But
-        see \code{xlim}.
+        An integer, giving the suggested number of intervals between
+        ticks.  This is ignored for a factor, shingle, or character
+        vector, for in these cases there is no natural rule for leaving
+        out some of the labels. But see \code{xlim}.
       }
       \item{\code{draw}}{
         A logical flag, defaulting to \code{TRUE}, that determines
-        whether to draw the axis at all.
-        
+        whether to draw the axis (i.e., tick marks and labels) at all.
       }
       \item{\code{alternating}}{
         Usually a logical flag specifying whether axis labels should
@@ -675,17 +674,34 @@ bwplot(x, data, \dots)
         no different than transforming the data in the formula; e.g.,
         \code{scales=list(x = list(log = 2))} is equivalent to \code{y ~
           log2(x)}.
-      
-        % whether to use a log scale. Defaults to \code{FALSE}, other
-        % possible values are any number that works as a base for taking
-        % logarithm, \code{TRUE}, equivalent to 10, and \code{"e"} (for
-        % natural logarithm).  Note that in this case the values passed
+
+	See entry for \code{equispaced.log} below for details on how to
+	control axis labeling.
+
+        % Note that in this case the values passed
         % to the panel function are already transformed, so all
         % computations done inside the panel function will be affected
         % accordingly. For example, \code{panel.lmline} will fit a line
         % to the transformed values.
       }
+      \item{\code{equispaced.log}}{
+	A logical flag indicating whether tick mark locations should be
+	equispaced when \sQuote{log scales} are in use.  Defaults to
+	\code{TRUE}.
 
+	Tick marks are always labeled in the original (untransformed)
+	scale, but this makes the choice of tick mark locations
+	nontrivial.  If \code{equispaced.log} is \code{FALSE}, the
+	choice made is similar to how log scales are annotated in
+	traditional graphics.  If \code{TRUE}, tick mark locations are
+	chosen as \sQuote{pretty} equispaced values in the transformed
+	scale, and labeled in the form \code{"base^loc"}, where
+	\code{base} is the base of the logarithm transformation, and
+	\code{loc} are the locations in the transformed scale.
+
+	See also \code{xscale.components.logpower} in the
+	\pkg{latticeExtra} package.
+      }
       \item{\code{format}}{
         The \code{format} to use for POSIXct variables. See
         \code{\link{strptime}} for description of valid values.

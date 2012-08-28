@@ -39,10 +39,12 @@ should be constructed with another set of data provided in \code{dataX} --- \cod
 be the same for both. Facilitates smooth id's.}
 \item{null.space.penalty}{Should an extra penalty be added to the smooth which will penalize the 
 components of the smooth in the penalty null space: provides a way of penalizing terms out of the model altogether.}
-\item{sparse.cons}{If \code{0} then default sum to zero constraints are used. If \code{1} then one
+
+\item{sparse.cons}{If \code{0} then default sum to zero constraints are used. If \code{-1} then sweep and 
+drop sum to zero constraints are used (default with \code{\link{bam}}). If \code{1} then one
 coefficient is set to zero as constraint for sparse smooths. If \code{2} then sparse coefficient sum to zero 
 constraints are used for sparse smooths. None of these options has an effect if the smooth supplies its own 
-constriant.}
+constraint.}
 
 }
 

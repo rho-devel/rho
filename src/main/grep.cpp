@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2011  The R Development Core Team
+ *  Copyright (C) 1997--2011  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Pulic License as published by
@@ -794,10 +794,10 @@ SEXP attribute_hidden do_grep(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     if (!useBytes) {
-	Rboolean onlyASCII = strIsASCII(CHAR(STRING_ELT(pat, 0)));
+	Rboolean onlyASCII = CXXRCONSTRUCT(Rboolean, IS_ASCII(STRING_ELT(pat, 0)));
 	if (onlyASCII)
 	    for (i = 0; i < n; i++)
-		if (!strIsASCII(CHAR(STRING_ELT(text, i)))) {
+		if (!IS_ASCII(STRING_ELT(text, i))) {
 		    onlyASCII = FALSE;
 		    break;
 		}
@@ -1520,16 +1520,15 @@ SEXP attribute_hidden do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     if (!useBytes) {
-	Rboolean onlyASCII = strIsASCII(CHAR(STRING_ELT(pat, 0)));
+	Rboolean onlyASCII = CXXRCONSTRUCT(Rboolean, IS_ASCII(STRING_ELT(pat, 0)));
 	if (onlyASCII)
 	    for (i = 0; i < n; i++)
-		if (!strIsASCII(CHAR(STRING_ELT(text, i)))) {
+		if (!IS_ASCII(STRING_ELT(text, i))) {
 		    onlyASCII = FALSE;
 		    break;
 		}
 	useBytes = onlyASCII;
     }
-
     if (!useBytes) {
 	Rboolean haveBytes = CXXRCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
 	if (!haveBytes)
@@ -2321,10 +2320,10 @@ SEXP attribute_hidden do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
 
     n = LENGTH(text);
     if (!useBytes) {
-	Rboolean onlyASCII = strIsASCII(CHAR(STRING_ELT(pat, 0)));
+	Rboolean onlyASCII = CXXRCONSTRUCT(Rboolean, IS_ASCII(STRING_ELT(pat, 0)));
 	if (onlyASCII)
 	    for (i = 0; i < n; i++)
-		if (!strIsASCII(CHAR(STRING_ELT(text, i)))) {
+		if (!IS_ASCII(STRING_ELT(text, i))) {
 		    onlyASCII = FALSE;
 		    break;
 		}
@@ -2423,7 +2422,8 @@ SEXP attribute_hidden do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     if (PRIMVAL(op) == 0) { /* regexpr */
-	SEXP matchlen, capture_start = R_NilValue, capturelen = R_NilValue;
+	SEXP matchlen, capture_start, capturelen;
+	int *is, *il;
 	PROTECT(ans = allocVector(INTSXP, n));
 	/* Protect in case install("match.length") allocates */
 	PROTECT(matchlen = allocVector(INTSXP, n));
@@ -2444,8 +2444,9 @@ SEXP attribute_hidden do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
 	    setAttrib(ans, install("capture.length"), capturelen);
 	    setAttrib(ans, install("capture.names"), capture_names);
 	    UNPROTECT(3);
-	}
-
+	    is = INTEGER(capture_start);
+	    il = INTEGER(capturelen);
+        } else is = il = NULL; /* not actually used */
 	vmax = vmaxget();
 	for (i = 0 ; i < n ; i++) {
 	    if (STRING_ELT(text, i) == NA_STRING) {
@@ -2491,22 +2492,21 @@ SEXP attribute_hidden do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
 						     capture_count,
 						     INTEGER(ans) + i,
 						     INTEGER(matchlen) + i,
-						     INTEGER(capture_start) + i,
-						     INTEGER(capturelen) + i,
+						     is + i, il + i,
 						     s, n);
 			} else {
 			    extract_match_and_groups(use_UTF8, ovector, 
 						     capture_count,
 						     INTEGER(ans) + i,
-						     INTEGER(matchlen) + i, NULL, NULL,
+						     INTEGER(matchlen) + i,
+						     NULL, NULL,
 						     s, n);
 			}
 		    } else {
 			INTEGER(ans)[i] = INTEGER(matchlen)[i] = -1;
 			for(int cn = 0; cn < capture_count; cn++) {
 			    int ind = i + cn*n;
-			    INTEGER(capture_start)[ind] = 
-				INTEGER(capturelen)[ind] = -1;
+			    is[ind] = il[ind] = -1;
 			}
 		    }
 		} else {
@@ -2634,11 +2634,11 @@ SEXP attribute_hidden do_regexec(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     if(!useBytes) {
-        useWC = CXXRCONSTRUCT(Rboolean, !strIsASCII(CHAR(STRING_ELT(pat, 0))));
+        useWC = CXXRCONSTRUCT(Rboolean, !IS_ASCII(STRING_ELT(pat, 0)));
         if(!useWC) {
             for(i = 0 ; i < n ; i++) {
                 if(STRING_ELT(vec, i) == NA_STRING) continue;
-                if(!strIsASCII(CHAR(STRING_ELT(vec, i)))) {
+                if(!IS_ASCII(STRING_ELT(vec, i))) {
                     useWC = TRUE;
                     break;
                 }

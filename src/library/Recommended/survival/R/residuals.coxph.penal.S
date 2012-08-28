@@ -1,4 +1,4 @@
-# $Id: residuals.coxph.penal.S 11174 2008-12-29 03:56:01Z therneau $
+# $Id: residuals.coxph.penal.S 11516 2012-04-24 12:49:14Z therneau $
 residuals.coxph.penal <- function(object, 
             type=c("martingale", "deviance", "score", "schoenfeld",
 			  "dfbeta", "dfbetas", "scaledsch","partial"),
@@ -16,7 +16,7 @@ residuals.coxph.penal <- function(object,
 	sparsename <- (names(object$pterms))[object$pterms==2]
 	x <- object[['x']]  #don't accidentally get object$xlevels
 	if (is.null(x)) {
-	    temp <- coxph.getdata(object, y=TRUE, x=TRUE, strata=TRUE)
+	    temp <- coxph.getdata(object, y=TRUE, x=TRUE, stratax=TRUE)
 	    if (is.null(object$y)) object$y <- temp$y
 	    if (is.null(object$strata)) object$strata <- temp$strata
 	    x <- temp$x

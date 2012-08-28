@@ -1,7 +1,9 @@
 % File src/library/stats/man/princomp.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{princomp}
 \alias{princomp}
@@ -45,7 +47,7 @@ princomp(x, \dots)
     principal component should be calculated.}
   \item{covmat}{a covariance matrix, or a covariance list as returned by
     \code{\link{cov.wt}} (and \code{\link[MASS:cov.rob]{cov.mve}} or
-    \code{\link[MASS:cov.rob]{cov.mcd}} from package \pkg{MASS}).
+    \code{\link[MASS:cov.rob]{cov.mcd}} from package \CRANpkg{MASS}).
     If supplied, this is used rather than the covariance matrix of
     \code{x}.}
   \item{\dots}{arguments passed to or from other methods. If \code{x} is
@@ -151,5 +153,11 @@ USArrests[1, 2] <- NA
 pc.cr <- princomp(~ Murder + Assault + UrbanPop,
                   data = USArrests, na.action=na.exclude, cor = TRUE)
 \donttest{pc.cr$scores[1:5, ]}
+
+## (Simple) Robust PCA:
+## Classical:
+(pc.cl  <- princomp(stackloss))
+## Robust:
+(pc.rob <- princomp(stackloss, covmat = MASS::cov.rob(stackloss)))
 }
 \keyword{multivariate}

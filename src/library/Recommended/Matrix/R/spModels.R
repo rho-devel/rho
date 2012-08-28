@@ -100,7 +100,7 @@ fac2Sparse <- function(from, to = c("d","i","l","n","z"),
 sparse.model.matrix <-
     function(object, data = environment(object), contrasts.arg = NULL,
 	     xlev = NULL, transpose = FALSE,
-             drop.unused.levels = FALSE, row.names=TRUE, ...)
+             drop.unused.levels = FALSE, row.names=TRUE, verbose=FALSE, ...)
 {
     t <- if(missing(data)) terms(object) else terms(object, data=data)
     if (is.null(attr(data, "terms")))
@@ -154,10 +154,12 @@ sparse.model.matrix <-
     }
     ## <Sparse> src/library/stats/R/models.R has
     ##    ans <- .Internal(model.matrix(t, data))
+    if(verbose) {
+	cat("model.spmatrix(t, data, ..)  with t =\n"); str(t,give.attr=FALSE) }
     ans <- model.spmatrix(t, data, transpose=transpose,
     ##     ==============
                           drop.unused.levels=drop.unused.levels,
-                          row.names=row.names)
+                          row.names=row.names, verbose=verbose)
     ## </Sparse>
     attr(ans, "contrasts") <-
 	lapply(data[isF], function(x) attr(x, "contrasts"))
@@ -165,10 +167,8 @@ sparse.model.matrix <-
 } ## {sparse.model.matrix}
 
 
-##' <description>
 ##' Produce the t(Z); Z = "design matrix" of (X : Y), where
 ##'             --- t(Z) : aka rowwise -version : "r"
-##' <details>
 ##'
 ##' @title sparse model matrix for 2-way interaction
 ##' @param X and Y either are numeric matrices {maybe 1-column}
@@ -177,7 +177,7 @@ sparse.model.matrix <-
 ##' @param forceSparse logical
 ##' @return
 ##' @author Martin Maechler
-sparse2int <- function(X, Y, do.names = TRUE, forceSparse = FALSE)
+sparse2int <- function(X, Y, do.names = TRUE, forceSparse = FALSE, verbose = FALSE)
 {
     if(do.names) {
         dnx <- dimnames(X)
@@ -209,7 +209,7 @@ sparse2int <- function(X, Y, do.names = TRUE, forceSparse = FALSE)
                     ## FIXME: similar trick would be applicable for ny > 2
                     r <- X
                     dp <- X@p[-1] - X@p[-(X@Dim[2]+1L)]
-                    stopifnot(all(dp %in% 0:1)) # just for now - drop! - FIXME
+                    ## stopifnot(all(dp %in% 0:1)) # just for now - drop! - FIXME
                     r@x <- Y[dp == 1L] * X@x
                     r
                 }
@@ -223,6 +223,9 @@ sparse2int <- function(X, Y, do.names = TRUE, forceSparse = FALSE)
             (if(ny == 1) X else X[rep.int(seq_len(nx), ny)     , ]) *
             (if(nx == 1) Y else Y[rep    (seq_len(ny),each=nx) , ])
 	}
+    if(verbose) cat(sprintf(" sp..2int(%s[%d],%s[%d]) ",
+			    if(nX)"<N>" else "<sparse>", nx,
+			    if(nY)"<N>" else "<sparse>", ny))
 
     if(do.names) {
         ## FIXME: This names business needs a good solution..
@@ -235,22 +238,32 @@ sparse2int <- function(X, Y, do.names = TRUE, forceSparse = FALSE)
     r
 }
 
-##' @param rList: list(.) of (transposed) single-factor model matrices,
-##'	belonging to, say, factors  a, b, c,...
+##' Sparse Model Matrix for a (high order) interaction term  A:B:x:C
+##'
+##' @param rList list(.) of (transposed) single-factor model matrices,
+##' 	belonging to, say, factors  a, b, c,...
 ##' @param do.names
-
+##' @param forceSparse
+##' @param verbose
 ##' @return the model matrix corresponding to a:b:...
-sparseInt.r <- function(rList, do.names = TRUE, forceSparse = FALSE) {
-    m <- length(rList)
-    F <- if(forceSparse) {
-	function(m) if(is.matrix(m)) .Call(dense_to_Csparse, m) else m
-    } else identity
-    if(m == 1) {
-	F(rList[[1]])
+sparseInt.r <- function(rList, do.names = TRUE, forceSparse = FALSE, verbose=FALSE)
+{
+    nl <- length(rList)
+    if(forceSparse)
+	F <- function(m) if(is.matrix(m)) .Call(dense_to_Csparse, m) else m
+    if(verbose)
+	cat("sparseInt.r(<list>[1:",nl,"], f.Sp=",forceSparse,"): is.mat()= (",
+	    paste(symnum(vapply(rList, is.matrix, NA)), collapse=""),
+	    ")\n", sep="")
+    if(nl == 1) {
+	if(forceSparse) F(rList[[1]]) else rList[[1]]
     } else {
-	## recurse
-	F(sparse2int(sparseInt.r(rList[-m], do.names=do.names),
-		     rList[[m]], do.names=do.names))
+	## 'recursion' free:
+	r <- rList[[1]]
+	for(j in 2:nl)
+	    r <- sparse2int(r, rList[[j]],
+			    do.names=do.names, verbose=verbose)
+	if(forceSparse) F(r) else r
     }
 }
 
@@ -273,10 +286,8 @@ is.model.frame <- function(x)
 }
 
 
-##' <description>
 ##' Create a sparse model matrix from a model frame.
 ##' -- This version uses  'rBind' and returns  X' i.e. t(X) :
-##' <details>
 ##'
 ##' @title Sparse Model Matrix from Model Frame
 ##' @param trms a "terms" object
@@ -289,7 +300,7 @@ is.model.frame <- function(x)
 ##' @return sparse matrix (class "dgCMatrix")
 ##' @author Martin Maechler
 model.spmatrix <- function(trms, mf, transpose=FALSE,
-                           drop.unused.levels = TRUE, row.names=TRUE)
+                           drop.unused.levels = TRUE, row.names=TRUE, verbose=FALSE)
 {
     ## Author: Martin Maechler, Date:  7 Jul 2009
 
@@ -316,6 +327,9 @@ model.spmatrix <- function(trms, mf, transpose=FALSE,
     ## all the "variables in the model" are also in "mf", including "sin(x)";
     ## actually, ..../src/main/model.c even assumes
     stopifnot((m <- length(mf)) >= nVar)
+    if(verbose)
+        cat(sprintf("model.spm..(): (n=%d, nVar=%d (m=%d), nTrm=%d)\n",
+                    n, nVar,m, nTrm))
     if(m > nVar) mf <- mf[seq_len(nVar)]
     stopifnot(fnames == names(mf))
     noVar <- nVar == 0
@@ -323,9 +337,10 @@ model.spmatrix <- function(trms, mf, transpose=FALSE,
     ##>> if(noVar) nVar <- 1L # (as in ~/R/D/r-devel/R/src/main/model.c)
     ## Note: "character" variables have been changed to factor in the caller;
     ##     hence: both factor and *logical*  should be dealt as factor :
-    is.f <- if(noVar) logical(0) else sapply(mf, function(.) is.factor(.) | is.logical(.))
+    is.f <- if(noVar) logical(0) else vapply(mf, function(.)
+					     is.factor(.) | is.logical(.), NA)
     indF <- which(is.f)
-
+    if(verbose) { cat(" --> indF =\n"); print(indF) }
     hasInt <- attr(trms, "intercept") == 1
     ## the degree of interaction:
     ## intOrder <- attr(trms, "order")
@@ -373,6 +388,13 @@ model.spmatrix <- function(trms, mf, transpose=FALSE,
             mf[[i]] <- f
         }
     }
+    if(verbose) {
+	cat(" ---> f.matr list :\n")
+	str(f.matr, max = as.integer(verbose))
+	fNms <- format(dQuote(Names))
+	dim.string <- gsub('5', as.character(floor(1+log10(n))),
+			   " -- concatenating (r, rj): dim = (%5d,%5d) | (%5d,%5d)\n")
+    }
 
     ## FIXME: do all this in C --
 
@@ -389,11 +411,17 @@ model.spmatrix <- function(trms, mf, transpose=FALSE,
     iTrm <- seq_len(nTrm)
     for(j in iTrm) { ## j-th term
 	nm <- Names[j]
+        if(verbose) cat(sprintf("term[%2d] %s .. ", j, fNms[j]))
 	nmSplits <- strsplit(nm, ":", fixed=TRUE)[[1]]
-	rj <- sparseInt.r(lapply(nmSplits, getR), do.names=TRUE, forceSparse = TRUE)
+        ## NOTA BENE: This can be very slow when many terms are involved
+        ## FIXME ??? why does it use *much* memory in those cases ??
+	rj <- sparseInt.r(lapply(nmSplits, getR), do.names=TRUE,
+                          forceSparse = TRUE, verbose=verbose)# or just (verbose >= 2))
+        if(verbose) cat(sprintf(dim.string, nrow(r), ncol(r), nrow(rj),ncol(rj)))
 	## fast version of cbind2() / rbind2(), w/o checks, dimnames, etc
 	r <- if(transpose) .Call(Csparse_vertcat, r, rj)
 		else	   .Call(Csparse_horzcat, r, t(rj))
+        ## if(verbose) cat(" [Ok]\n")
 	vNms <- c(vNms, dimnames(rj)[[1]])
 	counts[j] <- nrow(rj)
     }

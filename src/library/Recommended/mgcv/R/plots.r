@@ -163,8 +163,88 @@ qq.gam <- function(object, rep=0, level=.9,s.rep=10,
 }
 
 
+k.check <- function(b,subsample=5000,n.rep=400) {
+## function to check k in a gam fit... 
+## does a randomization test looking for evidence of residual 
+## pattern attributable to covariates of each smooth. 
+  m <- length(b$smooth)
+  if (m==0) return(NULL)
+  rsd <- residuals(b)
+ 
+  ve <- rep(0,n.rep)
+  p.val<-v.obs <- kc <- edf<- rep(0,m)
+  snames <- rep("",m)
+  n <- nrow(b$model)
+  if (n>subsample) { ## subsample to avoid excessive cost
+    ind <- sample(1:n,subsample)
+    modf <- b$model[ind,] 
+    rsd <- rsd[ind]
+  } else modf <- b$model
+  nr <- length(rsd)
+  for (k in 1:m) { ## work through smooths
+    dat <- as.data.frame(mgcv:::ExtractData(b$smooth[[k]],modf,NULL)$data)
+    snames[k] <- b$smooth[[k]]$label
+    ind <- b$smooth[[k]]$first.para:b$smooth[[k]]$last.para
+    kc[k] <- length(ind)
+    edf[k] <- sum(b$edf[ind]) 
+    nc <- b$smooth[[k]]$dim
+    ok <- TRUE
+    for (j in 1:nc) if (is.factor(dat[[j]])) ok <- FALSE 
+    if (!is.null(attr(dat[[1]],"matrix"))) ok <- FALSE
+    if (!ok) {
+      p.val[k] <- v.obs[k] <- NA ## can't do this test with summation convention/factors
+    } else { ## normal term
+      if (nc==1) { ## 1-D term
+        e <- diff(rsd[order(dat[,1])])
+        v.obs[k] <- mean(e^2)/2
+        for (i in 1:n.rep) {
+          e <- diff(rsd[sample(1:nr,nr)]) ## shuffle 
+          ve[i] <-  mean(e^2)/2
+        }
+        p.val[k] <- mean(ve<v.obs[k])
+        v.obs[k] <- v.obs[k]/mean(rsd^2)
+      } else { ## multi-D 
+        if (!is.null(b$smooth[[k]]$margin)) { ## tensor product (have to consider scaling)
+          ## get the scale factors...
+          beta <- coef(b)[ind]
+          f0 <- PredictMat(b$smooth[[k]],dat)%*%beta
+          gr.f <- rep(0,ncol(dat))
+          for (i in 1:nc) {
+            datp <- dat;dx <- diff(range(dat[,i]))/1000
+            datp[,i] <- datp[,i] + dx
+            fp <- PredictMat(b$smooth[[k]],datp)%*%beta
+            gr.f[i] <- mean(abs(fp-f0))/dx
+          }
+          for (i in 1:nc) { ## rescale distances
+            dat[,i] <- dat[,i] - min(dat[,i])
+            dat[,i] <- gr.f[i]*dat[,i]/max(dat[,i])
+          }
+        }
+        nn <- 3
+        ni <- mgcv:::nearest(nn,as.matrix(dat))$ni
+        e <- rsd - rsd[ni[,1]]
+        for (j in 2:nn) e <- c(e,rsd-rsd[ni[,j]])
+        v.obs[k] <- mean(e^2)/2
+        for (i in 1:n.rep) {
+          rsdr <- rsd[sample(1:nr,nr)] ## shuffle
+          e <- rsdr - rsdr[ni[,1]]
+          for (j in 2:nn) e <- c(e,rsdr-rsdr[ni[,j]])
+          ve[i] <-  mean(e^2)/2
+        }
+        p.val[k] <- mean(ve<v.obs[k])
+        v.obs[k] <- v.obs[k]/mean(rsd^2)
+      }
+    }
+  }
+  k.table <- cbind(kc,edf,v.obs, p.val)
+  dimnames(k.table) <- list(snames, c("k\'","edf","k-index", "p-value"))
+  k.table
+} ## end of k.check
+
+
 gam.check <- function(b, old.style=FALSE,
 		      type=c("deviance","pearson","response"), 
+                      k.sample=5000,k.rep=200,
 		      ## arguments passed to qq.gam() {w/o warnings !}:
 		      rep=0, level=.9, rl.col=2, rep.col="gray80", ...)
 # takes a fitted gam object and produces some standard diagnostic plots
@@ -183,7 +263,7 @@ gam.check <- function(b, old.style=FALSE,
     hist(resid,xlab="Residuals",main="Histogram of residuals",...)
     plot(fitted(b), napredict(b$na.action, b$y),
          xlab="Fitted Values",ylab="Response",main="Response vs. Fitted Values",...)
-    if (!(b$method%in%c("GCV","GACV","UBRE","REML","ML","P-ML","P-REML"))) { ## gamm `gam' object
+    if (!(b$method%in%c("GCV","GACV","UBRE","REML","ML","P-ML","P-REML","fREML"))) { ## gamm `gam' object
        par(old.par)
        return(invisible())
     }
@@ -219,6 +299,13 @@ gam.check <- function(b, old.style=FALSE,
       }
     }
     cat("\n")
+    ## now check k
+    kchck <- k.check(b,subsample=k.sample,n.rep=k.rep)
+    if (!is.null(kchck)) {
+      cat("Basis dimension (k) checking results. Low p-value (k-index<1) may\n") 
+      cat("indicate that k is too low, especially if edf is close to k\'.\n\n")
+      printCoefmat(kchck,digits=3);
+    }
     par(old.par)
 ##  } else plot(linpred,resid,xlab="linear predictor",ylab="residuals",...)
 } ## end of gam.check
@@ -924,8 +1011,8 @@ plot.gam <- function(x,residuals=FALSE,rug=TRUE,se=TRUE,pages=0,select=NULL,scal
     if (se1.mult<0) se1.mult<-0;if (se2.mult < 0) se2.mult <- 0
   } else se1.mult <- se2.mult <-1
   
-  if (se && x$Vp[1,1]<=0) ## check that variances are actually available
-  { se<-FALSE
+  if (se && x$Vp[1,1] < 0) ## check that variances are actually available
+  { se <- FALSE
     warning("No variance estimates available")
   }
 

@@ -85,7 +85,7 @@ Journal on Scientific Computing 15(5):1126-1133
 }
 \author{ Simon N. Wood \email{simon.wood@r-project.org}} 
 
-\seealso{  \code{\link{mgcv}} \code{\link{mono.con}}  }
+\seealso{  \code{\link{magic}}, \code{\link{mono.con}}  }
 
 \examples{
 # first an un-penalized example - fit E(y)=a+bx subject to a>0

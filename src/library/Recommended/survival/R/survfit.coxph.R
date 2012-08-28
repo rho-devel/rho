@@ -116,9 +116,24 @@ survfit.coxph <-
            x <- scale(x, center=xcenter, scale=FALSE)    
            }
         }
+    subterms <- function(x, i) {
+        predvars <- attr(x, "predvars")
+        x <- x[i]
+        if (!is.null(predvars)) {
+            #predvars is a call.  When subscripting we need to keep the
+            #  first element, which is as.name("list"), and optionally
+            #  the response which will be second.  Our index i aligns
+            #  with the remainder of the elements
+            k <- 1:(1+ attr(x, 'response')) #either 1 or 1:2
+            j <- seq(along=predvars)[-k] #what we index to
+            attr(x, "predvars") <- predvars[c(k, j[i])]
+        }
+        x
+    }
     temp <- untangle.specials(Terms, 'cluster')
     if (length(temp$vars)) {
-        Terms <- Terms[-temp$terms]
+        ptemp <- attr(temp, "predvars")
+        Terms <- subterms(Terms, -temp$terms)
         stype <- stype[-temp$terms]
     }
     if (missing(newdata)) {
@@ -132,7 +147,7 @@ survfit.coxph <-
 
         if (!individual) {
             Terms2 <- delete.response(Terms)
-            if (any(stype>0)) Terms2 <- Terms2[stype==0] #strata and interactions
+            if (any(stype>0)) Terms2 <- subterms(Terms2,stype==0) #strata and interactions
             }
         else Terms2 <- Terms
         tcall <- Call[c(1, match(c('newdata', 'id'), names(Call), nomatch=0))]
@@ -190,7 +205,7 @@ survfit.coxph <-
             stop("Survival type of newdata does not match the fitted model")
         if (attr(y2, "type") != "counting")
             stop("Individual=TRUE is only valid for counting process data")
-        y2 <- y2[,1:2]  #throw away status, it's never used
+        y2 <- y2[,1:2, drop=F]  #throw away status, it's never used
 
         newrisk <- exp(c(x2 %*% coef)) + offset2
         result <- survfitcoxph.fit(y, x, wt, x2, risk, newrisk, strata,

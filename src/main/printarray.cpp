@@ -17,7 +17,8 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996	Robert Gentleman and Ross Ihaka
- *  Copyright (C) 2000--2006	The R Development Core Team.
+ *  Copyright (C) 2000--2012	The R Core Team.
+ *  Copyright (C) 2001--2012	The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -154,13 +155,10 @@ static void printLogicalMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 			       StringVector* rl, SEXP cl,
                                const char *rn, const char *cn)
 {
-    int *x;
-
 /* initialization; particularly of row labels, rl= dimnames(.)[[1]] and
  * rn = names(dimnames(.))[1] : */
 #define _PRINT_INIT_rl_rn				\
-    GCStackRoot<> sw;					\
-    int *w;						\
+    int *w = static_cast<int *>( CXXR_alloc(c, sizeof(int)));	\
     int width, rlabw = -1, clabw = -1; /* -Wall */	\
     int i, j, jmin = 0, jmax = 0, lbloff = 0;		\
 							\
@@ -181,10 +179,8 @@ static void printLogicalMatrix(SEXP sx, int offset, int r_pr, int r, int c,
     }
 
     _PRINT_INIT_rl_rn;
+    int *x = LOGICAL(sx) + offset;
 
-    sw = allocVector(INTSXP, c);
-    x = LOGICAL(sx) + offset;
-    w = INTEGER(sw);
     /* compute w[j] = column-width of j(+1)-th column : */
     for (j = 0; j < c; j++) {
 	formatLogical(&x[j * r], r, &w[j]);
@@ -254,13 +250,9 @@ static void printIntegerMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 			       StringVector* rl, SEXP cl,
 			       const char *rn, const char *cn)
 {
-    int *x;
-
     _PRINT_INIT_rl_rn;
+    int *x = INTEGER(sx) + offset;
 
-    sw = allocVector(INTSXP, c);
-    x = INTEGER(sx) + offset;
-    w = INTEGER(sw);
     for (j = 0; j < c; j++) {
 	formatInteger(&x[j * r], r, &w[j]);
 	_PRINT_SET_clabw;
@@ -296,19 +288,11 @@ static void printRealMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 			    StringVector* rl, SEXP cl,
 			    const char *rn, const char *cn)
 {
-    SEXP sd, se;
-    double *x;
-    int *d, *e;
     _PRINT_INIT_rl_rn;
+    double *x = REAL(sx) + offset;
 
-    PROTECT(sd = allocVector(INTSXP, c));
-    PROTECT(se = allocVector(INTSXP, c));
-    sw = allocVector(INTSXP, c);
-    UNPROTECT(2);
-    x = REAL(sx) + offset;
-    d = INTEGER(sd);
-    e = INTEGER(se);
-    w = INTEGER(sw);
+    int *d = static_cast<int *>( CXXR_alloc(c, sizeof(int))),
+	*e = static_cast<int *>( CXXR_alloc(c, sizeof(int)));
 
     for (j = 0; j < c; j++) {
 	formatReal(&x[j * r], r, &w[j], &d[j], &e[j], 0);
@@ -345,27 +329,15 @@ static void printComplexMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 			       StringVector* rl, SEXP cl,
 			       const char *rn, const char *cn)
 {
-    SEXP sdr, ser, swr, sdi, sei, swi;
-    Rcomplex *x;
-    int *dr, *er, *wr, *di, *ei, *wi;
     _PRINT_INIT_rl_rn;
+    Rcomplex *x = COMPLEX(sx) + offset;
 
-    PROTECT(sdr = allocVector(INTSXP, c));
-    PROTECT(ser = allocVector(INTSXP, c));
-    PROTECT(swr = allocVector(INTSXP, c));
-    PROTECT(sdi = allocVector(INTSXP, c));
-    PROTECT(sei = allocVector(INTSXP, c));
-    PROTECT(swi = allocVector(INTSXP, c));
-    PROTECT(sw	= allocVector(INTSXP, c));
-    UNPROTECT(7);
-    x = COMPLEX(sx) + offset;
-    dr = INTEGER(sdr);
-    er = INTEGER(ser);
-    wr = INTEGER(swr);
-    di = INTEGER(sdi);
-    ei = INTEGER(sei);
-    wi = INTEGER(swi);
-    w = INTEGER(sw);
+    int *dr = static_cast<int *>( CXXR_alloc(c, sizeof(int))),
+	*er = static_cast<int *>( CXXR_alloc(c, sizeof(int))),
+	*wr = static_cast<int *>( CXXR_alloc(c, sizeof(int))),
+	*di = static_cast<int *>( CXXR_alloc(c, sizeof(int))),
+	*ei = static_cast<int *>( CXXR_alloc(c, sizeof(int))),
+	*wi = static_cast<int *>( CXXR_alloc(c, sizeof(int)));
 
     /* Determine the column widths */
 
@@ -417,9 +389,7 @@ static void printStringMatrix(const StringVector* sx, int offset, int r_pr,
 {
     _PRINT_INIT_rl_rn;
 
-    sw = allocVector(INTSXP, c);
     StringVector::const_iterator beg = sx->begin() + offset;
-    w = INTEGER(sw);
     for (j = 0; j < c; j++) {
 	StringVector::const_iterator jbeg = beg + j*r;
 	w[j] = accumulate(jbeg, jbeg + r, 0,
@@ -463,12 +433,9 @@ static void printRawMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 			   StringVector* rl, SEXP cl,
 			   const char *rn, const char *cn)
 {
-    Rbyte *x;
     _PRINT_INIT_rl_rn;
+    Rbyte *x = RAW(sx) + offset;
 
-    sw = allocVector(INTSXP, c);
-    x = RAW(sx) + offset;
-    w = INTEGER(sw);
     for (j = 0; j < c; j++) {
 	formatRaw(&x[j * r], r, &w[j]);
 	_PRINT_SET_clabw;
@@ -550,13 +517,13 @@ void printMatrix(SEXP x, int offset, SEXP dim, int quote, int right,
     }
 #ifdef ENABLE_NLS
     if(r_pr < r) /* FIXME? use _P() and "Defn.h" ? */
-	Rprintf(ngettext(" [ reached getOption(\"max.print\") -- omitted last row ]]\n",
-			 " [ reached getOption(\"max.print\") -- omitted %d rows ]]\n",
+	Rprintf(ngettext(" [ reached getOption(\"max.print\") -- omitted last row ]\n",
+			 " [ reached getOption(\"max.print\") -- omitted %d rows ]\n",
 			 r - r_pr),
 		r - r_pr);
 #else
     if(r_pr < r) /* FIXME? use _P() and "Defn.h" ? */
-	Rprintf(" [ reached getOption(\"max.print\") -- omitted %d rows ]]\n",
+	Rprintf(" [ reached getOption(\"max.print\") -- omitted %d rows ]\n",
 		r - r_pr);
 #endif
 }

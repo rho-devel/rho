@@ -2,15 +2,16 @@
 \title{Scatter Plot Matrices}
 \alias{splom}
 \alias{parallel}
+\alias{parallelplot}
 \alias{splom.matrix}
 \alias{splom.data.frame}
-\alias{parallel.matrix}
-\alias{parallel.data.frame}
+\alias{parallelplot.matrix}
+\alias{parallelplot.data.frame}
 \alias{splom.formula}
-\alias{parallel.formula}
+\alias{parallelplot.formula}
 \usage{
 splom(x, data, \dots)
-parallel(x, data, \dots)
+parallelplot(x, data, \dots)
 
 \method{splom}{formula}(x,
       data,
@@ -35,7 +36,7 @@ parallel(x, data, \dots)
       default.scales,
       default.prepanel = lattice.getOption("prepanel.default.splom"),
       subset = TRUE)
-\method{parallel}{formula}(x,
+\method{parallelplot}{formula}(x,
          data,
          auto.key = FALSE,
          aspect = "fill",
@@ -61,8 +62,8 @@ parallel(x, data, \dots)
 \method{splom}{data.frame}(x, data = NULL, \dots, groups = NULL, subset = TRUE)
 \method{splom}{matrix}(x, data = NULL, \dots, groups = NULL, subset = TRUE)
 
-\method{parallel}{matrix}(x, data = NULL, \dots, groups = NULL, subset = TRUE)
-\method{parallel}{data.frame}(x, data = NULL, \dots, groups = NULL, subset = TRUE)
+\method{parallelplot}{matrix}(x, data = NULL, \dots, groups = NULL, subset = TRUE)
+\method{parallelplot}{data.frame}(x, data = NULL, \dots, groups = NULL, subset = TRUE)
 }
 \description{
   Draw Conditional Scatter Plot Matrices and Parallel Coordinate Plots
@@ -93,8 +94,8 @@ parallel(x, data, \dots)
     show the panels of a splom plot with space between them.
   }
   \item{panel}{
-    Usual interpretation for \code{parallel}, namely the function that
-    creates the display within each panel. 
+    For \code{parallelplot}, this has the usual interpretation, i.e., a
+    function that creates the display within each panel.
 
     For \code{splom}, the terminology is slightly complicated. The role
     played by the panel function in most other high-level functions is
@@ -153,7 +154,7 @@ parallel(x, data, \dots)
   usually not very useful in \code{splom}, and trying to change it may
   have undesired effects.
 
-  \code{\link{parallel}} draws Parallel Coordinate Plots. (Difficult to
+  \code{\link{parallelplot}} draws Parallel Coordinate Plots. (Difficult to
   describe, see example.)
   
   These and all other high level Trellis functions have several
@@ -192,9 +193,9 @@ splom(~iris[1:3]|Species, data = iris,
                 labels = c("Three", "Varieties", "of", "Iris"),
                 cex = 2)
       })
-parallel(~iris[1:4] | Species, iris) 
-parallel(~iris[1:4], iris, groups = Species,
-         horizontal.axis = FALSE, scales = list(x = list(rot = 90)))
+parallelplot(~iris[1:4] | Species, iris) 
+parallelplot(~iris[1:4], iris, groups = Species,
+             horizontal.axis = FALSE, scales = list(x = list(rot = 90)))
 }
 \keyword{hplot}
 

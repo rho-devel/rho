@@ -874,13 +874,12 @@ SEXP do_writeStata(SEXP call)
     if (!isValidString(fname = CADR(call)))
 	error(_("first argument must be a file name\n"));
 
-
-    fp = fopen(R_ExpandFileName(CHAR(STRING_ELT(fname,0))), "wb");
-    if (!fp) error(_("unable to open file for writing: '%s'"), strerror(errno));
-
     df = CADDR(call);
     if (!inherits(df,"data.frame"))
 	error(_("data to be saved must be in a data frame"));
+
+    fp = fopen(R_ExpandFileName(CHAR(STRING_ELT(fname,0))), "wb");
+    if (!fp) error(_("unable to open file for writing: '%s'"), strerror(errno));
 
     version = INTEGER(coerceVector(CADDDR(call), INTSXP))[0];
     /* 9 is mapped to 8 in R code */

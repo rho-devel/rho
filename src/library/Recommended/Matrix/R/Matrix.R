@@ -206,14 +206,8 @@ Matrix <- function (data = NA, nrow = 1, ncol = 1, byrow = FALSE,
 			Dimnames = if(is.null(dimnames)) list(NULL,NULL)
 			else dimnames)
 	} else { ## normal case - using .Internal() to avoid more copying
-	    if(getRversion() >= "2.13")
-		data <- .Internal(matrix(data, nrow, ncol, byrow, dimnames,
-					 missing(nrow), missing(ncol)))
-	    else {
-		if (missing(nrow)) nrow <- ceiling(length(data)/ncol) else
-		if (missing(ncol)) ncol <- ceiling(length(data)/nrow)
-		data <- .Internal(matrix(data, nrow, ncol, byrow, dimnames))
-	    }
+	    data <- .Internal(matrix(data, nrow, ncol, byrow, dimnames,
+				     missing(nrow), missing(ncol)))
 	    if(is.null(sparse))
 		sparse <- sparseDefault(data)
 	}
@@ -289,6 +283,12 @@ setMethod("solve", signature(a = "ANY", b = "Matrix"),
 
 setMethod("chol2inv", signature(x = "denseMatrix"),
 	  function (x, ...) chol2inv(as(as(x, "dMatrix"), "dtrMatrix"), ...))
+setMethod("chol2inv", signature(x = "diagonalMatrix"),
+	  function (x, ...) {
+	      if(length(list(...)))
+		  warning("arguments in ",deparse(list(...))," are disregarded")
+	      tcrossprod(solve(x))
+	  })
 setMethod("chol2inv", signature(x = "sparseMatrix"),
 	  function (x, ...) {
 	      if(length(list(...)))

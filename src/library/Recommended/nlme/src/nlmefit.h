@@ -53,7 +53,7 @@ typedef struct state_struct {
 
 extern dimPTR dims(longint *);
 extern dimPTR dimS(SEXP);
-extern size_t count_DmHalf_pars(dimPTR, longint *);
+extern int count_DmHalf_pars(dimPTR, longint *);
 extern double * generate_theta(double *, dimPTR, longint *, double *);
 extern double * generate_DmHalf(double *, dimPTR, longint *, double *);
 extern void dimFree(dimPTR);

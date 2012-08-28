@@ -172,10 +172,13 @@ This file documents software changes since the third edition.
 - fitdistr() gains a vcov() method (suggested by Achim Zeileis).
 - ch06.R has R alternatives to fac.design.
 - ch11.R has R alternatives for ggobi and factor rotation.
-- hubers() copes in extreme case when middle 50% of data is constant.
+- hubers() copes in extreme cases when middle 50% of data is constant.
 - tests/ now includes dataset for polr.R, so checking depends only on
   base packages and lattice.
 - The "glm" method for profile() failed when given a binomial model
   with a two-column response.
 - fitdistr() works harder to rescale the problem when fitting a gamma.
-
+- cov.trob() handles zero weights without giving a warning (reported by
+  John Fox).
+- boxcox() works better when 'y' is very badly scaled, e.g. around 1e-16
+  (patch by Martin Maechler).

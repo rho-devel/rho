@@ -24,9 +24,6 @@ as0 <- function(x, mod=mode(x))
     switch(mod, "integer" = 0L, "numeric" = 0, "logical" = FALSE, "complex" = 0+0i)
 
 
-## maybe we should have this in base, maybe via an .Internal(paste0(.)) -> do_paste(.. op=2)
-paste0 <- function(...) paste(..., sep = '')
-
 .M.DN <- function(x) if(!is.null(dn <- dimnames(x))) dn else list(NULL,NULL)
 
 .if.NULL <- function(x, orElse) if(!is.null(x)) x else orElse
@@ -389,10 +386,8 @@ prTriang <- function(x, digits = getOption("digits"),
 
     m <- as(x, "matrix")
     cf <- format(m, digits = digits, justify = justify)
-    if(upper)
-	cf[row(cf) > col(cf)] <- "."
-    else
-	cf[row(cf) < col(cf)] <- "."
+    cf[if(upper) row(cf) > col(cf)
+	else	 row(cf) < col(cf)] <- "."
     print(cf, quote = FALSE, right = right, max = maxp)
     invisible(x)
 }
@@ -418,6 +413,8 @@ prMatrix <- function(x, digits = getOption("digits"),
 	print(head(m, max(1, n2)))
 	cat("\n ..........\n\n")
 	print(tail(m, max(1, nr - n2)))
+	cat("\n ..........\n\n")
+
     }
     ## DEBUG: cat("str(.):\n") ; str(x)
     invisible(x)# as print() S3 methods do

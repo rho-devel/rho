@@ -32,6 +32,8 @@ isoMDS <- function(d, y = cmdscale(d, k), k = 2, maxit = 50, trace = TRUE,
         x <- x + t(x)
         rn <- attr(d, "Labels")
     }
+    n <- as.integer(n)
+    if(is.na(n)) stop("invalid size")
     ab <- x[row(x) < col(x)] <= 0
     if (any(ab, na.rm = TRUE)) {
         ab <- !is.na(ab) & ab
@@ -55,7 +57,7 @@ isoMDS <- function(d, y = cmdscale(d, k), k = 2, maxit = 50, trace = TRUE,
     .C(VR_mds_init_data,
        as.integer(nd),
        as.integer(k),
-       as.integer(n),
+       n,
        as.integer(ord - 1),
        as.integer(order(ord) - 1),
        as.double(y),
@@ -73,12 +75,14 @@ Shepard <- function(d, x, p = 2)
 #
 # Given a dissimilarity d and configuration x, compute Shepard plot
 #
-  n <- nrow(x)
+  n <- as.integer(nrow(x))
+  if (is.na(n)) stop("invalid row(x)")
   k <- ncol(x)
   y <- dist(x, method="minkowski", p = p)
   ord <- order(d)
   y <- y[ord]
   nd <- length(ord)
+  if (is.na(nd)) stop("invalid length(d)")
   Z <- .C(VR_mds_fn,
 	  as.double(y),
 	  yf=as.double(y),

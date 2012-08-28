@@ -2,7 +2,7 @@
 #  Part of the R package, http://www.R-project.org
 #
 # Copyright (C) 2006  Deepayan Sarkar <Deepayan.Sarkar@R-project.org>
-# Copyright (C) 2006-2009  The R Development Core Team
+# Copyright (C) 2006-2012  The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@
     UseMethod(".DollarNames")
 
 .DollarNames.default <- function(x, pattern = "") {
-    if (is.atomic(x) || is.symbol(x)) character(0)
+    if (is.atomic(x) || is.symbol(x)) character()
     else grep(pattern, names(x), value = TRUE)
 }
 
@@ -735,14 +735,14 @@ correctFilenameToken <- function()
     ## part after the last space.  This function tries to recover the
     ## complete initial part.
 
-    ## Find part between last " or ' 
+    ## Find part between last " or '
     linebuffer <- .CompletionEnv[["linebuffer"]]
     lbss <- head.default(unlist(strsplit(linebuffer, "")), .CompletionEnv[["end"]])
     whichDoubleQuote <- lbss == '"'
     whichSingleQuote <- lbss == "'"
     insideDoubleQuote <- (sum(whichDoubleQuote) %% 2 == 1)
     insideSingleQuote <- (sum(whichSingleQuote) %% 2 == 1)
-    loc.start <- 
+    loc.start <-
         if (insideDoubleQuote && insideSingleQuote)
         {
             ## Should not happen, but if it does, should take whichever comes later
@@ -909,7 +909,7 @@ fileCompletions <- function(token)
             }
         if (haveArithOp && length(comps))
         {
-            comps <- paste(prefix, comps, sep = "")
+            comps <- paste0(prefix, comps)
         }
         comps <- c(comps, fargComps)
         .CompletionEnv[["comps"]] <- comps

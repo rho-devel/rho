@@ -1,4 +1,92 @@
 ------------------------------------------------------------------------
+r719 | deepayan | 2012-03-10 14:39:50 +0530 (Sat, 10 Mar 2012) | 1 line
+Changed paths:
+   M /pkg/DESCRIPTION
+   M /pkg/R/axis.R
+   M /pkg/inst/po/de/LC_MESSAGES/R-lattice.mo
+   M /pkg/po/R-de.po
+   M /pkg/po/R-lattice.pot
+
+German translation updates
+------------------------------------------------------------------------
+r718 | deepayan | 2012-03-10 13:38:01 +0530 (Sat, 10 Mar 2012) | 1 line
+Changed paths:
+   M /pkg/DESCRIPTION
+   M /pkg/NAMESPACE
+   M /pkg/R/parallel.R
+
+fixed improper deprecation of parallel
+------------------------------------------------------------------------
+r717 | deepayan | 2012-03-06 21:27:44 +0530 (Tue, 06 Mar 2012) | 1 line
+Changed paths:
+   M /pkg/po/R-de.po
+
+updated German translations
+------------------------------------------------------------------------
+r716 | deepayan | 2012-03-05 21:18:07 +0530 (Mon, 05 Mar 2012) | 1 line
+Changed paths:
+   M /pkg/R/axis.R
+   M /pkg/R/common.R
+   M /pkg/R/settings.R
+   M /pkg/inst/po/de/LC_MESSAGES/R-lattice.mo
+   M /pkg/inst/po/en@quot/LC_MESSAGES/R-lattice.mo
+   M /pkg/inst/po/fr/LC_MESSAGES/R-lattice.mo
+   M /pkg/po/R-de.po
+   M /pkg/po/R-en@quot.po
+   M /pkg/po/R-fr.po
+   M /pkg/po/R-lattice.pot
+
+new show.settings()
+------------------------------------------------------------------------
+r715 | deepayan | 2011-11-19 13:33:52 +0530 (Sat, 19 Nov 2011) | 1 line
+Changed paths:
+   M /pkg/DESCRIPTION
+   M /pkg/NEWS
+   M /pkg/R/axis.R
+   M /pkg/R/print.trellis.R
+   M /pkg/R/scales.R
+   M /pkg/man/splom.Rd
+   M /pkg/man/xyplot.Rd
+
+finished support for traditional graphics-like log-scale annotation
+------------------------------------------------------------------------
+r714 | deepayan | 2011-11-18 10:43:51 +0530 (Fri, 18 Nov 2011) | 1 line
+Changed paths:
+   M /pkg/R/axis.R
+   M /pkg/R/print.trellis.R
+   M /pkg/man/lset.Rd
+
+incomplete attempt to implement nice log ticks as in traditional graphics
+------------------------------------------------------------------------
+r713 | deepayan | 2011-11-18 01:11:06 +0530 (Fri, 18 Nov 2011) | 1 line
+Changed paths:
+   M /pkg/NAMESPACE
+   M /pkg/R/layout.R
+
+fixed NAMESPACE to reflect parallel rename
+------------------------------------------------------------------------
+r712 | deepayan | 2011-11-15 18:12:42 +0530 (Tue, 15 Nov 2011) | 1 line
+Changed paths:
+   M /pkg/DESCRIPTION
+   M /pkg/NAMESPACE
+   M /pkg/R/parallel.R
+   M /pkg/man/splom.Rd
+
+initial steps for deprecating parallel() in favour of parallelplot()
+------------------------------------------------------------------------
+r711 | deepayan | 2011-10-21 22:28:53 +0530 (Fri, 21 Oct 2011) | 1 line
+Changed paths:
+   M /pkg/DESCRIPTION
+
+version update
+------------------------------------------------------------------------
+r710 | deepayan | 2011-10-21 22:28:31 +0530 (Fri, 21 Oct 2011) | 1 line
+Changed paths:
+   M /pkg/R/levelplot.R
+   M /pkg/man/panel.levelplot.Rd
+
+better control over levelplot rectangle borders
+------------------------------------------------------------------------
 r706 | deepayan | 2011-10-18 23:48:18 +0530 (Tue, 18 Oct 2011) | 1 line
 Changed paths:
    M /pkg/R/xyplot.R

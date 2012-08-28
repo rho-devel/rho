@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-3 Paul Murrell
- *                2003-8 The R Development Core Team
+ *                2003-8 The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -506,6 +506,12 @@ double evaluateGrobUnit(double value, SEXP grob,
     case 3:
 	PROTECT(evalFny = findFun(install("height"), R_gridEvalEnv));
 	break;
+    case 4:
+	PROTECT(evalFny = findFun(install("ascentDetails"), R_gridEvalEnv));
+        break;
+    case 5:
+	PROTECT(evalFny = findFun(install("descentDetails"), R_gridEvalEnv));
+        break;
     }
     PROTECT(postFn = findFun(install("postDraw"), R_gridEvalEnv));
     /*
@@ -587,6 +593,8 @@ double evaluateGrobUnit(double value, SEXP grob,
 	PROTECT(unitx = eval(R_fcall2x, R_gridEvalEnv));
 	break;
     case 3:
+    case 4:
+    case 5:
 	PROTECT(R_fcall2y = lang2(evalFny, grob));
 	PROTECT(unity = eval(R_fcall2y, R_gridEvalEnv));
 	break;
@@ -645,6 +653,8 @@ double evaluateGrobUnit(double value, SEXP grob,
 	}
 	break;
     case 3:
+    case 4:
+    case 5:
 	if (pureNullUnit(unity, 0, dd)) {
 	    result = evaluateNullUnit(pureNullUnitValue(unity, 0), 
 				      vpWidthCM,
@@ -674,6 +684,8 @@ double evaluateGrobUnit(double value, SEXP grob,
 	break;
     case 2:
     case 3:
+    case 4:
+    case 5:
 	UNPROTECT(9);
     }
     /* Return the transformed width
@@ -723,6 +735,24 @@ double evaluateGrobHeightUnit(SEXP grob,
 			    nullLMode, nullAMode, 3, dd);
 }
 
+double evaluateGrobAscentUnit(SEXP grob, 
+                              double vpheightCM, double vpwidthCM,
+                              int nullLMode, int nullAMode,
+                              pGEDevDesc dd) 
+{
+    return evaluateGrobUnit(1, grob, vpheightCM, vpwidthCM, 
+			    nullLMode, nullAMode, 4, dd);
+}
+
+double evaluateGrobDescentUnit(SEXP grob, 
+                               double vpheightCM, double vpwidthCM,
+                               int nullLMode, int nullAMode,
+                               pGEDevDesc dd) 
+{
+    return evaluateGrobUnit(1, grob, vpheightCM, vpwidthCM, 
+			    nullLMode, nullAMode, 5, dd);
+}
+
 /**************************
  * TRANSFORMATIONS
  **************************
@@ -741,6 +771,7 @@ double transform(double value, int unit, SEXP data,
 		 double thisCM, double otherCM,
 		 int nullLMode, int nullAMode, pGEDevDesc dd)
 {
+    double asc, dsc, wid;
     double result = value;
     switch (unit) {
     case L_NPC:      
@@ -823,6 +854,30 @@ double transform(double value, int unit, SEXP data,
 					     gc, dd),
 				 GE_INCHES, dd);
 	break;
+    case L_STRINGASCENT:        
+	if (isExpression(data))
+            GEExpressionMetric(VECTOR_ELT(data, 0), gc, 
+                               &asc, &dsc, &wid,
+                               dd);
+	else
+            GEStrMetric(CHAR(STRING_ELT(data, 0)), 
+                        getCharCE(STRING_ELT(data, 0)), gc,
+                        &asc, &dsc, &wid,
+                        dd);
+        result = result*fromDeviceHeight(asc, GE_INCHES, dd);
+	break;
+    case L_STRINGDESCENT:        
+	if (isExpression(data))
+            GEExpressionMetric(VECTOR_ELT(data, 0), gc, 
+                               &asc, &dsc, &wid,
+                               dd);
+	else
+            GEStrMetric(CHAR(STRING_ELT(data, 0)), 
+                        getCharCE(STRING_ELT(data, 0)), gc,
+                        &asc, &dsc, &wid,
+                        dd);
+        result = result*fromDeviceHeight(dsc, GE_INCHES, dd);
+	break;
     case L_GROBX:
 	result = evaluateGrobXUnit(value, data, thisCM, otherCM,
 				   nullLMode, nullAMode, dd);
@@ -838,6 +893,14 @@ double transform(double value, int unit, SEXP data,
     case L_GROBHEIGHT:
 	result = value*evaluateGrobHeightUnit(data, otherCM, thisCM,
 					      nullLMode, nullAMode, dd);
+	break;
+    case L_GROBASCENT:
+	result = value*evaluateGrobAscentUnit(data, otherCM, thisCM,
+					      nullLMode, nullAMode, dd);
+	break;
+    case L_GROBDESCENT:
+	result = value*evaluateGrobDescentUnit(data, otherCM, thisCM,
+                                               nullLMode, nullAMode, dd);
 	break;
     case L_NULL:
 	result = evaluateNullUnit(result, thisCM, nullLMode, nullAMode);
@@ -1691,17 +1754,21 @@ static UnitTab UnitTable[] = {
     { "scaledpts",     13 },
     { "strwidth",      14 },
     { "strheight",     15 },
+    { "strascent",     16 },
+    { "strdescent",    17 },
 
     { "char",          18 },
     { "grobx",         19 },
     { "groby",         20 },
     { "grobwidth",     21 },
     { "grobheight",    22 },
+    { "grobascent",    23 },
+    { "grobdescent",   24 },
 
-    { "mylines",       23 },
-    { "mychar",        24 },
-    { "mystrwidth",    25 },
-    { "mystrheight",   26 },
+    { "mylines",       103 },
+    { "mychar",        104 },
+    { "mystrwidth",    105 },
+    { "mystrheight",   106 },
 
     /*
      * Some pseudonyms 

@@ -55,30 +55,6 @@ double **array2d(int ni,int nj)
 
 void free2d(double **a) {free(*a);free(a);}
 
-
-
-void mgcv_AtA(double *AA,double *A,int *q,int *n)
-/* REDUNDANT: call getXtX(AA,A,n,q) instead.
- 
-   form A'A efficiently where A is an R matrix supplied using 
-   as.double(A) so that it is stored column wise. A has n rows
-   and q columns.
-   Typical R call something like
-   matrix(.C("mgcv_AtA",as.double(rep(0,q*q)),as.double(A),as.integer(q),
-              as.integer(n),PACKAGE="mgcv")[[1]],q,q)
-*/
-{ double xx,*p,*p1,*p2,*p3,*p4;
-  int i,j;
-  /*nq= *n * *q;*/
-  for (i=0,p=A;i < *q;p+= *n,i++) for (j=i,p1=p;j< *q;p1+= *n,j++)
-  { for (xx=0.0,p2=p,p3=p1,p4=p+ *n;p2<p4;p2++,p3++) xx += *p2 * *p3;
-    AA[i * *q + j] = AA[ j * *q + i]=xx;
-  }
-}
-
-
-
-
 void fit_magic(double *X,double *sp,double **S,double *H,double *gamma,double *scale,
                int *control,double rank_tol,double yy,double *y0,double *y1,double *U1,
                double *V,double *d,double *b,double *score,double *norm,double *delta,int *rank,
@@ -223,7 +199,7 @@ void magic_gH(double *U1U1,double **M,double **K,double *VS,double **My,double *
 
 { double *p,*p1,*p2,*p3,*p4,xx,xx1,x1,x2;
   int i,j,*ip,bt,ct,r,c; 
-  /*mgcv_AtA(U1U1,U1,&rank,&q);*/ /* U_1'U_1 U1 is q by rank*/
+  /* U_1'U_1 U1 is q by rank ... */
   getXtX(U1U1,U1,&q,&rank);
   for (p=S,ip=cS,i=0;ip<cS+m;p+= *ip *q,ip++,i++) /* work through all smooths */ 
   { bt=1;ct=0;r=rank;c= *ip;

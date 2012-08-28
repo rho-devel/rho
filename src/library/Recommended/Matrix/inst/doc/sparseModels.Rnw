@@ -7,7 +7,7 @@
 \newcommand{\noFootnote}[1]{{\small (\textit{#1})}}
 \newcommand{\myOp}[1]{{$\left\langle\ensuremath{#1}\right\rangle$}}
 %%\VignetteIndexEntry{Sparse Model Matrices}
-%%\VignetteDepends{Matrix}
+%%\VignetteDepends{Matrix,MASS}
 \title{Sparse Model Matrices}
 \author{Martin Maechler\\ R Core Development Team
   \\\email{maechler@R-project.org}}

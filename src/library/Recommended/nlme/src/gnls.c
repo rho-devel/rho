@@ -57,7 +57,7 @@ gnls_init(double *ptheta, longint *dims, double *corFactor, double *varWeights,
   gnls->N = dims[1];
   gnls->nrdof = gnls->N - gnls->npar;
   gnls->ncol = gnls->npar + 1;
-  gnls->maxIter = (long) settings[0];
+  gnls->maxIter = (int) settings[0];
   gnls->minFactor = settings[1];
   gnls->tolerance = settings[2];
   gnls->newtheta = Calloc(gnls->npar, double);

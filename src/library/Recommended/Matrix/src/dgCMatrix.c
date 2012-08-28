@@ -120,13 +120,13 @@ SEXP compressed_non_0_ij(SEXP x, SEXP colP)
     SEXP indP = GET_SLOT(x, indSym),
 	pP = GET_SLOT(x, Matrix_pSym);
     int i, *ij;
-    int ncol = INTEGER(GET_SLOT(x, Matrix_DimSym))[1],
-	n_el = INTEGER(pP)[ncol]; /* is only == length(indP), if the
-				     i-slot is not over-allocated */
+    int nouter = INTEGER(GET_SLOT(x, Matrix_DimSym))[col ? 1 : 0],
+	n_el   = INTEGER(pP)[nouter]; /* is only == length(indP), if the
+				     inner slot is not over-allocated */
 
     ij = INTEGER(ans = PROTECT(allocMatrix(INTSXP, n_el, 2)));
     /* expand the compressed margin to 'i' or 'j' : */
-    expand_cmprPt(ncol, INTEGER(pP), &ij[col ? n_el : 0]);
+    expand_cmprPt(nouter, INTEGER(pP), &ij[col ? n_el : 0]);
     /* and copy the other one: */
     if (col)
 	for(i = 0; i < n_el; i++)

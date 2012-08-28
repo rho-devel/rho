@@ -1,10 +1,11 @@
 #### PAM : Partitioning Around Medoids
-#### --- $Id: pam.q 5779 2011-05-20 20:58:50Z maechler $
+#### --- $Id: pam.q 6057 2012-02-01 08:42:19Z maechler $
 pam <- function(x, k, diss = inherits(x, "dist"),
 		metric = "euclidean", medoids = NULL,
                 stand = FALSE, cluster.only = FALSE, do.swap = TRUE,
                 keep.diss = !diss && !cluster.only && n < 100,
-                keep.data = !diss && !cluster.only, trace.lev = 0)
+                keep.data = !diss && !cluster.only,
+		pamonce = FALSE, trace.lev = 0)
 {
     if((diss <- as.logical(diss))) {
 	## check type of input vector
@@ -30,7 +31,7 @@ pam <- function(x, k, diss = inherits(x, "dist"),
 	jp <- 1
 	mdata <- FALSE
 	ndyst <- 0
-	x2 <- double(n)
+	x2 <- double()# unused in this case
     }
     else {
 	## check input matrix and standardize, if necessary
@@ -56,7 +57,8 @@ pam <- function(x, k, diss = inherits(x, "dist"),
         medID <- integer(k)# all 0 -> will be used as 'code' in C
     else {
         ## 'fixme': consider  sort(medoids) {and rely on it in ../src/pam.c }
-	if(length(medID <- as.integer(medoids)) != k ||
+        ## "0L+..." ensure a "DUPLICATE(.)" (a real copy on the C level; as.integer(.) is not enough!
+	if(length(medID <- if(is.integer(medoids))0L+medoids else as.integer(medoids)) != k ||
 	   any(medID < 1) || any(medID > n) || any(duplicated(medID)))
 	    stop("'medoids' must be NULL or vector of ",
 		 k, " distinct indices in {1,2, .., n}, n=", n)
@@ -66,7 +68,8 @@ pam <- function(x, k, diss = inherits(x, "dist"),
     if(do.swap) nisol[1] <- 1L
     stopifnot(length(cluster.only) == 1,
 	      length(trace.lev) == 1)
-    ## call Fortran routine
+
+    ## call C routine --- FIXME -- using .Call() would simplify logic *much*
     storage.mode(dv) <- "double"
     storage.mode(x2) <- "double"
     res <- .C(cl_pam,
@@ -93,17 +96,19 @@ pam <- function(x, k, diss = inherits(x, "dist"),
 	      clusinf = if(cluster.only) 0. else matrix(0., k, 5),
 	      silinf  = if(cluster.only) 0. else matrix(0., n, 4),
 	      isol = nisol,
+	      as.integer(pamonce),
 	      DUP = FALSE) # care!!
 
     xLab <- if(diss) attr(x, "Labels") else dimnames(x)[[1]]
+    r.clu <- res$clu
     if(length(xLab) > 0)
-        names(res$clu) <- xLab
+	names(r.clu) <- xLab
 
     ## Error if have NA's in diss:
     if(!diss && res$jdyss == -1)
 	stop("No clustering performed, NAs in the computed dissimilarity matrix.")
     if(cluster.only)
-        return(res$clu)
+	return(r.clu)
 
     ## Else, usually
     medID <- res$med
@@ -113,43 +118,45 @@ pam <- function(x, k, diss = inherits(x, "dist"),
     if(diss) {
 	if(keep.diss) disv <- x
 	## add labels to Fortran output
-	if(length(xLab) > 0) {
+	r.med <- if(length(xLab) > 0) {
 	    sildim <- xLab[sildim]
-	    res$med <- xLab[medID]
-	}
+	    xLab[medID]
+	} else medID
     }
     else {
-        if(keep.diss) {
-            ## adapt Fortran output to S:
-            ## convert lower matrix, read by rows, to upper matrix, read by rows.
-            disv <- res$dys[-1]
-            disv[disv == -1] <- NA
-            disv <- disv[upper.to.lower.tri.inds(n)]
-            class(disv) <- dissiCl
-            attr(disv, "Size") <- nrow(x)
-            attr(disv, "Metric") <- metric
-            attr(disv, "Labels") <- dimnames(x)[[1]]
-        }
+	if(keep.diss) {
+	    ## adapt Fortran output to S:
+	    ## convert lower matrix, read by rows, to upper matrix, read by rows.
+	    disv <- res$dys[-1]
+	    disv[disv == -1] <- NA
+	    disv <- disv[upper.to.lower.tri.inds(n)]
+	    class(disv) <- dissiCl
+	    attr(disv, "Size") <- nrow(x)
+	    attr(disv, "Metric") <- metric
+	    attr(disv, "Labels") <- dimnames(x)[[1]]
+	}
 	## add labels to Fortran output
-	res$med <- x[medID,  , drop =FALSE]
+	r.med <- x[medID,  , drop =FALSE]
 	if(length(xLab) > 0)
 	    sildim <- xLab[sildim]
     }
-    ## add dimnames to Fortran output
-    names(res$obj) <- c("build", "swap")
-    res$isol <- factor(res$isol, levels = 0:2, labels = c("no", "L", "L*"))
-    names(res$isol) <- 1:k
-    dimnames(res$clusinf) <- list(NULL, c("size", "max_diss", "av_diss",
-					  "diameter", "separation"))
+    ## add names & dimnames to Fortran output
+    r.obj <- structure(res$obj, .Names = c("build", "swap"))
+    r.isol <- factor(res$isol, levels = 0:2, labels = c("no", "L", "L*"))
+    names(r.isol) <- 1:k
+    r.clusinf <- res$clusinf
+    dimnames(r.clusinf) <- list(NULL, c("size", "max_diss", "av_diss",
+					"diameter", "separation"))
     ## construct S object
     r <-
-	list(medoids = res$med, id.med = medID, clustering = res$clu,
-	     objective = res$obj, isolation = res$isol,
-	     clusinfo = res$clusinf,
+	list(medoids = r.med, id.med = medID, clustering = r.clu,
+	     objective = r.obj, isolation = r.isol,
+	     clusinfo = r.clusinf,
 	     silinfo = if(k != 1) {
-		 dimnames(res$silinf) <-
-		     list(sildim, c("cluster", "neighbor", "sil_width", ""))
-		 list(widths = res$silinf[, -4],
+		 silinf <- res$silinf[, -4, drop=FALSE]
+		 dimnames(silinf) <-
+		     list(sildim, c("cluster", "neighbor", "sil_width"))
+		 list(widths = silinf,
 		      clus.avg.widths = res$avsil[1:k],
 		      avg.width = res$ttsil)
 	     },

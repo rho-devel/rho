@@ -1,7 +1,9 @@
 % File src/library/stats/man/extractAIC.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 %-- This page by Martin Maechler,  improvements welcome!
 \name{extractAIC}
@@ -33,8 +35,8 @@ extractAIC(fit, scale, k = 2, \dots)
 \details{
   This is a generic function, with methods in base \R for classes
   \code{"aov"}, \code{"glm"} and \code{"lm"} as well as for
-  \code{"negbin"} (package \pkg{MASS}) and \code{"coxph"} and
-  \code{"survreg"} (package \pkg{survival}).
+  \code{"negbin"} (package \CRANpkg{MASS}) and \code{"coxph"} and
+  \code{"survreg"} (package \CRANpkg{survival}).
 
   The criterion used is
   \deqn{AIC = - 2\log L +  k \times \mbox{edf},}{AIC = - 2*log L +  k * edf,}
@@ -74,8 +76,8 @@ extractAIC(fit, scale, k = 2, \dots)
 }
 \note{
   This function is used in \code{\link{add1}}, \code{\link{drop1}}
-  and \code{\link{step}} and the similar functions in package \pkg{MASS}
-  from which it was adopted.
+  and \code{\link{step}} and the similar functions in package
+  \CRANpkg{MASS} from which it was adopted.
 }
 \value{
   A numeric vector of length 2, with first and second elements giving

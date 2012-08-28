@@ -1,9 +1,8 @@
-
 %{
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2011  The R Development Core Team
+ *  Copyright (C) 1997--2011  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,6 +23,7 @@
 #include <config.h>
 #endif
 
+#define R_USE_SIGNALS 1
 #include <Defn.h>
 #include <Parse.h>
 #define STRICT_R_HEADERS
@@ -219,6 +219,7 @@ Section:	VSECTIONHEADER VerbatimArg	{ $$ = xxmarkup($1, $2, STATIC, &@$); }
 	|	LISTSECTION    Item2Arg		{ $$ = xxmarkup($1, $2, STATIC, &@$); }
 	|	SECTIONHEADER2 LatexArg LatexArg2 { $$ = xxmarkup2($1, $2, $3, 2, STATIC, &@$); }
 	|	IFDEF IfDefTarget SectionList ENDIF { $$ = xxmarkup2($1, $2, $3, 2, HAS_IFDEF, &@$); UNPROTECT_PTR($4); } 
+	|	IFDEF IfDefTarget SectionList error { $$ = xxmarkup2($1, $2, $3, 2, HAS_IFDEF, &@$); }
 	|	SEXPR       goOption RLikeArg2   { $$ = xxmarkup($1, $3, HAS_SEXPR, &@$); xxpopMode($2); }
 	|	SEXPR       goOption Option RLikeArg2 { $$ = xxOptionmarkup($1, $3, $4, HAS_SEXPR, &@$); xxpopMode($2); }
 	|	COMMENT				{ $$ = xxtag($1, COMMENT, &@$); }
@@ -254,6 +255,7 @@ Markup:		LATEXMACRO  LatexArg 		{ $$ = xxmarkup($1, $2, STATIC, &@$); }
 	|       VERBMACRO2  VerbatimArg1 VerbatimArg2 { $$ = xxmarkup2($1, $2, $3, 2, STATIC, &@$); }
 	|	ESCAPE				{ $$ = xxmarkup($1, R_NilValue, STATIC, &@$); }
 	|	IFDEF IfDefTarget ArgItems ENDIF { $$ = xxmarkup2($1, $2, $3, 2, HAS_IFDEF, &@$); UNPROTECT_PTR($4); }
+	|	IFDEF IfDefTarget ArgItems error { $$ = xxmarkup2($1, $2, $3, 2, HAS_IFDEF, &@$); }
 	|	VERBLATEX   VerbatimArg1 LatexArg2 { $$ = xxmarkup2($1, $2, $3, 2, STATIC, &@$); }
 	
 UserMacro:	NEWCOMMAND  VerbatimArg1 VerbatimArg { $$ = xxnewcommand($1, $2, $3, &@$); }
@@ -1238,16 +1240,27 @@ static void yyerror(const char *s)
     	if (expecting) *expecting = '\0';
     	for (i = 0; yytname_translations[i]; i += 2) {
     	    if (!strcmp(s + sizeof yyunexpected - 1, yytname_translations[i])) {
-    	        sprintf(ParseErrorMsg, yychar < 256 ? _(yyshortunexpected): _(yylongunexpected), 
+    	    	if (yychar < 256)
+    	    	    sprintf(ParseErrorMsg, _(yyshortunexpected), 
     	    	        i/2 < YYENGLISH ? _(yytname_translations[i+1])
-    	    	                    : yytname_translations[i+1], CHAR(STRING_ELT(yylval, 0)));
+    	    	                        : yytname_translations[i+1]);
+    	    	else
+    	    	    sprintf(ParseErrorMsg, _(yylongunexpected), 
+    	    	        i/2 < YYENGLISH ? _(yytname_translations[i+1])
+    	    	                        : yytname_translations[i+1], 
+    	    	        CHAR(STRING_ELT(yylval, 0)));
     	    	translated = TRUE;
     	    	break;
     	    }
     	}
-    	if (!translated)
-    	    sprintf(ParseErrorMsg, yychar < 256 ? _(yyshortunexpected) : _(yylongunexpected),
-    	                             s + sizeof yyunexpected - 1, CHAR(STRING_ELT(yylval, 0)));
+    	if (!translated) {
+    	    if (yychar < 256) 
+    		sprintf(ParseErrorMsg, _(yyshortunexpected),
+    	            s + sizeof yyunexpected - 1);
+    	    else
+    	    	sprintf(ParseErrorMsg, _(yylongunexpected),
+    	            s + sizeof yyunexpected - 1, CHAR(STRING_ELT(yylval, 0)));
+	}
     	if (expecting) {
  	    translated = FALSE;
     	    for (i = 0; yytname_translations[i]; i += 2) {

@@ -1,7 +1,9 @@
 % File src/library/graphics/man/mosaicplot.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{mosaicplot}
 \alias{mosaicplot}
@@ -118,8 +120,8 @@ mosaicplot(x, \dots)
   
   A more flexible and extensible implementation of mosaic plots written
   in the grid graphics system is provided in the function
-  \code{\link[vcd]{mosaic}} in the contributed package \pkg{vcd} (Meyer,
-  Zeileis and Hornik, 2005).
+  \code{\link[vcd]{mosaic}} in the contributed package \CRANpkg{vcd}
+  (Meyer, Zeileis and Hornik, 2005).
 }
 \author{
   S-PLUS original by John Emerson \email{john.emerson@yale.edu}.

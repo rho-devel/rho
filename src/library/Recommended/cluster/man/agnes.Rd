@@ -67,8 +67,9 @@ agnes(x, diss = inherits(x, "dist"), metric = "euclidean",
     memory allocation \emph{time}.}
 }
 \value{
-  an object of class \code{"agnes"} representing the clustering.
-  See \code{\link{agnes.object}} for details.
+  an object of class \code{"agnes"} (which extends \code{"twins"})
+  representing the clustering.  See \code{\link{agnes.object}} for
+  details, and methods applicable.
 }
 \details{
   \code{agnes} is fully described in chapter 5 of Kaufman and Rousseeuw (1990).
@@ -141,10 +142,10 @@ agnes(x, diss = inherits(x, "dist"), metric = "euclidean",
   \emph{Finding Groups in Data: An Introduction to Cluster Analysis}.
   Wiley, New York.
 
-  Anja Struyf, Mia Hubert & Peter J. Rousseeuw (1996):
+  Anja Struyf, Mia Hubert & Peter J. Rousseeuw (1996)
   Clustering in an Object-Oriented Environment.
-  \emph{Journal of Statistical Software}, \bold{1}.
-  \url{http://www.stat.ucla.edu/journals/jss/}
+  \emph{Journal of Statistical Software} \bold{1}.
+  \url{http://www.jstatsoft.org/v01/i04}
 
   Struyf, A., Hubert, M. and Rousseeuw, P.J. (1997). Integrating
   Robust Clustering Techniques in S-PLUS,
@@ -174,9 +175,20 @@ agnS <- agnes(votes.repub, method = "flexible", par.meth = 0.6)
 plot(agnS)
 par(op)
 
+## Exploring the dendrogram structure
+(d2 <- as.dendrogram(agn2)) # two main branches
+d2[[1]] # the first branch
+d2[[2]] # the 2nd one  { 8 + 42  = 50 }
+d2[[1]][[1]]# first sub-branch of branch 1 .. and shorter form
+identical(d2[[c(1,1)]],
+          d2[[1]][[1]])
+## a "textual picture" of the dendrogram :
+str(d2)
+
 data(agriculture)
+
 ## Plot similar to Figure 7 in ref
-\dontrun{ plot(agnes(agriculture), ask = TRUE)}
-\testonly{plot(agnes(agriculture))}
+\dontrun{plot(agnes(agriculture), ask = TRUE)}
+\dontshow{plot(agnes(agriculture))}
 }
 \keyword{cluster}

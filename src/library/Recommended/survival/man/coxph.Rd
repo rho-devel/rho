@@ -19,9 +19,9 @@ of Andersen and Gill.
 \usage{
 coxph(formula, data=, weights, subset, 
       na.action, init, control, 
-      method=c("efron","breslow","exact"), 
+      ties=c("efron","breslow","exact"), 
       singular.ok=TRUE, robust=FALSE, 
-      model=FALSE, x=FALSE, y=TRUE, tt, ...)
+      model=FALSE, x=FALSE, y=TRUE, tt, method, ...)
 }
 \arguments{
   \item{formula}{
@@ -58,18 +58,19 @@ coxph(formula, data=, weights, subset,
     Object of class \code{\link{coxph.control}} specifying iteration limit
     and other control options. Default is \code{coxph.control(...)}.
   }
-  \item{method}{
+  \item{ties}{
     a character string specifying the method for tie handling.  If there  
     are no tied death times all the methods are equivalent. 
     Nearly all Cox regression programs use the Breslow method by default, 
     but not this one. 
-    The Efron approximation is used as the default here, as it is much more 
+    The Efron approximation is used as the default here, it is more 
     accurate when dealing with tied death times, and is as efficient 
     computationally. 
-    The exact method computes the exact partial likelihood, which is 
-    equivalent 
-    to a conditional logistic model.  If there are a large number of ties 
-    the computational time will be excessive. 
+    The ``exact partial likelihood'' is 
+    equivalent to a conditional logistic model, and is appropriate when
+    the times are a small set of discrete values.
+    If there are a large number of ties and (start, stop) style survival
+    data the computational time will be excessive. 
   }
   \item{singular.ok}{
     logical value indicating how to handle collinearity in the model matrix. 
@@ -81,10 +82,8 @@ coxph(formula, data=, weights, subset,
     the missing coefficients are treated as zeros. 
   }
   \item{robust}{
-    if \code{TRUE} a robust variance estimate is returned.
-    Default is \code{TRUE} if the model includes a \code{cluster}
-    operative, 
-    \code{FALSE} otherwise. 
+    this argument has been deprecated, use a cluster term in the model
+    instead.
   }
   \item{model}{
     logical value: if \code{TRUE}, the model frame is returned in component
@@ -99,6 +98,7 @@ coxph(formula, data=, weights, subset,
     component \code{y}. 
   }
   \item{tt}{optional list of time-transform functions.}
+  \item{method}{alternate name for the \code{ties} argument.}
   \item{...}{Other arguments will be passed to \code{\link{coxph.control}}
   }
 }
@@ -130,7 +130,14 @@ as time marches onward we observe the events for a subject, rather
 like watching a Geiger counter. 
 The data for a subject is presented as multiple rows or "observations", 
 each 
-of which applies to an interval of observation (start, stop]. 
+of which applies to an interval of observation (start, stop].
+
+The routine internally scales and centers data to avoid overflow in
+the argument to the exponential function.  These actions do not change
+the result, but lead to more numerical stability.
+However, arguments to offset are not scaled since there are situations
+where a large offset value is a purposefully used.
+Users should not use normally allow large numeric offset values.
 }
 \section{Special terms}{
 There are three special terms that may be used in the model equation. 

@@ -306,7 +306,9 @@ R_init_Matrix(DllInfo *dll)
 
     RREGDEF(dpoMatrix_chol);
     RREGDEF(numeric_as_chm_dense);
+#if R_VERSION < R_Version(2, 15, 0)
     RREGDEF(Matrix_check_class_etc);
+#endif
 
     R_cholmod_start(&c);
 //    R_cholmod_l_start(&cl);

@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2011  The R Development Core Team.
+ *  Copyright (C) 1998--2011  The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -140,6 +140,7 @@ extern0 SEXP    R_dot_GenericDefEnv;  /* ".GenericDefEnv" */
 
 int IS_BYTES(SEXP x);
 void SET_BYTES(SEXP x);
+int IS_ASCII(SEXP x);
 /* macros and declarations for managing CHARSXP cache */
 /* Not implemented within CXXR: */
 /*#define USE_ATTRIB_FIELD_FOR_CHARSXP_CACHE_CHAINS */
@@ -167,11 +168,13 @@ extern void R_ProcessEvents(void);
 }  /* extern "C" */
 #endif
 
+#ifdef R_USE_SIGNALS
 #ifdef Win32
 # include <psignal.h>
 #else
 # include <signal.h>
 # include <setjmp.h>
+#endif
 #endif
 
 #ifdef Unix
@@ -226,7 +229,7 @@ extern void R_ProcessEvents(void);
 /*	R_NSIZE	   The number of cons cells	 */
 /*	R_VSIZE	   The vector heap size in bytes */
 /*  These values are defaults and can be overridden in config.h
-    The maxima and minima are in ../unix/sys-common.c */
+    The maxima and minima are in startup.c */
 
 #ifndef R_PPSSIZE
 #define	R_PPSSIZE	50000L
@@ -357,7 +360,6 @@ inline size_t PTR2VEC(int n)
 #else /* if not __cplusplus */
 
 typedef SEXP R_bcstack_t;
-typedef struct VECREC *VECP;
 
 #endif // __cplusplus
 
@@ -420,10 +422,10 @@ extern0 int	R_BrowseLines	INI_as(0);	/* lines/per call in browser */
 
 extern0 Rboolean R_KeepSource	INI_as(FALSE);	/* options(keep.source) */
 extern0 int	R_WarnLength	INI_as(1000);	/* Error/warning max length */
+extern0 int	R_nwarnings	INI_as(50);
 extern uintptr_t R_CStackLimit	INI_as((uintptr_t)-1);	/* C stack limit */
 extern uintptr_t R_CStackStart	INI_as((uintptr_t)-1);	/* Initial stack address */
 extern0 int	R_CStackDir	INI_as(1);	/* C stack direction */
-
 
 /* File Input/Output */
 LibExtern Rboolean R_Interactive INI_as(TRUE);	/* TRUE during interactive use*/

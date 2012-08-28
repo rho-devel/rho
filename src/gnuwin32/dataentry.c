@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2011  The R Development Core Team
+ *  Copyright (C) 1998--2011  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@
 #include <wchar.h>
 #include <R_ext/rlocale.h>
 
+#define R_USE_SIGNALS 1
 #include "Defn.h"
 #include "Print.h"
 #include <Rinternals.h>

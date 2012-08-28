@@ -88,7 +88,7 @@ Wood S.N. (2006) Generalized additive models: an intriduction with R CRC.
 }
 
 \author{ Simon N. Wood \email{simon.wood@r-project.org} and Thomas Kneib
-(Fabian Scheipl prorotyped the low rank MRF idea) } 
+(Fabian Scheipl prototyped the low rank MRF idea) } 
 
 \seealso{\code{\link{in.out}}, \code{\link{polys.plot}}}
 

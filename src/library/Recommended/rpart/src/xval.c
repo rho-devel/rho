@@ -27,8 +27,12 @@
 #include "rpartS.h"
 #include "rpartproto.h"
 
+#define DEBUG 0
+#if DEBUG
 static int debug =0;    /*if it is odd, print out every tree */
                         /*if >= 2, print out every risk value we see */
+#endif
+
 /* Next line only if mainline version */
 #ifdef MAIN
 extern char *xname[];
@@ -119,17 +123,21 @@ void xval(int n_xval,  struct cptable *cptable_head,  Sint *x_grp,
 	for (j=0; j<rp.n; j++) {
 	    if (which[j]==0) {
 		rundown(xtree, j, cp, xpred, xtemp);
+#if DEBUG > 1
 		if (debug >1) {
 		   jj = j+1;
 		   printf("\nObs %d, y=%f \n", jj, rp.ydata[j][0]);
-		   }
+		}
+#endif
 		/* add it in to the risk */
 		cplist = cptable_head;
 		for (jj = 0; jj<rp.num_unique_cp; jj++) {
 		    cplist->xrisk += xtemp[jj] * rp.wt[j];
 		    cplist->xstd  += xtemp[jj]*xtemp[jj] * rp.wt[j];
+#if DEBUG > 1
 		    if (debug>1) printf("  cp=%f, pred=%f, xtemp=%f\n",
-					  cp[jj]/old_wt, xpred[jj], xtemp[jj]);
+					cp[jj]/old_wt, xpred[jj], xtemp[jj]);
+#endif
 		    cplist = cplist->forward;
 		    }
 		}

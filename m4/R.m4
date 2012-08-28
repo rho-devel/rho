@@ -129,8 +129,10 @@ fi
 ## ------------
 AC_DEFUN([R_PROG_TEXMF],
 [
-## TEX PDFTEX LATEX PDFLATEX MAKEINDEX TEXI2DVI are used to make manuals
+## PDFTEX PDFLATEX MAKEINDEX TEXI2DVI are used to make manuals
+## PDFLATEX and MAKEINDEX in the emulation mode of tools::texi2dvi
 ## TEXI2DVICMD sets default for R_TEXI2DVICMD, used for options('texi2dvi')
+## TEX AND LATEX are no longer used
 AC_PATH_PROGS(TEX, [${TEX} tex], )
 AC_PATH_PROGS(PDFTEX, [${PDFTEX} pdftex], )
 if test -z "${ac_cv_path_PDFTEX}" ; then
@@ -150,8 +152,6 @@ if test -z "${TEXI2DVICMD}"; then
   TEXI2DVICMD=texi2dvi
 fi
 AC_SUBST(TEXI2DVICMD)
-: ${R_RD4DVI="ae"}
-AC_SUBST(R_RD4DVI)
 AC_PATH_PROGS(KPSEWHICH, [${KPSEWHICH} kpsewhich], "")
 r_rd4pdf="times,inconsolata,hyper"
 if test -n "${KPSEWHICH}"; then
@@ -173,7 +173,9 @@ AC_DEFUN([R_PROG_MAKEINFO],
 [AC_PATH_PROGS(MAKEINFO, [${MAKEINFO} makeinfo])
 if test -n "${MAKEINFO}"; then
   _R_PROG_MAKEINFO_VERSION
-  AC_PATH_PROGS(INSTALL_INFO, [${INSTALL_INFO} install-info], false)
+  AC_PATH_PROGS(INSTALL_INFO,
+                [${INSTALL_INFO} ginstall-info install-info],
+                false)
   if test "ac_cv_path_INSTALL_INFO" = "false"; then
     if test "${r_cv_prog_perl_v5}" = yes; then
       INSTALL_INFO="perl \$(top_srcdir)/tools/install-info.pl"
@@ -2912,8 +2914,6 @@ AC_SUBST(LAPACK_LIBS)
 ## Try finding XDR library functions and headers.
 ## FreeBSD in particular needs rpc/types.h before rpc/xdr.h.
 AC_DEFUN([R_XDR],
-[AC_CACHE_CHECK([for XDR support], [r_cv_xdr],
-save_CPPFLAGS=${CPPFLAGS}
 [AC_CHECK_HEADER(rpc/types.h)
 if test "${ac_cv_header_rpc_types_h}" = yes ; then
   AC_CHECK_HEADER(rpc/xdr.h, , , [#include <rpc/types.h>])
@@ -2921,28 +2921,31 @@ fi
 if test "${ac_cv_header_rpc_types_h}" = yes && \
    test "${ac_cv_header_rpc_xdr_h}" = yes && \
    test "${ac_cv_search_xdr_string}" != no ; then
-  r_cv_xdr=yes
+  r_xdr=yes
 else
-  r_cv_xdr=no
+  r_xdr=no
 fi
-## No RPC headers, so try for TI-RPC headers: do need /usr/include/tirpc
-## on include path to find /usr/include/tirpc/netconfig.h
-if test "${r_cv_xdr}" = no ; then
+TIRPC_CPPFLAGS=
+if test "${r_xdr}" = no ; then
+  ## No RPC headers, so try for TI-RPC headers: need /usr/include/tirpc
+  ## on include path to find /usr/include/tirpc/netconfig.h
+  save_CPPFLAGS=${CPPFLAGS}
   CPPFLAGS="${CPPFLAGS} -I/usr/include/tirpc"
   AC_CHECK_HEADER(tirpc/rpc/types.h)
   if test "${ac_cv_header_tirpc_rpc_types_h}" = yes ; then
     AC_CHECK_HEADER(tirpc/rpc/xdr.h, , , [#include <tirpc/rpc/types.h>])
   fi
   if test "${ac_cv_header_tirpc_rpc_types_h}" = yes && \
-    test "${ac_cv_header_tirpc_rpc_xdr_h}" = yes &&
-    test "${ac_cv_search_xdr_string}" != no ; then
+       test "${ac_cv_header_tirpc_rpc_xdr_h}" = yes &&
+       test "${ac_cv_search_xdr_string}" != no ; then
     TIRPC_CPPFLAGS=-I/usr/include/tirpc
-    r_cv_xdr=yes
+    r_xdr=yes
   fi
   CPPFLAGS="${save_CPPFLAGS}"
 fi
-])
-AM_CONDITIONAL(BUILD_XDR, [test "x${r_cv_xdr}" = xno])
+AC_MSG_CHECKING([for XDR support])
+AC_MSG_RESULT([${r_xdr}])
+AM_CONDITIONAL(BUILD_XDR, [test "x${r_xdr}" = xno])
 AC_SUBST(TIRPC_CPPFLAGS)
 ])# R_XDR
 
@@ -3443,22 +3446,22 @@ fi
 ## -------------
 ## C99 complex
 AC_DEFUN([R_C99_COMPLEX],
-[
-  AC_CACHE_CHECK([whether C99 double complex is supported],
-  [r_cv_c99_complex],
-[ AC_MSG_RESULT([])
-  AC_CHECK_HEADER(complex.h, [r_cv_c99_complex="yes"], [r_cv_c99_complex="no"])
-  if test "${r_cv_c99_complex}" = "yes"; then
-    AC_CHECK_TYPE([double complex], , r_cv_c99_complex=no,
-                  [#include <complex.h>])
-  fi
-  dnl we are supposed to have a C99 compiler, so fail at this point.
-  if test "${r_cv_c99_complex}" = "no"; then
-    AC_MSG_ERROR([Support for C99 double complex type is required.])
-  fi
-])
+[AC_CHECK_HEADER(complex.h,
+                 [r_c99_complex=yes],
+                 [r_c99_complex=no])
+if test "${r_c99_complex}" = "yes"; then
+  AC_CHECK_TYPE([double complex], , [r_c99_complex=no],
+                [#include <complex.h>])
+fi
+AC_MSG_CHECKING([whether C99 double complex is supported])
+AC_MSG_RESULT([${r_c99_complex}])
+dnl we are supposed to have a C99 compiler, so fail at this point.
+if test "${r_c99_complex}" = "no"; then
+  AC_MSG_ERROR([Support for C99 double complex type is required.])
+fi
 R_CHECK_FUNCS([cabs carg cexp clog csqrt cpow ccos csin ctan \
-	       cacos casin catan ccosh csinh ctanh], [#include <complex.h>])
+	       cacos casin catan ccosh csinh ctanh],
+              [#include <complex.h>])
 ])# R_COMPLEX
 
 ## R_CHECK_DECL(SYMBOL,
@@ -3814,6 +3817,9 @@ case "${host_os}" in
     ;;
   darwin*)
     R_SYSTEM_ABI="osx"
+    ;;
+  freebsd*)
+    R_SYSTEM_ABI="freebsd"
     ;;
   *)
     R_SYSTEM_ABI="?"

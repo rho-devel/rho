@@ -1,6 +1,6 @@
 % File src/library/base/man/Syntax.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Syntax}
@@ -19,7 +19,7 @@
     \code{^}\tab exponentiation (right to left)\cr
     \code{- +}\tab unary minus and plus\cr
     \code{:}\tab sequence operator\cr
-    \code{\%any\%}\tab special operators\cr
+    \code{\%any\%}\tab special operators (including \code{\%\%} and \code{\%/\%})\cr
     \code{* /}\tab multiply, divide\cr
     \code{+ -}\tab (binary) add, subtract\cr
     \code{< > <= >= == !=}\tab ordering and comparison\cr

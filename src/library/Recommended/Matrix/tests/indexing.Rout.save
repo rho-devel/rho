@@ -1,6 +1,6 @@
 
-R version 2.13.1 Patched (2011-08-05 r56640)
-Copyright (C) 2011 The R Foundation for Statistical Computing
+R Under development (unstable) (2012-02-28 r58513)
+Copyright (C) 2012 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
@@ -125,7 +125,7 @@ diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
 + 	  identical(a.m, array(v, dim=dim(mn), dimnames=dimnames(mn)))
 + 	  )
 > showProc.time()
-Time elapsed:  0.593 0.011 0.603 
+Time elapsed:  0.352 0.006 0.366 
 > 
 > ## Printing sparse colnames:
 > ms[sample(28, 20)] <- 0
@@ -182,7 +182,7 @@ diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
 + 	  identical3(m[!sel],  m[!ssel], as.matrix(m)[as.matrix(!ssel)])
 + 	  )
 > showProc.time()
-Time elapsed:  0.126 0.002 0.128 
+Time elapsed:  0.079 0.002 0.082 
 > 
 > ## more sparse Matrices --------------------------------------
 > 
@@ -488,7 +488,7 @@ ok( d )
 == ###======================================================================
 
 > showProc.time()
-Time elapsed:  6.745 0.03 6.788 
+Time elapsed:  4.38 0.014 4.453 
 > 
 > ##---- Symmetric indexing of symmetric Matrix ----------
 > m. <- mC
@@ -560,7 +560,7 @@ Time elapsed:  6.745 0.03 6.788
 +     assert.EQ.mat(T[i,i], ss[i,i])
 + }
 > showProc.time()
-Time elapsed:  2.199 0.004 2.206 
+Time elapsed:  1.632 0.003 1.657 
 > 
 > stopifnot(all.equal(mC[,3], mm[,3]),
 + 	  identical(mC[ij], mC[ij + 0.4]),
@@ -711,6 +711,9 @@ c3 . | | . | | | | | | | | | | | . . | | |
 [3,] . . .
 [4,] . . .
 > B <- A;              B[c(1,2,1), 2] <- 1:3; B; B. <- B
+Note: Method with signature "numeric#sparseVector" chosen for function "coerce",
+ target signature "integer#sparseVector".
+ "atomicVector#sparseVector" would also be valid
 4 x 3 sparse Matrix of class "dgCMatrix"
           
 [1,] . 3 .
@@ -764,7 +767,7 @@ diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
 + 	  all(sm[,-(1:3)] == 0)
 + 	  )
 > showProc.time()
-Time elapsed:  0.429 0.008 0.439 
+Time elapsed:  0.261 0.008 0.273 
 > 
 > ##---  "nsparse*" sub-assignment :----------
 > M <- Matrix(c(1, rep(0,7), 1:4), 3,4)
@@ -840,7 +843,7 @@ Now: class ngCMatrix  :
 ,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
 ,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
 > showProc.time()
-Time elapsed:  3.62 0.02 3.647 
+Time elapsed:  2.295 0.01 2.363 
 > 
 > m0 <- Diagonal(5)
 > stopifnot(identical(m0[2,], m0[,2]),
@@ -996,7 +999,7 @@ diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
 as(<triangular (ge)matrix>, dtCMatrix): valid: TRUE 
 > stopifnot(is(T, "dtCMatrix"), identical(T[,3], c(10,10,10,0,0)))
 > showProc.time()
-Time elapsed:  1.596 0.008 1.607 
+Time elapsed:  1.066 0.003 1.091 
 > 
 > 
 > ## "Vector indices" -------------------
@@ -1104,7 +1107,7 @@ diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
 > ## mixing of negative and positive must give error
 > assertError(mT[-1:1,])
 > showProc.time()
-Time elapsed:  0.221 0.002 0.223 
+Time elapsed:  0.153 0 0.156 
 > 
 > ## Sub *Assignment* ---- now works (partially):
 > mt0 <- mt
@@ -1231,7 +1234,7 @@ r1  .
 r3  3
 r5  1
 > showProc.time()
-Time elapsed:  1.135 0.004 1.14 
+Time elapsed:  0.772 0.003 0.788 
 > options(Matrix.verbose = TRUE)
 > 
 > mc # no longer has non-structural zeros
@@ -1452,7 +1455,7 @@ M[i,j] <- v :  coercing symmetric M[] into non-symmetric
 > assert.EQ.mat(t2, m)# ok
 > assert.EQ.mat(s2, m)# failed in 0.9975-8
 > showProc.time()
-Time elapsed:  1.725 0.011 1.741 
+Time elapsed:  1.156 0.013 1.19 
 > 
 > 
 > ## m[cbind(i,j)] <- value: (2-column matrix subassignment):
@@ -1595,7 +1598,7 @@ r5  TRUE TRUE FALSE TRUE TRUE TRUE TRUE
 > 
 > cc <- capture.output(show(dLrg))# show(<diag>) used to error for large n
 > showProc.time()
-Time elapsed:  1.913 0.019 1.934 
+Time elapsed:  1.296 0.007 1.322 
 > 
 > ## Large Matrix indexing / subassignment
 > ## ------------------------------------- (from ex. by Imran Rashid)
@@ -1653,7 +1656,7 @@ attr(,"package")
 + 	  identical(thCol,  fx[,5762]))
 > 
 > showProc.time()
-Time elapsed:  7.936 1.118 9.064 
+Time elapsed:  6.639 0.531 7.246 
 > ##
 > cat("checkMatrix() of all: \n---------\n")
 checkMatrix() of all: 
@@ -1834,8 +1837,11 @@ suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
 suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
 zz 
 > showProc.time()
-Time elapsed:  16.668 0.573 17.268 
+Time elapsed:  10.663 0.326 11.138 
 > 
 > if(!interactive()) warnings()
 NULL
 > 
+> proc.time()
+   user  system elapsed 
+ 32.867   1.031  34.499 

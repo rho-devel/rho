@@ -68,9 +68,15 @@ internal_chm_factor(SEXP Ap, int perm, int LDL, int super, double Imult)
     }
     if (!cholmod_factorize_p(A, &Imult, (int*)NULL, 0 /*fsize*/, L, &c))
 	// have never seen this, rather R_cholmod_error(status, ..) is called :
-	error(_("Cholesky factorization failed; unusually, hence consider reporting"));
+	error(_("Cholesky factorization failed; unusually, please report to Matrix-authors"));
 
     if (!Imult) {		/* cache the factor */
+	if(!chm_factor_ok(L)) {
+	    cholmod_free_factor(&L, &c);// <- do not leak!
+	    CHM_restore_common();
+	    error(_("internal_chm_factor: Cholesky factorization failed"));
+	}
+
 	char fnm[12] = "sPDCholesky";
 
 	/* now that we allow (super, LDL) to be "< 0", be careful :*/

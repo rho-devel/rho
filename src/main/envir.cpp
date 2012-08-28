@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2011  The R Development Core Team.
+ *  Copyright (C) 1999-2012  The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -745,6 +745,9 @@ SEXP attribute_hidden do_list2env(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (TYPEOF(xnms) != STRSXP || LENGTH(xnms) != n)
 	error(_("names(x) must be a character vector of the same length as x"));
     envir = CADR(args);
+    if (TYPEOF(envir) != ENVSXP)
+	error(_("'envir' argument must be an environment"));
+
     for(int i = 0; i < LENGTH(x) ; i++) {
 	SEXP name = install(translateChar(STRING_ELT(xnms, i)));
 	defineVar(name, VECTOR_ELT(x, i), envir);

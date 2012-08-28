@@ -41,12 +41,8 @@
       should be left between the plants.}
   }
 }
-\source{The reference below.}
 \references{
-  Anja Struyf, Mia Hubert & Peter J. Rousseeuw (1996):
-  Clustering in an Object-Oriented Environment.
-  \emph{Journal of Statistical Software}, \bold{1}.
-  \url{http://www.stat.ucla.edu/journals/jss/}
+  Struyf, Hubert and Rousseeuw (1996), see \code{\link{agnes}}.
 }
 \examples{
 data(flower)

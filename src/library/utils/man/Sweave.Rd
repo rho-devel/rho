@@ -1,7 +1,9 @@
 % File src/library/utils/man/Sweave.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{Sweave}
 \alias{Sweave}
@@ -54,7 +56,7 @@ Stangle(file, driver = Rtangle(),
 
   \code{Stangle} is just a wrapper to \code{Sweave} specifying a
   different default driver.  Alternative drivers can be used: the CRAN
-  package \pkg{cacheSweave} and the Bioconductor package \pkg{weaver}
+  package \CRANpkg{cacheSweave} and the Bioconductor package \pkg{weaver}
   both provide drivers based on the default driver
   \code{\link{RweaveLatex}} which incorporate ideas of \emph{caching}
   the results of computations on code chunks.
@@ -64,7 +66,7 @@ Stangle(file, driver = Rtangle(),
   of \code{key=value} items, as would be used in a \samp{\\SweaveOpts}
   statement in a document.
   
-  Non-ASCII source files should contain a line of the form
+  Non-ASCII source files must contain a line of the form
 \preformatted{\usepackage[foo]{inputenc}}
   (where \samp{foo} is typically \samp{latin1}, \samp{latin2}, \samp{utf8} or
   \samp{cp1252} or \samp{cp1250}) or they will give an error.
@@ -105,11 +107,11 @@ Stangle(file, driver = Rtangle(),
   
   \code{\link{RweaveLatex}}, \code{\link{Rtangle}}.
   
-  Packages \pkg{cacheSweave}, \pkg{weaver} (Bioconductor) and
-  \pkg{SweaveListingUtils}.
+  Packages \CRANpkg{cacheSweave}, \pkg{weaver} (Bioconductor) and
+  \CRANpkg{SweaveListingUtils}.
 
-  Further Sweave drivers are in, for example, packages \pkg{R2HTML},
-  \pkg{ascii}, \pkg{odfWeave} and \pkg{pgfSweave}.
+  Further Sweave drivers are in, for example, packages \CRANpkg{R2HTML},
+  \CRANpkg{ascii}, \CRANpkg{odfWeave} and \CRANpkg{pgfSweave}.
 }
 
 \examples{

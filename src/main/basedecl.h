@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2002-2011	The R Development Core Team.
+ *  Copyright (C) 2002-2011	The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -113,7 +113,7 @@ void Rf_InitColors(void);
 SEXP R_compress1(SEXP);
 SEXP R_decompress1(SEXP);
 
-SEXP R_serializeb(SEXP, SEXP, SEXP, SEXP);
+SEXP R_serializeb(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP R_serialize(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP R_unserialize(SEXP, SEXP);
 
@@ -125,11 +125,9 @@ SEXP R_get_primname(SEXP op) ;
 
 SEXP R_setFileTime(SEXP name, SEXP time);
 
-#ifdef BYTECODE
 SEXP R_getbcprofcounts(void);
 SEXP R_startbcprof(void);
 SEXP R_stopbcprof(void);
-#endif
 
 SEXP Rg_contourDef(void);
 

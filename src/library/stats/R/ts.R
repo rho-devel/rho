@@ -22,7 +22,7 @@ window	  <- function(x, ...) UseMethod("window")
 cycle     <- function(x, ...) UseMethod("cycle")
 deltat    <- function(x, ...) UseMethod("deltat")
 
-ts <- function(data = NA, start = 1, end = numeric(0), frequency = 1,
+ts <- function(data = NA, start = 1, end = numeric(), frequency = 1,
 	       deltat = 1, ts.eps  =  getOption("ts.eps"),
                class = if(nseries > 1) c("mts", "ts") else "ts",
                names = if(!is.null(dimnames(data))) colnames(data)
@@ -385,7 +385,7 @@ print.ts <- function(x, calendar, ...)
                     if(fr.x == 12) month.abb
                     else if(fr.x == 4) {
                         c("Qtr1", "Qtr2", "Qtr3", "Qtr4")
-                    } else paste("p", 1L:fr.x, sep = "")
+                    } else paste0("p", 1L:fr.x)
                 if(NROW(x) <= fr.x && start(x)[1L] == end(x)[1L]) {
                     ## not more than one period
                     dn1 <- start(x)[1L]
@@ -713,7 +713,7 @@ window.ts <- function (x, ...) as.ts(window.default(x, ...))
     if(any(is.na(ind))) stop("times to be replaced do not match")
 
     len <- length(ind)
-    val_len <- length(value)
+    val_len <- NROW(value)
     if(!val_len) stop("no replacement values supplied")
     if(val_len > len) stop("too many replacement values supplied")
     if(val_len > 1L && (len %% val_len))

@@ -2137,8 +2137,9 @@ substr(x, 1, 2) <- NA_character_; x
 ## regression tests for pmin/pmax, rewritten in C for 2.5.0
 # NULL == integer(0)
 pmin(NULL, integer(0))
-pmin(integer(0), NULL)
-try(pmin(NULL, 1:3))
+pmax(integer(0), NULL)
+pmin(NULL, 1:3)# now ok
+pmax(pi, NULL, 2:4)
 
 x <- c(1, NA, NA, 4, 5)
 y <- c(2, NA, 4, NA, 3)
@@ -2602,3 +2603,21 @@ x <- as.POSIXlt(c("2010-02-27 22:30:33", "2009-08-09 06:01:03",
                   "2010-07-23 17:29:59"))
 stopifnot(!is.na(trunc(x, units = "days")[1:3]))
 ## gave NAs after the first in R < 2.13.2
+
+
+## explicit error message for silly input (tol = 0)
+aa <- c(1, 2, 3, 8, 8, 8, 8, 8, 8, 8, 8, 8, 12, 13, 14)
+try(smooth.spline(aa, seq_along(aa)))
+fit <- smooth.spline(aa, seq_along(aa), tol = 0.1)
+# actual output is too unstable to diff.
+## Better message from R 2.14.2
+
+
+## PR#14840
+d <- data.frame(x = 1:9,
+                y = 1:9 + 0.1*c(1, 2, -1, 0, 1, 1000, 0, 1, -1),
+                w = c(1, 0.5, 2, 1, 2, 0, 1, 2, 1))
+fit <- lm(y ~ x, data=d, weights=w)
+summary(fit)
+## issue is how the 5-number summary is labelled
+## (also seem in example(case.names))

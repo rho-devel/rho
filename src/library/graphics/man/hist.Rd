@@ -1,7 +1,9 @@
 % File src/library/graphics/man/hist.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{hist}
 \title{Histograms}
@@ -149,7 +151,8 @@ hist(x, \dots)
 
 \seealso{
   \code{\link{nclass.Sturges}}, \code{\link{stem}},
-  \code{\link{density}},  \code{\link[MASS]{truehist}} in package \pkg{MASS}.
+  \code{\link{density}},  \code{\link[MASS]{truehist}} in package
+  \CRANpkg{MASS}.
 
   Typical plots with vertical bars are \emph{not} histograms.  Consider
   \code{\link{barplot}} or \code{\link{plot}(*, type = "h")}

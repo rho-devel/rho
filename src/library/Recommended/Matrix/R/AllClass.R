@@ -103,10 +103,13 @@ setClass("diagonalMatrix", representation(diag = "character", "VIRTUAL"),
 	     d <- object@Dim
 	     if(d[1] != (n <- d[2])) return("matrix is not square")
 	     lx <- length(object@x)
-	     if(object@diag == "U" && lx != 0)
-		 return("diag = \"U\" (identity matrix) requires empty 'x' slot")
-	     if(object@diag == "N" && lx != n)
-		 return("diagonal matrix has 'x' slot of length != 'n'")
+	     if(object@diag == "U") {
+		 if(lx != 0)
+		     return("diag = \"U\" (identity matrix) requires empty 'x' slot")
+	     } else if(object@diag == "N") {
+		 if(lx != n)
+		     return("diagonal matrix has 'x' slot of length != 'n'")
+	     } else return("diagonal matrix 'diag' slot must be \"U\" or \"N\"")
 	     TRUE
 	 },
 	 prototype = prototype(diag = "N")

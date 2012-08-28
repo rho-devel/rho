@@ -44,6 +44,11 @@ extern "C" {
 #include <limits.h>
 #include <stdlib.h>
 
+// For use with R package 'Matrix'
+#include <stdio.h> // because other parts call it, rather call it *before* #define..
+#include <R_ext/Print.h>
+#define printf Rprintf
+
 /* ========================================================================== */
 /* === UF_long ============================================================== */
 /* ========================================================================== */

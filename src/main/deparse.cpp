@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2011  The R Development Core Team
+ *  Copyright (C) 1997--2011  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -279,18 +279,43 @@ static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
     return svec;
 }
 
-/* deparse1line uses the maximum cutoff rather than the default */
+/* deparse1line concatenates all lines into one long one */
 /* This is needed in terms.formula, where we must be able */
 /* to deparse a term label into a single line of text so */
 /* that it can be reparsed correctly */
 SEXP deparse1line(SEXP call, Rboolean abbrev)
 {
-   SEXP temp;
-   Rboolean backtick=TRUE;
+    SEXP temp;
+    Rboolean backtick=TRUE;
+    int lines;
 
-   temp = deparse1WithCutoff(call, abbrev, MAX_Cutoff, backtick,
-			     SIMPLEDEPARSE, 1);
-   return(temp);
+    PROTECT(temp = deparse1WithCutoff(call, abbrev, MAX_Cutoff, backtick,
+			     SIMPLEDEPARSE, -1));
+    if ((lines = length(temp)) > 1) {
+	char *buf;
+	int i, len;
+	const void *vmax;
+	cetype_t enc = CE_NATIVE;
+	for (len=0, i = 0; i < length(temp); i++) {
+	    SEXP s = STRING_ELT(temp, i);
+	    cetype_t thisenc = getCharCE(s);
+	    len += strlen(CHAR(s));
+	    if (thisenc != CE_NATIVE) 
+	    	enc = thisenc; /* assume only one non-native encoding */ 
+	}    
+	vmax = vmaxget();
+	buf = R_alloc(size_t( len)+lines, sizeof(char));
+	*buf = '\0';
+	for (i = 0; i < length(temp); i++) {
+	    strcat(buf, CHAR(STRING_ELT(temp, i)));
+	    if (i < lines - 1)
+	    	strcat(buf, "\n");
+	}
+	temp = ScalarString(mkCharCE(buf, enc));
+	vmaxset(vmax);
+    }		
+    UNPROTECT(1);	
+    return(temp);
 }
 
 SEXP attribute_hidden deparse1s(SEXP call)
@@ -668,42 +693,16 @@ static void printcomment(SEXP s, LocalParseData *d)
 }
 
 
-static const char * backquotify(const char *s)
+static const char * quotify(SEXP name, int quote)
 {
-    /* backquotifying can at most double the length of the symbol in bytes,
-       plus surrounding quotes and terminator. */
-    // 'buf' is (intentionally) never deleted.
-    static char* buf = new char[2*Symbol::maxLength()+10];
-    char *t = buf;
+    const char *s = CHAR(name);
 
-    /* If a symbol is not a valid name, put it in backquotes, escaping
-     * any backquotes in the string itself */
-
-    /* NOTE: This could be fragile if sufficiently weird names are
-     * used. Ideally, we should insert backslash escapes, etc. */
+    /* If a symbol is not a valid name, put it in quotes, escaping
+     * any quotes in the string itself */
 
     if (isValidName(s) || *s == '\0') return s;
 
-    /* Don't translate 'impossible' error condition. */
-    if(strlen(s) > Symbol::maxLength())
-	error("symbol '%s' is too long to be a valid symbol", s);
-
-    *t++ = '`';
-    if(mbcslocale && !utf8locale) {
-	mbstate_t mb_st; int j, used;
-	mbs_init(&mb_st);
-	while( (used = Mbrtowc(NULL, s, MB_CUR_MAX, &mb_st)) ) {
-	    if ( *s  == '`' || *s == '\\' ) *t++ = '\\';
-	    for(j = 0; j < used; j++) *t++ = *s++;
-	}
-    } else
-	while ( *s ) {
-	    if ( *s  == '`' || *s == '\\' ) *t++ = '\\';
-	    *t++ = *s++;
-	}
-    *t++ = '`';
-    *t = '\0';
-    return buf;
+    return EncodeString(name, 0, quote, Rprt_adj_none);
 }
 
 /* This is the recursive part of deparsing. */
@@ -733,15 +732,9 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	    print2buff("quote(", d);
 	}
 	if (localOpts & S_COMPAT) {
-	    const char *ss = CHAR(PRINTNAME(s));
-	    if (isValidName(ss)) print2buff(ss, d);
-	    else {
-		print2buff("\"", d);
-		print2buff(ss, d);
-		print2buff("\"", d);
-	    }
+	    print2buff(quotify(PRINTNAME(s), '"'), d);
 	} else if (d->backtick)
-	    print2buff(backquotify(CHAR(PRINTNAME(s))), d);
+	    print2buff(quotify(PRINTNAME(s), '`'), d);
 	else
 	    print2buff(CHAR(PRINTNAME(s)), d);
 	if (localOpts & QUOTEEXPRESSIONS) {
@@ -960,17 +953,10 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    break;
 		case CXXRBUILTINFUNCTION::PP_FUNCALL:
 		case CXXRBUILTINFUNCTION::PP_RETURN:
-		    if (isValidName(CHAR(PRINTNAME(op)))) /* ASCII */
-			print2buff(CHAR(PRINTNAME(op)), d);
-		    else if (d->backtick) {
-			print2buff("`", d);
-			print2buff(CHAR(PRINTNAME(op)), d);
-			print2buff("`", d);
-		    } else {
-			print2buff("\"", d);
-			print2buff(CHAR(PRINTNAME(op)), d);
-			print2buff("\"", d);
-		    }
+		    if (d->backtick) 
+		        print2buff(quotify(PRINTNAME(op), '`'), d);
+		    else 
+		    	print2buff(quotify(PRINTNAME(op), '"'), d);
 		    print2buff("(", d);
 		    d->inlist++;
 		    args2buff(s, 0, 0, d);
@@ -1141,18 +1127,10 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    }
 		    else {
 			if ( isSymbol(CAR(s)) ){
-			    const char *ss = CHAR(PRINTNAME(CAR(s)));
-			    if (isValidName(ss))
-				print2buff(ss, d);
-			    else if(d->opts & S_COMPAT) {
-				print2buff("\'", d);
-				print2buff(ss, d);
-				print2buff("\'", d);
-			    } else {
-				print2buff("`", d);
-				print2buff(ss, d);
-				print2buff("`", d);
-			    }
+			    if(d->opts & S_COMPAT) 
+			        print2buff(quotify(PRINTNAME(CAR(s)), '\''), d);
+			    else 
+				print2buff(quotify(PRINTNAME(CAR(s)), '`'), d);
 			}
 			else
 			    deparse2buff(CAR(s), d);
@@ -1200,12 +1178,10 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	print2buff(tpb, d);
     }
 	break;
-#ifdef BYTECODE
     case BCODESXP:
 	d->sourceable = FALSE;
 	print2buff("<bytecode>", d);
 	break;
-#endif
     case WEAKREFSXP:
 	d->sourceable = FALSE;
 	print2buff("<weak reference>", d);
@@ -1490,18 +1466,13 @@ static void args2buff(SEXP arglist, int lineb, int formals, LocalParseData *d)
 	if (TAG(arglist) != R_NilValue) {
 	    SEXP s = TAG(arglist);
 
-	    const char *ss = CHAR(PRINTNAME(s));
-	    if( s == R_DotsSymbol || isValidName(ss) )
-		print2buff(ss, d);
-	    else if(d->backtick) {
-		print2buff("`", d);
-		print2buff(ss, d);
-		print2buff("`", d);
-	    } else {
-		print2buff("\"", d);
-		print2buff(ss, d);
-		print2buff("\"", d);
-	    }
+	    if( s == R_DotsSymbol )
+		print2buff(CHAR(PRINTNAME(s)), d);
+	    else if(d->backtick) 
+		print2buff(quotify(PRINTNAME(s), '`'), d);
+	    else 
+	        print2buff(quotify(PRINTNAME(s), '"'), d);
+	    
 	    if(formals) {
 		if (CAR(arglist) != R_MissingArg) {
 		    print2buff(" = ", d);

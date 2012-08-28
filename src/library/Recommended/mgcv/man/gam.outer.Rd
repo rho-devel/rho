@@ -65,7 +65,7 @@ models. Journal of the Royal Statistical Society (B) 73(1):3-36
 \author{ Simon N. Wood \email{simon.wood@r-project.org}}
 
 
-\seealso{\code{\link{gam.fit3}},  \code{\link{gam}}, \code{\link{mgcv}}, \code{\link{magic}}}
+\seealso{\code{\link{gam.fit3}},  \code{\link{gam}}, \code{\link{magic}}}
 
 
 \keyword{models} \keyword{smooth} \keyword{regression}%-- one or more ...

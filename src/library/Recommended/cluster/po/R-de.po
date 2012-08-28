@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.14.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-10-16 16:34\n"
+"POT-Creation-Date: 2012-01-18 12:26\n"
 "PO-Revision-Date: 2011-10-16 19:32+0200\n"
 "Last-Translator: Detlef Steuer <steuer@hsu-hh.de>\n"
 "Language-Team: R Core Team <r-core@r-project.org\n"
@@ -90,6 +90,9 @@ msgstr "einem Cluster zugeordnet werden konnte (wegen fehlender Werte)"
 
 msgid "invalid 'jstop' from .C(cl_clara,.):"
 msgstr "unzulässiger 'jstop' aus .C(cl_clara,.):"
+
+msgid "'B' has to be a positive integer"
+msgstr "'B' muss eine positive Ganzzahl sein"
 
 msgid "invalid 'twins' object"
 msgstr "unzulässiges 'twins'-Objekt"

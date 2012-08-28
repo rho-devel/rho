@@ -304,10 +304,15 @@ Matrix_check_class(char *class, const char **valid)
 }
 
 /**
- * These are the ones users should use -- is() versions, also looking
+ * These are the ones "everyone" should use -- is() versions, also looking
  * at super classes:
  */
+#if R_VERSION < R_Version(2, 15, 0)
 int Matrix_check_class_etc(SEXP x, const char **valid);
+#else
+# define Matrix_check_class_etc R_check_class_etc
+#endif
+
 #if R_VERSION < R_Version(2, 13, 0)
 int Matrix_check_class_and_super(SEXP x, const char **valid, SEXP rho);
 #else

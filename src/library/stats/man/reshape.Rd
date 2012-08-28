@@ -1,6 +1,6 @@
 % File src/library/stats/man/reshape.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
 
 \name{reshape}
@@ -38,7 +38,7 @@ reshape(data, varying = NULL, v.names = NULL, timevar = "time",
     to multiple variables in the wide format.  See \sQuote{Details}.}
   \item{timevar}{the variable in long format that differentiates multiple
     records from the same group or individual.  If more than one record
-    matches, the first will be taken.}
+    matches, the first will be taken (with a warning). }
   \item{idvar}{Names of one or more variables in long format that
     identify multiple records from the same group/individual.  These
     variables may also be present in wide format.}

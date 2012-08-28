@@ -913,7 +913,9 @@ plot.trellis <-
                                                     logsc = x$x.scales$log,
                                                     abbreviate = x$x.scales$abbreviate,
                                                     minlength = x$x.scales$minlength,
-                                                    n = x$x.scales$tick.number,
+                                                    n = x$x.scales$tick.number, # for pretty()
+                                                    nint = x$x.scales$tick.number, # for axisTicks() (log)
+                                                    equispaced.log = x$x.scales$equispaced.log,
                                                     format.posixt = x$x.scales$format)
                             else 
                                 x$xscale.components(lim = x$x.limits[[packet.number]], 
@@ -938,6 +940,8 @@ plot.trellis <-
                                                     abbreviate = x$x.scales$abbreviate,
                                                     minlength = x$x.scales$minlength,
                                                     n = x$x.scales$tick.number,
+                                                    nint = x$x.scales$tick.number,
+                                                    equispaced.log = x$x.scales$equispaced.log,
                                                     format.posixt = x$x.scales$format)
 
 
@@ -959,6 +963,8 @@ plot.trellis <-
                                                     abbreviate = x$y.scales$abbreviate,
                                                     minlength = x$y.scales$minlength,
                                                     n = x$y.scales$tick.number,
+                                                    nint = x$y.scales$tick.number,
+                                                    equispaced.log = x$y.scales$equispaced.log,
                                                     format.posixt = x$y.scales$format)
                             else 
                                 x$yscale.components(lim = x$y.limits[[packet.number]], 
@@ -983,6 +989,8 @@ plot.trellis <-
                                                     abbreviate = x$y.scales$abbreviate,
                                                     minlength = x$y.scales$minlength,
                                                     n = x$y.scales$tick.number,
+                                                    nint = x$y.scales$tick.number,
+                                                    equispaced.log = x$y.scales$equispaced.log,
                                                     format.posixt = x$y.scales$format)
 
 

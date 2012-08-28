@@ -1,4 +1,3 @@
-# SCCS $Id: aareg.S 11218 2009-02-09 12:09:29Z therneau $
 # Aalen's additive regression model
 #  Originally, this tried to call coxph with certain options.
 #  But we found the passing ... to a model method just doesn't work (for
@@ -13,7 +12,7 @@ aareg <- function(formula, data, weights, subset, na.action,
 		  model=FALSE, x=FALSE, y=FALSE) {
     call <- match.call()
 
-    m <- match.call(expand=FALSE)
+    m <- match.call(expand.dots=FALSE)
     temp <- c("", "formula", "data", "weights", "subset", "na.action")
     m <- m[ match(temp, names(m), nomatch=0)]
     special <- c("strata", "cluster")
@@ -312,12 +311,12 @@ aareg <- function(formula, data, weights, subset, na.action,
 	#   though it will always be ignored in the overall chisquare test
 	if (test=='aalen') {
 	    temp <- twt* coefficient
-	    test.statistic <- apply(temp, 2, sum)
+	    test.statistic <- colSums(temp)
 	    test.var <- t(temp) %*% temp
 	    }
 	else if (test=='nrisk') {
 	    temp <- coefficient * nrisk
-	    test.statistic <- apply(temp, 2, sum)
+	    test.statistic <- colSums(temp)
 	    test.var <- t(temp) %*% temp
 	    }
 	else  {

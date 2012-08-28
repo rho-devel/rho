@@ -1,6 +1,6 @@
 % File src/library/base/man/nchar.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Development Team
+% Copyright 1995-2010 R Core Team
 % Distributed under GPL 2 or later
 
 \name{nchar}
@@ -22,7 +22,7 @@ nzchar(x)
 }
 \arguments{
   \item{x}{character vector, or a vector to be coerced to a character
-    vector.}
+    vector.  Giving a factor is an error.}
   \item{type}{character string: partial matching to one of
     \code{c("bytes", "chars", "width")}.  See \sQuote{Details}.}
   \item{allowNA}{logical: should \code{NA} be returned for invalid

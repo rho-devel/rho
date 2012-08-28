@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1998  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2011  The R Development Core Team.
+ *  Copyright (C) 1999-2011  The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -294,7 +294,6 @@ SEXP attribute_hidden do_envirgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if(NAMED(s) > 1)
 	    /* this copies but does not duplicate args or code */
 	    s = duplicate(s);
-#ifdef BYTECODE
 	if (TYPEOF(BODY(s)) == BCODESXP) {
 	    /* switch to interpreted version if compiled */
 	    Closure* clos = static_cast<Closure*>(s.get());
@@ -302,7 +301,6 @@ SEXP attribute_hidden do_envirgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 				 R_ClosureExpr(clos),
 				 clos->environment()));
 	}
-#endif
 	SET_CLOENV(s, env);
     }
     else if (isNull(env) || isEnvironment(env) ||

@@ -1,6 +1,6 @@
 % File src/library/base/man/library.dynam.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
 
 \name{library.dynam}
@@ -13,7 +13,7 @@
   already, or unloads it.
 }
 \usage{
-library.dynam(chname, package = NULL, lib.loc = NULL,
+library.dynam(chname, package, lib.loc,
               verbose = getOption("verbose"),
               file.ext = .Platform$dynlib.ext, \dots)
 
@@ -26,13 +26,9 @@ library.dynam.unload(chname, libpath,
 \arguments{
   \item{chname}{a character string naming a DLL (also known as a dynamic
     shared object or library) to load.}
-  \item{package}{a character vector with the names of packages to search
-    through, or \code{NULL}.  By default, all packages in the search
-    path are used.}
+  \item{package}{a character vector with the name of package.}
   \item{lib.loc}{a character vector describing the location of \R
-    library trees to search through, or \code{NULL}.  The default value
-    of \code{NULL} corresponds to all libraries currently known to
-    \code{\link{.libPaths}()}.}
+    library trees to search through.}
   \item{libpath}{the path to the loaded package whose DLL is to be unloaded.}
   \item{verbose}{a logical value indicating whether an announcement
     is printed on the console before loading the DLL.  The
@@ -73,9 +69,6 @@ library.dynam.unload(chname, libpath,
   
   \code{lib.loc} should contain absolute paths: versions of \R prior to
   2.12.0 may get confused by relative paths.
-  
-  Using the defaults for \code{package} or \code{lib.loc} is deprecated,
-  not least because they will not give work as intended from \code{.onLoad}.
 }
 \value{
    If \code{chname} is not specified, \code{library.dynam} returns an

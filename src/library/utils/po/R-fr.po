@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.12.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-10-17 10:14\n"
-"PO-Revision-Date: 2011-10-15 15:37+0100\n"
+"POT-Creation-Date: 2012-05-21 13:00\n"
+"PO-Revision-Date: 2012-03-06 22:16+0100\n"
 "Last-Translator: Philippe Grosjean <phgrosjean@sciviews.org>\n"
 "Language-Team: French <R-core@r-project.org>\n"
 "Language: fr\n"
@@ -82,6 +82,9 @@ msgstr "le chemin vers %s contient des espaces,"
 msgid "this may cause problems when running LaTeX"
 msgstr "cela peut provoquer des problèmes dans l'utilisation de LaTeX"
 
+msgid "the output file '%s' has disappeared"
+msgstr "le fichier en sortie '%s' a disparu"
+
 msgid "invalid value for %s : %s"
 msgstr "valeur incorrecte pour %s : %s"
 
@@ -149,28 +152,23 @@ msgstr ""
 msgid ","
 msgstr ","
 
-#, fuzzy
 msgid "Use either %s or %s/%s but not both."
-msgstr "Utilisez soit 'family', soit 'last', mais pas les deux en même temps."
+msgstr "Utilisez soit %s, soit %s/%s, mais pas les deux en même temps."
 
-#, fuzzy
 msgid "It is recommended to use %s instead of %s."
-msgstr "Il est recommandé d'utiliser 'given' à la place de 'first'."
+msgstr "Il est recommandé d'utiliser %s à la place de %s."
 
-#, fuzzy
 msgid "Use either %s or %s but not both."
-msgstr "Utilisez soit 'family', soit 'last', mais pas les deux en même temps."
+msgstr "Utilisez soit %s, soit %s, mais pas les deux en même temps."
 
 msgid "Invalid role specification(s): %s."
 msgstr "Spécification(s) de rôle incorrecte(s) : %s"
 
-#, fuzzy
 msgid "It is recommended to use %s/%s instead of %s/%s/%s."
-msgstr "Il est recommandé d'utiliser 'given' à la place de 'first'."
+msgstr "Il est recommandé d'utiliser %s/%s à la place de %s/%s/%s."
 
-#, fuzzy
 msgid "method is just applicable to %s objects"
-msgstr "la méthod n'est applicable qu'à des objets 'person'"
+msgstr "la méthode n'est applicable qu'à des objets %s"
 
 msgid "all arguments must be of class \"person\""
 msgstr "tous les arguments doivent être de la classe \"person\""
@@ -181,21 +179,19 @@ msgstr "il faut spécifier au moins un champ"
 msgid "all fields have to be named"
 msgstr "tous les champs doivent être nommés"
 
-#, fuzzy
 msgid "%s has to be one of %s"
-msgstr "'bibtype' doit être l'un de"
+msgstr "%s doit être l'un de %s"
 
-#, fuzzy
 msgid "A bibentry of bibtype %s has to correctly specify the field(s): %s"
-msgstr "' doit spécifier le(s) champ(s) de manière correcte :"
+msgstr ""
+"Une entrée bibentry de bibtype %s doit spécifier correctement le(s) champ"
+"(s) : %s"
 
-#, fuzzy
 msgid "%s should be one of %s"
-msgstr "'style' doit être l'un de %s"
+msgstr "%s doit être l'un de %s"
 
-#, fuzzy
 msgid "A bibentry of bibtype %s has to specify the field(s): %s"
-msgstr "' doit spécifier le(s) champ(s) :"
+msgstr "Une entrée bibentry de bibtype %s doit spécifier le(s) champ(s) : %s"
 
 msgid "package %s not found"
 msgstr "package %s introuvable"
@@ -356,6 +352,18 @@ msgstr "trop d'entrées de lists (26 maximum)"
 msgid "too many list items (at most up to number 3899)"
 msgstr "trop d'entrées de liste (3899 maximum)"
 
+msgid "no vector columns were selected"
+msgstr "pas de vecteurs colonnes sélectionnés"
+
+msgid "non-vector columns will be ignored"
+msgstr "les colonnes non vectorielles seront ignorées"
+
+msgid "at least one vector element is required"
+msgstr "il faut spécifier au moins un élément vectoriel"
+
+msgid "non-vector elements will be ignored"
+msgstr "les éléments non vectoriels seront ignorés"
+
 msgid "'form' must be a two-sided formula"
 msgstr "'form' doit être une formule à deux membres"
 
@@ -367,9 +375,6 @@ msgid "'topic' should be a name, length-one character vector or reserved word"
 msgstr ""
 "'topic' doit être un nom, une chaîne de caractères de longueur unitaire, ou "
 "un mot réservé"
-
-msgid "Postscript offline help is deprecated"
-msgstr "Les fichiers d'aide postscript hors ligne sont obsolète"
 
 msgid "No documentation for %s in specified packages and libraries:"
 msgstr ""
@@ -419,12 +424,6 @@ msgid ""
 msgstr ""
 "le package %s existe, mais il n'a pas été installé sous R >= 2.10.0 et donc "
 "l'aide n'est pas accessible"
-
-msgid "running %s failed"
-msgstr "l'exécution de %s a échoué"
-
-msgid "%s produced no output file: sent to printer?"
-msgstr "%s n'a produit aucun fichier en sortie : envoyer vers l'imprimante ?"
 
 msgid "creation of %s failed"
 msgstr "la création de %s a échoué"
@@ -534,7 +533,8 @@ msgstr "les métadonnées du package '%s' sont incorrectes"
 msgid "DESCRIPTION file of package '%s' is corrupt"
 msgstr "le fichier DESCRIPTION du package '%s' est incorrect"
 
-msgid "'DESCRIPTION' file has 'Encoding' field and re-encoding is not possible"
+msgid ""
+"'DESCRIPTION' file has an 'Encoding' field and re-encoding is not possible"
 msgstr ""
 "le fichier 'DESCRIPTION' a un champ 'Encoding' et le réencodage est "
 "impossible"
@@ -609,38 +609,11 @@ msgstr "'code_files' devrait être un vecteur de type caractère"
 msgid "'list' must be a character vector naming R objects"
 msgstr "'list' devrait être un vecteur de type caractère nommant des objets R"
 
-msgid "cannot turn off locale-specific chars via LC_CTYPE"
-msgstr ""
-"impossible the transformer les caractères spécifiques de la localisation via "
-"LC_TYPE"
-
 msgid "no R objects specified or available"
 msgstr "aucun objet R spécifié ou disponible"
 
-msgid "Creating directories ..."
-msgstr "Création des répertoires..."
-
 msgid "directory '%s' already exists"
 msgstr "le répertoire '%s' existe déjà"
-
-msgid "Creating DESCRIPTION ..."
-msgstr "Création de DESCRIPTION..."
-
-msgid "From R 2.14.0 on, every package gets a NAMESPACE."
-msgstr ""
-
-#, fuzzy
-msgid "Argument 'namespace' is deprecated."
-msgstr "l'argument 'help.db' est obsolète"
-
-msgid "Creating NAMESPACE ..."
-msgstr "Création de NAMESPACE..."
-
-msgid "Creating Read-and-delete-me ..."
-msgstr "Création de 'Read-and-delete-me'..."
-
-msgid "Saving functions and data ..."
-msgstr "Sauvegarde des fonctions et des données..."
 
 msgid ""
 "Generic functions and other S4 objects (e.g., '%s') cannot be dumped; use "
@@ -649,32 +622,15 @@ msgstr ""
 "Les fonctions génériques et autres objets S4 (e.g., '%s') ne peuvent être "
 "retranscrits à l'aide de dump ; utilisez l'argument code_files="
 
-msgid "Copying code files ..."
-msgstr "Recopiage des fichiers de code..."
-
-msgid "Invalid file name(s) for R code in"
-msgstr "Nom(s) de fichier(s) invalide(s) pour du code R"
-
-msgid ":"
-msgstr ":"
-
-msgid "are now renamed to 'z<name>.R'"
-msgstr "sont maintenant renommés vers 'z<nom>.R'"
-
-msgid "Making help files ..."
-msgstr "Création des fichiers d'aide ..."
-
-msgid "Done."
-msgstr "Terminé."
-
-msgid "Further steps are described in '%s'."
-msgstr "Les étapes suivantes sont décrites dans '%s'."
-
 msgid "unable to access index for repository %s"
 msgstr "impossible d'accéder à l'index de l'entrepôt %s"
 
 msgid "Invalid 'filters' argument."
 msgstr "argument 'filters' incorrect"
+
+#, fuzzy
+msgid "package '%s' in library '%s' will not be updated"
+msgstr "le package %s est en cours d'utilisation et ne sera pas installé"
 
 msgid ""
 "invalid 'oldPkgs'; must be a character vector or a result from old.packages()"
@@ -766,20 +722,26 @@ msgstr ""
 msgid "'lib = \"%s\"' is not writable"
 msgstr "'lib = \"%s\"' ne peut être ouvert en écriture"
 
-msgid ""
-"Would you like to create a personal library\n"
-"%s\n"
-"to install packages into?"
-msgstr ""
-"Voulez-vous créer une bibliothèque personnelle\n"
-"%s\n"
-"pour y installer les packages ?"
-
 msgid "unable to install packages"
 msgstr "impossible d'installer les packages"
 
 msgid "unable to create"
 msgstr "impossible de créer"
+
+msgid ""
+"type == \"both\" can only be used on Windows or a CRAN build for Mac OS X"
+msgstr ""
+"type == \"both\" peut seulement être utilisé sous Windows ou une compilation "
+"Mac OS X CRAN"
+
+msgid ""
+"type == \"both\" cannot be used if 'available' or 'contriburl' is specified"
+msgstr ""
+"type == \"both\" ne peut être utilisé si 'available' ou 'contriburl' est "
+"fourni"
+
+msgid "type == \"both\" cannot be used with 'repos = NULL'"
+msgstr "type == \"both\" ne peut être utilisé avec 'repos = NULL'"
 
 msgid "inferring 'repos = NULL' from the file name"
 msgstr "supposition de 'repos = NULL' à partir du nom de fichier"
@@ -816,11 +778,16 @@ msgstr ""
 " probablement %s"
 
 msgid ""
-"The downloaded packages are in\n"
+"The downloaded source packages are in\n"
 "\t%s"
 msgstr ""
-"Les packages téléchargés sont dans\n"
+"Les packages source téléchargés sont dans\n"
 "\t%s"
+
+msgid ""
+"The namespace for package \"%s\" is locked; no changes in the global "
+"variables list may be made."
+msgstr ""
 
 msgid "no object named '%s' to show"
 msgstr "aucun objet de nom '%s' à afficher"
@@ -849,11 +816,11 @@ msgstr ""
 "l'aide)"
 
 msgid ""
-"the object of class \"%s\" in the function call %s could not be used as a "
+"the object of class %s in the function call %s could not be used as a "
 "documentation topic"
 msgstr ""
-"l'objet de la classe \"%s\" dans l'appel de fonction %s n'a pas pu être "
-"utilisé comme thème de documentation"
+"l'objet de la classe %s dans l'appel de fonction %s n'a pas pu être utilisé "
+"comme thème de documentation"
 
 msgid "no methods for %s and no documentation for it as a function"
 msgstr ""
@@ -1032,6 +999,9 @@ msgstr "'profile' ne contient pas d'information sur la mémoire"
 msgid "no events were recorded"
 msgstr "aucun événement à enregistrer"
 
+msgid "invalid 'tarfile' argument"
+msgstr "argument 'tarfile' incorrect"
+
 msgid "'compressed' must be logical or character"
 msgstr ""
 "'compressed' devrait être un vecteur de type caractère ou booléen (logical)"
@@ -1150,6 +1120,9 @@ msgstr "le téléchargement a a eu un statut de sortie non nul"
 msgid "'tar' returned non-zero exit code %d"
 msgstr "'tar' a renvoyé un code de sortie non nul %d"
 
+msgid "file %s is not an OS X binary package"
+msgstr ""
+
 msgid "package %s successfully unpacked and MD5 sums checked"
 msgstr ""
 "le package %s a été décompressé et les sommes MD5 ont été vérifiées avec "
@@ -1176,6 +1149,13 @@ msgstr "impossible de déplacer l'installation temporaire %s vers %s"
 
 msgid "cannot remove prior installation of package"
 msgstr "impossible de supprimer l'installation précédente du package"
+
+msgid ""
+"The downloaded binary packages are in\n"
+"\t%s"
+msgstr ""
+"Les packages binaires téléchargés sont dans\n"
+"\t%s"
 
 msgid "'memory.size()' is Windows-specific"
 msgstr "'memory.size()' est spécifique à Windows"
@@ -1245,11 +1225,80 @@ msgstr[0] "l'élément %s de 'lib' n'est pas un répertoire ouvrable en écriture"
 msgstr[1] ""
 "les éléments %s de 'lib' ne sont pas des répertoires ouvrables en écriture"
 
+msgid "installing the source package %s"
+msgid_plural "installing the source packages %s"
+msgstr[0] "installation du package source %s"
+msgstr[1] "installation des packages sources %s"
+
 msgid "package %s is in use and will not be installed"
 msgid_plural "packages %s are in use and will not be installed"
 msgstr[0] "le package %s est en cours d'utilisation et ne sera pas installé"
 msgstr[1] ""
 "les packages %s sont en cours d'utilisation et ne seront pas installés"
+
+#~ msgid "cannot turn off locale-specific chars via LC_CTYPE"
+#~ msgstr ""
+#~ "impossible the transformer les caractères spécifiques de la localisation "
+#~ "via LC_TYPE"
+
+#~ msgid "Creating directories ..."
+#~ msgstr "Création des répertoires..."
+
+#~ msgid "Creating DESCRIPTION ..."
+#~ msgstr "Création de DESCRIPTION..."
+
+#~ msgid "From R 2.14.0 on, every package gets a NAMESPACE."
+#~ msgstr ""
+#~ "A partir de R 2.14.0, chaque package reçoit un espace de noms (NAMESPACE)."
+
+#~ msgid "Argument 'namespace' is deprecated."
+#~ msgstr "L'argument 'namespace' est obsolète"
+
+#~ msgid "Creating NAMESPACE ..."
+#~ msgstr "Création de NAMESPACE..."
+
+#~ msgid "Creating Read-and-delete-me ..."
+#~ msgstr "Création de 'Read-and-delete-me'..."
+
+#~ msgid "Saving functions and data ..."
+#~ msgstr "Sauvegarde des fonctions et des données..."
+
+#~ msgid "Copying code files ..."
+#~ msgstr "Recopiage des fichiers de code..."
+
+#~ msgid "Invalid file name(s) for R code in"
+#~ msgstr "Nom(s) de fichier(s) invalide(s) pour du code R"
+
+#~ msgid ":"
+#~ msgstr ":"
+
+#~ msgid "are now renamed to 'z<name>.R'"
+#~ msgstr "sont maintenant renommés vers 'z<nom>.R'"
+
+#~ msgid "Making help files ..."
+#~ msgstr "Création des fichiers d'aide ..."
+
+#~ msgid "Done."
+#~ msgstr "Terminé."
+
+#~ msgid "Further steps are described in '%s'."
+#~ msgstr "Les étapes suivantes sont décrites dans '%s'."
+
+#~ msgid ""
+#~ "Would you like to create a personal library\n"
+#~ "%s\n"
+#~ "to install packages into?"
+#~ msgstr ""
+#~ "Voulez-vous créer une bibliothèque personnelle\n"
+#~ "%s\n"
+#~ "pour y installer les packages ?"
+
+#~ msgid "running %s failed"
+#~ msgstr "l'exécution de %s a échoué"
+
+#~ msgid "%s produced no output file: sent to printer?"
+#~ msgstr ""
+#~ "%s n'a produit aucun fichier en sortie : envoyer vers l'imprimante ?"
 
 #~ msgid "Use either 'given' or 'first'/'middle' but not both."
 #~ msgstr ""
@@ -1272,6 +1321,9 @@ msgstr[1] ""
 
 #~ msgid "method is just applicable to 'bibentry' objects"
 #~ msgstr "la méthode est seulement applicable à des objets 'bibentry'"
+
+#~ msgid "Postscript offline help is deprecated"
+#~ msgstr "Les fichiers d'aide postscript hors ligne sont obsolète"
 
 #, fuzzy
 #~ msgid "Enhanced authors specification provides no authors."

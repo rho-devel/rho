@@ -98,8 +98,8 @@ getting plots on the response scale, when the model consists only of a single sm
 
 \item{seWithMean}{if \code{TRUE} the component smooths are shown with confidence 
 intervals that include the uncertainty about the overall mean. If \code{FALSE} then the 
-uncertainty relates purely to the centred smooth itself. An extension of the argument
-presented in Nychka (1988) suggests that \code{TRUE} results in better coverage performance,
+uncertainty relates purely to the centred smooth itself. Marra and Wood (2012) suggests 
+that \code{TRUE} results in better coverage performance,
 and this is also suggested by simulation.}
 
 \item{by.resids}{Should partial residuals be plotted for terms with \code{by} variables? 
@@ -150,7 +150,7 @@ Fine control of plots for parametric terms can be obtained by calling
 Note that, if \code{seWithMean=TRUE}, the confidence bands include the uncertainty about the overall mean. In other words 
 although each smooth is shown centred, the confidence bands are obtained as if every other term in the model was 
 constrained to have average 0, (average taken over the covariate values), except for the smooth concerned. This seems to correspond more closely to how most users interpret componentwise intervals in practice, and also results in intervals with
-close to nominal (frequentist) coverage probabilities by an extension of Nychka's (1988) results.
+close to nominal (frequentist) coverage probabilities by an extension of Nychka's (1988) results presented in Marra and Wood (2012).
 
 Sometimes you may want a small change to a default plot, and the arguments to \code{plot.gam} just won't let you do it. 
 In this case, the quickest option is sometimes to clone the \code{smooth.construct} and \code{Predict.matrix} methods for 
@@ -166,6 +166,10 @@ smooth in models (e.g. \code{s(x,bs="foo")}), and it will automatically plot usi
 \references{
 
 Chambers and Hastie (1993) Statistical Models in S. Chapman & Hall.
+
+Marra, G and S.N. Wood (2012) Coverage Properties of Confidence Intervals for Generalized Additive
+Model Components. Scandinavian Journal of Statistics.
+
 
 Nychka (1988) Bayesian Confidence Intervals for Smoothing Splines. 
 Journal of the American Statistical Association 83:1134-1143.

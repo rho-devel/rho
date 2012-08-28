@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2002   The R Development Core Team.
+ *  Copyright (C) 2002   The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@
 int strncasecmp(const char *s1, const char *s2, size_t n)
 {
     char c1, c2;
-    int i;
+    size_t i;
 
     for (i = 0; i < n; i++) {
 	c1 = s1[i]; c2 = s2[i];

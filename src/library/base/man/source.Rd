@@ -1,7 +1,9 @@
 % File src/library/base/man/source.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{source}
 \title{Read R Code from a File or a Connection}
@@ -26,9 +28,10 @@ source(file, local = FALSE, echo = verbose, print.eval = echo,
     of the file or URL to read from.  \code{""} indicates the connection
     \code{\link{stdin}()}.}
   \item{local}{\code{TRUE}, \code{FALSE} or an environment, determining
-    where the parsed expressions are evaluated.  \code{TRUE} corresponds
-    to the user's workspace (the global environment) and \code{FALSE} to
-    the environment from \code{source} is called.}
+    where the parsed expressions are evaluated.  \code{FALSE} (the
+    default) corresponds to the user's workspace (the global
+    environment) and \code{TRUE} to the environment from which
+    \code{source} is called.}
   \item{echo}{logical; if \code{TRUE}, each expression is printed
     after parsing, before evaluation.}
   \item{print.eval}{logical; if \code{TRUE}, the result of
@@ -61,14 +64,14 @@ source(file, local = FALSE, echo = verbose, print.eval = echo,
   from entering it at the \R command line.  Since expressions are not
   executed at the top level, auto-printing is not done.  So you will
   need to include explicit \code{print} calls for things you want to be
-  printed (and remember that this includes plotting by \pkg{lattice},
+  printed (and remember that this includes plotting by \CRANpkg{lattice},
   FAQ Q7.22).  Since the complete file is parsed before any of it is
   run, syntax errors result in none of the code being run.  If an error
   occurs in running a syntactically correct script, anything assigned
   into the workspace by code that has been run will be kept (just as
   from the command line), but diagnostic information such as
   \code{\link{traceback}()} will contain additional calls to
-  \code{eval.with.vis}, an undocumented internal function.
+  \code{\link{withVisible}}.
 
   All versions of \R accept input from a connection with end of line
   marked by LF (as used on Unix), CRLF (as used on DOS/Windows) or CR

@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2007   The R Development Core Team
+ *  Copyright (C) 1997-2007   The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -294,9 +294,7 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int level, SEXP call)
     case 1915:  /* vector     <- complex    */
     case 1916:  /* vector     <- character  */
     case 1920:  /* vector     <- expression  */
-#ifdef BYTECODE
     case 1921:  /* vector     <- bytecode   */
-#endif
     case 1922:  /* vector     <- external pointer */
     case 1923:  /* vector     <- weak reference */
     case 1924:  /* vector     <- raw */
@@ -1161,11 +1159,9 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 	case 1914:  /* vector     <- real       */
 	case 1915:  /* vector     <- complex    */
 	case 1916:  /* vector     <- character  */
-	case 1919:      /* vector     <- vector     */
+	case 1919:  /* vector     <- vector     */
 	case 1920:  /* vector     <- expression */
-#ifdef BYTECODE
 	case 1921:  /* vector     <- bytecode   */
-#endif
 	case 1922:  /* vector     <- external pointer */
 	case 1923:  /* vector     <- weak reference */
 	case 1924:  /* vector     <- raw */

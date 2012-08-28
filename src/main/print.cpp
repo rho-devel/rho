@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1998	Robert Gentleman and Ross Ihaka.
- *  Copyright (C) 2000-2011	The R Development Core Team.
+ *  Copyright (C) 2000-2011	The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -113,7 +113,7 @@ void PrintDefaults(void)
     R_print.scipen = asInteger(GetOption1(install("scipen")));
     if (R_print.scipen == NA_INTEGER) R_print.scipen = 0;
     R_print.max = asInteger(GetOption1(install("max.print")));
-    if (R_print.max == NA_INTEGER) R_print.max = 99999;
+    if (R_print.max == NA_INTEGER || R_print.max < 0) R_print.max = 99999;
     R_print.gap = 1;
     R_print.width = GetOptionWidth();
     R_print.useSource = USESOURCE;
@@ -216,10 +216,7 @@ static void PrintLanguageEtc(SEXP s, Rboolean useSource, Rboolean isClosure)
 	Rprintf("%s\n", CHAR(STRING_ELT(t, i))); /* translated */
     UNPROTECT(1);
     if (isClosure) {
-#ifdef BYTECODE
-	if (isByteCode(BODY(s)))
-	    Rprintf("<bytecode: %p>\n", BODY(s));
-#endif
+	if (isByteCode(BODY(s))) Rprintf("<bytecode: %p>\n", BODY(s));
 	t = CLOENV(s);
 	if (t != R_GlobalEnv)
 	    Rprintf("%s\n", EncodeEnvironment(t));
@@ -287,7 +284,7 @@ SEXP attribute_hidden do_printdefault(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if(!isNull(CAR(args))) {
 	R_print.max = asInteger(CAR(args));
-	if(R_print.max == NA_INTEGER)
+	if(R_print.max == NA_INTEGER || R_print.max < 0)
 	    error(_("invalid '%s' argument"), "max");
     }
     args = CDR(args);
@@ -495,7 +492,7 @@ static void PrintGenericVector(SEXP s, SEXP env)
 	    }
 	    Rprintf("\n");
 	    if(n_pr < ns)
-		Rprintf(" [ reached getOption(\"max.print\") -- omitted %d entries ]]\n",
+		Rprintf(" [ reached getOption(\"max.print\") -- omitted %d entries ]\n",
 			ns - n_pr);
 	}
 	else { /* ns = length(s) == 0 */
@@ -816,11 +813,9 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
     case EXTPTRSXP:
 	Rprintf("<pointer: %p>\n", R_ExternalPtrAddr(s));
 	break;
-#ifdef BYTECODE
     case BCODESXP:
 	Rprintf("<bytecode: %p>\n", s);
 	break;
-#endif
     case WEAKREFSXP:
 	Rprintf("<weak reference>\n");
 	break;

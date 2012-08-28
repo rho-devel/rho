@@ -66,7 +66,9 @@
     \code{\link[grid]{grid.rect}}).  The default depends on the matrix
     dimension and the device size.}
   \item{\dots}{further arguments passed to methods and
-    \code{\link[lattice]{levelplot}}.}
+    \code{\link[lattice]{levelplot}}, notably \code{at} for specifying
+    (possibly non equidistant) cut values for dividing the matrix
+    values (superseding \code{cuts} above).}% FIXME? example *using*  at=..
 }
 \section{Methods}{
   All methods currently end up calling the method for the

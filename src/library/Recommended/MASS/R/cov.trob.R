@@ -1,5 +1,5 @@
 # file MASS/R/cov.trob.R
-# copyright (C) 1994-2004 W. N. Venables and B. D. Ripley
+# copyright (C) 1994-2011 W. N. Venables and B. D. Ripley
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -30,11 +30,13 @@ cov.trob <- function(x, wt = rep(1, n), cor = FALSE, center = TRUE, nu = 5,
     dn <- colnames(x)
     test.values(x)
     if(!(miss.wt <- missing(wt))) {
+        wt0 <- wt
         test.values(wt)
         if(length(wt) != n)
             stop("length of 'wt' must equal number of observations")
         if(any(wt < 0)) stop("negative weights not allowed")
         if(!sum(wt)) stop("no positive weights")
+        x <- x[wt > 0, , drop = FALSE]; wt <- wt[wt > 0]; n <- nrow(x)
     }
     loc <- colSums(wt * x)/sum(wt)
     if(is.numeric(center)) {
@@ -66,7 +68,7 @@ cov.trob <- function(x, wt = rep(1, n), cor = FALSE, center = TRUE, nu = 5,
     }
     if(miss.wt)
         ans <- list(cov = cov, center = loc, n.obs = n)
-    else ans <- list(cov = cov, center = loc, wt = wt, n.obs = n)
+    else ans <- list(cov = cov, center = loc, wt = wt0, n.obs = n)
     if(cor) {
         sd <- sqrt(diag(cov))
         cor <- (cov/sd)/rep(sd, rep.int(p, p))

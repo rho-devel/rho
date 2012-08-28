@@ -81,6 +81,85 @@ dd <- daisy(d.st, stand = TRUE)
 
 dev.off()
 
+##------------------------ Testing pam() with new "pamonce" argument:
+
+## This is from "next version of Matrix" test-tools-1.R:
+showSys.time <- function(expr) {
+    ## prepend 'Time' for R CMD Rdiff
+    st <- system.time(expr)
+    writeLines(paste("Time", capture.output(print(st))))
+    invisible(st)
+}
+show2Ratios <- function(...) {
+    stopifnot(length(rgs <- list(...)) == 2,
+              nchar(ns <- names(rgs)) > 0)
+    r <- round(cbind(..1, ..2)[c(1,3),], 3)
+    dimnames(r) <- list(paste("Time ", rownames(r)), ns)
+    r
+}
+
+
+n <- 1000
+## If not enough cases, all CPU times equals 0.
+n <- 500 # for now, and automatic testing
+
+sd <- 0.5
+set.seed(13)
+n2 <- as.integer(round(n * 1.5))
+x <- rbind(cbind(rnorm( n,0,sd), rnorm( n,0,sd)),
+           cbind(rnorm(n2,5,sd), rnorm(n2,5,sd)),
+           cbind(rnorm(n2,7,sd), rnorm(n2,7,sd)),
+           cbind(rnorm(n2,9,sd), rnorm(n2,9,sd)))
+
+
+## original algorithm
+st0 <- showSys.time(pamx      <- pam(x, 4,               trace.lev=2))# 8.157   0.024   8.233
+ ## bswapPamOnce  algorithm
+st1 <- showSys.time(pamxonce  <- pam(x, 4, pamonce=TRUE, trace.lev=2))# 6.122   0.024   6.181
+## bswapPamOnceDistIndice
+st2 <- showSys.time(pamxonce2 <- pam(x, 4, pamonce = 2,  trace.lev=2))# 4.101   0.024   4.151
+show2Ratios('2:orig' = st2/st0, '1:orig' = st1/st0)
+
+## only call element is not equal
+(icall <- which(names(pamx) == "call"))
+pamx[[icall]]
+stopifnot(all.equal(pamx    [-icall],  pamxonce [-icall]),
+	  all.equal(pamxonce[-icall],  pamxonce2[-icall]))
+
+## Same using specified medoids
+(med0 <- 1 + round(n* c(0,1, 2.5, 4)))#                                      lynne (~ 2010, AMD Phenom II X4 925)
+st0 <- showSys.time(pamxst      <- pam(x, 4, medoids = med0,               trace.lev=2))#  13.071   0.024  13.177
+st1 <- showSys.time(pamxoncest  <- pam(x, 4, medoids = med0, pamonce=TRUE, trace.lev=2))#   8.503   0.024   8.578
+st2 <- showSys.time(pamxonce2st <- pam(x, 4, medoids = med0, pamonce=2,    trace.lev=2))#   5.587   0.025   5.647
+show2Ratios('2:orig' = st2/st0, '1:orig' = st1/st0)
+
+## only call element is not equal
+stopifnot(all.equal(pamxst    [-icall], pamxoncest [-icall]),
+          all.equal(pamxoncest[-icall], pamxonce2st[-icall]))
+
+## Different starting values
+med0 <- 1:4 #                                                               lynne (~ 2010, AMD Phenom II X4 925)
+st0 <- showSys.time(pamxst      <- pam(x, 4, medoids = med0,               trace.lev=2))# 13.416   0.023  13.529
+st1 <- showSys.time(pamxoncest  <- pam(x, 4, medoids = med0, pamonce=TRUE, trace.lev=2))#  8.384   0.024   8.459
+st2 <- showSys.time(pamxonce2st <- pam(x, 4, medoids = med0, pamonce=2,    trace.lev=2))#  5.455   0.030   5.520
+show2Ratios('2:orig' = st2/st0, '1:orig' = st1/st0)
+
+## only call element is not equal
+stopifnot(all.equal(pamxst    [-icall], pamxoncest [-icall]),
+          all.equal(pamxoncest[-icall], pamxonce2st[-icall]))
+
+
+## Medoid bug  --- MM: Fixed, well "0L+ hack", in my pam.q, on 2012-01-31
+## ----------
+med0 <- (1:6)
+st0 <- showSys.time(pamxst   <- pam(x, 6, medoids = med0 ,            trace.lev=2))
+stopifnot(identical(med0, 1:6))
+med0 <- (1:6)
+st1 <- showSys.time(pamxst.1 <- pam(x, 6, medoids = med0 , pamonce=1, trace.lev=2))
+stopifnot(identical(med0, 1:6))
+stopifnot(all.equal(pamxst[-icall], pamxst.1 [-icall]))
+
+
 ## Last Line:
 cat('Time elapsed: ', proc.time() - .proctime00,'\n')
 

@@ -1,9 +1,11 @@
 \name{coef.hclust}
+\alias{coefHier}
 \alias{coef.hclust}
 \alias{coef.twins}
-\title{Agglomerative Coefficient for 'hclust' Objects}
+\title{Agglomerative / Divisive Coefficient for 'hclust' Objects}
 \description{
-  Computes the \dQuote{agglomerative coefficient}, measuring the
+  Computes the \dQuote{agglomerative coefficient} (aka \dQuote{divisive
+    coefficient} for \code{\link{diana}}), measuring the
   clustering structure of the dataset.
 
   For each observation i, denote by \eqn{m(i)} its dissimilarity to the
@@ -12,10 +14,15 @@
   coefficient is the average of all \eqn{1 - m(i)}.  It can also be seen
   as the average width (or the percentage filled) of the banner plot.
 
+  \code{coefHier()} directly interfaces to the underlying C code, and
+  \dQuote{proves} that \emph{only} \code{object$heights} is needed to
+  compute the coefficient.
+
   Because it grows with the number of observations, this measure should not
   be used to compare datasets of very different sizes.
 }
 \usage{
+coefHier(object)
 coef.hclust(object, \dots)%-- we export this, on purpose
 \method{coef}{hclust}(object, \dots)
 \method{coef}{twins}(object, \dots)
@@ -28,6 +35,8 @@ coef.hclust(object, \dots)%-- we export this, on purpose
     Since \code{coef.hclust} only uses \code{object$heights}, and
     \code{object$merge}, \code{object} can be any list-like object with
     appropriate \code{merge} and \code{heights} components.
+
+    For \code{coefHier}, even only \code{object$heights} is needed.
   }
   \item{\dots}{currently unused potential further arguments}
 }
@@ -41,7 +50,9 @@ data(agriculture)
 aa <- agnes(agriculture)
 coef(aa) # really just extracts aa$ac
 coef(as.hclust(aa))# recomputes
+coefHier(aa)       # ditto
 \dontshow{
+ stopifnot(all.equal(coef(aa), coefHier(aa)))
  d.a <- dist(agriculture, "manhattan")
  for (m in c("average", "single", "complete"))
     stopifnot(all.equal(coef(hclust(d.a, method=m)),

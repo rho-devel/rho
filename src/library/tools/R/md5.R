@@ -23,7 +23,7 @@ md5sum <- function(files)
     if (is.null(dot))
         stop("current working directory cannot be ascertained")
     setwd(pkgDir)
-    x <- md5sum(dir(pkgDir, recursive=TRUE))
+    x <- md5sum(dir(".", recursive=TRUE))
     setwd(dot)
     x <- x[names(x) != "MD5"]
     cat(paste(x, names(x), sep=" *"), sep="\n",
@@ -59,8 +59,11 @@ checkMD5sums <- function(package, dir)
     diff <- xx[nmxx] != x[nmxx]
     if(any(diff)) {
         res <- FALSE
-        cat("files", paste(nmxx[diff], collapse=", "),
-            "have the wrong MD5 checksums\n", sep=" ")
+        files <- nmxx[diff]
+        if(length(files) > 1L)
+            cat("files", paste(sQuote(files), collapse=", "),
+                "have the wrong MD5 checksums\n", sep=" ")
+        else cat("file", sQuote(files), "has the wrong MD5 checksum\n")
     }
     return(res)
 }

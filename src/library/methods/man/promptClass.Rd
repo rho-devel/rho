@@ -1,6 +1,6 @@
 % File src/library/methods/man/promptClass.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
 
 \name{promptClass}
@@ -12,7 +12,8 @@
 }
 \usage{
 promptClass(clName, filename = NULL, type = "class",
-            keywords = "classes", where = topenv(parent.frame()))
+            keywords = "classes", where = topenv(parent.frame()),
+            generatorName = clName)
 }
 \arguments{
   \item{clName}{a character string naming the class to be documented.}
@@ -28,6 +29,10 @@ promptClass(clName, filename = NULL, type = "class",
   \item{where}{where to look for the definition of the class and of
     methods that use it.
     %%FIXME: By default, anywhere in the current search list.
+  }
+  \item{generatorName}{the name for a generator function for this
+    class; only required if a generator function was created
+    \emph{and} saved under a name different from the class name.
   }
 }
 \details{
@@ -52,6 +57,10 @@ promptClass(clName, filename = NULL, type = "class",
   documentation shell is created and returned.  Writing the shell to a
   file amounts to \code{cat(unlist(x), file = filename, sep = "\\n")},
   where \code{x} is the list-style representation.
+
+  If a generator function is found assigned under the class name or
+  the optional \code{generatorName}, skeleton documentation for that
+  function is added to the file.
 }
 \value{
   If \code{filename} is \code{NA}, a list-style representation of the

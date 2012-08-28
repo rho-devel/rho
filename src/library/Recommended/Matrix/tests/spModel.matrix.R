@@ -59,7 +59,7 @@ stopifnot(identical(## non-sensical, but "should work" (with a warning each):
 		    sparse.model.matrix( ~ 1, dd)))
 sparse.model.matrix(~ a + b, dd, contrasts = list(a="contr.sum"))
 sparse.model.matrix(~ a + b, dd, contrasts = list(b="contr.SAS"))
-xm <-  sparse.model.matrix(~ x, dM) # gives a warning, correctly
+xm <-  sparse.model.matrix(~ x, dM) # {no warning anymore ...}
 dxm <- Matrix(model.matrix(~ x, dM), sparse=TRUE)
 stopifnot(is(xm, "sparseMatrix"), mEQ(as(xm,"generalMatrix"), dxm))
 
@@ -124,7 +124,13 @@ stopifnot(mEQ(sm, mm))
 f <- ~ a*X + X*Y + a*c
 attr(terms(f, data=dM), "factors")
 dim(mm <- Matrix(model.matrix(f, data=dM), sparse=TRUE))
-dim(sm <- Sparse.model.matrix(f, data=dM))
+dim(sm <- Sparse.model.matrix(f, data=dM, verbose=TRUE))
+stopifnot(mEQ(sm, mm))
+
+## high order
+f <- ~ a:b:X:c:Y
+mm <- Matrix(model.matrix(f, data=dM), sparse=TRUE)
+sm <- Sparse.model.matrix(f, data=dM, verbose=2)
 stopifnot(mEQ(sm, mm))
 
 

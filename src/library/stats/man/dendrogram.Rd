@@ -1,6 +1,6 @@
 % File src/library/stats/man/dendrogram.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Copyright 2002-2011 The R Foundation
 % Distributed under GPL 2 or later
 
@@ -50,7 +50,8 @@ as.dendrogram(object, \dots)
 
 \method{str}{dendrogram}(object, max.level = NA, digits.d = 3,
     give.attr = FALSE, wid = getOption("width"),
-    nest.lev = 0, indent.str = "", last.str = "`", stem = "--",
+    nest.lev = 0, indent.str = "",
+    last.str = getOption("str.dendrogram.last"), stem = "--",
     \dots)
 
 is.leaf(object)
@@ -113,7 +114,9 @@ is.leaf(object)
     attributes for each node.}
   \item{last.str, stem}{strings used for \code{str()} specifying how the
     last branch (at each level) should start and the \emph{stem}
-    to use for each dendrogram branch.}
+    to use for each dendrogram branch.  In some environments, using
+    \code{last.str = "'"} will provide much nicer looking output, than
+    the historical default \code{last.str = "`"}.}
 }
 \details{
   The dendrogram is directly represented as a nested list where each
@@ -201,6 +204,9 @@ hc <- hclust(dist(USArrests), "ave")
 (dend1 <- as.dendrogram(hc)) # "print()" method
 str(dend1)          # "str()" method
 str(dend1, max = 2, last.str= "'") # only the first two sub-levels
+oo <- options(str.dendrogram.last = "\\\\") # yet another possibility
+str(dend1, max = 2) # only the first two sub-levels
+options(oo)# .. resetting them
 
 op <- par(mfrow= c(2,2), mar = c(5,2,1,4))
 plot(dend1)

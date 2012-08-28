@@ -55,6 +55,7 @@ lm.influence <- function (model, do.coef = TRUE)
         e[abs(e) < 100 * .Machine$double.eps * median(abs(e))] <- 0
         mqr <- qr.lm(model)
         n <- as.integer(nrow(mqr$qr))
+        if (is.na(n)) stop("invalid model QR matrix")
         k <- as.integer(mqr$rank)
         ## in na.exclude case, omit NAs; also drop 0-weight cases
         if(NROW(e) != n)
@@ -306,7 +307,7 @@ summary.infl <- function(object, digits = max(2, getOption("digits") - 5), ...)
 	dimnames(imat)[[1L]] <- rownam[is.star]
 	chmat <- format(round(imat, digits = digits))
 	cat("\n")
-	print(array(paste(chmat,c("","_*")[1+is.inf], sep=''),
+	print(array(paste0(chmat, c("","_*")[1+is.inf]),
 		    dimnames = dimnames(imat), dim=dim(imat)),
 	      quote = FALSE)
 	invisible(imat)

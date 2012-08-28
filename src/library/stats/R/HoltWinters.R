@@ -80,14 +80,17 @@ function (x,
     }
 
     ## Call to filtering loop
-    len <- length(x) - start.time + 1
+    lenx <- as.integer(length(x))
+    if (is.na(lenx)) stop("invalid length(x)")
+
+    len <- lenx - start.time + 1
     hw <- function(alpha, beta, gamma)
         .C(C_HoltWinters,
            as.double(x),
-           as.integer(length(x)),
-           as.double(max(min(alpha,1),0)),
-           as.double(max(min(beta,1),0)),
-           as.double(max(min(gamma,1),0)),
+           lenx,
+           as.double(max(min(alpha, 1), 0)),
+           as.double(max(min(beta, 1), 0)),
+           as.double(max(min(gamma, 1), 0)),
            as.integer(start.time),
            as.integer(! + (seasonal == "multiplicative")),
            as.integer(f),
@@ -336,7 +339,7 @@ print.HoltWinters <- function (x, ...)
     cat("Holt-Winters exponential smoothing",
         if (is.logical(x$beta) && !x$beta) "without" else "with", "trend and",
         if (is.logical(x$gamma) && !x$gamma) "without" else
-        paste(if (is.logical(x$beta) && !x$beta) "with ", x$seasonal, sep=""),
+        paste0(if (is.logical(x$beta) && !x$beta) "with ", x$seasonal),
         "seasonal component.\n")
     cat("\nCall:\n", deparse (x$call), "\n\n")
     cat("Smoothing parameters:\n")

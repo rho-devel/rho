@@ -1,10 +1,11 @@
-### $Id: diana.q 5598 2010-06-24 10:20:48Z maechler $
+### $Id: diana.q 6015 2012-01-18 11:03:38Z maechler $
 
 diana <- function(x, diss = inherits(x, "dist"),
 		  metric = "euclidean", stand = FALSE,
-                  keep.diss = n < 100, keep.data = !diss)
+		  ##_not_yet stop.at.k = FALSE,
+                  keep.diss = n < 100, keep.data = !diss, trace.lev = 0)
 {
-   if((diss <- as.logical(diss))) {
+    if((diss <- as.logical(diss))) {
 	## check type of input vector
 	if(any(is.na(x))) stop(..msg$error["NAdiss"])
 	if(data.class(x) != "dissimilarity") { # try to convert to
@@ -23,7 +24,7 @@ diana <- function(x, diss = inherits(x, "dist"),
 	dv <- x[lower.to.upper.tri.inds(n)]
 	## prepare arguments for the Fortran call
 	dv <- c(0., dv)# double
-	jp <- as.integer(1)
+	jp <- 1L
 	mdata <- FALSE
 	ndyst <- 0
 	x2 <- double(1)
@@ -45,28 +46,32 @@ diana <- function(x, diss = inherits(x, "dist"),
 	}
 	dv <- double(1 + (n * (n - 1))/2)
     }
-    res <- .Fortran(twins,
+    stopifnot(length(trace.lev <- as.integer(trace.lev)) == 1)
+##_not_yet     stopifnot(is.logical(stop.at.k) ||
+##_not_yet               (is.numeric(stop.at.k) && 1 <= stop.at.k && stop.at.k <= n))
+    C.keep.diss <- keep.diss && !diss
+    res <- .C(twins,
 		    n,
 		    jp,
 		    as.double(x2),
 		    dv,
-		    dis = double(if(keep.diss) length(dv) else 1),
-		    ok = as.integer(if(keep.diss) diss + 10 else diss),
+		    dis = double(if(C.keep.diss) length(dv) else 1),
+		    jdyss = if(C.keep.diss) diss + 10L else as.integer(diss),
 		    if(mdata)valmd else double(1),
 		    if(mdata) jtmd else integer(jp),
 		    as.integer(ndyst),
-		    as.integer(2),# jalg = 2 <==> DIANA
-		    as.integer(0),# ~ method
+		    2L,# jalg = 2 <==> DIANA
+                    0L, ##_not_yet as.integer(stop.at.k),# default: 0 do *not* stop early,
 		    integer(n),
 		    ner = integer(n),
 		    ban = double(n),
-		    dc = double(1),# care! as.double() is copy-less from 2.6.0
+		    dc = as.double(trace.lev),# in / out
 		    double(1),
-		    merge = matrix(0:0, n - 1, 2), # integer
+		    merge = matrix(0L, n - 1, 2), # integer
 		    DUP = FALSE)
     if(!diss) {
 	## give warning if some dissimilarities are missing.
-	if(res$ok == -1)
+	if(res$jdyss == -1)
 	    stop("No clustering performed, NA's in dissimilarity matrix.\n")
         if(keep.diss) {
             ## adapt Fortran output to S:

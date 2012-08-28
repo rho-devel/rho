@@ -157,7 +157,6 @@ axis.default <-
     side <- match.arg(side)
     labels <- match.arg(labels)
     ticks <- match.arg(ticks)
-
     row <- lattice.getStatus("current.focus.row", prefix = prefix)
     column <- lattice.getStatus("current.focus.column", prefix = prefix)
     panel.layout <- trellis.currentLayout("panel", prefix = prefix)
@@ -211,8 +210,7 @@ axis.default <-
                           left   = rep(scales$alternating, length.out = row)[row] %in% c(1, 3),
                           right  = rep(scales$alternating, length.out = row)[row] %in% c(2, 3))
 
-               } else TRUE)) 
-
+               } else TRUE))
     if (do.ticks || do.labels)
     {
         comp.list <-
@@ -231,16 +229,6 @@ axis.default <-
                    top = scales$tck[2])
         if (!is.logical(comp.list)) ## must be FALSE if it is
         {
-            ## WAS: (but did not allow ticks$at and labels$at to be different)
-            ## panel.axis(side = side,
-            ##            at = comp.list$ticks$at,
-            ##            labels = comp.list$labels$labels,
-            ##            draw.labels = do.labels, 
-            ##            check.overlap = comp.list$labels$check.overlap,
-            ##            outside = TRUE,
-            ##            ticks = do.ticks,
-            ##            tck = scales.tck * comp.list$ticks$tck,
-            ##            ...)
             if (do.ticks)
                 panel.axis(side = side,
                            at = comp.list$ticks$at,
@@ -347,20 +335,26 @@ formattedTicksAndLabels.default <-
              num.limit = NULL,
              abbreviate = NULL,
              minlength = 4,
-             format.posixt = NULL)
+             format.posixt = NULL,
+             equispaced.log = TRUE)
     ## meant for when x is numeric
 {
     rng <-
         if (length(x) == 2) as.numeric(x)
         else range(as.numeric(x))
 
+    ## str(list(x = x, num.limit = num.limit,
+    ##          rng = rng, equispaced.log = equispaced.log))
+
     ## handle log scale (most other methods ignore logsc)
     if (is.logical(logsc) && logsc) logsc <- 10
-    have.log <- !is.logical(logsc) || logsc
+    have.log <- !is.logical(logsc)
 
-    logbase <-
-        if (is.numeric(logsc)) logsc
-        else exp(1)
+    if (have.log)
+        logbase <-
+            if (is.numeric(logsc)) logsc
+            else if (logsc == "e") exp(1)
+            else stop("Invalid value of 'log'")
     logpaste <-
         if (have.log) paste(as.character(logsc), "^", sep = "")
         else ""
@@ -373,16 +367,27 @@ formattedTicksAndLabels.default <-
         
     if (is.logical(at)) ## at not explicitly specified
     {
-        at <- checkArgsAndCall(pretty, list(x = x[is.finite(x)], ...))
+        at <-
+            if (have.log && !equispaced.log) # FIXME: num.limit instead of rng?
+                checkArgsAndCall(axisTicks, list(usr = log10(logbase^rng), log = TRUE, axp = NULL, ...))
+            else
+                checkArgsAndCall(pretty, list(x = x[is.finite(x)], ...))
     }
     else if (have.log && (length(at) > 0))  ## 'at' specified but not NULL
     {
         if (is.logical(labels)) labels <- as.character(at)
         at <- log(at, base = logbase)
     }
-    list(at = at,
-         labels = if (is.logical(labels)) paste(logpaste, format(at, trim = TRUE), sep = "")
-                  else labels,
+    if (is.logical(labels))
+    {
+        if (have.log && !equispaced.log)
+        {
+            labels <- as.character(at)
+            at <- log(at, logbase)
+        }
+        else labels <- paste(logpaste, format(at, trim = TRUE), sep = "")
+    }
+    list(at = at, labels = labels,
          check.overlap = check.overlap,
          num.limit = rng)
 }
@@ -805,20 +810,6 @@ OLD_formattedTicksAndLabels.times <-
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 panel.axis <-
     function(side = c("bottom", "left", "top", "right"),
              at = pretty(scale.range),
@@ -859,12 +850,6 @@ panel.axis <-
     axis.line <- trellis.par.get("axis.line")
     axis.text <- trellis.par.get("axis.text")
     rot <- rep(rot, length.out = 2) ## for x- and y-axes respectively
-
-#    if (missing(at) || is.null(at))
-#    {
-#        warning("nothing to draw if at not specified")
-#        return()
-#    }
 
     if (is.null(at) || length(at) == 0) return()
 

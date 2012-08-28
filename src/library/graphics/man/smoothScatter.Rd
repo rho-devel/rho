@@ -1,7 +1,9 @@
 % File src/library/graphics/man/smoothscatter.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{smoothScatter}
 \alias{smoothScatter}
@@ -57,12 +59,12 @@ smoothScatter(x, y = NULL, nbin = 128, bandwidth,
 \details{
   \code{smoothScatter} produces a smoothed version of a scatter plot.
   Two dimensional (kernel density) smoothing is performed by
-  \code{\link[KernSmooth]{bkde2D}} from package \pkg{KernSmooth}.
+  \code{\link[KernSmooth]{bkde2D}} from package \CRANpkg{KernSmooth}.
   See the examples for how to use this function together with
   \code{\link{pairs}}.
 }
 \seealso{
-  \code{\link[KernSmooth]{bkde2D}} from package \pkg{KernSmooth};
+  \code{\link[KernSmooth]{bkde2D}} from package \CRANpkg{KernSmooth};
   \code{\link{densCols}} which uses the same smoothing computations and
   \code{\link{blues9}} in package \pkg{grDevices}.
 

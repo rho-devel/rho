@@ -1,6 +1,6 @@
 % File src/library/utils/man/install.packages.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{install.packages}
@@ -85,11 +85,19 @@ install.packages(pkgs, lib, repos = getOption("repos"),
     \code{c("Depends", "Imports", "LinkingTo", "Suggests", "Enhances")}.
 
     Only supported if \code{lib} is of length one (or missing),
-    so it is unambiguous where to install the dependent packages.
+    so it is unambiguous where to install the dependent packages.  If
+    this is not the case it is ignored, with a warning.
 
     The default, \code{NA}, means
-    \code{c("Depends", "Imports", "LinkingTo")}
-    if \code{lib} is unambiguous, and \code{FALSE} otherwise.
+    \code{c("Depends", "Imports", "LinkingTo")}.
+
+    \code{TRUE} means (as from \R 2.15.0) to use
+    \code{c("Depends", "Imports", "LinkingTo", "Suggests")} for
+    \code{pkgs} and
+    \code{c("Depends", "Imports", "LinkingTo")} for added dependencies:
+    this installs all the packages needed to run \code{pkgs}, their
+    examples, tests and vignettes (if the package author specified them
+    correctly).
   }
   \item{type}{character, indicating the type of package to download and
     install.
@@ -100,6 +108,11 @@ install.packages(pkgs, lib, repos = getOption("repos"),
 
     The default is the appropriate binary type on Windows and on
     the CRAN binary Mac OS X distribution, otherwise \code{"source"}.
+    For the platforms where binary packages are the default, an
+    alternative is \code{"both"} which means \sQuote{try binary if
+      available, otherwise try source}.  (This will only choose the
+    binary package if its version number is no older than the source
+    version.)
   }
   \item{configure.args}{
     (not used on Windows) a character vector or a named list.  If a
@@ -148,20 +161,21 @@ install.packages(pkgs, lib, repos = getOption("repos"),
     \code{c("--html", "--no-multiarch")}.
   }
   \item{\dots}{
-    Arguments to be passed to \code{\link{download.file}}, or to the
-    functions for binary installs on Mac OS X and Windows (which accept
-    an argument \code{"lock"}: the the section on \sQuote{Locking}).
+    Arguments to be passed to \code{\link{download.file}} (e.g.
+    \code{quiet = TRUE}), or to the functions for binary installs on Mac
+    OS X and Windows (which accept an argument \code{"lock"}: see the
+    section on \sQuote{Locking}).
   }
 }
 \details{
-  \R packages are primarily distributed as \emph{source} packages, but
+    \R packages are primarily distributed as \emph{source} packages, but
   \emph{binary} packages (a packaging up of the installed package) are
-  also available, and the type most commonly used on Windows and from
-  the CRAN distribution for Mac OS X.  This function can install
-  either type where supported, either by downloading a file from a
-  repository or from a local file.  The default type is given by
-  \code{\link{getOption}("pkgType")}: this is \code{"source"} apart from
-  under Windows or a CRAN binary distribution for Mac OS X.
+  also supported, and the type most commonly used on Windows and from
+  the CRAN distribution for Mac OS X.  This function can install either
+  type where supported, either by downloading a file from a repository
+  or from a local file.  The default type is given by
+  \code{\link{getOption}("pkgType")}: this defaults to \code{"source"}
+  apart from under Windows or a CRAN binary distribution for Mac OS X.
   
   This is the main function to install packages. It takes
   a vector of names and a destination library, downloads the packages
@@ -237,6 +251,24 @@ install.packages(pkgs, lib, repos = getOption("repos"),
   that the lock directory is not removed: this inhibits any further
   installs to the library directory (or for \code{--pkglock}, of the
   package) until the lock directory is removed manually.
+}
+
+\section{Parallel installs}{
+  Parallel installs are attempted if \code{pkgs} has length greater than
+  one and \code{Ncpus > 1}.  It makes use of a parallel \command{make},
+  so the \code{make} specified (default \command{make}) when \R was
+  built must be capable of supporting \code{make -j \var{n}}: GNU make
+  and \command{dmake} do, but FreeBSD and Solaris \command{make} do not:
+  if necessary environment variable \env{MAKE} can be set for the
+  current session to select a suitable \command{make}.
+
+  \code{install.packages} needs to be able to compute all the
+  dependencies of \code{pkgs} from \code{available}, including if one
+  element of \code{pkgs} depends indirectly on another.  This means that
+  if for example you are installing \acronym{CRAN} packages which depend
+  on Bioconductor packages which in turn depend on \acronym{CRAN}
+  packages, \code{available} needs to cover both \acronym{CRAN} and
+  Bioconductor packages.
 }
 
 #ifdef unix

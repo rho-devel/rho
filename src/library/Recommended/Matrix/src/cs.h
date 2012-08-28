@@ -3,7 +3,11 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <math.h>
+// needed for FILE:
 #include <stdio.h>
+// For use with R package 'Matrix'
+# include <R_ext/Print.h>
+# define printf Rprintf
 #ifdef MATLAB_MEX_FILE
 #include "mex.h"
 #endif

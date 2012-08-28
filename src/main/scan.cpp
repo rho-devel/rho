@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2011   The R Development Core Team.
+ *  Copyright (C) 1998-2011   The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -72,6 +72,7 @@ static R_INLINE int imin2(int x, int y)
 /* The size of vector initially allocated by scan */
 #define SCAN_BLOCKSIZE		1000
 /* The size of the console buffer */
+/* NB:  in Windows this also needs to be set in gnuwin32/getline/getline.c */
 #define CONSOLE_PROMPT_SIZE	256
 
 #define NO_COMCHAR 100000 /* won't occur even in Unicode */

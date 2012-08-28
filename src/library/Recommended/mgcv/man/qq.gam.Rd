@@ -53,6 +53,9 @@ Binomial models other than binary are ok.
 
 \references{
 
+N.H. Augustin, E-A Sauleaub, S.N. Wood (2012) On quantile quantile plots for generalized linear models
+Computational Statistics & Data Analysis. 56(8), 2404-2409.
+
 M.G. Ben and V.J. Yohai (2004) JCGS 13(1), 36-47.
 
 \url{http://www.maths.bath.ac.uk/~sw283/}
@@ -61,7 +64,7 @@ M.G. Ben and V.J. Yohai (2004) JCGS 13(1), 36-47.
 \author{ Simon N. Wood \email{simon.wood@r-project.org}}
 
 
-\seealso{ \code{\link{choose.k}},  \code{\link{gam}}, \code{\link{mgcv}}, \code{\link{magic}}}
+\seealso{ \code{\link{choose.k}},  \code{\link{gam}}}
 
 \examples{
 

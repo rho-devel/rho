@@ -47,8 +47,13 @@ bdiag(Diagonal(2), matrix(1:3, 3,4), diag(3:2))
 
 mlist <- list(1, 2:3, diag(x=5:3), 27, cbind(1,3:6), 100:101)
 bdiag(mlist)
-
 stopifnot(identical(bdiag(mlist), % <- used to fail in earlier versions
                     bdiag(lapply(mlist, as.matrix))))
+
+ml <- c(as(matrix((1:24)\%\% 11 == 0, 6,4),"nMatrix"),
+        rep(list(Diagonal(2, x=TRUE)), 3))
+mln <- c(ml, Diagonal(x = 1:3))
+stopifnot(is(bdiag(ml), "lsparseMatrix"),% failed in Matrix <= 1.0-2
+          is(bdiag(mln),"dsparseMatrix") )
 }
 \keyword{array}
