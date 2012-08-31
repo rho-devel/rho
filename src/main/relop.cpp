@@ -56,13 +56,51 @@ using namespace VectorOps;
 static SEXP string_relop(RELOP_TYPE code, SEXP s1, SEXP s2);
 
 namespace {
+    // This class template, and more particularly its specialisations,
+    // are used to ensure that comparisons involving NaN yield NA.
+    //
+    // CXXR FIXME: it would be better if this code did not specialise
+    // for 'double' and 'Rcomplex' explicitly, but instead worked
+    // entirely in terms of appropriate ElementTraits.
+    template <typename T, template <typename> class Relop>
+    struct NaN2NA : std::binary_function<T, T, int>
+    {
+	int operator()(const T& l, const T& r) const
+	{
+	    return Relop<T>()(l, r);
+	}
+    };
+
+    template <template <typename> class Relop>
+    struct NaN2NA<double, Relop> : std::binary_function<double, double, int>
+    {
+	int operator()(double l, double r) const
+	{
+	    if (isnan(l) || isnan(r))
+		return ElementTraits::NAFunc<int>()();
+	    return Relop<double>()(l, r);
+	}
+    };
+
+    template <template <typename> class Relop>
+    struct NaN2NA<Rcomplex, Relop>
+	: std::binary_function<Rcomplex, Rcomplex, int>
+    {
+	int operator()(const Rcomplex& l, const Rcomplex& r) const
+	{
+	    if (isnan(l.r) || isnan(l.i) || isnan(r.r) || isnan(r.i))
+		return ElementTraits::NAFunc<int>()();
+	    return Relop<Rcomplex>()(l, r);
+	}
+    };
+
     template <template <typename> class Relop, class V>
     inline LogicalVector* relop_aux(const V* vl, const V* vr)
     {
 	typedef typename V::value_type value_type;
 	return
 	    BinaryFunction<GeneralBinaryAttributeCopier,
-		           Relop<value_type> >()
+	                   NaN2NA<value_type, Relop> >()
 	    .template apply<LogicalVector>(vl, vr);
     }
 
