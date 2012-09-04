@@ -76,6 +76,7 @@ namespace {
     {
 	int operator()(double l, double r) const
 	{
+	    using std::isnan;
 	    if (isnan(l) || isnan(r))
 		return ElementTraits::NAFunc<int>()();
 	    return Relop<double>()(l, r);
@@ -88,6 +89,7 @@ namespace {
     {
 	int operator()(const Rcomplex& l, const Rcomplex& r) const
 	{
+	    using std::isnan;
 	    if (isnan(l.r) || isnan(l.i) || isnan(r.r) || isnan(r.i))
 		return ElementTraits::NAFunc<int>()();
 	    return Relop<Rcomplex>()(l, r);
