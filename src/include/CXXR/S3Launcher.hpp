@@ -124,7 +124,7 @@ namespace CXXR {
 	 *
 	 * @param table_env Pointer, possibly null, to the Environment
 	 *          in whose Frame an S3 methods table (i.e. an
-	 *          Environment bound to<tt>.__S3MethodsTable__.</tt>)
+	 *          Environment bound to <tt>.__S3MethodsTable__.</tt>)
 	 *          is sought, if no method was found in \a call_env.
 	 *          If \a table_env is null, no S3 methods table is sought.
 	 *
@@ -187,7 +187,7 @@ namespace CXXR {
 	 *
 	 * @param table_env Pointer, possibly null, to the Environment
 	 *          in whose Frame an S3 methods table (i.e. an
-	 *          Environment bound to<tt>.__S3MethodsTable__.</tt>)
+	 *          Environment bound to <tt>.__S3MethodsTable__.</tt>)
 	 *          is sought, if no method was found in \a call_env.
 	 *          If \a table_env is null, no S3 methods table is sought.
 	 *

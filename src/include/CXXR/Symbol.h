@@ -80,10 +80,9 @@ namespace CXXR {
      * dot-dot symbols; CXXR does.)
      *
      * Special symbols are used to implement certain pseudo-objects
-     * (::R_MissingArg, ::R_RestartToken and ::R_UnboundValue) that CR
-     * expects to have ::SEXPTYPE SYMSXP.  Each special symbol has a
-     * blank string as its name, but despite this each of them is a
-     * distinct symbol.
+     * (::R_MissingArg and ::R_UnboundValue) that CR expects to have
+     * ::SEXPTYPE SYMSXP.  Each special symbol has a blank string as
+     * its name, but despite this each of them is a distinct symbol.
      *
      * @note Following the practice with CR's symbol table, Symbol
      * objects, once created, are permanently preserved against
@@ -391,7 +390,6 @@ extern "C" {
 
     /* Pseudo-objects */
     extern SEXP R_MissingArg;
-    extern SEXP R_RestartToken;
     extern SEXP R_UnboundValue;
 
     /* Symbol Table Shortcuts */
