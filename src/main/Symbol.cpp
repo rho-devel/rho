@@ -47,7 +47,7 @@
 #include "CXXR/Environment.h"
 #include "CXXR/Evaluator.h"
 #include "CXXR/GCStackRoot.hpp"
-#include "CXXR/CachedString.h"
+#include "CXXR/String.h"
 
 using namespace std;
 using namespace CXXR;
@@ -78,7 +78,7 @@ namespace {
 
 // ***** Class Symbol itself *****
 
-Symbol::Symbol(const CachedString* the_name)
+Symbol::Symbol(const String* the_name)
     : RObject(SYMSXP), m_name(the_name), m_dd_index(0)
 {
     if (m_name) {
@@ -160,7 +160,7 @@ void Symbol::initialize()
     dd_regex = &dd_rx;
 }
 
-Symbol* Symbol::make(const CachedString* name)
+Symbol* Symbol::make(const String* name)
 {
     Symbol* ans = CXXR_NEW(Symbol(name));
     s_table->push_back(GCRoot<Symbol>(ans));
@@ -170,7 +170,7 @@ Symbol* Symbol::make(const CachedString* name)
 
 Symbol* Symbol::obtain(const std::string& name)
 {
-    GCStackRoot<const CachedString> str(CachedString::obtain(name));
+    GCStackRoot<const String> str(String::obtain(name));
     return Symbol::obtain(str);
 }
 
@@ -180,7 +180,7 @@ Symbol* Symbol::obtainDotDotSymbol(unsigned int n)
 	Rf_error(_("..0 is not a permitted symbol name"));
     ostringstream nameos;
     nameos << ".." << n;
-    GCStackRoot<const CachedString> name(CachedString::obtain(nameos.str()));
+    GCStackRoot<const String> name(String::obtain(nameos.str()));
     return obtain(name);
 }
 

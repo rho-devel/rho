@@ -1,6 +1,6 @@
 % File src/library/graphics/man/rug.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2008 R Core Team
 % Distributed under GPL 2 or later
 
 \name{rug}
@@ -32,8 +32,6 @@ rug(x, ticksize = 0.03, side = 1, lwd = 0.5, col = par("fg"),
   that fall within the plot region are included.  There will be a
   warning if any finite values are omitted, but non-finite values are
   omitted silently.
-  
-  Prior to \R 2.8.0 \code{rug} re-drew the axis like: it no longer does so.
 }
 \references{
   Chambers, J. M. and Hastie, T. J. (1992)

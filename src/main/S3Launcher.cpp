@@ -43,8 +43,8 @@ void S3Launcher::addMethodBindings(Frame* frame) const
 
     // .Method:
     {
-	CachedString* method_name
-	    = const_cast<CachedString*>(m_symbol->name());
+	String* method_name
+	    = const_cast<String*>(m_symbol->name());
 	frame->bind(DotMethodSymbol, CXXR_NEW(StringVector(1, method_name)));
     }
 

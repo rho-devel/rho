@@ -157,8 +157,8 @@ namespace CXXR {
      *
      * <li>Since Symbol objects may well need to be evaluated,
      * Symbol::obtain() returns a non-const pointer; similarly,
-     * CachedString::obtain() returns a non-const pointer to a
-     * CachedString object.</li>
+     * String::obtain() returns a non-const pointer to a
+     * String object.</li>
      * </ol>
      *
      * @todo Incorporate further attribute consistency checks within

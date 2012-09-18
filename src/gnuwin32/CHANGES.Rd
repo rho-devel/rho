@@ -4,7 +4,128 @@
 \title{Windows-specific changes to R}
 \encoding{UTF-8}
 
-\section{CHANGES IN R VERSION 2.14.0 patched}{
+\section{CHANGES IN R VERSIONS > 2.15.0}{
+  \itemize{
+    \item Windows-specific changes will now be announced in the
+    common NEWS file.
+  }
+}
+
+\section{CHANGES IN R VERSION 2.15.0}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item The 32-bit and 64-bit builds are now treated equally, as it
+      is anticipated that 64-bit R will soon be (if not already) the
+      more commonly used.  This entails:
+      
+      The \command{Rterm} or \command{Rgui} title mentions 32-bit as
+      well as 64-bit.
+      
+      The desktop icons are labelled \code{R i386} and \code{R x64}.
+
+      \command{R CMD INSTALL} for a package with compiled code will fail
+      if compilation fails for any of the installed sub-architectures:
+      use \option{--no-multiarch} to override this.
+
+      \item \code{postscript(file = "|cmd")} now works on Windows.
+      
+      \item \code{file.symlink()} is now implemented on NTFS file
+      systems on Vista or later, for accounts which have suitable
+      permissions (and most will not).  It can link existing
+      directories, and existing-or-not files.
+
+      \item There is a new function \code{Sys.junction()} to create
+      junction points on NTFS file systems.
+
+      \item C-level error formats now use the trio library, and so for
+      example output \samp{1.53e-11} (as required by C99) rather than
+      \samp{1.53e-011}.
+    }
+  }
+  
+  \subsection{INSTALLER}{
+    \itemize{
+      \item The installer has many fewer options with more files always
+      being installed, as a few Mb of file space is nowadays no longer
+      an issue.
+
+      \item It is now possible to select \sQuote{64-bit Files}
+      from the standard installer even on a 32-bit version of Windows.
+    }
+  }
+  
+  \subsection{PACKAGE INSTALLATION}{
+    \itemize{
+      \item As the current toolchain uses only 32-bit executables, it is
+      possible to compile a package for both architectures on 32-bit
+      Windows provided both architectures of \R have been installed: use
+      \command{Rcmd INSTALL --compile-both}.
+
+      \item \code{Rcmd INSTALL --merge-multiarch} will work (but do a
+      normal install) if only one architecture is installed.
+    }
+  }
+
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item Due to a race condition, some graphics changes were not
+      flushed to the display if another graphics window was closed at
+      nearly the same time.  (Reported by Michael Sumner.)      
+    }
+  }
+}
+
+\section{CHANGES IN R VERSION 2.14.2}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item \code{bitmap()} and \code{dev2bitmap()} look for
+      \command{gswin64c.exe} (as used by 64-bit GhostScript), in
+      preference to \command{gswin32c.exe}.
+    }
+  }
+  
+  \subsection{INSTALLATION}{
+    \itemize{
+      \item The sources (and packages) can now be compiled using the
+      multilib toolchain developed for \R 2.15.x: see the
+      \samp{MULTI} macro in \file{MkRules.dist}.  This toolchain is used
+      for the CRAN binary distribution.
+    }
+  }
+      
+  \subsection{PACKAGE INSTALLATION}{
+    \itemize{
+      \item The preferred toolchain has changed since the one used for
+      \R 2.12.0 to 2.14.1: see the\sQuote{R Installation and
+      Administration manual}.  Compiled code (except DLLs) may be
+      incompatible with previous toolchains (and compiled C++ code
+      almost certainly will be: users of \pkg{Rcpp} take care).
+
+      Ensure that the settings in \file{MkRules.local} are appropriate
+      to the toolchain you use.
+
+      \item There is a new macro (aka make variable)
+      \samp{SHLIB_PTHREAD_FLAGS}.  This is set to \option{-pthread} on
+      builds using toolchains which support it, and should be included
+      in both \samp{PKG_CPPFLAGS} (or the Fortran or F9x equivalents)
+      and \samp{PKG_LIBS}.
+    }
+  }
+
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item Using a prompt of more than 80 characters in
+      \code{readline()} could cause a buffer overflow in Rterm.
+      (Reported by Henrik Bengtsson.)
+
+      \item Some of the custom messages in the installer were corrupted:
+      add a BOM mark to the file as now required by Unicode Inno Setup.
+      (\PR{14816})
+    }
+  }
+}
+
+\section{CHANGES IN R VERSION 2.14.1}{
   \subsection{NEW FEATURES}{
     \itemize{
       \item The \code{Save as} menu item on the script
@@ -26,7 +147,7 @@
   
   \subsection{BUG FIXES}{
     \itemize{
-      \item The fix for \PR{14543} caused stack problems with outputing
+      \item The fix for \PR{14543} caused stack problems with outputting
       large \R objects (e.g. data frames of 25,000 items).  (\PR{14698})
 
       \item In a double-byte locale (Chinese, Japanese, Korean),

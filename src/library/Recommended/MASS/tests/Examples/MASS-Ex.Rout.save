@@ -1,8 +1,8 @@
 
-R version 2.14.0 alpha (2011-10-06 r57179)
-Copyright (C) 2011 The R Foundation for Statistical Computing
+R Under development (unstable) (2012-05-26 r59449) -- "Unsuffered Consequences"
+Copyright (C) 2012 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
-Platform: x86_64-apple-darwin9.8.0/x86_64 (32-bit)
+Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -1551,7 +1551,7 @@ Coefficients:
 (Intercept)        1.122e+00  2.008e-01   5.590 2.28e-08 ***
 predplacebo-base   1.087e-01  4.691e-02   2.318 0.020474 *  
 preddrug-placebo  -1.016e-01  6.507e-02  -1.561 0.118431    
-factor(subject)2  -4.271e-15  2.828e-01   0.000 1.000000    
+factor(subject)2  -2.300e-15  2.828e-01   0.000 1.000000    
 factor(subject)3  -3.857e-01  3.144e-01  -1.227 0.219894    
 factor(subject)4  -1.744e-01  2.960e-01  -0.589 0.555847    
 factor(subject)5   1.577e+00  2.197e-01   7.178 7.08e-13 ***
@@ -1765,7 +1765,7 @@ detaching ‘package:nlme’
  ( 0.0722) ( 0.0543)
 > ## allow df to vary: not a very good idea!
 > fitdistr(x2, "t")
-Warning in dt(x, df, log) : NaNs produced
+Warning in dt((x - m)/s, df, log = TRUE) : NaNs produced
       m          s          df   
   -0.00965    1.00617    6.62729 
  ( 0.07147) ( 0.07707) ( 2.71033)
@@ -3354,7 +3354,7 @@ n= 40
 
 > # and predict at 130C
 > unlist(predict(motor.wei, data.frame(temp=130), se.fit = TRUE))
-     fit   se.fit 
+   fit.1 se.fit.1 
 33813.06  7506.36 
 > 
 > motor.cox <- coxph(Surv(time, cens) ~ temp, motors)
@@ -5210,7 +5210,7 @@ Nonlinear regression model
  residual sum-of-squares: 39.24
 
 Number of iterations to convergence: 3 
-Achieved convergence tolerance: 4.39e-06 
+Achieved convergence tolerance: 4.324e-06 
 > plot(wtloss)
 > with(wtloss, lines(Days, fitted(wtloss.fm)))
 > 
@@ -5219,7 +5219,7 @@ Achieved convergence tolerance: 4.39e-06
 > ### * <FOOTER>
 > ###
 > cat("Time elapsed: ", proc.time() - get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  22.282 1.2 26.796 0 0 
+Time elapsed:  14.809 0.117 20.658 0 0 
 > grDevices::dev.off()
 null device 
           1 

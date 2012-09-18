@@ -49,6 +49,9 @@ Which you use should depend on which model you really think is appropriate. In a
 different. The mixed model AIC uses the marginal liklihood and the corresponding number of model parameters. The gam model 
 uses the penalized likelihood and the effective degrees of freedom. 
 
+\item \bold{What does 'mgcv' stand for?} '\bold{M}ixed \bold{G}AM \bold{C}omputation \bold{V}ehicle', is my current best effort (let me know if you can do better). Originally it stood for `Multiple GCV', which has long since ceased to be usefully descriptive, (and I can't really change 'mgcv' now without causing disruption).
+
+
 \item \bold{My new method is failing to beat mgcv, what can I do?} If speed is the problem, then make sure that you use the 
 slowest basis possible (\code{"tp"}) with a large sample size, and experiment with different optimizers to find one that is 
 slow for your problem. For prediction error/MSE, then leaving the smoothing basis dimensions at their 

@@ -38,7 +38,7 @@ GCStackRoot<StringVector> Parentage::asStringVector() {
     GCStackRoot<StringVector> rc(GCNode::expose(new StringVector(size())));
     for (unsigned int i=0;i<size();i++) {
 	Provenance *p=at(i);
-	(*rc)[i]=const_cast<CachedString*>(p->getSymbol()->name());
+	(*rc)[i]=const_cast<String*>(p->getSymbol()->name());
     }
     return rc;
 }

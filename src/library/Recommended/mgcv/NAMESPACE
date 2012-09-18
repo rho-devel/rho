@@ -12,7 +12,7 @@ export(anova.gam, bam, bam.update, concurvity, cSplineDes,
        gam.side,
        get.var,ldTweedie,
        initial.sp,logLik.gam,ls.size,
-       magic, magic.post.proc, mgcv, mgcv.control, model.matrix.gam, 
+       magic, magic.post.proc, model.matrix.gam, 
         mono.con, mroot, negbin, new.name, 
        notExp,notExp2,notLog,notLog2,pcls,null.space.dimension, 
        pen.edf,pdIdnot,pdTens,
@@ -53,15 +53,22 @@ export(anova.gam, bam, bam.update, concurvity, cSplineDes,
        Tweedie,uniquecombs, vcov.gam, vis.gam)
 
 importFrom(grDevices,cm.colors,gray,heat.colors,terrain.colors,topo.colors)
-importFrom(graphics,axis,box,contour,hist,lines,mtext, par, persp,plot,points,polygon,strheight,strwidth,text)
-importFrom(stats,.checkMFClasses,.getXlevels, as.formula, anova,anova.glmlist,coef,cooks.distance,cor,
-           delete.response,family,fitted,formula,
-           gaussian,glm,influence,lm,logLik,median,model.frame,model.matrix,model.offset,na.pass,napredict,naresid,nlm,optim,
-           pchisq,pf,pnorm,pt,
-            predict,printCoefmat ,quantile,qqnorm, reformulate,residuals,rnorm,runif,termplot,terms,terms.formula, uniroot, 
-           var,vcov)
+importFrom(graphics,axis,box,contour,hist,lines,mtext, par, persp,plot,points,
+           polygon,strheight,strwidth,text)
+#importFrom(stats,.checkMFClasses,.getXlevels, as.formula, anova,anova.glmlist,
+#           coef,cooks.distance,cor,delete.response,family,fitted,formula,
+#           gaussian,glm,influence,lm,logLik,median,model.frame,model.matrix,
+#           model.offset,na.pass,napredict,naresid,nlm,optim,pchisq,pf,pnorm,pt,
+#           predict,printCoefmat ,quantile,qqnorm, reformulate,residuals,rnorm,
+#           runif,termplot,terms,terms.formula, uniroot, 
+#           var,vcov)
+
+importFrom(stats,anova,influence,cooks.distance,logLik,vcov,residuals,predict,
+           model.matrix)
 importFrom(nlme,Dim,corMatrix,logDet,pdConstruct,pdFactor,pdMatrix)
-importFrom(Matrix,t,mean,colMeans,colSums,chol,solve,diag)
+#importFrom(Matrix,t,mean,colMeans,colSums,chol,solve,diag)
+import(Matrix)
+importFrom(methods,cbind2)
 
 S3method(anova, gam)
 S3method(influence, gam)

@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2011	    The R Development Core Team.
+ *  Copyright (C) 1998--2012	    The R Core Team.
  *  Copyright (C) 2003-4	    The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -288,13 +288,17 @@ double R_pow_di(double x, int n)
 
     if (ISNAN(x)) return x;
     if (n == NA_INTEGER) return NA_REAL;
+
     if (n != 0) {
 	if (!R_FINITE(x)) return R_POW(x, double(n));
-	if (n < 0) { n = -n; x = 1/x; }
+
+	bool is_neg = (n < 0);
+	if(is_neg) n = -n;
 	for(;;) {
 	    if(n & 01) xn *= x;
 	    if(n >>= 1) x *= x; else break;
 	}
+        if(is_neg) xn = 1. / xn;
     }
     return xn;
 }
@@ -667,16 +671,6 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
     else
 	ans = allocVector(INTSXP, n);
     if (n1 == 0 || n2 == 0) return(ans);
-    /* note: code below was surely wrong in DIVOP and POWOP cases,
-       since ans was a REALSXP.
-     */
-
-/*    if (n1 < 1 || n2 < 1) {
-	for (i = 0; i < n; i++)
-	    INTEGER(ans)[i] = NA_INTEGER;
-	return ans;
-	} */
-    ans->maybeTraceMemory(s1, s2);
 
     switch (code) {
     case PLUSOP:
@@ -748,9 +742,9 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	break;
     case POWOP:
 	mod_iterate(n1, n2, i1, i2) {
-	    x1 = INTEGER(s1)[i1];
-	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
+	    if((x1 = INTEGER(s1)[i1]) == 1 || (x2 = INTEGER(s2)[i2]) == 0)
+		REAL(ans)[i] = 1.;
+	    else if (x1 == NA_INTEGER || x2 == NA_INTEGER)
 		REAL(ans)[i] = NA_REAL;
 	    else {
 		REAL(ans)[i] = R_POW(double( x1), double( x2));
@@ -774,12 +768,12 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	mod_iterate(n1, n2, i1, i2) {
 	    x1 = INTEGER(s1)[i1];
 	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
+	    /* This had x %/% 0 == 0 prior to 2.14.1, but
+	       it seems conventionally to be undefined */
+	    if (x1 == NA_INTEGER || x2 == NA_INTEGER || x2 == 0)
 		INTEGER(ans)[i] = NA_INTEGER;
-	    else if (x2 == 0)
-		INTEGER(ans)[i] = 0;
 	    else
-	        INTEGER(ans)[i] = int(floor(double(x1) / double(x2)));
+		INTEGER(ans)[i] = CXXRCONSTRUCT(int, floor(double(x1) / double(x2)));
 	}
 	break;
     }
@@ -825,13 +819,6 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 
     n = (n1 > n2) ? n1 : n2;
     PROTECT(ans = allocVector(REALSXP, n));
-    ans->maybeTraceMemory(s1, s2);
-
-/*    if (n1 < 1 || n2 < 1) {
-      for (i = 0; i < n; i++)
-      REAL(ans)[i] = NA_REAL;
-      return ans;
-      } */
 
     switch (code) {
     case PLUSOP:
@@ -846,7 +833,7 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
                 for (i = 0; i < n; i++)
 		    REAL(ans)[i] = tmp + REAL(s2)[i];
             }
-            else if (n1 == n2)            
+            else if (n1 == n2)
                 for (i = 0; i < n; i++)
 		    REAL(ans)[i] = REAL(s1)[i] + REAL(s2)[i];
             else
@@ -874,7 +861,7 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
                 for (i = 0; i < n; i++)
 		    REAL(ans)[i] = tmp - REAL(s2)[i];
             }
-            else if (n1 == n2)            
+            else if (n1 == n2)
                 for (i = 0; i < n; i++)
 		    REAL(ans)[i] = REAL(s1)[i] - REAL(s2)[i];
             else
@@ -902,7 +889,7 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
                 for (i = 0; i < n; i++)
 		    REAL(ans)[i] = tmp * REAL(s2)[i];
             }
-            else if (n1 == n2)            
+            else if (n1 == n2)
                 for (i = 0; i < n; i++)
 		    REAL(ans)[i] = REAL(s1)[i] * REAL(s2)[i];
             else
@@ -923,14 +910,14 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
             if (n2 == 1) {
                 double tmp = REAL(s2)[0];
                 for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] / tmp; 
+		    REAL(ans)[i] = REAL(s1)[i] / tmp;
             }
             else if (n1 == 1) {
                 double tmp = REAL(s1)[0];
                 for (i = 0; i < n; i++)
 		    REAL(ans)[i] = tmp / REAL(s2)[i];
             }
-            else if (n1 == n2)            
+            else if (n1 == n2)
                 for (i = 0; i < n; i++)
 		    REAL(ans)[i] = REAL(s1)[i] / REAL(s2)[i];
             else
@@ -951,14 +938,14 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
             if (n2 == 1) {
                 double tmp = REAL(s2)[0];
                 for (i = 0; i < n; i++)
-		    REAL(ans)[i] = R_POW(REAL(s1)[i], tmp); 
+		    REAL(ans)[i] = R_POW(REAL(s1)[i], tmp);
             }
             else if (n1 == 1) {
                 double tmp = REAL(s1)[0];
                 for (i = 0; i < n; i++)
 		    REAL(ans)[i] = R_POW(tmp, REAL(s2)[i]);
             }
-            else if (n1 == n2)            
+            else if (n1 == n2)
                 for (i = 0; i < n; i++)
 		    REAL(ans)[i] = R_POW(REAL(s1)[i], REAL(s2)[i]);
             else
@@ -1144,7 +1131,7 @@ SEXP attribute_hidden do_trunc(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /*
-   Note that this is slightly different from the do_math1 set, 
+   Note that this is slightly different from the do_math1 set,
    both for integer/logical inputs and what it dispatches to for complex ones.
 */
 
@@ -1220,8 +1207,6 @@ static SEXP math2(SEXP sa, SEXP sb, double (*f)(double, double),
 
     SETUP_Math2;
 
-    sy->maybeTraceMemory(sa, sb);
-
     mod_iterate(na, nb, ia, ib) {
 	ai = a[ia];
 	bi = b[ib];
@@ -1233,8 +1218,7 @@ static SEXP math2(SEXP sa, SEXP sb, double (*f)(double, double),
     }
 
 #define FINISH_Math2				\
-    if(naflag)					\
-	warningcall(lcall, R_MSG_NA);		\
+    if(naflag) warning(R_MSG_NA);		\
     if (n == na)  DUPLICATE_ATTRIB(sy, sa);	\
     else if (n == nb) DUPLICATE_ATTRIB(sy, sb);	\
     UNPROTECT(3)
@@ -1258,8 +1242,6 @@ static SEXP math2_1(SEXP sa, SEXP sb, SEXP sI,
 
     SETUP_Math2;
     m_opt = asInteger(sI);
-
-    sy->maybeTraceMemory(sa, sb);
 
     mod_iterate(na, nb, ia, ib) {
 	ai = a[ia];
@@ -1288,8 +1270,6 @@ static SEXP math2_2(SEXP sa, SEXP sb, SEXP sI1, SEXP sI2,
     SETUP_Math2;
     i_1 = asInteger(sI1);
     i_2 = asInteger(sI2);
-
-    sy->maybeTraceMemory(sa, sb);
 
     mod_iterate(na, nb, ia, ib) {
 	ai = a[ia];
@@ -1321,8 +1301,6 @@ static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
        as no recycling will occur */
     SETUP_Math2;
 
-    sy->maybeTraceMemory(sa, sb);
-    
     /* allocate work array for BesselJ, BesselY large enough for all
        arguments */
     amax = 0.0;
@@ -1574,8 +1552,7 @@ SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
     naflag = 0
 
 #define FINISH_Math3				\
-    if(naflag)					\
-	warningcall(lcall, R_MSG_NA);		\
+    if(naflag) warning(R_MSG_NA);		\
 						\
     if (n == na) DUPLICATE_ATTRIB(sy, sa);	\
     else if (n == nb) DUPLICATE_ATTRIB(sy, sb);	\
@@ -1593,8 +1570,6 @@ static SEXP math3_1(SEXP sa, SEXP sb, SEXP sc, SEXP sI,
 
     SETUP_Math3;
     i_1 = asInteger(sI);
-
-    sy->maybeTraceMemory(sa, sb, sc);
 
     mod_iterate3 (na, nb, nc, ia, ib, ic) {
 	ai = a[ia];
@@ -1624,8 +1599,6 @@ static SEXP math3_2(SEXP sa, SEXP sb, SEXP sc, SEXP sI, SEXP sJ,
     i_1 = asInteger(sI);
     i_2 = asInteger(sJ);
 
-    sy->maybeTraceMemory(sa, sb, sc);
-
     mod_iterate3 (na, nb, nc, ia, ib, ic) {
 	ai = a[ia];
 	bi = b[ib];
@@ -1652,8 +1625,6 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
     long nw;
 
     SETUP_Math3;
-
-    sy->maybeTraceMemory(sa, sb, sc);
 
     /* allocate work array for BesselI, BesselK large enough for all
        arguments */
@@ -1823,8 +1794,7 @@ static SEXP math4(SEXP sa, SEXP sb, SEXP sc, SEXP sd,
     }
 
 #define FINISH_Math4				\
-    if(naflag)					\
-	warningcall(lcall, R_MSG_NA);		\
+    if(naflag) warning(R_MSG_NA);		\
 						\
     if (n == na) DUPLICATE_ATTRIB(sy, sa);	\
     else if (n == nb) DUPLICATE_ATTRIB(sy, sb);	\
@@ -2011,8 +1981,7 @@ static SEXP math5(SEXP sa, SEXP sb, SEXP sc, SEXP sd, SEXP se, double (*f)())
     }
 
 #define FINISH_Math5				\
-    if(naflag)					\
-	warningcall(lcall, R_MSG_NA);		\
+    if(naflag) warning(R_MSG_NA);		\
 						\
     if (n == na) DUPLICATE_ATTRIB(sy, sa);	\
     else if (n == nb) DUPLICATE_ATTRIB(sy, sb);	\

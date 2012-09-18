@@ -150,7 +150,7 @@ Subscripting::canonicalize(const StringVector* raw_indices, std::size_t range_si
 			   const StringVector* range_names)
 {
     const std::size_t rawsize = raw_indices->size();
-    typedef std::tr1::unordered_map<GCRoot<CachedString>, unsigned int> Nmap;
+    typedef std::tr1::unordered_map<GCRoot<String>, unsigned int> Nmap;
     Nmap names_map;
     unsigned int max_index = (range_names ? 0 : range_size);
     GCStackRoot<IntVector> ans(CXXR_NEW(IntVector(rawsize)));
@@ -161,13 +161,12 @@ Subscripting::canonicalize(const StringVector* raw_indices, std::size_t range_si
 	if (subscript == String::NA())
 	    (*ans)[iraw] = NA<int>();
 	else {
-	    GCRoot<CachedString>
-		csubscript(SEXP_downcast<CachedString*>(subscript));
+	    GCRoot<String> csubscript(SEXP_downcast<String*>(subscript));
 	    // Coerce to UTF8 if necessary:
 	    if (csubscript->encoding() != CE_UTF8) {
 		RAllocStack::Scope scope;
 		const char* utf8s = Rf_translateCharUTF8(csubscript);
-		csubscript = CachedString::obtain(utf8s, CE_UTF8);
+		csubscript = String::obtain(utf8s, CE_UTF8);
 	    }
 	    // Have we met this name already?
 	    Nmap::const_iterator it = names_map.find(csubscript);
@@ -182,14 +181,13 @@ Subscripting::canonicalize(const StringVector* raw_indices, std::size_t range_si
 		while (max_index < range_size && !found) {
 		    String* name = (*range_names)[max_index++];
 		    if (name != String::NA()) {
-			GCRoot<CachedString>
-			    cname(SEXP_downcast<CachedString*>(name));
-			if (cname != CachedString::blank()) {
+			GCRoot<String> cname(SEXP_downcast<String*>(name));
+			if (cname != String::blank()) {
 			    // Coerce to UTF8 if necessary:
 			    if (cname->encoding() != CE_UTF8) {
 				RAllocStack::Scope scope;
 				const char* utf8s = Rf_translateCharUTF8(cname);
-				cname = CachedString::obtain(utf8s, CE_UTF8);
+				cname = String::obtain(utf8s, CE_UTF8);
 			    }
 			    // Insert this name into names_map
 			    // provided it isn't already there:
@@ -255,11 +253,15 @@ std::size_t Subscripting::createDimIndexers(DimIndexerVector* dimindexers,
 				       const ListVector* indices)
 {
     std::size_t ndims = source_dims->size();
+    double dresultsize = 1.0;
     std::size_t resultsize = 1;
     for (unsigned int d = 0; d < ndims; ++d) {
 	DimIndexer& di = (*dimindexers)[d];
 	const IntVector* iv = static_cast<IntVector*>((*indices)[d].get());
 	di.nindices = iv->size();
+	dresultsize *= di.nindices;
+	if (dresultsize > std::numeric_limits<size_t>::max())
+	    Rf_error(_("dimensions would exceed maximum size of array"));
 	resultsize *= di.nindices;
 	di.indices = iv;
 	di.indexnum = 0;
@@ -284,7 +286,8 @@ bool Subscripting::dropDimensions(VectorBase* v)
 	    ++ngooddims;
     if (ngooddims == ndims)
 	return false;
-    ListVector* dimnames = const_cast<ListVector*>(v->dimensionNames());
+    GCStackRoot<ListVector> dimnames(const_cast<ListVector*>(v->dimensionNames()));
+    v->setDimensionNames(0);
     if (ngooddims > 1) {
 	// The result will still be an array/matrix.
 	bool havenames = false;
@@ -324,7 +327,6 @@ bool Subscripting::dropDimensions(VectorBase* v)
     } else if (ngooddims == 1) {
 	// Reduce to a vector.
 	v->setDimensions(0);
-	v->setDimensionNames(0);
 	if (dimnames) {
 	    unsigned int d = 0;
 	    while ((*dims)[d] == 1)

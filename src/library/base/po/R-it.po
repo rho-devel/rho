@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.3.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-10-23 14:54\n"
+"POT-Creation-Date: 2012-06-07 15:52\n"
 "PO-Revision-Date: 2005-02-16 08:34\n"
 "Last-Translator: Stefano M. Iacus <Stefano.Iacus@R-project.org>\n"
 "Language-Team: Italian\n"
@@ -28,12 +28,6 @@ msgstr "Si veda help(\"Defunct\") e help(\"%s-defunct\")."
 
 msgid "See help(\"Defunct\")"
 msgstr "Si veda help(\"Defunct\")"
-
-msgid "'symbol.C' is not needed: please remove it"
-msgstr ""
-
-msgid "'symbol.For' is not needed: please remove it"
-msgstr ""
 
 msgid "'%s' is deprecated."
 msgstr "'%s' è deprecata"
@@ -169,6 +163,10 @@ msgstr "l'autocaricatore non trova '%s' in '%s'"
 msgid "invalid argument values in 'backsolve'"
 msgstr "parametri non valid in 'backsolve'"
 
+#, fuzzy
+msgid "invalid value of ncol(x)"
+msgstr "valore 'n' non valido"
+
 msgid "singular matrix in 'backsolve'. First zero in diagonal [%d]"
 msgstr "matrice singolare in backsolve. Primo zero sulla diagonale [%d]"
 
@@ -183,6 +181,10 @@ msgstr "matrice non quadrata in 'chol'"
 
 msgid "non-matrix argument to 'chol'"
 msgstr "argomento di 'chol' deve essere una matrice"
+
+#, fuzzy
+msgid "invalid nrow(x)"
+msgstr "nome non valido"
 
 msgid "matrix not positive definite"
 msgstr "matrice non definita positiva"
@@ -254,6 +256,10 @@ msgstr "i 'breaks' non sono distinti"
 
 msgid "labels/breaks length conflict"
 msgstr "lunghezze di labels e breaks differenti"
+
+#, fuzzy
+msgid "invalid value of length(x)"
+msgstr "valore 'n' non valido"
 
 msgid "invalid 'row.names' length"
 msgstr "lunghezza di 'row.names' non ammissibile"
@@ -739,6 +745,14 @@ msgstr "'vec' contiene NA"
 msgid "'vec' must be sorted non-decreasingly"
 msgstr "'vec' deve essere ordinato in ordine non decrescente"
 
+#, fuzzy
+msgid "invalid length(x)"
+msgstr "nome non valido"
+
+#, fuzzy
+msgid "invalid length(vec)"
+msgstr "nome non valido"
+
 msgid "using the first element of 'value' of type expression"
 msgstr ""
 
@@ -917,7 +931,7 @@ msgstr "il pacchetto '%s' non ha un namespace"
 msgid "package %s already present in search()"
 msgstr "il pacchetto '%s' è già presente in search()"
 
-msgid "'DESCRIPTION' has 'Encoding' field and re-encoding is not possible"
+msgid "'DESCRIPTION' has an 'Encoding' field and re-encoding is not possible"
 msgstr ""
 
 #, fuzzy
@@ -1049,6 +1063,9 @@ msgstr "'file' deve essere specificato"
 msgid "Use of save versions prior to 2 is deprecated"
 msgstr ""
 
+msgid "nothing specified to be save()d"
+msgstr ""
+
 msgid "'file' must be non-empty string"
 msgstr "'file' deve essere una stringa non vuota"
 
@@ -1133,6 +1150,10 @@ msgstr "'origin' deve avere lunghezza 1"
 
 msgid "trimmed means are not defined for complex data"
 msgstr "le medie troncate non sono definite per dati complex"
+
+#, fuzzy
+msgid "'by' must specify uniquely valid column(s)"
+msgstr "'by' deve specificare colonne(a) valide"
 
 msgid "'by' must match numbers of columns"
 msgstr "'by' deve essere compatibile col numero di colonne"
@@ -1225,6 +1246,9 @@ msgstr ""
 msgid "in package %s classes %s were specified for export but not defined"
 msgstr "in '%s', classi da esportare non definite: %s"
 
+msgid "No function found corresponding to methods exports from %s for: %s"
+msgstr ""
+
 #, fuzzy
 msgid "in %s methods for export not found: %s"
 msgstr "in '%s', metodi da esportare non trovati: %s"
@@ -1281,10 +1305,18 @@ msgstr "destinazione per importazione non valida"
 msgid "found methods to import for function %s but not the generic itself"
 msgstr ""
 
+msgid "No methods found in \"%s\" for requests: %s"
+msgstr ""
+
 #, fuzzy
 msgid "requested methods not found in environment/package %s: %s"
 msgstr ""
 "oggetti  'methods' richiesti non trovati nel environment/pacchetto '%s': %s"
+
+msgid ""
+"No generic function found corresponding to requested imported methods for "
+"\"%s\" from package \"%s\" (malformed exports?)"
+msgstr ""
 
 #, fuzzy
 msgid "cannot add to exports of a sealed namespace"
@@ -1370,8 +1402,22 @@ msgstr "'u5.bias' deve essere numeric non negativo"
 msgid "'eps.correct' must be 0, 1, or 2"
 msgstr "'eps.correct' deve essere 0, 1, o 2"
 
+#, fuzzy
+msgid "invalid ncol(x)"
+msgstr "nome non valido"
+
 msgid "first argument must be a QR decomposition"
 msgstr "il primo argomento deve essere una decomposizione QR"
+
+msgid "invalid nrow(qr$qr)"
+msgstr ""
+
+msgid "invalid ncol(qr$qr)"
+msgstr ""
+
+#, fuzzy
+msgid "invalid ncol(y)"
+msgstr "nome non valido"
 
 msgid "'qr' and 'y' must have the same number of rows"
 msgstr "'qr' e 'y' devono avere lo stesso numero di righe"
@@ -1381,6 +1427,9 @@ msgstr "singolarità perfetta in 'qr.coef'"
 
 msgid "argument is not a QR decomposition"
 msgstr "l'argomento non è una decomposizione QR"
+
+msgid "invalid NCOL(y)"
+msgstr ""
 
 msgid "not implemented for complex 'qr'"
 msgstr "implementato per 'qr' complex"
@@ -1395,6 +1444,9 @@ msgid "need larger value of 'ncol' as pivoting occurred"
 msgstr ""
 "c'è bisogno di un valore più grande di 'ncol' poiché si utilizzato il "
 "pivoting"
+
+msgid "invalid NCOL(R)"
+msgstr ""
 
 #, fuzzy
 msgid "'x' must be an atomic vector"
@@ -1432,6 +1484,10 @@ msgstr "'lenght.out' deve avere lunghezza 1"
 
 msgid "first element used of 'length.out' argument"
 msgstr ""
+
+#, fuzzy
+msgid "extra argument(s) %s will be disregarded"
+msgstr "l'argomento drop verrà ignorato"
 
 msgid "invalid (to - from)/by in seq(.)"
 msgstr "specificazione di (to - from)/by non valida in seq(.)"
@@ -1616,6 +1672,14 @@ msgstr "'x' non è un array"
 msgid "'bin' must be numeric or a factor"
 msgstr "'bin' deve essere numeric o factor"
 
+#, fuzzy
+msgid "invalid value of length(bin)"
+msgstr "valore 'n' non valido"
+
+#, fuzzy
+msgid "invalid value of nbins"
+msgstr "valore 'n' non valido"
+
 msgid "arguments must have same length"
 msgstr "gli argomenti devono avere la stessa lunghezza"
 
@@ -1712,6 +1776,17 @@ msgstr "'to' deve avere  lunghezza 1"
 msgid "'which' was not found on this platform"
 msgstr ""
 
+#, fuzzy
+msgid "fewer 'from' files than 'to' files"
+msgstr "ci sono più file 'from' che file 'to'"
+
+msgid "link '%s' already exists"
+msgstr ""
+
+#, fuzzy
+msgid "failed to create directory for link '%s"
+msgstr "nessun file/directory da collegare"
+
 msgid "'show.output.on.console' must be TRUE or FALSE"
 msgstr ""
 
@@ -1787,6 +1862,15 @@ msgid "object %s not found"
 msgid_plural "objects %s not found"
 msgstr[0] "%s non trovato"
 msgstr[1] "%s non trovato"
+
+msgid ""
+"Function found when exporting methods from the namespace %s which is not S4 "
+"generic: %s"
+msgid_plural ""
+"Functions found when exporting methods from the namespace %s which are not "
+"S4 generic: %s"
+msgstr[0] ""
+msgstr[1] ""
 
 #, fuzzy
 msgid "class %s is not exported by 'namespace:%s'"
@@ -1901,9 +1985,6 @@ msgstr[1] "Messaggi di avvertimento:\n"
 
 #~ msgid "S3 method '%s' was declared in NAMESPACE but not found"
 #~ msgstr "dichiarato in NAMESPACE ma non trovato"
-
-#~ msgid "invalid name"
-#~ msgstr "nome non valido"
 
 #~ msgid "is required by"
 #~ msgstr "richiesto da"

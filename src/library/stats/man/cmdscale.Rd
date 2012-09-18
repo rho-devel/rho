@@ -1,7 +1,9 @@
 % File src/library/stats/man/cmdscale.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Development Team
+% Copyright 1995-2010 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{cmdscale}
 \alias{cmdscale}
@@ -119,8 +121,8 @@ cmdscale(d, k = 2, eig = FALSE, add = FALSE, x.ret = FALSE)
   \code{\link{dist}}.
 
   \code{\link[MASS]{isoMDS}} and \code{\link[MASS]{sammon}}
-  in package \pkg{MASS} provide alternative methods of multidimensional
-  scaling.
+  in package \CRANpkg{MASS} provide alternative methods of
+  multidimensional scaling.
 }
 \examples{
 require(graphics)

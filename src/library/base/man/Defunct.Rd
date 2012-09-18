@@ -1,12 +1,13 @@
 % File src/library/base/man/Defunct.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Defunct}
 \title{Marking Objects as Defunct}
 \alias{Defunct}
 \alias{.Defunct}
+\alias{defunct}
 
 \description{
   When a function is removed from \R it should be replaced by a function
@@ -31,7 +32,8 @@
 \details{
   \code{.Defunct} is called from defunct functions.  Functions should be
   listed in \code{help("pkg-defunct")} for an appropriate \code{pkg},
-  including \code{base}.
+  including \code{base} (with the alias added to the respective Rd
+  file).
 }
 \seealso{
   \code{\link{Deprecated}}.

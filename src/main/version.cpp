@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2011  The R Development Core Team
+ *  Copyright (C) 1998--2012  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ void attribute_hidden PrintGreeting(void)
     // the standard R greeting.
 
     Rprintf("\n");
-    Rprintf("This is CXXR 0.39-2.14.1, based on:\n");
+    Rprintf("This is CXXR 0.40-2.15.1, based on:\n");
     PrintVersion_part_1(buf);
     Rprintf("%s\n", buf);
     Rprintf(_("CXXR Copyright (C) 2008-12 Andrew R. Runnalls.  CXXR like\n"));
@@ -74,8 +74,8 @@ SEXP attribute_hidden do_version(SEXP call, SEXP op, SEXP args, SEXP env)
     char buf[128];
 
     checkArity(op, args);
-    PROTECT(value = allocVector(VECSXP,13));
-    PROTECT(names = allocVector(STRSXP,13));
+    PROTECT(value = allocVector(VECSXP,14));
+    PROTECT(names = allocVector(STRSXP,14));
 
     SET_STRING_ELT(names, 0, mkChar("platform"));
     SET_VECTOR_ELT(value, 0, mkString(R_PLATFORM));
@@ -108,6 +108,8 @@ SEXP attribute_hidden do_version(SEXP call, SEXP op, SEXP args, SEXP env)
     PrintVersionString(buf);
     SET_STRING_ELT(names, 12, mkChar("version.string"));
     SET_VECTOR_ELT(value, 12, mkString(buf));
+    SET_STRING_ELT(names, 13, mkChar("nickname"));
+    SET_VECTOR_ELT(value, 13, mkString(R_NICK));
 
     setAttrib(value, R_NamesSymbol, names);
     UNPROTECT(2);
@@ -121,7 +123,7 @@ void attribute_hidden PrintVersion(char *s)
     strcat(s, "\n"
 	   "R is free software and comes with ABSOLUTELY NO WARRANTY.\n"
 	   "You are welcome to redistribute it under the terms of the\n"
-	   "GNU General Public License version 2.\n"
+	   "GNU General Public License versions 2 or 3.\n"
 	   "For more information about these matters see\n"
 	   "http://www.gnu.org/licenses/.\n");
 }
@@ -136,7 +138,7 @@ void attribute_hidden PrintVersionString(char *s)
 		R_MAJOR, R_MINOR, R_YEAR, R_MONTH, R_DAY);
     } else if(strcmp(R_STATUS, "Under development (unstable)") == 0) {
 	sprintf(s, "R %s (%s-%s-%s r%s)",
-		R_STATUS, R_YEAR, R_MONTH, R_DAY, R_SVN_REVISION);	
+		R_STATUS, R_YEAR, R_MONTH, R_DAY, R_SVN_REVISION);
     } else {
 	sprintf(s, "R version %s.%s %s (%s-%s-%s r%s)",
 		R_MAJOR, R_MINOR, R_STATUS, R_YEAR, R_MONTH, R_DAY,
@@ -150,6 +152,11 @@ void attribute_hidden PrintVersion_part_1(char *s)
     char tmp[128];
 
     PrintVersionString(s);
+    if(strlen(R_NICK) != 0) {
+	char nick[64];
+	sprintf(nick, " -- \"%s\"", R_NICK);
+	strcat(s, nick);
+    }
     SPRINTF_2("\nCopyright (C) %s The R Foundation for Statistical Computing\n",
 	      R_YEAR);
     strcat(s, "ISBN 3-900051-07-0\n");

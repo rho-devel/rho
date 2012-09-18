@@ -44,8 +44,7 @@ the number of halvings to try before giving up.}
 
 
 \item{rank.tol}{The tolerance used to estimate the rank of the fitting
-problem, for methods which deal with rank deficient cases (basically all
-except those based on \code{\link{mgcv}}).}
+problem.}
 
 \item{nlm}{list of control parameters to pass to \code{\link{nlm}} if this is
 used for outer estimation of smoothing parameters (not default). See details.}

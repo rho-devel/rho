@@ -53,7 +53,7 @@ additive models. J.R.Statist.Soc.B 70(3):495-518
 \author{ Simon N. Wood \email{simon.wood@r-project.org}}
 
 
-\seealso{\code{\link{gam.fit3}},  \code{\link{gam}}, \code{\link{mgcv}}, \code{\link{magic}}}
+\seealso{\code{\link{gam.fit3}},  \code{\link{gam}}, \code{\link{magic}}}
 
 
 \keyword{models} \keyword{smooth} \keyword{regression}%-- one or more ...

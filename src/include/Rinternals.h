@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2010   The R Development Core Team.
+ *  Copyright (C) 1999-2010   The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -75,7 +75,6 @@ using std::FILE;
 
 #include <R_ext/libextern.h>
 
-#include "CXXR/CachedString.h"
 #include "CXXR/Closure.h"
 #include "CXXR/ComplexVector.h"
 #include "CXXR/DotInternal.h"
@@ -93,9 +92,9 @@ using std::FILE;
 #include "CXXR/RawVector.h"
 #include "CXXR/RealVector.h"
 #include "CXXR/S4Object.h"
+#include "CXXR/String.h"
 #include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
-#include "CXXR/UncachedString.h"
 #include "CXXR/WeakRef.h"
 /* used for detecting PROTECT issues in memory.c */
 #define NEWSXP      30    /* fresh node creaed in new page */
@@ -228,11 +227,7 @@ int  (HASHVALUE)(SEXP x);
 #define EXTPTR_PROT(x)  R_ExternalPtrProtected(x)
 #define EXTPTR_TAG(x)	R_ExternalPtrTag(x)
 
-#ifdef BYTECODE
 #define isByteCode(x)	(TYPEOF(x)==BCODESXP)
-#else
-#define isByteCode(x)	FALSE
-#endif
 
 /* Pointer Protection and Unprotection */
 #define PROTECT(s)	Rf_protect(s)
@@ -297,6 +292,10 @@ LibExtern SEXP  R_dot_target;       /* ".target" */
 #define NA_STRING	R_NaString
 LibExtern SEXP	R_NaString;	    /* NA_STRING as a CHARSXP */
 LibExtern SEXP	R_BlankString;	    /* "" as a CHARSXP */
+
+/* srcref related functions */
+SEXP R_GetCurrentSrcref(int);
+SEXP R_GetSrcFilename(SEXP);
 
 /*--- FUNCTIONS ------------------------------------------------------ */
 
@@ -438,13 +437,9 @@ SEXP R_WeakRefKey(SEXP w);
 SEXP R_WeakRefValue(SEXP w);
 void R_RunWeakRefFinalizer(SEXP w);
 
-#ifdef BYTECODE
 SEXP R_ClosureExpr(SEXP);
 void R_initialize_bcode(void);
 #define BODY_EXPR(e) R_ClosureExpr(e)
-#else
-#define BODY_EXPR(e) BODY(e)
-#endif
 
 /* Protected evaluation */
 Rboolean R_ToplevelExec(void (*fun)(void *), void *data);
@@ -558,7 +553,9 @@ int R_has_slot(SEXP obj, SEXP name);
 SEXP R_do_MAKE_CLASS(const char *what);
 SEXP R_getClassDef  (const char *what);
 SEXP R_do_new_object(SEXP class_def);
+/* supporting  a C-level version of  is(., .) : */
 int R_check_class_and_super(SEXP x, const char **valid, SEXP rho);
+int R_check_class_etc      (SEXP x, const char **valid);
 
 /* preserve objects across GCs */
 void R_PreserveObject(SEXP);
@@ -575,7 +572,7 @@ FILE *R_popen(const char *, const char *);
 int R_system(const char *);
 
 /* R_compute_identical:  C version of identical() function
-   The third arg to R_compute_identical() consists of bitmapped flags for non-default options:  
+   The third arg to R_compute_identical() consists of bitmapped flags for non-default options:
    currently all default to TRUE, so the flag is set for FALSE values:
    1 = !NUM_EQ
    2 = !SINGLE_NA

@@ -116,7 +116,7 @@ Parentage* Provenance::getParentage() const {
 	return m_parentage;
 }
 
-const CachedString* Provenance::getTime() const{
+const String* Provenance::getTime() const{
 	struct tm *lt;
 	char buffer[32];
 	size_t p;
@@ -124,7 +124,7 @@ const CachedString* Provenance::getTime() const{
 	lt=localtime(&m_timestamp.tv_sec);
 	p=strftime(buffer,32,"%x %X",lt);
 	sprintf(&buffer[p],".%ld",m_timestamp.tv_usec);
-	return CachedString::obtain(buffer);
+	return String::obtain(buffer);
 }
 
 void Provenance::setXenogenous(const RObject* value)
@@ -155,7 +155,7 @@ GCStackRoot<StringVector> Provenance::setAsStringVector(Set* s) {
 	     it!=s->end();
 	     ++it) {
 		Provenance* p=(*it);
-		(*rc)[i++]=const_cast<CachedString*>(p->getSymbol()->name());
+		(*rc)[i++]=const_cast<String*>(p->getSymbol()->name());
 	}
 	return rc;
 }
@@ -163,10 +163,13 @@ GCStackRoot<StringVector> Provenance::setAsStringVector(Set* s) {
 void Provenance::visitReferents(const_visitor* v) const {
 	const GCNode* exp=m_expression;
 	const GCNode* sym=m_symbol;
+	const GCNode* value = m_value;
 	if (exp)
 	    (*v)(exp);
 	if (sym)
 	    (*v)(sym);
+	if (value)
+	    (*v)(value);
 	if (m_parentage) { // cas : manually conduct to parents
 		for (unsigned int i=0;
 		     i<m_parentage->size();

@@ -94,8 +94,8 @@ SEXP attribute_hidden do_castestfun(SEXP call, SEXP op, SEXP args, SEXP rho)
 	(*inv2)[1]=5;
 
 	GCStackRoot<StringVector> str(GCNode::expose(new StringVector(2)));
-	(*str)[0]=const_cast<CachedString*>(CachedString::obtain("ivOne"));
-	(*str)[1]=const_cast<CachedString*>(CachedString::obtain("ivTwo"));
+	(*str)[0]=const_cast<String*>(String::obtain("ivOne"));
+	(*str)[1]=const_cast<String*>(String::obtain("ivTwo"));
 
 	GCStackRoot<ListVector> rc(GCNode::expose(new ListVector(2)));
 	(*rc)[0]=inv;
@@ -146,13 +146,13 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	GCStackRoot<StringVector> timestamp(GCNode::expose(new StringVector(1)));
 	GCStackRoot<StringVector> names(GCNode::expose(new StringVector(nfields)));
 
-	(*timestamp)[0]=const_cast<CachedString*>(provenance->getTime());
+	(*timestamp)[0]=const_cast<String*>(provenance->getTime());
 
-	(*names)[0]=const_cast<CachedString*>(CachedString::obtain("command"));
-	(*names)[1]=const_cast<CachedString*>(CachedString::obtain("symbol"));
-	(*names)[2]=const_cast<CachedString*>(CachedString::obtain("timestamp"));
-	(*names)[3]=const_cast<CachedString*>(CachedString::obtain("parents"));
-	(*names)[4]=const_cast<CachedString*>(CachedString::obtain("children"));
+	(*names)[0]=const_cast<String*>(String::obtain("command"));
+	(*names)[1]=const_cast<String*>(String::obtain("symbol"));
+	(*names)[2]=const_cast<String*>(String::obtain("timestamp"));
+	(*names)[3]=const_cast<String*>(String::obtain("parents"));
+	(*names)[4]=const_cast<String*>(String::obtain("children"));
 
 	(*list)[0]=provenance->getCommand();
 	(*list)[1]=provenance->getSymbol();
@@ -190,7 +190,7 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
     if (nargs != 1)
 	Rf_error(_("%d arguments passed to 'pedigree' which requires 1"), nargs);
     SEXP arg1 = CAR(args);
-    if (arg1->sexptype() != STRSXP)
+    if (!arg1 || arg1->sexptype() != STRSXP)
 	    Rf_error(_("invalid 'names' argument"));
 
     Environment* env = static_cast<Environment*>(rho);
@@ -270,6 +270,8 @@ SEXP attribute_hidden do_bserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_bdeserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     std::ifstream ifs("bserialize.xml");
+    if (!ifs)
+	Rf_error("file bserialize.xml not found");
     boost::archive::xml_iarchive ia(ifs);
     GCStackRoot<Environment> env;
     GCNPTR_SERIALIZE(ia, env);

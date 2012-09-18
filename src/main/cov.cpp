@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1995-2011	The R Development Core Team
+ *  Copyright (C) 1995-2011	The R Core Team
  *  Copyright (C) 2003		The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -124,7 +124,7 @@
 		ANS(i,j) = sum;						\
 	    }								\
 	    else							\
-		ANS(i,j) = NA_REAL;
+		ANS(i,j) = NA_REAL
 
 
 static void cov_pairwise1(int n, int ncx, double *x,
@@ -136,7 +136,7 @@ static void cov_pairwise1(int n, int ncx, double *x,
 	for (int j = 0 ; j <= i ; j++) {
 	    double *yy = &x[j * n];
 
-	    COV_PAIRWISE_BODY
+	    COV_PAIRWISE_BODY;
 
 	    ANS(j,i) = ANS(i,j);
 	}
@@ -152,7 +152,7 @@ static void cov_pairwise2(int n, int ncx, int ncy, double *x, double *y,
 	for (int j = 0 ; j < ncy ; j++) {
 	    double *yy = &y[j * n];
 
-	    COV_PAIRWISE_BODY
+	    COV_PAIRWISE_BODY;
 	}
     }
 }

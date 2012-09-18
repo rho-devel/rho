@@ -943,8 +943,17 @@ SEXP chm_factor_to_SEXP(CHM_FR f, int dofree)
     int *dims, *type;
     char *class = (char*) NULL;	/* -Wall */
 
-    if(!chm_factor_ok(f))
-	error(_("previous CHOLMOD factorization was unsuccessful"));
+#define DOFREE_MAYBE					\
+    if(dofree) {					\
+	if (dofree > 0) cholmod_free_factor(&f, &c);	\
+	else /* dofree < 0 */ Free(f);			\
+    }
+
+    if(!chm_factor_ok(f)) {
+	DOFREE_MAYBE;
+	error(_("CHOLMOD factorization was unsuccessful"));
+	// error(_("previous CHOLMOD factorization was unsuccessful"));
+    }
 
     switch(f->xtype) {
     case CHOLMOD_REAL:
@@ -954,10 +963,9 @@ SEXP chm_factor_to_SEXP(CHM_FR f, int dofree)
 	class = f->is_super ? "nCHMsuper" : "nCHMsimpl";
 	break;
     default:
+	DOFREE_MAYBE;
 	error(_("f->xtype of %d not recognized"), f->xtype);
     }
-    if(!chm_factor_ok(f))
-	error(_("CHOLMOD factorization was unsuccessful"));
 
     ans = PROTECT(NEW_OBJECT(MAKE_CLASS(class)));
     dims = INTEGER(ALLOC_SLOT(ans, Matrix_DimSym, INTSXP, 2));
@@ -997,13 +1005,11 @@ SEXP chm_factor_to_SEXP(CHM_FR f, int dofree)
 	       (int*)f->prev, f->n + 2);
 
     }
-    if(dofree) {
-	if (dofree > 0) cholmod_free_factor(&f, &c);
-	else /* dofree < 0 */ Free(f);
-    }
+    DOFREE_MAYBE;
     UNPROTECT(1);
     return ans;
 }
+#undef DOFREE_MAYBE
 
 /**
  * Drop the (unit) diagonal entries from a cholmod_sparse matrix

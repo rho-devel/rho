@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2010  The R Development Core Team
+ *  Copyright (C) 1997--2012  The R Core Team
  *  Copyright (C) 2003	      The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -33,11 +33,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
- */
-
-/* <UTF8-FIXME>
-   Need to convert character strings to and from 8-bit.
-   Check other uses.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -63,12 +58,13 @@
 
 using namespace CXXR;
 
-/* These are set during each call to do_dotCode() below. */
+/* These are set during the first call to do_dotCode() below. */
 
 static SEXP NaokSymbol = NULL;
 static SEXP DupSymbol = NULL;
 static SEXP PkgSymbol = NULL;
 static SEXP EncSymbol = NULL;
+static SEXP CSingSymbol = NULL;
 
 /* Global variable that should go. Should actually be doing this in
    a much more straightforward manner. */
@@ -84,9 +80,10 @@ typedef struct {
 /* Maximum length of entry-point name, including nul terminator */
 #define MaxSymbolBytes 1024
 
-/* This looks up entry points in DLLs in a platform specific way. */
+/* Maximum number of args to .C, .Fortran and .C */
 #define MAX_ARGS 65
 
+/* This looks up entry points in DLLs in a platform specific way. */
 static DL_FUNC
 R_FindNativeSymbolFromDLL(char *name, DllReference *dll,
 			  R_RegisteredNativeSymbol *symbol);
@@ -94,7 +91,6 @@ R_FindNativeSymbolFromDLL(char *name, DllReference *dll,
 static SEXP naokfind(SEXP args, int * len, int *naok, int *dup,
 		     DllReference *dll);
 static SEXP pkgtrim(SEXP args, DllReference *dll);
-static SEXP enctrim(SEXP args, char *name, int len);
 
 /*
   Checks whether the specified object correctly identifies a native routine.
@@ -269,12 +265,6 @@ resolveNativeRoutine(SEXP args, DL_FUNC *fun,
 }
 
 
-
-/* Convert an R object to a non-moveable C/Fortran object and return
-   a pointer to it.  This leaves pointers for anything other
-   than vectors and lists unaltered.
-*/
-
 static Rboolean
 checkNativeType(int targetType, int actualType)
 {
@@ -286,305 +276,6 @@ checkNativeType(int targetType, int actualType)
     }
 
     return(TRUE);
-}
-
-static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
-			const char *name, R_toCConverter **converter,
-			SEXPTYPE targetType, CXXRCONST char* encname)
-{
-    Rbyte *rawptr;
-    int *iptr;
-    float *sptr;
-    double *rptr;
-    char **cptr, *fptr;
-    Rcomplex *zptr;
-    SEXP *lptr, CSingSymbol=install("Csingle");
-    int i, l, n;
-
-    if(converter)
-	*converter = NULL;
-
-    if(length(getAttrib(s, R_ClassSymbol))) {
-	R_CConvertInfo info;
-	int success;
-	void *ans;
-
-	info.naok = naok;
-	info.dup = dup;
-	info.narg = narg;
-	info.Fort = Fort;
-	info.name = name;
-
-	ans = Rf_convertToC(s, &info, &success, converter);
-	if(success)
-	    return(ans);
-    }
-
-    if(checkNativeType(targetType, TYPEOF(s)) == FALSE) {
-	if(!dup) {
-	    error(_("explicit request not to duplicate arguments in call to '%s', but argument %d is of the wrong type (%d != %d)"),
-		  name, narg + 1, targetType, TYPEOF(s));
-	}
-
-	if(targetType != SINGLESXP)
-	    s = coerceVector(s, targetType);
-    }
-
-    switch(TYPEOF(s)) {
-    case RAWSXP:
-    n = LENGTH(s);
-    rawptr = RAW(s);
-    if (dup) {
-	rawptr = static_cast<Rbyte *>( CXXR_alloc(n, sizeof(Rbyte)));
-	for (i = 0; i < n; i++)
-	    rawptr[i] = RAW(s)[i];
-    }
-    return CXXRNOCAST(void *) rawptr;
-    break;
-    case LGLSXP:
-    case INTSXP:
-	n = LENGTH(s);
-	iptr = INTEGER(s);
-	if(!naok)
-	    for (i = 0 ; i < n ; i++)
-		if(iptr[i] == NA_INTEGER)
-		    error(_("NAs in foreign function call (arg %d)"), narg);
-	if (dup) {
-	    iptr = static_cast<int*>(CXXR_alloc(n, sizeof(int)));
-	    for (i = 0 ; i < n ; i++)
-		iptr[i] = INTEGER(s)[i];
-	}
-	return CXXRNOCAST(void*)iptr;
-	break;
-    case REALSXP:
-	n = LENGTH(s);
-	rptr = REAL(s);
-	if(!naok)
-	    for (i = 0 ; i < n ; i++)
-		if(!R_FINITE(rptr[i]))
-		    error(_("NA/NaN/Inf in foreign function call (arg %d)"), narg);
-	if (dup) {
-	    if(asLogical(getAttrib(s, CSingSymbol)) == 1) {
-		sptr = static_cast<float*>(CXXR_alloc(n, sizeof(float)));
-		for (i = 0 ; i < n ; i++)
-		    sptr[i] = float( REAL(s)[i]);
-		return CXXRNOCAST(void*)sptr;
-	    } else {
-		rptr = static_cast<double*>(CXXR_alloc(n, sizeof(double)));
-		for (i = 0 ; i < n ; i++)
-		    rptr[i] = REAL(s)[i];
-		return CXXRNOCAST(void*)rptr;
-	    }
-	} else
-	    return CXXRNOCAST(void*)rptr;
-	break;
-    case CPLXSXP:
-	n = LENGTH(s);
-	zptr = COMPLEX(s);
-	if(!naok)
-	    for (i = 0 ; i < n ; i++)
-		if(!R_FINITE(zptr[i].r) || !R_FINITE(zptr[i].i))
-		    error(_("complex NA/NaN/Inf in foreign function call (arg %d)"), narg);
-	if (dup) {
-	    zptr = static_cast<Rcomplex*>(CXXR_alloc(n, sizeof(Rcomplex)));
-	    for (i = 0 ; i < n ; i++)
-		zptr[i] = COMPLEX(s)[i];
-	}
-	return CXXRNOCAST(void*)zptr;
-	break;
-    case STRSXP:
-	if(!dup)
-	    error(_("character variables must be duplicated in .C/.Fortran"));
-	n = LENGTH(s);
-	if(Fort) {
-	    const char *ss = translateChar(STRING_ELT(s, 0));
-	    if(n > 1)
-		warning(_("only first string in char vector used in .Fortran"));
-	    l = strlen(ss);
-	    fptr = static_cast<char*>(R_alloc(max(255, l) + 1, sizeof(char)));
-	    strcpy(fptr, ss);
-	    return CXXRNOCAST(void*)fptr;
-	} else {
-	    cptr = static_cast<char**>(CXXR_alloc(n, sizeof(char*)));
-	    if(strlen(encname)) {
-		char *outbuf;
-		const char *inbuf;
-		std::size_t inb, outb, outb0, res;
-		void *obj = Riconv_open("", encname); /* (to, from) */
-		if(obj == reinterpret_cast<void *>(-1))
-		    error(_("unsupported encoding '%s'"), encname);
-		for (i = 0 ; i < n ; i++) {
-		    inbuf = CHAR(STRING_ELT(s, i));
-		    inb = strlen(inbuf);
-		    outb0 = 3*inb;
-		restart_in:
-		    cptr[i] = outbuf = static_cast<char*>(R_alloc(outb0 + 1, sizeof(char)));
-		    outb = 3*inb;
-		    Riconv(obj, NULL, NULL, &outbuf, &outb);
-		    errno = 0; /* precaution */
-		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-		    if(res == CXXRCONSTRUCT(std::size_t, -1) && errno == E2BIG) {
-			outb0 *= 3;
-			goto restart_in;
-		    }
-		    if(res == CXXRCONSTRUCT(std::size_t, -1))
-			error(_("conversion problem in re-encoding to '%s'"),
-			      encname);
-		    *outbuf = '\0';
-		}
-		Riconv_close(obj);
-	    } else {
-		for (i = 0 ; i < n ; i++) {
-		    const char *ss = translateChar(STRING_ELT(s, i));
-		    l = strlen(ss);
-		    cptr[i] = static_cast<char*>(R_alloc(l + 1, sizeof(char)));
-		    strcpy(cptr[i], ss);
-		}
-	    }
-	    return CXXRNOCAST(void*)cptr;
-	}
-	break;
-    case VECSXP:
-	if(!dup)
-	    error(_("lists must be duplicated in .C"));
-	/* if (!dup) return (void*)VECTOR_PTR(s); ***** Dangerous to GC!!! */
-	n = length(s);
-	lptr = static_cast<SEXP*>(CXXR_alloc(n, sizeof(SEXP)));
-	for (i = 0 ; i < n ; i++) {
-	    lptr[i] = VECTOR_ELT(s, i);
-	}
-	return CXXRNOCAST(void*)lptr;
-	break;
-    case LISTSXP:
-	if(Fort) error(_("invalid mode to pass to Fortran (arg %d)"), narg);
-	/* Warning : The following looks like it could bite ... */
-	if(!dup) return CXXRNOCAST(void*)s;
-	n = length(s);
-	cptr = static_cast<char**>(CXXR_alloc(n, sizeof(char*)));
-	for(i=0 ; i<n ; i++) {
-	    cptr[i] = reinterpret_cast<char*>(s);
-	    s = CDR(s);
-	}
-	return CXXRNOCAST(void*)cptr;
-	break;
-    default:
-	if(Fort) error(_("invalid mode to pass to Fortran (arg %d)"), narg);
-	return CXXRNOCAST(void*)s;
-    }
-}
-
-
-static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
-		       R_NativePrimitiveArgType type, char *encname)
-{
-    Rbyte *rawptr;
-    int *iptr, n=length(arg);
-    float *sptr;
-    double *rptr;
-    char **cptr, buf[256];
-    Rcomplex *zptr;
-    SEXP *lptr, CSingSymbol = install("Csingle");
-    int i;
-    SEXP s, t;
-    SEXPTYPE stype = (type == SINGLESXP ? REALSXP : SEXPTYPE(type));
-
-    switch(stype) {
-    case RAWSXP:
-    s = allocVector(stype, n);
-    rawptr = static_cast<Rbyte *>(p);
-    for (i = 0; i < n; i++) RAW(s)[i] = rawptr[i];
-    break;
-    case LGLSXP:
-	s = allocVector(stype, n);
-	iptr = static_cast<int*>(p);
-	for(i = 0 ; i < n ; i++) {
-	    int tmp =  iptr[i];
-	    LOGICAL(s)[i] = (tmp == NA_INTEGER || tmp == 0) ? tmp : 1;
-	}
-	break;
-    case INTSXP:
-	s = allocVector(stype, n);
-	iptr = static_cast<int*>(p);
-	for(i = 0 ; i < n ; i++) INTEGER(s)[i] = iptr[i];
-	break;
-    case REALSXP:
-	s = allocVector(REALSXP, n);
-	if(type == SINGLESXP || asLogical(getAttrib(arg, CSingSymbol)) == 1) {
-	    sptr = static_cast<float*>( p);
-	    for(i = 0 ; i < n ; i++) REAL(s)[i] = double( sptr[i]);
-	} else {
-	    rptr = static_cast<double*>( p);
-	    for(i = 0 ; i < n ; i++) REAL(s)[i] = rptr[i];
-	}
-	break;
-    case CPLXSXP:
-	s = allocVector(stype, n);
-	zptr = static_cast<Rcomplex*>(p);
-	for(i=0 ; i<n ; i++) COMPLEX(s)[i] = zptr[i];
-	break;
-    case STRSXP:
-	if(Fort) {
-	    /* only return one string: warned on the R -> Fortran step */
-	    strncpy(buf, static_cast<char*>(p), 255);
-	    buf[255] = '\0';
-	    PROTECT(s = allocVector(stype, 1));
-	    SET_STRING_ELT(s, 0, mkChar(buf));
-	    UNPROTECT(1);
-	} else {
-	    PROTECT(s = allocVector(stype, n));
-	    cptr = static_cast<char**>(p);
-	    if(strlen(encname)) {
-		const char *inbuf;
-		char *outbuf, *p;
-		std::size_t inb, outb, outb0, res;
-		void *obj = Riconv_open(encname, ""); /* (to, from) */
-		if(obj == reinterpret_cast<void *>((-1)))
-		    error(_("unsupported encoding '%s'"), encname);
-		for (i = 0 ; i < n ; i++) {
-		    inbuf = cptr[i]; inb = strlen(inbuf);
-		    outb0 = 3*inb;
-		restart_out:
-		    p = outbuf = static_cast<char*>(R_alloc(outb0 + 1, sizeof(char)));
-		    outb = outb0;
-		    Riconv(obj, NULL, NULL, &outbuf, &outb);
-		    errno = 0; /* precaution */
-		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-		    if(res == CXXRCONSTRUCT(std::size_t, -1) && errno == E2BIG) {
-			outb0 *= 3;
-			goto restart_out;
-		    }
-		    if(res == CXXRCONSTRUCT(std::size_t, -1))
-			error(_("conversion problem in re-encoding from '%s'"),
-			      encname);
-		    *outbuf = '\0';
-		    SET_STRING_ELT(s, i, mkChar(p));
-		}
-		Riconv_close(obj);
-	    } else {
-		for(i = 0 ; i < n ; i++)
-		    SET_STRING_ELT(s, i, mkChar(cptr[i]));
-	    }
-	    UNPROTECT(1);
-	}
-	break;
-    case VECSXP:
-	PROTECT(s = allocVector(VECSXP, n));
-	lptr = static_cast<SEXP*>(p);
-	for (i = 0 ; i < n ; i++) SET_VECTOR_ELT(s, i, lptr[i]);
-	UNPROTECT(1);
-	break;
-    case LISTSXP:
-	PROTECT(t = s = allocList(n));
-	lptr = static_cast<SEXP*>(p);
-	for(i = 0 ; i < n ; i++) {
-	    SETCAR(t, lptr[i]);
-	    t = CDR(t);
-	}
-	UNPROTECT(1);
-    default:
-	s = static_cast<SEXP>(p);
-    }
-    return s;
 }
 
 static Rboolean
@@ -713,7 +404,7 @@ static SEXP pkgtrim(SEXP args, DllReference *dll)
 static SEXP enctrim(SEXP args, char *name, int len)
 {
     SEXP s, ss, sx;
-    int pkgused=0;
+    int pkgused = 0;
 
     strcpy(name, "");
     for(s = args ; s != R_NilValue;) {
@@ -727,6 +418,7 @@ static SEXP enctrim(SEXP args, char *name, int len)
 	    if(TYPEOF(sx) != STRSXP || length(sx) != 1)
 		error(_("ENCODING argument must be a single character string"));
 	    strncpy(name, translateChar(STRING_ELT(sx, 0)), len);
+	    warning("ENCODING is deprecated");
 	    return R_NilValue;
 	}
 	if(TAG(ss) == EncSymbol) {
@@ -735,6 +427,7 @@ static SEXP enctrim(SEXP args, char *name, int len)
 	    if(TYPEOF(sx) != STRSXP || length(sx) != 1)
 		error(_("ENCODING argument must be a single character string"));
 	    strncpy(name, translateChar(STRING_ELT(sx, 0)), len);
+	    warning("ENCODING is deprecated");
 	    SETCDR(s, CDR(ss));
 	}
 	s = CDR(s);
@@ -774,8 +467,8 @@ SEXP attribute_hidden do_isloaded(SEXP call, SEXP op, SEXP args, SEXP env)
     return ScalarLogical(val);
 }
 
-/*   Call dynamically loaded "internal" functions */
-/*   code by Jean Meloche <jean@stat.ubc.ca> */
+/*   Call dynamically loaded "internal" functions.
+     Original code by Jean Meloche <jean@stat.ubc.ca> */
 
 typedef SEXP (*R_ExternalRoutine)(SEXP);
 
@@ -788,7 +481,7 @@ SEXP attribute_hidden do_External(SEXP call, SEXP op, SEXP args, SEXP env)
     const void *vmax = vmaxget();
     char buf[MaxSymbolBytes];
 
-    if (length(args) < 1) errorcall(call, _("'name' is missing"));
+    if (length(args) < 1) errorcall(call, _("'.NAME' is missing"));
     check1arg(args, call, "name");
     args = resolveNativeRoutine(args, &ofun, &symbol, buf, NULL, NULL,
 				NULL, call);
@@ -827,7 +520,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
     const void *vmax = vmaxget();
     char buf[MaxSymbolBytes];
 
-    if (length(args) < 1) errorcall(call, _("'name' is missing"));
+    if (length(args) < 1) errorcall(call, _("'.NAME' is missing"));
     check1arg(args, call, "name");
     args = resolveNativeRoutine(args, &ofun, &symbol, buf, NULL, NULL,
 				NULL, call);
@@ -1530,7 +1223,7 @@ SEXP attribute_hidden do_Externalgr(SEXP call, SEXP op, SEXP args, SEXP env)
     dd->recordGraphics = FALSE;
     PROTECT(retval = do_External(call, op, args, env));
     dd->recordGraphics = record;
-    if (GErecording(call, dd)) {
+    if (GErecording(call, dd)) { // which is record && call != R_NilValue
 	if (!GEcheckState(dd))
 	    errorcall(call, _("Invalid graphics state"));
 	GErecordGraphicOperation(op, args, dd);
@@ -1632,22 +1325,38 @@ R_FindNativeSymbolFromDLL(char *name, DllReference *dll,
 
 
 /* .C() {op=0}  or  .Fortran() {op=1} */
+/* Use of this except for atomic vectors is not allowed for .Fortran,
+   and is only kept for legacy code for .C.
+
+   CRAN packages R2Cuba, RCALI, ars, coxme, fCopulae, locfit, nlme,
+   splinesurv and survival pass functions, the case of RCALI as a list
+   of two functions.
+
+   RecordLinkage and locfit pass lists.
+*/
+
+/* Will be defunct in 2.16.0 */
+#define SUPPORT_CONVERTERS 1
+
 SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     void **cargs;
-    int dup, havenames, naok, nargs, which;
+    int dup, naok, na, nargs, Fort;
+    Rboolean havenames;
     DL_FUNC ofun = NULL;
     VarFun fun = NULL;
-    SEXP ans, pargs, s;
+    SEXP ans, pa, s;
+#ifdef SUPPORT_CONVERTERS
     /* the post-call converters back to R objects. */
     R_toCConverter  *argConverters[65];
+#endif
     R_RegisteredNativeSymbol symbol = {R_C_SYM, {NULL}, NULL};
     R_NativePrimitiveArgType *checkTypes = NULL;
     R_NativeArgStyle *argStyles = NULL;
     void *vmax;
     char symName[MaxSymbolBytes], encname[101];
 
-    if (length(args) < 1) errorcall(call, _("'name' is missing"));
+    if (length(args) < 1) errorcall(call, _("'.NAME' is missing"));
     check1arg(args, call, "name");
     if (NaokSymbol == NULL || DupSymbol == NULL || PkgSymbol == NULL) {
 	NaokSymbol = install("NAOK");
@@ -1655,10 +1364,10 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 	PkgSymbol = install("PACKAGE");
     }
     if (EncSymbol == NULL) EncSymbol = install("ENCODING");
+    if (CSingSymbol == NULL) CSingSymbol = install("Csingle");
     vmax = vmaxget();
-    which = PRIMVAL(op);
-    if(which)
-	symbol.type = R_FORTRAN_SYM;
+    Fort = PRIMVAL(op);
+    if(Fort) symbol.type = R_FORTRAN_SYM;
 
     args = enctrim(args, encname, 100);
     args = resolveNativeRoutine(args, &ofun, &symbol, symName, &nargs,
@@ -1675,37 +1384,271 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 	argStyles = symbol.symbol.c->styles;
     }
 
-
-    /* Convert the arguments for use in foreign */
-    /* function calls.  Note that we copy twice */
-    /* once here, on the way into the call, and */
-    /* once below on the way out. */
-    cargs = static_cast<void**>(CXXR_alloc(nargs, sizeof(void*)));
+    /* Construct the return value */
     nargs = 0;
-    for(pargs = args ; pargs != R_NilValue; pargs = CDR(pargs)) {
+    havenames = FALSE;
+    for(pa = args ; pa != R_NilValue; pa = CDR(pa)) {
+	if (TAG(pa) != R_NilValue) havenames = TRUE;
+	nargs++;
+    }
+
+    PROTECT(ans = allocVector(VECSXP, nargs));
+    if (havenames) {
+	SEXP names;
+	PROTECT(names = allocVector(STRSXP, nargs));
+	for (na = 0, pa = args ; pa != R_NilValue ; pa = CDR(pa), na++) {
+	    if (TAG(pa) == R_NilValue)
+		SET_STRING_ELT(names, na, R_BlankString);
+	    else
+		SET_STRING_ELT(names, na, PRINTNAME(TAG(pa)));
+	}
+	setAttrib(ans, R_NamesSymbol, names);
+	UNPROTECT(1);
+    }
+
+    /* Convert the arguments for use in foreign function calls. */
+    cargs = static_cast<void**>( CXXR_alloc(nargs, sizeof(void*)));
+    for(na = 0, pa = args ; pa != R_NilValue; pa = CDR(pa), na++) {
 	if(checkTypes &&
-	   !comparePrimitiveTypes(checkTypes[nargs], CAR(pargs), CXXRCONSTRUCT(Rboolean, dup))) {
+	   !comparePrimitiveTypes(checkTypes[na], CAR(pa), CXXRCONSTRUCT(Rboolean, dup))) {
 	    /* We can loop over all the arguments and report all the
 	       erroneous ones, but then we would also want to avoid
 	       the conversions.  Also, in the future, we may just
 	       attempt to coerce the value to the appropriate
-	       type. This is why we pass the checkTypes[nargs] value
-	       to RObjToCPtr(). We just have to sort out the ability
-	       to return the correct value which is complicated by
-	       dup, etc. */
+	       type. */
 	    errorcall(call, _("Wrong type for argument %d in call to %s"),
-		      nargs+1, symName);
+		      na+1, symName);
 	}
-	cargs[nargs] = RObjToCPtr(CAR(pargs), naok, dup, nargs + 1,
-				  which, symName, argConverters + nargs,
-				  checkTypes ? CXXRCONSTRUCT(SEXPTYPE, checkTypes[nargs]) : NILSXP,
-				  encname);
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-	if (RTRACE(CAR(pargs)) && dup)
-		memtrace_report(CAR(pargs), cargs[nargs]);
+	int n, nprotect = 0,
+	    targetType =  checkTypes ? checkTypes[na] : 0;
+	s = CAR(pa);
+	/* start with return value a copy of the inputs, as that is
+	   what is needed for DUP = FALSE and for non-atomic-vector inputs */
+	SET_VECTOR_ELT(ans, na, s);
+
+#ifdef SUPPORT_CONVERTERS
+	/* We could simplify this code, but we have no known examples */
+	R_toCConverter **converter = argConverters + na;
+	if(converter) *converter = NULL;
+	if(length(getAttrib(s, R_ClassSymbol))) {
+	    R_CConvertInfo info;
+	    int success;
+	    void *ans;
+
+	    info.naok = naok;
+	    info.dup = dup;
+	    info.narg = na + 1;
+	    info.Fort = Fort;
+	    info.name = symName;
+
+	    ans = Rf_convertToC(s, &info, &success, converter);
+	    if(success) {
+		cargs[na] = ans;
+		continue;
+	    }
+	}
 #endif
-	nargs++;
+
+	if(checkNativeType(targetType, TYPEOF(s)) == FALSE) {
+	    if(!dup) {
+		error(_("explicit request not to duplicate arguments in call to '%s', but argument %d is of the wrong type (%d != %d)"),
+		      symName, na + 1, targetType, TYPEOF(s));
+	    }
+
+	    if(targetType != SINGLESXP) {
+		/* Cannot be called if DUP = FALSE, so only needs to live
+		   until copied in the switch.
+		   But R_alloc allocates, so missed protection < R 2.15.0.
+		*/
+		PROTECT(s = coerceVector(s, CXXRCONSTRUCT(SEXPTYPE, targetType)));
+		nprotect++;
+	    }
+	}
+
+	/* We create any copies needed for the return value here,
+	   except for character vectors.  The compiled code works on
+	   the data pointer of the return value for the other atomic
+	   vectors, and anything else is supposed to be read-only.
+
+	   We do not need to copy if the inputs have NAMED = 0 */
+
+	SEXPTYPE t = TYPEOF(s);
+	switch(t) {
+	case RAWSXP:
+	    {
+		if (dup && NAMED(s)) {
+		    n = LENGTH(s);
+		    SEXP ss = allocVector(t, n);
+		    memcpy(RAW(ss), RAW(s), n * sizeof(Rbyte));
+		    SET_VECTOR_ELT(ans, na, ss);
+		    cargs[na] = CXXRNOCAST(void*) RAW(ss);
+#ifdef R_MEMORY_PROFILING
+		    if (RTRACE(s)) memtrace_report(s, ss);
+#endif
+		} else cargs[na] = reinterpret_cast<void *>( RAW(s));
+	    }
+	    break;
+	case LGLSXP:
+	case INTSXP:
+	    {
+		n = LENGTH(s);
+		int *iptr = INTEGER(s);
+		if (!naok)
+		    for (int i = 0 ; i < n ; i++)
+			if(iptr[i] == NA_INTEGER)
+			    error(_("NAs in foreign function call (arg %d)"), na + 1);
+		if (dup && NAMED(s)) {
+		    SEXP ss = allocVector(t, n);
+		    memcpy(INTEGER(ss), INTEGER(s), n * sizeof(int));
+		    SET_VECTOR_ELT(ans, na, ss);
+		    cargs[na] = CXXRNOCAST(void*) INTEGER(ss);
+#ifdef R_MEMORY_PROFILING
+		    if (RTRACE(s)) memtrace_report(s, ss);
+#endif
+		} else cargs[na] = CXXRNOCAST(void*) iptr;
+	    }
+	    break;
+	case REALSXP:
+	    {
+		n = LENGTH(s);
+		double *rptr = REAL(s);
+		if (!naok)
+		    for (int i = 0 ; i < n ; i++)
+			if(!R_FINITE(rptr[i]))
+			    error(_("NA/NaN/Inf in foreign function call (arg %d)"), na + 1);
+		if (asLogical(getAttrib(s, CSingSymbol)) == 1) {
+		    float *sptr = static_cast<float*>( CXXR_alloc(n, sizeof(float)));
+		    for (int i = 0 ; i < n ; i++) sptr[i] = float( REAL(s)[i]);
+		    cargs[na] = CXXRNOCAST(void*) sptr;
+#ifdef R_MEMORY_PROFILING
+		    if (RTRACE(s)) memtrace_report(s, sptr);
+#endif
+		} else if (dup && NAMED(s)) {
+		    SEXP ss  = allocVector(t, n);
+		    memcpy(REAL(ss), REAL(s), n * sizeof(double));
+		    SET_VECTOR_ELT(ans, na, ss);
+		    cargs[na] = CXXRNOCAST(void*) REAL(ss);
+#ifdef R_MEMORY_PROFILING
+		    if (RTRACE(s)) memtrace_report(s, ss);
+#endif
+		} else cargs[na] = CXXRNOCAST(void*) rptr;
+	    }
+	    break;
+	case CPLXSXP:
+	    {
+		n = LENGTH(s);
+		Rcomplex *zptr = COMPLEX(s);
+		if (!naok)
+		    for (int i = 0 ; i < n ; i++)
+			if(!R_FINITE(zptr[i].r) || !R_FINITE(zptr[i].i))
+			    error(_("complex NA/NaN/Inf in foreign function call (arg %d)"), na + 1);
+		if (dup && NAMED(s)) {
+		    SEXP ss = allocVector(t, n);
+		    memcpy(COMPLEX(ss), COMPLEX(s), n * sizeof(Rcomplex));
+		    SET_VECTOR_ELT(ans, na, ss);
+		    cargs[na] = CXXRNOCAST(void*) COMPLEX(ss);
+#ifdef R_MEMORY_PROFILING
+		    if (RTRACE(s)) memtrace_report(s, ss);
+#endif
+		} else cargs[na] = CXXRNOCAST(void *) zptr;
+	    }
+	    break;
+	case STRSXP:
+	    {
+		if (!dup)
+		    error(_("character variables must be duplicated in .C/.Fortran"));
+		n = LENGTH(s);
+		if (Fort) {
+		    const char *ss = translateChar(STRING_ELT(s, 0));
+		    if (n > 1)
+			warning(_("only first string in char vector used in .Fortran"));
+		    char *fptr = CXXRNOCAST(char*) R_alloc(max(255, strlen(ss)) + 1, sizeof(char));
+		    strcpy(fptr, ss);
+		    cargs[na] =  CXXRNOCAST(void*) fptr;
+		} else {
+		    char **cptr = static_cast<char**>( CXXR_alloc(n, sizeof(char*)));
+		    if (strlen(encname)) {
+			char *outbuf;
+			const char *inbuf;
+			size_t inb, outb, outb0, res;
+			void *obj = Riconv_open("", encname); /* (to, from) */
+			if (obj == reinterpret_cast<void *>(-1))
+			    error(_("unsupported encoding '%s'"), encname);
+			for (int i = 0 ; i < n ; i++) {
+			    inbuf = CHAR(STRING_ELT(s, i));
+			    inb = strlen(inbuf);
+			    outb0 = 3*inb;
+			restart_in:
+			    cptr[i] = outbuf = CXXRNOCAST(char*) R_alloc(outb0 + 1, sizeof(char));
+			    outb = 3*inb;
+			    Riconv(obj, NULL, NULL, &outbuf, &outb);
+			    errno = 0; /* precaution */
+			    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
+			    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
+				outb0 *= 3;
+				goto restart_in;
+			    }
+			    if(res == CXXRCONSTRUCT(size_t, -1))
+				error(_("conversion problem in re-encoding to '%s'"),
+				      encname);
+			    *outbuf = '\0';
+			}
+			Riconv_close(obj);
+		    } else {
+			for (int i = 0 ; i < n ; i++) {
+			    const char *ss = translateChar(STRING_ELT(s, i));
+			    int nn = strlen(ss) + 1;
+			    if(nn > 1) {
+				cptr[i] = CXXRNOCAST(char*) R_alloc(nn, sizeof(char));
+				strcpy(cptr[i], ss);
+			    } else {
+				/* Protect ourselves against those who like to
+				   extend "", maybe using strncpy */
+				nn = 128;
+				cptr[i] = CXXRNOCAST(char*) R_alloc(nn, sizeof(char));
+				memset(cptr[i], 0, nn);
+			    }
+			}
+		    }
+		    cargs[na] = CXXRNOCAST(void*) cptr;
+#ifdef R_MEMORY_PROFILING
+		    if (RTRACE(s)) memtrace_report(s, cargs[na]);
+#endif
+		}
+	    }
+	    break;
+	case VECSXP:
+	    {
+		if (Fort) error(_("invalid mode to pass to Fortran (arg %d)"), na + 1);
+		/* Used read-only, so this is safe */
+		n = length(s);
+		SEXP *lptr = static_cast<SEXP *>( CXXR_alloc(n, sizeof(SEXP)));
+		for (int i = 0 ; i < n ; i++) lptr[i] = VECTOR_ELT(s, i);
+		cargs[na] = CXXRNOCAST(void*) lptr;
+	    }
+	    break;
+	case CLOSXP:
+	case BUILTINSXP:
+	case SPECIALSXP:
+	case ENVSXP:
+	    {
+		if (Fort) error(_("invalid mode (%s) to pass to Fortran (arg %d)"), 
+				type2char(TYPEOF(s)), na + 1);
+		cargs[na] =  CXXRNOCAST(void*) s;
+	    }
+	    break;
+	default:
+	    /* Includes pairlists from R 2.15.0 */
+	    if (Fort) error(_("invalid mode (%s) to pass to Fortran (arg %d)"), 
+			    type2char(t), na + 1);
+	    warning("passing an object of type '%s' to .C (arg %d) is deprecated", 
+		    type2char(t), na + 1);
+	    if (t == LISTSXP)
+		warning(_("pairlists are passed as SEXP as from R 2.15.0"));
+	    cargs[na] =  CXXRNOCAST(void*) s;
+	    continue;
+	}
+	if (nprotect) UNPROTECT(nprotect);
     }
 
 
@@ -2303,81 +2246,101 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     default:
 	errorcall(call, _("too many arguments, sorry"));
     }
-    PROTECT(ans = allocVector(VECSXP, nargs));
-    havenames = 0;
+
     if (dup) {
+#ifdef SUPPORT_CONVERTERS
 	R_FromCConvertInfo info;
 	info.cargs = cargs;
 	info.allArgs = args;
 	info.nargs = nargs;
 	info.functionName = symName;
-	nargs = 0;
-	for (pargs = args ; pargs != R_NilValue ; pargs = CDR(pargs)) {
-	    if(argStyles && argStyles[nargs] == R_ARG_IN) {
-		PROTECT(s = R_NilValue);
-	    } else if(argConverters[nargs]) {
-		if(argConverters[nargs]->reverse) {
-		    info.argIndex = nargs;
-		    s = argConverters[nargs]->reverse(cargs[nargs], CAR(pargs),
-						      &info,
-						      argConverters[nargs]);
-		} else
-		    s = R_NilValue;
-		PROTECT(s);
-	    } else {
-		PROTECT(s = CPtrToRObj(cargs[nargs], CAR(pargs), which,
-				       checkTypes ? checkTypes[nargs] : TYPEOF(CAR(pargs)),
-				       encname));
-    // In CR this reads #if R_MEMORY_PROFILING :
-#if 0
-		if (RTRACE(CAR(pargs)) && dup){
-			memtrace_report(cargs[nargs], s);
-			SET_RTRACE(s, 1);
+#endif
+
+	for (na = 0, pa = args ; pa != R_NilValue ; pa = CDR(pa), na++) {
+	    if(argStyles && argStyles[na] == R_ARG_IN) {
+		SET_VECTOR_ELT(ans, na, R_NilValue);
+		continue;
+#ifdef SUPPORT_CONVERTERS
+	    } else if(argConverters[na]) {
+		if(argConverters[na]->reverse) {
+		    info.argIndex = na;
+		    s = argConverters[na]->reverse(cargs[na], CAR(pa),
+						   &info,
+						   argConverters[na]);
+		    PROTECT(s);
+		    SET_VECTOR_ELT(ans, na, s);
+		    UNPROTECT(1);
+		} else {
+		    SET_VECTOR_ELT(ans, na, R_NilValue);
+		    continue;
 		}
 #endif
-		DUPLICATE_ATTRIB(s, CAR(pargs));
+	    } else {
+		void *p = cargs[na];
+		SEXP arg = CAR(pa);
+		s = VECTOR_ELT(ans, na);
+		R_NativePrimitiveArgType type =
+		    checkTypes ? checkTypes[na] : TYPEOF(arg);
+	        int n = length(arg);
+
+		switch(type) {
+		case LGLSXP:
+		{
+		    int *iptr = INTEGER(arg), tmp;
+		    for (int i = 0 ; i < n ; i++) {
+			tmp =  iptr[i];
+			iptr[i] = (tmp == NA_INTEGER || tmp == 0) ? tmp : 1;
+		    }
+		    break;
+		}
+		case REALSXP:
+		case SINGLESXP:
+		    if (type == SINGLESXP || asLogical(getAttrib(arg, CSingSymbol)) == 1) {
+			s = allocVector(REALSXP, n);
+			float *sptr = static_cast<float*>( p);
+			for(int i = 0 ; i < n ; i++) 
+			    REAL(s)[i] = double( sptr[i]);
+		    }
+		    break;
+		case STRSXP:
+		    if(Fort) {
+			char buf[256];
+			/* only return one string: warned on the R -> Fortran step */
+			strncpy(buf, static_cast<char*>(p), 255);
+			buf[255] = '\0';
+			PROTECT(s = allocVector(CXXRCONSTRUCT(SEXPTYPE, type), 1));
+			SET_STRING_ELT(s, 0, mkChar(buf));
+			UNPROTECT(1);
+		    } else {
+			PROTECT(s = allocVector(CXXRCONSTRUCT(SEXPTYPE, type), n));
+			char **cptr = static_cast<char**>( p);
+			for (int i = 0 ; i < n ; i++)
+			    SET_STRING_ELT(s, i, mkChar(cptr[i]));
+			UNPROTECT(1);
+		    }
+		    break;
+		default:
+		    break;
+		}
+		if (s != arg) {
+		    PROTECT(s);
+		    DUPLICATE_ATTRIB(s, arg);
+		    SET_VECTOR_ELT(ans, na, s);
+		    UNPROTECT(1);
+		}
 	    }
-	    if (TAG(pargs) != R_NilValue)
-		havenames = 1;
-	    SET_VECTOR_ELT(ans, nargs, s);
-	    nargs++;
-	    UNPROTECT(1);
 	}
-    }
-    else {
-	nargs = 0;
-	for (pargs = args ; pargs != R_NilValue ; pargs = CDR(pargs)) {
-	    if (TAG(pargs) != R_NilValue)
-		havenames = 1;
-	    SET_VECTOR_ELT(ans, nargs, CAR(pargs));
-	    nargs++;
-	}
-    }
-    if (havenames) {
-	SEXP names;
-	PROTECT(names = allocVector(STRSXP, nargs));
-	nargs = 0;
-	for (pargs = args ; pargs != R_NilValue ; pargs = CDR(pargs)) {
-	    if (TAG(pargs) == R_NilValue)
-		SET_STRING_ELT(names, nargs++, R_BlankString);
-	    else
-		SET_STRING_ELT(names, nargs++, PRINTNAME(TAG(pargs)));
-	}
-	setAttrib(ans, R_NamesSymbol, names);
-	UNPROTECT(1);
     }
     UNPROTECT(1);
     vmaxset(vmax);
-    return (ans);
+    return ans;
 }
-
-/* FIXME : Must work out what happens here when we replace LISTSXP by
-   VECSXP. */
 
 static const struct {
     const char *name;
     const SEXPTYPE type;
 }
+
 typeinfo[] = {
     {"logical",	  LGLSXP },
     {"integer",	  INTSXP },
@@ -2399,6 +2362,72 @@ static SEXPTYPE string2type(char *s)
     error(_("type \"%s\" not supported in interlanguage calls"), s);
     return NILSXP; /* for -Wall */
 }
+
+/* This is entirely legacy, with no known users (Mar 2012).
+   So we freeze the code involved. 
+ */
+
+static void *RObjToCPtr2(SEXP s)
+{
+    int n;
+
+    switch(TYPEOF(s)) {
+    case LGLSXP:
+    case INTSXP:
+	{
+	    n = LENGTH(s);
+	    int *iptr = INTEGER(s);
+	    iptr = static_cast<int*>( CXXR_alloc(n, sizeof(int)));
+	    for (int i = 0 ; i < n ; i++) iptr[i] = INTEGER(s)[i];
+	    return CXXRNOCAST(void*) iptr;
+	}
+	break;
+    case REALSXP:
+	{
+	    n = LENGTH(s);
+	    double *rptr = REAL(s);
+	    rptr = static_cast<double*>( CXXR_alloc(n, sizeof(double)));
+	    for (int i = 0 ; i < n ; i++) rptr[i] = REAL(s)[i];
+	    return CXXRNOCAST(void*) rptr;
+	}
+	break;
+    case CPLXSXP:
+	{
+	    n = LENGTH(s);
+	    Rcomplex *zptr = COMPLEX(s);
+	    zptr = static_cast<Rcomplex*>( CXXR_alloc(n, sizeof(Rcomplex)));
+	    for (int i = 0 ; i < n ; i++) zptr[i] = COMPLEX(s)[i];
+	    return CXXRNOCAST(void*) zptr;
+	}
+	break;
+    case STRSXP:
+	{
+	    n = LENGTH(s);
+	    char **cptr = static_cast<char**>( CXXR_alloc(n, sizeof(char*)));
+	    for (int i = 0 ; i < n ; i++) {
+		const char *ss = translateChar(STRING_ELT(s, i));
+		cptr[i] = CXXRNOCAST(char*) R_alloc(strlen(ss) + 1, sizeof(char));
+		strcpy(cptr[i], ss);
+	    }
+	    return CXXRNOCAST(void*) cptr;
+	}
+	break;
+	/* From here down, probably not right */
+    case VECSXP:
+	{
+	    n = length(s);
+	    SEXP *lptr = static_cast<SEXP *>( CXXR_alloc(n, sizeof(SEXP)));
+	    for (int i = 0 ; i < n ; i++) lptr[i] = VECTOR_ELT(s, i);
+	    return CXXRNOCAST(void*) lptr;
+	}
+	break;
+    default:
+	return CXXRNOCAST(void*) s;
+    }
+    return 0;  // -Wall
+}
+
+
 
 void call_R(char *func, long nargs, void **arguments, char **modes,
 	    long *lengths, char **names, long nres, char **results)
@@ -2460,23 +2489,19 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
     case CPLXSXP:
     case STRSXP:
 	if(nres > 0)
-	    results[0] = static_cast<char *>( RObjToCPtr(s, 1, 1, 0, 0, CXXRNOCAST(const char *)NULL,
-							      NULL, NILSXP, ""));
+	    results[0] = static_cast<char *>( RObjToCPtr2(s));
 	break;
     case VECSXP:
 	n = length(s);
 	if (nres < n) n = nres;
-	for (i = 0 ; i < n ; i++) {
-	    results[i] = static_cast<char *>( RObjToCPtr(VECTOR_ELT(s, i), 1, 1, 0, 0,
-							      CXXRNOCAST(const char *)NULL, NULL, NILSXP, ""));
-	}
+	for (i = 0 ; i < n ; i++)
+	    results[i] = static_cast<char *>( RObjToCPtr2(VECTOR_ELT(s, i)));
 	break;
     case LISTSXP:
 	n = length(s);
 	if(nres < n) n = nres;
-	for(i=0 ; i<n ; i++) {
-	    results[i] = static_cast<char *>( RObjToCPtr(s, 1, 1, 0, 0, CXXRNOCAST(const char *)NULL,
-							      NULL, NILSXP, ""));
+	for(i = 0 ; i < n ; i++) {
+	    results[i] = static_cast<char *>( RObjToCPtr2(s));
 	    s = CDR(s);
 	}
 	break;

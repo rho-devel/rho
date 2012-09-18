@@ -1,7 +1,9 @@
 % File src/library/utils/man/combn.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{combn}
 \alias{combn}
@@ -46,7 +48,7 @@ combn(x, m, FUN = NULL, simplify = TRUE, \dots)
   Academic Press, NY.
 }
 \author{Scott Chasalow wrote the original in 1994 for S;
-  R package \pkg{combinat} and documentation by Vince Carey
+  R package \CRANpkg{combinat} and documentation by Vince Carey
   \email{stvjc@channing.harvard.edu};
   small changes by the R core team, notably to return an array in all
   cases of \code{simplify = TRUE}, e.g., for \code{combn(5,5)}.

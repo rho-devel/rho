@@ -1,3 +1,36 @@
+2012-02-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/clusGap.R (maxSE): with 5 methods to compute "maximal gap",
+	used also in print() method.
+
+2012-01-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/clusGap.R (print.clusGap, plot.clusGap): added
+
+2012-01-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/clusGap.R: new clusGap() for computing the cluster gap statistic.
+
+2011-12-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/coef.R (coefHier): newly export coefHier(), interfacing to C's bncoef().
+
+	* tests/diana-boots.R (dianaBoot): add a "bootstrap", for considerably more tests.
+	* tests/diana-ex.R: reorganized
+
+	* src/twins.c: newly translated from Fortran, for more future flexibility
+	* src/twins.f: no longer there
+
+	* R/agnes.q (as.dendrogram.twins): define for 'twins' rather than
+	just 'agnes'.
+
+2011-12-03  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/plotpart.q (clusplot.default): xlab, and ylab arguments;
+	new 's.x.2d' argument which allows to specify the plot setup in details.
+	(clas.snijpunt): also check for NAs in x[1:2,m].
+	Suggestions originally from Peter Ruckdeschel
+
 2011-10-16  Martin Maechler  <maechler@stat.math.ethz.ch>
 
 	* po/: setup of for translation
@@ -8,7 +41,7 @@
 
 2011-08-29  Martin Maechler  <maechler@stat.math.ethz.ch>
 
-	* DESCRIPTION (Version): 1.14.1, (not yet released)
+	* DESCRIPTION (Version): 1.14.1, released to CRAN, 2011-10-16
 
 	* R/silhouette.R (plot.silhouette): col = <one per cluster> had
 	ordering bug.

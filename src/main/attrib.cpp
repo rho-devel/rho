@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2010  The R Development Core Team
+ *  Copyright (C) 1997--2012  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -446,6 +446,7 @@ SEXP attribute_hidden do_commentgets(SEXP call, SEXP op, SEXP args, SEXP env)
     if (NAMED(CAR(args)) == 2) SETCAR(args, duplicate(CAR(args)));
     if (length(CADR(args)) == 0) SETCADR(args, R_NilValue);
     setAttrib(CAR(args), R_CommentSymbol, CADR(args));
+    SET_NAMED(CAR(args), 0);
     return CAR(args);
 }
 
@@ -503,6 +504,7 @@ SEXP attribute_hidden do_classgets(SEXP call, SEXP op, SEXP args, SEXP env)
     if(IS_S4_OBJECT(CAR(args)))
       UNSET_S4_OBJECT(CAR(args));
     setAttrib(CAR(args), R_ClassSymbol, CADR(args));
+    SET_NAMED(CAR(args), 0);
     return CAR(args);
 }
 
@@ -760,6 +762,7 @@ SEXP attribute_hidden do_namesgets(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     setAttrib(CAR(args), R_NamesSymbol, CADR(args));
     UNPROTECT(1);
+    SET_NAMED(CAR(args), 0);
     return CAR(args);
 }
 
@@ -867,6 +870,7 @@ SEXP attribute_hidden do_dimnamesgets(SEXP call, SEXP op, SEXP args, SEXP env)
     if (NAMED(CAR(args)) > 1) SETCAR(args, duplicate(CAR(args)));
     setAttrib(CAR(args), R_DimNamesSymbol, CADR(args));
     UNPROTECT(1);
+    SET_NAMED(CAR(args), 0);
     return CAR(args);
 }
 
@@ -997,10 +1001,11 @@ SEXP attribute_hidden do_dimgets(SEXP call, SEXP op, SEXP args, SEXP env)
 	if (s == R_NilValue) return x;
     }
     PROTECT(args = ans);
-    if (NAMED(x) > 1) SETCAR(args, duplicate(x));
+    if (NAMED(x) > 1) { SETCAR(args, duplicate(x)); x = CAR(args); }
     setAttrib(x, R_DimSymbol, CADR(args));
     setAttrib(x, R_NamesSymbol, R_NilValue);
     UNPROTECT(1);
+    SET_NAMED(x, 0);
     return x;
 }
 
@@ -1357,6 +1362,7 @@ SEXP attribute_hidden do_attrgets(SEXP call, SEXP op, SEXP args, SEXP env)
      */
     setAttrib(obj, name, CADDR(args));
     UNPROTECT(2);
+    SET_NAMED(obj, 0);
     return obj;
 }
 

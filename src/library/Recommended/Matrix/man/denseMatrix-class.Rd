@@ -4,6 +4,7 @@
 \alias{denseMatrix-class}
 %% Group methods
 \alias{Math,denseMatrix-method}
+\alias{-,denseMatrix,missing-method}
 %
 \alias{show,denseMatrix-method}
 \alias{coerce,ANY,denseMatrix-method}

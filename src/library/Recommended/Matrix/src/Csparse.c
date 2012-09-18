@@ -566,18 +566,18 @@ SEXP Csparse_diagN2U(SEXP x)
     }
     else { /* triangular with diag='N'): now drop the diagonal */
 	/* duplicate, since chx will be modified: */
-	SEXP xdup = duplicate(x);
-	PROTECT(xdup);
-	CHM_SP chx = AS_CHM_SP__(xdup);
+	SEXP ans;
+	SEXP xx = PROTECT(duplicate(x));
+	CHM_SP chx = AS_CHM_SP__(xx);
 	int uploT = (*uplo_P(x) == 'U') ? 1 : -1,
 	    Rkind = (chx->xtype != CHOLMOD_PATTERN) ? Real_kind(x) : 0;
 	R_CheckStack();
 
 	chm_diagN2U(chx, uploT, /* do_realloc */ FALSE);
 
-	SEXP ans = chm_sparse_to_SEXP(chx, /*dofree*/ 0/* or 1 ?? */,
-				      uploT, Rkind, "U",
-				      GET_SLOT(x, Matrix_DimNamesSym));
+	ans = chm_sparse_to_SEXP(chx, /*dofree*/ 0/* or 1 ?? */,
+				 uploT, Rkind, "U",
+				 GET_SLOT(x, Matrix_DimNamesSym));
 	UNPROTECT(1);
 	return ans;
     }

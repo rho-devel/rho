@@ -42,9 +42,8 @@
 #include <list>
 #include <map>
 #include <vector>
-#include "CXXR/CachedString.h"
 #include "CXXR/GCEdge.hpp"
-#include "CXXR/GCNode.hpp"
+#include "CXXR/String.h"
 
 namespace CXXR {
     class ArgList;
@@ -282,15 +281,15 @@ namespace CXXR {
 	FormalVector m_formal_data;
 
 	struct Comparator {
-	    bool operator()(const CachedString* l, const CachedString* r) const
+	    bool operator()(const String* l, const String* r) const
 	    {
 		return l->stdstring() < r->stdstring();
 	    }
 	};
 
 	// Mapping from tag names to index within m_formal_data:
-	typedef std::map<const CachedString*, unsigned int, Comparator,
-			 Allocator<std::pair<const CachedString*,
+	typedef std::map<const String*, unsigned int, Comparator,
+			 Allocator<std::pair<const String*,
 					     unsigned int> > > FormalMap;
 	FormalMap m_formal_index;
 
@@ -313,8 +312,7 @@ namespace CXXR {
 
 	// Return true if 'shorter' is a prefix of 'longer', or is
 	// identical to 'longer':
-	static bool isPrefix(const CachedString* shorter,
-			     const CachedString* longer);
+	static bool isPrefix(const String* shorter, const String* longer);
 
 	// Create a Binding in the Frame of target_env for the Symbol
 	// in fdata, setting its Origin and applying default value

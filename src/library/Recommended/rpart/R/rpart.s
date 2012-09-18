@@ -35,33 +35,32 @@ rpart <- function(formula, data, weights, subset,
     if (missing(method)) {
 	if (is.factor(Y) || is.character(Y))      method <- 'class'
         else if (inherits(Y, "Surv"))   method <- 'exp'
-	else if (is.matrix(Y)) method<- 'poisson'
-	else                   method<- 'anova'
-	}
+	else if (is.matrix(Y)) method <- 'poisson'
+	else                   method <- 'anova'
+    }
 
     if (is.list(method)) {
 	# User written split methods
 	mlist <- method
 	method <- 'user'
 
-	if (missing(parms)) init <- mlist$init(Y, offset, wt=wt)
-	else                init <- mlist$init(Y, offset, parms, wt)
+	init <- if (missing(parms)) mlist$init(Y, offset, wt=wt)
+	else  mlist$init(Y, offset, parms, wt)
 
 	method.int <- 4L     #the fourth entry in func_table.h
 
         ## assign this to avoid garbage collection
         keep <- rpartcallback(mlist, nobs, init)
-    }
-    else {
+    } else {
 	method.int <- pmatch(method, c("anova", "poisson", "class", "exp"))
 	if (is.na(method.int)) stop("Invalid method")
 	method <- c("anova", "poisson", "class", "exp")[method.int]
-	if (method.int==4L) method.int <- 2L
+	if (method.int == 4L) method.int <- 2L
 
-	if (missing(parms))
-	  init <- (get(paste("rpart", method, sep='.')))(Y, offset, ,wt)
+	 init <-if (missing(parms))
+             (get(paste("rpart", method, sep='.')))(Y, offset, ,wt)
 	else
-	  init <- (get(paste("rpart", method, sep='.')))(Y, offset, parms, wt)
+            (get(paste("rpart", method, sep='.')))(Y, offset, parms, wt)
 
         ns <- asNamespace("rpart")
         if(!is.null(init$print)) environment(init$print) <- ns
@@ -76,8 +75,8 @@ rpart <- function(formula, data, weights, subset,
     cats <- rep(0,ncol(X))
     if(!is.null(xlevels)) {
 	cats[match(names(xlevels), dimnames(X)[[2]])] <-
-		  unlist(lapply(xlevels, length))
-	}
+            unlist(lapply(xlevels, length))
+    }
 
     # We want to pass any ... args to rpart.control, but not pass things
     #  like "dats=mydata" where someone just made a typo.  The use of ...
@@ -88,7 +87,7 @@ rpart <- function(formula, data, weights, subset,
 	indx <- match(names(extraArgs), controlargs, nomatch=0)
 	if (any(indx==0))
             stop("Argument ", names(extraArgs)[indx==0], "not matched")
-	}
+    }
 
     controls <- rpart.control(...)
     if (!missing(control)) controls[names(control)] <- control
@@ -119,7 +118,7 @@ rpart <- function(formula, data, weights, subset,
 	    else stop("Wrong length for xval")
 	    }
 	else stop("Wrong length for xval")
-	}
+    }
 
     #
     # Incorporate costs
@@ -127,9 +126,9 @@ rpart <- function(formula, data, weights, subset,
     if (missing(cost)) cost <- rep(1.0, nvar)
     else {
 	if (length(cost) != nvar)
-		stop("Cost vector is the wrong length")
+            stop("Cost vector is the wrong length")
 	if (any(cost <=0)) stop("Cost vector must be positive")
-	}
+    }
 
     #
     # Have s_to_rp consider ordered categories as continuous
@@ -139,8 +138,9 @@ rpart <- function(formula, data, weights, subset,
     tfun <- function(x) {
 	if (is.matrix(x)) rep(is.ordered(x), ncol(x))
 	else is.ordered(x)
-	}
-    isord <- unlist(lapply(m[attr(Terms, 'term.labels')], tfun))
+    }
+    labs <- sub("^`(.*)`$", "\\1", attr(Terms, 'term.labels'))
+    isord <- unlist(lapply(m[labs], tfun))
     rpfit <- .C(C_s_to_rp,
 		    n = as.integer(nobs),
 		    nvarx = as.integer(nvar),
@@ -169,7 +169,7 @@ rpart <- function(formula, data, weights, subset,
 
     if (nsplit == 0) xval <- 0
     cpcol <- if (xval>0 && nsplit>0) 5L else 3L
-    if (ncat==0) catmat <- 0
+    if (ncat == 0) catmat <- 0
     else         catmat <- matrix(integer(1), ncat, max(cats))
 
     rp    <- .C(C_s_to_rp2,
@@ -273,7 +273,7 @@ rpart <- function(formula, data, weights, subset,
     where <- rp$which
     names(where) <- row.names(m)
 
-    if (nsplit ==0L) {  # no 'splits' component
+    if (nsplit == 0L) {  # no 'splits' component
 	ans <- list(frame = frame,
 		    where = where,
 		    call=call, terms=Terms,
@@ -282,8 +282,7 @@ rpart <- function(formula, data, weights, subset,
 		    parms  = init$parms,
 		    control= controls,
 		    functions= functions)
-	}
-    else {
+    } else {
 	ans <- list(frame = frame,
 		    where = where,
 		    call=call, terms=Terms,
@@ -294,22 +293,22 @@ rpart <- function(formula, data, weights, subset,
 		    control= controls,
 		    functions= functions)
 	}
-    if (ncat>0) ans$csplit <- catmat + 2L
+    if (ncat > 0) ans$csplit <- catmat + 2L
     if (model) {
 	ans$model <- m
 	if (missing(y)) y <- FALSE
-	}
+    }
     if (y) ans$y <- Y
     if (x) {
 	ans$x <- X
 	ans$wt<- wt
-	}
+    }
     ans$ordered <- isord
     if(!is.null(attr(m, "na.action")))
-	    ans$na.action <- attr(m, "na.action")
+        ans$na.action <- attr(m, "na.action")
     if (!is.null(xlevels)) attr(ans, 'xlevels') <- xlevels
     if(method=='class') attr(ans, "ylevels") <- init$ylevels
 #    if (length(xgroups)) ans$xgroups <- xgroups
     class(ans) <- "rpart"
     ans
-    }
+}

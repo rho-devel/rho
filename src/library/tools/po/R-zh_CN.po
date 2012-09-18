@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.4.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-10-03 18:49\n"
+"POT-Creation-Date: 2012-04-22 15:25\n"
 "PO-Revision-Date: 2005-02-04 08:37+0000\n"
 "Last-Translator: 陈斐 <feic@avaya.com>\n"
 "Language-Team: Chinese\n"
@@ -172,51 +172,12 @@ msgstr "%s里不能有T/F这样的值"
 msgid "package name '%s' seems invalid; using directory name '%s' instead"
 msgstr "程辑包的名字'%s'好象有问题；用文件目录名'%s'替代"
 
-msgid "Packages required but not available:"
-msgstr "需要有程辑包但它却不存在:"
-
-msgid "Package required but not available: %s"
-msgstr "需要有程辑包但它却不存在: %s"
-
-msgid "Packages required and available but unsuitable versions:"
-msgstr "虽然有需要的程辑包，但其版本不对:"
-
-msgid "Package required and available but unsuitable version: %s"
-msgstr "虽然有需要的程辑包，但其版本不对: %s"
-
-msgid "Former standard packages required but now defunct:"
-msgstr "原来需要的标准程辑包现在不要了:"
-
-msgid "Packages suggested but not available for checking:"
-msgstr "无法检查建议用的程辑包:"
-
-msgid "Package suggested but not available for checking: %s"
-msgstr "无法检查建议用的程辑包: %s"
-
-msgid "Packages which this enhances but not available for checking:"
-msgstr "无法检查被加强功能的程辑包:"
-
-msgid "Package which this enhances but not available for checking: %s"
-msgstr "无法检查被加强功能的程辑包:%s"
-
-msgid "Vignette dependencies not required:"
-msgstr "不需要标头从属:"
-
-msgid "Vignette dependencies not required: %s"
-msgstr "不需要标头从属: %s"
-
 msgid ""
 "Vignette dependencies (\\VignetteDepends{} entries) must be contained in the "
 "DESCRIPTION Depends/Suggests/Imports entries."
 msgstr ""
 "标头从属(\\VignetteDepends{}条目)必需包含在DESCRIPTION文件里的Depends/"
 "Suggests/Imports条目中."
-
-msgid "Namespace dependencies not required:"
-msgstr "不需要名字空间从属:"
-
-msgid "Namespace dependency not required: %s"
-msgstr "不需要名字空间从属: %s"
 
 msgid "Malformed package name"
 msgstr "畸形程辑包名"
@@ -280,9 +241,6 @@ msgid ""
 "Version numbers must be sequences of at least two non-negative integers, "
 "separated by single '.' or '-'."
 msgstr "版本数目至少要由两个非负整数组成，中间用单一的'.'或'-'符号分开."
-
-msgid "Package name and namespace differ."
-msgstr "程辑包的名字和它的名字空间不一样."
 
 msgid "Invalid Priority field."
 msgstr "Priority域不对."
@@ -394,6 +352,14 @@ msgstr "程序包启动函数应该用%s来生成消息"
 msgid "packageStartupMessage"
 msgstr "packageStartupMessage"
 
+#, fuzzy
+msgid "Package startup functions should not call %s."
+msgstr "程序包启动函数不应该改变搜索路径"
+
+#, fuzzy
+msgid "installed.packages"
+msgstr "程辑包无效."
+
 msgid "See section %s in ?.onAttach."
 msgstr "参见?.onAttach 里的%s章节"
 
@@ -414,6 +380,15 @@ msgstr "'library'或'require'调用没有被声明:"
 
 msgid "'library' or 'require' call not declared from: %s"
 msgstr "'library'或'require'调用没有被声明: %s"
+
+msgid "'data(package=)' calls not declared from:"
+msgstr "'data(package=)'调用没有被声明:"
+
+msgid "'data(package=)' call not declared from: %s"
+msgstr "'data(package=)'调用没有被声明: %s"
+
+msgid "NB: need Internet access to use CRAN incoming checks"
+msgstr ""
 
 msgid "Rd files with duplicated name '%s':"
 msgstr "有重复名字'%s'的Rd文件:"
@@ -484,6 +459,9 @@ msgstr "Rd文件里缺少或有空白的\\name域"
 msgid "No help on %s found in RdDB %s"
 msgstr "RdDB %2$s里找不到关于%1$s的帮助"
 
+msgid "more than one \\examples section, using the first"
+msgstr "多个\\example段，取用第一段"
+
 msgid "Converting Rd files to LaTeX ..."
 msgstr "把Rd文件转化成LaTeX…"
 
@@ -511,14 +489,8 @@ msgstr "不能确定的当前工作目录"
 msgid "no inputs"
 msgstr "没有输入"
 
-msgid "DVI output from Rd2dvi is deprecated"
-msgstr "DVI从Rd2dvi输出不再有用"
-
-msgid "Error in running tools::texi2dvi"
-msgstr "调用tools::texi2dvi时出了错"
-
-msgid "more than one \\examples section, using the first"
-msgstr "多个\\example段，取用第一段"
+msgid "Error in running tools::texi2pdf"
+msgstr "调用tools::texi2pdf时出了错"
 
 msgid "invalid value for '%s' : %s"
 msgstr "'%s'值无效：%s"
@@ -582,13 +554,6 @@ msgstr "无法重新编码'%s'%s行"
 msgid "unable to copy INDEX to '%s'"
 msgstr "无法拷贝索引至'%s'"
 
-msgid ""
-"running Stangle on vignette '%s' failed with message:\n"
-"%s"
-msgstr ""
-"用Stangle处理标头'%s'失败，诊断信息为:\n"
-"%s"
-
 msgid "cannot create directory '%s'"
 msgstr "无法建立目录'%s'"
 
@@ -626,8 +591,14 @@ msgstr "改动需要特别'style'"
 msgid "The default JSS style may not be modified."
 msgstr "不能对缺省JSS式样进行修改"
 
+msgid "invalid value for --compact-vignettes, assuming \"qpdf\""
+msgstr "--compact-vignettes的值不对，用\"qpdf\""
+
 msgid "Error: cannot rename directory to"
 msgstr "错误：无法改变目录名字为"
+
+msgid "cannot link from"
+msgstr ""
 
 msgid "-l option without value"
 msgstr "-l选项一定得有值"
@@ -637,6 +608,9 @@ msgstr "R 2.12.0以后的版本不支持设置文件"
 
 msgid "'--multiarch' specified with only one usable sub-architecture"
 msgstr "'--multiarch'只设定了一个可以用的子体系结构"
+
+msgid "--as-cran turns off --extra-arch"
+msgstr ""
 
 msgid "Error: no packages were specified"
 msgstr "错误：没有设定程序包"
@@ -649,6 +623,9 @@ msgstr "程序包目录"
 
 msgid "does not exist"
 msgstr "不存在"
+
+msgid "non-ASCII input in a CITATION file without a declared encoding"
+msgstr ""
 
 msgid "No files in this directory"
 msgstr "目录里没有任何文件"
@@ -784,17 +761,14 @@ msgstr "找不到源程序文件"
 msgid "empty 'data' directory"
 msgstr "空的'data'目录"
 
-msgid "--merge-multiarch is Windows-only"
-msgstr "--merge-multiarch只在Windows上有用"
-
 msgid "cannot create temporary directory"
 msgstr "无法建立临时性目录"
 
 msgid "ERROR: --merge-multiarch applies only to a single tarball"
 msgstr "错误：--merge-multiarch只适用于单独压缩包"
 
-msgid "ERROR: --merge-multiarch can only be used on i386/x64 installations"
-msgstr "错误：--merge-multiarch只适用i386/x64安装"
+msgid "only one architecture so ignoring '--merge-multiarch'"
+msgstr ""
 
 msgid "invalid package"
 msgstr "程辑包无效."
@@ -910,8 +884,7 @@ msgstr ""
 "NEWS.Rd文件格式不对:\n"
 "开始块\n"
 "  %s\n"
-"包含多个\\itemize."
-"因此用第一个。"
+"包含多个\\itemize.因此用第一个。"
 
 msgid "Processing packages:"
 msgstr "正在处理程辑包:"
@@ -1246,6 +1219,64 @@ msgid "object %s is created by more than one data call"
 msgid_plural "objects %s are created by more than one data call"
 msgstr[0] "不能用多个数据调用来产生对象%s"
 
+#~ msgid "ERROR: --merge-multiarch can only be used on i386/x64 installations"
+#~ msgstr "错误：--merge-multiarch只适用i386/x64安装"
+
+#~ msgid "--merge-multiarch is Windows-only"
+#~ msgstr "--merge-multiarch只在Windows上有用"
+
+#~ msgid ""
+#~ "running Stangle on vignette '%s' failed with message:\n"
+#~ "%s"
+#~ msgstr ""
+#~ "用Stangle处理标头'%s'失败，诊断信息为:\n"
+#~ "%s"
+
+#~ msgid "Packages required but not available:"
+#~ msgstr "需要有程辑包但它却不存在:"
+
+#~ msgid "Package required but not available: %s"
+#~ msgstr "需要有程辑包但它却不存在: %s"
+
+#~ msgid "Packages required and available but unsuitable versions:"
+#~ msgstr "虽然有需要的程辑包，但其版本不对:"
+
+#~ msgid "Package required and available but unsuitable version: %s"
+#~ msgstr "虽然有需要的程辑包，但其版本不对: %s"
+
+#~ msgid "Former standard packages required but now defunct:"
+#~ msgstr "原来需要的标准程辑包现在不要了:"
+
+#~ msgid "Packages suggested but not available for checking:"
+#~ msgstr "无法检查建议用的程辑包:"
+
+#~ msgid "Package suggested but not available for checking: %s"
+#~ msgstr "无法检查建议用的程辑包: %s"
+
+#~ msgid "Packages which this enhances but not available for checking:"
+#~ msgstr "无法检查被加强功能的程辑包:"
+
+#~ msgid "Package which this enhances but not available for checking: %s"
+#~ msgstr "无法检查被加强功能的程辑包:%s"
+
+#~ msgid "Vignette dependencies not required:"
+#~ msgstr "不需要标头从属:"
+
+#~ msgid "Vignette dependencies not required: %s"
+#~ msgstr "不需要标头从属: %s"
+
+#~ msgid "Namespace dependencies not required:"
+#~ msgstr "不需要名字空间从属:"
+
+#~ msgid "Namespace dependency not required: %s"
+#~ msgstr "不需要名字空间从属: %s"
+
+#~ msgid "Package name and namespace differ."
+#~ msgstr "程辑包的名字和它的名字空间不一样."
+
+#~ msgid "DVI output from Rd2dvi is deprecated"
+#~ msgstr "DVI从Rd2dvi输出不再有用"
+
 #, fuzzy
 #~ msgid ""
 #~ "installing a top-level 'COPYING' file is deprecated -- see the 'Writing R "
@@ -1444,4 +1475,3 @@ msgstr[0] "不能用多个数据调用来产生对象%s"
 
 #~ msgid "no or more than one match"
 #~ msgstr "没有成对的，或多于一双"
-

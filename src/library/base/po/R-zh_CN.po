@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.3.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-10-23 14:54\n"
+"POT-Creation-Date: 2012-06-07 15:52\n"
 "PO-Revision-Date: 2005-02-04 08:37+0000\n"
 "Last-Translator: 陈斐 <FeiChen@FairIsaac.com>\n"
 "Language-Team: Chinese\n"
@@ -28,12 +28,6 @@ msgstr "见help(\"Defunct\"))和help(\"%s-defunct\")。"
 
 msgid "See help(\"Defunct\")"
 msgstr "见help(\"Defunct\"))"
-
-msgid "'symbol.C' is not needed: please remove it"
-msgstr "不需要'symbol.C'：请删除"
-
-msgid "'symbol.For' is not needed: please remove it"
-msgstr "不需要'symbol.For'：请删除"
 
 msgid "'%s' is deprecated."
 msgstr "%s不再有用。"
@@ -125,6 +119,7 @@ msgstr "%2$s需要程辑包%1$s，但它与目前的版本不相容"
 msgid "package %s is required by %s so will not be detached"
 msgstr "%2$s需要程辑包%1$s，因此不能将之分离"
 
+#, fuzzy
 msgid ""
 "%s failed in %s() for '%s', details:\n"
 "  call: %s\n"
@@ -158,6 +153,10 @@ msgstr "自动载入器在'%2$s'找不到'%1$s' "
 msgid "invalid argument values in 'backsolve'"
 msgstr "'backsolve'的参数有错"
 
+#, fuzzy
+msgid "invalid value of ncol(x)"
+msgstr "无效值"
+
 msgid "singular matrix in 'backsolve'. First zero in diagonal [%d]"
 msgstr "'backsolve'的矩阵奇异。对角[%d]第一个零点"
 
@@ -172,6 +171,10 @@ msgstr "'chol'的矩阵不是正方形的"
 
 msgid "non-matrix argument to 'chol'"
 msgstr "'chol'的参数不是矩阵"
+
+#, fuzzy
+msgid "invalid nrow(x)"
+msgstr "名字不对"
 
 msgid "matrix not positive definite"
 msgstr "非正定矩阵"
@@ -241,6 +244,10 @@ msgstr "'breaks' 的值有重复"
 
 msgid "labels/breaks length conflict"
 msgstr "label/breaks两个参数的长度不一样"
+
+#, fuzzy
+msgid "invalid value of length(x)"
+msgstr "无效值"
 
 msgid "invalid 'row.names' length"
 msgstr "'row.names'的长度不对"
@@ -689,6 +696,14 @@ msgstr "'vec'内有NA值"
 msgid "'vec' must be sorted non-decreasingly"
 msgstr "'vec'的顺序一定得从小到大"
 
+#, fuzzy
+msgid "invalid length(x)"
+msgstr "名字不对"
+
+#, fuzzy
+msgid "invalid length(vec)"
+msgstr "名字不对"
+
 msgid "using the first element of 'value' of type expression"
 msgstr "用种类表现'value'的第一个元素"
 
@@ -796,13 +811,16 @@ msgstr "程辑包%s是为%s建造的"
 msgid "package %s is not installed for 'arch=%s'"
 msgstr "程辑包%s没有安装在'arch=%s'中"
 
+#, fuzzy
 msgid ""
 "package %s has a license that you need to accept in an interactive session"
 msgstr "程辑包％s的许可证要求你在交互式会议时先接受它"
 
+#, fuzzy
 msgid "Package %s has a license that you need to accept after viewing"
 msgstr "程辑包％s的许可证要求你在看完后接受它"
 
+#, fuzzy
 msgid ""
 "Package %s has a license that you need to accept:\n"
 "according to the DESCRIPTION file it is"
@@ -813,6 +831,7 @@ msgstr ""
 msgid "License"
 msgstr "许可证"
 
+#, fuzzy
 msgid "License for package %s not accepted"
 msgstr "程辑包％s的许可证没有被接受"
 
@@ -846,8 +865,8 @@ msgstr "程辑包%s没有名字空间，应该重新安装"
 msgid "package %s already present in search()"
 msgstr "search()里已经存在程辑包%s"
 
-msgid "'DESCRIPTION' has 'Encoding' field and re-encoding is not possible"
-msgstr "'DESCRIPTION'有'Encoding'一域，但重新編碼是不可能的"
+msgid "'DESCRIPTION' has an 'Encoding' field and re-encoding is not possible"
+msgstr "'DESCRIPTION'内有'Encoding'这个域，但重新編碼是不可能的"
 
 msgid "%sPackages in library %s:"
 msgstr "图书馆%2$s里有%1$s个程辑包："
@@ -960,6 +979,9 @@ msgstr "必需设定'file'的值"
 msgid "Use of save versions prior to 2 is deprecated"
 msgstr "在R版本2号之前的保存功能不再有用"
 
+msgid "nothing specified to be save()d"
+msgstr "没有指定要save()的东西"
+
 msgid "'file' must be non-empty string"
 msgstr "'file'的值必需是长度大于零的字符串"
 
@@ -1038,6 +1060,10 @@ msgstr "'trim'必需是长度必需为一的数值"
 msgid "trimmed means are not defined for complex data"
 msgstr "复数数据不能算切尾平均值"
 
+#, fuzzy
+msgid "'by' must specify uniquely valid column(s)"
+msgstr "'by'所指定的那些列有错"
+
 msgid "'by' must match numbers of columns"
 msgstr "'by'的长度一定得和列的长度相同"
 
@@ -1112,6 +1138,7 @@ msgstr "程辑包%s没有名字空间"
 msgid "unable to load R code in package %s"
 msgstr "程辑包%s里的R写碼载入失败"
 
+#, fuzzy
 msgid ""
 "exportClassPattern specified in NAMESPACE but no matching classes in package "
 "%s"
@@ -1119,6 +1146,9 @@ msgstr "虽然exportClassPattern在NAMESPACE有设定但它在%s程辑包中没�
 
 msgid "in package %s classes %s were specified for export but not defined"
 msgstr "在%s程辑包中%s类别指定被用于出口，但它的定义并不存在"
+
+msgid "No function found corresponding to methods exports from %s for: %s"
+msgstr "从%s导出功能里找不到适用于%s的相应方法"
 
 msgid "in %s methods for export not found: %s"
 msgstr "用于出口的%s方法不存在：%s "
@@ -1168,8 +1198,18 @@ msgstr "进口目标有错"
 msgid "found methods to import for function %s but not the generic itself"
 msgstr "%s函数有可进口的方法，但找不到它的同属方法"
 
+msgid "No methods found in \"%s\" for requests: %s"
+msgstr "在\"%s\"找不到%s需要的索取"
+
 msgid "requested methods not found in environment/package %s: %s"
 msgstr "环境/程辑包%s里找不到所要求的方法：%s"
+
+msgid ""
+"No generic function found corresponding to requested imported methods for "
+"\"%s\" from package \"%s\" (malformed exports?)"
+msgstr ""
+"程序包\"%2$s\"里没有相应于为\"%1$s\"所要求的进口方法的泛型函数（是不是出口的"
+"格式不对？）"
 
 msgid "cannot add to exports of a sealed namespace"
 msgstr "不能在封闭名字空间里进行出口加入"
@@ -1201,6 +1241,7 @@ msgstr "S3方法%s有声明但并不存在"
 msgid "bad method"
 msgstr "方法有错"
 
+#, fuzzy
 msgid "object '%s' not found whilst loading namespace '%s'"
 msgstr "在载入名字空间的时候没有找到'%s'对象"
 
@@ -1243,8 +1284,22 @@ msgstr "'u5.bias'必需为非负数值"
 msgid "'eps.correct' must be 0, 1, or 2"
 msgstr "'eps.correct'的值只能为零，一，或二"
 
+#, fuzzy
+msgid "invalid ncol(x)"
+msgstr "名字不对"
+
 msgid "first argument must be a QR decomposition"
 msgstr "第一个参数必需是QR分解"
+
+msgid "invalid nrow(qr$qr)"
+msgstr ""
+
+msgid "invalid ncol(qr$qr)"
+msgstr ""
+
+#, fuzzy
+msgid "invalid ncol(y)"
+msgstr "名字不对"
 
 msgid "'qr' and 'y' must have the same number of rows"
 msgstr "'qr'和'y'必需有相同的行数"
@@ -1254,6 +1309,9 @@ msgstr "'qr.coef'里出现了精确奇异"
 
 msgid "argument is not a QR decomposition"
 msgstr "参数不是QR分解"
+
+msgid "invalid NCOL(y)"
+msgstr ""
 
 msgid "not implemented for complex 'qr'"
 msgstr "没有在复数'qr'内实现"
@@ -1266,6 +1324,9 @@ msgstr "'k'值太大"
 
 msgid "need larger value of 'ncol' as pivoting occurred"
 msgstr "因为产生了主轴，需要大一点的'ncol'值"
+
+msgid "invalid NCOL(R)"
+msgstr ""
 
 msgid "'x' must be an atomic vector"
 msgstr "'x'必需为原子矢量"
@@ -1299,6 +1360,9 @@ msgstr "'length.out'参数的长度必需为一"
 
 msgid "first element used of 'length.out' argument"
 msgstr "用了'length.out'参数里的第一个元素"
+
+msgid "extra argument(s) %s will be disregarded"
+msgstr "额外参数%s忽略不用"
 
 msgid "invalid (to - from)/by in seq(.)"
 msgstr "seq(.)里的(to - from)/by 有错"
@@ -1483,6 +1547,14 @@ msgstr "'x'不是陈列"
 msgid "'bin' must be numeric or a factor"
 msgstr "'bin'必需是数值或是因子"
 
+#, fuzzy
+msgid "invalid value of length(bin)"
+msgstr "无效值"
+
+#, fuzzy
+msgid "invalid value of nbins"
+msgstr "无效值"
+
 msgid "arguments must have same length"
 msgstr "参数的长度必需相同"
 
@@ -1573,6 +1645,15 @@ msgstr "'stderr'的长度必需为一"
 msgid "'which' was not found on this platform"
 msgstr "这个平台上找不到'which'"
 
+msgid "fewer 'from' files than 'to' files"
+msgstr "'from'的文件比'to'的文件要少"
+
+msgid "link '%s' already exists"
+msgstr "已经存在'%s'这个链结"
+
+msgid "failed to create directory for link '%s"
+msgstr "无法为'%s'这个链结创建目录"
+
 msgid "'show.output.on.console' must be TRUE or FALSE"
 msgstr "'show.output.on.console'的值必需是'TRUE'或'FALSE'值"
 
@@ -1615,7 +1696,6 @@ msgstr "项目"
 msgid "have been removed from the search path"
 msgstr "在搜索路径上被删除"
 
-#, fuzzy
 msgid "cannot find namespace environment"
 msgstr "找不到名字空间环境"
 
@@ -1639,6 +1719,14 @@ msgid "object %s not found"
 msgid_plural "objects %s not found"
 msgstr[0] "目标对象%s不存在"
 
+msgid ""
+"Function found when exporting methods from the namespace %s which is not S4 "
+"generic: %s"
+msgid_plural ""
+"Functions found when exporting methods from the namespace %s which are not "
+"S4 generic: %s"
+msgstr[0] ""
+
 msgid "class %s is not exported by 'namespace:%s'"
 msgid_plural "classes %s are not exported by 'namespace:%s'"
 msgstr[0] "'namespace:%2$s'没有出口%1$s这个类别"
@@ -1658,6 +1746,19 @@ msgstr[0] "S3方法%s在NAMESPACE里有声明但不存在"
 msgid "Warning message:\n"
 msgid_plural "Warning messages:\n"
 msgstr[0] "警告信息：\n"
+
+#~ msgid ""
+#~ "Functions for exporting methods must have been made generic, explicitly "
+#~ "or implicitly; not true when loading %s for %s"
+#~ msgstr ""
+#~ "出口方法的函数肯定已经被明确地或隐式地被泛型了; 但在为%2$s加载%1$s时却不是"
+#~ "这样的"
+
+#~ msgid "'symbol.C' is not needed: please remove it"
+#~ msgstr "不需要'symbol.C'：请删除"
+
+#~ msgid "'symbol.For' is not needed: please remove it"
+#~ msgstr "不需要'symbol.For'：请删除"
 
 #~ msgid "'pattern' must be a non-empty character string"
 #~ msgstr "'pattern'必需为非空字符串"
@@ -1765,9 +1866,6 @@ msgstr[0] "警告信息：\n"
 
 #~ msgid "S3 method '%s' was declared in NAMESPACE but not found"
 #~ msgstr "S3方法'%s'在NAMESPACE里有声明但不存在"
-
-#~ msgid "invalid name"
-#~ msgstr "名字不对"
 
 #~ msgid "is required by"
 #~ msgstr "需要"

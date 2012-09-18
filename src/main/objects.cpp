@@ -18,7 +18,7 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 2002-3	      The R Foundation
- *  Copyright (C) 1999-2007   The R Development Core Team.
+ *  Copyright (C) 1999-2007   The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -304,7 +304,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (!generic || generic->size() != 1)
 		Rf_errorcall(call,
 			     _("'generic' argument must be a character string"));
-	    if ((*generic)[0] == CachedString::blank())
+	    if ((*generic)[0] == String::blank())
 		Rf_errorcall(call, _("first argument must be a generic name"));
 	}
 
@@ -753,7 +753,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    // For Ops we need `method' to be a vector
 	    for (unsigned int j = 0; j < dotmethod->size(); ++j) {
 		if (!(*dotmethod)[j])
-		    (*dotmethod)[j] = CachedString::obtain(nextmethodname);
+		    (*dotmethod)[j] = String::obtain(nextmethodname);
 	    }
 	}
 	method_bindings->bind(DotMethodSymbol, dotmethod);
@@ -883,7 +883,8 @@ int R_check_class_and_super(SEXP x, const char **valid, SEXP rho)
     }
     /* if not found directly, now search the non-virtual super classes :*/
     if(IS_S4_OBJECT(x)) {
-	/* now try the superclasses, i.e.,  try   is(x, "....") : */
+	/* now try the superclasses, i.e.,  try   is(x, "....");  superCl :=
+	   .selectSuperClasses(getClass("....")@contains, dropVirtual=TRUE)  */
 	SEXP classExts, superCl, _call;
 	static SEXP s_contains = NULL, s_selectSuperCl = NULL;
 	int i;
@@ -912,6 +913,38 @@ int R_check_class_and_super(SEXP x, const char **valid, SEXP rho)
 	UNPROTECT(1);
     }
     return -1;
+}
+
+
+/**
+ * Return the 0-based index of an is() match in a vector of class-name
+ * strings terminated by an empty string.  Returns -1 for no match.
+ * Strives to find the correct environment() for is(), using .classEnv()
+ * (from \pkg{methods}).
+ *
+ * @param x  an R object, about which we want is(x, .) information.
+ * @param valid vector of possible matches terminated by an empty string.
+ *
+ * @return index of match or -1 for no match
+ */
+int R_check_class_etc(SEXP x, const char **valid)
+{
+    static SEXP meth_classEnv = NULL;
+    SEXP cl = Rf_getAttrib(x, R_ClassSymbol), rho = R_GlobalEnv, pkg;
+    if(!meth_classEnv)
+	meth_classEnv = Rf_install(".classEnv");
+
+    pkg = Rf_getAttrib(cl, R_PackageSymbol); /* ==R== packageSlot(class(x)) */
+    if(!Rf_isNull(pkg)) { /* find  rho := correct class Environment */
+	SEXP clEnvCall;
+	// FIXME: fails if 'methods' is not attached.
+	PROTECT(clEnvCall = Rf_lang2(meth_classEnv, cl));
+	rho = Rf_eval(clEnvCall, R_GlobalEnv);
+	UNPROTECT(1);
+	if(!Rf_isEnvironment(rho))
+	    Rf_error(_("could not find correct environment; please report!"));
+    }
+    return R_check_class_and_super(x, valid, rho);
 }
 
 /*

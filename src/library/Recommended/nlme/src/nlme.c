@@ -254,8 +254,8 @@ nlme_increment(nlmePtr nlme)
 		nlme->pdClass, &RML, &logLik, Ra, &lRSS);
     {
 	statePTR st = Calloc(1, struct state_struct);
-	int ntheta = count_DmHalf_pars( nlme->dd, nlme->pdClass ), itrmcd, itncnt,
-	    msg, iagflg;
+	int ntheta = count_DmHalf_pars( nlme->dd, nlme->pdClass ),
+	    itrmcd, itncnt, msg, iagflg;
 	double epsm,
 	    *theta = Calloc(ntheta, double),
 	    *typsiz = Calloc(ntheta, double),

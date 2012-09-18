@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-2009   The R Development Core Team.
+ *  Copyright (C) 2001-2009   The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -988,7 +988,7 @@ SEXP R_dispatchGeneric(SEXP fname, SEXP ev, SEXP fdef)
     if(sigargs == R_UnboundValue || siglength == R_UnboundValue ||
        mtable == R_UnboundValue)
 	error(_("Generic \"%s\" seems not to have been initialized for table dispatch---need to have .SigArgs and .AllMtable assigned in its environment"));
-    nargs = NUMERIC_VALUE(siglength);
+    nargs = asInteger(siglength);
     PROTECT(classes = NEW_LIST(nargs)); nprotect++;
     if (nargs > LENGTH(sigargs))
 	error("'.SigArgs' is shorter than '.SigLength' says it should be");

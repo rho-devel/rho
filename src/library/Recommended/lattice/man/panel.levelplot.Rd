@@ -21,6 +21,8 @@ panel.levelplot(x, y, z,
                 lty = add.line$lty,
                 lwd = add.line$lwd,
                 border = "transparent",
+                border.lty = 1,
+                border.lwd = 0.1,
                 \dots,
                 col.regions = regions$col,
                 alpha.regions = regions$alpha,
@@ -95,8 +97,9 @@ panel.levelplot.raster(x, y, z,
     A logical flag, specifying whether inter-contour regions should be
     filled with appropriately colored rectangles.
   }
-  \item{col, lty, lwd}{ graphical parameters for contour lines}
-  \item{border}{ border color for rectangles used when \code{region=TRUE}. }
+  \item{col, lty, lwd}{ Graphical parameters for contour lines. }
+  \item{border}{ Border color for rectangles used when \code{region=TRUE}. }
+  \item{border.lty, border.lwd}{ Graphical parameters for the border}
 %   \item{cex, col.text, font, fontfamily, fontface}{ graphical parameters for contour labels}
   \item{\dots}{ Extra parameters. }
   \item{col.regions}{

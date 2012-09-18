@@ -515,8 +515,10 @@ calculateGridLayout <-
                     else textGrob("")
             }
             xaxis.panel.unit <-
+### widthDetails(
                 max(unit(rep(1, length(lab.groblist)), "grobheight", data = lab.groblist)) +
                     tick.unit + pad1.unit + pad2.unit
+### )
         }
     }
 
@@ -702,8 +704,10 @@ calculateGridLayout <-
                     else textGrob("")
             }
             yaxis.panel.unit <-
+### widthDetails(
                 max(unit(rep(1, length(lab.groblist)), "grobwidth", data = lab.groblist)) +
                     tick.unit + pad1.unit + pad2.unit
+###)
         }
     }
 

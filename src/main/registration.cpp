@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2002-2011	The R Development Core Team.
+ *  Copyright (C) 2002-2011	The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -237,7 +237,7 @@ static R_CallMethodDef callMethods [] = {
     /* compression and serialization routines */
     CALLDEF(R_compress1, 1),
     CALLDEF(R_decompress1, 1),
-    CALLDEF(R_serializeb, 4),
+    CALLDEF(R_serializeb, 5),
     CALLDEF(R_serialize, 5),
     CALLDEF(R_unserialize, 2),
     CALLDEF(R_setFileTime, 2),
@@ -247,11 +247,9 @@ static R_CallMethodDef callMethods [] = {
     CALLDEF(R_lazyLoadDBinsertValue, 5),
     CALLDEF(R_lazyLoadDBflush, 1),
 
-#ifdef BYTECODE
     CALLDEF(R_getbcprofcounts, 0),
     CALLDEF(R_startbcprof, 0),
     CALLDEF(R_stopbcprof, 0),
-#endif
 
     /* base graphics */
     CALLDEF(Rg_contourDef, 0),

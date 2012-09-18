@@ -27,13 +27,36 @@
 ##-------- originally from ./Matrix.R --------------------
 
 ## Some ``Univariate'' "Arith":
-setMethod("+", signature(e1 = "Matrix", e2 = "missing"), function(e1) e1)
+setMethod("+", signature(e1 = "Matrix", e2 = "missing"), function(e1,e2) e1)
+
 ## "fallback":
 setMethod("-", signature(e1 = "Matrix", e2 = "missing"),
-	  function(e1) {
+	  function(e1, e2) {
 	      warning("inefficient method used for \"- e1\"")
 	      0-e1
 	  })
+setMethod("-", signature(e1 = "denseMatrix", e2 = "missing"),
+	  function(e1, e2) { e1@x <- -e1@x; e1 })
+
+## "diagonalMatrix" -- only two cases -- easiest to do both
+setMethod("-", signature(e1 = "ddiMatrix", e2 = "missing"),
+	  function(e1, e2) {
+		  if(e1@diag == "U") {
+                      e1@x <- rep.int(-1., e1@Dim[1])
+                      e1@diag <- "N"
+                  }
+		  else ## diag == "N" -> using 'x' slot
+                      e1@x <- -e1@x
+	      e1
+	  })
+setMethod("-", signature(e1 = "ldiMatrix", e2 = "missing"),
+	  function(e1, e2) {
+	      d <- e1@Dim
+	      new("ddiMatrix", Dim = d, Dimnames = e1@Dimnames, diag = "N",
+		  x = if(e1@diag == "U") rep.int(-1, d[1]) else -e1@x)
+	  })
+
+
 
 ## old-style matrices are made into new ones
 setMethod("Ops", signature(e1 = "Matrix", e2 = "matrix"),
@@ -1018,21 +1041,14 @@ A.M.n <- function(e1, e2) {
 	stop("<Matrix> ",.Generic," ", class(e2),"(0) is undefined")
     f0 <- callGeneric(0, e2)
     if(mean(is0(f0)) > 7/8) { ## remain sparse ['7/8' is *somewhat* arbitrary]
-	if(l2 > 1) {   # length(e2) > 1 : "recycle" e2 "carefully"
-	    n <- prod(d <- dim(e1))
-	    if(n < l2)
-		stop("<Matrix> ",.Generic," numeric(<too-long>)")
-	    if(n %% l2 != 0) ## identical warning as in main/arithmetic.c
-		warning("longer object length\n\tis not a multiple of shorter object length")
-	    ## TODO: construction of [1L + in0 %%l2] via one .Call()
-	    ## 0-based indices:
-	    in0 <- .Call(m_encodeInd, .Call(compressed_non_0_ij, e1, TRUE), d, FALSE)
-	    e2 <- e2[1L + in0 %% l2]
+	if(l2 > 1)
+	    callGeneric(e1, as(e2, "sparseVector"))
+	else { ## l2 == 1: e2 is "scalar"
+	    e1@x <- callGeneric(e1@x, e2)
+	    if(length(e1@factors)) # TODO: be much smarter and try *updating* (some) 'factors':
+		e1@factors <- list()
+	    e1
 	}
-	e1@x <- callGeneric(e1@x, e2)
-	if(length(e1@factors))# TODO: be much smarter and try *updating* (some) 'factors':
-	    e1@factors <- list()
-	e1
     }
     else { ## non-sparse, since '0 o e2' is not (all) 0
 	r <- as(e1, "matrix")
@@ -1056,21 +1072,14 @@ A.n.M <- function(e1, e2) {
 	stop(class(e2),"(0) ",.Generic," <Matrix> is undefined")
     f0 <- callGeneric(e1, 0)
     if(mean(is0(f0)) > 7/8) { ## remain sparse ['7/8' is *somewhat* arbitrary]
-	if(l1 > 1) {   # length(e1) > 1 : "recycle" e1 "carefully"
-	    n <- prod(d <- dim(e2))
-	    if(n < l1)
-		stop("numeric(<too-long>) ",.Generic," <Matrix>")
-	    if(n %% l1 != 0) ## identical warning as in main/arithmetic.c
-		warning("longer object length\n\tis not a multiple of shorter object length")
-	    ## TODO: construction of [1L + in0 %% l1] via one .Call()
-	    ## 0-based indices:
-	    in0 <- .Call(m_encodeInd, .Call(compressed_non_0_ij, e2, TRUE), d, FALSE)
-	    e1 <- e1[1L + in0 %% l1]
+	if(l1 > 1)
+	    callGeneric(as(e1, "sparseVector"), e2)
+	else { ## l1 == 1: e1 is "scalar"
+	    e2@x <- callGeneric(e1, e2@x)
+	    if(length(e2@factors))# TODO: be much smarter and try *updating* (some) 'factors':
+		e2@factors <- list()
+	    e2
 	}
-	e2@x <- callGeneric(e1, e2@x)
-	if(length(e2@factors))# TODO: be much smarter and try *updating* (some) 'factors':
-	    e2@factors <- list()
-	e2
     }
     else { ## non-sparse, since '0 o e2' is not (all) 0
 	r <- as(e2, "matrix")

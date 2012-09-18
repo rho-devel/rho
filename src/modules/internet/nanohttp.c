@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-8   The R Development Core Team.
+ *  Copyright (C) 2001-8   The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,9 +76,15 @@ extern void R_ProcessEvents(void);
 #ifdef Win32
 #include <io.h>
 #include <winsock2.h>
-#define EWOULDBLOCK             WSAEWOULDBLOCK
-#define EINPROGRESS             WSAEINPROGRESS
-#define EALREADY                WSAEALREADY
+#ifndef EWOULDBLOCK
+# define EWOULDBLOCK             WSAEWOULDBLOCK
+#endif
+#ifndef EINPROGRESS
+# define EINPROGRESS             WSAEINPROGRESS
+#endif
+#ifndef EALREADY
+# define EALREADY                WSAEALREADY
+#endif
 #define _WINSOCKAPI_
 extern void R_FlushConsole(void);
 #define R_SelectEx(n,rfd,wrd,efd,tv,ih) select(n,rfd,wrd,efd,tv)

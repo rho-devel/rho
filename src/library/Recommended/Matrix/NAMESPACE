@@ -14,11 +14,12 @@ importFrom("methods",
 	   ## still needed {group generics needed to be explicitly imported} ?
 	   Ops, Arith, Compare, Logic, Math, Math2, Summary, Complex,
            ## generics for which we export new methods:
-	   coerce, show)
-
-if(getRversion() >= "2.15.0") {
-    importFrom("methods", kronecker)
-}
+	   cbind2, rbind2, coerce, show
+	   , kronecker
+	   ## things we call,.. necessary when Matrix is loaded, but not attached, as in
+           ## Rscript --vanilla -e 'require(methods);(M <- Matrix::Matrix(0:1,3,3));as(M,"sparseMatrix")'
+	   , is, as, new
+	   )
 
 
 ## Generics and functions defined in this package
@@ -66,8 +67,9 @@ export("Cholesky",
        , ".validateCsparse"
 #        "writeHB",
        , "writeMM"
-       , ".M.classEnv"
        )
+if(getRversion() < "2.15.0" || R.version$`svn rev` < 57849)
+    export(".M.classEnv")
 
 ## substitute for using  cbind() / rbind()
 export("cBind",

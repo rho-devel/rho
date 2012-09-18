@@ -1,6 +1,6 @@
 % File src/library/base/man/funprog.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2008 R Core Team
 % Distributed under GPL 2 or later
 \name{funprog}
 \alias{Filter}
@@ -97,8 +97,8 @@ Position(f, x, right = FALSE, nomatch = NA_integer_)
 }
 
 \seealso{
-  \code{\link{clusterMap}} in package \pkg{parallel} provides a parallel
-  version of \code{Map}.
+  Function \code{\link{clusterMap}} and \code{\link{mcmapply}} (not
+  Windows) in package \pkg{parallel} provide parallel versions of \code{Map}.
 }
 
 \examples{

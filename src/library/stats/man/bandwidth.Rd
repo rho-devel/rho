@@ -1,7 +1,9 @@
 % File src/library/stats/man/bandwidth.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{bandwidth}
 \alias{bw.nrd0}
@@ -73,7 +75,7 @@ bw.SJ(x, nb = 1000, lower = 0.1 * hmax, upper = hmax,
 
   \code{\link[MASS]{bandwidth.nrd}}, \code{\link[MASS]{ucv}},
   \code{\link[MASS]{bcv}} and \code{\link[MASS]{width.SJ}} in
-  package \pkg{MASS}, which are all scaled to the \code{width} argument
+  package \CRANpkg{MASS}, which are all scaled to the \code{width} argument
   of \code{density} and so give answers four times as large.
 }
 \references{

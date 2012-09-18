@@ -34,7 +34,7 @@ plot.function <-
     if (is.null(ylab)) {
         xname <- list(...)[["xname"]]
         if (is.null(xname)) xname <- "x"
-       ylab <- paste(substitute(x), "(", xname, ")", sep = "")
+       ylab <- paste0(substitute(x), "(", xname, ")")
     }
     ## name args to avoid partial matches from ...
     curve(expr = x, from = from, to = to, xlim = xlim, ylab = ylab, ...)
@@ -121,13 +121,11 @@ plot.table <-
 	plot(x0, unclass(x), type = type,
 	     ylim = ylim, xlab = xlab, ylab = ylab, frame.plot = frame.plot,
 	     lwd = lwd, ..., xaxt = "n")
-	xaxt <-
-	    if(length(as <- list(...))) {
-		if(!is.null(as$axes) && !as$axes) "n" else as$xaxt
-	    }## else NULL
-	axis(1, at = x0, labels = nx, xaxt = xaxt)
+        localaxis <- function(..., col, bg, pch, cex, lty) axis(...)
+	if(!identical(list(...)$axes, FALSE))
+            localaxis(1, at = x0, labels = nx, ...)
     } else {
-	if(length(as <- list(...)) && !is.null(as$main)) # use 'main'
+	if(length(dots <- list(...)) && !is.null(dots$main)) # use 'main'
 	    mosaicplot(x, xlab = xlab, ylab = ylab, ...)
 	else # default main
 	    mosaicplot(x, xlab = xlab, ylab = ylab, main = xnam, ...)
@@ -178,7 +176,7 @@ function(formula, data = parent.frame(), ..., subset,
 	if( is.object(y) ) {
 	    found <- FALSE
 	    for(j in class(y)) {
-		funname <- paste("plot.", j, sep = "")
+		funname <- paste0("plot.", j)
 		if( exists(funname) ) {
 		    found <- TRUE
 		    break

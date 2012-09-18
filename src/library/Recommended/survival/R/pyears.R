@@ -17,7 +17,7 @@ pyears <- function(formula, data,
             stop("Pyears cannot have interaction terms")
 
     rate <- attr(Terms, "specials")$ratetable                   
-    if (length(rate) >0 || !missing(rmap)) {
+    if (length(rate) >0 || !missing(rmap) || !missing(ratetable)) {
         has.ratetable <- TRUE
         if(length(rate) > 1)
             stop("Can have only 1 ratetable() call in a formula")
@@ -25,7 +25,7 @@ pyears <- function(formula, data,
 
         if(length(rate) == 1) {
             if (!missing(rmap)) 
-                stop("The ratetable() call in the formula is depreciated")
+                stop("The ratetable() call in a formula is depreciated")
 
             stemp <- untangle.specials(Terms, 'ratetable')
             rcall <- as.call(parse(text=stemp$var)[[1]])   # as a call object
@@ -37,7 +37,7 @@ pyears <- function(formula, data,
             if (!is.call(rcall) || rcall[[1]] != as.name('list'))
                 stop ("Invalid rcall argument")
             }
-        else rcall <- NULL
+        else rcall <- NULL   # A ratetable, but not rcall argument
 
         # Check that there are no illegal names in rcall, then expand it
         #  to include all the names in the ratetable
@@ -48,6 +48,7 @@ pyears <- function(formula, data,
             varlist <- all.vars(delete.response(ratetable$terms))
             }
         else stop("Invalid rate table")
+
         temp <- match(names(rcall)[-1], varlist) # 2,3,... are the argument names
         if (any(is.na(temp)))
             stop("Variable not found in the ratetable:", (names(rcall))[is.na(temp)])
@@ -191,16 +192,16 @@ pyears <- function(formula, data,
                 offset <- bdate - as.Date(paste(byear, "01/01", sep='/'), 
                                           origin="1960/01/01")
                 }
-            else if (exists('month.day.year')) { # Splus, usually
-                bdate <- R[,cols[2]] - R[,cols[1]]
-                byear <- month.day.year(bdate)$year
-                offset <- bdate - julian(1,1,byear)
-                }
-            else if (exists('date.mdy')) { # Therneau's date class is available
-                bdate <- as.date(R[,cols[2]] - R[,cols[1]])
-                byear <- date.mdy(bdate)$year
-                offset <- bdate - mdy.date(1,1,byear)
-                }
+            #else if (exists('month.day.year')) { # Splus, usually
+            #    bdate <- R[,cols[2]] - R[,cols[1]]
+            #    byear <- month.day.year(bdate)$year
+            #    offset <- bdate - julian(1,1,byear)
+            #    }
+            #else if (exists('date.mdy')) { # Therneau's date class is available
+            #    bdate <- as.date(R[,cols[2]] - R[,cols[1]])
+            #    byear <- date.mdy(bdate)$year
+            #    offset <- bdate - mdy.date(1,1,byear)
+            #    }
             else stop("Can't find an appropriate date class\n") 
             R[,cols[2]] <- R[,cols[2]] - offset
 
@@ -313,7 +314,7 @@ pyears <- function(formula, data,
     if (length(na.action))  out$na.action <- na.action
     if (model) out$model <- m
     else {
-        if (x) out$x <- cbind(X, R)
+        if (x) out$x <- X
         if (y) out$y <- Y
         }
     oldClass(out) <- 'pyears'

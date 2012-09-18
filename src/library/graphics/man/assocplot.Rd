@@ -1,7 +1,9 @@
 % File src/library/graphics/man/assocplot.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{assocplot}
 \alias{assocplot}
@@ -48,8 +50,8 @@ assocplot(x, col = c("black", "red"), space = 0.3,
 
   A more flexible and extensible implementation of association plots
   written in the grid graphics system is provided in the function
-  \code{\link[vcd]{assoc}} in the contributed package \pkg{vcd} (Meyer,
-  Zeileis and Hornik, 2005).
+  \code{\link[vcd]{assoc}} in the contributed package \CRANpkg{vcd}
+  (Meyer, Zeileis and Hornik, 2005).
 }
 \seealso{
   \code{\link{mosaicplot}}, \code{\link{chisq.test}}.

@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-11  R Development Core Team
+ *  Copyright (C) 2000-11  R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -79,7 +79,7 @@ static int isDir(char *path)
 
 void rcmdusage (char *RCMD)
 {
-    fprintf(stderr, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+    fprintf(stderr, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
 	    "where 'command' is one of:\n",
 	    "  INSTALL  Install add-on packages\n",
 	    "  REMOVE   Remove add-on packages\n",
@@ -90,7 +90,6 @@ void rcmdusage (char *RCMD)
 	    "  Rprof    Post process R profiling files\n",
 	    "  Rdconv   Convert Rd format to various other formats\n",
 	    "  Rdiff    difference R output files\n",
-	    "  Rd2dvi   Convert Rd format to DVI\n",
 	    "  Rd2pdf   Convert Rd format to PDF\n",
 	    "  Rd2txt   Convert Rd format to pretty text\n",
 	    "  Stangle  Extract S/R code from Sweave documentation\n",
@@ -245,12 +244,12 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 "Further arguments starting with a '-' are considered as options as long\n",
 "as '--' was not encountered, and are passed on to the R process, which\n",
 "by default is started with '--restore --save'.\n\n",
-"Report bugs to <r-bugs@r-project.org>.");
+"Report bugs at bugs.r-project.org .");
 		return(0);
 	    }
 	    if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--version")) {
 		fprintf(stderr, "BATCH %s\n%s%s%s\n", "1.2",
-"Copyright (C) 1997-2004 R Core Development Team.\n",
+"Copyright (C) 1997-2004 R Core Team.\n",
 "This is free software; see the GNU General Public Licence version 2\n",
 "or later for copying conditions.  There is NO warranty.");
 		return(0);
@@ -462,14 +461,9 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 		 "%s/%s/Rterm.exe -e tools:::.Rdconv() R_DEFAULT_PACKAGES= LC_COLLATE=C --vanilla --slave --args nextArg-tnextArgtxt",
 		 getRHOME(3), BINDIR);
 	PROCESS_CMD("nextArg");
-    } else if (!strcmp(argv[cmdarg], "Rd2dvi")) {
-	snprintf(cmd, CMD_LEN,
-		 "%s/%s/Rterm.exe -e tools:::..Rd2dvi() R_DEFAULT_PACKAGES= LC_ALL=C --vanilla --slave --args ",
-		 getRHOME(3), BINDIR);
-	PROCESS_CMD("nextArg");
     } else if (!strcmp(argv[cmdarg], "Rd2pdf")) {
 	snprintf(cmd, CMD_LEN,
-		 "%s/%s/Rterm.exe -e tools:::..Rd2dvi() R_DEFAULT_PACKAGES= LC_ALL=C --vanilla --slave --args nextArg--pdf",
+		 "%s/%s/Rterm.exe -e tools:::..Rd2pdf() R_DEFAULT_PACKAGES= LC_ALL=C --vanilla --slave --args ",
 		 getRHOME(3), BINDIR);
 	PROCESS_CMD("nextArg");
     } else if (!strcmp(argv[cmdarg], "Sweave")) {

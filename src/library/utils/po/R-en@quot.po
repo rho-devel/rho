@@ -22,10 +22,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.14.0\n"
+"Project-Id-Version: R 2.15.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-10-17 10:14\n"
-"PO-Revision-Date: 2011-10-17 10:14\n"
+"POT-Creation-Date: 2012-05-21 13:00\n"
+"PO-Revision-Date: 2012-05-21 13:00\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "MIME-Version: 1.0\n"
@@ -95,6 +95,9 @@ msgstr "path to %s contains spaces,"
 
 msgid "this may cause problems when running LaTeX"
 msgstr "this may cause problems when running LaTeX"
+
+msgid "the output file '%s' has disappeared"
+msgstr "the output file ‘%s’ has disappeared"
 
 msgid "invalid value for %s : %s"
 msgstr "invalid value for %s : %s"
@@ -353,6 +356,18 @@ msgstr "too many list items (at most up to number 26)"
 msgid "too many list items (at most up to number 3899)"
 msgstr "too many list items (at most up to number 3899)"
 
+msgid "no vector columns were selected"
+msgstr "no vector columns were selected"
+
+msgid "non-vector columns will be ignored"
+msgstr "non-vector columns will be ignored"
+
+msgid "at least one vector element is required"
+msgstr "at least one vector element is required"
+
+msgid "non-vector elements will be ignored"
+msgstr "non-vector elements will be ignored"
+
 msgid "'form' must be a two-sided formula"
 msgstr "‘form’ must be a two-sided formula"
 
@@ -361,9 +376,6 @@ msgstr "‘form’ must be a two-sided formula with one term on each side"
 
 msgid "'topic' should be a name, length-one character vector or reserved word"
 msgstr "‘topic’ should be a name, length-one character vector or reserved word"
-
-msgid "Postscript offline help is deprecated"
-msgstr "Postscript offline help is deprecated"
 
 msgid "No documentation for %s in specified packages and libraries:"
 msgstr "No documentation for %s in specified packages and libraries:"
@@ -411,12 +423,6 @@ msgid ""
 msgstr ""
 "package %s exists but was not installed under R >= 2.10.0 so help cannot be "
 "accessed"
-
-msgid "running %s failed"
-msgstr "running %s failed"
-
-msgid "%s produced no output file: sent to printer?"
-msgstr "%s produced no output file: sent to printer?"
 
 msgid "creation of %s failed"
 msgstr "creation of %s failed"
@@ -522,9 +528,10 @@ msgstr "metadata of package ‘%s’ is corrupt"
 msgid "DESCRIPTION file of package '%s' is corrupt"
 msgstr "DESCRIPTION file of package ‘%s’ is corrupt"
 
-msgid "'DESCRIPTION' file has 'Encoding' field and re-encoding is not possible"
+msgid ""
+"'DESCRIPTION' file has an 'Encoding' field and re-encoding is not possible"
 msgstr ""
-"‘DESCRIPTION’ file has ‘Encoding’ field and re-encoding is not possible"
+"‘DESCRIPTION’ file has an ‘Encoding’ field and re-encoding is not possible"
 
 msgid "DESCRIPTION file of package '%s' is missing or broken"
 msgstr "DESCRIPTION file of package ‘%s’ is missing or broken"
@@ -595,35 +602,11 @@ msgstr "‘code_files’ must be a character vector"
 msgid "'list' must be a character vector naming R objects"
 msgstr "‘list’ must be a character vector naming R objects"
 
-msgid "cannot turn off locale-specific chars via LC_CTYPE"
-msgstr "cannot turn off locale-specific chars via LC_CTYPE"
-
 msgid "no R objects specified or available"
 msgstr "no R objects specified or available"
 
-msgid "Creating directories ..."
-msgstr "Creating directories ..."
-
 msgid "directory '%s' already exists"
 msgstr "directory ‘%s’ already exists"
-
-msgid "Creating DESCRIPTION ..."
-msgstr "Creating DESCRIPTION ..."
-
-msgid "From R 2.14.0 on, every package gets a NAMESPACE."
-msgstr "From R 2.14.0 on, every package gets a NAMESPACE."
-
-msgid "Argument 'namespace' is deprecated."
-msgstr "Argument ‘namespace’ is deprecated."
-
-msgid "Creating NAMESPACE ..."
-msgstr "Creating NAMESPACE ..."
-
-msgid "Creating Read-and-delete-me ..."
-msgstr "Creating Read-and-delete-me ..."
-
-msgid "Saving functions and data ..."
-msgstr "Saving functions and data ..."
 
 msgid ""
 "Generic functions and other S4 objects (e.g., '%s') cannot be dumped; use "
@@ -632,32 +615,14 @@ msgstr ""
 "Generic functions and other S4 objects (e.g., '%s') cannot be dumped; use "
 "the code_files= argument"
 
-msgid "Copying code files ..."
-msgstr "Copying code files ..."
-
-msgid "Invalid file name(s) for R code in"
-msgstr "Invalid file name(s) for R code in"
-
-msgid ":"
-msgstr ":"
-
-msgid "are now renamed to 'z<name>.R'"
-msgstr "are now renamed to ‘z<name>.R’"
-
-msgid "Making help files ..."
-msgstr "Making help files ..."
-
-msgid "Done."
-msgstr "Done."
-
-msgid "Further steps are described in '%s'."
-msgstr "Further steps are described in '%s'."
-
 msgid "unable to access index for repository %s"
 msgstr "unable to access index for repository %s"
 
 msgid "Invalid 'filters' argument."
 msgstr "Invalid ‘filters’ argument."
+
+msgid "package '%s' in library '%s' will not be updated"
+msgstr "package ‘%s’ in library ‘%s’ will not be updated"
 
 msgid ""
 "invalid 'oldPkgs'; must be a character vector or a result from old.packages()"
@@ -748,20 +713,24 @@ msgstr ""
 msgid "'lib = \"%s\"' is not writable"
 msgstr "‘lib = “%s”’ is not writable"
 
-msgid ""
-"Would you like to create a personal library\n"
-"%s\n"
-"to install packages into?"
-msgstr ""
-"Would you like to create a personal library\n"
-"%s\n"
-"to install packages into?"
-
 msgid "unable to install packages"
 msgstr "unable to install packages"
 
 msgid "unable to create"
 msgstr "unable to create"
+
+msgid ""
+"type == \"both\" can only be used on Windows or a CRAN build for Mac OS X"
+msgstr ""
+"type == “both” can only be used on Windows or a CRAN build for Mac OS X"
+
+msgid ""
+"type == \"both\" cannot be used if 'available' or 'contriburl' is specified"
+msgstr ""
+"type == “both” cannot be used if ‘available’ or ‘contriburl’ is specified"
+
+msgid "type == \"both\" cannot be used with 'repos = NULL'"
+msgstr "type == “both” cannot be used with ‘repos = NULL’"
 
 msgid "inferring 'repos = NULL' from the file name"
 msgstr "inferring ‘repos = NULL’ from the file name"
@@ -796,11 +765,18 @@ msgstr ""
 "  probably %s"
 
 msgid ""
-"The downloaded packages are in\n"
+"The downloaded source packages are in\n"
 "\t%s"
 msgstr ""
-"The downloaded packages are in\n"
+"The downloaded source packages are in\n"
 "\t%s"
+
+msgid ""
+"The namespace for package \"%s\" is locked; no changes in the global "
+"variables list may be made."
+msgstr ""
+"The namespace for package “%s” is locked; no changes in the global variables "
+"list may be made."
 
 msgid "no object named '%s' to show"
 msgstr "no object named ‘%s’ to show"
@@ -827,10 +803,10 @@ msgid "no documentation of type %s and topic %s (or error in processing help)"
 msgstr "no documentation of type %s and topic %s (or error in processing help)"
 
 msgid ""
-"the object of class \"%s\" in the function call %s could not be used as a "
+"the object of class %s in the function call %s could not be used as a "
 "documentation topic"
 msgstr ""
-"the object of class “%s” in the function call %s could not be used as a "
+"the object of class %s in the function call %s could not be used as a "
 "documentation topic"
 
 msgid "no methods for %s and no documentation for it as a function"
@@ -1002,6 +978,9 @@ msgstr "profile does not contain memory information"
 msgid "no events were recorded"
 msgstr "no events were recorded"
 
+msgid "invalid 'tarfile' argument"
+msgstr "invalid ‘tarfile’ argument"
+
 msgid "'compressed' must be logical or character"
 msgstr "‘compressed’ must be logical or character"
 
@@ -1115,6 +1094,9 @@ msgstr "download had nonzero exit status"
 msgid "'tar' returned non-zero exit code %d"
 msgstr "‘tar’ returned non-zero exit code %d"
 
+msgid "file %s is not an OS X binary package"
+msgstr "file %s is not an OS X binary package"
+
 msgid "package %s successfully unpacked and MD5 sums checked"
 msgstr "package %s successfully unpacked and MD5 sums checked"
 
@@ -1139,6 +1121,13 @@ msgstr "unable to move temporary installation %s to %s"
 
 msgid "cannot remove prior installation of package"
 msgstr "cannot remove prior installation of package"
+
+msgid ""
+"The downloaded binary packages are in\n"
+"\t%s"
+msgstr ""
+"The downloaded binary packages are in\n"
+"\t%s"
 
 msgid "'memory.size()' is Windows-specific"
 msgstr "‘memory.size()’ is Windows-specific"
@@ -1206,6 +1195,11 @@ msgid "'lib' element %s is not a writable directory"
 msgid_plural "'lib' elements %s are not writable directories"
 msgstr[0] "‘lib’ element %s is not a writable directory"
 msgstr[1] "‘lib’ elements %s are not writable directories"
+
+msgid "installing the source package %s"
+msgid_plural "installing the source packages %s"
+msgstr[0] "installing the source package %s"
+msgstr[1] "installing the source packages %s"
 
 msgid "package %s is in use and will not be installed"
 msgid_plural "packages %s are in use and will not be installed"

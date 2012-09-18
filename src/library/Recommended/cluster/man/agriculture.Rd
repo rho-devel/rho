@@ -26,10 +26,7 @@
 \seealso{\code{\link{agnes}}, \code{\link{daisy}}, \code{\link{diana}}.
 }
 \references{
-  Anja Struyf, Mia Hubert & Peter J. Rousseeuw (1996):
-  Clustering in an Object-Oriented Environment.
-  \emph{Journal of Statistical Software}, \bold{1}.
-  \url{http://www.stat.ucla.edu/journals/jss/}
+  see those in \code{\link{agnes}}.
 }
 \examples{
 data(agriculture)
@@ -43,10 +40,10 @@ plot(pam(agriculture, 2))
 
 ## Plot similar to Figure 7 in Struyf et al (1996)
 \dontrun{plot(agnes(agriculture), ask = TRUE)}
-\testonly{plot(agnes(agriculture))}
+\dontshow{plot(agnes(agriculture))}
 
 ## Plot similar to Figure 8 in Struyf et al (1996)
 \dontrun{plot(diana(agriculture), ask = TRUE)}
-\testonly{plot(diana(agriculture))}
+\dontshow{plot(diana(agriculture))}
 }
 \keyword{datasets}

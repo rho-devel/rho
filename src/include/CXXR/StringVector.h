@@ -44,8 +44,7 @@
 #ifndef STRINGVECTOR_H
 #define STRINGVECTOR_H
 
-#include "CXXR/CachedString.h"
-#include "CXXR/VectorBase.h"
+#include "CXXR/String.h"
 
 #ifdef __cplusplus
 
@@ -79,7 +78,7 @@ namespace CXXR {
     // Make the default handle for a String point to a blank string:
     template <>
     inline RHandle<String>::RHandle()
-	: GCEdge<String>(CachedString::blank())
+	: GCEdge<String>(String::blank())
     {}
 
     template <>
@@ -111,7 +110,7 @@ namespace CXXR {
     inline StringVector* asStringVector(const std::string& str,
 					cetype_t encoding = CE_NATIVE)
     {
-	GCStackRoot<CachedString> cs(CachedString::obtain(str, encoding));
+	GCStackRoot<String> cs(String::obtain(str, encoding));
 	return CXXR_NEW(StringVector(1, cs));
     }
 

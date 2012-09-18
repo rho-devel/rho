@@ -21,7 +21,7 @@ survexp <- function(formula, data,
             stop("Can have only 1 ratetable() call in a formula")
     if(length(rate) == 1) {
         if (!missing(rmap)) 
-            stop("The ratetable() call in the formula is depreciated")
+            stop("The ratetable() call in a formula is depreciated")
 
         stemp <- untangle.specials(Terms, 'ratetable')
         rcall <- as.call(parse(text=stemp$var)[[1]])   # as a call object
@@ -33,7 +33,7 @@ survexp <- function(formula, data,
         if (!is.call(rcall) || rcall[[1]] != as.name('list'))
             stop ("Invalid rcall argument")
         }
-    else rcall <- NULL
+    else rcall <- NULL   # A ratetable, but not rcall argument
 
     # Check that there are no illegal names in rcall, then expand it
     #  to include all the names in the ratetable
@@ -44,6 +44,7 @@ survexp <- function(formula, data,
         varlist <- all.vars(delete.response(ratetable$terms))
         }
     else stop("Invalid rate table")
+
     temp <- match(names(rcall)[-1], varlist) # 2,3,... are the argument names
     if (any(is.na(temp)))
         stop("Variable not found in the ratetable:", (names(rcall))[is.na(temp)])
@@ -130,8 +131,8 @@ survexp <- function(formula, data,
     if (!cohort) { #individual survival
         if (no.Y) stop("For non-cohort, an observation time must be given")
         if (israte)
-             temp <- survexp.fit (cbind(1:n,R), Y, max(Y), TRUE, ratetable)
-        else temp<- survexp.cfit(cbind(1:n,R), Y, FALSE, TRUE, ratetable, FALSE)
+             temp <- survexp.fit (1:n, R, Y, max(Y), TRUE, ratetable)
+        else temp<- survexp.cfit(1:n, R, Y, FALSE, TRUE, ratetable, FALSE)
         xx <- temp$surv
         names(xx) <- row.names(m)
         na.action <- attr(m, "na.action")
@@ -152,10 +153,10 @@ survexp <- function(formula, data,
 
     #do the work
     if (israte)
-        temp <- survexp.fit(cbind(as.numeric(X),R), Y, newtime,
+        temp <- survexp.fit(as.numeric(X), R, Y, newtime,
                            conditional, ratetable)
     else {
-        temp <- survexp.cfit(cbind(as.numeric(X),R), Y, conditional, FALSE,
+        temp <- survexp.cfit(as.numeric(X), R, Y, conditional, FALSE,
                            ratetable, se.fit=se.fit)
         newtime <- temp$times
         }
@@ -203,8 +204,7 @@ survexp <- function(formula, data,
          }
     if (model) out$model <- m
     else {
-        if (x) out$x <- structure(cbind(X, R),
-            dimnames=list(row.names(m), c("group", varlist ))) ### was dimid)))
+        if (x) out$x <- X
         if (y) out$y <- Y
         }
     if (israte && !is.null(rtemp$summ)) out$summ <- rtemp$summ

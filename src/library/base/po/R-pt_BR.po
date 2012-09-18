@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.3.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-10-23 14:54\n"
+"POT-Creation-Date: 2012-06-07 15:52\n"
 "PO-Revision-Date: 2011-03-26 08:54-0300\n"
 "Last-Translator: Fernando Henrique <pessoal@fernandohrosa.com.br>\n"
 "Language-Team: http://www.feferraz.net/br/P/Projeto_Traducao_R_Portugues\n"
@@ -28,12 +28,6 @@ msgstr "Veja help(\"Defunct\") e help(\"%s-defunct\")."
 
 msgid "See help(\"Defunct\")"
 msgstr "Veja help(\"Defunct\")"
-
-msgid "'symbol.C' is not needed: please remove it"
-msgstr "'symbol.C' não é necesário: por favor remova"
-
-msgid "'symbol.For' is not needed: please remove it"
-msgstr "'symbol.For' não é necessário: remova-o"
 
 msgid "'%s' is deprecated."
 msgstr "'%s' é obsoleto."
@@ -161,6 +155,10 @@ msgstr "autocarregador não encontrou '%s' em '%s'"
 msgid "invalid argument values in 'backsolve'"
 msgstr "argumentos de valores inválidos em 'backsolve'"
 
+#, fuzzy
+msgid "invalid value of ncol(x)"
+msgstr "valor inválido"
+
 msgid "singular matrix in 'backsolve'. First zero in diagonal [%d]"
 msgstr "matriz singular em 'backsolve'. Primeiro zero na diagonal [%d]"
 
@@ -175,6 +173,9 @@ msgstr "matriz não quadrada em 'chol'"
 
 msgid "non-matrix argument to 'chol'"
 msgstr "argumento não matricial para 'chol'"
+
+msgid "invalid nrow(x)"
+msgstr ""
 
 msgid "matrix not positive definite"
 msgstr "matriz não é positiva definida"
@@ -244,6 +245,10 @@ msgstr "'breaks' não são únicos"
 
 msgid "labels/breaks length conflict"
 msgstr "conflito de tamanho entre labels e breaks"
+
+#, fuzzy
+msgid "invalid value of length(x)"
+msgstr "valor inválido"
 
 msgid "invalid 'row.names' length"
 msgstr "'row.names' com comprimento inválido"
@@ -712,6 +717,14 @@ msgstr "'vec' contem NAs"
 msgid "'vec' must be sorted non-decreasingly"
 msgstr "'vec' deve ser ordenado de forma não-decrescente"
 
+#, fuzzy
+msgid "invalid length(x)"
+msgstr "valor inválido"
+
+#, fuzzy
+msgid "invalid length(vec)"
+msgstr "valor inválido"
+
 msgid "using the first element of 'value' of type expression"
 msgstr "usando o primeiro elemento de 'value' da expressão de tipo"
 
@@ -893,7 +906,8 @@ msgstr "pacote '%s' não tem um espaõ de nomes"
 msgid "package %s already present in search()"
 msgstr "pacote '%s' já presente em search()"
 
-msgid "'DESCRIPTION' has 'Encoding' field and re-encoding is not possible"
+#, fuzzy
+msgid "'DESCRIPTION' has an 'Encoding' field and re-encoding is not possible"
 msgstr "'DESCRIPTION' tem o campo 'Encoding' e recodificação não é possível"
 
 #, fuzzy
@@ -1024,6 +1038,9 @@ msgstr "'file' deve ser especificado"
 msgid "Use of save versions prior to 2 is deprecated"
 msgstr "Uso de versões salvas antes da versão 2 é obsoleto"
 
+msgid "nothing specified to be save()d"
+msgstr ""
+
 msgid "'file' must be non-empty string"
 msgstr "'file' deve ser uma string não vazia"
 
@@ -1105,6 +1122,10 @@ msgstr "'trim' deve ser numérico de comprimento 1"
 
 msgid "trimmed means are not defined for complex data"
 msgstr "médias aparadas não são definidas para dados complexos"
+
+#, fuzzy
+msgid "'by' must specify uniquely valid column(s)"
+msgstr "'by' deve especificar coluna(s) válida(s)"
 
 msgid "'by' must match numbers of columns"
 msgstr "'by' deve ser compatível com o número de colunas"
@@ -1198,6 +1219,9 @@ msgstr ""
 "no pacote %s classes %s foram especificadas para exportação mas não foram "
 "definidas"
 
+msgid "No function found corresponding to methods exports from %s for: %s"
+msgstr ""
+
 #, fuzzy
 msgid "in %s methods for export not found: %s"
 msgstr "em '%s' métodos para exportação não encontrados: %s"
@@ -1256,8 +1280,16 @@ msgid "found methods to import for function %s but not the generic itself"
 msgstr ""
 "métodos encontrados para importar para função %s mas não o genérico em si"
 
+msgid "No methods found in \"%s\" for requests: %s"
+msgstr ""
+
 msgid "requested methods not found in environment/package %s: %s"
 msgstr "métodos requeridos não encontrados no ambiente/pacote %s: %s"
+
+msgid ""
+"No generic function found corresponding to requested imported methods for "
+"\"%s\" from package \"%s\" (malformed exports?)"
+msgstr ""
 
 #, fuzzy
 msgid "cannot add to exports of a sealed namespace"
@@ -1336,8 +1368,22 @@ msgstr "'u5.bias' deve ser não negativo numérico"
 msgid "'eps.correct' must be 0, 1, or 2"
 msgstr "'eps.correct' deve ser 0, 1, ou 2"
 
+#, fuzzy
+msgid "invalid ncol(x)"
+msgstr "valor inválido"
+
 msgid "first argument must be a QR decomposition"
 msgstr "primeiro argumento deve ser uma decomposição QR"
+
+msgid "invalid nrow(qr$qr)"
+msgstr ""
+
+msgid "invalid ncol(qr$qr)"
+msgstr ""
+
+#, fuzzy
+msgid "invalid ncol(y)"
+msgstr "valor inválido"
 
 msgid "'qr' and 'y' must have the same number of rows"
 msgstr "'qr' e 'y' devem ter o mesmo número de linhas"
@@ -1347,6 +1393,9 @@ msgstr "singularidade exata em 'qr.coef'"
 
 msgid "argument is not a QR decomposition"
 msgstr "argumento não é uma decomposição QR"
+
+msgid "invalid NCOL(y)"
+msgstr ""
 
 msgid "not implemented for complex 'qr'"
 msgstr "não implementado para 'qr' complexo"
@@ -1359,6 +1408,9 @@ msgstr "'k' é muito grande"
 
 msgid "need larger value of 'ncol' as pivoting occurred"
 msgstr "necessário valor maior de 'ncol', pois houve pivotamento"
+
+msgid "invalid NCOL(R)"
+msgstr ""
 
 msgid "'x' must be an atomic vector"
 msgstr "'x' deve ser um vetor atômico"
@@ -1392,6 +1444,10 @@ msgstr "argumento 'length.out' deve ter comprimento 1"
 
 msgid "first element used of 'length.out' argument"
 msgstr ""
+
+#, fuzzy
+msgid "extra argument(s) %s will be disregarded"
+msgstr "argumento 'drop' será ignorado"
 
 msgid "invalid (to - from)/by in seq(.)"
 msgstr "(to-from)/by inválido em seq(.)"
@@ -1579,6 +1635,14 @@ msgstr "'x' não é um array"
 msgid "'bin' must be numeric or a factor"
 msgstr "'bin' deve ser numérico ou um fator"
 
+#, fuzzy
+msgid "invalid value of length(bin)"
+msgstr "valor inválido"
+
+#, fuzzy
+msgid "invalid value of nbins"
+msgstr "valor inválido"
+
 msgid "arguments must have same length"
 msgstr "argumentos devem ter o mesmo comprimento"
 
@@ -1670,6 +1734,17 @@ msgstr "'stderr' deve ter comprimento 1"
 msgid "'which' was not found on this platform"
 msgstr ""
 
+#, fuzzy
+msgid "fewer 'from' files than 'to' files"
+msgstr "mais arquivos 'from' do que 'to'"
+
+msgid "link '%s' already exists"
+msgstr ""
+
+#, fuzzy
+msgid "failed to create directory for link '%s"
+msgstr "falha ao encontrar objeto de metadados para %s"
+
 msgid "'show.output.on.console' must be TRUE or FALSE"
 msgstr "'show.output.on.console' deve ser TRUE ou FALSE"
 
@@ -1741,6 +1816,15 @@ msgid_plural "objects %s not found"
 msgstr[0] "objeto %s não encontrado"
 msgstr[1] "objetos %s não encontrado"
 
+msgid ""
+"Function found when exporting methods from the namespace %s which is not S4 "
+"generic: %s"
+msgid_plural ""
+"Functions found when exporting methods from the namespace %s which are not "
+"S4 generic: %s"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "class %s is not exported by 'namespace:%s'"
 msgid_plural "classes %s are not exported by 'namespace:%s'"
 msgstr[0] "classe %s não foi exportada por 'namespace:%s'"
@@ -1765,6 +1849,12 @@ msgid "Warning message:\n"
 msgid_plural "Warning messages:\n"
 msgstr[0] "Mensagem de aviso:\n"
 msgstr[1] "Mensagens de aviso:\n"
+
+#~ msgid "'symbol.C' is not needed: please remove it"
+#~ msgstr "'symbol.C' não é necesário: por favor remova"
+
+#~ msgid "'symbol.For' is not needed: please remove it"
+#~ msgstr "'symbol.For' não é necessário: remova-o"
 
 #~ msgid "'pattern' must be a non-empty character string"
 #~ msgstr "'pattern' deve ser uma string de caracteres não vazia"

@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2009  The R Development Core Team
+ *  Copyright (C) 1997--2011  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -547,10 +547,8 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	break;
     case CHARSXP:
 	len = m->InInteger(fp, d);
-	s = CXXR_NEW(UncachedString(len)); /* This is not longer correct */
 	R_AllocStringBuffer(len, &(d->buffer));
-	/* skip over the string */
-	/* string = */ m->InString(fp, d);
+	s = String::obtain(m->InString(fp, d));
 	break;
     case REALSXP:
 	len = m->InInteger(fp, d);
@@ -624,7 +622,9 @@ static void RestoreSEXP(SEXP s, FILE *fp, InputRoutines *m, NodeInfo *node, int 
 	len = m->InInteger(fp, d);
 	R_AllocStringBuffer(len, &(d->buffer));
 	/* Better to use a fresh copy in the cache */
-	strcpy(CHAR_RW(s), m->InString(fp, d));
+	// CXXR FIXME
+	// strcpy(CHAR_RW(s), m->InString(fp, d));
+	m->InString(fp, d);  // Just skip the string for the mo.
 	break;
     case REALSXP:
 	len = m->InInteger(fp, d);

@@ -1,7 +1,9 @@
 % File src/library/graphics/man/contour.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{contour}
 \alias{contour}
@@ -85,11 +87,11 @@ contour(x, \dots)
   Notice that \code{contour} interprets the \code{z} matrix as a table of
   \code{f(x[i], y[j])} values, so that the x axis corresponds to row
   number and the y axis to column number, with column 1 at the bottom,
-  i.e. a 90 degree clockwise rotation of the conventional textual
+  i.e. a 90 degree counter-clockwise rotation of the conventional textual
   layout.
 
   Alternatively, use \code{\link[lattice:levelplot]{contourplot}} from the
-  \pkg{lattice} package where the \code{\link{formula}} notation allows
+  \CRANpkg{lattice} package where the \code{\link{formula}} notation allows
   to use vectors \code{x,y,z} of the same length.
 
   There is limited control over the axes and frame as arguments
@@ -109,7 +111,7 @@ contour(x, \dots)
   \code{\link{contourLines}}, \code{\link{filled.contour}}
   for color-filled contours,
   \code{\link[lattice:levelplot]{contourplot}} (and
-  \code{\link[lattice]{levelplot}}) from package \pkg{lattice}.
+  \code{\link[lattice]{levelplot}}) from package \CRANpkg{lattice}.
   Further, \code{\link{image}} and the graphics demo which can be
   invoked as \code{demo(graphics)}.
 }

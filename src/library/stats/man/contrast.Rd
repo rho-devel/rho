@@ -1,7 +1,9 @@
 % File src/library/stats/man/contrast.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2009 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{contrast}
 \alias{contr.helmert}
@@ -26,7 +28,7 @@ contr.SAS(n, contrasts = TRUE, sparse = FALSE)
     computed.}
   \item{sparse}{logical indicating if the result should be sparse
     (of class \code{\link[Matrix:dgCMatrix-class]{dgCMatrix}}), using
-    package \pkg{Matrix}.}
+    package \CRANpkg{Matrix}.}
   \item{scores}{the set of values over which orthogonal polynomials are
     to be computed.}
   \item{base}{an integer specifying which group is considered the

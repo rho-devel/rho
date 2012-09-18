@@ -21,14 +21,14 @@ summaries from it. (See \code{\link{sink}} to divert output to a file.)
 \item{dispersion}{A known dispersion parameter. \code{NULL} to use estimate or
                   default (e.g. 1 for Poisson).}
 
-\item{freq}{By default p-values for individual terms are calculated using the Bayesian estimated
-covariance matrix of the parameter estimators. If this is set to TRUE then
-the frequentist covariance matrix of the parameters is used instead. See details. }
+\item{freq}{By default p-values for parametric terms are calculated using the Bayesian estimated
+covariance matrix of the parameter estimators. If this is set to \code{TRUE} then
+the frequentist covariance matrix of the parameters is used instead. }
 
-\item{p.type}{determines how p-values are computed when \code{freq==FALSE}. 0 uses a test statistic with 
+\item{p.type}{determines how p-values are computed for smooth terms. 0 uses a test statistic with 
 distribution determined by the un-rounded edf of the term. 1 uses upwardly biased rounding of the edf and -1
-uses a version of the test statistic with a null distribution that has to be simulated. Other options are
-poor, generate a warning, and are only of research interest. See details.
+uses a version of the test statistic with a null distribution that has to be simulated. 5 is the approximation 
+in Wood (2006). Other options are poor, generate a warning, and are only of research interest. See details.
 }
 
 \item{digits}{controls number of digits printed in output.}
@@ -45,11 +45,41 @@ freedom.
 Let \eqn{ {\bf P}_i}{P_i} be the matrix 
 giving the parameters of the ith smooth when applied to the data (or pseudodata in the generalized case) and let \eqn{ {\bf X}}{X} 
 be the design matrix of the model. Then \eqn{ tr({\bf XP}_i )}{tr(XP_i)} is the edf for the ith term. Clearly this 
-definition causes the edf's to add up properly! 
+definition causes the edf's to add up properly! An alternative version of EDF is more appropriate for p-value computation, and is based 
+on the trace of  \eqn{ 2{\bf A} - {\bf AA}}{2A - AA}.
 
 \code{print.summary.gam} tries to print various bits of summary information useful for term selection in a pretty way.
 
-If \code{freq=TRUE} then the frequentist approximation for p-values of smooth terms described in section
+Unless \code{p.type=5}, p-values for smooth terms are usually based on a 
+test statistic motivated by an extension of Nychka's (1988) analysis of the frequentist properties 
+of Bayesian confidence intervals for smooths. 
+These have better frequentist performance (in terms of power and distribution under the null) 
+than the alternative strictly frequentist approximation. Let \eqn{\bf f}{f} denote the vector of 
+values of a smooth term evaluated at the original 
+covariate values and let \eqn{{\bf V}_f}{V_f} denote the corresponding Bayesian covariance matrix. Let 
+\eqn{{\bf V}_f^{r-}}{V*_f} denote the rank \eqn{r}{r} pseudoinverse of \eqn{{\bf V}_f}{V_f}, where \eqn{r}{r} is the 
+EDF for the term. The statistic used is then 
+\deqn{T = {\bf f}^T {\bf V}_f^{r-}{\bf f}}{T = f'V*_f f}
+(this can be calculated efficiently without forming the pseudoinverse explicitly). \eqn{T}{T} is compared to an approximation to an appropriate mizture of chi-squared distributions with degrees of freedom given by the EDF for the term, 
+or \eqn{T}{T} is used as a component in an F ratio statistic if the 
+scale parameter has been estimated.  
+
+The non-integer rank truncated inverse is constructed to give an 
+approximation varying smoothly between the bounding integer rank approximations, while yielding test statistics with the correct mean and variance under the null. Alternatively (\code{p.type==1}) \eqn{r}{r} is obtained by 
+biased rounding of the EDF: values less than .05 above the preceding integer are rounded down, while other values are rounded up. Another option (\code{p.type==-1}) uses a statistic of formal rank given by the number of coefficients for the smooth, but with its terms weighted by the eigenvalues of the covariance matrix, so that penalized terms are down-weighted, but the null distribution requires simulation. Other options for \code{p.type} are 2 (naive rounding), 3 (round up), 4 (numerical rank determination): these are poor options for theoretically known reasons, and will generate a warning. 
+
+The resulting p-value also has a  Bayesian interpretation: 
+the probability of observing an \eqn{\bf f}{f} less probable than \eqn{\bf 0}{0}, 
+under the approximation for the posterior for \eqn{\bf f}{f} implied by the truncation used in the test statistic.
+
+Note that for terms with no unpenalized terms the Nychka (1988) requirement for smoothing bias to be substantially 
+less than variance breaks down (see e.g. appendix of Marra and Wood, 2012), and this results in incorrect null distribution 
+for p-values computed using the above approach. In this case it is necessary to fall back on slightly cruder frequentist approximations 
+(which may overstate significance a little). The frequentist covariance matrix is used in place of the Bayesian version, and the statistic rank is set to 1 for EDF < 1. In the case of random effects, a further modification is required, since the eigen spectrum of the penalty is then flat and a good unpenalized approximation with rank given by the EDF of the term is not generally available, further breaking the theory used for other smoothers. In this case the rank of the test statistic is set to the full rank of the term, and the p-value relates to testing whether the individual random effects were in fact all zero (despite the estimated posterior modes being those observed). 
+
+In simulations the p-values have best behaviour under ML smoothness selection, with REML coming second. 
+
+If \code{p.type=5} then the frequentist approximation for p-values of smooth terms described in section
 4.8.5 of Wood (2006) is used. The approximation is not great.  If \eqn{ {\bf p}_i}{p_i} 
 is the parameter vector for the ith smooth term, and this term has estimated
 covariance matrix \eqn{ {\bf V}_i}{V_i} then the 
@@ -64,31 +94,12 @@ which case it will have been estimated) the statistic is compared
 to an F distribution with k upper d.f.  and lower d.f. given by the residual degrees of freedom for the model. 
 Typically the p-values will be somewhat too low.
 
-If \code{freq=FALSE} then `Bayesian p-values' are returned for the smooth terms, based on a 
-test statistic motivated
-by an extension of Nychka's (1988) analysis of the frequentist properties of Bayesian confidence intervals for smooths. 
-These have better frequentist performance (in terms of power and distribution under the null) 
-than the alternative strictly frequentist approximation. Let \eqn{\bf f}{f} denote the vector of 
-values of a smooth term evaluated at the original 
-covariate values and let \eqn{{\bf V}_f}{V_f} denote the corresponding Bayesian covariance matrix. Let 
-\eqn{{\bf V}_f^{r-}}{V*_f} denote the rank \eqn{r}{r} pseudoinverse of \eqn{{\bf V}_f}{V_f}, where \eqn{r}{r} is the 
-EDF for the term. The statistic used is then 
-\deqn{T = {\bf f}^T {\bf V}_f^{r-}{\bf f}}{T = f'V*_f f}
-(this can be calculated efficiently without forming the pseudoinverse explicitly). \eqn{T}{T} is compared to a 
-chi-squared distribution with degrees of freedom given by the EDF for the term, 
-or \eqn{T}{T} is used as a component in an F ratio statistic if the 
-scale parameter has been estimated.  
-
-The non-integer rank truncated inverse is constructed to give an 
-approximation varying smoothly between the bounding integer rank approximations, while yielding test statistics with the correct mean and variance under the null. Alternatively (\code{p.type==1}) \eqn{r}{r} is obtained by 
-biased rounding of the EDF: values less than .05 above the preceding integer are rounded down, while other values are rounded up. Another option (\code{p.type==-1}) uses a statistic of formal rank given by the number of coefficients for the smooth, but with its terms weighted by the eigenvalues of the covariance matrix, so that penalized terms are down-weighted, but the null distribution requires simulation. Other options for \code{p.type} are 2 (naive rounding), 3 (round up), 4 (numerical rank determination): these are poor options for theoretically known reasons, and will generate a warning. 
-
-The resulting p-value also has a  Bayesian interpretation: 
-the probability of observing an \eqn{\bf f}{f} less probable than \eqn{\bf 0}{0}, under the approximation for the posterior for \eqn{\bf f}{f} implied by the truncation used in the test statistic.
-
-Note that the p-values distributional approximations start to break down below one effective degree of freedom, and p-values are not reported below 0.5 degrees of freedom. 
-
-In simulations the p-values have best behaviour under ML smoothness selection, with REML coming second. 
+By default the p-values for parametric model terms are also based on Wald tests using the Bayesian 
+covariance matrix for the coefficients. This is appropriate when there are "re" terms present, and is 
+otherwise rather similar to the results using the frequentist covariance matrix (\code{freq=TRUE}), since 
+the parametric terms themselves are usually unpenalized. Default P-values for parameteric terms that are 
+penalized using the \code{paraPen} argument will not be good. However if such terms represent conventional 
+random effects with full rank penalties, then setting \code{freq=TRUE} is appropriate. 
 
 }
 
@@ -167,6 +178,10 @@ by scale parameter.}
 
 \references{
 
+Marra, G and S.N. Wood (2012) Coverage Properties of Confidence Intervals for Generalized Additive
+Model Components. Scandinavian Journal of Statistics, 39(1), 53-74.
+
+
 Nychka (1988) Bayesian Confidence Intervals for Smoothing Splines. 
 Journal of the American Statistical Association 83:1134-1143.
 
@@ -177,7 +192,9 @@ and Hall/CRC Press.
 \author{ Simon N. Wood \email{simon.wood@r-project.org} with substantial
 improvements by Henric Nilsson.}
 
-\section{WARNING }{ The p-values are approximate: do read the details section.
+\section{WARNING }{ The p-values are approximate (especially for terms that can be penalized to zero): do read the details section.
+
+P-values for terms penalized via `paraPen' will not be correct unless `freq=TRUE' (and maybe not even then).
 } 
 
 \seealso{  \code{\link{gam}}, \code{\link{predict.gam}},

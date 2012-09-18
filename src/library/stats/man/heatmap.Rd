@@ -1,7 +1,9 @@
 % File src/library/stats/man/heatmap.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{heatmap}
 \alias{heatmap}
@@ -102,8 +104,7 @@ heatmap(x, Rowv=NULL, Colv=if(symm)"Rowv" else NULL,
   from genomic plotting that this is useful.
 
   The default colors are not pretty.  Consider using enhancements such
-  as the \pkg{RColorBrewer} package,
-  \url{http://cran.r-project.org/package=RColorBrewer}.
+  as the \CRANpkg{RColorBrewer} package.
 }
 \note{
   Unless \code{Rowv = NA} (or \code{Colw = NA}), the original rows and
@@ -163,6 +164,12 @@ round(Ca <- cor(attitude), 2)
 symnum(Ca) # simple graphic
 heatmap(Ca,             symm = TRUE, margins=c(6,6))# with reorder()
 heatmap(Ca, Rowv=FALSE, symm = TRUE, margins=c(6,6))# _NO_ reorder()
+## slightly artificial with color bar, without and with ordering:
+cc <- rainbow(nrow(Ca))
+heatmap(Ca, Rowv=FALSE, symm = TRUE, RowSideColors=cc, ColSideColors=cc,
+	margins=c(6,6))
+heatmap(Ca,		symm = TRUE, RowSideColors=cc, ColSideColors=cc,
+	margins=c(6,6))
 
 ## For variable clustering, rather use distance based on cor():
 symnum( cU <- cor(USJudgeRatings) )

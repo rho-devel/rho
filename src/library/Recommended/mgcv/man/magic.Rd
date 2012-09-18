@@ -11,13 +11,13 @@ steepest descent to iteratively adjust the smoothing parameters for each penalty
 
 For maximal numerical stability the method is based on orthogonal decomposition methods, 
 and attempts to deal with numerical rank deficiency gracefully using a truncated singular 
-value decomposition approach.
+value decomposition approach. 
 } %- end description
 
 \usage{
 magic(y,X,sp,S,off,L=NULL,lsp0=NULL,rank=NULL,H=NULL,C=NULL,
       w=NULL,gamma=1,scale=1,gcv=TRUE,ridge.parameter=NULL,
-      control=list(maxit=50,tol=1e-6,step.half=25,
+      control=list(tol=1e-6,step.half=25,
       rank.tol=.Machine$double.eps^0.5),extra.rss=0,n.score=length(y))
 }
 %- maybe also `usage' for other objects documented here.
@@ -25,7 +25,7 @@ magic(y,X,sp,S,off,L=NULL,lsp0=NULL,rank=NULL,H=NULL,C=NULL,
 
 \item{y}{is the response data vector.}
 
-\item{X}{is the model matrix.}
+\item{X}{is the model matrix (more columns than rows are allowed).}
 
 \item{sp}{is the array of smoothing parameters. The vector \code{L\%*\%log(sp)
 + lsp0} 
@@ -85,7 +85,6 @@ parameter value.}
 \item{control}{ is a list of iteration control constants with the following elements:
 
 \describe{
-\item{maxit}{The maximum number of iterations of the magic algorithm to allow.}
 
 \item{tol}{The tolerance to use in judging convergence.}
 
@@ -202,24 +201,31 @@ generalized additive models. J. Amer. Statist. Ass. 99:673-686
 
 
 \seealso{  
-\code{\link{magic.post.proc}},
-\code{\link{mgcv}},\code{\link{gam}}
+\code{\link{magic.post.proc}},\code{\link{gam}}
 }
 
 \examples{
 ## Use `magic' for a standard additive model fit ... 
    library(mgcv)
-   set.seed(1);n <- 400;sig <- 2
+   set.seed(1);n <- 200;sig <- 1
    dat <- gamSim(1,n=n,scale=sig)
+   k <- 30
 ## set up additive model
-   G <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),fit=FALSE,data=dat)
-## fit using magic
-   mgfit <- magic(G$y,G$X,G$sp,G$S,G$off,rank=G$rank,C=G$C)
+   G <- gam(y~s(x0,k=k)+s(x1,k=k)+s(x2,k=k)+s(x3,k=k),fit=FALSE,data=dat)
+## fit using magic (and gam default tolerance)
+   mgfit <- magic(G$y,G$X,G$sp,G$S,G$off,rank=G$rank,
+                  control=list(tol=1e-7,step.half=15))
 ## and fit using gam as consistency check
    b <- gam(G=G)
    mgfit$sp;b$sp  # compare smoothing parameter estimates
    edf <- magic.post.proc(G$X,mgfit,G$w)$edf # get e.d.f. per param
    range(edf-b$edf)  # compare
+
+## p>n example... fit model to first 100 data only, so more
+## params than data...
+
+   mgfit <- magic(G$y[1:100],G$X[1:100,],G$sp,G$S,G$off,rank=G$rank)
+   edf <- magic.post.proc(G$X[1:100,],mgfit,G$w[1:100])$edf
 
 ## constrain first two smooths to have identical smoothing parameters
    L <- diag(3);L <- rbind(L[1,],L)

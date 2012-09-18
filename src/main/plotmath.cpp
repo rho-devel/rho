@@ -17,11 +17,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997 Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2008	The R Development Core Team
+ *  Copyright (C) 1998-2008	The R Core Team
  *
  *  This source code module:
  *  Copyright (C) 1997, 1998 Paul Murrell and Ross Ihaka
- *  Copyright (C) 1998-2008	The R Development Core Team
+ *  Copyright (C) 1998-2008	The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -3149,6 +3149,45 @@ double GEExpressionHeight(SEXP expr,
      * the device drawing is oriented.
      */
     return fabs(toDeviceHeight(height, GE_INCHES, dd));
+}
+
+void GEExpressionMetric(SEXP expr,
+                        const pGEcontext gc,
+                        double *ascent, double *descent, double *width,
+                        pGEDevDesc dd)
+{
+    BBOX bbox;
+
+    /*
+     * Build a "drawing context" for the current expression
+     */
+    mathContext mc;
+    mc.BaseCex = gc->cex;
+    mc.BoxColor = name2col("pink");
+    mc.CurrentStyle = STYLE_D;
+    /*
+     * Some "empty" values.  Will be filled in after BBox is calc'ed
+     */
+    mc.ReferenceX = 0;
+    mc.ReferenceY = 0;
+    mc.CurrentX = 0;
+    mc.CurrentY = 0;
+    mc.CurrentAngle = 0;
+    mc.CosAngle = 0;
+    mc.SinAngle = 0;
+
+    SetFont(PlainFont, gc);
+    bbox = RenderElement(expr, 0, &mc, gc, dd);
+    /* NOTE that we do fabs() here in case the device
+     * draws top-to-bottom (like an X11 window).
+     * This is so that these calculations match those
+     * for string widths and heights, where the width
+     * and height of text is positive no matter how
+     * the device drawing is oriented.
+     */
+    *width = fabs(toDeviceWidth(bboxWidth(bbox), GE_INCHES, dd));
+    *ascent = fabs(toDeviceHeight(bboxHeight(bbox), GE_INCHES, dd));
+    *descent = fabs(toDeviceHeight(bboxDepth(bbox), GE_INCHES, dd));
 }
 
 void GEMathText(double x, double y, SEXP expr,

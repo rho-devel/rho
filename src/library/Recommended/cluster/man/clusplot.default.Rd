@@ -8,7 +8,8 @@
   is drawn.
 }
 \usage{
-\method{clusplot}{default}(x, clus, diss = FALSE, cor = TRUE, stand = FALSE,
+\method{clusplot}{default}(x, clus, diss = FALSE,
+          s.x.2d = mkCheckX(x, diss), stand = FALSE,
           lines = 2, shade = FALSE, color = FALSE,
           labels= 0, plotchar = TRUE,
           col.p = "dark green", col.txt = col.p,
@@ -19,6 +20,7 @@
           main = paste("CLUSPLOT(", deparse(substitute(x)),")"),
           sub = paste("These two components explain",
              round(100 * var.dec, digits = 2), "\% of the point variability."),
+          xlab = "Component 1", ylab = "Component 2",
           verbose = getOption("verbose"),
           \dots)
 }
@@ -50,9 +52,9 @@
     logical indicating if \code{x} will be considered as a dissimilarity
     matrix or a matrix of observations by variables (see \code{x}
     arugment above).}
-  \item{cor}{
-    logical flag, only used when working with a data matrix (\code{diss
-      = FALSE}). If TRUE, then the variables are scaled to unit variance.}
+  \item{s.x.2d}{a \code{\link{list}} with components \code{x} (a \eqn{n
+    \times 2} matrix; typically something like principal components of
+    original data), \code{labs} and \code{var.dec}.}
   \item{stand}{
     logical flag: if true, then the representations of the n observations in the
     2-dimensional plot are standardized.
@@ -138,6 +140,7 @@
     ranges as in \code{\link{plot.default}}.}
   \item{main}{main title for the plot; by default, one is constructed.}
   \item{sub}{sub title for the plot; by default, one is constructed.}
+  \item{xlab, ylab}{x- and y- axis labels for the plot, with defaults.}
   \item{verbose}{a logical indicating, if there should be extra
     diagnostic output; mainly for \sQuote{debugging}.}
   \item{\dots}{Further graphical parameters may also be supplied, see

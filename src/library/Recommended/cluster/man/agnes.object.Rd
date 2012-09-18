@@ -10,7 +10,7 @@
 }
 \section{METHODS}{
   The \code{"agnes"} class has methods for the following generic functions:
-  \code{print}, \code{summary}, \code{plot}.
+  \code{print}, \code{summary}, \code{plot}, and \code{\link{as.dendrogram}}.
 }
 \section{INHERITANCE}{
   The class \code{"agnes"} inherits from \code{"twins"}.

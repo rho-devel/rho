@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1998  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2011   The R Development Core Team.
+ *  Copyright (C) 1998-2012   The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -548,10 +548,13 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(lout == NA_INTEGER) {
 	double rfrom = asReal(from), rto = asReal(to), rby = asReal(by), *ra;
 	if(from == R_MissingArg) rfrom = 1.0;
+	else if(length(from) != 1) error("'from' must be of length 1");
 	if(to == R_MissingArg) rto = 1.0;
+	else if(length(to) != 1) error("'to' must be of length 1");
 	if(by == R_MissingArg)
 	    ans = seq_colon(rfrom, rto, call);
 	else {
+	    if(length(by) != 1) error("'by' must be of length 1");
 	    double del = rto - rfrom, n, dd;
 	    int nn;
 	    if(!R_FINITE(rfrom))
@@ -689,6 +692,7 @@ SEXP attribute_hidden do_seq_along(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     checkArity(op, args);
     check1arg(args, call, "along.with");
+
     /* Try to dispatch to S3 or S4 metods for 'length'.  For cases
        where no methods are defined this is more efficient than an
        unconditional callback to R */

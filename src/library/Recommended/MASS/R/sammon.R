@@ -14,8 +14,8 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 #
-sammon <- function(d, y= cmdscale(d, k), k=2, niter=100, trace=TRUE,
-                   magic=0.2, tol=1e-4)
+sammon <- function(d, y = cmdscale(d, k), k = 2, niter = 100, trace = TRUE,
+                   magic = 0.2, tol = 1e-4)
 {
     call <- match.call()
     if(any(is.infinite(d))) stop("Infs not allowed in 'd'")
@@ -34,6 +34,8 @@ sammon <- function(d, y= cmdscale(d, k), k=2, niter=100, trace=TRUE,
         x <- x + t(x)
         rn <- attr(d, "Labels")
     }
+    n <- as.integer(n)
+    if(is.na(n)) stop("invalid size")
     ab <- x[row(x) < col(x)] <= 0
     if (any(ab, na.rm = TRUE)) {
         ab <- !is.na(ab) & ab
@@ -52,7 +54,7 @@ sammon <- function(d, y= cmdscale(d, k), k=2, niter=100, trace=TRUE,
     storage.mode(y) <- "double"
     z <- .C(VR_sammon,
             x = x,
-            as.integer(n),
+            n,
             as.integer(k),
             y = y,
             as.integer(niter),

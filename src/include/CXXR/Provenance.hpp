@@ -45,7 +45,7 @@ namespace CXXR {
 	Expression* getCommand() const;
 	Symbol* getSymbol() const;
 	Parentage* getParentage() const;
-	const CachedString* getTime() const;
+	const String* getTime() const;
 
 	const RObject* getValue() const
 	{

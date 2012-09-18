@@ -18,7 +18,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2010  The R Development Core Team
+ *  Copyright (C) 1997--2010  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1241,7 +1241,7 @@ SEXP R_Parse1Buffer(IoBuffer *buffer, int gencode, ParseStatus *status)
     R_Parse1(status);
     if (gencode && keepSource) {
     	if (ParseState.didAttach) {
-   	    int buflen = buffer->read_offset;
+   	    int buflen = R_IoBufferReadOffset(buffer);
    	    char buf[buflen+1];
    	    SEXP class_sv;
    	    R_IoBufferReadReset(buffer);

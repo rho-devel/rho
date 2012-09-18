@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1998--2009  R Development Core Team
+ *  Copyright (C) 1998--2009  R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -94,7 +94,7 @@ int AppMain(int argc, char **argv)
 #ifdef WIN64
 	SetConsoleTitle("Rterm (64-bit)");
 #else
-	SetConsoleTitle("Rterm");
+	SetConsoleTitle("Rterm (32-bit)");
 #endif
     }
     Rf_mainloop();

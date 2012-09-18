@@ -26,7 +26,13 @@ Smooth terms are specified by expressions of the form: \cr
  where \code{x1}, \code{x2}, etc. are the covariates which the smooth
 is a function of, and \code{k} is the dimension of the basis used to
 represent the smooth term. If \code{k} is not
- specified then basis specific defaults are used.  
+ specified then basis specific defaults are used. Note that these defaults are
+essentially arbitrary, and it  is important to check that they are not so 
+small that they cause oversmoothing (too large just slows down computation). 
+Sometimes the modelling context suggests sensible values for \code{k}, but if not
+informal checking is easy: see \code{\link{choose.k}} and \code{\link{gam.check}}.  
+
+
 \code{fx} is used to indicate whether or not this term should be unpenalized, 
 and therefore have a fixed number of degrees of freedom set by \code{k} 
 (almost always \code{k-1}). \code{bs} indicates the basis to use for the smooth:

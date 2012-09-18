@@ -27,7 +27,7 @@ Usage <- function() {
         "  -v, --version		print REMOVE version info and exit",
         "  -l, --library=LIB	remove packages from library tree LIB",
         "",
-        "Report bugs to <r-bugs@r-project.org>.", sep="\n")
+        "Report bugs at bugs.r-project.org .", sep="\n")
 }
 
 options(showErrorCalls=FALSE)
@@ -45,7 +45,7 @@ while(length(args)) {
             R.version[["major"]], ".",  R.version[["minor"]],
             " (r", R.version[["svn rev"]], ")\n", sep = "")
         cat("",
-            "Copyright (C) 2000-2009 The R Core Development Team.",
+            "Copyright (C) 2000-2009 The R Core Team.",
             "This is free software; see the GNU General Public License version 2",
             "or later for copying conditions.  There is NO warranty.",
             sep="\n")

@@ -1,6 +1,6 @@
 % File src/library/base/man/get.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
 
 \name{get}
@@ -16,7 +16,7 @@ get(x, pos = -1, envir = as.environment(pos), mode = "any",
 
 mget(x, envir, mode = "any",
      ifnotfound = list(function(x)
-         stop(paste("value for '", x, "' not found", sep = ""),
+         stop(paste0("value for '", x, "' not found"),
               call. = FALSE)),
      inherits = FALSE)
 }

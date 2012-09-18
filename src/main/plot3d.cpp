@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2011  The R Development Core Team
+ *  Copyright (C) 1997--2011  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1343,9 +1343,9 @@ SEXP attribute_hidden do_contour(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP oargs, c, x, y, z, vfont, col, rawcol, lty, lwd, labels;
     int i, j, nx, ny, nc, ncol, nlty, nlwd;
-    int ltysave, lwdsave, fontsave = 1 /* -Wall */;
+    int ltysave, fontsave = 1 /* -Wall */;
     rcolor colsave;
-    double cexsave;
+    double cexsave, lwdsave;
     double atom, zmin, zmax;
     const void *vmax, *vmax0;
     char familysave[201];
@@ -1402,7 +1402,7 @@ SEXP attribute_hidden do_contour(SEXP call, SEXP op, SEXP args, SEXP env)
     if (!isNull(vfont)) {
 	strncpy(familysave, gpptr(dd)->family, 201);
 	strncpy(gpptr(dd)->family, "Her ", 201);
-	gpptr(dd)->family[3] = INTEGER(vfont)[0];
+	gpptr(dd)->family[3] = char( INTEGER(vfont)[0]);
 	fontsave = gpptr(dd)->font;
 	gpptr(dd)->font = INTEGER(vfont)[1];
     }
@@ -1978,9 +1978,9 @@ static void DrawFacets(double *z, double *x, double *y, int nx, int ny,
 	if (nv > 2) {
 	    newcol = col[icol];
 	    if (DoLighting) {
-		r = CXXRCONSTRUCT(static_cast<unsigned int>, shade * R_RED(newcol));
-		g = CXXRCONSTRUCT(static_cast<unsigned int>, shade * R_GREEN(newcol));
-		b = CXXRCONSTRUCT(static_cast<unsigned int>, shade * R_BLUE(newcol));
+		r = int(shade * R_RED(newcol));
+		g = int(shade * R_GREEN(newcol));
+		b = int(shade * R_BLUE(newcol));
 		newcol = R_RGB(r, g, b);
 	    }
 	    GPolygon(nv, xx, yy, USER, newcol, border, dd);

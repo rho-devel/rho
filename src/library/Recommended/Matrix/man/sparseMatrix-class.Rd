@@ -27,6 +27,7 @@
 \alias{rbind2,numeric,sparseMatrix-method}
 %
 \alias{coerce,ANY,sparseMatrix-method}
+\alias{coerce,table,sparseMatrix-method}
 \alias{coerce,factor,sparseMatrix-method}
 \alias{coerce,sparseMatrix,generalMatrix-method}
 \alias{coerce,sparseMatrix,symmetricMatrix-method}
@@ -126,6 +127,12 @@
   See also \code{\link{colSums}}, \code{\link{norm}},
   ... %% FIXME
   for methods with separate help pages.
+}
+\seealso{
+  \code{\link{sparseMatrix}}, and its references, such as
+  \code{\link{xtabs}(*, sparse=TRUE)}, or
+  \code{\link{sparse.model.matrix}()},
+  for constructing sparse matrices.
 }
 \note{
   In method selection for multiplication operations (i.e. \code{\%*\%}

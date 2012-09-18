@@ -1,7 +1,9 @@
 % File src/library/stats/man/offset.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{offset}
 \title{Include an Offset in a Model Formula}
@@ -29,6 +31,6 @@ offset(object)
   \code{\link{model.offset}}, \code{\link{model.frame}}.
   
   For examples see \code{\link{glm}} and
-  \code{\link[MASS]{Insurance}} in package \pkg{MASS}.
+  \code{\link[MASS]{Insurance}} in package \CRANpkg{MASS}.
 }
 \keyword{models}

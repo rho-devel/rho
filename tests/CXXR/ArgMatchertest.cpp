@@ -37,7 +37,6 @@
 // Otherwise expanded to Rf_match:
 #undef match
 
-#include "CXXR/CachedString.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ListFrame.hpp"
 #include "CXXR/PairList.h"
@@ -96,7 +95,7 @@ namespace {
 		if (valstr.empty())
 		    value = Symbol::missingArgument();
 		else value
-		    = const_cast<CachedString*>(CachedString::obtain(valstr.c_str()));
+		    = const_cast<String*>(String::obtain(valstr.c_str()));
 		const RObject* tag = 0;
 		if (!namestr.empty())
 		    tag = Symbol::obtain(namestr.c_str());
@@ -108,9 +107,9 @@ namespace {
 
     string getString(const RObject* value)
     {
-	const CachedString* str = dynamic_cast<const CachedString*>(value);
+	const String* str = dynamic_cast<const String*>(value);
 	if (!str) {
-	    cerr << "CachedString expected.\n";
+	    cerr << "String expected.\n";
 	    abort();
 	}
 	return str->stdstring();
@@ -192,7 +191,7 @@ namespace {
 
     void showFrame(const Frame* frame)
     {
-	typedef map<const CachedString*, const Frame::Binding*,
+	typedef map<const String*, const Frame::Binding*,
 	    String::Comparator> FrameMap;
 	FrameMap fmap;
 	// Get bindings sorted by name:

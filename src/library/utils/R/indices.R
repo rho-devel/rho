@@ -29,7 +29,7 @@ packageDescription <- function(pkg, lib.loc=NULL, fields=NULL, drop=TRUE,
 	if(is.null(lib.loc)) {
 	    if(pkg == "base")
 		file.path(.Library, "base")
-	    else if((envname <- paste("package:", pkg, sep = ""))
+	    else if((envname <- paste0("package:", pkg))
 		    %in% search()) {
 		pp <- attr(as.environment(envname), "path")
 		## could be NULL if a perverse user has been naming
@@ -108,10 +108,16 @@ packageDescription <- function(pkg, lib.loc=NULL, fields=NULL, drop=TRUE,
 }
 
 
-print.packageDescription <- function(x, ...)
+print.packageDescription <- function(x, abbrCollate = 0.8 * getOption("width"), ...)
 {
     xx <- x
     xx[] <- lapply(xx, function(x) if(is.na(x)) "NA" else x)
+    if(abbrCollate > 0 && any(names(xx) == "Collate")) {
+        ## trim a long "Collate" field -- respecting word boundaries
+	wrds <- strsplit(xx$Collate,"[ \n]")[[1L]]
+	k <- which.max(cumsum(nchar(wrds)) > abbrCollate) - 1L
+	xx$Collate <- paste(c(wrds[seq_len(k)], "....."), collapse=" ")
+    }
     write.dcf(as.data.frame.list(xx, optional = TRUE))
     cat("\n-- File:", attr(x, "file"), "\n")
     if(!is.null(attr(x, "fields"))){
@@ -124,9 +130,9 @@ print.packageDescription <- function(x, ...)
 
 # Simple convenience functions
 
-maintainer <- function(pkg){
-  pkg # force evaluation
-  return(packageDescription(pkg)$Maintainer)
+maintainer <- function(pkg) {
+    force(pkg)
+    packageDescription(pkg)$Maintainer
 }
 
 packageVersion <- function(pkg, lib.loc=NULL)

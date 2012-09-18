@@ -10,7 +10,8 @@ pam(x, k, diss = inherits(x, "dist"), metric = "euclidean",
     medoids = NULL, stand = FALSE, cluster.only = FALSE,
     do.swap = TRUE,
     keep.diss = !diss && !cluster.only && n < 100,
-    keep.data = !diss && !cluster.only, trace.lev = 0)
+    keep.data = !diss && !cluster.only,
+    pamonce = FALSE, trace.lev = 0)
 }
 \arguments{
   \item{x}{
@@ -67,6 +68,8 @@ pam(x, k, diss = inherits(x, "dist"), metric = "euclidean",
     and/or input data \code{x} should be kept in the result.  Setting
     these to \code{FALSE} can give much smaller results and hence even save
     memory allocation \emph{time}.}
+  \item{pamonce}{logical or integer in \code{0:2} specifying algorithmic
+    short cuts as proposed by Reynolds et al. (2006), see below.}
   \item{trace.lev}{integer specifying a trace level for printing
     diagnostics during the build and swap phase of the algorithm.
     Default \code{0} does not print anything; higher values print
@@ -112,11 +115,37 @@ pam(x, k, diss = inherits(x, "dist"), metric = "euclidean",
   When the \code{medoids} are specified, their order does \emph{not}
   matter; in general, the algorithms have been designed to not depend on
   the order of the observations.
+
+  The \code{pamonce} option, new in cluster 1.14.2 (Jan. 2012), has been
+  proposed by Matthias Studer, University of Geneva, based on the
+  findings by Reynolds et al. (2006).
+
+  The default \code{FALSE} (or integer \code{0}) corresponds to the
+  original \dQuote{swap} algorithm, whereas \code{pamonce = 1} (or
+  \code{TRUE}), corresponds to the first proposal .... %% FIXME
+  and \code{pamonce = 2} additionally implements the second proposal as
+  well. % FIXME more details
 }
 \note{
   For large datasets, \code{pam} may need too much memory or too much
   computation time since both are \eqn{O(n^2)}.  Then,
   \code{\link{clara}()} is preferable, see its documentation.
+}
+\author{Kaufman and Rousseeuw's orginal Fortran code was translated to C
+  and augmented in several ways, e.g. to allow \code{cluster.only=TRUE}
+  or \code{do.swap=FALSE}, by Martin Maechler.
+  \cr
+  Matthias Studer, Univ.Geneva provided the \code{pamonce}
+  implementation.
+}
+\references{
+%% the pamonce options :
+  Reynolds, A., Richards, G., de la Iglesia, B. and Rayward-Smith, V. (1992)
+  Clustering rules: A comparison of partitioning and hierarchical
+  clustering algorithms;
+  \emph{Journal of Mathematical Modelling and Algorithms} \bold{5},
+  475--504 (\url{http://dx.doi.org/10.1007/s10852-005-9022-1}).
+
 }
 \seealso{
   \code{\link{agnes}} for background and references;

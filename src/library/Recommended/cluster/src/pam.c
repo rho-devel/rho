@@ -22,7 +22,7 @@ void cl_pam(int *nn, int *p, int *kk, double *x, double *dys,
 	    int *ndyst, int *nsend, int/*logical*/ *nrepr, int *nelem,
 	    double *radus, double *damer, double *avsyl, double *separ,
 	    double *ttsyl, double *obj, int *med, int *ncluv,
-	    double *clusinf, double *sylinf, int *nisol)
+	    double *clusinf, double *sylinf, int *nisol, int* pamonce)
 {
     int clusinf_dim1 = *kk;
 
@@ -31,7 +31,7 @@ void cl_pam(int *nn, int *p, int *kk, double *x, double *dys,
 	med_given = (med[0] != 0),/* if true, med[] contain initial medoids */
 	do_swap = (nisol[0] != 0);
     int k, i, nhalf, jhalt, trace_lev = (int) obj[1];
-    double s, sky;
+    double s;
 
     /* Function Body */
     nhalf = *nn * (*nn - 1) / 2 + 1; /* nhalf := #{distances}+1 = length(dys) */
@@ -65,9 +65,10 @@ void cl_pam(int *nn, int *p, int *kk, double *x, double *dys,
     }
 
 /*     Build + Swap [but no build if(med_given); swap only if(do_swap) : */
+
     bswap(*kk, *nn, nrepr,
 	  med_given, do_swap, trace_lev,
-	  radus, damer, avsyl, dys, &sky, s, obj);
+	  radus, damer, avsyl, dys, s, obj, pamonce);
 
     if(trace_lev) Rprintf("end{bswap()}, ");
 /*     Compute Clustering & STATs if(all_stats): */
@@ -90,30 +91,29 @@ void cl_pam(int *nn, int *p, int *kk, double *x, double *dys,
     }
 } /* pam */
 
-/* NOTE: dysta() is *kept* in Fortran for now --> ./dysta.f */
 
 /* -----------------------------------------------------------
-
      bswap(): the clustering algorithm in 2 parts:  I. build,	II. swap
 */
 void bswap(int kk, int n, int *nrepr,
 	   Rboolean med_given, Rboolean do_swap, int trace_lev,
 	   /* nrepr[]: here is boolean (0/1): 1 = "is representative object"  */
 	   double *dysma, double *dysmb, double *beter,
-	   double *dys, double *sky, double s, double *obj)
+	   double *dys, double s, double *obj, int *pamonce)
 {
-    int i, j, ij, k,h;
+    int i, j, ij, k,h, dig_n;
+    double sky;
 
-     /* Parameter adjustments */
+    /* Parameter adjustments */
     --nrepr;
     --beter;
 
     --dysma; --dysmb;
 
-    if(trace_lev) Rprintf("pam()'s bswap(*, s=%g): ", s);
+    if(trace_lev) Rprintf("pam()'s bswap(*, s=%g, pamonce=%d): ", s, *pamonce);
 
-    s = s * 1.1 + 1.;/* larger than all dys[];
-			replacing by DBL_MAX  changes result - why ? */
+    s = s * 1.1 + 1.;// larger than all dys[]  (but DBL_MAX is too large)
+
 
 /* IDEA: when n is large compared to k (= kk),
  * ----  rather use a "sparse" representation:
@@ -183,9 +183,10 @@ void bswap(int kk, int n, int *nrepr,
     }
 
     if(trace_lev) /* >= 2 (?) */ {
+	dig_n = 1+floor(log10(n));
 	Rprintf("  after build: medoids are");
 	for (i = 1; i <= n; ++i)
-	    if(nrepr[i] == 1) Rprintf(" %2d", i);
+	    if(nrepr[i] == 1) Rprintf(" %*d", dig_n, i);
 	if(trace_lev >= 3) {
 	    Rprintf("\n  and min.dist dysma[1:n] are\n");
 	    for (i = 1; i <= n; ++i) {
@@ -194,17 +195,34 @@ void bswap(int kk, int n, int *nrepr,
 	    }
 	    if(n % 10 != 0) Rprintf("\n");
 	} else Rprintf("\n");
-    }
+    } else dig_n = 1;// -Wall
 
-    *sky = 0.;
+    sky = 0.;
     for (j = 1; j <= n; ++j)
-	*sky += dysma[j];
-    obj[0] = *sky / n;
+	sky += dysma[j];
+    obj[0] = sky / n;
 
     if (do_swap && (kk > 1 || med_given)) {
 
 	double dzsky;
-	int hbest = -1, nbest = -1;/* init: -Wall*/
+	int hbest = -1, nbest = -1, kbest= -1; // -Wall
+	int *medoids, *clustmembership;
+	double *fvect;
+	if(*pamonce) {
+	    // add one to use R indices
+	    medoids = (int*) R_alloc(kk+1, sizeof(int));
+	    clustmembership = (int*) R_alloc(n+1, sizeof(int));
+	    fvect = (double*) R_alloc(n+1, sizeof(double));
+	    for (int k = 1, i = 1; i <= n; ++i) {
+		if (nrepr[i]) {
+		    medoids[k] = i;
+		    k++;
+		}
+	    }
+	} else { // -Wall :
+	    clustmembership = medoids = (int*) NULL;
+	    fvect = (double*) NULL;
+	}
 
 /* ====== second algorithm: SWAP. ====== */
 
@@ -212,16 +230,37 @@ void bswap(int kk, int n, int *nrepr,
 	 *      don't need it first time; then only need *update* after swap */
 
 /*--   Loop : */
-L60:
-	for (j = 1; j <= n; ++j) {
-	    /*  dysma[j] := D_j  d(j, <closest medi>)  [KR p.102, 104]
-	     *  dysmb[j] := E_j  d(j, <2-nd cl.medi>)  [p.103] */
-	    dysma[j] = s;
-	    dysmb[j] = s;
-	    for (i = 1; i <= n; ++i) {
-		if (nrepr[i]) {
+    L60:
+	if(*pamonce == 0) { // original algorihtm
+	    for (j = 1; j <= n; ++j) {
+		/*  dysma[j] := D_j  d(j, <closest medi>)  [KR p.102, 104]
+		 *  dysmb[j] := E_j  d(j, <2-nd cl.medi>)  [p.103] */
+		dysma[j] = s;
+		dysmb[j] = s;
+		for (i = 1; i <= n; ++i) {
+		    if (nrepr[i]) {
+			ij = ind_2(i, j);
+			if (dysma[j] > dys[ij]) {
+			    dysmb[j] = dysma[j];
+			    dysma[j] = dys[ij];
+			} else if (dysmb[j] > dys[ij]) {
+			    dysmb[j] = dys[ij];
+			}
+		    }
+		}
+	    }
+	} else { // *pamonce == 1 or == 2 :
+	    for (j = 1; j <= n; ++j) {
+		/*  dysma[j] := D_j  d(j, <closest medi>)  [KR p.102, 104]
+		 *  dysmb[j] := E_j  d(j, <2-nd cl.medi>)  [p.103] */
+		dysma[j] = s;
+		dysmb[j] = s;
+		for(k = 1; k <= kk; k++) {
+		    i = medoids[k];
 		    ij = ind_2(i, j);
 		    if (dysma[j] > dys[ij]) {
+			//store cluster membership
+			clustmembership[j] = i;
 			dysmb[j] = dysma[j];
 			dysma[j] = dys[ij];
 		    } else if (dysmb[j] > dys[ij]) {
@@ -232,39 +271,111 @@ L60:
 	}
 
 	dzsky = 1.; /* 1 is arbitrary > 0; only dzsky < 0 matters in the end */
-	for (h = 1; h <= n; ++h) if (!nrepr[h]) {
-	    R_CheckUserInterrupt();
-            for (i = 1; i <= n; ++i) if (nrepr[i]) {
-		double dz = 0.;
-		/* dz := T_{ih} := sum_j C_{jih}  [p.104] : */
-		for (j = 1; j <= n; ++j) { /* if (!nrepr[j]) { */
-		    int ij = ind_2(i, j),
-			hj = ind_2(h, j);
-		    if (dys[ij] == dysma[j]) {
-			double small = dysmb[j] > dys[hj] ? dys[hj] : dysmb[j];
-			dz += (- dysma[j] + small);
-		    } else if (dys[hj] < dysma[j]) /* 1c. */
-			dz += (- dysma[j] + dys[hj]);
+
+	if(*pamonce == 0) { // original algorihtm
+	    for (h = 1; h <= n; ++h) if (!nrepr[h]) {
+		    R_CheckUserInterrupt();
+		    for (i = 1; i <= n; ++i) if (nrepr[i]) {
+			    double dz = 0.;
+			    /* dz := T_{ih} := sum_j C_{jih}  [p.104] : */
+			    for (j = 1; j <= n; ++j) { /* if (!nrepr[j]) { */
+				int hj = ind_2(h, j);
+				ij = ind_2(i, j);
+				if (dys[ij] == dysma[j]) {
+				    double small = dysmb[j] > dys[hj] ? dys[hj] : dysmb[j];
+				    dz += (- dysma[j] + small);
+				} else if (dys[hj] < dysma[j]) /* 1c. */
+				    dz += (- dysma[j] + dys[hj]);
+			    }
+			    if (dzsky > dz) {
+				dzsky = dz; /* dzsky := min_{i,h} T_{i,h} */
+				hbest = h;
+				nbest = i;
+			    }
+			}
 		}
-		if (dzsky > dz) {
-		    dzsky = dz; /* dzsky := min_{i,h} T_{i,h} */
-		    hbest = h;
-		    nbest = i;
+	} else { // *pamonce == 1 or == 2 :
+	    for(k = 1; k <= kk; k++) {
+		R_CheckUserInterrupt();
+		i=medoids[k];
+		double removeCost = 0.;
+		//Compute cost for removing the medoid
+		for (j = 1; j <= n; ++j) {
+		    if(clustmembership[j] == i) {
+			removeCost+=(dysmb[j]-dysma[j]);
+			fvect[j]=dysmb[j];
+		    }
+		    else{
+			fvect[j]=dysma[j];
+		    }
+		}
+
+		if (*pamonce == 1) {
+		    // Now check possible new medoids h
+		    for (h = 1; h <= n; ++h) if (!nrepr[h]) {
+			    double addGain = removeCost;
+			    // Compute gain of adding h as a medoid:
+			    for (j = 1; j <= n; ++j) {
+				int hj = ind_2(h, j);
+				if(dys[hj] < fvect[j])
+				    addGain += (dys[hj]-fvect[j]);
+			    }
+			    if (dzsky > addGain) {
+				dzsky = addGain; /* dzsky := min_{i,h} T_{i,h} */
+				hbest = h;
+				nbest = i;
+				kbest = k;
+			    }
+			}
+
+		} else { // *pamonce == 2 :
+
+		    // Now check possible new medoids h
+		    for (h = 1; h <= n; ++h) if (!nrepr[h]) {
+			    double addGain = removeCost - fvect[h]; // - fvect[h] since dys[h,h]=0;
+			    // Compute gain of adding h as a medoid:
+			    int ijbase = (h-2)*(h-1)/2;
+			    for (j = 1; j < h; ++j) {
+				int hj = ijbase+j;
+				if(dys[hj] < fvect[j])
+				    addGain += (dys[hj]-fvect[j]);
+			    }
+			    ijbase += h;// = (h-2)*(h-1)/2 + h
+			    for (j = h+1; j <= n; ++j) {
+				ijbase += j-2;
+				if(dys[ijbase] < fvect[j])
+				    addGain += (dys[ijbase]-fvect[j]);
+			    }
+			    if (dzsky > addGain) {
+				dzsky = addGain; /* dzsky := min_{i,h} T_{i,h} */
+				hbest = h;
+				nbest = i;
+				kbest = k;
+			    }
+			}
 		}
 	    }
 	}
-	if (dzsky < 0.) { /* found an improving swap */
+
+	if (dzsky < - 16*DBL_EPSILON * fabs(sky)) { // basically " < 0 ",
+	    // but ' < 0 ' gave infinite loop, swapping the identical objects
+	    // found an improving swap
+
 	    if(trace_lev >= 2)
-		Rprintf( "   swp new %d <-> %d old; decreasing diss. by %g\n",
-			hbest, nbest, dzsky);
+		Rprintf( "   swp new %*d <-> %*d old; decreasing diss. %7g by %g\n",
+			 dig_n, hbest, dig_n, nbest, sky, dzsky);
 	    nrepr[hbest] = 1;
 	    nrepr[nbest] = 0;
-	    *sky += dzsky;
+	    if(*pamonce)
+		medoids[kbest]=hbest;
+
+	    sky += dzsky;
 	    goto L60;
 	}
     }
-    obj[1] = *sky / n;
+    obj[1] = sky / n;
 } /* bswap */
+
 
 /* -----------------------------------------------------------
  cstat(): Compute STATistics (numerical output) concerning each partition

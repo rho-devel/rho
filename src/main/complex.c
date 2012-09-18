@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 2000-11	    The R Development Core Team.
+ *  Copyright (C) 2000-11	    The R Core Team.
  *  Copyright (C) 2005		    The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -66,6 +66,11 @@
 #undef HAVE_CACOS
 #endif
 
+#ifdef __SUNPRO_C
+/* segfaults in Solaris Studio 12.3 */
+#undef HAVE_CPOW
+#endif
+
 #include <Rmath.h>
 #include <R_ext/Applic.h>	/* R_cpoly */
 
@@ -84,6 +89,10 @@
 #endif
 
 
+/* 
+   Note: this could use the C11 CMPLX() macro.
+   As could mycpow, z_tan and some of the substitutes.
+ */
 static R_INLINE double complex toC99(Rcomplex *x)
 {
 #if __GNUC__
@@ -157,6 +166,7 @@ static R_INLINE double complex R_cpow_n(double complex X, int k)
 
   3) PPC Mac OS X crashes on powers of 0+0i (at least under Rosetta).
   Really 0i^-1 should by Inf+NaNi, but getting that portably seems too hard.
+  (C1x's CMPLX will eventually be possible.)
 */
 
 static double complex mycpow (double complex X, double complex Y)

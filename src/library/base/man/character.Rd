@@ -1,6 +1,6 @@
 % File src/library/base/man/character.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
 
 \name{character}
@@ -55,8 +55,9 @@ is.character(x)
   whether its argument is of character type or not.
 }
 \note{
-  \code{as.character} truncates components of language objects to 500
-  characters (was about 70 before 1.3.1).
+  \code{as.character} breaks lines in language objects at 500
+  characters, and inserts newlines.  Prior to 2.15.0 lines were
+  truncated (at about 70 characters before 1.3.1).
 }
 \seealso{
   \code{\link{paste}}, \code{\link{substr}} and \code{\link{strsplit}}

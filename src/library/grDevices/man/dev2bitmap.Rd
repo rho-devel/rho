@@ -1,6 +1,6 @@
 % File src/library/grDevices/man/dev2bitmap.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{dev2bitmap}
@@ -17,7 +17,7 @@ dev2bitmap(file, type = "png16m", height = 7, width = 7, res = 72,
 }
 \arguments{
   \item{file}{The output file name, with an appropriate extension.}
-  \item{type}{The type of bitmap. the default is \code{"png256"}.}
+  \item{type}{The type of bitmap.}
   \item{width, height}{Dimensions of the display region.}
   \item{res}{Resolution, in dots per inch.}
   \item{units}{The units in which \code{height} and \code{width} are
@@ -46,15 +46,11 @@ dev2bitmap(file, type = "png16m", height = 7, width = 7, res = 72,
   and post-processing the output as \sQuote{printing}.
 
   You will need \code{ghostscript}: the full path to the executable can
-  be set by the environment variable \env{R_GSCMD}.
-#ifdef unix
-  (If this is unset the command \code{"gs"} is used, which will work if
-  it is in your path.)
-#endif  
-#ifdef windows
-  (If this is unset the setting of \env{GSC} is used, otherwise command
-  \code{"gswin32c.exe"}, which will work if it is in your \env{PATH}.)
-#endif
+  be set by the environment variable \env{R_GSCMD}. It this is unset, a
+  GhostScript executable will be looked for by name on your path: on a
+  Unix alike \code{"gs"} is used, and on Windows the setting of the
+  environment variable \env{GSC} is used, otherwise commands
+  \code{"gswi64c.exe"} then \code{"gswin32c.exe"} are tried.
 
   The types available will depend on the version of \code{ghostscript},
   but are likely to include

@@ -1,6 +1,6 @@
 % File src/library/utils/man/bibentry.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
 
 \name{bibentry}
@@ -152,15 +152,15 @@ bibentry(bibtype, textVersion = NULL, header = NULL, footer = NULL,
     \item{year:}{The year of publication.}
   }
 }
-\note{
-  The bibentry functionality is still experimental.
+\seealso{
+  \code{\link{person}}
 }
 \examples{
 ## R reference
 rref <- bibentry(
    bibtype = "Manual",
    title = "R: A Language and Environment for Statistical Computing",
-   author = person("R Development Core Team"),
+   author = person("R Core Team"),
    organization = "R Foundation for Statistical Computing",
    address = "Vienna, Austria",
    year = 2010,
@@ -181,12 +181,14 @@ bref <- c(
      bibtype = "Manual",
      title = "boot: Bootstrap R (S-PLUS) Functions",
      author = c(
-       person("Angelo", "Canty", role = "aut", comment = "S original"),
+       person("Angelo", "Canty", role = "aut",
+         comment = "S original"),
        person(c("Brian", "D."), "Ripley", role = c("aut", "trl", "cre"),
-         comment = "R port", email = "ripley@stats.ox.ac.uk")
+         comment = "R port, author of parallel support",
+         email = "ripley@stats.ox.ac.uk")
      ),
-     year = "2010",
-     note = "R package version 1.2-42",
+     year = "2012",
+     note = "R package version 1.3-4",
      url = "http://CRAN.R-project.org/package=boot",
      key = "boot-package"
    ),

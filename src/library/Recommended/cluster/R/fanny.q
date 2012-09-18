@@ -1,4 +1,4 @@
-#### $Id: fanny.q 5645 2010-11-08 22:33:44Z maechler $
+#### $Id: fanny.q 5977 2011-12-21 09:42:55Z maechler $
 fanny <- function(x, k, diss = inherits(x, "dist"), memb.exp = 2,
                   metric = c("euclidean", "manhattan", "SqEuclidean"),
                   stand = FALSE, iniMem.p = NULL, cluster.only = FALSE,
@@ -26,7 +26,7 @@ fanny <- function(x, k, diss = inherits(x, "dist"), memb.exp = 2,
 	dv <- as.double(c(x, 0))# add extra one
 	jp <- 1
 	mdata <- FALSE
-	ndyst <- 0:0
+	ndyst <- 0L
 	x2 <- double(n)
 	jdyss <- 1
     }
@@ -221,7 +221,7 @@ as.membership <- function(clustering, keep.names = TRUE) {
     stopifnot(is.numeric(clustering), clustering == round(clustering))
     n <- length(clustering)
     k <- length(u <- sort(unique(clustering)))
-    r <- matrix(0:0, n, k)
+    r <- matrix(0L, n, k)
     if(k == 0 || n == 0) return(r)
     if(keep.names)
 	dimnames(r) <- list(names(clustering), NULL)

@@ -96,6 +96,8 @@ DL = $(LCORE) $(LCHECK) $(LCHOLESKY) $(LMATRIXOPS) $(LMODIFY) $(LSUPERNODAL) #$(
 
 OBJS = $(DI) $(DL)
 #              ^^  FIXME?  MM thinks we should be able to only use $(DI)
+#  well, Doug thought so, too .. but it's currently wrong:
+# --> ../../chm_common.c  has a few  'cholmod_l_' left
 
 LIB = ../../CHOLMOD.a
 

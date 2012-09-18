@@ -1,8 +1,8 @@
 \name{mgcv-package}
 \alias{mgcv-package}
+\alias{mgcv}
 \docType{package}
-\title{
-GAMs with GCV/AIC/REML smoothness estimation and GAMMs by REML/PQL
+\title{Mixed GAM Computation Vehicle with GCV/AIC/REML smoothness estimation and GAMMs by REML/PQL
 }
 \description{
 \code{mgcv} provides functions for generalized additive modelling (\code{\link{gam}} and \code{\link{bam}})  and
@@ -64,7 +64,7 @@ can fit models to data with a known correlation structure.
 
 
 Some underlying GAM fitting methods are available as low level fitting
-functions: see \code{\link{magic}} and \code{\link{mgcv}}. But there is little functionality 
+functions: see \code{\link{magic}}. But there is little functionality 
 that can not be more conventiently accessed via \code{\link{gam}} . 
 Penalized weighted least squares with linear equality and inequality constraints is provided by 
 \code{\link{pcls}}.

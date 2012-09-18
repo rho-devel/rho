@@ -1,7 +1,9 @@
 % File src/library/datasets/man/faithful.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{faithful}
 \docType{data}
@@ -40,7 +42,7 @@
   (1990) use a more complete version.
 }
 \seealso{
-  \code{geyser} in package \pkg{MASS} for the Azzalini--Bowman version.
+  \code{geyser} in package \CRANpkg{MASS} for the Azzalini--Bowman version.
 }
 \examples{
 require(stats); require(graphics)

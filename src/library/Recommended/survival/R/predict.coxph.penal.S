@@ -1,4 +1,4 @@
-# $Id: predict.coxph.penal.S 11204 2009-02-06 13:14:06Z therneau $
+# $Id: predict.coxph.penal.S 11516 2012-04-24 12:49:14Z therneau $
 predict.coxph.penal <- function(object,  newdata, 
 				type=c("lp", "risk", "expected", "terms"),
 				se.fit=FALSE, terms=names(object$assign), 
@@ -9,7 +9,7 @@ predict.coxph.penal <- function(object,  newdata,
     Terms <- object$terms
     pterms <- object$pterms
     # If there are no sparse terms
-    if (!any(pterms==2) || type=='expected' || 
+    if (!any(pterms==2) ||  
 	(missing(newdata) && se.fit==FALSE && type!='terms')) 
 	    NextMethod('predict',object,...)
     else {
@@ -29,7 +29,7 @@ predict.coxph.penal <- function(object,  newdata,
 	    # I need the X matrix
 	    x <- object[['x']]  # object$x might grab object$xlevels
 	    if (is.null(x)) {
-		temp <- coxph.getdata(object, y=TRUE, x=TRUE, strata=TRUE)
+		temp <- coxph.getdata(object, y=TRUE, x=TRUE, stratax=TRUE)
 		if (is.null(object$y)) object$y <- temp$y
 		if (is.null(object$strata)) object$strata <- temp$strata
 		x <- temp$x
@@ -48,6 +48,10 @@ predict.coxph.penal <- function(object,  newdata,
 	    se <- sqrt(object$fvar[indx])
 	    pred <- object$linear.predictor
 	    if (type=='risk') pred <- exp(pred)
+            if (type=='expected') {
+                pred <- object$y[,ncol(object$y)] -object$residuals 
+                se.fit=FALSE
+                }
 	    }
 	else {
 	    # temporarily remove the sparse term, call NextMethod,

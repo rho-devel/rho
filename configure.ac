@@ -30,7 +30,7 @@ m4_define([R_VERSION],
           m4_bpatsubst(m4_esyscmd([cat VERSION]),
                        [\([0-9.]*\)\(\w\|\W\)*],
                        [\1]))
-AC_INIT([R],[R_VERSION],[r-bugs@R-project.org],[R])
+AC_INIT([R],[R_VERSION],[http://bugs.r-project.org],[R],[http://www.r-project.org])
 AC_CONFIG_SRCDIR([src/include/Defn.h])
 AC_CONFIG_AUX_DIR([tools])
 
@@ -322,6 +322,21 @@ AC_ARG_ENABLE([prebuilt-html],
 [want_prebuilt_html="${enableval}"],
 [want_prebuilt_html=no])
 AM_CONDITIONAL(BUILD_HTML, [test "x${want_prebuilt_html}" = xyes])
+
+
+AC_ARG_ENABLE([lto],
+[AS_HELP_STRING([--enable-lto],[enable link-time optimization @<:@no@:>@])],
+[want_lto="${enableval}"], [want_lto=no])
+## FIXME: add a test for gcc >= 4.5.0
+if test "x${want_lto}" != xno; then
+  LTO=-flto
+fi
+if test "x${want_lto}" == xyes; then
+  LTOALL=-flto
+fi
+AC_SUBST(LTO)
+AC_SUBST(LTOALL)
+AM_CONDITIONAL(BUILD_LTO, [test "x${want_lto}" != xno])
 
 
 ### ** Optional packages.
@@ -782,6 +797,8 @@ R_HEADER_GLIBC2
 ### * Checks for types.
 
 AC_TYPE_SIGNAL
+## xz needs uint64_t
+AC_TYPE_UINT64_T
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 R_SIZE_MAX
@@ -833,6 +850,10 @@ AC_OPENMP
 ### *** Fortran 77 compiler.
 
 R_PROG_F77_FLIBS
+if test -z "$FLIBS_IN_SO"; then
+  FLIBS_IN_SO=${FLIBS}
+fi
+AC_SUBST(FLIBS_IN_SO)
 R_PROG_F77_APPEND_UNDERSCORE
 R_PROG_F77_CAN_RUN
 R_PROG_F77_CC_COMPAT
@@ -1456,12 +1477,18 @@ rm -f libconftest${DYLIB_EXT} conftest.c
 ## so need PIC not pic.  They are the same on other Solaris platforms.
     shlib_ldflags="-G"
     shlib_cxxldflags="-G"
-    if test "${GCC}" = yes; then
+   if test "${GCC}" = yes; then
+      cpicflags="-fPIC"
       ld=`${CC} -print-prog-name=ld`
       ldoutput=`${ld} -v 2>&1 | grep GNU`
       if test -n "${ldoutput}"; then
 	main_ldflags="-Wl,-export-dynamic"
 	shlib_ldflags="-shared"
+        shlib_cxxldflags="-shared"
+      else
+        ## it seems gcc c 4.6.2 needs this with Solaris linker
+	shlib_ldflags="-shared"
+        shlib_cxxldflags="-shared"
       fi
     else
       cpicflags="-KPIC"
@@ -1473,10 +1500,14 @@ rm -f libconftest${DYLIB_EXT} conftest.c
         fi
       fi
     fi
+    ## G77 include gfortran
     if test "${G77}" != yes; then
       fpicflags="-PIC"
+    else
+      fpicflags="-fPIC"
     fi
     if test "${GXX}" = yes; then
+      cxxpicflags="-fPIC"
       ld=`${CXX} -print-prog-name=ld`
       ldoutput=`${ld} -v 2>&1 | grep GNU`
       if test -n "${ldoutput}"; then
@@ -1668,7 +1699,8 @@ AC_SUBST(FW_VERSION)
 
 if test "x${main_ld_was_given}" = xno -a "${MAIN_LD}" = "${CC}" -a \
         "x${dylib_ld_was_given}" = xno -a "${DYLIB_LD}" = "${CC}" -a \
-        "x${ac_cv_prog_c_openmp}" != "xunsupported"; then
+        "x${ac_cv_prog_c_openmp}" != "xunsupported" -a \
+        "x${ac_cv_prog_c_openmp}" != "x"; then
   R_OPENMP_CFLAGS="${OPENMP_CFLAGS}"
   R_OPENMP_FFLAGS="${OPENMP_FFLAGS}"
   R_SH_VAR_ADD(MAIN_LDFLAGS, [${OPENMP_CFLAGS}])
@@ -1771,12 +1803,13 @@ R_CHECK_FUNCS([access chdir execv ftruncate getcwd geteuid getuid link readlink 
 [#ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif])
-## This was declared obsolescent in POSIX 2008 (use utimes instead)
+## utime was declared obsolescent in POSIX 2008 (use utimes instead)
 R_CHECK_FUNCS([utime], [#include <utime.h>])
 ## clock_gettime is POSIX 1993, but not on MacOS X
 ## Some OSes need -lrt: Linux, Solaris, not FreeBSD.
 ## Unsurprising, as POSIX 2008 moved it from its timers section to base.
-R_CHECK_FUNCS([clock_gettime], [#include <time.h>])
+## timespec_get is C11.
+R_CHECK_FUNCS([clock_gettime timespec_get], [#include <time.h>])
 if test "${ac_cv_have_decl_clock_gettime}" = "yes"; then
 AC_CHECK_LIB(rt, clock_gettime)
 fi
@@ -2233,6 +2266,7 @@ AC_SUBST(FCLIBS)
 if test "x${shlib_ld_was_given}" = xno -a \
         "${SHLIB_LD}" = "${CC}" -a \
         "x${ac_cv_prog_c_openmp}" != "xunsupported" -a \
+        "x${ac_cv_prog_c_openmp}" != "x" -a \
         "x${shlib_cxxld_was_given}" = xno -a \
         "${SHLIB_CXXLD}" = "${CXX}" -a \
         "x${ac_cv_prog_cxx_openmp}" != "xunsupported" -a \
@@ -2741,12 +2775,6 @@ if test -n "${warn_fcpicflags}"; then
 fi
 if test -n "${warn_tcltk_version}"; then
   AC_MSG_WARN([${warn_tcltk_version}])
-fi
-if test -n "${warn_dvi1}"; then
-  AC_MSG_WARN([${warn_dvi1}])
-fi
-if test -n "${warn_dvi2}"; then
-  AC_MSG_WARN([${warn_dvi2}])
 fi
 if test -n "${warn_info}"; then
   AC_MSG_WARN([${warn_info}])

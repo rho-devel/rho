@@ -47,16 +47,16 @@
 
 #include "CXXR/GCRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
-#include "CXXR/CachedString.h"
+#include "CXXR/String.h"
 
 namespace CXXR {
     /** @brief Class used to represent R symbols.
      *
      * A Symbol is an R identifier.  Each Symbol (except for special
-     * symbols, see below) has a name, namely a CachedString giving
-     * the textual representation of the identifier.  Generally
-     * speaking, however, a Symbol object is identified by its address
-     * rather than by its name.  Consequently, the class enforces the
+     * symbols, see below) has a name, namely a String giving the
+     * textual representation of the identifier.  Generally speaking,
+     * however, a Symbol object is identified by its address rather
+     * than by its name.  Consequently, the class enforces the
      * invariant that there is a most one Symbol object with a given
      * name (but this does not apply to special symbols).
      *
@@ -180,11 +180,11 @@ namespace CXXR {
 	 *
 	 * @return const reference to the name of this Symbol.
 	 */
-	const CachedString* name() const
+	const String* name() const
 	{
 	    if (m_name)
 		return m_name;
-	    return CachedString::blank();
+	    return String::blank();
 	}
 
 	/** @brief Get a pointer to a regular Symbol object.
@@ -198,7 +198,7 @@ namespace CXXR {
 	 * @return Pointer to a Symbol (preexisting or newly
 	 * created) with the required name.
 	 */
-	static Symbol* obtain(const CachedString* name)
+	static Symbol* obtain(const String* name)
 	{
 	    return (name->m_symbol ? name->m_symbol : make(name));
 	}
@@ -273,7 +273,7 @@ namespace CXXR {
 	static Symbol* s_missing_arg;
 	static Symbol* s_unbound_value;
 
-	GCEdge<const CachedString> m_name;
+	GCEdge<const String> m_name;
 
 	GCEdge<Symbol> m_s11n_reloc;  // Used only during deserialization
  
@@ -291,7 +291,7 @@ namespace CXXR {
 	 *          signifies a special Symbol, which is not entered
 	 *          into s_table.
 	 */
-	explicit Symbol(const CachedString* name = 0);
+	explicit Symbol(const String* name = 0);
 
 	// Declared private to ensure that Symbol objects are
 	// allocated only using 'new':
@@ -316,7 +316,7 @@ namespace CXXR {
 	//
 	// Creates a new Symbol identified by 'name', enters it into
 	// the table of standard Symbols, and returns a pointer to it.
-	static Symbol* make(const CachedString* name);
+	static Symbol* make(const String* name);
 
 	template<class Archive>
 	void save(Archive & ar, const unsigned int version) const;
@@ -461,7 +461,6 @@ extern "C" {
 
     /* Pseudo-objects */
     extern SEXP R_MissingArg;
-    extern SEXP R_RestartToken;
     extern SEXP R_UnboundValue;
 
     /* Symbol Table Shortcuts */
@@ -571,7 +570,7 @@ extern "C" {
      *
      * @param x Pointer to a CXXR::Symbol (checked).
      *
-     * @return Pointer to a CXXR::CachedString representing \a x's name.
+     * @return Pointer to a CXXR::String representing \a x's name.
      */
 #ifndef __cplusplus
     SEXP PRINTNAME(SEXP x);
@@ -580,7 +579,7 @@ extern "C" {
     {
 	using namespace CXXR;
 	const Symbol& sym = *SEXP_downcast<Symbol*>(x);
-	return const_cast<CachedString*>(sym.name());
+	return const_cast<String*>(sym.name());
     }
 #endif
 

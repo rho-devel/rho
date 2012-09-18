@@ -71,12 +71,13 @@ localeToCharset <- function(locale = Sys.getlocale("LC_CTYPE"))
               # "1256" = return("ISO8859-6"),
                "1257" = return("ISO8859-13")
                )
-        return(paste("CP", x[2L], sep=""))
+        return(paste0("CP", x[2L]))
     } else {
         ## Assume locales are like  en_US[.utf8[@euro]]
         x <- strsplit(locale, ".", fixed=TRUE)[[1L]]
         enc <- if(length(x) == 2) gsub("@.*$o", "", x[2L]) else ""
-        if(enc == "UTF-8") enc <- "utf8" # for AIX
+        # AIX uses UTF-8, OS X utf-8
+        if(toupper(enc) == "UTF-8") enc <- "utf8"
         if(nzchar(enc) && enc != "utf8") {
             enc <- tolower(enc)
             known <-
@@ -111,7 +112,7 @@ localeToCharset <- function(locale = Sys.getlocale("LC_CTYPE"))
                 return(sub("cp-([0-9]+)", "CP\\1", enc))
             if(enc == "EUC") {
                 ## let's hope it is a ll_* name.
-                if(length(grep("^[[:alpha:]]{2}_", x[1L]))) {
+                if(length(grep("^[[:alpha:]]{2}_", x[1L], perl = TRUE))) {
                     ll <- substr(x[1L], 1L, 2L)
                     return(switch(ll, "jp"="EUC-JP", "kr"="EUC-KR",
                                   "zh"="GB2312"))
@@ -124,7 +125,7 @@ localeToCharset <- function(locale = Sys.getlocale("LC_CTYPE"))
 	## locales (why is this duplicated in R code anyway?)
 	if (length(grep("darwin", R.version$os))) return("UTF-8")
         ## let's hope it is a ll_* name.
-        if(length(grep("^[[:alpha:]]{2}_", x[1L]))) {
+        if(length(grep("^[[:alpha:]]{2}_", x[1L], perl = TRUE))) {
             ll <- substr(x[1L], 1L, 2L)
             if(enc == "utf8") return(c("UTF-8", guess(ll)))
             else return(guess(ll))

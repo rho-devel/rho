@@ -1,7 +1,9 @@
 % File src/library/stats/man/wilcox.test.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{wilcox.test}
 \alias{wilcox.test}
@@ -154,9 +156,9 @@ wilcox.test(x, \dots)
 \seealso{
   \code{\link{psignrank}}, \code{\link{pwilcox}}.
 
-  \code{\link[coin:LocationTests]{wilcox_test}} in package \pkg{coin}
-  for exact, asymptotic and Monte Carlo \emph{conditional} p-values,
-  including in the presence of ties.
+  \code{\link[coin:LocationTests]{wilcox_test}} in package
+  \CRANpkg{coin} for exact, asymptotic and Monte Carlo
+  \emph{conditional} p-values, including in the presence of ties.
 
   \code{\link{kruskal.test}} for testing homogeneity in location
   parameters in the case of two or more samples;

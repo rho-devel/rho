@@ -1,22 +1,24 @@
 Package: boot
 Priority: recommended
-Version: 1.3-3
-Date: 2011-10-06
-Author: S original <http://statwww.epfl.ch/davison/BMA/library.html> by
-        Angelo Canty <cantya@mcmaster.ca>.  R port by Brian Ripley
-        <ripley@stats.ox.ac.uk>.  Note that maintainers are not
-        available to give advice on using a package they did not
-        author.
+Version: 1.3-4
+Date: 2012-01-16
+Authors@R: c(person("Angelo", "Canty", role = "aut", email =
+        "cantya@mcmaster.ca"), person("Brian", "Ripley", role =
+        c("aut", "trl", "cre"), email = "ripley@stats.ox.ac.uk",
+        comment = "author of parallel support"))
+Author: S original <http://statwww.epfl.ch/davison/BMA/library.html>
+        by Angelo Canty <cantya@mcmaster.ca>.  
+        R port and many enhancements by Brian Ripley <ripley@stats.ox.ac.uk>.
+        Note that maintainers are not available to give advice on using a
+        package they did not author.
 Maintainer: Brian Ripley <ripley@stats.ox.ac.uk>
-Description: functions and datasets for bootstrapping from the book
-        "Bootstrap Methods and Their Applications" by A. C. Davison and
-        D. V. Hinkley (1997, CUP).
+Description: functions and datasets for bootstrapping from the
+  book "Bootstrap Methods and Their Applications" by A. C. Davison and 
+  D. V. Hinkley (1997, CUP).
 Title: Bootstrap Functions (originally by Angelo Canty for S)
 Depends: R (>= 2.14.0), graphics, stats
-Suggests: survival
+Suggests: MASS, survival
 LazyLoad: yes
 LazyData: yes
 License: Unlimited
-Packaged: 2011-10-06 11:43:03 UTC; ripley
-Repository: CRAN
-Date/Publication: 2011-10-09 13:57:29
+Packaged: 2012-03-12 16:36:45 UTC; ripley

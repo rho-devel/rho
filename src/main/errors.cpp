@@ -16,8 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2010  The R Development Core Team.
+ *  Copyright (C) 1995--2012  The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +37,8 @@
  *
  * Error and warning handling.
  */
+
+#include <signal.h>
 
 // For debugging:
 #include <iostream>
@@ -220,11 +221,23 @@ RETSIGTYPE attribute_hidden onsigusr2(int dummy)
 
 static void setupwarnings(void)
 {
-    R_Warnings = allocVector(VECSXP, 50);
-    setAttrib(R_Warnings, R_NamesSymbol, allocVector(STRSXP, 50));
+    R_Warnings = allocVector(VECSXP, R_nwarnings);
+    setAttrib(R_Warnings, R_NamesSymbol, allocVector(STRSXP, R_nwarnings));
 }
 
 /* Rvsnprintf: like vsnprintf, but guaranteed to null-terminate. */
+#ifdef Win32
+int trio_vsnprintf(char *buffer, size_t bufferSize, const char *format,
+		   va_list args);
+
+static int Rvsnprintf(char *buf, size_t size, const char  *format, va_list ap)
+{
+    int val;
+    val = trio_vsnprintf(buf, size, format, ap);
+    buf[size-1] = '\0';
+    return val;
+}
+#else
 static int Rvsnprintf(char *buf, std::size_t size, const char  *format, va_list ap)
 {
     int val;
@@ -232,6 +245,7 @@ static int Rvsnprintf(char *buf, std::size_t size, const char  *format, va_list 
     buf[size-1] = '\0';
     return val;
 }
+#endif
 
 #define BUFSIZE 8192
 void warning(const char *format, ...)
@@ -339,7 +353,7 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
 	else if(w == 0) {	/* collect them */
 	    CXXRCONST char *tr; int nc;
 	    if(!R_CollectWarnings) setupwarnings();
-	    if( R_CollectWarnings < 50 ) {
+	    if(R_CollectWarnings < R_nwarnings ) {
 		SET_VECTOR_ELT(R_Warnings, R_CollectWarnings, call);
 		Rvsnprintf(buf, min(BUFSIZE, R_WarnLength+1), format, ap);
 		if(R_WarnLength < BUFSIZE - 20 && CXXRCONSTRUCT(int, strlen(buf)) == R_WarnLength)
@@ -469,11 +483,11 @@ void PrintWarnings(void)
 		}
 	    }
 	} else {
-	    if (R_CollectWarnings < 50)
+	    if (R_CollectWarnings < R_nwarnings)
 		REprintf(_("There were %d warnings (use warnings() to see them)\n"),
 			 R_CollectWarnings);
 	    else
-		REprintf(_("There were 50 or more warnings (use warnings() to see the first 50)\n"));
+		REprintf(_("There were %d or more warnings (use warnings() to see the first %d)\n"), R_nwarnings);
 	}
 	/* now truncate and install last.warning */
 	PROTECT(s = allocVector(VECSXP, R_CollectWarnings));
@@ -501,6 +515,25 @@ void PrintWarnings(void)
     R_CollectWarnings = 0;
     R_Warnings = R_NilValue;
     return;
+}
+
+/* Return a constructed source location (e.g. filename#123) from a srcref.  If the srcref
+   is not valid "" will be returned.
+*/
+
+static SEXP GetSrcLoc(SEXP srcref)
+{
+    SEXP sep, line, result;
+    SEXP srcfile = R_GetSrcFilename(srcref);
+    if (TYPEOF(srcref) != INTSXP || length(srcref) < 4) {
+	return ScalarString(mkChar(""));
+    }
+    PROTECT(srcfile = eval( lang2( install("basename"), srcfile ), R_BaseEnv ) );
+    PROTECT(sep = ScalarString(mkChar("#")));
+    PROTECT(line = ScalarInteger(INTEGER(srcref)[0]));
+    result = eval( lang4( install("paste0"), srcfile, sep, line ), R_BaseEnv );
+    UNPROTECT(3);
+    return result;
 }
 
 static char errbuf[BUFSIZE];
@@ -545,9 +578,35 @@ static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
     try {
 	if(call != R_NilValue) {
 	    char tmp[BUFSIZE];
-	    CXXRCONST char *head = _("Error in "), *mid = " : ", *tail = "\n  ";
-	    int len = strlen(head) + strlen(mid) + strlen(tail);
+	    CXXRCONST char *head = _("Error in "),
+		*mid1 = " : ", *mid2 = _(" (from %s) : "), *tail = "\n  ";
+	    CXXRCONST char *mid = mid1;
+	    char src[BUFSIZE];
+	    SEXP srcloc;
+	    size_t len;	
+	    int protectct = 0, skip = NA_INTEGER;
+	    SEXP opt = GetOption1(install("show.error.locations"));
+	    if (!isNull(opt)) {
+		if (TYPEOF(opt) == STRSXP && length(opt) == 1) {
+		    if (pmatch(ScalarString(mkChar("top")), opt, CXXRFALSE)) skip = 0;
+		    else if (pmatch(ScalarString(mkChar("bottom")), opt, CXXRFALSE)) skip = -1;
+		} else if (TYPEOF(opt) == LGLSXP)
+		    skip = asLogical(opt) == 1 ? 0 : NA_INTEGER;
+		else
+		    skip = asInteger(opt);
+	    }
 
+	    if (skip != NA_INTEGER) {
+		PROTECT(srcloc = GetSrcLoc(R_GetCurrentSrcref(skip)));
+		protectct++;
+		len = strlen(CHAR(STRING_ELT(srcloc, 0)));
+		if (len) {
+		    snprintf(src, BUFSIZE, mid2, CHAR(STRING_ELT(srcloc, 0)));
+		    mid = src;
+		}
+	    }
+	    len = strlen(head) + strlen(mid) + strlen(tail);
+	
 	    Rvsnprintf(tmp, min(BUFSIZE, R_WarnLength) - strlen(head), format, ap);
 	    dcall = CHAR(STRING_ELT(deparse1s(call), 0));
 	    if (len + strlen(dcall) + strlen(tmp) < BUFSIZE) {
@@ -574,6 +633,7 @@ static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
 		sprintf(errbuf, _("Error: "));
 		strcat(errbuf, tmp);
 	    }
+	UNPROTECT(protectct);
 	}
 	else {
 	    sprintf(errbuf, _("Error: "));
@@ -1190,6 +1250,19 @@ SEXP R_GetTraceback(int skip)
     return s;
 }
 
+SEXP attribute_hidden do_traceback(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    int skip;
+    
+    checkArity(op, args);
+    skip = asInteger(CAR(args));
+    
+    if (skip == NA_INTEGER || skip < 0 )
+    	error(_("invalid '%s' value"), "skip");
+    	
+    return R_GetTraceback(skip);
+}
+
 // Utility intended to be called from a debugger.  Prints out the
 // hierarchy of R function calls, as recorded by FunctionContexts.
 namespace CXXR {
@@ -1257,7 +1330,7 @@ static CXXRCONST char * R_ConciseTraceback(SEXP call, int skip)
     /* don't add Calls if it adds no extra information */
     /* However: do we want to include the call in the list if it is a
        primitive? */
-    if (ncalls == 1 && call != R_NilValue) {
+    if (ncalls == 1 && TYPEOF(call) == LANGSXP) {
 	SEXP fun = CAR(call);
 	const char *funstr = (TYPEOF(fun) == SYMSXP) ?
 	    CHAR(PRINTNAME(fun)) : "<Anonymous>";
@@ -1774,4 +1847,48 @@ do_interruptsSuspended(SEXP call, SEXP op, SEXP args, SEXP env)
     return ScalarLogical(orig_value);
 }
 	
-	
+/* These functions are to be used in error messages, and available for others to use in the API 
+   GetCurrentSrcref returns the first non-NULL srcref after skipping skip of them.  If it
+   doesn't find one it returns NULL. */
+
+SEXP
+R_GetCurrentSrcref(int skip)
+{
+    FunctionContext* c = FunctionContext::innermost();
+    SEXP srcref = R_Srcref;
+    if (skip < 0) { /* to count up from the bottom, we need to count them all first */
+    	while (c) {
+    	    if (srcref && srcref != R_NilValue) 
+		skip++;
+	    srcref = c->sourceLocation();
+	    c = FunctionContext::innermost(c->nextOut());
+    	};
+    	if (skip < 0) return R_NilValue; /* not enough there */
+	c = FunctionContext::innermost();
+    	srcref = R_Srcref;
+    }
+    while (c && (skip || !srcref)) {
+    	if (srcref) 
+	    skip--;
+	srcref = c->sourceLocation();
+	c = FunctionContext::innermost(c->nextOut());
+    }
+    if (skip || !srcref)
+    	srcref = R_NilValue;
+    return srcref;
+}
+
+/* Return the filename corresponding to a srcref, or "" if none is found */
+
+SEXP 
+R_GetSrcFilename(SEXP srcref)
+{
+    SEXP srcfile = getAttrib(srcref, R_SrcfileSymbol);
+    if (TYPEOF(srcfile) != ENVSXP) 
+    	return ScalarString(mkChar(""));
+    srcfile = findVar(install("filename"), srcfile);	
+    if (TYPEOF(srcfile) != STRSXP)
+        return ScalarString(mkChar(""));
+    return srcfile;
+}
+

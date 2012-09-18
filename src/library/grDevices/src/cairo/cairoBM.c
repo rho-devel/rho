@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2011  The R Development Core Team
+ *  Copyright (C) 1997--2011  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -195,7 +195,7 @@ static void BM_NewPage(const pGEcontext gc, pDevDesc dd)
     }
 #ifdef HAVE_CAIRO_SVG
     else if(xd->type == SVG) {
-	if (xd->npages > 1) {
+	if (xd->npages > 1 && xd->cs) {
 	    cairo_show_page(xd->cc);
 	    if(!xd->onefile) {
 		cairo_surface_destroy(xd->cs);
@@ -209,6 +209,7 @@ static void BM_NewPage(const pGEcontext gc, pDevDesc dd)
 					      (double)xd->windowHeight);
 	    res = cairo_surface_status(xd->cs);
 	    if (res != CAIRO_STATUS_SUCCESS) {
+		xd->cs = NULL;
 		error("cairo error '%s'", cairo_status_to_string(res));
 	    }
 	    if(xd->onefile)

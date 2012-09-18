@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-3 Paul Murrell
- *                2003-5 The R Development Core Team
+ *                2003-5 The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -97,6 +97,7 @@ static const R_CallMethodDef callMethods[] = {
     {"L_textBounds", (DL_FUNC) &L_textBounds, 7},
     {"L_xsplineBounds", (DL_FUNC) &L_xsplineBounds, 8},
     {"L_xsplinePoints", (DL_FUNC) &L_xsplinePoints, 8},
+    {"L_stringMetric", (DL_FUNC) &L_stringMetric, 1},
     { NULL, NULL, 0 }
 };
 

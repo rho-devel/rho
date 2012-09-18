@@ -22,10 +22,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.15.0\n"
+"Project-Id-Version: R 2.16.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-10-14 21:52\n"
-"PO-Revision-Date: 2011-10-14 21:52\n"
+"POT-Creation-Date: 2012-03-06 17:05\n"
+"PO-Revision-Date: 2012-03-06 17:05\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "MIME-Version: 1.0\n"
@@ -307,16 +307,6 @@ msgstr "length of 1st arg does not match dimension of 2nd"
 msgid "internal bug in \"Logic\" method (.Logic.Mat.atomic); please report"
 msgstr "internal bug in “Logic” method (.Logic.Mat.atomic); please report"
 
-msgid "numeric(<too-long>)"
-msgstr "numeric(<too-long>)"
-
-msgid ""
-"longer object length\n"
-"\tis not a multiple of shorter object length"
-msgstr ""
-"longer object length\n"
-"\tis not a multiple of shorter object length"
-
 msgid "(0)"
 msgstr "(0)"
 
@@ -427,6 +417,13 @@ msgstr "prod(<abIndex>) is not yet implemented"
 
 msgid "not yet implemented"
 msgstr "not yet implemented"
+
+msgid ""
+"longer object length\n"
+"\tis not a multiple of shorter object length"
+msgstr ""
+"longer object length\n"
+"\tis not a multiple of shorter object length"
 
 msgid "x / 0 for an <abIndex> x with sign-change"
 msgstr "x / 0 for an <abIndex> x with sign-change"
@@ -599,6 +596,9 @@ msgstr "replacing “pMatrix” entries is not allowed, as rarely sensible"
 msgid "not-yet-implemented method for <%s> %%*%% <%s>"
 msgstr "not-yet-implemented method for <%s> %%*%% <%s>"
 
+msgid "method '%s' not applicable for qr() result class '%s'"
+msgstr "method ‘%s’ not applicable for qr() result class ‘%s’"
+
 msgid "model frame and formula mismatch in model.matrix()"
 msgstr "model frame and formula mismatch in model.matrix()"
 
@@ -610,6 +610,9 @@ msgstr "invalid ‘contrasts.arg’ argument"
 
 msgid "variable '%s' is absent, its contrast will be ignored"
 msgstr "variable ‘%s’ is absent, its contrast will be ignored"
+
+msgid "only 2-dimensional tables can be directly coerced to sparse matrices"
+msgstr "only 2-dimensional tables can be directly coerced to sparse matrices"
 
 msgid "exactly one of 'i', 'j', or 'p' must be missing from call"
 msgstr "exactly one of 'i', 'j', or ‘p’ must be missing from call"
@@ -646,18 +649,6 @@ msgstr "rcond(.) via sparse -> dense coercion"
 
 msgid "'V' is not a *square* matrix"
 msgstr "‘V’ is not a *square* matrix"
-
-msgid "must supply either 'formula' or 'data'"
-msgstr "must supply either ‘formula’ or ‘data’"
-
-msgid "'formula' missing or incorrect"
-msgstr "‘formula’ missing or incorrect"
-
-msgid "interactions are not allowed"
-msgstr "interactions are not allowed"
-
-msgid "xtabs(*, sparse=TRUE) applies only to two-way tables"
-msgstr "xtabs(*, sparse=TRUE) applies only to two-way tables"
 
 msgid "qr.R(<sparse>) may differ from qr.R(<dense>) because of permutations"
 msgstr "qr.R(<sparse>) may differ from qr.R(<dense>) because of permutations"

@@ -5,7 +5,7 @@
 \usage{
 \method{plot}{partition}(x, ask = FALSE, which.plots = NULL,
      nmax.lab = 40, max.strlen = 5, data = x$data, dist = NULL,
-     cor = TRUE, stand = FALSE, lines = 2,
+     stand = FALSE, lines = 2,
      shade = FALSE, color = FALSE, labels = 0, plotchar = TRUE,
      span = TRUE, xlim = NULL, ylim = NULL, main = NULL, \dots)
 }
@@ -27,7 +27,7 @@
   \item{dist}{when \code{x} does not have a \code{diss} component as for
     \code{\link{pam}(*, keep.diss=FALSE)}, \code{dist} must be the
     dissimilarity if a clusplot is desired.}
-  \item{cor,stand,lines,shade,color,labels,plotchar,span,xlim,ylim,main, \dots}{
+  \item{stand,lines,shade,color,labels,plotchar,span,xlim,ylim,main, \dots}{
     All optional arguments available for the \code{\link{clusplot.default}}
     function (except for the \code{diss} one) and graphical parameters
     (see \code{\link{par}}) may also be supplied as arguments to this function.}

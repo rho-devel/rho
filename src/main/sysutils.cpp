@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1996   Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2011   The R Development Core Team
+ *  Copyright (C) 1997-2011   The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@
 #endif
 
 #include <stdlib.h> /* for putenv */
+#define R_USE_SIGNALS 1
 #include <Defn.h>
 #include <Fileio.h>
 #include <R_ext/GraphicsEngine.h>
@@ -815,7 +816,7 @@ const char *translateChar(SEXP x)
 	error(_("translating strings with \"bytes\" encoding is not allowed"));
     if(utf8locale && IS_UTF8(x)) return ans;
     if(latin1locale && IS_LATIN1(x)) return ans;
-    if(strIsASCII(CHAR(x))) return ans;
+    if(IS_ASCII(x)) return ans;
 
     if(IS_LATIN1(x)) {
 	if(!latin1_obj) {
@@ -925,7 +926,7 @@ const char *translateCharUTF8(SEXP x)
 	error(_("'%s' must be called on a CHARSXP"), "translateCharUTF8");
     if(x == NA_STRING) return ans;
     if(IS_UTF8(x)) return ans;
-    if(strIsASCII(CHAR(x))) return ans;
+    if(IS_ASCII(x)) return ans;
     if(IS_BYTES(x))
 	error(_("translating strings with \"bytes\" encoding is not allowed"));
 

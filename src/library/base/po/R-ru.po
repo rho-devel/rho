@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.11.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-10-23 14:54\n"
-"PO-Revision-Date: 2011-10-18 19:27-0600\n"
+"POT-Creation-Date: 2012-06-07 15:52\n"
+"PO-Revision-Date: 2012-03-15 11:24-0500\n"
 "Last-Translator: Alexey Shipunov <dactylorhiza@gmail.com>\n"
 "Language-Team: Russian\n"
 "Language: \n"
@@ -32,12 +32,6 @@ msgstr "См. help(\"Defunct\") и help(\"%s-defunct\")."
 
 msgid "See help(\"Defunct\")"
 msgstr "См. help(\"Defunct\")"
-
-msgid "'symbol.C' is not needed: please remove it"
-msgstr "'symbol.C' не нужен: удалите его"
-
-msgid "'symbol.For' is not needed: please remove it"
-msgstr "'symbol.For' не нужен: удалите его"
 
 msgid "'%s' is deprecated."
 msgstr "'%s' устарел"
@@ -162,6 +156,10 @@ msgstr "автозагрузчик не нашел '%s' в '%s'"
 msgid "invalid argument values in 'backsolve'"
 msgstr "неправильные значения аргумента в 'backsolve'"
 
+#, fuzzy
+msgid "invalid value of ncol(x)"
+msgstr "неправильное значение"
+
 msgid "singular matrix in 'backsolve'. First zero in diagonal [%d]"
 msgstr "сингулярная матрица в 'backsolve'. Первый ноль на диагонали [%d]"
 
@@ -176,6 +174,10 @@ msgstr "не квадратная матрица в 'chol'"
 
 msgid "non-matrix argument to 'chol'"
 msgstr "нематричный аргумент для 'chol'"
+
+#, fuzzy
+msgid "invalid nrow(x)"
+msgstr "неправильное имя"
 
 msgid "matrix not positive definite"
 msgstr "матрица не является положительно определенной"
@@ -245,6 +247,10 @@ msgstr "'breaks' не уникальны"
 
 msgid "labels/breaks length conflict"
 msgstr "длины labels/breaks конфликтуют"
+
+#, fuzzy
+msgid "invalid value of length(x)"
+msgstr "неправильное значение"
 
 msgid "invalid 'row.names' length"
 msgstr "неправильная длина 'row.names'"
@@ -508,6 +514,7 @@ msgstr "унарный '-' не определен для объектов \"POSIXt\""
 msgid "can only subtract numbers from POSIXt objects"
 msgstr "могу вычитать лишь числа из объектов 'POSIXt'"
 
+#, fuzzy
 msgid "unary '%s' not defined for \"POSIXt\" objects"
 msgstr "унарный '-' не определен для объектов \"POSIXt\""
 
@@ -703,6 +710,14 @@ msgstr "'vec' содержит NA"
 msgid "'vec' must be sorted non-decreasingly"
 msgstr "'vec' должен быть сортирован не по уменьшению"
 
+#, fuzzy
+msgid "invalid length(x)"
+msgstr "неправильное имя"
+
+#, fuzzy
+msgid "invalid length(vec)"
+msgstr "неправильное имя"
+
 msgid "using the first element of 'value' of type expression"
 msgstr "использую первый элемент 'value' типа выражения"
 
@@ -790,7 +805,7 @@ msgid "'object' must be a list"
 msgstr "'object' должен быть списком"
 
 msgid "'keep.source' is deprecated and will be ignored"
-msgstr ""
+msgstr "'keep.source' устарел и будет пропущен"
 
 msgid "package %s has not been installed properly"
 msgstr "пакет %s как следует не установлен"
@@ -862,7 +877,7 @@ msgstr ""
 msgid "package %s already present in search()"
 msgstr "пакет %s уже есть в search()"
 
-msgid "'DESCRIPTION' has 'Encoding' field and re-encoding is not possible"
+msgid "'DESCRIPTION' has an 'Encoding' field and re-encoding is not possible"
 msgstr "У 'DESCRIPTION' есть поле 'Encoding', перекодировка невозможна"
 
 msgid "%sPackages in library %s:"
@@ -976,6 +991,9 @@ msgstr "должен быть указан 'file'"
 msgid "Use of save versions prior to 2 is deprecated"
 msgstr "Использование сохраненных версий, более ранних чем 2, не одобряется"
 
+msgid "nothing specified to be save()d"
+msgstr "ничего не задано для save()d"
+
 msgid "'file' must be non-empty string"
 msgstr "'file' должен быть непустой строкой"
 
@@ -1054,6 +1072,10 @@ msgstr "'trim' должен быть числовым объектом длины 1"
 
 msgid "trimmed means are not defined for complex data"
 msgstr "обрезанные средние не определены для комплексных данных"
+
+#, fuzzy
+msgid "'by' must specify uniquely valid column(s)"
+msgstr "'by' должен определять правильные колонк(и)"
 
 msgid "'by' must match numbers of columns"
 msgstr "'by' должен соответствовать номерам колонок"
@@ -1142,6 +1164,9 @@ msgstr ""
 msgid "in package %s classes %s were specified for export but not defined"
 msgstr "в пакете '%s' классы %s указаны для экспорта, но не определены"
 
+msgid "No function found corresponding to methods exports from %s for: %s"
+msgstr "Нет подходящей функции для методов экспорта из %s для: %s"
+
 msgid "in %s methods for export not found: %s"
 msgstr "в %s не найдены методы для экспорта: %s"
 
@@ -1190,8 +1215,18 @@ msgstr "неправильное место назначения для импорта"
 msgid "found methods to import for function %s but not the generic itself"
 msgstr "найдены методы импорта для функции %s но они сами не общие"
 
+msgid "No methods found in \"%s\" for requests: %s"
+msgstr "В \"%s\" не найдено методов для запросов: %s"
+
 msgid "requested methods not found in environment/package %s: %s"
 msgstr "запрошенные методы не найдены в окружении/пакете %s: %s"
+
+msgid ""
+"No generic function found corresponding to requested imported methods for "
+"\"%s\" from package \"%s\" (malformed exports?)"
+msgstr ""
+"Не найдено общей функции, соответствующей запрошенным методам импорта для "
+"\"%s\" из пакета \"%s\" (испорчен вывод?)"
 
 msgid "cannot add to exports of a sealed namespace"
 msgstr "не могу добавить к экспорту из запечатанного пространства имен"
@@ -1265,8 +1300,22 @@ msgstr "'u5.bias' должен быть неотрицательным числом"
 msgid "'eps.correct' must be 0, 1, or 2"
 msgstr "'eps.correct' должен быть 0, 1, или 2"
 
+#, fuzzy
+msgid "invalid ncol(x)"
+msgstr "неправильное имя"
+
 msgid "first argument must be a QR decomposition"
 msgstr "первый аргумент должен быть результатом QR разложения"
+
+msgid "invalid nrow(qr$qr)"
+msgstr ""
+
+msgid "invalid ncol(qr$qr)"
+msgstr ""
+
+#, fuzzy
+msgid "invalid ncol(y)"
+msgstr "неправильное имя"
 
 msgid "'qr' and 'y' must have the same number of rows"
 msgstr "'qr' и 'y' должны иметь одинаковое количество строк"
@@ -1276,6 +1325,9 @@ msgstr "точная сингулярность в 'qr.coef'"
 
 msgid "argument is not a QR decomposition"
 msgstr "аргумент не является результатом QR разложения"
+
+msgid "invalid NCOL(y)"
+msgstr ""
 
 msgid "not implemented for complex 'qr'"
 msgstr "не реализован для комплексных 'qr'"
@@ -1289,6 +1341,9 @@ msgstr "'k' слишком велик"
 msgid "need larger value of 'ncol' as pivoting occurred"
 msgstr ""
 "нужно большее значение 'ncol', так как происходит выбор ведущего элемента"
+
+msgid "invalid NCOL(R)"
+msgstr ""
 
 msgid "'x' must be an atomic vector"
 msgstr "'x' должен быть атомарным вектором"
@@ -1322,6 +1377,9 @@ msgstr "аргумент 'length.out' должен быть длиной 1"
 
 msgid "first element used of 'length.out' argument"
 msgstr "только первый элемент аргумента 'length.out' использован"
+
+msgid "extra argument(s) %s will be disregarded"
+msgstr "дополнительные аргументы %s не будут учтены"
 
 msgid "invalid (to - from)/by in seq(.)"
 msgstr "неправильный (to - from)/by в seq(.)"
@@ -1509,6 +1567,14 @@ msgstr "'x' не является многомерной матрицей"
 msgid "'bin' must be numeric or a factor"
 msgstr "'bin' должен быть числом или фактором"
 
+#, fuzzy
+msgid "invalid value of length(bin)"
+msgstr "неправильное значение"
+
+#, fuzzy
+msgid "invalid value of nbins"
+msgstr "неправильное значение"
+
 msgid "arguments must have same length"
 msgstr "аргументы должны иметь одинаковую длину"
 
@@ -1600,6 +1666,15 @@ msgstr "'stderr' должен быть длиной 1"
 msgid "'which' was not found on this platform"
 msgstr "'which' для этой платформы не найдена"
 
+msgid "fewer 'from' files than 'to' files"
+msgstr "меньше файлов 'from', чем 'to'"
+
+msgid "link '%s' already exists"
+msgstr "ссылка '%s' уже есть"
+
+msgid "failed to create directory for link '%s"
+msgstr "не удалось создать папку для ссылки %s"
+
 msgid "'show.output.on.console' must be TRUE or FALSE"
 msgstr "'show.output.on.console' должен быть TRUE или FALSE"
 
@@ -1642,7 +1717,6 @@ msgstr "элементы"
 msgid "have been removed from the search path"
 msgstr "удален из пути поиска"
 
-#, fuzzy
 msgid "cannot find namespace environment"
 msgstr "не могу найти окружение пространства имен"
 
@@ -1676,6 +1750,19 @@ msgstr[0] "%s не найден"
 msgstr[1] "%s не найден"
 msgstr[2] "%s не найден"
 
+msgid ""
+"Function found when exporting methods from the namespace %s which is not S4 "
+"generic: %s"
+msgid_plural ""
+"Functions found when exporting methods from the namespace %s which are not "
+"S4 generic: %s"
+msgstr[0] ""
+"Во время экспорта из пространства имен %s найдена не S4-общая функция: %s"
+msgstr[1] ""
+"Во время экспорта из пространства имен %s найдены не S4-общие функции: %s"
+msgstr[2] ""
+"Во время экспорта из пространства имен %s найдены не S4-общие функции: %s"
+
 msgid "class %s is not exported by 'namespace:%s'"
 msgid_plural "classes %s are not exported by 'namespace:%s'"
 msgstr[0] "класс %s не экспортирован из 'namespace:%s'"
@@ -1705,6 +1792,12 @@ msgid_plural "Warning messages:\n"
 msgstr[0] "Предупреждение:\n"
 msgstr[1] "Предупреждения:\n"
 msgstr[2] "Предупреждения:\n"
+
+#~ msgid "'symbol.C' is not needed: please remove it"
+#~ msgstr "'symbol.C' не нужен: удалите его"
+
+#~ msgid "'symbol.For' is not needed: please remove it"
+#~ msgstr "'symbol.For' не нужен: удалите его"
 
 #~ msgid "'pattern' must be a non-empty character string"
 #~ msgstr "'pattern' должен быть непустой текстовой строкой"
@@ -1813,9 +1906,6 @@ msgstr[2] "Предупреждения:\n"
 
 #~ msgid "S3 method '%s' was declared in NAMESPACE but not found"
 #~ msgstr "S3-метод '%s' объявлен в NAMESPACE, но не найден"
-
-#~ msgid "invalid name"
-#~ msgstr "неправильное имя"
 
 #~ msgid "is required by"
 #~ msgstr "требуется для"

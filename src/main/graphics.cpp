@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2011  The R Development Core Team
+ *  Copyright (C) 1997--2011  The R Core Team
  *  Copyright (C) 2002--2011  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1318,8 +1318,8 @@ static void layoutRegions(double widths[], double heights[],
 }
 
 static void subRegion(double *left, double *right, double *bottom, double *top,
-		      double mincol, double maxcol,
-		      double minrow, double maxrow,
+		      int mincol, int maxcol,
+		      int minrow, int maxrow,
 		      double widths[], double heights[], pGEDevDesc dd)
 {
     double totalWidth = sumRegions(widths, 0, gpptr(dd)->numcols-1);
@@ -2231,7 +2231,7 @@ void GRestore(pGEDevDesc dd)
 
 static double	adjsave;	/* adj */
 static int	annsave;	/* ann */
-static int	btysave;	/* bty */
+static char	btysave;	/* bty */
 static double	cexsave;	/* cex */
 static double   lheightsave;
 static double	cexbasesave;	/* cexbase */
@@ -2268,12 +2268,12 @@ static double	srtsave;	/* string rotation */
 static double	tcksave;	/* tick mark length */
 static double	tclsave;	/* tick mark length in LINES */
 static double	xaxpsave[3];	/* x axis parameters */
-static int	xaxssave;	/* x axis calculation style */
-static int	xaxtsave;	/* x axis type */
+static char	xaxssave;	/* x axis calculation style */
+static char	xaxtsave;	/* x axis type */
 static int	xpdsave;	/* clipping control */
 static double	yaxpsave[3];	/* y axis parameters */
-static int	yaxssave;	/* y axis calculation style */
-static int	yaxtsave;	/* y axis type */
+static char	yaxssave;	/* y axis calculation style */
+static char	yaxtsave;	/* y axis type */
 
 
 /* Make a temporary copy of the inline parameter values. */
@@ -2871,7 +2871,9 @@ void GPolyline(int n, double *x, double *y, GUnit coords, pGEDevDesc dd)
  * This allows new graphics API (GraphicsDevice.h, GraphicsEngine.h)
  * to be developed alongside.
  * Could be removed if Rgraphics.h ever gets REPLACED by new API
- * NOTE that base graphics code (in plot.c) still calls this.
+ * NOTE that base graphics code (do_symbol in plot.c) still calls this.
+ *
+ * NB: this fiddles with radius = 0.
  */
 void GCircle(double x, double y, GUnit coords,
 	     double radius, int bg, int fg, pGEDevDesc dd)
@@ -3147,11 +3149,11 @@ void GLPretty(double *ul, double *uh, int *n)
  * The real work happens when the axis is drawn. */
     int p1, p2;
     double dl = *ul, dh = *uh;
-    p1 = CXXRCONSTRUCT(int, ceil(log10(dl)));
-    p2 = CXXRCONSTRUCT(int, floor(log10(dh)));
+    p1 = int( ceil(log10(dl)));
+    p2 = int( floor(log10(dh)));
     if(p2 <= p1 &&  dh/dl > 10.0) {
-	p1 = CXXRCONSTRUCT(int, ceil(log10(dl) - 0.5));
-	p2 = CXXRCONSTRUCT(int, floor(log10(dh) + 0.5));
+	p1 = int( ceil(log10(dl) - 0.5));
+	p2 = int( floor(log10(dh) + 0.5));
     }
 
     if (p2 <= p1) { /* floor(log10(uh)) <= ceil(log10(ul))
@@ -3315,7 +3317,7 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
 
  *  This source code module:
  *  Copyright (C) 1997, 1998 Paul Murrell and Ross Ihaka
- *  Copyright (C) 1998-2008  The R Development Core Team
+ *  Copyright (C) 1998-2008  The R Core Team
 
  */
 

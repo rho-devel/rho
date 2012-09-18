@@ -1,6 +1,6 @@
 
-R Under development (unstable) (2011-10-08 r57190)
-Copyright (C) 2011 The R Foundation for Statistical Computing
+R Under development (unstable) (2012-02-27 r58508)
+Copyright (C) 2012 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
@@ -20,13 +20,6 @@ Type 'q()' to quit R.
 > 
 > library(Matrix)
 Loading required package: lattice
-
-Attaching package: 'Matrix'
-
-The following object(s) are masked from 'package:base':
-
-    det
-
 > 
 > source(system.file("test-tools.R", package = "Matrix"))# identical3() etc
 > 
@@ -133,7 +126,7 @@ A 1 4 7 10 100 1 4 7 10
 B 2 5 8 11 100 2 5 8 11
 C 3 6 9 12 100 3 6 9 12
 > showProc.time()
-Time elapsed:  0.18 0 0.177 
+Time elapsed:  0.176 0.012 0.189 
 > 
 > ### --- Diagonal / Sparse - had bugs
 > 
@@ -164,7 +157,7 @@ Time elapsed:  0.18 0 0.177
 + 	  identical(t(d4), cBind(Diagonal(4),     0:3)),
 + 	  identical(t(m4), rBind(Diagonal(x=-1:2), 0:3)))
 > showProc.time()
-Time elapsed:  0.07 0 0.078 
+Time elapsed:  0.076 0 0.076 
 > 
 > ### --- Sparse Matrices ---
 > 
@@ -214,7 +207,7 @@ rBind (m, v= 2 ), class(m) : dgeMatrix ,. dgCMatrix ,. dgTMatrix ,.
 cBind (m, v= c(1L, 0L) ), class(m) : dgeMatrix ,. dgCMatrix ,. dgTMatrix ,.
 rBind (m, v= c(1L, 0L) ), class(m) : dgeMatrix ,. dgCMatrix ,. dgTMatrix ,.
 > showProc.time()
-Time elapsed:  0.15 0 0.15 
+Time elapsed:  0.248 0 0.249 
 > 
 > cBind(0, mC); cBind(mC, 0)
 4 x 7 sparse Matrix of class "dgCMatrix"
@@ -385,5 +378,8 @@ v5 . | . | .
 [5,]    6    1    0    0    0    0   50    1
 > 
 > showProc.time()
-Time elapsed:  0.2 0.01 0.219 
+Time elapsed:  0.208 0.004 0.213 
 > 
+> proc.time()
+   user  system elapsed 
+  2.716   0.060   2.779 

@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1998--2007  R Development Core Team
+ *  Copyright (C) 1998--2007  R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,7 +34,10 @@
  */
 
 /* For AttachConsole: seems the MinGW headers are wrong and that
-   requires XP or later, not 2000 or later. */
+   requires XP or later, not 2000 or later.
+   Mingw-w64 has it included unconditionally.
+*/
+/* Mingw-w64 defines this to be 0x0502 */
 #define _WIN32_WINNT 0x0501
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>

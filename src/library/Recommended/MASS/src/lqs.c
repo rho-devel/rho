@@ -64,7 +64,7 @@ static void sample_noreplace(int *x, int n, int k)
 
     for (i = 0; i < n; i++) ind[i] = i;
     for (i = 0; i < k; i++) {
-	j = nn * unif_rand();
+	j = (int)(nn * unif_rand());
 	x[i] = ind[j];
 	ind[j] = ind[--nn];
     }

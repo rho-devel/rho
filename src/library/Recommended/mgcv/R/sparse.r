@@ -119,7 +119,7 @@ kd.vis <- function(X,cex=.5) {
 
 }
 
-nearest <- function(k,X,get.a=FALSE,balanced=FALSE,cut.off=5) {
+nearest <- function(k,X,gt.zero = FALSE,get.a=FALSE,balanced=FALSE,cut.off=5) {
 ## The rows of X contain coordinates of points.
 ## For each point, this routine finds its k nearest 
 ## neighbours, returning a list of 2, n by k matrices:
@@ -133,8 +133,14 @@ nearest <- function(k,X,get.a=FALSE,balanced=FALSE,cut.off=5) {
 ## for neighbours chosen to be on either side of the box in each 
 ## direction in this case k>2*ncol(X). These neighbours are only used
 ## if closer than cut.off*max(k nearest distances).
+## gt.zero indicates that neighbours must have distances greater
+## than zero...
   require(mgcv)
-  Xu <- uniquecombs(X);ind <- attr(Xu,"index") ## Xu[ind,] == X
+  if (balanced) gt.zero <- TRUE
+  if (gt.zero) {
+    Xu <- uniquecombs(X);ind <- attr(Xu,"index") ## Xu[ind,] == X
+  } else { Xu <- X; ind <- 1:nrow(X)}
+  if (k>nrow(Xu)) stop("not enough unique values to find k nearest")
   nobs <- length(ind)
   n <- nrow(Xu)
   d <- ncol(Xu)
@@ -154,7 +160,8 @@ nearest <- function(k,X,get.a=FALSE,balanced=FALSE,cut.off=5) {
   rind <- 1:nobs
   rind[ind] <- 1:nobs
   ni <- matrix(rind[oo$ni+1],n,k)[ind,]
-  list(ni=ni,dist=dist,a=oo$a[ind])
+  if (get.a) a=oo$a[ind] else a <- NULL
+  list(ni=ni,dist=dist,a=a)
 }
 
 

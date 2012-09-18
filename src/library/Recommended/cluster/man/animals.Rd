@@ -28,10 +28,7 @@
   variable is used for each split) hierarchical clustering.
 }
 \references{
-  Anja Struyf, Mia Hubert & Peter J. Rousseeuw (1996):
-  Clustering in an Object-Oriented Environment.
-  \emph{Journal of Statistical Software}, \bold{1}.
-  \url{http://www.stat.ucla.edu/journals/jss/}
+  see Struyf, Hubert & Rousseeuw (1996),  in \code{\link{agnes}}.
 }
 \examples{
 data(animals)

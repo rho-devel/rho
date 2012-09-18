@@ -81,7 +81,7 @@ that version.  The main R FAQ can be found at
 @end display
 
 The information here applies only to recent versions of R for Windows,
-(@samp{2.14.0} or later).
+(@samp{2.14.0} or later).  It is biased towards users of 64-bit Windows.
 
 
 @newchap{}
@@ -128,7 +128,7 @@ The information here applies only to recent versions of R for Windows,
 Go to any CRAN site (see @uref{http://cran.r-project.org/@/mirrors.html}
 for a list), navigate to the @file{bin/windows/base} directory and
 collect the file(s) you need.  The current release is distributed as an
-installer @samp{@RWVER@-win.exe} of about 45Mb.  This contains all the
+installer @samp{@RWVER@-win.exe} of about 47Mb.  This contains all the
 components and allows as complete as installation as you choose.
 
 There are also links on that page to the @samp{r-patched} and
@@ -154,10 +154,8 @@ mainly 64-bit Windows 7 and Server 2008, but to a limited extent on
 32-bit XP SP3.
 
 Your file system must allow case-honouring long file names (as is likely
-except perhaps for some network-mounted systems).  A typical
-installation for one architecture takes 55Mb of disk space, for both
-about 70Mb, a full installation about 90Mb and a minimal 32-bit one
-about 40Mb.
+except perhaps for some network-mounted systems).  A installation for
+one architecture takes about 75Mb of disk space, for both about 90Mb.
 
 If you want to be able to build packages from sources, we recommend that
 you choose an installation path not containing spaces.  (Using a path
@@ -224,10 +222,7 @@ set the default installation directory
 set the default Start-menu group name
 @item /COMPONENTS="comma separated list of component names"
 set the initial list of components: Components are named @samp{main},
-@samp{i386} or @samp{x64}, @samp{html}, @samp{manuals},
-@samp{manuals/basic}, @samp{manuals/technical}, @samp{manuals/refman},
-@samp{manuals/libdocs}, @samp{tcl/noarch}, @samp{tcl/32}, @samp{tcl/64},
-@samp{tcl/tzdata}, @samp{tcl/chm}, @samp{trans} and @code{tests}.
+@samp{i386} and @samp{x64} (there were many more before R 2.15.0).
 @end table
 
 @noindent
@@ -236,7 +231,7 @@ reload those settings using
 
 @table @samp
 @item /SAVEINF="filename"
-save the settings to the specified file.  Don't forget to use quotes if
+save the settings to the specified file.  Don't forget to use the quotes if
 the filename contains spaces.
 @item /LOADINF="filename"
 instructs the installer to load the settings from the specified file
@@ -310,8 +305,8 @@ versions around if you wish.
 For those with a personal library (folder @file{R\win-library\@var{x.y}}
 of your home directory, @file{R\win64-library\@var{x.y}} on 64-bit
 builds), you will need to update that too when the minor version of R
-changes (e.g.@: from 2.12.2 to 2.13.0).  A simple way to do so is to
-copy (say) @file{R\win-library\2.12} to @file{R\win-library\2.13} before
+changes (e.g.@: from 2.14.2 to 2.15.0).  A simple way to do so is to
+copy (say) @file{R\win-library\2.14} to @file{R\win-library\2.15} before
 running @code{update.packages(checkBuilt=TRUE, ask=FALSE)}.
 
 
@@ -319,8 +314,10 @@ running @code{update.packages(checkBuilt=TRUE, ask=FALSE)}.
 @section There seems to be a limit on the memory it uses!
 
 Indeed there is.  It is set by the command-line flag
-@option{--max-mem-size} (@pxref{How do I install R for Windows?}). For a
-64-bit build of R it defaults to the amount of RAM.
+@option{--max-mem-size} (@pxref{How do I install R for Windows?}) or by
+environment variable @env{R_MAX_MEM_SIZE}. 
+
+For a 64-bit build of R it defaults to the amount of RAM.
 
 For a 32-bit build of R it defaults to the smaller of the amount of
 physical RAM in the machine and 0.5GB less than the limit on user
@@ -392,7 +389,7 @@ You can also set up a batch file using @command{Rterm.exe}.  A sample
 batch file might contain (as one line)
 
 @example
-path_to_R\bin\i386\Rterm.exe --no-restore --no-save < %1 > %1.out 2>&1
+path_to_R\bin\x64\Rterm.exe --no-restore --no-save < %1 > %1.out 2>&1
 @end example
 
 @noindent
@@ -432,7 +429,8 @@ If that fails, if both environment variables @env{HOMEDRIVE} and
 @file{$@{HOMEDRIVE@}$@{HOMEPATH@}}.  If all of these fail, the current
 working directory is used.
 
-You can find this from R code by @code{Sys.getenv("R_USER")}.
+You can find this from R code by @code{Sys.getenv("R_USER")} or
+@code{normalizePath("~")}, @samp{~} being Unix notation for the home directory.
 
 @node How do I set environment variables?, R can't find my file, What are HOME and working directories?, Installation and Usage
 @section How do I set environment variables?
@@ -445,7 +443,7 @@ On the command line as name=value pairs.  For example in the shortcut to
 @command{Rgui} you could have
 
 @example
-"path_to_R\bin\i386\Rgui.exe" HOME=p:/ R_LIBS=p:/myRlib
+"path_to_R\bin\x64\Rgui.exe" HOME=p:/ R_LIBS=p:/myRlib
 @end example
 
 @item
@@ -557,19 +555,20 @@ We have had several reports of this, although they do work for us on
 
 (a) Use the alternative @file{internet2.dll} by starting R with the flag
 @option{--internet2} (@pxref{How do I install R for Windows?}) or
-calling @code{setInternet2(TRUE)}.  These cause R to use the Internet
-Explorer internals, which may already be configured for use with
-proxies.  Note that this does @emph{not} work with proxies that need
-authentication.
+calling @code{setInternet2(TRUE)}, or setting the environnent variable
+@env{R_WIN_INTERNET2} to a non-empty value.  These cause R to use the
+Internet Explorer internals, which may already be configured for use
+with proxies.  Note that this does @emph{not} work with proxies that
+need authentication.
 
 (b) A proxy needs to be set up: see @code{?download.file}.  Here are two
 versions of an example (a real one, but from a machine that is only
 available locally) of a command-line in a short cut:
 
 @example
-"path_to_R\bin\i386\Rgui.exe" http_proxy=http://user:pass@@gannet:80/
+"path_to_R\bin\x64\Rgui.exe" http_proxy=http://user:pass@@gannet:80/
 
-"path_to_R\bin\i386\Rgui.exe" http_proxy=http://gannet/ http_proxy_user=ask
+"path_to_R\bin\x64\Rgui.exe" http_proxy=http://gannet/ http_proxy_user=ask
 @end example
 
 @noindent
@@ -799,9 +798,10 @@ This is @code{]} in Canadian (multilingual), German and Scandinavian
 layouts, @code{1} in Eastern Europe, @code{[} in Portuguese, @code{4} or
 @code{5} in Spanish, @code{/} in Francophone Belgian, and so on.  For
 some keyboards the uses of AltGr are at
-@url{http://office.microsoft.com/@/en-us/@/word/@/HP052590631033.aspx}: you
-can explore those for your keyboard via the `On-Screen Keyboard' (under
-Accessories, Accessibility on XP).
+@url{http://office.microsoft.com/@/en-us/@/word/@/HP052590631033.aspx}:
+you can explore those for your keyboard via the `On-Screen Keyboard'
+(under Accessories, Accessibility on XP, Accessories, Ease of access on
+Windows 7).
 
 On all Windows versions you should be able to get tilde by holding the
 down the left Alt key and typing 0126 on the numeric keypad (if you have
@@ -821,8 +821,8 @@ process is 4GB (rather than 2GB or perhaps 3GB).
 When R is installed on 64-bit Windows there is the option of installing
 32- and/or 64-bit builds: the default is to install both.  The 64-bit
 build has 'x64' suffixed to its name on the Start menu and desktop
-shortcuts.  If you are using the 64-bit build, replace @samp{i386} by
-@samp{x64} in the examples in this FAQ.
+shortcuts.  If you are using the 32-bit build, replace @samp{x64} by
+@samp{i386} in the examples in this FAQ.
 
 @node Should I run 32-bit or 64-bit R?, Can both 32- and 64-bit R be installed on the same machine?, Can I use R on 64-bit Windows?, Installation and Usage
 @section Should I run 32-bit or 64-bit R?
@@ -843,18 +843,15 @@ to be moved around, and that less external software is available for
 64-bit versions of the OS. The 64-bit compilers are able to take
 advantage of extra features of all x86-64 chips (more registers, SSE2/3
 instructions, @dots{}) and so the code may run faster despite using
-larger pointers.  Changes in the compilation options in R 2.14.0 mean
-that the 64-bit build is now usually slightly faster than the 32-bit
-build on a recent CPU (Core 2 Duo or later).
+larger pointers.  The 64-bit build is nowadays usually slightly faster
+than the 32-bit build on a recent CPU (Intel Core 2 or later or AMD
+equivalent).
 
 For advanced users the choice may be dictated by whether the contributed
-packages needed are available in 64-bit builds (and if CRAN binary
-packages are not that is some indication that installing them from
-sources is problematic).  At the time of writing the most commonly-used
-CRAN packages without 64-bit versions were @code{BRugs} and
-@code{rggobi}.  The considerations can be more complex: for example
-32/64-bit @code{RODBC} need 32/64-bit ODBC drivers respectively, and
-where both exist they may not be able to be installed together.  An
+packages needed are available in 64-bit builds (although CRAN only
+offers 32/64-bit builds).  The considerations can be more complex: for
+example 32/64-bit @code{RODBC} need 32/64-bit ODBC drivers respectively,
+and where both exist they may not be able to be installed together.  An
 extreme example is the Microsoft Access/Excel ODBC drivers: if you have
 installed 64-bit Microsoft Office you can only install the 64-bit
 drivers and so need to use 64-bit @code{RODBC} and hence R.  (And
@@ -874,7 +871,7 @@ installation for which this option is selected, and if that was for an
 installation of both, will use 64-bit R.  To change the association the
 safest way is to edit the Registry entry
 @samp{HKEY_CLASSES_ROOT\RWorkspace\shell\open\command}
-and replace @samp{i386} by @samp{x64} or @emph{vice versa}.
+and replace @samp{x64} by @samp{i386} or @emph{vice versa}.
 
 
 @node Rcmd is not found in my PATH!,  , Can both 32- and 64-bit R be installed on the same machine?, Installation and Usage
@@ -889,16 +886,15 @@ will install to a different location) and un-installed the old version
 of R.  If you do that (or install R for the first time), you need to
 edit the @env{PATH}.
 
-In recent versions of R (it was different before 2.12.0) the element you
-want to add to the path is something like
+The element you want to add to the path is something like
 
 @example
-c:\Program Files\R\R-2.14.0\bin\i386
+c:\Program Files\R\R-2.14.0\bin\x64
 @end example
 
 @noindent
-for 32-bit @command{Rcmd.exe}, replacing @code{i386} by @code{x64} for
-64-bit.
+for 64-bit @command{Rcmd.exe}, replacing @code{x64} by @code{i386} for
+32-bit.
 
 How you set the path depends on your OS version.  On Windows XP/Server
 2003 you can use `System' in the control panel or the properties of `My
@@ -1115,6 +1111,7 @@ handles internationalization slightly odd.
 * How can I get a binary version of a package?::  
 * Package xxx is out of date for Windows::  
 * No binary packages appear to be available for my version of R::  
+* How do I build my package for both 32- and 64-bit R?::  
 @end menu
 
 
@@ -1133,10 +1130,10 @@ CRAN or from a local @code{.zip} file by using @code{install.packages}:
 see its help page.  There are menu items on the @code{Packages} menu to
 provide a point-and-click interface to package installation.  The
 packages for each minor (2.x) version will be stored in a separate area,
-so for R 2.13.? the files are in @file{bin/windows/contrib/2.13}.
+so for R 2.15.? the files are in @file{bin/windows/contrib/2.15}.
 
 Note that the binary versions on CRAN are unsupported: see
-@uref{http://cran.r-project.org/@/bin/@/windows/@/contrib/@/2.13/@/ReadMe},
+@uref{http://cran.r-project.org/@/bin/@/windows/@/contrib/@/2.15/@/ReadMe},
 which also gives the locations of a few other binary packages.
 
 If there is no binary package or that is not up-to-date or you prefer
@@ -1234,7 +1231,7 @@ You can tell the version the package was compiled for by looking at the
 For a small number of binary packages you need to install additional
 software and have its DLLs in your @code{PATH}.  Windows will normally
 give an informative message about a certain DLL not being found.  See
-@uref{http://cran.r-project.org/@/bin/@/windows/@/contrib/@/2.13/@/ReadMe} for a
+@uref{http://cran.r-project.org/@/bin/@/windows/@/contrib/@/2.15/@/ReadMe} for a
 listing of some of these packages (notably @code{RGtk2},
 @code{cairoDevice}, @code{rggobi}, @code{rJava}, @code{rjags} and some
 of the packages connecting to databases).
@@ -1398,7 +1395,7 @@ Your R might be too old.  Binary packages for the 2.x series are built
 binary packages for 2.13.x will be frozen.  You can always try
 installing from the sources.
 
-@node No binary packages appear to be available for my version of R,  , Package xxx is out of date for Windows, Packages
+@node No binary packages appear to be available for my version of R, How do I build my package for both 32- and 64-bit R?, Package xxx is out of date for Windows, Packages
 @section No binary packages appear to be available for my version of R
 
 How old is it?  The CRAN policy is to archive binary packages two years
@@ -1408,6 +1405,37 @@ archived in October 2011).
 If you are using an R version that old we advise you to update your R,
 but you do also have the option of installing packages from their
 source.
+
+
+@node How do I build my package for both 32- and 64-bit R?,  , No binary packages appear to be available for my version of R, Packages
+@section How do I build my package for both 32- and 64-bit R?
+
+Packages without compiled code nor a @file{configure.win} script will
+run on both 32- and 64-bit R.
+
+Packages with compiled code but no @file{configure.win} nor
+@code{src/Makefile.win} file will be built for both when running on a
+64-bit version of Windows if both versions of R are installed.
+
+An empty @file{configure.win} is treated in the same way as if none
+existed.  Also, there is a list of packages known to have an
+architecture-independent @file{configure.win} hardcoded into @command{R
+CMD INSTALL}, and for these packages, both architectures will be built
+under the above conditions.  Other packages can be installed with
+@file{configure.win} run for just the first architecture by using option
+@option{--force-biarch}. 
+
+Any package can be installed for first one architecture and then the
+other with option @option{--merge-multiarch}, but the package source
+must be a tarball (and as before, running on a 64-bit version of Windows
+with both versions of R installed).
+
+Finally, as from R 2.15.0, a package without a @code{src/Makefile.win}
+file and no or empty or architecture-independent @code{configure.win}
+file can be installed for both architectures from 32-bit Windows if the
+64-bit components were selected when R was installed and option
+@option{--compile-both} is given.  Obviously, only the 32-bit
+installation can be tested.
 
 @newchap{}
 @node Windows Features, Workspaces, Packages, Top
@@ -1673,7 +1701,7 @@ often an important part of R computations, and more typical calculations
 on small matrices may run slower.
 
 BLAS support is supplied by the single DLL
-@file{R_HOME\bin\i386\Rblas.dll}, and you can add a fast BLAS just by
+@file{R_HOME\bin\x64\Rblas.dll}, and you can add a fast BLAS just by
 replacing that.  Replacements for 32-bit R and some of the older common
 chips are available on CRAN in directory
 @file{bin/windows/contrib/ATLAS}.  See the R Installation and
@@ -1703,12 +1731,12 @@ see the @emph{`Writing R Extensions'} manual.  In any event you should
 get and install the tools and toolchain mentioned in the `R Installation
 and Administration' manual.  Then you can use
 @example
-...\bin\i386\R CMD SHLIB foo.c bar.f
+...\bin\x64\R CMD SHLIB foo.c bar.f
 @end example
 @noindent
-to make @file{foo.dll}.  Use @command{...\bin\i386\R CMD SHLIB --help} for
-further options, or see @code{?SHLIB}.  (Replace @code{i386} by
-@code{x64} for 64-bit R.)
+to make @file{foo.dll}.  Use @command{...\bin\x64\R CMD SHLIB --help} for
+further options, or see @code{?SHLIB}.  (Replace @code{x64} by
+@code{i386} for 64-bit R.)
 
 If you want to use Visual C++, Borland C++ or other compilers, see the
 appropriate section in @file{README.packages}.
@@ -1744,7 +1772,7 @@ You will need a suitable version of @command{gdb} which matches your
 compiler.  Then you can debug by
 
 @example
-gdb /path/to/@RWVER@/bin/i386/Rgui.exe
+gdb /path/to/@RWVER@/bin/x64/Rgui.exe
 @end example
 
 @noindent
@@ -1824,7 +1852,7 @@ as in the example in @emph{`Writing R Extensions'}.  Then build the DLL by
 (@command{gcc})
 
 @example
-...\bin\i386\R CMD SHLIB X.cc X_main.cc
+...\bin\x64\R CMD SHLIB X.cc X_main.cc
 @end example
 
 @noindent
@@ -1891,7 +1919,7 @@ call @code{R_ProcessEvents()} periodically from your compiled code.
 If you want output to be updated on the console, call
 @code{R_FlushConsole()} and then @code{R_ProcessEvents()}.
 
-@set LASTEDIT 2011-07-08
+@set LASTEDIT 2012-02-01
 @ifhtml
 @html
 <hr WIDTH="100%">

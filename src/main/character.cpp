@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2010  The R Development Core Team
+ *  Copyright (C) 1997--2010  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Pulic License as published by
@@ -90,6 +90,7 @@ abbreviate chartr make.names strtrim tolower toupper give error.
 #endif
 
 #include <Defn.h>
+#include <errno.h>
 
 #include <R_ext/RS.h>  /* for Calloc/Free */
 
@@ -121,6 +122,8 @@ SEXP attribute_hidden do_nzchar(SEXP call, SEXP op, SEXP args, SEXP env)
     checkArity(op, args);
     check1arg(args, call, "x");
 
+    if (isFactor(CAR(args)))
+	error(_("'%s' requires a character vector"), "nzchar()");
     PROTECT(x = coerceVector(CAR(args), STRSXP));
     if (!isString(x))
 	error(_("'%s' requires a character vector"), "nzchar()");
@@ -145,6 +148,8 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
     const void *vmax;
 
     checkArity(op, args);
+    if (isFactor(CAR(args)))
+	error(_("'%s' requires a character vector"), "nchar()");
     PROTECT(x = coerceVector(CAR(args), STRSXP));
     if (!isString(x))
 	error(_("'%s' requires a character vector"), "nchar()");
@@ -1334,9 +1339,12 @@ static int strtoi(SEXP s, int base)
     long res;
     char *endp;
 
+    /* strtol might return extreme values on error */
+    errno = 0;
+
     if(s == NA_STRING) return(NA_INTEGER);
     res = strtol(CHAR(s), &endp, base); /* ASCII */
-    if(*endp != '\0') res = NA_INTEGER;
+    if(errno || *endp != '\0') res = NA_INTEGER;
     if(res > INT_MAX || res < INT_MIN) res = NA_INTEGER;
     return(res);
 }

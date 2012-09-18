@@ -107,6 +107,8 @@ write.dta <-
              convert.factors = c("labels","string","numeric","codes"))
 {
 
+    if(!is.data.frame(dataframe))
+        stop("The object \"dataframe\" must have class data.frame")
     if (version < 6L) stop("Version must be 6-12")
     if (version == 9L) version <- 8L
     if (version == 11L) version <- 10L

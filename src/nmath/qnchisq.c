@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 2000-2008   The R Development Core Team
+ *  Copyright (C) 2000-2008   The R Core Team
  *  Copyright (C) 2004	      The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -87,8 +87,7 @@ double qnchisq(double p, double df, double ncp, int lower_tail, int log_p)
     if(lower_tail) {
 	if(p > 1 - DBL_EPSILON) return ML_POSINF;
 	pp = fmin2(1 - DBL_EPSILON, p * (1 + Eps));
-        for(ux = ux;
-	    ux < DBL_MAX &&
+        for(; ux < DBL_MAX &&
 		pnchisq_raw(ux, df, ncp, Eps, rEps, 10000, TRUE) < pp;
 	    ux *= 2);
 	pp = p * (1 - Eps);
@@ -100,8 +99,7 @@ double qnchisq(double p, double df, double ncp, int lower_tail, int log_p)
     else {
 	if(p > 1 - DBL_EPSILON) return 0.0;
 	pp = fmin2(1 - DBL_EPSILON, p * (1 + Eps));
-        for(ux = ux;
-	    ux < DBL_MAX &&
+        for(; ux < DBL_MAX &&
 		pnchisq_raw(ux, df, ncp, Eps, rEps, 10000, FALSE) > pp;
 	    ux *= 2);
 	pp = p * (1 - Eps);

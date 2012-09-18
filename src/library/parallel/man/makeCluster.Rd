@@ -1,13 +1,16 @@
 % File src/library/parallel/man/makePSOCKcluster.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2003-11 R Core Development Team
+% Copyright 2003-12 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{makeCluster}
 \alias{makeCluster}
 \alias{makePSOCKcluster}
 \alias{makeForkCluster}
 \alias{stopCluster}
+\alias{setDefaultCluster}
 \title{
   Create a Parallel Socket Cluster
 }
@@ -20,7 +23,9 @@ makeCluster(spec, type, ...)
 makePSOCKcluster(names, ...)
 makeForkCluster(nnodes = getOption("mc.cores", 2L), ...)
 
-stopCluster(cl)
+stopCluster(cl = NULL)
+
+setDefaultCluster(cl = NULL)
 }
 \arguments{
   \item{spec}{A specification appropriate to the type of cluster.}
@@ -36,11 +41,11 @@ stopCluster(cl)
 \details{
   \code{makeCluster} creates a cluster of one of the supported types.
   The default type, \code{"PSOCK"}, calls \code{makePSOCKcluster}.  Type
-  \code{"FORK"}calls \code{makeForkCluster}.  Other types are passed to
-  package \pkg{snow}.
+  \code{"FORK"} calls \code{makeForkCluster}.  Other types are passed to
+  package \CRANpkg{snow}.
   
   \code{makePSOCKcluster} is very similar to \code{makeSOCKcluster} in
-  package \pkg{snow}.  It runs \command{Rscript} on the specified
+  package \CRANpkg{snow}.  It runs \command{Rscript} on the specified
   host(s) to set up a worker process which listens on a socket for
   expressions to evaluate, and returns the results (as serialized
   objects).
@@ -90,17 +95,26 @@ stopCluster(cl)
     \item{\code{methods}}{Logical.  If true (default) the workers will
       load the \pkg{methods} package: not loading it saves ca 30\% of the
       startup time of the cluster.}
+    \item{\code{useXDR}}{Logical. If true (default) serialization will
+      use XDR: where large amounts of data are to be transferred and
+      all the nodes are little-endian, communication may be
+      substantially fast if this is set to false.}
   }
 
   Function \code{makeForkCluster} creates a socket cluster by forking
   (and hence is not available on Windows).  It supports options
-  \code{port}, \code{timeout} and \code{outfile}.
+  \code{port}, \code{timeout} and \code{outfile}, and always uses
+  \code{useXDR = FALSE}.
   
   It is good practice to shut down the workers by calling
   \code{\link{stopCluster}}: however the workers will terminate
   themselves once the socket on which they are listening for commands
   becomes unavailable, which it should if the master \R session is
   completed (or its process dies).
+  
+  Function \code{setDefaultCluster} registers a cluster as the default one
+  for the current session.  Using \code{setDefaultCluster(NULL)} removes
+  the registered cluster, as does stopping that cluster.
 }
 
 \value{
@@ -110,5 +124,5 @@ stopCluster(cl)
 \author{
   Luke Tierney and R Core.
 
-  Derived from the \pkg{snow} package.
+  Derived from the \CRANpkg{snow} package.
 }

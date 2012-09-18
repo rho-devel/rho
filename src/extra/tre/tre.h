@@ -106,6 +106,8 @@ typedef enum {
 #define REG_RIGHT_ASSOC (REG_LITERAL << 1)
 #define REG_UNGREEDY    (REG_RIGHT_ASSOC << 1)
 
+#define REG_USEBYTES    (REG_UNGREEDY << 1)
+
 /* POSIX tre_regexec() flags. */
 #define REG_NOTBOL 1
 #define REG_NOTEOL (REG_NOTBOL << 1)
@@ -277,7 +279,8 @@ enum {
   TRE_CONFIG_WCHAR,
   TRE_CONFIG_MULTIBYTE,
   TRE_CONFIG_SYSTEM_ABI,
-  TRE_CONFIG_VERSION
+  TRE_CONFIG_VERSION,
+  TRE_MB_CUR_MAX_VALUE  /* [i_a] - derived from MULTIBYTE and WCHAR, but still handy to have: no need to copy logic in TRE header files, etc. in order to know this */
 };
 
 /* Returns 1 if the compiled pattern has back references, 0 if not. */

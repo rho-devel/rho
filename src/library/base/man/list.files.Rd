@@ -1,6 +1,6 @@
 % File src/library/base/man/list.files.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
 
 \name{list.files}
@@ -57,7 +57,12 @@ list.dirs(path = ".", full.names = TRUE, recursive = TRUE)
 \author{Ross Ihaka, Brian Ripley}
 \note{
   File naming conventions are platform dependent.  The pattern matching
-  works with the case of file names as returned by the OS
+  works with the case of file names as returned by the OS.
+#ifdef unix
+
+  On a POSIX filesystem recursive listings will follow symbolic links to
+  directories.
+#endif
 #ifdef windows
 
   \code{path} must specify paths which can be represented in the current

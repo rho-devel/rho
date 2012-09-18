@@ -1,7 +1,9 @@
 % File src/library/graphics/man/persp.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{persp}
 \alias{persp}
@@ -137,9 +139,9 @@ persp(x, \dots)
 \seealso{
   \code{\link{contour}} and \code{\link{image}}; \code{\link{trans3d}}.
   
-  Rotatable 3D plots can be produced by package \pkg{rgl}: other ways to
-  produce static perspective plots are available in packages
-  \pkg{lattice} and \pkg{scatterplot3d}.
+  Rotatable 3D plots can be produced by package \CRANpkg{rgl}: other
+  ways to produce static perspective plots are available in packages
+  \CRANpkg{lattice} and \CRANpkg{scatterplot3d}.
 }
 \examples{
 require(grDevices) # for trans3d

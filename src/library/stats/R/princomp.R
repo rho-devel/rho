@@ -52,8 +52,6 @@ princomp.default <-
 {
     cl <- match.call()
     cl[[1L]] <- as.name("princomp")
-    if(!missing(x) && !missing(covmat))
-        warning("both 'x' and 'covmat' were supplied: 'x' will be ignored")
     z <- if(!missing(x)) as.matrix(x)[subset, , drop = FALSE]
     if (is.list(covmat)) {
         if(any(is.na(match(c("cov", "n.obs"), names(covmat)))))
@@ -62,6 +60,8 @@ princomp.default <-
         n.obs <- covmat$n.obs
         cen <- covmat$center
     } else if(is.matrix(covmat)) {
+	if(!missing(x)) ## warn only here; x is used for scores when we have 'cen'
+	    warning("both 'x' and 'covmat' were supplied: 'x' will be ignored")
         cv <- covmat
         n.obs <- NA
         cen <- NULL
@@ -90,7 +90,7 @@ princomp.default <-
         else
             ev[neg] <- 0
     }
-    cn <- paste("Comp.", 1L:ncol(cv), sep = "")
+    cn <- paste0("Comp.", 1L:ncol(cv))
     names(ev) <- cn
     dimnames(edc$vectors) <- if(missing(x))
         list(dimnames(cv)[[2L]], cn) else list(dimnames(x)[[2L]], cn)

@@ -1,11 +1,10 @@
 % File src/library/methods/man/MethodSupport.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2009 R Core Team
 % Distributed under GPL 2 or later
 
 \name{MethodSupport}
 \title{Additional (Support) Functions for Methods}
-\alias{.conflicts.OK}
 \alias{OldEvalSelectedMethod}
 \alias{getMethodsForDispatch}
 \alias{cacheMethod}

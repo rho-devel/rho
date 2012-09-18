@@ -1,5 +1,5 @@
 
-R version 2.13.0 Patched (2011-04-16 r55459)
+R version 2.14.1 RC (2011-12-20 r57943)
 Copyright (C) 2011 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
 Platform: x86_64-unknown-linux-gnu (64-bit)
@@ -19,9 +19,9 @@ Type 'q()' to quit R.
 > library(cluster)
 > options(digits = 6)
 > data(votes.repub)
+> di.votes <- daisy(votes.repub)
 > 
-> .proctime00 <- proc.time()
-> 
+> .p00 <- proc.time()
 > summary(diana(votes.repub, metric = "manhattan", stand = TRUE))
 Merge:
       [,1] [,2]
@@ -105,7 +105,7 @@ Number of objects : 50
 Available components:
 [1] "order"     "height"    "dc"        "merge"     "diss"      "call"     
 [7] "order.lab" "data"     
-> summary(diana(daisy(votes.repub), keep.diss = FALSE))
+> summary(diana(di.votes, keep.diss = FALSE))
 Merge:
       [,1] [,2]
  [1,]  -12  -50
@@ -182,9 +182,20 @@ Divisive coefficient:
 Available components:
 [1] "order"     "height"    "dc"        "merge"     "diss"      "call"     
 [7] "order.lab"
+> cat('Time elapsed: ', proc.time() - .p00,'\n')
+Time elapsed:  0.014 0.001 0.015 0 0 
 > 
 > data(agriculture)
-> summary(diana(agriculture))
+> data(ruspini)
+> 
+> .p0 <- proc.time()
+> dia.agr <- diana(agriculture)
+> drusp0  <- diana(ruspini, keep.diss=FALSE, keep.data=FALSE)
+> drusp1  <- diana(ruspini, metric = "manhattan")
+> cat('Time elapsed: ', proc.time() - .p0,'\n')
+Time elapsed:  0.006 0.001 0.006 0 0 
+> 
+> summary(dia.agr)
 Merge:
       [,1] [,2]
  [1,]   -1  -10
@@ -215,9 +226,7 @@ Number of objects : 12
 Available components:
 [1] "order"     "height"    "dc"        "merge"     "diss"      "call"     
 [7] "order.lab" "data"     
-> 
-> data(ruspini)
-> summary(dr0 <- diana(ruspini, keep.diss=FALSE, keep.data=FALSE))
+> summary(drusp0)
 Merge:
       [,1] [,2]
  [1,]  -18  -19
@@ -316,7 +325,7 @@ Divisive coefficient:
 Available components:
 [1] "order"     "height"    "dc"        "merge"     "diss"      "call"     
 [7] "order.lab"
-> summary(dr1 <- diana(ruspini, metric = "manhattan"))
+> summary(drusp1)
 Merge:
       [,1] [,2]
  [1,]  -55  -56
@@ -414,7 +423,7 @@ Number of objects : 75
 Available components:
 [1] "order"     "height"    "dc"        "merge"     "diss"      "call"     
 [7] "order.lab" "data"     
-> str(dr1)
+> str    (drusp1)
 List of 8
  $ order    : int [1:75] 1 2 3 5 9 10 14 16 18 19 ...
  $ height   : num [1:74] 12 9 22 36 5 24 11 5 2 12 ...
@@ -432,14 +441,14 @@ List of 8
   .. ..$ : chr [1:2] "x" "y"
  - attr(*, "class")= chr [1:2] "diana" "twins"
 > 
-> cat('Time elapsed: ', proc.time() - .proctime00,'\n')
-Time elapsed:  0.03 0.03 0.057 0 0 
-> 
 > ## From system.file("scripts/ch11.R", package = "MASS")
 > data(swiss)
 > swiss.x <- as.matrix(swiss[,-1])
+> .p1 <- proc.time()
 > dCH <- diana(swiss.x)
-> str(as.dendrogram(as.hclust(dCH)))
+> cat('Time elapsed: ', proc.time() - .p1,'\n')
+Time elapsed:  0.001 0 0.001 0 0 
+> str(as.dendrogram(as.hclust(dCH)))# keep back-compatible
 --[dendrogram w/ 2 branches and 47 members at h = 127]
   |--[dendrogram w/ 2 branches and 31 members at h = 99.2]
   |  |--[dendrogram w/ 2 branches and 11 members at h = 60.9]
@@ -533,5 +542,4 @@ Time elapsed:  0.03 0.03 0.057 0 0
            `--[dendrogram w/ 2 branches and 2 members at h = 5.09]
               |--leaf "Martigwy" 
               `--leaf "St Maurice" 
-> 
 > 

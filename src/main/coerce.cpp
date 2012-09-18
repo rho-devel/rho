@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995,1996  Robert Gentleman, Ross Ihaka
- *  Copyright (C) 1997-2011  The R Development Core Team
+ *  Copyright (C) 1997-2011  The R Core Team
  *  Copyright (C) 2003-2009 The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1456,10 +1456,7 @@ SEXP attribute_hidden do_asfunction(SEXP call, SEXP op, SEXP args, SEXP rho)
        Rf_mkCLOSXP can continue to overreact when its
        test fails (PR#1880, 7535, 7702) */
     if(Rf_isList(body) || Rf_isLanguage(body) || Rf_isSymbol(body)
-       || Rf_isExpression(body) || Rf_isVector(body)
-#ifdef BYTECODE
-       || isByteCode(body)
-#endif
+       || Rf_isExpression(body) || Rf_isVector(body) || isByteCode(body)
        )
 	    args =  Rf_mkCLOSXP(args, body, envir);
     else
@@ -1807,9 +1804,7 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 	case ANYSXP:
 	case EXPRSXP:
 	case EXTPTRSXP:
-#ifdef BYTECODE
 	case BCODESXP:
-#endif
 	case WEAKREFSXP:
 	    LOGICAL(ans)[0] = 1;
 	    break;
@@ -2501,11 +2496,11 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 	return obj;
     }
     if(TYPEOF(value) != STRSXP) {
-	/* Beware: assumes value is protected, which it is
-	   in the only use below */
-	GCStackRoot<> valdup(Rf_duplicate(value));
-	PROTECT(value = Rf_coerceVector(valdup, STRSXP));
-	nProtect++;
+	SEXP dup;
+	/* assumes value is protected, which it is in R_do_set_class */
+	PROTECT(dup = Rf_duplicate(value));
+	PROTECT(value = Rf_coerceVector(dup, STRSXP));
+	nProtect += 2;
     }
     if(length(value) > 1) {
 	Rf_setAttrib(obj, R_ClassSymbol, value);

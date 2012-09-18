@@ -7,12 +7,13 @@ export(clusplot, pltree, silhouette, volume)
 export(agnes, clara, daisy, diana, fanny, mona, pam)
 ## and the rest
 export(bannerplot, ellipsoidhull, ellipsoidPoints,
+       clusGap, maxSE,
        lower.to.upper.tri.inds, upper.to.lower.tri.inds,
        meanabsdev, sizeDiss, sortSilhouette)
 
 ## Methods also useful as 'standalone functions':
 export(predict.ellipsoid)
-export(coef.hclust)
+export(coef.hclust, coefHier)
 
 ## things from (ex-)mva -- not really needed..
 #importFrom(stats, as.hclust, as.dist, as.dendrogram, cutree)
@@ -34,7 +35,7 @@ S3method(volume, ellipsoid)
 
 ## register all the method for generics elsewhere in case namespace is
 ## loaded but not currently attached.
-S3method(as.dendrogram, agnes)
+S3method(as.dendrogram, twins)
 S3method(coef, hclust)
 S3method(coef, twins)
 
@@ -43,6 +44,7 @@ S3method(plot, diana)
 S3method(plot, mona)
 S3method(plot, partition)
 S3method(plot, silhouette)
+S3method(plot, clusGap)
 
 #exported: S3method(predict, ellipsoid)
 
@@ -54,6 +56,7 @@ S3method(print, ellipsoid)
 S3method(print, fanny)
 S3method(print, mona)
 S3method(print, pam)
+S3method(print, clusGap)
 S3method(print, summary.agnes)
 S3method(print, summary.clara)
 S3method(print, summary.diana)

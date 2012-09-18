@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1997, 1998  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2004  The R Development Core Team.
+ *  Copyright (C) 1998-2004  The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -225,7 +225,7 @@ void printVector(SEXP x, int indx, int quote)
 	    break;
 	}
 	if(n_pr < n)
-		Rprintf(" [ reached getOption(\"max.print\") -- omitted %d entries ]]\n",
+		Rprintf(" [ reached getOption(\"max.print\") -- omitted %d entries ]\n",
 			n - n_pr);
     }
     else
@@ -382,7 +382,7 @@ void printNamedVector(SEXP x, SEXP names, int quote, const char *title)
 	    break;
 	}
 	if(n_pr < n)
-		Rprintf(" [ reached getOption(\"max.print\") -- omitted %d entries ]]\n",
+		Rprintf(" [ reached getOption(\"max.print\") -- omitted %d entries ]\n",
 			n - n_pr);
 
     }

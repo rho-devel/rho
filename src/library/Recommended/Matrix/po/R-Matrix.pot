@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.15.0\n"
+"Project-Id-Version: R 2.16.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-10-14 21:52\n"
+"POT-Creation-Date: 2012-03-06 17:05\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -266,12 +266,6 @@ msgstr ""
 msgid "internal bug in \"Logic\" method (.Logic.Mat.atomic); please report"
 msgstr ""
 
-msgid "numeric(<too-long>)"
-msgstr ""
-
-msgid "longer object length\n\tis not a multiple of shorter object length"
-msgstr ""
-
 msgid "(0)"
 msgstr ""
 
@@ -381,6 +375,9 @@ msgid "prod(<abIndex>) is not yet implemented"
 msgstr ""
 
 msgid "not yet implemented"
+msgstr ""
+
+msgid "longer object length\n\tis not a multiple of shorter object length"
 msgstr ""
 
 msgid "x / 0 for an <abIndex> x with sign-change"
@@ -554,6 +551,9 @@ msgstr ""
 msgid "not-yet-implemented method for <%s> %%*%% <%s>"
 msgstr ""
 
+msgid "method '%s' not applicable for qr() result class '%s'"
+msgstr ""
+
 msgid "model frame and formula mismatch in model.matrix()"
 msgstr ""
 
@@ -564,6 +564,9 @@ msgid "invalid 'contrasts.arg' argument"
 msgstr ""
 
 msgid "variable '%s' is absent, its contrast will be ignored"
+msgstr ""
+
+msgid "only 2-dimensional tables can be directly coerced to sparse matrices"
 msgstr ""
 
 msgid "exactly one of 'i', 'j', or 'p' must be missing from call"
@@ -600,18 +603,6 @@ msgid "rcond(.) via sparse -> dense coercion"
 msgstr ""
 
 msgid "'V' is not a *square* matrix"
-msgstr ""
-
-msgid "must supply either 'formula' or 'data'"
-msgstr ""
-
-msgid "'formula' missing or incorrect"
-msgstr ""
-
-msgid "interactions are not allowed"
-msgstr ""
-
-msgid "xtabs(*, sparse=TRUE) applies only to two-way tables"
 msgstr ""
 
 msgid "qr.R(<sparse>) may differ from qr.R(<dense>) because of permutations"

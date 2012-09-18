@@ -99,9 +99,10 @@ survfitcoxph.fit <- function(y, x, wt, x2, risk, newrisk, strata, se.fit,
             result <- list(onecurve(survlist, x2, y2, strata2, newrisk, se.fit))
             }
         else {
-            result <- vector('list', length=length(unique(id)))
-            for (i in unique(id)) {
-                indx <- which(id==i)
+            uid <- unique(id)
+            result <- vector('list', length=length(uid))
+            for (i in 1:length(uid)) {
+                indx <- which(id==uid[i])
                 result[[i]] <- onecurve(survlist, x2[indx,,drop=FALSE], 
                                          y2[indx,,drop=FALSE], 
                                          strata2[indx],  newrisk[indx], se.fit)

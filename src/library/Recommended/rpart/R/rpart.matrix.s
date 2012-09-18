@@ -13,6 +13,8 @@ rpart.matrix <- function(frame)
     else {
 	a <- attributes(terms)
 	predictors <- as.character(a$variables)[-1L] # R change
+        ## and this might include backquotes
+        predictors <- sub("^`(.*)`$", "\\1", predictors)
 	removals <- NULL
 	if((TT <- a$response) > 0L) {
 	    removals <- TT

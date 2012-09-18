@@ -1,5 +1,6 @@
 #!/bin/sh
 ## Update Libraries from Tim Davis' University of Florida (UF) collection:
+## Note that cs.c , cs.h  are done in ./CSparse_install.sh
 #
 if [ ! -d ../src ]
 then echo 'Must run in Matrix/src/ !' ; exit 1
@@ -24,8 +25,9 @@ mv UFconfig/README.txt ../inst/doc/UFsparse/UFconfig.txt
   ## environment variables but this name is embedded in some Makefiles
 touch UFconfig/UFconfig.mk
   ## Need to add the Matrix-specific changes to UFconfig/UFconfig.h :
-## 2011-04: *no longer* !!
-# patch -p0 < scripts/UFconfig.patch
+## 2011-04: *no longer* !!  patch -p0 < scripts/UFconfig.patch
+## again for printf():
+patch -p0 < scripts/UFconfig.patch2
 
 ## 2) COLAMD -----------------------------------------------
    ## install COLAMD/Source and COLAMD/Include directories
@@ -34,6 +36,7 @@ Rscript --vanilla -e 'source("scripts/fixup-fn.R")' -e 'fixup("COLAMD/Source/Mak
   ## install documentation for COLAMD
 tar zxf COLAMD.tar.gz COLAMD/README.txt COLAMD/Doc
 mv COLAMD/README.txt ../inst/doc/UFsparse/COLAMD.txt
+patch -p0 < scripts/COLAMD.patch
 
 ## 3) AMD --------------------------------------------------
   ## install AMD/Source and AMD/Include directories
@@ -44,6 +47,8 @@ svn revert AMD/Source/Makefile
 mv AMD/README.txt ../inst/doc/UFsparse/AMD.txt
   ## remove Fortran source files and GNUMakefile
 rm AMD/Source/*.f AMD/Source/GNUmakefile
+#(for f in AMD/Include/amd_internal.h AMD/Source/amd_global.c; do diff -ubBw ${f}.~1~ $f ; done ) | tee scripts/AMD-noprint.patch
+patch -p0 < scripts/AMD-noprint.patch
 
 ## 4) CHOLMOD ----------------------------------------------
   ## install CHOLMOD source files

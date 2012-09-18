@@ -1,6 +1,5 @@
 \name{clogit}
 \alias{clogit}
-%- Also NEED an `\alias' for EACH other topic documented here.
 \title{Conditional logistic regression }
 \description{
   Estimates a logistic regression model by maximising the conditional
@@ -11,16 +10,21 @@
   with older software.
 }
 \usage{
-clogit(formula, data, method=c("exact", "approximate"), na.action=getOption("na.action"), subset=NULL,control=coxph.control())
+clogit(formula, data, weights, subset, na.action,
+ method=c("exact", "approximate", "efron", "breslow"),
+ \dots)
 }
-%- maybe also `usage' for other objects documented here.
 \arguments{
   \item{formula}{Model formula}
   \item{data}{data frame }
-  \item{method}{correct or approximate conditonal likelihood?}
-  \item{na.action}{missing value handling}
-  \item{subset}{subset of records to use }
-  \item{control}{control values}
+  \item{weights}{optional, names the variable containing case weights}
+  \item{subset}{optional, subset the data}
+  \item{na.action}{optional na.action argument.  By default the
+    global option \code{na.action} is used.}
+  \item{method}{use the correct (exact) calculation in the conditional
+    likelihood or one of the approximations}
+  \item{\dots}{optional arguments, which will be passed to
+  \code{coxph.control}}
 }
 
 \value{
@@ -28,12 +32,55 @@ clogit(formula, data, method=c("exact", "approximate"), na.action=getOption("na.
   \code{"coxph"} object.
 }
 \author{Thomas Lumley}
+\details{
+  A stratified Cox model with time=constant, status of 1=case 0=control,
+  and using the exact partial likelihood has the same likelihood formula
+  as a conditional logistic regression.  The clogit routine creates
+  the necessary dummy variable of times (all 1) and then calls coxph.
 
+  The computation of the exact partial likelihood can be very slow,
+  however.  If a particular strata had say 10 events out of 20 subjects
+  we have to add up a denominator that involves all possible ways of
+  choosing 10 out of 20, which is 20!/(10! 10!) = 184756 terms. Gail et
+  al describe a fast recursion method, which largely ameleorates 
+  this; 
+  it was incorporated into version 2.36-11 of the survival package.
+  (Most of the time conditional logistic modeling 
+  is applied data with 1 case + k controls per set, however, 
+  which involves choosing 1 out of k and the computational issue
+  above does not arise.)
+  The 'appoximate' option maps to the
+  Breslow approximation for historical reasons.
 
+  It is not clear how case weights should be handled.  For instance if
+  there are two deaths in a strata, one with weight=1 and one with
+  weight=2, should the likelihood calculation consider all subsets of
+  size 2 or all subsets of size 3?
+  Consequently, case weights are ignored by the routine.
+  }
 \seealso{\code{\link{strata}},\code{\link{coxph}},\code{\link{glm}} }
 
 \examples{
-\dontrun{clogit(case~spontaneous+induced+strata(stratum),data=infert)}
+\dontrun{clogit(case ~ spontaneous + induced + strata(stratum), data=infert)}
+
+# A multinomial response recoded to use clogit
+#  The revised data set has one copy per possible outcome level, with new
+#  variable tocc = target occupation for this copy, and case = whether
+#  that is the actual outcome for each subject.
+# See the catspec package for more details.
+resp <- levels(logan$occupation)
+n <- nrow(logan)
+indx <- rep(1:n, length(resp))
+logan2 <- data.frame(logan[indx,],
+                     id = indx,
+                     tocc = factor(rep(resp, each=n)))
+logan2$case <- (logan2$occupation == logan2$tocc)
+clogit(case ~ tocc + tocc:education + strata(id), logan2)
 }
-\keyword{survival}%-- one or more ...
+\section{References}{
+  Michell H Gail, Jay H Lubin and Lawrence V Rubinstein.  Likelihood
+calculations for matched case-control studies and survival studies with
+tied death times.  Biometrika 68:703-707, 1980.
+}
+\keyword{survival}
 \keyword{models}

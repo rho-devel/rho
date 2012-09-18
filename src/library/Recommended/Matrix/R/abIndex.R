@@ -82,8 +82,8 @@ abIindTri <- function(n, upper = TRUE, diag = FALSE) {
 	tt <- if(diag) 2L else 3L
 	mk1s <- function(n,m) as.vector(rbind(1L, n:m))
 	mks1 <- function(n,m) as.vector(rbind(n:m, 1L))
-	rl <- .rle(len = if(upper) mk1s(1L,n1) else mks1(n1,1L),
-		   val = if(upper) mks1(n, tt) else mk1s(tt, n))
+	rl <- .rle(lengths= if(upper) mk1s(1L,n1) else mks1(n1,1L),
+		   values = if(upper) mks1(n, tt) else mk1s(tt, n))
 	frst <- if(diag) 1L else if(upper) n+1L else 2L
 	new("abIndex", kind = "rleDiff",
 	    rleD = new("rleDiff", first = frst, rle = rl))

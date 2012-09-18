@@ -1,6 +1,6 @@
 % File src/library/grid/man/grid.circle.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{grid.circle}
@@ -42,6 +42,10 @@ circleGrob(x=0.5, y=0.5, r=0.5, default.units="npc", name=NULL,
   whether it is interpreted as a width or as a height.  In such cases,
   the smaller of these two values will be the result.  To see the
   effect, type \code{grid.circle()} and adjust the size of the window.
+  
+  What happens for very small radii is device-dependent: the
+  circle may become invisible or be shown at a fixed minimum size.  As
+  from \R 2.15.0, circles of zero radius will not be plotted.
 }
 \section{Warning}{
   Negative values for the radius are silently converted to their

@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2011  The R Development Core Team
+ *  Copyright (C) 1997--2012  The R Core Team
  *  Copyright (C) 2003, 2004  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -40,7 +40,7 @@
 #endif
 
 #include <iostream>
-#include "CXXR/CachedString.h"
+
 #include "CXXR/Evaluator_Context.hpp"
 #include "CXXR/GCStackRoot.hpp"
 
@@ -520,6 +520,7 @@ void BuiltInFunction::initialize()
 
 {"as.vector",	do_asvector,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"paste",	do_paste,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"paste0",	do_paste,	1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.path",	do_filepath,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"format",	do_format,	0,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
 {"format.info",	do_formatinfo,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
@@ -688,6 +689,7 @@ void BuiltInFunction::initialize()
 {"closeWinProgressBar",do_closewinprogressbar,0,111,1,	{PP_FUNCALL, PREC_FN,	0}},
 {"setWinProgressBar",do_setwinprogressbar,0,11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"useInternet2",do_setInternet2,0,	211,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"mkjunction", do_mkjunction,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 #endif
 #if defined(__APPLE_CC__) && defined(HAVE_AQUA)
 {"wsbrowser",	do_wsbrowser,	0,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
@@ -741,6 +743,7 @@ void BuiltInFunction::initialize()
 {"sys.on.exit",	do_sys,		7,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"sys.parents",	do_sys,		8,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"sys.function",do_sys,		9,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
+{"traceback",	do_traceback,  	0,      11,     1,      {PP_FUNCALL, PREC_FN,   0}},
 {"browserText", do_sysbrowser,	1,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"browserCondition", do_sysbrowser,	2,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"browserSetDebug", do_sysbrowser,	3,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -955,7 +958,6 @@ void BuiltInFunction::initialize()
 {"Date2POSIXlt",do_D2POSIXlt,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"POSIXlt2Date",do_POSIXlt2D,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 
-#ifdef BYTECODE
 {"mkCode",     do_mkcode,       0,      11,     2,      {PP_FUNCALL, PREC_FN, 0}},
 {"bcClose",    do_bcclose,      0,      11,     3,      {PP_FUNCALL, PREC_FN, 0}},
 {"is.builtin.internal",    do_is_builtin_internal,      0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
@@ -968,7 +970,6 @@ void BuiltInFunction::initialize()
 {"getconst", do_getconst,       0,      11,     2,      {PP_FUNCALL, PREC_FN, 0}},
 {"enableJIT",    do_enablejit,  0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
 {"compilePKGS", do_compilepkgs, 0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
-#endif
 
 {"setNumMathThreads", do_setnumthreads,      0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
 {"setMaxNumMathThreads", do_setmaxnumthreads,      0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
@@ -1104,7 +1105,5 @@ void InitNames()
     /* NA_STRING */
     // CXXR: NA_STRING is initialised in String.cpp
     R_print.na_string = NA_STRING;
-#ifdef BYTECODE
     R_initialize_bcode();
-#endif
 }

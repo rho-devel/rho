@@ -1,7 +1,9 @@
 % File src/library/grDevices/man/dev.interactive.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{dev.interactive}
 \alias{dev.interactive}
@@ -28,7 +30,7 @@ deviceIsInteractive(name = NULL)
   The \code{X11} (Unix), \code{windows} (Windows) and \code{quartz}
   (Mac OS X, on-screen types only) are regarded as interactive, together
   with \code{JavaGD} (from the package of the same name) and
-  \code{CairoWin} and \code{CairoX11} (from package \pkg{Cairo}).
+  \code{CairoWin} and \code{CairoX11} (from package \CRANpkg{Cairo}).
   Packages can add their devices to the list by calling
   \code{deviceIsInteractive}.
 }

@@ -89,6 +89,8 @@
 \alias{Arith,numeric,ldiMatrix-method}
 \alias{Arith,ddiMatrix,numeric-method}
 \alias{Arith,ldiMatrix,numeric-method}
+\alias{-,ddiMatrix,missing-method}
+\alias{-,ldiMatrix,missing-method}
 
 \alias{all,ddiMatrix-method}
 \alias{all,ldiMatrix-method}
@@ -184,6 +186,7 @@
 \alias{Summary,ddiMatrix-method}
 \alias{Summary,ldiMatrix-method}
 %
+\alias{chol2inv,diagonalMatrix-method}
 \alias{t,diagonalMatrix-method}
 \alias{print,diagonalMatrix-method}
 \alias{show,diagonalMatrix-method}

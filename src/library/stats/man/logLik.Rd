@@ -1,7 +1,9 @@
 % File src/library/stats/man/logLik.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2011 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{logLik}
 \encoding{UTF-8}
@@ -30,8 +32,9 @@ logLik(object, \dots)
   function include: \code{"glm"}, \code{"lm"}, \code{"nls"} and
   \code{"Arima"}.  Packages contain methods for other classes, such as
   \code{"fitdistr"}, \code{"negbin"} and \code{"polr"} in package
-  \pkg{MASS}, \code{"multinom"} in package \pkg{nnet} and \code{"gls"},
-  \code{"gnls"} \code{"lme"} and others in package \pkg{nlme}.
+  \CRANpkg{MASS}, \code{"multinom"} in package \CRANpkg{nnet} and
+  \code{"gls"}, \code{"gnls"} \code{"lme"} and others in package
+  \CRANpkg{nlme}. 
 }
 %   \code{corStruct}, \code{lmList}, \code{lmeStruct}, \code{reStruct}, and
 %   \code{varFunc}.
@@ -65,7 +68,7 @@ logLik(object, \dots)
 }
 \seealso{
   \code{\link[nlme:logLik.lme]{logLik.gls}}, \code{\link[nlme]{logLik.lme}}, in
-  package \pkg{nlme}, etc.
+  package \CRANpkg{nlme}, etc.
 }
 \references{
   For \code{logLik.lm}:

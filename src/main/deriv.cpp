@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2011   The R Development Core Team.
+ *  Copyright (C) 1998-2011   The R Core Team.
  *  Copyright (C) 2004-5        The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -882,17 +882,18 @@ static SEXP HessAssign1(SEXP name, SEXP expr)
 
 static SEXP HessAssign2(SEXP name1, SEXP name2, SEXP expr)
 {
-    static Symbol* bracksym = Symbol::obtain("[");
-    static Symbol* hesssym = Symbol::obtain(".hessian");
-    static Symbol* assignsym = Symbol::obtain("<-");
-    GCStackRoot<> newname1(ScalarString(name1));
-    GCStackRoot<> newname2(ScalarString(name2));
-    GCStackRoot<> l5a(Rf_lang5(bracksym, hesssym,
-			       R_MissingArg, newname1, newname2));
-    GCStackRoot<> l5b(Rf_lang5(bracksym, hesssym,
-			       R_MissingArg, newname2, newname1));
-    GCStackRoot<> l3(Rf_lang3(assignsym, l5b, expr));
-    return Rf_lang3(assignsym, l5a, l3);
+    SEXP ans, newname1, newname2, tmp1, tmp2, tmp3;
+    PROTECT(newname1 = ScalarString(name1));
+    PROTECT(newname2 = ScalarString(name2));
+    /* this is overkill, but PR#14772 found an issue */
+    PROTECT(tmp1 = lang5(install("["), install(".hessian"), R_MissingArg,
+			 newname1, newname2));
+    PROTECT(tmp2 = lang5(install("["), install(".hessian"), R_MissingArg,
+			 newname2, newname1));
+    PROTECT(tmp3 = lang3(install("<-"), tmp2, expr));
+    ans = lang3(install("<-"), tmp1, tmp3);
+    UNPROTECT(5);
+    return ans;
 }
 
 /* attr(.value, "gradient") <- .grad */

@@ -1,6 +1,6 @@
 % File src/library/base/man/base-internal.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Development Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{base-internal}
@@ -28,16 +28,12 @@
 \alias{.POSIXlt}
 \alias{.difftime}
 \alias{.cache_class}
-%% moved from readRDS.Rd in 2.13.0
-% These were introduced in R 1.7.0, post version 2
-\alias{.readRDS}
-\alias{.saveRDS}
 \alias{.Firstlib_as_onLoad}
+\alias{.methodsNamespace} % created by the methods package ....
 
-
-\title{Internal Functions in Package \pkg{base}}
+\title{Internal Objects in Package \pkg{base}}
 \description{
-  Internal functions in the base package, which are only user-visible
+  Internal objects in the base package, which are only user-visible
   because of the special nature of the base namespace.
 }
 \usage{
@@ -76,9 +72,6 @@ lazyLoadDBfetch(key, file, compressed, hook)
 .difftime(xx, units)
 
 .cache_class(class, extends)
-
-.saveRDS(\dots)
-.readRDS(\dots)
 
 .find.package(\dots)
 .path.package(\dots)
@@ -192,12 +185,9 @@ lazyLoadDBfetch(key, file, compressed, hook)
   S3 method dispatch.  With \code{NULL} second argument, returns the
   cached inheritance, for diagnostic use.
 
-  \code{.readRDS}, \code{.saveRDS}, \code{.find.package} and
-  \code{.path.package} are internal-only versions (and the only versions
-  available prior to \R 2.13.0) of \code{\link{.readRDS}},
-  \code{\link{.saveRDS}}, \code{\link{.find.package}} and
-  \code{\link{.path.package}}.  \code{.readRDS} and \code{.saveRDS} were
-  deprecated in \R 2.14.0.
+  \code{.find.package} and \code{.path.package} are internal-only
+  versions (and the only versions available prior to \R 2.13.0) of
+  \code{\link{.find.package}} and \code{\link{.path.package}}.
 }
 \value{
   \code{.getRequiredPackages} and \code{.getRequiredPackages2}

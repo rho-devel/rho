@@ -39,7 +39,7 @@ tre_regncomp(regex_t *preg, const char *regex, size_t n, int cflags)
   if (TRE_MB_CUR_MAX == 1)
 #endif /* TRE_MULTIBYTE */
     {
-      unsigned int i;
+      size_t i;
       const unsigned char *str = (const unsigned char *)regex;
       tre_char_t *wstr = wregex;
 
@@ -50,7 +50,7 @@ tre_regncomp(regex_t *preg, const char *regex, size_t n, int cflags)
 #if TRE_MULTIBYTE
   else
     {
-      int consumed;
+      size_t consumed;
       tre_char_t *wcptr = wregex;
 #ifdef HAVE_MBSTATE_T
       mbstate_t state;
@@ -71,11 +71,11 @@ tre_regncomp(regex_t *preg, const char *regex, size_t n, int cflags)
 		  return REG_BADPAT;
 		}
 	      break;
-	    case -1:
+	    case (size_t)-1:
 	      DPRINT(("mbrtowc: error %d: %s.\n", errno, strerror(errno)));
 	      xfree(wregex);
 	      return REG_BADPAT;
-	    case -2:
+	    case (size_t)-2:
 	      /* The last character wasn't complete.  Let's not call it a
 		 fatal error. */
 	      consumed = n;
@@ -116,10 +116,10 @@ tre_regncompb(regex_t *preg, const char *regex, size_t n, int cflags)
   for (i = 0; i < n; i++)
     wregex[i] = (tre_char_t) ((unsigned char) regex[i]);
 
-  ret = tre_compile(preg, wregex, n, cflags);
+  ret = tre_compile(preg, wregex, n, cflags | REG_USEBYTES);
   xfree(wregex);
 #else /* !TRE_WCHAR */
-  ret = tre_compile(preg, (const tre_char_t *)regex, n, cflags);
+  ret = tre_compile(preg, (const tre_char_t *)regex, n, cflags | REG_USEBYTES);
 #endif /* !TRE_WCHAR */
 
   return ret;
@@ -149,7 +149,7 @@ tre_regcompb(regex_t *preg, const char *regex, int cflags)
   for (i = 0; i < n; i++) *(wstr++) = *(str++);
   wlen = n;
   wregex[wlen] = L'\0';
-  ret = tre_compile(preg, wregex, wlen, cflags);
+  ret = tre_compile(preg, wregex, wlen, cflags | REG_USEBYTES);
   xfree(wregex);
   return ret;
 }

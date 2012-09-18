@@ -22,10 +22,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.14.0\n"
+"Project-Id-Version: R 2.15.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-10-23 14:54\n"
-"PO-Revision-Date: 2011-10-23 14:54\n"
+"POT-Creation-Date: 2012-06-07 15:52\n"
+"PO-Revision-Date: 2012-06-07 15:52\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "MIME-Version: 1.0\n"
@@ -45,12 +45,6 @@ msgstr "See help(“Defunct”) and help(“%s-defunct”)."
 
 msgid "See help(\"Defunct\")"
 msgstr "See help(“Defunct”)"
-
-msgid "'symbol.C' is not needed: please remove it"
-msgstr "‘symbol.C’ is not needed: please remove it"
-
-msgid "'symbol.For' is not needed: please remove it"
-msgstr "‘symbol.For’ is not needed: please remove it"
 
 msgid "'%s' is deprecated."
 msgstr "‘%s’ is deprecated."
@@ -175,6 +169,9 @@ msgstr "autoloader did not find ‘%s’ in ‘%s’"
 msgid "invalid argument values in 'backsolve'"
 msgstr "invalid argument values in ‘backsolve’"
 
+msgid "invalid value of ncol(x)"
+msgstr "invalid value of ncol(x)"
+
 msgid "singular matrix in 'backsolve'. First zero in diagonal [%d]"
 msgstr "singular matrix in 'backsolve'. First zero in diagonal [%d]"
 
@@ -189,6 +186,9 @@ msgstr "non-square matrix in ‘chol’"
 
 msgid "non-matrix argument to 'chol'"
 msgstr "non-matrix argument to ‘chol’"
+
+msgid "invalid nrow(x)"
+msgstr "invalid nrow(x)"
 
 msgid "matrix not positive definite"
 msgstr "matrix not positive definite"
@@ -258,6 +258,9 @@ msgstr "‘breaks’ are not unique"
 
 msgid "labels/breaks length conflict"
 msgstr "labels/breaks length conflict"
+
+msgid "invalid value of length(x)"
+msgstr "invalid value of length(x)"
 
 msgid "invalid 'row.names' length"
 msgstr "invalid ‘row.names’ length"
@@ -711,6 +714,12 @@ msgstr "‘vec’ contains NAs"
 msgid "'vec' must be sorted non-decreasingly"
 msgstr "‘vec’ must be sorted non-decreasingly"
 
+msgid "invalid length(x)"
+msgstr "invalid length(x)"
+
+msgid "invalid length(vec)"
+msgstr "invalid length(vec)"
+
 msgid "using the first element of 'value' of type expression"
 msgstr "using the first element of ‘value’ of type expression"
 
@@ -867,8 +876,8 @@ msgstr "package %s does not have a NAMESPACE and should be re-installed"
 msgid "package %s already present in search()"
 msgstr "package %s already present in search()"
 
-msgid "'DESCRIPTION' has 'Encoding' field and re-encoding is not possible"
-msgstr "‘DESCRIPTION’ has ‘Encoding’ field and re-encoding is not possible"
+msgid "'DESCRIPTION' has an 'Encoding' field and re-encoding is not possible"
+msgstr "‘DESCRIPTION’ has an ‘Encoding’ field and re-encoding is not possible"
 
 msgid "%sPackages in library %s:"
 msgstr "%sPackages in library %s:"
@@ -982,6 +991,9 @@ msgstr "‘file’ must be specified"
 msgid "Use of save versions prior to 2 is deprecated"
 msgstr "Use of save versions prior to 2 is deprecated"
 
+msgid "nothing specified to be save()d"
+msgstr "nothing specified to be save()d"
+
 msgid "'file' must be non-empty string"
 msgstr "‘file’ must be non-empty string"
 
@@ -1059,6 +1071,9 @@ msgstr "‘trim’ must be numeric of length one"
 
 msgid "trimmed means are not defined for complex data"
 msgstr "trimmed means are not defined for complex data"
+
+msgid "'by' must specify uniquely valid column(s)"
+msgstr "‘by’ must specify uniquely valid column(s)"
 
 msgid "'by' must match numbers of columns"
 msgstr "‘by’ must match numbers of columns"
@@ -1147,6 +1162,9 @@ msgstr ""
 msgid "in package %s classes %s were specified for export but not defined"
 msgstr "in package %s classes %s were specified for export but not defined"
 
+msgid "No function found corresponding to methods exports from %s for: %s"
+msgstr "No function found corresponding to methods exports from %s for: %s"
+
 msgid "in %s methods for export not found: %s"
 msgstr "in %s methods for export not found: %s"
 
@@ -1195,8 +1213,18 @@ msgstr "invalid import target"
 msgid "found methods to import for function %s but not the generic itself"
 msgstr "found methods to import for function %s but not the generic itself"
 
+msgid "No methods found in \"%s\" for requests: %s"
+msgstr "No methods found in “%s” for requests: %s"
+
 msgid "requested methods not found in environment/package %s: %s"
 msgstr "requested methods not found in environment/package %s: %s"
+
+msgid ""
+"No generic function found corresponding to requested imported methods for "
+"\"%s\" from package \"%s\" (malformed exports?)"
+msgstr ""
+"No generic function found corresponding to requested imported methods for "
+"“%s” from package “%s” (malformed exports?)"
 
 msgid "cannot add to exports of a sealed namespace"
 msgstr "cannot add to exports of a sealed namespace"
@@ -1270,8 +1298,20 @@ msgstr "‘u5.bias’ must be non-negative numeric"
 msgid "'eps.correct' must be 0, 1, or 2"
 msgstr "‘eps.correct’ must be 0, 1, or 2"
 
+msgid "invalid ncol(x)"
+msgstr "invalid ncol(x)"
+
 msgid "first argument must be a QR decomposition"
 msgstr "first argument must be a QR decomposition"
+
+msgid "invalid nrow(qr$qr)"
+msgstr "invalid nrow(qr$qr)"
+
+msgid "invalid ncol(qr$qr)"
+msgstr "invalid ncol(qr$qr)"
+
+msgid "invalid ncol(y)"
+msgstr "invalid ncol(y)"
 
 msgid "'qr' and 'y' must have the same number of rows"
 msgstr "‘qr’ and ‘y’ must have the same number of rows"
@@ -1281,6 +1321,9 @@ msgstr "exact singularity in ‘qr.coef’"
 
 msgid "argument is not a QR decomposition"
 msgstr "argument is not a QR decomposition"
+
+msgid "invalid NCOL(y)"
+msgstr "invalid NCOL(y)"
 
 msgid "not implemented for complex 'qr'"
 msgstr "not implemented for complex ‘qr’"
@@ -1293,6 +1336,9 @@ msgstr "‘k’ is too large"
 
 msgid "need larger value of 'ncol' as pivoting occurred"
 msgstr "need larger value of ‘ncol’ as pivoting occurred"
+
+msgid "invalid NCOL(R)"
+msgstr "invalid NCOL(R)"
 
 msgid "'x' must be an atomic vector"
 msgstr "‘x’ must be an atomic vector"
@@ -1326,6 +1372,9 @@ msgstr "argument ‘length.out’ must be of length 1"
 
 msgid "first element used of 'length.out' argument"
 msgstr "first element used of ‘length.out’ argument"
+
+msgid "extra argument(s) %s will be disregarded"
+msgstr "extra argument(s) %s will be disregarded"
 
 msgid "invalid (to - from)/by in seq(.)"
 msgstr "invalid (to - from)/by in seq(.)"
@@ -1512,6 +1561,12 @@ msgstr "‘x’ is not an array"
 msgid "'bin' must be numeric or a factor"
 msgstr "‘bin’ must be numeric or a factor"
 
+msgid "invalid value of length(bin)"
+msgstr "invalid value of length(bin)"
+
+msgid "invalid value of nbins"
+msgstr "invalid value of nbins"
+
 msgid "arguments must have same length"
 msgstr "arguments must have same length"
 
@@ -1603,6 +1658,15 @@ msgstr "‘stderr’ must be of length 1"
 msgid "'which' was not found on this platform"
 msgstr "‘which’ was not found on this platform"
 
+msgid "fewer 'from' files than 'to' files"
+msgstr "fewer ‘from’ files than ‘to’ files"
+
+msgid "link '%s' already exists"
+msgstr "link ‘%s’ already exists"
+
+msgid "failed to create directory for link '%s"
+msgstr "failed to create directory for link '%s"
+
 msgid "'show.output.on.console' must be TRUE or FALSE"
 msgstr "‘show.output.on.console’ must be TRUE or FALSE"
 
@@ -1672,6 +1736,19 @@ msgid "object %s not found"
 msgid_plural "objects %s not found"
 msgstr[0] "object %s not found"
 msgstr[1] "objects %s not found"
+
+msgid ""
+"Function found when exporting methods from the namespace %s which is not S4 "
+"generic: %s"
+msgid_plural ""
+"Functions found when exporting methods from the namespace %s which are not "
+"S4 generic: %s"
+msgstr[0] ""
+"Function found when exporting methods from the namespace %s which is not S4 "
+"generic: %s"
+msgstr[1] ""
+"Functions found when exporting methods from the namespace %s which are not "
+"S4 generic: %s"
 
 msgid "class %s is not exported by 'namespace:%s'"
 msgid_plural "classes %s are not exported by 'namespace:%s'"

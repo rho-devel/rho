@@ -11,13 +11,12 @@
   \eqn{x} and \eqn{y} coordinates of the points, respectively.
 }
 \source{
-  Sample data set accompanying the reference below, obtained from
-  \url{http://www.stat.ucla.edu/journals/jss/v01/i04/data/}.
+  Sample data set accompanying the reference below.
 }
 \references{
-  Anja Struyf, Mia Hubert & Peter J. Rousseeuw (1996):
+  Anja Struyf, Mia Hubert & Peter J. Rousseeuw (1996)
   Clustering in an Object-Oriented Environment.
-  \emph{Journal of Statistical Software}, \bold{1}.
-  \url{http://www.stat.ucla.edu/journals/jss/}
+  \emph{Journal of Statistical Software} \bold{1}.
+  \url{http://www.jstatsoft.org/v01/i04}
 }
 \keyword{datasets}

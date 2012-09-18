@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.13.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-10-12 18:01\n"
+"POT-Creation-Date: 2012-06-07 15:52\n"
 "PO-Revision-Date: 2011-04-02 \n"
 "Last-Translator: Murat Alkan <muratalk@gmail.com>\n"
 "Language-Team: Turkish <muratalk@gmail.com>\n"
@@ -41,6 +41,13 @@ msgstr ""
 
 msgid "need at least 2 periods to compute seasonal start values."
 msgstr "mevsimsel başlangıç değerlerini hesaplamak için en az 2 dönem gerekli"
+
+#, fuzzy
+msgid "invalid length(x)"
+msgstr "geçersiz 'x'"
+
+msgid "optimization difficulties: %s"
+msgstr ""
 
 msgid "optimization failure"
 msgstr ""
@@ -269,6 +276,10 @@ msgstr "'vec' NAs içeriyor"
 msgid "'vec' must be sorted non-decreasingly"
 msgstr "'vec' azalmayan şekilde sıralanmalı"
 
+#, fuzzy
+msgid "invalid length(vec)"
+msgstr "geçersiz argüman 'c'"
+
 msgid "'order.max' must be >= 1"
 msgstr "'order.max' >= 1 olmalı"
 
@@ -462,6 +473,10 @@ msgstr "'d' içinde NA değerlerine izin verilmiyor"
 
 msgid "distances must be result of 'dist' or a square matrix"
 msgstr ""
+
+#, fuzzy
+msgid "invalid value of 'n'"
+msgstr "geçersiz argüman 'n'"
 
 msgid "'k' must be in {1, 2, ..  n - 1}"
 msgstr "'k' {1, 2, ..  n - 1} içinde olmalı"
@@ -998,6 +1013,10 @@ msgstr "negatif sıklığa izin verilmiyor"
 msgid "number of offsets is %d should equal %d (number of observations)"
 msgstr ""
 
+msgid ""
+"fitting to calculate the null deviance did not converge -- increase maxit?"
+msgstr ""
+
 msgid "value of 'epsilon' must be > 0"
 msgstr "'epsilon'un değeri > 0 olmalı"
 
@@ -1102,6 +1121,9 @@ msgstr ""
 msgid "invalid dissimilarities"
 msgstr ""
 
+msgid "size cannot be NA nor exceed 65536"
+msgstr ""
+
 msgid "must have n >= 2 objects to cluster"
 msgstr ""
 
@@ -1200,6 +1222,14 @@ msgstr ""
 msgid "iterations"
 msgstr "ötelemeler"
 
+#, fuzzy
+msgid "invalid nrow(x)"
+msgstr "geçersiz 'x'"
+
+#, fuzzy
+msgid "invalid ncol(x)"
+msgstr "geçersiz 'x'"
+
 msgid "'centers' must be a number or a matrix"
 msgstr "'centers' bir matris veya bir sayı olmalı"
 
@@ -1242,6 +1272,9 @@ msgid ""
 "For density estimation use density()"
 msgstr ""
 
+msgid "invalid value of length(x)"
+msgstr ""
+
 msgid "'k' is not an integer"
 msgstr "'k' bir tamsayı değil"
 
@@ -1259,12 +1292,6 @@ msgstr ""
 
 msgid "incompatible dimensions"
 msgstr "uyumsuz boyutlar"
-
-msgid "extra arguments"
-msgstr "ekstra argümanlar"
-
-msgid "are just disregarded."
-msgstr ""
 
 msgid "singular fit encountered"
 msgstr ""
@@ -1330,6 +1357,9 @@ msgstr ""
 msgid "the 'se.fit' argument is not yet implemented for \"mlm\" objects"
 msgstr ""
 
+msgid "invalid model QR matrix"
+msgstr ""
+
 msgid "non-NA residual length does not match cases used in fitting"
 msgstr ""
 
@@ -1347,6 +1377,10 @@ msgstr ""
 
 msgid "invalid 'control' argument"
 msgstr "geçersiz 'control' argümanı"
+
+#, fuzzy
+msgid "invalid NCOL(X)"
+msgstr "geçersiz 'x'"
 
 msgid "only 1-4 predictors are allowed"
 msgstr ""
@@ -1972,6 +2006,10 @@ msgid ""
 "times"
 msgstr ""
 
+#, fuzzy
+msgid "invalid value of 'k'"
+msgstr "geçersiz argüman 'n'"
+
 msgid "'k' must be positive"
 msgstr "'k' pozitif olmalı"
 
@@ -2023,6 +2061,10 @@ msgstr "bütün sıklıkların negatif olmaması tavsiye edilir"
 
 msgid "some weights should be positive"
 msgstr "bazı sıklıkların pozitif olması tavsiye edilir"
+
+#, fuzzy
+msgid "'tol' must be strictly positive and finite"
+msgstr "'ratio' tek bir pozitif tamsayı olmalı"
 
 msgid "need at least four unique 'x' values"
 msgstr "en az dört eşsiz 'x' değeri gerekli"
@@ -2399,3 +2441,6 @@ msgid "parameter %s does not occur in the model formula"
 msgid_plural "parameters %s do not occur in the model formula"
 msgstr[0] ""
 msgstr[1] ""
+
+#~ msgid "extra arguments"
+#~ msgstr "ekstra argümanlar"

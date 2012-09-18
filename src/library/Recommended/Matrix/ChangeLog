@@ -1,3 +1,47 @@
+2012-03-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (sparseInt.r): recursion free (which does not help much).
+
+2012-03-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dtCMatrix.c (dtCMatrix_sparse_solve): no longer use Alloca()
+	here.
+	* tests/factorizing.R (checkSchur): check against segfault example.
+
+	* R/Matrix.R (chol2inv(<diagonalMatrix>)) new method.
+
+2012-03-01  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (sparse.model.matrix, model.spmatrix): add 'verbose'
+	argument in order to show to the user what's going on.
+	* man/sparse.model.matrix.Rd: ditto
+
+2012-02-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R (A.M.n, A.n.M): <sparse> o <numeric> now correct, newly
+	via sparseVector.
+
+2012-02-25  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-5, CRAN-released: 2012-...., r...
+	* src/chm_common.c (chm_factor_to_SEXP): in case of failure,
+	* src/dsCMatrix.c (internal_chm_factor): ensure memory cleanup;
+	memory leak reported by Kasper Kristensen at dtu.dk.
+
+2012-02-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-4, CRAN-released: 2012-02-21, r2765
+	* R/Ops.R: Fix "-" method for diagonalMatrix types.
+
+2012-01-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Suggests): MASS, as we use a data set in a vignette
+
+2011-12-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-3, CRAN-released: 2012-01-12, r2749
+	* R/diagMatrix.R (.bdiag): now works correctly when all blocks are "lMatrix"
+
 2011-11-02  Martin Maechler  <maechler@stat.math.ethz.ch>
 
 	* R/zzz.R (.onLoad): when R version >= 2.15.0, no longer
@@ -5,7 +49,7 @@
 
 2011-10-30  Martin Maechler  <maechler@stat.math.ethz.ch>
 
-	* DESCRIPTION (Version): 1.0-2, CRAN-released: ..., r...
+	* DESCRIPTION (Version): 1.0-2, CRAN-released: 2011-11-19, r2739
 
 	* tests/other-pkgs.R: print more, don't run SparseM on Solaris for now.
 	* tests/Simple.R: encoding warning should not be promoted to error.

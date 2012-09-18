@@ -387,7 +387,7 @@ namespace CXXR {
 	 * raw_indices .  All the elements of this ListVector are
 	 * NULL, except where the corresponding element of \a
 	 * raw_indices was mapped into a supplementary vector element,
-	 * in which case the ListVector element will be a CachedString
+	 * in which case the ListVector element will be a String
 	 * giving the name of that supplementary vector element.
 	 *
 	 * @note The use.names attribute should be regarded as private

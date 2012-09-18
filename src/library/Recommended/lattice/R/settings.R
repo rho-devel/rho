@@ -448,12 +448,182 @@ lset <- function(theme = col.whitebg())
 }
 
 
-
-
-
-
-
 show.settings <- function(x = NULL)
+{
+    old.settings <- trellis.par.get()
+    on.exit(trellis.par.set(old.settings))
+    if (!is.null(x)) trellis.par.set(x)
+    theme <- trellis.par.get()
+    d <- c("superpose.symbol",
+           "superpose.line",
+           "strip.background",
+           "strip.shingle",
+           "dot.[symbol, line]",
+           "box.[dot, rectangle, umbrella]",
+           "add.[line, text]",
+           "reference.line",
+           "plot.[symbol, line]",
+           "plot.shingle[plot.polygon]",
+           "histogram[plot.polygon]",
+           "barchart[plot.polygon]",
+           "superpose.polygon",
+           "regions")
+    d <- factor(d, levels = d)
+
+    ## We only draw a border box for some panels.  To do this, we make
+    ## axis.line globally transparent, and then draw the border on a
+    ## case-by-case basis.  But to do that, we need to store the
+    ## original axis.line settings.
+    par.box <- trellis.par.get("axis.line")
+    panel.box <- function()
+    {
+        panel.fill(col = "transparent",
+                   border = adjustcolor(par.box$col, par.box$alpha),
+                   lty = par.box$lty,
+                   lwd = par.box$lwd)
+    }
+    
+    xyplot(d ~ d | d,
+           prepanel = function(x, y) {
+               list(ylim = c(0, 1),
+                    xlim = as.character(x),
+                    xat = 1)
+           },
+           panel = function(x, y) {
+               cpl <- current.panel.limits() # ylim = c(0, 1)
+               rsx <- function(u) # (ReScaleX) map from [0,1]
+               {
+                   cpl$xlim[1] + u * diff(cpl$xlim)
+               }
+               switch(as.character(x),
+                      "superpose.symbol" = {
+                          superpose.symbol <- trellis.par.get("superpose.symbol")
+                          len <- max(2, sapply(superpose.symbol, length))
+                          panel.superpose(x = rep(rsx(ppoints(len)), len),
+                                          y = rep(ppoints(len), each = len),
+                                          groups = gl(len, len),
+                                          subscripts = 1:(len*len))
+                      },
+                      "superpose.line" = {
+                          superpose.line <- trellis.par.get("superpose.line")
+                          len <- max(2, sapply(superpose.line, length))
+                          panel.superpose(x = rep(rsx(c(0,1)), len),
+                                          y = rep(ppoints(1:len), each = 2),
+                                          groups = gl(len, 2),
+                                          subscripts = 1:(2*len),
+                                          type = "l")
+                      },
+                      "strip.background" = {
+                          strip.background <- trellis.par.get("strip.background")
+                          strip.border <- trellis.par.get("strip.border")
+                          len <-
+                              max(sapply(strip.background, length),
+                                  sapply(strip.border, length))
+                          panel.rect(y = ppoints(len), height = 0.5 / len,
+                                     xleft = cpl$xlim[1], xright = cpl$xlim[2],
+                                     col = adjustcolor(strip.background$col, strip.background$alpha),
+                                     border = strip.border$col,
+                                     lty = strip.border$lty,
+                                     lwd = strip.border$lwd)
+                      },
+                      "strip.shingle" = {
+                          strip.shingle <- trellis.par.get("strip.shingle")
+                          len <- max(sapply(strip.shingle, length))
+                          panel.rect(y = ppoints(len), height = 0.5 / len,
+                                     xleft = cpl$xlim[1], xright = cpl$xlim[2],
+                                     col = adjustcolor(strip.shingle$col, strip.shingle$alpha),
+                                     border = "transparent")
+                      },
+                      "dot.[symbol, line]" = {
+                          panel.dotplot(x = rsx(ppoints(5, a = 0)), y = ppoints(5, a = 0))
+                          panel.box()
+                      },
+                      "box.[dot, rectangle, umbrella]" = {
+                          panel.bwplot(x = rsx(ppoints(5)), y = rep(0.5, 5), box.width = 0.15)
+                          panel.box()
+                      },
+                      "add.[line, text]" = {
+                          add.line <- trellis.par.get("add.line")
+                          xx <- seq(0.1, 0.9, length.out = 50)
+                          yy <- 0.5 + .45 * sin(0.1 + 11 * xx)
+                          panel.lines(x = rsx(xx), y = yy,
+                                      col = add.line$col, lty = add.line$lty, lwd = add.line$lwd)
+                          panel.text(labels = c("Hello", "World"),
+                                     x = rsx(c(.25, .75)), y = c(0.25, 0.75))
+                          panel.box()
+                      },
+                      "reference.line" = {
+                          panel.grid()
+                          panel.box()
+                      },
+                      "plot.[symbol, line]" = {
+                          ## plot.symbol <- trellis.par.get("plot.symbol")
+                          ## plot.line <- trellis.par.get("plot.line")
+                          ## x <- seq(.1, .9, length.out = 20)
+                          ## y <- .9 * sin(.1+11*x)
+                          xx <- seq(0.1, 0.9, length.out = 20)
+                          yy <- 0.5 + .4 * sin(0.1 + 11 * xx)
+                          panel.xyplot(x = rsx(xx + 0.05), y = yy + 0.01, type = "l")
+                          panel.xyplot(x = rsx(xx - 0.05), y = yy - 0.01)
+                          panel.box()
+                      },
+                      "plot.shingle[plot.polygon]" = {
+                          xx <- seq(0.1, 0.4, length.out = 5)
+                          yy <- ppoints(5)
+                          panel.barchart(x = rsx(xx + 0.5), y = yy, origin = rsx(xx),
+                                         reference = FALSE, horizontal = TRUE,
+                                         box.width = 1/10)
+                          panel.box()
+                      },
+                      "histogram[plot.polygon]" = {
+                          xx <- ppoints(7, 0)
+                          panel.barchart(x = rsx(xx), y = (2:8)/9, horizontal = FALSE,
+                                         origin = 1/18, box.width = diff(rsx(xx))[1],
+                                         reference = FALSE)
+                          panel.box()
+                      },
+                      "barchart[plot.polygon]" = {
+                          xx <- ppoints(6)
+                          panel.barchart(x = rev(rsx(xx)), y = xx,
+                                         origin = cpl$xlim[1], box.width = 1/12)
+                          panel.box()
+                      },
+                      "superpose.polygon" = {
+                          superpose.polygon <- trellis.par.get("superpose.polygon")
+                          len <- max(2, sapply(superpose.polygon, length))
+                          xx <- ppoints(len)
+                          panel.barchart(x = rsx(rev(xx)), y = rep(0.5, len),
+                                         groups = gl(len, 1),
+                                         subscripts = seq_len(len),
+                                         stack = FALSE,
+                                         box.width = 0.9)
+                          panel.box()
+                      },
+                      "regions" = {
+                          panel.levelplot(x = do.breaks(cpl$xlim, 98),
+                                          y = rep(0.5, 99),
+                                          z = 1:99 + 0.5,
+                                          at = 1:100,
+                                          region = TRUE,
+                                          subscripts = 1:99)
+                          panel.box()
+                      })
+           },
+           ## layout = c(4, 4),
+           par.settings = modifyList(theme,
+                                     list(axis.line = list(col = "transparent"),
+                                          clip = list(panel = "off"))),
+           as.table = TRUE, strip = FALSE, xlab = "", ylab = "",
+           between = list(x = 1, y = 0.5),
+           scales = list(relation = "free", 
+                         y = list(draw = FALSE, axs = "i"),
+                         x = list(tck = 0, axs = "r")))
+}
+
+
+
+
+show.settings.old <- function(x = NULL)
 {
     old.settings <- trellis.par.get()
     on.exit(trellis.par.set(old.settings))

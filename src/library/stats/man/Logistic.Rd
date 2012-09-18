@@ -1,6 +1,6 @@
 % File src/library/stats/man/Logistic.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2007 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Logistic}
@@ -66,7 +66,7 @@ rlogis(n, location = 0, scale = 1)
   \emph{sigmoid function} in contexts such as neural networks.
 }
 \source{
-  \code{[dpr]logis} are calculated directly from the definitions.
+  \code{[dpq]logis} are calculated directly from the definitions.
 
   \code{rlogis} uses inversion.
 }

@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-11 The R Development Core Team.
+ *  Copyright (C) 2001-11 The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -449,6 +449,9 @@ double GEStrWidth(const char *str, cetype_t enc,
 		  const pGEcontext gc, pGEDevDesc dd);
 double GEStrHeight(const char *str, cetype_t enc,
 		  const pGEcontext gc, pGEDevDesc dd);
+void GEStrMetric(const char *str, cetype_t enc, const pGEcontext gc,
+                 double *ascent, double *descent, double *width,
+                 pGEDevDesc dd);
 int GEstring_to_pch(SEXP pch);
 
 /*-------------------------------------------------------------------
@@ -487,6 +490,9 @@ double GEExpressionWidth(SEXP expr,
 			 const pGEcontext gc, pGEDevDesc dd);
 double GEExpressionHeight(SEXP expr,
 			  const pGEcontext gc, pGEDevDesc dd);
+void GEExpressionMetric(SEXP expr, const pGEcontext gc,
+                        double *ascent, double *descent, double *width,
+                        pGEDevDesc dd);
 void GEMathText(double x, double y, SEXP expr,
 		double xc, double yc, double rot,
 		const pGEcontext gc, pGEDevDesc dd);
@@ -534,10 +540,10 @@ void GEonExit(void);
 void GEnullDevice(void);
 
 
-// From ../../main/plot.c, used by ../../library/grid/src/grid.c :
+/* From ../../main/plot.c, used by ../../library/grid/src/grid.c */
 #define CreateAtVector		Rf_CreateAtVector
 SEXP CreateAtVector(double*, double*, int, Rboolean);
-// From ../../main/graphics.c, used by ../../library/grDevices/src/axis_scales.c :
+/* From ../../main/graphics.c, used by ../../library/grDevices/src/axis_scales.c */
 #define GAxisPars 		Rf_GAxisPars
 void GAxisPars(double *min, double *max, int *n, Rboolean log, int axis);
 

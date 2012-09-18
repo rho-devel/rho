@@ -38,10 +38,10 @@
  */
 
 #include "CXXR/DotInternal.h"
+
 #include "Internal.h"
 
 #include "CXXR/BuiltInFunction.h"
-#include "CXXR/CachedString.h"
 #include "CXXR/Expression.h"
 #include "CXXR/errors.h"
 
@@ -92,10 +92,10 @@ SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
 	Rf_errorcall(call, _("invalid .Internal() argument"));
     Symbol* funsym = dynamic_cast<Symbol*>(innercall->car());
     if (!funsym)
-	Rf_errorcall(call, _("invalid internal function"));
+	Rf_errorcall(call, _("invalid .Internal() argument"));
     BuiltInFunction* func = DotInternalTable::get(funsym);
     if (!func)
-	Rf_errorcall(call, _("no internal function \"%s\""),
+	Rf_errorcall(call, _("there is no .Internal function \"%s\""),
 		     funsym->name()->c_str());
     ArgList al(innercall->tail(), ArgList::RAW);
     return func->apply(&al, envir, innercall);

@@ -154,7 +154,7 @@ void usersplit(int n,    double *y[],     FLOAT *x,     int nclass,
 **    use of xpred.rpart for user-written split routines).
 */
 double usersplit_pred(double *y, double *yhat) {
-    y=y;
+    /* y=y; pointless */
     return(0.0);
     }
 

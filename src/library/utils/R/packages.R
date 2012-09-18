@@ -241,7 +241,7 @@ function(db)
     ## Now find the recursive reverse dependencies of these and the
     ## packages missing from the db.
     depends <-
-        tools:::.package_dependencies(db1$Package[ind], db = db1,
+        tools:::package_dependencies(db1$Package[ind], db = db1,
                                       reverse = TRUE, recursive = TRUE)
     depends <- unique(unlist(depends))
     ind[match(depends, db1$Package, nomatch = 0L)] <- TRUE
@@ -249,6 +249,22 @@ function(db)
     ## And drop these from the db.
     db[!ind, , drop = FALSE]
 }
+
+available_packages_filters_db$CRAN <-
+function(db)
+{
+    packages <- db[, "Package"]
+    dups <- packages[duplicated(packages)]
+    drop <- integer()
+    CRAN <- getOption("repos")["CRAN"]
+    for(d in dups) {
+        pos <- which(packages == d)
+        drop <- c(drop, pos[substring(db[pos, "Repository"], 1,
+                                      nchar(CRAN)) != CRAN])
+    }
+    if(length(drop)) db[-drop, , drop = FALSE] else db
+}
+
 
 ## unexported helper function
 simplifyRepos <- function(repos, type)
@@ -307,6 +323,21 @@ update.packages <- function(lib.loc = NULL, repos = getOption("repos"),
 	oldPkgs <- old.packages(lib.loc = lib.loc,
 				contriburl = contriburl, method = method,
 				available = available, checkBuilt = checkBuilt)
+	## prune package versions which are invisible to require()
+	if(!is.null(oldPkgs)) {
+	    pkg <- 0L
+	    while(pkg < nrow(oldPkgs)) {
+		pkg <- pkg + 1L
+		if(find.package(oldPkgs[pkg], lib.loc = lib.loc) !=
+		   find.package(oldPkgs[pkg], lib.loc = oldPkgs[pkg,2])) {
+		    warning(sprintf("package '%s' in library '%s' will not be updated",
+				    oldPkgs[pkg], oldPkgs[pkg, 2]),
+			    call. = FALSE, immediate. = TRUE)
+		    oldPkgs <- oldPkgs[-pkg, , drop = FALSE]
+		    pkg <- pkg - 1L
+		}
+	    }
+	}
 	if(is.null(oldPkgs))
 	    return(invisible())
     } else if (!(is.matrix(oldPkgs) && is.character(oldPkgs)))
@@ -458,19 +489,19 @@ new.packages <- function(lib.loc = NULL, repos = getOption("repos"),
 
 
 ## Read packages' Description and aggregate 'fields' into a character matrix
-## NB: this does not handle encodings, so only suitable for
-## ASCII-only fields.
+## NB: this does not handle encodings, so only suitable for ASCII-only fields.
 .readPkgDesc <- function(lib, fields, pkgs = list.files(lib))
 {
     ## to be used in installed.packages() and similar
-    ## FIXME: this is vulnerable to installs going on in parallel
     ## As from 2.13.0 only look at metadata.
     ret <- matrix(NA_character_, length(pkgs), 2L+length(fields))
     for(i in seq_along(pkgs)) {
         pkgpath <- file.path(lib, pkgs[i])
         if(file.access(pkgpath, 5L)) next
         if (file.exists(file <- file.path(pkgpath, "Meta", "package.rds"))) {
-            md <- readRDS(file)
+            ## this is vulnerable to installs going on in parallel
+            md <- try(readRDS(file))
+            if(inherits(md, "try-error")) next
             desc <- md$DESCRIPTION[fields]
             if (!length(desc)) {
                 warning(gettextf("metadata of %s is corrupt", sQuote(pkgpath)),
@@ -506,7 +537,7 @@ installed.packages <-
     }
 
     fields <- .instPkgFields(fields)
-    retval <- matrix(character(0), 0L, 2L + length(fields))
+    retval <- matrix(character(), 0L, 2L + length(fields))
     for(lib in lib.loc) {
         if(noCache) {
             ret0 <- .readPkgDesc(lib, fields)
@@ -520,7 +551,7 @@ installed.packages <-
                            ## it is actually 32-bit on some systems)
                            .Call("crc64ToString", base, PACKAGE = "base"))
             dest <- file.path(tempdir(),
-                              paste("libloc_", enc, ".rds", sep = ""))
+                              paste0("libloc_", enc, ".rds"))
             if(file.exists(dest) &&
                file.info(dest)$mtime > file.info(lib)$mtime &&
                (val <- readRDS(dest))$base == base)
@@ -674,6 +705,8 @@ download.packages <- function(pkgs, destdir, available = NULL,
 
 contrib.url <- function(repos, type = getOption("pkgType"))
 {
+    ## Not entirely clear this is optimal
+    if(type == "both") type <- "source"
     if(is.null(repos)) return(NULL)
     if("@CRAN@" %in% repos && interactive()) {
         cat(gettext("--- Please select a CRAN mirror for use in this session ---"),
@@ -739,11 +772,15 @@ chooseCRANmirror <- function(graphics = getOption("menu.graphics"))
 chooseBioCmirror <- function(graphics = getOption("menu.graphics"))
 {
     if(!interactive()) stop("cannot choose a BioC mirror non-interactively")
-    m <- c("Seattle (USA)"="http://www.bioconductor.org",
-           "Bethesda (USA)"="http://watson.nci.nih.gov/bioc_mirror",
-           "Dortmund (Germany)"="http://bioconductor.statistik.tu-dortmund.de",
-           "Bergen (Norway)"="http://bioconductor.uib.no/",
-           "Cambridge (UK)"="http://mirrors.ebi.ac.uk/bioconductor/")
+    m <- c("Seattle (USA)"="http://www.bioconductor.org"
+	   , "Bethesda (USA)"="http://watson.nci.nih.gov/bioc_mirror"
+	   , "Dortmund (Germany)"="http://bioconductor.statistik.tu-dortmund.de"
+	   , "Bergen (Norway)"="http://bioconductor.uib.no/"
+	   , "Cambridge (UK)"="http://mirrors.ebi.ac.uk/bioconductor/"
+	   , "Riken, Kobe (Japan)" = "http://bioconductor.jp/"
+	   , "Canberra (Australia)" = "http://mirror.aarnet.edu.au/pub/bioconductor/"
+	   , "Sao Paulo (Brazil)" = "http://bioconductor.fmrp.usp.br/"
+	   )
     res <- menu(names(m), graphics, "BioC mirror")
     if(res > 0L) options("BioC_mirror" = m[res])
     invisible()
@@ -883,7 +920,7 @@ compareVersion <- function(a, b)
             target <- as.package_version(x[[3L]])
             res <- eval(parse(text = paste("any(current", x$op, "target)")))
             if(res) canget <- c(canget, x[[1L]])
-            else  miss <- c(miss, paste(x[[1L]], " (>= ", x[[3L]], ")", sep=""))
+            else  miss <- c(miss, paste0(x[[1L]], " (>= ", x[[3L]], ")"))
         } else if(x[[1L]] %in% pkgs) canget <- c(canget, x[[1L]])
         else miss <- c(miss, x[[1L]])
     }

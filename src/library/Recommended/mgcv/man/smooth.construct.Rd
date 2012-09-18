@@ -125,6 +125,8 @@ it can be used and plotted, and \code{2} is it can be used but not plotted. Set 
 
 \item{plot.me}{Set to \code{FALSE} if this smooth should not be plotted by \code{\link{plot.gam}}.  Set to \code{TRUE} if \code{NULL}.}
 
+\item{side.constrain}{Set to \code{FALSE} to ensure that the smooth is never subject to side constraints as a result of nesting. }
+
 \item{L}{smooths may depend on fewer `underlying' smoothing parameters than there are elements of
 \code{S}. In this case \code{L} is the matrix mapping the vector of underlying log smoothing 
 parameters to the vector of logs of the smoothing parameters actually multiplying the \code{S[[i]]}. 
@@ -161,7 +163,10 @@ covariate combinations; i.e. that the basis is the same whether generated from
 the full set of covariates, or just the unique combinations of covariates. 
 
 Plotting of smooths is handled by plot methods for smooth objects. A default \code{mgcv.smooth} method 
-is used if there is no more specific method available. Plot methods can  
+is used if there is no more specific method available. Plot methods can be added for specific smooth classes, see 
+source code for \code{mgcv:::plot.sos.smooth}, \code{mgcv:::plot.random.effect}, \code{mgcv:::plot.mgcv.smooth} 
+for example code.
+
 }
 
 
@@ -178,7 +183,7 @@ Ruppert, D., M.P. Wand and R.J. Carroll (2003) Semiparametric Regression. Cambri
 University Press.
 
 However if you want p-splines, rather than splines with derivative based penalties,
-then the built in "ps" class is probably a better bet. It's based on
+then the built in "ps" class is probably a marginally better bet. It's based on
 
 Eilers, P.H.C. and B.D. Marx (1996) Flexible Smoothing with B-splines and Penalties. 
 Statistical Science, 11(2):89-121

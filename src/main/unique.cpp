@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2010  The R Development Core Team
+ *  Copyright (C) 1997--2010  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -431,9 +431,6 @@ SEXP duplicated(SEXP x, Rboolean from_last)
     	    if(ENC_KNOWN(STRING_ELT(x, i))) {                   \
 		data.useUTF8 = TRUE;                            \
 	    }							\
-	    if(!IS_CACHED(STRING_ELT(x, i))) {                  \
-		data.useCache = FALSE; break;                   \
-	    }							\
 	}							\
     }
 
@@ -762,10 +759,6 @@ SEXP match5(SEXP itable, SEXP ix, int nmatch, SEXP incomp, SEXP env)
 	    if(ENC_KNOWN(s)) {
 		useUTF8 = TRUE;
 	    }
-            if(!IS_CACHED(s)) {
-		useCache = FALSE;
-		break;
-	    }
         }
 	if(!useBytes || useCache) {
 	    for(i = 0; i < length(table); i++) {
@@ -777,10 +770,6 @@ SEXP match5(SEXP itable, SEXP ix, int nmatch, SEXP incomp, SEXP env)
 		}
 		if(ENC_KNOWN(s)) {
 		    useUTF8 = TRUE;
-		}
-		if(!IS_CACHED(s)) {
-		    useCache = FALSE;
-		    break;
 		}
             }
         }
