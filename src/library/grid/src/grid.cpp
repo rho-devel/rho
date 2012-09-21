@@ -3601,6 +3601,8 @@ SEXP L_stringMetric(SEXP label)
 	txt = coerceVector(txt, EXPRSXP);
     else if (!isExpression(txt))
 	txt = coerceVector(txt, STRSXP);
+    UNPROTECT(1);
+    PROTECT(txt);
     n = LENGTH(txt);
     vmax = vmaxget();
     PROTECT(ascent = allocVector(REALSXP, n));
