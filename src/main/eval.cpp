@@ -1657,7 +1657,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Rf_setAttrib(env, R_NamesSymbol, encl);
 	expr = env;
 	UNPROTECT(3);
-	ProvenanceTracker::resetExpression(); // PA-source
+	ProvenanceTracker::setExpression(0); // PA-source
     }
     UNPROTECT(1);
     return expr;

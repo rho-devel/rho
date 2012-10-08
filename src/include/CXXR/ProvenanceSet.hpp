@@ -41,15 +41,17 @@
 #include "CXXR/Provenance.hpp"
 
 namespace CXXR {
-	class ProvenanceSet :
-		public GCNode, public std::set<GCEdge<Provenance>,Provenance::CompTime> {
-	public:
+    class ProvenanceSet :
+	public GCNode,
+	public std::set<GCEdge<const Provenance>,
+			Provenance::CompTime>
+    {
+    public:
 	
 	//virtual methods of GCNode
 	void detachReferents();
-	void visitReferents(const_visitor*) const;
-	};
-
+	void visitReferents(const_visitor* v) const;
+    };
 }
 
 #endif

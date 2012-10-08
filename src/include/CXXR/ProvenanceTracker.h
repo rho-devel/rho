@@ -49,12 +49,16 @@
 namespace CXXR {
     class ProvenanceTracker {
     public:
-	static Parentage* parentage();
+	static Parentage* parentage()
+	{
+	    return (*p_current)->parentage();
+	}
+
 	static void resetParentage();
 
 	static const Expression* expression();
-	static void resetExpression();
-	static void setExpression(const RObject*);
+
+	static void setExpression(const RObject* arg);
 
 	static void flagXenogenous()
 	{
@@ -62,19 +66,29 @@ namespace CXXR {
 	}
 
 	static void forcedPromise(const Frame::Binding&);
-	static void readMonitor(const Frame::Binding&);
-	static void writeMonitor(const Frame::Binding&);
+
+	static void readMonitor(const Frame::Binding& bdg);
+
+	static void writeMonitor(const Frame::Binding& bind)
+	{
+	    writeMonitor(bind, true);
+	}
+
 	static void writeMonitor(const Frame::Binding&,bool);
 
 	static void initEnvs();
-
     private:
-	ProvenanceTracker();
-	static ProvenanceSet* seen();
 	static GCRoot<Parentage::Protector>* p_current;
 	static GCRoot<ProvenanceSet>* p_seen;
 	static const Expression* e_current;
 	static bool s_xenogenous;
+
+	ProvenanceTracker();
+
+	static ProvenanceSet* seen()
+	{
+	    return *p_seen;
+	}
 
 	// Required for SchwarzCounter
 	static void cleanup();

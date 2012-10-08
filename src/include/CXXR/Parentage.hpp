@@ -51,31 +51,52 @@
 namespace CXXR {
     class Provenance;
 
-    class Parentage : public std::vector<GCEdge<Provenance> > {
+    class Parentage : public std::vector<GCEdge<const Provenance> > {
     public:
-
 	class Protector : public GCNode {
 	public:
-	    Protector() : p_parentage(0) {}
+	    Protector()
+		: m_parentage(0)
+	    {}
+
+	    Parentage* parentage()
+	    {
+		return m_parentage;
+	    }
+
+	    void set(Parentage* p);
+
+	    // Virtual functions of GCNode:
 	    void detachReferents();
-	    Parentage* parentage();
-	    void set(Parentage*);
-	    void visitReferents(const_visitor*) const;
+	    void visitReferents(const_visitor* v) const;
 	private:
-	    Parentage* p_parentage;
+	    Parentage* m_parentage;
 	};
 		
-	Parentage() : p_refcount(0) { };
-	GCStackRoot<StringVector> asStringVector();
-	unsigned long decRefCount();
+	Parentage()
+	    : m_refcount(0)
+	{}
+
+	StringVector* asStringVector() const;
+
 	void Display() const;
-	unsigned long incRefCount();
-	void pushProvenance(Provenance*);
-	
+
+	void pushProvenance(const Provenance* prov);
     private:
 	friend class boost::serialization::access;
+	friend class Provenance;
 
-	unsigned long p_refcount;
+	unsigned long m_refcount;
+
+	unsigned long decRefCount()
+	{
+	    return --m_refcount;
+	}
+
+	unsigned long incRefCount()
+	{
+	    return ++m_refcount;
+	}
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
@@ -84,7 +105,7 @@ namespace CXXR {
 	    ar & boost::serialization::make_nvp("size", sz);
 	    resize(sz);
 	    for (size_t i = 0; i < sz; ++i) {
-		GCEdge<Provenance>& parent = (*this)[i];
+		GCEdge<const Provenance>& parent = (*this)[i];
 		GCNPTR_SERIALIZE(ar, parent);
 	    }
 	}

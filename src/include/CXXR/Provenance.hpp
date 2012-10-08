@@ -59,27 +59,53 @@ namespace CXXR {
     public:
 	class CompTime {
 	public:
-	    bool operator()(Provenance* lhs, Provenance* rhs) {
+	    bool operator()(const Provenance* lhs, const Provenance* rhs) {
 		return (lhs->m_timestamp.tv_sec==rhs->m_timestamp.tv_sec) ?
 		    (lhs->m_timestamp.tv_usec<rhs->m_timestamp.tv_usec) :
 		    (lhs->m_timestamp.tv_sec<rhs->m_timestamp.tv_sec);
 	    }
 	};
-	typedef std::set<Provenance*,Provenance::CompTime> Set;
 
-	Provenance(); // sort of for boost::serialization
-	Provenance(const Expression*,Symbol*,Parentage*);
-	~Provenance();
+	typedef std::set<const Provenance*, Provenance::CompTime> Set;
 
+	// For boost::serialization:
+	Provenance()
+	{}
+
+	Provenance(const Expression* exp, const Symbol* sym, Parentage* par);
+
+	~Provenance()
+	{
+	    announceDeath(); // Necessary house-keeping
+	}
+
+	static StringVector* setAsStringVector(const Set& s);
+
+	// CXXR FIXME: make this private in due course:
 	static Set* ancestors(Set*);
-	static Set* descendants(Set*);
-	static GCStackRoot<StringVector> setAsStringVector(Set*);
 
-	Set* children() const;
+	const Set& children() const
+	{
+	    return m_children;
+	}
+
 	void detachReferents();
-	Expression* getCommand() const;
-	Symbol* getSymbol() const;
-	Parentage* getParentage() const;
+
+	const Expression* getCommand() const
+	{
+	    return m_expression;
+	}
+
+	const Symbol* getSymbol() const
+	{
+	    return m_symbol;
+	}
+
+	const Parentage* getParentage() const
+	{
+	    return m_parentage;
+	}
+
 	const String* getTime() const;
 
 	const RObject* getValue() const
@@ -98,21 +124,34 @@ namespace CXXR {
 	void visitReferents(const_visitor*) const;
     private:
 	friend class boost::serialization::access;
-	// Do away with compiler-generated copy constructor
-	Provenance(const Provenance&);
+
+	mutable Set m_children;
 	struct timeval m_timestamp;
 	unsigned int m_parentpos;
-	Set* m_children;
-	GCEdge<Expression> m_expression;
-	GCEdge<Symbol> m_symbol;
+	GCEdge<const Expression> m_expression;
+	GCEdge<const Symbol> m_symbol;
 	GCEdge<const RObject> m_value;
 	Parentage* m_parentage;
 	bool m_xenogenous;
 
+	static Set* descendants(Set*);
+
+	// Do away with compiler-generated copy constructor
+	Provenance(const Provenance&);
+
 	void announceBirth();
+
 	void announceDeath();
-	void deregisterChild(Provenance*);
-	void registerChild(Provenance*);
+
+	void deregisterChild(const Provenance* child) const
+	{
+	    m_children.erase(child);
+	}
+
+	void registerChild(const Provenance* child) const
+	{
+	    m_children.insert(child);
+	}
 
 	template <class Archive>
 	void load(Archive& ar, const unsigned int version);
@@ -143,7 +182,6 @@ void CXXR::Provenance::load(Archive& ar, const unsigned int version)
     GCNPTR_SERIALIZE(ar, m_value);
     ar >> BOOST_SERIALIZATION_NVP(m_parentage);
     ar >> BOOST_SERIALIZATION_NVP(m_xenogenous);
-    m_children=new Set();
 
     m_parentage->incRefCount();
     announceBirth();

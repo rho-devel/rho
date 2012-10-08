@@ -68,10 +68,6 @@ const Expression* ProvenanceTracker::expression() {
 #endif
 }
 
-void ProvenanceTracker::resetExpression() {
-	setExpression(NULL);
-}
-
 void ProvenanceTracker::setExpression(const RObject* arg) {
     if (arg && arg->sexptype() == EXPRSXP) {
 	const ExpressionVector* ev = static_cast<const ExpressionVector*>(arg);
@@ -83,13 +79,14 @@ void ProvenanceTracker::setExpression(const RObject* arg) {
     // we treat these odd cases as null expressions, because no
     // bindings should result from evaluating them..  (Oh, but what
     // happens if Promises are forced in the search for a Symbol? -
-    // FIXME)
+    // CXXR FIXME)
     if (arg && arg->sexptype() != LANGSXP)
 	arg = 0;
     e_current = static_cast<const Expression*>(arg);
 }
 
-void ProvenanceTracker::initEnvs() {
+void ProvenanceTracker::initEnvs()
+{
     Frame::setReadMonitor(ProvenanceTracker::readMonitor);
     Frame::setWriteMonitor(ProvenanceTracker::writeMonitor);
     Frame* global_frame = Environment::global()->frame();
@@ -97,19 +94,11 @@ void ProvenanceTracker::initEnvs() {
     global_frame->enableWriteMonitoring(true);
 }
 
-Parentage* ProvenanceTracker::parentage() {
-	return (*p_current)->parentage();
-}
-
-ProvenanceSet* ProvenanceTracker::seen() {
-	return *p_seen;
-}
-
-void ProvenanceTracker::resetParentage() {
-	(*p_seen)=GCNode::expose(new ProvenanceSet);
-	(*p_current)->set(new Parentage());
-	s_xenogenous = false;
-	return;
+void ProvenanceTracker::resetParentage()
+{
+    *p_seen = CXXR_NEW(ProvenanceSet);
+    (*p_current)->set(new Parentage());
+    s_xenogenous = false;
 }
 
 /*
@@ -124,56 +113,51 @@ void ProvenanceTracker::forcedPromise(const Frame::Binding& bdg) {
 	                         // but don't add to seen set
 }
 
-void ProvenanceTracker::readMonitor(const Frame::Binding& bdg) { 
-	Frame::Binding& b=const_cast<Frame::Binding&>(bdg);
+void ProvenanceTracker::readMonitor(const Frame::Binding& bdg)
+{ 
 #ifdef VERBOSEMONITOR
-	cout<<"Read '"<<b.symbol()->name()->c_str()<<"'"<<endl;
+    cout << "Read '" << bdg.symbol()->name()->c_str() << "'" <<endl;
 #endif
-	Provenance* p=const_cast<Provenance*>(b.getProvenance());
-	// If 'p' has not been written to
-	if (!p) return;
-	GCEdge<Provenance> needle(p);
-	if (seen()->find(needle)==seen()->end())
-		parentage()->pushProvenance(p);
-	seen()->insert(needle);
-}
-
-/* Default behaviour is that the new object has been seen */
-void ProvenanceTracker::writeMonitor(const Frame::Binding &bind) {
-	writeMonitor(bind, true);
+    const Provenance* p = bdg.getProvenance();
+    if (!p)
+	return;
+    GCEdge<const Provenance> needle(p);
+    if (seen()->find(needle) == seen()->end())
+	parentage()->pushProvenance(p);
+    seen()->insert(needle);
 }
 
 /* Have control over whether or not the object gets added to the seen set */
-void ProvenanceTracker::writeMonitor(const Frame::Binding &bind, bool beenSeen) {
-        CXXR::Frame::Binding& bdg=const_cast<CXXR::Frame::Binding&>(bind);
+void ProvenanceTracker::writeMonitor(const Frame::Binding &bind, bool beenSeen)
+{
 #ifdef VERBOSEMONITOR
-	cout<<"Write '"<<bdg.symbol()->name()->c_str()<<"'"<<endl;
+    cout << "Write '" << bind.symbol()->name()->c_str() << "'" <<endl;
 #endif
-        const Expression* expr = expression();
-        Symbol* sym=const_cast<Symbol*>(bind.symbol());
-
-        bdg.setProvenance(GCNode::expose(
-                new Provenance(expr,sym,parentage())
-        ));
-	Provenance* prov=const_cast<Provenance*>(bdg.getProvenance());
-	if (s_xenogenous)
-	    prov->setXenogenous(bdg.rawValue());  // Maybe ought to clone value
-	if (beenSeen) {
-		GCEdge<Provenance> tmp(prov);
-		seen()->insert(tmp);
-	}
+    const Expression* expr = expression();
+    const Symbol* sym = bind.symbol();
+    GCStackRoot<Provenance> prov(CXXR_NEW(Provenance(expr, sym, parentage())));
+    if (s_xenogenous)
+	prov->setXenogenous(bind.rawValue());  // Maybe ought to clone value
+    CXXR::Frame::Binding& bdg = const_cast<CXXR::Frame::Binding&>(bind);
+    bdg.setProvenance(prov);
+    if (beenSeen) {
+	GCEdge<const Provenance> tmp(prov);
+	seen()->insert(tmp);
+    }
 }
 
-void ProvenanceTracker::cleanup() {
-	delete p_current;
-	delete p_seen;
+void ProvenanceTracker::cleanup()
+{
+    delete p_current;
+    delete p_seen;
 }
 
 void ProvenanceTracker::initialize() {
 	e_current=NULL;
-	p_current=new GCRoot<Parentage::Protector>(GCNode::expose(new Parentage::Protector()));
+	p_current
+	    = new GCRoot<Parentage::Protector>(CXXR_NEW(Parentage::Protector()));
 	(*p_current)->set(new Parentage());
-	p_seen=new GCRoot<ProvenanceSet>(GCNode::expose(new ProvenanceSet()));
+	p_seen=new GCRoot<ProvenanceSet>(CXXR_NEW(ProvenanceSet()));
 }
 
 // ***** C interface *****

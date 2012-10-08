@@ -351,7 +351,7 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
     Rboolean wasDisplayed = FALSE;
     unsigned int browselevel = Browser::numberActive();
     ProvenanceTracker::resetParentage();
-    ProvenanceTracker::resetExpression();
+    ProvenanceTracker::setExpression(0);
 
     if(!*state->bufp) {
 	    R_Busy(0);

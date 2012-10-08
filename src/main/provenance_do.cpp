@@ -139,8 +139,8 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	Provenance* provenance=const_cast<Provenance*>(bdg->getProvenance());
 	if (!provenance)
 		errorcall(call,_("object does not have any provenance"));
-	Parentage* parentage=provenance->getParentage();
-	Provenance::Set* children=provenance->children();
+	const Parentage* parentage=provenance->getParentage();
+	const Provenance::Set& children=provenance->children();
 
 	GCStackRoot<ListVector> list(GCNode::expose(new ListVector(nfields)));
 	GCStackRoot<StringVector> timestamp(GCNode::expose(new StringVector(1)));
@@ -154,13 +154,13 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	(*names)[3]=const_cast<String*>(String::obtain("parents"));
 	(*names)[4]=const_cast<String*>(String::obtain("children"));
 
-	(*list)[0]=provenance->getCommand();
-	(*list)[1]=provenance->getSymbol();
+	(*list)[0] = const_cast<Expression*>(provenance->getCommand());
+	(*list)[1] = const_cast<Symbol*>(provenance->getSymbol());
 	(*list)[2]=timestamp;
 	(*list)[3]=(parentage) ?
 		    parentage->asStringVector() : 
 		    static_cast<RObject*>(R_NilValue) ;
-	(*list)[4]=(!children->empty()) ?
+	(*list)[4]=(!children.empty()) ?
 		     Provenance::setAsStringVector(children) :
 		     static_cast<RObject*>(R_NilValue);
 
@@ -181,7 +181,7 @@ SEXP attribute_hidden do_provCommand (SEXP call, SEXP op, SEXP args, SEXP rho)
 	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
 	Environment* env=static_cast<Environment*>(rho);
 	Frame::Binding* bdg = env->findBinding(sym).second;
-	return bdg->getProvenance()->getCommand();
+	return const_cast<Expression*>(bdg->getProvenance()->getCommand());
 }
 
 SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -226,10 +226,10 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 	size_t i = 0;
 	for (Provenance::Set::iterator it = ancestors->begin();
 	     it != ancestors->end(); ++it) {
-	    Provenance* p = *it;
-	    (*commands)[i] = p->getCommand();
+	    const Provenance* p = *it;
+	    (*commands)[i] = const_cast<Expression*>(p->getCommand());
 	    (*timestamps)[i] = p->timestamp();
-	    (*symbols)[i] = p->getSymbol();
+	    (*symbols)[i] = const_cast<Symbol*>(p->getSymbol());
 	    (*xenogenous)[i] = FALSE;
 	    if (p->isXenogenous()) {
 		(*xenogenous)[i] = TRUE;
