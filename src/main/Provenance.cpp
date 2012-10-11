@@ -56,21 +56,22 @@ Provenance::Provenance(const Expression* exp, const Symbol* sym,
     announceBirth();
 }
 
-Provenance::Set* Provenance::ancestors(Set* open)
+Provenance::Set* Provenance::ancestors(const Set& roots)
 {
+    Set open = roots;
     Set* closed = new Set();
-    while (!open->empty()) {
-	const Provenance* n = *(open->begin());
+    while (!open.empty()) {
+	const Provenance* n = *(open.begin());
 	const Parentage* p = n->getParentage();
 	if (p) {
 	    for (unsigned int i = 0; i < p->size(); ++i) {
 		const Provenance* s = (*p)[i];
 		// If s isn't in closed set, put it in open
 		if (closed->find(s) == closed->end())
-		    open->insert(s);
+		    open.insert(s);
 	    }
 	}
-	open->erase(n);
+	open.erase(n);
 	closed->insert(n);
     }
     return closed;
@@ -98,19 +99,20 @@ void Provenance::announceDeath()
     m_parentage = 0;
 }
 
-Provenance::Set* Provenance::descendants(Set* open)
+Provenance::Set* Provenance::descendants(const Set& roots)
 {
+    Set open = roots;
     Set* closed = new Set();
-    while (!open->empty()) {
-	const Provenance* n = *(open->begin());
+    while (!open.empty()) {
+	const Provenance* n = *(open.begin());
 	const Set& c = n->children();
 	for (Set::iterator it = c.begin(); it != c.end(); ++it) {
 	    const Provenance* s = *it;
 	    // If s isn't in closed set, put it in open
 	    if (closed->find(s) == closed->end())
-		open->insert(s);
+		open.insert(s);
 	}
-	open->erase(n);
+	open.erase(n);
 	closed->insert(n);
     }
     return closed;
@@ -130,26 +132,6 @@ const String* Provenance::getTime() const
     size_t p = strftime(buffer, 32, "%x %X", lt);
     sprintf(&buffer[p], ".%ld", m_timestamp.tv_usec);
     return String::obtain(buffer);
-}
-
-Provenance::Set* Provenance::pedigree()
-{
-    Set *open = new Set(), *rc;
-    open->insert(this);
-    rc = ancestors(open);
-    delete open;
-    return rc;
-}
-
-StringVector* Provenance::setAsStringVector(const Set& s)
-{
-    GCStackRoot<StringVector> rc(CXXR_NEW(StringVector(s.size())));
-    unsigned int i = 0;
-    for (Set::const_iterator it = s.begin(); it != s.end(); ++it) {
-	const Provenance* p = *it;
-	(*rc)[i++] = const_cast<String*>(p->getSymbol()->name());
-    }
-    return rc;
 }
 
 void Provenance::setXenogenous(const RObject* value)

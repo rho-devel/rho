@@ -65,17 +65,6 @@ void Parentage::Protector::visitReferents(const_visitor* v) const
 
 // ***** Class Parentage *****
 
-// Display method, mostly for debugging purposes
-StringVector* Parentage::asStringVector() const
-{
-    GCStackRoot<StringVector> rc(CXXR_NEW(StringVector(size())));
-    for (unsigned int i = 0; i < size(); ++i) {
-	const Provenance* p = at(i);
-	(*rc)[i]=const_cast<String*>(p->getSymbol()->name());
-    }
-    return rc;
-}
-
 void Parentage::Display() const {
     std::cout << "Printing Parentage..size() = " << size() << '\n';
     for (unsigned int i = 0; i < size(); ++i) {

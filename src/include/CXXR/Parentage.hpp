@@ -77,8 +77,6 @@ namespace CXXR {
 	    : m_refcount(0)
 	{}
 
-	StringVector* asStringVector() const;
-
 	void Display() const;
 
 	void pushProvenance(const Provenance* prov);

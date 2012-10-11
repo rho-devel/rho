@@ -60,9 +60,9 @@ namespace CXXR {
 	class CompTime {
 	public:
 	    bool operator()(const Provenance* lhs, const Provenance* rhs) {
-		return (lhs->m_timestamp.tv_sec==rhs->m_timestamp.tv_sec) ?
-		    (lhs->m_timestamp.tv_usec<rhs->m_timestamp.tv_usec) :
-		    (lhs->m_timestamp.tv_sec<rhs->m_timestamp.tv_sec);
+		return (lhs->m_timestamp.tv_sec == rhs->m_timestamp.tv_sec) ?
+		    (lhs->m_timestamp.tv_usec < rhs->m_timestamp.tv_usec) :
+		    (lhs->m_timestamp.tv_sec < rhs->m_timestamp.tv_sec);
 	    }
 	};
 
@@ -79,15 +79,14 @@ namespace CXXR {
 	    announceDeath(); // Necessary house-keeping
 	}
 
-	static StringVector* setAsStringVector(const Set& s);
-
-	// CXXR FIXME: make this private in due course:
-	static Set* ancestors(Set*);
+	static Set* ancestors(const Set& roots);
 
 	const Set& children() const
 	{
 	    return m_children;
 	}
+
+	static Set* descendants(const Set& roots);
 
 	void detachReferents();
 
@@ -118,7 +117,6 @@ namespace CXXR {
 	    return m_xenogenous;
 	}
 
-	Set* pedigree();
 	void setXenogenous(const RObject* value);
 	double timestamp() const;
 	void visitReferents(const_visitor*) const;
@@ -133,8 +131,6 @@ namespace CXXR {
 	GCEdge<const RObject> m_value;
 	Parentage* m_parentage;
 	bool m_xenogenous;
-
-	static Set* descendants(Set*);
 
 	// Do away with compiler-generated copy constructor
 	Provenance(const Provenance&);

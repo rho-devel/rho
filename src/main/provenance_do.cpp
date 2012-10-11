@@ -157,12 +157,25 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	(*list)[0] = const_cast<Expression*>(provenance->getCommand());
 	(*list)[1] = const_cast<Symbol*>(provenance->getSymbol());
 	(*list)[2]=timestamp;
-	(*list)[3]=(parentage) ?
-		    parentage->asStringVector() : 
-		    static_cast<RObject*>(R_NilValue) ;
-	(*list)[4]=(!children.empty()) ?
-		     Provenance::setAsStringVector(children) :
-		     static_cast<RObject*>(R_NilValue);
+	if (parentage) {
+	    size_t sz = parentage->size();
+	    StringVector* sv = CXXR_NEW(StringVector(sz));
+	    (*list)[3] = sv;
+	    for (size_t i = 0; i < sz; ++i) {
+		const Provenance* p = (*parentage)[i];
+		(*sv)[i] = const_cast<String*>(p->getSymbol()->name());
+	    }
+	}
+	if (!children.empty()) {
+	    StringVector* sv = CXXR_NEW(StringVector(children.size()));
+	    (*list)[4] = sv;
+	    unsigned int i = 0;
+	    for (Provenance::Set::const_iterator it = children.begin();
+		 it != children.end(); ++it) {
+		const Provenance* p = *it;
+		(*sv)[i] = const_cast<String*>(p->getSymbol()->name());
+	    }
+	}
 
 	setAttrib(list,R_NamesSymbol,names);
 
@@ -211,7 +224,7 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	}
 
-    Provenance::Set* ancestors = Provenance::ancestors(&provs);
+    Provenance::Set* ancestors = Provenance::ancestors(provs);
 
     GCStackRoot<ListVector> ans(CXXR_NEW(ListVector(5)));
 
