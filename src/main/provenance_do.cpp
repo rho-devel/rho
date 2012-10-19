@@ -118,7 +118,7 @@ SEXP attribute_hidden do_hasProvenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	Environment* env=static_cast<Environment*>(rho);
 	Frame::Binding* bdg = env->findBinding(sym).second;
 	GCStackRoot<LogicalVector> v(GCNode::expose(new LogicalVector(1)));
-	(*v)[0]=bdg->hasProvenance();
+	(*v)[0] = (bdg->provenance() != 0);
 	return v;
 }
 
@@ -136,10 +136,10 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	Frame::Binding* bdg = env->findBinding(sym).second;
 	if (!bdg)
 		errorcall(call,_("invalid Symbol passed to 'provenance'"));
-	Provenance* provenance=const_cast<Provenance*>(bdg->getProvenance());
+	Provenance* provenance=const_cast<Provenance*>(bdg->provenance());
 	if (!provenance)
 		errorcall(call,_("object does not have any provenance"));
-	const Parentage* parentage=provenance->getParentage();
+	const Parentage* parentage=provenance->parentage();
 	const Provenance::Set& children=provenance->children();
 
 	GCStackRoot<ListVector> list(GCNode::expose(new ListVector(nfields)));
@@ -154,8 +154,8 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	(*names)[3]=const_cast<String*>(String::obtain("parents"));
 	(*names)[4]=const_cast<String*>(String::obtain("children"));
 
-	(*list)[0] = const_cast<Expression*>(provenance->getCommand());
-	(*list)[1] = const_cast<Symbol*>(provenance->getSymbol());
+	(*list)[0] = const_cast<Expression*>(provenance->command());
+	(*list)[1] = const_cast<Symbol*>(provenance->symbol());
 	(*list)[2]=timestamp;
 	if (parentage) {
 	    size_t sz = parentage->size();
@@ -163,7 +163,7 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	    (*list)[3] = sv;
 	    for (size_t i = 0; i < sz; ++i) {
 		const Provenance* p = (*parentage)[i];
-		(*sv)[i] = const_cast<String*>(p->getSymbol()->name());
+		(*sv)[i] = const_cast<String*>(p->symbol()->name());
 	    }
 	}
 	if (!children.empty()) {
@@ -173,7 +173,7 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	    for (Provenance::Set::const_iterator it = children.begin();
 		 it != children.end(); ++it) {
 		const Provenance* p = *it;
-		(*sv)[i] = const_cast<String*>(p->getSymbol()->name());
+		(*sv)[i] = const_cast<String*>(p->symbol()->name());
 	    }
 	}
 
@@ -194,7 +194,7 @@ SEXP attribute_hidden do_provCommand (SEXP call, SEXP op, SEXP args, SEXP rho)
 	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
 	Environment* env=static_cast<Environment*>(rho);
 	Frame::Binding* bdg = env->findBinding(sym).second;
-	return const_cast<Expression*>(bdg->getProvenance()->getCommand());
+	return const_cast<Expression*>(bdg->provenance()->command());
 }
 
 SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -216,7 +216,7 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (!bdg)
 	    Rf_error(_("symbol '%s' not found"), name);
 	else {
-	    Provenance* prov = const_cast<Provenance*>(bdg->getProvenance());
+	    Provenance* prov = const_cast<Provenance*>(bdg->provenance());
 	    if (!prov)
 		Rf_warning(_("'%s' does not have provenance information"),
 			   name);
@@ -240,13 +240,13 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 	for (Provenance::Set::iterator it = ancestors->begin();
 	     it != ancestors->end(); ++it) {
 	    const Provenance* p = *it;
-	    (*commands)[i] = const_cast<Expression*>(p->getCommand());
+	    (*commands)[i] = const_cast<Expression*>(p->command());
 	    (*timestamps)[i] = p->timestamp();
-	    (*symbols)[i] = const_cast<Symbol*>(p->getSymbol());
+	    (*symbols)[i] = const_cast<Symbol*>(p->symbol());
 	    (*xenogenous)[i] = FALSE;
 	    if (p->isXenogenous()) {
 		(*xenogenous)[i] = TRUE;
-		(*values)[i] = const_cast<RObject*>(p->getValue());
+		(*values)[i] = const_cast<RObject*>(p->value());
 	    }
 	    ++i;
 	}

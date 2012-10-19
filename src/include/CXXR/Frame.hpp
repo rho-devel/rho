@@ -207,23 +207,15 @@ namespace CXXR {
 	     */
 	    void fromPairList(PairList* pl);
 
-	    /** @brief Retrieve pointer to Provenance object associated
-	     * with this binding
+	    /** @brief Provenance associated with this binding.
 	     *
-	     * @return Pointer to Provenance object
+	     * @return pointer to the Provenance object associated
+	     * with this Binding, or a null pointer if no provenance
+	     * has been recorded for it.
 	     */
-	    const Provenance* getProvenance() const
+	    const Provenance* provenance() const
 	    {
 		return m_provenance;
-	    }
-
-	    /** @brief Does this Binding have provenance?
-	     *
-	     * @return true iff this binding has associated provenance
-	     */
-	    bool hasProvenance() const
-	    {
-		return (m_provenance != 0);
 	    }
 
 	    /** @brief Initialize the Binding.

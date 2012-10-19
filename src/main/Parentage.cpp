@@ -69,7 +69,7 @@ void Parentage::Display() const {
     std::cout << "Printing Parentage..size() = " << size() << '\n';
     for (unsigned int i = 0; i < size(); ++i) {
 	const Provenance* p = at(i);
-	std::cout << "Symbol Name : " << p->getSymbol()->name()->c_str()
+	std::cout << "Symbol Name : " << p->symbol()->name()->c_str()
 		  << "Prov addr : " << p << std::endl;
     }
 }

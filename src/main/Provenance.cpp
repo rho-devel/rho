@@ -62,7 +62,7 @@ Provenance::Set* Provenance::ancestors(const Set& roots)
     Set* closed = new Set();
     while (!open.empty()) {
 	const Provenance* n = *(open.begin());
-	const Parentage* p = n->getParentage();
+	const Parentage* p = n->parentage();
 	if (p) {
 	    for (unsigned int i = 0; i < p->size(); ++i) {
 		const Provenance* s = (*p)[i];

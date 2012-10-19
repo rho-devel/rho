@@ -118,7 +118,7 @@ void ProvenanceTracker::readMonitor(const Frame::Binding& bdg)
 #ifdef VERBOSEMONITOR
     cout << "Read '" << bdg.symbol()->name()->c_str() << "'" <<endl;
 #endif
-    const Provenance* p = bdg.getProvenance();
+    const Provenance* p = bdg.provenance();
     if (!p)
 	return;
     GCEdge<const Provenance> needle(p);

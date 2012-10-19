@@ -33,6 +33,11 @@
  *  http://www.r-project.org/Licenses/
  */
 
+/** @file Parentage.hpp
+ *
+ * @brief Class Parentage.
+ */
+
 #ifndef PARENTAGE_HPP
 #define PARENTAGE_HPP 1
 

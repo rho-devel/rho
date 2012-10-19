@@ -123,7 +123,7 @@ void StdFrame::import(const Frame* frame) {
 	const Binding* bdgSrc=&(*it).second;
 
 	Binding* bdgDest = obtainBinding(symbol);
-	bdgDest->setProvenance(const_cast<Provenance*>(bdgSrc->getProvenance()));
+	bdgDest->setProvenance(const_cast<Provenance*>(bdgSrc->provenance()));
 	bdgDest->setValue(bdgSrc->rawValue(), bdgSrc->origin(), TRUE);
     }
 }
