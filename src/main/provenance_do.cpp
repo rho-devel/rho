@@ -48,7 +48,6 @@
 #include <set>
 
 #include "CXXR/Provenance.hpp"
-#include "CXXR/Parentage.hpp"
 
 // So that BOOST_CLASS_EXPORT is visible:
 #include "CXXR/ListFrame.hpp"
@@ -139,7 +138,6 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	Provenance* provenance=const_cast<Provenance*>(bdg->provenance());
 	if (!provenance)
 		errorcall(call,_("object does not have any provenance"));
-	const Parentage* parentage=provenance->parentage();
 	const Provenance::Set& children=provenance->children();
 
 	GCStackRoot<ListVector> list(GCNode::expose(new ListVector(nfields)));
@@ -154,16 +152,22 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	(*names)[3]=const_cast<String*>(String::obtain("parents"));
 	(*names)[4]=const_cast<String*>(String::obtain("children"));
 
-	(*list)[0] = const_cast<Expression*>(provenance->command());
+	(*list)[0] = const_cast<RObject*>(provenance->command());
 	(*list)[1] = const_cast<Symbol*>(provenance->symbol());
 	(*list)[2]=timestamp;
-	if (parentage) {
-	    size_t sz = parentage->size();
+	// Handle parents:
+	{
+	    std::pair<CommandChronicle::ParentVector::const_iterator,
+		      CommandChronicle::ParentVector::const_iterator>
+                pr = provenance->parents();
+	    size_t sz = pr.second - pr.first;
 	    StringVector* sv = CXXR_NEW(StringVector(sz));
 	    (*list)[3] = sv;
-	    for (size_t i = 0; i < sz; ++i) {
-		const Provenance* p = (*parentage)[i];
-		(*sv)[i] = const_cast<String*>(p->symbol()->name());
+	    unsigned int i = 0;
+	    for (CommandChronicle::ParentVector::const_iterator it = pr.first;
+		 it != pr.second; ++it) {
+		const Provenance* p = *it;
+		(*sv)[i++] = const_cast<String*>(p->symbol()->name());
 	    }
 	}
 	if (!children.empty()) {
@@ -194,7 +198,7 @@ SEXP attribute_hidden do_provCommand (SEXP call, SEXP op, SEXP args, SEXP rho)
 	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
 	Environment* env=static_cast<Environment*>(rho);
 	Frame::Binding* bdg = env->findBinding(sym).second;
-	return const_cast<Expression*>(bdg->provenance()->command());
+	return const_cast<RObject*>(bdg->provenance()->command());
 }
 
 SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -240,7 +244,7 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 	for (Provenance::Set::iterator it = ancestors->begin();
 	     it != ancestors->end(); ++it) {
 	    const Provenance* p = *it;
-	    (*commands)[i] = const_cast<Expression*>(p->command());
+	    (*commands)[i] = const_cast<RObject*>(p->command());
 	    (*timestamps)[i] = p->timestamp();
 	    (*symbols)[i] = const_cast<Symbol*>(p->symbol());
 	    (*xenogenous)[i] = FALSE;

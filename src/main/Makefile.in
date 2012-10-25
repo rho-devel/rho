@@ -33,7 +33,8 @@ SOURCES_CXX = \
 	ArgList.cpp ArgMatcher.cpp \
 	BinaryFunction.cpp Browser.cpp BuiltInFunction.cpp ByteCode.cpp \
 	CConverters.cpp CellPool.cpp Closure.cpp \
-	ClosureContext.cpp CommandLineArgs.cpp ComplexVector.cpp ConsCell.cpp \
+	ClosureContext.cpp CommandChronicle.cpp CommandLineArgs.cpp \
+	ComplexVector.cpp ConsCell.cpp \
 	DotInternal.cpp DottedArgs.cpp \
 	Environment.cpp Evaluator.cpp Evaluator_Context.cpp Expression.cpp \
 	ExpressionVector.cpp ExternalPointer.cpp \
@@ -45,8 +46,8 @@ SOURCES_CXX = \
 	ListFrame.cpp ListVector.cpp LogicalVector.cpp LoopBailout.cpp \
 	MemoryBank.cpp \
 	NodeStack.cpp \
-        PairList.cpp Parentage.cpp Promise.cpp ProtectStack.cpp \
-	Provenance.cpp ProvenanceSet.cpp ProvenanceTracker.cpp \
+        PairList.cpp Promise.cpp ProtectStack.cpp Provenance.cpp \
+	ProvenanceSet.cpp ProvenanceTracker.cpp \
         RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
         RealVector.cpp Renviron.cpp ReturnBailout.cpp \
         S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp StdFrame.cpp \

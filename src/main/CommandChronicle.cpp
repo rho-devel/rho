@@ -33,48 +33,43 @@
  *  http://www.r-project.org/Licenses/
  */
 
-#include <cstdio>
+/** @file CommandChronicle.cpp
+ *
+ * Implementation of class CommandChronicle.
+ */
 
-#include "CXXR/Parentage.hpp"
+#include "CXXR/CommandChronicle.hpp"
+
 #include "CXXR/Provenance.hpp"
 
 using namespace CXXR;
 
-// ***** Class Parentage::Protector *****
-
-void Parentage::Protector::detachReferents()
-{}
-
-void Parentage::Protector::set(Parentage* p)
+void CommandChronicle::detachReferents()
 {
-    if (m_parentage && !m_parentage->decRefCount())
-	delete m_parentage;
-    m_parentage = p;
-    if (m_parentage)
-	m_parentage->incRefCount();
+    m_read_set.clear();
+    m_reads.clear();
+    m_command.detach();
 }
 
-void Parentage::Protector::visitReferents(const_visitor* v) const
+void CommandChronicle::readBinding(const Provenance* bdgprov)
 {
-    for (Parentage::iterator it = m_parentage->begin();
-	 it != m_parentage->end(); ++it) {
-	const GCNode* rent=*it;
-	(*v)(rent);
+    std::pair<std::set<const Provenance*>::iterator, bool> pr
+	= m_read_set.insert(bdgprov);
+    if (pr.second) {
+	GCEdge<const Provenance> parent(bdgprov);
+	m_reads.push_back(parent);
     }
 }
 
-// ***** Class Parentage *****
-
-void Parentage::Display() const {
-    std::cout << "Printing Parentage..size() = " << size() << '\n';
-    for (unsigned int i = 0; i < size(); ++i) {
-	const Provenance* p = at(i);
-	std::cout << "Symbol Name : " << p->symbol()->name()->c_str()
-		  << "Prov addr : " << p << std::endl;
+void CommandChronicle::visitReferents(const_visitor* v) const
+{
+    for (ParentVector::const_iterator it = m_reads.begin();
+	 it != m_reads.end(); ++it) {
+	const GCNode* parent = *it;
+	(*v)(parent);
     }
+    if (m_command)
+	(*v)(m_command);
 }
 
-void Parentage::pushProvenance(const Provenance* prov) {
-    GCEdge<const Provenance> tmp(prov);
-    push_back(tmp);
-}
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::CommandChronicle)

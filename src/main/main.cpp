@@ -350,7 +350,6 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
     SEXP value, thisExpr;
     Rboolean wasDisplayed = FALSE;
     unsigned int browselevel = Browser::numberActive();
-    ProvenanceTracker::resetParentage();
     ProvenanceTracker::setExpression(0);
 
     if(!*state->bufp) {

@@ -49,11 +49,10 @@
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_member.hpp>
 
+#include "CXXR/CommandChronicle.hpp"
 #include "CXXR/Expression.h"
 #include "CXXR/GCEdge.hpp"
-#include "CXXR/GCNode.hpp"
 #include "CXXR/GCStackRoot.hpp"
-#include "CXXR/Parentage.hpp"
 #include "CXXR/RObject.h"
 #include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
@@ -102,7 +101,7 @@ namespace CXXR {
 	 */
 	class CompTime {
 	public:
-	    bool operator()(const Provenance* lhs, const Provenance* rhs)
+	    bool operator()(const Provenance* lhs, const Provenance* rhs) const
 	    {
 		return (lhs->m_timestamp.tv_sec == rhs->m_timestamp.tv_sec) ?
 		    (lhs->m_timestamp.tv_usec < rhs->m_timestamp.tv_usec) :
@@ -127,21 +126,13 @@ namespace CXXR {
 
 	/** @brief Constructor.
 	 *
-	 * @param exp Pointer to the top-level expression whose
-	 *          evaluation gave rise to this binding.
-	 *
 	 * @param sym Pointer to the Symbol bound by this binding.
 	 *
-	 * @param par Pointer to a Parentage object recording the
-	 *          provenances of the parents of this binding.  Only the
-	 *          elements of the Parentage object which are present
-	 *          at the time this constructor is called are
-	 *          considered to be parents of this binding;
-	 *          i.e. elements of the Parentage object added
-	 *          subsequently are <em>not</em> considered to be
-	 *          parents of this binding.
+	 * @param chron Pointer to the CommandChronicle for the
+	 *          command whose evaluation gave rise to this
+	 *          binding.
 	 */
-	Provenance(const Expression* exp, const Symbol* sym, Parentage* par);
+	Provenance(const Symbol* sym, const CommandChronicle* chron);
 
 	~Provenance()
 	{
@@ -185,10 +176,21 @@ namespace CXXR {
 	 * @return pointer to the top-level command which was being
 	 * evaluated when this binding was established.
 	 */
-	const Expression* command() const
+	const RObject* command() const
 	{
-	    return m_expression;
+	    return m_chronicle->command();
 	}
+
+	const String* getTime() const;
+
+	/** @brief Parents of this Provenance object.
+	 *
+	 * @return Iterator range comprising all parents of this
+	 * binding.
+	 */
+	std::pair<CommandChronicle::ParentVector::const_iterator,
+		  CommandChronicle::ParentVector::const_iterator>
+	parents() const;
 
 	/** @brief Symbol bound by this binding.
 	 *
@@ -198,18 +200,6 @@ namespace CXXR {
 	{
 	    return m_symbol;
 	}
-
-	/** @brief Parentage object associated with this Provenance.
-	 *
-	 * @return pointer to the Parentage object associated with
-	 * this Provenance object.
-	 */
-	const Parentage* parentage() const
-	{
-	    return m_parentage;
-	}
-
-	const String* getTime() const;
 
 	/** @brief Value of xenogenous binding.
 	 *
@@ -258,11 +248,10 @@ namespace CXXR {
 
 	mutable Set m_children;
 	struct timeval m_timestamp;
-	unsigned int m_parentpos;
-	GCEdge<const Expression> m_expression;
+	unsigned int m_num_parents;
 	GCEdge<const Symbol> m_symbol;
+	GCEdge<const CommandChronicle> m_chronicle;
 	GCEdge<const RObject> m_value;
-	Parentage* m_parentage;
 	bool m_xenogenous;
 
 	// Do away with compiler-generated copy constructor
@@ -305,14 +294,12 @@ void CXXR::Provenance::load(Archive& ar, const unsigned int version)
     ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
     ar >> boost::serialization::make_nvp("sec", m_timestamp.tv_sec);
     ar >> boost::serialization::make_nvp("usec", m_timestamp.tv_usec);
-    ar >> BOOST_SERIALIZATION_NVP(m_parentpos);
-    GCNPTR_SERIALIZE(ar, m_expression);
+    ar >> BOOST_SERIALIZATION_NVP(m_num_parents);
     GCNPTR_SERIALIZE(ar, m_symbol);
     GCNPTR_SERIALIZE(ar, m_value);
-    ar >> BOOST_SERIALIZATION_NVP(m_parentage);
+    GCNPTR_SERIALIZE(ar, m_chronicle);
     ar >> BOOST_SERIALIZATION_NVP(m_xenogenous);
 
-    m_parentage->incRefCount();
     announceBirth();
 }
 		
@@ -322,11 +309,10 @@ void CXXR::Provenance::save(Archive& ar, const unsigned int version) const
     ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
     ar << boost::serialization::make_nvp("sec", m_timestamp.tv_sec);
     ar << boost::serialization::make_nvp("usec", m_timestamp.tv_usec);
-    ar << BOOST_SERIALIZATION_NVP(m_parentpos);
-    GCNPTR_SERIALIZE(ar, m_expression);
+    ar << BOOST_SERIALIZATION_NVP(m_num_parents);
     GCNPTR_SERIALIZE(ar, m_symbol);
     GCNPTR_SERIALIZE(ar, m_value);
-    ar << BOOST_SERIALIZATION_NVP(m_parentage);
+    GCNPTR_SERIALIZE(ar, m_chronicle);
     ar << BOOST_SERIALIZATION_NVP(m_xenogenous);
 }
 

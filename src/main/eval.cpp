@@ -1543,10 +1543,8 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
      * *eval.with.vis*
      * (probably?) from a call to source
      */
-    if (PRIMVAL(op)==1) {
+    if (PRIMVAL(op)==1)
 	ProvenanceTracker::setExpression(expr);
-	ProvenanceTracker::resetParentage();
-    }
 
     if (Rf_isNull(encl)) {
 	/* This is supposed to be defunct, but has been kept here
