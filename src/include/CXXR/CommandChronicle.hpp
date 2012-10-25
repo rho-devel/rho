@@ -56,13 +56,15 @@ namespace CXXR {
      *
      * This class maintains a record of the provenances of any
      * provenance-tracked bindings read in the course of evaluating a
-     * top-level command.  The record is in the form of a vector,
-     * ordered according to the time when a particular binding state
-     * is \e first read during the evaluation of the top-level
-     * command.  If a Frame::Binding object is read more than once
-     * during the evaluation of the top-level command, it will only be
-     * reentered into the vector if its state (and therefore its
-     * provenance) has changed in the meantime.
+     * top-level command.  The record includes only binding states
+     * which were in existence before evaluation of the top-level
+     * command started: i.e. the record ignores binding states which
+     * are created and subsequently read back in the course of
+     * evaluating the top-level command.
+     *
+     * The record is in the form of a vector, ordered according to the
+     * time when a particular binding state is \e first read during
+     * the evaluation of the top-level command.
      */
     class CommandChronicle : public GCNode {
     public:
@@ -109,7 +111,7 @@ namespace CXXR {
 	 */
 	void close()
 	{
-	    m_read_set.clear();
+	    m_seen.clear();
 	}
 
 	/** @brief The top-level command.
@@ -132,6 +134,18 @@ namespace CXXR {
 	 */
 	void readBinding(const Provenance* bdgprov);
 
+	/** @brief Report writing of a provenance-tracked binding.
+	 *
+	 * This function should be called whenever the top-level
+	 * command creates or changes the state of a Frame::Binding
+	 * with non-null Provenance.
+	 *
+	 * @param bdgprov Non-null pointer to the Provenance of a
+	 *          Frame::Binding created or modified by the
+	 *          top-level command.
+	 */
+	void writeBinding(const Provenance* bdgprov);
+
 	// Virtual functions of GCNode:
 	void detachReferents();
 	void visitReferents(const_visitor* v) const;
@@ -140,9 +154,19 @@ namespace CXXR {
 	friend class Provenance;
 
 	ParentVector m_reads;
-	std::set<const Provenance*> m_read_set;
+
+	std::set<unsigned int> m_seen;  // Set of serial numbers of
+	  // all Provenance objects associated with bindings so far
+	  // read or written during the evaluation of the top-level
+	  // command.
+
 	GCEdge<const RObject> m_command;
 
+	// Although it is possible that a CommandChronicle object may
+	// not have been closed by the time it is serialised, it is
+	// assumed that it *will* have been closed before any
+	// subsequent deserialisation of it takes place.  Consequently
+	// the m_seen set is not itself serialised.
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 	    using namespace boost::serialization;

@@ -42,8 +42,11 @@
 
 using namespace CXXR;
 
+unsigned int Provenance::s_next_serial = 0;
+
 Provenance::Provenance(const Symbol* sym, const CommandChronicle* chron)
-    : m_symbol(sym), m_chronicle(chron), m_xenogenous(false)
+    : m_serial(s_next_serial++), m_symbol(sym), m_chronicle(chron),
+      m_xenogenous(false)
 {
     m_num_parents = m_chronicle->bindingsRead().size();
     gettimeofday(&m_timestamp, 0);

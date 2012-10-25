@@ -86,6 +86,7 @@ void ProvenanceTracker::writeMonitor(const Frame::Binding &bind)
 	prov->setXenogenous(bind.rawValue());  // Maybe ought to clone value
     CXXR::Frame::Binding& bdg = const_cast<CXXR::Frame::Binding&>(bind);
     bdg.setProvenance(prov);
+    s_chronicle->writeBinding(prov);
 }
 
 void flagXenogenous()

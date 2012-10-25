@@ -114,16 +114,6 @@ namespace CXXR {
 	 */
 	typedef std::set<const Provenance*, Provenance::CompTime> Set;
 
-	/** @brief Not for general use.
-	 *
-	 * Provided for use by boost::serialization.
-	 *
-	 * @todo Try to get rid of this constructor.
-	 */
-	// CXXR FIXME
-	Provenance()
-	{}
-
 	/** @brief Constructor.
 	 *
 	 * @param sym Pointer to the Symbol bound by this binding.
@@ -160,16 +150,15 @@ namespace CXXR {
 	    return m_children;
 	}
 
-	/** @brief Descendants of a set of Provenance objects.
+	/** @brief CommandChronicle for this Provenance object.
 	 *
-	 * @param roots An arbitrary Provenance::Set.
-	 *
-	 * @return Pointer to a Provenance::Set which is the closure
-	 * of \a roots under the 'child' relationship.  This return
-	 * value is allocated from the free store, and the calling
-	 * code is responsible for deleting it in due course.
+	 * @return pointer to the CommandChronicle for the top-level
+	 * command that gave rise to this binding.
 	 */
-	static Set* descendants(const Set& roots);
+	const CommandChronicle* chronicle() const
+	{
+	    return m_chronicle;
+	}
 
 	/** @brief Top-level command giving rise to this binding.
 	 *
@@ -180,6 +169,17 @@ namespace CXXR {
 	{
 	    return m_chronicle->command();
 	}
+
+	/** @brief Descendants of a set of Provenance objects.
+	 *
+	 * @param roots An arbitrary Provenance::Set.
+	 *
+	 * @return Pointer to a Provenance::Set which is the closure
+	 * of \a roots under the 'child' relationship.  This return
+	 * value is allocated from the free store, and the calling
+	 * code is responsible for deleting it in due course.
+	 */
+	static Set* descendants(const Set& roots);
 
 	const String* getTime() const;
 
@@ -220,6 +220,19 @@ namespace CXXR {
 	    return m_xenogenous;
 	}
 
+	/** @brief Return serial number.
+	 *
+	 * During each session, each Provenance object created is
+	 * given a unique serial number.  This serial number is not
+	 * preserved across sessions.
+	 *
+	 * @return This Provenance object's serial number.
+	 */
+	unsigned int serialNumber() const
+	{
+	    return m_serial;
+	}
+
 	/** @brief Declare binding to be xenogenous.
 	 *
 	 * By default, a Provenance is assumed to be associated with a
@@ -246,8 +259,15 @@ namespace CXXR {
     private:
 	friend class boost::serialization::access;
 
+	static unsigned int s_next_serial;
+
 	mutable Set m_children;
 	struct timeval m_timestamp;
+
+	unsigned int m_serial;  // Within a session each Provenance
+	  // object is given a unique serial number.  This serial
+	  // number is not preserved during serialisation.
+
 	unsigned int m_num_parents;
 	GCEdge<const Symbol> m_symbol;
 	GCEdge<const CommandChronicle> m_chronicle;
@@ -286,6 +306,33 @@ namespace CXXR {
 
 BOOST_CLASS_EXPORT_KEY(CXXR::Provenance)
 
+namespace boost {
+    namespace serialization {
+	template<class Archive>
+	void load_construct_data(Archive& ar, CXXR::Provenance* prov,
+				 const unsigned int version)
+	{
+	    using namespace CXXR;
+	    GCStackRoot<const Symbol> symbol;
+	    GCNPTR_SERIALIZE(ar, symbol);
+	    GCStackRoot<const CommandChronicle> chronicle;
+	    GCNPTR_SERIALIZE(ar, chronicle);
+	    new (prov) Provenance(symbol, chronicle);
+	}
+
+	template<class Archive>
+	void save_construct_data(Archive& ar, const CXXR::Provenance* prov,
+				 const unsigned int version)
+	{
+	    using namespace CXXR;
+	    const Symbol* symbol = prov->symbol();
+	    GCNPTR_SERIALIZE(ar, symbol);
+	    const CommandChronicle* chronicle = prov->chronicle();
+	    GCNPTR_SERIALIZE(ar, chronicle);
+	}
+    }  // namespace serialization
+}  // namespace boost
+
 // ***** Implementation of non-inlined templated members *****
 
 template <class Archive>
@@ -295,9 +342,7 @@ void CXXR::Provenance::load(Archive& ar, const unsigned int version)
     ar >> boost::serialization::make_nvp("sec", m_timestamp.tv_sec);
     ar >> boost::serialization::make_nvp("usec", m_timestamp.tv_usec);
     ar >> BOOST_SERIALIZATION_NVP(m_num_parents);
-    GCNPTR_SERIALIZE(ar, m_symbol);
     GCNPTR_SERIALIZE(ar, m_value);
-    GCNPTR_SERIALIZE(ar, m_chronicle);
     ar >> BOOST_SERIALIZATION_NVP(m_xenogenous);
 
     announceBirth();
@@ -310,9 +355,7 @@ void CXXR::Provenance::save(Archive& ar, const unsigned int version) const
     ar << boost::serialization::make_nvp("sec", m_timestamp.tv_sec);
     ar << boost::serialization::make_nvp("usec", m_timestamp.tv_usec);
     ar << BOOST_SERIALIZATION_NVP(m_num_parents);
-    GCNPTR_SERIALIZE(ar, m_symbol);
     GCNPTR_SERIALIZE(ar, m_value);
-    GCNPTR_SERIALIZE(ar, m_chronicle);
     ar << BOOST_SERIALIZATION_NVP(m_xenogenous);
 }
 
