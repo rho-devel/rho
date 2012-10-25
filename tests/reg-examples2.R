@@ -24,7 +24,7 @@ example(lm)
 example(ls.diag)
 example(model.tables)
 example(nlminb)
-#example(optim) # Temporarily omitted for CXXR provenance branch
+example(optim)
 example(prcomp)
 example(step)
 example(summary.manova)
