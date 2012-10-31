@@ -35,17 +35,17 @@ CXXR_HS = \
   ListVector.h LogicalVector.h \
   PairList.h Promise.h ProtectStack.h ProvenanceTracker.h \
   RAllocStack.h RObject.h RawVector.h RealVector.h \
-  S4Object.h SEXPTYPE.h String.h StringEncodingType.h StringVector.h Symbol.h \
+  S4Object.h SEXPTYPE.h String.h StringVector.h Symbol.h \
   VectorBase.h WeakRef.h errors.h uncxxr.h
 
 CXXR_HPPS = \
   Allocator.hpp ArgList.hpp ArgMatcher.hpp BinaryFunction.hpp \
-  CellPool.hpp \
+  CellPool.hpp CommandChronicle.hpp \
   ElementTraits.hpp Evaluator_Context.hpp \
   FixedVector.hpp Frame.hpp GCEdge.hpp GCNode.hpp GCNode_PtrS11n.hpp \
   GCStackRoot.hpp \
   HeterogeneousList.hpp MemoryBank.hpp NAAugment.hpp NodeStack.hpp \
-  Parentage.hpp Provenance.hpp RHandle.hpp \
+  Provenance.hpp RHandle.hpp \
   SEXP_downcast.hpp SchwarzCounter.hpp StdFrame.hpp Subscripting.hpp \
   UnaryFunction.hpp config.hpp
 

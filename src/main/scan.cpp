@@ -972,7 +972,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!data.ttyflag && !data.wasopen)
 	data.con->close(data.con);
     if (data.quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, data.quoteset));
-    ProvenanceTracker::flagXenogenous();
+    ProvenanceTracker::flagXenogenesis();
     return ans;
 }
 

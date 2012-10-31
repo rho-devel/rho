@@ -1539,13 +1539,6 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
     env = CADR(args);
     encl = CADDR(args);
 
-    /* cas 14/01/10
-     * *eval.with.vis*
-     * (probably?) from a call to source
-     */
-    if (PRIMVAL(op)==1)
-	ProvenanceTracker::setExpression(expr);
-
     if (Rf_isNull(encl)) {
 	/* This is supposed to be defunct, but has been kept here
 	   (and documented as such) */
@@ -1655,7 +1648,6 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Rf_setAttrib(env, R_NamesSymbol, encl);
 	expr = env;
 	UNPROTECT(3);
-	ProvenanceTracker::setExpression(0); // PA-source
     }
     UNPROTECT(1);
     return expr;

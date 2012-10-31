@@ -33,36 +33,155 @@
  *  http://www.r-project.org/Licenses/
  */
 
+/** @file ProvenanceTracker.h
+ *
+ * Class CXXR::ProvenanceTracker.
+ */
+
 #ifndef PROVENANCETRACKER_H
 #define PROVENANCETRACKER_H
 
 #ifdef __cplusplus
 
 #include "CXXR/Frame.hpp"
-#include "CXXR/GCEdge.hpp"
-#include "CXXR/Provenance.hpp"
-#include "CXXR/ProvenanceSet.hpp"
-#include "CXXR/SchwarzCounter.hpp"
 
 namespace CXXR {
+    /** @brief Management of provenance tracking.
+     *
+     * This class, all of whose members are static, provides
+     * high-level management of the provenance-tracking facilities.
+     */
     class ProvenanceTracker {
     public:
-	static void setExpression(const RObject* arg);
+	/** @brief Object associating provenance tracking with a
+	 *  top-level command.
+	 *
+	 * An object of this type should be in existence during the
+	 * period that the interpreter is evaluating a top-level
+	 * command, and associates newly created bindings (i.e.\ new
+	 * Frame::Binding objects, or new states of such objects)
+	 * within provenance-tracked Frames with that top-level
+	 * command.
+	 *
+	 * CommandScope objects are intended to be allocated on the
+	 * processor stack.
+	 */
+	class CommandScope {
+	public:
+	    /** @brief Constructor.
+	     *
+	     * @param command Top-level command whose evaluation the
+	     *          lifetime of this object will span.
+	     *
+	     * @note In the event that a CommandScope object is
+	     * already in existence (i.e. the CommandScope being
+	     * constructed is nested within another, possibly as a
+	     * result of a browser call) then the provenance of
+	     * bindings will continue to be ascribed to the command of
+	     * the outermost CommandScope, so the parameter \a command
+	     * is effectively ignored.
+	     */
+	    CommandScope(const RObject* command);
 
-	static void flagXenogenous()
+	    ~CommandScope();
+
+	    /** @brief Flag up xenogenesis.
+	     *
+	     * This function is called by class ProvenanceTracker to
+	     * indicate to the provenance tracker that in evaluating
+	     * the top-level command, the behaviour of the interpreter
+	     * has been influenced by something external to it,
+	     * e.g. by reading an external file, or by accepting user
+	     * input.  Provenance-tracked bindings created by the
+	     * top-level command subsequently to this call will be
+	     * flagged as having xenogenous provenance.
+	     */
+	    void flagXenogenesis()
+	    {
+		m_xenogenetic = true;
+	    }
+
+	    /** @brief Monitor reading of bindings.
+	     *
+	     * Class ProvenanceTracker will call this function
+	     * whenever evaluation of the top-level command results in
+	     * the reading of a binding within a provenance-tracked
+	     * Frame.
+	     *
+	     * @param bdg reference to the binding read.
+	     */
+	    void monitorRead(const Frame::Binding& bdg);
+
+	    /** @brief Monitor writing of bindings.
+	     *
+	     * Class ProvenanceTracker will call this function
+	     * whenever evaluation of the top-level command results in
+	     * the writing of a binding within a provenance-tracked
+	     * Frame.
+	     *
+	     * @param bdg reference to the binding written.
+	     */
+	    void monitorWrite(const Frame::Binding& bdg);
+	private:
+	    GCStackRoot<CommandChronicle> m_chronicle;
+	    bool m_xenogenetic;
+	};
+
+	    /** @brief Flag up xenogenesis.
+	     *
+	     * This function is called to indicate to the provenance
+	     * tracker that in evaluating the current top-level
+	     * command, the behaviour of the interpreter has been
+	     * influenced by something external to it, e.g. by reading
+	     * an external file, or by accepting user input.
+	     * Provenance-tracked bindings created by the top-level
+	     * command subsequently to this call will be flagged as
+	     * having xenogenous provenance.
+	     */
+	static void flagXenogenesis()
 	{
-	    s_xenogenous = true;
+	    s_scope->flagXenogenesis();
 	}
 
-	static void readMonitor(const Frame::Binding& bdg);
+	/** @brief Read monitor.
+	 *
+	 * This function is set up as the read monitor for class
+	 * Frame, to ensure that reading of bindings within
+	 * provenance-tracked Frames is reported to the provenance
+	 * tracker.
+	 */
+	static void monitorRead(const Frame::Binding& bdg)
+	{
+	    s_scope->monitorRead(bdg);
+	}
 
-	static void writeMonitor(const Frame::Binding& bind);
+	/** @brief Write monitor.
+	 *
+	 * This function is set up as the write monitor for class
+	 * Frame, to ensure that writing of bindings within
+	 * provenance-tracked Frames is reported to the provenance
+	 * tracker.
+	 */
+	static void monitorWrite(const Frame::Binding& bdg)
+	{
+	    s_scope->monitorWrite(bdg);
+	}
 
-	static void initEnvs();
+	/** @brief Establish read and write monitoring for provenance
+	 *  tracking.
+	 *
+	 * This function sets up the read and write monitors of class
+	 * Frame appropriately for provenance tracking, and enables
+	 * the provenance tracking of bindings within the global
+	 * environment.
+	 */
+	static void setMonitors();
     private:
-	static GCRoot<CommandChronicle> s_chronicle;
-	static bool s_xenogenous;
+	static CommandScope* s_scope;  // Pointer to the current scope
+	  // or null if none.  If scopes are nested, this points to
+	  // the outermost scope.
 
+	// Declared private to prevent instantiation of this class:
 	ProvenanceTracker();
     };
 } // namespace CXXR
@@ -70,7 +189,7 @@ namespace CXXR {
 extern "C" {
 #endif // __cplusplus
 
-    void flagXenogenous();
+    void flagXenogenesis();
 
 #ifdef __cplusplus
 }  // extern "C"

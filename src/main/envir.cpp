@@ -247,7 +247,7 @@ void attribute_hidden InitGlobalEnv()
     R_PreserveObject(R_NamespaceRegistry);
     defineVar(install("base"), R_BaseNamespace, R_NamespaceRegistry);
 
-    ProvenanceTracker::initEnvs();
+    ProvenanceTracker::setMonitors();
     //ProvenanceTracker::initEnv(static_cast<Environment*>(R_BaseEnv));
     /**** needed to properly initialize the base namespace */
 }

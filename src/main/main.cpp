@@ -350,7 +350,6 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
     SEXP value, thisExpr;
     Rboolean wasDisplayed = FALSE;
     unsigned int browselevel = Browser::numberActive();
-    ProvenanceTracker::setExpression(0);
 
     if(!*state->bufp) {
 	    R_Busy(0);
@@ -387,37 +386,37 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
 	return 1;
 
     case PARSE_OK:
-
-	R_IoBufferReadReset(&R_ConsoleIob);
-	R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 1, &state->status);
-	ProvenanceTracker::setExpression(R_CurrentExpr);
-	if (browselevel) {
-	    browsevalue = ParseBrowser(R_CurrentExpr, rho);
-	    if(browsevalue == 1) return -1;
-	    if(browsevalue == 2) {
-		R_IoBufferWriteReset(&R_ConsoleIob);
-		return 0;
+	{
+	    R_IoBufferReadReset(&R_ConsoleIob);
+	    R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 1, &state->status);
+	    ProvenanceTracker::CommandScope scope(R_CurrentExpr);
+	    if (browselevel) {
+		browsevalue = ParseBrowser(R_CurrentExpr, rho);
+		if(browsevalue == 1) return -1;
+		if(browsevalue == 2) {
+		    R_IoBufferWriteReset(&R_ConsoleIob);
+		    return 0;
+		}
 	    }
+	    R_Visible = FALSE;
+	    Evaluator::setDepth(0);
+	    resetTimeLimits();
+	    PROTECT(thisExpr = R_CurrentExpr);
+	    R_Busy(1);
+	    value = eval(thisExpr, rho);
+	    SET_SYMVALUE(R_LastvalueSymbol, value);
+	    wasDisplayed = R_Visible;
+	    if (R_Visible)
+		PrintValueEnv(value, rho);
+	    if (R_CollectWarnings)
+		PrintWarnings();
+	    Rf_callToplevelHandlers(thisExpr, value, TRUE, wasDisplayed);
+	    R_CurrentExpr = value; /* Necessary? Doubt it. */
+	    UNPROTECT(1);
+	    R_IoBufferWriteReset(&R_ConsoleIob);
+	    state->prompt_type = 1;
+	    return(1);
 	}
-	R_Visible = FALSE;
-	Evaluator::setDepth(0);
-	resetTimeLimits();
-	PROTECT(thisExpr = R_CurrentExpr);
-	R_Busy(1);
-	value = eval(thisExpr, rho);
-	SET_SYMVALUE(R_LastvalueSymbol, value);
-	wasDisplayed = R_Visible;
-	if (R_Visible)
-	    PrintValueEnv(value, rho);
-	if (R_CollectWarnings)
-	    PrintWarnings();
-	Rf_callToplevelHandlers(thisExpr, value, TRUE, wasDisplayed);
-	R_CurrentExpr = value; /* Necessary? Doubt it. */
-	UNPROTECT(1);
-	R_IoBufferWriteReset(&R_ConsoleIob);
-	state->prompt_type = 1;
-	return(1);
-
     case PARSE_ERROR:
 
 	state->prompt_type = 1;

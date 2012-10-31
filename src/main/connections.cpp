@@ -3402,7 +3402,7 @@ SEXP attribute_hidden do_readLines(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(!wasopen) con->close(con);
 	UNPROTECT(1);
 	free(buf);
-	ProvenanceTracker::flagXenogenous();
+	ProvenanceTracker::flagXenogenesis();
 	return ans;
     no_more_lines:
 	if(!wasopen) con->close(con);
@@ -3430,7 +3430,7 @@ SEXP attribute_hidden do_readLines(SEXP call, SEXP op, SEXP args, SEXP env)
     for(i = 0; i < nread; i++)
 	SET_STRING_ELT(ans2, i, STRING_ELT(ans, i));
     UNPROTECT(2);
-    ProvenanceTracker::flagXenogenous();
+    ProvenanceTracker::flagXenogenesis();
     return ans2;
 }
 
@@ -3827,7 +3827,7 @@ SEXP attribute_hidden do_readbin(SEXP call, SEXP op, SEXP args, SEXP env)
 	UNPROTECT(1);
     }
     UNPROTECT(1);
-    ProvenanceTracker::flagXenogenous();
+    ProvenanceTracker::flagXenogenesis();
     return ans;
 }
 
@@ -4243,7 +4243,7 @@ SEXP attribute_hidden do_readchar(SEXP call, SEXP op, SEXP args, SEXP env)
 	UNPROTECT(1);
     }
     UNPROTECT(1);
-    ProvenanceTracker::flagXenogenous();
+    ProvenanceTracker::flagXenogenesis();
     return ans;
 }
 

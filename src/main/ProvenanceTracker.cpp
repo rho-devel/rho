@@ -35,61 +35,69 @@
 
 #include "CXXR/ProvenanceTracker.h"
 
-#include "CXXR/Provenance.hpp"
-#include "CXXR/ProvenanceSet.hpp"
-#include "CXXR/Expression.h"
-#include "CXXR/Frame.hpp"
-#include "Defn.h"
+#include "CXXR/CommandChronicle.hpp"
+#include "CXXR/Environment.h"
 
 using namespace CXXR;
 
-GCRoot<CommandChronicle> ProvenanceTracker::s_chronicle;
-bool ProvenanceTracker::s_xenogenous = false;
+ProvenanceTracker::CommandScope* ProvenanceTracker::s_scope = 0;
 
-void ProvenanceTracker::setExpression(const RObject* arg) {
-    if (arg) {
-	s_chronicle = CXXR_NEW(CommandChronicle(arg));
-	s_xenogenous = false;
-    } else if (s_chronicle) {
-	s_chronicle->close();
-	s_chronicle = 0;
+
+// ***** Class ProvenanceTracker::CommandScope *****
+
+// CXXR FIXME: Maybe ought to duplicate 'command', either here or in
+// CommandChronicle constructor.
+ProvenanceTracker::CommandScope::CommandScope(const RObject* command)
+    : m_xenogenetic(false)
+{
+    if (!ProvenanceTracker::s_scope) {
+	m_chronicle = CXXR_NEW(CommandChronicle(command));
+	ProvenanceTracker::s_scope = this;
     }
 }
 
-void ProvenanceTracker::initEnvs()
+ProvenanceTracker::CommandScope::~CommandScope()
 {
-    Frame::setReadMonitor(ProvenanceTracker::readMonitor);
-    Frame::setWriteMonitor(ProvenanceTracker::writeMonitor);
+    if (s_scope == this) {
+	m_chronicle->close();
+	ProvenanceTracker::s_scope = 0;
+    }
+}
+
+void ProvenanceTracker::CommandScope::monitorRead(const Frame::Binding& bdg)
+{ 
+    const Provenance* prov = bdg.provenance();
+    if (prov)
+	m_chronicle->readBinding(prov);
+}
+
+void ProvenanceTracker::CommandScope::monitorWrite(const Frame::Binding &bdg)
+{
+    const Symbol* sym = bdg.symbol();
+    GCStackRoot<Provenance> prov(CXXR_NEW(Provenance(sym, m_chronicle)));
+    if (m_xenogenetic)
+	prov->setXenogenous(bdg.rawValue());  // Maybe ought to clone value
+    CXXR::Frame::Binding& ncbdg = const_cast<CXXR::Frame::Binding&>(bdg);
+    ncbdg.setProvenance(prov);
+    m_chronicle->writeBinding(prov);
+}
+
+
+// ***** Class ProvenanceTracker::CommandScope *****
+
+void ProvenanceTracker::setMonitors()
+{
+    Frame::setReadMonitor(ProvenanceTracker::monitorRead);
+    Frame::setWriteMonitor(ProvenanceTracker::monitorWrite);
     Frame* global_frame = Environment::global()->frame();
     global_frame->enableReadMonitoring(true);
     global_frame->enableWriteMonitoring(true);
 }
 
-void ProvenanceTracker::readMonitor(const Frame::Binding& bdg)
-{ 
-#ifdef VERBOSEMONITOR
-    cout << "Read '" << bdg.symbol()->name()->c_str() << "'" <<endl;
-#endif
-    const Provenance* p = bdg.provenance();
-    if (p)
-	s_chronicle->readBinding(p);
-}
 
-void ProvenanceTracker::writeMonitor(const Frame::Binding &bind)
-{
-#ifdef VERBOSEMONITOR
-    cout << "Write '" << bind.symbol()->name()->c_str() << "'" <<endl;
-#endif
-    const Symbol* sym = bind.symbol();
-    GCStackRoot<Provenance> prov(CXXR_NEW(Provenance(sym, s_chronicle)));
-    if (s_xenogenous)
-	prov->setXenogenous(bind.rawValue());  // Maybe ought to clone value
-    CXXR::Frame::Binding& bdg = const_cast<CXXR::Frame::Binding&>(bind);
-    bdg.setProvenance(prov);
-    s_chronicle->writeBinding(prov);
-}
+// ***** C interface *****
 
-void flagXenogenous()
+void flagXenogenesis()
 {
-    ProvenanceTracker::flagXenogenous();
+    ProvenanceTracker::flagXenogenesis();
 }
