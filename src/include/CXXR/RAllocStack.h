@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -41,6 +41,8 @@
 
 #ifndef RALLOCSTACK_H
 #define RALLOCSTACK_H 1
+
+#include <stddef.h>
 
 #ifdef __cplusplus
 
