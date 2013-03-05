@@ -46,6 +46,14 @@
 #include "CXXR/Frame.hpp"
 
 namespace CXXR {
+
+#ifndef PROVENANCE_TRACKING
+    // Vestigial implementation of ProvenanceTracker:
+    struct ProvenanceTracker {
+	static void flagXenogenesis()
+	{}
+    };
+#else
     /** @brief Management of provenance tracking.
      *
      * This class, all of whose members are static, provides
@@ -184,6 +192,7 @@ namespace CXXR {
 	// Declared private to prevent instantiation of this class:
 	ProvenanceTracker();
     };
+#endif  // PROVENANCE_TRACKING
 } // namespace CXXR
 
 extern "C" {

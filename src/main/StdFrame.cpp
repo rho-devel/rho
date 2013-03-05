@@ -123,7 +123,9 @@ void StdFrame::import(const Frame* frame) {
 	const Binding* bdgSrc=&(*it).second;
 
 	Binding* bdgDest = obtainBinding(symbol);
+#ifdef PROVENANCE_TRACKING
 	bdgDest->setProvenance(const_cast<Provenance*>(bdgSrc->provenance()));
+#endif
 	bdgDest->setValue(bdgSrc->rawValue(), bdgSrc->origin(), TRUE);
     }
 }

@@ -40,6 +40,8 @@
 
 using namespace CXXR;
 
+#ifdef PROVENANCE_TRACKING
+
 ProvenanceTracker::CommandScope* ProvenanceTracker::s_scope = 0;
 
 
@@ -94,6 +96,7 @@ void ProvenanceTracker::setMonitors()
     global_frame->enableWriteMonitoring(true);
 }
 
+#endif  // PROVENANCE_TRACKING
 
 // ***** C interface *****
 

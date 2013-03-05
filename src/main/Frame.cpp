@@ -144,8 +144,10 @@ void Frame::Binding::visitReferents(const_visitor* v) const
     // visit that.
     if (m_value)
 	(*v)(m_value);
+#ifdef PROVENANCE_TRACKING
     if (m_provenance)
 	(*v)(m_provenance);
+#endif
 }
 
 void Frame::enableReadMonitoring(bool on) const

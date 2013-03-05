@@ -112,7 +112,10 @@ namespace CXXR {
 	     */
 	    Binding()
 		: m_frame(0), m_symbol(0), m_value(Symbol::missingArgument()),
-		  m_provenance(0), m_origin(MISSING), m_active(false),
+#ifdef PROVENANCE_TRACKING
+		  m_provenance(0),
+#endif
+		  m_origin(MISSING), m_active(false),
 		  m_locked(false)
 	    {}
 
@@ -207,6 +210,7 @@ namespace CXXR {
 	     */
 	    void fromPairList(PairList* pl);
 
+#ifdef PROVENANCE_TRACKING
 	    /** @brief Provenance associated with this binding.
 	     *
 	     * @return pointer to the Provenance object associated
@@ -217,6 +221,7 @@ namespace CXXR {
 	    {
 		return m_provenance;
 	    }
+#endif
 
 	    /** @brief Initialize the Binding.
 	     *
@@ -307,6 +312,7 @@ namespace CXXR {
 		m_locked = on;
 	    }
 
+#ifdef PROVENANCE_TRACKING
 	    /** @brief Set provenance object association with this binding
 	     *
 	     * @param prov Pointer to Provenance object to associate with this
@@ -316,6 +322,7 @@ namespace CXXR {
 	    {
 		m_provenance=prov;
 	    }
+#endif
 
 	    /** @brief Define the object to which this Binding's
 	     *         Symbol is bound.
@@ -368,7 +375,9 @@ namespace CXXR {
 	    Frame* m_frame;
 	    const Symbol* m_symbol;
 	    GCEdge<> m_value;
+#ifdef PROVENANCE_TRACKING
 	    GCEdge<const Provenance> m_provenance;
+#endif
 	    unsigned char m_origin;
 	    bool m_active;
 	    bool m_locked;
@@ -836,7 +845,14 @@ template<class Archive>
 void CXXR::Frame::Binding::serialize(Archive & ar, const unsigned int version)
 {
     GCNPTR_SERIALIZE(ar, m_value);
-    GCNPTR_SERIALIZE(ar, m_provenance);
+    const Provenance* prov = 0;
+#ifdef PROVENANCE_TRACKING
+    prov = m_provenance;
+#endif
+    GCNode::PtrS11n::invoke(ar, prov, "m_provenance");
+#ifdef PROVENANCE_TRACKING
+    m_provenance = prov;
+#endif
     ar & BOOST_SERIALIZATION_NVP(m_origin);
     ar & BOOST_SERIALIZATION_NVP(m_active);
     ar & BOOST_SERIALIZATION_NVP(m_locked);
