@@ -47,6 +47,8 @@
 #ifdef __cplusplus
 
 #include <map>
+#include <boost/serialization/nvp.hpp>
+
 #include "CXXR/ArgList.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/Expression.h"
@@ -281,6 +283,9 @@ namespace CXXR {
 	    return (s_function_table[m_offset].flags%100)/10 == 1;
 	}
 
+	// Virtual function of GCNode:
+	BuiltInFunction* s11n_relocate() const;
+
 	// Virtual function of RObject:
 	const char* typeName() const;
 
@@ -288,6 +293,9 @@ namespace CXXR {
 	RObject* apply(ArgList* arglist, Environment* env,
 		       const Expression* call) const;
     private:
+	friend class boost::serialization::access;
+	friend class SchwarzCounter<BuiltInFunction>;
+
 	// 'Pretty-print' information:
 	struct PPinfo {
 	    Kind kind;
@@ -325,6 +333,20 @@ namespace CXXR {
 	bool m_transparent;  // if true, do not create a
 			     // FunctionContext when this function is
 			     // applied.
+	GCEdge<BuiltInFunction> m_s11n_reloc; // Used only in
+	  // temporary objects created during deserialisation.
+
+	// This default constructor is used only during (boost)
+	// deserialisation, and constructs a bodged-up temporary
+	// object, with m_s11n_relocate pointing to the corresponding
+	// pukka object returned by BuiltInFunction::obtain().
+
+	// (The argument to the FunctionBase base-class constructor is
+	// arbitrary, but will not be used during the lifetime of this
+	// temporary object.)
+	BuiltInFunction()
+	    : FunctionBase(BUILTINSXP), m_offset(0), m_function(0)
+	{}
 
 	/** @brief Constructor.
 	 *
@@ -364,6 +386,9 @@ namespace CXXR {
 			      const_cast<PairList*>(arglist->list()), env);
 	}
 
+	template<class Archive>
+	void load(Archive & ar, const unsigned int version);
+
 	/** @brief Raise error because of missing argument.
 	 *
 	 * @param func Pointer, possibly null, to the BuiltInFunction
@@ -378,15 +403,45 @@ namespace CXXR {
 					 const PairList* args,
 					 unsigned int index);
 
-	friend class SchwarzCounter<BuiltInFunction>;
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const;
+
+	// Fields not serialised here are set up by the constructor:
+	template <class Archive>
+	void serialize(Archive& ar, const unsigned int version) {
+	    boost::serialization::split_member(ar, *this, version);
+	}
     };
 }  // namespace CXXR
+
+BOOST_CLASS_EXPORT_KEY(CXXR::BuiltInFunction)
 
 // Force Environment and Symbol classes to be initialised first:
 #include "CXXR/Environment.h"
 
 namespace {
     CXXR::SchwarzCounter<CXXR::BuiltInFunction> bif_schwarz_ctr;
+}
+
+// ***** Implementation of non-inlined templated members *****
+
+template<class Archive>
+void CXXR::BuiltInFunction::load(Archive& ar, const unsigned int version)
+{
+    // This will only ever be applied to a 'temporary' BuiltInFunction
+    // created by the default constructor.
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(FunctionBase);
+    std::string namestr;
+    ar >> boost::serialization::make_nvp("name", namestr);
+    m_s11n_reloc = obtain(namestr);
+}
+
+template<class Archive>
+void CXXR::BuiltInFunction::save(Archive& ar, const unsigned int version) const
+{
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(FunctionBase);
+    std::string namestr(name());
+    ar << boost::serialization::make_nvp("name", namestr);
 }
 
 // Old-style accessor functions.  Get rid of these in due course.

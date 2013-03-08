@@ -55,6 +55,7 @@ typedef enum {
 
 #ifdef __cplusplus
 
+#include <boost/serialization/nvp.hpp>
 #include <tr1/unordered_map>
 #include <string>
 
@@ -242,7 +243,14 @@ namespace CXXR {
 	// Virtual functions of RObject:
 	unsigned int packGPBits() const;
 	const char* typeName() const;
+
+	// Virtual function of GCNode:
+	String* s11n_relocate() const;
     private:
+	friend class boost::serialization::access;
+	friend class SchwarzCounter<String>;
+	friend class Symbol;
+
 	// The first element of the key is the text, the second
 	// element the encoding:
 	typedef std::pair<std::string, cetype_t> key;
@@ -275,13 +283,15 @@ namespace CXXR {
 
 	map::value_type* m_key_val_pr;
 	const std::string* m_string;
+	GCEdge<String> m_s11n_reloc;  // Used only in temporary objects
+	  // created during deserialisation.
 	cetype_t m_encoding;
 	mutable Symbol* m_symbol;  // Pointer to the Symbol object identified
 	  // by this String, or a null pointer if none.
 	bool m_ascii;
 
 	// A null value of key_val_pr is used to designate the NA string:
-	explicit String(map::value_type* key_val_pr);
+	explicit String(map::value_type* key_val_pr = 0);
 
 	// Not implemented.  Declared to prevent
 	// compiler-generated versions:
@@ -297,8 +307,17 @@ namespace CXXR {
 	// Initialize the static data members:
 	static void initialize();
 
-	friend class SchwarzCounter<String>;
-	friend class Symbol;
+	template<class Archive>
+	void load(Archive & ar, const unsigned int version);
+
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const;
+
+	// Fields not serialised here are set up by the constructor:
+	template <class Archive>
+	void serialize(Archive& ar, const unsigned int version) {
+	    boost::serialization::split_member(ar, *this, version);
+	}
     };
 
     /** @brief Is a std::string entirely ASCII?
@@ -312,8 +331,43 @@ namespace CXXR {
     bool isASCII(const std::string& str);
 }  // namespace CXXR
 
+BOOST_CLASS_EXPORT_KEY(CXXR::String)
+
 namespace {
     CXXR::SchwarzCounter<CXXR::String> string_schwarz_ctr;
+}
+    
+// ***** Implementation of non-inlined templated members *****
+
+template<class Archive>
+void CXXR::String::load(Archive& ar, const unsigned int version)
+{
+    // This will only ever be applied to a 'temporary' String
+    // created by the default constructor.
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
+    bool isna;
+    ar >> BOOST_SERIALIZATION_NVP(isna);
+    if (isna)
+	m_s11n_reloc = NA();
+    else {
+	std::string str;
+	ar >> boost::serialization::make_nvp("string", str);
+	ar >> BOOST_SERIALIZATION_NVP(m_encoding);
+	m_s11n_reloc = obtain(str, m_encoding);
+    }
+}
+
+template<class Archive>
+void CXXR::String::save(Archive& ar, const unsigned int version) const
+{
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
+    bool isna = (this == NA());
+    ar << BOOST_SERIALIZATION_NVP(isna);
+    if (!isna) {
+	std::string str = stdstring();
+	ar << boost::serialization::make_nvp("string", str);
+	ar << BOOST_SERIALIZATION_NVP(m_encoding);
+    }
 }
 
 extern "C" {

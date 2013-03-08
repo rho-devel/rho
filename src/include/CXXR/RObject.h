@@ -47,7 +47,11 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/GCNode.hpp"
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/nvp.hpp>
+
+#include "CXXR/GCNode_PtrS11n.hpp"
 #include "CXXR/RHandle.hpp"
 #include "CXXR/uncxxr.h"
 
@@ -169,10 +173,10 @@ namespace CXXR {
 	 * This struct is typically used as a default template
 	 * parameter, for example in FixedVector.
 	 */
-	struct DoNothing : std::unary_function<RObject*, void> {
+	struct DoNothing {
 	    /** @brief Does nothing.
 	     */
-	    void operator()(RObject*)
+	    static void initialize(RObject*)
 	    {}
 	};
 
@@ -556,6 +560,8 @@ namespace CXXR {
 
 	virtual ~RObject() {}
     private:
+	friend class boost::serialization::access;
+
 	static const unsigned char s_sexptype_mask = 0x3f;
 	static const unsigned char s_S4_mask = 0x40;
 	static const unsigned char s_class_mask = 0x80;
@@ -572,7 +578,8 @@ namespace CXXR {
 	// when a copy is made of this object, or - more generally -
 	// some comparably sized object is derived from this object,
 	// this fact should be reported, and the m_memory_traced
-	// property propagated to the new object.
+	// property propagated to the new object.  Setting of this
+	// field is not preserved in CXXR-style serialization.
 	bool m_memory_traced : 1;
     public:
 	// The following field is used only in connection with objects
@@ -586,6 +593,8 @@ namespace CXXR {
 
 	// 'Scratchpad' field used in handling argument lists,
 	// formerly hosted in the 'gp' field of sxpinfo_struct.
+	// Setting of this field is not preserved in CXXR-style
+	// serialization.
 	unsigned m_missing     : 2;
 	
 	// Similarly the following three obsolescent fields squeezed
@@ -593,19 +602,25 @@ namespace CXXR {
 	// PairList (and only rarely then), so they would more
 	// logically be placed in that class (and formerly were within
 	// CXXR).
-	
 	// 'Scratchpad' field used in handling argument lists,
 	// formerly hosted in the 'gp' field of sxpinfo_struct.
+	// Setting of this field is not preserved in CXXR-style
+	// serialization.
 	unsigned m_argused    : 2;
 
 	// Used when the contents of an Environment are represented as
 	// a PairList, for example during serialization and
 	// deserialization, and formerly hosted in the gp field of
-	// sxpinfo_struct.
+	// sxpinfo_struct.  Setting of these fields is not preserved
+	// in CXXR-style serialization.
 	bool m_active_binding : 1;
 	bool m_binding_locked : 1;
     private:
 	RHandle<PairList> m_attrib;
+
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version);
+
 #ifdef R_MEMORY_PROFILING
 	// This function implements maybeTraceMemory() (qv.) when
 	// memory profiling is enabled.
@@ -614,6 +629,19 @@ namespace CXXR {
 #endif	
     };
 }  // namespace CXXR
+
+// ***** Implementation of non-inlined templated members *****
+
+// Fields not serialized here are handled in the constructor:
+template<class Archive>
+void CXXR::RObject::serialize(Archive& ar, const unsigned int version)
+{
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
+    unsigned int type = m_type;
+    ar & BOOST_SERIALIZATION_NVP(type);
+    m_type = type;
+    GCNPTR_SERIALIZE(ar, m_attrib);
+}
 
 /** @brief Pointer to an RObject.
  *

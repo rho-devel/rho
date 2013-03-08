@@ -45,6 +45,11 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/nvp.hpp>
+#include <boost/serialization/split_member.hpp>
+
 #include "CXXR/ArgMatcher.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/PairList.h"
@@ -231,6 +236,8 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+        friend class boost::serialization::access;
+
 	/** @brief Patrol entry and exit if debugging.
 	 *
 	 * DebugScope objects must be declared on the processor stack
@@ -286,11 +293,60 @@ namespace CXXR {
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
 	Closure& operator=(const Closure&);
+
+	template<class Archive>
+	void load(Archive & ar, const unsigned int version);
+
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    boost::serialization::split_member(ar, *this, version);
+	}
     };
 }  // namespace CXXR
 
+BOOST_CLASS_EXPORT_KEY(CXXR::Closure)
+
+// ***** Implementation of non-inlined templated members *****
+
+template<class Archive>
+void CXXR::Closure::load(Archive& ar, const unsigned int version)
+{
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
+    GCStackRoot<const PairList> formal_args;
+    GCNPTR_SERIALIZE(ar, formal_args);
+    m_matcher=expose(new ArgMatcher(formal_args));
+    GCNPTR_SERIALIZE(ar, m_body);
+    GCNPTR_SERIALIZE(ar, m_environment);
+}
+
+template<class Archive>
+void CXXR::Closure::save(Archive& ar, const unsigned int version) const
+{
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
+    GCStackRoot<const PairList> formal_args(m_matcher->formalArgs());
+    GCNPTR_SERIALIZE(ar, formal_args);
+    GCNPTR_SERIALIZE(ar, m_body);
+    GCNPTR_SERIALIZE(ar, m_environment);
+}
+
+// ***** boost serialization object construction *****
+
+namespace boost {
+    namespace serialization {
+	template<class Archive>
+	void load_construct_data(Archive& ar, CXXR::Closure* t,
+				 const unsigned int version)
+	{
+	    new (t) CXXR::Closure(0, 0);
+	}
+    }  // namespace serialization
+}  // namespace boost
+
 extern "C" {
-#endif
+#endif  /* __cplusplus */
 
     /** @brief Create a CXXR::Closure object.
      *

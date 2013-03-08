@@ -33,18 +33,21 @@ SOURCES_CXX = \
 	ArgList.cpp ArgMatcher.cpp \
 	BinaryFunction.cpp Browser.cpp BuiltInFunction.cpp ByteCode.cpp \
 	CConverters.cpp CellPool.cpp Closure.cpp \
-	ClosureContext.cpp CommandLineArgs.cpp ComplexVector.cpp ConsCell.cpp \
+	ClosureContext.cpp CommandChronicle.cpp CommandLineArgs.cpp \
+	ComplexVector.cpp ConsCell.cpp \
 	DotInternal.cpp DottedArgs.cpp \
 	Environment.cpp Evaluator.cpp Evaluator_Context.cpp Expression.cpp \
 	ExpressionVector.cpp ExternalPointer.cpp \
         Frame.cpp FunctionBase.cpp FunctionContext.cpp \
-        GCEdge.cpp GCManager.cpp GCNode.cpp GCRoot.cpp GCStackRoot.cpp \
+        GCEdge.cpp GCManager.cpp GCNode.cpp GCNode_PtrS11n.cpp GCRoot.cpp \
+	GCStackRoot.cpp \
 	HeterogeneousList.cpp \
-        inspect.cpp IntVector.cpp \
+        IntVector.cpp inspect.cpp \
 	ListFrame.cpp ListVector.cpp LogicalVector.cpp LoopBailout.cpp \
 	MemoryBank.cpp \
 	NodeStack.cpp \
-        PairList.cpp Promise.cpp ProtectStack.cpp \
+        PairList.cpp Promise.cpp ProtectStack.cpp Provenance.cpp \
+	ProvenanceSet.cpp ProvenanceTracker.cpp \
         RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
         RealVector.cpp Renviron.cpp ReturnBailout.cpp \
         S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp StdFrame.cpp \
@@ -68,6 +71,7 @@ SOURCES_CXX = \
 	names.cpp objects.cpp optim.cpp optimize.cpp options.cpp \
 	par.cpp paste.cpp platform.cpp plot.cpp plot3d.cpp plotmath.cpp \
 	print.cpp printarray.cpp printvector.cpp printutils.cpp qsort.cpp \
+	provenance_do.cpp \
 	random.cpp raw.cpp registration.cpp relop.cpp rlocale.cpp \
 	saveload.cpp scan.cpp seq.cpp serialize.cpp size.cpp sort.cpp \
         source.cpp split.cpp sprintf.cpp startup.cpp subassign.cpp \
@@ -143,13 +147,16 @@ EXTRA_LIBS = $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS) @LIBINTL@ $(READLINE_LIBS) $(L
 
 R_binary = R.bin
 
-## CXXR: LogicalVector.o must be forced in, because it defines
-## non-inlined versions of some functions called from C, but defines
-R_bin_OBJECTS = Rmain.o LogicalVector.o @BUILD_LTO_TRUE@@WANT_R_SHLIB_FALSE@$(OBJECTS)
+## CXXR: Certain object files (e.g. IntVector.o) must be linked in
+## explicitly, because they define nothing that would cause their
+## automatic inclusion, but are needed e.g. because they define
+## non-inlined versions of functions called from C, or constructs
+## related to serialization. 
+R_bin_OBJECTS = Rmain.o ComplexVector.o IntVector.o LogicalVector.o \
+                RealVector.o @BUILD_LTO_TRUE@@WANT_R_SHLIB_FALSE@$(OBJECTS)
 @BUILD_LTO_TRUE@@WANT_R_SHLIB_FALSE@R_bin_LDADD = $(MAIN_OBJS) $(EXTRA_STATIC_LIBS) $(EXTRA_LIBS)
 @BUILD_LTO_FALSE@@WANT_R_SHLIB_FALSE@R_bin_LDADD = libR.a $(EXTRA_LIBS)
-## nothing that would cause its automatic inclusion.
-R_bin_OBJECTS = Rmain.o LogicalVector.o
+
 ## Linked against -lRblas becasue -lR is and otherwise ld complains.
 @WANT_R_SHLIB_TRUE@R_bin_LDADD = -L../../lib@R_ARCH@ -lR @BLAS_SHLIB_TRUE@-lRblas
 @BUILD_LTO_FALSE@R_bin_DEPENDENCIES =@WANT_R_SHLIB_FALSE@ libR.a @USE_EXPORTFILES_TRUE@ $(top_builddir)/etc/R.exp

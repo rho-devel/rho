@@ -82,6 +82,8 @@ namespace CXXR {
     typedef CXXR::FixedVector<double, REALSXP> RealVector;
 }  // namespace CXXR
 
+BOOST_CLASS_EXPORT_KEY(CXXR::RealVector)
+
 extern "C" {
 #endif /* __cplusplus */
 

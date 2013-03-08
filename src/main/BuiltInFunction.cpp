@@ -108,8 +108,10 @@ BuiltInFunction::BuiltInFunction(unsigned int offset)
 
 BuiltInFunction::~BuiltInFunction()
 {
+    if (m_s11n_reloc)
+	return;
     // During program exit, s_cache may already have been deleted:
-    if (s_cache)
+    else if (s_cache)
 	s_cache->erase(name());
 }
 
@@ -201,7 +203,14 @@ BuiltInFunction* BuiltInFunction::obtain(const std::string& name)
     return (*it).second;
 }
 
+BuiltInFunction* BuiltInFunction::s11n_relocate() const 
+{
+    return m_s11n_reloc;
+}
+
 const char* BuiltInFunction::typeName() const
 {
     return sexptype() == SPECIALSXP ? "special" : "builtin";
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::BuiltInFunction)

@@ -52,3 +52,8 @@ namespace CXXR {
 	int* (*LOGICALp)(SEXP) = LOGICAL;
     }
 }
+
+// Needed for the instantiation in BOOST_CLASS_EXPORT_IMPLEMENT:
+#include "CXXR/PairList.h"
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::LogicalVector)

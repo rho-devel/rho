@@ -112,6 +112,12 @@ bool ListFrame::erase(const Symbol* symbol)
     return true;
 }
 
+void ListFrame::import(const Frame* frame)
+{
+    cerr << "Not (yet) implemented.\n";
+    abort();
+}
+
 void ListFrame::lockBindings()
 {
     for (List::iterator it = m_list.begin(); it != m_list.end(); ++it)
@@ -172,3 +178,5 @@ void ListFrame::visitReferents(const_visitor* v) const
 	 it != m_list.end(); ++it)
 	(*it).visitReferents(v);
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::ListFrame)

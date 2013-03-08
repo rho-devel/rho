@@ -210,6 +210,11 @@ unsigned int Environment::packGPBits() const
     return ans;
 }
 
+Environment* Environment::s11n_relocate() const
+{
+    return m_s11n_reloc;
+}
+
 void  Environment::setEnclosingEnvironment(Environment* new_enclos)
 {
     m_enclosing = new_enclos;
@@ -269,6 +274,8 @@ void Environment::visitReferents(const_visitor* v) const
     if (frame)
 	(*v)(frame);
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::Environment)
 
 // ***** Free-standing functions *****
 

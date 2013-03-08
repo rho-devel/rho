@@ -41,10 +41,22 @@
 #ifndef GCNODE_HPP
 #define GCNODE_HPP
 
+#include <sstream>
+
 #include "CXXR/Allocator.hpp"
 #include "CXXR/HeterogeneousList.hpp"
 #include "CXXR/MemoryBank.hpp"
 #include "CXXR/SchwarzCounter.hpp"
+
+// According to various web postings (and arr's experience) it is
+// necessary for the compiler to have seen the headers for the archive
+// types in use before it encounters any of the BOOST_CLASS_EXPORT_*
+// macros.  So we include them here, along with export.hpp itself.
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/export.hpp>
+#include <boost/serialization/version.hpp>
 
 /** @def GC_FIND_LOOPS
  *
@@ -191,6 +203,10 @@ namespace CXXR {
 		return s_inhibitor_count != 0;
 	    }
 	};
+
+	// Serialization of pointers to GCNodes.  Defined in
+	// GCNode_PtrS11n.hpp .
+	class PtrS11n;
 
 	GCNode()
             : HeterogeneousListBase::Link(s_live),
@@ -388,6 +404,19 @@ namespace CXXR {
 	 */
 	static size_t numNodes() {return s_num_nodes;}
 
+	/** @brief Not for general use.
+	 *
+	 * See the description of class GCNode::PtrS11n for background.
+	 *
+	 * @return Either a null pointer or a pointer to an object of
+	 * the same class C as *this (or conceivably of a class
+	 * derived from C).
+	 */
+	 virtual GCNode* s11n_relocate() const
+	 {
+	     return 0;
+	 }
+
 	/** @brief Conduct a visitor to the nodes referred to by this
 	 * one.
 	 *
@@ -425,7 +454,7 @@ namespace CXXR {
 	    --s_num_nodes;
 	}
     private:
-	friend class GCInhibitor;
+	friend class boost::serialization::access;
 	friend class GCRootBase;
 	friend class GCStackRootBase;
 	friend class NodeStack;
@@ -526,7 +555,9 @@ namespace CXXR {
 
 	// Not implemented.  Declared private to prevent clients
 	// allocating arrays of GCNode.
-	static void* operator new[](size_t);
+	//
+	// But boost::serialization doesn't like this.
+	// static void* operator new[](size_t);
 
 	// Abort program if 'node' is not exposed to GC.
 	static void abortIfNotExposed(const GCNode* node);
@@ -596,6 +627,14 @@ namespace CXXR {
 	 */
 	static void mark();
 
+	// boost::serialization.  Version 0 is for debugging, and will
+	// be used for output if the preprocessor variable DEBUG_S11N
+	// is defined.  It writes the GCNode's address and id to the
+	// archive; these fields are parsed but ignored on input.
+	// Version 1 is the default version.
+	template <class Archive>
+	void serialize(Archive & ar, const unsigned int version);
+
 	/** @brief Carry out the sweep phase of garbage collection.
 	 */
 	static void sweep();
@@ -609,6 +648,25 @@ namespace CXXR {
 	friend class SchwarzCounter<GCNode>;
     };
 }  // namespace CXXR
+
+template <class Archive>
+void CXXR::GCNode::serialize(Archive & ar, const unsigned int version) {
+    if (version == 0) {
+	std::ostringstream oss;
+	oss << this;
+	std::string addr = oss.str();
+	ar & BOOST_SERIALIZATION_NVP(addr);
+	unsigned int id = 0;
+#ifdef GCID
+	id = m_id;
+#endif
+	ar & BOOST_SERIALIZATION_NVP(id);
+    }
+}
+
+#ifndef DEBUG_S11N
+BOOST_CLASS_VERSION(CXXR::GCNode, 1)
+#endif
 
 namespace {
     CXXR::SchwarzCounter<CXXR::GCNode> gcnode_schwarz_ctr;

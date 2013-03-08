@@ -614,6 +614,14 @@ SEXP do_gzcon(SEXP, SEXP, SEXP, SEXP);
 SEXP do_memCompress(SEXP, SEXP, SEXP, SEXP);
 SEXP do_memDecompress(SEXP, SEXP, SEXP, SEXP);
 
+SEXP do_castestfun(SEXP, SEXP, SEXP, SEXP);
+SEXP do_hasProvenance(SEXP, SEXP, SEXP, SEXP);
+SEXP do_provCommand(SEXP, SEXP, SEXP, SEXP);
+SEXP do_provenance(SEXP, SEXP, SEXP, SEXP);
+SEXP do_pedigree(SEXP, SEXP, SEXP, SEXP);
+SEXP do_bserialize(SEXP, SEXP, SEXP, SEXP);
+SEXP do_bdeserialize(SEXP, SEXP, SEXP, SEXP);
+
 SEXP do_lockEnv(SEXP, SEXP, SEXP, SEXP);
 SEXP do_envIsLocked(SEXP, SEXP, SEXP, SEXP);
 SEXP do_lockBnd(SEXP, SEXP, SEXP, SEXP);

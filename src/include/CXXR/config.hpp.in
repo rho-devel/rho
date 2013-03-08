@@ -149,6 +149,17 @@
 #define NDEBUG
 #endif
 
+/** @def PROVENANCE_TRACKING
+ *
+ * @brief Enable provenance-tracking facilities.
+ *
+ * By default, CXXR does not carry out provenance tracking.  Defining
+ * PROVENANCE_TRACKING enables this facility.
+ */
+#ifdef DOXYGEN
+#define PROVENANCE_TRACKING
+#endif
+
 /** @def RARE_GC
  *
  * @brief Suppress reference-counting garbage collection.

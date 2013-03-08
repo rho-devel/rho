@@ -43,6 +43,7 @@
 #define LISTFRAME_HPP
 
 #include <list>
+
 #include "CXXR/Allocator.hpp"
 #include "CXXR/Frame.hpp"
 
@@ -70,6 +71,7 @@ namespace CXXR {
 	void clear();
 	ListFrame* clone() const;
 	bool erase(const Symbol* symbol);
+	void import(const Frame* frame);
 	void lockBindings();
 	Binding* obtainBinding(const Symbol* symbol);
 	std::size_t size() const;
@@ -82,6 +84,8 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	friend class boost::serialization::access;
+
 	List m_list;
 
 	// Declared private to ensure that ListFrame objects are
@@ -91,7 +95,46 @@ namespace CXXR {
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
 	ListFrame& operator=(const ListFrame&);
+
+	template<class Archive>
+	void load(Archive& ar, const unsigned int version)
+	{
+	    ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(Frame);
+	    size_t numberOfBindings;
+	    ar >> BOOST_SERIALIZATION_NVP(numberOfBindings);
+	    for (size_t i = 0; i < numberOfBindings; ++i) {
+		GCStackRoot<Symbol> symbol;
+		GCNPTR_SERIALIZE(ar, symbol);
+		m_list.push_back(Binding());
+		Binding& binding = m_list.back();
+		binding.initialize(this, symbol);
+		statusChanged(symbol);
+		ar >> BOOST_SERIALIZATION_NVP(binding);
+	    }
+	}
+
+	template<class Archive>
+	void save(Archive& ar, const unsigned int version) const
+	{
+	    ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(Frame);
+	    size_t numberOfBindings = size();
+	    ar << BOOST_SERIALIZATION_NVP(numberOfBindings);
+	    for (List::const_iterator it = m_list.begin();
+		 it != m_list.end(); ++it) {
+		const Binding& binding = *it;
+		const Symbol* symbol = binding.symbol();
+		GCNPTR_SERIALIZE(ar, symbol);
+		ar << BOOST_SERIALIZATION_NVP(binding);
+	    }
+	}
+
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version) {
+	    boost::serialization::split_member(ar, *this, version);
+	}
     };
 }  // namespace CXXR
+
+BOOST_CLASS_EXPORT_KEY(CXXR::ListFrame)
 
 #endif // LISTFRAME_HPP

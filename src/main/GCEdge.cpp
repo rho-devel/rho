@@ -39,10 +39,6 @@
 
 #include "CXXR/GCEdge.hpp"
 
-#include <cstdlib>
-#include <iostream>
-
-using namespace std;
 using namespace CXXR;
 
 void GCEdgeBase::detach()

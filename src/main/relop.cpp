@@ -101,8 +101,7 @@ namespace {
     {
 	typedef typename V::value_type value_type;
 	return
-	    BinaryFunction<GeneralBinaryAttributeCopier,
-	                   NaN2NA<value_type, Relop> >()
+	    BinaryFunction<NaN2NA<value_type, Relop> >()
 	    .template apply<LogicalVector>(vl, vr);
     }
 
@@ -205,7 +204,7 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 				" a multiple of shorter object length"));
 	GCStackRoot<VectorBase>
 	    ans(static_cast<VectorBase*>(string_relop(opcode, xv, yv)));
-	GeneralBinaryAttributeCopier()(ans, xv, yv);
+	GeneralBinaryAttributeCopier::copyAttributes(ans, xv, yv);
 	return ans;
     }
     else if (isComplex(x) || isComplex(y)) {

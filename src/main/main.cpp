@@ -69,6 +69,7 @@
 #include "CXXR/Browser.hpp"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/CommandTerminated.hpp"
+#include "CXXR/ProvenanceTracker.h"
 #include "CXXR/ReturnException.hpp"
 
 using namespace CXXR;
@@ -385,36 +386,39 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
 	return 1;
 
     case PARSE_OK:
-
-	R_IoBufferReadReset(&R_ConsoleIob);
-	R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 1, &state->status);
-	if (browselevel) {
-	    browsevalue = ParseBrowser(R_CurrentExpr, rho);
-	    if(browsevalue == 1) return -1;
-	    if(browsevalue == 2) {
-		R_IoBufferWriteReset(&R_ConsoleIob);
-		return 0;
+	{
+	    R_IoBufferReadReset(&R_ConsoleIob);
+	    R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 1, &state->status);
+#ifdef PROVENANCE_TRACKING
+	    ProvenanceTracker::CommandScope scope(R_CurrentExpr);
+#endif
+	    if (browselevel) {
+		browsevalue = ParseBrowser(R_CurrentExpr, rho);
+		if(browsevalue == 1) return -1;
+		if(browsevalue == 2) {
+		    R_IoBufferWriteReset(&R_ConsoleIob);
+		    return 0;
+		}
 	    }
+	    R_Visible = FALSE;
+	    Evaluator::setDepth(0);
+	    resetTimeLimits();
+	    PROTECT(thisExpr = R_CurrentExpr);
+	    R_Busy(1);
+	    value = eval(thisExpr, rho);
+	    SET_SYMVALUE(R_LastvalueSymbol, value);
+	    wasDisplayed = R_Visible;
+	    if (R_Visible)
+		PrintValueEnv(value, rho);
+	    if (R_CollectWarnings)
+		PrintWarnings();
+	    Rf_callToplevelHandlers(thisExpr, value, TRUE, wasDisplayed);
+	    R_CurrentExpr = value; /* Necessary? Doubt it. */
+	    UNPROTECT(1);
+	    R_IoBufferWriteReset(&R_ConsoleIob);
+	    state->prompt_type = 1;
+	    return(1);
 	}
-	R_Visible = FALSE;
-	Evaluator::setDepth(0);
-	resetTimeLimits();
-	PROTECT(thisExpr = R_CurrentExpr);
-	R_Busy(1);
-	value = eval(thisExpr, rho);
-	SET_SYMVALUE(R_LastvalueSymbol, value);
-	wasDisplayed = R_Visible;
-	if (R_Visible)
-	    PrintValueEnv(value, rho);
-	if (R_CollectWarnings)
-	    PrintWarnings();
-	Rf_callToplevelHandlers(thisExpr, value, TRUE, wasDisplayed);
-	R_CurrentExpr = value; /* Necessary? Doubt it. */
-	UNPROTECT(1);
-	R_IoBufferWriteReset(&R_ConsoleIob);
-	state->prompt_type = 1;
-	return(1);
-
     case PARSE_ERROR:
 
 	state->prompt_type = 1;
@@ -1056,6 +1060,9 @@ void setup_Rmainloop(void)
 	if (R_CurrentExpr != R_UnboundValue &&
 	    TYPEOF(R_CurrentExpr) == CLOSXP) {
 		PROTECT(R_CurrentExpr = lang1(cmd));
+#ifdef PROVENANCE_TRACKING
+		ProvenanceTracker::CommandScope scope(R_CurrentExpr);
+#endif		
 		R_CurrentExpr = eval(R_CurrentExpr, R_GlobalEnv);
 		UNPROTECT(1);
 	}

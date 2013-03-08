@@ -45,6 +45,9 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/nvp.hpp>
+
 namespace CXXR {
     /** @brief Singly linked list representing an R expression.
      *
@@ -93,6 +96,7 @@ namespace CXXR {
 	RObject* evaluate(Environment* env);
 	const char* typeName() const;
     private:
+	friend class boost::serialization::access;
 	// Declared private to ensure that Expression objects are
 	// allocated only using 'new':
 	~Expression() {}
@@ -100,11 +104,18 @@ namespace CXXR {
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated versions:
 	Expression& operator=(const Expression&);
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(ConsCell);
+	}
     };
 } // namespace CXXR
 
-    /** @brief Pointer to expression currently being evaluated.
-     */
+BOOST_CLASS_EXPORT_KEY(CXXR::Expression)
+
+/** @brief Pointer to expression currently being evaluated.
+ */
     extern CXXR::GCRoot<> R_CurrentExpr;
 
 extern "C" {
@@ -132,7 +143,7 @@ extern "C" {
     /** @brief Designate the Expression currently being evaluated.
      *
      * @param e Pointer to the Expression now to be evaluated.  (Not
-     * currently checked in any way.)
+     *          currently checked in any way.)
      */
     void Rf_setCurrentExpression(SEXP e);
 #ifdef __cplusplus

@@ -127,8 +127,9 @@ namespace CXXR {
 	     *
 	     * @param vr Non-null pointer to the second operand.
 	     */
-	    void operator()(VectorBase* vout,
-			    const VectorBase* vl, const VectorBase* vr) const
+	    static void copyAttributes(VectorBase* vout,
+				       const VectorBase* vl,
+				       const VectorBase* vr)
 	    {
 		if (!vl->attributes() && !vr->attributes())
 		    return;
@@ -136,9 +137,9 @@ namespace CXXR {
 	    }
 	private:
 	    // Deal with non-trivial cases:
-	    void apply(VectorBase* vout,
-		       const VectorBase* vl,
-		       const VectorBase* vr) const;
+	    static void apply(VectorBase* vout,
+			      const VectorBase* vl,
+			      const VectorBase* vr);
 	};
 
 	/** @brief Monitor function application for binary functions.
@@ -334,15 +335,21 @@ namespace CXXR {
 	 * shorter operand has non-zero length but its length is not
 	 * an exact submultiple of the length of the longer operand.
 	 *
-	 * @tparam AttributeCopier The apply() method will create an
-	 *           object of this class and use it to determine
-	 *           which attributes are copied from the operands
-	 *           to the output vector.  See the description of
-	 *           VectorOps::GeneralBinaryAttributeCopier for a
-	 *           commonly used example.
-	 *
 	 * @tparam Functor Function or function object type,
 	 *           representing a binary function.
+	 *
+	 * @tparam AttributeCopier This class must define a static
+	 *           member function with the signature
+	 *           <tt>copyAttributes(VectorBase* vout, const
+	 *           VectorBase* vl, const VectorBase* vr).  (Its return
+	 *           value, if any, is ignored.)  The apply() method
+	 *           of BinaryFunction will invoke this member
+	 *           function to copy attributes from the operands
+	 *           <tt>vl</tt> and <tt>vr</tt> of the binary
+	 *           function to its result <tt>vout</tt>.  See the
+	 *           description of
+	 *           VectorOps::GeneralBinaryAttributeCopier for a 
+	 *           commonly used example (in fact, the default).
 	 *
 	 * @tparam FunctorWrapper Each invocation of apply() will
 	 *           create an object of class
@@ -353,7 +360,8 @@ namespace CXXR {
 	 *           VectorOps::BinaryNAPropagator for further
 	 *           information.
 	 */
-	template <class AttributeCopier, typename Functor,
+	template <typename Functor,
+                  class AttributeCopier = GeneralBinaryAttributeCopier,
 		  template <typename, typename,
                             typename, typename> class FunctorWrapper
 	          = BinaryNAPropagator>
@@ -437,10 +445,10 @@ namespace CXXR {
 		  template <typename, typename,
                             typename, typename> class FunctorWrapper,
 		  typename Functor>
-	static BinaryFunction<AttributeCopier, Functor, FunctorWrapper>
+	static BinaryFunction<Functor, AttributeCopier, FunctorWrapper>
 	makeBinaryFunction(Functor f)
 	{
-	    return BinaryFunction<AttributeCopier, Functor, FunctorWrapper>(f);
+	    return BinaryFunction<Functor, AttributeCopier, FunctorWrapper>(f);
 	}
 
 	/** @brief Create a BinaryFunction object from a functor.
@@ -466,10 +474,10 @@ namespace CXXR {
 	 *          output vector from the operands.
 	 */
 	template <class AttributeCopier, typename Functor>
-	static BinaryFunction<AttributeCopier, Functor>
+	static BinaryFunction<Functor, AttributeCopier>
 	makeBinaryFunction(Functor f)
 	{
-	    return BinaryFunction<AttributeCopier, Functor>(f);
+	    return BinaryFunction<Functor, AttributeCopier>(f);
 	}
     }  // namespace VectorOps
 }  // namespace CXXR
@@ -477,12 +485,12 @@ namespace CXXR {
 
 // ***** Implementations of non-inlined templated functions. *****
 
-template <class AttributeCopier, typename Functor,
+template <typename Functor, class AttributeCopier,
 	  template <typename, typename,
 		    typename, typename> class FunctorWrapper>
 template <class Vout, class Vl, class Vr>
-Vout* CXXR::VectorOps::BinaryFunction<AttributeCopier,
-		                      Functor,
+Vout* CXXR::VectorOps::BinaryFunction<Functor,
+				      AttributeCopier,
 		                      FunctorWrapper>::apply(const Vl* vl,
 							     const Vr* vr) const
 {
@@ -502,17 +510,16 @@ Vout* CXXR::VectorOps::BinaryFunction<AttributeCopier,
 	ans = CXXR_NEW(Vout(rsize));
 	mapElements<-1>(ans.get(), vl, vr);
     }
-    AttributeCopier attrib_copier;
-    attrib_copier(ans, vl, vr);
+    AttributeCopier::copyAttributes(ans, vl, vr);
     return ans;
 }
 
-template <class AttributeCopier, typename Functor,
+template <typename Functor, class AttributeCopier, 
 	  template <typename, typename,
 		    typename, typename> class FunctorWrapper>
 template <int flag, class Vout, class Vl, class Vr>
-void CXXR::VectorOps::BinaryFunction<AttributeCopier,
-				     Functor,
+void CXXR::VectorOps::BinaryFunction<Functor,
+				     AttributeCopier,
 				     FunctorWrapper>::mapElements(Vout* vout,
 								  const Vl* vl,
 								  const Vr* vr) const

@@ -51,6 +51,10 @@ typedef int R_len_t; /* will be long later, LONG64 or ssize_t on Win64 */
 
 #ifdef __cplusplus
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/nvp.hpp>
+
 #include "CXXR/ElementTraits.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/SEXP_downcast.hpp"
@@ -315,7 +319,18 @@ namespace CXXR {
 	}
 
     private:
-	std::size_t m_size;
+	friend class boost::serialization::access;
+
+	size_t m_size;
+
+	// m_size will always be passed in by the constructor, and so
+	// is not serialised.
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version)
+	{
+	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
+	    ar & BOOST_SERIALIZATION_NVP(m_truelength);
+	}
     };
 
     template <class V>

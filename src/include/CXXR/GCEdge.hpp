@@ -41,6 +41,7 @@
 #define GCEDGE_HPP 1
 
 #include "CXXR/GCNode.hpp"
+#include "CXXR/GCStackRoot.hpp"
 
 namespace CXXR {
     class RObject;
@@ -90,10 +91,10 @@ namespace CXXR {
 	}
     protected:
 	/** @brief Redirect the GCEdge to point at a (possibly) different node.
--        *
-        * @param newtarget Pointer to the object to which reference is now
--        *           to be made.
--        */
+         *
+         * @param newtarget Pointer to the object to which reference is now
+         *           to be made.
+         */
 	void retarget(const GCNode* newtarget)
 	{
 	    GCEdgeBase tmp(newtarget);
@@ -126,6 +127,8 @@ namespace CXXR {
     template <class T = RObject>
     class GCEdge : public GCEdgeBase {
     public:
+	typedef T type;
+
 	GCEdge()
 	{}
 
@@ -182,6 +185,6 @@ namespace CXXR {
 	    return static_cast<T*>(const_cast<GCNode*>(target()));
 	}
     };
-}
+} // namespace CXXR
 
 #endif  // GCEDGE_HPP

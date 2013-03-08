@@ -64,6 +64,8 @@ namespace CXXR {
     typedef FixedVector<RHandle<>, VECSXP> ListVector;
 }  // namespace CXXR
 
+BOOST_CLASS_EXPORT_KEY(CXXR::ListVector)
+
 extern "C" {
 #endif /* __cplusplus */
 

@@ -63,6 +63,8 @@ namespace CXXR {
     typedef CXXR::FixedVector<int, LGLSXP> LogicalVector;
 }  // namespace CXXR
 
+BOOST_CLASS_EXPORT_KEY(CXXR::LogicalVector)
+
 extern "C" {
 #endif /* __cplusplus */
 

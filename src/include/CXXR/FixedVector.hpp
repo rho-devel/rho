@@ -41,6 +41,8 @@
 #define FIXEDVECTOR_HPP 1
 
 #include <boost/aligned_storage.hpp>
+#include <boost/serialization/nvp.hpp>
+
 #include "CXXR/VectorBase.h"
 
 namespace CXXR {
@@ -62,13 +64,14 @@ namespace CXXR {
      * @tparam ST The required ::SEXPTYPE of the vector.
      *
      * @tparam Initializer (optional).  Class of function object
-     *           defining <code>operator()(RObject*)</code>. (Any
-     *           return value is discarded.)  When a FixedVector
-     *           object is constructed, a default-constructed
-     *           Initializer object is applied to it.  This can be
-     *           used, for example, to apply an R class attribute
-     *           etc.  The default is to do nothing.
+     *           defining a static member function
+     *           <code>initialize(RObject*)</code>. (Any return value
+     *           is discarded.)  When a FixedVector object is
+     *           constructed, this member function is applied to it.
+     *           This can be used, for example, to apply an R class
+     *           attribute etc.  The default is to do nothing.
      */
+    // (Default binding of Initializer already defined in VectorBase.h)
     template <typename T, SEXPTYPE ST,
 	      typename Initializer /* = RObject::DoNothing */>
     class FixedVector : public VectorBase {
@@ -91,7 +94,7 @@ namespace CXXR {
 		m_data = allocData(sz);
 	    if (ElementTraits::MustConstruct<T>::value)  // known at compile-time
 		constructElements(begin(), end());
-	    Initializer()(this);
+	    Initializer::initialize(this);
 	}
 
 	/** @brief Create a vector, and fill with a specified initial
@@ -129,7 +132,7 @@ namespace CXXR {
 	    : VectorBase(ST, 1), m_data(singleton())
 	{
 	    new (m_data) T(source[index]);
-	    Initializer()(this);
+	    Initializer::initialize(this);
 	}
 
 	/** @brief Copy constructor.
@@ -252,6 +255,8 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	friend class boost::serialization::access;
+
 	T* m_data;  // pointer to the vector's data block.
 
 	// If there is only one element, it is stored here, internally
@@ -278,6 +283,19 @@ namespace CXXR {
 	// Helper function for detachReferents():
 	void detachElements();
 
+	template<class Archive>
+	void load(Archive & ar, const unsigned int version); 
+
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version)
+	{
+	    boost::serialization::split_member(ar, *this, version);
+	}
+
+
 	T* singleton()
 	{
 	    return static_cast<T*>(static_cast<void*>(&m_singleton_buf));
@@ -288,6 +306,30 @@ namespace CXXR {
     };
 }  // namespace CXXR
 
+// ***** boost serialization object construction *****
+
+namespace boost {
+    namespace serialization {
+	template<class Archive, class T, SEXPTYPE ST, typename Initr>
+	void load_construct_data(Archive& ar,
+				 CXXR::FixedVector<T, ST, Initr>* t,
+				 const unsigned int version)
+	{
+	    std::size_t size;
+	    ar >> BOOST_SERIALIZATION_NVP(size);
+	    new (t) CXXR::FixedVector<T, ST, Initr>(size);
+	}
+
+	template<class Archive, class T, SEXPTYPE ST, typename Initr>
+	void save_construct_data(Archive& ar,
+				 const CXXR::FixedVector<T, ST, Initr>* t,
+				 const unsigned int version)
+	{
+	    std::size_t size = t->size();
+	    ar << BOOST_SERIALIZATION_NVP(size);
+	}
+    }  // namespace serialization
+}  // namespace boost
 
 // ***** Implementation of non-inlined members *****
 
@@ -305,7 +347,7 @@ CXXR::FixedVector<T, ST, Initr>::FixedVector(std::size_t sz,
 	m_data = allocData(sz);
     for (T *p = m_data, *pend = m_data + sz; p != pend; ++p)
 	new (p) T(fill_value);
-    Initr()(this);
+    Initr::initialize(this);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
@@ -319,7 +361,7 @@ CXXR::FixedVector<T, ST, Initr>::FixedVector(const FixedVector<T, ST, Initr>& pa
     for (const_iterator it = pattern.begin(), end = pattern.end();
 	 it != end; ++it)
 	new (p++) T(*it);
-    Initr()(this);
+    Initr::initialize(this);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
@@ -332,7 +374,7 @@ CXXR::FixedVector<T, ST, Initr>::FixedVector(FwdIter from, FwdIter to)
     T* p = m_data;
     for (const_iterator it = from; it != to; ++it)
 	new (p++) T(*it);
-    Initr()(this);
+    Initr::initialize(this);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
@@ -380,6 +422,26 @@ void CXXR::FixedVector<T, ST, Initr>::detachReferents()
     if (ElementTraits::HasReferents<T>::value)  // known at compile-time
 	detachElements();
     VectorBase::detachReferents();
+}
+
+template <typename T, SEXPTYPE ST, typename Initr>
+template<class Archive>
+void CXXR::FixedVector<T, ST, Initr>::load(Archive & ar,
+					   const unsigned int version)
+{
+    ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(VectorBase);
+    for (unsigned int i = 0; i < size(); i++)
+	ElementTraits::Serialize<T>()(ar, m_data[i]);
+}
+
+template <typename T, SEXPTYPE ST, typename Initr>
+template<class Archive>
+void CXXR::FixedVector<T, ST, Initr>::save(Archive & ar,
+					   const unsigned int version) const
+{
+    ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(VectorBase);
+    for (unsigned int i = 0; i < size(); i++)
+	ElementTraits::Serialize<T>()(ar, m_data[i]);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>

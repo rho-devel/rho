@@ -64,8 +64,7 @@ namespace CXXR {
 	 * parameter, and its behaviour is to copy all attributes
 	 * across, along with the S4 object status.
 	 */
-	struct CopyAllAttributes
-	    : std::binary_function<VectorBase*, VectorBase*, void> {
+	struct CopyAllAttributes {
 	    /** @brief Copy all attributes and S4 object status.
 	     *
 	     * @param to Non-null pointer to the vector to which
@@ -74,7 +73,7 @@ namespace CXXR {
 	     * @param from Non-null pointer to the vector from which
 	     *          attributes are to be copied.
 	     */
-	    void operator()(VectorBase* to, const VectorBase* from) const
+	    static void copyAttributes(VectorBase* to, const VectorBase* from)
 	    {
 		to->copyAttributes(from, true);
 	    }
@@ -89,8 +88,7 @@ namespace CXXR {
 	 * parameter, and its behaviour is to copy the 'names', 'dim'
 	 * and 'dimnames' attributes if present.
 	 */
-	struct CopyLayoutAttributes
-	    : std::binary_function<VectorBase*, VectorBase*, void> {
+	struct CopyLayoutAttributes {
 	    /** @brief Copy 'names', 'dim' and 'dimnames' attributes.
 	     *
 	     * @param to Non-null pointer to the vector to which
@@ -99,7 +97,7 @@ namespace CXXR {
 	     * @param from Non-null pointer to the vector from which
 	     *          attributes are to be copied.
 	     */
-	    void operator()(VectorBase* to, const VectorBase* from) const;
+	    static void copyAttributes(VectorBase* to, const VectorBase* from);
 	};
 
 
@@ -112,11 +110,10 @@ namespace CXXR {
 	 * This class can be used as the value of the \a AttributeCopier
 	 * parameter, and its behaviour is to copy no attributes at all.
 	 */
-	struct CopyNoAttributes
-	    : std::binary_function<VectorBase*, VectorBase*, void> {
+	struct CopyNoAttributes {
 	    /** @brief Copy no attributes.
 	     */
-	    void operator()(VectorBase*, const VectorBase*) const
+	    static void copyAttributes(VectorBase*, const VectorBase*)
 	    {}
 	};
 
@@ -308,14 +305,19 @@ namespace CXXR {
 	 * vector being obtained from the corresponding element of the
 	 * input vector by the application of a unary function.
 	 *
-	 * @tparam AttributeCopier The apply() method will create an
-	 *           object of this class and use it to determine
-	 *           which attributes are copied from the input vector
-	 *           to the output vector.  See the description of
-	 *           VectorOps::CopyAllAttributes for an example.
-	 *
 	 * @tparam Functor Function or function object type,
 	 *           representing a unary function.
+	 *
+	 * @tparam AttributeCopier This class must define a static
+	 *           member function with the signature
+	 *           <tt>copyAttributes(VectorBase* to, const
+	 *           VectorBase* from)</tt>.  (Its return value, if
+	 *           any, is ignored.)  The apply() method of
+	 *           UnaryFunction will invoke this member function to
+	 *           copy attributes from the unary function operand
+	 *           <tt>from</tt> to its result <tt>to</tt>.  See the
+	 *           description of VectorOps::CopyAllAttributes for
+	 *           an example.
 	 *
 	 * @tparam FunctorWrapper Each invocation of apply() will
 	 *           create an object of class
@@ -326,7 +328,7 @@ namespace CXXR {
 	 *           VectorOps::UnaryNAPropagator for further
 	 *           information.
 	 */
-	template <class AttributeCopier, typename Functor,
+	template <typename Functor, class AttributeCopier,
 		  template <typename, typename, typename> class FunctorWrapper
                   = UnaryNAPropagator>
 	class UnaryFunction {
@@ -396,7 +398,7 @@ namespace CXXR {
 		  template <typename,
                             typename, typename> class FunctorWrapper,
                   typename Functor>
-	static UnaryFunction<AttributeCopier, Functor, FunctorWrapper>
+	static UnaryFunction<Functor, AttributeCopier, FunctorWrapper>
 	makeUnaryFunction(Functor f)
 	{
 	    return UnaryFunction<AttributeCopier, Functor, FunctorWrapper>(f);
@@ -405,7 +407,7 @@ namespace CXXR {
 	/** @brief Create a UnaryFunction object from a functor.
 	 *
 	 * This differs from the previous function only in that the
-	 * FunctorWrapper of the BinaryFunction is automatically set
+	 * FunctorWrapper of the UnaryFunction is automatically set
 	 * to UnaryNAPropagator.
 	 *
 	 * @tparam AttributeCopier The apply() method of the resulting
@@ -425,10 +427,10 @@ namespace CXXR {
 	 *          output vector from the operands.
 	 */
 	template <class AttributeCopier, typename Functor>
-	static UnaryFunction<AttributeCopier, Functor>
+	static UnaryFunction<Functor, AttributeCopier>
 	makeUnaryFunction(Functor f)
 	{
-	    return UnaryFunction<AttributeCopier, Functor>(f);
+	    return UnaryFunction<Functor, AttributeCopier>(f);
 	}
     }  // namespace VectorOps
 }  // namespace CXXR
@@ -436,11 +438,11 @@ namespace CXXR {
 
 // ***** Implementations of non-inlined templated functions. *****
 
-template <class AttributeCopier, typename Functor,
+template <typename Functor, class AttributeCopier, 
 	  template <typename, typename, typename> class FunctorWrapper>
 template <class Vout, class Vin>
-Vout* CXXR::VectorOps::UnaryFunction<AttributeCopier,
-				     Functor,
+Vout* CXXR::VectorOps::UnaryFunction<Functor,
+                                     AttributeCopier,
 				     FunctorWrapper>::apply(const Vin* v) const
 {
     using namespace boost::lambda;
@@ -451,8 +453,7 @@ Vout* CXXR::VectorOps::UnaryFunction<AttributeCopier,
     std::transform(v->begin(), v->end(), ans->begin(),
     		   bind<Outelt>(var(fwrapper), _1));
     fwrapper.warnings();
-    AttributeCopier attrib_copier;
-    attrib_copier(ans, v);
+    AttributeCopier::copyAttributes(ans, v);
     return ans;
 }
 

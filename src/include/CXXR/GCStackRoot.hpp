@@ -206,6 +206,8 @@ namespace CXXR {
     template <class T = RObject>
     class GCStackRoot : public GCStackRootBase {
     public:
+	typedef T type;
+
 	/**
 	 * @param node Pointer the node to be pointed to, and
 	 *          protected from the garbage collector, or a null

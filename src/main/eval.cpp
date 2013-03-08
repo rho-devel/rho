@@ -65,6 +65,7 @@
 #include "CXXR/LoopBailout.hpp"
 #include "CXXR/LoopException.hpp"
 #include "CXXR/PlainContext.hpp"
+#include "CXXR/ProvenanceTracker.h"
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
 #include "CXXR/S3Launcher.hpp"
@@ -1051,7 +1052,6 @@ SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
     return lbo;
 }
 
-
 SEXP attribute_hidden do_paren(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
@@ -1538,6 +1538,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
     expr = CAR(args);
     env = CADR(args);
     encl = CADDR(args);
+
     if (Rf_isNull(encl)) {
 	/* This is supposed to be defunct, but has been kept here
 	   (and documented as such) */

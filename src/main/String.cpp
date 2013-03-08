@@ -209,6 +209,11 @@ unsigned int String::packGPBits() const
     return ans;
 }
 
+String* String::s11n_relocate() const 
+{
+    return m_s11n_reloc;
+}
+
 const char* String::typeName() const
 {
     return String::staticTypeName();
@@ -232,3 +237,8 @@ SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding)
     std::string str(text, length);
     return String::obtain(str, encoding);
 }
+
+// Needed for the instantiation in BOOST_CLASS_EXPORT_IMPLEMENT:
+#include "CXXR/PairList.h"
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::String)

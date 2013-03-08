@@ -111,6 +111,7 @@
 #include <iostream>
 #include "Defn.h"
 #include <R_ext/Callbacks.h>
+#include "CXXR/ProvenanceTracker.h"
 #include "CXXR/ClosureContext.hpp"
 
 using namespace CXXR;
@@ -245,7 +246,12 @@ void attribute_hidden InitGlobalEnv()
     R_NamespaceRegistry = R_NewHashedEnv(R_NilValue, zero);
     R_PreserveObject(R_NamespaceRegistry);
     defineVar(install("base"), R_BaseNamespace, R_NamespaceRegistry);
+
+#ifdef PROVENANCE_TRACKING
+    ProvenanceTracker::setMonitors();
+    //ProvenanceTracker::initEnv(static_cast<Environment*>(R_BaseEnv));
     /**** needed to properly initialize the base namespace */
+#endif
 }
 
 

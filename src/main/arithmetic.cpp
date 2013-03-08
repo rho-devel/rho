@@ -544,7 +544,7 @@ static SEXP integer_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
 	    using namespace VectorOps;
 	    IntVector* iv = SEXP_downcast<IntVector*>(s1);
 	    return
-		UnaryFunction<CopyAllAttributes, std::negate<int> >()
+		UnaryFunction<std::negate<int>, CopyAllAttributes>()
 		.apply<IntVector>(iv);
 	}
     default:
@@ -1057,7 +1057,7 @@ static SEXP math1(SEXP sa, double (*f)(double), SEXP lcall)
     /* coercion can lose the object bit */
     GCStackRoot<RealVector>
 	rv(static_cast<RealVector*>(coerceVector(sa, REALSXP)));
-    UnaryFunction<CopyAllAttributes, double (*)(double), NaNWarner> uf(f);
+    UnaryFunction<double (*)(double), CopyAllAttributes, NaNWarner> uf(f);
     return uf.apply<RealVector>(rv.get());
 }
 

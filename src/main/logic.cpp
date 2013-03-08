@@ -82,13 +82,13 @@ namespace {
 	switch (opcode) {
 	case 1:
 	    {
-		BinaryFunction<GeneralBinaryAttributeCopier, AndOp,
+		BinaryFunction<AndOp, GeneralBinaryAttributeCopier,
 		               NullBinaryFunctorWrapper> bf;
 		return bf.apply<LogicalVector>(l, r);
 	    }
 	case 2:
 	    {
-		BinaryFunction<GeneralBinaryAttributeCopier, OrOp,
+		BinaryFunction<OrOp, GeneralBinaryAttributeCopier,
 		               NullBinaryFunctorWrapper> bf;
 		return bf.apply<LogicalVector>(l, r);
 	    }

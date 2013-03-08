@@ -248,6 +248,7 @@ void GCNode::initialize()
     GCRootBase::initialize();  // BREAKPOINT A
     ProtectStack::initialize();
     GCManager::initialize();
+    PtrS11n::initialize();
 }
 
 void GCNode::makeMoribund() const

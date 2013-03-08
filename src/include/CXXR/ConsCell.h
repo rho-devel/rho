@@ -54,6 +54,10 @@
 #ifdef __cplusplus
 
 #include <stdexcept>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/nvp.hpp>
+
 #include "CXXR/GCRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
 
@@ -332,6 +336,7 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	friend class boost::serialization::access;
 	friend class PairList;
 
 	RHandle<> m_car;
@@ -344,7 +349,18 @@ namespace CXXR {
 
 	// Check that st is a legal SEXPTYPE for a ConsCell:
 	static void checkST(SEXPTYPE st);
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version);
     };
+
+    template<class Archive>
+    void CXXR::ConsCell::serialize(Archive & ar, const unsigned int version) {
+	ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
+	GCNPTR_SERIALIZE(ar, m_tag);
+	GCNPTR_SERIALIZE(ar, m_car);
+	GCNPTR_SERIALIZE(ar, m_tail);
+    }
 
     inline bool operator==(ConsCell::iterator l, ConsCell::iterator r)
     {
@@ -509,6 +525,8 @@ namespace CXXR {
 	const char* typeName() const;
 	void unpackGPBits(unsigned int gpbits);
     private:
+        friend class boost::serialization::access;
+
 	// Tailless copy constructor.  Copies the node without copying
 	// its tail.  Used in implementing the copy constructor
 	// proper.  The second parameter is simply to provide a
@@ -527,6 +545,11 @@ namespace CXXR {
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated version:
 	PairList& operator=(const PairList&);
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(ConsCell);
+	}
     };
 
     inline void ConsCell::iterator::advance()
@@ -571,6 +594,8 @@ namespace CXXR {
 	return m_tail;
     }
 } // namespace CXXR
+
+BOOST_CLASS_EXPORT_KEY(CXXR::PairList)
 
 extern "C" {
 

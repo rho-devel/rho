@@ -186,3 +186,5 @@ void Closure::visitReferents(const_visitor* v) const
     if (environment)
 	(*v)(environment);
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::Closure)

@@ -41,8 +41,13 @@
 #ifndef RFRAME_HPP
 #define RFRAME_HPP
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/nvp.hpp>
+
 #include "CXXR/GCNode.hpp"
 #include "CXXR/PairList.h"
+#include "CXXR/Provenance.hpp"
 #include "CXXR/Symbol.h"
 
 namespace CXXR {
@@ -107,7 +112,11 @@ namespace CXXR {
 	     */
 	    Binding()
 		: m_frame(0), m_symbol(0), m_value(Symbol::missingArgument()),
-		  m_origin(MISSING), m_active(false), m_locked(false)
+#ifdef PROVENANCE_TRACKING
+		  m_provenance(0),
+#endif
+		  m_origin(MISSING), m_active(false),
+		  m_locked(false)
 	    {}
 
 	    /** @brief Represent this Binding as a PairList element.
@@ -201,6 +210,19 @@ namespace CXXR {
 	     */
 	    void fromPairList(PairList* pl);
 
+#ifdef PROVENANCE_TRACKING
+	    /** @brief Provenance associated with this binding.
+	     *
+	     * @return pointer to the Provenance object associated
+	     * with this Binding, or a null pointer if no provenance
+	     * has been recorded for it.
+	     */
+	    const Provenance* provenance() const
+	    {
+		return m_provenance;
+	    }
+#endif
+
 	    /** @brief Initialize the Binding.
 	     *
 	     * This function initializes the Frame and Symbol
@@ -248,13 +270,15 @@ namespace CXXR {
 	     * 'raw' here means that in the case of an active Binding,
 	     * the function returns a pointer to the encapsulated
 	     * function rather than the result of evaluating the
-	     * encapsulated function.
+	     * encapsulated function.  This function will not result
+	     * in the calling of a read monitor.
 	     *
 	     * @return The value bound to a Symbol by this Binding.
 	     */
 	    RObject* rawValue() const
 	    {
-		m_frame->monitorRead(*this);
+	    	if (m_frame)
+		    m_frame->monitorRead(*this);
 		return m_value;
 	    }
 
@@ -288,6 +312,18 @@ namespace CXXR {
 		m_locked = on;
 	    }
 
+#ifdef PROVENANCE_TRACKING
+	    /** @brief Set provenance object association with this binding
+	     *
+	     * @param prov Pointer to Provenance object to associate with this
+	     * 		Binding.
+	     */
+	    void setProvenance(Provenance *prov)
+	    {
+		m_provenance=prov;
+	    }
+#endif
+
 	    /** @brief Define the object to which this Binding's
 	     *         Symbol is bound.
 	     *
@@ -298,8 +334,11 @@ namespace CXXR {
 	     *          bound.
 	     *
 	     * @param origin Origin of the newly assigned value.
+	     *
+	     * @param quiet Don't trigger monitor
 	     */
-	    void setValue(RObject* new_value, Origin origin = EXPLICIT);
+	    void setValue(RObject* new_value, Origin origin = EXPLICIT,
+	                  bool quiet = false);
 
 	    /** @brief Bound symbol.
 	     *
@@ -331,13 +370,25 @@ namespace CXXR {
 	     */
 	    void visitReferents(const_visitor* v) const;
 	private:
+	    friend class boost::serialization::access;
+
 	    Frame* m_frame;
 	    const Symbol* m_symbol;
 	    GCEdge<> m_value;
+#ifdef PROVENANCE_TRACKING
+	    GCEdge<const Provenance> m_provenance;
+#endif
 	    unsigned char m_origin;
 	    bool m_active;
 	    bool m_locked;
-	};
+
+	    // Note that serialisation does not save the m_frame or
+	    // m_symbol fields, because deserialisation assumes that a
+	    // Binding object will already have been initialised (by
+	    // calling initialize()).
+	    template<class Archive>
+	    void serialize(Archive & ar, const unsigned int version);
+	};  // Frame::Binding
 
 	typedef void (*monitor)(const Binding&);
 
@@ -454,6 +505,51 @@ namespace CXXR {
 	 */
 	virtual Frame* clone() const = 0;
 
+	/** @brief Enable monitored reading of Symbol values.
+	 *
+	 * This function determines whether the read monitor function
+	 * set with setReadMonitor() will be called whenever a
+	 * Symbol's value is read from a Binding within this Frame.
+	 *
+	 * In the case of an active Binding, the monitor is called
+	 * whenever the encapsulated function is accessed: note that
+	 * this includes calls to Binding::assign().
+	 *
+	 * @param on True if monitoring is be enabled (in which case a
+	 *          read monitor must already have been set), false if
+	 *          it is to be disabled.
+	 *
+	 * @note Whether or not monitoring is enabled is not
+	 * considered to be part of the state of a Frame object, and
+	 * hence this function is const.
+	 */
+	void enableReadMonitoring(bool on) const;
+
+	/** @brief Enable monitored writing of Symbol values.
+	 *
+	 * This function determines whether the write monitor function
+	 * set with setWriteMonitor() will be called whenever a
+	 * Symbol's value is modified a Binding within this Frame.
+	 *
+	 * In the case of an active Binding, the monitor is called
+	 * only when the encapsulated function is initially set or
+	 * changed: in particular the monitor is \e not invoked by
+	 * calls to Binding::assign().
+	 *
+	 * The monitor is not called when a Binding is newly created
+	 * within a Frame (with the Symbol bound by default to a null
+	 * pointer).
+	 *
+	 * @param on True if monitoring is be enabled (in which case a
+	 *          write monitor must already have been set), false if
+	 *          it is to be disabled.
+	 *
+	 * @note Whether or not monitoring is enabled is not
+	 * considered to be part of the state of a Frame object, and
+	 * hence this function is const.
+	 */
+	void enableWriteMonitoring(bool on) const;
+
 	/** @brief Remove the Binding (if any) of a Symbol.
 	 *
 	 * This function causes any Binding for a specified Symbol to
@@ -469,6 +565,12 @@ namespace CXXR {
 	 * mapping for \a symbol.
 	 */
 	virtual bool erase(const Symbol* symbol) = 0;
+
+	/** @brief Install Bindings from another Frame
+	 *
+	 * @param frame Source frame from which to 'copy' bindings
+	 */
+	virtual void import(const Frame* frame) = 0;
 
 	/** @brief Is the Frame locked?
 	 *
@@ -526,15 +628,15 @@ namespace CXXR {
 	 */
 	virtual Binding* obtainBinding(const Symbol* symbol) = 0;
 
-	/** @brief Monitor reading of Symbol values.
+	/** @brief Define function to monitor reading of Symbol values.
 	 *
 	 * This function allows the user to define a function to be
 	 * called whenever a Symbol's value is read from a Binding
-	 * within this Frame.
-	 *
-	 * In the case of an active Binding, the monitor is called
-	 * whenever the encapsulated function is accessed: note that
-	 * this includes calls to Binding::assign().
+	 * within a Frame.  Even if such a function has been defined,
+	 * the monitoring is off by default: it must be enabled for
+	 * particular Frame objects by calling enableReadMonitoring().
+	 * See the description of enableReadMonitoring() for further
+	 * information.
 	 *
 	 * @param new_monitor Pointer, possibly null, to the new
 	 *          monitor function.  A null pointer signifies that
@@ -543,10 +645,6 @@ namespace CXXR {
 	 *
 	 * @return Pointer, possibly null, to the monitor being
 	 * displaced by \a new_monitor.
-	 *
-	 * @note The presence or absence of a monitor is not
-	 * considered to be part of the state of a Frame object, and
-	 * hence this function is const.
 	 */
 	static monitor setReadMonitor(monitor new_monitor)
 	{
@@ -555,32 +653,23 @@ namespace CXXR {
 	    return old;
 	}
 
-	/** @brief Monitor writing of Symbol values.
+	/** @brief Define function to monitor writing of Symbol values.
 	 *
 	 * This function allows the user to define a function to be
 	 * called whenever a Symbol's value is modified in a Binding
-	 * within this Frame.
-	 *
-	 * In the case of an active Binding, the monitor is called
-	 * only when the encapsulated function is initially set or
-	 * changed: in particular the monitor is \e not invoked by
-	 * calls to Binding::assign().
-	 *
-	 * The monitor is not called when a Binding is newly created
-	 * within a Frame (with the Symbol bound by default to a null
-	 * pointer).
+	 * within a Frame.  Even if such a function has been defined,
+	 * the monitoring is off by default: it must be enabled for
+	 * particular Frame objects by calling enableWriteMonitoring().
+	 * See the description of enableWriteMonitoring() for further
+	 * information.
 	 *
 	 * @param new_monitor Pointer, possibly null, to the new
 	 *          monitor function.  A null pointer signifies that
-	 *          no write monitoring is to take place, which is the
+	 *          no read monitoring is to take place, which is the
 	 *          default state.
 	 *
 	 * @return Pointer, possibly null, to the monitor being
 	 * displaced by \a new_monitor.
-	 *
-	 * @note The presence or absence of a monitor is not
-	 * considered to be part of the state of a Frame object, and
-	 * hence this function is const.
 	 */
 	static monitor setWriteMonitor(monitor new_monitor)
 	{
@@ -626,6 +715,9 @@ namespace CXXR {
 	{
 	    statusChanged(0);
 	}
+
+	template<class Archive>
+	void serialize (Archive & ar, const unsigned int version);
 
 	/** @brief Report change in the bound/unbound status of Symbol
 	 *         objects.
@@ -677,6 +769,8 @@ namespace CXXR {
 	    if (m_read_monitored)
 		s_read_monitor(bdg);
 	}
+    private:
+	friend class boost::serialization::access;
 
 	void monitorWrite(const Binding& bdg) const
 	{
@@ -744,5 +838,32 @@ namespace CXXR {
 // This definition is visible only in C++; C code sees instead a
 // definition (in Environment.h) as an opaque pointer.
 typedef CXXR::Frame::Binding* R_varloc_t;
+
+// ***** Implementation of non-inlined templated members *****
+
+template<class Archive>
+void CXXR::Frame::Binding::serialize(Archive & ar, const unsigned int version)
+{
+    GCNPTR_SERIALIZE(ar, m_value);
+    const Provenance* prov = 0;
+#ifdef PROVENANCE_TRACKING
+    prov = m_provenance;
+#endif
+    GCNode::PtrS11n::invoke(ar, prov, "m_provenance");
+#ifdef PROVENANCE_TRACKING
+    m_provenance = prov;
+#endif
+    ar & BOOST_SERIALIZATION_NVP(m_origin);
+    ar & BOOST_SERIALIZATION_NVP(m_active);
+    ar & BOOST_SERIALIZATION_NVP(m_locked);
+}
+
+template<class Archive>
+void CXXR::Frame::serialize (Archive & ar, const unsigned int version) {
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
+    bool locked = m_locked;
+    ar & BOOST_SERIALIZATION_NVP(locked);
+    m_locked = locked;
+}
 
 #endif // RFRAME_HPP

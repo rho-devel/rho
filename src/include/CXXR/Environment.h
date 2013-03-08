@@ -45,6 +45,10 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/nvp.hpp>
+
 #include "CXXR/Frame.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Symbol.h"
@@ -423,14 +427,18 @@ namespace CXXR {
 	const char* typeName() const;
 	void unpackGPBits(unsigned int gpbits);
 
-	// Virtual function of GCNode:
+	// Virtual functions of GCNode:
+	Environment* s11n_relocate() const;
 	void visitReferents(const_visitor* v) const;
     protected:
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	friend class boost::serialization::access;
 	friend class SchwarzCounter<Environment>;
 	friend class Frame;
+
+	enum S11nType {NORMAL = 0, GLOBAL, BASE};
 
 	struct LeakMonitor : public GCNode::const_visitor {
 	    LeakMonitor()
@@ -463,6 +471,7 @@ namespace CXXR {
 
 	GCEdge<Environment> m_enclosing;
 	GCEdge<Frame> m_frame;
+	GCEdge<Environment> m_s11n_reloc;  // Used only during deserialization
 	bool m_single_stepping;
 	bool m_locked;
 	bool m_cached;
@@ -502,10 +511,20 @@ namespace CXXR {
 	    return (this == s_global);
 	}
 
+	template<class Archive>
+	void load(Archive& ar, const unsigned int version);
+
 	// Designate this Environment as a participant in the search
 	// list cache:
 	void makeCached();
 
+	template<class Archive>
+	void save(Archive& ar, const unsigned int version) const;
+
+	template<class Archive>
+	void serialize (Archive & ar, const unsigned int version) {
+	    boost::serialization::split_member(ar, *this, version);
+	}
     };
 
     /** @brief Search for a Binding of a Symbol to a FunctionBase.
@@ -638,8 +657,65 @@ namespace CXXR {
     }
 }  // namespace CXXR
 
+BOOST_CLASS_EXPORT_KEY(CXXR::Environment)
+
+namespace boost {
+    namespace serialization {
+	template<class Archive>
+	void load_construct_data(Archive& ar, CXXR::Environment* t,
+				 const unsigned int version)
+	{
+	    new (t) CXXR::Environment(0, 0);
+	}
+    }  // namespace serialization
+}  // namespace boost
+
 namespace {
     CXXR::SchwarzCounter<CXXR::Environment> env_schwartz_ctr;
+}
+
+// ***** Implementation of non-inlined templated members *****
+
+template<class Archive>
+void CXXR::Environment::load(Archive& ar, const unsigned int version)
+{
+    ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
+    S11nType envtype;
+    ar >> BOOST_SERIALIZATION_NVP(envtype);
+    switch(envtype) {
+    case NORMAL:
+	{
+	    GCNPTR_SERIALIZE(ar, m_enclosing);
+	    GCNPTR_SERIALIZE(ar, m_frame);
+	    ar >> BOOST_SERIALIZATION_NVP(m_single_stepping);
+	    ar >> BOOST_SERIALIZATION_NVP(m_locked);
+	}
+	break;
+    case GLOBAL:
+	m_s11n_reloc = s_global;
+	break;
+    case BASE:
+	m_s11n_reloc = s_base;
+	break;
+    }
+}
+
+template<class Archive>
+void CXXR::Environment::save(Archive& ar, const unsigned int version) const
+{
+    ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
+    S11nType envtype = NORMAL;
+    if (this == s_global)
+	envtype = GLOBAL;
+    else if (this == s_base)
+	envtype = BASE;
+    ar << BOOST_SERIALIZATION_NVP(envtype);
+    if (envtype == NORMAL) {
+	GCNPTR_SERIALIZE(ar, m_enclosing);
+	GCNPTR_SERIALIZE(ar, m_frame);
+	ar << BOOST_SERIALIZATION_NVP(m_single_stepping);
+	ar << BOOST_SERIALIZATION_NVP(m_locked);
+    }
 }
 
 extern "C" {
