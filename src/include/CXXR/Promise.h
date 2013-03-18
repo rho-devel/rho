@@ -233,6 +233,23 @@ BOOST_CLASS_EXPORT_KEY(CXXR::Promise)
 
 namespace boost {
     namespace serialization {
+	/** @brief Template specialisation.
+	 *
+	 * This specialisation is required because CXXR::Promise does
+	 * not have a default constructor.  See the
+	 * boost::serialization documentation for further details.
+	 *
+	 * @tparam Archive archive class from which deserialisation is
+	 *           taking place.
+	 *
+	 * @param ar Archive from which deserialisation is taking
+	 *           place.
+         *
+	 * @param t Pointer to the location at which a CXXR::Promise
+	 *          object is to be constructed.
+	 *
+	 * @param version Ignored.
+	 */
 	template<class Archive>
 	void load_construct_data(Archive& ar, CXXR::Promise* t,
 				 const unsigned int version)
@@ -245,6 +262,26 @@ namespace boost {
 	    new (t) Promise(valgen, env);
 	}
 
+	/** @brief Template specialisation.
+	 *
+	 * This specialisation is required to ensure that the value
+	 * generator and environment of a CXXR::Promise are serialised
+	 * within an archive before the Promise itself is serialised,
+	 * so that on deserialisation the value generator and
+	 * environment can be made available to load_construct_data().
+	 * See the boost::serialization documentation for further
+	 * details.
+	 *
+	 * @tparam Archive archive class to which serialisation is
+	 *           taking place.
+	 *
+	 * @param ar Archive to which serialisation is taking place.
+         *
+	 * @param chron Non-null pointer to the CXXR::Promise object
+	 *          about to be serialised. 
+	 *
+	 * @param version Ignored.
+	 */
 	template<class Archive>
 	void save_construct_data(Archive& ar, const CXXR::Promise* t,
 				 const unsigned int version)

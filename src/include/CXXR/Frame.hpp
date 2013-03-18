@@ -716,9 +716,6 @@ namespace CXXR {
 	    statusChanged(0);
 	}
 
-	template<class Archive>
-	void serialize (Archive & ar, const unsigned int version);
-
 	/** @brief Report change in the bound/unbound status of Symbol
 	 *         objects.
 	 *
@@ -734,6 +731,7 @@ namespace CXXR {
 	}
     private:
 	friend class Environment;
+	friend class boost::serialization::access;
 
 	static monitor s_read_monitor, s_write_monitor;
 
@@ -769,14 +767,15 @@ namespace CXXR {
 	    if (m_read_monitored)
 		s_read_monitor(bdg);
 	}
-    private:
-	friend class boost::serialization::access;
 
 	void monitorWrite(const Binding& bdg) const
 	{
 	    if (m_write_monitored)
 		s_write_monitor(bdg);
 	}
+
+	template<class Archive>
+	void serialize (Archive & ar, const unsigned int version);
     };
 
     /** @brief Incorporate bindings defined by a PairList into a Frame.

@@ -198,6 +198,16 @@ namespace CXXR {
 extern "C" {
 #endif // __cplusplus
 
+    /** @brief Flag up xenogenesis.
+     *
+     * This function is called to indicate to the provenance tracker
+     * that in evaluating the current top-level command, the behaviour
+     * of the interpreter has been influenced by something external to
+     * it, e.g. by reading an external file, or by accepting user
+     * input.  Provenance-tracked bindings created by the top-level
+     * command subsequently to this call will be flagged as having
+     * xenogenous provenance.
+     */
     void flagXenogenesis();
 
 #ifdef __cplusplus

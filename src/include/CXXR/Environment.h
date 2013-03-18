@@ -661,6 +661,23 @@ BOOST_CLASS_EXPORT_KEY(CXXR::Environment)
 
 namespace boost {
     namespace serialization {
+	/** @brief Template specialisation.
+	 *
+	 * This specialisation is required because CXXR::Environment
+	 * does not have a default constructor.  See the
+	 * boost::serialization documentation for further details.
+	 *
+	 * @tparam Archive archive class from which deserialisation is
+	 *           taking place.
+	 *
+	 * @param ar Archive from which deserialisation is taking
+	 *           place.
+         *
+	 * @param t Pointer to the location at which a CXXR::Environment
+	 *          object is to be constructed.
+	 *
+	 * @param version Ignored.
+	 */
 	template<class Archive>
 	void load_construct_data(Archive& ar, CXXR::Environment* t,
 				 const unsigned int version)

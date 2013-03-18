@@ -310,6 +310,33 @@ namespace CXXR {
 
 namespace boost {
     namespace serialization {
+	/** @brief Template specialisation.
+	 *
+	 * This specialisation is required because
+	 * CXXR::FixedVector does not have a default constructor.
+	 * See the boost::serialization documentation for further
+	 * details.
+	 *
+	 * @tparam Archive archive class from which deserialisation is
+	 *           taking place.
+	 *
+	 * @tparam T The type of the elements of the vector to be
+	 *           constructed.
+	 *
+	 * @tparam ST The required ::SEXPTYPE of the vector to be
+	 *           constructed.
+	 *
+	 * @tparam Initr The initialiser class of the vector to be
+	 *           constructed.
+	 *
+	 * @param ar Archive from which deserialisation is taking
+	 *           place.
+         *
+	 * @param t Pointer to the location at which a
+	 *          CXXR::FixedVector object is to be constructed.
+	 *
+	 * @param version Ignored.
+	 */
 	template<class Archive, class T, SEXPTYPE ST, typename Initr>
 	void load_construct_data(Archive& ar,
 				 CXXR::FixedVector<T, ST, Initr>* t,
@@ -320,6 +347,35 @@ namespace boost {
 	    new (t) CXXR::FixedVector<T, ST, Initr>(size);
 	}
 
+	/** @brief Template specialisation.
+	 *
+	 * This specialisation is required to ensure that the size of
+	 * a CXXR::FixedVector is serialised within an archive before
+	 * the FixedVector itself is serialised, so that on
+	 * deserialisation this size can be made available to
+	 * load_construct_data().  See the boost::serialization
+	 * documentation for further details.
+	 *
+	 * @tparam Archive archive class to which serialisation is
+	 *           taking place.
+	 *
+	 * @tparam T The type of the elements of the vector about to
+	 *           be serialised.
+	 *
+	 * @tparam ST The ::SEXPTYPE of the vector about to be
+	 *           serialised.
+	 *
+	 * @tparam Initr The initialiser class of the vector about to
+	 *           be serialised.
+	 *
+	 * @param ar Archive to which serialisation is taking
+	 *           place.
+         *
+	 * @param t Non-null pointer to the CXXR::FixedVector object
+	 *          about to be serialised.
+	 *
+	 * @param version Ignored.
+	 */
 	template<class Archive, class T, SEXPTYPE ST, typename Initr>
 	void save_construct_data(Archive& ar,
 				 const CXXR::FixedVector<T, ST, Initr>* t,

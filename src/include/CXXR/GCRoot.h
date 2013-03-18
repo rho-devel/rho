@@ -70,8 +70,16 @@ namespace CXXR {
 	 */
 	static void visitRoots(GCNode::const_visitor* v);
     protected:
+	/** @brief Primary constructor.
+	 *
+	 * @param node Pointer, possibly null, to the node to be protected.
+	 */
 	GCRootBase(const GCNode* node);
 
+	/** @brief Copy constructor.
+	 *
+	 * @param source Pattern for the copy.
+	 */
 	GCRootBase(const GCRootBase& source)
 	    : m_it(s_roots->insert(s_roots->end(), *source.m_it))
 	{

@@ -336,6 +336,23 @@ void CXXR::Closure::save(Archive& ar, const unsigned int version) const
 
 namespace boost {
     namespace serialization {
+	/** @brief Template specialisation.
+	 *
+	 * This specialisation is required because CXXR::Closure does not
+	 * have a default constructor.  See the boost::serialization
+	 * documentation for further details.
+	 *
+	 * @tparam Archive archive class from which deserialisation is
+	 *           taking place.
+	 *
+	 * @param ar Archive from which deserialisation is taking
+	 *           place.
+         *
+	 * @param t Pointer to the location at which a CXXR::Closure
+	 *          object is to be constructed.
+	 *
+	 * @param version Ignored.
+	 */
 	template<class Archive>
 	void load_construct_data(Archive& ar, CXXR::Closure* t,
 				 const unsigned int version)

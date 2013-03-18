@@ -82,6 +82,10 @@ namespace CXXR {
 	    GCNode::maybeCheckExposed(node);
 	}
 
+	/** @brief Copy constructor.
+	 *
+	 * @param source Pattern for the copy.
+	 */
 	GCStackRootBase(const GCStackRootBase& source)
 	    : m_next(s_roots), m_target(source.m_target), m_protecting(false)
 	{

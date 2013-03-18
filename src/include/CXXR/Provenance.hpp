@@ -101,6 +101,15 @@ namespace CXXR {
 	 */
 	class CompTime {
 	public:
+	    /** @brief Comparison operator
+	     *
+	     * @param lhs Non-null pointer to Provenance object.
+	     *
+	     * @param rhs Non-null pointer to Provenance object.
+	     *
+	     * @return true iff the timestamp of \a lhs is earlier
+	     * than the timestamp of \a rhs.
+	     */
 	    bool operator()(const Provenance* lhs, const Provenance* rhs) const
 	    {
 		return (lhs->m_timestamp.tv_sec == rhs->m_timestamp.tv_sec) ?
@@ -308,6 +317,23 @@ BOOST_CLASS_EXPORT_KEY(CXXR::Provenance)
 
 namespace boost {
     namespace serialization {
+	/** @brief Template specialisation.
+	 *
+	 * This specialisation is required because CXXR::Provenance
+	 * does not have a default constructor.  See the
+	 * boost::serialization documentation for further details.
+	 *
+	 * @tparam Archive archive class from which deserialisation is
+	 *           taking place.
+	 *
+	 * @param ar Archive from which deserialisation is taking
+	 *           place.
+         *
+	 * @param chron Pointer to the location at which a
+	 *          CXXR::CommandChronicle object is to be constructed.
+	 *
+	 * @param version Ignored.
+	 */
 	template<class Archive>
 	void load_construct_data(Archive& ar, CXXR::Provenance* prov,
 				 const unsigned int version)
@@ -320,6 +346,26 @@ namespace boost {
 	    new (prov) Provenance(symbol, chronicle);
 	}
 
+	/** @brief Template specialisation.
+	 *
+	 * This specialisation is required to ensure that the symbol
+	 * and chronicle of a CXXR::Provenance object are serialised
+	 * within an archive before the Provenance object itself is
+	 * serialised, so that on deserialisation the symbol and
+	 * chronicle can be made available to load_construct_data().
+	 * See the boost::serialization documentation for further
+	 * details.
+	 *
+	 * @tparam Archive archive class to which serialisation is
+	 *           taking place.
+	 *
+	 * @param ar Archive to which serialisation is taking place.
+         *
+	 * @param chron Non-null pointer to the CXXR::Provenance
+	 *          object about to be serialised.
+	 *
+	 * @param version Ignored.
+	 */
 	template<class Archive>
 	void save_construct_data(Archive& ar, const CXXR::Provenance* prov,
 				 const unsigned int version)

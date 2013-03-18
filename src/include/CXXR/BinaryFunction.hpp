@@ -341,7 +341,7 @@ namespace CXXR {
 	 * @tparam AttributeCopier This class must define a static
 	 *           member function with the signature
 	 *           <tt>copyAttributes(VectorBase* vout, const
-	 *           VectorBase* vl, const VectorBase* vr).  (Its return
+	 *           VectorBase* vl, const VectorBase* vr)</tt>.  (Its return
 	 *           value, if any, is ignored.)  The apply() method
 	 *           of BinaryFunction will invoke this member
 	 *           function to copy attributes from the operands

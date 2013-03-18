@@ -102,6 +102,11 @@ namespace CXXR {
 	class iterator
 	    : public std::iterator<std::forward_iterator_tag, ConsCell> {
 	public:
+	    /** @brief Constructor.
+	     *
+	     * @param cc Pointer, possibly null, to the ConsCell to be
+	     *           designated by the iterator.
+	     */
 	    explicit iterator(ConsCell* cc = 0)
 		: m_cc(cc)
 	    {}
@@ -139,6 +144,11 @@ namespace CXXR {
 	class const_iterator
 	    : public std::iterator<std::forward_iterator_tag, const ConsCell> {
 	public:
+	    /** @brief Constructor.
+	     *
+	     * @param cc Pointer, possibly null, to the ConsCell to be
+	     *           designated by the const_iterator.
+	     */
 	    explicit const_iterator(const ConsCell* cc = 0)
 		: m_cc(cc)
 	    {}

@@ -70,6 +70,10 @@ namespace CXXR {
 	    GCNode::incRefCount(m_target);
 	}
 
+	/** @brief Copy constructor.
+	 *
+	 * @param source Pattern for the copy.
+	 */
 	GCEdgeBase(const GCEdgeBase& source)
 	    : m_target(source.m_target)
 	{

@@ -186,6 +186,24 @@ BOOST_CLASS_EXPORT_KEY(CXXR::CommandChronicle)
 
 namespace boost {
     namespace serialization {
+	/** @brief Template specialisation.
+	 *
+	 * This specialisation is required because
+	 * CXXR::CommandChronicle does not have a default constructor.
+	 * See the boost::serialization documentation for further
+	 * details.
+	 *
+	 * @tparam Archive archive class from which deserialisation is
+	 *           taking place.
+	 *
+	 * @param ar Archive from which deserialisation is taking
+	 *           place.
+         *
+	 * @param chron Pointer to the location at which a
+	 *          CXXR::CommandChronicle object is to be constructed.
+	 *
+	 * @param version Ignored.
+	 */
 	template<class Archive>
 	void load_construct_data(Archive& ar, CXXR::CommandChronicle* chron,
 				 const unsigned int version)
@@ -196,6 +214,25 @@ namespace boost {
 	    new (chron) CommandChronicle(command);
 	}
 
+	/** @brief Template specialisation.
+	 *
+	 * This specialisation is required to ensure that the command
+	 * of a CXXR::CommandChronicle is serialised within an archive
+	 * before the CommandChronicle itself is serialised, so that
+	 * on deserialisation this command can be made available to
+	 * load_construct_data().  See the boost::serialization
+	 * documentation for further details.
+	 *
+	 * @tparam Archive archive class to which serialisation is
+	 *           taking place.
+	 *
+	 * @param ar Archive to which serialisation is taking place.
+         *
+	 * @param chron Non-null pointer to the CXXR::CommandChronicle
+	 *          object about to be serialised.
+	 *
+	 * @param version Ignored.
+	 */
 	template<class Archive>
 	void save_construct_data(Archive& ar,
 				 const CXXR::CommandChronicle* chron,
