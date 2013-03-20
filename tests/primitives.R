@@ -118,6 +118,8 @@ except <- c("call", "switch", ".C", ".Fortran", ".Call", ".External",
             ".Internal", ".Primitive", "^", "|", "%*%", "rep", "seq.int",
             ## not implemented in CXXR:
             "gc.time",
+            ## not mature in CXXR:
+            "bdeserialize", "bserialize", "provenance",
             ## these may not be enabled
             "tracemem", "retracemem", "untracemem")
 
