@@ -77,6 +77,7 @@ namespace {
 Environment::Cache* Environment::s_cache;
 Environment* Environment::s_base;
 Environment* Environment::s_base_namespace;
+Environment* Environment::s_empty;
 Environment* Environment::s_global;
 
 SEXP R_EmptyEnv;
@@ -176,7 +177,8 @@ void Environment::initialize()
     s_cache->max_load_factor(0.5);
     GCStackRoot<Frame> empty_frame(CXXR_NEW(ListFrame));
     static GCRoot<Environment> empty_env(CXXR_NEW(Environment(0, empty_frame)));
-    R_EmptyEnv = empty_env.get();
+    s_empty = empty_env.get();
+    R_EmptyEnv = s_empty;
     GCStackRoot<Frame> base_frame(CXXR_NEW(StdFrame));
     static GCRoot<Environment>
 	base_env(CXXR_NEW(Environment(empty_env, base_frame)));

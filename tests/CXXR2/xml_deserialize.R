@@ -8,3 +8,16 @@ is.na(rhubarb)
 identical(rhubarb, c("rhubarb", NA, "rhubarb"))
 custard
 identical(custard, quote(custard))
+my.empty.env
+identical(my.empty.env, emptyenv())
+my.base.env
+identical(my.base.env, baseenv())
+my.basenamespace
+identical(my.basenamespace, .BaseNamespaceEnv)
+my.global.env
+identical(my.global.env, .GlobalEnv)
+e1
+ls(e1)
+get("battles", envir=e2)
+e2
+identical(e1, e2)

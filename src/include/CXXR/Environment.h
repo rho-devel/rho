@@ -84,17 +84,6 @@ namespace CXXR {
      * binding for a Symbol first in the Environment's own Frame, and
      * then successively in the Frames of enclosing Environments.
      *
-     * @note CR accords a special status to the empty environment,
-     * R_EmptyEnv, which is an Environment whose Frame contains no
-     * Bindings, and which has no enclosing Environment.  In CR the
-     * search for a Symbol Binding terminates when it reaches the
-     * empty environment, without looking inside it.  In CXXR,
-     * although R_EmptyEnv still exists (at least for the time being),
-     * it is not handled specially.  If the search for a Symbol
-     * reaches the empty environment, CXXR will look for the Symbol
-     * inside it - unsuccessfully of course - and the search then
-     * terminates because there is no enclosing Environment.
-     *
      * @note This class does not in itself enforce the requirement
      * that the enclosing relationship must be acyclic.
      *
@@ -211,6 +200,31 @@ namespace CXXR {
 	bool canReturn() const
 	{
 	    return m_can_return;
+	}
+
+	/** @brief Empty environment.
+	 *
+	 * CR accords a special status to the empty environment,
+	 * R_EmptyEnv, which is an Environment whose Frame contains no
+	 * Bindings, and which has no enclosing Environment.  In CR
+	 * the search for a Symbol Binding terminates when it reaches
+	 * the empty environment, without looking inside it.  In CXXR,
+	 * although the empty environment still exists (for backwards
+	 * compatibility)), it is not handled specially.  If the
+	 * search for a Symbol reaches the empty environment, CXXR
+	 * will look for the Symbol inside it - unsuccessfully of
+	 * course - and the search then terminates because there is no
+	 * enclosing Environment.
+	 *
+	 * @return Pointer to the empty environment.
+	 *
+	 * @note CXXR's own code does not include tests to prohibit
+	 * the creation of bindings within the empty environment, but
+	 * the effect of doing so is undefined.
+	 */
+	static Environment* empty()
+	{
+	    return s_empty;
 	}
 
 	/** @brief Access the enclosing Environment.
@@ -438,7 +452,7 @@ namespace CXXR {
 	friend class SchwarzCounter<Environment>;
 	friend class Frame;
 
-	enum S11nType {NORMAL = 0, GLOBAL, BASE};
+	enum S11nType {EMPTY = 0, BASE, BASENAMESPACE, GLOBAL, OTHER};
 
 	struct LeakMonitor : public GCNode::const_visitor {
 	    LeakMonitor()
@@ -462,11 +476,10 @@ namespace CXXR {
 
 	static Cache* s_cache;
 
-	// Predefined environments.  R_EmptyEnvironment has no special
-	// significance in CXXR, and may be abolished, so is not
-	// included here:
+	// Predefined environments:
 	static Environment* s_base;
 	static Environment* s_base_namespace;
+	static Environment* s_empty;
 	static Environment* s_global;
 
 	GCEdge<Environment> m_enclosing;
@@ -700,19 +713,25 @@ void CXXR::Environment::load(Archive& ar, const unsigned int version)
     S11nType envtype;
     ar >> BOOST_SERIALIZATION_NVP(envtype);
     switch(envtype) {
-    case NORMAL:
+    case EMPTY:
+	m_s11n_reloc = s_empty;
+	break;
+    case BASE:
+	m_s11n_reloc = s_base;
+	break;
+    case BASENAMESPACE:
+	m_s11n_reloc = s_base_namespace;
+	break;
+    case GLOBAL:
+	m_s11n_reloc = s_global;
+	break;
+    case OTHER:
 	{
 	    GCNPTR_SERIALIZE(ar, m_enclosing);
 	    GCNPTR_SERIALIZE(ar, m_frame);
 	    ar >> BOOST_SERIALIZATION_NVP(m_single_stepping);
 	    ar >> BOOST_SERIALIZATION_NVP(m_locked);
 	}
-	break;
-    case GLOBAL:
-	m_s11n_reloc = s_global;
-	break;
-    case BASE:
-	m_s11n_reloc = s_base;
 	break;
     }
 }
@@ -721,13 +740,17 @@ template<class Archive>
 void CXXR::Environment::save(Archive& ar, const unsigned int version) const
 {
     ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-    S11nType envtype = NORMAL;
-    if (this == s_global)
-	envtype = GLOBAL;
-    else if (this == s_base)
+    S11nType envtype = OTHER;
+    if (this == s_empty)
+	envtype = EMPTY;
+    else if  (this == s_base)
 	envtype = BASE;
+    else if (this == s_base_namespace)
+	envtype = BASENAMESPACE;
+    else if (this == s_global)
+	envtype = GLOBAL;
     ar << BOOST_SERIALIZATION_NVP(envtype);
-    if (envtype == NORMAL) {
+    if (envtype == OTHER) {
 	GCNPTR_SERIALIZE(ar, m_enclosing);
 	GCNPTR_SERIALIZE(ar, m_frame);
 	ar << BOOST_SERIALIZATION_NVP(m_single_stepping);

@@ -25,7 +25,7 @@ xml_s11n.ts : xml_serialize.R xml_deserialize.R xml_s11n.save
 	rm -f bserialize.xml
 	$(R) < xml_serialize.R
 	$(R) < xml_deserialize.R > xml_s11n.fail
-	$(RDIFF) xml_s11n.fail xml_s11n.save 1
+	$(RDIFF) xml_s11n.save xml_s11n.fail 1
 	rm -f bserialize.xml xml_s11n.fail
 	touch $@
 
