@@ -36,7 +36,7 @@ depends = $(sources_cxx:.cpp=.d)
 tests = CellPooltest MemoryBanktest Allocatortest \
         HeterogeneousListtest splice_test SETLENGTHtest ArgMatchertest0 \
         ArgMatchertest1 ArgMatchertest2 ArgMatchertest3 ArgMatchertest4 \
-        ArgMatchertest5 ArgMatchertest6 ArgMatchertest7 ArgMatchertest8 miscR
+        ArgMatchertest5 ArgMatchertest6 ArgMatchertest7 ArgMatchertest8
 
 check : $(tests:=.ts)
 
@@ -240,12 +240,6 @@ SETLENGTHtest.ts : SETLENGTHtest SETLENGTHtest.save
 	rm SETLENGTHtest.out
 	touch $@
 
-miscR.ts : ../../bin/exec/R misc.R misc.save
-	../../bin/R --vanilla --quiet < misc.R > misc.Rout 2>&1
-	diff misc.save misc.Rout
-	rm misc.Rout
-	touch $@
- 
 RObject_sizer : RObject_sizer.o #../../src/main/libR.a
 	$(LINK.cc) -o $@ $< -L../../lib -L../../src/main -Wl,-rpath,../../lib \
                    -lR -ldl $(MAIN_LDFLAGS) $(EXTRA_LIBS)

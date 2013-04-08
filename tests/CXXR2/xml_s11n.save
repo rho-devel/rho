@@ -1,0 +1,23 @@
+> bdeserialize()
+> ls()
+[1] "custard" "rhubarb" "sq"      "x"       "z"      
+> x
+ [1]  1  2  3  4  5  6  7  8  9 10
+> sq
+function (y) 
+{
+    y * y
+}
+> z
+ [1]   1   4   9  16  25  36  49  64  81 100
+> rhubarb
+[1] "rhubarb" NA        "rhubarb"
+> is.na(rhubarb)
+[1] FALSE  TRUE FALSE
+> identical(rhubarb, c("rhubarb", NA, "rhubarb"))
+[1] TRUE
+> custard
+custard
+> identical(custard, quote(custard))
+[1] TRUE
+> 

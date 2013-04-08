@@ -1028,7 +1028,7 @@ SEXP attribute_hidden do_radixsort(SEXP call, SEXP op, SEXP args, SEXP rho)
     napos = off ? 0 : xmax + 1;
     off -= xmin;
     /* automatic allocation is fine here: we know this is small */
-    std::vector<unsigned int> cntsv(xmax+1);
+    std::vector<unsigned int> cntsv(xmax+2);
     unsigned int* cnts = &cntsv[0];
 
     for(i = 0; i <= xmax+1; i++) cnts[i] = 0;

@@ -185,7 +185,7 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	for (Provenance::Set::const_iterator it = children.begin();
 	     it != children.end(); ++it) {
 	    const Provenance* p = *it;
-	    (*sv)[i] = const_cast<String*>(p->symbol()->name());
+	    (*sv)[i++] = const_cast<String*>(p->symbol()->name());
 	}
     }
 
