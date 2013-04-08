@@ -152,6 +152,7 @@
 /** @def PROVENANCE_TRACKING
  *
  * @brief Enable provenance-tracking facilities.
+ * @deprecated This option is now controllable in the global config.h
  *
  * By default, CXXR does not carry out provenance tracking.  Defining
  * PROVENANCE_TRACKING enables this facility.

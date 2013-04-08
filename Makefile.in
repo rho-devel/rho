@@ -32,6 +32,7 @@ ACLOCAL_M4 = aclocal.m4
 ## NB: this is duplicated in m4/Makefile.in
 ACINCLUDE_DEPENDENCIES = \
 	m4/R.m4 \
+	m4/boost.m4 \
 	m4/bigendian.m4 \
 	m4/cairo.m4 \
 	m4/clibs.m4 \

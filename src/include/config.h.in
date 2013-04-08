@@ -61,6 +61,15 @@
 /* Define to 1 if you have the `asprintf' function. */
 #undef HAVE_ASPRINTF
 
+/* define if the Boost library is available */
+#undef HAVE_BOOST
+
+/* define if the Boost::Regex library is available */
+#undef HAVE_BOOST_REGEX
+
+/* define if the Boost::Serialization library is available */
+#undef HAVE_BOOST_SERIALIZATION
+
 /* Define if you have BSD networking headers and libraries. */
 #undef HAVE_BSD_NETWORKING
 
@@ -893,6 +902,9 @@
 /* Define if <inttypes.h> exists and defines unusable PRI* macros. (For intl)
    */
 #undef PRI_MACROS_BROKEN
+
+/* Define this to enable CXXR provenance tracking. */
+#undef PROVENANCE_TRACKING
 
 /* Define if the pthread_in_use() detection is hard. (For intl) */
 #undef PTHREAD_IN_USE_DETECTION_HARD
