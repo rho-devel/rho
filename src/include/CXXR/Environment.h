@@ -367,6 +367,15 @@ namespace CXXR {
 #endif
 	}
 
+	/** @brief Get package name (if any).
+	 *
+	 * @return If this Environment is the Environment of a package, this
+	 * function returns the name of the package (of the form
+	 * "package:foo") as the first element of a StringVector.
+	 * Otherwise returns a null pointer.
+	 */
+	const StringVector* packageName() const;
+
 	/** @brief Replace the enclosing environment.
 	 *
 	 * @param new_enclos Pointer to the environment now to be
@@ -452,7 +461,10 @@ namespace CXXR {
 	friend class SchwarzCounter<Environment>;
 	friend class Frame;
 
-	enum S11nType {EMPTY = 0, BASE, BASENAMESPACE, GLOBAL, OTHER};
+	// PACKAGE_ENV because PACKAGE is defined (to "R") as a macro
+	// within config.h .
+	enum S11nType {EMPTY = 0, BASE, BASENAMESPACE,
+		       GLOBAL, PACKAGE_ENV, NAMESPACE, OTHER};
 
 	struct LeakMonitor : public GCNode::const_visitor {
 	    LeakMonitor()
@@ -513,6 +525,9 @@ namespace CXXR {
 
 	void detachFrame();
 
+	// Used in deserializing package environments:
+	static Environment* findPackage(const std::string name);
+
 	// Remove any mapping of 'sym' from the cache.  If called with
 	// a null pointer, clear the cache entirely.
 	static void flushFromCache(const Symbol* sym);
@@ -530,6 +545,10 @@ namespace CXXR {
 	// Designate this Environment as a participant in the search
 	// list cache:
 	void makeCached();
+
+	// Warn about package possibly not being available when
+	// loading, and extract package name.
+	static const char* package_s11n_aux(const StringVector* pkg_name);
 
 	template<class Archive>
 	void save(Archive& ar, const unsigned int version) const;
@@ -725,6 +744,16 @@ void CXXR::Environment::load(Archive& ar, const unsigned int version)
     case GLOBAL:
 	m_s11n_reloc = s_global;
 	break;
+    case PACKAGE_ENV:
+	{
+	    std::string pkgname;
+	    ar >> BOOST_SERIALIZATION_NVP(pkgname);
+	    m_s11n_reloc = findPackage(pkgname);
+	}
+	break;
+    case NAMESPACE:
+	// Not yet used
+	break;
     case OTHER:
 	{
 	    GCNPTR_SERIALIZE(ar, m_enclosing);
@@ -740,17 +769,43 @@ template<class Archive>
 void CXXR::Environment::save(Archive& ar, const unsigned int version) const
 {
     ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-    S11nType envtype = OTHER;
-    if (this == s_empty)
-	envtype = EMPTY;
-    else if  (this == s_base)
-	envtype = BASE;
-    else if (this == s_base_namespace)
-	envtype = BASENAMESPACE;
-    else if (this == s_global)
-	envtype = GLOBAL;
-    ar << BOOST_SERIALIZATION_NVP(envtype);
-    if (envtype == OTHER) {
+    // EMPTY:
+    if (this == s_empty) {
+	S11nType envtype = EMPTY;
+	ar << BOOST_SERIALIZATION_NVP(envtype);
+	return;
+    }
+    // BASE:
+    if  (this == s_base) {
+	S11nType envtype = BASE;
+	ar << BOOST_SERIALIZATION_NVP(envtype);
+	return;
+    }
+    // BASENAMESPACE:
+    if (this == s_base_namespace) {
+	S11nType envtype = BASENAMESPACE;
+	ar << BOOST_SERIALIZATION_NVP(envtype);
+	return;
+    }
+    // GLOBAL:
+    if (this == s_global) {
+	S11nType envtype = GLOBAL;
+	ar << BOOST_SERIALIZATION_NVP(envtype);
+	return;
+    }
+    // PACKAGE_ENV:
+    const StringVector* pkgsv = packageName();
+    if (pkgsv) {
+	S11nType envtype = PACKAGE_ENV;
+	ar << BOOST_SERIALIZATION_NVP(envtype);
+	std::string pkgname(package_s11n_aux(pkgsv));
+	ar << BOOST_SERIALIZATION_NVP(pkgname);
+	return;
+    }
+    // OTHER:
+    {
+	S11nType envtype = OTHER;
+	ar << BOOST_SERIALIZATION_NVP(envtype);
 	GCNPTR_SERIALIZE(ar, m_enclosing);
 	GCNPTR_SERIALIZE(ar, m_frame);
 	ar << BOOST_SERIALIZATION_NVP(m_single_stepping);

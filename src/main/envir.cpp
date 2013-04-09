@@ -1946,6 +1946,12 @@ SEXP R_PackageEnvName(SEXP rho)
 	return R_NilValue;
 }
 
+const StringVector* Environment::packageName() const
+{
+    RObject* ans = R_PackageEnvName(const_cast<Environment*>(this));
+    return SEXP_downcast<const StringVector*>(ans);
+}
+
 SEXP R_FindPackageEnv(SEXP info)
 {
     SEXP expr, val;
@@ -1954,6 +1960,13 @@ SEXP R_FindPackageEnv(SEXP info)
     val = eval(expr, R_GlobalEnv);
     UNPROTECT(2);
     return val;
+}
+
+Environment* Environment::findPackage(const std::string name)
+{
+    GCStackRoot<StringVector> pkgsv(asStringVector(name));
+    RObject* ans = R_FindPackageEnv(pkgsv);
+    return SEXP_downcast<Environment*>(ans);
 }
 
 Rboolean R_IsNamespaceEnv(SEXP rho)
