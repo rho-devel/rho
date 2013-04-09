@@ -16,6 +16,8 @@ my.basenamespace
 identical(my.basenamespace, .BaseNamespaceEnv)
 my.global.env
 identical(my.global.env, .GlobalEnv)
+my.stats.env
+identical(my.stats.env, as.environment("package:stats"))
 e1
 ls(e1)
 get("battles", envir=e2)

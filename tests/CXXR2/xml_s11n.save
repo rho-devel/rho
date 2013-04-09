@@ -1,8 +1,8 @@
 > bdeserialize()
 > ls()
  [1] "custard"          "e1"               "e2"               "my.base.env"     
- [5] "my.basenamespace" "my.empty.env"     "my.global.env"    "rhubarb"         
- [9] "sq"               "x"                "z"               
+ [5] "my.basenamespace" "my.empty.env"     "my.global.env"    "my.stats.env"    
+ [9] "rhubarb"          "sq"               "x"                "z"               
 > x
  [1]  1  2  3  4  5  6  7  8  9 10
 > sq
@@ -38,14 +38,22 @@ custard
 <environment: R_GlobalEnv>
 > identical(my.global.env, .GlobalEnv)
 [1] TRUE
+> my.stats.env
+<environment: package:stats>
+attr(,"name")
+[1] "package:stats"
+attr(,"path")
+[1] "/home/arr/NOTBACKEDUP/sandboxes/CXXR1/trunk/library/stats"
+> identical(my.stats.env, as.environment("package:stats"))
+[1] TRUE
 > e1
-<environment: 0x9d0a600>
+<environment: 0x9a8f510>
 > ls(e1)
 [1] "battles"
 > get("battles", envir=e2)
 [1] 1066 1485
 > e2
-<environment: 0x9d0a600>
+<environment: 0x9a8f510>
 > identical(e1, e2)
 [1] TRUE
 > 

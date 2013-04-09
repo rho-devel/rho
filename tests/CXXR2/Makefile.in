@@ -8,6 +8,7 @@ top_srcdir = ../..
 
 R = $(top_builddir)/bin/R --vanilla --quiet
 RDIFF = $(top_builddir)/bin/R CMD Rdiff
+REXEC= $(top_builddir)/bin/exec/R
 
 include $(top_builddir)/Makeconf
 
@@ -15,13 +16,13 @@ tests = miscR xml_s11n
 
 check : $(tests:=.ts)
 
-miscR.ts : ../../bin/exec/R misc.R misc.save
+miscR.ts : $(REXEC) misc.R misc.save
 	$(R) < misc.R > misc.Rout 2>&1
 	diff misc.save misc.Rout
 	rm misc.Rout
 	touch $@
 
-xml_s11n.ts : xml_serialize.R xml_deserialize.R xml_s11n.save
+xml_s11n.ts : $(REXEC) xml_serialize.R xml_deserialize.R xml_s11n.save
 	rm -f bserialize.xml
 	$(R) < xml_serialize.R
 	$(R) < xml_deserialize.R > xml_s11n.fail
