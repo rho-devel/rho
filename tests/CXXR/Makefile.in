@@ -12,7 +12,7 @@ maindir = $(top_srcdir)/src/main
 
 #ALL_CPPFLAGS = $(CPPFLAGS) -I../../include
 
-EXTRA_LIBS = $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS)  $(READLINE_LIBS) $(LIBS)
+EXTRA_LIBS = $(BOOST_LIBS) $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS)  $(READLINE_LIBS) $(LIBS)
 
 # Thanks to Jochen Laubrock for suggestions about the handling of
 # valgrind on non-Linux platforms.
@@ -51,6 +51,7 @@ ArgMatchertest : ArgMatchertest.o ../../lib/libR.dylib
 else
 ArgMatchertest : ArgMatchertest.o #../../src/main/libR.a
 	$(LINK.cc) -o $@ $< -L../../lib -L../../src/main -Wl,-rpath,../../lib \
+		   -Wl,-rpath,$(BOOST_LD_LIBRARY_PATH) \
                    -lR -ldl $(MAIN_LDFLAGS) $(EXTRA_LIBS)
 endif
 
@@ -231,6 +232,7 @@ SETLENGTHtest : SETLENGTHtest.o ../../lib/libR.dylib
 else
 SETLENGTHtest : SETLENGTHtest.o #../../src/main/libR.a
 	$(LINK.cc) -o $@ $< -L../../lib -L../../src/main -Wl,-rpath,../../lib \
+		   -Wl,-rpath,$(BOOST_LD_LIBRARY_PATH) \
                    -lR -ldl $(MAIN_LDFLAGS) $(EXTRA_LIBS)
 endif
 
