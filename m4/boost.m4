@@ -10,26 +10,32 @@
 ### This file is largely created by
 ### cat ax_boost_{base,regex,serialization}.m4 > boost.m4
 ###
-### And definition of CXXR_BOOST_LD_LIBRARY_PATH
+### And definition of CXXR_BOOST
 ###
 ### Other changes:
 ### * Remove warning of BOOST_CPPFLAGS from AX_BOOST_SERIALIZATION
 
-### CXXR_BOOST_LD_LIBRARY_PATH
+### CXXR_BOOST
 ###
-### This relies on things from AX_BOOST_BASE
+### This relies on things from AX_BOOST_BASE, which must
+### be called first, as should AX_BOOST_REGEX.
 ###
+### If Boost is in a standard path, then BOOST_CPPFLAGS
+### and BOOST_LDFLAGS are reset to empty strings.
 
-AC_DEFUN([CXXR_BOOST_LD_LIBRARY_PATH],
+AC_DEFUN([CXXR_BOOST],
 [
 	
 	if test -n "$ac_boost_path" || test -n "$ac_boost_lib_path" ||
 	   test -n "$ax_boost_user_regex_lib" || test -n "$ax_boost_user_serialization_lib"; then
 		BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
 		BOOST_LD_LIBRARY_PATH="${BOOSTLIBDIR}"
+	else
+		AC_SUBST(BOOST_CPPFLAGS,"")
+		AC_SUBST(BOOST_LDFLAGS,"")
 	fi
 	AC_SUBST(BOOST_LD_LIBRARY_PATH)
-]) #CXXR_BOOST_LD_LIBRARY_PATH
+]) #CXXR_BOOST
 
 
 AC_DEFUN([AX_BOOST_BASE],

@@ -25,7 +25,7 @@ CC = @CC@
 CFLAGS += @CFLAGS@ @LTO@
 CXXFLAGS += @CXXFLAGS@ -Wno-attributes
 CPICFLAGS = @CPICFLAGS@
-CPPFLAGS += $(BOOST_CPPFLAGS) @CPPFLAGS@
+CPPFLAGS += @CPPFLAGS@
 DEFS = @DEFS@ @R_DEFS@
 DISTDIR_TAR_EXCLUDE = --exclude=.svn --exclude=Makefile --exclude="*.o" --exclude="*$(SHLIB_EXT)" --exclude="*~"
 DYLIB_EXT = @DYLIB_EXT@
