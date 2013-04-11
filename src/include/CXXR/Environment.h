@@ -280,6 +280,35 @@ namespace CXXR {
 		             const Frame::Binding*>(ebpr.first, ebpr.second);
 	}
 
+	/** @brief Locate a namespace environment from its
+	 *   specification.
+	 *
+	 * @param spec Non-null pointer to the specification of a
+	 * namespace environment (as returned by namespaceSpec() ).
+	 *
+	 * @return A pointer to the namespace environment
+	 * corresponding to \a spec .  This namespace is loaded if
+	 * necessary, and deserialization fails if loading is
+	 * unsuccessful.
+	 *
+	 * @todo Having deserialization fail entirely in the event that
+	 * the namespace cannot be loaded seems insufficiently robust,
+	 * but follows CR practice.
+	 */
+	static Environment* findNamespace(const StringVector* spec);
+
+	/** @brief Locate a package environment from its name.
+	 *
+	 * @param name Name of a package, prefixed by <tt>package:</tt>.
+	 *
+	 * @return A pointer to the package environment corresponding
+	 * to \a name .  This package is loaded if necessary.  If
+	 * loading fails, the function returns a pointer to the global
+	 * Environment (<tt>Environment::global()</tt>): this follows
+	 * CR practice.
+	 */
+	static Environment* findPackage(const std::string& name);
+
 	/** @brief Access the Environment's Frame.
 	 *
 	 * @return pointer to the Environment's Frame.
@@ -366,6 +395,14 @@ namespace CXXR {
 	    }
 #endif
 	}
+
+	/** @brief Get namespace spec (if applicable).
+	 *
+	 * @return If this Environment is a namespace environment,
+	 * this function returns the namespace specification.
+	 * Otherwise returns a null pointer.
+	 */
+	const StringVector* namespaceSpec() const;
 
 	/** @brief Get package name (if any).
 	 *
@@ -524,9 +561,6 @@ namespace CXXR {
 	static void cleanup();
 
 	void detachFrame();
-
-	// Used in deserializing package environments:
-	static Environment* findPackage(const std::string name);
 
 	// Remove any mapping of 'sym' from the cache.  If called with
 	// a null pointer, clear the cache entirely.
@@ -752,7 +786,11 @@ void CXXR::Environment::load(Archive& ar, const unsigned int version)
 	}
 	break;
     case NAMESPACE:
-	// Not yet used
+	{
+	    GCStackRoot<const StringVector> nsspec;
+	    GCNPTR_SERIALIZE(ar, nsspec);
+	    m_s11n_reloc = findNamespace(nsspec);
+	}
 	break;
     case OTHER:
 	{
@@ -800,6 +838,14 @@ void CXXR::Environment::save(Archive& ar, const unsigned int version) const
 	ar << BOOST_SERIALIZATION_NVP(envtype);
 	std::string pkgname(package_s11n_aux(pkgsv));
 	ar << BOOST_SERIALIZATION_NVP(pkgname);
+	return;
+    }
+    // NAMESPACE:
+    const StringVector* nsspec = namespaceSpec();
+    if (nsspec) {
+	S11nType envtype = NAMESPACE;
+	ar << BOOST_SERIALIZATION_NVP(envtype);
+	GCNPTR_SERIALIZE(ar, nsspec);
 	return;
     }
     // OTHER:
