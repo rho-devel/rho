@@ -50,6 +50,8 @@ extern "C" {
     {
 	cout << buf << endl;
     }
+
+    void DoNothing() { }
 }
 
 namespace {
@@ -233,6 +235,8 @@ int main(int argc, char* argv[]) {
 	usage(argv[0]);
     // Set up error reporting:
     ptr_R_WriteConsoleEx = WriteConsoleEx;
+    ptr_R_ResetConsole = ptr_R_FlushConsole = 
+        ptr_R_ClearerrConsole = DoNothing;
     Rf_InitOptions();
     // Set up Environments:
     GCStackRoot<Frame> ff(CXXR_NEW(ListFrame));

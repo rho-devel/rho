@@ -5,3 +5,4 @@ brown :
  : RED
 Error: invalid formal arguments for 'function'
 
+terminate called after throwing an instance of 'CXXR::CommandTerminated'
