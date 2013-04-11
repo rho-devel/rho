@@ -9,6 +9,8 @@ top_srcdir = ../..
 R = $(top_builddir)/bin/R --vanilla --quiet
 RDIFF = $(top_builddir)/bin/R CMD Rdiff
 REXEC= $(top_builddir)/bin/exec/R
+FIND = \[1\] \"/home/arr/NOTBACKEDUP/sandboxes/CXXR1/trunk/library/stats\"
+REPLACE = `echo 'attr(as.environment(\"package:stats\"), \"path\")' | $(R) | sed -n 2p`
 
 include $(top_builddir)/Makeconf
 
@@ -26,7 +28,7 @@ xml_s11n.ts : $(REXEC) xml_serialize.R xml_deserialize.R xml_s11n.save
 	rm -f bserialize.xml
 	$(R) < xml_serialize.R
 	$(R) < xml_deserialize.R > xml_s11n.fail
-	$(RDIFF) xml_s11n.save xml_s11n.fail 1
+	sed -e "s|$(FIND)|$(REPLACE)|g" xml_s11n.save | $(RDIFF) - xml_s11n.fail 1
 	rm -f bserialize.xml xml_s11n.fail
 	touch $@
 
