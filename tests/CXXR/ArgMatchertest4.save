@@ -25,4 +25,3 @@ gre : gris
 white : blanc
 Error: formal argument 'green' matched by multiple actual arguments
 
-terminate called after throwing an instance of 'CXXR::CommandTerminated'

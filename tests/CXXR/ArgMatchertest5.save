@@ -26,4 +26,3 @@ grey : gris
 white : blanc
 Error: argument 5 matches multiple formal arguments
 
-terminate called after throwing an instance of 'CXXR::CommandTerminated'

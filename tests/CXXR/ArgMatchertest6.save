@@ -30,4 +30,3 @@ green : vert
 violet : violette
 Error: unused argument(s) (gold = or, notmatchedtowhite, pink = rose)
 
-terminate called after throwing an instance of 'CXXR::CommandTerminated'

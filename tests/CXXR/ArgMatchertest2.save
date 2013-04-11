@@ -7,4 +7,3 @@ green : GREEN
 blue : BLUE
 Error: formals list contains more than one '...'
 
-terminate called after throwing an instance of 'CXXR::CommandTerminated'

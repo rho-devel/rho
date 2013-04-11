@@ -7,4 +7,3 @@ violet : VIOLET
 white : 
 Error: duplicated name in formals list
 
-terminate called after throwing an instance of 'CXXR::CommandTerminated'
