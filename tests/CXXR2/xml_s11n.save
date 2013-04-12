@@ -3,9 +3,14 @@
  [1] "custard"          "e1"               "e2"               "my.base.env"     
  [5] "my.basenamespace" "my.empty.env"     "my.global.env"    "my.stats.env"    
  [9] "my.stats.ns"      "rhubarb"          "sq"               "x"               
-[13] "z"               
+[13] "y"                "z"               
 > x
  [1]  1  2  3  4  5  6  7  8  9 10
+> y
+[1] 1.000000e-01 3.141593e+00 1.234568e-51 1.414214e+50          Inf
+[6]         -Inf          NaN
+> identical(y, c(0.1, pi, 0.123456789E-50, sqrt(2.0E100), Inf, -Inf, NaN))
+[1] TRUE
 > sq
 function (y) 
 {
@@ -52,13 +57,13 @@ attr(,"path")
 > identical(my.stats.ns, environment(rnorm))
 [1] TRUE
 > e1
-<environment: 0x9adf630>
+<environment: 0x9a765d0>
 > ls(e1)
 [1] "battles"
 > get("battles", envir=e2)
 [1] 1066 1485
 > e2
-<environment: 0x9adf630>
+<environment: 0x9a765d0>
 > identical(e1, e2)
 [1] TRUE
 > 
