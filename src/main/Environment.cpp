@@ -157,6 +157,8 @@ Environment::findBinding(const Symbol* symbol)
     return EBPair(0, 0);
 }
 
+// Environment::findNamespace() is in envir.cpp
+
 // Environment::findPackage() is in envir.cpp
 
 void Environment::flushFromCache(const Symbol* sym)
@@ -205,6 +207,8 @@ void Environment::makeCached()
 	m_frame->incCacheCount();
     m_cached = true;
 }
+
+// Environment::namespaceSpec() is in envir.cpp
 
 const char* Environment::package_s11n_aux(const StringVector* pkg_name)
 {

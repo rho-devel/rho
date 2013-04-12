@@ -8,6 +8,7 @@ my.base.env <- baseenv()
 my.basenamespace <- .BaseNamespaceEnv
 my.global.env <- .GlobalEnv
 my.stats.env <- as.environment("package:stats")
+my.stats.ns <- environment(rnorm)
 e1 <- new.env()
 assign("battles", c(1066, 1485), e1)
 e2 <- e1

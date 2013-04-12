@@ -2,7 +2,8 @@
 > ls()
  [1] "custard"          "e1"               "e2"               "my.base.env"     
  [5] "my.basenamespace" "my.empty.env"     "my.global.env"    "my.stats.env"    
- [9] "rhubarb"          "sq"               "x"                "z"               
+ [9] "my.stats.ns"      "rhubarb"          "sq"               "x"               
+[13] "z"               
 > x
  [1]  1  2  3  4  5  6  7  8  9 10
 > sq
@@ -46,14 +47,18 @@ attr(,"path")
 [1] "/home/arr/NOTBACKEDUP/sandboxes/CXXR1/trunk/library/stats"
 > identical(my.stats.env, as.environment("package:stats"))
 [1] TRUE
+> my.stats.ns
+<environment: namespace:stats>
+> identical(my.stats.ns, environment(rnorm))
+[1] TRUE
 > e1
-<environment: 0x9a8f510>
+<environment: 0x9adf630>
 > ls(e1)
 [1] "battles"
 > get("battles", envir=e2)
 [1] 1066 1485
 > e2
-<environment: 0x9a8f510>
+<environment: 0x9adf630>
 > identical(e1, e2)
 [1] TRUE
 > 

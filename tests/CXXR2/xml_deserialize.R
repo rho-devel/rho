@@ -18,6 +18,8 @@ my.global.env
 identical(my.global.env, .GlobalEnv)
 my.stats.env
 identical(my.stats.env, as.environment("package:stats"))
+my.stats.ns
+identical(my.stats.ns, environment(rnorm))
 e1
 ls(e1)
 get("battles", envir=e2)
