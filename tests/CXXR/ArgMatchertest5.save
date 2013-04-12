@@ -26,3 +26,4 @@ grey : gris
 white : blanc
 Error: argument 5 matches multiple formal arguments
 
+ArgMatchertest: Error encountered while matching arguments

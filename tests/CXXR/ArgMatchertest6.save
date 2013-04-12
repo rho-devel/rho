@@ -30,3 +30,4 @@ green : vert
 violet : violette
 Error: unused argument(s) (gold = or, notmatchedtowhite, pink = rose)
 
+ArgMatchertest: Error encountered while matching arguments

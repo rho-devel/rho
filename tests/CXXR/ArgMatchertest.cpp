@@ -37,6 +37,7 @@
 // Otherwise expanded to Rf_match:
 #undef match
 
+#include "CXXR/CommandTerminated.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ListFrame.hpp"
 #include "CXXR/PairList.h"
@@ -245,8 +246,13 @@ int main(int argc, char* argv[]) {
     // Process formals:
     cout << "Formal arguments:\n\n";
     GCStackRoot<PairList> formals(getArgs(argv[1]));
-    GCStackRoot<ArgMatcher>
-	matcher(GCNode::expose(new ArgMatcher(formals)));
+    GCStackRoot<ArgMatcher> matcher;
+    try {
+    	matcher = GCNode::expose(new ArgMatcher(formals));
+    } catch (CommandTerminated) {
+	cerr << "ArgMatchertest: Error encountered while processing formals" << endl;
+	return 0;
+    }
     // Process supplied arguments:
     cout << "\nSupplied arguments:\n\n";
     ArgList supplied(getArgs(argv[2]), ArgList::RAW);
@@ -262,7 +268,12 @@ int main(int argc, char* argv[]) {
 	}
     }
     // Perform match and show result:
-    matcher->match(fenv, &supplied);
+    try {
+	matcher->match(fenv, &supplied);
+    } catch (CommandTerminated) {
+    	cerr << "ArgMatchertest: Error encountered while matching arguments" << endl;
+	return 0;
+    }
     cout << "\nMatch result:\n\n";
     showFrame(frame);
     return 0;

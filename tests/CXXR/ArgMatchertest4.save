@@ -25,3 +25,4 @@ gre : gris
 white : blanc
 Error: formal argument 'green' matched by multiple actual arguments
 
+ArgMatchertest: Error encountered while matching arguments

@@ -7,3 +7,4 @@ violet : VIOLET
 white : 
 Error: duplicated name in formals list
 
+ArgMatchertest: Error encountered while processing formals
