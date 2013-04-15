@@ -1,8 +1,9 @@
 bdeserialize()
 ls()
 x
+xna
 y
-identical(y, c(0.1, pi, 0.123456789E-50, sqrt(2.0E100), Inf, -Inf, NaN))
+identical(y, c(0.1, pi, 0.123456789E-50, sqrt(2.0E100), Inf, -Inf, NaN, NA))
 sq
 z
 rhubarb

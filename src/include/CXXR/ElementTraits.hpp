@@ -95,6 +95,26 @@ namespace CXXR {
 	    }
 	};  // struct Data
 
+	/** @brief Access the data payload of an R vector element.
+	 *
+	 * This templated function is syntactic sugar for the
+	 * Data::get() function.  It should not be specialized:
+	 * instead specialize ElementTraits::Data itself.
+	 *
+	 * @tparam T type used as an element in the CXXR
+	 *           implementation of an R vector type.
+	 *
+	 * @param t Reference to an object of type \a T .
+	 *
+	 * @return reference to the data payload contained within \a t .
+	 */
+	template <typename T>
+	inline const typename ElementTraits::Data<T>::type&
+	data(const T& t)
+	{
+	    return Data<T>::get(t);
+	}
+
 	/** @brief Function object for detaching referents.
 	 *
 	 * For element types for which \c HasReferents is true, this
@@ -182,7 +202,7 @@ namespace CXXR {
 	 */	 
 	template <typename T>
 	struct Serialize {
-	    /** @brief Serialize/deserialize an element.
+	    /** @brief Serialize/deserialize an element's payload.
 	     *
 	     * @tparam Archive boost::serialization archive type.
 	     *           Serialization or deserialization will take
@@ -191,12 +211,16 @@ namespace CXXR {
 	     *
 	     * @param ar Archive to be used.
 	     *
-	     * @param item Object to be serialized/deserialized.
+	     * @param item Object whose data payload is to be
+	     *          serialized/deserialized.
 	     */
 	    template <class Archive>
 	    void operator()(Archive& ar, T& item)
 	    {
-		ar & BOOST_SERIALIZATION_NVP(item);
+		typename ElementTraits::Data<T>::type payload
+		    = ElementTraits::data(item); 
+		ar & boost::serialization::make_nvp("item", payload);
+		item = payload;
 	    }
 	};
 	    
@@ -227,26 +251,6 @@ namespace CXXR {
 	    void operator()(const T& t) const
 	    {}
 	};
-
-	/** @brief Access the data payload of an R vector element.
-	 *
-	 * This templated function is syntactic sugar for the
-	 * Data::get() function.  It should not be specialized:
-	 * instead specialize ElementTraits::Data itself.
-	 *
-	 * @tparam T type used as an element in the CXXR
-	 *           implementation of an R vector type.
-	 *
-	 * @param t Reference to an object of type \a T .
-	 *
-	 * @return reference to the data payload contained within \a t .
-	 */
-	template <typename T>
-	inline const typename ElementTraits::Data<T>::type&
-	data(const T& t)
-	{
-	    return Data<T>::get(t);
-	}
 
 	/** @brief Function object to generate 'not available' value.
 	 *
