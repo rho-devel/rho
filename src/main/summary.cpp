@@ -370,7 +370,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, a, stmp = NA_STRING /* -Wall */, scum = NA_STRING, call2;
     double tmp = 0.0, s;
-    Rcomplex z, ztmp, zcum(0.0, 0.0) /* -Wall */;
+    Rcomplex z, ztmp, zcum={0.0, 0.0} /* -Wall */;
     int itmp = 0, icum=0, int_a, real_a, empty, warn = 0 /* dummy */;
     short iop;
     SEXPTYPE ans_type;/* only INTEGER, REAL, COMPLEX or STRSXP here */

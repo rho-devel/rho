@@ -36,45 +36,17 @@
 #ifndef R_COMPLEX_H
 #define R_COMPLEX_H
 
-#ifndef  __cplusplus
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 typedef struct {
     double r;
     double i;
 } Rcomplex;
 
-#else
 
-#include <cstdio>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/nvp.hpp>
-
-struct Rcomplex {
-    double r;
-    double i;
-
-    Rcomplex()
-    {}
-
-    Rcomplex(double rl, double im = 0.0)
-	: r(rl), i(im)
-    {}
-
-    Rcomplex& operator=(double rhs)
-    {
-	r = rhs;
-	i = 0;
-	return *this;
-    }
-
-    template<class Archive>
-    void serialize (Archive & ar, const unsigned int version) {
-	std::printf("Serialize RComplex");
-	ar & BOOST_SERIALIZATION_NVP(r);
-	ar & BOOST_SERIALIZATION_NVP(i);
-    }
-};
-
+#ifdef  __cplusplus
 inline bool operator==(const Rcomplex& l, const Rcomplex& r)
 {
     return (l.r == r.r) && (l.i == r.i);
@@ -85,6 +57,7 @@ inline bool operator!=(const Rcomplex& l, const Rcomplex& r)
     return !(l==r);
 }
 
+}  // extern "C"
 #endif // __cplusplus
 
 #endif /* R_COMPLEX_H */
