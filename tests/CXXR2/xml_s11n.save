@@ -46,12 +46,7 @@ custard
 <environment: R_GlobalEnv>
 > identical(my.global.env, .GlobalEnv)
 [1] TRUE
-> my.stats.env
-<environment: package:stats>
-attr(,"name")
-[1] "package:stats"
-attr(,"path")
-[1] "/home/arr/NOTBACKEDUP/sandboxes/CXXR1/trunk/library/stats"
+> #my.stats.env
 > identical(my.stats.env, as.environment("package:stats"))
 [1] TRUE
 > my.stats.ns
@@ -59,13 +54,13 @@ attr(,"path")
 > identical(my.stats.ns, environment(rnorm))
 [1] TRUE
 > e1
-<environment: 0xa779690>
+<environment: 0xa5476c0>
 > ls(e1)
 [1] "battles"
 > get("battles", envir=e2)
 [1] 1066 1485
 > e2
-<environment: 0xa779690>
+<environment: 0xa5476c0>
 > identical(e1, e2)
 [1] TRUE
 > 

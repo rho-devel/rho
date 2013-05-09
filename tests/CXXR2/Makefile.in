@@ -35,7 +35,7 @@ xml_s11n_2.ts : $(REXEC) xml_serialize_2.R xml_deserialize_2.R
 	$(R) < xml_serialize_2.R > /dev/null 2>&1
 	$(R) < xml_deserialize_2.R
 	diff xml_serialize_2.pre xml_serialize_2.post
-	rm -f xml_serialize_2.pre xml_serialize_2.post
+	rm -f xml_serialize_2.pre xml_serialize_2.post reg-tests-2.pdf
 	touch $@
 
 Makefile : Makefile.in
