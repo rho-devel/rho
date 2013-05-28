@@ -98,8 +98,10 @@ String::String(map::value_type* key_val_pr)
 
 String::~String()
 {
-    // During program exit, s_cache may already have been deleted:
-    if (s_cache) {
+    // During program exit, s_cache may already have been deleted.
+    // Also need to allow for serialization proxies, for which
+    // m_key_val_pr will be null.
+    if (s_cache && m_key_val_pr) {
 	// Must copy the key, because some implementations may,
 	// having deleted the cache entry pointed to by
 	// m_key_val_pr, continue looking for other entries with

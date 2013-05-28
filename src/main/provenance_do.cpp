@@ -330,6 +330,6 @@ SEXP attribute_hidden do_bdeserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
     GCNPTR_SERIALIZE(ia, env);
     Frame* frame = Environment::global()->frame();
     frame->import(env->frame());
-
+    GCNode::PtrS11n::freeProxies();
     return 0;
 }
