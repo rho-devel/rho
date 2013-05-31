@@ -82,8 +82,6 @@ namespace CXXR {
 	// cache lines.
 
 	// Virtual functions of Frame (qv):
-	PairList* asPairList() const;
-
 #ifdef __GNUG__
 	__attribute__((hot,fastcall))
 #endif
@@ -91,20 +89,9 @@ namespace CXXR {
 
 	const Binding* binding(const Symbol* symbol) const;
 	BindingRange bindingRange() const;
-	void clear();
 	StdFrame* clone() const;
-	bool erase(const Symbol* symbol);
-	void import(const Frame* frame);
 	void lockBindings();
-	Binding* obtainBinding(const Symbol* symbol);
 	std::size_t size() const;
-	void softMergeInto(Frame* target) const;
-
-	// Virtual function of GCNode:
-	void visitReferents(const_visitor* v) const;
-    protected:
-	// Virtual function of GCNode:
-	void detachReferents();
     private:
 	friend class boost::serialization::access;
 
@@ -128,40 +115,45 @@ namespace CXXR {
 	void serialize(Archive& ar, const unsigned int version) {
 	    boost::serialization::split_member(ar, *this, version);
 	}
+
+	// Virtual functions of Frame (qv):
+	void v_clear();
+	bool v_erase(const Symbol* symbol);
+	Binding* v_obtainBinding(const Symbol* symbol);
     };
+
+    // ***** Implementation of non-inlined templated members *****
+
+    template<class Archive>
+    void StdFrame::load(Archive& ar, const unsigned int version)
+    {
+	ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(Frame);
+	size_t numberOfBindings;
+	ar >> BOOST_SERIALIZATION_NVP(numberOfBindings);
+	for (size_t i = 0; i < numberOfBindings; ++i) {
+	    GCStackRoot<Symbol> symbol;
+	    GCNPTR_SERIALIZE(ar, symbol);
+	    Binding* binding = obtainBinding(symbol);
+	    ar >> boost::serialization::make_nvp("binding", *binding);
+	}
+    }
+	
+    template<class Archive>
+    void StdFrame::save(Archive& ar, const unsigned int version) const
+    {
+	ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(Frame);
+	size_t numberOfBindings = size();
+	ar << BOOST_SERIALIZATION_NVP(numberOfBindings);
+	for (map::const_iterator it = m_map.begin();
+	     it != m_map.end(); ++it) {
+	    const Symbol* symbol = (*it).first;
+	    const Binding& binding = (*it).second;
+	    GCNPTR_SERIALIZE(ar, symbol);
+	    ar << BOOST_SERIALIZATION_NVP(binding);
+	}
+    }
 }  // namespace CXXR
 
 BOOST_CLASS_EXPORT_KEY(CXXR::StdFrame)
-
-// ***** Implementation of non-inlined templated members *****
-
-template<class Archive>
-void CXXR::StdFrame::load(Archive& ar, const unsigned int version)
-{
-    ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(Frame);
-    size_t numberOfBindings;
-    ar >> BOOST_SERIALIZATION_NVP(numberOfBindings);
-    for (size_t i = 0; i < numberOfBindings; ++i) {
-	GCStackRoot<Symbol> symbol;
-	GCNPTR_SERIALIZE(ar, symbol);
-	Binding* binding = obtainBinding(symbol);
-	ar >> boost::serialization::make_nvp("binding", *binding);
-    }
-}
-	
-template<class Archive>
-void CXXR::StdFrame::save(Archive& ar, const unsigned int version) const
-{
-    ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(Frame);
-    size_t numberOfBindings = size();
-    ar << BOOST_SERIALIZATION_NVP(numberOfBindings);
-    for (map::const_iterator it = m_map.begin();
-	 it != m_map.end(); ++it) {
-	const Symbol* symbol = (*it).first;
-	const Binding& binding = (*it).second;
-	GCNPTR_SERIALIZE(ar, symbol);
-	ar << BOOST_SERIALIZATION_NVP(binding);
-    }
-}
 
 #endif // STDFRAME_HPP

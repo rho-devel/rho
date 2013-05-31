@@ -139,9 +139,9 @@ void Frame::Binding::setValue(RObject* new_value, Origin origin, bool quiet)
 vector<const Symbol*> Frame::symbols(bool include_dotsymbols) const
 {
     vector<const Symbol*> ans;
-    BindingRange range = bindingRange();
-    for (BindingRange::const_iterator it = range.begin();
-	 it != range.end(); ++it) {
+    BindingRange bdgs = bindingRange();
+    for (BindingRange::const_iterator it = bdgs.begin();
+	 it != bdgs.end(); ++it) {
 	const Binding& bdg = *it;
 	const Symbol* symbol = bdg.symbol();
 	if (include_dotsymbols || !isDotSymbol(symbol))
@@ -164,6 +164,37 @@ void Frame::Binding::visitReferents(const_visitor* v) const
 #endif
 }
 
+PairList* Frame::asPairList() const
+{
+    GCStackRoot<PairList> ans(0);
+    BindingRange bdgs = bindingRange();
+    for (BindingRange::const_iterator it = bdgs.begin();
+	 it != bdgs.end(); ++it)
+	ans = (*it).asPairList(ans);
+    return ans;
+}
+
+void Frame::clear()
+{
+    statusChanged(0);
+    v_clear();
+}
+
+void Frame::detachReferents()
+{
+    v_clear();
+}
+
+bool Frame::erase(const Symbol* symbol)
+{
+    if (isLocked())
+	Rf_error(_("cannot remove bindings from a locked frame"));
+    bool ans = v_erase(symbol);
+    if (ans)
+	statusChanged(symbol);
+    return ans;
+}
+
 void Frame::enableReadMonitoring(bool on) const
 {
     if (on && !s_read_monitor)
@@ -181,6 +212,28 @@ void Frame::enableWriteMonitoring(bool on) const
 void Frame::flush(const Symbol* sym)
 {
     Environment::flushFromCache(sym);
+}
+
+Frame::Binding* Frame::obtainBinding(const Symbol* symbol)
+{
+    Binding* ans = v_obtainBinding(symbol);
+    if (!ans->frame()) {
+	if (isLocked()) {
+	    v_erase(symbol);
+	    Rf_error(_("cannot add bindings to a locked frame"));
+	}
+	ans->initialize(this, symbol);
+	statusChanged(symbol);
+    }
+    return ans;
+}
+
+void Frame::visitReferents(const_visitor* v) const
+{
+    BindingRange bdgs = bindingRange();
+    for (BindingRange::const_iterator it = bdgs.begin();
+	 it != bdgs.end(); ++it)
+	(*it).visitReferents(v);
 }
 
 namespace CXXR {

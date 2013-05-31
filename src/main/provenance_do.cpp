@@ -285,6 +285,22 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 #endif  // PROVENANCE_TRACKING
 }
 
+namespace {
+    // Import Bindings (and their provenance) from one Frame into another.
+    void import(Frame* to, const Frame& from)
+    {
+	Frame::BindingRange range = from.bindingRange();
+	for (Frame::BindingRange::const_iterator it = range.begin();
+	     it != range.end(); ++it) {
+	    const Frame::Binding& frombdg = *it;
+	    Frame::Binding* tobdg = to->obtainBinding(frombdg.symbol());
+#ifdef PROVENANCE_TRACKING
+	    tobdg->setProvenance(const_cast<Provenance*>(frombdg.provenance()));
+#endif
+	    tobdg->setValue(frombdg.rawValue(), frombdg.origin(), TRUE);
+	}
+    }
+}
 
 SEXP attribute_hidden do_bserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
@@ -306,7 +322,7 @@ SEXP attribute_hidden do_bserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
 
     GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
     GCStackRoot<Environment> env(CXXR_NEW(Environment(0, frame)));
-    frame->import(Environment::global()->frame());
+    import(frame, *Environment::global()->frame());
     GCNPTR_SERIALIZE(oa, env);
 
     return 0;
@@ -328,8 +344,7 @@ SEXP attribute_hidden do_bdeserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
     boost::archive::xml_iarchive ia(ifs, boost::archive::no_codecvt);
     GCStackRoot<Environment> env;
     GCNPTR_SERIALIZE(ia, env);
-    Frame* frame = Environment::global()->frame();
-    frame->import(env->frame());
+    import(Environment::global()->frame(), *env->frame());
     GCNode::PtrS11n::freeProxies();
     return 0;
 }

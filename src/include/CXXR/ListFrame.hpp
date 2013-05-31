@@ -60,8 +60,6 @@ namespace CXXR {
 	std::list<Binding, CXXR::Allocator<Binding> > List;
     public:
 	// Virtual functions of Frame (qv):
-	PairList* asPairList() const;
-
 #ifdef __GNUG__
 	__attribute__((hot,fastcall))
 #endif
@@ -69,20 +67,9 @@ namespace CXXR {
 
 	const Binding* binding(const Symbol* symbol) const;
 	BindingRange bindingRange() const;
-	void clear();
 	ListFrame* clone() const;
-	bool erase(const Symbol* symbol);
-	void import(const Frame* frame);
 	void lockBindings();
-	Binding* obtainBinding(const Symbol* symbol);
 	std::size_t size() const;
-	void softMergeInto(Frame* target) const;
-
-	// Virtual function of GCNode:
-	void visitReferents(const_visitor* v) const;
-    protected:
-	// Virtual function of GCNode:
-	void detachReferents();
     private:
 	friend class boost::serialization::access;
 
@@ -132,6 +119,11 @@ namespace CXXR {
 	void serialize(Archive& ar, const unsigned int version) {
 	    boost::serialization::split_member(ar, *this, version);
 	}
+
+	// Virtual functions of Frame (qv):
+	void v_clear();
+	bool v_erase(const Symbol* symbol);
+	Binding* v_obtainBinding(const Symbol* symbol);
     };
 }  // namespace CXXR
 

@@ -68,14 +68,6 @@ StdFrame::StdFrame(size_t initial_capacity)
     m_map.max_load_factor(maximum_load_factor);
 }
 
-PairList* StdFrame::asPairList() const
-{
-    GCStackRoot<PairList> ans(0);
-    for (map::const_iterator it = m_map.begin(); it != m_map.end(); ++it)
-	ans = (*it).second.asPairList(ans);
-    return ans;
-}
-
 Frame::Binding* StdFrame::binding(const Symbol* symbol)
 {
     map::iterator it = m_map.find(symbol);
@@ -100,45 +92,9 @@ Frame::BindingRange StdFrame::bindingRange() const
 			boost::make_transform_iterator(m_map.end(), f));
 }
 
-void StdFrame::clear()
-{
-    statusChanged(0);
-    m_map.clear();
-}
-
 StdFrame* StdFrame::clone() const
 {
     return expose(new StdFrame(*this));
-}
-
-void StdFrame::detachReferents()
-{
-    m_map.clear();
-    Frame::detachReferents();
-}
-
-bool StdFrame::erase(const Symbol* symbol)
-{
-    if (isLocked())
-	Rf_error(_("cannot remove bindings from a locked frame"));
-    bool ans = m_map.erase(symbol);
-    if (ans)
-	statusChanged(symbol);
-    return ans;
-}
-
-void StdFrame::import(const Frame* frame) {
-    const StdFrame* stdFrame = static_cast<const StdFrame*>(frame);
-    for (map::const_iterator it = stdFrame->m_map.begin(); it != stdFrame->m_map.end(); ++it) {
-	const Symbol* symbol=(*it).first;
-	const Binding* bdgSrc=&(*it).second;
-
-	Binding* bdgDest = obtainBinding(symbol);
-#ifdef PROVENANCE_TRACKING
-	bdgDest->setProvenance(const_cast<Provenance*>(bdgSrc->provenance()));
-#endif
-	bdgDest->setValue(bdgSrc->rawValue(), bdgSrc->origin(), TRUE);
-    }
 }
 
 void StdFrame::lockBindings()
@@ -147,43 +103,24 @@ void StdFrame::lockBindings()
 	(*it).second.setLocking(true);
 }
 
-Frame::Binding* StdFrame::obtainBinding(const Symbol* symbol)
-{
-    Binding& bdg = m_map[symbol];
-    // Was this binding newly created?
-    if (!bdg.frame()) {
-	if (isLocked()) {
-	    m_map.erase(symbol);
-	    Rf_error(_("cannot add bindings to a locked frame"));
-	}
-	bdg.initialize(this, symbol);
-	statusChanged(symbol);
-    }
-    return &bdg;
-}
-
 size_t StdFrame::size() const
 {
     return m_map.size();
 }
 
-void StdFrame::softMergeInto(Frame* target) const
+void StdFrame::v_clear()
 {
-    for (map::const_iterator it = m_map.begin(); it != m_map.end(); ++it) {
-	const Symbol* symbol = (*it).first;
-	if (!target->binding(symbol)) {
-	    const Binding& mybdg = (*it).second;
-	    Binding* yourbdg = target->obtainBinding(symbol);
-	    yourbdg->setValue(mybdg.value(), mybdg.origin());
-	}
-    }
+    m_map.clear();
 }
 
-void StdFrame::visitReferents(const_visitor* v) const
+bool StdFrame::v_erase(const Symbol* symbol)
 {
-    Frame::visitReferents(v);
-    for (map::const_iterator it = m_map.begin(); it != m_map.end(); ++it)
-	(*it).second.visitReferents(v);
+    return m_map.erase(symbol);
+}
+
+Frame::Binding* StdFrame::v_obtainBinding(const Symbol* symbol)
+{
+    return &m_map[symbol];
 }
 
 BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::StdFrame)
