@@ -90,6 +90,7 @@ namespace CXXR {
 	Binding* binding(const Symbol* symbol);
 
 	const Binding* binding(const Symbol* symbol) const;
+	BindingRange bindingRange() const;
 	void clear();
 	StdFrame* clone() const;
 	bool erase(const Symbol* symbol);
@@ -98,7 +99,6 @@ namespace CXXR {
 	Binding* obtainBinding(const Symbol* symbol);
 	std::size_t size() const;
 	void softMergeInto(Frame* target) const;
-	std::vector<const Symbol*> symbols(bool include_dotsymbols) const;
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;

@@ -81,6 +81,11 @@ const Frame::Binding* ListFrame::binding(const Symbol* symbol) const
     return &(*it);
 }
 
+Frame::BindingRange ListFrame::bindingRange() const
+{
+    return BindingRange(m_list.begin(), m_list.end());
+}
+
 void ListFrame::clear()
 {
     statusChanged(0);
@@ -157,18 +162,6 @@ void ListFrame::softMergeInto(Frame* target) const
 	    yourbdg->setValue(mybdg.value(), mybdg.origin());
 	}
     }
-}
-
-vector<const Symbol*> ListFrame::symbols(bool include_dotsymbols) const
-{
-    vector<const Symbol*> ans;
-    for (List::const_iterator it = m_list.begin();
-	 it != m_list.end(); ++it) {
-	const Symbol* symbol = (*it).symbol();
-	if (include_dotsymbols || !isDotSymbol(symbol))
-	    ans.push_back(symbol);
-    }
-    return ans;
 }
 
 void ListFrame::visitReferents(const_visitor* v) const

@@ -136,6 +136,20 @@ void Frame::Binding::setValue(RObject* new_value, Origin origin, bool quiet)
 	m_frame->monitorWrite(*this);
 }
 
+vector<const Symbol*> Frame::symbols(bool include_dotsymbols) const
+{
+    vector<const Symbol*> ans;
+    BindingRange range = bindingRange();
+    for (BindingRange::const_iterator it = range.begin();
+	 it != range.end(); ++it) {
+	const Binding& bdg = *it;
+	const Symbol* symbol = bdg.symbol();
+	if (include_dotsymbols || !isDotSymbol(symbol))
+	    ans.push_back(symbol);
+    }
+    return ans;
+}
+
 // Frame::Binding::value() is defined in envir.cpp (for the time being).
 	
 void Frame::Binding::visitReferents(const_visitor* v) const

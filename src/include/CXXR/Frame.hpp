@@ -41,6 +41,7 @@
 #ifndef RFRAME_HPP
 #define RFRAME_HPP
 
+#include <boost/range/any_range.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
@@ -390,6 +391,17 @@ namespace CXXR {
 	    void serialize(Archive & ar, const unsigned int version);
 	};  // Frame::Binding
 
+	/** @brief Allow iteration over a Frame object's Bindings.
+	 *
+	 * This is a boost::any_range type which allows for (read-only)
+	 * iteration over the Binding objects within a Frame,
+	 * irrespective of the underlying implementation of the Frame.
+	 */
+	typedef boost::any_range<const Binding,
+				 boost::forward_traversal_tag,
+				 const Binding&,
+				 std::ptrdiff_t> BindingRange;
+
 	typedef void (*monitor)(const Binding&);
 
 	Frame()
@@ -479,6 +491,13 @@ namespace CXXR {
 	 * pointer if it was not found..
 	 */
 	virtual const Binding* binding(const Symbol* symbol) const = 0;
+
+	/** @brief Obtain a BindingRange for this Frame.
+	 *
+	 * @return a BindingRange allowing read-only iteration over
+	 * the Binding objects within this Frame.
+	 */
+	virtual BindingRange bindingRange() const = 0;
 
 	/** @brief Remove all symbols from the Frame.
 	 *
@@ -706,8 +725,7 @@ namespace CXXR {
 	 * @return A vector containing pointers to the Symbol objects
 	 * bound by this Frame.
 	 */
-	virtual std::vector<const Symbol*>
-	symbols(bool include_dotsymbols) const = 0;
+        std::vector<const Symbol*> symbols(bool include_dotsymbols) const;
     protected:
 	// Declared protected to ensure that Frame objects are created
 	// only using 'new':

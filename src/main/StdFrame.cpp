@@ -41,6 +41,9 @@
 #include "CXXR/StdFrame.hpp"
 
 #include <cmath>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
+#include <boost/iterator/transform_iterator.hpp>
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "CXXR/GCStackRoot.hpp"
@@ -87,6 +90,14 @@ const Frame::Binding* StdFrame::binding(const Symbol* symbol) const
     if (it == m_map.end())
 	return 0;
     return &(*it).second;
+}
+
+Frame::BindingRange StdFrame::bindingRange() const
+{
+    boost::function<const Binding& (const map::value_type&)> f
+	= boost::bind(&map::value_type::second, _1);
+    return BindingRange(boost::make_transform_iterator(m_map.begin(), f),
+			boost::make_transform_iterator(m_map.end(), f));
 }
 
 void StdFrame::clear()
@@ -166,17 +177,6 @@ void StdFrame::softMergeInto(Frame* target) const
 	    yourbdg->setValue(mybdg.value(), mybdg.origin());
 	}
     }
-}
-
-vector<const Symbol*> StdFrame::symbols(bool include_dotsymbols) const
-{
-    vector<const Symbol*> ans;
-    for (map::const_iterator it = m_map.begin(); it != m_map.end(); ++it) {
-	const Symbol* symbol = (*it).first;
-	if (include_dotsymbols || !isDotSymbol(symbol))
-	    ans.push_back(symbol);
-    }
-    return ans;
 }
 
 void StdFrame::visitReferents(const_visitor* v) const
