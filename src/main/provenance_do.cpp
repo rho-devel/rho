@@ -343,8 +343,8 @@ SEXP attribute_hidden do_bdeserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
     ifs.imbue(nfnum_locale);
     boost::archive::xml_iarchive ia(ifs, boost::archive::no_codecvt);
     GCStackRoot<Environment> env;
+    S11nScope scope;
     GCNPTR_SERIALIZE(ia, env);
     import(Environment::global()->frame(), *env->frame());
-    GCNode::PtrS11n::freeProxies();
     return 0;
 }

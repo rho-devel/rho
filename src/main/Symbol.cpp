@@ -184,11 +184,6 @@ Symbol* Symbol::obtainDotDotSymbol(unsigned int n)
     return obtain(name);
 }
 
-Symbol* Symbol::s11n_relocate() const
-{
-    return m_s11n_reloc;
-}
-
 const char* Symbol::typeName() const
 {
     return staticTypeName();

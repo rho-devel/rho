@@ -44,6 +44,7 @@
 #include <boost/mpl/identity.hpp>
 
 #include "CXXR/GCNode.hpp"
+#include "CXXR/S11nScope.hpp"
 
 namespace CXXR {
     /** @brief Serialization/deserialization of pointers to GCNode objects.
@@ -79,36 +80,35 @@ namespace CXXR {
      * The way CXXR handles this is that whenever a non-null pointer
      * to an object of a class inheriting from GCNode is deserialized,
      * class GCNode::PtrS11n (specifically the templated function
-     * GCNode::PtrS11n::invoke()) will call the virtual function
-     * s11n_relocate() on the deserialized GCNode object.  If this
+     * GCNode::PtrS11n::invoke()) will call the function
+     * S11nScope::relocate() on the pointer value.  This function will
+     * use a look-up table within the innermost S11nScope.  If this
      * function returns a null pointer, then this signifies that no
      * special handling is required, and the pointer being
-     * deserialized is made to point to the object just deserialized.
+     * deserialized is left unchanged from the value given to it by
+     * boost deserialization.
      *
-     * However, if s11n_relocate() returns a non-null pointer
-     * <tt>p</tt>, this signifies that the object just deserialized is
-     * merely a \e proxy for the required object, and that the pointer
-     * being deserialized should be made to point instead to the
-     * object pointed to by <tt>p</tt>.  For example suppose that in
-     * the previous session a particular pointer pointed to the NA
-     * string.  When that pointer is deserialized,
-     * boost::deserialization will create a String object <tt>s</tt>
-     * which is merely a \e proxy for the NA string; however, invoking
-     * s11n_relocate() on that object will return a pointer to the new
-     * session's NA string.  GCNode::PtrS11n::invoke() will make the
-     * pointer being deserialized point to that.
+     * However, if S11nScope::relocate() returns a non-null pointer
+     * <tt>p</tt>, this signifies that the pointer value yielded by
+     * boost deserialization needs to be replaced by <tt>p</tt>.  For
+     * example suppose that in the previous session a particular
+     * pointer pointed to the NA string.  When that pointer is
+     * deserialized, boost::deserialization will create a String
+     * object <tt>s</tt> which is merely a \e proxy for the NA string;
+     * however, invoking S11nScope::relocate() on the address of that
+     * object will return a pointer to the new session's NA string.
+     * GCNode::PtrS11n::invoke() will make the pointer being
+     * deserialized point to that.
      *
-     * For boost::serialization to work correctly, it is important
-     * that these proxy objects be protected from garbage collection
-     * while deserialization of an archive is in progress, and class
-     * GCNode::PtrS11n contains a data structure to ensure this.  Once
-     * deserialization of the archive is complete, the calling code
-     * should call GCNode::PtrS11n::freeProxies() to allow them to be
-     * garbage collected.
+     * Whenever one of these 'proxy' objects is deserialized, the
+     * deserialization logic should create an appropriate entry in the
+     * look-up table used by S11nScope::relocate() by calling
+     * S11nScope::defineRelocation().  Once that is done, there is no
+     * need to retain the proxy object, and S11nScope::defineRelocation() will
+     * automatically expose it to garbage collection.
      *
      * Note that proxy objects may be malformed, i.e. violate the
-     * invariants of their class: no use should be made of them apart
-     * from invoking s11n_relocate().
+     * invariants of their class: no use should be made of them.
      */
     class GCNode::PtrS11n {
     private:
@@ -132,15 +132,12 @@ namespace CXXR {
 		GCNode* target;
 		ar >> boost::serialization::make_nvp(name, target);
 		if (target) {
-		    GCNode* reloc = target->s11n_relocate();
+		    GCNode* reloc = S11nScope::relocate(target);
 		    // Note that the target may already have been
 		    // exposed, e.g. as a result of deserialising
 		    // another pointer pointing to it.
-		    if (!target->isExposed()) {
+		    if (!target->isExposed())
 			target->expose();
-			if (reloc)
-			    preserveProxy(target);
-		    }
 		    if (reloc)
 			target = reloc;
 		}
@@ -158,17 +155,7 @@ namespace CXXR {
 		ar << boost::serialization::make_nvp(name, target);
 	    }
 	};
-
-	static void initialize();
-
-	static void preserveProxy(const GCNode* target);
     public:
-	/** @brief Allow proxy objects to be garbage collected.
-	 *
-	 * See class description.
-	 */
-	static void freeProxies();
-
 	/** @brief Serialize/deserialize a pointer to a GCNode object.
 	 *
 	 * See class description for details.

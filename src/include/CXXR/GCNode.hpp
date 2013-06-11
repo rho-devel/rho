@@ -404,19 +404,6 @@ namespace CXXR {
 	 */
 	static size_t numNodes() {return s_num_nodes;}
 
-	/** @brief Not for general use.
-	 *
-	 * See the description of class GCNode::PtrS11n for background.
-	 *
-	 * @return Either a null pointer or a pointer to an object of
-	 * the same class C as *this (or conceivably of a class
-	 * derived from C).
-	 */
-	 virtual GCNode* s11n_relocate() const
-	 {
-	     return 0;
-	 }
-
 	/** @brief Conduct a visitor to the nodes referred to by this
 	 * one.
 	 *

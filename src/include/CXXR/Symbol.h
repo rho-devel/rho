@@ -249,9 +249,6 @@ namespace CXXR {
 	    return s_unbound_value;
 	}
 
-	// Virtual function of GCNode:
-	Symbol* s11n_relocate() const;
-
 	// Virtual functions of RObject:
 	RObject* evaluate(Environment* env);
 	const char* typeName() const;
@@ -275,8 +272,6 @@ namespace CXXR {
 
 	GCEdge<const String> m_name;
 
-	GCEdge<Symbol> m_s11n_reloc;  // Used only during deserialization
- 
 	unsigned int m_dd_index;
 
 	enum S11nType {NORMAL = 0, MISSINGARG, UNBOUNDVALUE};
@@ -419,21 +414,23 @@ void CXXR::Symbol::load(Archive& ar, const unsigned int version)
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
     S11nType symtype;
     ar >> BOOST_SERIALIZATION_NVP(symtype);
+    Symbol* reloc;
     switch(symtype) {
     case NORMAL:
 	{
 	    std::string name;
 	    ar >> BOOST_SERIALIZATION_NVP(name);
-	    m_s11n_reloc = obtain(name);
+	    reloc = obtain(name);
 	}
 	break;
     case MISSINGARG:
-	m_s11n_reloc = s_missing_arg;
+	reloc = s_missing_arg;
 	break;
     case UNBOUNDVALUE:
-	m_s11n_reloc = s_unbound_value;
+	reloc = s_unbound_value;
 	break;
     }
+    S11nScope::defineRelocation(this, reloc);
 }
 
 template<class Archive>

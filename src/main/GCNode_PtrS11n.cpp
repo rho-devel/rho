@@ -38,29 +38,3 @@
  */
 
 #include "CXXR/GCNode_PtrS11n.hpp"
-
-#include <vector>
-
-#include "CXXR/GCRoot.h"
-
-using namespace CXXR;
-
-namespace {
-    std::vector<GCRoot<const GCNode> >* proxies;
-}
-
-void GCNode::PtrS11n::freeProxies()
-{
-    proxies->clear();
-}
-
-void GCNode::PtrS11n::initialize()
-{
-    static std::vector<GCRoot<const GCNode> > temps;
-    proxies = &temps;
-}
-
-void GCNode::PtrS11n::preserveProxy(const GCNode* target)
-{
-    proxies->push_back(GCRoot<const GCNode>(target));
-}
