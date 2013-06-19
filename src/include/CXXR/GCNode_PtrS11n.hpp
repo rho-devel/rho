@@ -133,13 +133,13 @@ namespace CXXR {
 		ar >> boost::serialization::make_nvp(name, target);
 		if (target) {
 		    GCNode* reloc = S11nScope::relocate(target);
+		    if (reloc)
+			target = reloc;
 		    // Note that the target may already have been
 		    // exposed, e.g. as a result of deserialising
 		    // another pointer pointing to it.
-		    if (!target->isExposed())
+		    else if (!target->isExposed())
 			target->expose();
-		    if (reloc)
-			target = reloc;
 		}
 		ptr = static_cast<typename Payload<Ptr>::type*>(target);
 	    }

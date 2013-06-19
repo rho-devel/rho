@@ -39,6 +39,7 @@ S11nScope::S11nScope()
 void S11nScope::defineRelocation(GCNode* from, GCNode* to)
 {
     s_innermost->m_relocations[from] = to;
+    from->expose();
 }
 
 GCNode* S11nScope::relocate(GCNode* from)
