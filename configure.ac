@@ -357,12 +357,10 @@ AM_CONDITIONAL(BUILD_LTO, [test "x${want_lto}" != xno])
 
 AX_BOOST_BASE([1.49.0],
 	      [],
-              [AC_MSG_ERROR([CXXR requires boost and it was not possible to locate boost. Consider using --with-boost= to specify path to boost headers and libraries])]
+              [AC_MSG_ERROR([CXXR requires boost, which was not found. Consider using --with-boost-dir= to specify path to boost headers and libraries])]
              )
 AX_BOOST_REGEX
 AX_BOOST_SERIALIZATION
-CXXR_BOOST
-
 
 ### ** Optional packages.
 
