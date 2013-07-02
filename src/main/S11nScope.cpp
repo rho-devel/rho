@@ -36,10 +36,21 @@ S11nScope::S11nScope()
     s_innermost = this;
 }
 
+S11nScope::~S11nScope()
+{
+    if (this != s_innermost)
+	seqError();
+    // Expose proxy nodes to garbage collection:
+    std::map<GCNode*, GCNode*> map = s_innermost->m_relocations;
+    for (std::map<GCNode*, GCNode*>::const_iterator it = map.begin();
+	 it != map.end(); ++it)
+	(*it).first->expose();
+    s_innermost = m_next;
+}
+
 void S11nScope::defineRelocation(GCNode* from, GCNode* to)
 {
     s_innermost->m_relocations[from] = to;
-    from->expose();
 }
 
 GCNode* S11nScope::relocate(GCNode* from)

@@ -51,24 +51,14 @@ namespace CXXR {
 	 */
 	S11nScope();
 
-	~S11nScope()
-	{
-	    if (this != s_innermost)
-		seqError();
-	    s_innermost = m_next;
-	}
+	~S11nScope();
 
 	/** @brief Define a deserialization relocation.
 	 *
 	 * This function defines a deserialization relocation within
 	 * the innermost S11nScope.
 	 *
-	 * @param from Non-null pointer value to be relocated.  A side
-	 *          effect of the function is to expose the GCNode
-	 *          pointed to by \a from to garbage collection.
-	 *          Consequently, during the deserialization of an
-	 *          archive this function must be called at most once
-	 *          with any particular value of \a from .
+	 * @param from Non-null pointer value to be relocated.
 	 *
 	 * @param to Non-null pointer value to which \a from is to be mapped.
 	 */
