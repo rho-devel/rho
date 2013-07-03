@@ -5,6 +5,22 @@
 ### The serial numbers of the versions used were as follows:
 ### Base 20 Regex 22 Serialization 21
 
+### Requires AX_BOOST_BASE to have been called
+### Only exports BOOST_CPPFLAGS and BOOST_LDFLAGS if
+### a path was given in --with-boost-dir= 
+AC_DEFUN([CXXR_BOOST],
+[
+    if test -n "$ac_boost_path"; then
+	BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
+	BOOST_LD_LIBRARY_PATH="${BOOSTLIBDIR}"
+    else
+	AC_SUBST(BOOST_CPPFLAGS,"")
+	AC_SUBST(BOOST_LDFLAGS,"")
+    fi
+    AC_SUBST(BOOST_LD_LIBRARY_PATH)
+]) #CXXR_BOOST
+
+
 AC_DEFUN([AX_BOOST_BASE],
 [
 AC_ARG_WITH([boost-dir],
@@ -42,17 +58,20 @@ AC_ARG_WITH([boost-dir],
         libsubdirs="stage/lib64 lib64 stage/lib lib lib64"
     fi
 
-    dnl first we check the system location for boost libraries
-    dnl this location ist chosen if boost libraries are installed with the --layout=system option
-    dnl or if you install boost with RPM
     if test "$ac_boost_path" != ""; then
-        BOOST_CPPFLAGS="-I$ac_boost_path/include"
-        for ac_boost_path_tmp in $libsubdirs; do
-                if test -d "$ac_boost_path"/"$ac_boost_path_tmp" ; then
-                        BOOST_LDFLAGS="-L$ac_boost_path/$ac_boost_path_tmp"
-                        break
-                fi
-        done
+    	dnl Let's see if we have what looks like a staged build, i.e. DIR/boost and DIR/stage
+	dnl If we are, then don't append /include to it
+	if test -d "$ac_boost_path"/"boost" && test -d "$ac_boost_path"/stage; then
+	    BOOST_CPPFLAGS="-I$ac_boost_path"
+	else
+	    BOOST_CPPFLAGS="-I$ac_boost_path/include"
+	fi
+	for ac_boost_path_tmp in $libsubdirs; do
+	    if test -d "$ac_boost_path"/"$ac_boost_path_tmp" ; then
+		BOOST_LDFLAGS="-L$ac_boost_path/$ac_boost_path_tmp"
+		break
+	    fi
+	done
     elif test "$cross_compiling" != yes; then
         for ac_boost_path_tmp in /usr /usr/local /opt /opt/local ; do
             if test -d "$ac_boost_path_tmp/include/boost" && test -r "$ac_boost_path_tmp/include/boost"; then
@@ -101,12 +120,6 @@ AC_ARG_WITH([boost-dir],
         # execute ACTION-IF-NOT-FOUND (if present):
         ifelse([$3], , :, [$3])
     else
-	if test -n "$ac_boost_path"; then 
-		BOOST_LD_LIBRARY_PATH=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
-		AC_SUBST(BOOST_CPPFLAGS)
-		AC_SUBST(BOOST_LDFLAGS)
-		AC_SUBST(BOOST_LD_LIBRARY_PATH)
-	fi
         AC_DEFINE(HAVE_BOOST,,[define if the Boost library is available])
         # execute ACTION-IF-FOUND (if present):
         ifelse([$2], , :, [$2])

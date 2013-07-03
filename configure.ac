@@ -361,6 +361,7 @@ AX_BOOST_BASE([1.49.0],
              )
 AX_BOOST_REGEX
 AX_BOOST_SERIALIZATION
+CXXR_BOOST
 
 ### ** Optional packages.
 
