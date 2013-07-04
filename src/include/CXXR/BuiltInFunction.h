@@ -283,9 +283,6 @@ namespace CXXR {
 	    return (s_function_table[m_offset].flags%100)/10 == 1;
 	}
 
-	// Virtual function of GCNode:
-	BuiltInFunction* s11n_relocate() const;
-
 	// Virtual function of RObject:
 	const char* typeName() const;
 
@@ -327,25 +324,23 @@ namespace CXXR {
 	typedef std::map<std::string, BuiltInFunction*> map;
 	static map* s_cache;
 
-	unsigned int m_offset;
+	int m_offset;
 	CCODE m_function;
 	ResultPrintingMode m_result_printing_mode;
 	bool m_transparent;  // if true, do not create a
 			     // FunctionContext when this function is
 			     // applied.
-	GCEdge<BuiltInFunction> m_s11n_reloc; // Used only in
-	  // temporary objects created during deserialisation.
 
 	// This default constructor is used only during (boost)
 	// deserialisation, and constructs a bodged-up temporary
-	// object, with m_s11n_relocate pointing to the corresponding
-	// pukka object returned by BuiltInFunction::obtain().
+	// object, with m_offset set negative to signify that this is
+	// a deserialisation proxy.
 
 	// (The argument to the FunctionBase base-class constructor is
 	// arbitrary, but will not be used during the lifetime of this
 	// temporary object.)
 	BuiltInFunction()
-	    : FunctionBase(BUILTINSXP), m_offset(0), m_function(0)
+	    : FunctionBase(BUILTINSXP), m_offset(-1), m_function(0)
 	{}
 
 	/** @brief Constructor.
@@ -433,7 +428,7 @@ void CXXR::BuiltInFunction::load(Archive& ar, const unsigned int version)
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(FunctionBase);
     std::string namestr;
     ar >> boost::serialization::make_nvp("name", namestr);
-    m_s11n_reloc = obtain(namestr);
+    S11nScope::defineRelocation(this, obtain(namestr));
 }
 
 template<class Archive>

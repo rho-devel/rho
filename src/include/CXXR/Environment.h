@@ -488,7 +488,6 @@ namespace CXXR {
 	void unpackGPBits(unsigned int gpbits);
 
 	// Virtual functions of GCNode:
-	Environment* s11n_relocate() const;
 	void visitReferents(const_visitor* v) const;
     protected:
 	// Virtual function of GCNode:
@@ -533,7 +532,6 @@ namespace CXXR {
 
 	GCEdge<Environment> m_enclosing;
 	GCEdge<Frame> m_frame;
-	GCEdge<Environment> m_s11n_reloc;  // Used only during deserialization
 	bool m_single_stepping;
 	bool m_locked;
 	bool m_cached;
@@ -765,31 +763,32 @@ void CXXR::Environment::load(Archive& ar, const unsigned int version)
     ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
     S11nType envtype;
     ar >> BOOST_SERIALIZATION_NVP(envtype);
+    Environment* reloc = 0;
     switch(envtype) {
     case EMPTY:
-	m_s11n_reloc = s_empty;
+	reloc = s_empty;
 	break;
     case BASE:
-	m_s11n_reloc = s_base;
+	reloc = s_base;
 	break;
     case BASENAMESPACE:
-	m_s11n_reloc = s_base_namespace;
+	reloc = s_base_namespace;
 	break;
     case GLOBAL:
-	m_s11n_reloc = s_global;
+	reloc = s_global;
 	break;
     case PACKAGE_ENV:
 	{
 	    std::string pkgname;
 	    ar >> BOOST_SERIALIZATION_NVP(pkgname);
-	    m_s11n_reloc = findPackage(pkgname);
+	    reloc = findPackage(pkgname);
 	}
 	break;
     case NAMESPACE:
 	{
 	    GCStackRoot<const StringVector> nsspec;
 	    GCNPTR_SERIALIZE(ar, nsspec);
-	    m_s11n_reloc = findNamespace(nsspec);
+	    reloc = findNamespace(nsspec);
 	}
 	break;
     case OTHER:
@@ -801,6 +800,8 @@ void CXXR::Environment::load(Archive& ar, const unsigned int version)
 	}
 	break;
     }
+    if (reloc)
+	S11nScope::defineRelocation(this, reloc);
 }
 
 template<class Archive>

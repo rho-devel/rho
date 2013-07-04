@@ -243,9 +243,6 @@ namespace CXXR {
 	// Virtual functions of RObject:
 	unsigned int packGPBits() const;
 	const char* typeName() const;
-
-	// Virtual function of GCNode:
-	String* s11n_relocate() const;
     private:
 	friend class boost::serialization::access;
 	friend class SchwarzCounter<String>;
@@ -283,8 +280,6 @@ namespace CXXR {
 
 	map::value_type* m_key_val_pr;
 	const std::string* m_string;
-	GCEdge<String> m_s11n_reloc;  // Used only in temporary objects
-	  // created during deserialisation.
 	cetype_t m_encoding;
 	mutable Symbol* m_symbol;  // Pointer to the Symbol object identified
 	  // by this String, or a null pointer if none.
@@ -348,12 +343,12 @@ void CXXR::String::load(Archive& ar, const unsigned int version)
     bool isna;
     ar >> BOOST_SERIALIZATION_NVP(isna);
     if (isna)
-	m_s11n_reloc = NA();
+	S11nScope::defineRelocation(this, NA());
     else {
 	std::string str;
 	ar >> boost::serialization::make_nvp("string", str);
 	ar >> BOOST_SERIALIZATION_NVP(m_encoding);
-	m_s11n_reloc = obtain(str, m_encoding);
+	S11nScope::defineRelocation(this, obtain(str, m_encoding));
     }
 }
 

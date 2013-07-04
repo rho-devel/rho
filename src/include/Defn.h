@@ -787,9 +787,13 @@ void Rf_InitGlobalEnv(void);
 Rboolean R_current_trace_state(void);
 Rboolean R_has_methods(SEXP);
 void R_InitialData(void);
+
 #ifdef __cplusplus
+}  // extern "C"
 std::pair<bool, SEXP> R_possible_dispatch(SEXP, SEXP, SEXP, SEXP, Rboolean);
+extern "C" {
 #endif
+
 void Rf_InitGraphics(void);
 void Rf_InitMemory(void);
 void Rf_InitNames(void);

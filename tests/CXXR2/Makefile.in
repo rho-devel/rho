@@ -14,7 +14,7 @@ REPLACE = `echo 'attr(as.environment(\"package:stats\"), \"path\")' | $(R) | sed
 
 include $(top_builddir)/Makeconf
 
-tests = miscR xml_s11n
+tests = miscR xml_s11n xml_s11n_2
 
 check : $(tests:=.ts)
 
@@ -30,6 +30,14 @@ xml_s11n.ts : $(REXEC) xml_serialize.R xml_deserialize.R xml_s11n.save
 	$(R) < xml_deserialize.R > xml_s11n.fail
 	sed -e "s|$(FIND)|$(REPLACE)|g" xml_s11n.save | $(RDIFF) - xml_s11n.fail 1
 	rm -f bserialize.xml xml_s11n.fail
+	touch $@
+
+xml_s11n_2.ts : $(REXEC) xml_serialize_2.R xml_deserialize_2.R
+	rm -f bserialize.xml
+	$(R) < xml_serialize_2.R > /dev/null 2>&1
+	$(R) < xml_deserialize_2.R
+	diff xml_serialize_2.pre xml_serialize_2.post
+	rm -f xml_serialize_2.pre xml_serialize_2.post reg-tests-2.pdf
 	touch $@
 
 Makefile : Makefile.in

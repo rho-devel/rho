@@ -50,8 +50,8 @@ SOURCES_CXX = \
 	ProvenanceSet.cpp ProvenanceTracker.cpp \
         RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
         RealVector.cpp Renviron.cpp ReturnBailout.cpp \
-        S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp StdFrame.cpp \
-        String.cpp StringVector.cpp Subscripting.cpp Symbol.cpp \
+        S11nScope.cpp S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp \
+        StdFrame.cpp String.cpp StringVector.cpp Subscripting.cpp Symbol.cpp \
 	UnaryFunction.cpp \
         VectorBase.cpp \
         WeakRef.cpp \

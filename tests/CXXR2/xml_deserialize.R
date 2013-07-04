@@ -1,8 +1,9 @@
 bdeserialize()
 ls()
 x
+xna
 y
-identical(y, c(0.1, pi, 0.123456789E-50, sqrt(2.0E100), Inf, -Inf, NaN))
+identical(y, c(0.1, pi, 0.123456789E-50, sqrt(2.0E100), Inf, -Inf, NaN, NA))
 sq
 z
 rhubarb
@@ -18,7 +19,7 @@ my.basenamespace
 identical(my.basenamespace, .BaseNamespaceEnv)
 my.global.env
 identical(my.global.env, .GlobalEnv)
-my.stats.env
+#my.stats.env
 identical(my.stats.env, as.environment("package:stats"))
 my.stats.ns
 identical(my.stats.ns, environment(rnorm))

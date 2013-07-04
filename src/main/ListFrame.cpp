@@ -50,15 +50,6 @@
 using namespace std;
 using namespace CXXR;
 
-PairList* ListFrame::asPairList() const
-{
-    GCStackRoot<PairList> ans(0);
-    for (List::const_iterator it = m_list.begin();
-	 it != m_list.end(); ++it)
-	ans = (*it).asPairList(ans);
-    return ans;
-}
-
 Frame::Binding* ListFrame::binding(const Symbol* symbol)
 {
     List::iterator end = m_list.end();
@@ -81,41 +72,14 @@ const Frame::Binding* ListFrame::binding(const Symbol* symbol) const
     return &(*it);
 }
 
-void ListFrame::clear()
+Frame::BindingRange ListFrame::bindingRange() const
 {
-    statusChanged(0);
-    m_list.clear();
+    return BindingRange(m_list.begin(), m_list.end());
 }
 
 ListFrame* ListFrame::clone() const
 {
     return expose(new ListFrame(*this));
-}
-
-void ListFrame::detachReferents()
-{
-    m_list.clear();
-    Frame::detachReferents();
-}
-
-bool ListFrame::erase(const Symbol* symbol)
-{
-    if (isLocked())
-	Rf_error(_("cannot remove bindings from a locked frame"));
-    List::iterator it = m_list.begin();
-    while (it != m_list.end() && (*it).symbol() != symbol)
-	++it;
-    if (it == m_list.end())
-	return false;
-    m_list.erase(it);
-    statusChanged(symbol);
-    return true;
-}
-
-void ListFrame::import(const Frame* frame)
-{
-    cerr << "Not (yet) implemented.\n";
-    abort();
 }
 
 void ListFrame::lockBindings()
@@ -124,7 +88,28 @@ void ListFrame::lockBindings()
 	(*it).setLocking(true);
 }
 
-Frame::Binding* ListFrame::obtainBinding(const Symbol* symbol)
+size_t ListFrame::size() const
+{
+    return m_list.size();
+}
+
+void ListFrame::v_clear()
+{
+    m_list.clear();
+}
+
+bool ListFrame::v_erase(const Symbol* symbol)
+{
+    List::iterator it = m_list.begin();
+    while (it != m_list.end() && (*it).symbol() != symbol)
+	++it;
+    if (it == m_list.end())
+	return false;
+    m_list.erase(it);
+    return true;
+}
+
+Frame::Binding* ListFrame::v_obtainBinding(const Symbol* symbol)
 {
     List::iterator end = m_list.end();
     List::iterator it = m_list.begin();
@@ -132,51 +117,8 @@ Frame::Binding* ListFrame::obtainBinding(const Symbol* symbol)
 	++it;
     if (it != end)
 	return &(*it);
-    if (isLocked())
-	Rf_error(_("cannot add bindings to a locked frame"));
     m_list.push_back(Binding());
-    Binding* bdg = &m_list.back();
-    bdg->initialize(this, symbol);
-    statusChanged(symbol);
-    return bdg;
-}
-
-size_t ListFrame::size() const
-{
-    return m_list.size();
-}
-
-void ListFrame::softMergeInto(Frame* target) const
-{
-    for (List::const_iterator it = m_list.begin();
-	 it != m_list.end(); ++it) {
-	const Binding& mybdg = *it;
-	const Symbol* symbol = mybdg.symbol();
-	if (!target->binding(symbol)) {
-	    Binding* yourbdg = target->obtainBinding(symbol);
-	    yourbdg->setValue(mybdg.value(), mybdg.origin());
-	}
-    }
-}
-
-vector<const Symbol*> ListFrame::symbols(bool include_dotsymbols) const
-{
-    vector<const Symbol*> ans;
-    for (List::const_iterator it = m_list.begin();
-	 it != m_list.end(); ++it) {
-	const Symbol* symbol = (*it).symbol();
-	if (include_dotsymbols || !isDotSymbol(symbol))
-	    ans.push_back(symbol);
-    }
-    return ans;
-}
-
-void ListFrame::visitReferents(const_visitor* v) const
-{
-    Frame::visitReferents(v);
-    for (List::const_iterator it = m_list.begin();
-	 it != m_list.end(); ++it)
-	(*it).visitReferents(v);
+    return &m_list.back();
 }
 
 BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::ListFrame)

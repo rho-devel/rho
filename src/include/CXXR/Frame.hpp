@@ -41,6 +41,7 @@
 #ifndef RFRAME_HPP
 #define RFRAME_HPP
 
+#include <boost/range/any_range.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
@@ -390,6 +391,18 @@ namespace CXXR {
 	    void serialize(Archive & ar, const unsigned int version);
 	};  // Frame::Binding
 
+
+	/** @brief Allow iteration over a Frame object's Bindings.
+	 *
+	 * This is a boost::any_range type which allows for (read-only)
+	 * iteration over the Binding objects within a Frame,
+	 * irrespective of the underlying implementation of the Frame.
+	 */
+	typedef boost::any_range<const Binding,
+				 boost::forward_traversal_tag,
+				 const Binding&,
+				 std::ptrdiff_t> BindingRange;
+
 	typedef void (*monitor)(const Binding&);
 
 	Frame()
@@ -426,7 +439,7 @@ namespace CXXR {
 	 * to the returned PairList will have no effect on the
 	 * Frame itself.
 	 */
-	virtual PairList* asPairList() const = 0;
+	PairList* asPairList() const;
 
 	/** @brief Bind a Symbol to a specified value.
 	 *
@@ -480,11 +493,18 @@ namespace CXXR {
 	 */
 	virtual const Binding* binding(const Symbol* symbol) const = 0;
 
+	/** @brief Obtain a BindingRange for this Frame.
+	 *
+	 * @return a BindingRange allowing read-only iteration over
+	 * the Binding objects within this Frame.
+	 */
+	virtual BindingRange bindingRange() const = 0;
+
 	/** @brief Remove all symbols from the Frame.
 	 *
 	 * Raises an error if the Frame is locked.
 	 */
-	virtual void clear() = 0;
+	void clear();
 
 	/** @brief Return pointer to a copy of this Frame.
 	 *
@@ -564,13 +584,7 @@ namespace CXXR {
 	 * @return true iff the environment previously contained a
 	 * mapping for \a symbol.
 	 */
-	virtual bool erase(const Symbol* symbol) = 0;
-
-	/** @brief Install Bindings from another Frame
-	 *
-	 * @param frame Source frame from which to 'copy' bindings
-	 */
-	virtual void import(const Frame* frame) = 0;
+	bool erase(const Symbol* symbol);
 
 	/** @brief Is the Frame locked?
 	 *
@@ -626,7 +640,7 @@ namespace CXXR {
 	 *
 	 * @return Pointer to the required Binding.
 	 */
-	virtual Binding* obtainBinding(const Symbol* symbol) = 0;
+	Binding* obtainBinding(const Symbol* symbol);
 
 	/** @brief Define function to monitor reading of Symbol values.
 	 *
@@ -685,19 +699,6 @@ namespace CXXR {
 	 */
 	virtual std::size_t size() const = 0;
 
-	/** @brief Merge this Frame's Bindings into another Frame.
-	 *
-	 * This function copies each Binding in this Frame into \a
-	 * target, unless \a target already contains a Binding for the
-	 * Symbol concerned.
-	 *
-	 * @param target Non-null pointer to the Frame into which
-	 *          Bindings are to be merged.  An error is raised if
-	 *          a new Binding needs to be created and \a target is
-	 *          locked.
-	 */
-	virtual void softMergeInto(Frame* target) const = 0;
-
 	/** @brief Symbols bound by this Frame.
 	 *
 	 * @param include_dotsymbols If false, any Symbol whose name
@@ -706,8 +707,10 @@ namespace CXXR {
 	 * @return A vector containing pointers to the Symbol objects
 	 * bound by this Frame.
 	 */
-	virtual std::vector<const Symbol*>
-	symbols(bool include_dotsymbols) const = 0;
+        std::vector<const Symbol*> symbols(bool include_dotsymbols) const;
+
+	// Virtual function of GCNode:
+	void visitReferents(const_visitor* v) const;
     protected:
 	// Declared protected to ensure that Frame objects are created
 	// only using 'new':
@@ -729,6 +732,9 @@ namespace CXXR {
 	    if (m_cache_count > 0)
 		flush(sym);
 	}
+
+	// Virtual function of GCNode:
+	void detachReferents();
     private:
 	friend class Environment;
 	friend class boost::serialization::access;
@@ -776,6 +782,11 @@ namespace CXXR {
 
 	template<class Archive>
 	void serialize (Archive & ar, const unsigned int version);
+
+	// Implementation dependent auxiliary functions:
+	virtual void v_clear() = 0;
+	virtual bool v_erase(const Symbol* symbol) = 0;
+	virtual Binding* v_obtainBinding(const Symbol* symbol) = 0;
     };
 
     /** @brief Incorporate bindings defined by a PairList into a Frame.
@@ -832,37 +843,37 @@ namespace CXXR {
      * @return true iff \a sym is missing with respect to \a frame.
      */
     bool isMissingArgument(const Symbol* sym, Frame* frame);
+
+    // ***** Implementation of non-inlined templated members *****
+
+    template<class Archive>
+    void Frame::Binding::serialize(Archive & ar, const unsigned int version)
+    {
+	GCNPTR_SERIALIZE(ar, m_value);
+	const Provenance* prov = 0;
+#ifdef PROVENANCE_TRACKING
+	prov = m_provenance;
+#endif
+	GCNode::PtrS11n::invoke(ar, prov, "m_provenance");
+#ifdef PROVENANCE_TRACKING
+	m_provenance = prov;
+#endif
+	ar & BOOST_SERIALIZATION_NVP(m_origin);
+	ar & BOOST_SERIALIZATION_NVP(m_active);
+	ar & BOOST_SERIALIZATION_NVP(m_locked);
+    }
+
+    template<class Archive>
+    void Frame::serialize (Archive & ar, const unsigned int version) {
+	ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
+	bool locked = m_locked;
+	ar & BOOST_SERIALIZATION_NVP(locked);
+	m_locked = locked;
+    }
 }  // namespace CXXR
 
 // This definition is visible only in C++; C code sees instead a
 // definition (in Environment.h) as an opaque pointer.
 typedef CXXR::Frame::Binding* R_varloc_t;
-
-// ***** Implementation of non-inlined templated members *****
-
-template<class Archive>
-void CXXR::Frame::Binding::serialize(Archive & ar, const unsigned int version)
-{
-    GCNPTR_SERIALIZE(ar, m_value);
-    const Provenance* prov = 0;
-#ifdef PROVENANCE_TRACKING
-    prov = m_provenance;
-#endif
-    GCNode::PtrS11n::invoke(ar, prov, "m_provenance");
-#ifdef PROVENANCE_TRACKING
-    m_provenance = prov;
-#endif
-    ar & BOOST_SERIALIZATION_NVP(m_origin);
-    ar & BOOST_SERIALIZATION_NVP(m_active);
-    ar & BOOST_SERIALIZATION_NVP(m_locked);
-}
-
-template<class Archive>
-void CXXR::Frame::serialize (Archive & ar, const unsigned int version) {
-    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
-    bool locked = m_locked;
-    ar & BOOST_SERIALIZATION_NVP(locked);
-    m_locked = locked;
-}
 
 #endif // RFRAME_HPP
