@@ -72,7 +72,7 @@ namespace CXXR {
     inline PtrOut SEXP_downcast(PtrIn s, bool allow_null = true)
     {
 	if (!s && !allow_null) {
-	    PtrOut exemplar;
+	    PtrOut exemplar = 0;
 	    SEXP_downcast_error("NULL", exemplar->staticTypeName());
 	}
 	return static_cast<PtrOut>(s);
@@ -81,7 +81,7 @@ namespace CXXR {
     template <typename PtrOut, typename PtrIn>
     PtrOut SEXP_downcast(PtrIn s, bool allow_null = true)
     {
-	PtrOut ans;
+	PtrOut ans = 0;
 	if (!s) {
 	    if (allow_null)
 		return 0;

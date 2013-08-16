@@ -6,15 +6,16 @@ abs_top_builddir = @abs_top_builddir@
 
 include $(top_srcdir)/share/make/vars.mk
 
-BOOSTDIR = /home/arr/NOTBACKEDUP/packages/boost/boost_1_50_0
-BOOSTLIBS = $(BOOSTDIR)/stage/lib
-
 AR = @AR@
 ACLOCAL = @ACLOCAL@
 AUTOCONF = @AUTOCONF@
 AUTOMAKE = @AUTOMAKE@
 AUTOHEADER = @AUTOHEADER@
 BLAS_LIBS = @BLAS_LIBS@
+BOOST_CPPFLAGS = @BOOST_CPPFLAGS@
+BOOST_LDFLAGS = @BOOST_LDFLAGS@
+BOOST_LD_LIBRARY_PATH = @BOOST_LD_LIBRARY_PATH@
+BOOST_LIBS = @BOOST_REGEX_LIB@ @BOOST_SERIALIZATION_LIB@
 BUILDDIR_IS_SRCDIR = @BUILDDIR_IS_SRCDIR@
 ## next two for future support of cross-compiling, not actually used
 BUILD_CC = @BUILD_CC@
@@ -22,9 +23,9 @@ BUILD_R = @BUILD_R@
 CC = @CC@
 # FIXME arr 2007/06/17: += conflicts with R coding standards
 CFLAGS += @CFLAGS@ @LTO@
-CXXFLAGS += @CXXFLAGS@
+CXXFLAGS += @CXXFLAGS@ -Wno-attributes
 CPICFLAGS = @CPICFLAGS@
-CPPFLAGS += -I$(BOOSTDIR) @CPPFLAGS@
+CPPFLAGS += @CPPFLAGS@
 DEFS = @DEFS@ @R_DEFS@
 DISTDIR_TAR_EXCLUDE = --exclude=.svn --exclude=Makefile --exclude="*.o" --exclude="*$(SHLIB_EXT)" --exclude="*~"
 DYLIB_EXT = @DYLIB_EXT@
@@ -66,7 +67,7 @@ MAIN_CFLAGS = @MAIN_CFLAGS@
 MAIN_CXXFLAGS =
 MAIN_FFLAGS = @MAIN_FFLAGS@
 MAIN_LD = @MAIN_LD@@BUILD_LTO_TRUE@ $(CFLAGS)
-MAIN_LDFLAGS = -L$(BOOSTLIBS) -Wl,-rpath,$(BOOSTLIBS) @MAIN_LDFLAGS@ -lboost_regex -lboost_serialization @WANT_R_SHLIB_FALSE@ @USE_EXPORTFILES_TRUE@ -Wl,-bE:$(top_builddir)/etc/R.exp
+MAIN_LDFLAGS = @MAIN_LDFLAGS@ $(BOOST_LDFLAGS) @WANT_R_SHLIB_FALSE@ @USE_EXPORTFILES_TRUE@ -Wl,-bE:$(top_builddir)/etc/R.exp
 MAIN_LINK = $(MAIN_LD) $(MAIN_LDFLAGS) $(LDFLAGS)
 ## need this for bootstrapping
 MKINSTALLDIRS = @R_SHELL@ $(top_srcdir)/src/scripts/mkinstalldirs.in
@@ -82,7 +83,7 @@ R_OSTYPE = @R_OSTYPE@
 R_PKGS = $(R_PKGS_BASE) @USE_RECOMMENDED_PACKAGES_TRUE@ $(R_PKGS_RECOMMENDED)
 R_PLATFORM = @R_PLATFORM@
 R_XTRA_CFLAGS = @R_XTRA_CFLAGS@ 
-R_XTRA_CPPFLAGS = @R_XTRA_CPPFLAGS@ -I. -I$(top_builddir)/src/include -I$(top_srcdir)/src/include
+R_XTRA_CPPFLAGS = @BOOST_CPPFLAGS@ @R_XTRA_CPPFLAGS@ -I. -I$(top_builddir)/src/include -I$(top_srcdir)/src/include
 R_XTRA_FFLAGS = @R_XTRA_FFLAGS@
 R_XTRA_LIBS = @R_XTRA_LIBS@
 RANLIB = @RANLIB@

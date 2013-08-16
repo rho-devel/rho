@@ -31,6 +31,7 @@ m4_define([R_VERSION],
                        [\([0-9.]*\)\(\w\|\W\)*],
                        [\1]))
 AC_INIT([R],[R_VERSION],[http://bugs.r-project.org],[R],[http://www.r-project.org])
+AC_USE_SYSTEM_EXTENSIONS
 AC_CONFIG_SRCDIR([src/include/Defn.h])
 AC_CONFIG_AUX_DIR([tools])
 
@@ -199,6 +200,19 @@ AC_SUBST([rsharedir])
 config_opts="${ac_configure_args}"
 AC_SUBST(config_opts)
 
+### ** CXXR Optional features.
+## Allow the user to specify support for memory profiling.
+AC_ARG_ENABLE([provenance-tracking],
+[AS_HELP_STRING([--enable-provenance-tracking],[enable CXXR provenance tracking facilities @<:@no@:>@])],
+[if test "${enableval}" = no; then
+  want_provenance_tracking=no
+elif test "${enableval}" = yes; then
+  want_provenance_tracking=yes
+else
+  want_provenance_tracking=no
+fi],
+[want_provenance_tracking=no])
+
 ### ** Optional features.
 
 ## Allow the user to specify support for R profiling.
@@ -338,6 +352,19 @@ AC_SUBST(LTO)
 AC_SUBST(LTOALL)
 AM_CONDITIONAL(BUILD_LTO, [test "x${want_lto}" != xno])
 
+### CXXR Requires Boost of at least a given version,
+### including the boost::regex and boost::serialization libraries
+
+AX_BOOST_BASE([1.53.0],
+	      [],
+              [AC_MSG_ERROR([CXXR requires boost, which was not found.])]
+             )
+AX_BOOST_REGEX
+AX_BOOST_SERIALIZATION
+if test -n "$BOOST_LDFLAGS"; then
+    BOOST_LD_LIBRARY_PATH=`echo $BOOST_LDFLAGS | sed -e 's/^-L//'`
+fi
+AC_SUBST(BOOST_LD_LIBRARY_PATH)
 
 ### ** Optional packages.
 
@@ -2175,6 +2202,11 @@ R_SYS_POSIX_LEAPSECONDS
 
 ## stat times
 gl_STAT_TIME
+
+## CXXR provenance tracking.
+if test "${want_provenance_tracking}" = yes; then
+  AC_DEFINE(PROVENANCE_TRACKING, 1, [Define this to enable CXXR provenance tracking.])
+fi
  
 ## R profiling.
 if test "${want_R_profiling}" = yes; then
@@ -2615,6 +2647,7 @@ AC_CONFIG_FILES(
   src/unix/Makefile
   tests/Makefile
   tests/CXXR/Makefile
+  tests/CXXR2/Makefile
   tests/Embedding/Makefile
   tests/Examples/Makefile
   tests/Native/Makefile
@@ -2699,6 +2732,7 @@ if test "${r_cv_cairo_works}" = yes; then
   R_SH_VAR_ADD(r_capabilities, [cairo], [, ])
 fi
 r_options=
+cxxr_options=
 if test "${want_R_framework}" = yes; then
   R_SH_VAR_ADD(r_options, [framework], [, ])
 elif test "${want_R_shlib}" = yes; then
@@ -2731,9 +2765,13 @@ if test "${want_prebuilt_html}" = yes; then
   R_SH_VAR_ADD(r_options, [static HTML], [, ])
 fi
 
+if test "${want_provenance_tracking}" = yes; then
+  R_SH_VAR_ADD(cxxr_options, [Provenance Tracking], [, ])
+fi
+
 AC_MSG_RESULT(
 [
-R is now configured for ${host}
+CXXR is now configured for ${host}
 
   Source directory:          ${srcdir}
   Installation directory:    ${prefix}
@@ -2748,7 +2786,8 @@ R is now configured for ${host}
   Interfaces supported:      ${r_interfaces}
   External libraries:        ${r_external_libs}
   Additional capabilities:   ${r_capabilities}
-  Options enabled:           ${r_options}
+  CR Options enabled:        ${r_options}
+  CXXR Options enabled:      ${cxxr_options}
 
   Recommended packages:      ${use_recommended_packages} 
 ])
