@@ -32,7 +32,10 @@ Rdiff(from, to, useDiff = FALSE, forEx = FALSE, nullPointers = TRUE,
   Windows, Windows' so-called \sQuote{smart quotes} are mapped to a
   simple quote.  Addresses of environments, compiled bytecode and other
   exotic types expressed as hex addresses (e.g. \code{<environment:
-    0x12345678>}) are mapped to \code{0x00000000}.  The files are then
+    0x12345678>}) are mapped to \code{0x00000000}.  In addition, CXXR
+  replaces a program location given in the context 'In ... :' by a
+  single question mark; this is because the given location may differ
+  according to whether or not byte-compilation is applied.  The files are then
   compared line-by-line.  If there are the same number of lines and
   \code{useDiff} is false, a simple \command{diff}-like display of
   differences is printed, otherwise \command{diff -bw} is called on the

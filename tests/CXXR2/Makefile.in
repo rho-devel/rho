@@ -12,7 +12,7 @@ REXEC= $(top_builddir)/bin/exec/R
 
 include $(top_builddir)/Makeconf
 
-tests = miscR xml_s11n xml_s11n_2
+tests = miscR xml_s11n # xml_s11n_2
 
 check : $(tests:=.ts)
 
