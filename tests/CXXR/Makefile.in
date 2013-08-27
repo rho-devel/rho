@@ -2,9 +2,11 @@
 
 uname = $(shell uname)
 
-top_builddir = ../..
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
 
-top_srcdir = ../..
+top_builddir = ../..
+subdir = tests/CXXR
 
 include $(top_builddir)/Makeconf
 
@@ -254,8 +256,8 @@ splice_test.ts : splice_test splice_test.save
 	rm splice_test.out
 	touch $@
 
-Makefile : Makefile.in
-	cp $< $@
+Makefile : $(srcdir)/Makefile.in $(top_builddir)/config.status
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean:
 	rm -f *.d *.o *.ts $(tests)
