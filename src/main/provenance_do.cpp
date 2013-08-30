@@ -217,7 +217,8 @@ SEXP attribute_hidden do_provCommand (SEXP call, SEXP op, SEXP args, SEXP rho)
 #endif  // PROVENANCE_TRACKING
 }
 
-SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden
+do_provenance_graph(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 #ifndef PROVENANCE_TRACKING
     Rf_error(_("provenance tracking not implemented in this build"));
@@ -225,7 +226,8 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 #else
     int nargs = length(args);
     if (nargs != 1)
-	Rf_error(_("%d arguments passed to 'pedigree' which requires 1"), nargs);
+	Rf_error(_("%d arguments passed to 'provenance.graph' which requires 1"),
+		 nargs);
     SEXP arg1 = CAR(args);
     if (!arg1 || arg1->sexptype() != STRSXP)
 	    Rf_error(_("invalid 'names' argument"));
@@ -250,35 +252,80 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 
     Provenance::Set* ancestors = Provenance::ancestors(provs);
 
-    GCStackRoot<ListVector> ans(CXXR_NEW(ListVector(5)));
+    GCStackRoot<ListVector> ans(CXXR_NEW(ListVector(7)));
+    std::map<const Provenance*, unsigned int> ancestor_index;
+    std::vector<std::pair<unsigned int, const RObject*> > xenogenous_bdgs;
 
-    // Assemble result:
+    // Assemble information on graph nodes:
     {
 	size_t n = ancestors->size();
+	GCStackRoot<ListVector> symbols(CXXR_NEW(ListVector(n)));
 	GCStackRoot<ListVector> commands(CXXR_NEW(ListVector(n)));
 	GCStackRoot<RealVector> timestamps(CXXR_NEW(RealVector(n)));
-	GCStackRoot<ListVector> symbols(CXXR_NEW(ListVector(n)));
-	GCStackRoot<LogicalVector> xenogenous(CXXR_NEW(LogicalVector(n)));
-	GCStackRoot<ListVector> values(CXXR_NEW(ListVector(n)));
 	size_t i = 0;
 	for (Provenance::Set::iterator it = ancestors->begin();
 	     it != ancestors->end(); ++it) {
 	    const Provenance* p = *it;
+	    (*symbols)[i] = const_cast<Symbol*>(p->symbol());
 	    (*commands)[i] = const_cast<RObject*>(p->command());
 	    (*timestamps)[i] = p->timestamp();
-	    (*symbols)[i] = const_cast<Symbol*>(p->symbol());
-	    (*xenogenous)[i] = FALSE;
-	    if (p->isXenogenous()) {
-		(*xenogenous)[i] = TRUE;
-		(*values)[i] = const_cast<RObject*>(p->value());
-	    }
 	    ++i;
+	    ancestor_index[p] = i;
+	    if (p->isXenogenous())
+		xenogenous_bdgs.push_back(std::make_pair(i, p->value()));
 	}
-	(*ans)[0] = commands;
-	(*ans)[1] = timestamps;
-	(*ans)[2] = symbols;
+
+	(*ans)[0] = symbols;
+	(*ans)[1] = commands;
+	(*ans)[2] = timestamps;
+    }
+
+    // Record information on xenogenous bindings:
+    {
+	size_t xn = xenogenous_bdgs.size();
+	GCStackRoot<IntVector> xenogenous(CXXR_NEW(IntVector(xn)));
+	GCStackRoot<ListVector> values(CXXR_NEW(ListVector(xn)));
+	for (unsigned int i = 0; i < xn; ++i) {
+	    std::pair<unsigned int, const RObject*>& pr = xenogenous_bdgs[i];
+	    (*xenogenous)[i] = pr.first;
+	    (*values)[i] = const_cast<RObject*>(pr.second);
+	}
 	(*ans)[3] = xenogenous;
 	(*ans)[4] = values;
+    }
+
+    // Assemble information on graph edges:
+    {
+	typedef std::set<std::pair<unsigned int, unsigned int> > EdgeSet;
+	EdgeSet edges;
+	for (Provenance::Set::iterator it = ancestors->begin();
+	     it != ancestors->end(); ++it) {
+	    const Provenance* child = *it;
+	    unsigned int child_idx = ancestor_index[child];
+	    std::pair<CommandChronicle::ParentVector::const_iterator,
+		      CommandChronicle::ParentVector::const_iterator>
+		pr = child->parents();
+	    for (CommandChronicle::ParentVector::const_iterator it = pr.first;
+		 it != pr.second; ++it) {
+		const Provenance* parent = *it;
+		unsigned int parent_idx = ancestor_index[parent];
+		edges.insert(std::make_pair(parent_idx, child_idx));
+	    }
+	}
+
+	size_t en = edges.size();
+	GCStackRoot<IntVector> parents(CXXR_NEW(IntVector(en)));
+	GCStackRoot<IntVector> children(CXXR_NEW(IntVector(en)));
+	unsigned int i = 0;
+	for (EdgeSet::const_iterator it = edges.begin(); it != edges.end(); ++it) {
+	    const std::pair<unsigned int, unsigned int>& edge = *it;
+	    (*parents)[i] = edge.first;
+	    (*children)[i] = edge.second;
+	    ++i;
+	}
+		
+	(*ans)[5] = parents;
+	(*ans)[6] = children;
     }
     delete ancestors;
     return ans;

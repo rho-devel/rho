@@ -135,21 +135,18 @@ namespace CXXR {
 	    bool m_xenogenetic;
 	};
 
-	    /** @brief Flag up xenogenesis.
-	     *
-	     * This function is called to indicate to the provenance
-	     * tracker that in evaluating the current top-level
-	     * command, the behaviour of the interpreter has been
-	     * influenced by something external to it, e.g. by reading
-	     * an external file, or by accepting user input.
-	     * Provenance-tracked bindings created by the top-level
-	     * command subsequently to this call will be flagged as
-	     * having xenogenous provenance.
-	     */
-	static void flagXenogenesis()
-	{
-	    s_scope->flagXenogenesis();
-	}
+	/** @brief Flag up xenogenesis.
+	 *
+	 * This function is called to indicate to the provenance
+	 * tracker that in evaluating the current top-level command
+	 * (if any), the behaviour of the interpreter has been
+	 * influenced by something external to it, e.g. by reading an
+	 * external file, or by accepting user input.
+	 * Provenance-tracked bindings created by the top-level
+	 * command subsequently to this call will be flagged as having
+	 * xenogenous provenance.
+	 */
+	static void flagXenogenesis();
 
 	/** @brief Read monitor.
 	 *
@@ -158,10 +155,7 @@ namespace CXXR {
 	 * provenance-tracked Frames is reported to the provenance
 	 * tracker.
 	 */
-	static void monitorRead(const Frame::Binding& bdg)
-	{
-	    s_scope->monitorRead(bdg);
-	}
+	static void monitorRead(const Frame::Binding& bdg);
 
 	/** @brief Write monitor.
 	 *
@@ -170,10 +164,7 @@ namespace CXXR {
 	 * provenance-tracked Frames is reported to the provenance
 	 * tracker.
 	 */
-	static void monitorWrite(const Frame::Binding& bdg)
-	{
-	    s_scope->monitorWrite(bdg);
-	}
+	static void monitorWrite(const Frame::Binding& bdg);
 
 	/** @brief Establish read and write monitoring for provenance
 	 *  tracking.

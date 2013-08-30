@@ -85,7 +85,25 @@ void ProvenanceTracker::CommandScope::monitorWrite(const Frame::Binding &bdg)
 }
 
 
-// ***** Class ProvenanceTracker::CommandScope *****
+// ***** Class ProvenanceTracker *****
+
+void ProvenanceTracker::flagXenogenesis()
+{
+    if (s_scope)
+	s_scope->flagXenogenesis();
+}
+
+void ProvenanceTracker::monitorRead(const Frame::Binding& bdg)
+{
+    if (s_scope)
+	s_scope->monitorRead(bdg);
+}
+
+void ProvenanceTracker::monitorWrite(const Frame::Binding& bdg)
+{
+    if (s_scope)
+	s_scope->monitorWrite(bdg);
+}
 
 void ProvenanceTracker::setMonitors()
 {

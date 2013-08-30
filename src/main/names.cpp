@@ -1021,7 +1021,7 @@ void BuiltInFunction::initialize()
 
 /* Provenance Functions */
 {"provenance", do_provenance,   0,       0,     1,      {PP_FUNCALL, PREC_FN, 0}},
-{"pedigree", do_pedigree,       0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
+{"provenance.graph", do_provenance_graph,0,11,  1,      {PP_FUNCALL, PREC_FN, 0}},
 
 /* and my serialization function */
 {"bserialize", do_bserialize,   0,     100,     1,      {PP_FUNCALL, PREC_FN, 0}},

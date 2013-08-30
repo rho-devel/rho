@@ -6,18 +6,23 @@
 # CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 # CXXR Licence.
 # CXXR 
-# CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
+# CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
 # CXXR copyrights and copyright restrictions as may be stated below.
 # CXXR 
 # CXXR CXXR is not part of the R project, and bugs and other issues should
 # CXXR not be reported via r-bugs or other R project channels; instead refer
 # CXXR to the CXXR website.
 
-pedigree <- function(names) {
-  ans <- .Internal(pedigree(names))
-  names(ans) <- c("commands", "timestamps", "symbols", "xenogenous", "values")
+provenance.graph <- function(names) {
+  ans <- .Internal(provenance.graph(names))
+  names(ans) <- c("symbols", "commands", "timestamps", "xenogenous", "values",
+                  "parents", "children")
   ans$timestamps <- as.POSIXct(ans$timestamps, origin = "1970-01-01",
         tz = "GMT")
   ans
 }
 
+pedigree <- function(names) {
+  pg <- provenance.graph(names)
+  pg$commands[!duplicated(pg$timestamps)]
+}
