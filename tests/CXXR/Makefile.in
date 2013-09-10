@@ -2,6 +2,7 @@
 
 uname = $(shell uname)
 
+VPATH = @srcdir@
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 
@@ -59,67 +60,75 @@ endif
 # OK match:
 ArgMatchertest0.ts : ArgMatchertest formals_ok.txt supplied_ok.txt \
                      prior_bindings.txt
-	./withldpaths ./$< formals_ok.txt supplied_ok.txt prior_bindings.txt \
-	     &> ArgMatchertest0.out
-	diff ArgMatchertest0.save ArgMatchertest0.out
+	$(srcdir)/withldpaths ./$< $(srcdir)/formals_ok.txt $(srcdir)/supplied_ok.txt \
+            $(srcdir)/prior_bindings.txt &> ArgMatchertest0.out
+	diff $(srcdir)/ArgMatchertest0.save ArgMatchertest0.out
 	rm ArgMatchertest0.out
 	touch $@
  
 # Unnamed formal argument:
 ArgMatchertest1.ts : ArgMatchertest formals_unnamed.txt
-	./withldpaths ./$< formals_unnamed.txt /dev/null &> ArgMatchertest1.out
-	diff ArgMatchertest1.save ArgMatchertest1.out
+	$(srcdir)/withldpaths ./$<  $(srcdir)/formals_unnamed.txt /dev/null \
+            &> ArgMatchertest1.out
+	diff $(srcdir)/ArgMatchertest1.save ArgMatchertest1.out
 	rm ArgMatchertest1.out
 	touch $@
  
 # ... appears twice:
 ArgMatchertest2.ts : ArgMatchertest formals_dotstwice.txt
-	./withldpaths ./$< formals_dotstwice.txt /dev/null &> ArgMatchertest2.out
-	diff ArgMatchertest2.save ArgMatchertest2.out
+	$(srcdir)/withldpaths ./$< $(srcdir)/formals_dotstwice.txt /dev/null \
+            &> ArgMatchertest2.out
+	diff $(srcdir)/ArgMatchertest2.save ArgMatchertest2.out
 	rm ArgMatchertest2.out
 	touch $@
  
 # Duplicated formal name:
 ArgMatchertest3.ts : ArgMatchertest formals_dupnames.txt
-	./withldpaths ./$< formals_dupnames.txt /dev/null &> ArgMatchertest3.out
-	diff ArgMatchertest3.save ArgMatchertest3.out
+	$(srcdir)/withldpaths ./$< $(srcdir)/formals_dupnames.txt /dev/null \
+            &> ArgMatchertest3.out
+	diff $(srcdir)/ArgMatchertest3.save ArgMatchertest3.out
 	rm ArgMatchertest3.out
 	touch $@
  
 # Formal arg partially matched by &>1 supplied args:
 ArgMatchertest4.ts : ArgMatchertest formals_ok.txt supplied_pm2supp.txt
-	./withldpaths ./$< formals_ok.txt supplied_pm2supp.txt &> ArgMatchertest4.out
-	diff ArgMatchertest4.save ArgMatchertest4.out
+	$(srcdir)/withldpaths ./$< $(srcdir)/formals_ok.txt \
+            $(srcdir)/supplied_pm2supp.txt &> ArgMatchertest4.out
+	diff $(srcdir)/ArgMatchertest4.save ArgMatchertest4.out
 	rm ArgMatchertest4.out
 	touch $@
  
 # Supplied arg partially matches &>1 formal args:
 ArgMatchertest5.ts : ArgMatchertest formals_ok.txt supplied_pm2form.txt
-	./withldpaths ./$< formals_ok.txt supplied_pm2form.txt &> ArgMatchertest5.out
-	diff ArgMatchertest5.save ArgMatchertest5.out
+	$(srcdir)/withldpaths ./$< $(srcdir)/formals_ok.txt \
+            $(srcdir)/supplied_pm2form.txt &> ArgMatchertest5.out
+	diff $(srcdir)/ArgMatchertest5.save ArgMatchertest5.out
 	rm ArgMatchertest5.out
 	touch $@
  
 # Surplus supplied args:
 ArgMatchertest6.ts : ArgMatchertest formals_ok.txt supplied_surplus.txt
-	./withldpaths ./$< formals_nodots.txt supplied_surplus.txt &> ArgMatchertest6.out
-	diff ArgMatchertest6.save ArgMatchertest6.out
+	$(srcdir)/withldpaths ./$< $(srcdir)/formals_nodots.txt \
+            $(srcdir)/supplied_surplus.txt &> ArgMatchertest6.out
+	diff $(srcdir)/ArgMatchertest6.save ArgMatchertest6.out
 	rm ArgMatchertest6.out
 	touch $@
  
 # ... with default:
 ArgMatchertest7.ts : ArgMatchertest formals_dotsdflt.txt
-	./withldpaths ./$< formals_dotsdflt.txt /dev/null &> ArgMatchertest7.out
-	diff ArgMatchertest7.save ArgMatchertest7.out
+	$(srcdir)/withldpaths ./$< $(srcdir)/formals_dotsdflt.txt /dev/null \
+            &> ArgMatchertest7.out
+	diff $(srcdir)/ArgMatchertest7.save ArgMatchertest7.out
 	rm ArgMatchertest7.out
 	touch $@
  
 # Non-null match to '...', plus attempted partial match to formal following ... :
 ArgMatchertest8.ts : ArgMatchertest formals_ok.txt supplied_surplus.txt \
                      prior_bindings.txt
-	./withldpaths ./$< formals_ok.txt supplied_surplus.txt prior_bindings.txt \
-             &> ArgMatchertest8.out
-	diff ArgMatchertest8.save ArgMatchertest8.out
+	$(srcdir)/withldpaths ./$< $(srcdir)/formals_ok.txt \
+            $(srcdir)/supplied_surplus.txt $(srcdir)/prior_bindings.txt \
+            &> ArgMatchertest8.out
+	diff $(srcdir)/ArgMatchertest8.save ArgMatchertest8.out
 	rm ArgMatchertest8.out
 	touch $@
  
@@ -133,7 +142,7 @@ Allocatortest : $(Allocatortest_objs)
 
 Allocatortest.ts : Allocatortest Allocatortest.save
 	$(valgrind) ./$< 10 12 > Allocatortest.out
-	diff Allocatortest.save Allocatortest.out
+	diff $(srcdir)/Allocatortest.save Allocatortest.out
 	rm Allocatortest.out
 	touch $@
 
@@ -150,7 +159,7 @@ CellHeaptest : $(CellHeaptest_objs)
 
 CellHeaptest.ts : CellHeaptest CellHeaptest.save
 	$(valgrind) ./$< > CellHeaptest.out
-	diff CellHeaptest.save CellHeaptest.out
+	diff $(srcdir)/CellHeaptest.save CellHeaptest.out
 	rm CellHeaptest.out
 	touch $@
 
@@ -167,7 +176,7 @@ CellPooltest : $(CellPooltest_objs)
 
 CellPooltest.ts : CellPooltest CellPooltest.save
 	$(valgrind) ./$< > CellPooltest.out
-	diff CellPooltest.save CellPooltest.out
+	diff $(srcdir)/CellPooltest.save CellPooltest.out
 	rm CellPooltest.out
 	touch $@
 
@@ -181,7 +190,7 @@ GCManagertest : $(GCManagertest_objs)
 
 GCManagertest.ts : GCManagertest GCManagertest.save
 	./$< > GCManagertest.out
-	grep -v '^#' GCManagertest.save | diff - GCManagertest.out
+	grep -v '^#' $(srcdir)/GCManagertest.save | diff - GCManagertest.out
 	rm GCManagertest.out
 	touch $@
 
@@ -204,7 +213,7 @@ HeterogeneousListtest : $(HeterogeneousListtest_objs)
 
 HeterogeneousListtest.ts : HeterogeneousListtest HeterogeneousListtest.save
 	./$< > HeterogeneousListtest.out
-	diff HeterogeneousListtest.save HeterogeneousListtest.out
+	diff $(srcdir)/HeterogeneousListtest.save HeterogeneousListtest.out
 	rm HeterogeneousListtest.out
 	touch $@
 
@@ -221,7 +230,7 @@ MemoryBanktest : $(MemoryBanktest_objs)
 
 MemoryBanktest.ts : MemoryBanktest MemoryBanktest.save
 	$(valgrind) ./$< 10 12 > MemoryBanktest.out
-	diff MemoryBanktest.save MemoryBanktest.out
+	diff $(srcdir)/MemoryBanktest.save MemoryBanktest.out
 	rm MemoryBanktest.out
 	touch $@
 
@@ -239,7 +248,7 @@ endif
 
 SETLENGTHtest.ts : SETLENGTHtest SETLENGTHtest.save
 	-./$< > SETLENGTHtest.out 2>&1
-	diff SETLENGTHtest.save SETLENGTHtest.out
+	diff $(srcdir)/SETLENGTHtest.save SETLENGTHtest.out
 	rm SETLENGTHtest.out
 	touch $@
 
@@ -252,7 +261,7 @@ splice_test : splice_test.o
 
 splice_test.ts : splice_test splice_test.save
 	./$< > splice_test.out
-	diff splice_test.save splice_test.out
+	diff $(srcdir)/splice_test.save splice_test.out
 	rm splice_test.out
 	touch $@
 

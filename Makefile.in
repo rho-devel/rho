@@ -36,10 +36,9 @@ config.status: $(srcdir)/configure
 # CXXR always rebuilds aclocal.m4 if autoconf needs to be run.  This
 # saves having to enumerate here all the m4 files as dependencies of
 # aclocal.m4
-$(srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(srcdir)/configure.ac $(CONFIGURE_DEPENDENCIES) acinclude.m4
-	BD=`pwd`; cd $(srcdir) \
-                  && $(ACLOCAL) --output=$${BD}/$@ -I $${BD} -I$(srcdir)/m4 \
-	          && $(AUTOCONF) -B $${BD}
+$(srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(srcdir)/configure.ac $(CONFIGURE_DEPENDENCIES) \
+                     $(srcdir)/acinclude.m4
+	cd $(srcdir) && $(ACLOCAL) -Im4 && $(AUTOCONF)
 
 LIBTOOL_DEPS = @LIBTOOL_DEPS@
 libtool: $(LIBTOOL_DEPS)
