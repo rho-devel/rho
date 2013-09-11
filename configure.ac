@@ -629,6 +629,7 @@ R_PROG_BROWSER
 R_PROG_PDFVIEWER
 ## Noweb
 AC_PATH_PROG(NOTANGLE, notangle, false)
+AM_CONDITIONAL(HAVE_NOTANGLE, "${NOTANGLE}" != "false")
 
 ## cairographics needs pkg-config
 AC_PATH_PROG(PKGCONF, pkg-config , [], 

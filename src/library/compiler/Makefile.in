@@ -29,7 +29,7 @@ all: Makefile DESCRIPTION @MAINTAINER_MODE_TRUE@ from-noweb
 
 NOTANGLE = @NOTANGLE@
 from-noweb: $(srcdir)/R/cmp.R
-$(srcdir)/R/cmp.R: $(srcdir)/noweb/compiler.nw
+$(srcdir)/R/cmp.R: @HAVE_NOTANGLE_TRUE@ $(srcdir)/noweb/compiler.nw
 	@echo "re-making 'R/cmp.R'"
 	@$(NOTANGLE) -Rcmp.R $(srcdir)/noweb/compiler.nw > $(srcdir)/R/cmp.R
 
