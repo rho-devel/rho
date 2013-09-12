@@ -190,6 +190,15 @@ namespace CXXR {
 	 */
 	static Set* descendants(const Set& roots);
 
+	/** @brief Formatted timestamp as a CXXR::String.
+	 *
+	 * @return pointer to a CXXR::String representing the
+	 * timestamp.  The formatting of this string is currently
+	 * locale-dependent.
+	 *
+	 * @deprecated This should instead use R's native date-time
+	 * classes.
+	 */
 	const String* getTime() const;
 
 	/** @brief Parents of this Provenance object.

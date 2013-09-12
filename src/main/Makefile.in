@@ -47,7 +47,7 @@ SOURCES_CXX = \
 	MemoryBank.cpp \
 	NodeStack.cpp \
         PairList.cpp Promise.cpp ProtectStack.cpp Provenance.cpp \
-	ProvenanceSet.cpp ProvenanceTracker.cpp \
+	ProvenanceTracker.cpp \
         RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
         RealVector.cpp Renviron.cpp ReturnBailout.cpp \
         S11nScope.cpp S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp \

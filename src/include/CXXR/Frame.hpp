@@ -403,6 +403,10 @@ namespace CXXR {
 				 const Binding&,
 				 std::ptrdiff_t> BindingRange;
 
+	/** @brief Function type for read and write monitors.
+	 *
+	 * See the documentation for setReadMonitor() and setWriteMonitor().
+	 */
 	typedef void (*monitor)(const Binding&);
 
 	Frame()
