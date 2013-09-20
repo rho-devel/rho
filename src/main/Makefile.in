@@ -158,7 +158,7 @@ R_bin_OBJECTS = Rmain.o ComplexVector.o IntVector.o LogicalVector.o \
 @BUILD_LTO_FALSE@@WANT_R_SHLIB_FALSE@R_bin_LDADD = libR.a $(EXTRA_LIBS)
 
 ## Linked against -lRblas becasue -lR is and otherwise ld complains.
-@WANT_R_SHLIB_TRUE@R_bin_LDADD = -L../../lib@R_ARCH@ -lR $(BOOST_LIBS) @BLAS_SHLIB_TRUE@-lRblas
+@WANT_R_SHLIB_TRUE@R_bin_LDADD = -L../../lib@R_ARCH@ -lR $(BOOST_LIBS) @LIBINTL@ @BLAS_SHLIB_TRUE@-lRblas
 @BUILD_LTO_FALSE@R_bin_DEPENDENCIES =@WANT_R_SHLIB_FALSE@ libR.a @USE_EXPORTFILES_TRUE@ $(top_builddir)/etc/R.exp
 
 libR_la = libR$(DYLIB_EXT)

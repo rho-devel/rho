@@ -38,8 +38,11 @@
  *
  * @brief Build configuration options specific to CXXR.
  *
- * These definitions may in due course be merged into the top-level
- * config.h.
+ * This file contains documentation and definitions of preprocessor
+ * variables that configure the behaviour of CXXR.  However, it
+ * excludes preprocessor variables that are controlled by options to
+ * the autoconf-generated <tt>configure</tt> script: for information
+ * on these see <tt>./configure --help</tt>.
  *
  * As distributed, this file represents a configuration suitable for
  * development, with numerous facilities enable for checking and
@@ -149,17 +152,11 @@
 #define NDEBUG
 #endif
 
-/** @def PROVENANCE_TRACKING
- *
- * @brief Enable provenance-tracking facilities.
- * @deprecated This option is now controllable in the global config.h
- *
- * By default, CXXR does not carry out provenance tracking.  Defining
- * PROVENANCE_TRACKING enables this facility.
+
+/* PROVENANCE_TRACKING is controlled by the
+ * --enable-provenance-tracking option to configure, and will be
+ * defined (or not) in config.h .
  */
-#ifdef DOXYGEN
-#define PROVENANCE_TRACKING
-#endif
 
 /** @def RARE_GC
  *

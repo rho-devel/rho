@@ -8,6 +8,7 @@ top_srcdir = @top_srcdir@
 
 top_builddir = ../..
 subdir = tests/CXXR
+R_HOME = $(top_builddir)
 
 include $(top_builddir)/Makeconf
 
@@ -15,7 +16,7 @@ maindir = $(top_srcdir)/src/main
 
 #ALL_CPPFLAGS = $(CPPFLAGS) -I../../include
 
-EXTRA_LIBS = $(BOOST_LIBS) $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS)  $(READLINE_LIBS) $(LIBS)
+EXTRA_LIBS = $(BOOST_LIBS) $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS)  $(READLINE_LIBS) $(LIBS) @LIBINTL@
 
 # Thanks to Jochen Laubrock for suggestions about the handling of
 # valgrind on non-Linux platforms.
