@@ -1226,7 +1226,7 @@ size_t ucstomb(char *s, const unsigned int wc)
 
     if(wc == 0) {*s = '\0'; return 1;}
 
-    memset(buf, 0, sizeof(buf));
+    memset(buf, 0, bufv.size());
     memset(wcs, 0, sizeof(wcs));
     wcs[0] = wc;
 
