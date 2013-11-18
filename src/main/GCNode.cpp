@@ -166,6 +166,7 @@ bool GCNode::check()
 
 void GCNode::cleanup()
 {
+    ProtectStack::restoreSize(0);
     sweep();
     GCManager::cleanup();
     ProtectStack::cleanup();
