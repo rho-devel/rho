@@ -117,7 +117,7 @@ namespace CXXR {
 	    memset(p, 0x55, bytes);
 #endif
 	    // Assumes sizeof(double) == 8:
-	    if (bytes > s_max_cell_size)
+	    if (use_new_directly(bytes))
 		::operator delete(p);
 	    else s_pools[s_pooltab[(bytes + 7) >> 3]].deallocate(p);
 	    --s_blocks_allocated;
@@ -156,7 +156,8 @@ namespace CXXR {
     private:
 	typedef CellPool Pool;
 	static const size_t s_num_pools = 10;
-	static const size_t s_max_cell_size;
+	// The size of allocation past which we use 'new' directly.
+	static const size_t s_alloc_threshold;
 	static size_t s_blocks_allocated;
 	static size_t s_bytes_allocated;
 	static Pool* s_pools;
@@ -175,6 +176,12 @@ namespace CXXR {
 
 	// Initialize the static data members:
 	static void initialize();
+
+	// We only use the pool for small allocations.  For larger ones we
+	// use 'new' and 'delete' directly.
+	static bool use_new_directly(size_t bytes) {
+	    return bytes >= s_alloc_threshold;
+	}
 
 	friend class SchwarzCounter<MemoryBank>;
     };
