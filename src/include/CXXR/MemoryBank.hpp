@@ -55,7 +55,7 @@ namespace CXXR {
      * defined, released memory blocks are filled with 0x55 bytes
      * (though some of these may be overwritten by data used for free
      * list management).  This can be useful to show up premature
-     * deallocation of memory block, especially if used in conjunction
+     * deallocation of memory blocks, especially if used in conjunction
      * with the CELLFIFO preprocessor variable documented in
      * config.hpp .
      */
@@ -117,7 +117,7 @@ namespace CXXR {
 	    memset(p, 0x55, bytes);
 #endif
 	    // Assumes sizeof(double) == 8:
-	    if (bytes > s_max_cell_size)
+	    if (bytes >= s_new_threshold)
 		::operator delete(p);
 	    else s_pools[s_pooltab[(bytes + 7) >> 3]].deallocate(p);
 	    --s_blocks_allocated;
@@ -156,7 +156,8 @@ namespace CXXR {
     private:
 	typedef CellPool Pool;
 	static const size_t s_num_pools = 10;
-	static const size_t s_max_cell_size;
+	// We use ::operator new directly for allocations at least this big:
+	static const size_t s_new_threshold;
 	static size_t s_blocks_allocated;
 	static size_t s_bytes_allocated;
 	static Pool* s_pools;

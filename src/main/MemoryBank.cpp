@@ -51,9 +51,9 @@ using namespace CXXR;
 // class CellPool with Valgrind client requests, but the result was
 // intolerably slow running.)
 #ifdef NO_CELLPOOLS
-const size_t MemoryBank::s_max_cell_size = 0;
+const size_t MemoryBank::s_new_threshold = 0;
 #else
-const size_t MemoryBank::s_max_cell_size = 192;
+const size_t MemoryBank::s_new_threshold = 193;
 #endif
 
 size_t MemoryBank::s_blocks_allocated = 0;
@@ -86,7 +86,7 @@ void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
     if (s_monitor && bytes >= s_monitor_threshold) s_monitor(bytes);
 #endif
     void* p;
-    if (bytes > s_max_cell_size)
+    if (bytes >= s_new_threshold)
 	p = ::operator new(bytes);
     else {
 	Pool& pool = s_pools[s_pooltab[(bytes + 7) >> 3]];

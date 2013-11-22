@@ -204,8 +204,9 @@ int attribute_hidden R_Newhashpjw(const char *s)
 
 SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
 {
-    Environment* enc = SEXP_downcast<Environment*>(enclos);
-    GCStackRoot<Frame> frame(CXXR_NEW(StdFrame(asInteger(size))));
+    int nsize = asInteger(size);
+    GCStackRoot<Environment> enc(SEXP_downcast<Environment*>(enclos));
+    GCStackRoot<Frame> frame(CXXR_NEW(StdFrame(nsize)));
     return CXXR_NEW(Environment(enc, frame));
 }
 
