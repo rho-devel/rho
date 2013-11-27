@@ -78,10 +78,10 @@ install install-strip:
 	@echo "Installing it would overwrite your installation of standard R;"
 	@echo "consequently, installation is currently disabled."
 	@false
-  
-CXXR-install CXXR-install-strip: installdirs svnonly
+
+CXXR-install: installdirs svnonly
 	@for d in $(SUBDIRS); do \
-	  (cd $${d} && $(MAKE) $@) || exit 1; \
+	  (cd $${d} && $(MAKE) install) || exit 1; \
 	done
 	@for f in $(INSTFILES); do \
 	  $(INSTALL_DATA) $(srcdir)/$${f} "$(DESTDIR)$(rhome)"; \

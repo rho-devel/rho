@@ -48,11 +48,9 @@
 ## Debugging and optimization options for the C compiler.
 ## Use this to specify CFLAGS for the version of the C compiler
 ## specified above.
-## If unspecified, defaults to '-g -O2' for gcc, 
-## and '-g' in all other cases except icc (for which see R-admin.html).
 # 2007/12/07 arr: this is obviously not the right place to specify
 # -fexceptions, but I don't know what is!
-CFLAGS="-fexceptions -g -O2"
+CFLAGS="-fexceptions ${CFLAGS}"
 
 ## Defines for C compilation.
 ## Use this to specify defines to be used in the compilation of R,
@@ -70,7 +68,7 @@ CFLAGS="-fexceptions -g -O2"
 ## If unset defaults to '-I/usr/local/include', with '-I/sw/include'
 ## prepended on systems using Fink with root '/sw'.
 ## CPPFLAGS=
-CPPFLAGS="-I/usr/local/include -I/opt/local/include"
+CPPFLAGS="-I/usr/local/include -I/opt/local/include ${CPPFLAGS}"
 
 ## The command which runs the FORTRAN 77 compiler.
 ## If this is not specified, a search is made for
@@ -156,7 +154,7 @@ CPPFLAGS="-I/usr/local/include -I/opt/local/include"
 ## On some Linux 64-bit systems its default is -L/usr/local/lib64.
 ## If LIBnn is set it defaults to -L/usr/local/$LIBnn.
 ## LDFLAGS=
-LDFLAGS="-L/usr/local/lib -L/opt/local/lib"
+LDFLAGS="-L/usr/local/lib -L/opt/local/lib ${LDFLAGS}"
 
 
 ## The command which runs the C++ compiler.  It not specified, configure
@@ -167,7 +165,7 @@ LDFLAGS="-L/usr/local/lib -L/opt/local/lib"
 
 ## Options for the C++ compiler.
 #CXXFLAGS="-g -O1 -std=c++98 -Wall"
-CXXFLAGS="-g -std=c++98 -Wall"
+CXXFLAGS="-g -std=c++98 -Wall ${CXXFLAGS}"
 
 ## Any special flags which must be used when compiling C++ code to be
 ## turned into a shared object.  If this variable is left unspecified

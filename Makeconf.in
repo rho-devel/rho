@@ -21,6 +21,7 @@ BUILDDIR_IS_SRCDIR = @BUILDDIR_IS_SRCDIR@
 BUILD_CC = @BUILD_CC@
 BUILD_R = @BUILD_R@
 CC = @CC@
+CXX = @CXX@
 # FIXME arr 2007/06/17: += conflicts with R coding standards
 CFLAGS += @CFLAGS@ @LTO@
 CXXFLAGS += @CXXFLAGS@ -Wno-attributes
