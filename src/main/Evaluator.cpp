@@ -31,6 +31,12 @@
 using namespace std;
 using namespace CXXR;
 
+namespace CXXR {
+    namespace ForceNonInline {
+	SEXP (*evalp)(SEXP, SEXP) = Rf_eval;
+    }
+}
+
 Rboolean R_Visible = TRUE;
 int R_interrupts_pending = 0;
 Rboolean R_interrupts_suspended = FALSE;
