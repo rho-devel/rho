@@ -41,7 +41,6 @@
 
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/PairList.h"
-#include "CXXR/Symbol.h"
 
 namespace CXXR {
     class DottedArgs;
@@ -258,12 +257,7 @@ namespace CXXR {
 	 * @todo This function probably ought to be fussier about what
 	 * it accepts as input.
 	 */
-	inline static const Symbol* tag2Symbol(const RObject* tag)
-	{
-	    return ((!tag || tag->sexptype() == SYMSXP)
-		    ? static_cast<const Symbol*>(tag)
-		    : coerceTag(tag));
-	}
+	static const Symbol* tag2Symbol(const RObject* tag);
 
 	/** @brief Wrap elements of the argument list in Promise
 	 * objects.

@@ -47,13 +47,13 @@
 #include <boost/serialization/nvp.hpp>
 
 #include "CXXR/GCNode.hpp"
-#include "CXXR/PairList.h"
 #include "CXXR/Provenance.hpp"
 #include "CXXR/Symbol.h"
 
 namespace CXXR {
     class Environment;
     class FunctionBase;
+    class PairList;
 
     /** @brief Mapping from Symbols to R objects.
      *

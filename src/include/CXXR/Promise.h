@@ -51,7 +51,6 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
 
-#include "CXXR/Expression.h"
 #include "CXXR/Environment.h"
 #include "CXXR/Symbol.h"
 

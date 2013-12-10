@@ -51,6 +51,7 @@
 
 #include "CXXR/Frame.hpp"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/PairList.h"
 #include "CXXR/Symbol.h"
 
 /** @def DETACH_LOCAL_FRAMES

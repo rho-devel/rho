@@ -42,6 +42,7 @@
 #define GCNODE_HPP
 
 #include <sstream>
+#include <vector>
 
 #include "CXXR/Allocator.hpp"
 #include "CXXR/HeterogeneousList.hpp"

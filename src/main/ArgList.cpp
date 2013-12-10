@@ -188,6 +188,13 @@ void ArgList::stripTags()
     }
 }
 	    
+const Symbol* ArgList::tag2Symbol(const RObject* tag)
+{
+    return ((!tag || tag->sexptype() == SYMSXP)
+	    ? static_cast<const Symbol*>(tag)
+	    : coerceTag(tag));
+}
+
 void ArgList::wrapInPromises(Environment* env)
 {
     if (m_status == PROMISED)

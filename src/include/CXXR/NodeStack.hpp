@@ -41,9 +41,12 @@
 #define NODESTACK_H 1
 
 #include <vector>
+#include "CXXR/GCNode.hpp"
 #include "CXXR/RObject.h"
 
 namespace CXXR {
+    class RObject;
+
     /** @brief Class implementing a stack of RObject*.
      *
      * This class is not intended for general use.  It is currently

@@ -50,11 +50,9 @@
 #include <boost/serialization/split_member.hpp>
 
 #include "CXXR/CommandChronicle.hpp"
-#include "CXXR/Expression.h"
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/RObject.h"
-#include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
 
 namespace CXXR {

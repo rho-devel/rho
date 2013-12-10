@@ -50,6 +50,7 @@
 #include <boost/math/special_functions/nonfinite_num_facets.hpp>
 
 #include "CXXR/Provenance.hpp"
+#include "CXXR/StdFrame.hpp"
 
 // So that BOOST_CLASS_EXPORT is visible:
 #include "CXXR/ListFrame.hpp"

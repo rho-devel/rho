@@ -49,6 +49,7 @@
 #include "CXXR/FunctionBase.h"
 #include "CXXR/ListFrame.hpp"
 #include "CXXR/StdFrame.hpp"
+#include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
 
 using namespace std;

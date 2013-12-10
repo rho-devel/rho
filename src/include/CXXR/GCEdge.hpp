@@ -41,7 +41,6 @@
 #define GCEDGE_HPP 1
 
 #include "CXXR/GCNode.hpp"
-#include "CXXR/GCStackRoot.hpp"
 
 namespace CXXR {
     class RObject;

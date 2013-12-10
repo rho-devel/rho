@@ -51,6 +51,7 @@
 #include "CXXR/FunctionContext.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/MemoryBank.hpp"
+#include "CXXR/StdFrame.hpp"
 
 #include <Defn.h>
 #include <R_ext/GraphicsEngine.h> /* GEDevDesc, GEgetDevice */

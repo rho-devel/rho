@@ -40,7 +40,6 @@
 #ifndef CLOSURECONTEXT_HPP
 #define CLOSURECONTEXT_HPP 1
 
-#include "CXXR/FunctionBase.h"
 #include "CXXR/FunctionContext.hpp"
 
 extern "C" {
@@ -50,6 +49,8 @@ extern "C" {
 }
 
 namespace CXXR {
+    class FunctionBase;
+
     /** @brief Context typically recording the call of a Closure.
      *
      * The normal use of a ClosureContext is to record the application
