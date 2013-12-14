@@ -1333,6 +1333,27 @@ void R_set_quick_method_check(R_stdGen_ptr_t value)
     quick_method_check_ptr = value;
 }
 
+RObject *call_function(Closure *func, PairList *args,
+		       Expression *call_expression, Environment *call_env,
+		       Rboolean promisedArgs) {
+    if(!promisedArgs) {
+	ArgList al(call_expression->tail(), ArgList::RAW);
+	al.wrapInPromises(call_env);
+	PairList* pargs = const_cast<PairList*>(al.list());
+	PairList *a, *b;
+	for (a = args, b = pargs;
+	     a != 0 && b != 0;
+	     a = a->tail(), b = b->tail())
+	    SET_PRVALUE(b->car(), a->car());
+	// Check for unequal list lengths:
+	if (a != 0 || b != 0)
+	    Rf_error(_("dispatch error"));
+	args = pargs;
+    }
+    ArgList al(args, ArgList::PROMISED);
+    return func->invoke(call_env, &al, call_expression);
+}
+
 /* try to dispatch the formal method for this primitive op, by calling
    the stored generic function corresponding to the op.	 Requires that
    the methods be set up to return a special object rather than trying
@@ -1378,22 +1399,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	if(Rf_isFunction(value)) {
 	    Closure* func = static_cast<Closure*>(value);
 	    // found a method, call it with promised args
-	    if(!promisedArgs) {
-		ArgList al(callx->tail(), ArgList::RAW);
-		al.wrapInPromises(callenv);
-		PairList* pargs = const_cast<PairList*>(al.list());
-		PairList *a, *b;
-		for (a = argspl, b = pargs;
-		     a != 0 && b != 0;
-		     a = a->tail(), b = b->tail())
-		    SET_PRVALUE(b->car(), a->car());
-		// Check for unequal list lengths:
-		if (a != 0 || b != 0)
-		    Rf_error(_("dispatch error"));
-		argspl = pargs;
-	    }
-	    ArgList al2(argspl, ArgList::PROMISED);
-	    value = func->invoke(callenv, &al2, callx);
+	    value = call_function(func, argspl, callx, callenv, promisedArgs);
 	    return std::make_pair(true, value);
 	}
 	// else, need to perform full method search
@@ -1406,22 +1412,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
     Closure* func = static_cast<Closure*>(fundef);
     // To do:  arrange for the setting to be restored in case of an
     // error in method search
-    if(!promisedArgs) {
-	ArgList al(callx->tail(), ArgList::RAW);
-	al.wrapInPromises(callenv);
-	PairList* pargs = const_cast<PairList*>(al.list());
-	PairList *a, *b;
-	for (a = argspl, b = pargs;
-	     a != 0 && b != 0;
-	     a = a->tail(), b = b->tail())
-	    SET_PRVALUE(b->car(), a->car());
-	// Check for unequal list lengths:
-	if (a != 0 || b != 0)
-	    Rf_error(_("dispatch error"));
-	argspl = pargs;
-    }
-    ArgList al3(argspl, ArgList::PROMISED);
-    value = func->invoke(callenv, &al3, callx);
+    value = call_function(func, argspl, callx, callenv, promisedArgs);
     prim_methods[offset] = current;
     if (value == deferred_default_object)
 	return std::pair<bool, SEXP>(false, 0);
