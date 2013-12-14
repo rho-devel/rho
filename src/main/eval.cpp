@@ -573,8 +573,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 	    = {DotdefinedSymbol, DotMethodSymbol, DottargetSymbol, 0};
 	for (const Symbol** symp = syms; *symp; ++symp) {
 	    const Frame::Binding* frombdg = fromf->binding(*symp);
-	    Frame::Binding* tobdg = tof->obtainBinding(*symp);
-	    tobdg->setValue(frombdg->unforcedValue());
+	    frombdg->copyIntoFrame(tof);
 	}
     }
 
@@ -586,8 +585,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 	for (const Symbol** symp = syms; *symp; ++symp) {
 	    const Frame::Binding* frombdg
 		= callenv->findBinding(*symp).second;
-	    Frame::Binding* tobdg = tof->obtainBinding(*symp);
-	    tobdg->setValue(frombdg->unforcedValue());
+	    frombdg->copyIntoFrame(tof);
 	}
     }
 

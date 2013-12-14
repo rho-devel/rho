@@ -362,6 +362,15 @@ namespace CXXR {
 	     */
 	    RObject* unforcedValue() const;
 
+	    /** @brief Insert a copy of this Binding in another Frame.
+	     *
+	     * Inserts a binding with the same Symbol and value in the specified
+	     * frame.  Retains active bindings and does not force promises.
+	     *
+	     * @param dest The frame to copy this binding into.
+	     */
+	    void copyIntoFrame(Frame *dest) const;
+
 	    /** @brief Auxiliary function to Frame::visitReferents().
 	     *
 	     * This function conducts a visitor to those objects

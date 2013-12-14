@@ -151,6 +151,12 @@ vector<const Symbol*> Frame::symbols(bool include_dotsymbols) const
 }
 
 // Frame::Binding::value() is defined in envir.cpp (for the time being).
+
+void Frame::Binding::copyIntoFrame(Frame *dest) const {
+    Binding *binding = dest->obtainBinding(m_symbol);
+    *binding = *this;
+    binding->m_frame = dest;
+}
 	
 void Frame::Binding::visitReferents(const_visitor* v) const
 {

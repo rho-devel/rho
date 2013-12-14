@@ -436,7 +436,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	Frame::Binding* bdg
 	    = nmcallenv->frame()->binding(DotGenericCallEnvSymbol);
 	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
-	    RObject* val = forceIfPromise(bdg->unforcedValue());
+	    RObject* val = bdg->forcedValue().first;
 	    gencallenv = SEXP_downcast<Environment*>(val);
 	}
     }
@@ -447,7 +447,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	Frame::Binding* bdg
 	    = nmcallenv->frame()->binding(DotGenericDefEnvSymbol);
 	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
-	    RObject* val = forceIfPromise(bdg->unforcedValue());
+	    RObject* val = bdg->forcedValue().first;
 	    gendefenv = SEXP_downcast<Environment*>(val);
 	}
     }
@@ -695,7 +695,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    Frame::Binding* bdg = callenv->findBinding(genericsym).second;
 	    if (!bdg)
 		Rf_error(_("no method to invoke"));
-	    RObject* nfval = forceIfPromise(bdg->unforcedValue());
+	    RObject* nfval = bdg->forcedValue().first;
 	    if (!nfval)
 		Rf_error(_("no method to invoke"));
 	    nextfun = dynamic_cast<FunctionBase*>(nfval);
