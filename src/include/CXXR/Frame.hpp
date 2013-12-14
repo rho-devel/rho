@@ -314,7 +314,7 @@ namespace CXXR {
 	    }
 
 #ifdef PROVENANCE_TRACKING
-	    /** @brief Set provenance object association with this binding
+	    /** @brief Set provenance object association with this binding.
 	     *
 	     * @param prov Pointer to Provenance object to associate with this
 	     * 		Binding.
@@ -336,7 +336,7 @@ namespace CXXR {
 	     *
 	     * @param origin Origin of the newly assigned value.
 	     *
-	     * @param quiet Don't trigger monitor
+	     * @param quiet Don't trigger monitor.
 	     */
 	    void setValue(RObject* new_value, Origin origin = EXPLICIT,
 	                  bool quiet = false);
@@ -362,15 +362,6 @@ namespace CXXR {
 	     */
 	    RObject* unforcedValue() const;
 
-	    /** @brief Insert a copy of this Binding in another Frame.
-	     *
-	     * Inserts a binding with the same Symbol and value in the specified
-	     * frame.  Retains active bindings and does not force promises.
-	     *
-	     * @param dest The frame to copy this binding into.
-	     */
-	    void copyIntoFrame(Frame *dest) const;
-
 	    /** @brief Auxiliary function to Frame::visitReferents().
 	     *
 	     * This function conducts a visitor to those objects
@@ -383,6 +374,7 @@ namespace CXXR {
 	    void visitReferents(const_visitor* v) const;
 	private:
 	    friend class boost::serialization::access;
+	    friend class Frame;
 
 	    Frame* m_frame;
 	    const Symbol* m_symbol;
@@ -656,6 +648,30 @@ namespace CXXR {
 	 * @return Pointer to the required Binding.
 	 */
 	Binding* obtainBinding(const Symbol* symbol);
+
+	/** @brief Import a Binding from another Frame into this one.
+	 *
+	 * Inserts a binding with the same Symbol, value and metadata as the
+	 * supplied binding into this frame.  Retains active bindings and does
+	 * not force promises.
+	 *
+	 * @param binding The binding to copy into this frame.
+	 */
+	void importBinding(const Binding *binding);
+
+	/** @brief Import a Binding from another Frame into this one.
+	 *
+	 * Inserts a binding with the same Symbol, value and metadata as the
+	 * specified binding into this frame.  Retains active bindings and does
+	 * not force promises.
+	 *
+	 * @param src_frame The Frame containing the Binding to import.
+	 *
+	 * @param symbol The Symbol of the Binding to import.
+	 */
+	inline void importBinding(const Frame *src_frame, const Symbol *symbol) {
+	    importBinding(src_frame->binding(symbol));
+	}
 
 	/** @brief Define function to monitor reading of Symbol values.
 	 *
