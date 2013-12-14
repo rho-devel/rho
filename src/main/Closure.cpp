@@ -162,7 +162,7 @@ RObject* Closure::invoke(Environment* env, const ArgList* arglist,
 		const Symbol* sym = mbbdg.symbol();
 		if (!newframe->binding(sym)) {
 		    Frame::Binding* nbdg = newframe->obtainBinding(sym);
-		    nbdg->setValue(mbbdg.value(), mbbdg.origin());
+		    nbdg->setValue(mbbdg.unforcedValue(), mbbdg.origin());
 		}
 	    }
 	    FunctionContext* fctxt = FunctionContext::innermost();

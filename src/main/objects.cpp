@@ -296,7 +296,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
 	// "generic":
 	{
-	    RObject* genval = matchenv->frame()->binding(genericsym)->value();
+	    RObject* genval = matchenv->frame()->binding(genericsym)->unforcedValue();
 	    if (genval == Symbol::missingArgument())
 		Rf_errorcall(call, _("there must be a 'generic' argument"));
 	    if (genval->sexptype() == STRSXP)
@@ -310,7 +310,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
 	// "object":
 	{
-	    RObject* objval = matchenv->frame()->binding(objectsym)->value();
+	    RObject* objval = matchenv->frame()->binding(objectsym)->unforcedValue();
 	    if (objval != Symbol::missingArgument())
 		obj = objval->evaluate(argsenv);
 	    else obj = GetObject(cptr);
@@ -436,7 +436,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	Frame::Binding* bdg
 	    = nmcallenv->frame()->binding(DotGenericCallEnvSymbol);
 	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
-	    RObject* val = forceIfPromise(bdg->value());
+	    RObject* val = forceIfPromise(bdg->unforcedValue());
 	    gencallenv = SEXP_downcast<Environment*>(val);
 	}
     }
@@ -447,7 +447,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	Frame::Binding* bdg
 	    = nmcallenv->frame()->binding(DotGenericDefEnvSymbol);
 	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
-	    RObject* val = forceIfPromise(bdg->value());
+	    RObject* val = forceIfPromise(bdg->unforcedValue());
 	    gendefenv = SEXP_downcast<Environment*>(val);
 	}
     }
@@ -570,7 +570,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	Frame::Binding* bdg = nmcallenv->frame()->binding(DotClassSymbol);
 	RObject* klassval;
 	if (bdg)
-	    klassval = bdg->value();
+	    klassval = bdg->unforcedValue();
 	else {
 	    RObject* s = GetObject(cptr);
 	    if (!s || !s->hasClass())
@@ -586,7 +586,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     {
 	Frame::Binding* bdg = nmcallenv->frame()->binding(DotGenericSymbol);
 	RObject* genval
-	    = (bdg ? bdg->value() : callargs->car()->evaluate(callenv));
+	    = (bdg ? bdg->unforcedValue() : callargs->car()->evaluate(callenv));
 	if (!genval)
 	    Rf_error(_("generic function not specified"));
 	if (genval->sexptype() == STRSXP)
@@ -604,7 +604,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     {
 	Frame::Binding* bdg = nmcallenv->frame()->binding(DotGroupSymbol);
 	if (bdg) {
-	    RObject* grpval = bdg->value();
+	    RObject* grpval = bdg->unforcedValue();
 	    if (grpval->sexptype() == STRSXP)
 		dotgroup = static_cast<StringVector*>(grpval);
 	    if (!dotgroup || dotgroup->size() != 1)
@@ -622,7 +622,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    Symbol* opsym = SEXP_downcast<Symbol*>(cptr->call()->car());
 	    currentmethodname = opsym->name()->stdstring();
 	} else {
-	    RObject* methval = bdg->value();
+	    RObject* methval = bdg->unforcedValue();
 	    if (!methval || methval->sexptype() != STRSXP)
 		Rf_error(_("wrong value for .Method"));
 	    dotmethod = static_cast<StringVector*>(methval);
@@ -695,7 +695,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    Frame::Binding* bdg = callenv->findBinding(genericsym).second;
 	    if (!bdg)
 		Rf_error(_("no method to invoke"));
-	    RObject* nfval = forceIfPromise(bdg->value());
+	    RObject* nfval = forceIfPromise(bdg->unforcedValue());
 	    if (!nfval)
 		Rf_error(_("no method to invoke"));
 	    nextfun = dynamic_cast<FunctionBase*>(nfval);
@@ -722,7 +722,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	Frame::Binding* bdg = callenv->frame()->binding(DotsSymbol);
 	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
 	    GCStackRoot<DottedArgs>
-		dots(SEXP_downcast<DottedArgs*>(bdg->value()));
+		dots(SEXP_downcast<DottedArgs*>(bdg->unforcedValue()));
 	    GCStackRoot<PairList> newargs(ConsCell::convert<PairList>(dots));
 	    newarglist.merge(newargs);
 	    newcall
@@ -1333,12 +1333,21 @@ void R_set_quick_method_check(R_stdGen_ptr_t value)
     quick_method_check_ptr = value;
 }
 
-RObject *call_function(Closure *func, PairList *args,
-		       Expression *call_expression, Environment *call_env,
-		       Rboolean promisedArgs) {
+static RObject *call_closure_from_prim(Closure *func, PairList *args,
+				       Expression *call_expression,
+				       Environment *call_env,
+				       Rboolean promisedArgs) {
     if(!promisedArgs) {
+	/* Because we call this from a primitive op, args either contains
+	 * promises or actual values.  In the later case, we create promises
+	 * that have already been forced to the value in args.
+	 *
+	 * TODO(kmillar): why is this necessary?  We should be able to pass
+	 * either the args or the unforced promises directly to the closure.
+	 */
 	ArgList al(call_expression->tail(), ArgList::RAW);
 	al.wrapInPromises(call_env);
+
 	PairList* pargs = const_cast<PairList*>(al.list());
 	PairList *a, *b;
 	for (a = args, b = pargs;
@@ -1399,7 +1408,8 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	if(Rf_isFunction(value)) {
 	    Closure* func = static_cast<Closure*>(value);
 	    // found a method, call it with promised args
-	    value = call_function(func, argspl, callx, callenv, promisedArgs);
+	    value = call_closure_from_prim(func, argspl, callx, callenv,
+					   promisedArgs);
 	    return std::make_pair(true, value);
 	}
 	// else, need to perform full method search
@@ -1412,7 +1422,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
     Closure* func = static_cast<Closure*>(fundef);
     // To do:  arrange for the setting to be restored in case of an
     // error in method search
-    value = call_function(func, argspl, callx, callenv, promisedArgs);
+    value = call_closure_from_prim(func, argspl, callx, callenv, promisedArgs);
     prim_methods[offset] = current;
     if (value == deferred_default_object)
 	return std::pair<bool, SEXP>(false, 0);

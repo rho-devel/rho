@@ -158,7 +158,7 @@ void Frame::Binding::assign(RObject* new_value, Origin origin)
     }
 }
 
-RObject* Frame::Binding::value() const
+RObject* Frame::Binding::unforcedValue() const
 {
     RObject* ans = (isActive() ? getActiveValue(m_value) : m_value);
     m_frame->monitorRead(*this);
@@ -323,7 +323,7 @@ R_varloc_t R_findVarLocInFrame(SEXP rho, SEXP symbol)
 
 SEXP R_GetVarLocValue(R_varloc_t vl)
 {
-    return vl->value();
+    return vl->unforcedValue();
 }
 
 SEXP R_GetVarLocSymbol(R_varloc_t vl)
@@ -368,7 +368,7 @@ SEXP findVarInFrame3(SEXP rho, SEXP symbol, Rboolean /*doGet*/)
     Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Frame::Binding* bdg = env->frame()->binding(sym);
     if (bdg)
-	return bdg->value();
+	return bdg->unforcedValue();
     // Reproduce the CR behaviour:
     if (sym == Symbol::missingArgument())
 	return sym;
@@ -400,7 +400,7 @@ SEXP findVar(SEXP symbol, SEXP rho)
     Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = static_cast<Environment*>(rho);
     Frame::Binding* bdg = env->findBinding(sym).second;
-    return (bdg ? bdg->value() : R_UnboundValue);
+    return (bdg ? bdg->unforcedValue() : R_UnboundValue);
 }
 
 
@@ -506,7 +506,7 @@ findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits,
 	if (!inherits)
 	    bdg = env->frame()->binding(sym);
 	else bdg = env->findBinding(sym).second;
-	return bdg ? bdg->value() : R_UnboundValue;
+	return bdg ? bdg->unforcedValue() : R_UnboundValue;
     }
     ModeTester modetest(mode);
     std::pair<bool, RObject*> pr = findTestedValue(sym, env, modetest, inherits);

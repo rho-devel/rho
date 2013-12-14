@@ -356,9 +356,11 @@ namespace CXXR {
 	     * function and returns the result rather than returning a
 	     * pointer to the encapsulated function itself.
 	     *
+	     * Does not force promises.
+	     *
 	     * @return The value bound to a Symbol by this Binding.
 	     */
-	    RObject* value() const;
+	    RObject* unforcedValue() const;
 
 	    /** @brief Auxiliary function to Frame::visitReferents().
 	     *

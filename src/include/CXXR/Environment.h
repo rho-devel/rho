@@ -1003,7 +1003,7 @@ extern "C" {
 	using namespace CXXR;
 	const Symbol* sym = SEXP_downcast<Symbol*>(x);
 	Frame::Binding* bdg = Environment::base()->frame()->binding(sym);
-	return bdg ? bdg->value() : Symbol::unboundValue();
+	return bdg ? bdg->unforcedValue() : Symbol::unboundValue();
     }
 #endif
 

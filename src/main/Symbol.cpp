@@ -122,7 +122,7 @@ RObject* Symbol::evaluate(Environment* env)
     else {
 	Frame::Binding* bdg = env->findBinding(this).second;
 	if (bdg)
-	    val = bdg->value();
+	    val = bdg->unforcedValue();
 	else if (this == missingArgument())
 	    val = this;  // This reproduces CR behaviour
 	else val = unboundValue();
