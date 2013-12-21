@@ -83,7 +83,7 @@ S3Launcher::findMethod(const Symbol* symbol, Environment* call_env,
 	Frame::Binding* tblbdg
 	    = table_env->frame()->binding(S3MethodsTableSymbol);
 	if (tblbdg) {
-	    RObject* tblbdgval = tblbdg->forcedValue().first;
+	    RObject* tblbdgval = tblbdg->forcedValue();
 	    if (tblbdgval && tblbdgval->sexptype() == ENVSXP)
 		table = static_cast<Environment*>(tblbdgval);
 	}
@@ -92,7 +92,7 @@ S3Launcher::findMethod(const Symbol* symbol, Environment* call_env,
     if (table) {
 	Frame::Binding* symbdg = table->frame()->binding(symbol);
 	if (symbdg) {
-	    RObject* symbdgval = symbdg->forcedValue().first;
+	    RObject* symbdgval = symbdg->forcedValue();
 	    // Assume that the result is a FunctionBase:
 	    return make_pair(static_cast<FunctionBase*>(symbdgval), false);
 	}

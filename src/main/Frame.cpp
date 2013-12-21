@@ -65,8 +65,13 @@ PairList* Frame::Binding::asPairList(PairList* tail) const
 
 // Frame::Binding::assign() is defined in envir.cpp (for the time being).
 	
+RObject* Frame::Binding::forcedValue()
+{
+    return forcedValue2().first;
+}
+
 pair<RObject*, bool>
-Frame::Binding::forcedValue()
+Frame::Binding::forcedValue2()
 {
     bool promise_forced = false;
     RObject* val = m_value;

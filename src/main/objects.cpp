@@ -88,7 +88,7 @@ static RObject* GetObject(ClosureContext *cptr)
 	Frame::Binding* bdg
 	    = cptr->workingEnvironment()->frame()->binding(formal1);
 	if (bdg->origin() != Frame::Binding::MISSING)
-	    return bdg->forcedValue().first;
+	    return bdg->forcedValue();
     }
 
     // If we reach this point, either there was no first formal
@@ -436,7 +436,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	Frame::Binding* bdg
 	    = nmcallenv->frame()->binding(DotGenericCallEnvSymbol);
 	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
-	    RObject* val = bdg->forcedValue().first;
+	    RObject* val = bdg->forcedValue();
 	    gencallenv = SEXP_downcast<Environment*>(val);
 	}
     }
@@ -447,7 +447,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	Frame::Binding* bdg
 	    = nmcallenv->frame()->binding(DotGenericDefEnvSymbol);
 	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
-	    RObject* val = bdg->forcedValue().first;
+	    RObject* val = bdg->forcedValue();
 	    gendefenv = SEXP_downcast<Environment*>(val);
 	}
     }
@@ -695,7 +695,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    Frame::Binding* bdg = callenv->findBinding(genericsym).second;
 	    if (!bdg)
 		Rf_error(_("no method to invoke"));
-	    RObject* nfval = bdg->forcedValue().first;
+	    RObject* nfval = bdg->forcedValue();
 	    if (!nfval)
 		Rf_error(_("no method to invoke"));
 	    nextfun = dynamic_cast<FunctionBase*>(nfval);

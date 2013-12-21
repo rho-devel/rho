@@ -165,6 +165,28 @@ namespace CXXR {
 	     * function forces the Promise if necessary, and returns a
 	     * pointer to the value of the Promise.
 	     *
+	     * @return A pointer - possibly null - to the bound value, or the
+	     * Promise value if the bound value is a Promise.
+	     *
+	     * @note If this Binding's frame has a read monitor set,
+	     * the function will call it only in the event that a
+	     * Promise is forced (and in that event the evaluation of
+	     * the Promise may trigger other read and write monitors).
+	     *
+	     * @note It is conceivable that forcing a Promise will
+	     * result in the destruction of this Binding object.
+	     */
+	    RObject* forcedValue();
+
+	    /** @brief Look up bound value, forcing Promises if
+	     * necessary.
+	     *
+	     * If the value of this Binding is anything other than a
+	     * Promise, this function returns a pointer to that bound
+	     * value.  However, if the value is a Promise, the
+	     * function forces the Promise if necessary, and returns a
+	     * pointer to the value of the Promise.
+	     *
 	     * @return The first element of the returned pair is a
 	     * pointer - possibly null - to the bound value, or the
 	     * Promise value if the bound value is a Promise.  The
@@ -179,7 +201,7 @@ namespace CXXR {
 	     * @note It is conceivable that forcing a Promise will
 	     * result in the destruction of this Binding object.
 	     */
-	    std::pair<RObject*, bool> forcedValue();
+	    std::pair<RObject*, bool> forcedValue2();
 
 	    /** @brief Get pointer to Frame.
 	     *

@@ -702,7 +702,7 @@ namespace CXXR {
 		bdg = pr.second;
 	    }
 	    if (bdg) {
-		pair<RObject*, bool> fpr = bdg->forcedValue();
+		pair<RObject*, bool> fpr = bdg->forcedValue2();
 		RObject* val = fpr.first;
 		found = pred(val);
 		if (found) {
