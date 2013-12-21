@@ -258,8 +258,7 @@ void ArgMatcher::propagateFormalBindings(const Environment* fromenv,
     // m_formal_data excludes '...', so:
     if (m_has_dots) {
 	const Frame::Binding* frombdg = fromf->binding(DotsSymbol);
-	Frame::Binding* tobdg = toenv->frame()->obtainBinding(DotsSymbol);
-	tobdg->setValue(frombdg->unforcedValue(), frombdg->origin());
+	toenv->frame()->importBinding(frombdg);
     }
 }
 	    

@@ -681,20 +681,6 @@ namespace CXXR {
 	 */
 	void importBinding(const Binding *binding);
 
-	/** @brief Import a Binding from another Frame into this one.
-	 *
-	 * Inserts a binding with the same Symbol, value and metadata as the
-	 * specified binding into this frame.  Retains active bindings and does
-	 * not force promises.
-	 *
-	 * @param src_frame The Frame containing the Binding to import.
-	 *
-	 * @param symbol The Symbol of the Binding to import.
-	 */
-	inline void importBinding(const Frame *src_frame, const Symbol *symbol) {
-	    importBinding(src_frame->binding(symbol));
-	}
-
 	/** @brief Define function to monitor reading of Symbol values.
 	 *
 	 * This function allows the user to define a function to be

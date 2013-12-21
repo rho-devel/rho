@@ -215,7 +215,7 @@ namespace {
 	     it != fmap.end(); ++it) {
 	    const Frame::Binding* bdg = (*it).second;
 	    string tag = bdg->symbol()->name()->stdstring();
-	    RObject* value = bdg->value();
+	    RObject* value = bdg->unforcedValue();
 	    cout << originString(bdg->origin()) << tag << " : ";
 	    showValue(value);
 	    cout << endl;

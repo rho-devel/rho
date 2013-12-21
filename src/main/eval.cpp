@@ -572,7 +572,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 	static const Symbol* syms[]
 	    = {DotdefinedSymbol, DotMethodSymbol, DottargetSymbol, 0};
 	for (const Symbol** symp = syms; *symp; ++symp) {
-	    tof->importBinding(fromf, *symp);
+	    tof->importBinding(fromf->binding(*symp));
 	}
     }
 
