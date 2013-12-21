@@ -296,7 +296,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
 	// "generic":
 	{
-	    RObject* genval = matchenv->frame()->binding(genericsym)->unforcedValue();
+	    RObject* genval = matchenv->frame()->binding(genericsym)->forcedValue();
 	    if (genval == Symbol::missingArgument())
 		Rf_errorcall(call, _("there must be a 'generic' argument"));
 	    if (genval->sexptype() == STRSXP)
@@ -310,7 +310,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
 	// "object":
 	{
-	    RObject* objval = matchenv->frame()->binding(objectsym)->unforcedValue();
+	    RObject* objval = matchenv->frame()->binding(objectsym)->forcedValue();
 	    if (objval != Symbol::missingArgument())
 		obj = objval->evaluate(argsenv);
 	    else obj = GetObject(cptr);
@@ -570,7 +570,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	Frame::Binding* bdg = nmcallenv->frame()->binding(DotClassSymbol);
 	RObject* klassval;
 	if (bdg)
-	    klassval = bdg->unforcedValue();
+	    klassval = bdg->forcedValue();
 	else {
 	    RObject* s = GetObject(cptr);
 	    if (!s || !s->hasClass())
@@ -586,7 +586,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     {
 	Frame::Binding* bdg = nmcallenv->frame()->binding(DotGenericSymbol);
 	RObject* genval
-	    = (bdg ? bdg->unforcedValue() : callargs->car()->evaluate(callenv));
+	    = (bdg ? bdg->forcedValue() : callargs->car()->evaluate(callenv));
 	if (!genval)
 	    Rf_error(_("generic function not specified"));
 	if (genval->sexptype() == STRSXP)
@@ -604,7 +604,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     {
 	Frame::Binding* bdg = nmcallenv->frame()->binding(DotGroupSymbol);
 	if (bdg) {
-	    RObject* grpval = bdg->unforcedValue();
+	    RObject* grpval = bdg->forcedValue();
 	    if (grpval->sexptype() == STRSXP)
 		dotgroup = static_cast<StringVector*>(grpval);
 	    if (!dotgroup || dotgroup->size() != 1)
@@ -622,7 +622,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    Symbol* opsym = SEXP_downcast<Symbol*>(cptr->call()->car());
 	    currentmethodname = opsym->name()->stdstring();
 	} else {
-	    RObject* methval = bdg->unforcedValue();
+	    RObject* methval = bdg->forcedValue();
 	    if (!methval || methval->sexptype() != STRSXP)
 		Rf_error(_("wrong value for .Method"));
 	    dotmethod = static_cast<StringVector*>(methval);
@@ -722,7 +722,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	Frame::Binding* bdg = callenv->frame()->binding(DotsSymbol);
 	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
 	    GCStackRoot<DottedArgs>
-		dots(SEXP_downcast<DottedArgs*>(bdg->unforcedValue()));
+		dots(SEXP_downcast<DottedArgs*>(bdg->forcedValue()));
 	    GCStackRoot<PairList> newargs(ConsCell::convert<PairList>(dots));
 	    newarglist.merge(newargs);
 	    newcall

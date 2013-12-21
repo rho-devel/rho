@@ -50,7 +50,7 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
 	    Frame::Binding* bdg = env->findBinding(CXXR::DotsSymbol).second;
 	    if (!bdg)
 		Rf_error(_("'...' used but not bound"));
-	    RObject* h = bdg->unforcedValue();
+	    RObject* h = bdg->forcedValue();
 	    if (!h || h->sexptype() == DOTSXP) {
 		ConsCell* dotlist = static_cast<DottedArgs*>(h);
 		while (dotlist) {
@@ -154,7 +154,7 @@ pair<bool, RObject*> ArgList::firstArg(Environment* env)
 	// If we get here it must be DotSymbol.
 	Frame::Binding* bdg = env->findBinding(DotsSymbol).second;
 	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
-	    RObject* val = bdg->unforcedValue();
+	    RObject* val = bdg->forcedValue();
 	    if (val) {
 		if (val->sexptype() != DOTSXP)
 		    Rf_error(_("'...' used in an incorrect context"));
@@ -214,7 +214,7 @@ void ArgList::wrapInPromises(Environment* env)
 	    pair<Environment*, Frame::Binding*> pr
 		= env->findBinding(DotsSymbol);
 	    if (pr.first) {
-		RObject* dval = pr.second->unforcedValue();
+		RObject* dval = pr.second->forcedValue();
 		if (!dval || dval->sexptype() == DOTSXP) {
 		    ConsCell* dotlist = static_cast<ConsCell*>(dval);
 		    while (dotlist) {
