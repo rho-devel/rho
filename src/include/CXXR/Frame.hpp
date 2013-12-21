@@ -678,8 +678,10 @@ namespace CXXR {
 	 * not force promises.
 	 *
 	 * @param binding The binding to copy into this frame.
+	 *
+	 * @param quiet Don't trigger monitor.
 	 */
-	void importBinding(const Binding *binding);
+	void importBinding(const Binding *binding, bool quiet = false);
 
 	/** @brief Define function to monitor reading of Symbol values.
 	 *

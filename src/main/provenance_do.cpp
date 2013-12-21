@@ -341,11 +341,7 @@ namespace {
 	for (Frame::BindingRange::const_iterator it = range.begin();
 	     it != range.end(); ++it) {
 	    const Frame::Binding& frombdg = *it;
-	    Frame::Binding* tobdg = to->obtainBinding(frombdg.symbol());
-#ifdef PROVENANCE_TRACKING
-	    tobdg->setProvenance(const_cast<Provenance*>(frombdg.provenance()));
-#endif
-	    tobdg->setValue(frombdg.rawValue(), frombdg.origin(), TRUE);
+	    to->importBinding(&frombdg, TRUE);
 	}
     }
 }

@@ -233,13 +233,14 @@ Frame::Binding* Frame::obtainBinding(const Symbol* symbol)
     return ans;
 }
 
-void Frame::importBinding(const Binding *binding) {
-    if (!binding)
+void Frame::importBinding(const Binding* binding_to_import, bool quiet) {
+    if (!binding_to_import)
 	return;
-    Binding *new_binding = obtainBinding(binding->symbol());
-    *new_binding = *binding;
+    Binding *new_binding = obtainBinding(binding_to_import->symbol());
+    *new_binding = *binding_to_import;
     new_binding->m_frame = this;
-    // TODO(kmillar): should this trigger any read or write monitors?
+    if (!quiet)
+	monitorWrite(new_binding);
 }
 	
 void Frame::visitReferents(const_visitor* v) const
