@@ -89,9 +89,24 @@ namespace CXXR {
 	 */
 	ClosureContext(const Expression* the_call, Environment* call_env,
 		       const FunctionBase* function, Environment* working_env,
-		       const PairList* promise_args);
+		       const PairList* promise_args)
+	    : FunctionContext(the_call, call_env, function),
+	      m_interrupts_suspended(R_interrupts_suspended),
+	      m_handlerstack(R_HandlerStack), m_restartstack(R_RestartStack),
+	      m_working_env(working_env), m_promise_args(promise_args)
+	{
+	    setType(CLOSURE);
+	}
 
-	~ClosureContext();
+
+	~ClosureContext() {
+	    R_RestartStack = m_restartstack;
+	    R_HandlerStack = m_handlerstack;
+	    if (m_onexit) {
+		runOnExit();
+	    }
+	    R_interrupts_suspended = m_interrupts_suspended;
+	}
 
 	/** @brief (Not for general use.)
 	 *
@@ -164,6 +179,8 @@ namespace CXXR {
 	    return m_working_env;
 	}
     private:
+	void runOnExit();
+
 	Rboolean m_interrupts_suspended;
 	GCStackRoot<> m_handlerstack;
 	GCStackRoot<> m_restartstack;
