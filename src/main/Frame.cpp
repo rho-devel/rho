@@ -240,7 +240,7 @@ void Frame::importBinding(const Binding* binding_to_import, bool quiet) {
     *new_binding = *binding_to_import;
     new_binding->m_frame = this;
     if (!quiet)
-	monitorWrite(new_binding);
+	monitorWrite(*new_binding);
 }
 	
 void Frame::visitReferents(const_visitor* v) const
