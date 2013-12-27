@@ -79,6 +79,7 @@ Frame::BindingRange ListFrame::bindingRange() const
 
 ListFrame* ListFrame::clone() const
 {
+    // FIXME: The bindings in the new frame have the wrong m_frame element.
     return expose(new ListFrame(*this));
 }
 

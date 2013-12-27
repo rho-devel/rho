@@ -94,6 +94,7 @@ Frame::BindingRange StdFrame::bindingRange() const
 
 StdFrame* StdFrame::clone() const
 {
+    // FIXME: The bindings in the new frame have the wrong m_frame element.
     return expose(new StdFrame(*this));
 }
 
