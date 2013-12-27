@@ -87,7 +87,7 @@ namespace CXXR {
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
 	 */
-	FixedVector(std::size_t sz)
+	explicit FixedVector(std::size_t sz)
 	    : VectorBase(ST, sz), m_data(singleton())
 	{
 	    if (sz > 1)
