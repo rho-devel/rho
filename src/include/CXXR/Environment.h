@@ -169,7 +169,7 @@ namespace CXXR {
 	 */
 	Environment(Environment* enclosing, Frame* frame)
 	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(frame),
-	      m_single_stepping(false), m_locked(false), m_cached(false),
+	      m_single_stepping(false), m_locked(false), m_on_search_path(false),
 	      m_leaked(false), m_in_loop(false), m_can_return(false)
 	{}
 
@@ -523,7 +523,7 @@ namespace CXXR {
 							  EBPair> >
 	                        > Cache;
 
-	static Cache* s_cache;
+	static Cache* s_search_path_cache;
 
 	// Predefined environments:
 	static Environment* s_base;
@@ -535,7 +535,7 @@ namespace CXXR {
 	GCEdge<Frame> m_frame;
 	bool m_single_stepping;
 	bool m_locked;
-	bool m_cached;
+	bool m_on_search_path;
 	// For local environments, m_leaked is set to true to signify
 	// that the environment may continue to be reachable after the
 	// return of the Closure call that created it.  It has no
@@ -553,7 +553,7 @@ namespace CXXR {
 	// created only using 'new':
 	~Environment()
 	{
-	    if (m_cached && m_frame)
+	    if (m_on_search_path && m_frame)
 		m_frame->decCacheCount();
 	}
 
@@ -561,13 +561,13 @@ namespace CXXR {
 
 	void detachFrame();
 
-	// Remove any mapping of 'sym' from the cache.  If called with
-	// a null pointer, clear the cache entirely.
-	static void flushFromCache(const Symbol* sym);
+	// Remove any mapping of 'sym' from the search path cache.  If called
+        // with a null pointer, clear the cache entirely.
+	static void flushFromSearchPathCache(const Symbol* sym);
 
 	static void initialize();
 
-	bool isCachePortal() const
+	bool isSearchPathCachePortal() const
 	{
 	    return (this == s_global);
 	}

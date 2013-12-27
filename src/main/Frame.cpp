@@ -216,7 +216,7 @@ void Frame::enableWriteMonitoring(bool on) const
 
 void Frame::flush(const Symbol* sym)
 {
-    Environment::flushFromCache(sym);
+    Environment::flushFromSearchPathCache(sym);
 }
 
 Frame::Binding* Frame::obtainBinding(const Symbol* symbol)

@@ -75,7 +75,7 @@ namespace {
     const unsigned int GLOBAL_FRAME_MASK = 1<<15;
 }
 
-Environment::Cache* Environment::s_cache;
+Environment::Cache* Environment::s_search_path_cache;
 Environment* Environment::s_base;
 Environment* Environment::s_base_namespace;
 Environment* Environment::s_empty;
@@ -101,12 +101,12 @@ void Environment::LeakMonitor::operator()(const GCNode* node)
 
 void Environment::cleanup()
 {
-    delete s_cache;
+    delete s_search_path_cache;
 }
 
 void Environment::detachFrame()
 {
-    if (m_cached && m_frame)
+    if (m_on_search_path && m_frame)
 	m_frame->decCacheCount();
     m_frame = 0;
 }
@@ -114,7 +114,7 @@ void Environment::detachFrame()
 void Environment::detachReferents()
 {
     m_enclosing.detach();
-    if (m_cached && m_frame)
+    if (m_on_search_path && m_frame)
 	m_frame->decCacheCount();
     m_frame.detach();
     RObject::detachReferents();
@@ -132,9 +132,9 @@ Environment::findBinding(const Symbol* symbol)
     EBPair cachepr(0, 0);
 #endif
     while (env) {
-	if (env->isCachePortal()) {
-	    Cache::iterator it = s_cache->find(symbol);
-	    if (it == s_cache->end())
+	if (env->isSearchPathCachePortal()) {
+	    Cache::iterator it = s_search_path_cache->find(symbol);
+	    if (it == s_search_path_cache->end())
 		cache_miss = true;
 #ifdef CHECK_CACHE
 	    else cachepr = (*it).second;
@@ -150,7 +150,7 @@ Environment::findBinding(const Symbol* symbol)
 		abort();
 #endif
 	    if (cache_miss)
-		(*s_cache)[symbol] = ans;
+		(*s_search_path_cache)[symbol] = ans;
 	    return ans;
 	}
 	env = env->enclosingEnvironment();
@@ -162,15 +162,15 @@ Environment::findBinding(const Symbol* symbol)
 
 // Environment::findPackage() is in envir.cpp
 
-void Environment::flushFromCache(const Symbol* sym)
+void Environment::flushFromSearchPathCache(const Symbol* sym)
 {
     if (sym)
-	s_cache->erase(sym);
+	s_search_path_cache->erase(sym);
     else {
 	// Clear the cache, but retain the current number of buckets:
-	size_t buckets = s_cache->bucket_count();
-	s_cache->clear();
-	s_cache->rehash(buckets);
+	size_t buckets = s_search_path_cache->bucket_count();
+	s_search_path_cache->clear();
+	s_search_path_cache->rehash(buckets);
     }
 }
 
@@ -178,8 +178,8 @@ void Environment::initialize()
 {
     // 509 is largest prime <= 512.  This will have capacity for 254
     // Symbols at load factor 0.5.
-    s_cache = new Cache(509);
-    s_cache->max_load_factor(0.5);
+    s_search_path_cache = new Cache(509);
+    s_search_path_cache->max_load_factor(0.5);
     GCStackRoot<Frame> empty_frame(CXXR_NEW(ListFrame));
     static GCRoot<Environment> empty_env(CXXR_NEW(Environment(0, empty_frame)));
     s_empty = empty_env.get();
@@ -204,9 +204,9 @@ void Environment::initialize()
 
 void Environment::makeCached()
 {
-    if (!m_cached && m_frame)
+    if (!m_on_search_path && m_frame)
 	m_frame->incCacheCount();
-    m_cached = true;
+    m_on_search_path = true;
 }
 
 // Environment::namespaceSpec() is in envir.cpp
@@ -232,13 +232,13 @@ void  Environment::setEnclosingEnvironment(Environment* new_enclos)
 {
     m_enclosing = new_enclos;
     // Recursively propagate participation in search list cache:
-    if (m_cached) {
+    if (m_on_search_path) {
 	Environment* env = m_enclosing;
-	while (env && !env->m_cached) {
+	while (env && !env->m_on_search_path) {
 	    env->makeCached();
 	    env = env->m_enclosing;
 	}
-	flushFromCache(0);
+	flushFromSearchPathCache(0);
     }
 }
 
@@ -246,8 +246,8 @@ void Environment::skipEnclosing()
 {
     if (!m_enclosing)
 	Rf_error(_("this Environment has no enclosing Environment."));
-    if (m_enclosing->m_cached)
-	flushFromCache(0);
+    if (m_enclosing->m_on_search_path)
+	flushFromSearchPathCache(0);
     m_enclosing = m_enclosing->m_enclosing;
 }
 
@@ -256,9 +256,9 @@ void Environment::slotBehind(Environment* anchor)
     if (!anchor || anchor == this)
 	Rf_error("internal error in Environment::slotBehind()");
     // Propagate participation in search list cache:
-    if (anchor->m_cached) {
+    if (anchor->m_on_search_path) {
 	makeCached();
-	flushFromCache(0);
+	flushFromSearchPathCache(0);
     }
     m_enclosing = anchor->m_enclosing;
     anchor->m_enclosing = this;
