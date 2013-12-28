@@ -683,8 +683,8 @@ namespace CXXR {
 			bdg->rawValue();
 		    return val;
 		}
-		env = env->enclosingEnvironment();
 	    }
+            env = env->enclosingEnvironment();
 	} while (inherits && env);
 	return NULL;
     }
