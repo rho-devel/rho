@@ -447,32 +447,23 @@ namespace CXXR {
 	    return m_single_stepping;
 	}
 
-	/** @brief Interpolate this Environment between a given
-	 * Environment and its enclosing Environment.
+        /** @brief Attach a copy of this environment to the search path.
 	 *
-	 * This causes this Environment T to be interpolated between
-	 * \a anchor and the current enclosing Environment of \a
-	 * anchor.  Suppose that prior to the call E (possibly null)
-	 * is the enclosing Environment of \a anchor.  Then after the
-	 * call, E will be the enclosing Environment of T, and T will
-	 * be the enclosing Environment of \a anchor.
+	 * @param pos The position in the search list to attach to.
 	 *
-	 * @param anchor Pointer to the Environment 'behind' which this
-	 *          Environment is to be interpolated.  Must not
-	 *          be a null pointer.
+	 * @param name The name to used for the attached environment.
+	 *
+	 * @return The environment that was attached.
 	 */
-	void slotBehind(Environment* anchor);
+	Environment* attachToSearchPath(int pos, StringVector* name);
 
-	/** @brief Grandparent becomes parent.
+	/** @brief Detach an element from the search path.
 	 *
-	 * Suppose that prior to the call, E is the enclosing
-	 * Environment of this Environment (it is an error for E to be
-	 * null), and that EE (possibly null) is the enclosing
-	 * Environment of E.  Then after the call EE will be the
-	 * enclosing Environment both of this Environment and of E.
-	 * (However, this change may expose E to garbage collection.)
+	 * @param pos The position in the search list to detach.
+	 *
+	 * @return The environment that was detached.
 	 */
-	void skipEnclosing();
+	static Environment* detachFromSearchPath(int pos);
 	    
 	/** @brief The name by which this type is known in R.
 	 *
@@ -575,9 +566,9 @@ namespace CXXR {
 	template<class Archive>
 	void load(Archive& ar, const unsigned int version);
 
-	// Designate this Environment as a participant in the search
+	// Set whether or not this Environment is a participant in the search
 	// list cache:
-	void makeCached();
+        void setOnSearchPath(bool status);
 
 	// Warn about package possibly not being available when
 	// loading, and extract package name.

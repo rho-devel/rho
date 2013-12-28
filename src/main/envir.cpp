@@ -1199,18 +1199,18 @@ SEXP attribute_hidden do_emptyenv(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP name, x;
-    int pos;
-    GCStackRoot<Environment> newenv;
+    SEXP x;
+    GCStackRoot<Environment> env_to_attach;
 
     checkArity(op, args);
 
-    pos = asInteger(CADR(args));
+    int pos = asInteger(CADR(args));
     if (pos == NA_INTEGER)
 	error(_("'pos' must be an integer"));
-    name = CADDR(args);
-    if (!isValidStringF(name))
+
+    if (!isValidStringF(CADDR(args)))
 	error(_("invalid '%s' argument"), "name");
+    StringVector* name = SEXP_downcast<StringVector*>(CADDR(args));
 
     if (isNewList(CAR(args))) {
 	SETCAR(args, VectorToPairList(CAR(args)));
@@ -1219,37 +1219,17 @@ SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (TAG(x) == R_NilValue)
 		error(_("all elements of a list must be named"));
 	GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
-	newenv = CXXR_NEW(Environment(0, frame));
+	GCStackRoot<Environment> newenv(CXXR_NEW(Environment(0, frame)));
 	GCStackRoot<PairList> dupcar(static_cast<PairList*>(duplicate(CAR(args))));
 	frameReadPairList(newenv->frame(), dupcar);
+	env_to_attach = newenv;
     } else if (isEnvironment(CAR(args))) {
-	SEXP p, loadenv = CAR(args);
-
-	GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
-	newenv = CXXR_NEW(Environment(0, frame));
-	GCStackRoot<> framelist(FRAME(loadenv));
-	for(p = framelist; p != R_NilValue; p = CDR(p))
-	    defineVar(TAG(p), duplicate(CAR(p)), newenv);
+	env_to_attach = SEXP_downcast<Environment*>(CAR(args));
     } else {
 	error(_("'attach' only works for lists, data frames and environments"));
-	newenv = R_NilValue; /* -Wall */
     }
-
-    setAttrib(newenv, install("name"), name);
-
-    // Interpolate the new environment into the chain of enclosing environments:
-    {
-	Environment* anchor = Environment::global();
-	while (anchor->enclosingEnvironment() != Environment::base()
-	       && pos > 2) {
-	    anchor = anchor->enclosingEnvironment();
-	    --pos;
-	}
-	newenv->slotBehind(anchor);
-    }
-    return newenv;
+    return env_to_attach->attachToSearchPath(pos, name);
 }
-
 
 
 /*----------------------------------------------------------------------
@@ -1263,31 +1243,10 @@ SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 
 SEXP attribute_hidden do_detach(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    GCStackRoot<> s;
-    SEXP t;
-    int pos, n;
-
     checkArity(op, args);
-    pos = asInteger(CAR(args));
+    int pos = asInteger(CAR(args));
 
-    for (n = 2, t = ENCLOS(R_GlobalEnv); t != R_BaseEnv; t = ENCLOS(t))
-	n++;
-
-    if (pos == n) /* n is the length of the search list */
-	error(_("detaching \"package:base\" is not allowed"));
-
-    for (t = R_GlobalEnv ; ENCLOS(t) != R_BaseEnv && pos > 2 ; t = ENCLOS(t))
-	pos--;
-    if (pos != 2) {
-	error(_("invalid '%s' argument"), "pos");
-	s = t;	/* for -Wall */
-    }
-    else {
-	Environment* tenv = static_cast<Environment*>(t);
-	s = tenv->enclosingEnvironment();
-	tenv->skipEnclosing();
-    }
-    return s;
+    return Environment::detachFromSearchPath(pos);
 }
 
 

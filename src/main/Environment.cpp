@@ -102,20 +102,19 @@ void Environment::LeakMonitor::operator()(const GCNode* node)
 void Environment::cleanup()
 {
     delete s_search_path_cache;
+    s_search_path_cache = 0;
 }
 
 void Environment::detachFrame()
 {
-    if (m_on_search_path && m_frame)
-	m_frame->decCacheCount();
+    setOnSearchPath(false);
     m_frame = 0;
 }
 
 void Environment::detachReferents()
 {
+    setOnSearchPath(false);
     m_enclosing.detach();
-    if (m_on_search_path && m_frame)
-	m_frame->decCacheCount();
     m_frame.detach();
     RObject::detachReferents();
 }
@@ -164,6 +163,9 @@ Environment::findBinding(const Symbol* symbol)
 
 void Environment::flushFromSearchPathCache(const Symbol* sym)
 {
+    if (!s_search_path_cache)
+	return;
+
     if (sym)
 	s_search_path_cache->erase(sym);
     else {
@@ -188,13 +190,13 @@ void Environment::initialize()
     static GCRoot<Environment>
 	base_env(CXXR_NEW(Environment(empty_env, base_frame)));
     s_base = base_env.get();
-    s_base->makeCached();
+    s_base->setOnSearchPath(true);
     R_BaseEnv = s_base;
     GCStackRoot<Frame> global_frame(CXXR_NEW(StdFrame));
     static GCRoot<Environment>
 	global_env(CXXR_NEW(Environment(s_base, global_frame)));
     s_global = global_env.get();
-    s_global->makeCached();
+    s_base->setOnSearchPath(true);
     R_GlobalEnv = s_global;
     static GCRoot<Environment>
 	base_namespace(CXXR_NEW(Environment(s_global, s_base->frame())));
@@ -202,11 +204,23 @@ void Environment::initialize()
     R_BaseNamespace = s_base_namespace;
 }
 
-void Environment::makeCached()
-{
-    if (!m_on_search_path && m_frame)
+void Environment::setOnSearchPath(bool status) {
+    if (status == m_on_search_path)
+	return;
+
+    if (status)
 	m_frame->incCacheCount();
-    m_on_search_path = true;
+    else
+	m_frame->decCacheCount();
+
+    m_on_search_path = status;
+
+    // Invalidate cache entries.
+    std::vector<const Symbol*> symbols = frame()->symbols(true);
+    for (std::vector<const Symbol*>::const_iterator symbol = symbols.begin();
+	 symbol != symbols.end(); ++symbol) {
+	flushFromSearchPathCache(*symbol);
+    }
 }
 
 // Environment::namespaceSpec() is in envir.cpp
@@ -235,33 +249,56 @@ void  Environment::setEnclosingEnvironment(Environment* new_enclos)
     if (m_on_search_path) {
 	Environment* env = m_enclosing;
 	while (env && !env->m_on_search_path) {
-	    env->makeCached();
+	    env->setOnSearchPath(true);
 	    env = env->m_enclosing;
 	}
-	flushFromSearchPathCache(0);
     }
 }
 
-void Environment::skipEnclosing()
+Environment* Environment::attachToSearchPath(int pos, StringVector* name)
 {
-    if (!m_enclosing)
-	Rf_error(_("this Environment has no enclosing Environment."));
-    if (m_enclosing->m_on_search_path)
-	flushFromSearchPathCache(0);
-    m_enclosing = m_enclosing->m_enclosing;
+    // Duplicate the environment.
+    GCStackRoot<Frame> frame(static_cast<Frame*>(m_frame->clone()));
+    GCStackRoot<Environment> new_env(expose(new Environment(0, frame)));
+    new_env->setAttribute(NameSymbol, name);
+
+    // Iterate through the search path to the environment just before where we
+    // want to insert.
+    // This will be either pos - 1 or the environment prior to base().
+    Environment* where = global();
+    for (int n = 1; n < pos - 1 && where->enclosingEnvironment() != base(); n++)
+	where = where->enclosingEnvironment();
+
+    // Insert the new environment after where.
+    new_env->m_enclosing = where->m_enclosing;
+    where->m_enclosing = new_env;
+    new_env->setOnSearchPath(true);
+
+    return new_env;
 }
 
-void Environment::slotBehind(Environment* anchor)
-{
-    if (!anchor || anchor == this)
-	Rf_error("internal error in Environment::slotBehind()");
-    // Propagate participation in search list cache:
-    if (anchor->m_on_search_path) {
-	makeCached();
-	flushFromSearchPathCache(0);
-    }
-    m_enclosing = anchor->m_enclosing;
-    anchor->m_enclosing = this;
+Environment* Environment::detachFromSearchPath(int pos) {
+    if (pos == 1)
+	error(_("invalid '%s' argument"), "pos");
+
+    // Iterate through the search path to the environment just before where we
+    // want to detach.
+    Environment* where = global();
+    for (int n = 1; n < pos - 1 && where->enclosingEnvironment() != empty(); n++)
+	where = where->enclosingEnvironment();
+
+    Environment *env_to_detach = where->enclosingEnvironment();
+    if (env_to_detach == base())
+	error(_("detaching \"package:base\" is not allowed"));
+    if (env_to_detach == empty())
+	error(_("invalid '%s' argument"), "pos");
+
+    // Detach the environment after where.
+    where->m_enclosing = env_to_detach->m_enclosing;
+    env_to_detach->m_enclosing = 0;
+    env_to_detach->setOnSearchPath(false);
+
+    return env_to_detach;
 }
 
 const char* Environment::typeName() const
