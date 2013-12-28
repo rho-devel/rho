@@ -84,7 +84,7 @@ SEXP attribute_hidden do_castestfun(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
 	Environment* env=static_cast<Environment*>(rho);
 	// Let's try to get the binding for given symbol...
-	Frame::Binding* binding = env->findBinding(sym).second;
+	Frame::Binding* binding = env->findBinding(sym);
 	if (binding!=NULL)
 		printf("Binding located :-)\n");
 	GCStackRoot<IntVector> inv(GCNode::expose(new IntVector(3)));
@@ -120,7 +120,7 @@ SEXP attribute_hidden do_hasProvenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 #ifdef PROVENANCE_TRACKING
     Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
     Environment* env=static_cast<Environment*>(rho);
-    Frame::Binding* bdg = env->findBinding(sym).second;
+    Frame::Binding* bdg = env->findBinding(sym);
     (*v)[0] = (bdg->provenance() != 0);
 #else
     (*v)[0] = false;
@@ -143,7 +143,7 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call,_("provenance expects Symbol argument"));
     Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
     Environment* env=static_cast<Environment*>(rho);
-    Frame::Binding* bdg = env->findBinding(sym).second;
+    Frame::Binding* bdg = env->findBinding(sym);
     if (!bdg)
 	errorcall(call,_("invalid Symbol passed to 'provenance'"));
     Provenance* provenance=const_cast<Provenance*>(bdg->provenance());
@@ -213,7 +213,7 @@ SEXP attribute_hidden do_provCommand (SEXP call, SEXP op, SEXP args, SEXP rho)
 
     Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
     Environment* env=static_cast<Environment*>(rho);
-    Frame::Binding* bdg = env->findBinding(sym).second;
+    Frame::Binding* bdg = env->findBinding(sym);
     return const_cast<RObject*>(bdg->provenance()->command());
 #endif  // PROVENANCE_TRACKING
 }
@@ -239,7 +239,7 @@ do_provenance_graph(SEXP call, SEXP op, SEXP args, SEXP rho)
     for (size_t i = 0; i < sv->size(); i++) {
 	const char* name = (*sv)[i]->c_str();
 	Symbol* sym = Symbol::obtain(name);
-	Frame::Binding* bdg = env->findBinding(sym).second;
+	Frame::Binding* bdg = env->findBinding(sym);
 	if (!bdg)
 	    Rf_error(_("symbol '%s' not found"), name);
 	else {

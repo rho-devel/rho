@@ -120,7 +120,7 @@ RObject* Symbol::evaluate(Environment* env)
     if (isDotDotSymbol())
 	val = Rf_ddfindVar(this, env);
     else {
-	Frame::Binding* bdg = env->findBinding(this).second;
+	Frame::Binding* bdg = env->findBinding(this);
 	if (bdg)
 	    val = bdg->unforcedValue();
 	else if (this == missingArgument())

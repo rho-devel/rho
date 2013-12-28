@@ -398,7 +398,7 @@ SEXP findVar(SEXP symbol, SEXP rho)
 
     Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = static_cast<Environment*>(rho);
-    Frame::Binding* bdg = env->findBinding(sym).second;
+    Frame::Binding* bdg = env->findBinding(sym);
     return (bdg ? bdg->unforcedValue() : R_UnboundValue);
 }
 
@@ -447,8 +447,8 @@ findVar1(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits)
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
     TypeTester typetest(mode);
-    std::pair<bool, RObject*> pr = findTestedValue(sym, env, typetest, inherits);
-    return (pr.first ? pr.second : R_UnboundValue);
+    RObject* value = findTestedValue(sym, env, typetest, inherits);
+    return (value ? value : R_UnboundValue);
 }
 
 /*
@@ -504,12 +504,12 @@ findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits,
 	Frame::Binding* bdg;
 	if (!inherits)
 	    bdg = env->frame()->binding(sym);
-	else bdg = env->findBinding(sym).second;
+	else bdg = env->findBinding(sym);
 	return bdg ? bdg->unforcedValue() : R_UnboundValue;
     }
     ModeTester modetest(mode);
-    std::pair<bool, RObject*> pr = findTestedValue(sym, env, modetest, inherits);
-    return (pr.first ? pr.second : R_UnboundValue);
+    RObject* value = findTestedValue(sym, env, modetest, inherits);
+    return (value ? value : R_UnboundValue);
 }
 
 
@@ -609,9 +609,9 @@ SEXP findFun(SEXP symbol, SEXP rho)
 {
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
-    std::pair<Environment*, FunctionBase*> pr = findFunction(sym, env);
-    if (pr.first)
-	return pr.second;
+    FunctionBase* fun = findFunction(sym, env);
+    if (fun)
+	return fun;
     error(_("could not find function \"%s\""), sym->name()->c_str());
     /* NOT REACHED */
     return R_UnboundValue;
@@ -659,12 +659,9 @@ void setVar(SEXP symbol, SEXP value, SEXP rho)
 {
     Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
-    std::pair<Environment*, Frame::Binding*> pr = env->findBinding(sym);
-    Frame::Binding* bdg = pr.second;
-    env = pr.first;
-    if (!env) {
-	env = Environment::global();
-	bdg = env->frame()->obtainBinding(sym);
+    Frame::Binding* bdg = env->findBinding(sym);
+    if (!bdg) {
+	bdg = Environment::global()->frame()->obtainBinding(sym);
     }
     bdg->assign(value);
 }

@@ -122,13 +122,12 @@ void Environment::detachReferents()
 // Define the preprocessor variable CHECK_CACHE to verify that the
 // search list cache is delivering correct results.
 
-pair<Environment*, Frame::Binding*>
-Environment::findBinding(const Symbol* symbol)
+Frame::Binding* Environment::findBinding(const Symbol* symbol)
 {
     bool cache_miss = false;
     Environment* env = this;
 #ifdef CHECK_CACHE
-    EBPair cachepr(0, 0);
+    Frame::Binding cache_binding = 0;
 #endif
     while (env) {
 	if (env->isSearchPathCachePortal()) {
@@ -136,25 +135,24 @@ Environment::findBinding(const Symbol* symbol)
 	    if (it == s_search_path_cache->end())
 		cache_miss = true;
 #ifdef CHECK_CACHE
-	    else cachepr = (*it).second;
+	    else cache_binding = it->second;
 #else
-	    else return (*it).second;
+	    else return it->second;
 #endif
 	}
 	Frame::Binding* bdg = env->frame()->binding(symbol);
 	if (bdg) {
-	    EBPair ans(env, bdg);
 #ifdef CHECK_CACHE
-	    if (cachepr.first && cachepr != ans)
+	    if (cache_binding && cache_binding != bdg)
 		abort();
 #endif
 	    if (cache_miss)
-		(*s_search_path_cache)[symbol] = ans;
-	    return ans;
+		(*s_search_path_cache)[symbol] = bdg;
+	    return bdg;
 	}
 	env = env->enclosingEnvironment();
     }
-    return EBPair(0, 0);
+    return 0;
 }
 
 // Environment::findNamespace() is in envir.cpp
@@ -352,13 +350,12 @@ namespace {
 }
 
 namespace CXXR {
-    pair<Environment*, FunctionBase*>
+    FunctionBase*
     findFunction(const Symbol* symbol, Environment* env, bool inherits)
     {
 	FunctionTester functest(symbol);
-	pair<Environment*, RObject*> pr
-	    = findTestedValue(symbol, env, functest, inherits);
-	return make_pair(pr.first, static_cast<FunctionBase*>(pr.second));
+	RObject *value = findTestedValue(symbol, env, functest, inherits);
+	return static_cast<FunctionBase*>(value);
     }
 }
 

@@ -47,7 +47,7 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
     for (const PairList* inp = oldargs; inp; inp = inp->tail()) {
 	RObject* incar = inp->car();
 	if (incar == DotsSymbol) {
-	    Frame::Binding* bdg = env->findBinding(CXXR::DotsSymbol).second;
+	    Frame::Binding* bdg = env->findBinding(CXXR::DotsSymbol);
 	    if (!bdg)
 		Rf_error(_("'...' used but not bound"));
 	    RObject* h = bdg->forcedValue();
@@ -152,7 +152,7 @@ pair<bool, RObject*> ArgList::firstArg(Environment* env)
 	    return make_pair(true, m_first_arg);
 	}
 	// If we get here it must be DotSymbol.
-	Frame::Binding* bdg = env->findBinding(DotsSymbol).second;
+	Frame::Binding* bdg = env->findBinding(DotsSymbol);
 	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
 	    RObject* val = bdg->forcedValue();
 	    if (val) {
@@ -211,10 +211,9 @@ void ArgList::wrapInPromises(Environment* env)
     for (const PairList* inp = oldargs; inp; inp = inp->tail()) {
 	RObject* rawvalue = inp->car();
 	if (rawvalue == DotsSymbol) {
-	    pair<Environment*, Frame::Binding*> pr
-		= env->findBinding(DotsSymbol);
-	    if (pr.first) {
-		RObject* dval = pr.second->forcedValue();
+	    Frame::Binding* binding = env->findBinding(DotsSymbol);
+	    if (binding) {
+		RObject* dval = binding->forcedValue();
 		if (!dval || dval->sexptype() == DOTSXP) {
 		    ConsCell* dotlist = static_cast<ConsCell*>(dval);
 		    while (dotlist) {

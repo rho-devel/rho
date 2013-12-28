@@ -68,7 +68,7 @@ static RObject* GetObject(ClosureContext *cptr)
 	RObject* op(funcall->car());
 	RObject* func;
 	if (op->sexptype() == SYMSXP)
-	    func = findFunction(static_cast<Symbol*>(op), callenv).second;
+	    func = findFunction(static_cast<Symbol*>(op), callenv);
 	else
 	    func = op->evaluate(callenv);
 	if (func->sexptype() != CLOSXP)
@@ -220,12 +220,11 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 	switch (opcar->sexptype()) {
 	case SYMSXP: {
 	    const Symbol* symbol = static_cast<Symbol*>(opcar);
-	    std::pair<Environment*, FunctionBase*> pr
-		= findFunction(symbol, cptr->callEnvironment());
-	    if (!pr.first)
+	    FunctionBase* fun = findFunction(symbol, cptr->callEnvironment());
+	    if (!fun)
 		Rf_error(_("could not find function '%s'"),
 			 symbol->name()->c_str());
-	    op = pr.second;
+	    op = fun;
 	    break;
 	}
 	case CLOSXP:
@@ -338,7 +337,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	std::string generic_name = Rf_translateChar((*generic)[0]);
 	FunctionBase* func
 	    = findFunction(Symbol::obtain(generic_name),
-			   argsenv->enclosingEnvironment()).second;
+			   argsenv->enclosingEnvironment());
 	if (func && func->sexptype() == CLOSXP)
 	    defenv = static_cast<Closure*>(func)->environment();
     }
@@ -692,7 +691,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	// function of the same name.
 	if (!nextfun) {
 	    Symbol* genericsym(Symbol::obtain(genericname));
-	    Frame::Binding* bdg = callenv->findBinding(genericsym).second;
+	    Frame::Binding* bdg = callenv->findBinding(genericsym);
 	    if (!bdg)
 		Rf_error(_("no method to invoke"));
 	    RObject* nfval = bdg->forcedValue();

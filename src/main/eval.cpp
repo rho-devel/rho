@@ -582,8 +582,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 	static const Symbol* syms[]
 	    = {DotGenericSymbol, DotMethodsSymbol, 0};
 	for (const Symbol** symp = syms; *symp; ++symp) {
-	    const Frame::Binding* frombdg
-		= callenv->findBinding(*symp).second;
+	    const Frame::Binding* frombdg = callenv->findBinding(*symp);
 	    tof->importBinding(frombdg);
 	}
     }
