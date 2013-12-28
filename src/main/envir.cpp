@@ -279,8 +279,7 @@ void attribute_hidden unbindVar(SEXP symbol, SEXP rho)
 
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
-    if (env->frame()->erase(sym) && env == Environment::global())
-	R_DirtyImage = 1;
+    env->frame()->erase(sym);
 }
 
 
@@ -629,9 +628,6 @@ SEXP findFun(SEXP symbol, SEXP rho)
 
 void defineVar(SEXP symbol, SEXP value, SEXP rho)
 {
-    /* R_DirtyImage should only be set if assigning to R_GlobalEnv. */
-    if (rho == R_GlobalEnv) R_DirtyImage = 1;
-
     if (rho == R_EmptyEnv)
 	error(_("cannot assign values in the empty environment"));
 
@@ -670,8 +666,6 @@ void setVar(SEXP symbol, SEXP value, SEXP rho)
 	env = Environment::global();
 	bdg = env->frame()->obtainBinding(sym);
     }
-    if (env == Environment::global())
-	R_DirtyImage = 1;
     bdg->assign(value);
 }
 
@@ -791,8 +785,6 @@ static int RemoveVariable(SEXP name, SEXP env)
     Environment* envir = SEXP_downcast<Environment*>(env);
     const Symbol* sym = SEXP_downcast<Symbol*>(name);
     bool found = envir->frame()->erase(sym);
-    if (found && env == R_GlobalEnv)
-	R_DirtyImage = 1;
     return found;
 }
 

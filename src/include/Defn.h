@@ -455,7 +455,7 @@ extern0 int	R_ParseContextLast INI_as(0); /* last character in context buffer */
 extern0 int	R_ParseContextLine; /* Line in file of the above */
 
 /* Image Dump/Restore */
-extern int	R_DirtyImage	INI_as(0);	/* Current image dirty */
+extern int	R_DirtyImage	INI_as(1);	/* Current image dirty */
 
 /* History */
 LibExtern char *R_HistoryFile;	/* Name of the history file */

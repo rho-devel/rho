@@ -1083,7 +1083,7 @@ void attribute_hidden Rstd_CleanUp(SA_TYPE saveact, int status, int runLast)
     switch (saveact) {
     case SA_SAVE:
 	if(runLast) R_dot_Last();
-	if(R_DirtyImage) R_SaveGlobalEnv();
+        R_SaveGlobalEnv();
 #ifdef HAVE_LIBREADLINE
 # ifdef HAVE_READLINE_HISTORY_H
 	if(R_Interactive && UsingReadline) {
