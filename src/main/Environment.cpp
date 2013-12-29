@@ -194,7 +194,7 @@ void Environment::initialize()
     static GCRoot<Environment>
 	global_env(CXXR_NEW(Environment(s_base, global_frame)));
     s_global = global_env.get();
-    s_base->setOnSearchPath(true);
+    s_global->setOnSearchPath(true);
     R_GlobalEnv = s_global;
     static GCRoot<Environment>
 	base_namespace(CXXR_NEW(Environment(s_global, s_base->frame())));
@@ -206,12 +206,14 @@ void Environment::setOnSearchPath(bool status) {
     if (status == m_on_search_path)
 	return;
 
+    m_on_search_path = status;
+    if (!m_frame)
+	return;
+
     if (status)
 	m_frame->incCacheCount();
     else
 	m_frame->decCacheCount();
-
-    m_on_search_path = status;
 
     // Invalidate cache entries.
     std::vector<const Symbol*> symbols = frame()->symbols(true);

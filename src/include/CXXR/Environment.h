@@ -533,8 +533,7 @@ namespace CXXR {
 	// created only using 'new':
 	~Environment()
 	{
-	    if (m_on_search_path && m_frame)
-		m_frame->decCacheCount();
+	    setOnSearchPath(false);
 	}
 
 	static void cleanup();
