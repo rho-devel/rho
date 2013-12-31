@@ -683,6 +683,18 @@ namespace CXXR {
 	 */
 	void importBinding(const Binding *binding, bool quiet = false);
 
+	/** @brief Import all the Bindings from another frame into this one.
+	 *
+	 * Inserts bindings with the same Symbol, value and metadata as those
+	 * in the supplied frame.  Retains active bindings and does
+	 * not force promises.
+	 *
+	 * @param frame The Frame to copy bindings from.
+	 *
+	 * @param quiet Don't trigger monitor.
+	 */
+	void importBindings(const Frame *frame, bool quiet = false);
+
 	/** @brief Define function to monitor reading of Symbol values.
 	 *
 	 * This function allows the user to define a function to be

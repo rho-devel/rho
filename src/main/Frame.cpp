@@ -242,6 +242,14 @@ void Frame::importBinding(const Binding* binding_to_import, bool quiet) {
     if (!quiet)
 	monitorWrite(*new_binding);
 }
+
+void Frame::importBindings(const Frame* frame, bool quiet) {
+    BindingRange bindings = frame->bindingRange();
+    for (BindingRange::const_iterator i = bindings.begin();
+	 i != bindings.end(); ++i) {
+	importBinding(&(*i), quiet);
+    }
+}
 	
 void Frame::visitReferents(const_visitor* v) const
 {
