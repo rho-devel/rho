@@ -492,19 +492,6 @@ namespace CXXR {
 	    void operator()(const GCNode* node);
 	};
 
-	// The class maintains a cache of Symbol Bindings found along
-	// the search path:
-
-	typedef
-	std::tr1::unordered_map<const Symbol*, Frame::Binding*,
-				std::tr1::hash<const Symbol*>,
-				std::equal_to<const Symbol*>,
-				CXXR::Allocator<std::pair<const Symbol*,
-							  Frame::Binding*> >
-	                        > Cache;
-
-	static Cache* s_search_path_cache;
-
 	// Predefined environments:
 	static Environment* s_base;
 	static Environment* s_base_namespace;
@@ -540,9 +527,12 @@ namespace CXXR {
 
 	void detachFrame();
 
-	// Remove any mapping of 'sym' from the search path cache.  If called
-        // with a null pointer, clear the cache entirely.
+	// Remove any mapping of 'sym' from the search path cache.
 	static void flushFromSearchPathCache(const Symbol* sym);
+
+        static Frame::Binding *getCachedGlobalBinding(const Symbol *symbol);
+        static void cacheGlobalBinding(const Symbol *symbol,
+                                       Frame::Binding *binding);
 
 	static void initialize();
 

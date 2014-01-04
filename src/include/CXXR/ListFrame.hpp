@@ -80,7 +80,9 @@ namespace CXXR {
 
 	// Declared private to ensure that ListFrame objects are
 	// created only using 'new':
-	~ListFrame() {}
+	~ListFrame() {
+	    clear();
+	}
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:

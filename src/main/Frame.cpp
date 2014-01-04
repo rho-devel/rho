@@ -181,7 +181,12 @@ PairList* Frame::asPairList() const
 
 void Frame::clear()
 {
-    statusChanged(0);
+    if (m_cache_count > 0) {
+	BindingRange bdgs = bindingRange();
+	for (BindingRange::const_iterator it = bdgs.begin();
+	     it != bdgs.end(); ++it)
+	    statusChanged(it->symbol());
+    }
     v_clear();
 }
 

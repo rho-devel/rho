@@ -98,6 +98,9 @@ Symbol::Symbol(const String* the_name)
 	    iss >> m_dd_index;
 	}
     }
+    m_cached_value = 0;
+    m_cached_value_is_global = false;
+    m_cached_value_is_unique = false;
 }
 
 void Symbol::cleanup()

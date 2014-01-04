@@ -75,7 +75,6 @@ namespace {
     const unsigned int GLOBAL_FRAME_MASK = 1<<15;
 }
 
-Environment::Cache* Environment::s_search_path_cache;
 Environment* Environment::s_base;
 Environment* Environment::s_base_namespace;
 Environment* Environment::s_empty;
@@ -100,10 +99,7 @@ void Environment::LeakMonitor::operator()(const GCNode* node)
 }
 
 void Environment::cleanup()
-{
-    delete s_search_path_cache;
-    s_search_path_cache = 0;
-}
+{ }
 
 void Environment::detachFrame()
 {
@@ -119,6 +115,18 @@ void Environment::detachReferents()
     RObject::detachReferents();
 }
 
+Frame::Binding* Environment::getCachedGlobalBinding(const Symbol *symbol) {
+    if (symbol->m_cached_value_is_global)
+	return static_cast<Frame::Binding*>(symbol->m_cached_value);
+    return 0;
+}
+
+void
+Environment::cacheGlobalBinding(const Symbol *symbol, Frame::Binding* binding) {
+    symbol->m_cached_value = static_cast<void*>(binding);
+    symbol->m_cached_value_is_global = true;
+}
+
 // Define the preprocessor variable CHECK_CACHE to verify that the
 // search list cache is delivering correct results.
 
@@ -126,19 +134,17 @@ Frame::Binding* Environment::findBinding(const Symbol* symbol)
 {
     bool cache_miss = false;
     Environment* env = this;
-#ifdef CHECK_CACHE
-    Frame::Binding cache_binding = 0;
-#endif
+    Frame::Binding* cache_binding = 0;
+
     while (env) {
 	if (env->isSearchPathCachePortal()) {
-	    Cache::iterator it = s_search_path_cache->find(symbol);
-	    if (it == s_search_path_cache->end())
-		cache_miss = true;
-#ifdef CHECK_CACHE
-	    else cache_binding = it->second;
-#else
-	    else return it->second;
+	    if (getCachedGlobalBinding(symbol)) {
+		cache_binding = getCachedGlobalBinding(symbol);
+#ifndef CHECK_CACHE
+		return cache_binding;
 #endif
+	    } else
+		cache_miss = true;
 	}
 	Frame::Binding* bdg = env->frame()->binding(symbol);
 	if (bdg) {
@@ -147,7 +153,7 @@ Frame::Binding* Environment::findBinding(const Symbol* symbol)
 		abort();
 #endif
 	    if (cache_miss)
-		(*s_search_path_cache)[symbol] = bdg;
+		cacheGlobalBinding(symbol, bdg);
 	    return bdg;
 	}
 	env = env->enclosingEnvironment();
@@ -161,25 +167,11 @@ Frame::Binding* Environment::findBinding(const Symbol* symbol)
 
 void Environment::flushFromSearchPathCache(const Symbol* sym)
 {
-    if (!s_search_path_cache)
-	return;
-
-    if (sym)
-	s_search_path_cache->erase(sym);
-    else {
-	// Clear the cache, but retain the current number of buckets:
-	size_t buckets = s_search_path_cache->bucket_count();
-	s_search_path_cache->clear();
-	s_search_path_cache->rehash(buckets);
-    }
+    sym->m_cached_value_is_global = false;
 }
 
 void Environment::initialize()
 {
-    // 509 is largest prime <= 512.  This will have capacity for 254
-    // Symbols at load factor 0.5.
-    s_search_path_cache = new Cache(509);
-    s_search_path_cache->max_load_factor(0.5);
     GCStackRoot<Frame> empty_frame(CXXR_NEW(ListFrame));
     static GCRoot<Environment> empty_env(CXXR_NEW(Environment(0, empty_frame)));
     s_empty = empty_env.get();

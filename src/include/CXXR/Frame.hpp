@@ -767,10 +767,7 @@ namespace CXXR {
     protected:
 	// Declared protected to ensure that Frame objects are created
 	// only using 'new':
-	~Frame()
-	{
-	    statusChanged(0);
-	}
+	~Frame() { }
 
 	/** @brief Report change in the bound/unbound status of Symbol
 	 *         objects.
@@ -813,7 +810,7 @@ namespace CXXR {
 	    --m_cache_count;
 	}
 
-	// Flush symbol(s) from search list cache:
+	// Flush symbol from search list cache:
 	void flush(const Symbol* sym);
 
 	void incCacheCount()
