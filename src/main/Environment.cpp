@@ -187,6 +187,7 @@ void Environment::initialize()
 	global_env(CXXR_NEW(Environment(s_base, global_frame)));
     s_global = global_env.get();
     s_global->setOnSearchPath(true);
+    s_global->m_enclosed_by_global_env = true;
     R_GlobalEnv = s_global;
     static GCRoot<Environment>
 	base_namespace(CXXR_NEW(Environment(s_global, s_base->frame())));
@@ -345,10 +346,10 @@ namespace {
 
 namespace CXXR {
     FunctionBase*
-    findFunction(const Symbol* symbol, Environment* env, bool inherits)
+    Environment::findFunctionNonInline(const Symbol* symbol, bool inherits)
     {
 	FunctionTester functest(symbol);
-	RObject *value = findTestedValue(symbol, env, functest, inherits);
+	RObject *value = findTestedValue(symbol, functest, inherits);
 	return static_cast<FunctionBase*>(value);
     }
 }
