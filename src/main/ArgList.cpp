@@ -33,6 +33,14 @@ using namespace CXXR;
 
 // Implementation of ArgList::coerceTag() is in coerce.cpp
 
+PairList* ArgList::append(PairList* object, PairList* last_element) {
+    if (last_element)
+	last_element->setTail(object);
+    else
+	setList(object);
+    return object;
+}
+
 void ArgList::evaluate(Environment* env, bool allow_missing)
 {
     if (m_status == EVALUATED)
@@ -40,9 +48,9 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
     if (m_first_arg_env && env != m_first_arg_env)
 	Rf_error("Internal error: first arg of ArgList"
 		 " previously evaluated in different environment");
-    GCStackRoot<const PairList> oldargs(m_list->tail());
-    m_list->setTail(0);
-    PairList* lastout = m_list;
+    GCStackRoot<const PairList> oldargs(list());
+    setList(0);
+    PairList* lastout = 0;
     unsigned int arg_number = 1;
     for (const PairList* inp = oldargs; inp; inp = inp->tail()) {
 	RObject* incar = inp->car();
@@ -63,8 +71,7 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
 		    } else if (dotcar != Symbol::missingArgument())
 			outcar = Evaluator::evaluate(dotcar, env);
 		    PairList* cell = PairList::cons(outcar, 0, dotlist->tag());
-		    lastout->setTail(cell);
-		    lastout = lastout->tail();
+		    lastout = append(cell, lastout);
 		    dotlist = dotlist->tail();
 		}
 	    } else if (h != Symbol::missingArgument())
@@ -93,8 +100,7 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
 		RObject* outcar = Evaluator::evaluate(incar, env);
 		cell = PairList::cons(outcar, 0, inp->tag());
 	    }
-	    lastout->setTail(cell);
-	    lastout = lastout->tail();
+	    lastout = append(cell, lastout);
 	}
 	++arg_number;
     }
@@ -110,12 +116,9 @@ void ArgList::merge(const ConsCell* extraargs)
     Xargs xargs;
     for (const ConsCell* cc = extraargs; cc; cc = cc->tail())
 	xargs.push_back(make_pair(cc->tag(), cc->car()));
-    // Duplicate the original list if necessary:
-    if (list() == m_orig_list)
-	m_list->setTail(m_orig_list->clone());
     // Apply overriding arg values supplied in extraargs:
-    PairList* last = m_list;
-    for (PairList* pl = m_list->tail(); pl; pl = pl->tail()) {
+    PairList* last = 0;
+    for (PairList* pl = mutable_list(); pl; pl = pl->tail()) {
 	last = pl;
 	const RObject* tag = pl->tag();
 	if (tag) {
@@ -130,8 +133,8 @@ void ArgList::merge(const ConsCell* extraargs)
     }
     // Append remaining extraargs:
     for (Xargs::const_iterator it = xargs.begin(); it != xargs.end(); ++it) {
-	last->setTail(PairList::cons((*it).second, 0, (*it).first));
-	last = last->tail();
+	PairList* cell = PairList::cons((*it).second, 0, (*it).first);
+	last = append(cell, last);
     }
 }
 
@@ -173,19 +176,8 @@ pair<bool, RObject*> ArgList::firstArg(Environment* env)
 
 void ArgList::stripTags()
 {
-    if (list() == m_orig_list) {
-	// Mustn't modify the list supplied to the constructor:
-	GCStackRoot<PairList> oldargs(m_list->tail());
-	m_list->setTail(0);
-	PairList* lastout = m_list;
-	for (const PairList* inp = oldargs; inp; inp = inp->tail()) {
-	    lastout->setTail(PairList::cons(inp->car(), 0));
-	    lastout = lastout->tail();
-	}
-    } else {
-	for (PairList* p = m_list->tail(); p; p = p->tail())
-	    p->setTag(0);
-    }
+    for (PairList* p = mutable_list(); p; p = p->tail())
+	p->setTag(0);
 }
 	    
 const Symbol* ArgList::tag2Symbol(const RObject* tag)
@@ -205,9 +197,10 @@ void ArgList::wrapInPromises(Environment* env)
     else if (m_first_arg_env && env != m_first_arg_env)
 	Rf_error("Internal error: first arg of ArgList"
 		 " previously evaluated in different environment");
-    GCStackRoot<PairList> oldargs(m_list->tail());
-    m_list->setTail(0);
-    PairList* lastout = m_list;
+    GCStackRoot<const PairList> oldargs(list());
+    setList(0);
+    PairList* lastout = 0;
+
     for (const PairList* inp = oldargs; inp; inp = inp->tail()) {
 	RObject* rawvalue = inp->car();
 	if (rawvalue == DotsSymbol) {
@@ -227,8 +220,8 @@ void ArgList::wrapInPromises(Environment* env)
 			}
 			prom->expose();
 			const Symbol* tag = tag2Symbol(dotlist->tag());
-			lastout->setTail(PairList::cons(prom, 0, tag));
-			lastout = lastout->tail();
+			PairList* cell = PairList::cons(prom, 0, tag);
+			lastout = append(cell, lastout);
 			dotlist = dotlist->tail();
 		    }
 		} else if (dval != Symbol::missingArgument())
@@ -243,8 +236,8 @@ void ArgList::wrapInPromises(Environment* env)
 		m_first_arg_env = 0;
 	    } else if (rawvalue != Symbol::missingArgument())
 		value = CXXR_NEW(Promise(rawvalue, env));
-	    lastout->setTail(PairList::cons(value, 0, tag));
-	    lastout = lastout->tail();
+	    PairList* cell = PairList::cons(value, 0, tag);
+	    lastout = append(cell, lastout);
 	}
     }
     m_status = PROMISED;

@@ -83,7 +83,7 @@ namespace CXXR {
 	 */
 	ArgList(const PairList* args, Status status)
 	    : m_orig_list(args),
-	      m_list(PairList::cons(0, const_cast<PairList*>(args))),
+	      m_list(const_cast<PairList*>(args)),
 	      m_status(status)
 	{}
 
@@ -188,7 +188,7 @@ namespace CXXR {
 	 */
 	const PairList* list() const
 	{
-	    return m_list->tail();
+	    return m_list;
 	}
 
 	/** @brief Merge in new argument values..
@@ -306,8 +306,7 @@ namespace CXXR {
     private:
 	const PairList* const m_orig_list;  // Pointer to the argument
 	  // list supplied to the constructor. 
-	GCStackRoot<PairList> m_list;  // The current argument list,
-	  // preceded by a dummy element to simplify coding.  The
+	GCStackRoot<PairList> m_list;  // The current argument list. The
 	  // class code should never modify the PairList supplied as
 	  // an argument to the constructor, even though the
 	  // constructor casts const away when it initialises this
@@ -321,6 +320,27 @@ namespace CXXR {
 	  // wrapInPromises(). 
 	GCStackRoot<Environment> m_first_arg_env;
 	Status m_status;
+
+	void setList(PairList* list) {
+	    m_list = list;
+	}
+
+	PairList* mutable_list() {
+	    // Mustn't modify the list supplied to the constructor:
+	    if (m_list != NULL && m_list == m_orig_list) {
+		m_list = m_list->clone();
+	    }
+	    return m_list;
+	}
+
+	/* @brief Appends item to the end of m_list.  Handles empty lists correctly.
+	 *
+	 * @param item The item to add.
+	 * @param last_element A pointer to the last element of m_list.
+	 *
+	 * @return A pointer to the current last element of m_list.
+	 */
+	PairList* append(PairList* item, PairList* last_element);
 
 	// Not implemented.  Declared private to suppress
 	// compiler-generated versions:
