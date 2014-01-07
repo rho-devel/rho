@@ -138,8 +138,8 @@ Frame::Binding* Environment::findBinding(const Symbol* symbol)
 
     while (env) {
 	if (env->isSearchPathCachePortal()) {
-	    if (getCachedGlobalBinding(symbol)) {
-		cache_binding = getCachedGlobalBinding(symbol);
+	    cache_binding = getCachedGlobalBinding(symbol);
+	    if (cache_binding) {
 #ifndef CHECK_CACHE
 		return cache_binding;
 #endif
@@ -350,7 +350,7 @@ namespace CXXR {
     {
 	FunctionTester functest(symbol);
 	RObject *value = findTestedValue(symbol, functest, inherits);
-	return static_cast<FunctionBase*>(value);
+	return SEXP_downcast<FunctionBase*>(value);
     }
 }
 

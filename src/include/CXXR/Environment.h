@@ -325,13 +325,15 @@ namespace CXXR {
 		&& symbol->m_cached_value_is_global
 		&& symbol->m_cached_value_is_unique
 		&& enclosedByGlobalEnv()
-		&& !Frame::anyReadMonitorsEnabled()
-		&& FunctionBase::isA(
-		    static_cast<RObject*>(symbol->m_cached_value))) {
-		return static_cast<FunctionBase*>(symbol->m_cached_value);
-	    } else {
-		return findFunctionNonInline(symbol, inherits);
-	    }
+		&& !Frame::anyReadMonitorsEnabled()) {
+              RObject* cached_value
+                = static_cast<Frame::Binding*>(symbol->m_cached_value)
+                ->unforcedValue();
+              if(FunctionBase::isA(cached_value)) {
+		return SEXP_downcast<FunctionBase*>(cached_value);
+              }
+            }
+            return findFunctionNonInline(symbol, inherits);
         }
 
         /** @brief Search for a Binding whose value satisfies a predicate.
