@@ -792,8 +792,7 @@ namespace CXXR {
 	 *
 	 * This function should be called when a Symbol that was not
 	 * formerly bound within this Frame becomes bound, or <em>vice
-	 * versa</em>.  If called with a null pointer, this signifies
-	 * that all bindings are about to be removed from the Frame.
+	 * versa</em>.
 	 */
 	void statusChanged(const Symbol* sym)
 	{
