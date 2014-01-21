@@ -1,6 +1,8 @@
 #  File src/library/utils/R/write.table.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -88,7 +90,7 @@ function (x, file = "", append = FALSE, quote = TRUE, sep = " ",
 
     if(is.logical(col.names)) {
         if(!rn && is.na(col.names))
-            stop("col.names = NA makes no sense when row.names = FALSE")
+            stop("'col.names = NA' makes no sense when 'row.names = FALSE'")
         col.names <- if(is.na(col.names) && rn) c("", d[[2L]])
         else if(col.names) d[[2L]] else NULL
     } else {
@@ -135,8 +137,8 @@ function (x, file = "", append = FALSE, quote = TRUE, sep = " ",
         })
     }
 
-    .Internal(write.table(x, file, nrow(x), p, rnames, sep, eol, na, dec,
-                          as.integer(quote), qmethod != "double"))
+    invisible(.External2(C_writetable, x, file, nrow(x), p, rnames, sep, eol,
+                         na, dec, as.integer(quote), qmethod != "double"))
 }
 
 write.csv <- function(...)

@@ -20,7 +20,7 @@ formals(fun, envir = environment(fun)) <- value
   \item{value}{a list (or pairlist) of \R expressions.}
 }
 \details{
-  
+
   For the first form, \code{fun} can also be a character string naming
   the function to be manipulated, which is searched for from the parent
   frame.  If it is not specified, the function calling \code{formals} is
@@ -49,7 +49,7 @@ length(formals(lm))      # the number of formal arguments
 names(formals(boxplot))  # formal arguments names
 
 f <- function(x) a+b
-formals(f) <- alist(a=,b=3) # function(a,b=3)a+b
+formals(f) <- alist(a = , b = 3) # function(a, b = 3) a+b
 f(2) # result = 5
 }
 \keyword{programming}

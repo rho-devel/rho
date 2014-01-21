@@ -12,8 +12,8 @@ setMethod("nnzero", "ANY",
 	  function(x, na.counted = NA)	sum(nz.NA(x, na.counted)))
 setMethod("nnzero", "diagonalMatrix",
 	  function(x, na.counted = NA) sum(nz.NA(diag(x), na.counted)))
-setMethod("nnzero", "pMatrix", function(x, na.counted = NA) x@Dim[1])
-## other (not "pMatrix", not "diagonalMatrix") "sparseMatrix":
+setMethod("nnzero", "indMatrix", function(x, na.counted = NA) x@Dim[1])
+## other (not "indMatrix", not "diagonalMatrix") "sparseMatrix":
 setMethod("nnzero", "sparseMatrix",
 	  function(x, na.counted = NA)
       {
@@ -24,9 +24,14 @@ setMethod("nnzero", "sparseMatrix",
 	cld <- getClassDef(cl)
 	n <- d[1]
 	iSym <- extends(cld, "symmetricMatrix")
+        iTri <- if(iSym) FALSE else extends(cld, "triangularMatrix")
 	nn <- switch(.sp.class(cl),
 		     "CsparseMatrix" = x@p[d[2]+1L],# == length(x@i) only if not over-alloc.
-		     "TsparseMatrix" = length(x@i),
+		     "TsparseMatrix" = {
+			 if(is_duplicatedT(x, di = d))
+			     x <- .Call(Tsparse_to_Csparse, x, iTri)
+			 length(x@i)
+		     },
 		     "RsparseMatrix" = x@p[n+1L])
 	if(!extends(cld, "nMatrix")) # <==> has 'x' slot : consider NAs in it:
 	    nn <- sum(nz.NA(if(nn < length(x@x)) x@x[seq_len(nn)] else x@x,
@@ -34,7 +39,7 @@ setMethod("nnzero", "sparseMatrix",
 
 	if(iSym)
 	    nn+nn - sum(nz.NA(diag(x), na.counted))
-	else if(extends(cld, "triangularMatrix") && x@diag == "U")
+	else if(iTri && x@diag == "U")
 	    nn + n else nn
     })
 

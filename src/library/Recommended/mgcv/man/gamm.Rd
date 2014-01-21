@@ -319,6 +319,7 @@ b <- gamm(y~s(x0,bs="cr")+s(x1,bs="cr")+s(x2,bs="cr")+
   s(x3,bs="cr"),data=dat,random=list(fa=~1,fb=~1),
   correlation=corAR1())
 plot(b$gam,pages=1)
+summary(b$gam)
 vis.gam(b$gam)
 ## and a "spatial" example...
 library(nlme);set.seed(1);n <- 200

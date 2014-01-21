@@ -33,6 +33,14 @@
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
+
+/* 
+   C declarations of double-precision LINPACK Fortran subroutines
+   included in R, and some others.
+   
+   Those which are listed as part of R are in the API
+ */
+
 #ifndef R_LINPACK_H_
 #define R_LINPACK_H_
 
@@ -45,7 +53,6 @@ extern "C" {
 
 	/* Double Precision Linpack */
 
-extern void F77_NAME(dchdc)(double*, int*, int*, double*, int*, int*, int*);
 extern void F77_NAME(dpbfa)(double*, int*, int*, int*, int*);
 extern void F77_NAME(dpbsl)(double*, int*, int*, int*, double*);
 extern void F77_NAME(dpoco)(double*, int*, int*, double*, double*, int*);

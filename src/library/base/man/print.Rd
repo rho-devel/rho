@@ -49,7 +49,7 @@ print(x, \dots)
     right-justified or left alone, passed to \code{\link{format}}.}
   \item{useSource}{logical indicating if internally stored source
     should be used for printing when present, e.g., if
-    \code{\link{options}(keep.source=TRUE)} has been in use.}
+    \code{\link{options}(keep.source = TRUE)} has been in use.}
 }
 \details{
   The default method, \code{\link{print.default}} has its own help page.
@@ -60,7 +60,8 @@ print(x, \dots)
   \code{\link{ordered}} factors as well.
 
   \code{print.table} for printing \code{\link{table}}s allows other
-  customization.
+  customization. As of R 3.0.0, it only prints a description in case of a table 
+  with 0-extents (this can happen if a classifier has no valid data).
 
   See \code{\link{noquote}} as an example of a class whose main
   purpose is a specific \code{print} method.
@@ -76,11 +77,13 @@ print(x, \dots)
 
   For more customizable (but cumbersome) printing, see
   \code{\link{cat}}, \code{\link{format}} or also \code{\link{write}}.
+  For a simple prototypical print method, see
+  \code{\link[tools]{.print.via.format}} in package \pkg{tools}.
 }
 \examples{
 require(stats)
 
-ts(1:20)#-- print is the "Default function" --> print.ts(.) is called
+ts(1:20)  #-- print is the "Default function" --> print.ts(.) is called
 for(i in 1:3) print(1:i)
 
 ## Printing of factors
@@ -92,9 +95,12 @@ esoph$alcgp[1:12]
 
 ## Printing of sparse (contingency) tables
 set.seed(521)
-t1 <- round(abs(rt(200, df=1.8)))
-t2 <- round(abs(rt(200, df=1.4)))
-table(t1,t2) # simple
-print(table(t1,t2), zero.print = ".")# nicer to read
+t1 <- round(abs(rt(200, df = 1.8)))
+t2 <- round(abs(rt(200, df = 1.4)))
+table(t1, t2) # simple
+print(table(t1, t2), zero.print = ".") # nicer to read
+
+## Corner cases with empty extents:
+table(1, NA) # < table of extent 1 x 0 >
 }
 \keyword{print}

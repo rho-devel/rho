@@ -343,7 +343,7 @@ wireframe(volcano, shade = TRUE,
           light.source = c(10,0,10))
 
 g <- expand.grid(x = 1:10, y = 5:15, gr = 1:2)
-g$z <- log((g$x^g$g + g$y^2) * g$gr)
+g$z <- log((g$x^g$gr + g$y^2) * g$gr)
 wireframe(z ~ x * y, data = g, groups = gr,
           scales = list(arrows = FALSE),
           drape = TRUE, colorkey = TRUE,

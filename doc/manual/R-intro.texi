@@ -21,28 +21,20 @@
 @include R-defs.texi
 @include version.texi
 
-@ifnottex
-@macro RIcopyright{}
+@copying
+This manual is for R, version @value{VERSION}.
+
 Copyright @copyright{} 1990 W.@: N.@: Venables@*
 Copyright @copyright{} 1992 W.@: N.@: Venables & D.@: M.@: Smith@*
 Copyright @copyright{} 1997 R.@: Gentleman & R.@: Ihaka@*
 Copyright @copyright{} 1997, 1998 M.@: Maechler@*
-Copyright @copyright{} 1997-- R Core Team@*
 @Rcopyright{1999}
-@end macro
-@end ifnottex
 
-@iftex
-@macro RIcopyright{}
-@noindent
-Copyright @copyright{} 1990 W.@: N.@: Venables
-Copyright @copyright{} 1992 W.@: N.@: Venables & D.@: M.@: Smith
-Copyright @copyright{} 1997 R.@: Gentleman & R.@: Ihaka
-Copyright @copyright{} 1997, 1998 M.@: Maechler
-Copyright @copyright{} 1997-- R Core Team@*
-@Rcopyright{1999}
-@end macro
-@end iftex
+@quotation
+@permission{}
+@end quotation
+@end copying
+
 
 @c <FIXME>
 @c Apparently AUCTeX 11.06 has a problem with '@appendixsection' entries
@@ -56,44 +48,31 @@ Copyright @copyright{} 1997-- R Core Team@*
 @c Revert when this is fixed.
 @c </NOTE>
 
-@ifinfo
-This is an introduction to R.
-
-@RIcopyright{}
-
-@permission{}
-
-@end ifinfo
-
 @titlepage
 @title An Introduction to R
 @subtitle Notes on @R{}: A Programming Environment for Data Analysis and Graphics
 @subtitle Version @value{VERSION}
 @author W. N. Venables, D. M. Smith
 @author and the R Core Team
-
 @page
 @vskip 0pt plus 1filll
-
-@flushleft
-@RIcopyright{}
-@end flushleft
-
-@permission{}
-
-@value{ISBN-intro}
+@insertcopying
 @end titlepage
 
-@c @ifnothtml
+@ifplaintext
+@insertcopying
+@end ifplaintext
+
 @contents
-@c @end ifnothtml
 
 @ifnottex
 @node Top, Preface, (dir), (dir)
 @top An Introduction to R
 
 This is an introduction to R (``GNU S''), a language and environment for
-statistical computing and graphics.  R is similar to the award-winning S
+statistical computing and graphics.  R is similar to the
+award-winning@footnote{ACM Software Systems award, 1998:
+@uref{http://awards.acm.org/award_winners/chambers_6640862.cfm}.} S
 system, which was developed at Bell Laboratories by John Chambers et al.
 It provides a wide variety of statistical and graphical techniques
 (linear and nonlinear modelling, statistical tests, time series
@@ -102,9 +81,8 @@ analysis, classification, clustering, ...).
 This manual provides information on data types, programming elements,
 statistical modelling and graphics.
 
-The current version of this document is @value{VERSION}.
+@insertcopying
 
-@value{ISBN-intro}
 @end ifnottex
 
 @menu
@@ -122,6 +100,7 @@ The current version of this document is @value{VERSION}.
 * Statistical models in R::     
 * Graphics::                    
 * Packages::                    
+* OS facilities::               
 * A sample session::            
 * Invoking R::                  
 * The command-line editor::     
@@ -152,10 +131,9 @@ Most @R{} novices will start with the introductory session in Appendix
 A.  This should give some familiarity with the style of @R{} sessions
 and more importantly some instant feedback on what actually happens.
 
-Many users will come to @R{} mainly for its graphical facilities.  In
-this case, @ref{Graphics} on the graphics facilities can be read at
-almost any time and need not wait until all the preceding sections have
-been digested.
+Many users will come to @R{} mainly for its graphical facilities.
+@xref{Graphics}, which can be read at almost any time and need not wait
+until all the preceding sections have been digested.
 
 @menu
 * Introduction and preliminaries::
@@ -277,7 +255,7 @@ generally to any implementation of the @R{} environment.
 Most users will find it necessary to interact directly with the
 operating system on their computer from time to time.  In this guide, we
 mainly discuss interaction with the operating system on UNIX machines.
-If you are running @R{} under Windows or Mac OS you will need to make
+If you are running @R{} under Windows or OS X you will need to make
 some small adjustments.
 
 Setting up a workstation to take full advantage of the customizable
@@ -457,8 +435,8 @@ be used in @R{} packages) only A--Za--z0--9 should be used.} (and in
 some countries this includes accented letters) plus @samp{@code{.}} and
 @samp{@code{_}}, with the restriction that a name must start with
 @samp{@code{.}} or a letter, and if it starts with @samp{@code{.}} the
-second character must not be a digit.  Names are currently effectively
-unlimited, but were limited to 256 bytes prior to @R{} 2.13.0
+second character must not be a digit.  Names are effectively
+unlimited in length.
 
 Elementary commands consist of either @emph{expressions} or
 @emph{assignments}.  If an expression is given as a command, it is
@@ -580,8 +558,9 @@ you are given the opportunity to save all the currently available
 objects.  If you indicate that you want to do this, the objects are
 written to a file called @file{.RData}@footnote{The leading ``dot'' in
 this file name makes it @emph{invisible} in normal file listings in
-UNIX.} in the current directory, and the command lines used in the
-session are saved to a file called @file{.Rhistory}.
+UNIX, and in default GUI file listings on OS X and Windows.} in the
+current directory, and the command lines used in the session are saved
+to a file called @file{.Rhistory}.
 
 When @R{} is started at later time from the same directory it reloads
 the workspace from this file.  At the same time the associated commands
@@ -1139,10 +1118,6 @@ assignment, in which case the assignment operation is performed
 @emph{only on those elements of the vector}.  The expression must be of
 the form @code{vector[@var{index_vector}]} as having an arbitrary
 expression in place of the vector name does not make much sense here.
-
-The vector assigned must match the length of the index vector, and in
-the case of a logical index vector it must again be the same length as
-the vector it is indexing.
 
 For example
 
@@ -1989,12 +1964,27 @@ is available, so we could have used @code{B <- t(A)}.
 @node Matrix facilities, Forming partitioned matrices, Generalized transpose of an array, Arrays and matrices
 @section Matrix facilities
 
+@iftex
 @macro xTx{}
- @eqn{@strong{x}^T @strong{x}, x'x}
+@tex
+$@strong{x}^T @strong{x}$%
+@end tex
 @end macro
 @macro xxT{}
- @eqn{@strong{x}@strong{x}^T, x x'}
+@tex
+$@strong{x}@strong{x}^T$%
+@end tex
 @end macro
+@end iftex
+
+@ifnottex
+@macro xTx{}
+x'x
+@end macro
+@macro xxT{}
+x x'
+@end macro
+@end ifnottex
 
 As noted above, a matrix is just an array with two subscripts.  However
 it is such an important special case it needs a separate discussion.
@@ -2055,8 +2045,7 @@ the interpretation adopted, so the scalar @xTx{} is in this case the
 result.  The matrix @xxT{} may be calculated either by @code{cbind(x)
 %*% x} or @code{x %*% rbind(x)} since the result of @code{rbind()} or
 @code{cbind()} is always a matrix.  However, the best way to compute
-@xTx{} or @xxT{} is @code{crossprod(x)} or @code{x %o% x}
-respectively.}
+@xTx{} or @xxT{} is @code{crossprod(x)} or @code{x %o% x} respectively.}
 
 @findex crossprod
 The function @code{crossprod()} forms ``crossproducts'', meaning that
@@ -2111,13 +2100,13 @@ but rarely is needed.  Numerically, it is both inefficient and
 potentially unstable to compute @code{x <- solve(A) %*% b} instead of
 @code{solve(A,b)}.
 
-The quadratic form @eqn{@strong{x^T  A^{-1} x},@ @code{x %*% A^@{-1@} %*%
+The quadratic form @eqn{@strong{x^T A^{-1} x},@ @code{x %*% A^@{-1@} %*%
 x} @ } which is used in multivariate computations, should be computed by
 something like@footnote{Even better would be to form a matrix square
-root @eqn{B, B} with @eqn{A = BB^T, A = BB'} and find the squared length of the
-solution of @eqn{By = x, By = x}, perhaps using the Cholesky or
-eigendecomposition of @eqn{A, A}.} @code{x %*% solve(A,x)}, rather than
-computing the inverse of @code{A}.
+root @eqn{B, B} with @eqn{A = BB^T, A = BB'} and find the squared length
+of the solution of @eqn{By = x, By = x} , perhaps using the Cholesky or
+eigen decomposition of @eqn{A, A}.  } @code{x %*% solve(A,x)}, rather
+than computing the inverse of @code{A}.
 
 @node Eigenvalues and eigenvectors, Singular value decomposition and determinants, Linear equations and inversion, Matrix facilities
 @subsection Eigenvalues and eigenvectors
@@ -2535,9 +2524,11 @@ factors, numeric matrices, lists, or other data frames.
 Matrices, lists, and data frames provide as many variables to the new
 data frame as they have columns, elements, or variables, respectively.
 @item
-Numeric vectors, logicals and factors are included as is, and character
-vectors are coerced to be factors, whose levels are the unique values
-appearing in the vector.
+Numeric vectors, logicals and factors are included as is, and by
+default@footnote{Conversion of character columns to factors is
+overridden using the @code{stringsAsFactors} argument to the
+@code{data.frame()} function.} character vectors are coerced to be
+factors, whose levels are the unique values appearing in the vector.
 @item
 Vector structures appearing as variables of the data frame must all have
 the @emph{same length}, and matrix structures must all have the same
@@ -2734,9 +2725,9 @@ rather than entered during an @R{} session at the keyboard.  @R{} input
 facilities are simple and their requirements are fairly strict and even
 rather inflexible.  There is a clear presumption by the designers of
 @R{} that you will be able to modify your input files using other tools,
-such as file editors or Perl@footnote{Under UNIX, the utilities Sed or
-Awk can be used.} to fit in with the requirements of @R{}.  Generally
-this is very simple.
+such as file editors or Perl@footnote{Under UNIX, the utilities
+@command{sed} or@command{awk} can be used.} to fit in with the
+requirements of @R{}.  Generally this is very simple.
 
 If variables are to be held mainly in data frames, as we strongly
 suggest they should be, an entire data frame can be read directly with
@@ -2903,10 +2894,9 @@ data()
 @end example
 
 @noindent
-As from @R{} version 2.0.0 all the datasets supplied with @R{} are
-available directly by name.  However, many packages still use the
-earlier convention in which @code{data} was also used to load datasets
-into @R{}, for example
+All the datasets supplied with @R{} are available directly by name.
+However, many packages still use the obsolete convention in which
+@code{data} was also used to load datasets into @R{}, for example
 
 @example
 data(infert)
@@ -3720,6 +3710,9 @@ to be constants as in our simple example here.
 @node The three dots argument, Assignment within functions, Named arguments and defaults, Writing your own functions
 @section The @samp{@dots{}} argument
 
+@c The ?Reserved topic links here, so please update it
+@c if changing the node name.
+
 Another frequent requirement is to allow one function to pass on
 argument settings to another.  For example many graphics functions use
 the function @code{par()} and functions like @code{plot()} allow the
@@ -3737,6 +3730,12 @@ fun1 <- function(data, data.frame, graph=TRUE, limit=20, ...) @{
   @r{[more omissions]}
 @}
 @end example
+
+Less frequently, a function will need to refer to components of
+@samp{@dots{}}.  The expression @code{list(...)} evaluates all such
+arguments and returns them in a named list, while @code{..1},
+@code{..2}, etc. evaluate them one at a time, with @samp{..n}
+returning the n'th unmatched argument.
 
 @node Assignment within functions, More advanced examples, The three dots argument, Writing your own functions
 @section Assignments within functions
@@ -5094,7 +5093,7 @@ Certain forms of nonlinear model can be fitted by Generalized Linear
 Models (@code{glm()}).  But in the majority of cases we have to approach
 the nonlinear curve fitting problem as one of nonlinear optimization.
 @R{}'s nonlinear optimization routines are @code{optim()}, @code{nlm()}
-and (from @R{} 2.2.0) @code{nlminb()},
+and @code{nlminb()},
 @findex nlm
 @findex optim
 @findex nlminb
@@ -5338,13 +5337,15 @@ of the @R{} environment.  It is possible to use the facilities to
 display a wide variety of statistical graphs and also to build entirely
 new types of graph.
 
-The graphics facilities can be used in both interactive and batch modes, but in
-most cases, interactive use is more productive.  Interactive use is also
-easy because at startup time @R{} initiates a graphics @emph{device
-driver} which opens a special @emph{graphics window} for the display of
-interactive graphics.  Although this is done automatically, it is useful
-to know that the command used is @code{X11()} under UNIX,
-@code{windows()} under Windows and @code{quartz()} under Mac OS X.
+The graphics facilities can be used in both interactive and batch modes,
+but in most cases, interactive use is more productive.  Interactive use
+is also easy because at startup time @R{} initiates a graphics
+@emph{device driver} which opens a special @emph{graphics window} for
+the display of interactive graphics.  Although this is done
+automatically, it may useful to know that the command used is
+@code{X11()} under UNIX, @code{windows()} under Windows and
+@code{quartz()} under OS X.  A new device can always be opened by
+@code{dev.new()}.
 
 Once the device driver is running, @R{} plotting commands can be used to
 produce a variety of graphical displays and to create entirely new kinds
@@ -6251,7 +6252,7 @@ For use with the X11 window system on Unix-alikes
 For use on Windows
 @item quartz()
 @findex quartz
-For use on Mac OS X
+For use on OS X
 @item postscript()
 @findex postscript
 For printing on PostScript printers, or creating PostScript graphics
@@ -6341,7 +6342,7 @@ meanings are as follows:
 @itemx win.metafile()
 [Windows]
 @item quartz()
-[Mac OS X]
+[OS X]
 @item postscript()
 @itemx pdf()
 @item png()
@@ -6411,7 +6412,7 @@ and these can be accessed from @R{} via the package @CRANpkg{rggobi}, described 
 Also, package @CRANpkg{rgl} provides ways to interact with 3D plots, for example
 of surfaces.
 
-@node Packages, A sample session, Graphics, Top
+@node Packages, OS facilities, Graphics, Top
 @chapter Packages
 @cindex Packages
 
@@ -6441,9 +6442,9 @@ command like
 
 Users connected to the Internet can use the @code{install.packages()}
 and @code{update.packages()} functions (available through the
-@code{Packages} menu in the Windows and RAqua GUIs, @pxref{Installing
-packages, , , R-admin, R Installation and Administration}) to install and
-update packages.
+@code{Packages} menu in the Windows and OS X GUIs, @pxref{Installing
+packages, , , R-admin, R Installation and Administration}) to install
+and update packages.
 
 To see which packages are currently loaded, use
 
@@ -6510,13 +6511,12 @@ collection of available packages changes very frequently.
 @findex ::
 @findex :::
 
-Packages can have @emph{namespaces}, and currently all of the base and
-recommended packages do except the @code{datasets} package.  Namespaces
-do three things: they allow the package writer to hide functions and
-data that are meant only for internal use, they prevent functions from
-breaking when a user (or other package writer) picks a name that clashes
-with one in the package, and they provide a way to refer to an object
-within a particular package.
+All packages have @emph{namespaces}, and have since @R{} 2.14.0.
+Namespaces do three things: they allow the package writer to hide
+functions and data that are meant only for internal use, they prevent
+functions from breaking when a user (or other package writer) picks a
+name that clashes with one in the package, and they provide a way to
+refer to an object within a particular package.
 
 For example, @code{t()} is the transpose function in @R{}, but users
 might define their own function named @code{t}.  Namespaces prevent
@@ -6541,8 +6541,195 @@ cause automatic loading of the associated package.  When packages with
 namespaces are loaded automatically they are not added to the search
 list.
 
+@node OS facilities, A sample session, Packages, Top
+@chapter OS facilities
 
-@node A sample session, Invoking R, Packages, Top
+@R{} has quite extensive facilities to access the OS under which it is
+running: this allows it to be used as a scripting language and that
+ability is much used by @R{} itself, for example to install packages.
+
+Because @R{}'s own scripts need to work across all platforms,
+considerable effort has gone into make the scripting facilities as
+platform-independent as is feasible.
+
+@menu
+* Files and directories::       
+* Filepaths::                   
+* System commands::             
+* Compression and Archives::    
+@end menu
+
+@node Files and directories, Filepaths, OS facilities, OS facilities
+@section Files and directories
+
+There are many functions to manipulate files and directories. Here are
+pointers to some of the more commonly used ones.
+
+To create an (empty) file or directory, use @code{file.create} or
+@code{create.dir}.  (These are the analogues of the POSIX utilities
+@command{touch} and @command{mkdir}.)  For temporary files and
+directories in the @R{} session directory see @code{tempfile}.
+
+Files can be removed by either @code{file.remove} or @code{unlink}: the
+latter can remove directory trees.
+
+For directory listings use @code{list.files} (also available as
+@code{dir}) or @code{list.dirs}. These can select files using a regular
+expression: to select by wildcards use @code{Sys.glob}.
+
+Many types of information on a filepath (including for example if it is
+a file or directory) can be found by @code{file.info}.
+
+There are several ways to find out if a file `exists' (and file can
+exist on the filesystem and not be visible to the current user).
+There are functions @code{file.exists}, @code{file.access} and
+@code{file_test} with various versions of this test: @code{file_test} is
+a version of the POSIX @command{test} command for those familiar with
+shell scripting.
+
+Function @code{file.copy} is the @R{} analogue of the POSIX command
+@command{cp}.
+
+Choosing files can be done interactively by @code{file.choose}: the
+Windows port has the more versatile functions @code{choose.files} and
+@code{choose.dir} and there are similar functions in the @pkg{tcltk}
+package: @code{tk_choose.files} and @code{tk_choose.dir}.
+
+Functions @code{file.show} and @code{file.edit} will display and edit
+one or more files in a way appropriate to the @R{} port, using the
+facilities of a console (such as RGui on Windows or R.app on OS X) if
+one is in use.
+
+There is some support for @emph{links} in the filesystem: see functions
+@code{file.link} and @code{Sys.readlink}.
+
+
+@node Filepaths, System commands, Files and directories, OS facilities
+@section Filepaths
+
+With a few exceptions, @R{} relies on the underlying OS functions to
+manipulate filepaths.  Some aspects of this are allowed to depend on the
+OS, and do, even down to the version of the OS.  There are POSIX
+standards for how OSes should interpret filepaths and many @R{} users
+assume POSIX compliance: but Windows does not claim to be compliant and
+other OSes may be less than completely compliant.
+
+The following are some issues which have been encountered with filepaths.
+
+@itemize @bullet
+@item
+POSIX filesystems are case-sensitive, so @file{foo.png} and
+@file{Foo.PNG} are different files.  However, the defaults on Windows
+and OS X are to be case-insensitive, and FAT filesystems (commonly used
+on removable storage) are not normally case-sensitive (and all filepaths
+may be mapped to lower case).
+
+@item
+Almost all the Windows' OS services support the use of slash or
+backslash as the filepath separator, and @R{} converts the known
+exceptions to the form required by Windows.
+
+@item
+The behaviour of filepaths with a trailing slash is OS-dependent.  Such
+paths are not valid on Windows and should not be expected to work.
+POSIX-2008 requires such paths to match only directories, but earlier
+versions allowed them to also match files.  So they are best avoided.
+
+@item
+Multiple slashes in filepaths such as @file{/abc//def} are valid on
+POSIX filesystems and treated as if there was only one slash.  They are
+@emph{usually} accepted by Windows' OS functions.  However, leading
+double slashes may have a different meaning.
+
+@item
+Windows' UNC filepaths (such as @file{\\server\dir1\dir2\file} and
+@file{\\?\UNC\server\dir1\dir2\file}) are not supported, but they may
+work in some @R{} functions.  POSIX filesystems are allowed to treat a
+leading double slash specially.
+
+@item
+Windows allows filepaths containing drives and relative to the current
+directory on a drive, e.g.@: @file{d:foo/bar} refers to
+@file{d:/a/b/c/foo/bar} if the current directory @emph{on drive
+@file{d:}} is @file{/a/b/c}.  It is intended that these work, but the
+use of absolute paths is safer.
+@end itemize
+
+Functions @code{basename} and @code{dirname} select parts of a file
+path: the recommended way to assemble a file path from components is
+@code{file.path}.  Function @code{pathexpand} does `tilde expansion',
+substituting values for home directories (the current user's, and
+perhaps those of other users).
+
+On filesystems with links, a single file can be referred to by many
+filepaths.  Function @code{normalizePath} will find a canonical
+filepath.
+
+Windows has the concepts of short (`8.3') and long file names:
+@code{normalizePath} will return an absolute path using long file names
+and @code{shortPathName} will return a version using short names.  The
+latter does not contain spaces and uses backslash as the separator, so
+is sometimes useful for exporting names from @R{}.
+
+File @emph{permissions} are a related topic.  @R{} has support for the
+POSIX concepts of read/write/execute permission for owner/group/all but
+this may be only partially supported on the filesystem (so for example
+on Windows only read-only files (for the account running the @R{}
+session) are recognized.  Access Control Lists (ACLs) are employed on
+several filesystems, but do not have an agreed standard and @R{} has no
+facilities to control them.  Use @code{Sys.chmod} to change permissions.
+
+@node System commands, Compression and Archives, Filepaths, OS facilities
+@section System commands
+
+Functions @code{system} and @code{system2} are used to invoke a system
+command and optionally collect its output.  @code{system2} is a little
+more general but its main advantage is that it is easier to write
+cross-platform code using it.
+
+@code{system} behaves differently on Windows from other OSes (because
+the API C call of that name does).  Elsewhere it invokes a shell to run
+the command: the Windows port of @R{} has a function @code{shell} to do
+that.
+
+To find out if the OS includes a command, use @code{Sys.which}, which
+attempts to do this in a cross-platform way (unfortunately it is not a
+standard OS service).
+
+Function @code{shQuote} will quote filepaths as needed for commands in
+the current OS.
+
+@node Compression and Archives,  , System commands, OS facilities
+@section Compression and Archives
+
+Recent versions of @R{} have extensive facilities to read and write
+compressed files, often transparently.  Reading of files in @R{} is to a
+vey large extent done by @emph{connections}, and the @code{file}
+function which is used to open a connection to a file (or a URL) and is
+able to identify the compression used from the `magic' header of the
+file.
+
+The type of compression which has been supported for longest is
+@command{gzip} compression, and that remains a good general compromise.
+Files compressed by the earlier Unix @command{compress} utility can also
+be read, but these are becoming rare.  Two other forms of compression,
+those of the @command{bzip2} and @command{xz} utilities are also
+available.  These generally achieve higher rates of compression
+(depending on the file, much higher) at the expense of slower
+decompression and much slower compression.
+
+There is some confusion between @command{xz} and @command{lzma}
+compression (see @uref{http://en.wikipedia.org/wiki/Xz} and
+@uref{http://en.wikipedia.org/wiki/LZMA}): @R{} can read files
+compressed by most versions of either.
+
+File archives are single files which contain a collection of files, the
+most common ones being `tarballs' and zip files as used to distribute
+@R{} packages.  @R{} can list and unpack both (see functions @code{untar}
+and @code{unzip}) and create both (for @command{zip} with the help of an
+external program).
+
+@node A sample session, Invoking R, OS facilities, Top
 @appendix A sample session
 
 The following session is intended to introduce to you some features of
@@ -6553,8 +6740,7 @@ disappear.
 @c need to adapt the discussion slightly.
 
 @table @code
-@item
-Start @R{} appropriately for your platform (@pxref{Invoking R}).
+@item Start @R{} appropriately for your platform (@pxref{Invoking R}).
 
 The @R{} program begins, with a banner.
 
@@ -6757,15 +6943,13 @@ parts @dots{}
 
 @item plot(w, xlim=c(-1,1), ylim=c(-1,1), pch="+",xlab="x", ylab="y")
 @itemx lines(z)
-@itemx
-All points are inside the unit circle, but the distribution is not
+@itemx All points are inside the unit circle, but the distribution is not
 uniform.
 
 @item w <- sqrt(runif(100))*exp(2*pi*runif(100)*1i)
 @itemx plot(w, xlim=c(-1,1), ylim=c(-1,1), pch="+", xlab="x", ylab="y")
 @itemx lines(z)
-@itemx
-The second method uses the uniform distribution.  The points should now
+@itemx The second method uses the uniform distribution.  The points should now
 look more evenly spaced over the disc.
 
 @item rm(th, w, z)
@@ -6780,13 +6964,13 @@ want to save it.
 @node Invoking R, The command-line editor, A sample session, Top
 @appendix Invoking R
 
-Users of @R{} on Windows or Mac OS X should read the OS-specific section
+Users of @R{} on Windows or OS X should read the OS-specific section
 first, but command-line use is also supported.
 
 @menu
 * Invoking R from the command line::  
 * Invoking R under Windows::    
-* Invoking R under Mac OS X::   
+* Invoking R under OS X::       
 * Scripting with R::            
 @end menu
 
@@ -6877,7 +7061,11 @@ Print version information to standard output and exit successfully.
 @item --encoding=@var{enc}
 Specify the encoding to be assumed for input from the console or
 @code{stdin}.  This needs to be an encoding known to @code{iconv}: see
-its help page.  (@code{--encoding @var{enc}} is also accepted.)
+its help page.  (@code{--encoding @var{enc}} is also accepted.)  The
+input is re-encoded to the locale @R{} is running in and needs to be
+representable in the latter's encoding (so e.g.@ you cannot re-encode
+Greek text in a French locale unless that locale uses the UTF-8
+encoding).
 
 @item RHOME
 Print the path to the @R{} ``home directory'' to standard output and
@@ -6930,7 +7118,7 @@ Combine @option{--no-save}, @option{--no-environ},
 (not @command{Rgui.exe}) Take input from @var{file}: @samp{-} means
 @code{stdin}.  Implies @option{--no-save} unless @option{--save} has
 been set.  On a Unix-alike, shell metacharacters should be avoided in
-@var{file} (but as from @R{} 2.14.0 spaces are allowed).
+@var{file} (but spaces are allowed).
 
 @item -e @var{expression}
 (not @command{Rgui.exe}) Use @var{expression} as an input line.  One or
@@ -6953,7 +7141,8 @@ tilde-expansion: see the help for @code{path.expand}.
 For expert use only: set the initial trigger sizes for garbage
 collection of vector heap (in bytes) and @emph{cons cells} (number)
 respectively.  Suffix @samp{M} specifies megabytes or millions of cells
-respectively.  The defaults are 6Mb and 350k respectively.
+respectively.  The defaults are 6Mb and 350k respectively and can also
+be set by environment variables @env{R_NSIZE} and @env{R_VSIZE}.
 
 @item --max-ppsize=@var{N}
 Specify the maximum size of the pointer protection stack as @var{N}
@@ -6967,7 +7156,7 @@ for @R{} objects and working areas.  This is set by default to the
 smaller of the amount of physical RAM in the machine and for 32-bit
 @R{}, 1.5Gb@footnote{2.5Gb on versions of Windows that support 3Gb per
 process and have the support enabled: see the @file{rw-FAQ} Q2.9; 3.5Gb
-on some 64-bit versions of Windows.}, and must be between 32Mb and the
+on most 64-bit versions of Windows.}, and must be between 32Mb and the
 maximum allowed on that version of Windows.
 
 @item --quiet
@@ -7016,9 +7205,7 @@ support is available, @samp{Tk}. (For back-compatibility, @samp{x11} and
 @samp{tk} are accepted.)
 
 @item --arch=@var{name}
-(UNIX only) Run the specified sub-architecture.  Most commonly used on
-Mac OS X, where the possible values are @samp{i386}, @samp{x86_64} and
-@samp{ppc}.
+(UNIX only) Run the specified sub-architecture.
 
 @item --args
 This flag does nothing except cause the rest of the command line to be
@@ -7070,12 +7257,12 @@ Post-process @R{} profiling files.
 Convert Rd format to various other formats, including @HTML{}, @LaTeX{},
 plain text, and extracting the examples.  @code{Rd2txt} can be used as
 shorthand for @code{Rd2conv -t txt}.
-@itemx Rd2pdf
+@item Rd2pdf
 Convert Rd format to PDF.
 @item Stangle
-Extract S/R code from Sweave documentation
+Extract S/R code from Sweave or other vignette documentation
 @item Sweave
-Process Sweave documentation
+Process Sweave or other vignette documentation
 @item Rdiff
 Diff @R{} output ignoring headers etc
 @item config
@@ -7100,17 +7287,17 @@ R CMD @var{command} --help
 to obtain usage information for each of the tools accessible via the
 @code{R CMD} interface.
 
-In addition, you can use@footnote{as from @R{} 2.13.0.}  options
-@option{--arch=}, @option{--no-environ}, @option{--no-init-file},
-@option{--no-site-file} and @option{--vanilla} between @command{R} and
-@command{CMD}: these affect any @R{} processes run by the tools.  (Here
-@option{--vanilla} is equivalent to @option{--no-environ --no-site-file
---no-init-file}.)  However, note that @command{R CMD} does not of itself
-use any @R{} startup files (in particular, neither user nor site
-@file{Renviron} files), and all of the @R{} processes run by these tools
-(except @command{BATCH}) use @option{--no-restore}.  Most use
-@option{--vanilla} and so invoke no @R{} startup files: the current
-exceptions are @command{INSTALL}, @command{REMOVE}, @command{Sweave} and
+In addition, you can use options @option{--arch=},
+@option{--no-environ}, @option{--no-init-file}, @option{--no-site-file}
+and @option{--vanilla} between @command{R} and @command{CMD}: these
+affect any @R{} processes run by the tools.  (Here @option{--vanilla} is
+equivalent to @option{--no-environ --no-site-file --no-init-file}.)
+However, note that @command{R CMD} does not of itself use any @R{}
+startup files (in particular, neither user nor site @file{Renviron}
+files), and all of the @R{} processes run by these tools (except
+@command{BATCH}) use @option{--no-restore}.  Most use @option{--vanilla}
+and so invoke no @R{} startup files: the current exceptions are
+@command{INSTALL}, @command{REMOVE}, @command{Sweave} and
 @command{SHLIB} (which uses @option{--no-site-file --no-init-file}).
 
 @example
@@ -7126,7 +7313,7 @@ batch file, or if it has extension @code{.sh} or @code{.pl} the
 appropriate interpreter (if available) is called to run it.
 
 
-@node Invoking R under Windows, Invoking R under Mac OS X, Invoking R from the command line, Invoking R
+@node Invoking R under Windows, Invoking R under OS X, Invoking R from the command line, Invoking R
 @appendixsec Invoking R under Windows
 
 There are two ways to run @R{} under Windows.  Within a terminal window
@@ -7196,22 +7383,23 @@ will run @LaTeX{} on @file{mydoc.tex}, with the path to @R{}'s
 this does not help with the MiKTeX build of @LaTeX{}, but
 @command{R CMD texify mydoc} will work in that case.)
 
-@node Invoking R under Mac OS X, Scripting with R, Invoking R under Windows, Invoking R
-@appendixsec Invoking R under Mac OS X
+@node Invoking R under OS X, Scripting with R, Invoking R under Windows, Invoking R
+@appendixsec Invoking R under OS X
 
-There are two ways to run @R{} under Mac OS X.  Within a @code{Terminal.app}
+There are two ways to run @R{} under OS X.  Within a @code{Terminal.app}
 window by invoking @code{R}, the methods described in the first
 subsection apply.  There is also console-based GUI (@code{R.app}) that by
 default is installed in the @code{Applications} folder on your
-system.  It is a standard double-clickable Mac OS X application.
+system.  It is a standard double-clickable OS X application.
 
-The startup procedure under Mac OS X is very similar to that under UNIX.
-The `home directory' is the one inside the R.framework, but the startup
-and current working directory are set as the user's home directory
-unless a different startup directory is given in the Preferences window
+The startup procedure under OS X is very similar to that under UNIX, but
+@code{R.app} does not make use of command-line arguments.  The `home
+directory' is the one inside the R.framework, but the startup and
+current working directory are set as the user's home directory unless a
+different startup directory is given in the Preferences window
 accessible from within the GUI.
 
-@node Scripting with R,  , Invoking R under Mac OS X, Invoking R
+@node Scripting with R,  , Invoking R under OS X, Invoking R
 @appendixsec Scripting with R
 
 If you just want to run a file @file{foo.R} of @R{} commands, the
@@ -7270,7 +7458,7 @@ the usual way for the shell running the command.
 
 If you do not wish to hardcode the path to @command{Rscript} but have it
 in your path (which is normally the case for an installed @R{} except on
-Windows, but e.g.@: Mac OS X users may need to add @file{/usr/local/bin}
+Windows, but e.g.@: OS X users may need to add @file{/usr/local/bin}
 to their path), use
 
 @example
@@ -7314,8 +7502,8 @@ EOF
 but here @code{stdin()} refers to the program source and
 @code{"stdin"} will not be usable.
 
-Very short scripts can be passed to @command{Rscript} on the
-command-line via the @option{-e} flag.
+Short scripts can be passed to @command{Rscript} on the command-line
+@emph{via} the @option{-e} flag.  (Empty scripts are not accepted.)
 
 Note that on a Unix-alike the input filename (such as @file{foo.R})
 should not contain spaces nor shell metacharacters.
@@ -7330,7 +7518,7 @@ When the @acronym{GNU} @strong{readline} library is available at the
 time @R{} is configured for compilation under UNIX, an inbuilt command
 line editor allowing recall, editing and re-submission of prior commands
 is used.  Note that other versions of @strong{readline} exist and may be
-used by the inbuilt command line editor: this used to happen on Mac OS X.
+used by the inbuilt command line editor: this used to happen on OS X.
 
 It can be disabled (useful for usage with @acronym{ESS} @footnote{The
 `Emacs Speaks Statistics' package; see the @acronym{URL}
@@ -7445,9 +7633,8 @@ Re-submit the command to @R{}.
 The final @key{RET} terminates the command line editing sequence.
 
 The @strong{readline} key bindings can be customized in the usual way
-@emph{via} a @file{~/.inputrc} file.  As from @R{} 2.12.0, these
-customizations can be conditioned on application @code{R}, that is
-by including a section like
+@emph{via} a @file{~/.inputrc} file.  These customizations can be
+conditioned on application @code{R}, that is by including a section like
 
 @example
 $if R

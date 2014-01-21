@@ -49,7 +49,7 @@ generalized additive mixed models. Biometrics 62(4):1025-1036
 ## see also examples for gam.models, gam.vcomp and gamm
 
 ## simple comparison of lme and gam
-
+require(mgcv)
 require(nlme)
 b0 <- lme(travel~1,data=Rail,~1|Rail,method="REML") 
 

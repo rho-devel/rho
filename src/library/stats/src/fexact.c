@@ -14,6 +14,27 @@
  *CXXR to the CXXR website.
  *CXXR */
 
+/*
+ *  R : A Computer Language for Statistical Data Analysis
+ *  Copyright (C) 1999-2010   The R Core Team.
+ *
+ *  Based on ACM TOMS643 (1993)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
+ */
+
 /* -*- mode: c; kept-new-versions: 25; kept-old-versions: 20 -*-
 
    Fisher's exact test for contingency tables -- usage see below
@@ -28,8 +49,6 @@
 #include <R.h>
 #include <stdio.h>
 #include <limits.h>
-
-#include "ctest.h"
 
 static void f2xact(int nrow, int ncol, int *table, int ldtabl,
 		   double *expect, double *percnt, double *emin,
@@ -2059,3 +2078,16 @@ L30:
 }
 
 #endif /* not USING_R */
+
+#include <Rinternals.h>
+
+SEXP Fexact(SEXP x, SEXP pars, SEXP work, SEXP smult)
+{
+    int nr = nrows(x), nc = ncols(x), ws = asInteger(work),
+	mult = asInteger(smult);
+    pars = PROTECT(coerceVector(pars, REALSXP));
+    double p, prt, *rp =  REAL(pars);
+    fexact(&nr, &nc, INTEGER(x), &nr, rp, rp+1, rp+2, &prt, &p, &ws, &mult);
+    UNPROTECT(1);
+    return ScalarReal(p);
+}

@@ -1,6 +1,8 @@
 #  File src/library/base/R/load.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -14,7 +16,7 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-load <- function (file, envir = parent.frame())
+load <- function (file, envir = parent.frame(), verbose = FALSE)
 {
     if (is.character(file)) {
         ## files are allowed to be of an earlier format
@@ -30,9 +32,11 @@ load <- function (file, envir = parent.frame())
             if(grepl("RD[ABX][12]\r", magic))
                 stop("input has been corrupted, with LF replaced by CR")
             ## Not a version 2 magic number, so try the pre-R-1.4.0 code
-            warning(gettextf("file %s has magic number '%s'\n   Use of save versions prior to 2 is deprecated",
-                             sQuote(basename(file)),
-                             gsub("[\n\r]*", "", magic)),
+            warning(sprintf("file %s has magic number '%s'\n",
+                            sQuote(basename(file)),
+                            gsub("[\n\r]*", "", magic)),
+                    "  ",
+                    "Use of save versions prior to 2 is deprecated",
                     domain = NA, call. = FALSE)
             return(.Internal(load(file, envir)))
         }
@@ -41,7 +45,10 @@ load <- function (file, envir = parent.frame())
                else gzcon(file)
     } else stop("bad 'file' argument")
 
-    .Internal(loadFromConn2(con, envir))
+    if (verbose)
+    	cat("Loading objects:\n")
+    	
+    .Internal(loadFromConn2(con, envir, verbose))
 }
 
 save <- function(..., list = character(),
@@ -57,15 +64,14 @@ save <- function(..., list = character(),
         ascii <- opts$ascii
     if (missing(version)) version <- opts$version
     if (!is.null(version) && version < 2)
-        warning("Use of save versions prior to 2 is deprecated")
+        warning("Use of save versions prior to 2 is deprecated", domain = NA)
 
     if(missing(list) && !length(list(...)))
 	warning("nothing specified to be save()d")
     names <- as.character( substitute(list(...)))[-1L]
     list <- c(list, names)
     if (!is.null(version) && version == 1)
-        invisible(.Internal(save(list, file, ascii, version, envir,
-                                 eval.promises)))
+        .Internal(save(list, file, ascii, version, envir, eval.promises))
     else {
         if (precheck) {
             ## check for existence of objects before opening connection
@@ -113,8 +119,7 @@ save <- function(..., list = character(),
 	else stop("bad file argument")
 	if(isOpen(con) && summary(con)$text != "binary")
 	    stop("can only save to a binary connection")
-	invisible(.Internal(saveToConn(list, con, ascii, version, envir,
-				       eval.promises)))
+	.Internal(saveToConn(list, con, ascii, version, envir, eval.promises))
     }
 }
 
@@ -154,7 +159,8 @@ save.image <- function (file = ".RData", version = NULL, ascii = FALSE,
     if (safe)
         if (! file.rename(outfile, file)) {
             on.exit()
-            stop("image could not be renamed and is left in ", outfile)
+            stop(gettextf("image could not be renamed and is left in %s",
+                          outfile), domain = NA)
         }
     on.exit()
 }
@@ -184,6 +190,6 @@ findPackageEnv <- function(info)
     pkg <- substr(info, 9L, 1000L)
     if(require(pkg, character.only=TRUE, quietly = TRUE))
         return(as.environment(info))
-    message("not found: using .GlobalEnv instead")
-    return(.GlobalEnv)
+    message("Specified environment not found: using '.GlobalEnv' instead")
+    .GlobalEnv
 }

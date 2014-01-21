@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2007   The R Core Team
+ *  Copyright (C) 1997-2012   The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -55,7 +55,8 @@
 #endif
 
 #include <stdexcept>
-#include "Defn.h"
+#include <Defn.h>
+#include <Internal.h>
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Subscripting.hpp"
 
@@ -66,26 +67,59 @@ using namespace CXXR;
 #undef _S4_subsettable
 
 
-/* ExtractSubset does the transfer of elements from "x" to "result" */
-/* according to the integer subscripts given in "indx". */
+static R_INLINE SEXP VECTOR_ELT_FIX_NAMED(SEXP y, R_xlen_t i) {
+    /* if RHS (container or element) has NAMED > 0 set NAMED = 2.
+       Duplicating might be safer/more consistent (fix bug reported by
+       Radford Neal; similar to PR15098) */
+    SEXP val = VECTOR_ELT(y, i);
+    if ((NAMED(y) || NAMED(val)))
+	if (NAMED(val) < 2)
+	    SET_NAMED(val, 2);
+    return val;
+}
+
+static R_INLINE SEXP XVECTOR_ELT_FIX_NAMED(SEXP y, R_xlen_t i) {
+    /* if RHS (container or element) has NAMED > 0 set NAMED = 2.
+       Duplicating might be safer/more consistent (fix bug reported by
+       Radford Neal; similar to PR15098) */
+    SEXP val = XVECTOR_ELT(y, i);
+    if ((NAMED(y) || NAMED(val)))
+	if (NAMED(val) < 2)
+	    SET_NAMED(val, 2);
+    return val;
+}
+
+/* ExtractSubset does the transfer of elements from "x" to "result"
+   according to the integer/real subscripts given in "indx". */
 
 static SEXP ExtractSubset(SEXP x, SEXP result, SEXP indx, SEXP call)
 {
-    int mode = TYPEOF(x);
-    int n = LENGTH(indx);
-    int nx = length(x);
-    SEXP tmp = result;
+    R_xlen_t i, ii, n, nx;
+    int mode, mi;
+    SEXP tmp;
+    mode = TYPEOF(x);
+    mi = TYPEOF(indx);
+    n = XLENGTH(indx);
+    nx = xlength(x);
+    tmp = result;
 
     if (x == R_NilValue)
 	return x;
 
-    for (int i = 0; i < n; i++) {
-	int ii = INTEGER(indx)[i];
-	if (ii != NA_INTEGER)
-	    ii--;
+    for (i = 0; i < n; i++) {
+	switch(mi) {
+	case REALSXP:
+	    if(!R_FINITE(REAL(indx)[i])) ii = NA_INTEGER;
+	    else ii = R_xlen_t( (REAL(indx)[i] - 1));
+	    break;
+	default:
+	    ii = INTEGER(indx)[i];
+	    if (ii != NA_INTEGER) ii--;
+	}
 	switch (mode) {
+	    /* NA_INTEGER < 0, so some of this is redundant */
 	case LGLSXP:
-	    if (0 <= ii && ii < nx && ii != NA_LOGICAL)
+	    if (0 <= ii && ii < nx && ii != NA_INTEGER)
 		LOGICAL(result)[i] = LOGICAL(x)[ii];
 	    else
 		LOGICAL(result)[i] = NA_INTEGER;
@@ -105,8 +139,7 @@ static SEXP ExtractSubset(SEXP x, SEXP result, SEXP indx, SEXP call)
 	case CPLXSXP:
 	    if (0 <= ii && ii < nx && ii != NA_INTEGER) {
 		COMPLEX(result)[i] = COMPLEX(x)[ii];
-	    }
-	    else {
+	    } else {
 		COMPLEX(result)[i].r = NA_REAL;
 		COMPLEX(result)[i].i = NA_REAL;
 	    }
@@ -119,19 +152,23 @@ static SEXP ExtractSubset(SEXP x, SEXP result, SEXP indx, SEXP call)
 	    break;
 	case VECSXP:
 	    if (0 <= ii && ii < nx && ii != NA_INTEGER)
-		SET_VECTOR_ELT(result, i, VECTOR_ELT(x, ii));
+		SET_VECTOR_ELT(result, i, VECTOR_ELT_FIX_NAMED(x, ii));
 	    else
 		SET_VECTOR_ELT(result, i, R_NilValue);
 	    break;
 	case EXPRSXP:
 	    if (0 <= ii && ii < nx && ii != NA_INTEGER)
-		SET_XVECTOR_ELT(result, i, XVECTOR_ELT(x, ii));
+		SET_XVECTOR_ELT(result, i, XVECTOR_ELT_FIX_NAMED(x, ii));
 	    else
 		SET_XVECTOR_ELT(result, i, R_NilValue);
 	    break;
 	case LISTSXP:
 	    /* cannot happen: pairlists are coerced to lists */
 	case LANGSXP:
+#ifdef LONG_VECTOR_SUPPORT
+	    if (ii > R_SHORT_LEN_MAX)
+		error("invalid subscript for pairlist");
+#endif
 	    if (0 <= ii && ii < nx && ii != NA_INTEGER) {
 		SEXP tmp2 = nthcdr(x, ii);
 		SETCAR(tmp, CAR(tmp2));
@@ -364,16 +401,16 @@ SEXP attribute_hidden do_subset(SEXP call, SEXP op, SEXP args, SEXP rho)
     return do_subset_dflt(call, op, ans, rho);
 }
 
-static R_INLINE int scalarIndex(SEXP s)
+static R_INLINE R_xlen_t scalarIndex(SEXP s)
 {
     if (ATTRIB(s) == R_NilValue)
 	switch (TYPEOF(s)) {
 	case REALSXP:
-	    if (LENGTH(s) == 1 && ! ISNAN(REAL(s)[0]))
-		return REAL(s)[0];
+	    if (XLENGTH(s) == 1 && ! ISNAN(REAL(s)[0]))
+		return R_xlen_t( REAL(s)[0]);
 	    else return -1;
 	case INTSXP:
-	    if (LENGTH(s) == 1 && INTEGER(s)[0] != NA_INTEGER)
+	    if (XLENGTH(s) == 1 && INTEGER(s)[0] != NA_INTEGER)
 		return INTEGER(s)[0];
 	    else return -1;
 	default: return -1;
@@ -388,7 +425,7 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* By default we drop extents of length 1 */
 
     /* Handle cases of extracting a single element from a simple vector
-       or matrix directly to improve speed for these simple case. */
+       or matrix directly to improve speed for these simple cases. */
     SEXP cdrArgs = CDR(args);
     SEXP cddrArgs = CDR(cdrArgs);
     if (cdrArgs != R_NilValue && cddrArgs == R_NilValue &&
@@ -397,18 +434,18 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SEXP x = CAR(args);
 	if (ATTRIB(x) == R_NilValue) {
 	    SEXP s = CAR(cdrArgs);
-	    int i = scalarIndex(s);
+	    R_xlen_t i = scalarIndex(s);
 	    switch (TYPEOF(x)) {
 	    case REALSXP:
-		if (i >= 1 && i <= LENGTH(x))
+		if (i >= 1 && i <= XLENGTH(x))
 		    return ScalarReal( REAL(x)[i-1] );
 		break;
 	    case INTSXP:
-		if (i >= 1 && i <= LENGTH(x))
+		if (i >= 1 && i <= XLENGTH(x))
 		    return ScalarInteger( INTEGER(x)[i-1] );
 		break;
 	    case LGLSXP:
-		if (i >= 1 && i <= LENGTH(x))
+		if (i >= 1 && i <= XLENGTH(x))
 		    return ScalarLogical( LOGICAL(x)[i-1] );
 		break;
 	    default: break;
@@ -427,13 +464,13 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 		/* x is a matrix */
 		SEXP si = CAR(cdrArgs);
 		SEXP sj = CAR(cddrArgs);
-		int i = scalarIndex(si);
-		int j = scalarIndex(sj);
+		R_xlen_t i = scalarIndex(si);
+		R_xlen_t j = scalarIndex(sj);
 		int nrow = INTEGER(dim)[0];
 		int ncol = INTEGER(dim)[1];
 		if (i > 0 && j > 0 && i <= nrow && j <= ncol) {
 		    /* indices are legal scalars */
-		    int k = i - 1 + nrow * (j - 1);
+		    R_xlen_t k = i - 1 + nrow * (j - 1);
 		    switch (TYPEOF(x)) {
 		    case REALSXP:
 			if (k < LENGTH(x))
@@ -617,21 +654,21 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,
 
     /* split out ENVSXP for now */
     if ( TYPEOF(x) == ENVSXP ) {
-      if ( nsubs != 1 || !isString(CAR(subs)) || length(CAR(subs)) != 1 )
-	  errorcall(call, _("wrong arguments for subsetting an environment"));
-      GCStackRoot<>
-	  ans(findVarInFrame(x,
-			     install(translateChar(STRING_ELT(CAR(subs),
-							      0)))));
-      if ( TYPEOF(ans) == PROMSXP )
-	  ans = eval(ans, R_GlobalEnv);
-      else SET_NAMED(ans, 2);
+	if( nsubs != 1 || !isString(CAR(subs)) || length(CAR(subs)) != 1 )
+	    errorcall(call, _("wrong arguments for subsetting an environment"));
+	GCStackRoot<>
+	    ans(findVarInFrame(x,
+			       install(translateChar(STRING_ELT(CAR(subs),
+								0)))));
+	if ( TYPEOF(ans) == PROMSXP )
+	    ans = eval(ans, R_GlobalEnv);
+	else SET_NAMED(ans, 2);
 
-      if (ans == R_UnboundValue )
-	  return(R_NilValue);
-      if (NAMED(ans))
-	  SET_NAMED(ans, 2);
-      return(ans);
+	if (ans == R_UnboundValue )
+	    return(R_NilValue);
+	if (NAMED(ans))
+	    SET_NAMED(ans, 2);
+	return ans;
     }
 
     /* back to the regular program */
@@ -640,17 +677,17 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,
 
     int named_x = NAMED(x);  /* x may change below; save this now.  See PR#13411 */
 
-    int offset = 0;
+    R_xlen_t offset = 0;
     if (nsubs == 1) { /* vector indexing */
 	SEXP thesub = CAR(subs);
 	int len = length(thesub);
 
 	if (len > 1)
-	    x = vectorIndex(x, thesub, 0, len-1, pok, call);
-	    
+	    x = vectorIndex(x, thesub, 0, len-1, pok, call, FALSE);
+	
 	offset = get1index(thesub, getAttrib(x, R_NamesSymbol),
-			   length(x), pok, len > 1 ? len-1 : -1, call);
-	if (offset < 0 || offset >= length(x)) {
+			   xlength(x), pok, len > 1 ? len-1 : -1, call);
+	if (offset < 0 || offset >= xlength(x)) {
 	    /* a bold attempt to get the same behaviour for $ and [[ */
 	    if (offset < 0 && (isNewList(x) ||
 			       isExpression(x) ||
@@ -671,10 +708,10 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,
 	SEXP dimnames = getAttrib(x, R_DimNamesSymbol);
 	ndn = length(dimnames);
 	for (int i = 0; i < nsubs; i++) {
-	    INTEGER(indx)[i] =
-		get1index(CAR(subs), (i < ndn) ? VECTOR_ELT(dimnames, i) :
-			  R_NilValue,
-			  INTEGER(indx)[i], pok, -1, call);
+	    INTEGER(indx)[i] = int(
+		get1index(CAR(subs),
+			  (i < ndn) ? VECTOR_ELT(dimnames, i) : R_NilValue,
+			  INTEGER(indx)[i], pok, -1, call));
 	    subs = CDR(subs);
 	    if (INTEGER(indx)[i] < 0 ||
 		INTEGER(indx)[i] >= INTEGER(dims)[i])
@@ -687,7 +724,11 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,
     }
 
     if (isPairList(x)) {
-	SEXP ans = CAR(nthcdr(x, offset));
+#ifdef LONG_VECTOR_SUPPORT
+	if (offset > R_SHORT_LEN_MAX)
+	    error("invalid subscript for pairlist");
+#endif
+	SEXP ans = CAR(nthcdr(x, int( offset)));
 	if (named_x > NAMED(ans))
 	    SET_NAMED(ans, named_x);
 	return ans;
@@ -739,9 +780,10 @@ enum pmatch {
 /* Returns: */
 static
 enum pmatch
-pstrmatch(SEXP target, SEXP input, int slen)
+pstrmatch(SEXP target, SEXP input, size_t slen)
 {
     const char *st = "";
+    const void *vmax = vmaxget();
 
     if(target == R_NilValue)
 	return NO_MATCH;
@@ -756,9 +798,13 @@ pstrmatch(SEXP target, SEXP input, int slen)
     default:  // -Wswitch
 	break;
     }
-    if(strncmp(st, translateChar(input), slen) == 0)
-	return (CXXRCONSTRUCT(int, strlen(st)) == slen) ?  EXACT_MATCH : PARTIAL_MATCH;
-    else return NO_MATCH;
+    if(strncmp(st, translateChar(input), slen) == 0) {
+	vmaxset(vmax);
+	return (strlen(st) == slen) ?  EXACT_MATCH : PARTIAL_MATCH;
+    } else {
+	vmaxset(vmax);
+	return NO_MATCH;
+    }
 }
 
 
@@ -814,14 +860,14 @@ SEXP attribute_hidden do_subset3(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
 {
     SEXP y, nlist;
-    int slen;
+    size_t slen;
 
     PROTECT(x);
     PROTECT(input);
 
     /* Optimisation to prevent repeated recalculation */
     slen = strlen(translateChar(input));
-     /* The mechanism to allow  a class extending "environment" */
+     /* The mechanism to allow a class extending "environment" */
     if( IS_S4_OBJECT(x) && TYPEOF(x) == S4SXP ){
         x = R_getS4DataSlot(x, ANYSXP);
 	if(x == R_NilValue)
@@ -829,7 +875,6 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
     }
 
     /* If this is not a list object we return NULL. */
-    /* Or should this be allocVector(VECSXP, 0)? */
 
     if (isPairList(x)) {
 	SEXP xmatch = R_NilValue;
@@ -853,7 +898,7 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
 	if (havematch == 1) { /* unique partial match */
 	    if(R_warn_partial_match_dollar) {
 		const char *st = "";
-		SEXP target = TAG(y);
+		SEXP target = TAG(xmatch);
 		switch (TYPEOF(target)) {
 		case SYMSXP:
 		    st = CHAR(PRINTNAME(target));
@@ -874,10 +919,11 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
 	return R_NilValue;
     }
     else if (isVectorList(x)) {
-	int i, n, havematch, imatch=-1;
+	R_xlen_t i, n, imatch = -1;
+	int havematch;
 	nlist = getAttrib(x, R_NamesSymbol);
 	UNPROTECT(2);
-	n = length(nlist);
+	n = xlength(nlist);
 	havematch = 0;
 	for (i = 0 ; i < n ; i = i + 1) {
 	    switch(pstrmatch(STRING_ELT(nlist, i), input, slen)) {
@@ -926,7 +972,7 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
 	return R_NilValue;
     }
     else if( isEnvironment(x) ){
-	y = findVarInFrame(x, install(translateChar(input)));
+	y = findVarInFrame(x, installTrChar(input));
 	if( TYPEOF(y) == PROMSXP ) {
 	    PROTECT(y);
 	    y = eval(y, R_GlobalEnv);
@@ -940,7 +986,7 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
 		SET_NAMED(y, NAMED(x));
 	    return(y);
 	}
-      return R_NilValue;
+	return R_NilValue;
     }
     else if( isVectorAtomic(x) ){
 	errorcall(call, "$ operator is invalid for atomic vectors");

@@ -10,7 +10,8 @@
   Load a given URL into a WWW browser.
 }
 \usage{
-browseURL(url, browser = getOption("browser"), encodeIfNeeded = FALSE)
+browseURL(url, browser = getOption("browser"),
+          encodeIfNeeded = FALSE)
 }
 \arguments{
   \item{url}{a non-empty character string giving the URL to be loaded.}
@@ -18,7 +19,7 @@ browseURL(url, browser = getOption("browser"), encodeIfNeeded = FALSE)
     program to be used as hypertext browser.  It should be in the PATH,
     or a full path specified.  Alternatively, an \R function to be
     called to invoke the browser.
-    
+
     Under Windows \code{NULL} is also allowed (and is the default), and
     implies that the file association mechanism will be used.
   }
@@ -37,7 +38,7 @@ browseURL(url, browser = getOption("browser"), encodeIfNeeded = FALSE)
   made manually or automatically when \R was configured.  (See
   \code{\link{Startup}} for where to override that default value.)
   To suppress showing URLs altogether, use the value \code{"false"}.
-  
+
   If \code{browser} supports remote control and \R knows how to perform
   it, the URL is opened in any already running browser or a new one if
   necessary.  This mechanism currently is available for browsers which
@@ -58,11 +59,11 @@ browseURL(url, browser = getOption("browser"), encodeIfNeeded = FALSE)
   (see \code{\link{URLencode}}).  This can be tricky for file URLs,
   where the format accepted can depend on the browser and OS.
 
-  To suppress showing URLs altogether, set \code{browser="false"}.
+  To suppress showing URLs altogether, set \code{browser = "false"}.
 }
 \examples{
 \dontrun{## for KDE users who want to open files in a new tab
-options(browser="kfmclient newTab") 
+options(browser = "kfmclient newTab")
 browseURL("http://www.r-project.org")
 }}
 #endif
@@ -77,12 +78,12 @@ browseURL("http://www.r-project.org")
   paths: others do not accept that.  All seem to accept \code{\\} as a
   path separator even though the RFC1738 standard requires \code{/}.
 
-  To suppress showing URLs altogether, set \code{browser="false"}.
+  To suppress showing URLs altogether, set \code{browser = "false"}.
 }
 \examples{
 \dontrun{browseURL("http://www.r-project.org")
 browseURL("file://d:/R/R-2.5.1/doc/html/index.html",
-          browser="C:/Program Files/Mozilla Firefox/firefox.exe")
+          browser = "C:/Program Files/Mozilla Firefox/firefox.exe")
 }}
 #endif
 \keyword{file}

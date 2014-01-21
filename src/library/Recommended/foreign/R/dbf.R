@@ -25,7 +25,9 @@ read.dbf <- function(file, as.is = FALSE)
     if (!(identical(onames, inames))) {
         for (i in seq_along(onames))
             if (!(identical(onames[i], inames[i])))
-                message("Field name: ", onames[i], " changed to: ", inames[i])
+                message(gettextf("Field name: %s changed to: %s",
+                                 sQuote(onames[i]), sQuote(inames[i])),
+                        domain = NA)
     }
     data_types <- attr(df, "data_types")
     for(i in seq_along(onames))
@@ -52,8 +54,11 @@ write.dbf <- function(dataframe, file, factor2char = TRUE, max_nchar = 254)
     asis <- cl == "AsIs"
     cl[asis & sapply(dataframe, mode) == "character"] <- "character"
     if(length(cl0 <- setdiff(cl, allowed_classes)))
-        stop("data frame contains columns of unsupported class(es) ",
-             paste(cl0, collapse = ","))
+        stop(sprintf(ngettext(length(cl0),
+                              "data frame contains columns of unsupported class %s",
+                              "data frame contains columns of unsupported classes %s"),
+
+                     paste(dQuote(cl0), collapse = ",")), domain = NA)
     m <- ncol(dataframe)
     DataTypes <- c(logical="L", integer="N", numeric="F", character="C",
                    factor=if(factor2char) "C" else "N", Date="D")[cl]

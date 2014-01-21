@@ -1,6 +1,6 @@
 % File src/library/graphics/man/layout.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{layout}
@@ -15,8 +15,8 @@
   row-heights specified in the respective arguments.
 }
 \usage{
-layout(mat, widths = rep(1, ncol(mat)),
-       heights = rep(1, nrow(mat)), respect = FALSE)
+layout(mat, widths = rep.int(1, ncol(mat)),
+       heights = rep.int(1, nrow(mat)), respect = FALSE)
 
 layout.show(n = 1)
 lcm(x)
@@ -47,9 +47,9 @@ lcm(x)
     The \code{respect} argument controls whether a unit column-width is
     the same physical measurement on the device as a unit row-height.
 
-    There is a limit (currently 50) for the numbers of rows and columns
-    in the layout, and also for the total number of cells (500).
-    
+    There is a limit (currently 200) for the numbers of rows and columns
+    in the layout, and also for the total number of cells (10007).
+
     \code{layout.show(n)} plots (part of) the current layout, namely the
     outlines of the next \code{n} figures.
 
@@ -61,9 +61,9 @@ lcm(x)
   \code{layout} returns the number of figures, \eqn{N}, see above.
 }
 \references{
-  Murrell, P. R. (1999) Layouts: A mechanism for arranging plots on a page. 
+  Murrell, P. R. (1999) Layouts: A mechanism for arranging plots on a page.
   \emph{Journal of Computational and Graphical Statistics},
-  \bold{8}, 121-134. 
+  \bold{8}, 121--134.
 
   Chapter 5 of Paul Murrell's Ph.D. thesis.
 
@@ -91,11 +91,11 @@ layout.show(2)
 ## divide device into two rows and two columns
 ## allocate figure 1 and figure 2 as above
 ## respect relations between widths and heights
-nf <- layout(matrix(c(1,1,0,2), 2, 2, byrow=TRUE), respect=TRUE)
+nf <- layout(matrix(c(1,1,0,2), 2, 2, byrow = TRUE), respect = TRUE)
 layout.show(nf)
 
 ## create single figure which is 5cm square
-nf <- layout(matrix(1), widths=lcm(5), heights=lcm(5))
+nf <- layout(matrix(1), widths = lcm(5), heights = lcm(5))
 layout.show(nf)
 
 
@@ -103,22 +103,22 @@ layout.show(nf)
 
 x <- pmin(3, pmax(-3, stats::rnorm(50)))
 y <- pmin(3, pmax(-3, stats::rnorm(50)))
-xhist <- hist(x, breaks=seq(-3,3,0.5), plot=FALSE)
-yhist <- hist(y, breaks=seq(-3,3,0.5), plot=FALSE)
+xhist <- hist(x, breaks = seq(-3,3,0.5), plot = FALSE)
+yhist <- hist(y, breaks = seq(-3,3,0.5), plot = FALSE)
 top <- max(c(xhist$counts, yhist$counts))
-xrange <- c(-3,3)
-yrange <- c(-3,3)
-nf <- layout(matrix(c(2,0,1,3),2,2,byrow=TRUE), c(3,1), c(1,3), TRUE)
+xrange <- c(-3, 3)
+yrange <- c(-3, 3)
+nf <- layout(matrix(c(2,0,1,3),2,2,byrow = TRUE), c(3,1), c(1,3), TRUE)
 layout.show(nf)
 
-par(mar=c(3,3,1,1))
-plot(x, y, xlim=xrange, ylim=yrange, xlab="", ylab="")
-par(mar=c(0,3,1,1))
-barplot(xhist$counts, axes=FALSE, ylim=c(0, top), space=0)
-par(mar=c(3,0,1,1))
-barplot(yhist$counts, axes=FALSE, xlim=c(0, top), space=0, horiz=TRUE)
+par(mar = c(3,3,1,1))
+plot(x, y, xlim = xrange, ylim = yrange, xlab = "", ylab = "")
+par(mar = c(0,3,1,1))
+barplot(xhist$counts, axes = FALSE, ylim = c(0, top), space = 0)
+par(mar = c(3,0,1,1))
+barplot(yhist$counts, axes = FALSE, xlim = c(0, top), space = 0, horiz = TRUE)
 
-par(def.par)#- reset to default
+par(def.par)  #- reset to default
 }
 \keyword{iplot}
 \keyword{dplot}

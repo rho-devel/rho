@@ -112,8 +112,8 @@ xyplot(Yhat ~ Conc | Strip, Muscle, as.table = TRUE,
   subscripts = TRUE, xlab = "Calcium Chloride concentration (mM)",
   ylab = "log(Length in mm)", panel =
   function(x, y, subscripts, ...) {
-     lines(spline(x, y))
      panel.xyplot(x, Muscle$logLength[subscripts], ...)
+     llines(spline(x, y))
   })
 
 

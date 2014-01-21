@@ -1,3 +1,130 @@
+2013-08-27 Fabian Scheipl  <fabian.scheipl@stat.uni-muenchen.de>
+
+	* man/indMatrix-class.Rd: new "indMatrix" class, a natural
+	superclass of "pMatrix".  Many methods moved from "pMatrix" to
+	"indMatrix".
+
+2013-05-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-13
+
+	* R/KhatriRao.R: Efficient KhatriRao() by Michael Cysouw
+
+2012-11-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-11
+
+	* R/SparseM-conv.R: as(<csr>, "dgCMatrix") now works again
+	* tests/other-pkgs.R: test that.
+
+	* src/Mutils.c: do *not* use '#if R_VERSION < ..' so this also
+	*runs* in older R when installed in R >= 2.15.2.
+
+2012-10-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Mutils.c (Mmatrix): new, to be used by .External()
+	in order to replace .Internal(matrix(....))
+
+2012-10-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R (.sparseDiagonal): new 'unitri' argument;
+	more flexibility; new: solve(<dsCMatrix>, <missing>)
+
+2012-09-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-10, CRAN-released: 2012-10-16, r2845
+
+2012-09-01  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseVector.R (sparseVector): new constructor
+
+	* inst/test-tools-Matrix.R (rspMat): smarter; also useful for large
+	dimensions.
+
+2012-07-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/group-methods.R: now do much more testing, notably <Ops> of
+	pairs of matrices ... however only when 'doExtras' is true, which
+	it is not by default, e.g., on CRAN.
+
+2012-07-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R, R/diagMatrix.R: many fixes, notably for rare operations
+	that were not triggered before.
+
+	* R/Auxiliaries.R (allTrueMat): new utility.
+
+2012-07-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dsparseMatrix.R, R/sparseVector.R, ...: Newly defined
+	is.finite() and is.infinite() methods for all our *Matrix and *sparseVector.
+
+2012-07-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/d??Matrix.R (diag<-): many "diag<-" methods, which preserve
+	symmetricity, triangularity (even uni-triangularity sometimes);
+	Partly by also making   A[cbind(i,i)]  preserve such properties.
+
+	* src/Mutils.c (SET_packed_setDiag) {and similar}:
+	*_setDiag() C functions implementing "diag<-" R methods.
+
+2012-06-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R (Ops.x.x): now, dense symmetric and triangular matrices
+	are preserved for many arithmetic and logic binary operators.
+
+	* src/ldense.c (lsyMatrix_as_lspMatrix, ..): more coercions keep
+	the dimnames().
+
+	* R/symmetricMatrix.R (pack, unpack): new pack() {"inverse" of
+	unpack(), including pack(<matrix>)}; new unpack() methods.
+
+2012-06-20  Douglas Bates <bates@stat.wisc.edu>
+
+	* src/scripts/DEPS.mkf,	...
+	* src/*.c: Update to version 4.0.0 of SuiteSparse
+
+2012-06-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-8, CRAN-released: 2012-06-20, r2789
+
+	* R/CHMfactor.R (update): *DO* allow non-symmetric parent.
+	* man/CHMfactor-class.Rd: be more clear about the two ways.
+	* tests/factorizing.R: more update(<Chol>) testing
+
+2012-06-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/matprod.R (chkDnProd): new testing function
+
+2012-06-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/CHMfactor.R (update): now *warn* when parent is not formally
+	symmetric and coerce it.
+
+2012-06-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (chk.s): "check dots" - new utility -- possibly
+	for base R ?
+
+2012-04-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (sparseMatrix): now also works for
+	'symmetric=TRUE' and lower triangular indices.
+
+2012-04-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/CHMfactor.R (updown): new generic and methods,
+	* man/updown.Rd: provided by Nicholas Nagle.
+
+2012-03-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-7, CRAN-released: for a few days only.
+
+2012-03-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-6, CRAN-released: 2012-03-30, r2775
+	* DESCRIPTION (Depends): R >= 2.15.0
+
 2012-03-15  Martin Maechler  <maechler@stat.math.ethz.ch>
 
 	* R/spModels.R (sparseInt.r): recursion free (which does not help much).
@@ -23,7 +150,7 @@
 
 2012-02-25  Martin Maechler  <maechler@stat.math.ethz.ch>
 
-	* DESCRIPTION (Version): 1.0-5, CRAN-released: 2012-...., r...
+	* DESCRIPTION (Version): 1.0-5, CRAN-released: 2012-03-15, r2773
 	* src/chm_common.c (chm_factor_to_SEXP): in case of failure,
 	* src/dsCMatrix.c (internal_chm_factor): ensure memory cleanup;
 	memory leak reported by Kasper Kristensen at dtu.dk.

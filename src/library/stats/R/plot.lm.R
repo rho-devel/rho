@@ -1,6 +1,8 @@
 #  File src/library/stats/R/plot.lm.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -30,9 +32,9 @@ function (x, which = c(1L:3L,5L), ## was which = 1L:4L,
 {
     dropInf <- function(x, h) {
 	if(any(isInf <- h >= 1.0)) {
-	    warning("Not plotting observations with leverage one:\n  ",
-		    paste(which(isInf), collapse=", "),
-                    call.=FALSE)
+            warning(gettextf("not plotting observations with leverage one:\n  %s",
+                             paste(which(isInf), collapse=", ")),
+                    call. = FALSE, domain = NA)
 	    x[isInf] <- NaN
 	}
 	x
@@ -125,7 +127,7 @@ function (x, which = c(1L:3L,5L), ## was which = 1L:4L,
     if (show[1L]) {
 	ylim <- range(r, na.rm=TRUE)
 	if(id.n > 0)
-	    ylim <- extendrange(r= ylim, f = 0.08)
+	    ylim <- extendrange(r = ylim, f = 0.08)
         dev.hold()
 	plot(yh, r, xlab = l.fit, ylab = "Residuals", main = main,
 	     ylim = ylim, type = "n", ...)
@@ -192,7 +194,7 @@ function (x, which = c(1L:3L,5L), ## was which = 1L:4L,
  	rsp <- dropInf( r.w/(s * sqrt(1 - hii)), hii )
 	ylim <- range(rsp, na.rm = TRUE)
 	if (id.n > 0) {
-	    ylim <- extendrange(r= ylim, f = 0.08)
+	    ylim <- extendrange(r = ylim, f = 0.08)
 	    show.rsp <- order(-cook)[iid]
 	}
         do.plot <- TRUE
@@ -233,9 +235,9 @@ function (x, which = c(1L:3L,5L), ## was which = 1L:4L,
                 dev.flush()
             }
 	    else { # no factors
-		message("hat values (leverages) are all = ",
-                        format(mean(r.hat)),
-			"\n and there are no factor predictors; no plot no. 5")
+                message(gettextf("hat values (leverages) are all = %s\n and there are no factor predictors; no plot no. 5",
+                                 format(mean(r.hat))),
+                        domain = NA)
                 frame()
                 do.plot <- FALSE
             }

@@ -59,7 +59,7 @@ gnls <-
   controlvals <- gnlsControl()
   if (!missing(control)) {
     if(!is.null(control$nlmStepMax) && control$nlmStepMax < 0) {
-      warning("Negative control$nlmStepMax - using default value")
+      warning("negative control$nlmStepMax - using default value")
       control$nlmStepMax <- NULL
     }
     controlvals[names(control)] <- control
@@ -68,7 +68,7 @@ gnls <-
   ## checking arguments
   ##
   if (!inherits(form, "formula"))
-    stop("\"object\" must be a formula")
+    stop("'object' must be a formula")
   if (length(form)!=3)
     stop("object formula must be of the form \"resp ~ pred\"")
 
@@ -78,16 +78,15 @@ gnls <-
   if (missing(start)) {
     if (!is.null(attr(eval(form[[3]][[1]]), "initial"))) {
       nlsCall <- Call[c("","model","data")]
-      nlsCall[[1]] <- as.name("nls")
+      nlsCall[[1]] <- quote(stats::nls)
       names(nlsCall)[2] <- "formula"
       ## checking if "data" is not equal to sys.frame(sys.parent())
       if (is.null(dim(data))) {
-        stop(paste("\"data\" must be given explicitly to use \"nls\"",
-                   "to get initial estimates"))
+          stop("'data' must be given explicitly to use 'nls' to get initial estimates")
       }
       start <- coef(eval(nlsCall))
     } else {
-      stop("No initial values for model parameters")
+      stop("no initial values for model parameters")
     }
   } else {
     start <- unlist(start)
@@ -100,7 +99,7 @@ gnls <-
 
   if (missing(params)) {
     if (is.null(pNams <- names(start))) {
-      stop("Starting estimates must have names when \"params\" is missing")
+      stop("starting estimates must have names when 'params' is missing")
     }
     params <- eval(parse(text = paste(paste(pNams, collapse = "+"), "1",
                            sep = "~")))
@@ -124,11 +123,11 @@ gnls <-
   for (i in seq_along(params)) {
     this <- eval(params[[i]])
     if (!inherits(this, "formula"))
-      stop ("params must be a formula or list of formulae")
+      stop ("'params' must be a formula or list of formulae")
     if (length(this) != 3)
-      stop ("formulae in params must be of the form \"parameter ~ expr\".")
+      stop ("formulae in 'params' must be of the form \"parameter ~ expr\"")
     if (!is.name(this[[2]]))
-      stop ("formulae in params must be of the form \"parameter ~ expr\".")
+      stop ("formulae in 'params' must be of the form \"parameter ~ expr\"")
     pnames[i] <- as.character(this[[2]])
   }
   names(params) <- pnames
@@ -417,9 +416,9 @@ gnls <-
     if (work$settings[4] == 1) {
 ##      convResult <- 2
       if (controlvals$returnObject) {
-        warning("Step halving factor reduced below minimum in NLS step")
+        warning("step halving factor reduced below minimum in NLS step")
       } else {
-        stop("Step halving factor reduced below minimum in NLS step")
+        stop("step halving factor reduced below minimum in NLS step")
       }
       break
     }
@@ -464,10 +463,10 @@ gnls <-
     if (numIter >= controlvals$maxIter) {
 ##      convResult <- 1
       if (controlvals$returnObject) {
-	warning("Maximum number of iterations reached without convergence")
+	warning("maximum number of iterations reached without convergence")
 	break
       } else {
-	stop("Maximum number of iterations reached without convergence")
+	stop("maximum number of iterations reached without convergence")
       }
     }
   }
@@ -481,8 +480,7 @@ gnls <-
     sqrt(sum((attr(gnlsSt,"conLin")$Xy[,pLen+1])^2)/(NReal - pLen))
   varBeta <- qr(attr(gnlsSt, "conLin")$Xy[ , 1:pLen, drop = FALSE])
   if (varBeta$rank < pLen) {
-    stop(paste("Approx. covariance matrix for parameter estimates",
-               "not of full rank"))
+    stop("approximate covariance matrix for parameter estimates not of full rank")
   }
   lsig <- log(sigma) + 0.5 * log(1 - pLen/NReal)
   attr(parAssign, "varBetaFact") <- varBeta <-
@@ -654,7 +652,7 @@ logLik.gnls <-
   function(object, REML = FALSE, ...)
 {
   if (REML) {
-    stop("Cannot calculate REML log-likelihood for gnls objects")
+    stop("cannot calculate REML log-likelihood for \"gnls\" objects")
   }
   p <- object$dims$p
   N <- object$dims$N
@@ -695,8 +693,10 @@ predict.gnls <-
       levs <- levels(dataMod[,i])
       levsC <- dimnames(contr[[i]])[[1]]
       if (any(wch <- is.na(match(levs, levsC)))) {
-        stop(paste("Levels", paste(levs[wch], collapse = ","),
-                   "not allowed for", i))
+          stop(sprintf(ngettext(sum(wch),
+                                "level %s not allowed for %s",
+                                "levels %s not allowed for %s"),
+                       paste(levs[wch], collapse = ",")), domain = NA)
       }
       attr(dataMod[,i], "contrasts") <- contr[[i]][levs, , drop = FALSE]
 #      if (length(levs) < length(levsC)) {

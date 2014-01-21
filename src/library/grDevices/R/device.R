@@ -1,6 +1,8 @@
 #  File src/library/grDevices/R/device.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -58,7 +60,7 @@ dev.cur <- function()
 {
     if(!exists(".Devices"))
 	.Devices <- list("null device")
-    num.device <- .Internal(dev.cur())
+    num.device <- .External(C_devcur)
     names(num.device) <- .Devices[[num.device]]
     num.device
 }
@@ -66,7 +68,7 @@ dev.cur <- function()
 dev.set <-
     function(which = dev.next())
 {
-    which <- .Internal(dev.set(as.integer(which)))
+    which <- .External(C_devset, as.integer(which))
     names(which) <- .Devices[[which]]
     which
 }
@@ -76,7 +78,7 @@ dev.next <-
 {
     if(!exists(".Devices"))
 	.Devices <- list("null.device")
-    num.device <- .Internal(dev.next(as.integer(which)))
+    num.device <- .External(C_devnext, as.integer(which))
     names(num.device) <- .Devices[[num.device]]
     num.device
 }
@@ -86,7 +88,7 @@ dev.prev <-
 {
     if(!exists(".Devices"))
 	.Devices <- list("null device")
-    num.device <- .Internal(dev.prev(as.integer(which)))
+    num.device <- .External(C_devprev, as.integer(which))
     names(num.device) <- .Devices[[num.device]]
     num.device
 }
@@ -96,7 +98,7 @@ dev.off <-
 {
     if(which == 1)
 	stop("cannot shut down device 1 (the null device)")
-    .Internal(dev.off(as.integer(which)))
+    .External(C_devoff, as.integer(which))
     dev.cur()
 }
 
@@ -121,7 +123,7 @@ dev.copy <- function(device, ..., which = dev.next())
     }
     ## protect against failure
     on.exit(dev.set(old.device))
-    .Internal(dev.copy(old.device))
+    .External(C_devcopy, old.device)
     on.exit()
     dev.cur()
 }
@@ -132,9 +134,9 @@ dev.print <- function(device = postscript, ...)
     nm <- names(current.device)[1L]
     if(nm == "null device") stop("no device to print from")
     if(!dev.displaylist())
-        stop("can only print from screen device")
+        stop("can only print from a screen device")
     oc <- match.call()
-    oc[[1L]] <- as.name("dev.copy")
+    oc[[1L]] <- quote(grDevices::dev.copy)
     oc$device <- device
     din <- graphics::par("din"); w <- din[1L]; h <- din[2L]
     if(missing(device)) { ## safe way to recognize postscript
@@ -194,7 +196,7 @@ dev.copy2eps <- function(...)
     if(!dev.displaylist())
         stop("can only print from a screen device")
     oc <- match.call()
-    oc[[1L]] <- as.name("dev.copy")
+    oc[[1L]] <- quote(grDevices::dev.copy)
     oc$device <- postscript
     oc$onefile <- FALSE
     oc$horizontal <- FALSE
@@ -220,7 +222,7 @@ dev.copy2pdf <- function(..., out.type = "pdf")
     if(!dev.displaylist())
         stop("can only print from a screen device")
     oc <- match.call()
-    oc[[1L]] <- as.name("dev.copy")
+    oc[[1L]] <- quote(grDevices::dev.copy)
     if(out.type == "quartz" && capabilities("aqua")) {
         oc$device <- quartz
         oc$type <- "pdf"
@@ -252,7 +254,7 @@ dev.control <- function(displaylist = c("inhibit", "enable"))
         stop("dev.control() called without an open graphics device")
     if(!missing(displaylist)) {
         displaylist <- match.arg(displaylist)
-	.Internal(dev.control(displaylist == "enable"))
+	.External(C_devcontrol, displaylist == "enable")
     } else stop("argument is missing with no default")
     invisible()
 }
@@ -261,12 +263,12 @@ dev.displaylist <- function()
 {
     if(dev.cur() <= 1)
         stop("dev.displaylist() called without an open graphics device")
-    .Internal(dev.displaylist())
+    .External(C_devdisplaylist)
 }
 
-recordGraphics <- function(expr, list, env) {
+## This records graphics ops and manipulates visibility, so needs to stay .Internal
+recordGraphics <- function(expr, list, env)
   .Internal(recordGraphics(substitute(expr), list, env))
-}
 
 graphics.off <- function ()
 {
@@ -334,24 +336,24 @@ checkIntFormat <- function(s)
     length(grep("%", s)) == 0L
 }
 
-devAskNewPage <- function(ask=NULL) .Internal(devAskNewPage(ask))
+devAskNewPage <- function(ask=NULL) .External2(C_devAskNewPage, ask)
 
 dev.size <- function(units = c("in", "cm", "px"))
 {
     units <- match.arg(units)
-    size <- .Internal(dev.size())
+    size <- .External(C_devsize)
     if(units == "px") size else size * graphics::par("cin")/graphics::par("cra") *
         if(units == "cm") 2.54 else 1
 }
 
-dev.hold <- function(level = 1L) .Internal(devHoldFlush(max(0L, level)))
-dev.flush <- function(level = 1L) .Internal(devHoldFlush(-max(0L, level)))
+dev.hold <- function(level = 1L) .External(C_devholdflush, max(0L, level))
+dev.flush <- function(level = 1L) .External(C_devholdflush, -max(0L, level))
 
-dev.capture <- function(native = FALSE) .Internal(devCapture(native))
+dev.capture <- function(native = FALSE) .External(C_devcapture, native)
 
 dev.capabilities <- function(what = NULL)
 {
-    zz <- .Internal(dev.capabilities())
+    zz <- .External(C_devcap)
     z <- vector("list", 6L)
     names(z) <-  c("semiTransparency", "transparentBackground",
                    "rasterImage", "capture", "locator",

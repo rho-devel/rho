@@ -33,11 +33,13 @@
  *  http://www.r-project.org/Licenses/
  */
 
+/* Included by R.h: API */
+
 #ifndef R_RS_H
 #define R_RS_H
 
 #ifndef NO_C_HEADERS
-# include <string.h>		/* for memcpy */
+# include <string.h>		/* for memcpy, memset */
 #endif
 
 #include <Rconfig.h>		/* for F77_APPEND_UNDERSCORE */
@@ -82,6 +84,8 @@ extern void R_chk_free(void *);
 #define R_Realloc(p,n,t) reinterpret_cast<t *>(R_chk_realloc( (p), (size_t)((n) * sizeof(t)) ))
 #define R_Free(p)      (R_chk_free(p), (p) = NULL)
 #define Memcpy(p,q,n)  memcpy( p, q, size_t( (n) * sizeof(*p) ) )
+/* added for 3.0.0 */
+#define Memzero(p,n)  memset(p, 0, size_t(n) * sizeof(*p))
 #else  /* not __cplusplus */
 #ifndef STRICT_R_HEADERS
 /* S-PLUS 3.x but not 5.x NULLs the pointer in the following */
@@ -92,8 +96,12 @@ extern void R_chk_free(void *);
 #define R_Calloc(n, t)   (t *) R_chk_calloc( (size_t) (n), sizeof(t) )
 #define R_Realloc(p,n,t) (t *) R_chk_realloc( (void *)(p), (size_t)((n) * sizeof(t)) )
 #define R_Free(p)      (R_chk_free( (void *)(p) ), (p) = NULL)
-#define Memcpy(p,q,n)  memcpy( p, q, (size_t)( (n) * sizeof(*p) ) )
+#define Memcpy(p,q,n)  memcpy( p, q, (size_t)(n) * sizeof(*p) )
+/* added for 3.0.0 */
+#define Memzero(p,n)  memset(p, 0, (size_t)(n) * sizeof(*p))
+
 #endif  /* __cplusplus */
+
 
 #ifdef __cplusplus
 #define CallocCharBuf(n) reinterpret_cast<char *>(R_chk_calloc(size_t((n)+1), sizeof(char)))

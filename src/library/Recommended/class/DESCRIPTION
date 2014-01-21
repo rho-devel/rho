@@ -1,16 +1,21 @@
 Package: class
 Priority: recommended
-Version: 7.3-3
-Date: 2010-12-06
-Depends: R (>= 2.5.0), stats, utils
+Version: 7.3-9
+Date: 2013-08-21
+Depends: R (>= 3.0.0), stats, utils
 Imports: MASS
-Author: Brian Ripley <ripley@stats.ox.ac.uk>.
-Maintainer: Brian Ripley <ripley@stats.ox.ac.uk>
+Authors@R: c(person("Brian", "Ripley", role = c("aut", "cre", "cph"),
+                    email = "ripley@stats.ox.ac.uk"),
+             person("William", "Venables", role = "cph"))
 Description: Various functions for classification.
 Title: Functions for Classification
+ByteCompile: yes
 License: GPL-2 | GPL-3
 URL: http://www.stats.ox.ac.uk/pub/MASS4/
-LazyLoad: yes
-Packaged: 2010-12-06 11:46:04 UTC; ripley
+Packaged: 2013-08-21 12:04:50 UTC; ripley
+Author: Brian Ripley [aut, cre, cph],
+  William Venables [cph]
+Maintainer: Brian Ripley <ripley@stats.ox.ac.uk>
+NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2010-12-09 11:56:32
+Date/Publication: 2013-08-21 14:09:59

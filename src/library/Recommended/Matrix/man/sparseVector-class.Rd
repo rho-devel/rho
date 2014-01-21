@@ -73,6 +73,10 @@
 \alias{dim<-,sparseVector-method}
 \alias{is.na,nsparseVector-method}
 \alias{is.na,sparseVector-method}
+\alias{is.finite,nsparseVector-method}
+\alias{is.finite,sparseVector-method}
+\alias{is.infinite,nsparseVector-method}
+\alias{is.infinite,sparseVector-method}
 \alias{length,sparseVector-method}
 \alias{mean,sparseVector-method}
 \alias{rep,sparseVector-method}
@@ -82,7 +86,9 @@
 \alias{\%*\%,sparseVector,Matrix-method}
 \alias{crossprod,Matrix,sparseVector-method}
 \alias{crossprod,sparseVector,Matrix-method}
-\alias{solve,Matrix,sparseVector-method}
+%\alias{solve,Matrix,sparseVector-method}--> solve-methods.Rd
+\alias{toeplitz}% only needed if(as.numeric(R.version$`svn rev`) < 60620)
+\alias{toeplitz,sparseVector-method}
 \alias{tcrossprod,Matrix,sparseVector-method}
 \alias{tcrossprod,sparseVector,Matrix-method}
 %
@@ -162,6 +168,9 @@
       more efficient, see the example.}
     \item{tail}{\code{signature(x = "sparseVector")}: analogous to
       \code{\link{head}}, see above.}
+    \item{toeplitz}{\code{signature(x = "sparseVector")}: as
+      \code{\link[stats]{toeplitz}(x)}, produce the \eqn{n \times n}
+      Toeplitz matrix from \code{x}, where \code{n = length(x)}.}
     \item{rep}{\code{signature(x = "sparseVector")} repeat \code{x},
       with the same argument list \code{(x, times, length.out, each,
 	...)} as the default method for rep().}
@@ -177,7 +186,17 @@
       subsetting of traditional vectors \code{x} by logical sparse
       vectors (i.e., \code{i} of class \code{"nsparseVector"} or
       \code{"lsparseVector"}).}
-   }
+    \item{is.na, is.finite, is.infinite}{\code{(x = "sparseVector")}, and}
+    \item{is.na, is.finite, is.infinite}{\code{(x = "nsparseVector")}:
+      return \code{\link{logical}} or \code{"nsparseVector"} of the same
+      length as \code{x}, indicating if/where \code{x} is
+      \code{\link{NA}} (or \code{NaN}), finite or infinite, entirely
+      analogously to the corresponding base \R functions.}
+  }
+}
+\seealso{
+  \code{\link{sparseVector}()} for friendly construction of sparse
+  vectors (apart from \code{as(*, "sparseVector")}).
 }
 %\author{Martin}
 \examples{
@@ -233,5 +252,11 @@ stopifnot(identical(hv, h2),
 	  identical(is^2 > 0,	is & TRUE),
 	  all(!lis), !any(lis), length(nn@i) == 0, !any(nn), all(!nn),
 	  sum(lis) == 0, !prod(lis), range(lis) == c(0,0))
+
+x20 <- sparseVector(c(9,3:1), i=c(1:2,4,7), length=20)
+(T20 <- toeplitz(x20))
+stopifnot(is(T20, "symmetricMatrix"), is(T20, "sparseMatrix"),
+	  identical(unname(as.matrix(T20)),
+                    toeplitz(as.vector(x20))))
 }
 \keyword{classes}

@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1996   Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2011   The R Core Team
+ *  Copyright (C) 1997-2013   The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@
 #include <stdlib.h> /* for putenv */
 #define R_USE_SIGNALS 1
 #include <Defn.h>
+#include <Internal.h>
 #include <Fileio.h>
 #include <R_ext/GraphicsEngine.h>
 #include <R_ext/Riconv.h>
@@ -54,8 +55,6 @@ using namespace std;
   See ../unix/system.txt for a description of some of these functions.
   Formally part of ../unix/sys-common.c.
  */
-
-/* The __APPLE__ and __APPLE_CC__ defines are for OS X */
 
 /*
  * FILESYSTEM INTERACTION
@@ -78,7 +77,7 @@ extern	Rboolean useaqua;
 #endif
 
 #ifdef Win32
-Rboolean attribute_hidden R_FileExists(const char *path)
+Rboolean R_FileExists(const char *path)
 {
     struct _stati64 sb;
     return _stati64(R_ExpandFileName(path), &sb) == 0;
@@ -92,7 +91,7 @@ double attribute_hidden R_FileMtime(const char *path)
     return sb.st_mtime;
 }
 #else
-Rboolean attribute_hidden R_FileExists(const char *path)
+Rboolean R_FileExists(const char *path)
 {
     struct stat sb;
     return CXXRCONSTRUCT(Rboolean, stat(R_ExpandFileName(path), &sb) == 0);
@@ -103,7 +102,7 @@ double attribute_hidden R_FileMtime(const char *path)
     struct stat sb;
     if (stat(R_ExpandFileName(path), &sb) != 0)
 	error(_("cannot determine file modification time of '%s'"), path);
-    return sb.st_mtime;
+    return double( sb.st_mtime);
 }
 #endif
 
@@ -221,10 +220,13 @@ FILE *RC_fopen(const SEXP fn, const char *mode, const Rboolean expand)
 #else
 FILE *RC_fopen(const SEXP fn, const char *mode, const Rboolean expand)
 {
-    const char *filename = translateChar(fn);
+    const void *vmax = vmaxget();
+    const char *filename = translateChar(fn), *res;
     if(fn == NA_STRING || !filename) return NULL;
-    if(expand) return fopen(R_ExpandFileName(filename), mode);
-    else return fopen(filename, mode);
+    if(expand) res = R_ExpandFileName(filename);
+    else res = filename;
+    vmaxset(vmax);
+    return fopen(res, mode);
 }
 #endif
 
@@ -295,7 +297,7 @@ SEXP attribute_hidden do_tempfile(SEXP call, SEXP op, SEXP args, SEXP env)
 FILE *R_popen(const char *command, const char *type)
 {
     FILE *fp;
-#ifdef __APPLE_CC__
+#ifdef __APPLE__
     /* Luke recommends this to fix PR#1140 */
     sigset_t ss;
     sigemptyset(&ss);
@@ -316,24 +318,18 @@ FILE *R_popen(const char *command, const char *type)
 int R_system(const char *command)
 {
     int res;
-#ifdef __APPLE_CC__
+#ifdef __APPLE__
     /* Luke recommends this to fix PR#1140 */
     sigset_t ss;
     sigemptyset(&ss);
     sigaddset(&ss, SIGPROF);
     sigprocmask(SIG_BLOCK, &ss,  NULL);
 #ifdef HAVE_AQUA
-    char *cmdcpy;
-    if(useaqua) {
-	/* FIXME, is Cocoa's interface not const char*? */
-	cmdcpy = acopy_string(command);
-	res = ptr_CocoaSystem(cmdcpy);
-    }
-    else
+    if(ptr_CocoaSystem) res = ptr_CocoaSystem(command); else
 #endif
     res = system(command);
     sigprocmask(SIG_UNBLOCK, &ss, NULL);
-#else
+#else // not APPLE
     res = system(command);
 #endif
 #ifdef HAVE_SYS_WAIT_H
@@ -584,7 +580,6 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, x = CAR(args), si;
     void * obj;
-    int i, j, nout;
     const char *inbuf;
     char *outbuf;
     const char *sub;
@@ -664,7 +659,7 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 		PROTECT(ans = duplicate(x));
 	}
 	R_AllocStringBuffer(0, &cbuff);  /* 0 -> default */
-	for(i = 0; i < LENGTH(x); i++) {
+	for(R_xlen_t i = 0; i < XLENGTH(x); i++) {
 	    if (isRawlist) {
 		si = VECTOR_ELT(x, i);
 		if (TYPEOF(si) == NILSXP) {
@@ -705,6 +700,7 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 		    snprintf(outbuf, 5, "<%02x>", static_cast<unsigned char>(*inbuf));
 		    outbuf += 4; outb -= 4;
 		} else {
+		    size_t j;
 		    if(outb < strlen(sub)) {
 			R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 			goto top_of_loop;
@@ -719,7 +715,7 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 
 	    if(toRaw) {
 		if(res != CXXRCONSTRUCT(size_t, -1) && inb == 0) {
-		    nout = cbuff.bufsize - 1 - outb;
+		    size_t nout = cbuff.bufsize - 1 - outb;
 		    SEXP el = allocVector(RAWSXP, nout);
 		    memcpy(RAW(el), cbuff.data, nout);
 		    SET_VECTOR_ELT(ans, i, el);
@@ -728,12 +724,13 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 		if(res != CXXRCONSTRUCT(size_t, -1) && inb == 0) {
 		    cetype_t ienc = CE_NATIVE;
 		    
-		    nout = cbuff.bufsize - 1 - outb;
+		    size_t nout = cbuff.bufsize - 1 - outb;
 		    if(mark) {
 			if(isLatin1) ienc = CE_LATIN1;
 			else if(isUTF8) ienc = CE_UTF8;
 		    }
-		    SET_STRING_ELT(ans, i, mkCharLenCE(cbuff.data, nout, ienc));
+		    SET_STRING_ELT(ans, i,
+				   mkCharLenCE(cbuff.data, nout, ienc));
 		} else SET_STRING_ELT(ans, i, NA_STRING);
 	    }
 	}
@@ -800,11 +797,13 @@ int Riconv_close (void *cd)
 static void *latin1_obj = NULL, *utf8_obj=NULL, *ucsmb_obj=NULL,
     *ucsutf8_obj=NULL;
 
+/* This may return a R_alloc-ed result, so the caller has to manage the
+   R_alloc stack */
 const char *translateChar(SEXP x)
 {
     void * obj;
     const char *inbuf, *ans = CHAR(x);
-    char *outbuf, *p;
+    char *outbuf;
     size_t inb, outb, res;
     cetype_t ienc = getCharCE(x);
     R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
@@ -870,10 +869,10 @@ next_char:
 	if (ienc == CE_UTF8) {
 	    /* if starting in UTF-8, use \uxxxx */
 	    /* This must be the first byte */
-	    int clen;
+	    size_t clen;
 	    wchar_t wc;
 	    clen = utf8toucs(&wc, inbuf);
-	    if(clen > 0 && CXXRCONSTRUCT(int, inb) >= clen) {
+	    if(clen > 0 && inb >= clen) {
 		inbuf += clen; inb -= clen;
 # ifndef Win32
 		if(static_cast<unsigned int>( wc) < 65536) {
@@ -900,12 +899,118 @@ next_char:
     }
     *outbuf = '\0';
     res = strlen(cbuff.data) + 1;
-    p = R_alloc(res, 1);
+    char *p = R_alloc(res, 1);
     memcpy(p, cbuff.data, res);
     R_FreeStringBuffer(&cbuff);
     return p;
 }
 
+SEXP installTrChar(SEXP x)
+{
+    void * obj;
+    const char *inbuf, *ans = CHAR(x);
+    char *outbuf;
+    size_t inb, outb, res;
+    cetype_t ienc = getCharCE(x);
+    R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
+
+    if(TYPEOF(x) != CHARSXP)
+	error(_("'%s' must be called on a CHARSXP"), "translateChar");
+    if(x == NA_STRING || !(ENC_KNOWN(x))) return install(ans);
+    if(IS_BYTES(x))
+	error(_("translating strings with \"bytes\" encoding is not allowed"));
+    if(utf8locale && IS_UTF8(x)) return install(ans);
+    if(latin1locale && IS_LATIN1(x)) return install(ans);
+    if(IS_ASCII(x)) return install(ans);
+
+    if(IS_LATIN1(x)) {
+	if(!latin1_obj) {
+	    obj = Riconv_open("", "latin1");
+	    /* should never happen */
+	    if(obj == reinterpret_cast<void *>((-1)))
+#ifdef Win32
+		error(_("unsupported conversion from '%s' in codepage %d"),
+		      "latin1", localeCP);
+#else
+	        error(_("unsupported conversion from '%s' to '%s'"),
+		      "latin1", "");
+#endif
+	    latin1_obj = obj;
+	}
+	obj = latin1_obj;
+    } else {
+	if(!utf8_obj) {
+	    obj = Riconv_open("", "UTF-8");
+	    /* should never happen */
+	    if(obj == reinterpret_cast<void *>((-1))) 
+#ifdef Win32
+		error(_("unsupported conversion from '%s' in codepage %d"),
+		      "latin1", localeCP);
+#else
+	        error(_("unsupported conversion from '%s' to '%s'"),
+		      "latin1", "");
+#endif
+	    utf8_obj = obj;
+	}
+	obj = utf8_obj;
+    }
+
+    R_AllocStringBuffer(0, &cbuff);
+top_of_loop:
+    inbuf = ans; inb = strlen(inbuf);
+    outbuf = cbuff.data; outb = cbuff.bufsize - 1;
+    /* First initialize output */
+    Riconv (obj, NULL, NULL, &outbuf, &outb);
+next_char:
+    /* Then convert input  */
+    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
+    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
+	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
+	goto top_of_loop;
+    } else if(res == CXXRCONSTRUCT(size_t, -1) && (errno == EILSEQ || errno == EINVAL)) {
+	if(outb < 13) {
+	    R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
+	    goto top_of_loop;
+	}
+	if (ienc == CE_UTF8) {
+	    /* if starting in UTF-8, use \uxxxx */
+	    /* This must be the first byte */
+	    size_t clen;
+	    wchar_t wc;
+	    clen = utf8toucs(&wc, inbuf);
+	    if(clen > 0 && inb >= clen) {
+		inbuf += clen; inb -= clen;
+# ifndef Win32
+		if(static_cast<unsigned int>( wc) < 65536) {
+# endif
+		    snprintf(outbuf, 9, "<U+%04X>", static_cast<unsigned int>( wc));
+		    outbuf += 8; outb -= 8;
+# ifndef Win32
+		} else {
+		    snprintf(outbuf, 13, "<U+%08X>", static_cast<unsigned int>( wc));
+		    outbuf += 12; outb -= 12;
+		}
+# endif
+	    } else {
+		snprintf(outbuf, 5, "<%02x>", static_cast<unsigned char>(*inbuf));
+		outbuf += 4; outb -= 4;
+		inbuf++; inb--;
+	    }
+	} else {
+	    snprintf(outbuf, 5, "<%02x>", static_cast<unsigned char>(*inbuf));
+	    outbuf += 4; outb -= 4;
+	    inbuf++; inb--;
+	}
+	goto next_char;
+    }
+    *outbuf = '\0';
+    SEXP Sans = install(cbuff.data);
+    R_FreeStringBuffer(&cbuff);
+    return Sans;
+}
+
+/* This may return a R_alloc-ed result, so the caller has to manage the
+   R_alloc stack */
 const char *translateChar0(SEXP x)
 {
     if(TYPEOF(x) != CHARSXP)
@@ -914,6 +1019,8 @@ const char *translateChar0(SEXP x)
     return translateChar(x);
 }
 
+/* This may return a R_alloc-ed result, so the caller has to manage the
+   R_alloc stack */
 const char *translateCharUTF8(SEXP x)
 {
     void *obj;
@@ -986,6 +1093,8 @@ static void *latin1_wobj = NULL, *utf8_wobj=NULL;
    NB: that wchar_t is UCS-4 is an assumption, but not easy to avoid.
 */
 
+/* This may return a R_alloc-ed result, so the caller has to manage the
+   R_alloc stack */
 attribute_hidden /* but not hidden on Windows, where it was used in tcltk.c */
 const wchar_t *wtransChar(SEXP x)
 {
@@ -1069,8 +1178,8 @@ next_char:
 }
 
 
-extern void *Rf_AdobeSymbol2utf8(char* work, const char *c0, int nwork); /* from util.c */
-
+/* This may return a R_alloc-ed result, so the caller has to manage the
+   R_alloc stack */
 const char *reEnc(const char *x, cetype_t ce_in, cetype_t ce_out, int subst)
 {
     void * obj;
@@ -1088,7 +1197,7 @@ const char *reEnc(const char *x, cetype_t ce_in, cetype_t ce_out, int subst)
        ce_in == CE_ANY || ce_out == CE_ANY) return x;
     if(ce_in == CE_SYMBOL) {
 	if(ce_out == CE_UTF8) {
-	    int nc = 3*strlen(x)+1; /* all in BMP */
+	    size_t nc = 3*strlen(x)+1; /* all in BMP */
 	    p = R_alloc(nc, 1);
 	    Rf_AdobeSymbol2utf8(p, x, nc);
 	    return p;
@@ -1106,7 +1215,7 @@ const char *reEnc(const char *x, cetype_t ce_in, cetype_t ce_out, int subst)
     case CE_NATIVE:
 	{
 	    /* Looks like CP1252 is treated as Latin-1 by iconv */
-	    sprintf(buf, "CP%d", localeCP);
+	    snprintf(buf, 20, "CP%d", localeCP);
 	    fromcode = buf;
 	    break;
 	}
@@ -1124,7 +1233,7 @@ const char *reEnc(const char *x, cetype_t ce_in, cetype_t ce_out, int subst)
     case CE_NATIVE:
 	{
 	    /* avoid possible misidentification of CP1250 as LATIN-2 */
-	    sprintf(buf, "CP%d", localeCP);
+	    snprintf(buf, 20, "CP%d", localeCP);
 	    tocode = buf;
 	    break;
 	}
@@ -1191,6 +1300,111 @@ next_char:
     R_FreeStringBuffer(&cbuff);
     return p;
 }
+
+#ifdef Win32
+/* A version avoiding R_alloc for use in the Rgui editor */
+void reEnc2(const char *x, char *y, int ny,
+	    cetype_t ce_in, cetype_t ce_out, int subst)
+{
+    void * obj;
+    const char *inbuf;
+    char *outbuf;
+    size_t inb, outb, res, top;
+    char *tocode = NULL, *fromcode = NULL;
+    char buf[20];
+    R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
+
+    strncpy(y, x, ny);
+
+    if(ce_in == ce_out || ce_in == CE_ANY || ce_out == CE_ANY) return;
+    if(utf8locale && ce_in == CE_NATIVE && ce_out == CE_UTF8) return;
+    if(utf8locale && ce_out == CE_NATIVE && ce_in == CE_UTF8) return;
+    if(latin1locale && ce_in == CE_NATIVE && ce_out == CE_LATIN1) return;
+    if(latin1locale && ce_out == CE_NATIVE && ce_in == CE_LATIN1) return;
+
+    if(strIsASCII(x)) return;
+
+    switch(ce_in) {
+    case CE_NATIVE:
+	{
+	    /* Looks like CP1252 is treated as Latin-1 by iconv */
+	    snprintf(buf, 20, "CP%d", localeCP);
+	    fromcode = buf;
+	    break;
+	}
+    case CE_LATIN1: fromcode = "CP1252"; break;
+    case CE_UTF8:   fromcode = "UTF-8"; break;
+    default: return;
+    }
+
+    switch(ce_out) {
+    case CE_NATIVE:
+	{
+	    /* avoid possible misidentification of CP1250 as LATIN-2 */
+	    snprintf(buf, 20, "CP%d", localeCP);
+	    tocode = buf;
+	    break;
+	}
+    case CE_LATIN1: tocode = "latin1"; break;
+    case CE_UTF8:   tocode = "UTF-8"; break;
+    default: return;
+    }
+
+    obj = Riconv_open(tocode, fromcode);
+    if(obj == (void *)(-1)) return;
+    R_AllocStringBuffer(0, &cbuff);
+top_of_loop:
+    inbuf = x; inb = strlen(inbuf);
+    outbuf = cbuff.data; top = outb = cbuff.bufsize - 1;
+    /* First initialize output */
+    Riconv (obj, NULL, NULL, &outbuf, &outb);
+next_char:
+    /* Then convert input  */
+    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
+    if(res == -1 && errno == E2BIG) {
+	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
+	goto top_of_loop;
+    } else if(res == -1 && (errno == EILSEQ || errno == EINVAL)) {
+	switch(subst) {
+	case 1: /* substitute hex */
+	    if(outb < 5) {
+		R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
+		goto top_of_loop;
+	    }
+	    snprintf(outbuf, 5, "<%02x>", (unsigned char)*inbuf);
+	    outbuf += 4; outb -= 4;
+	    inbuf++; inb--;
+	    goto next_char;
+	    break;
+	case 2: /* substitute . */
+	    if(outb < 1) {
+		R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
+		goto top_of_loop;
+	    }
+	    *outbuf++ = '.'; inbuf++; outb--; inb--;
+	    goto next_char;
+	    break;
+	case 3: /* substitute ? */
+	    if(outb < 1) {
+		R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
+		goto top_of_loop;
+	    }
+	    *outbuf++ = '?'; inbuf++; outb--; inb--;
+	    goto next_char;
+	    break;
+	default: /* skip byte */
+	    inbuf++; inb--;
+	    goto next_char;
+	}
+    }
+    Riconv_close(obj);
+    *outbuf = '\0';
+    res = (top-outb)+1; /* strlen(cbuff.data) + 1; */
+    if (res > ny) error("converted string too long for buffer");
+    memcpy(y, cbuff.data, res);
+    R_FreeStringBuffer(&cbuff);
+}
+#endif
 
 void attribute_hidden
 invalidate_cached_recodings(void)
@@ -1407,7 +1621,6 @@ void attribute_hidden InitTempDir()
 {
     char *tmp, tmp1[PATH_MAX+11], *p;
     CXXRCONST char* tm;
-    int len;
 #ifdef Win32
     char tmp2[PATH_MAX];
     int hasspace = 0;
@@ -1437,21 +1650,22 @@ void attribute_hidden InitTempDir()
 	    GetShortPathName(tm, tmp2, MAX_PATH);
 	    tm = tmp2;
 	}
-	sprintf(tmp1, "%s\\RtmpXXXXXX", tm);
+	snprintf(tmp1, PATH_MAX+11, "%s\\RtmpXXXXXX", tm);
 #else
-	sprintf(tmp1, "%s/RtmpXXXXXX", tm);
+	snprintf(tmp1, PATH_MAX+11, "%s/RtmpXXXXXX", tm);
 #endif
 	tmp = mkdtemp(tmp1);
-	if(!tmp) R_Suicide(_("cannot mkdir R_TempDir"));
+	if(!tmp) R_Suicide(_("cannot create 'R_TempDir'"));
 #ifndef Win32
 # ifdef HAVE_SETENV
 	if(setenv("R_SESSION_TMPDIR", tmp, 1))
 	    errorcall(R_NilValue, _("unable to set R_SESSION_TMPDIR"));
 # elif defined(HAVE_PUTENV)
 	{
-	    char * buf = (char *) malloc((strlen(tmp) + 20) * sizeof(char));
+	    size_t len = strlen(tmp) + 20;
+	    char * buf = (char *) malloc((len) * sizeof(char));
 	    if(buf) {
-		sprintf(buf, "R_SESSION_TMPDIR=%s", tmp);
+		snprintf(buf, len, "R_SESSION_TMPDIR=%s", tmp);
 		if(putenv(buf))
 		    errorcall(R_NilValue, _("unable to set R_SESSION_TMPDIR"));
 		/* no free here: storage remains in use */
@@ -1462,10 +1676,10 @@ void attribute_hidden InitTempDir()
 #endif
     }
 
-    len = strlen(tmp) + 1;
+    size_t len = strlen(tmp) + 1;
     p = static_cast<char *>( malloc(len));
     if(!p)
-	R_Suicide(_("cannot allocate R_TempDir"));
+	R_Suicide(_("cannot allocate 'R_TempDir'"));
     else {
 	R_TempDir = p;
 	strcpy(R_TempDir, tmp);
@@ -1631,7 +1845,8 @@ do_setSessionTimeLimit(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_glob(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP x, ans;
-    int i, n, res, dirmark;
+    R_xlen_t i, n; 
+    int res, dirmark, initialized=FALSE;
     glob_t globbuf;
 #ifdef Win32
     R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
@@ -1640,7 +1855,7 @@ SEXP attribute_hidden do_glob(SEXP call, SEXP op, SEXP args, SEXP env)
     checkArity(op, args);
     if (!isString(x = CAR(args)))
 	error(_("invalid '%s' argument"), "paths");
-    if (!LENGTH(x)) return allocVector(STRSXP, 0);
+    if (!XLENGTH(x)) return allocVector(STRSXP, 0);
     dirmark = asLogical(CADR(args));
     if (dirmark == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "dirmark");
@@ -1649,13 +1864,13 @@ SEXP attribute_hidden do_glob(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("'dirmark = TRUE' is not supported on this platform"));
 #endif
 
-    for (i = 0; i < LENGTH(x); i++) {
+    for (i = 0; i < XLENGTH(x); i++) {
 	SEXP el = STRING_ELT(x, i);
 	if (el == NA_STRING) continue;
 #ifdef Win32
 	res = dos_wglob(filenameToWchar(el, FALSE),
 			(dirmark ? GLOB_MARK : 0) |
-			GLOB_QUOTE | (i ? GLOB_APPEND : 0),
+			GLOB_QUOTE | (initialized ? GLOB_APPEND : 0),
 			NULL, &globbuf);
 	if (res == GLOB_NOSPACE)
 	    error(_("internal out-of-memory condition"));
@@ -1664,7 +1879,7 @@ SEXP attribute_hidden do_glob(SEXP call, SEXP op, SEXP args, SEXP env)
 # ifdef GLOB_MARK
 		   (dirmark ? GLOB_MARK : 0) |
 # endif
-		   GLOB_QUOTE | (i ? GLOB_APPEND : 0),
+		   GLOB_QUOTE | (initialized ? GLOB_APPEND : 0),
 		   NULL, &globbuf);
 # ifdef GLOB_ABORTED
 	if (res == GLOB_ABORTED)
@@ -1675,8 +1890,9 @@ SEXP attribute_hidden do_glob(SEXP call, SEXP op, SEXP args, SEXP env)
 	    error(_("internal out-of-memory condition"));
 # endif
 #endif
+	initialized = TRUE;
     }
-    n = globbuf.gl_pathc;
+    n = initialized ? globbuf.gl_pathc : 0;
     PROTECT(ans = allocVector(STRSXP, n));
     for (i = 0; i < n; i++)
 #ifdef Win32
@@ -1695,6 +1911,6 @@ SEXP attribute_hidden do_glob(SEXP call, SEXP op, SEXP args, SEXP env)
 #ifdef Win32
     R_FreeStringBufferL(&cbuff);
 #endif
-    globfree(&globbuf);
+    if (initialized) globfree(&globbuf);
     return ans;
 }

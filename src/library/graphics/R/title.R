@@ -1,6 +1,8 @@
 #  File src/library/graphics/R/title.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -21,5 +23,6 @@ title <- function(main=NULL, sub=NULL, xlab=NULL, ylab=NULL,
     sub <- as.graphicsAnnot(sub)
     xlab <- as.graphicsAnnot(xlab)
     ylab <- as.graphicsAnnot(ylab)
-    .Internal(title(main, sub, xlab, ylab, line, outer, ...))
+    .External.graphics(C_title, main, sub, xlab, ylab, line, outer, ...)
+    invisible()
 }

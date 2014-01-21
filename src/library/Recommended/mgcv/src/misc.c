@@ -1,4 +1,4 @@
-/* Copyright (C) 2008 Simon N. Wood  simon.wood@r-project.org
+/* Copyright (C) 2008-2013 Simon N. Wood  simon.wood@r-project.org
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -19,8 +19,7 @@ USA. */
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#define ANSI
-#include "matrix.h"
+#include <R.h>
 #include "mgcv.h"
 
 /* Compute reproducing kernel for spline on the sphere */
@@ -129,9 +128,9 @@ double *forward_buf(double *buf,int *jal,int update)
 /* extend buffer forward 1000 */
 { double *buf2,*p,*p1,*p2;
   int n=1000;
-  buf2 = (double *)calloc((size_t)*jal+n,sizeof(double));
+  buf2 = (double *)R_chk_calloc((size_t)*jal+n,sizeof(double));
   for (p=buf,p1=buf + *jal,p2=buf2;p<p1;p++,p2++) *p2 = *p;
-  free(buf);
+  R_chk_free(buf);
   if (update) *jal += n;
   return(buf2);
 }
@@ -143,7 +142,7 @@ double *backward_buf(double *buf,int *jal,int *j0,int *j_lo,int *j_hi,int update
   double *buf2,*p,*p1,*p2;
   if (n > *j0-1) n = *j0 - 1; /* only extend back to j=1 */
   if (n==0) return(buf);
-  buf2 = (double *)calloc((size_t)*jal+n,sizeof(double));
+  buf2 = (double *)R_chk_calloc((size_t)*jal+n,sizeof(double));
   for (p=buf,p1=buf + *jal,p2=buf2 + n;p<p1;p++,p2++) *p2 = *p;  
   if (update) {
     *jal += n;
@@ -151,7 +150,7 @@ double *backward_buf(double *buf,int *jal,int *j0,int *j_lo,int *j_hi,int update
     *j_hi += n;  
     *j0 -= n;
   }
-  free(buf);
+  R_chk_free(buf);
   return(buf2);
 }
 
@@ -183,7 +182,7 @@ void tweedious(double *w,double *w1,double *w2,double *y,double *phi,double *p,d
   /* initially establish the min and max y values, and hence the initial buffer range,
      at the same time produce the alpha log(y) vector. */ 
   
-  alogy = (double *)calloc((size_t)*n,sizeof(double));
+  alogy = (double *)R_chk_calloc((size_t)*n,sizeof(double));
   ymax = ymin = *y;
   *alogy = alpha * log(*y);
   for (p1=y+1,p2=y+ *n,p3=alogy+1;p1<p2;p1++,p3++) {
@@ -204,9 +203,9 @@ void tweedious(double *w,double *w1,double *w2,double *y,double *phi,double *p,d
   j_lo -= j0;
   j_hi -= j0;
 
-  wb = (double *)calloc((size_t)jal,sizeof(double)); /* add -j*alogy[i] to get logW_j, for y[i] */
-  wb1 = (double *)calloc((size_t)jal,sizeof(double)); /* add -j*alogy[i] to get logW_j', for y[i] */
-  wb2 = (double *)calloc((size_t)jal,sizeof(double)); /* add -j*alogy[i] to get logW_j'', for y[i] */
+  wb = (double *)R_chk_calloc((size_t)jal,sizeof(double)); /* add -j*alogy[i] to get logW_j, for y[i] */
+  wb1 = (double *)R_chk_calloc((size_t)jal,sizeof(double)); /* add -j*alogy[i] to get logW_j', for y[i] */
+  wb2 = (double *)R_chk_calloc((size_t)jal,sizeof(double)); /* add -j*alogy[i] to get logW_j'', for y[i] */
   
   /* ... note that in the above it's log of derivative, not derivative of log */ 
 
@@ -324,7 +323,7 @@ void tweedious(double *w,double *w1,double *w2,double *y,double *phi,double *p,d
     w2[i] = exp(w2[i]-w[i]) - exp(2*w1i-2*w[i]); /* d2 logW / dphi2 */
  
   } /* end of looping through y */
-  free(alogy);free(wb);free(wb1);free(wb2);
+  R_chk_free(alogy);R_chk_free(wb);R_chk_free(wb1);R_chk_free(wb2);
 }
 
 
@@ -383,7 +382,7 @@ void rwMatrix(int *stop,int *row,double *w,double *X,int *n,int *p) {
   int i,j,jump,start=0,end,off;
   double *X1p,*Xp,weight,*Xpe,*X1;
   /* create storage for output matrix, cleared to zero */
-  X1 = (double *)calloc((size_t)(*n * *p),sizeof(double));
+  X1 = (double *)R_chk_calloc((size_t)(*n * *p),sizeof(double));
   jump = *n;
   off = *n * *p;
   for (i=0;i<*n;i++) { /* loop through rows of output X1 */
@@ -398,7 +397,7 @@ void rwMatrix(int *stop,int *row,double *w,double *X,int *n,int *p) {
   }
   /* coppy output to input for return...*/
   for (Xp=X,X1p=X1,Xpe=Xp+off;Xp<Xpe;Xp++,X1p++) *Xp = *X1p;
-  free(X1);
+  R_chk_free(X1);
 }
 
 /* Example code for rwMatrix in R....

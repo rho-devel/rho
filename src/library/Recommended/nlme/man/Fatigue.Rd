@@ -42,7 +42,7 @@
   cycles.
 }
 \source{
-  Lu, C. Joseph , and Meeker, William Q. (1993), Using degradation
+  Lu, C. Joséph , and Meeker, William Q. (1993), Using degradation
   measures to estimate a time-to-failure distribution,
   \emph{Technometrics}, \bold{35}, 161-174 
 }

@@ -13,7 +13,7 @@ plotcp(x, minline = TRUE, lty = 3, col = 1,
 }
 \arguments{
 \item{x}{
-an object of class \code{rpart} 
+an object of class \code{"rpart"} 
 }
 \item{minline}{
 whether a horizontal line is drawn 1SE above the minimum of the curve. 

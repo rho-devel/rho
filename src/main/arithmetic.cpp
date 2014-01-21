@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2012	    The R Core Team.
+ *  Copyright (C) 1998--2013	    The R Core Team.
  *  Copyright (C) 2003-4	    The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -47,17 +47,23 @@
 
 #include <limits>
 
+/* interval at which to check interrupts, a guess */
+#define NINTERRUPT 10000000
+
+
 #ifdef __OpenBSD__
 /* for definition of "struct exception" in math.h */
 # define __LIBM_PRIVATE
 #endif
-#include "Defn.h"		/*-> Arith.h -> math.h */
+#include <Defn.h>		/*-> Arith.h -> math.h */
 #ifdef __OpenBSD__
 # undef __LIBM_PRIVATE
 #endif
 
+#include <Internal.h>
+
 #define R_MSG_NA	_("NaNs produced")
-#define R_MSG_NONNUM_MATH _("Non-numeric argument to mathematical function")
+#define R_MSG_NONNUM_MATH _("non-numeric argument to mathematical function")
 
 #include <Rmath.h>
 
@@ -113,9 +119,9 @@ int matherr(struct exception *exc)
 #endif
 
 #ifndef _AIX
-const double R_Zero_Hack = 0.0;	/* Silence the Sun compiler */
+static const double R_Zero_Hack = 0.0;	/* Silence the Sun compiler */
 #else
-double R_Zero_Hack = 0.0;
+static double R_Zero_Hack = 0.0;
 #endif
 typedef union
 {
@@ -196,7 +202,7 @@ void attribute_hidden InitArithmetic()
 
 /* Keep these two in step */
 /* FIXME: consider using
-    tmp = (long double)x1 - floor(q) * (long double)x2;
+    tmp = (LDOUBLE)x1 - floor(q) * (LDOUBLE)x2;
  */
 static double myfmod(double x1, double x2)
 {
@@ -322,8 +328,8 @@ static double logbase(double x, double base)
     return R_log(x) / R_log(base);
 }
 
-static SEXP integer_unary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP logical_unary(ARITHOP_TYPE, SEXP, SEXP);
+static SEXP integer_unary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP real_unary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP real_binary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP integer_binary(ARITHOP_TYPE, SEXP, SEXP, SEXP);
@@ -387,7 +393,7 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
     GCStackRoot<VectorBase> y(FIXUP_NULL_AND_CHECK_TYPES(yarg));
     checkOperandsConformable(x, y);
 
-    int nx = LENGTH(x);
+    R_xlen_t nx = XLENGTH(x);
     bool xattr = false;
     bool xarray = false;
     if (ATTRIB(x) != R_NilValue) {
@@ -395,7 +401,7 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 	xarray = isArray(x);
     }
 
-    int ny = LENGTH(y);
+    R_xlen_t ny = XLENGTH(y);
     bool yattr = false;
     bool yarray = false;
     if (ATTRIB(y) != R_NilValue) {
@@ -485,9 +491,9 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 	}
     }
     else {
-	if (length(val) == length(xnames))
+	if (xlength(val) == xlength(xnames))
 	    setAttrib(val, R_NamesSymbol, xnames);
-	else if (length(val) == length(ynames))
+	else if (xlength(val) == xlength(ynames))
 	    setAttrib(val, R_NamesSymbol, ynames);
     }
 
@@ -534,25 +540,6 @@ SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
     return s1;			/* never used; to keep -Wall happy */
 }
 
-static SEXP integer_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
-{
-    switch (code) {
-    case PLUSOP:
-	return s1;
-    case MINUSOP:
-	{
-	    using namespace VectorOps;
-	    IntVector* iv = SEXP_downcast<IntVector*>(s1);
-	    return
-		UnaryFunction<std::negate<int>, CopyAllAttributes>()
-		.apply<IntVector>(iv);
-	}
-    default:
-	errorcall(call, _("invalid unary operator"));
-    }
-    return s1;			/* never used; to keep -Wall happy */
-}
-
 static SEXP logical_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
 {
     switch (code) {
@@ -565,6 +552,25 @@ static SEXP logical_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
 	    return
 		makeUnaryFunction<CopyAllAttributes>(std::negate<int>())
 		.apply<IntVector>(lv);
+	}
+    default:
+	errorcall(call, _("invalid unary operator"));
+    }
+    return s1;			/* never used; to keep -Wall happy */
+}
+
+static SEXP integer_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
+{
+    switch (code) {
+    case PLUSOP:
+	return s1;
+    case MINUSOP:
+	{
+	    using namespace VectorOps;
+	    IntVector* iv = SEXP_downcast<IntVector*>(s1);
+	    return
+		UnaryFunction<std::negate<int>, CopyAllAttributes>()
+		.apply<IntVector>(iv);
 	}
     default:
 	errorcall(call, _("invalid unary operator"));
@@ -656,13 +662,13 @@ namespace {
 
 static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 {
-    int i, i1, i2, n, n1, n2;
+    R_xlen_t i, i1, i2, n, n1, n2;
     int x1, x2;
     SEXP ans;
     Rboolean naflag = FALSE;
 
-    n1 = LENGTH(s1);
-    n2 = LENGTH(s2);
+    n1 = XLENGTH(s1);
+    n2 = XLENGTH(s2);
     /* S4-compatibility change: if n1 or n2 is 0, result is of length 0 */
     if (n1 == 0 || n2 == 0) n = 0; else n = (n1 > n2) ? n1 : n2;
 
@@ -671,10 +677,12 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
     else
 	ans = allocVector(INTSXP, n);
     if (n1 == 0 || n2 == 0) return(ans);
+    PROTECT(ans);
 
     switch (code) {
     case PLUSOP:
 	mod_iterate(n1, n2, i1, i2) {
+//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	    x1 = INTEGER(s1)[i1];
 	    x2 = INTEGER(s2)[i2];
 	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
@@ -694,6 +702,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	break;
     case MINUSOP:
 	mod_iterate(n1, n2, i1, i2) {
+//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	    x1 = INTEGER(s1)[i1];
 	    x2 = INTEGER(s2)[i2];
 	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
@@ -713,6 +722,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	break;
     case TIMESOP:
 	mod_iterate(n1, n2, i1, i2) {
+//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	    x1 = INTEGER(s1)[i1];
 	    x2 = INTEGER(s2)[i2];
 	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
@@ -732,6 +742,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	break;
     case DIVOP:
 	mod_iterate(n1, n2, i1, i2) {
+//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	    x1 = INTEGER(s1)[i1];
 	    x2 = INTEGER(s2)[i2];
 	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
@@ -742,6 +753,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	break;
     case POWOP:
 	mod_iterate(n1, n2, i1, i2) {
+//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	    if((x1 = INTEGER(s1)[i1]) == 1 || (x2 = INTEGER(s2)[i2]) == 0)
 		REAL(ans)[i] = 1.;
 	    else if (x1 == NA_INTEGER || x2 == NA_INTEGER)
@@ -753,6 +765,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	break;
     case MODOP:
 	mod_iterate(n1, n2, i1, i2) {
+//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	    x1 = INTEGER(s1)[i1];
 	    x2 = INTEGER(s2)[i2];
 	    if (x1 == NA_INTEGER || x2 == NA_INTEGER || x2 == 0)
@@ -766,6 +779,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	break;
     case IDIVOP:
 	mod_iterate(n1, n2, i1, i2) {
+//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	    x1 = INTEGER(s1)[i1];
 	    x2 = INTEGER(s2)[i2];
 	    /* This had x %/% 0 == 0 prior to 2.14.1, but
@@ -773,11 +787,11 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	    if (x1 == NA_INTEGER || x2 == NA_INTEGER || x2 == 0)
 		INTEGER(ans)[i] = NA_INTEGER;
 	    else
-		INTEGER(ans)[i] = CXXRCONSTRUCT(int, floor(double(x1) / double(x2)));
+		INTEGER(ans)[i] = int( floor(double(x1) / double(x2)));
 	}
 	break;
     }
-
+    UNPROTECT(1);
 
     /* quick return if there are no attributes */
     if (ATTRIB(s1) == R_NilValue && ATTRIB(s2) == R_NilValue)
@@ -807,12 +821,12 @@ namespace {
 
 static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 {
-    int i, i1, i2, n, n1, n2;
+    R_xlen_t i, i1, i2, n, n1, n2;
     SEXP ans;
 
     /* Note: "s1" and "s2" are protected above. */
-    n1 = LENGTH(s1);
-    n2 = LENGTH(s2);
+    n1 = XLENGTH(s1);
+    n2 = XLENGTH(s2);
 
     /* S4-compatibility change: if n1 or n2 is 0, result is of length 0 */
     if (n1 == 0 || n2 == 0) return(allocVector(REALSXP, 0));
@@ -837,14 +851,18 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
                 for (i = 0; i < n; i++)
 		    REAL(ans)[i] = REAL(s1)[i] + REAL(s2)[i];
             else
-                mod_iterate(n1, n2, i1, i2)
+                mod_iterate(n1, n2, i1, i2) {
+//		    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 		    REAL(ans)[i] = REAL(s1)[i1] + REAL(s2)[i2];
+		}
 	} else	if(TYPEOF(s1) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = R_INTEGER(s1, i1) + REAL(s2)[i2];
 	     }
 	} else	if(TYPEOF(s2) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = REAL(s1)[i1] + R_INTEGER(s2, i2);
 	     }
 	}
@@ -865,14 +883,18 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
                 for (i = 0; i < n; i++)
 		    REAL(ans)[i] = REAL(s1)[i] - REAL(s2)[i];
             else
-                mod_iterate(n1, n2, i1, i2)
+                mod_iterate(n1, n2, i1, i2) {
+//		    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 		    REAL(ans)[i] = REAL(s1)[i1] - REAL(s2)[i2];
+		}
 	} else	if(TYPEOF(s1) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = R_INTEGER(s1, i1) - REAL(s2)[i2];
 	   }
 	} else	if(TYPEOF(s2) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = REAL(s1)[i1] - R_INTEGER(s2, i2);
 	   }
 	}
@@ -893,14 +915,18 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
                 for (i = 0; i < n; i++)
 		    REAL(ans)[i] = REAL(s1)[i] * REAL(s2)[i];
             else
-                mod_iterate(n1, n2, i1, i2)
+                mod_iterate(n1, n2, i1, i2) {
+//		    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 		    REAL(ans)[i] = REAL(s1)[i1] * REAL(s2)[i2];
+		}
 	} else if(TYPEOF(s1) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = R_INTEGER(s1, i1) * REAL(s2)[i2];
 	   }
 	} else	if(TYPEOF(s2) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = REAL(s1)[i1] * R_INTEGER(s2, i2);
 	   }
 	}
@@ -921,14 +947,18 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
                 for (i = 0; i < n; i++)
 		    REAL(ans)[i] = REAL(s1)[i] / REAL(s2)[i];
             else
-                mod_iterate(n1, n2, i1, i2)
+                mod_iterate(n1, n2, i1, i2) {
+//		    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 		    REAL(ans)[i] = REAL(s1)[i1] / REAL(s2)[i2];
+		}
 	} else if(TYPEOF(s1) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = R_INTEGER(s1, i1) / REAL(s2)[i2];
 	   }
 	} else	if(TYPEOF(s2) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = REAL(s1)[i1] / R_INTEGER(s2, i2);
 	   }
 	}
@@ -947,17 +977,21 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
             }
             else if (n1 == n2)
                 for (i = 0; i < n; i++)
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 		    REAL(ans)[i] = R_POW(REAL(s1)[i], REAL(s2)[i]);
             else
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = R_POW(REAL(s1)[i1], REAL(s2)[i2]);
 	    }
 	} else if(TYPEOF(s1) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = R_POW( R_INTEGER(s1, i1), REAL(s2)[i2]);
 	   }
 	} else	if(TYPEOF(s2) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = R_POW(REAL(s1)[i1], R_INTEGER(s2, i2));
 	   }
 	}
@@ -965,14 +999,17 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
     case MODOP:
 	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = myfmod(REAL(s1)[i1], REAL(s2)[i2]);
 	    }
 	} else if(TYPEOF(s1) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = myfmod( R_INTEGER(s1, i1), REAL(s2)[i2]);
 	   }
 	} else	if(TYPEOF(s2) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = myfmod(REAL(s1)[i1], R_INTEGER(s2, i2));
 	   }
 	}
@@ -980,14 +1017,17 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
     case IDIVOP:
 	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = myfloor(REAL(s1)[i1], REAL(s2)[i2]);
 	    }
 	} else if(TYPEOF(s1) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = myfloor(R_INTEGER(s1, i1), REAL(s2)[i2]);
 	   }
 	} else	if(TYPEOF(s2) == INTSXP ) {
 	   mod_iterate(n1, n2, i1, i2) {
+//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	       REAL(ans)[i] = myfloor(REAL(s1)[i1], R_INTEGER(s2,i2));
 	   }
 	}
@@ -1149,13 +1189,13 @@ SEXP attribute_hidden do_abs(SEXP call, SEXP op, SEXP args, SEXP env)
     if (isInteger(x) || isLogical(x)) {
 	/* integer or logical ==> return integer,
 	   factor was covered by Math.factor. */
-	int i, n = length(x);
+	R_xlen_t i, n = xlength(x);
 	PROTECT(s = allocVector(INTSXP, n));
 	/* Note: relying on INTEGER(.) === LOGICAL(.) : */
 	for(i = 0 ; i < n ; i++)
 	    INTEGER(s)[i] = abs(INTEGER(x)[i]);
     } else if (TYPEOF(x) == REALSXP) {
-	int i, n = length(x);
+	R_xlen_t i, n = xlength(x);
 	PROTECT(s = allocVector(REALSXP, n));
 	for(i = 0 ; i < n ; i++)
 	    REAL(s)[i] = fabs(REAL(x)[i]);
@@ -1170,6 +1210,10 @@ SEXP attribute_hidden do_abs(SEXP call, SEXP op, SEXP args, SEXP env)
 
 /* Mathematical Functions of Two Numeric Arguments (plus 1 int) */
 
+/* math2_1 and math2_2 and related can be removed  once the byte
+  compiler knows how to optimize to .External rather than
+  .Internal */
+
 #define if_NA_Math2_set(y,a,b)				\
 	if      (ISNA (a) || ISNA (b)) y = NA_REAL;	\
 	else if (ISNAN(a) || ISNAN(b)) y = R_NaN;
@@ -1178,7 +1222,7 @@ static SEXP math2(SEXP sa, SEXP sb, double (*f)(double, double),
 		  SEXP lcall)
 {
     SEXP sy;
-    int i, ia, ib, n, na, nb;
+    R_xlen_t i, ia, ib, n, na, nb;
     double ai, bi, *a, *b, *y;
     int naflag;
 
@@ -1188,8 +1232,8 @@ static SEXP math2(SEXP sa, SEXP sb, double (*f)(double, double),
     /* for 0-length a we want the attributes of a, not those of b
        as no recycling will occur */
 #define SETUP_Math2				\
-    na = LENGTH(sa);				\
-    nb = LENGTH(sb);				\
+    na = XLENGTH(sa);				\
+    nb = XLENGTH(sb);				\
     if ((na == 0) || (nb == 0))	{		\
 	PROTECT(sy = allocVector(REALSXP, 0));	\
 	if (na == 0) DUPLICATE_ATTRIB(sy, sa);  \
@@ -1208,6 +1252,7 @@ static SEXP math2(SEXP sa, SEXP sb, double (*f)(double, double),
     SETUP_Math2;
 
     mod_iterate(na, nb, ia, ib) {
+//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	ai = a[ia];
 	bi = b[ib];
 	if_NA_Math2_set(y[i], ai, bi)
@@ -1232,7 +1277,7 @@ static SEXP math2_1(SEXP sa, SEXP sb, SEXP sI,
 		    double (*f)(double, double, int), SEXP lcall)
 {
     SEXP sy;
-    int i, ia, ib, n, na, nb;
+    R_xlen_t i, ia, ib, n, na, nb;
     double ai, bi, *a, *b, *y;
     int m_opt;
     int naflag;
@@ -1244,6 +1289,7 @@ static SEXP math2_1(SEXP sa, SEXP sb, SEXP sI,
     m_opt = asInteger(sI);
 
     mod_iterate(na, nb, ia, ib) {
+//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	ai = a[ia];
 	bi = b[ib];
 	if_NA_Math2_set(y[i], ai, bi)
@@ -1260,7 +1306,7 @@ static SEXP math2_2(SEXP sa, SEXP sb, SEXP sI1, SEXP sI2,
 		    double (*f)(double, double, int, int), SEXP lcall)
 {
     SEXP sy;
-    int i, ia, ib, n, na, nb;
+    R_xlen_t i, ia, ib, n, na, nb;
     double ai, bi, *a, *b, *y;
     int i_1, i_2;
     int naflag;
@@ -1272,6 +1318,7 @@ static SEXP math2_2(SEXP sa, SEXP sb, SEXP sI1, SEXP sI2,
     i_2 = asInteger(sI2);
 
     mod_iterate(na, nb, ia, ib) {
+//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	ai = a[ia];
 	bi = b[ib];
 	if_NA_Math2_set(y[i], ai, bi)
@@ -1284,11 +1331,13 @@ static SEXP math2_2(SEXP sa, SEXP sb, SEXP sI1, SEXP sI2,
     return sy;
 } /* math2_2() */
 
+/* This is only used directly by .Internal for Bessel functions,
+   so managing R_alloc stack is only prudence */
 static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
 		   SEXP lcall)
 {
     SEXP sy;
-    int i, ia, ib, n, na, nb;
+    R_xlen_t i, ia, ib, n, na, nb;
     double ai, bi, *a, *b, *y;
     int naflag;
     double amax, *work;
@@ -1308,10 +1357,12 @@ static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
 	double av = b[i] < 0 ? -b[i] : b[i];
 	if (av > amax) amax = av;
     }
+    const void *vmax = vmaxget();
     nw = 1 + long(floor(amax));
     work = static_cast<double *>( CXXR_alloc(size_t( nw), sizeof(double)));
 
     mod_iterate(na, nb, ia, ib) {
+//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	ai = a[ia];
 	bi = b[ib];
 	if_NA_Math2_set(y[i], ai, bi)
@@ -1321,7 +1372,7 @@ static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
 	}
     }
 
-
+    vmaxset(vmax);
     FINISH_Math2;
 
     return sy;
@@ -1398,7 +1449,7 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
     if (length(args) >= 2 &&
 	isSymbol(CADR(args)) && R_isMissing(CADR(args), env)) {
 	double digits = 0;
-	if(PRIMVAL(op) == 10004) digits = 6.0;
+	if(PRIMVAL(op) == 10004) digits = 6.0; // for signif()
 	PROTECT(args = list2(CAR(args), ScalarReal(digits))); nprotect++;
     }
 
@@ -1419,6 +1470,7 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
     if (! DispatchGroup("Math", call2, op, args, env, &res)) {
 	if(n == 1) {
 	    double digits = 0.0;
+	    check1arg(args, call, "x");
 	    if(PRIMVAL(op) == 10004) digits = 6.0;
 	    SETCDR(args, CONS(ScalarReal(digits), R_NilValue));
 	} else {
@@ -1487,6 +1539,7 @@ SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
     if (! DispatchGroup("Math", call2, op, args, env, &res)) {
 	switch (n) {
 	case 1:
+	    check1arg(args, call, "x");
 	    if (isComplex(CAR(args)))
 		res = complex_math1(call, op, args, env);
 	    else
@@ -1519,6 +1572,11 @@ SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
 
 /* Mathematical Functions of Three (Real) Arguments */
 
+/* math3_1 and math3_2 and related can be removed once the byte
+  compiler knows how to optimize to .External rather than
+  .Internal */
+
+
 #define if_NA_Math3_set(y,a,b,c)			        \
 	if      (ISNA (a) || ISNA (b)|| ISNA (c)) y = NA_REAL;	\
 	else if (ISNAN(a) || ISNAN(b)|| ISNAN(c)) y = R_NaN;
@@ -1533,9 +1591,9 @@ SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
     if (!isNumeric(sa) || !isNumeric(sb) || !isNumeric(sc))	\
 	errorcall(lcall, R_MSG_NONNUM_MATH);			\
 								\
-    na = LENGTH(sa);						\
-    nb = LENGTH(sb);						\
-    nc = LENGTH(sc);						\
+    na = XLENGTH(sa);						\
+    nb = XLENGTH(sb);						\
+    nc = XLENGTH(sc);						\
     if ((na == 0) || (nb == 0) || (nc == 0))			\
 	return(allocVector(REALSXP, 0));			\
     n = na;							\
@@ -1563,7 +1621,7 @@ static SEXP math3_1(SEXP sa, SEXP sb, SEXP sc, SEXP sI,
 		    double (*f)(double, double, double, int), SEXP lcall)
 {
     SEXP sy;
-    int i, ia, ib, ic, n, na, nb, nc;
+    R_xlen_t i, ia, ib, ic, n, na, nb, nc;
     double ai, bi, ci, *a, *b, *c, *y;
     int i_1;
     int naflag;
@@ -1572,6 +1630,7 @@ static SEXP math3_1(SEXP sa, SEXP sb, SEXP sc, SEXP sI,
     i_1 = asInteger(sI);
 
     mod_iterate3 (na, nb, nc, ia, ib, ic) {
+//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	ai = a[ia];
 	bi = b[ib];
 	ci = c[ic];
@@ -1590,7 +1649,7 @@ static SEXP math3_2(SEXP sa, SEXP sb, SEXP sc, SEXP sI, SEXP sJ,
 		    double (*f)(double, double, double, int, int), SEXP lcall)
 {
     SEXP sy;
-    int i, ia, ib, ic, n, na, nb, nc;
+    R_xlen_t i, ia, ib, ic, n, na, nb, nc;
     double ai, bi, ci, *a, *b, *c, *y;
     int i_1,i_2;
     int naflag;
@@ -1600,6 +1659,7 @@ static SEXP math3_2(SEXP sa, SEXP sb, SEXP sc, SEXP sI, SEXP sJ,
     i_2 = asInteger(sJ);
 
     mod_iterate3 (na, nb, nc, ia, ib, ic) {
+//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	ai = a[ia];
 	bi = b[ib];
 	ci = c[ic];
@@ -1614,11 +1674,13 @@ static SEXP math3_2(SEXP sa, SEXP sb, SEXP sc, SEXP sI, SEXP sJ,
     return sy;
 } /* math3_2 */
 
+/* This is only used directly by .Internal for Bessel functions,
+   so managing R_alloc stack is only prudence */
 static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
 		   double (*f)(double, double, double, double *), SEXP lcall)
 {
     SEXP sy;
-    int i, ia, ib, ic, n, na, nb, nc;
+    R_xlen_t i, ia, ib, ic, n, na, nb, nc;
     double ai, bi, ci, *a, *b, *c, *y;
     int naflag;
     double amax, *work;
@@ -1633,10 +1695,12 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
 	double av = b[i] < 0 ? -b[i] : b[i];
 	if (av > amax) amax = av;
     }
+    const void *vmax = vmaxget();
     nw = 1 + long(floor(amax));
     work = static_cast<double *>( CXXR_alloc(size_t( nw), sizeof(double)));
 
     mod_iterate3 (na, nb, nc, ia, ib, ic) {
+//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	ai = a[ia];
 	bi = b[ib];
 	ci = c[ic];
@@ -1648,6 +1712,7 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
     }
 
     FINISH_Math3;
+    vmaxset(vmax);
 
     return sy;
 } /* math3B */
@@ -1734,6 +1799,9 @@ SEXP attribute_hidden do_math3(SEXP call, SEXP op, SEXP args, SEXP env)
 
 /* Mathematical Functions of Four (Real) Arguments */
 
+/* This can be removed completely once the byte compiler knows how to
+  optimize to .External rather than .Internal */
+
 #define if_NA_Math4_set(y,a,b,c,d)				\
 	if      (ISNA (a)|| ISNA (b)|| ISNA (c)|| ISNA (d)) y = NA_REAL;\
 	else if (ISNAN(a)|| ISNAN(b)|| ISNAN(c)|| ISNAN(d)) y = R_NaN;
@@ -1749,7 +1817,7 @@ static SEXP math4(SEXP sa, SEXP sb, SEXP sc, SEXP sd,
 		  double (*f)(double, double, double, double), SEXP lcall)
 {
     SEXP sy;
-    int i, ia, ib, ic, id, n, na, nb, nc, nd;
+    R_xlen_t i, ia, ib, ic, id, n, na, nb, nc, nd;
     double ai, bi, ci, di, *a, *b, *c, *d, *y;
     int naflag;
 
@@ -1757,10 +1825,10 @@ static SEXP math4(SEXP sa, SEXP sb, SEXP sc, SEXP sd,
     if(!isNumeric(sa)|| !isNumeric(sb)|| !isNumeric(sc)|| !isNumeric(sd))\
 	errorcall(lcall, R_MSG_NONNUM_MATH);				\
 									\
-    na = LENGTH(sa);							\
-    nb = LENGTH(sb);							\
-    nc = LENGTH(sc);							\
-    nd = LENGTH(sd);							\
+    na = XLENGTH(sa);							\
+    nb = XLENGTH(sb);							\
+    nc = XLENGTH(sc);							\
+    nd = XLENGTH(sd);							\
     if ((na == 0) || (nb == 0) || (nc == 0) || (nd == 0))		\
 	return(allocVector(REALSXP, 0));				\
     n = na;								\
@@ -1782,6 +1850,7 @@ static SEXP math4(SEXP sa, SEXP sb, SEXP sc, SEXP sd,
     SETUP_Math4;
 
     mod_iterate4 (na, nb, nc, nd, ia, ib, ic, id) {
+//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	ai = a[ia];
 	bi = b[ib];
 	ci = c[ic];
@@ -1810,7 +1879,7 @@ static SEXP math4(SEXP sa, SEXP sb, SEXP sc, SEXP sd,
 static SEXP math4_1(SEXP sa, SEXP sb, SEXP sc, SEXP sd, SEXP sI, double (*f)(double, double, double, double, int), SEXP lcall)
 {
     SEXP sy;
-    int i, ia, ib, ic, id, n, na, nb, nc, nd;
+    R_xlen_t i, ia, ib, ic, id, n, na, nb, nc, nd;
     double ai, bi, ci, di, *a, *b, *c, *d, *y;
     int i_1;
     int naflag;
@@ -1819,6 +1888,7 @@ static SEXP math4_1(SEXP sa, SEXP sb, SEXP sc, SEXP sd, SEXP sI, double (*f)(dou
     i_1 = asInteger(sI);
 
     mod_iterate4 (na, nb, nc, nd, ia, ib, ic, id) {
+//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	ai = a[ia];
 	bi = b[ib];
 	ci = c[ic];
@@ -1837,7 +1907,7 @@ static SEXP math4_2(SEXP sa, SEXP sb, SEXP sc, SEXP sd, SEXP sI, SEXP sJ,
 		    double (*f)(double, double, double, double, int, int), SEXP lcall)
 {
     SEXP sy;
-    int i, ia, ib, ic, id, n, na, nb, nc, nd;
+    R_xlen_t i, ia, ib, ic, id, n, na, nb, nc, nd;
     double ai, bi, ci, di, *a, *b, *c, *d, *y;
     int i_1, i_2;
     int naflag;
@@ -1847,6 +1917,7 @@ static SEXP math4_2(SEXP sa, SEXP sb, SEXP sc, SEXP sd, SEXP sI, SEXP sJ,
     i_2 = asInteger(sJ);
 
     mod_iterate4 (na, nb, nc, nd, ia, ib, ic, id) {
+//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	ai = a[ia];
 	bi = b[ib];
 	ci = c[ic];
@@ -1930,7 +2001,7 @@ SEXP attribute_hidden do_math4(SEXP call, SEXP op, SEXP args, SEXP env)
 static SEXP math5(SEXP sa, SEXP sb, SEXP sc, SEXP sd, SEXP se, double (*f)())
 {
     SEXP sy;
-    int i, ia, ib, ic, id, ie, n, na, nb, nc, nd, ne;
+    R_xlen_t i, ia, ib, ic, id, ie, n, na, nb, nc, nd, ne;
     double ai, bi, ci, di, ei, *a, *b, *c, *d, *e, *y;
 
 #define SETUP_Math5							\
@@ -1938,11 +2009,11 @@ static SEXP math5(SEXP sa, SEXP sb, SEXP sc, SEXP sd, SEXP se, double (*f)())
 	!isNumeric(sd) || !isNumeric(se))				\
 	errorcall(lcall, R_MSG_NONNUM_MATH);				\
 									\
-    na = LENGTH(sa);							\
-    nb = LENGTH(sb);							\
-    nc = LENGTH(sc);							\
-    nd = LENGTH(sd);							\
-    ne = LENGTH(se);							\
+    na = XLENGTH(sa);							\
+    nb = XLENGTH(sb);							\
+    nc = XLENGTH(sc);							\
+    nd = XLENGTH(sd);							\
+    ne = XLENGTH(se);							\
     if ((na == 0) || (nb == 0) || (nc == 0) || (nd == 0) || (ne == 0))	\
 	return(allocVector(REALSXP, 0));				\
     n = na;								\
@@ -1968,6 +2039,7 @@ static SEXP math5(SEXP sa, SEXP sb, SEXP sc, SEXP sd, SEXP se, double (*f)())
 
     mod_iterate5 (na, nb, nc, nd, ne,
 		  ia, ib, ic, id, ie) {
+//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	ai = a[ia];
 	bi = b[ib];
 	ci = c[ic];

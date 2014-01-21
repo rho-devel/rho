@@ -20,7 +20,7 @@ cov.trob <- function(x, wt = rep(1, n), cor = FALSE, center = TRUE, nu = 5,
     test.values <- function(x)
     {
         if(any(is.na(x)) || any(is.infinite(x)))
-            stop("missing or infinite values in ", deparse(substitute(x)))
+            stop("missing or infinite values in 'x'")
     }
     scale.simp <- function(x, center, n, p) x - rep(center, rep(n, p))
 

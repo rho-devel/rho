@@ -10,8 +10,8 @@
    Find (recursively) dependencies or reverse dependencies of packages.
 }
 \usage{
-package_dependencies(packages = NULL, db, 
-        which = c("Depends", "Imports", "LinkingTo"), 
+package_dependencies(packages = NULL, db,
+        which = c("Depends", "Imports", "LinkingTo"),
 	recursive = FALSE, reverse = FALSE)
 }
 \arguments{
@@ -21,24 +21,25 @@ package_dependencies(packages = NULL, db,
     \url{http://cran.R-project.org/web/packages/packages.rds}.
 }
   \item{which}{a character vector listing the types of
-    dependencies, a subset of \code{c("Depends", "Imports", "LinkingTo",
-      "Suggests", "Enhances")}.  Character string \code{"all"} is
-    shorthand for that vector, character string \code{"most"} 
-    for the same vector without \code{"Enhances"}.
-}
+    dependencies, a subset of
+    \code{c("Depends", "Imports", "LinkingTo", "Suggests", "Enhances")}.
+    Character string \code{"all"} is shorthand for that vector,
+    character string \code{"most"} for the same vector without
+    \code{"Enhances"}.
+  }
   \item{recursive}{logical: should (reverse) dependencies of (reverse)
     dependencies (and so on) be included?
-}
-  \item{reverse}{logical: if \code{FALSE} (default), regular dependencies are calculated,
-  otherwise reverse dependencies.
-}
+  }
+  \item{reverse}{logical: if \code{FALSE} (default), regular
+    dependencies are calculated, otherwise reverse dependencies.
+  }
 }
 \value{
 Named list with one element for each package in argument \code{packages},
 each consists of a character vector naming the (recursive) (reverse) dependencies
 of that package.
 
-For given packages which are not found in the db, \code{NULL} entries are returned, 
+For given packages which are not found in the db, \code{NULL} entries are returned,
 as opposed to \code{character(0)} entries which indicate no dependencies.
 }
 \seealso{

@@ -20,6 +20,7 @@ isLDL <- function(x)
     stopifnot(is(x, "CHMfactor"))
     as.logical(! x@type[2])# "!" = not as type[2] := (cholmod_factor)->is_ll
 }
+.isLDL <- function(x) as.logical(! x@type[2])# "!" = not as type[2] := (cholmod_factor)->is_ll
 
 setMethod("image", "CHMfactor",
           function(x, ...) {
@@ -32,11 +33,13 @@ setMethod("image", "CHMfactor",
 	     system = c("A", "LDLt", "LD", "DLt", "L", "Lt", "D", "P", "Pt"),
 	     ...)
 {
-    if(length(list(...)))
-	warning("arguments in ",deparse(list(...))," are disregarded")
+    chk.s(...)
     sysDef <- eval(formals()$system)
-    .Call(CHMfactor_solve, a, b,
-	  match(match.arg(system, sysDef), sysDef, nomatch = 0))
+    .Call(CHMfactor_solve,
+	  ##-> cholmod_solve() in  ../src/CHOLMOD/Cholesky/cholmod_solve.c
+          a, b,
+	  ## integer in	 1 ("A"), 2 ("LDLt"), ..., 9 ("Pt") :
+	  match(match.arg(system, sysDef), sysDef, nomatch = 0L))
 }
 
 setMethod("solve", signature(a = "CHMfactor", b = "ddenseMatrix"),
@@ -55,11 +58,11 @@ setMethod("solve", signature(a = "CHMfactor", b = "dsparseMatrix"),
 	  function(a, b,
 		   system = c("A", "LDLt", "LD", "DLt", "L", "Lt", "D", "P", "Pt"),
 		   ...) {
-	      if(length(list(...)))
-		  warning("arguments in ",deparse(list(...))," are disregarded")
+	      chk.s(...)
 	      sysDef <- eval(formals()$system)
-	      .Call(CHMfactor_spsolve, a, as(as(b, "CsparseMatrix"), "dgCMatrix"),
-		    match(match.arg(system, sysDef), sysDef, nomatch = 0))
+	      .Call(CHMfactor_spsolve,	#--> cholmod_spsolve() in  ../src/CHOLMOD/Cholesky/cholmod_spsolve.c
+		    a, as(as(b, "CsparseMatrix"), "dgCMatrix"),
+		    match(match.arg(system, sysDef), sysDef, nomatch = 0L))
 	  }, valueClass = "CsparseMatrix")# < virtual value ?
 
 setMethod("solve", signature(a = "CHMfactor", b = "diagonalMatrix"),
@@ -70,8 +73,7 @@ setMethod("solve", signature(a = "CHMfactor", b = "missing"),
 	  function(a, b,
 		   system = c("A", "LDLt", "LD","DLt", "L","Lt", "D", "P","Pt"),
 		   ...) {
-	      if(length(list(...)))
-		  warning("arguments in ",deparse(list(...))," are disregarded")
+	      chk.s(...)
 	      sysDef <- eval(formals()$system)
 	      system <- match.arg(system, sysDef)
 	      i.sys <- match(system, sysDef, nomatch = 0L)
@@ -92,8 +94,7 @@ setMethod("solve", signature(a = "CHMfactor", b = "ANY"),
 
 setMethod("chol2inv", signature(x = "CHMfactor"),
 	  function (x, ...) {
-	      if(length(list(...)))
-		  warning("arguments in ",deparse(list(...))," are disregarded")
+	      chk.s(...)
 	      solve(x, system = "A")
 	  })
 
@@ -108,11 +109,45 @@ setMethod("determinant", signature(x = "CHMfactor", logarithm = "logical"),
       })
 
 setMethod("update", signature(object = "CHMfactor"),
-          function(object, parent, mult = 0, ...)
+	  function(object, parent, mult = 0, ...)
       {
-          stopifnot(is(parent, "sparseMatrix"))
-          .Call(CHMfactor_update, object, parent, mult)
+	  stopifnot(extends(clp <- class(parent), "sparseMatrix"))
+	  d <- dim(parent)
+	  if(!extends(clp, "dsparseMatrix"))
+	      clp <- class(parent <- as(parent, "dsparseMatrix"))
+	  if(!extends(clp, "CsparseMatrix"))
+	      clp <- class(parent <- as(parent, "CsparseMatrix"))
+	  if(d[1] == d[2] && !extends(clp, "dsCMatrix") &&
+	     !is.null(v <- getOption("Matrix.verbose")) && v >= 1)
+	      message(gettextf("Quadratic matrix '%s' (=: A) is not formally\n	symmetric.  Will be treated as	A A' ",
+			       "parent"), domain=NA)
+	  chk.s(...)
+	  .Call(CHMfactor_update, object, parent, mult)
       })
+##' fast version, somewhat hidden; here parent *must* be  'd[sg]CMatrix'
+.updateCHMfactor <- function(object, parent, mult)
+    .Call(CHMfactor_update, object, parent, mult)
+
+
+setMethod("updown", signature(update="ANY", C="ANY", L="ANY"),
+	  ## fallback method -- give a "good" error message:
+	  function(update,C,L)
+	  stop("'update' must be logical or '+' or '-'; 'C' a matrix, and 'L' a \"CHMfactor\""))
+
+setMethod("updown", signature(update="logical", C="mMatrix", L="CHMfactor"),
+	function(update,C,L){
+	   bnew <- as(L,'pMatrix') %*% C
+	   .Call(CHMfactor_updown,update, as(bnew,'sparseMatrix'), L)
+	})
+
+setMethod("updown", signature(update="character", C="mMatrix", L="CHMfactor"),
+	function(update,C,L){
+	   if(! update %in% c("+","-"))
+	       stop("update must be TRUE/FALSE or '+' or '-'")
+	   update <- update=="+"
+	   bnew <- as(L,'pMatrix') %*% C
+	   .Call(CHMfactor_updown,update, as(bnew,'sparseMatrix'), L)
+	})
 
 ## Currently hidden:
 ldetL2up <- function(x, parent, Imult)

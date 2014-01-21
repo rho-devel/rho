@@ -1,6 +1,8 @@
 #  File src/library/graphics/R/barplot.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -74,12 +76,12 @@ function(height, width = 1, space = NULL, names.arg = NULL,
     if (beside) {
 	if (length(space) == 2)
 	    space <- rep.int(c(space[2L], rep.int(space[1L], NR - 1)), NC)
-	width <- rep(width, length.out = NR)
+	width <- rep_len(width, NR)
     } else {
-	width <- rep(width, length.out = NC)
+	width <- rep_len(width, NC)
     }
 
-    offset <- rep(as.vector(offset), length.out = length(width))
+    offset <- rep_len(as.vector(offset), length(width))
 
     delta <- width / 2
     w.r <- cumsum(space + width)
@@ -170,7 +172,7 @@ function(height, width = 1, space = NULL, names.arg = NULL,
 		 lty = axis.lty, cex.axis = cex.names, ...)
 	}
 	if(!is.null(legend.text)) {
-	    legend.col <- rep(col, length.out = length(legend.text))
+	    legend.col <- rep_len(col, length(legend.text))
 	    if((horiz & beside) || (!horiz & !beside)){
 		legend.text <- rev(legend.text)
 		legend.col <- rev(legend.col)

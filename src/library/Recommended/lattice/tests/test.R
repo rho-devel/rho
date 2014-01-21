@@ -73,7 +73,7 @@ xyplot( xa ~ xb | xc, scales = "free")
 
 x = sample(1:3, 100, replace=TRUE)
 histogram( ~ x, breaks=c(0,1.5,2.5,3.5), type='count')
-
+histogram( ~ x, breaks=c(0,1.5,2.5,3.5), type='density')
 
 
 ## splom pscales

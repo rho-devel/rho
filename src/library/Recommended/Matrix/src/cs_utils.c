@@ -119,19 +119,18 @@ cs *Matrix_as_cs(cs *ans, SEXP x, Rboolean check_Udiag)
 /* FIXME:  Change API : May need object,  not just class */
 SEXP Matrix_cs_to_SEXP(cs *a, char *cl, int dofree)
 {
-    SEXP ans;
     static const char *valid[] = {"dgCMatrix", "dsCMatrix", "dtCMatrix", ""};
-    int *dims, ctype = Matrix_check_class(cl, valid), nz;
+    int ctype = Matrix_check_class(cl, valid);
 
     if (ctype < 0)
 	error(_("invalid class of object to %s"), "Matrix_cs_to_SEXP");
-    ans = PROTECT(NEW_OBJECT(MAKE_CLASS(cl)));
+    SEXP ans = PROTECT(NEW_OBJECT(MAKE_CLASS(cl)));
 				/* allocate and copy common slots */
-    dims = INTEGER(ALLOC_SLOT(ans, Matrix_DimSym, INTSXP, 2));
+    int *dims = INTEGER(ALLOC_SLOT(ans, Matrix_DimSym, INTSXP, 2));
     dims[0] = a->m; dims[1] = a->n;
     Memcpy(INTEGER(ALLOC_SLOT(ans, Matrix_pSym, INTSXP, a->n + 1)),
 	   a->p, a->n + 1);
-    nz = a->p[a->n];
+    int nz = a->p[a->n];
     Memcpy(INTEGER(ALLOC_SLOT(ans, Matrix_iSym, INTSXP, nz)), a->i, nz);
     Memcpy(REAL(ALLOC_SLOT(ans, Matrix_xSym, REALSXP, nz)), a->x, nz);
     if (ctype > 0) { /* dsC or dtC */

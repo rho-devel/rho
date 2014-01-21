@@ -33,11 +33,7 @@
 \alias{norm,ddenseMatrix,character-method}
 \alias{rcond,ddenseMatrix,missing-method}
 \alias{rcond,ddenseMatrix,character-method}
-\alias{solve,ddenseMatrix,missing-method}
-\alias{solve,ddenseMatrix,numeric-method}
-\alias{solve,ddenseMatrix,matrix-method}
-\alias{solve,ddenseMatrix,Matrix-method}
-\alias{solve,ddenseMatrix,ANY-method}
+%% \alias{solve,ddenseMatrix,ANY-method}--> solve-methods.Rd
 \alias{t,ddenseMatrix-method}
 %
 \description{This is the virtual class of all dense numeric (i.e.,

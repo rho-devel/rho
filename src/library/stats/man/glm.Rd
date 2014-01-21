@@ -118,7 +118,7 @@ glm.fit(x, y, weights = rep(1, nobs),
   \item{\dots}{
     For \code{glm}: arguments to be used to form the default
     \code{control} argument if it is not supplied directly.
-    
+
     For \code{weights}: further arguments passed to or from other methods.
   }
 }
@@ -192,7 +192,7 @@ glm.fit(x, y, weights = rep(1, nobs),
   which inherits from the class \code{"lm"}. See later in this section.
   If a non-standard \code{method} is used, the object will also inherit
   from the class (if any) returned by that function.
-  
+
   The function \code{\link{summary}} (i.e., \code{\link{summary.glm}}) can
   be used to obtain or print a summary of the results and the function
   \code{\link{anova}} (i.e., \code{\link{anova.glm}})
@@ -290,14 +290,14 @@ glm.fit(x, y, weights = rep(1, nobs),
 
   \code{\link{lm}} for non-generalized \emph{linear} models (which SAS
   calls GLMs, for \sQuote{general} linear models).
-  
+
   \code{\link{loglin}} and \code{\link[MASS]{loglm}} (package
   \CRANpkg{MASS}) for fitting log-linear models (which binomial and
   Poisson GLMs are) to contingency tables.
 
   \code{bigglm} in package \CRANpkg{biglm} for an alternative
   way to fit GLMs to large datasets (especially those with many cases).
- 
+
   \code{\link{esoph}}, \code{\link{infert}} and
   \code{\link{predict.glm}} have examples of fitting binomial glms.
 }
@@ -334,24 +334,25 @@ counts <- c(18,17,15,20,10,20,25,13,12)
 outcome <- gl(3,1,9)
 treatment <- gl(3,3)
 print(d.AD <- data.frame(treatment, outcome, counts))
-glm.D93 <- glm(counts ~ outcome + treatment, family=poisson())
+glm.D93 <- glm(counts ~ outcome + treatment, family = poisson())
 anova(glm.D93)
 \donttest{summary(glm.D93)}
 
-## an example with offsets from Venables & Ripley (2002, p.189)
-utils::data(anorexia, package="MASS")
+\dontrun{## an example with offsets from Venables & Ripley (2002, p.189)
+utils::data(anorexia, package = "MASS")
 
 anorex.1 <- glm(Postwt ~ Prewt + Treat + offset(Prewt),
                 family = gaussian, data = anorexia)
 summary(anorex.1)
+}
 
 # A Gamma example, from McCullagh & Nelder (1989, pp. 300-2)
 clotting <- data.frame(
     u = c(5,10,15,20,30,40,60,80,100),
     lot1 = c(118,58,42,35,27,25,21,19,18),
     lot2 = c(69,35,26,21,18,16,13,12,12))
-summary(glm(lot1 ~ log(u), data=clotting, family=Gamma))
-summary(glm(lot2 ~ log(u), data=clotting, family=Gamma))
+summary(glm(lot1 ~ log(u), data = clotting, family = Gamma))
+summary(glm(lot2 ~ log(u), data = clotting, family = Gamma))
 
 \dontrun{
 ## for an example of the use of a terms object as a formula

@@ -7,12 +7,12 @@ Plot an Rpart Object
 Plots an rpart object on the current graphics device.
 }
 \usage{
-\method{plot}{rpart}(x, uniform=FALSE, branch=1, compress=FALSE, nspace,
-     margin=0, minbranch=.3, \dots)
+\method{plot}{rpart}(x, uniform = FALSE, branch = 1, compress = FALSE, nspace,
+     margin = 0, minbranch = 0.3, \dots)
 }
 \arguments{
 \item{x}{
-  a fitted object of class \code{rpart}, containing a classification,
+  a fitted object of class \code{"rpart"}, containing a classification,
   regression, or rate tree.
 }
 \item{uniform}{
@@ -61,7 +61,12 @@ The coordinates of the nodes are returned as a list, with
 components \code{x} and \code{y}.
 }
 \section{Side Effects}{
-An unlabeled plot is produced on the current graphics device.
+An unlabeled plot is produced on the current graphics device: one being
+opened if needed.
+
+In order to build up a plot in the usual S style, e.g., a separate
+\code{text} command for adding labels, some extra information about the
+plot needs be retained.  This is kept in an environment in the package.
 }
 \details{
 This function is a method for the generic function \code{plot}, for objects
@@ -73,7 +78,8 @@ The y-coordinate of the top node of the tree will always be 1.
 }
 \examples{
 fit <- rpart(Price ~ Mileage + Type + Country, cu.summary)
-plot(fit, compress=TRUE)
-text(fit, use.n=TRUE)
+par(xpd = TRUE)
+plot(fit, compress = TRUE)
+text(fit, use.n = TRUE)
 }
 \keyword{tree}

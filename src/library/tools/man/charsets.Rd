@@ -1,6 +1,6 @@
 % File src/library/tools/man/charsets.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{charsets}
@@ -12,7 +12,7 @@
   \code{charset_to_Unicode} is a matrix of Unicode points with columns
   for the common 8-bit encodings.
 
-  \code{Adobe_glyphs} is a dataframe which gives Adobe glyph names for
+  \code{Adobe_glyphs} is a data frame which gives Adobe glyph names for
   Unicode points. It has two character columns, \code{"adobe"} and
   \code{"unicode"} (a 4-digit hex representation).
 }
@@ -40,7 +40,7 @@ Adobe_glyphs
 \examples{
 ## find Adobe names for ISOLatin2 chars.
 latin2 <- charset_to_Unicode[, "ISOLatin2"]
-aUnicode <- as.numeric(paste("0x", Adobe_glyphs$unicode, sep=""))
+aUnicode <- as.numeric(paste0("0x", Adobe_glyphs$unicode))
 keep <- aUnicode \%in\% latin2
 aUnicode <- aUnicode[keep]
 aAdobe <- Adobe_glyphs[keep, 1]
@@ -48,6 +48,6 @@ aAdobe <- Adobe_glyphs[keep, 1]
 aLatin2 <- aAdobe[match(latin2, aUnicode)]
 ## all matches
 bLatin2 <- lapply(1:256, function(x) aAdobe[aUnicode == latin2[x]])
-format(bLatin2, justify="none")
+format(bLatin2, justify = "none")
 }
 \keyword{datasets}

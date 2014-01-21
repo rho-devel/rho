@@ -11,8 +11,8 @@ p-spline(s) or cubic regression spline(s). Discrete P-spline type penalties are 
 of the basis, but the penalties themselves have a basis representation, allowing the strength of the
 penalty to vary with the covariates. The coefficients of the penalty basis are the smoothing parameters.
 
-When invoking an adaptive smoother the \code{k} argument specifies the dimension of the smoothing basis, 
-while the \code{m} argument specifies the dimension of the penalty basis. For an adaptive smooth of two 
+When invoking an adaptive smoother the \code{k} argument specifies the dimension of the smoothing basis (default 40 in 1D, 15 in 2D), 
+while the \code{m} argument specifies the dimension of the penalty basis (default 5 in 1D, 3 in 2D). For an adaptive smooth of two 
 variables \code{k} is taken as the dimension of both marginal bases: different marginal basis dimensions can be 
 specified by making \code{k} a two element vector. Similarly, in the two dimensional case \code{m} is the 
 dimension of both marginal bases for the penalties, unless it is a two element vector, which specifies different
@@ -66,6 +66,7 @@ This class can not be used as a marginal basis in a tensor product smooth, nor b
 \examples{
 ## Comparison using an example taken from AdaptFit
 ## library(AdaptFit)
+require(mgcv)
 set.seed(0)
 x <- 1:1000/1000
 mu <- exp(-400*(x-.6)^2)+5*exp(-500*(x-.75)^2)/3+2*exp(-500*(x-.9)^2)
@@ -90,7 +91,9 @@ b <- gam(y~s(x,bs="ad",k=40,m=5,xt=list(bs="cr")))
 plot(b,shade=TRUE,main=round(cor(fitted(b),mu),digits=4))
 lines(x,mu-mean(mu),col=2)
 
-## A 2D example....
+## A 2D example (marked, 'Not run' purely to reduce
+## checking load on CRAN).
+\dontrun{
 par(mfrow=c(2,2),mar=c(1,1,1,1))
 x <- seq(-.5, 1.5, length= 60)
 z <- x
@@ -119,7 +122,7 @@ vis.gam(b1,theta=30,phi=30,ticktype="detailed")
 b <- gam(y~s(x,z,bs="ad",k=15,m=3),gamma=1.4)
 vis.gam(b,theta=30,phi=30,ticktype="detailed")
 cor(fitted(b0),f);cor(fitted(b),f)
-
+}
 
 
 }

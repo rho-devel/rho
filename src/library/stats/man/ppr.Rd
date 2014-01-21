@@ -1,12 +1,14 @@
 % File src/library/stats/man/ppr.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 % file stats/man/ppr.Rd
 % copyright (C) 1995-8 B. D. Ripley
 % copyright (C) 2000-3   The R Core Team
-%
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
+
 \name{ppr}
 \alias{ppr}
 \alias{ppr.default}
@@ -21,8 +23,8 @@ ppr(x, \dots)
 \method{ppr}{formula}(formula, data, weights, subset, na.action,
     contrasts = NULL, \dots, model = FALSE)
 
-\method{ppr}{default}(x, y, weights = rep(1,n),
-    ww = rep(1,q), nterms, max.terms = nterms, optlevel = 2,
+\method{ppr}{default}(x, y, weights = rep(1, n),
+    ww = rep(1, q), nterms, max.terms = nterms, optlevel = 2,
     sm.method = c("supsmu", "spline", "gcvspline"),
     bass = 0, span = 0, df = 5, gcvpen = 1, \dots)
 }
@@ -128,7 +130,7 @@ method functions.
 \item{residuals}{the residuals, as a matrix if \code{q > 1}.}
 \item{smod}{internal work array, which includes the ridge functions
   evaluated at the training set points.}
-\item{model}{(only if \code{model=TRUE}) the model frame.}
+\item{model}{(only if \code{model = TRUE}) the model frame.}
 }
 \details{
   The basic method is given by Friedman (1984), and is essentially the
@@ -152,6 +154,12 @@ method functions.
   from each regressor at each step and so is a little less likely to
   converge to a saddle point of the sum of squares criterion.
 }
+\source{
+  Friedman (1984): converted to double precision and added interface to
+  smoothing splines by B. D. Ripley, originally for the \CRANpkg{MASS}
+  package.
+}
+
 \references{
   Friedman, J. H. and Stuetzle, W. (1981)
   Projection pursuit regression.
@@ -200,12 +208,12 @@ summary(rock.ppr)
 #    term 1    term 2
 # 1.6079271 0.5460971
 
-par(mfrow=c(3,2))# maybe: , pty="s")
-plot(rock.ppr, main="ppr(log(perm)~ ., nterms=2, max.terms=5)")
-plot(update(rock.ppr, bass=5), main = "update(..., bass = 5)")
-plot(update(rock.ppr, sm.method="gcv", gcvpen=2),
+par(mfrow = c(3,2))   # maybe: , pty = "s")
+plot(rock.ppr, main = "ppr(log(perm)~ ., nterms=2, max.terms=5)")
+plot(update(rock.ppr, bass = 5), main = "update(..., bass = 5)")
+plot(update(rock.ppr, sm.method = "gcv", gcvpen = 2),
      main = "update(..., sm.method=\"gcv\", gcvpen=2)")
-cbind(perm=rock$perm, prediction=round(exp(predict(rock.ppr)), 1))
+cbind(perm = rock$perm, prediction = round(exp(predict(rock.ppr)), 1))
 detach()
 }
 \keyword{regression}

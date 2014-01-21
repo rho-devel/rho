@@ -1,0 +1,1101 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: MASS 7.3-21\n"
+"Report-Msgid-Bugs-To: bugs@R-project.org\n"
+"POT-Creation-Date: 2013-03-18 09:49\n"
+"PO-Revision-Date: 2012-10-02 16:58+0100\n"
+"Last-Translator: Łukasz Daniel <lukasz.daniel@gmail.com>\n"
+"Language-Team: Łukasz Daniel <lukasz.daniel@gmail.com>\n"
+"Language: pl_PL\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
+"|| n%100>=20) ? 1 : 2);\n"
+"X-Poedit-SourceCharset: iso-8859-1\n"
+"X-Generator: Poedit 1.5.3\n"
+
+# MASS/R/add.R: 38
+# stop("no terms in scope")
+# MASS/R/add.R: 105
+# stop("no terms in scope")
+# MASS/R/add.R: 157
+# stop("no terms in scope")
+msgid "no terms in scope"
+msgstr "brak członów w zakresie"
+
+# MASS/R/add.R: 42
+# stop("no terms in scope for adding to object")
+# MASS/R/add.R: 161
+# stop("no terms in scope for adding to object")
+msgid "no terms in scope for adding to object"
+msgstr "brak członów w zakresie do dodania do obiektu"
+
+# MASS/R/add.R: 56
+# message(gettextf("trying + %s", tt), domain = NA)
+# MASS/R/add.R: 203
+# message(gettextf("trying + %s", tt), domain = NA)
+msgid "trying + %s"
+msgstr "próbowanie + %s"
+
+# MASS/R/add.R: 65
+# stop("number of rows in use has changed: remove missing values?")
+# MASS/R/add.R: 290
+# stop("number of rows in use has changed: remove missing values?")
+# MASS/R/stepAIC.R: 180
+# stop("number of rows in use has changed: remove missing values?")
+msgid "number of rows in use has changed: remove missing values?"
+msgstr "liczba wierszy w użyciu zmieniła się: usunąć brakujące wartości?"
+
+# MASS/R/add.R: 241
+# warning(gettextf("F test assumes 'quasi%s' family", fam),
+#                     domain = NA)
+# MASS/R/add.R: 425
+# warning(gettextf("F test assumes 'quasi%s' family", fam),
+#                     domain = NA)
+msgid "F test assumes 'quasi%s' family"
+msgstr "test Fishera zakłada rodzinę 'kwazi-%s'"
+
+# MASS/R/add.R: 256
+# stop("no 'addterm' method implemented for \"mlm\" models")
+msgid "no 'addterm' method implemented for \"mlm\" models"
+msgstr "brak zaimplementowanej metody 'addterm' dla modeli \"mlm\""
+
+# MASS/R/add.R: 270
+# stop("scope is not a subset of term labels")
+# MASS/R/add.R: 368
+# stop("scope is not a subset of term labels")
+msgid "scope is not a subset of term labels"
+msgstr "zakres nie jest podzbiorem etykiet członów"
+
+# MASS/R/add.R: 281
+# message(gettextf("trying - %s", tt), domain = NA)
+# MASS/R/add.R: 385
+# message(gettextf("trying - %s", scope[i]), domain = NA)
+msgid "trying - %s"
+msgstr "próbowanie - %s"
+
+# MASS/R/add.R: 353
+# stop("'dropterm' not implemented for \"mlm\" fits")
+msgid "'dropterm' not implemented for \"mlm\" fits"
+msgstr "'dropterm' nie jest zaimplementowane dla dopasowań \"mlm\""
+
+# MASS/R/area.R: 29
+# warning(gettextf("iteration limit reached near 'x = %f'", d),
+#                 doman = NA)
+msgid "iteration limit reached near 'x = %f'"
+msgstr "osiągnięto limit iteracji w pobliżu 'x = %f'"
+
+# MASS/R/boxcox.R: 50
+# stop(gettextf("%s does not have both 'qr' and 'y' components",
+#                       sQuote(deparse(substitute(object)))), domain = NA)
+# MASS/R/logtrans.R: 25
+# stop(gettextf("%s does not have both 'qr' and 'y' components",
+#                       sQuote(deparse(substitute(object)))), domain = NA)
+msgid "%s does not have both 'qr' and 'y' components"
+msgstr "%s nie posiada obydwu komponentów 'qr' oraz 'y'"
+
+# MASS/R/boxcox.R: 53
+# stop("response variable must be positive")
+msgid "response variable must be positive"
+msgstr "zmienna zależna musi być dodatnia"
+
+# MASS/R/confint.R: 23
+# message("Waiting for profiling to be done...")
+# MASS/R/confint.R: 60
+# message("Waiting for profiling to be done...")
+# MASS/R/polr.R: 451
+# message("Waiting for profiling to be done...")
+msgid "Waiting for profiling to be done..."
+msgstr "Oczekiwanie na wykonanie profilowania..."
+
+# MASS/R/contr.sdif.R: 22
+# stop("invalid number of levels")
+# MASS/R/contr.sdif.R: 28
+# stop("invalid number of levels")
+msgid "invalid number of levels"
+msgstr "niepoprawna liczba poziomów"
+
+# MASS/R/corresp.R: 22
+# stop(gettextf("frequency table is %d-dimensional", m), domain = NA)
+msgid "frequency table is %d-dimensional"
+msgstr "tabela częstotliwości jest %d-wymiarowa"
+
+# MASS/R/corresp.R: 30
+# stop("invalid table specification")
+msgid "invalid table specification"
+msgstr "niepoprawne określenie tabeli"
+
+# MASS/R/corresp.R: 39
+# stop("higher-way table requested.  Only 2-way allowed")
+msgid "higher-way table requested.  Only 2-way allowed"
+msgstr ""
+"zażądano tabeli o wyższej kierunkowości.  Tylko 2-kierunkowa jest dozwolona"
+
+# MASS/R/corresp.R: 48
+# warning("negative or non-integer entries in table")
+msgid "negative or non-integer entries in table"
+msgstr "ujemne lub niecałkowite wpisy w tabeli"
+
+# MASS/R/corresp.R: 49
+# stop("all frequencies are zero")
+msgid "all frequencies are zero"
+msgstr "wszystkie częstotliwości wynoszą zero"
+
+# MASS/R/corresp.R: 52
+# stop("empty row or column in table")
+msgid "empty row or column in table"
+msgstr "pusty wiersz lub kolumna w tablicy"
+
+# MASS/R/corresp.R: 108
+# stop("biplot is only possible if nf >= 2")
+msgid "biplot is only possible if nf >= 2"
+msgstr "biplot jest możliwy jeśli nf >= 2"
+
+# MASS/R/cov.trob.R: 23
+# stop("missing or infinite values in 'x'")
+msgid "missing or infinite values in 'x'"
+msgstr "brakujące lub nieskończone wartości w 'x'"
+
+# MASS/R/cov.trob.R: 36
+# stop("length of 'wt' must equal number of observations")
+msgid "length of 'wt' must equal number of observations"
+msgstr "długość 'wt' musi równać się liczbie obserwacji"
+
+# MASS/R/cov.trob.R: 37
+# stop("negative weights not allowed")
+# MASS/R/negbin.R: 108
+# stop("negative weights not allowed")
+msgid "negative weights not allowed"
+msgstr "ujemne wagi nie są dozwolone"
+
+# MASS/R/cov.trob.R: 38
+# stop("no positive weights")
+msgid "no positive weights"
+msgstr "brak dodatnich wag"
+
+# MASS/R/cov.trob.R: 43
+# stop("'center' is not the right length")
+msgid "'center' is not the right length"
+msgstr "'center' nie posiada poprawnej długości"
+
+# MASS/R/cov.trob.R: 63
+# warning("Probable convergence failure")
+msgid "Probable convergence failure"
+msgstr "Prawdopodobne niepowodzenie zbieżności"
+
+# MASS/R/eqscplot.R: 57
+# stop("'uin' is too large to fit plot in")
+msgid "'uin' is too large to fit plot in"
+msgstr "'uin' jest zbyt duże aby dopasować wykres"
+
+# MASS/R/fitdistr.R: 29
+# stop("'x' must be a non-empty numeric vector")
+msgid "'x' must be a non-empty numeric vector"
+msgstr "'x' musi być niepustym wektorem liczbowym"
+
+# MASS/R/fitdistr.R: 30
+# stop("'x' contains missing or infinite values")
+msgid "'x' contains missing or infinite values"
+msgstr "'x' zawiera brakujące lub nieskończone wartości"
+
+# MASS/R/fitdistr.R: 32
+# stop("'densfun' must be supplied as a function or name")
+msgid "'densfun' must be supplied as a function or name"
+msgstr "'densfun' musi być dostarczone jako funkcja lub nazwa"
+
+# MASS/R/fitdistr.R: 55
+# stop("unsupported distribution")
+msgid "unsupported distribution"
+msgstr "niewspierany rozkład"
+
+# MASS/R/fitdistr.R: 58
+# stop(gettextf("supplying pars for the %s distribution is not supported",
+#                               "log-Normal"), domain = NA)
+# MASS/R/fitdistr.R: 77
+# stop(gettextf("supplying pars for the %s distribution is not supported",
+#                               "Normal"), domain = NA)
+# MASS/R/fitdistr.R: 92
+# stop(gettextf("supplying pars for the %s distribution is not supported",
+#                               "Poisson"), domain = NA)
+# MASS/R/fitdistr.R: 106
+# stop(gettextf("supplying pars for the %s distribution is not supported",
+#                               "exponential"), domain = NA)
+# MASS/R/fitdistr.R: 119
+# stop(gettextf("supplying pars for the %s distribution is not supported",
+#                               "geometric"), domain = NA)
+msgid "supplying pars for the %s distribution is not supported"
+msgstr "dostarczanie parametrów dla rozkładu %s jest niewspierane"
+
+# MASS/R/fitdistr.R: 61
+# stop("need positive values to fit a log-Normal")
+msgid "need positive values to fit a log-Normal"
+msgstr ""
+"potrzeba dodatnich wartości aby dopasować rozkład logarytmicznie normalny"
+
+# MASS/R/fitdistr.R: 104
+# stop("Exponential values must be >= 0")
+msgid "Exponential values must be >= 0"
+msgstr "wartości eksponencjalne muszą być  >= 0"
+
+# MASS/R/fitdistr.R: 133
+# stop("Weibull values must be > 0")
+msgid "Weibull values must be > 0"
+msgstr "wartości Weibulla muszą być > 0"
+
+# MASS/R/fitdistr.R: 141
+# stop("gamma values must be >= 0")
+msgid "gamma values must be >= 0"
+msgstr "wartości 'gamma' muszą być >= 0"
+
+# MASS/R/fitdistr.R: 163
+# stop("'start' must be a named list")
+msgid "'start' must be a named list"
+msgstr "'start' musi być nazwaną listą"
+
+# MASS/R/fitdistr.R: 170
+# stop("'start' specifies names which are not arguments to 'densfun'")
+msgid "'start' specifies names which are not arguments to 'densfun'"
+msgstr ""
+"'start' określa nazwy, które nie są argumentami przekazywanymi do 'densfun'"
+
+# MASS/R/fitdistr.R: 191
+# stop("optimization failed")
+msgid "optimization failed"
+msgstr "optymalizacja nie powiodła się"
+
+# MASS/R/fitdistr.R: 202
+# stop("only 'REML = FALSE' is implemented")
+msgid "only 'REML = FALSE' is implemented"
+msgstr "tylko 'REML = FALSE' jest zaimplementowane"
+
+# MASS/R/gamma.shape.R: 31
+# message(gettextf("Initial estimate: %s", format(alpha)), domain = NA)
+msgid "Initial estimate: %s"
+msgstr "Początkowe oszacowanie: %s"
+
+# MASS/R/gamma.shape.R: 42
+# message(gettextf("Iter. %d Alpha: %s", itr, format(alpha)),
+#                     domain = NA)
+msgid "Iter. %d Alpha: %s"
+msgstr "Iteracja %d Alpha: %s"
+
+# MASS/R/gamma.shape.R: 47
+# warning("iteration limit reached")
+# MASS/R/negbin.R: 363
+# warning("iteration limit reached")
+# MASS/R/negbin.R: 364
+# gettext("iteration limit reached")
+msgid "iteration limit reached"
+msgstr "osiągnięto graniczą wartość iteracji"
+
+# MASS/R/glmmPQL.R: 20
+# stop("package 'nlme' is essential")
+msgid "package 'nlme' is essential"
+msgstr "pakiet 'nlmne' jest kluczowy"
+
+# MASS/R/glmmPQL.R: 26
+# stop("'family' not recognized")
+msgid "'family' not recognized"
+msgstr "'family' nie zostało rozpoznane"
+
+# MASS/R/glmmPQL.R: 81
+# message(gettextf("iteration %d", i), domain = NA)
+msgid "iteration %d"
+msgstr "iteracja %d"
+
+# MASS/R/glmmPQL.R: 139
+# stop("'anova' is not available for PQL fits")
+msgid "'anova' is not available for PQL fits"
+msgstr "'anova' nie jest dostępna dla dopasowań PQL"
+
+# MASS/R/huber.R: 23
+# stop("cannot estimate scale: MAD is zero for this sample")
+msgid "cannot estimate scale: MAD is zero for this sample"
+msgstr "nie można oszacować skali: MAD wynosi zero dla tej próby"
+
+# MASS/R/isoMDS.R: 21
+# stop("an initial configuration must be supplied with NA/Infs in 'd'")
+msgid "an initial configuration must be supplied with NA/Infs in 'd'"
+msgstr ""
+"początkowa konfiguracja musi zostać dostarczona z wartosciami NA/Inf w 'd'"
+
+# MASS/R/isoMDS.R: 22
+# stop("'y' must be a matrix")
+# MASS/R/sammon.R: 24
+# stop("'y' must be a matrix")
+msgid "'y' must be a matrix"
+msgstr "'y' musi być macierzą"
+
+# MASS/R/isoMDS.R: 27
+# stop("distances must be result of 'dist' or a square matrix")
+# MASS/R/sammon.R: 29
+# stop("distances must be result of 'dist' or a square matrix")
+msgid "distances must be result of 'dist' or a square matrix"
+msgstr "odległości muszą być wynikiem 'dist' lub być kwadratową macierzą"
+
+# MASS/R/isoMDS.R: 36
+# stop("invalid size")
+# MASS/R/sammon.R: 38
+# stop("invalid size")
+msgid "invalid size"
+msgstr "niepoprawny rozmiar"
+
+# MASS/R/isoMDS.R: 42
+# stop(gettextf("zero or negative distance between objects %d and %d",
+#                       aa[1,1], aa[1,2]), domain = NA)
+# MASS/R/sammon.R: 44
+# stop(gettextf("zero or negative distance between objects %d and %d",
+#                       aa[1,1], aa[1,2]), domain = NA)
+msgid "zero or negative distance between objects %d and %d"
+msgstr "zerowa lub ujemna odległość pomiędzy obiektami %d oraz %d"
+
+# MASS/R/isoMDS.R: 47
+# stop("not enough non-missing data")
+# MASS/R/sammon.R: 49
+# stop("not enough non-missing data")
+msgid "not enough non-missing data"
+msgstr "niewystarczająca liczba niebrakujących danych"
+
+# MASS/R/isoMDS.R: 49
+# stop("invalid initial configuration")
+# MASS/R/sammon.R: 51
+# stop("invalid initial configuration")
+msgid "invalid initial configuration"
+msgstr "niepoprawna początkowa konfiguracja"
+
+# MASS/R/isoMDS.R: 50
+# stop("initial configuration must be complete")
+# MASS/R/sammon.R: 52
+# stop("initial configuration must be complete")
+msgid "initial configuration must be complete"
+msgstr "początkowa konfiguracja musi być kompletna"
+
+# MASS/R/isoMDS.R: 79
+# stop("invalid row(x)")
+msgid "invalid row(x)"
+msgstr "niepoprawne 'row(x)'"
+
+# MASS/R/isoMDS.R: 85
+# stop("invalid length(d)")
+msgid "invalid length(d)"
+msgstr "niepoprawne 'length(d)'"
+
+# MASS/R/kde2d.R: 21
+# stop("data vectors must be the same length")
+msgid "data vectors must be the same length"
+msgstr "wektory danych muszą być tej samej długości"
+
+# MASS/R/kde2d.R: 23
+# stop("missing or infinite values in the data are not allowed")
+msgid "missing or infinite values in the data are not allowed"
+msgstr "wartości brakujące lub nieskończone nie są dozwolone w zbiorze danych"
+
+# MASS/R/kde2d.R: 25
+# stop("only finite values are allowed in 'lims'")
+msgid "only finite values are allowed in 'lims'"
+msgstr "tylko skończone wartości są dozwolone w 'lims'"
+
+# MASS/R/truehist.R: 50
+# stop("'h' must be strictly positive")
+#, fuzzy
+msgid "bandwidths must be strictly positive"
+msgstr "'h' musi być ściśle dodatnie"
+
+# MASS/R/lda.R: 80
+# stop("'x' is not a matrix")
+# MASS/R/qda.R: 78
+# stop("'x' is not a matrix")
+msgid "'x' is not a matrix"
+msgstr "'x' nie jest macierzą"
+
+# MASS/R/lda.R: 83
+# stop("infinite, NA or NaN values in 'x'")
+# MASS/R/qda.R: 81
+# stop("infinite, NA or NaN values in 'x'")
+msgid "infinite, NA or NaN values in 'x'"
+msgstr "wartości nieskończone, NA lub NaN w 'x'"
+
+# MASS/R/lda.R: 87
+# stop("nrow(x) and length(grouping) are different")
+# MASS/R/qda.R: 85
+# stop("nrow(x) and length(grouping) are different")
+msgid "nrow(x) and length(grouping) are different"
+msgstr "'nrow(x)' oraz 'length(grouping)' są różne"
+
+# MASS/R/lda.R: 92
+# stop("invalid 'prior'")
+# MASS/R/lda.R: 254
+# stop("invalid 'prior'")
+# MASS/R/qda.R: 94
+# stop("invalid 'prior'")
+# MASS/R/qda.R: 195
+# stop("invalid 'prior'")
+msgid "invalid 'prior'"
+msgstr "niepoprawna wartość 'prior'"
+
+# MASS/R/lda.R: 93
+# stop("'prior' is of incorrect length")
+# MASS/R/lda.R: 255
+# stop("'prior' is of incorrect length")
+# MASS/R/qda.R: 95
+# stop("'prior' is of incorrect length")
+# MASS/R/qda.R: 196
+# stop("'prior' is of incorrect length")
+msgid "'prior' is of incorrect length"
+msgstr "'prior' posiada niepoprawną długość"
+
+# MASS/R/lda.R: 111
+# stop(gettext("cannot use leave-one-out CV with method %s",
+#                      sQuote(method)), domain = NA)
+# MASS/R/qda.R: 103
+# stop(gettext("cannot use leave-one-out CV with method %s",
+#                      sQuote(method)), domain = NA)
+# MASS/R/qda.R: 191
+# stop(gettext("cannot use leave-one-out CV with method %s",
+#                      sQuote(mt), domain = NA))
+msgid "cannot use leave-one-out CV with method %s"
+msgstr "nie można użyć 'zostaw-jeden' CV z metodą %s"
+
+# MASS/R/lda.R: 130
+# stop("rank = 0: variables are numerically constant")
+# MASS/R/lda.R: 151
+# stop("rank = 0: variables are numerically constant")
+# MASS/R/lda.R: 159
+# stop("rank = 0: variables are numerically constant")
+msgid "rank = 0: variables are numerically constant"
+msgstr "rank = 0: zmienne są liczbowo stałe"
+
+# MASS/R/lda.R: 131
+# warning("variables are collinear")
+# MASS/R/lda.R: 152
+# warning("variables are collinear")
+# MASS/R/lda.R: 160
+# warning("variables are collinear")
+msgid "variables are collinear"
+msgstr "zmienne są współliniowe"
+
+# MASS/R/lda.R: 135
+# stop("'nu' must exceed 2")
+# MASS/R/qda.R: 113
+# stop("'nu' must exceed 2")
+msgid "'nu' must exceed 2"
+msgstr "'nu' musi przekraczać 2"
+
+# MASS/R/lda.R: 198
+# stop("group means are numerically identical")
+msgid "group means are numerically identical"
+msgstr "średnie grup są liczbowo identyczne"
+
+# MASS/R/lda.R: 217
+# stop("object not of class \"lda\"")
+msgid "object not of class \"lda\""
+msgstr "obiekt nie jest klasy \"lda\""
+
+# MASS/R/lda.R: 248
+# stop("wrong number of variables")
+# MASS/R/qda.R: 239
+# stop("wrong number of variables")
+msgid "wrong number of variables"
+msgstr "niepoprawna liczba zmiennych"
+
+# MASS/R/lda.R: 251
+# warning("variable names in 'newdata' do not match those in 'object'")
+# MASS/R/qda.R: 242
+# warning("variable names in 'newdata' do not match those in 'object'")
+msgid "variable names in 'newdata' do not match those in 'object'"
+msgstr "nazwy zmiennych w 'newdata' nie zgadzają się z tymi w 'object'"
+
+# MASS/R/lda.R: 388
+# stop("'breaks' must be strictly increasing")
+# MASS/R/truehist.R: 55
+# stop("'breaks' must be strictly increasing")
+msgid "'breaks' must be strictly increasing"
+msgstr "wartości 'breaks' muszą być ściśle rosnące"
+
+# MASS/R/lda.R: 390
+# stop("'breaks' do not cover the data")
+# MASS/R/truehist.R: 57
+# stop("'breaks' do not cover the data")
+msgid "'breaks' do not cover the data"
+msgstr "'breaks' nie pokrywa danych"
+
+# MASS/R/lm.gls.R: 33
+# stop("dim(W) is not correct")
+msgid "dim(W) is not correct"
+msgstr "'dim(W)' nie jest poprawne"
+
+# MASS/R/lm.gls.R: 36
+# stop("'W' is not positive definite")
+msgid "'W' is not positive definite"
+msgstr "'W' nie jest dodatnio określone"
+
+# MASS/R/loglm.R: 82
+# stop("'data' has no 'terms' attribute")
+# MASS/R/loglm.R: 120
+# stop("'data' has no 'terms' attribute")
+msgid "'data' has no 'terms' attribute"
+msgstr "'data' nie posiada atrybutu 'terms'"
+
+# MASS/R/loglm.R: 83
+# stop("formula specifies no response")
+msgid "formula specifies no response"
+msgstr "formuła nie określa zmiennej zależnej"
+
+# MASS/R/loglm.R: 271
+# stop("'object' has no 'call' component.  Updating not possible")
+msgid "'object' has no 'call' component.  Updating not possible"
+msgstr "'object' nie posiada komponentu 'call'.  Aktualizacja nie jest możliwa"
+
+# MASS/R/logtrans.R: 30
+# stop("Response variable must be positive after additions")
+msgid "Response variable must be positive after additions"
+msgstr "Zmienna zależna musi być dodatnią po wykonanych uzupełnieniach"
+
+# MASS/R/lqs.R: 66
+# stop("missing values are not allowed")
+msgid "missing values are not allowed"
+msgstr "brakujące wartości nie są dozwolone"
+
+# MASS/R/lqs.R: 75
+# stop("'x' and 'y' must have the same number of rows")
+msgid "'x' and 'y' must have the same number of rows"
+msgstr "'x' oraz 'y' muszą mieć tę samą liczbę wierszy"
+
+# MASS/R/lqs.R: 92
+# stop(gettextf("'quantile' must be at most %d", n-1),
+#              domain = NA)
+# MASS/R/lqs.R: 213
+# stop(gettextf("'quantile' must be at most %d", n-1), domain = NA)
+msgid "'quantile' must be at most %d"
+msgstr "'quantile' musi być najwyżej %d"
+
+# MASS/R/lqs.R: 98
+# warning("'ps' must be at least 'p'")
+msgid "'ps' must be at least 'p'"
+msgstr "'ps' musi być co najmniej 'p'"
+
+# MASS/R/lqs.R: 133
+# stop("'lqs' failed: all the samples were singular", call.=FALSE)
+msgid "'lqs' failed: all the samples were singular"
+msgstr "'lqs' nie powiodło się: wszystkie próby były osobliwe"
+
+# MASS/R/lqs.R: 203
+# stop("missing or infinite values are not allowed")
+msgid "missing or infinite values are not allowed"
+msgstr "wartości brakujące lub nieskończone nie są dozwolone"
+
+# MASS/R/lqs.R: 206
+# stop(gettextf("at least %d cases are needed", p+1), domain = NA)
+msgid "at least %d cases are needed"
+msgstr "co najmniej %d przypadków jest potrzebnych"
+
+# MASS/R/lqs.R: 211
+# stop(gettextf("'quantile' must be at least %d", p+1), domain = NA)
+msgid "'quantile' must be at least %d"
+msgstr "'quantile' musi być co najmniej %d"
+
+# MASS/R/lqs.R: 216
+# stop("at least one column has IQR 0")
+msgid "at least one column has IQR 0"
+msgstr "co najmniej jedna kolumna ma IQR równe 0"
+
+# MASS/R/lqs.R: 252
+# stop("'x' is probably collinear")
+msgid "'x' is probably collinear"
+msgstr "'x' jest najprawdopodobniej współliniowe"
+
+# MASS/R/mca.R: 28
+# stop("all variables must be factors")
+# MASS/R/mca.R: 94
+# stop("all variables must be factors")
+msgid "all variables must be factors"
+msgstr "wszystkie zmienne muszą być czynnikami"
+
+# MASS/R/mca.R: 101
+# stop("factors in 'newdata' do not match those for 'object'")
+msgid "factors in 'newdata' do not match those for 'object'"
+msgstr "czynniki w 'newdata' nie zgadzają się z tymi dla 'object'"
+
+# MASS/R/mca.R: 108
+# stop("'newdata' is not of the right length")
+msgid "'newdata' is not of the right length"
+msgstr "'newdata' nie posiada poprawnej długości"
+
+# MASS/R/misc.R: 36
+# stop("'X' must be a numeric or complex matrix")
+msgid "'X' must be a numeric or complex matrix"
+msgstr "'X' musi być macierzą liczbową lub zespoloną"
+
+# MASS/R/mvrnorm.R: 21
+# stop("incompatible arguments")
+msgid "incompatible arguments"
+msgstr "niezgodne argumenty"
+
+# MASS/R/mvrnorm.R: 25
+# stop("'Sigma' is not positive definite")
+msgid "'Sigma' is not positive definite"
+msgstr "'Sigma' nie jest dodatnio określona"
+
+# MASS/man/MASS-internal.Rd: 21
+# stop("'theta' must be given")
+# MASS/R/neg.bin.R: 17
+# stop("'theta' must be given")
+msgid "'theta' must be given"
+msgstr "'theta' musi być podana"
+
+# MASS/R/neg.bin.R: 38
+# stop("negative values not allowed for the negative binomial family")
+# MASS/R/negbin.R: 250
+# stop("negative values not allowed for the negative binomial family")
+msgid "negative values not allowed for the negative binomial family"
+msgstr "ujemne wartości nie są dozwolone dla rodziny rozkładu Pascala"
+
+# MASS/R/negbin.R: 8
+# warning("tests made without re-estimating 'theta'")
+msgid "tests made without re-estimating 'theta'"
+msgstr "testy wykonano bez ponownego oszacowania 'theta'"
+
+# MASS/R/negbin.R: 17
+# warning("only Chi-squared LR tests are implemented")
+msgid "only Chi-squared LR tests are implemented"
+msgstr "jedynie testy Chi-kwadrat regresji liniowej są zaimplementowane"
+
+# MASS/R/negbin.R: 24
+# stop("not all objects are of class \"negbin\"")
+msgid "not all objects are of class \"negbin\""
+msgstr "nie wszystkie obiekt są klasy \"negbin\""
+
+# MASS/R/negbin.R: 116
+# stop(gettextf("unimplemented method: %s", sQuote(method)),
+#                  domain = NA)
+msgid "unimplemented method: %s"
+msgstr "niezaimplementowana metoda: %s"
+
+# MASS/R/negbin.R: 123
+# message("Initial fit:")
+msgid "Initial fit:"
+msgstr "Początkowe dopasowanie:"
+
+# MASS/R/negbin.R: 136
+# message(gettextf("Initial value for 'theta': %f", signif(th)),
+#                 domain = NA)
+msgid "Initial value for 'theta': %f"
+msgstr "Początkowa wartość dla 'theta': %f"
+
+# MASS/R/negbin.R: 171
+# warning("alternation limit reached")
+# MASS/R/negbin.R: 172
+# gettext("alternation limit reached")
+msgid "alternation limit reached"
+msgstr "osiągnięto limit zmian"
+
+# MASS/man/negative.binomial.Rd: 14
+# stop("'theta' must be specified")
+# MASS/man/rnegbin.Rd: 14
+# stop("'theta' must be specified")
+# MASS/R/negbin.R: 216
+# stop("'theta' must be specified")
+# MASS/R/negbin.R: 271
+# stop("'theta' must be specified")
+msgid "'theta' must be specified"
+msgstr "'theta' musi być określona"
+
+# MASS/R/negbin.R: 231
+# stop(gettextf("\"%s\" link not available for negative binomial family; available links are \"identity\", \"log\" and \"sqrt\"", linktemp))
+msgid ""
+"\"%s\" link not available for negative binomial family; available links are "
+"\"identity\", \"log\" and \"sqrt\""
+msgstr ""
+"połączenie \"%s\" nie jest dostępne dla rodziny rozkładu Pascala; dostępne "
+"połączenia to \"identity\", \"log\" oraz \"sqrt\""
+
+# MASS/R/negbin.R: 324
+# warning("estimate truncated at zero")
+# MASS/R/negbin.R: 325
+# gettext("estimate truncated at zero")
+# MASS/R/negbin.R: 359
+# warning("estimate truncated at zero")
+# MASS/R/negbin.R: 360
+# gettext("estimate truncated at zero")
+# MASS/R/negbin.R: 391
+# warning("estimate truncated at zero")
+# MASS/R/negbin.R: 392
+# gettext("estimate truncated at zero")
+msgid "estimate truncated at zero"
+msgstr "oszacowanie zostało przycięte w zerze"
+
+# MASS/R/negbin.R: 355
+# message("theta.ml: iter", it," theta =", signif(t0))
+msgid "theta.ml: iter"
+msgstr "theta.ml: iteracja"
+
+# MASS/R/negbin.R: 355
+# message("theta.ml: iter", it," theta =", signif(t0))
+msgid "theta ="
+msgstr "theta ="
+
+# MASS/R/negbin.R: 399
+# warning("extra arguments discarded")
+msgid "extra arguments discarded"
+msgstr "dodatkowe argumenty zostały odrzucone"
+
+# MASS/R/negexp.R: 22
+# stop("at least 3 distinct 'x' values are needed")
+msgid "at least 3 distinct 'x' values are needed"
+msgstr "co najmniej 3 różne wartości 'x' są potrzebne"
+
+# MASS/R/polr.R: 37
+# warning("an intercept is needed and assumed")
+msgid "an intercept is needed and assumed"
+msgstr "przecięcie jest potrzebne oraz jest zakładane"
+
+# MASS/R/polr.R: 43
+# stop("response must be a factor")
+msgid "response must be a factor"
+msgstr "zmienna zależna musi być czynnikiem"
+
+# MASS/R/polr.R: 45
+# stop("response must have 3 or more levels")
+# MASS/R/polr.R: 366
+# stop("response must have 3 or more levels")
+msgid "response must have 3 or more levels"
+msgstr "zmienna zależna musi mieć 3 lub więcej poziomów"
+
+# MASS/R/polr.R: 62
+# stop("attempt to find suitable starting values failed")
+msgid "attempt to find suitable starting values failed"
+msgstr "próba znalezienia odpowiednich wartości startowych nie powiodła się"
+
+# MASS/R/polr.R: 65
+# warning("design appears to be rank-deficient, so dropping some coefs")
+msgid "design appears to be rank-deficient, so dropping some coefs"
+msgstr ""
+"projekt wydaje się mieć deficyt rang, więc usuwam niektóre współczynniki"
+
+# MASS/R/polr.R: 77
+# stop("'start' is not of the correct length")
+msgid "'start' is not of the correct length"
+msgstr "'start' nie posiada poprawnej długości"
+
+msgid "Re-fitting to get Hessian"
+msgstr "Ponowne dopasowywanie aby uzyskać hesjan"
+
+# MASS/R/polr.R: 216
+# stop("not a \"polr\" object")
+msgid "not a \"polr\" object"
+msgstr "to nie jest obiekt \"polr\""
+
+# MASS/R/polr.R: 290
+# stop('anova is not implemented for a single "polr" object')
+msgid "anova is not implemented for a single \"polr\" object"
+msgstr "anova nie jest zaimplementowana dla pojedynczego obiektu \"polr\""
+
+# MASS/R/polr.R: 297
+# stop('not all objects are of class "polr"')
+msgid "not all objects are of class \"polr\""
+msgstr "nie wszystkie obiekty są klasy \"polr\""
+
+# MASS/R/polr.R: 300
+# stop("models were not all fitted to the same size of dataset")
+msgid "models were not all fitted to the same size of dataset"
+msgstr ""
+"nie wszystkie modele zostały dopasowane do zbioru danych tego samego rozmiaru"
+
+msgid "Parameter:"
+msgstr "Parametr:"
+
+# MASS/R/polr.R: 414
+# message("\nParameter:", pi, c("down", "up")[(sgn + 1)/2 + 1])
+# MASS/R/profiles.R: 70
+# message("\nParameter: ", pi, " ",
+#                         c("down", "up")[(sgn + 1)/2 + 1])
+msgid "down"
+msgstr "down"
+
+# MASS/R/polr.R: 414
+# message("\nParameter:", pi, c("down", "up")[(sgn + 1)/2 + 1])
+# MASS/R/profiles.R: 70
+# message("\nParameter: ", pi, " ",
+#                         c("down", "up")[(sgn + 1)/2 + 1])
+msgid "up"
+msgstr "up"
+
+# MASS/R/polr.R: 432
+# stop("profiling has found a better solution, so original fit had not converged")
+# MASS/R/profiles.R: 91
+# stop("profiling has found a better solution, so original fit had not converged")
+msgid ""
+"profiling has found a better solution, so original fit had not converged"
+msgstr ""
+"profilowanie znalazło lepsze rozwiązanie, tak więc oryginalne dopasowanie "
+"nie uzbieżniło się"
+
+# MASS/R/polr.R: 489
+# stop("weighted fits are not supported")
+msgid "weighted fits are not supported"
+msgstr "ważone dopasowania nie są wspierane"
+
+# MASS/R/qda.R: 90
+# stop("some group is too small for 'qda'")
+msgid "some group is too small for 'qda'"
+msgstr "niektóre grupy są zbyt małe dla 'qda'"
+
+# MASS/R/qda.R: 128
+# stop(gettextf("rank deficiency in group %s",
+#                                           lev[i]), domain = NA)
+# MASS/R/qda.R: 137
+# stop(gettextf("rank deficiency in group %s",
+#                                           lev[i]), domain = NA)
+msgid "rank deficiency in group %s"
+msgstr "deficyt rang w grupie %s"
+
+# MASS/R/qda.R: 185
+# stop("object not of class \"qda\"")
+msgid "object not of class \"qda\""
+msgstr "obiekt nie jest klasy \"qda\""
+
+# MASS/R/qda.R: 188
+# stop("cannot have leave-one-out CV with 'newdata'")
+msgid "cannot have leave-one-out CV with 'newdata'"
+msgstr "nie można mieć 'zostaw-jeden' CV z 'newdata'"
+
+# MASS/R/rlm.R: 95
+# stop("'x' is singular: singular fits are not implemented in 'rlm'")
+msgid "'x' is singular: singular fits are not implemented in 'rlm'"
+msgstr ""
+"'x' jest osobliwe: osobliwe dopasowania nie są zaimplementowane w 'rlm'"
+
+# MASS/R/rlm.R: 98
+# stop("invalid 'test.vec'")
+msgid "invalid 'test.vec'"
+msgstr "niepoprawny 'test.vec'"
+
+# MASS/R/rlm.R: 104
+# stop("length of 'weights' must equal number of observations")
+msgid "length of 'weights' must equal number of observations"
+msgstr "długość 'weights' musi równać się liczbie obserwacji"
+
+# MASS/R/rlm.R: 105
+# stop("negative 'weights' value")
+msgid "negative 'weights' value"
+msgstr "ujemna wartość 'weights'"
+
+# MASS/R/rlm.R: 123
+# warning("some of ... do not match")
+msgid "some of ... do not match"
+msgstr "niektóre z ... nie pasują"
+
+# MASS/R/rlm.R: 132
+# stop("'init' method is unknown")
+msgid "'init' method is unknown"
+msgstr "metoda 'init' jest nieznana"
+
+# MASS/R/rlm.R: 153
+# warning("'c' must be at least 1.548 and has been ignored")
+msgid "'c' must be at least 1.548 and has been ignored"
+msgstr "'c' musi być co najmniej 1.548; wartość została zignorowane"
+
+# MASS/R/rlm.R: 156
+# stop("'method' is unknown")
+msgid "'method' is unknown"
+msgstr "'method' jest nieznane"
+
+# MASS/R/rlm.R: 193
+# warning(gettextf("'rlm' failed to converge in %d steps", maxit),
+#                 domain = NA)
+msgid "'rlm' failed to converge in %d steps"
+msgstr "'rlm' nie uzbieżnił się w %d krokach"
+
+# MASS/R/rlm.R: 391
+# stop("'coef' must define a contrast, i.e., sum to 0")
+msgid "'coef' must define a contrast, i.e., sum to 0"
+msgstr "'coef' musi definiować kontrast, tzn. sumować się do 0"
+
+# MASS/R/rlm.R: 393
+# stop("'coef' must have same length as 'contrast.obj'")
+msgid "'coef' must have same length as 'contrast.obj'"
+msgstr "'coef' musi mieć tę samą długość jak 'contrast.obj'"
+
+# MASS/R/rlm.R: 399
+# stop(gettextf("each element of '%s' must be logical",
+#                                      substitute(contrasts.list)),
+#                             domain = NA)
+msgid "each element of '%s' must be logical"
+msgstr "każdy element '%s' musi być typem logicznym"
+
+# MASS/R/rlm.R: 405
+# stop("the contrast defined is empty (has no TRUE elements)")
+msgid "the contrast defined is empty (has no TRUE elements)"
+msgstr "zdefiniowany kontrast jest pusty (nie ma PRAWDZIWYCH elementów)"
+
+# MASS/R/rlm.R: 410
+# stop("columns of 'contrast.obj' must define a contrast (sum to zero)")
+msgid "columns of 'contrast.obj' must define a contrast (sum to zero)"
+msgstr "kolumny 'contrast.obj' muszą określać konstrast (sumować się do zera)"
+
+# MASS/R/rms.curv.R: 22
+# stop("\"gradient\" attribute missing")
+msgid "\"gradient\" attribute missing"
+msgstr "brakuje atrybutu \"gradient\""
+
+# MASS/R/rms.curv.R: 24
+# stop("\"hessian\" attribute missing")
+msgid "\"hessian\" attribute missing"
+msgstr "brakuje atrybutu \"hessian\""
+
+# MASS/R/rms.curv.R: 34
+# warning("regression apparently linear")
+msgid "regression apparently linear"
+msgstr "regresja najwyraźniej jest liniowa"
+
+# MASS/R/sammon.R: 21
+# stop("Infs not allowed in 'd'")
+msgid "Infs not allowed in 'd'"
+msgstr "Nieskończoności nie są dozwolone w 'd'"
+
+# MASS/R/sammon.R: 23
+# stop("an initial configuration must be supplied if there are NAs in 'd'")
+msgid "an initial configuration must be supplied if there are NAs in 'd'"
+msgstr ""
+"początkowa konfiguracja musi zostać dostarczona jeśli są wartości Na w 'd'"
+
+# MASS/R/stepAIC.R: 75
+# warning("'use.start' cannot be used with R's version of 'glm'")
+msgid "'use.start' cannot be used with R's version of 'glm'"
+msgstr "'use.start' nie może być użyta z wersją R 'glm'"
+
+# MASS/R/stepAIC.R: 105
+# stop("AIC is not defined for this model, so 'stepAIC' cannot proceed")
+msgid "AIC is not defined for this model, so 'stepAIC' cannot proceed"
+msgstr ""
+"AIC nie jest zdefiniowane dla tego modelu, więc 'stepAIC' nie może "
+"kontynuować"
+
+# MASS/R/stepAIC.R: 105
+# stop("AIC is not defined for this model, so 'stepAIC' cannot proceed")
+#, fuzzy
+msgid "AIC is -infinity for this model, so 'stepAIC' cannot proceed"
+msgstr ""
+"AIC nie jest zdefiniowane dla tego modelu, więc 'stepAIC' nie może "
+"kontynuować"
+
+# MASS/R/stepAIC.R: 139
+# warning("0 df terms are changing AIC")
+msgid "0 df terms are changing AIC"
+msgstr "0 różniczkowych członów zmienia AIC"
+
+# MASS/R/stepAIC.R: 210
+# stop("AIC undefined for REML fit")
+# MASS/R/stepAIC.R: 218
+# stop("AIC undefined for REML fit")
+msgid "AIC undefined for REML fit"
+msgstr "AIC nie jest zdefiniowane dla dopasowania REML"
+
+# MASS/R/truehist.R: 46
+# stop("'nbins' must result in a positive integer")
+msgid "'nbins' must result in a positive integer"
+msgstr "'nbins' musi być dodatnią liczbą całkowitą"
+
+# MASS/R/truehist.R: 50
+# stop("'h' must be strictly positive")
+msgid "'h' must be strictly positive"
+msgstr "'h' musi być ściśle dodatnie"
+
+# MASS/R/truehist.R: 60
+# warning("uneven breaks with 'prob = FALSE' will give a misleading plot")
+msgid "uneven breaks with 'prob = FALSE' will give a misleading plot"
+msgstr "nieparzyste przerwy z 'prob = FALSE' dadzą mylny wykres"
+
+# MASS/R/ucv.R: 42
+# stop("'x' has length zero")
+# MASS/R/ucv.R: 84
+# stop("'x' has length zero")
+# MASS/R/ucv.R: 113
+# stop("'x' has length zero")
+msgid "'x' has length zero"
+msgstr "'x' posiada zerową długość"
+
+# MASS/R/ucv.R: 64
+# stop("no solution in the specified range of bandwidths")
+msgid "no solution in the specified range of bandwidths"
+msgstr "brak rozwiązania we wskazanym zakresie pasm"
+
+# MASS/R/ucv.R: 97
+# warning("minimum occurred at one end of the range")
+# MASS/R/ucv.R: 127
+# warning("minimum occurred at one end of the range")
+msgid "minimum occurred at one end of the range"
+msgstr "pojawiła się wartość minimum na jednym z końców zakresu"
+
+# MASS/R/add.R: 183
+# warning(sprintf(ngettext(newn,
+#                                  "using the %d/%d row from a combined fit",
+#                                  "using the %d/%d rows from a combined fit"),
+#                         newn, oldn), domain = NA)
+msgid "using the %d/%d row from a combined fit"
+msgid_plural "using the %d/%d rows from a combined fit"
+msgstr[0] "używanie %d/%d wiersza z połączonego dopasowania"
+msgstr[1] "używanie %d/%d wierszy z połączonego dopasowania"
+msgstr[2] "używanie %d/%d wierszy z połączonego dopasowania"
+
+# MASS/R/lda.R: 98
+# warning(sprintf(ngettext(length(empty),
+#                                  "group %s is empty",
+#                                  "groups %s are empty"),
+#                         paste(empty, collapse=" ")), domain = NA)
+msgid "group %s is empty"
+msgid_plural "groups %s are empty"
+msgstr[0] "grupa %s jest pusta"
+msgstr[1] "grupy %s są puste"
+msgstr[2] "grupy %s są puste"
+
+# MASS/R/lda.R: 117
+# stop(sprintf(ngettext(length(const),
+#                      "variable %s appears to be constant within groups",
+#                      "variables %s appear to be constant within groups"),
+#                      paste(const, collapse = " ")),
+#              domain = NA)
+msgid "variable %s appears to be constant within groups"
+msgid_plural "variables %s appear to be constant within groups"
+msgstr[0] "zmienna %s wygląda na stałą wewnątrz grup"
+msgstr[1] "zmienne %s wyglądają na stałe wewnątrz grup"
+msgstr[2] "zmienne %s wyglądają na stałe wewnątrz grup"
+
+# MASS/R/lqs.R: 106
+# warning(sprintf(ngettext(nexact,
+#                                  "only %d set, so all sets will be tried",
+#                                  "only %d sets, so all sets will be tried"),
+#                         nexact), domain = NA)
+# MASS/R/lqs.R: 224
+# warning(sprintf(ngettext(nexact,
+#                                      "only %d set, so all sets will be tried",
+#                                      "only %d sets, so all sets will be tried"),
+#                             nexact), domain = NA)
+msgid "only %d set, so all sets will be tried"
+msgid_plural "only %d sets, so all sets will be tried"
+msgstr[0] "tylko %d zbiór, więc wszystkie zbiory zostaną sprawdzone"
+msgstr[1] "tylko %d zbiory, więc wszystkie zbiory zostaną sprawdzone"
+msgstr[2] "tylko %d zbiorów, więc wszystkie zbiory zostaną sprawdzone"
+
+# MASS/R/stdres.R: 25
+# warning(sprintf(ngettext(n.miss,
+#                                  "%d missing observation deleted",
+#                                  "%d missing observations deleted"),
+#                         n.miss), domain = NA)
+msgid "%d missing observation deleted"
+msgid_plural "%d missing observations deleted"
+msgstr[0] "%d brakująca obserwacja została usunięta"
+msgstr[1] "%d brakujące obserwacje zostały usunięte"
+msgstr[2] "%d brakujących obserwacji zostało usuniętych"
+
+# MASS/R/stdres.R: 40
+# warning(sprintf(ngettext(sum(excl),
+#                                      "%d row with zero weights not counted",
+#                                      "%d rows with zero weights not counted"),
+#                             sum(excl)), domain = NA)
+msgid "%d row with zero weights not counted"
+msgid_plural "%d rows with zero weights not counted"
+msgstr[0] "%d wiersz z zerowymi wagami nie został zliczony"
+msgstr[1] "%d wiersze z zerowymi wagami nie zostały zliczone"
+msgstr[2] "%d wierszy z zerowymi wagami nie zostało zliczonych"

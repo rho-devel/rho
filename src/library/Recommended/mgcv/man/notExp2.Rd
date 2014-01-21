@@ -68,6 +68,7 @@ notLog2(x,d=.Options$mgcv.vc.logrange,b=1/d)
 
 \examples{
 ## Illustrate the notExp2 function:
+require(mgcv)
 x <- seq(-50,50,length=1000)
 op <- par(mfrow=c(2,2))
 plot(x,notExp2(x),type="l")

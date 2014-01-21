@@ -1,6 +1,24 @@
-version 1.3-? 2012-02-25
+version 1.3-9 2013-03-20
+
+    Add ko translations
+
+version 1.3-8 2013-02-09
+
+    Update reference output for R 3.0.0
+
+version 1.3-7 2012-10-12
+
+    Force byte-compilation for compatibility with versions in R releases
+
+version 1.3-6 2012-10-08
+
+    Work on messages.
+    Update translations.
+
+version 1.3-5 2012-06-27
 
     inst/CITATION: protect against TRE bug in UTF-8 locales.
+    Add Polish translations.
 
 version 1.3-4 2012-01-16
 

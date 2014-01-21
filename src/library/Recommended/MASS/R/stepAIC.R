@@ -72,7 +72,7 @@ stepAIC <-
     if(inherits(object, "lme")) object$call$fixed <- Terms
     else if(inherits(object, "gls")) object$call$model <- Terms
     else object$call$formula <- Terms
-    if(use.start) warning("'use.start' cannot be used with R's version of glm")
+    if(use.start) warning("'use.start' cannot be used with R's version of 'glm'")
     md <- missing(direction)
     direction <- match.arg(direction)
     backward <- direction == "both" | direction == "backward"
@@ -102,8 +102,10 @@ stepAIC <-
     edf <- bAIC[1L]
     bAIC <- bAIC[2L]
     if(is.na(bAIC))
-        stop("AIC is not defined for this model, so stepAIC cannot proceed")
-    nm <- 1
+        stop("AIC is not defined for this model, so 'stepAIC' cannot proceed")
+    if(bAIC == -Inf)
+        stop("AIC is -infinity for this model, so 'stepAIC' cannot proceed")
+   nm <- 1
     Terms <- terms(fit)
     if(trace) {
         cat("Start:  AIC=", format(round(bAIC, 2)), "\n",
@@ -135,7 +137,7 @@ stepAIC <-
                 nc <- match(c("Cp", "AIC"), names(aod))
                 nc <- nc[!is.na(nc)][1L]
                 ch <- abs(aod[zdf, nc] - aod[1, nc]) > 0.01
-                if(any(ch)) {
+                if(any(is.finite(ch) & ch)) {
                     warning("0 df terms are changing AIC")
                     zdf <- zdf[!ch]
                 }

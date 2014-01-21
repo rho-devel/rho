@@ -1,6 +1,6 @@
 % File src/library/base/man/colnames.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{row+colnames}
@@ -53,6 +53,15 @@ colnames(x) <- value
   coerced by \code{\link{as.character}}, and setting \code{colnames}
   will convert the row names to character.
 }
+\note{
+  If the replacement versions are called on a matrix without any
+  existing dimnames, they will add suitable dimnames.  But
+  constructions such as
+\preformatted{    rownames(x)[3] <- "c"}
+  may not work unless \code{x} already has dimnames, since this will
+  create a length-3 \code{value} from the \code{NULL} value of
+  \code{rownames(x)}.
+}
 \seealso{
   \code{\link{dimnames}},
   \code{\link{case.names}},
@@ -62,7 +71,7 @@ colnames(x) <- value
 m0 <- matrix(NA, 4, 0)
 rownames(m0)
 
-m2 <- cbind(1,1:4)
+m2 <- cbind(1, 1:4)
 colnames(m2, do.NULL = FALSE)
 colnames(m2) <- c("x","Y")
 rownames(m2) <- rownames(m2, do.NULL = FALSE, prefix = "Obs.")

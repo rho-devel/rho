@@ -56,7 +56,7 @@ debugger(dump = last.dump)
   If the error occurred when computing the default value of a formal
   argument the debugger will report \dQuote{recursive default argument
   reference} when trying to examine that environment.
-  
+
   Of course post-mortem debugging will not work if \R is too damaged to
   produce and save the dump, for example if it has run out of workspace.
 }
@@ -72,14 +72,14 @@ debugger(dump = last.dump)
 }
 \examples{
 \dontrun{
-options(error=quote(dump.frames("testdump", TRUE)))
+options(error = quote(dump.frames("testdump", TRUE)))
 
 f <- function() {
     g <- function() stop("test dump.frames")
     g()
 }
 f()   # will generate a dump on file "testdump.rda"
-options(error=NULL)
+options(error = NULL)
 
 ## possibly in another R session
 load("testdump.rda")
@@ -99,7 +99,7 @@ Browse[1]> ls()
 Browse[1]> g
 function() stop("test dump.frames")
 <environment: 759818>
-Browse[1]> 
+Browse[1]>
 Available environments had calls:
 1: f()
 2: g()
@@ -109,7 +109,7 @@ Enter an environment number, or 0 to exit
 Selection: 0
 
 ## A possible setting for non-interactive sessions
-options(error=quote({dump.frames(to.file=TRUE); q()}))
+options(error = quote({dump.frames(to.file = TRUE); q()}))
 }}
 \keyword{utilities}
 \keyword{error}

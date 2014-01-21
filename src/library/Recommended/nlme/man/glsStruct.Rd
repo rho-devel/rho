@@ -27,7 +27,7 @@ glsStruct(corStruct, varStruct)
   parameters to be estimated for the associated linear model.
 }
 
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{
   \code{\link{corClasses}},

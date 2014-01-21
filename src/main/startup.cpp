@@ -17,7 +17,7 @@
 /*
   R : A Computer Language for Statistical Data Analysis
   Copyright (C) 1995-1996   Robert Gentleman and Ross Ihaka
-  Copyright (C) 1997-2012   The R Core Team
+  Copyright (C) 1997-2013   The R Core Team
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -128,12 +128,14 @@ static char workspace_name[1000] = ".RData";
 #else
 static char workspace_name[PATH_MAX] = ".RData";
 
+attribute_hidden
 void set_workspace_name(const char *fn)
 {
     strncpy(workspace_name, fn, PATH_MAX);
 }
 #endif
 
+attribute_hidden
 const char* get_workspace_name()
 {
     return workspace_name;
@@ -171,6 +173,7 @@ void R_DefParams(Rstart Rp)
     Rp->max_vsize = R_SIZE_T_MAX;
     Rp->ppsize = R_PPSSIZE;
     Rp->NoRenviron = FALSE;
+    R_SizeFromEnv(Rp);
 }
 
 #define Max_Nsize 50000000	/* about 1.4Gb 32-bit, 2.8Gb 64-bit */
@@ -198,15 +201,16 @@ static void SetSize(R_size_t vsize)
 {
     char msg[1024];
 
-    /* vsize >0 to catch long->int overflow */
+    /* vsize > 0 to catch long->int overflow */
     if (vsize < 1000 && vsize > 0) {
 	R_ShowMessage("WARNING: vsize ridiculously low, Megabytes assumed\n");
-	vsize *= CXXRCONSTRUCT(R_size_t, Mega);
+	vsize *= R_size_t( Mega);
     }
     if(vsize < Min_Vsize || vsize > Max_Vsize) {
-	sprintf(msg, "WARNING: invalid v(ector heap)size `%lu' ignored\n"
+	snprintf(msg, 1024, 
+		 "WARNING: invalid v(ector heap)size `%lu' ignored\n"
 		 "using default = %gM\n", static_cast<unsigned long>( vsize),
-		R_VSIZE / Mega);
+		 R_VSIZE / Mega);
 	R_ShowMessage(msg);
 	R_VSize = R_VSIZE;
     } else

@@ -14,7 +14,7 @@ dpik(x, scalest = "minim", level = 2L, kernel = "normal",
 }
 \arguments{
 \item{x}{
-vector containing the sample on which the
+numeric vector containing the sample on which the
 kernel density estimate is to be constructed.
 }
 \item{scalest}{

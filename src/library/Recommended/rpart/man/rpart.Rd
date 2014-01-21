@@ -1,6 +1,6 @@
 \name{rpart}
 \alias{rpart}
-\alias{rpartcallback}
+%\alias{rpartcallback}
 \title{
   Recursive Partitioning and Regression Trees
 }
@@ -12,7 +12,10 @@ rpart(formula, data, weights, subset, na.action = na.rpart, method,
       model = FALSE, x = FALSE, y = TRUE, parms, control, cost, \dots)
 }
 \arguments{
-  \item{formula}{a \link{formula}, with a response but no interaction terms.}
+  \item{formula}{a \link{formula}, with a response but no interaction
+    terms.  If this a a data frome, that is taken as the model frame
+    (see \code{\link{model.frame}).}
+  }
   
   \item{data}{an optional data frame in which to interpret the variables
     named in the formula.} 
@@ -29,16 +32,17 @@ rpart(formula, data, weights, subset, na.action = na.rpart, method,
   \item{method}{one of \code{"anova"}, \code{"poisson"}, \code{"class"}
     or \code{"exp"}.  If \code{method} is missing then the routine tries
     to make an intelligent guess.
-    If \code{y} is a survival object, then \code{method="exp"} is assumed,
-    if \code{y} has 2 columns then \code{method="poisson"} is assumed,
-    if \code{y} is a factor then \code{method="class"} is assumed,
-    otherwise \code{method="anova"} is assumed.
+    If \code{y} is a survival object, then \code{method = "exp"} is assumed,
+    if \code{y} has 2 columns then \code{method = "poisson"} is assumed,
+    if \code{y} is a factor then \code{method = "class"} is assumed,
+    otherwise \code{method = "anova"} is assumed.
     It is wisest to specify the method directly, especially as more
     criteria may added to the function in future.
 
     Alternatively, \code{method} can be a list of functions named
     \code{init}, \code{split} and \code{eval}.  Examples are given in
-    the file \file{tests/usersplits.R} in the sources.}
+    the file \file{tests/usersplits.R} in the sources, and in the
+    vignettes \sQuote{User Written Split Functions}.}
   
   \item{model}{if logical: keep a copy of the model frame in the result?
     If the input value for \code{model} is a model frame (likely from an
@@ -81,7 +85,7 @@ rpart(formula, data, weights, subset, na.action = na.rpart, method,
 \details{
   This differs from the \code{tree} function in S mainly in its handling
   of surrogate variables.  In most details it follows Breiman
-  et. al. quite closely.  \R package \pkg{tree} provides a
+  \emph{et. al} (1984) quite closely.  \R package \pkg{tree} provides a
   re-implementation of \code{tree}.
 }
 
@@ -90,7 +94,7 @@ rpart(formula, data, weights, subset, na.action = na.rpart, method,
 }
 
 \references{
-  Breiman, Friedman, Olshen, and Stone. (1984)
+  Breiman L., Friedman J. H., Olshen R. A., and Stone, C. J. (1984)
   \emph{Classification and Regression Trees.}
   Wadsworth.
 }
@@ -101,15 +105,15 @@ rpart(formula, data, weights, subset, na.action = na.rpart, method,
 }
 
 \examples{
-fit <- rpart(Kyphosis ~ Age + Number + Start, data=kyphosis)
-fit2 <- rpart(Kyphosis ~ Age + Number + Start, data=kyphosis,
-              parms=list(prior=c(.65,.35), split='information'))
-fit3 <- rpart(Kyphosis ~ Age + Number + Start, data=kyphosis,
-              control=rpart.control(cp=.05))
-par(mfrow=c(1,2), xpd=NA) # otherwise on some devices the text is clipped
+fit <- rpart(Kyphosis ~ Age + Number + Start, data = kyphosis)
+fit2 <- rpart(Kyphosis ~ Age + Number + Start, data = kyphosis,
+              parms = list(prior = c(.65,.35), split = "information"))
+fit3 <- rpart(Kyphosis ~ Age + Number + Start, data = kyphosis,
+              control = rpart.control(cp = 0.05))
+par(mfrow = c(1,2), xpd = NA) # otherwise on some devices the text is clipped
 plot(fit)
-text(fit, use.n=TRUE)
+text(fit, use.n = TRUE)
 plot(fit2)
-text(fit2, use.n=TRUE)
+text(fit2, use.n = TRUE)
 }
 \keyword{tree}

@@ -1,6 +1,8 @@
 #  File src/library/base/R/Defunct.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -157,26 +159,26 @@
 ## <entry>
 ## Deprecated in 2.7.0
 ## Defunct in 2.8.0
-gammaCody <- function(x) .Defunct("gamma")
+## gammaCody <- function(x) .Defunct("gamma")
 ## </entry>
 
 ## <entry>
 ## Deprecated inter alia in 2.8.1
 ## Defunct in 2.9.0
-manglePackageName <- function (pkgName, pkgVersion) .Defunct()
+## manglePackageName <- function (pkgName, pkgVersion) .Defunct()
 ## </entry>
 
 ## <entry>
 ## Deprecated in 2.12.2 (and only ever experimental)
 ## Defunct in 2.13.0
-.Import <- function(...)
-    .Defunct(msg = "namespaces should be specified via the 'NAMESPACE' file")
-.ImportFrom <- function(name, ...)
-    .Defunct(msg = "namespaces should be specified via the 'NAMESPACE' file")
-.Export <- function(...)
-    .Defunct(msg = "namespaces should be specified via the 'NAMESPACE' file")
-.S3method <- function(generic, class, method)
-    .Defunct(msg = "namespaces should be specified via the 'NAMESPACE' file")
+## .Import <- function(...)
+##     .Defunct(msg = "namespaces should be specified via the 'NAMESPACE' file")
+## .ImportFrom <- function(name, ...)
+##     .Defunct(msg = "namespaces should be specified via the 'NAMESPACE' file")
+## .Export <- function(...)
+##     .Defunct(msg = "namespaces should be specified via the 'NAMESPACE' file")
+## .S3method <- function(generic, class, method)
+##     .Defunct(msg = "namespaces should be specified via the 'NAMESPACE' file")
 ## </entry>
 
 ## <entry>

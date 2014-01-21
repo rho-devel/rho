@@ -27,7 +27,7 @@ spMatrix <- function(nrow, ncol,
     ## The conformability of (i,j,x) with itself and with 'dim'
     ## is checked automatically by internal "validObject()" inside new(.):
     kind <- .M.kind(x)
-    new(paste(kind, "gTMatrix", sep=''), Dim = dim,
+    new(paste0(kind, "gTMatrix"), Dim = dim,
         x = if(kind == "d") as.double(x) else x,
         ## our "Tsparse" Matrices use  0-based indices :
         i = as.integer(i - 1L),
@@ -62,12 +62,16 @@ sparseMatrix <- function(i = ep, j = ep, p, x, dims, dimnames,
         stopifnot(all(dims >= dims.min))
         dims <- as.integer(dims)
     }
-    if(symmetric && dims[1] != dims[2])
-        stop("symmetric matrix must be square")
+    sx <- if(symmetric) {
+        if(dims[1] != dims[2])
+            stop("symmetric matrix must be square")
+        "s"
+    } else "g"
     isPat <- missing(x) ## <-> patter"n" Matrix
     kx <- if(isPat) "n" else .M.kind(x)
-    r <- new(paste(kx, if(symmetric)"s" else "g", "TMatrix", sep=''))
+    r <- new(paste0(kx, sx, "TMatrix"))
     r@Dim <- dims
+    if(symmetric && all(i >= j)) r@uplo <- "L" # else "U", the default
     if(!isPat) {
 	if(kx == "d" && !is.double(x)) x <- as.double(x)
 	if(length(x) != (n <- length(i))) { ## recycle
@@ -247,7 +251,7 @@ setMethod("[", signature(x = "sparseMatrix", i = "missing", j = "index",
 	      cld <- getClassDef(class(x))
 ##> why should this be needed; can still happen in <Tsparse>[..]:
 ##>	      if(!extends(cld, "generalMatrix")) x <- as(x, "generalMatrix")
-##	      viaCl <- paste(.M.kind(x, cld), "gTMatrix", sep='')
+##	      viaCl <- paste0(.M.kind(x, cld), "gTMatrix")
 
 	      x <- as(x, "TsparseMatrix")[, j, drop=drop]
 ##simpler than x <- callGeneric(x = as(x, "TsparseMatrix"), j=j, drop=drop)
@@ -266,8 +270,8 @@ setMethod("[", signature(x = "sparseMatrix",
 ##> why should this be needed; can still happen in <Tsparse>[..]:
 ##>	      if(!doSym && !extends(cld, "generalMatrix"))
 ##>		  x <- as(x, "generalMatrix")
-##	      viaCl <- paste(.M.kind(x, cld),
-##			     if(doSym) "sTMatrix" else "gTMatrix", sep='')
+##	      viaCl <- paste0(.M.kind(x, cld),
+##			      if(doSym) "sTMatrix" else "gTMatrix")
 	      x <- as(x, "TsparseMatrix")[i, j, drop=drop]
 	      if(is(x, "Matrix") && extends(cld, "CsparseMatrix"))
 		  as(x, "CsparseMatrix") else x
@@ -282,9 +286,10 @@ setMethod("[", signature(x = "sparseMatrix",
 ## x[] <- value :
 setReplaceMethod("[", signature(x = "sparseMatrix", i = "missing", j = "missing",
 				value = "ANY"),## double/logical/...
-	  function (x, value) {
+	  function (x, i,j,..., value) {
 	      if(all0(value)) { # be faster
 		  cld <- getClassDef(class(x))
+		  x <- diagU2N(x, cl = cld)
 		  for(nm in intersect(nsl <- names(cld@slots),
 				      c("x", "i","j", "factors")))
 		      length(slot(x, nm)) <- 0L
@@ -364,7 +369,7 @@ setMethod("Math",
 		   iarg <- as.integer(sub("^[^0-9]*", '', cn))
 		   colnames(cx) <- substr(colnames(cx), 1, iarg)
 	       },
-	       stop("invalid 'col.names' string: ", cn))
+	       stop(gettextf("invalid 'col.names' string: %s", cn), domain=NA))
     }
     ## else: nothing to do for col.names == TRUE
     cx
@@ -378,7 +383,7 @@ formatSparseM <- function(x, zero.print = ".", align = c("fancy", "right"),
 {
     cld <- getClassDef(class(x))
     if(is.null(asLogical)) {
-        binary <- extends(cld,"nsparseMatrix") || extends(cld, "pMatrix")# -> simple T / F
+        binary <- extends(cld,"nsparseMatrix") || extends(cld, "indMatrix")# -> simple T / F
         asLogical <- { binary || extends(cld,"lsparseMatrix") ||
                        extends(cld,"matrix") && is.logical(x) }
 					# has NA and (non-)structural FALSE
@@ -464,7 +469,7 @@ formatSpMatrix <- function(x, digits = NULL, # getOption("digits"),
 	else {
 	    kind <- .M.kind(x, cld)
 	    x <- .Call(Tsparse_diagU2N,
-		       as(as(x, paste(kind, "Matrix", sep='')), "TsparseMatrix"))
+		       as(as(x, paste0(kind, "Matrix")), "TsparseMatrix"))
 	    cld <- getClassDef(class(x))
 	}
     }
@@ -478,7 +483,7 @@ formatSpMatrix <- function(x, digits = NULL, # getOption("digits"),
         m <- as(x, "matrix")
     }
     dn <- dimnames(m) ## will be === dimnames(cx)
-    binary <- extends(cld,"nsparseMatrix") || extends(cld, "pMatrix") # -> simple T / F
+    binary <- extends(cld,"nsparseMatrix") || extends(cld, "indMatrix") # -> simple T / F
     logi <- binary || extends(cld,"lsparseMatrix") # has NA and (non-)structural FALSE
     cx <- .formatSparseSimple(m, asLogical = logi, digits=digits,
                               col.names=col.names,
@@ -631,6 +636,16 @@ print.sparseSummary <- function (x, ...) {
     invisible(x)
 }
 
+
+
+### FIXME [from ../TODO ]: Use cholmod_symmetry() --
+## Possibly even use 'option' as argument here for fast check to use sparse solve !!
+
+##' This case should be particularly fast
+setMethod("isSymmetric", signature(object = "dgCMatrix"),
+	  function(object, tol = 100*.Machine$double.eps, ...)
+	      isTRUE(all.equal(.dgC.0.factors(object), t(object), tol = tol, ...)))
+
 setMethod("isSymmetric", signature(object = "sparseMatrix"),
 	  function(object, tol = 100*.Machine$double.eps, ...) {
 	      ## pretest: is it square?
@@ -747,9 +762,7 @@ setMethod("cov2cor", signature(V = "sparseMatrix"),
 	      Is <- sqrt(1/diag(V))
 	      if (any(!is.finite(Is))) ## original had 0 or NA
 		  warning("diag(.) had 0 or NA entries; non-finite result is doubtful")
-	      ## TODO: if  <diagonal> %*% <sparse> was implemented more efficiently
-	      ##       we'd rather use that!
-	      Is <- as(Diagonal(x = Is), "sparseMatrix")
+	      Is <- Diagonal(x = Is)
 	      r <- Is %*% V %*% Is
 	      r[cbind(1:p,1:p)] <- 1 # exact in diagonal
 	      as(r, "symmetricMatrix")
@@ -776,33 +789,34 @@ setMethod("all.equal", c(target = "sparseMatrix", current = "sparseMatrix"),
 	  function(target, current, check.attributes = TRUE, ...)
       {
 	  msg <- attr.all_Mat(target, current, check.attributes=check.attributes, ...)
-	  if(is.list(msg)) return(msg[[1]])
-	  ## else
-	  r <- all.equal(as(target, "sparseVector"), as(current, "sparseVector"),
-			 check.attributes=check.attributes, ...)
-	  if(is.null(msg) & (r.ok <- isTRUE(r))) TRUE else c(msg, if(!r.ok) r)
+	  if(is.list(msg)) msg[[1]]
+	  else .a.e.comb(msg,
+			 all.equal(as(target, "sparseVector"), as(current, "sparseVector"),
+				   check.attributes=check.attributes, ...))
       })
 setMethod("all.equal", c(target = "sparseMatrix", current = "ANY"),
 	  function(target, current, check.attributes = TRUE, ...)
       {
 	  msg <- attr.all_Mat(target, current, check.attributes=check.attributes, ...)
-	  if(is.list(msg)) return(msg[[1]])
-	  ## else
-	  r <- all.equal(as(target, "sparseVector"), current,
-			 check.attributes=check.attributes, ...)
-	  if(is.null(msg) & (r.ok <- isTRUE(r))) TRUE else c(msg, if(!r.ok) r)
+	  if(is.list(msg)) msg[[1]]
+	  else .a.e.comb(msg,
+			 all.equal(as(target, "sparseVector"), current,
+				   check.attributes=check.attributes, ...))
       })
 setMethod("all.equal", c(target = "ANY", current = "sparseMatrix"),
 	  function(target, current, check.attributes = TRUE, ...)
       {
 	  msg <- attr.all_Mat(target, current, check.attributes=check.attributes, ...)
-	  if(is.list(msg)) return(msg[[1]])
-	  ## else
-	  r <- all.equal(target, as(current, "sparseVector"),
-			 check.attributes=check.attributes, ...)
-	  if(is.null(msg) & (r.ok <- isTRUE(r))) TRUE else c(msg, if(!r.ok) r)
+	  if(is.list(msg)) msg[[1]]
+	  else .a.e.comb(msg,
+			 all.equal(target, as(current, "sparseVector"),
+				   check.attributes=check.attributes, ...))
       })
 
+
+setMethod("writeMM", "sparseMatrix",
+	  function(obj, file, ...)
+	  writeMM(as(obj, "CsparseMatrix"), as.character(file), ...))
 
 ### --- sparse model matrix,  fac2sparse, etc ----> ./spModels.R
 

@@ -1,8 +1,7 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.10.0\n"
-"Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-05-11 13:15\n"
+"Project-Id-Version: MASS 7.3-25\n"
+"POT-Creation-Date: 2013-03-18 09:49\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,37 +16,31 @@ msgstr ""
 msgid "no terms in scope for adding to object"
 msgstr ""
 
-msgid "trying +"
+msgid "trying + %s"
 msgstr ""
 
 msgid "number of rows in use has changed: remove missing values?"
 msgstr ""
 
-msgid "using the %d/%d rows from a combined fit"
+msgid "F test assumes 'quasi%s' family"
 msgstr ""
 
-msgid "F test assumes quasi%s family"
-msgstr ""
-
-msgid "no addterm method implemented for \"mlm\" models"
+msgid "no 'addterm' method implemented for \"mlm\" models"
 msgstr ""
 
 msgid "scope is not a subset of term labels"
 msgstr ""
 
-msgid "trying -"
+msgid "trying - %s"
 msgstr ""
 
-msgid "dropterm not implemented for \"mlm\" fits"
+msgid "'dropterm' not implemented for \"mlm\" fits"
 msgstr ""
 
-msgid "F test assumes 'quasi%s' family"
+msgid "iteration limit reached near 'x = %f'"
 msgstr ""
 
-msgid "iteration limit reached near x ="
-msgstr ""
-
-msgid "does not have both 'qr' and 'y' components"
+msgid "%s does not have both 'qr' and 'y' components"
 msgstr ""
 
 msgid "response variable must be positive"
@@ -80,7 +73,7 @@ msgstr ""
 msgid "biplot is only possible if nf >= 2"
 msgstr ""
 
-msgid "missing or infinite values in"
+msgid "missing or infinite values in 'x'"
 msgstr ""
 
 msgid "length of 'wt' must equal number of observations"
@@ -104,28 +97,28 @@ msgstr ""
 msgid "'x' must be a non-empty numeric vector"
 msgstr ""
 
+msgid "'x' contains missing or infinite values"
+msgstr ""
+
 msgid "'densfun' must be supplied as a function or name"
 msgstr ""
 
 msgid "unsupported distribution"
 msgstr ""
 
-msgid "supplying pars for the log-Normal is not supported"
+msgid "supplying pars for the %s distribution is not supported"
 msgstr ""
 
 msgid "need positive values to fit a log-Normal"
 msgstr ""
 
-msgid "supplying pars for the Normal is not supported"
+msgid "Exponential values must be >= 0"
 msgstr ""
 
-msgid "supplying pars for the Poisson is not supported"
+msgid "Weibull values must be > 0"
 msgstr ""
 
-msgid "supplying pars for the exponential is not supported"
-msgstr ""
-
-msgid "supplying pars for the geometric is not supported"
+msgid "gamma values must be >= 0"
 msgstr ""
 
 msgid "'start' must be a named list"
@@ -140,13 +133,10 @@ msgstr ""
 msgid "only 'REML = FALSE' is implemented"
 msgstr ""
 
-msgid "Initial estimate:"
+msgid "Initial estimate: %s"
 msgstr ""
 
-msgid "Iter."
-msgstr ""
-
-msgid "Alpha:"
+msgid "Iter. %d Alpha: %s"
 msgstr ""
 
 msgid "iteration limit reached"
@@ -158,7 +148,7 @@ msgstr ""
 msgid "'family' not recognized"
 msgstr ""
 
-msgid "iteration"
+msgid "iteration %d"
 msgstr ""
 
 msgid "'anova' is not available for PQL fits"
@@ -173,7 +163,10 @@ msgstr ""
 msgid "'y' must be a matrix"
 msgstr ""
 
-msgid "distances must be result of dist or a square matrix"
+msgid "distances must be result of 'dist' or a square matrix"
+msgstr ""
+
+msgid "invalid size"
 msgstr ""
 
 msgid "zero or negative distance between objects %d and %d"
@@ -188,6 +181,12 @@ msgstr ""
 msgid "initial configuration must be complete"
 msgstr ""
 
+msgid "invalid row(x)"
+msgstr ""
+
+msgid "invalid length(d)"
+msgstr ""
+
 msgid "data vectors must be the same length"
 msgstr ""
 
@@ -195,6 +194,9 @@ msgid "missing or infinite values in the data are not allowed"
 msgstr ""
 
 msgid "only finite values are allowed in 'lims'"
+msgstr ""
+
+msgid "bandwidths must be strictly positive"
 msgstr ""
 
 msgid "'x' is not a matrix"
@@ -206,16 +208,16 @@ msgstr ""
 msgid "nrow(x) and length(grouping) are different"
 msgstr ""
 
-msgid "invalid prior"
+msgid "invalid 'prior'"
 msgstr ""
 
 msgid "'prior' is of incorrect length"
 msgstr ""
 
-msgid "cannot use leave-one-out CV with method"
+msgid "cannot use leave-one-out CV with method %s"
 msgstr ""
 
-msgid "rank = 0: variables are numerically const"
+msgid "rank = 0: variables are numerically constant"
 msgstr ""
 
 msgid "variables are collinear"
@@ -272,10 +274,7 @@ msgstr ""
 msgid "'ps' must be at least 'p'"
 msgstr ""
 
-msgid "only %d sets, so all sets will be tried"
-msgstr ""
-
-msgid "lqs failed: all the samples were singular"
+msgid "'lqs' failed: all the samples were singular"
 msgstr ""
 
 msgid "missing or infinite values are not allowed"
@@ -314,7 +313,7 @@ msgstr ""
 msgid "'theta' must be given"
 msgstr ""
 
-msgid "negative values not allowed for the Negative Binomal family"
+msgid "negative values not allowed for the negative binomial family"
 msgstr ""
 
 msgid "tests made without re-estimating 'theta'"
@@ -326,22 +325,13 @@ msgstr ""
 msgid "not all objects are of class \"negbin\""
 msgstr ""
 
-msgid "unimplemented method:"
+msgid "unimplemented method: %s"
 msgstr ""
 
 msgid "Initial fit:"
 msgstr ""
 
-msgid "Initial value for theta:"
-msgstr ""
-
-msgid "Theta("
-msgstr ""
-
-msgid ") ="
-msgstr ""
-
-msgid ", 2(Ls - Lm) ="
+msgid "Initial value for 'theta': %f"
 msgstr ""
 
 msgid "alternation limit reached"
@@ -350,16 +340,10 @@ msgstr ""
 msgid "'theta' must be specified"
 msgstr ""
 
-msgid "link not available for negative binomial family; available links are \"identity\", \"log\" and \"sqrt\""
-msgstr ""
-
-msgid "negative values not allowed for the negative binomial family"
+msgid "\"%s\" link not available for negative binomial family; available links are \"identity\", \"log\" and \"sqrt\""
 msgstr ""
 
 msgid "estimate truncated at zero"
-msgstr ""
-
-msgid "theta.ml: initial theta ="
 msgstr ""
 
 msgid "theta.ml: iter"
@@ -419,10 +403,13 @@ msgstr ""
 msgid "profiling has found a better solution, so original fit had not converged"
 msgstr ""
 
-msgid "some group is too small for qda"
+msgid "weighted fits are not supported"
 msgstr ""
 
-msgid "rank deficiency in group"
+msgid "some group is too small for 'qda'"
+msgstr ""
+
+msgid "rank deficiency in group %s"
 msgstr ""
 
 msgid "object not of class \"qda\""
@@ -431,7 +418,7 @@ msgstr ""
 msgid "cannot have leave-one-out CV with 'newdata'"
 msgstr ""
 
-msgid "'x' is singular: singular fits are not implemented in rlm"
+msgid "'x' is singular: singular fits are not implemented in 'rlm'"
 msgstr ""
 
 msgid "invalid 'test.vec'"
@@ -455,7 +442,7 @@ msgstr ""
 msgid "'method' is unknown"
 msgstr ""
 
-msgid "rlm failed to converge in %d steps"
+msgid "'rlm' failed to converge in %d steps"
 msgstr ""
 
 msgid "'coef' must define a contrast, i.e., sum to 0"
@@ -464,7 +451,7 @@ msgstr ""
 msgid "'coef' must have same length as 'contrast.obj'"
 msgstr ""
 
-msgid "each element of %s must be logical"
+msgid "each element of '%s' must be logical"
 msgstr ""
 
 msgid "the contrast defined is empty (has no TRUE elements)"
@@ -488,19 +475,13 @@ msgstr ""
 msgid "an initial configuration must be supplied if there are NAs in 'd'"
 msgstr ""
 
-msgid "1 missing observation deleted"
+msgid "'use.start' cannot be used with R's version of 'glm'"
 msgstr ""
 
-msgid "missing observations deleted"
+msgid "AIC is not defined for this model, so 'stepAIC' cannot proceed"
 msgstr ""
 
-msgid "rows with zero weights not counted"
-msgstr ""
-
-msgid "'use.start' cannot be used with R's version of glm"
-msgstr ""
-
-msgid "AIC is not defined for this model, so stepAIC cannot proceed"
+msgid "AIC is -infinity for this model, so 'stepAIC' cannot proceed"
 msgstr ""
 
 msgid "0 df terms are changing AIC"
@@ -527,6 +508,11 @@ msgstr ""
 msgid "minimum occurred at one end of the range"
 msgstr ""
 
+msgid        "using the %d/%d row from a combined fit"
+msgid_plural "using the %d/%d rows from a combined fit"
+msgstr[0]    ""
+msgstr[1]    ""
+
 msgid        "group %s is empty"
 msgid_plural "groups %s are empty"
 msgstr[0]    ""
@@ -534,5 +520,20 @@ msgstr[1]    ""
 
 msgid        "variable %s appears to be constant within groups"
 msgid_plural "variables %s appear to be constant within groups"
+msgstr[0]    ""
+msgstr[1]    ""
+
+msgid        "only %d set, so all sets will be tried"
+msgid_plural "only %d sets, so all sets will be tried"
+msgstr[0]    ""
+msgstr[1]    ""
+
+msgid        "%d missing observation deleted"
+msgid_plural "%d missing observations deleted"
+msgstr[0]    ""
+msgstr[1]    ""
+
+msgid        "%d row with zero weights not counted"
+msgid_plural "%d rows with zero weights not counted"
 msgstr[0]    ""
 msgstr[1]    ""

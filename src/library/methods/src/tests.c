@@ -35,7 +35,6 @@
 
 #include <R.h>
 #include <Rdefines.h>
-#include <Rinternals.h>
 #include "methods.h"
 
 SEXP R_methods_test_MAKE_CLASS(SEXP className)

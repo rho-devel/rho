@@ -95,6 +95,7 @@ Wood, S.N. (2003) Thin plate regression splines. J.R.Statist.Soc.B 65(1):95-114
 \author{ Simon N. Wood \email{simon.wood@r-project.org}}
 
 \examples{
+require(mgcv)
 eg <- gamSim(2,n=200,scale=.05)
 attach(eg)
 op <- par(mfrow=c(2,2),mar=c(4,4,1,1))

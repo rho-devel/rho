@@ -1,6 +1,8 @@
 #  File src/library/stats/R/arima.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 2002-12 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -190,7 +192,23 @@ arima <- function(x, order = c(0, 0, 0),
             S <- svd(na.omit(xreg))
             xreg <- xreg %*% S$v
         }
-        fit <- lm(x ~ xreg - 1, na.action = na.omit)
+        dx <- x
+        dxreg <- xreg
+        if(order[2L] > 0L) {
+            dx <- diff(dx, 1L, order[2L])
+            dxreg <- diff(dxreg, 1L, order[2L])
+        }
+        if(seasonal$period > 1L & seasonal$order[2L] > 0) {
+            dx <- diff(dx, seasonal$period, seasonal$order[2L])
+            dxreg <- diff(dxreg, seasonal$period, seasonal$order[2L])
+        }
+        fit <- if(length(dx) > ncol(dxreg))
+            lm(dx ~ dxreg - 1, na.action = na.omit)
+        else list(rank = 0L)
+        if(fit$rank == 0L) {
+            ## Degenerate model. Proceed anyway so as not to break old code
+            fit <- lm(x ~ xreg - 1, na.action = na.omit)
+        }
         n.used <- sum(!is.na(resid(fit))) - length(Delta)
         init0 <- c(init0, coef(fit))
         ses <- summary(fit)$coefficients[, 2L]
@@ -226,8 +244,8 @@ arima <- function(x, order = c(0, 0, 0),
             optim(init[mask], armaCSS,  method = optim.method, hessian = TRUE,
                   control = optim.control)
         if(res$convergence > 0)
-            warning("possible convergence problem: optim gave code=",
-                          res$convergence)
+            warning(gettextf("possible convergence problem: optim gave code = %d",
+                             res$convergence), domain = NA)
         coef[mask] <- res$par
         ## set model for predictions
         trarma <- .Call(C_ARIMA_transPars, coef, arma, FALSE)
@@ -277,8 +295,8 @@ arima <- function(x, order = c(0, 0, 0),
                   hessian = TRUE, control = optim.control,
                   trans = as.logical(transform.pars))
         if(res$convergence > 0)
-            warning("possible convergence problem: optim gave code=",
-                    res$convergence)
+            warning(gettextf("possible convergence problem: optim gave code = %d",
+                             res$convergence), domain = NA)
         coef[mask] <- res$par
         if(transform.pars) {
             ## enforce invertibility
@@ -349,7 +367,7 @@ arima <- function(x, order = c(0, 0, 0),
 
 
 print.Arima <-
-    function (x, digits = max(3, getOption("digits") - 3), se = TRUE, ...)
+    function (x, digits = max(3L, getOption("digits") - 3L), se = TRUE, ...)
 {
     cat("\nCall:", deparse(x$call, width.cutoff = 75L), "", sep = "\n")
     if (length(x$coef)) {
@@ -373,13 +391,13 @@ print.Arima <-
         cat("\nsigma^2 estimated as ",
             format(x$sigma2, digits = digits),
             ":  part log likelihood = ", format(round(x$loglik,2)),
-            "\n", sep="")
+            "\n", sep = "")
     invisible(x)
 }
 
 
 predict.Arima <-
-    function (object, n.ahead = 1, newxreg = NULL, se.fit = TRUE, ...)
+    function (object, n.ahead = 1L, newxreg = NULL, se.fit = TRUE, ...)
 {
     myNCOL <- function(x) if (is.null(x)) 0 else NCOL(x)
     rsd <- object$residuals
@@ -436,13 +454,13 @@ makeARIMA <- function(phi, theta, Delta, kappa = 1e6)
     if(p > 0) T[1L:p, 1L] <- phi
     if(r > 1L) {
         ind <- 2:r
-        T[cbind(ind-1L, ind)]<- 1
+        T[cbind(ind-1L, ind)] <- 1
     }
     if(d > 0L) {
         T[r+1L, ] <- Z
         if(d > 1L) {
             ind <- r + 2:d
-            T[cbind(ind, ind-1)]<- 1
+            T[cbind(ind, ind-1)] <- 1
         }
     }
     if(q < r - 1L) theta <- c(theta, rep(0, r-1L-q))

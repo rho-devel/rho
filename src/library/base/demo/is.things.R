@@ -1,3 +1,5 @@
+#  Copyright (C) 1997-2010 The R Core Team
+
 ## being a 'builtin' function is not the same as being in base
 ls.base <- ls("package:base", all=TRUE)
 base.is.f <- sapply(ls.base, function(x) is.function(get(x)))
@@ -28,7 +30,7 @@ is.method <- function(fname) {
 }
 
 is.ALL <- function(obj, func.names = ls(pos=length(search())),
-		   not.using = c("is.single", "is.loaded",
+		   not.using = c("is.single", "is.real", "is.loaded",
                      "is.empty.model", "is.R", "is.element", "is.unsorted"),
 		   true.only = FALSE, debug = FALSE)
 {

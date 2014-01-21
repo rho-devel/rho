@@ -38,7 +38,7 @@
 #include <R.h>
 #include "modreg.h"
 
-SEXP R_isoreg(SEXP y)
+SEXP isoreg(SEXP y)
 {
     int n = LENGTH(y), i, ip, known, n_ip;
     double tmp, slope;
@@ -77,7 +77,8 @@ SEXP R_isoreg(SEXP y)
 	    REAL(yf)[i] = (REAL(yc)[ip] - REAL(yc)[known]) / (ip - known);
     } while ((known = ip) < n);
 
-    SETLENGTH(iKnots, n_ip);
+    if (n_ip < n)
+	SET_VECTOR_ELT(ans, 3, lengthgets(iKnots, n_ip));
     UNPROTECT(1);
     return(ans);
 }

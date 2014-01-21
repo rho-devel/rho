@@ -19,7 +19,7 @@
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998--2003  Guido Masarotto and Brian Ripley
  *  Copyright (C) 2004        The R Foundation
- *  Copyright (C) 2004-11     The R Core Team
+ *  Copyright (C) 2004-13     The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -63,6 +63,7 @@
 #endif
 #include <windows.h>
 #include "devWindows.h"
+#define DEVWINDOWS 1
 #include "grDevices.h"
 
 /* there are conflicts with Rmath.h */
@@ -560,12 +561,12 @@ static void RFontInit()
     char *opt[2];
     char  oops[256];
 
-    sprintf(oops, "%s/Rdevga", getenv("R_USER"));
+    snprintf(oops, 256, "%s/Rdevga", getenv("R_USER"));
     notdone = 1;
     fontnum = 0;
     fontinitdone = 1;
     if (!optopenfile(oops)) {
-	sprintf(oops, "%s/etc/Rdevga", getenv("R_HOME"));
+	snprintf(oops, 256, "%s/etc/Rdevga", getenv("R_HOME"));
 	if (!optopenfile(oops)) {
 	    RStandardFonts();
 	    notdone = 0;
@@ -575,7 +576,7 @@ static void RFontInit()
 	oops[0] = '\0';
 	notdone = optread(opt, ':');
 	if (notdone == 1)
-	    sprintf(oops, "[%s] Error at line %d.", optfile(), optline());
+	    snprintf(oops, 256, "[%s] Error at line %d.", optfile(), optline());
 	else if (notdone == 2) {
 	    fontname[fontnum] = strdup(opt[0]);
 	    if (!fontname[fontnum])
@@ -590,7 +591,7 @@ static void RFontInit()
 		else if (!strcmpi(opt[1], "bold&italic"))
 		    fontstyle[fontnum] = BoldItalic;
 		else
-		    sprintf(oops, "Unknown style at line %d. ", optline());
+		    snprintf(oops, 256, "Unknown style at line %d. ", optline());
 		fontnum += 1;
 	    }
 	}
@@ -616,7 +617,7 @@ static char *SaveFontSpec(SEXP sxp, int offset)
 {
     char *s;
     if(!isString(sxp) || length(sxp) <= offset)
-	error(_("Invalid font specification"));
+	error(_("invalid font specification"));
     s = R_alloc(strlen(CHAR(STRING_ELT(sxp, offset)))+1, sizeof(char));
     strcpy(s, CHAR(STRING_ELT(sxp, offset)));
     return s;
@@ -655,7 +656,7 @@ static char* translateFontFamily(const char* family) {
 	    }
 	}
 	if (!found)
-	    warning(_("Font family not found in Windows font database"));
+	    warning(_("font family not found in Windows font database"));
     }
     UNPROTECT(4);
     return result;
@@ -796,7 +797,7 @@ static void SetLineStyle(const pGEcontext gc, pDevDesc dd)
 	xd->lend = PS_ENDCAP_SQUARE;
 	break;
     default:
-	error(_("Invalid line end"));
+	error(_("invalid line end"));
     }
     switch (gc->ljoin) {
     case GE_ROUND_JOIN:
@@ -809,7 +810,7 @@ static void SetLineStyle(const pGEcontext gc, pDevDesc dd)
 	xd->ljoin = PS_JOIN_BEVEL;
 	break;
     default:
-	error(_("Invalid line join"));
+	error(_("invalid line join"));
     }
 
     xd->lmitre = gc->lmitre;
@@ -1005,7 +1006,7 @@ static void menuwm(control m)
 	askok(G_("file path selected is too long: only 512 bytes are allowed"));
 	return;
     }
-    sprintf(display, "win.metafile:%s", fn);
+    snprintf(display, 550, "win.metafile:%s", fn);
     SaveAsWin(dd, display, TRUE);
 }
 
@@ -1229,6 +1230,7 @@ static void menunext(control m)
     pMUSTEXIST;
     pCHECK;
     if (pCURRENTPOS != (pNUMPLOTS - 1)) pMOVE(1);
+    PrintWarnings();
 }
 
 static void menuprev(control m)
@@ -1251,6 +1253,7 @@ static void menuprev(control m)
 	}
 	pMOVE((xd->needsave) ? 0 : -1);
     }
+    PrintWarnings();
 }
 
 static void menugrclear(control m)
@@ -1267,11 +1270,12 @@ static void menugvar(control m)
     if (!v)
 	return;
     vDL = findVar(install(v), R_GlobalEnv);
-    if (!pEXIST || !pNUMPLOTS) {
-	R_ShowMessage(G_("Variable doesn't exist or doesn't contain any plots!"));
+    pMUSTEXIST;
+    pCHECK;
+    if (!pNUMPLOTS) {
+	R_ShowMessage(G_("Variable doesn't contain any plots!"));
 	return;
     }
-    pCHECK;
     pCURRENTPOS = 0;
     Replay(dd, vDL);
     SETDL;
@@ -1574,7 +1578,7 @@ setupScreenDevice(pDevDesc dd, gadesc *xd, double w, double h,
 				    Document | StandardWindow | Menubar |
 				    VScrollbar | HScrollbar | CanvasSize)
 		)) {
-	    warning("Unable to open window");
+	    warning("unable to open window");
 	    return FALSE;
 	}
     }
@@ -1800,7 +1804,7 @@ static Rboolean GA_Open(pDevDesc dd, gadesc *xd, const char *dsp,
 	xd->fast = 0; /* use scalable line widths */
 	xd->gawin = newprinter(MM_PER_INCH * w, MM_PER_INCH * h, &dsp[10]);
 	if (!xd->gawin) {
-	    warning("Unable to open printer");
+	    warning("unable to open printer");
 	    return FALSE;
 	}
     } else if (!strncmp(dsp, "png:", 4) || !strncmp(dsp,"bmp:", 4)) {
@@ -1811,7 +1815,7 @@ static Rboolean GA_Open(pDevDesc dd, gadesc *xd, const char *dsp,
 				       (dsp[0]=='p') ? "png" : "bmp");
 	strcpy(xd->filename, R_ExpandFileName(dsp+4));
 	if (!Load_Rbitmap_Dll()) {
-	    warning(_("Unable to load Rbitmap.dll"));
+	    warning("unable to load Rbitmap.dll");
 	    return FALSE;
 	}
 
@@ -1824,18 +1828,18 @@ static Rboolean GA_Open(pDevDesc dd, gadesc *xd, const char *dsp,
 	  if required depth > 1
 	*/
 	if ((xd->gawin = newbitmap(w, h, 256)) == NULL) {
-	    warning(_("Unable to allocate bitmap"));
+	    warning(_("unable to allocate bitmap"));
 	    return FALSE;
 	}
 	xd->bm = xd->gawin;
 	if ((xd->bm2 = newbitmap(w, h, 256)) == NULL) {
-	    warning(_("Unable to allocate bitmap"));
+	    warning(_("unable to allocate bitmap"));
 	    return FALSE;
 	}
 	snprintf(buf, 600, xd->filename, 1);
 	if ((xd->fp = R_fopen(buf, "wb")) == NULL) {
 	    del(xd->gawin);
-	    warning(_("Unable to open file '%s' for writing"), buf);
+	    warning(_("unable to open file '%s' for writing"), buf);
 	    return FALSE;
 	}
 	xd->have_alpha = TRUE;
@@ -1846,7 +1850,7 @@ static Rboolean GA_Open(pDevDesc dd, gadesc *xd, const char *dsp,
 	xd->kind = JPEG;
 	if (!p) return FALSE;
 	if (!Load_Rbitmap_Dll()) {
-	    warning(_("Unable to load Rbitmap.dll"));
+	    warning("unable to load Rbitmap.dll");
 	    return FALSE;
 	}
 	*p = '\0';
@@ -1858,18 +1862,18 @@ static Rboolean GA_Open(pDevDesc dd, gadesc *xd, const char *dsp,
 	    warning(_("'width=%d, height=%d' are unlikely values in pixels"),
 		    (int)w, (int) h);
 	if((xd->gawin = newbitmap(w, h, 256)) == NULL) {
-	    warning(_("Unable to allocate bitmap"));
+	    warning(_("unable to allocate bitmap"));
 	    return FALSE;
 	}
 	xd->bm = xd->gawin;
 	if ((xd->bm2 = newbitmap(w, h, 256)) == NULL) {
-	    warning(_("Unable to allocate bitmap"));
+	    warning(_("unable to allocate bitmap"));
 	    return FALSE;
 	}
 	snprintf(buf, 600, xd->filename, 1);
 	if ((xd->fp = R_fopen(buf, "wb")) == NULL) {
 	    del(xd->gawin);
-	    warning(_("Unable to open file '%s' for writing"), buf);
+	    warning(_("unable to open file '%s' for writing"), buf);
 	    return FALSE;
 	}
 	xd->have_alpha = TRUE;
@@ -1880,7 +1884,7 @@ static Rboolean GA_Open(pDevDesc dd, gadesc *xd, const char *dsp,
 	xd->kind = TIFF;
 	if (!p) return FALSE;
 	if (!Load_Rbitmap_Dll()) {
-	    warning(_("Unable to load Rbitmap.dll"));
+	    warning("unable to load Rbitmap.dll");
 	    return FALSE;
 	}
 	*p = '\0';
@@ -1892,12 +1896,12 @@ static Rboolean GA_Open(pDevDesc dd, gadesc *xd, const char *dsp,
 	    warning(_("'width=%d, height=%d' are unlikely values in pixels"),
 		    (int) w, (int) h);
 	if((xd->gawin = newbitmap(w, h, 256)) == NULL) {
-	    warning(_("Unable to allocate bitmap"));
+	    warning(_("unable to allocate bitmap"));
 	    return FALSE;
 	}
 	xd->bm = xd->gawin;
 	if ((xd->bm2 = newbitmap(w, h, 256)) == NULL) {
-	    warning(_("Unable to allocate bitmap"));
+	    warning(_("unable to allocate bitmap"));
 	    return FALSE;
 	}
 	xd->have_alpha = TRUE;
@@ -1914,7 +1918,7 @@ static Rboolean GA_Open(pDevDesc dd, gadesc *xd, const char *dsp,
 	if (ls > ld)
 	    return FALSE;
 	if (strncmp(dsp, s, ls) || (dsp[ls] && (dsp[ls] != ':'))) {
-	    warning("Invalid specification for file name in win.metafile()");
+	    warning("invalid specification for file name in win.metafile()");
 	    return FALSE;
 	}
 	if(ld > ls && strlen(&dsp[ls + 1]) >= 512)
@@ -1928,9 +1932,9 @@ static Rboolean GA_Open(pDevDesc dd, gadesc *xd, const char *dsp,
 	xd->fast = 0; /* use scalable line widths */
 	if (!xd->gawin) {
 	    if(ld > ls)
-		warning(_("Unable to open metafile '%s' for writing"), buf);
+		warning(_("unable to open metafile '%s' for writing"), buf);
 	    else
-		warning(_("Unable to open clipboard to write metafile"));
+		warning(_("unable to open clipboard to write metafile"));
 	    return FALSE;
 	}
     }
@@ -2178,7 +2182,7 @@ static void GA_NewPage(const pGEcontext gc,
     if ((xd->kind == METAFILE) && xd->needsave) {
 	char buf[600];
 	if (strlen(xd->filename) == 0)
-	    error(_("A clipboard metafile can store only one figure."));
+	    error(_("a clipboard metafile can store only one figure."));
 	else {
 	    del(xd->gawin);
 	    snprintf(buf, 600, xd->filename, xd->npage);
@@ -2193,7 +2197,7 @@ static void GA_NewPage(const pGEcontext gc,
 	SaveAsBitmap(dd, xd->res_dpi);
 	snprintf(buf, 600, xd->filename, xd->npage);
 	if ((xd->fp = R_fopen(buf, "wb")) == NULL)
-	    error(_("Unable to open file '%s' for writing"), buf);
+	    error(_("unable to open file '%s' for writing"), buf);
     }
     if (xd->kind == TIFF && xd->needsave) {
 	SaveAsBitmap(dd, xd->res_dpi);
@@ -2241,7 +2245,7 @@ static void deleteGraphMenus(int devnum)
 {
     char prefix[15];
 
-    sprintf(prefix, "$Graph%i", devnum);
+    snprintf(prefix, 15, "$Graph%i", devnum);
     windelmenus(prefix);
 }
 
@@ -2315,7 +2319,7 @@ static void GA_Activate(pDevDesc dd)
 	snprintf(t, 140, xd->title, ndevNumber(dd) + 1);
 	t[139] = '\0';
     } else {
-	sprintf(t, "R Graphics: Device %d", ndevNumber(dd) + 1);
+	snprintf(t, 150, "R Graphics: Device %d", ndevNumber(dd) + 1);
     }
     strcat(t, " (ACTIVE)");
     settext(xd->gawin, t);
@@ -2343,7 +2347,7 @@ static void GA_Deactivate(pDevDesc dd)
 	snprintf(t, 140, xd->title, ndevNumber(dd) + 1);
 	t[139] = '\0';
     } else {
-	sprintf(t, "R Graphics: Device %d", ndevNumber(dd) + 1);
+	snprintf(t, 150, "R Graphics: Device %d", ndevNumber(dd) + 1);
     }
     strcat(t, " (inactive)");
     settext(xd->gawin, t);
@@ -3051,8 +3055,8 @@ static void GA_Text0(double x, double y, const char *str, int enc,
 	if(gc->fontface != 5) {
 	    /* As from 2.7.0 can use Unicode always */
 	    int n = strlen(str), cnt;
+	    R_CheckStack2(sizeof(wchar_t)*(n+1));
 	    wchar_t wc[n+1];/* only need terminator to debug */
-	    R_CheckStack();
 	    cnt = (enc == CE_UTF8) ?
 		Rf_utf8towcs(wc, str, n+1): mbstowcs(wc, str, n);
 	    /* These macros need to be wrapped in braces */
@@ -3070,8 +3074,8 @@ static void GA_Text0(double x, double y, const char *str, int enc,
 	    gcopy(xd->bm2, xd->bm, r);
 	    if(gc->fontface != 5) {
 		int n = strlen(str), cnt;
+		R_CheckStack2(sizeof(wchar_t)*(n+1));
 		wchar_t wc[n+1];
-		R_CheckStack();
 		cnt = (enc == CE_UTF8) ?
 		    Rf_utf8towcs(wc, str, n+1): mbstowcs(wc, str, n);
 		gwdrawstr1(xd->bm2, xd->font, xd->fgcolor, pt(x, y),
@@ -3425,7 +3429,7 @@ SEXP savePlot(SEXP args)
     if(!dd) error(_("invalid device in 'savePlot'"));
     filename = CADR(args);
     if (!isString(filename) || LENGTH(filename) != 1)
-	error(_("invalid filename argument in savePlot"));
+	error(_("invalid filename argument in 'savePlot'"));
     /* in 2.8.0 this will always be passed as native, but be conserative */
     fn = translateChar(STRING_ELT(filename, 0));
     type = CADDR(args);
@@ -3450,7 +3454,7 @@ SEXP savePlot(SEXP args)
 	    askok(G_("file path selected is too long: only 512 bytes are allowed"));
 	    return R_NilValue;
 	}
-	sprintf(display, "win.metafile:%s", fn);
+	snprintf(display, 550, "win.metafile:%s", fn);
 	SaveAsWin(dd, display, restoreConsole);
     } else if (!strcmp(tp, "ps") || !strcmp(tp, "eps")) {
 	SaveAsPostscript(dd, fn);
@@ -3720,6 +3724,16 @@ SEXP devga(SEXP args)
     R_CheckDeviceAvailable();
     BEGIN_SUSPEND_INTERRUPTS {
 	pDevDesc dev;
+	char type[100];
+	strcpy(type, "windows");
+	if (display[0]) {
+	    strncpy(type, display, 100);
+	    // Package tkrplot assumes the exact form here
+	    if(strncmp(display, "win.metafile", 12)) {
+		char *p = strchr(type, ':');
+		if(p) *p = '\0';
+	    }
+	}
 	/* Allocate and initialize the device driver data */
 	if (!(dev = (pDevDesc) calloc(1, sizeof(DevDesc)))) return 0;
 	GAsetunits(xpinch, ypinch);
@@ -3728,17 +3742,11 @@ SEXP devga(SEXP args)
 			    xpos, ypos, (Rboolean)buffered, psenv,
 			    restoreConsole, title, clickToConfirm,
 			    fillOddEven, family, quality)) {
-	    char type[100], *p;
 	    free(dev);
-	    if (display[0]) {
-		strncpy(type, display, 100);
-		p = strchr(type, ':');
-		if(p) *p = '\0';
-	    } else strcpy(type, "windows");
 	    error(_("unable to start %s() device"), type);
 	}
 	gdd = GEcreateDevDesc(dev);
-	GEaddDevice2(gdd, display[0] ? display : "windows");
+	GEaddDevice2(gdd, type);
     } END_SUSPEND_INTERRUPTS;
     vmaxset(vmax);
     return R_NilValue;
@@ -3853,7 +3861,7 @@ static int Load_Rcairo_Dll()
 SEXP devCairo(SEXP args)
 {
     if (!Load_Rcairo_Dll())
-	error(_("Unable to load winCairo.dll: was it built?"));
+	error("unable to load winCairo.dll: was it built?");
     else (R_devCairo)(args);
     return R_NilValue;
 }

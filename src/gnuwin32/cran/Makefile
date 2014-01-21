@@ -34,7 +34,8 @@ all:
 	@(zip -q dosfiles.zip CHANGES.$(RPREFIX) NEWS.$(RPREFIX) README.$(RPREFIX) ReadMe; \
 	 unzip -aqo dosfiles.zip; \
 	 $(RM) dosfiles.zip)
+	$(ECHO) set target=$(RPREFIX) >target.cmd
 
 
 clean:
-	$(RM) -r *.html *.htm ReadMe README* *.exe md5sum.txt NEWS.* CHANGES.* 
+	$(RM) -R *.html *.htm ReadMe README* *.exe md5sum.txt NEWS.* CHANGES.* target.cmd

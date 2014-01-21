@@ -1,6 +1,8 @@
 #  File src/library/tools/R/dynamicHelp.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2013 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -34,8 +36,7 @@ httpd <- function(path, query, ...)
         if(!length(files))
             out <- c(out, gettext("No files in this directory"))
         else {
-            urls <- paste('<a href="', base, '/', files, '">', files, '</a>',
-                          sep = "")
+            urls <- paste0('<a href="', base, '/', files, '">', files, '</a>')
             out <- c(out, "<dl>",
                      paste0("<dd>", mono(iconv(urls, "", "UTF-8")), "</dd>"),
                      "</dl>")
@@ -50,13 +51,10 @@ httpd <- function(path, query, ...)
 
         out <- HTMLheader("R User Manuals")
         for (pkg in pkgs) {
-            filename <- system.file(file.path("Meta", "vignette.rds"),
-            			    package=pkg)
-     	    if (file.exists(filename)) {
-     	    	vignettes <- readRDS(filename)
+            vinfo <- getVignetteInfo(pkg)
+     	    if (nrow(vinfo)) 
          	out <- c(out, paste0('<h2>Manuals in package', sQuote(pkg),'</h2>'),
-         		 makeVignetteTable(cbind(Package=pkg, as.matrix(vignettes[,c("File", "Title", "PDF", "R")]))))
-            }
+         		 makeVignetteTable(cbind(Package=pkg, vinfo[,c("File", "Title", "PDF", "R")])))
      	}
         out <- c(out, "<hr>\n</body></html>")
         list(payload = paste(out, collapse="\n"))
@@ -89,7 +87,9 @@ httpd <- function(path, query, ...)
             		types = args$types <- strsplit(query[i], ";")[[1L]],
             		package = args$package <- strsplit(query[i], ";")[[1L]],
             		lib.loc = args$lib.loc <- strsplit(query[i], ";")[[1L]],
-            		warning("Unrecognized search field: ", names(query)[i]))
+            		warning("Unrecognized search field: ", names(query)[i],
+                                domain = NA)
+                       )
             args$fields <- fields
             args$use_UTF8 <- TRUE
             do.call(help.search, args)
@@ -124,7 +124,7 @@ httpd <- function(path, query, ...)
 			    	vigDB <- readRDS(vigfile)
 			    	vigfile0 <- vigfile
 			    }
-			    vignette <- vigDB[topic == file_path_sans_ext(vigDB$File),]
+			    vignette <- vigDB[topic == file_path_sans_ext(vigDB$PDF),]
 			    # There should be exactly one row in the result, but
 			    # bad packages might have more, e.g. vig.Snw and vig.Rnw
 			    vignettes[i,] <- c(pkg, unlist(vignette[1,c("File", "Title", "PDF", "R")]))
@@ -176,7 +176,7 @@ httpd <- function(path, query, ...)
                "pdf" = "application/pdf",
                "eps" =,
                "ps" = "application/postscript", # in GLMMGibbs, mclust
-               "sgml"= "text/sgml", # in RGtk2
+               "sgml" = "text/sgml", # in RGtk2
                "xml" = "text/xml",  # in RCurl
                "text/plain")
     }
@@ -188,10 +188,7 @@ httpd <- function(path, query, ...)
 
     error_page <- function(msg)
         list(payload =
-             paste(HTMLheader("httpd error"),
-                   msg,
-                   "\n</body></html>",
-                   sep = ""))
+             paste0(HTMLheader("httpd error"), msg, "\n</body></html>"))
 
     cssRegexp <- "^/library/([^/]*)/html/R.css$"
     if (grepl("R\\.css$", path) && !grepl(cssRegexp, path))
@@ -201,7 +198,7 @@ httpd <- function(path, query, ...)
         return(list(file = file.path(R.home("doc"), "html", "favicon.ico")))
     else if(path == "/NEWS")
          return(list(file = file.path(R.home("doc"), "html", "NEWS.html")))
-    else if(path %in% c("/ONEWS", "/OONEWS")) # not installed
+    else if(grepl("^/NEWS[.][[:digit:]]$", path)) 
     	return(list(file = file.path(R.home(), sub("/", "", path)),
     	            "content-type" = "text/plain"))
     else if(!grepl("^/(doc|library|session)/", path))
@@ -226,7 +223,7 @@ httpd <- function(path, query, ...)
     if (grepl(topicRegexp, path)) {
         ## ----------------------- package help by topic ---------------------
     	pkg <- sub(topicRegexp, "\\1", path)
-    	if (pkg == "NULL") pkg <- NULL  # how can this occur?
+    	if (pkg == "NULL") pkg <- NULL  # There were multiple hits in the console
     	topic <- sub(topicRegexp, "\\2", path)
         ## if a package is specified, look there first, then everywhere
     	if (!is.null(pkg)) # () avoids deparse here
@@ -239,17 +236,17 @@ httpd <- function(path, query, ...)
 	    return(list(payload = error_page(msg)))
 	} else if (length(file) == 1L) {
 	    path <- dirname(dirname(file))
-	    file <- paste('../../', basename(path), '/html/',
-                          basename(file), '.html', sep='')
+	    file <- paste0('../../', basename(path), '/html/',
+                           basename(file), '.html')
             ## cat("redirect to", file, "\n")
             ## We need to do this because there are static HTML pages
             ## with links to "<file>.html" for topics in the same
             ## package, and if we served one of such a page as a link from
             ## a different package those links on the page would not work.
-	    return(list(payload = paste('Redirect to <a href="', file, '">"',
-                        basename(file), '"</a>', sep=''),
+	    return(list(payload = paste0('Redirect to <a href="', file, '">"',
+                                         basename(file), '"</a>'),
 	    		"content-type" = 'text/html',
-	    		header = paste('Location: ', file, sep=''),
+	    		header = paste0('Location: ', file),
 	    		"status code" = 302L)) # temporary redirect
 	} else if (length(file) > 1L) {
             paths <- dirname(dirname(file))
@@ -268,13 +265,17 @@ httpd <- function(path, query, ...)
                               basename(paths),
                               '/html/00Index.html">', basename(paths),
                               '</a> in library ', dirname(paths), ")</dd>",
-                              sep="", collapse="\n")
+                              sep = "", collapse = "\n")
 
             return(list(payload =
                         paste("<p>",
-                              gettextf("Help on topic '%s' was found in the following packages:", topic),
+                              ## for languages with multiple plurals ....
+                              sprintf(ngettext(length(paths),
+                                               "Help on topic '%s' was found in the following package:",
+                                               "Help on topic '%s' was found in the following packages:"
+                                               ), topic),
                               "</p><dl>\n",
-                              packages, "</dl>", sep="", collapse="\n")
+                              packages, "</dl>", sep = "", collapse = "\n")
                         ))
         }
     } else if (grepl(fileRegexp, path)) {
@@ -323,16 +324,16 @@ httpd <- function(path, query, ...)
                               try.all.packages = TRUE)
                 if (length(files)) {
                     path <- dirname(dirname(files))
-                    files <- paste('/library/', basename(path), '/html/',
-                                   basename(files), '.html', sep='')
+                    files <- paste0('/library/', basename(path), '/html/',
+                                    basename(files), '.html')
                     msg <- c(msg, "<br>",
                              "However, you might be looking for one of",
                              "<p></p>",
-                             paste('<p><a href="', files, '">',
-                                   mono(files), "</a></p>", sep="")
+                             paste0('<p><a href="', files, '">',
+                                    mono(files), "</a></p>")
                              )
                 }
-                return(error_page(paste(msg, collapse ="\n")))
+                return(error_page(paste(msg, collapse = "\n")))
             }
             helpdoc <- tmp
         }
@@ -361,8 +362,7 @@ httpd <- function(path, query, ...)
             file <- paste0(docdir, rest)
             if(isTRUE(file.info(file)$isdir))
                 return(.HTMLdirListing(file,
-                                       paste("/library/", pkg, "/doc", rest,
-                                             sep = ""),
+                                       paste0("/library/", pkg, "/doc", rest),
                                        up))
             else
                 return(list(file = file, "content-type" = mime_type(rest)))
@@ -375,13 +375,13 @@ httpd <- function(path, query, ...)
     } else if (grepl(demoRegexp, path)) {
     	pkg <- sub(demoRegexp, "\\1", path)
 
-    	url <- paste("http://127.0.0.1:", httpdPort,
+    	url <- paste0("http://127.0.0.1:", httpdPort,
                       "/doc/html/Search?package=",
-                      pkg, "&agrep=FALSE&types=demo", sep="")
-    	return(list(payload = paste('Redirect to <a href="', url,
-    				'">help.search()</a>', sep=''),
+                      pkg, "&agrep=FALSE&types=demo")
+    	return(list(payload = paste0('Redirect to <a href="', url,
+    				'">help.search()</a>'),
 		    		"content-type" = 'text/html',
-		    		header = paste('Location: ', url, sep=''),
+		    		header = paste0('Location: ', url),
 	    		"status code" = 302L)) # temporary redirect
     } else if (grepl(demosRegexp, path)) {
 	    pkg <- sub(demosRegexp, "\\1", path)
@@ -393,11 +393,11 @@ httpd <- function(path, query, ...)
     	pkg <- sub(DemoRegexp, "\\1", path)
     	demo <- sub(DemoRegexp, "\\2", path)
     	demo(demo, package=pkg, character.only=TRUE, ask=FALSE)
-	return( list(payload = paste("Demo '", pkg, "::", demo,
+	return( list(payload = paste0("Demo '", pkg, "::", demo,
 				"' was run in the console.",
 				" To repeat, type 'demo(",
 				pkg, "::", demo,
-				")' in the console.", sep="")) )
+				")' in the console.")) )
     } else if (grepl(newsRegexp, path)) {
     	pkg <- sub(newsRegexp, "\\1", path)
     	formatted <- toHTML(news(package = pkg),
@@ -496,7 +496,7 @@ startDynamicHelp <- function(start=TRUE)
         for(i in seq_along(ports)) {
             ## the next can throw an R-level error,
             ## so do not assign port unless it succeeds.
-	    status <- .Internal(startHTTPD("127.0.0.1", ports[i]))
+	    status <- .Call(startHTTPD, "127.0.0.1", ports[i])
 	    if (status == 0L) {
                 OK <- TRUE
                 httpdPort <<- ports[i]
@@ -516,7 +516,7 @@ startDynamicHelp <- function(start=TRUE)
         }
     } else {
         ## Not really tested
-        .Internal(stopHTTPD())
+        .Call(stopHTTPD)
     	httpdPort <<- 0L
     }
     lockBinding("httpdPort", env)

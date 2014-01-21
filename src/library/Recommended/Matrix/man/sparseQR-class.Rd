@@ -3,27 +3,32 @@
 \title{Sparse QR decomposition of a sparse matrix}
 \alias{sparseQR-class}
 \alias{qr.R,sparseQR-method}
-\alias{qr.coef,sparseQR,dgeMatrix-method}
+\alias{qr.Q}% the generic
+\alias{qr.Q,sparseQR-method}
+\alias{qr.coef,sparseQR,ddenseMatrix-method}
 \alias{qr.coef,sparseQR,matrix-method}
 \alias{qr.coef,sparseQR,numeric-method}
-\alias{qr.fitted,sparseQR,dgeMatrix-method}
+\alias{qr.fitted,sparseQR,ddenseMatrix-method}
 \alias{qr.fitted,sparseQR,matrix-method}
 \alias{qr.fitted,sparseQR,numeric-method}
-\alias{qr.qty,sparseQR,dgeMatrix-method}
+\alias{qr.qty,sparseQR,ddenseMatrix-method}
 \alias{qr.qty,sparseQR,matrix-method}
 \alias{qr.qty,sparseQR,numeric-method}
 \alias{qr.qty,sparseQR,Matrix-method}
-\alias{qr.qy,sparseQR,dgeMatrix-method}
+\alias{qr.qy,sparseQR,ddenseMatrix-method}
 \alias{qr.qy,sparseQR,matrix-method}
 \alias{qr.qy,sparseQR,numeric-method}
 \alias{qr.qy,sparseQR,Matrix-method}
-\alias{qr.resid,sparseQR,dgeMatrix-method}
+\alias{qr.resid,sparseQR,ddenseMatrix-method}
 \alias{qr.resid,sparseQR,matrix-method}
 \alias{qr.resid,sparseQR,numeric-method}
-\alias{solve,sparseQR,ANY-method}
+%\alias{solve,sparseQR,ANY-method}--> solve-methods.Rd
 %
-\description{Objects of this class represent a QR decomposition of a
-  sparse rectangular matrix.}
+\description{Objects class \code{"sparseQR"} represent a QR decomposition of a
+  sparse \eqn{n \times p}{n x p} rectangular matrix \eqn{X},
+  typically resulting from \code{\link{qr}()}
+}
+
 \section{Objects from the Class}{
   Objects can be created by calls of the form \code{new("sparseQR", ...)}
   but are more commonly created by function \code{\link[base]{qr}} applied
@@ -39,10 +44,10 @@
       factors for the Householder transformations.}
     \item{\code{p}:}{Object of class \code{"integer"}: Permutation
       (of \code{0:(n-1)}) applied to the rows of the original matrix.}
-    \item{\code{R}:}{Object of class \code{"dgCMatrix"} An upper
+    \item{\code{R}:}{Object of class \code{"dgCMatrix"}: An upper
       triangular matrix of dimension \ } % << FIXME
     \item{\code{q}:}{Object of class \code{"integer"}: Permutation
-      applied from the right. Can be of length 0 which implies no
+      applied from the right.  Can be of length 0 which implies no
       permutation.}
   }
 }
@@ -55,25 +60,27 @@
       can suppress these warnings by setting \code{\link{options}()}
       either \code{"Matrix.quiet.qr.R"} or (the more general)
       either \code{"Matrix.quiet"} to \code{\link{TRUE}}.}
-    \item{qr.coef}{\code{signature(qr = "sparseQR", y = "dgeMatrix")}: ... }
+    \item{qr.Q}{\code{signature(qr = "sparseQR")}: compute the
+      orthogonal \eqn{Q} matrix of the QR decomposition.}
+    \item{qr.coef}{\code{signature(qr = "sparseQR", y = "ddenseMatrix")}: ... }
     \item{qr.coef}{\code{signature(qr = "sparseQR", y = "matrix")}: ... }
     \item{qr.coef}{\code{signature(qr = "sparseQR", y = "numeric")}: ... }
-    \item{qr.fitted}{\code{signature(qr = "sparseQR", y = "dgeMatrix")}: ... }
+    \item{qr.fitted}{\code{signature(qr = "sparseQR", y = "ddenseMatrix")}: ... }
     \item{qr.fitted}{\code{signature(qr = "sparseQR", y = "matrix")}: ... }
     \item{qr.fitted}{\code{signature(qr = "sparseQR", y = "numeric")}: ... }
-    \item{qr.qty}{\code{signature(qr = "sparseQR", y = "dgeMatrix")}: ... }
+    \item{qr.qty}{\code{signature(qr = "sparseQR", y = "ddenseMatrix")}: ... }
     \item{qr.qty}{\code{signature(qr = "sparseQR", y = "matrix")}: ... }
     \item{qr.qty}{\code{signature(qr = "sparseQR", y = "numeric")}: ... }
-    \item{qr.qy}{\code{signature(qr = "sparseQR", y = "dgeMatrix")}: ... }
+    \item{qr.qy}{\code{signature(qr = "sparseQR", y = "ddenseMatrix")}: ... }
     \item{qr.qy}{\code{signature(qr = "sparseQR", y = "matrix")}: ... }
     \item{qr.qy}{\code{signature(qr = "sparseQR", y = "numeric")}: ... }
-    \item{qr.resid}{\code{signature(qr = "sparseQR", y = "dgeMatrix")}: ... }
+    \item{qr.resid}{\code{signature(qr = "sparseQR", y = "ddenseMatrix")}: ... }
     \item{qr.resid}{\code{signature(qr = "sparseQR", y = "matrix")}: ... }
     \item{qr.resid}{\code{signature(qr = "sparseQR", y = "numeric")}: ... }
 
-    \item{solve}{\code{signature(a = "sparseQR", b = "ANY")}: simply
-      uses \code{qr.coef(a,b)}.}
-	 }
+    \item{solve}{\code{signature(a = "sparseQR", b = "ANY")}: For
+      \code{solve(a,b)}, simply uses \code{qr.coef(a,b)}.}
+  }
 }
 
 %\references{}
@@ -87,7 +94,7 @@
   \code{1:m} applied to the rows of the original matrix.  If the \code{q}
   slot has length \code{n} it is a 0-based permutation of \code{1:n}
   applied to the columns of the original matrix to reduce the amount
-  of "fill-in" in the matrix \eqn{R}.
+  of \dQuote{fill-in} in the matrix \eqn{R}.
 
   The matrix \eqn{Q} is a "virtual matrix".  It is the product of
   \eqn{n} Householder transformations.  The information to generate
@@ -105,7 +112,7 @@
   calculations.
 
   Also, the results of \code{qr.qy} and \code{qr.qty} apply to the
-  permuted column order when the \code{q}  slot has length \code{n}.
+  permuted column order when the \code{q} slot has length \code{n}.
 }
 \seealso{
   \code{\link[base]{qr}}, \code{\link{qr.Q}},

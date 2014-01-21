@@ -34,7 +34,7 @@ drop.terms(termobj, dropx = NULL, keep.response = FALSE)
 
   \code{drop.terms} removes variables from the right-hand side of the
   model. There is also a \code{"[.terms"} method to perform the same
-  function (with \code{keep.response=TRUE}).
+  function (with \code{keep.response = TRUE}).
 
   \code{reformulate} creates a formula from a character vector.
 }
@@ -60,6 +60,9 @@ reformulate(attr(tt, "term.labels"))
 reformulate("x*w", ff[[2]])
 fS <- surv(ft, case) ~ a + b
 reformulate(c("a", "b*f"), fS[[2]])
+
+## using non-syntactic names:
+reformulate(c("`P/E`", "`\% Growth`"), response = as.name("+-"))
 
 stopifnot(identical(      ~ var, reformulate("var")),
           identical(~ a + b + c, reformulate(letters[1:3])),

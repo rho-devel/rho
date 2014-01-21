@@ -4,7 +4,7 @@
 \title{ Form component of GAMM covariance matrix}
 \description{ This is a service routine for \code{\link{gamm}}. Given,
 \eqn{V}{V}, an estimated covariance matrix obtained using \code{\link{extract.lme.cov2}} this
-routine forms \eqn{ X^TV^{-1}X}{X'inv(V)X} as efficiently as possible, given
+routine forms a matrix square root of \eqn{ X^TV^{-1}X}{X'inv(V)X} as efficiently as possible, given
 the structure of \eqn{V}{V} (usually sparse).
 }
 \usage{
@@ -27,7 +27,7 @@ this matrix.
 
 
 
-\value{ A matrix.
+\value{ A matrix, R such that \code{crossprod(R)} gives \eqn{ X^TV^{-1}X}{X'inv(V)X}.
 }
 
 \references{
@@ -50,6 +50,17 @@ Generalized Additive Mixed Models. Biometrics 62(4):1025-1036
 \code{\link{gamm}}, \code{\link{extract.lme.cov2}} 
 }
 
+\examples{
+require(mgcv)
+library(nlme)
+data(ergoStool)
+b <- lme(effort ~ Type, data=ergoStool, random=~1|Subject)
+V1 <- extract.lme.cov(b, ergoStool)
+V2 <- extract.lme.cov2(b, ergoStool)
+X <- model.matrix(b, data=ergoStool)
+crossprod(formXtViX(V2, X))
+t(X)%*%solve(V1,X)
+}
 \keyword{models} \keyword{smooth} \keyword{regression}%-- one or more ..
 
 

@@ -41,6 +41,9 @@
 #ifndef RFRAME_HPP
 #define RFRAME_HPP
 
+// As at boost 1.49.0, any_range.hpp needs concepts.hpp but does not
+// itself #include it:
+#include <boost/range/concepts.hpp>
 #include <boost/range/any_range.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>

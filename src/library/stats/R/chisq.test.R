@@ -1,6 +1,8 @@
 #  File src/library/stats/R/chisq.test.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -61,8 +63,10 @@ chisq.test <- function(x, y = NULL, correct = TRUE,
     }
     if (is.matrix(x)) {
 	METHOD <- "Pearson's Chi-squared test"
-	nr <- nrow(x)
-	nc <- ncol(x)
+        nr <- as.integer(nrow(x))
+        nc <- as.integer(ncol(x))
+        if (is.na(nr) || is.na(nc) || is.na(nr * nc))
+            stop("invalid nrow(x) or ncol(x)", domain = NA)
 	sr <- rowSums(x)
 	sc <- colSums(x)
 	E <- outer(sr, sc, "*") / n
@@ -75,29 +79,18 @@ chisq.test <- function(x, y = NULL, correct = TRUE,
 	dimnames(E) <- dimnames(x)
 	if (simulate.p.value && all(sr > 0) && all(sc > 0)) {
 	    setMETH()
-	    tmp <- .C(C_chisqsim,
-		      as.integer(nr),
-		      as.integer(nc),
-		      as.integer(sr),
-		      as.integer(sc),
-		      as.integer(n),
-		      as.integer(B),
-		      as.double(E),
-		      integer(nr * nc),
-		      double(n + 1),
-		      integer(nc),
-		      results = double(B))
+            tmp <- .Call(C_chisq_sim, sr, sc, B, E)
 	    ## Sorting before summing may look strange, but seems to be
 	    ## a sensible way to deal with rounding issues (PR#3486):
 	    STATISTIC <- sum(sort((x - E) ^ 2 / E, decreasing = TRUE))
 	    PARAMETER <- NA
 	    ## use correct significance level for a Monte Carlo test
-	    PVAL <- (1 + sum(tmp$results >= almost.1 * STATISTIC)) / (B + 1)
+	    PVAL <- (1 + sum(tmp >= almost.1 * STATISTIC)) / (B + 1)
 	}
 	else {
 	    if (simulate.p.value)
 		warning("cannot compute simulated p-value with zero marginals")
-	    if (correct && nrow(x) == 2 && ncol(x) == 2) {
+	    if (correct && nrow(x) == 2L && ncol(x) == 2L) {
 		YATES <- min(0.5, abs(x-E))
                 if (YATES > 0)
 		    METHOD <- paste(METHOD, "with Yates' continuity correction")
@@ -105,7 +98,7 @@ chisq.test <- function(x, y = NULL, correct = TRUE,
 	    else
 		YATES <- 0
 	    STATISTIC <- sum((abs(x - E) - YATES)^2 / E)
-	    PARAMETER <- (nr - 1) * (nc - 1)
+	    PARAMETER <- (nr - 1L) * (nc - 1L)
 	    PVAL <- pchisq(STATISTIC, PARAMETER, lower.tail = FALSE)
 	}
     }
@@ -122,8 +115,8 @@ chisq.test <- function(x, y = NULL, correct = TRUE,
 	METHOD <- "Chi-squared test for given probabilities"
 	E <- n * p
         V <- n * p * (1 - p)
-	names(E) <- names(x)
 	STATISTIC <- sum((x - E) ^ 2 / E)
+	names(E) <- names(x)
 	if(simulate.p.value) {
 	    setMETH()
 	    nx <- length(x)

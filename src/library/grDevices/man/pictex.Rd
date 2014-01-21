@@ -29,7 +29,7 @@ pictex(file = "Rplots.tex", width = 5, height = 4, debug = FALSE,
   use of \code{\link{plotmath}} is not supported.
 
   Line widths are ignored except when setting the spacing of line textures.
-  \code{pch="."} corresponds to a square of side 1pt.
+  \code{pch = "."} corresponds to a square of side 1pt.
 
   This device does not support colour (nor does the PicTeX package),
   and all colour settings are ignored.
@@ -37,8 +37,8 @@ pictex(file = "Rplots.tex", width = 5, height = 4, debug = FALSE,
   Note that text is recorded in the file as-is, so annotations involving
   TeX special characters (such as ampersand and underscore) need to be
   quoted as they would be when entering TeX.
-  
-  Multiple plots will be placed as separate environments in the output file.  
+
+  Multiple plots will be placed as separate environments in the output file.
 }
 \references{
   Knuth, D. E. (1984)
@@ -83,7 +83,7 @@ pictex(file = "Rplots.tex", width = 5, height = 4, debug = FALSE,
 require(graphics)
 
 pictex()
-plot(1:11,(-5:5)^2, type='b', main="Simple Example Plot")
+plot(1:11, (-5:5)^2, type = "b", main = "Simple Example Plot")
 dev.off()
 ##--------------------
 \dontrun{

@@ -24,6 +24,7 @@
 #ifndef NLME_NLMEFIT_H
 #define NLME_NLMEFIT_H
 #include "base.h"
+#include <R_ext/Applic.h> // for nlm internals
 
 typedef struct dim_struct {
   longint

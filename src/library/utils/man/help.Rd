@@ -1,6 +1,6 @@
 % File src/library/utils/man/help.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{help}
@@ -24,7 +24,7 @@ help(topic, package = NULL, lib.loc = NULL,
    character vector the topic is taken to be the value of the only
    element.  Otherwise \code{topic} must be a name or a \link{reserved}
    word (if syntactically valid) or character string.
-   
+
    See \sQuote{Details} for what happens if this is omitted.
  }
  \item{package}{a name or character vector giving the packages to look
@@ -49,7 +49,7 @@ help(topic, package = NULL, lib.loc = NULL,
     \item HTML help pages with hyperlinks to other topics, shown in a
     browser by \code{\link{browseURL}}.
 #ifdef unix
-    (Where possible an existing browser window is re-used: the Mac OS X
+    (Where possible an existing browser window is re-used: the OS X
     GUI uses its own browser window.)
 #endif
     If for some reason HTML help is unavailable (see
@@ -97,7 +97,7 @@ help(topic, package = NULL, lib.loc = NULL,
   first on the search path is used.  (For HTML help the menu will be an
   HTML page, otherwise a graphical menu if possible if
   \code{\link{getOption}("menu.graphics")} is true, the default.)
-  
+
   Note that HTML help does not make use of \code{lib.loc}: it will
   always look first in the attached packages and then along
   \code{.libPaths()}.
@@ -120,10 +120,9 @@ help(topic, package = NULL, lib.loc = NULL,
   otherwise the function of that name in the \code{utils} namespace (to
   which the first paragraph applies).  It should accept at least two
   arguments, the name of the LaTeX file to be typeset and the type
-  (which as from \R 2.15.0 is ignored).  As from \R 2.14.0 it should
-  accept a third argument, \code{texinputs}, which will give the
-  graphics path when the help document contains figures, and will
-  otherwise not be supplied.
+  (which as from \R 2.15.0 is ignored).  It accepts a third argument,
+  \code{texinputs}, which will give the graphics path when the help
+  document contains figures, and will otherwise not be supplied.
 }
 
 \note{
@@ -150,7 +149,7 @@ help(topic, package = NULL, lib.loc = NULL,
 }
 \seealso{
   \code{\link[=Question]{?}} for shortcuts to help topics.
-  
+
   \code{\link{help.search}()} or \code{\link{??}} for finding help pages
   on a vague topic;
   \code{\link{help.start}()} which opens the HTML version of the \R
@@ -171,14 +170,20 @@ help(lapply)
 
 help("for")             # or ?"for", but quotes/backticks are needed
 
-\donttest{help(package="splines") # get help even when package is not loaded}
+\donttest{try({# requires working TeX installation:
+ help(dgamma, help_type = "pdf")
+ ## -> nicely formatted pdf -- including math formula -- for help(dgamma):
+ system2(getOption("pdfviewer"), "dgamma.pdf", wait = FALSE)
+})
+}
+\donttest{help(package = "splines") # get help even when package is not loaded}
 
 topi <- "women"
 help(topi)
 
-try(help("bs", try.all.packages=FALSE)) # reports not found (an error)
-help("bs", try.all.packages=TRUE)       # reports can be found
-                                        # in package 'splines'
+try(help("bs", try.all.packages = FALSE)) # reports not found (an error)
+help("bs", try.all.packages = TRUE)       # reports can be found
+                                          # in package 'splines'
 
 \donttest{## For programmatic use:
 topic <- "family"; pkg_ref <- "stats"

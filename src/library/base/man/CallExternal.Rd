@@ -20,13 +20,13 @@
     or an object of class \code{"\link{NativeSymbolInfo}"},
     \code{"\link{RegisteredNativeSymbol}"} or
     \code{"\link{NativeSymbol}"} referring to such a name.}
-  
+
   \item{\dots}{arguments to be passed to the compiled code. Up to 65 for
     \code{.Call}.}
-  
-  \item{PACKAGE}{if supplied, confine the search for the \code{.NAME} to
-    the DLL given by this argument (plus the conventional extension,
-    \file{.so}, \file{.dll}, \dots).
+
+  \item{PACKAGE}{if supplied, confine the search for a character string
+    \code{.NAME} to the DLL given by this argument (plus the
+    conventional extension, \file{.so}, \file{.dll}, \dots).
 
     This argument follows \code{...} and so its name cannot be abbreviated.
 
@@ -40,18 +40,17 @@
   internal \R objects, passing the arguments to the code as a sequence
   of \R objects.  They assume C calling conventions, so can usually
   also be used of C++ code.
-  
+
   For details about how to write code to use with these functions see
-  the chapter on \dQuote{System and foreign language interfaces} in
-  the \dQuote{Writing \R Extensions} manual.  They differ in the way the
+  the chapter on \sQuote{System and foreign language interfaces} in
+  the \sQuote{Writing \R Extensions} manual.  They differ in the way the
   arguments are passed to the C code:  \code{.External} allows for a
   variable number of arguments.
-  
+
   These functions are \link{primitive}, and \code{.NAME} is always
-  matched to the first argument supplied (which if named must partially
-  match \code{.NAME}).  For clarity, avoid using names in the
-  arguments passed to \code{\dots} that match or partially match
-  \code{.NAME}.  
+  matched to the first argument supplied (which should not be named).
+  For clarity, avoid using names in the arguments passed to \code{\dots}
+  that match or partially match \code{.NAME}.
 }
 
 \value{
@@ -69,10 +68,13 @@
   \code{PACKAGE} (to confine the search to a single DLL) or pass
   \code{.NAME} as one of the native symbol objects.  Searching for
   symbols can take a long time, especially when many namespaces are loaded.
-  
+
   You may see \code{PACKAGE = "base"} for symbols linked into \R.  Do
   not use this in your own code: such symbols are not part of the API
   and may be changed without warning.
+
+  \code{PACKAGE = ""} used to be accepted (but was undocumented): it is
+  now an error.
 }
 
 \references{
@@ -82,7 +84,7 @@
 }
 \seealso{
   \code{\link{dyn.load}}, \code{\link{.C}}, \code{\link{.Fortran}}.
-  
-  The \sQuote{Writing R Extensions} manual.  
+
+  The \sQuote{Writing R Extensions} manual.
 }
 \keyword{programming}

@@ -1,4 +1,3 @@
-# $Id: survdiff.fit.S 11166 2008-11-24 22:10:34Z therneau $
 survdiff.fit <- function(y, x, strat, rho=0) {
     #
     # This routine is almost always called from survdiff
@@ -21,7 +20,7 @@ survdiff.fit <- function(y, x, strat, rho=0) {
     ord <- order(strat, y[,1], -y[,2])
     strat2 <- c(1*(diff(strat[ord])!=0), 1)
 
-    xx <- .C("survdiff2", as.integer(n),
+    xx <- .C(Csurvdiff2, as.integer(n),
 		   as.integer(ngroup),
 		   as.integer(nstrat),
 		   as.double(rho),

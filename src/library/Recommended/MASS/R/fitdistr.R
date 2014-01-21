@@ -1,5 +1,5 @@
 # file MASS/R/fitdistr.R
-# copyright (C) 2002-2010 W. N. Venables and B. D. Ripley
+# copyright (C) 2002-2013 W. N. Venables and B. D. Ripley
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -55,7 +55,8 @@ fitdistr <- function(x, densfun, start, ...)
         if(is.null(densfun)) stop("unsupported distribution")
         if(distname %in% c("lognormal",  "log-normal")) {
             if(!is.null(start))
-                stop("supplying pars for the log-Normal is not supported")
+                stop(gettextf("supplying pars for the %s distribution is not supported",
+                              "log-Normal"), domain = NA)
             if(any(x <= 0))
                 stop("need positive values to fit a log-Normal")
             lx <- log(x)
@@ -73,7 +74,8 @@ fitdistr <- function(x, densfun, start, ...)
         }
         if(distname == "normal") {
             if(!is.null(start))
-                stop("supplying pars for the Normal is not supported")
+                stop(gettextf("supplying pars for the %s distribution is not supported",
+                              "Normal"), domain = NA)
             sd0 <- sqrt((n-1)/n)*sd(x)
             mx <- mean(x)
             estimate <- c(mx, sd0)
@@ -87,7 +89,8 @@ fitdistr <- function(x, densfun, start, ...)
         }
         if(distname == "poisson") {
             if(!is.null(start))
-                stop("supplying pars for the Poisson is not supported")
+                stop(gettextf("supplying pars for the %s distribution is not supported",
+                              "Poisson"), domain = NA)
             estimate <- mean(x)
             sds <- sqrt(estimate/n)
             names(estimate) <- names(sds) <- "lambda"
@@ -100,7 +103,8 @@ fitdistr <- function(x, densfun, start, ...)
         if(distname == "exponential") {
             if(any(x < 0)) stop("Exponential values must be >= 0")
             if(!is.null(start))
-                stop("supplying pars for the exponential is not supported")
+                stop(gettextf("supplying pars for the %s distribution is not supported",
+                              "exponential"), domain = NA)
             estimate <- 1/mean(x)
             sds <- estimate/sqrt(n)
 	    vc <- matrix(sds^2, ncol = 1, nrow = 1,
@@ -112,7 +116,8 @@ fitdistr <- function(x, densfun, start, ...)
         }
         if(distname == "geometric") {
             if(!is.null(start))
-                stop("supplying pars for the geometric is not supported")
+                stop(gettextf("supplying pars for the %s distribution is not supported",
+                              "geometric"), domain = NA)
             estimate <- 1/(1 + mean(x))
             sds <- estimate * sqrt((1-estimate)/n)
 	    vc <- matrix(sds^2, ncol = 1, nrow = 1,
@@ -170,7 +175,7 @@ fitdistr <- function(x, densfun, start, ...)
             parse(text = paste("densfun(x,",
                   paste("parm[", 1L:l, "]", collapse = ", "),
                   ", ...)"))
-    Call[[1L]] <- as.name("optim")
+    Call[[1L]] <- quote(stats::optim)
     Call$densfun <- Call$start <- NULL
     Call$x <- x # want local variable as eval in this frame
     Call$par <- start

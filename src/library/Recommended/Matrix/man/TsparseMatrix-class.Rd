@@ -34,8 +34,7 @@
 \alias{tcrossprod,Matrix,TsparseMatrix-method}
 \alias{tcrossprod,TsparseMatrix,TsparseMatrix-method}
 \alias{tcrossprod,TsparseMatrix,missing-method}
-\alias{solve,TsparseMatrix,ANY-method}
-\alias{solve,TsparseMatrix,missing-method}
+%% \alias{solve,TsparseMatrix,ANY-method}--> solve-methods.Rd
 \alias{t,TsparseMatrix-method}
 %
 \description{The \code{"TsparseMatrix"} class is the virtual class of

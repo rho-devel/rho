@@ -53,7 +53,7 @@ lmList.formula <-
       if (missing(level))
         level <- length(getGroupsFormula(data, asList = TRUE))
       else if (length(level) > 1) {
-	stop("Multiple levels not allowed")
+	stop("multiple levels not allowed")
       }
       groups <- getGroups(data, level = level)[drop = TRUE]
       grpForm <- getGroupsFormula(data)
@@ -62,13 +62,13 @@ lmList.formula <-
                                deparse(grpForm[[2]]), sep = "|"))))
 
     } else {
-      stop ("data must be a groupedData object if groups argument is missing")
+      stop ("'data' must be a \"groupedData\" object if 'groups' argument is missing")
     }
   } else {
     if (missing(level))
       level <- length(getGroupsFormula(object, asList = TRUE))
     else if (length(level) > 1) {
-      stop("Multiple levels not allowed")
+      stop("multiple levels not allowed")
     }
     groups <- getGroups(data, form = grpForm, level = level)[drop = TRUE]
     object <- eval(parse(text=paste(deparse(getResponseFormula(object)[[2]]),
@@ -77,9 +77,14 @@ lmList.formula <-
   val <- lapply(split(data, groups),
 		function(dat, form, na.action)
 		{
-                  lm(formula = form, data = dat, na.action = na.action)
+			try(lm(formula = form, data = dat, na.action = na.action),
+				silent=TRUE)
 		},
 		form = object, na.action = na.action)
+  use <- sapply(val, function(x)!inherits(x, "try-error"))
+  val[!use] <- list(NULL)
+  if (sum(!use))
+	  warning("An lm fit failed, probably because a factor only had one level")
   if (inherits(data, "groupedData")) {
     ## saving labels and units for plots
     attr(val, "units") <- attr(data, "units")
@@ -105,13 +110,13 @@ augPred.lmList <-
 {
   data <- eval(attr(object, "call")[["data"]])
   if (!inherits(data, "data.frame")) {
-    stop(paste("Data in", substitute(object),
-               "call must evaluate to a data frame"))
+      stop(gettextf("'data' in %s call must evaluate to a data frame",
+                     sQuote(substitute(object))), domain = NA)
   }
   if(is.null(primary)) {
     if (!inherits(data, "groupedData")) {
-      stop(paste(sys.call()[[1]],
-      "without \"primary\" can only be used with fits of groupedData objects"))
+        stop(gettextf("%s without \"primary\" can only be used with fits of \"groupedData\" objects",
+                      sys.call()[[1]]), domain = NA)
     }
     primary <- getCovariate(data)
     prName <- deparse(getCovariateFormula(data)[[2]])
@@ -167,16 +172,24 @@ coef.lmList <-
 {
   coefs <- lapply(object, coef)
   non.null <- !unlist(lapply(coefs, is.null))
+  ## size the data frame to cope with combined levels for factors
+  ## and name the columns so can fill by name
   if (sum(non.null) > 0) {
-    template <- coefs[non.null][[1]]
-    if (is.numeric(template)) {
-      co <- matrix(template,
-		      ncol = length(template),
-		      nrow = length(coefs),
-		      byrow = TRUE,
-		      dimnames = list(names(object), names(template)))
+	  coefNames <- unique(as.vector(sapply(coefs[non.null], names)))
+	  co <- matrix(NA,
+				   ncol=length(coefNames),
+				   nrow=length(coefs),
+				   byrow=TRUE, dimnames=list(names(object), coefNames))
+    ## template <- coefs[non.null][[1]]
+    ## if (is.numeric(template)) {
+    ##   co <- matrix(template,
+	## 	      ncol = length(template),
+	## 	      nrow = length(coefs),
+	## 	      byrow = TRUE,
+	## 	      dimnames = list(names(object), names(template)))
       for (i in names(object)) {
-	co[i,] <- if (is.null(coefs[[i]])) { NA } else coefs[[i]]
+		  co[i, names(coefs[[i]])] <-
+			  if (is.null(coefs[[i]])) { NA } else coefs[[i]]
       }
       coefs <- as.data.frame(co)
       effectNames <- names(coefs)
@@ -208,7 +221,7 @@ coef.lmList <-
       attr(coefs, "grpNames") <- deparse(getGroupsFormula(object)[[2]])
       class(coefs) <- c("coef.lmList", "ranef.lmList", class(coefs))
     }
-  }
+  ##}
   coefs
 }
 
@@ -218,15 +231,15 @@ fitted.lmList <-
   if(!is.null(subset)) {
     if(is.character(subset)) {
       if (any(is.na(match(subset, names(object))))) {
-        stop("Non-existent groups requested in \"subset\".")
+        stop("nonexistent groups requested in 'subset'")
       }
     } else {
       if (is.integer(subset)) {
         if (any(is.na(match(subset, 1:length(object))))) {
-          stop("Non-existent groups requested in \"subset\".")
+          stop("nonexistent groups requested in 'subset'")
         }
       } else {
-        stop("Subset can only be character or integer")
+        stop("'subset' can only be character or integer")
       }
     }
     oclass <- class(object)
@@ -331,7 +344,7 @@ logLik.lmList <-
   function(object, REML = FALSE, pool = attr(object, "pool"), ...)
 {
   if(any(unlist(lapply(object, is.null)))) {
-    stop("Log-likelihood not available with NULL fits.")
+    stop("log-likelihood not available with NULL fits")
   }
   if(pool) {
     aux <- apply(sapply(object, function(el) {
@@ -373,10 +386,10 @@ pairs.lmList <-
   object <- x
   ## scatter plot matrix plots, generally based on coef or random.effects
   if (!inherits(form, "formula")) {
-    stop("\"Form\" must be a formula")
+    stop("'form' must be a formula")
   }
   if (length(form) != 2) {
-    stop("\"Form\" must be a one-sided formula")
+    stop("'form' must be a one-sided formula")
   }
   ## constructing data
   allV <- all.vars(asOneFormula(form, id, idLabels))
@@ -391,8 +404,11 @@ pairs.lmList <-
       data <- eval(alist, sys.parent(1))
     } else {
       if (any(naV <- is.na(match(allV, names(data))))) {
-	stop(paste(allV[naV], "not found in data"))
-      }
+        stop(sprintf(ngettext(sum(naV),
+                              "%s not found in data",
+                              "%s not found in data"),
+                     allV[naV]), domain = NA)
+     }
     }
   } else data <- NULL
 
@@ -405,7 +421,7 @@ pairs.lmList <-
   covF <- getCovariateFormula(form)
   .x <- eval(covF[[2]], list(. = object)) # only function of "."
   if (!inherits(.x, "data.frame")) {
-    stop("Covariate must be a data frame")
+    stop("covariate must be a data frame")
   }
   if (!is.null(effNams <- attr(.x, "effectNames"))) {
     .x <- .x[, effNams, drop = FALSE]
@@ -415,7 +431,7 @@ pairs.lmList <-
   .x <- .x[, !isFixed, drop = FALSE]
   nc <- ncol(.x)
   if (nc == 1) {
-    stop("Cannot do pairs of just one variable")
+    stop("cannot do pairs of just one variable")
   }
   if (!missing(label)) {
     names(.x) <- labels
@@ -456,7 +472,7 @@ pairs.lmList <-
       switch(mode(id),
 	     numeric = {
 	       if ((id <= 0) || (id >= 1)) {
-		 stop("Id must be between 0 and 1")
+		 stop("'id' must be between 0 and 1")
 	       }
 	       aux <- as.matrix(na.omit(ranef(object)))
 	       auxV <- t(chol(var(aux)))
@@ -465,7 +481,7 @@ pairs.lmList <-
 	       aux
 	     },
 	     call = eval(asOneSidedFormula(id)[[2]], data),
-	     stop("\"Id\" can only be a formula or numeric.")
+	     stop("'id' can only be a formula or numeric")
 	     )
     if (length(id) == N) {
       ## id as a formula evaluated in data
@@ -480,11 +496,11 @@ pairs.lmList <-
 	  as.character(eval(asOneSidedFormula(idLabels)[[2]], data))
       } else if (is.vector(idLabels)) {
 	if (length(idLabels <- unlist(idLabels)) != N) {
-	  stop("\"IdLabels\" of incorrect length")
+	  stop("'idLabels' of incorrect length")
 	}
 	idLabels <- as.character(idLabels)
       } else {
-	stop("\"IdLabels\" can only be a formula or a vector")
+	stop("'idLabels' can only be a formula or a vector")
       }
     }
     if (length(idLabels) == N) {
@@ -514,8 +530,8 @@ pairs.lmList <-
 
     }
   }
-
-  assign("id", as.logical(as.character(id)) )
+  if (is.null(id)) assign("id", FALSE)
+  else assign("id", as.logical(as.character(id)) )
   assign("idLabels", as.character(idLabels))
   assign("grid", grid)
 
@@ -538,7 +554,7 @@ pairs.lmList <-
                     dots <- list(...)
 		    if (grid) panel.grid()
 		    panel.xyplot(x, y)
-                    if (any(ids <- id[subscripts])) {
+                    if (any(id) & any(ids <- id[subscripts])) {
                         ltext(x[ids], y[ids], idLabels[subscripts][ids],
                              cex = dots$cex, adj = dots$adj)
 		    }
@@ -553,7 +569,7 @@ pairs.lmList <-
                     dots <- list(...)
 		    if (grid) panel.grid()
 		    panel.xyplot(x, y)
-                    if (any(ids <- id[subscripts])) {
+                    if (any(id) & any(ids <- id[subscripts])) {
                         ltext(x[ids], y[ids], idLabels[subscripts][ids],
                               cex = dots$cex, adj = dots$adj)
 		    }
@@ -632,7 +648,7 @@ plot.lmList <-
 {
   object <- x
   if (!inherits(form, "formula")) {
-    stop("\"Form\" must be a formula")
+    stop("'form' must be a formula")
   }
 
   ## constructing data
@@ -648,8 +664,11 @@ plot.lmList <-
       data <- eval(alist, sys.parent(1))
     } else {
       if (any(naV <- is.na(match(allV, names(data))))) {
-	stop(paste(allV[naV], "not found in data"))
-      }
+        stop(sprintf(ngettext(sum(naV),
+                              "%s not found in data",
+                              "%s not found in data"),
+                      allV[naV]), domain = NA)
+     }
     }
   } else data <- NULL
 
@@ -662,7 +681,7 @@ plot.lmList <-
     if (!is.null(lbs$x)) cL <- paste(lbs$x, unts$x) else cF <- NULL
     if (!is.null(lbs$y)) rL <- paste(lbs$y, unts$y) else rF <- NULL
   } else {
-    rF <- rC <- NULL
+    rF <- cF <- NULL
   }
 
   ## argument list
@@ -676,7 +695,7 @@ plot.lmList <-
   covF <- getCovariateFormula(form)
   .x <- eval(covF[[2]], data)
   if (!is.numeric(.x)) {
-    stop("Covariate must be numeric")
+    stop("covariate must be numeric")
   }
   argForm <- ~ .x
   argData <- as.data.frame(.x)
@@ -725,12 +744,12 @@ plot.lmList <-
       switch(mode(id),
 	     numeric = {
 	       if ((id <= 0) || (id >= 1)) {
-		 stop("Id must be between 0 and 1")
+		 stop("'id' must be between 0 and 1")
 	       }
 	       as.logical(abs(resid(object, type = "pooled")) > -qnorm(id / 2))
 	     },
 	     call = eval(asOneSidedFormula(id)[[2]], data),
-	     stop("\"Id\" can only be a formula or numeric.")
+	     stop("'id' can only be a formula or numeric")
 	     )
     if (is.null(idLabels)) {
       idLabels <- getGroups(object)
@@ -742,11 +761,11 @@ plot.lmList <-
 	  as.character(eval(asOneSidedFormula(idLabels)[[2]], data))
       } else if (is.vector(idLabels)) {
 	if (length(idLabels <- unlist(idLabels)) != length(id)) {
-	  stop("\"IdLabels\" of incorrect length")
+	  stop("'idLabels' of incorrect length")
 	}
 	idLabels <- as.character(idLabels)
       } else {
-	stop("\"IdLabels\" can only be a formula or a vector")
+	stop("'idLabels' can only be a formula or a vector")
       }
     }
   }
@@ -841,7 +860,7 @@ predict.lmList <-
       grps <- grps[drop = TRUE]
       subset <- as.character(unique(grps))
       if(any(is.na(match(subset, names(object))))) {
-	stop("Non-existent group in \"newdata\".")
+	stop("nonexistent group in 'newdata'")
       }
       myData <- split(newdata, grps)
       newdata <- NULL
@@ -850,7 +869,7 @@ predict.lmList <-
   }
   if(!is.null(subset)) {
     if(any(is.na(match(subset, names(object)))))
-      stop("Non-existent group requested in \"subset\".")
+      stop("nonexistent group requested in 'subset'")
     oclass <- class(object)
     ## fix for PR#13788
     oatt <- attributes(object)[c("call", "groupsForm", "pool")]
@@ -1016,7 +1035,7 @@ qqnorm.lmList <-
 {
   object <- y
   if (!inherits(form, "formula")) {
-    stop("\"Form\" must be a formula")
+    stop("'form' must be a formula")
   }
   ## constructing data
   allV <- all.vars(asOneFormula(form, id, idLabels))
@@ -1031,7 +1050,10 @@ qqnorm.lmList <-
       data <- eval(alist, sys.parent(1))
     } else {
       if (any(naV <- is.na(match(allV, names(data))))) {
-	stop(paste(allV[naV], "not found in data"))
+        stop(sprintf(ngettext(sum(naV),
+                              "%s not found in data",
+                              "%s not found in data"),
+                     allV[naV]), domain = NA)
       }
     }
   } else data <- NULL
@@ -1053,7 +1075,7 @@ qqnorm.lmList <-
                            (substring(labs, 1, 9) == "Residuals"))) {
       type <- "res"                     # residuals
     } else {
-      stop("Only residuals and random effects allowed")
+      stop("only residuals and random effects allowed")
     }
   }
   if (is.null(args$xlab)) args$xlab <- labs
@@ -1071,13 +1093,13 @@ qqnorm.lmList <-
         switch(mode(id),
                numeric = {
                  if ((id <= 0) || (id >= 1)) {
-                   stop("Id must be between 0 and 1")
+                   stop("'id' must be between 0 and 1")
                  }
                  as.logical(abs(resid(object, type=resType))
                             > -qnorm(id / 2))
                },
                call = eval(asOneSidedFormula(id)[[2]], data),
-               stop("\"Id\" can only be a formula or numeric.")
+               stop("'id' can only be a formula or numeric")
                )
       if (is.null(idLabels)) {
         idLabels <- getGroups(object)
@@ -1089,11 +1111,11 @@ qqnorm.lmList <-
             as.character(eval(asOneSidedFormula(idLabels)[[2]], data))
         } else if (is.vector(idLabels)) {
           if (length(idLabels <- unlist(idLabels)) != length(id)) {
-            stop("\"IdLabels\" of incorrect length")
+            stop("'idLabels' of incorrect length")
           }
           idLabels <- as.character(idLabels)
         } else {
-          stop("\"IdLabels\" can only be a formula or a vector")
+          stop("'idLabels' can only be a formula or a vector")
         }
       }
     }
@@ -1124,13 +1146,13 @@ qqnorm.lmList <-
         switch(mode(id),
                numeric = {
                  if ((id <= 0) || (id >= 1)) {
-                   stop("Id must be between 0 and 1")
+                   stop("'id' must be between 0 and 1")
                  }
                  aux <- ranef(object, standard = TRUE)
                  as.logical(abs(c(unlist(aux))) > -qnorm(id / 2))
                },
                call = eval(asOneSidedFormula(id)[[2]], data),
-               stop("\"Id\" can only be a formula or numeric.")
+               stop("'id' can only be a formula or numeric")
                )
       if (length(id) == N) {
         ## id as a formula evaluated in data
@@ -1145,11 +1167,11 @@ qqnorm.lmList <-
             as.character(eval(asOneSidedFormula(idLabels)[[2]], data))
         } else if (is.vector(idLabels)) {
           if (length(idLabels <- unlist(idLabels)) != N) {
-            stop("\"IdLabels\" of incorrect length")
+            stop("'idLabels' of incorrect length")
           }
           idLabels <- as.character(idLabels)
         } else {
-          stop("\"IdLabels\" can only be a formula or a vector")
+          stop("'idLabels' can only be a formula or a vector")
         }
       }
       if (length(idLabels) == N) {
@@ -1245,15 +1267,15 @@ residuals.lmList <-
   if(!is.null(subset)) {
     if(is.character(subset)) {
       if (any(is.na(match(subset, names(object))))) {
-        stop("Non-existent groups requested in \"subset\".")
+        stop("nonexistent groups requested in 'subset'")
       }
     } else {
       if (is.integer(subset)) {
         if (any(is.na(match(subset, 1:length(object))))) {
-          stop("Non-existent groups requested in \"subset\".")
+          stop("nonexistent groups requested in 'subset'")
         }
       } else {
-        stop("Subset can only be character or integer")
+        stop("'subset' can only be character or integer")
       }
     }
     oclass <- class(object)
@@ -1308,96 +1330,114 @@ residuals.lmList <-
 summary.lmList <-
   function(object, pool = attr(object, "pool"), ...)
 {
-  to.3d.array <-
-    ## Convert the list to a 3d array watching for null elements
-    function(lst, template)
-      {
-	if (!is.matrix(template)) {
-	  return(lst)
-	}
-	val <- aperm(array(unlist(lapply(lst, function(el, template)
- 					 if(is.null(el)) { template }
-					 else { el }, template = template)),
-			   c(dim(template), length(lst)),
-			   c(dimnames(template), list(names(lst)))),
-		     c(3, 2, 1))
-	val[unlist(lapply(lst, is.null)), , ] <- NA
-	val
-      }
-  to.2d.array <-
-    ## Convert the list to a 2d array watching for null elements
-    function(lst, template)
-      {
-	if(is.null(template)) {
-	  return(lst)
-	}
-	template <- as.vector(template)
-	val <- t(array(unlist(lapply(lst, function(el, template)
-				     if(is.null(el)) { template }
-				     else { el }, template = template)),
-		       c(length(template), length(lst)),
-		       list(names(template), names(lst))))
-	val[unlist(lapply(lst, is.null)), ] <- NA
-	val
-      }
-  ## Create a summary by applying summary to each component of the list
-  sum.lst <- lapply(object, function(el) if(is.null(el)) {NULL}
-                                         else {summary(el)})
-  nonNull <- !unlist(lapply(sum.lst, is.null))
-  if(!any(nonNull)) {
-    return(NULL)
-  }
-  template <- sum.lst[[match(TRUE, nonNull)]]
-  val <- list()
-  for (i in names(template)) {
-    val[[i]] <- lapply(sum.lst, "[[", i)
-    class(val[[i]]) <- "listof"
-  }
-  ## re-arrange the matrices into 3d arrays
-  for(i in c("parameters", "cov.unscaled", "correlation", "coefficients")) {
-    if(length(val[[i]])) {
-      val[[i]] <- to.3d.array(val[[i]], template[[i]])
+    to.3d.array <-
+        ## Convert the list to a 3d array watching for null elements
+        function(lst, template)
+        {
+            if (!is.matrix(template)) {
+                return(lst)
+            }
+            ## make empty array:
+            dnames <- dimnames(template)
+            if (length(dnames[[1]]) == length(dnames[[2]]) &&
+		all(dnames[[1]] == dnames[[2]])) {
+		val <- array(NA, dim=c(length(coefNames), length(coefNames),
+                                 length(lst)),
+                             dimnames=c(list(coefNames), list(coefNames), list(names(lst))))
+		for (ii in 1:length(lst))
+                    if (length(lst[[ii]])) {
+                        use <- dimnames(lst[[ii]])[[1]]
+                        val[use, use, ii] <- lst[[ii]]
+                    }
+            } else {
+		val <- array(NA, dim=c(length(coefNames), dim(template)[2],
+                                 length(lst)),
+                             dimnames=c(list(coefNames), list(dimnames(template)[[2]]),
+                             list(names(lst))))
+		for (ii in 1:length(lst))
+                    if (length(lst[[ii]])) {
+                        use <- dimnames(lst[[ii]])[[1]]
+                        val[use, , ii] <- lst[[ii]]
+                    }
+            }
+            ## val <- aperm(array(unlist(lapply(lst, function(el, template)
+            ## 				 if(is.null(el)) { template }
+            ## 				 else { el }, template = template)),
+            ## 		   c(dim(template), length(lst)),
+            ## 		   c(dimnames(template), list(names(lst)))),
+            ## 	     c(3, 2, 1))
+            ## val[unlist(lapply(lst, is.null)), , ] <- NA
+
+            val <- aperm(val, c(3, 2, 1))
+            val
+        }
+    to.2d.array <-
+        ## Convert the list to a 2d array watching for null elements
+        function(lst, template)
+        {
+            if(is.null(template)) return(lst)
+            template <- as.vector(template)
+            val <- t(array(unlist(lapply(lst, function(el, template)
+                                         if(is.null(el)) { template }
+                                         else { el }, template = template)),
+                           c(length(template), length(lst)),
+                           list(names(template), names(lst))))
+            val[unlist(lapply(lst, is.null)), ] <- NA
+            val
+        }
+    ## Create a summary by applying summary to each component of the list
+    sum.lst <- lapply(object, function(el) if(is.null(el)) {NULL}
+                      else {summary(el)})
+    nonNull <- !unlist(lapply(sum.lst, is.null))
+    if(!any(nonNull)) return(NULL)
+    template <- sum.lst[[match(TRUE, nonNull)]]
+    val <- list()
+    for (i in names(template)) {
+        val[[i]] <- lapply(sum.lst, "[[", i)
+        class(val[[i]]) <- "listof"
     }
-  }
-  ## re-arrange the vectors into 2d arrays
-  for(i in c("df", "fstatistic")) {
-    val[[i]] <- to.2d.array(val[[i]], template[[i]])
-  }
-  ## re-arrange the scalars into vectors
-  for(i in c("sigma", "r.squared")) {
-    ##    val[[i]] <- unlist(val[[i]]) - this deletes NULL components
-    val[[i]] <- c(to.2d.array(val[[i]], template[[i]]))
-  }
-  ## select those attributes that do not vary with groups
-  for(i in c("terms", "formula")) {
-    val[[i]] <- template[[i]]
-  }
-  val[["call"]] <- attr(object, "call")
-  if(inherits(object, "nlsList")) {
-    names(val[["call"]]["model"]) <- "object"
-  }
-  val[["pool"]] <- pool
-  if(pool) {
-    poolSD <- pooledSD(object)
-    dfRes <- attr(poolSD, "df")
-    RSE <- c(poolSD)
-    corRSE <- RSE/val$sigma
-    if(inherits(object, "nlsList")) {
-      pname <- "parameters"
-    } else {
-      pname <- "coefficients"
+    ## get complete set of coefs
+    coefNames <-
+        unique(as.vector(sapply(sum.lst[nonNull],
+                                function(x)dimnames(x[['coefficients']])[[1]])))
+
+
+    ## re-arrange the matrices into 3d arrays
+    for(i in c("parameters", "cov.unscaled", "correlation", "coefficients"))
+        if(length(val[[i]]))
+            val[[i]] <- to.3d.array(val[[i]], template[[i]])
+    ## re-arrange the vectors into 2d arrays
+    for(i in c("df", "fstatistic"))
+        val[[i]] <- to.2d.array(val[[i]], template[[i]])
+    ## re-arrange the scalars into vectors
+    for(i in c("sigma", "r.squared")) {
+        ##    val[[i]] <- unlist(val[[i]]) - this deletes NULL components
+        val[[i]] <- c(to.2d.array(val[[i]], template[[i]]))
     }
-    val[[pname]][,2,] <- val[[pname]][,2,] * corRSE
-    val[[pname]][,3,] <- val[[pname]][,3,] / corRSE
-    if(!inherits(object, "nlsList")) {
-      val[[pname]][,4,] <- 2*(1-pt(abs(val[[pname]][,3,]), dfRes))
+    ## select those attributes that do not vary with groups
+    for(i in c("terms", "formula"))
+        val[[i]] <- template[[i]]
+    val[["call"]] <- attr(object, "call")
+    if(inherits(object, "nlsList"))
+        names(val[["call"]]["model"]) <- "object"
+    val[["pool"]] <- pool
+    if(pool) {
+        poolSD <- pooledSD(object)
+        dfRes <- attr(poolSD, "df")
+        RSE <- c(poolSD)
+        corRSE <- RSE/val$sigma
+        pname <- if(inherits(object, "nlsList")) "parameters"
+        else "coefficients"
+        val[[pname]][,2,] <- val[[pname]][,2,] * corRSE
+        val[[pname]][,3,] <- val[[pname]][,3,] / corRSE
+        if(!inherits(object, "nlsList"))
+            val[[pname]][,4,] <- 2*(1-pt(abs(val[[pname]][,3,]), dfRes))
+        val[["df.residual"]] <- dfRes
+        val[["RSE"]] <- RSE
     }
-    val[["df.residual"]] <- dfRes
-    val[["RSE"]] <- RSE
-  }
-  attr(val, "groupsForm") <- attr(object, "groupsForm")
-  class(val) <- "summary.lmList"
-  val
+    attr(val, "groupsForm") <- attr(object, "groupsForm")
+    class(val) <- "summary.lmList"
+    val
 }
 
 # based on R's update.default

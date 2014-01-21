@@ -1,6 +1,8 @@
 #  File src/library/utils/R/help.search.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -190,7 +192,7 @@ help.search <-
     if(rebuild) {
 	if(verbose > 0L) {
             message("Rebuilding the help.search() database", " ", "...",
-                    if(verbose > 1L) "...")
+                    if(verbose > 1L) "...", domain = NA)
             flush.console()
         }
 
@@ -226,7 +228,7 @@ help.search <-
 	## Create the hsearch db.
 	np <- 0L
 	if(verbose >= 2L) {
-	    message("Packages {readRDS() sequentially}:")
+	    message("Packages {readRDS() sequentially}:", domain = NA)
             flush.console()
         }
         tot <- length(package_paths)
@@ -255,7 +257,7 @@ help.search <-
 
 	for(p in packages_in_hsearch_db) {
             if(incr && np %% incr == 0L) {
-                message(".", appendLF = FALSE)
+                message(".", appendLF = FALSE, domain = NA)
                 flush.console()
             }
 	    np <- np + 1L
@@ -302,7 +304,7 @@ help.search <-
                 }
 	    }
 	    else if(!is.null(package))
-                warning("no hsearch.rds meta data for package ", p)
+                warning("no hsearch.rds meta data for package ", p, domain = NA)
 	}
 
 	if(verbose >= 2L)  {
@@ -343,7 +345,7 @@ help.search <-
 	## And maybe re-encode ...
 	if(!identical(Sys.getlocale("LC_CTYPE"), "C")) {
 	    if(verbose >= 2L) {
-                message("reencoding ...", appendLF=FALSE)
+                message("reencoding ...", appendLF=FALSE, domain = NA)
                 flush.console()
             }
 	    encoding <- db$Base[, "Encoding"]
@@ -359,7 +361,7 @@ help.search <-
 		}
 	    }
 	    if(verbose >= 2L) {
-                message(" ", "done")
+                message(" ", "done", domain = NA)
                 flush.console()
             }
 	}
@@ -390,7 +392,7 @@ help.search <-
 	}
 
         if(verbose >= 2L) {
-            message("saving the database ...", appendLF=FALSE)
+            message("saving the database ...", appendLF=FALSE, domain = NA)
             flush.console()
         }
         attr(db, "LibPaths") <- lib.loc
@@ -399,11 +401,11 @@ help.search <-
         attr(db, "Types") <- unique(c("help", types))
         .hsearch_db(db)
         if(verbose >= 2L) {
-            message(" ", "done")
+            message(" ", "done", domain = NA)
             flush.console()
         }
         if(verbose > 0L) {
-            message("... database rebuilt")
+            message("... database rebuilt", domain = NA)
             if(WINDOWS) {
                 close(pb)
                 on.exit() # clear closing of progress bar
@@ -507,7 +509,11 @@ help.search <-
 		 c("topic", "title", "Package", "LibPath", "name", "Type"),
 		 drop = FALSE]
     if(verbose>= 2L) {
-        message(gettextf("matched %d objects.", NROW(db)), domain=NA)
+        message(sprintf(ngettext(NROW(db),
+                                 "matched %d object.",
+                                 "matched %d objects."),
+                        NROW(db)),
+                domain = NA)
         flush.console()
     }
 
@@ -595,8 +601,7 @@ printhsearchInternal  <- function(x, ...)
 				       "using", matchtype, "matching:")),
 			 "\n"),
 		       outConn)
-	    dbnam <- paste(dbtemp[, "Package"], "::", dbtemp[ , "topic"],
-			   sep = "")
+	    dbnam <- paste0(dbtemp[, "Package"], "::", dbtemp[ , "topic"])
 	    dbtit <- paste0(dbtemp[ , "title"])
 	    writeLines(formatDL(dbnam, dbtit), outConn)
 	    writeLines(c("\n",

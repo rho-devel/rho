@@ -43,6 +43,7 @@
 #endif
 
 #include <Defn.h>
+#include <Internal.h>
 #include <Fileio.h>
 #include <Startup.h>
 
@@ -208,6 +209,7 @@ SEXP do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
     Stdout = CAR(args);
     args = CDR(args);
     Stderr = CAR(args);
+    
  
     if (CharacterMode == RGui) {
 	/* This is a rather conservative approach: if
@@ -217,6 +219,8 @@ SEXP do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SetStdHandle(STD_INPUT_HANDLE, INVALID_HANDLE_VALUE);
 	SetStdHandle(STD_OUTPUT_HANDLE, INVALID_HANDLE_VALUE);
 	SetStdHandle(STD_ERROR_HANDLE, INVALID_HANDLE_VALUE);
+	if (TYPEOF(Stdout) == STRSXP) fout = CHAR(STRING_ELT(Stdout, 0));
+	if (TYPEOF(Stderr) == STRSXP) ferr = CHAR(STRING_ELT(Stderr, 0));
     } else {
 	if (flag == 2) flag = 1; /* ignore std.output.on.console */
 	if (TYPEOF(Stdout) == STRSXP) fout = CHAR(STRING_ELT(Stdout, 0));
@@ -276,7 +280,10 @@ SEXP do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    SET_STRING_ELT(rval, j, CAR(tlist));
 	    tlist = CDR(tlist);
 	}
-	if(ll) setAttrib(rval, install("status"), ScalarInteger(ll));
+	if(ll) {
+	    SEXP lsym = install("status");
+	    setAttrib(rval, lsym, ScalarInteger(ll));
+	}
 	UNPROTECT(2);
 	return rval;
     } else {

@@ -1,7 +1,7 @@
 #  File src/library/utils/R/fineLineNum.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright 2009-2012 Duncan Murdoch and the R Core Team
+#  Copyright (C) 2009-2012 Duncan Murdoch and the R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -179,12 +179,12 @@ print.findLineNumResult <- function(x, steps=TRUE, ...) {
     	    !identical(line, x[[i]]$line)) {
     	    filename <- x[[i]]$filename
     	    line <- x[[i]]$line
-    	    cat(filename, "#", line, ":\n", sep="")
+    	    cat(filename, "#", line, ":\n", sep = "")
     	}
-        cat(" ", x[[i]]$name, if (steps) paste(" step ", paste(x[[i]]$at, collapse=",")) else "", sep="")
+        cat(" ", x[[i]]$name, if (steps) paste(" step ", paste(x[[i]]$at, collapse=",")) else "", sep = "")
         if (!is.null(x[[i]]$signature))
-            cat(" signature ", paste(x[[i]]$signature, collapse=","), sep="")
-        cat(" in ", format(x[[i]]$env), "\n", sep="")
+            cat(" signature ", paste(x[[i]]$signature, collapse=","), sep = "")
+        cat(" in ", format(x[[i]]$env), "\n", sep = "")
     }
 }
 

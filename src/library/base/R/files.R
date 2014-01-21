@@ -1,6 +1,8 @@
 #  File src/library/base/R/files.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -58,7 +60,7 @@ file.show <-
         delete.file <- TRUE
     }
     if(is.function(pager))
-	pager(files, header, title, delete.file)
+	pager(files, header = header, title = title, delete.file = delete.file)
     else
         .Internal(file.show(files, header, title, delete.file, pager))
 }
@@ -72,11 +74,12 @@ file.remove <- function(...)
 file.rename <- function(from, to)
     .Internal(file.rename(from, to))
 
-list.files <- function(path = ".", pattern = NULL, all.files = FALSE,
-                       full.names = FALSE, recursive = FALSE,
-                       ignore.case = FALSE, include.dirs = FALSE)
+list.files <-
+    function(path = ".", pattern = NULL, all.files = FALSE,
+             full.names = FALSE, recursive = FALSE,
+             ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
     .Internal(list.files(path, pattern, all.files, full.names,
-                         recursive, ignore.case, include.dirs))
+			 recursive, ignore.case, include.dirs, no..))
 
 dir <- list.files
 
@@ -104,6 +107,8 @@ file.copy <- function(from, to,
     if (!(nt <- length(to)))   stop("no files to copy to")
     ## we don't use file_test as that is in utils.
     if (nt == 1 && isTRUE(file.info(to)$isdir)) {
+        if (recursive && to %in% from)
+            stop("attempt to copy a directory to itself")
         ## on Windows we need \ for the compiled code (e.g. mkdir).
         if(.Platform$OS.type == "windows") {
             from <- gsub("/", "\\", from, fixed = TRUE)
@@ -113,7 +118,7 @@ file.copy <- function(from, to,
     } else if (nf > nt) stop("more 'from' files than 'to' files")
     else if (recursive)
         warning("'recursive' will be ignored as 'to' is not a single existing directory")
-    if(nt > nf) from <- rep(from, length.out = nt)
+    if(nt > nf) from <- rep_len(from, length.out = nt)
     okay <- file.exists(from)
     if (!overwrite) okay[file.exists(to)] <- FALSE
     if (any(from[okay] %in% to[okay]))
@@ -163,8 +168,7 @@ file.access <- function(names, mode = 0)
 
 dir.create <- function(path, showWarnings = TRUE, recursive = FALSE,
                        mode = "0777")
-    invisible(.Internal(dir.create(path, showWarnings, recursive,
-                                   as.octmode(mode))))
+    .Internal(dir.create(path, showWarnings, recursive, as.octmode(mode)))
 
 system.file <- function(..., package = "base", lib.loc = NULL, mustWork = FALSE)
 {
@@ -195,7 +199,7 @@ Sys.info <- function()
     .Internal(Sys.info())
 
 Sys.sleep <- function(time)
-    invisible(.Internal(Sys.sleep(time)))
+    .Internal(Sys.sleep(time))
 
 path.expand <- function(path)
     .Internal(path.expand(path))
@@ -206,7 +210,7 @@ Sys.glob <- function(paths, dirmark = FALSE)
 unlink <- function(x, recursive = FALSE, force = FALSE)
     .Internal(unlink(as.character(x), recursive, force))
 
-Sys.chmod <- function(paths, mode = "0777", use_umask= TRUE)
+Sys.chmod <- function(paths, mode = "0777", use_umask = TRUE)
     .Internal(Sys.chmod(paths, as.octmode(mode), use_umask))
 
 Sys.umask <- function(mode = NA)
@@ -227,5 +231,5 @@ Sys.setFileTime <- function(path, time)
         stop("invalid 'path' argument")
     time <- as.POSIXct(time)
     if (is.na(time))  stop("invalid 'time' argument")
-    invisible(.Call("R_setFileTime", path, time, PACKAGE = "base"))
+    .Internal(setFileTime(path, time))
 }

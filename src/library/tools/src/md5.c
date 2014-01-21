@@ -238,7 +238,7 @@ static void
   if (len > 0)
     {
       memcpy (ctx->buffer, buffer, len);
-      ctx->buflen = len;
+      ctx->buflen = (md5_uint32) len;
     }
 }
 

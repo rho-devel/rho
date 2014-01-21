@@ -15,6 +15,8 @@
 \alias{coerce,matrix,ltpMatrix-method}
 \alias{diag,ltrMatrix-method}
 \alias{diag,ltpMatrix-method}
+\alias{diag<-,ltpMatrix-method}
+\alias{diag<-,ltrMatrix-method}
 \alias{t,ltpMatrix-method}
 \alias{t,ltrMatrix-method}
 %

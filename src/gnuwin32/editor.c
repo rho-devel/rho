@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1999-2008  The R Core Team
+ *  Copyright (C) 1999-2013  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -57,6 +57,10 @@ extern UImode  CharacterMode;
 #include <windows.h>
 #include "rui.h"
 #include "editor.h"
+
+/* from sysutils.c */
+void reEnc2(const char *x, char *y, int ny,
+	    cetype_t ce_in, cetype_t ce_out, int subst);
 
 #define gettext GA_gettext
 
@@ -117,7 +121,7 @@ static void editor_load_file(editor c, const char *name, int enc)
     textbox t = getdata(c);
     EditorData p = getdata(t);
     FILE *f;
-    char *buffer = NULL, tmp[MAX_PATH+50];
+    char *buffer = NULL, tmp[MAX_PATH+50], tname[MAX_PATH+1];
     const char *sname;
     long num = 1, bufsize;
 
@@ -125,7 +129,8 @@ static void editor_load_file(editor c, const char *name, int enc)
 	wchar_t wname[MAX_PATH+1];
 	Rf_utf8towcs(wname, name, MAX_PATH+1);
 	f = R_wfopen(wname, L"r");
-	sname = reEnc(name, CE_UTF8, CE_NATIVE, 3);
+	reEnc2(name, tname, MAX_PATH+1, CE_UTF8, CE_NATIVE, 3);
+	sname = tname;
     } else {
 	f = R_fopen(name, "r");
 	sname = name;
@@ -163,7 +168,7 @@ static void editor_save_file(editor c, const char *name, int enc)
 {
     textbox t = getdata(c);
     FILE *f;
-    char buf[MAX_PATH+30];
+    char buf[MAX_PATH+30], tname[MAX_PATH+1];
     const char *sname;
 
     if (name == NULL)
@@ -172,7 +177,8 @@ static void editor_save_file(editor c, const char *name, int enc)
 	if(enc == CE_UTF8) {
 	    wchar_t wname[MAX_PATH+1];
 	    Rf_utf8towcs(wname, name, MAX_PATH+1);
-	    sname = reEnc(name, CE_UTF8, CE_NATIVE, 3);
+	    reEnc2(name, tname, MAX_PATH+1, CE_UTF8, CE_NATIVE, 3);
+	    sname = tname;
 	    f = R_wfopen(wname, L"w");
 	} else {
 	    sname = name;
@@ -198,17 +204,15 @@ static void editorsaveas(editor c)
     wname = askfilesaveW(G_("Save script as"), "");
     if (wname) {
 	char name[4*MAX_PATH+1];
-	const char *tname;
 	wcstoutf8(name, wname, MAX_PATH);
 	/* now check if it has an extension */
 	char *q = strchr(name, '.');
 	if(!q) strncat(name, ".R", 4*MAX_PATH);
-	tname = reEnc(name, CE_UTF8, CE_NATIVE, 3);
 	editor_save_file(c, name, CE_UTF8);
 	p->file = 1;
-	strncpy(p->filename, tname, MAX_PATH+1);
+	reEnc2(name, p->filename, MAX_PATH+1, CE_UTF8, CE_NATIVE, 3);
 	gsetmodified(t, 0);
-	editor_set_title(c, tname);
+	editor_set_title(c, p->filename);
     }
     show(c);
 }
@@ -268,7 +272,7 @@ static void editorprint(control m)
     while (i < strlen(contents)) {
 	if ( linep + fh >= rr ) { /* new page */
 	    if (page > 1) nextpage(lpr);
-	    sprintf(msg, "Page %d", page++);
+	    snprintf(msg, LF_FACESIZE + 128, "Page %d", page++);
 	    gdrawstr(lpr, f, Black, pt(cc - gstrwidth(lpr, f, msg) - 1, top),
 		     msg);
 	    linep = top + 2*fh;
@@ -340,8 +344,7 @@ int editorchecksave(editor c)
 	case NO:
 	    break;
 	case CANCEL:
-	    return 1; /* used in rui.c (closeconsole) to abort closing
-			 the whole of Rgui */
+	    return 1;
 	}
     }
     return 0;
@@ -365,7 +368,10 @@ void editorcleanall(void)
 {
     int i;
     for (i = neditors-1;  i >= 0; --i) {
-	if (editorchecksave(REditors[i])) jump_to_toplevel();
+	if (editorchecksave(REditors[i])) {
+	    R_ProcessEvents();  // see R_CleanUp
+	    jump_to_toplevel();
+	}
 	del(REditors[i]);
     }
 }
@@ -383,8 +389,7 @@ void menueditornew(control m)
 static void editoropen(const char *default_name)
 {
     wchar_t *wname;
-    char name[4*MAX_PATH];
-    const char* title;
+    char name[4*MAX_PATH], title[4*MAX_PATH];
 
     int i; textbox t; EditorData p;
     setuserfilterW(L"R files (*.R)\0*.R\0S files (*.q, *.ssc, *.S)\0*.q;*.ssc;*.S\0All files (*.*)\0*.*\0\0");
@@ -400,7 +405,7 @@ static void editoropen(const char *default_name)
 		break;
 	    }
 	}
-	title = reEnc(name, CE_UTF8, CE_NATIVE, 3);
+	reEnc2(name, title, MAX_PATH+1, CE_UTF8, CE_NATIVE, 3);
 	Rgui_Edit(name, CE_UTF8, title, 0);
     } else show(RConsole);
 }
@@ -755,9 +760,6 @@ static editor neweditor(void)
     MCHECK(m = newmenuitem("-", 0, NULL));
     MCHECK(m = newmenuitem(G_("Close script"), 0, menueditorclose));
     setdata(m, c);
-    /* MCHECK(m = newmenuitem("-", 0, NULL));
-       MCHECK(m = newmenuitem(G_("Exit"), 0, closeconsole));
-       setdata(m, c); */
     MCHECK(newmenu(G_("Edit")));
     MCHECK(m = newmenuitem(G_("Undo"), 'Z', editorundo));
     setdata(m, t);

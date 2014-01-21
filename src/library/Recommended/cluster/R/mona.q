@@ -35,7 +35,7 @@ mona <- function(x)
 
     ## stop with a message when two many missing values:
     if(res$error != 0) {
-        ch <- "No clustering performed, "
+        ch <- gettext("No clustering performed, ")
         switch(res$error,
                ## 1 :
                stop(ch,"an object was found with all values missing."),

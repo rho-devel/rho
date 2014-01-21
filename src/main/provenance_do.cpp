@@ -43,6 +43,9 @@
 #include <config.h>
 #endif
 
+#include "CXXR/RObject.h"
+#include <Internal.h>
+
 #include <fstream>
 #include <locale>
 #include <set>

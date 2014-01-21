@@ -58,7 +58,7 @@
 \value{
   an \code{xyplot} Trellis plot.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{Variogram}}, \code{\link{xyplot}}, \code{\link{loess}}}
 \examples{
 fm1 <- lme(follicles ~ sin(2*pi*Time) + cos(2*pi*Time), Ovary)

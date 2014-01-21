@@ -88,6 +88,7 @@ Journal on Scientific Computing 15(5):1126-1133
 \seealso{  \code{\link{magic}}, \code{\link{mono.con}}  }
 
 \examples{
+require(mgcv)
 # first an un-penalized example - fit E(y)=a+bx subject to a>0
 set.seed(0)
 n<-100

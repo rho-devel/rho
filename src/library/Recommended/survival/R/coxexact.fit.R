@@ -43,7 +43,7 @@ coxexact.fit <- function(x, y, strata, offset, init, control,
     rescale <- attr(newx, "scaled:scale")
     means   <- attr(newx, "scaled:center")
 
-    cfit <- .Call("coxexact", 
+    cfit <- .Call(Ccoxexact, 
                   as.integer(control$iter.max),
                   as.double(y),  # interger data?  Just in case.
                   newx,
@@ -83,7 +83,7 @@ coxexact.fit <- function(x, y, strata, offset, init, control,
     score <- as.double(exp(lp))
 
     # Compute the residuals
-    cxres <- .C("coxmart2",
+    cxres <- .C(Ccoxmart2,
 		   as.integer(n),
 		   as.double(y[,1]),
 		   as.integer(y[,2]),
@@ -96,6 +96,8 @@ coxexact.fit <- function(x, y, strata, offset, init, control,
     resid[sorted] <- cxres$resid
     names(resid) <- rownames
     coef[which.sing] <- NA
+    lp.unsort <- double(n)
+    lp.unsort[sorted] <- lp
 
     scmat <- diag(1/rescale, nvar,nvar)
     list(coefficients  = coef/rescale,
@@ -103,7 +105,7 @@ coxexact.fit <- function(x, y, strata, offset, init, control,
 		loglik = loglik,
 		score  = sctest,
 		iter   = iter,
-		linear.predictors = lp,
+		linear.predictors = lp.unsort,
 		residuals = resid,
 		means = means,
 		method= 'coxph')

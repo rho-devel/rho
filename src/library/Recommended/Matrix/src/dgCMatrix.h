@@ -23,6 +23,6 @@ SEXP dgCMatrix_QR(SEXP Ap, SEXP order);
 SEXP dgCMatrix_SPQR(SEXP Ap, SEXP ordering, SEXP econ, SEXP tol);
 #endif
 SEXP dgCMatrix_LU(SEXP Ap, SEXP orderp, SEXP tolp, SEXP error_on_sing);
-SEXP dgCMatrix_matrix_solve(SEXP Ap, SEXP bp);
+SEXP dgCMatrix_matrix_solve(SEXP Ap, SEXP bp, SEXP give_sparse);
 
 #endif

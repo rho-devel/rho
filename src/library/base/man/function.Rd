@@ -31,7 +31,7 @@
   (The expression is evaluated as soon as \code{return} is called, in
   the evaluation frame of the function and before any
   \code{\link{on.exit}} expression is evaluated.)
-  
+
   If the end of a function is reached without calling \code{return}, the
   value of the last evaluated expression is returned.
 }
@@ -71,6 +71,6 @@ norm <- function(x) sqrt(x\%*\%x)
 norm(1:4)
 
 ## An anonymous function:
-(function(x,y){ z <- x^2 + y^2; x+y+z })(0:7, 1)
+(function(x, y){ z <- x^2 + y^2; x+y+z })(0:7, 1)
 }
 \keyword{programming}

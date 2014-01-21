@@ -113,6 +113,10 @@ SEXP R_to_CMatrix(SEXP x)
     return ans;
 }
 
+/** Return a 2 column matrix  '' cbind(i, j) ''  of 0-origin index vectors (i,j)
+ *  which entirely correspond to the (i,j) slots of
+ *  as(x, "TsparseMatrix") :
+ */
 SEXP compressed_non_0_ij(SEXP x, SEXP colP)
 {
     int col = asLogical(colP); /* 1 if "C"olumn compressed;  0 if "R"ow */
@@ -196,46 +200,41 @@ SEXP dgCMatrix_qrsol(SEXP x, SEXP y, SEXP ord)
 	error(_("cs_qrsol() failed inside dgCMatrix_qrsol()"));
 
     /* Solution is only in the first part of ycp -- cut its length back to n : */
-    {
-	SEXP nms = getAttrib(ycp, R_NamesSymbol);
-	SETLENGTH(ycp, xc->n);
-	if(nms != R_NilValue) {
-	    SETLENGTH(nms, xc->n);
-	    setAttrib(ycp, R_NamesSymbol, nms);
-	}
-    }
+    ycp = lengthgets(ycp, (R_len_t) xc->n);
+
     UNPROTECT(1);
     return ycp;
 }
 
-/* Modified version of Tim Davis's cs_qr_mex.c file for MATLAB */
+// Modified version of Tim Davis's cs_qr_mex.c file for MATLAB (in CSparse)
+//  Usage: [V,beta,p,R,q] = cs_qr(A) ;
 SEXP dgCMatrix_QR(SEXP Ap, SEXP order)
 {
-    SEXP ans = PROTECT(NEW_OBJECT(MAKE_CLASS("sparseQR")));
     CSP A = AS_CSP__(Ap), D;
-    css *S;
-    csn *N;
+    int io = INTEGER(order)[0];
+    Rboolean verbose = (io < 0);
     int m = A->m, n = A->n, ord = asLogical(order) ? 3 : 0, *p;
-    int *dims = INTEGER(ALLOC_SLOT(ans, Matrix_DimSym, INTSXP, 2));
     R_CheckStack();
 
     if (m < n) error(_("A must have #{rows} >= #{columns}")) ;
+    SEXP ans = PROTECT(NEW_OBJECT(MAKE_CLASS("sparseQR")));
+    int *dims = INTEGER(ALLOC_SLOT(ans, Matrix_DimSym, INTSXP, 2));
     dims[0] = m; dims[1] = n;
-    S = cs_sqr(ord, A, 1);	/* symbolic QR ordering & analysis*/
+    css *S = cs_sqr(ord, A, 1);	/* symbolic QR ordering & analysis*/
     if (!S) error(_("cs_sqr failed"));
-    N = cs_qr(A, S);		/* numeric QR factorization */
+    if(verbose && S->m2 > m) // in ./cs.h , m2 := # of rows for QR, after adding fictitious rows
+	Rprintf("Symbolic QR(): Matrix structurally rank deficient (m2-m = %d)\n",
+		S->m2 - m);
+    csn *N = cs_qr(A, S);		/* numeric QR factorization */
     if (!N) error(_("cs_qr failed")) ;
     cs_dropzeros(N->L);		/* drop zeros from V and sort */
-    D = cs_transpose(N->L, 1);
-    cs_spfree(N->L);
-    N->L = cs_transpose(D, 1);
-    cs_spfree(D);
+    D = cs_transpose(N->L, 1); cs_spfree(N->L);
+    N->L = cs_transpose(D, 1); cs_spfree(D);
     cs_dropzeros(N->U);		/* drop zeros from R and sort */
-    D = cs_transpose(N->U, 1);
-    cs_spfree(N->U) ;
-    N->U = cs_transpose(D, 1);
-    cs_spfree(D);
+    D = cs_transpose(N->U, 1); cs_spfree(N->U) ;
+    N->U = cs_transpose(D, 1); cs_spfree(D);
     m = N->L->m;		/* m may be larger now */
+    // MM: m := S->m2  also counting the ficticious rows (Tim Davis, p.72, 74f)
     p = cs_pinv(S->pinv, m);	/* p = pinv' */
     SET_SLOT(ans, install("V"),
 	     Matrix_cs_to_SEXP(N->L, "dgCMatrix", 0));
@@ -398,8 +397,21 @@ SEXP dgCMatrix_LU(SEXP Ap, SEXP orderp, SEXP tolp, SEXP error_on_sing)
     return get_factors(Ap, "LU");
 }
 
-SEXP dgCMatrix_matrix_solve(SEXP Ap, SEXP b)
+SEXP dgCMatrix_matrix_solve(SEXP Ap, SEXP b, SEXP give_sparse)
 {
+    Rboolean sparse = asLogical(give_sparse);
+    if(sparse) {
+	// FIXME: implement this
+	error(_("dgCMatrix_matrix_solve(.., sparse=TRUE) not yet implemented"));
+
+	/* Idea: in the  for(j = 0; j < nrhs ..) loop below, build the *sparse* result matrix
+	 * ----- *column* wise -- which is perfect for dgCMatrix
+	 * --> build (i,p,x) slots "increasingly" [well, allocate in batches ..]
+	 *
+	 * --> maybe first a protoype in R
+	 */
+
+    }
     SEXP ans = PROTECT(dup_mMatrix_as_dgeMatrix(b)),
 	lu, qslot;
     CSP L, U;
@@ -427,7 +439,7 @@ SEXP dgCMatrix_matrix_solve(SEXP Ap, SEXP b)
 	cs_pvec(p, ax + j * n, x, n);  /* x = b(p) */
 	cs_lsolve(L, x);	       /* x = L\x */
 	cs_usolve(U, x);	       /* x = U\x */
-	if (q)			       /* b(q) = x */
+	if (q)			       /* r(q) = x , hence r = Q' U{^-1} L{^-1} P b = A^{-1} b */
 	    cs_ipvec(q, x, ax + j * n, n);
 	else
 	    Memcpy(ax + j * n, x, n);

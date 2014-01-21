@@ -93,13 +93,7 @@
 \alias{coerce,Matrix,denseMatrix-method}
 \alias{coerce,Matrix,CsparseMatrix-method}
 \alias{coerce,Matrix,sparseMatrix-method}
-\alias{solve,Matrix,ANY-method}
-\alias{solve,ANY,Matrix-method}
-\alias{solve,Matrix,matrix-method}
-\alias{solve,matrix,Matrix-method}
-\alias{solve,Matrix,diagonalMatrix-method}
-\alias{solve,Matrix,missing-method}
-\alias{solve,Matrix,numeric-method}
+%\alias{solve,Matrix,....-method}--> ./solve-methods.Rd
 %\alias{unname,Matrix-method}
 \alias{unname,Matrix,missing-method}
 %

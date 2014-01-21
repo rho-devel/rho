@@ -81,26 +81,22 @@ specifies that the tensor product should use a rank 6 cubic regression spline ma
 and a rank 7 P-spline marginal to create a smooth with basis dimension 42.
 }
 
-\section{Nested terms}{
- Another common modelling task is to decide
-if a model like:
-  \deqn{E(y_i) = f(x_i,z_i)}{E(y)=f(x,z)}
-  is really necessary or whether:
-  \deqn{E(y_i)=f_1(x_i)+f_2(z_i)}{E(y)=f1(x)+f2(z)}
-  would do just as well. One possibility is to examine the results
-  of fitting:\cr
-  \code{y ~ s(x) + s(z) + s(x,z)}.\cr
-  \code{gam} automatically generates side conditions to make this model
-  identifiable. You can also estimate `overlapping' models like:\cr
-  \code{y ~ s(x,z) + s(z,v)}.  
+\section{Nested terms/functional ANOVA}{
 
-  Note that optimum interpretability of such models is obtained by ensuring that 
-  lower order terms are strictly nested withing higher order ones. This is most easily achieved by
-  employing tensor product smooths for multidimensional terms, and ensuring that lower order terms are
-  using the same (marginal) bases as higher order ones. For example:\cr
-  \code{y ~ s(x,bs="cr",k=5) + s(z,bs="cr",k=5) + te(x,z)}\cr
-  would ensure strict nesting of the main effects within the interaction (given the \code{\link{te}} default 
-  \code{bs} and \code{k} arguments), since the main effects employ the same bases used as marginals for the \code{te} term.
+Sometimes it is interesting to specify smooth models with a main effects + interaction structure such as 
+  \deqn{E(y_i) = f_1(x_i) + f_2(z_i) + f_3(x_i,z_i)}{E(y) = f1 (x) + f2(z) + f3(x,z)}
+  or
+  \deqn{E(y_i)=f_1(x_i) + f_2(z_i) + f_3(v_i)
++ f_4(x_i,z_i) + f_5(z_i,v_i) + f_6(z_i,v_i) + f_7(x_i,z_i,v_i) }{
+ E(y) = f1(x) + f2(z) + f3(v) + f4(x,z) + f5(z,v) + f6(z,v) + f7(x,z,v)}
+for example. Such models should be set up using \code{\link{ti}} terms in the model formula. For example: \cr
+  \code{y ~ ti(x) + ti(z) + ti(x,z)}, or\cr
+ \code{y ~ ti(x) + ti(z) + ti(v) + ti(x,z) + ti(x,v) + ti(z,v)+ti(x,z,v)}. \cr
+The \code{ti} terms produce interactions with the component main effects excluded appropriately. (There is in fact no need to use \code{ti} terms for the main effects here, \code{s} terms could also be used.)
+
+\code{gam} allows nesting (or `overlap') of \code{te} and \code{s} smooths, and automatically generates side conditions to 
+make such models identifiable, but the resulting models are much less stable and interpretable than those constructed using \code{ti} terms. 
+
 }
 
 \section{`by' variables}{
@@ -250,6 +246,7 @@ and Hall/CRC Press.
 \author{ Simon N. Wood \email{simon.wood@r-project.org}}
 
 \examples{
+require(mgcv)
 set.seed(10)
 ## simulate date from y = f(x2)*x1 + error
 dat <- gamSim(3,n=400)

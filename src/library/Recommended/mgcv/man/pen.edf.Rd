@@ -31,6 +31,7 @@ actually needed in a model.
 
 
 \examples{ 
+  require(mgcv)
   set.seed(20) 
   dat <- gamSim(1,n=400,scale=2) ## simulate data
   ## following `t2' smooth basically separates smooth 

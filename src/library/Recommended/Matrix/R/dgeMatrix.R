@@ -59,8 +59,10 @@ setMethod("norm", signature(x = "matrix", type = "character"),
 setMethod("t", signature(x = "dgeMatrix"), t_geMatrix)
 
 
-setMethod("diag", signature(x = "dgeMatrix"),
-	  function(x, nrow, ncol) .Call(dgeMatrix_getDiag, x))
+.dge.diag <- function(x, nrow, ncol) .Call(dgeMatrix_getDiag, x)
+setMethod("diag", signature(x = "dgeMatrix"), .dge.diag)
+setMethod("diag<-", signature(x = "dgeMatrix"),
+	  function(x, value) .Call(dgeMatrix_setDiag, x, value))
 
 setMethod("chol", signature(x = "dgeMatrix"), cholMat)
 

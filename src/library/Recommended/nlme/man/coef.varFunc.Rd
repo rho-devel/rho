@@ -47,7 +47,7 @@
 \value{
   a vector with the coefficients corresponding to \code{object}.
 }
-\author{Jose Pinheiro and Douglas Bates }
+\author{José Pinheiro and Douglas Bates }
 \section{SIDE EFFECTS}{
   On the left side of an assignment, sets the values of the coefficients
   of \code{object} to \code{value}.

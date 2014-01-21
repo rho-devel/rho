@@ -1,6 +1,8 @@
 #  File src/library/stats/R/power.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -38,7 +40,7 @@ power.t.test <-
     if (strict & tside == 2) # count rejections in opposite tail
       p.body <- quote({
 	  nu <- (n - 1) * tsample
-	  qu<-qt(sig.level/tside, nu, lower.tail = FALSE)
+	  qu <- qt(sig.level/tside, nu, lower.tail = FALSE)
 	  pt(qu, nu, ncp = sqrt(n/tsample) * delta/sd, lower.tail = FALSE) +
 	    pt(-qu, nu, ncp = sqrt(n/tsample) * delta/sd, lower.tail = TRUE)
       })
@@ -58,7 +60,7 @@ power.t.test <-
 	sig.level <- uniroot(function(sig.level) eval(p.body) - power,
 		      c(1e-10,1-1e-10))$root
     else # Shouldn't happen
-	stop("internal error")
+	stop("internal error", domain = NA)
     NOTE <- switch(type,
 		   paired = "n is number of *pairs*, sd is std.dev. of *differences* within pairs",
 		   two.sample = "n is number in *each* group", NULL)
@@ -125,7 +127,7 @@ power.prop.test <-
 	sig.level <- uniroot(function(sig.level) eval(p.body) - power,
 		      c(1e-10,1-1e-10))$root
     else # Shouldn't happen
-	stop("internal error")
+	stop("internal error", domain = NA)
 
     NOTE <- "n is number in *each* group"
 
@@ -142,12 +144,9 @@ function(x, ...)
 {
     cat("\n    ", x$method, "\n\n")
     note <- x$note
-    x[c("method","note")] <- NULL
-    cat(paste(format(names(x), width= 15, justify = "right"),
-	      format(x), sep= " = "), sep= "\n")
-    if(!is.null(note))
-	cat("\n", "NOTE:", note, "\n\n")
-    else
-	cat("\n")
+    x[c("method", "note")] <- NULL
+    cat(paste(format(names(x), width = 15L, justify = "right"),
+	      format(x), sep = " = "), sep = "\n")
+    if(!is.null(note)) cat("\n", "NOTE: ", note, "\n\n", sep = "") else cat("\n")
     invisible(x)
 }

@@ -16,7 +16,7 @@
 }
 \value{
   A list with at least the following components:
-  
+
   \item{OS.type}{
     character string, giving the \bold{O}perating \bold{S}ystem
     (family) of the computer.  One of \code{"unix"} or \code{"windows"}.
@@ -24,20 +24,20 @@
   \item{file.sep}{
     character string, giving the \bold{file} \bold{sep}arator used on your
     platform: \code{"/"} on both Unix-alikes \emph{and} on Windows (but
-    not on the once port to Classic Mac OS).
+    not on the former port to Classic Mac OS).
   }
   \item{dynlib.ext}{
     character string, giving the file name \bold{ext}ension of
     \bold{dyn}amically loadable \bold{lib}raries, e.g., \code{".dll"} on
     Windows and \code{".so"} or \code{".sl"} on Unix-alikes.  (Note for
-    Mac OS X users: these are shared objects as loaded by
+    OS X users: these are shared objects as loaded by
     \code{\link{dyn.load}} and not dylibs: see \code{\link{dyn.load}}.)
   }
   \item{GUI}{
     character string, giving the type of GUI in use, or \code{"unknown"}
     if no GUI can be assumed.  Possible values are for Unix-alikes the
     values given via the \option{-g} command-line flag (\code{"X11"},
-    \code{"Tk"}), \code{"AQUA"} (running under \code{R.app} on Mac OS X),
+    \code{"Tk"}), \code{"AQUA"} (running under \code{R.app} on OS X),
     \code{"Rgui"} and \code{"RTerm"} (Windows) and perhaps others under
     alternative front-ends or embedded \R.
   }
@@ -45,7 +45,7 @@
     character string, \code{"big"} or \code{"little"}, giving the
     endianness of the processor in use.  This is relevant when it is
     necessary to know the order to read/write bytes of e.g. an integer or
-    double from/to a \link{connection}: see \code{\link{readBin}}. 
+    double from/to a \link{connection}: see \code{\link{readBin}}.
   }
   \item{pkgType}{
     character string, the preferred setting for
@@ -66,7 +66,7 @@
 }
 
 \section{AQUA}{
-  \code{.Platform$GUI} is set to \code{"AQUA"} under the Mac OS X GUI,
+  \code{.Platform$GUI} is set to \code{"AQUA"} under the OS X GUI,
   \code{R.app}. This has a number of consequences:
   \itemize{
     \item the \env{DISPLAY} environment variable is set to \code{":0"} if unset.
@@ -83,7 +83,7 @@
   \code{\link{R.version}} and \code{\link{Sys.info}} give more details
   about the OS.  In particular, \code{R.version$platform} is the
   canonical name of the platform under which \R was compiled.
-  
+
   \code{\link{.Machine}} for details of the arithmetic used, and
   \code{\link{system}} for invoking platform-specific system commands.
 }
@@ -95,7 +95,7 @@ if(.Platform$OS.type == "unix") {
    system.test <- function(...) { system(paste("test", ...)) == 0 }
    dir.exists <- function(dir)
        sapply(dir, function(d) system.test("-d", d))
-   dir.exists(c(R.home(), "/tmp", "~", "/NO"))# > T T T F
+   dir.exists(c(R.home(), "/tmp", "~", "/NO")) # > T T T F
 }
 }
 \keyword{file}

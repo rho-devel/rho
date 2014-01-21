@@ -20,19 +20,19 @@ detectCores(all.tests = FALSE, logical = FALSE)
 \arguments{
   \item{all.tests}{Logical: if true apply all known tests.}
   \item{logical}{Logical: if possible, use the number of physical CPUs/cores
-    (if \code{FALSE}) or logical CPUs (if \code{TRUE}.}
+    (if \code{FALSE}) or logical CPUs (if \code{TRUE}).}
 }
 \details{
   This attempts to detect the number of CPU cores in the current
   machine.
 
-  It has methods to do so for Linux, Darwin (Mac OS X), FreeBSD, Solaris,
+  It has methods to do so for Linux, OS X, FreeBSD, Solaris,
   Irix and Windows.  \code{detectCores(TRUE)} could be tried on other
   Unix-alike systems.
 }
 \value{
   An integer, \code{NA} if the answer is unknown.
-  
+
   Exactly what this represents is OS-dependent: where possible by
   default it represents physical cores and not logical
   (e.g. hyperthreaded) CPUs.
@@ -46,7 +46,7 @@ detectCores(all.tests = FALSE, logical = FALSE)
   tested.
 #endif
 % http://msdn.microsoft.com/en-us/library/ms683194%28v=VS.85%29.aspx
-  
+
   Currently \code{logical} makes a difference on Sparc Solaris: there
   \code{logical = FALSE} returns the number of physical cores and
   \code{logical = TRUE} returns the number of available hardware

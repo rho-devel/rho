@@ -1,7 +1,6 @@
 
-R version 2.15.0 alpha (2012-03-07 r58625)
-Copyright (C) 2012 The R Foundation for Statistical Computing
-ISBN 3-900051-07-0
+R version 3.0.2 RC (2013-09-22 r63960) -- "Frisbee Sailing"
+Copyright (C) 2013 The R Foundation for Statistical Computing
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -19,7 +18,7 @@ Type 'q()' to quit R.
 > #### Run all demos that do not depend on tcl and other specials.
 > .ptime <- proc.time()
 > set.seed(123)
-> options(keep.source=TRUE, useFancyQuotes=FALSE)
+> options(keep.source=TRUE, useFancyQuotes=FALSE, warn = 1)
 > 
 > ## Drop these for strict testing {and add them to demos2.R)
 > ## lm.glm is in ../src/library/utils/man/demo.Rd }:
@@ -58,14 +57,15 @@ Type 'q()' to quit R.
 > 	###  Here's a solution	(see R-help mailing list, Dec 9, 2010):	 ###
 > 	##================================================================##
 > 
-> ##' We want to catch *and* save both errors and warnings, and in the case of
+> ##' Catch *and* save both errors and warnings, and in the case of
 > ##' a warning, also keep the computed result.
 > ##'
-> ##' @title tryCatch both warnings and errors
-> ##' @param expr
+> ##' @title tryCatch both warnings (with value) and errors
+> ##' @param expr an \R expression to evaluate
 > ##' @return a list with 'value' and 'warning', where
 > ##'   'value' may be an error caught.
-> ##' @author Martin Maechler
+> ##' @author Martin Maechler;
+> ##' Copyright (C) 2010-2012  The R Core Team
 > tryCatch.W.E <- function(expr)
 + {
 +     W <- NULL
@@ -94,7 +94,7 @@ List of 2
 > str( tryCatch.W.E( log("a") ) )
 List of 2
  $ value  :List of 2
-  ..$ message: chr "Non-numeric argument to mathematical function"
+  ..$ message: chr "non-numeric argument to mathematical function"
   ..$ call   : language log("a")
   ..- attr(*, "class")= chr [1:3] "simpleError" "error" "condition"
  $ warning: NULL
@@ -103,6 +103,8 @@ List of 2
 	demo(is.things)
 	---- ~~~~~~~~~
 
+> #  Copyright (C) 1997-2010 The R Core Team
+> 
 > ## being a 'builtin' function is not the same as being in base
 > ls.base <- ls("package:base", all=TRUE)
 
@@ -113,9 +115,9 @@ List of 2
 +     "\n\t starting with 'is.' :\t  ",
 +     sum(grepl("^is\\.", ls.base[base.is.f])), "\n", sep = "")
 
-Number of base objects:		1253
-Number of functions in base:	1222
-	 starting with 'is.' :	  50
+Number of base objects:		1266
+Number of functions in base:	1224
+	 starting with 'is.' :	  49
 
 > ## 0.14  : 31
 > ## 0.50  : 33
@@ -140,7 +142,7 @@ Number of functions in base:	1222
 + }
 
 > is.ALL <- function(obj, func.names = ls(pos=length(search())),
-+ 		   not.using = c("is.single", "is.loaded",
++ 		   not.using = c("is.single", "is.real", "is.loaded",
 +                      "is.empty.model", "is.R", "is.element", "is.unsorted"),
 + 		   true.only = FALSE, debug = FALSE)
 + {
@@ -227,7 +229,6 @@ is.pairlist        : |
 is.primitive       : . 
 is.qr              : . 
 is.raw             : . 
-is.real            : . 
 is.recursive       : . 
 is.symbol          : . 
 is.table           : . 
@@ -286,7 +287,6 @@ is.pairlist        : .
 is.primitive       : . 
 is.qr              : . 
 is.raw             : . 
-is.real            : . 
 is.recursive       : . 
 is.symbol          : . 
 is.table           : . 
@@ -324,7 +324,6 @@ is.pairlist        : .
 is.primitive       : . 
 is.qr              : . 
 is.raw             : . 
-is.real            : . 
 is.recursive       : . 
 is.symbol          : . 
 is.table           : . 
@@ -362,7 +361,6 @@ is.pairlist        : .
 is.primitive       : . 
 is.qr              : . 
 is.raw             : . 
-is.real            : | 
 is.recursive       : . 
 is.symbol          : . 
 is.table           : . 
@@ -371,6 +369,8 @@ is.vector          : |
 > e13 <- expression(1 + 3)
 
 > is.ALL(e13)
+Warning in fn(obj) :
+  is.na() applied to non-(list or vector) of type 'expression'
 is.array           : . 
 is.atomic          : . 
 is.call            : . 
@@ -402,7 +402,6 @@ is.pairlist        : .
 is.primitive       : . 
 is.qr              : . 
 is.raw             : . 
-is.real            : . 
 is.recursive       : | 
 is.symbol          : . 
 is.table           : . 
@@ -443,7 +442,6 @@ is.pairlist        : .
 is.primitive       : . 
 is.qr              : . 
 is.raw             : . 
-is.real            : . 
 is.recursive       : | 
 is.symbol          : . 
 is.table           : . 
@@ -482,10 +480,10 @@ logical(0)
              FALSE              FALSE               TRUE              FALSE 
          is.object         is.ordered is.package_version        is.pairlist 
              FALSE              FALSE              FALSE              FALSE 
-      is.primitive              is.qr             is.raw            is.real 
-             FALSE              FALSE              FALSE               TRUE 
-      is.recursive          is.symbol           is.table          is.vector 
-             FALSE              FALSE              FALSE               TRUE 
+      is.primitive              is.qr             is.raw       is.recursive 
+             FALSE              FALSE              FALSE              FALSE 
+         is.symbol           is.table          is.vector 
+             FALSE              FALSE               TRUE 
 
 > ispi <- unlist(is.ALL(pi))
 
@@ -493,10 +491,10 @@ logical(0)
 [1] TRUE
 
 > is.ALL(numeric(0), true=TRUE)
-[1] "is.atomic"  "is.double"  "is.numeric" "is.real"    "is.vector" 
+[1] "is.atomic"  "is.double"  "is.numeric" "is.vector" 
 
 > is.ALL(array(1,1:3), true=TRUE)
-[1] "is.array"   "is.atomic"  "is.double"  "is.numeric" "is.real"   
+[1] "is.array"   "is.atomic"  "is.double"  "is.numeric"
 
 > is.ALL(cbind(1:3), true=TRUE)
 [1] "is.array"   "is.atomic"  "is.integer" "is.matrix"  "is.numeric"
@@ -533,7 +531,6 @@ is.pairlist        : .
 is.primitive       : . 
 is.qr              : . 
 is.raw             : . 
-is.real            : . 
 is.recursive       : . 
 is.symbol          : . 
 is.table           : . 
@@ -578,7 +575,6 @@ is.pairlist        : .
 is.primitive       : . 
 is.qr              : . 
 is.raw             : . 
-is.real            : . 
 is.recursive       : | 
 is.symbol          : . 
 is.table           : . 
@@ -616,7 +612,6 @@ is.pairlist        : .
 is.primitive       : . 
 is.qr              : . 
 is.raw             : . 
-is.real            : . 
 is.recursive       : . 
 is.symbol          : . 
 is.table           : . 
@@ -629,6 +624,8 @@ is.vector          : |
 	demo(recursion)
 	---- ~~~~~~~~~
 
+> #  Copyright (C) 1997-2005 The R Core Team
+> 
 > ## Adaptive integration:	 Venables and Ripley pp. 105-110
 > ## This is the basic integrator.
 > 
@@ -730,6 +727,8 @@ is.vector          : |
 > ## This is a very nifty way of creating "closures" and a little thought
 > ## will show you that there are many ways of using this in statistics.
 > 
+> #  Copyright (C) 1997-8 The R Core Team
+> 
 > open.account <- function(total) {
 + 
 +     list(
@@ -778,13 +777,13 @@ Your balance is 120
 > try(ross$withdraw(500)) # no way..
 Error in ross$withdraw(500) : You don't have that much money!
 
-In addition: Warning message:
-In fn(obj) : is.na() applied to non-(list or vector) of type 'expression'
 
 
 	demo(graphics)
 	---- ~~~~~~~~
 
+> #  Copyright (C) 1997-2009 The R Core Team
+> 
 > require(datasets)
 
 > require(grDevices); require(graphics)
@@ -987,6 +986,8 @@ In fn(obj) : is.na() applied to non-(list or vector) of type 'expression'
 	demo(image)
 	---- ~~~~~
 
+> #  Copyright (C) 1997-2009 The R Core Team
+> 
 > require(datasets)
 
 > require(grDevices); require(graphics)
@@ -1042,7 +1043,7 @@ In fn(obj) : is.na() applied to non-(list or vector) of type 'expression'
 
 flld.c> require(grDevices) # for colours
 
-flld.c> filled.contour(volcano, color = terrain.colors, asp = 1)# simple
+flld.c> filled.contour(volcano, color = terrain.colors, asp = 1) # simple
 
 flld.c> x <- 10*1:nrow(volcano)
 
@@ -1053,8 +1054,8 @@ flld.c+     plot.title = title(main = "The Topography of Maunga Whau",
 flld.c+     xlab = "Meters North", ylab = "Meters West"),
 flld.c+     plot.axes = { axis(1, seq(100, 800, by = 100))
 flld.c+                   axis(2, seq(100, 600, by = 100)) },
-flld.c+     key.title = title(main="Height\n(meters)"),
-flld.c+     key.axes = axis(4, seq(90, 190, by = 10)))# maybe also asp=1
+flld.c+     key.title = title(main = "Height\n(meters)"),
+flld.c+     key.axes = axis(4, seq(90, 190, by = 10)))  # maybe also asp = 1
 
 flld.c> mtext(paste("filled.contour(.) from", R.version.string),
 flld.c+       side = 1, line = 4, adj = 1, cex = .66)
@@ -1065,7 +1066,7 @@ flld.c> a <- expand.grid(1:20, 1:20)
 flld.c> b <- matrix(a[,1] + a[,2], 20)
 
 flld.c> filled.contour(x = 1:20, y = 1:20, z = b,
-flld.c+                plot.axes={ axis(1); axis(2); points(10,10) })
+flld.c+                plot.axes = { axis(1); axis(2); points(10, 10) })
 
 flld.c> ## Persian Rug Art:
 flld.c> x <- y <- seq(-4*pi, 4*pi, len = 27)
@@ -1193,6 +1194,8 @@ flld.c+                plot.axes = {})
 	demo(glm.vr)
 	---- ~~~~~~
 
+> #  Copyright (C) 1997-2009 The R Core Team
+> 
 > #### -*- R -*-
 > require(stats)
 
@@ -1238,7 +1241,7 @@ TempHigh:SoftSoft           -0.30442    0.22239  -1.369  0.17104
 M.userY:TempHigh:SoftMedium  0.21189    0.31577   0.671  0.50220    
 M.userY:TempHigh:SoftSoft   -0.20387    0.32540  -0.627  0.53098    
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 (Dispersion parameter for poisson family taken to be 1)
 
@@ -1282,7 +1285,7 @@ M.userY:BrandM               0.40757    0.15961   2.554  0.01066 *
 TempHigh:BrandM              0.04411    0.18463   0.239  0.81119    
 M.userY:TempHigh:BrandM      0.44427    0.26673   1.666  0.09579 .  
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 (Dispersion parameter for poisson family taken to be 1)
 
@@ -1322,7 +1325,7 @@ M.userY:BrandM               0.40757    0.15961   2.554  0.01066 *
 TempHigh:BrandM              0.04411    0.18463   0.239  0.81119    
 M.userY:TempHigh:BrandM      0.44427    0.26673   1.666  0.09579 .  
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 (Dispersion parameter for poisson family taken to be 1)
 
@@ -1368,6 +1371,7 @@ Model 2: Fr ~ M.user * Temp * Soft + Brand * M.user * Temp
 	---- ~~~~~~
 
 > ### This used to be in   example(smooth) before we had package-specific demos
+> #  Copyright (C) 1997-2009 The R Core Team
 > 
 > require(stats); require(graphics); require(datasets)
 
@@ -1395,7 +1399,7 @@ S Tukey smoother resulting from  smooth(x = x3R, kind = "S")
 smooth> sm.3RS <- function(x, ...)
 smooth+    smooth(smooth(x, "3R", ...), "S", ...)
 
-smooth> y <- c(1,1, 19:1)
+smooth> y <- c(1, 1, 19:1)
 
 smooth> plot(y, main = "misbehaviour of \"3RSR\"", col.main = 3)
 
@@ -1403,13 +1407,13 @@ smooth> lines(sm.3RS(y))
 
 smooth> lines(smooth(y))
 
-smooth> lines(smooth(y, "3RSR"), col = 3, lwd = 2)# the horror
+smooth> lines(smooth(y, "3RSR"), col = 3, lwd = 2)  # the horror
 
-smooth> x <- c(8:10,10, 0,0, 9,9)
+smooth> x <- c(8:10, 10, 0, 0, 9, 9)
 
 smooth> plot(x, main = "breakdown of  3R  and  S  and hence  3RSS")
 
-smooth> matlines(cbind(smooth(x,"3R"),smooth(x,"S"), smooth(x,"3RSS"),smooth(x)))
+smooth> matlines(cbind(smooth(x, "3R"), smooth(x, "S"), smooth(x, "3RSS"), smooth(x)))
 
 smooth> presidents[is.na(presidents)] <- 0 # silly
 
@@ -1434,15 +1438,15 @@ smooth> summary(sm  <- smooth(presidents))
    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
   24.00   44.00   57.00   55.88   69.00   82.00 
 
-smooth> all.equal(c(sm2),c(smooth(smooth(sm3, "S"), "S"))) # 3RSS  === 3R S S
+smooth> all.equal(c(sm2), c(smooth(smooth(sm3, "S"), "S")))  # 3RSS  === 3R S S
 [1] TRUE
 
-smooth> all.equal(c(sm), c(smooth(smooth(sm3, "S"), "3R")))# 3RS3R === 3R S 3R
+smooth> all.equal(c(sm),  c(smooth(smooth(sm3, "S"), "3R"))) # 3RS3R === 3R S 3R
 [1] TRUE
 
 smooth> plot(presidents, main = "smooth(presidents0, *) :  3R and default 3RS3R")
 
-smooth> lines(sm3,col = 3, lwd = 1.5)
+smooth> lines(sm3, col = 3, lwd = 1.5)
 
 smooth> lines(sm, col = 2, lwd = 1.25)
 
@@ -1506,5 +1510,5 @@ sm     3    3    3    3    4    4    4    4    2     2     2
 > par(op)
 > 
 > cat("Time elapsed: ", proc.time() - .ptime, "\n")
-Time elapsed:  1.908 0.04 1.958 0 0 
+Time elapsed:  1.359 0.03 1.397 0 0 
 > 

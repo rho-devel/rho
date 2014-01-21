@@ -1,7 +1,9 @@
 % File src/library/stats/man/GammaDist.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{GammaDist}
 \alias{GammaDist}
@@ -44,6 +46,14 @@ rgamma(n, shape, rate = 1, scale = 1/rate)
   \code{rgamma} generates random deviates.
 
   Invalid arguments will result in return value \code{NaN}, with a warning.
+  
+  The length of the result is determined by \code{n} for
+  \code{rgamma}, and is the maximum of the lengths of the
+  numerical parameters for the other functions.  
+  
+  The numerical parameters other than \code{n} are recycled to the
+  length of the result.  Only the first elements of the logical
+  parameters are used.
 }
 \details{
   If \code{scale} is omitted, it assumes the default value of \code{1}.
@@ -55,7 +65,7 @@ rgamma(n, shape, rate = 1, scale = 1/rate)
   }{f(x)= 1/(s^a Gamma(a)) x^(a-1) e^-(x/s)}
   for \eqn{x \ge 0}, \eqn{\alpha > 0}{a > 0} and \eqn{\sigma > 0}{s > 0}.
   (Here \eqn{\Gamma(\alpha)}{Gamma(a)} is the function implemented by \R's
-  \code{\link{gamma}()} and defined in its help.  Note that \eqn{a=0}
+  \code{\link{gamma}()} and defined in its help.  Note that \eqn{a = 0}
   corresponds to the trivial distribution with all mass at point 0.)
 
   The mean and variance are
@@ -63,37 +73,50 @@ rgamma(n, shape, rate = 1, scale = 1/rate)
   \eqn{Var(X) = \alpha\sigma^2}{Var(X) = a*s^2}.
 
   The cumulative hazard \eqn{H(t) = - \log(1 - F(t))}{H(t) = - log(1 - F(t))}
-  is \code{-pgamma(t, ..., lower = FALSE, log = TRUE)}.
+  is
+\preformatted{-pgamma(t, ..., lower = FALSE, log = TRUE)
+}
 
   Note that for smallish values of \code{shape} (and moderate
   \code{scale}) a large parts of the mass of the Gamma distribution is
   on values of \eqn{x} so near zero that they will be represented as
-  zero in computer arithmetic.  So \code{rgamma} can well return values
+  zero in computer arithmetic.  So \code{rgamma} may well return values
   which will be represented as zero.  (This will also happen for very
   large values of \code{scale} since the actual generation is done for
-  \code{scale=1}.)
+  \code{scale = 1}.)
 }
 % Have caught all currently known problems; hence no longer say:
 %   Similarly, \code{qgamma} has a very hard job for
 %   small \code{scale}, and warns of potential unreliability for
 %   \code{scale < 1e-10}.
 \note{
-  The S parametrization is via \code{shape} and \code{rate}: S has no
-  \code{scale} parameter.
+  The S (Becker \emph{et al} (1988) parametrization was via \code{shape}
+  and \code{rate}: S had no \code{scale} parameter.  In \R 2.x.y
+  \code{scale} took precedence over \code{rate}, but now it is an error
+  to supply both.
 
   \code{pgamma} is closely related to the incomplete gamma function.  As
   defined by Abramowitz and Stegun 6.5.1 (and by \sQuote{Numerical
     Recipes}) this is
-  \deqn{P(a,x) = \frac{1}{\Gamma(a)} \int_0^x t^{a-1} e^{-t} dt}{P(a,x) =
-      1/Gamma(a) integral_0^x t^(a-1) exp(-t) dt}
+  \deqn{P(a,x) = \frac{1}{\Gamma(a)} \int_0^x t^{a-1} e^{-t} dt}{P(a,x) = 1/Gamma(a) integral_0^x t^(a-1) exp(-t) dt}
   \eqn{P(a, x)} is \code{pgamma(x, a)}.  Other authors (for example
   Karl Pearson in his 1922 tables) omit the normalizing factor,
-  defining the incomplete gamma function as \code{pgamma(x, a) * gamma(a)}.
-  A few use the \sQuote{upper} incomplete gamma function, the integral
-  from \eqn{x} to \eqn{\infty}{infinity} which can be computed by
-  \code{pgamma(x, a, lower=FALSE) * gamma(a)}, or its normalized
-  version. See also
-  \url{http://en.wikipedia.org/wiki/Incomplete_gamma_function}.
+  defining the incomplete gamma function \eqn{\gamma(a,x)} as
+  \eqn{\gamma(a,x) = \int_0^x t^{a-1} e^{-t} dt,}{gamma(a,x) =
+    integral_0^x t^(a-1) exp(-t) dt,} i.e., \code{pgamma(x, a) * gamma(a)}.
+  Yet other use the \sQuote{upper} incomplete gamma function,
+  \deqn{\Gamma(a,x) = \int_x^\infty t^{a-1} e^{-t} dt,}{Gamma(a,x) = integral_x^Inf t^(a-1) exp(-t) dt,}
+  which can be computed by
+  \code{pgamma(x, a, lower = FALSE) * gamma(a)}.
+
+  Note however that \code{pgamma(x, a, ..)} currently requires \eqn{a > 0},
+  whereas the incomplete gamma function is also defined for negative
+  \eqn{a}.  In that case, you can use \code{gamma_inc(a,x)} (for
+  \eqn{\Gamma(a,x)}) from package \CRANpkg{gsl}.
+
+  See also
+  \url{http://en.wikipedia.org/wiki/Incomplete_gamma_function}, or
+  \url{http://dlmf.nist.gov/8.2#i}.
 }
 \source{
   \code{dgamma} is computed via the Poisson density, using code contributed
@@ -134,6 +157,9 @@ rgamma(n, shape, rate = 1, scale = 1/rate)
   Abramowitz, M. and Stegun, I. A. (1972)
   \emph{Handbook of Mathematical Functions.} New York: Dover.
   Chapter 6: Gamma and Related Functions.
+
+  NIST Digital Library of Mathematical Functions.
+  \url{http://dlmf.nist.gov/}, section 8.2.
 }
 \seealso{
   \code{\link{gamma}} for the gamma function.
@@ -144,10 +170,10 @@ rgamma(n, shape, rate = 1, scale = 1/rate)
   distribution.
 }
 \examples{
--log(dgamma(1:4, shape=1))
+-log(dgamma(1:4, shape = 1))
 p <- (1:9)/10
-pgamma(qgamma(p,shape=2), shape=2)
-1 - 1/exp(qgamma(p, shape=1))
+pgamma(qgamma(p, shape = 2), shape = 2)
+1 - 1/exp(qgamma(p, shape = 1))
 
 \donttest{# even for shape = 0.001 about half the mass is on numbers
 # that cannot be represented accurately (and most of those as zero)

@@ -1,6 +1,8 @@
 #  File src/library/tcltk/R/tcltk-defunct.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -14,32 +16,36 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-## deprecated at r16598, 2001-11-04
-"$.tclvar" <- function(x, name)
-	.Defunct("tclVar and tclvalue")
+## This file is only retained to record history.
 
-"$<-.tclvar" <- function(x, name, value)
-    .Defunct("tclVar and tclvalue<-")
+## deprecated at r16598, 2001-11-04
+## defunct 2006-04-10, for R 2.4.0
+## removed in R 3.0.0
+## "$.tclvar" <- function(x, name) .Defunct("tclVar and tclvalue")
+
+## "$<-.tclvar" <- function(x, name, value) .Defunct("tclVar and tclvalue<-")
 
 ## deprecated in R 2.3.0
-tkcmd <- function(...)
-    .Defunct("tcl")
+## defunct 2006-04-10, for R 2.4.0
+## removed in R 3.0.0
+## tkcmd <- function(...)
+##     .Defunct("tcl")
 
-tkfile.tail <- function(...)
-    .Defunct("tclfile.tail")
+## tkfile.tail <- function(...)
+##     .Defunct("tclfile.tail")
 
-tkfile.dir <- function(...)
-    .Defunct("tclfile.dir")
+## tkfile.dir <- function(...)
+##     .Defunct("tclfile.dir")
 
-tkopen <- function(...)
-    .Defunct("tclopen")
+## tkopen <- function(...)
+##     .Defunct("tclopen")
 
-tkclose <- function(...)
-    .Defunct("tclclose")
+## tkclose <- function(...)
+##     .Defunct("tclclose")
 
-tkputs <- function(...)
-    .Defunct("tclputs")
+## tkputs <- function(...)
+##     .Defunct("tclputs")
 
-tkread <- function(...)
-    .Defunct("tclread")
+## tkread <- function(...)
+##     .Defunct("tclread")
 

@@ -1,6 +1,6 @@
 % File src/library/base/man/chol.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{chol}
@@ -14,15 +14,16 @@
 \usage{
 chol(x, \dots)
 
-\method{chol}{default}(x, pivot = FALSE,  LINPACK = pivot, \dots)
+\method{chol}{default}(x, pivot = FALSE,  LINPACK = FALSE, tol = -1, \dots)
 }
 \arguments{
   \item{x}{an object for which a method exists.  The default method
-    applies to real symmetric, positive-definite matrices.}
+    applies to numeric (or logical) symmetric, positive-definite matrices.}
   \item{\dots}{arguments to be based to or from methods.}
   \item{pivot}{Should pivoting be used?}
-  \item{LINPACK}{logical.  Should LINPACK be used in the non-pivoting
-    case (for compatibility with \R < 1.7.0)?}
+  \item{LINPACK}{logical.  Should LINPACK be used (which is deprecated)?}
+  \item{tol}{A numeric tolerance for use with \code{pivot = TRUE,
+      LINPACK = FALSE)}.}
 }
 \value{
   The upper triangular factor of the Choleski decomposition, i.e., the
@@ -34,16 +35,13 @@ chol(x, \dots)
 \details{
   \code{chol} is generic: the description here applies to the default
   method.
-  
-  This is an interface to the LAPACK routine DPOTRF and the
-  LINPACK routines DPOFA and DCHDC.
 
   Note that only the upper triangular part of \code{x} is used, so
   that \eqn{R'R = x} when \code{x} is symmetric.
 
   If \code{pivot = FALSE} and \code{x} is not non-negative definite an
   error occurs.  If \code{x} is positive semi-definite (i.e., some zero
-  eigenvalues) an error will also occur, as a numerical tolerance is used.
+  eigenvalues) an error will also occur as a numerical tolerance is used.
 
   If \code{pivot = TRUE}, then the Choleski decomposition of a positive
   semi-definite \code{x} can be computed.  The rank of \code{x} is
@@ -53,7 +51,17 @@ chol(x, \dots)
   \code{pivot <- attr(Q, "pivot")} and \code{oo <- order(pivot)}, it
   is true that \code{t(Q[, oo]) \%*\% Q[, oo]} equals \code{x},
   or, alternatively, \code{t(Q) \%*\% Q} equals \code{x[pivot,
-  pivot]}.  See the examples.
+    pivot]}.  See the examples.
+  
+  Use of \code{chol(pivot = FALSE, LINPACK = TRUE)} was deprecated in \R
+  1.7.0.   Pivoting with LAPACK requires LAPACK >= 3.2 and was added in \R
+  2.15.2.  The value of \code{tol} is passed to LAPACK, with negative
+  values selecting the default tolerance of (usually) \code{nrow(x) *
+  .Machine$double.neg.eps * max(diag(x)}.  The algorithm terminates once
+  the pivot is less than \code{tol}.
+
+  The LINPACK interface is restricted to matrices \code{x} with less
+  than \eqn{2^{31}}{2^31} elements.
 }
 
 \section{Warning}{
@@ -65,19 +73,33 @@ chol(x, \dots)
   by construction.
 }
 
+\source{
+  This is an interface to the LAPACK routines \code{DPOTRF} and
+  \code{DPSTRF} and the LINPACK routines \code{DPOFA} and \code{DCHDC}.
+
+  LAPACK and LINPACK are from \url{http://www.netlib.org/lapack} and
+  \url{http://www.netlib.org/linpack} and their guides are listed
+  in the references.
+}
 \references{
+  Anderson. E. and ten others (1999)
+  \emph{LAPACK Users' Guide}. Third Edition. SIAM.\cr
+  Available on-line at
+  \url{http://www.netlib.org/lapack/lug/lapack_lug.html}.
+
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
   Wadsworth & Brooks/Cole.
 
   Dongarra, J. J., Bunch, J. R., Moler, C. B. and Stewart, G. W. (1978)
   \emph{LINPACK Users Guide.}  Philadelphia: SIAM Publications.
-
-  Anderson. E. and ten others (1999)
-  \emph{LAPACK Users' Guide}. Third Edition. SIAM.\cr
-  Available on-line at
-  \url{http://www.netlib.org/lapack/lug/lapack_lug.html}.
 }
+
+\note{
+  \code{LINPACK = TRUE, pivot = FALSE} (for compatibility with \R <
+  1.7.0) was formally deprecated in \R 2.15.2.
+}
+
 
 \seealso{
   \code{\link{chol2inv}} for its \emph{inverse} (without pivoting),
@@ -96,6 +118,7 @@ crossprod(cm)  #-- = 'm'
 # now for something positive semi-definite
 x <- matrix(c(1:5, (1:5)^2), 5, 2)
 x <- cbind(x, x[, 1] + 3*x[, 2])
+colnames(x) <- letters[20:22]
 m <- crossprod(x)
 qr(m)$rank # is 2, as it should be
 
@@ -103,15 +126,14 @@ qr(m)$rank # is 2, as it should be
 # chol() unlike qr() does not use a tolerance.
 try(chol(m))
 
-(Q <- chol(m, pivot = TRUE)) # NB wrong rank here - see Warning section.
+(Q <- chol(m, pivot = TRUE))
 ## we can use this by
 pivot <- attr(Q, "pivot")
 crossprod(Q[, order(pivot)]) # recover m
 
 ## now for a non-positive-definite matrix
-( m <- matrix(c(5,-5,-5,3),2,2) )
+( m <- matrix(c(5,-5,-5,3), 2, 2) )
 try(chol(m))  # fails
-try(chol(m, LINPACK=TRUE))   # fails
 (Q <- chol(m, pivot = TRUE)) # warning
 crossprod(Q)  # not equal to m
 }

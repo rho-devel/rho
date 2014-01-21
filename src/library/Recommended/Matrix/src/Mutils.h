@@ -30,11 +30,24 @@ extern "C" {
 # include <alloca.h>
 #endif
 
+#ifndef LONG_VECTOR_SUPPORT
+// notably for  R <= 2.15.x :
+# define XLENGTH(x) LENGTH(x)
+# if R_VERSION < R_Version(2,16,0)
+  typedef int R_xlen_t;
+# endif
+#endif
+
 #define Alloca(n, t)   (t *) alloca( (size_t) ( (n) * sizeof(t) ) )
 
 SEXP triangularMatrix_validate(SEXP obj);
 SEXP symmetricMatrix_validate(SEXP obj);
 SEXP dense_nonpacked_validate(SEXP obj);
+
+// La_norm_type() & La_rcond_type()  have been in R_ext/Lapack.h
+//  but have still not been available to package writers ...
+char La_norm_type (const char *typstr);
+char La_rcond_type(const char *typstr);
 
 /* enum constants from cblas.h and some short forms */
 enum CBLAS_ORDER {CblasRowMajor=101, CblasColMajor=102};
@@ -59,6 +72,7 @@ SEXP set_double_by_name(SEXP obj, double val, char *nm);
 SEXP as_det_obj(double val, int log, int sign);
 SEXP get_factors(SEXP obj, char *nm);
 SEXP set_factors(SEXP obj, SEXP val, char *nm);
+SEXP R_set_factors(SEXP obj, SEXP val, SEXP name);
 
 #if 0
 SEXP dgCMatrix_set_Dim(SEXP x, int nrow);
@@ -73,8 +87,16 @@ Rboolean equal_string_vectors(SEXP s1, SEXP s2);
 
 void d_packed_getDiag(double *dest, SEXP x, int n);
 void l_packed_getDiag(   int *dest, SEXP x, int n);
-void tr_d_packed_getDiag(double *dest, SEXP x);
-void tr_l_packed_getDiag(   int *dest, SEXP x);
+SEXP d_packed_setDiag(double *diag, int l_d, SEXP x, int n);
+SEXP l_packed_setDiag(   int *diag, int l_d, SEXP x, int n);
+SEXP d_packed_addDiag(double *diag, int l_d, SEXP x, int n);
+
+void tr_d_packed_getDiag(double *dest, SEXP x, int n);
+void tr_l_packed_getDiag(   int *dest, SEXP x, int n);
+
+SEXP tr_d_packed_setDiag(double *diag, int l_d, SEXP x, int n);
+SEXP tr_l_packed_setDiag(   int *diag, int l_d, SEXP x, int n);
+SEXP tr_d_packed_addDiag(double *diag, int l_d, SEXP x, int n);
 
 SEXP Matrix_getElement(SEXP list, char *nm);
 
@@ -122,7 +144,10 @@ extern	 /* stored pointers to symbols initialized in R_init_Matrix */
 
 #define uplo_P(_x_) CHAR(STRING_ELT(GET_SLOT(_x_, Matrix_uploSym), 0))
 #define diag_P(_x_) CHAR(STRING_ELT(GET_SLOT(_x_, Matrix_diagSym), 0))
+#define Diag_P(_x_) (R_has_slot(x, Matrix_diagSym) ?			\
+		     CHAR(STRING_ELT(GET_SLOT(_x_, Matrix_diagSym), 0)) : " ")
 #define class_P(_x_) CHAR(asChar(getAttrib(_x_, R_ClassSymbol)))
+
 
 // Define this "Cholmod compatible" to some degree
 enum x_slot_kind {x_pattern=-1, x_double=0, x_logical=1, x_integer=2, x_complex=3};
@@ -229,6 +254,27 @@ Rboolean any_NA_in_x(SEXP obj)
 }
 
 
+
+/** Inverse Permutation
+ * C version of   .inv.perm.R <- function(p) { p[p] <- seq_along(p) ; p }
+ */
+static R_INLINE
+SEXP inv_permutation(SEXP p_, SEXP zero_p, SEXP zero_res)
+{
+    int *p = INTEGER(p_), n = LENGTH(p_);
+    SEXP val = allocVector(INTSXP, n);
+    int *v = INTEGER(val), p_0 = asLogical(zero_p), r_0 = asLogical(zero_res);
+    if(!p_0) v--; // ==> use 1-based indices
+    // shorter (but not 100% sure if ok: is LHS always eval'ed *before* RHS ?) :
+    // for(int i=0; i < n; ) v[p[i]] = ++i;
+    for(int i=0; i < n; ) {
+	int j = p[i]; v[j] = (r_0) ? i++ : ++i;
+    }
+    return val;
+}
+
+SEXP Mmatrix(SEXP args);
+
 void make_d_matrix_triangular(double *x, SEXP from);
 void make_i_matrix_triangular(   int *x, SEXP from);
 
@@ -307,18 +353,8 @@ Matrix_check_class(char *class, const char **valid)
  * These are the ones "everyone" should use -- is() versions, also looking
  * at super classes:
  */
-#if R_VERSION < R_Version(2, 15, 0)
-int Matrix_check_class_etc(SEXP x, const char **valid);
-#else
 # define Matrix_check_class_etc R_check_class_etc
-#endif
-
-#if R_VERSION < R_Version(2, 13, 0)
-int Matrix_check_class_and_super(SEXP x, const char **valid, SEXP rho);
-#else
 # define Matrix_check_class_and_super R_check_class_and_super
-#endif
-
 
 /** Accessing  *sparseVectors :  fast (and recycling)  v[i] for v = ?sparseVector:
  * -> ./sparseVector.c  -> ./t_sparseVector.c :

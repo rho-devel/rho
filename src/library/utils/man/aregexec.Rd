@@ -1,3 +1,8 @@
+% File src/library/utils/man/aregexec.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 2011-2 R Core Team
+% Distributed under GPL 2 or later
+
 \name{aregexec}
 \alias{aregexec}
 \title{Approximate String Match Positions}
@@ -33,7 +38,7 @@ aregexec(pattern, text, max.distance = 0.1, costs = NULL,
   to exact string matching provided by \code{\link{regexec}} and
   \code{\link{grep}}).
 
-  Note that by default, \code{\link{agrep}} performs literal matches, 
+  Note that by default, \code{\link{agrep}} performs literal matches,
   whereas \code{aregexec} performs regular expression matches.
 
   See \code{\link{agrep}} and \code{\link{adist}} for more information

@@ -1,6 +1,8 @@
 #  File src/library/stats4/R/mle.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -94,7 +96,7 @@ setMethod("summary", "mle", function(object, ...){
     cmat <- cbind(Estimate = object@coef,
                   `Std. Error` = sqrt(diag(object@vcov)))
     m2logL <- 2*object@min
-    new("summary.mle", call=object@call, coef=cmat, m2logL= m2logL)
+    new("summary.mle", call = object@call, coef = cmat, m2logL = m2logL)
 })
 
 setGeneric("profile")
@@ -318,11 +320,9 @@ setMethod("nobs", "mle", function (object, ...)
     if("nobs" %in% slotNames(object)) object@nobs else NA_integer_)
 
 setGeneric("logLik")
-setMethod("logLik", "mle",
-function (object, ...)
-{
-    if(length(list(...)))
-        warning("extra arguments discarded")
+setMethod("logLik", "mle", function(object, ...) {
+    if(!missing(...))
+	warning("extra arguments discarded")
     val <- -object@min
     if ("nobs" %in% slotNames(object) && # introduced in 2.13.0
         !is.na(no <- object@nobs)) attr(val, "nobs") <- no

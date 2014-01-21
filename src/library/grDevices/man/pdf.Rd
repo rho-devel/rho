@@ -1,6 +1,6 @@
 % File src/library/grDevices/man/pdf.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{pdf}
@@ -9,7 +9,6 @@
 
 \title{PDF Graphics Device}
 %% The definitive doc is the source :-)
-%%         ../../../main/devices.c  &   ../../../main/devPS.c
 \description{
   \code{pdf} starts the graphics device driver for producing PDF
   graphics.
@@ -18,7 +17,7 @@
 pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
     width, height, onefile, family, title, fonts, version,
     paper, encoding, bg, fg, pointsize, pagecentre, colormodel,
-    useDingbats, useKerning, fillOddEven, maxRasters, compress)
+    useDingbats, useKerning, fillOddEven, compress)
 }
 \arguments{
   \item{file}{a character string giving the name of the file.
@@ -71,7 +70,7 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
     speaking, in bp, that is 1/72 of an inch, but approximately in
     points.  Defaults to \code{12}.}
   \item{pagecentre}{logical: should the device region be centred on the
-    page? -- is only relevant for \code{paper != "special"}.  
+    page? -- is only relevant for \code{paper != "special"}.
     Defaults to \code{TRUE}.}
   \item{colormodel}{a character string describing the color model:
     currently allowed values are \code{"srgb"}, \code{"gray"} (or
@@ -84,16 +83,13 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
     font is one of the 14 guaranteed to be available in all PDF viewers,
     that guarantee is not always honoured.
 #ifdef unix
-    See the \sQuote{Note} for a possible fix for such viewers.
+    See the \sQuote{Note} for a possible fix for some viewers.
 #endif
     }
   \item{useKerning}{logical.  Should kerning corrections be included in
     setting text and calculating string widths?  Defaults to \code{TRUE}.}
   \item{fillOddEven}{logical controlling the polygon fill mode:  see
     \code{\link{polygon}} for details.  Defaults to \code{FALSE}.}
-  \item{maxRasters}{integer.  Unused in \R >= 2.14.0, previously the
-    maximum number of raster images to be stored in this PDF document
-    (default \code{64} in \R < 2.13.2).}
   \item{compress}{logical.  Should PDF streams be generated with Flate
     compression?  Defaults to \code{TRUE}.}
 }
@@ -101,7 +97,7 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   All arguments except \code{file} default to values given by
   \code{\link{pdf.options}()}.  The ultimate defaults are quoted in the
   arguments section.
-    
+
   \code{pdf()} opens the file \code{file} and the PDF commands needed to
   plot any graphics requested are sent to that file.
 
@@ -109,14 +105,14 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   by \code{\link{sprintf}}, with integer argument the page number.
   The default gives files \file{Rplot001.pdf}, \dots, \file{Rplot999.pdf},
   \file{Rplot1000.pdf}, \dots.
-  
+
   The \code{family} argument can be used to specify a PDF-specific
   font family as the initial/default font for the device.  If additional
   font families are to be used they should be included in the
   \code{fonts} argument.
 
   If a device-independent \R graphics font family is specified (e.g., via
-  \code{par(family=)} in the graphics package), the PDF device makes use
+  \code{par(family = )} in the graphics package), the PDF device makes use
   of the PostScript font mappings to convert the \R graphics font family
   to a PDF-specific font family description.  (See the
   documentation for \code{\link{pdfFonts}}.)
@@ -141,7 +137,7 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
 #endif
   Since \code{\link{embedFonts}} makes use of Ghostscript, it should be
   able to embed the URW-based families for use with other viewers.
-  
+
   See \code{\link{postscript}} for details of encodings, as the internal
   code is shared between the drivers.  The native PDF encoding is given
   in file \file{PDFDoc.enc}.
@@ -159,8 +155,8 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   supported by Acrobat 5 in 2001; it is very unlikely not to be
   supported in a current viewer.)
 
-  Line widths as controlled by \code{par(lwd=)} are in multiples of
-  1/96 inch.  Multiples less than 1 are allowed.  \code{pch="."} with
+  Line widths as controlled by \code{par(lwd = )} are in multiples of
+  1/96 inch.  Multiples less than 1 are allowed.  \code{pch = "."} with
   \code{cex = 1} corresponds to a square of side 1/72 inch, which is
   also the \sQuote{pixel} size assumed for graphics parameters such as
   \code{"cra"}.
@@ -173,7 +169,7 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   than \code{0.1} or too large to give a total margin of 0.5 inch, it is
   reset to the corresponding paper dimension minus 0.5.  Thus if you
   want the default behaviour of \code{\link{postscript}} use
-  \code{pdf(paper="a4r", width=0, height=0)} to centre the device region
+  \code{pdf(paper = "a4r", width = 0, height = 0)} to centre the device region
   on a landscape A4 page with 0.25 inch margins.
 
   When the background colour is fully transparent (as is the initial
@@ -222,9 +218,7 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
 \section{Printing}{
   Except on Windows it is possible to print directly from \code{pdf} by
   something like (this is appropriate for a CUPS printing system):
-\preformatted{
-    pdf("|lp -o landscape", paper = "a4r")
-}
+\preformatted{    pdf("|lp -o landscape", paper = "a4r")}
   This forces \code{onefile = TRUE}.
 }
 
@@ -236,9 +230,9 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   in your viewer if you can) and missing or incorrect glyphs in text
   (viewers silently doing font substitution).
 
-  Unfortunately the default viewers on most Linux and Mac OS X systems
+  Unfortunately the default viewers on most Linux and OS X systems
   have these problems, and no obvious way to turn off graphics anti-aliasing.
-  
+
   Acrobat Reader does not use the fonts specified but rather emulates
   them from multiple-master fonts.  This can be seen in imprecise
   centering of characters, for example the multiply and divide signs in
@@ -249,37 +243,39 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
 
   Acrobat Reader can be extended by \sQuote{font packs}, and these will
   be needed for the full use of encodings other than Latin-1 (although
-  they may be downloaded as needed).  See
-  \url{http://www.adobe.com/downloads/updates} for Reader 9 and X, and
-  \url{http://www.adobe.com/products/acrobat/acrrasianfontpack.html} for
-  Reader 6 to 8.
+  they may be offered for download as needed).
 
 #ifdef unix
-  On some systems the default plotting character \code{pch = 1} is
+  On some systems the default plotting character \code{pch = 1} was
   displayed in some PDF viewers incorrectly as a \code{"q"}
   character.  (These seem to be viewers based on the \samp{poppler} PDF
   rendering library).  This may be due to incorrect or incomplete mapping
   of font names to those used by the system.  Adding the following lines
   to \file{~/.fonts.conf} or \file{/etc/fonts/local.conf} may circumvent
-  this problem.
-\preformatted{<fontconfig>    
+  this problem, although this has largely been corrected on the affected
+  systems.
+\preformatted{<fontconfig>
 <alias binding="same">
   <family>ZapfDingbats</family>
   <accept><family>Dingbats</family></accept>
 </alias>
-</fontconfig>  
+</fontconfig>
 }
   Some further workarounds for problems with symbol fonts on
   viewers using \sQuote{fontconfig} are given in the \sQuote{Cairo Fonts}
   section of the help for \code{\link{X11}}.
 #endif
 #ifdef windows
-  The TeXworks PDF viewer is one of those which has been seen to fail to
-  display Dingbats correctly.  Whereas on other platforms the problems
-  seen are incorrect output, on Windows points are silently omitted.  One
-  workaround is to use the argument \code{useDingbats = FALSE}: another
-  it to use a better PDF viewer.
+  The TeXworks PDF viewer was one of those which has been seen to fail to
+  display Dingbats (used by e.g. \code{pch = 1}) correctly.  Whereas on
+  other platforms the problems seen were incorrect output, on Windows
+  points were silently omitted: however recent versions seem to manage
+  to display Dingbats.
 #endif
+
+  There is a different font bug in the \command{pdf.js} viewer included
+  in Firefox 19 and later: that maps Dingbats to the Symbol font and so
+  displays symbols such \code{pch = 1} as lambda.
 }
 
 \seealso{
@@ -288,12 +284,12 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   \code{\link{Devices}},
   \code{\link{postscript}}.
 
-#ifdef unix  
-  \code{\link{cairo_pdf}} and (on Mac OS X only) \code{\link{quartz}}
+#ifdef unix
+  \code{\link{cairo_pdf}} and (on OS X only) \code{\link{quartz}}
   for other devices that can produce PDF.
 #endif
-#ifdef windows  
-  \code{\link{cairo_pdf}} and (on Mac OS X only) \code{quartz}
+#ifdef windows
+  \code{\link{cairo_pdf}} and (on OS X only) \code{quartz}
   for other devices that can produce PDF.
 #endif
 
@@ -307,25 +303,25 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
 \examples{
 \dontrun{
 ## Test function for encodings
-TestChars <- function(encoding="ISOLatin1", ...)
+TestChars <- function(encoding = "ISOLatin1", ...)
 {
-    pdf(encoding=encoding, ...)
-    par(pty="s")
-    plot(c(-1,16), c(-1,16), type="n", xlab="", ylab="",
-         xaxs="i", yaxs="i")
+    pdf(encoding = encoding, ...)
+    par(pty = "s")
+    plot(c(-1,16), c(-1,16), type = "n", xlab = "", ylab = "",
+         xaxs = "i", yaxs = "i")
          title(paste("Centred chars in encoding", encoding))
-    grid(17, 17, lty=1)
+    grid(17, 17, lty = 1)
     for(i in c(32:255)) {
         x <- i \%\% 16
         y <- i \%/\% 16
-        points(x, y, pch=i)
+        points(x, y, pch = i)
     }
     dev.off()
 }
 ## there will be many warnings.
 TestChars("ISOLatin2")
 ## this does not view properly in older viewers.
-TestChars("ISOLatin2", family="URWHelvetica")
+TestChars("ISOLatin2", family = "URWHelvetica")
 ## works well for viewing in gs-based viewers, and often in xpdf.
 }}
 \keyword{device}

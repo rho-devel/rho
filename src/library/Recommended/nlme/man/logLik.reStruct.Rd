@@ -35,7 +35,7 @@
   mixed-effects model represented by \code{object} and \code{conLin},
   evaluated at \code{coef{object}}.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{reStruct}},
   \code{\link{pdMat}},
   \code{\link{logLik.lme}}

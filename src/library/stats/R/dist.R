@@ -1,6 +1,8 @@
 #  File src/library/stats/R/dist.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -14,7 +16,7 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-dist <- function(x, method="euclidean", diag=FALSE, upper=FALSE, p=2)
+dist <- function(x, method = "euclidean", diag = FALSE, upper = FALSE, p = 2)
 {
     ## account for possible spellings of euclid?an
     if(!is.na(pmatch(method, "euclidian")))
@@ -30,7 +32,6 @@ dist <- function(x, method="euclidean", diag=FALSE, upper=FALSE, p=2)
 
     x <- as.matrix(x)
     N  <- nrow(x)
-    if (!is.double(x)) storage.mode(x) <- "double"
     attrs <- if(method == 6L)
         list(Size = N, Labels =  dimnames(x)[[1L]], Diag = diag,
              Upper = upper, method = METHODS[method],
@@ -94,7 +95,7 @@ print.dist <-
 {
     if(length(x)) {
 	if(is.null(diag))
-	    diag <-	 if(is.null(a <- attr(x, "Diag"))) FALSE else a
+	    diag <- if(is.null(a <- attr(x, "Diag"))) FALSE else a
 	if(is.null(upper))
 	    upper <- if(is.null(a <- attr(x,"Upper"))) FALSE else a
 
@@ -111,7 +112,7 @@ print.dist <-
 	print(if(diag || upper) cf else cf[-1, -attr(x, "Size"), drop = FALSE],
 	      quote = FALSE, right = right, ...)
     } else {
-	cat(data.class(x),"(0)\n", sep='')
+	cat(data.class(x),"(0)\n", sep = "")
     }
     invisible(x)
 }

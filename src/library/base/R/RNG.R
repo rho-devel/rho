@@ -1,6 +1,8 @@
 #  File src/library/base/R/RNG.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -45,7 +47,8 @@ RNGkind <- function(kind = NULL, normal.kind = NULL)
 	    stop(gettextf("'%s' is not a valid choice", normal.kind),
                  domain = NA)
 	if (normal.kind == 0L)
-            warning("Buggy version of Kinderman-Ramage generator used")
+            warning("buggy version of Kinderman-Ramage generator used",
+                    domain = NA)
          if(normal.kind == length(n.kinds) - 1L) normal.kind <- -1L
     }
     r <- 1L + .Internal(RNGkind(i.knd, normal.kind))
@@ -78,10 +81,11 @@ set.seed <- function(seed, kind = NULL, normal.kind = NULL)
 	    stop(gettextf("'%s' is not a valid choice", normal.kind),
                  domain = NA)
 	if (normal.kind == 0L)
-            stop("Buggy version of Kinderman-Ramage generator is not allowed")
+            stop("buggy version of Kinderman-Ramage generator is not allowed",
+                 domain = NA)
          if(normal.kind == length(n.kinds) - 1L) normal.kind <- -1L
     }
-    invisible(.Internal(set.seed(seed, i.knd, normal.kind)))
+    .Internal(set.seed(seed, i.knd, normal.kind))
 }
 
 # Compatibility function to set RNGkind as in a given R version

@@ -55,15 +55,19 @@ An alternative for specifying smooths of more than one covariate is e.g.: \cr
 smooth of the two covariates \code{x} and \code{z} constructed from marginal t.p.r.s. bases 
 of dimension 5 and 10 with marginal penalties of order 2 and 3. Any combination of basis types is 
 possible, as is any number of covariates. \code{\link{te}} provides further information. 
+\code{\link{ti}} terms are a variant designed to be used as interaction terms when the main 
+effects (and any lower order interactions) are present. \code{\link{t2}} produces tensor product
+smooths that are the natural low rank analogue of smoothing spline anova models. 
 
-Both \code{s} and \code{te} terms accept an \code{sp} argument of supplied smoothing parameters: positive 
+\code{s}, \code{te}, \code{ti} and \code{t2} terms accept an \code{sp} argument of supplied smoothing parameters: positive 
 values are taken  as fixed values to be used, negative to indicate that the parameter should be estimated. If
 \code{sp} is supplied then it over-rides whatever is in the \code{sp} argument to \code{gam}, if it is not supplied 
 then it defaults to all negative, but does not over-ride the \code{sp} argument to \code{gam}.
 
 Formulae can involve nested or ``overlapping'' terms such as \cr
-\code{y~s(x)+s(z)+s(x,z)} or \code{y~s(x,z)+s(z,v)}:\cr see
-\code{\link{gam.side}} for further details and examples. 
+\code{y~s(x)+s(z)+s(x,z)} or \code{y~s(x,z)+s(z,v)}\cr 
+but nested models should really be set up using \code{\link{ti}} terms:
+see \code{\link{gam.side}} for further details and examples. 
 
 Smooth terms in a \code{gam} formula will accept matrix arguments as covariates (and corresponding \code{by} variable), 
 in which case a `summation convention' is invoked. Consider the example of \code{s(X,Z,by=L)} where \code{X}, \code{Z}

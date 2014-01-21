@@ -38,7 +38,7 @@
   variance covariate reevaluated at the current fitted object value;
   else \code{object} is returned unchanged.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{needUpdate}},
   \code{\link{covariate<-.varFunc}}
 }

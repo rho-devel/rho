@@ -1,6 +1,6 @@
 % File src/library/base/man/libPaths.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{libPaths}
@@ -43,6 +43,12 @@
   and this is returned.  If given no argument, a character vector with
   the currently active library trees is returned.
 
+  How paths \code{new} with a trailing slash are treated is
+  OS-dependent.  On a POSIX filesystem existing directories can usually
+  be specified with a trailing slash: on Windows filepaths with a
+  trailing slash (or backslash) are invalid and so will never be added
+  to the library search path.
+
 #ifdef unix
   The library search path is initialized at startup from the environment
   variable \env{R_LIBS} (which should be a colon-separated list of
@@ -53,10 +59,10 @@
   By default \env{R_LIBS} is unset, and \env{R_LIBS_USER} is set to
   directory \file{R/\var{R.version$platform}-library/\var{x.y}}
   of the home directory (or \file{Library/R/\var{x.y}/library} for
-  Mac OS X AQUA builds), for \R \var{x.y.z}.
+  CRAN OS X builds), for \R \var{x.y.z}.
 
-  \code{.Library.site} can be set via the environment variable 
-  \env{R_LIBS_SITE} (as a colon-separated list of library trees).
+  \code{.Library.site} can be set via the environment variable
+  \env{R_LIBS_SITE} (as a non-empty colon-separated list of library trees).
 #endif
 #ifdef windows
   The library search path is initialized at startup from the environment
@@ -70,7 +76,7 @@
   for \R \var{x.y.z}.
 
   \code{.Library.site} can be set via the environment variable
-  \env{R_LIBS_SITE} (as a semicolon-separated list of library trees).
+  \env{R_LIBS_SITE} (as a non-empty semicolon-separated list of library trees).
 #endif
 
   Both \env{R_LIBS_USER} and \env{R_LIBS_SITE} feature possible
@@ -100,7 +106,7 @@
   updated value.
 
   For consistency, the paths are always normalized by
-  \code{\link{normalizePath}(winslash="/")}.
+  \code{\link{normalizePath}(winslash = "/")}.
 }
 \value{
   A character vector of file paths.

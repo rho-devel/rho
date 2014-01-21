@@ -40,7 +40,7 @@
   an \code{reStruct} object similar to \code{object}, but with all
   \code{pdMat} components initialized.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{reStruct}}, \code{\link{pdMat}},
   \code{\link{Initialize}}

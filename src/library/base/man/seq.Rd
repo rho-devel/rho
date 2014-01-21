@@ -1,6 +1,6 @@
 % File src/library/base/man/seq.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{seq}
@@ -39,6 +39,9 @@ seq_len(length.out)
   \item{along.with}{take the length from the length of this argument.}
 }
 \details{
+  Numerical inputs should all be \link{finite} (that is, not infinite,
+  \code{\link{NaN}} or \code{NA}).
+
   The interpretation of the unnamed arguments of \code{seq} and
   \code{seq.int} is \emph{not} standard, and it is recommended always to
   name the arguments when programming.
@@ -53,7 +56,7 @@ seq_len(length.out)
   \code{seq.int} is an \link{internal generic} which dispatches on
   methods for \code{"seq"} based on the class of the first supplied
   argument (before argument matching).
-  
+
   Typical usages are
 \preformatted{seq(from, to)
 seq(from, to, by= )
@@ -111,7 +114,8 @@ seq(length.out= )
   arguments return a vector of type \code{"integer"} or \code{"double"}:
   programmers should not rely on which.
 
-  \code{seq_along} and \code{seq_len} always return an integer vector.
+  \code{seq_along} and \code{seq_len} return an integer vector, unless
+  it is a \emph{long vector} when it will be double.
 }
 
 \references{
@@ -129,12 +133,12 @@ seq(length.out= )
   \code{\link{col}}.
 }
 \examples{
-seq(0, 1, length.out=11)
+seq(0, 1, length.out = 11)
 seq(stats::rnorm(20)) # effectively 'along'
 seq(1, 9, by = 2)     # matches 'end'
 seq(1, 9, by = pi)    # stays below 'end'
 seq(1, 6, by = 3)
-seq(1.575, 5.125, by=0.05)
+seq(1.575, 5.125, by = 0.05)
 seq(17) # same as 1:17, or even better seq_len(17)
 }
 \keyword{manip}

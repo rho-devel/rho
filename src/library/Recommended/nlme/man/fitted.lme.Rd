@@ -52,7 +52,7 @@
   in S and S-PLUS", Springer, esp. pp. 235, 397.    
 }
 
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{lme}}, \code{\link{residuals.lme}} }
 

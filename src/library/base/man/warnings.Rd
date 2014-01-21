@@ -1,13 +1,14 @@
 % File src/library/base/man/warnings.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{warnings}
+\title{Print Warning Messages}
 \alias{warnings}
 \alias{last.warning}
 \alias{print.warnings}
-\title{Print Warning Messages}
+\alias{[.warnings}
 \description{
   \code{warnings} and its \code{print} method print the
   variable \code{last.warning} in a pleasing form.
@@ -31,7 +32,7 @@ warnings(\dots)
 
   It is possible that \code{last.warning} refers to the last recorded
   warning and not to the last warning, for example if \code{options(warn)} has
-  been changed or if a catastrophic error occurred. 
+  been changed or if a catastrophic error occurred.
 }
 \section{Warning}{
   It is undocumented where \code{last.warning} is stored nor that it is
@@ -46,11 +47,12 @@ warnings(\dots)
 ##    rather than run by example()
 ow <- options("warn")
 for(w in -1:1) {
-   options(warn = w); cat("\n warn =",w,"\n")
+   options(warn = w); cat("\n warn =", w, "\n")
    for(i in 1:3) { cat(i,"..\n"); m <- matrix(1:7, 3,4) }
 }
 warnings()
 options(ow) # reset
+tail(warnings(), 2) # see the last two warnings only (via '[' method)
 }
 \keyword{programming}
 \keyword{error}

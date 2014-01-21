@@ -1,0 +1,91 @@
+The changes documented since 3/2002, which is the date stated in Brian's 
+version of the Description file.
+
+  In Sept 2012 the current R version and the Mayo version were merged.
+
+14March02: When y was a factor, with no instances of one of the levels in
+the "middle" of the levels list, the program would generate NA due to
+division by 0.  Fairly simple fixes to gini.c and rpart.s.  The bug, and
+a very nicely documented test case, was supplied by Matthew Wiener.
+
+8Aug02: Small bug pointed out by Kai Yu in rundown.c - a missing pair of {},
+which only apply if usesurrogate < 2 and there are lots of missings.  Appears
+that the se of the xval error would be too small.
+
+29Oct02: Error in xpred.rpart.s, for a user split with a response vector >1,
+the "yback" vector was too short.  (Diff the lines creating eframe with those
+of rpart.s, to see the obvious oversight!)  Leads to a core dump.
+
+29Oct02: Fix error in branch.c, which was not watching out for missing
+values in the surrogate variable.  Found due to close reading of the
+C code by Kai Yu.  (I'm impressed!)
+
+12Nov02: Add the "return.all" argument to xpred.rpart, to fit the needs of
+Dan Schaid.  Add the test case xpred.s to test it.
+
+28Nov02: Major changes to how indexing is done.  In the older version, at a 
+lower branch on the tree one would find the following code again and again:
+	for (i=0; i<n; i++) {
+	    if (which[i] = current_node) {
+		 ... all the work ...
+	        }
+If a node only had 20 of n=20,000 observations in it, the code still walked
+through all 20000.  
+   In the new code, the chain of routines is called with the pair
+(n1, n2).  Consequences:
+
+   a. The repeated code fragment is now the much more efficient
+			for (i=n1; i<n2; i++) {
+A trivial test (continuous y, n=20000, 20 xvals, cp=0 to force deep trees)
+gave unix.time values of 107 vs 2526 seconds.  This was a bit of a shock -
+I never assumed that quite so much of the time could be spent in
+inefficient bookkeeping.  With shallower trees I would expect far less
+gain, maybe 2 fold (at n=2000 it was 10 vs 32 seconds).
+   b. In nodesplit.c, extra work has to be done to modify the rp.sort
+array.  See comments in the last block of nodesplit for a full
+explanation.
+   c. Under the new regime, it turns out to be important to NOT sort
+the columns of the x matrix.  As a consequence:
+	1. There is no advantage to calling rpart with as.single(x) to
+	  save memory.  The copy=F arg is a more efficient use of
+	  resources.  (If the S manuals can be believed....)
+        2. Internal variables have been changed to 'double', by redefining
+	  the constant "FLOAT" in rpart.h.
+	3. Since X is not disturbed, it is now safe to use the is_na
+	macro to test it, rather than passing the result of is.na(X) as
+        a separate argument to the C code.  This resulted in further
+	algorithmic time savings in nodesplit.c and branch.c (depending on
+	the number of surrogates that need to be used in splitting).
+   d. Because tree building mixes up the rp.sorts array, we need to save
+an original copy for cross-validation.  So the rewrite is not a total win --
+we use somewhat more memory.  Subsetting out a group of subjects
+turns out to be essentially the same code as was added to nodesplit.
+
+29Nov02: If the primary split sends exactly the same number left and right
+(same total weights actually), there should be no "go with the majority"
+default.  Prior code always would choose left in this case, now chooses
+neither.
+
+29Nov02: The length of the response vector (numresp) added to the output
+structure.  It was needed for xpred.rpart.
+
+2Dec02: Based on concerns of a user (whose email I currently can't find) about
+accuracy with asymmetric loss matrices, I spent the last 2 days creating
+a completely worked example.  Their concerns, unfortunately, were completely
+justified.
+   a. With L=loss asymmetric, the altered priors were computed wrong -- they
+were using L' instead of L!  Upshot -- the tree would not not necessarily
+choose optimal splits for the given loss matrix.  Once chosen, splits were 
+evaluated correctly.  The printed "improvement" values are of course the
+wrong onese as well.  It's interesting that for my little test case, with
+L quite asymmetric, the early splits in the tree are unchanged -- a good split
+still looks good.  Simple fix to gini.c.
+   b. Fixed a minor bug in the Gini criteria -- the printed "improvement"
+values were too large by a constant = (#classes -1).  Since they are only used
+to select the largest value, there was no practical impact.
+
+17Jun05: Fix offset bug -- the line in rpart.s didn't actually get
+the offset, but rather the variable number of the offset.
+ 
+27March05: Finish up the test suite for priors.  Run test suite.  Code is
+ready for distribution.

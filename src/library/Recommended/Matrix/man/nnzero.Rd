@@ -4,7 +4,7 @@
 \alias{nnzero,ANY-method}
 \alias{nnzero,denseMatrix-method}
 \alias{nnzero,diagonalMatrix-method}
-\alias{nnzero,pMatrix-method}
+\alias{nnzero,indMatrix-method}
 \alias{nnzero,sparseMatrix-method}
 \alias{nnzero,CHMfactor-method}
 \description{
@@ -44,7 +44,7 @@ nnzero(x, na.counted = NA)
       for traditional \code{\link{matrix}} objects, care has to be taken
       for \code{"\linkS4class{symmetricMatrix}"} objects.}
     \item{\code{signature(x = "diagonalMatrix")}, and
-      \code{signature(x = "pMatrix")}}{fast simple methods for these
+      \code{signature(x = "indMatrix")}}{fast simple methods for these
       special \code{"sparseMatrix"} classes.}
     \item{\code{signature(x = "sparseMatrix")}}{typically, the most
       interesting method, also carefully taking

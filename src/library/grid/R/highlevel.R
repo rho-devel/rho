@@ -1,6 +1,8 @@
 #  File src/library/grid/R/highlevel.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -129,8 +131,8 @@ grid.multipanel <- function(x = stats::runif(90), y = stats::runif(90),
 
 grid.show.layout <- function(l, newpage=TRUE,
                              bg="light grey",
-                         cell.border="blue", cell.fill="light blue",
-                         cell.label=TRUE, label.col="blue",
+                             cell.border="blue", cell.fill="light blue",
+                             cell.label=TRUE, label.col="blue",
                              unit.col="red", vp=NULL) {
   if (!is.layout(l))
     stop("'l' must be a layout")

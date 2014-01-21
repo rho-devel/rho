@@ -35,7 +35,7 @@
   the grouping level associated \code{object}, if any are present.
 }
 
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{summary.pdMat}},\code{\link{pdMat}}}
 

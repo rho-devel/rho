@@ -111,7 +111,7 @@ sparse.model.matrix <-
                          names(data))
 	if (any(is.na(reorder)))
 	    stop("model frame and formula mismatch in model.matrix()")
-	if(!identical(reorder, seq_len(ncol(data))))
+	if(!isSeq(reorder, ncol(data), Ostart=FALSE))
 	    data <- data[,reorder, drop=FALSE]
     }
     int <- attr(t, "response")

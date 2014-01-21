@@ -8,7 +8,7 @@ freedom for each parameter and leading diagonal of influence/hat matrix,
 for a penalized regression estimated by \code{magic}.
 }
 \usage{
-magic.post.proc(X,object,w)
+magic.post.proc(X,object,w=NULL)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{

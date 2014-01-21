@@ -11,9 +11,9 @@
 Diagonal(n, x = NULL)
 
 .symDiagonal(n, x = rep.int(1,n), uplo = "U")
-.sparseDiagonal(n, x = rep.int(1,m), uplo = "U",
+.sparseDiagonal(n, x = 1, uplo = "U",
                 shape = if(missing(cols)) "t" else "g",
-	        kind, cols = if(n) 0:(n - 1L) else integer(0))
+	        unitri, kind, cols = if(n) 0:(n - 1L) else integer(0))
 }
 \arguments{
   \item{n}{integer specifying the dimension of the (square) matrix.  If
@@ -26,6 +26,10 @@ Diagonal(n, x = NULL)
     will it make sense to change this from the default.}
   \item{shape}{string of 1 character, one of \code{c("t","s","g")}, to
     chose a triangular, symmetric or general result matrix.}
+  \item{unitri}{optional logical indicating if a triangular result
+    should be \dQuote{unit-triangular}, i.e., with \code{diag = "U"}
+    slot, if possible.  The default, \code{\link{missing}}, is the same
+    as \code{\link{TRUE}}.}
   \item{kind}{string of 1 character, one of \code{c("d","l","n")}, to
     chose the storage mode of the result, from classes
     \code{\linkS4class{dsparseMatrix}},
@@ -35,9 +39,6 @@ Diagonal(n, x = NULL)
     the \emph{columns} to subselect conceptually, i.e., get the
     equivalent of  \code{Diagonal(n,*)[, cols + 1]}.}
 }
-% \details{
-%   ~~ If necessary, more details than the description above ~~
-% }
 \value{
   \code{Diagonal()} returns an object of class
   \code{\linkS4class{ddiMatrix}} or \code{\linkS4class{ldiMatrix}}
@@ -78,6 +79,12 @@ M1 <- Matrix(0+0:5, 2,3)
 (S <- crossprod(Matrix(rbinom(60, size=1, prob=0.1), 10,6)))
 (SI <- S + 10*.symDiagonal(6)) # sparse symmetric still
 stopifnot(is(SI, "dsCMatrix"))
+(I4 <- .sparseDiagonal(4, shape="t"))# now (2012-10) unitriangular
+stopifnot(I4@diag == "U", all(I4 == diag(4)))
+\dontshow{% checking some "unit-diagonality":
+  L <- Diagonal(5, TRUE)
+  stopifnot(L@diag == "U", identical(L, Diagonal(5) > 0))
+}
 }
 \keyword{array}
 \keyword{algebra}

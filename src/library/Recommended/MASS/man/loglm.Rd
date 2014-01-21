@@ -1,5 +1,5 @@
 % file MASS/man/loglm.Rd
-% copyright (C) 1994-9 W. N. Venables and B. D. Ripley
+% copyright (C) 1994-2013 W. N. Venables and B. D. Ripley
 %
 \name{loglm}
 \alias{loglm}
@@ -119,46 +119,24 @@ loglm(formula, data, subset, na.action, \dots)
 sapply(minn38, function(x) length(levels(x)))
 ## hs phs fol sex f
 ##  3   4   7   2 0
-minn38a <- array(0, c(3,4,7,2), lapply(minn38[, -5], levels))
-minn38a[data.matrix(minn38[,-5])] <- minn38$fol
-fm <- loglm(~1 + 2 + 3 + 4, minn38a)  # numerals as names.
+##minn38a <- array(0, c(3,4,7,2), lapply(minn38[, -5], levels))
+##minn38a[data.matrix(minn38[,-5])] <- minn38$f
+
+## or more simply
+minn38a <- xtabs(f ~ ., minn38)
+
+fm <- loglm(~ 1 + 2 + 3 + 4, minn38a)  # numerals as names.
 deviance(fm)
-##[1] 3711.9
+## [1] 3711.9
 fm1 <- update(fm, .~.^2)
 fm2 <- update(fm, .~.^3, print = TRUE)
-## 5 iterations: deviation 0.0750732
+## 5 iterations: deviation 0.075
 anova(fm, fm1, fm2)
-\dontrun{LR tests for hierarchical log-linear models
 
-Model 1:
-  ~  1 + 2 + 3 + 4
-Model 2:
- .  ~  1 + 2 + 3 + 4 + 1:2 + 1:3 + 1:4 + 2:3 + 2:4 + 3:4
-Model 3:
- .  ~  1 + 2 + 3 + 4 + 1:2 + 1:3 + 1:4 + 2:3 + 2:4 + 3:4 +
-        1:2:3 + 1:2:4 + 1:3:4 + 2:3:4
-
-
-          Deviance  df Delta(Dev) Delta(df) P(> Delta(Dev)
-  Model 1 3711.915 155
-  Model 2  220.043 108   3491.873        47        0.00000
-  Model 3   47.745  36    172.298        72        0.00000
-Saturated    0.000   0     47.745        36        0.09114
-
-}
 # Case 1. An array generated with xtabs.
 
 loglm(~ Type + Origin, xtabs(~ Type + Origin, Cars93))
-\dontrun{Call:
-loglm(formula = ~Type + Origin, data = xtabs(~Type + Origin,
-    Cars93))
 
-Statistics:
-                    X^2 df  P(> X^2)
-Likelihood Ratio 18.362  5 0.0025255
-         Pearson 14.080  5 0.0151101
-
-}
 # Case 2.  Frequencies given as a vector in a data frame
 names(quine)
 ## [1] "Eth"  "Sex"  "Age"  "Lrn"  "Days"

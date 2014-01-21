@@ -1,6 +1,8 @@
 #  File src/library/methods/R/MethodsListClass.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -92,8 +94,9 @@
         switch(typeof(def),
                "builtin" = , "special" = , "NULL" = return(def),
                "closure" = {},
-               stop(gettextf("invalid object for formal method definition: type \"%s\"",
-                             typeof(def)), domain = NA)
+               stop(gettextf("invalid object for formal method definition: type %s",
+                             dQuote(typeof(def))),
+                    domain = NA)
                )
         if(is(def, "MethodDefinition")) {
             value <- def
@@ -158,7 +161,7 @@
                         return(value)
                 }
                 else
-                    stop(gettextf("initialize method returned an object of class %s instead of the required class %s",
+                    stop(gettextf("'initialize' method returned an object of class %s instead of the required class %s",
                                   paste(dQuote(class(value)), collapse=", "),
                                   dQuote(class(.Object))),
                          domain = NA)
@@ -227,8 +230,10 @@
     setMethod("show", "MethodSelectionReport", where = envir,
               function(object) {
                   nreport <- length(object@target)
-                  cat(gettextf("Reported %d ambiguous selections out of %d for function %s\n",nreport,
-			       length(object@allSelections), object@generic))
+                  cat(sprintf(ngettext(nreport,
+                                       "Reported %d ambiguous selection out of %d for function %s\n",
+                                       "Reported %d ambiguous selections out of %d for function %s\n"),
+                              nreport, length(object@allSelections), object@generic))
                   target <- object@target; selected = object@selected
                   candidates <- object@candidates; note <- object@note
                   for(i in seq_len(nreport)) {
@@ -246,8 +251,9 @@
               })
     setMethod("show", "classGeneratorFunction", where = envir,
               function(object) {
-                  cat(gettextf("Class generator function for class \"%s\" from package \"%s\"\n",
-                         object@className, object@package))
+                  cat(gettextf("class generator function for class %s from package %s\n",
+                               dQuote(object@className),
+                               sQuote(object@package)))
                   show(as(object, "function"))
               })
 
@@ -255,17 +261,17 @@
 	       where = envir)
     ## and its default methods:
     setMethod("cbind2", signature(x = "ANY", y = "ANY"),
-	      function(x,y) .Internal(cbind(deparse.level = 0, x, y)))
+	      function(x,y) .__H__.cbind(deparse.level = 0, x, y) )
     setMethod("cbind2", signature(x = "ANY", y = "missing"),
-	      function(x,y) .Internal(cbind(deparse.level = 0, x)))
+	      function(x,y) .__H__.cbind(deparse.level = 0, x) )
 
     setGeneric("rbind2", function(x, y, ...) standardGeneric("rbind2"),
 	       where = envir)
     ## and its default methods:
     setMethod("rbind2", signature(x = "ANY", y = "ANY"),
-	      function(x,y) .Internal(rbind(deparse.level = 0, x, y)))
+	      function(x,y) .__H__.rbind(deparse.level = 0, x, y) )
     setMethod("rbind2", signature(x = "ANY", y = "missing"),
-	      function(x,y) .Internal(rbind(deparse.level = 0, x)))
+	      function(x,y) .__H__.rbind(deparse.level = 0, x) )
 
     setGeneric("kronecker", where = envir)
 
@@ -291,7 +297,7 @@
           array = "Ops", nonStructure = "Ops"),
           array = "[", structure = "[", nonStructure = "[",
           structure = "Math", nonStructure = "Math",
-          refClass = "$", data.frame = "$<-"
+          refClass = "$", refClass = "$<-", data.frame = "$<-"
                 )
     assign(".NeedPrimitiveMethods", needed, where)
     setMethod("Ops", c("structure", "vector"), where = where,

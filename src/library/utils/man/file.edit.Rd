@@ -15,7 +15,7 @@ file.edit(\dots, title = file, editor = getOption("editor"),
   \item{\dots}{one or more character vectors containing the names of the
     files to be displayed.  These will be tilde-expanded: see
     \code{\link{path.expand}}.}
-  \item{title}{the title to use in the editor; defaults to the filename.}  
+  \item{title}{the title to use in the editor; defaults to the filename.}
   \item{editor}{the text editor to be used.  See \sQuote{Details}.}
   \item{fileEncoding}{the encoding to assume for the file: the default
     is to assume the native encoding.  See the \sQuote{Encoding} section
@@ -26,7 +26,7 @@ file.edit(\dots, title = file, editor = getOption("editor"),
   files can be opened only one at a time on Unix; on Windows, the
   internal editor allows multiple files to be opened, but has a limit of
   50 simultaneous edit windows.
-    
+
   The \code{title} argument is used for the window caption in Windows,
   and is currently ignored on other platforms.
 
@@ -36,14 +36,14 @@ file.edit(\dots, title = file, editor = getOption("editor"),
 
   The default for \code{editor} is system-dependent.   On
   Windows it defaults to \code{"internal"}, the script editor, and in
-  the Mac OS X GUI the document editor is used whatever the value of
+  the OS X GUI the document editor is used whatever the value of
   \code{editor}.  On Unix the default is set from the environment
   variables \env{EDITOR} or \env{VISUAL} if either is set, otherwise
   \code{vi} is used.
 #ifdef windows
-  
-  UTF-8-encoded paths not valid in the current locale can be used.  
-#endif  
+
+  UTF-8-encoded paths not valid in the current locale can be used.
+#endif
 }
 \seealso{
   \code{\link{files}},

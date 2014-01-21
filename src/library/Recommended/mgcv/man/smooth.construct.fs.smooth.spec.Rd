@@ -83,9 +83,11 @@ y <- f + rnorm(n)*2
 ## so response depends on global smooths of x0 and 
 ## x2, and a smooth of x1 for each level of fac.
 
-## fit model...
+## fit model (note p-values not available when fit 
+## using gamm)...
 bm <- gamm(y~s(x0)+ s(x1,fac,bs="fs",k=5)+s(x2,k=20))
 plot(bm$gam,pages=1)
+summary(bm$gam)
 
 ## Could also use...
 ## b <- gam(y~s(x0)+ s(x1,fac,bs="fs",k=5)+s(x2,k=20),method="ML")

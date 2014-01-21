@@ -115,7 +115,7 @@ intI <- function(i, n, dn, give.dn = TRUE)
     ## ----------------------------------------------------------------------
     ## Author: Martin Maechler, Date: 23 Apr 2007
 
-    has.dn <- !is.null(dn)
+    has.dn <- !is.null.DN(dn)
     DN <- has.dn && give.dn
     if(is(i, "numeric")) {
 	storage.mode(i) <- "integer"
@@ -127,7 +127,7 @@ intI <- function(i, n, dn, give.dn = TRUE)
 	    i0 <- (0:(n - 1L))[i]
 	} else {
 	    if(length(i) && max(i, na.rm=TRUE) > n)
-		stop("index larger than maximal ",n)
+		stop(gettextf("index larger than maximal %d", n), domain=NA)
 	    if(any(z <- i == 0)) i <- i[!z]
 	    i0 <- i - 1L		# transform to 0-indexing
 	}
@@ -136,7 +136,7 @@ intI <- function(i, n, dn, give.dn = TRUE)
     else if (is(i, "logical")) {
 	if(length(i) > n)
 	    stop(gettextf("logical subscript too long (%d, should be %d)",
-			  length(i), n))
+			  length(i), n), domain=NA)
 	i0 <- (0:(n - 1L))[i]
 	if(DN) dn <- dn[i]
     } else { ## character
@@ -242,7 +242,7 @@ setMethod("[", signature(x = "TsparseMatrix",
 	  if(is(x, "symmetricMatrix")) {
 	      isSym <- isTRUE(all(i == j))# work for i,j NA
 	      if(!isSym)
-		  x <- as(x, paste(.M.kind(x), "gTMatrix", sep=''))
+		  x <- as(x, paste0(.M.kind(x), "gTMatrix"))
 	  } else isSym <- FALSE
 
 	  if(isSym) {
@@ -317,7 +317,7 @@ replTmat <- function (x, i, j, ..., value)
 
 	if(!is(x,"generalMatrix")) {
 	    cl <- class(x)
-	    x <- as(x, paste(.M.kind(x), "gTMatrix", sep=''))
+	    x <- as(x, paste0(.M.kind(x), "gTMatrix"))
 	    Matrix.msg("'sub-optimal sparse 'x[i] <- v' assignment: Coercing class ",
 		       cl," to ",class(x))
 	}
@@ -341,8 +341,12 @@ replTmat <- function (x, i, j, ..., value)
         has.x <- "x" %in% slotNames(clDx) # === slotNames(x)
 	if(!has.x && # <==> "n.TMatrix"
 	   ((iNA <- any(is.na(value))) || !value.is.logical))
-	    warning(gettextf("x[.] <- val: x is \"%s\", val not in {TRUE, FALSE} is coerced%s.",
-			     clx, if(iNA) " NA |--> TRUE" else ""))
+	    warning(if(iNA)
+		    gettextf("x[.] <- val: x is %s, val not in {TRUE, FALSE} is coerced NA |--> TRUE.",
+			     dQuote(clx))
+		    else
+		    gettextf("x[.] <- val: x is %s, val not in {TRUE, FALSE} is coerced.",
+			     dQuote(clx)), domain=NA)
 
 	## now have 0-based indices   x.i (entries) and	 i (new entries)
 
@@ -466,7 +470,7 @@ replTmat <- function (x, i, j, ..., value)
 	   (!is.null(v <- getOption("Matrix.verbose")) && v >= 1))
 	    (if(.w) warning else message)(
 	     "M[i,j] <- v :  coercing symmetric M[] into non-symmetric")
-        x <- as(x, paste(.M.kind(x), "gTMatrix", sep=''))
+        x <- as(x, paste0(.M.kind(x), "gTMatrix"))
         clDx <- getClassDef(clx <- class(x))
     }
 
@@ -497,8 +501,12 @@ replTmat <- function (x, i, j, ..., value)
 
     if(!has.x && # <==> "n.TMatrix"
        ((iNA <- any(is.na(value))) || !value.is.logical))
-	warning(gettextf("x[.,.] <- val: x is \"%s\", val not in {TRUE, FALSE} is coerced%s.",
-			 clx, if(iNA) " NA |--> TRUE" else ""))
+	warning(if(iNA)
+		gettextf("x[.,.] <- val: x is %s, val not in {TRUE, FALSE} is coerced NA |--> TRUE.",
+			 dQuote(clx))
+		else
+		gettextf("x[.,.] <- val: x is %s, val not in {TRUE, FALSE} is coerced.",
+			 dQuote(clx)), domain=NA)
 
     ## another simple, typical case:
     if(lenRepl == 1) {
@@ -524,7 +532,8 @@ replTmat <- function (x, i, j, ..., value)
 ## if(identical(Sys.getenv("USER"),"maechler")
 ##    if(lenRepl > 2) { # __________ ___ JUST for testing! _______________
 	if(is.null(v <- getOption("Matrix.quiet")) || !v)
-	    message(gettextf("x[.,.] <- val : x being coerced from Tsparse* to CsparseMatrix"))
+	    message(gettextf("x[.,.] <- val : x being coerced from Tsparse* to CsparseMatrix"),
+		    domain = NA)
 	return(replCmat4(as(x,"CsparseMatrix"), i1, i2, iMi=iMi, jMi=jMi,
 			 value = if(spV) value else as(value, "sparseVector"),
 			 spV = TRUE))
@@ -619,7 +628,7 @@ replTmat <- function (x, i, j, ..., value)
 {
     nA <- nargs()
     if(nA != 3)
-	stop(gettextf("nargs() = %d should never happen; please report.", nA))
+	stop(gettextf("nargs() = %d should never happen; please report.", nA), domain=NA)
 
     ## else: nA == 3  i.e.,  M [ cbind(ii,jj) ] <- value or M [ Lmat ] <- value
     if(is.logical(i)) {
@@ -664,14 +673,15 @@ replTmat <- function (x, i, j, ..., value)
     nc <- di[2]
     i1 <- i[,1]
     i2 <- i[,2]
-    if(any(i1 > nr)) stop("row indices must be <= nrow(.) which is ", nr)
-    if(any(i2 > nc)) stop("column indices must be <= ncol(.) which is ", nc)
+    if(any(i1 > nr)) stop(gettextf("row indices must be <= nrow(.) which is %d", nr), domain=NA)
+    if(any(i2 > nc)) stop(gettextf("column indices must be <= ncol(.) which is %d", nc), domain=NA)
 
     ## Tmatrix maybe non-unique, have an entry split into a sum of several ones:
     if(is_duplicatedT(x, di = di))
 	x <- uniqTsparse(x)
 
     toGeneral <- FALSE
+    isN <- extends(clDx, "nMatrix")
     if(r.sym <- extends(clDx, "symmetricMatrix")) {
 	## Tests to see if the assignments are symmetric as well
 	r.sym <- all(i1 == i2)
@@ -701,8 +711,13 @@ replTmat <- function (x, i, j, ..., value)
     else if(extends(clDx, "triangularMatrix")) {
 	r.tri <- all(if(x@uplo == "U") i1 <= i2 else i2 <= i1)
 	if(r.tri) { ## result is *still* triangular
-	    if(any(i1 == i2)) # diagonal will be changed
+	    if(any(ieq <- i1 == i2)) { # diagonal will be changed
+		if(x@diag == "U" && all(ieq) &&
+		   all(value == if(isN) TRUE else as1(x@x)))
+		    ## only diagonal values are set to 1 -- i.e. unchanged
+		    return(x)
 		x <- diagU2N(x) # keeps class (!)
+	    }
 	}
 	else toGeneral <- TRUE
     }
@@ -710,7 +725,7 @@ replTmat <- function (x, i, j, ..., value)
 	if((.w <- isTRUE(getOption("Matrix.warn"))) || isTRUE(getOption("Matrix.verbose")))
 	    (if(.w) warning else message)(
 	     "M[ij] <- v :  coercing symmetric M[] into non-symmetric")
-	x <- as(x, paste(.M.kind(x), "gTMatrix", sep=''))
+	x <- as(x, paste0(.M.kind(x), "gTMatrix"))
 	clDx <- getClassDef(clx <- class(x))
     }
 
@@ -726,11 +741,11 @@ replTmat <- function (x, i, j, ..., value)
     m1 <- match(ii.v, ii.x)
     i.repl <- !is.na(m1) # those that need to be *replaced*
 
-    if(isN <- extends(clDx, "nMatrix")) { ## no 'x' slot
+    if(isN) { ## no 'x' slot
 	isN <- all(value %in% c(FALSE, TRUE)) # will result remain  "nMatrix" ?
 	if(!isN)
-	    x <- as(x, paste(if(extends(clDx, "lMatrix")) "l" else "d",
-			     .sparse.prefixes[.M.shape(x)], "TMatrix", sep=''))
+	    x <- as(x, paste0(if(extends(clDx, "lMatrix")) "l" else "d",
+			      .sparse.prefixes[.M.shape(x)], "TMatrix"))
     }
     has.x <- !isN ## isN  <===> "remains pattern matrix" <===> has no 'x' slot
 
@@ -823,9 +838,3 @@ setMethod("t", signature(x = "TsparseMatrix"),
 	      r@Dimnames <- x@Dimnames[2:1]
 	      r
       })
-
-
-setMethod("writeMM", "TsparseMatrix",
-	  function(obj, file, ...)
-          .Call(Csparse_MatrixMarket, as(obj, "CsparseMatrix"),
-                as.character(file)))

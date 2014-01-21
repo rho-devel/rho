@@ -1,6 +1,8 @@
 #  File src/library/graphics/R/rect.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -36,8 +38,9 @@ rect <-
                 density = density, angle = angle, ...)
     }
     else
-        .Internal(rect(as.double(xleft), as.double(ybottom),
-                       as.double(xright), as.double(ytop),
-                       col = col, border = border,
-                       lty = lty, lwd = lwd, ...))
+        .External.graphics(C_rect, as.double(xleft), as.double(ybottom),
+                           as.double(xright), as.double(ytop),
+                           col = col, border = border,
+                           lty = lty, lwd = lwd, ...)
+    invisible()
 }

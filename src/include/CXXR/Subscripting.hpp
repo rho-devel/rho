@@ -81,6 +81,9 @@ namespace CXXR {
      * subsetting and subassignment operations, CXXR sometimes makes
      * deep copies of vectors of RHandle objects in cases where CR
      * gets away with simple pointer copies.
+     *
+     * @todo CR 3 uses vectors of real numbers to represent subscripts
+     * where these would be too big to fit into an INTEGER.
      */
     class Subscripting {
     public:

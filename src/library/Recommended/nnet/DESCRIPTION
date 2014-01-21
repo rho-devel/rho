@@ -1,15 +1,21 @@
 Package: nnet
 Priority: recommended
-Version: 7.3-1
-Date: 2009-05-09
-Depends: R (>= 2.5.0), stats, utils
+Version: 7.3-7
+Date: 2013-07-01
+Depends: R (>= 2.14.0), stats, utils
 Suggests: MASS
+Authors@R: c(person("Brian", "Ripley", role = c("aut", "cre", "cph"),
+        email = "ripley@stats.ox.ac.uk"))
 Author: Brian Ripley <ripley@stats.ox.ac.uk>.
 Maintainer: Brian Ripley <ripley@stats.ox.ac.uk>
+Copyright: W. N. Venables and B. D. Ripley
 Description: Software for feed-forward neural networks with a single
-  hidden layer, and for multinomial log-linear models.
+        hidden layer, and for multinomial log-linear models.
 Title: Feed-forward Neural Networks and Multinomial Log-Linear Models
+ByteCompile: yes
 License: GPL-2 | GPL-3
 URL: http://www.stats.ox.ac.uk/pub/MASS4/
-LazyLoad: yes
-Packaged: 2009-07-31 14:02:09 UTC; ripley
+Packaged: 2013-07-01 11:32:28 UTC; ripley
+NeedsCompilation: yes
+Repository: CRAN
+Date/Publication: 2013-07-01 13:34:06

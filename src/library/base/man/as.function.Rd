@@ -30,7 +30,7 @@ as.function(x, \dots)
 }
 \note{
   For ancient historical reasons, \code{envir = NULL} uses the global
-  environment rather than the base environment.  
+  environment rather than the base environment.
   Please use \code{envir = \link{globalenv}()} instead if this is what you want,
   as the special handling of \code{NULL} may change in a future release.
 }
@@ -44,7 +44,7 @@ as.function(x, \dots)
   argument lists, etc.
 }
 \examples{
-as.function(alist(a=,b=2,a+b))
-as.function(alist(a=,b=2,a+b))(3)
+as.function(alist(a = , b = 2, a+b))
+as.function(alist(a = , b = 2, a+b))(3)
 }
 \keyword{programming}

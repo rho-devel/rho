@@ -25,8 +25,8 @@ expand(x, \dots)
   The function \code{expand} allows all factors to be fully expanded.
 }
 \seealso{
-  The LU decomposition \code{\link{lu}}, for which there \emph{is} an
-  \code{expand} method;
+  The LU \code{\link{lu}}, and the \code{\link{Cholesky}}
+  decompositions which have \code{expand} methods;
   \code{\link{facmul}}.
 }
 \examples{

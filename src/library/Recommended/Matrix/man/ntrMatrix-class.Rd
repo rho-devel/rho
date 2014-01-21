@@ -13,6 +13,8 @@
 \alias{coerce,ntrMatrix,ntpMatrix-method}
 \alias{coerce,matrix,ntrMatrix-method}
 \alias{coerce,matrix,ntpMatrix-method}
+\alias{diag<-,ntpMatrix-method}
+\alias{diag<-,ntrMatrix-method}
 \alias{t,ntpMatrix-method}
 \alias{t,ntrMatrix-method}
 %

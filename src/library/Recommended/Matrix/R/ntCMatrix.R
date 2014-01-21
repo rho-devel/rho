@@ -1,7 +1,7 @@
 #### Logical Sparse Triangular Matrices in Compressed column-oriented format
 
 setAs("ntCMatrix", "matrix",
-      function(from) as(as(from, "denseMatrix"), "matrix"))
+      function(from) as(copyClass(diagU2N(from), "ngCMatrix"), "matrix"))
 setAs("matrix", "ntCMatrix",
       function(from) as(as(from, "dtCMatrix"), "ntCMatrix"))
 

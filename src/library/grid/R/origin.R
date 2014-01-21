@@ -1,6 +1,8 @@
 #  File src/library/grid/R/origin.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -19,7 +21,7 @@ valid.origin <- function(origin) {
                              c("bottom.left", "top.left",
                                "bottom.right", "top.right")) - 1)
   if (any(is.na(origin)))
-    stop("Invalid 'origin'")
+    stop("invalid 'origin'")
   origin
 }
 

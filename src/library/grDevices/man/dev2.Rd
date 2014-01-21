@@ -27,7 +27,7 @@ dev.control(displaylist = c("inhibit", "enable"))
     \code{\link{postscript}} arguments.}
   \item{which}{A device number specifying the device to copy to.}
   \item{out.type}{The name of the output device: can be \code{"pdf"}, or
-    \code{"quartz"} (some Mac OS X builds) or \code{"cairo"} (Windows
+    \code{"quartz"} (some OS X builds) or \code{"cairo"} (Windows
     and some Unix-alikes, see \code{\link{cairo_pdf}}).}
   \item{displaylist}{A character string: the only valid values are
     \code{"inhibit"} and \code{"enable"}.}
@@ -69,7 +69,7 @@ dev.control(displaylist = c("inhibit", "enable"))
   copied.  Most screen devices default to a transparent background, which
   is probably not what is needed when copying to a device such as
   \code{\link{png}}.
-  
+
   For \code{dev.copy2eps} and \code{dev.copy2pdf}, \code{width} and
   \code{height} are taken from the current device unless otherwise
   specified.  If just one of \code{width} and \code{height} is
@@ -107,7 +107,7 @@ dev.control(displaylist = c("inhibit", "enable"))
   \code{dev.copy2eps}.  This will not be appropriate unless the device
   specifies dimensions in inches, in particular not for
   \code{png}, \code{jpeg}, \code{tiff} and \code{bmp} unless
-  \code{units="inches"} is specified.
+  \code{units = "inches"} is specified.
 }
 \note{
   Most devices (including all screen devices) have a display list
@@ -132,10 +132,10 @@ dev.control(displaylist = c("inhibit", "enable"))
 \examples{
 \dontrun{
 x11() # on a Unix-alike
-plot(rnorm(10), main="Plot 1")
-dev.copy(device=x11)
+plot(rnorm(10), main = "Plot 1")
+dev.copy(device = x11)
 mtext("Copy 1", 3)
-dev.print(width=6, height=6, horizontal=FALSE) # prints it
+dev.print(width = 6, height = 6, horizontal = FALSE) # prints it
 dev.off(dev.prev())
 dev.off()
 }

@@ -78,7 +78,7 @@
   Pinheiro and Bates (1996).  The different correlation structures
   available for the \code{correlation} argument are described in Box,
   Jenkins and Reinse (1994), Littel \emph{et al} (1996), and Venables and
-  Ripley, (1997). The use of variance functions for linear and nonlinear
+  Ripley, (2002). The use of variance functions for linear and nonlinear
   mixed effects models is presented in detail in Davidian and Giltinan
   (1995).
 
@@ -108,7 +108,7 @@
 }
 
 \author{
-  Jose Pinheiro and Douglas
+  José Pinheiro and Douglas
   Bates \email{bates@stat.wisc.edu}
 }
 

@@ -108,17 +108,16 @@ SEXP dtCMatrix_sparse_solve(SEXP a, SEXP b)
 
     int *xp = INTEGER(ALLOC_SLOT(ans, Matrix_pSym, INTSXP, (B->n) + 1)),
 	xnz = 10 * B->p[B->n];	/* initial estimate of nnz in x */
-    int *ti = Calloc(xnz, int), k, lo = uplo_P(a)[0] == 'L', pos = 0;
-    double *tx = Calloc(xnz, double);
-    double  *wrk = Calloc(A->n, double);
-    int *xi = Calloc(2*A->n, int);	/* for cs_reach */
+    int k, lo = uplo_P(a)[0] == 'L', pos = 0;
+    int    *ti = Calloc(xnz, int),     *xi = Calloc(2*A->n, int); /* for cs_reach */
+    double *tx = Calloc(xnz, double), *wrk = Calloc(  A->n, double);
 
     slot_dup(ans, b, Matrix_DimSym);
     SET_DimNames(ans, b);
     xp[0] = 0;
     for (k = 0; k < B->n; k++) {
 	int top = cs_spsolve (A, B, k, xi, wrk, (int *)NULL, lo);
-	int nz = A->n - top, p;
+	int nz = A->n - top;
 
 	xp[k + 1] = nz + xp[k];
 	if (xp[k + 1] > xnz) {
@@ -127,12 +126,12 @@ SEXP dtCMatrix_sparse_solve(SEXP a, SEXP b)
 	    tx = Realloc(tx, xnz, double);
 	}
 	if (lo)			/* increasing row order */
-	    for(p = top; p < A->n; p++, pos++) {
+	    for(int p = top; p < A->n; p++, pos++) {
 		ti[pos] = xi[p];
 		tx[pos] = wrk[xi[p]];
 	    }
 	else			/* decreasing order, reverse copy */
-	    for(p = A->n - 1; p >= top; p--, pos++) {
+	    for(int p = A->n - 1; p >= top; p--, pos++) {
 		ti[pos] = xi[p];
 		tx[pos] = wrk[xi[p]];
 	    }
@@ -141,7 +140,7 @@ SEXP dtCMatrix_sparse_solve(SEXP a, SEXP b)
     Memcpy(INTEGER(ALLOC_SLOT(ans, Matrix_iSym, INTSXP,  xnz)), ti, xnz);
     Memcpy(   REAL(ALLOC_SLOT(ans, Matrix_xSym, REALSXP, xnz)), tx, xnz);
 
-    Free(ti); Free(tx);
+    Free(ti);  Free(tx);
     Free(wrk); Free(xi);
 
     RETURN(ans);

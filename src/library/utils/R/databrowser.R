@@ -1,6 +1,8 @@
 #  File src/library/utils/R/databrowser.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -16,7 +18,7 @@
 
 browseEnv <- function(envir = .GlobalEnv, pattern,
                       excludepatt = "^last\\.warning",
-		      html = .Platform$OS.type != "mac",
+		      html = .Platform$GUI != "AQUA",
 		      expanded = TRUE, properties = NULL,
 		      main = NULL, debugMe = FALSE)
 {
@@ -172,14 +174,15 @@ browseEnv <- function(envir = .GlobalEnv, pattern,
 				    si[c("user","nodename","sysname")]})))
     }
     if(html)
-	wsbrowser(IDS,IsRoot,Container,ItemsPerContainer, ParentID,
-		  NAMES,TYPES,DIMS,
-		  kind = "HTML", main = main, properties = properties,
-		  expanded)
-    else ## currently only for Mac:
-	.Internal(wsbrowser(as.integer(IDS),IsRoot,Container,
-			    as.integer(ItemsPerContainer),as.integer(ParentID),
-			    NAMES,TYPES,DIMS))
+	wsbrowser(IDS, IsRoot, Container, ItemsPerContainer, ParentID,
+		  NAMES, TYPES, DIMS, kind = "HTML", main = main,
+                  properties = properties, expanded)
+    else if(.Platform$GUI == "AQUA") {
+        awsbrowser <- get("wsbrowser", envir = as.environment("tools:RGUI"))
+ 	awsbrowser(as.integer(IDS), IsRoot, Container,
+                   as.integer(ItemsPerContainer), as.integer(ParentID),
+                   NAMES, TYPES, DIMS)
+   } else stop("only 'html = TRUE' is supported on this platform")
 }
 
 wsbrowser <- function(IDS, IsRoot, IsContainer, ItemsPerContainer,
@@ -193,8 +196,8 @@ wsbrowser <- function(IDS, IsRoot, IsContainer, ItemsPerContainer,
 
     bold <- function(ch) paste0("<b>",ch,"</b>")
     ital <- function(ch) paste0("<i>",ch,"</i>")
-    entry<- function(ch) paste0("<td>",ch,"</td>")
-    Par	 <- function(ch) paste0("<P>",ch,"</P>")
+    entry <- function(ch) paste0("<td>",ch,"</td>")
+    Par	<- function(ch) paste0("<P>",ch,"</P>")
     Trow <- function(N, ...) {
 	if(length(list(...)) != N) stop("wrong number of table row entries")
 	paste("<tr>", ..., "</tr>\n")

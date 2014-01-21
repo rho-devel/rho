@@ -206,7 +206,7 @@ constraint free parameterizations.}
 ## Adding a penalized truncated power basis class and methods
 ## as favoured by Ruppert, Wand and Carroll (2003) 
 ## Semiparametric regression CUP. (No advantage to actually
-## using this, since mgcv can happliy handle non-identity 
+## using this, since mgcv can happily handle non-identity 
 ## penalties.)
 
 smooth.construct.tr.smooth.spec<-function(object,data,knots)
@@ -260,9 +260,8 @@ Predict.matrix.tr.smooth<-function(object,data)
   X # return the prediction matrix
 }
 
-
-
 # an example, using the new class....
+require(mgcv)
 set.seed(100)
 dat <- gamSim(1,n=400,scale=2)
 b<-gam(y~s(x0,bs="tr",m=2)+s(x1,bs="ps",m=c(1,3))+

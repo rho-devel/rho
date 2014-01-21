@@ -1,6 +1,9 @@
 #  File src/library/stats/R/ppr.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1998 B. D. Ripley
+#  Copyright (C) 2000-12 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -14,11 +17,6 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-## file stats/R/ppr.R
-## copyright (C) 1998 B. D. Ripley
-## Copyright (C) 2000-3 The R Core Team
-## This version distributed under GPL (version 2 or later)
-
 ppr <- function(x, ...) UseMethod("ppr")
 
 ppr.formula <-
@@ -28,7 +26,7 @@ function(formula, data, weights, subset,
     call <- match.call()
     m <- match.call(expand.dots = FALSE)
     m$contrasts <- m$... <- NULL
-    m[[1L]] <- as.name("model.frame")
+    m[[1L]] <- quote(stats::model.frame)
     m <- eval(m, parent.frame())
     Terms <- attr(m, "terms")
     attr(Terms, "intercept") <- 0L
@@ -131,7 +129,7 @@ print.ppr <- function(x, ...)
     }
     mu <- x$mu; ml <- x$ml
     cat("\nGoodness of fit:\n")
-    gof <- x$gofn; names(gof) <- paste(1L:ml, "terms")
+    gof <- setNames(x$gofn, paste(1L:ml, "terms"))
     print(format(gof[mu:ml], ...), quote=FALSE)
     invisible(x)
 }
@@ -152,7 +150,7 @@ print.summary.ppr <- function(x, ...)
     print(format(x$beta, ...), quote=FALSE)
     if(any(x$edf >0)) {
 	cat("\nEquivalent df for ridge terms:\n")
-	edf <- x$edf; names(edf) <- paste("term", 1L:mu)
+	edf <- setNames(x$edf, paste("term", 1L:mu))
 	print(round(edf,2), ...)
     }
     invisible(x)

@@ -25,7 +25,7 @@ allCoef(\dots, extract)
   a vector with all elements, generally coefficients, obtained by
   applying \code{extract} to the objects in \code{\dots}. 
 }
-\author{Jose' Pinheiro and Douglas Bates}
+\author{José' Pinheiro and Douglas Bates}
 
 \seealso{\code{\link{lmeStruct}},\code{\link{nlmeStruct}}}
 

@@ -34,20 +34,31 @@ Sys.glob(paths, dirmark = FALSE)
 
   All systems should interpret \code{*} (match zero or more characters),
   \code{?} (match a single character) and (probably) \code{[} (begin a
-  character class or range).  If a filename starts with \code{.} this
-  must be matched explicitly.  By default paths ending in \code{/} will
-  be accepted and matched only to directories.
+  character class or range).  The handling of paths
+  ending with a separator is system-dependent.  On a POSIX-2008
+  compliant OS they will match directories (only), but as they are not
+  valid filepaths on Windows, they match nothing there.  (Earlier POSIX
+  standards allowed them to match files.)
+  % section A.4.12, http://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_xbd_chap04.html
 
   The rest of these details are indicative (and based on the POSIX
   standard).
-  
+
+  If a filename starts with \code{.} this may need to be matched
+  explicitly: for example \code{Sys.glob("*.RData")} may or may not
+  match \file{.RData} but will not usually match \file{.aa.RData}.  Note
+  that this is platform-dependent: e.g. on Solaris \code{Sys.glob("*.*")}
+  matches \file{.} and \file{..}.
+
   \code{[} begins a character class.  If the first character in
   \code{[...]} is not \code{!}, this is a character class which matches
   a single character against any of the characters specified.  The class
   cannot be empty, so \code{]} can be included provided it is first.  If
   the first character is \code{!}, the character class matches a single
-  character which is \emph{none} of the specified characters.
-  
+  character which is \emph{none} of the specified characters.  Whether
+  \code{.} in a character class matches a leading \code{.} in the
+  filename is OS-dependent.
+
   Character classes can include ranges such as \code{[A-Z]}: include
   \code{-} as a character by having it first or last in a class.  (The
   interpretation of ranges should be locale-specific, so the example is
@@ -63,16 +74,17 @@ Sys.glob(paths, dirmark = FALSE)
 
   Wildcards are \code{*} (match zero or more characters) and \code{?} (match
   a single character).  If a filename starts with \code{.} this must be
-  matched explicitly.
+  matched explicitly (on Windows, but note that this is platform-dependent).
 
-  In addition, \code{[} begins a character class.  If the first
-  character in \code{[...]} is not \code{!}, this is a character class
-  which matches a single character against any of the characters
-  specified.  The class cannot be empty, so \code{]} can be included
-  provided it is first.  If the first character is \code{!}, the
-  character class matches a single character which is \emph{none} of the
-  specified characters.
-  
+  \code{[} begins a character class.  If the first character in
+  \code{[...]} is not \code{!}, this is a character class which matches
+  a single character against any of the characters specified.  The class
+  cannot be empty, so \code{]} can be included provided it is first.  If
+  the first character is \code{!}, the character class matches a single
+  character which is \emph{none} of the specified characters.  Whether
+  \code{.} in a character class matches a leading \code{.} in the
+  filename is OS-dependent.
+
   Character classes can include ranges such as \code{[A-Z]}: include
   \code{-} as a character by having it first or last in a class.  (In the
   current implementation ranges are in numeric order of Unicode points.)
@@ -97,7 +109,7 @@ Sys.glob(paths, dirmark = FALSE)
   is normally collated in either the current locale or in byte (ASCII)
   order; however, on Windows collation is in the order of Unicode
   points.
-  
+
   Directory errors are normally ignored, so the matches are to
   accessible file paths (but not necessarily accessible files).
 }

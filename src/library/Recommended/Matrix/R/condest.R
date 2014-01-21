@@ -231,7 +231,8 @@ onenormest <- function(A, t = min(n, 5),
         S_old <- S
         if (iter > iter.max) {
             ## Gone too far.  Stop.
-            if(!silent) warning("not converged in ",iter.max," iterations")
+            if(!silent) warning(gettextf("not converged in %d iterations",
+					 iter.max), domain = NA)
             break
         }
 

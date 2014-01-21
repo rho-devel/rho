@@ -34,6 +34,7 @@
 \alias{determinant,dgeMatrix,logical-method}
 \alias{determinant,dgeMatrix,missing-method}
 \alias{diag,dgeMatrix-method}
+\alias{diag<-,dgeMatrix-method}
 \alias{dim,dgeMatrix-method}
 \alias{dimnames,dgeMatrix-method}
 \alias{eigen,dgeMatrix,missing-method}
@@ -44,10 +45,7 @@
 \alias{rcond,dgeMatrix,character-method}
 \alias{rowMeans,dgeMatrix-method}
 \alias{rowSums,dgeMatrix-method}
-\alias{solve,dgeMatrix,matrix-method}
-\alias{solve,dgeMatrix,ddenseMatrix-method}
-\alias{solve,dgeMatrix,sparseMatrix-method}
-\alias{solve,dgeMatrix,missing-method}
+%\alias{solve,dgeMatrix,matrix-method}--> solve-methods.Rd
 \alias{t,dgeMatrix-method}
 \alias{tcrossprod,dgeMatrix,missing-method}
 \alias{tcrossprod,dgeMatrix,dgeMatrix-method}
@@ -115,8 +113,6 @@
     \item{rcond}{\code{signature(x = "dgeMatrix", norm = "missing")}: ... }
     \item{rowMeans}{\code{signature(x = "dgeMatrix")}: rowwise means (averages)}
     \item{rowSums}{\code{signature(x = "dgeMatrix")}: rowwise sums}
-    \item{solve}{\code{signature(a = "dgeMatrix", b = "dgeMatrix")}: ... }
-    \item{solve}{\code{signature(a = "dgeMatrix", b = "missing")}: ... }
     \item{t}{\code{signature(x = "dgeMatrix")}: ... }
   }
 }

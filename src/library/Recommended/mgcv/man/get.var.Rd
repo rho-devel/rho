@@ -29,6 +29,7 @@ function returns \code{NULL}.}
 \seealso{  \code{\link{gam} } }
 
 \examples{
+require(mgcv)
 y <- 1:4;dat<-data.frame(x=5:10)
 get.var("x",dat)
 get.var("y",dat)

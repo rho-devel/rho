@@ -38,9 +38,9 @@
   }
 }
 \section{Extends}{
-Class \code{"lMatrix"}, directly.
+Class \code{"nMatrix"}, directly.
 Class \code{"denseMatrix"}, directly.
-Class \code{"Matrix"}, by class \code{"lMatrix"}.
+Class \code{"Matrix"}, by class \code{"nMatrix"}.
 Class \code{"Matrix"}, by class \code{"denseMatrix"}.
 }
 \section{Methods}{

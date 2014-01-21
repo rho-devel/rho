@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2007   The R Core Team
+ *  Copyright (C) 1997-2012   The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -100,24 +100,21 @@
 #include <config.h>
 #endif
 
-#include "Defn.h"
+#include <Defn.h>
+#include <Internal.h>
 #include <R_ext/RS.h> /* for test of S4 objects */
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Subscripting.hpp"
 
 using namespace CXXR;
 
-#if 0
-static SEXP gcall;
-#endif
-
 /* EnlargeVector() takes a vector "x" and changes its length to "newlen".
    This allows to assign values "past the end" of the vector or list.
    Note that, unlike S, we only extend as much as is necessary.
 */
-static SEXP EnlargeVector(SEXP x, R_len_t newlen)
+static SEXP EnlargeVector(SEXP x, R_xlen_t newlen)
 {
-    R_len_t i, len;
+    R_xlen_t i, len;
     SEXP newx, names, newnames;
 
     /* Sanity Checks */
@@ -125,7 +122,7 @@ static SEXP EnlargeVector(SEXP x, R_len_t newlen)
 	error(_("attempt to enlarge non-vector"));
 
     /* Enlarge the vector itself. */
-    len = length(x);
+    len = xlength(x);
     if (LOGICAL(GetOption1(install("check.bounds")))[0])
 	warning(_("assignment outside vector/list limits (extending from %d to %d)"),
 		len, newlen);
@@ -373,18 +370,40 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int level, SEXP call)
     return(100 * TYPEOF(*x) + TYPEOF(*y));
 }
 
+#ifdef LONG_VECTOR_SUPPORT
+static R_INLINE R_xlen_t gi(SEXP indx, R_xlen_t i)
+{
+    if (TYPEOF(indx) == REALSXP) {
+	double d = REAL(indx)[i];
+	return R_FINITE(d) ? (R_xlen_t) d : NA_INTEGER;
+    } else
+	return INTEGER(indx)[i];
+}
+#else
+#define R_SHORT_LEN_MAX INT_MAX
+static R_INLINE int gi(SEXP indx, R_xlen_t i)
+{
+    if (TYPEOF(indx) == REALSXP) {
+	double d = REAL(indx)[i];
+	if (!R_FINITE(d) || d < -R_SHORT_LEN_MAX || d > R_SHORT_LEN_MAX) return NA_INTEGER;
+	return int( d);
+    } else
+	return INTEGER(indx)[i];
+}
+#endif
+
 static SEXP DeleteListElements(SEXP x, SEXP which)
 {
     SEXP include, xnew, xnames, xnewnames;
-    R_len_t i, ii, len, lenw;
-    len = length(x);
-    lenw = length(which);
+    R_xlen_t i, ii, len, lenw;
+    len = xlength(x);
+    lenw = xlength(which);
     /* calculate the length of the result */
     PROTECT(include = allocVector(INTSXP, len));
     for (i = 0; i < len; i++)
 	INTEGER(include)[i] = 1;
     for (i = 0; i < lenw; i++) {
-	ii = INTEGER(which)[i];
+	ii = gi(which, i);
 	if (0 < ii  && ii <= len)
 	    INTEGER(include)[ii - 1] = 0;
     }
@@ -656,6 +675,7 @@ static SEXP ArrayAssign(SEXP call, SEXP xarg, PairList* subscripts, SEXP yarg)
     return 0;  // -Wall
 }
 
+/* Use for pairlists */
 static SEXP GetOneIndex(SEXP sub, int ind)
 {
     if (ind < 0 || ind+1 > length(sub))
@@ -681,8 +701,9 @@ static SEXP GetOneIndex(SEXP sub, int ind)
 /* This is only used for [[<-, so only adding one element */
 static SEXP SimpleListAssign(SEXP call, SEXP x, SEXP s, SEXP y, int ind)
 {
-    SEXP indx, xi, sub = CAR(s);
-    int ii, n, nx, stretch=1;
+    SEXP indx, sub = CAR(s);
+    int ii, n, nx;
+    R_xlen_t stretch = 1;
 
     if (length(s) > 1)
 	error(_("invalid number of subscripts to list assign"));
@@ -698,31 +719,30 @@ static SEXP SimpleListAssign(SEXP call, SEXP x, SEXP s, SEXP y, int ind)
 
     if (stretch) {
 	SEXP t = CAR(s);
-	GCStackRoot<> yi(allocList(stretch - nx));
+	GCStackRoot<> yi(allocList(int(stretch - nx)));
 	/* This is general enough for only usage */
 	if(isString(t) && length(t) == stretch - nx) {
 	    SEXP z = yi;
 	    int i;
 	    for(i = 0; i < LENGTH(t); i++, z = CDR(z))
-		SET_TAG(z, install(translateChar(STRING_ELT(t, i))));
+		SET_TAG(z, installTrChar(STRING_ELT(t, i)));
 	}
 	PROTECT(x = listAppend(x, yi));
-	nx = stretch;
+	nx = int( stretch);
     }
     else PROTECT(x);
 
     if (n == 1) {
-	ii = INTEGER(indx)[0];
+	ii = asInteger(indx);
 	if (ii != NA_INTEGER) {
 	    ii = ii - 1;
-	    xi = nthcdr(x, ii % nx);
+	    SEXP xi = nthcdr(x, ii % nx);
 	    SETCAR(xi, y);
 	}
     }
     UNPROTECT(3);
     return x;
 }
-
 
 /* This is for x[[s[ind]]] <- NULL */
 
@@ -891,11 +911,11 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP argsarg,
     return x;
 }
 
-static SEXP DeleteOneVectorListItem(SEXP x, int which)
+static SEXP DeleteOneVectorListItem(SEXP x, R_xlen_t which)
 {
     SEXP y, xnames, ynames;
-    int i, k, n;
-    n = length(x);
+    R_xlen_t i, k, n;
+    n = xlength(x);
     if (0 <= which && which < n) {
 	PROTECT(y = allocVector(TYPEOF(x), n - 1));
 	k = 0;
@@ -952,7 +972,8 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 {
     PairList* args = SEXP_downcast<PairList*>(argsarg);
     SEXP dims, indx, names, newname, x, xtop, xup, y, thesub = R_NilValue, xOrig = R_NilValue;
-    int i, ndims, nsubs, offset, off = -1 /* -Wall */, stretch, which, len = 0 /* -Wall */;
+    int i, ndims, nsubs, which, len = 0 /* -Wall */;
+    R_xlen_t  stretch, offset, off = -1; /* -Wall */
     Rboolean S4, recursed=FALSE;
 
     PROTECT(args);
@@ -1000,20 +1021,22 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
     if( TYPEOF(x) == ENVSXP) {
 	if( nsubs!=1 || !isString(CAR(subs)) || length(CAR(subs)) != 1 )
 	    error(_("wrong args for environment subassignment"));
-	defineVar(install(translateChar(STRING_ELT(CAR(subs), 0))), y, x);
+	defineVar(installTrChar(STRING_ELT(CAR(subs), 0)), y, x);
 	UNPROTECT(1);
 	return(S4 ? xOrig : x);
     }
 
-    /* new case in 1.7.0, one vector index for a list, more general as of 2.10.0 */
+    /* new case in 1.7.0, one vector index for a list,
+       more general as of 2.10.0 */
     if (nsubs == 1) {
 	thesub = CAR(subs);
-	len = length(thesub);
+	len = length(thesub); /* depth of recursion, small */
 	if (len > 1) {
-	    xup = vectorIndex(x, thesub, 0, len-2, /*partial ok*/TRUE, call);
+	    xup = vectorIndex(x, thesub, 0, len-2, /*partial ok*/TRUE, call,
+			      TRUE);
 	    /* OneIndex sets newname, but it will be overwritten before being used. */
-	    off = OneIndex(xup, thesub, length(xup), 0, &newname, len-2, R_NilValue);
-	    x = vectorIndex(xup, thesub, len-2, len-1, TRUE, call);
+	    off = OneIndex(xup, thesub, xlength(xup), 0, &newname, len-2, R_NilValue);
+	    x = vectorIndex(xup, thesub, len-2, len-1, TRUE, call, TRUE);
 	    recursed = TRUE;
 	}
     }
@@ -1027,7 +1050,8 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 	if (nsubs == 0 || CAR(subs) == R_MissingArg)
 	    error(_("[[ ]] with missing subscript"));
 	if (nsubs == 1) {
-	    offset = OneIndex(x, thesub, length(x), 0, &newname, recursed ? len-1 : -1, R_NilValue);
+	    offset = OneIndex(x, thesub, length(x), 0, &newname,
+			      recursed ? len-1 : -1, R_NilValue);
 	    if (isVectorList(x) && isNull(y)) {
 		x = DeleteOneVectorListItem(x, offset);
 		if(recursed) SET_VECTOR_ELT(xup, off, x);
@@ -1037,8 +1061,8 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 	    }
 	    if (offset < 0)
 		error(_("[[ ]] subscript out of bounds"));
-	    if (offset >= LENGTH(x))
-		    stretch = offset + 1;
+	    if (offset >= XLENGTH(x))
+		stretch = offset + 1;
 	}
 	else {
 	    if (ndims != nsubs)
@@ -1046,10 +1070,11 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 	    PROTECT(indx = allocVector(INTSXP, ndims));
 	    names = getAttrib(x, R_DimNamesSymbol);
 	    for (i = 0; i < ndims; i++) {
-		INTEGER(indx)[i] = get1index(CAR(subs), isNull(names) ?
-					      R_NilValue : VECTOR_ELT(names, i),
-					      INTEGER(dims)[i],
-					      /*partial ok*/FALSE, -1, call);
+		INTEGER(indx)[i] = int(
+		    get1index(CAR(subs), isNull(names) ?
+			      R_NilValue : VECTOR_ELT(names, i),
+			      INTEGER(dims)[i],
+			      /*partial ok*/FALSE, -1, call));
 		subs = subs->tail();
 		if (INTEGER(indx)[i] < 0 ||
 		    INTEGER(indx)[i] >= INTEGER(dims)[i])
@@ -1179,8 +1204,8 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 	case 2014:	/* expression <- real	    */
 	case 2015:	/* expression <- complex    */
 	case 2016:	/* expression <- character  */
-	case 2024:  /* expression     <- raw */
-	case 2025:  /* expression     <- S4 */
+	case 2024:      /* expression     <- raw */
+	case 2025:      /* expression     <- S4 */
 	case 2020:	/* expression <- expression */
 
 	    if( NAMED(y) ) y = duplicate(y);
@@ -1231,9 +1256,10 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 	    PROTECT(indx = allocVector(INTSXP, ndims));
 	    names = getAttrib(x, R_DimNamesSymbol);
 	    for (i = 0; i < ndims; i++) {
-		INTEGER(indx)[i] = get1index(CAR(subs), CAR(names),
-					     INTEGER(dims)[i],
-					     /*partial ok*/FALSE, -1, call);
+		INTEGER(indx)[i] = int(
+		    get1index(CAR(subs), CAR(names),
+			      INTEGER(dims)[i],
+			      /*partial ok*/FALSE, -1, call));
 		subs = subs->tail();
 		if (INTEGER(indx)[i] < 0 ||
 		    INTEGER(indx)[i] >= INTEGER(dims)[i])
@@ -1243,7 +1269,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 	    for (i = (ndims - 1); i > 0; i--)
 		offset = (offset + INTEGER(indx)[i]) * INTEGER(dims)[i - 1];
 	    offset += INTEGER(indx)[0];
-	    SETCAR(nthcdr(x, offset), duplicate(y));
+	    SETCAR(nthcdr(x, int( offset)), duplicate(y));
 	    /* FIXME: add name */
 	    UNPROTECT(1);
 	}
@@ -1302,7 +1328,7 @@ SEXP attribute_hidden do_subassign3(SEXP call, SEXP op, SEXP args, SEXP env)
 
     GCStackRoot<> ansrt(ans);
     if (! iS)
-	nlist = install(translateChar(STRING_ELT(input, 0)));
+	nlist = installTrChar(STRING_ELT(input, 0));
 
     return R_subassign3_dflt(call, CAR(ans), nlist, CADDR(ans));
 }
@@ -1386,7 +1412,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 	error(R_MSG_ob_nonsub, type2char(TYPEOF(x)));
     }
     else {
-	int i, imatch, nx;
+	R_xlen_t i, imatch, nx;
 	SEXP names;
 	SEXPTYPE type = VECSXP;
 
@@ -1397,7 +1423,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 	    REPROTECT(x = coerceVector(x, VECSXP), pxidx);
 	}
 	names = getAttrib(x, R_NamesSymbol);
-	nx = length(x);
+	nx = xlength(x);
 	nlist = PRINTNAME(nlist);
 	if (isNull(val)) {
 	    /* If "val" is NULL, this is an element deletion */

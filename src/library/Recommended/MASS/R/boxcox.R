@@ -47,9 +47,8 @@ function(object, lambda = seq(-2, 2, 1/10), plotit = TRUE,
          50, xlab = expression(lambda), ylab = "log-Likelihood", ...)
 {
     if(is.null(y <- object$y) || is.null(xqr <- object$qr))
-        stop(paste(deparse(substitute(object)),
-                   "does not have both 'qr' and 'y' components"
-                   ))
+        stop(gettextf("%s does not have both 'qr' and 'y' components",
+                      sQuote(deparse(substitute(object)))), domain = NA)
     if(any(y <= 0))
         stop("response variable must be positive")
     n <- length(y)

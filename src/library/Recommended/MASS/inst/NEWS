@@ -182,3 +182,13 @@ This file documents software changes since the third edition.
   John Fox).
 - boxcox() works better when 'y' is very badly scaled, e.g. around 1e-16
   (patch by Martin Maechler).
+- mvrnorm() no longer defaults to the deprecated EISPACK=TRUE (and
+  hence changes the results).  It gains an argument 'EISPACK' for
+  back-compatibility.
+- the "polr" method for profile() could lose dimensions in its return object
+  (reported by Joris Meys)
+- kde2d() throws an error if given zero bandwidths or constant data.
+- ldahist(sep = TRUE) was missing a dev.flush().
+- addterm.glm() mis-calculated F statistics for df > 1.
+- anova.loglm() needed revision for changes in R.
+- The addterm() default method allows update() to fail.

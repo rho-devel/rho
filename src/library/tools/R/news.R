@@ -1,6 +1,8 @@
 #  File src/library/tools/R/news.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2013 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -335,10 +337,15 @@ function(f, out, ...) {
 }
 
 Rd2pdf_NEWS_in_Rd <-
-function(f, pdf_file) {
+function(f, pdf_file)
+{
     if (grepl("[.]rds$", f)) f <- readRDS(f)
     f2 <- tempfile()
-    f3 <- file.path(tempdir(), "NEWS.tex")
+    ## See the comments in ?texi2dvi about spaces in paths
+    f3 <- if(grepl(" ", td <- Sys.getenv("TMPDIR")))
+        file.path("/tmp", "NEWS.tex")
+    else
+        file.path(tempdir(), "NEWS.tex")
     out <- file(f3, "w")
     Rd2latex(f, f2,
              stages = c("install", "render"),
@@ -360,11 +367,11 @@ function(f, pdf_file) {
     writeLines(readLines(f2), out)
     writeLines("\\end{document}", out)
     close(out)
-    od <- setwd(tempdir())
+    od <- setwd(dirname(f3))
     on.exit(setwd(od))
     texi2pdf("NEWS.tex", quiet = TRUE)
     setwd(od); on.exit()
-    invisible(file.copy(file.path(tempdir(), "NEWS.pdf"),
+    invisible(file.copy(file.path(dirname(f3), "NEWS.pdf"),
                         pdf_file, overwrite = TRUE))
 }
 
@@ -523,7 +530,8 @@ function(file = NULL)
     }
 
     db <- .extract_news_from_Rd(x)
-
+    db <- db[db[,1L] != "CHANGES in previous versions",,drop = FALSE]
+    
     ## Squeeze in an empty date column.
     .make_news_db(cbind(sub("^CHANGES IN (R )?(VERSION )?", "", db[, 1L]),
                         NA_character_,
@@ -541,7 +549,7 @@ function(file)
     db <- .extract_news_from_Rd(x)
 
     ## Post-process section names to extract versions and dates.
-    re_v <- sprintf(".*[Vv]ersion[[:space:]]+(%s).*$",
+    re_v <- sprintf(".*version[[:space:]]+(%s).*$",
                     .standard_regexps()$valid_package_version)
     re_d <- sprintf("^.*(%s)[[:punct:][:space:]]*$",
                     "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}")
@@ -552,7 +560,7 @@ function(file)
         warning("Cannot extract version info from the following section titles:\n",
                 sprintf("  %s", unique(nms[!ind])))
     .make_news_db(cbind(ifelse(ind,
-                               sub(re_v, "\\1", nms),
+                               sub(re_v, "\\1", nms, ignore.case = TRUE),
                                NA_character_),
                         ifelse(grepl(re_d, nms, perl = TRUE),
                                sub(re_d, "\\1", nms, perl = TRUE),

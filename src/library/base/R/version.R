@@ -1,6 +1,8 @@
 #  File src/library/base/R/version.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -46,9 +48,9 @@ function(x, strict = TRUE, regexp, classes = NULL)
     if(length(x)) {
         ok <- grepl(valid_numeric_version_regexp, x)
         if(!all(ok) && strict)
-            stop("invalid version specification ",
-                 paste(sQuote(unique(x[!ok])), collapse = ", "),
-                 call. = FALSE)
+            stop(gettextf("invalid version specification %s",
+                          paste(sQuote(unique(x[!ok])), collapse = ", ")),
+                 call. = FALSE, domain = NA)
         y[ok] <- lapply(strsplit(x[ok], "[.-]"), as.integer)
     }
     names(y) <- nms
@@ -202,15 +204,15 @@ function(x, ..., value)
        if(length(..1) < 2L) {
            if(is.character(value) && length(value) == 1L)
                value <- unclass(as.numeric_version(value))[[1L]]
-           else if(!is.integer(value)) stop("invalid value")
+           else if(!is.integer(value)) stop("invalid 'value'")
        } else {
            value <- as.integer(value)
-           if(length(value) != 1L) stop("invalid value")
+           if(length(value) != 1L) stop("invalid 'value'")
        }
        z[[..1]] <- value
    } else {
        value <- as.integer(value)
-       if(length(value) != 1L) stop("invalid value")
+       if(length(value) != 1L) stop("invalid 'value'")
        z[[..1]][..2] <- value
    }
    structure(z, class = oldClass(x))
@@ -241,7 +243,8 @@ function(..., na.rm)
 {
     ok <- switch(.Generic, max = , min = , range = TRUE, FALSE)
     if(!ok)
-        stop(.Generic, " not defined for numeric_version objects")
+        stop(gettextf("%s not defined for \"numeric_version\" objects",
+                      .Generic), domain = NA)
     x <- do.call("c", lapply(list(...), as.numeric_version))
     v <- .encode_numeric_version(x)
     if(!na.rm && length(pos <- which(is.na(v)))) {

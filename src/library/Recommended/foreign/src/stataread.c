@@ -381,15 +381,43 @@ SEXP R_LoadStataData(FILE *fp)
 
     UNPROTECT(1);
 
-    /** variable 'characteristics'  -- not yet implemented **/
+    /* Expansion Fields. These include
+       variable/dataset 'characteristics' (-char-)
+       variable/dataset 'notes' (-notes-)
+       variable/dataset/values non-current language labels (-label language-)
+    */
 
+    PROTECT(labeltable = allocVector(VECSXP, 0));
+    j = 0;
     while(RawByteBinary(fp, 1)) {
 	if (abs(version) >= 7) /* manual is wrong here */
 	    charlen = (InIntegerBinary(fp, 1, swapends));
 	else
 	    charlen = (InShortIntBinary(fp, 1, swapends));
-	for (i = 0; i < charlen; i++) InByteBinary(fp, 1);
+	
+	if((charlen > 66)) {
+	    labeltable = lengthgets(labeltable, j+1);
+	    UNPROTECT(1);
+	    PROTECT(labeltable);
+	    PROTECT(tmp = allocVector(STRSXP, 3));
+	    InStringBinary(fp, 33, datalabel);
+	    SET_STRING_ELT(tmp, 0, mkChar(datalabel));
+	    InStringBinary(fp, 33, datalabel);
+	    SET_STRING_ELT(tmp, 1, mkChar(datalabel));
+	    txt =  Calloc((size_t) (charlen-66), char);
+	    InStringBinary(fp, (charlen-66), txt);
+	    SET_STRING_ELT(tmp, 2, mkChar(txt));
+	    SET_VECTOR_ELT(labeltable, j, tmp);
+	    Free(txt);
+	    UNPROTECT(1);
+	    j++;
+	} else
+	    for (i = 0; i < charlen; i++) InByteBinary(fp, 1);
     }
+    if(j > 0)
+	setAttrib(df, install("expansion.fields"), labeltable);
+
+    UNPROTECT(1); //labeltable
     if (abs(version) >= 7)
 	charlen = (InIntegerBinary(fp, 1, swapends));
     else
@@ -469,26 +497,34 @@ SEXP R_LoadStataData(FILE *fp)
 
     /** value labels **/
     if (abs(version) > 5) {
-	/* There may be up to nvar value labels, but possibly 0 */
-	PROTECT(labeltable = allocVector(VECSXP, nvar));
-	PROTECT(tmp = allocVector(STRSXP, nvar));
-	for(j = 0; j < nvar; j++) {
+	PROTECT(labeltable = allocVector(VECSXP, 0));
+	PROTECT(tmp = allocVector(STRSXP, 0));
+	for(j = 0; ; j++) {
 	    /* first int not needed, use fread directly to trigger EOF */
 	    res = fread((int *) aname, sizeof(int), 1, fp);
 	    if (feof(fp)) break;
 	    if (res != 1) warning(_("a binary read error occurred"));
+
+	    //resize the vectors
+	    labeltable = lengthgets(labeltable, j+1);
+	    UNPROTECT(1);
+	    PROTECT(labeltable);
+	    tmp = lengthgets(tmp, j+1);
+	    UNPROTECT(1);
+	    PROTECT(tmp);
+
 	    InStringBinary(fp, varnamelength+1, aname);
 	    SET_STRING_ELT(tmp, j, mkChar(aname));
 	    RawByteBinary(fp, 1); RawByteBinary(fp, 1); RawByteBinary(fp, 1); /*padding*/
 	    nlabels = InIntegerBinary(fp, 1, swapends);
 	    totlen = InIntegerBinary(fp, 1, swapends);
 	    off =  Calloc((size_t) nlabels, int);
-	    PROTECT(levels = allocVector(REALSXP, nlabels));
+	    PROTECT(levels = allocVector(INTSXP, nlabels));
 	    PROTECT(labels = allocVector(STRSXP, nlabels));
 	    for(i = 0; i < nlabels; i++)
 		off[i] = InIntegerBinary(fp, 1, swapends);
 	    for(i = 0; i < nlabels; i++)
-		REAL(levels)[i] = (double) InIntegerBinary(fp, 0, swapends);
+		INTEGER(levels)[i] = (double) InIntegerBinary(fp, 0, swapends);
 	    txt =  Calloc((size_t) totlen, char);
 	    InStringBinary(fp, totlen, txt);
 	    for(i = 0; i < nlabels; i++)
@@ -501,11 +537,6 @@ SEXP R_LoadStataData(FILE *fp)
 	}
 	namesgets(labeltable, tmp);
 	UNPROTECT(1); /*tmp*/
-	if(j > 0 && j < nvar) {
-	    labeltable = lengthgets(labeltable, j);
-	    UNPROTECT(1);
-	    PROTECT(labeltable);
-	}
     }
 
     /** tidy up **/
@@ -611,20 +642,87 @@ static void OutStringBinary(const char *buffer, FILE * fp, int nchar)
 	error(_("a binary write error occurred"));
 }
 
-static char* nameMangleOut(char *stataname, int len){
-    int i;
-    for(i=0;i<len;i++){
-      if (stataname[i]=='.') stataname[i]='_';
+static char* nameMangleOut(char *stataname, int len)
+{
+    for(int i = 0; i < len; i++) {
+      if (stataname[i] == '.') stataname[i] = '_';
     }
     return stataname;
 }
 
+/* Writes out a value label (name, and then labels and levels). 
+ * theselevels can be R_NilValue in which case the level values will be
+ * written out as 1,2,3, ...
+ */
+static Rboolean 
+writeStataValueLabel(const char *labelName, const SEXP theselabels,
+		     const SEXP theselevels, const int namelength, FILE *fp)
+{
+    int i,len,txtlen; 
+
+    if(!isString(theselabels))
+	return FALSE;
+
+    if (!isNull(theselevels) && 
+	((TYPEOF(theselevels)!=INTSXP && TYPEOF(theselevels)!=REALSXP)  || 
+	 LENGTH(theselabels)!=LENGTH(theselevels)))
+	return FALSE;
+
+    len = 4*2*(length(theselabels)+1);
+    txtlen = 0;
+    for (i = 0; i < length(theselabels); i++)
+	txtlen += strlen(CHAR(STRING_ELT(theselabels, i))) + 1;
+    len += txtlen;
+    OutIntegerBinary(len, fp, 0); /* length of table */
+    char labelName2[strlen(labelName) + 1];
+    strcpy(labelName2, labelName);
+    OutStringBinary(nameMangleOut(labelName2, namelength), fp, namelength);
+    OutByteBinary(0, fp); /* label format name */
+    OutByteBinary(0, fp); OutByteBinary(0, fp); OutByteBinary(0, fp); /*padding*/
+    OutIntegerBinary(length(theselabels), fp, 0);
+    OutIntegerBinary(txtlen, fp, 0);
+    /* offsets */
+    len = 0;
+    for (i = 0; i < length(theselabels); i++){
+	OutIntegerBinary(len, fp, 0);
+	len += strlen(CHAR(STRING_ELT(theselabels,i))) + 1;
+    }
+    /* values: just 1,2,3,...*/
+    if(isNull(theselevels)){
+	for (i = 0; i < length(theselabels); i++)
+	    OutIntegerBinary(i+1, fp, 0);
+    }
+    else{
+	if(TYPEOF(theselevels)==INTSXP){
+		for (i = 0; i < length(theselevels); i++)
+		    OutIntegerBinary(INTEGER(theselevels)[i], fp, 0);
+	}
+	else{
+		for (i = 0; i < length(theselevels); i++)
+		    OutIntegerBinary((int) REAL(theselevels)[i], fp, 0);
+	}
+    }
+    /* the actual labels */
+    for(i = 0; i < length(theselabels); i++){
+	len = strlen(CHAR(STRING_ELT(theselabels, i)));
+	OutStringBinary(CHAR(STRING_ELT(theselabels,i)), fp, len);
+	OutByteBinary(0, fp);
+	txtlen -= len+1;
+	if (txtlen < 0) error(_("this should happen: overrun"));
+    }
+    if (txtlen > 0) error(_("this should happen: underrun"));
+
+    return TRUE;
+
+}
+
 void R_SaveStataData(FILE *fp, SEXP df, int version, SEXP leveltable)
 {
-    int i,j,k=0,l,nvar,nobs,charlen,txtlen,len;
+    int i,j,k=0,l,nvar,nobs,charlen;
     char datalabel[81]="Written by R.              ", timestamp[18], aname[33];
     char format9g[50]="%9.0g", strformat[50]="";
-    SEXP names,types,theselabels,orig_names;
+    const char *thisnamechar;
+    SEXP names,types,theselabels,orig_names,vlabels,dlabel,exp_fields,exp_field,curr_val_labels,label_table,names_lt,theselabelslevels;
 
     int namelength = 8;
     int fmtlist_len = 12;
@@ -649,9 +747,17 @@ void R_SaveStataData(FILE *fp, SEXP df, int version, SEXP leveltable)
 
     nvar = length(df);
     OutShortIntBinary(nvar, fp);
-    nobs=length(VECTOR_ELT(df, 0));
+    nobs = length(VECTOR_ELT(df, 0));
     OutIntegerBinary(nobs, fp, 1);  /* number of cases */
-    OutStringBinary(datalabel, fp, 81);   /* data label - zero terminated string */
+
+    PROTECT(dlabel = getAttrib(df, install("datalabel")));
+    if(!isNull(dlabel) && isString(dlabel) && LENGTH(dlabel) == 1)
+	strncpy(datalabel, CHAR(STRING_ELT(dlabel, 0)), 81);
+    UNPROTECT(1);
+    datalabel[80] = (char) 0;
+    OutStringBinary(datalabel, fp, 81);
+
+
     /* FIXME: use a real time */
     for(i = 0; i < 18; i++) timestamp[i] = 0;
     OutStringBinary(timestamp,fp,18);   /* file creation time - zero terminated string */
@@ -758,31 +864,71 @@ void R_SaveStataData(FILE *fp, SEXP df, int version, SEXP leveltable)
 	which are themselves stored later in the file.
 	The label format has the same name as the variable. **/
 
-
+    PROTECT(curr_val_labels = getAttrib(df, install("val.labels")));
     for(i = 0; i < nvar; i++) {
 	if (VECTOR_ELT(leveltable, i) == R_NilValue){ /* no label */
 	    for(j = 0; j < namelength+1; j++) OutByteBinary(0, fp);
 	} else {                                   /* label */
-	    strncpy(aname, CHAR(STRING_ELT(names, i)), namelength);
+            //If we remember what the value label was called, use that. Otherwise use the var name
+	    if(!isNull(curr_val_labels) && isString(curr_val_labels) 
+	       && LENGTH(curr_val_labels) > i)
+	    	strncpy(aname, CHAR(STRING_ELT(curr_val_labels, i)), namelength);
+	    else
+		strncpy(aname, CHAR(STRING_ELT(names, i)), namelength);
 	    OutStringBinary(nameMangleOut(aname, namelength), fp, namelength);
 	    OutByteBinary(0, fp);
 	}
     }
+    UNPROTECT(1);
 
 
-    /** Variable Labels -- full R name of column**/
-    /** FIXME: this is now just the same abbreviated name **/
-
-    PROTECT(orig_names = getAttrib(df,install("orig.names")));
-    for(i = 0; i < nvar; i++) {
-	strncpy(datalabel,CHAR(STRING_ELT(orig_names,i)),81);
-	datalabel[80] = (char) 0;
-	OutStringBinary(datalabel, fp, 81);
+    /** Variable Labels -- Uses "var.labels" attribute
+	if is a string vector of the right length, otherwise the
+	the variable name (FIXME: this is now just the same abbreviated name) **/
+    PROTECT(vlabels = getAttrib(df, install("var.labels")));
+    if(!isNull(vlabels) && isString(vlabels) && LENGTH(vlabels)==nvar){
+        for(i = 0; i < nvar; i++) {
+	    strncpy(datalabel,CHAR(STRING_ELT(vlabels,i)),81);
+	    datalabel[80] = (char) 0;
+	    OutStringBinary(datalabel, fp, 81);
+        }
+    }
+    else{
+        PROTECT(orig_names = getAttrib(df,install("orig.names")));
+        for(i = 0; i < nvar; i++) {
+	    strncpy(datalabel,CHAR(STRING_ELT(orig_names,i)),81);
+	    datalabel[80] = (char) 0;
+	    OutStringBinary(datalabel, fp, 81);
+        }
+        UNPROTECT(1);
     }
     UNPROTECT(1);
 
 
-    /** variable 'characteristics' -- not relevant**/
+    /** Expansion fields. Only existing ones are type-1 fields (first byte is 1).
+	This includes dataset/variables characteristics, multilingual data (dataset/variable labels, 
+	value label attachments, language list), and notes. 
+	Don't have documentation for pre-version7 format (are the first two fields still 33 bytes?) **/
+    PROTECT(exp_fields = getAttrib(df, install("expansion.fields")));
+    if(!isNull(exp_fields) && TYPEOF(exp_fields) == VECSXP && abs(version)>=7){
+	for(i = 0; i< LENGTH(exp_fields); i++){
+		PROTECT(exp_field = VECTOR_ELT(exp_fields, i));	
+		if(!isNull(exp_field) && isString(exp_field) && LENGTH(exp_field) ==3) {
+		    OutByteBinary(1, fp);
+		    OutIntegerBinary(2*(namelength+1) + (length(STRING_ELT(exp_field,2))+1), fp, 1);
+
+		    OutStringBinary(CHAR(STRING_ELT(exp_field,0)), fp, namelength);
+		    OutByteBinary(0, fp);
+		    OutStringBinary(CHAR(STRING_ELT(exp_field,1)), fp, namelength);
+		    OutByteBinary(0, fp);
+		    OutStringBinary(CHAR(STRING_ELT(exp_field,2)), fp, length(STRING_ELT(exp_field,2)));
+		    OutByteBinary(0, fp);
+		}
+		UNPROTECT(1);
+	}
+    }
+    UNPROTECT(1);
+    //The last block is always zeros
     OutByteBinary(0, fp);
     OutByteBinary(0, fp);
     OutByteBinary(0, fp);
@@ -808,6 +954,8 @@ void R_SaveStataData(FILE *fp, SEXP df, int version, SEXP leveltable)
 	    case STRSXP:
 		/* Up to 244 bytes should be written, zero-padded */
 		k = length(STRING_ELT(VECTOR_ELT(df, j), i));
+		if (k == 0)
+		    error("empty string is not valid in Stata's documented format");
 		if(k > 244) k = 244;
 		OutStringBinary(CHAR(STRING_ELT(VECTOR_ELT(df, j), i)), fp, k);
 		for(l = INTEGER(types)[j]-k; l > 0; l--) OutByteBinary(0, fp);
@@ -821,44 +969,46 @@ void R_SaveStataData(FILE *fp, SEXP df, int version, SEXP leveltable)
 
     /** value labels: pp92-94 of 'Programming' manual in v7.0 **/
 
+    PROTECT(curr_val_labels = getAttrib(df, install("val.labels")));
     for(i = 0;i < nvar; i++){
-	if (VECTOR_ELT(leveltable, i) == R_NilValue)
-	    continue; /* no labels */
-	else {
-	    theselabels = VECTOR_ELT(leveltable, i);
-	    len = 4*2*(length(theselabels)+1);
-	    txtlen = 0;
-	    for (j = 0; j < length(theselabels); j++)
-		txtlen += strlen(CHAR(STRING_ELT(theselabels, j))) + 1;
-	    len += txtlen;
-	    OutIntegerBinary(len, fp, 0); /* length of table */
-	    strncpy(aname, CHAR(STRING_ELT(names, i)), namelength);
-	    OutStringBinary(nameMangleOut(aname, namelength), fp, namelength);
-	    OutByteBinary(0, fp); /* label format name */
-	    OutByteBinary(0, fp); OutByteBinary(0, fp); OutByteBinary(0, fp); /*padding*/
-	    OutIntegerBinary(length(theselabels), fp, 0);
-	    OutIntegerBinary(txtlen, fp, 0);
-	    /* offsets */
-	    len = 0;
-	    for (j = 0; j < length(theselabels); j++){
-		OutIntegerBinary(len, fp, 0);
-		len += strlen(CHAR(STRING_ELT(theselabels,j))) + 1;
-	    }
-	    /* values: just 1,2,3,...*/
-	    for (j = 0; j < length(theselabels); j++)
-		OutIntegerBinary(j+1, fp, 0);
-	    /* the actual labels */
-	    for(j = 0; j < length(theselabels); j++){
-		len = strlen(CHAR(STRING_ELT(theselabels, j)));
-		OutStringBinary(CHAR(STRING_ELT(theselabels,j)), fp, len);
-		OutByteBinary(0, fp);
-		txtlen -= len+1;
-		if (txtlen < 0) error(_("this should happen: overrun"));
-	    }
-	    if (txtlen > 0) error(_("this should happen: underrun"));
+	theselabels = VECTOR_ELT(leveltable, i);
+	if (!isNull(theselabels)){
+            //If we remember what the value label was called, use that. Otherwise use the var name
+	    if(!isNull(curr_val_labels) && isString(curr_val_labels) && LENGTH(curr_val_labels)>i)
+	    	strncpy(aname, CHAR(STRING_ELT(curr_val_labels, i)), namelength);
+	    else
+		strncpy(aname, CHAR(STRING_ELT(names, i)), namelength);
+
+	    writeStataValueLabel(aname, theselabels, R_NilValue, namelength, fp);
 	}
     }
-    UNPROTECT(2); /* names,types */
+    PROTECT(label_table = getAttrib(df, install("label.table")));
+    if(TYPEOF(label_table) == VECSXP){
+	PROTECT(names_lt = getAttrib(label_table, R_NamesSymbol));
+	if(!isNull(names_lt) && LENGTH(label_table)==LENGTH(names_lt)){
+		for(i=0; i<LENGTH(label_table); i++){
+			thisnamechar = CHAR(STRING_ELT(names_lt,i));
+			//check it this label was noted in val.labels because it would've been already written
+			if(!isNull(curr_val_labels) && isString(curr_val_labels)){
+				for(j=0; j<LENGTH(curr_val_labels); j++){
+					if(strncmp(thisnamechar, CHAR(STRING_ELT(curr_val_labels, j)), namelength)==0)
+						break;
+				}
+				if(j<LENGTH(curr_val_labels)) continue;
+			}
+			//check to 
+			theselabelslevels = VECTOR_ELT(label_table, i);
+			if(!isNull(theselabelslevels)){
+				PROTECT(theselabels = getAttrib(theselabelslevels, R_NamesSymbol));
+				writeStataValueLabel(thisnamechar, theselabels, theselabelslevels, namelength, fp);
+				UNPROTECT(1); /* theselabel */
+			}
+		}
+	}
+	UNPROTECT(1); /* names_lt */
+    }
+
+    UNPROTECT(4); /* names,types,curr_val_labels, label_table */
 }
 
 SEXP do_writeStata(SEXP call)

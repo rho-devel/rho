@@ -45,9 +45,6 @@
 #include <ctype.h>
 #include <limits.h> /* required for MB_LEN_MAX */
 
-/* Formerly in headers, but only used in some devices */
-typedef unsigned int rcolor;
-
 #include <wchar.h>
 #include <wctype.h>
 static void
@@ -257,7 +254,7 @@ static int KeyType(const char * const s)
     for (i = 0; KeyWordDictionary[i].keyword; i++)
 	if (MatchKey(s, KeyWordDictionary[i].keyword))
 	    return KeyWordDictionary[i].code;
-    printf("Unknown %s\n", s);
+//    printf("Unknown %s\n", s); // not needed, PR#15057 found it annoying
     return Unknown;
 }
 
@@ -389,14 +386,14 @@ static int GetKPX(char *buf, int nkp, FontMetricInfo *metrics,
     if (streql(c1, "space") || streql(c2, "space")) return 0;
     for(i = 0; i < 256; i++) {
 	if (!strcmp(c1, charnames[i].cname)) {
-	    metrics->KernPairs[nkp].c1 = i;
+	    metrics->KernPairs[nkp].c1 = (unsigned char) i;
 	    done++;
 	    break;
 	}
     }
     for(i = 0; i < 256; i++)
 	if (!strcmp(c2, charnames[i].cname)) {
-	    metrics->KernPairs[nkp].c2 = i;
+	    metrics->KernPairs[nkp].c2 = (unsigned char) i;
 	    done++;
 	    break;
 	}
@@ -602,7 +599,7 @@ PostScriptLoadFontMetrics(const char * const fontpath,
 
 	case FontBBox:
 	    if (!GetFontBBox(buf, metrics)) {
-		warning(_("FontBBox could not be parsed"));
+		warning("'FontBBox' could not be parsed");
 		goto pserror;
 	    }
 	    break;
@@ -610,7 +607,7 @@ PostScriptLoadFontMetrics(const char * const fontpath,
 	case C:
 	    if (mode != StartFontMetrics) goto pserror;
 	    if (!GetCharInfo(buf, metrics, charnames, encnames, reencode)) {
-		warning(_("CharInfo could not be parsed"));
+		warning("'CharInfo' could not be parsed");
 		goto pserror;
 	    }
 	    break;
@@ -694,22 +691,22 @@ PostScriptLoadFontMetrics(const char * const fontpath,
 	    break;
 	}
     }
-    metrics->nKP = i;
+    metrics->nKP = (short) i;
     R_gzclose(fp);
     /* Make an index for kern-pair searches: relies on having contiguous
        blocks by first char for efficiency, but works in all cases. */
     {
 	short ind, tmp;
 	for (j = 0; j < 256; j++) {
-	    metrics->KPstart[j] = i;
+	    metrics->KPstart[j] = (short) i;
 	    metrics->KPend[j] = 0;
 	}
 	for (j = 0; j < i; j++) {
 	    ind = metrics->KernPairs[j].c1;
 	    tmp = metrics->KPstart[ind];
-	    if(j < tmp) metrics->KPstart[ind] = j;
+	    if(j < tmp) metrics->KPstart[ind] = (short) j;
 	    tmp = metrics->KPend[ind];
-	    if(j > tmp) metrics->KPend[ind] = j;
+	    if(j > tmp) metrics->KPend[ind] = (short) j;
 	}
     }
     return 1;
@@ -742,12 +739,12 @@ static double
 	ucslen = mbcsToUcs2((char *)str, NULL, 0, enc);
 	if (ucslen != (size_t)-1) {
 	    /* We convert the characters but not the terminator here */
+	    R_CheckStack2(ucslen * sizeof(ucs2_t));
 	    ucs2_t ucs2s[ucslen];
-	    R_CheckStack();
-	    status = (int) mbcsToUcs2((char *)str, ucs2s, ucslen, enc);
+	    status = (int) mbcsToUcs2((char *)str, ucs2s, (int) ucslen, enc);
 	    if (status >= 0)
 		for(i = 0 ; i < ucslen ; i++) {
-		    wx = 500 * Ri18n_wcwidth(ucs2s[i]);
+		    wx = (short)(500 * Ri18n_wcwidth(ucs2s[i]));
 		    /* printf("width for U+%04x is %d\n", ucs2s[i], wx); */
 		    sum += wx;
 		}
@@ -765,9 +762,9 @@ static double
 	    * see postscriptFonts()
 	    */
 	   (face % 5) != 0) {
+	    R_CheckStack2(strlen((char *)str)+1);
 	    char buff[strlen((char *)str)+1];
 	    /* Output string cannot be longer */
-	    R_CheckStack();
 	    mbcsToSbcs((char *)str, buff, encoding, enc);
 	    str1 = (unsigned char *)buff;
 	}
@@ -848,7 +845,7 @@ PostScriptMetricInfo(int c, double *ascent, double *descent, double *width,
 		  encoding);
 
 	/* Here we use terminated strings, but could use one char */
-	w[0] = c; w[1] = 0;
+	w[0] = (unsigned short) c; w[1] = 0;
 	i_buf = (char *)w;
 	i_len = 4;
 	o_buf = out;
@@ -899,7 +896,7 @@ PostScriptCIDMetricInfo(int c, double *ascent, double *descent, double *width)
 	    /* convert to UCS-2 to use wcwidth. */
 	    char str[2]={0,0};
 	    ucs2_t out;
-	    str[0] = c;
+	    str[0] = (char) c;
 	    if(mbcsToUcs2(str, &out, 1, CE_NATIVE) == (size_t)-1)
 		error(_("invalid character sent to 'PostScriptCIDMetricInfo' in a single-byte locale"));
 	    c = out;
@@ -1454,7 +1451,7 @@ findLoadedFont(const char *name, const char *encoding, Rboolean isPDF)
 SEXP Type1FontInUse(SEXP name, SEXP isPDF)
 {
     if (!isString(name) || LENGTH(name) > 1)
-	error(_("Invalid font name or more than one font name"));
+	error(_("invalid font name or more than one font name"));
     return ScalarLogical(
 	findLoadedFont(CHAR(STRING_ELT(name, 0)), NULL, asLogical(isPDF))
 	!= NULL);
@@ -1487,7 +1484,7 @@ static cidfontfamily findLoadedCIDFont(const char *family, Rboolean isPDF)
 SEXP CIDFontInUse(SEXP name, SEXP isPDF)
 {
     if (!isString(name) || LENGTH(name) > 1)
-	error(_("Invalid font name or more than one font name"));
+	error(_("invalid font name or more than one font name"));
     return ScalarLogical(
 	findLoadedCIDFont(CHAR(STRING_ELT(name, 0)), asLogical(isPDF))
 	!= NULL);
@@ -2399,7 +2396,7 @@ static void PSEncodeFonts(FILE *fp, PostScriptDesc *pd)
 		encoding = findEncoding(fonts->family->encoding->encpath,
 					pd->encodings, FALSE);
 		if (!encoding)
-		    warning(_("Corrupt loaded encodings;  encoding not recorded"));
+		    warning(_("corrupt loaded encodings;  encoding not recorded"));
 		else {
 		    /*
 		     * Record encoding on device's list of encodings so
@@ -2410,7 +2407,7 @@ static void PSEncodeFonts(FILE *fp, PostScriptDesc *pd)
 		    if (enclist)
 			pd->encodings = enclist;
 		    else
-			warning(_("Failed to record device encoding"));
+			warning(_("failed to record device encoding"));
 		}
 	    } else {
 		/*
@@ -2579,7 +2576,7 @@ static void PSFileHeader(FILE *fp,
 	}
     }
     if(!isString(prolog))
-	error(_("Object .ps.prolog is not a character vector"));
+	error(_("object '.ps.prolog' is not a character vector"));
     fprintf(fp, "%% begin .ps.prolog\n");
     for (i = 0; i < length(prolog); i++)
 	fprintf(fp, "%s\n", CHAR(STRING_ELT(prolog, i)));
@@ -2652,7 +2649,7 @@ static void PostScriptSetLineEnd(FILE *fp, R_GE_lineend lend)
 	lineend = 2;
 	break;
     default:
-	error(_("Invalid line end"));
+	error(_("invalid line end"));
     }
     fprintf(fp, "%1d setlinecap\n", lineend);
 }
@@ -2671,7 +2668,7 @@ static void PostScriptSetLineJoin(FILE *fp, R_GE_linejoin ljoin)
 	linejoin = 2;
 	break;
     default:
-	error(_("Invalid line join"));
+	error(_("invalid line join"));
     }
     fprintf(fp, "%1d setlinejoin\n", linejoin);
 }
@@ -2679,7 +2676,7 @@ static void PostScriptSetLineJoin(FILE *fp, R_GE_linejoin ljoin)
 static void PostScriptSetLineMitre(FILE *fp, double linemitre)
 {
     if (linemitre < 1)
-	error(_("Invalid line mitre"));
+	error(_("invalid line mitre"));
     fprintf(fp, "%.2f setmiterlimit\n", linemitre);
 }
 
@@ -2763,9 +2760,9 @@ static void PostScriptCircle(FILE *fp, double x, double y, double r)
     fprintf(fp, "%.2f %.2f %.2f c ", x, y, r);
 }
 
-static void PostScriptWriteString(FILE *fp, const char *str, int nb)
+static void PostScriptWriteString(FILE *fp, const char *str, size_t nb)
 {
-    int i;
+    size_t i;
 
     fputc('(', fp);
     for (i = 0 ; i < nb && *str; i++, str++)
@@ -2799,7 +2796,7 @@ static void PostScriptWriteString(FILE *fp, const char *str, int nb)
 static FontMetricInfo *metricInfo(const char *, int, PostScriptDesc *);
 
 static void PostScriptText(FILE *fp, double x, double y,
-			   const char *str, int nb, double xc, double rot,
+			   const char *str, size_t nb, double xc, double rot,
 			   const pGEcontext gc,
 			   pDevDesc dd)
 {
@@ -2824,7 +2821,7 @@ static void PostScriptText(FILE *fp, double x, double y,
 }
 
 static void PostScriptText2(FILE *fp, double x, double y,
-			    const char *str, int nb,
+			    const char *str, size_t nb,
 			    Rboolean relative, double rot,
 			    const pGEcontext gc,
 			    pDevDesc dd)
@@ -2848,11 +2845,11 @@ static void PostScriptText2(FILE *fp, double x, double y,
 }
 
 static void PostScriptHexText(FILE *fp, double x, double y,
-			      const char *str, int strlen,
+			      const char *str, size_t strlen,
 			      double xc, double rot)
 {
     unsigned char *p = (unsigned char *)str;
-    int i;
+    size_t i;
 
     fprintf(fp, "%.2f %.2f ", x, y);
     fprintf(fp, "<");
@@ -2880,7 +2877,8 @@ PostScriptTextKern(FILE *fp, double x, double y,
     PostScriptDesc *pd = (PostScriptDesc *) dd->deviceSpecific;
     int face = gc->fontface;
     FontMetricInfo *metrics;
-    int i, j, n, nout = 0, w;
+    size_t i, n, nout = 0;
+    int j, w;
     unsigned char p1, p2;
     double fac = 0.001 * floor(gc->cex * gc->ps + 0.5);
     Rboolean relative = FALSE;
@@ -2898,6 +2896,7 @@ PostScriptTextKern(FILE *fp, double x, double y,
     metrics = metricInfo(gc->fontfamily, face, pd);
 
     n = strlen(str);
+    if (n < 1) return;
     /* First check for any kerning */
     for(i = 0; i < n-1; i++) {
 	p1 = str[i];
@@ -3190,7 +3189,7 @@ PSDeviceDriver(pDevDesc dd, const char *file, const char *paper,
 		 * AND if we do, we should free
 		 */
 		PS_cleanup(3, dd, pd);
-		error(_("Invalid font type"));
+		error(_("invalid font type"));
 	    }
 	}
     }
@@ -3214,7 +3213,7 @@ PSDeviceDriver(pDevDesc dd, const char *file, const char *paper,
     }
     if (!gotFont) {
 	PS_cleanup(3, dd, pd);
-	error(_("Failed to initialise default PostScript font"));
+	error(_("failed to initialise default PostScript font"));
     }
 
     /*
@@ -3253,7 +3252,7 @@ PSDeviceDriver(pDevDesc dd, const char *file, const char *paper,
 			 * Should NOT get here.
 			 */
 			PS_cleanup(4, dd, pd);
-			error(_("Invalid font type"));
+			error(_("invalid font type"));
 		    }
 		}
 		/*
@@ -3280,7 +3279,7 @@ PSDeviceDriver(pDevDesc dd, const char *file, const char *paper,
 	}
 	if (gotFonts < nfonts) {
 	    PS_cleanup(4, dd, pd);
-	    error(_("Failed to initialise additional PostScript fonts"));
+	    error(_("failed to initialise additional PostScript fonts"));
 	}
     }
     /*****************************
@@ -3306,7 +3305,7 @@ PSDeviceDriver(pDevDesc dd, const char *file, const char *paper,
     strcpy(pd->command, cmd);
     if (printit && strlen(cmd) == 0) {
 	PS_cleanup(4, dd, pd);
-	error(_("postscript(print.it=TRUE) used with an empty print command"));
+	error(_("'postscript(print.it=TRUE)' used with an empty 'print' command"));
     }
     strcpy(pd->command, cmd);
 
@@ -3358,8 +3357,8 @@ PSDeviceDriver(pDevDesc dd, const char *file, const char *paper,
 	error(_("invalid page type '%s' (postscript)"), pd->papername);
     }
     pd->pagecentre = pagecentre;
-    pd->paperwidth = 72 * pd->pagewidth;
-    pd->paperheight = 72 * pd->pageheight;
+    pd->paperwidth = (int)(72 * pd->pagewidth);
+    pd->paperheight = (int)(72 * pd->pageheight);
     pd->onefile = onefile;
     if(pd->landscape) {
 	double tmp;
@@ -3381,8 +3380,8 @@ PSDeviceDriver(pDevDesc dd, const char *file, const char *paper,
     } else {
 	xoff = yoff = 0.0;
     }
-    pd->maxpointsize = 72.0 * ((pd->pageheight > pd->pagewidth) ?
-			       pd->pageheight : pd->pagewidth);
+    pd->maxpointsize = (int)(72.0 * ((pd->pageheight > pd->pagewidth) ?
+				     pd->pageheight : pd->pagewidth));
     pd->pageno = pd->fileno = 0;
     pd->warn_trans = FALSE;
 
@@ -3768,7 +3767,7 @@ static FontMetricInfo
 	/* (Type 1!) symbol font */
 	result = &(fontfamily->symfont->metrics);
     } else
-	error(_("CID family '%s' not included in PostScript device"),
+	error(_("CID family '%s' not included in postscript() device"),
 	      family);
     return result;
 }
@@ -3786,7 +3785,7 @@ static FontMetricInfo *metricInfo(const char *family, int face,
 	}
 	result = &(fontfamily->fonts[face-1]->metrics);
     } else
-	error(_("family '%s' not included in PostScript device"), family);
+	error(_("family '%s' not included in postscript() device"), family);
     return result;
 }
 
@@ -3797,7 +3796,7 @@ static char *convname(const char *family, PostScriptDesc *pd) {
     if (fontfamily)
 	result = fontfamily->encoding->convname;
     else
-	error(_("family '%s' not included in PostScript device"), family);
+	error(_("family '%s' not included in postscript() device"), family);
     return result;
 }
 
@@ -4235,7 +4234,7 @@ static int translateFont(char *family, int style, PostScriptDesc *pd)
     if (fontfamily) {
 	result = (fontIndex - 1)*5 + style;
     } else {
-	warning(_("family '%s' not included in PostScript device"), family);
+	warning(_("family '%s' not included in postscript() device"), family);
     }
     return result;
 }
@@ -4265,7 +4264,7 @@ static int translateCIDFont(char *family, int style, PostScriptDesc *pd)
 	 */
 	result = (numFonts(pd->fonts)*5) + (fontIndex - 1)*5 + style;
     } else {
-	warning(_("family '%s' not included in PostScript device"), family);
+	warning(_("family '%s' not included in postscript() device"), family);
     }
     return result;
 }
@@ -4370,7 +4369,7 @@ static void PS_Text0(double x, double y, const char *str, int enc,
 						  pd->cidfonts,
 						  &fontIndex);
 	if(!cidfont)
-	    error(_("family '%s' not included in PostScript device"),
+	    error(_("family '%s' not included in postscript() device"),
 		  gc->fontfamily);
 
 	if (!dd->hasTextUTF8 &&
@@ -4403,8 +4402,8 @@ static void PS_Text0(double x, double y, const char *str, int enc,
 		return;
 	    }
 
+	    R_CheckStack2(buflen);
 	    unsigned char buf[buflen];
-	    R_CheckStack();
 
 	    i_buf = (char *)str;
 	    o_buf = (char *)buf;
@@ -4444,8 +4443,8 @@ static void PS_Text0(double x, double y, const char *str, int enc,
        CJK MBCS.
     */
     if((enc == CE_UTF8 || mbcslocale) && !strIsASCII(str)) {
+	R_CheckStack2(strlen(str)+1);
 	buff = alloca(strlen(str)+1); /* Output string cannot be longer */
-	R_CheckStack();
 	mbcsToSbcs(str, buff, convname(gc->fontfamily, pd), enc);
 	str1 = buff;
     }
@@ -4594,7 +4593,7 @@ static int XF_SetColor(int color, XFigDesc *pd)
     for (i = 0; i < pd->nXFigColors; i++)
 	if(color == pd->XFigColors[i]) return i;
     if(pd->nXFigColors == 534)
-	error(_("run out of colors in xfig()"));
+	error(_("ran out of colors in xfig()"));
     /* new colour */
     fprintf(pd->psfp, "0 %d #%02x%02x%02x\n", pd->nXFigColors,
 	    R_RED(color), R_GREEN(color), R_BLUE(color));
@@ -4794,7 +4793,7 @@ XFigDeviceDriver(pDevDesc dd, const char *file, const char *paper,
 	if (isType1Font(family, PostScriptFonts, NULL)) {
 	    font = addFont(family, FALSE, pd->encodings);
 	} else {
-	    error(_("Only Type 1 fonts supported for XFig"));
+	    error(_("only Type 1 fonts supported for XFig"));
 	}
     }
     if (font) {
@@ -4807,7 +4806,7 @@ XFigDeviceDriver(pDevDesc dd, const char *file, const char *paper,
     if (!gotFont) {
 	free(dd);
 	free(pd);
-	error(_("Failed to initialise default XFig font"));
+	error(_("failed to initialise default XFig font"));
     }
 
     /* Deal with paper and plot size and orientation */
@@ -4847,8 +4846,8 @@ XFigDeviceDriver(pDevDesc dd, const char *file, const char *paper,
 	error(_("invalid page type '%s' (xfig)"), pd->papername);
     }
     pd->pagecentre = pagecentre;
-    pd->paperwidth = 72 * pd->pagewidth;
-    pd->paperheight = 72 * pd->pageheight;
+    pd->paperwidth = (int)(72 * pd->pagewidth);
+    pd->paperheight = (int)(72 * pd->pageheight);
     if(!onefile) {
 	char *p = strrchr(pd->filename, '%');
 	if(!p)
@@ -4875,8 +4874,8 @@ XFigDeviceDriver(pDevDesc dd, const char *file, const char *paper,
     else
 	pd->ymax = (int)(1200.0 * pd->height);
     pd->onefile = onefile;
-    pd->maxpointsize = 72.0 * ((pd->pageheight > pd->pagewidth) ?
-			       pd->pageheight : pd->pagewidth);
+    pd->maxpointsize = (int)(72.0 * ((pd->pageheight > pd->pagewidth) ?
+				     pd->pageheight : pd->pagewidth));
     pd->pageno = 0;
     /* Base Pointsize */
     /* Nominal Character Sizes in Pixels */
@@ -5110,7 +5109,7 @@ static void XFig_Rect(double x0, double y0, double x1, double y1,
     FILE *fp = pd->tmpfp;
     int ix0, iy0, ix1, iy1;
     int cbg = XF_SetColor(gc->fill, pd), cfg = XF_SetColor(gc->col, pd), cpen,
-	dofill, lty = XF_SetLty(gc->lty), lwd = gc->lwd*0.833 + 0.5;
+	dofill, lty = XF_SetLty(gc->lty), lwd = (int)(gc->lwd*0.833 + 0.5);
 
     if(lty < 0) return;
 
@@ -5143,7 +5142,7 @@ static void XFig_Circle(double x, double y, double r,
     FILE *fp = pd->tmpfp;
     int ix, iy, ir;
     int cbg = XF_SetColor(gc->fill, pd), cfg = XF_SetColor(gc->col, pd), cpen,
-	dofill, lty = XF_SetLty(gc->lty), lwd = gc->lwd*0.833 + 0.5;
+	dofill, lty = XF_SetLty(gc->lty), lwd = (int)(gc->lwd*0.833 + 0.5);
 
     if(lty < 0) return;
 
@@ -5170,7 +5169,7 @@ static void XFig_Line(double x1, double y1, double x2, double y2,
 {
     XFigDesc *pd = (XFigDesc *) dd->deviceSpecific;
     FILE *fp = pd->tmpfp;
-    int lty = XF_SetLty(gc->lty), lwd = gc->lwd*0.833 + 0.5;
+    int lty = XF_SetLty(gc->lty), lwd = (int)(gc->lwd*0.833 + 0.5);
 
     if(lty < 0) return;
 
@@ -5198,7 +5197,7 @@ static void XFig_Polygon(int n, const double *x, const double *y,
     double xx, yy;
     int i;
     int cbg = XF_SetColor(gc->fill, pd), cfg = XF_SetColor(gc->col, pd), cpen,
-	dofill, lty = XF_SetLty(gc->lty), lwd = gc->lwd*0.833 + 0.5;
+	dofill, lty = XF_SetLty(gc->lty), lwd = (int)(gc->lwd*0.833 + 0.5);
 
     if(lty < 0) return;
 
@@ -5229,7 +5228,7 @@ static void XFig_Polyline(int n, const double *x, const double *y,
     XFigDesc *pd = (XFigDesc*) dd->deviceSpecific;
     FILE *fp = pd->tmpfp;
     double xx, yy;
-    int i, lty = XF_SetLty(gc->lty), lwd = gc->lwd*0.833 + 0.5;
+    int i, lty = XF_SetLty(gc->lty), lwd = (int)(gc->lwd*0.833 + 0.5);
 
     XF_CheckAlpha(gc->col, pd);
     if(R_OPAQUE(gc->col) && lty >= 0) {
@@ -5293,14 +5292,14 @@ static void XFig_Text(double x, double y, const char *str,
 	    void *cd;
 	    const char *i_buf; char *o_buf;
 	    size_t i_len, o_len, status;
-	    int buflen = MB_LEN_MAX*strlen(str) + 1;
+	    size_t buflen = MB_LEN_MAX*strlen(str) + 1;
 
 	    cd = (void*)Riconv_open(pd->encoding, "");
 	    if(cd == (void*)-1) {
 		warning(_("unable to use encoding '%s'"), pd->encoding);
 	    } else {
+		R_CheckStack2(buflen);
 		buf = (char *) alloca(buflen);
-		R_CheckStack();
 		i_buf = (char *) str;
 		o_buf = buf;
 		i_len = strlen(str) + 1; /* including terminator */
@@ -5440,6 +5439,7 @@ typedef struct {
     Rboolean dingbats, useKern;
     Rboolean fillOddEven; /* polygon fill mode */
     Rboolean useCompression;
+    char tmpname[PATH_MAX]; /* used before compression */
 
     /*
      * Fonts and encodings used on the device
@@ -5572,7 +5572,7 @@ static int addRaster(rcolorPtr raster, int w, int h,
     newRaster = malloc(w*h*sizeof(rcolor));
 
     if (!newRaster)
-	error(_("Unable to allocate raster image"));
+	error(_("unable to allocate raster image"));
 
     for (i = 0; i < w*h; i++) {
 	newRaster[i] = raster[i];
@@ -5624,7 +5624,7 @@ static void writeRasterXObject(rasterImage raster, int n,
 	    double r =  0.213 * R_RED(raster.raster[i]) 
 		+ 0.715 * R_GREEN(raster.raster[i])
 		+ 0.072 * R_BLUE(raster.raster[i]);
-	    *p++ = (int)(r + 0.49);
+	    *p++ = (Bytef)(r + 0.49);
 	}
     } else {
 	inlen = 3 * raster.w * raster.h;
@@ -5637,7 +5637,7 @@ static void writeRasterXObject(rasterImage raster, int n,
     }
     uLong outlen = inlen;
     if (pd->useCompression) {
-	outlen = 1.001*inlen + 20;
+	outlen = (int)(1.001*inlen + 20);
 	buf2 = Calloc(outlen, Bytef);
 	int res = compress(buf2, &outlen, buf, inlen);
 	if(res != Z_OK) error("internal error %d in writeRasterXObject", res);
@@ -5687,7 +5687,7 @@ static void writeMaskXObject(rasterImage raster, int n, PDFDesc *pd)
     for(int i = 0; i < raster.w * raster.h; i++) 
 	*p++ = R_ALPHA(raster.raster[i]);
     if (pd->useCompression) {
-	outlen = 1.001*inlen + 20;
+	outlen = (uLong)(1.001*inlen + 20);
 	buf2 = Calloc(outlen, Bytef);
 	int res = compress(buf2, &outlen, buf, inlen);
 	if(res != Z_OK) error("internal error %d in writeRasterXObject", res);
@@ -5773,7 +5773,7 @@ static Rboolean addPDFDevicefont(type1fontfamily family,
 	    encoding = findEncoding(family->encoding->encpath,
 				    pd->encodings, TRUE);
 	    if (!encoding) {
-		warning(_("Corrupt loaded encodings;  font not added"));
+		warning(_("corrupt loaded encodings;  font not added"));
 	    } else {
 		encodinglist enclist = addDeviceEncoding(encoding,
 							 pd->encodings);
@@ -5782,7 +5782,7 @@ static Rboolean addPDFDevicefont(type1fontfamily family,
 		    pd->encodings = enclist;
 		    result = TRUE;
 		} else
-		    warning(_("Failed to record device encoding; font not added"));
+		    warning(_("failed to record device encoding; font not added"));
 	    }
 	}
     }
@@ -5966,7 +5966,7 @@ PDFDeviceDriver(pDevDesc dd, const char *file, const char *paper,
 		/*
 		 * Should NOT get here.
 		 */
-		error(_("Invalid font type"));
+		error(_("invalid font type"));
 	    }
 	}
     }
@@ -5989,7 +5989,7 @@ PDFDeviceDriver(pDevDesc dd, const char *file, const char *paper,
     if (!gotFont) {
 	PDFcleanup(3, pd);
 	free(dd);
-	error(_("Failed to initialise default PDF font"));
+	error(_("failed to initialise default PDF font"));
     }
 
     /*
@@ -6021,7 +6021,7 @@ PDFDeviceDriver(pDevDesc dd, const char *file, const char *paper,
 			/*
 			 * Should NOT get here.
 			 */
-			error(_("Invalid font type"));
+			error(_("invalid font type"));
 		    }
 		}
 		/*
@@ -6044,7 +6044,7 @@ PDFDeviceDriver(pDevDesc dd, const char *file, const char *paper,
 	if (gotFonts < nfonts) {
 	    PDFcleanup(4, pd);
 	    free(dd);
-	    error(_("Failed to initialise additional PDF fonts"));
+	    error(_("failed to initialise additional PDF fonts"));
 	}
     }
     /*****************************
@@ -6130,8 +6130,8 @@ PDFDeviceDriver(pDevDesc dd, const char *file, const char *paper,
 	error(_("invalid paper type '%s' (pdf)"), pd->papername);
     }
     pd->pagecentre = pagecentre;
-    pd->paperwidth = 72 * pd->pagewidth;
-    pd->paperheight = 72 * pd->pageheight;
+    pd->paperwidth = (int)(72 * pd->pagewidth);
+    pd->paperheight = (int)(72 * pd->pageheight);
     if(strcmp(pd->papername, "special"))
     {
 	if(pd->width < 0.1 || pd->width > pd->pagewidth-0.5)
@@ -6155,8 +6155,8 @@ PDFDeviceDriver(pDevDesc dd, const char *file, const char *paper,
     }
 
     pd->onefile = onefile;
-    pd->maxpointsize = 72.0 * ((pd->pageheight > pd->pagewidth) ?
-			       pd->pageheight : pd->pagewidth);
+    pd->maxpointsize = (int)(72.0 * ((pd->pageheight > pd->pagewidth) ?
+				     pd->pageheight : pd->pagewidth));
     pd->pageno = pd->fileno = 0;
     /* Base Pointsize */
     /* Nominal Character Sizes in Pixels */
@@ -6259,16 +6259,16 @@ static void PDF_Invalidate(pDevDesc dd)
  */
 static int alphaIndex(int alpha, short *alphas) {
     int i, found = 0;
-    for (i=0; i<256 && !found; i++) {
+    for (i = 0; i < 256 && !found; i++) {
 	if (alphas[i] < 0) {
-	    alphas[i] = alpha;
+	    alphas[i] = (short) alpha;
 	    found = 1;
 	}
 	else if (alpha == alphas[i])
 	    found = 1;
     }
     if (!found)
-	error(_("Invalid alpha value in PDF"));
+	error(_("invalid 'alpha' value in PDF"));
     return i;
 }
 
@@ -6420,7 +6420,7 @@ static void PDFSetLineEnd(FILE *fp, R_GE_lineend lend)
 	lineend = 2;
 	break;
     default:
-	error(_("Invalid line end"));
+	error(_("invalid line end"));
     }
     fprintf(fp, "%1d J\n", lineend);
 }
@@ -6439,7 +6439,7 @@ static void PDFSetLineJoin(FILE *fp, R_GE_linejoin ljoin)
 	linejoin = 2;
 	break;
     default:
-	error(_("Invalid line join"));
+	error(_("invalid line join"));
     }
     fprintf(fp, "%1d j\n", linejoin);
 }
@@ -6585,7 +6585,7 @@ static void PDFwritesRGBcolorspace(PDFDesc *pd)
              R_Home, FILESEP, FILESEP, FILESEP, FILESEP,
 	     pd->useCompression ? "srgb.flate" : "srgb");
     if (!(fp = R_fopen(R_ExpandFileName(buf), "rb")))
-        error(_("Failed to load sRGB colorspace file"));
+        error(_("failed to load sRGB colorspace file"));
     size_t res = fread(buf, 1, BUFSIZE2, fp);
     res = fwrite(buf, 1, res, pd->pdffp);
     fclose(fp);
@@ -6849,7 +6849,7 @@ static void PDF_endfile(PDFDesc *pd)
 		findDeviceEncoding(fontlist->family->encoding->encpath,
 				   pd->encodings, &encIndex);
 	    if (!encoding)
-		error(_("Corrupt encodings in PDF device"));
+		error(_("corrupt encodings in PDF device"));
 	    for (i = 0; i < 5; i++) {
 		if (nfonts >= 100 || pd->fontUsed[nfonts]) {
 		    type1fontinfo fn = fontlist->family->fonts[i];
@@ -7025,7 +7025,7 @@ static void PDF_endfile(PDFDesc *pd)
     fclose(pd->pdffp);
     if (pd->open_type == 1) {
 	char buf[APPENDBUFSIZE];
-	int nc;
+	size_t nc;
 	pd->pdffp = R_fopen(pd->filename, "rb"); 
 	while((nc = fread(buf, 1, APPENDBUFSIZE, pd->pdffp))) {
 	    if(nc != fwrite(buf, 1, nc, pd->pipefp))
@@ -7115,14 +7115,15 @@ static void PDF_endpage(PDFDesc *pd)
     if (pd->useCompression) {
 	fflush(pd->pdffp);
 	fseek(pd->pdffp, 0, SEEK_END);
-	unsigned int len = ftell(pd->pdffp);
+	unsigned int len = (unsigned int) ftell(pd->pdffp);
 	fseek(pd->pdffp, 0, SEEK_SET);
 	Bytef *buf = Calloc(len, Bytef);
-	uLong outlen = 1.001*len + 20;
+	uLong outlen = (uLong)(1.001*len + 20);
 	Bytef *buf2 = Calloc(outlen, Bytef);
 	size_t res = fread(buf, 1, len, pd->pdffp);
 	if (res < len) error("internal read error in PDF_endpage");
 	fclose(pd->pdffp);
+	unlink(pd->tmpname);
 	pd->pdffp = pd->mainfp;
 	int res2 = compress(buf2, &outlen, buf, len);
 	if(res2 != Z_OK) 
@@ -7216,6 +7217,8 @@ static void PDF_NewPage(const pGEcontext gc,
     pd->pos[++pd->nobjs] = (int) ftell(pd->pdffp);
     if (pd->useCompression) {
 	char *tmp = R_tmpnam("pdf", R_TempDir);
+	/* assume tmpname is less than PATH_MAX */
+	strcpy(pd->tmpname, tmp);
 	pd->pdffp = fopen(tmp, "w+b");
 	free(tmp);
 	if(! pd->pdffp) error("cannot open file '%s', reason %s", 
@@ -7642,7 +7645,7 @@ static int PDFfontNumber(const char *family, int face, PDFDesc *pd)
 		    /*
 		     * Should NOT get here.
 		     */
-		    error(_("Invalid font type"));
+		    error(_("invalid font type"));
 		}
 	    }
 	    /*
@@ -7667,7 +7670,7 @@ static int PDFfontNumber(const char *family, int face, PDFDesc *pd)
 	    }
 	}
 	if (!(fontfamily || cidfontfamily))
-	    error(_("Failed to find or load PDF font"));
+	    error(_("failed to find or load PDF font"));
     } else {
 	if (isType1Font(family, PDFFonts, pd->defaultFont))
 	    num = 1 + face;
@@ -7684,11 +7687,12 @@ static void PDFWriteT1KerningString(FILE *fp, const char *str,
 				    const pGEcontext gc)
 {
     unsigned char p1, p2;
-    int i,j, n;
-    int ary_buf[128], *ary;
+    size_t i, n;
+    int j, ary_buf[128], *ary;
     Rboolean haveKerning = FALSE;
 
     n = strlen(str);
+    if (n < 1) return;
     if(n > sizeof(ary_buf)/sizeof(int))
 	ary = Calloc(n, int);
     else ary = ary_buf;
@@ -7850,7 +7854,7 @@ static void PDF_Text0(double x, double y, const char *str, int enc,
 	    }
 	}
 	if (!cidfont)
-	    error(_("Failed to find or load PDF CID font"));
+	    error(_("failed to find or load PDF CID font"));
 	if(!dd->hasTextUTF8 &&
 	   !strcmp(locale2charset(NULL), cidfont->encoding)) {
 	    PDF_SetFill(gc->col, dd);
@@ -7882,8 +7886,8 @@ static void PDF_Text0(double x, double y, const char *str, int enc,
 				    (enc == CE_UTF8) ? "UTF-8": "");
 	    if(cd  == (void*)-1) return;
 
+	    R_CheckStack2(buflen);
 	    unsigned char buf[buflen];
-	    R_CheckStack();
 
 	    i_buf = (char *)str;
 	    o_buf = (char *)buf;
@@ -7922,8 +7926,8 @@ static void PDF_Text0(double x, double y, const char *str, int enc,
 	    a, b, bm, a, x, y);
     if((enc == CE_UTF8 || mbcslocale) && !strIsASCII(str) && face < 5) {
 	/* face 5 handled above */
+	R_CheckStack2(strlen(str)+1);
 	buff = alloca(strlen(str)+1); /* Output string cannot be longer */
-	R_CheckStack();
 	mbcsToSbcs(str, buff, PDFconvname(gc->fontfamily, pd), enc);
 	str1 = buff;
     } else str1 = str;
@@ -7983,7 +7987,7 @@ static FontMetricInfo
 	    }
 	}
 	if (!fontfamily)
-	    error(_("Failed to find or load PDF CID font"));
+	    error(_("failed to find or load PDF CID font"));
     } else {
 	result = &(pd->cidfonts->cidfamily->symfont->metrics);
     }
@@ -8028,7 +8032,7 @@ static FontMetricInfo
 	    }
 	}
 	if (!fontfamily)
-	    error(_("Failed to find or load PDF font"));
+	    error(_("failed to find or load PDF font"));
     } else {
 	result = &(pd->fonts->family->fonts[face-1]->metrics);
     }
@@ -8075,7 +8079,7 @@ static char
 	    }
 	}
 	if (!fontfamily)
-	    error(_("Failed to find or load PDF font"));
+	    error(_("failed to find or load PDF font"));
     }
     return result;
 }

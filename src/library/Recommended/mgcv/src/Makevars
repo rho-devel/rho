@@ -1,3 +1,4 @@
- PKG_LIBS =  $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-# PKG_CFLAGS = -Wall -pedantic -g
+PKG_LIBS =  $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(SHLIB_OPENMP_CFLAGS)
+PKG_CFLAGS = $(SHLIB_OPENMP_CFLAGS)
+#PKG_CFLAGS = -Wall -pedantic -g -O0 $(SHLIB_OPENMP_CFLAGS)
 ## `#' out previous line for release

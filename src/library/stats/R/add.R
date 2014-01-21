@@ -1,6 +1,9 @@
 #  File src/library/stats/R/add.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1994-8 W. N. Venables and B. D. Ripley
+#  Copyright (C) 1998-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -13,6 +16,7 @@
 #
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
+
 
 ## version to return NA for df = 0, as R did before 2.7.0
 safe_pchisq <- function(q, df, ...)
@@ -53,7 +57,7 @@ add1.default <- function(object, scope, scale = 0, test=c("none", "Chisq"),
     for(i in seq(ns)) {
 	tt <- scope[i]
 	if(trace > 1) {
-	    cat("trying +", tt, "\n", sep='')
+	    cat("trying +", tt, "\n", sep = "")
 	    utils::flush.console()
 	}
 	nfit <- update(object, as.formula(paste("~ . +", tt)),
@@ -148,8 +152,10 @@ add1.lm <- function(object, scope, scale = 0, test=c("none", "Chisq", "F"),
         y <- model.response(m, "numeric")
         newn <- length(y)
         if(newn < oldn)
-            warning(gettextf("using the %d/%d rows from a combined fit",
-                             newn, oldn), domain = NA)
+            warning(sprintf(ngettext(newn,
+                                     "using the %d/%d row from a combined fit",
+                                     "using the %d/%d rows from a combined fit"),
+                            newn, oldn), domain = NA)
     } else {
         ## need to get offset and weights from somewhere
         wt <- object$weights
@@ -219,7 +225,7 @@ add1.glm <- function(object, scope, scale = 0, test=c("none", "Rao", "LRT",
 	dev <- table$Deviance
 	df <- table$Df
 	diff <- pmax(0, (dev[1L] - dev)/df)
-	Fs <- (diff/df)/(dev/(rdf-df))
+	Fs <- diff/(dev/(rdf-df))
 	Fs[df < .Machine$double.eps] <- NA
 	P <- Fs
 	nnas <- !is.na(Fs)
@@ -265,8 +271,11 @@ add1.glm <- function(object, scope, scale = 0, test=c("none", "Rao", "LRT",
         }
         newn <- length(y)
         if(newn < oldn)
-            warning(gettextf("using the %d/%d rows from a combined fit",
-                             newn, oldn), domain = NA)
+            warning(sprintf(ngettext(newn,
+                                     "using the %d/%d row from a combined fit",
+                                     "using the %d/%d rows from a combined fit"),
+                            newn, oldn), domain = NA)
+
     } else {
         ## need to get offset and weights from somewhere
         wt <- object$prior.weights
@@ -374,7 +383,7 @@ drop1.default <- function(object, scope, scale = 0, test=c("none", "Chisq"),
     for(i in seq(ns)) {
 	tt <- scope[i]
 	if(trace > 1) {
-	    cat("trying -", tt, "\n", sep='')
+	    cat("trying -", tt, "\n", sep = "")
 	    utils::flush.console()
         }
         nfit <- update(object, as.formula(paste("~ . -", tt)),
@@ -628,8 +637,10 @@ factor.scope <- function(factor, scope)
                              function(x) paste(sort(x), collapse=":"))
 	    where <- match(nmdrop0, nmfac0, 0L)
 	    if(any(!where))
-                stop(gettextf("lower scope has term(s) %s not included in model",
-                              paste(sQuote(nmdrop[where==0]), collapse=", ")),
+                stop(sprintf(ngettext(sum(where==0),
+                                      "lower scope has term %s not included in model",
+                                      "lower scope has terms %s not included in model"),
+                             paste(sQuote(nmdrop[where==0]), collapse=", ")),
                      domain = NA)
 	    facs <- factor[, -where, drop = FALSE]
 	    nmdrop <- nmfac[-where]
@@ -656,8 +667,10 @@ factor.scope <- function(factor, scope)
                              function(x) paste(sort(x), collapse=":"))
 	    where <- match(nmfac0, nmadd0, 0L)
 	    if(any(!where))
-                stop(gettextf("upper scope does not include model term(s) %s",
-                              paste(sQuote(nmfac[where==0L]), collapse=", ")),
+                stop(sprintf(ngettext(sum(where==0),
+                                      "upper scope has term %s not included in model",
+                                      "upper scope has terms %s not included in model"),
+                             paste(sQuote(nmdrop[where==0]), collapse=", ")),
                      domain = NA)
 	    nmadd <- nmadd[-where]
 	    add <- add[, -where, drop = FALSE]
@@ -672,28 +685,12 @@ factor.scope <- function(factor, scope)
     list(drop = nmdrop, add = nmadd)
 }
 
+
+## a slightly simplified version of stepAIC().
 step <- function(object, scope, scale = 0,
 		 direction = c("both", "backward", "forward"),
 		 trace = 1, keep = NULL, steps = 1000, k = 2, ...)
 {
-#     fixFormulaObject <- function(object) {
-# 	tt <- terms(object)
-# 	tmp <- attr(tt, "term.labels")
-# 	if (!attr(tt, "intercept"))
-# 	    tmp <- c(tmp, "0")
-# 	if (!length(tmp))
-# 	    tmp <- "1"
-#         tmp <- paste("~", paste(tmp, collapse = " + "))
-#         form <- formula(object) # some formulae have no lhs
-#         tmp <- if(length(form) > 2) paste(deparse(form[[2L]]), tmp)
-#         ## must be as.character as deparse gives spurious ()
-# 	if (length(offset <- attr(tt, "offset")))
-# 	    tmp <- paste(tmp, as.character(attr(tt, "variables")[offset + 1]),
-# 			 sep = " + ")
-# 	form <- formula(tmp)
-#         environment(form) <- environment(tt)
-#         form
-#     }
     mydeviance <- function(x, ...)
     {
         dev <- deviance(x)
@@ -775,11 +772,13 @@ step <- function(object, scope, scale = 0,
     bAIC <- bAIC[2L]
     if(is.na(bAIC))
         stop("AIC is not defined for this model, so 'step' cannot proceed")
+    if(bAIC == -Inf)
+        stop("AIC is -infinity for this model, so 'step' cannot proceed")
     nm <- 1
     ## Terms <- fit$terms
     if(trace) {
 	cat("Start:  AIC=", format(round(bAIC, 2)), "\n",
-	    cut.string(deparse(formula(fit))), "\n\n", sep='')
+	    cut.string(deparse(formula(fit))), "\n\n", sep = "")
         utils::flush.console()
     }
 
@@ -843,7 +842,7 @@ step <- function(object, scope, scale = 0,
 	bAIC <- bAIC[2L]
 	if(trace) {
 	    cat("\nStep:  AIC=", format(round(bAIC, 2)), "\n",
-		cut.string(deparse(formula(fit))), "\n\n", sep='')
+		cut.string(deparse(formula(fit))), "\n\n", sep = "")
             utils::flush.console()
         }
         ## add a tolerance as dropping 0-df terms might increase AIC slightly

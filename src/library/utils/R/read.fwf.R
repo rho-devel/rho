@@ -1,6 +1,8 @@
 #  File src/library/utils/R/read.fwf.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -64,9 +66,11 @@ function(file, widths, header = FALSE, sep = "\t",
         raw <- readLines(file, n = thisblock)
         nread <- length(raw)
         if (recordlength > 1L &&  nread %% recordlength) {
-            raw<-raw[1L:(nread-nread %% recordlength)]
-            warning(gettextf("last record incomplete, %d lines discarded",
-                             nread %% recordlength), domain = NA)
+            raw <- raw[1L:(nread-nread %% recordlength)]
+            warning(sprintf(ngettext(nread %% recordlength,
+                                     "last record incomplete, %d line discarded",
+                                     "last record incomplete, %d lines discarded"),
+                            nread %% recordlength), domain = NA)
         }
         if (recordlength > 1L) {
             raw <- matrix(raw, nrow=recordlength)
@@ -77,7 +81,7 @@ function(file, widths, header = FALSE, sep = "\t",
         first <- st[-length(st)][!drop]
         last <- cumsum(widths)[!drop]
         cat(file = FILE, sapply(raw, doone),
-            sep = c(rep(sep, length.out = length(first)-1L), "\n"))
+            sep = c(rep_len(sep, length(first)-1L), "\n"))
 
         if (nread < thisblock) break
         if (n > 0L) n <- n - length(raw)

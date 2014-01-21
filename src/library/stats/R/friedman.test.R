@@ -1,6 +1,8 @@
 #  File src/library/stats/R/friedman.test.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -26,9 +28,9 @@ function(y, groups, blocks, ...)
     }
     else {
         if (any(is.na(groups)) || any(is.na(blocks)))
-            stop("NA's are not allowed in groups or blocks")
+            stop("NA's are not allowed in 'groups' or 'blocks'")
         if (any(diff(c(length(y), length(groups), length(blocks))) != 0L))
-            stop("y, groups and blocks must have the same length")
+            stop("'y', 'groups' and 'blocks' must have the same length")
         DNAME <- paste(DNAME, ", ", deparse(substitute(groups)),
                        " and ", deparse(substitute(blocks)), sep = "")
         if (any(table(groups, blocks) != 1))
@@ -86,7 +88,7 @@ function(formula, data, subset, na.action, ...)
     m$formula <- formula
     if(is.matrix(eval(m$data, parent.frame())))
         m$data <- as.data.frame(data)
-    m[[1L]] <- as.name("model.frame")
+    m[[1L]] <- quote(stats::model.frame)
     mf <- eval(m, parent.frame())
     DNAME <- paste(names(mf), collapse = " and ")
     names(mf) <- NULL

@@ -36,7 +36,7 @@
   Pairwise scatter plots of the values being compared, with different
   symbols (colors) used for each object under comparison.
 }
-\author{Jose Pinheiro and Douglas Bates }
+\author{José Pinheiro and Douglas Bates }
 \seealso{
   \code{\link{compareFits}},
   \code{\link{plot.compareFits}},

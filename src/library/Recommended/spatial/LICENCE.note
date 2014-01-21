@@ -1,0 +1,46 @@
+Software and datasets to support 'Modern Applied Statistics with S', 
+fourth edition, by W. N. Venables and B. D. Ripley.
+Springer, 2002.
+
+From the text (pp. 464):
+
+    These datasets and software are provided in good faith, but none of
+    the authors, publishers nor distributors warrant their accuracy
+    nor can be held responsible for the consequences of their use.
+
+This file is intended to clarify ownership and copyright: where
+possible individual files also carry brief copyright notices. 
+
+
+Copyrights
+==========
+
+Files spatial/data/*.dat were generated or digitized by B. D. Ripley: no
+copyright is asserted.
+
+All other files are copyright (C) 1994-2013  W. N. Venables and
+B. D. Ripley. Those parts which were distributed with the first
+edition are also copyright (C) 1994 Springer-Verlag New York Inc, with
+all rights assigned to W. N. Venables and B. D. Ripley.
+
+
+Licence
+=======
+
+    This is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 or 3 of the License
+    (at your option).
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+Files share/licenses/GPL-2 and share/licenses/GPL-3 in the R
+(source or binary) distribution are copies of versions 2 and 3
+of the 'GNU General Public License'.
+These can also be viewed at http://www.r-project.org/licenses/
+
+Bill.Venables@csiro.au
+ripley@stats.ox.ac.uk

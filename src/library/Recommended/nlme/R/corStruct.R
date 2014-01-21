@@ -57,8 +57,8 @@ corMatrix.corStruct <-
 {
   if (corr) {
     ## Do not know how to calculate the correlation matrix
-    stop(paste("Don't know how to calculate correlation matrix of",
-	       class(object)[1],"object"))
+      stop(gettextf("do not know how to calculate correlation matrix of %s object",
+                    dQuote(class(object)[1])), domain = NA)
   } else {
     ## transpose inverse square root
     if (data.class(covariate) == "list") {
@@ -105,7 +105,7 @@ coef.corStruct <-
 {
   if (unconstrained) {
     if (is.null(isFix <- attr(object, "fixed"))) {
-      stop("corStruct object must have a \"fixed\" attribute.")
+      stop("\"corStruct\" object must have a \"fixed\" attribute")
     }
     if (isFix) {
       numeric(0)
@@ -113,8 +113,8 @@ coef.corStruct <-
       as.vector(object)
     }
   } else {
-    stop(paste("Don't know how to obtain parameters of",
-	       class(object)[1], "object"))
+      stop(gettextf("do not know how to obtain parameters of %s object",
+                    dQuote(class(object)[1])), domain = NA)
   }
 }
 
@@ -124,7 +124,7 @@ coef.corStruct <-
   ## Assignment of the unconstrained parameter of corStruct objects
   value <- as.numeric(value)
   if (length(value) != length(object)) {
-    stop("Cannot change the length of the parameter of a corStruct object")
+    stop("cannot change the length of the parameter of a \"corStruct\" object")
   }
   object[] <- value
   ## updating the factor list and logDet, by forcing a recalculation
@@ -159,11 +159,11 @@ getCovariate.corStruct <-
 {
   if (!missing(form)) {
     form <- formula(object)
-    warning("Cannot change \"form\".")
+    warning("cannot change 'form'")
   }
   if (is.null(covar <- attr(object, "covariate"))) { # need to calculate it
     if (missing(data)) {
-      stop("Need data to calculate covariate of corStruct object")
+      stop("need data to calculate covariate of \"corStruct\" object")
     }
     covForm <- getCovariateFormula(form)
     if (!is.null(getGroupsFormula(form))) {
@@ -417,7 +417,7 @@ coef.corSymm <-
   function(object, ..., value)
 {
   if (length(value) != length(object)) {
-    stop("Cannot change the length of the parameter of a corStruct object")
+    stop("cannot change the length of the parameter of a \"corSymm\" object")
   }
   object[] <- value
   corD <- attr(object, "Dim")
@@ -447,14 +447,12 @@ Initialize.corSymm <-
     covar <- list(covar)
   }
   if (any(unlist(lapply(covar, duplicated)))) {
-    stop(paste("Covariate must have unique values",
-	       "within groups for corSymm objects"))
+    stop("covariate must have unique values within groups for \"corSymm\" objects")
   }
   covar <- unlist(covar) - 1
   maxCov <- max(uCov <- unique(covar)) + 1
   if (length(uCov) != maxCov) {
-    stop(paste("Unique values of the covariate  for \"corSymm\"",
-	       "objects must be a sequence of consecutive integers"))
+    stop("unique values of the covariate  for \"corSymm\" objects must be a sequence of consecutive integers")
   }
   if (Dim(object)[["M"]] > 1) {
     attr(object, "covariate") <- split(covar, getGroups(object))
@@ -466,18 +464,17 @@ Initialize.corSymm <-
   if (length(natPar) > 0) {
     ## parameters assumed in constrained form
     if (length(natPar) != round(maxCov * (maxCov - 1) / 2)) {
-      stop("Initial value for corSymm parameters of wrong dimension")
+      stop("initial value for \"corSymm\" parameters of wrong dimension")
     }
     if (max(abs(natPar)) >= 1) {
-      stop("Initial values for corSymm must be between -1 and 1")
+      stop("initial values for \"corSymm\" must be between -1 and 1")
     }
     natMat <- diag(maxCov)/2
     natMat[lower.tri(natMat)] <- natPar
     natMat <- (t(natMat) + natMat)
     ## checking if positive-definite
     if (any(eigen(natMat)$values <= 0)) {
-      stop(paste("Initial values for corSymm do not define",
-                 "a positive-definite correlation structure"))
+      stop("initial values for \"corSymm\" do not define a positive-definite correlation structure")
     }
     natMat <- chol(natMat)
     uncPar <- numeric(0)
@@ -660,7 +657,7 @@ coef.corNatural <-
   function(object, ..., value)
 {
   if (length(value) != length(object)) {
-    stop("Cannot change the length of the parameter of a corStruct object")
+    stop("cannot change the length of the parameter of a \"corNatural\" object")
   }
   object[] <- value
   corD <- attr(object, "Dim")
@@ -690,14 +687,12 @@ Initialize.corNatural <-
     covar <- list(covar)
   }
   if (any(unlist(lapply(covar, duplicated)))) {
-    stop(paste("Covariate must have unique values",
-	       "within groups for corNatural objects"))
+    stop("covariate must have unique values within groups for \"corNatural\" objects")
   }
   covar <- unlist(covar) - 1
   maxCov <- max(uCov <- unique(covar)) + 1
   if (length(uCov) != maxCov) {
-    stop(paste("Unique values of the covariate  for corNatural",
-	       "objects must be a sequence of consecutive integers"))
+    stop("unique values of the covariate for \"corNatural\" objects must be a sequence of consecutive integers")
   }
   if (Dim(object)[["M"]] > 1) {
     attr(object, "covariate") <- split(covar, getGroups(object))
@@ -709,18 +704,17 @@ Initialize.corNatural <-
   if (length(natPar) > 0) {
     ## parameters assumed in constrained form
     if (length(natPar) != round(maxCov * (maxCov - 1) / 2)) {
-      stop("Initial value for corNatural parameters of wrong dimension")
+      stop("initial value for \"corNatural\" parameters of wrong dimension")
     }
     if (max(abs(natPar)) >= 1) {
-      stop("Initial values for corNatural must be between -1 and 1")
+      stop("initial values for \"corNatural\" must be between -1 and 1")
     }
     natMat <- diag(maxCov)/2
     natMat[lower.tri(natMat)] <- natPar
     natMat <- (t(natMat) + natMat)
     ## checking if positive-definite
     if (any(eigen(natMat)$values <= 0)) {
-      stop(paste("Initial values for corNatural do not define",
-                 "a positive-definite correlation structure"))
+      stop("initial values for \"corNatural\" do not define a positive-definite correlation structure")
     }
     coef(object) <- log((natPar + 1)/(1 - natPar))
   } else {				# initializing the parameters
@@ -861,7 +855,7 @@ corAR1 <-
   function(value = 0, form = ~ 1, fixed = FALSE)
 {
   if (abs(value) >= 1) {
-    stop("Parameter in AR(1) structure must be between -1 and 1")
+    stop("parameter in AR(1) structure must be between -1 and 1")
   }
   value <- log((1 + value)/( 1 - value))
   attr(value, "formula") <- form
@@ -951,7 +945,7 @@ coef.corAR1 <-
   function(object, ..., value)
 {
   if (length(value) != length(object)) {
-    stop("Cannot change the length of the parameter of a corStruct object")
+    stop("cannot change the length of the parameter of a \"corAR1\" object")
   }
   object[] <- value
   corD <- attr(object, "Dim")
@@ -976,8 +970,7 @@ Initialize.corAR1 <-
     covar <- list(covar)
   }
   if (any(unlist(lapply(covar, duplicated)))) {
-    stop(paste("Covariate must have unique values",
-	       "within groups for corAR1 objects"))
+    stop("covariate must have unique values within groups for \"corAR1\" objects")
   }
   if (any(unlist(lapply(covar, diff)) != 1)) {
     ## Cannot use formulas for inverse of square root matrix
@@ -1024,7 +1017,7 @@ corCAR1 <-
   function(value = 0.2, form = ~ 1, fixed = FALSE)
 {
   if (value <= 0 | value >= 1) {
-    stop("Parameter in CAR(1) structure must be between 0 and 1")
+    stop("parameter in CAR(1) structure must be between 0 and 1")
   }
   value <- log(value / (1 - value))
   attr(value, "formula") <- form
@@ -1118,7 +1111,7 @@ coef.corCAR1 <-
   function(object, ..., value)
 {
   if (length(value) != length(object)) {
-    stop("Cannot change the length of the parameter of a corStruct object")
+    stop("cannot change the length of the parameter of a \"corCAR1\" object")
   }
   object[] <- value
   corD <- attr(object, "Dim")
@@ -1145,8 +1138,7 @@ Initialize.corCAR1 <-
   }
 
   if (any(unlist(lapply(covar, duplicated)))) {
-    stop(paste("Covariate must have unique values",
-	       "within groups for corCAR1 objects"))
+    stop("covariate must have unique values within groups for \"corCAR1\" objects")
   }
   attr(object, "factor") <- corFactor(object)
   attr(object, "logDet") <- -attr(attr(object, "factor"), "logDet")
@@ -1184,19 +1176,19 @@ corARMA <-
   function(value = double(p + q), form = ~ 1, p = 0, q = 0, fixed = FALSE)
 {
   if (!(p >= 0 && (p == round(p)))) {
-    stop("Autoregressive order must be a non-negative integer")
+    stop("autoregressive order must be a non-negative integer")
   }
   if (!(q >= 0 && (q == round(q)))) {
-    stop("Moving average order must be a non-negative integer")
+    stop("moving average order must be a non-negative integer")
   }
   if (0 == (p + q)) {
     return(corIdent())
   }
   if (length(value) != p + q) {
-    stop("Initial value for parameter of wrong length")
+    stop("initial value for parameter of wrong length")
   }
   if (max(abs(value)) >= 1) {
-    stop("Parameters in ARMA structure must be < 1 in absolute value")
+    stop("parameters in ARMA structure must be < 1 in absolute value")
   }
   ## unconstrained parameters
   value <- .C(ARMA_unconstCoef,
@@ -1320,7 +1312,7 @@ coef.corARMA <-
   maxLag <- attr(object, "maxLag")
   if(is.null(maxLag)) stop("'object' has not been Initialize()d")
   if (length(value) != length(object)) {
-    stop("Cannot change the length of the parameter of a corStruct object")
+    stop("cannot change the length of the parameter of a \"corARMA\" object")
   }
   p <- attr(object, "p")
   q <- attr(object, "q")
@@ -1351,8 +1343,7 @@ Initialize.corARMA <-
     covar <- list(covar)
   }
   if (any(unlist(lapply(covar, duplicated)))) {
-    stop(paste("Covariate must have unique values",
-	       "within groups for corARMA objects"))
+    stop("covariate must have unique values within groups for \"corARMA\" objects")
   }
   if ((attr(object, "p") == 1) && (attr(object, "q") == 0) &&
      all(unlist(lapply(covar, diff)) == 1)) {
@@ -1405,8 +1396,7 @@ corCompSymm <-
   function(value = 0, form = ~ 1, fixed = FALSE)
 {
   if (abs(value) >= 1) {
-    stop(paste("Parameter in \"corCompSymm\" structure",
-	       "must be < 1 in absolute value"))
+    stop("parameter in \"corCompSymm\" structure must be < 1 in absolute value")
   }
   attr(value, "formula") <- form
   attr(value, "fixed") <- fixed
@@ -1498,7 +1488,7 @@ coef.corCompSymm <-
   function(object, ..., value)
 {
   if (length(value) != length(object)) {
-    stop("Cannot change the length of the parameter of a corStruct object")
+    stop("cannot change the length of the parameter of a \"corCompSymm\" object")
   }
   object[] <- value
   corD <- attr(object, "Dim")
@@ -1525,8 +1515,8 @@ Initialize.corCompSymm <-
   natPar <- as.vector(object)
   corD <- Dim(object)
   if (natPar <= (attr(object, "inf") <- -1/(corD[["maxLen"]] - 1))) {
-    stop(paste("Initial value in corCompSymm must be > than",
-               attr(object, "inf")))
+      stop(gettextf("initial value in \"corCompSymm\" must be greater than %s",
+                    attr(object, "inf")), domain = NA)
   }
   object[] <- log((natPar - attr(object, "inf"))/(1 - natPar))
   attr(object, "factor") <- corFactor(object)
@@ -1861,7 +1851,7 @@ coef.corSpatial <-
   function(object, ..., value)
 {
   if (length(value) != length(object)) {
-    stop("Cannot change the length of the parameter after initialization")
+    stop("cannot change the length of the parameter after initialization")
   }
   object[] <- value
   corD <- attr(object, "Dim")
@@ -1899,7 +1889,7 @@ getCovariate.corSpatial <-
 {
   if (is.null(covar <- attr(object, "covariate"))) { # need to calculate it
     if (missing(data)) {
-      stop("Need data to calculate covariate")
+      stop("need data to calculate covariate")
     }
     covForm <- getCovariateFormula(form)
     if (length(all.vars(covForm)) > 0) { # covariate present
@@ -1941,7 +1931,7 @@ getCovariate.corSpatial <-
       }
     }
     if (any(unlist(covar) == 0)) {
-      stop("Cannot have zero distances in \"corSpatial\"")
+      stop("cannot have zero distances in \"corSpatial\"")
     }
   }
   covar
@@ -1959,22 +1949,22 @@ Initialize.corSpatial <-
   val <- as.vector(object)
   if (length(val) > 0) {		# initialized
     if (val[1] <= 0) {
-      stop("Range must be > 0 in \"corSpatial\" initial value")
+      stop("'range' must be > 0 in \"corSpatial\" initial value")
     }
     if (nug) {				# with nugget effect
       if (length(val) == 1) {		# assuming nugget effect not given
 	val <- c(val, 0.1)		# setting it to 0.1
       } else {
 	if (length(val) != 2) {
-	  stop("Initial value for corSpatial parameters of wrong dimension")
+	  stop("initial value for \"corSpatial\" parameters of wrong dimension")
 	}
       }
       if ((val[2] <= 0) || (val[2] >= 1)) {
-	stop("Initial value of nugget ratio must be between 0 and 1")
+	stop("initial value of nugget ratio must be between 0 and 1")
       }
     } else {				# only range parameter
       if (length(val) != 1) {
-	stop("Initial value for corSpatial parameters of wrong dimension")
+	stop("initial value for \"corSpatial\" parameters of wrong dimension")
       }
     }
   } else {
@@ -2129,11 +2119,10 @@ Initialize.corLin <-
   val <- as.vector(object)
   if (length(val) > 0) {		# initialized
     if (val[1] <= 0) {
-      stop("Range must be > 0 in \"corLin\" initial value")
+      stop("'range' must be > 0 in \"corLin\" initial value")
     }
     if (val[1] <= minD) {
-      warning(paste("Initial value for range less than minimum distance.",
-		    "Setting it to 1.1 * min(distance)"))
+      warning("initial value for 'range' less than minimum distance. Setting it to 1.1 * min(distance)")
       val[1] <- 1.1 * minD
     }
     if (nug) {				# with nugget effect
@@ -2141,15 +2130,15 @@ Initialize.corLin <-
 	val <- c(val, 0.1)		# setting it to 0.1
       } else {
 	if (length(val) != 2) {
-	  stop("Initial value for corSpher parameters of wrong dimension")
+	  stop("initial value for \"corLin\" parameters of wrong dimension")
 	}
       }
       if ((val[2] <= 0) || (val[2] >= 1)) {
-	stop("Initial value of nugget ratio must be between 0 and 1")
+	stop("initial value of nugget ratio must be between 0 and 1")
       }
     } else {				# only range parameter
       if (length(val) != 1) {
-	stop("Initial value for corLin parameters of wrong dimension")
+	stop("initial value for \"corLin\" parameters of wrong dimension")
       }
     }
   } else {
@@ -2251,11 +2240,10 @@ Initialize.corSpher <-
   val <- as.vector(object)
   if (length(val) > 0) {		# initialized
     if (val[1] <= 0) {
-      stop("Range must be > 0 in \"corSpher\" initial value")
+      stop("range must be > 0 in \"corSpher\" initial value")
     }
     if (val[1] <= minD) {
-      warning(paste("Initial value for range less than minimum distance.",
-		    "Setting it to 1.1 * min(distance)"))
+      warning("initial value for 'range' less than minimum distance. Setting it to 1.1 * min(distance)")
       val[1] <- 1.1 * minD
     }
     if (nug) {				# with nugget effect
@@ -2263,15 +2251,15 @@ Initialize.corSpher <-
 	val <- c(val, 0.1)		# setting it to 0.1
       } else {
 	if (length(val) != 2) {
-	  stop("Initial value for corSpher parameters of wrong dimension")
+	  stop("initial value for \"corSpher\" parameters of wrong dimension")
 	}
       }
       if ((val[2] <= 0) || (val[2] >= 1)) {
-	stop("Initial value of nugget ratio must be between 0 and 1")
+	stop("initial value of nugget ratio must be between 0 and 1")
       }
     } else {				# only range parameter
       if (length(val) != 1) {
-	stop("Initial value for corSpher parameters of wrong dimension")
+	stop("initial value for \"corSpher\" parameters of wrong dimension")
       }
     }
   } else {

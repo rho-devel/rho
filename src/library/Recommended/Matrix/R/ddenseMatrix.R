@@ -76,8 +76,7 @@ setMethod("rcond", signature(x = "ddenseMatrix", norm = "character"),
 ## setMethod("t", signature(x = "ddenseMatrix"),
 ## 	  function(x) callGeneric(as(x, "dgeMatrix")))
 
-setMethod("diag", signature(x = "ddenseMatrix"),
-          function(x, nrow, ncol) diag(as(x, "dgeMatrix")))
+## "diag" --> specific methods for dge, dtr,dtp, dsy,dsp
 
 setMethod("solve", signature(a = "ddenseMatrix", b = "missing"),
           function(a, b, ...) solve(as(a, "dgeMatrix")))
@@ -88,9 +87,11 @@ setMethod("solve", signature(a = "ddenseMatrix", b = .b),
 for(.b in c("matrix","numeric")) ## << against ambiguity notes
 setMethod("solve", signature(a = "ddenseMatrix", b = .b),
 	  function(a, b, ...) solve(as(a, "dgeMatrix"), Matrix(b)))
+rm(.b)
 
 setMethod("lu", signature(x = "ddenseMatrix"),
-	  function(x, ...) lu(as(x, "dgeMatrix"), ...))
+	  function(x, ...)
+	  .set.factors(x, "LU", lu(as(x, "dgeMatrix"), ...)))
 
 setMethod("chol", signature(x = "ddenseMatrix"), cholMat)
 
@@ -154,3 +155,47 @@ setMethod("symmpart", signature(x = "ddenseMatrix"),
 setMethod("skewpart", signature(x = "ddenseMatrix"),
 	  function(x) .Call(ddense_skewpart, x))
 
+
+setMethod("is.finite", signature(x = "dgeMatrix"),
+	  function(x) {
+	      if(all(ifin <- is.finite(x@x)))
+		  allTrueMat(x)
+	      else if(any(ifin)) {
+		  r <- as(x, "lMatrix") #-> logical x-slot
+		  r@x <- ifin
+		  as(r, "nMatrix")
+	      }
+	      else is.na_nsp(x)
+	  })
+
+## TODO? -- rather methods for specific subclasses of ddenseMatrix
+setMethod("is.finite", signature(x = "ddenseMatrix"),
+	  function(x) {
+	      if(all(ifin <- is.finite(x@x))) return(allTrueMat(x))
+	      ## *NOT* dge, i.e., either triangular or symmetric
+	      ## (possibly packed): has finite 0-triangle
+	      cdx <- getClassDef(class(x))
+
+	      r <- new(if(extends(cdx,"symmetricMatrix"))"nsyMatrix" else "ngeMatrix")
+	      r@Dim <- (d <- x@Dim)
+	      r@Dimnames <- x@Dimnames
+	      isPacked <- (le <- prod(d)) > length(ifin)
+	      r@x <- rep.int(TRUE, le)
+	      iTr <- indTri(d[1], upper= x@uplo == "U", diag= TRUE)
+	      if(isPacked) { ## x@x is "usable"
+		  r@x[iTr] <- ifin
+	      } else {
+		  r@x[iTr] <- ifin[iTr]
+	      }
+	      r
+	  })
+
+setMethod("is.infinite", signature(x = "ddenseMatrix"),
+	  function(x) {
+	      if(any((isInf <- is.infinite(x@x)))) {
+		  r <- as(x, "lMatrix")#-> logical x-slot; 0 |--> FALSE
+		  r@x <- isInf
+		  as(r, "nMatrix")# often sparse .. better way?
+	      }
+	      else is.na_nsp(x)
+	  })

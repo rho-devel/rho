@@ -55,7 +55,7 @@ naPattern, \dots)
   columns given by the predictions at different levels and the grouping
   factors. 
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{nlme}}, \code{\link{fitted.lme}}}
 \examples{
 fm1 <- nlme(height ~ SSasymp(age, Asym, R0, lrc),

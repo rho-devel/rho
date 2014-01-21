@@ -1,6 +1,8 @@
 #  File src/library/graphics/R/coplot.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -225,8 +227,8 @@ coplot <-
 	xlim <- range(as.numeric(x), finite = TRUE)
     if(missing(ylim))
 	ylim <- range(as.numeric(y), finite = TRUE)
-    pch <- rep(pch, length.out = nobs)
-    col <- rep(col, length.out = nobs)
+    pch <- rep_len(pch, nobs)
+    col <- rep_len(col, nobs)
     do.panel <- function(index, subscripts = FALSE, id) {
 	## Use `global' variables
 	##	rows, columns,	total.rows, total.columns, nplots, xlim, ylim
@@ -311,8 +313,8 @@ coplot <-
               xpd=NA, font = par("font.lab"), cex = par("cex.lab"))
     }
     else { ## i. e. !show.given
-	mtext(xlab[2L], 3, line = 3.25, outer= TRUE, at= 0.5*f.col, xpd=NA,
-              font = par("font.lab"), cex = par("cex.lab"))
+	mtext(xlab[2L], 3, line = 3.25, outer = TRUE, at = 0.5*f.col,
+              xpd = NA, font = par("font.lab"), cex = par("cex.lab"))
     }
     if(have.b) {
 	if(length(ylab) == 1L)
@@ -346,8 +348,8 @@ coplot <-
 	}
     }
     if (length(missingrows)) {
-	cat("\n", gettext("Missing rows"), ": ",
-            paste0(missingrows, collapse = ", "), "\n")
+	cat("\n", gettextf("Missing rows: %s",
+                           paste0(missingrows, collapse = ", ")), "\n")
 	invisible(missingrows)
     } else invisible()
 }

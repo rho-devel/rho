@@ -251,32 +251,36 @@ calculateGridLayout <-
         ##widths.data[[ pos.widths[["panel"]] ]] <- NULL
     }
 
-    if (!is.null(main))
+    ## Update label data as necessary, but only if units are
+    ## "grobwidth|grobheight" (the default).  Otherwise, the user
+    ## wanted something different, so honor that.
+
+    if (!is.null(main) && (heights.units[[ pos.heights[["main"]] ]] == "grobheight"))
     {
         heights.x[pos.heights[["main"]]] <- heights.settings[["main"]]
         heights.data[[ pos.heights[["main"]]  ]] <- main
     }
-    if (!is.null(sub))
+    if (!is.null(sub) && (heights.units[[ pos.heights[["sub"]] ]] == "grobheight"))
     {
         heights.x[pos.heights[["sub"]]] <- heights.settings[["sub"]]
         heights.data[[ pos.heights[["sub"]]  ]] <- sub
     }
-    if (!is.null(xlab))
+    if (!is.null(xlab) && (heights.units[[ pos.heights[["xlab"]] ]] == "grobheight"))
     {
         heights.x[pos.heights[["xlab"]]] <- heights.settings[["xlab"]]
         heights.data[[ pos.heights[["xlab"]]  ]] <- xlab
     }
-    if (!is.null(ylab))
-    {
-        widths.x[pos.widths[["ylab"]]] <- widths.settings[["ylab"]]
-        widths.data[[ pos.widths[["ylab"]]  ]] <- ylab
-    }
-    if (!is.null(xlab.top))
+    if (!is.null(xlab.top) && (heights.units[[ pos.heights[["xlab.top"]] ]] == "grobheight"))
     {
         heights.x[pos.heights[["xlab.top"]]] <- heights.settings[["xlab.top"]]
         heights.data[[ pos.heights[["xlab.top"]]  ]] <- xlab.top
     }
-    if (!is.null(ylab.right))
+    if (!is.null(ylab) && (widths.units[[ pos.widths[["ylab"]] ]] == "grobwidth"))
+    {
+        widths.x[pos.widths[["ylab"]]] <- widths.settings[["ylab"]]
+        widths.data[[ pos.widths[["ylab"]]  ]] <- ylab
+    }
+    if (!is.null(ylab.right) && (widths.units[[ pos.widths[["ylab.right"]] ]] == "grobwidth"))
     {
         widths.x[pos.widths[["ylab.right"]]] <- widths.settings[["ylab.right"]]
         widths.data[[ pos.widths[["ylab.right"]]  ]] <- ylab.right
@@ -284,30 +288,29 @@ calculateGridLayout <-
 
     if (!is.null(legend))
     {
-        ## update data as necessary. FIXME: need to change x too?
+        ## Update data as necessary, but only if units are
+        ## "grobwidth|grobheight" (the default).  Otherwise, the user
+        ## wanted something different, so honor that.
+
         nl <- names(legend)
-        if ("left" %in% nl)
+        if ("left" %in% nl && (widths.units[[ pos.widths[["key.left"]] ]] == "grobwidth"))
         {
-            widths.x[ pos.widths[["key.left"]] ] <-
-                widths.settings[["key.left"]]
+            widths.x[ pos.widths[["key.left"]] ] <- widths.settings[["key.left"]]
             widths.data[[ pos.widths[["key.left"]] ]] <- legend$left$obj
         }
-        if ("right" %in% nl)
+        if ("right" %in% nl && (widths.units[[ pos.widths[["key.right"]] ]] == "grobwidth"))
         {
-            widths.x[ pos.widths[["key.right"]] ] <-
-                widths.settings[["key.right"]]
+            widths.x[ pos.widths[["key.right"]] ] <- widths.settings[["key.right"]]
             widths.data[[ pos.widths[["key.right"]] ]] <- legend$right$obj
         }
-        if ("top" %in% nl)
+        if ("top" %in% nl && (heights.units[[ pos.heights[["key.top"]] ]] == "grobheight"))
         {
-            heights.x[ pos.heights[["key.top"]] ] <-
-                heights.settings[["key.top"]]
+            heights.x[ pos.heights[["key.top"]] ] <- heights.settings[["key.top"]]
             heights.data[[ pos.heights[["key.top"]] ]] <- legend$top$obj
         }
-        if ("bottom" %in% nl)
+        if ("bottom" %in% nl && (heights.units[[ pos.heights[["key.bottom"]] ]] == "grobheight"))
         {
-            heights.x[ pos.heights[["key.bottom"]] ] <-
-                heights.settings[["key.top"]]
+            heights.x[ pos.heights[["key.bottom"]] ] <- heights.settings[["key.top"]]
             heights.data[[ pos.heights[["key.bottom"]] ]] <- legend$bottom$obj
         }
     }

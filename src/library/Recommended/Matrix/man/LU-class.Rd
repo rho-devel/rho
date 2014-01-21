@@ -3,7 +3,7 @@
 \alias{LU-class}
 \alias{denseLU-class}
 \alias{expand,denseLU-method}
-\alias{solve,denseLU,missing-method}
+%% \alias{solve,denseLU,missing-method}
 \title{LU (dense) Matrix Decompositions}
 \description{
   The \code{"LU"} class is the \emph{virtual} class of LU decompositions of
@@ -61,7 +61,7 @@
       see also the example below.}
     \item{solve}{\code{signature(a = "denseLU", b = "missing")}: Compute
       the inverse of A, \eqn{A^{-1}}{A^(-1)}, \code{solve(A)} using the LU
-      decomposition.}
+      decomposition, see also \code{\link{solve-methods}}.}
   }
 }
 % \references{}

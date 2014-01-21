@@ -1,3 +1,82 @@
+2013-08-17  Brian Ripley
+
+	* add start on ko translations.
+
+2013-08-15  Brian Ripley
+
+	* DESCRIPTION: version is 3.1-111,
+	* R/lmList.R: Adjust to cope with failed fits and fits with 
+	fewer coefficients returned by lm().  (Contributed by Ruth Ripley.)
+
+2013-07-02  Brian Ripley
+
+	* DESCRIPTION: version is 3.1-110,
+	* R/{gls,gnls,lme}.R: Replace as.name() calls by quote(stats::nls) etc.
+	* inst/LICENCE: remove.
+	
+2013-03-21  Brian Ripley
+
+	* inst/CITATION: modernize.
+
+2013-03-11  Brian Ripley
+
+	* LICENCE: remove (it was not a licence file).
+	
+2013-01-26  Brian Ripley
+
+	* DESCRIPTION: version is 3.1-109,
+	depends on R (>= 3.0.0).
+
+2013-01-26  Brian Ripley
+
+	* DESCRIPTION: version is 3.1-108, 
+	depends on R (< 3.0.0) and has chol.f and rs.f in .Rbuildignore.
+	
+2013-01-23  Brian Ripley
+
+	* man/[n]lme.Rd: add a note about the need to scale the response.
+	* man/lmeControl.Rd: correct description of 'msTol' argument.
+	* man/[n]lmeControl.Rd: correct description of 'opt' argument (it is
+	a character string).
+	* man/*.Rd: s/Jose/José/
+	* R/[n]lme.R, man/[n]lmeControl.Rd: allow '...' for further
+	control arguments to be based though to nlminb() and optim().
+
+
+2013-01-13  Brian Ripley
+
+	* DESCRIPTION: add accent on JCP's first name (and declare
+	UTF-8 encoding). Add EISPACK authors.
+	* src/rs.f: minimal version of eigen.f containing just RS and
+	ancillaries (replacing eigen.f).
+
+2013-01-12  Brian Ripley
+
+	* DESCRIPTION: version is 3.1-107
+	* src/{chol,eigen}.f: port files from R (where they are
+	  deprecated/defunct).
+
+2012-12-06  Kurt Hornik
+
+	* DESCRIPTION: version is 3.1-106, add roles to Authors@R.
+
+2012-11-28  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* NAMESPACE: import selectively from lattice and stats.
+
+2012-09-24  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* DESCRIPTION: version is 3.1-105
+	* R: improve messages for translation.
+
+2012-09-01  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* po: add Polish translations.
+
+2012-08-30  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* src/init.c: force use of registered symbols in R >= 2.16.0
+
 2012-05-23  Brian Ripley <Brian.Ripley@R-project.org>
 
 	* DESCRIPTION: version is 3.1-104
@@ -6,7 +85,7 @@
 
 2012-04-25  Brian Ripley <Brian.Ripley@R-project.org>
 
-	* src/nlmefit.c: type mismatch shown by -Wconversion
+	* src/nlmefit.c: type mismatch shown by clang's -Wconversion
 
 2012-03-29  Brian Ripley <Brian.Ripley@R-project.org>
 
@@ -23,7 +102,7 @@
 2011-12-25  Brian Ripley <Brian.Ripley@R-project.org>
 
 	* DESCRIPTION: needs Suggests: MASS for data(package=)
-	
+
 2011-07-19  Brian Ripley <Brian.Ripley@R-project.org>
 
 	* DESCRIPTION: version is 3.1-102

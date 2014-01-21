@@ -1,3 +1,6 @@
+
+.onUnload <- function(libpath) library.dynam.unload("survival", libpath)
+
 # The vcov and extractAIC methods are not defined in Splus, so they
 #  do not need survival methods.
 if (is.R()) {

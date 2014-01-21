@@ -1,6 +1,8 @@
 #  File src/library/base/R/print.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -23,7 +25,7 @@ print.default <- function(x, digits = NULL, quote = TRUE, na.print = NULL,
 {
     noOpt <- missing(digits) && missing(quote) && missing(na.print) &&
 	missing(print.gap) && missing(right) && missing(max) &&
-	missing(useSource) && length(list(...)) == 0L
+	missing(useSource) && missing(...)
     .Internal(print.default(x, digits, quote, na.print, print.gap, right, max,
 			    useSource, noOpt))
 }

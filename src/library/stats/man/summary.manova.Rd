@@ -40,7 +40,7 @@
   (1994) for further references.  All four approximate F statistics are
   the same when the term being tested has one degree of freedom, but in
   other cases that for the Roy statistic is an upper bound.
-  
+
   The tolerance \code{tol} is applied to the QR decomposition of the
   residual correlation matrix (unless some response has essentially zero
   residuals, when it is unscaled).  Thus the default value guards
@@ -63,7 +63,7 @@
 \references{
   Anderson, T. W. (1994) \emph{An Introduction to Multivariate
     Statistical Analysis.} Wiley.
-  
+
   Hand, D. J. and Taylor, C. C.  (1987)
   \emph{Multivariate Analysis of Variance and Repeated Measures.}
   Chapman and Hall.
@@ -87,12 +87,12 @@ gloss <- c(9.5, 9.9, 9.6, 9.6, 9.2, 9.1, 10.0, 9.9, 9.5, 9.4,
 opacity <- c(4.4, 6.4, 3.0, 4.1, 0.8, 5.7, 2.0, 3.9, 1.9, 5.7,
              2.8, 4.1, 3.8, 1.6, 3.4, 8.4, 5.2, 6.9, 2.7, 1.9)
 Y <- cbind(tear, gloss, opacity)
-rate <- factor(gl(2,10), labels=c("Low", "High"))
-additive <- factor(gl(2, 5, length=20), labels=c("Low", "High"))
+rate <- factor(gl(2,10), labels = c("Low", "High"))
+additive <- factor(gl(2, 5, length = 20), labels = c("Low", "High"))
 
 fit <- manova(Y ~ rate * additive)
-summary.aov(fit)           # univariate ANOVA tables
-summary(fit, test="Wilks") # ANOVA table of Wilks' lambda
-summary(fit)               # same F statistics as single-df terms
+summary.aov(fit)             # univariate ANOVA tables
+summary(fit, test = "Wilks") # ANOVA table of Wilks' lambda
+summary(fit)                # same F statistics as single-df terms
 }}
 \keyword{models}

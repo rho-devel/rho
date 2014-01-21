@@ -63,12 +63,12 @@ reStruct <-
     }
   } else if (inherits(object, "pdMat")) { # single group, as pdMat
     if (is.null(formula(object))) {
-      stop("pdMat element must have a formula")
+      stop("\"pdMat\" element must have a formula")
     }
     object <- list(object)
   } else {
     if (data.class(object) != "list") {
-      stop("Object must be a list or a formula")
+      stop("'object' must be a list or a formula")
     }
     ## checking if nlme-type list - unnamed list of 2-sided formulas
     if (is.null(names(object)) &&
@@ -81,7 +81,7 @@ reStruct <-
                        function(el) {
                          if (inherits(el, "pdMat")) {
                            if (is.null(formula(el))) {
-                             stop("pdMat elements must have a formula")
+                             stop("\"pdMat\" elements must have a formula")
                            }
                            return(el)
                          }
@@ -98,7 +98,7 @@ reStruct <-
                                  inherits(el1, "formula") && length(el1) == 3
                                })))) { return(el) }
                            else {
-                 stop("Elements in object must be formulas or pdMat objects")
+                 stop("elements in 'object' must be formulas or \"pdMat\" objects")
                            }
                          }
 		     })
@@ -151,7 +151,7 @@ corMatrix.reStruct <-
   function(object, ...)
 {
   if (!isInitialized(object)) {
-    stop("Cannot access the matrix of uninitialized objects")
+    stop("cannot access the matrix of uninitialized objects")
   }
   as.list(rev(lapply(object, corMatrix)))
 }
@@ -166,7 +166,7 @@ pdMatrix.reStruct <-
   function(object, factor = FALSE)
 {
   if (!isInitialized(object)) {
-    stop("Cannot access the matrix of uninitialized objects")
+    stop("cannot access the matrix of uninitialized objects")
   }
   as.list(rev(lapply(object, pdMatrix, factor)))
 }
@@ -186,11 +186,10 @@ coef.reStruct <-
   function(object, ..., value)
 {
   if (is.null(plen <- attr(object, "plen"))) {
-    stop(paste("Cannot change the parameter when",
-	       "length of parameters is undefined"))
+    stop("cannot change the parameter when ength of parameters is undefined")
   }
   if (length(value) != sum(plen)) {
-    stop("Cannot change parameter length of initialized objects")
+    stop("cannot change parameter length of initialized objects")
   }
   ends <- cumsum(plen)
   starts <- 1 + c(0, ends[-length(ends)])
@@ -210,7 +209,7 @@ getGroupsFormula.reStruct <-
   function(object, asList = FALSE, sep)
 {
   if (is.null(val <- rev(formula(object)))) {
-    stop("Can not extract groups formula without a formula")
+    stop("cannot extract groups formula without a formula")
   }
   if (is.null(nVal <- names(val))) return(NULL)
   if (asList) {
@@ -251,7 +250,7 @@ Initialize.reStruct <-
 			  }
 			}))
   if (!all(plen > 0)) {
-    stop("All elements of a reStruct object must have a non-zero size")
+    stop("all elements of a \"reStruct\" object must have a non-zero size")
   }
   attr(object, "plen") <- plen
 
@@ -301,7 +300,7 @@ logLik.reStruct <-
 {
   if (data.class(value) != "list") value <- list(value)
   if (length(value) != length(object)) {
-    stop("Cannot change the length of object")
+    stop("cannot change the length of 'object'")
   }
   value <- rev(value)                   # same order as object
   for(i in seq_along(object)) {
@@ -314,7 +313,7 @@ model.matrix.reStruct <-
   function(object, data, contrast = NULL, ...)
 {
   if (is.null(form <- formula(object, asList = TRUE))) {
-    stop("Cannot extract model matrix without formula")
+    stop("cannot extract model matrix without formula")
   }
   form1 <- asOneFormula(form)
   if (length(form1) > 0) {
@@ -372,7 +371,7 @@ Names.reStruct <-
   function(object, ..., value)
 {
   if (length(object) != length(value)) {
-    stop("Incompatible lengths for object names")
+    stop("incompatible lengths for object names")
   }
   for(i in seq_along(object)) {
     Names(object[[i]]) <- value[[i]]

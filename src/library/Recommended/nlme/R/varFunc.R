@@ -43,8 +43,7 @@ varFunc <-
     return(varFixed(asOneSidedFormula(object)))
   }
 
-  stop(paste("Can only construct varFunc object from another varFunc",
-	     "object, a formula, or a character string"))
+  stop("can only construct \"varFunc\" object from another \"varFunc\" object, a formula, or a character string")
 }
 
 
@@ -62,7 +61,7 @@ coef.varFunc <-
   wPar <- attr(object, "whichFix")
   if (is.null(wPar) ||
       (length(object) != (length(wPar) - sum(wPar)))) {
-    stop("Cannot extract parameters of uninitialized object")
+    stop("cannot extract parameters of uninitialized object")
   }
   if (unconstrained) {
     if (allCoef) {
@@ -78,8 +77,8 @@ coef.varFunc <-
     }
     val
   } else {
-    stop(paste("Don't know how to get coefficients for",
-	       class(object)[1],"object"))
+      stop(gettextf("do not know how to get coefficients for %s object",
+                    dQuote(class(object)[1])), domain = NA)
   }
 }
 
@@ -89,7 +88,7 @@ coef.varFunc <-
   value <- as.numeric(value)
   if (!is.null(aux <- getCovariate(object))) {
     if (length(aux) != length(value)) {
-      stop("Cannot change the length of covariate in varFunc object")
+      stop("cannot change the length of covariate in \"varFunc\" object")
     }
   }
   attr(object, "covariate") <- value
@@ -200,15 +199,15 @@ varFixed <-
   function(value = ~ 1)
 {
   if (!inherits(value, "formula")) {
-    stop("Value must be a one sided formula")
+    stop("'value' must be a one sided formula")
   }
   form <- asOneSidedFormula(value)
   if (length(all.vars(getCovariateFormula(form))) == 0) {
-    stop("\"form\" must have a covariate")
+    stop("'form' must have a covariate")
   }
   if (!is.null(getGroupsFormula(form))) {
     form <- getCovariateFormula(form)
-    warning("Ignoring \"groups\" in \"varFixed\" formula")
+    warning("ignoring 'group' in \"varFixed\" formula")
   }
   value <- numeric(0)
   attr(value, "formula") <- form
@@ -230,7 +229,7 @@ Initialize.varFixed <-
   form <- formula(object)
   if (any(is.na(match(all.vars(form), names(data))))) {
     ## cannot evaluate covariate on data
-    stop("All variables used in \"formula\" must be in \"data\"")
+    stop("all variables used in 'formula' must be in 'data'")
   }
   attr(object, "needUpdate") <- FALSE
   attr(object, "covariate") <- getCovariate(data, form)
@@ -268,11 +267,11 @@ varIdent <-
   } else {
     if ((lv <- length(value)) > 0) {		# initialized
       if (is.null(grpNames <- names(value)) && (lv > 1)) {
-	stop("Initial values must have group names in varIdent")
+	stop("initial values must have group names in 'varIdent'")
       }
       value <- unlist(value)		# may be a list with names
       if (any(value <= 0)) {
-	stop("Initial values for \"varIdent\" must be > 0.")
+	stop("initial values for 'varIdent' must be > 0")
       }
       value <- log(value)               # unconstrained form
     } else grpNames <- NULL
@@ -280,7 +279,7 @@ varIdent <-
     if (!is.null(fixed)) {
        fix <- attr(value, "fixed") <- log(unlist(fixed))
       if (is.null(fixNames <- names(fix))) {
-	stop("Fixed parameters must have names in varIdent")
+	stop("fixed parameters must have names in 'varIdent'")
       }
       if (!is.null(attr(value, "groupNames"))) {
 	attr(value, "groupNames") <- c(attr(value, "groupNames"), fixNames)
@@ -337,8 +336,7 @@ coef.varIdent <-
     ## fix from PR#9831
     nFixed  <- sum(as.numeric(attr(object,"whichFix")))
     if (length(value) != nGroups - nFixed - 1) {
-      stop(paste("Cannot change the length of the varIdent",
-		 "parameter after initialization"))
+      stop("cannot change the length of the \"varIdent\" parameter after initialization")
     }
     object[] <- value
     natPar <- coef(object, FALSE, allCoef = TRUE)
@@ -367,8 +365,7 @@ Initialize.varIdent <-
     if (!is.null(fix <- attr(object, "fixed"))) {
       fixNames <- names(fix)
       if (any(is.na(match(fixNames, uStrat)))) {
-	stop(paste("Fixed parameters names in varIdent",
-		   "must be a subset of groups names"))
+	stop("fixed parameter names in 'varIdent' must be a subset of group names")
       }
       uStratVar <- uStrat[is.na(match(uStrat, fixNames))] # varying strata
       uStrat <- c(uStratVar, fixNames)
@@ -376,7 +373,7 @@ Initialize.varIdent <-
       uStratVar <- uStrat
     }
     if ((nStratVar <- length(uStratVar)) == 0) {
-      stop("Cannot fix variances in all groups")
+      stop("cannot fix variances in all groups")
     }
     if (nStratVar > 1) {
       if (length(object) <= 1) {
@@ -391,19 +388,18 @@ Initialize.varIdent <-
 	attr(object, "groupNames") <- uStrat
       } else {
 	if (length(as.vector(object)) != (len <- (nStratVar - 1))) {
-	  stop(paste("Initial value for \"varIdent\" should be of length",
-		     len))
+            stop(gettextf("initial value for \"varIdent\" should be of length %d",
+                          len), domain = NA)
 	}
 	if (!is.null(stN <- attr(object, "groupNames"))) {
 	  missStrat <- uStrat[is.na(match(uStrat, stN))]
 	  if (length(missStrat) != 1) {
-	    stop(paste("Names of starting value for \"varIdent\" object",
-		       "must contain all but one of the stratum levels"))
+	    stop("names of starting value for \"varIdent\" object must contain all but one of the stratum levels")
 	  }
 	  stN <-  c(missStrat, stN)
 	  if ((length(stN) != length(uStrat)) ||
 	      any(sort(stN) != sort(uStrat))) {
-	    stop("Nonexistent groups names for initial values in varIdent")
+	    stop("nonexistent group names for initial values in 'varIdent'")
 	  }
 	  attr(object, "groupNames") <- stN
 	} else {
@@ -469,15 +465,15 @@ varPower <-
   fixed <- attr(value, "fixed") <- unlist(fixed)
   attr(value, "formula") <- form <- asOneSidedFormula(form)
   if (length(all.vars(getCovariateFormula(form))) == 0) {
-    stop("\"form\" must have a covariate")
+    stop("'form' must have a covariate")
   }
   if (!is.null(getGroupsFormula(form))) {
     if (is.null(grpNames <- names(value)) && (length(value) > 1)) {
-      stop("Initial values must have group names in varPower")
+      stop("initial values must have group names in 'varPower'")
     }
     if (!is.null(fixed)) {
       if (is.null(names(fixed))) {
-	stop("Fixed parameters must have group names in varPower")
+	stop("fixed parameters must have group names in 'varPower'")
       }
     }
     attr(value, "groupNames") <- c(grpNames, names(fixed))
@@ -524,8 +520,7 @@ coef.varPower <-
   if ((len <- length(object)) > 0) {		# varying parameters
     value <- as.numeric(value)
     if (length(value) != len) {
-      stop(paste("Cannot change the length of the varStruct",
-		 "parameter after initialization"))
+      stop("cannot change the length of the \"varStruct\" parameter after initialization")
     }
     object[] <- value
     aux <- coef(object, FALSE, allCoef = TRUE)
@@ -537,8 +532,7 @@ coef.varPower <-
     attr(object, "logLik") <-
       sum(log(attr(object, "weights") <- abs(covariateObj)^(-aux)))
   } else {
-    stop(paste("Cannot change coefficients before initialization or",
-               "when all parameters are fixed"))
+    stop("cannot change coefficients before initialization or when all parameters are fixed")
   }
   object
 }
@@ -564,10 +558,10 @@ Initialize.varPower <-
       if (!is.null(attr(object, "fixed"))) {
 	fixNames <- names(attr(object, "fixed"))
 	if (is.null(fixNames)) {
-	  stop("Fixed parameters must have group names")
+	  stop("fixed parameters must have group names")
 	}
 	if (any(is.na(match(fixNames, uStrat)))) {
-	  stop("Mismatch between group names and fixed values names")
+	  stop("mismatch between group names and fixed values names")
 	}
       } else {
 	fixNames <- NULL
@@ -590,13 +584,13 @@ Initialize.varPower <-
 	  names(object) <- uStratVar
 	} else {
 	  if (length(as.vector(object)) != nStratVar) {
-	    stop(paste("Initial value for \"varPower\" should be of length",
-		       nStratVar))
+              stop(gettextf("initial value for \"varPower\" should be of length %d",
+                            nStratVar), domain = NA)
 	  }
 	  stN <- attr(object, "groupNames") # must have names
 	  if (length(stN) != length(uStrat) ||
 	      any(sort(stN) != sort(uStrat))) {
-	    stop("Nonexistent groups names for initial values in varPower")
+	    stop("nonexistent group names for initial values in \"varPower\"")
 	  }
 	}
       } else {				# all parameters are fixed
@@ -633,7 +627,7 @@ Initialize.varPower <-
         object <- 0
         attributes(object) <- oldAttr
       } else if (len > 1) {
-        stop("Initial value for \"varPower\" should be of length 1.")
+        stop("initial value for \"varPower\" should be of length 1")
       }
     }
   }
@@ -685,15 +679,15 @@ varExp <-
   fixed <- attr(value, "fixed") <- unlist(fixed)
   attr(value, "formula") <- form <- asOneSidedFormula(form)
   if (length(all.vars(getCovariateFormula(form))) == 0) {
-    stop("\"form\" must have a covariate")
+    stop("'form' must have a covariate")
   }
   if (!is.null(getGroupsFormula(form))) {
     if (is.null(grpNames <- names(value)) && (length(value) > 1)) {
-      stop("Initial values must have groups names in varPower")
+      stop("initial values must have group names in 'varExp'")
     }
     if (!is.null(fixed)) {
       if (is.null(names(fixed))) {
-	stop("Fixed parameters must have groups names in varPower")
+	stop("fixed parameters must have group names in 'varExp'")
       }
     }
     attr(value, "groupNames") <- c(grpNames, names(fixed))
@@ -739,8 +733,7 @@ coef.varExp <-
   if (length(object) > 0) {		# varying parameters
     value <- as.numeric(value)
     if (length(value) != length(object)) {
-      stop(paste("Cannot change the length of the varStruct",
-		 "parameter after initialization"))
+      stop("cannot change the length of the \"varExp\" parameter after initialization")
     }
     object[] <- value
     aux <- coef(object, FALSE, allCoef = TRUE)
@@ -750,8 +743,7 @@ coef.varExp <-
     attr(object, "logLik") <-
       sum(log(attr(object, "weights") <- exp(-aux * getCovariate(object))))
   } else {
-    stop(paste("Cannot change coefficients before initialization or",
-               "when all parameters are fixed"))
+    stop("cannot change coefficients before initialization or when all parameters are fixed")
   }
   object
 }
@@ -777,10 +769,10 @@ Initialize.varExp <-
       if (!is.null(attr(object, "fixed"))) {
 	fixNames <- names(attr(object, "fixed"))
 	if (is.null(fixNames)) {
-	  stop("Fixed parameters must have group names")
+	  stop("fixed parameters must have group names")
 	}
 	if (any(is.na(match(fixNames, uStrat)))) {
-	  stop("Mismatch between group names and fixed values names")
+	  stop("mismatch between group names and fixed values names")
 	}
       } else {
 	fixNames <- NULL
@@ -803,13 +795,13 @@ Initialize.varExp <-
 	  names(object) <- uStratVar
 	} else {
 	  if (length(as.vector(object)) != nStratVar) {
-	    stop(paste("Initial value for \"varExp\" should be of length",
-		       nStratVar))
+              stop(gettextf("initial value for \"varExp\" should be of length %d",
+                            nStratVar), domain = NA)
 	  }
 	  stN <- attr(object, "groupNames") #must have names
 	  if ((length(stN) != length(uStrat)) ||
 	      any(sort(stN) != sort(uStrat))) {
-	    stop("Nonexistent groups names for initial values in varExp")
+	    stop("nonexistent group names for initial values in \"varExp\"")
 	  }
 	}
       } else {
@@ -846,7 +838,7 @@ Initialize.varExp <-
         object <- 0
         attributes(object) <- oldAttr
       } else if (len > 1) {
-        stop("Initial value for \"varExp\" should be of length 1.")
+        stop("initial value for \"varExp\" should be of length 1")
       }
     }
   }
@@ -901,13 +893,14 @@ varConstPower <-
   CPconstr <- function(val, form, nam) {
     if ((lv <- length(val)) == 0) return(val)
     if (lv > 2) {
-      stop(paste(nam,"can have at most two components"))
+      stop(gettextf("%s can have at most two components", nam), domain = NA)
     }
     if (is.null(nv <- names(val))) {
       names(val) <- c("const", "power")[1:lv]
     } else {
       if (any(is.na(match(nv, c("const", "power"))))) {
-	stop(paste(nam,"can only have names \"const\" and \"power\""))
+        stop(gettextf("%s can only have names \"const\" and \"power\"", nam),
+             domain = NA)
       }
     }
     nv <- names(val)
@@ -916,8 +909,8 @@ varConstPower <-
       grpNames <- unique(unlist(lapply(val, names)))
     } else {				# must be a vector or a scalar
       if (!is.numeric(val)) {
-	stop(paste(nam,"can only be a list, or numeric"))
-      }
+        stop(gettextf("%s can only be a list or numeric", nam), domain = NA)
+     }
       val <- as.list(val)
       names(val) <- nv
       grpNames <- NULL
@@ -926,13 +919,14 @@ varConstPower <-
       if (any(unlist(lapply(val, function(el) {
 	(length(el) > 1) && is.null(names(el))
       })))) {
-	stop(paste(nam,"must have group names in varConstPower"))
+        stop(gettextf("%s must have group names in 'varConstPower'", nam),
+             domain = NA)
       }
       attr(val, "groupNames") <- grpNames
     }
     if (length(val$const) > 0) {
       if (any(val$const <= 0)) {
-	stop("Constant in varConstPower structure must be > 0")
+	stop("constant in \"varConstPower\" structure must be > 0")
       }
       val$const <- log(val$const)
     }
@@ -941,7 +935,7 @@ varConstPower <-
   value <- list(const = const, power = power)
   form <- asOneSidedFormula(form)
   if (length(all.vars(getCovariateFormula(form))) == 0) {
-    stop("\"form\" must have a covariate")
+    stop("'form' must have a covariate")
   }
   ## initial value may be given as a vector or list. If groups are
   ## present and different initial values are given for each group, then
@@ -1010,8 +1004,7 @@ coef.varConstPower <-
   if (length(unlist(object)) > 0) {	# varying parameters
     value <- as.numeric(value)
     if (length(value) != length(unlist(object))) {
-      stop(paste("Cannot change the length of the",
-		 "parameter after initialization"))
+      stop("cannot change the length of the parameter after initialization")
     }
     start <- 0
     for(i in names(object)) {
@@ -1028,8 +1021,7 @@ coef.varConstPower <-
       sum(log(attr(object, "weights") <-
 	      1/(natPar[1,] + abs(getCovariate(object))^natPar[2,])))
   } else {
-    stop(paste("Cannot change coefficients before initialization or",
-               "when all parameters are fixed"))
+    stop("cannot change coefficients before initialization or when all parameters are fixed")
   }
   object
 }
@@ -1059,10 +1051,10 @@ Initialize.varConstPower <-
 	if (!is.null(attr(object[[i]], "fixed"))) {
 	  fixNames <- names(attr(object[[i]], "fixed"))
 	  if (is.null(fixNames)) {
-	    stop("Fixed parameters must have group names")
+	    stop("fixed parameters must have group names")
 	  }
 	  if (any(is.na(match(fixNames, uStrat)))) {
-	    stop("Mismatch between group names and fixed values names")
+	    stop("mismatch between group names and fixed values names")
 	  }
 	} else {
 	  fixNames <- NULL
@@ -1084,12 +1076,13 @@ Initialize.varConstPower <-
 	    names(object[[i]]) <- uStratVar
 	  } else {
 	    if (length(as.vector(object[[i]])) != nStratVar) {
-	      stop(paste("Initial value should be of length", nStratVar))
+                stop(gettext("initial value should be of length %d",
+                             nStratVar), domain = NA)
 	    }
 	    stN <- names(object[[i]]) # must have names
 	    if ((length(stN) != length(uStratVar)) ||
 		any(sort(stN) != sort(uStratVar))) {
-	      stop("Nonexistent groups names for initial values")
+	      stop("nonexistent group names for initial values")
 	    }
 	  }
 	}
@@ -1132,7 +1125,7 @@ Initialize.varConstPower <-
   }
   aux <- 2 - sum(whichFix[,1])
   if (length(as.vector(unlist(object))) != aux) {
-    stop(paste("Initial value should be of length", aux))
+      stop(gettext("initial value should be of length %d", aux), domain = NA)
   }
   NextMethod()
 }
@@ -1173,7 +1166,7 @@ varComb <-
 {
   val <- list(...)
   if (!all(unlist(lapply(val, inherits, "varFunc")))) {
-    stop("All arguments to \"varComb\" must be of class \"varFunc\".")
+    stop("all arguments to 'varComb' must be of class \"varFunc\".")
   }
   if (is.null(names(val))) {
     names(val) <- LETTERS[1:length(val)]
@@ -1205,7 +1198,7 @@ coef.varComb <-
   plen <- attr(object, "plen")
   if ((len <- sum(plen)) > 0) {		# varying parameters
     if (length(value) != len) {
-      stop("Cannot change parameter length of initialized varComb object.")
+      stop("cannot change parameter length of initialized \"varComb\" object")
     }
     start <- 0
     for (i in seq_along(object)) {

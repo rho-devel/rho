@@ -43,8 +43,8 @@
   Pinheiro, J. C. and Bates, D. M. (2000), \emph{Mixed-Effects Models in S
     and S-PLUS}, Springer, New York.  (Appendix A.15)
 
-  Venables, W. N. and Ripley, B. D. (1999) \emph{Modern Applied
-    Statistics with S-PLUS (3rd ed)}, Springer, New York.
+  Venables, W. N. and Ripley, B. D. (2002) \emph{Modern Applied
+    Statistics with S. (4th ed)}, Springer, New York.
 }
 %\examples{}
 \keyword{datasets}

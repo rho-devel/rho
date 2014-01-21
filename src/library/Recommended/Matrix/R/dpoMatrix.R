@@ -59,6 +59,13 @@ setMethod("solve", signature(a = "dpoMatrix", b = "matrix"),
           function(a, b, ...) .Call(dpoMatrix_matrix_solve, a, b),
           valueClass = "matrix")
 
+mkDet.via.chol <- function(x, logarithm, ...)
+    mkDet(logarithm, ldet = 2*sum(log(abs(diag(chol(x))))), sig = 1L)
+
+setMethod("determinant", signature(x = "dpoMatrix", logarithm = "logical"), mkDet.via.chol)
+setMethod("determinant", signature(x = "dpoMatrix", logarithm = "missing"),
+	  function(x, logarithm, ...) mkDet.via.chol(x, logarithm=TRUE))
+
 ## Is this usable / necessary?  -- FIXME!
 ## setMethod("solve", signature(a = "dpoMatrix", b = "numeric"),
 ##          function(a, b, ...)

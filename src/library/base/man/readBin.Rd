@@ -24,7 +24,7 @@ writeBin(object, con, size = NA_integer_,
     vector to be read, or a character vector of length one describing
     the mode: one of \code{"numeric"}, \code{"double"},
     \code{"integer"}, \code{"int"}, \code{"logical"}, \code{"complex"},
-    \code{"character"}, \code{"raw"}.} 
+    \code{"character"}, \code{"raw"}.}
   \item{n}{integer.  The (maximal) number of records to be
     read.  You can use an over-estimate here, but not too large as
     storage is reserved for \code{n} items.}
@@ -34,11 +34,11 @@ writeBin(object, con, size = NA_integer_,
   \item{signed}{logical.  Only used for integers of sizes 1 and 2,
     when it determines if the quantity on file
     should be regarded as a signed or unsigned integer.}
-  \item{endian}{The endian-ness (\code{"big"} or \code{"little"} of the
+  \item{endian}{The endian-ness (\code{"big"} or \code{"little"}) of the
     target system for the file.  Using \code{"swap"} will force swapping
     endian-ness.}
   \item{object}{An \R object to be written to the connection.}
-  \item{useBytes}{See \code{\link{writeLines}}.} 
+  \item{useBytes}{See \code{\link{writeLines}}.}
 }
 \details{
   These functions are intended to be used with binary-mode connections.
@@ -55,7 +55,7 @@ writeBin(object, con, size = NA_integer_,
   the vector is used as input.  If \code{writeBin} is called with
   \code{con} a raw vector, it is just an indication that a raw vector
   should be returned.
-  
+
   If \code{size} is specified and not the natural size of the object,
   each element of the vector is coerced to an appropriate type before
   being written or as it is read.  Possible sizes are 1, 2, 4 and
@@ -70,10 +70,10 @@ writeBin(object, con, size = NA_integer_,
   characters.  \code{\link{readChar}} and \code{\link{writeChar}} can
   be used to read and write fixed-length strings.  No check is made that
   the string is valid in the current locale.
-  
+
   Handling \R's missing and special (\code{Inf}, \code{-Inf} and
-  \code{NaN}) values is discussed in the \emph{R Data Import/Export} manual.
-  
+  \code{NaN}) values is discussed in the \sQuote{R Data Import/Export} manual.
+
   Only \eqn{2^{31}-1}{2^31 - 1} bytes can be written in a single
   call (and that is the maximum capacity of a raw vector).
 }
@@ -91,10 +91,10 @@ writeBin(object, con, size = NA_integer_,
   which does not contain C-style character strings, warnings (usually
   many) are given.  From a file or connection, the input will be broken
   into pieces of length 10000 with any final part being discarded.
-  
+
   Using these functions on a text-mode connection may work but should
   not be mixed with text-mode access to the connection, especially if
-  the connection was opened with an \code{encoding} argument. 
+  the connection was opened with an \code{encoding} argument.
 }
 
 \value{
@@ -105,7 +105,7 @@ writeBin(object, con, size = NA_integer_,
   invisibly \code{NULL}.
 }
 \seealso{
-  The \emph{R Data Import/Export} manual.
+  The \sQuote{R Data Import/Export} manual.
 
   \code{readChar} to read/write fixed-length strings.
 
@@ -118,31 +118,31 @@ writeBin(object, con, size = NA_integer_,
 \examples{
 zz <- file("testbin", "wb")
 writeBin(1:10, zz)
-writeBin(pi, zz, endian="swap")
-writeBin(pi, zz, size=4)
-writeBin(pi^2, zz, size=4, endian="swap")
+writeBin(pi, zz, endian = "swap")
+writeBin(pi, zz, size = 4)
+writeBin(pi^2, zz, size = 4, endian = "swap")
 writeBin(pi+3i, zz)
 writeBin("A test of a connection", zz)
-z <- paste("A very long string", 1:100, collapse=" + ")
+z <- paste("A very long string", 1:100, collapse = " + ")
 writeBin(z, zz)
 if(.Machine$sizeof.long == 8 || .Machine$sizeof.longlong == 8)
     writeBin(as.integer(5^(1:10)), zz, size = 8)
-if((s <-.Machine$sizeof.longdouble) > 8)
+if((s <- .Machine$sizeof.longdouble) > 8)
     writeBin((pi/3)^(1:10), zz, size = s)
 close(zz)
 
 zz <- file("testbin", "rb")
 readBin(zz, integer(), 4)
 readBin(zz, integer(), 6)
-readBin(zz, numeric(), 1, endian="swap")
-readBin(zz, numeric(), size=4)
-readBin(zz, numeric(), size=4, endian="swap")
+readBin(zz, numeric(), 1, endian = "swap")
+readBin(zz, numeric(), size = 4)
+readBin(zz, numeric(), size = 4, endian = "swap")
 readBin(zz, complex(), 1)
 readBin(zz, character(), 1)
 z2 <- readBin(zz, character(), 1)
 if(.Machine$sizeof.long == 8 || .Machine$sizeof.longlong == 8)
     readBin(zz, integer(), 10,  size = 8)
-if((s <-.Machine$sizeof.longdouble) > 8)
+if((s <- .Machine$sizeof.longdouble) > 8)
     readBin(zz, numeric(), 10, size = s)
 close(zz)
 unlink("testbin")
@@ -151,17 +151,17 @@ stopifnot(z2 == z)
 ## signed vs unsigned ints
 zz <- file("testbin", "wb")
 x <- as.integer(seq(0, 255, 32))
-writeBin(x, zz, size=1)
-writeBin(x, zz, size=1)
+writeBin(x, zz, size = 1)
+writeBin(x, zz, size = 1)
 x <- as.integer(seq(0, 60000, 10000))
-writeBin(x, zz, size=2)
-writeBin(x, zz, size=2)
+writeBin(x, zz, size = 2)
+writeBin(x, zz, size = 2)
 close(zz)
 zz <- file("testbin", "rb")
-readBin(zz, integer(), 8, size=1)
-readBin(zz, integer(), 8, size=1, signed=FALSE)
-readBin(zz, integer(), 7, size=2)
-readBin(zz, integer(), 7, size=2, signed=FALSE)
+readBin(zz, integer(), 8, size = 1)
+readBin(zz, integer(), 8, size = 1, signed = FALSE)
+readBin(zz, integer(), 7, size = 2)
+readBin(zz, integer(), 7, size = 2, signed = FALSE)
 close(zz)
 unlink("testbin")
 

@@ -130,7 +130,7 @@
   class.  To include a literal \samp{]}, place it first in the list.
   Similarly, to include a literal \samp{^}, place it anywhere but first.
   Finally, to include a literal \samp{-}, place it first or last (or,
-  for \code{perl = TRUE} only, precede it by a backslash.).  (Only
+  for \code{perl = TRUE} only, precede it by a backslash).  (Only
   \samp{^ - \\ ]} are special inside character classes.)
 
   The period \samp{.} matches any single character.  The symbol
@@ -309,12 +309,11 @@
   Patterns \samp{(?<=...)} and \samp{(?<!...)} are the lookbehind
   equivalents: they do not allow repetition quantifiers nor \samp{\\C}
   in \code{\dots}.
-  
-  As from \R 2.14.0 \code{regexpr} and \code{gregexpr} support
-  \sQuote{named capture}.  If groups are named, e.g.,
-  \code{"(?<first>[A-Z][a-z]+)"} then the positions of the matches are
-  also returned by name.  (Named backreferences are not supported by
-  \code{sub}.)
+
+  \code{regexpr} and \code{gregexpr} support \sQuote{named capture}.  If
+  groups are named, e.g., \code{"(?<first>[A-Z][a-z]+)"} then the
+  positions of the matches are also returned by name.  (Named
+  backreferences are not supported by \code{sub}.)
 
   Atomic grouping, possessive qualifiers and conditional
   and recursive patterns are not covered here.

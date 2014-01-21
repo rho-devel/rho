@@ -35,6 +35,9 @@ npk
     }
   }
 }
+\note{
+  This dataset is also contained in \R 3.0.2 and later.
+}
 \source{
   Imperial College, London, M.Sc. exercise sheet.
 }

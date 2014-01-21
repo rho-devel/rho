@@ -37,7 +37,7 @@
   Pinheiro, J.C., and Bates, D.M. (2000) "Mixed-Effects Models
   in S and S-PLUS", Springer.  
 }
-\author{Jose Pinheiro and Douglas Bates}
+\author{José Pinheiro and Douglas Bates}
 \seealso{\code{\link{lme}},\code{\link{gls}},
   \code{\link{logLik.corStruct}},
   \code{\link{logLik.glsStruct}},

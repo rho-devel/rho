@@ -30,7 +30,7 @@ levels(x) <- value
   Both the extractor and replacement forms are generic and new methods
   can be written for them.  The most important method for the replacement
   function is that for \code{\link{factor}}s.
-  
+
   For the factor replacement method, a \code{NA} in \code{value}
   causes that level to be removed from the levels and the elements
   formerly with that level to be replaced by \code{NA}.
@@ -68,7 +68,7 @@ z
 
 ## same, using a named list
 z <- gl(3, 2, 12)
-levels(z) <- list(A=c(1,3), B=2)
+levels(z) <- list(A = c(1,3), B = 2)
 z
 
 ## we can add levels this way:
@@ -77,7 +77,7 @@ levels(f) <- c("c", "a", "b")
 f
 
 f <- factor(c("a","b"))
-levels(f) <- list(C="C", A="a", B="b")
+levels(f) <- list(C = "C", A = "a", B = "b")
 f
 }
 \keyword{category}

@@ -26,7 +26,7 @@ Names(object, \dots) <- value
 \value{
   will depend on the method function used; see the appropriate documentation.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \section{SIDE EFFECTS}{
   On the left side of an assignment, sets the names associated with
   \code{object} to \code{value}, which must have an appropriate length. 

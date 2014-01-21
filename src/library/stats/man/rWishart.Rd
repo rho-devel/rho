@@ -8,7 +8,7 @@
 \title{Random Wishart Distributed Matrices}
 \description{
   Generate \code{n} random matrices, distributed according to the
-  Wishart distribution with parameters \code{Sigma, df},
+  Wishart distribution with parameters \code{Sigma} and \code{df},
   \eqn{W_p(\Sigma, m),\ m=\code{df},\ \Sigma=\code{Sigma}}{W_p(Sigma, df)}.
 }
 \usage{
@@ -56,8 +56,8 @@ rWishart(n, df, Sigma)
 S <- toeplitz((10:1)/10)
 set.seed(11)
 R <- rWishart(1000, 20, S)
-dim(R)# 10 10  1000
-mR <- apply(R, 1:2, mean)# ~= E[ Wish(S, 20) ] = 20 * S
+dim(R)  #  10 10  1000
+mR <- apply(R, 1:2, mean)  # ~= E[ Wish(S, 20) ] = 20 * S
 stopifnot(all.equal(mR, 20*S, tol = .009))
 
 ## See Details, the variance is

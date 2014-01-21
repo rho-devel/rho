@@ -8,9 +8,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: R 2.10.0\n"
-"Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-07-16 22:46\n"
-"PO-Revision-Date: 2011-10-18 19:34-0600\n"
+"Report-Msgid-Bugs-To: bugs.r-project.org\n"
+"POT-Creation-Date: 2013-03-20 07:11\n"
+"PO-Revision-Date: 2013-03-19 19:36-0600\n"
 "Last-Translator: Alexey Shipunov <dactylorhiza@gmail.com>\n"
 "Language-Team: Russian\n"
 "Language: \n"
@@ -20,7 +20,8 @@ msgstr ""
 "X-Poedit-Language: Russian\n"
 "X-Poedit-Country: RUSSIAN FEDERATION\n"
 "X-Poedit-SourceCharset: iso-8859-1\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 msgid "'a' is overridden by 'reg'"
 msgstr "'a' отвергнут в пользу 'reg'"
@@ -68,10 +69,12 @@ msgid "'height' must be a vector or a matrix"
 msgstr "'height' должен быть вектором или матрицей"
 
 msgid "Cannot use shading lines in bars when log scale is used"
-msgstr "Не могу затенять линии в столбиках, если используется логарифмическая шкала"
+msgstr ""
+"Не могу затенять линии в столбиках, если используется логарифмическая шкала"
 
 msgid "log scale error: at least one 'height + offset' value <= 0"
-msgstr "Ошибка логарифмической шкалы: at least one 'height + offset' значение <= 0"
+msgstr ""
+"Ошибка логарифмической шкалы: at least one 'height + offset' значение <= 0"
 
 msgid "log scale error: 'xlim' <= 0"
 msgstr "Ошибка логарифмической шкалы: 'xlim' <= 0"
@@ -88,14 +91,16 @@ msgstr "неправильный первый аргумент"
 msgid "'formula' missing or incorrect"
 msgstr "'formula' пропущена или неправильная"
 
-msgid "'at' must have same length as 'z$n', i.e."
-msgstr "'at' должен иметь ту же длину, что и 'z$n', т.е."
+msgid "'at' must have same length as 'z$n', i.e. %d"
+msgstr "'at' должен иметь ту же длину, что и 'z$n', т.е. %d"
 
 msgid "invalid boxplot widths"
 msgstr "неправильные ширины у ящиков-с-усами"
 
 msgid "some notches went outside hinges ('box'): maybe set notch=FALSE"
-msgstr "некоторые notches ушли за пределы hinges ('box'): наверное, надо сделать notch=FALSE"
+msgstr ""
+"некоторые notches ушли за пределы hinges ('box'): наверное, надо сделать "
+"notch=FALSE"
 
 msgid "'formula' should specify exactly two variables"
 msgstr "'formula' должна определять в точности две переменные"
@@ -104,7 +109,8 @@ msgid "dependent variable should be a factor"
 msgstr "зависимая переменная должна быть фактором"
 
 msgid "y axis is on a cumulative probability scale, 'ylim' must be in [0,1]"
-msgstr "ось y -- в шкале суммарной вероятности, 'ylim' должен быть в пределах [0,1]"
+msgstr ""
+"ось y -- в шкале суммарной вероятности, 'ylim' должен быть в пределах [0,1]"
 
 msgid "no 'z' matrix specified"
 msgstr "не указана матрица 'z'"
@@ -133,8 +139,8 @@ msgstr "неправильные 'given.values'"
 msgid "rows * columns too small"
 msgstr "слишком маленькое произведение строки * колонки"
 
-msgid "Missing rows"
-msgstr "Пропущенные строки"
+msgid "Missing rows: %s"
+msgstr "Пропущенные строки: %s"
 
 msgid "'expr' must be a function, or a call or an expression containing '%s'"
 msgstr "'expr' должен быть функцией, вызовом или выражением содержащим '%s'"
@@ -187,6 +193,9 @@ msgstr "неправильное указание геометрии"
 msgid "'x' must be numeric"
 msgstr "'x' должен быть числовым"
 
+msgid "invalid length(x)"
+msgstr "неправильный length(x)"
+
 msgid "'nclass' not used when 'breaks' is specified"
 msgstr "'nclass' не используется, когда указаны 'breaks'"
 
@@ -199,8 +208,14 @@ msgstr "неизвестный алгоритм 'breaks'"
 msgid "invalid number of 'breaks'"
 msgstr "неправильное количество 'breaks'"
 
-msgid "hist.default: pretty() error, breaks="
-msgstr "hist.default: ошибка в pretty(), breaks="
+msgid "hist.default: pretty() error, breaks=%s"
+msgstr "hist.default: ошибка в pretty(), breaks=%s"
+
+msgid "Invalid breakpoints produced by 'breaks(x)': %s"
+msgstr ""
+
+msgid "invalid length(breaks)"
+msgstr "неправильные length(breaks)"
 
 msgid "'breaks' are not strictly increasing"
 msgstr "'breaks' не возрастают строго"
@@ -208,14 +223,12 @@ msgstr "'breaks' не возрастают строго"
 msgid "'probability' is an alias for '!freq', however they differ."
 msgstr "'probability' является псевдонимом для '!freq', однако они отличаются."
 
-msgid "negative 'counts'. Internal Error in C-code for \"bincount\""
-msgstr "негативные 'counts'. Внутренняя ошибка C-кода для \"bincount\""
-
 msgid "some 'x' not counted; maybe 'breaks' do not span range of 'x'"
-msgstr "некоторые 'x' не подсчитаны; возможно, 'breaks' не занимают всего размаха 'x'"
+msgstr ""
+"некоторые 'x' не подсчитаны; возможно, 'breaks' не занимают всего размаха 'x'"
 
-msgid "the AREAS in the plot are wrong -- rather use freq=FALSE"
-msgstr "Неправильные AREAS на графике -- используйте лучше freq=FALSE"
+msgid "the AREAS in the plot are wrong -- rather use 'freq = FALSE'"
+msgstr "неправильные AREAS на графике -- лучше используйте 'freq=FALSE'"
 
 msgid "'x' is wrongly structured"
 msgstr "'x' неправильно структурирован"
@@ -235,26 +248,34 @@ msgstr "неправильные границы z"
 msgid "must have one more break than colour"
 msgstr "'breaks' нужно брать на один больше, чем 'colours'"
 
-msgid "breaks must all be finite"
+msgid "'breaks' must all be finite"
 msgstr "все 'breaks' должны быть конечными"
+
+msgid "unsorted 'breaks' will be sorted before use"
+msgstr "несортированные 'breaks' будут отсортированы перед использованием"
 
 msgid "dimensions of z are not length(x)(-1) times length(y)(-1)"
 msgstr "размерность z не является произведением length(x)(-1) на length(y)(-1)"
 
-msgid "useRaster=TRUE can only be used with a regular grid"
-msgstr "useRaster = TRUE можно использовать только с регулярной сеткой"
+msgid "%s can only be used with a regular grid"
+msgstr "%s можно использовать только с регулярной сеткой"
+
+msgid "integer colors must be non-negative"
+msgstr "целочисленные цвета должны быть неотрицательными"
 
 msgid "'respect' must be logical or matrix with same dimension as 'mat'"
-msgstr "'respect' должен быть логическим или матрицей с той же размерностью, что и 'mat'"
+msgstr ""
+"'respect' должен быть логическим или матрицей с той же размерностью, что и "
+"'mat'"
 
 msgid ""
 "layout matrix must contain at least one reference\n"
-"to each of the values {1..n}; here  n ="
+"to each of the values {1 ... %d}"
 msgstr ""
 "матрица-макет должна содержать по крайней мере одну ссылку\n"
-"на каждое из значений {1..n}; здесь же  n ="
+"на каждое из значений {1 ... %d}"
 
-msgid "invalid title"
+msgid "invalid 'title'"
 msgstr "неправильный 'title'"
 
 msgid "'legend' is of length 0"
@@ -266,8 +287,8 @@ msgstr "неправильные длины координат"
 msgid "'text.width' must be numeric, >= 0"
 msgstr "'text.width' должен быть числовым и >= 0"
 
-msgid "horizontal specification overrides: Number of columns :="
-msgstr "горизонтальное указание превышено: Число колонок :="
+msgid "horizontal specification overrides: Number of columns := %d"
+msgstr "горизонтальное указание превышено: Число колонок := %d"
 
 msgid "'merge = TRUE' has no effect when no line segments are drawn"
 msgstr "'merge = TRUE' не дает результата, покуда не нарисованы сегменты линии"
@@ -282,19 +303,18 @@ msgid "'x' and 'y' must have same number of rows"
 msgstr "'x' и 'y' должны иметь одинаковое количество строк"
 
 msgid "'x' and 'y' must have only 1 or the same number of columns"
-msgstr "'x' и 'y' должны иметь только 1 колонку или одинаковое количество колонок"
+msgstr ""
+"'x' и 'y' должны иметь только 1 колонку или одинаковое количество колонок"
 
 msgid "default 'pch' is smaller than number of columns and hence recycled"
-msgstr "умалчиваемое значение 'pch' меньше количества колонок и поэтому повторяется"
+msgstr ""
+"умалчиваемое значение 'pch' меньше количества колонок и поэтому повторяется"
 
 msgid "missing values in contingency table"
 msgstr "пропущенные значения в таблице сопряженности"
 
 msgid "'x' must not have 0 dimensionality"
 msgstr "'x' не должен быть 0-мерным"
-
-msgid "extra argument(s) %s will be disregarded"
-msgstr "дополнительный(е) аргумент(ы) %s будут отброшены"
 
 msgid "invalid 'shade' specification"
 msgstr "неправильное указание 'shade'"
@@ -378,7 +398,8 @@ msgid "a 2-way table has to be specified"
 msgstr "надо указать двумерную таблицу"
 
 msgid "x axis is on a cumulative probability scale, 'xlim' must be in [0,1]"
-msgstr "ось х -- в шкале суммарной вероятности, 'xlim' должен быть в пределах [0,1]"
+msgstr ""
+"ось х -- в шкале суммарной вероятности, 'xlim' должен быть в пределах [0,1]"
 
 msgid "'x' must be a matrix or a data frame"
 msgstr "'x' должен быть матрицей или таблицей данных"
@@ -386,8 +407,8 @@ msgstr "'x' должен быть матрицей или таблицей данных"
 msgid "data in 'x' must be numeric"
 msgstr "данные в 'x' должны быть числовыми"
 
-msgid "nrow * ncol <  number of observations"
-msgstr "nrow * ncol <  числа наблюдений"
+msgid "'nrow * ncol' is less than the number of observations"
+msgstr "'nrow * ncol' меньше числа наблюдений"
 
 msgid "labels do not make sense for a single location"
 msgstr "метки не имеют смысла для единственной точки"
@@ -422,13 +443,13 @@ msgstr "'number' должен иметь ту же длину, что и 'x' и 'y'"
 msgid "exactly one symbol type must be specified"
 msgstr "должен быть указан в точности один тип символа"
 
-msgid "x log scale:  xinch() is non-sense"
+msgid "x log scale:  xinch() is nonsense"
 msgstr "логарифмическая шкала x:  xinch() бессмысленно"
 
-msgid "y log scale:  yinch() is non-sense"
+msgid "y log scale:  yinch() is nonsense"
 msgstr "логарифмическая шкала y:  yinch() бессмысленно"
 
-msgid "log scale:  xyinch() is non-sense"
+msgid "log scale:  xyinch() is nonsense"
 msgstr "логарифмическая шкала:  xyinch() бессмысленно"
 
 msgid "Outlier (%s) in boxplot %d is not drawn"
@@ -443,10 +464,20 @@ msgstr[0] "аргумент %s не для использования"
 msgstr[1] "аргументы %s не для использования"
 msgstr[2] "аргументы %s не для использования"
 
+msgid "extra argument %s will be disregarded"
+msgid_plural "extra arguments %s will be disregarded"
+msgstr[0] "дополнительный аргумент %s будет отброшен"
+msgstr[1] "дополнительные аргументы %s будут отброшены"
+msgstr[2] "дополнительные аргументы %s будут отброшены"
+
+#~ msgid "negative 'counts'. Internal Error in C-code for \"bincount\""
+#~ msgstr "негативные 'counts'. Внутренняя ошибка C-кода для \"bincount\""
+
 #~ msgid "explanatory variable should be numeric"
 #~ msgstr "независимая переменная должна быть числовой"
+
 #~ msgid "regression coefficients"
 #~ msgstr "коэффициенты регресии"
+
 #~ msgid "argument 'col' is deprecated in favour of 'boxfill'"
 #~ msgstr "аргумент 'col' не одобряется, пользуйтесь 'boxfill'"
-

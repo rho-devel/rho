@@ -27,16 +27,16 @@ lme(fixed, data, random, correlation, weights, subset, method,
    \code{subset}.  By default the variables are taken from the
    environment from which \code{lme} is called.}
  \item{random}{optionally, any of the following: (i) a one-sided formula
-   of the form \code{~x1+...+xn | g1/.../gm}, with \code{x1+...+xn}
+   of the form \code{~ x1 + ... + xn | g1/.../gm}, with \code{x1 + ... + xn}
    specifying the model for the random effects and \code{g1/.../gm} the
    grouping structure (\code{m} may be equal to 1, in which case no
    \code{/} is required). The random effects formula will be repeated
    for all levels of grouping, in the case of multiple levels of
    grouping; (ii) a list of one-sided formulas of the form
-   \code{~x1+...+xn | g}, with possibly different random effects models
+   \code{~ x1 + ... + xn | g}, with possibly different random effects models
    for each grouping level. The order of nesting will be assumed the
    same as the order of the elements in the list; (iii) a one-sided
-   formula of the form \code{~x1+...+xn}, or a \code{pdMat} object with
+   formula of the form \code{~ x1 + ... + xn}, or a \code{pdMat} object with
    a formula (i.e. a non-\code{NULL} value for \code{formula(object)}),
    or a list of such formulas or \code{pdMat} objects. In this case, the
    grouping structure formula will be derived from the data used to
@@ -97,6 +97,11 @@ lme(fixed, data, random, correlation, weights, subset, method,
   \code{resid}, \code{coef}, \code{fitted}, \code{fixed.effects}, and
   \code{random.effects}  can be used to extract some of its components.
 }
+\note{
+  The function does not do any scaling internally: the optimization will
+  work best when the response is scaled so its variance is of the order
+  of one.
+}
 \references{
  
   The computational methods follow the general framework of Lindstrom
@@ -105,7 +110,7 @@ lme(fixed, data, random, correlation, weights, subset, method,
   Pinheiro and Bates (1996).  The different correlation structures
   available for the \code{correlation} argument are described in Box,
   Jenkins and Reinse (1994), Littel \emph{et al} (1996), and Venables and
-  Ripley, (1997). The use of variance functions for linear and nonlinear
+  Ripley, (2002). The use of variance functions for linear and nonlinear
   mixed effects models is presented in detail in Davidian and Giltinan
   (1995).
 
@@ -136,7 +141,7 @@ lme(fixed, data, random, correlation, weights, subset, method,
   Venables, W.N. and Ripley, B.D. (2002) "Modern Applied Statistics with
   S", 4th Edition, Springer-Verlag.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{
   \code{\link{corClasses}},
   \code{\link{lme.lmList}},

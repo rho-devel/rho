@@ -59,7 +59,7 @@ read.DIF(file, header = FALSE,
     Its value is either a vector of logicals (values are recycled if
     necessary), or a vector of numeric or character indices which
     specify which columns should not be converted to factors.
-    
+
     Note: In releases prior to \R{} 2.12.1, cells marked as being of
     character type were converted to logical, numeric or complex using
     \code{\link{type.convert}} as in \code{\link{read.table}}.
@@ -152,11 +152,11 @@ read.DIF(file, header = FALSE,
   its WinFX system, which may or may not be compatible.
 }
 \examples{
-## read.DIF() needs transpose=TRUE for file exported from Excel
-udir <- system.file("misc", package="utils")
-dd <- read.DIF(file.path(udir, "exDIF.dif"), header= TRUE, transpose=TRUE)
-dc <- read.csv(file.path(udir, "exDIF.csv"), header= TRUE)
-stopifnot(identical(dd,dc), dim(dd) == c(4,2))
+## read.DIF() needs transpose = TRUE for file exported from Excel
+udir <- system.file("misc", package = "utils")
+dd <- read.DIF(file.path(udir, "exDIF.dif"), header = TRUE, transpose = TRUE)
+dc <- read.csv(file.path(udir, "exDIF.csv"), header = TRUE)
+stopifnot(identical(dd, dc), dim(dd) == c(4,2))
 }
 \keyword{file}
 \keyword{connection}

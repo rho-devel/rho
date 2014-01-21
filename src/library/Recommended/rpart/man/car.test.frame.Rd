@@ -18,14 +18,14 @@ a numeric vector giving the list price in US dollars of a standard model
 }
 \item{\code{Country}}{
 of origin, a factor with levels
-\code{France} 
-\code{Germany} 
-\code{Japan} 
-\code{Japan/USA} 
-\code{Korea} 
-\code{Mexico} 
-\code{Sweden} 
-\code{USA} 
+\samp{France}, 
+\samp{Germany}, 
+\samp{Japan} ,
+\samp{Japan/USA}, 
+\samp{Korea},
+\samp{Mexico},
+\samp{Sweden} and
+\samp{USA} 
 }
 \item{\code{Reliability}}{
 a numeric vector coded \code{1} to \code{5}.
@@ -57,9 +57,12 @@ the net horsepower of the vehicle.
 
   John M. Chambers and Trevor J. Hastie eds. (1992)
   \emph{Statistical Models in S}, Wadsworth and Brooks/Cole,
-  Pacific Grove, CA 1992, pp. 46--47.
+  Pacific Grove, CA, pp. 46--47.
 }
-\seealso{\code{\link{cu.summary}}}
+\seealso{
+  \code{\link{car90}},
+  \code{\link{cu.summary}}
+}
 \examples{
 z.auto <- rpart(Mileage ~ Weight, car.test.frame)
 summary(z.auto)

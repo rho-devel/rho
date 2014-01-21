@@ -31,7 +31,7 @@ readRegistry(key, hive = c("HLM", "HCR", "HCU", "HU", "HCC", "HPD"),
   session: this means that some Registry keys may not be accessible even
   if they exist.  This may result in \code{NULL} values in the object
   returned, and, possibly, empty element names.
-  
+
   On 64-bit Windows, this will by default read the 32-bit view of the
   Registry when run from 32-bit \R, and the 64-bit view when run from
   64-bit \R: see
@@ -42,17 +42,20 @@ readRegistry(key, hive = c("HLM", "HCR", "HCU", "HU", "HCC", "HPD"),
   lists).  The default value (if any) precedes named values which
   precede subkeys, and both the latter sets are sorted alphabetically.
 }
+\note{
+  This is only available on Windows.
+}
 \examples{\donttest{
 ## only in HLM if set in an admin-mode install.
 readRegistry("SOFTWARE\\\\R-core", maxdepth = 3)
 
 gmt <- file.path("SOFTWARE", "Microsoft", "Windows NT",
                  "CurrentVersion", "Time Zones",
-                 "GMT Standard Time", fsep="\\\\")
+                 "GMT Standard Time", fsep = "\\\\")
 readRegistry(gmt, "HLM")
 
 ## on a 64-bit R need this to find 32-bit JAGS
-readRegistry("SOFTWARE\\\\JAGS-1.0.3", maxdepth = 3, view="32")
+readRegistry("SOFTWARE\\\\JAGS-1.0.3", maxdepth = 3, view = "32")
 
 ## See if there is a 64-bit user install
 readRegistry("SOFTWARE\\\\R-core\\\\R64", "HCU", maxdepth = 2)

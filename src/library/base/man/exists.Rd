@@ -51,7 +51,7 @@ exists(x, where = -1, envir = , frame, mode = "any",
   The \code{mode} may specify one of the collections \code{"numeric"} and
   \code{"function"} (see \code{\link{mode}}): any member of the
   collection will suffice.  (This is true even if a member of a
-  collection is specified, so for example \code{mode="special"} will
+  collection is specified, so for example \code{mode = "special"} will
   seek any type of function.)
 }
 \value{
@@ -66,14 +66,16 @@ exists(x, where = -1, envir = , frame, mode = "any",
 \seealso{
   \code{\link{get}}.  For quite a different kind of \dQuote{existence}
   checking, namely if function arguments were specified,
-  \code{\link{missing}}.
+  \code{\link{missing}};
+  and for yet a different kind, namely if a file exists,
+  \code{\link{file.exists}}.
 }
 \examples{
 ##  Define a substitute function if necessary:
-if(!exists("some.fun", mode="function"))
+if(!exists("some.fun", mode = "function"))
   some.fun <- function(x) { cat("some.fun(x)\n"); x }
 search()
-exists("ls", 2) # true even though ls is in pos=3
+exists("ls", 2) # true even though ls is in pos = 3
 exists("ls", 2, inherits = FALSE) # false
 }
 \keyword{data}

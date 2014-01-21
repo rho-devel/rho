@@ -20,8 +20,9 @@ setAs("dsCMatrix", "dgCMatrix",
       function(from) .Call(Csparse_symmetric_to_general, from))
 
 for(prefix in c("d", "l", "n"))
-    setAs(paste(prefix,"sCMatrix",sep=''), "generalMatrix",
+    setAs(paste0(prefix,"sCMatrix"), "generalMatrix",
 	  function(from) .Call(Csparse_symmetric_to_general, from))
+rm(prefix)
 
 setAs("dtCMatrix", "dtTMatrix",
       function(from) .Call(Csparse_to_Tsparse, from, TRUE))
@@ -39,8 +40,8 @@ setAs("CsparseMatrix", "denseMatrix",
 	      if (extends(cld, "triangularMatrix") && from@diag == "U")
 		  from <- .Call(Csparse_diagU2N, from)
 	      as(.Call(Csparse_to_dense, from), # -> "[dln]geMatrix"
-		 paste(.M.kind(from, cld),
-		       .dense.prefixes[.M.shape(from, cld)], "Matrix", sep=''))
+		 paste0(.M.kind(from, cld),
+			.dense.prefixes[.M.shape(from, cld)], "Matrix"))
 	  }
       })
 
@@ -48,27 +49,31 @@ setAs("CsparseMatrix", "denseMatrix",
 setAs("dgCMatrix", "dgeMatrix",
       function(from) .Call(Csparse_to_dense, from))
 
+setAs("dgCMatrix", "vector", function(from) .Call(Csparse_to_vector, from))
+setAs("dsCMatrix", "vector", function(from) .Call(Csparse_to_vector, from))
+setMethod("as.vector", signature(x = "dgCMatrix", mode = "missing"),
+	  function(x, mode) .Call(Csparse_to_vector, x))
+setMethod("as.vector", signature(x = "dsCMatrix", mode = "missing"),
+	  function(x, mode) .Call(Csparse_to_vector, x))
+## could do these and more for as(., "numeric") ... but we *do* recommend  as(*,"vector"):
+## setAs("dgCMatrix", "numeric", Csp2vec)
+## setAs("dsCMatrix", "numeric", Csp2vec)
+
+## |-> cholmod_C -> cholmod_dense -> chm_dense_to_matrix
 ## cholmod_sparse_to_dense converts symmetric storage to general
 ## storage so symmetric classes are ok for conversion to matrix.
 ## unit triangular needs special handling
-setAs("CsparseMatrix", "matrix",
-      function(from) {
-          ## |-> cholmod_C -> cholmod_dense -> chm_dense_to_matrix
-          if (is(from, "triangularMatrix") && from@diag == "U")
-              from <- .Call(Csparse_diagU2N, from)
-          .Call(Csparse_to_matrix, from)
-      })
+setAs("dgCMatrix", "matrix", function(from) .Call(Csparse_to_matrix, from))
+setAs("dsCMatrix", "matrix", function(from) .Call(Csparse_to_matrix, from))
+setAs("dtCMatrix", "matrix", function(from)
+      .Call(Csparse_to_matrix, .Call(Csparse_diagU2N, from)))
+## NB: Would *not* be ok for l*Matrix or n*Matrix,
+## --------- as cholmod coerces to "REAL" aka "double"
 
 setAs("CsparseMatrix", "symmetricMatrix",
       function(from) {
-	  if(isSymmetric(from)) {
-	      isTri <- is(from, "triangularMatrix")# i.e. effectively *diagonal*
-	      if (isTri && from@diag == "U")
-		  from <- .Call(Csparse_diagU2N, from)
-	      .Call(Csparse_general_to_symmetric, from,
-		    uplo = if(isTri) from@uplo else "U")
-	  } else
-	  stop("not a symmetric matrix; consider forceSymmetric() or symmpart()")
+	  if(isSymmetric(from)) forceCspSymmetric(from)
+	  else stop("not a symmetric matrix; consider forceSymmetric() or symmpart()")
       })
 
 
@@ -76,6 +81,8 @@ setAs("CsparseMatrix", "symmetricMatrix",
     .Call(Csparse_validate2, x, sort.if.needed)
 ##-> to be used in sparseMatrix(.), e.g. --- but is unused currently
 ## NB: 'sort.if.needed' is called 'maybe_modify' in C -- so be careful
+## more useful:
+.sortCsparse <- function(x) .Call(Csparse_sort, x) ## modifies 'x' !!
 
 ### Some group methods:
 
@@ -269,7 +276,7 @@ replCmat4 <- function(x, i1, i2, iMi, jMi, value, spV = is(value,"sparseVector")
 		x <- diagU2N(x) # keeps class (!)
 	}
 	else { # go to "generalMatrix" and continue
-	    x <- as(x, paste(.M.kind(x), "gCMatrix", sep='')) ## & do not redefine clx!
+	    x <- as(x, paste0(.M.kind(x), "gCMatrix")) ## & do not redefine clx!
 	}
     }
     ## Temporary hack for debugging --- remove eventually -- FIXME :
@@ -410,7 +417,7 @@ setReplaceMethod("[", signature(x = "CsparseMatrix", i = "index", j = "index",
 ## A[ ij ] <- value,  where ij is (i,j) 2-column matrix
 setReplaceMethod("[", signature(x = "CsparseMatrix", i = "matrix", j = "missing",
 				value = "replValue"),
-		 function(x, i, value)
+		 function(x, i, j, ..., value)
 		 ## goto Tsparse modify and convert back:
 		 as(.TM.repl.i.mat(as(x, "TsparseMatrix"), i=i, value=value),
 		    "CsparseMatrix"))
@@ -431,7 +438,7 @@ setMethod("tril", "CsparseMatrix",
 	      r <- .Call(Csparse_band, x, -dd[1], k)
 	      ## return "lower triangular" if k <= 0
 	      if(sqr && k <= 0)
-		  as(r, paste(.M.kind(x), "tCMatrix", sep='')) else r
+		  as(r, paste0(.M.kind(x), "tCMatrix")) else r
 	  })
 
 setMethod("triu", "CsparseMatrix",
@@ -442,7 +449,7 @@ setMethod("triu", "CsparseMatrix",
 	      r <- .Call(Csparse_band, x, k, dd[2])
 	      ## return "upper triangular" if k >= 0
 	      if(sqr && k >= 0)
-		  as(r, paste(.M.kind(x), "tCMatrix", sep='')) else r
+		  as(r, paste0(.M.kind(x), "tCMatrix")) else r
 	  })
 
 setMethod("band", "CsparseMatrix",
@@ -453,9 +460,9 @@ setMethod("band", "CsparseMatrix",
 	      stopifnot(-dd[1] <= k1, k1 <= k2, k2 <= dd[2])
 	      r <- .Call(Csparse_band, diagU2N(x), k1, k2)
 	      if(sqr && k1 * k2 >= 0) ## triangular
-		  as(r, paste(.M.kind(x), "tCMatrix", sep=''))
+		  as(r, paste0(.M.kind(x), "tCMatrix"))
 	      else if (k1 < 0  &&  k1 == -k2  && isSymmetric(x)) ## symmetric
-		  as(r, paste(.M.kind(x), "sCMatrix", sep=''))
+		  as(r, paste0(.M.kind(x), "sCMatrix"))
 	      else
 		  r
 	  })
@@ -485,7 +492,7 @@ setMethod("diag", "CsparseMatrix",
 
 setMethod("writeMM", "CsparseMatrix",
 	  function(obj, file, ...)
-          .Call(Csparse_MatrixMarket, obj, as.character(file)))
+	  .Call(Csparse_MatrixMarket, obj, path.expand(as.character(file))))
 
 setMethod("Cholesky", signature(A = "CsparseMatrix"),
 	  function(A, perm = TRUE, LDL = !super, super = FALSE, Imult = 0, ...)

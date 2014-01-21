@@ -67,10 +67,12 @@ lik.CI <- function(like, lim ) {
 	theta <- like[, 1]
 	n <- length(L)
 	i <- min(c(1L:n)[L > lim])
-	if (is.na(i)) stop("likelihood never exceeds ", lim)
+	if (is.na(i)) stop(gettextf("likelihood never exceeds %f", lim),
+                           domain = NA)
 	j <- max(c(1L:n)[L > lim])
 	if (i ==j )
-		stop("likelihood exceeds ", lim, " at only one point")
+            stop(gettextf("likelihood exceeds %f at only one point", lim),
+                 domain = NA)
 	if (i == 1) bot <- -Inf
 	else {
             i <- i + c(-1, 0, 1)

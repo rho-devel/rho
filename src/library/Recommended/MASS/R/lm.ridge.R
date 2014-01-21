@@ -19,7 +19,7 @@ lm.ridge <- function(formula, data, subset, na.action,
 {
     m <- match.call(expand.dots = FALSE)
     m$model <- m$x <- m$y <- m$contrasts <- m$... <- m$lambda <- NULL
-    m[[1L]] <- as.name("model.frame")
+    m[[1L]] <- quote(stats::model.frame)
     m <- eval.parent(m)
     Terms <- attr(m, "terms")
     Y <- model.response(m)

@@ -78,7 +78,7 @@ gls(model, data, correlation, weights, subset, method, na.action,
  \code{correlation} argument are described in Box, G.E.P., Jenkins,
  G.M., and Reinsel G.C. (1994), Littel, R.C., Milliken, G.A., Stroup,
  W.W., and Wolfinger, R.D. (1996), and Venables, W.N. and Ripley,
- B.D. (1997). The use of variance functions for linear 
+ B.D. (2002). The use of variance functions for linear 
  and nonlinear models is presented in detail in Carroll, R.J. and Ruppert,
  D. (1988) and Davidian, M. and Giltinan, D.M. (1995).  
 
@@ -97,10 +97,10 @@ gls(model, data, correlation, weights, subset, method, na.action,
  Pinheiro, J.C., and Bates, D.M. (2000) "Mixed-Effects Models
  in S and S-PLUS", Springer, esp. pp. 100, 461.  
 
- Venables, W.N. and Ripley, B.D. (1997) "Modern Applied Statistics with
- S-PLUS", 2nd Edition, Springer-Verlag.
+ Venables, W.N. and Ripley, B.D. (2002) "Modern Applied Statistics with
+ S", 4th Edition, Springer-Verlag.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}} 
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}} 
 \seealso{
   \code{\link{corClasses}},
   \code{\link{glsControl}},

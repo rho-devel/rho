@@ -1,24 +1,17 @@
 \input texinfo
+
 @c %**start of header
 @setfilename R-FAQ.info
 @settitle R FAQ
 @setchapternewpage on
-@set FAQ_YEAR 2012
-@set FAQ_DATE @value{FAQ_YEAR}-09-19
-@set REL_YEAR 2012
-@set REL_MAJOR 2
-@set REL_MINOR 15
-@set REL_PATCHLEVEL 1
+@set FAQ_YEAR 2013
+@set FAQ_DATE @value{FAQ_YEAR}-09-16
+@set REL_YEAR 2013
+@set REL_MAJOR 3
+@set REL_MINOR 0
+@set REL_PATCHLEVEL 2
 @set REL_VERSION @value{REL_MAJOR}.@value{REL_MINOR}.@value{REL_PATCHLEVEL}
 @set FAQ_VERSION @value{REL_MAJOR}.@value{REL_MINOR}.@value{FAQ_DATE}
-
-@c <COMMENT>
-@c ISBNs for R 1.x.
-@c @set FAQ_ISBN 3-900051-01-1
-@c @set R_ISBN 3-900051-00-3
-@c </COMMENT>
-@set FAQ_ISBN 3-900051-08-9
-@set R_ISBN 3-900051-07-0
 @documentlanguage en
 @documentencoding ISO-8859-1
 @c %**end of header
@@ -66,7 +59,6 @@ FORTRAN
 @title R @acronym{FAQ}
 @subtitle Frequently Asked Questions on R
 @subtitle Version @value{FAQ_VERSION}
-@subtitle ISBN @value{FAQ_ISBN}
 @author Kurt Hornik
 @end titlepage
 
@@ -75,28 +67,27 @@ FORTRAN
 R FAQ                            @*
 Frequently Asked Questions on R  @*
 Version @value{FAQ_VERSION}      @*
-ISBN @value{FAQ_ISBN}            @*
 Kurt Hornik                      @*
 
 @sp 2
 @end ifinfo
 
-@ifnothtml
-@contents
-@end ifnothtml
-
-@ifnottex
-@node Top, Introduction, (dir), (dir)
-@top R FAQ
 @ifhtml
 @html
 <h2>Frequently Asked Questions on R</h2>
 <h2>Version @value{FAQ_VERSION}</h2>
-<h2>ISBN @value{FAQ_ISBN}</h2>
 <address>Kurt Hornik</address>
 <p><p><hr><p>
 @end html
 @end ifhtml
+
+@c @ifnothtml
+@contents
+@c @end ifnothtml
+
+@ifnottex
+@node Top, Introduction, (dir), (dir)
+@top R FAQ
 @end ifnottex
 
 @menu
@@ -179,7 +170,7 @@ subdirectory of a @CRAN{} site (@pxref{What is CRAN?}).
 
 In publications, please refer to this @acronym{FAQ} as Hornik
 (@value{FAQ_YEAR}), ``The R @acronym{FAQ}'', and give the above,
-@emph{official} @acronym{URL} and the ISBN @value{FAQ_ISBN}:
+@emph{official} @acronym{URL}:
 
 @example
 @group
@@ -187,7 +178,6 @@ In publications, please refer to this @acronym{FAQ} as Hornik
   author        = @{Kurt Hornik@},
   title         = @{The @{R@} @{FAQ@}@},
   year          = @{@value{REL_YEAR}@},
-  note          = @{@{ISBN@} @value{FAQ_ISBN}@},
   url           = @{http://CRAN.R-project.org/doc/FAQ/R-FAQ.html@}
 @}
 @end group
@@ -468,20 +458,15 @@ respectively.
 @subsection How can R be installed (Windows)
 
 The @file{bin/windows} directory of a @CRAN{} site contains binaries for
-a base distribution and a large number of add-on packages from @CRAN{}
-to run on Windows 2000 and later (including 64-bit versions of Windows)
-on ix86 and x86_64 chips. The Windows version of R was created by Robert
-Gentleman and Guido Masarotto, and is now being developed and maintained
-by @email{murdoch@@stats.uwo.ca, Duncan Murdoch} and
+a base distribution and add-on packages from @CRAN{} to run on Windows
+XP and later (including 64-bit versions of Windows) on ix86 and x86_64
+chips. The Windows version of R was created by Robert Gentleman and
+Guido Masarotto, and is now being developed and maintained by
+@email{murdoch@@stats.uwo.ca, Duncan Murdoch} and
 @email{Brian.Ripley@@R-project.org, Brian D. Ripley}.
 
-@c Note that when uncompressing the zip files, the pkunzip program needs to
-@c be invoked with the @samp{-D} flag to create subdirectories.  Also, be
-@c aware that some decompression programs do not preserve long file names
-@c properly.
-
-For most installations the Windows installer program will be the easiest
-tool to use.
+The same directory has links to snapshots of the r-patched and r-devel
+versions of R.
 
 See the @url{http://CRAN.R-project.org/bin/windows/base/@/rw-FAQ.html,
 ``R for Windows @acronym{FAQ}''} for more details.
@@ -490,23 +475,16 @@ See the @url{http://CRAN.R-project.org/bin/windows/base/@/rw-FAQ.html,
 @subsection How can R be installed (Macintosh)
 
 The @file{bin/macosx} directory of a @CRAN{} site contains a standard
-Apple installer package inside a disk image named @file{R.dmg}.  Once
-downloaded and executed, the installer will install the current
-non-developer release of R.  RAqua is a native Mac OS X Darwin version
-of R with a R.app Mac OS X @acronym{GUI}.  Inside
-@file{bin/macosx/powerpc/contrib/@var{x}.@var{y}} there are prebuilt
-binary packages (for powerpc version of Mac OS X) to be used with RAqua
-corresponding to the ``@var{x}.@var{y}'' release of R. The installation
-of these packages is available through the ``Package'' menu of the R.app
-@acronym{GUI}.  This port of R for Mac OS X is maintained by
-@email{Stefano.Iacus@@R-project.org, Stefano Iacus}.  The
+Apple installer package to run on OS X 10.6 (`Snow Leopard') and later.
+Once downloaded and executed, the installer will install the current
+release of R and a R.app Mac OS X @acronym{GUI}.  This port of R for Mac
+OS X is maintained by @email{Simon.Urbanek@@R-project.org, Simon
+Urbanek} (and previously by Stefano Iacus).  The
 @url{http://CRAN.R-project.org/bin/macosx/RMacOSX-FAQ.html, ``R for Mac
 OS X @acronym{FAQ}} has more details.
 
-The @file{bin/macos} directory of a @CRAN{} site contains bin-hexed
-(@file{hqx}) and stuffit (@file{sit}) archives for a base distribution
-and a large number of add-on packages of R 1.7.1 to run under Mac OS 8.6
-to Mac OS 9.2.2.  This port of R for Macintosh is no longer supported.
+Snapshots of the r-patched and r-devel versions of R are available as
+Apple installer packages at @uref{http://r.research.att.com}.
 
 @node Are there Unix-like binaries for R?, What documentation exists for R?, How can R be installed?, R Basics
 @section Are there Unix-like binaries for R?
@@ -586,7 +564,7 @@ When a new version of R is released, there may be a delay of up to 2
 weeks until the Fedora RPM becomes publicly available, as it must pass
 through the statutory Fedora review process.
 
-See @url{http://cran.r-project.org/bin/linux/suse/README.html} for
+See @url{http://CRAN.R-project.org/bin/linux/suse/README.html} for
 information about RPMs for openSUSE.
 
 @c The @file{bin/osf} directory of a @CRAN{} site contains RPMs
@@ -724,7 +702,6 @@ To cite R in publications, use
   organization = @{R Foundation for Statistical Computing@},
   address      = @{Vienna, Austria@},
   year         = @value{REL_YEAR},
-  note         = @{@{ISBN@} @value{R_ISBN}@},
   url          = @{http://www.R-project.org@}
 @}
 @end group
@@ -816,8 +793,8 @@ sites which carry identical material, consisting of the R
 distribution(s), the contributed extensions, documentation for R, and
 binaries.
 
-The @CRAN{} master site at Wirtschaftsuniversit@"at Wien, Austria, can
-be found at the @acronym{URL}
+The @CRAN{} master site at WU (Wirtschaftsuniversit@"at Wien) in Austria
+can be found at the @acronym{URL}
 
 @quotation
 @c @multitable @columnfractions .45 .30
@@ -872,20 +849,6 @@ prebuilt binaries for various operating systems (Linux, Mac OS Classic,
 Mac OS X, and MS Windows).  @CRAN{} also provides access to
 documentation on R, existing mailing lists and the R Bug Tracking
 system.
-
-To ``submit'' to @CRAN{}, check that your submission meets the
-@url{http://CRAN.R-project.org/web/packages/policies.html, CRAN
-Repository Policy}, upload to @url{ftp://CRAN.R-project.org/incoming/}
-and send an email to @email{CRAN@@R-project.org}.  Note that @CRAN{}
-generally does not accept submissions of precompiled binaries due to
-security reasons.  In particular, binary packages for Windows and Mac OS
-X are provided by the respective binary package maintainers.
-
-@quotation Note
-It is very important that you indicate the copyright (license)
-information (@acronym{GPL-2}, @acronym{GPL-3}, @acronym{BSD}, Artistic,
-@dots{}) in your submission.
-@end quotation
 
 Please always use the @acronym{URL} of the master site when referring to
 @CRAN{}.
@@ -1709,8 +1672,7 @@ as a shared computing resource.
 @url{http://sysbio.mrc-bsu.cam.ac.uk/Rwui, Rwui} is a web application to
 create user-friendly web interfaces for R scripts.  All code for the web
 interface is created automatically.  There is no need for the user to do
-any extra scripting or learn any new scripting techniques.  Rwui can
-also be found at @uref{http://rwui.cryst.bbk.ac.uk}.
+any extra scripting or learn any new scripting techniques.
 
 The @CRANpkg{R.rsp} package by Henrik Bengtsson introduces ``R Server
 Pages''.  Analogous to Java Server Pages, an R server page is typically
@@ -3226,7 +3188,7 @@ There is not an option in the GUI to enable/disable anti-aliasing.
 From a console command line, use:
 @smallexample
 $ kwriteconfig --file okularpartrc --group 'Dlg Performance' \
-               --key TextAntialias Disabled
+               --key GraphicsAntialias Disabled
 @end smallexample
 Then restart Okular.  Change the final word to @samp{Enabled} to restore
 the original setting.
@@ -3340,7 +3302,7 @@ In most cases, typing the name of the function will print its source
 code. However, code is sometimes hidden in a namespace, or compiled.  For 
 a complete overview on how to access source code, see Uwe Ligges (2006),
 ``Help Desk: Accessing the sources'', @emph{R News}, @strong{6/4},
-43--45 (@url{http://cran.r-project.org/doc/Rnews/Rnews_2006-4.pdf}).
+43--45 (@url{http://CRAN.R-project.org/doc/Rnews/Rnews_2006-4.pdf}).
 
 @node Why does summary() report strange results for the R^2 estimate when I fit a linear model with no intercept?, Why is R apparently not releasing memory?, How do I access the source code for a function?, R Miscellanea
 @section Why does summary() report strange results for the R^2 estimate when I fit a linear model with no intercept?

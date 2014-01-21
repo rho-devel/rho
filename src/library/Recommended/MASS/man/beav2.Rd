@@ -66,7 +66,7 @@ arima(temp, order = c(1,0,0), xreg = activ)
 dreg <- cbind(sin = sin(2*pi*beav2$hours/24), cos = cos(2*pi*beav2$hours/24))
 arima(temp, order = c(1,0,0), xreg = cbind(active=activ, dreg))
 
-library(nlme)
+library(nlme) # for gls and corAR1
 beav2.gls <- gls(temp ~ activ, data = beav2, corr = corAR1(0.8),
                  method = "ML")
 summary(beav2.gls)

@@ -75,7 +75,7 @@ panel.abline <-
         b <- coef[2]
     }
     id <- identifier
-    if (hasArg(group.number))
+    if (hasGroupNumber())
         group <- list(...)$group.number
     else
         group <- 0
@@ -281,7 +281,7 @@ panel.curve <-
     if (missing(to)) to <- max(lims)
     x <- seq(from, to, length.out = n)
     y <- eval(expr, envir = list(x = x), enclos = parent.frame())
-    if (hasArg(group.number))
+    if (hasGroupNumber())
         id <- paste(identifier, "group", list(...)$group.number, sep=".")
     else
         id <- identifier
@@ -315,7 +315,7 @@ panel.rug <-
     x.units <- rep(x.units, length.out = 2)
     y.units <- rep(y.units, length.out = 2)
     id <- identifier
-    if (hasArg(group.number))
+    if (hasGroupNumber())
         group <- list(...)$group.number
     else
         group <- 0
@@ -349,7 +349,7 @@ panel.fill <-
              border = "transparent", ...,
              identifier = "fill")
 {
-    if (hasArg(group.number))
+    if (hasGroupNumber())
         group <- list(...)$group.number
     else
         group <- 0
@@ -380,7 +380,7 @@ panel.grid <-
     h <- as.integer(h)
     v <- as.integer(v)
 
-    if (hasArg(group.number))
+    if (hasGroupNumber())
         group <- list(...)$group.number
     else
         group <- 0

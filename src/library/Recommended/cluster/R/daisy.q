@@ -74,8 +74,10 @@ daisy <- function(x, metric = c("euclidean", "manhattan", "gower"),
     type2[type2 == "ordered"] <- "O"
     type2[type2 == "factor"] <- "N"
     if(any(ilog <- type2 == "logical")) {
-	warning("setting 'logical' variable",if(sum(ilog)>1)"s " else " ",
-		pColl(which(ilog)), " to type 'asymm'")
+	warning(sprintf(ngettext(sum(ilog),
+				 "setting 'logical' variable %s to type 'asymm'",
+				 "setting 'logical' variables %s to type 'asymm'"),
+			pColl(which(ilog))), domain = NA)
 	type2[ilog] <- "A"
     }
     ## Note: We have 2 status codings:  ndyst = (0,1,2) and jdat = (1,2);

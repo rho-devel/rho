@@ -1,5 +1,5 @@
 
-### Copyright (C) 2001-2011  Deepayan Sarkar <Deepayan.Sarkar@R-project.org>
+### Copyright (C) 2001-2012  Deepayan Sarkar <Deepayan.Sarkar@R-project.org>
 ###
 ### This file is part of the lattice package for R.
 ### It is made available under the terms of the GNU General Public
@@ -98,8 +98,9 @@ panel.superpose <-
         alpha <- rep(alpha, length.out = nvals)
         cex <- rep(cex, length.out = nvals)
         font <- rep(font, length.out = nvals)
-        fontface <- rep(fontface, length.out = nvals)
-        fontfamily <- rep(fontfamily, length.out = nvals)
+        ## The next two may be NULL (in fact, are so by default)
+        if (!is.null(fontface)) fontface <- rep(fontface, length.out = nvals)
+        if (!is.null(fontfamily)) fontfamily <- rep(fontfamily, length.out = nvals)
         type <- rep(type, length.out = nvals)
 
         panel.groups <- getFunctionOrName(panel.groups)

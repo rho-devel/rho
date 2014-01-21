@@ -18,7 +18,7 @@ spectrum(x, \dots, method = c("pgram", "ar"))
   \item{x}{A univariate or multivariate time series.}
   \item{method}{String specifying the method used to estimate the
     spectral density.  Allowed methods are \code{"pgram"} (the default)
-    and \code{"ar"}.} 
+    and \code{"ar"}.}
   \item{\dots}{Further arguments to specific spec methods or
     \code{plot.spec}.}
 }
@@ -56,13 +56,13 @@ spectrum(x, \dots, method = c("pgram", "ar"))
 \details{
   \code{spectrum} is a wrapper function which calls the methods
   \code{\link{spec.pgram}} and \code{\link{spec.ar}}.
-  
+
   The spectrum here is defined with scaling \code{1/\link{frequency}(x)},
   following S-PLUS.  This makes the spectral density a density over the
   range \code{(-frequency(x)/2, +frequency(x)/2]}, whereas a more common
   scaling is \eqn{2\pi}{2pi} and range \eqn{(-0.5, 0.5]} (e.g., Bloomfield)
   or 1 and range \eqn{(-\pi, \pi]}{(-pi, pi]}.
-  
+
   If available, a confidence interval will be plotted by
   \code{plot.spec}: this is asymmetric, and the width of the centre
   mark indicates the equivalent bandwidth.
@@ -95,22 +95,22 @@ require(graphics)
 
 ## Examples from Venables & Ripley
 ## spec.pgram
-par(mfrow=c(2,2))
+par(mfrow = c(2,2))
 spectrum(lh)
-spectrum(lh, spans=3)
-spectrum(lh, spans=c(3,3))
-spectrum(lh, spans=c(3,5))
+spectrum(lh, spans = 3)
+spectrum(lh, spans = c(3,3))
+spectrum(lh, spans = c(3,5))
 
 spectrum(ldeaths)
-spectrum(ldeaths, spans=c(3,3))
-spectrum(ldeaths, spans=c(3,5))
-spectrum(ldeaths, spans=c(5,7))
-spectrum(ldeaths, spans=c(5,7), log="dB", ci=0.8)
+spectrum(ldeaths, spans = c(3,3))
+spectrum(ldeaths, spans = c(3,5))
+spectrum(ldeaths, spans = c(5,7))
+spectrum(ldeaths, spans = c(5,7), log = "dB", ci = 0.8)
 
 # for multivariate examples see the help for spec.pgram
 
 ## spec.ar
-spectrum(lh, method="ar")
-spectrum(ldeaths, method="ar")
+spectrum(lh, method = "ar")
+spectrum(ldeaths, method = "ar")
 }
 \keyword{ts}

@@ -18,7 +18,7 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  file run.c: a simple 'reading' pipe (and a command executor)
  *  Copyright  (C) 1999-2001  Guido Masarotto  and Brian Ripley
- *             (C) 2007-10    The R Core Team
+ *             (C) 2007-13    The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@
 
 #define R_USE_SIGNALS 1
 #include <Defn.h>
+#include <Internal.h>
 #include "win-nls.h"
 
 #define WIN32_LEAN_AND_MEAN 1
@@ -55,11 +56,13 @@ extern UImode  CharacterMode;
 
 static char RunError[501] = "";
 
-
-static char *expandcmd(const char *cmd)
+/* This might be given a command line (whole = 0) or just the
+   executable (whole = 0).  In the later case the path may or may not
+   be quoted */
+static char *expandcmd(const char *cmd, int whole)
 {
-    char  c;
-    char *s, *p, *q, *f, *dest, *src;
+    char c = '\0';
+    char *s, *p, *q = NULL, *f, *dest, *src;
     int   d, ext, len = strlen(cmd)+1;
     char buf[len], fl[len], fn[len];
 
@@ -73,14 +76,18 @@ static char *expandcmd(const char *cmd)
     /* skip leading spaces */
     for (p = buf; *p && isspace(*p); p++);
     /* find the command itself, possibly double-quoted */
-    for (q = p, d = 0; *q && ( d || !isspace(*q) ); q++)
-	if (*q == '\"') d = d ? 0 : 1;
-    if (d) {
-	strcpy(RunError, "A \" is missing (expandcmd)");
-	return NULL;
+    if (whole) {
+	d = 0;
+    } else {
+	for (q = p, d = 0; *q && ( d || !isspace(*q) ); q++)
+	    if (*q == '\"') d = d ? 0 : 1;
+	if (d) {
+	    strcpy(RunError, "A \" is missing (expandcmd)");
+	    return NULL;
+	}
+	c = *q; /* character after the command, normally a space */
+	*q = '\0';
     }
-    c = *q; /* character after the command, normally a space */
-    *q = '\0';
 
     /*
      * Guido resorted to this since SearchPath returned FOUND also
@@ -114,7 +121,7 @@ static char *expandcmd(const char *cmd)
     if (!d) {
 	free(s);
 	snprintf(RunError, 500, "'%s' not found", p);
-	*q = c;
+	if(!whole) *q = c;
 	return NULL;
     }
     /*
@@ -125,8 +132,10 @@ static char *expandcmd(const char *cmd)
       SearchPath seems dislikes them
     */
     GetShortPathName(fn, s, MAX_PATH);
-    *q = c;
-    strcat(s, q);
+    if (!whole) {
+	*q = c;
+	strcat(s, q);
+    }
     return s;
 }
 
@@ -160,7 +169,7 @@ static void pcreate(const char* cmd, cetype_t enc,
     sa.bInheritHandle = TRUE;
 
     /* FIXME: this might need to be done in wchar_t */
-    if (!(ecmd = expandcmd(cmd))) return; /* error message already set */
+    if (!(ecmd = expandcmd(cmd, 0))) return; /* error message already set */
 
     inpipe = (hIN != INVALID_HANDLE_VALUE)
 	|| (hOUT != INVALID_HANDLE_VALUE)
@@ -246,7 +255,7 @@ static void pcreate(const char* cmd, cetype_t enc,
 	CloseHandle(dupERR);
     }
     if (!ret)
-	snprintf(RunError, 500, _("CreateProcess failed to run '%s'"), ecmd);
+	snprintf(RunError, 500, _("'CreateProcess' failed to run '%s'"), ecmd);
     else CloseHandle(pi->hThread);
     free(ecmd);
     return;
@@ -406,7 +415,7 @@ int runcmd(const char *cmd, cetype_t enc, int wait, int visible,
 	cntxt.cenddata = &pi;
 	ret = pwait2(pi.hProcess);
 	endcontext(&cntxt);
-	sprintf(RunError, _("Exit code was %d"), ret);
+	snprintf(RunError, 501, _("Exit code was %d"), ret);
 	ret &= 0xffff;
     } else ret = 0;
     CloseHandle(pi.hProcess);
@@ -627,7 +636,7 @@ static Rboolean Wpipe_open(Rconnection con)
 
 static void Wpipe_close(Rconnection con)
 {
-    rpipeClose( ((RWpipeconn)con->private) ->rp);
+    con->status = rpipeClose( ((RWpipeconn)con->private) ->rp);
     con->isopen = FALSE;
 }
 
@@ -706,27 +715,22 @@ static size_t Wpipe_write(const void *ptr, size_t size, size_t nitems,
     else return 0;
 }
 
-#define BUFSIZE 1000
+#define BUFSIZE 10000
 static int Wpipe_vfprintf(Rconnection con, const char *format, va_list ap)
 {
-    char buf[BUFSIZE], *b = buf, *vmax = vmaxget();
-    int res = 0, usedRalloc = FALSE;
+    R_CheckStack2(BUFSIZE);
+    char buf[BUFSIZE], *b = buf;
+    int res = 0;
 
     res = vsnprintf(b, BUFSIZE, format, ap);
     if(res < 0) { /* a failure indication, so try again */
-	usedRalloc = TRUE;
-	b = R_alloc(10*BUFSIZE, sizeof(char));
-	res = vsnprintf(b, 10*BUFSIZE, format, ap);
-	if (res < 0) {
-	    *(b + 10*BUFSIZE) = '\0';
-	    warning("printing of extremely long output is truncated");
-	    res = 10*BUFSIZE;
-	}
+	b[BUFSIZE -1] = '\0';
+	warning("printing of extremely long output is truncated");
+	res = BUFSIZE;
     }
-    res = Wpipe_write(buf, res, 1, con);
-    if(usedRalloc) vmaxset(vmax);
-    return res;
+    return Wpipe_write(buf, res, 1, con);
 }
+
 
 Rconnection newWpipe(const char *description, int ienc, const char *mode)
 {
@@ -794,14 +798,18 @@ SEXP do_syswhich(SEXP call, SEXP op, SEXP args, SEXP env)
     checkArity(op, args);
     nm = CAR(args);
     if(!isString(nm))
-	error(_("'names' is not a character string"));
+	error(_("'names' is not a character vector"));
     n = LENGTH(nm);
     PROTECT(ans = allocVector(STRSXP, n));
     for(i = 0; i < n; i++) {
-	const char *this = CHAR(STRING_ELT(nm, i));
-	char *that = expandcmd(this);
-	SET_STRING_ELT(ans, i, mkChar(that ? that : ""));
-	free(that);
+	if (STRING_ELT(nm, i) == NA_STRING) {
+	    SET_STRING_ELT(ans, i, NA_STRING);
+	} else {
+	    const char *this = CHAR(STRING_ELT(nm, i));
+	    char *that = expandcmd(this, 1);
+	    SET_STRING_ELT(ans, i, mkChar(that ? that : ""));
+	    free(that);
+	}
     }
     setAttrib(ans, R_NamesSymbol, nm);
     UNPROTECT(1);

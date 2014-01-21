@@ -15,11 +15,13 @@
  *CXXR */
 
 /*
- *  Copyright (C) 2000-2008 The R Core Team
+ *  Copyright (C) 2000-2012 The R Core Team
  *
  *  Algorithm AS 226 Appl. Statist. (1987) Vol. 36, No. 2
+ *  by Russell V. Lenth
  *  Incorporates modification AS R84 from AS Vol. 39, pp311-2, 1990
  *                        and AS R95 from AS Vol. 44, pp551-2, 1995
+ *  by H. Frick and Min Long Lam.
  *  original (C) Royal Statistical Society 1987, 1990, 1995
  *
  *  Returns the cumulative probability of x for the non-central
@@ -33,7 +35,7 @@
 #include "nmath.h"
 #include "dpq.h"
 
-long double attribute_hidden
+LDOUBLE attribute_hidden
 pnbeta_raw(double x, double o_x, double a, double b, double ncp)
 {
     /* o_x  == 1 - x  but maybe more accurate */
@@ -44,10 +46,10 @@ pnbeta_raw(double x, double o_x, double a, double b, double ncp)
     const int    itrmax = 10000;  /* 100 is not enough for pf(ncp=200)
 				     see PR#11277 */
 
-    double a0, ax, lbeta, c, errbd, temp, x0, tmp_c;
+    double a0, lbeta, c, errbd, x0, temp, tmp_c;
     int j, ierr;
 
-    long double ans, gx, q, sumq;
+    LDOUBLE ans, ax, gx, q, sumq;
 
     if (ncp < 0. || a <= 0. || b <= 0.) ML_ERR_return_NAN;
 
@@ -75,16 +77,16 @@ pnbeta_raw(double x, double o_x, double a, double b, double ncp)
     ans = ax = q * temp;
 
 	/* recurse over subsequent terms until convergence is achieved */
-    j = x0;
+    j = (int) x0;
     do {
 	j++;
-	temp -= gx;
+	temp -= (double) gx;
 	gx *= x * (a + b + j - 1.) / (a + j);
 	q *= c / j;
 	sumq -= q;
 	ax = temp * q;
 	ans += ax;
-	errbd = (temp - gx) * sumq;
+	errbd = (double)((temp - gx) * sumq);
     }
     while (errbd > errmax && j < itrmax + x0);
 
@@ -101,14 +103,25 @@ pnbeta2(double x, double o_x, double a, double b, double ncp,
 	/* o_x  == 1 - x  but maybe more accurate */
 	int lower_tail, int log_p)
 {
-    long double ans= pnbeta_raw(x, o_x, a,b, ncp);
+    LDOUBLE ans = pnbeta_raw(x, o_x, a,b, ncp);
+
 
     /* return R_DT_val(ans), but we want to warn about cancellation here */
-    if(lower_tail) return log_p	? log(ans) : ans;
+    if (lower_tail)
+#ifdef HAVE_LONG_DOUBLE
+	return (double) (log_p ? logl(ans) : ans);
+#else
+	return log_p ? log(ans) : ans;
+#endif
     else {
-	if(ans > 1 - 1e-10) ML_ERROR(ME_PRECISION, "pnbeta");
-	ans = fmin2(ans, 1.0);  /* Precaution */
-	return log_p ? log1p(-ans) : (1 - ans);
+	if (ans > 1. - 1e-10) ML_ERROR(ME_PRECISION, "pnbeta");
+	if (ans > 1.0) ans = 1.0;  /* Precaution */
+#if defined(HAVE_LONG_DOUBLE) && defined(HAVE_LOG1PL)
+	return (double) (log_p ? log1pl(-ans) : (1. - ans));
+#else
+	/* include standalone case */
+	return (double) (log_p ? log1p((double)-ans) : (1. - ans));
+#endif
     }
 }
 

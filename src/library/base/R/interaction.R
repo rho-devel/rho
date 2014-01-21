@@ -1,6 +1,8 @@
 #  File src/library/base/R/interaction.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -35,7 +37,7 @@ interaction <- function(..., drop = FALSE, sep = ".", lex.order = FALSE)
             if(lex.order) {
                 ll <- length(lvs)
                 ans <- ans + ll * if1
-                lvs <- paste(rep(l, each= ll), rep(lvs, length(l)), sep=sep)
+                lvs <- paste(rep(l, each = ll), rep(lvs, length(l)), sep=sep)
             } else {
                 ans <- ans * length(l) + if1
                 lvs <- paste(rep(l, length(lvs)),

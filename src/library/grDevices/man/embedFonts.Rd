@@ -39,7 +39,7 @@ embedFonts(file, format, outfile = file, fontpaths = "",
   something like \code{options="-sFONTPATH=path/to/font"}.
 
   You will need \code{ghostscript}: the full path to the executable can
-  be set by the environment variable \env{R_GSCMD}. It this is
+  be set by the environment variable \env{R_GSCMD}. If this is
   unset, a GhostScript executable will be looked for by name on your
   path: on a Unix alike \code{"gs"} is used, and on Windows the setting
   of the environment variable \env{GSC} is used, otherwise commands
@@ -47,7 +47,7 @@ embedFonts(file, format, outfile = file, fontpaths = "",
 
   Note that Ghostscript may do font substitution, so the font embedded
   may differ from that specified in the original file.
-  
+
   Some other options which can be useful (see your Ghostscript
   documentation) are \option{-dMaxSubsetPct=100},
   \option{-dSubsetFonts=true} and  \option{-dEmbedAllFonts=true}.

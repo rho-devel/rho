@@ -1,6 +1,8 @@
 #  File src/library/stats/R/family.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -48,12 +50,9 @@ make.link <- function (link)
 {
     switch(link,
            "logit" = {
-               linkfun <- function(mu)
-                   .Call(C_logit_link, mu, PACKAGE="stats")
-               linkinv <- function(eta)
-                   .Call(C_logit_linkinv, eta, PACKAGE="stats")
-               mu.eta <- function(eta)
-                   .Call(C_logit_mu_eta, eta, PACKAGE="stats")
+               linkfun <- function(mu) .Call(C_logit_link, mu)
+               linkinv <- function(eta) .Call(C_logit_linkinv, eta)
+               mu.eta <- function(eta) .Call(C_logit_mu_eta, eta)
                valideta <- function(eta) TRUE
            },
            "probit" = {
@@ -119,11 +118,14 @@ make.link <- function (link)
                linkfun <- function(mu) 1/mu
                linkinv <- function(eta) 1/eta
                mu.eta <- function(eta) -1/(eta^2)
-               valideta <- function(eta) all(eta!=0)
+               valideta <- function(eta) all(eta != 0)
            },
            ## else :
-           stop(sQuote(link), " link not recognised")
+           stop(gettextf("%s link not recognised", sQuote(link)),
+                domain = NA)
            )# end switch(.)
+    environment(linkfun) <- environment(linkinv) <- environment(mu.eta) <-
+        environment(valideta) <- asNamespace("stats")
     structure(list(linkfun = linkfun, linkinv = linkinv,
                    mu.eta = mu.eta, valideta = valideta, name = link),
               class="link-glm")
@@ -153,11 +155,16 @@ poisson <- function (link = "log")
     variance <- function(mu) mu
     validmu <- function(mu) all(mu>0)
     dev.resids <- function(y, mu, wt)
-        2 * wt * (y * log(ifelse(y == 0, 1, y/mu)) - (y - mu))
+    { ## faster than  2 * wt * (y * log(ifelse(y == 0, 1, y/mu)) - (y - mu))
+	r <- mu*wt
+	p <- which(y > 0)
+	r[p] <- (wt * (y*log(y/mu) - (y - mu)))[p]
+	2*r
+    }
     aic <- function(y, n, mu, wt, dev) -2*sum(dpois(y, mu, log=TRUE)*wt)
     initialize <- expression({
 	if (any(y < 0))
-	    stop("negative values not allowed for the Poisson family")
+	    stop("negative values not allowed for the 'Poisson' family")
 	n <- rep.int(1, nobs)
 	mustart <- y + 0.1
     })
@@ -209,11 +216,16 @@ quasipoisson <- function (link = "log")
     variance <- function(mu) mu
     validmu <- function(mu) all(mu>0)
     dev.resids <- function(y, mu, wt)
-	2 * wt * (y * log(ifelse(y == 0, 1, y/mu)) - (y - mu))
+    { ## faster than  2 * wt * (y * log(ifelse(y == 0, 1, y/mu)) - (y - mu))
+	r <- mu*wt
+	p <- which(y > 0)
+	r[p] <- (wt * (y*log(y/mu) - (y - mu)))[p]
+	2*r
+    }
     aic <- function(y, n, mu, wt, dev) NA
     initialize <- expression({
 	if (any(y < 0))
-	    stop("negative values not allowed for the quasiPoisson family")
+	    stop("negative values not allowed for the 'quasiPoisson' family")
 	n <- rep.int(1, nobs)
 	mustart <- y + 0.1
     })
@@ -301,8 +313,7 @@ binomial <- function (link = "logit")
     }
     variance <- function(mu) mu * (1 - mu)
     validmu <- function(mu) all(mu>0) && all(mu<1)
-    dev.resids <- function(y, mu, wt)
-        .Call(C_binomial_dev_resids, y, mu, wt, PACKAGE="stats")
+    dev.resids <- function(y, mu, wt) .Call(C_binomial_dev_resids, y, mu, wt)
     aic <- function(y, n, mu, wt, dev) {
         m <- if(any(n > 1)) n else wt
 	-2*sum(ifelse(m > 0, (wt/m), 0)*
@@ -331,8 +342,7 @@ binomial <- function (link = "logit")
 	    weights <- weights * n
             mustart <- (n * y + 0.5)/(n + 1)
 	}
-	else stop("for the binomial family, y must be a vector of 0 and 1\'s\n",
-                  "or a 2 column matrix where col 1 is no. successes and col 2 is no. failures")
+	else stop("for the 'binomial' family, y must be a vector of 0 and 1\'s\nor a 2 column matrix where col 1 is no. successes and col 2 is no. failures")
     })
     simfun <- function(object, nsim) {
         ftd <- fitted(object)
@@ -401,9 +411,7 @@ quasibinomial <- function (link = "logit")
     }
     variance <- function(mu) mu * (1 - mu)
     validmu <- function(mu) all(mu>0) && all(mu<1)
-    dev.resids <- function(y, mu, wt)
-	2 * wt * (y * log(ifelse(y == 0, 1, y/mu)) +
-		  (1 - y) * log(ifelse(y == 1, 1, (1 - y)/(1 - mu))))
+    dev.resids <- function(y, mu, wt) .Call(C_binomial_dev_resids, y, mu, wt)
     aic <- function(y, n, mu, wt, dev) NA
     initialize <- expression({
 	if (NCOL(y) == 1) {
@@ -419,8 +427,7 @@ quasibinomial <- function (link = "logit")
 	    weights <- weights * n
             mustart <- (n * y + 0.5)/(n + 1)
 	}
-	else stop("for the quasibinomial family, y must be a vector of 0 and 1\'s\n",
-                  "or a 2 column matrix where col 1 is no. successes and col 2 is no. failures")
+	else stop("for the 'quasibinomial' family, y must be a vector of 0 and 1\'s\nor a 2 column matrix where col 1 is no. successes and col 2 is no. failures")
     })
     structure(list(family = "quasibinomial",
 		   link = linktemp,
@@ -466,7 +473,7 @@ Gamma <- function (link = "inverse")
     }
     initialize <- expression({
 	if (any(y <= 0))
-	    stop("non-positive values not allowed for the gamma family")
+	    stop("non-positive values not allowed for the 'gamma' family")
 	n <- rep.int(1, nobs)
 	mustart <- y
     })
@@ -519,7 +526,7 @@ inverse.gaussian <- function(link = "1/mu^2")
 	sum(wt)*(log(dev/sum(wt)*2*pi)+1)+3*sum(log(y)*wt)+2
     initialize <- expression({
 	if(any(y <= 0))
-	    stop("positive values only allowed for the inverse.gaussian family")
+	    stop("positive values only are allowed for the 'inverse.gaussian' family")
 	n <- rep.int(1, nobs)
 	mustart <- y
     })
@@ -527,7 +534,7 @@ inverse.gaussian <- function(link = "1/mu^2")
     simfun <- function(object, nsim) {
         if(is.null(tryCatch(loadNamespace("SuppDists"),
                             error = function(e) NULL)))
-            stop("Need CRAN package 'SuppDists' for 'inverse.gaussian' family")
+            stop("need CRAN package 'SuppDists' for the 'inverse.gaussian' family")
         wts <- object$prior.weights
         if (any(wts != 1)) message("using weights as inverse variances")
         ftd <- fitted(object)
@@ -577,9 +584,7 @@ quasi <- function (link = "identity", variance = "constant")
            "mu(1-mu)" = {
                varfun <- function(mu) mu * (1 - mu)
                validmu <- function(mu) all(mu>0) && all(mu<1)
-               dev.resids <- function(y, mu, wt)
-                   2 * wt * (y * log(ifelse(y == 0, 1, y/mu)) +
-                             (1 - y) * log(ifelse(y == 1, 1, (1 - y)/(1 - mu))))
+               dev.resids <- function(y, mu, wt) .Call(C_binomial_dev_resids, y, mu, wt)
                initialize <- expression({n <- rep.int(1, nobs)
                                          mustart <- pmax(0.001, pmin(0.999, y))})
            },

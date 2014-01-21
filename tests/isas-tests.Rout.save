@@ -1,9 +1,7 @@
 
-R version 2.13.0 Patched (2011-04-13 r55430)
-Copyright (C) 2011 The R Foundation for Statistical Computing
-R version 2.11.1 (2010-05-31)
-ISBN 3-900051-07-0
-Platform: x86_64-apple-darwin9.8.0/x86_64 (64-bit)
+R version 3.0.2 RC (2013-09-22 r63960) -- "Frisbee Sailing"
+Copyright (C) 2013 The R Foundation for Statistical Computing
+Platform: x86_64-unknown-linux-gnu (64-bit)
 
 CXXR Copyright (C) 2008-10 Andrew Runnalls.  CXXR like
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -95,9 +93,6 @@ via r-bugs or the R website; instead refer to the CXXR website.
 > res <- try(as.raw( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.raw(res))
 [1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error')) report(is.real(res))
-[1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.symbol(res))
 > res <- try(as.table( x ), silent = TRUE)
@@ -220,11 +215,6 @@ IS: [1] TRUE
 +    report({if(is.raw(x)) { cat('IS: ');all.equal(x, res, tol=0)
 +    } else   !isall.equal(x, res)})
 [1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error'))
-+    report({if(is.real(x)) { cat('IS: ');all.equal(x, res, tol=0)
-+    } else   !isall.equal(x, res)})
-[1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
 > if(!inherits(res, 'try-error'))
 +    report({if(is.symbol(x)) { cat('IS: ');all.equal(x, res, tol=0)
@@ -323,9 +313,6 @@ IS: [1] TRUE
 >   if(!inherits(f, 'try-error')) report(identical(f, as.qr( f )))
 > f <- try(as.raw( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.raw( f )))
-[1] TRUE
-> f <- try(as.real( x ), silent = TRUE)
->   if(!inherits(f, 'try-error')) report(identical(f, as.real( f )))
 [1] TRUE
 > f <- try(as.single( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.single( f )))
@@ -417,9 +404,6 @@ In as.dist.default(x) : non-square matrix
 > res <- try(as.raw( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.raw(res))
 [1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error')) report(is.real(res))
-[1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.symbol(res))
 > res <- try(as.table( x ), silent = TRUE)
@@ -541,11 +525,6 @@ IS: [1] TRUE
 +    report({if(is.raw(x)) { cat('IS: ');all.equal(x, res, tol=0)
 +    } else   !isall.equal(x, res)})
 [1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error'))
-+    report({if(is.real(x)) { cat('IS: ');all.equal(x, res, tol=0)
-+    } else   !isall.equal(x, res)})
-[1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
 > if(!inherits(res, 'try-error'))
 +    report({if(is.symbol(x)) { cat('IS: ');all.equal(x, res, tol=0)
@@ -641,9 +620,6 @@ Error: x is not TRUE
 >   if(!inherits(f, 'try-error')) report(identical(f, as.qr( f )))
 > f <- try(as.raw( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.raw( f )))
-[1] TRUE
-> f <- try(as.real( x ), silent = TRUE)
->   if(!inherits(f, 'try-error')) report(identical(f, as.real( f )))
 [1] TRUE
 > f <- try(as.single( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.single( f )))
@@ -733,9 +709,6 @@ Error: x is not TRUE
 > res <- try(as.raw( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.raw(res))
 [1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error')) report(is.real(res))
-[1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.symbol(res))
 > res <- try(as.table( x ), silent = TRUE)
@@ -856,11 +829,6 @@ IS: [1] TRUE
 +    report({if(is.raw(x)) { cat('IS: ');all.equal(x, res, tol=0)
 +    } else   !isall.equal(x, res)})
 [1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error'))
-+    report({if(is.real(x)) { cat('IS: ');all.equal(x, res, tol=0)
-+    } else   !isall.equal(x, res)})
-[1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
 > if(!inherits(res, 'try-error'))
 +    report({if(is.symbol(x)) { cat('IS: ');all.equal(x, res, tol=0)
@@ -955,9 +923,6 @@ IS: [1] TRUE
 >   if(!inherits(f, 'try-error')) report(identical(f, as.qr( f )))
 > f <- try(as.raw( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.raw( f )))
-[1] TRUE
-> f <- try(as.real( x ), silent = TRUE)
->   if(!inherits(f, 'try-error')) report(identical(f, as.real( f )))
 [1] TRUE
 > f <- try(as.single( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.single( f )))
@@ -1052,9 +1017,6 @@ In as.dist.default(x) : non-square matrix
 > res <- try(as.raw( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.raw(res))
 [1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error')) report(is.real(res))
-[1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.symbol(res))
 [1] TRUE
@@ -1181,11 +1143,6 @@ IS: [1] TRUE
 +    report({if(is.raw(x)) { cat('IS: ');all.equal(x, res, tol=0)
 +    } else   !isall.equal(x, res)})
 [1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error'))
-+    report({if(is.real(x)) { cat('IS: ');all.equal(x, res, tol=0)
-+    } else   !isall.equal(x, res)})
-[1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
 > if(!inherits(res, 'try-error'))
 +    report({if(is.symbol(x)) { cat('IS: ');all.equal(x, res, tol=0)
@@ -1288,9 +1245,6 @@ IS: [1] TRUE
 >   if(!inherits(f, 'try-error')) report(identical(f, as.qr( f )))
 > f <- try(as.raw( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.raw( f )))
-[1] TRUE
-> f <- try(as.real( x ), silent = TRUE)
->   if(!inherits(f, 'try-error')) report(identical(f, as.real( f )))
 [1] TRUE
 > f <- try(as.single( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.single( f )))
@@ -1391,9 +1345,6 @@ In FUN(X[[1L]], ...) : inaccurate integer conversion in coercion
 > res <- try(as.raw( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.raw(res))
 [1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error')) report(is.real(res))
-[1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.symbol(res))
 [1] TRUE
@@ -1525,11 +1476,6 @@ In FUN(X[[1L]], ...) : inaccurate integer conversion in coercion
 +    report({if(is.raw(x)) { cat('IS: ');all.equal(x, res, tol=0)
 +    } else   !isall.equal(x, res)})
 [1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error'))
-+    report({if(is.real(x)) { cat('IS: ');all.equal(x, res, tol=0)
-+    } else   !isall.equal(x, res)})
-IS: [1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
 > if(!inherits(res, 'try-error'))
 +    report({if(is.symbol(x)) { cat('IS: ');all.equal(x, res, tol=0)
@@ -1635,9 +1581,6 @@ In FUN(X[[1L]], ...) : inaccurate integer conversion in coercion
 >   if(!inherits(f, 'try-error')) report(identical(f, as.qr( f )))
 > f <- try(as.raw( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.raw( f )))
-[1] TRUE
-> f <- try(as.real( x ), silent = TRUE)
->   if(!inherits(f, 'try-error')) report(identical(f, as.real( f )))
 [1] TRUE
 > f <- try(as.single( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.single( f )))
@@ -1733,9 +1676,6 @@ In FUN(X[[1L]], ...) : inaccurate integer conversion in coercion
 > res <- try(as.raw( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.raw(res))
 [1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error')) report(is.real(res))
-[1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.symbol(res))
 [1] TRUE
@@ -1861,11 +1801,6 @@ IS: [1] TRUE
 +    report({if(is.raw(x)) { cat('IS: ');all.equal(x, res, tol=0)
 +    } else   !isall.equal(x, res)})
 [1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error'))
-+    report({if(is.real(x)) { cat('IS: ');all.equal(x, res, tol=0)
-+    } else   !isall.equal(x, res)})
-[1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
 > if(!inherits(res, 'try-error'))
 +    report({if(is.symbol(x)) { cat('IS: ');all.equal(x, res, tol=0)
@@ -1966,9 +1901,6 @@ IS: [1] TRUE
 >   if(!inherits(f, 'try-error')) report(identical(f, as.qr( f )))
 > f <- try(as.raw( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.raw( f )))
-[1] TRUE
-> f <- try(as.real( x ), silent = TRUE)
->   if(!inherits(f, 'try-error')) report(identical(f, as.real( f )))
 [1] TRUE
 > f <- try(as.single( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.single( f )))
@@ -2062,9 +1994,6 @@ IS: [1] TRUE
 > res <- try(as.raw( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.raw(res))
 [1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error')) report(is.real(res))
-[1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.symbol(res))
 > res <- try(as.table( x ), silent = TRUE)
@@ -2188,11 +2117,6 @@ IS: [1] TRUE
 +    report({if(is.raw(x)) { cat('IS: ');all.equal(x, res, tol=0)
 +    } else   !isall.equal(x, res)})
 [1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error'))
-+    report({if(is.real(x)) { cat('IS: ');all.equal(x, res, tol=0)
-+    } else   !isall.equal(x, res)})
-[1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
 > if(!inherits(res, 'try-error'))
 +    report({if(is.symbol(x)) { cat('IS: ');all.equal(x, res, tol=0)
@@ -2290,9 +2214,6 @@ IS: [1] TRUE
 >   if(!inherits(f, 'try-error')) report(identical(f, as.qr( f )))
 > f <- try(as.raw( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.raw( f )))
-[1] TRUE
-> f <- try(as.real( x ), silent = TRUE)
->   if(!inherits(f, 'try-error')) report(identical(f, as.real( f )))
 [1] TRUE
 > f <- try(as.single( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.single( f )))
@@ -2385,9 +2306,6 @@ Warning message:
 In as.raw(x) : out-of-range values treated as 0 in coercion to raw
 > if(!inherits(res, 'try-error')) report(is.raw(res))
 [1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error')) report(is.real(res))
-[1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.symbol(res))
 > res <- try(as.table( x ), silent = TRUE)
@@ -2460,7 +2378,7 @@ IS: [1] TRUE
 +    } else   !isall.equal(x, res)})
 IS: [1] "Attributes: < names for target but not for current >"             
 [2] "Attributes: < Length mismatch: comparison on first 0 components >"
-Error: x is not all TRUE
+Error: x are not all TRUE
 > res <- try(as.logical( x ), silent = TRUE)
 > if(!inherits(res, 'try-error'))
 +    report({if(is.logical(x)) { cat('IS: ');all.equal(x, res, tol=0)
@@ -2511,11 +2429,6 @@ Warning message:
 In as.raw(x) : out-of-range values treated as 0 in coercion to raw
 > if(!inherits(res, 'try-error'))
 +    report({if(is.raw(x)) { cat('IS: ');all.equal(x, res, tol=0)
-+    } else   !isall.equal(x, res)})
-[1] TRUE
-> res <- try(as.real( x ), silent = TRUE)
-> if(!inherits(res, 'try-error'))
-+    report({if(is.real(x)) { cat('IS: ');all.equal(x, res, tol=0)
 +    } else   !isall.equal(x, res)})
 [1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
@@ -2616,9 +2529,6 @@ Warning message:
 In as.raw(x) : out-of-range values treated as 0 in coercion to raw
 >   if(!inherits(f, 'try-error')) report(identical(f, as.raw( f )))
 [1] TRUE
-> f <- try(as.real( x ), silent = TRUE)
->   if(!inherits(f, 'try-error')) report(identical(f, as.real( f )))
-[1] TRUE
 > f <- try(as.single( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.single( f )))
 [1] TRUE
@@ -2646,6 +2556,6 @@ In as.dist.default(x) : non-square matrix
 > f <- try(as.ts( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.ts( f )))
 > cat('Time elapsed: ', proc.time() - .proctime00,'\n')
-Time elapsed:  4.148 0.155 4.315 0 0 
+Time elapsed:  0.822 0.021 0.847 0 0 
 > 
 > 

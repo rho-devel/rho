@@ -1,4 +1,3 @@
-# $Id: summary.aareg.S 11250 2009-03-19 13:44:59Z tlumley $
 # The summary routine for aareg models.
 # A lot of the work below relates to one particular issue: the coeffients
 #  of an aareg model often get "wild" near the end (at the largest times).
@@ -64,11 +63,12 @@ summary.aareg <- function(object, maxtime, test=c('aalen', 'nrisk'), scale=1,...
 	    if (!is.null(object$cluster)) influence <- rowsum(influence, cluster)
 	    test.var2 <- t(influence) %*% influence
 	    }
+        else test.var2 <- NULL
 	}
     else {  #use the value that was passed in
 	test.stat <- object$test.statistic
 	test.var  <- object$test.var
-	test.var2 <- object$test.var2
+	test.var2 <- object$test.var2   #NULL if dfbeta option was false
 	}
 
     # create the matrix for printing out

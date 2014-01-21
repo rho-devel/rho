@@ -73,8 +73,8 @@ Workshop on Distributed Statistical Computing (DSC 2003), March 20-22,
   in future.
 }
 \seealso{
-\code{\link{hsv}},
-\code{\link{rgb}}.
+  \code{\link{hsv}},
+  \code{\link{rgb}}.
 }
 \examples{
 require(graphics)
@@ -84,7 +84,7 @@ csd <- matrix(c( 4,2,4,6, 4,3,1,4, 4,7,7,1,
                  0,7,3,2, 4,5,3,2, 5,4,2,2,
                  3,1,3,0, 4,4,6,7, 1,10,8,7,
                  1,5,3,2, 1,5,2,1, 4,1,4,3,
-                 0,3,0,6, 2,1,5,5), nrow=4)
+                 0,3,0,6, 2,1,5,5), nrow = 4)
 
 csphd <- function(colors)
   barplot(csd, col = colors, ylim = c(0,30),
@@ -119,6 +119,10 @@ csphd(hcl(h = seq(120, 0, length = 4) - 30))
 
 # Single Color
 hist(stats::rnorm(1000), col = hcl(240))
+
+## Exploring the hcl() color space {in its mapping to R's sRGB colors}:
+demo(hclColors)
+
 }
 \keyword{color}
 \keyword{dplot}

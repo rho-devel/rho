@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-07-16 22:46\n"
+"Project-Id-Version: R 3.0.0\n"
+"Report-Msgid-Bugs-To: bugs.r-project.org\n"
+"POT-Creation-Date: 2013-03-20 07:11\n"
 "PO-Revision-Date: 2012-01-08 00:28+0200\n"
 "Last-Translator: Joe <joedalton2@yahoo.dk>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -79,7 +79,7 @@ msgstr ""
 msgid "'formula' missing or incorrect"
 msgstr ""
 
-msgid "'at' must have same length as 'z$n', i.e."
+msgid "'at' must have same length as 'z$n', i.e. %d"
 msgstr ""
 
 msgid "invalid boxplot widths"
@@ -124,7 +124,7 @@ msgstr ""
 msgid "rows * columns too small"
 msgstr ""
 
-msgid "Missing rows"
+msgid "Missing rows: %s"
 msgstr ""
 
 msgid "'expr' must be a function, or a call or an expression containing '%s'"
@@ -178,6 +178,10 @@ msgstr ""
 msgid "'x' must be numeric"
 msgstr ""
 
+#, fuzzy
+msgid "invalid length(x)"
+msgstr "ugyldig »log«"
+
 msgid "'nclass' not used when 'breaks' is specified"
 msgstr ""
 
@@ -190,7 +194,13 @@ msgstr ""
 msgid "invalid number of 'breaks'"
 msgstr ""
 
-msgid "hist.default: pretty() error, breaks="
+msgid "hist.default: pretty() error, breaks=%s"
+msgstr ""
+
+msgid "Invalid breakpoints produced by 'breaks(x)': %s"
+msgstr ""
+
+msgid "invalid length(breaks)"
 msgstr ""
 
 msgid "'breaks' are not strictly increasing"
@@ -199,13 +209,10 @@ msgstr ""
 msgid "'probability' is an alias for '!freq', however they differ."
 msgstr ""
 
-msgid "negative 'counts'. Internal Error in C-code for \"bincount\""
-msgstr ""
-
 msgid "some 'x' not counted; maybe 'breaks' do not span range of 'x'"
 msgstr ""
 
-msgid "the AREAS in the plot are wrong -- rather use freq=FALSE"
+msgid "the AREAS in the plot are wrong -- rather use 'freq = FALSE'"
 msgstr ""
 
 msgid "'x' is wrongly structured"
@@ -226,23 +233,32 @@ msgstr ""
 msgid "must have one more break than colour"
 msgstr ""
 
-msgid "breaks must all be finite"
+msgid "'breaks' must all be finite"
+msgstr ""
+
+msgid "unsorted 'breaks' will be sorted before use"
 msgstr ""
 
 msgid "dimensions of z are not length(x)(-1) times length(y)(-1)"
 msgstr ""
 
-msgid "useRaster=TRUE can only be used with a regular grid"
+msgid "%s can only be used with a regular grid"
+msgstr ""
+
+msgid "integer colors must be non-negative"
 msgstr ""
 
 msgid "'respect' must be logical or matrix with same dimension as 'mat'"
 msgstr ""
 
-msgid "layout matrix must contain at least one reference\nto each of the values {1..n}; here  n ="
+msgid ""
+"layout matrix must contain at least one reference\n"
+"to each of the values {1 ... %d}"
 msgstr ""
 
-msgid "invalid title"
-msgstr ""
+#, fuzzy
+msgid "invalid 'title'"
+msgstr "ugyldig »log«"
 
 msgid "'legend' is of length 0"
 msgstr ""
@@ -253,7 +269,7 @@ msgstr ""
 msgid "'text.width' must be numeric, >= 0"
 msgstr ""
 
-msgid "horizontal specification overrides: Number of columns :="
+msgid "horizontal specification overrides: Number of columns := %d"
 msgstr ""
 
 msgid "'merge = TRUE' has no effect when no line segments are drawn"
@@ -278,9 +294,6 @@ msgid "missing values in contingency table"
 msgstr ""
 
 msgid "'x' must not have 0 dimensionality"
-msgstr ""
-
-msgid "extra argument(s) %s will be disregarded"
 msgstr ""
 
 msgid "invalid 'shade' specification"
@@ -373,7 +386,7 @@ msgstr ""
 msgid "data in 'x' must be numeric"
 msgstr ""
 
-msgid "nrow * ncol <  number of observations"
+msgid "'nrow * ncol' is less than the number of observations"
 msgstr ""
 
 msgid "labels do not make sense for a single location"
@@ -409,13 +422,13 @@ msgstr ""
 msgid "exactly one symbol type must be specified"
 msgstr ""
 
-msgid "x log scale:  xinch() is non-sense"
+msgid "x log scale:  xinch() is nonsense"
 msgstr ""
 
-msgid "y log scale:  yinch() is non-sense"
+msgid "y log scale:  yinch() is nonsense"
 msgstr ""
 
-msgid "log scale:  xyinch() is non-sense"
+msgid "log scale:  xyinch() is nonsense"
 msgstr ""
 
 msgid "Outlier (%s) in boxplot %d is not drawn"
@@ -425,5 +438,10 @@ msgstr[1] ""
 
 msgid "argument %s is not made use of"
 msgid_plural "arguments %s are not made use of"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "extra argument %s will be disregarded"
+msgid_plural "extra arguments %s will be disregarded"
 msgstr[0] ""
 msgstr[1] ""

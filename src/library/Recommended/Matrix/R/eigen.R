@@ -14,7 +14,7 @@ setMethod("eigen", signature(x = "dgeMatrix", only.values = "logical"),
 } #not yet
 
 .dgeSchur <- function(x, vectors, ...) {
-    cl <- .Call(dgeMatrix_Schur, x, TRUE)
+    cl <- .Call(dgeMatrix_Schur, x, TRUE, TRUE)
     realEV <- all(cl$WI == 0)
     ## TODO: do all this in C
     new("Schur", Dim = x@Dim,
@@ -29,12 +29,35 @@ setMethod("Schur", signature(x = "dgeMatrix", vectors = "logical"),
 	  function(x, vectors, ...) {
 	      if(vectors) .dgeSchur(x)
 	      else {
-		  cl <- .Call(dgeMatrix_Schur, x, FALSE)
+		  cl <- .Call(dgeMatrix_Schur, x, FALSE, TRUE)
 		  realEV <- all(cl$WI == 0)
 		  list(T = as(cl$T, if(realEV) "dtrMatrix" else "dgeMatrix"),
 		       EValues =
                        if(realEV) cl$WR else complex(real = cl$WR, imaginary = cl$WI))
 	      }})
+
+## Ok, for the faint of heart, also provide "matrix" methods :
+.mSchur <- function(x, vectors, ...) {
+    cl <- .Call(dgeMatrix_Schur, x, TRUE, FALSE)
+    list(Q = cl$Z,
+	 T = cl$T,
+	 EValues = if(all(cl$WI == 0)) cl$WR
+	 else complex(real = cl$WR, imaginary = cl$WI))
+}
+setMethod("Schur", signature(x = "matrix", vectors = "missing"), .mSchur)
+
+setMethod("Schur", signature(x = "matrix", vectors = "logical"),
+	  function(x, vectors, ...) {
+	      if(vectors) .mSchur(x)
+	      else {
+		  cl <- .Call(dgeMatrix_Schur, x, FALSE, FALSE)
+		  EV <- if(all(cl$WI == 0)) cl$WR
+			else complex(real = cl$WR, imaginary = cl$WI)
+		  cl$WR <- cl$WI <- NULL
+		  cl$EValues <- EV
+		  cl
+	      }})
+
 
 Schur.dsy <- function(x, vectors, ...)
 {

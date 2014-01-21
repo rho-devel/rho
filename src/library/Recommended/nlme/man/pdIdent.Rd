@@ -63,7 +63,7 @@ pdIdent(value, form, nam, data)
  in S and S-PLUS", Springer.  
 }
 
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{as.matrix.pdMat}},
   \code{\link{coef.pdMat}},

@@ -17,22 +17,15 @@
 @include R-defs.texi
 @include version.texi
 
-@ifinfo
-This is a guide to importing and exporting data to and from R.
+@copying
+This manual is for R, version @value{VERSION}.
 
 @Rcopyright{2000}
 
-@ignore
-Permission is granted to process this file through TeX and print the
-results, provided the printed document carries a copying permission
-notice identical to this one except for the removal of this paragraph
-(this paragraph not being relevant to the printed manual).
-
-@end ignore
-
+@quotation
 @permission{}
-@c ---------- ^- read that
-@end ifinfo
+@end quotation
+@end copying
 
 @titlepage
 @title R Data Import/Export
@@ -40,16 +33,16 @@ notice identical to this one except for the removal of this paragraph
 @author R Core Team
 @page
 @vskip 0pt plus 1filll
-@permission{}
-
-@Rcopyright{2000}
-
-@value{ISBN-data}
+@insertcopying
 @end titlepage
 
-@ifnothtml
+@ifplaintext
+@insertcopying
+@end ifplaintext
+
+@c @ifnothtml
 @contents
-@end ifnothtml
+@c @end ifnothtml
 
 @ifnottex
 @node Top, Acknowledgements, (dir), (dir)
@@ -57,9 +50,8 @@ notice identical to this one except for the removal of this paragraph
 
 This is a guide to importing and exporting data to and from R.
 
-The current version of this document is @value{VERSION}.
+@insertcopying
 
-@value{ISBN-data}
 @end ifnottex
 
 @menu
@@ -69,6 +61,7 @@ The current version of this document is @value{VERSION}.
 * Importing from other statistical systems::  
 * Relational databases::        
 * Binary files::                
+* Image files::                 
 * Connections::                 
 * Network interfaces::          
 * Reading Excel spreadsheets::  
@@ -102,7 +95,7 @@ principal authors of the packages mentioned are
 @item @CRANpkg{RNetCDF} @tab Pavel Michna
 @item @CRANpkg{RODBC} @tab Michael Lapsley and Brian Ripley
 @item @CRANpkg{ROracle} @tab David A, James
-@item @CRANpkg{RPostgreSQL} @tab Sameer Kumar Prayaga
+@item @CRANpkg{RPostgreSQL} @tab Sameer Kumar Prayaga and Tomoaki Nishiyama
 @item @pkg{RSPerl} @tab Duncan Temple Lang
 @item @pkg{RSPython} @tab Duncan Temple Lang
 @item @CRANpkg{RSQLite} @tab David A, James
@@ -214,9 +207,9 @@ discussed in @ref{Network interfaces}.
 @subsection Encodings
 @cindex Encodings
 
-Unless the file to be imported from is entirely in ASCII, it is usually
-necessary to know how it was encoded.  For text files, a good way to
-find out something about its structure is the @command{file}
+Unless the file to be imported from is entirely in @acronym{ASCII}, it
+is usually necessary to know how it was encoded.  For text files, a good
+way to find out something about its structure is the @command{file}
 command-line tool (for Windows, included in @code{Rtools}).  This
 reports something like
 
@@ -230,7 +223,7 @@ intro.dat: UTF-8 Unicode (with BOM) text
 @end example
 
 @noindent
-Modern Unix-alike systems, including Mac OS X, are likely to produce
+Modern Unix-alike systems, including OS X, are likely to produce
 UTF-8 files.  Windows may produce what it calls `Unicode' files
 (@code{UCS-2LE} or just possibly @code{UTF-16LE}@footnote{the
 distinction is subtle,
@@ -370,11 +363,12 @@ The second is the form of escape commonly used by spreadsheets.
 @item @strong{Encodings}
 @cindex Encodings
 
-Text files do not contain metadata on their encodings, so for non-ASCII
-data the file needs to be targetted to the application intended to read
-it.  All of these functions can write to a @emph{connection} which
-allows an encoding to be specified for the file, and @code{write.table}
-has a @code{fileEncoding} argument to make this easier.
+Text files do not contain metadata on their encodings, so for
+non-@acronym{ASCII} data the file needs to be targetted to the
+application intended to read it.  All of these functions can write to a
+@emph{connection} which allows an encoding to be specified for the file,
+and @code{write.table} has a @code{fileEncoding} argument to make this
+easier.
 
 The hard part is to know what file encoding to use.  For use on Windows,
 it is best to use what Windows calls `Unicode'@footnote{Even then,
@@ -382,7 +376,7 @@ Windows applications may expect a Byte Order Mark which the
 implementation of @code{iconv} used by @R{} may or may not add depending
 on the platform.}, that is @code{"UTF-16LE"}.  Using UTF-8 is a good way
 to make portable files that will not easily be confused with any other
-encoding, but even Mac OS X applications (where UTF-8 is the system
+encoding, but even OS X applications (where UTF-8 is the system
 encoding) may not recognize them, and Windows applications are most
 unlikely to.  Apparently Excel:mac 2004/8 expects @code{.csv} files in
 @code{"macroman"} encoding (the encoding used in much earlier versions
@@ -428,7 +422,7 @@ standard for general data markup and exchange.  It is being used by
 different communities to describe geographical data such as maps,
 graphical displays, mathematics and so on.
 
-XML provides a way to specify the file's encoding, e.g.@:
+@acronym{XML} provides a way to specify the file's encoding, e.g.@:
 
 @example
 <?xml version="1.0" encoding="UTF-8"?>
@@ -484,9 +478,9 @@ Some of the issues to consider are:
 @enumerate
 @item @strong{Encoding}
 
-If the file contains non-ASCII character fields, ensure that it is read
-in the correct encoding.  This is mainly an issue for reading Latin-1
-files in a UTF-8 locale, which can be done by something like
+If the file contains non-@acronym{ASCII} character fields, ensure that
+it is read in the correct encoding.  This is mainly an issue for reading
+Latin-1 files in a UTF-8 locale, which can be done by something like
 
 @example
 read.table("file.dat", fileEncoding="latin1")
@@ -661,19 +655,18 @@ read.table("intro.dat", fileEncoding = "UTF-8")
 @end example
 
 @noindent
-but in a UTF-8 locale on a Unix-alike is likely to need
+but on a Unix-alike might need
 
 @example
-con <- file("intro.dat", "r")
-seek(con, 3)  # step over the 3 initial bytes, the BOM
-foo <- read.table(con)
-close(con)
+read.table("intro.dat", fileEncoding = "UTF-8-BOM")
 @end example
 
 @noindent
+(This would most likely work without specifying an encoding in a UTF-8 locale.)
+
 Another problem with this (real-life) example is that whereas
-@command{file-5.03} reported the BOM, @command{file-4.17} found on Mac
-OS 10.5 (Leopard) did not.
+@command{file-5.03} reported the BOM, @command{file-4.17} found on OS
+10.5 (Leopard) did not.
 @end enumerate
 
 @findex read.csv
@@ -1169,8 +1162,8 @@ from a database for separate analysis.
 Increasingly OSes are themselves making use of DBMSs for these reasons,
 so it is nowadays likely that one will be already installed on your
 (non-Windows) OS.  @uref{http://en.wikipedia.org/wiki/Akonadi, Akonadi}
-is used by KDE4 to store personal information and uses MySQL.  Several
-Mac OS X applications, including Mail and Address Book, use SQLite.
+is used by KDE4 to store personal information.  Several OS X
+applications, including Mail and Address Book, use SQLite.
 @c http://www.actualtechnologies.com/sqlite_applications.php
 
 @node Overview of RDBMSs, R interface packages, Why use a database?, Relational databases
@@ -1182,11 +1175,11 @@ Oracle}; @uref{http://www.sybase.com, Sybase};
 @uref{http://www.ibm.com/db2, IBM's DB2};
 @uref{http://www.microsoft.com/SQL/default.mspx, Microsoft @acronym{SQL}
 Server} on Windows) and academic and small-system databases (such as
-MySQL, PostgreSQL, Microsoft Access, @dots{}), the former marked out by
-much greater emphasis on data security features.  The line is blurring,
-with the Open Source MySQL and PostgreSQL having more and more high-end
-features, and free `express' versions being made available for the
-commercial DBMSs.
+MySQL@footnote{and forks, notably MariaDB.}, PostgreSQL, Microsoft
+Access, @dots{}), the former marked out by much greater emphasis on data
+security features.  The line is blurring, with MySQL and PostgreSQL
+having more and more high-end features, and free `express' versions
+being made available for the commercial DBMSs.
 
 @cindex ODBC
 @cindex Open Database Connectivity
@@ -1195,7 +1188,7 @@ non-relational databases and even text files (possibly compressed).
 Open Database Connectivity (@acronym{ODBC}) is a standard to use all of
 these data sources.  It originated on Windows (see
 @uref{http://www.microsoft.com/data/odbc/}) but is also implemented on
-Linux/Unix/Mac OS X.
+Linux/Unix/OS X.
 
 All of the packages described later in this chapter provide clients to
 client/server databases.  The database can reside on the same machine or
@@ -1367,12 +1360,12 @@ another client using @pkg{mongodb}'s C driver.
 
 Package @CRANpkg{RMySQL} on @acronym{CRAN} provides an interface to the
 MySQL database system (see @uref{http://www.mysql.com} and Dubois,
-2000.).  The description here applies to version @code{0.5-0}: earlier
+2000).  The description here applies to version @code{0.5-0}: earlier
 versions had a substantially different interface.  The current version
 requires the @CRANpkg{DBI} package, and this description will apply with
 minor changes to all the other back-ends to @CRANpkg{DBI}.
 
-MySQL exists on Unix/Linux/Mac OS X and Windows: there is a `Community
+MySQL exists on Unix/Linux/OS X and Windows: there is a `Community
 Edition' released under GPL but commercial licenses are also available.
 MySQL was originally a `light and lean' database.  (It preserves the
 case of names where the operating file system is case-sensitive, so not
@@ -1456,13 +1449,14 @@ Arkansas          8.8     190       50 19.5
 @cindex ODBC
 @cindex Open Database Connectivity
 
-Package @CRANpkg{RODBC} on @acronym{CRAN} provides an interface to database
-sources supporting an @acronym{ODBC} interface.  This is very widely
-available, and allows the same @R{} code to access different database
-systems.  @CRANpkg{RODBC} runs on Unix/Linux, Windows and Mac OS X, and
-almost all database systems provide support for @acronym{ODBC}.  We have
-tested Microsoft SQL Server, Access, MySQL, PostgreSQL, Oracle and IBM
-DB2 on Windows and MySQL, Oracle, PostgreSQL and SQLite on Linux.
+Package @CRANpkg{RODBC} on @acronym{CRAN} provides an interface to
+database sources supporting an @acronym{ODBC} interface.  This is very
+widely available, and allows the same @R{} code to access different
+database systems.  @CRANpkg{RODBC} runs on Unix/Linux, Windows and OS X,
+and almost all database systems provide support for @acronym{ODBC}.  We
+have tested Microsoft SQL Server, Access, MySQL, PostgreSQL, Oracle and
+IBM DB2 on Windows and MySQL, MariaDB, Oracle, PostgreSQL and SQLite on
+Linux.
 
 ODBC is a client-server system, and we have happily connected to a DBMS
 running on a Unix server from a Windows client, and @emph{vice versa}.
@@ -1470,7 +1464,7 @@ running on a Unix server from a Windows client, and @emph{vice versa}.
 On Windows ODBC support is part of the OS.  On Unix/Linux you will need
 an @acronym{ODBC} Driver Manager such as unixODBC
 (@uref{http://www.unixODBC.org}) or iOBDC (@uref{http://www.iODBC.org}:
-this is pre-installed in Mac OS X) and an installed driver for your
+this is pre-installed in OS X) and an installed driver for your
 database system.
 
 @cindex Excel
@@ -1487,7 +1481,7 @@ which will lead to @file{AccessDatabaseEngine.exe}), the `2007 Office
 System Driver' (the latter has a version for 64-bit Windows, and that
 will also read earlier versions).
 
-On Mac OS X the Actual Technologies
+On OS X the Actual Technologies
 (@url{http://www.actualtechnologies.com/product_access.php}) drivers
 provide ODBC interfaces to Access databases (including Access 2007/2010)
 and to Excel spreadsheets (not including Excel 2007/2010).
@@ -1725,7 +1719,7 @@ differences.
 @c within a data frame and PostgreSQL types.
 
 
-@node Binary files, Connections, Relational databases, Top
+@node Binary files, Image files, Relational databases, Top
 @chapter Binary files
 @cindex Binary files
 
@@ -1794,7 +1788,48 @@ ODBC driver (and the Visual FoxPro driver can also be used via
 @code{odbcDriverConnect}).
 @findex odbcConnectDbase
 
-@node Connections, Network interfaces, Binary files, Top
+@node Image files, Connections, Binary files, Top
+@chapter Image files
+
+A particular class of binary files are those representing images, and a
+not uncommon request is to read such a file into @R{} as a matrix.
+
+There are many formats for image files (most with lots of variants), and
+it may be necessary to use external conversion software to first convert
+the image into one of the formats for which a package currently provides
+an @R{} reader.  A versatile example of such software is ImageMagick and
+its fork GraphicsMagick.  These provide command-line programs
+@command{convert} and @command{gm convert} to convert images from one
+format to another: what formats they can input is determined when they
+are compiled, and the supported formats can be listed by e.g.@:
+@command{convert -list format}.
+
+Package @CRANpkg{pixmap} has a function @code{read.pnm} to read `portable
+anymap' images in PBM (black/white), PGM (grey) and PPM (RGB colour)
+formats.  These are also known as `netpbm' formats.
+
+Packages @CRANpkg{bmp}, @CRANpkg{jpeg} and @CRANpkg{png} read the
+formats after which they are named.  See also packages @CRANpkg{biOps}
+and @CRANpkg{Momocs}, and Bioconductor package @pkg{EBImage}.
+
+TIFF is more a meta-format, a wrapper within which a very large variety
+of image formats can be embedded.  Packages @CRANpkg{rtiff} (orphaned)
+and @CRANpkg{tiff} can read some of the sub-formats (depending on the
+external @code{libtiff} software against which they are compiled).
+There some facilities for specialized sub-formats, for example in
+Bioconductor package @pkg{beadarray}.
+
+Raster files are common in the geographical sciences, and package
+@CRANpkg{rgdal} provides an interface to GDAL which provides some
+facilities of its own to read raster files and links to many others.
+Which formats it supports is determined when GDAL is compiled: use
+@code{gdalDrivers()} to see what these are for the build you are using.
+It can be useful for uncommon formats such as JPEG 2000 (which is a
+different format from JPEG, and not currently supported in the OS X
+nor Windows binary versions of @CRANpkg{rgdal}).
+
+
+@node Connections, Network interfaces, Image files, Top
 @chapter Connections
 
 @cindex Connections
@@ -2285,7 +2320,7 @@ depending on your ODBC drivers: by calling @code{odbcConnect} directly
 versions back to Excel 3.0 can be read).  The version
 @code{odbcConnectExcel2007} will read the Excel 2007 formats as well as
 earlier ones (provided the drivers are installed, including with 64-bit
-Windows @R{}: @pxref{RODBC}).  Mac users can also use @CRANpkg{RODBC} if
+Windows @R{}: @pxref{RODBC}).  OS X users can also use @CRANpkg{RODBC} if
 they have a suitable driver (e.g.@: that from Actual Technologies).
 
 @findex read.xls

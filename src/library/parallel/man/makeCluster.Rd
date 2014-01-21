@@ -1,6 +1,6 @@
 % File src/library/parallel/man/makePSOCKcluster.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2003-12 R Core Team
+% Copyright 2003-13 R Core Team
 % Distributed under GPL 2 or later
 
 \newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
@@ -43,7 +43,7 @@ setDefaultCluster(cl = NULL)
   The default type, \code{"PSOCK"}, calls \code{makePSOCKcluster}.  Type
   \code{"FORK"} calls \code{makeForkCluster}.  Other types are passed to
   package \CRANpkg{snow}.
-  
+
   \code{makePSOCKcluster} is very similar to \code{makeSOCKcluster} in
   package \CRANpkg{snow}.  It runs \command{Rscript} on the specified
   host(s) to set up a worker process which listens on a socket for
@@ -52,7 +52,7 @@ setDefaultCluster(cl = NULL)
 
   \code{makeForkCluster} is merely a stub on Windows.  On Unix-alike
   platforms it creates the worker process by forking.
-  
+
   The workers are most often running on the same host as the master,
   when no options need be set.
 
@@ -61,22 +61,22 @@ setDefaultCluster(cl = NULL)
     \item{\code{master}}{The host name of the master, as known to the
       workers.  This may not be the same as it is known to the master,
       and on private subnets it may be necessary to specify this as a
-      numeric IP address.  For example, Mac OS X is likely to detect a
+      numeric IP address.  For example, OS X is likely to detect a
       machine as \samp{somename.local}, a name known only to itself.}
     \item{\code{port}}{The port number for the socket connection,
       default taken from the environment variable \env{R_PARALLEL_PORT},
-      then \code{10187}.}
+      then a randomly chosen port in the range \code{11000:11999}.}
     \item{\code{timeout}}{The timeout in seconds for that port.  Default
       30 days (and the POSIX standard only requires values up to 31 days
       to be supported).}
     \item{\code{outfile}}{Where to direct the \code{\link{stdout}} and
       \code{\link{stderr}} connection output from the workers.
       \code{""} indicates no redirection (which may only be useful for
-      workers on the local machines). 
+      workers on the local machines).
       Defaults to \file{/dev/null} (\file{nul:} on Windows).  The other
       possibility is a file path on the worker's host.
       Files will be opened in append mode, as all workers log to the
-      same file.} 
+      same file.}
     \item{\code{homogeneous}}{Logical.  Are all the hosts running
       identical setups, so \command{Rscript} can be launched using its
       full path on the master?  Otherwise it has to be in the default
@@ -105,13 +105,13 @@ setDefaultCluster(cl = NULL)
   (and hence is not available on Windows).  It supports options
   \code{port}, \code{timeout} and \code{outfile}, and always uses
   \code{useXDR = FALSE}.
-  
+
   It is good practice to shut down the workers by calling
   \code{\link{stopCluster}}: however the workers will terminate
   themselves once the socket on which they are listening for commands
   becomes unavailable, which it should if the master \R session is
   completed (or its process dies).
-  
+
   Function \code{setDefaultCluster} registers a cluster as the default one
   for the current session.  Using \code{setDefaultCluster(NULL)} removes
   the registered cluster, as does stopping that cluster.

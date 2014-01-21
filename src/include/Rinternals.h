@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2010   The R Core Team.
+ *  Copyright (C) 1999-2013   The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -70,8 +70,8 @@ using std::FILE;
 #include <R_ext/Arith.h>
 #include <R_ext/Error.h>
 #include <R_ext/Memory.h>
-#include <R_ext/PrtUtil.h>
 #include <R_ext/Utils.h>
+#include <R_ext/Print.h>
 
 #include <R_ext/libextern.h>
 
@@ -96,6 +96,36 @@ using std::FILE;
 #include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
 #include "CXXR/WeakRef.h"
+
+typedef unsigned char Rbyte;
+
+/* type for length of (standard, not long) vectors etc */
+typedef int R_len_t;
+#define R_LEN_T_MAX INT_MAX
+
+/* both config.h and Rconfig.h set SIZEOF_SIZE_T, but Rconfig.h is
+   skipped if config.h has already been included. */
+#ifndef R_CONFIG_H
+# include <Rconfig.h>
+#endif
+
+#if ( SIZEOF_SIZE_T > 4 )
+# define LONG_VECTOR_SUPPORT
+#endif
+
+#ifdef LONG_VECTOR_SUPPORT
+    typedef ptrdiff_t R_xlen_t;
+    typedef struct { R_xlen_t lv_length, lv_truelength; } R_long_vec_hdr_t;
+# define R_XLEN_T_MAX 4503599627370496
+# define R_SHORT_LEN_MAX 2147483647
+# define R_LONG_VEC_TOKEN -1
+#else
+    typedef int R_xlen_t;
+# define R_XLEN_T_MAX R_LEN_T_MAX
+#endif
+
+
+/* 11 and 12 were factors and ordered factors in the 1990s */
 /* used for detecting PROTECT issues in memory.c */
 #define NEWSXP      30    /* fresh node creaed in new page */
 #define FREESXP     31    /* node released by GC */
@@ -106,6 +136,48 @@ extern "C" {
 
 #endif
 
+/* Vector Access Macros */
+#ifdef LONG_VECTOR_SUPPORT
+    R_len_t R_BadLongVector(SEXP, const char *, int);
+# define IS_LONG_VEC(x) (SHORT_VEC_LENGTH(x) == R_LONG_VEC_TOKEN)
+# define SHORT_VEC_LENGTH(x) (((VECSEXP) (x))->vecsxp.length)
+# define SHORT_VEC_TRUELENGTH(x) (((VECSEXP) (x))->vecsxp.truelength)
+# define LONG_VEC_LENGTH(x) ((R_long_vec_hdr_t *) (x))[-1].lv_length
+# define LONG_VEC_TRUELENGTH(x) ((R_long_vec_hdr_t *) (x))[-1].lv_truelength
+# define XLENGTH(x) (IS_LONG_VEC(x) ? LONG_VEC_LENGTH(x) : SHORT_VEC_LENGTH(x))
+# define XTRUELENGTH(x)	(IS_LONG_VEC(x) ? LONG_VEC_TRUELENGTH(x) : SHORT_VEC_TRUELENGTH(x))
+# define LENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : SHORT_VEC_LENGTH(x))
+# define TRUELENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : SHORT_VEC_TRUELENGTH(x))
+# define SET_SHORT_VEC_LENGTH(x,v) (SHORT_VEC_LENGTH(x) = (v))
+# define SET_SHORT_VEC_TRUELENGTH(x,v) (SHORT_VEC_TRUELENGTH(x) = (v))
+# define SET_LONG_VEC_LENGTH(x,v) (LONG_VEC_LENGTH(x) = (v))
+# define SET_LONG_VEC_TRUELENGTH(x,v) (LONG_VEC_TRUELENGTH(x) = (v))
+# define SETLENGTH(x,v) do { \
+      SEXP sl__x__ = (x); \
+      R_xlen_t sl__v__ = (v); \
+      if (IS_LONG_VEC(sl__x__)) \
+	  SET_LONG_VEC_LENGTH(sl__x__,  sl__v__); \
+      else SET_SHORT_VEC_LENGTH(sl__x__, (R_len_t) sl__v__); \
+  } while (0)
+# define SET_TRUELENGTH(x,v) do { \
+      SEXP sl__x__ = (x); \
+      R_xlen_t sl__v__ = (v); \
+      if (IS_LONG_VEC(sl__x__)) \
+	  SET_LONG_VEC_TRUELENGTH(sl__x__, sl__v__); \
+      else SET_SHORT_VEC_TRUELENGTH(sl__x__, (R_len_t) sl__v__); \
+  } while (0)
+#else
+// Commentings out done during CXXR 3.0.2 upgrade.  FIXME delete altogether
+//# define LENGTH(x)	(((VECSEXP) (x))->vecsxp.length)
+//# define TRUELENGTH(x)	(((VECSEXP) (x))->vecsxp.truelength)
+# define XLENGTH(x) LENGTH(x)
+# define XTRUELENGTH(x) TRUELENGTH(x)
+//# define SETLENGTH(x,v)		((((VECSEXP) (x))->vecsxp.length)=(v))
+//# define SET_TRUELENGTH(x,v)	((((VECSEXP) (x))->vecsxp.truelength)=(v))
+# define SET_SHORT_VEC_LENGTH SETLENGTH
+# define SET_SHORT_VEC_TRUELENGTH SET_TRUELENGTH
+# define IS_LONG_VEC(x) 0
+#endif
 
 #define CHAR(x)		R_CHAR(x)
 const char *(R_CHAR)(SEXP x);
@@ -147,6 +219,9 @@ int  (LENGTH)(SEXP x);
 int  (TRUELENGTH)(SEXP x);
 void (SETLENGTH)(SEXP x, int v);
 void (SET_TRUELENGTH)(SEXP x, int v);
+R_xlen_t  (XLENGTH)(SEXP x);
+R_xlen_t  (XTRUELENGTH)(SEXP x);
+int  (IS_LONG_VEC)(SEXP x);
 int  (LEVELS)(SEXP x);
 int  (SETLEVELS)(SEXP x, int v);
 
@@ -155,10 +230,10 @@ int  *(INTEGER)(SEXP x);
 Rbyte *(RAW)(SEXP x);
 double *(REAL)(SEXP x);
 Rcomplex *(COMPLEX)(SEXP x);
-SEXP (STRING_ELT)(SEXP x, int i);
-SEXP (VECTOR_ELT)(SEXP x, int i);
-void SET_STRING_ELT(SEXP x, int i, SEXP v);
-SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v);
+SEXP (STRING_ELT)(SEXP x, R_xlen_t i);
+SEXP (VECTOR_ELT)(SEXP x, R_xlen_t i);
+void SET_STRING_ELT(SEXP x, R_xlen_t i, SEXP v);
+SEXP SET_VECTOR_ELT(SEXP x, R_xlen_t i, SEXP v);
 
 /* List Access Functions */
 /* These also work for ... objects */
@@ -322,7 +397,7 @@ SEXP Rf_allocMatrix(SEXPTYPE, int, int);
 SEXP Rf_allocList(unsigned int);
 SEXP Rf_allocS4Object(void);
 SEXP Rf_allocSExp(SEXPTYPE);
-SEXP Rf_allocVector(SEXPTYPE, R_len_t);
+SEXP Rf_allocVector(SEXPTYPE, R_xlen_t);
 int  Rf_any_duplicated(SEXP x, Rboolean from_last);
 int  Rf_any_duplicated3(SEXP x, SEXP incomp, Rboolean from_last);
 SEXP Rf_arraySubscript(int, SEXP, SEXP, SEXP (*)(SEXP,SEXP),
@@ -330,6 +405,7 @@ SEXP Rf_arraySubscript(int, SEXP, SEXP, SEXP (*)(SEXP,SEXP),
 SEXP Rf_classgets(SEXP, SEXP);
 SEXP Rf_cons(SEXP, SEXP);
 void Rf_copyMatrix(SEXP, SEXP, Rboolean);
+void Rf_copyListMatrix(SEXP, SEXP, Rboolean);
 void Rf_copyMostAttrib(SEXP, SEXP);
 void Rf_copyVector(SEXP, SEXP);
 SEXP Rf_CreateTag(SEXP);
@@ -338,6 +414,7 @@ SEXP Rf_dimgets(SEXP, SEXP);
 SEXP Rf_dimnamesgets(SEXP, SEXP);
 SEXP Rf_DropDims(SEXP);
 SEXP Rf_duplicate(SEXP);
+/* the next really should not be here and is also in Defn.h */
 SEXP Rf_duplicated(SEXP, Rboolean);
 SEXP Rf_eval(SEXP, SEXP);
 SEXP Rf_findFun(SEXP, SEXP);
@@ -360,6 +437,7 @@ Rboolean Rf_isOrdered(SEXP);
 Rboolean Rf_isUnordered(SEXP);
 Rboolean Rf_isUnsorted(SEXP, Rboolean);
 SEXP Rf_lengthgets(SEXP, R_len_t);
+SEXP Rf_xlengthgets(SEXP, R_xlen_t);
 SEXP R_lsInternal(SEXP, Rboolean);
 SEXP Rf_match(SEXP, SEXP, int);
 SEXP Rf_matchE(SEXP, SEXP, int, SEXP);
@@ -464,7 +542,11 @@ Rboolean R_HasFancyBindings(SEXP rho);
 
 /* ../main/errors.c : */
 /* needed for R_load/savehistory handling in front ends */
+#if defined(__GNUC__) && __GNUC__ >= 3
+void Rf_errorcall(SEXP, const char *, ...) __attribute__((noreturn));
+#else
 void Rf_errorcall(SEXP, const char *, ...);
+#endif
 void Rf_warningcall(SEXP, const char *, ...);
 void Rf_warningcall_immediate(SEXP, const char *, ...);
 
@@ -526,7 +608,7 @@ void R_InitFileOutPStream(R_outpstream_t stream, FILE *fp,
 			  SEXP (*phook)(SEXP, SEXP), SEXP pdata);
 
 #ifdef NEED_CONNECTION_PSTREAMS
-/* The connection interface is not yet available to packages.  To
+/* The connection interface is not available to packages.  To
    allow limited use of connection pointers this defines the opaque
    pointer type. */
 #ifndef HAVE_RCONNECTION_TYPEDEF
@@ -581,6 +663,10 @@ int R_system(const char *);
 */
 Rboolean R_compute_identical(SEXP, SEXP, int);
 
+/* C version of R's  indx <- order(..., na.last, decreasing) :
+   e.g.  arglist = Rf_lang2(x,y)  or  Rf_lang3(x,y,z) */
+void R_orderVector(int *indx, int n, SEXP arglist, Rboolean nalast, Rboolean decreasing);
+
 /* These Rf_ macros are retained for backwards compatibility, but
  * their use is deprecated within CXXR.  In particular header files
  * should always use the Rf_ prefix explicitly, and not rely on these
@@ -610,6 +696,7 @@ Rboolean R_compute_identical(SEXP, SEXP, int);
 #define coerceVector		Rf_coerceVector
 #define conformable		Rf_conformable
 #define cons			Rf_cons
+#define copyListMatrix		Rf_copyListMatrix
 #define copyMatrix		Rf_copyMatrix
 #define copyMostAttrib		Rf_copyMostAttrib
 #define copyVector		Rf_copyVector
@@ -745,6 +832,8 @@ Rboolean R_compute_identical(SEXP, SEXP, int);
 #define VectorToPairList	Rf_VectorToPairList
 #define warningcall		Rf_warningcall
 #define warningcall_immediate	Rf_warningcall_immediate
+#define xlength(x)		Rf_xlength(x)
+#define xlengthgets		Rf_xlengthgets
 #endif /* R_NO_REMAP */
 
 #if defined(CALLED_FROM_DEFN_H) && !defined(__MAIN__) && (defined(COMPILING_R) || ( __GNUC__ && !defined(__INTEL_COMPILER) ))
@@ -805,6 +894,7 @@ SEXP	 Rf_ScalarLogical(int);
 SEXP	 Rf_ScalarRaw(Rbyte);
 SEXP	 Rf_ScalarReal(double);
 SEXP	 Rf_ScalarString(SEXP);
+R_xlen_t  Rf_xlength(SEXP);
 #endif
 
 #ifdef __cplusplus

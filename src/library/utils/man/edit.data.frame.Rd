@@ -49,7 +49,7 @@
   It is possible to use the data-editor's facilities to select the mode
   of columns to swap between numerical and factor columns in a data
   frame.  Changing any column in a numerical matrix to character will
-  cause the result to be coerced to a character matrix.  Changing 
+  cause the result to be coerced to a character matrix.  Changing
   the mode of logical columns is not supported.
 
   For a data frame, the row names will be taken from the original object
@@ -57,7 +57,7 @@
   and from the edited output if \code{edit.row.names = TRUE} and there
   are no duplicates.  (If the \code{row.names} column is incomplete, it
   is extended by entries like \code{row223}.)  In all other cases the
-  row names are replaced by \code{seq(length=nrows)}.
+  row names are replaced by \code{seq(length = nrows)}.
 
   For a matrix, colnames will be added (of the form \code{col7}) if
   needed.  The rownames will be taken from the original object if
@@ -86,7 +86,7 @@
 \examples{
 \dontrun{
 edit(InsectSprays)
-edit(InsectSprays, factor.mode="numeric")
+edit(InsectSprays, factor.mode = "numeric")
 }
 }
 

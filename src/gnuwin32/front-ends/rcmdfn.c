@@ -183,12 +183,14 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 		fprintf(stderr, "command line too long\n");
 		return(27);
 	    }
-	    if(strchr(argv[i], ' ')) {
+	    if(strchr(argv[i], ' ') || !strlen(argv[i])) {
 		strcat(cmd, "\"");
 		strcat(cmd, argv[i]);
 		strcat(cmd, "\"");
 	    } else strcat(cmd, argv[i]);
 	}
+	/* R.exe should ignore Ctrl-C, and let Rterm.exe handle it */
+	SetConsoleCtrlHandler(NULL, TRUE);
 	return system(cmd);
     }
 

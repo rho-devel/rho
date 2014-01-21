@@ -3,7 +3,7 @@ useDynLib(lattice, .registration = TRUE)
 
 import(grid)
 
-importFrom(methods, hasArg)
+## importFrom(methods, hasArg) # replicated in hasGroupNumber()
 
 importFrom(grDevices,
 

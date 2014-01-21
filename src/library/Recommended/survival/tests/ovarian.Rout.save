@@ -219,7 +219,7 @@ coxph(formula = Surv(futime, fustat) ~ age + ecog.ps + strata(rx))
 age      0.13853   1.14858  0.04801  2.885  0.00391 **
 ecog.ps -0.09670   0.90783  0.62994 -0.154  0.87800   
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
         exp(coef) exp(-coef) lower .95 upper .95
 age        1.1486     0.8706    1.0454     1.262

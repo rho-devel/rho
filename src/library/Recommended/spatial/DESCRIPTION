@@ -1,16 +1,22 @@
 Package: spatial
 Priority: recommended
-Version: 7.3-3
-Date: 2011-03-05
-Depends: R (>= 2.5.0), graphics, stats, utils
+Version: 7.3-7
+Date: 2013-07-01
+Depends: R (>= 3.0.0), graphics, stats, utils
 Suggests: MASS
+Authors@R: c(person("Brian", "Ripley", role = c("aut", "cre", "cph"),
+        email = "ripley@stats.ox.ac.uk"), person("Roger", "Bivand",
+        role = "ctb"))
 Author: Brian Ripley <ripley@stats.ox.ac.uk>
 Maintainer: Brian Ripley <ripley@stats.ox.ac.uk>
+Copyright: W. N. Venables and B. D. Ripley
 Description: Functions for kriging and point pattern analysis.
 Title: Functions for Kriging and Point Pattern Analysis
 LazyLoad: yes
+ByteCompile: yes
 License: GPL-2 | GPL-3
 URL: http://www.stats.ox.ac.uk/pub/MASS4/
-Packaged: 2011-03-05 22:44:52 UTC; ripley
+Packaged: 2013-07-01 11:32:29 UTC; ripley
+NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2011-03-06 18:38:23
+Date/Publication: 2013-07-01 13:34:08

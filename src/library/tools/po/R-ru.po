@@ -8,9 +8,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: R 2.11.0\n"
-"Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2012-04-22 15:25\n"
-"PO-Revision-Date: 2012-03-15 12:03-0500\n"
+"Report-Msgid-Bugs-To: bugs.r-project.org\n"
+"POT-Creation-Date: 2013-06-09 21:53\n"
+"PO-Revision-Date: 2013-03-19 22:26-0600\n"
 "Last-Translator: Alexey Shipunov <dactylorhiza@gmail.com>\n"
 "Language-Team: Russian\n"
 "Language: \n"
@@ -57,10 +57,11 @@ msgid "directory '%s' does not contain Rd objects"
 msgstr "папка '%s' не содержит Rd-объектов"
 
 msgid ""
-"Functions/methods with usage in documentation object '%s' but not in code:"
-msgstr "Функции/методы использованы в объекте документации '%s', но не в коде:"
+"Functions or methods with usage in documentation object '%s' but not in code:"
+msgstr ""
+"Функции или методы использованы в объекте документации '%s', но не в коде:"
 
-msgid "Data sets with usage in documentation object '%s' but not in code:"
+msgid "Data with usage in documentation object '%s' but not in code:"
 msgstr "Данные использованы в объекте документации '%s', но не в коде:"
 
 msgid "Argument names in code not in docs:"
@@ -96,20 +97,11 @@ msgstr "Несоответствия структуры S4-класса в объекте документации '%s':"
 msgid "Slots for class '%s'"
 msgstr "Слоты для класса '%s'"
 
-msgid "name"
-msgstr "имя"
-
 msgid "Data codoc mismatches from documentation object '%s':"
 msgstr "Несоответствия структуры данных в объекте документации '%s':"
 
 msgid "Variables in data frame '%s'"
 msgstr "переменные в таблице данных '%s'"
-
-msgid "code"
-msgstr "код"
-
-msgid "docs"
-msgstr "документы"
 
 msgid "Undocumented arguments in documentation object '%s'"
 msgstr "В объекте документации '%s' есть недокументированные аргументы "
@@ -134,12 +126,6 @@ msgstr ""
 msgid "S3 methods shown with full name in documentation object '%s':"
 msgstr "Методы S3 показаны с полным именем в объектах документации '%s':"
 
-msgid "unable to create"
-msgstr "не могу создать"
-
-msgid "unable to write code files"
-msgstr "не могу записать файлы кода"
-
 msgid "you must specify 'package', 'dir' or 'file'"
 msgstr "Вы должны задать 'package', 'dir' или 'file'"
 
@@ -152,9 +138,6 @@ msgid ""
 msgstr ""
 "ошибка разбора в файле '%s':\n"
 "%s"
-
-msgid "Foreign function calls without 'PACKAGE' argument:"
-msgstr "Вызов чужой функции без аргумента 'PACKAGE':"
 
 msgid "declared S3 method '%s' not found"
 msgstr "заявленный S3-метод '%s' не найден"
@@ -180,24 +163,14 @@ msgstr ""
 "'%s'"
 
 msgid ""
-"Vignette dependencies (\\VignetteDepends{} entries) must be contained in the "
-"DESCRIPTION Depends/Suggests/Imports entries."
+"Vignette dependencies (%s entries) must be contained in the DESCRIPTION "
+"Depends/Suggests/Imports entries."
 msgstr ""
-"Зависимости очерка (элементы \\VignetteDepends{}) должны содержаться в "
-"пунктах 'Depends/Suggests/Imports' файла DESCRIPTION."
+"Зависимости очерка (%s элементы) должны содержаться в пунктах 'Depends/"
+"Suggests/Imports' файла DESCRIPTION."
 
 msgid "Malformed package name"
 msgstr "Плохое имя пакета"
-
-msgid "Invalid package name."
-msgstr "Неправильное имя пакета."
-
-msgid "This is the name of a base package."
-msgstr "Это имя базового пакета."
-
-msgid "This name was used for a base package and is remapped by library()."
-msgstr ""
-"Это имя использовано базовым пакетом и связано заново посредством library()."
 
 msgid "Unknown encoding"
 msgstr "Неизвестная кодировка"
@@ -279,6 +252,9 @@ msgstr "Не могу вынуть поле Author из поля Authors@R:"
 msgid "Authors@R field gives no person with author role."
 msgstr "В поле Authors@R нет никого в роли автора."
 
+msgid "Authors@R field gives persons with no valid roles:"
+msgstr "В поле Authors@R есть люди без правильных ролей:"
+
 msgid "Cannot extract Maintainer field from Authors@R field:"
 msgstr "Не могу вынуть поле Maintainer из поля Authors@R:"
 
@@ -304,11 +280,11 @@ msgstr "Стандартизованная спецификация лицензии:"
 msgid "Invalid license file pointers: %s"
 msgstr "Неправильные указатели файла лицензии: %s"
 
+msgid "Components with restrictions not permitted:"
+msgstr "Компоненты с ограничениями не разрешены:"
+
 msgid "Non-portable flags in variable '%s':"
 msgstr "Непереносимые флаги в переменной '%s':"
-
-msgid "package must be loaded"
-msgstr "должен быть загружен пакет"
 
 msgid ""
 "package %s exists but was not installed under R >= 2.10.0 so xrefs cannot be "
@@ -317,17 +293,8 @@ msgstr ""
 "пакет %s в наличии, но не был установлен под R >= 2.10.0, поэтому xrefs не "
 "могут быть проверены"
 
-msgid "Obsolete package(s) %s in Rd xrefs"
-msgstr "Устаревши(е) пакет(ы) %s в Rd xrefs"
-
-msgid "Package(s) unavailable to check Rd xrefs: %s"
-msgstr "Пакет(ы) недоступны для проверки Rd xrefs: %s"
-
-msgid "Unknown package(s) %s in Rd xrefs"
-msgstr "Неизвестные пакет(ы) %s в Rd xrefs"
-
-msgid "Missing link(s) in documentation object '%s':"
-msgstr "Пропущенные связ(и) с объектом документации '%s':"
+msgid "Missing link or links in documentation object '%s':"
+msgstr "Пропущенная связь или связи с объектом документации '%s':"
 
 msgid ""
 "See the information in section 'Cross-references' of the 'Writing R "
@@ -336,17 +303,11 @@ msgstr ""
 "См. информацию в секции 'Cross-references' руководства 'Writing R "
 "Extensions'."
 
-msgid "found %s"
-msgstr "найден %s"
-
 msgid "File %s:"
 msgstr "Файл %s:"
 
 msgid "%s has wrong argument list %s"
 msgstr "у %s неправильный список аргументов %s"
-
-msgid ","
-msgstr ","
 
 msgid "%s calls:"
 msgstr "%s вызывает:"
@@ -358,12 +319,6 @@ msgstr ""
 "Стартовые функции пакета должны иметь два аргумента с именами, начинающимися "
 "с %s и %s, соответственно."
 
-msgid "lib"
-msgstr "lib"
-
-msgid "pkg"
-msgstr "pkg"
-
 msgid "Package startup functions should not change the search path."
 msgstr "Стартовые функции пакета не должны менять путь поиска."
 
@@ -371,20 +326,27 @@ msgid "Package startup functions should use %s to generate messages."
 msgstr ""
 "Стартовые функции пакета должны использовать %s для создания сообщений."
 
-msgid "packageStartupMessage"
-msgstr "packageStartupMessage"
-
 msgid "Package startup functions should not call %s."
 msgstr "Стартовые функции пакета не должны вызывать %s."
 
-msgid "installed.packages"
-msgstr "installed.packages"
+msgid "See section %s in '%s'."
+msgstr "См. раздел %s в '%s'."
 
-msgid "See section %s in ?.onAttach."
-msgstr "См. раздел %s в ?.onAttach."
+msgid ""
+"Package detach functions should have one arguments with names starting with "
+"%s."
+msgstr ""
+"Функции отсоединения пакета должны иметь один аргумент с именем, "
+"начинающимся с %s."
 
-msgid "Good practice"
-msgstr "Хорошо сделано"
+msgid "Package detach functions should not call %s."
+msgstr "Функции отсоединения пакета не должны вызывать %s."
+
+msgid "unable to create"
+msgstr "не могу создать"
+
+msgid "unable to write code files"
+msgstr "не могу записать файлы кода"
 
 msgid "package 'methods' is used but not declared"
 msgstr "пакет 'methods' используется, но не объявлен"
@@ -398,9 +360,8 @@ msgstr "'::' или ':::' импорт не определен из: %s"
 msgid "'library' or 'require' calls not declared from:"
 msgstr "не объявлены вызовы 'library' или 'require' из:"
 
-#, fuzzy
 msgid "'library' or 'require' call not declared from: %s"
-msgstr "не объявлен вызов 'library' или 'require' из: %ы"
+msgstr "не объявлен вызов 'library' или 'require' из %s"
 
 msgid "'data(package=)' calls not declared from:"
 msgstr "'data(package=)' не объявлены в:"
@@ -425,38 +386,31 @@ msgstr ""
 "Автоматические сгенерированное содержание требует редактирования в оббъекте "
 "Rd '%s':"
 
-msgid "Generics g in env ="
-msgstr "Общие 'g' в env ="
+#, fuzzy
+msgid "no Rd sections specified"
+msgstr "не указан 'type'"
 
-msgid "where hasMethods(g, env) errors:"
-msgstr "где ошибки hasMethods(g, env):"
-
-msgid "May need something like"
-msgstr "Возможно, надо что-то вроде"
-
-msgid "importFrom("
-msgstr "importFrom("
-
-msgid ")"
-msgstr ")"
-
-msgid "in NAMESPACE."
-msgstr "в NAMESPACE."
-
-msgid "Generics without methods in"
-msgstr "Общие функции без методов в"
-
-msgid ":"
-msgstr ":"
+msgid ""
+"Generics 'g' in 'env' %s where '%s' errors: %s\n"
+"May need something like\n"
+"\n"
+"%s\n"
+"in NAMESPACE."
+msgstr ""
+"Общие 'g' в 'env' %s были '%s' ошибками: %s\n"
+"Может, надо что-то вроде\n"
+"\n"
+"%s\n"
+"в NAMESPACE."
 
 msgid "argument 'file' must be a character string or connection"
 msgstr "аргумент 'file' должен быть текстовой строкой  или соединением"
 
-msgid "missing/empty \\name field in '%s'"
-msgstr "пропущенное/пустое поле \\имен в '%s'"
+msgid "missing/empty %s field in '%s'"
+msgstr "пропущенное/пустое %s поле в '%s'"
 
-msgid "Rd files must have a non-empty \\name."
-msgstr "Rd-файлы должны иметь непустое \\имя."
+msgid "Rd files must have a non-empty %s."
+msgstr "Rd-файлы должны иметь непустое %s."
 
 msgid "See chapter 'Writing R documentation' in manual 'Writing R Extensions'."
 msgstr ""
@@ -476,9 +430,6 @@ msgstr "Вы должны задать 'dir' или 'file'"
 
 msgid "cannot deal with Rd objects with missing/empty names"
 msgstr "не могу работать с Rd-объектами в пропущенными/пустыми именами"
-
-msgid "missing/empty \\name field in Rd file(s)"
-msgstr "пропущенное/пустое поле \\имя Rd-файлы"
 
 msgid "No help on %s found in RdDB %s"
 msgstr "Не найдено помощи %s в RdDB %s"
@@ -513,23 +464,85 @@ msgstr "невозможно перейти в текущий рабочий каталог"
 msgid "no inputs"
 msgstr "нет вводов"
 
-msgid "Error in running tools::texi2pdf"
-msgstr "Ошибка запуска tools::texi2pdf"
+msgid "Error in running tools::texi2pdf()"
+msgstr "Ошибка запуска tools::texi2pdf()"
 
 msgid "invalid value for '%s' : %s"
 msgstr "неправильное значение '%s' : %s"
 
-msgid "Only one Rd section per \\Sexpr is supported."
-msgstr "Поддерживается только один раздел Rd на \\Sexpr."
+msgid "Only one Rd section per %s is supported."
+msgstr "Поддерживается только один раздел Rd на %s."
 
-msgid "unable to create temp directory"
-msgstr "не могу создать временную папку"
+msgid "Vignette product"
+msgstr "Продукт миниатюры"
+
+msgid "does not have a known filename extension ("
+msgstr "не имеет известного расширения имени файла ("
+
+msgid ","
+msgstr ","
+
+msgid ")"
+msgstr ")"
+
+msgid "Failed to locate the"
+msgstr "Не могу найти"
+
+msgid "output file (by engine"
+msgstr "файл вывода (в соответствии с устройством"
+
+msgid "%s::%s"
+msgstr "%s::%s"
+
+msgid ") for vignette with name"
+msgstr ") для очерка с именем"
+
+msgid ". The following files exists in directory"
+msgstr ". Следующие файлы есть в папке"
+
+msgid ":"
+msgstr ":"
+
+msgid "Located more than one"
+msgstr "Нашел больше одного"
+
+msgid "unable to create temp directory %s"
+msgstr "не могу создать временную папку %s"
+
+#, fuzzy
+msgid "Running"
+msgstr "Запускаю %s"
+
+msgid "Vignette"
+msgstr "Миниатюра"
+
+msgid "overwrites the following"
+msgstr "переписывает следующее"
+
+msgid "output by vignette"
+msgstr "вывод очерка"
+
+msgid "Detected vignette source files ("
+msgstr "Обнаружены исходники очерка ("
+
+msgid ") with shared names ("
+msgstr ") с общими именами ("
+
+msgid ") and therefore risking overwriting each others output files"
+msgstr ") и поэтому есть риск перезаписи чужих файлов вывода"
 
 msgid ""
 "processing vignette '%s' failed with diagnostics:\n"
 "%s"
 msgstr ""
 "выполнение очерка '%s' не удалось с диагностикой:\n"
+"%s"
+
+msgid ""
+"tangling vignette '%s' failed with diagnostics:\n"
+"%s"
+msgstr ""
+"связывание очерка '%s' не удалось с диагностикой:\n"
 "%s"
 
 msgid "running 'make' failed"
@@ -543,6 +556,63 @@ msgstr "аргумент 'vignette' должен быть единичной длины"
 
 msgid "file '%s' not found"
 msgstr "файл '%s' не найден"
+
+msgid "Unsupported engine name"
+msgstr "Неподдерживаемое имя устройства"
+
+msgid "None of packages"
+msgstr "Ни один из пакетов"
+
+msgid "have registered vignette engines"
+msgstr "имеет зарегистрированные устройства очерков"
+
+msgid "Vignette engine"
+msgstr "Устройство очерка"
+
+msgid "is not registered"
+msgstr "не зарегистрировано"
+
+msgid "is not registered by any of the packages"
+msgstr "не зарегистрировано ни одним пакетом"
+
+msgid "Engine name"
+msgstr "Имя устройства"
+
+msgid "and package"
+msgstr "и пакет"
+
+msgid "do not match"
+msgstr "не соответствует"
+
+msgid "Argument"
+msgstr "Аргумент"
+
+msgid "weave"
+msgstr "weave"
+
+msgid "must be a function and not"
+msgstr "должно быть функцией и не"
+
+msgid "tangle"
+msgstr "tangle"
+
+msgid "pattern"
+msgstr "паттерн"
+
+msgid "must be a character vector or NULL and not"
+msgstr "должен быть текстовой строкой или NULL и не"
+
+msgid "Cannot change the"
+msgstr "Не могу изменить файл"
+
+msgid "Sweave"
+msgstr "Sweave"
+
+msgid "engine or use an engine of that name"
+msgstr "устройство или использование устройства с этим именем"
+
+msgid "vignette builder '%s' not found"
+msgstr "сборщик очерка '%s' не найден"
 
 msgid "Invalid DESCRIPTION file"
 msgstr "Неправильный файл 'DESCRIPTION'"
@@ -574,27 +644,28 @@ msgstr "файлы в '%s' пропущены в поле '%s':"
 msgid "unable to create '%s'"
 msgstr "не могу создать '%s'"
 
-msgid "unable to re-encode '%s' line(s) %s"
-msgstr "не могу перекодировать '%s' строк(и) %s"
-
 msgid "unable to copy INDEX to '%s'"
 msgstr "не могу скопировать 'INDEX' в '%s'"
 
 msgid "cannot create directory '%s'"
 msgstr "Не могу создать папку '%s'"
 
-msgid "processing"
-msgstr "обрабытываю"
+msgid "processing %s"
+msgstr "обрабатываю %s"
 
 msgid ""
-"running Sweave on vignette '%s' failed with message:\n"
+"running %s on vignette '%s' failed with message:\n"
 "%s"
 msgstr ""
-"выполнение Sweave в очерке '%s' не удалось с диагностикой:\n"
+"выполнение %s в очерке '%s' не удалось с сообщением:\n"
 "%s"
 
-msgid "file '%s' was not created"
-msgstr "файл '%s' не создан"
+msgid ""
+"compiling TeX file %s failed with message:\n"
+"%s"
+msgstr ""
+"компиляция TeX файла %s не удалась с сообщением:\n"
+"%s"
 
 msgid "cannot copy '%s' to '%s'"
 msgstr "не могу скопировать '%s' в '%s'"
@@ -617,14 +688,14 @@ msgstr "Изменения требуют определенного 'style'"
 msgid "The default JSS style may not be modified."
 msgstr "Исходную библиотеку стиля JSS нельзя изменять. "
 
-msgid "invalid value for --compact-vignettes, assuming \"qpdf\""
-msgstr "неправильное значение --compact-vignettes, предполагаю \"qpdf\""
+msgid "invalid value for '--compact-vignettes', assuming %s"
+msgstr "неправильное значение для '--compact-vignettes', предполагаю %s"
 
-msgid "Error: cannot rename directory to"
-msgstr "Ошибка: не могу переименовать папку в"
+msgid "Error: cannot rename directory to %s"
+msgstr "Ошибка: не могу переименовать папку в %s"
 
-msgid "cannot link from"
-msgstr ""
+msgid "cannot link from %s"
+msgstr "не могу линковать с %s"
 
 msgid "-l option without value"
 msgstr "-l опция без значения"
@@ -635,9 +706,8 @@ msgstr "начиная с R 2.12.0, конфигурационные файлы не поддерживаются"
 msgid "'--multiarch' specified with only one usable sub-architecture"
 msgstr "'--multiarch' определен только для одной используемой субархитектуры"
 
-#, fuzzy
-msgid "--as-cran turns off --extra-arch"
-msgstr "--cran выключает --extra-arch"
+msgid "'--as-cran' turns off '--extra-arch'"
+msgstr "'--as-cran' выключает '--extra-arch'"
 
 msgid "Error: no packages were specified"
 msgstr "Ошибка: пакеты не определены"
@@ -645,20 +715,29 @@ msgstr "Ошибка: пакеты не определены"
 msgid "ERROR: cannot create check dir %s"
 msgstr "ОШИБКА: не могу создать проверочную директорию %s"
 
-msgid "package dir"
-msgstr "директория пакетов"
+msgid "package directory %s does not exist"
+msgstr "папка пакета %s не существует"
 
-msgid "does not exist"
-msgstr "не существует"
+msgid "no packages to check"
+msgstr "нет пакетов для проверки"
+
+msgid "downloading reverse dependencies ..."
+msgstr "скачиваю обратные зависимости ..."
+
+msgid "downloading %s ..."
+msgstr "скачиваю %s ..."
+
+msgid "installing dependencies %s"
+msgstr "устанавливаю зависимости %s"
+
+msgid "checking %s ..."
+msgstr "проверяю %s..."
 
 msgid "non-ASCII input in a CITATION file without a declared encoding"
-msgstr ""
+msgstr "не-ASCII символы в файле CITATION без объявленной кодировки"
 
 msgid "No files in this directory"
 msgstr "В этой папке нет файлов"
-
-msgid "Unrecognized search field:"
-msgstr "Неизвестное поле поиска:"
 
 msgid "No results found"
 msgstr "Не найдено результатов"
@@ -674,9 +753,6 @@ msgstr "Страницы помощи:"
 
 msgid "No help found for topic %s in any package."
 msgstr "Не найдено помощи по теме %s ни в одном из пакетов."
-
-msgid "Help on topic '%s' was found in the following packages:"
-msgstr "Помощь по теме '%s' была найдена в следующих пакетах:"
 
 msgid "No package index found for package %s"
 msgstr "Не найдено указателя для пакета %s"
@@ -698,18 +774,6 @@ msgid ""
 "Only help files, %s, %s and files under %s and %s in a package can be viewed"
 msgstr ""
 "Только файлы помощи, %s, %s и файлы внутри %s в пакете могут быть просмотрены"
-
-msgid "NEWS"
-msgstr "НОВОСТИ"
-
-msgid "DESCRIPTION"
-msgstr "ОПИСАНИЕ"
-
-msgid "doc/"
-msgstr "doc/"
-
-msgid "demo/"
-msgstr "demo/"
 
 msgid "unsupported URL %s"
 msgstr "неподдерживаемые URL %s"
@@ -741,23 +805,11 @@ msgstr "не удалось запустить httpd сервер"
 msgid "cannot read index information in file '%s'"
 msgstr "не могу прочитать индексную информацию из файла '%s'"
 
-msgid "ERROR:"
-msgstr "ОШИБКА:"
-
 msgid "error reading file '%s'"
 msgstr "ошибка чтения файла '%s'"
 
 msgid "this seems to be a bundle -- and they are defunct"
 msgstr "похоже, что это сборник -- они отключены"
-
-msgid "running 'zip' failed"
-msgstr "не удался запуск 'zip'"
-
-msgid "packaged installation of"
-msgstr "пакетная установка"
-
-msgid "as"
-msgstr "как"
 
 msgid ""
 "'cleanup' exists but is not executable -- see the 'R Installation and "
@@ -766,14 +818,8 @@ msgstr ""
 "'cleanup' есть, но его невозможно выполнить  -- смотрите 'R Installation and "
 "Adminstration Manual'"
 
-msgid "installing via 'install.libs.R' to"
-msgstr "инсталлирую четез 'install.libs.R' в"
-
-msgid "installing to"
-msgstr "устанавливаю в"
-
-msgid "generating debug symbols (dSYM)"
-msgstr "создаю символы отладки (dSYM)"
+msgid "generating debug symbols (%s)"
+msgstr "создаю символы отладки (%s)"
 
 msgid "package %s successfully unpacked and MD5 sums checked"
 msgstr "пакет %s удачно распакован, MD5 sums проверены"
@@ -784,9 +830,6 @@ msgid ""
 msgstr ""
 "Включаемая папка R пуста -- возможно, надо установить R-devel.rpm или похожее"
 
-msgid "running src/Makefile.win ..."
-msgstr "запускаю src/Makefile.win ..."
-
 msgid "no source files found"
 msgstr "не найдено файлов исходников"
 
@@ -796,11 +839,8 @@ msgstr "пустая папка 'data'"
 msgid "cannot create temporary directory"
 msgstr "Не могу создать врЕменную"
 
-msgid "ERROR: --merge-multiarch applies only to a single tarball"
-msgstr "ОШИБКА: --merge-multiarch применим только к одному tar-архиву"
-
-msgid "only one architecture so ignoring '--merge-multiarch'"
-msgstr "только одна архитектура, так что пропускаю '--merge-multiarch'"
+msgid "ERROR: '--merge-multiarch' applies only to a single tarball"
+msgstr "ОШИБКА: '--merge-multiarch' применим только к одному tar-архиву"
 
 msgid "invalid package"
 msgstr "неправильный пакет"
@@ -808,33 +848,14 @@ msgstr "неправильный пакет"
 msgid "ERROR: no packages specified"
 msgstr "ОШИБКА: пакет не определен"
 
-msgid "ERROR: cannot cd to directory"
-msgstr "ОШИБКА: не могу перейти в папку"
+msgid "ERROR: cannot cd to directory %s"
+msgstr "ОШИБКА: не могу перейти в папку %s"
 
 msgid "ERROR: no permission to install to directory"
 msgstr "ОШИБКА: нет прав для установочной папки"
 
-msgid "ERROR: failed to lock directory"
-msgstr "ОШИБКА: не удалось заблокировать папку"
-
-msgid ""
-"for modifying\n"
-"Try removing"
-msgstr ""
-"для модификации\n"
-"Пытаюсь переместить"
-
-msgid "ERROR: failed to create lock directory"
-msgstr "ОШИБКА: не удалось создать блокированную папку"
-
 msgid "building a fake installation is disallowed"
 msgstr "сборка ложной установки не разрешается"
-
-msgid "finding HTML links ..."
-msgstr "нахожу ссылки HTML..."
-
-msgid "finding level-2 HTML links ..."
-msgstr "нахожу ссылки HTML второго уровня..."
 
 msgid "there is no package called '%s'"
 msgstr "нет пакета по имени '%s'"
@@ -924,36 +945,6 @@ msgstr ""
 msgid "Processing packages:"
 msgstr "Обрабатываю пакеты:"
 
-msgid "Internal error, no tag"
-msgstr "Внутренняя ошибка, тега нет"
-
-msgid "Argument for"
-msgstr "Аргумент для"
-
-msgid "not found."
-msgstr "не найден"
-
-msgid "Internal error:  NULL tag"
-msgstr "Внутренняя ошибка:  тег NULL"
-
-msgid "internal error"
-msgstr "внутренняя ошибка"
-
-msgid "Inconsistent arg count for"
-msgstr "Несоответственный аргумент найден у"
-
-msgid "Entry for"
-msgstr "Вход для"
-
-msgid "="
-msgstr "="
-
-msgid "already defined to be"
-msgstr "уже определен быть"
-
-msgid "found encoding"
-msgstr "найдена кодировка"
-
 msgid "%s must be a character string or a file/raw connection"
 msgstr "%s должен быть текстовой строкой или файлом/простым соединением"
 
@@ -963,8 +954,8 @@ msgstr "Заголовок PDF не найден"
 msgid "EOF marker not found"
 msgstr "Маркер EOF не найден"
 
-msgid "cannot find startxref"
-msgstr "не могу найти startxref"
+msgid "cannot find 'startxref' keyword"
+msgstr "не могу найти ключевое слово 'startxref'"
 
 msgid "cannot find xref table"
 msgstr "не могу найти таблицу xref"
@@ -1020,17 +1011,14 @@ msgstr "не могу прочитать потоковые данные"
 msgid "invalid index in object stream lookup"
 msgstr "неправильный индекс в просмотре потока"
 
-msgid "processing %s"
-msgstr "обрабатываю %s"
-
 msgid "expanding %s"
 msgstr "раскрываю %s"
 
 msgid "unsupported filter %s"
 msgstr "неподдерживаемый фильтр %s"
 
-msgid "unsupported flatedecode predictor %d"
-msgstr "неподдерживаемый flatedecode predictor %d"
+msgid "unsupported %s predictor %d"
+msgstr "неподдерживаемый %s предиктор %d"
 
 msgid "unsupported PNG filter %d"
 msgstr "неподдерживаемый фильтр PNG %d"
@@ -1056,38 +1044,17 @@ msgstr "'file' должен быть текстовой строкой или соединением"
 msgid "unimplemented encoding"
 msgstr "не разработанная кодировка"
 
-msgid "file"
-msgstr "файл"
-
 msgid "Found %s, possibly from %s"
 msgstr "Нашел %s, возможно, из %s"
-
-msgid "%s (%s)"
-msgstr "%s (%s)"
-
-msgid "ssname"
-msgstr "ssname"
-
-msgid "language"
-msgstr "язык"
-
-msgid "cannot be opened"
-msgstr "нельзя открыть"
 
 msgid "testing '%s' failed"
 msgstr "тестирование '%s' не удалось"
 
-msgid "Testing examples for package"
-msgstr "Проверяю примеры к пакету"
+msgid "Testing examples for package %s"
+msgstr "Проверяю примеры к пакету %s"
 
-msgid "comparing"
-msgstr "сравниваю"
-
-msgid "to"
-msgstr "в"
-
-msgid "..."
-msgstr "..."
+msgid "comparing %s to %s ..."
+msgstr "сравниваю %s и %s ..."
 
 msgid "OK"
 msgstr "OK"
@@ -1098,71 +1065,32 @@ msgstr "результаты отличаются от эталонных"
 msgid "no examples found for package %s"
 msgstr "не найдено примеров для пакета %s"
 
-msgid "Running specific tests for package"
-msgstr "Запускаю специфические тесты для пакета"
+msgid "Running specific tests for package %s"
+msgstr "Запускаю специфические тесты для пакета %s"
 
-msgid "Running"
-msgstr "Запускаю"
+msgid "Running %s"
+msgstr "Запускаю %s"
 
-msgid "Running vignettes for package"
-msgstr "Запускаю миниатюры для пакета"
+msgid "Running vignettes for package %s"
+msgstr "Запускаю миниатюры для пакета %s"
 
-msgid "Comparing"
-msgstr "Сравниваю"
-
-msgid "creation of"
-msgstr "создание"
-
-msgid "failed"
-msgstr "не удалось"
+msgid "Comparing %s to %s ..."
+msgstr "Сравниваю %s и %s ..."
 
 msgid "no parsed files found"
 msgstr "не анализированных файлов"
 
-msgid "creating"
-msgstr "создаю"
-
-msgid "running code in"
-msgstr "запускаю код в "
-
 msgid "FAILED"
 msgstr "НЕ УДАЛОСЬ"
 
-msgid "running strict specific tests"
-msgstr "запускаю узкоспецифические тесты"
-
-msgid "running sloppy specific tests"
-msgstr "запускаю широкие тесты"
-
-msgid "running regression tests"
-msgstr "запускаю регрессионные тесты"
-
-msgid "comparing 'reg-plot.ps' to 'reg-plot.ps.save' ..."
-msgstr "сравниваю 'reg-plot.ps' с 'reg-plot.ps.save' ..."
-
-msgid "running tests of plotting Latin-1"
-msgstr "запускаю тесты на рисование с Latin-1"
-
-msgid "expect failure or some differences if not in a Latin or UTF-8 locale"
-msgstr "ожидайте неудачу или отличия если не на локали Latin или UTF-8"
-
-msgid "comparing 'reg-plot-latin1.ps' to 'reg-plot-latin1.ps.save' ..."
-msgstr "сравниваю 'reg-plot-latin1.ps' с 'reg-plot-latin1.ps.save' ..."
-
-msgid "running tests of consistency of as/is.*"
-msgstr "запускаю тесты на соответствие as/is.*"
+msgid "DIFFERED"
+msgstr ""
 
 msgid "running tests of random deviate generation -- fails occasionally"
 msgstr "запускаю тесты на генерацию случайных отклонений -- иногда не удаются"
 
-msgid "running tests of primitives"
-msgstr "запускаю тесты на примитивы"
-
-msgid "running regexp regression tests"
-msgstr "запускаю регрессионные тесты на регулярные выражения"
-
-msgid "running tests to possibly trigger segfaults"
-msgstr "запускаю тесты на возможное переключение ошибок сегментации"
+msgid "R CMD build failed"
+msgstr "R CMD не удалась"
 
 msgid "'x' must be a single character string"
 msgstr "аргумент 'x' должен быть текстовой строкой"
@@ -1209,6 +1137,9 @@ msgstr "неправильная структура пакета"
 msgid "file '%s' is not in valid DCF format"
 msgstr "файл '%s' не является правильным форматом DCF"
 
+msgid "contains a blank line"
+msgstr "содержит пустую строку"
+
 msgid "Unknown encoding with non-ASCII data: converting to ASCII"
 msgstr "Неизвестная кодировка с не-ASCII данными: конвертирую в ASCII"
 
@@ -1220,6 +1151,24 @@ msgstr "Последовательность вызова:"
 
 msgid "parsing '%s'"
 msgstr "разбор '%s'"
+
+msgid "Obsolete package %s in Rd xrefs"
+msgid_plural "Obsolete packages %s in Rd xrefs"
+msgstr[0] "Устаревший пакет %s в Rd xrefs"
+msgstr[1] "Устаревшие пакеты %s в Rd xrefs"
+msgstr[2] "Устаревшие пакеты %s в Rd xrefs"
+
+msgid "Package unavailable to check Rd xrefs: %s"
+msgid_plural "Packages unavailable to check Rd xrefs: %s"
+msgstr[0] "Пакет недоступен для проверки Rd xrefs: %s"
+msgstr[1] "Пакеты недоступны для проверки Rd xrefs: %s"
+msgstr[2] "Пакеты недоступны для проверки Rd xrefs: %s"
+
+msgid "Unknown package %s in Rd xrefs"
+msgid_plural "Unknown packages %s in Rd xrefs"
+msgstr[0] "Неизвестный пакет %s в Rd xrefs"
+msgstr[1] "Неизвестные пакеты %s в Rd xrefs"
+msgstr[2] "Неизвестные пакеты %s в Rd xrefs"
 
 msgid "Note: found %d marked Latin-1 string"
 msgid_plural "Note: found %d marked Latin-1 strings"
@@ -1239,11 +1188,11 @@ msgstr[0] "Замечание: найдена %d строка, отмеченная как \"bytes\""
 msgstr[1] "Замечание: найдена %d строки, отмеченных как \"bytes\""
 msgstr[2] "Замечание: найдена %d строк, отмеченных как \"bytes\""
 
-msgid "Warning in file '%s':"
-msgid_plural "Warnings in file '%s':"
-msgstr[0] "Предупреждение в файле '%s'"
-msgstr[1] "Предупреждения в файле '%s'"
-msgstr[2] "Предупреждения в файле '%s'"
+msgid "Warning in file %s:"
+msgid_plural "Warnings in file %s:"
+msgstr[0] "Предупреждение в файле %s"
+msgstr[1] "Предупреждения в файле %s"
+msgstr[2] "Предупреждения в файле %s"
 
 msgid "Found possibly global 'T' or 'F' in the following function:"
 msgid_plural "Found possibly global 'T' or 'F' in the following functions:"
@@ -1251,26 +1200,411 @@ msgstr[0] "Найдены возможные глобальные T или F в следующей функциии:"
 msgstr[1] "Найдены возможные глобальные T или F в следующих функциях:"
 msgstr[2] "Найдены возможные глобальные T или F в следующих функциях:"
 
-msgid "Found possibly global 'T' or 'F' in the following Rd example file:"
+msgid ""
+"Found possibly global 'T' or 'F' in the examples of the following Rd file:"
 msgid_plural ""
-"Found possibly global 'T' or 'F' in the following Rd example files:"
-msgstr[0] "Найдены возможные глобальные T или F в следующем Rd-файле примеров:"
+"Found possibly global 'T' or 'F' in the examples of the following Rd files:"
+msgstr[0] ""
+"Найдены возможные глобальные 'T' или 'F' в следующем Rd-файле примеров:"
 msgstr[1] ""
-"Найдены возможные глобальные T или F в следующих Rd-файлах примеров:"
+"Найдены возможные глобальные 'T' или 'F' в следующих Rd-файлах примеров:"
 msgstr[2] ""
-"Найдены возможные глобальные T или F в следующих Rd-файлах примеров:"
+"Найдены возможные глобальные 'T' или 'F' в следующих Rd-файлах примеров:"
 
-msgid "Found .Internal call in the following function:"
+msgid "Found a .Internal call in the following function:"
 msgid_plural "Found .Internal calls in the following functions:"
-msgstr[0] "Найден вызов .Internal call в следующей функции:"
+msgstr[0] "Найден вызов .Internal в следующей функции:"
 msgstr[1] "Найдены вызовы .Internal в следующих функциях:"
 msgstr[2] "Найдены вызовы .Internal в следующих функциях:"
+
+msgid "Found a.Internal call in methods for the following S4 generic:"
+msgid_plural "Found .Internal calls in methods for the following S4 generics:"
+msgstr[0] "Найден вызов .Internal в методах следующей S4-общей функции:"
+msgstr[1] "Найдены вызовы .Internal в методах следующих S4-общих функций:"
+msgstr[2] "Найдены вызовы .Internal в методах следующих S4-общих функций:"
+
+msgid "Found a .Internal call in methods for the following reference class:"
+msgid_plural ""
+"Found .Internal calls in methods for the following reference classes:"
+msgstr[0] "Найден вызов .Internal в методах следующего класса ссылок:"
+msgstr[1] "Найдены вызовы .Internal в методах следующих классов ссылок:"
+msgstr[2] "Найдены вызовы .Internal в методах следующих классов ссылок:"
+
+msgid "Found an obsolete call in the following function:"
+msgid_plural "Found an obsolete call in the following functions:"
+msgstr[0] "Найден устаревший вызов в следующей функции:"
+msgstr[1] "Найдены устаревшие вызовы в следующих функциях:"
+msgstr[2] "Найдены устаревшие вызовы в следующих функциях:"
+
+msgid "Found an obsolete call in methods for the following S4 generic:"
+msgid_plural "Found an obsolete call in methods for the following S4 generics:"
+msgstr[0] "Найден устаревший вызов в методах следующей S4-общей функции:"
+msgstr[1] "Найдены устаревшие вызовы в методах следующих S4-общих функций:"
+msgstr[2] "Найдены устаревшие вызовы в методах следующих S4-общих функций:"
+
+msgid "Found an obsolete call in methods for the following reference class:"
+msgid_plural ""
+"Found an obsolete call in methods for the following reference classes:"
+msgstr[0] "Найден устаревший вызов в методах следующего класса ссылок:"
+msgstr[1] "Найдены устаревшие вызовы в методах следующих классов ссылок:"
+msgstr[2] "Найдены устаревшие вызовы в методах следующих классов ссылок:"
+
+msgid "Found the deprecated function:"
+msgid_plural "Found the deprecated functions:"
+msgstr[0] "Нашел не рекомендованную функцию:"
+msgstr[1] "Нашел не рекомендованные функции:"
+msgstr[2] "Нашел не рекомендованные функции:"
+
+msgid "Found the defunct/removed function:"
+msgid_plural "Found the defunct/removed functions:"
+msgstr[0] "Нашел вымершую/удаленную функцию:"
+msgstr[1] "Нашел вымершие/удаленные функции:"
+msgstr[2] "Нашел вымершие/удаленные функции:"
+
+msgid "Generic without any methods in %s: %s"
+msgid_plural "Generics without any methods in %s: %s"
+msgstr[0] "Общая функция без каких-либо методов в %s: %s"
+msgstr[1] "Общие функции без каких-либо методов в %s: %s"
+msgstr[2] "Общие функции без каких-либо методов в %s: %s"
+
+msgid ""
+"missing/empty \\name field in Rd file\n"
+"%s"
+msgid_plural ""
+"missing/empty \\name field in Rd files\n"
+"%s"
+msgstr[0] ""
+"пропущенное/пустое \\nполе имени в Rd-файле\n"
+"%s"
+msgstr[1] ""
+"пропущенное/пустое \\nполе имени в Rd-файлах\n"
+"%s"
+msgstr[2] ""
+"пропущенное/пустое \\nполе имени в Rd-файлах\n"
+"%s"
+
+msgid "unable to re-encode %s line %s"
+msgid_plural "unable to re-encode %s lines %s"
+msgstr[0] "не могу перекодировать %s строку %s"
+msgstr[1] "не могу перекодировать %s строки %s"
+msgstr[2] "не могу перекодировать %s строки %s"
+
+msgid "Help on topic '%s' was found in the following package:"
+msgid_plural "Help on topic '%s' was found in the following packages:"
+msgstr[0] "Помощь по теме '%s' была найдена в следующем пакете:"
+msgstr[1] "Помощь по теме '%s' была найдена в следующих пакетах:"
+msgstr[2] "Помощь по теме '%s' была найдена в следующих пакетах:"
 
 msgid "object %s is created by more than one data call"
 msgid_plural "objects %s are created by more than one data call"
 msgstr[0] "объект %s создан больше чем за один вызов данных"
 msgstr[1] "объекты %s созданы больше чем за один вызов данных"
 msgstr[2] "объекты %s созданы больше чем за один вызов данных"
+
+#, fuzzy
+#~ msgid "not found"
+#~ msgstr "не найден"
+
+#~ msgid "file '%s' was not created"
+#~ msgstr "файл '%s' не создан"
+
+#~ msgid "found %s"
+#~ msgstr "найден %s"
+
+#, fuzzy
+#~ msgid "Foreign function call without 'PACKAGE' argument:"
+#~ msgid_plural "Foreign function calls without 'PACKAGE' argument:"
+#~ msgstr[0] "Вызов чужой функции без аргумента 'PACKAGE':"
+#~ msgstr[1] "Вызов чужой функции без аргумента 'PACKAGE':"
+#~ msgstr[2] "Вызов чужой функции без аргумента 'PACKAGE':"
+
+#, fuzzy
+#~ msgid "Foreign function call with empty 'PACKAGE' argument:"
+#~ msgid_plural "Foreign function calls with empty 'PACKAGE' argument:"
+#~ msgstr[0] "Вызов чужой функции без аргумента 'PACKAGE':"
+#~ msgstr[1] "Вызов чужой функции без аргумента 'PACKAGE':"
+#~ msgstr[2] "Вызов чужой функции без аргумента 'PACKAGE':"
+
+#, fuzzy
+#~ msgid "Foreign function call with 'PACKAGE' argument in a base package:"
+#~ msgid_plural ""
+#~ "Foreign function calls with 'PACKAGE' argument in a base package:"
+#~ msgstr[0] "Вызов чужой функции без аргумента 'PACKAGE':"
+#~ msgstr[1] "Вызов чужой функции без аргумента 'PACKAGE':"
+#~ msgstr[2] "Вызов чужой функции без аргумента 'PACKAGE':"
+
+#, fuzzy
+#~ msgid ""
+#~ "Foreign function call with 'PACKAGE' argument in a different package:"
+#~ msgid_plural ""
+#~ "Foreign function calls with 'PACKAGE' argument in a different package:"
+#~ msgstr[0] "Вызов чужой функции без аргумента 'PACKAGE':"
+#~ msgstr[1] "Вызов чужой функции без аргумента 'PACKAGE':"
+#~ msgstr[2] "Вызов чужой функции без аргумента 'PACKAGE':"
+
+#, fuzzy
+#~ msgid "Warning: found non-ASCII string"
+#~ msgid_plural "Warning: found non-ASCII strings"
+#~ msgstr[0] "Предупреждение: неизвестная опция"
+#~ msgstr[1] "Предупреждение: неизвестная опция"
+#~ msgstr[2] "Предупреждение: неизвестная опция"
+
+#, fuzzy
+#~ msgid "Found the following executable file:"
+#~ msgid_plural "Found the following executable files:"
+#~ msgstr[0] ""
+#~ "Найдены возможные глобальные T или F в следующем Rd-файле примеров:"
+#~ msgstr[1] ""
+#~ "Найдены возможные глобальные T или F в следующих Rd-файлах примеров:"
+#~ msgstr[2] ""
+#~ "Найдены возможные глобальные T или F в следующих Rd-файлах примеров:"
+
+#~ msgid "name"
+#~ msgstr "имя"
+
+#~ msgid "code"
+#~ msgstr "код"
+
+#~ msgid "docs"
+#~ msgstr "документы"
+
+#, fuzzy
+#~ msgid "\\VignetteDepends{}"
+#~ msgstr "Миниатюры:"
+
+#~ msgid "Invalid package name."
+#~ msgstr "Неправильное имя пакета."
+
+#~ msgid "This is the name of a base package."
+#~ msgstr "Это имя базового пакета."
+
+#~ msgid "This name was used for a base package and is remapped by library()."
+#~ msgstr ""
+#~ "Это имя использовано базовым пакетом и связано заново посредством library"
+#~ "()."
+
+#~ msgid "package must be loaded"
+#~ msgstr "должен быть загружен пакет"
+
+#~ msgid "lib"
+#~ msgstr "lib"
+
+#~ msgid "pkg"
+#~ msgstr "pkg"
+
+#~ msgid "packageStartupMessage"
+#~ msgstr "packageStartupMessage"
+
+#~ msgid "installed.packages"
+#~ msgstr "installed.packages"
+
+#~ msgid "Good practice"
+#~ msgstr "Хорошо сделано"
+
+#, fuzzy
+#~ msgid "\\name"
+#~ msgstr "имя"
+
+#~ msgid "NEWS"
+#~ msgstr "НОВОСТИ"
+
+#~ msgid "DESCRIPTION"
+#~ msgstr "ОПИСАНИЕ"
+
+#~ msgid "doc/"
+#~ msgstr "doc/"
+
+#~ msgid "demo/"
+#~ msgstr "demo/"
+
+#~ msgid "file"
+#~ msgstr "файл"
+
+#~ msgid "%s (%s)"
+#~ msgstr "%s (%s)"
+
+#~ msgid "ssname"
+#~ msgstr "ssname"
+
+#~ msgid "language"
+#~ msgstr "язык"
+
+#~ msgid "processing"
+#~ msgstr "обрабытываю"
+
+#, fuzzy
+#~ msgid "package directory"
+#~ msgstr "директория пакетов"
+
+#~ msgid "Unrecognized search field:"
+#~ msgstr "Неизвестное поле поиска:"
+
+#~ msgid "ERROR:"
+#~ msgstr "ОШИБКА:"
+
+#~ msgid "running 'zip' failed"
+#~ msgstr "не удался запуск 'zip'"
+
+#~ msgid "packaged installation of"
+#~ msgstr "пакетная установка"
+
+#~ msgid "as"
+#~ msgstr "как"
+
+#~ msgid "installing via 'install.libs.R' to"
+#~ msgstr "инсталлирую четез 'install.libs.R' в"
+
+#~ msgid "installing to"
+#~ msgstr "устанавливаю в"
+
+#, fuzzy
+#~ msgid "running 'src/Makefile.win' ..."
+#~ msgstr "запускаю src/Makefile.win ..."
+
+#~ msgid "only one architecture so ignoring '--merge-multiarch'"
+#~ msgstr "только одна архитектура, так что пропускаю '--merge-multiarch'"
+
+#~ msgid "ERROR: failed to lock directory"
+#~ msgstr "ОШИБКА: не удалось заблокировать папку"
+
+#~ msgid ""
+#~ "for modifying\n"
+#~ "Try removing"
+#~ msgstr ""
+#~ "для модификации\n"
+#~ "Пытаюсь переместить"
+
+#~ msgid "ERROR: failed to create lock directory"
+#~ msgstr "ОШИБКА: не удалось создать блокированную папку"
+
+#~ msgid "finding HTML links ..."
+#~ msgstr "нахожу ссылки HTML..."
+
+#~ msgid "finding level-2 HTML links ..."
+#~ msgstr "нахожу ссылки HTML второго уровня..."
+
+#~ msgid "Internal error, no tag"
+#~ msgstr "Внутренняя ошибка, тега нет"
+
+#~ msgid "Internal error:  NULL tag"
+#~ msgstr "Внутренняя ошибка:  тег NULL"
+
+#~ msgid "internal error"
+#~ msgstr "внутренняя ошибка"
+
+#~ msgid "Inconsistent arg count for"
+#~ msgstr "Несоответственный аргумент найден у"
+
+#~ msgid "Entry for"
+#~ msgstr "Вход для"
+
+#~ msgid "="
+#~ msgstr "="
+
+#~ msgid "already defined to be"
+#~ msgstr "уже определен быть"
+
+#~ msgid "found encoding"
+#~ msgstr "найдена кодировка"
+
+#~ msgid "cannot be opened"
+#~ msgstr "нельзя открыть"
+
+#~ msgid "comparing"
+#~ msgstr "сравниваю"
+
+#~ msgid "to"
+#~ msgstr "в"
+
+#~ msgid "..."
+#~ msgstr "..."
+
+#~ msgid "Comparing"
+#~ msgstr "Сравниваю"
+
+#~ msgid "creation of"
+#~ msgstr "создание"
+
+#~ msgid "failed"
+#~ msgstr "не удалось"
+
+#~ msgid "creating"
+#~ msgstr "создаю"
+
+#~ msgid "running code in"
+#~ msgstr "запускаю код в "
+
+#~ msgid "running strict specific tests"
+#~ msgstr "запускаю узкоспецифические тесты"
+
+#~ msgid "running sloppy specific tests"
+#~ msgstr "запускаю широкие тесты"
+
+#~ msgid "running regression tests"
+#~ msgstr "запускаю регрессионные тесты"
+
+#~ msgid "comparing 'reg-plot.ps' to 'reg-plot.ps.save' ..."
+#~ msgstr "сравниваю 'reg-plot.ps' с 'reg-plot.ps.save' ..."
+
+#~ msgid "running tests of plotting Latin-1"
+#~ msgstr "запускаю тесты на рисование с Latin-1"
+
+#~ msgid "expect failure or some differences if not in a Latin or UTF-8 locale"
+#~ msgstr "ожидайте неудачу или отличия если не на локали Latin или UTF-8"
+
+#~ msgid "comparing 'reg-plot-latin1.ps' to 'reg-plot-latin1.ps.save' ..."
+#~ msgstr "сравниваю 'reg-plot-latin1.ps' с 'reg-plot-latin1.ps.save' ..."
+
+#~ msgid "running tests of consistency of as/is.*"
+#~ msgstr "запускаю тесты на соответствие as/is.*"
+
+#~ msgid "running tests of primitives"
+#~ msgstr "запускаю тесты на примитивы"
+
+#~ msgid "running regexp regression tests"
+#~ msgstr "запускаю регрессионные тесты на регулярные выражения"
+
+#~ msgid "running tests to possibly trigger segfaults"
+#~ msgstr "запускаю тесты на возможное переключение ошибок сегментации"
+
+#, fuzzy
+#~ msgid "not installing"
+#~ msgstr "устанавливаю в"
+
+#~ msgid "Generics g in env ="
+#~ msgstr "Общие 'g' в env ="
+
+#~ msgid "where hasMethods(g, env) errors:"
+#~ msgstr "где ошибки hasMethods(g, env):"
+
+#~ msgid "May need something like"
+#~ msgstr "Возможно, надо что-то вроде"
+
+#~ msgid "importFrom("
+#~ msgstr "importFrom("
+
+#~ msgid "in NAMESPACE."
+#~ msgstr "в NAMESPACE."
+
+#, fuzzy
+#~ msgid "not insttalling"
+#~ msgstr "устанавливаю в"
+
+#, fuzzy
+#~ msgid "running msgmerge failed"
+#~ msgstr "не удался запуск 'make'"
+
+#, fuzzy
+#~ msgid "running msginit failed"
+#~ msgstr "не удался запуск 'zip'"
+
+#, fuzzy
+#~ msgid "running msgconv failed"
+#~ msgstr "не удался запуск 'make'"
+
+#, fuzzy
+#~ msgid "running xgettext failed"
+#~ msgstr "не удался запуск 'make'"
 
 #~ msgid "ERROR: --merge-multiarch can only be used on i386/x64 installations"
 #~ msgstr ""
@@ -1402,9 +1736,6 @@ msgstr[2] "объекты %s созданы больше чем за один вызов данных"
 
 #~ msgid "Running examples in package"
 #~ msgstr "Запускаю примеры к пакету"
-
-#~ msgid "making DLL ..."
-#~ msgstr "делаю DLL..."
 
 #~ msgid "... done"
 #~ msgstr "... готово"
@@ -1560,6 +1891,3 @@ msgstr[2] "объекты %s созданы больше чем за один вызов данных"
 
 #~ msgid "multiple \\encoding lines in file"
 #~ msgstr "несколько \\строк кодировок в файле"
-
-#~ msgid "no or more than one match"
-#~ msgstr "нет или более одного соответствия"

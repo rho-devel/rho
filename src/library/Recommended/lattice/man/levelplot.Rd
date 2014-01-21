@@ -138,6 +138,8 @@ contourplot(x, data, \dots)
     for.  However, this also means that when supplying \code{at}
     explicitly, one has to be careful to include values outside the
     range of \code{z} to ensure that all the data are shown.
+
+    \code{at} can have length one only if \code{region=FALSE}.  
   }
   \item{col.regions}{ color vector to be used if regions is TRUE. The
     general idea is that this should be a color vector of moderately
@@ -185,18 +187,23 @@ contourplot(x, data, \dots)
 	and \code{fontfamily}.
       }
 
-      \item{\code{tick.number}:}{ approximate number of ticks. }
+      \item{\code{tick.number}:}{ The approximate number of ticks desired. }
 
-      \item{\code{corner}:}{ interacts with x, y; unimplemented }
+      \item{\code{tck}:}{ A (scalar) multipler for tick lengths. }
 
-      \item{\code{width}:}{ width of the key }
+      \item{\code{corner}:}{ Interacts with x, y; currently unimplemented }
 
-      \item{\code{height}:}{ length of key w.r.t side of plot. }
+      \item{\code{width}:}{ The width of the key }
 
-      \item{\code{raster}:}{ Logical flag indicating whether the
+      \item{\code{height}:}{ The length of key as a fraction of the
+	appropriate side of plot.
+      } 
+
+      \item{\code{raster}:}{ A logical flag indicating whether the
 	colorkey should be rendered as a raster image using
 	\code{\link{grid.raster}}.  See also
-	\code{\link{panel.levelplot.raster}}. }
+	\code{\link{panel.levelplot.raster}}.
+      }
 
       \item{\code{interpolate}:}{ Logical flag, passed to
 	\code{\link{rasterGrob}} when \code{raster=TRUE}. }
@@ -212,13 +219,13 @@ contourplot(x, data, \dots)
     }
   }
   \item{contour}{
-    logical, whether to draw contour lines.
+    A logical flag, indicating whether to draw contour lines.
   }
   \item{cuts}{
-    number of levels the range of \code{z} would be divided into
+    The number of levels the range of \code{z} would be divided into.
   }
   \item{labels}{
-    typically a logical indicating whether contour lines should be
+    Typically a logical indicating whether contour lines should be
     labelled, but other possibilities for more sophisticated control
     exists.  Details are documented in the help page for
     \code{\link{panel.levelplot}}, to which this argument is passed on
@@ -226,7 +233,8 @@ contourplot(x, data, \dots)
     argument, which affects how the labels are rendered.
   }
   \item{pretty}{
-    logical, whether to use pretty cut locations and labels
+    A logical flag, indicating whether to use pretty cut locations and
+    labels. 
   }
   \item{region}{
     A logical flag, indicating whether regions between contour lines
@@ -235,7 +243,7 @@ contourplot(x, data, \dots)
   \item{allow.multiple, outer, prepanel, scales, strip, groups, xlab,
     xlim, ylab, ylim, drop.unused.levels, lattice.options,
     default.scales, subset}{
-    these arguments are described in the help page for
+    These arguments are described in the help page for
     \code{\link{xyplot}}.
   }
   \item{default.prepanel}{

@@ -1,6 +1,8 @@
 #  File src/library/tools/R/rtags.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -148,7 +150,7 @@ rtags.file <-
     tokens <- lapply(elist, expr2token)
     startlines <- sapply(attr(elist, "srcref"), "[", 1L)
     if (length(tokens) != length(startlines))
-        stop("length mismatch: bug in code!")
+        stop("length mismatch: bug in code!", domain = NA)
     keep <- sapply(tokens, length) == 1L
     if (!any(keep)) return(invisible())
     tokens <- unlist(tokens[keep])
@@ -178,30 +180,21 @@ rtags <-
              ofile = "", append = FALSE,
              verbose = getOption("verbose"))
 {
-    if (ofile != "" && !append) file.remove(ofile)
+    if (ofile != "" && !append) {
+        if (!file.create(ofile, showWarnings = FALSE)) 
+            stop(gettextf("Could not create file %s, aborting", ofile),
+                 domain = NA)
+    }
     if (!missing(keep.re))
         src <- grep(keep.re, src, value = TRUE)
     for (s in src)
     {
-        if (verbose) message("Processing file ", s)
+        if (verbose) message(gettextf("Processing file %s", s), domain = NA)
         tryCatch(
                  rtags.file(s, ofile = ofile, append = TRUE),
                  error = function(e) NULL)
     }
     invisible()
-}
-
-
-
-## Typical usage:
-
-if (FALSE)
-{
-
-    ## to tag all .[RrSs] files under /path/to/src/repository/ that
-    ## have "/R/" in the full path
-
-
 }
 
 

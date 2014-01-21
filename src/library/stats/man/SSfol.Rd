@@ -22,14 +22,16 @@ SSfol(Dose, input, lKe, lKa, lCl)
 }
 \description{
   This \code{selfStart} model evaluates the first-order compartment
-  function and its gradient.  It has an \code{initial} attribute that 
+  function and its gradient.  It has an \code{initial} attribute that
   creates initial estimates of the parameters \code{lKe}, \code{lKa},
   and \code{lCl}.
 }
 \value{
   a numeric vector of the same length as \code{input}, which is the
   value of the expression
-  \code{Dose * exp(lKe+lKa-lCl) * (exp(-exp(lKe)*input)-exp(-exp(lKa)*input)) / (exp(lKa)-exp(lKe))}.
+\preformatted{Dose * exp(lKe+lKa-lCl) * (exp(-exp(lKe)*input) - exp(-exp(lKa)*input))
+    / (exp(lKa) - exp(lKe))
+}
 
   If all of the arguments \code{lKe}, \code{lKa}, and \code{lCl} are
   names of objects, the gradient matrix with respect to these names is

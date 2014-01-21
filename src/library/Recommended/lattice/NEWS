@@ -27,6 +27,8 @@ Changes in lattice 0.20
  o parallel() deprecated in favour of parallelplot(), to avoid
    potential confusion with the parallel package.
 
+ o The internal lattice.status list is cleaned up whenever new page
+   starts.  This should fix lattice bug #1629.
 
 Changes in lattice 0.19
 =======================

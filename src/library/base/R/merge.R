@@ -1,6 +1,8 @@
 #  File src/library/base/R/merge.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -34,8 +36,11 @@ merge.data.frame <-
         if(is.character(by)) {
             poss <- c("row.names", names(df))
             # names(df) are not necessarily unique, so check for multiple matches.
-            if(any(!charmatch(by, poss, 0L)))
-                stop("'by' must specify uniquely valid column(s)")
+            if(any(bad <- !charmatch(by, poss, 0L)))
+                stop(ngettext(sum(bad),
+                              "'by' must specify a uniquely valid column",
+                              "'by' must specify uniquely valid columns"),
+                     domain = NA)
             by <- match(by, poss) - 1L
         } else if(is.numeric(by)) {
             if(any(by < 0L) || any(by > nc))
@@ -43,9 +48,13 @@ merge.data.frame <-
         } else if(is.logical(by)) {
             if(length(by) != nc) stop("'by' must match number of columns")
             by <- seq_along(by)[by]
-        } else stop("'by' must specify column(s) as numbers, names or logical")
-        if(any(is.na(by))) stop("'by' must specify valid column(s)")
-        unique(by)
+        } else stop("'by' must specify one or more columns as numbers, names or logical")
+        if(any(bad <- is.na(by)))
+            stop(ngettext(sum(bad),
+                          "'by' must specify a uniquely valid column",
+                          "'by' must specify uniquely valid columns"),
+                 domain = NA)
+         unique(by)
     }
 
     nx <- nrow(x <- as.data.frame(x)); ny <- nrow(y <- as.data.frame(y))
@@ -133,10 +142,14 @@ merge.data.frame <-
         }
         y <- y[c(m$yi, if(all.x) rep.int(1L, nxx), if(all.y) m$y.alone),
                -by.y, drop = FALSE]
-        if(all.x)
-            for(i in seq_along(y))
+        if(all.x) {
+            zap <- (lxy+1L):(lxy+nxx)
+            for(i in seq_along(y)) {
                 ## do it this way to invoke methods for e.g. factor
-                is.na(y[[i]]) <- (lxy+1L):(lxy+nxx)
+                if(is.matrix(y[[1]])) y[[1]][zap, ] <- NA
+                else is.na(y[[i]]) <- zap
+            }
+        }
 
         if(has.common.nms) names(y) <- nm.y
         nm <- c(names(x), names(y))

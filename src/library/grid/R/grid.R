@@ -1,6 +1,8 @@
 #  File src/library/grid/R/grid.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -23,7 +25,7 @@ push.vp <- function(vp, recording) {
 }
 
 push.vp.default <- function(vp, recording) {
-  stop("Only valid to push viewports")
+  stop("only valid to push viewports")
 }
 
 push.vp.viewport <- function(vp, recording) {
@@ -80,6 +82,11 @@ push.vp.vpTree <- function(vp, recording) {
   push.vp(vp$children, recording)
 }
 
+# "push"ing a vpPath is just a downViewport(..., strict=TRUE)
+push.vp.vpPath <- function(vp, recording) {
+    downViewport(vp, strict=TRUE, recording)
+}
+
 push.viewport <- function(..., recording=TRUE) {
   .Deprecated("pushViewport")
   pushViewport(..., recording=recording)
@@ -87,7 +94,7 @@ push.viewport <- function(..., recording=TRUE) {
 
 pushViewport <- function(..., recording=TRUE) {
   if (missing(...))
-    stop("Must specify at least one viewport")
+    stop("must specify at least one viewport")
   else {
     vps <- list(...)
     lapply(vps, push.vp, recording)
@@ -183,7 +190,7 @@ pop.viewport <- function(n=1, recording=TRUE) {
 
 popViewport <- function(n=1, recording=TRUE) {
   if (n < 0)
-    stop("Must pop at least one viewport")
+    stop("must pop at least one viewport")
   if (n == 0)
     n <- vpDepth()
   if (n > 0) {
@@ -201,7 +208,7 @@ popViewport <- function(n=1, recording=TRUE) {
 # simply navigate up, leaving pushed viewports in place.
 upViewport <- function(n=1, recording=TRUE) {
   if (n < 0)
-    stop("Must navigate up at least one viewport")
+    stop("must navigate up at least one viewport")
   if (n == 0) {
     n <- vpDepth()
     upPath <- current.vpPath()
@@ -240,7 +247,7 @@ current.viewport <- function(vp=NULL) {
     # ever see normal viewports, so convert.
     vpFromPushedvp(grid.Call(L_currentViewport))
   else {
-    warning("The vp argument is deprecated")
+    warning("the 'vp' argument is deprecated")
     vp
   }
 }
@@ -289,16 +296,6 @@ current.transform <- function() {
   grid.Call(L_currentViewport)$trans
 }
 
-# Control whether user is prompted before new page
-grid.prompt <- function(ask) {
-    .Deprecated("devAskNewPage")
-    if(!missing(ask)) {
-        if (!is.logical(ask))
-            stop("Invalid 'ask' value")
-        grDevices::devAskNewPage(ask)
-    } else grDevices::devAskNewPage()
-}
-
 # Call this function if you want the graphics device erased or moved
 # on to a new page.  High-level plotting functions should call this.
 # NOTE however, that if you write a function which calls grid.newpage,
@@ -319,6 +316,7 @@ grid.newpage <- function(recording=TRUE) {
     .Call(L_initViewportStack)
     if (recording) {
         .Call(L_initDisplayList)
+        grDevices:::recordPalette()
         for (fun in getHook("grid.newpage"))  {
             if(is.character(fun)) fun <- get(fun)
             try(fun())
@@ -373,7 +371,7 @@ record <- function(x) {
 # gets put on the display list
 record.default <- function(x) {
   if (!is.numeric(x))
-    stop("Invalid object inserted on the display list")
+    stop("invalid object inserted on the display list")
   grid.Call(L_setDLelt, x)
   inc.display.list()
 }
@@ -416,21 +414,21 @@ grid.refresh <- function() {
 grid.DLapply <- function(FUN, ...) {
     FUN <- match.fun(FUN)
     # Traverse DL and do something to each entry
-    gridDL <- grid.Call("L_getDisplayList")
-    gridDLindex <- grid.Call("L_getDLindex")
+    gridDL <- grid.Call(L_getDisplayList)
+    gridDLindex <- grid.Call(L_getDLindex)
     newDL <- vector("list", gridDLindex)
     for (i in 1:(gridDLindex - 1)) {
-        elt <- grid.Call("L_getDLelt", i)
+        elt <- grid.Call(L_getDLelt, i)
         newElt <- FUN(elt, ...)
         if (!(is.null(newElt) || inherits(newElt, class(elt))))
-            stop("Invalid modification of the display list")
+            stop("invalid modification of the display list")
         newDL[[i]] <- newElt
     }
     for (i in 1:(gridDLindex - 1)) {
-        grid.Call("L_setDLindex", i)
-        grid.Call("L_setDLelt", newDL[[i]])
+        grid.Call(L_setDLindex, i)
+        grid.Call(L_setDLelt, newDL[[i]])
     }
-    grid.Call("L_setDLindex", gridDLindex)
+    grid.Call(L_setDLindex, gridDLindex)
 }
 
 # Wrapper for .Call and .Call.graphics
@@ -442,7 +440,7 @@ grid.DLapply <- function(FUN, ...) {
 # you are doing -- this will be a bit of overkill, but is for safety
 grid.Call <- function(fnname, ...) {
   .Call(L_gridDirty)
-  .Call(fnname, ..., PACKAGE="grid")
+  .Call(fnname, ...)
 }
 
 grid.Call.graphics <- function(fnname, ...) {
@@ -454,11 +452,11 @@ grid.Call.graphics <- function(fnname, ...) {
     # the the first thing on the engine display list is a dirty
     # operation;  this is necessary in case the display list is
     # played on another device (e.g., via replayPlot() or dev.copy())
-    .Call.graphics(L_gridDirty, PACKAGE="grid")
-    result <- .Call.graphics(fnname, ..., PACKAGE="grid")
+    .Call.graphics(L_gridDirty)
+    result <- .Call.graphics(fnname, ...)
   } else {
     .Call(L_gridDirty)
-    result <- .Call(fnname, ..., PACKAGE="grid")
+    result <- .Call(fnname, ...)
   }
   result
 }
@@ -482,3 +480,30 @@ recordGrob <- function(expr, list,
   grob(expr=substitute(expr), list=list,
        name=name, gp=gp, vp=vp, cl="recordedGrob")
 }
+
+# Must only generate a grob, not modify drawing context
+makeContent.delayedgrob <- function(x) {
+    grob <- eval(x$expr, x$list, getNamespace("grid"))
+    if (is.grob(grob)) {
+        children <- gList(grob)
+    } else if (is.gList(grob)) {
+        children <- grob
+    } else {
+        stop("'expr' must return a grob or gList")
+    }
+    x <- setChildren(x, children)
+    x
+}
+
+grid.delay <- function(expr, list,
+                       name=NULL, gp=NULL, vp=NULL) {
+    grid.draw(gTree(expr=substitute(expr), list=list,
+                    name=name, gp=gp, vp=vp, cl="delayedgrob"))
+}
+
+delayGrob <- function(expr, list,
+                      name=NULL, gp=NULL, vp=NULL) {
+    gTree(expr=substitute(expr), list=list,
+          name=name, gp=gp, vp=vp, cl="delayedgrob")
+}
+

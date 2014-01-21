@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 2001-11      The R Core Team
+ *  Copyright (C) 2001-13      The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,6 +39,8 @@
 #endif
 
 #include <Defn.h>
+#include <Internal.h>
+#include <Fileio.h>
 #include <Fileio.h>
 #include <IOStuff.h>
 #include <Parse.h>
@@ -102,12 +104,15 @@ SEXP attribute_hidden getParseContext(void)
 static void getParseFilename(char* buffer, size_t buflen)
 {
     buffer[0] = '\0';
-    if (R_ParseErrorFile && !isNull(R_ParseErrorFile)) {
-	SEXP filename;
-	PROTECT(filename = findVar(install("filename"), R_ParseErrorFile));
-	if (isString(filename) && length(filename))
-	    strncpy(buffer, CHAR(STRING_ELT(filename, 0)), buflen - 1);
-	UNPROTECT(1);
+    if (R_ParseErrorFile) {
+    	if (isEnvironment(R_ParseErrorFile)) {
+	    SEXP filename;
+	    PROTECT(filename = findVar(install("filename"), R_ParseErrorFile));
+	    if (isString(filename) && length(filename))
+		strncpy(buffer, CHAR(STRING_ELT(filename, 0)), buflen - 1);
+	    UNPROTECT(1);
+        } else if (isString(R_ParseErrorFile) && length(R_ParseErrorFile)) 
+            strncpy(buffer, CHAR(STRING_ELT(R_ParseErrorFile, 0)), buflen - 1);
     }
 }
 
@@ -134,7 +139,7 @@ static SEXP tabExpand(SEXP strings)
     return result;
 }
     	
-void attribute_hidden parseError(SEXP call, int linenum)
+void parseError(SEXP call, int linenum)
 {
     SEXP context;
     int len, width;
@@ -147,36 +152,36 @@ void attribute_hidden parseError(SEXP call, int linenum)
 
 	switch (len) {
 	case 0:
-	    error(_("%s%d:%d: %s"),
+	    error("%s%d:%d: %s",
 		  filename, linenum, R_ParseErrorCol, R_ParseErrorMsg);
 	    break;
 	case 1: // replaces use of %n
-	    width = sprintf(buffer, "%d: ", R_ParseContextLine); 
-	    error(_("%s%d:%d: %s\n%d: %s\n%*s"),
+	    width = snprintf(buffer, 10, "%d: ", R_ParseContextLine); 
+	    error("%s%d:%d: %s\n%d: %s\n%*s",
 		  filename, linenum, R_ParseErrorCol, R_ParseErrorMsg,
 		  R_ParseContextLine, CHAR(STRING_ELT(context, 0)), 
-		  width+R_ParseErrorCol, "^");
+		  width+R_ParseErrorCol+1, "^");
 	    break;
 	default:
-	    width = sprintf(buffer, "%d:", R_ParseContextLine);
-	    error(_("%s%d:%d: %s\n%d: %s\n%d: %s\n%*s"),
+	    width = snprintf(buffer, 10, "%d:", R_ParseContextLine);
+	    error("%s%d:%d: %s\n%d: %s\n%d: %s\n%*s",
 		  filename, linenum, R_ParseErrorCol, R_ParseErrorMsg,
 		  R_ParseContextLine-1, CHAR(STRING_ELT(context, len-2)),
 		  R_ParseContextLine, CHAR(STRING_ELT(context, len-1)), 
-		  width+R_ParseErrorCol, "^");
+		  width+R_ParseErrorCol+1, "^");
 	    break;
 	}
     } else {
 	switch (len) {
 	case 0:
-	    error(_("%s"), R_ParseErrorMsg);
+	    error("%s", R_ParseErrorMsg);
 	    break;
 	case 1:
-	    error(_("%s in \"%s\""),
+	    error("%s in \"%s\"",
 		  R_ParseErrorMsg, CHAR(STRING_ELT(context, 0)));
 	    break;
 	default:
-	    error(_("%s in:\n\"%s\n%s\""),
+	    error("%s in:\n\"%s\n%s\"",
 		  R_ParseErrorMsg, CHAR(STRING_ELT(context, len-2)),
 		  CHAR(STRING_ELT(context, len-1)));
 	    break;

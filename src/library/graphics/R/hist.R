@@ -1,6 +1,8 @@
 #  File src/library/graphics/R/hist.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -19,7 +21,7 @@ hist <- function(x, ...) UseMethod("hist")
 hist.default <-
     function (x, breaks = "Sturges", freq = NULL,
 	      probability = !freq, include.lowest= TRUE,
-	      right= TRUE, density = NULL, angle = 45,
+	      right = TRUE, density = NULL, angle = 45,
 	      col = NULL, border = NULL,
 	      main = paste("Histogram of" , xname),
 	      xlim = range(breaks), ylim = NULL,
@@ -31,14 +33,16 @@ hist.default <-
 	stop("'x' must be numeric")
     xname <- paste(deparse(substitute(x), 500), collapse="\n")
     n <- length(x <- x[is.finite(x)])
+    n <- as.integer(n)
+    if(is.na(n)) stop("invalid length(x)")
     use.br <- !missing(breaks)
     if(use.br) {
 	if(!missing(nclass))
 	    warning("'nclass' not used when 'breaks' is specified")
     }
-    else if(!is.null(nclass) && length(nclass) == 1)
+    else if(!is.null(nclass) && length(nclass) == 1L)
 	breaks <- nclass
-    use.br <- use.br && (nB <- length(breaks)) > 1
+    use.br <- use.br && (nB <- length(breaks)) > 1L
     if(use.br)
 	breaks <- sort(breaks)
     else {				# construct vector of breaks
@@ -59,13 +63,26 @@ hist.default <-
 	} else if(is.function(breaks)) {
 	    breaks <- breaks(x)
 	}
-	if(!is.numeric(breaks) || !is.finite(breaks) || breaks < 1)
-	    stop("invalid number of 'breaks'")
-	breaks <- pretty (range(x), n = breaks, min.n = 1)
-	nB <- length(breaks)
-	if(nB <= 1) ##-- Impossible !
-	    stop("hist.default: pretty() error, breaks=", format(breaks))
+        if (length(breaks) == 1) {
+            if(!is.numeric(breaks) || !is.finite(breaks) || breaks < 1L)
+                stop("invalid number of 'breaks'")
+            breaks <- pretty (range(x), n = breaks, min.n = 1)
+            nB <- length(breaks)
+            if(nB <= 1) ##-- Impossible !
+                stop(gettextf("hist.default: pretty() error, breaks=%s",
+                              format(breaks)), domain = NA)
+        }
+        else {
+            if(!is.numeric(breaks) || length(breaks) <= 1)
+                stop(gettextf("Invalid breakpoints produced by 'breaks(x)': %s",
+                              format(breaks)), domain = NA)
+            breaks <- sort(breaks)
+            nB <- length(breaks)
+            use.br <- TRUE # To allow equidist=FALSE below (FIXME: Find better way?)
+        }
     }
+    nB <- as.integer(nB)
+    if(is.na(nB)) stop("invalid length(breaks)")
 
     ## Do this *before* adding fuzz or logic breaks down...
 
@@ -95,30 +112,19 @@ hist.default <-
     fuzzybreaks <- breaks + fuzz
     h <- diff(fuzzybreaks)
 
-    storage.mode(x) <- "double"
-    storage.mode(fuzzybreaks) <- "double"
     ## With the fuzz adjustment above, the "right" and "include"
-    ## arguments are often irrelevant (not with integer data!)
-    counts <- .C("bincount",
-		 x,
-		 as.integer(n),
-		 fuzzybreaks,
-		 as.integer(nB),
-		 counts = integer(nB - 1),
-		 right = as.logical(right),
-		 include= as.logical(include.lowest), naok = FALSE,
-		 NAOK = FALSE, DUP = FALSE, PACKAGE = "base") $counts
-    if (any(counts < 0))
-	stop("negative 'counts'. Internal Error in C-code for \"bincount\"")
+    ## arguments are often irrelevant (but not with integer data!)
+    counts <- .Call(C_BinCount, x, fuzzybreaks, right, include.lowest)
+    if (any(counts < 0L))
+	stop("negative 'counts'. Internal Error.", domain = NA)
     if (sum(counts) < n)
 	stop("some 'x' not counted; maybe 'breaks' do not span range of 'x'")
     dens <- counts/(n*diff(breaks)) # use un-fuzzed intervals
     mids <- 0.5 * (breaks[-1L] + breaks[-nB])
     r <- structure(list(breaks = breaks, counts = counts,
-			intensities = dens,
 			density = dens, mids = mids,
 			xname = xname, equidist = equidist),
-		   class="histogram")
+		   class = "histogram")
     if (plot) {
 	plot(r, freq = freq1, col = col, border = border,
 	     angle = angle, density = density,
@@ -159,13 +165,11 @@ plot.histogram <-
 	if(is.logical(x$equidist)) x$equidist
 	else { h <- diff(x$breaks) ; diff(range(h)) < 1e-7 * mean(h) }
     if(freq && !equidist)
-	warning("the AREAS in the plot are wrong -- rather use freq=FALSE")
+	warning("the AREAS in the plot are wrong -- rather use 'freq = FALSE'")
 
-    y <- if (freq) x$counts else { ## x$density -- would be enough, but
-	## for back compatibility
-	y <- x$density; if(is.null(y)) x$intensities else y}
+    y <- if (freq) x$counts else x$density
     nB <- length(x$breaks)
-    if(is.null(y) || 0 == nB) stop("'x' is wrongly structured")
+    if(is.null(y) || 0L == nB) stop("'x' is wrongly structured")
 
     dev.hold(); on.exit(dev.flush())
     if(!add) {

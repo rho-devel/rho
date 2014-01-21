@@ -5,8 +5,7 @@
 /* ------------------------------------------------------------------------- */
 /* AMD, Copyright (c) Timothy A. Davis,					     */
 /* Patrick R. Amestoy, and Iain S. Duff.  See ../README.txt for License.     */
-/* email: davis at cise.ufl.edu    CISE Department, Univ. of Florida.        */
-/* web: http://www.cise.ufl.edu/research/sparse/amd                          */
+/* email: DrTimothyAldenDavis@gmail.com                                      */
 /* ------------------------------------------------------------------------- */
 
 #include <stdlib.h>
@@ -66,7 +65,7 @@ void *(*amd_calloc) (size_t, size_t) = NULL ;
 /* ========================================================================= */
 
 /* The user can redefine this global pointer at run-time to change the printf
- * routine used by AMD.  If NULL, no printing occurs.
+ * routine used by AMD.  If NULL, no printing occurs.  
  *
  * If -DNPRINT is defined at compile-time, stdio.h is not included.  Printing
  * can then be enabled at run-time by setting amd_printf to a non-NULL function.

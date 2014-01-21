@@ -1,0 +1,70 @@
+# Korean translation for R class package
+# Recommended/class/po/R-ko.po
+# Maintainer: Brian Ripley <ripley@stats.ox.ac.uk>
+# Copyright (C) 1995-2013 The R Core Team
+# This file is distributed under the same license as the R class package.
+# R Development Translation Team - Korean
+# Chel Hee Lee <gnustats@korea.gnu.org>, 2013.
+# Chel Hee Lee <gnustats@gmail.com>, 2013.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: class 7.3-5\n"
+"POT-Creation-Date: 2012-10-08 10:54\n"
+"PO-Revision-Date: 2013-03-11 13:42-0600\n"
+"Last-Translator: Chel Hee Lee <gnustats@gmail.com>\n"
+"Language-Team: R Development Translation Teams (Korean) <gnustats@korea.gnu."
+"org>\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Poedit-Language: Korean\n"
+"X-Poedit-Country: KOREA, REPUBLIC OF\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+msgid "wrong plot method used"
+msgstr "사용된 플랏 메소드가 잘못되었습니다"
+
+msgid "'SOM' called with no data"
+msgstr "아무런 데이터가 없이 호출된 'SOM'입니다"
+
+msgid "'radii' must be a list of the same length as 'alpha'"
+msgstr "'radii'는 반드시 'alpha'와 같은 길이의 리스트이어야 합니다"
+
+msgid "'alpha' and 'radii' do not have the same lengths"
+msgstr "'alpha'와 'radii'는 같은 길이를 가지고 있지 않습니다"
+
+msgid "'alpha' and 'radii' do not match"
+msgstr "'alpha'와 'radii'가 서로 일치하지 않습니다"
+
+msgid "no missing values are allowed"
+msgstr "결측치들은 허용되지 않습니다"
+
+msgid "'train' and 'class' have different lengths"
+msgstr "'train'과 'class'는 다른 길이를 가집니다"
+
+msgid "dims of 'test' and 'train' differ"
+msgstr "'test'와 'train'의 dims가 서로 다릅니다"
+
+msgid "k = %d exceeds number %d of patterns"
+msgstr ""
+
+msgid "k = %d must be at least 1"
+msgstr "k의 값 %d는 반드시 적어도 1이어야 합니다"
+
+msgid "'x' and 'cl' have different lengths"
+msgstr "'x'와 'cl'은 서로 다른 길이를 가집니다"
+
+msgid "invalid 'prior'"
+msgstr "유효하지 않은 'prior'입니다"
+
+msgid "'prior' is of incorrect length"
+msgstr "'prior'의 길이가 잘못되었습니다"
+
+msgid "retained set is now too small to proceed"
+msgstr ""
+
+msgid "pass %s size %d"
+msgstr ""

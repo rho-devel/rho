@@ -14,9 +14,9 @@
 \title{R for Windows Configuration}
 \description{
   The file \file{Rconsole} configures the R GUI console in this
-  Windows port. The \code{loadRconsole} function loads a new 
+  Windows port. The \code{loadRconsole} function loads a new
   configuration.
-  
+
   The file \file{Rdevga} configures the graphics devices
   \code{\link{windows}}, \code{win.graph}, \code{win.metafile} and
   \code{win.print}, as well as the bitmap devices \code{\link{bmp}},
@@ -47,8 +47,8 @@
   \file{Rconsole} can also set the initial positions of the console and
   the graphics device, as well as the size and position of the MDI
   workspace in MDI mode.
-  
-  \code{loadRconsole} is called for its side effect of loading new 
+
+  \code{loadRconsole} is called for its side effect of loading new
   defaults.  It returns no useful value.
 }
 
@@ -61,7 +61,7 @@
 
   If the environment variable \env{R_USER} is not set, the \R system
   sets it to \env{HOME} if that is set (stripping any trailing slash),
-  otherwise to the Windows \sQuote{personal}  directory, 
+  otherwise to the Windows \sQuote{personal}  directory,
   otherwise to \code{{HOMEDRIVE}{HOMEPATH}} if \code{HOMEDRIVE} and
   \code{HOMEDRIVE} are both set
   otherwise to the working directory.  This is as described in the file
@@ -78,6 +78,8 @@
   The \code{GUI preferences} item on the \code{Edit} menu brings up an
   dialog box which can be used to edit the console settings, and to save them
   to a file.
+
+  This is only available on Windows.
 }
 \author{
   Guido Masarotto and R-core members
@@ -86,7 +88,7 @@
 \examples{
 ruser <- Sys.getenv("R_USER")
 cat("\n\nLocation for personal configuration files is\n   R_USER = ",
-    ruser, "\n\n", sep="")
+    ruser, "\n\n", sep = "")
 ## see if there are personal configuration files
 file.exists(file.path(ruser, c("Rconsole", "Rdevga")))
 
@@ -96,7 +98,7 @@ showConfig <- function(file)
     ruser <- Sys.getenv("R_USER")
     path <- file.path(ruser, file)
     if(!file.exists(path)) path <- file.path(R.home(), "etc", file)
-    file.show(path, header=path)
+    file.show(path, header = path)
 }
 showConfig("Rconsole")
 }

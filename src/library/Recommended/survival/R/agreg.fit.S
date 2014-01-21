@@ -29,27 +29,28 @@ agreg.fit <- function(x, y, strata, offset, init, control,
         #  To keep the C code to a small set, we call the usual routines, but
 	#  with a dummy X matrix and 0 iterations
 	nvar <- 1
-	x <- matrix(1:n, ncol=1)
+	x <- matrix(1:n, ncol=1)  #keep the .C call happy
 	maxiter <- 0
 	nullmodel <- TRUE
+        if (length(init) !=0) stop("Wrong length for inital values")
+        init <- 0.0  #dummy value to keep the .C call happy (doesn't like 0 length)
 	}
     else {
 	nullmodel <- FALSE
 	maxiter <- control$iter.max
-	}
-
-    if (!is.null(init)) {
+        
+        if (is.null(init)) init <- rep(0., nvar)
 	if (length(init) != nvar) stop("Wrong length for inital values")
 	}
-	else init <- rep(0,nvar)
-    agfit <- .C("agfit3", iter= as.integer(maxiter),
+
+    agfit <- .C(Cagfit3, iter= as.integer(maxiter),
 		as.integer(n),
 		as.integer(nvar), 
 		as.double(start), 
 		as.double(stopp),
 		as.integer(event),
 		as.double(x),
-		as.double(offset - mean(offset)),
+		as.double(offset),
 		as.double(weights),
 		as.integer(length(newstrat)),
 		as.integer(newstrat),
@@ -63,8 +64,7 @@ agreg.fit <- function(x, y, strata, offset, init, control,
 		double(2*nvar*nvar +nvar*3 + n),
 		as.double(control$eps),
 		as.double(control$toler.chol),
-		sctest=as.double(method=='efron'),
-                PACKAGE = 'survival')
+		sctest=as.double(method=='efron'))
 
     var <- matrix(agfit$imat,nvar,nvar)
     coef <- agfit$coef
@@ -87,7 +87,7 @@ agreg.fit <- function(x, y, strata, offset, init, control,
     lp  <- as.vector(x %*% coef + offset - sum(coef *agfit$means))
     score <- as.double(exp(lp))
 
-    agres <- .C("agmart2",
+    agres <- .C(Cagmart2,
 		as.integer(n),
 		as.integer(method=='efron'),
 		as.double(start), 
@@ -100,8 +100,7 @@ agreg.fit <- function(x, y, strata, offset, init, control,
 		score,
 		as.double(weights),
 		resid=double(n),
-		double(2*sum(event)),
-                PACKAGE= 'survival')
+		double(2*sum(event)))
     resid <- agres$resid
 
     if (nullmodel) {

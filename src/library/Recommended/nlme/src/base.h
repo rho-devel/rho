@@ -31,7 +31,7 @@
 #include <R.h>
 #include <Rinternals.h>
 #include <Rmath.h>
-#include <R_ext/Applic.h>
+//#include <R_ext/Applic.h>
 #ifdef ENABLE_NLS
 #include <libintl.h>
 #define _(String) dgettext ("nlme", String)

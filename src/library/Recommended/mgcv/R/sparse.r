@@ -1,5 +1,6 @@
-## (c) Simon N. Wood 2011
+## (c) Simon N. Wood 2011-2013
 ## functions for sparse smoothing.
+
 
 
 tri2nei <- function(T) {
@@ -19,7 +20,6 @@ tri.pen <- function(X,T) {
 ## finds a sparse approximate TPS penalty, based on the points in X, 
 ## with triangulation T. Rows of X are points. Rows of T index vertices 
 ## of triangles in X.
-  require(Matrix)
   nn <- tri2nei(T) ## get neighbour list from T
   ## now obtain generalized FD penalty...
   n <- nrow(X);d <- ncol(X);
@@ -95,31 +95,34 @@ apply.spline <- function(spl,y) {
 
 
 
-## Routines for sparse thin plate splines...
+## kd tree/k nearest neighbout related routines....
 
-kd.vis <- function(X,cex=.5) {
-## code obtains and visualizes a kd tree for points in rows of X
+kd.vis <- function(kd,X,cex=.5) {
+## code visualizes a kd tree for points in rows of X
+## kd <- kd.tree(X) produces correct tree.
   if (ncol(X)!=2) stop("only deals with 2D case")
   n <- nrow(X)
   d <- ncol(X)
-  ind <- rind <- rep(0,n)
-  m <- 2;
-  while (m<n) m <- m*2
-  nb <- min(m-1,2*n-m/2-1)
-  lo <- hi <- rep(0,nb*d)
-  oo <- .C(C_Rkdtree,as.double(X),as.integer(n),as.integer(d),lo = as.double(lo),hi =  as.double(hi),
-           ind = as.integer(ind), rind = as.integer(rind));
-  lo <- matrix(oo$lo,nb,d)
-  hi <- matrix(oo$hi,nb,d)
+  nb <- kd$idat[1]
+  dd <- matrix(kd$ddat[-1],nb,2*d,byrow=TRUE)
+  lo <- dd[,1:d];hi <- dd[,1:d+d]
+  rm(dd) 
+  ll <- min(X[,1]); ul<- max(X[,1])
+  w <- ul-ll
+  ind <- lo[,1] < ll-w/10;lo[ind,1] <- ll-w/10
+  ind <- hi[,1] > ul+w/10;hi[ind,1] <- ul+w/10
+  ll <- min(X[,2]);ul <- max(X[,2])
+  w <- ul-ll
+  ind <- lo[,2] < ll-w/10;lo[ind,2] <- ll-w/10
+  ind <- hi[,2] > ul+w/10;hi[ind,2] <- ul+w/10
   plot(X[,1],X[,2],pch=19,cex=cex,col=2)
   for (i in 1:nb) {
     rect(lo[i,1],lo[i,2],hi[i,1],hi[i,2])
   }
   #points(X[,1],X[,2],pch=19,cex=cex,col=2)
-
 }
 
-nearest <- function(k,X,gt.zero = FALSE,get.a=FALSE,balanced=FALSE,cut.off=5) {
+nearest <- function(k,X,gt.zero = FALSE,get.a=FALSE) {
 ## The rows of X contain coordinates of points.
 ## For each point, this routine finds its k nearest 
 ## neighbours, returning a list of 2, n by k matrices:
@@ -129,14 +132,9 @@ nearest <- function(k,X,gt.zero = FALSE,get.a=FALSE,balanced=FALSE,cut.off=5) {
 ##        neighbours.
 ## a - area associated with each point, if get.a is TRUE 
 ## ties are broken arbitrarily.
-## if balanced = TRUE, then some nearest neighbours are sacrificed 
-## for neighbours chosen to be on either side of the box in each 
-## direction in this case k>2*ncol(X). These neighbours are only used
-## if closer than cut.off*max(k nearest distances).
 ## gt.zero indicates that neighbours must have distances greater
 ## than zero...
-  require(mgcv)
-  if (balanced) gt.zero <- TRUE
+ 
   if (gt.zero) {
     Xu <- uniquecombs(X);ind <- attr(Xu,"index") ## Xu[ind,] == X
   } else { Xu <- X; ind <- 1:nrow(X)}
@@ -146,56 +144,65 @@ nearest <- function(k,X,gt.zero = FALSE,get.a=FALSE,balanced=FALSE,cut.off=5) {
   d <- ncol(Xu)
   dist <- matrix(0,n,k)
   if (get.a) a <- 1:n else a=1
-  if (balanced) {
-    kk <- k - 2*ncol(X)
-    if (kk<0) stop("k too small for balanced neighbours")
-    oo <- .C(C_kba_nn,Xu=as.double(Xu),dist=as.double(dist),a=as.double(a),ni=as.integer(dist),
-                    n=as.integer(n),d=as.integer(d),k=as.integer(kk),get.a=as.integer(get.a),
-                    as.double(cut.off))
-  } else {
-    oo <- .C(C_k_nn,Xu=as.double(Xu),dist=as.double(dist),a=as.double(a),ni=as.integer(dist),
+
+  oo <- .C(C_k_nn,Xu=as.double(Xu),dist=as.double(dist),a=as.double(a),ni=as.integer(dist),
                     n=as.integer(n),d=as.integer(d),k=as.integer(k),get.a=as.integer(get.a))
-  }
+
   dist <- matrix(oo$dist,n,k)[ind,]
   rind <- 1:nobs
   rind[ind] <- 1:nobs
   ni <- matrix(rind[oo$ni+1],n,k)[ind,]
   if (get.a) a=oo$a[ind] else a <- NULL
   list(ni=ni,dist=dist,a=a)
+} # nearest
+
+kd.tree <- function(X) {
+## function to obtain kd tree for points in rows of X
+  n <- nrow(X) ## number of points
+  d <- ncol(X) ## dimension of points
+  ## compute the number of boxes in the kd tree, nb
+  m <- 2;while (m < n) m <- m* 2;
+  nb = n * 2 - m %/% 2 - 1;
+  if (nb > m-1) nb = m - 1; 
+  ## compute the storage requirements for the tree
+  nd = 1 + d * nb * 2 ## number of doubles
+  ni = 3 + 5 * nb  + 2*n   ## number of integers
+  oo <- .C(C_Rkdtree,as.double(X),as.integer(n),as.integer(d),idat = as.integer(rep(0,ni)),
+                     ddat = as.double(rep(0,nd)))
+  list(idat=oo$idat,ddat=oo$ddat)
 }
 
-
-sparse.pen <- function(X,area.weight=TRUE) {
-## Function to generate a sparse approximate TPS penalty matrix
-## NOTE: duplicates not yet handled!!
-  require(Matrix)
+kd.nearest <- function(kd,X,x,k) {
+## given a set of points in rows of X, and corresponding kd tree, kd 
+## (produced by a call to kd.tree(X)), then this routine finds the 
+## k nearest neighbours in X, to the points in the rows of x.
+## outputs: ni[i,] lists k nearest neighbours of X[i,].
+##          dost[i,] is distance to those neighbours.
+## note R indexing of output
   n <- nrow(X)
-  d <- ncol(X)
-  if (d!=2) stop("only 2D case available so far")
-  m <- 3
-  D <- matrix(0,n,6*m)
-  k <- 5
-  ni <- matrix(0,n,k)
-  kappa <- rep(0,n) ## condition numbers
-  ## Get the sqrt penalty matrix entries...
-
-  oo <- .C(C_sparse_penalty,as.double(X),as.integer(n),as.integer(d),D=as.double(D),
-           ni=as.integer(ni),as.integer(k),as.integer(m),as.integer(area.weight),kappa=
-           as.double(kappa))
-
-  ## Now make put the entries into sparse matrices...
-
-  ## First sort out indexing...
-  ##ni <- cbind(1:n,matrix(oo$ni,n,k)) ## neighbour indices, including self
-  ii <- rep(1:n,k+1) ## row index
-  jj <- c(1:n,oo$ni+1) ## col index
-  
-  ni <- length(ii)
-  Kx <- sparseMatrix(i=ii,j=jj,x=oo$D[1:ni],dims=c(n,n))
-  Kz <- sparseMatrix(i=ii,j=jj,x=oo$D[1:ni+ni],dims=c(n,n))
-  Kxz <- sparseMatrix(i=ii,j=jj,x=oo$D[1:ni+2*ni],dims=c(n,n))
-  list(Kx=Kx,Kz=Kz,Kxz=Kxz)
+  m <- nrow(x)
+  ni <- matrix(0,m,k)
+  oo <- .C(C_Rkdnearest,as.double(X),as.integer(kd$idat),as.double(kd$ddat),as.integer(n),as.double(x), 
+           as.integer(m), ni=as.integer(ni), dist=as.double(ni),as.integer(k))
+  list(ni=matrix(oo$ni+1,m,k),dist=matrix(oo$dist,m,k))
 }
+
+kd.radius <- function(kd,X,x,r) {
+## find all points in kd tree (kd,X) in radius r of points in x.
+## kd should come from kd.tree(X).
+## neighbours of x[i,] in X are the rows given by ni[off[i]:(off[i+1]-1)]
+   m <- nrow(x);
+   off <- rep(0,m+1)
+   ## do the work...
+   oo <- .C(C_Rkradius,as.double(r),as.integer(kd$idat),as.double(kd$ddat),as.double(X),as.double(t(x)),
+         as.integer(m),off=as.integer(off),ni=as.integer(0),op=as.integer(0))
+   off <- oo$off
+   ni <- rep(0,off[m+1])
+   ## extract to R and clean up...
+   oo <- .C(C_Rkradius,as.double(r),as.integer(kd$idat),as.double(kd$ddat),as.double(X),as.double(t(x)),
+         as.integer(m),off=as.integer(off),ni=as.integer(ni),op=as.integer(1))
+   list(off=off+1,ni=oo$ni+1) ## note R indexing here.
+} ## kd.radius
 
 tieMatrix <- function(x) {
 ## takes matrix x, and produces sparse matrix P that maps list of unique 
@@ -397,12 +404,12 @@ spasm.range <- function(object,upper.prop=.5,centre=TRUE) {
 ## get reasonable smoothing parameter range for sparse smooth in object
   sp <- 1
   edf <- spasm.sp(object,sp,get.trH=TRUE,centre=centre)$trH
-  while (edf < object$edf0*1.01) { 
+  while (edf < object$edf0*1.01+.5) { 
     sp <- sp /100
     edf <- spasm.sp(object,sp,get.trH=TRUE,centre=centre)$trH
   }
   sp1 <- sp ## store smallest known good
-  while (edf > object$edf0*1.01) { 
+  while (edf > object$edf0*1.01+.5) { 
     sp <- sp * 100
     edf <- spasm.sp(object,sp,get.trH=TRUE,centre=centre)$trH
   }

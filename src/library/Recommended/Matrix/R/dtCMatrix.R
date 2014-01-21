@@ -80,7 +80,7 @@ setMethod("determinant", signature(x = "dtCMatrix", logarithm = "logical"),
 setMethod("solve", signature(a = "dtCMatrix", b = "missing"),
 	  function(a, b, ...) {
 	      stopifnot((n <- nrow(a)) == ncol(a))
-	      as(.Call(dtCMatrix_sparse_solve, a, .trDiagonal(n)),
+	      as(.Call(dtCMatrix_sparse_solve, a, .trDiagonal(n, unitri=FALSE)),
                  "dtCMatrix")
           }, valueClass = "dtCMatrix")
 
@@ -89,7 +89,8 @@ setMethod("solve", signature(a = "dtCMatrix", b = "dgeMatrix"),
 	  valueClass = "dgeMatrix")
 
 setMethod("solve", signature(a = "dtCMatrix", b = "CsparseMatrix"),
-	  function(a, b, ...) .Call(dtCMatrix_sparse_solve, a, b),
+	  function(a, b, ...) .sortCsparse(.Call(dtCMatrix_sparse_solve, a, b)),
+	  ##                  ------------ TODO: both in C code
 	  valueClass = "dgCMatrix")
 
 setMethod("solve", signature(a = "dtCMatrix", b = "matrix"),

@@ -1,6 +1,8 @@
 #  File src/library/utils/R/de.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -143,7 +145,7 @@ de <- function(..., Modes=list(), Names=NULL)
 	}
 	else {
 	    if( (length(Names) != length(Modes)) && length(Modes) ) {
-		warning("modes argument ignored")
+		warning("'modes' argument ignored")
 		Modes <- list()
 	    }
 	    odata <- vector("list", length=length(Names))

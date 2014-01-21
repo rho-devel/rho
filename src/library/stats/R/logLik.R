@@ -1,6 +1,8 @@
 #  File src/library/stats/R/logLik.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 2001-12 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -14,16 +16,19 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
+### originally from package nlne.
+
+
 logLik <- function(object, ...) UseMethod("logLik")
 
 print.logLik <- function(x, digits = getOption("digits"), ...)
 {
-    cat("'log Lik.' ", paste(format(c(x), digits=digits), collapse=", "),
-        " (df=",format(attr(x,"df")),")\n",sep="")
+    cat("'log Lik.' ", paste(format(c(x), digits = digits), collapse = ", "),
+        " (df=", format(attr(x,"df")), ")\n", sep = "")
     invisible(x)
 }
 
-str.logLik <- function(object, digits = max(2, getOption("digits") - 3),
+str.logLik <- function(object, digits = max(2L, getOption("digits") - 3L),
                        vec.len = getOption("str")$vec.len, ...)
 {
     cl <- oldClass(object)
@@ -31,9 +36,10 @@ str.logLik <- function(object, digits = max(2, getOption("digits") - 3),
     cutl <- len > vec.len
     cat("Class", if (length(cl) > 1L) "es",
 	" '", paste(cl, collapse = "', '"), "' : ",
-	paste(format(co[seq_len(min(len,vec.len))], digits=digits),
-	      collapse = ", "), if(cutl)", ...",
-	" (df=",format(attr(object,"df")),")\n",sep="")
+	paste
+        (format(co[seq_len(min(len,vec.len))], digits = digits),
+	      collapse = ", "), if(cutl) ", ...",
+	" (df=", format(attr(object,"df")), ")\n", sep = "")
 }
 
 ## rather silly (but potentially used in pkg nlme):
@@ -47,8 +53,7 @@ as.data.frame.logLik <- function (x, ...)
 ## log-likelihood for glm objects
 logLik.glm <- function(object, ...)
 {
-    if(length(list(...)))
-        warning("extra arguments discarded")
+    if(!missing(...)) warning("extra arguments discarded")
     fam <- family(object)$family
     p <- object$rank
     ## allow for estimated dispersion
@@ -64,6 +69,8 @@ logLik.glm <- function(object, ...)
 ## log-likelihood for lm objects
 logLik.lm <- function(object, REML = FALSE, ...)
 {
+    if(inherits(object, "mlm"))
+        stop("'logLik.lm' does not support multiple responses")
     res <- object$residuals # not resid(object) because of NA methods
     p <- object$rank
     N <- length(res)

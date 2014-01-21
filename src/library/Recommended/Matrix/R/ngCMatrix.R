@@ -35,8 +35,7 @@ setAs("ngCMatrix", "ngeMatrix",
 	  new("ngeMatrix", x = c(as(from, "matrix")), # is fast,
 	      Dim = from@Dim, Dimnames = from@Dimnames))
 
-setAs("ngCMatrix", "matrix",
-      function(from) .Call(ncsc_to_matrix, from))
+setAs("ngCMatrix", "matrix", function(from) .Call(ngC_to_matrix, from))
 ## not this: .Call(Csparse_to_matrix, from)), since it goes via dense -> double precision
 
 ## TODO (maybe): write  matrix_to_lcsc()  in ../src/ngCMatrix.c

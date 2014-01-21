@@ -1,6 +1,6 @@
 % File src/library/stats/man/logLik.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
@@ -34,11 +34,16 @@ logLik(object, \dots)
   \code{"fitdistr"}, \code{"negbin"} and \code{"polr"} in package
   \CRANpkg{MASS}, \code{"multinom"} in package \CRANpkg{nnet} and
   \code{"gls"}, \code{"gnls"} \code{"lme"} and others in package
-  \CRANpkg{nlme}. 
+  \CRANpkg{nlme}.
 }
 %   \code{corStruct}, \code{lmList}, \code{lmeStruct}, \code{reStruct}, and
 %   \code{varFunc}.
 \details{
+  \code{logLik} is most commonly used for a model fitted by maximum
+  likelihood, and some uses, e.g. by \code{\link{AIC}}, assume this.  So
+  care is needed where other fit criteria have been used, for example
+  REML (the default for \code{"lme"}).
+
   For a \code{"glm"} fit the \code{\link{family}} does not have to
   specify how to calculate the log-likelihood, so this is based on using
   the family's \code{aic()} function to compute the AIC.  For the
@@ -52,7 +57,8 @@ logLik(object, \dots)
 
   For \code{"lm"} fits it is assumed that the scale has been estimated
   (by maximum likelihood or REML), and all the constants in the
-  log-likelihood are included.
+  log-likelihood are included.  That method is only applicable to
+  single-response fits.
 }
 \value{
   Returns an object of class \code{logLik}.  This is a number with at
@@ -60,7 +66,7 @@ logLik(object, \dots)
   giving the number of (estimated) parameters in the model.
 
   There is a simple \code{print} method for \code{"logLik"} objects.
-  
+
   There may be other attributes depending on the method used: see the
   appropriate documentation.  One that is used by several methods is
   \code{"nobs"}, the number of observations used in estimation (after
@@ -69,10 +75,12 @@ logLik(object, \dots)
 \seealso{
   \code{\link[nlme:logLik.lme]{logLik.gls}}, \code{\link[nlme]{logLik.lme}}, in
   package \CRANpkg{nlme}, etc.
+
+  \code{\link{AIC}}
 }
 \references{
   For \code{logLik.lm}:
-  
+
   Harville, D.A. (1974).
   Bayesian inference for variance components using only error contrasts.
   \emph{Biometrika}, \bold{61}, 383--385.
@@ -91,9 +99,9 @@ utils::str(logLik(lmx))
 logLik(fm1)
 logLik(fm1, REML = TRUE)
 
-utils::data(Orthodont, package="nlme")
+\donttest{utils::data(Orthodont, package = "nlme")
 fm1 <- lm(distance ~ Sex * age, Orthodont)
 logLik(fm1)
 logLik(fm1, REML = TRUE)
-}
+}}
 \keyword{models}

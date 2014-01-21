@@ -1,6 +1,8 @@
 #  File src/library/base/R/zzz.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2013 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -15,7 +17,7 @@
 #  http://www.r-project.org/Licenses/
 
 ## top-level assignments that need to be copied to baseloader.R
-as.numeric <- as.real <- as.double
+as.numeric <- as.double
 is.name <- is.symbol
 
 
@@ -59,10 +61,12 @@ assign(".Fortran",
 assign(".Call", function(.NAME, ..., PACKAGE) NULL, envir = .ArgsEnv)
 assign(".Call.graphics", function(.NAME, ..., PACKAGE) NULL, envir = .ArgsEnv)
 assign(".External", function(.NAME, ..., PACKAGE) NULL, envir = .ArgsEnv)
+assign(".External2", function(.NAME, ..., PACKAGE) NULL, envir = .ArgsEnv)
 assign(".External.graphics", function(.NAME, ..., PACKAGE) NULL,
        envir = .ArgsEnv)
 assign(".Internal", function(call) NULL, envir = .ArgsEnv)
 assign(".Primitive", function(name) NULL, envir = .ArgsEnv)
+assign(".isMethodsDispatchOn", function(x, onOff = NULL) NULL, envir = .ArgsEnv)
 assign(".primTrace", function(obj) NULL, envir = .ArgsEnv)
 assign(".primUntrace", function(obj) NULL, envir = .ArgsEnv)
 assign(".subset", function(x, ...) NULL, envir = .ArgsEnv)
@@ -109,10 +113,10 @@ assign("is.null", function(x) NULL, envir = .ArgsEnv)
 assign("is.object", function(x) NULL, envir = .ArgsEnv)
 assign("is.pairlist", function(x) NULL, envir = .ArgsEnv)
 assign("is.raw", function(x) NULL, envir = .ArgsEnv)
-assign("is.real", function(x) NULL, envir = .ArgsEnv)
 assign("is.recursive", function(x) NULL, envir = .ArgsEnv)
 assign("is.single", function(x) NULL, envir = .ArgsEnv)
 assign("is.symbol", function(x) NULL, envir = .ArgsEnv)
+assign("isS4", function(object) NULL, envir = .ArgsEnv)
 assign("list", function(...) NULL, envir = .ArgsEnv)
 assign("lazyLoadDBfetch", function(key, file, compressed, hook) NULL,
        envir = .ArgsEnv)
@@ -140,7 +144,7 @@ assign("untracemem", function(x) NULL, envir = .ArgsEnv)
 
 .S3PrimitiveGenerics <-
   c("as.character", "as.complex", "as.double", "as.environment",
-    "as.integer", "as.logical", "as.numeric", "as.raw", "as.real",
+    "as.integer", "as.logical", "as.numeric", "as.raw",
     "c", "dim", "dim<-", "dimnames", "dimnames<-",
     "is.array", "is.finite",
     "is.infinite", "is.matrix", "is.na", "is.nan", "is.numeric",
@@ -231,8 +235,6 @@ assign("signif", function(x, digits=6) UseMethod("signif"),
 assign("trunc", function(x, ...) UseMethod("trunc"), envir = .GenericArgsEnv)
 #assign("xtfrm", function(x) UseMethod("xtfrm"), envir = .GenericArgsEnv)
 
-## make these the same object as as.double
+## make this the same object as as.double
 assign("as.numeric", get("as.double", envir = .GenericArgsEnv),
-       envir = .GenericArgsEnv)
-assign("as.real", get("as.double", envir = .GenericArgsEnv),
        envir = .GenericArgsEnv)

@@ -16,7 +16,7 @@
 
 /*
  *  Mathlib : A C Library of Special Functions
- *  Copyright (C) 1998-2003 Ross Ihaka and the R Core team.
+ *  Copyright (C) 1998-2012 Ross Ihaka and the R Core team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,8 @@
 #include <R_ext/Memory.h>
 #endif
 
+#define min0(x, y) (((x) <= (y)) ? (x) : (y))
+
 static void Y_bessel(double *x, double *alpha, long *nb,
 		     double *by, long *ncalc);
 
@@ -74,7 +76,7 @@ double bessel_y(double x, double alpha)
 		bessel_j(x, -alpha) * sin(M_PI * alpha)));
     }
     nb = 1+ (long)na;/* nb-1 <= alpha < nb */
-    alpha -= (nb-1);
+    alpha -= (double)(nb-1);
 #ifdef MATHLIB_STANDALONE
     by = (double *) calloc(nb, sizeof(double));
     if (!by) MATHLIB_ERROR("%s", _("bessel_y allocation error"));
@@ -91,7 +93,7 @@ double bessel_y(double x, double alpha)
 			     x, ncalc, nb, alpha);
 	else /* ncalc >= 0 */
 	    MATHLIB_WARNING2(_("bessel_y(%g,nu=%g): precision lost in result\n"),
-			     x, alpha+nb-1);
+			     x, alpha+(double)nb-1);
     }
     x = by[nb-1];
 #ifdef MATHLIB_STANDALONE
@@ -126,7 +128,7 @@ double bessel_y_ex(double x, double alpha, double *by)
 		bessel_j_ex(x, -alpha, by) * sin(M_PI * alpha)));
     }
     nb = 1+ (long)na;/* nb-1 <= alpha < nb */
-    alpha -= (nb-1);
+    alpha -= (double)(nb-1);
     Y_bessel(&x, &alpha, &nb, by, &ncalc);
     if(ncalc != nb) {/* error input */
 	if(ncalc == -1)
@@ -136,7 +138,7 @@ double bessel_y_ex(double x, double alpha, double *by)
 			     x, ncalc, nb, alpha);
 	else /* ncalc >= 0 */
 	    MATHLIB_WARNING2(_("bessel_y(%g,nu=%g): precision lost in result\n"),
-			     x, alpha+nb-1);
+			     x, alpha+(double)nb-1);
     }
     x = by[nb-1];
     return x;
@@ -511,7 +513,7 @@ L450:
 
     } else {
 	by[0] = 0.;
-	*ncalc = imin2(*nb,0) - 1;
+	*ncalc = min0(*nb,0) - 1;
     }
 }
 

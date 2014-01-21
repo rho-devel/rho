@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2009,2011 The R Core Team.
+ *  Copyright (C) 2009-2012 The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,6 +43,8 @@
 #endif
 
 #include <Defn.h>
+#include <Internal.h>
+#include <R_ext/Print.h>
 
 // This is currently a no-op in CXXR (and quite likely always will be):
 /* pre is the prefix, v is the object to inspect, deep specifies

@@ -7,6 +7,8 @@
 ###			Douglas M. Bates <bates$stat.wisc.edu>,
 ###			Thomas Lumley
 ### Copyright 2007-9 R Core Development Team
+### Pathed 2013-01-02 following PR#15073 by Peggy Overcashier
+
 ### This file is part of the `foreign' package for R and related languages.
 ### It is made available under the terms of the GNU General Public
 ### License, version 2, or at your option, any later version,
@@ -82,7 +84,7 @@ read.spss <- function(file, use.value.labels = TRUE, to.data.frame = FALSE,
         if(is.na(reencode)) reencode <- l10n_info()[["UTF-8"]]
 
         if(reencode) {
-            message("re-encoding from ", cp)
+            message(gettextf("re-encoding from %s", cp), domain = NA)
             names(rval) <- iconv(names(rval), cp, "")
             vl <- attr(rval, "variable.labels")
             nm <- names(vl)
@@ -97,6 +99,7 @@ read.spss <- function(file, use.value.labels = TRUE, to.data.frame = FALSE,
     }
 
     miss <- attr(rval, "missings")
+    vl <- attr(rval,"label.table")
     if(!is.null(miss)) {
         if(reencode) {
             nm <- names(miss)
@@ -109,69 +112,76 @@ read.spss <- function(file, use.value.labels = TRUE, to.data.frame = FALSE,
         if(use.missings)
             for(v in names(rval)) {
                 tp <- miss[[v]]$type
+                xi <- rval[[v]]
+                z <- miss[[v]]$value
+
+                ## Convert data (xi) to NA for values that either match a
+                ## specified discrete missing value code or fall within
+                ## the specified missing value range, if applicable.
+                ##
+                ## Added Oct. 2012: Retain value labels (vl[[v]]) only for
+                ## codes that haven't been converted to NA in the data.
+
                 if(tp %in% "none") next
                 if(tp %in% c("one", "two", "three")) {
-                    xi <- rval[[v]]
                     other <- miss[[v]]$value
                     ## FIXME: do we need to worry about padding for string vals?
-                    xi[xi %in% other] <- NA
-                    rval[[v]] <- xi
-                    ## NB: not much tested from here down
+                    xi[ xi %in% other ] <- NA
+                    vl[[v]] <- vl[[v]][ !(vl[[v]] %in% other) ]
                 } else if(tp == "low" || tp == "low+1") {
-                    xi <- rval[[v]]
-                    z <- miss[[v]]$value
-                    if(tp == "low+1") xi[ xi <= z[1L] | xi == z[2L] ] <- NA
-                    else  xi[xi <= z[1L]] <- NA
-                    rval[[v]] <- xi
+                    xi[ xi <= z[1L] ] <- NA
+                    vl[[v]] <- vl[[v]][ as.numeric(vl[[v]]) > z[1L] ]
+                    if(tp == "low+1"){
+                        xi[ xi == z[2L] ] <- NA
+                        vl[[v]] <- vl[[v]][ as.numeric(vl[[v]]) != z[2L] ]
+                    }
                 } else if(tp == "high" || tp == "high+1") {
-                    xi <- rval[[v]]
-                    z <- miss[[v]]$value
-                    if(tp == "high+1") xi[ xi >= z[1L] | xi == z[2L] ] <- NA
-                    else xi[ xi >= z[1L] ] <- NA
-                    rval[[v]] <- xi
+                    xi[ xi >= z[1L] ] <- NA
+                    vl[[v]] <- vl[[v]][ as.numeric(vl[[v]]) < z[1L] ]
+                    if(tp == "high+1"){
+                        xi[ xi == z[2L] ] <- NA
+                        vl[[v]] <- vl[[v]][ as.numeric(vl[[v]]) != z[2L] ]
+                    }
                 } else if(tp == "range" || tp == "range+1") {
-                    xi <- rval[[v]]
-                    z <- miss[[v]]$value
-                    if(tp == "range+1")
-                        xi[ xi >= z[1L] | xi <= z[2L] | xi[xi == z[3L]] ] <- NA
-                    else
-                        xi[ xi >= z[1L] | xi <= z[2L] ] <- NA
-                    rval[[v]] <- xi
+                    xi[ xi >= z[1L] & xi <= z[2L] ] <- NA
+                    vl[[v]] <- vl[[v]][ as.numeric(vl[[v]]) < z[1L] | as.numeric(vl[[v]]) > z[2L] ]
+                    if(tp == "range+1"){
+                        xi[ xi == z[3L] ] <- NA
+                        vl[[v]] <- vl[[v]][ as.numeric(vl[[v]]) != z[3L] ]
+                    }
                 } else
                     warning(gettextf("missingness type %s is not handled", tp),
                             domain = NA)
+                rval[[v]] <- xi
         }
     } else use.missings <- FALSE
 
-    vl <- attr(rval,"label.table")
     if(reencode) names(vl) <- iconv(names(vl), cp, "")
     has.vl <- which(!sapply(vl, is.null))
     for(v in has.vl) {
-	nm <- names(vl)[[v]]
-	nvalues <- length(na.omit(unique(rval[[nm]])))
-	nlabels <- length(vl[[v]])
+        nm <- names(vl)[[v]]
+        nvalues <- length(na.omit(unique(rval[[nm]])))
+        nlabels <- length(vl[[v]])
         if(reencode && nlabels) {
             nm2 <- names(vl[[v]])
             vl[[v]] <- iconv(vl[[v]], cp, "")
             names(vl[[v]]) <- iconv(nm2, cp, "")
         }
-        if(use.missings && !is.null(mv <- miss[[v]]$value))
-            vl[[v]] <- vl[[v]][! vl[[v]] %in% mv]
-	if (use.value.labels &&
-	    (!is.finite(max.value.labels) || nvalues <= max.value.labels) &&
-	    nlabels >= nvalues) {
-	    rval[[nm]] <- factor(trim(rval[[nm]], trim_values),
+        if (use.value.labels &&
+            (!is.finite(max.value.labels) || nvalues <= max.value.labels) &&
+            nlabels >= nvalues) {
+            rval[[nm]] <- factor(trim(rval[[nm]], trim_values),
                                  levels = rev(trim(vl[[v]], trim_values)),
-				 labels = rev(trim(names(vl[[v]]), trim.factor.names)))
+                                 labels = rev(trim(names(vl[[v]]), trim.factor.names)))
         } else
-	    attr(rval[[nm]], "value.labels") <- vl[[v]]
+            attr(rval[[nm]], "value.labels") <- vl[[v]]
     }
     if(reencode) attr(rval, "label.table") <- vl
 
     if (to.data.frame) {
-	varlab <- attr(rval, "variable.labels")
-	rval <- as.data.frame(rval)
-	attr(rval, "variable.labels") <- varlab
+        varlab <- attr(rval, "variable.labels")
+        rval <- as.data.frame(rval)
+        attr(rval, "variable.labels") <- varlab
         if(codepage > 500) attr(rval, "codepage") <- codepage
     }
     rval

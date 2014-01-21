@@ -1,6 +1,8 @@
 #  File src/library/base/R/octhex.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -58,7 +60,7 @@ as.octmode <- function(x)
         z <- strtoi(x, 8L)
         if(!any(is.na(z) | z < 0)) return(structure(z, class="octmode"))
     }
-    stop("'x' cannot be coerced to 'octmode'")
+    stop("'x' cannot be coerced to class \"octmode\"")
 }
 
 ## BioC packages cellHTS2 and flowCore misuse this for doubles,
@@ -108,26 +110,18 @@ as.hexmode <- function(x)
         z <- strtoi(x, 16L)
         if(!any(is.na(z) | z < 0)) return(structure(z, class = "hexmode"))
     }
-    stop("'x' cannot be coerced to hexmode")
+    stop("'x' cannot be coerced to class \"hexmode\"")
 }
 
 
-`!.octmode` <- function(a)
-    as.octmode(.Call("bitwiseNot", as.octmode(a), PACKAGE = "base"))
+`!.octmode` <- function(a) as.octmode(bitwNot(as.octmode(a)))
 
-`&.octmode` <- function(a, b)
-    as.octmode(.Call("bitwiseAnd", as.octmode(a), as.octmode(b), PACKAGE = "base"))
-`|.octmode` <- function(a, b)
-    as.octmode(.Call("bitwiseOr", as.octmode(a), as.octmode(b), PACKAGE = "base"))
-xor.octmode <- function(a, b)
-    as.octmode(.Call("bitwiseXor", as.octmode(a), as.octmode(b), PACKAGE = "base"))
+`&.octmode` <- function(a, b) as.octmode(bitwAnd(as.octmode(a), as.octmode(b)))
+`|.octmode` <- function(a, b) as.octmode(bitwOr(as.octmode(a), as.octmode(b)))
+xor.octmode <- function(a, b) as.octmode(bitwXor(as.octmode(a), as.octmode(b)))
 
-`!.hexmode` <- function(a)
-    as.hexmode(.Call("bitwiseNot", as.hexmode(a), PACKAGE = "base"))
+`!.hexmode` <- function(a) as.hexmode(bitwNot(as.hexmode(a)))
 
-`&.hexmode` <- function(a, b)
-    as.hexmode(.Call("bitwiseAnd", as.hexmode(a), as.hexmode(b), PACKAGE = "base"))
-`|.hexmode` <- function(a, b)
-    as.hexmode(.Call("bitwiseOr", as.hexmode(a), as.hexmode(b), PACKAGE = "base"))
-xor.hexmode <- function(a, b)
-    as.hexmode(.Call("bitwiseXor", as.hexmode(a), as.hexmode(b), PACKAGE = "base"))
+`&.hexmode` <- function(a, b) as.hexmode(bitwAnd(as.hexmode(a), as.hexmode(b)))
+`|.hexmode` <- function(a, b) as.hexmode(bitwOr(as.hexmode(a), as.hexmode(b)))
+xor.hexmode <- function(a, b) as.hexmode(bitwXor(as.hexmode(a), as.hexmode(b)))

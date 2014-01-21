@@ -23,7 +23,7 @@ setAs("matrix", "ngTMatrix",
 	  if(any(is.na(from)))
 	      stop("cannot coerce 'NA's to \"nsparseMatrix\"")
           dn <- dimnames(from)
-          if(is.null(dn))
+          if(is.null.DN(dn))
               dn <- list(NULL,NULL)
           else dimnames(from) <- NULL # such that which(.) does not see any:
 	  ij <- which(from, arr.ind = TRUE) - 1L

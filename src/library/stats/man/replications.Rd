@@ -6,7 +6,7 @@
 \name{replications}
 \title{Number of Replications of Terms}
 \usage{
-replications(formula, data=NULL, na.action)
+replications(formula, data = NULL, na.action)
 }
 \alias{replications}
 \arguments{
@@ -24,6 +24,8 @@ replications(formula, data=NULL, na.action)
 \details{
   If \code{formula} is a data frame and \code{data} is missing,
   \code{formula} is used for \code{data} with the formula \code{~ .}.
+  
+  Any character vectors in the formula are coerced to factors.
 }
 \value{
   A vector or list with one entry for each term in the formula giving
@@ -55,8 +57,8 @@ K <- c(1,0,0,1,0,1,1,0,0,1,0,1,0,1,1,0,0,0,1,1,1,0,1,0)
 yield <- c(49.5,62.8,46.8,57.0,59.8,58.5,55.5,56.0,62.8,55.8,69.5,
 55.0, 62.0,48.8,45.5,44.2,52.0,51.5,49.8,48.8,57.2,59.0,53.2,56.0)
 
-npk <- data.frame(block=gl(6,4), N=factor(N), P=factor(P),
-                  K=factor(K), yield=yield)
+npk <- data.frame(block = gl(6,4), N = factor(N), P = factor(P),
+                  K = factor(K), yield = yield)
 replications(~ . - yield, npk)
 }
 \keyword{models}

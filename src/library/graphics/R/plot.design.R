@@ -1,6 +1,8 @@
 #  File src/library/graphics/R/plot.design.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -55,7 +57,7 @@ plot.design <-
 	    }
 	}
         if(axes && xaxt != "n")
-            axis(1, at = 1L:k, names(stats), xaxt= xaxt, tick = xtick,
+            axis(1, at = 1L:k, names(stats), xaxt = xaxt, tick = xtick,
                  mgp = {p <- par("mgp"); c(p[1L], if(xtick) p[2L] else 0, 0)},
                  ...)
     } ## .plot.des()

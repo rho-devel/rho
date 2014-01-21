@@ -46,7 +46,7 @@ col.whitebg()
     A possible use of this argument is to change the default settings by 
     specifying \code{lattice.options(default.theme = "col.whitebg")}. 
     For back-compatibility, this is initially (when lattice is loaded)
-    set to \code{options(lattice.theme)}.
+    set to \code{getOption(lattice.theme)}.
 
     If \code{theme} is a function, it will not be supplied any
     arguments, however, it is guaranteed that a device will already be
@@ -101,8 +101,9 @@ col.whitebg()
   ways.  For this reason, a \dQuote{safe} default is used for all
   devices from \R 2.3.0 onwards.  The old behaviour can be reinstated by
   setting \code{standard.theme} as the default \code{theme} argument,
-  e.g. by putting \code{options(lattice.theme = "standard.theme")} in a
-  startup script (see the entry for \code{theme} above for details).
+  e.g. by putting \code{lattice.options(default.theme =
+  "standard.theme")} in a startup script (see the entry for \code{theme}
+  above for details).
 }
 
 \value{

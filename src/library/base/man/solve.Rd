@@ -1,10 +1,14 @@
 % File src/library/base/man/solve.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{solve}
 \title{Solve a System of Equations}
+\description{
+  This generic function solves the equation \code{a \%*\% x = b} for \code{x},
+  where \code{b} can be either a vector or a matrix.
+}
 \usage{
 solve(a, b, \dots)
 
@@ -14,22 +18,16 @@ solve(a, b, \dots)
 \alias{solve.default}
 \arguments{
   \item{a}{a square numeric or complex matrix containing the coefficients of
-    the linear system.}
+    the linear system.  Logical matrices are coerced to numeric.}
   \item{b}{a numeric or complex vector or matrix giving the right-hand
     side(s) of the linear system.  If missing, \code{b} is taken to be
     an identity matrix and \code{solve} will return the inverse of \code{a}.}
   \item{tol}{the tolerance for detecting linear dependencies in the
-    columns of \code{a}.  If \code{LINPACK} is \code{TRUE} the default
-    is \code{1e-7}, otherwise it is \code{.Machine$double.eps}. Future
-    versions of R may use a tighter tolerance.  Not currently used with
-    complex matrices \code{a}.}
-  \item{LINPACK}{logical.  Should LINPACK be used (for compatibility with
-    \R < 1.7.0)?  Otherwise LAPACK is used.}
+    columns of \code{a}.  The default is \code{.Machine$double.eps}. Not
+    currently used with complex matrices \code{a}.}
+  \item{LINPACK}{logical.  Defunct and ignored (with a warning for a
+    true value).}
   \item{\dots}{further arguments passed to or from other methods}
-}
-\description{
-  This generic function solves the equation \code{a \%*\% x = b} for \code{x},
-  where \code{b} can be either a vector or a matrix.
 }
 \details{
   \code{a} or \code{b} can be complex, but this uses double complex
@@ -46,11 +44,23 @@ solve(a, b, \dots)
   although \code{\link{qr.solve}} should be called in that case.
   \code{\link{qr.solve}} can handle non-square systems.
 }
+\source{
+  The defult method is an interface to the LAPACK routines \code{DGESV}
+  and \code{ZGESV}.
+
+  LAPACK is from \url{http://www.netlib.org/lapack}.
+}
 \references{
+  Anderson. E. and ten others (1999)
+  \emph{LAPACK Users' Guide}. Third Edition. SIAM.\cr
+  Available on-line at
+  \url{http://www.netlib.org/lapack/lug/lapack_lug.html}.
+
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
   Wadsworth & Brooks/Cole.
 }
+
 \seealso{
   \code{\link{solve.qr}} for the \code{qr} method,
   \code{\link{chol2inv}} for inverting from the Choleski factor

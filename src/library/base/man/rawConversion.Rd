@@ -1,6 +1,6 @@
 % File src/library/base/man/rawConversion.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2004-2009 R Core Team
+% Copyright 2004-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{rawConversion}
@@ -42,9 +42,10 @@ packBits(x, type = c("raw", "integer"))
   \code{0}).  (Note that a single character string could contain
   embedded nuls; only trailing nulls are allowed and will be removed.)
   In either case it is possible to create a result which is invalid in a
-  multibyte locale, e.g. one using UTF-8.
+  multibyte locale, e.g. one using UTF-8. \link{Long vectors} are
+  allowed if \code{multiple} is true.
 
-  \code{rawShift(x,n)} shift the bits in \code{x} by \code{n} positions
+  \code{rawShift(x, n)} shift the bits in \code{x} by \code{n} positions
   to the right, see the argument \code{n}, above.
 
   \code{rawToBits} returns a raw vector of 8 times the length of a raw

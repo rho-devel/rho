@@ -2,6 +2,7 @@
 
 library(Matrix)
 source(system.file("test-tools.R", package = "Matrix"))# identical3() etc
+cat("doExtras:",doExtras,"\n")
 
 set.seed(2001)
 
@@ -68,9 +69,39 @@ tst <- function(n, i = 1) {
               {C <- (ee / D == ee / diag(n)); all(is.na(C) | C)},
               TRUE)
 }
-tmp <- sapply(1:16, tst)
+tmp <- sapply(1:16, tst) # failed in Matrix 1.0-4
 i <- sapply(1:16, function(i) sample(i,1))
-tmp <- mapply(tst, n= 1:16, i= i)
+tmp <- mapply(tst, n= 1:16, i= i)# failed too
+
+showProc.time()
+set.seed(111)
+local({
+    for(i in 1:20) {
+        M <- rspMat(n=1000, 200, density = 1/20)
+        v <- rnorm(ncol(M))
+        m <- as(M,"matrix")
+        stopifnot(all(t(M)/v == t(m)/v))
+        cat(".")
+    }});cat("\n")
+
+## Now just once, with a large such matrix:
+local({
+    n <- 100000; m <- 30000
+    AA <- rspMat(n, m, density = 1/20000)
+    v <- rnorm(m)
+    st <- system.time({
+        BB <- t(AA)/v # should happen *fast*
+        stopifnot(dim(BB) == c(m,n), is(BB, "sparseMatrix"))
+    })
+    str(BB)
+    print(st)
+    if(Sys.info()[["sysname"]] == "Linux") {
+        mips <- as.numeric(sub(".*: *", '',
+                               grep("bogomips", readLines("/proc/cpuinfo"),
+                                    value=TRUE)[[1]]))
+        stopifnot(st[1] < 1000/mips)# ensure there was no gross inefficiency
+    }
+})
 
 
 ###----- Compare methods ---> logical Matrices ------------
@@ -147,46 +178,95 @@ stopifnot(identical(crossprod(lm1),# "lgC": here works!
                     crossprod(as(lm1, "dMatrix"))
                     ))
 
-## Systematically look at all "Ops" group generics for "all" Matrix classes
-## -------------- Main issue: Detect infinite recursion problems
+## For the checks below, remove some and add a few more objects:
+rm(list= ls(pat="^.[mMC]?$"))
+D3 <- Diagonal(x=4:2); L7 <- Diagonal(7) > 0
+T3 <- Diagonal(3) > 0; stopifnot(T3@diag == "U") # "uni-diagonal"
+validObject(xpp <- pack(round(xpx,2)))
+validObject(dtp <- pack(as(dt3, "denseMatrix")))
+lsp <- xpp > 0
+isValid(lsC <- as(lsp, "sparseMatrix"), "lsCMatrix")
+
+showProc.time()
+
+### Systematically look at all "Ops" group generics for "all" Matrix classes
+### -------------- Main issue: Detect infinite recursion problems
 cl <- sapply(ls(), function(.) class(get(.)))
 Mcl <- c(grep("Matrix$", cl, value=TRUE),
          grep("sparseVector", cl, value=TRUE))
 table(Mcl)
-M.objs <- names(Mcl[!duplicated(Mcl)])
+## choose *one* of each class:
+## M.objs <- names(Mcl[!duplicated(Mcl)])
+## choose all
+M.objs <- names(Mcl)
+Mat.objs <- M.objs[vapply(M.objs, function(nm) is(get(nm), "Matrix"), NA)]
+MatDims <- t(vapply(Mat.objs, function(nm) dim(get(nm)), 0:1))
+noquote(cbind(Mcl[Mat.objs], format(MatDims)))
+mDims <- MatDims %*% (d.sig <- c(1, 1000)) # "dim-signature" to match against
 
+m2num <- function(m) { if(is.integer(m)) storage.mode(m) <- "double" ; m }
+M.knd <- Matrix:::.M.kind
 cat("Checking all group generics for a set of arguments:\n",
     "---------------------------------------------------\n", sep='')
+options(warn = 2)#, error=recover)
 for(gr in getGroupMembers("Ops")) {
-    cat(gr,"\n",paste(rep.int("=",nchar(gr)),collapse=""),"\n", sep='')
-    for(f in getGroupMembers(gr)) {
-	cat(sprintf("%9s : ", dQuote(f)))
-	for(nm in M.objs) {
-	    M <- get(nm, inherits=FALSE)
-            nm <- NROW(M)
-	    cat("o")
-	    for(x in list(TRUE, -3.2, 0L, seq_len(nm))) {
-                cat(".")
-		validObject(r1 <- do.call(f, list(M,x)))
-		validObject(r2 <- do.call(f, list(x,M)))
-		stopifnot(dim(r1) == dim(M), dim(r2) == dim(M))
-	    }
-            ## M  o  <sparseVector>
-            x <- numeric(nm)
-            x[c(1,length(x))] <- 1:2
-            sv <- as(x, "sparseVector")
-            cat("s.")
-            validObject(r3 <- do.call(f, list(M, sv)))
-            stopifnot(dim(r3) == dim(M))
-	}
-	cat("\n")
+  cat(gr,"\n",paste(rep.int("=",nchar(gr)),collapse=""),"\n", sep='')
+  for(f in getGroupMembers(gr)) {
+    cat(sprintf("%9s :\n%9s\n", paste0('"',f,'"'), "--"))
+    for(nm in M.objs) {
+      if(doExtras) cat("  '",nm,"' ", sep="")
+      M <- get(nm, inherits=FALSE)
+      n.m <- NROW(M)
+      cat("o")
+      for(x in list(TRUE, -3.2, 0L, seq_len(n.m))) {
+        cat(".")
+        validObject(r1 <- do.call(f, list(M,x)))
+        validObject(r2 <- do.call(f, list(x,M)))
+        stopifnot(dim(r1) == dim(M), dim(r2) == dim(M))
+      }
+      ## M  o  <sparseVector>
+      x <- numeric(n.m)
+      x[c(1,length(x))] <- 1:2
+      sv <- as(x, "sparseVector")
+      cat("s.")
+      validObject(r3 <- do.call(f, list(M, sv)))
+      stopifnot(dim(r3) == dim(M))
+      if(doExtras && is(M, "Matrix")) { ## M o <Matrix>
+        d <- dim(M)
+        ds <- sum(d * d.sig)         # signature .. match with all other sigs
+        match. <- ds == mDims        # (matches at least itself)
+        cat("\nM o M:")
+        for(oM in Mat.objs[match.]) {
+          M2 <- get(oM)
+          ##   R4 :=  M  f  M2
+          validObject(R4 <- do.call(f, list(M, M2)))
+          cat(".")
+          for(M. in list(as.mat(M), M)) { ## two cases ..
+            r4 <- m2num(as.mat(do.call(f, list(M., as.mat(M2)))))
+            cat(",")
+            if(!identical(r4, as.mat(R4))) {
+              cat(sprintf("\n %s %s %s not identical: r4 \\ R4:\n",
+                          nm, f, oM))
+              print(r4); print(R4)
+              C1 <- (eq <- R4 == r4) | ((nr4 <- is.na(r4)) & !is.finite(R4))
+              if(isTRUE(all(C1)) && (k1 <- M.knd(M)) != "d" && (k2 <- M.knd(M2)) != "d")
+                cat(" --> ",k1,"",f,"", k2,
+                    " (ok): only difference is NA (matrix) and NaN/Inf (Matrix)\n")
+              else if(isTRUE(all(eq | (nr4 & Matrix:::is0(R4)))))
+                cat(" --> 'ok': only difference is 'NA' (matrix) and 0 (Matrix)\n")
+              else stop("differing \"too much\"")
+            }
+          }
+          cat("i")
+        }
+      }
     }
+    cat("\n")
+  }
 }
 
-if(FALSE) {## These are not yet there
-lm1 & lm2
-lm1 | lm2
-}
+stopifnot(identical(lm2, lm1 & lm2),
+	  identical(lm1, lm1 | lm2))
 
 
 cat('Time elapsed: ', proc.time(),'\n') # for ``statistical reasons''

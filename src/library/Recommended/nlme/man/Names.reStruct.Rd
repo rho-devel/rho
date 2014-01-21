@@ -30,7 +30,7 @@
   a list containing the column names of each of the positive-definite
   matrices represented by the \code{pdMat} elements of \code{object}. 
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \section{SIDE EFFECTS}{
   On the left side of an assignment, sets the \code{Names} of the
   \code{pdMat} elements of \code{object} to the corresponding element of

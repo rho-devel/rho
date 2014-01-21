@@ -107,7 +107,7 @@ Data", in "Modelling Longitudinal and Spatially Correlated Data:
 Methods, Applications and Future Directions", T.G. Gregoire (ed.),
 Springer-Verlag, New York.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{groupedData}}, \code{\link{collapse.groupedData}},
   \code{\link{plot.nfnGroupedData}}, \code{\link{plot.nffGroupedData}}
 }  

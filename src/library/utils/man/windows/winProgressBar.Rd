@@ -34,14 +34,14 @@ setWinProgressBar(pb, value, title = NULL, label = NULL)
 \details{
   \code{winProgressBar} will display a progress bar centred on the
   screen.  Space will be allocated for the label only if it is non-empty.
-  
+
   \code{setWinProgessBar} will update the value and for non-\code{NULL}
   values, the title and label (provided there was one when the widget
   was created).  Missing (\code{\link{NA}}) and out-of-range values of
   \code{value} will be (silently) ignored.
-  
+
   The progress bar should be \code{close}d when finished with, but it
-  will be garbage-collected once no \R object refers to it. 
+  will be garbage-collected once no \R object refers to it.
 }
 \value{
   For \code{winProgressBar} an object of class \code{"winProgressBar"}.
@@ -50,6 +50,9 @@ setWinProgressBar(pb, value, title = NULL, label = NULL)
   length-one numeric vector giving the previous value (invisibly for
   \code{setWinProgressBar}).
 }
+\note{
+    These functions are only available on Windows.
+}
 \seealso{
   \code{\link{txtProgressBar}}, \code{\link{tkProgressBar}}
 }
@@ -57,7 +60,7 @@ setWinProgressBar(pb, value, title = NULL, label = NULL)
 pb <- winProgressBar("test progress bar", "Some information in \%",
                      0, 100, 50)
 Sys.sleep(0.5)
-u <- c(0, sort(runif(20, 0 ,100)), 100)
+u <- c(0, sort(runif(20, 0, 100)), 100)
 for(i in u) {
     Sys.sleep(0.1)
     info <- sprintf("\%d\%\% done", round(i))

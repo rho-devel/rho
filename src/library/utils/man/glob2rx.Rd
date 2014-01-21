@@ -1,7 +1,7 @@
 % File src/library/utils/man/glob2rx.Rd
 % Part of the R package, http://www.R-project.org
 % Copyright 1995-2008 R Core Team
-% Copyright 1995-2008 The R Foundation
+% Copyright 2002-2008 The R Foundation
 % Distributed under GPL 2 or later
 
 \name{glob2rx}
@@ -46,9 +46,9 @@ glob2rx(pattern, trim.head = FALSE, trim.tail = TRUE)
 \examples{
 stopifnot(glob2rx("abc.*") == "^abc\\\\.",% '\\' doubled in Rd file!
           glob2rx("a?b.*") == "^a.b\\\\.",
-          glob2rx("a?b.*", trim.tail=FALSE) == "^a.b\\\\..*$",
+          glob2rx("a?b.*", trim.tail = FALSE) == "^a.b\\\\..*$",
           glob2rx("*.doc") == "^.*\\\\.doc$",
-          glob2rx("*.doc", trim.head=TRUE) == "\\\\.doc$",
+          glob2rx("*.doc", trim.head = TRUE) == "\\\\.doc$",
           glob2rx("*.t*")  == "^.*\\\\.t",
           glob2rx("*.t??") == "^.*\\\\.t..$",
           glob2rx("*[*")  == "^.*\\\\["

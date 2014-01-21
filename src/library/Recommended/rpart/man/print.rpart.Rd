@@ -5,14 +5,14 @@
 }
 \description{
 This function prints an \code{rpart} object.  It is a method for the generic 
-function \code{print} of class \code{rpart}. 
+function \code{print} of class \code{"rpart"}. 
 }
 \usage{
-\method{print}{rpart}(x, minlength=0, spaces=2, cp, digits= getOption("digits"), \dots)
+\method{print}{rpart}(x, minlength = 0, spaces = 2, cp, digits = getOption("digits"), \dots)
 }
 \arguments{
 \item{x}{
-fitted model object of class \code{rpart}.  This is assumed to be the result 
+fitted model object of class \code{"rpart"}.  This is assumed to be the result 
 of some function that produces an object with the same named 
 components as that returned by the \code{rpart} function. 
 }

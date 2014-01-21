@@ -1,6 +1,8 @@
 #  File src/library/stats/R/contrast.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -85,8 +87,10 @@ contrasts <- function (x, contrasts = TRUE, sparse = FALSE)
     d <- c(n,n)
     dn <- list(nms, nms)
     if(sparse) {
-	if(is.null(tryCatch(loadNamespace("Matrix"), error= function(e)NULL)))
-	    stop("contr*(.., sparse=TRUE) needs package \"Matrix\" correctly installed")
+	if(is.null(tryCatch(loadNamespace("Matrix"), error = function(e)NULL)))
+	    stop(gettextf("%s needs package 'Matrix' correctly installed",
+                          "contr*(.., sparse=TRUE)"),
+                 domain = NA)
 	new("ddiMatrix", diag = "U", Dim = d, Dimnames = dn)
     } else
 	array(c(rep.int(c(1, numeric(n)), n-1L), 1), d, dn)
@@ -94,8 +98,10 @@ contrasts <- function (x, contrasts = TRUE, sparse = FALSE)
 
 .asSparse <- function(m) {
     ## ensure helpful error message when Matrix is missing:
-    if(is.null(tryCatch(loadNamespace("Matrix"), error= function(e)NULL)))
-	stop("contr*(.., sparse=TRUE) needs package \"Matrix\" correctly installed")
+    if(is.null(tryCatch(loadNamespace("Matrix"), error = function(e)NULL)))
+	stop(gettextf("%s needs package 'Matrix' correctly installed",
+                      "contr*(.., sparse=TRUE)"),
+             domain = NA)
     as(m, "sparseMatrix")
 }
 

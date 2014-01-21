@@ -25,7 +25,7 @@ asOneFormula(\dots, omit)
   extracted from the objects in \code{\dots}, except the ones listed in
   \code{omit}. 
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{formula}}, \code{\link{all.vars}}}
 

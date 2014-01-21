@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2010  The R Core Team
+ *  Copyright (C) 1997--2012  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Pulic License as published by
@@ -56,6 +56,7 @@ here prior to 2.10.0 are now in grep.c and agrep.c
 make.unique, duplicated, unique, match, pmatch, charmatch are in unique.c
 iconv is in sysutils.c
 
+Character strings in R are less than 2^31-1 bytes, so we use int not size_t.
 
 Support for UTF-8-encoded strings in non-UTF-8 locales
 ======================================================
@@ -90,11 +91,12 @@ abbreviate chartr make.names strtrim tolower toupper give error.
 #endif
 
 #include <Defn.h>
+#include <Internal.h>
 #include <errno.h>
 
 #include <R_ext/RS.h>  /* for Calloc/Free */
 
-#include <R_ext/rlocale.h>
+#include <rlocale.h>
 
 using namespace CXXR;
 
@@ -117,7 +119,7 @@ static R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
 SEXP attribute_hidden do_nzchar(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP x, ans;
-    int i, len;
+    R_xlen_t i, len;
 
     checkArity(op, args);
     check1arg(args, call, "x");
@@ -127,7 +129,7 @@ SEXP attribute_hidden do_nzchar(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(x = coerceVector(CAR(args), STRSXP));
     if (!isString(x))
 	error(_("'%s' requires a character vector"), "nzchar()");
-    len = LENGTH(x);
+    len = XLENGTH(x);
     PROTECT(ans = allocVector(LGLSXP, len));
     for (i = 0; i < len; i++)
 	LOGICAL(ans)[i] = LENGTH(STRING_ELT(x, i)) > 0;
@@ -139,7 +141,8 @@ SEXP attribute_hidden do_nzchar(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP d, s, x, stype;
-    int i, len, allowNA;
+    R_xlen_t i, len;
+    int allowNA;
     size_t ntype;
     int nc;
     const char *type;
@@ -153,7 +156,7 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(x = coerceVector(CAR(args), STRSXP));
     if (!isString(x))
 	error(_("'%s' requires a character vector"), "nchar()");
-    len = LENGTH(x);
+    len = XLENGTH(x);
     stype = CADR(args);
     if (!isString(stype) || LENGTH(stype) != 1)
 	error(_("invalid '%s' argument"), "type");
@@ -184,12 +187,12 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
 		    error(_("number of characters is not computable for element %d in \"bytes\" encoding"), i+1);
 		INTEGER(s)[i] = NA_INTEGER;
 	    } else if (mbcslocale) {
-		nc = mbstowcs(NULL, translateChar(sxi), 0);
+		nc = int( mbstowcs(NULL, translateChar(sxi), 0));
 		if (!allowNA && nc < 0)
 		    error(_("invalid multibyte string %d"), i+1);
 		INTEGER(s)[i] = nc >= 0 ? nc : NA_INTEGER;
 	    } else
-		INTEGER(s)[i] = strlen(translateChar(sxi));
+		INTEGER(s)[i] = int( strlen(translateChar(sxi)));
 	} else if (strncmp(type, "width", ntype) == 0) {
 	    if (IS_UTF8(sxi)) { /* assume this is valid */
 		const char *p = CHAR(sxi);
@@ -206,7 +209,7 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
 		INTEGER(s)[i] = NA_INTEGER;
 	    } else if (mbcslocale) {
 		xi = translateChar(sxi);
-		nc = mbstowcs(NULL, xi, 0);
+		nc = int( mbstowcs(NULL, xi, 0));
 		if (nc >= 0) {
 		    wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 
@@ -218,7 +221,7 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
 		else
 		    INTEGER(s)[i] = NA_INTEGER;
 	    } else
-		INTEGER(s)[i] = strlen(translateChar(sxi));
+		INTEGER(s)[i] = int( strlen(translateChar(sxi)));
 	} else
 	    error(_("invalid '%s' argument"), "type");
 	vmaxset(vmax);
@@ -241,7 +244,7 @@ static void substr(char *buf, const char *str, int ienc, int sa, int so)
 
     if (ienc == CE_UTF8) {
 	for (i = 0; i < so; i++) {
-	    used = utf8clen(*str);
+	    int used = utf8clen(*str);
 	    if (i < sa - 1) { str+= used; continue; }
 	    for (j = 0; j < used; j++) *buf++ = *str++;
 	}
@@ -253,7 +256,7 @@ static void substr(char *buf, const char *str, int ienc, int sa, int so)
 	    mbs_init(&mb_st);
 	    for (i = 1; i < sa; i++) str += Mbrtowc(NULL, str, MB_CUR_MAX, &mb_st);
 	    for (i = sa; i <= so; i++) {
-		used = Mbrtowc(NULL, str, MB_CUR_MAX, &mb_st);
+		used = int( Mbrtowc(NULL, str, MB_CUR_MAX, &mb_st));
 		for (j = 0; j < used; j++) *buf++ = *str++;
 	    }
 	} else
@@ -265,7 +268,8 @@ static void substr(char *buf, const char *str, int ienc, int sa, int so)
 SEXP attribute_hidden do_substr(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s, x, sa, so, el;
-    int i, len, start, stop, k, l;
+    R_xlen_t i, len;
+    int start, stop, k, l;
     size_t slen;
     cetype_t ienc;
     const char *ss;
@@ -280,11 +284,11 @@ SEXP attribute_hidden do_substr(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (!isString(x))
 	error(_("extracting substrings from a non-character object"));
-    len = LENGTH(x);
+    len = XLENGTH(x);
     PROTECT(s = allocVector(STRSXP, len));
     if (len > 0) {
 	if (!isInteger(sa) || !isInteger(so) || k == 0 || l == 0)
-	    error(_("invalid substring argument(s)"));
+	    error(_("invalid substring arguments"));
 
 	for (i = 0; i < len; i++) {
 	    start = INTEGER(sa)[i % k];
@@ -302,7 +306,7 @@ SEXP attribute_hidden do_substr(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (start > stop || start > CXXRCONSTRUCT(int, slen)) {
 		buf[0] = '\0';
 	    } else {
-		if (stop > CXXRCONSTRUCT(int, slen)) stop = slen;
+		if (stop > CXXRCONSTRUCT(int, slen)) stop = int( slen);
 		substr(buf, ss, ienc, start, stop);
 	    }
 	    SET_STRING_ELT(s, i, mkCharCE(buf, ienc));
@@ -331,7 +335,7 @@ substrset(char *buf, const char *const str, cetype_t ienc, int sa, int so)
 	if (in != out) memmove(buf+in, buf+out, strlen(buf+out)+1);
 	memcpy(buf, str, in);
     } else if (ienc == CE_LATIN1 || ienc == CE_BYTES) {
-	in = strlen(str);
+	in = int( strlen(str));
 	out = so - sa + 1;
 	memcpy(buf + sa - 1, str, (in < out) ? in : out);
     } else {
@@ -340,14 +344,14 @@ substrset(char *buf, const char *const str, cetype_t ienc, int sa, int so)
 	    for (i = 1; i < sa; i++) buf += Mbrtowc(NULL, buf, MB_CUR_MAX, NULL);
 	    /* now work out how many bytes to replace by how many */
 	    for (i = sa; i <= so; i++) {
-		in += Mbrtowc(NULL, str+in, MB_CUR_MAX, NULL);
-		out += Mbrtowc(NULL, buf+out, MB_CUR_MAX, NULL);
+		in += int( Mbrtowc(NULL, str+in, MB_CUR_MAX, NULL));
+		out += int( Mbrtowc(NULL, buf+out, MB_CUR_MAX, NULL));
 		if (!str[in]) break;
 	    }
 	    if (in != out) memmove(buf+in, buf+out, strlen(buf+out)+1);
 	    memcpy(buf, str, in);
 	} else {
-	    in = strlen(str);
+	    in = int( strlen(str));
 	    out = so - sa + 1;
 	    memcpy(buf + sa - 1, str, (in < out) ? in : out);
 	}
@@ -357,7 +361,8 @@ substrset(char *buf, const char *const str, cetype_t ienc, int sa, int so)
 SEXP attribute_hidden do_substrgets(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s, x, sa, so, value, el, v_el;
-    int i, len, start, stop, k, l, v;
+    R_xlen_t i, len;
+    int start, stop, k, l, v;
     size_t slen;
     cetype_t ienc, venc;
     const char *ss, *v_ss;
@@ -378,7 +383,7 @@ SEXP attribute_hidden do_substrgets(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(s = allocVector(STRSXP, len));
     if (len > 0) {
 	if (!isInteger(sa) || !isInteger(so) || k == 0 || l == 0)
-	    error(_("invalid substring argument(s)"));
+	    error(_("invalid substring arguments"));
 
 	v = LENGTH(value);
 	if (!isString(value) || v == 0) error(_("invalid value"));
@@ -398,7 +403,7 @@ SEXP attribute_hidden do_substrgets(SEXP call, SEXP op, SEXP args, SEXP env)
 	    ss = CHAR(el);
 	    slen = strlen(ss);
 	    if (start < 1) start = 1;
-	    if (stop > CXXRCONSTRUCT(int, slen)) stop = slen; /* SBCS optimization */
+	    if (stop > slen) stop = int( slen); /* SBCS optimization */
 	    if (start > stop) {
 		/* just copy element across */
 		SET_STRING_ELT(s, i, STRING_ELT(x, i));
@@ -481,7 +486,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
     char *buff1 = cbuff.data;
 
     mystrcpy(buff1, inchar);
-    upper = strlen(buff1)-1;
+    upper = int(strlen(buff1) - 1);
 
     /* remove leading blanks */
     j = 0;
@@ -492,7 +497,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
 	    break;
 
     mystrcpy(buff1, &buff1[j]);
-    upper = strlen(buff1) - 1;
+    upper = int(strlen(buff1) - 1);
 
     if (CXXRCONSTRUCT(int, strlen(buff1)) < minlen)
 	goto donesc;
@@ -511,7 +516,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
 	    goto donesc;
     }
 
-    upper = strlen(buff1) -1;
+    upper = int(strlen(buff1) - 1);
     for (i = upper; i > 0; i--) {
 	if (LOWVOW(buff1, i) && LASTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
@@ -519,7 +524,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
 	    goto donesc;
     }
 
-    upper = strlen(buff1) -1;
+    upper = int(strlen(buff1) - 1);
     for (i = upper; i > 0; i--) {
 	if (LOWVOW(buff1, i) && !FIRSTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
@@ -527,7 +532,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
 	    goto donesc;
     }
 
-    upper = strlen(buff1) - 1;
+    upper = int(strlen(buff1) - 1);
     for (i = upper; i > 0; i--) {
 	if (islower(int(buff1[i])) && LASTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
@@ -535,7 +540,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
 	    goto donesc;
     }
 
-    upper = strlen(buff1) -1;
+    upper = int(strlen(buff1) - 1);
     for (i = upper; i > 0; i--) {
 	if (islower(int(buff1[i])) && !FIRSTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
@@ -545,7 +550,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
 
     /* all else has failed so we use brute force */
 
-    upper = strlen(buff1) - 1;
+    upper = int(strlen(buff1) - 1);
     for (i = upper; i > 0; i--) {
 	if (!FIRSTCHAR(buff1, i) && !isspace(int(buff1[i])))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
@@ -555,7 +560,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
 
 donesc:
 
-    upper = strlen(buff1);
+    upper = int( strlen(buff1));
     if (upper > minlen)
 	for (i = upper - 1; i > 0; i--)
 	    if (isspace(int(buff1[i])))
@@ -568,7 +573,8 @@ donesc:
 SEXP attribute_hidden do_abbrev(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP x, ans;
-    int i, len, minlen;
+    R_xlen_t i, len;
+    int minlen;
     bool warn = false;
     const char *s;
     const void *vmax;
@@ -578,7 +584,7 @@ SEXP attribute_hidden do_abbrev(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (!isString(x))
 	error(_("the first argument must be a character vector"));
-    len = length(x);
+    len = XLENGTH(x);
 
     PROTECT(ans = allocVector(STRSXP, len));
     minlen = asInteger(CADR(args));
@@ -588,9 +594,11 @@ SEXP attribute_hidden do_abbrev(SEXP call, SEXP op, SEXP args, SEXP env)
 	    SET_STRING_ELT(ans, i, NA_STRING);
 	else {
 	    s = translateChar(STRING_ELT(x, i));
-	    warn = warn | !strIsASCII(s);
-	    R_AllocStringBuffer(strlen(s), &cbuff);
-	    SET_STRING_ELT(ans, i, stripchars(s, minlen));
+	    if(strlen(s) > minlen) {
+		warn = warn | !strIsASCII(s);
+		R_AllocStringBuffer(strlen(s), &cbuff);
+		SET_STRING_ELT(ans, i, stripchars(s, minlen));
+	    } else SET_STRING_ELT(ans, i, mkChar(s));
 	}
 	vmaxset(vmax);
     }
@@ -605,7 +613,8 @@ SEXP attribute_hidden do_abbrev(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP arg, ans;
-    int i, l, n, allow_;
+    R_xlen_t i, n;
+    int l, allow_;
     char *p, *tmp = NULL, *cbuf;
     const char *This;
     Rboolean need_prefix;
@@ -615,7 +624,7 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
     arg = CAR(args);
     if (!isString(arg))
 	error(_("non-character names"));
-    n = length(arg);
+    n = XLENGTH(arg);
     allow_ = asLogical(CADR(args));
     if (allow_ == NA_LOGICAL)
 	error(_("invalid '%s' value"), "allow_");
@@ -623,7 +632,7 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
     vmax = vmaxget();
     for (i = 0 ; i < n ; i++) {
 	This = translateChar(STRING_ELT(arg, i));
-	l = strlen(This);
+	l = int( strlen(This));
 	/* need to prefix names not beginning with alpha or ., as
 	   well as . followed by a number */
 	need_prefix = FALSE;
@@ -633,7 +642,7 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 	    mbstate_t mb_st;
 	    const char *pp = This;
 	    mbs_init(&mb_st);
-	    used = Mbrtowc(&wc, pp, MB_CUR_MAX, &mb_st);
+	    used = int( Mbrtowc(&wc, pp, MB_CUR_MAX, &mb_st));
 	    pp += used; nc -= used;
 	    if (wc == L'.') {
 		if (nc > 0) {
@@ -658,7 +667,7 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 	    /* This cannot lengthen the string, so safe to overwrite it.
 	       Would also be possible a char at a time.
 	     */
-	    int nc = mbstowcs(NULL, tmp, 0);
+	    int nc = int( mbstowcs(NULL, tmp, 0));
 	    wchar_t *wstr = Calloc(nc+1, wchar_t), *wc;
 	    if (nc >= 0) {
 		mbstowcs(wstr, tmp, nc+1);
@@ -684,7 +693,7 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 		/* else leave alone */
 	    }
 	}
-	l = strlen(tmp);        /* needed? */
+	l = int( strlen(tmp));        /* needed? */
 	SET_STRING_ELT(ans, i, mkChar(tmp));
 	/* do we have a reserved word?  If so the name is invalid */
 	if (!isValidName(tmp)) {
@@ -706,7 +715,8 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_tolower(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP x, y;
-    int i, n, ul;
+    R_xlen_t i, n;
+    int ul;
     char *p;
     SEXP el;
     cetype_t ienc;
@@ -719,9 +729,9 @@ SEXP attribute_hidden do_tolower(SEXP call, SEXP op, SEXP args, SEXP env)
     x = CAR(args);
     /* coercion is done in wrapper */
     if (!isString(x)) error(_("non-character argument"));
-    n = LENGTH(x);
+    n = XLENGTH(x);
     PROTECT(y = allocVector(STRSXP, n));
-#if defined(Win32) || defined(__STDC_ISO_10646__) || defined(__APPLE_CC__)
+#if defined(Win32) || defined(__STDC_ISO_10646__) || defined(__APPLE__) || defined(__FreeBSD__)
     /* utf8towcs is really to UCS-4/2 */
     for (i = 0; i < n; i++)
 	if (getCharCE(STRING_ELT(x, i)) == CE_UTF8) use_UTF8 = TRUE;
@@ -745,10 +755,10 @@ SEXP attribute_hidden do_tolower(SEXP call, SEXP op, SEXP args, SEXP env)
 		ienc = getCharCE(el);
 		if (use_UTF8 && ienc == CE_UTF8) {
 		    xi = CHAR(el);
-		    nc = utf8towcs(NULL, xi, 0);
+		    nc = int( utf8towcs(NULL, xi, 0));
 		} else {
 		    xi = translateChar(el);
-		    nc = mbstowcs(NULL, xi, 0);
+		    nc = int( mbstowcs(NULL, xi, 0));
 		    ienc = CE_NATIVE;
 		}
 		if (nc >= 0) {
@@ -758,14 +768,14 @@ SEXP attribute_hidden do_tolower(SEXP call, SEXP op, SEXP args, SEXP env)
 		    if (ienc == CE_UTF8) {
 			utf8towcs(wc, xi, nc + 1);
 			for (j = 0; j < nc; j++) wc[j] = towctrans(wc[j], tr);
-			nb = wcstoutf8(NULL, wc, 0);
+			nb = int( wcstoutf8(NULL, wc, 0));
 			cbuf = CallocCharBuf(nb);
 			wcstoutf8(cbuf, wc, nb + 1);
 			SET_STRING_ELT(y, i, mkCharCE(cbuf, CE_UTF8));
 		    } else {
 			mbstowcs(wc, xi, nc + 1);
 			for (j = 0; j < nc; j++) wc[j] = towctrans(wc[j], tr);
-			nb = wcstombs(NULL, wc, 0);
+			nb = int( wcstombs(NULL, wc, 0));
 			cbuf = CallocCharBuf(nb);
 			wcstombs(cbuf, wc, nb + 1);
 			SET_STRING_ELT(y, i, markKnown(cbuf, el));
@@ -788,7 +798,7 @@ SEXP attribute_hidden do_tolower(SEXP call, SEXP op, SEXP args, SEXP env)
 		xi = CallocCharBuf(strlen(CHAR(STRING_ELT(x, i))));
 		strcpy(xi, translateChar(STRING_ELT(x, i)));
 		for (p = xi; *p != '\0'; p++)
-		    *p = ul ? toupper(*p) : tolower(*p);
+		    *p = char( ul ? toupper(*p) : tolower(*p));
 		SET_STRING_ELT(y, i, markKnown(xi, STRING_ELT(x, i)));
 		Free(xi);
 	    }
@@ -817,7 +827,7 @@ struct wtr_spec {
 
 static void
 wtr_build_spec(const wchar_t *s, struct wtr_spec *trs) {
-    int i, len = wcslen(s);
+    int i, len = int( wcslen(s));
     struct wtr_spec *This, *_new;
 
     This = trs;
@@ -903,7 +913,7 @@ struct tr_spec {
 
 static void
 tr_build_spec(const char *s, struct tr_spec *trs) {
-    int i, len = strlen(s);
+    int i, len = int( strlen(s));
     struct tr_spec *This, *_new;
 
     This = trs;
@@ -1046,7 +1056,7 @@ static R_INLINE int xtable_key_comp(const void *a, const void *b)
 SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP old, _new, x, y;
-    int i, n;
+    R_xlen_t i, n;
     char *cbuf;
     SEXP el;
     cetype_t ienc;
@@ -1057,7 +1067,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
     old = CAR(args); args = CDR(args);
     _new = CAR(args); args = CDR(args);
     x = CAR(args);
-    n = LENGTH(x);
+    n = XLENGTH(x);
     if (!isString(old) || length(old) < 1 || STRING_ELT(old, 0) == NA_STRING)
 	error(_("invalid '%s' argument"), "old");
     if (length(old) > 1)
@@ -1069,7 +1079,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
     if (!isString(x)) error("invalid '%s' argument", "x");
 
     /* utf8towcs is really to UCS-4/2 */
-#if defined(Win32) || defined(__STDC_ISO_10646__) || defined(__APPLE_CC__)
+#if defined(Win32) || defined(__STDC_ISO_10646__) || defined(__APPLE__)  || defined(__FreeBSD__)
     for (i = 0; i < n; i++)
 	if (getCharCE(STRING_ELT(x, i)) == CE_UTF8) use_UTF8 = TRUE;
 
@@ -1100,13 +1110,13 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* Build the old and new wtr_spec lists. */
 	if (use_UTF8 && getCharCE(STRING_ELT(old, 0)) == CE_UTF8) {
 	    s = CHAR(STRING_ELT(old, 0));
-	    nc = utf8towcs(NULL, s, 0);
+	    nc = int( utf8towcs(NULL, s, 0));
 	    if (nc < 0) error(_("invalid UTF-8 string 'old'"));
 	    wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 	    utf8towcs(wc, s, nc + 1);
 	} else {
 	    s = translateChar(STRING_ELT(old, 0));
-	    nc = mbstowcs(NULL, s, 0);
+	    nc = int( mbstowcs(NULL, s, 0));
 	    if (nc < 0) error(_("invalid multibyte string 'old'"));
 	    wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 	    mbstowcs(wc, s, nc + 1);
@@ -1119,13 +1129,13 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 
 	if (use_UTF8 && getCharCE(STRING_ELT(_new, 0)) == CE_UTF8) {
 	    s = CHAR(STRING_ELT(_new, 0));
-	    nc = utf8towcs(NULL, s, 0);
+	    nc = int( utf8towcs(NULL, s, 0));
 	    if (nc < 0) error(_("invalid UTF-8 string 'new'"));
 	    wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 	    utf8towcs(wc, s, nc + 1);
 	} else {
 	    s = translateChar(STRING_ELT(_new, 0));
-	    nc = mbstowcs(NULL, s, 0);
+	    nc = int( mbstowcs(NULL, s, 0));
 	    if (nc < 0) error(_("invalid multibyte string 'new'"));
 	    wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 	    mbstowcs(wc, s, nc + 1);
@@ -1179,10 +1189,10 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 		ienc = getCharCE(el);
 		if (use_UTF8 && ienc == CE_UTF8) {
 		    xi = CHAR(el);
-		    nc = utf8towcs(NULL, xi, 0);
+		    nc = int( utf8towcs(NULL, xi, 0));
 		} else {
 		    xi = translateChar(el);
-		    nc = mbstowcs(NULL, xi, 0);
+		    nc = int( mbstowcs(NULL, xi, 0));
 		    ienc = CE_NATIVE;
 		}
 		if (nc < 0)
@@ -1197,12 +1207,12 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 		    if (tbl) wc[j] = tbl->c_new;
 		}
 		if (ienc == CE_UTF8) {
-		    nb = wcstoutf8(NULL, wc, 0);
+		    nb = int( wcstoutf8(NULL, wc, 0));
 		    cbuf = CallocCharBuf(nb);
 		    wcstoutf8(cbuf, wc, nb + 1);
 		    SET_STRING_ELT(y, i, mkCharCE(cbuf, CE_UTF8));
 		} else {
-		    nb = wcstombs(NULL, wc, 0);
+		    nb = int( wcstombs(NULL, wc, 0));
 		    cbuf = CallocCharBuf(nb);
 		    wcstombs(cbuf, wc, nb + 1);
 		    SET_STRING_ELT(y, i, markKnown(cbuf, el));
@@ -1217,7 +1227,8 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 	struct tr_spec *trs_old, **trs_old_ptr;
 	struct tr_spec *trs_new, **trs_new_ptr;
 
-	for (i = 0; i <= UCHAR_MAX; i++) xtable[i] = i;
+	for (unsigned int ii = 0; ii <= UCHAR_MAX; ii++) 
+	    xtable[ii] = static_cast<unsigned char>( ii);
 
 	/* Initialize the old and new tr_spec lists. */
 	trs_old = Calloc(1, struct tr_spec);
@@ -1279,7 +1290,8 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_strtrim(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s, x, width;
-    int i, len, nw, w, nc;
+    R_xlen_t i, len;
+    int nw, w, nc;
     const char *This;
     char *buf;
     const char *p; char *q;
@@ -1292,7 +1304,7 @@ SEXP attribute_hidden do_strtrim(SEXP call, SEXP op, SEXP args, SEXP env)
     /* as.character happens at R level now */
     if (!isString(x = CAR(args)))
 	error(_("strtrim() requires a character vector"));
-    len = LENGTH(x);
+    len = XLENGTH(x);
     PROTECT(width = coerceVector(CADR(args), INTSXP));
     nw = LENGTH(width);
     if (!nw || (nw < len && len % nw))
@@ -1310,12 +1322,12 @@ SEXP attribute_hidden do_strtrim(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 	w = INTEGER(width)[i % nw];
 	This = translateChar(STRING_ELT(x, i));
-	nc = strlen(This);
+	nc = int( strlen(This));
 	buf = static_cast<char*>(R_AllocStringBuffer(nc, &cbuff));
 	wsum = 0;
 	mbs_init(&mb_st);
 	for (p = This, w0 = 0, q = buf; *p ;) {
-	    nb =  Mbrtowc(&wc, p, MB_CUR_MAX, &mb_st);
+	    nb =  int( Mbrtowc(&wc, p, MB_CUR_MAX, &mb_st));
 	    w0 = Ri18n_wcwidth(wc);
 	    if (w0 < 0) { p += nb; continue; } /* skip non-printable chars */
 	    wsum += w0;
@@ -1336,7 +1348,7 @@ SEXP attribute_hidden do_strtrim(SEXP call, SEXP op, SEXP args, SEXP env)
 
 static int strtoi(SEXP s, int base)
 {
-    long res;
+    long int res;
     char *endp;
 
     /* strtol might return extreme values on error */
@@ -1346,13 +1358,14 @@ static int strtoi(SEXP s, int base)
     res = strtol(CHAR(s), &endp, base); /* ASCII */
     if(errno || *endp != '\0') res = NA_INTEGER;
     if(res > INT_MAX || res < INT_MIN) res = NA_INTEGER;
-    return(res);
+    return int( res);
 }
 
 SEXP attribute_hidden do_strtoi(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, x, b;
-    int i, n, base;
+    R_xlen_t i, n;
+    int base;
 
     checkArity(op, args);
 
@@ -1372,4 +1385,3 @@ SEXP attribute_hidden do_strtoi(SEXP call, SEXP op, SEXP args, SEXP env)
     
     return ans;
 }
-

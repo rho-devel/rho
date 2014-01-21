@@ -22,10 +22,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.15.0\n"
-"Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2012-01-18 12:26\n"
-"PO-Revision-Date: 2012-01-18 12:26\n"
+"Project-Id-Version: R 2.15.1\n"
+"Report-Msgid-Bugs-To: bugs.r-project.org\n"
+"POT-Creation-Date: 2012-08-21 22:49\n"
+"PO-Revision-Date: 2012-08-21 22:49\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "MIME-Version: 1.0\n"
@@ -59,7 +59,7 @@ msgid "No clustering performed, NA-values in the dissimilarity matrix."
 msgstr "No clustering performed, NA-values in the dissimilarity matrix."
 
 msgid "'x' is a \"dist\" object, but should be a data matrix or frame"
-msgstr "‘x’ is a “dist” object, but should be a data matrix or frame"
+msgstr "‘x’ is a \"dist\" object, but should be a data matrix or frame"
 
 msgid "The number of cluster should be at least 1 and at most n-1."
 msgstr "The number of cluster should be at least 1 and at most n-1."
@@ -75,18 +75,6 @@ msgstr "‘samples’ should be at least 1"
 
 msgid "when 'medoids.x' is FALSE, 'keep.data' must be too"
 msgstr "when ‘medoids.x’ is FALSE, ‘keep.data’ must be too"
-
-msgid "Observation %d has *only* NAs --> omit it for clustering"
-msgstr "Observation %d has *only* NAs --> omit it for clustering"
-
-msgid "Observations %s"
-msgstr "Observations %s"
-
-msgid "%d observations (%s ...)"
-msgstr "%d observations (%s ...)"
-
-msgid "have *only* NAs --> na.omit() them for clustering!"
-msgstr "have *only* NAs --> na.omit() them for clustering!"
 
 msgid "Each of the random samples contains objects between which"
 msgstr "Each of the random samples contains objects between which"
@@ -155,15 +143,6 @@ msgstr "binary variable(s)"
 msgid "treated as interval scaled"
 msgstr "treated as interval scaled"
 
-msgid "setting 'logical' variable"
-msgstr "setting ‘logical’ variable"
-
-msgid "s"
-msgstr "s"
-
-msgid "to type 'asymm'"
-msgstr "to type ‘asymm’"
-
 msgid "x"
 msgstr "x"
 
@@ -174,7 +153,7 @@ msgid "; these are standardized to 0"
 msgstr "; these are standardized to 0"
 
 msgid "with mixed variables, metric \"gower\" is used automatically"
-msgstr "with mixed variables, metric “gower” is used automatically"
+msgstr "with mixed variables, metric \"gower\" is used automatically"
 
 msgid "'weights' must be of length p (or 1)"
 msgstr "‘weights’ must be of length p (or 1)"
@@ -242,6 +221,9 @@ msgstr "x must be a matrix or data frame."
 msgid "All variables must be binary (factor with 2 levels)."
 msgstr "All variables must be binary (factor with 2 levels)."
 
+msgid "No clustering performed,"
+msgstr "No clustering performed,"
+
 msgid "an object was found with all values missing."
 msgstr "an object was found with all values missing."
 
@@ -270,7 +252,7 @@ msgid "error from .C(cl_pam, *): invalid medID's"
 msgstr "error from .C(cl_pam, *): invalid medID's"
 
 msgid "NA-values are not allowed in dist-like 'x'."
-msgstr "NA-values are not allowed in dist-like 'x'."
+msgstr "NA-values are not allowed in dist-like ‘x’."
 
 msgid "Distances must be result of dist or a square matrix."
 msgstr "Distances must be result of dist or a square matrix."
@@ -348,3 +330,8 @@ msgstr "invalid ‘silhouette’ object"
 
 msgid "No valid silhouette information (#{clusters} =? 1)"
 msgstr "No valid silhouette information (#{clusters} =? 1)"
+
+msgid "setting 'logical' variable %s to type 'asymm'"
+msgid_plural "setting 'logical' variables %s to type 'asymm'"
+msgstr[0] "setting ‘logical’ variable %s to type ‘asymm’"
+msgstr[1] "setting ‘logical’ variables %s to type ‘asymm’"

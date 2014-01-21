@@ -4,7 +4,7 @@
 % \alias{writeHB}
 \alias{writeMM}
 \alias{writeMM,CsparseMatrix-method}
-\alias{writeMM,TsparseMatrix-method}
+\alias{writeMM,sparseMatrix-method}
 \title{Read and write external matrix formats}
 \description{
   Read matrices stored in the Harwell-Boeing or MatrixMarket formats
@@ -14,7 +14,7 @@
 \usage{
 readHB(file)
 readMM(file)
-writeMM(obj, file, ...)
+writeMM(obj, file, \dots)
 }
 \arguments{
  \item{obj}{a real sparse matrix}

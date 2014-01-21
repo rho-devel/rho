@@ -5,7 +5,9 @@
 \title{Approximate hypothesis tests related to  GAM fits}
 \description{ Performs hypothesis tests relating to one or more fitted
 \code{gam} objects. For a single fitted \code{gam} object, Wald tests of
-the significance of each parametric and smooth term are performed. Otherwise
+the significance of each parametric and smooth term are performed, so interpretation 
+is analogous to \code{\link{drop1}} rather than \code{anova.lm} (i.e. it's like type III ANOVA, 
+rather than a sequential type I ANOVA). Otherwise
 the fitted models are compared using an analysis of deviance table: this latter approach 
 should not be use to test the significance of terms which can be penalized 
 to zero. See details.
@@ -42,17 +44,21 @@ can be greatly overstated: i.e. p-values are often substantially too low. This c
 Note also that in the multi-model call to \code{anova.gam}, it is quite possible for a model with more terms to end up with lower effective degrees of freedom, but better fit, than the notionally null model with fewer terms. In such cases it is very rare that it makes sense to perform any sort of test, since there is then no basis on which to accept the notional null model. 
 
 If only one model is provided then the significance of each model term
-is assessed using Wald tests: see \code{\link{summary.gam}} for details. The p-values 
-provided here are better justified than in the multi model case, and have close to the 
-correct distribution under the null for smooths with a non-zero dimensional null space (i.e. terms that can-not be penalized to zero). ML or REML smoothing parameter selection leads to the best results in simulations as they tend to avoid occasional severe undersmoothing. In the single model case \code{print.anova.gam} is used as the
-printing method. 
+is assessed using Wald tests, conditional on the smoothing parameter estimates: see \code{\link{summary.gam}} 
+and Wood (in press) for details. The p-values  provided here are better justified than in the multi model case, and have close to the 
+correct distribution under the null, unless smoothing parameters are poorly identified. ML or REML smoothing parameter selection leads to 
+the best results in simulations as they tend to avoid occasional severe undersmoothing. In replication of the full simulation study of Scheipl et al. 
+(2008) the tests give almost indistinguishable power to the method recommended there, but slightly too low p-values under the null in their 
+section 3.1.8 test for a smooth interaction (the Scheipl et al. recommendation is not used directly, because it only applies in the Gaussian case,
+and requires model refits, but it is available in package \code{RLRsim}). 
+
+In the single model case \code{print.anova.gam} is used as the printing method. 
 
 By default the p-values for parametric model terms are also based on Wald tests using the Bayesian 
 covariance matrix for the coefficients. This is appropriate when there are "re" terms present, and is 
 otherwise rather similar to the results using the frequentist covariance matrix (\code{freq=TRUE}), since 
 the parametric terms themselves are usually unpenalized. Default P-values for parameteric terms that are 
-penalized using the \code{paraPen} argument will not be good. However if such terms represent conventional 
-random effects with full rank penalties, then setting \code{freq=TRUE} is appropriate. 
+penalized using the \code{paraPen} argument will not be good.
 
 }
 
@@ -66,6 +72,13 @@ which is in fact an object returned from \code{\link{summary.gam}}.
 
 }
 
+\references{
+
+Scheipl, F., Greven, S. and Kuchenhoff, H. (2008) Size and power of tests for a zero random effect variance or polynomial 
+regression in additive and linear mixed models. Comp. Statist. Data Anal. 52, 3283-3299
+
+Wood, S.N. (2013) On p-values for smooth components of an extended generalized additive model. Biometrika 100:221-228
+}
 
 \author{ Simon N. Wood \email{simon.wood@r-project.org} with substantial
 improvements by Henric Nilsson.}
@@ -75,6 +88,8 @@ p values from anova(a,b) are unreliable, and usually much too low.
 
 Default P-values will usually be wrong for parametric terms penalized using `paraPen': use freq=TRUE
 to obtain better p-values when the penalties are full rank and represent conventional random effects.
+
+For a single model, interpretation is similar to drop1, not anova.lm.
 } 
 
 \seealso{  \code{\link{gam}}, \code{\link{predict.gam}},

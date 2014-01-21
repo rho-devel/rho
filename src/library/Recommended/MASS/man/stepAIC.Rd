@@ -129,11 +129,9 @@ quine.stp <- stepAIC(quine.nxt,
 quine.stp$anova
 
 cpus1 <- cpus
-attach(cpus)
 for(v in names(cpus)[2:7])
   cpus1[[v]] <- cut(cpus[[v]], unique(quantile(cpus[[v]])),
                     include.lowest = TRUE)
-detach()
 cpus0 <- cpus1[, 2:8]  # excludes names, authors' predictions
 cpus.samp <- sample(1:209, 100)
 cpus.lm <- lm(log10(perf) ~ ., data = cpus1[cpus.samp,2:8])

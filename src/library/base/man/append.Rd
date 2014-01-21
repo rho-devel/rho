@@ -1,6 +1,6 @@
 % File src/library/base/man/append.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{append}
@@ -27,7 +27,7 @@ append(x, values, after = length(x))
   Wadsworth & Brooks/Cole.
 }
 \examples{
-append(1:5, 0:1, after=3)
+append(1:5, 0:1, after = 3)
 }
 \keyword{manip}
 \concept{insert}

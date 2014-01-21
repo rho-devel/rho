@@ -26,7 +26,7 @@
 \details{
   The standard errors calculation is slower than prediction.
 
-  When the fit was made using \code{surface="interpolate"} (the
+  When the fit was made using \code{surface = "interpolate"} (the
   default), \code{predict.loess} will not extrapolate -- so points outside
   an axis-aligned hypercube enclosing the original data will have
   missing (\code{NA}) predictions and standard errors.
@@ -48,7 +48,7 @@
   If \code{newdata} was the result of a call to
   \code{\link{expand.grid}}, the predictions (and s.e.'s if requested)
   will be an array of the appropriate dimensions.
-  
+
   Predictions from infinite inputs will be \code{NA} since \code{loess}
   does not support extrapolation.
 }
@@ -68,10 +68,10 @@
 
 \examples{
 cars.lo <- loess(dist ~ speed, cars)
-predict(cars.lo, data.frame(speed=seq(5, 30, 1)), se=TRUE)
+predict(cars.lo, data.frame(speed = seq(5, 30, 1)), se = TRUE)
 # to get extrapolation
 cars.lo2 <- loess(dist ~ speed, cars,
-  control=loess.control(surface="direct"))
-predict(cars.lo2, data.frame(speed=seq(5, 30, 1)), se=TRUE)
+  control = loess.control(surface = "direct"))
+predict(cars.lo2, data.frame(speed = seq(5, 30, 1)), se = TRUE)
 }
 \keyword{smooth}

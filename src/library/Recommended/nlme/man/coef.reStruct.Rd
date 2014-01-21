@@ -32,7 +32,7 @@
 \value{
   a vector with the coefficients corresponding to \code{object}.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \section{SIDE EFFECTS}{
   On the left side of an assignment, sets the values of the coefficients

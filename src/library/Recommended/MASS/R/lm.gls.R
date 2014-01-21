@@ -23,7 +23,7 @@ lm.gls <-
     m <- match.call(expand.dots = FALSE)
     m$W <- m$inverse <- m$method <- m$model <- m$x <-
         m$y <- m$contrasts <- m$... <- NULL
-    m[[1L]] <- as.name("model.frame")
+    m[[1L]] <- quote(stats::model.frame)
     m <- eval.parent(m)
     if(method == "model.frame") return(m)
     Terms <- attr(m, "terms")

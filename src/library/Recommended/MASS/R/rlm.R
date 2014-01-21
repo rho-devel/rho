@@ -24,7 +24,7 @@ rlm.formula <-
 {
     mf <- match.call(expand.dots = FALSE)
     mf$method <- mf$wt.method <- mf$model <- mf$x.ret <- mf$y.ret <- mf$contrasts <- mf$... <- NULL
-    mf[[1L]] <- as.name("model.frame")
+    mf[[1L]] <- quote(stats::model.frame)
     mf <- eval.parent(mf)
     method <- match.arg(method)
     wt.method <- match.arg(wt.method)
@@ -92,7 +92,7 @@ rlm.default <-
     if(is.null(colnames(x)))
         colnames(x) <- paste("X", seq(ncol(x)), sep="")
     if(qr(x)$rank < ncol(x))
-        stop("'x' is singular: singular fits are not implemented in rlm")
+        stop("'x' is singular: singular fits are not implemented in 'rlm'")
 
     if(!(any(test.vec == c("resid", "coef", "w", "NULL"))
          || is.null(test.vec))) stop("invalid 'test.vec'")
@@ -190,7 +190,7 @@ rlm.default <-
         if(done) break
     }
     if(!done)
-        warning(gettextf("rlm failed to converge in %d steps", maxit),
+        warning(gettextf("'rlm' failed to converge in %d steps", maxit),
                 domain = NA)
     fitted <- drop(xx %*% coef)
     ## fix up call to refer to the generic, but leave arg name as `formula'
@@ -421,7 +421,7 @@ predict.rlm <- function (object, newdata = NULL, scale = NULL, ...)
     ## problems with using predict.lm are the scale and
     ## the QR decomp which has been done on down-weighted values.
     object$qr <- qr(sqrt(object$weights) * object$x)
-    predict.lm(object, newdata = newdata, scale = object$s, ...)
+    NextMethod(object, scale = object$s, ...)
 }
 
 vcov.rlm <- function (object, ...)

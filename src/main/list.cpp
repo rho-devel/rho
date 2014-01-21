@@ -46,7 +46,8 @@
 #include <config.h>
 #endif
 
-#include "Defn.h"
+#include <Defn.h>
+#include <Internal.h>
 
 /* Utility functions moved to Rinlinedfuns.h */
 
@@ -64,7 +65,6 @@ typedef struct {
 
 static void namewalk(SEXP s, NameWalkData *d)
 {
-    int i, j, n;
     SEXP name;
 
     switch(TYPEOF(s)) {
@@ -75,14 +75,14 @@ static void namewalk(SEXP s, NameWalkData *d)
 	if(d->ItemCounts < d->MaxCount) {
 	    if(d->StoreValues) {
 		if(d->UniqueNames) {
-		    for(j = 0 ; j < d->ItemCounts ; j++) {
+		    for(int j = 0 ; j < d->ItemCounts ; j++) {
 			if(STRING_ELT(d->ans, j) == name)
 			    goto ignore;
 		    }
 		}
 		SET_STRING_ELT(d->ans, d->ItemCounts, name);
 	    }
-	    d->ItemCounts += 1;
+	    d->ItemCounts++;
 	}
     ignore:
 	break;
@@ -94,8 +94,7 @@ static void namewalk(SEXP s, NameWalkData *d)
 	}
 	break;
     case EXPRSXP:
-	n = length(s);
-	for(i=0 ; i<n ; i++)
+	for(R_xlen_t i = 0 ; i < XLENGTH(s) ; i++)
 	    namewalk(XVECTOR_ELT(s, i), d);
 	break;
     default:

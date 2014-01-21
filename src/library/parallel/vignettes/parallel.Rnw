@@ -1,3 +1,8 @@
+% File src/library/parallel/vignettes/parallel.Rnw
+% Part of the R package, http://www.R-project.org
+% Copyright 2011-3 R Core Team
+% Distributed under GPL 2 or later
+
 \documentclass[a4paper]{article}
 
 \usepackage{Rd, parskip, amsmath, enumerate}
@@ -92,7 +97,7 @@ processes.  They can be created in one of three ways:
   This should be available on all \R{} platforms, although it is
   conceivable that zealous security measures could block the
   inter-process communication \emph{via} sockets.  Users of Windows
-  and Mac OS X may expect pop-up dialog boxes from the firewall asking
+  and OS X may expect pop-up dialog boxes from the firewall asking
   if an \R{} process should accept incoming connections.
 
   Following \CRANpkg{snow}, a pool of worker processes listening
@@ -128,9 +133,8 @@ processes.  They can be created in one of three ways:
 
 \item Using OS-level facilities to set up a means to send tasks to
   other members of a group of machines.  There are several ways to do
-  that, and for example package \CRANpkg{snow} can make use of PVM
-  (`parallel virtual machine') and MPI (`message passing interface')
-  using \R{} packages \CRANpkg{rpvm} and \CRANpkg{Rmpi} respectively.
+  that, and for example package \CRANpkg{snow} can make use of MPI
+  (`message passing interface') using \R{} package \CRANpkg{Rmpi}.
   Communication overheads can dominate computation times in this
   approach, so it is most often used on tightly-coupled networks of
   computers with high-speed interconnects.
@@ -141,16 +145,15 @@ processes.  They can be created in one of three ways:
 
   It will not be considered further in this vignette, but those parts
   of \pkg{parallel} which provide \CRANpkg{snow}-like functions will
-  accept \CRANpkg{snow} clusters including MPI clusters (and although PVM
-  and NWS clusters have not been tested, they should also work).
+  accept \CRANpkg{snow} clusters including MPI clusters.
 \end{enumerate}
 
 The landscape of parallel computing has changed with the advent of
 shared-memory computers with multiple (and often many) CPU cores.
 Until the late 2000's parallel computing was mainly done on clusters
 of large numbers of single- or dual-CPU computers: nowadays even
-laptops have two or four cores, and servers with 8 or more cores are
-commonplace.  It is such hardware that package \pkg{parallel} is
+laptops have two or four cores, and servers with 8, 32 or more cores
+are commonplace.  It is such hardware that package \pkg{parallel} is
 designed to exploit.  It can also be used with several computers
 running the same version of \R{} connected by (reasonable-speed)
 ethernet: the computers need not be running the same OS.
@@ -284,7 +287,8 @@ information in the shape of extra arguments.
     SSH should be set
     up to use silent authentication: setups which require a password
     to be supplied may or may not work.
-  \item Socket communication is done over port 10187: site policies
+  \item Socket communication is done over port a randomly chosen port
+    in the range \code{11000:11999}: site policies
     might require some other port to be used, in which case set
     argument \code{port} or environment variable \env{R\_PARALLEL\_PORT}.
 \end{itemize}
@@ -293,10 +297,10 @@ information in the shape of extra arguments.
 
 Except on Windows, the package contains a copy of \CRANpkg{multicore}:
 there a few names with the added prefix \code{mc}, e.g.{}
-\code{mccollect} and \code{mcparallel}.  (Package \CRANpkg{multicore} used
-these names, but also the versions without the prefix which are too
-easily masked: e.g.{} package \CRANpkg{lattice} has a function
-\code{parallel}.)
+\code{mccollect} and \code{mcparallel}.  (Package \CRANpkg{multicore}
+used these names, but also the versions without the prefix which are
+too easily masked: e.g.{} package \CRANpkg{lattice} used to have a
+function \code{parallel}.)
 
 The low-level functions from \CRANpkg{multicore} are provided but not
 exported from the namespace.
@@ -309,8 +313,8 @@ package is loaded.  (Setting this to \code{1} inhibits parallel
 operation: there are stub versions of these functions on Windows which
 force \code{mc.cores = 1}.)
 
-As from \R{} 2.15.0, \code{mcmapply} and \code{mcMap} provide
-analogues of \code{mapply} and \code{Map}.
+Functions \code{mcmapply} and \code{mcMap} provide analogues of
+\code{mapply} and \code{Map}.
 
 Note the earlier comments about using forking in a GUI environment.
 
@@ -386,9 +390,9 @@ seed is advanced by $k$ steps by \R{} call
 \code{.Random.seed <- nextRNGStream(.Random.seed)}.
 
 % use \verb to get consistent quote mapping.
-The \citet{lecuyer.1999} generator is available in \R{} as from
-version 2.14.0 \emph{via} \verb|RNGkind("L'Ecuyer-CMRG")|.  Thus using
-the ideas of \citet{lecuyer.2002} is as simple as
+The \citet{lecuyer.1999} generator is available \emph{via}
+\verb|RNGkind("L'Ecuyer-CMRG")|.  Thus using the ideas of
+\citet{lecuyer.2002} is as simple as
 \begin{verbatim}
 RNGkind("L'Ecuyer-CMRG")
 set.seed(<something>)
@@ -419,8 +423,7 @@ using S4 classes in package \CRANpkg{rstream} \citep{rstream}.
 The introduction mentioned a different strategy which dynamically
 allocates tasks to workers: this is sometimes known as `load
 balancing' and is implemented in \code{mclapply(mc.preschedule =
-  FALSE)}, \code{clusterApplyLB} and wrappers such as
-\code{parLapplyLB} and \code{clusterMap(.scheduling = "dynamic")}.
+  FALSE)}, \code{clusterApplyLB} and wrappers.
 
 Load balancing is potentially advantageous when the tasks take quite
 dissimilar amounts of computation time, or where the nodes are of
@@ -721,7 +724,7 @@ since lazy evaluation may be delayed until the tasks have been sent to
 the workers.  This is no problem in the forking approach, as the
 information needed for lazy evaluation will be present in the forked workers.
 
-For \pkg{snow}-like clusters the trick is to ensure that \code{...}
+For \CRANpkg{snow}-like clusters the trick is to ensure that \code{...}
 has any promises forced whilst the information is still available.
 This is how \CRANpkg{boot} does it:
 <<eval=FALSE>>=
@@ -780,7 +783,7 @@ Aliased functions \code{collect} and \code{parallel} are no longer provided.
 POSIX, and did not provide a means to set the timeout on the workers.
 This resulted in process interlocks on Solaris.
 
-\code{makeCluster} creates PVM, MPI or NWS clusters by calling \CRANpkg{snow}.
+\code{makeCluster} creates MPI or NWS clusters by calling \CRANpkg{snow}.
 
 \code{makePSOCKcluster} has been streamlined, as package \pkg{parallel} is in
 a known location on all systems, and \command{Rscript} is these days

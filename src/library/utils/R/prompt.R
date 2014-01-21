@@ -1,6 +1,8 @@
 #  File src/library/utils/R/prompt.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -85,7 +87,7 @@ function(object, filename = NULL, name = NULL,
                               ## need to backtick symbols
                               paste(deparse(argls[[i]],
                                             backtick = TRUE,
-                                            width.cutoff= 500L),
+                                            width.cutoff = 500L),
                                     collapse="\n")))
         if(i != n) Call <- paste0(Call, ", ")
     }

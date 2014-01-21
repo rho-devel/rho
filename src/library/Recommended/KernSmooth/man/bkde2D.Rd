@@ -14,12 +14,12 @@ bkde2D(x, bandwidth, gridsize = c(51L, 51L), range.x, truncate = TRUE)
 }
 \arguments{
 \item{x}{
-a two-column matrix containing the observations from the  
+a two-column numeric matrix containing the observations from the  
 distribution whose density is to be estimated.
 Missing values are not allowed.
 }
 \item{bandwidth}{
-vector containing the bandwidth to be used in each coordinate
+numeric vector oflength 2, containing the bandwidth to be used in each coordinate
 direction.
 }
 \item{gridsize}{

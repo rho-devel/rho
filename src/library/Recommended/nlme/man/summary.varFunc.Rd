@@ -40,7 +40,7 @@
   \code{structName}, inheriting from class \code{summary.varFunc}. 
 }
 
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{
   \code{\link{varClasses}}, 
   \code{\link{varFunc}}

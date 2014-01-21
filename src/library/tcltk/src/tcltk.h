@@ -41,7 +41,6 @@
 #include <string.h>
 
 #include <Rinternals.h>
-#include <R_ext/PrtUtil.h>
 #include <R_ext/Parse.h>
 
 #ifndef Win32
@@ -80,6 +79,7 @@ SEXP RTcl_ObjAsRawVector(SEXP args);
 SEXP RTcl_ObjFromCharVector(SEXP args);
 SEXP RTcl_ObjFromDoubleVector(SEXP args);
 SEXP RTcl_ObjFromIntVector(SEXP args);
+SEXP RTcl_ObjFromRawVector(SEXP args);
 SEXP RTcl_GetArrayElem(SEXP args);
 SEXP RTcl_SetArrayElem(SEXP args);
 SEXP RTcl_RemoveArrayElem(SEXP args);

@@ -110,13 +110,16 @@ if(isTRUE(try(require(SparseM)))) { # may be there and fail
 	A <- matrix(a,5,4)
 	print(M <- Matrix(A))
 	stopifnot(
-		  validObject(A.csr <- as.matrix.csr(A)),
-		  validObject(At.csr <- as.matrix.csr(t(A))),
-		  identical(At.csr, t(A.csr)),
-		  identical(A, as.matrix(A.csr)),
-		  identical(M, as(A.csr, "CsparseMatrix")),
-		  identical(t(M), as(At.csr, "CsparseMatrix"))
-		  )
+            validObject(A.csr <- as.matrix.csr(A)),
+            validObject(At.csr <- as.matrix.csr(t(A))),
+            validObject(A.csc <- as.matrix.csc(A)),
+            identical(At.csr, t(A.csr)),
+            identical(A, as.matrix(A.csr)),
+            identical(A.csr, as(M, "matrix.csr")),
+            identical(A.csc, as(M, "matrix.csc")),
+            identical3(M, as(A.csr, "CsparseMatrix"), as(A.csr, "dgCMatrix")),
+            identical(t(M), as(At.csr, "CsparseMatrix"))
+            )
 
 	## More tests, notably for triplets
 	A.coo <- as.matrix.coo(A)
@@ -124,8 +127,8 @@ if(isTRUE(try(require(SparseM)))) { # may be there and fail
 	str(T. <- as(A.coo, "TsparseMatrix")) # has 'i' sorted
 
 	T3 <- as(as(T, "matrix.coo"), "Matrix") # dgT
-	M3 <- as(as(M, "matrix.csr"), "Matrix") # dgC
-	M4 <- as(as(M, "matrix.csc"), "Matrix") # dgC
+	M3 <- as(A.csr,               "Matrix") # dgC
+	M4 <- as(A.csc,               "Matrix") # dgC
 	M5 <- as(as(M, "matrix.coo"), "Matrix") # dgT
 	uniqT <- Matrix:::uniqTsparse
 	stopifnot(identical4(uniqT(T), uniqT(T.), uniqT(T3), uniqT(M5)),

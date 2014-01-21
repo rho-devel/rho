@@ -14,6 +14,27 @@
  *CXXR to the CXXR website.
  *CXXR */
 
+/*
+ *  R : A Computer Language for Statistical Data Analysis
+ *  Copyright (C) 2002-2012   The R Core Team.
+ *
+ *  Based on CACM algorithm #347 by R. C. Singleton (1969)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
+ */
+
 /*====== BODY of R_qsort() and R_qsorti() functions ====================
  *
  * is included in ./qsort.c  with and without ``qsort_Index'' defined
@@ -29,16 +50,20 @@
  * This version incorporates the modification in the remark by Peto.
 */
 
-    int il[31], iu[31];
+#ifndef INTt
+# define INTt size_t
+#endif
+
+    INTt il[40], iu[40]; /* was 31 */
     /* Arrays iu[k] and il[k] permit sorting up to 2^(k+1)-1 elements;
      * originally k = 20 -> n_max =    2'097'151
      * now        k = 31 -> n_max = 4294'967'295
      */
     NUMERIC vt, vtt;
     double R = 0.375;
-    int ii, ij, k, l, m;
+    INTt ii, ij, k, l, m;
 #ifdef qsort_Index
-    int it, tt;
+    INDt it, tt;
 #endif
 
 
@@ -57,7 +82,7 @@
       L20:
 	k = i;
 	/* ij = (j + i) >> 1; midpoint */
-	ij = i + int((j - i)*R);
+	ij = INTt(i + INTt((j - i)*R));
 #ifdef qsort_Index
 	it = I[ij];
 #endif

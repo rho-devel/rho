@@ -33,7 +33,7 @@ setAs(from = "denseMatrix", to = "generalMatrix", as_geSimpl)
         else if (extends(cld,"lMatrix")) as(r, "ltCMatrix")
         else if (extends(cld,"nMatrix")) as(r, "ntCMatrix")
         else if (extends(cld,"zMatrix")) as(r, "ztCMatrix")
-        else stop("undefined method for class ", cl)
+	else stop(gettextf("undefined method for class %s", dQuote(cl)), domain=NA)
     }
 }
 
@@ -98,7 +98,7 @@ setMethod("[", signature(x = "denseMatrix", i = "index", j = "missing",
 		  r <- as(x, "matrix")[i, drop=drop]
 	      else if(na == 4)
 		  r <- as(x, "matrix")[i, , drop=drop]
-	      else stop("invalid nargs()= ",na)
+	      else stop(gettextf("invalid nargs()= %d", na), domain=NA)
 	      if(is.null(dim(r))) r else as(r, geClass(x))
 	  })
 
@@ -161,7 +161,7 @@ setReplaceMethod("[", signature(x = "denseMatrix", i = "index", j = "missing",
 			 r[i] <- value
 		     else if(na == 4)
 			 r[i, ] <- value
-		     else stop("invalid nargs()= ",na)
+		     else stop(gettextf("invalid nargs()= %d", na), domain=NA)
 		     as(r, geClass(x))
 		 })
 

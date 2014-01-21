@@ -1,6 +1,8 @@
 #  File src/library/stats/R/ave.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -16,11 +18,11 @@
 
 ave <- function (x, ..., FUN = mean)
 {
-    n <- length(list(...))
-    if (n) {
+    if(missing(...))
+	x[] <- FUN(x)
+    else {
 	g <- interaction(...)
 	split(x,g) <- lapply(split(x, g), FUN)
-    } else
-        x[] <- FUN(x)
+    }
     x
 }

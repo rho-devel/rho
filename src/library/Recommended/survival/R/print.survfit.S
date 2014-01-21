@@ -3,6 +3,15 @@ print.survfit <- function(x, scale=1,
                           print.rmean = getOption('survfit.print.rmean'),
                           rmean = getOption('survfit.rmean'), ...) {
 
+    if (inherits(x, "survfitms")) {
+        x$surv <- 1- x$prev
+        if (is.matrix(x$surv)) dimnames(x$surv) <- list(NULL, x$states)
+        if (!is.null(x$lower)) {
+            x$lower <- 1- x$lower
+            x$upper <- 1- x$upper
+        }
+    }
+
     if (!is.null(cl<- x$call)) {
 	cat("Call: ")
 	dput(cl)
@@ -113,10 +122,17 @@ survmean <- function(x, scale=1, rmean) {
             hh <- ifelse((n.risk-n.event)==0, 0, 
 		       n.event /(n.risk *(n.risk -n.event)))
             keep <- which(time <= end.time)
-            temptime <- c(time[keep], end.time)
-            tempsurv <- c(surv[keep], surv[max(keep)])
-            hh <- c(hh[keep], 0)
-                          
+
+            if (length(keep) ==0) { # the cutoff is before the first event
+                temptime <- end.time
+                tempsurv <- 1
+                hh <- 0
+            }
+            else {
+                temptime <- c(time[keep], end.time)
+                tempsurv <- c(surv[keep], surv[max(keep)])
+                hh <- c(hh[keep], 0)
+            }
             n <- length(temptime)
             delta <- diff(c(start.time, temptime))     #width of rectangles
             rectangles <- delta * c(1, tempsurv[-n])   #area of rectangles

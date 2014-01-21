@@ -87,7 +87,7 @@ symbols(x, y = NULL, circles, squares, rectangles, stars,
   used.  For boxplots, the lengths of the whiskers are regarded as
   dimensions alongside width and height when scaling by \code{inches},
   and are otherwise interpreted in the units of the y axis.)
-  
+
   % The next is enforced in GCircle.
   Circles of radius zero are plotted at radius one pixel (which is
   device-dependent).  Circles of a very small non-zero radius may or may
@@ -122,7 +122,7 @@ z <- runif(10)
 z3 <- cbind(z, 2*runif(10), runif(10))
 symbols(x, y, thermometers = cbind(.5, 1, z), inches = .5, fg = 1:10)
 symbols(x, y, thermometers = z3, inches = FALSE)
-text(x,y, apply(format(round(z3, digits=2)), 1, paste, collapse = ","),
+text(x, y, apply(format(round(z3, digits = 2)), 1, paste, collapse = ","),
      adj = c(-.2,0), cex = .75, col = "purple", xpd = NA)
 
 ## Note that  example(trees)  shows more sensible plots!

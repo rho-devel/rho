@@ -14,8 +14,9 @@
 }
 \usage{CO2}
 \format{
-  This object of class \code{c("nfnGroupedData", "nfGroupedData",
-    "groupedData", "data.frame")} containing the following columns:
+  An object of class
+  \code{c("nfnGroupedData", "nfGroupedData", "groupedData", "data.frame")}
+  containing the following columns:
   \describe{
     \item{Plant}{
       an ordered factor with levels
@@ -24,13 +25,13 @@
     }
     \item{Type}{
       a factor with levels
-      \code{Quebec} 
+      \code{Quebec}
       \code{Mississippi}
       giving the origin of the plant
     }
     \item{Treatment}{
       a factor with levels
-      \code{nonchilled} 
+      \code{nonchilled}
       \code{chilled}
     }
     \item{conc}{
@@ -47,10 +48,10 @@
   from Mississippi was measured at several levels of ambient
   \eqn{CO_2}{CO2} concentration.  Half the plants of each type were
   chilled overnight before the experiment was conducted.
-  
+
   This dataset was originally part of package \code{nlme}, and that has
   methods (including for \code{[}, \code{as.data.frame}, \code{plot} and
-  \code{print}) for its grouped-data classes. 
+  \code{print}) for its grouped-data classes.
 }
 \source{
   Potvin, C., Lechowicz, M. J. and Tardif, S. (1990)
@@ -67,7 +68,7 @@ require(stats); require(graphics)
 coplot(uptake ~ conc | Plant, data = CO2, show.given = FALSE, type = "b")
 ## fit the data for the first plant
 fm1 <- nls(uptake ~ SSasymp(conc, Asym, lrc, c0),
-   data = CO2, subset = Plant == 'Qn1')
+   data = CO2, subset = Plant == "Qn1")
 summary(fm1)
 ## fit each plant separately
 fmlist <- list()
@@ -76,6 +77,6 @@ for (pp in levels(CO2$Plant)) {
       data = CO2, subset = Plant == pp)
 }
 ## check the coefficients by plant
-print(sapply(fmlist, coef), digits=3)
+print(sapply(fmlist, coef), digits = 3)
 }
 \keyword{datasets}

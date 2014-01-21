@@ -1,6 +1,6 @@
 % File src/library/stats/man/arima.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{arima}
@@ -66,7 +66,7 @@ arima(x, order = c(0, 0, 0),
   \item{n.cond}{Only used if fitting by conditional-sum-of-squares: the
     number of initial observations to ignore.  It will be ignored if
     less than the maximum lag of an AR term.}
-  
+
   \item{optim.method}{The value passed as the \code{method} argument to
     \code{\link{optim}}.}
 
@@ -186,7 +186,7 @@ arima(x, order = c(0, 0, 0),
   2nd Edition, Harvester Wheatsheaf, sections 3.3 and 4.4.
 
   Jones, R. H. (1980) Maximum likelihood fitting of ARMA models to time
-  series with missing observations. \emph{Technometrics} \bold{20} 389--395.
+  series with missing observations. \emph{Technometrics} \bold{22} 389--395.
 
   Ripley, B. D. (2002) Time series in \R 1.5.0.
   \emph{R News}, \bold{2/2}, 2--7.

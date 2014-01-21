@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2012  The R Core Team.
+ *  Copyright (C) 1998--2013  The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,6 +53,7 @@
 #include "CXXR/MemoryBank.hpp"
 
 #include <Defn.h>
+#include <Internal.h>
 #include <R_ext/GraphicsEngine.h> /* GEDevDesc, GEgetDevice */
 #include <R_ext/Rdynload.h>
 #include "Rdynpriv.h"
@@ -128,6 +129,7 @@ SEXP attribute_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* The Generational Collector. */
 
 /* public interface for controlling GC torture settings */
+/* maybe, but in no header */
 // NB: all these are loose wheels in CXXR.
 void R_gc_torture(int gap, int wait, Rboolean inhibit)
 {
@@ -333,13 +335,18 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 /* Allocate a vector object (and also list-like objects).
 */
 
-SEXP allocVector(SEXPTYPE type, R_len_t length)
+SEXP allocVector(SEXPTYPE type, R_xlen_t length)
 {
     SEXP s = 0;  // -Wall
 
-    if (length < 0 ) {
+    if (length > R_XLEN_T_MAX) {
 	FunctionContext* ctxt = FunctionContext::innermost();
-	errorcall(ctxt ? CXXRCCAST(Expression*, ctxt->call()) : static_cast<RObject*>(0),
+	errorcall(ctxt ? const_cast<Expression*>(ctxt->call()) : static_cast<RObject*>(0),
+		  _("vector is too large"));; /**** put length into message */
+    }
+    else if (length < 0 ) {
+	FunctionContext* ctxt = FunctionContext::innermost();
+	errorcall(ctxt ? const_cast<Expression*>(ctxt->call()) : static_cast<RObject*>(0),
 		  _("negative length vectors are not allowed"));
     }
     /* number of vector cells to allocate */
@@ -377,12 +384,18 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	{
 	    if (length == 0)
 		return 0;
+#ifdef LONG_VECTOR_SUPPORT
+	    if (length > R_SHORT_LEN_MAX) error("invalid length for pairlist");
+#endif
 	    GCStackRoot<PairList> tl(PairList::make(length - 1));
 	    s = new Expression(0, tl);
 	    break;
 	}
     case LISTSXP:
-	return allocList(length);
+#ifdef LONG_VECTOR_SUPPORT
+	if (length > R_SHORT_LEN_MAX) error("invalid length for pairlist");
+#endif
+	return allocList(int( length));
     default:
 	error(_("invalid type/length (%s/%d) in vector allocation"),
 	      type2char(type), length);
@@ -440,7 +453,7 @@ void *R_chk_calloc(std::size_t nelem, std::size_t elsize)
 #endif
     p = calloc(nelem, elsize);
     if(!p) /* problem here is that we don't have a format for size_t. */
-	error(_("Calloc could not allocate memory (%.0f of %u bytes)"),
+	error(_("'Calloc' could not allocate memory (%.0f of %u bytes)"),
 	      double( nelem), elsize);
     return(p);
 }
@@ -451,7 +464,7 @@ void *R_chk_realloc(void *ptr, std::size_t size)
     /* Protect against broken realloc */
     if(ptr) p = realloc(ptr, size); else p = malloc(size);
     if(!p)
-	error(_("Realloc could not re-allocate memory (%.0f bytes)"), 
+	error(_("'Realloc' could not re-allocate memory (%.0f bytes)"), 
 	      double( size));
     return(p);
 }
@@ -494,7 +507,7 @@ DL_FUNC R_ExternalPtrAddrFn(SEXP s)
 
 #ifndef R_MEMORY_PROFILING
 
-SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_Rprofmem(SEXP args)
 {
     error(_("memory profiling is not available on this system"));
     return R_NilValue; /* not reached */
@@ -551,13 +564,12 @@ static void R_InitMemReporting(SEXP filename, int append,
     MemoryBank::setMonitor(R_ReportAllocation, threshold);
 }
 
-SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_Rprofmem(SEXP args)
 {
     SEXP filename;
     R_size_t threshold;
     int append_mode;
 
-    checkArity(op, args);
     if (!isString(CAR(args)) || (LENGTH(CAR(args))) != 1)
 	error(_("invalid '%s' argument"), "filename");
     append_mode = asLogical(CADR(args));
@@ -576,7 +588,6 @@ SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 #include "RBufferUtils.h"
 
-attribute_hidden
 void *R_AllocStringBuffer(std::size_t blen, R_StringBuffer *buf)
 {
     std::size_t blen1, bsize = buf->defaultSize;
@@ -608,7 +619,7 @@ void *R_AllocStringBuffer(std::size_t blen, R_StringBuffer *buf)
     return buf->data;
 }
 
-void attribute_hidden
+void
 R_FreeStringBuffer(R_StringBuffer *buf)
 {
     if (buf->data != NULL) {
@@ -628,11 +639,10 @@ R_FreeStringBufferL(R_StringBuffer *buf)
     }
 }
 
-/* ======== These need direct access to gp field for efficiency ======== */
-
-/* FIXME: consider inlining here */
+/* ======== This needs direct access to gp field for efficiency ======== */
 
 /* this has NA_STRING = NA_STRING */
+attribute_hidden
 int Seql(SEXP a, SEXP b)
 {
     /* The only case where pointer comparisons do not suffice is where
@@ -650,3 +660,12 @@ int Seql(SEXP a, SEXP b)
     	return result;
     }
 }
+
+
+#ifdef LONG_VECTOR_SUPPORT
+R_len_t R_BadLongVector(SEXP x, const char *file, int line)
+{
+    error(_("long vectors not supported yet: %s:%d"), file, line);
+    return 0; /* not reached */
+}
+#endif

@@ -51,6 +51,7 @@ Generalized Additive Mixed Models. Biometrics 62(4):1025-1036
 \seealso{  \code{\link{te}}, \code{\link{smooth.construct.tensor.smooth.spec}}  }
 
 \examples{
+require(mgcv)
 X <- list(matrix(1:4,2,2),matrix(5:10,2,3))
 tensor.prod.model.matrix(X)
 

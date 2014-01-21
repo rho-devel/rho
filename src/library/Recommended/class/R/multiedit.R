@@ -40,7 +40,8 @@ multiedit <- function(x, class, k=1, V=3, I=5, trace=TRUE)
 	 if(n2 < n1) lpass <- pass
 	 if(lpass <= pass - I) break
 	 n1 <- n2
-	 if(trace) message(paste("pass ", pass," size ", n2))
+	 if(trace) message(gettextf("pass %s size %d", pass, n2),
+                           domain = NA)
      }
      index
 }

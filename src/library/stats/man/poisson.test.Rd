@@ -56,7 +56,7 @@ poisson.test(x, T = 1, r = 1,
   The one-sample case is effectively the binomial test with a very large
   \code{n}. The two sample case is converted to a binomial test by
   conditioning on the total event count, and the rate ratio is directly
-  related to the odds in that binomial distribution.  
+  related to the odds in that binomial distribution.
 }
 \seealso{
   \code{\link{binom.test}}
@@ -68,7 +68,7 @@ poisson.test(x, T = 1, r = 1,
 poisson.test(137, 24.19893)
 
 ## eba1977, compare Fredericia to other three cities for ages 55-59
-poisson.test(c(11,6+8+7),c(800, 1083+1050+878))
+poisson.test(c(11, 6+8+7), c(800, 1083+1050+878))
 }
 \keyword{htest}
 

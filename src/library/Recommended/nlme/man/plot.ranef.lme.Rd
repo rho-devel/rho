@@ -77,7 +77,7 @@
   a Trellis plot of the estimated random-effects (coefficients) versus
   covariates, or groups.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{ranef.lme}}, \code{\link{lme}},
   \code{\link{dotplot}}} 
 \examples{

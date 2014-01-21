@@ -91,9 +91,8 @@ as.difftime(tim, format = "\%X", units = "auto")
 
   The units of a \code{"difftime"} object can be extracted by the
   \code{units} function, which also has a replacement form.  If the
-  units are changed, the numerical value is scaled accordingly.  As from
-  \R 2.15.0 the replacement version keeps attributes such as names and
-  dimensions.
+  units are changed, the numerical value is scaled accordingly.  The
+  replacement version keeps attributes such as names and dimensions.
 
   The \code{as.double} method returns the numeric value expressed in
   the specified units.  Using  \code{units = "auto"} means the units of the
@@ -101,7 +100,7 @@ as.difftime(tim, format = "\%X", units = "auto")
 
   The \code{format} method simply formats the numeric value and appends
   the units as a text string.
-  
+
   The default behaviour when \code{time1} or \code{time2} was a
   \code{"POSIXlt"} object changed in \R 2.12.0: previously such objects
   were regarded as in the timezone given by \code{tz} which defaulted to
@@ -118,10 +117,10 @@ Sys.time() - z                # just over 3600 seconds.
 ISOdate(2001, 4, 26) - ISOdate(2001, 2, 26)
 
 as.difftime(c("0:3:20", "11:23:15"))
-as.difftime(c("3:20", "23:15", "2:"), format= "\%H:\%M")# 3rd gives NA
-(z <- as.difftime(c(0,30,60), units="mins"))
-as.numeric(z, units="secs")
-as.numeric(z, units="hours")
+as.difftime(c("3:20", "23:15", "2:"), format= "\%H:\%M") # 3rd gives NA
+(z <- as.difftime(c(0,30,60), units = "mins"))
+as.numeric(z, units = "secs")
+as.numeric(z, units = "hours")
 format(z)
 }}
 \keyword{utilities}

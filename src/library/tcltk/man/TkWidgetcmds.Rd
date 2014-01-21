@@ -115,7 +115,7 @@ tkcompare(widget, ...)
 tkconfigure(widget, ...)
 tkcoords(widget, ...)
 tkcreate(widget, ...)
-tkcurselection(widget,...)
+tkcurselection(widget, ...)
 tkdchars(widget, ...)
 tkdebug(widget, ...)
 tkdelete(widget, ...)
@@ -167,7 +167,7 @@ tkselection.includes(widget, ...)
 tkselection.present(widget, ...)
 tkselection.range(widget, ...)
 tkselection.set(widget, ...)
-tkselection.to(widget,...)
+tkselection.to(widget, ...)
 tkset(widget, ...)
 tksize(widget, ...)
 tktoggle(widget, ...)
@@ -207,10 +207,10 @@ tkyview.scroll(widget, ...)
   Except for a few exceptions, the pattern is that  Tcl widget commands
   possibly with subcommands like
   \code{.a.b selection clear} are converted to function names like
-  \code{tkselection.clear} and the widget is given as the first argument. 
+  \code{tkselection.clear} and the widget is given as the first argument.
 }
 \seealso{\code{\link{TclInterface}}, \code{\link{TkWidgets}},
-  \code{\link{TkCommands}}} 
+  \code{\link{TkCommands}}}
 
 \examples{
 \dontrun{
@@ -221,10 +221,10 @@ tt <- tktoplevel()
 tkpack(txt.w <- tktext(tt))
 tkinsert(txt.w, "0.0", "plot(1:10)")
 
-# callback function 
+# callback function
 eval.txt <- function()
-   eval(parse(text=tclvalue(tkget(txt.w, "0.0", "end"))))
-tkpack(but.w <- tkbutton(tt,text="Submit", command=eval.txt))
+   eval(parse(text = tclvalue(tkget(txt.w, "0.0", "end"))))
+tkpack(but.w <- tkbutton(tt, text = "Submit", command = eval.txt))
 
 ## Try pressing the button, edit the text and when finished:
 

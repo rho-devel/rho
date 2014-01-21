@@ -63,7 +63,7 @@ Top-level tasks are individual expressions
 rather than entire lines of input.  Thus an input
 line of the form \code{expression1 ; expression2}
 will give rise to 2 top-level tasks.
-  
+
 A top-level task callback is called with the expression for the
 top-level task, the result of the top-level task, a logical value
 indicating whether it was successfully completed or not (always TRUE
@@ -87,7 +87,7 @@ will be called on the completion of the next top-level task.
   \url{http://developer.r-project.org/TaskHandlers.pdf}
 }
 \examples{
- times <- function(total = 3, str="Task a") {
+times <- function(total = 3, str = "Task a") {
    ctr <- 0
 
    function(expr, value, ok, visible) {
@@ -109,7 +109,7 @@ will be called on the completion of the next top-level task.
 
 \dontrun{
 # There is no point in running this
-# as 
+# as
  addTaskCallback(times(4))
 
  sum(1:10)

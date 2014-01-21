@@ -36,6 +36,8 @@
  * Memory Allocation (garbage collected) --- INCLUDING S compatibility ---
  */
 
+/* Included by R.h: API */
+
 #ifndef R_EXT_MEMORY_H_
 #define R_EXT_MEMORY_H_
 
@@ -53,6 +55,7 @@ void*   vmaxget(void);
 void	vmaxset(const void *);
 
 void	R_gc(void);
+int	R_gc_running();
 
 char*	R_alloc(size_t, int);
 char*	S_alloc(long, int);

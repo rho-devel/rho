@@ -36,7 +36,7 @@ fdHess(pars, fun, \dots, .relStep=(.Machine$double.eps)^(1/3), minAbsPar=0)
   \item{gradient}{an approximate gradient}
   \item{Hessian}{a matrix whose upper triangle contains an approximate Hessian.}
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}} 
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}} 
 \examples{
 fdHess(c(12.3, 2.34), function(x) x[1]*(1-exp(-0.4*x[2])))
 }

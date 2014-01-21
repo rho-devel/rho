@@ -87,6 +87,7 @@
     \code{x \%=~\% y}   \tab x and y are congruent \cr
     \code{x \%==\% y}   \tab x is defined as y \cr
     \code{x \%prop\% y}  \tab x is proportional to y \cr
+    \code{x \%~\% y}  \tab x is distributed as y \cr
     \code{plain(x)}   \tab draw x in normal font \cr
     \code{bold(x)}   \tab draw x in bold font \cr
     \code{italic(x)}   \tab draw x in italic font \cr
@@ -217,7 +218,7 @@
   \code{\link{points}}.  The \code{\link{windows}} family of devices can
   display such characters if they are available in the font in use.
   This can often be used to display Greek \emph{letters} in bold or italic.
- 
+
   A good way to both find out which characters are available in a font
   and to determine the Unicode number is to use the \sQuote{Character
   Map} accessory (usually on the \sQuote{Start} menu under
@@ -268,15 +269,15 @@ axis(1, at = c(-pi, -pi/2, 0, pi/2, pi),
 plot(1:10, type="n", xlab="", ylab="", main = "plot math & numbers")
 theta <- 1.23 ; mtext(bquote(hat(theta) == .(theta)), line= .25)
 for(i in 2:9)
-    text(i,i+1, substitute(list(xi,eta) == group("(",list(x,y),")"),
-                           list(x=i, y=i+1)))
+    text(i, i+1, substitute(list(xi, eta) == group("(",list(x,y),")"),
+                            list(x = i, y = i+1)))
 ## note that both of these use calls rather than expressions.
 ##
-text(1,10,  "Derivatives:", adj=0)
-text(1,9.6, expression(
- "             first: {f * minute}(x) " == {f * minute}(x)), adj=0)
-text(1,9.0, expression(
- "     second: {f * second}(x) "        == {f * second}(x)), adj=0)
+text(1, 10,  "Derivatives:", adj = 0)
+text(1, 9.6, expression(
+ "             first: {f * minute}(x) " == {f * minute}(x)), adj = 0)
+text(1, 9.0, expression(
+ "     second: {f * second}(x) "        == {f * second}(x)), adj = 0)
 
 
 plot(1:10, 1:10)
@@ -292,27 +293,27 @@ text(8, 5, expression(paste(frac(1, sigma*sqrt(2*pi)), " ",
 
 ## some other useful symbols
 plot.new(); plot.window(c(0,4), c(15,1))
-text(1, 1, "universal", adj=0); text(2.5, 1,  "\\\\042")
+text(1, 1, "universal", adj = 0); text(2.5, 1,  "\\\\042")
 text(3, 1, expression(symbol("\\042")))
-text(1, 2, "existential", adj=0); text(2.5, 2,  "\\\\044")
+text(1, 2, "existential", adj = 0); text(2.5, 2,  "\\\\044")
 text(3, 2, expression(symbol("\\044")))
-text(1, 3, "suchthat", adj=0); text(2.5, 3,  "\\\\047")
+text(1, 3, "suchthat", adj = 0); text(2.5, 3,  "\\\\047")
 text(3, 3, expression(symbol("\\047")))
-text(1, 4, "therefore", adj=0); text(2.5, 4,  "\\\\134")
+text(1, 4, "therefore", adj = 0); text(2.5, 4,  "\\\\134")
 text(3, 4, expression(symbol("\\134")))
-text(1, 5, "perpendicular", adj=0); text(2.5, 5,  "\\\\136")
+text(1, 5, "perpendicular", adj = 0); text(2.5, 5,  "\\\\136")
 text(3, 5, expression(symbol("\\136")))
-text(1, 6, "circlemultiply", adj=0); text(2.5, 6,  "\\\\304")
+text(1, 6, "circlemultiply", adj = 0); text(2.5, 6,  "\\\\304")
 text(3, 6, expression(symbol("\\304")))
-text(1, 7, "circleplus", adj=0); text(2.5, 7,  "\\\\305")
+text(1, 7, "circleplus", adj = 0); text(2.5, 7,  "\\\\305")
 text(3, 7, expression(symbol("\\305")))
-text(1, 8, "emptyset", adj=0); text(2.5, 8,  "\\\\306")
+text(1, 8, "emptyset", adj = 0); text(2.5, 8,  "\\\\306")
 text(3, 8, expression(symbol("\\306")))
-text(1, 9, "angle", adj=0); text(2.5, 9,  "\\\\320")
+text(1, 9, "angle", adj = 0); text(2.5, 9,  "\\\\320")
 text(3, 9, expression(symbol("\\320")))
-text(1, 10, "leftangle", adj=0); text(2.5, 10,  "\\\\341")
+text(1, 10, "leftangle", adj = 0); text(2.5, 10,  "\\\\341")
 text(3, 10, expression(symbol("\\341")))
-text(1, 11, "rightangle", adj=0); text(2.5, 11,  "\\\\361")
+text(1, 11, "rightangle", adj = 0); text(2.5, 11,  "\\\\361")
 text(3, 11, expression(symbol("\\361")))
 }
 \keyword{aplot}

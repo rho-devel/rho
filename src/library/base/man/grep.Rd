@@ -1,6 +1,6 @@
 % File src/library/base/man/grep.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{grep}
@@ -52,7 +52,8 @@ regexec(pattern, text, ignore.case = FALSE,
     is used with a warning.  Missing values are allowed except for
     \code{regexpr} and \code{gregexpr}.}
   \item{x, text}{a character vector where matches are sought, or an
-    object which can be coerced by \code{as.character} to a character vector.}
+    object which can be coerced by \code{as.character} to a character
+    vector.  \link{Long vectors} are supported.}
   \item{ignore.case}{if \code{FALSE}, the pattern matching is \emph{case
       sensitive} and if \code{TRUE}, case is ignored during matching.}
   \item{perl}{logical.  Should perl-compatible regexps be used?}
@@ -115,23 +116,15 @@ regexec(pattern, text, ignore.case = FALSE,
   locale, and you should expect it only to work for ASCII characters if
   \code{useBytes = TRUE}.
 
-  As from \R 2.14.0, \code{regexpr} and \code{gregexpr} with \code{perl
-    = TRUE} allow Python-style named captures.
-}
-
-\note{
-  Prior to \R 2.11.0 there was an argument \code{extended} which could
-  be used to select \sQuote{basic} regular expressions: this was often
-  used when \code{fixed = TRUE} would be preferable.  In the actual
-  implementation (as distinct from the POSIX standard) the only
-  difference was that \samp{?}, \samp{+}, \samp{\{}, \samp{|}, \samp{(},
-  and \samp{)} were not interpreted as metacharacters.
+  \code{regexpr} and \code{gregexpr} with \code{perl = TRUE} allow
+    Python-style named captures, but not for \emph{long vector} inputs.  
 }
 
 \value{
-  \code{grep(value = FALSE)} returns an integer vector of the indices
+  \code{grep(value = FALSE)} returns a vector of the indices
   of the elements of \code{x} that yielded a match (or not, for
-  \code{invert = TRUE}.
+  \code{invert = TRUE}.  This will be an integer vector unless the input
+  is a \emph{long vector}, when it will be a double vector.
 
   \code{grep(value = TRUE)} returns a character vector containing the
   selected elements of \code{x} (after coercion, preserving names but no
@@ -167,7 +160,7 @@ regexec(pattern, text, ignore.case = FALSE,
   element of which is either \eqn{-1} if there is no match, or a
   sequence of integers with the starting positions of the match and all
   substrings corresponding to parenthesized subexpressions of
-  \code{pattern}, with attribute \code{"match.length"} an integer vector
+  \code{pattern}, with attribute \code{"match.length"} a vector
   giving the lengths of the matches (or \eqn{-1} for no match).
 }
 
@@ -201,12 +194,10 @@ regexec(pattern, text, ignore.case = FALSE,
 \source{
   The C code for POSIX-style regular expression matching has changed
   over the years.  As from \R 2.10.0 the TRE library of Ville Laurikari
-  (\url{http://laurikari.net/tre/}) is used.  From 2005 to \R 2.9.2,
-  code based on \code{glibc} was used (and before that, code from GNU
-  \command{grep}).  The POSIX standard does give some room for
-  interpretation, especially in the handling of invalid regular
-  expressions and the collation of character ranges, so the results will
-  have changed slightly.
+  (\url{http://laurikari.net/tre/}) is used.  The POSIX standard does
+  give some room for interpretation, especially in the handling of
+  invalid regular expressions and the collation of character ranges, so
+  the results will have changed slightly over the years.
 
   For Perl-style matching PCRE (\url{http://www.pcre.org}) is used.
 }
@@ -243,8 +234,8 @@ regexec(pattern, text, ignore.case = FALSE,
 grep("[a-z]", letters)
 
 txt <- c("arm","foot","lefroo", "bafoobar")
-if(length(i <- grep("foo",txt)))
-   cat("'foo' appears at least once in\n\t",txt,"\n")
+if(length(i <- grep("foo", txt)))
+   cat("'foo' appears at least once in\n\t", txt, "\n")
 i # 2 and 4
 txt[i]
 
@@ -287,10 +278,10 @@ findArgs <- function(env, pattern) {
 findArgs("package:base", "warn")
 
 ## trim trailing white space
-str <- 'Now is the time      '
-sub(' +$', '', str)  ## spaces only
-sub('[[:space:]]+$', '', str) ## white space, POSIX-style
-sub('\\\\s+$', '', str, perl = TRUE) ## Perl-style white space
+str <- "Now is the time      "
+sub(" +$", "", str)  ## spaces only
+sub("[[:space:]]+$", "", str) ## white space, POSIX-style
+sub("\\\\s+$", "", str, perl = TRUE) ## Perl-style white space
 
 ## capitalizing
 txt <- "a test of capitalizing"

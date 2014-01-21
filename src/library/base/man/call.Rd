@@ -1,6 +1,6 @@
 % File src/library/base/man/call.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{call}
@@ -32,17 +32,20 @@ as.call(x)
   taken as \code{name} and the remaining arguments as arguments for the
   constructed call: if the first argument is named the name must
   partially match \code{name}.
-  
+
   \code{is.call} is used to determine whether \code{x} is a call (i.e.,
   of mode \code{"call"}).
-  
+
   Objects of mode \code{"list"} can be coerced to mode \code{"call"}.
   The first element of the list becomes the function part of the call,
   so should be a function or the name of one (as a symbol; a quoted
-  string will not do).  
-  
-  All three are \link{primitive} functions.  \code{call} is
-  \sQuote{special}: it only evaluates its first argument.
+  string will not do).
+
+  All three are \link{primitive} functions. 
+}
+\section{Warning}{
+  \code{call} should not be used to attempt to evade restrictions on the
+  use of \code{.Internal} and other non-API calls.
 }
 \seealso{
   \code{\link{do.call}} for calling a function by name and argument
@@ -63,10 +66,10 @@ is.call(call) #-> FALSE: Functions are NOT calls
 
 ## set up a function call to round with argument 10.5
 cl <- call("round", 10.5)
-is.call(cl)# TRUE
+is.call(cl) # TRUE
 cl
 ## such a call can also be evaluated.
-eval(cl)# [1] 10
+eval(cl) # [1] 10
 
 A <- 10.5
 call("round", A)        # round(10.5)

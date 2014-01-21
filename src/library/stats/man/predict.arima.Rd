@@ -39,7 +39,7 @@
 \references{
   Durbin, J. and Koopman, S. J. (2001) \emph{Time Series Analysis by
     State Space Methods.}  Oxford University Press.
-  
+
   Harvey, A. C. and McKenzie, C. R. (1982) Algorithm AS182.
   An algorithm for finite sample prediction from ARIMA processes.
   \emph{Applied Statistics} \bold{31}, 180--187.
@@ -53,11 +53,11 @@
 }
 
 \examples{
-od <- options(digits=5) # avoid too much spurious accuracy
+od <- options(digits = 5) # avoid too much spurious accuracy
 predict(arima(lh, order = c(3,0,0)), n.ahead = 12)
 
 (fit <- arima(USAccDeaths, order = c(0,1,1),
-              seasonal = list(order=c(0,1,1))))
+              seasonal = list(order = c(0,1,1))))
 predict(fit, n.ahead = 6)
 options(od)
 }

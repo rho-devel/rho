@@ -50,20 +50,77 @@ lattice.getOption(name)
       manipulation.  Defaults to \code{TRUE}.
     }
 
-    \item{\code{layout.widths}, \code{layout.heights}}{
-      Controls details of the default space allocation in the grid
-      layout created in the course of plotting a \code{"trellis"}
-      object.  Not of interest to the end-user, who should instead use
+    \item{\code{layout.widths}, \code{layout.heights}}{ Controls details
+      of the default space allocation in the grid layout created in the
+      course of plotting a \code{"trellis"} object.  Each named
+      component is a list of arguments to the \pkg{grid} function
+      \code{\link{unit}} (\code{x}, \code{units}, and optionally
+      \code{data}).
+
+      Usually not of interest to the end-user, who should instead use
       the similiarly named component in the graphical settings,
       modifiable using \code{\link{trellis.par.set}}.
     }
 
-    \item{\code{drop.unused.levels}}{ }
+    \item{\code{drop.unused.levels}}{ A list of two components named
+      \code{cond} and \code{data}, both logical flags.  The flags
+      indicate whether the unused levels of factors (conditioning
+      variables and primary variables respectively) will be dropped,
+      which is usually relevant when a subsetting operation is performed
+      or an 'interaction' is created.  See \code{\link{xyplot}} for more
+      details.  Note that this does not control dropping of levels of
+      the 'groups' argument.
+    }
 
-    \item{\code{legend.bbox}}{}
+    \item{\code{legend.bbox}}{
+      A character string, either \code{"full"} or \code{"panel"}.  This
+      determines the interpretation of \code{x} and \code{y} when
+      \code{space="inside"} in \code{key} (determining the legend; see
+      \code{\link{xyplot}}): either the full figure region ('"full"'),
+      or just the region that bounds the panels and strips ('"panel"').
+    }
 
+    \item{\code{default.args}}{ A list giving default values for various
+      standard arguments: \code{as.table}, \code{aspect},
+      \code{between}, \code{skip}, \code{strip},
+      \code{xscale.components}, \code{yscale.components}, and
+      \code{axis}.
+    }
+
+    \item{\code{highlight.gpar}}{ A list giving arguments to
+      \code{\link{gpar}} used to highlight a viewport chosen using
+      \code{\link{trellis.focus}}.
+    }
+
+    \item{\code{banking}}{ The banking function. See
+      \code{\link{banking}}. }
+
+    \item{\code{axis.padding}}{ List with components named
+         \code{"numeric"} and \code{"factor"}, both scalar numbers.
+         Panel limits are extended by this amount, to provide padding
+         for numeric and factor scales respectively.  The value for
+         numeric is multiplicative, whereas factor is additive. }
+
+    \item{\code{skip.boundary.labels}}{ Numeric scalar between 0 and 1.
+      Tick marks that are too close to the limits are not drawn unless
+      explicitly requested.  The limits are contracted by this
+      proportion, and anything outside is skipped. }
+
+    \item{\code{interaction.sep}}{ The separator for creating
+      interactions with the extended formula interface (see
+      \code{\link{xyplot}}).
+    }
+
+    \item{\code{axis.units}}{ List determining default units for axis
+      components.  Should not be of interest to the end-user.
+    }
 
   }
+
+  In addition, there is an option for the default prepanel and panel
+  function for each high-level function; e.g., \code{panel.xyplot} and
+  \code{prepanel.default.xyplot} for \code{\link{xyplot}}.  The options
+  for the others have similarly patterned names.
 
 }
 
@@ -84,7 +141,7 @@ lattice.getOption(name)
 
 \examples{
 names(lattice.options())
-str(lattice.getOption("layout.widths"))
+str(lattice.getOption("layout.widths"), max.level = 2)
 }
 \keyword{dplot}
 

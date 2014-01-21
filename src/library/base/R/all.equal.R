@@ -1,6 +1,8 @@
 #  File src/library/base/R/all.equal.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2013 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -48,8 +50,8 @@ all.equal.numeric <-
     msg <- if(check.attributes)
 	attr.all.equal(target, current, tolerance=tolerance, scale=scale, ...)
     if(data.class(target) != data.class(current)) {
-	msg <- c(msg, paste("target is ", data.class(target), ", current is ",
-			    data.class(current), sep = ""))
+	msg <- c(msg, paste0("target is ", data.class(target), ", current is ",
+                             data.class(current)))
 	return(msg)
     }
 
@@ -59,8 +61,8 @@ all.equal.numeric <-
     if(lt != lc) {
 	## *replace* the 'Lengths' msg[] from attr.all.equal():
 	if(!is.null(msg)) msg <- msg[- grep("\\bLengths\\b", msg)]
-	msg <- c(msg, paste(if(cplx)"Complex" else "Numeric",
-			    ": lengths (", lt, ", ", lc, ") differ", sep = ""))
+	msg <- c(msg, paste0(if(cplx) "Complex" else "Numeric",
+                             ": lengths (", lt, ", ", lc, ") differ"))
 	return(msg)
     }
     ## remove atttributes (remember these are both numeric or complex vectors)
@@ -104,17 +106,18 @@ all.equal.character <-
 {
     msg <-  if(check.attributes) attr.all.equal(target, current, ...)
     if(data.class(target) != data.class(current)) {
-	msg <- c(msg, paste("target is ", data.class(target), ", current is ",
-			    data.class(current), sep = ""))
+	msg <- c(msg, paste0("target is ", data.class(target), ", current is ",
+                             data.class(current)))
 	return(msg)
     }
     lt <- length(target)
     lc <- length(current)
     if(lt != lc) {
 	if(!is.null(msg)) msg <- msg[- grep("\\bLengths\\b", msg)]
-	msg <- c(msg, paste("Lengths (", lt, ", ", lc,
-		     ") differ (string compare on first ", ll <- min(lt, lc),
-		     ")", sep = ""))
+	msg <- c(msg,
+                 paste0("Lengths (", lt, ", ", lc,
+                        ") differ (string compare on first ",
+                        ll <- min(lt, lc), ")"))
 	ll <- seq_len(ll)
 	target <- target[ll]
 	current <- current[ll]
@@ -148,6 +151,8 @@ all.equal.factor <- function(target, current, check.attributes = TRUE, ...)
 
 all.equal.formula <- function(target, current, ...)
 {
+    ## NB: this assumes the default method for class formula, not
+    ## the misquided one in package Formula
     if(length(target) != length(current))
 	return(paste("target, current differ in having response: ",
 		     length(target) == 3L, ", ",
@@ -186,27 +191,10 @@ all.equal.language <- function(target, current, ...)
 all.equal.list <- function(target, current, check.attributes = TRUE, ...)
 {
     msg <- if(check.attributes) attr.all.equal(target, current, ...)
-##    nt <- names(target)
-##    nc <- names(current)
-    ## Unclass to ensure we get the low-level components (see the
-    ## comment below).
+    ## Unclass to ensure we get the low-level components
     target <- unclass(target)
     current <- unclass(current)
     iseq <-
-	## <FIXME>
-	## Commenting this eliminates PR#674, and assumes that lists are
-	## regarded as generic vectors, so that they are equal iff they
-	## have identical names attributes and all components are equal.
-	## if(length(nt) && length(nc)) {
-	##     if(any(not.in <- (c.in.t <- match(nc, nt, 0L)) == 0L))
-	##	msg <- c(msg, paste("Components not in target:",
-	##			    paste(nc[not.in], collapse = ", ")))
-	##     if(any(not.in <- match(nt, nc, 0L) == 0L))
-	##	msg <- c(msg, paste("Components not in current:",
-	##			    paste(nt[not.in], collapse = ", ")))
-	##     nt[c.in.t]
-	## } else
-	## </FIXME>
 	if(length(target) == length(current)) {
 	    seq_along(target)
 	} else {
@@ -230,17 +218,17 @@ all.equal.raw <-
 {
     msg <-  if(check.attributes) attr.all.equal(target, current, ...)
     if(data.class(target) != data.class(current)) {
-	msg <- c(msg, paste("target is ", data.class(target), ", current is ",
-			    data.class(current), sep = ""))
+	msg <- c(msg, paste0("target is ", data.class(target), ", current is ",
+                             data.class(current)))
 	return(msg)
     }
     lt <- length(target)
     lc <- length(current)
     if(lt != lc) {
 	if(!is.null(msg)) msg <- msg[- grep("\\bLengths\\b", msg)]
-	msg <- c(msg, paste("Lengths (", lt, ", ", lc,
-		     ") differ (comparison on first ", ll <- min(lt, lc),
-		     " components)", sep = ""))
+	msg <- c(msg, paste0("Lengths (", lt, ", ", lc,
+                             ") differ (comparison on first ",
+                             ll <- min(lt, lc), " components)"))
 	ll <- seq_len(ll)
 	target <- target[ll]
 	current <- current[ll]
@@ -260,6 +248,7 @@ all.equal.raw <-
 }
 
 
+## attributes are a pairlist, so never 'long'
 attr.all.equal <- function(target, current,
                            check.attributes = TRUE, check.names = TRUE, ...)
 {
@@ -269,8 +258,8 @@ attr.all.equal <- function(target, current,
     if(mode(target) != mode(current))
 	msg <- paste0("Modes: ", mode(target), ", ", mode(current))
     if(length(target) != length(current))
-	msg <- c(msg, paste("Lengths: ", length(target), ", ",
-			    length(current), sep = ""))
+	msg <- c(msg,
+                 paste0("Lengths: ", length(target), ", ", length(current)))
     ax <- attributes(target)
     ay <- attributes(current)
     if(check.names) {
@@ -286,7 +275,11 @@ attr.all.equal <- function(target, current,
                 msg <- c(msg, "names for target but not for current")
             else msg <- c(msg, "names for current but not for target")
         }
+    } else {
+	ax[["names"]] <- NULL
+	ay[["names"]] <- NULL
     }
+	
     if(check.attributes && (length(ax) || length(ay))) {# some (more) attributes
 	## order by names before comparison:
 	nx <- names(ax)

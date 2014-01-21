@@ -119,7 +119,7 @@ outer, inner, labels, units, \dots)
   in S and S-PLUS", Springer.  
 }
 
-\author{Douglas Bates and Jose Pinheiro}
+\author{Douglas Bates and José Pinheiro}
 
 \seealso{\code{\link{formula}}, \code{\link{gapply}},
   \code{\link{gsummary}},

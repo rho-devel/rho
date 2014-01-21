@@ -32,6 +32,9 @@
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
+
+/* Included by R.h: API */
+
 #ifndef R_EXT_PRINT_H_
 #define R_EXT_PRINT_H_
 

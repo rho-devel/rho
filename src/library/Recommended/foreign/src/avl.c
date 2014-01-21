@@ -39,7 +39,7 @@
 #endif
 #endif
 
-static void Free_fn(void *x)
+static void Free_fn(void *x, void *y)
 {
     Free(x);
 }
@@ -145,7 +145,7 @@ R_avl_destroy (avl_tree *tree, avl_node_func free_func)
 void
 R_avl_free (avl_tree *tree)
 {
-  R_avl_destroy (tree, (avl_node_func) Free_fn);
+  R_avl_destroy (tree, Free_fn);
 }
 
 /* Return the number of nodes in TREE. */

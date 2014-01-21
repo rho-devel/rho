@@ -21,6 +21,8 @@
 #include <Rinternals.h>
 #include <R_ext/Applic.h>
 
+#include "statsR.h"
+
 /* A wrapper to replace
 
     z <- .Fortran("dqrls",
@@ -40,13 +42,13 @@ SEXP Cdqrls(SEXP x, SEXP y, SEXP tol)
 {
     SEXP ans, ansnames;
     SEXP qr, coefficients, residuals, effects, pivot, qraux;
-    int n, ny, p, rank, nprotect = 4, pivoted = 0;
+    int n, ny = 0, p, rank, nprotect = 4, pivoted = 0;
     double rtol = asReal(tol), *work;
 
 
     int *dims = INTEGER(getAttrib(x, R_DimSymbol));
     n = dims[0]; p = dims[1];
-    ny = LENGTH(y)/n;  /* n x ny, or a vector */
+    if(n) ny = LENGTH(y)/n;  /* n x ny, or a vector */
 
     /* These lose attributes, so do after we have extracted dims */
     if (TYPEOF(x) != REALSXP) {
@@ -59,11 +61,11 @@ SEXP Cdqrls(SEXP x, SEXP y, SEXP tol)
     }
 
     double *rptr = REAL(x);
-    for (int i = 0 ; i < LENGTH(x) ; i++)
+    for (R_xlen_t i = 0 ; i < XLENGTH(x) ; i++)
 	if(!R_FINITE(rptr[i])) error("NA/NaN/Inf in 'x'");
     
     rptr = REAL(y);
-    for (int i = 0 ; i < LENGTH(y) ; i++)
+    for (R_xlen_t i = 0 ; i < XLENGTH(y) ; i++)
 	if(!R_FINITE(rptr[i])) error("NA/NaN/Inf in 'y'");
 
     PROTECT(ans = allocVector(VECSXP, 9));

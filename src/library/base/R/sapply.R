@@ -1,6 +1,8 @@
 #  File src/library/base/R/sapply.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -46,7 +48,7 @@ simplify2array <- function(x, higher = TRUE)
 
         } else if(prod(d <- c(common.len, n)) == length(r))
             array(r, dim = d,
-                  dimnames= if(!(is.null(n1 <- names(x[[1L]])) &
+                  dimnames = if(!(is.null(n1 <- names(x[[1L]])) &
                   is.null(n2 <- names(x)))) list(n1,n2))
         else x
     }

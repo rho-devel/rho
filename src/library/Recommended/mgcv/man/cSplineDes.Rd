@@ -31,6 +31,7 @@ last knot locations.}
 \seealso{\code{\link{cyclic.p.spline}}}
 
 \examples{
+ require(mgcv)
  ## create some x's and knots...
  n <- 200
  x <- 0:(n-1)/(n-1);k<- 0:5/5

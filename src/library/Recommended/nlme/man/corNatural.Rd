@@ -40,7 +40,7 @@ corNatural(value, form, fixed)
   an object of class \code{corNatural} representing a general correlation
   structure.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{
   \code{\link{Initialize.corNatural}},
   \code{\link{pdNatural}}, 

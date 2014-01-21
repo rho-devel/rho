@@ -5,10 +5,10 @@
 # Detlef Steuer <steuer@hsu-hh.de>, 2010-2012.
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.15.0 / Lattice 0.20.0\n"
-"Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2012-03-09 18:17\n"
-"PO-Revision-Date: 2012-03-06 15:47+0100\n"
+"Project-Id-Version: R 2.15.2 / Lattice 0.20.10\n"
+"Report-Msgid-Bugs-To: bugs.r-project.org\n"
+"POT-Creation-Date: 2013-01-08 23:17\n"
+"PO-Revision-Date: 2012-09-10 15:20+0200\n"
 "Last-Translator: Detlef Steuer <steuer@hsu-hh.de>\n"
 "Language-Team: German <debian-l10n-german@lists.debian.org>\n"
 "Language: de\n"
@@ -17,9 +17,8 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#, fuzzy
 msgid "Invalid value of 'log'"
-msgstr "Ungültiger Wert von 'aspect'"
+msgstr "Ungültiger Wert von 'log'"
 
 msgid "range too small for min.n"
 msgstr "Spannweite zu klein für min.n"

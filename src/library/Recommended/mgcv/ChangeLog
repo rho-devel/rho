@@ -1,0 +1,2358 @@
+**  denotes quite substantial/important changes
+*** denotes really big changes 
+
+1.7-26
+
+* Namespace fixes.
+
+1.7-25
+
+* code added to allow openMP based multi-threading in gam fits (see
+  ?gam.control and ?"mgcv-parallel"). 
+
+* bam now allows AR1 error model to be split blockwise. See argument 
+  'AR.start'.
+
+* magic.post.proc made more efficient (one of two O(np^2) steps removed).
+
+* var.summary now coerces character to factor. 
+
+* bugs fixed whereby etastart etc were not passed to initial.spg and
+  get.null.coefs. Thanks to Gavin Simpson.
+
+* reformulate removed from predict.gam to avoid (slow) repeated parser 
+  calls.
+
+* gaussian(link="log") initialization fixed so that negative data 
+  does not make it fail, via fix.family patching function.
+
+* bug fix in plot method for "fs" basis - ignored any side conditions.
+  Thanks to Martijn Weiling and Jacolien van Rij.
+
+* gamm now checks whether smooths nested in factors have illegal side 
+  conditions, and halts if so (re-ordering formula can help).
+ 
+* anova.glmlist no longer called.
+
+* Compiled code now uses R_chck_calloc and R_chk_free for memory management
+  to avoid the possibility of unfriendly exit on running out of memory. 
+
+* fix in gam.side which would fail with unpenalized interactions in the 
+  presence of main effects. 
+
+1.7-24
+
+* Examples pruned in negbin, smooth.construct.ad.smooth.spec and bam help 
+  files to reduce CRAN checking load.
+
+* gam.side now warns if only repeated 1-D smooths of the same variable are
+  encountered, but does not halt.
+
+* Bug fix in C code for "cr" basis, that could cause a memory violation during
+  prediction, when an extrapolation was immediately followed by a prediction 
+  that lay exactly on the upper boundary knot. Thanks to Keith Woolner for 
+  reporting this.
+
+* Fix for bug in fast REML code that could cause bam to fail with ti/te only
+  models. Thanks to Martijn Wieling.
+
+* Fix of bug in extract.lme.cov2, which could cause gamm to fail when
+  a correlation structure was nested inside a grouping factor finer than
+  the finest random effect grouping factor. 
+
+* Fix for an interesting feature of lme that getGroups applied to the 
+  corStruct that is part of the fitted lme object returns groups in 
+  sorted order, not data frame order, and without an index from one order 
+  to the other. (Oddly, the same corStruct Initialized outside lme has its 
+  groups  in data frame order.) This feature could cause gamm to fail,
+  complaining that the grouping factors for the correlation did not appear 
+  to be nested inside the grouping structure of the random effects. A 
+  bunch of ordering sensitivity tests have been added to the mgcv test suite.
+  Thanks to Dave Miller for reporting the bug. 
+
+1.7-23
+
+*** Fix of severe bug introduced with R 2.15.2 LAPACK change. The shipped
+  version of dsyevr can fail to produce orthogonal eigenvectors when 
+  uplo='U' (upper triangle of symmetric matrix used), as opposed to 'L'. 
+  This led to a substantial number of gam smoothing parameter estimation 
+  convergence failures, as the key stabilizing re-parameterization was 
+  substantially degraded. The issue did not affect gaussian additive models
+  with GCV model selection. Other models could fail to converge any further 
+  as soon as any smoothing parameter became `large', as happens when a 
+  smooth is estimated as a straight line. check.gam reported the lack of full 
+  convergence, but the issue could also generate complete fit failures.
+  Picked up late as full test suite had only been run on R > 2.15.1 with an 
+  external LAPACK.
+
+** 'ti' smooth specification introduced, which provides a much better (and 
+  very simple) way of allowing nested models based on 'te' type tensor 
+  product smooths. 'ti' terms are used to set up smooth interactions 
+  excluding main effects (so ti(x,z) is like x:z while te(x,z) is more
+  like x*z, although the analogy is not exact). 
+
+* summary.gam now uses a more efficient approach to p-value computation 
+  for smooths, using the factor R from the QR factorization of the weighted 
+  model matrix produced during fitting. This is a weighted version of the 
+  Wood (2013) statistic used previously - simulations in that paper 
+  essentially unchanged by the change. 
+
+* summary.gam now deals gracefully with terms such as "fs" smooths 
+  estimated using gamm, for which p-values can not be computed. (thanks to 
+  Gavin Simpson).
+
+* gam.check/qq.gam now uses a normal QQ-plot when the model has been fitted 
+  using gamm or gamm4, since qq.gam cannot compute corrext quantiles in 
+  the presence of random effects in these cases. 
+
+* gamm could fail with fixed smooths while assembling total 
+  penalty matrix, by attempting to access non-existent penalty 
+  matrix. (Thanks Ainars Aunins for reporting this.)
+
+* stripped rownames from model matrix, eta, linear predictor etc. Saves
+  memory and time.
+
+* plot.soap.film could switch axis ranges. Fixed.
+
+* plot.mgcv.smooth now sets smooth plot range on basis of xlim and 
+  ylim if present.
+
+* formXtViX documentation fixed + return matrix labels.
+
+* fixDependence related negative index failures for completely confounded 
+  terms - now fixed.
+
+* sos smooth model matrix re-scaled for better conditioning.
+
+* sos plot method could produce NaNs by a rounding error in argument to 
+  acos - fixed. 
+
+1.7-22
+
+* Predict.matrix.pspline.smooth now allows prediction outside range of knots, 
+  and uses linear extrapolation in this case.
+
+* missing drop=FALSE in reTest called by summary.gam caused 1-D random effect
+  p-value computation to fail. Fixed (thanks Silje Skår).
+
+1.7-21
+
+** soap film smoother class added. See ?soap
+
+* Polish translation added thanks to Lukasz Daniel.
+
+* mgcv/po/R-mgcv.pot up-dated.
+
+* plot methods for smooths modified slightly to allow methods to return 
+  plot data directly, without a prediction matrix.
+
+1.7-20
+
+* '...' now passed to termplot by plot.gam (thanks Andreas Eckner).
+
+* fix to null deviance computation for binomial when n>1, matrix response 
+  used and an offset is present. (Thanks to Tim Miller)
+
+* Some pruning of unused code from recov and reTest.
+
+* recov modified to stop it returning a numerically non-symmetric Ve, and 
+  causing occasional failures of summary.gam with "re" terms.
+
+* MRF smooth bug. Region ordering could become confused under some 
+  circumstances due to incorrect setting of factor levels. Corrected 
+  thanks to detailed bug report from Andreas Bender.
+
+* polys.plot colour/grey scale bug. Could ask for colour 0 from colour 
+  scheme, and therefore fail. Fixed.
+
+1.7-19
+
+** summary.gam and anova.gam now use an improved p-value computation for 
+  smooth terms with a zero dimensional penalty null space (including 
+  random effects). The new scheme has been tested by full replication 
+  of the simulation study in Scheipl (2008,CSDA) to compare it to the best 
+  method therein. In these tests it is at least as powerful as the best 
+  method given there, and usually indistinguishable, but it gives slightly 
+  too low null p-values when smoothing parameters are very poorly identified. 
+  Note that the new p-values can not be computed from old fitted gam objects.
+  Thanks to Martijn Wieling for pointing out how bad the p-values for regular
+  smooths could be with random effects.
+
+* t2 terms now take an argument `ord' that allows orders of interaction to 
+  be selected.
+
+* "tp" smooths can now drop the null space from their construction via
+  a vector m argument, to allow testing against polynomials in the null space.
+
+* Fix of vicious little bug in gamm tensor product handling that could have 
+  a te term pick up the wrong model matrix and fail. 
+
+* bam now resets method="fREML" to "REML" if there are no free smoothing 
+  parameters, since there is no advantage to the "fREML" optimizer in this 
+  case, and it assumes there is at least one free smoothing parameter.
+
+* print.gam modified to print effective degrees of freedom more prettily,
+
+* testStat bug fix. qr was called with default arguments, which includes 
+  tol=1e-7... 
+
+* bam now correctly returns fitting weights (rather than prior) in weights 
+  field.
+
+1.7-18
+
+* Embarrassingly, the adjusted r^2 computation in summary.gam was wrong
+  for models with prior weights. Now fixed, thanks to Antony Unwin.
+
+* bam(...,method="fREML") could give incorrect edfs for "re" terms as a 
+  result of a matrix indexing error in Sl.initial.repara. Now fixed. 
+  Thanks to Martijn Wieling for reporting this.
+
+* summary.gam had freq=TRUE set as default in 1.7-17. This gave better 
+  p-values for paraPen terms, but spoiled p-values for fixed effects in the
+  presence of "re" terms (a rather more common setup). Default now reset to
+  freq=FALSE.
+
+* bam(...,method="fREML") made fully compatible with gam.vcomp.
+
+* bam and negbin examples speeded up
+
+* predict.gam could fail for models of the form y~1 when newdata are supplied.
+  (Could make some model averaging methods fail). Fixed.
+
+* plot.gam had an overzealous check for availibility of variance estimates,
+  which could make rank deficient models fail to plot CIs. fixed.
+
+1.7-17
+
+** p-values for terms with no un-penalized components were poor. The theory on 
+  which the p-value computation for other terms is based shows why this is, 
+  and allows fixes to be made. These are now implemented.
+
+* summary p value bug fix --- smooths with no null space had a bug in 
+  lower tail of p-value computation, yielding far too low values. Fixed.
+
+* bam now outputs frequentist cov matrix Ve and alternative effective degrees 
+  of freedom edf1, in all cases.
+
+* smoothCon now adjusts null.space.dim on constraint absorption.
+
+* Prediction with matrix arguments (i.e. for models using summation 
+  convention) could be very memory hungry. This in turn meant that
+  bam could run out of memory when fitting models with such terms.
+  The problem was memory inefficient handling of duplicate evaluations.
+  Now fixed by modification of PredictMat
+
+* bam could fail if the response vector was of class matrix. fixed.
+
+* reduced rank mrf smooths with supplied penalty could use the incorrect
+  penalty rank when computing the reduced rank basis and fail. fixed 
+  thanks to Fabian Scheipl.
+
+* a cr basis efficiency change could lead to old fitted model objects causing 
+  segfaults when used with current mgcv version. This is now caught.
+
+1.7-16
+
+* There was an unitialized variable bug in the 1.7-14 re-written "cr" basis 
+  code for the case k=3. Fixed.
+
+* gam.check modified slightly so that k test only applied to smooths of
+  numeric variables, not factors.
+
+1.7-15
+
+* Several packages had documentation linking to the 'mgcv' function
+  help page (now removed), when a link to the package was meant. An alias
+  has been added to mgcv-package.Rd to fix/correct these links. 
+
+1.7-14
+
+** predict.bam now added as a wrapper for predict.gam, allowing parallel 
+   computation
+
+** bam now has method="fREML" option which uses faster REML optimizer: 
+   can make a big difference on parameter rich models.
+
+* bam can now use a cross product and Choleski based method to accumulate
+  the required model matrix factorization. Faster, but less stable than 
+  the QR based default.
+
+* bam can now obtain starting values using a random sub sample of the data. 
+  Useful for seriously large datasets. 
+
+* check of adequacy of basis dimensions added to gam.check
+
+* magic can now deal with model matrices with more columns than rows.
+
+* p-value reference distribution approximations improved.
+
+* bam returns objects of class "bam" inheriting from "gam"
+
+* bam now uses newdata.guaranteed=TRUE option when predicting as part
+  of model matrix decomposition accumulation. Speeds things up. 
+
+* More efficient `sweep and drop' centering constraints added as default for
+  bam. Constaint null space unchanged, but computation is faster.
+
+* Underlying "cr" basis code re-written for greater efficiency.
+
+* routine mgcv removed, it now being many years since there has been any 
+  reason to use it. C source code heavily pruned as a result. 
+
+* coefficient name generation moved from estimate.gam to gam.setup.
+
+* smooth2random.tensor.smooth had a bug that could produce a nonsensical
+  penalty null space rank and an error, in some cases (e.g. "cc" basis)
+  causing te terms to fail in gamm. Fixed.
+
+* minor change to te constructor. Any unpenalized margin now has 
+  corresponding penalty rank dropped along with penalty.
+
+* Code for handling sp's fixed at exactly zero was badly thought out, and 
+  could easily fail. fixed.
+
+* TPRS prediction code made more efficient, partly by use of BLAS. Large
+  dataset setup also made more efficient using BLAS.
+
+* smooth.construct.tensor.smooth.spec now handles marginals with factor
+  arguments properly (there was a knot generation bug in this case)
+
+* bam now uses LAPACK version of qr, for model matrix QR, since it's 
+  faster and uses BLAS.
+
+1.7-13
+
+** The Lanczos routine in mat.c was using a stupidly inefficient check for 
+  convergence of the largest magnitude eigenvectors. This resulted in 
+  far too many Lanczos steps being used in setting up thin plate regression 
+  splines, and a noticeable speed penalty. This is now fixed, with many thanks
+  David Shavlik for reporting the slow down.  
+
+* Namespace modified to import from methods. Dependency on stats and graphics
+  made explicit.
+
+* "re" smooths are no longer subject to side constraint under nesting (since
+  this is almost always un-necessary and undesirable, and often unexpected).
+
+* side.con modified to allow smooths to be excluded and to allow side 
+  constraint computation to take account of penalties (unused at present).
+
+1.7-12
+
+* bam can now compute the leading order QR decomposition on a cluster
+  set up using the parallel package.
+
+* Default k for "tp" and "ds" modified so that it doesn't exceed  100 + 
+  the null space dimension (to avoid complaints from users smoothing in 
+  quite alot of dimensions). Also default sub-sample size reduced to 2000.
+
+* Greater use of BLAS routines in the underlying method code. In particular 
+  all leading order operations count steps for gam fitting now use BLAS. 
+  You'll need R to be using a rather fancy BLAS to see much difference, 
+  however. 
+
+* Amusingly, some highly tuned blas libraries can result in lapack not always 
+  giving identical eigenvalues when called twice with the same matrix. The 
+  `newton' optimizer had assumed this wouldn't happen: not any more.
+
+* Now byte compiled by default. Turn this off in DESCRIPTION if it interferes
+  with debugging.
+ 
+* summary.gam p-value computation options modified (default remains the 
+  same).
+
+* summary.gam default p-value computation made more computationally 
+  efficient.
+
+* gamm and bam could fail under some options for specifying binomial models.
+  Now fixed.
+
+1.7-11
+
+* smoothCon bug fix to avoid NA labels for matrix arguments when 
+  no by variable provided. 
+
+* modification to p-value computation in summary.gam: `alpha' argument 
+  removed (was set to zero anyway); computation now deals with possibility
+  of rank deficiency computing psuedo-inverse of cov matrix for statistic. 
+  Previously p-value computation could fail for random effect smooths with 
+  large datasets, when a random effect has many levels. Also for large data
+  sets test statistic is now based on randomly sampling max(1000,np*2) model
+  matrix rows, where np is number of model coefficients (random number 
+  generator state unchanged by this), previous sample size was 3000. 
+
+* plot.mrf.smooth modified to allow passing '...' argument.
+
+* 'negbin' modified to avoid spurious warnings on initialization call.
+
+1.7-10
+
+* fix stupid bug in 1.7-9 that lost term labels in plot.gam.
+
+1.7-9
+
+* rather lovely plot method added for splines on the sphere.
+
+* plot.gam modified to allow 'scheme' to be specified for plots, to easily
+  select different plot looks.
+
+* schemes added for default smooth plotting method, modified for mrfs and 
+  factor-smooth interactions.
+
+* mgcv function deprected, since magic and gam are much better (let me know 
+  if this is really a problem).  
+
+1.7-8
+
+* gamm.setup fix. Bug introduced in 1.7-7 whereby gamm with no smooths would
+  fail.
+
+* gamm gives returned object a class "gamm"
+
+
+1.7-7
+
+* "fs" smooth factor interaction class introduced, for smooth factor 
+  interactions where smoothing parameters are same at each factor level.
+  Very efficient with gamm, so good for e.g. individual subject smooths.
+
+* qq.gam default method modified for increased power.
+
+* "re" terms now allowed as tensor product marginals.
+
+* log saturated likelihoods modified w.r.t. weight handling, so that weights
+  are treated as modifying the scale parameter, when scale parameter is free.
+  i.e. obs specific scale parameter is overall scale parameter divided by 
+  obs weight. This ensures that when the scale parameter is free, RE/ML based
+  inference is invariant to multiplicative rescaling of weights. 
+
+* te and t2 now accept lists for 'm'. This allows more flexibility with 
+  marginals that can have vector 'm' arguments (Duchon splines, P splines).   
+
+* minor mroot fix/gam.reparam fix. Could declare symmetric matrix 
+  not symmetric and halt gam fit.
+
+* argument sparse added to bam to allow exploitation of sparsity in fitting,
+  but results disappointing.
+
+* "mrf" now evaluates rank of penalty null space numerically (previously 
+   assumed it was always one, which it need not be with e.g. a supplied 
+   penalty).
+
+* gam.side now corrects the penalty rank in smooth objects that have 
+  been constrained, to account for the constraint. Avoids some nested 
+  model failures.
+
+* gamm and gamm.setup code restructured to allow smooths nested in factors
+  and for cleaner object oriented converion of smooths to random effects.
+
+* gam.fit3 bug. Could fail on immediate divergence as null.eta was matrix.
+
+* slanczos bug fixes --- could segfault if k negative. Could also fail to 
+  return correct values when k small and kl < 0 (due to a convergence 
+  testing bug, now fixed)
+
+* gamm bug --- could fail if only smooth was a fixed one, by looking for
+  non-existent sp vector. fixed.
+
+* 'cc' Predict.matrix bug fix - prediction failed for single points.
+
+* summary.gam failed for single coefficient random effects. fixed.
+
+* gam returns rV, where t(rV)%*%rV*scale is Bayesian cov matrix.
+ 
+1.7-6
+
+** factor `by' variable handling extended: if a by variable is an
+   ordered factor then the first level is treated as a reference level
+   and smooths are only generated for the other levels. This is useful 
+   for avoiding identifiability issues in complex models with factor by 
+   variables. 
+
+* bam bug fix. aic was reported incorrectly (too low). 
+
+1.7-5
+
+* gam.fit3 modified to converge more reliably with links that don't guarantee
+  feasible mu (e.g poisson(link="identity")). One vulnerability removed + a
+  new approach taken, which restarts the iteration from null model 
+  coefficients if the original start values lead to an infinite deviance.
+
+* Duchon spline bug fix (could fail to create model matrix if 
+  number of data was one greater than number of unique data).
+    
+* fix so that 'main' is not ignored by plot.gam (got broken in 1.7-0 
+  object orientation of smooth plotting)
+
+* Duchon spline constructor now catches k > number of data errors.
+
+* fix of a gamm bug whereby a model with no smooths would fail after 
+  fitting because of a missing smoothing parameter vector.
+
+* fix to bug introduced to gam/bam in 1.7-3, whereby '...' were passed to 
+  gam.control, instead of passing on to fitting routines. 
+
+* fix of some compiler warnings in matrix.c 
+
+* fix to indexing bug in monotonic additive model example in ?pcls.
+
+1.7-4
+
+* Fix for single letter typo bug in C code called by slanczos, could 
+  actually segfault on matrices of less than 10 by 10.
+
+* matrix.c:Rlanczos memory error fix in convergence testing of -ve 
+  eigenvalues.
+
+* Catch for min.sp vector all zeroes, which could cause an ungraceful 
+  failure. 
+
+1.7-3
+
+** "ds" (Duchon splines) smooth class added. See ?Duchon.spline
+
+** "sos" (spline on the sphere) smooth class added. See ?Spherical.Spline.
+
+* Extended quasi-likelihood used with RE/ML smoothness selection and 
+  quasi families. 
+
+* random subsampling code in bam, sos and tp smooths modified a little, so 
+  that .Random.seed is set if it doesn't exist. 
+
+* `control' argument changed for gam/bam/gamm to a simple list, which is 
+  then passed to gam.control (or lmeControl), to match `glm'.
+
+* Efficiency of Lanczos iteration code improved, by restructuring, and 
+  calling LAPACK for the eigen decompostion of the working tri-diagonal
+  matrix.
+
+* Slight modification to `t2' marginal reparameterization, so that `main 
+  effects' can be extracted more easily, if required.
+
+
+1.7-2
+
+* `polys.plot' now exported, to facilitate plotting of results for
+  models involving mrf terms.
+
+* bug fix in plot.gam --- too.far had stopped working in 1.7-0.
+
+1.7-1
+
+* post fitting constraint modification would fail if model matrix was 
+  rank deficient until penalized. This was an issue when mixing new t2 
+  terms with "re" type random effects. Fixed.
+
+* plot.mrf.smooth bug fix. There was an implicit assumption that the
+  `polys' list was ordered in the same way as the levels of the covariate
+  of the smooth. fixed. 
+
+* gam.side intercept detection could occasionally fail. Improved.
+
+* concurvity would fail if model matrix contained NA's. Fixed.
+
+1.7-0
+
+** `t2' alternative tensor product smooths added. These can be used with 
+  gamm4. 
+
+** "mrf" smooth class added (at the suggestion of Thomas Kneib). 
+   Implements smoothing over discrete geographic districts using a
+   Markov random field penalty. See ?mrf
+
+* qq.gam added to allow better checking of distribution of residuals.
+
+* gam.check modified to use qq.gam for QQ plots of deviance residuals.
+  Also, it now works with gam(*, na.action = "na.replace") and NAs.
+
+* `concurvity' function added to provide simple concurvity measures.
+
+* plot.gam automatic layout modified to be a bit more sensible (i.e.
+  to recognise that most screens are landscape, and that usually 
+  squarish plots are wanted). 
+
+* Plot method added for mrf smooths. 
+
+* in.out function added to test whether points are interior to 
+  a region defined by a set of polygons. Useful when working with 
+  MRFs.
+
+* `plot.gam' restructured so that smooths are plotted by smooth specific
+  plot methods.
+
+* Plot method added for "random.effect" smooth class.
+
+* `pen.edf' function added to extract EDF associated with each penalty.
+   Useful with t2 smooths. 
+
+* Facilty provided to allow different identifiability constraints to be
+  used for fitting and prediction. This allows t2 smooths to be fitted
+  with a constraint that allows fitting by gamm4, but still perform 
+  inference with the componentwise optimal sum to zero constraints.
+
+* mgcv-FAQ.Rd added.
+
+* paraPen works properly with `gam.vcomp' and full.sp names returned 
+  correctly.
+
+* bam (and bam.update) can now employ an AR1 error model in the 
+  guassian-identity case. 
+
+* bam.update modified for faster updates (initial scale parameter 
+  estimate now supplied in RE/ML case)
+
+* Absorption of identifiability constraints modified to allow 
+  constraints that only affect some parameters to leave rest of 
+  parameters completely unchanged.  
+
+* rTweedie added for quick simulation of Tweedie random deviates 
+  when 1<p<2.
+
+* smooth.terms help file fixed so cyclic p spline identifies as "cp"
+  and not "cs"!
+
+* bug fix in `gamm' so that binomial response can be provided as 2 column 
+  matrix, in standard `glm' way.
+
+1.6-2
+
+** Random effect support for `gam' improved with the addition of 
+   a random effect "smooth" class, and a function for extracting 
+   variance components. See ?random.effects and links for details. 
+
+* smooths now contain extra elements: S.scale records the scale factor 
+  used in any linear rescaling of a penalty matrix; plot.me indicates 
+  whether `plot.gam' should attempt to plot the term; te.ok indicates 
+  whether the smooth is a suitable marginal for a tensor product.
+
+* Fix in `gamm.setup' -- models with no fixed effects (except smooths) 
+  could fail to fit properly, because of an indexing error (caused odd 
+  results with indicator by variables)
+
+* help files have had various misuses of `itemize' fixed. 
+
+* initialization could fail if response was actually a 1D array. fixed.
+
+* New function `bam.update' allows efficient updating of very large
+  strictly additive models fitted by `bam' when additional data become 
+  available. 
+
+* gam now warns if RE/ML used with quasi families.
+
+* gam.check now accepts graphics parameters.
+
+* fixed problem in welcome message that messed up ESS.
+
+1.6-1
+
+* Bug in cSplineDes caused bases to be non-cyclic unless first 
+  knot was at 0. This also affected the "cp" smoother class. Fixed. 
+
+* null.deviance calculation was wrong for case with offset and 
+  weights. Fixed.
+
+* Built in strictly 1D smoothers now give an informative error message if 
+  an attempt is made to use them for multidimensional smoothing.
+
+* gam.check generated a spurious error when applied to a model with no
+  estimated smoothing parameters. Fixed.
+
+1.6-0
+
+*** Routine `bam' added for fitting GAMs to very large datasets.
+    See ?bam
+
+** p-value method tweaked again. Reference DoF for testing now 
+  defaults to the alternative EDF estimate (based on 2F - FF where 
+  F = (X'WX+S)^{-1}X'WX). `magic.post.proc' and `gam.fit3.post.proc'
+  changed to provide this. p-values still a bit too small, but only 
+  slightly so, if `method="ML"' is the smoothness selector.
+
+* bad bug in `get.null.coef' could cause fit failure as a result of 
+  initial null coefs predicting infinite deviance.
+
+* REML/ML convergence could be response scale sensitive, because of 
+  innapropriate convergence testing scaling in newton and bfgs - 
+  fixed.
+
+* Slight fix to REML (not ML) score calculation in gam.fit3 - 
+  Mp/2*log(2*pi*scale) was missing from REML score, where Mp is
+  total null space dimension for model.
+
+* `summary.gam' bug fix: REML/ML models were always treated as if
+  scale parameter had been estimated. gamObject should now contain 
+  `scale.estimated' indicating whether or not scale estimated
+
+* some modifications to smoothCon and gam.setup to allow smooth
+  constructors to return Matrix style sparse model matrices and 
+  penalty matrices.  
+
+* fixed misplaced bracket in print.mgcv.version, called on attachment.
+
+* added utility function `ls.list' to give memory usage for elements 
+  of a list.
+
+* added function `rig' to generate inverse Gaussian random deviates. 
+
+1.5-6
+
+* "ts" and "cs" modified so that zero eigen values of penalty
+   matrix are reset to 10% of smallest strictly positive eigen
+   value, rather than 1%. This seems to lead to more reliable
+   performance. 
+
+* `bfgs' simplified and improved so that it now checks the Wolfe 
+   conditions are met at each step. No longer uses any Newton steps,
+   so if it's used with gam.control(outerPIsteps=0) then it's
+   first derivative only for smoothing parameter optimization. 
+
+* `outerPIsteps' now defaults to zero in `gam.control'.
+
+* New routine `initial.spg' gets jth initial sp to equalize 
+  Frobenious norm of S_j and cols of sqrt(W)X which it penalizes, 
+  where W are initial fisher weights. This removes the need for a 
+  performance iteration step to get starting values (so 
+  outerPIsteps=0 in gam.control can now bypass PI completely).
+
+* fscale set from get.null.coef (facilitates cleaner initialization).
+
+* large data set rare event logistic regression example added to 
+  ?gam.
+
+* For p-value calculation for smooths, summary.gam subsamples rows of 
+  the model matrix if it has more than 3000 rows. This speeds things
+  up for large datasets.
+
+* minor bug fix in `gamm' so that intercept gets correct name, if 
+  it's the only non-smooth fixed effect.
+
+* .pot files updated, German translation added, thanks to Detlef Steuer.
+
+* `in.out' was not working from 1.5 --- fixed.
+
+* loglik.gam now ups parameter count for Tweedie by one to account for 
+  scale estimation.
+
+* There was a bug in the calculation of the Bayesian cov matrix, when the 
+  scale parameter was known: it was always using an estimated scale 
+  parameter. Makes no statistically meaningful difference for a model  
+  that fits properly, of course. 
+
+* Some junk removed from gam object.
+
+* summary.gam pseudoinversion made slightly more efficient.
+
+* adaptive smooth constructor is a bit more careful about the ranks 
+  of the penalties.
+
+* 2d adaptive smoother bug fix --- part of penalty was missing due
+  to complete line error.
+
+* `smoothCon' and `PredictMat' modified so that sparse smooths can
+   optionally have sparse centering constraints applied. 
+
+* `gamm' fix: prediction and visualization from `x$gam' where x is a 
+  fitted `gamm' object should not require the random effects to be 
+  provided. Now it doesn't.
+
+* minor bug fix: a model with no penalties except a fixed one would fail
+  with an index error. 
+
+* `te' terms are now only subject to centering constraints if all 
+  marginals would usually have a centering constraint. 
+
+* `te' no longer resets multi-dimensional marginals to "tp", unless 
+  they have been set to "cr", "cs", "ps" or "cp". This allows tensor
+  products with user supplied smooths.
+
+* Example of obtaining derivatives of a smooth (with CIs) added to 
+  `predict.gam' help file.
+
+* `newdata.guaranteed' argument to predict.gam didn't work. fixed.
+
+
+1.5-5
+
+* `gamm.setup' made an assumption about basis dimensions which was not 
+  true for tensor products involving the "cc" basis. This is now fixed.
+
+1.5-4
+
+* smooth.construct.tensor.smooth.spec modified, so that 
+  re-parameterization in terms of function values is only if it's 
+  stable, and by default the parameters are function values with
+  even spacing. Otherwise it was possible for tensor products of
+  p-splines to fail.
+
+1.5-3
+
+* `gam' now attempts to coerce `data' to a data frame, if it is not 
+  already a list or a data frame, provided that it is already an object 
+  that model.frame can deal with. This is to support an undocumented 
+  feature of versions prior to 1.5-2 that `data' could actually be 
+  something other than a list or data frame. 
+
+* An offset of type "array" could cause gam.fit3 to fail. fixed.
+
+* `variable.summary' bug fixed, (it caused gam(y~1) to fail).   
+
+1.5-2
+
+* Several exported functions had no usage entries in the help files.
+  Everything exported does now.
+
+* `vis.gam' had a bunch of bugs (which could make it fail altogether) 
+   as a result of trying to set default conditioning values from the gam 
+   object model frame. `gam' and `gamm' now obtain summary statistics of 
+   the predictor variables, stored in `var.summary' in the gam object, 
+   which `vis.gam' now uses. As a result `vis.gam' `view' and `cond' 
+   arguments should now contain original variable names, not model frame 
+   term names.
+
+* `data' argument of `gam' no longer stored in the `gam' object, by 
+  default to save memory (can restore this --- see `gam.control').
+
+* `summary.gam' failed under na.exclude. Fixed. 
+
+* `mroot' failed on 1 by 1 matrices, Fixed.
+
+1.5-1
+
+* The stability of the fitting methods had become substantially greater 
+  than the stability of the edf calculations after fitting. So it was 
+  possible to fit very poor models, and then have non-sensical effective 
+  degrees of freedom reported. This has been fixed by using much more stable 
+  expressions for edf calculation, when outer iteration smoothness
+  selection is employed. (Changes are to gam.fit3, gam.outer and a new
+  routine gam.fit3.post.proc).
+
+* edfs in version 1.5-0 were calculated using newton, rather than fisher 
+  weights, in the matrix F=(X'WX+S)^{-1}X'WX, the diagonal of which gives 
+  the edf array. The problem with this is that it is possible for X'WX 
+  not to be +ve definite, and then degrees of freedom can be non-sensical.
+  Fisher weights are always used now (although the original problem is 
+  exceedingly hard to generate an example of).
+
+* The summation convention code could be *very* memory intensive for cases 
+  in which the matrix arguments of a smooth feature many repeated values. 
+  Code now fixed to make much more efficient use of any repeated rows in  
+  matrix arguments. This enables much larger signal regression problems to 
+  be tackled. 
+
+* Some help file fixes.
+
+1.5-0
+
+*** Efficient and general REML/ML smoothing selection implemented. 
+    Smoothness selection criterion and numerical optimizer are now
+    selected using arguments `method' and `optimizer' of `gam', and 
+    `gam.method' has been removed.
+
+*** To further enhance stability and efficiency, Fisher scoring is now 
+    only used for canonical links, when it corresponds to full Newton. 
+    With non-canonical links PIRLS is based on full Newton. 
+
+** Derivative iteration as in Wood (2008) has been replaced by a direct
+   implicit function method (which costs no more given Newton based 
+   PIRLS).
+
+** An option `select' has been added to `gam' to allow terms to be
+   completely removed from a model by smoothness selection. 
+
+** The shrinkage smoothers "cs" and "ts" have been modified 
+   substantially. The Wood (2006, 4.1.6) proposal of adding a 
+   small multiple of the identity matrix to the penalty matrix 
+   is flawed in that it tends to corrupt small eigen values
+   of the penalty matrix for large (dimension) penalty matrices. 
+   It is much better to set the zero eigenvalues of the penalty matrix 
+   to a small proportion of the smallest +ve eigenvalue, and to 
+   use the matrix with the resulting eigen-decomposition as the 
+   penalty. This is now done. Thanks to Roman Torgovitsky for 
+   reporting the original problem.
+
+** Tweedie family added (including `ldTweedie' function to evaluate 
+   log Tweedie densities for powers in (1,2]).
+
+* "ps" "cp" and "cc" smooths can now be supplied with 2 knots to be 
+  treated as `endpoints' of the smooths (full set of knots can still 
+  be supplied as before).
+
+* The `newton' optimizer was dropping terms when their gradient was 
+  below the convergence threshold (and allowing re-entry). This 
+  promotes zig-zagging unless the terms are independent. Now only 
+  drops terms if gradient and second derivative are very small 
+  (so obective is really flat). 
+
+* The adaptive smoothing "ad" class has been greatly simplified and 2D 
+  penalty improved. Much faster as a result, and 2D adaptive actually 
+  quite good.
+
+* gam.fit3 now checks that the initial PIRLS step produces an 
+  improvement in penalized deviance relative to a null model. If not 
+  then step halving towards the null model parameter is employed.
+  The null model is as close to constant predicted values as the model
+  structure allows (it is estimated up front in estimate.gam, to save 
+  computation).
+
+* `gam.side' now takes account of whether the model has an intercept 
+   (or the model model matrix column corresponding to an intercept is 
+   in the column space of the model matrix of the parametric model 
+   components).  
+
+* The smoothing parameter array returned by `gam' now includes names
+  for the smoothing parameters.
+
+* s and te check that `id' is a single element.
+
+* By default, partial residuals are no longer plotted for smooths with 
+  `by' variables since they are usually meaningless here (they can 
+  be re-instated by argument `by.resids').
+
+* `min.sp' processing modified to work with `paraPen' argument to 
+  `gam'.
+
+* vcov.gam defaults to Bayesian covariance matrix.
+  
+* indexing error in `parametricPenalty' corrected.
+
+* plot.gam modified so that page change behaviour is like plot.glm 
+
+* negbin family upgraded to work with (RE)ML.
+
+* `sp.vcov' function added to extract covariance matrix of log 
+  smoothing parameters from (RE)ML based fits.
+
+* `power' links now handled by default fitting methods (i.e. gam.fit3)
+
+* `magic.post.proc' now expects weights, not sqrt(weights) as the 
+   `w' argument (unless `w' is a matrix).
+
+* p-values tweaked again, for slightly better performance with smooths of 
+  several variables. Still not quite right.
+
+* record of intial sp's is now carried in `smooth' objects in field 
+  `sp'.
+
+* ?linear.functional.term error fix.
+
+* memory leak in magic.c:magic fixed --- all fixed smoothing 
+  parameters lead to 2 arrays being left unfreed.
+
+* various .Rd file fixes.
+
+1.4-2
+
+* Some minor .Rd file fixes
+
+1.4-1
+
+* `Predict.matrix2' was not in NAMESPACE: fixed.
+
+* term specific offsets handled properly w.r.t. `by' variables in 
+  `smoothCon' (a rather specialized topic!)
+
+* minor doc bug fix for `smooth.construct'.
+
+1.4-0
+
+*** Model terms can now include linear functionals of smooths, by 
+    supplying matrix arguments and matrix `by' variables to model 
+    smooth terms. This allows, for example, a model to depend on the 
+    integral of a smooth function, or its derivative, or for models to 
+    depend on functional  predictors. See ?linear.functional.terms. Main 
+    code changes are in `smoothCon' and `predMat'.
+
+** Smooth terms can now be linked in order that they have the same 
+   smoothing parameters (and, by default, bases). Linkage is specified
+   using the `id' argument to `s' or `te'. Terms with the same `id' value
+   will have the same smoothing parameter(s).
+
+** `by' variables can now be factor variables. Also smooth terms with a 
+   `by' variable are only subject to a sum-to-zero constraint if it
+   is needed for identifiability.
+
+** Argument `paraPen' of `gam' allows (multiple) penalization of 
+   parametric model terms. This allows `gam' to fit any model that
+   can be expressed as a penalized GLM.
+
+** p-values returned by `summary.gam' now default to a Bayesian 
+   approximation which gives (substantially) better frequentist behaviour 
+   than the old method.
+
+** The 2 standard error bands for smooths shown by `plot.gam' can now
+   include the uncertainty about the overall mean, by default. Such
+   intervals have better coverage probability (of their target of 
+   inference) than intervals for centred smooths. Argument 
+   `type="iterms"' to `predict.gam' will return such standard errors.
+
+** An adaptive smoother class has been added, for smoothing with respect
+   to one or two variables: invoked with `s(...,bs="ad",...). 
+
+** `gamm' now supports nested smooth terms, and uses the same, constraint 
+   absorbed, parameterization as `gam'.
+
+** `s' and `te' terms accept an `sp' argument setting the term specific 
+   smoothing parameters (and over-riding argument `sp' of `gam'). Ignored
+   by `gamm'.
+
+** Negative binomial handling changed. `negbin' family added: adapted from 
+   MASS to work with gam outer iteration fitting. `gam.negbin' fitting 
+   routine added in order to enable use of `negbin' with outer iteration.
+   See ?negbin for details. MASS families no longer supported. 
+   `nb.theta.mult' removed from `gam.control'.
+
+** The Eilers and Marx style p-spline class is now one of the default 
+   smoothing classes, rather than just being an example of how to set up
+   a class in the help file. cyclic versions are also available.
+
+** `smoothCon' now handles `by' variables and centering constraints 
+   automatically, removing the need for smooth constructors to do so.
+   `PredMat' handles `by' variables automatically. Users can over-ride 
+   this behaviour when adding smooth classes, if needed - see 
+   documentation. 
+
+** The interface for adding user defined smooths has been simplified, 
+   but this may mean that some user defined classes which worked before
+   no longer work: see ?user.defined.smooths
+
+* `smooth.construct' methods are now expected to set default values
+   for the penalty order `p.order' and the basis dimension `bs.dim'
+   if none are supplied. They should also sanity check supplied 
+   values. Previously this was done by `s', but this put unhelpful
+   restrictions on new smooth classes.
+
+* `smooth.construct' now expects to recieve `data' and `knots' arguments
+   with names corresponding exactly to `object$term'. In addition `data'
+   should contain only what is required by `object$term' + a final column
+   containing a `by' variable, if present. Predict.mat expects the same of 
+   its `data' argument. wrapper functions smooth.construct2 and 
+   Predict.mat2 will accept a data frame containing any number of variables 
+   -- all that is required is that `object$terms' can be evaluated using 
+   it. These functions handle repeat rows in matrix arguments efficiently.
+
+* bug fix in `plot.gam' -- no longer requires to hit return if `select'
+  used (ever).
+
+* bug fix in `fixDependence' --- a completely dependent `X2' would not
+  be detected, since the first element of R2 would be zero: used first
+  element of R1 to set scale instead.
+
+* `gam.fit' passes corrected n to `magic' so that `n' used in gcv/ubre
+   does not include obs with zero prior weight. `gam.fit3' already doing 
+   this...
+
+* `magic' and `gam.fit3' now allow log smoothing parameters to be a 
+  linear transformation of a smaller set of underlying smoothing parameters.
+
+* `mgcv' based fitting has been removed as an option in `gam', as has 
+  Pearson based GCV. In consequence `am' argument removed from 
+  `gam.method' and `globit' removed from `gam.control'.
+
+* `get.var' now coerces matrix values to numeric vectors, to facilitate 
+   the handling of linear functionals of smooths.
+
+* `gam.fit2' has been removed, since gam.fit3 is simply better.
+
+* The default optimizer for the generalized case has been made slightly 
+  more efficient (derivative free evaluation of GCV/AIC has been 
+  improved). The upshot is that the default is now faster than performance
+  iteration in almost all cases (while still being more reliable).
+
+* the `absorb.cons' option has been removed from `gam.control'.
+
+* `fix.family.link' and `fix.family.var' bug fix --- only return 
+   family unmodified if all required derivative functions are present.
+
+* `smoothCon' now returns a list of smooth objects to facilitate factor
+  `by' variables.
+
+* `smoothCon' makes smooth object labels more informative, if there are 
+  `by' variables... this also makes default plots more informative.
+
+* `plot.gam' indicates `by' variables in labels
+
+* `gamm.setup' modified to call `gam.setup' for most of the setup, leaving 
+  just the re-parameterization step to do. 
+
+* `gamm' modified to allow constraint absorption (same as `gam')
+
+* `gamm' bug fixed whereby "cc" smooths would get the wrong null space 
+  dimension (effect was small, but noticeable, in practice e.g. Cairo 
+  temperature example from chapter 6 of Wood, 2006, book).
+
+* print methods now return first argument invisibly as they should.
+
+* code for (very) old style summary removed. 
+
+* `gam.fit3' now traps derivative iteration divergence, and suggests 
+  tightening the convergence tolerance `epsilon' in `gam.control'. 
+  Divergence can happen for ill-conditioned models if the PIRLS has 
+  not converged sufficiently.
+
+* gamm.Rd updated to reflect change to gammPQL in 1.3-28.
+
+1.3-31
+
+* There was a most annoying warning generated by R 2.7.0 every time `gam'
+  was used. Now there isn't.
+
+1.3-30
+
+* change to DESCRIPTION file.
+
+1.3-29
+
+* `magic' could segfault if supplied with many constraints and relatively 
+   high rank penalties, so that after constriant the penalty  matrix 
+   square roots had more columns than rows (never happened in additive 
+   model case, but can happen in more general settings). Fixed.
+
+* `gamm' now silently drops grouping factors within the correlation 
+   structure formulae that duplicate random effects grouping factors 
+   (which automatically act as grouping factors on the correlation 
+   structures anyway).
+
+* Some replacement of dubious `as.matrix' calls with use of `,drop=FALSE]' 
+  in gamm.r   
+
+1.3-28
+
+** `gamm' modified to call a routine `gammPQL' in place of MASS::glmmPQL. 
+  This avoids some duplication, and facilitates maintainance. 
+
+* Bug fix in `formXtViX' where matrix dimensions got dropped when 
+  subsetting thereby messing up variance calculations for gamm fits in 
+  which some group sizes were 1. 
+
+1.3-27
+
+** Fix of nasty bug in large dataset handling with "tp" basis (introduced 
+   in 1.3-26). Subsampling code was re-seeding RNG instead of intended 
+   behaviour of saving RNG state and  restoring it. Fixed and tested.
+
+1.3-26
+
+* modification to `gam' so that GCV/UBRE scores reported with all fixed 
+  smoothing parameters are consistent with equivalent under s.p. 
+  estimation.
+
+* gam.fit3 modified to test for convergence of coefficients as well
+  as penalized deviance, otherwise in extreme cases the derivative 
+  iterations can diverge.
+
+* modifications of gam.setup, predict.gam and plot.gam to allow smooths
+  to contribute an offset term to the model (offset is returned from 
+  smooth.construct or Predict.matrix as an "offset" attribute of 
+  model/prediction matrix). This is useful for smooths which have known 
+  boundary conditions of some sort.
+
+* PredictMat can now handle NAs in a returned prediction matrix.
+ 
+* vis.gam can handle NA's in predictions.
+
+** Modification of large dataset handling for "tp" and "ts" bases. If 
+   there are more that 3000 unique covariate combinations for a tprs then 
+   3000 combinations are randomly sub-sampled, and used as the initial 
+   knots for tprs basis construction. The same random number seed is used 
+   every time,  (R's RNG state is unaltered by this). Control of this is 
+   usually via the `max.knots' (default 3000) and `seed' (default 1) 
+   elements of the `xt' argument of `s'. In consequence, `max.tprs.knots' 
+   has been removed from `gam.control'.
+
+* Modification of `s' and `te' to allow an extra argument `xt' which can 
+  contain extra information to pass to the basis constructors for smooths.
+
+* removal of `full.call' from smooth.spec objects - it wasn't used 
+  anywhere any more, and is a pain to maintain.
+
+* removal of `full.formula' from the `gam' object - it is no longer used 
+  anywhere and requires alot of code to construct.
+
+1.3-25
+
+* A bug in `null.space.dimension' caused prediction to fail for `s' terms 
+  of 4 or more variables, unless the `m' argument was supplied explicitly 
+  (and was large enough for the number of variables). Fixed. 
+
+1.3-24
+
+* summary.gam modified so that it behaves correctly if fitting routines 
+  detect and deal with rank deficiency in parameteric part of a model.
+
+* spring cleaning of help files.
+
+* gam.check modified to report more useful convergence diagnostics.
+
+** `model.matrix.gam' added.
+
+** "cr" basis constructor modified to use the same centering conditions 
+  as other bases (sum to zero over covariates, rather than parameters 
+  sum to zero). This makes centred confidence intervals for smooths, of 
+  the sort used in plot.gam, behave in a similar way for all bases. With 
+  the old "cr" centering constraint there could be high negative 
+  correlation between coefficients of a centered smooth and the intercept: 
+  this could make centred "cr" smooth CIs wider than CIs for other bases 
+  (not really wrong, but disconcerting).  
+
+1.3-23
+
+* step size correction bug fixed in gam.fit3. `Perfect' convergence could
+  cause the divergence control loop to fail: the divergence control loop
+  was asking for near strict decrease in the penalized deviance, which 
+  could be numerically impossible to achieve if the algorithm had actually 
+  converged completely.... fixed.  
+
+* minor doc bug fixes.
+
+
+1.3-22
+
+* Cheap but unneccesary code added to gdi.c and magic.c to stop 
+  inappropriate uninitialized variable warnings from some compilers.
+
+** Bad bug in gam.fit3 fixed. Prior weights of zero were not handled 
+  correctly - prior weight vector should have been subsetted before
+  gdi call, but this didn't happen. Result was infinite derivatives
+  and fit failure. fixed.
+
+* Related bug in gam.fit3: dropped observations not handled correctly 
+  in deviance calculation, which can result in inappropriate step 
+  halving. fixed.
+
+* inner loop 3 in gam.fit2 and gam.fit3 modified so that step halving 
+  continues until penalized deviance is at worst non-increasing. 
+
+* stupid bug in summary.gam, p-value calc. fixed.
+
+1.3-21
+
+* minor bug in gam.fit() - edf array not passed to `mgcv.find.theta'
+  if method "perf.magic" used - so wrong EDF used for theta estimation 
+  with neagative binomial. fixed. 
+
+* Theta estimate added to family object of fitted gam if negative binomial 
+  used...
+
+* extract.lme.cov(2) modified to allow use with single level grouping 
+  factors (not really sure when this is useful)
+
+* bug in gam4objective called when using gam.method(outer="nlm") - never 
+  used GCV.
+
+* fixed bug in `newton' whereby immediate convergence actually caused
+  routine to fail.
+
+* modified `smoothCon' and `predictMat' so that `qrc' attribute always
+  created if constraint absorption used, even if there are no constraints.
+  This attribute can then be used to test that there are no unabsorbed 
+  constraints (e.g. in `gam.outer').
+
+1.3-20
+
+* Bad bug in `newton' - step halving set up so that step *never* 
+  accepted (it still beat all previous methods in simulations)
+
+* Minor bug in `newton' step limiting of Newton steps reduced step
+  to max component 1, rather than `maxNstep'. 
+
+* Some documentation fixes
+
+1.3-19
+
+*** SUBSTANTIAL CHANGE: Improved outer iteration added via gdi.c coupled 
+  with gam.fit3. Exact first and second derivatives of GACV/GCV/UBRE/AIC 
+  are now available via new iteration methods. These improve the 
+  speed and reliability of fitting in the *generalized* additive model 
+  case. 
+
+* numerous changes to NAMESPACE and gamm related functions to pass
+  codetools checks.
+
+** gam.method()  modified to allow GACV as an option for outer GCV 
+  model selection.
+
+* magic.c::mgcv_mmult modified so that all inner loop calculations are 
+  optimal (i.e. inner loop pointers increments are all 1).
+
+* `smooth.construct' functions for "cc" and "cr" smooths now increase `k'
+  to the minimum possible value (and warn), if it's too low. 
+
+** `gam' modified to allow passing of `mustart' etc to gam.fit and 
+  gam.fit2, properly
+
+* `gam' modified to fix a bug whereby fitting in two steps using argument 
+  `G' could fail when some sp's are to be estimated and some fixed.
+
+** an argument `in.out' added to `gam' to allow user initialization of 
+  smoothing parameters when using `outer' iteration in the generalized 
+  case. This can speed up analyses that rely on several refits of the same 
+  model. 
+
+1.3-18
+
+* gamm modifed so that weights dealt with properly if lme type varFunc 
+  used. This is only possible in the non-generalized case, as gamm.Rd 
+  now clarifies.
+
+* slight modification to s() to add `width.cutoff=500' to `deparse'
+
+* by variables not handled properly in p-spline example in 
+  smooth.construct.Rd - fixed.
+
+* bug fix in summary.gam.Rd example (pmax -> pmin)
+
+* color example added to plot.gam.Rd
+
+* bug fix in `smooth.construct.tensor.smooth.spec' - class "cyclic.smooth"
+  marginals no longer re-parameterized.
+
+* `te' documentation modified to mention that marginal reparameterization 
+  can destabilize tensor products. 
+
+1.3-17
+
+* print.summary.gam prints estimated ranks more prettily (thanks Martin 
+  Maechler)
+
+** `fix.family.link' can now handle the `cauchit' link, and also appends a
+   third derivative of link function to the family (not yet used).
+
+* `fix.family.var' now adds a second derivative of the link function to 
+   the family (not yet used).
+
+** `magic' modified to (i) accept an argument `rss.extra' which is added 
+  to the  RSS(squared norm) term in the GCV/UBRE or scale calculation; (ii)
+  accept argument `n.score' (defaults to number of data), the number to 
+  use in place of the number of data in the GCV/UBRE calculation.
+  These are useful for dealing with very large data sets using 
+  pseudo-model approaches.
+
+* `trans' and `shift' arguments added to `plot.gam': allows, e.g. single
+   smooth models to be easily plotted on uncentred response scale.
+
+* Some .Rd bug fixes. 
+
+** Addition of choose.k.Rd helpfile, including example code for diagnosing 
+   overly restrictive choice of smoothing basis dimension `k'.
+
+1.3-16
+
+* bug fix in predict.gam documentation + example of how to predict from a 
+  `gam' outside `R'.
+
+1.3-15
+
+* chol(A,pivot=TRUE) now (R 2.3.0) generates a warning if `A' is not +ve 
+  definite. `mroot' modified to supress this (since it only calls 
+  `chol(A,pivot=TRUE)' because `A' is usually +ve semi-definite). 
+
+1.3-14
+
+* mat.c:mgcv_symeig modified to allow selection of the LAPACK routine
+  actually used: dsyevd is the routine used previously, and seems very 
+  reliable. dsyevr is the faster, smaller more modern version, which it
+  seems possible to break... rest of code still calls dsyevd.
+
+* Symbol registration added (thanks largely to Brian Ripley). Version 
+  depends on R >= 2.3.0
+
+1.3-13
+
+* some doc changes
+
+** The p-values for smooth terms had too low power sometimes. Modified 
+  testing  procedure so that testing rank is at most 
+  ceiling(2*edf.for.term). This gives quite close to uniform p-value 
+  distributions when the null is true, in simulations, without excessive 
+  inflation of the p-values, relative to parametetric equivalents when 
+  it is not. Still not really satisfactory.
+
+1.3-12
+
+* vis.gam could fail if the original model formula contained functions of 
+  covariates, since vis.gam calls predict.gam with a newdata argument 
+  based on the *model frame* of the model object. predict.gam now 
+  recognises that this has happened and doesn't fail if newdata is a model 
+  frame which contains, e.g. log(x) rather than x itself. offset handling 
+  simplified as a result.
+
+* prediction from te smooths could fail because of a bug in handling the 
+  list of re-parameterization matrices for 1-D terms in 
+  Predict.matrix.tensor.smooth. Fixed. (tensor product docs also updated)
+
+* gamm did not handle s(...,fx=TRUE) terms properly, due to several 
+  failures to count s(...,fx=FALSE) terms properly if there were fixed 
+  terms present. Now fixed.
+
+* In the gaussian additive mixed model case `gamm' now allows "ML" or 
+  "REML" to be selected (and is slightly more self consistent in 
+  handling the results of the two alternatives).
+
+1.3-11
+
+* added package doc file
+
+* added French error message support (thanks to Philippe Grosjean), and 
+error message quotation characters (thanks to Brian Ripley.)
+
+1.3-10
+
+* a `constant' attribute has been added to the object returned by
+  predict.gam(...,type="terms"), although what is returned is still not an 
+  exact match to what `predict.lm' would do. 
+
+** na.action handling made closer to glm/lm functions. In particular,
+  default for predict.gam is now to pad predictions with NA's as opposed
+  to dropping rows of newdata containing NA's. 
+
+* interpret.gam had a bug caused by a glitch in the terms.object 
+  documentation (R <=2.2.0). Formulae such as y ~ a + b:a + s(x) could 
+  cause failure. This was because attr(tf,"specials") is documented as 
+  returning indices of specials in `terms'. It doesn't, it indexes 
+  specials in the variables dimension of the attr(tf,"factors") table: 
+  latter now used to translate.
+
+* `by' variable use could fail unreasonably if a `by' variable was not of 
+  mode `numeric': now coerced to numeric at appropriate times in smooth
+  constructors. 
+
+1.3-9
+
+* constants multiplying TPRS basis functions were `unconventional' for d 
+  odd in function eta() in tprs.c. The constants are immaterial if you are 
+  using gam, gamm etc, but matter if you are trying to get out the 
+  explicit representation of a TPRS term yourself (e.g. to differentiate 
+  a smooth exactly).
+
+1.3-8
+
+* get.var() now checks that result is numeric or factor (avoids 
+  occasional problems with variable names that are functions - e.g `t')
+
+* fix.family.var and fix.family.link now pass through unaltered any family 
+  already containing the extra derivative functions. Usually, to make a 
+  family work with gam.fit2 it is only necessary to add a dvar function.
+
+* defaults modified so that when using outer iteration, several performance
+  iteration steps are now used for initialization of smoothing parameters 
+  etc. The number is controlled by gam.control(outerPIsteps). This tends
+  to lead to better starting values, especially with binary data. gam, 
+  gam.fit and gam.control are modified.
+
+* initial.sp modified to allow a more expensive intialization method, but
+  this is not currently used by gam.
+
+* minor documentation changes (e.g. removal of full stops from titles)
+
+1.3-7
+
+* change to `pcls' example to account for model matrix rescaling changing 
+smoothing parameter sizes.
+
+* `gamm' `control' argument set to use "L-BFGS-B" method if `lme' is using 
+`optim' (only does this if `nlminb' not present). Consequently `mgcv' now 
+depends on nlme_3.1-64 or above.
+
+* improvement of the algorithm in `initial.sp'. Previously it was possible 
+for very low rank smoothers (e.g. k=3) to cause the initialization to 
+fail, because of poor handling of unpenalized parameters. 
+
+1.3-6
+
+* pdIdnot class changed so that parameters are variances not standard 
+deviations - this makes for greater consistency with pdTens class, and 
+means that limits on notLog2 parameterization should mean the same thing 
+for both classes. 
+
+** niterEM set to 0 in lme calls. This is because EM steps in lme are not
+ set up to deal properly with user defined pdMat classes (latter 
+ confirmed by DB).
+
+1.3-5
+
+** Improvements to anova and summary functions by Henric Nilsson 
+  incorporated. Functions are now closer to glm equivalents, and 
+  printing is more informative. See ?anova.gam and ?summary.gam.
+
+* nlme 3.1-62 changed the optimizer underlying lme, so that indefintie 
+  likelihoods cause problems. See ?logExp2 for the workaround.
+  - niterEM now reset to 25, since parameterization prevents parameters 
+  wandering to +/- infinity (this is important as starting values for 
+  Newton steps are now more critical, since reparameterization 
+  introduces new local minima).
+
+** smoothCon modified to rescale penalty coefficient matrices to have 
+  similar `size' to X'X for each term. This is to try and ensure that 
+  gamm is reasonably scale invariant in its behaviour, given the 
+  logExp2 re-parameterization.
+
+* magic dropped dimensions of an array inapproporiately - fixed.
+
+* gam now checks that model does not have more coefficients than data.
+
+1.3-4
+
+* inst/CITATION file added. Some .Rd fixes
+
+30/6/2005 1.3-3
+
+* te() smooths were not always estimated correctly by gamm(): invariance 
+  lost and different results to equivalent s() smooths. The problem seems
+  to lie in a sensitivity of lme() estimation to the absolute size of the 
+  `S' attribute matrices of a pdTens class pdMat object: the problem did 
+  not occur at the last revision of the pdTens class, and there are no 
+  changes logged for nlme that could have caused it, so I guess it's down
+  to a change in something that lme calls in the base distribution. 
+  To avoid the problem, smooth.construct.tensor.smooth.spec has been 
+  modified to scale all marginal penalty matrices so that they have 
+  largest singular value 1.
+
+* Changes to GLMs in R 2.1.1 mean that if the response is an array, gam 
+  could fail, due to failure of terms like w * X when w is and array 
+  rather than a vector. Code modified accordingly.
+
+* Outer iteration now suppresses some warnings, until the final fitted
+  model is obtained, in order to avoid printing warnings that actually
+  don't apply to the final fit.
+
+* Version number reporting made (hopefully) more robust.
+
+* pdconstruct.pdTens removed absolute lower limit on coef - replaced with
+  relative lower limit.
+
+* moved tensor product constraint construction to BEFORE by variable
+  stuff in smooth.construct.tensor.smooth.spec.
+
+1.3-1
+
+* vcov had been left out of namespace - fixed.
+
+* cr and cc smooths now trap the case in which the incorrect number of 
+  knots are supplied to them.
+
+* `s(.)' in a formula could cause a segfault, it get's trapped now, 
+  hopefully it will be handled nicely at some point in the future. Thanks 
+  Martin Maechler.
+
+* wrong n reported in summary.gam() in the generalized case - fixed. 
+  Thanks YK Chau. 
+
+1.3-0
+
+*** The GCV/UBRE score used in the generalized case when fitting by 
+  outer iteration (the default) in version 1.2 was based on the Pearson 
+  statistic. It is prone to serious undersmoothing, particularly of binary 
+  data. The default is now to use a GCV/UBRE score based on the deviance: 
+  this performs much better, while still maintaining the enhanced 
+  numerical convergence performance of outer iteration.
+
+* The Pearson based scores are still available as an option (see 
+  ?gam.method)
+
+* For the known scale parameter case the default UBRE score is now 
+  just a linearly rescaled AIC criterion. 
+
+1.2-6
+
+* Two bugs in smooth.sconstruct.tensor.smooth.spec: (i) incorrect 
+  testing of class of smooth before re-parameterizing, so that cr smooths 
+  were re-parameterized, when there is no need to; (ii) knots used in 
+  re-parameterization were based on quantiles of the relevant marginal 
+  covariate, which meant that repeated knots could be generated: now uses 
+  quantiles of unique covariate values.
+
+* Thanks to Henric Nilsson a bug in the documentation of magic.post.proc has 
+  been fixed. 
+
+1.2-5
+
+** Bug fix in gam.fit2: prior weights not subsetted for non-informative 
+  data in GCV/UBRE calculation. Also plot.gam modified to allow for 
+  consequent NA working residuals. Thanks to B. Stollenwerk for reporting 
+  this bug.
+
+** vcov.gam written by Henric Nilsson included... see ?vcov.gam
+
+* Some minor documentation fixes.
+
+* Some tweaking of tolerances for outer iteration (was too lax).
+
+** Modification of the way predict.gam picks up variables. 
+  (complication is that it should behave like other predict functions, but 
+  warn if an incomplete prediction data frame is supplied -since latter 
+  violates what white book says). 
+
+1.2-2
+
+*** An alternative approach to GCV/UBRE optimization in the 
+  *generalized* additive model case has been implemented. It leads to more 
+  reliable convergence for models with concurvity problems, but is slower 
+  than the old default `performance iteration'. Basically the GAM IRLS 
+  process is iterated to convergence for each trial set of smoothing 
+  parameters, and the derivatives of the GCV/UBRE score w.r.t. smoothing 
+  parameters are calculated explicitly as part of the IRLS iteration. This 
+  means that the GCV/UBRE optimization is now `outer' to the IRLS 
+  iteration, rather than being performed on each working model of the IRLS 
+  iteration. The faster `performance iteration' is still available as an 
+  option. As a side effect, when using outer iteration, it is not possible 
+  to find smoothing parameters that marginally improve on the GCV/UBRE 
+  scores of the estimated ones by hand tuning: this improves the logical 
+  self consistency of using GCV/UBRE scores for model selection purposes.
+
+* To facilitate the expanded list of fitting methods, `gam' now has a 
+  `method' argument requiring a 3 item list, specifying which method to 
+  use for additive models, which for generalized additive models and if using 
+  outer iteration, which optimization routine to use. See ?gam.method for 
+  details. `gam.control' has also been modified accordingly.
+    
+*** By default all smoothing bases are now automatically 
+  re-parameterized to absorb centering constraints on smooths into the 
+  basis. This makes everything more modular, and is usually user 
+  transparent. See ?gam.control to get the old behaviour.
+    
+** Tensor product smooths (te) now use a reparameterization of the 
+  marginal smoothing bases, which ensures that the penalties of a tensor 
+  product smooth retain the interpretation, in terms of function shape, of 
+  the marginal penalties from which they are induced. In practice this 
+  almost always improves MSE performance (at least for smooth underlying 
+  functions.) See ?te to turn this off.
+    
+*** P-values reported by anova.gam and summary.gam are now based on 
+  strictly frequentist calculations. This means that they are much better 
+  justified theoretically, and are interpretable as ordinary frequentist 
+  p-values. They are still conditional on smoothing parameters, however, 
+  and are hence underestimates when smoothing parameters have been 
+  estimated.
+
+** Identifiability side conditions modified to work with all smooths 
+  (including user defined). Now works by identifying possible dependencies 
+  symbolically, but dealing with the resulting degeneracies numerically. 
+  This allows full ANOVA decompositions of functions using tensor product 
+  smooths, for example.
+
+* summary.gam modified to deal with prior weights in adjusted r^2 
+  calculation.
+    
+** `gam' object now contains `Ve' the frequentist covariance matrix of 
+  the paremeter estimators, which is useful for p-value calculation. see 
+  ?gamObject and ?magic.post.proc for details.
+
+* Now depends on R >=2.0.0
+    
+* Default residual plots modified in `gam.check'
+    
+** Added `cooks.distance.gam' function.
+    
+* Bug whereby te smooths ignored `by' variables is now fixed. 
+
+1.1-6
+
+* Smoothing parameter initialization method changed in magic, to allow 
+  better initialization of te() terms. This affects default gam fits.
+    
+* gamm and extract.lme.cov2 modified to work correctly when the 
+  correlation structure applies to a finer grouping than the random 
+  effects. (Example of this added to gamm help file)
+    
+* modifications of pdTens class. pdFactor.pdTens now returns a vector, 
+  not a matrix in accordance with documentation (in nlme 3.1-52). Factors 
+  are now always of form A=B'B (previously, could be A=BB') in accordance 
+  with documentation (nlme 3.1-52). pdConstruct.pdTens now tests whether 
+  initializing matrix is proportional to r.e. cov matrix or its inverse 
+  and initializes appropriately. gamm fitting with te() class tested 
+  extensively with modifications and nlme 3.1-52, and lme fits with pdTens 
+  class tested against equivalent fits made using re-parameterization and 
+  pdIdent class. In particular for gamm testing : model fits with single 
+  argument te() terms now match their equivalent models using s() terms; 
+  models fitted using gam() and gamm() match if gam() is called with the 
+  gamm() estimated smoothing parameters.
+   
+* modifications of gamm() for compatibility with nlme 3.1-52: in 
+  particular a work around to allow everything to work correctly with a 
+  constructed formula object in lme call.
+  
+* some modifications of plot.gam to allow greater control of 
+  appearance of plots of smooths of 2 variables.
+  
+* added argument `offset' to gam for further compatibility with 
+  glm/lm.
+  
+* change to safe prediction for parameteric terms had a bug in offset 
+  handling (offset not picked up if no newdata supplied, since model frame 
+  not created in this case). Fixed. (thanks to Jim Young for this) 1.1-5
+    
+* predict.gam had a further bug introduced with parametric safe 
+  prediction. Fixed by using a formula only containing the actual variable 
+  names when collecting data for prediction (i.e. no terms like 
+  `offset(x)') 
+
+1.1-5
+
+* partial argument matching made col.shade be matched by col passed in 
+..in plot.gam, taking away user control of colors. 1.1-5
+    
+* 2d smooth plotting in plot.gam modified.
+
+* plot.gam could fail with residuals=TRUE due to incorrect counting in 
+  the code allowing use of termplot. plot.gam failed to prompt before a 
+  newpage if there was only one smooth. gam and gamm .Rd files updated 
+  slightly. 
+
+1.1-3
+
+* extract.lme.cov2 could fail for random effect group sizes of 1 
+  because submatrices with only a row or column lose their dimensions, and 
+  because single number calls to diag() result in an identity matrix. 
+
+1.1-2
+
+* Some model formulae constructed in interpret.gam and used in 
+  facilitating safe prediction for parametric terms had the wrong 
+  environment - this could cause gam to fail to find data when e.g. lm, 
+  would find it. (thanks Thomas Maiwald)
+  
+* Some items were missing from the NAMESPACE file. (thanks Kurt 
+  Hornik)
+    
+* A very simple formula.gam function added, purely to facilitate 
+  better printing of anova method results under R 2.0.0. 
+
+1.1-1
+
+* Due, no doubt, to gross moral turpitude on the part of the author, 
+  gamm() calculated the complete estimated covariance matrix of the 
+  response data explicitly, despite the fact that this matrix is usually rather 
+  sparse. For large datasets this could easily require more memory than 
+  was available, and huge computational expense to find the choleski 
+  decomposition of the matrix. This has now been rectified: when the 
+  covariance matrix has diagonal or block diagonal structure, then this is 
+  exploited.
+    
+* Better examples have been added to gamm().
+    
+* Some documentation bugs were fixed. 
+
+1.1-0
+
+Main changes are as follows. Note that `gam' object has been modified, so 
+old objects will not always work with version 1.1 functions.
+
+** Two new smooth classes "cs" and "ts": these are like "cr" and "tp" 
+  but can be penalized all the way down to zero degrees of freedom to 
+  allow fully automatic model selection (more self consistent than having a 
+  step.gam function).
+ 
+* The gam object expanded to allow inheritance from type lm and type 
+  glm, although QR related components of glm and lm are not available 
+  because of the difference in fitting method between glm/lm and gam.
+
+** An anova method for gam objects has been added, for *approximate* 
+  hypothesis testing with GAMs.
+  
+** logLik.gam added (logLik.glm with df's fixed): enables AIC() to be 
+  used with gam objects.
+  
+** plot.gam modified to allow plotting of order 1 parametric terms via 
+  call to termplot.
+    
+* Thanks to Henric Nilsson option `shade' added to plot.gam
+    
+* predict.gam modified to allow safe prediction of parametric model 
+  components (such as poly() terms).
+    
+* predict.gam type="terms" now works like predict.glm for parametric 
+  components. (also some enhancements to facilitate calling from 
+  termplot())
+    
+* Range of smoothing parameter estimation iteration methods expanded 
+  to help with non-convergent cases --- see ?gam.convergence
+    
+* monotonic smoothing examples modified in light of above changes.
+    
+* gamm modified to allow offset terms.
+    
+* gamm bug fixed whereby terms in a model formula could get lost if 
+  there were too many of them.
+    
+* gamm object modified in light of changes to gam object. 
+
+1.0-7
+
+* Allows a model frame to be passed as `newdata' to predict.gam: it 
+  must contain all the terms in the gam objects model frame, `model'.
+    
+* vis.gam() now passes a model frame to predict.gam and should be more 
+  robust as a result. `view' and `cond' must contain names from 
+  `names(x$model)' where x is the gam object. 
+
+1.0-6/5/4
+
+* partial residuals modified to be IRLS residuals, weighted by IRLS 
+  weights. This is a much better reflecton of the influence of residuals 
+  than the raw IRLS residuals used before.
+    
+* gamm summary sorted out by using NextMethod to get around fact that 
+  summary.pdMat can't be called directly (not in nlme namespace exports).
+    
+* niterPQL and verbosePQL arguments added to gamm to allow more 
+  control of PQL iteration.
+    
+* backquote=TRUE added when deparsing to allow non-standard names. 
+  (thanks: Brian Ripley)
+    
+* bug in gam corrected: now gives correct null deviance when an offset 
+  is present. (thanks: Louise Burt)
+    
+* bug in smooth.construct.tp.smooth.spec corrected: k=2 caused a 
+  segfault as the C code was reseting k to 3 (actually null space 
+  dimension +1), and not enough space was being allocated in R to handle 
+  the resultng returned objects. k reset in R code, with warning. (Thanks: 
+  Jari Oksanen)
+    
+* predict.gam() now has "standard" data searching using a model frame 
+  based on a fake formula produced from full.formula in the fitted object. 
+  However it also warns if newdata is present but incomplete. This means 
+  that if newdata does not meet White book specifications, you get a 
+  warning, but the function behaves like predict.lm etc. predict.gam had 
+  been segfaulting if variables were missing from newdata (Thanks: Andy 
+  Liaw and BR)
+    
+* contour option added to vis.gam
+    
+* te smooths can be forced to use only a single penalty (theoretical 
+  interest only - not recommended for practical use) 
+
+1.0-3
+
+* Fixes bugs in handling graphics parameters in plot.gam()
+    
+* Adds option of partial residuals to plot.gam() 
+
+1.0-2/1
+
+* Fixes a bug in evaluating variables of smooths, knots and by-variables.
+
+1.0-0
+
+*** Tensor product smooths - any bases available via s() terms in a gam 
+  formula can be used as the basis for tensor product smooths of multiple 
+  covariates. A separate wiggliness penalty and smoothing parameter is 
+  associated with each `marginal' basis.
+    
+** Cyclic smoothers: penalized cubic regression splines which have the 
+  same value and first two derivatives at their first and last knots.
+    
+*** An object oriented approach to handling smooth terms which allows 
+  the user to add their own smooths. Smooth terms are constructed using 
+  smooth.construct method functions, while predictions from individual 
+  smooth terms are handled by predict.matrix method functions.
+    
+** p-splines implemented as the illustrative example for the above in 
+  the help files.
+    
+*** A generalized additive mixed model function gamm() with estimation 
+  via lme() in the normal-identity case and glmmPQL() otherwise. The main 
+  aim of the function is to allow a defensible way of modelling correlated 
+  error structures while using a GAM.
+    
+* The gam object itself has changed to facilitate the above. Most 
+  information pertaining to smooth terms is now stored in a list of smooth 
+  objects, whose classes depend on the bases used. The objects are not 
+  back compatible, and neither are the new method functions. This has been done 
+  in an attempt to minimize the scope for bugs, given the amount of time 
+  available for maintenance.
+    
+** s() no longer supports old stlye (version <0.6) specification of 
+  smooths (e.g. s(x,10|f)). This is in order to reduce the scope for 
+  problems with user defined smooth classes.
+    
+* The mgcv() function now has an argument list more similar to magic().
+    
+* Function GAMsetup() has been removed.
+    
+* I've made a general attempt to make the R code a bit less like a 
+  simultaneous translation from C. 
+
+0.9-5/4/3/2/1 
+
+* Mixtures of fixed degree of freedom and estimated degree of freedom 
+  smooths did not work correctly with the perf.iter=FALSE option. Fixed.
+    
+* fx=TRUE not handled correctly by fit.method="magic": fixed.
+    
+* some fixes to GAMsetup and gam documentation.
+    
+* call re-instated to the fitted gam object to allow updating
+    
+* -Wall and -pedantic removed from Makevars as they are gcc specific.
+    
+* isolated call to Stop() replaced by call to stop()! 
+
+0.9-0 
+
+*** There is a new underlying smoothing parameter selection method,
+  based on pivoted QR decomposition and SVD methods implemented in LAPACK. 
+  The method is more stable than the Wood (2000) method and allows the 
+  user to fix some smoothing parameters while estimating others, 
+  regularize the GAM fit in non-convergent cases and put lower bounds on 
+  smoothing parameters. The new method can deal with rank deficient 
+  problems, for example if there is a lack of identifiability between the 
+  parametric and smooth parts of the model. See ?magic for fuller details. 
+  The old method is still available, but gam() defaults to the new method.
+
+* Note that the new method calls LAPACK routines directly, which means 
+  that the package now depends on external linear algebra libraries,
+  rather than relying entirely on my linear algebra routines. This is a 
+  good thing in terms of numerical robustness and speed, but does mean 
+  that to install the package from source you need a BLAS library installed 
+  and accesible to the linker. If you sucessfully installed R by building 
+  from source then you should have no problem: you have everything already 
+  installed, but occasionally users may have to install ATLAS in order to 
+  install from source.
+    
+* Negative binomial GAMs now use the families supplied by the MASS library 
+  and employ a fast integrated GCV based method for estiamting the 
+  negative binomial parameter. See ?gam.neg.bin for details. The new 
+  method seems to converge slightly more often than the old method, and 
+  does so more quickly.
+
+* persp.gam() has been replaced by a new routine vis.gam() which is 
+  prettier, simpler and deals better with factor covariates and at all 
+  with `by' variables.
+    
+* NA's can now be handled properly in a manner consistent with lm() 
+  and glm() [thanks to Brian Ripley for pointing me in the right direction 
+  here] and there is some internal tidying of GAM so that it's behavious 
+  is more similar to glm() and lm().
+    
+* Users can now choose to `polish' gam model fits by adding an nlm()  
+  based optimization after the usual Gu (2002) style `power iteration' to
+  find smoothing parameters. This second stage will typically result in a 
+  slightly lower final GCV/UBRE score than the defualt method, but is much 
+  slower. See ?gam.control for more information.
+    
+* The option to add a ridge penalty to the GAM fitting objective has been 
+  added to help deal with some convergence issues that occur when the
+  linear predictor is essentially un-identifiable. see ?gam.control. 
+
+0.8-7
+
+* There was a bug in the calculation of identifiability side conditions 
+  that could lead to over constraint of smooths using `by' variables in
+  models with mixtures of smooths of different numbers of variables. This 
+  has been fixed. 
+
+0.8-6
+
+* Fixes a bug which occured with user supplied smoothing parameters, in 
+  which the weight vector was omitted from part of the influence (hat) 
+  matrix calculation. This could result in non-sensical variance 
+  estimates.
+    
+* Stronger consistency checks introduced on estimated degrees of freedom.
+
+0.8-5
+
+* mgcv was using Machine() which is deprecated from R 1.6.0, this 
+  version uses .Machine instead. 
+
+0.8-4 
+
+* There was a memory bug which could occur with the "cr" basis, in 
+  which un-allocated memory was written to in the tps_g() routine in the 
+  compiled C code - this occured when that routine was asked to clean up 
+  its memory, when there was nothing to clean up. Thanks to Luke Tierney for 
+  finding this problem and locating it to tps_g()!
+    
+* A very minor memory leak which occured when knots are used to start 
+  a tps basis was fixed. 
+
+0.8-3 
+
+* Elements on leading diagonal of Hat/Influence matrix are now 
+  returned in gam object.
+    
+* Over-zealous error trap introduced at 0.8-2, caused failure with 
+  smoothless models. 
+
+0.8-2
+
+* User can now supply smoothing parameters for all smooth terms (can't 
+  have a mixture of supplied and estimated smoothing parameters). Feature 
+  is useful if e.g. GCV/UBRE fails to produce sensible estimates.
+    
+* svd() replaced by La.svd() in summary.gam(). 
+    
+* a bug in the Lanczos iteration code meant that smooths behaved 
+  poorly if the smooth had exactly one less degree of freedom than the 
+  number of data (the wrong eigenvectors were retained in this case) - 
+  this was a rather rare bug in practice!
+    
+* pcls() was not using sensible tolerances and svdroot() was using 
+  tolerances incorrectly, leading to problems with pcls(), now fixed.
+    
+* prior weights were missing from the pearson residuals.
+
+* Faulty by variable documentation fixed (have lost name of person who 
+  let me know this, but thanks!)
+    
+* Scale factor removed from Pearson residual calculation for 
+  consistancy with a higher proportion of authors.
+    
+* The proportion deviance explained has been added to summary.gam() as 
+  a better measure than r-squared in most cases.
+    
+* Routine SANtest() has been removed (obsolete).
+    
+* A bug in the select option of plot.gam has been fixed. 
+
+0.8-1 
+
+* The GCV/UBRE score can develop phantom minima for some models: these 
+  are minima in the score for the IRLS problem which suggest large 
+  parameter changes, but which disappear if those large changes are 
+  actually made. This problem occurs in some logistic regression models. 
+  To aid convergence in such cases, gam.fit now switches to a cautious 
+  mgcv optimization method if convergence has not been obtained in a user 
+  defined number of iterations. The cautious mode selects the local 
+  minimum of the GCV/UBRE closest to the previous minimum if multiple 
+  minima are present. See gam.control for details about controlling 
+  iterations.
+    
+* Option trace in gam.control now prints and plots more useful 
+  information for diagnosing convergence problems.
+    
+* The one explicit formation of an inverse in the underlying multiple 
+  GCV optimization has been replaced with something more stable (and 
+  quicker).
+    
+* A bug in the calculation of side conditions has been fixed - this 
+  caused a failure with models having parametric terms and terms like: 
+  s(x)+s(z)+s(z,x).
+    
+* A bug whereby predict.gam simply failed to pick up offset terms has 
+  been fixed.
+    
+* gam() now drops unused levels in factors.
+    
+* A bug in the conversion of svd convergence criteria between version 
+0.7-2 and 0.8-0 has been fixed.
+
+* Memory leaks have been removed from the C code (thanks to the superb 
+  dmalloc library).
+    
+* A bug that caused an undignified exit when 1-d smoothing with full 
+  splines in 0.8-0 has been fixed.
+
+0.8-0 
+
+* There was a problem on some platforms resulting from the default 
+  compiler optimizations used by R. Specifically: floating point registers  
+  can be used to store local variables. If the register is larger than a 
+  double (as is the case for Intel 486 and up), this means that:
+      double a,b;
+      a=b;
+      if (a==b)
+  can evaluate as FALSE. The mgcv source code assumed that this could 
+  never happen (it wouldn't under strict ieee fp compliance, for example). 
+  As a result, for some models using the package compiled using some 
+  compiler versions, the one dimensional "overall" smoothing parameter 
+  search could fail, resulting in convergence failure, or undersmoothing. 
+  The Windows version from CRAN was OK, but versions installed under Linux 
+  could have problems. Version 0.8 does not make the problematic 
+  assumption.
+    
+* The search for the optimal overall smoothing parameter has been 
+  improved, providing better protection against local minima in the 
+  GCV/UBRE score.
+    
+* Extra GCV/UBRE diagnostics are provided, along with a function 
+  gam.check() for checking them.
+    
+* It is now possible for the user to supply "knots" to be used when 
+  producing the t.p.r.s. basis, or for the cubic regression spline basis. 
+  This makes it feasible to work with very large datasets using the 
+  of the data. It also provides a mechanism for obtaining purely "knot 
+  based" thin plate regression splines.
+    
+* A new mechanism is provided for allowing a smooth term to be 
+  multiplied by a covariate within the model. Such "by" variables allow 
+  smooths to be conditional on factors, for example.
+    
+* Formulae such as y~s(x)+s(z)+s(x,z) can now be used.
+    
+* The package now reports the UBRE score of a fitted model if UBRE was 
+  used for smoothing parameter selection, and the GCV score otherwise.
+    
+* A new help page gam.models has been added.
+    
+* A bug whereby offsets in model formulae only worked if they were at 
+  the end of the formulae has been fixed.
+    
+* A bug whereby weights could not be supplied in the model data frame 
+  has been fixed.
+   
+* gam.fit has been upgraded using the R 1.5.0 version of glm.fit
+    
+* An error in the documentaion of xp in the gam object has been fixed, 
+  in addition to numerous other changes to the documentation.
+    
+* The scoping rules employed by gam() have been brought into line with 
+  lm() and glm by searching for variables in the environment of the model 
+  formula rather than in the environment from which gam() was called - 
+  usually these are the same, but not always.
+    
+* A bug in persp.gam() has been fixed, whereby slice information had 
+  to be supplied in a particular order.
+    
+* All compiled code calls now specify package mgcv to avoid any 
+  possibility of calling the wrong function.
+    
+* All examples now set the random number generator seed to facilitate 
+  cross platform comparisons. 
+
+0.7-2
+
+* T and F changed to TRUE and FALSE in code and examples.
+    
+* Minor predict.gam error fixed (didn't get correct fitted values if 
+  called without new data and model contained multi-dimensional smooths). 
+
+0.7-1
+
+* There was a somewhat over-zealous warning message in the single 
+  smoothing parameter selection code - gave a warning everytime that GCV 
+  suggested a smoothing parameter at the boundary of the search interval - 
+  even if this GCV function was also flat. Fixed.
+    
+* The search range for 1-d smoothing parameter selection was too wide 
+  - it was possible to give so little weight to the data that numerical 
+  problems caused all parameters to be estimates as zero (along with the 
+  edf for the term!). The range has been narrowed to something more sensible 
+  [above warning should still be triggered if it is ever too narrow - but 
+  this should not be possible].
+    
+* summary.gam() documentation extended a bit. p-values for smooths are 
+  slightly improved, and an example included that shows the user how to 
+  check them! 
+
+0.7-0
+
+* The underlying multiple GCV/UBRE optimization method has been 
+  considereably strengthened, as follows:
+  o First and second guess starting values for the relative 
+    smoothing parameters have been improved.
+  o Steepest descent is used if either: i) the Hessian of the 
+    objective is not positive definite, or (ii) Steps in the Newton direction 
+    fails to improve the GCV/UBRE score after 4 step halvings (since in 
+    this case the quadratic model is clearly poor).
+  o Newton steps are rescaled so that the largest step component 
+    (in log relative smoothing parameters) is of size 5 if any step 
+    components are >5. This avoids very large Newton steps that can occur 
+    in flat regions of the objective.
+  o All steepest descent steps are initially scaled so that their 
+    longest component is 1, this avoids long steps into flat regions of 
+    the objective.
+  o MGCV Convergence diagnostics are returned from routines mgcv 
+    and gam.
+  o In gam.fit() smoothing parameters are re-auto-initialized 
+     during IRLS if they have become so far apart that some are likely to 
+     be in flat parts of the GCV/UBRE score.
+  o A bug whereby poor second guesses at relative smoothing 
+    parameters could lead to acceptance of the first guess at these 
+    parameters has been removed.
+  o The user is warned if the initial smoothing parameter guesses 
+    are not improved upon (can happen legitmately if all s.p.s should be 
+    very high or very low.) 
+      
+  The end result of these changes is to make fits from gam much more 
+  reliable (particularly when using the tprs basis available from version 
+  0.6).
+
+* A summary.gam and associated print function are provided. These 
+  provide approximate p-values for all model terms.
+    
+* plot.gam now provides a mechanism for selecting single plots, and 
+  allows jittering of rug plots.
+    
+* A bug that prevented models with no smooth terms from being fitted 
+  has been removed.
+    
+* A scoping bug in gam.setup has been fixed.
+    
+* A bug preventing certain mixtures of the bases to be used has been 
+  fixed.
+    
+* The neg.bin family has been renamed neg.binom to avoid masking a 
+  function in the MASS library. 
+
+0.6-2 
+revisions from 0.6.1
+
+* Relatively important fix in low level numerics. Under some circumstances 
+  the Lanczos routines used to find the thin plate regression spline basis 
+  could fail to converge or give wrong answers (many thanks to Charles 
+  Paxton for spotting this). The problem was with an insufficiently stable 
+  inverse iteration scheme used to find eigenvectors as part of the 
+  Lanczos scheme. The scheme had been used because it was very fast: 
+  unfortuantely stabilizing it is as computationally costly as simply 
+  accumulating eigen-vectors with the eigen-values - hence the latter has 
+  now been done. Some further examples also added. 
+
+0.6-1
+
+* Junk files removed from src directory. 
+
+* 3 C++ style comments removed from tprs.c.
+
+0.6-0
+
+* Multi-dimesional smoothing is now available, using "thin plate 
+  regression splines" (MS submitted). These are based on optimal 
+  approximations to the thin-plate splines.
+    
+* gam formula syntax upgraded (see ?s ). Old syntax still works, with 
+  the exception that if no df specified then the tprs basis is always used 
+  by default.
+    
+* plot.gam can now deal with two dimensional smooth terms as well as 
+  one dimensional smooths.
+    
+* persp.gam added to allow user to visualize slices through a gam 
+  [Mike Lonergan]
+    
+* negative binomial family added [Mike Lonergan] - not quite as robust 
+  as rest of families though [can have convergence problems].
+    
+* predict.gam now has an option to return the matrix mapping the 
+  parameters to the linear predictor at the supplied covariate values.
+    
+* Variance calculation has been made more robust.
+    
+* Routine pcls added, for penalized, linearly constrained optimization 
+(e.g. monotonic splines).
+    
+* Residual method provided (there was a bug in the default - Thanks 
+  Carmen Fernandez).
+    
+* The cubic regression spline basis behaved wrongly when extrapolating 
+  [thanks Sharon Hedley]. This is now fixed.
+    
+* Tests included to check that there are enough unique covariate 
+  combinations to support the users choise of smoothing basis dimension.
+    
+* Internal storage improved so that large numbers of zeroes are no 
+  longer stored in arrays of matrices.
+    
+* Some method argument lists brought into line with the R default 
+  versions. 
+
+0.5
+
+    
+* There was a bug in gam.fit(). The square roots of the correct iterative 
+  weights were being used in place of the weights: the bug was
+  apparent because the sum of fitted values didn't always equal the sum of 
+  the response data when using the canonical link (which it should as a 
+  result of X'f=X'y when canonical link used and unpenalized). The bug has 
+  been corrected, and the correction tested. This problem did not affect 
+  (unweighted) additive models, only generalized additive models.
+    
+* There was a bug that caused a crash in the compiled code when there were 
+  more than 8000 datapoints to fit. This has been fixed.
+    
+* The package now reports its version number when loaded into R.
+    
+* predict.gam() now returns predictions for the original covariate values 
+  (used to fit the model) when called without new data.
+    
+* predict.gam() now allows type="response" as an argument - returning 
+  predictions on the scale of the response variable.
+    
+* plot.gam() no-longer defaults to automatic page layout, use argument 
+  pages=1 to get the old default behaviour.
+    
+* A bug that could cause a crash with the model formula y~s(x)-1 has been 
+  fixed.
+    
+* Yet more sloppy practices are now allowed for naming variables in model 
+  formulae. e.g. d$y ~ s(d$x) now works, although its not recommended.
+    
+* The GCV score is now reported by print.gam() (whether or not GCV was 
+  actually used - it isn't the default for Poisson or binomial).
+    
+* plot.gam() modified to avoid prompting for input when not used 
+  interactively.
+
+0.4 
+
+* Transformations allowed on lhs of gam formulae .
+    
+* Argument order same as Splus gam.
+    
+* Search for data now designed to be like lm() , so you can now be quite 
+  sloppy about where your data are.
+    
+* The above mean that Venables and Ripley examples can be run without 
+  having to read the documentation for gam() so carefully!
+    
+* A bug in the standard error calculations for parametric terms in 
+  predict.gam() is fixed.
+    
+* A serious bug in the handling of factors was fixed - it was previously 
+  possible to obtain a rank deficient design matrix when using factors, 
+  despite having specified an identifiable model.
+    
+* Some glitches when dealing with formulae containing offset() and/or I() 
+  have been fixed.
+    
+* Fitting defaults can now be altered using gam.control when calling gam()
+
+0.3-3
+    
+* Documentation updated, including removal of wrong information about 
+  constraints and mgcv . Also some readability changes in code and no 
+  smooths are now allowed.
+    
+0.3-2/1
+
+* Allows all ways of specifying a family that glm() allows (previously 
+  family=poisson or family="poisson" would fail). Some more documentation 
+  fixes.
+    
+* 0.2 lost the end of long formulae (because of a difference in the way 
+  that R and Splus deal with formulae). This is now fixed.
+    
+* A minor error that meant that QT() failed under some versions of Windows 
+  is now fixed.
+    
+* All package functions now have help(). Also the help files have been 
+  more carefully checked - version 0.2 actually contained no information 
+  on how to write a GAM formula as a result of a single missing '}' in the 
+  help file!
+
+0.2
+
+* Fixed d.f. regression splines allowed as part of gam() model 
+  specification.
+    
+* Bug in knot placement algorithm fixed (caused crash with df close to 
+  number of data).
+    
+* Replicate covariate values dealt with properly in gam()!
+    
+* Data search method in gam() revised - now looks in frame from which 
+  gam() called.
+    
+* plot.gam() can now deal with missing variance estimates gracefully.
+    
+* Low (1,2) d.f. smooths dealt with gracefully by gam() - no longer cause 
+  freeze or crash.
+    
+* Confidence intervals simulation tested for normal(identity), 
+  poisson(log), binomial(logit) and gamma(log) cases. Average coverage 
+  probabilities from 0.89 to 0.97 term by term, 0.93 to 0.96 "across the 
+  model", for nominal 0.95.
+    
+* R documentation updated and tidied. 

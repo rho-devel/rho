@@ -1,6 +1,6 @@
 % File src/library/stats/man/AIC.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{AIC}
@@ -9,7 +9,7 @@
 \alias{BIC}
 \title{Akaike's An Information Criterion}
 \description{
-  Generic function calculating Akaike's information criterion for
+  Generic function calculating Akaike's \sQuote{An Information Criterion} for
   one or several fitted model objects for which a log-likelihood value
   can be obtained, according to the formula
   \eqn{-2 \mbox{log-likelihood} + k n_{par}}{-2*log-likelihood + k*npar},
@@ -33,24 +33,35 @@ BIC(object, \dots)
     default \code{k = 2} is the classical AIC.}
 }
 \details{
+  When comparing models fitted by maximum likelihood to the same data,
+  the smaller the AIC or BIC, the better the fit.
+  
+  The theory of AIC requires that the log-likelihood has been maximized:
+  whereas AIC can be computed for models not fitted by maximum
+  likelihood, their AIC values should not be compared.
+
+  Examples of models not \sQuote{fitted to the same data} are where the
+  response is transformed (accelerated-life models are fitted to
+  log-times) and where contingency tables have been used to summarize
+  data.
+  
   These are generic functions (with S4 generics defined in package
   \pkg{stats4}): however methods should be defined for the
   log-likelihood function \code{\link{logLik}} rather than these
   functions: the action of their default methods is to call \code{logLik}
-  on all the supplied objects and assemble the results.
-  
-  When comparing fitted objects, the smaller the AIC or BIC, the better
-  the fit.
+  on all the supplied objects and assemble the results.  Note that in
+  several common cases \code{\link{logLik}} does not return the value at
+  the MLE: see its help page.
 
   The log-likelihood and hence the AIC/BIC is only defined up to an
-  additive constant.  Different constants have conventionally be used
+  additive constant.  Different constants have conventionally been used
   for different purposes and so \code{\link{extractAIC}} and \code{AIC}
   may give different values (and do for models of class \code{"lm"}: see
   the help for \code{\link{extractAIC}}).  Particular care is needed
   when comparing fits of different classes (with, for example, a
   comparison of a Poisson and gamma GLM being meaningless since one has
   a discrete response, the other continuous).
-  
+
   \code{BIC} is defined as
   \code{AIC(object, \dots, k = log(nobs(object)))}.
   This needs the number of observations to be known: the default method

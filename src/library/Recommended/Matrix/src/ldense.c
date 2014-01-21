@@ -25,7 +25,7 @@ SEXP lspMatrix_as_lsyMatrix(SEXP from, SEXP kind)
     return val;
 }
 
-/* this is very close to dsyMatrix_as_dsp* () in ./dsyMatrix.c : */
+// this is very close to dsyMatrix_as_lsp*() in ./dsyMatrix.c  -- keep synced !
 SEXP lsyMatrix_as_lspMatrix(SEXP from, SEXP kind)
 {
     SEXP val = PROTECT(NEW_OBJECT(MAKE_CLASS((asInteger(kind) == 1) ?
@@ -41,11 +41,15 @@ SEXP lsyMatrix_as_lspMatrix(SEXP from, SEXP kind)
 	LOGICAL(ALLOC_SLOT(val, Matrix_xSym, LGLSXP, (n*(n+1))/2)),
 	LOGICAL( GET_SLOT(from, Matrix_xSym)), n,
 	*CHAR(STRING_ELT(uplo, 0)) == 'U' ? UPP : LOW, NUN);
+    SET_SLOT(val, Matrix_DimNamesSym,
+	     duplicate(GET_SLOT(from, Matrix_DimNamesSym)));
+    SET_SLOT(val, Matrix_factorSym,
+	     duplicate(GET_SLOT(from, Matrix_factorSym)));
     UNPROTECT(1);
     return val;
 }
 
-/* this is very close to dtpMatrix_as_dtr* () in ./dtpMatrix.c : */
+// this is very close to dtpMatrix_as_dtr*() in ./dtpMatrix.c -- keep synced!
 SEXP ltpMatrix_as_ltrMatrix(SEXP from, SEXP kind)
 {
     SEXP val = PROTECT(NEW_OBJECT(MAKE_CLASS((asInteger(kind) == 1) ?
@@ -64,6 +68,8 @@ SEXP ltpMatrix_as_ltrMatrix(SEXP from, SEXP kind)
     packed_to_full_int(LOGICAL(ALLOC_SLOT(val, Matrix_xSym, LGLSXP, n*n)),
 		       LOGICAL(GET_SLOT(from, Matrix_xSym)), n,
 		       *CHAR(STRING_ELT(uplo, 0)) == 'U' ? UPP : LOW);
+    SET_SLOT(val, Matrix_DimNamesSym,
+	     duplicate(GET_SLOT(from, Matrix_DimNamesSym)));
     UNPROTECT(1);
     return val;
 }
@@ -87,6 +93,8 @@ SEXP ltrMatrix_as_ltpMatrix(SEXP from, SEXP kind)
 	LOGICAL(GET_SLOT(from, Matrix_xSym)), n,
 	*CHAR(STRING_ELT(uplo, 0)) == 'U' ? UPP : LOW,
 	*CHAR(STRING_ELT(diag, 0)) == 'U' ? UNT : NUN);
+    SET_SLOT(val, Matrix_DimNamesSym,
+	     duplicate(GET_SLOT(from, Matrix_DimNamesSym)));
     UNPROTECT(1);
     return val;
 }
@@ -121,7 +129,6 @@ SEXP lsyMatrix_as_lgeMatrix(SEXP from, SEXP kind)
     SET_SLOT(val, Matrix_factorSym, allocVector(VECSXP, 0));
 
     make_i_matrix_symmetric(LOGICAL(GET_SLOT(val, Matrix_xSym)), from);
-
     UNPROTECT(1);
     return val;
 }

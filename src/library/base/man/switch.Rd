@@ -24,7 +24,7 @@ switch(EXPR, \dots)
 \details{
   \code{switch} works in two distinct ways depending whether the first
   argument evaluates to a character string or a number.
-  
+
   If the value of \code{EXPR} is not a character string it is coerced to
   integer.  If this is between 1 and \code{nargs()-1} then the
   corresponding element of \code{\dots} is evaluated and the result
@@ -35,16 +35,16 @@ switch(EXPR, \dots)
   matched (exactly)to the names of the elements in \code{\dots}.  If
   there is a match then that element is evaluated unless it is missing,
   in which case the next non-missing element is evaluated, so for
-  example \code{switch("cc", a=1, cc=, cd=, d=2)} evaluates to \code{2}.
-  If there is more than one match, the first matching element is used.
-  In the case of no match, if there is a unnamed element of \code{\dots}
-  its value is returned.  (If there is more than one such argument 
-  an error is returned.  Before \R 2.13.0 the first one would have
-  been used.)
-  
+  example \code{switch("cc", a = 1, cc =, cd =, d = 2)} evaluates to
+  \code{2}.  If there is more than one match, the first matching element
+  is used.  In the case of no match, if there is a unnamed element of
+  \code{\dots} its value is returned.  (If there is more than one such
+  argument an error is returned.  Before \R 2.13.0 the first one would
+  have been used.)
+
   The first argument is always taken to be \code{EXPR}: if it is named
   its name must (partially) match.
-  
+
   This is implemented as a \link{primitive} function that only evaluates
   its first argument and one other if one is selected.
 }
@@ -88,13 +88,13 @@ centre(x, "trimmed")
 ccc <- c("b","QQ","a","A","bb")
 # note: cat() produces no output for NULL
 for(ch in ccc)
-    cat(ch,":", switch(EXPR = ch, a=1,     b=2:3), "\n")
+    cat(ch,":", switch(EXPR = ch, a = 1, b = 2:3), "\n")
 for(ch in ccc)
-    cat(ch,":", switch(EXPR = ch, a=, A=1, b=2:3, "Otherwise: last"),"\n")
+    cat(ch,":", switch(EXPR = ch, a =, A = 1, b = 2:3, "Otherwise: last"),"\n")
 
 ## Numeric EXPR does not allow a default value to be specified
 ## -- it is always NULL
-for(i in c(-1:3,9))  print(switch(i, 1,2,3,4))
+for(i in c(-1:3, 9))  print(switch(i, 1, 2 , 3, 4))
 
 ## visibility
 switch(1, invisible(pi), pi)

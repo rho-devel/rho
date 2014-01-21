@@ -14,11 +14,11 @@ dpill(x, y, blockmax = 5, divisor = 20, trim = 0.01, proptrun = 0.05,
 }
 \arguments{
 \item{x}{
-vector of x data.
+numeric vector of x data.
 Missing values are not accepted.
 }
 \item{y}{
-vector of y data.
+numeric vector of y data.
 This must be same length as \code{x}, and
 missing values are not accepted.
 }

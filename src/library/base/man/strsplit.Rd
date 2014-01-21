@@ -52,8 +52,7 @@ strsplit(x, split, fixed = FALSE, perl = FALSE, useBytes = FALSE)
   element(s) of \code{x} at all.
 
   The algorithm applied to each input string is
-\preformatted{
-    repeat \{
+\preformatted{    repeat \{
         if the string is empty
             break.
         if there is a match
@@ -108,14 +107,14 @@ unlist(strsplit("a.b.c", "."))
 ## [1] "" "" "" "" ""
 ## Note that 'split' is a regexp!
 ## If you really want to split on '.', use
-unlist(strsplit("a.b.c", "\\\\."))
+unlist(strsplit("a.b.c", "[.]"))
 ## [1] "a" "b" "c"
 ## or
 unlist(strsplit("a.b.c", ".", fixed = TRUE))
 
 ## a useful function: rev() for strings
 strReverse <- function(x)
-        sapply(lapply(strsplit(x, NULL), rev), paste, collapse="")
+        sapply(lapply(strsplit(x, NULL), rev), paste, collapse = "")
 strReverse(c("abc", "Statistics"))
 
 ## get the first names of the members of R-core

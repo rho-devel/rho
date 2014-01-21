@@ -226,3 +226,19 @@ setMethod("colMeans", signature(x = "RsparseMatrix"),
 
 ## setMethod("colMeans", signature(x = "dgRMatrix"), sp.colMeans)
 
+## --- indMatrix [incl pMatrix ] ---
+
+setMethod("colSums",  signature(x = "indMatrix"),
+	  function(x, na.rm = FALSE, dims = 1)
+	  tabulate(x@perm, nbins=x@Dim[2]))
+setMethod("colMeans",  signature(x = "indMatrix"),
+	  function(x, na.rm = FALSE, dims = 1)
+	  tabulate(x@perm, nbins=x@Dim[2])/x@Dim[1])
+## for completeness:
+setMethod("rowSums",  signature(x = "indMatrix"),
+	  function(x, na.rm = FALSE, dims = 1) rep.int(1, x@Dim[1]))
+setMethod("rowMeans",  signature(x = "indMatrix"),
+	  function(x, na.rm = FALSE, dims = 1) rep.int(1/x@Dim[2], x@Dim[1]))
+
+
+

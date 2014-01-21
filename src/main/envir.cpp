@@ -109,7 +109,8 @@
 
 #include <functional>
 #include <iostream>
-#include "Defn.h"
+#include <Defn.h>
+#include <Internal.h>
 #include <R_ext/Callbacks.h>
 #include "CXXR/ProvenanceTracker.h"
 #include "CXXR/ClosureContext.hpp"
@@ -240,6 +241,7 @@ static SEXP R_BaseNamespaceName;
 
 void attribute_hidden InitGlobalEnv()
 {
+    R_MethodsNamespace = R_GlobalEnv; // so it is initialized.
     SET_SYMVALUE(install(".BaseNamespaceEnv"), R_BaseNamespace);
     R_BaseNamespaceName = ScalarString(mkChar("base"));
     R_PreserveObject(R_BaseNamespaceName);
@@ -320,21 +322,25 @@ R_varloc_t R_findVarLocInFrame(SEXP rho, SEXP symbol)
     return findVarLocInFrame(rho, symbol, NULL);
 }
 
+attribute_hidden
 SEXP R_GetVarLocValue(R_varloc_t vl)
 {
     return vl->value();
 }
 
+attribute_hidden
 SEXP R_GetVarLocSymbol(R_varloc_t vl)
 {
     return const_cast<Symbol*>(vl->symbol());
 }
 
+/* used in methods */
 Rboolean R_GetVarLocMISSING(R_varloc_t vl)
 {
     return Rboolean(vl->origin());
 }
 
+attribute_hidden
 void R_SetVarLocValue(R_varloc_t vl, SEXP value)
 {
     vl->assign(value);
@@ -543,6 +549,7 @@ static int ddVal(SEXP symbol)
 
 */
 
+attribute_hidden
 SEXP ddfindVar(SEXP symbol, SEXP rho)
 {
     int i;
@@ -557,7 +564,7 @@ SEXP ddfindVar(SEXP symbol, SEXP rho)
 	    return(CAR(vl));
 	}
 	else
-	    error(_("The ... list does not contain %d elements"), i);
+	    error(_("the ... list does not contain %d elements"), i);
     }
     else error(_("..%d used in an incorrect context, no ... to look in"), i);
 
@@ -568,7 +575,7 @@ SEXP ddfindVar(SEXP symbol, SEXP rho)
 
 /*----------------------------------------------------------------------
 
-  dynamicFindVar
+  dynamicfindVar
 
   This function does a variable lookup, but uses dynamic scoping rules
   rather than the lexical scoping rules used in findVar.
@@ -578,6 +585,7 @@ SEXP ddfindVar(SEXP symbol, SEXP rho)
 
 */
 
+#ifdef UNUSED
 SEXP dynamicfindVar(SEXP symbol, ClosureContext *cptr)
 {
     SEXP vl;
@@ -588,6 +596,7 @@ SEXP dynamicfindVar(SEXP symbol, ClosureContext *cptr)
     }
     return R_UnboundValue;
 }
+#endif
 
 
 
@@ -714,7 +723,7 @@ SEXP attribute_hidden do_assign(SEXP call, SEXP op, SEXP args, SEXP rho)
     else {
 	if (length(CAR(args)) > 1)
 	    warning(_("only the first element is used as variable name"));
-	name = install(translateChar(STRING_ELT(CAR(args), 0)));
+	name = installTrChar(STRING_ELT(CAR(args), 0));
     }
     PROTECT(val = CADR(args));
     aenv = CADDR(args);
@@ -756,7 +765,7 @@ SEXP attribute_hidden do_list2env(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("'envir' argument must be an environment"));
 
     for(int i = 0; i < LENGTH(x) ; i++) {
-	SEXP name = install(translateChar(STRING_ELT(xnms, i)));
+	SEXP name = installTrChar(STRING_ELT(xnms, i));
 	defineVar(name, VECTOR_ELT(x, i), envir);
     }
 
@@ -866,7 +875,7 @@ SEXP attribute_hidden do_get(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!isValidStringF(CAR(args)))
 	error(_("invalid first argument"));
     else
-	t1 = install(translateChar(STRING_ELT(CAR(args), 0)));
+	t1 = installTrChar(STRING_ELT(CAR(args), 0));
 
     /* envir :	originally, the "where=" argument */
 
@@ -974,9 +983,8 @@ static SEXP gfind(const char *name, SEXP env, SEXPTYPE mode,
  */
 SEXP attribute_hidden do_mget(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP ans, env, x, mode, ifnotfound, ifnfnd;
-    SEXPTYPE gmode; /* is unsigned int */
-    int ginherits = 0, nvals, nmode, nifnfnd, i;
+    SEXP ans, env, x, mode, ifnotfound;
+    int ginherits = 0, nvals, nmode, nifnfnd;
 
     checkArity(op, args);
 
@@ -988,11 +996,9 @@ SEXP attribute_hidden do_mget(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* It must be present and a string */
     if (!isString(x) )
 	error(_("invalid first argument"));
-    for(i = 0; i < nvals; i++)
+    for(int i = 0; i < nvals; i++)
 	if( isNull(STRING_ELT(x, i)) || !CHAR(STRING_ELT(x, 0))[0] )
 	    error(_("invalid name in position %d"), i+1);
-
-    /* FIXME: should we install them all?) */
 
     env = CADR(args);
     if (ISNULL(env)) {
@@ -1022,35 +1028,19 @@ SEXP attribute_hidden do_mget(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     PROTECT(ans = allocVector(VECSXP, nvals));
 
-    /* now for each element of x, we look for it, using the inherits,
-       etc */
-
-    for(i = 0; i < nvals; i++) {
-	if (isString(mode)) { /* ASCII */
-	    if (!strcmp(CHAR(STRING_ELT(CAR(CDDR(args)), i % nmode )), "function"))
-		gmode = FUNSXP;
-	    else
-		gmode = str2type(CHAR(STRING_ELT(CAR(CDDR(args)), i % nmode )));
-	} else {
-	    error(_("invalid '%s' argument"), "mode");
-	    gmode = FUNSXP; /* -Wall */
+    for(int i = 0; i < nvals; i++) {
+	SEXPTYPE gmode;
+	if (!strcmp(CHAR(STRING_ELT(CAR(CDDR(args)), i % nmode)), "function"))
+	    gmode = FUNSXP;
+	else {
+	    gmode = str2type(CHAR(STRING_ELT(CAR(CDDR(args)), i % nmode)));
+	    if(gmode == SEXPTYPE( (-1)))
+		error(_("invalid '%s' argument"), "mode");
 	}
-
-	/* is the mode provided one of the real modes? */
-	if( gmode == SEXPTYPE( (-1)))
-	    error(_("invalid '%s' argument"), "mode");
-
-
-	if( TYPEOF(ifnotfound) != VECSXP )
-	    error(_("invalid '%s' argument"), "ifnotfound");
-	if( nifnfnd == 1 ) /* length has been checked to be 1 or nvals. */
-	    ifnfnd = VECTOR_ELT(ifnotfound, 0);
-	else
-	    ifnfnd = VECTOR_ELT(ifnotfound, i);
-
 	SET_VECTOR_ELT(ans, i,
-		       gfind(translateChar(STRING_ELT(x,i % nvals)), env,
-			     gmode, ifnfnd, ginherits, rho));
+		       duplicate(gfind(translateChar(STRING_ELT(x, i % nvals)), env,
+			     gmode, VECTOR_ELT(ifnotfound, i % nifnfnd),
+			     ginherits, rho)));
     }
 
     setAttrib(ans, R_NamesSymbol, duplicate(x));
@@ -1097,7 +1087,7 @@ SEXP attribute_hidden do_missing(SEXP call, SEXP op, SEXP args, SEXP rho)
     check1arg(args, call, "x");
     s = sym = CAR(args);
     if( isString(sym) && length(sym)==1 )
-	s = sym = install(translateChar(STRING_ELT(CAR(args), 0)));
+	s = sym = installTrChar(STRING_ELT(CAR(args), 0));
     if (!isSymbol(sym))
 	errorcall(call, _("invalid use of 'missing'"));
 
@@ -1535,7 +1525,10 @@ SEXP attribute_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     for(i = 0; i < k2; i++) {
 	INTEGER(ind)[0] = i+1;
-	SET_VECTOR_ELT(ans, i, eval(R_fcall, rho));
+	SEXP tmp = eval(R_fcall, rho);
+	if (NAMED(tmp))
+	    tmp = duplicate(tmp);
+	SET_VECTOR_ELT(ans, i, tmp);
     }
 
     if (useNms) {
@@ -1649,6 +1642,7 @@ SEXP attribute_hidden do_pos2env(SEXP call, SEXP op, SEXP args, SEXP rho)
 static SEXP matchEnvir(SEXP call, const char *what)
 {
     SEXP t, name;
+    const void *vmax = vmaxget();
     if(!strcmp(".GlobalEnv", what))
 	return R_GlobalEnv;
     if(!strcmp("package:base", what))
@@ -1656,10 +1650,14 @@ static SEXP matchEnvir(SEXP call, const char *what)
     for (t = ENCLOS(R_GlobalEnv); t != R_EmptyEnv ; t = ENCLOS(t)) {
 	name = getAttrib(t, R_NameSymbol);
 	if(isString(name) && length(name) > 0 &&
-	   !strcmp(translateChar(STRING_ELT(name, 0)), what))
+	   !strcmp(translateChar(STRING_ELT(name, 0)), what)) {
+	    vmaxset(vmax);
 	    return t;
+	}
     }
     errorcall(call, _("no item called \"%s\" on the search list"), what);
+    /* not reached */
+    vmaxset(vmax);
     return R_NilValue;
 }
 
@@ -1920,7 +1918,7 @@ Rboolean R_IsPackageEnv(SEXP rho)
     if (TYPEOF(rho) == ENVSXP) {
 	SEXP name = getAttrib(rho, R_NameSymbol);
 	CXXRCONST char *packprefix = "package:";
-	int pplen = strlen(packprefix);
+	size_t pplen = strlen(packprefix);
 	if(isString(name) && length(name) > 0 &&
 	   ! strncmp(packprefix, CHAR(STRING_ELT(name, 0)), pplen)) /* ASCII */
 	    return TRUE;
@@ -1936,7 +1934,7 @@ SEXP R_PackageEnvName(SEXP rho)
     if (TYPEOF(rho) == ENVSXP) {
 	SEXP name = getAttrib(rho, R_NameSymbol);
 	CXXRCONST char *packprefix = "package:";
-	int pplen = strlen(packprefix);
+	size_t pplen = strlen(packprefix);
 	if(isString(name) && length(name) > 0 &&
 	   ! strncmp(packprefix, CHAR(STRING_ELT(name, 0)), pplen)) /* ASCII */
 	    return name;
@@ -2047,7 +2045,7 @@ static SEXP checkNSname(SEXP call, SEXP name)
 	break;
     case STRSXP:
 	if (LENGTH(name) >= 1) {
-	    name = install(translateChar(STRING_ELT(name, 0)));
+	    name = installTrChar(STRING_ELT(name, 0));
 	    break;
 	}
 	/* else fall through */
@@ -2133,8 +2131,8 @@ SEXP attribute_hidden do_importIntoEnv(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     n = LENGTH(impnames);
     for (i = 0; i < n; i++) {
-	impsym = install(translateChar(STRING_ELT(impnames, i)));
-	expsym = install(translateChar(STRING_ELT(expnames, i)));
+	impsym = installTrChar(STRING_ELT(impnames, i));
+	expsym = installTrChar(STRING_ELT(expnames, i));
 
 	/* find the binding--may be a CONS cell or a symbol */
 	SEXP binding = R_NilValue;

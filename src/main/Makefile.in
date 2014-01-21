@@ -32,7 +32,7 @@ SOURCES_C = complex.c inlined.c
 SOURCES_CXX = \
 	ArgList.cpp ArgMatcher.cpp \
 	BinaryFunction.cpp Browser.cpp BuiltInFunction.cpp ByteCode.cpp \
-	CConverters.cpp CellPool.cpp Closure.cpp \
+	CellPool.cpp Closure.cpp \
 	ClosureContext.cpp CommandChronicle.cpp CommandLineArgs.cpp \
 	ComplexVector.cpp ConsCell.cpp \
 	DotInternal.cpp DottedArgs.cpp \
@@ -56,24 +56,25 @@ SOURCES_CXX = \
         VectorBase.cpp \
         WeakRef.cpp \
 	apply.cpp agrep.cpp arithmetic.cpp array.cpp attrib.cpp \
-	base.cpp bind.cpp builtin.cpp \
+	bind.cpp builtin.cpp \
 	character.cpp coerce.cpp colors.cpp connections.cpp context.cpp \
-	cov.cpp cum.cpp \
-	dcf.cpp datetime.cpp debug.cpp deparse.cpp deriv.cpp devices.cpp \
+	cum.cpp \
+	dcf.cpp datetime.cpp debug.cpp deparse.cpp devices.cpp \
 	dotcode.cpp dounzip.cpp dstruct.cpp duplicate.cpp \
 	engine.cpp envir.cpp errors.cpp eval.cpp \
-	format.cpp fourier.cpp \
-	gevents.cpp gram-ex.cpp gram.cpp gramLatex.cpp gramRd.cpp graphics.cpp \
-	grep.cpp \
+	format.cpp \
+	gevents.cpp gram-ex.cpp gram.cpp graphics.cpp grep.cpp \
 	identical.cpp internet.cpp iosupport.cpp \
 	lapack.cpp list.cpp localecharset.cpp logic.cpp \
-	main.cpp mapply.cpp match.cpp memory.cpp model.cpp \
-	names.cpp objects.cpp optim.cpp optimize.cpp options.cpp \
-	par.cpp paste.cpp platform.cpp plot.cpp plot3d.cpp plotmath.cpp \
-	print.cpp printarray.cpp printvector.cpp printutils.cpp qsort.cpp \
+	main.cpp mapply.cpp match.cpp memory.cpp \
+	names.cpp \
+        objects.cpp options.cpp \
+	paste.cpp platform.cpp plot.cpp plot3d.cpp plotmath.cpp \
+	print.cpp printarray.cpp printvector.cpp printutils.cpp \
 	provenance_do.cpp \
+	qsort.cpp \
 	random.cpp raw.cpp registration.cpp relop.cpp rlocale.cpp \
-	saveload.cpp scan.cpp seq.cpp serialize.cpp size.cpp sort.cpp \
+	saveload.cpp scan.cpp seq.cpp serialize.cpp sort.cpp \
         source.cpp split.cpp sprintf.cpp startup.cpp subassign.cpp \
         subscript.cpp subset.cpp summary.cpp sysutils.cpp \
 	unique.cpp util.cpp \
@@ -95,8 +96,8 @@ HEADERS = \
 	RBufferUtils.h Rstrptime.h \
 	arithmetic.h \
 	basedecl.h \
+	contour-common.h \
 	gzio.h \
-	par-common.c \
 	qsort-body.c \
 	rlocale_data.h \
 	unzip.h \
@@ -110,9 +111,7 @@ DISTFILES = Makefile.in Makefile.win \
 	$(SOURCES_CXX) \
 	$(EXTRA_SOURCES_CXX) \
 	$(SOURCES_F) \
-	gram.y \
-	gramRd.y \
-	gramLatex.y
+	gram.y
 
 ZLIB_CPPFLAGS = @BUILD_ZLIB_TRUE@ -I$(top_srcdir)/src/extra/zlib
 BZLIB_CPPFLAGS = @BUILD_BZLIB_TRUE@ -I$(top_srcdir)/src/extra/bzip2
@@ -147,25 +146,16 @@ EXTRA_LIBS = $(BOOST_LIBS) $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS) @LIBINTL@ $(READ
 
 R_binary = R.bin
 
-## CXXR: Certain object files (e.g. IntVector.o) must be linked in
-## explicitly, because they define nothing that would cause their
-## automatic inclusion, but are needed e.g. because they define
-## non-inlined versions of functions called from C, or constructs
-## related to serialization. 
-R_bin_OBJECTS = Rmain.o ComplexVector.o IntVector.o LogicalVector.o \
-                RealVector.o @BUILD_LTO_TRUE@@WANT_R_SHLIB_FALSE@$(OBJECTS)
-@BUILD_LTO_TRUE@@WANT_R_SHLIB_FALSE@R_bin_LDADD = $(MAIN_OBJS) $(EXTRA_STATIC_LIBS) $(EXTRA_LIBS)
-@BUILD_LTO_FALSE@@WANT_R_SHLIB_FALSE@R_bin_LDADD = libR.a $(EXTRA_LIBS)
+R_bin_OBJECTS = Rmain.o @WANT_R_SHLIB_FALSE@$(OBJECTS)
+@WANT_R_SHLIB_FALSE@R_bin_LDADD = $(MAIN_OBJS) $(EXTRA_STATIC_LIBS) $(EXTRA_LIBS)
 
 ## Linked against -lRblas becasue -lR is and otherwise ld complains.
 @WANT_R_SHLIB_TRUE@R_bin_LDADD = -L../../lib@R_ARCH@ -lR $(BOOST_LIBS) @LIBINTL@ @BLAS_SHLIB_TRUE@-lRblas
 @BUILD_LTO_FALSE@R_bin_DEPENDENCIES =@WANT_R_SHLIB_FALSE@ libR.a @USE_EXPORTFILES_TRUE@ $(top_builddir)/etc/R.exp
 
 libR_la = libR$(DYLIB_EXT)
-## have to force in Rembedded.o
-libR_la_OBJECTS = $(OBJECTS) @BUILD_LTO_FALSE@../unix/Rembedded.o
-@BUILD_LTO_FALSE@libR_la_LIBADD = $(STATIC_LIBS) $(EXTRA_LIBS) @WANT_R_SHLIB_TRUE@ @USE_EXPORTFILES_TRUE@ -Wl,-bE:$(top_builddir)/etc/R.exp
-@BUILD_LTO_TRUE@libR_la_LIBADD = $(MAIN_OBJS) $(EXTRA_STATIC_LIBS) $(EXTRA_LIBS)
+libR_la_OBJECTS = $(OBJECTS)
+libR_la_LIBADD =  $(MAIN_OBJS) $(EXTRA_STATIC_LIBS) $(EXTRA_LIBS) @WANT_R_SHLIB_TRUE@ @USE_EXPORTFILES_TRUE@ -Wl,-bE:$(top_builddir)/etc/R.exp
 libR_la_DEPENDENCIES = $(STATIC_LIBS) @WANT_R_SHLIB_TRUE@ @USE_EXPORTFILES_TRUE@ $(top_builddir)/etc/R.exp
 
 ## The next is needed on darwin only at present
@@ -179,8 +169,7 @@ all: Makefile Makedeps R
 Makefile: $(srcdir)/Makefile.in \
   $(top_builddir)/config.status \
   ../include/config.h \
-  ../include/Rversion.h \
-  $(SOURCES_C) $(SOURCES_CXX) $(EXTRA_SOURCES_CXX)
+  ../include/Rversion.h
 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 Makedeps: Makefile $(DEPENDS)
@@ -248,14 +237,6 @@ $(srcdir)/gram.cpp: @MAINTAINER_MODE_TRUE@ $(srcdir)/gram.y
 	@$(ECHO) "re-making gram.cpp"
 	$(YACC) $(YFLAGS) -p gram_ $(srcdir)/gram.y
 	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gram.cpp
-$(srcdir)/gramRd.cpp: @MAINTAINER_MODE_TRUE@ $(srcdir)/gramRd.y
-	@$(ECHO) "re-making gramRd.cpp"
-	$(YACC) $(YFLAGS) -p gramRd_ $(srcdir)/gramRd.y
-	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gramRd.cpp
-$(srcdir)/gramLatex.cpp: @MAINTAINER_MODE_TRUE@ $(srcdir)/gramLatex.y
-	@$(ECHO) "re-making gramLatex.cpp"
-	$(YACC) $(YFLAGS) -p gramLatex_ $(srcdir)/gramLatex.y
-	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gramLatex.cpp	
 
 install: installdirs
 	@$(MAKE) install-bin
@@ -300,7 +281,7 @@ distclean: clean
 maintainer-clean: distclean
 	@$(ECHO) "This command is intended for maintainers to use; it"
 	@$(ECHO) "deletes files that may need special rules to rebuild"
-	@-rm -f $(srcdir)/gram.c $(srcdir)/gramRd.c
+	@-rm -f $(srcdir)/gram.c $(srcdir)/gramLatex.c $(srcdir)/gramRd.c
 
 tags: TAGS
 TAGS: $(SOURCES) $(EXTRA_SOURCES_CXX) $(HEADERS)
@@ -315,8 +296,5 @@ distdir: $(DISTFILES)
 	    || ln $(srcdir)/$${f} $(distdir)/$${f} 2>/dev/null \
 	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
 	done
-	@if test -f $(srcdir)/TAOCP1997.c ; then \
-	  cp -p $(srcdir)/TAOCP1997.c $(distdir)/TAOCP1997.c; \
-	fi
 
 include $(DEPENDS)

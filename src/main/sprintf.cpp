@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2002--2009     The R Core Team
+ *  Copyright (C) 2002--2013     The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@
 #endif
 
 #include <Defn.h>
+#include <Internal.h>
 #include "RBufferUtils.h"
 #include <R_ext/RS.h> /* for Calloc/Free */
 
@@ -82,6 +83,10 @@ static Rboolean checkfmt(const char *fmt, const char *pattern)
     return strcspn(p, pattern) ? TRUE : FALSE;
 }
 
+#define TRANSLATE_CHAR(_STR_, _i_)  \
+   ((use_UTF8) ? translateCharUTF8(STRING_ELT(_STR_, _i_))  \
+    : translateChar(STRING_ELT(_STR_, _i_)))
+
 
 SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 {
@@ -89,7 +94,8 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
     /* fmt2 is a copy of fmt with '*' expanded.
        bit will hold numeric formats and %<w>s, so be quite small. */
     char fmt[MAXLINE+1], fmt2[MAXLINE+10], *fmtp, bit[MAXLINE+1],
-	*outputString, *formatString;
+	*outputString;
+    const char *formatString;
     size_t n, cur, chunk;
 
     SEXP format, _this, a[MAXNARGS], ans /* -Wall */ = R_NilValue;
@@ -97,16 +103,11 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
     static R_StringBuffer outbuff = {NULL, 0, MAXELTSIZE};
     Rboolean has_star, use_UTF8;
 
-#define TRANSLATE_CHAR(_STR_, _i_)				\
-    const_cast<char *>((use_UTF8)						\
-	     ? translateCharUTF8(STRING_ELT(_STR_, _i_))	\
-	     : translateChar    (STRING_ELT(_STR_, _i_)))
-
 #define _my_sprintf(_X_)						\
     {									\
 	int nc = snprintf(bit, MAXLINE+1, fmtp, _X_);			\
 	if (nc > MAXLINE)						\
-	    error(_("required resulting string length %d is > maximal %d"), \
+	    error(_("required resulting string length %d is greater than maximal %d"), \
 		  nc, MAXLINE);						\
     }
 
@@ -165,7 +166,8 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 	    error(_("'fmt' length exceeds maximal format length %d"), MAXLINE);
 	/* process the format string */
 	for (cur = 0, cnt = 0; cur < n; cur += chunk) {
-	    char *curFormat = formatString + cur, *ss, *starc;
+	    const char *curFormat = formatString + cur, *ss;
+	    char *starc;
 	    ss = NULL;
 	    if (formatString[cur] == '%') { /* handle special format command */
 
@@ -194,7 +196,7 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 				error(_("reference to non-existent argument %d"), v);
 			    nthis = v-1;
 			    memmove(fmt+1, fmt+3, strlen(fmt)-2);
-			} else if(fmt[2] >= '1' && fmt[2] <= '9' && fmt[3] == '$') {
+			} else if(fmt[2] >= '0' && fmt[2] <= '9' && fmt[3] == '$') {
 			    v = 10*v + fmt[2] - '0';
 			    if(v > nargs)
 				error(_("reference to non-existent argument %d"), v);
@@ -213,7 +215,7 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 				    error(_("reference to non-existent argument %d"), v);
 				nstar = v-1;
 				memmove(starc+1, starc+3, strlen(starc)-2);
-			    } else if(starc[2] >= '1' && starc[2] <= '9'
+			    } else if(starc[2] >= '0' && starc[2] <= '9'
 				      && starc[3] == '$') {
 				v = 10*v + starc[2] - '0';
 				if(v > nargs)
@@ -249,7 +251,7 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 		    if (fmt[strlen(fmt) - 1] == '%') {
 			/* handle % with formatting options */
 			if (has_star)
-			    sprintf(bit, fmt, star_arg);
+			    snprintf(bit, MAXLINE+1, fmt, star_arg);
 			else
 			    strcpy(bit, fmt);
 			/* was sprintf(..)  for which some compiler warn */

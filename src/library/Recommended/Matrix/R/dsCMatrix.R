@@ -1,11 +1,8 @@
 #### Symmetric Sparse Matrices in compressed column-oriented format
 
 setAs("dgCMatrix", "dsCMatrix",
-      function(from) {
-	  if(!exists(".warn.dsC")) { ## now only warn *once* ..
-	      warning("as(.,\"dsCMatrix\") is deprecated; do use as(., \"symmetricMatrix\")")
-	      assign(".warn.dsC", "DONE", envir = .GlobalEnv)
-	  }
+      function(from) { ## r2130 ... | 2008-03-14 | added deprecation warning
+	  warning("as(.,\"dsCMatrix\") is deprecated (since 2008); do use as(., \"symmetricMatrix\")")
 	  as(from, "symmetricMatrix")
       })
 
@@ -43,6 +40,20 @@ setAs("dsCMatrix", "dgCMatrix",
 
 setAs("dsCMatrix", "dsyMatrix",
       function(from) as(from, "denseMatrix"))
+
+##' Check if \code{name} (== "[sS][pP][dD]Cholesky") fits the values of the
+##' logicals (perm, LDL, super).
+##' @param name a string such as "sPdCholesky"
+##' @param perm also known as \code{pivot}
+##' @param LDL
+##' @param super
+##' @return logical: TRUE if the name matches
+.chkName.CHM <- function(name, perm, LDL, super)
+    .Call(R_chkName_Cholesky, name, perm, LDL, super)
+## ../src/dsCMatrix.c
+
+.CHM.factor.name <- function(perm, LDL, super)
+    .Call(R_chm_factor_name, perm, LDL, super)
 
 ## have rather tril() and triu() methods than
 ## setAs("dsCMatrix", "dtCMatrix", ....)
@@ -99,8 +110,8 @@ setMethod("solve", signature(a = "dsCMatrix", b = "numeric"),
 	  solve.dsC.mat(a, .Call(dup_mMatrix_as_dgeMatrix, b)),
 	  valueClass = "dgeMatrix")
 
-## `` Fully-sparse'' solve() :
-solve.dsC.dsC <- function(a,b, tol) {
+## ``Fully-sparse'' solve() -- only used here; separate function for debugging etc
+solve.dsC.dC <- function(a,b, tol) {
     r <- tryCatch(.Call(dsCMatrix_Csparse_solve, a, b),
 		  error=function(e)NULL, warning=function(w)NULL)
     if(is.null(r)) { ## cholmod factorization was not ok
@@ -114,12 +125,17 @@ solve.dsC.dsC <- function(a,b, tol) {
 }
 setMethod("solve", signature(a = "dsCMatrix", b = "dsparseMatrix"),
 	  function(a, b, ...) {
-	      if (!is(b, "CsparseMatrix"))
-		  b <- as(b, "CsparseMatrix")
-	      if (is(b, "symmetricMatrix")) ## not supported (yet) by cholmod_spsolve
+	      cb <- getClassDef(class(b))
+	      if (!extends(cb, "CsparseMatrix"))
+		  cb <- getClassDef(class(b <- as(b, "CsparseMatrix")))
+	      if (extends(cb, "symmetricMatrix")) ## not supported (yet) by cholmod_spsolve
 		  b <- as(b, "dgCMatrix")
-	      solve.dsC.dsC(a,b)
+	      solve.dsC.dC(a,b)
 	  })
+
+setMethod("solve", signature(a = "dsCMatrix", b = "missing"),
+	  function(a, b, ...) solve(a, .trDiagonal(nrow(a), unitri=FALSE), ...))
+
 
 
 setMethod("chol", signature(x = "dsCMatrix"),
@@ -137,11 +153,21 @@ setMethod("t", signature(x = "dsCMatrix"),
           function(x) .Call(Csparse_transpose, x, FALSE),
           valueClass = "dsCMatrix")
 
+### These two are very similar, the first one has the advantage to be applicable to 'Chx' directly:
+
 .diag.dsC <- function(x, Chx = Cholesky(x, LDL=TRUE), res.kind = "diag") {
     force(Chx)
-    stopifnot(is.integer(Chx@p), is.double(Chx@x))
+    if(!missing(Chx)) stopifnot(.isLDL(Chx), is.integer(Chx@p), is.double(Chx@x))
     .Call(diag_tC, Chx@p, Chx@x, Chx@perm, res.kind)
+    ##    ^^^^^^^ from ../src/Csparse.c
 }
+
+## here, we  *could* allow a 'mult = 0' factor :
+.CHM.LDL.D <- function(x, perm = TRUE, res.kind = "diag") {
+    .Call(dsCMatrix_LDL_D, x, perm, res.kind)
+    ##    ^^^^^^^^^^^^^^^^ from ../src/dsCMatrix.c
+}
+
 
 ## FIXME:  kind = "diagBack" is not yet implemented
 ##	would be much more efficient, but there's no CHOLMOD UI (?)
@@ -149,6 +175,8 @@ setMethod("t", signature(x = "dsCMatrix"),
 ## Note: for det(), permutation is unimportant;
 ##       for diag(), apply *inverse* permutation
 ##    	q <- p ; q[q] <- seq_along(q); q
+
+
 
 ldet1.dsC <- function(x, ...) .Call(CHMfactor_ldetL2, Cholesky(x, ...))
 ## these are slightly faster (ca. 3 to 4 %):

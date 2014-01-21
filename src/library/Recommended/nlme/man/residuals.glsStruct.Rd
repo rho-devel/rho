@@ -29,7 +29,7 @@
   a vector with the residuals for the linear model represented by
   \code{object}. 
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \note{
   This method function is primarily used inside \code{gls} and 
   \code{residuals.gls}.

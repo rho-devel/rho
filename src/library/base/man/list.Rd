@@ -1,6 +1,6 @@
 % File src/library/base/man/list.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{list}
@@ -40,9 +40,9 @@ alist(\dots)
     (default) only those whose names do not begin with a dot.}
 }
 \details{
-  Most lists in \R internally are \emph{Generic Vectors}, whereas
-  traditional \emph{dotted pair} lists (as in LISP) are available
-  but rarely seen by users (except as \code{\link{formals}} of functions).
+  Almost all lists in \R internally are \emph{Generic Vectors}, whereas
+  traditional \emph{dotted pair} lists (as in LISP) remain available but
+  rarely seen by users (except as \code{\link{formals}} of functions).
 
   The arguments to \code{list} or \code{pairlist} are of the form
   \code{value} or \code{tag = value}.  The functions return a list or
@@ -58,7 +58,7 @@ alist(\dots)
   functions, this returns the concatenation of the list of formal
   arguments and the function body.  For expressions, the list of
   constituent elements is returned.  \code{as.list} is generic, and as
-  the default method calls \code{\link{as.vector}(mode="list")} for a
+  the default method calls \code{\link{as.vector}(mode = "list")} for a
   non-list, methods for \code{as.vector} may be invoked.  \code{as.list}
   turns a factor into a list of one-element factors.  Attributes may
   be dropped unless the argument already is a list or expression.  (This
@@ -81,8 +81,8 @@ alist(\dots)
   Note that there is an inverse operation, the
   \code{\link{as.environment}()} method for list objects.
 
-  An empty pairlist, \code{pairlist()} is the same as \code{NULL}.  This
-  is different from \code{list()}.
+  An empty pairlist, \code{pairlist()} is the same as
+  \code{\link{NULL}}.  This is different from \code{list()}.
 
   \code{as.pairlist} is implemented as \code{\link{as.vector}(x,
   "pairlist")}, and hence will dispatch methods for the generic function
@@ -109,7 +109,7 @@ alist(\dots)
 require(graphics)
 
 # create a plotting structure
-pts <- list(x=cars[,1], y=cars[,2])
+pts <- list(x = cars[,1], y = cars[,2])
 plot(pts)
 
 is.pairlist(.Options)  # a user-level pairlist
@@ -120,7 +120,7 @@ vector("list", 5)
 # Argument lists
 f <- function() x
 # Note the specification of a "..." argument:
-formals(f) <- al <- alist(x=, y=2+3, \dots=)
+formals(f) <- al <- alist(x = , y = 2+3, \dots = )
 f
 al
 

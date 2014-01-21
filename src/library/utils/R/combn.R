@@ -1,6 +1,8 @@
 #  File src/library/utils/R/combn.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -29,14 +31,12 @@ combn <- function(x, m, FUN = NULL, simplify = TRUE, ...)
     ##	unchanged to function given by argument FUN,  if any.
 
     ##S : Change if (simplify = TRUE) return an array/matrix {not a 'vector'}
-    stopifnot(length(m) == 1L)
-    if(m < 0)
-	stop("m < 0")
+    stopifnot(length(m) == 1L, is.numeric(m))
+    if(m < 0) stop("m < 0", domain = NA)
     if(is.numeric(x) && length(x) == 1L && x > 0 && trunc(x) == x)
 	x <- seq_len(x)
     n <- length(x)
-    if(n < m)
-	stop("n < m")
+    if(n < m) stop("n < m", domain = NA)
     m <- as.integer(m)
     e <- 0
     h <- m
@@ -66,7 +66,7 @@ combn <- function(x, m, FUN = NULL, simplify = TRUE, ...)
 
     if(simplify) { # use atomic vector/array instead of list
 ##S	if(use.arr)
-	    out <- matrix(r, nrow= len.r, ncol= count) # matrix for now
+	    out <- matrix(r, nrow = len.r, ncol = count) # matrix for now
 ##S	else {
 ##S	    if(count > 1) {
 ##S		out <- vector(storage.mode(r), len.r * count)

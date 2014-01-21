@@ -1,6 +1,6 @@
 % File src/library/base/man/eigen.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{eigen}
@@ -8,11 +8,16 @@
 \concept{eigen vector}
 \concept{eigen value}
 \title{Spectral Decomposition of a Matrix}
+\description{
+  Computes eigenvalues and eigenvectors of numeric (double, integer,
+  logical) or complex matrices.
+}
 \usage{
 eigen(x, symmetric, only.values = FALSE, EISPACK = FALSE)
 }
 \arguments{
-  \item{x}{a matrix whose spectral decomposition is to be computed.}
+  \item{x}{a numeric or complex matrix whose spectral decomposition is to
+    be computed.  Logical matrices are coerced to numeric.}
   \item{symmetric}{if \code{TRUE}, the matrix is assumed to be symmetric
     (or Hermitian if complex) and only its lower triangle (diagonal
     included) is used.  If \code{symmetric} is not specified, the matrix
@@ -20,27 +25,12 @@ eigen(x, symmetric, only.values = FALSE, EISPACK = FALSE)
   \item{only.values}{if \code{TRUE}, only the eigenvalues are computed
     and returned, otherwise both eigenvalues and eigenvectors are
     returned.}
-  \item{EISPACK}{logical.  Should EISPACK be used (for compatibility with
-    \R < 1.7.0)?}
-}
-\description{
-  Computes eigenvalues and eigenvectors of real (double, integer,
-  logical) or complex matrices.
+  \item{EISPACK}{logical. Defunct and ignored (with a warning for true values).}
 }
 \details{
-  By default \code{eigen} uses the LAPACK routines DSYEVR,
-  DGEEV, ZHEEV and ZGEEV whereas \code{eigen(EISPACK = TRUE)} provides an
-  interface to the EISPACK routines \code{RS}, \code{RG}, \code{CH}
-  and \code{CG}.
-
   If \code{symmetric} is unspecified, the code attempts to
   determine if the matrix is symmetric up to plausible numerical
   inaccuracies.  It is faster and surer to set the value yourself.
-
-  \code{eigen} is preferred to \code{eigen(EISPACK = TRUE)}
-  for new projects, but its eigenvectors may differ in sign and
-  (in the asymmetric case) in normalization.  (They may also differ
-  between methods and between platforms.)
 
   Computing the eigenvectors is the slow part for large matrices.
 
@@ -64,11 +54,8 @@ eigen(x, symmetric, only.values = FALSE, EISPACK = FALSE)
   }
   \item{vectors}{either a \eqn{p\times p}{p * p} matrix whose columns
     contain the eigenvectors of \code{x}, or \code{NULL} if
-    \code{only.values} is \code{TRUE}.
-
-    For \code{eigen(, symmetric = FALSE, EISPACK =TRUE)} the choice of
-    length of the eigenvectors is not defined by EISPACK.  In all other
-    cases the vectors are normalized to unit length.
+    \code{only.values} is \code{TRUE}.  The vectors are normalized to
+    unit length.
 
     Recall that the eigenvectors are only defined up to a constant: even
     when the length is specified they are still only defined up to a
@@ -79,20 +66,23 @@ eigen(x, symmetric, only.values = FALSE, EISPACK = FALSE)
   then \deqn{A = V \Lambda V^{-1}}{A = V Lmbd V^(-1)} (up to numerical
   fuzz), where \eqn{\Lambda =}{Lmbd =}\code{diag(lam)}.
 }
+\source{
+  By default \code{eigen} uses the LAPACK routines \code{DSYEVR},
+  \code{DGEEV}, \code{ZHEEV} and \code{ZGEEV} whereas
+
+  LAPACK is from \url{http://www.netlib.org/lapack} and its guide is listed
+  in the references.
+}
 \references{
-  Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
-  \emph{The New S Language}.
-  Wadsworth & Brooks/Cole.
-
-  Smith, B. T, Boyle, J. M., Dongarra, J. J., Garbow, B. S., Ikebe,Y.,
-  Klema, V., and  Moler, C. B. (1976).
-  \emph{Matrix Eigensystems Routines -- EISPACK Guide}.
-  Springer-Verlag Lecture Notes in Computer Science \bold{6}.
-
   Anderson. E. and ten others (1999)
   \emph{LAPACK Users' Guide}.  Third Edition.  SIAM.\cr
   Available on-line at
   \url{http://www.netlib.org/lapack/lug/lapack_lug.html}.
+
+  Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
+  \emph{The New S Language}.
+  Wadsworth & Brooks/Cole.
+  Springer-Verlag Lecture Notes in Computer Science \bold{6}.
 
   Wilkinson, J. H. (1965) \emph{The Algebraic Eigenvalue Problem.}
   Clarendon Press, Oxford.
@@ -106,16 +96,16 @@ eigen(x, symmetric, only.values = FALSE, EISPACK = FALSE)
   decomposition is much more efficient: \code{\link{det}}.
 }
 \examples{
-eigen(cbind(c(1,-1),c(-1,1)))
-eigen(cbind(c(1,-1),c(-1,1)), symmetric = FALSE)
+eigen(cbind(c(1,-1), c(-1,1)))
+eigen(cbind(c(1,-1), c(-1,1)), symmetric = FALSE)
 # same (different algorithm).
 
-eigen(cbind(1,c(1,-1)), only.values = TRUE)
-eigen(cbind(-1,2:1)) # complex values
-eigen(print(cbind(c(0,1i), c(-1i,0))))# Hermite ==> real Eigen values
+eigen(cbind(1, c(1,-1)), only.values = TRUE)
+eigen(cbind(-1, 2:1)) # complex values
+eigen(print(cbind(c(0, 1i), c(-1i, 0)))) # Hermite ==> real Eigenvalues
 ## 3 x 3:
-eigen(cbind( 1,3:1,1:3))
-eigen(cbind(-1,c(1:2,0),0:2)) # complex values
+eigen(cbind( 1, 3:1, 1:3))
+eigen(cbind(-1, c(1:2,0), 0:2)) # complex values
 
 }
 \keyword{algebra}

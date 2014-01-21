@@ -1,6 +1,8 @@
 #  File src/library/graphics/R/text.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -27,7 +29,8 @@ function(x, y = NULL, labels = seq_along(x),
     labels <- as.graphicsAnnot(labels)
     if (!is.null(vfont))
         vfont <- c(typeface = pmatch(vfont[1L], Hershey$typeface),
-                   fontindex= pmatch(vfont[2L], Hershey$fontindex))
-    .Internal(text(xy.coords(x,y, recycle = TRUE), labels,
-                   adj, pos, offset, vfont, cex, col, font, ...))
+                   fontindex = pmatch(vfont[2L], Hershey$fontindex))
+    .External.graphics(C_text, xy.coords(x,y, recycle = TRUE), labels,
+                       adj, pos, offset, vfont, cex, col, font, ...)
+    invisible()
 }

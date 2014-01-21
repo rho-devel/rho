@@ -101,6 +101,8 @@ image(USCounties[1:400,1:200], lwd=.1)
 image(USCounties[1:200,1:200], lwd=.5)
 image(USCounties[1:200,1:200], lwd=.01)
 
+if(doExtras <- interactive() || nzchar(Sys.getenv("R_MATRIX_CHECK_EXTRA")) ||
+    identical("true", unname(Sys.getenv("R_PKG_CHECKING_doExtras")))) {
 ## Using raster graphics: For PDF this would give a 77 MB file,
 ## however, for such a large matrix, this is typically considerably
 ## *slower* (than vector graphics rectangles) in most cases :
@@ -110,6 +112,7 @@ image(USCounties, useRaster = TRUE) # should not suffer from anti-aliasing
 if(doPNG)
    dev.off()
    ## and now look at the *.png image in a viewer you can easily zoom in and out
+}#only if(doExtras)
 }
 \keyword{methods}
 \keyword{hplot}

@@ -24,8 +24,8 @@ suppressWarnings(expr)
   \item{immediate.}{logical, indicating if the call should be output
     immediately, even if \code{\link{getOption}("warn") <= 0}.}
   \item{expr}{expression to evaluate.}
-  \item{domain}{see \code{\link{gettext}}. If \code{NA}, messages will
-    not be translated.}
+  \item{domain}{see \code{\link{gettext}}.  If \code{NA}, messages will
+    not be translated, see also the note in \code{\link{stop}}.}
 }
 \details{
   The result \emph{depends} on the value of
@@ -81,13 +81,13 @@ suppressWarnings(expr)
   of messages.
 }
 \examples{
-\dontshow{oldopt <- options(warn=1)}
+\dontshow{oldopt <- options(warn = 1)}
 testit <- function() warning("testit")
 testit() ## shows call
 testit <- function() warning("problem in testit", call. = FALSE)
 testit() ## no call
 suppressWarnings(warning("testit"))
-\dontshow{eigenval <- 10 ^ -stats::rnorm(1, mean=6)
+\dontshow{eigenval <- 10 ^ -stats::rnorm(1, mean = 6)
 if(eigenval < 1.e-7) warning("system near singular")
 options(oldopt)}
 }

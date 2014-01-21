@@ -1,6 +1,6 @@
 % File src/library/utils/man/demo.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{demo}
@@ -13,7 +13,8 @@
 \usage{
 demo(topic, package = NULL, lib.loc = NULL,
      character.only = FALSE, verbose = getOption("verbose"),
-     echo = TRUE, ask = getOption("demo.ask"))
+     echo = TRUE, ask = getOption("demo.ask"),
+     encoding = getOption("encoding"))
 }
 \arguments{
   \item{topic}{the topic which should be demonstrated, given as a
@@ -34,7 +35,7 @@ demo(topic, package = NULL, lib.loc = NULL,
     printed.}
   \item{echo}{a logical.  If \code{TRUE}, show the \R input when sourcing.}
   \item{ask}{a logical (or \code{"default"}) indicating if
-    \code{\link{devAskNewPage}(ask=TRUE)} should be called before
+    \code{\link{devAskNewPage}(ask = TRUE)} should be called before
     graphical output happens from the demo code.  The value
     \code{"default"} (the factory-fresh default) means to ask if
     \code{echo == TRUE} and the graphics device appears to be
@@ -42,6 +43,8 @@ demo(topic, package = NULL, lib.loc = NULL,
     device and to any devices opened by the demo code.  If this is
     evaluated to \code{TRUE} and the session is \link{interactive}, the
     user is asked to press RETURN to start.}
+  \item{encoding}{See \code{\link{source}}.  If the package has a
+    declared encoding, that takes preference.}
 }
 \details{
   If no topics are given, \code{demo} lists the available demos.  The
@@ -49,7 +52,7 @@ demo(topic, package = NULL, lib.loc = NULL,
   \code{"packageIQR"}.
 }
 \seealso{
-  \code{\link{source}} and \code{\link{devAskNewPage}} which 
+  \code{\link{source}} and \code{\link{devAskNewPage}} which
 are called by \code{demo}.
 }
 
@@ -61,10 +64,10 @@ demo(package = .packages(all.available = TRUE))
 
 \donttest{
 ## Display a demo, pausing between pages
-demo(lm.glm, package="stats", ask=TRUE)
+demo(lm.glm, package = "stats", ask = TRUE)
 
 ## Display it without pausing
-demo(lm.glm, package="stats", ask=FALSE)
+demo(lm.glm, package = "stats", ask = FALSE)
 }
 
 \dontrun{
@@ -73,7 +76,7 @@ demo(lm.glm, package="stats", ask=FALSE)
 }
 
 ## Find the location of a demo
-system.file("demo", "lm.glm.R", package="stats")
+system.file("demo", "lm.glm.R", package = "stats")
 }
 \keyword{documentation}
 \keyword{utilities}

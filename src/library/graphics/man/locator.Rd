@@ -31,7 +31,7 @@ locator(n = 512, type = "n", \dots)
   \code{locator} is only supported on screen devices such as
   \code{X11}, \code{windows} and \code{quartz}.  On other devices the
   call will do nothing.
-  
+
   Unless the process is terminated prematurely by the user (see below)
   at most \code{n} positions are determined.
 
@@ -54,7 +54,7 @@ locator(n = 512, type = "n", \dots)
 
   On most devices which support \code{locator}, successful selection of
   a point is indicated by a bell sound unless
-  \code{\link{options}(locatorBell=FALSE)} has been set.
+  \code{\link{options}(locatorBell = FALSE)} has been set.
 
   If the window is resized or hidden and then exposed before the input
   process has terminated, any lines or points drawn by \code{locator}

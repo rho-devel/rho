@@ -1,6 +1,8 @@
 #  File src/library/stats/R/identify.hclust.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -56,7 +58,7 @@ rect.hclust <- function(tree, k=NULL, which=NULL,
         stop(gettextf("all elements of 'which' must be between 1 and %d", k),
              domain = NA)
 
-    border <- rep(border, length.out = length(which))
+    border <- rep_len(border, length(which))
 
     retval <- list()
     for(n in seq_along(which)) {

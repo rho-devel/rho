@@ -1,5 +1,5 @@
 ## R routines for gam fitting with calculation of derivatives w.r.t. sp.s
-## (c) Simon Wood 2004-2009
+## (c) Simon Wood 2004-2013
 
 ## These routines are for type 3 gam fitting. The basic idea is that a P-IRLS
 ## is run to convergence, and only then is a scheme for evaluating the 
@@ -81,32 +81,40 @@ gam.fit3 <- function (x, y, sp, Eb,UrS=list(),
             mustart = NULL, offset = rep(0, nobs),U1=diag(ncol(x)), Mp=-1, family = gaussian(), 
             control = gam.control(), intercept = TRUE,deriv=2,
             gamma=1,scale=1,printWarn=TRUE,scoreType="REML",null.coef=rep(0,ncol(x)),
-            pearson.extra=0,dev.extra=0,n.true=-1,...) 
- 
-## Version with new reparameterization and truncation strategy. 
-## ISSUES: 
-## 1. More efficient use of re-parameterization strategy could be employed, 
-##    as repara is O(nq^2). Could pass in a repara object, containing sp's
-##    at last repara, X, rS, E, Eb in transformed form + T. If object is NULL
-##    that would signal need to create it. It would only be re-created if the log sps
-##    have moved far enough that some component is more than 3? from sps at last re-para.
-##    repara object would be returned at end of routine. 
-##    --- note that this would require det|S| calculation to be performed separately 
-##        in cases where re-parameterization is not done. 
-##    --- not clear if this is really worth the effort: point is to avoid forming X%*%T
-##        every time routine is called, but this is only saving one O(np^2) operation 
-##        from several to many.
-##    --- also this idea is difficult to make work with optimizers other than mine.
-## This version is designed to allow iterative weights to be negative. This means that 
-## it deals with weights, rather than sqrt weights.
-## deriv, sp, S, rS, H added to arg list. 
-## need to modify family before call.
-## pearson.extra is an extra component to add to the pearson statistic in the P-REML/P-ML 
-## case, only.
-## dev.extra is an extra component to add to the deviance in the REML and ML cases only.
-## Similarly, n.true is to be used in place of the length(y) in ML/REML calculations,
-## and the scale.est only.
-{   if (family$link==family$canonical) fisher <- TRUE else fisher=FALSE 
+            pearson.extra=0,dev.extra=0,n.true=-1,...) {
+## Inputs:
+## * x model matrix
+## * y response
+## * sp log smoothing parameters
+## * Eb square root of nicely balanced total penalty matrix used for rank detection
+## * UrS list of penalty square roots in range space of overall penalty. UrS[[i]]%*%t(UrS[[i]]) 
+##   is penalty. See 'estimate.gam' for more.
+## * weights prior weights (reciprocal variance scale)
+## * start initial values for parameters
+## * etastart initial values for eta
+## * mustart initial values for mu... only one of last## * control - control list.
+## * intercept - indicates whether model has one.
+## * deriv - order 0,1 or 2 derivatives are to be returned (lower is cheaper!)
+## * gamma - multiplier for effective degrees of freedom in GCV/UBRE.
+## * scale parameter. Negative signals to estimate.
+## * printWarn print or supress?
+## * scoreType - type of smoothness selection to use.
+## * null.coef - coefficients for a null model, in order to be able to check for immediate 
+##   divergence.
+## * pearson.extra is an extra component to add to the pearson statistic in the P-REML/P-ML 
+##   case, only.
+## * dev.extra is an extra component to add to the deviance in the REML and ML cases only.
+## * n.true is to be used in place of the length(y) in ML/REML calculations,
+##   and the scale.est only.
+## 
+## Version with new reparameterization and truncation strategy. Allows iterative weights 
+## to be negative. Basically the workhorse routine for Wood (2011) JRSSB.
+## A much modified version of glm.fit. Purpose is to estimate regression coefficients 
+## and compute a smoothness selection score along with its derivatives.
+##
+    if (control$trace) { t0 <- proc.time();tc <- 0} 
+
+    if (family$link==family$canonical) fisher <- TRUE else fisher=FALSE 
     ## ... if canonical Newton = Fisher, but Fisher cheaper!
     if (scale>0) scale.known <- TRUE else scale.known <- FALSE
     if (!scale.known&&scoreType%in%c("REML","ML")) { ## the final element of sp is actually log(scale)
@@ -118,6 +126,8 @@ gam.fit3 <- function (x, y, sp, Eb,UrS=list(),
     x <- as.matrix(x)  
     nSp <- length(sp)  
     if (nSp==0) deriv.sp <- 0 else deriv.sp <- deriv 
+
+    rank.tol <- .Machine$double.eps*100 ## tolerance to use for rank deficiency
 
     xnames <- dimnames(x)[[2]]
     ynames <- if (is.matrix(y)) 
@@ -192,7 +202,7 @@ gam.fit3 <- function (x, y, sp, Eb,UrS=list(),
         valideta <- function(eta) TRUE
     validmu <- family$validmu
     if (is.null(validmu)) 
-        validmu <- function(mu) TRUE
+       validmu <- function(mu) TRUE
     if (is.null(mustart)) {
         eval(family$initialize)
     }
@@ -300,19 +310,22 @@ gam.fit3 <- function (x, y, sp, Eb,UrS=list(),
             ## Here a Fortran call has been replaced by pls_fit1 call
            
             if (sum(good)<ncol(x)) stop("Not enough informative observations.")
-           
+            if (control$trace) t1 <- proc.time()
             oo <- .C(C_pls_fit1,y=as.double(z),X=as.double(x[good,]),w=as.double(w),
                      E=as.double(Sr),Es=as.double(Eb),n=as.integer(sum(good)),
                      q=as.integer(ncol(x)),rE=as.integer(rows.E),eta=as.double(z),
-                     penalty=as.double(1),rank.tol=as.double(.Machine$double.eps*100))
+                     penalty=as.double(1),rank.tol=as.double(rank.tol),nt=as.integer(control$nthreads))
+            if (control$trace) tc <- tc + sum((proc.time()-t1)[c(1,4)])
 
             if (!fisher&&oo$n<0) { ## likelihood indefinite - switch to Fisher for this step
               z <- (eta - offset)[good] + (yg - mug)/mevg
               w <- (weg * mevg^2)/var.mug
+              if (control$trace) t1 <- proc.time()
               oo <- .C(C_pls_fit1,y=as.double(z),X=as.double(x[good,]),w=as.double(w),
                        E=as.double(Sr),Es=as.double(Eb),n=as.integer(sum(good)),
                        q=as.integer(ncol(x)),rE=as.integer(rows.E),eta=as.double(z),
-                       penalty=as.double(1),rank.tol=as.double(.Machine$double.eps*100))
+                       penalty=as.double(1),rank.tol=as.double(rank.tol),nt=as.integer(control$nthreads))
+              if (control$trace) tc <- tc + sum((proc.time()-t1)[c(1,4)])
             }
 
             start <- oo$y[1:ncol(x)];
@@ -515,7 +528,7 @@ gam.fit3 <- function (x, y, sp, Eb,UrS=list(),
        if (scoreType%in%c("ML","P-ML")) {REML <- -1;remlInd <- 0} 
 
        if (REML==0) rSncol <- unlist(lapply(rS,ncol)) else rSncol <- unlist(lapply(UrS,ncol))
-
+       if (control$trace) t1 <- proc.time()
        oo <- .C(C_gdi1,X=as.double(x[good,]),E=as.double(Sr),Eb = as.double(Eb), 
                 rS = as.double(unlist(rS)),U1=as.double(U1),sp=as.double(exp(sp)),
                 z=as.double(z),w=as.double(w),wf=as.double(wf),alpha=as.double(alpha),
@@ -525,14 +538,16 @@ gam.fit3 <- function (x, y, sp, Eb,UrS=list(),
                 V2=as.double(V2),V3=as.double(V3),beta=as.double(coef),D1=as.double(D1),
                 D2=as.double(D2),P=as.double(dum),P1=as.double(P1),P2=as.double(P2),
                 trA=as.double(dum),trA1=as.double(trA1),trA2=as.double(trA2),
-                rV=as.double(rV),rank.tol=as.double(.Machine$double.eps*100),
+                rV=as.double(rV),rank.tol=as.double(rank.tol),
                 conv.tol=as.double(control$epsilon),rank.est=as.integer(1),n=as.integer(length(z)),
                 p=as.integer(ncol(x)),M=as.integer(nSp),Mp=as.integer(Mp),Enrow = as.integer(rows.E),
                 rSncol=as.integer(rSncol),deriv=as.integer(deriv.sp),
                 REML = as.integer(REML),fisher=as.integer(fisher),
-                fixed.penalty = as.integer(rp$fixed.penalty))      
-       
-         if (control$trace) cat("done!\n")
+                fixed.penalty = as.integer(rp$fixed.penalty),nthreads=as.integer(control$nthreads))      
+         if (control$trace) { 
+           tg <- sum((proc.time()-t1)[c(1,4)])
+           cat("done!\n")
+         }
  
          rV <- matrix(oo$rV,ncol(x),ncol(x)) ## rV%*%t(rV)*scale gives covariance matrix 
          
@@ -549,6 +564,7 @@ gam.fit3 <- function (x, y, sp, Eb,UrS=list(),
           ls <- family$ls(y,weights,n,scale)*n.true/nobs ## saturated likelihood and derivatives
           Dp <- dev + oo$conv.tol + dev.extra
           REML <- Dp/(2*scale) - ls[1] + oo$rank.tol/2 - rp$det/2 - remlInd*Mp/2*log(2*pi*scale)
+          attr(REML,"Dp") <- Dp/(2*scale)
           if (deriv) {
             REML1 <- oo$D1/(2*scale) + oo$trA1/2 - rp$det1/2 
             if (deriv==2) REML2 <- (matrix(oo$D2,nSp,nSp)/scale + matrix(oo$trA2,nSp,nSp) - rp$det2)/2
@@ -581,7 +597,7 @@ gam.fit3 <- function (x, y, sp, Eb,UrS=list(),
           K <- oo$rank.tol/2 - rp$det/2
                  
           REML <- Dp/(2*phi) - ls[1] + K - Mp/2*log(2*pi*phi)*remlInd
-
+          attr(REML,"Dp") <- Dp/(2*phi)
           if (deriv) {
             phi1 <- oo$P1; Dp1 <- oo$D1; K1 <- oo$trA1/2 - rp$det1/2;
             REML1 <- Dp1/(2*phi) - phi1*(Dp/(2*phi^2)+Mp/(2*phi)*remlInd + ls[2]) + K1
@@ -688,7 +704,11 @@ gam.fit3 <- function (x, y, sp, Eb,UrS=list(),
     nulldf <- n.ok - as.integer(intercept)
    
     aic.model <- aic(y, n, mu, weights, dev) # note: incomplete 2*edf needs to be added
-
+    if (control$trace) {
+      t1 <- proc.time()
+      at <- sum((t1-t0)[c(1,4)])
+      cat("Proportion time in C: ",(tc+tg)/at," ls:",tc/at," gdi:",tg/at,"\n")
+    } 
    
     list(coefficients = coef, residuals = residuals, fitted.values = mu, 
          family = family, linear.predictors = eta, deviance = dev, 
@@ -703,6 +723,7 @@ gam.fit3 <- function (x, y, sp, Eb,UrS=list(),
 
 gam.fit3.post.proc <- function(X,object) {
 ## get edf array and covariance matrices after a gam fit. 
+## X is original model matrix
   Vb <- object$rV%*%t(object$rV)*object$scale ## Bayesian cov.
   PKt <- object$rV%*%t(object$K)
   F <- PKt%*%(sqrt(object$weights)*X)
@@ -712,7 +733,13 @@ gam.fit3.post.proc <- function(X,object) {
   ## Ve <- PKt%*%t(PKt)*object$scale  ## frequentist cov
   Ve <- F%*%Vb ## not quite as stable as above, but quicker
   hat <- rowSums(object$K*object$K)
-  list(Vb=Vb,Ve=Ve,edf=edf,edf1=edf1,hat=hat)
+  ## get QR factor R of WX - more efficient to do this
+  ## in gdi_1 really, but that means making QR of augmented 
+  ## a two stage thing, so not clear cut...
+  qrx <- qr(sqrt(object$weights)*X,LAPACK=TRUE)
+  R <- qr.R(qrx);R[,qrx$pivot] <- R
+  ##bias = as.numeric(object$coefficients - F%*%object$coefficients)
+  list(Vb=Vb,Ve=Ve,edf=edf,edf1=edf1,hat=hat,F=F,R=R)
 }
 
 
@@ -1222,7 +1249,7 @@ newton <- function(lsp,X,y,Eb,UrS,L,lsp0,offset,U1,Mp,family,weights,
   else if (i==200) ct <- "iteration limit reached" 
   else ct <- "full convergence"
   list(score=score,lsp=lsp,lsp.full=L%*%lsp+lsp0,grad=grad,hess=hess,iter=i,conv =ct,score.hist = score.hist[!is.na(score.hist)],object=b)
-}
+} ## newton
 
 bfgs0 <- function(lsp,X,y,Eb,UrS,L,lsp0,offset,U1,Mp,family,weights,
                    control,gamma,scale,conv.tol=1e-6,maxNstep=5,maxSstep=2,
@@ -2029,11 +2056,24 @@ fix.family.ls<-function(fam)
   stop("family not recognised")
 }
 
+fix.family <- function(fam) {
+## allows families to be patched...
+   if (fam$family[1]=="gaussian") { ## sensible starting values given link...
+     fam$initialize <- expression({
+     n <- rep.int(1, nobs)
+     if (family$link == "inverse") mustart <- y + (y==0)*sd(y)*.01 else
+     if (family$link == "log") mustart <- pmax(y,.01*sd(y)) else
+     mustart <- y
+     })
+  }
+  fam
+}
+
 
 negbin <- function (theta = stop("'theta' must be specified"), link = "log") { 
 ## modified from Venables and Ripley's MASS library to work with gam.fit3,
 ## and to allow a range of `theta' values to be specified
-## single `theta' to specify fixed value; 2 theta values (first smaller that second)
+## single `theta' to specify fixed value; 2 theta values (first smaller than second)
 ## are limits within which to search for theta; otherwise supplied values make up 
 ## search set.
 ## Note: to avoid warnings, get(".Theta")[1] is used below. Otherwise the initialization
@@ -2107,7 +2147,7 @@ negbin <- function (theta = stop("'theta' must be specified"), link = "log") {
         linkinv = stats$linkinv, variance = variance,dvar=dvar,d2var=d2var,d3var=d3var, dev.resids = dev.resids,
         aic = aic, mu.eta = stats$mu.eta, initialize = initialize,ls=ls,
         validmu = validmu, valideta = stats$valideta,getTheta = getTheta,qf=qf,rd=rd,canonical="log"), class = "family")
-}
+} ## negbin
 
 
 
@@ -2154,17 +2194,19 @@ totalPenaltySpace <- function(S,H,off,p)
 
 
 
-mini.roots <- function(S,off,np)
+mini.roots <- function(S,off,np,rank=NULL)
 # function to obtain square roots, B[[i]], of S[[i]]'s having as few
 # columns as possible. S[[i]]=B[[i]]%*%t(B[[i]]). np is the total number
-# of parameters. S is in packed form. 
+# of parameters. S is in packed form. rank[i] is optional supplied rank 
+# of S[[i]], rank[i] < 1, or rank=NULL to estimate.
 { m<-length(S)
   if (m<=0) return(list())
   B<-S
+  if (is.null(rank)) rank <- rep(-1,m)
   for (i in 1:m)
-  { b<-mroot(S[[i]])
-    B[[i]]<-matrix(0,np,ncol(b))
-    B[[i]][off[i]:(off[i]+nrow(b)-1),]<-b
+  { b <- mroot(S[[i]],rank=rank[i]) 
+    B[[i]] <- matrix(0,np,ncol(b))
+    B[[i]][off[i]:(off[i]+nrow(b)-1),] <- b
   }
   B
 }
@@ -2256,7 +2298,7 @@ Tweedie <- function(p=1,link=power(0)) {
        if (!is.null(stats$name))
           linktemp <- stats$name
         } else {
-            stop(gettextf("link \"%s\" not available for poisson family.",
+            stop(gettextf("link \"%s\" not available for Tweedie family.",
                 linktemp, collapse = ""),domain = NA)
         }
     }

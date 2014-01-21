@@ -23,7 +23,7 @@ createConLin <-
 {
 ##    Call <- match.call()
     if(!inherits(fixed, "formula") || length(fixed) != 3) {
-        stop("\nFixed-effects model must be a formula of the form \"resp ~ pred\"")
+        stop("\nfixed-effects model must be a formula of the form \"resp ~ pred\"")
     }
     REML <- FALSE
     reSt <- reStruct(random, REML = REML, data = NULL)
@@ -36,7 +36,7 @@ createConLin <-
             Q <- length(groupsL)
             if(length(reSt) != Q) {		# may need to repeat reSt
                 if(length(reSt) != 1) {
-                    stop("Incompatible lengths for \"random\" and grouping factors")
+                    stop("incompatible lengths for 'random' and grouping factors")
                 }
                 auxForm <-
                     eval(parse(text = paste("~", deparse(formula(random)[[2]]), "|",
@@ -48,8 +48,7 @@ createConLin <-
             }
         }
         else {
-            stop(paste("Data must inherit from \"groupedData\" class ",
-                       "if random does not define groups"))
+            stop("'data' must inherit from \"groupedData\" class if 'random' does not define groups")
         }
     }
     ## create an lme structure containing the random effects model
@@ -113,7 +112,7 @@ simulate.lme <-
              useGen = FALSE, ...)
 {
     if (inherits(nsim, "lm") || inherits(nsim, "lme"))
-        stop("order of arguments in simulate.lme has changed to conform with generic in R-2.2.0")
+        stop("order of arguments in 'simulate.lme' has changed to conform with generic in R-2.2.0", domain = NA)
     ## object is a list of arguments to lme, or an lme object from which the
     ##    call is extracted, to define the null model
     ## m2 is an option list of arguments to lme to define the feared model
@@ -160,7 +159,7 @@ simulate.lme <-
         fit1 <- do.call("lme", object)
     }
     if (length(fit1$modelStruct) > 1) {
-        stop("Models with corStruct and/or varFunc objects not allowed.")
+        stop("models with \"corStruct\" and/or \"varFunc\" objects not allowed")
     }
     reSt1 <- fit1$modelStruct$reStruct
     condL1 <- do.call("createConLin", object)
@@ -226,7 +225,7 @@ simulate.lme <-
             fit2 <- do.call("lme", m2)
         }
         if (length(fit2$modelStruct) > 1) {
-            stop("Models with corStruct and/or varFunc objects not allowed.")
+            stop("models with \"corStruct\" and/or \"varFunc\" objects not allowed")
         }
         condL2 <- do.call("createConLin", m2)
         reSt2 <- fit2$modelStruct$reStruct
@@ -356,18 +355,18 @@ plot.simulate.lme <-
     ML <- !is.null(x$null$ML)
     if(ML) {
         if (is.null(x$alt$ML))
-            stop("Plot method only implemented for comparing models")
+            stop("plot method only implemented for comparing models")
         okML <- x$null$ML[, "info"] < 8 & x$alt$ML[, "info"] < 8
     }
     REML <- !is.null(x$null$REML)
     if(REML) {
         if (is.null(x$alt$REML))
-            stop("Plot method only implemented for comparing models")
+            stop("plot method only implemented for comparing models")
         okREML <- x$null$REML[, "info"] < 8 & x$alt$REML[, "info"] < 8
     }
 
     if (is.null(df)) {
-        stop("No degrees of freedom specified")
+        stop("no degrees of freedom specified")
     }
     if ((ldf <- length(df)) > 1) {
         df <- sort(unique(df))
@@ -375,7 +374,7 @@ plot.simulate.lme <-
             weights <- rep.int(1/ldf, ldf)
         } else {
 	    if (!identical(weights,FALSE) && length(weights) != ldf)
-		stop("Degrees of freedom and weights must have the same length")
+		stop("degrees of freedom and weights must have the same length")
         }
     } else {
         weights <- FALSE
@@ -383,10 +382,10 @@ plot.simulate.lme <-
     useWgts <- (length(weights) != 1)
 
     if (any(df < 0)) {
-        stop("Negative degrees of freedom not allowed")
+        stop("negative degrees of freedom not allowed")
     } else {
         if ((ldf == 1) && (df == 0)) {
-            stop("More than one degree of freedom is needed when one them is zero.")
+            stop("more than one degree of freedom is needed when one them is zero.")
         }
     }
     if (ML) {

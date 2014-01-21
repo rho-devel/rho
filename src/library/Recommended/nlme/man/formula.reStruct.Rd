@@ -25,7 +25,7 @@
 \value{
   a list with the formulas of each component of \code{x}.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{formula}}}
 

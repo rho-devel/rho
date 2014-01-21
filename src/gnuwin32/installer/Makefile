@@ -35,28 +35,28 @@ endif
 
 FULLVERSION=`cat ../../../VERSION`
 RPREFIX = $(shell ../../../bin$(R_ARCH)/Rscript ../fixed/rwver.R)
-LIBFILES = $(foreach i, $(R_PKGS_BASE) $(R_PKGS_RECOMMENDED) $(EXTRA_PKGS), $(R_HOME)/library/$i)
+LIBFILES = $(foreach i, $(R_PKGS_BASE) $(R_PKGS_RECOMMENDED) translations $(EXTRA_PKGS), $(R_HOME)/library/$i)
 
-INFO_FILES = COPYING NEWS README
+INFO_FILES = COPYING NEWS NEWS.0 NEWS.1 NEWS.2 README
 DOC_INFO_FILES = AUTHORS COPYING FAQ RESOURCES THANKS CHANGES
-GW_INFO_FILES = COPYRIGHTS README.Rterm rw-FAQ
+GW_INFO_FILES = COPYRIGHTS README.Rterm ../../doc/manual/rw-FAQ
 
 ETC_FILES = Rprofile.site Rconsole Rdevga rgb.txt repositories Rcmd_environ
 
 
 # we don't want share/{Makefile.in,java,sh} installed
-SHARE_DIRS = R encodings licenses locale make texmf zoneinfo
+SHARE_DIRS = R dictionaries encodings licenses make texmf zoneinfo
 
 all: $(RPREFIX)-win.exe
 msi: $(RPREFIX)-$(SUFF).msi
 
 imagedir:
-	$(RM) -r $(RPREFIX)
+	$(RM) -R $(RPREFIX)
 	$(MKDIR) $(RPREFIX)
-	$(CP) -pr $(R_HOME)/bin $(R_HOME)/modules $(RPREFIX)
+	$(CP) -pR $(R_HOME)/bin $(R_HOME)/modules $(RPREFIX)
 # copy base and recommended packages
 	$(MKDIR) -p $(RPREFIX)/library
-	$(CP) -pr $(LIBFILES) $(RPREFIX)/library
+	$(CP) -pR $(LIBFILES) $(RPREFIX)/library
 	$(RM) $(RPREFIX)/library/*/MD5
 	$(RM) $(RPREFIX)/*/Makefile.in
 	$(MKDIR) -p $(RPREFIX)/etc$(R_ARCH)
@@ -66,7 +66,7 @@ imagedir:
 	$(MKDIR) -p $(RPREFIX)/doc
 	$(CP) -p $(R_HOME)/doc/CRAN_mirrors.csv $(RPREFIX)/doc
 	$(MKDIR) -p $(RPREFIX)/doc/manual
-	$(CP) -pr $(R_HOME)/doc/html $(RPREFIX)/doc
+	$(CP) -pR $(R_HOME)/doc/html $(RPREFIX)/doc
 	$(CP) -p $(R_HOME)/doc/manual/*.html $(R_HOME)/doc/manual/*.pdf \
 	  $(RPREFIX)/doc/manual
 #	html copies of these are in doc/manual, and we don't have FAQ PDF on menus
@@ -94,11 +94,11 @@ imagedir:
 	  $(RPREFIX)/src/library $(RPREFIX)/src/gnuwin32
 	$(CP) $(R_HOME)/doc/html/logo.jpg $(RPREFIX)/doc/html
 	$(CP) $(R_HOME)/doc/KEYWORDS* $(RPREFIX)/doc
-	$(CP) -pr $(R_HOME)/include $(RPREFIX)
-	$(CP) -pr $(foreach i,$(SHARE_DIRS),$(R_HOME)/share/$i) $(RPREFIX)/share
+	$(CP) -pR $(R_HOME)/include $(RPREFIX)
+	$(CP) -pR $(foreach i,$(SHARE_DIRS),$(R_HOME)/share/$i) $(RPREFIX)/share
 # This is odd -- better to clean the copy
 	(cd ..; $(MAKE) --no-print-directory PKGDIR=. pkgclean-windlgs)
-	$(CP) -pr ../windlgs $(RPREFIX)/src/library
+	$(CP) -pR ../windlgs $(RPREFIX)/src/library
 #
 # test dir
 	mkdir $(RPREFIX)/tests
@@ -118,7 +118,7 @@ PDF_FILES = $(wildcard $(RPREFIX)/library/*/doc/*.pdf)
 
 fixups:
 	echo "make.packages.html(.Library,temp=FALSE,verbose=FALSE)" | $(RPREFIX)/$(BINDIR)/Rterm.exe --vanilla --slave LC_COLLATE=C
-	$(CP) -prf $(R_HOME)/Tcl $(RPREFIX)
+	$(CP) -pRf $(R_HOME)/Tcl $(RPREFIX)
 	$(RM) $(RPREFIX)/Tcl*/lib/*.lib
 ifneq ($(strip $(QPDF)),)
 	@for f in $(PDF_FILES); do \
@@ -135,7 +135,7 @@ ifneq ($(strip $(HOME32)),)
 	unzip -qo "$(HOME32)/32bit" -d $(RPREFIX)
 	rm "$(HOME32)/32bit.zip"
 	mkdir -p $(RPREFIX)/Tcl
-	$(CP) -prf "$(HOME32)/Tcl/bin" "$(HOME32)/Tcl/lib" $(RPREFIX)/Tcl
+	$(CP) -pRf "$(HOME32)/Tcl/bin" "$(HOME32)/Tcl/lib" $(RPREFIX)/Tcl
 	for f in $(R_PKGS_RECOMMENDED); do \
 	   sed -e 's/Archs: x64/Archs: i386, x64/' \
              ../../../library/$${f}/DESCRIPTION \
@@ -160,7 +160,8 @@ R.iss: JRins.R header1.iss types3264.iss types32.iss code.iss \
    CustomMsg.iss imagedir fixups 32bit extras md5sums \
   ../../../VERSION ../../../SVN-REVISION
 	../../../bin$(R_ARCH)/Rscript JRins.R \
-	  $(RPREFIX) $(RPREFIX) $(MDISDI) $(HelpStyle) $(Internet) $(Producer)
+	  $(RPREFIX) $(RPREFIX) $(MDISDI) \
+	  $(HelpStyle) $(Internet) $(Producer) "$(ISDIR)"
 
 $(RPREFIX)-win.exe: R.iss
 	"$(ISDIR)/iscc" R.iss > $(RPREFIX).log 2>&1
@@ -171,9 +172,9 @@ $(RPREFIX)-win.exe: R.iss
 uuidgen.exe: uuidgen.o
 	$(CC) -o $@ $< -lole32
 
-# currently use about 3300
+# currently use about 3500: allow for EXTRA_PKGS
 uuids: uuidgen.exe
-	./uuidgen 4000 > $@
+	./uuidgen 10000 > $@
 
 files.wxs: imagedir fixups 32bit extras md5sums
 	"$(WIX3DIR)/heat" dir $(RPREFIX) -sw5150 -nologo -o $@
@@ -187,7 +188,7 @@ $(RPREFIX)-$(SUFF).msi: R.wxs License.rtf
 	 -ext WixUIExtension -sw1076 -sval -spdb >> $(RPREFIX).log 2>&1
 
 
-## occasionally this fails to empty directories.
+## too often this fails to empty directories.
 clean:
 	rm -rf R.iss *.log R.wxs files.wxs R.wixobj uuidgen.o uuidgen.exe uuids
 	-rm -rf $(RPREFIX)
@@ -202,5 +203,6 @@ myR:
 	  R_DEFAULT_PACKAGES=NULL LC_COLLATE=C R_OSTYPE=windows \
 	  "$(IMAGEDIR)/$(BINDIR)/Rterm.exe" --vanilla --slave)
 	../../../bin$(R_ARCH)/Rscript JRins.R \
-	  $(RPREFIX) "$(IMAGEDIR)" $(MDISDI) $(HelpStyle) $(Internet) $(Producer)
+	  $(RPREFIX) "$(IMAGEDIR)" $(MDISDI) \
+	  $(HelpStyle) $(Internet) $(Producer) "$(ISDIR)"
 	"$(ISDIR)/iscc" R.iss > myR.log

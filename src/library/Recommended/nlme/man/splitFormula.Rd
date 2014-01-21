@@ -25,7 +25,7 @@ splitFormula(form, sep)
   a list of formulas, corresponding to the split of \code{form}
   according to \code{sep}.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{formula}}}
 

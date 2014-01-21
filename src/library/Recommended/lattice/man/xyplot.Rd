@@ -755,7 +755,7 @@ bwplot(x, data, \dots)
   \item{ylim}{ Similar to \code{xlim}, applied to the y-axis. }
   \item{drop.unused.levels}{
     A logical flag indicating whether the unused levels of factors will
-    be dropped, usually relevant with a subsetting operation is
+    be dropped, usually relevant when a subsetting operation is
     performed or an \code{\link{interaction}} is created.  Unused levels
     are usually dropped, but it is sometimes appropriate to suppress
     dropping to preserve a useful layout.  For finer control, this

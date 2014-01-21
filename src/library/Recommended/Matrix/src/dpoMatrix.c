@@ -23,7 +23,7 @@ SEXP dpoMatrix_chol(SEXP x)
     int n = dims[0];
     double *vx;
 
-    if (val != R_NilValue) return val;
+    if (val != R_NilValue) return val;// use x@factors$Cholesky if available
     dims = INTEGER(dimP);
     val = PROTECT(NEW_OBJECT(MAKE_CLASS("Cholesky")));
     SET_SLOT(val, Matrix_uploSym, duplicate(uploP));

@@ -1,5 +1,7 @@
 
 #  File src/library/tools/R/Rd2HTML.R
+#
+#  Copyright (C) 1995-2012 The R Core Team
 #  Part of the R package, http://www.R-project.org
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -734,7 +736,7 @@ Rd2HTML <-
     	if (length(section)) {
 	    ## There may be an initial \n, so remove that
 	    s1 <- section[[1L]][1L]
-	    if (RdTags(s1) == "TEXT" && s1 == "\n") section <- section[-1L]
+	    if (RdTags(section)[1] == "TEXT" && s1 == "\n") section <- section[-1L]
 	    writeContent(section, tag)
 	}
 	leavePara(FALSE)

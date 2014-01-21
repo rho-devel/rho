@@ -100,9 +100,7 @@ read.ssd <- function(libname, sectionnames, tmpXport=tempfile(),
             names(zz) <- sn
             return(zz)
         }
-    }
-    else
-    {
+    } else {
         cat("SAS failed.  SAS program at", tmpProg,"\n")
         if(.Platform$OS.type == "unix") {
             cat("a log and other error products should be in the vicinity\n")
@@ -112,7 +110,7 @@ read.ssd <- function(libname, sectionnames, tmpXport=tempfile(),
                 paste(basename(tmpProgLoc), ".log", sep=""),
                 " in the current directory\n", sep="")
         }
-        warning("SAS return code was ", sysret)
+        warning(gettextf("SAS return code was %d", sysret), domain = NA)
         return(NULL)
     }
 }

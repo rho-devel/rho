@@ -1,6 +1,6 @@
 % File src/library/grid/man/grid.record.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2009-11 R Core Team
+% Copyright 2009-13 R Core Team
 % Distributed under GPL 2 or later
 
 \name{grid.raster}
@@ -36,7 +36,7 @@ rasterGrob(image,
   \item{y}{A numeric vector or unit object specifying y-location.}
   \item{width}{A numeric vector or unit object specifying width.}
   \item{height}{A numeric vector or unit object specifying height.}
-  \item{just}{The justification of the rectangle 
+  \item{just}{The justification of the rectangle
     relative to its (x, y) location.  If there are two values, the first
     value specifies horizontal justification and the second value specifies
     vertical justification.  Possible string values are: \code{"left"},
@@ -50,7 +50,7 @@ rasterGrob(image,
     If specified, overrides the \code{just} setting.}
   \item{default.units}{A string indicating the default units to use
     if \code{x}, \code{y}, \code{width}, or \code{height}
-    are only given as numeric vectors.}  
+    are only given as numeric vectors.}
   \item{name}{ A character identifier. }
   \item{gp}{An object of class \code{gpar}, typically the output
     from a call to the function \code{gpar}.  This is basically
@@ -67,11 +67,12 @@ rasterGrob(image,
   in which case, the aspect ratio of the image is preserved.  If
   both \code{width} and \code{height} are specified, it is likely
   that the image will be distorted.
-  
+
   Not all graphics devices are capable of rendering raster images
   and some may not be able to produce rotated images (i.e., if
-  a raster object is rendered within a rotated viewport).
-  
+  a raster object is rendered within a rotated viewport).  See also the
+  comments under \code{\link{rasterImage}}.
+
   All graphical parameter settings in \code{gp} will be ignored,
   including \code{alpha}.
 }
@@ -89,7 +90,7 @@ rasterGrob(image,
 \examples{
 redGradient <- matrix(hcl(0, 80, seq(50, 80, 10)),
                       nrow=4, ncol=5)
-# interpolated 
+# interpolated
 grid.newpage()
 grid.raster(redGradient)
 # blocky

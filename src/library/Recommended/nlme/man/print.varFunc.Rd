@@ -20,7 +20,7 @@
   The class and the coefficients associated with \code{x} are printed.
 }
 
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{summary.varFunc}}}
 

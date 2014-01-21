@@ -14,10 +14,30 @@
  *CXXR to the CXXR website.
  *CXXR */
 
+/*
+ *  R : A Computer Language for Statistical Data Analysis
+ *  Copyright (C) 1997-2012   The R Core Team.
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
+ */
+
 #include <R_ext/Utils.h>	/* R_rsort() */
 #include <math.h>
 
-#include "eda.h"
+#include <Rinternals.h>
+#include "statsR.h"
 
 /* Speed up by `inlining' these (as macros) [since R version 1.2] : */
 #if 1
@@ -35,9 +55,6 @@ static int iu(int n, double x)
     return (int)ceil((n - 1) * x);
 }
 #endif
-
-/* FIXME : We really do want a C API for median(x)
- * -----   and even  quantile(x, alpha) ! */
 
 static void line(double *x, double *y, /* input (x[i],y[i])s */
 		 double *z, double *w, /* work and output: resid. & fitted */
@@ -101,8 +118,32 @@ static void line(double *x, double *y, /* input (x[i],y[i])s */
     coef[1] = slope;
 }
 
-void tukeyline(double *x, double *y, double *z, double *w, int *n,
+void tukeyline0(double *x, double *y, double *z, double *w, int *n,
 	       double *coef)
 {
     line(x, y, z, w, *n, coef);
+}
+
+SEXP tukeyline(SEXP x, SEXP y, SEXP call)
+{
+    int n = LENGTH(x);
+    if (n < 2) error("insufficient observations");
+    SEXP ans;
+    ans = PROTECT(allocVector(VECSXP, 4));
+    SEXP nm = allocVector(STRSXP, 4);
+    setAttrib(ans, R_NamesSymbol, nm);
+    SET_STRING_ELT(nm, 0, mkChar("call"));
+    SET_STRING_ELT(nm, 1, mkChar("coefficients"));
+    SET_STRING_ELT(nm, 2, mkChar("residuals"));
+    SET_STRING_ELT(nm, 3, mkChar("fitted.values"));
+    SET_VECTOR_ELT(ans, 0, call);
+    SEXP coef = allocVector(REALSXP, 2);
+    SET_VECTOR_ELT(ans, 1, coef);
+    SEXP res = allocVector(REALSXP, n);
+    SET_VECTOR_ELT(ans, 2, res);
+    SEXP fit = allocVector(REALSXP, n);
+    SET_VECTOR_ELT(ans, 3, fit);
+    line(REAL(x), REAL(y), REAL(res), REAL(fit), n, REAL(coef));
+    UNPROTECT(1);
+    return ans;
 }

@@ -1,6 +1,6 @@
 % File src/library/base/man/stop.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{stop}
@@ -17,7 +17,7 @@ geterrmessage()
     condition object.}
   \item{call.}{logical, indicating if the call should become part of the
     error message.}
-  \item{domain}{see \code{\link{gettext}}. If \code{NA}, messages will
+  \item{domain}{see \code{\link{gettext}}.  If \code{NA}, messages will
     not be translated.}
 }
 \description{
@@ -36,7 +36,7 @@ geterrmessage()
   handler is used.  The default behaviour (the \code{NULL}
   error-handler) in interactive use is to return to the top level
   prompt or the top level browser, and in non-interactive use to
-  (effectively) call \code{\link{q}("no", status=1, runLast=FALSE}).
+  (effectively) call \code{\link{q}("no", status = 1, runLast = FALSE}).
   The default handler stores the error message in a buffer; it can be
   retrieved by \code{geterrmessage()}.  It also stores a trace of
   the call stack that can be retrieved by \code{\link{traceback}()}.
@@ -46,6 +46,10 @@ geterrmessage()
 
   If a condition object is supplied it should be the only argument, and
   further arguments will be ignored, with a warning.
+}
+\note{
+  Use \code{domain = NA} whenever \code{\dots} contain a
+  result from \code{\link{gettextf}()} as that is translated already.
 }
 \value{
   \code{geterrmessage} gives the last error message, as a character string
@@ -79,7 +83,7 @@ tst1(1:10, long, calling, expression)
 tst2 <- function(...) stop("dummy error", call. = FALSE)
 tst2(1:10, longcalling, expression, but.not.seen.in.Error)
 
-options(error = NULL)# revert to default
+options(error = NULL)  # restore to default
 }
 \keyword{environment}
 \keyword{programming}

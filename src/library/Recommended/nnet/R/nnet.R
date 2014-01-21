@@ -49,7 +49,7 @@ nnet.formula <- function(formula, data, weights, ...,
             warning(sprintf(ngettext(length(empty),
                                      "group %s is empty",
                                      "groups %s are empty"),
-                            paste(empty, collapse=" ")), domain = NA)
+                            paste(sQuote(empty), collapse=" ")), domain = NA)
             y <- factor(y, levels=lev[counts > 0L])
         }
         if(length(lev) == 2L) {

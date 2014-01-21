@@ -28,7 +28,7 @@
   \code{summary.modelStruct}, also inheriting from the same classes as
   \code{object}.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{
   \code{\link{reStruct}},
   \code{\link{summary}}

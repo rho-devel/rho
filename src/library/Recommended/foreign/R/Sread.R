@@ -205,8 +205,8 @@ data.restore <-
 	    else try(mode(value) <- code)
 	}
 	else {
-	    stop("S mode ", sQuote(code), " (near byte offset ",
-                 seek(dump), ") not supported")
+            stop(gettextf("S mode %s (near byte offset %s) not supported",
+                          sQuote(code), seek(dump)), domain = NA)
 	}
 	list(name = name, value = value)
     }

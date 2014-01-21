@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2011  The R Core Team
+ *  Copyright (C) 1997--2012  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,7 +39,8 @@
 #include <config.h>
 #endif
 
-#include "Defn.h"
+#include <Defn.h>
+#include <Internal.h>
 #include <R_ext/Random.h>
 
 /* Normal generator is not actually set here but in nmath/snorm.c */
@@ -173,18 +174,18 @@ double unif_rand(void)
 
 	p1 = a12 * static_cast<unsigned int>(II(1)) - a13n * static_cast<unsigned int>(II(0));
 	/* p1 % m1 would surely do */
-	k = p1 / m1;
+	k = int( (p1 / m1));
 	p1 -= k * m1;
 	if (p1 < 0.0) p1 += m1;
-	II(0) = II(1); II(1) = II(2); II(2) = p1;
+	II(0) = II(1); II(1) = II(2); II(2) = int( p1);
 
 	p2 = a21 * static_cast<unsigned int>(II(5)) - a23n * static_cast<unsigned int>(II(3));
-	k = p2 / m2;
+	k = int( (p2 / m2));
 	p2 -= k * m2;
 	if (p2 < 0.0) p2 += m2;
-	II(3) = II(4); II(4) = II(5); II(5) = p2;
+	II(3) = II(4); II(4) = II(5); II(5) = int( p2);
 
-	return ((p1 > p2) ? (p1 - p2) : (p1 - p2 + m1)) * normc;
+	return double(((p1 > p2) ? (p1 - p2) : (p1 - p2 + m1))) * normc;
     }
     default:
 	error(_("unif_rand: unimplemented RNG kind %d"), RNG_kind);
@@ -366,19 +367,24 @@ static void GetRNGkind(SEXP seeds)
     if (seeds == R_UnboundValue) return;
     if (!isInteger(seeds)) {
 	if (seeds == R_MissingArg) /* How can this happen? */
-	    error(_(".Random.seed is a missing argument with no default"));
-	error(_(".Random.seed is not an integer vector but of type '%s'"),
+	    error(_("'.Random.seed' is a missing argument with no default"));
+	warning(_("'.Random.seed' is not an integer vector but of type '%s', so ignored"),
 		type2char(TYPEOF(seeds)));
+	goto invalid;
     }
     is = INTEGER(seeds);
     tmp = is[0];
     /* avoid overflow here: max current value is 705 */
-    if (tmp == NA_INTEGER || tmp < 0 || tmp > 1000)
-	error(_(".Random.seed[1] is not a valid integer"));
+    if (tmp == NA_INTEGER || tmp < 0 || tmp > 1000) {
+	warning(_("'.Random.seed[1]' is not a valid integer, so ignored"));
+	goto invalid;
+    }
     newRNG = RNGtype( (tmp % 100));
     newN01 = N01type( (tmp / 100));
-    if (newN01 > KINDERMAN_RAMAGE)
-	error(_(".Random.seed[0] is not a valid Normal type"));
+    if (newN01 > KINDERMAN_RAMAGE) {
+	warning(_("'.Random.seed[1]' is not a valid Normal type, so ignored"));
+	goto invalid;
+    }
     switch(newRNG) {
     case WICHMANN_HILL:
     case MARSAGLIA_MULTICARRY:
@@ -389,13 +395,20 @@ static void GetRNGkind(SEXP seeds)
     case LECUYER_CMRG:
 	break;
     case USER_UNIF:
-	if(!User_unif_fun)
-	    error(_(".Random.seed[1] = 5 but no user-supplied generator"));
+	if(!User_unif_fun) {
+	    warning(_("'.Random.seed[1] = 5' but no user-supplied generator, so ignored"));
+	    goto invalid;
+	}
 	break;
     default:
-	error(_(".Random.seed[1] is not a valid RNG kind (code)"));
+	warning(_("'.Random.seed[1]' is not a valid RNG kind so ignored"));
+	goto invalid;
     }
     RNG_kind = newRNG; N01_kind = newN01;
+    return;
+invalid:
+    RNG_kind = RNG_DEFAULT; N01_kind = N01_DEFAULT;
+    Randomize(RNG_kind);
     return;
 }
 
@@ -415,7 +428,7 @@ void GetRNGstate()
 	len_seed = RNG_Table[RNG_kind].n_seed;
 	/* Not sure whether this test is needed: wrong for USER_UNIF */
 	if(LENGTH(seeds) > 1 && LENGTH(seeds) < len_seed + 1)
-	    error(_(".Random.seed has wrong length"));
+	    error(_("'.Random.seed' has wrong length"));
 	if(LENGTH(seeds) == 1 && RNG_kind != USER_UNIF)
 	    Randomize(RNG_kind);
 	else {
@@ -456,7 +469,7 @@ static void RNGkind(RNGtype newkind)
 /* Choose a new kind of RNG.
  * Initialize its seed by calling the old RNG's unif_rand()
  */
-    if (newkind == CXXRCONSTRUCT(RNGtype, -1)) newkind = RNG_DEFAULT;
+    if (newkind == RNGtype(-1)) newkind = RNG_DEFAULT;
     switch(newkind) {
     case WICHMANN_HILL:
     case MARSAGLIA_MULTICARRY:
@@ -471,7 +484,7 @@ static void RNGkind(RNGtype newkind)
 	error(_("RNGkind: unimplemented RNG kind %d"), newkind);
     }
     GetRNGstate();
-    RNG_Init(newkind, unif_rand() * UINT_MAX);
+    RNG_Init(newkind, Int32( (unif_rand() * UINT_MAX)));
     RNG_kind = newkind;
     PutRNGstate();
 }
@@ -480,9 +493,9 @@ static void Norm_kind(N01type kind)
 {
     /* N01type is an enumeration type, so this will probably get
        mapped to an unsigned integer type. */
-    if (kind == CXXRCONSTRUCT(N01type, -1)) kind = N01_DEFAULT;
+    if (kind == N01type(-1)) kind = N01_DEFAULT;
     if (kind > KINDERMAN_RAMAGE)
-	error(_("invalid Normal type in RNGkind"));
+	error(_("invalid Normal type in 'RNGkind'"));
     if (kind == USER_NORM) {
 	User_norm_fun = R_FindSymbol("user_norm_rand", "", NULL);
 	if (!User_norm_fun) error(_("'user_norm_rand' not in load table"));
@@ -525,10 +538,12 @@ SEXP attribute_hidden do_setseed (SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP skind, nkind;
     int seed;
 
-    checkArity(op,args);
-    seed = asInteger(CAR(args));
-    if (seed == NA_INTEGER)
-	error(_("supplied seed is not a valid integer"));
+    checkArity(op, args);
+    if(!isNull(CAR(args))) {
+	seed = asInteger(CAR(args));
+	if (seed == NA_INTEGER)
+	    error(_("supplied seed is not a valid integer"));
+    } else seed = TimeToSeed();
     skind = CADR(args);
     nkind = CADDR(args);
     GetRNGkind(R_NilValue); /* pull RNG_kind, N01_kind from 
@@ -698,7 +713,7 @@ static long *ran_arr_ptr=&ran_arr_sentinel; /* the next random number, or -1 */
 static long ran_arr_cycle(void)
 {
   ran_array(ran_arr_buf,QUALITY);
-  ran_arr_buf[KK]=-1;
+  ran_arr_buf[KK]=long(-1);
   ran_arr_ptr=ran_arr_buf+1;
   return ran_arr_buf[0];
 }
@@ -765,7 +780,7 @@ static void RNG_Init_R_KT(Int32 seed)
     fun = findVar1(install(".TAOCP1997init"), R_BaseEnv, CLOSXP, FALSE);
     if(fun == R_UnboundValue)
 	error("function '.TAOCP1997init' is missing");
-    PROTECT(sseed = ScalarInteger(seed % 1073741821));
+    PROTECT(sseed = ScalarInteger(int(seed % 1073741821)));
     PROTECT(call = lang2(fun, sseed));
     ans = eval(call, R_GlobalEnv);
     memcpy(dummy, INTEGER(ans), 100*sizeof(int));

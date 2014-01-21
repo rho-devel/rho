@@ -24,7 +24,7 @@ matrix(object) <- value
 \value{
   will depend on the method function; see the appropriate documentation.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{as.matrix}}
 %  ,\code{"\link[=Matrix.pdMat]{matrix.pdMat}"}

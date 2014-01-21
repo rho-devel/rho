@@ -1,7 +1,7 @@
 #ifndef CHM_COMMON_H
 #define CHM_COMMON_H
 
-#include "UFconfig/UFconfig.h"
+#include "SuiteSparse_config/SuiteSparse_config.h"
 #include "CHOLMOD/Include/cholmod.h"
 #include "Mutils.h"
 #ifdef Matrix_with_SPQR
@@ -68,6 +68,8 @@ SEXP chm_triplet_to_SEXP(CHM_TR a, int dofree, int uploT, int Rkind,
 SEXP chm_dense_to_SEXP(CHM_DN a, int dofree, int Rkind, SEXP dn);
 /* 		       int uploST, char *diag, SEXP dn); */
 SEXP chm_dense_to_matrix(CHM_DN a, int dofree, SEXP dn);
+SEXP chm_dense_to_vector(CHM_DN a, int dofree);
+
 
 void chm_diagN2U(CHM_SP chx, int uploT, Rboolean do_realloc);
 

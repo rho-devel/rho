@@ -1,5 +1,5 @@
 # file MASS/R/loglm.R
-# copyright (C) 1994-2006 W. N. Venables and B. D. Ripley
+# copyright (C) 1994-2013 W. N. Venables and B. D. Ripley
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ loglm <-
     if(missing(data) || inherits(data, "data.frame")) {
         m <- match.call(expand.dots = FALSE)
         m$... <- NULL
-        m[[1L]] <- as.name("model.frame")
+        m[[1L]] <- quote(stats::model.frame)
         data <- eval.parent(m)
         .formula <- as.formula(attr(data, "terms"))
     } else {
@@ -170,7 +170,7 @@ anova.loglm <- function(object, ..., test = c("Chisq", "chisq", "LR"))
     o <- order( - dfs)
     objs <- objs[o]
     dfs <- c(dfs[o], 0)
-    forms <- lapply(objs, formula)
+    forms <- lapply(objs, function(x) x$call$formula)
     dev <- c(sapply(objs, "[[", "lrt"), 0)
     M <- array(0, c(k + 2L, 5L),
                list(c(paste("Model", 1L:(k + 1L)), "Saturated"),
@@ -201,13 +201,11 @@ print.anova.loglm <- function(x, ...)
         colnames(R)[j] <- colj[1L]
     }
     R[1L, 3L:5L] <- ""
-    pform <- function(form)
-        if(length(form) == 2L) form else form[c(2L, 1L, 3L)]
     forms <- attr(x, "formulae")
     cat("LR tests for hierarchical log-linear models\n\n")
     for(i in seq_along(forms))
         cat(paste("Model ", i, ":\n", sep = ""),
-            deparse(pform(forms[[i]])), "\n")
+            deparse(forms[[i]], width.cutoff = 500L), "\n")
     cat("\n")
     print(R, quote = FALSE)
     invisible(x)
@@ -272,7 +270,7 @@ update.loglm <- function (object, formula, ...)
     if (fix <- !missing(formula)) {
         object$formula <- denumerate(object$formula)
         formula <- denumerate(as.formula(formula))
-        call$formula <- update.formula(formula(object), formula)
+        call$formula <- renumerate(update.formula(formula(object), formula))
     }
     extras <- match.call(expand.dots = FALSE)$...
     if (length(extras) > 0L) {
@@ -285,10 +283,6 @@ update.loglm <- function (object, formula, ...)
         }
     }
     result <- eval.parent(call)
-    if (fix) {
-        form <- renumerate(result$formula)
-        result$call$formula <- unclass(result$formula <- form)
-    }
     result
 }
 

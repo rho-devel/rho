@@ -30,7 +30,7 @@ lvqinit <- function(x, cl, size, prior, k=5)
     # allow for supplied prior
     if(missing(prior)) prior <- prop
     else if(any(prior <0)||round(sum(prior), 5) != 1)
-        stop("invalid prior")
+        stop("invalid 'prior'")
     if(length(prior) != np) stop("'prior' is of incorrect length")
     if(missing(size)) size <- min(round(0.4 * np * (np-1+p/2),0), n)
     inside <- knn.cv(x, cl, k) == cl

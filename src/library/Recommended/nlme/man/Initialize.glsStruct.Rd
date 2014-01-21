@@ -33,7 +33,7 @@
   a \code{glsStruct} object similar to \code{object}, but with
   initialized model components. 
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{gls}},
   \code{\link{Initialize.corStruct}},
   \code{\link{Initialize.varFunc}},

@@ -57,8 +57,8 @@
   Daniel, C. and Wood, F. S. (1980), \emph{Fitting Equations to Data},
   Wiley, New York
 
-  Venables, W. N. and Ripley, B. D. (1999) \emph{Modern Applied
-    Statistics with S-PLUS (3rd ed)}, Springer, New York.
+  Venables, W. N. and Ripley, B. D. (2002) \emph{Modern Applied
+    Statistics with S (4th ed)}, Springer, New York.
 }
 %\examples{}
 \keyword{datasets}

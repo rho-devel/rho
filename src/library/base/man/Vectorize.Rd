@@ -21,7 +21,7 @@ Vectorize(FUN, vectorize.args = arg.names, SIMPLIFY = TRUE,
     vectorized.  Defaults to all arguments of \code{FUN}.}
   \item{SIMPLIFY}{logical or character string; attempt to reduce the
     result to a vector, matrix or higher dimensional array; see
-    the \code{simplify} argument of \code{\link{sapply}}.} 
+    the \code{simplify} argument of \code{\link{sapply}}.}
   \item{USE.NAMES}{logical; use names if the first \dots argument has
     names, or if it is a character vector, use that character vector as
     the names.}
@@ -49,7 +49,7 @@ vrep(times = 1:4, x = 4:1)
 vrep <- Vectorize(rep.int, "times")
 vrep(times = 1:4, x = 42)
 
-f <- function(x = 1:3, y) c(x,y)
+f <- function(x = 1:3, y) c(x, y)
 vf <- Vectorize(f, SIMPLIFY = FALSE)
 f(1:3, 1:3)
 vf(1:3, 1:3)

@@ -401,3 +401,6 @@
   typically (but not at all always!) fails when the matrix is *not* pos.def !!
   ~/R/MM/Pkg-ex/Matrix/solve-Gorjanc-bug.R
   ==> must fall back to LU (e.g.) in that case.
+
+- pack() and unpack(); (more) methods for supporting "packed" (symmetric / triangular)
+  matrices;  see  man/unpack.Rd -- (have some dtr* <-> dtp*)

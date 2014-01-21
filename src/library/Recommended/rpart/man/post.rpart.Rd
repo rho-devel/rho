@@ -12,12 +12,12 @@ post(tree, \dots)
 
 \method{post}{rpart}(tree, title., 
      filename = paste(deparse(substitute(tree)), ".ps", sep = ""), 
-     digits = getOption("digits") - 3, pretty = TRUE,
+     digits = getOption("digits") - 2, pretty = TRUE,
      use.n = TRUE, horizontal = TRUE, \dots)
 }
 \arguments{
 \item{tree}{
-fitted model object of class \code{rpart}.  This is assumed to be the result 
+fitted model object of class \code{"rpart"}.  This is assumed to be the result 
 of some function that produces an object with the same named 
 components as that returned by the \code{rpart} function. 
 }

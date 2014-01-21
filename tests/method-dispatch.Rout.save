@@ -1,8 +1,7 @@
 
-R version 2.15.0 alpha (2012-03-02 r58556)
-Copyright (C) 2012 The R Foundation for Statistical Computing
+R version 3.0.2 RC (2013-09-22 r63960) -- "Frisbee Sailing"
+Copyright (C) 2013 The R Foundation for Statistical Computing
 R version 2.11.1 (2010-05-31)
-ISBN 3-900051-07-0
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
 CXXR Copyright (C) 2008-10 Andrew Runnalls.  CXXR like

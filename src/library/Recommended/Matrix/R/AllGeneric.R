@@ -3,13 +3,11 @@
 
     setGeneric("expand", function(x, ...) standardGeneric("expand"))
 
-## these two are *not* exported (yet) :
 
-    setGeneric("isDiagonal", function(object, ...)
-               standardGeneric("isDiagonal"))
+setGeneric("isDiagonal", function(object) standardGeneric("isDiagonal"))
 
-    setGeneric("isTriangular", function(object, ...) ## 'upper = NA'
-               standardGeneric("isTriangular"))
+setGeneric("isTriangular", function(object, ...) ## 'upper = NA'
+	   standardGeneric("isTriangular"))
 
 ## isSymmetric is "S3 generic" in R's  base/R/eigen.R
 
@@ -30,20 +28,15 @@ setGeneric("lu", function(x, ...) standardGeneric("lu"))
 
     setGeneric("Schur", function(x, vectors, ...) standardGeneric("Schur"))
 
-    setGeneric("unpack", function(x, ...) standardGeneric("unpack"))
+setGeneric("unpack", function(x, ...) standardGeneric("unpack"))
+setGeneric("pack", function(x, ...) standardGeneric("pack"))
 
 ##-     setGeneric("%p%", function(a, b) standardGeneric("%p%"))
 
     setGeneric("expm", function(x) standardGeneric("expm"))
 
-##     setGeneric("writeHB", function(obj, file, ...)
-##                standardGeneric("writeHB"))
-
     setGeneric("writeMM", function(obj, file, ...)
                standardGeneric("writeMM"))
-
-##     setGeneric("qqmath", function(x, data, ...)
-##                standardGeneric("qqmath"))
 
     setGeneric("tril", function(x, k = 0, ...)
                standardGeneric("tril"))
@@ -71,3 +64,21 @@ setGeneric("forceSymmetric",
 setGeneric("nnzero", function(x, na.counted = NA) standardGeneric("nnzero"),
 	   signature = "x")
 
+setGeneric("updown", function(update, C, L) standardGeneric("updown"))
+
+##> must do this in any case, as long as this should *run* in R < 2.15.2
+##> if(as.numeric(R.version$`svn rev`) < 60620)
+setGeneric("toeplitz", function(x, ...) standardGeneric("toeplitz"),
+           useAsDefault= function(x, ...) stats::toeplitz(x))
+## and an entry in ../man/sparseVector-class.Rd
+
+if(FALSE)
+   ## only "need this", as 'Dvec' should not get its default from base::qr.Q :
+   ## unfortunately, this masks  base::qr.Q  with a warning
+setGeneric("qr.Q", function(qr, complete = FALSE, Dvec)
+	   standardGeneric("qr.Q"),
+	   useAsDefault = function(qr, complete = FALSE, Dvec) {
+	       if(missing(Dvec))
+		   base::qr.Q(qr, complete=complete)
+	       else base::qr.Q(qr, complete=complete, Dvec=Dvec)
+	   })

@@ -48,7 +48,7 @@ optional vector of subject identifiers.
 If specified, the output will contain one entry per subject rather than one 
 entry per observation. 
 }
-\item{reference}{reference for centering predictions}
+\item{reference}{reference for centering predictions, see details below}
 \item{\dots}{For future methods}
 }
 \value{
@@ -74,6 +74,9 @@ may be desirable to use a fixed reference level.
 Use of \code{reference="sample"} will use the overall means, and agrees
 with the \code{linear.predictors} component of the coxph object (which
 uses the overall mean for backwards compatability with older code).
+Predictions of \code{type="terms"} are almost invariably passed
+forward to further calculation, so for these we default to using
+the sample as the reference.
 
 Predictions of type "expected" incorporate the baseline hazard and are
 thus absolute instead of relative; the
@@ -88,8 +91,10 @@ predictions will always be for a random effect of zero.
 \code{\link{predict}},\code{\link{coxph}},\code{\link{termplot}} }
 
 \examples{
-fit <- coxph(Surv(time, status) ~ age + ph.ecog + strata(inst), lung) 
-mresid <- lung$status - predict(fit, type='expected') #Martingale resid 
+options(na.action=na.exclude) # retain NA in predictions
+fit <- coxph(Surv(time, status) ~ age + ph.ecog + strata(inst), lung)
+#lung data set has status coded as 1/2
+mresid <- (lung$status-1) - predict(fit, type='expected') #Martingale resid 
 predict(fit,type="lp")
 predict(fit,type="expected")
 predict(fit,type="risk",se.fit=TRUE)

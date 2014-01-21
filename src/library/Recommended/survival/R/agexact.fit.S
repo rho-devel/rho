@@ -1,4 +1,4 @@
-# $Id: agexact.fit.S 11516 2012-04-24 12:49:14Z therneau $
+
 agexact.fit <- function(x, y, strata, offset, init, control,
 			  weights, method, rownames)
     {
@@ -44,7 +44,7 @@ agexact.fit <- function(x, y, strata, offset, init, control,
 	}
     else init <- rep(0,nvar)
 
-    agfit <- .C("agexact", iter= as.integer(control$iter.max),
+    agfit <- .C(Cagexact, iter= as.integer(control$iter.max),
 		   as.integer(n),
 		   as.integer(nvar), sstart, sstop,
 		   sstat,
@@ -60,8 +60,7 @@ agexact.fit <- function(x, y, strata, offset, init, control,
 		   integer(2*n),
 		   as.double(control$eps),
 		   as.double(control$toler.chol),
-		   sctest=double(1),
-                   PACKAGE = "survival")
+		   sctest=double(1))
 
     var <- matrix(agfit$imat,nvar,nvar)
     coef <- agfit$coef
@@ -85,7 +84,7 @@ agexact.fit <- function(x, y, strata, offset, init, control,
     names(coef) <- dimnames(x)[[2]]
     lp  <- x %*% coef + offset - sum(coef *agfit$means)
     score <- as.double(exp(lp[sorted]))
-    agres <- .C("agmart",
+    agres <- .C(Cagmart,
 		   as.integer(n),
 		   as.integer(0),
 		   sstart, sstop,
@@ -93,8 +92,8 @@ agexact.fit <- function(x, y, strata, offset, init, control,
 		   score,
 		   rep(1.0, n),
 		   newstrat,
-		   resid=double(n),
-                   PACKAGE = 'survival')
+		   resid=double(n))
+
     resid <- double(n)
     resid[sorted] <- agres$resid
     names(resid) <- rownames

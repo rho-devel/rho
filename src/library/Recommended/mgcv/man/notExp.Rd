@@ -48,6 +48,7 @@ notLog(x)
 \examples{
 ## Illustrate the notExp function: 
 ## less steep than exp, but still monotonic.
+require(mgcv)
 x <- -100:100/10
 op <- par(mfrow=c(2,2))
 plot(x,notExp(x),type="l")

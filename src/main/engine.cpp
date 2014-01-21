@@ -38,11 +38,12 @@
 #endif
 
 #include <Defn.h>
+#include <Internal.h>
 #include <R_ext/GraphicsEngine.h>
-#include <R_ext/Applic.h>	/* pretty0() */
+#include <R_ext/Applic.h>	/* pretty() */
 #include <Rmath.h>
 
-# include <R_ext/rlocale.h>
+# include <rlocale.h>
 
 int R_GE_getVersion()
 {
@@ -772,7 +773,9 @@ void GELine(double x1, double y1, double x2, double y2,
 	    const pGEcontext gc, pGEDevDesc dd)
 {
     Rboolean clip_ok;
-    if (gc->lty == LTY_BLANK) return;
+    if (gc->lwd == R_PosInf || gc->lwd < 0.0)
+	error(_("'lwd' must be non-negative and finite"));
+    if (ISNAN(gc->lwd) || gc->lty == LTY_BLANK) return;
     if (dd->dev->canClip) {
 	clip_ok = clipLine(&x1, &y1, &x2, &y2, 1, dd);
     }
@@ -874,7 +877,9 @@ static void clipPolyline(int n, double *x, double *y,
    does all other clipping */
 void GEPolyline(int n, double *x, double *y, const pGEcontext gc, pGEDevDesc dd)
 {
-    if (gc->lty == LTY_BLANK) return;
+    if (gc->lwd == R_PosInf || gc->lwd < 0.0)
+	error(_("'lwd' must be non-negative and finite"));
+    if (ISNAN(gc->lwd) || gc->lty == LTY_BLANK) return;
     if (dd->dev->canClip) {
 	clipPolyline(n, x, y, gc, 1, dd);  /* clips to device extent
 						  then draws */
@@ -1105,7 +1110,9 @@ void GEPolygon(int n, double *x, double *y, const pGEcontext gc, pGEDevDesc dd)
      * after any R_alloc's done by functions I call.
      */
     const void *vmaxsave = vmaxget();
-    if (gc->lty == LTY_BLANK)
+    if (gc->lwd == R_PosInf || gc->lwd < 0.0)
+	error(_("'lwd' must be non-negative and finite"));
+    if (ISNAN(gc->lwd) || gc->lty == LTY_BLANK)
 	/* "transparent" border */
 	gc->col = R_TRANWHITE;
     if (dd->dev->canClip) {
@@ -1210,7 +1217,9 @@ void GECircle(double x, double y, double radius, const pGEcontext gc, pGEDevDesc
     /* There is no point in trying to plot a circle of zero radius */
     if (radius <= 0.0) return;
 
-    if (gc->lty == LTY_BLANK)
+    if (gc->lwd == R_PosInf || gc->lwd < 0.0)
+	error(_("'lwd' must be non-negative and finite"));
+    if (ISNAN(gc->lwd) || gc->lty == LTY_BLANK)
 	/* "transparent" border */
 	gc->col = R_TRANWHITE;
     /*
@@ -1331,7 +1340,9 @@ void GERect(double x0, double y0, double x1, double y1,
     double *xc, *yc;
     int result;
 
-    if (gc->lty == LTY_BLANK)
+    if (gc->lwd == R_PosInf || gc->lwd < 0.0)
+	error(_("'lwd' must be non-negative and finite"));
+    if (ISNAN(gc->lwd) || gc->lty == LTY_BLANK)
 	/* "transparent" border */
 	gc->col = R_TRANWHITE;
     /*
@@ -1388,12 +1399,14 @@ void GEPath(double *x, double *y,
 {
     /* safety check: this will be NULL if the device did not set it. */
     if (!dd->dev->path) {
-	warning(_("Path rendering is not implemented for this device"));
+	warning(_("path rendering is not implemented for this device"));
 	return;
     }
     /* FIXME: what about clipping? (if the device can't) 
     */
-    if (gc->lty == LTY_BLANK)
+    if (gc->lwd == R_PosInf || gc->lwd < 0.0)
+	error(_("'lwd' must be non-negative and finite"));
+    if (ISNAN(gc->lwd) || gc->lty == LTY_BLANK)
 	gc->col = R_TRANWHITE;
     if (npoly > 0) {
         int i;
@@ -1425,7 +1438,7 @@ void GERaster(unsigned int *raster, int w, int h,
 {
     /* safety check: this will be NULL if the device did not set it. */
     if (!dd->dev->raster) {
-	warning(_("Raster rendering is not implemented for this device"));
+	warning(_("raster rendering is not implemented for this device"));
 	return;
     }
 
@@ -1449,7 +1462,7 @@ SEXP GECap(pGEDevDesc dd)
 {
     /* safety check: this will be NULL if the device did not set it. */
     if (!dd->dev->cap) {
-	warning(_("Raster capture is not available for this device"));
+	warning(_("raster capture is not available for this device"));
 	return R_NilValue;
     }
     return dd->dev->cap(dd->dev);
@@ -2342,12 +2355,11 @@ void GEPretty(double *lo, double *up, int *ndiv)
 #ifdef DEBUG_PLOT
     x1 = ns; x2 = nu;
 #endif
-    unit = R_pretty0(&ns, &nu, ndiv, /* min_n = */ 1,
-		     /* shrink_sml = */ 0.25,
-		     high_u_fact,
-		     2, /* do eps_correction in any case */
-		     0 /* return (ns,nu) in  (lo,up) */);
-    /* ==> ../appl/pretty.c */
+    unit = R_pretty(&ns, &nu, ndiv, /* min_n = */ 1,
+		    /* shrink_sml = */ 0.25,
+		    high_u_fact,
+		    2, /* do eps_correction in any case */
+		    0 /* return (ns,nu) in  (lo,up) */);
 
     /* The following is ugly since it kind of happens already in Rpretty0(..):
      */
@@ -2731,6 +2743,9 @@ void GEinitDisplayList(pGEDevDesc dd)
  ****************************************************************
  */
 
+/* from colors.c */
+void savePalette(Rboolean save);
+
 void GEplayDisplayList(pGEDevDesc dd)
 {
     int i, devnum, savedDevice, plotok;
@@ -2760,22 +2775,29 @@ void GEplayDisplayList(pGEDevDesc dd)
     PROTECT(theList);
     plotok = 1;
     if (theList != R_NilValue) {
+	savePalette(TRUE);
 	savedDevice = curDevice();
 	selectDevice(devnum);
 	while (theList != R_NilValue && plotok) {
 	    SEXP theOperation = CAR(theList);
 	    SEXP op = CAR(theOperation);
 	    SEXP args = CADR(theOperation);
-	    PRIMFUN(op) (R_NilValue, op, args, R_NilValue);
-	    /* Check with each graphics system that the plotting went ok
-	     */
-	    if (!GEcheckState(dd)) {
-		plotok = 0;
-		warning(_("Display list redraw incomplete"));
+	    if (TYPEOF(op) == BUILTINSXP || TYPEOF(op) == SPECIALSXP) {
+	    	PRIMFUN(op) (R_NilValue, op, args, R_NilValue);
+		/* Check with each graphics system that the plotting went ok
+		 */
+		if (!GEcheckState(dd)) {
+		    warning(_("display list redraw incomplete"));
+		    plotok = 0;
+		}
+	    } else {
+	    	warning(_("invalid display list"));
+	    	plotok = 0;
 	    }
 	    theList = CDR(theList);
 	}
 	selectDevice(savedDevice);
+	savePalette(FALSE);
     }
     UNPROTECT(1);
 }
@@ -2903,14 +2925,14 @@ void GEplaySnapshot(SEXP snapshot, pGEDevDesc dd)
 }
 
 /* recordPlot() */
-SEXP attribute_hidden do_getSnapshot(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP do_getSnapshot(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     checkArity(op, args);
     return GEcreateSnapshot(GEcurrentDevice());
 }
 
 /* replayPlot() */
-SEXP attribute_hidden do_playSnapshot(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP do_playSnapshot(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     checkArity(op, args);
     GEplaySnapshot(CAR(args), GEcurrentDevice());

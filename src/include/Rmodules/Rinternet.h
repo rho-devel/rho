@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-typedef SEXP (*R_DownloadRoutine)(SEXP call, SEXP op, SEXP args, SEXP env);
+typedef SEXP (*R_DownloadRoutine)(SEXP args);
 typedef Rconnection (*R_NewUrlRoutine)(const char *description, const char * const mode);
 typedef Rconnection (*R_NewSockRoutine)(const char *host, int port, int server, const char *const mode, int timeout); 
 

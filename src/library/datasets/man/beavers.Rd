@@ -18,7 +18,7 @@ beaver2
   temperature dynamics of beaver \emph{Castor canadensis} in
   north-central Wisconsin.  Body temperature was measured by telemetry
   every 10 minutes for four females, but data from a one period of
-  less than a day for each of two animals is used there. 
+  less than a day for each of two animals is used there.
 }
 \format{
   The \code{beaver1} data frame has 114 rows and 4 columns on body
@@ -65,7 +65,7 @@ beaver.plot <- function(bdat, ...) {
     points(hours[is.act], temp[is.act], col = 2, cex = .8)
   })
 }
-op <- par(mfrow = c(2,1), mar = c(3,3,4,2), mgp = .9* 2:0)
+op <- par(mfrow = c(2, 1), mar = c(3, 3, 4, 2), mgp = 0.9 * 2:0)
  beaver.plot(beaver1, ylim = yl)
  beaver.plot(beaver2, ylim = yl)
 par(op)

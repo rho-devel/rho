@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1997, 1998  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2004  The R Core Team.
+ *  Copyright (C) 1998-2012  The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -74,15 +74,16 @@ using namespace CXXR;
     else				\
 	width = 0
 
-void printLogicalVector(int *x, int n, int indx)
+static
+void printLogicalVector(int *x, R_xlen_t n, int indx)
 {
-    int i, w, labwidth=0, width;
+    int w, labwidth=0, width;
 
     DO_first_lab;
     formatLogical(x, n, &w);
     w += R_print.gap;
 
-    for (i = 0; i < n; i++) {
+    for (R_xlen_t i = 0; i < n; i++) {
 	if (i > 0 && width + w > R_print.width) {
 	    DO_newline;
 	}
@@ -92,15 +93,16 @@ void printLogicalVector(int *x, int n, int indx)
     Rprintf("\n");
 }
 
-void printIntegerVector(int *x, int n, int indx)
+attribute_hidden
+void printIntegerVector(int *x, R_xlen_t n, int indx)
 {
-    int i, w, labwidth=0, width;
+    int w, labwidth=0, width;
 
     DO_first_lab;
     formatInteger(x, n, &w);
     w += R_print.gap;
 
-    for (i = 0; i < n; i++) {
+    for (R_xlen_t i = 0; i < n; i++) {
 	if (i > 0 && width + w > R_print.width) {
 	    DO_newline;
 	}
@@ -110,15 +112,17 @@ void printIntegerVector(int *x, int n, int indx)
     Rprintf("\n");
 }
 
-void printRealVector(double *x, int n, int indx)
+// used in uncmin.c
+attribute_hidden
+void printRealVector(double *x, R_xlen_t n, int indx)
 {
-    int i, w, d, e, labwidth=0, width;
+    int w, d, e, labwidth=0, width;
 
     DO_first_lab;
     formatReal(x, n, &w, &d, &e, 0);
     w += R_print.gap;
 
-    for (i = 0; i < n; i++) {
+    for (R_xlen_t i = 0; i < n; i++) {
 	if (i > 0 && width + w > R_print.width) {
 	    DO_newline;
 	}
@@ -128,9 +132,10 @@ void printRealVector(double *x, int n, int indx)
     Rprintf("\n");
 }
 
-void printComplexVector(Rcomplex *x, int n, int indx)
+attribute_hidden
+void printComplexVector(Rcomplex *x, R_xlen_t n, int indx)
 {
-    int i, w, wr, dr, er, wi, di, ei, labwidth=0, width;
+    int w, wr, dr, er, wi, di, ei, labwidth=0, width;
 
     DO_first_lab;
     formatComplex(x, n, &wr, &dr, &er, &wi, &di, &ei, 0);
@@ -138,7 +143,7 @@ void printComplexVector(Rcomplex *x, int n, int indx)
     w = wr + wi + 2;	/* +2 for "+" and "i" */
     w += R_print.gap;
 
-    for (i = 0; i < n; i++) {
+    for (R_xlen_t i = 0; i < n; i++) {
 	if (i > 0 && width + w > R_print.width) {
 	    DO_newline;
 	}
@@ -155,13 +160,13 @@ void printComplexVector(Rcomplex *x, int n, int indx)
 static void printStringVector(const StringVector* sv, int n, int quote,
 			      int indx)
 {
-    int i, w, labwidth=0, width;
+    int w, labwidth=0, width;
 
     DO_first_lab;
     StringVector::const_iterator beg = sv->begin();
     w = accumulate(beg, beg + n, 0, (quote ? stringWidthQuote : stringWidth));
 
-    for (i = 0; i < n; i++) {
+    for (R_xlen_t i = 0; i < n; i++) {
 	String* str = const_cast<String*>((*sv)[i].get());
 	if (i > 0 && width + w + R_print.gap > R_print.width) {
 	    DO_newline;
@@ -173,19 +178,20 @@ static void printStringVector(const StringVector* sv, int n, int quote,
     Rprintf("\n");
 }
 
-void printRawVector(Rbyte *x, int n, int indx)
+static
+void printRawVector(Rbyte *x, R_xlen_t n, int indx)
 {
-    int i, w, labwidth=0, width;
+    int w, labwidth=0, width;
 
     DO_first_lab;
     formatRaw(x, n, &w);
     w += R_print.gap;
 
-    for (i = 0; i < n; i++) {
+    for (R_xlen_t i = 0; i < n; i++) {
 	if (i > 0 && width + w > R_print.width) {
 	    DO_newline;
 	}
-	Rprintf("%*s%s", R_print.gap, "", EncodeRaw(x[i]));
+	Rprintf("%*s%s", R_print.gap, "", EncodeRaw(x[i], ""));
 	width += w;
     }
     Rprintf("\n");
@@ -194,10 +200,10 @@ void printRawVector(Rbyte *x, int n, int indx)
 void printVector(SEXP x, int indx, int quote)
 {
 /* print R vector x[];	if(indx) print indices; if(quote) quote strings */
-    int n;
+    R_xlen_t n;
 
-    if ((n = LENGTH(x)) != 0) {
-	int n_pr = (n <= R_print.max +1) ? n : R_print.max;
+    if ((n = XLENGTH(x)) != 0) {
+	R_xlen_t n_pr = (n <= R_print.max +1) ? n : R_print.max;
 	/* '...max +1'  ==> will omit at least 2 ==> plural in msg below */
 	switch (TYPEOF(x)) {
 	case LGLSXP:
@@ -342,8 +348,9 @@ static void printNamedStringVector(StringVector* sv, int n, int quote,
 
 static void printNamedRawVector(Rbyte * x, int n, StringVector* names)
     PRINT_N_VECTOR(formatRaw(x, n, &w),
-		   Rprintf("%s%*s", EncodeRaw(x[k]), R_print.gap,""))
+		   Rprintf("%s%*s", EncodeRaw(x[k], ""), R_print.gap,""))
 
+attribute_hidden
 void printNamedVector(SEXP x, SEXP names, int quote, const char *title)
 {
     int n;

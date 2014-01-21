@@ -20,6 +20,7 @@
  * See copyright etc below.
  *
  * #included from engine.c
+ * That manages the R_alloc stack.
  */
 
 /*
@@ -61,6 +62,7 @@ static double *ypoints;
 
 /************* Code begins here *************/
 
+/* R_allocs or mallocs global arrays */
 static Rboolean
 add_point(double x, double y, pGEDevDesc dd)
 {
@@ -235,17 +237,17 @@ point_computing(double *A_blend,
   *y = EQN_NUMERATOR(py) / (weights_sum);
 }
 
-static float
+static double
 step_computing(int k,
 	       double *px, double *py,
 	       double s1, double s2,
-	       float precision,
+	       double precision,
                pGEDevDesc dd)
 {
   double A_blend[4];
   double xstart, ystart, xend, yend, xmid, ymid, xlength, ylength;
   double start_to_end_dist, devWidth, devHeight, devDiag, number_of_steps;
-  float  step, angle_cos, scal_prod, xv1, xv2, yv1, yv2, sides_length_prod;
+  double  step, angle_cos, scal_prod, xv1, xv2, yv1, yv2, sides_length_prod;
 
   /* This function computes the step used to draw the segment (p1, p2)
      (xv1, yv1) : coordinates of the vector from middle to origin
@@ -356,7 +358,7 @@ step_computing(int k,
 }
 
 static void
-spline_segment_computing(float step, int k,
+spline_segment_computing(double step, int k,
 			 double *px, double *py,
 			 double s1, double s2,
 			 pGEDevDesc dd)
@@ -403,7 +405,7 @@ spline_segment_computing(float step, int k,
  * (i.e., can't just connect to last control point)
  */
 static void
-spline_last_segment_computing(float step, int k,
+spline_last_segment_computing(double step, int k,
 			      double *px, double *py,
 			      double s1, double s2,
 			      pGEDevDesc dd)
@@ -468,11 +470,11 @@ spline_last_segment_computing(float step, int k,
 static Rboolean
 compute_open_spline(int n, double *x, double *y, double *s,
 		    Rboolean repEnds,
-		    float precision,
+		    double precision,
 		    pGEDevDesc dd)
 {
   int       k;
-  float     step = 0.0 /* -Wall */;
+  double     step = 0.0 /* -Wall */;
   double px[4];
   double py[4];
   double ps[4]={0.,0.,0.,0.};
@@ -483,9 +485,9 @@ compute_open_spline(int n, double *x, double *y, double *s,
   ypoints = NULL;
 
   if (repEnds && n < 2)
-      error(_("There must be at least two control points"));
+      error(_("there must be at least two control points"));
   if (!repEnds && n < 4)
-      error(_("There must be at least four control points"));
+      error(_("there must be at least four control points"));
 
   if (repEnds) {
       /* first control point is needed twice for the first segment */
@@ -530,11 +532,11 @@ compute_open_spline(int n, double *x, double *y, double *s,
 
 static Rboolean
 compute_closed_spline(int n, double *x, double *y, double *s,
-		      float precision,
+		      double precision,
 		      pGEDevDesc dd)
 {
   int k;
-  float     step;
+  double step;
   double px[4];
   double py[4];
   double ps[4];

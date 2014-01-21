@@ -1,6 +1,6 @@
 # -*- Makefile -*-
 
-PKG_CPPFLAGS = -I./UFconfig
+PKG_CPPFLAGS = -DNTIMER -I./SuiteSparse_config
 ## we use the BLAS and the LAPACK library:
 PKG_LIBS = $(SUBLIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
@@ -9,7 +9,7 @@ MkInclude = $(R_HOME)/etc${R_ARCH}/Makeconf
 include scripts/SOURCES_C.mkf
 
 OBJECTS = $(SOURCES_C:.c=.o)
-SUBDIRS = CHOLMOD COLAMD AMD
+SUBDIRS = CHOLMOD COLAMD AMD SuiteSparse_config
 SUBLIBS = $(SUBDIRS:=.a)
 
 all: $(SHLIB)
@@ -23,7 +23,7 @@ $(SHLIB): $(OBJECTS) sublibs
 ## INSTALL only cleans src/*.o src/*$(SHLIB_EXT) for each arch
 sublibs: subclean sublibraries
 
-sublibraries:
+sublibraries: subclean
 	@for d in $(SUBDIRS); do \
 	  (cd $${d} && CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" MkInclude="$(MkInclude)" $(MAKE) library) || exit 1; \
 	done

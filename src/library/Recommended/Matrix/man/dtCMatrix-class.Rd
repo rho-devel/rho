@@ -13,6 +13,7 @@
 \alias{coerce,dtCMatrix,ltCMatrix-method}
 \alias{coerce,dtCMatrix,ntCMatrix-method}
 \alias{coerce,dtCMatrix,TsparseMatrix-method}
+\alias{coerce,dtCMatrix,matrix-method}
 \alias{coerce,dtTMatrix,dgTMatrix-method}
 \alias{coerce,dtTMatrix,dgeMatrix-method}
 \alias{coerce,dtTMatrix,dtCMatrix-method}
@@ -26,11 +27,7 @@
 %% Group methods
 \alias{Arith,dtCMatrix,dtCMatrix-method}
 %
-\alias{solve,dtCMatrix,matrix-method}
-\alias{solve,dtCMatrix,CsparseMatrix-method}
-\alias{solve,dtCMatrix,dgeMatrix-method}
-\alias{solve,dtCMatrix,missing-method}
-\alias{solve,dtCMatrix,numeric-method}
+%\alias{solve,dtCMatrix,...-method}%--> solve-methods.Rd
 \alias{t,dtCMatrix-method}
 \alias{t,dtTMatrix-method}
 \description{The \code{"dtCMatrix"} class is a class of triangular, sparse
@@ -81,13 +78,9 @@
     \item{coerce}{\code{signature(from = "dtTMatrix", to = "dgeMatrix")}}
     \item{coerce}{\code{signature(from = "dtTMatrix", to = "dtrMatrix")}}
     \item{coerce}{\code{signature(from = "dtTMatrix", to = "matrix")}}
-    \item{solve}{\code{signature(a = "dtCMatrix", b = "matrix")}}
-    \item{solve}{\code{signature(a = "dtCMatrix", b = "dgeMatrix")}}
-    \item{solve}{\code{signature(a = "dtCMatrix", b = "missing")}}
-    \item{solve}{\code{signature(a = "dtCMatrix", b = "numeric")}}
-    \item{solve}{\code{signature(a = "dtCMatrix", b = "CsparseMatrix")}:
-      fully sparse triangular solve, in traditional S/\R\ aka
-      \code{\link{backsolve}}.}
+    \item{solve}{\code{signature(a = "dtCMatrix", b = "....")}:
+      sparse triangular solve (aka \dQuote{backsolve} or
+      \dQuote{forwardsolve}), see \code{\link{solve-methods}}.}
     \item{t}{\code{signature(x = "dtCMatrix")}: returns the transpose of
       \code{x}}
     \item{t}{\code{signature(x = "dtTMatrix")}: returns the transpose of
@@ -121,6 +114,21 @@ t1 # still triangular
 (it1 <- solve(t1))
 t1. <- solve(it1)
 all(abs(t1 - t1.) < 10 * .Machine$double.eps)
-}
+
+## 2nd example
+U5 <- new("dtCMatrix", i= c(1L, 0:3), p=c(0L,0L,0:2, 5L), Dim = c(5L, 5L),
+          x = rep(1, 5), diag = "U")
+U5
+(iu <- solve(U5)) # contains one '0'
+validObject(iu2 <- solve(U5, Diagonal(5)))# failed in earlier versions
+
+I5 <- iu  \%*\% U5 # should equal the identity matrix
+i5 <- iu2 \%*\% U5
+asDiag <- function(M) as(drop0(M), "diagonalMatrix")
+stopifnot(
+   all.equal(Diagonal(5), asDiag(I5), tol=1e-14)
+   ,
+   all.equal(Diagonal(5), asDiag(i5), tol=1e-14)
+)}
 \keyword{classes}
 \keyword{algebra}

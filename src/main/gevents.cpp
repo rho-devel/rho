@@ -44,6 +44,7 @@
 #include <Defn.h>
 #include <Rmath.h>
 #include <R_ext/GraphicsEngine.h>
+#include <R_ext/Print.h>
 
 static const char * mouseHandlers[] =
 {"onMouseDown", "onMouseUp", "onMouseMove"};
@@ -57,7 +58,7 @@ static void checkHandler(const char * name, SEXP eventEnv)
 	warning(_("'%s' events not supported in this device"), name);
 }
 
-SEXP attribute_hidden
+SEXP
 do_setGraphicsEventEnv(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP eventEnv;
@@ -96,7 +97,7 @@ do_setGraphicsEventEnv(SEXP call, SEXP op, SEXP args, SEXP env)
     return(R_NilValue);
 }
 
-SEXP attribute_hidden
+SEXP
 do_getGraphicsEventEnv(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     int devnum;
@@ -113,7 +114,7 @@ do_getGraphicsEventEnv(SEXP call, SEXP op, SEXP args, SEXP env)
     return gdd->dev->eventEnv;
 }
 
-SEXP attribute_hidden
+SEXP
 do_getGraphicsEvent(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP result = R_NilValue, prompt;
@@ -136,7 +137,7 @@ do_getGraphicsEvent(SEXP call, SEXP op, SEXP args, SEXP env)
 	    gd = GEgetDevice(devNum);
 	    dd = gd->dev;
 	    if (dd->gettingEvent)
-	    	error(_("recursive use of getGraphicsEvent not supported"));
+	    	error(_("recursive use of 'getGraphicsEvent' not supported"));
 	    if (dd->eventEnv != R_NilValue) {
 	        if (dd->eventHelper) dd->eventHelper(dd, 1);
 	        dd->gettingEvent = TRUE;
@@ -202,7 +203,10 @@ void doMouseEvent(pDevDesc dd, R_MouseEvent event,
 
     if (TYPEOF(handler) == CLOSXP) {
         defineVar(install("which"), ScalarInteger(ndevNumber(dd)+1), dd->eventEnv);
-	PROTECT(bvec = allocVector(INTSXP, 3));
+	int len = (buttons & leftButton)
+	    + (buttons & middleButton)
+	    + (buttons & rightButton);
+	PROTECT(bvec = allocVector(INTSXP, len));
 	i = 0;
 	if (buttons & leftButton) INTEGER(bvec)[i++] = 0;
 	if (buttons & middleButton) INTEGER(bvec)[i++] = 1;

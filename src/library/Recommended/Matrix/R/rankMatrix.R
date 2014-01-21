@@ -10,7 +10,7 @@
 
 rankMatrix <- function(x, tol = NULL,
                        method = c("tolNorm2", "qrLINPACK", "useGrad", "maybeGrad"),
-                       sval = svd(x, 0,0)$d)
+                       sval = svd(x, 0,0)$d, warn.t = TRUE)
 {
     ## Purpose: rank of a matrix ``as Matlab'' or "according to Ravi V"
     ## ----------------------------------------------------------------------
@@ -31,38 +31,54 @@ rankMatrix <- function(x, tol = NULL,
 
     ## ----------------------------------------------------------------------
 
-    d <- dim(x)
+    stopifnot(length(d <- dim(x)) == 2)
     p <- min(d)
-    stopifnot(length(d) == 2, length(sval) == p,
-              diff(sval) <= 0) # must be sorted non-increasingly: max = s..[1]
-    absval <- abs(sval)
+    miss.meth <- missing(method)
     method <- match.arg(method)
 
-    if(method %in% c("useGrad", "maybeGrad")) {
-        useGrad <- TRUE
-        ln.av <- log(absval)
-        diff1 <- diff(ln.av)
-        if(method == "maybeGrad") {
-            grad <- (min(ln.av) - max(ln.av)) / p
-            useGrad <- (min(diff1) <= min(-3, 10 * grad))
-        }
-    } else useGrad <- FALSE
-
+    if(useGrad <- (method %in% c("useGrad", "maybeGrad"))) {
+	stopifnot(length(sval) == p,
+		  diff(sval) <= 0) # must be sorted non-increasingly: max = s..[1]
+	ln.av <- log(abs(sval))
+	diff1 <- diff(ln.av)
+	if(method == "maybeGrad") {
+	    grad <- (min(ln.av) - max(ln.av)) / p
+	    useGrad <- (min(diff1) <= min(-3, 10 * grad))
+	}#  -------
+    }
     if(!useGrad) {
-        if(is.null(tol))# the "Matlab" default:
-            tol <- max(d) * .Machine$double.eps * absval[1]
-        else stopifnot(is.numeric(tol), tol >= 0)
+	x.dense <- is(x,"denseMatrix")
+	findTol <- function() {         # the "Matlab" default:
+	    stopifnot(diff(sval) <= 0)
+	    max(d) * .Machine$double.eps * abs(sval[1])
+	}
+	if(method == "qrLINPACK") {
+	    if(is.null(tol) && x.dense) tol <- findTol()
+	    ## tol = NULL is fine for sparse QR
+	} else { ## (method != "qrLINPACK")
+	    if(is.null(tol)) {
+		if(!x.dense && missing(sval) && prod(d) >= 100000L)
+		    warning(gettextf("rankMatrix(<large sparse Matrix>, method = '%s') coerces to dense matrix.\n  Probably should rather use  method = 'qrLINPACK' !?",
+				     method),
+			    immediate.=TRUE, domain=NA)
+		tol <- findTol()
+	    } else stopifnot((tol <- as.numeric(tol)[[1]]) >= 0)
+	}
     }
 
     structure(## rank :
 	      if(useGrad) which.min(diff1)
 	      else if(method == "qrLINPACK") {
-		  q.r <- qr(x, tol=tol, LAPACK = FALSE)
+		  if(do.t <- (d[1L] < d[2L]))
+		      warning(gettextf(
+			"rankMatrix(x, method='qrLINPACK'): computing t(x) as nrow(x) < ncol(x)"))
+		  q.r <- qr(if(do.t) t(x) else x, tol=tol, LAPACK = FALSE)
 		  if(is(q.r, "qr")) q.r$rank
 		  else if(is(q.r,"sparseQR")) sum(diag(q.r@R) != 0)
 		  else stop(gettextf(
-			"method '%s' not applicable for qr() result class '%s'",
-				     method, class(q.r)[1]))
+			"method %s not applicable for qr() result class %s",
+				     sQuote(method), dQuote(class(q.r)[1])),
+			    domain=NA)
 	      } else sum(sval >= tol),
 	      "method" = method,
 	      "useGrad" = useGrad,
@@ -72,7 +88,7 @@ rankMatrix <- function(x, tol = NULL,
 ## Ravi's plot of the absolute singular values:
 if(FALSE) {
 ## if (plot.eigen) {
-    plot(absval, type = "b", xlab = "Index", xaxt = "n",
+    plot(abs(sval), type = "b", xlab = "Index", xaxt = "n",
          log = "y", ylab = "|singular value|   [log scaled]")
     axis(1, at = unique(c(axTicks(1), rank, p)))
     abline(v = rank, lty = 3)

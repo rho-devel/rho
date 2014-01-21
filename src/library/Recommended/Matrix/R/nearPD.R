@@ -17,8 +17,10 @@ nearPD <-
              , conv.tol  = 1e-7 # convergence tolerance for algorithm
              , posd.tol  = 1e-8 # tolerance for enforcing positive definiteness
              , maxit    = 100 # maximum number of iterations allowed
+             , conv.norm.type = "I"
              , trace = FALSE # set to TRUE (or 1 ..) to trace iterations
              )
+
 {
     if(ensureSymmetry) { ## only if needed/wanted ...
 	## message("applying nearPD() to symmpart(x)")
@@ -64,7 +66,7 @@ nearPD <-
         if(corr) diag(X) <- 1
         else if(keepDiag) diag(X) <- diagX0
 
-        conv <- norm(Y-X, "I") / norm(Y, "I")
+        conv <- norm(Y-X, conv.norm.type) / norm(Y, conv.norm.type)
         iter <- iter + 1
 	if (trace)
 	    cat(sprintf("iter %3d : #{p}=%d, ||Y-X|| / ||Y||= %11g\n",
@@ -73,9 +75,9 @@ nearPD <-
         converged <- (conv <= conv.tol)
     }
 
-    if(!converged) {
-        warning("nearPD() did not converge in ", iter, " iterations")
-    }
+    if(!converged)
+	warning(gettextf("'nearPD()' did not converge in %d iterations",
+			 iter), domain = NA)
 
     ## force symmetry is *NEVER* needed, we have symmetric X here!
     ## X <- (X + t(X))/2

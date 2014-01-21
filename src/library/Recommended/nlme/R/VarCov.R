@@ -23,9 +23,9 @@ getVarCov.lme <-
 {
     type  <-  match.arg(type)
     if(any("nlme" == class(obj)))
-        stop("Not implemented for nlme objects")
+        stop("not implemented for \"nlme\" objects")
     if(length(obj$group) > 1)
-        stop("Not implemented for multiple levels of nesting")
+        stop("not implemented for multiple levels of nesting")
     sigma <- obj$sigma
     D <- as.matrix(obj$modelStruct$reStruct[[1]]) * sigma^2
     if (type=="random.effects")
@@ -44,9 +44,11 @@ getVarCov.lme <-
         {
             indx <- (1:length(ugroups))[individ==ugroups]
             if (!length(indx))
-                stop(paste("individual",individ,"was not used in the fit."))
+                stop(gettextf("individual %s was not used in the fit",
+                              sQuote(individ)), domain = NA)
             if (is.na(indx))
-                stop(paste("individual",individ,"was not used in the fit."))
+                 stop(gettextf("individual %s was not used in the fit",
+                              sQuote(individ)), domain = NA)
             ind <- groups == individ
             if(!is.null(obj$modelStruct$corStruct)) {
                 V <- corMatrix(obj$modelStruct$corStruct)[[as.character(individ)]]

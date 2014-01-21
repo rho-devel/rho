@@ -15,7 +15,7 @@
  *CXXR */
 
 /* PAUL MURRELL
-   This is from the GNU plotutils liplot-2.3 distribution, with PS font
+   This is from the GNU plotutils libplot-2.3 distribution, with PS font
    stuff removed
 */
 

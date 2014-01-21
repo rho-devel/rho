@@ -1,6 +1,8 @@
 #  File src/library/stats/R/models.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -35,7 +37,7 @@ formula.default <- function (x, env = parent.frame(), ...)
 }
 formula.formula <- function(x, ...) x
 formula.terms <- function(x, ...) {
-    env<- environment(x)
+    env <- environment(x)
     attributes(x) <- list(class="formula")
     if (!is.null(env))
     	environment(x) <- env
@@ -81,7 +83,7 @@ print.formula <- function(x, showEnv = !identical(e, .GlobalEnv), ...)
     ## as.character gives a vector.
     if(as.character(ans[[1L]])[1L] == "~") {
 	class(ans) <- "formula"
-        environment(ans)<-environment(x)
+        environment(ans) <- environment(x)
     }
     ans
 }
@@ -91,9 +93,9 @@ as.formula <- function(object, env = parent.frame())
     if(inherits(object, "formula"))
         object
     else {
-        rval<-formula(object,env=baseenv())
+        rval <- formula(object, env = baseenv())
         if (identical(environment(rval), baseenv()) || !missing(env))
-            environment(rval)<-env
+            environment(rval) <- env
         rval
     }
 }
@@ -110,7 +112,7 @@ terms.default <- function(x, ...) {
 
 terms.terms <- function(x, ...) x
 print.terms <- function(x, ...) {
-    print.default(unclass(x))
+    print.default(unclass(x), ...)
     invisible(x)
 }
 
@@ -164,7 +166,9 @@ drop.terms <- function(termobj, dropx = NULL, keep.response = FALSE)
 	termobj
     else {
         if(!inherits(termobj, "terms"))
-            stop("'termobj' must be a object of class \"terms\"")
+            stop(gettextf("'termobj' must be a object of class %s",
+                          dQuote("terms")),
+                 domain = NA)
 	newformula <- reformulate(attr(termobj, "term.labels")[-dropx],
 				  if (keep.response) termobj[[2L]] else NULL,
                                   attr(termobj, "intercept"))
@@ -174,17 +178,19 @@ drop.terms <- function(termobj, dropx = NULL, keep.response = FALSE)
 }
 
 
-`[.terms` <-function (termobj, i)
+`[.terms` <- function (termobj, i)
 {
     resp <- if (attr(termobj, "response")) termobj[[2L]] else NULL
     newformula <- attr(termobj, "term.labels")[i]
     if (length(newformula) == 0L) newformula <- "1"
     newformula <- reformulate(newformula, resp, attr(termobj, "intercept"))
-    environment(newformula)<-environment(termobj)
+    environment(newformula) <- environment(termobj)
     terms(newformula, specials = names(attr(termobj, "specials")))
 }
 
 
+## Arguments abb and neg.out are a legacy from S
+## simplify=TRUE was the default in R < 1.7.0
 terms.formula <- function(x, specials = NULL, abb = NULL, data = NULL,
 			  neg.out = TRUE, keep.order = FALSE,
                           simplify = FALSE, ..., allowDotAsName = FALSE)
@@ -197,7 +203,7 @@ terms.formula <- function(x, specials = NULL, abb = NULL, data = NULL,
         if(length(ind)) tmp[ind] <- paste("(", tmp[ind], ")")
         ## need to add back any offsets
         if(length(ind <- attr(Terms, "offset"))) {
-            ## can't look at rownames of factors, as not there y ~ offset(x)
+            ## can't look at rownames of factors, as not there for y ~ offset(x)
             tmp2 <- as.character(attr(Terms, "variables"))[-1L]
             tmp <- c(tmp, tmp2[ind])
         }
@@ -211,9 +217,9 @@ terms.formula <- function(x, specials = NULL, abb = NULL, data = NULL,
     }
 
     if (!is.null(data) && !is.environment(data) && !is.data.frame(data))
-	data <- as.data.frame(data, optional=TRUE)
-    terms <- .Internal(terms.formula(x, specials, data, keep.order,
-                                     allowDotAsName))
+	data <- as.data.frame(data, optional = TRUE)
+    terms <-
+        .External(C_termsform, x, specials, data, keep.order, allowDotAsName)
     if (simplify) {
         a <- attributes(terms)
         terms <- fixFormulaObject(terms)
@@ -276,7 +282,7 @@ offset <- function(object) object
 .checkMFClasses <- function(cl, m, ordNotOK = FALSE)
 {
     ## when called from predict.nls, vars not match.
-    new <- sapply(m, .MFclass)
+    new <- vapply(m, .MFclass, "")
     new <- new[names(new) %in% names(cl)]
      if(length(new) == 0L) return()
     old <- cl[names(new)]
@@ -285,7 +291,11 @@ offset <- function(object) object
         new[new == "ordered"] <- "factor"
     }
     ## ordered is OK as a substitute for factor, but not v.v.
-    new[new == "ordered" && old == "factor"] <- "factor"
+    new[new == "ordered" & old == "factor"] <- "factor"
+    ## factor is OK as a substitute for character
+    ## This probably means the original character got auto-converted to
+    ## factor, setting xlevels and causing the conversion of the new
+    new[new == "factor" & old == "character"] <- "character"
     if(!identical(old, new)) {
         wrong <- old != new
         if(sum(wrong) == 1)
@@ -308,7 +318,9 @@ offset <- function(object) object
     ## logical, factor, ordered vs numeric, and other for future proofing
     if(is.logical(x)) return("logical")
     if(is.ordered(x)) return("ordered")
-    if(is.factor(x))  return("factor")
+    if(is.factor(x)) return("factor")
+    ## Character vectors may be auto-converted to factors, but keep them separate for now
+    if(is.character(x)) return("character")
     if(is.matrix(x) && is.numeric(x))
         return(paste("nmatrix", ncol(x), sep="."))
     ## this is unclear.  Prior to 2.6.0 we assumed numeric with attributes
@@ -342,7 +354,7 @@ model.frame.default <-
         m <- match(c("formula", "data", "subset", "weights", "na.action"),
                    names(fcall), 0)
         fcall <- fcall[c(1, m)]
-        fcall[[1L]] <- as.name("model.frame")
+        fcall[[1L]] <- quote(stats::model.frame)
         env <- environment(formula$terms)
 	if (is.null(env)) env <- parent.frame()
         return(eval(fcall, env, parent.frame()))
@@ -395,31 +407,34 @@ model.frame.default <-
         ## need to do this before subsetting and na.action
         nr2 <- max(sapply(variables, NROW))
         if(nr2 != nr)
-            warning(gettextf(
-                    "'newdata' had %d rows but variable(s) found have %d rows",
-                             nr, nr2), call.=FALSE)
+            warning(sprintf(paste0(ngettext(nr,
+                                            "'newdata' had %d row",
+                                            "'newdata' had %d rows"),
+                                   " ",
+                                  ngettext(nr2,
+                                           "but variable found had %d row",
+                                           "but variables found have %d rows")),
+                            nr, nr2),
+                    call. = FALSE, domain = NA)
     }
     if(is.null(attr(formula, "predvars"))) {
         for (i in seq_along(varnames))
-            predvars[[i+1]] <- makepredictcall(variables[[i]], vars[[i+1]])
+            predvars[[i+1L]] <- makepredictcall(variables[[i]], vars[[i+1L]])
         attr(formula, "predvars") <- predvars
     }
     extras <- substitute(list(...))
     extranames <- names(extras[-1L])
     extras <- eval(extras, data, env)
     subset <- eval(substitute(subset), data, env)
-    data <- .Internal(model.frame(formula, rownames, variables, varnames,
-				  extras, extranames, subset, na.action))
+    data <- .External2(C_modelframe, formula, rownames, variables, varnames,
+                       extras, extranames, subset, na.action)
     ## fix up the levels
     if(length(xlev)) {
 	for(nm in names(xlev))
 	    if(!is.null(xl <- xlev[[nm]])) {
 		xi <- data[[nm]]
-                if(is.character(xi)) {
+                if(is.character(xi))
                     xi <- as.factor(xi)
-		    warning(gettextf("character variable '%s' changed to a factor", nm),
-                            domain = NA)
-                }
 		if(!is.factor(xi) || is.null(nxl <- levels(xi)))
 		    warning(gettextf("variable '%s' is not a factor", nm),
                             domain = NA)
@@ -427,8 +442,10 @@ model.frame.default <-
 		    xi <- xi[, drop = TRUE] # drop unused levels
                     nxl <- levels(xi)
 		    if(any(m <- is.na(match(nxl, xl))))
-			stop(gettextf("factor '%s' has new level(s) %s",
-                                      nm, paste(nxl[m], collapse=", ")),
+                        stop(sprintf(ngettext(length(m),
+                                              "factor %s has new level %s",
+                                              "factor %s has new levels %s"),
+                                     nm, paste(nxl[m], collapse=", ")),
                              domain = NA)
 		    data[[nm]] <- factor(xi, levels=xl, exclude=NULL)
 		}
@@ -441,7 +458,7 @@ model.frame.default <-
 		data[[nm]] <- data[[nm]][, drop = TRUE]
 	}
     }
-    attr(formula, "dataClasses") <- sapply(data, .MFclass)
+    attr(formula, "dataClasses") <- vapply(data, .MFclass, "")
     attr(data, "terms") <- formula
     data
 }
@@ -473,8 +490,10 @@ model.matrix.default <- function(object, data = environment(object),
     if (is.null(attr(data, "terms")))
 	data <- model.frame(object, data, xlev=xlev)
     else {
-	reorder <- match(sapply(attr(t,"variables"),deparse,
-                                width.cutoff=500)[-1L],
+        ## need complete deparse, PR#15377
+        deparse2 <- function(x)
+            paste(deparse(x, width.cutoff = 500L), collapse = " ")
+	reorder <- match(sapply(attr(t, "variables"), deparse2)[-1L],
                          names(data))
 	if (any(is.na(reorder)))
 	    stop("model frame and formula mismatch in model.matrix()")
@@ -487,14 +506,11 @@ model.matrix.default <- function(object, data = environment(object),
         namD <- names(data)
         ## turn any character columns into factors
         for(i in namD)
-            if(is.character(data[[i]])) {
+            if(is.character(data[[i]]))
                 data[[i]] <- factor(data[[i]])
-                warning(gettextf("variable '%s' converted to a factor", i),
-                        domain = NA)
-            }
-        isF <- sapply(data, function(x) is.factor(x) || is.logical(x) )
+        isF <- vapply(data, function(x) is.factor(x) || is.logical(x), NA)
         isF[int] <- FALSE
-        isOF <- sapply(data, is.ordered)
+        isOF <- vapply(data, is.ordered, NA)
         for(nn in namD[isF])            # drop response
             if(is.null(attr(data[[nn]], "contrasts")))
                 contrasts(data[[nn]]) <- contr.funs[1 + isOF[nn]]
@@ -515,13 +531,12 @@ model.matrix.default <- function(object, data = environment(object),
             }
         }
     } else {               # internal model.matrix needs some variable
-        isF <-  FALSE
-        data <- list(x=rep(0, nrow(data)))
+	isF <- FALSE
+	data <- data.frame(x=rep(0, nrow(data)))
     }
-    ans <- .Internal(model.matrix(t, data))
+    ans <- .External2(C_modelmatrix, t, data)
     cons <- if(any(isF))
-	lapply(data[isF], function(x) attr(x,  "contrasts"))
-    else NULL
+	lapply(data[isF], attr, "contrasts") ## else NULL
     attr(ans, "contrasts") <- cons
     ans
 }
@@ -532,7 +547,7 @@ model.response <- function (data, type = "any")
 	if (is.list(data) | is.data.frame(data)) {
 	    v <- data[[1L]]
 	    if (type == "numeric" && is.factor(v)) {
-		warning('using type="numeric" with a factor response will be ignored')
+		warning('using type = "numeric" with a factor response will be ignored')
 	    } else if (type == "numeric" | type == "double")
 		storage.mode(v) <- "double"
 	    else if (type != "any") stop("invalid response type")
@@ -565,7 +580,7 @@ model.extract <- function (frame, component)
 	    dimnames(rval) <- list(attr(frame, "row.names"), t1[[2L]])
 	}
     }
-    return(rval)
+    rval
 }
 
 preplot <- function(object, ...) UseMethod("preplot")
@@ -589,11 +604,17 @@ makepredictcall.default  <- function(var, call)
 
 .getXlevels <- function(Terms, m)
 {
-    xvars <- sapply(attr(Terms, "variables"), deparse, width.cutoff=500)[-1L]
+    deparse2 <- function(x)
+        paste(deparse(x, width.cutoff = 500L), collapse = " ")
+    xvars <- sapply(attr(Terms, "variables"), deparse2)[-1L]
     if((yvar <- attr(Terms, "response")) > 0) xvars <- xvars[-yvar]
     if(length(xvars)) {
-        xlev <- lapply(m[xvars], function(x) if(is.factor(x)) levels(x) else NULL)
-        xlev[!sapply(xlev, is.null)]
+        xlev <- lapply(m[xvars], 
+        	    function(x) 
+        	    	if(is.factor(x)) levels(x) 
+        	    	else if (is.character(x)) levels(as.factor(x))
+        	    	else NULL)
+        xlev[!vapply(xlev, is.null, NA)]
     } else NULL
 }
 
@@ -634,8 +655,8 @@ get_all_vars <- function(formula, data = NULL, ...)
     extras <- substitute(list(...))
     extranames <- names(extras[-1L])
     extras <- eval(extras, data, env)
-    x <- as.data.frame(c(variables, extras), optional=TRUE)
-    names(x) <- c(varnames, extranames)
+    x <- setNames(as.data.frame(c(variables, extras), optional=TRUE),
+		  c(varnames, extranames))
     if (!is.null(rownames))
 	attr(x, "row.names") <- rownames # might be short form
     x

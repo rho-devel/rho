@@ -10,8 +10,8 @@
   Select item(s) from a character vector.
 }
 \usage{
-select.list(choices, preselect = NULL, multiple = FALSE, title = NULL,
-             graphics = getOption("menu.graphics"))
+select.list(choices, preselect = NULL, multiple = FALSE,
+            title = NULL, graphics = getOption("menu.graphics"))
 }
 \arguments{
   \item{choices}{a character vector of items.}
@@ -37,7 +37,7 @@ select.list(choices, preselect = NULL, multiple = FALSE, title = NULL,
   \sQuote{Cancel} button or pressing Escape.
 #endif
 #ifdef unix
-  Under the Mac OS X GUI this brings up a modal dialog box
+  Under the OS X GUI this brings up a modal dialog box
   with a (scrollable) list of items, which can be selected by the mouse.
   On other Unix-like platforms it will use a
   Tcl/Tk listbox widget if possible.
@@ -48,8 +48,8 @@ select.list(choices, preselect = NULL, multiple = FALSE, title = NULL,
   \code{multiple = FALSE} case uses \code{\link{menu}}.  Preselection is
   only supported for \code{multiple = TRUE}, where it is indicated by a
   \code{"+"} preceding the item.
-  
-  It is an error to use \code{select.list} in a non-interactive session. 
+
+  It is an error to use \code{select.list} in a non-interactive session.
 }
 \value{
   A character vector of selected items.  If \code{multiple} is false and

@@ -1,6 +1,9 @@
 #  File src/library/stats/R/aov.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2013 The R Core Team
+#  Copyright (C) 1998 B. D. Ripley
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -20,13 +23,15 @@ aov <- function(formula, data = NULL, projections = FALSE, qr = TRUE,
     Terms <- if(missing(data)) terms(formula, "Error")
     else terms(formula, "Error", data = data)
     indError <- attr(Terms, "specials")$Error
+    ## NB: this is only used for n > 1, so singular form makes no sense
+    ## in English.  But some languages have multiple plurals.
     if(length(indError) > 1L)
         stop(sprintf(ngettext(length(indError),
                               "there are %d Error terms: only 1 is allowed",
                               "there are %d Error terms: only 1 is allowed"),
                      length(indError)), domain = NA)
     lmcall <- Call <- match.call()
-    lmcall[[1L]] <- as.name("lm")
+    lmcall[[1L]] <- quote(stats::lm)
     lmcall$singular.ok <- TRUE
     if(projections) qr <- lmcall$qr <- TRUE
     lmcall$projections <- NULL
@@ -68,7 +73,7 @@ aov <- function(formula, data = NULL, projections = FALSE, qr = TRUE,
         nmstrata <- c("(Intercept)", nmstrata)
         qr.e <- er.fit$qr
         rank.e <- er.fit$rank
-        if(rank.e < length(er.fit$coefficients))
+        if(rank.e < NROW(er.fit$coefficients))
             warning("Error() model is singular")
         qty <- er.fit$residuals
         maov <- is.matrix(qty)
@@ -76,24 +81,18 @@ aov <- function(formula, data = NULL, projections = FALSE, qr = TRUE,
         ## we want this to label the rows of qtx, not cols of x.
         maxasgn <- length(nmstrata) - 1L
         nobs <- NROW(qty)
-        if(nobs > rank.e) {
-            result <- vector("list", maxasgn + 2L)
-            asgn.e[(rank.e+1):nobs] <- maxasgn + 1L
-            nmstrata <- c(nmstrata, "Within")
-        } else result <- vector("list", maxasgn + 1L)
-        names(result) <- nmstrata
+	len <- if(nobs > rank.e) {
+	    asgn.e[(rank.e+1):nobs] <- maxasgn + 1L
+	    nmstrata <- c(nmstrata, "Within")
+	    maxasgn + 2L
+	} else maxasgn + 1L
+        result <- setNames(vector("list", len), nmstrata)
         lmcall$formula <- form <-
             update(formula, paste(". ~ .-", deparse(errorterm, width.cutoff = 500L, backtick = TRUE)))
         Terms <- terms(form)
         lmcall$method <- "model.frame"
         mf <- eval(lmcall, parent.frame())
-        xvars <- as.character(attr(Terms, "variables"))[-1L]
-        if ((yvar <- attr(Terms, "response")) > 0L)
-            xvars <- xvars[-yvar]
-        if (length(xvars)) {
-            xlev <- lapply(mf[xvars], levels)
-            xlev <- xlev[!sapply(xlev, is.null)]
-        } else xlev <- NULL
+        xlev <- .getXlevels(Terms, mf)
         resp <- model.response(mf)
         qtx <- model.matrix(Terms, mf, contrasts)
         cons <- attr(qtx, "contrasts")
@@ -152,7 +151,7 @@ function(x, intercept = FALSE, tol = .Machine$double.eps^0.5, ...)
 {
     if(!is.null(cl <- x$call)) {
         cat("Call:\n   ")
-        dput(cl, control=NULL)
+        dput(cl, control = NULL)
     }
     qrx <- if(x$rank) qr(x)
     asgn <- x$assign[qrx$pivot[1L:x$rank]]
@@ -199,7 +198,8 @@ function(x, intercept = FALSE, tol = .Machine$double.eps^0.5, ...)
             dimnames(tmp) <- list(c(rn, "Deg. of Freedom"), "Residuals")
             print(tmp, quote = FALSE, right = TRUE)
             cat("\n")
-            cat("Residual standard error:", sapply(sqrt(ss/rdf), format), "\n")
+            cat("Residual standard error: ", sapply(sqrt(ss/rdf), format),
+                "\n", sep = "")
         } else
         print(matrix(0, 2L, 1L, dimnames=
                      list(c("Sum of Squares", "Deg. of Freedom"), "<empty>")))
@@ -224,7 +224,7 @@ function(x, intercept = FALSE, tol = .Machine$double.eps^0.5, ...)
         cat("\n")
         if(rdf > 0) {
             rs <- sqrt(RSS/rdf)
-            cat("Residual standard error:", sapply(rs, format), "\n")
+            cat("Residual standard error: ", sapply(rs, format), "\n", sep = "")
         }
         coef <- as.matrix(x$coefficients)[, 1L]
         R <- qrx$qr
@@ -239,7 +239,7 @@ function(x, intercept = FALSE, tol = .Machine$double.eps^0.5, ...)
         if(sum(abs(R))/d2 > tol)
             cat("Estimated effects may be unbalanced\n")
         else cat("Estimated effects are balanced\n")
-        if(nzchar(mess <- naprint(x$na.action))) cat(mess, "\n", sep="")
+        if(nzchar(mess <- naprint(x$na.action))) cat(mess, "\n", sep = "")
     }
     invisible(x)
 }
@@ -257,16 +257,15 @@ summary.aov <- function(object, intercept = FALSE, split,
             if(any(sp)) {              # some marginal terms are split
                 if(sum(sp) > 1) {
                     old <- split[ f[sp] ]
-                    nn <- f[sp]
-                    names(nn) <- nn
+		    nn <- setNames(nm = f[sp])
                     marg <- lapply(nn, function(x)
                                    df.names[asgn == (match(x, names) - 1L)])
                     term.coefs <- strsplit(df.names[asgn == i], ":", fixed=TRUE)
                     ttc <- sapply(term.coefs, function(x) x[sp])
                     rownames(ttc) <- nn
-                    splitnames <- apply(expand.grid(lapply(old, names)), 1L,
-                                        function(x) paste(x, collapse="."))
-                    names(splitnames) <- splitnames
+		    splitnames <-
+			setNames(nm = apply(expand.grid(lapply(old, names)), 1L,
+				 function(x) paste(x, collapse=".")))
                     tmp <- sapply(nn, function(i)
                                   names(old[[i]])[match(ttc[i, ], marg[[i]])] )
                     tmp <- apply(tmp, 1L, function(x) paste(x, collapse="."))
@@ -315,8 +314,14 @@ summary.aov <- function(object, intercept = FALSE, split,
         if(!is.null(Terms <- object$terms)) {
             if(!is.list(split))
                 stop("the 'split' argument must be a list")
-            if(!all(ns %in% nmeffect))
-                stop("unknown name(s) in the 'split' list")
+            if(!all(ns %in% nmeffect)) {
+                na <- sum(!ns %in% nmeffect)
+                stop(sprintf(ngettext(na,
+                                      "unknown name %s in the 'split' list",
+                                      "unknown names %s in the 'split' list"),
+                             paste(sQuote(ns[na]), collapse = ", ")),
+                     domain = NA)
+            }
         }
         if(expand.split) {
             df.names <- names(coef(object))
@@ -380,14 +385,15 @@ summary.aov <- function(object, intercept = FALSE, split,
 }
 
 print.summary.aov <-
-    function(x, digits = max(3, getOption("digits") - 3), symbolic.cor = FALSE,
-             signif.stars = getOption("show.signif.stars"),	...)
+    function(x, digits = max(3L, getOption("digits") - 3L),
+             symbolic.cor = FALSE,
+             signif.stars = getOption("show.signif.stars"), ...)
 {
     if (length(x) == 1L)
         print(x[[1L]], digits = digits, symbolic.cor = symbolic.cor,
               signif.stars = signif.stars)
     else NextMethod()
-    if(nzchar(mess <- naprint(attr(x, "na.action")))) cat(mess, "\n", sep="")
+    if(nzchar(mess <- naprint(attr(x, "na.action")))) cat(mess, "\n", sep = "")
     invisible(x)
 }
 
@@ -476,8 +482,8 @@ print.aovlist <- function(x, ...)
         mn <- x[[1L]]$coefficients
         if(is.matrix(mn)) {
             cat("\nGrand Means:\n")
-            print(format(mn[1,]), quote=FALSE)
-        } else cat("\nGrand Mean:", format(mn[1L]), "\n")
+            print(format(mn[1,]), quote = FALSE)
+        } else cat("\nGrand Mean: ", format(mn[1L]), "\n", sep = "")
         nx <- nx[-1L]
     }
     for(ii in seq_along(nx)) {
@@ -499,8 +505,8 @@ summary.aovlist <- function(object, ...)
         strata <- strata[-1L]
         object <- object[-1L]
     }
-    x <- vector(length = length(strata), mode = "list")
-    names(x) <- paste("Error:", strata)
+    x <- setNames(vector(length = length(strata), mode = "list"),
+		  paste("Error:", strata))
     for(i in seq_along(strata))
         x[[i]] <- do.call("summary", c(list(object = object[[i]]), dots))
     class(x) <- "summary.aovlist"
@@ -511,7 +517,7 @@ print.summary.aovlist <- function(x, ...)
 {
     nn <- names(x)
     for (i in nn) {
-        cat("\n", i, "\n", sep="")
+        cat("\n", i, "\n", sep = "")
         print(x[[i]], ...)
     }
     invisible(x)
@@ -519,8 +525,7 @@ print.summary.aovlist <- function(x, ...)
 
 coef.listof <- function(object, ...)
 {
-    val <- vector("list", length(object))
-    names(val) <- names(object)
+    val <- setNames(vector("list", length(object)), names(object))
     for(i in seq_along(object)) val[[i]] <- coef(object[[i]])
     class(val) <- "listof"
     val
@@ -604,8 +609,7 @@ se.contrast.aovlist <-
         n.object <- length(object)
         e.assign <- c(e.assign,
                       rep.int(n.object - 1L, nrow(c.qr) - length(e.assign)))
-        res <- vector(length = n.object, mode = "list")
-        names(res) <- names(object)
+	res <- setNames(vector("list", n.object), names(object))
         for(j in seq_along(names(object))) {
             strata <- object[[j]]
             if(is.qr(strata$qr)) {

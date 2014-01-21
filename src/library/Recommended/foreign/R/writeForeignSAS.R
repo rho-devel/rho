@@ -25,8 +25,7 @@ make.SAS.names <- function(varnames, validvarname = c("V7", "V6")){
   x <- abbreviate(x, minlength = nmax)
 
   if (any(nchar(x) > nmax) || any(duplicated(x)))
-    stop("Cannot uniquely abbreviate the variable names to ",
-         nmax, " or fewer characters")
+      stop(gettextf("Cannot uniquely abbreviate the variable names to %d or fewer characters", nmax), domain = NA)
   names(x) <- varnames
   x
 }

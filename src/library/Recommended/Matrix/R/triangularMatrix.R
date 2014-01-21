@@ -48,5 +48,5 @@ for(cls in trCls)
               function(object, ...) TRUE)
 ## instead of just for ....   signature(object = "triangularMatrix")
 
-rm(trCls)
+rm(trCls, cls)
 

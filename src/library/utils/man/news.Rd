@@ -96,14 +96,17 @@ news(query, package = "R", lib.loc = NULL, format = NULL,
 }
 
 \examples{
-\donttest{% <- is not sensibly diff-ed against previous versions
 ## Build a db of all R news entries.
 db <- news()
+\dontshow{
+  vv <- capture.output(db)  # without an error
+}
+\donttest{% <- is not sensibly diff-ed against previous versions
 ## Bug fixes with PR number in 2.11.0.
 news(Version == "2.11.0" & grepl("^BUG", Category) & grepl("PR#", Text),
      db = db)
 ## Which categories have been in use? % R-core maybe should standardize a bit more
-sort(table(db[,"Category"]), decreasing=TRUE)
+sort(table(db[, "Category"]), decreasing = TRUE)
 ## Entries with version >= 2.10.1 (including "2.10.1 patched"):
 table(news(Version >= "2.10.1", db = db)$Version)
 }}

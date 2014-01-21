@@ -34,10 +34,14 @@ setAs("dspMatrix", "dppMatrix",
 setMethod("chol", signature(x = "dppMatrix"),
 	  function(x, pivot, LINPACK) .Call(dppMatrix_chol, x))
 
+setMethod("determinant", signature(x = "dppMatrix", logarithm = "logical"), mkDet.via.chol)
+setMethod("determinant", signature(x = "dppMatrix", logarithm = "missing"),
+	  function(x, logarithm, ...) mkDet.via.chol(x, logarithm=TRUE))
+
 setMethod("rcond", signature(x = "dppMatrix", norm = "character"),
-          function(x, norm, ...)
-          .Call(dppMatrix_rcond, x, norm),
-          valueClass = "numeric")
+	  function(x, norm, ...)
+	  .Call(dppMatrix_rcond, x, norm),
+	  valueClass = "numeric")
 
 setMethod("rcond", signature(x = "dppMatrix", norm = "missing"),
           function(x, norm, ...)

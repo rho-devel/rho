@@ -94,14 +94,16 @@ setMethod("Summary", signature(x = "dsparseMatrix", na.rm = "ANY"),
       {
 	  ne <- prod(d <- dim(x))
 	  if(ne == 0) return(callGeneric(numeric(0), ..., na.rm=na.rm))
+	  n <- d[1]
+	  clx <- getClassDef(class(x))
+	  isTri <- extends(clx, "triangularMatrix")
+	  if(extends(clx, "TsparseMatrix") && is_duplicatedT(x, di = d))
+	      x <- .Call(Tsparse_to_Csparse, x, isTri)# = as(x, "Csparsematrix")
 	  l.x <- length(x@x)
 	  if(l.x == ne) ## fully non-zero (and "general") - very rare but quick
 	      return( callGeneric(x@x, ..., na.rm = na.rm) )
 	  ## else  l.x < ne
 
-	  n <- d[1]
-	  clx <- getClassDef(class(x))
-	  isTri <- extends(clx, "triangularMatrix")
 	  isSym <- !isTri && extends(clx, "symmetricMatrix")
 	  isU.tri <- isTri && x@diag == "U"
 	  ## "full": has *no* structural zero : very rare, but need to catch :
@@ -138,10 +140,12 @@ setMethod("Summary", signature(x = "dsparseMatrix", na.rm = "ANY"),
 
 ## Methods for single-argument transformations
 
-setMethod("zapsmall", signature = list(x = "dMatrix"),
+setMethod("zapsmall", signature(x = "dMatrix"),
           function(x, digits = getOption("digits")) {
               x@x <- zapsmall(x@x, digits)
               x
           })
 
 ## -- end(single-argument transformations) ------
+
+

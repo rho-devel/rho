@@ -63,8 +63,8 @@ read.dta <- function(file, convert.dates = TRUE,
     if (convert.dates) {
         ff <- attr(rval,"formats")
         dates <- grep("%-*d", ff)
-        ## avoid as.Date in case strptime is screwed up
-        base <- structure(-3653, class="Date")
+        ## avoid as.Date in case strptime is messed up
+        base <- structure(-3653, class = "Date")
         for(v in dates) rval[[v]] <- base+rval[[v]]
     }
     if (convert.factors %in% c(TRUE, NA)) {
@@ -77,8 +77,9 @@ read.dta <- function(file, convert.dates = TRUE,
             for(v in factors) {
                 labels <- tt[[ll[v]]]
                 if (warn.missing.labels && is.null(labels)) {
-                    warning("value labels (", ll[v], ") for ", names(rval)[v],
-                            " are missing")
+                    warning(gettextf("value labels (%s) for %s are missing",
+                                     sQuote(ll[v]), sQuote(names(rval)[v])),
+                            domain = NA)
                     next
                 }
                 if(!is.na(convert.factors)) {
@@ -159,9 +160,10 @@ write.dta <-
     shortlevels <- function(f) {
         ll <- levels(f)
         if (is.null(ll)) return(NULL)
-        abbreviate(ll, 80L)
+        ## avoid warning if non-ASCII strings are used (unwisely)
+        if (all(nchar(ll, "bytes") <= 80L)) ll else abbreviate(ll, 80L)
     }
-    leveltable <- lapply(dataframe,shortlevels)
+    leveltable <- lapply(dataframe, shortlevels)
 
     if (any(sapply(dataframe, function(x) {
         d <- dim(x)

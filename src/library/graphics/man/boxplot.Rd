@@ -105,7 +105,7 @@ boxplot(x, \dots)
   formula, parallel boxplots will be plotted, in the order of the
   arguments or the order of the levels of the factor (see
   \code{\link{factor}}).
-  
+
   Missing values are ignored when forming boxplots.
 }
 \value{
@@ -151,7 +151,7 @@ boxplot(count ~ spray, data = InsectSprays,
 boxplot(decrease ~ treatment, data = OrchardSprays,
         log = "y", col = "bisque")
 
-rb <- boxplot(decrease ~ treatment, data = OrchardSprays, col="bisque")
+rb <- boxplot(decrease ~ treatment, data = OrchardSprays, col = "bisque")
 title("Comparing boxplot()s and non-robust mean +/- SD")
 
 mn.t <- tapply(OrchardSprays$decrease, OrchardSprays$treatment, mean)
@@ -166,7 +166,7 @@ mat <- cbind(Uni05 = (1:100)/21, Norm = rnorm(100),
              `5T` = rt(100, df = 5), Gam2 = rgamma(100, shape = 2))
 boxplot(as.data.frame(mat),
         main = "boxplot(as.data.frame(mat), main = ...)")
-par(las=1)# all axis labels horizontal
+par(las = 1) # all axis labels horizontal
 boxplot(as.data.frame(mat), main = "boxplot(*, horizontal = TRUE)",
         horizontal = TRUE)
 

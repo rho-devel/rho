@@ -4,14 +4,42 @@ static int chk_nm(const char *nm, int perm, int LDL, int super)
 {
     if (strlen(nm) != 11) return 0;
     if (strcmp(nm + 3, "Cholesky")) return 0;
-    if (super > 0 && nm[0] != 'S') return 0;
+    if (super  > 0 && nm[0] != 'S') return 0;
     if (super == 0 && nm[0] != 's') return 0;
-    if (perm > 0 && nm[1] != 'P') return 0;
+    if (perm  > 0 && nm[1] != 'P') return 0;
     if (perm == 0 && nm[1] != 'p') return 0;
-    if (LDL > 0 && nm[2] != 'D') return 0;
+    if (LDL  > 0 && nm[2] != 'D') return 0;
     if (LDL == 0 && nm[2] != 'd') return 0;
     return 1;
 }
+
+SEXP R_chkName_Cholesky(SEXP nm, SEXP perm, SEXP LDL, SEXP super)
+{
+    return ScalarLogical(chk_nm(CHAR(asChar(nm)), asLogical(perm),
+				asLogical(LDL), asLogical(super)));
+}
+
+// must be called with 'nm' a string of length 11
+static void chm_factor_name(char* nm, int perm, int LDL, int super) {
+    if (strlen(nm) != 11) {
+	error(_("chm_factor_name(): did not get string of length 11"));
+	return;
+    }
+    nm[0] = (super > 0) ? 'S' : 's';
+    nm[1] = (perm == 0) ? 'p' : 'P';
+    nm[2] = (LDL  == 0) ? 'd' : 'D';
+    return;
+}
+
+// must be called with 'nm' a string of length 11
+SEXP R_chm_factor_name(SEXP perm, SEXP LDL, SEXP super)
+{
+    char nm[12] = "...Cholesky";// 11 + final \0
+    chm_factor_name(nm, asLogical(perm), asLogical(LDL), asLogical(super));
+    return mkString(nm);
+}
+
+
 
 /**
  * Return a CHOLMOD copy of the cached Cholesky decomposition with the
@@ -77,15 +105,13 @@ internal_chm_factor(SEXP Ap, int perm, int LDL, int super, double Imult)
 	    error(_("internal_chm_factor: Cholesky factorization failed"));
 	}
 
-	char fnm[12] = "sPDCholesky";
-
 	/* now that we allow (super, LDL) to be "< 0", be careful :*/
 	if(super < 0) super = L->is_super ? 1 : 0;
 	if(LDL < 0)   LDL   = L->is_ll    ? 0 : 1;
 
-	if (super > 0) fnm[0] = 'S';
-	if (perm == 0) fnm[1] = 'p';
-	if (LDL  == 0) fnm[2] = 'd';
+	char fnm[12] = "...Cholesky";// 11 + final \0
+	chm_factor_name(fnm, perm, LDL, super);
+
 	set_factors(Ap, chm_factor_to_SEXP(L, 0), fnm);
     }
     CHM_restore_common();
@@ -155,6 +181,7 @@ SEXP dsCMatrix_LDL_D(SEXP Ap, SEXP permP, SEXP resultKind)
     SEXP ans;
     L = internal_chm_factor(Ap, asLogical(permP),
 			    /*LDL*/ 1, /*super*/0, /*Imult*/0.);
+    // ./Csparse.c :
     ans = PROTECT(diag_tC_ptr(L->n,
 			      L->p,
 			      L->x,
@@ -165,6 +192,7 @@ SEXP dsCMatrix_LDL_D(SEXP Ap, SEXP permP, SEXP resultKind)
     return(ans);
 }
 
+// using cholmod_spsolve() --> sparse result
 SEXP dsCMatrix_Csparse_solve(SEXP a, SEXP b)
 {
     CHM_FR L = internal_chm_factor(a, /*perm*/-1, /*LDL*/-1, /*super*/-1, /*Imult*/0.);
@@ -182,6 +210,7 @@ SEXP dsCMatrix_Csparse_solve(SEXP a, SEXP b)
 			      /*dimnames = */ R_NilValue);
 }
 
+// using cholmod_solve() --> dense result
 SEXP dsCMatrix_matrix_solve(SEXP a, SEXP b)
 {
     CHM_FR L = internal_chm_factor(a, -1, -1, -1, 0.);
