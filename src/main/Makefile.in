@@ -27,7 +27,7 @@ R_HOME=$(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES_C = complex.c inlined.c
+SOURCES_C = complex.c edit.c inlined.c
 
 SOURCES_CXX = \
 	ArgList.cpp ArgMatcher.cpp \

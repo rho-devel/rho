@@ -82,7 +82,7 @@ extern "C" {
 
 SEXP   R_new_custom_connection(const char *description, const char *mode, const char *class_name, Rconnection *ptr);
 size_t R_ReadConnection(Rconnection con, void *buf, size_t n);
-size_t R_WriteConnection(Rconnection con, CXXRCONST void *buf, size_t n);
+size_t R_WriteConnection(Rconnection con, const void *buf, size_t n);
 
 #ifdef  __cplusplus
 }

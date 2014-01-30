@@ -108,7 +108,7 @@ R_xlen_t Rf_xlength(SEXP s)
 /*  mkCLOSXP - return a closure with formals f,  */
 /*             body b, and environment rho       */
 
-SEXP attribute_hidden Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
+SEXP Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
 {
     GCStackRoot<PairList> formrt(SEXP_downcast<PairList*>(formals));
     GCStackRoot<> bodyrt(body);

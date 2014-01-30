@@ -101,7 +101,7 @@ do_mapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SET_VECTOR_ELT(nindex, j, allocVector(realIndx ? REALSXP : INTSXP, 1));
 	SEXP tmp1 = PROTECT(lang3(R_Bracket2Symbol, Dots, VECTOR_ELT(mindex, j)));
 	SEXP tmp2 = PROTECT(lang3(R_Bracket2Symbol, tmp1, VECTOR_ELT(nindex, j)));
-	REPROTECT(fcall = LCONS(tmp2, fcall), fi);
+	REPROTECT(fcall = CONS(tmp2, fcall), fi);
 	UNPROTECT(2);
 	if (named && CHAR(STRING_ELT(vnames, j))[0] != '\0')
 	    SET_TAG(fcall, installTrChar(STRING_ELT(vnames, j)));

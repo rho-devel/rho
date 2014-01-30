@@ -1,3 +1,19 @@
+/*CXXR $Id: deriv.cpp 1348 2013-02-25 17:49:03Z arr $
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -22,11 +38,19 @@
  *  Symbolic Differentiation
  */
 
+/** @file deriv.cpp
+ *
+ * Symbolic differentiation.
+ */
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
 #include "Defn.h"
+#include "CXXR/GCStackRoot.hpp"
+
+using namespace CXXR;
 
 static SEXP ParenSymbol;
 static SEXP PlusSymbol;
@@ -266,14 +290,16 @@ static SEXP simplify(SEXP fun, SEXP arg1, SEXP arg2)
     return ans;
 }/* simplify() */
 
+namespace {
+    inline SEXP PP_S(SEXP F, SEXP a1, SEXP a2 = R_MissingArg)
+    {
+	return PP(simplify(F,a1,a2));
+    }
+}
 
 /* D() implements the "derivative table" : */
 static SEXP D(SEXP expr, SEXP var)
 {
-
-#define PP_S(F,a1,a2) PP(simplify(F,a1,a2))
-#define PP_S2(F,a1)   PP(simplify(F,a1, R_MissingArg))
-
     SEXP ans = R_NilValue, expr1, expr2;
     switch(TYPEOF(expr)) {
     case LGLSXP:
@@ -360,7 +386,7 @@ static SEXP D(SEXP expr, SEXP var)
 		expr2 = simplify(TimesSymbol,
 				 PP_S(PowerSymbol, CADR(expr), CADDR(expr)),
 				 PP_S(TimesSymbol,
-				      PP_S2(LogSymbol, CADR(expr)),
+				      PP_S(LogSymbol, CADR(expr)),
 				      PP(D(CADDR(expr), var))));
 		UNPROTECT(4);
 		PROTECT(expr2);
@@ -382,13 +408,13 @@ static SEXP D(SEXP expr, SEXP var)
 	}
 	else if (CAR(expr) == CosSymbol) {
 	    ans = simplify(TimesSymbol,
-			   PP_S2(SinSymbol, CADR(expr)),
-			   PP_S2(MinusSymbol, PP(D(CADR(expr), var))));
+			   PP_S(SinSymbol, CADR(expr)),
+			   PP_S(MinusSymbol, PP(D(CADR(expr), var))));
 	    UNPROTECT(3);
 	}
 	else if (CAR(expr) == SinSymbol) {
 	    ans = simplify(TimesSymbol,
-			   PP_S2(CosSymbol, CADR(expr)),
+			   PP_S(CosSymbol, CADR(expr)),
 			   PP(D(CADR(expr), var)));
 	    UNPROTECT(2);
 	}
@@ -396,19 +422,19 @@ static SEXP D(SEXP expr, SEXP var)
 	    ans = simplify(DivideSymbol,
 			   PP(D(CADR(expr), var)),
 			   PP_S(PowerSymbol,
-				PP_S2(CosSymbol, CADR(expr)),
+				PP_S(CosSymbol, CADR(expr)),
 				PP(Constant(2.0))));
 	    UNPROTECT(4);
 	}
 	else if (CAR(expr) == CoshSymbol) {
 	    ans = simplify(TimesSymbol,
-			   PP_S2(SinhSymbol, CADR(expr)),
+			   PP_S(SinhSymbol, CADR(expr)),
 			   PP(D(CADR(expr), var)));
 	    UNPROTECT(2);
 	}
 	else if (CAR(expr) == SinhSymbol) {
 	    ans = simplify(TimesSymbol,
-			   PP_S2(CoshSymbol, CADR(expr)),
+			   PP_S(CoshSymbol, CADR(expr)),
 			   PP(D(CADR(expr), var))),
 		UNPROTECT(2);
 	}
@@ -416,13 +442,13 @@ static SEXP D(SEXP expr, SEXP var)
 	    ans = simplify(DivideSymbol,
 			   PP(D(CADR(expr), var)),
 			   PP_S(PowerSymbol,
-				PP_S2(CoshSymbol, CADR(expr)),
+				PP_S(CoshSymbol, CADR(expr)),
 				PP(Constant(2.0))));
 	    UNPROTECT(4);
 	}
 	else if (CAR(expr) == SqrtSymbol) {
-	    PROTECT(expr1 = allocList(3));
-	    SET_TYPEOF(expr1, LANGSXP);
+	    GCStackRoot<PairList> tl(PairList::make(2));
+	    PROTECT(expr1 = CXXR_NEW(Expression(0, tl)));
 	    SETCAR(expr1, PowerSymbol);
 	    SETCADR(expr1, CADR(expr));
 	    SETCADDR(expr1, Constant(0.5));
@@ -431,15 +457,15 @@ static SEXP D(SEXP expr, SEXP var)
 	}
 	else if (CAR(expr) == PnormSymbol) {
 	    ans = simplify(TimesSymbol,
-			   PP_S2(DnormSymbol, CADR(expr)),
+			   PP_S(DnormSymbol, CADR(expr)),
 			   PP(D(CADR(expr), var)));
 	    UNPROTECT(2);
 	}
 	else if (CAR(expr) == DnormSymbol) {
 	    ans = simplify(TimesSymbol,
-			   PP_S2(MinusSymbol, CADR(expr)),
+			   PP_S(MinusSymbol, CADR(expr)),
 			   PP_S(TimesSymbol,
-				PP_S2(DnormSymbol, CADR(expr)),
+				PP_S(DnormSymbol, CADR(expr)),
 				PP(D(CADR(expr), var))));
 	    UNPROTECT(4);
 	}
@@ -473,7 +499,7 @@ static SEXP D(SEXP expr, SEXP var)
 	else if (CAR(expr) == LGammaSymbol) {
 	    ans = simplify(TimesSymbol,
 			   PP(D(CADR(expr), var)),
-			   PP_S2(DiGammaSymbol, CADR(expr)));
+			   PP_S(DiGammaSymbol, CADR(expr)));
 	    UNPROTECT(2);
 	}
 	else if (CAR(expr) == GammaSymbol) {
@@ -481,13 +507,13 @@ static SEXP D(SEXP expr, SEXP var)
 			   PP(D(CADR(expr), var)),
 			   PP_S(TimesSymbol,
 				expr,
-				PP_S2(DiGammaSymbol, CADR(expr))));
+				PP_S(DiGammaSymbol, CADR(expr))));
 	    UNPROTECT(3);
 	}
 	else if (CAR(expr) == DiGammaSymbol) {
 	    ans = simplify(TimesSymbol,
 			   PP(D(CADR(expr), var)),
-			   PP_S2(TriGammaSymbol, CADR(expr)));
+			   PP_S(TriGammaSymbol, CADR(expr)));
 	    UNPROTECT(2);
 	}
 	else if (CAR(expr) == TriGammaSymbol) {
@@ -522,7 +548,7 @@ static SEXP D(SEXP expr, SEXP var)
 	}
 
 	else {
-	    SEXP u = deparse1(CAR(expr), 0, SIMPLEDEPARSE);
+	    SEXP u = deparse1(CAR(expr), CXXRFALSE, SIMPLEDEPARSE);
 	    error(_("Function '%s' is not in the derivatives table"),
 		  translateChar(STRING_ELT(u, 0)));
 	}
@@ -622,11 +648,12 @@ static SEXP AddParens(SEXP expr)
     return expr;
 }
 
+extern "C"
 SEXP doD(SEXP args)
 {
     SEXP expr, var;
     args = CDR(args);
-    if (isExpression(CAR(args))) expr = VECTOR_ELT(CAR(args), 0);
+    if (isExpression(CAR(args))) expr = XVECTOR_ELT(CAR(args), 0);
     else expr = CAR(args);
     var = CADR(args);
     if (!isString(var) || length(var) < 1)
@@ -643,7 +670,7 @@ SEXP doD(SEXP args)
 
 /* ------ FindSubexprs ------ and ------ Accumulate ------ */
 
-static void InvalidExpression(char *where)
+static void InvalidExpression(CXXRCONST char *where)
 {
     error(_("invalid expression in '%s'"), where);
 }
@@ -904,10 +931,11 @@ static SEXP Prune(SEXP lst)
     else return lst ;
 }
 
+extern "C"
 SEXP deriv(SEXP args)
 {
 /* deriv(expr, namevec, function.arg, tag, hessian) */
-    SEXP ans, ans2, expr, funarg, names, s;
+    SEXP ans, ans2, expr, funarg, names;
     int f_index, *d_index, *d2_index;
     int i, j, k, nexpr, nderiv=0, hessian;
     SEXP exprlist, tag;
@@ -917,7 +945,7 @@ SEXP deriv(SEXP args)
     PROTECT(exprlist = LCONS(install("{"), R_NilValue));
     /* expr: */
     if (isExpression(CAR(args)))
-	PROTECT(expr = VECTOR_ELT(CAR(args), 0));
+	PROTECT(expr = XVECTOR_ELT(CAR(args), 0));
     else PROTECT(expr = CAR(args));
     args = CDR(args);
     /* namevec: */
@@ -941,10 +969,10 @@ SEXP deriv(SEXP args)
      */
     PROTECT(ans = duplicate(expr));
     f_index = FindSubexprs(ans, exprlist, tag);
-    d_index = (int*)R_alloc((size_t) nderiv, sizeof(int));
+    d_index = static_cast<int*>(CXXR_alloc(size_t( nderiv), sizeof(int)));
     if (hessian)
-	d2_index = (int*)R_alloc((size_t) ((nderiv * (1 + nderiv))/2),
-				 sizeof(int));
+	d2_index = static_cast<int*>(CXXR_alloc(size_t ((nderiv * (1 + nderiv))/2),
+						sizeof(int)));
     else d2_index = d_index;/*-Wall*/
     UNPROTECT(1);
     for(i=0, k=0; i<nderiv ; i++) {
@@ -1078,29 +1106,21 @@ SEXP deriv(SEXP args)
 
     if (TYPEOF(funarg) == CLOSXP)
     {
-	s = allocSExp(CLOSXP);
-	SET_FORMALS(s, FORMALS(funarg));
-	SET_CLOENV(s, CLOENV(funarg));
-	funarg = s;
-	SET_BODY(funarg, exprlist);
+	funarg = mkCLOSXP(FORMALS(funarg), exprlist, CLOENV(funarg));
     }
     else if (isString(funarg)) {
-	PROTECT(names = duplicate(funarg));
-	PROTECT(funarg = allocSExp(CLOSXP));
-	PROTECT(ans = allocList(length(names)));
-	SET_FORMALS(funarg, ans);
-	for(i = 0; i < length(names); i++) {
-	    SET_TAG(ans, installTrChar(STRING_ELT(names, i)));
+	GCStackRoot<> formals(allocList(length(funarg)));
+	ans = formals;
+	for(i = 0; i < length(funarg); i++) {
+	    SET_TAG(ans, installTrChar(STRING_ELT(funarg, i)));
 	    SETCAR(ans, R_MissingArg);
 	    ans = CDR(ans);
 	}
-	UNPROTECT(3);
-	SET_BODY(funarg, exprlist);
-	SET_CLOENV(funarg, R_GlobalEnv);
+	funarg = mkCLOSXP(formals, exprlist, R_GlobalEnv);
     }
     else {
 	funarg = allocVector(EXPRSXP, 1);
-	SET_VECTOR_ELT(funarg, 0, exprlist);
+	SET_XVECTOR_ELT(funarg, 0, exprlist);
 	/* funarg = lang2(install("expression"), exprlist); */
     }
     UNPROTECT(2);

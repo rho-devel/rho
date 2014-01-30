@@ -46,6 +46,7 @@ while (<>) {
   s/newbuff/new/g;
   s/newconn/new/g;
   s/newd\b/new/g;
+  s/newf\b/new/g;
   s/newi\b/new/g;
   s/newplot/new/g;
   s/newv\b/new/g;

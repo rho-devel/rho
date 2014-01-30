@@ -316,6 +316,7 @@ static SEXP ziplist(const char *zipname)
 
 /* called from a .External in package 'utils', so managing
    the R_alloc stack here is prudence */
+extern "C"
 SEXP Runzip(SEXP args)
 {
     SEXP  fn, ans, names = R_NilValue;

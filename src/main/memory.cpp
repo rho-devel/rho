@@ -507,6 +507,7 @@ DL_FUNC R_ExternalPtrAddrFn(SEXP s)
 
 #ifndef R_MEMORY_PROFILING
 
+extern "C"
 SEXP do_Rprofmem(SEXP args)
 {
     error(_("memory profiling is not available on this system"));
@@ -564,6 +565,7 @@ static void R_InitMemReporting(SEXP filename, int append,
     MemoryBank::setMonitor(R_ReportAllocation, threshold);
 }
 
+extern "C"
 SEXP do_Rprofmem(SEXP args)
 {
     SEXP filename;

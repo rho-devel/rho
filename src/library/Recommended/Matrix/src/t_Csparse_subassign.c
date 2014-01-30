@@ -179,7 +179,6 @@ SEXP Csparse_subassign(SEXP x, SEXP i_, SEXP j_, SEXP value)
     val_i_slot = PROTECT(coerceVector(GET_SLOT(value, Matrix_iSym), REALSXP));
     double *val_i = REAL(val_i_slot);
     int nnz_val = LENGTH(GET_SLOT(value, Matrix_iSym)), n_prot = 4;
-    SEXP val_x_slot = 0;
     Type_x *val_x = NULL;
     if(!value_is_nsp) {
 	if(ctype_v) { // matrix 'x' and 'value' are of different kinds

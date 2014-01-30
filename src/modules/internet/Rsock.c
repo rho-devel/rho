@@ -66,7 +66,7 @@ extern void R_ProcessEvents(void);
 
 static int sock_inited = 0;
 
-static struct Sock_error_t perr;
+static struct Sock_error_st perr;
 
 static int enter_sock(int fd)
 {

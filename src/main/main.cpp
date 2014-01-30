@@ -173,13 +173,13 @@ attribute_hidden int	R_ErrorCon	= 2;	/* Error connection */
 attribute_hidden char   *Sys_TempDir	= NULL;	/* Name of per-session dir
 						   if set by R itself */
 attribute_hidden char	R_StdinEnc[31]  = "";	/* Encoding assumed for stdin */
-attribute_hidden int	R_ParseError	= 0; /* Line where parse error occurred */
+int R_ParseError	= 0; /* Line where parse error occurred */
 attribute_hidden int	R_ParseErrorCol;    /* Column of start of token where parse error occurred */
 attribute_hidden SEXP	R_ParseErrorFile;   /* Source file where parse error was seen */
-attribute_hidden char	R_ParseErrorMsg[PARSE_ERROR_SIZE] = "";
-attribute_hidden char	R_ParseContext[PARSE_CONTEXT_SIZE] = "";
-attribute_hidden int	R_ParseContextLast = 0; /* last character in context buffer */
-attribute_hidden int	R_ParseContextLine; /* Line in file of the above */
+char R_ParseErrorMsg[PARSE_ERROR_SIZE] = "";
+char R_ParseContext[PARSE_CONTEXT_SIZE] = "";
+int R_ParseContextLast = 0; /* last character in context buffer */
+int R_ParseContextLine; /* Line in file of the above */
 attribute_hidden int	R_CollectWarnings = 0;	/* the number of warnings */
 GCRoot<>	R_Warnings;	    /* the warnings and their calls */
 attribute_hidden int	R_ShowErrorMessages = 1;     /* show error messages? */
@@ -189,13 +189,13 @@ attribute_hidden Rboolean R_ShowWarnCalls = FALSE;
 attribute_hidden Rboolean R_ShowErrorCalls = FALSE;
 attribute_hidden int R_NShowCalls = 50;
 attribute_hidden   Rboolean latin1locale = FALSE; /* is this a Latin-1 locale? */
-attribute_hidden char OutDec	= '.';  /* decimal point used for output */
+char OutDec = '.';  /* decimal point used for output */
 attribute_hidden Rboolean R_DisableNLinBrowser = FALSE;
 
 attribute_hidden int R_dec_min_exponent		= -308;
-attribute_hidden unsigned int max_contour_segments = 25000;
-attribute_hidden Rboolean known_to_be_latin1 = FALSE;
-attribute_hidden Rboolean known_to_be_utf8 = FALSE;
+unsigned int max_contour_segments = 25000;
+Rboolean known_to_be_latin1 = FALSE;
+Rboolean known_to_be_utf8 = FALSE;
 
 #ifdef BYTECODE
 attribute_hidden int R_jit_enabled = 0;
@@ -822,6 +822,7 @@ unsigned int TimeToSeed(void); /* datetime.c */
 
 const char* get_workspace_name();  /* from startup.c */
 
+extern "C"
 void attribute_hidden BindDomain(char *R_Home)
 {
 #ifdef ENABLE_NLS
@@ -1659,6 +1660,7 @@ void attribute_hidden dummy12345(void)
 }
 
 /* Used in unix/system.c, avoid inlining */
+extern "C"
 uintptr_t dummy_ii(void)
 {
     int ii;

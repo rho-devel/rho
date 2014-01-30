@@ -1,3 +1,19 @@
+/*CXXR $Id: size.cpp 1348 2013-02-25 17:49:03Z arr $
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2000-12  The R Core Team
@@ -19,13 +35,17 @@
 
 
 /* We need to know the sizes of certain internal structures */
-#define USE_RINTERNALS
+//#define USE_RINTERNALS
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
 #include <Defn.h>
+#include "CXXR/ByteCode.hpp"
+#include "CXXR/GCStackRoot.hpp"
+
+using namespace CXXR;
 
 /* A count of the memory used by an object. The following assumptions
    are made.
@@ -41,7 +61,7 @@ SEXP csduplicated(SEXP x);  /* from unique.c */
 static R_size_t objectsize(SEXP s)
 {
     R_size_t cnt = 0, vcnt = 0;
-    SEXP tmp, dup;
+    SEXP tmp;
     Rboolean isVec = FALSE;
 
     switch (TYPEOF(s)) {
@@ -52,11 +72,17 @@ static R_size_t objectsize(SEXP s)
 	break;
     case LISTSXP:
     case LANGSXP:
-    case BCODESXP:
 	cnt += objectsize(TAG(s));
 	cnt += objectsize(CAR(s));
 	cnt += objectsize(CDR(s));
 	break;
+    case BCODESXP:
+	{
+	    ByteCode* bc = SEXP_downcast<ByteCode*>(s);
+	    cnt += objectsize(bc->code());
+	    cnt += objectsize(bc->constants());
+	    break;
+	}
     case CLOSXP:
 	cnt += objectsize(FORMALS(s));
 	cnt += objectsize(BODY(s));
@@ -85,27 +111,36 @@ static R_size_t objectsize(SEXP s)
 	isVec = TRUE;
 	break;
     case STRSXP:
-	vcnt = PTR2VEC(xlength(s));
-	dup = csduplicated(s);
-	for (R_xlen_t i = 0; i < xlength(s); i++) {
-	    tmp = STRING_ELT(s, i);
-	    if(tmp != NA_STRING && !LOGICAL(dup)[i])
-		cnt += objectsize(tmp);
+	{
+	    vcnt = PTR2VEC(xlength(s));
+	    GCStackRoot<> dup(csduplicated(s));
+	    for (R_xlen_t i = 0; i < xlength(s); i++) {
+		tmp = STRING_ELT(s, i);
+		if(tmp != NA_STRING && !LOGICAL(dup)[i])
+		    cnt += objectsize(tmp);
+	    }
+	    isVec = TRUE;
+	    break;
 	}
-	isVec = TRUE;
-	break;
     case DOTSXP:
     case ANYSXP:
 	/* we don't know about these */
 	break;
     case VECSXP:
-    case EXPRSXP:
-    case WEAKREFSXP:
 	/* Generic Vector Objects */
 	vcnt = PTR2VEC(xlength(s));
 	for (R_xlen_t i = 0; i < xlength(s); i++)
 	    cnt += objectsize(VECTOR_ELT(s, i));
 	isVec = TRUE;
+	break;
+    case EXPRSXP:
+	vcnt = PTR2VEC(xlength(s));
+	for (R_xlen_t i = 0; i < xlength(s); i++)
+	    cnt += objectsize(XVECTOR_ELT(s, i));
+	isVec = TRUE;
+	break;
+    case WEAKREFSXP:
+	// Not properly addressed in CXXR:
 	break;
     case EXTPTRSXP:
 	cnt += sizeof(void *);  /* the actual pointer */
@@ -117,8 +152,6 @@ static R_size_t objectsize(SEXP s)
 	isVec = TRUE;
 	break;
     case S4SXP:
-	/* Has TAG and ATRIB but no CAR nor CDR */
-	cnt += objectsize(TAG(s));
 	break;
     default:
 	UNIMPLEMENTED_TYPE("object.size", s);
@@ -127,7 +160,7 @@ static R_size_t objectsize(SEXP s)
        we need to take into account the rounding up that goes on
        in the node classes. */
     if(isVec) {
-	cnt += sizeof(SEXPREC_ALIGN);
+	cnt += sizeof(RObject);
 	if (vcnt > 16) cnt += 8*vcnt;
 	else if (vcnt > 8) cnt += 128;
 	else if (vcnt > 6) cnt += 64;
@@ -135,14 +168,14 @@ static R_size_t objectsize(SEXP s)
 	else if (vcnt > 2) cnt += 32;
 	else if (vcnt > 1) cnt += 16;
 	else if (vcnt > 0) cnt += 8;
-    } else cnt += sizeof(SEXPREC);
+    } else cnt += sizeof(RObject);
     /* add in attributes: these are fake for CHARSXPs */
     if(TYPEOF(s) != CHARSXP) cnt += objectsize(ATTRIB(s));
     return(cnt);
 }
 
-
+extern "C"
 SEXP objectSize(SEXP x)
 {
-    return ScalarReal( (double) objectsize(x) );
+    return ScalarReal( double( objectsize(x)) );
 }

@@ -53,6 +53,7 @@ static F2 ptr_col2name;
 static F3 ptr_R_GE_str2col;
 static F4 ptr_savePalette;
 
+extern "C"
 void Rg_set_col_ptrs(F1 f1, F2 f2, F3 f3, F4 f4)
 {
     ptr_RGBpar3 = f1;

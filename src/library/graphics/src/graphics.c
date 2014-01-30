@@ -1767,7 +1767,7 @@ pGEDevDesc GNewPlot(Rboolean recording)
      * read-only par("page") in par.c, SO if you make changes
      * to the logic here, you will need to change that as well
      */
-    if (!gpptr(dd)->new) {
+    if (!gpptr(dd)->newplot) {
 	R_GE_gcontext gc;
 	gcontextFromGP(&gc, dd);
 	dpptr(dd)->currentFigure += 1;
@@ -2183,7 +2183,7 @@ void GInit(GPar *dp)
     dp->respect[0] = 0;
 
     /* Misc plotting parameters */
-    dp->new = FALSE;
+    dp->newplot = FALSE;
     dp->devmode = -99;
     dp->pty = 'm';
     dp->lwd = 1;
@@ -2595,7 +2595,7 @@ void GMode(int mode, pGEDevDesc dd)
     if (NoDevices())
 	error(_("No graphics device is active"));
     if(mode != gpptr(dd)->devmode) GEMode(mode, dd); /* dd->dev->mode(mode, dd->dev); */
-    gpptr(dd)->new = dpptr(dd)->new = FALSE;
+    gpptr(dd)->newplot = dpptr(dd)->newplot = FALSE;
     gpptr(dd)->devmode = dpptr(dd)->devmode = mode;
 }
 

@@ -2445,8 +2445,8 @@ SEXP C_mtext(SEXP args)
     /* we don't want to mark the plot as dirty. */
 
     dirtyplot = FALSE;
-    gpnewsave = gpptr(dd)->new;
-    dpnewsave = dpptr(dd)->new;
+    gpnewsave = gpptr(dd)->newplot;
+    dpnewsave = dpptr(dd)->newplot;
     cexsave = gpptr(dd)->cex;
     fontsave = gpptr(dd)->font;
     colsave = gpptr(dd)->col;
@@ -2457,8 +2457,8 @@ SEXP C_mtext(SEXP args)
 	gpptr(dd)->xpd = 1;
 
     if (outer) {
-	gpnewsave = gpptr(dd)->new;
-	dpnewsave = dpptr(dd)->new;
+	gpnewsave = gpptr(dd)->newplot;
+	dpnewsave = dpptr(dd)->newplot;
 	/* override par("xpd") and force clipping to device region */
 	gpptr(dd)->xpd = 2;
     }
@@ -2508,8 +2508,8 @@ SEXP C_mtext(SEXP args)
 
     GRestorePars(dd);
     if (!dirtyplot) {
-	gpptr(dd)->new = gpnewsave;
-	dpptr(dd)->new = dpnewsave;
+	gpptr(dd)->newplot = gpnewsave;
+	dpptr(dd)->newplot = dpnewsave;
     }
     UNPROTECT(10);
     return R_NilValue;

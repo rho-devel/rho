@@ -17,6 +17,10 @@
  *  http://www.r-project.org/Licenses/
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* auxiliary */
 SEXP getListElement(SEXP list, char *str);
 
@@ -34,7 +38,7 @@ SEXP Cdist(SEXP x, SEXP method, SEXP attrs, SEXP p);
 SEXP r2dtable(SEXP n, SEXP r, SEXP c);
 SEXP cor(SEXP x, SEXP y, SEXP na_method, SEXP method);
 SEXP cov(SEXP x, SEXP y, SEXP na_method, SEXP method);
-SEXP updateform(SEXP old, SEXP new);
+SEXP updateform(SEXP old, SEXP newf);
 SEXP fft(SEXP z, SEXP inverse);
 SEXP mvfft(SEXP z, SEXP inverse);
 SEXP nextn(SEXP n, SEXP factors);
@@ -108,3 +112,7 @@ SEXP d2x2xk(SEXP sK, SEXP sm, SEXP sn, SEXP st, SEXP srn);
 
 SEXP stats_signrank_free(void);
 SEXP stats_wilcox_free(void);
+
+#ifdef __cplusplus
+}
+#endif

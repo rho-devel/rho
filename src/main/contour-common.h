@@ -48,7 +48,7 @@ static int ctr_intersect(double z0, double z1, double zc, double *f)
 
 static SEGP ctr_newseg(double x0, double y0, double x1, double y1, SEGP prev)
 {
-    SEGP seg = static_cast<SEGP>(CXXR_alloc(1, sizeof(SEG)));
+    SEGP seg = (SEGP)R_alloc(1, sizeof(SEG));
     seg->x0 = x0;
     seg->y0 = y0;
     seg->x1 = x1;
@@ -174,7 +174,7 @@ static SEGP* contourLines(double *x, int nx, double *y, int ny,
     /*
      * This reset is done out in GEcontourLines
      */
-    segmentDB = static_cast<SEGP*>(CXXR_alloc(nx*ny, sizeof(SEGP)));
+    segmentDB = (SEGP*)R_alloc(nx*ny, sizeof(SEGP));
     for (i = 0; i < nx; i++)
 	for (j = 0; j < ny; j++)
 	    segmentDB[i + j * nx] = NULL;

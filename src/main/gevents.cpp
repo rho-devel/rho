@@ -42,6 +42,7 @@
 #endif
 
 #include <Defn.h>
+#include <Internal.h>
 #include <Rmath.h>
 #include <R_ext/GraphicsEngine.h>
 #include <R_ext/Print.h>

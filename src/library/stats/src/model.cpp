@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -26,20 +42,29 @@
 
 #include "statsR.h"
 
+#include <vector>
+#include "CXXR/GCStackRoot.hpp"
+
+using namespace std;
+using namespace CXXR;
+
 /* inline-able versions, used just once! */
 static R_INLINE Rboolean isUnordered_int(SEXP s)
 {
-    return (TYPEOF(s) == INTSXP
-	    && inherits(s, "factor")
-	    && !inherits(s, "ordered"));
+    return Rboolean(TYPEOF(s) == INTSXP
+		    && inherits(s, "factor")
+		    && !inherits(s, "ordered"));
 }
 
 static R_INLINE Rboolean isOrdered_int(SEXP s)
 {
-    return (TYPEOF(s) == INTSXP
-	    && inherits(s, "factor")
-	    && inherits(s, "ordered"));
+    return Rboolean(TYPEOF(s) == INTSXP
+		    && inherits(s, "factor")
+		    && inherits(s, "ordered"));
 }
+
+
+
 
 /*
  *  model.frame
@@ -224,7 +249,6 @@ SEXP modelframe(SEXP call, SEXP op, SEXP args, SEXP rho)
     vmaxset(vmax);
     return ans;
 }
-
 
 	/* The code below is related to model expansion */
 	/* and is ultimately called by modelmatrix. */
@@ -467,13 +491,14 @@ SEXP modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* the required arguments at call time.  The calls have the following */
     /* form: (contrast.type nlevs contrasts) */
 
-    PROTECT(contr1 = allocVector(VECSXP, nVar));
-    PROTECT(contr2 = allocVector(VECSXP, nVar));
-
-    PROTECT(expr = allocList(3));
-    SET_TYPEOF(expr, LANGSXP);
-    SETCAR(expr, install("contrasts"));
-    SETCADDR(expr, allocVector(LGLSXP, 1));
+    {
+	PROTECT(contr1 = allocVector(VECSXP, nVar));
+	PROTECT(contr2 = allocVector(VECSXP, nVar));
+	GCStackRoot<PairList> tl(PairList::make(2));
+	PROTECT(expr = CXXR_NEW(Expression(0, tl)));
+	SETCAR(expr, install("contrasts"));
+	SETCADDR(expr, allocVector(LGLSXP, 1));
+    }
 
     /* FIXME: We need to allow a third argument to this function */
     /* which allows us to specify contrasts directly.  That argument */
@@ -551,11 +576,11 @@ SEXP modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	}
 	if (dk > INT_MAX) error(_("term %d would require %.0g columns"), j+1, dk);
-	INTEGER(count)[j] = (int) dk;
+	INTEGER(count)[j] = int( dk);
 	dnc = dnc + dk;
     }
     if (dnc > INT_MAX) error(_("matrix would require %.0g columns"), dnc);
-    nc = (int) dnc;
+    nc = int( dnc);
 
     /* Record which columns of the design matrix are associated */
     /* with which model terms. */
@@ -665,12 +690,7 @@ SEXP modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     PROTECT(x = allocMatrix(REALSXP, n, nc));
 
-#ifdef R_MEMORY_PROFILING
-    if (RTRACE(vars)){
-       memtrace_report(vars, x);
-       SET_RTRACE(x, 1);
-    }
-#endif
+    x->maybeTraceMemory(vars);
 
     /* a) Begin with a column of 1s for the intercept. */
 
@@ -689,12 +709,7 @@ SEXP modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if (INTEGER(columns)[i] == 0)
 		continue;
 	    var_i = VECTOR_ELT(variable, i);
-#ifdef R_MEMORY_PROFILING
-	    if (RTRACE(var_i)){
-	       memtrace_report(var_i, x);
-	       SET_RTRACE(x, 1);
-	    }
-#endif
+	    x->maybeTraceMemory(var_i);
 	    fik = INTEGER(factors)[i + k * nVar];
 	    if (fik) {
 		switch(fik) {
@@ -878,7 +893,7 @@ static SEXP ExpandDots(SEXP object, SEXP value)
     return R_NilValue; /*NOTREACHED*/
 }
 
-SEXP updateform(SEXP old, SEXP new)
+SEXP updateform(SEXP old, SEXP newf)
 {
     SEXP _new;
 
@@ -902,7 +917,7 @@ SEXP updateform(SEXP old, SEXP new)
     /* formulae may be part of the parse tree */
     /* and we don't want to modify it. */
 
-    PROTECT(_new = duplicate(new));
+    PROTECT(_new = duplicate(newf));
 
     /* Check of new and old formulae. */
     if (TYPEOF(old) != LANGSXP ||
@@ -941,8 +956,7 @@ SEXP updateform(SEXP old, SEXP new)
     /* the attribute list of the returned */
     /* value, but it can't hurt. */
 
-    SET_ATTRIB(_new, R_NilValue);
-    SET_OBJECT(_new, 0);
+    _new->clearAttributes();
     SEXP DotEnvSymbol = install(".Environment");
     setAttrib(_new, DotEnvSymbol, getAttrib(old, DotEnvSymbol));
 
@@ -960,7 +974,7 @@ static int nwords;		/* # of words (ints) to code a term */
 static int nterm;		/* # of model terms */
 static SEXP varlist;		/* variables in the model */
 static PROTECT_INDEX vpi;
-static SEXP framenames;		/* variables names for specified frame */
+static GCRoot<> framenames;	/* variables names for specified frame */
 static Rboolean haveDot;	/* does RHS of formula contain `.'? */
 
 static int isZeroOne(SEXP x)
@@ -991,7 +1005,8 @@ static int isOne(SEXP x)
 static int Seql2(SEXP a, SEXP b)
 {
     if (a == b) return 1;
-    if (IS_CACHED(a) && IS_CACHED(b) && ENC_KNOWN(a) == ENC_KNOWN(b))
+    // IS_CACHED not implemented in CXXR, because always true.
+    if (/*IS_CACHED(a) && IS_CACHED(b) &&*/ ENC_KNOWN(a) == ENC_KNOWN(b))
 	return 0;
     else {
     	const void *vmax = vmaxget();
@@ -1199,12 +1214,12 @@ static SEXP AllocTerm(void)
 static void SetBit(SEXP term, int whichBit, int value)
 {
     int word, offset;
-    word = (int)((whichBit - 1) / WORDSIZE);
+    word = int((whichBit - 1) / WORDSIZE);
     offset = (WORDSIZE - whichBit) % WORDSIZE;
     if (value)
-	((unsigned *) INTEGER(term))[word] |= ((unsigned) 1 << offset);
+	(reinterpret_cast<unsigned int*>( INTEGER(term)))[word] |= (1U << offset);
     else
-	((unsigned *) INTEGER(term))[word] &= ~((unsigned) 1 << offset);
+	(reinterpret_cast<unsigned int*>( INTEGER(term)))[word] &= ~(1U << offset);
 }
 
 
@@ -1214,9 +1229,9 @@ static void SetBit(SEXP term, int whichBit, int value)
 static int GetBit(SEXP term, int whichBit)
 {
     unsigned int word, offset;
-    word = (int)((whichBit - 1) / WORDSIZE);
+    word = int((whichBit - 1) / WORDSIZE);
     offset = (WORDSIZE - whichBit) % WORDSIZE;
-    return ((((unsigned *) INTEGER(term))[word]) >> offset) & 1;
+    return (((reinterpret_cast<unsigned int*>( INTEGER(term)))[word]) >> offset) & 1;
 }
 
 
@@ -1696,14 +1711,8 @@ SEXP termsform(SEXP args)
     allowDot = asLogical(CAR(a));
     if (allowDot == NA_LOGICAL) allowDot = 0;
 
-    if (specials == R_NilValue) {
-	a = allocList(8);
-	SET_ATTRIB(ans, a);
-    }
-    else {
-	a = allocList(9);
-	SET_ATTRIB(ans, a);
-    }
+    GCStackRoot<> attributes(allocList(specials == 0 ? 8 : 9));
+    a = attributes;
 
     /* Step 1: Determine the ``variables'' in the model */
     /* Here we create an expression of the form */
@@ -1722,7 +1731,7 @@ SEXP termsform(SEXP args)
     a = CDR(a);
 
     nvar = length(varlist) - 1;
-    nwords = (int)((nvar - 1) / WORDSIZE + 1);
+    nwords = int((nvar - 1) / WORDSIZE + 1);
 
     /* Step 2: Recode the model terms in binary form */
     /* and at the same time, expand the model formula. */
@@ -1748,7 +1757,7 @@ SEXP termsform(SEXP args)
 
     PROTECT(varnames = allocVector(STRSXP, nvar));
     for (v = CDR(varlist), i = 0; v != R_NilValue; v = CDR(v))
-	SET_STRING_ELT(varnames, i++, STRING_ELT(deparse1line(CAR(v), 0), 0));
+	SET_STRING_ELT(varnames, i++, STRING_ELT(deparse1line(CAR(v), CXXRFALSE), 0));
 
     /* Step 2b: Find and remove any offset(s) */
 
@@ -1861,10 +1870,11 @@ SEXP termsform(SEXP args)
 	    if (GetBit(CAR(call), i)) {
 		if (l > 0)
 		    l += 1;
-		l += (int) strlen(CHAR(STRING_ELT(varnames, i - 1)));
+		l += int( strlen(CHAR(STRING_ELT(varnames, i - 1))));
 	    }
 	}
-	char cbuf[l+1];
+	vector<char> cbufv(l+1);
+	char* cbuf = &cbufv[0];
 	cbuf[0] = '\0';
 	l = 0;
 	for (i = 1; i <= nvar; i++) {
@@ -1897,7 +1907,7 @@ SEXP termsform(SEXP args)
 	for (j = 0, t = v; j < i; j++, t = CDR(t)) {
 	    const char *ss = translateChar(STRING_ELT(specials, j));
 	    SET_TAG(t, install(ss));
-	    n = (int) strlen(ss);
+	    n = int( strlen(ss));
 	    SETCAR(t, allocVector(INTSXP, 0));
 	    k = 0;
 	    for (l = 0; l < nvar; l++) {
@@ -1970,10 +1980,9 @@ SEXP termsform(SEXP args)
 
     SETCAR(a, mkString("terms"));
     SET_TAG(a, install("class"));
-    SET_OBJECT(ans, 1);
 
     SETCDR(a, R_NilValue);  /* truncate if necessary */
-
+    SET_ATTRIB(ans, attributes);
     UNPROTECT(5);
     return ans;
 }

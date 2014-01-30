@@ -40,7 +40,7 @@
 #endif
 	R_DEV__(bg) = RGBpar3(value, 0, dpptr(dd)->bg);
 #ifdef FOR_PAR
-	R_DEV__(new) = FALSE;
+	R_DEV__(newplot) = FALSE;
 #endif
     }
     else if (streql(what, "bty")) {

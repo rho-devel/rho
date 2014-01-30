@@ -45,13 +45,13 @@ extern "C" {
 
 typedef struct {
  char *data;
- std::size_t bufsize;
- std::size_t defaultSize;
+ size_t bufsize;
+ size_t defaultSize;
 } R_StringBuffer;
 
 /* code in ./memory.c : */
 /* Note that R_StringBuffer *buf needs to be initialized before call */
-void *R_AllocStringBuffer(std::size_t blen, R_StringBuffer *buf);
+void *R_AllocStringBuffer(size_t blen, R_StringBuffer *buf);
 void R_FreeStringBuffer(R_StringBuffer *buf);
 void R_FreeStringBufferL(R_StringBuffer *buf);
 
