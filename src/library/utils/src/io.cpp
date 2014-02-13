@@ -703,7 +703,7 @@ SEXP typeconvert(SEXP call, SEXP op, SEXP args, SEXP env)
 	    setAttrib(rval, R_LevelsSymbol, levs);
 	    PROTECT(a = mkString("factor"));
 	    setAttrib(rval, R_ClassSymbol, a);
-	    UNPROTECT(3);
+	    UNPROTECT(4);
 	}
     }
 

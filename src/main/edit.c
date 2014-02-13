@@ -201,7 +201,7 @@ SEXP do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 	n = LENGTH(x);
 	for (j = 0 ; j < n ; j++)
-	    tmp = eval(VECTOR_ELT(x, j), R_GlobalEnv);
+	    tmp = eval(XVECTOR_ELT(x, j), R_GlobalEnv);
 	x = tmp;
     }
     if (TYPEOF(x) == CLOSXP && envir != R_NilValue)

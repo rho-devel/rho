@@ -290,6 +290,7 @@ SEXP attribute_hidden do_utf8ToInt(SEXP call, SEXP op, SEXP args, SEXP env)
     if (LENGTH(x) > 1)
 	warning(_("argument should be a character vector of length 1\nall but the first element will be ignored"));
     if (STRING_ELT(x, 0) == NA_STRING) return ScalarInteger(NA_INTEGER);
+    s = CHAR(STRING_ELT(x, 0));
     nc = XLENGTH(STRING_ELT(x, 0)); /* ints will be shorter */
     int *ians = static_cast<int *>( CXXR_alloc(nc, sizeof(int)));
     for (i = 0, j = 0; i < nc; i++) {

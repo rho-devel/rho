@@ -142,8 +142,13 @@ Rdiff <- function(from, to, useDiff = FALSE, forEx = FALSE,
         if (nullPointers)
         ## remove pointer addresses from listings
             txt <- gsub("<(environment|bytecode|pointer|promise): [x[:xdigit:]]+>", "<\\1: 0>", txt)
-        ## CXXR ignores differences in location given by 'In ... :'
-        txt <- sub("^In .* :", "In ? :", txt)
+        ## In error and warning messages, the location of the error may be reported
+        ## differently by CR and CXXR, and this may in turn give differences
+        ## in line breaking within these messages.  Ignore such differences:
+        broken <- grep("^(([[:digit:]]+: )?In|Error in) .* : ?$", txt)
+        txt[broken] <- paste(txt[broken], txt[broken + 1])
+        if (length(broken)) txt <- txt[-(broken + 1)]
+        txt <- sub("^(([[:digit:]]+: )?In|Error in) .* :[[:space:]]*", "\\1 ? : ", txt)
         ## regularize fancy quotes.  First UTF-8 ones:
         txt <- gsub("(\xe2\x80\x98|\xe2\x80\x99)", "'", txt,
                       perl = TRUE, useBytes = TRUE)
