@@ -27,7 +27,7 @@ R_HOME=$(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES_C = complex.c edit.c inlined.c
+SOURCES_C = complex.c inlined.c
 
 SOURCES_CXX = \
 	ArgList.cpp ArgMatcher.cpp \
@@ -61,7 +61,7 @@ SOURCES_CXX = \
 	cum.cpp \
 	dcf.cpp datetime.cpp debug.cpp deparse.cpp devices.cpp \
 	dotcode.cpp dounzip.cpp dstruct.cpp duplicate.cpp \
-	engine.cpp envir.cpp errors.cpp eval.cpp \
+	edit.cpp engine.cpp envir.cpp errors.cpp eval.cpp \
 	format.cpp \
 	gevents.cpp gram-ex.cpp gram.cpp graphics.cpp grep.cpp \
 	identical.cpp internet.cpp iosupport.cpp \
