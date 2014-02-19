@@ -122,7 +122,7 @@ inline SEXP XVECTOR_ELT(SEXP x, int i)
 {
     using namespace CXXR;
     ExpressionVector* ev = SEXP_downcast<ExpressionVector*>(x, false);
-    return (*ev)[i];
+    return (*ev)[VectorBase::size_type(i)];
 }
 #endif
 

@@ -223,7 +223,8 @@ void GCNode::gclite()
 	unsigned char& rcmmu = node->m_rcmmu;
 	if ((rcmmu & s_refcount_mask) == 0)
 	    delete node;
-	else rcmmu &= ~s_moribund_mask;  // Clear moribund bit
+	// Clear moribund bit.  Beware ~ promotes to unsigned int.
+	else rcmmu &= static_cast<unsigned char>(~s_moribund_mask);
     }
     s_gclite_threshold = MemoryBank::bytesAllocated() + s_gclite_margin;
 }
@@ -348,8 +349,8 @@ void GCNode::Marker::operator()(const GCNode* node)
 #ifdef GC_FIND_LOOPS
     m_ariadne.push_back(node);
 #endif
-    // Update mark:
-    node->m_rcmmu &= ~s_mark_mask;
+    // Update mark  Beware ~ promotes to unsigned int.
+    node->m_rcmmu &= static_cast<unsigned char>(~s_mark_mask);
     node->m_rcmmu |= s_mark;
     ++m_marks_applied;
     s_reachable->splice_back(node);

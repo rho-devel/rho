@@ -59,7 +59,8 @@ static char *rmspace(char *s)
 {
     ssize_t i; // to be safe
 
-    for (i = strlen(s) - 1; i >= 0 && isspace(int(s[i])); i--) s[i] = '\0';
+    for (i = ssize_t(strlen(s)) - 1; i >= 0 && isspace(int(s[i])); i--)
+	s[i] = '\0';
     for (i = 0; isspace(int(s[i])); i++);
     return s + i;
 }
@@ -127,7 +128,7 @@ static CXXRCONST char *findterm(CXXRCONST char *s)
 	/* copy over leading part */
 	size_t nans = strlen(ans);
 	strncat(ans, s, size_t (p - s)); ans[nans + p - s] = '\0';
-	vector<char> rv(q - p + 2);
+	vector<char> rv(size_t(q - p + 2));
 	char* r = &rv[0];
 	strncpy(r, p, size_t (q - p + 1));
 	r[q - p + 1] = '\0';

@@ -427,7 +427,7 @@ namespace CXXR {
      */
     inline size_t listLength(const ConsCell* start)
     {
-	return (start ? std::distance(start->begin(), start->end()) : 0);
+	return (start ? size_t(std::distance(start->begin(), start->end())) : 0);
     }
 
     /** @brief <tt>cc ? cc->tail() : 0</tt>

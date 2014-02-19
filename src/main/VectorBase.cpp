@@ -130,7 +130,7 @@ void VectorBase::setNames(StringVector* names)
     setAttribute(NamesSymbol, names);
 }
 
-void VectorBase::setSize(std::size_t)
+void VectorBase::setSize(size_type)
 {
     Rf_error(_("this object cannot be resized"));
 }
@@ -162,5 +162,5 @@ void SETLENGTH(SEXP x, int v)
     CXXR::VectorBase* vb = dynamic_cast<CXXR::VectorBase*>(x);
     if (!vb)
 	Rf_error("SETLENGTH invoked for a non-vector.");
-    vb->setSize(v);
+    vb->setSize(VectorBase::size_type(v));
 }

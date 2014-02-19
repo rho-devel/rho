@@ -305,7 +305,7 @@ namespace CXXR {
 	    if (isExposed())
 		alreadyExposedError();
 #endif
-	    m_rcmmu &= ~1;
+	    m_rcmmu &= static_cast<unsigned char>(~1);
 	    --s_inhibitor_count;
 	}
 

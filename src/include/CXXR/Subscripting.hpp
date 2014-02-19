@@ -687,13 +687,13 @@ namespace CXXR {
 	// Data structure used in subsetting arrays, containing
 	// information relating to a particular dimension. 
 	struct DimIndexer {
-	    unsigned int nindices;  // Number of index values to be
+	    std::size_t nindices;  // Number of index values to be
 	      // extracted along this dimension.
 	    const IntVector* indices;  // Pointer to array containing the index
 	      // values themselves.  The index values count from 1. 
-	    unsigned int indexnum;  // Position (counting from 0) of
+	    std::size_t indexnum;  // Position (counting from 0) of
 	      // the index within 'indices' currently being processed.
-	    unsigned int stride;  // Number of elements (within the
+	    std::size_t stride;  // Number of elements (within the
 	      // linear layout of the source array) separating
 	      // consecutive elements along this dimension.
 	};
@@ -760,9 +760,9 @@ namespace CXXR {
 	if (rhs_size > 1) {
 	    // TODO: Move NA-detection back into the canonicalisation
 	    // process.
-	    for (unsigned int d = 0; d < ndims; ++d) {
+	    for (std::size_t d = 0; d < ndims; ++d) {
 		DimIndexer& di = dimindexer[d];
-		for (unsigned int i = 0; i < di.nindices; ++i)
+		for (std::size_t i = 0; i < di.nindices; ++i)
 		    if (isNA((*di.indices)[i]))
 			Rf_error(_("NA subscripts are not allowed"
 				   " in this context"));
@@ -784,10 +784,10 @@ namespace CXXR {
 	    Rf_warning(_("number of items to replace is not"
 			 " a multiple of replacement length"));
 	// Copy elements across:
-	for (unsigned int irhs = 0; irhs < ni; ++irhs) {
+	for (std::size_t irhs = 0; irhs < ni; ++irhs) {
 	    bool naindex = false;
-	    unsigned int iout = 0;
-	    for (unsigned int d = 0; d < ndims; ++d) {
+	    std::size_t iout = 0;
+	    for (std::size_t d = 0; d < ndims; ++d) {
 		const DimIndexer& di = dimindexer[d];
 		int index = (*di.indices)[di.indexnum];
 		if (isNA(index)) {
@@ -807,7 +807,7 @@ namespace CXXR {
 	    }
 	    // Advance the index selection:
 	    {
-		unsigned int d = 0;
+		std::size_t d = 0;
 		bool done;
 		do {
 		    done = true;
@@ -837,10 +837,10 @@ namespace CXXR {
 	    // ***** FIXME *****  Currently needed because Handle's
 	    // assignment operator takes a non-const RHS:
 	    V* vnc = const_cast<V*>(v);
-	    for (unsigned int iout = 0; iout < resultsize; ++iout) {
+	    for (std::size_t iout = 0; iout < resultsize; ++iout) {
 		bool naindex = false;
-		unsigned int iin = 0;
-		for (unsigned int d = 0; d < ndims; ++d) {
+		std::size_t iin = 0;
+		for (std::size_t d = 0; d < ndims; ++d) {
 		    const DimIndexer& di = dimindexer[d];
 		    int index = (*di.indices)[di.indexnum];
 		    if (isNA(index)) {
@@ -854,7 +854,7 @@ namespace CXXR {
 		       : (*vnc)[iin]);
 		// Advance the index selection:
 		{
-		    unsigned int d = 0;
+		    std::size_t d = 0;
 		    bool done;
 		    do {
 			done = true;
@@ -875,7 +875,7 @@ namespace CXXR {
     VL* Subscripting::subassign(VL* lhs, const PairList* subscripts,
 				const VR* rhs)
     {
-	unsigned int nsubs = listLength(subscripts);
+	std::size_t nsubs = listLength(subscripts);
 	if (nsubs > 1)
 	    return arraySubassign(lhs, subscripts, rhs);
 	const IntVector* dims = lhs->dimensions();
@@ -888,7 +888,7 @@ namespace CXXR {
     template <class V>
     V* Subscripting::subset(const V* v, const PairList* subscripts, bool drop)
     {
-	unsigned int nsubs = listLength(subscripts);
+	std::size_t nsubs = listLength(subscripts);
 	if (nsubs > 1)
 	    return arraySubset(v, subscripts, drop);
 	const IntVector* dims = v->dimensions();
@@ -913,7 +913,7 @@ namespace CXXR {
 	if (rhs_size > 1) {
 	    // TODO: Move NA-detection back into the canonicalisation
 	    // process.
-	    for (unsigned int i = 0; i < ni; ++i)
+	    for (std::size_t i = 0; i < ni; ++i)
 		if (isNA((*indices)[i]))
 		    Rf_error(_("NA subscripts are not allowed"
 			       " in this context"));
@@ -935,7 +935,7 @@ namespace CXXR {
 	if (ni%rhs_size != 0)
 	    Rf_warning(_("number of items to replace is not"
 			 " a multiple of replacement length"));
-	for (unsigned int i = 0; i < ni; ++i) {
+	for (std::size_t i = 0; i < ni; ++i) {
 	    int index = (*indices)[i];
 	    if (!isNA(index)) {
 		// Be careful not to create a temporary RHandle.
@@ -960,12 +960,12 @@ namespace CXXR {
 	// ***** FIXME *****  Currently needed because Handle's
 	// assignment operator takes a non-const RHS:
 	V* vnc = const_cast<V*>(v);
-	for (unsigned int i = 0; i < ni; ++i) {
+	for (std::size_t i = 0; i < ni; ++i) {
 	    int index = (*indices)[i];
 	    // Note that zero and negative indices ought not to occur.
 	    if (isNA(index) || index > int(vsize))
 		(*ans)[i] = NA<typename V::value_type>();
-	    else (*ans)[i] = (*vnc)[index - 1];
+	    else (*ans)[i] = (*vnc)[std::size_t(index) - 1];
 	}
 	setVectorAttributes(ans, v, indices);
 	return ans;

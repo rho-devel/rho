@@ -59,11 +59,11 @@ using namespace CXXR;
 // needed to determine that a symbol is not present is 1 + 2L, where L
 // is the load factor.  So we keep the load factor small:
 namespace {
-    const float maximum_load_factor = 0.5;
+    const double maximum_load_factor = 0.5;
 }
 
 StdFrame::StdFrame(size_t initial_capacity)
-    : m_map(ceil(initial_capacity/maximum_load_factor))
+    : m_map(size_t(ceil(initial_capacity/maximum_load_factor)))
 {
     m_map.max_load_factor(maximum_load_factor);
 }

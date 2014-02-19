@@ -301,8 +301,8 @@ extern "C" {
 #else
     inline void vmaxset(const void* stack_sizep)
     {
-	size_t stack_size = static_cast<const char*>(stack_sizep)
-	                    - static_cast<const char*>(0);
+	size_t stack_size = size_t(static_cast<const char*>(stack_sizep)
+				   - static_cast<const char*>(0));
 	CXXR::RAllocStack::restoreSize(stack_size);
     }
 #endif

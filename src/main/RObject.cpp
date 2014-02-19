@@ -96,7 +96,8 @@ void RObject::clearAttributes()
 {
     if (m_attrib) {
 	m_attrib = 0;
-	m_type &= ~s_class_mask;
+	// Beware promotion to int by ~:
+	m_type &= static_cast<signed char>(~s_class_mask);
     }
 }
 
@@ -141,8 +142,8 @@ void RObject::setAttribute(const Symbol* name, RObject* value)
     // Update 'has class' bit if necessary:
     if (name == R_ClassSymbol) {
 	if (value == 0)
-	    m_type &= ~s_class_mask;
-	else m_type |= s_class_mask;
+	    m_type &= static_cast<signed char>(~s_class_mask);
+	else m_type |= static_cast<signed char>(s_class_mask);
     }
     // Find attribute:
     PairList* prev = 0;

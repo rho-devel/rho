@@ -102,7 +102,8 @@ void NodeStack::pop(unsigned int count)
 
 void NodeStack::protectAll()
 {
-    std::vector<RObject*>::iterator start = m_vector.begin() + m_protected_count;
+    std::vector<RObject*>::iterator start
+	= m_vector.begin() + std::ptrdiff_t(m_protected_count);
     std::vector<RObject*>::iterator end = m_vector.end();
     for (std::vector<RObject*>::iterator it = start; it != end; ++it)
 	GCNode::incRefCount(*it);

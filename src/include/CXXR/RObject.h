@@ -637,7 +637,7 @@ template<class Archive>
 void CXXR::RObject::serialize(Archive& ar, const unsigned int version)
 {
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
-    unsigned int type = m_type;
+    signed char type = m_type;
     ar & BOOST_SERIALIZATION_NVP(type);
     m_type = type;
     GCNPTR_SERIALIZE(ar, m_attrib);
@@ -701,7 +701,7 @@ extern "C" {
     /** @brief (For use only in serialization.)
      */
 #ifdef __cplusplus
-    inline int LEVELS(SEXP x) {return x->packGPBits();}
+    inline int LEVELS(SEXP x) {return int(x->packGPBits());}
 #endif
 
     /** @brief Get object copying status.
@@ -738,7 +738,7 @@ extern "C" {
 #ifdef __cplusplus
     inline int SETLEVELS(SEXP x, int v)
     {
-	x->unpackGPBits(v);
+	x->unpackGPBits(static_cast<unsigned int>(v));
 	return v;
     }
 #endif
@@ -778,7 +778,7 @@ extern "C" {
     inline void SET_NAMED(SEXP x, int v)
     {
 	if (!x) return;
-	x->m_named = v;
+	x->m_named = static_cast<unsigned char>(v);
     }
 #endif
 

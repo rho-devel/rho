@@ -140,7 +140,7 @@ Provenance::parents() const
 {
     CommandChronicle::ParentVector::const_iterator bgn
 	= m_chronicle->bindingsRead().begin();
-    return make_pair(bgn, bgn + m_num_parents);
+    return make_pair(bgn, bgn + std::ptrdiff_t(m_num_parents));
 }
 
 void Provenance::setXenogenous(const RObject* value)

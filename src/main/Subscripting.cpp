@@ -33,9 +33,9 @@ Subscripting::canonicalize(const IntVector* raw_indices, std::size_t range_size)
     const std::size_t rawsize = raw_indices->size();
     bool anyNA = false;
     bool anyneg = false;
-    unsigned int zeroes = 0;
-    unsigned int max_index = 0;
-    for (unsigned int i = 0; i < rawsize; ++i) {
+    std::size_t zeroes = 0;
+    int max_index = 0;
+    for (std::size_t i = 0; i < rawsize; ++i) {
 	int index = (*raw_indices)[i];
 	if (isNA(index))
 	    anyNA = true;
@@ -43,7 +43,7 @@ Subscripting::canonicalize(const IntVector* raw_indices, std::size_t range_size)
 	    anyneg = true;
 	else if (index == 0)
 	    ++zeroes;
-	else if (index > int(max_index))
+	else if (index > max_index)
 	    max_index = index;
     }
     if (!anyneg) {
@@ -52,22 +52,22 @@ Subscripting::canonicalize(const IntVector* raw_indices, std::size_t range_size)
 	    return std::make_pair(raw_indices, max_index);
 	// Otherwise suppress zeroes:
 	GCStackRoot<IntVector> ans(CXXR_NEW(IntVector(rawsize - zeroes)));
-	unsigned int iout = 0;
-	for (unsigned int iin = 0; iin < rawsize; ++iin) {
+	std::size_t iout = 0;
+	for (std::size_t iin = 0; iin < rawsize; ++iin) {
 	    int index = (*raw_indices)[iin];
 	    if (index != 0)
 		(*ans)[iout++] = index;
 	}
-	return std::pair<const IntVector*, std::size_t>(ans, max_index);
+	return std::pair<const IntVector*, std::size_t>(ans, std::size_t(max_index));
     } else {  // Negative subscripts
 	if (anyNA || max_index > 0)
 	    Rf_error(_("only 0's may be mixed with negative subscripts"));
 	// Create a LogicalVector to show which elements are to be retained:
 	GCStackRoot<LogicalVector>
 	    lgvec(CXXR_NEW(LogicalVector(range_size, 1)));
-	for (unsigned int i = 0; i < rawsize; ++i) {
-	    int index = -(*raw_indices)[i];
-	    if (index != 0 && index <= int(range_size))
+	for (std::size_t i = 0; i < rawsize; ++i) {
+	    std::size_t index = std::size_t(-(*raw_indices)[i]);
+	    if (index != 0 && index <= range_size)
 		(*lgvec)[index - 1] = 0;
 	}
 	return canonicalize(lgvec, range_size);
@@ -80,22 +80,22 @@ Subscripting::canonicalize(const LogicalVector* raw_indices, std::size_t range_s
     const std::size_t rawsize = raw_indices->size();
     if (rawsize == 0)
 	return std::make_pair(CXXR_NEW(IntVector(0)), 0);
-    unsigned int nmax = std::max(range_size, rawsize);
+    std::size_t nmax = std::max(range_size, rawsize);
     // Determine size of answer:
     std::size_t anssize = 0;
-    for (unsigned int i = 0; i < nmax; ++i)
+    for (std::size_t i = 0; i < nmax; ++i)
 	if ((*raw_indices)[i%rawsize] != 0)
 	    ++anssize;
     // Create canonical index vector:
     GCStackRoot<IntVector> ans(CXXR_NEW(IntVector(anssize)));
     {
-	unsigned int iout = 0;
-	for (unsigned int iin = 0; iin < nmax; ++iin) {
+	std::size_t iout = 0;
+	for (std::size_t iin = 0; iin < nmax; ++iin) {
 	    int logical = (*raw_indices)[iin % rawsize];
 	    if (isNA(logical))
 		(*ans)[iout++] = NA<int>();
 	    else if (logical != 0)
-		(*ans)[iout++] = iin + 1;
+		(*ans)[iout++] = int(iin + 1);
 	}
     }
     return std::pair<const IntVector*, std::size_t>(ans, nmax);
@@ -119,8 +119,8 @@ Subscripting::canonicalize(const RObject* subscripts, std::size_t range_size,
 	    const RealVector* rsub = static_cast<const RealVector*>(subscripts);
 	    std::size_t rawsize = rsub->size();
 	    GCStackRoot<IntVector> isub(CXXR_NEW(IntVector(rawsize)));
-	    for (unsigned int i = 0; i < rawsize; ++i)
-		(*isub)[i] = (*rsub)[i];
+	    for (std::size_t i = 0; i < rawsize; ++i)
+		(*isub)[i] = int((*rsub)[i]);
 	    return canonicalize(isub, range_size);
 	}
     case STRSXP:
@@ -133,8 +133,8 @@ Subscripting::canonicalize(const RObject* subscripts, std::size_t range_size,
 		// If a subscript argument is missing, we take this as
 		// meaning 'select everything':
 		GCStackRoot<IntVector> ivec(CXXR_NEW(IntVector(range_size)));
-		for (unsigned int i = 0; i < range_size; ++i)
-		    (*ivec)[i] = i + 1;
+		for (std::size_t i = 0; i < range_size; ++i)
+		    (*ivec)[i] = int(i + 1);
 		return std::pair<const IntVector*, std::size_t>(ivec, range_size);
 	    }
 	    // Else deliberate fall through to default case:
@@ -150,13 +150,13 @@ Subscripting::canonicalize(const StringVector* raw_indices, std::size_t range_si
 			   const StringVector* range_names)
 {
     const std::size_t rawsize = raw_indices->size();
-    typedef std::tr1::unordered_map<GCRoot<String>, unsigned int> Nmap;
+    typedef std::tr1::unordered_map<GCRoot<String>, std::size_t> Nmap;
     Nmap names_map;
-    unsigned int max_index = (range_names ? 0 : range_size);
+    std::size_t max_index = (range_names ? 0 : range_size);
     GCStackRoot<IntVector> ans(CXXR_NEW(IntVector(rawsize)));
     GCStackRoot<ListVector> use_names;  // For the use.names attribute
     // Process the supplied subscripts in order:
-    for (unsigned int iraw = 0; iraw < rawsize; ++iraw) {
+    for (std::size_t iraw = 0; iraw < rawsize; ++iraw) {
 	String* subscript = (*raw_indices)[iraw];
 	if (subscript == String::NA())
 	    (*ans)[iraw] = NA<int>();
@@ -171,7 +171,7 @@ Subscripting::canonicalize(const StringVector* raw_indices, std::size_t range_si
 	    // Have we met this name already?
 	    Nmap::const_iterator it = names_map.find(csubscript);
 	    if (it != names_map.end())  // Yes
-		(*ans)[iraw] = (*it).second;
+		(*ans)[iraw] = int((*it).second);
 	    else {  // No
 		// If we haven't yet worked right through range_names,
 		// continue searching for a match from where we left
@@ -199,13 +199,13 @@ Subscripting::canonicalize(const StringVector* raw_indices, std::size_t range_si
 		    }
 		}
 		if (found) 
-		    (*ans)[iraw] = max_index;
+		    (*ans)[iraw] = int(max_index);
 		else { // The supplied subscript is a new name:
 		    if (!use_names)
 			use_names = CXXR_NEW(ListVector(rawsize));
 		    ++max_index;
 		    (*use_names)[iraw] = csubscript;
-		    (*ans)[iraw] = max_index;
+		    (*ans)[iraw] = int(max_index);
 		    names_map[csubscript] = max_index;
 		}
 	    }
@@ -228,10 +228,10 @@ Subscripting::canonicalizeArraySubscripts(const VectorBase* v,
     const ListVector* dimnames = v->dimensionNames();
     GCStackRoot<ListVector> ans(CXXR_NEW(ListVector(ndims)));
     const PairList* pl = subscripts;
-    for (unsigned int d = 0; d < ndims; ++d) {
+    for (std::size_t d = 0; d < ndims; ++d) {
 	if (!pl)
 	    Rf_error(_("too few subscripts"));
-	std::size_t dimsize = (*dims)[d];
+	std::size_t dimsize = std::size_t((*dims)[d]);
 	const StringVector* names
 	    = (dimnames ? static_cast<StringVector*>((*dimnames)[d].get()) : 0);
 	std::pair<const IntVector*, std::size_t> pr
@@ -255,7 +255,7 @@ std::size_t Subscripting::createDimIndexers(DimIndexerVector* dimindexers,
     std::size_t ndims = source_dims->size();
     double dresultsize = 1.0;
     std::size_t resultsize = 1;
-    for (unsigned int d = 0; d < ndims; ++d) {
+    for (std::size_t d = 0; d < ndims; ++d) {
 	DimIndexer& di = (*dimindexers)[d];
 	const IntVector* iv = static_cast<IntVector*>((*indices)[d].get());
 	di.nindices = iv->size();
@@ -267,9 +267,9 @@ std::size_t Subscripting::createDimIndexers(DimIndexerVector* dimindexers,
 	di.indexnum = 0;
     }
     (*dimindexers)[0].stride = 1;
-    for (unsigned int d = 1; d < ndims; ++d)
+    for (std::size_t d = 1; d < ndims; ++d)
 	(*dimindexers)[d].stride
-	    = (*dimindexers)[d - 1].stride * (*source_dims)[d - 1];
+	    = (*dimindexers)[d - 1].stride * std::size_t((*source_dims)[d - 1]);
     return resultsize;
 }
 
@@ -281,7 +281,7 @@ bool Subscripting::dropDimensions(VectorBase* v)
     std::size_t ndims = dims->size();
     // Count the number of dimensions with extent != 1 :
     std::size_t ngooddims = 0;
-    for (unsigned int d = 0; d < ndims; ++d)
+    for (std::size_t d = 0; d < ndims; ++d)
 	if ((*dims)[d] != 1)
 	    ++ngooddims;
     if (ngooddims == ndims)
@@ -294,11 +294,11 @@ bool Subscripting::dropDimensions(VectorBase* v)
 	// Set up new dimensions attribute:
 	{
 	    GCStackRoot<IntVector> newdims(CXXR_NEW(IntVector(ngooddims)));
-	    unsigned int dout = 0;
-	    for (unsigned int din = 0; din < ndims; ++din) {
-		std::size_t dsize = (*dims)[din];
+	    std::size_t dout = 0;
+	    for (std::size_t din = 0; din < ndims; ++din) {
+		std::size_t dsize = std::size_t((*dims)[din]);
 		if (dsize != 1) {
-		    (*newdims)[dout++] = dsize;
+		    (*newdims)[dout++] = int(dsize);
 		    if (dimnames && (*dimnames)[din])
 			havenames = true;
 		}
@@ -312,8 +312,8 @@ bool Subscripting::dropDimensions(VectorBase* v)
 	    GCStackRoot<ListVector> newdimnames(CXXR_NEW(ListVector(ngooddims)));
 	    GCStackRoot<StringVector>
 		newdimnamesnames(CXXR_NEW(StringVector(ngooddims)));
-	    unsigned int dout = 0;
-	    for (unsigned int din = 0; din < ndims; ++din)
+	    std::size_t dout = 0;
+	    for (std::size_t din = 0; din < ndims; ++din)
 		if ((*dims)[din] != 1) {
 		    (*newdimnames)[dout] = (*dimnames)[din];
 		    if (dimnamesnames)
@@ -328,7 +328,7 @@ bool Subscripting::dropDimensions(VectorBase* v)
 	// Reduce to a vector.
 	v->setDimensions(0);
 	if (dimnames) {
-	    unsigned int d = 0;
+	    std::size_t d = 0;
 	    while ((*dims)[d] == 1)
 		++d;
 	    v->setNames(static_cast<StringVector*>((*dimnames)[d].get()));
@@ -341,8 +341,8 @@ bool Subscripting::dropDimensions(VectorBase* v)
 	// just one dimension has names.
 	if (dimnames) {
 	    StringVector* newnames = 0;
-	    unsigned int count = 0;
-	    for (unsigned int d = 0; d < ndims; ++d) {
+	    std::size_t count = 0;
+	    for (std::size_t d = 0; d < ndims; ++d) {
 		RObject* dnd = (*dimnames)[d];
 		if (dnd) {
 		    newnames = static_cast<StringVector*>(dnd);
@@ -372,12 +372,12 @@ void Subscripting::processUseNames(VectorBase* v, const IntVector* indices)
 	    newnames = SEXP_downcast<StringVector*>(nmattr);
 	else newnames = CXXR_NEW(StringVector(v->size()));
     }
-    for (unsigned int i = 0; i < usenames->size(); ++i) {
+    for (std::size_t i = 0; i < usenames->size(); ++i) {
 	RObject* newname = (*usenames)[i];
 	if (newname) {
 	    int index = (*indices)[i];
 	    if (!isNA(index))
-		(*newnames)[index - 1] = SEXP_downcast<String*>(newname);
+		(*newnames)[VectorBase::size_type(index) - 1] = SEXP_downcast<String*>(newname);
 	}
     }
     v->setAttribute(NamesSymbol, newnames);
@@ -392,8 +392,8 @@ void Subscripting::setArrayAttributes(VectorBase* subset,
     // Dimensions:
     {
 	GCStackRoot<IntVector> newdims(CXXR_NEW(IntVector(ndims)));
-	for (unsigned int d = 0; d < ndims; ++d)
-	    (*newdims)[d] = dimindexers[d].nindices;
+	for (std::size_t d = 0; d < ndims; ++d)
+	    (*newdims)[d] = int(dimindexers[d].nindices);
 	subset->setDimensions(newdims);
     }
     // Dimnames:
@@ -401,7 +401,7 @@ void Subscripting::setArrayAttributes(VectorBase* subset,
 	const ListVector* dimnames = source->dimensionNames();
 	if (dimnames) {
 	    GCStackRoot<ListVector> newdimnames(CXXR_NEW(ListVector(ndims)));
-	    for (unsigned int d = 0; d < ndims; ++d) {
+	    for (std::size_t d = 0; d < ndims; ++d) {
 		const DimIndexer& di = dimindexers[d];
 		// 0-length dims have NULL dimnames:
 		if (di.nindices > 0) {

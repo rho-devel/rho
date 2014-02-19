@@ -284,7 +284,7 @@ namespace CXXR {
 	 *          an error is reported and the nesting depth is left
 	 *          unchanged.
 	 */
-	static void setDepthLimit(int depth);
+	static void setDepthLimit(unsigned int depth);
    private:
 	friend class Context;  // Unnecessary in C++ 0x
 

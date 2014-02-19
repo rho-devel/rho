@@ -97,7 +97,7 @@ inline SEXP VECTOR_ELT(SEXP x, int i)
 {
     using namespace CXXR;
     ListVector* lv = SEXP_downcast<ListVector*>(x, false);
-    return (*lv)[i];
+    return (*lv)[VectorBase::size_type(i)];
 }
 #endif
 

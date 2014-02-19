@@ -108,9 +108,10 @@ char* R_alloc(size_t num_elts, int elt_size)
 {
     if (elt_size <= 0)
 	Rf_error(_("R_alloc: element size must be positive."));
-    size_t size = num_elts*elt_size;
+    size_t uelt_size = size_t(elt_size);
+    size_t size = num_elts*uelt_size;
     // Check for integer overflow:
-    if (size/elt_size != num_elts)
+    if (size/uelt_size != num_elts)
 	Rf_error(_("R_alloc: requested allocation is impossibly large."));
     return static_cast<char*>(RAllocStack::allocate(size));
 }
@@ -121,9 +122,11 @@ char* S_alloc(long num_elts, int elt_size)
 	Rf_error(_("S_alloc: number of elements must be non-negative."));
     if (elt_size <= 0)
 	Rf_error(_("S_alloc: element size must be positive."));
-    size_t size = num_elts*elt_size;
+    size_t unum_elts = size_t(num_elts);
+    size_t uelt_size = size_t(elt_size);
+    size_t size = unum_elts*uelt_size;
     // Check for integer overflow:
-    if (size/elt_size != size_t(num_elts))
+    if (size/uelt_size != unum_elts)
 	Rf_error(_("R_alloc: requested allocation is impossibly large."));
     char* ans = static_cast<char*>(RAllocStack::allocate(size));
     memset(ans, 0, size);
@@ -135,8 +138,9 @@ char* S_realloc(char *prev_block, long new_sz, long old_sz, int elt_size)
     if (new_sz <= old_sz)
 	return prev_block;
     char* ans = S_alloc(new_sz, elt_size);
-    size_t old_bytes = old_sz*elt_size;
+    size_t uelt_size = size_t(elt_size);
+    size_t old_bytes = size_t(old_sz)*uelt_size;
     memcpy(ans, prev_block, old_bytes);
-    memset(ans + old_sz, 0, new_sz*elt_size - old_bytes);
+    memset(ans + old_sz, 0, size_t(new_sz)*uelt_size - old_bytes);
     return ans;
 }

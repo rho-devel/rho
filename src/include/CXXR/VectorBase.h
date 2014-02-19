@@ -71,12 +71,14 @@ namespace CXXR {
      */
     class VectorBase : public RObject {
     public:
+	typedef std::size_t size_type;
+
 	/**
 	 * @param stype The required ::SEXPTYPE.
 	 * @param sz The required number of elements in the vector.
 	 */
-	VectorBase(SEXPTYPE stype, std::size_t sz)
-	    : RObject(stype), m_truelength(sz), m_size(sz)
+	VectorBase(SEXPTYPE stype, size_type sz)
+	    : RObject(stype), m_truelength(R_len_t(sz)), m_size(sz)
 	{}
 
 	/** @brief Copy constructor.
@@ -168,7 +170,7 @@ namespace CXXR {
 	 * copyAttributesOnResize().
 	 */
 	template <class V>
-	static V* resize(const V* pattern, std::size_t new_size);
+	static V* resize(const V* pattern, size_type new_size);
 
 	/** @brief Adjust attributes for a resized vector.
 	 *
@@ -188,7 +190,7 @@ namespace CXXR {
 	 * vector.
 	 */
 	static PairList* resizeAttributes(const PairList* attributes,
-					  std::size_t new_size);
+					  size_type new_size);
 
 	/** @brief Associate names with the rows, columns or other
 	 *  dimensions of an R matrix or array.
@@ -273,13 +275,13 @@ namespace CXXR {
 	 *          be initialized with <tt>NA<T>()</tt>, where \a T
 	 *          is the element type.
 	 */
-	virtual void setSize(std::size_t new_size);
+	virtual void setSize(size_type new_size);
 
 	/** @brief Number of elements in the vector.
 	 *
 	 * @return The number of elements in the vector.
 	 */
-	std::size_t size() const
+	size_type size() const
 	{
 	    return m_size;
 	}
@@ -312,7 +314,7 @@ namespace CXXR {
 	 *
 	 * @param new_size New size required.
 	 */
-	void adjustSize(std::size_t new_size)
+	void adjustSize(size_type new_size)
 	{
 	    m_size = new_size;
 	    setAttributes(resizeAttributes(attributes(), new_size));
@@ -321,7 +323,7 @@ namespace CXXR {
     private:
 	friend class boost::serialization::access;
 
-	size_t m_size;
+	size_type m_size;
 
 	// m_size will always be passed in by the constructor, and so
 	// is not serialised.
@@ -334,10 +336,10 @@ namespace CXXR {
     };
 
     template <class V>
-    V* VectorBase::resize(const V* pattern, std::size_t new_size)
+    V* VectorBase::resize(const V* pattern, size_type new_size)
     {
 	GCStackRoot<V> ans(CXXR_NEW(V(new_size)));
-	std::size_t copysz = std::min(pattern->size(), new_size);
+	size_type copysz = std::min(pattern->size(), new_size);
 	typename V::const_iterator patb = pattern->begin();
 	typename V::iterator ansit
 	    = std::copy(patb, patb + copysz, ans->begin());
@@ -369,9 +371,10 @@ extern "C" {
     inline int LENGTH(SEXP x)
     {
 	using namespace CXXR;
-	if (!x) return 0;
+	if (!x)
+	    return 0;
 	VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
-	return vb.size();
+	return int(vb.size());
     }
 #endif
 

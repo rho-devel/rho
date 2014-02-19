@@ -302,6 +302,9 @@ extern int putenv(char *string);
  */
 
 /* Vector Heap Structure */
+/* sizeof(VECREC) is used for some backwards-compatibility purposes in
+   CXXR, and that's all.
+*/
 typedef struct {
 	union {
 		SEXP		backpointer;
@@ -311,32 +314,29 @@ typedef struct {
 
 /* Vector Heap Macros */
 
-// This doesn't seem to be used anywhere:
-//#define BACKPOINTER(v)	((v).u.backpointer)
-
 inline size_t BYTE2VEC(int n)
 {
-    return (n > 0) ? (n - 1)/sizeof(VECREC) + 1 : 0;
+    return (n > 0) ? (std::size_t(n) - 1)/sizeof(VECREC) + 1 : 0;
 }
 
 inline size_t INT2VEC(int n)
 {
-    return (n > 0) ? (n*sizeof(int) - 1)/sizeof(VECREC) + 1 : 0;
+    return (n > 0) ? (std::size_t(n)*sizeof(int) - 1)/sizeof(VECREC) + 1 : 0;
 }
 
 inline size_t FLOAT2VEC(int n)
 {
-    return (n > 0) ? (n*sizeof(double) - 1)/sizeof(VECREC) + 1 : 0;
+    return (n > 0) ? (std::size_t(n)*sizeof(double) - 1)/sizeof(VECREC) + 1 : 0;
 }
 
 inline size_t COMPLEX2VEC(int n)
 {
-    return (n > 0) ? (n*sizeof(Rcomplex) - 1)/sizeof(VECREC) + 1 : 0;
+    return (n > 0) ? (std::size_t(n)*sizeof(Rcomplex) - 1)/sizeof(VECREC) + 1 : 0;
 }
 
 inline size_t PTR2VEC(int n)
 {
-    return (n > 0) ? (n*sizeof(SEXP) - 1)/sizeof(VECREC) + 1 : 0;
+    return (n > 0) ? (std::size_t(n)*sizeof(SEXP) - 1)/sizeof(VECREC) + 1 : 0;
 }
 
 /* Bindings */

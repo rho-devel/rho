@@ -89,7 +89,7 @@ namespace CXXR {
 
     /** @brief Vector of strings.
      *
-     * Note that the <tt>StringVector(size_t)</tt> constructor will
+     * Note that the <tt>StringVector(size_type)</tt> constructor will
      * fill the constructed vector with blank strings rather than
      * with NULL.
      */
@@ -168,7 +168,7 @@ SEXP STRING_ELT(SEXP x, int i);
 inline SEXP STRING_ELT(SEXP x, int i)
 {
     using namespace CXXR;
-    return (*SEXP_downcast<StringVector*>(x, false))[i];
+    return (*SEXP_downcast<StringVector*>(x, false))[VectorBase::size_type(i)];
 }
 #endif
 

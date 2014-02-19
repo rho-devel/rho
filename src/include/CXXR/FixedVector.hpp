@@ -87,7 +87,7 @@ namespace CXXR {
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
 	 */
-	FixedVector(std::size_t sz)
+	FixedVector(size_type sz)
 	    : VectorBase(ST, sz), m_data(singleton())
 	{
 	    if (sz > 1)
@@ -109,7 +109,7 @@ namespace CXXR {
 	 *          element.
 	 */
 	template <typename U>
-	FixedVector(std::size_t sz, const U& fill_value);
+	FixedVector(size_type sz, const U& fill_value);
 
 	/** @brief Pick a single element from a vector.
 	 *
@@ -162,7 +162,7 @@ namespace CXXR {
 	 *
 	 * @return Reference to the specified element.
 	 */
-	T& operator[](unsigned int index)
+	T& operator[](size_type index)
 	{
 	    return m_data[index];
 	}
@@ -174,7 +174,7 @@ namespace CXXR {
 	 *
 	 * @return \c const reference to the specified element.
 	 */
-	const T& operator[](unsigned int index) const
+	const T& operator[](size_type index) const
 	{
 	    return m_data[index];
 	}
@@ -231,7 +231,7 @@ namespace CXXR {
 	static const char* staticTypeName();
 
 	// Virtual functions of VectorBase:
-	void setSize(std::size_t new_size);
+	void setSize(size_type new_size);
 
 	// Virtual functions of RObject:
 	FixedVector<T, ST, Initializer>* clone() const;
@@ -274,7 +274,7 @@ namespace CXXR {
 
 	// If there is more than one element, this function is used to
 	// allocate the required memory block from CXXR::MemoryBank :
-	static T* allocData(std::size_t sz);
+	static T* allocData(size_type sz);
 
 	static void constructElements(iterator from, iterator to);
 
@@ -342,7 +342,7 @@ namespace boost {
 				 CXXR::FixedVector<T, ST, Initr>* t,
 				 const unsigned int version)
 	{
-	    std::size_t size;
+	    size_t size;
 	    ar >> BOOST_SERIALIZATION_NVP(size);
 	    new (t) CXXR::FixedVector<T, ST, Initr>(size);
 	}
@@ -381,7 +381,7 @@ namespace boost {
 				 const CXXR::FixedVector<T, ST, Initr>* t,
 				 const unsigned int version)
 	{
-	    std::size_t size = t->size();
+	    size_t size = t->size();
 	    ar << BOOST_SERIALIZATION_NVP(size);
 	}
     }  // namespace serialization
@@ -395,7 +395,7 @@ namespace boost {
 
 template <typename T, SEXPTYPE ST, typename Initr>
 template <typename U>
-CXXR::FixedVector<T, ST, Initr>::FixedVector(std::size_t sz,
+CXXR::FixedVector<T, ST, Initr>::FixedVector(size_type sz,
 					     const U& fill_value)
     : VectorBase(ST, sz), m_data(singleton())
 {
@@ -410,7 +410,7 @@ template <typename T, SEXPTYPE ST, typename Initr>
 CXXR::FixedVector<T, ST, Initr>::FixedVector(const FixedVector<T, ST, Initr>& pattern)
     : VectorBase(pattern), m_data(singleton())
 {
-    std::size_t sz = size();
+    size_type sz = size();
     if (sz > 1)
 	m_data = allocData(sz);
     T* p = m_data;
@@ -434,9 +434,9 @@ CXXR::FixedVector<T, ST, Initr>::FixedVector(FwdIter from, FwdIter to)
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
-T* CXXR::FixedVector<T, ST, Initr>::allocData(std::size_t sz)
+T* CXXR::FixedVector<T, ST, Initr>::allocData(size_type sz)
 {
-    std::size_t blocksize = sz*sizeof(T);
+    size_type blocksize = sz*sizeof(T);
     // Check for integer overflow:
     if (blocksize/sizeof(T) != sz)
 	Rf_error(_("request to create impossibly large vector."));
@@ -487,7 +487,7 @@ void CXXR::FixedVector<T, ST, Initr>::load(Archive & ar,
 {
     ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(VectorBase);
 
-    size_t numnas;
+    size_type numnas;
     ar >> BOOST_SERIALIZATION_NVP(numnas);
     std::vector<unsigned int> na_indices;
     // Fill in NAs:
@@ -538,7 +538,7 @@ void CXXR::FixedVector<T, ST, Initr>::save(Archive & ar,
 
     // Record first differences of NA indices:
     {
-	size_t numnas = na_indices.size();
+	size_type numnas = na_indices.size();
 	ar << BOOST_SERIALIZATION_NVP(numnas);
 	unsigned int last_idx = 0;
 	for (std::vector<unsigned int>::const_iterator it = na_indices.begin();
@@ -557,9 +557,9 @@ void CXXR::FixedVector<T, ST, Initr>::save(Archive & ar,
 };
 
 template <typename T, SEXPTYPE ST, typename Initr>
-void CXXR::FixedVector<T, ST, Initr>::setSize(std::size_t new_size)
+void CXXR::FixedVector<T, ST, Initr>::setSize(size_type new_size)
 {
-    std::size_t copysz = std::min(size(), new_size);
+    size_type copysz = std::min(size(), new_size);
     T* newblock = singleton();  // Setting used only if new_size == 0
     if (new_size > 0)
 	newblock = allocData(new_size);

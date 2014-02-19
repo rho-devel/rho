@@ -177,13 +177,13 @@ double unif_rand(void)
 	k = int( (p1 / m1));
 	p1 -= k * m1;
 	if (p1 < 0.0) p1 += m1;
-	II(0) = II(1); II(1) = II(2); II(2) = int( p1);
+	II(0) = II(1); II(1) = II(2); II(2) = Int32( p1);
 
 	p2 = a21 * static_cast<unsigned int>(II(5)) - a23n * static_cast<unsigned int>(II(3));
 	k = int( (p2 / m2));
 	p2 -= k * m2;
 	if (p2 < 0.0) p2 += m2;
-	II(3) = II(4); II(4) = II(5); II(5) = int( p2);
+	II(3) = II(4); II(4) = II(5); II(5) = Int32( p2);
 
 	return double(((p1 > p2) ? (p1 - p2) : (p1 - p2 + m1))) * normc;
     }
@@ -434,7 +434,7 @@ void GetRNGstate()
 	else {
 	    int j, *is = INTEGER(seeds);
 	    for(j = 1; j <= len_seed; j++)
-		RNG_Table[RNG_kind].i_seed[j - 1] = is[j];
+		RNG_Table[RNG_kind].i_seed[j - 1] = CXXRCONSTRUCT(Int32, is[j]);
 	    FixupSeeds(RNG_kind, 0);
 	}
     }
@@ -457,8 +457,8 @@ void PutRNGstate()
 
     INTEGER(seeds)[0] = RNG_kind + 100 * N01_kind;
     for(j = 0; j < len_seed; j++)
-	INTEGER(seeds)[j+1] = RNG_Table[RNG_kind].i_seed[j];
-
+	INTEGER(seeds)[j+1] = CXXRCONSTRUCT(int, RNG_Table[RNG_kind].i_seed[j]);
+					    
     /* assign only in the workspace */
     defineVar(R_SeedsSymbol, seeds, R_GlobalEnv);
     UNPROTECT(1);
@@ -543,7 +543,7 @@ SEXP attribute_hidden do_setseed (SEXP call, SEXP op, SEXP args, SEXP env)
 	seed = asInteger(CAR(args));
 	if (seed == NA_INTEGER)
 	    error(_("supplied seed is not a valid integer"));
-    } else seed = TimeToSeed();
+    } else seed = CXXRCONSTRUCT(int, TimeToSeed());
     skind = CADR(args);
     nkind = CADDR(args);
     GetRNGkind(R_NilValue); /* pull RNG_kind, N01_kind from 
@@ -645,7 +645,7 @@ static double MT_genrand(void)
     static Int32 mag01[2]={0x0, MATRIX_A};
     /* mag01[x] = x * MATRIX_A  for x=0,1 */
 
-    mti = dummy[0];
+    mti = CXXRCONSTRUCT(int, dummy[0]);
 
     if (mti >= N) { /* generate N words at one time */
 	int kk;
@@ -672,7 +672,7 @@ static double MT_genrand(void)
     y ^= TEMPERING_SHIFT_S(y) & TEMPERING_MASK_B;
     y ^= TEMPERING_SHIFT_T(y) & TEMPERING_MASK_C;
     y ^= TEMPERING_SHIFT_L(y);
-    dummy[0] = mti;
+    dummy[0] = CXXRCONSTRUCT(Int32, mti);
 
     return ( double(y) * 2.3283064365386963e-10 ); /* reals: [0,1)-interval */
 }

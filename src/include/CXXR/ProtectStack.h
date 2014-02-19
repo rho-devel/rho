@@ -315,7 +315,7 @@ extern "C" {
 #else
     inline void Rf_unprotect(int count)
     {
-	CXXR::ProtectStack::unprotect(count);
+	CXXR::ProtectStack::unprotect(static_cast<unsigned int>(count));
     }
 #endif	
 

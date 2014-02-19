@@ -324,7 +324,7 @@ namespace CXXR {
 	typedef std::map<std::string, BuiltInFunction*> map;
 	static map* s_cache;
 
-	int m_offset;
+	unsigned int m_offset;
 	CCODE m_function;
 	ResultPrintingMode m_result_printing_mode;
 	bool m_transparent;  // if true, do not create a
@@ -333,14 +333,14 @@ namespace CXXR {
 
 	// This default constructor is used only during (boost)
 	// deserialisation, and constructs a bodged-up temporary
-	// object, with m_offset set negative to signify that this is
+	// object, with m_function set null to signify that this is
 	// a deserialisation proxy.
 
 	// (The argument to the FunctionBase base-class constructor is
 	// arbitrary, but will not be used during the lifetime of this
 	// temporary object.)
 	BuiltInFunction()
-	    : FunctionBase(BUILTINSXP), m_offset(-1), m_function(0)
+	    : FunctionBase(BUILTINSXP), m_offset(0), m_function(0)
 	{}
 
 	/** @brief Constructor.
@@ -496,7 +496,7 @@ inline const char* PRIMNAME(SEXP x)
     {
 	using namespace CXXR;
 	BuiltInFunction& bif = *SEXP_downcast<BuiltInFunction*>(x);
-	return bif.offset();
+	return int(bif.offset());
     }
 #endif
 
