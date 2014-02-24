@@ -293,7 +293,7 @@ static SEXP ziplist(const char *zipname)
 	/* In theory at least bit 11 of the flag tells us that the
 	   filename is in UTF-8, so FIXME */
 	SET_STRING_ELT(names, i, mkChar(filename_inzip));
-	REAL(lengths)[i] = file_info.uncompressed_size;
+	REAL(lengths)[i] = double(file_info.uncompressed_size);
 	snprintf(date, 50, "%d-%02d-%02d %02d:%02d",
 		 file_info.tmu_date.tm_year,
 		 file_info.tmu_date.tm_mon + 1,

@@ -5835,7 +5835,7 @@ do_memDecompress(SEXP call, SEXP op, SEXP args, SEXP env)
 		break;
 	    }
 	}
-	outlen = strm.total_out;
+	outlen = size_t(strm.total_out);
 	lzma_end(&strm);
 	ans = allocVector(RAWSXP, outlen);
 	memcpy(RAW(ans), buf, outlen);

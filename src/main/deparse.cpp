@@ -345,7 +345,8 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP saveenv, tval;
     int i, ifile, res;
-    Rboolean wasopen, havewarned = FALSE, opts;
+    Rboolean wasopen, havewarned = FALSE;
+    int opts;
     Rconnection con = Rconnection( 1); /* stdout */
 
     checkArity(op, args);
@@ -356,9 +357,9 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(saveenv = CLOENV(tval));
 	SET_CLOENV(tval, R_GlobalEnv);
     }
-    opts = CXXRCONSTRUCT(Rboolean, SHOWATTRIBUTES);
+    opts = SHOWATTRIBUTES;
     if(!isNull(CADDR(args)))
-	opts = CXXRCONSTRUCT(Rboolean, asInteger(CADDR(args)));
+	opts = asInteger(CADDR(args));
 
     tval = deparse1(tval, CXXRFALSE, opts);
     if (TYPEOF(CAR(args)) == CLOSXP) {
