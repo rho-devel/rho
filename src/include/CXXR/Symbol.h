@@ -274,20 +274,6 @@ namespace CXXR {
 
 	unsigned int m_dd_index;
 
-	// The environment class maintains a cache of variables in the global
-        // search path. For efficiency reasons, the data is stored here, but
-        // it is managed by the environment class.
-        friend class Environment;
-	// Should be Frame::Binding*, but cyclic dependencies in the headers
-        // make that too tricky.
-	mutable void* m_cached_value;
-        // Set to true if this symbol is in the global cache.
-        mutable bool m_cached_value_is_global : 1;
-        // Set to true if this symbol is known to be bound to the same symbol
-        // everywhere it is bound.
-        // TODO(kmillar): currently always set to false.
-        mutable bool m_cached_value_is_unique : 1;
-
 	enum S11nType {NORMAL = 0, MISSINGARG, UNBOUNDVALUE};
 
 	/**

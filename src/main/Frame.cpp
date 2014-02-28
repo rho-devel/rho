@@ -51,8 +51,6 @@ using namespace CXXR;
 
 Frame::monitor Frame::s_read_monitor = 0;
 Frame::monitor Frame::s_write_monitor = 0;
-int Frame::s_read_monitor_count = 0;
-int Frame::s_write_monitor_count = 0;
 
 // ***** Class Frame::Binding *****
 
@@ -183,12 +181,7 @@ PairList* Frame::asPairList() const
 
 void Frame::clear()
 {
-    if (m_cache_count > 0) {
-	BindingRange bdgs = bindingRange();
-	for (BindingRange::const_iterator it = bdgs.begin();
-	     it != bdgs.end(); ++it)
-	    statusChanged(it->symbol());
-    }
+    statusChanged(0);
     v_clear();
 }
 
@@ -211,20 +204,14 @@ void Frame::enableReadMonitoring(bool on) const
 {
     if (on && !s_read_monitor)
 	Rf_error("Internal error: Frame::s_read_monitor not set");
-    if (on != m_read_monitored) {
-	s_read_monitor_count += (on ? 1 : -1);
-	m_read_monitored = on;
-    }
+    m_read_monitored = on;
 }
 
 void Frame::enableWriteMonitoring(bool on) const
 {
     if (on && !s_write_monitor)
 	Rf_error("Internal error: Frame::s_write_monitor not set");
-    if (on != m_write_monitored) {
-	s_write_monitor_count += (on ? 1 : -1);
-	m_write_monitored = on;
-    }
+    m_write_monitored = on;
 }
 
 void Frame::flush(const Symbol* sym)

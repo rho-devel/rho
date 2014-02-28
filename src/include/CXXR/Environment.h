@@ -50,7 +50,6 @@
 #include <boost/serialization/nvp.hpp>
 
 #include "CXXR/Frame.hpp"
-#include "CXXR/FunctionBase.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/Symbol.h"
@@ -171,10 +170,7 @@ namespace CXXR {
 	Environment(Environment* enclosing, Frame* frame)
 	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(frame),
 	      m_single_stepping(false), m_locked(false), m_on_search_path(false),
-	      m_leaked(false), m_in_loop(false), m_can_return(false),
-	      m_enclosed_by_global_env(enclosing
-				       ? enclosing->enclosedByGlobalEnv()
-				       : false)
+	      m_leaked(false), m_in_loop(false), m_can_return(false)
 	{}
 
 	/** @brief Base environment.
@@ -205,15 +201,6 @@ namespace CXXR {
 	bool canReturn() const
 	{
 	    return m_can_return;
-	}
-
-	/** @brief Is the global environment visible from this environment?
-	 *
-	 * @return true iff the global environment is in the chain of enclosing
-	 *   environments.
-	 */
-	bool enclosedByGlobalEnv() const {
-	    return m_enclosed_by_global_env;
 	}
 
 	/** @brief Empty environment.
@@ -283,136 +270,6 @@ namespace CXXR {
 	{
 	    return const_cast<Environment*>(this)->findBinding(symbol);
 	}
-
-        /** @brief Search for a Binding of a Symbol to a FunctionBase.
-         *
-         * This function looks for a Binding of \a symbol, and tests
-         * whether the Binding's value is a FunctionBase.
-         *
-         * If a Binding of \a symbol to a Promise is encountered, the
-         * Promise is forced before testing whether the value of the
-         * Promise is a FunctionBase.  In this case, if the predicate is
-         * satisfied, the result of evaluating the Promise is part of the
-         * returned value.
-         *
-         * If, in the course of searching for a suitable Binding, a
-         * Binding of \a symbol to Symbol::missingArgument()
-         * (R_MissingArg) is encountered, an error is raised.
-         *
-         * Read/write monitors are invoked in the following circumstances:
-         * (i) If a Promise is forced, any read monitor for the relevant
-         * Binding is called before forcing it, and any write monitor for
-         * the symbol's Binding is called immediately afterwards.  (ii) If
-         * this function succeeds in finding a Binding to a FunctionBase,
-         * then any read monitor for that Binding is called.
-         *
-         * @param symbol Non-null pointer to the Symbol for which a
-         *          Binding is sought.
-         *
-         * @param inherits If false, only the current environment will be
-         *          searched; if true, the search will propagate as
-         *          necessary to enclosing environments until either a
-         *          Binding to a FunctionBase is found, or the chain of
-         *          enclosing environments is exhausted.
-         *
-         * @return Returns the sought function if a Binding to a FunctionBase was
-         *         found.  Otherwise returns null.
-         */
-        FunctionBase*
-	findFunction(const Symbol* symbol, bool inherits = true) {
-	    // In most cases, we can get the function directly from the cache.
-	    if (inherits
-		&& symbol->m_cached_value_is_global
-		&& symbol->m_cached_value_is_unique
-		&& enclosedByGlobalEnv()
-		&& !Frame::anyReadMonitorsEnabled()) {
-              RObject* cached_value
-                = static_cast<Frame::Binding*>(symbol->m_cached_value)
-                ->unforcedValue();
-              if(FunctionBase::isA(cached_value)) {
-		return SEXP_downcast<FunctionBase*>(cached_value);
-              }
-            }
-            return findFunctionNonInline(symbol, inherits);
-        }
-
-        /** @brief Search for a Binding whose value satisfies a predicate.
-         *
-         * This function looks for a Binding of \a symbol, and tests
-         * whether the Binding's value satisfies a predicate \a pred.
-         *
-         * If a Binding of \a symbol to a Promise is encountered, the
-         * Promise is forced before applying the predicate to the result
-         * of evaluating the Promise.  In this case, if the predicate is
-         * satisfied, the result of evaluating the Promise is part of the
-         * returned value.
-         *
-         * Read/write monitors are invoked in the following circumstances:
-         * (i) If a Promise is forced, any read monitor for the relevant
-         * Binding is called before forcing it, and any write monitor for
-         * the symbol's Binding is called immediately afterwards.  (ii) If
-         * this function succeeds in finding a Binding satisfying the
-         * predicate, then any read monitor for that Binding is called.
-         *
-         * @tparam UnaryPredicate A type of function or function object
-         *           capable of accepting const RObject* and returning
-         *           bool.
-         *
-         * @param symbol Pointer to the Symbol for which a Binding is
-         *          sought.
-         *
-         * @param env Pointer to the Environment in which the search for a
-         *          Binding is to start.  Must not be null.
-         *
-         * @param pred The UnaryPredicate object to be used to test
-         *          candidate values.
-         *
-         * @param inherits If false, only the Frame of \a env will be
-         *          searched; if true, the search will propagate as
-         *          necessary to enclosing environments until either a
-         *          Binding satisfying the predicate is found, or the
-         *          chain of enclosing environments is exhausted.
-         *
-         * @return Returns the sought function if a Binding to a FunctionBase was
-         *         found.  Otherwise returns null.
-         * @return If a Binding satisfying the predicate was found, returns the
-         *   value of the Binding, except that if the value was a Promise,
-         *   returns the result of evaluating the Promise instead.  If no Binding
-         *   satisfying the predicate was found, returns null.
-         */
-        template <typename UnaryPredicate>
-        RObject* findTestedValue(const Symbol* symbol, UnaryPredicate pred,
-                                 bool inherits)
-        {
-	    using namespace std;
-          
-	    Environment* env = this;
-	    do {
-		Frame::Binding *bdg;
-		if (inherits && env == Environment::global()) {
-		    // findBinding() handles the details of the cache correctly.
-		    bdg = env->findBinding(symbol);
-		} else {
-		    bdg = env->frame()->binding(symbol);
-		}
-		if (bdg) {
-		    pair<RObject*, bool> fpr = bdg->forcedValue2();
-		    RObject* val = fpr.first;
-		    if (pred(val)) {
-			// Invoke read monitor (if any) only if
-			// forcedValue() did not force a Promise.  (If a
-			// Promise was forced, the read monitor will have
-			// been invoked anyway, and 'bdg' may now be
-			// junk.)
-			if (!fpr.second)
-			    bdg->rawValue();
-			return val;
-		    }
-		}
-		env = env->enclosingEnvironment();
-	    } while (inherits && env);
-	    return NULL;
-        }
 
 	/** @brief Locate a namespace environment from its
 	 *   specification.
@@ -635,6 +492,19 @@ namespace CXXR {
 	    void operator()(const GCNode* node);
 	};
 
+	// The class maintains a cache of Symbol Bindings found along
+	// the search path:
+
+	typedef
+	std::tr1::unordered_map<const Symbol*, Frame::Binding*,
+				std::tr1::hash<const Symbol*>,
+				std::equal_to<const Symbol*>,
+				CXXR::Allocator<std::pair<const Symbol*,
+							  Frame::Binding*> >
+	                        > Cache;
+
+	static Cache* s_search_path_cache;
+
 	// Predefined environments:
 	static Environment* s_base;
 	static Environment* s_base_namespace;
@@ -653,7 +523,6 @@ namespace CXXR {
 	mutable bool m_leaked;
 	bool m_in_loop;
 	bool m_can_return;
-	bool m_enclosed_by_global_env;
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
@@ -671,12 +540,9 @@ namespace CXXR {
 
 	void detachFrame();
 
-	// Remove any mapping of 'sym' from the search path cache.
+	// Remove any mapping of 'sym' from the search path cache.  If called
+        // with a null pointer, clear the cache entirely.
 	static void flushFromSearchPathCache(const Symbol* sym);
-
-        static Frame::Binding *getCachedGlobalBinding(const Symbol *symbol);
-        static void cacheGlobalBinding(const Symbol *symbol,
-                                       Frame::Binding *binding);
 
 	static void initialize();
 
@@ -684,9 +550,6 @@ namespace CXXR {
 	{
 	    return (this == s_global);
 	}
-
-        FunctionBase*
-	findFunctionNonInline(const Symbol* symbol, bool inherits);
 
 	template<class Archive>
 	void load(Archive& ar, const unsigned int version);
@@ -708,6 +571,122 @@ namespace CXXR {
 	}
     };
 
+    /** @brief Search for a Binding of a Symbol to a FunctionBase.
+     *
+     * This function looks for a Binding of \a symbol, and tests
+     * whether the Binding's value is a FunctionBase.
+     *
+     * If a Binding of \a symbol to a Promise is encountered, the
+     * Promise is forced before testing whether the value of the
+     * Promise is a FunctionBase.  In this case, if the predicate is
+     * satisfied, the result of evaluating the Promise is part of the
+     * returned value.
+     *
+     * If, in the course of searching for a suitable Binding, a
+     * Binding of \a symbol to Symbol::missingArgument()
+     * (R_MissingArg) is encountered, an error is raised.
+     *
+     * Read/write monitors are invoked in the following circumstances:
+     * (i) If a Promise is forced, any read monitor for the relevant
+     * Binding is called before forcing it, and any write monitor for
+     * the symbol's Binding is called immediately afterwards.  (ii) If
+     * this function succeeds in finding a Binding to a FunctionBase,
+     * then any read monitor for that Binding is called.
+     *
+     * @param symbol Non-null pointer to the Symbol for which a
+     *          Binding is sought.
+     *
+     * @param env Pointer to the Environment in which the search for a
+     *          Binding is to start.  Must not be null.
+     *
+     * @param inherits If false, only the Frame of \a env will be
+     *          searched; if true, the search will propagate as
+     *          necessary to enclosing environments until either a
+     *          Binding to a FunctionBase is found, or the chain of
+     *          enclosing environments is exhausted.
+     *
+     * @return Returns the sought function if a Binding to a FunctionBase was
+     *         found.  Otherwise returns null.
+     */
+    FunctionBase*
+    findFunction(const Symbol* symbol, Environment* env, bool inherits = true);
+
+    /** @brief Search for a Binding whose value satisfies a predicate.
+     *
+     * This function looks for a Binding of \a symbol, and tests
+     * whether the Binding's value satisfies a predicate \a pred.
+     *
+     * If a Binding of \a symbol to a Promise is encountered, the
+     * Promise is forced before applying the predicate to the result
+     * of evaluating the Promise.  In this case, if the predicate is
+     * satisfied, the result of evaluating the Promise is part of the
+     * returned value.
+     *
+     * Read/write monitors are invoked in the following circumstances:
+     * (i) If a Promise is forced, any read monitor for the relevant
+     * Binding is called before forcing it, and any write monitor for
+     * the symbol's Binding is called immediately afterwards.  (ii) If
+     * this function succeeds in finding a Binding satisfying the
+     * predicate, then any read monitor for that Binding is called.
+     *
+     * @tparam UnaryPredicate A type of function or function object
+     *           capable of accepting const RObject* and returning
+     *           bool.
+     *
+     * @param symbol Pointer to the Symbol for which a Binding is
+     *          sought.
+     *
+     * @param env Pointer to the Environment in which the search for a
+     *          Binding is to start.  Must not be null.
+     *
+     * @param pred The UnaryPredicate object to be used to test
+     *          candidate values.
+     *
+     * @param inherits If false, only the Frame of \a env will be
+     *          searched; if true, the search will propagate as
+     *          necessary to enclosing environments until either a
+     *          Binding satisfying the predicate is found, or the
+     *          chain of enclosing environments is exhausted.
+     *
+     * @return Returns the sought function if a Binding to a FunctionBase was
+     *         found.  Otherwise returns null.
+     * @return If a Binding satisfying the predicate was found, returns the
+     *   value of the Binding, except that if the value was a Promise, returns
+     *   the result of evaluating the Promise instead.  If no Binding
+     *   satisfying the predicate was found, returns null.
+     */
+    template <typename UnaryPredicate>
+    RObject* findTestedValue(const Symbol* symbol, Environment* env,
+			     UnaryPredicate pred, bool inherits)
+    {
+	using namespace std;
+
+	do {
+	    Frame::Binding *bdg;
+	    if (inherits && env == Environment::global()) {
+		// findBinding() handles the details of the cache correctly.
+		bdg = env->findBinding(symbol);
+	    } else {
+		bdg = env->frame()->binding(symbol);
+	    }
+	    if (bdg) {
+		pair<RObject*, bool> fpr = bdg->forcedValue2();
+		RObject* val = fpr.first;
+		if (pred(val)) {
+		    // Invoke read monitor (if any) only if
+		    // forcedValue() did not force a Promise.  (If a
+		    // Promise was forced, the read monitor will have
+		    // been invoked anyway, and 'bdg' may now be
+		    // junk.)
+		    if (!fpr.second)
+			bdg->rawValue();
+		    return val;
+		}
+	    }
+            env = env->enclosingEnvironment();
+	} while (inherits && env);
+	return NULL;
+    }
 }  // namespace CXXR
 
 BOOST_CLASS_EXPORT_KEY(CXXR::Environment)

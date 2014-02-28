@@ -101,9 +101,7 @@ namespace CXXR {
 
 	// Declared private to ensure that StdFrame objects are
 	// created only using 'new':
-	~StdFrame() {
-	    clear();
-	}
+	~StdFrame() {}
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:

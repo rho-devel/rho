@@ -68,7 +68,7 @@ static RObject* GetObject(ClosureContext *cptr)
 	RObject* op(funcall->car());
 	RObject* func;
 	if (op->sexptype() == SYMSXP)
-	    func = callenv->findFunction(static_cast<Symbol*>(op));
+	    func = findFunction(static_cast<Symbol*>(op), callenv);
 	else
 	    func = op->evaluate(callenv);
 	if (func->sexptype() != CLOSXP)
@@ -220,7 +220,7 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 	switch (opcar->sexptype()) {
 	case SYMSXP: {
 	    const Symbol* symbol = static_cast<Symbol*>(opcar);
-	    FunctionBase* fun = cptr->callEnvironment()->findFunction(symbol);
+	    FunctionBase* fun = findFunction(symbol, cptr->callEnvironment());
 	    if (!fun)
 		Rf_error(_("could not find function '%s'"),
 			 symbol->name()->c_str());
@@ -336,8 +336,8 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     {
 	std::string generic_name = Rf_translateChar((*generic)[0]);
 	FunctionBase* func
-	    = argsenv->enclosingEnvironment()->findFunction(
-		Symbol::obtain(generic_name));
+	    = findFunction(Symbol::obtain(generic_name),
+			   argsenv->enclosingEnvironment());
 	if (func && func->sexptype() == CLOSXP)
 	    defenv = static_cast<Closure*>(func)->environment();
     }

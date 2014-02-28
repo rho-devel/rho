@@ -72,7 +72,7 @@ std::pair<FunctionBase*, bool>
 S3Launcher::findMethod(const Symbol* symbol, Environment* call_env,
 		       Environment* table_env)
 {
-    FunctionBase* fun = call_env->findFunction(symbol);
+    FunctionBase* fun = findFunction(symbol, call_env);
     if (fun)
 	return make_pair(fun, true);
     if (!table_env)

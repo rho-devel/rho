@@ -73,7 +73,7 @@ RObject* Expression::evaluate(Environment* env)
     RObject* head = car();
     if (head->sexptype() == SYMSXP) {
 	Symbol* symbol = static_cast<Symbol*>(head);
-	func = env->findFunction(symbol);
+	func = findFunction(symbol, env);
 	if (!func)
 	    error(_("could not find function \"%s\""),
 		  symbol->name()->c_str());

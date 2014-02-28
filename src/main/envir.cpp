@@ -447,7 +447,7 @@ findVar1(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits)
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
     TypeTester typetest(mode);
-    RObject* value = env->findTestedValue(sym, typetest, inherits);
+    RObject* value = findTestedValue(sym, env, typetest, inherits);
     return (value ? value : R_UnboundValue);
 }
 
@@ -508,7 +508,7 @@ findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits,
 	return bdg ? bdg->unforcedValue() : R_UnboundValue;
     }
     ModeTester modetest(mode);
-    RObject* value = env->findTestedValue(sym, modetest, inherits);
+    RObject* value = findTestedValue(sym, env, modetest, inherits);
     return (value ? value : R_UnboundValue);
 }
 
@@ -609,7 +609,7 @@ SEXP findFun(SEXP symbol, SEXP rho)
 {
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
-    FunctionBase* fun = env->findFunction(sym);
+    FunctionBase* fun = findFunction(sym, env);
     if (fun)
 	return fun;
     error(_("could not find function \"%s\""), sym->name()->c_str());

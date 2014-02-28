@@ -599,24 +599,6 @@ namespace CXXR {
 	 */
 	void enableWriteMonitoring(bool on) const;
 
-	/** @brief Is read monitoring enabled for any frames?
-	 *
-	 * @return true iff one or more read monitors are currently active for
-	 *    any frame.
-	 */
-	static bool anyReadMonitorsEnabled() {
-	    return s_read_monitor_count;
-	}
-
-	/** @brief Is write monitoring enabled for any frames?
-	 *
-	 * @return true iff one or more write monitors are currently active for
-	 *    any frame.
-	 */
-	static bool anyWriteMonitorsEnabled() {
-	    return s_write_monitor_count;
-	}
-
 	/** @brief Remove the Binding (if any) of a Symbol.
 	 *
 	 * This function causes any Binding for a specified Symbol to
@@ -785,7 +767,10 @@ namespace CXXR {
     protected:
 	// Declared protected to ensure that Frame objects are created
 	// only using 'new':
-	~Frame() { }
+	~Frame()
+	{
+	    statusChanged(0);
+	}
 
 	/** @brief Report change in the bound/unbound status of Symbol
 	 *         objects.
@@ -807,7 +792,6 @@ namespace CXXR {
 	friend class boost::serialization::access;
 
 	static monitor s_read_monitor, s_write_monitor;
-	static int s_read_monitor_count, s_write_monitor_count;
 
 	unsigned char m_cache_count;  // Number of cached Environments
 			// of which this is the Frame.  Normally
@@ -828,7 +812,7 @@ namespace CXXR {
 	    --m_cache_count;
 	}
 
-	// Flush symbol from search list cache:
+	// Flush symbol(s) from search list cache:
 	void flush(const Symbol* sym);
 
 	void incCacheCount()
