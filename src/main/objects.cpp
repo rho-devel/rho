@@ -263,6 +263,65 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
     return 1;
 }
 
+/* While UseMethod is a primitive, it is documented as using normal argument
+ * argument matching with parameter names 'generic' and 'object'.
+ * This function does the matching.
+ */
+static void matchArgsForUseMethod(SEXP call, SEXP args, Environment* argsenv,
+				  ClosureContext* cptr,
+				  StringVector** generic, GCStackRoot<>* obj) {
+    static Symbol* genericsym(Symbol::obtain("generic"));
+    static Symbol* objectsym(Symbol::obtain("object"));
+    static GCRoot<ArgMatcher>
+	matcher(ArgMatcher::make(genericsym, objectsym));
+    
+    GCStackRoot<Frame> matchframe(CXXR_NEW(ListFrame));
+    GCStackRoot<Environment>
+	matchenv(CXXR_NEW(Environment(0, matchframe)));
+    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+    matcher->match(matchenv, &arglist);
+
+    // "generic":
+    {
+	RObject* genval = matchenv->frame()->binding(genericsym)->forcedValue();
+	if (genval == Symbol::missingArgument())
+	    Rf_errorcall(call, _("there must be a 'generic' argument"));
+	if (genval->sexptype() == STRSXP)
+	    *generic = static_cast<StringVector*>(genval);
+	if (!(*generic) || (*generic)->size() != 1)
+	    Rf_errorcall(call,
+			 _("'generic' argument must be a character string"));
+	if ((**generic)[0] == String::blank())
+	    Rf_errorcall(call, _("first argument must be a generic name"));
+    }
+
+    // "object":
+    {
+	RObject* objval = matchenv->frame()->binding(objectsym)->forcedValue();
+	if (objval != Symbol::missingArgument()) {
+	    *obj = objval->evaluate(argsenv);
+	}
+	else *obj = GetObject(cptr);
+    }
+}
+
+static std::string classTypeAsString(RObject* obj) {
+    std::string cl;
+    GCStackRoot<StringVector>
+	klass(static_cast<StringVector*>(R_data_class2(obj)));
+    int nclass = klass->size();
+    if (nclass == 1)
+	cl = Rf_translateChar((*klass)[0]);
+    else {
+	cl = std::string("c('") + Rf_translateChar((*klass)[0]);
+	for (int i = 1; i < nclass; ++i)
+	    cl += std::string("', '") + Rf_translateChar((*klass)[i]);
+	cl += "')";
+    }
+    return cl;
+}
+
+
 /* Note: "do_usemethod" is not the only entry point to
    "Rf_usemethod". Things like [ and [[ call Rf_usemethod directly,
    hence do_usemethod should just be an interface to Rf_usemethod.
@@ -280,41 +339,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     StringVector* generic = 0;
     GCStackRoot<> obj;
-
-    // Analyse and check 'args':
-    {
-	static Symbol* genericsym(Symbol::obtain("generic"));
-	static Symbol* objectsym(Symbol::obtain("object"));
-	static GCRoot<ArgMatcher>
-	    matcher(ArgMatcher::make(genericsym, objectsym));
-	GCStackRoot<Frame> matchframe(CXXR_NEW(ListFrame));
-	GCStackRoot<Environment>
-	    matchenv(CXXR_NEW(Environment(0, matchframe)));
-	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
-	matcher->match(matchenv, &arglist);
-
-	// "generic":
-	{
-	    RObject* genval = matchenv->frame()->binding(genericsym)->forcedValue();
-	    if (genval == Symbol::missingArgument())
-		Rf_errorcall(call, _("there must be a 'generic' argument"));
-	    if (genval->sexptype() == STRSXP)
-		generic = static_cast<StringVector*>(genval);
-	    if (!generic || generic->size() != 1)
-		Rf_errorcall(call,
-			     _("'generic' argument must be a character string"));
-	    if ((*generic)[0] == String::blank())
-		Rf_errorcall(call, _("first argument must be a generic name"));
-	}
-
-	// "object":
-	{
-	    RObject* objval = matchenv->frame()->binding(objectsym)->forcedValue();
-	    if (objval != Symbol::missingArgument())
-		obj = objval->evaluate(argsenv);
-	    else obj = GetObject(cptr);
-	}
-    }
+    matchArgsForUseMethod(call, args, argsenv, cptr, &generic, &obj);
 
     /* get environments needed for dispatching.
        callenv = environment from which the generic was called
@@ -346,22 +371,10 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP ans;
     if (Rf_usemethod(Rf_translateChar((*generic)[0]), obj, call, 0,
 		     env, callenv, defenv, &ans) != 1) {
-	// Failed, so prepare error message:
-	std::string cl;
-	GCStackRoot<StringVector>
-	    klass(static_cast<StringVector*>(R_data_class2(obj)));
-	int nclass = klass->size();
-	if (nclass == 1)
-	    cl = Rf_translateChar((*klass)[0]);
-	else {
-	    cl = std::string("c('") + Rf_translateChar((*klass)[0]);
-	    for (int i = 1; i < nclass; ++i)
-		cl += std::string("', '") + Rf_translateChar((*klass)[i]);
-	    cl += "')";
-	}
 	Rf_errorcall(call, _("no applicable method for '%s'"
 			     " applied to an object of class '%s'"),
-		     Rf_translateChar((*generic)[0]), cl.c_str());
+		     Rf_translateChar((*generic)[0]),
+		     classTypeAsString(obj).c_str());
     }
 
     // Prepare return value:
@@ -402,6 +415,19 @@ static SEXP fixcall(SEXP call, SEXP args)
     return call;
 }
 
+static Environment* lookupEnvironmentValueFromBinding(
+    Environment* env,
+    const Symbol* symbol,
+    Environment* value_if_not_found)
+{
+    Frame::Binding* bdg
+	= env->frame()->binding(symbol);
+    if (bdg && bdg->origin() != Frame::Binding::MISSING) {
+	return SEXP_downcast<Environment*>(bdg->forcedValue());
+    }
+    return value_if_not_found;
+}
+
 /* If NextMethod has any arguments the first must be the generic */
 /* the second the object and any remaining are matched with the */
 /* formals of the chosen method. */
@@ -417,11 +443,9 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     // will be two out because NextMethod is an internal function.)
     ClosureContext* cptr = ClosureContext::innermost();
     Environment* nmcallenv = cptr->callEnvironment();
-    {
-	while (cptr && cptr->workingEnvironment() != nmcallenv)
-	    cptr = ClosureContext::innermost(cptr->nextOut());
-	if (cptr == NULL)
-	    Rf_error(_("'NextMethod' called from outside a function"));
+    cptr = ClosureContext::findClosureWithWorkingEnvironment(nmcallenv, cptr);
+    if (cptr == NULL) {
+	Rf_error(_("'NextMethod' called from outside a function"));
     }
 
     // Find dispatching environments. Promises shouldn't occur, but
@@ -430,26 +454,12 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     // then chose reasonable defaults.
 
     // Environment in which the generic was called:
-    Environment* gencallenv = callenv;
-    {
-	Frame::Binding* bdg
-	    = nmcallenv->frame()->binding(DotGenericCallEnvSymbol);
-	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
-	    RObject* val = bdg->forcedValue();
-	    gencallenv = SEXP_downcast<Environment*>(val);
-	}
-    }
+    Environment* gencallenv = lookupEnvironmentValueFromBinding(
+	nmcallenv, DotGenericCallEnvSymbol, callenv);
 
     // Environment in which the generic was defined:
-    Environment* gendefenv = Environment::global();
-    {
-	Frame::Binding* bdg
-	    = nmcallenv->frame()->binding(DotGenericDefEnvSymbol);
-	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
-	    RObject* val = bdg->forcedValue();
-	    gendefenv = SEXP_downcast<Environment*>(val);
-	}
-    }
+    Environment* gendefenv = lookupEnvironmentValueFromBinding(
+	nmcallenv, DotGenericDefEnvSymbol, Environment::global());
 
     // Find the generic closure:
     Closure* genclos = 0;  // -Wall

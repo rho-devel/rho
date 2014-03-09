@@ -178,6 +178,18 @@ namespace CXXR {
 	{
 	    return m_working_env;
 	}
+
+	static ClosureContext* findClosureWithWorkingEnvironment(
+	    const Environment* env,
+	    ClosureContext* start = ClosureContext::innermost())
+	{
+	    ClosureContext* context = start;
+	    while (context && context->workingEnvironment() != env) {
+		context = ClosureContext::innermost(context->nextOut());
+	    }
+	    return context;
+	}
+
     private:
 	void runOnExit();
 
