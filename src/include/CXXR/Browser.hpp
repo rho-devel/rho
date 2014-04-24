@@ -78,7 +78,7 @@ namespace CXXR {
 	 *
 	 * @return the number of browser levels currently active.
 	 */
-	static unsigned int numberActive()
+	static size_t numberActive()
 	{
 	    return s_browsers.size();
 	}
@@ -113,7 +113,7 @@ namespace CXXR {
 	 *
 	 * @return Pointer to the Browser at level \a i.
 	 */
-	static Browser* fromOutermost(unsigned int i)
+	static Browser* fromOutermost(size_t i)
 	{
 	    return s_browsers.at(i);
 	}

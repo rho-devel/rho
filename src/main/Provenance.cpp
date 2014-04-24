@@ -151,7 +151,7 @@ void Provenance::setXenogenous(const RObject* value)
 
 double Provenance::timestamp() const
 {
-    return m_timestamp.tv_sec + 1.0E-6*m_timestamp.tv_usec;
+    return double(m_timestamp.tv_sec) + 1.0E-6*double(m_timestamp.tv_usec);
 }
 
 void Provenance::visitReferents(const_visitor* v) const

@@ -112,7 +112,7 @@ void NodeStack::protectAll()
 
 // Foll. is inlined under NDEBUG:
 #ifndef NDEBUG
-void NodeStack::retarget(RObject* node, unsigned int index)
+void NodeStack::retarget(RObject* node, size_t index)
 {
     GCNode::maybeCheckExposed(node);
     if (index >= m_vector.size())

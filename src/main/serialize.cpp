@@ -798,8 +798,8 @@ static void WriteLENGTH(R_outpstream_t stream, SEXP s)
     if (IS_LONG_VEC(s)) {
 	OutInteger(stream, -1);
 	R_xlen_t len = XLENGTH(s);
-	OutInteger(stream, (int)(len / 4294967296L));
- 	OutInteger(stream, (int)(len % 4294967296L));
+	OutInteger(stream, int(len / 4294967296L));
+ 	OutInteger(stream, int(len % 4294967296L));
    } else OutInteger(stream, LENGTH(s));
 #else
     OutInteger(stream, LENGTH(s));
@@ -1509,7 +1509,7 @@ static R_xlen_t ReadLENGTH (R_inpstream_t stream)
     int len = InInteger(stream);
 #ifdef LONG_VECTOR_SUPPORT
     if (len < -1)
-	error(_("negative serialized length for vector"));
+	Rf_error(_("negative serialized length for vector"));
     if (len == -1) {
 	unsigned int len1, len2;
 	len1 = InInteger(stream); /* upper part */
@@ -1517,7 +1517,7 @@ static R_xlen_t ReadLENGTH (R_inpstream_t stream)
 	R_xlen_t xlen = len1; 
 	/* sanity check for now */
 	if (len1 > 65536)
-	    error (_("invalid upper part of serialized vector length"));
+	    Rf_error (_("invalid upper part of serialized vector length"));
 	return (xlen << 32) + len2;
     } else return len;
 #else
@@ -2439,7 +2439,7 @@ static void resize_buffer(membuf_t mb, R_size_t needed)
     if(needed < 10000000) /* ca 10MB */
 	needed = (1+2*needed/INCR) * INCR;
     else 
-	needed = (R_size_t)((1+1.2*(double)needed/INCR) * INCR);
+	needed = R_size_t((1+1.2*double(needed)/INCR) * INCR);
 #else
     if(needed < 10000000) /* ca 10MB */
 	needed = (1+2*needed/INCR) * INCR;

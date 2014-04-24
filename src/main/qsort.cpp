@@ -76,7 +76,7 @@ SEXP attribute_hidden do_qsort(SEXP call, SEXP op, SEXP args, SEXP rho)
     indx_ret = asLogical(CADR(args));
     R_xlen_t n = XLENGTH(x);
 #ifdef LONG_VECTOR_SUPPORT
-    Rboolean isLong = n > INT_MAX;
+    Rboolean isLong = CXXRCONSTRUCT(Rboolean, n > INT_MAX);
 #endif
     if(x_int) ivx = INTEGER(sx); else vx = REAL(sx);
     if(indx_ret) {
@@ -152,12 +152,12 @@ void R_qsort_int_I(int *v, int *I, int i, int j)
 #define INDt double
 #define NUMERIC double
 static void R_qsort_R(double *v, double *I, size_t i, size_t j)
-#include "qsort-body.c"
+#include "qsort-body.cpp"
 #undef NUMERIC
 
 #define NUMERIC int
 static void R_qsort_int_R(int *v, double *I, size_t i, size_t j)
-#include "qsort-body.c"
+#include "qsort-body.cpp"
 #undef NUMERIC
 #endif // LONG_VECTOR_SUPPORT
 

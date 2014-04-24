@@ -259,7 +259,7 @@ std::size_t Subscripting::createDimIndexers(DimIndexerVector* dimindexers,
 	DimIndexer& di = (*dimindexers)[d];
 	const IntVector* iv = static_cast<IntVector*>((*indices)[d].get());
 	di.nindices = iv->size();
-	dresultsize *= di.nindices;
+	dresultsize *= double(di.nindices);
 	if (dresultsize > std::numeric_limits<size_t>::max())
 	    Rf_error(_("dimensions would exceed maximum size of array"));
 	resultsize *= di.nindices;

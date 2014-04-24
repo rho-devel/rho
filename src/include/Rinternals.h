@@ -114,13 +114,11 @@ typedef int R_len_t;
 #endif
 
 #ifdef LONG_VECTOR_SUPPORT
-    typedef ptrdiff_t R_xlen_t;
     typedef struct { R_xlen_t lv_length, lv_truelength; } R_long_vec_hdr_t;
 # define R_XLEN_T_MAX 4503599627370496
 # define R_SHORT_LEN_MAX 2147483647
 # define R_LONG_VEC_TOKEN -1
 #else
-    typedef int R_xlen_t;
 # define R_XLEN_T_MAX R_LEN_T_MAX
 #endif
 
@@ -136,18 +134,27 @@ extern "C" {
 
 #endif
 
+// Commentings out done during CXXR 3.0.2 upgrade.  FIXME delete altogether
 /* Vector Access Macros */
 #ifdef LONG_VECTOR_SUPPORT
     R_len_t R_BadLongVector(SEXP, const char *, int);
-# define IS_LONG_VEC(x) (SHORT_VEC_LENGTH(x) == R_LONG_VEC_TOKEN)
+//# define IS_LONG_VEC(x) (SHORT_VEC_LENGTH(x) == R_LONG_VEC_TOKEN)
+# define IS_LONG_VEC(x) (XLENGTH(x) > R_SHORT_LEN_MAX)
 # define SHORT_VEC_LENGTH(x) (((VECSEXP) (x))->vecsxp.length)
 # define SHORT_VEC_TRUELENGTH(x) (((VECSEXP) (x))->vecsxp.truelength)
 # define LONG_VEC_LENGTH(x) ((R_long_vec_hdr_t *) (x))[-1].lv_length
 # define LONG_VEC_TRUELENGTH(x) ((R_long_vec_hdr_t *) (x))[-1].lv_truelength
-# define XLENGTH(x) (IS_LONG_VEC(x) ? LONG_VEC_LENGTH(x) : SHORT_VEC_LENGTH(x))
-# define XTRUELENGTH(x)	(IS_LONG_VEC(x) ? LONG_VEC_TRUELENGTH(x) : SHORT_VEC_TRUELENGTH(x))
-# define LENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : SHORT_VEC_LENGTH(x))
-# define TRUELENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : SHORT_VEC_TRUELENGTH(x))
+//# define XLENGTH(x) (IS_LONG_VEC(x) ? LONG_VEC_LENGTH(x) : SHORT_VEC_LENGTH(x))
+//# define XTRUELENGTH(x)	(IS_LONG_VEC(x) ? LONG_VEC_TRUELENGTH(x) : SHORT_VEC_TRUELENGTH(x))
+//# define LENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : SHORT_VEC_LENGTH(x))
+//# define TRUELENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : SHORT_VEC_TRUELENGTH(x))
+#ifdef __cplusplus
+# define LENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : R_len_t(XLENGTH(x)))
+# define TRUELENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : R_len_t(XTRUELENGTH(x)))
+#else
+# define LENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : (R_len_t)XLENGTH(x))
+# define TRUELENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : (R_len_t)XTRUELENGTH(x))
+#endif
 # define SET_SHORT_VEC_LENGTH(x,v) (SHORT_VEC_LENGTH(x) = (v))
 # define SET_SHORT_VEC_TRUELENGTH(x,v) (SHORT_VEC_TRUELENGTH(x) = (v))
 # define SET_LONG_VEC_LENGTH(x,v) (LONG_VEC_LENGTH(x) = (v))
@@ -159,21 +166,15 @@ extern "C" {
 	  SET_LONG_VEC_LENGTH(sl__x__,  sl__v__); \
       else SET_SHORT_VEC_LENGTH(sl__x__, (R_len_t) sl__v__); \
   } while (0)
-# define SET_TRUELENGTH(x,v) do { \
-      SEXP sl__x__ = (x); \
-      R_xlen_t sl__v__ = (v); \
-      if (IS_LONG_VEC(sl__x__)) \
-	  SET_LONG_VEC_TRUELENGTH(sl__x__, sl__v__); \
-      else SET_SHORT_VEC_TRUELENGTH(sl__x__, (R_len_t) sl__v__); \
-  } while (0)
+# define SET_TRUELENGTH(x,v) SET_XTRUELENGTH(x,v)
 #else
-// Commentings out done during CXXR 3.0.2 upgrade.  FIXME delete altogether
 //# define LENGTH(x)	(((VECSEXP) (x))->vecsxp.length)
+#define LENGTH(x) XLENGTH(x)
 //# define TRUELENGTH(x)	(((VECSEXP) (x))->vecsxp.truelength)
-# define XLENGTH(x) LENGTH(x)
-# define XTRUELENGTH(x) TRUELENGTH(x)
+# define TRUELENGTH(x) XTRUELENGTH(x)
 //# define SETLENGTH(x,v)		((((VECSEXP) (x))->vecsxp.length)=(v))
 //# define SET_TRUELENGTH(x,v)	((((VECSEXP) (x))->vecsxp.truelength)=(v))
+# define SET_TRUELENGTH SET_XTRUELENGTH
 # define SET_SHORT_VEC_LENGTH SETLENGTH
 # define SET_SHORT_VEC_TRUELENGTH SET_TRUELENGTH
 # define IS_LONG_VEC(x) 0
@@ -215,7 +216,7 @@ void (SET_S4_OBJECT)(SEXP x);
 void (UNSET_S4_OBJECT)(SEXP x);
 
 /* Vector Access Functions */
-int  (LENGTH)(SEXP x);
+size_t  (LENGTH)(SEXP x);
 int  (TRUELENGTH)(SEXP x);
 void (SETLENGTH)(SEXP x, int v);
 void (SET_TRUELENGTH)(SEXP x, int v);

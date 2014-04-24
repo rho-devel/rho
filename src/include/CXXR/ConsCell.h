@@ -657,7 +657,9 @@ extern "C" {
     inline void SET_MISSING(SEXP x, int v)
     {
 	using namespace CXXR;
-	SEXP_downcast<ConsCell*>(x)->m_missing = v;
+	// The RHS is a kludge to avoid a -Wconversion warning:
+	SEXP_downcast<ConsCell*>(x)->m_missing
+	  = static_cast<unsigned int>(v & 3);
     }
 #endif  /* __cplusplus */
 

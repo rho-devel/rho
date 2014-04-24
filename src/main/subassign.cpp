@@ -375,7 +375,7 @@ static R_INLINE R_xlen_t gi(SEXP indx, R_xlen_t i)
 {
     if (TYPEOF(indx) == REALSXP) {
 	double d = REAL(indx)[i];
-	return R_FINITE(d) ? (R_xlen_t) d : NA_INTEGER;
+	return R_FINITE(d) ? R_xlen_t( d) : NA_INTEGER;
     } else
 	return INTEGER(indx)[i];
 }
@@ -571,7 +571,7 @@ static SEXP VectorAssign(SEXP call, SEXP xarg, SEXP sarg, SEXP yarg)
     case 1900:  /* vector     <- null       */
     case 2000:  /* expression <- null       */
 	{
-	    int stretch = 1;
+	    R_xlen_t stretch = 1;
 	    GCStackRoot<> indx(makeSubscript(x, s, &stretch, R_NilValue));
 	    return DeleteListElements(x, indx);
 	}
@@ -755,12 +755,12 @@ static SEXP listRemove(SEXP x, SEXP s, int ind)
 	vcc.push_back(xp);
     // Null out pointers to unwanted elements:
     {
-	int stretch = 0;
+	R_xlen_t stretch = 0;
 	GCStackRoot<> sub(GetOneIndex(s, ind));
 	GCStackRoot<IntVector>
 	    iv(SEXP_downcast<IntVector*>(makeSubscript(x, sub, &stretch, 0)));
-	unsigned int ns = iv->size();
-	for (unsigned int i = 0; i < ns; ++i) {
+	size_t ns = iv->size();
+	for (size_t i = 0; i < ns; ++i) {
 	    int ii = (*iv)[i];
 	    if (ii != NA_INTEGER) vcc[ii-1] = 0;
 	}
@@ -768,8 +768,8 @@ static SEXP listRemove(SEXP x, SEXP s, int ind)
     // Restring the pearls:
     {
 	ConsCell* ans = 0;
-	for (int i = vcc.size() - 1; i >= 0; --i) {
-	    ConsCell* cc = vcc[i];
+	for (size_t i = vcc.size(); i > 0; --i) {
+	    ConsCell* cc = vcc[i - 1];
 	    if (cc) {
 		PairList* tail = static_cast<PairList*>(ans);
 		ans = cc;

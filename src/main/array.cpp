@@ -346,7 +346,7 @@ SEXP attribute_hidden do_length(SEXP call, SEXP op, SEXP args, SEXP rho)
 #ifdef LONG_VECTOR_SUPPORT
     // or use IS_LONG_VEC
     R_xlen_t len = xlength(x);
-    if (len > INT_MAX) return ScalarReal((double) len);
+    if (len > INT_MAX) return ScalarReal(double( len));
 #endif
     return ScalarInteger(length(x));
 }

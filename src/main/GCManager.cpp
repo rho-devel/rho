@@ -102,7 +102,7 @@ void GCManager::gcController()
 
     if (s_pre_gc) (*s_pre_gc)();
     GCNode::gc();
-    s_threshold = std::max(size_t(0.9*s_threshold),
+    s_threshold = std::max(size_t(0.9*double(s_threshold)),
 			   std::max(s_min_threshold,
 				    2*MemoryBank::bytesAllocated()));
     if (s_post_gc) (*s_post_gc)();

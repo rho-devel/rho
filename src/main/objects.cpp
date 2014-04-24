@@ -357,12 +357,12 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	std::string cl;
 	GCStackRoot<StringVector>
 	    klass(static_cast<StringVector*>(R_data_class2(obj)));
-	int nclass = klass->size();
+	size_t nclass = klass->size();
 	if (nclass == 1)
 	    cl = Rf_translateChar((*klass)[0]);
 	else {
 	    cl = std::string("c('") + Rf_translateChar((*klass)[0]);
-	    for (int i = 1; i < nclass; ++i)
+	    for (size_t i = 1; i < nclass; ++i)
 		cl += std::string("', '") + Rf_translateChar((*klass)[i]);
 	    cl += "')";
 	}

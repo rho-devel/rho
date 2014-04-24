@@ -1375,7 +1375,6 @@ namespace {
     // Given a Symbol "foo", this function returns the Symbol "foo<-":
     Symbol* func2ReplacementFunc(const Symbol* fsym)
     {
-	typedef std::map<const Symbol*, Symbol*> Fmap;
 	Symbol* ans = sym2replac[fsym];
 	if (!ans) {
 	    std::string replacname = fsym->name()->stdstring() + "<-";
@@ -2019,7 +2018,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	}
     }
 
-    unsigned int nargs = (isOps ? numargs : 1);
+    std::size_t nargs = (isOps ? numargs : 1);
     string generic(opfun->name());
 
     GCStackRoot<S3Launcher>

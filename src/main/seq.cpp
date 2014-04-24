@@ -375,7 +375,7 @@ SEXP attribute_hidden do_rep_int(SEXP call, SEXP op, SEXP args, SEXP rho)
 	double snc = asReal(ncopy);
 	if (!R_FINITE(snc) || snc < 0)
 	    error(_("invalid '%s' value"), "times");
-	nc = (R_xlen_t) snc;
+	nc = R_xlen_t( snc);
 #else
 	if ((nc = asInteger(ncopy)) == NA_INTEGER || nc < 0)/* nc = 0 ok */
 	    error(_("invalid '%s' value"), "times");
@@ -424,7 +424,7 @@ SEXP attribute_hidden do_rep_len(SEXP call, SEXP op, SEXP args, SEXP rho)
     double sna = asReal(len);
     if (!R_FINITE(sna) || sna < 0)
 	error(_("invalid '%s' value"), "length.out");
-    na = (R_xlen_t) sna;
+    na = R_xlen_t( sna);
 #else
     if ((na = asInteger(len)) == NA_INTEGER || na < 0) /* na = 0 ok */
 	error(_("invalid '%s' value"), "length.out");
@@ -998,7 +998,7 @@ SEXP attribute_hidden do_seq_along(SEXP call, SEXP op, SEXP args, SEXP rho)
 	double *p = REAL(ans);
 	for(R_xlen_t i = 0; i < len; i++) {
 //	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	    p[i] = (double) (i+1);
+	    p[i] = double( (i+1));
 	}
     } else
 #endif
@@ -1028,7 +1028,7 @@ SEXP attribute_hidden do_seq_len(SEXP call, SEXP op, SEXP args, SEXP rho)
     double dlen = asReal(CAR(args));
     if(!R_FINITE(dlen) || dlen < 0)
 	errorcall(call, _("argument must be coercible to non-negative integer"));
-    len = (R_xlen_t) dlen;
+    len = R_xlen_t( dlen);
 #else
     len = asInteger(CAR(args));
     if(len == NA_INTEGER || len < 0)
@@ -1041,7 +1041,7 @@ SEXP attribute_hidden do_seq_len(SEXP call, SEXP op, SEXP args, SEXP rho)
 	double *p = REAL(ans);
 	for(R_xlen_t i = 0; i < len; i++) {
 //	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();	    
-	    p[i] = (double) (i+1);
+	    p[i] = double( (i+1));
 	}
     } else
 #endif

@@ -93,7 +93,7 @@ SEXP attribute_hidden do_random1(SEXP call, SEXP op, SEXP args, SEXP rho)
 	double dn = asReal(CAR(args));
 	if (ISNAN(dn) || dn < 0 || dn > R_XLEN_T_MAX)
 	    invalid(call);
-	n = (R_xlen_t) dn;
+	n = R_xlen_t( dn);
 #else
 	n = asInteger(CAR(args));
 	if (n == NA_INTEGER || n < 0)
@@ -174,7 +174,7 @@ SEXP attribute_hidden do_random2(SEXP call, SEXP op, SEXP args, SEXP rho)
 	double dn = asReal(CAR(args));
 	if (ISNAN(dn) || dn < 0 || dn > R_XLEN_T_MAX)
 	    invalid(call);
-	n = (R_xlen_t) dn;
+	n = R_xlen_t( dn);
 #else
 	n = asInteger(CAR(args));
 	if (n == NA_INTEGER || n < 0)
@@ -266,7 +266,7 @@ SEXP attribute_hidden do_random3(SEXP call, SEXP op, SEXP args, SEXP rho)
 	double dn = asReal(CAR(args));
 	if (ISNAN(dn) || dn < 0 || dn > R_XLEN_T_MAX)
 	    invalid(call);
-	n = (R_xlen_t) dn;
+	n = R_xlen_t( dn);
 #else
 	n = asInteger(CAR(args));
 	if (n == NA_INTEGER || n < 0)
@@ -544,12 +544,12 @@ SEXP attribute_hidden do_sample(SEXP call, SEXP op, SEXP args, SEXP rho)
 		for (R_xlen_t i = 0; i < k; i++) ry[i] = floor(dn * ru() + 1);
 	    } else {
 #ifdef LONG_VECTOR_SUPPORT
-		R_xlen_t n = (R_xlen_t) dn;
-		double *x = (double *)R_alloc(n, sizeof(double));
+		R_xlen_t n = R_xlen_t( dn);
+		double *x = static_cast<double *>(CXXR_alloc(n, sizeof(double)));
 		double *ry = REAL(y);
-		for (R_xlen_t i = 0; i < n; i++) x[i] = (double) i;
+		for (R_xlen_t i = 0; i < n; i++) x[i] = double( i);
 		for (R_xlen_t i = 0; i < k; i++) {
-		    R_xlen_t j = (R_xlen_t)floor(n * ru());
+		    R_xlen_t j = R_xlen_t(floor(n * ru()));
 		    ry[i] = x[j] + 1;
 		    x[j] = x[--n];
 		}

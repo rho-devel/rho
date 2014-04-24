@@ -495,7 +495,7 @@ static const name_value guess[] = {
     {"zh_TW",                          ENC_BIG5},
     {"zu_ZA",                          ENC_ISO8859_1},
 };
-static const int guess_count = (sizeof(guess)/sizeof(name_value));
+static const int guess_count = (CXXRCONSTRUCT(int, sizeof(guess)/sizeof(name_value)));
 
 static const name_value known[] = {
     {"iso88591", "ISO8859-1"},
@@ -544,7 +544,7 @@ static const name_value known[] = {
     {"big5hkscs", "BIG5-HKSCS"},
 #endif
 };
-static const int known_count = (sizeof(known)/sizeof(name_value));
+static const int known_count = (CXXRCONSTRUCT(int, sizeof(known)/sizeof(name_value)));
 
 
 #ifndef __APPLE__

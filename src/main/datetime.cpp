@@ -535,7 +535,7 @@ double currentTime(void)
     struct timespec tp;
     int res = timespec_get(&tp, TIME_UTC);
     if(res != 0)
-	ans = (double) tp.tv_sec + 1e-9 * (double) tp.tv_nsec;
+        ans = double( tp.tv_sec) + 1e-9 * double( tp.tv_nsec);
 #elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_REALTIME)
     struct timespec tp;
     int res = clock_gettime(CLOCK_REALTIME, &tp);

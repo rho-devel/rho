@@ -1229,14 +1229,14 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 {
     SEXPTYPE type;
     SEXP s;
-    int pos, levs, objf;
+    int pos, levs;
 
     R_assert(TYPEOF(sym_table) == VECSXP && TYPEOF(env_table) == VECSXP);
     type = CXXRCONSTRUCT(SEXPTYPE, m->InInteger(fp, d));
     if ((s = NewLoadSpecialHook(type)))
 	return s;
     levs = m->InInteger(fp, d);
-    objf = m->InInteger(fp, d);
+    /*objf =*/ m->InInteger(fp, d);
     switch (type) {
     case SYMSXP:
 	pos = m->InInteger(fp, d);

@@ -44,8 +44,9 @@
 
 #include "CXXR/RObject.h"
 
-/* type for length of vectors etc */
-typedef int R_len_t; /* will be long later, LONG64 or ssize_t on Win64 */
+/* types for length of vectors etc */
+typedef int R_len_t;
+typedef ptrdiff_t R_xlen_t;
 
 #define R_LEN_T_MAX INT_MAX
 
@@ -78,7 +79,7 @@ namespace CXXR {
 	 * @param sz The required number of elements in the vector.
 	 */
 	VectorBase(SEXPTYPE stype, size_type sz)
-	    : RObject(stype), m_truelength(R_len_t(sz)), m_size(sz)
+	    : RObject(stype), m_xtruelength(sz), m_size(sz)
 	{}
 
 	/** @brief Copy constructor.
@@ -86,7 +87,7 @@ namespace CXXR {
 	 * @param pattern VectorBase to be copied.
 	 */
 	VectorBase(const VectorBase& pattern)
-	    : RObject(pattern), m_truelength(pattern.m_truelength),
+	    : RObject(pattern), m_xtruelength(pattern.m_xtruelength),
 	      m_size(pattern.m_size)
 	{}
 
@@ -303,7 +304,7 @@ namespace CXXR {
 	}
 
 	// Make private in due course (or get rid altogether):
-	R_len_t m_truelength;
+	R_xlen_t m_xtruelength;
     protected:
 	~VectorBase() {}
 
@@ -320,6 +321,11 @@ namespace CXXR {
 	    setAttributes(resizeAttributes(attributes(), new_size));
 	}
 
+	/** @brief Raise error on attempt to allocate overlarge vector.
+	 *
+	 * @param bytes Size of data block for which allocation failed.
+	 */
+	static void tooBig(std::size_t bytes);
     private:
 	friend class boost::serialization::access;
 
@@ -331,7 +337,7 @@ namespace CXXR {
 	void serialize(Archive & ar, const unsigned int version)
 	{
 	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-	    ar & BOOST_SERIALIZATION_NVP(m_truelength);
+	    ar & BOOST_SERIALIZATION_NVP(m_xtruelength);
 	}
     };
 
@@ -366,15 +372,15 @@ extern "C" {
      *         of \a x , not all of which may be used.)
      */
 #ifndef __cplusplus
-    int LENGTH(SEXP x);
+    R_xlen_t XLENGTH(SEXP x);
 #else
-    inline int LENGTH(SEXP x)
+    inline R_xlen_t XLENGTH(SEXP x)
     {
 	using namespace CXXR;
 	if (!x)
 	    return 0;
 	VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
-	return int(vb.size());
+	return vb.size();
     }
 #endif
 
@@ -389,13 +395,13 @@ extern "C" {
      * @deprecated May be withdrawn in the future.
      */
 #ifndef __cplusplus
-    int TRUELENGTH(SEXP x);
+    R_xlen_t XTRUELENGTH(SEXP x);
 #else
-    inline int TRUELENGTH(SEXP x)
+    inline R_xlen_t XTRUELENGTH(SEXP x)
     {
 	using namespace CXXR;
 	VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
-	return vb.m_truelength;
+	return vb.m_xtruelength;
     }
 #endif
 
@@ -422,13 +428,13 @@ extern "C" {
      * @deprecated May be withdrawn in the future.
      */
 #ifndef __cplusplus
-    void SET_TRUELENGTH(SEXP x, int v);
+    void SET_XTRUELENGTH(SEXP x, R_xlen_t v);
 #else
-    inline void SET_TRUELENGTH(SEXP x, int v)
+    inline void SET_XTRUELENGTH(SEXP x, R_xlen_t v)
     {
 	using namespace CXXR;
 	VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
-	vb.m_truelength = v;
+	vb.m_xtruelength = v;
     }
 #endif
 
@@ -446,7 +452,7 @@ extern "C" {
      *
      * @return Pointer to the created vector.
      */
-    SEXP Rf_allocVector(SEXPTYPE stype, R_len_t length);
+    SEXP Rf_allocVector(SEXPTYPE stype, R_xlen_t length);
 
     /** @brief Is an RObject a vector?
      *

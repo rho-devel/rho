@@ -62,6 +62,7 @@
 
 #define IN_RLOCALE_C 1 /* used in rlocale.h */
 #include <rlocale.h>
+#include "CXXR/uncxxr.h"
 #include "rlocale_data.h"
 
 #include <wctype.h>
@@ -70,7 +71,6 @@
 #include <locale.h>
 #include <limits.h>
 #include <R_ext/Riconv.h>
-#include "CXXR/uncxxr.h"
 
 static int wcwidthsearch(int wint, const struct interval_wcwidth *table,
 			 int max, int locale)
@@ -151,7 +151,7 @@ int Ri18n_wcwidth(wchar_t c)
     }
 
     return(wcwidthsearch(c, table_wcwidth,
-			 (sizeof(table_wcwidth)/sizeof(struct interval_wcwidth)),
+			 (CXXRCONSTRUCT(int, sizeof(table_wcwidth)/sizeof(struct interval_wcwidth))),
 			 lc));
 }
 

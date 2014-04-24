@@ -98,23 +98,35 @@ namespace {
 	return 0;  // -Wall
     }
 
+    struct BitwiseAnd {
+	unsigned char operator()(unsigned char l, unsigned char r) const
+	{
+	    return l & r;
+	}
+    };
+
+    struct BitwiseOr {
+	unsigned char operator()(unsigned char l, unsigned char r) const
+	{
+	    return l | r;
+	}
+    };
+
     RawVector* bitwiseBinary(int opcode, const RawVector* l, const RawVector* r)
     {
 	using namespace boost::lambda;
 	switch (opcode) {
 	case 1:
 	    {
-		return
-		    makeBinaryFunction<GeneralBinaryAttributeCopier,
-		                       NullBinaryFunctorWrapper>(_1 & _2)
-		    .apply<RawVector>(l, r);
+		BinaryFunction<BitwiseAnd, GeneralBinaryAttributeCopier,
+			       NullBinaryFunctorWrapper> bf;
+		return bf.apply<RawVector>(l, r);
 	    }
 	case 2:
 	    {
-		return
-		    makeBinaryFunction<GeneralBinaryAttributeCopier,
-		                       NullBinaryFunctorWrapper>(_1 | _2)
-		    .apply<RawVector>(l, r);
+		BinaryFunction<BitwiseOr, GeneralBinaryAttributeCopier,
+			       NullBinaryFunctorWrapper> bf;
+		return bf.apply<RawVector>(l, r);
 	    }
 	}
 	return 0;  // -Wall

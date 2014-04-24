@@ -418,7 +418,7 @@ SEXP attribute_hidden mat2indsub(SEXP dims, SEXP s, SEXP call)
 		    if (k > INTEGER(dims)[j]) {
 			ECALL(call, _("subscript out of bounds"));
 		    }
-		    rv[i] += (double) ((k - 1) * tdim);
+		    rv[i] += double ((k - 1) * tdim);
 		    tdim *= INTEGER(dims)[j];
 		}
 	    }
@@ -495,7 +495,7 @@ static SEXP nullSubscript(R_xlen_t n)
     if (n > R_SHORT_LEN_MAX) {
  	indx = allocVector(REALSXP, n);
 	for (R_xlen_t i = 0; i < n; i++)
-	    REAL(indx)[i] = (double)(i + 1);
+	    REAL(indx)[i] = double(i + 1);
     } else 
 #endif
     {
@@ -521,7 +521,7 @@ logicalSubscript(SEXP s, R_xlen_t ns, R_xlen_t nx, R_xlen_t *stretch, SEXP call)
     return const_cast<IntVector*>(pr.first);
 }
 
-static SEXP integerSubscript(SEXP s, int ns, int nx, int *stretch, SEXP call)
+static SEXP integerSubscript(SEXP s, R_xlen_t ns, R_xlen_t nx, R_xlen_t *stretch, SEXP call)
 {
     bool canstretch = (*stretch != 0);
     *stretch = 0;

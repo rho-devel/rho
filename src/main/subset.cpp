@@ -170,7 +170,7 @@ static SEXP ExtractSubset(SEXP x, SEXP result, SEXP indx, SEXP call)
 		error("invalid subscript for pairlist");
 #endif
 	    if (0 <= ii && ii < nx && ii != NA_INTEGER) {
-		SEXP tmp2 = nthcdr(x, ii);
+		SEXP tmp2 = nthcdr(x, int( ii));
 		SETCAR(tmp, CAR(tmp2));
 		SET_TAG(tmp, TAG(tmp2));
 	    }
@@ -248,7 +248,7 @@ static SEXP VectorSubset(SEXP x, SEXP sarg, SEXP call)
 
     /* Convert to a vector of integer subscripts */
     /* in the range 1:length(x). */
-    int stretch = 1;
+    R_xlen_t stretch = 1;
     GCStackRoot<> indx(makeSubscript(x, s, &stretch, call));
     int n = LENGTH(indx);
     const IntVector* indices = SEXP_downcast<IntVector*>(indx.get());
@@ -534,7 +534,7 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP sub1 = CAR(subs);  // null if nsubs == 0
     const IntVector* dims = static_cast<VectorBase*>(ax.get())->dimensions();
     if (dims) {
-	int ndim = dims->size();
+	size_t ndim = dims->size();
 	// Check for single matrix subscript:
 	if (nsubs == 1 && isMatrix(sub1)
 	    && isArray(ax) && ncols(sub1) == ndim)

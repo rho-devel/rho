@@ -149,7 +149,7 @@ extern "C" {
  *
  * @param v Non-null pointer to CXXR::String representing the new value.
  */
-void SET_STRING_ELT(SEXP x, int i, SEXP v);
+void SET_STRING_ELT(SEXP x, R_xlen_t i, SEXP v);
 
 /**
  * @brief Examine element of a CXXR::StringVector.
@@ -163,9 +163,9 @@ void SET_STRING_ELT(SEXP x, int i, SEXP v);
  * @return Pointer to extracted \a i 'th element.
  */
 #ifndef __cplusplus
-SEXP STRING_ELT(SEXP x, int i);
+SEXP STRING_ELT(SEXP x, R_xlen_t i);
 #else
-inline SEXP STRING_ELT(SEXP x, int i)
+inline SEXP STRING_ELT(SEXP x, R_xlen_t i)
 {
     using namespace CXXR;
     return (*SEXP_downcast<StringVector*>(x, false))[VectorBase::size_type(i)];

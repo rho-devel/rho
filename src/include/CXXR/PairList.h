@@ -67,7 +67,9 @@ extern "C" {
     inline void SET_ARGUSED(SEXP x, unsigned char v)
     {
 	using namespace CXXR;
-	SEXP_downcast<PairList*>(x)->m_argused = v;
+	// The RHS is a kludge to avoid a -Wconversion warning:
+	SEXP_downcast<PairList*>(x)->m_argused
+	  = static_cast<unsigned int>(v & 3);
     }
 
 #endif  /* __cplusplus */

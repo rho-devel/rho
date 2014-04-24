@@ -291,7 +291,7 @@ bool WeakRef::runFinalizers()
     while (lit != s_f10n_pending->end()) {
 	WeakRef* wr = *lit++;
 	GCStackRoot<> topExp(R_CurrentExpr);
-	unsigned int savestack = ProtectStack::size();
+	size_t savestack = ProtectStack::size();
 	{
 	    // An Evaluator is declared for the finalizer to
 	    // insure that any errors that might occur do not spill into

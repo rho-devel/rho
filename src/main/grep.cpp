@@ -959,7 +959,7 @@ SEXP attribute_hidden do_grep(SEXP call, SEXP op, SEXP args, SEXP env)
 	    ans = allocVector(REALSXP, nmatches);
 	    j = 0;
 	    for (i = 0 ; i < n ; i++)
-		if (invert ^ LOGICAL(ind)[i]) REAL(ans)[j++] = (double)(i + 1);
+	        if (invert ^ LOGICAL(ind)[i]) REAL(ans)[j++] = double( (i + 1));
 	} else 
 #endif
 	{

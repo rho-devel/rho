@@ -46,13 +46,13 @@ using namespace CXXR;
 namespace CXXR {
     namespace ForceNonInline {
 	Rboolean (*isExpressionptr)(SEXP s) = Rf_isExpression;
-	SEXP (*XVECTOR_ELTp)(const SEXP x, int i) = XVECTOR_ELT;
+	SEXP (*XVECTOR_ELTp)(const SEXP x, R_xlen_t i) = XVECTOR_ELT;
     }
 }
 
 // ***** C interface *****
 
-SEXP SET_XVECTOR_ELT(SEXP x, int i, SEXP v)
+SEXP SET_XVECTOR_ELT(SEXP x, R_xlen_t i, SEXP v)
 {
     ExpressionVector* ev = SEXP_downcast<ExpressionVector*>(x, false);
     (*ev)[i] = v;

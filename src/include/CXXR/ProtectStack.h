@@ -84,7 +84,7 @@ namespace CXXR {
 	 * @return Index of the stack cell thus created, for
 	 *          subsequent use with reprotect().
 	 */
-	static unsigned int protect(RObject* node)
+	static size_t protect(RObject* node)
 	{
 	    return s_stack->push(node);
 	}
@@ -106,7 +106,7 @@ namespace CXXR {
 	 *          the current size of the C pointer protection
 	 *          stack (checked).
 	 */
-	static void reprotect(RObject* node, unsigned int index)
+	static void reprotect(RObject* node, size_t index)
 	{
 	    s_stack->retarget(node, index);
 	}
@@ -209,7 +209,7 @@ extern "C" {
 
     /* ***** C interface ***** */
 
-    typedef unsigned int PROTECT_INDEX;
+    typedef size_t PROTECT_INDEX;
 
     /** @brief Push a node pointer onto the C pointer protection stack.
      *

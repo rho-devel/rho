@@ -3828,7 +3828,7 @@ SEXP attribute_hidden do_readbin(SEXP call, SEXP op, SEXP args, SEXP env)
 			    break;
 #if SIZEOF_LONG == 8
 			case sizeof(long):
-			    INTEGER(ans)[i] = (int)*((long *)buf);
+			  INTEGER(ans)[i] = int(*(reinterpret_cast<long *>(buf)));
 			    break;
 #elif SIZEOF_LONG_LONG == 8
 			case sizeof(_lli_t):

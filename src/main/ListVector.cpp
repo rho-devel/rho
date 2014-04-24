@@ -48,13 +48,13 @@ using namespace CXXR;
 // from C:
 namespace CXXR {
     namespace ForceNonInline {
-	SEXP (*VECTOR_ELTp)(const SEXP x, int i) = VECTOR_ELT;
+	SEXP (*VECTOR_ELTp)(const SEXP x, R_xlen_t i) = VECTOR_ELT;
     }
 }
 
 // ***** C interface *****
 
-SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v)
+SEXP SET_VECTOR_ELT(SEXP x, R_xlen_t i, SEXP v)
 {
     ListVector* lv = SEXP_downcast<ListVector*>(x, false);
     (*lv)[i] = v;

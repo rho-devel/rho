@@ -812,7 +812,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 }
 
 namespace {
-    inline double R_INTEGER(SEXP robj, unsigned int i)
+    inline double R_INTEGER(SEXP robj, R_xlen_t i)
     {
 	return double(INTEGER(robj)[i]
 		      == NA_INTEGER ? NA_REAL : INTEGER(robj)[i]);

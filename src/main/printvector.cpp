@@ -157,7 +157,7 @@ void printComplexVector(Rcomplex *x, R_xlen_t n, int indx)
     Rprintf("\n");
 }
 
-static void printStringVector(const StringVector* sv, int n, int quote,
+static void printStringVector(const StringVector* sv, R_xlen_t n, int quote,
 			      int indx)
 {
     int w, labwidth=0, width;

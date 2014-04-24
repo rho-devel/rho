@@ -774,7 +774,7 @@ int Rf_factorsConform(SEXP, SEXP);
 SEXP Rf_findVar1(SEXP, SEXP, SEXPTYPE, int);
 void Rf_FrameClassFix(SEXP);
 SEXP Rf_frameSubscript(int, SEXP, SEXP);
-R_xlen_t Rf_get1index(SEXP, SEXP, int, int, int, SEXP);
+R_xlen_t Rf_get1index(SEXP, SEXP, R_xlen_t, int, int, SEXP);
 int Rf_GetOptionCutoff(void);
 SEXP Rf_getVar(SEXP, SEXP);
 SEXP Rf_getVarInFrame(SEXP, SEXP);

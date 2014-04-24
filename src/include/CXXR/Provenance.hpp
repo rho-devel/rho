@@ -286,7 +286,7 @@ namespace CXXR {
 	  // object is given a unique serial number.  This serial
 	  // number is not preserved during serialisation.
 
-	unsigned int m_num_parents;
+	size_t m_num_parents;
 	GCEdge<const Symbol> m_symbol;
 	GCEdge<const CommandChronicle> m_chronicle;
 	GCEdge<const RObject> m_value;

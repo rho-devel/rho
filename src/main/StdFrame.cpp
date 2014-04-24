@@ -63,7 +63,7 @@ namespace {
 }
 
 StdFrame::StdFrame(size_t initial_capacity)
-    : m_map(size_t(ceil(initial_capacity/maximum_load_factor)))
+  : m_map(size_t(ceil(double(initial_capacity)/maximum_load_factor)))
 {
     m_map.max_load_factor(maximum_load_factor);
 }

@@ -1059,7 +1059,7 @@ static SEXP
 Rf_MakeDLLInfo(DllInfo *info)
 {
     SEXP ref, elNames, tmp;
-    int i, n;
+    size_t i, n;
     const char *const names[] = {"name", "path", "dynamicLookup",
 				 "handle", "info"};
 

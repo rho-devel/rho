@@ -622,12 +622,12 @@ SEXP attribute_hidden do_psort(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SETCADR(args, coerceVector(p, INTSXP));
     p = CADR(args);
     int nind = LENGTH(p);
-    R_xlen_t *l = (R_xlen_t *) R_alloc(nind, sizeof(R_xlen_t));
+    R_xlen_t *l = static_cast<R_xlen_t *>( CXXR_alloc(nind, sizeof(R_xlen_t)));
     if (TYPEOF(p) == REALSXP) {
 	double *rl = REAL(p);
 	for (int i = 0; i < nind; i++) {
 	    if (!R_FINITE(rl[i])) error(_("NA or infinite index"));
-	    l[i] = (R_xlen_t) rl[i];
+	    l[i] = R_xlen_t( rl[i]);
 	    if (l[i] < 1 || l[i] > n)
 		error(_("index %ld outside bounds"), l[i]);
 	}
@@ -1104,7 +1104,7 @@ orderVector1l(R_xlen_t *indx, R_xlen_t n, SEXP key, Rboolean nalast,
     int *ix = NULL /* -Wall */;
     double *x = NULL /* -Wall */;
     Rcomplex *cx = NULL /* -Wall */;
-    SEXP *sx = NULL /* -Wall */;
+    StringVector* sv = NULL /* -Wall */;
     R_xlen_t itmp;
 
     if (n < 2) return;
@@ -1117,10 +1117,12 @@ orderVector1l(R_xlen_t *indx, R_xlen_t n, SEXP key, Rboolean nalast,
 	x = REAL(key);
 	break;
     case STRSXP:
-	sx = STRING_PTR(key);
+	sv = static_cast<StringVector*>(key);
 	break;
     case CPLXSXP:
 	cx = COMPLEX(key);
+	break;
+    default:  // -Wswitch
 	break;
     }
 
@@ -1136,7 +1138,7 @@ orderVector1l(R_xlen_t *indx, R_xlen_t n, SEXP key, Rboolean nalast,
 	    for (i = 0; i < n; i++) isna[i] = ISNAN(x[i]);
 	    break;
 	case STRSXP:
-	    for (i = 0; i < n; i++) isna[i] = (sx[i] == NA_STRING);
+	    for (i = 0; i < n; i++) isna[i] = ((*sv)[i] == NA_STRING);
 	    break;
 	case CPLXSXP:
 	    for (i = 0; i < n; i++) isna[i] = ISNAN(cx[i].r) || ISNAN(cx[i].i);
@@ -1159,6 +1161,8 @@ orderVector1l(R_xlen_t *indx, R_xlen_t n, SEXP key, Rboolean nalast,
 		sort2_with_index
 #undef less
 		    if(nalast) hi -= numna; else lo += numna;
+	    default:  // -Wswitch
+		break;
 	    }
     }
 
@@ -1169,7 +1173,7 @@ orderVector1l(R_xlen_t *indx, R_xlen_t n, SEXP key, Rboolean nalast,
 
     if (isObject(key) && !isNull(rho)) {
 /* only reached from do_rank */
-#define less(a, b) greater(a, b, key, nalast^decreasing, decreasing, rho)
+#define less(a, b) greater(a, b, key, CXXRCONSTRUCT(Rboolean, nalast^decreasing), decreasing, rho)
 	    sort2_with_index
 #undef less
     } else {
@@ -1199,27 +1203,27 @@ orderVector1l(R_xlen_t *indx, R_xlen_t n, SEXP key, Rboolean nalast,
 	    break;
 	case CPLXSXP:
 	    if (decreasing) {
-#define less(a, b) (ccmp(cx[a], cx[b], 0) < 0 || (cx[a].r == cx[b].r && cx[a].i == cx[b].i && a > b))
+#define less(a, b) (ccmp(cx[a], cx[b], CXXRFALSE) < 0 || (cx[a].r == cx[b].r && cx[a].i == cx[b].i && a > b))
 		sort2_with_index
 #undef less
 	    } else {
-#define less(a, b) (ccmp(cx[a], cx[b], 0) > 0 || (cx[a].r == cx[b].r && cx[a].i == cx[b].i && a > b))
+#define less(a, b) (ccmp(cx[a], cx[b], CXXRFALSE) > 0 || (cx[a].r == cx[b].r && cx[a].i == cx[b].i && a > b))
 		sort2_with_index
 #undef less
 	    }
 	    break;
 	case STRSXP:
 	    if (decreasing)
-#define less(a, b) (c=Scollate(sx[a], sx[b]), c < 0 || (c == 0 && a > b))
+#define less(a, b) (c=Scollate((*sv)[a], (*sv)[b]), c < 0 || (c == 0 && a > b))
 		sort2_with_index
 #undef less
 	    else
-#define less(a, b) (c=Scollate(sx[a], sx[b]), c > 0 || (c == 0 && a > b))
+#define less(a, b) (c=Scollate((*sv)[a], (*sv)[b]), c > 0 || (c == 0 && a > b))
 		sort2_with_index
 #undef less
 	    break;
 	default:  /* only reached from do_rank */
-#define less(a, b) greater(a, b, key, nalast^decreasing, decreasing, rho)
+#define less(a, b) greater(a, b, key, CXXRCONSTRUCT(Rboolean, nalast^decreasing), decreasing, rho)
 	    sort2_with_index
 #undef less
 	}
@@ -1261,7 +1265,7 @@ SEXP attribute_hidden do_order(SEXP call, SEXP op, SEXP args, SEXP rho)
 #ifdef LONG_VECTOR_SUPPORT
 	    if (n > INT_MAX)  {
 		PROTECT(ans = allocVector(REALSXP, n));
-		R_xlen_t *in = (R_xlen_t *) R_alloc(n, sizeof(R_xlen_t));
+		R_xlen_t *in = static_cast<R_xlen_t *>( CXXR_alloc(n, sizeof(R_xlen_t)));
 		for (R_xlen_t i = 0; i < n; i++) in[i] = i;
 		orderVector1l(in, n, CAR(args), nalast, decreasing,
 			      R_NilValue);
@@ -1320,7 +1324,7 @@ SEXP attribute_hidden do_rank(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if(ISNAN(d)) error(_("vector size cannot be NA/NaN"));
 	if(!R_FINITE(d)) error(_("vector size cannot be infinite"));
 	if(d > R_XLEN_T_MAX) error(_("vector size specified is too large"));
-	n = (R_xlen_t) d;
+	n = R_xlen_t( d);
 	if (n < 0) error(_("invalid '%s' value"), "length(xx)");
     } else {
 	int nn = asInteger(sn);
@@ -1328,7 +1332,7 @@ SEXP attribute_hidden do_rank(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("invalid '%s' value"), "length(xx)");
 	n = nn;
     }
-    isLong = n > INT_MAX;
+    isLong = CXXRCONSTRUCT(Rboolean, n > INT_MAX);
 #else
     int n = asInteger(CADR(args));
     if (n == NA_INTEGER || n < 0)
@@ -1350,7 +1354,7 @@ SEXP attribute_hidden do_rank(SEXP call, SEXP op, SEXP args, SEXP rho)
 #ifdef LONG_VECTOR_SUPPORT
 	if(isLong) {
 	    R_xlen_t i, j, k;
-	    R_xlen_t *in = (R_xlen_t *) R_alloc(n, sizeof(R_xlen_t));
+	    R_xlen_t *in = static_cast<R_xlen_t *>( CXXR_alloc(n, sizeof(R_xlen_t)));
 	    for (i = 0; i < n; i++) in[i] = i;
 	    orderVector1l(in, n, x, TRUE, FALSE, rho);
 	    for (i = 0; i < n; i = j+1) {
@@ -1414,7 +1418,7 @@ SEXP attribute_hidden do_radixsort(SEXP call, SEXP op, SEXP args, SEXP rho)
     off = nalast^decreasing ? 0 : 1;
     n = XLENGTH(x);
 #ifdef LONG_VECTOR_SUPPORT
-    Rboolean isLong = n > INT_MAX;
+    Rboolean isLong = CXXRCONSTRUCT(Rboolean, n > INT_MAX);
     if(isLong)
 	ans = allocVector(REALSXP, n);
     else

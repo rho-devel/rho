@@ -127,7 +127,7 @@ namespace CXXR {
 	 * @return the number of cells currently allocated from this
 	 * pool.
 	 */
-	unsigned int cellsAllocated() const
+	size_t cellsAllocated() const
 	{
 	    return m_admin->cellsExisting() - cellsFree();
 	}

@@ -444,7 +444,7 @@ static LineEND lineend[] = {
     { NULL,	 CXXRCONSTRUCT(R_GE_lineend, 0)	     }
 };
 
-static int nlineend = (sizeof(lineend)/sizeof(LineEND)-2);
+static int nlineend = (CXXRCONSTRUCT(int, sizeof(lineend)/sizeof(LineEND))-2);
 
 R_GE_lineend GE_LENDpar(SEXP value, int ind)
 {
@@ -509,7 +509,7 @@ static LineJOIN linejoin[] = {
     { NULL,	 CXXRCONSTRUCT(R_GE_linejoin, 0)	     }
 };
 
-static int nlinejoin = (sizeof(linejoin)/sizeof(LineJOIN)-2);
+static int nlinejoin = (CXXRCONSTRUCT(int, sizeof(linejoin)/sizeof(LineJOIN))-2);
 
 R_GE_linejoin GE_LJOINpar(SEXP value, int ind)
 {
@@ -3124,7 +3124,7 @@ static unsigned int hexdigit(int digit)
     return digit; /* never occurs (-Wall) */
 }
 
-static int nlinetype = (sizeof(linetype)/sizeof(LineTYPE)-2);
+static int nlinetype = (CXXRCONSTRUCT(int, sizeof(linetype)/sizeof(LineTYPE))-2);
 
 unsigned int GE_LTYpar(SEXP value, int ind)
 {

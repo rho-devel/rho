@@ -48,7 +48,7 @@ using namespace CXXR;
 namespace CXXR {
     namespace ForceNonInline {
 	Rboolean (*isStringp)(SEXP s) = Rf_isString;
-	SEXP (*STRING_ELTp)(const SEXP x, int i) = STRING_ELT;
+	SEXP (*STRING_ELTp)(const SEXP x, R_xlen_t i) = STRING_ELT;
     }
 }
 
@@ -72,7 +72,7 @@ void CXXR::strdump(std::ostream& os, const StringVector& sv, std::size_t margin)
 
 // ***** C interface *****
 
-void SET_STRING_ELT(SEXP x, int i, SEXP v)
+void SET_STRING_ELT(SEXP x, R_xlen_t i, SEXP v)
 {
     StringVector* sv = SEXP_downcast<StringVector*>(x, false);
     String* s = SEXP_downcast<String*>(v, false);

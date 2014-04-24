@@ -730,7 +730,7 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 			else if(isUTF8) ienc = CE_UTF8;
 		    }
 		    SET_STRING_ELT(ans, i,
-				   mkCharLenCE(cbuff.data, nout, ienc));
+				   mkCharLenCE(cbuff.data, int( nout), ienc));
 		} else SET_STRING_ELT(ans, i, NA_STRING);
 	    }
 	}
@@ -1199,7 +1199,7 @@ const char *reEnc(const char *x, cetype_t ce_in, cetype_t ce_out, int subst)
 	if(ce_out == CE_UTF8) {
 	    size_t nc = 3*strlen(x)+1; /* all in BMP */
 	    p = R_alloc(nc, 1);
-	    Rf_AdobeSymbol2utf8(p, x, nc);
+	    Rf_AdobeSymbol2utf8(p, x, CXXRCONSTRUCT(int, nc));
 	    return p;
 	} else return x;
     }

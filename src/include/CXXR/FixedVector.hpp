@@ -440,7 +440,13 @@ T* CXXR::FixedVector<T, ST, Initr>::allocData(size_type sz)
     // Check for integer overflow:
     if (blocksize/sizeof(T) != sz)
 	Rf_error(_("request to create impossibly large vector."));
-    return static_cast<T*>(MemoryBank::allocate(blocksize));
+    void* block;
+    try {
+	block = MemoryBank::allocate(blocksize);
+    } catch (std::bad_alloc) {
+	tooBig(blocksize);
+    }
+    return static_cast<T*>(block);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
@@ -489,11 +495,11 @@ void CXXR::FixedVector<T, ST, Initr>::load(Archive & ar,
 
     size_type numnas;
     ar >> BOOST_SERIALIZATION_NVP(numnas);
-    std::vector<unsigned int> na_indices;
+    std::vector<size_type> na_indices;
     // Fill in NAs:
     {
 	unsigned int idx = 0;
-	for (unsigned int i = 0; i < numnas; ++i) {
+	for (size_type i = 0; i < numnas; ++i) {
 	    unsigned int ii;
 	    ar >> BOOST_SERIALIZATION_NVP(ii);
 	    idx += ii;
@@ -505,10 +511,10 @@ void CXXR::FixedVector<T, ST, Initr>::load(Archive & ar,
 
     // Fill in non-NA values:
     {
-	unsigned int i = 0;
-	for (std::vector<unsigned int>::const_iterator it = na_indices.begin();
+	size_type i = 0;
+	for (std::vector<size_type>::const_iterator it = na_indices.begin();
 	     it != na_indices.end(); ++it) {
-	    unsigned int stop = *it;
+	    size_type stop = *it;
 	    while (i != stop) {
 		ElementTraits::Serialize<T>()(ar, m_data[i]);
 		++i;
@@ -529,10 +535,10 @@ void CXXR::FixedVector<T, ST, Initr>::save(Archive & ar,
 {
     ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(VectorBase);
 
-    std::vector<unsigned int> na_indices;
+    std::vector<size_type> na_indices;
 
     // Collect indices of NAs (if any):
-    for (unsigned int i = 0; i < size(); ++i)
+    for (size_type i = 0; i < size(); ++i)
 	if (isNA(m_data[i]))
 	    na_indices.push_back(i);
 
@@ -540,11 +546,11 @@ void CXXR::FixedVector<T, ST, Initr>::save(Archive & ar,
     {
 	size_type numnas = na_indices.size();
 	ar << BOOST_SERIALIZATION_NVP(numnas);
-	unsigned int last_idx = 0;
-	for (std::vector<unsigned int>::const_iterator it = na_indices.begin();
+	size_type last_idx = 0;
+	for (std::vector<size_type>::const_iterator it = na_indices.begin();
 	     it != na_indices.end(); ++it) {
-	    unsigned int idx = *it;
-	    unsigned int ii = idx - last_idx;  // ii = "index increment"
+	    size_type idx = *it;
+	    size_type ii = idx - last_idx;  // ii = "index increment"
 	    ar << BOOST_SERIALIZATION_NVP(ii);
 	    last_idx = idx;
 	}

@@ -410,7 +410,7 @@ static void HashTableSetup(SEXP x, HashData *d, R_xlen_t nmax)
 	UNIMPLEMENTED_TYPE("HashTableSetup", x);
     }
 #ifdef LONG_VECTOR_SUPPORT
-    d->isLong = IS_LONG_VEC(x);
+    d->isLong = CXXRCONSTRUCT(Rboolean, IS_LONG_VEC(x));
     if (d->isLong) {
 	d->HashTable = allocVector(REALSXP, R_xlen_t( d->M));
 	for (R_xlen_t i = 0; i < d->M; i++) REAL(d->HashTable)[i] = NIL;
@@ -433,7 +433,7 @@ static int isDuplicated(SEXP x, R_xlen_t indx, HashData *d)
 	double *h = REAL(d->HashTable);
 	hlen i = d->hash(x, indx, d);
 	while (h[i] != NIL) {
-	    if (d->equal(x, (R_xlen_t) h[i], x, indx))
+	    if (d->equal(x, R_xlen_t( h[i]), x, indx))
 		return h[i] >= 0 ? 1 : 0;
 	    i = (i + 1) % d->M;
 	}
@@ -462,7 +462,7 @@ static void removeEntry(SEXP table, SEXP x, R_xlen_t indx, HashData *d)
 	double *h = REAL(d->HashTable);
 	hlen i = d->hash(x, indx, d);
 	while (h[i] >= 0) {
-	    if (d->equal(table, (R_xlen_t) h[i], x, indx)) {
+	    if (d->equal(table, R_xlen_t( h[i]), x, indx)) {
 		h[i] = NA_INTEGER;  /* < 0, only index values are inserted */
 		return;
 	    }

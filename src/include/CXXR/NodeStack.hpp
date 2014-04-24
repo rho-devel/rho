@@ -108,9 +108,9 @@ namespace CXXR {
 	    friend class NodeStack;
 
 	    NodeStack* m_stack;
-	    unsigned int m_index;
+	    size_t m_index;
 
-	    ElementProxy(NodeStack* stack, unsigned int index)
+	    ElementProxy(NodeStack* stack, size_t index)
 		: m_stack(stack), m_index(index)
 	    {}
 	};
@@ -201,7 +201,7 @@ namespace CXXR {
 	 * @return Proxy for the specified element, via which the
 	 *         element can be examined or modified.
 	 */
-	ElementProxy operator[](unsigned int index)
+	ElementProxy operator[](size_t index)
 	{
 	    return ElementProxy(this, index);
 	}
@@ -214,7 +214,7 @@ namespace CXXR {
 	 *
 	 * @return the specified element.
 	 */
-	RObject* const operator[](unsigned int index) const
+	RObject* const operator[](size_t index) const
 	{
 	    return m_vector[index];
 	}
@@ -253,7 +253,7 @@ namespace CXXR {
 	 *
 	 * @return the specified element.
 	 */
-	ElementProxy fromEnd(unsigned int count)
+	ElementProxy fromEnd(size_t count)
 	{
 	    return operator[](size() - count);
 	}
@@ -295,10 +295,10 @@ namespace CXXR {
 	 * @return Index of the stack cell thus created, counting from
 	 * zero.
 	 */
-	unsigned int push(RObject* node)
+	size_t push(RObject* node)
 	{
 	    GCNode::maybeCheckExposed(node);
-	    unsigned int index = m_vector.size();
+	    size_t index = m_vector.size();
 	    m_vector.push_back(node);
 	    return index;
 	}
@@ -321,9 +321,9 @@ namespace CXXR {
 	 *          stack (checked).
 	 */
 #ifndef NDEBUG
-	void retarget(RObject* node, unsigned int index);
+	void retarget(RObject* node, size_t index);
 #else
-	void retarget(RObject* node, unsigned int index)
+	void retarget(RObject* node, size_t index)
 	{
 	    GCNode::maybeCheckExposed(node);
 	    if (index < m_protected_count)

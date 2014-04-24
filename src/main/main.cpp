@@ -349,7 +349,7 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
     int c, browsevalue;
     SEXP value, thisExpr;
     Rboolean wasDisplayed = FALSE;
-    unsigned int browselevel = Browser::numberActive();
+    int browselevel = int(Browser::numberActive());
 
     if(!*state->bufp) {
 	    R_Busy(0);
@@ -1175,7 +1175,7 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
 /* browser(text = "", condition = NULL, expr = TRUE, skipCalls = 0L) */
 SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    unsigned int savestack;
+    int savestack;
     GCStackRoot<> topExp(R_CurrentExpr);
     SEXP ap;
     RObject* ans = 0;
@@ -1210,7 +1210,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* Save the evaluator state information */
     /* so that it can be restored on exit. */
 
-    savestack = ProtectStack::size();
+    savestack = int(ProtectStack::size());
 
     if (!ENV_DEBUG(rho)) {
 	ClosureContext* cptr = ClosureContext::innermost();
