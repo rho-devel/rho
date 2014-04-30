@@ -498,6 +498,13 @@ DL_FUNC R_ExternalPtrAddrFn(SEXP s)
     return tmp.fn;
 }
 
+/* The following functions are replacements for the accessor macros.
+   They are used by code that does not have direct access to the
+   internal representation of objects.  The replacement functions
+   implement the write barrier. */
+
+/* Vector Accessors */
+int (LENGTH)(SEXP x) { return LENGTH(x); }
 
 /*******************************************/
 /* Non-sampling memory use profiler

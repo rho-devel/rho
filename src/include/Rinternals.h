@@ -216,7 +216,7 @@ void (SET_S4_OBJECT)(SEXP x);
 void (UNSET_S4_OBJECT)(SEXP x);
 
 /* Vector Access Functions */
-size_t  (LENGTH)(SEXP x);
+int  (LENGTH)(SEXP x);
 int  (TRUELENGTH)(SEXP x);
 void (SETLENGTH)(SEXP x, int v);
 void (SET_TRUELENGTH)(SEXP x, int v);
