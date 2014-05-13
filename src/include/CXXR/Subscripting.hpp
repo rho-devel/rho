@@ -489,12 +489,42 @@ namespace CXXR {
 	     *          (ii) the constructed vector is the sequence (possibly
 	     *          empty) from 1 to \a range_size , omitting any
 	     *          values which appear (negated) within \a
-	     *          raw_indices .
+	     *          raw_indices ; zero indices are ignored.
 	     *
 	     * @param range_size The size of the vector or dimension into
 	     *          which indexing is being performed.
 	     */
 	    void initialize(const IntVector* raw_indices,
+			    std::size_t range_size);
+
+	    /** @brief Helper function to public initialize().
+	     *
+	     * Constructs Indices object from a RealVector.
+	     *
+	     * @param raw_indices Non-null pointer to a RealVector.
+	     *
+	     *          This vector must be of one of the following
+	     *          forms: (i) consisting entirely of non-negative
+	     *          integral values and/or non-finite values (Inf,
+	     *          -Inf, NaN); or (ii) consisting entirely of
+	     *          non-positive integral values with no
+	     *          non-finite values.  (Beware that at present no
+	     *          error is raised if \a raw_indices contains
+	     *          finite but non-integral values, but the effect
+	     *          of this is undefined.)  In case (i) the
+	     *          constructed vector is obtained by omitting any
+	     *          zero values from \a raw_indices , and
+	     *          replacing any non-finite values in \a
+	     *          raw_indices by zeroes.  In case (ii) the
+	     *          constructed vector is the sequence (possibly
+	     *          empty) from 1.0 to \a range_size , omitting
+	     *          any values which appear (negated) within \a
+	     *          raw_indices ; zero indices are ignored.
+	     *
+	     * @param range_size The size of the vector or dimension into
+	     *          which indexing is being performed.
+	     */
+	    void initialize(const RealVector* raw_indices,
 			    std::size_t range_size);
 
 	    /** @brief Helper function to public initialize().

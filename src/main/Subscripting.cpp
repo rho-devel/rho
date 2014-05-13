@@ -67,14 +67,7 @@ Subscripting::Indices::initialize(const RObject* subscripts,
 	initialize(static_cast<const IntVector*>(subscripts), range_size);
 	break;
     case REALSXP:
-	{
-	    const RealVector* rsub = static_cast<const RealVector*>(subscripts);
-	    std::size_t rawsize = rsub->size();
-	    GCStackRoot<IntVector> isub(CXXR_NEW(IntVector(rawsize)));
-	    for (std::size_t i = 0; i < rawsize; ++i)
-		(*isub)[i] = int((*rsub)[i]);
-	    initialize(isub, range_size);
-	}
+	initialize(static_cast<const RealVector*>(subscripts), range_size);
 	break;
     case STRSXP:
 	initialize(static_cast<const StringVector*>(subscripts), range_size,
@@ -98,7 +91,8 @@ Subscripting::Indices::initialize(const RObject* subscripts,
     }
 }
 
-void Subscripting::Indices::initialize(const IntVector* raw_indices, std::size_t range_size)
+void Subscripting::Indices::initialize(const IntVector* raw_indices,
+				       std::size_t range_size)
 {
     const std::size_t rawsize = raw_indices->size();
     bool anyNA = false;
@@ -128,6 +122,65 @@ void Subscripting::Indices::initialize(const IntVector* raw_indices, std::size_t
 	m_min_lhssize = m_max_index;
     } else {  // Negative subscripts
 	if (anyNA || m_max_index > 0)
+	    Rf_error(_("only 0's may be mixed with negative subscripts"));
+	// Create a vector whose elements are non-zero for elements to
+	// be retained:
+	std::vector<char> retvec(range_size, 1);
+	std::size_t removed = 0;
+	for (std::size_t i = 0; i < rawsize; ++i) {
+	    std::size_t index = std::size_t(-(*raw_indices)[i]);
+	    if (index != 0 && index <= range_size) {
+		char& elt = retvec[index - 1];
+		if (elt != 0)
+		    ++removed;
+		elt = 0;
+	    }
+	}
+	// Now set up vector and copy in the elements to be retained:
+	resize(range_size - removed);
+	m_max_index = 0;
+	std::size_t iout = 0;
+	for (std::size_t iin = 0; iin < range_size; ++iin)
+	    if (retvec[iin]) {
+		m_max_index = iin + 1;
+		(*this)[iout++] = m_max_index;
+	    }
+	m_min_lhssize = range_size;
+    }
+}
+
+void Subscripting::Indices::initialize(const RealVector* raw_indices,
+				       std::size_t range_size)
+{
+    const std::size_t rawsize = raw_indices->size();
+    bool anynonfinite = false;
+    bool anyneg = false;
+    std::size_t zeroes = 0;
+    m_max_index = 0;
+    for (std::size_t i = 0; i < rawsize; ++i) {
+	double index = (*raw_indices)[i];
+	if (!std::isfinite(index))
+	    anynonfinite = true;
+	else if (index < 0.0)
+	    anyneg = true;
+	else if (index == 0.0)
+	    ++zeroes;
+	else if (index > double(m_max_index))
+	    m_max_index = std::size_t(index);
+    }
+    if (!anyneg) {
+	resize(rawsize - zeroes);
+	std::size_t iout = 0;
+	// Suppress zeroes, and replace nonfinite values by zero:
+	for (std::size_t iin = 0; iin < rawsize; ++iin) {
+	    double index = (*raw_indices)[iin];
+	    if (index != 0.0)
+		(*this)[iout++]
+		    = (std::isfinite(index) ? std::size_t(index) : 0);
+	}
+	m_min_lhssize = m_max_index;
+    } else {  // Negative subscripts
+	if (anynonfinite || m_max_index > 0)
 	    Rf_error(_("only 0's may be mixed with negative subscripts"));
 	// Create a vector whose elements are non-zero for elements to
 	// be retained:
