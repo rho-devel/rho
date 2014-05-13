@@ -511,28 +511,26 @@ logicalSubscript(SEXP s, R_xlen_t ns, R_xlen_t nx, R_xlen_t *stretch, SEXP call)
 {
     bool canstretch = (*stretch != 0);
     *stretch = 0;
-    pair<const IntVector*, size_t> pr
-	= Subscripting::canonicalize(SEXP_downcast<LogicalVector*>(s), nx);
-    if (int(pr.second) > nx) {
+    pair<VectorBase*, size_t> pr = Subscripting::canonicalize(s, nx);
+    if (R_xlen_t(pr.second) > nx) {
 	if (!canstretch) {
 	    ECALL(call, _("subscript out of bounds"));
 	} else *stretch = pr.second;
     }
-    return const_cast<IntVector*>(pr.first);
+    return coerceVector(pr.first, INTSXP);
 }
 
 static SEXP integerSubscript(SEXP s, R_xlen_t ns, R_xlen_t nx, R_xlen_t *stretch, SEXP call)
 {
     bool canstretch = (*stretch != 0);
     *stretch = 0;
-    pair<const IntVector*, size_t> pr
-	= Subscripting::canonicalize(SEXP_downcast<IntVector*>(s), nx);
-    if (int(pr.second) > nx) {
+    pair<VectorBase*, size_t> pr = Subscripting::canonicalize(s, nx);
+    if (R_xlen_t(pr.second) > nx) {
 	if (!canstretch) {
 	    ECALL(call, _("subscript out of bounds"));
 	} else *stretch = pr.second;
     }
-    return const_cast<IntVector*>(pr.first);
+    return coerceVector(pr.first, INTSXP);
 }
 
 static SEXP 
@@ -641,15 +639,15 @@ stringSubscript(SEXP sarg, R_xlen_t ns, R_xlen_t nx, SEXP namesarg,
 {
     bool canstretch = (*stretch != 0);
     *stretch = 0;
-    pair<const IntVector*, size_t> pr
-	= Subscripting::canonicalize(SEXP_downcast<StringVector*>(sarg), nx,
+    pair<VectorBase*, size_t> pr
+	= Subscripting::canonicalize(sarg, nx,
 				     SEXP_downcast<StringVector*>(namesarg));
-    if (int(pr.second) > nx) {
+    if (R_xlen_t(pr.second) > nx) {
 	if (!canstretch) {
 	    ECALL(call, _("subscript out of bounds"));
 	} else *stretch = pr.second;
     }
-    return const_cast<IntVector*>(pr.first);
+    return coerceVector(pr.first, INTSXP);
 }
 
 /* Array Subscripts.
