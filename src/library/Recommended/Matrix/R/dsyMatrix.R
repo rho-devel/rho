@@ -80,10 +80,7 @@ setMethod("norm", signature(x = "dsyMatrix", type = "missing"),
           function(x, type, ...) .Call(dsyMatrix_norm, x, "O"),
           valueClass = "numeric")
 
-## Should this create the opposite storage format - i.e. "U" -> "L"
-## and vice-versa?
-## MM: I think yes, since the other part can be filled arbitrarily (wrongly)
-##WAS setMethod("t", signature(x = "dsyMatrix"), function(x) x)
+## *Should* create the opposite storage format:  "U" -> "L"  and vice-versa:
 setMethod("t", signature(x = "dsyMatrix"), t_trMatrix,
           valueClass = "dsyMatrix")
 
@@ -99,6 +96,11 @@ setAs("dsyMatrix", "dpoMatrix",
 	  copyClass(from, "dpoMatrix",
 		    sNames = c("x", "Dim", "Dimnames", "uplo", "factors"))
       })
+
+setMethod("diag", signature(x = "dsyMatrix"),
+	  function(x, nrow, ncol) .Call(dgeMatrix_getDiag, x))
+setMethod("diag<-", signature(x = "dsyMatrix"),
+	  function(x, value) .Call(dgeMatrix_setDiag, x, value))
 
 ## Now that we have "chol", we can define  "determinant" methods,
 ## exactly like in ./dsCMatrix.R

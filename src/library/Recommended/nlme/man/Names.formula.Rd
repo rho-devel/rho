@@ -31,7 +31,7 @@
   corresponding to the right hand side of \code{object} which are not
   listed in \code{excluded}.  
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{model.matrix}}, \code{\link{terms}},
   \code{\link{Names}}
 }

@@ -137,7 +137,32 @@ sparseMatrix(x = TRUE, i=1:3, j=2:4) # recycling x, |--> "lgCMatrix"
 ## a symmetric one:
 (sy <- sparseMatrix(i= c(2,4,3:5), j= c(4,7:5,5), x = 1:5,
                     dims = c(7,7), symmetric=TRUE))
-stopifnot(isSymmetric(sy))
+stopifnot(isSymmetric(sy),
+          identical(sy, ## switch i <-> j {and transpose }
+    t( sparseMatrix(j= c(2,4,3:5), i= c(4,7:5,5), x = 1:5,
+                    dims = c(7,7), symmetric=TRUE))))
+
+##' @title Random Sparse Matrix
+##' @param nrow,
+##' @param ncol number of rows and columns, i.e., the matrix dimension
+##' @param nnz number of non-zero entries
+##' @param rand.x random number generator for 'x' slot
+##' @param ... optionally further arguments passed to sparseMatrix()
+##' @return a sparseMatrix of dimension (nrow, ncol)
+##' @author Martin Maechler
+rSparseMatrix <- function(nrow, ncol, nnz,
+                          rand.x = function(n) round(rnorm(nnz), 2), ...)
+{
+    stopifnot((nnz <- as.integer(nnz)) >= 0,
+              nrow >= 0, ncol >= 0, nnz <= nrow * ncol)
+    sparseMatrix(i = sample(nrow, nnz, replace = TRUE),
+                 j = sample(ncol, nnz, replace = TRUE),
+                 x = rand.x(nnz), dims = c(nrow, ncol), ...)
+}
+
+M1 <- rSparseMatrix(1000, 20, nnz = 200)
+summary(M1)
+
 
 \donttest{% as SparseM is "outside"
 ## pointers example in converting from other sparse matrix representations.

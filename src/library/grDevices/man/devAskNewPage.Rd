@@ -15,14 +15,14 @@ devAskNewPage(ask = NULL)
 }
 \arguments{
   \item{ask}{\code{NULL} or a logical value.  If \code{TRUE}, the user
-    is prompted before a new page of output is started. }
+    will in future be prompted before a new page of output is started.}
 }
 \details{
   If the current device is the null device, this will open a graphics device.
-  
+
   The default argument just returns the current setting and does not
   change it.
-  
+
   The default value when a device is opened is taken from the
   setting of \code{\link{options}("device.ask.default")}.
 
@@ -34,6 +34,7 @@ devAskNewPage(ask = NULL)
 }
 \value{
   The current prompt setting \emph{before} any new setting is applied.
+  Invisibly if \code{ask} is logical.
 }
 
 \seealso{

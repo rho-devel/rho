@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2005-6   The R Core Team.
+ *  Copyright (C) 2005-12   The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -69,3 +69,5 @@ SEXP R_standardGeneric(SEXP fname, SEXP ev, SEXP fdef);
 SEXP do_substitute_direct(SEXP f, SEXP env);
 SEXP Rf_allocS4Object();
 SEXP R_set_method_dispatch(SEXP onOff);
+SEXP R_get_primname(SEXP object);
+SEXP new_object(SEXP class_def);

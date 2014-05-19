@@ -1,3 +1,8 @@
+% File src/library/methods/man/inheritedSlotNames.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 2009-12 R Core Team
+% Distributed under GPL 2 or later
+
 \name{inheritedSlotNames}
 \alias{inheritedSlotNames}
 \title{Names of Slots Inherited From a Super Class}
@@ -45,7 +50,7 @@ if(require("Matrix")) {
 % cached anyway :
 ## detach package we've attached above:
 for(n in rev(which(is.na(match(search(), .srch)))))
-    detach(pos = n)
+   try( detach(pos = n) )
 }% end{dontrun}
 }
 \keyword{classes}

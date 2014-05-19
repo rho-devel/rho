@@ -1,7 +1,7 @@
 
-R version 2.13.0 Under development (unstable) (2011-03-05 r54672)
-Copyright (C) 2011 The R Foundation for Statistical Computing
-ISBN 3-900051-07-0
+R Under development (unstable) (2013-09-02 r63797) -- "Unsuffered Consequences"
+Copyright (C) 2013 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin12.4.0 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -95,7 +95,7 @@ In read.dta("pc5.dta") : cannot read factor labels from Stata 5 files
  - attr(*, "val.labels")= chr  "" "" "" "" ...
  - attr(*, "var.labels")= chr  "" "" "" "" ...
  - attr(*, "version")= int 5
-> compressed<-read.dta("compressed.dta")
+> compressed <- read.dta("compressed.dta")
 > summary(compressed)
       age             alb           alkphos         ascites      
  Min.   :26.28   Min.   :1.960   Min.   :   -9   Min.   :-9.000  
@@ -220,7 +220,7 @@ In read.dta("pc5.dta") : cannot read factor labels from Stata 5 files
  - attr(*, "version")= int 6
 > all.equal(summary(sun6),summary(pc5))
 [1] TRUE
-> df<-read.dta("datefactor.dta")
+> df <- read.dta("datefactor.dta")
 > summary(df)
       hlth159         id            adate           
  EXCELLENT: 0   Min.   : 1.00   Min.   :1960-01-02  
@@ -230,20 +230,20 @@ In read.dta("pc5.dta") : cannot read factor labels from Stata 5 files
  POOR     : 1   3rd Qu.:22.75   3rd Qu.:1960-01-23  
  NA's     :11   Max.   :30.00   Max.   :1960-01-31  
 > data(esoph)
-> write.dta(esoph,esophile<-tempfile())
-> esoph2<-read.dta(esophile)
+> write.dta(esoph,esophile <- tempfile())
+> esoph2 <- read.dta(esophile)
 > all.equal(ordered(esoph2$alcgp),esoph$alcgp)
 [1] TRUE
 > write.dta(esoph,esophile,convert.factors="string")
-> esoph2<-read.dta(esophile)
+> esoph2 <- read.dta(esophile)
 > all.equal(as.character(esoph$alcgp),esoph2$alcgp)
 [1] TRUE
 > write.dta(esoph,esophile,convert.factors="code")
-> esoph2<-read.dta(esophile)
+> esoph2 <- read.dta(esophile)
 > all.equal(as.numeric(esoph$alcgp),as.numeric(esoph2$alcgp))
 [1] TRUE
 > 
-> se<-read.dta("stata7se.dta")
+> se <- read.dta("stata7se.dta")
 > print(se)
       race number
 1    white      2
@@ -253,7 +253,7 @@ In read.dta("pc5.dta") : cannot read factor labels from Stata 5 files
 5    black      5
 6    white      6
 7    black      7
-> v8<-read.dta("stata8mac.dta")
+> v8 <- read.dta("stata8mac.dta")
 > print(v8)
       race number
 1    white      2
@@ -264,7 +264,7 @@ In read.dta("pc5.dta") : cannot read factor labels from Stata 5 files
 6    white      6
 7    black      7
 > 
-> stata8<-read.dta("auto8.dta",missing.type=TRUE,convert.underscore=FALSE)
+> stata8 <- read.dta("auto8.dta",missing.type=TRUE,convert.underscore=FALSE)
 > str(stata8)
 'data.frame':	74 obs. of  13 variables:
  $ make        : chr  "AMC Concord" "AMC Pacer" "AMC Spirit" "Buick Century" ...
@@ -288,7 +288,7 @@ In read.dta("pc5.dta") : cannot read factor labels from Stata 5 files
  - attr(*, "var.labels")= chr  "Make and Model" "Price" "Mileage (mpg)" "Repair Record 1978" ...
  - attr(*, "version")= int 8
  - attr(*, "label.table")=List of 1
-  ..$ origin: Named num  0 1
+  ..$ origin: Named int  0 1
   .. ..- attr(*, "names")= chr  "Domestic" "Foreign"
  - attr(*, "missing")=List of 13
   ..$ make        : NULL
@@ -304,5 +304,85 @@ In read.dta("pc5.dta") : cannot read factor labels from Stata 5 files
   ..$ gear_ratio  : num  NA NA NA NA NA NA NA NA NA NA ...
   ..$ foreign     : num  NA NA NA NA NA NA NA NA NA NA ...
   ..$ testmiss    : num  18 18 18 18 18 18 18 18 18 18 ...
+> 
+> bq <- read.dta("MLLabelsWithNotesChar.dta")
+> str(bq)
+'data.frame':	0 obs. of  1 variable:
+ $ female: Factor w/ 2 levels "No","Yes": 
+ - attr(*, "datalabel")= chr "datalabelBQ"
+ - attr(*, "time.stamp")= chr "27 Apr 2013 16:16"
+ - attr(*, "formats")= chr "%8.0g"
+ - attr(*, "types")= int 251
+ - attr(*, "val.labels")= chr "female_lbl_def"
+ - attr(*, "var.labels")= chr "Is it female"
+ - attr(*, "expansion.fields")=List of 11
+  ..$ : chr  "female" "question" "Are you Female?"
+  ..$ : chr  "_dta" "_lang_c" "default"
+  ..$ : chr  "_dta" "_lang_v_spanish" "etiqdataBQ"
+  ..$ : chr  "female" "_lang_l_spanish" "female_lbl_es"
+  ..$ : chr  "female" "_lang_v_spanish" "Femenino"
+  ..$ : chr  "_dta" "note1" "datasetNoteTxt"
+  ..$ : chr  "_dta" "note0" "1"
+  ..$ : chr  "female" "note2" "FemaleNote2Txt"
+  ..$ : chr  "female" "note0" "2"
+  ..$ : chr  "female" "note1" "FemaleNoteTxt"
+  ..$ : chr  "_dta" "_lang_list" "default spanish"
+ - attr(*, "version")= int 12
+ - attr(*, "label.table")=List of 2
+  ..$ female_lbl_es : Named int  0 1
+  .. ..- attr(*, "names")= chr  "No" "Si"
+  ..$ female_lbl_def: Named int  0 1
+  .. ..- attr(*, "names")= chr  "No" "Yes"
+> write.dta(bq, "bq.dta", version = 12)
+> str(read.dta('bq.dta'))
+'data.frame':	0 obs. of  1 variable:
+ $ female: Factor w/ 2 levels "No","Yes": 
+ - attr(*, "datalabel")= chr "datalabelBQ"
+ - attr(*, "time.stamp")= chr ""
+ - attr(*, "formats")= chr "%9.0g"
+ - attr(*, "types")= int 253
+ - attr(*, "val.labels")= chr "female_lbl_def"
+ - attr(*, "var.labels")= chr "Is it female"
+ - attr(*, "expansion.fields")=List of 11
+  ..$ : chr  "female" "question" "Are you Female?"
+  ..$ : chr  "_dta" "_lang_c" "default"
+  ..$ : chr  "_dta" "_lang_v_spanish" "etiqdataBQ"
+  ..$ : chr  "female" "_lang_l_spanish" "female_lbl_es"
+  ..$ : chr  "female" "_lang_v_spanish" "Femenino"
+  ..$ : chr  "_dta" "note1" "datasetNoteTxt"
+  ..$ : chr  "_dta" "note0" "1"
+  ..$ : chr  "female" "note2" "FemaleNote2Txt"
+  ..$ : chr  "female" "note0" "2"
+  ..$ : chr  "female" "note1" "FemaleNoteTxt"
+  ..$ : chr  "_dta" "_lang_list" "default spanish"
+ - attr(*, "version")= int 12
+ - attr(*, "label.table")=List of 2
+  ..$ female_lbl_def: Named int  1 2
+  .. ..- attr(*, "names")= chr  "No" "Yes"
+  ..$ female_lbl_es : Named int  0 1
+  .. ..- attr(*, "names")= chr  "No" "Si"
+> unlink("bq.dta")
+> 
+> ## PR#15290
+> bq <- read.dta("OneVarTwoValLabels.dta")
+> str(bq)
+'data.frame':	0 obs. of  1 variable:
+ $ female: Factor w/ 2 levels "Male","Female": 
+ - attr(*, "datalabel")= chr ""
+ - attr(*, "time.stamp")= chr "25 Apr 2013 21:40"
+ - attr(*, "formats")= chr "%9.0g"
+ - attr(*, "types")= int 251
+ - attr(*, "val.labels")= chr "fem_lbl_val_en"
+ - attr(*, "var.labels")= chr ""
+ - attr(*, "expansion.fields")=List of 3
+  ..$ : chr  "_dta" "_lang_c" "default"
+  ..$ : chr  "female" "_lang_l_spanish" "fem_lbl_val_es"
+  ..$ : chr  "_dta" "_lang_list" "default spanish"
+ - attr(*, "version")= int 12
+ - attr(*, "label.table")=List of 2
+  ..$ fem_lbl_val_es: Named int  0 1
+  .. ..- attr(*, "names")= chr  "Masculino" "Femenino"
+  ..$ fem_lbl_val_en: Named int  0 1
+  .. ..- attr(*, "names")= chr  "Male" "Female"
 > 
 > q()

@@ -1,6 +1,8 @@
 #  File src/library/stats/R/hclust.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2013 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -66,7 +68,7 @@ hclust <- function(d, method="complete", members=NULL)
     else if(length(members) != n)
         stop("invalid length of members")
 
-    if (!is.double(d)) storage.mode(d) <- "double"
+    storage.mode(d) <- "double"
     hcl <- .Fortran(C_hclust,
 		    n = n,
 		    len = len,
@@ -78,21 +80,21 @@ hclust <- function(d, method="complete", members=NULL)
 		    nn = integer(n),
 		    disnn = double(n),
 		    flag = logical(n),
-		    diss = d, PACKAGE="stats")
+		    diss = d)
 
     ## 2nd step: interpret the information that we now have
     ## as merge, height, and order lists.
 
     hcass <- .Fortran(C_hcass2,
-		      n = as.integer(n),
-		      ia = as.integer(hcl$ia),
-		      ib = as.integer(hcl$ib),
+		      n = n, # checked above.
+		      ia = hcl$ia,
+		      ib = hcl$ib,
   		      order = integer(n),
 		      iia = integer(n),
-		      iib = integer(n), PACKAGE="stats")
+		      iib = integer(n))
 
     tree <- list(merge = cbind(hcass$iia[1L:(n-1)], hcass$iib[1L:(n-1)]),
-		 height= hcl$crit[1L:(n-1)],
+		 height = hcl$crit[1L:(n-1)],
 		 order = hcass$order,
 		 labels = attr(d, "Labels"),
                  method = METHODS[method],
@@ -132,8 +134,7 @@ plot.hclust <-
 
     dev.hold(); on.exit(dev.flush())
     plot.new()
-    .Internal(dend.window(n, merge, height,                 hang, labels, ...))
-    .Internal(dend       (n, merge, height, order(x$order), hang, labels, ...))
+    graphics:::plotHclust(n, merge, height, order(x$order), hang, labels, ...)
     if(axes)
         axis(2, at=pretty(range(height)), ...)
     if (frame.plot)
@@ -148,23 +149,6 @@ plot.hclust <-
     invisible()
 }
 
-## For S ``compatibility'': was in cluster just as
-## plclust <- plot.hclust ## .Alias
-plclust <- function(tree, hang = 0.1, unit = FALSE, level = FALSE, hmin = 0,
-                    square = TRUE, labels = NULL, plot. = TRUE,
-                    axes = TRUE, frame.plot = FALSE, ann = TRUE,
-                    main = "", sub = NULL, xlab = NULL, ylab = "Height")
-{
-    if(!missing(level) && level)	.NotYetUsed("level", error = FALSE)
-    if(!missing(hmin) && hmin != 0)	.NotYetUsed("hmin",  error = FALSE)
-    if(!missing(square) && !square)	.NotYetUsed("square",error = FALSE)
-    if(!missing(plot.) && !plot.)	.NotYetUsed("plot.", error = TRUE)
-    if(!missing(hmin)) tree$height <- pmax(tree$height, hmin)
-    if(unit) tree$height <- rank(tree$height)
-    plot.hclust(x = tree, labels = labels, hang = hang,
-                axes = axes, frame.plot = frame.plot, ann = ann,
-                main = main, sub = sub, xlab = xlab, ylab = ylab)
-}
 
 
 as.hclust <- function(x, ...) UseMethod("as.hclust")
@@ -172,10 +156,12 @@ as.hclust <- function(x, ...) UseMethod("as.hclust")
 as.hclust.default <- function(x, ...) {
     if(inherits(x, "hclust")) x
     else
-	stop(gettext("argument 'x' cannot be coerced to class \"hclust\""),
+	stop(gettextf("argument 'x' cannot be coerced to class %s",
+                      dQuote("hclust")),
              if(!is.null(oldClass(x)))
              gettextf("\n Consider providing an as.hclust.%s() method",
-                      oldClass(x)[1L]), domain = NA)
+                      oldClass(x)[1L]),
+             domain = NA)
 }
 
 as.hclust.twins <- function(x, ...)
@@ -195,7 +181,7 @@ as.hclust.twins <- function(x, ...)
 print.hclust <- function(x, ...)
 {
     if(!is.null(x$call))
-        cat("\nCall:\n",deparse(x$call),"\n\n",sep="")
+        cat("\nCall:\n", deparse(x$call), "\n\n", sep = "")
     if(!is.null(x$method))
         cat("Cluster method   :", x$method, "\n")
     if(!is.null(x$dist.method))

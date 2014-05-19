@@ -8,15 +8,15 @@
 \title{Plot and Summarize Trellis Objects}
 \usage{
 \method{plot}{trellis}(x, position, split,
-      more = FALSE, newpage = TRUE,
-      packet.panel = packet.panel.default, 
-      draw.in = NULL,
-      panel.height = lattice.getOption("layout.heights")$panel,
-      panel.width = lattice.getOption("layout.widths")$panel,
-      save.object = lattice.getOption("save.object"),
-      panel.error = lattice.getOption("panel.error"),
-      prefix,
-      \dots)
+     more = FALSE, newpage = TRUE,
+     packet.panel = packet.panel.default, 
+     draw.in = NULL,
+     panel.height = lattice.getOption("layout.heights")$panel,
+     panel.width = lattice.getOption("layout.widths")$panel,
+     save.object = lattice.getOption("save.object"),
+     panel.error = lattice.getOption("panel.error"),
+     prefix,
+     \dots)
 \method{print}{trellis}(x, \dots)
 
 \method{summary}{trellis}(object, \dots)

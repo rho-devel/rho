@@ -30,7 +30,8 @@ coxpenal.fit <- function(x, y, strata, offset, init, control,
 	    }
 	status <- y[,3]
 	andersen <- TRUE
-	routines <- paste('agfit5', c('a', 'b', 'c'), sep='_')
+#	routines <- paste('agfit5', c('a', 'b', 'c'), sep='_')
+        routines <- list(Cagfit5a, Cagfit5b, Cagfit5c)
         }
     else {
 	if (length(strata) ==0) {
@@ -44,7 +45,8 @@ coxpenal.fit <- function(x, y, strata, offset, init, control,
 	    }
 	status <- y[,2]
 	andersen <- FALSE
-	routines <- paste('coxfit5', c('a', 'b', 'c'), sep='_')
+#	routines <- paste('coxfit5', c('a', 'b', 'c'), sep='_')
+        routines <- list(Ccoxfit5a, Ccoxfit5b, Ccoxfit5c)
         }
 
     n.eff <- sum(y[,ncol(y)])  #effective n for a Cox model is #events
@@ -290,7 +292,7 @@ coxpenal.fit <- function(x, y, strata, offset, init, control,
     #
     # Have C store the data, and get the loglik for beta=initial, frailty=0
     #
-    coxfit <- .C(routines[1],
+    coxfit <- .C(routines[[1]],
                        as.integer(n),
                        as.integer(nvar), 
                        as.double(y),
@@ -309,9 +311,8 @@ coxpenal.fit <- function(x, y, strata, offset, init, control,
 		       as.integer(nfrail),
 		       as.integer(frailx),
                  #R callback additions
-                 f.expr1,f.expr2,rho,
-                 PACKAGE="survival"
-                 )
+                 f.expr1,f.expr2,rho)
+
     loglik0 <- coxfit$loglik
     means   <- coxfit$means
 
@@ -322,7 +323,7 @@ coxpenal.fit <- function(x, y, strata, offset, init, control,
     iterfail <- NULL
     thetasave <- unlist(thetalist)
     for (outer in 1:control$outer.max) {
-        coxfit <- .C(routines[2], 
+        coxfit <- .C(routines[[2]], 
 		        iter=as.integer(control$iter.max),
 			as.integer(n),
 			as.integer(nvar),
@@ -340,9 +341,7 @@ coxpenal.fit <- function(x, y, strata, offset, init, control,
 		        fcoef = as.double(finit),
 			fdiag = double(nfrail+nvar),
                      ## R additions
-                     f.expr1,f.expr2,rho,
-                     PACKAGE="survival"
-                     )
+                     f.expr1,f.expr2,rho)
 
 	iter <- outer
 	iter2 <- iter2 + coxfit$iter
@@ -419,11 +418,11 @@ coxpenal.fit <- function(x, y, strata, offset, init, control,
         }
 
     # release the memory
-    expect <- .C(routines[3], as.integer(n),
+    expect <- .C(routines[[3]], as.integer(n),
 		             as.integer(nvar),
 		             as.integer(newstrat),
 		             as.integer(method=='efron'),
-		             expect= double(n),PACKAGE="survival")$expect
+		             expect= double(n))$expect
 
     if (!need.df) {  #didn't need it iteration by iteration, but do it now
         #get the penalty portion of the second derive matrix

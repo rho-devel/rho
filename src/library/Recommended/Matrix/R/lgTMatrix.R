@@ -16,7 +16,7 @@ setAs("matrix", "lgTMatrix",
       function(from) {
 	  stopifnot(is.logical(from))
 	  dn <- dimnames(from)
-	  if(is.null(dn))
+	  if(is.null.DN(dn))
 	      dn <- list(NULL,NULL)
 	  else dimnames(from) <- NULL
 	  TorNA <- is.na(from) | from

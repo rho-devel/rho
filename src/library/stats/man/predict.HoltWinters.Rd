@@ -11,7 +11,7 @@
   the Holt-Winters method.
 }
 \usage{
-\method{predict}{HoltWinters}(object, n.ahead=1, prediction.interval = FALSE,
+\method{predict}{HoltWinters}(object, n.ahead = 1, prediction.interval = FALSE,
        level = 0.95, ...)
 }
 \arguments{
@@ -33,7 +33,7 @@
   Forecasting trends and seasonals by exponentially weighted
   moving averages,
   \emph{ONR Research Memorandum, Carnegie Institute of Technology} \bold{52}.
-  
+
   P. R. Winters (1960)
   Forecasting sales by exponentially weighted moving averages,
   \emph{Management Science} \bold{6}, 324--342.

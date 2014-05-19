@@ -22,7 +22,7 @@ setAs("matrix.csc", "dgCMatrix",
 	      x = from@ra, i = from@ja - 1L, p = from@ia - 1L,
 	      Dim = from@dimension)
       })
-setAs( "dgCMatrix", "matrix.csc",
+setAs("dgCMatrix", "matrix.csc",
       function(from) {
 	  new("matrix.csc",
 	      ra = from@x, ja = from@i + 1L, ia = from@p + 1L,
@@ -51,7 +51,7 @@ setAs("dsparseMatrix", "matrix.csr",
 
 ##
 setAs("matrix.csr", "dgCMatrix",
-      function(from) as(as(from, "dgRMatrix"), "dgCMatrix"))
+      function(from) as(as(from, "dgRMatrix"), "CsparseMatrix"))
 setAs("matrix.coo", "dgCMatrix",
       function(from) as(as(from, "dgTMatrix"), "dgCMatrix"))
 

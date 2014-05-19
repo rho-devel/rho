@@ -30,7 +30,7 @@ attr(x, which) <- value
   The extraction function first looks for an exact match to \code{which}
   amongst the attributes of \code{x}, then (unless \code{exact = TRUE})
   a unique partial match.
-  (Setting \code{\link{options}(warnPartialMatchAttr=TRUE)} causes
+  (Setting \code{\link{options}(warnPartialMatchAttr = TRUE)} causes
   partial matches to give warnings.)
 
   The replacement function only uses exact matches.
@@ -45,7 +45,7 @@ attr(x, which) <- value
 
   The extractor function allows (and does not match) empty and missing
   values of \code{which}: the replacement function does not.
-  
+
   Both are \link{primitive} functions.
 }
 \value{

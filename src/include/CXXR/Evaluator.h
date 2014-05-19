@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -284,7 +284,7 @@ namespace CXXR {
 	 *          an error is reported and the nesting depth is left
 	 *          unchanged.
 	 */
-	static void setDepthLimit(int depth);
+	static void setDepthLimit(unsigned int depth);
    private:
 	friend class Context;  // Unnecessary in C++ 0x
 

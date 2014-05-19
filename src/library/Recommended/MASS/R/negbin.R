@@ -1,17 +1,16 @@
 # file MASS/R/negbin.R
-# copyright (C) 1994-2009 W. N. Venables and B. D. Ripley
+# copyright (C) 1994-2013 W. N. Venables and B. D. Ripley
 #
 anova.negbin <- function(object, ..., test = "Chisq")
 {
   dots <- list(...)
   if(length(dots) == 0L) {
     warning("tests made without re-estimating 'theta'")
-    object$call[[1L]] <- as.name("glm")
-    if(is.null(object$link))
-      object$link <- as.name("log")
-    object$call$family <- call("negative.binomial", theta = object$
-                               theta, link = object$link)
-    anova.glm(object, test = test)
+    object$call[[1L]] <- quote(stats::glm)
+    if(is.null(object$link)) object$link <- as.name("log")
+    object$call$family <-
+        call("negative.binomial", theta = object$ theta, link = object$link)
+    NextMethod(object, test = test)
   } else {
     if(test != "Chisq")
       warning("only Chi-squared LR tests are implemented")
@@ -27,7 +26,7 @@ anova.negbin <- function(object, ..., test = "Chisq")
     ths <- sapply(mlist, function(x) x$theta)
     dfs <- dflis[s]
     lls <- sapply(mlist, function(x) x$twologlik)
-    tss <- c("", paste(1L:(nt - 1), 2:nt, sep = " vs "))
+    tss <- c("", paste(1L:(nt - 1L), 2:nt, sep = " vs "))
     df <- c(NA,  - diff(dfs))
     x2 <- c(NA, diff(lls))
     pr <- c(NA, 1 - pchisq(x2[-1L], df[-1L]))
@@ -64,7 +63,7 @@ family.negbin <- function(object, ...) object$family
 
 glm.convert <- function(object)
 {
-    object$call[[1L]] <- as.name("glm")
+    object$call[[1L]] <- quote(stats::glm)
     if(is.null(object$link))
         object$link <- as.name("log")
     object$call$family <- call("negative.binomial", theta = object$theta,
@@ -96,7 +95,7 @@ glm.nb <- function(formula, data, weights,
         "etastart", "mustart", "offset"), names(mf), 0)
     mf <- mf[c(1, m)]
     mf$drop.unused.levels <- TRUE
-    mf[[1L]] <- as.name("model.frame")
+    mf[[1L]] <- quote(stats::model.frame)
     mf <- eval.parent(mf)
     Terms <- attr(mf, "terms")
     if(method == "model.frame") return(mf)
@@ -113,7 +112,8 @@ glm.nb <- function(formula, data, weights,
     n <- length(Y)
     if(!missing(method)) {
         if(!exists(method, mode = "function"))
-            stop("unimplemented method: ", sQuote(method))
+            stop(gettextf("unimplemented method: %s", sQuote(method)),
+                 domain = NA)
         glm.fitter <- get(method)
     } else {
         method <- "glm.fit"
@@ -132,7 +132,8 @@ glm.nb <- function(formula, data, weights,
     th <- as.vector(theta.ml(Y, mu, sum(w), w, limit = control$maxit, trace =
                              control$trace> 2)) # drop attributes
     if(control$trace > 1)
-        message("Initial value for theta:", signif(th))
+        message(gettextf("Initial value for 'theta': %f", signif(th)),
+                domain = NA)
     fam <- do.call("negative.binomial", list(theta = th, link = link))
     iter <- 0
     d1 <- sqrt(2 * max(1, fit$df.residual))
@@ -160,8 +161,8 @@ glm.nb <- function(formula, data, weights,
         if(control$trace) {
             Ls <- loglik(n, th, Y, Y, w)
             Dev <- 2 * (Ls - Lm)
-            message("Theta(", iter, ") =", signif(th),
-                    ", 2(Ls - Lm) =", signif(Dev))
+            message(sprintf("Theta(%d) = %f, 2(Ls - Lm) = %f",
+                            iter, signif(th), signif(Dev)), domain = NA)
         }
     }
     if(!is.null(attr(th, "warn"))) fit$th.warn <- attr(th, "warn")
@@ -226,7 +227,7 @@ negative.binomial <-
             stats <- link
             if(!is.null(stats$name)) linktemp <- stats$name
         } else
-            stop(linktemp, " link not available for negative binomial family; available links are \"identity\", \"log\" and \"sqrt\"")
+            stop(gettextf("\"%s\" link not available for negative binomial family; available links are \"identity\", \"log\" and \"sqrt\"", linktemp))
     }
     .Theta <- theta ## avoid codetools warnings
     env <- new.env(parent=.GlobalEnv)
@@ -344,7 +345,8 @@ theta.ml <-
     t0 <- n/sum(weights*(y/mu - 1)^2)
     it <- 0
     del <- 1
-    if(trace) message("theta.ml: initial theta =", signif(t0))
+    if(trace) message(sprintf("theta.ml: iter %d 'theta = %f'",
+                              it, signif(t0)), domain = NA)
     while((it <- it + 1) < limit && abs(del) > eps) {
         t0 <- abs(t0)
         del <- score(n, t0, mu, y, weights)/(i <- info(n, t0, mu, y, weights))

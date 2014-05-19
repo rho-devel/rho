@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -273,7 +273,7 @@ double pureNullUnitValue(SEXP unit, int index)
 	    }
 	}
 	else 
-	    error(_("Unimplemented unit function"));
+	    error(_("unimplemented unit function"));
     } else if (isUnitList(unit)) {
 	/*
 	 * Recycle if necessary;  it is up to the calling code
@@ -304,7 +304,7 @@ int pureNullUnit(SEXP unit, int index, pGEDevDesc dd) {
 	 * and width/height(grob) is pure null
 	 */
 	if (unitUnit(unit, index) == L_GROBWIDTH) {
-	    SEXP grob, width;
+	    SEXP grob, updatedgrob, width;
 	    SEXP widthPreFn, widthFn, widthPostFn, findGrobFn;
 	    SEXP R_fcall0, R_fcall1, R_fcall2, R_fcall3;
 	    SEXP savedgpar, savedgrob;
@@ -340,17 +340,17 @@ int pureNullUnit(SEXP unit, int index, pGEDevDesc dd) {
 		UNPROTECT(2);
 	    }
 	    PROTECT(R_fcall1 = lang2(widthPreFn, grob));
-	    eval(R_fcall1, R_gridEvalEnv);
-	    PROTECT(R_fcall2 = lang2(widthFn, grob));
+            PROTECT(updatedgrob = eval(R_fcall1, R_gridEvalEnv));
+	    PROTECT(R_fcall2 = lang2(widthFn, updatedgrob));
 	    PROTECT(width = eval(R_fcall2, R_gridEvalEnv));
 	    result = pureNullUnit(width, 0, dd);
-	    PROTECT(R_fcall3 = lang2(widthPostFn, grob));
+	    PROTECT(R_fcall3 = lang2(widthPostFn, updatedgrob));
 	    eval(R_fcall3, R_gridEvalEnv);
 	    setGridStateElement(dd, GSS_GPAR, savedgpar);
 	    setGridStateElement(dd, GSS_CURRGROB, savedgrob);
-	    UNPROTECT(10);
+	    UNPROTECT(11);
 	} else if (unitUnit(unit, index) == L_GROBHEIGHT) {
-	    SEXP grob, height;
+	    SEXP grob, updatedgrob, height;
 	    SEXP heightPreFn, heightFn, heightPostFn, findGrobFn;
 	    SEXP R_fcall0, R_fcall1, R_fcall2, R_fcall3;
 	    SEXP savedgpar, savedgrob;
@@ -386,15 +386,15 @@ int pureNullUnit(SEXP unit, int index, pGEDevDesc dd) {
 		UNPROTECT(2);
 	    }
 	    PROTECT(R_fcall1 = lang2(heightPreFn, grob));
-	    eval(R_fcall1, R_gridEvalEnv);
-	    PROTECT(R_fcall2 = lang2(heightFn, grob));
+	    PROTECT(updatedgrob = eval(R_fcall1, R_gridEvalEnv));
+	    PROTECT(R_fcall2 = lang2(heightFn, updatedgrob));
 	    PROTECT(height = eval(R_fcall2, R_gridEvalEnv));
 	    result = pureNullUnit(height, 0, dd);
-	    PROTECT(R_fcall3 = lang2(heightPostFn, grob));
+	    PROTECT(R_fcall3 = lang2(heightPostFn, updatedgrob));
 	    eval(R_fcall3, R_gridEvalEnv);
 	    setGridStateElement(dd, GSS_GPAR, savedgpar);
 	    setGridStateElement(dd, GSS_CURRGROB, savedgrob);
-	    UNPROTECT(10);
+	    UNPROTECT(11);
 	} else
 	    result = unitUnit(unit, index) == L_NULL;
     }
@@ -423,7 +423,7 @@ int pureNullUnitArithmetic(SEXP unit, int index, pGEDevDesc dd) {
 	}
     } 
     else 
-	error(_("Unimplemented unit function"));
+	error(_("unimplemented unit function"));
     return result;
 }
 
@@ -461,7 +461,7 @@ double evaluateGrobUnit(double value, SEXP grob,
     SEXP preFn,  postFn, findGrobFn;
     SEXP evalFnx = R_NilValue, evalFny = R_NilValue;
     SEXP R_fcall0, R_fcall1, R_fcall2x, R_fcall2y, R_fcall3;
-    SEXP savedgpar, savedgrob;
+    SEXP savedgpar, savedgrob, updatedgrob;
     SEXP unitx = R_NilValue, unity = R_NilValue;
     double result = 0.0;
     Rboolean protectedGrob = FALSE;
@@ -547,7 +547,7 @@ double evaluateGrobUnit(double value, SEXP grob,
     /* Call preDraw(grob) 
      */
     PROTECT(R_fcall1 = lang2(preFn, grob));
-    eval(R_fcall1, R_gridEvalEnv);
+    PROTECT(updatedgrob = eval(R_fcall1, R_gridEvalEnv));
     /* 
      * The call to preDraw may have pushed viewports and/or
      * enforced gpar settings, SO we need to re-establish the
@@ -582,20 +582,20 @@ double evaluateGrobUnit(double value, SEXP grob,
 	{
 	    SEXP val;
 	    PROTECT(val = ScalarReal(value));
-	    PROTECT(R_fcall2x = lang3(evalFnx, grob, val));
+	    PROTECT(R_fcall2x = lang3(evalFnx, updatedgrob, val));
 	    PROTECT(unitx = eval(R_fcall2x, R_gridEvalEnv));
-	    PROTECT(R_fcall2y = lang3(evalFny, grob, val));
+	    PROTECT(R_fcall2y = lang3(evalFny, updatedgrob, val));
 	    PROTECT(unity = eval(R_fcall2y, R_gridEvalEnv));
 	}
 	break;
     case 2:
-	PROTECT(R_fcall2x = lang2(evalFnx, grob));
+	PROTECT(R_fcall2x = lang2(evalFnx, updatedgrob));
 	PROTECT(unitx = eval(R_fcall2x, R_gridEvalEnv));
 	break;
     case 3:
     case 4:
     case 5:
-	PROTECT(R_fcall2y = lang2(evalFny, grob));
+	PROTECT(R_fcall2y = lang2(evalFny, updatedgrob));
 	PROTECT(unity = eval(R_fcall2y, R_gridEvalEnv));
 	break;
     }
@@ -668,7 +668,7 @@ double evaluateGrobUnit(double value, SEXP grob,
     }
     /* Call postDraw(grob)
      */
-    PROTECT(R_fcall3 = lang2(postFn, grob));
+    PROTECT(R_fcall3 = lang2(postFn, updatedgrob));
     eval(R_fcall3, R_gridEvalEnv);
     /* 
      * Restore the saved gpar state and grob
@@ -680,13 +680,13 @@ double evaluateGrobUnit(double value, SEXP grob,
     switch(evalType) {
     case 0:
     case 1:
-	UNPROTECT(13);
+	UNPROTECT(14);
 	break;
     case 2:
     case 3:
     case 4:
     case 5:
-	UNPROTECT(9);
+	UNPROTECT(10);
     }
     /* Return the transformed width
      */
@@ -906,7 +906,7 @@ double transform(double value, int unit, SEXP data,
 	result = evaluateNullUnit(result, thisCM, nullLMode, nullAMode);
 	break;
     default:
-	error(_("Illegal unit or unit not yet implemented"));
+	error(_("invalid unit or unit not yet implemented"));
     }
     /*
      * For physical units, scale the result by GSS_SCALE (a "zoom" factor)
@@ -1217,7 +1217,7 @@ double transformXArithmetic(SEXP x, int index,
 	}
     }
     else 
-	error(_("Unimplemented unit function"));
+	error(_("unimplemented unit function"));
     return result;
 }
 
@@ -1297,7 +1297,7 @@ double transformYArithmetic(SEXP y, int index,
 	}
     }
     else 
-	error(_("Unimplemented unit function"));
+	error(_("unimplemented unit function"));
     return result;
 }
 
@@ -1377,7 +1377,7 @@ double transformWidthArithmetic(SEXP width, int index,
 	}
     }
     else 
-	error(_("Unimplemented unit function"));
+	error(_("unimplemented unit function"));
     return result;
 }
 
@@ -1457,7 +1457,7 @@ double transformHeightArithmetic(SEXP height, int index,
 	}
     }
     else 
-	error(_("Unimplemented unit function"));
+	error(_("unimplemented unit function"));
     return result;
 }
 
@@ -1652,7 +1652,7 @@ double transformFromINCHES(double value, int unit,
     case L_GROBHEIGHT:
     case L_NULL:
     default:
-	error(_("Illegal unit or unit not yet implemented"));
+	error(_("invalid unit or unit not yet implemented"));
     }
     /*
      * For physical units, reverse the scale by GSS_SCALE (a "zoom" factor)
@@ -1827,10 +1827,10 @@ SEXP validUnits(SEXP units)
 		INTEGER(answer)[i] = convertUnit(units, i);
 	    UNPROTECT(1);
 	} else {
-	    error(_("Units must be character"));
+	    error(_("'units' must be character"));
 	}
     } else {
-	error(_("Units must be of length > 0"));
+	error(_("'units' must be of length > 0"));
     }
     return answer;
 }

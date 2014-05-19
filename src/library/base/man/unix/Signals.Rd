@@ -1,6 +1,6 @@
 % File src/library/base/man/unix/Signals.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Signals}
@@ -16,11 +16,21 @@
 \special{kill -USR2 pid}
 }
 \arguments{
-  \item{pid}{The process ID of the R process}
+  \item{pid}{The process ID of the \R process.}
+}
+\details{
+  The commands history will also be saved if would be at normal
+  termination.
+
+  This is not available on Windows, and possibly on other OSes which do
+  not support these signals.
 }
 \section{Warning}{
-  It is possible that one or more R objects will be undergoing
+  It is possible that one or more \R objects will be undergoing
   modification at the time the signal is sent.  These objects could be
   saved in a corrupted form.
+}
+\seealso{
+  \code{\link{Sys.getpid}} to report the process ID for future use.
 }
 \keyword{utilities}

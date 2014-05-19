@@ -1,5 +1,5 @@
 \name{chol}
-\title{Choleski Decomposition - 'Matrix' S4 Generic}
+\title{Choleski Decomposition - 'Matrix' S4 Generic and Methods}
 \alias{chol}
 \alias{chol-methods}
 \alias{chol,Matrix-method}
@@ -32,7 +32,7 @@ chol(x, \dots)
   \item{x}{a (sparse or dense) square matrix, here inheriting from class
     \code{\linkS4class{Matrix}}; if \code{x} is not positive definite,
     an error is signalled.}
-  \item{pivot}{logical indicating if pivoting is used.}
+  \item{pivot}{logical indicating if pivoting is to be used.}
   \item{\dots}{potentially further arguments passed to methods.}
 }
 % \details{
@@ -86,6 +86,28 @@ str(c2)
 ## An example where chol() can't work
 (sy3 <- new("dsyMatrix", Dim = as.integer(c(2,2)), x = c(14, -1, 2, -7)))
 try(chol(sy3)) # error, since it is not positive definite
+
+## A sparse example --- exemplifying 'pivot'
+(mm <- toeplitz(as(c(10, 0, 1, 0, 3), "sparseVector"))) # 5 x 5
+(R <- chol(mm)) ## default:  pivot = FALSE
+R2 <- chol(mm, pivot=FALSE)
+stopifnot( identical(R, R2), all.equal(crossprod(R), mm) )
+(R. <- chol(mm, pivot=TRUE))# nice band structure,
+## but of course crossprod(R.) is *NOT* equal to mm
+## --> see Cholesky() and its examples, for the pivot structure & factorization
+stopifnot(all.equal(sqrt(det(mm)), det(R)),
+          all.equal(prod(diag(R)), det(R)),
+          all.equal(prod(diag(R.)), det(R)))
+
+## a second, even sparser example:
+(M2 <- toeplitz(as(c(1,.5, rep(0,12), -.1), "sparseVector")))
+c2 <- chol(M2)
+C2 <- chol(M2, pivot=TRUE)
+## check the caching of the factorizations:
+spd <- as(M2@factors[["spdCholesky"]], "Matrix")
+sPd <- as(M2@factors[["sPdCholesky"]], "Matrix")
+stopifnot(identical(t(spd), c2),
+          all.equal(t(sPd), C2, tol=0))#%% FIXME -- why not identical()?
 }
 \keyword{algebra}
 \keyword{array}

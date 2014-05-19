@@ -133,10 +133,11 @@ b2a$family$getTheta()
 
 ## unknown theta via outer iteration and AIC search
 ## over a discrete set of values...
+\dontrun{
 b3<-gam(y~s(x0)+s(x1)+s(x2)+s(x3),family=negbin(2:10/2),
         data=dat)
 plot(b3,pages=1)
-print(b3)
+print(b3)}
 
 ## another example...
 set.seed(1)

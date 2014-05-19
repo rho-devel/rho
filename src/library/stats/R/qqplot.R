@@ -1,6 +1,8 @@
 #  File src/library/stats/R/qqplot.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -17,14 +19,14 @@
 qqplot <- function(x, y, plot.it = TRUE, xlab = deparse(substitute(x)),
 		   ylab = deparse(substitute(y)), ...)
 {
-    sx<-sort(x)
-    sy<-sort(y)
-    lenx<-length(sx)
-    leny<-length(sy)
+    sx <- sort(x)
+    sy <- sort(y)
+    lenx <- length(sx)
+    leny <- length(sy)
     if( leny < lenx )
-	sx<-approx(1L:lenx, sx, n=leny)$y
+	sx <- approx(1L:lenx, sx, n = leny)$y
     if( leny > lenx )
-	sy<-approx(1L:leny, sy, n=lenx)$y
+	sy <- approx(1L:leny, sy, n = lenx)$y
     if(plot.it)
 	plot(sx, sy, xlab = xlab, ylab = ylab, ...)
     invisible(list(x = sx, y = sy))

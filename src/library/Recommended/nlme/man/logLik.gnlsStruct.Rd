@@ -36,7 +36,7 @@
   evaluated at \code{Pars}.  
 }
 
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{gnls}}, \code{\link{gnlsStruct}},
   \code{\link{logLik.gnls}}

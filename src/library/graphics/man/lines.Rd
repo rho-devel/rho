@@ -56,11 +56,12 @@ lines(x, \dots)
 
   \code{\link{abline}} for drawing (single) straight lines.
 
-  \code{\link{par}} for how to specify colors.
+  \code{\link{par}} for line type (\code{lty}) specification and how to
+  specify colors.
 }
 \examples{
 # draw a smooth line through a scatter plot
-plot(cars, main="Stopping Distance versus Speed")
+plot(cars, main = "Stopping Distance versus Speed")
 lines(stats::lowess(cars))
 }
 \keyword{aplot}

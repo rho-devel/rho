@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -80,7 +80,7 @@ extern "C" {
  *
  * @return The new value \a v.
  */
-SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v);
+SEXP SET_VECTOR_ELT(SEXP x, R_xlen_t i, SEXP v);
 
 /** @brief Examine element of CXXR::ListVector.
  *
@@ -91,13 +91,13 @@ SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v);
  * @return The value of the \a i 'th element.
  */
 #ifndef __cplusplus
-SEXP VECTOR_ELT(SEXP x, int i);
+SEXP VECTOR_ELT(SEXP x, R_xlen_t i);
 #else
-inline SEXP VECTOR_ELT(SEXP x, int i)
+inline SEXP VECTOR_ELT(SEXP x, R_xlen_t i)
 {
     using namespace CXXR;
     ListVector* lv = SEXP_downcast<ListVector*>(x, false);
-    return (*lv)[i];
+    return (*lv)[VectorBase::size_type(i)];
 }
 #endif
 

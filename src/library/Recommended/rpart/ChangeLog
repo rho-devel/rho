@@ -1,3 +1,75 @@
+2013 Sep 01	4.1-3	Document TMT change to predict() output.
+
+2013 Aug 15	4.1-2	Replace calls to as.name().
+	                Remove unused and un-exported rpartpl().
+	                Correct plot.rpart.Rd as to where things are stored.
+	                Increase version dependence to >= 2.15.0,
+	                remove conditional paste0 from this package.
+
+2013 Mar 20	4.1-1	Add ko translations, update reference output for 3.0.0.
+
+2012 Nov 29	4.1-0	Remove rpconvert() (converted rpart2 trees).
+	
+			Clean up a lot of the R code.
+	
+			C code reformatted with GNU indent and
+			-i4 -nut -ncdb -d1 -br -ce -il0 -npcs -brs
+			then use whitespace-cleanup in Emacs.
+
+			Call R_CheckUserInterrupts at each phase of
+			cross-validation.
+
+			Ensure that surrogates really are better than the
+			default split (adj > 1e-10), and that at least 2
+			cases of non-zero weight go each way.
+
+			Removed unused file src/s_xpred.c.
+
+2012 Nov 18	4.0-3	Add 'importance' to rpart object and to summary():
+	                from TMT.
+
+	                'minlength' arg for tree() method.
+
+	                Improved handling of weights with zero fit,
+	                including bugfix for ordered factors.
+
+	                free_tree was commented out in rpart.c, and
+	                could crash as the structure was not zeroed.  As a
+	                precaution, pointers which are freed are NULLed.
+
+	                s_xpred.c did not free the first instance of a tree.
+
+	                make_cp_list used calloc but did not free.
+
+	                Spell-check help pages and vignettes.
+
+			Several examples needed par(xpd = TRUE) at
+			default plotting sizes.
+
+2012 Nov 11	4.0-2	Add car90 dataset from TMT.
+
+	                'agree' in choose_surg.c needs to be double
+	                for fractional weights.
+
+	                Not use paste0() so R 2.14.x works.
+
+2012 Oct 26	4.0-1	Merge in updates from TMT: see inst/NEWS.Rd 
+	                and Changelog.TMT.
+
+	                Use .Call for all C code.
+
+	                Use an environment in the package for 'parms' from
+	                plot.rpart().
+
+	                Force byte-compilation for consistency.
+
+2012 Oct 03	3.1-55	Force use of registered symbols in R >= 3.0.0
+	                Update Polish translations.
+	                Work on message formats.
+	                text(fancy = TRUE) gains a 'bg' argument.
+
+2012 Jun 27	3.1-54	Add Polish tranlations.
+
 2012 Jun 01	3.1-53	rpart, rpart.matrix: allow backticks in formulae.
 	                tests/backtick.R: regession test
 
@@ -22,7 +94,7 @@
 
 2009 Jul 28	3.1-45	Add rpart-Ex.Rout.save file
 
-2009 May 18	3.1-44	Add de translations
+2009 May 18	3.1-44	Add German translations
 	
 2009 Mar 09	3.1-43	Spelling in man/snip.rpart.Rd.
 			Spacing issue in tests/testall.Rout.save

@@ -51,12 +51,12 @@ read.fwf(file, widths, header = FALSE, sep = "\t",
   Multiline records are concatenated to a single line before processing.
   Fields that are of zero-width or are wholly beyond the end of the line
   in \code{file} are replaced by \code{NA}.
-  
+
   Negative-width fields are used to indicate columns to be skipped, e.g.,
   \code{-5} to skip 5 columns.  These fields are not seen by
   \code{read.table} and so should not be included in a \code{col.names}
   or \code{colClasses} argument (nor in the header line, if present).
-  
+
   Reducing the \code{buffersize} argument may reduce memory use when
   reading large files with long lines.  Increasing \code{buffersize} may
   result in faster processing when enough memory is available.
@@ -67,15 +67,15 @@ read.fwf(file, widths, header = FALSE, sep = "\t",
 \seealso{\code{\link{scan}} and \code{\link{read.table}}.}
 \examples{
 ff <- tempfile()
-cat(file=ff, "123456", "987654", sep="\n")
-read.fwf(ff, widths=c(1,2,3))    #> 1 23 456 \\ 9 87 654
-read.fwf(ff, widths=c(1,-2,3))   #> 1 456 \\ 9 654
+cat(file = ff, "123456", "987654", sep = "\n")
+read.fwf(ff, widths = c(1,2,3))    #> 1 23 456 \\ 9 87 654
+read.fwf(ff, widths = c(1,-2,3))   #> 1 456 \\ 9 654
 unlink(ff)
-cat(file=ff, "123", "987654", sep="\n")
-read.fwf(ff, widths=c(1,0, 2,3))    #> 1 NA 23 NA \\ 9 NA 87 654
+cat(file = ff, "123", "987654", sep = "\n")
+read.fwf(ff, widths = c(1,0, 2,3))    #> 1 NA 23 NA \\ 9 NA 87 654
 unlink(ff)
-cat(file=ff, "123456", "987654", sep="\n")
-read.fwf(ff, widths=list(c(1,0, 2,3), c(2,2,2))) #> 1 NA 23 456 98 76 54
+cat(file = ff, "123456", "987654", sep = "\n")
+read.fwf(ff, widths = list(c(1,0, 2,3), c(2,2,2))) #> 1 NA 23 456 98 76 54
 unlink(ff)
 }
 \keyword{file}

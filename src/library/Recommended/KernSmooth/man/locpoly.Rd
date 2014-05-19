@@ -16,7 +16,7 @@ locpoly(x, y, drv = 0L, degree, kernel = "normal",
 }
 \arguments{
 \item{x}{
-vector of x data.
+numeric vector of x data.
 Missing values are not accepted.
 }
 \item{bandwidth}{

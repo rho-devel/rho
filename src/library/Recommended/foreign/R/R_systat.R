@@ -19,7 +19,7 @@
 read.systat <- function(file, to.data.frame=TRUE)
 {
     if (length(file) != 1L) stop("only one file")
-    if (!is.character(file)) stop("file must be character")
+    if (!is.character(file)) stop("'file' must be character")
     res <- .Call(readSystat, as.character(file))
     if (to.data.frame) {
         comment <- NULL

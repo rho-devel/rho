@@ -79,7 +79,7 @@ compareFits <-
   c1 <- deparse(substitute(object1))
   c2 <- deparse(substitute(object2))
   if (any(sort(dn1[[1]]) != sort(dn2[[1]]))) {
-    stop("Objects must have coefficients with same row names")
+    stop("objects must have coefficients with same row names")
   }
   ## putting object2 in same order
   object2 <- object2[dn1[[1]], dn1[[2]], drop = FALSE]
@@ -131,12 +131,12 @@ gapply <-
            groups = getGroups(object, form, level), ...)
 {
   if (!inherits(object, "data.frame")) {
-    stop("Object must inherit from data.frame")
+    stop("object must inherit from \"data.frame\"")
   }
   ## Apply a function to the subframes of a groupedData object
   if (missing(groups)) {                # formula and level are required
     if (!inherits(form, "formula")) {
-      stop("\"Form\" must be a formula")
+      stop("'form' must be a formula")
     }
     if (is.null(grpForm <- getGroupsFormula(form, asList = TRUE))) {
       ## will use right hand side of form as groups formula
@@ -144,7 +144,7 @@ gapply <-
     }
     if (missing(level)) level <- length(grpForm)
     else if (length(level) != 1) {
-      stop("Only one level allowed in gapply")
+      stop("only one level allowed in 'gapply'")
     }
     groups <- groups                    # forcing evaluation
   }
@@ -153,16 +153,20 @@ gapply <-
            character = {
              wchNot <- is.na(match(which, names(object)))
              if (any(wchNot)) {
-               stop(paste(paste(which[wchNot], collapse = ","),
-                          "not matched"))
+                 stop(sprintf(ngettext(sum(wchNot),
+                                       "%s not matched",
+                                       "%s not matched"),
+                              paste(which[wchNot], collapse = ",")),
+                      domain = NA)
              }
            },
            numeric = {
              if (any(is.na(match(which, 1:ncol(object))))) {
-               stop("Which must be between 1 and", ncol(object))
+                 stop(gettextf("'which' must be between 1 and %d",
+                               ncol(object)), domain = NA)
              }
            },
-           stop("Which can only be character or integer.")
+           stop("'which' can only be character or integer")
            )
     object <- object[, which, drop = FALSE]
   }
@@ -194,7 +198,7 @@ getResponseFormula <-
   ## Return the response formula as a one sided formula
   form <- formula(object)
   if (!(inherits(form, "formula") && (length(form) == 3))) {
-    stop("\"Form\" must be a two sided formula")
+    stop("'form' must be a two-sided formula")
   }
   eval(parse(text = paste("~", deparse(form[[2]]))))
 }
@@ -209,11 +213,11 @@ gsummary <-
 	   invariantsOnly = FALSE, ...)
 {
   if (!inherits(object, "data.frame")) {
-    stop("Object must inherit from data.frame")
+    stop("object must inherit from \"data.frame\"")
   }
   if (missing(groups)) {                # formula and level are required
     if (!inherits(form, "formula")) {
-      stop("\"Form\" must be a formula")
+      stop("'form' must be a formula")
     }
     if (is.null(grpForm <- getGroupsFormula(form, asList = TRUE))) {
       ## will use right hand side of form as groups formula
@@ -221,7 +225,7 @@ gsummary <-
     }
     if (missing(level)) level <- length(grpForm)
     else if (length(level) != 1) {
-      stop("Only one level allowed in gsummary")
+      stop("only one level allowed in 'gsummary'")
     }
   }
   gunique <- unique(groups)
@@ -246,7 +250,7 @@ gsummary <-
     } else {
       if (!(is.list(FUN) &&
 	   all(sapply(FUN, data.class) == "function"))) {
-	stop("FUN can only be a function or a list of functions")
+	stop("'FUN' can only be a function or a list of functions")
       }
       auxFUN <- list(numeric = mean, ordered = Mode, factor = Mode)
       aux <- names(auxFUN)[is.na(match(names(auxFUN), names(FUN)))]
@@ -275,7 +279,7 @@ gsummary <-
   }
   if (omitGroupingFactor) {
     if (is.null(form)) {
-      stop("Cannot omit grouping factor without \"form\"")
+      stop("cannot omit grouping factor without 'form'")
     }
     grpForm <- getGroupsFormula(form, asList = TRUE)
     if (missing(level)) level <- length(grpForm)
@@ -294,7 +298,7 @@ pooledSD <-
   function(object)
 {
   if (!inherits(object, "lmList")) {
-    stop("Object must inherit from class \"lmList\"")
+    stop("object must inherit from class \"lmList\"")
   }
   aux <- apply(sapply(object,
 		      function(el) {
@@ -306,7 +310,7 @@ pooledSD <-
 			}
 		      }), 1, sum)
   if (aux[2] == 0) {
-    stop("No degrees of freedom for estimating std. dev.")
+    stop("no degrees of freedom for estimating std. dev.")
   }
   val <- sqrt(aux[1]/aux[2])
   attr(val, "df") <- aux[2]

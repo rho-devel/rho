@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -61,7 +61,7 @@ using namespace CXXR;
 /* FIXME: sort out encodings */
 /* We need display width of a string */
 int Rstrwid(const char *str, int slen, cetype_t enc, int quote);  /* from printutils.c */
-#define strwidth(x) Rstrwid(x, strlen(x), CE_NATIVE, 0)
+#define strwidth(x) Rstrwid(x, int( strlen(x)), CE_NATIVE, 0)
 
 /* ceil_DIV(a,b) :=  ceil(a / b)  in _int_ arithmetic : */
 static R_INLINE
@@ -183,15 +183,17 @@ static void printLogicalMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 
     /* compute w[j] = column-width of j(+1)-th column : */
     for (j = 0; j < c; j++) {
-	formatLogical(&x[j * r], r, &w[j]);
+	formatLogical(&x[j * r], R_xlen_t( r), &w[j]);
 
 #	define _PRINT_SET_clabw					\
 								\
 	if (!isNull(cl)) {					\
+	    const void *vmax = vmaxget();			\
 	    if(STRING_ELT(cl, j) == NA_STRING)			\
 		clabw = R_print.na_width_noquote;		\
 	    else clabw = strwidth(translateChar(STRING_ELT(cl, j)));	\
-	} else							\
+	    vmaxset(vmax);					\
+		} else							\
 	    clabw = IndexWidth(j + 1) + 3;
 
 	_PRINT_SET_clabw;
@@ -254,7 +256,7 @@ static void printIntegerMatrix(SEXP sx, int offset, int r_pr, int r, int c,
     int *x = INTEGER(sx) + offset;
 
     for (j = 0; j < c; j++) {
-	formatInteger(&x[j * r], r, &w[j]);
+	formatInteger(&x[j * r], R_xlen_t( r), &w[j]);
 	_PRINT_SET_clabw;
 	if (w[j] < clabw)
 	    w[j] = clabw;
@@ -295,7 +297,7 @@ static void printRealMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 	*e = static_cast<int *>( CXXR_alloc(c, sizeof(int)));
 
     for (j = 0; j < c; j++) {
-	formatReal(&x[j * r], r, &w[j], &d[j], &e[j], 0);
+	formatReal(&x[j * r], R_xlen_t( r), &w[j], &d[j], &e[j], 0);
 	_PRINT_SET_clabw;
 	if (w[j] < clabw)
 	    w[j] = clabw;
@@ -342,7 +344,7 @@ static void printComplexMatrix(SEXP sx, int offset, int r_pr, int r, int c,
     /* Determine the column widths */
 
     for (j = 0; j < c; j++) {
-	formatComplex(&x[j * r], r,
+	formatComplex(&x[j * r], R_xlen_t( r),
 		      &wr[j], &dr[j], &er[j],
 		      &wi[j], &di[j], &ei[j], 0);
 	_PRINT_SET_clabw;
@@ -437,7 +439,7 @@ static void printRawMatrix(SEXP sx, int offset, int r_pr, int r, int c,
     Rbyte *x = RAW(sx) + offset;
 
     for (j = 0; j < c; j++) {
-	formatRaw(&x[j * r], r, &w[j]);
+	formatRaw(&x[j * r], R_xlen_t( r), &w[j]);
 	_PRINT_SET_clabw;
 	if (w[j] < clabw)
 	    w[j] = clabw;
@@ -459,19 +461,21 @@ static void printRawMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 	for (i = 0; i < r_pr; i++) {
 	    MatrixRowLabel(rl, i, rlabw, lbloff);
 	    for (j = jmin; j < jmax; j++)
-		Rprintf("%*s%s", w[j]-2, "", EncodeRaw(x[i + j * r]));
+		Rprintf("%*s%s", w[j]-2, "", EncodeRaw(x[i + j * r], ""));
 	}
 	Rprintf("\n");
 	jmin = jmax;
     }
 }
 
+attribute_hidden
 void printMatrix(SEXP x, int offset, SEXP dim, int quote, int right,
 		 SEXP rl, SEXP cl, const char *rn, const char *cn)
 {
 /* 'rl' and 'cl' are dimnames(.)[[1]] and dimnames(.)[[2]]  whereas
  * 'rn' and 'cn' are the  names(dimnames(.))
  */
+    const void *vmax = vmaxget();
     int r = INTEGER(dim)[0];
     int c = INTEGER(dim)[1], r_pr;
     /* PR#850 */
@@ -516,23 +520,24 @@ void printMatrix(SEXP x, int offset, SEXP dim, int quote, int right,
 	UNIMPLEMENTED_TYPE("printMatrix", x);
     }
 #ifdef ENABLE_NLS
-    if(r_pr < r) /* FIXME? use _P() and "Defn.h" ? */
-	Rprintf(ngettext(" [ reached getOption(\"max.print\") -- omitted last row ]\n",
+    if(r_pr < r) // number of formats must be consistent here
+	Rprintf(ngettext(" [ reached getOption(\"max.print\") -- omitted %d row ]\n",
 			 " [ reached getOption(\"max.print\") -- omitted %d rows ]\n",
 			 r - r_pr),
 		r - r_pr);
 #else
-    if(r_pr < r) /* FIXME? use _P() and "Defn.h" ? */
+    if(r_pr < r)
 	Rprintf(" [ reached getOption(\"max.print\") -- omitted %d rows ]\n",
 		r - r_pr);
 #endif
+    vmaxset(vmax);
 }
 
-static void printArrayGeneral(SEXP x, SEXP dim, int quote, int right,
-			      SEXP dimnames)
+attribute_hidden
+void printArray(SEXP x, SEXP dim, int quote, int right, SEXP dimnames)
 {
 /* == printArray(.) */
-
+    const void *vmax = vmaxget();
     int ndim = LENGTH(dim);
     const char *rn = NULL, *cn = NULL;
 
@@ -644,9 +649,5 @@ static void printArrayGeneral(SEXP x, SEXP dim, int quote, int right,
 	    Rprintf(" %d matrix slice(s) ]\n", nb - nb_pr);
 	}
     }
-}
-
-void printArray(SEXP x, SEXP dim, int quote, int right, SEXP dimnames)
-{
-    printArrayGeneral(x, dim, quote, right, dimnames);
+    vmaxset(vmax);
 }

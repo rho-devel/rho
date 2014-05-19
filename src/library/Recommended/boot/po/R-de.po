@@ -1,240 +1,229 @@
 # Translation of boot to German
 # Copyright (C) 2005 The R Foundation
 # This file is distributed under the same license as the boot package.
-# Chris Leick <c.leick@vollbio.de>, 2009.
-#
+# Copyright (C) of this file 2009-2012 Chris Leick <c.leick@vollbio.de>.
+# 2012 Detlef Steuer <steuer@hsu-hh.de>
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.10.0 / boot 1.2-40\n"
+"Project-Id-Version: R 2.15.2 / boot 1.3-6-\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-09-30 11:54\n"
-"PO-Revision-Date: 2009-10-11 13:03+0200\n"
+"POT-Creation-Date: 2012-10-11 15:21\n"
+"PO-Revision-Date: 2012-10-11 16:01+0200\n"
 "Last-Translator: Chris Leick <c.leick@vollbio.de>\n"
 "Language-Team: German <debian-l10n-german@lists.debian.org>\n"
+"Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgid ""
-"'simple=TRUE' is only valid for 'sim=\"ordinary\", stype=\"i\", n=0, so "
+"'simple=TRUE' is only valid for 'sim=\"ordinary\", stype=\"i\", n=0', so "
 "ignored"
 msgstr ""
-"'simple=TRUE' gilt nur für 'sim=\"ordinary\", stype=\"i\", n=0, wird hier "
-"also ignoriert"
+"'simple=TRUE' gilt nur für 'sim=\"ordinary\", stype=\"i\", n=0' und wird "
+"daher hier ignoriert"
 
-msgid "no data in call to boot"
-msgstr "keine Daten im Aufruf von boot"
+msgid "no data in call to 'boot'"
+msgstr "keine Daten im Aufruf von 'boot'"
 
-msgid "negative value of m supplied"
-msgstr "negativer Wert von m angegeben"
+msgid "negative value of 'm' supplied"
+msgstr "negativer Wert von 'm' angegeben"
 
-msgid "length of m incompatible with strata"
-msgstr "Länge von m inkompatibel mit Schichten"
+msgid "length of 'm' incompatible with 'strata'"
+msgstr "Länge von 'm' inkompatibel mit 'strata'"
 
-msgid "dimensions of R and weights do not match"
-msgstr "Dimensionen von R und Gewichten stimmen nicht überein"
+msgid "dimensions of 'R' and 'weights' do not match"
+msgstr "Dimensionen von 'R' und 'weights' stimmen nicht überein"
+
+msgid "arguments are not all the same type of \"boot\" object"
+msgstr "Argumente waren nicht all vom selben Typ des 'boot'-Objekts"
 
 # http://de.wikipedia.org/wiki/Resampling
 msgid "index array not defined for model-based resampling"
 msgstr "Index-Array nicht für Modell-basiertes Resampling definiert"
 
 msgid "boot.array not implemented for this object"
-msgstr "»boot.array« nicht für dieses Objekt implementiert"
+msgstr "'boot.array' nicht für dieses Objekt implementiert"
 
 # http://de.wikipedia.org/wiki/Bootstrapping_(Statistik)
 msgid "array cannot be found for parametric bootstrap"
 msgstr "Array kann nicht für parametrisches Bootstrapping gefunden werden"
 
 # R/bootfuns.q
-msgid "distribution not supported using normal instead"
+msgid "%s distribution not supported: using normal instead"
 msgstr ""
-"Verteilung nicht unterstützt, stattdessen wird Normalverteilung benutzt"
+"%s Verteilung nicht unterstützt, stattdessen wird Normalverteilung benutzt"
 
-msgid "only first element of index used"
-msgstr "nur erstes Element des Index benutzt"
+msgid "only first element of 'index' used"
+msgstr "nur erstes Element von 'index' benutzt"
 
-msgid "K outside allowable range"
-msgstr "K außerhalb des erlaubbaren Bereichs"
+msgid "'K' outside allowable range"
+msgstr "'K' außerhalb des erlaubbaren Bereichs"
 
-msgid "K has been set to"
-msgstr "K wurde gesetzt auf"
+msgid "'K' has been set to %f"
+msgstr "'K' wurde auf %f gesetzt"
 
-msgid "t and t0 must be supplied together"
-msgstr "t und t0 müssen zusammen angegeben werden"
+msgid "'t' and 't0' must be supplied together"
+msgstr "'t' und 't0' müssen zusammen angegeben werden"
 
 msgid "index out of bounds; minimum index only used."
 msgstr "Index außerhalb des Rands. Minimalindex wird benutzt."
 
-msgid "t must of length"
-msgstr "t muss folgende Länge haben:"
+msgid "'t' must of length %d"
+msgstr "'t' muss die Länge %d haben"
 
 # http://de.wikipedia.org/wiki/Studentisierung
 msgid "bootstrap variances needed for studentized intervals"
 msgstr "Bootstrap-Varianzen für studentisierte Intervalle benötigt"
 
-msgid "BCa intervals not defined for time series bootstraps."
-msgstr "BCa-Intervalle nicht für Zeitserien-Bootstraps definiert."
+msgid "BCa intervals not defined for time series bootstraps"
+msgstr "BCa Intervalle nicht für Zeitreihenbootstrap definiert."
 
 msgid "bootstrap output object or 't0' required"
-msgstr "Bootstrap-Ausgabeobjekt oder »t0« benötigt"
+msgstr "Bootstrap-Ausgabeobjekt oder 't0' benötigt"
 
-msgid "unable to calculate var.t0"
-msgstr "var.t0 kann nicht berechnet werden"
+msgid "unable to calculate 'var.t0'"
+msgstr "'var.t0' kann nicht berechnet werden"
 
-# CHECKME
 # http://xtremes.stat.math.uni-siegen.de/xtremes_old/history.pdf
 msgid "extreme order statistics used as endpoints"
 msgstr "Extremwertstatistiken werden als Endpunkte benutzt"
 
-msgid "variance required for Studentized CI's"
-msgstr "Varianz für studentisierte CI's benötigt"
+msgid "variance required for studentized intervals"
+msgstr "Varianz für studentisierte Intervalle benötigt"
 
 msgid "estimated adjustment 'w' is infinite"
 msgstr "geschätzte Anpassung 'w' ist unendlich"
 
 msgid "estimated adjustment 'a' is NA"
-msgstr "geschätzte Einstellung »a« ist NA"
+msgstr "geschätzte Einstellung 'a' ist NA"
 
-msgid "only first element of index used in abc.ci"
-msgstr "nur erstes Element des Index wird in abc.ci benutzt"
+msgid "only first element of 'index' used in 'abc.ci'"
+msgstr "nur erstes Element von 'index' wird in 'abc.ci' benutzt"
 
-msgid "missing values not allowed in data"
-msgstr "fehlende Werte in Daten nicht erlaubt"
+msgid "missing values not allowed in 'data'"
+msgstr "fehlende Werte in 'data' nicht erlaubt"
 
-msgid "unknown value of sim"
-msgstr "unbekannter Wert von »sim«"
+msgid "unknown value of 'sim'"
+msgstr "unbekannter Wert von 'sim'"
 
-msgid "data must be a matrix with at least 2 columns"
-msgstr "Daten müssen eine Matrix mit mindestens 2 Spalten sein"
+msgid "'data' must be a matrix with at least 2 columns"
+msgstr "'data' muss eine Matrix mit mindestens 2 Spalten sein"
 
-msgid "index must contain 2 elements"
-msgstr "Index muss 2 Elemente enthalten"
+msgid "'index' must contain 2 elements"
+msgstr "'index' muss 2 Elemente enthalten"
 
-msgid "only first 2 elements of index used"
-msgstr "nur die beiden ersten Elemente des Index werden benutzt"
+msgid "only first 2 elements of 'index' used"
+msgstr "nur die beiden ersten Elemente von 'index' werden benutzt"
 
-msgid "indices are incompatible with ncol(data)"
-msgstr "Indizes sind inkompatibel mit ncol(Daten)"
+msgid "indices are incompatible with 'ncol(data)'"
+msgstr "Indizes sind inkompatibel mit 'ncol(data)'"
 
-msgid "sim=weird cannot be used with coxph object"
-msgstr "sim=weird kann nicht mit coxph-Objekt benutzt werden"
+msgid "sim = \"weird\" cannot be used with a \"coxph\" object"
+msgstr "sim = \"weird\" kann nicht mit einem \"coxph\" Objekt benutzt werden"
 
-msgid "only columns"
-msgstr "nur die Spalten"
+msgid "only columns %s and %s of 'data' used"
+msgstr "nur die Spalten %s und %s von 'data' werden benutzt"
 
-msgid "and"
-msgstr "und"
+msgid "no coefficients in Cox model -- model ignored"
+msgstr "keine Koeffizienten im Cox-Modell -- Modell ignoriert"
 
-msgid "of data used"
-msgstr "der Daten werden benutzt"
+msgid "'F.surv' is required but missing"
+msgstr "'F.surv' wird benötigt, fehlt jedoch"
 
-msgid "no coefficients in cox model -- model ignored"
-msgstr "keine Koeffizienten im »cox«-Modell -- Modell ignoriert"
+msgid "'G.surv' is required but missing"
+msgstr "'G.surv' wird benötigt, fehlt jedoch"
 
-msgid "F.surv is required but missing"
-msgstr "F.surv wird benötigt, fehlt jedoch"
-
-msgid "G.surv is required but missing"
-msgstr "G.surv wird benötigt, fehlt jedoch"
-
-msgid "strata of wrong length"
-msgstr "Schicht hat falsche Länge"
+msgid "'strata' of wrong length"
+msgstr "'strata' hat falsche Länge"
 
 msgid "influence values cannot be found from a parametric bootstrap"
 msgstr ""
 "es können keine beeinflussenden Werte von einem parametrischen Bootstrap "
 "gefunden werden"
 
-msgid "no data or bootstrap object specified"
-msgstr "kein Daten- oder Bootstrap-Objekt angegeben"
+msgid "neither 'data' nor bootstrap object specified"
+msgstr "weder 'data' noch Bootstrap-Objekt angegeben"
 
-msgid "no statistic or bootstrap object specified"
-msgstr "kein Statistik- oder Bootstrap-Objekt angegeben"
+msgid "neither 'statistic' nor bootstrap object specified"
+msgstr "weder 'statistic' noch Bootstrap-Objekt angegeben"
 
 msgid "'stype' must be \"w\" for type=\"inf\""
-msgstr "»stype« muss für type=»inf« »w« sein"
+msgstr "'stype' muss für type=\"inf\" 'w' sein"
 
-msgid "input t ignored; type=\"inf\""
-msgstr "Eingabe t ignoriert. type=»inf«"
+msgid "input 't' ignored; type=\"inf\""
+msgstr "Eingabe 't' ignoriert; type=\"inf\""
 
 msgid "bootstrap object needed for type=\"reg\""
-msgstr "Bootstrap-Objekt für type=»reg« benötigt"
+msgstr "Bootstrap-Objekt für type=\"reg\" benötigt"
 
-msgid "input t ignored; type=\"jack\""
-msgstr "Eingabe t ignoriert. type=»jack«"
+msgid "input 't' ignored; type=\"jack\""
+msgstr "Eingabe 't' ignoriert; type=\"jack\""
 
-msgid "input t ignored; type=\"pos\""
-msgstr "Eingabe t ignoriert. type=»pos«"
+msgid "input 't' ignored; type=\"pos\""
+msgstr "Eingabe 't' ignoriert; type=\"pos\""
 
-msgid "input t0 ignored: neither t nor L supplied"
-msgstr "Eingabe t0 ignoriert: Weder t noch L angegeben"
+msgid "input 't0' ignored: neither 't' nor 'L' supplied"
+msgstr "Eingabe 't0' ignoriert: weder 't' noch 'L' angegeben"
 
 msgid "bootstrap output matrix missing"
 msgstr "Bootstrap-Ausgabematrix fehlt"
 
-msgid "use boot.ci for scalar parameters"
-msgstr "benutzen Sie boot.ci für skalare Parameter"
+msgid "use 'boot.ci' for scalar parameters"
+msgstr "benutzen Sie 'boot.ci' für skalare Parameter"
 
-msgid "unable to achieve requested overall error rate."
-msgstr "gesamte angefragte Fehlerquote kann nicht erreicht werden."
+msgid "unable to achieve requested overall error rate"
+msgstr "geforderte overall Fehlerquote kann nicht erreicht werden"
 
-msgid "unable to find multiplier for"
-msgstr "Es kann kein Multiplikator gefunden werden für"
+msgid "unable to find multiplier for %f"
+msgstr "Es kann kein Multiplikator für %f gefunden werden"
 
-msgid "theta or lambda required"
-msgstr "theta oder lambda benötigt"
+msgid "'theta' or 'lambda' required"
+msgstr "'theta' oder 'lambda' benötigt"
 
-msgid "0 elements not allowed in q"
-msgstr "0 Elemente nicht in q erlaubt"
+msgid "0 elements not allowed in 'q'"
+msgstr "0 Elemente nicht in 'q' erlaubt"
 
 msgid "bootstrap replicates must be supplied"
 msgstr "Bootstrap-Kopien müssen angegeben werden"
 
-msgid "either boot.out or w must be specified."
-msgstr "entweder boot.out oder w muss angegeben werden."
+msgid "either 'boot.out' or 'w' must be specified."
+msgstr "Entweder 'boot.out' oder 'w' muss angegeben werden."
 
-msgid "only first column of t used"
-msgstr "nur erste Spalte von t wird benutzt"
+msgid "only first column of 't' used"
+msgstr "Nur erste Spalte von 't' wird benutzt."
 
-msgid "invalid value of sim supplied"
-msgstr "ungültiger Wert von sim angegeben"
+msgid "invalid value of 'sim' supplied"
+msgstr "ungültiger Wert von 'sim' angegeben"
 
-msgid "R and theta have incompatible lengths"
-msgstr "R und theta haben inkompatible Längen"
+msgid "'R' and 'theta' have incompatible lengths"
+msgstr "'R' und 'theta' haben inkompatible Längen"
 
 msgid "R[1L] must be positive for frequency smoothing"
 msgstr "R[1L] muss für Frequenz-Glättung positiv sein"
 
-msgid "R and alpha have incompatible lengths"
-msgstr "R und alpha haben inkompatible Längen"
+msgid "'R' and 'alpha' have incompatible lengths"
+msgstr "'R' und 'alpha' haben inkompatible Längen"
 
 msgid "extreme values used for quantiles"
 msgstr "Extremwerte werden für Quantile benutzt"
 
-msgid "theta must be supplied if R[1L] = 0"
-msgstr "theta muss angegeben werden, wenn R[1L] = 0 ist"
+msgid "'theta' must be supplied if R[1L] = 0"
+msgstr "'theta' muss angegeben werden, falls R[1L] = 0 ist"
 
-msgid "alpha ignored; R[1L]=0"
-msgstr "alpha ignoriert; R[1L]=0"
+msgid "'alpha' ignored; R[1L] = 0"
+msgstr "'alpha' ignoriert; R[1L]=0"
 
-msgid "control methods undefined when boot.out has weights"
-msgstr "Kontrollmethoden undefiniert, wenn boot.out Gewichte hat"
+msgid "control methods undefined when 'boot.out' has weights"
+msgstr "Kontrollmethoden undefiniert, wenn 'boot.out' Gewichte hat"
 
-msgid "invalid proportions input"
-msgstr "Eingabe ungültiger Verhältnisse"
+msgid "number of columns of 'A' (%d) not equal to length of 'u' (%d)"
+msgstr ""
+"Anzahl der Spalten von 'A' (%d) ist nicht gleich der Länge von 'u' (%d)"
 
-msgid "number of columns of A ("
-msgstr "Zahl der Spalten von A ("
-
-msgid ") not equal to length of u ("
-msgstr ") ist nicht gleich der Länge von u ("
-
-msgid ")"
-msgstr ")"
-
-msgid "either A and u or K.adj and K2 must be supplied"
-msgstr "entweder A und u oder K.adj und K2 müssen angegeben werden"
+msgid "either 'A' and 'u' or 'K.adj' and 'K2' must be supplied"
+msgstr "entweder 'A' und 'u' oder 'K.adj' und 'K2' müssen angegeben werden"
 
 msgid "this type not implemented for Poisson"
 msgstr "dieser Typ ist nicht für Poisson implementiert"
@@ -242,39 +231,33 @@ msgstr "dieser Typ ist nicht für Poisson implementiert"
 msgid "this type not implemented for Binary"
 msgstr "dieser Typ ist nicht für Binary implementiert"
 
-msgid "one of t or t0 required"
-msgstr "eins von t oder t0 benötigt"
+msgid "one of 't' or 't0' required"
+msgstr "eins von 't' oder 't0' benötigt"
 
-msgid "function u missing"
-msgstr "Funktion u fehlt"
+msgid "function 'u' missing"
+msgstr "Funktion 'u' fehlt"
 
-msgid "u must be a function"
-msgstr "u muss eine Funktion sein"
+msgid "'u' must be a function"
+msgstr "'u' muss eine Funktion sein"
 
 msgid "unable to find range"
 msgstr "Bereich kann nicht gefunden werden"
 
-msgid "R must be positive"
-msgstr "R muss psitiv sein"
+msgid "'R' must be positive"
+msgstr "'R' muss psitiv sein"
 
-msgid "invalid value of l"
-msgstr "ungültiger Wert von l"
+msgid "invalid value of 'l'"
+msgstr "ungültiger Wert von 'l'"
 
-msgid "unrecognized value of sim"
-msgstr "unbekannter Wert von sim"
-
-msgid "irregular time series not allowed"
-msgstr "unregelmäßige Zeitserien nicht erlaubt"
+msgid "unrecognized value of 'sim'"
+msgstr "unbekannter Wert von 'sim'"
 
 # http://de.wikipedia.org/wiki/Multivariat
 msgid "multivariate time series not allowed"
 msgstr "multivariate Zeitserien nicht erlaubt"
 
-msgid "likelihood never exceeds"
-msgstr "Wahrscheinlichkeit niemals überschritten"
+msgid "likelihood never exceeds %f"
+msgstr "Wahrscheinlichkeit überschreitet niemals %f"
 
-msgid "likelihood exceeds"
-msgstr "Wahrscheinlichkeit überschritten"
-
-msgid "at only one point"
-msgstr "an nur einem Punkt"
+msgid "likelihood exceeds %f at only one point"
+msgstr "Wahrscheinlichkeit überschreitet %f an einem Punkt"

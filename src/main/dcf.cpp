@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-11   The R Core Team.
+ *  Copyright (C) 2001-12   The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@
 #endif
 
 #include <Defn.h>
+#include <Internal.h>
 #include <Rconnections.h>
 
 #include <tre/tre.h>
@@ -47,13 +48,40 @@ static void transferVector(SEXP s, SEXP t);
 
 static Rboolean field_is_foldable_p(const char *, SEXP);
 
+/* Use R_alloc as this might get interrupted */
+static char *Rconn_getline2(Rconnection con)
+{
+    int c, bufsize = MAXELTSIZE, nbuf = -1;
+    char *buf;
+
+    buf = R_alloc(bufsize, sizeof(char));
+    while((c = Rconn_fgetc(con)) != R_EOF) {
+	if(nbuf+2 >= bufsize) { // allow for terminator below
+	    bufsize *= 2;
+	    char *buf2 = R_alloc(bufsize, sizeof(char));
+	    memcpy(buf2, buf, nbuf);
+	    buf = buf2;
+	}
+	if(c != '\n'){
+	    buf[++nbuf] = char( c);
+	} else {
+	    buf[++nbuf] = '\0';
+	    break;
+	}
+    }
+    /* Make sure it is null-terminated even if file did not end with
+     *  newline.
+     */
+    if(nbuf >= 0 && buf[nbuf]) buf[++nbuf] = '\0';
+    return (nbuf == -1) ? NULL: buf;
+}
+
 SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     int nwhat, nret, nc, nr, m, k, lastm, need;
     Rboolean blank_skip, field_skip = FALSE;
-    unsigned int whatlen;
-    int dynwhat, buflen = 100;
-    char line[MAXELTSIZE], *buf;
+    int whatlen, dynwhat, buflen = 8096; // was 100, but that re-alloced often
+    char *line, *buf;
     regex_t blankline, contline, trailblank, regline, eblankline;
     regmatch_t regmatch[1];
     SEXP file, what, what2, retval, retval2, dims, dimnames;
@@ -89,7 +117,7 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(!buf) error(_("could not allocate memory for 'read.dcf'"));
 	nret = 20;
 	/* it is easier if we first have a record per column */
-	PROTECT (retval = allocMatrixNA(STRSXP, LENGTH(what), nret));
+	PROTECT(retval = allocMatrixNA(STRSXP, LENGTH(what), nret));
 
 	/* These used to use [:blank:] but that can match \xa0 as part of
 	   a UTF-8 character (and is nbspace on Windows). */ 
@@ -102,7 +130,8 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
 	k = 0;
 	lastm = -1; /* index of the field currently being recorded */
 	blank_skip = TRUE;
-	while(Rconn_getline(con, line, MAXELTSIZE) >= 0) {
+	CXXR::RAllocStack::Scope rscope;
+	while((line = Rconn_getline2(con))) {
 	    if(strlen(line) == 0 ||
 	       tre_regexecb(&blankline, line, 0, 0, 0) == 0) {
 		/* A blank line.  The first one after a record ends a new
@@ -132,8 +161,8 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
 			      line);
 		    }
 		    if(lastm >= 0) {
-			need = strlen(CHAR(STRING_ELT(retval,
-						      lastm + nwhat * k))) + 2;
+			need = int( strlen(CHAR(STRING_ELT(retval,
+							   lastm + nwhat * k)))) + 2;
 			if(tre_regexecb(&eblankline, line, 0, NULL, 0) == 0) {
 			    is_eblankline = TRUE;
 			} else {
@@ -147,7 +176,7 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
 			    } else {
 				offset = 0;
 			    }
-			    need += strlen(line + offset);
+			    need += int( strlen(line + offset));
 			}
 			if(buflen < need) {
 			    char *tmp = static_cast<char *>( realloc(buf, need));
@@ -165,8 +194,8 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
 		} else {
 		    if(tre_regexecb(&regline, line, 1, regmatch, 0) == 0){
 			for(m = 0; m < nwhat; m++){
-			    whatlen = strlen(CHAR(STRING_ELT(what, m)));
-			    if(strlen(line) > whatlen &&
+			    whatlen = int( strlen(CHAR(STRING_ELT(what, m))));
+			    if(CXXRSCAST(int, strlen(line)) > whatlen &&
 			       line[whatlen] == ':' &&
 			       strncmp(CHAR(STRING_ELT(what, m)),
 				       line, whatlen) == 0) {
@@ -219,14 +248,8 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
 			    UNPROTECT_PTR(what);
 			    retval = retval2;
 			    what = what2;
-			    /* FIXME:
-			       Why are we doing this?
-			       We need to copy the matched beginning of the
-			       line to buf, so shouldn't we need
-			       regmatch[0].rm_eo
-			       bytes?
-			    */
-			    need = strlen(line+regmatch[0].rm_eo);
+			    /* Make sure enough space was used */
+			    need = int( (Rf_strchr(line, ':') - line + 1));
 			    if(buflen < need){
 				char *tmp = static_cast<char *>( realloc(buf, need));
 				if(!tmp) {

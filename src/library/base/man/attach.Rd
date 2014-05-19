@@ -1,6 +1,6 @@
 % File src/library/base/man/attach.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{attach}
@@ -9,7 +9,7 @@
 
 \title{Attach Set of R Objects to Search Path}
 \usage{
-attach(what, pos = 2, name = deparse(substitute(what)),
+attach(what, pos = 2L, name = deparse(substitute(what)),
        warn.conflicts = TRUE)
 }
 \arguments{
@@ -19,7 +19,8 @@ attach(what, pos = 2, name = deparse(substitute(what)),
     \sQuote{Details}.}
   \item{pos}{integer specifying position in \code{\link{search}()} where
     to attach.}
-  \item{name}{name to use for the attached database.}
+  \item{name}{name to use for the attached database. Names starting with
+    \code{package:} are reserved for \code{\link{library}}.}
   \item{warn.conflicts}{logical.  If \code{TRUE}, warnings are
     printed about \code{\link{conflicts}} from attaching the database,
     unless that database contains an object \code{.conflicts.OK}.  A
@@ -64,7 +65,7 @@ attach(what, pos = 2, name = deparse(substitute(what)),
   \code{\link{load}} or \code{\link{sys.source}}.
 
   Names starting \code{"package:"} are reserved for
-  \code{\link{library}} and should not be used by end users. Attached
+  \code{\link{library}} and should not be used by end users.  Attached
   files are by default given the name \code{file:\var{what}}.  The
   \code{name} argument given for the attached environment will be used
   by \code{\link{search}} and can be used as the argument to
@@ -74,9 +75,31 @@ attach(what, pos = 2, name = deparse(substitute(what)),
   \code{"UserDefinedDatabase"}, associated with the Omegahat package
   \pkg{RObjectTables}.  See \url{http://www.omegahat.org/RObjectTables/}.
 }
+
 \value{
   The \code{\link{environment}} is returned invisibly with a
   \code{"name"} attribute.
+}
+
+\section{Good practice}{
+  \code{attach} has the side effect of altering the search path and this
+  can easily lead to the wrong object of a particular name being found.
+  People do often forget to \code{\link{detach}} databases.
+
+  In interactive use, \code{\link{with}} is usually preferable to the
+  use of \code{attach}/\code{detach}.
+
+  In programming, functions should not change the search path unless
+  that is their purpose.  Often \code{\link{with}} can be used within a
+  function. If not, good practice is to
+  \itemize{
+    \item Always use a distinctive \code{name} argument, and
+    \item To immediately follow the \code{attach} call by an
+    \code{\link{on.exit}} call to \code{detach} using the distinctive name.
+  }
+  This ensures that the search path is left unchanged even if the
+  function is interrupted or if code after the \code{attach} call
+  changes the search path.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
@@ -106,6 +129,6 @@ detach("women")
 summary(women$height)   # unchanged
 
 \dontrun{## create an environment on the search path and populate it
-sys.source("myfuns.R", envir=attach(NULL, name="myfuns"))
+sys.source("myfuns.R", envir = attach(NULL, name = "myfuns"))
 }}
 \keyword{data}

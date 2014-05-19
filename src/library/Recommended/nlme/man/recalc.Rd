@@ -30,7 +30,7 @@ recalc(object, conLin, \dots)
 \value{
   the recalculated condensed linear model object.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \note{This function is only used inside model fitting functions, such as
     \code{lme} and \code{gls}, that require recalculation of a condensed
     linear model object.}

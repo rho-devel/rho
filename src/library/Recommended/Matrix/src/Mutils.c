@@ -3,10 +3,8 @@
 #include "Mutils.h"
 #include <R_ext/Lapack.h>
 
-#if 0 /* defined(R_VERSION) && R_VERSION >= R_Version(2, 7, 0) *
-       * La_norm_type() & La_rcond_type() are now in R_ext/Lapack.h
-       * but because of the 'module-mess' that's not sufficient */
-#else
+// La_norm_type() & La_rcond_type()  have been in R_ext/Lapack.h
+//  but have still not been available to package writers ...
 char La_norm_type(const char *typstr)
 {
     char typup;
@@ -42,7 +40,6 @@ char La_rcond_type(const char *typstr)
 	      typstr);
     return typup;
 }
-#endif
 
 double get_double_by_name(SEXP obj, char *nm)
 {
@@ -122,37 +119,53 @@ SEXP get_factors(SEXP obj, char *nm)
     return R_NilValue;
 }
 
-/* In the past this function installed a duplicate of val in the
+/**
+ * Caches 'val' in the 'factors' slot of obj, i.e. modifies obj, and
+ * returns val.
+ * In the past this function installed a duplicate of
  * factors slot for obj then returned the (typically unprotected)
  * val.  This is now changed to return the duplicate, which will be
- * protected if obj is protected. */
+ * protected if obj is protected.
+*/
 SEXP set_factors(SEXP obj, SEXP val, char *nm)
 {
     SEXP fac = GET_SLOT(obj, Matrix_factorSym),
-	nms = getAttrib(fac, R_NamesSymbol), nfac, nnms;
+	nms = getAttrib(fac, R_NamesSymbol);
     int i, len = length(fac);
 
     if ((!isNewList(fac)) || (length(fac) > 0 && nms == R_NilValue))
 	error(_("'factors' slot must be a named list"));
     PROTECT(val); /* set_factors(..) may be called as "finalizer" after UNPROTECT()*/
+    // if there's already a 'nm' factor, we replace it and return:
     for (i = 0; i < len; i++) {
 	if (!strcmp(nm, CHAR(STRING_ELT(nms, i)))) {
 	    SET_VECTOR_ELT(fac, i, duplicate(val));
+	    UNPROTECT(1);
 	    return val;
 	}
     }
-    nfac = PROTECT(allocVector(VECSXP, len + 1));
-    nnms = PROTECT(allocVector(STRSXP, len + 1));
+    // Otherwise: create a new 'nm' entry in the 'factors' list:
+    // create a list of length (len + 1),
+    SEXP nfac = PROTECT(allocVector(VECSXP, len + 1)),
+	 nnms = PROTECT(allocVector(STRSXP, len + 1));
     setAttrib(nfac, R_NamesSymbol, nnms);
+    // copy all the previous entries,
     for (i = 0; i < len; i++) {
 	SET_VECTOR_ELT(nfac, i, VECTOR_ELT(fac, i));
 	SET_STRING_ELT(nnms, i, duplicate(STRING_ELT(nms, i)));
     }
+    // and add the new entry at the end.
     SET_VECTOR_ELT(nfac, len, duplicate(val));
     SET_STRING_ELT(nnms, len, mkChar(nm));
     SET_SLOT(obj, Matrix_factorSym, nfac);
     UNPROTECT(3);
     return VECTOR_ELT(nfac, len);
+}
+
+// R interface [for updating the '@ factors' slot of a function *argument* [CARE!]
+SEXP R_set_factors(SEXP obj, SEXP val, SEXP name)
+{
+    return set_factors(obj, val, (char *)CHAR(asChar(name)));
 }
 
 #if 0 				/* unused */
@@ -355,7 +368,7 @@ FULL_TO_PACKED(int)
  * Copy the diagonal elements of the packed denseMatrix x to dest
  *
  * @param dest vector of length ncol(x)
- * @param x pointer to an object representing a packed array
+ * @param x (pointer to) a "d?pMatrix" object
  * @param n number of columns in the matrix represented by x
  *
  * @return dest
@@ -386,37 +399,117 @@ void l_packed_getDiag(int *dest, SEXP x, int n)
 
 #undef END_packed_getDiag
 
-void tr_d_packed_getDiag(double *dest, SEXP x)
-{
-    int n = INTEGER(GET_SLOT(x, Matrix_DimSym))[0];
-    SEXP val = PROTECT(allocVector(REALSXP, n));
-    double *v = REAL(val);
+//----------------------------------------------------------------------
 
-    if (*diag_P(x) == 'U') {
-	int j;
-	for (j = 0; j < n; j++) v[j] = 1.;
+SEXP d_packed_setDiag(double *diag, int l_d, SEXP x, int n)
+{
+#define SET_packed_setDiag				\
+    SEXP ret = PROTECT(duplicate(x)),			\
+	r_x = GET_SLOT(ret, Matrix_xSym);		\
+    Rboolean d_full = (l_d == n);			\
+    if (!d_full && l_d != 1)				\
+	error("replacement diagonal has wrong length")
+
+#define END_packed_setDiag						\
+    int j, pos = 0;							\
+									\
+    if (*uplo_P(x) == 'U') {						\
+	if(d_full)							\
+	    for(pos= 0, j=0; j < n; pos += 1+(++j))	 xx[pos] = diag[j]; \
+	else /* l_d == 1 */						\
+	    for(pos= 0, j=0; j < n; pos += 1+(++j))	 xx[pos] = *diag; \
+    } else {								\
+	if(d_full)							\
+	    for(pos= 0, j=0; j < n; pos += (n - j), j++) xx[pos] = diag[j]; \
+	else /* l_d == 1 */						\
+	    for(pos= 0, j=0; j < n; pos += (n - j), j++) xx[pos] = *diag; \
+    }									\
+    UNPROTECT(1);							\
+    return ret
+
+    SET_packed_setDiag; double *xx = REAL(r_x);
+    END_packed_setDiag;
+}
+
+SEXP l_packed_setDiag(int *diag, int l_d, SEXP x, int n)
+{
+    SET_packed_setDiag; int *xx = LOGICAL(r_x);
+    END_packed_setDiag;
+}
+
+#define tr_END_packed_setDiag						\
+    if (*diag_P(x) == 'U') { /* uni-triangular */			\
+	/* after setting, typically is not uni-triangular anymore: */	\
+	SET_STRING_ELT(GET_SLOT(ret, Matrix_diagSym), 0, mkChar("N"));	\
+    }									\
+    END_packed_setDiag
+
+
+SEXP tr_d_packed_setDiag(double *diag, int l_d, SEXP x, int n)
+{
+    SET_packed_setDiag; double *xx = REAL(r_x);
+    tr_END_packed_setDiag;
+}
+
+SEXP tr_l_packed_setDiag(int *diag, int l_d, SEXP x, int n)
+{
+    SET_packed_setDiag; int *xx = LOGICAL(r_x);
+    tr_END_packed_setDiag;
+}
+
+
+#undef SET_packed_setDiag
+#undef END_packed_setDiag
+#undef tr_END_packed_setDiag
+//----------------------------------------------------------------------
+
+SEXP d_packed_addDiag(double *diag, int l_d, SEXP x, int n)
+{
+    SEXP ret = PROTECT(duplicate(x)),
+	r_x = GET_SLOT(ret, Matrix_xSym);
+    double *xx = REAL(r_x);
+    int j, pos = 0;
+
+    if (*uplo_P(x) == 'U') {
+	for(pos= 0, j=0; j < n; pos += 1+(++j))	     xx[pos] += diag[j];
     } else {
-	d_packed_getDiag(v, x, n);
+	for(pos= 0, j=0; j < n; pos += (n - j), j++) xx[pos] += diag[j];
     }
     UNPROTECT(1);
+    return ret;
+}
+
+SEXP tr_d_packed_addDiag(double *diag, int l_d, SEXP x, int n)
+{
+    SEXP ret = PROTECT(d_packed_addDiag(diag, l_d, x, n));
+    if (*diag_P(x) == 'U') /* uni-triangular */
+	SET_STRING_ELT(GET_SLOT(ret, Matrix_diagSym), 0, mkChar("N"));
+    UNPROTECT(1);
+    return ret;
+}
+
+
+//----------------------------------------------------------------------
+
+void tr_d_packed_getDiag(double *dest, SEXP x, int n)
+{
+    if (*diag_P(x) == 'U') {
+	for (int j = 0; j < n; j++) dest[j] = 1.;
+    } else {
+	d_packed_getDiag(dest, x, n);
+    }
     return;
 }
 
-void tr_l_packed_getDiag(   int *dest, SEXP x)
+void tr_l_packed_getDiag(   int *dest, SEXP x, int n)
 {
-    int n = INTEGER(GET_SLOT(x, Matrix_DimSym))[0];
-    SEXP val = PROTECT(allocVector(LGLSXP, n));
-    int *v = LOGICAL(val);
-
-    if (*diag_P(x) == 'U') {
-	int j;
-	for (j = 0; j < n; j++) v[j] = 1;
-    } else {
-	l_packed_getDiag(v, x, n);
-    }
-    UNPROTECT(1);
+    if (*diag_P(x) == 'U')
+	for (int j = 0; j < n; j++) dest[j] = 1;
+    else
+	l_packed_getDiag(dest, x, n);
     return;
 }
+
 
 SEXP Matrix_expand_pointers(SEXP pP)
 {
@@ -560,7 +653,7 @@ SEXP dup_mMatrix_as_geMatrix(SEXP A)
 	    dd[0] = LENGTH(A);						\
 	    dd[1] = 1;							\
 	    an = R_NilValue;						\
-	}								\
+ 	}								\
 	ctype = 0
 
 	DUP_MMATRIX_NON_CLASS;
@@ -821,98 +914,176 @@ SEXP m_encodeInd2(SEXP i, SEXP j, SEXP di, SEXP chk_bnds)
 }
 #undef do_ii_FILL
 
-
-#if R_VERSION < R_Version(2, 13, 0)
-/**
- * Return the 0-based index of an is() match in a vector of class-name
- * strings terminated by an empty string.  Returns -1 for no match.
- *
- * @param x  an R object, about which we want is(x, .) information.
- * @param valid vector of possible matches terminated by an empty string.
- * @param rho  the environment in which the class definitions exist.
- *
- * @return index of match or -1 for no match
- */
-int Matrix_check_class_and_super(SEXP x, const char **valid, SEXP rho)
+// fails, as R_SVN_REVISION is a string #if R_SVN_REVISION < 60943
+//__ no "if" so it *runs* in older R even if installed in R >= 2.15.2:
+//__ #if R_VERSION < R_Version(2, 15, 2)
+// it is *hidden* in earlier versions of R
+void copyListMatrix(SEXP s, SEXP t, Rboolean byrow)
 {
-    int ans;
-    SEXP cl = getAttrib(x, R_ClassSymbol);
-    const char *class = CHAR(asChar(cl));
-    for (ans = 0; ; ans++) {
-	if (!strlen(valid[ans])) // empty string
-	    break;
-	if (!strcmp(class, valid[ans])) return ans;
-    }
-    /* if not found directly, now search the non-virtual super classes :*/
-    if(IS_S4_OBJECT(x)) {
-	/* now try the superclasses, i.e.,  try   is(x, "....");  superCl :=
-	   .selectSuperClasses(getClass("...")@contains, dropVirtual=TRUE)  */
-	SEXP classExts, superCl, _call;
-	int i;
-	PROTECT(_call = lang2(install("getClassDef"), cl));
-	classExts = GET_SLOT(eval(_call, rho),
-			     install("contains"));
-	UNPROTECT(1);
-	PROTECT(classExts);
-	PROTECT(_call = lang3(install(".selectSuperClasses"), classExts,
-			      /* dropVirtual = */ ScalarLogical(1)));
-	superCl = eval(_call, rho);
-	UNPROTECT(2);
-	PROTECT(superCl);
-	for(i=0; i < length(superCl); i++) {
-	    const char *s_class = CHAR(STRING_ELT(superCl, i));
-	    for (ans = 0; ; ans++) {
-		if (!strlen(valid[ans]))
-		    break;
-		if (!strcmp(s_class, valid[ans])) {
-		    UNPROTECT(1);
-		    return ans;
-		}
+    SEXP pt, tmp;
+    int i, j, nr, nc;
+    R_xlen_t ns;
+
+    nr = nrows(s);
+    nc = ncols(s);
+    ns = ((R_xlen_t) nr) * nc;
+    pt = t;
+    if(byrow) {
+	R_xlen_t NR = nr;
+	PROTECT(tmp = allocVector(STRSXP, ns));
+	for (i = 0; i < nr; i++)
+	    for (j = 0; j < nc; j++) {
+		SET_STRING_ELT(tmp, i + j * NR, duplicate(CAR(pt)));
+		pt = CDR(pt);
+		if(pt == R_NilValue) pt = t;
 	    }
+	for (i = 0; i < ns; i++) {
+	    SETCAR(s, STRING_ELT(tmp, i++));
+	    s = CDR(s);
 	}
 	UNPROTECT(1);
     }
-    return -1;
+    else {
+	for (i = 0; i < ns; i++) {
+	    SETCAR(s, duplicate(CAR(pt)));
+	    s = CDR(s);
+	    pt = CDR(pt);
+	    if(pt == R_NilValue) pt = t;
+	}
+    }
 }
+//__ #endif
+
+// Almost "Cut n Paste" from ...R../src/main/array.c  do_matrix() :
+// used in ../R/Matrix.R as
+//
+// .External(Mmatrix,
+//	     data, nrow, ncol, byrow, dimnames,
+//	     missing(nrow), missing(ncol))
+SEXP Mmatrix(SEXP args)
+{
+    SEXP vals, ans, snr, snc, dimnames;
+    int nr = 1, nc = 1, byrow, miss_nr, miss_nc;
+    R_xlen_t lendat;
+
+    args = CDR(args); /* skip 'name' */
+    vals = CAR(args); args = CDR(args);
+    /* Supposedly as.vector() gave a vector type, but we check */
+    switch(TYPEOF(vals)) {
+	case LGLSXP:
+	case INTSXP:
+	case REALSXP:
+	case CPLXSXP:
+	case STRSXP:
+	case RAWSXP:
+	case EXPRSXP:
+	case VECSXP:
+	    break;
+	default:
+	    error(_("'data' must be of a vector type"));
+    }
+    lendat = XLENGTH(vals);
+    snr = CAR(args); args = CDR(args);
+    snc = CAR(args); args = CDR(args);
+    byrow = asLogical(CAR(args)); args = CDR(args);
+    if (byrow == NA_INTEGER)
+	error(_("invalid '%s' argument"), "byrow");
+    dimnames = CAR(args);
+    args = CDR(args);
+    miss_nr = asLogical(CAR(args)); args = CDR(args);
+    miss_nc = asLogical(CAR(args));
+
+    if (!miss_nr) {
+	if (!isNumeric(snr)) error(_("non-numeric matrix extent"));
+	nr = asInteger(snr);
+	if (nr == NA_INTEGER)
+	    error(_("invalid 'nrow' value (too large or NA)"));
+	if (nr < 0)
+	    error(_("invalid 'nrow' value (< 0)"));
+    }
+    if (!miss_nc) {
+	if (!isNumeric(snc)) error(_("non-numeric matrix extent"));
+	nc = asInteger(snc);
+	if (nc == NA_INTEGER)
+	    error(_("invalid 'ncol' value (too large or NA)"));
+	if (nc < 0)
+	    error(_("invalid 'ncol' value (< 0)"));
+    }
+    if (miss_nr && miss_nc) {
+	if (lendat > INT_MAX) error("data is too long");
+	nr = (int) lendat;
+    } else if (miss_nr) {
+	if (lendat > (double) nc * INT_MAX) error("data is too long");
+	nr = (int) ceil((double) lendat / (double) nc);
+    } else if (miss_nc) {
+	if (lendat > (double) nr * INT_MAX) error("data is too long");
+	nc = (int) ceil((double) lendat / (double) nr);
+    }
+
+    if(lendat > 0) {
+	R_xlen_t nrc = (R_xlen_t) nr * nc;
+	if (lendat > 1 && nrc % lendat != 0) {
+	    if (((lendat > nr) && (lendat / nr) * nr != lendat) ||
+		((lendat < nr) && (nr / lendat) * lendat != nr))
+		warning(_("data length [%d] is not a sub-multiple or multiple of the number of rows [%d]"), lendat, nr);
+	    else if (((lendat > nc) && (lendat / nc) * nc != lendat) ||
+		     ((lendat < nc) && (nc / lendat) * lendat != nc))
+		warning(_("data length [%d] is not a sub-multiple or multiple of the number of columns [%d]"), lendat, nc);
+	}
+	else if ((lendat > 1) && (nrc == 0)){
+	    warning(_("data length exceeds size of matrix"));
+	}
+    }
+
+ #ifndef LONG_VECTOR_SUPPORT
+   if ((double)nr * (double)nc > INT_MAX)
+	error(_("too many elements specified"));
 #endif
 
-#if R_VERSION < R_Version(2, 15, 0)
-/**
- * Return the 0-based index of an is() match in a vector of class-name
- * strings terminated by an empty string.  Returns -1 for no match.
- * Strives to find the correct environment() for is().
- *
- * @param x  an R object, about which we want is(x, .) information.
- * @param valid vector of possible matches terminated by an empty string.
- *
- * @return index of match or -1 for no match
- */
-int Matrix_check_class_etc(SEXP x, const char **valid)
-{
-    static SEXP s_M_classEnv = NULL;
-    SEXP cl = getAttrib(x, R_ClassSymbol), rho = R_GlobalEnv, pkg;
-/*     PROTECT(cl); */
-    if(!s_M_classEnv)
-	s_M_classEnv = install(".M.classEnv");
-
-    pkg = getAttrib(cl, R_PackageSymbol); /* ==R== packageSlot(class(x)) */
-    if(!isNull(pkg)) { /* find  rho := correct class Environment */
-	SEXP clEnvCall;
-	/* need to make sure we find ".M.classEnv" even if Matrix is not
-	   attached, but just namespace-loaded: */
-
-	/* Matrix::: does not work here either ... :
-	 *	    rho = eval(lang2(install("Matrix:::.M.classEnv"), cl), */
-
-	/* Now make this work via .onLoad() hack in ../R/zzz.R  : */
-	PROTECT(clEnvCall = lang2(s_M_classEnv, cl));
-	rho = eval(clEnvCall, R_GlobalEnv);
-	UNPROTECT(1);
-
-	if(!isEnvironment(rho))
-	    error(_("could not find correct environment; please report!"));
+    PROTECT(ans = allocMatrix(TYPEOF(vals), nr, nc));
+    if(lendat) {
+	if (isVector(vals))
+	    copyMatrix(ans, vals, byrow);
+	else
+	    copyListMatrix(ans, vals, byrow);
+    } else if (isVector(vals)) { /* fill with NAs */
+	R_xlen_t N = (R_xlen_t) nr * nc, i;
+	switch(TYPEOF(vals)) {
+	case STRSXP:
+	    for (i = 0; i < N; i++)
+		SET_STRING_ELT(ans, i, NA_STRING);
+	    break;
+	case LGLSXP:
+	    for (i = 0; i < N; i++)
+		LOGICAL(ans)[i] = NA_LOGICAL;
+	    break;
+	case INTSXP:
+	    for (i = 0; i < N; i++)
+		INTEGER(ans)[i] = NA_INTEGER;
+	    break;
+	case REALSXP:
+	    for (i = 0; i < N; i++)
+		REAL(ans)[i] = NA_REAL;
+	    break;
+	case CPLXSXP:
+	    {
+		Rcomplex na_cmplx;
+		na_cmplx.r = NA_REAL;
+		na_cmplx.i = 0;
+		for (i = 0; i < N; i++)
+		    COMPLEX(ans)[i] = na_cmplx;
+	    }
+	    break;
+	case RAWSXP:
+	    memset(RAW(ans), 0, N);
+	    break;
+	default:
+	    /* don't fill with anything */
+	    ;
+	}
     }
-/*     UNPROTECT(1); */
-    return Matrix_check_class_and_super(x, valid, rho);
+    if(!isNull(dimnames)&& length(dimnames) > 0)
+	ans = dimnamesgets(ans, dimnames);
+    UNPROTECT(1);
+    return ans;
 }
-#endif // R version < 2.15.0

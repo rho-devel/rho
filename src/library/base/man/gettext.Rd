@@ -1,6 +1,6 @@
 % File src/library/base/man/gettext.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{gettext}
@@ -24,7 +24,7 @@ bindtextdomain(domain, dirname = NULL)
   \item{domain}{The \sQuote{domain} for the translation.}
   \item{n}{a non-negative integer.}
   \item{msg1}{the message to be used in English for \code{n = 1}.}
-  \item{msg2}{the message to be used in English for \code{n = 0, 2, 3,\dots}.}
+  \item{msg2}{the message to be used in English for \code{n = 0, 2, 3, \dots}.}
   \item{dirname}{The directory in which to find translated message
     catalogs for the domain.}
 }
@@ -33,7 +33,8 @@ bindtextdomain(domain, dirname = NULL)
   based on the namespace which contains the function calling
   \code{gettext} or \code{ngettext}.  If a suitable domain can be found,
   each character string is offered for translation, and replaced by its
-  translation into the current language if one is found.
+  translation into the current language if one is found.  The value
+  (logical) \code{NA} suppresses any translation.
 
   Conventionally the domain for \R warning/error messages in package
   \pkg{pkg} is \code{"R-pkg"}, and that for C-level messages is \code{"pkg"}.
@@ -64,7 +65,7 @@ bindtextdomain(domain, dirname = NULL)
   translate messages.
 
   \code{\link{xgettext}} for extracting translatable strings from \R
-  source files. 
+  source files.
 }
 \examples{
 bindtextdomain("R")  # non-null if and only if NLS is enabled
@@ -84,14 +85,14 @@ msgstr[1] ""
 
 miss <- c("one", "or", "another")
 cat(ngettext(length(miss), "variable", "variables"),
-    paste(sQuote(miss), collapse=", "),
+    paste(sQuote(miss), collapse = ", "),
     ngettext(length(miss), "contains", "contain"), "missing values\n")
 
 ## better for translators would be to use
 cat(sprintf(ngettext(length(miss),
                      "variable \%s contains missing values\n",
                      "variables \%s contain missing values\n"),
-            paste(sQuote(miss), collapse=", ")))
+            paste(sQuote(miss), collapse = ", ")))
 }
 \keyword{ utilities }
 \keyword{ character }

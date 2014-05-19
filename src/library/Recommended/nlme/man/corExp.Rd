@@ -61,9 +61,11 @@ corExp(value, form, nugget, metric, fixed)
   structure. 
 }
 \references{
-  Cressie, N.A.C. (1993), "Statistics for Spatial Data", J. Wiley & Sons.
-  Venables, W.N. and Ripley, B.D. (1997) "Modern Applied Statistics with
-  S-plus", 2nd Edition, Springer-Verlag.
+  Cressie, N.A.C. (1993), "Statistics for Spatial Data", J. Wiley &
+  Sons.
+  
+  Venables, W.N. and Ripley, B.D. (2002) "Modern Applied Statistics with
+  S", 4th Edition, Springer-Verlag.
   
   Littel, Milliken, Stroup, and Wolfinger (1996) "SAS Systems for Mixed
   Models", SAS Institute.
@@ -71,7 +73,7 @@ corExp(value, form, nugget, metric, fixed)
   Pinheiro, J.C., and Bates, D.M. (2000) "Mixed-Effects Models
   in S and S-PLUS", Springer, esp. p. 238.      
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{
   \code{\link{corClasses}},

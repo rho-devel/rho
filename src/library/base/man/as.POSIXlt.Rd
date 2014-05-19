@@ -47,7 +47,7 @@ as.POSIXlt(x, tz = "", \dots)
   \item{format}{character string giving a date-time format as used
     by \code{\link{strptime}}.}
   \item{origin}{a date-time object, or something which can be coerced by
-    \code{as.POSIXct(tz="GMT")} to such an object.}
+    \code{as.POSIXct(tz = "GMT")} to such an object.}
 }
 \details{
   The \code{as.POSIX*} functions convert an object to one of the two
@@ -68,18 +68,15 @@ as.POSIXlt(x, tz = "", \dots)
   Alternatively, \code{format} can be specified for character vectors or
   factors: if it is not specified and no standard format works for
   all non-\code{NA} inputs an error is thrown.
-  
+
   If \code{format} is specified, remember that some of the format
   specifications are locale-specific, and you may need to set the
   \code{LC_TIME} category appropriately \emph{via}
   \code{\link{Sys.setlocale}}.  This most often affects the use of
   \code{\%b}, \code{\%B} (month names) and \code{\%p} (AM/PM).
-  
+
   Logical \code{NA}s can be converted to either of the classes, but no
   other logical vectors can be.
-
-  The \code{as.double} method converts \code{"POSIXlt"} objects to
-  \code{"POSIXct"}.
 
   If you are given a numeric time as the number of seconds since an
   epoch, see the examples.
@@ -91,8 +88,8 @@ as.POSIXlt(x, tz = "", \dots)
   \code{"POSIXlt"} to \code{"POSIXct"} will validate times in the
   selected timezone.  One issue is what happens at transitions
   to and from DST, for example in the UK
-\preformatted{as.POSIXct(strptime('2011-03-27 01:30:00', '\%Y-\%m-\%d \%H:\%M:\%S'))
-as.POSIXct(strptime('2010-10-31 01:30:00', '\%Y-\%m-\%d \%H:\%M:\%S'))
+\preformatted{as.POSIXct(strptime("2011-03-27 01:30:00", "\%Y-\%m-\%d \%H:\%M:\%S"))
+as.POSIXct(strptime("2010-10-31 01:30:00", "\%Y-\%m-\%d \%H:\%M:\%S"))
 }
   are respectively invalid (the clocks went forward at 1:00 GMT to 2:00
   BST) and ambiguous (the clocks went back at 2:00 BST to 1:00 GMT).  What
@@ -119,11 +116,11 @@ as.POSIXct(strptime('2010-10-31 01:30:00', '\%Y-\%m-\%d \%H:\%M:\%S'))
   assumed by ISO 8601:2004 is that there was a year zero, even though
   current year numbering (and zero) is a much later concept (525 AD for
   year numbers from 1 AD).
-  
+
   If you want to extract specific aspects of a time (such as the day of
   the week) just convert it to class \code{"POSIXlt"} and extract the
   relevant component(s) of the list, or if you want a character
-  representation (such as a named day of the week) use the 
+  representation (such as a named day of the week) use the
   \code{\link[base:format.POSIXlt]{format}} method.
 
   If a timezone is needed and that specified is invalid on your system,
@@ -134,31 +131,31 @@ as.POSIXct(strptime('2010-10-31 01:30:00', '\%Y-\%m-\%d \%H:\%M:\%S'))
   \link{DateTimeClasses} for details of the classes;
   \code{\link{strptime}} for conversion to and from character
   representations.
-  
+
   \code{\link{Sys.timezone}} for details of the (system-specific) naming
   of time zones.
-  
-  \link{locales} for locale-specific aspects.  
+
+  \link{locales} for locale-specific aspects.
 }
 \examples{\donttest{
 (z <- Sys.time())             # the current datetime, as class "POSIXct"
 unclass(z)                    # a large integer
 floor(unclass(z)/86400)       # the number of days since 1970-01-01 (UTC)
-(z <- as.POSIXlt(Sys.time())) # the current datetime, as class "POSIXlt"
-unlist(unclass(z))            # a list shown as a named vector
+(now <- as.POSIXlt(Sys.time())) # the current datetime, as class "POSIXlt"
+unlist(unclass(now))          # a list shown as a named vector
+now$year + 1900               # see ?DateTimeClasses
+months(now); weekdays(now)    # see ?months
 
 ## suppose we have a time in seconds since 1960-01-01 00:00:00 GMT
 ## (the origin used by SAS)
 z <- 1472562988
 # ways to convert this
-as.POSIXct(z, origin="1960-01-01")                # local
-as.POSIXct(z, origin="1960-01-01", tz="GMT")      # in UTC
-as.POSIXct(z, origin=ISOdatetime(1960,1,1,0,0,0)) # local
-ISOdatetime(1960,1,1,0,0,0) + z                   # local
+as.POSIXct(z, origin = "1960-01-01")                # local
+as.POSIXct(z, origin = "1960-01-01", tz = "GMT")    # in UTC
 
 ## SPSS dates (R-help 2006-02-16)
 z <- c(10485849600, 10477641600, 10561104000, 10562745600)
-as.Date(as.POSIXct(z, origin="1582-10-14", tz="GMT"))
+as.Date(as.POSIXct(z, origin = "1582-10-14", tz = "GMT"))
 
 as.POSIXlt(Sys.time(), "GMT") # the current time in UTC
 }
@@ -173,7 +170,7 @@ as.POSIXlt(Sys.time(), "Australia/Darwin")
 
 cols <- c("code", "coordinates", "TZ", "comments")
 tmp <- read.delim(file.path(R.home("share"), "zoneinfo", "zone.tab"),
-                  header = FALSE, comment.char="#", col.names = cols)
+                  header = FALSE, comment.char = "#", col.names = cols)
 if(interactive()) View(tmp)
 #endif
 }

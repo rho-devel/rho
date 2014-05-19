@@ -1,6 +1,8 @@
 #  File src/library/tools/R/RdConv2.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -294,7 +296,9 @@ processRdChunk <- function(code, stage, options, env, Rdfile)
 	    	    res <- tagged(res, "LIST")
 	    	else {
 	    	    if (sum(is_section) > 1)
-	    		stop("Only one Rd section per \\Sexpr is supported.")
+	    		stop(gettextf("Only one Rd section per %s is supported.",
+                                      "\\Sexpr"),
+                             domain = NA)
 	    	    res <- res[[which(is_section)]]
 	    	}
 	    } else if (length(res) == 1) res <- res[[1]]
@@ -595,7 +599,7 @@ fsub1 <- function(pattern, replacement, x)
 
 
 ## for lists of messages, see ../man/checkRd.Rd
-checkRd <- function(Rd, defines=.Platform$OS.type, stages="render",
+checkRd <- function(Rd, defines=.Platform$OS.type, stages = "render",
                     unknownOK = TRUE, listOK = TRUE, ..., def_enc = FALSE)
 {
     warnRd <- function(block, Rdfile, ..., level=0)
@@ -888,6 +892,9 @@ checkRd <- function(Rd, defines=.Platform$OS.type, stages="render",
             tagtitle <- sQuote(as.character(title))
     	} else tagtitle <- tag
         has_text <<- FALSE
+        if (tag == "\\synopsis")
+            warnRd(section, Rdfile, level = 3,
+                   "\\synopsis will be removed in R 3.1.0")
         if (tag %in% c("\\usage", "\\synopsis", "\\examples"))
             checkCodeBlock(section, tag)
     	else checkContent(section, tag)

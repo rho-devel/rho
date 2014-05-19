@@ -78,6 +78,13 @@ one or more curves are added to the current plot.
 \seealso{
 \code{\link{lines}},  \code{\link{par}},  \code{\link{plot.survfit}},  \code{\link{survfit}},  \code{\link{survexp}}.   
 }
+\details{
+  When the \code{survfit} function creates a multi-state survival curve
+  the resulting object has class `survfitms'.  The only difference in
+  the plots is that that it defaults to a curve that goes from lower
+  left to upper right (starting at 0), where survival curves default
+  to starting at 1 and going down.  All other options are identical.
+}    
 \examples{
 fit <- survfit(Surv(time, status==2) ~ sex, pbc,subset=1:312)
 plot(fit, mark.time=FALSE, xscale=365.25,

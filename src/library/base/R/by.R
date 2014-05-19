@@ -1,6 +1,8 @@
 #  File src/library/base/R/by.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -31,11 +33,10 @@ by.default <- function(data, INDICES, FUN, ..., simplify = TRUE)
         } else IND <- INDICES
         FUNx <- function(x) FUN(dd[x,], ...)
         nd <- nrow(dd)
-        ans <- eval(substitute(tapply(seq_len(nd), IND, FUNx,
-                                      simplify = simplify)), dd)
-        attr(ans, "call") <- match.call()
-        class(ans) <- "by"
-        ans
+	structure(eval(substitute(tapply(seq_len(nd), IND, FUNx,
+				      simplify = simplify)), dd),
+		  call = match.call(),
+		  class = "by")
     }
 }
 
@@ -48,11 +49,10 @@ by.data.frame <- function(data, INDICES, FUN, ..., simplify = TRUE)
     } else IND <- INDICES
     FUNx <- function(x) FUN(data[x,, drop=FALSE], ...) # (PR#10506)
     nd <- nrow(data)
-    ans <- eval(substitute(tapply(seq_len(nd), IND, FUNx,
-                                  simplify = simplify)), data)
-    attr(ans, "call") <- match.call()
-    class(ans) <- "by"
-    ans
+    structure(eval(substitute(tapply(seq_len(nd), IND, FUNx,
+				     simplify = simplify)), data),
+	      call = match.call(),
+	      class = "by")
 }
 
 print.by <- function(x, ..., vsep)
@@ -61,7 +61,7 @@ print.by <- function(x, ..., vsep)
     dn <- dimnames(x)
     dnn <- names(dn)
     if(missing(vsep))
-        vsep <- paste(rep("-", 0.75*getOption("width")), collapse = "")
+        vsep <- paste(rep.int("-", 0.75*getOption("width")), collapse = "")
     lapply(X = seq_along(x), FUN = function(i, x, vsep, ...) {
         if(i != 1L && !is.null(vsep)) cat(vsep, "\n")
         ii <- i - 1L

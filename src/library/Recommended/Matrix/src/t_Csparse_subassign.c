@@ -136,7 +136,7 @@ SEXP Csparse_subassign(SEXP x, SEXP i_, SEXP j_, SEXP value)
 			 "isparseVector",// 3      2
 			 "dsparseVector",// 4      0
 			 "zsparseVector",// 5      3
-			""};
+			 ""};
 
     int ctype_x = Matrix_check_class_etc(x,     valid_cM),
 	ctype_v = Matrix_check_class_etc(value, valid_spv);
@@ -154,7 +154,7 @@ SEXP Csparse_subassign(SEXP x, SEXP i_, SEXP j_, SEXP value)
 	dimslot = GET_SLOT(x, Matrix_DimSym),
 	i_cp = PROTECT(coerceVector(i_, INTSXP)),
 	j_cp = PROTECT(coerceVector(j_, INTSXP));
-	// for d.CMatrix and l.CMatrix  but not n.CMatrix:
+    // for d.CMatrix and l.CMatrix  but not n.CMatrix:
 
     int *dims = INTEGER(dimslot),
 	ncol = dims[1],	/* nrow = dims[0], */
@@ -175,11 +175,10 @@ SEXP Csparse_subassign(SEXP x, SEXP i_, SEXP j_, SEXP value)
     }
 #endif
 
-    SEXP val_i_slot;
-    PROTECT(val_i_slot = coerceVector(GET_SLOT(value, Matrix_iSym), REALSXP));
+    SEXP val_i_slot, val_x_slot;
+    val_i_slot = PROTECT(coerceVector(GET_SLOT(value, Matrix_iSym), REALSXP));
     double *val_i = REAL(val_i_slot);
-    int nnz_val =  LENGTH(GET_SLOT(value, Matrix_iSym));
-    SEXP val_x_slot = 0;
+    int nnz_val = LENGTH(GET_SLOT(value, Matrix_iSym)), n_prot = 4;
     Type_x *val_x = NULL;
     if(!value_is_nsp) {
 	if(ctype_v) { // matrix 'x' and 'value' are of different kinds
@@ -199,14 +198,13 @@ SEXP Csparse_subassign(SEXP x, SEXP i_, SEXP j_, SEXP value)
 	    case x_complex: // coercion should be tried (and fail for complex -> double) below
 		break;
 	    default:
-	       error(_("programming error in Csparse_subassign() should never happen"));
+		error(_("programming error in Csparse_subassign() should never happen"));
 	    }
 	    // otherwise: "coerce" :  as(., <sparseVector>) :
-	    PROTECT(val_x_slot = coerceVector(GET_SLOT(value, Matrix_xSym), SXP_x));
+	    val_x_slot = PROTECT(coerceVector(GET_SLOT(value, Matrix_xSym), SXP_x)); n_prot++;
 	    val_x = STYP_x(val_x_slot);
 	} else {
-	    val_x = STYP_x(		GET_SLOT(value, Matrix_xSym));
-	    PROTECT(val_x_slot);  // To balance 'then' clause
+	    val_x = STYP_x(		      GET_SLOT(value, Matrix_xSym));
 	}
     }
     int64_t len_val = (int64_t) asReal(GET_SLOT(value, Matrix_lengthSym));
@@ -222,7 +220,7 @@ SEXP Csparse_subassign(SEXP x, SEXP i_, SEXP j_, SEXP value)
     SEXP r_pslot = GET_SLOT(ans, Matrix_pSym);
     // and assign the i- and x- slots at the end, as they are potentially modified
     // not just in content, but also in their *length*
-    int	*rp = INTEGER(r_pslot),
+    int *rp = INTEGER(r_pslot),
 	*ri = Calloc(nnz_x, int);       // to contain the final i - slot
     Memcpy(ri, INTEGER(islot), nnz_x);
     Type_x_0_init(z_ans);
@@ -251,7 +249,7 @@ SEXP Csparse_subassign(SEXP x, SEXP i_, SEXP j_, SEXP value)
 	    int64_t ii_v1;//= ii_val + 1;
 	    Type_x v, /* := value[(ii + j_l) % len_val]
 			 = .sparseVector_sub((ii + j_l) % len_val,
-			                     nnz_val, val_i, val_x, len_val)
+			 nnz_val, val_i, val_x, len_val)
 		      */
 		M_ij;
 	    int ind;
@@ -292,25 +290,25 @@ SEXP Csparse_subassign(SEXP x, SEXP i_, SEXP j_, SEXP value)
 #  ifdef _CPLX_x
 				     (double)M_ij.r);
 #  else
-				     (double)M_ij);
+			             (double)M_ij);
 #  endif
 #endif
-			have_entry = TRUE;
+		        have_entry = TRUE;
 		    } else { // ri[ind] > i__
 #ifdef MATRIX_SUBASSIGN_VERBOSE
-			if(verbose)
+		        if(verbose)
 			    REprintf("@i > i__ = %d --> ind-- = %d\n", i__, ind);
 #endif
-		    }
-		    break;
 		}
+		break;
 	    }
+	}
 
-	    //-- R:  if(getM(i., j.) != (v <- getV(ii, jj)))
+	//-- R:  if(getM(i., j.) != (v <- getV(ii, jj)))
 
-	    // if(contents differ) ==> value needs to be changed :
+	// if(contents differ) ==> value needs to be changed :
 #ifdef _CPLX_x
-	    if(M_ij.r != v.r || M_ij.i != v.i) {
+	if(M_ij.r != v.r || M_ij.i != v.i) {
 #else
 	    if(M_ij != v) {
 #endif
@@ -319,46 +317,46 @@ SEXP Csparse_subassign(SEXP x, SEXP i_, SEXP j_, SEXP value)
 		if(verbose)
 		    REprintf("setting x[%d, %d] <- %g", i__,j__,
 #  ifdef _CPLX_x
-				     (double) v.r);
+			     (double) v.r);
 #  else
-				     (double) v);
+		             (double) v);
 #  endif
 #endif
-		// (otherwise: nothing to do):
-		// setM(i__, j__, v)
-		// ----------------------------------------------------------
+	    // (otherwise: nothing to do):
+	    // setM(i__, j__, v)
+	    // ----------------------------------------------------------
 
 #ifndef _has_x_slot_
-		if(v == z_ans) {
-		    // Case I ----- remove x[i, j] = M_ij  which we know is *non*-zero
+	    if(v == z_ans) {
+		// Case I ----- remove x[i, j] = M_ij  which we know is *non*-zero
 //  BUT it is more efficient (memory-management!) *NOT* to remove,
 /// but --- in the case of x slot put a 0 zero there, and only at the very end drop them,
 //  currently using  drop0() in R code
-		    // we know : have_entry = TRUE ;
-		    //  ri[ind] == i__; M_ij = rx[ind];
+		// we know : have_entry = TRUE ;
+		//  ri[ind] == i__; M_ij = rx[ind];
 #ifdef MATRIX_SUBASSIGN_VERBOSE
-		    if(verbose)
-		    	REprintf(" rm ind=%d\n", ind);
+		if(verbose)
+		    REprintf(" rm ind=%d\n", ind);
 #endif
-		    // remove the 'ind'-th element from x@i and x@x :
-		    nnz-- ;
-		    for(k=ind; k < nnz; k++) {
-			ri[k] = ri[k+1];
+		// remove the 'ind'-th element from x@i and x@x :
+		nnz-- ;
+		for(k=ind; k < nnz; k++) {
+		    ri[k] = ri[k+1];
 #ifdef _has_x_slot_
-			rx[k] = rx[k+1];
+		    rx[k] = rx[k+1];
 #endif
-		    }
-		    for(k=j__ + 1; k <= ncol; k++) {
-			rp[k] = rp[k] - 1;
-		    }
 		}
-		else
+		for(k=j__ + 1; k <= ncol; k++) {
+		    rp[k] = rp[k] - 1;
+		}
+	    }
+	    else
 #endif
-		    if(have_entry) {
+		if(have_entry) {
 		    // Case II ----- replace (non-empty) x[i,j] by v -------
 #ifdef MATRIX_SUBASSIGN_VERBOSE
 		    if(verbose)
-		    	REprintf(" repl.  ind=%d\n", ind);
+			REprintf(" repl.  ind=%d\n", ind);
 #endif
 #ifdef _has_x_slot_
 		    rx[ind] = v;
@@ -392,7 +390,7 @@ SEXP Csparse_subassign(SEXP x, SEXP i_, SEXP j_, SEXP value)
 				 p1,p2, ind, i1);
 #endif
 
-			// shift the "upper values" *before* the insertion:
+		    // shift the "upper values" *before* the insertion:
 		    for(int l = nnz-1; l >= i1; l--) {
 			ri[l+1] = ri[l];
 #ifdef _has_x_slot_
@@ -408,13 +406,13 @@ SEXP Csparse_subassign(SEXP x, SEXP i_, SEXP j_, SEXP value)
 		    for(k=j__ + 1; k <= ncol; k++)
 			rp[k]++;
 		}
-	    }
+	}
 #ifdef MATRIX_SUBASSIGN_VERBOSE
-	    else if(verbose) REprintf("M_ij == v = %g\n",
+	else if(verbose) REprintf("M_ij == v = %g\n",
 #  ifdef _CPLX_x
-				     (double) v.r);
+				  (double) v.r);
 #  else
-				     (double) v);
+	                          (double) v);
 #  endif
 #endif
 	}// for( ii )
@@ -431,7 +429,7 @@ SEXP Csparse_subassign(SEXP x, SEXP i_, SEXP j_, SEXP value)
     Free(rx);
 #endif
     Free(ri);
-    UNPROTECT(5);
+    UNPROTECT(n_prot);
     return ans;
 }
 

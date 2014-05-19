@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -15,7 +15,7 @@
  *CXXR */
 
 /* zconf.h -- configuration of the zlib compression library
- * Copyright (C) 1995-2012 Jean-loup Gailly.
+ * Copyright (C) 1995-2013 Jean-loup Gailly.
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -349,14 +349,10 @@ typedef uLong FAR uLongf;
 #  include <limits.h>
 #  if (UINT_MAX == 0xffffffffUL)
 #    define Z_U4 unsigned
-#  else
-#    if (ULONG_MAX == 0xffffffffUL)
-#      define Z_U4 unsigned long
-#    else
-#      if (USHRT_MAX == 0xffffffffUL)
-#        define Z_U4 unsigned short
-#      endif
-#    endif
+#  elif (ULONG_MAX == 0xffffffffUL)
+#    define Z_U4 unsigned long
+#  elif (USHRT_MAX == 0xffffffffUL)
+#    define Z_U4 unsigned short
 #  endif
 #endif
 
@@ -380,6 +376,12 @@ typedef uLong FAR uLongf;
 #  endif
 #endif
 
+#if defined(STDC) || defined(Z_HAVE_STDARG_H)
+#  ifndef Z_SOLO
+#    include <stdarg.h>         /* for va_list */
+#  endif
+#endif
+
 #ifdef _WIN32
 #  include <stddef.h>           /* for wchar_t */
 #endif
@@ -390,7 +392,7 @@ typedef uLong FAR uLongf;
  * both "#undef _LARGEFILE64_SOURCE" and "#define _LARGEFILE64_SOURCE 0" as
  * equivalently requesting no 64-bit operations
  */
-#if defined(LARGEFILE64_SOURCE) && -_LARGEFILE64_SOURCE - -1 == 1
+#if defined(_LARGEFILE64_SOURCE) && -_LARGEFILE64_SOURCE - -1 == 1
 #  undef _LARGEFILE64_SOURCE
 #endif
 
@@ -398,7 +400,7 @@ typedef uLong FAR uLongf;
 #  define Z_HAVE_UNISTD_H
 #endif
 #ifndef Z_SOLO
-#  if defined(Z_HAVE_UNISTD_H) || defined(LARGEFILE64_SOURCE)
+#  if defined(Z_HAVE_UNISTD_H) || defined(_LARGEFILE64_SOURCE)
 #    include <unistd.h>         /* for SEEK_*, off_t, and _LFS64_LARGEFILE */
 #    ifdef VMS
 #      include <unixio.h>       /* for off_t */

@@ -29,7 +29,7 @@ expm1(x)
     logarithms are computed.  Defaults to \eqn{e}=\code{exp(1)}.}
   }
 \description{
-  \code{log} computes logarithms, by default natural logarithms, 
+  \code{log} computes logarithms, by default natural logarithms,
   \code{log10} computes common (i.e., base 10) logarithms, and
   \code{log2} computes binary (i.e., base 2) logarithms.
   The general form \code{log(x, base)} computes logarithms with base
@@ -67,7 +67,7 @@ expm1(x)
   \code{logb} is a wrapper for \code{log} for compatibility with S.  If
   (S3 or S4) methods are set for \code{log} they will be dispatched.
   Do not set S4 methods on \code{logb} itself.
-  
+
   All except \code{log} are \link{primitive} functions.
 }
 \section{S4 methods}{
@@ -107,7 +107,7 @@ expm1(x)
 }
 \examples{
 log(exp(3))
-log10(1e7)# = 7
+log10(1e7) # = 7
 
 x <- 10^-(1+2*1:9)
 cbind(x, log(1+x), log1p(x), exp(x)-1, expm1(x))

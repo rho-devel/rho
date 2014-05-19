@@ -1,6 +1,6 @@
 
-R Under development (unstable) (2012-02-28 r58513)
-Copyright (C) 2012 The R Foundation for Statistical Computing
+R version 3.0.0 beta (2013-03-25 r62402) -- "Masked Marvel"
+Copyright (C) 2013 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
@@ -24,6 +24,8 @@ Type 'q()' to quit R.
 > 
 > source(system.file("test-tools.R", package = "Matrix"), keep.source = FALSE)
 > ##-> identical3() etc
+> cat("doExtras:",doExtras,"\n")
+doExtras: FALSE 
 > 
 > if(interactive()) {
 +     options(error = recover, warn = 1)
@@ -32,7 +34,7 @@ Type 'q()' to quit R.
 + } else {
 +     options(Matrix.verbose = TRUE, warn = 1)
 + }
-> 
+> 
 > 
 > ### Dense Matrices
 > 
@@ -125,7 +127,7 @@ diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
 + 	  identical(a.m, array(v, dim=dim(mn), dimnames=dimnames(mn)))
 + 	  )
 > showProc.time()
-Time elapsed:  0.352 0.006 0.366 
+Time elapsed:  0.497 0.014 0.52 
 > 
 > ## Printing sparse colnames:
 > ms[sample(28, 20)] <- 0
@@ -182,7 +184,7 @@ diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
 + 	  identical3(m[!sel],  m[!ssel], as.matrix(m)[as.matrix(!ssel)])
 + 	  )
 > showProc.time()
-Time elapsed:  0.079 0.002 0.082 
+Time elapsed:  0.268 0.001 0.273 
 > 
 > ## more sparse Matrices --------------------------------------
 > 
@@ -233,9 +235,9 @@ Time elapsed:  0.079 0.002 0.082
 > m1 <- add.simpleDimnames(m0)
 > for(kind in c("n", "l", "d")) {
 +  for(m in list(m0,m1)) { ## -- with and without dimnames -------------------------
-+     kClass <- paste(kind, "Matrix", sep="")
-+     Ckind <- paste(kind, "gCMatrix", sep="")
-+     Tkind <- paste(kind, "gTMatrix", sep="")
++     kClass <-paste0(kind, "Matrix"  )
++     Ckind <- paste0(kind, "gCMatrix")
++     Tkind <- paste0(kind, "gTMatrix")
 +     str(mC <- as(m, Ckind))
 +     str(mT <- as(as(as(m, kClass), "TsparseMatrix"), Tkind))
 +     mm <- as(mC, "matrix") # also logical or double
@@ -272,7 +274,7 @@ Time elapsed:  0.079 0.002 0.082
 +     ##
 +     ## set.seed(7)
 +     cat(" for(): ")
-+     for(n in 1:50) {
++     for(n in 1:(if(doExtras) 50 else 5)) {
 +         chkAssign(mC, mm)
 +         chkAssign(mC[-3,-2], mm[-3,-2])
 +         cat(".")
@@ -297,8 +299,8 @@ Formal class 'ngTMatrix' [package "Matrix"] with 5 slots
   .. ..$ : NULL
   .. ..$ : NULL
   ..@ factors : list()
-Note: Method with signature "nsparseMatrix#sparseMatrix" chosen for function "==",
- target signature "ngCMatrix#ngTMatrix".
+Note: method with signature 'nsparseMatrix#sparseMatrix' chosen for function '==',
+ target signature 'ngCMatrix#ngTMatrix'.
  "nMatrix#nMatrix", "sparseMatrix#nsparseMatrix" would also be valid
 ok
  [1] FALSE FALSE  TRUE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE  TRUE
@@ -310,7 +312,7 @@ ok
 [1,] . . . | . . | . . . . | . . | . | . . .
 [2,] . | . . . | . . . . . . | | . . . . | .
 [1] TRUE
- for(): ..................................................
+ for(): .....
 [Ok]----------------------------------------------------------------
 
 Formal class 'ngCMatrix' [package "Matrix"] with 5 slots
@@ -344,7 +346,7 @@ FALSE
 r1 . . . | . . | . . . . | . . | . | . . .
 r2 . | . . . | . . . . . . | | . . . . | .
 [1] TRUE
- for(): ..................................................
+ for(): .....
 [Ok]----------------------------------------------------------------
 
 
@@ -379,7 +381,7 @@ ok
 [1,] . . . | . . | . . . . | . . | . | . . .
 [2,] . | . . . | . . . . . . | | . . . . | .
 [1] TRUE
- for(): ..................................................
+ for(): .....
 [Ok]----------------------------------------------------------------
 
 Formal class 'lgCMatrix' [package "Matrix"] with 6 slots
@@ -415,7 +417,7 @@ FALSE
 r1 . . . | . . | . . . . | . . | . | . . .
 r2 . | . . . | . . . . . . | | . . . . | .
 [1] TRUE
- for(): ..................................................
+ for(): .....
 [Ok]----------------------------------------------------------------
 
 
@@ -448,7 +450,7 @@ ok
 [1,] .  . . 121 .   . 241 . . . . 441   .   . 561 . 641 .   . .
 [2,] . 42 .   . . 202   . . . . .   . 482 522   . .   . . 722 .
 [1] 7
- for(): ..................................................
+ for(): .....
 [Ok]----------------------------------------------------------------
 
 Formal class 'dgCMatrix' [package "Matrix"] with 6 slots
@@ -480,7 +482,7 @@ r21 r22 r23 r24 r25 r26 r27 r28 r29 r30 r31 r32 r33 r34 r35 r36 r37 r38 r39 r40
 r1 .  . . 121 .   . 241 . . . . 441   .   . 561 . 641 .   . .
 r2 . 42 .   . . 202   . . . . .   . 482 522   . .   . . 722 .
 [1] 7
- for(): ..................................................
+ for(): .....
 [Ok]----------------------------------------------------------------
 
 
@@ -488,7 +490,7 @@ ok( d )
 == ###======================================================================
 
 > showProc.time()
-Time elapsed:  4.38 0.014 4.453 
+Time elapsed:  1.387 0.004 1.403 
 > 
 > ##---- Symmetric indexing of symmetric Matrix ----------
 > m. <- mC
@@ -515,7 +517,7 @@ Time elapsed:  4.38 0.014 4.453
 > 
 > N <- nrow(T)
 > set.seed(11)
-> for(n in 1:50) {
+> for(n in 1:(if(doExtras) 50 else 3)) {
 +     i <- sample(N, max(2, sample(N,1)), replace = FALSE)
 +     validObject(Tii <- T[i,i]) ; tTi <- t(T)[i,i]
 +     stopifnot(is(Tii, "dsTMatrix"), # remained symmetric Tsparse
@@ -549,7 +551,7 @@ Time elapsed:  4.38 0.014 4.453
 > a. <- as(A., "matrix")
 > ## More testing {this was not working for a long time..}
 > set.seed(1)
-> for(n in 1:100) {
+> for(n in 1:(if(doExtras) 100 else 6)) {
 +     i <- sample(1:nrow(A), 3+2*rpois(1, lam=3), replace=TRUE)
 +     Aii  <- A[i,i]
 +     A.ii <- A.[i,i]
@@ -560,7 +562,7 @@ Time elapsed:  4.38 0.014 4.453
 +     assert.EQ.mat(T[i,i], ss[i,i])
 + }
 > showProc.time()
-Time elapsed:  1.632 0.003 1.657 
+Time elapsed:  0.417 0.003 0.424 
 > 
 > stopifnot(all.equal(mC[,3], mm[,3]),
 + 	  identical(mC[ij], mC[ij + 0.4]),
@@ -711,9 +713,6 @@ c3 . | | . | | | | | | | | | | | . . | | |
 [3,] . . .
 [4,] . . .
 > B <- A;              B[c(1,2,1), 2] <- 1:3; B; B. <- B
-Note: Method with signature "numeric#sparseVector" chosen for function "coerce",
- target signature "integer#sparseVector".
- "atomicVector#sparseVector" would also be valid
 4 x 3 sparse Matrix of class "dgCMatrix"
           
 [1,] . 3 .
@@ -767,7 +766,7 @@ diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
 + 	  all(sm[,-(1:3)] == 0)
 + 	  )
 > showProc.time()
-Time elapsed:  0.261 0.008 0.273 
+Time elapsed:  0.569 0.007 0.58 
 > 
 > ##---  "nsparse*" sub-assignment :----------
 > M <- Matrix(c(1, rep(0,7), 1:4), 3,4)
@@ -788,7 +787,7 @@ Time elapsed:  0.261 0.008 0.273
 > 
 > set.seed(1)
 > Nn0 <- Nn00; nn0 <- nn00
-> for(i in 1:200) {
+> for(i in 1:(if(doExtras) 200 else 25)) {
 +     Nn <- Nn0
 +     nn <- nn0
 +     i. <- getDuplIndex(nrow(N0), 6)
@@ -822,34 +821,14 @@ Time elapsed:  0.261 0.008 0.273
 + }
 ,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
 ,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-Now: class ngCMatrix  :
-~~~~~~~~~~~~~~~~~
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-,k.,k.,k.,k.,k.,k.,k.,k.,k.,k.
-> showProc.time()
-Time elapsed:  2.295 0.01 2.363 
+,k.,k.,k.,k.,k.> showProc.time()
+Time elapsed:  0.377 0.003 0.384 
 > 
 > m0 <- Diagonal(5)
 > stopifnot(identical(m0[2,], m0[,2]),
 + 	  identical(m0[,1], c(1,0,0,0,0)))
 > ### Diagonal -- Sparse:
-> (m1 <- as(m0, "TsparseMatrix")) # dtTMatrix
+> (m1 <- as(m0, "TsparseMatrix")) # dtTMatrix unitriangular
 5 x 5 sparse Matrix of class "dtTMatrix" (unitriangular)
               
 [1,] 1 . . . .
@@ -857,7 +836,7 @@ Time elapsed:  2.295 0.01 2.363
 [3,] . . 1 . .
 [4,] . . . 1 .
 [5,] . . . . 1
-> (m2 <- as(m0, "CsparseMatrix")) # dtCMatrix
+> (m2 <- as(m0, "CsparseMatrix")) # dtCMatrix unitriangular
 5 x 5 sparse Matrix of class "dtCMatrix" (unitriangular)
               
 [1,] 1 . . . .
@@ -884,10 +863,11 @@ Time elapsed:  2.295 0.01 2.363
 > assert.EQ.mat(uTr, cbind(0, rbind(0,diag(2))))
 > 
 > M <- m0; M[1,] <- 0
-> stopifnot(identical(M, Diagonal(x=c(0, rep(1,4)))))
+> Z <- m0; Z[] <- 0; z <- array(0, dim(M))
+> stopifnot(identical(M, Diagonal(x=c(0, rep(1,4)))),
++           all(Z == 0), Qidentical(as(Z, "matrix"), z))
 > M <- m0; M[,3] <- 3 ; M ; stopifnot(is(M, "sparseMatrix"), M[,3] == 3)
-M[i,j] <- v :  coercing symmetric M[] into non-symmetric
-5 x 5 sparse Matrix of class "dgTMatrix"
+5 x 5 sparse Matrix of class "dgCMatrix"
               
 [1,] 1 . 3 . .
 [2,] . 1 3 . .
@@ -895,16 +875,13 @@ M[i,j] <- v :  coercing symmetric M[] into non-symmetric
 [4,] . . 3 1 .
 [5,] . . 3 . 1
 > checkMatrix(M)
-Note: Method with signature "sparseMatrix#ldiMatrix" chosen for function "==",
- target signature "nsCMatrix#ldiMatrix".
+Note: method with signature 'sparseMatrix#ldiMatrix' chosen for function '==',
+ target signature 'nsCMatrix#ldiMatrix'.
  "nsparseMatrix#sparseMatrix", "nMatrix#lMatrix" would also be valid
  norm(m [5 x 5]) : 1  I  F  M  ok
  Summary:  ok
 as(., "nMatrix") giving full nonzero-pattern: ok
-2*m =?= m+m: Note: Method with signature "sparseMatrix#ldiMatrix" chosen for function "&",
- target signature "nsCMatrix#ldiMatrix".
- "nsparseMatrix#sparseMatrix", "nMatrix#lMatrix" would also be valid
-ok
+2*m =?= m+m: identical
 m >= m for all: ok
 m < m for none: ok
 symmpart(m) + skewpart(m) == m: ok;  determinant(): ok
@@ -930,11 +907,15 @@ symmpart(m) + skewpart(m) == m: ok;  determinant(): ok
 [5,] . . . . 1
 > M <- m1; M[,3] <- 3 ; stopifnot(is(M,"sparseMatrix"), M[,3] == 3)
 M[i,j] <- v :  coercing symmetric M[] into non-symmetric
+> Z <- m1; Z[] <- 0
 > checkMatrix(M)
  norm(m [5 x 5]) : 1  I  F  M  ok
  Summary:  ok
 as(., "nMatrix") giving full nonzero-pattern: ok
-2*m =?= m+m: ok
+2*m =?= m+m: Note: method with signature 'sparseMatrix#ldiMatrix' chosen for function '&',
+ target signature 'nsCMatrix#ldiMatrix'.
+ "nsparseMatrix#sparseMatrix", "nMatrix#lMatrix" would also be valid
+ok
 m >= m for all: ok
 m < m for none: ok
 symmpart(m) + skewpart(m) == m: ok;  determinant(): ok
@@ -958,7 +939,8 @@ symmpart(m) + skewpart(m) == m: ok;  determinant(): ok
 diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
 'sub-optimal sparse 'x[i] <- v' assignment: Coercing class dtTMatrix to dgTMatrix
 as(<triangular (ge)matrix>, dtTMatrix): valid: TRUE 
-> stopifnot(is(T, "triangularMatrix"), identical(T[,3], c(10,10,10,0,0)))
+> stopifnot(is(T, "triangularMatrix"), identical(T[,3], c(10,10,10,0,0)),
++ 	  Qidentical(as(Z, "matrix"), z))
 > 
 > M <- m2; M[1,] <- 0 ; M ; assert.EQ.mat(M, diag(c(0,rep(1,4))), tol=0)
 5 x 5 sparse Matrix of class "dtCMatrix"
@@ -977,6 +959,7 @@ as(., "nMatrix") giving full nonzero-pattern: ok
 m >= m for all: ok
 m < m for none: ok
 symmpart(m) + skewpart(m) == m: ok;  determinant(): ok
+> Z <- m2; Z[] <- 0
 > M <- m2; M[1:3, 3] <- 0 ;M
 5 x 5 sparse Matrix of class "dtCMatrix"
               
@@ -997,9 +980,10 @@ symmpart(m) + skewpart(m) == m: ok;  determinant(): ok
 diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
 'sub-optimal sparse 'x[i] <- v' assignment: Coercing class dtTMatrix to dgTMatrix
 as(<triangular (ge)matrix>, dtCMatrix): valid: TRUE 
-> stopifnot(is(T, "dtCMatrix"), identical(T[,3], c(10,10,10,0,0)))
+> stopifnot(is(T, "dtCMatrix"), identical(T[,3], c(10,10,10,0,0)),
++ 	  Qidentical(as(Z, "matrix"), z))
 > showProc.time()
-Time elapsed:  1.066 0.003 1.091 
+Time elapsed:  1.42 0.013 1.45 
 > 
 > 
 > ## "Vector indices" -------------------
@@ -1036,7 +1020,7 @@ diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
 [4,]  . . . 1 . .
 [5,]  . . . . 1 .
 [6,] 20 . . . . 1
-> stopifnot(identical(s,D))
+> stopifnot(Q.C.identical(D,s, checkClass=FALSE))
 > ## logical
 > eval(.iniDiag.example)
 > m[L] <- z
@@ -1107,7 +1091,7 @@ diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
 > ## mixing of negative and positive must give error
 > assertError(mT[-1:1,])
 > showProc.time()
-Time elapsed:  0.153 0 0.156 
+Time elapsed:  0.292 0.011 0.305 
 > 
 > ## Sub *Assignment* ---- now works (partially):
 > mt0 <- mt
@@ -1196,7 +1180,7 @@ r5   .   2  4   .  6  .  .
 > mt0 <- as(mc0, "TsparseMatrix")
 > m0  <- as(mc0, "matrix")
 > set.seed(1); options(Matrix.verbose = FALSE)
-> for(i in 1:50) {
+> for(i in 1:(if(doExtras) 50 else 4)) {
 +     mc <- mc0; mt <- mt0 ; m <- m0
 +     ev <- 1:5 %% 2 == round(runif(1))# 0 or 1
 +     j <- sample(ncol(mc), 1 + round(runif(1)))
@@ -1214,37 +1198,18 @@ r5   .   2  4   .  6  .  .
    c5
 r2  2
 r4  .
-2 x 1 sparse Matrix of class "dgCMatrix"
-   c7
-r2  2
-r4  1
-3 x 2 sparse Matrix of class "dgCMatrix"
-   c3 c7
-r1  1  .
-r3  .  .
-r5  1  .
-3 x 1 sparse Matrix of class "dgCMatrix"
-   c5
-r1  1
-r3  1
-r5  1
-3 x 1 sparse Matrix of class "dgCMatrix"
-   c1
-r1  .
-r3  3
-r5  1
 > showProc.time()
-Time elapsed:  0.772 0.003 0.788 
+Time elapsed:  0.579 0.005 0.589 
 > options(Matrix.verbose = TRUE)
 > 
 > mc # no longer has non-structural zeros
 5 x 7 sparse Matrix of class "dgCMatrix"
-   c1 c2 c3 c4 c5 c6  c7
-r1  .  .  2  4  .  . 241
-r2  1 42 -2  3  .  1   .
-r3  3  . -1  .  .  . 243
-r4  1  .  .  .  .  1   .
-r5  . 45  1  .  .  .   .
+   c1 c2 c3 c4 c5  c6  c7
+r1  .  .  2  4  .   . 241
+r2  . 42  .  3  . 202   .
+r3  3  . -1  .  .   . 243
+r4  .  .  1  .  .   .   .
+r5  . 45  1  .  .   .   .
 > mc[ii, jj] <- 1:6
 > mc[c(2,5), c(3,5)] <- 3.2
 > checkMatrix(mc)
@@ -1258,12 +1223,12 @@ m < m for none: ok
 > mc[4,] <- 0
 > mc
 5 x 7 sparse Matrix of class "dgCMatrix"
-   c1 c2   c3 c4  c5 c6  c7
-r1  .  .  2.0  4 .    . 241
-r2  1  1  3.2  3 3.2  1   .
-r3  3  . -1.0  . .    . 243
-r4  .  .  .    . .    .   .
-r5  .  2  3.2  . 3.2  .   .
+   c1 c2   c3 c4  c5  c6  c7
+r1  .  .  2.0  4 .     . 241
+r2  .  1  3.2  3 3.2 202   .
+r3  3  . -1.0  . .     . 243
+r4  .  .  .    . .     .   .
+r5  .  2  3.2  . 3.2   .   .
 > 
 > S <- as(Diagonal(5),"TsparseMatrix")
 > H <- Hilbert(9)
@@ -1349,8 +1314,8 @@ diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
 > ## an example that failed for a long time
 > sy3 <- new("dsyMatrix", Dim = as.integer(c(2, 2)), x = c(14, -1, 2, -7))
 > checkMatrix(dm <- kronecker(Diagonal(2), sy3))# now sparse with new kronecker
-Note: Method with signature "sparseMatrix#ANY" chosen for function "kronecker",
- target signature "dtTMatrix#dsyMatrix".
+Note: method with signature 'sparseMatrix#ANY' chosen for function 'kronecker',
+ target signature 'dtTMatrix#dsyMatrix'.
  "ANY#Matrix" would also be valid
  norm(m [4 x 4]) : 1  I  F  M  ok
  Summary:  ok
@@ -1455,14 +1420,14 @@ M[i,j] <- v :  coercing symmetric M[] into non-symmetric
 > assert.EQ.mat(t2, m)# ok
 > assert.EQ.mat(s2, m)# failed in 0.9975-8
 > showProc.time()
-Time elapsed:  1.156 0.013 1.19 
+Time elapsed:  1.453 0.008 1.495 
 > 
 > 
 > ## m[cbind(i,j)] <- value: (2-column matrix subassignment):
 > m.[ cbind(3:5, 1:3) ] <- 1:3
 > stopifnot(m.[3,1] == 1, m.[4,2] == 2)
 > nt. <- nt ; nt[rbind(2:3, 3:4, c(3,3))] <- FALSE
-> s. <- m. ; m.[cbind(3:4,2:3)] <- 0 ## assigning 0 where there *is* 0 ..
+> s. <- m. ; m.[cbind(3,4:6)] <- 0 ## assigning 0 where there *is* 0 ..
 > stopifnot(identical(nt.,nt),       ## should not have changed
 + 	  identical(s., m.))
 > x.x[ cbind(2:6, 2:6)] <- 12:16
@@ -1472,9 +1437,9 @@ Time elapsed:  1.156 0.013 1.19
 5 x 7 sparse Matrix of class "lgCMatrix"
    c1 c2 c3 c4 c5 c6 c7
 r1  .  .  :  :  .  .  :
-r2  :  :  :  :  :  :  .
+r2  .  :  :  :  :  :  .
 r3  |  .  :  .  .  .  :
-r4  |  |  .  .  .  |  .
+r4  .  |  |  .  .  .  .
 r5  .  :  |  .  :  .  .
 > stopifnot(identical(ne1, 0 != abs(mc - m.)))
 > (ge <- m. >= mc) # contains "=" -> result is dense
@@ -1598,7 +1563,7 @@ r5  TRUE TRUE FALSE TRUE TRUE TRUE TRUE
 > 
 > cc <- capture.output(show(dLrg))# show(<diag>) used to error for large n
 > showProc.time()
-Time elapsed:  1.296 0.007 1.322 
+Time elapsed:  1.638 0.003 1.653 
 > 
 > ## Large Matrix indexing / subassignment
 > ## ------------------------------------- (from ex. by Imran Rashid)
@@ -1636,212 +1601,37 @@ Formal class 'lsparseVector' [package "Matrix"] with 3 slots
 > ## *not* identical(): as(spCol, "sparseVector")@length is "double"prec:
 > stopifnot(all.equal(as(spCol, "sparseVector"),
 +                     as(sv,   "nsparseVector"), tol=0))
-> f[,5762] <- thisCol # now "fine" <<<<<<<<<< FIXME uses LARGE objects -- slow --
-> ## is using  replCmat() in ../R/Csparse.R, then
-> ##           replTmat() in ../R/Tsparse.R
-> 
-> fx <- sparseMatrix(i = sample(n, size=nnz, replace=TRUE),
+> if(doExtras) {#-----------------------------------------------------------------
++ f[,5762] <- thisCol # now "fine" <<<<<<<<<< FIXME uses LARGE objects -- slow --
++ ## is using  replCmat() in ../R/Csparse.R, then
++ ##           replTmat() in ../R/Tsparse.R
++ 
++ fx <- sparseMatrix(i = sample(n, size=nnz, replace=TRUE),
 +                    j = sample(m, size=nnz, replace=TRUE),
 +                    x = round(10*rnorm(nnz)))
-> class(fx)## dgCMatrix
-[1] "dgCMatrix"
-attr(,"package")
-[1] "Matrix"
-> fx[,6000] <- (tC <- rep(thisCol, length=nrow(fx)))# slow (as above)
-> thCol <- fx[,2000]
-> fx[,5762] <- thCol# slow
-> stopifnot(is(f, "ngCMatrix"), is(fx, "dgCMatrix"),
++ class(fx)## dgCMatrix
++ fx[,6000] <- (tC <- rep(thisCol, length=nrow(fx)))# slow (as above)
++ thCol <- fx[,2000]
++ fx[,5762] <- thCol# slow
++ stopifnot(is(f, "ngCMatrix"), is(fx, "dgCMatrix"),
 + 	  identical(thisCol, f[,5762]),# perfect
 + 	  identical(as.logical(fx[,6000]), tC),
 + 	  identical(thCol,  fx[,5762]))
-> 
-> showProc.time()
-Time elapsed:  6.639 0.531 7.246 
-> ##
-> cat("checkMatrix() of all: \n---------\n")
-checkMatrix() of all: 
----------
-> Sys.setlocale("LC_COLLATE", "C")# to keep ls() reproducible
-[1] "C"
-> for(nm in ls()) if(is(.m <- get(nm), "Matrix")) {
++ 
++ showProc.time()
++ ##
++ cat("checkMatrix() of all: \n---------\n")
++ Sys.setlocale("LC_COLLATE", "C")# to keep ls() reproducible
++ for(nm in ls()) if(is(.m <- get(nm), "Matrix")) {
 +     cat(nm, "\n")
 +     checkMatrix(.m, verbose = FALSE)
 + }
-A 
-A. 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-A.ii 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-A1 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-A2 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-Aii 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-B 
-B. 
-C 
-C. 
-Clrg 
-Ctrg 
-D 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-G 
-H 
-Note: Method with signature "sparseMatrix#ldiMatrix" chosen for function "==",
- target signature "ngCMatrix#ldiMatrix".
- "nsparseMatrix#sparseMatrix", "nMatrix#lMatrix" would also be valid
-H. 
-Hc 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-Hc. 
-Lrg 
-M 
-diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
-'sub-optimal sparse 'x[i] <- v' assignment: Coercing class dtTMatrix to dgTMatrix
-M. 
-diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
-'sub-optimal sparse 'x[i] <- v' assignment: Coercing class dtTMatrix to dgTMatrix
-M3 
-diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
-'sub-optimal sparse 'x[i] <- v' assignment: Coercing class ltTMatrix to lgTMatrix
-Ms 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-N0 
-Nn 
-Nn0 
-Nn00 
-Note: Method with signature "nsparseMatrix#sparseMatrix" chosen for function "==",
- target signature "ngTMatrix#ngTMatrix".
- "nMatrix#nMatrix", "sparseMatrix#nsparseMatrix" would also be valid
-Note: Method with signature "nsparseMatrix#sparseMatrix" chosen for function "!=",
- target signature "ngTMatrix#ngTMatrix".
- "nMatrix#nMatrix", "sparseMatrix#nsparseMatrix" would also be valid
-Note: Method with signature "nsparseMatrix#sparseMatrix" chosen for function "+",
- target signature "ngTMatrix#ngTMatrix".
- "sparseMatrix#nsparseMatrix" would also be valid
-Note: Method with signature "nsparseMatrix#sparseMatrix" chosen for function ">=",
- target signature "ngTMatrix#ngTMatrix".
- "nMatrix#nMatrix", "sparseMatrix#nsparseMatrix" would also be valid
-Note: Method with signature "nsparseMatrix#sparseMatrix" chosen for function "<",
- target signature "ngTMatrix#ngTMatrix".
- "nMatrix#nMatrix", "sparseMatrix#nsparseMatrix" would also be valid
-R 
-Rs 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-S 
-diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
-'sub-optimal sparse 'x[i] <- v' assignment: Coercing class dtTMatrix to dgTMatrix
-T 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-T3 
-diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
-'sub-optimal sparse 'x[i] <- v' assignment: Coercing class ltTMatrix to lgTMatrix
-T6 
-diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
-'sub-optimal sparse 'x[i] <- v' assignment: Coercing class ltTMatrix to lgTMatrix
-TG 
-Tii 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-cB 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-cI 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-cm 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-d6 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-dLrg 
-dm 
-Note: Method with signature "sparseMatrix#ldiMatrix" chosen for function "&",
- target signature "ngCMatrix#ldiMatrix".
- "nsparseMatrix#sparseMatrix", "nMatrix#lMatrix" would also be valid
-ds 
-f 
-fx 
-ge 
-l10 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-l3 
-lx.x 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-m. 
-m1 
-diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
-'sub-optimal sparse 'x[i] <- v' assignment: Coercing class dtTMatrix to dgTMatrix
-m1g 
-m2 
-mC 
-mT 
-mc 
-mc0 
-mn 
-mnr 
-mo 
-ms 
-msr 
-mt 
-mt0 
-ne. 
-ne1 
-nsel 
-nt 
-nt. 
-s 
-diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
-'sub-optimal sparse 'x[i] <- v' assignment: Coercing class dtTMatrix to dgTMatrix
-s. 
-s.32 
-s2 
-s2.32 
-sel 
-sm 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-spCol 
-ssel 
-st 
-sy3 
-t2 
-tI 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-tTi 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-trH 
-uTr 
-diagnosing replTmat(x,i,j,v): nargs()= 3; missing (i,j) = (0,1)
-'sub-optimal sparse 'x[i] <- v' assignment: Coercing class dtTMatrix to dgTMatrix
-x.x 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-x.x. 
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-suboptimal 'Arith' implementation of  'dsC*  o  dsC*'
-zz 
-> showProc.time()
-Time elapsed:  10.663 0.326 11.138 
++ showProc.time()
++ }#--------------end if(doExtras) -----------------------------------------------
 > 
 > if(!interactive()) warnings()
 NULL
 > 
 > proc.time()
    user  system elapsed 
- 32.867   1.031  34.499 
+ 14.125   0.224  14.608 

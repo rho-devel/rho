@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -483,14 +483,17 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, struct tm *tm,
 	    have_wday = 1;
 	    break;
 	case L'y':
-	    /* Match year within century.  */
-	    get_number (0, 99, 2);
-	    /* The "Year 2000: The Millennium Rollover" paper suggests that
-	       values in the range 69-99 refer to the twentieth century.  */
-	    tm->tm_year = val >= 69 ? val : val + 100;
-	    /* Indicate that we want to use the century, if specified.  */
-	    want_century = 1;
-	    want_xday = 1;
+	    {
+		/* Match year within century.  */
+		get_number (0, 99, 2);
+		/* The "Year 2000: The Millennium Rollover" paper suggests that
+		   values in the range 69-99 refer to the twentieth century.  */
+		int ival = val;
+		tm->tm_year = ival >= 69 ? ival : ival + 100;
+		/* Indicate that we want to use the century, if specified.  */
+		want_century = 1;
+		want_xday = 1;
+	    }
 	    break;
 	case L'Y':
 	    /* Match year including century number.  */
@@ -517,7 +520,7 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, struct tm *tm,
 		    val = (val / 100) * 100 + ((val % 100) * 50) / 30;
 		}
 		if (val > 1200) return NULL;
-		off = (val * 3600) / 100;
+		off = ((val * 3600) / 100);
 		if (neg) off = -off;
 		*poffset = off;
 	    }
@@ -542,7 +545,7 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, struct tm *tm,
 	    case L'e':
 		/* Match day of month using alternate numeric symbols.  */
 		get_alt_number (1, 31, 2);
-		tm->tm_mday = val;
+	        tm->tm_mday = val;
 		have_mday = 1;
 		want_xday = 1;
 		break;
@@ -550,27 +553,27 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, struct tm *tm,
 		/* Match hour in 24-hour clock using alternate numeric
 		   symbols.  */
 		get_alt_number (0, 23, 2);
-		tm->tm_hour = val;
+	        tm->tm_hour = val;
 		have_I = 0;
 		break;
 	    case L'I':
 		/* Match hour in 12-hour clock using alternate numeric
 		   symbols.  */
 		get_alt_number (1, 12, 2);
-		tm->tm_hour = val % 12;
+	        tm->tm_hour = val % 12;
 		have_I = 1;
 		break;
 	    case L'm':
 		/* Match month using alternate numeric symbols.  */
 		get_alt_number (1, 12, 2);
-		tm->tm_mon = val - 1;
+	        tm->tm_mon = val - 1;
 		have_mon = 1;
 		want_xday = 1;
 		break;
 	    case L'M':
 		/* Match minutes using alternate numeric symbols.  */
 		get_alt_number (0, 59, 2);
-		tm->tm_min = val;
+	        tm->tm_min = val;
 		break;
 	    case L'S':
 		/* Match seconds using alternate numeric symbols.
@@ -580,7 +583,7 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, struct tm *tm,
 		    wchar_t *end;
 		    sval = wcstod(rp, &end);
 		    if( sval >= 0.0 && sval <= 61.0) {
-		        tm->tm_sec = int(sval);
+		        tm->tm_sec = int( sval);
 			*psecs = sval;
 		    }
 		    rp = end;
@@ -608,10 +611,13 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, struct tm *tm,
 		have_wday = 1;
 		break;
 	    case L'y':
-		/* Match year within century using alternate numeric symbols.  */
-		get_alt_number (0, 99, 2);
-		tm->tm_year = val >= 69 ? val : val + 100;
-		want_xday = 1;
+		{
+		    /* Match year within century using alternate numeric symbols.  */
+		    get_alt_number (0, 99, 2);
+		    int ival = val;
+		    tm->tm_year = ival >= 69 ? ival : ival + 100;
+		    want_xday = 1;
+		}
 		break;
 	    default:
 		return NULL;
@@ -665,10 +671,12 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, struct tm *tm,
       if (have_mon)
 	  tm->tm_mon = save_mon;
 
-      if (!have_yday)
+      if (!have_yday) {
 	  tm->tm_yday = ((7 - (tm->tm_wday - w_offset)) % 7
 			 + (week_no - 1) *7
 			 + save_wday - w_offset);
+	  if(tm->tm_yday < 0) tm->tm_yday += 7;
+      }
 
       if (!have_mday || !have_mon)
       {
@@ -942,17 +950,20 @@ strptime_internal (const char *rp, const char *fmt, struct tm *tm,
 	    have_wday = 1;
 	    break;
 	case 'y':
-	    /* Match year within century.  */
-	    get_number (0, 99, 2);
-	    /* The "Year 2000: The Millennium Rollover" paper suggests that
-	       values in the range 69-99 refer to the twentieth century.
-	       And this is mandated by the POSIX 2001 standard, with a
-	       caveat that it might change in future.
-	    */
-	    tm->tm_year = val >= 69 ? val : val + 100;
-	    /* Indicate that we want to use the century, if specified.  */
-	    want_century = 1;
-	    want_xday = 1;
+	    {
+		/* Match year within century.  */
+		get_number (0, 99, 2);
+		/* The "Year 2000: The Millennium Rollover" paper suggests that
+		   values in the range 69-99 refer to the twentieth century.
+		   And this is mandated by the POSIX 2001 standard, with a
+		   caveat that it might change in future.
+		*/
+		int ival = val;
+		tm->tm_year = ival >= 69 ? ival : ival + 100;
+		/* Indicate that we want to use the century, if specified.  */
+		want_century = 1;
+		want_xday = 1;
+	    }
 	    break;
 	case 'Y':
 	    /* Match year including century number.  */
@@ -1043,7 +1054,7 @@ strptime_internal (const char *rp, const char *fmt, struct tm *tm,
 		       char *end;
 		       sval = strtod(rp, &end);
 		       if( sval >= 0.0 && sval <= 61.0) {
-			   tm->tm_sec = int(sval);
+			   tm->tm_sec = int( sval);
 			   *psecs = sval;
 		       }
 		       rp = end;
@@ -1071,10 +1082,13 @@ strptime_internal (const char *rp, const char *fmt, struct tm *tm,
 		have_wday = 1;
 		break;
 	    case 'y':
-		/* Match year within century using alternate numeric symbols.  */
-		get_alt_number (0, 99, 2);
-		tm->tm_year = val >= 69 ? val : val + 100;
-		want_xday = 1;
+		{
+		    /* Match year within century using alternate numeric symbols.  */
+		    get_alt_number (0, 99, 2);
+		    int ival = val;
+		    tm->tm_year = ival >= 69 ? ival : ival + 100;
+		    want_xday = 1;
+		}
 		break;
 	    default:
 		return NULL;

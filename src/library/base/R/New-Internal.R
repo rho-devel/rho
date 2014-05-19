@@ -1,6 +1,8 @@
 #  File src/library/base/R/New-Internal.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -51,26 +53,26 @@ try <- function(expr, silent = FALSE) {
     })
 }
 
-comment <- function(x).Internal(comment(x))
-`comment<-` <- function(x,value).Internal("comment<-"(x, value))
+comment <- function(x) .Internal(comment(x))
+`comment<-` <- function(x, value) .Internal("comment<-"(x, value))
 
 logb <- function(x, base=exp(1)) if(missing(base)) log(x) else log(x, base)
 
-atan2 <- function(y, x).Internal(atan2(y, x))
+atan2 <- function(y, x) .Internal(atan2(y, x))
 
-beta <- function(a, b).Internal( beta(a, b))
-lbeta <- function(a, b).Internal(lbeta(a, b))
+beta <- function(a, b) .Internal( beta(a, b))
+lbeta <- function(a, b) .Internal(lbeta(a, b))
 
 psigamma <- function(x, deriv = 0L) .Internal(psigamma(x, deriv))
 
 factorial <- function(x) gamma(x + 1)
 lfactorial <- function(x) lgamma(x + 1)
 
-choose <- function(n,k).Internal(choose(n,k))
-lchoose <- function(n,k).Internal(lchoose(n,k))
+choose <- function(n, k) .Internal(choose(n, k))
+lchoose <- function(n, k) .Internal(lchoose(n, k))
 
 ##-- 2nd part --
-R.Version <- function().Internal(Version())
+R.Version <- function() .Internal(Version())
 
 commandArgs <- function(trailingOnly = FALSE) {
     args <- .Internal(commandArgs())
@@ -80,7 +82,7 @@ commandArgs <- function(trailingOnly = FALSE) {
     } else args
 }
 
-args <- function(name).Internal(args(name))
+args <- function(name) .Internal(args(name))
 
 cbind <- function(..., deparse.level = 1)
     .Internal(cbind(deparse.level, ...))
@@ -131,7 +133,7 @@ do.call <- function(what, args, quote = FALSE, envir = parent.frame())
     .Internal(do.call(what, args, envir))
 }
 
-drop <- function(x).Internal(drop(x))
+drop <- function(x) .Internal(drop(x))
 
 format.info <- function(x, digits = NULL, nsmall = 0L)
     .Internal(format.info(x, digits, nsmall))
@@ -145,13 +147,13 @@ gc <- function(verbose = getOption("verbose"),	reset=FALSE)
     res
 }
 gcinfo <- function(verbose) .Internal(gcinfo(verbose))
-gctorture <- function(on=TRUE) invisible(.Internal(gctorture(on)))
+gctorture <- function(on = TRUE) .Internal(gctorture(on))
 gctorture2 <- function(step, wait = step, inhibit_release = FALSE)
     .Internal(gctorture2(step, wait, inhibit_release))
 
 is.unsorted <- function(x, na.rm = FALSE, strictly = FALSE)
 {
-    if(is.null(x)) return(FALSE)
+    if(length(x) <= 1L) return(FALSE)
     if(!na.rm && any(is.na(x)))## "FIXME" is.na(<large>) is "too slow"
 	return(NA)
     ## else
@@ -163,10 +165,10 @@ is.unsorted <- function(x, na.rm = FALSE, strictly = FALSE)
 nchar <- function(x, type = "chars", allowNA = FALSE)
     .Internal(nchar(x, type, allowNA))
 
-polyroot <- function(z).Internal(polyroot(z))
+polyroot <- function(z) .Internal(polyroot(z))
 
-readline <- function(prompt="").Internal(readline(prompt))
-search <- function().Internal(search())
+readline <- function(prompt = "") .Internal(readline(prompt))
+search <- function() .Internal(search())
 searchpaths <- function()
 {
     s <- search()
@@ -181,10 +183,10 @@ searchpaths <- function()
 sprintf <- function(fmt, ...) .Internal(sprintf(fmt, ...))
 
 ##-- DANGER ! ---   substitute(list(...))  inside functions !!!
-##substitute <- function(expr, env=baseenv()).Internal(substitute(expr, env))
+##substitute <- function(expr, env=baseenv()) .Internal(substitute(expr, env))
 
-t.default <- function(x).Internal(t.default(x))
-typeof <- function(x).Internal(typeof(x))
+t.default <- function(x) .Internal(t.default(x))
+typeof <- function(x) .Internal(typeof(x))
 
 
 memory.profile <- function() .Internal(memory.profile())

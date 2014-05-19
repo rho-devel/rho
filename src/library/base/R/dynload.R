@@ -1,6 +1,8 @@
 #  File src/library/base/R/dynload.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -44,16 +46,19 @@ getNativeSymbolInfo <- function(name, PACKAGE, unlist = TRUE,
     } else if(inherits(PACKAGE, "DLLInfoReference")) {
         pkgName <- character()
     } else
-        stop("must pass a package name, DLLInfo or DllInfoReference object")
+        stop(gettextf("must pass a package name, %s or %s object",
+                      dQuote("DLLInfo"),
+                      dQuote("DllInfoReference")),
+             domain = NA)
 
     syms <- lapply(name, function(id) {
-	v <- .Call("R_getSymbolInfo", as.character(id), PACKAGE,
-		   as.logical(withRegistrationInfo), PACKAGE = "base")
+	v <- .Internal(getSymbolInfo(as.character(id), PACKAGE,
+                                     as.logical(withRegistrationInfo)))
 	if(is.null(v)) {
 	    msg <- paste("no such symbol", id)
 	    if(length(pkgName) && nzchar(pkgName))
 		msg <- paste(msg, "in package", pkgName)
-	    stop(msg)
+	    stop(msg, domain = NA)
 	}
 	names(v) <- c("name", "address", "package", "numParameters")[seq_along(v)]
 	v
@@ -67,12 +72,7 @@ getNativeSymbolInfo <- function(name, PACKAGE, unlist = TRUE,
    syms
 }
 
-getLoadedDLLs <- function()
-{
-    els <- .Call("R_getDllTable", PACKAGE = "base")
-    names(els) <- vapply(els, function(x) x[["name"]], "")
-    els
-}
+getLoadedDLLs <- function() .Internal(getLoadedDLLs())
 
 
 getDLLRegisteredRoutines <- function(dll, addNames = TRUE)
@@ -85,7 +85,8 @@ getDLLRegisteredRoutines.character <- function(dll, addNames = TRUE)
     w <- vapply(dlls, function(x) x[["name"]] == dll || x[["path"]] == dll, NA)
 
     if(!any(w))
-        stop("No DLL currently loaded with name or path ", dll)
+        stop(gettextf("No DLL currently loaded with name or path %s", sQuote(dll)),
+             domain = NA)
 
     dll <- which(w)[1L]
     if(sum(w) > 1L)
@@ -100,10 +101,12 @@ getDLLRegisteredRoutines.DLLInfo <- function(dll, addNames = TRUE)
 {
     ## Provide methods for the different types.
     if(!inherits(dll, "DLLInfo"))
-        stop("must specify DLL via a DLLInfo object. See getLoadedDLLs()")
+        stop(gettextf("must specify DLL via a %s object. See getLoadedDLLs()",
+                      dQuote("DLLInfo")),
+             domain = NA)
 
     info <- dll[["info"]]
-    els <- .Call("R_getRegisteredRoutines", info, PACKAGE = "base")
+    els <- .Internal(getRegisteredRoutines(info))
     ## Put names on the elements by getting the names from each element.
     if(addNames) {
       els <- lapply(els, function(x) {
@@ -126,28 +129,28 @@ function(x, ...)
     invisible(x)
 }
 
+### This is arranged as a ragged data frame.  It may be confusing
+### if one reads it row-wise as the columns are related in pairs
+### but not across pairs.  We might leave it as  a list of lists
+### but that spans a great deal of vertical space and involves
+### a lot of scrolling for the user.
 print.DLLRegisteredRoutines <-
-      # This is arranged as a ragged data frame.  It may be confusing
-      # if one reads it row-wise as the columns are related in pairs
-      # but not across pairs.  We might leave it as  a list of lists
-      # but that spans a great deal of vertical space and involves
-      # a lot of scrolling for the user.
 function(x, ...)
 {
-      # Create a data frame with as many rows as the maximum number
-      # of routines in any category. Then fill the column with ""
-      # and then the actual entries.
+    ## Create a data frame with as many rows as the maximum number
+    ## of routines in any category. Then fill the column with ""
+    ## and then the actual entries.
 
-    n <- max(vapply(x, length, 1L))
+    n <- vapply(x, length, 1L)
+    x <- x[n > 0]
+    n <- max(n)
     d <- list()
     sapply(names(x),
              function(id) {
-                d[[id]] <<- rep("", n)
-                names <- sapply(x[[id]], function(x) x$name)
-                if(length(names))
-                    d[[id]][seq_along(names)] <<- names
-
-                d[[paste(id, "numParameters")]] <<- rep("", n)
+		d[[id]] <<- rep.int("", n)
+		names <- vapply(x[[id]], function(x) x$name, "")
+                if(length(names)) d[[id]][seq_along(names)] <<- names
+                d[[paste(id, "numParameters")]] <<- rep.int("", n)
                 names <- sapply(x[[id]], function(x) x$numParameters)
                 if(length(names))
                     d[[paste(id, "numParameters")]][seq_along(names)] <<- names
@@ -177,7 +180,7 @@ function(f = sys.function(-1), doStop = FALSE)
             return(NULL)
     }
 
-       # Please feel free to replace with a more encapsulated way to do this.
+    ## Please feel free to replace with a more encapsulated way to do this.
     if (is.null(env <- e$".__NAMESPACE__.")) env <- baseenv()
     if(exists("DLLs", envir = env) && length(env$DLLs))
         return(env$DLLs[[1L]])

@@ -40,3 +40,9 @@ load("BankWages.rda") # from AER
 bw <- polr(job ~ education, data = BankWages)
 summary(bw)
 ## failed due to incorrect restarting values
+
+## missing drop = FALSE in profiling (Joris Meys, Sep 2012)
+house.plr <- polr(Sat ~ Cont, weights = Freq, data = housing)
+pr <- profile(house.plr)
+plot(pr)
+

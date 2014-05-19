@@ -8,6 +8,7 @@
 \alias{\%*\%,ddenseMatrix,dgCMatrix-method}
 \alias{\%*\%,dgeMatrix,dgCMatrix-method}
 \alias{\%*\%,matrix,dgCMatrix-method}
+\alias{as.vector,dgCMatrix,missing-method}
 \alias{coerce,matrix,dgCMatrix-method}
 \alias{coerce,dgeMatrix,dgCMatrix-method}
 \alias{coerce,dgCMatrix,dgTMatrix-method}
@@ -15,8 +16,9 @@
 \alias{coerce,dgCMatrix,dtCMatrix-method}
 \alias{coerce,dgCMatrix,lgCMatrix-method}
 \alias{coerce,dgCMatrix,ngCMatrix-method}
-\alias{coerce,dgCMatrix,matrix-method}
 \alias{coerce,dgCMatrix,dgeMatrix-method}
+\alias{coerce,dgCMatrix,matrix-method}
+\alias{coerce,dgCMatrix,vector-method}
 \alias{coerce,factor,dgCMatrix-method}
 \alias{crossprod,dgCMatrix,missing-method}
 \alias{crossprod,dgCMatrix,matrix-method}
@@ -24,11 +26,9 @@
 \alias{diag,dgCMatrix-method}
 \alias{dim,dgCMatrix-method}
 %\alias{lu,dgCMatrix-method}-> ./lu.Rd
+\alias{isSymmetric,dgCMatrix-method}
 \alias{t,dgCMatrix-method}
-\alias{solve,dgCMatrix,matrix-method}
-\alias{solve,dgCMatrix,missing-method}
-\alias{solve,dgCMatrix,ddenseMatrix-method}
-\alias{solve,dgCMatrix,dsparseMatrix-method}
+%\alias{solve,dgCMatrix,matrix-method}--> solve-methods.Rd
 %% Group methods --------- FIXME: These are not tested yet (or documented)
 \alias{Arith,logical,dgCMatrix-method}
 \alias{Arith,numeric,dgCMatrix-method}
@@ -79,6 +79,9 @@
       of \code{x}}
     \item{image}{\code{signature(x = "dgCMatrix")}: plots an image of
       \code{x} using the \code{\link[lattice]{levelplot}} function}
+    \item{solve}{\code{signature(a = "dgCMatrix", b = "...")}:
+      see \code{\link{solve-methods}}, notably the extra argument
+      \code{sparse}.}
     \item{lu}{\code{signature(x = "dgCMatrix")}: computes the LU
       decomposition of a square \code{dgCMatrix} object}
   }

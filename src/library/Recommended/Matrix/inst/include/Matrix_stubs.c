@@ -510,6 +510,19 @@ M_cholmod_defaults (CHM_CM Common)
     return fun(Common);
 }
 
+int attribute_hidden
+M_cholmod_updown(int update, const_CHM_SP C,
+				const_CHM_FR L, CHM_CM Common)
+{
+	static int(*fun)(int,const_CHM_SP,const_CHM_FR,
+						CHM_CM) = NULL;
+	if (fun == NULL)
+		fun = (int(*)(int,const_CHM_SP,const_CHM_FR,
+							CHM_CM))
+		R_GetCCallable("Matrix", "cholmod_updown");
+	return fun(update, C, L, Common);
+}
+
 /* extern cholmod_common c; */
 
 void attribute_hidden

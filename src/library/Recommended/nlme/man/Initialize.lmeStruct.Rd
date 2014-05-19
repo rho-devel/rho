@@ -43,7 +43,7 @@
   initialized model components. 
 }
 
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{lme}}, \code{\link{Initialize.reStruct}},
   \code{\link{Initialize.corStruct}},

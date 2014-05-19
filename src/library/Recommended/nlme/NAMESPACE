@@ -1,7 +1,16 @@
 useDynLib(nlme, .registration=TRUE)
-import(lattice)
-import(stats)
+
 importFrom(graphics, pairs, plot)
+
+importFrom(lattice,
+           Rows, bwplot, dotplot, llines, lpoints, lsegments, ltext,
+           panel.abline, panel.bwplot, panel.dotplot,  panel.grid,
+           panel.histogram, panel.linejoin, panel.loess, panel.superpose,
+           panel.xyplot, splom, strip.default, trellis.par.get, xyplot)
+
+importFrom(stats,
+           anova, coef, fitted, formula, logLik, nobs, predict, qqnorm,
+           residuals, update, vcov)
 
 export(ACF, allCoef, asOneFormula, asTable, augPred, balancedGrouped,
        "coef<-", "coefficients<-", collapse, compareFits,
@@ -27,33 +36,7 @@ export(ACF, allCoef, asOneFormula, asTable, augPred, balancedGrouped,
 export(anova.lme, nlsList.formula, plot.lme)
 
 # needed as name stored in the call via match.call
-export(lme.formula, lme.lmList, lmList.formula, nlme.formula,
-       nlme.nlsList)
-
-# used internally - not intended to be visible to users
-# export(allVarsRec, createConLin, getFixDF, getParsGnls,
-#        getParsNlme, glsApVar, glsEstimate, gnlsApVar, lmeApVar,
-#        MEdecomp, MEdims, MEEM, MEestimate, nonlinModel)
-
-# export(lme.groupedData, lmList.groupedData, nlsList.selfStart)
-# export(anova.gls, anova.lme, pairs.compareFits, pairs.lme,
-#        pairs.lmList, plot.ACF, plot.augPred, plot.compareFits,
-#        plot.gls, plot.intervals.lmList, plot.lme, plot.lmList,
-#        plot.nffGroupedData, plot.nfnGroupedData, plot.nls,
-#        plot.nmGroupedData, plot.pdMat, plot.ranef.lme,
-#        plot.ranef.lmList, plot.simulate.lme, plot.Variogram,
-#        predict.gls, predict.gnls, predict.lme, predict.lmList,
-#        predict.nlme, qqnorm.gls, qqnorm.lm, qqnorm.lme, qqnorm.lmList,
-#        qqnorm.nls, residuals.gls, residuals.glsStruct, residuals.gnls,
-#        residuals.gnlsStruct, residuals.lme, residuals.lmeStruct,
-#        residuals.lmList, residuals.nlmeStruct, solve.pdBlocked,
-#        solve.pdDiag, solve.pdIdent, solve.pdLogChol, solve.pdMat,
-#        solve.pdNatural, solve.pdSymm, solve.reStruct,
-#        update.corStruct, update.gls, update.gnls, update.groupedData,
-#        update.lme, update.lmList, update.modelStruct, update.nlme,
-#        update.nlsList, update.reStruct, update.varComb,
-#        update.varConstPower, update.varExp, update.varFunc,
-#        update.varPower)
+export(lme.formula, lme.lmList, lmList.formula, nlme.formula, nlme.nlsList)
 
 S3method("[", groupedData)
 S3method("[", pdBlocked)

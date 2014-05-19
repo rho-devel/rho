@@ -35,6 +35,15 @@ apply(X, MARGIN, FUN, \dots)
   is either a function or a symbol (e.g. a backquoted name) or a
   character string specifying a function to be searched for from the
   environment of the call to \code{apply}.
+
+  Arguments in \code{\dots} cannot have the same name as any of the
+  other arguments, and care may be needed to avoid partial matching to
+  \code{MARGIN} or \code{FUN}.  In general-purpose code it is good
+  practice to name the first three arguments if \code{\dots} is passed
+  through: this both avoids partial matching to \code{MARGIN}
+  or \code{FUN} and ensures that a sensible error message is given if
+  arguments named \code{X}, \code{MARGIN} or \code{FUN} are passed
+  through \code{\dots}.
 }
 \value{
   If each call to \code{FUN} returns a vector of length \code{n}, then
@@ -79,17 +88,17 @@ apply(x, 2, sort)
 
 ##- function with extra args:
 cave <- function(x, c1, c2) c(mean(x[c1]), mean(x[c2]))
-apply(x,1, cave,  c1="x1", c2=c("x1","x2"))
+apply(x, 1, cave,  c1 = "x1", c2 = c("x1","x2"))
 
 ma <- matrix(c(1:4, 1, 6:8), nrow = 2)
 ma
 apply(ma, 1, table)  #--> a list of length 2
-apply(ma, 1, stats::quantile)# 5 x n matrix with rownames
+apply(ma, 1, stats::quantile) # 5 x n matrix with rownames
 
 stopifnot(dim(ma) == dim(apply(ma, 1:2, sum)))
 
 ## Example with different lengths for each call
-z <- array(1:24, dim=2:4)
+z <- array(1:24, dim = 2:4)
 zseq <- apply(z, 1:2, function(x) seq_len(max(x)))
 zseq         ## a 2 x 3 matrix
 typeof(zseq) ## list

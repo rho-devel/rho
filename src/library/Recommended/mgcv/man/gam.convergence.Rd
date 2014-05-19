@@ -30,7 +30,7 @@ the smoothing basis to use \code{bs="cr"} (see \code{\link{s}} for details)
 for 1-d smooths, and to use \code{\link{te}} smooths in place of
 \code{\link{s}} smooths for smooths of more than one variable. This is because
 the default thin plate regression spline basis \code{"tp"} is costly to set up
-for large datasets (much over 1000 data, say).
+for large datasets (much over 1000 data, say). (iv) consider using \code{\link{bam}}.
 
 If the GAM estimation process fails to converge when using performance
 iteration, then switch to outer iteration via the \code{optimizer} argument of

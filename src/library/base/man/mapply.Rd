@@ -1,6 +1,6 @@
 % File src/library/base/man/mapply.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2012 R Core Team
 % Copyright 2002-2010 The R Foundation
 % Distributed under GPL 2 or later
 
@@ -20,11 +20,11 @@ mapply(FUN, \dots, MoreArgs = NULL, SIMPLIFY = TRUE,
 \arguments{
   \item{FUN}{function to apply, found via \code{\link{match.fun}}.}
   \item{\dots}{arguments to vectorize over (vectors or lists of strictly
-    positive length, or all of zero length).}
+    positive length, or all of zero length).  See also \sQuote{Details}.}
   \item{MoreArgs}{a list of other arguments to \code{FUN}.}
   \item{SIMPLIFY}{logical or character string; attempt to reduce the
     result to a vector, matrix or higher dimensional array; see
-    the \code{simplify} argument of \code{\link{sapply}}.} 
+    the \code{simplify} argument of \code{\link{sapply}}.}
   \item{USE.NAMES}{logical; use names if the first \dots argument has
     names, or if it is a character vector, use that character vector as
     the names.}
@@ -34,6 +34,9 @@ mapply(FUN, \dots, MoreArgs = NULL, SIMPLIFY = TRUE,
   (re-cycled to the length of the longest, unless any have length zero),
   followed by the arguments given in \code{MoreArgs}.  The arguments in
   the call will be named if \code{\dots} or \code{MoreArgs} are named.
+
+  Arguments with classes in \code{\dots} will be accepted, and their
+  subsetting and \code{length} methods will be used.
 }
 \value{
   A list, or for \code{SIMPLIFY = TRUE}, a vector, array or list.
@@ -51,11 +54,11 @@ mapply(rep, times = 1:4, x = 4:1)
 
 mapply(rep, times = 1:4, MoreArgs = list(x = 42))
 
-mapply(function(x,y) seq_len(x) + y,
+mapply(function(x, y) seq_len(x) + y,
        c(a =  1, b = 2, c = 3),  # names from first
        c(A = 10, B = 0, C = -10))
 
-word <- function(C,k) paste(rep.int(C,k), collapse = '')
+word <- function(C, k) paste(rep.int(C, k), collapse = "")
 utils::str(mapply(word, LETTERS[1:6], 6:1, SIMPLIFY = FALSE))
 }
 \keyword{manip}

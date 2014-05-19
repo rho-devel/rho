@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -51,9 +51,9 @@ using namespace CXXR;
 // class CellPool with Valgrind client requests, but the result was
 // intolerably slow running.)
 #ifdef NO_CELLPOOLS
-const size_t MemoryBank::s_alloc_threshold = 0;
+const size_t MemoryBank::s_new_threshold = 0;
 #else
-const size_t MemoryBank::s_alloc_threshold = 193;
+const size_t MemoryBank::s_new_threshold = 193;
 #endif
 
 size_t MemoryBank::s_blocks_allocated = 0;
@@ -86,7 +86,7 @@ void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
     if (s_monitor && bytes >= s_monitor_threshold) s_monitor(bytes);
 #endif
     void* p;
-    if (use_new_directly(bytes))
+    if (bytes >= s_new_threshold)
 	p = ::operator new(bytes);
     else {
 	Pool& pool = s_pools[s_pooltab[(bytes + 7) >> 3]];

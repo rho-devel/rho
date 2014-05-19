@@ -43,7 +43,7 @@
  Pinheiro, J.C. and Bates., D.M.  (1996) "Unconstrained Parametrizations
  for Variance-Covariance Matrices", Statistics and Computing, 6, 289-296.
 }
-\author{Jose Pinheiro and Douglas Bates }
+\author{José Pinheiro and Douglas Bates }
 \section{SIDE EFFECTS}{
   On the left side of an assignment, sets the values of the coefficients
   of \code{object} to \code{value}. 

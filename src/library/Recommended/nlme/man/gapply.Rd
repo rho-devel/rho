@@ -54,7 +54,7 @@ gapply(object, which, FUN, form, level, groups, \dots)
   Pinheiro, J.C., and Bates, D.M. (2000) "Mixed-Effects Models
   in S and S-PLUS", Springer, esp. sec. 3.4.  
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{gsummary}}}
 

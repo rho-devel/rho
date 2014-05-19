@@ -1,6 +1,8 @@
 #  File src/library/utils/R/indices.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -108,7 +110,8 @@ packageDescription <- function(pkg, lib.loc=NULL, fields=NULL, drop=TRUE,
 }
 
 
-print.packageDescription <- function(x, abbrCollate = 0.8 * getOption("width"), ...)
+print.packageDescription <-
+    function(x, abbrCollate = 0.8 * getOption("width"), ...)
 {
     xx <- x
     xx[] <- lapply(xx, function(x) if(is.na(x)) "NA" else x)
@@ -122,7 +125,7 @@ print.packageDescription <- function(x, abbrCollate = 0.8 * getOption("width"), 
     cat("\n-- File:", attr(x, "file"), "\n")
     if(!is.null(attr(x, "fields"))){
         cat("-- Fields read: ")
-        cat(attr(x, "fields"), sep=", ")
+        cat(attr(x, "fields"), sep = ", ")
         cat("\n")
     }
     invisible(x)
@@ -130,17 +133,20 @@ print.packageDescription <- function(x, abbrCollate = 0.8 * getOption("width"), 
 
 # Simple convenience functions
 
-maintainer <- function(pkg) {
+maintainer <- function(pkg)
+{
     force(pkg)
-    packageDescription(pkg)$Maintainer
+    desc <- packageDescription(pkg)
+    if(is.list(desc)) gsub("\n", " ", desc$Maintainer, fixed = TRUE)
+    else NA_character_
 }
 
-packageVersion <- function(pkg, lib.loc=NULL)
+packageVersion <- function(pkg, lib.loc = NULL)
 {
     res <- suppressWarnings(packageDescription(pkg, lib.loc=lib.loc,
                                                fields = "Version"))
     if (!is.na(res)) package_version(res) else
-    stop("package ", sQuote(pkg), " not found")
+    stop(gettextf("package %s not found", sQuote(pkg)), domain = NA)
 }
 
 ## used with firstOnly = TRUE for example()
@@ -180,9 +186,8 @@ function(x, ...)
     outConn <- file(outFile, open = "w")
     first <- TRUE
     for(pkg in names(out)) {
-        writeLines(paste(ifelse(first, "", "\n"), x$title,
-                         " in package ", sQuote(pkg), ":\n",
-                         sep = ""),
+        writeLines(paste0(ifelse(first, "", "\n"), x$title,
+                          " in package ", sQuote(pkg), ":\n"),
                    outConn)
         writeLines(formatDL(out[[pkg]][, "Item"],
                             out[[pkg]][, "Title"]),

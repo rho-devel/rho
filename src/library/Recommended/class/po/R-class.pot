@@ -1,8 +1,7 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.10.0\n"
-"Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-05-11 13:16\n"
+"Project-Id-Version: class 7.3-6\n"
+"POT-Creation-Date: 2013-03-18 09:49\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,7 +13,7 @@ msgstr ""
 msgid "wrong plot method used"
 msgstr ""
 
-msgid "SOM called with no data"
+msgid "'SOM' called with no data"
 msgstr ""
 
 msgid "'radii' must be a list of the same length as 'alpha'"
@@ -44,7 +43,7 @@ msgstr ""
 msgid "'x' and 'cl' have different lengths"
 msgstr ""
 
-msgid "invalid prior"
+msgid "invalid 'prior'"
 msgstr ""
 
 msgid "'prior' is of incorrect length"
@@ -53,8 +52,5 @@ msgstr ""
 msgid "retained set is now too small to proceed"
 msgstr ""
 
-msgid "pass"
-msgstr ""
-
-msgid "size"
+msgid "pass %s size %d"
 msgstr ""

@@ -23,7 +23,7 @@ isInitialized(object)
   a logical value indicating whether \code{object} has been
   initialized. 
 }
-\author{Jose Pinheiro and Douglas Bates }
+\author{José Pinheiro and Douglas Bates }
 
 \seealso{\code{\link{Initialize}}}
 

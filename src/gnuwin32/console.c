@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -19,7 +19,7 @@
  *  file console.c
  *  Copyright (C) 1998--2003  Guido Masarotto and Brian Ripley
  *  Copyright (C) 2004-8      The R Foundation
- *  Copyright (C) 2004-11     The R Core Team
+ *  Copyright (C) 2004-13     The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ extern void R_ProcessEvents(void);
 #include <ctype.h>
 #include <wchar.h>
 #include <limits.h>
-#include <R_ext/rlocale.h>
+#include <rlocale.h>
 #include <R_ext/Memory.h>
 #include "graphapp/ga.h"
 #ifdef USE_MDI
@@ -280,7 +280,7 @@ static size_t enctowcs(wchar_t *wc, char *s, int n)
 	nc += mbstowcs(wc, s, n);
 	pb += 3; pe = pb;
 	while(*pe &&
-	      !((pe = strchr(pb, UTF8out[0])) && *(pe+1) == UTF8out[1] &&
+	      !((pe = strchr(pe, UTF8out[0])) && *(pe+1) == UTF8out[1] &&
 	      *(pe+2) == UTF8out[2])) pe++;
 	if(!*pe) return nc; /* FIXME */;
 	*pe = '\0';
@@ -294,18 +294,17 @@ static size_t enctowcs(wchar_t *wc, char *s, int n)
 
 static void xbufadds(xbuf p, const char *s, int user)
 {
-    int n = strlen(s) + 1; /* UCS-2 must be shorter */
+    int n = strlen(s) + 1; /* UCS-2 must be no more chars */
     if (n < 1000) {
 	wchar_t tmp[n];
 	enctowcs(tmp, (char *) s, n);
 	xbufaddxs(p, tmp, user);
     } else {
 	/* very long line */
-	void *vmax = vmaxget();
-	wchar_t *tmp = (wchar_t*) R_alloc(n, sizeof(wchar_t));
+	wchar_t *tmp = (wchar_t*) malloc(n * sizeof(wchar_t));
 	enctowcs(tmp, (char *) s, n);
 	xbufaddxs(p, tmp, user);
-	vmaxset(vmax);
+	free(tmp);
     }
 }
 
@@ -972,9 +971,10 @@ static void performCompletion(control c)
     for (i = 0; i < alen; i++)
 	if (pline[i] == '"') pline[i] = L'\'';
 
-    char cmd[wcslen(pline) + 100];
-    sprintf(cmd, "utils:::.win32consoleCompletion(\"%ls\", %d)",
-	    pline, cursor_position);
+    size_t len = wcslen(pline) + 100; 
+    char cmd[len];
+    snprintf(cmd, len, "utils:::.win32consoleCompletion(\"%ls\", %d)",
+	     pline, cursor_position);
     PROTECT(cmdSexp = mkString(cmd));
     cmdexpr = PROTECT(R_ParseVector(cmdSexp, -1, &status, R_NilValue));
     if (status != PARSE_OK) {
@@ -1007,8 +1007,9 @@ static void performCompletion(control c)
 	/* make a copy of the current string first */
 	wchar_t *p1 = LINE(NUMLINES - 1);
 	checkpointpos(p->lbuf, 1);
-	char buf1[MB_CUR_MAX * wcslen(p1) + 1];
-	sprintf(buf1,"%ls\n", p1);
+	size_t len = MB_CUR_MAX * wcslen(p1) + 1; 
+	char buf1[len];
+	snprintf(buf1, len, "%ls\n", p1);
 	consolewrites(c, buf1);
 
 	for (i = 0; i < min(alen, max_show); i++) {
@@ -1961,7 +1962,7 @@ int consoler = 25, consolec = 80, consolex = 0, consoley = 0;
 int pagerrow = 25, pagercol = 80;
 int pagerMultiple = 1, haveusedapager = 0;
 int consolebufb = DIMLBUF, consolebufl = MLBUF, consolebuffered = 1;
-int consoleblink = 1;
+static int consoleblink = 1;
 
 void
 setconsoleoptions(const char *fnname,int fnsty, int fnpoints,
@@ -1981,9 +1982,9 @@ setconsoleoptions(const char *fnname,int fnsty, int fnpoints,
 	consolefn = gnewfont(NULL, fnname, fnsty | FixedWidth, fnpoints, 0.0, 1);
 	if (!consolefn) {
 	    /* This is unlikely to happen: it will find some match */
-	    sprintf(msg,
-		    G_("Font %s-%d-%d  not found.\nUsing system fixed font"),
-		    fontname, fontsty | FixedWidth, pointsize);
+	    snprintf(msg, LF_FACESIZE + 128,
+		     G_("Font %s-%d-%d  not found.\nUsing system fixed font"),
+		     fontname, fontsty | FixedWidth, pointsize);
 	    R_ShowMessage(msg);
 	    consolefn = FixedFont;
 	}
@@ -2035,9 +2036,10 @@ void consoleprint(console c)
 		 fontsty, pointsize, 0.0, 1);
     if (!f) {
 	/* Should not happen but....*/
-	sprintf(msg, G_("Font %s-%d-%d  not found.\nUsing system fixed font"),
-		strcmp(fontname, "FixedFont") ? fontname : "Courier New",
-		fontsty, pointsize);
+	snprintf(msg, LF_FACESIZE + 128,
+		 G_("Font %s-%d-%d  not found.\nUsing system fixed font"),
+		 strcmp(fontname, "FixedFont") ? fontname : "Courier New",
+		 fontsty, pointsize);
 	R_ShowMessage(msg);
 	f = FixedFont;
     }
@@ -2090,7 +2092,7 @@ void consoleprint(console c)
 	if (clinp + fh >= rr) {
 	    if (cp > 1) nextpage(lpr);
 	    gdrawstr(lpr, f, Black, pt(left, top), title);
-	    sprintf(msg, "Page %d", cp++);
+	    snprintf(msg, LF_FACESIZE + 128, "Page %d", cp++);
 	    gdrawstr(lpr, f, Black,
 		     pt(cc - gstrwidth(lpr, f, msg) - 1, top),
 		     msg);

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -49,8 +49,8 @@ int strncasecmp(const char *s1, const char *s2, size_t n)
 
     for (i = 0; i < n; i++) {
 	c1 = s1[i]; c2 = s2[i];
-	c1 = isupper(c1) ? tolower(c1) : c1;
-	c2 = isupper(c2) ? tolower(c2) : c2;
+	c1 = isupper(c1) ? char(tolower(c1)) : c1;
+	c2 = isupper(c2) ? char(tolower(c2)) : c2;
 	if (c1 == '\0') return ((c2 == '\0') ? 0 : -1);
 	if (c2 == '\0') return 1;
 	if (c1 < c2) return -1;

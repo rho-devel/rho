@@ -12,12 +12,12 @@ assign("nameEx",
 ## Add some hooks to label plot pages for base and grid graphics
 assign("base_plot_hook",
        function() {
-           pp <- par(c("mfg","mfcol","oma","mar"))
+           pp <- graphics::par(c("mfg","mfcol","oma","mar"))
            if(all(pp$mfg[1:2] == c(1, pp$mfcol[2]))) {
                outer <- (oma4 <- pp$oma[4]) > 0; mar4 <- pp$mar[4]
-               mtext(sprintf("help(\"%s\")", nameEx()), side = 4,
+               graphics::mtext(sprintf("help(\"%s\")", nameEx()), side = 4,
                      line = if(outer)max(1, oma4 - 1) else min(1, mar4 - 1),
-               outer = outer, adj = 1, cex = .8, col = "orchid", las=3)
+               outer = outer, adj = 1, cex = 0.8, col = "orchid", las = 3)
            }
        },
        pos = "CheckExEnv")
@@ -41,9 +41,9 @@ assign("cleanEx",
 	   set.seed(1)
    	   options(warn = 1)
 	   .CheckExEnv <- as.environment("CheckExEnv")
-	   delayedAssign("T", stop("T used instead of TRUE"),
+	   delayedAssign("T", stop("T used instead of TRUE", domain = NA),
 		  assign.env = .CheckExEnv)
-	   delayedAssign("F", stop("F used instead of FALSE"),
+	   delayedAssign("F", stop("F used instead of FALSE", domain = NA),
 		  assign.env = .CheckExEnv)
 	   sch <- search()
 	   newitems <- sch[! sch %in% .oldSearch]
@@ -51,7 +51,7 @@ assign("cleanEx",
 	   missitems <- .oldSearch[! .oldSearch %in% sch]
 	   if(length(missitems))
 	       warning("items ", paste(missitems, collapse=", "),
-		       " have been removed from the search path")
+		       " have been removed from the search path", domain = NA)
        },
        pos = "CheckExEnv")
 assign("ptime", proc.time(), pos = "CheckExEnv")
@@ -64,3 +64,14 @@ grDevices::pdf(paste(pkgname, "-Ex.pdf", sep=""), encoding = "ISOLatin1")
 
 assign("par.postscript", graphics::par(no.readonly = TRUE), pos = "CheckExEnv")
 options(contrasts = c(unordered = "contr.treatment", ordered = "contr.poly"))
+
+
+if(identical("maechler", unname(Sys.getenv("USER")))) {
+    if(identical("true", unname(Sys.getenv("R_MM_PKG_CHECKING")))) {## when using R-pkg-check
+        cat("Command line [commandArgs()]:\n"); print(commandArgs())
+        cat("Sys.getenv(\"R_LIBS\")  [split at ':']:\n")
+        print(strsplit(Sys.getenv("R_LIBS"), ":", fixed=TRUE))
+        ## cat(".libPaths():\n"); print(.libPaths())
+        cat(".libPaths() :\n"); dput(.libPaths())
+    }
+}

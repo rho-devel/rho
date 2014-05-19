@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *   R : A Computer Language for Statistical Data Analysis
- *   Copyright (C) 1997-2010   The R Core Team
+ *   Copyright (C) 1997-2012   The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@
 
 #include <stdlib.h> /* for setenv or putenv */
 #include <Defn.h> /* for PATH_MAX */
+#include <Internal.h>
 #include <Rinterface.h>
 #include <Fileio.h>
 #include <ctype.h>		/* for isspace */
@@ -56,9 +57,10 @@ using namespace std;
 /* remove leading and trailing space */
 static char *rmspace(char *s)
 {
-    int   i;
+    ssize_t i; // to be safe
 
-    for (i = strlen(s) - 1; i >= 0 && isspace(int(s[i])); i--) s[i] = '\0';
+    for (i = ssize_t(strlen(s)) - 1; i >= 0 && isspace(int(s[i])); i--)
+	s[i] = '\0';
     for (i = 0; isspace(int(s[i])); i++);
     return s + i;
 }
@@ -114,7 +116,6 @@ static CXXRCONST char *findterm(CXXRCONST char *s)
     const char* ss=s;
     const char* r2;
     static char ans[BUF_SIZE];
-    size_t nans;
 
     if(!strlen(s)) return "";
     ans[0] = '\0';
@@ -125,9 +126,9 @@ static CXXRCONST char *findterm(CXXRCONST char *s)
 	q = findRbrace(p+2);
 	if(!q) break;
 	/* copy over leading part */
-	nans = strlen(ans);
+	size_t nans = strlen(ans);
 	strncat(ans, s, size_t (p - s)); ans[nans + p - s] = '\0';
-	vector<char> rv(q - p + 2);
+	vector<char> rv(size_t(q - p + 2));
 	char* r = &rv[0];
 	strncpy(r, p, size_t (q - p + 1));
 	r[q - p + 1] = '\0';

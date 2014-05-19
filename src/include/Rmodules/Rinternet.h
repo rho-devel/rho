@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-typedef SEXP (*R_DownloadRoutine)(SEXP call, SEXP op, SEXP args, SEXP env);
+typedef SEXP (*R_DownloadRoutine)(SEXP args);
 typedef Rconnection (*R_NewUrlRoutine)(const char *description, const char * const mode);
 typedef Rconnection (*R_NewSockRoutine)(const char *host, int port, int server, const char *const mode, int timeout); 
 

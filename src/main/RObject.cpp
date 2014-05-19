@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -96,7 +96,8 @@ void RObject::clearAttributes()
 {
     if (m_attrib) {
 	m_attrib = 0;
-	m_type &= ~s_class_mask;
+	// Beware promotion to int by ~:
+	m_type &= static_cast<signed char>(~s_class_mask);
     }
 }
 
@@ -141,8 +142,8 @@ void RObject::setAttribute(const Symbol* name, RObject* value)
     // Update 'has class' bit if necessary:
     if (name == R_ClassSymbol) {
 	if (value == 0)
-	    m_type &= ~s_class_mask;
-	else m_type |= s_class_mask;
+	    m_type &= static_cast<signed char>(~s_class_mask);
+	else m_type |= static_cast<signed char>(s_class_mask);
     }
     // Find attribute:
     PairList* prev = 0;

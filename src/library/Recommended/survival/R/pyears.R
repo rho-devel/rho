@@ -216,7 +216,7 @@ pyears <- function(formula, data,
                 }
             }
 
-        temp <- .C("pyears1",
+        temp <- .C(Cpyears1,
                         as.integer(n),
                         as.integer(ncol(Y)),
                         as.integer(is.Surv(Y)),
@@ -242,7 +242,7 @@ pyears <- function(formula, data,
                     DUP=FALSE)[18:22]
         }
     else {   #no expected
-        temp <- .C('pyears2',
+        temp <- .C(Cpyears2,
                         as.integer(n),
                         as.integer(ncol(Y)),
                         as.integer(is.Surv(Y)),

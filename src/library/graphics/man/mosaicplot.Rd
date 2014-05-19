@@ -15,7 +15,7 @@
 \usage{
 mosaicplot(x, \dots)
 
-\method{mosaicplot}{default}(x, main = deparse(substitute(x)), 
+\method{mosaicplot}{default}(x, main = deparse(substitute(x)),
            sub = NULL, xlab = NULL, ylab = NULL,
            sort = NULL, off = NULL, dir = NULL,
            color = NULL, shade = FALSE, margin = NULL,
@@ -32,7 +32,7 @@ mosaicplot(x, \dots)
     best created by the \code{table()} command.}
   \item{main}{character string for the mosaic title.}
   \item{sub}{character string for the mosaic sub-title (at bottom).}
-  \item{xlab,ylab}{x- and y-axis labels used for the plot; by default,
+  \item{xlab, ylab}{x- and y-axis labels used for the plot; by default,
     the first and second element of \code{names(dimnames(X))} (i.e., the
     name of the first and second variable in \code{X}).}
   \item{sort}{vector ordering of the variables, containing a permutation
@@ -49,8 +49,8 @@ mosaicplot(x, \dots)
     vertical split.}
   \item{color}{logical or (recycling) vector of colors for color
     shading, used only when \code{shade} is \code{FALSE}, or \code{NULL}
-    (default).  By default, grey boxes are drawn.  \code{color=TRUE}
-    uses a gamma-corrected grey palette.  \code{color=FALSE} gives empty
+    (default).  By default, grey boxes are drawn.  \code{color = TRUE}
+    uses a gamma-corrected grey palette.  \code{color = FALSE} gives empty
     boxes with no shading.}
   \item{shade}{a logical indicating whether to produce extended mosaic
     plots, or a numeric vector of at most 5 distinct positive numbers
@@ -117,7 +117,7 @@ mosaicplot(x, \dots)
 
   Missing values are not supported except via an \code{na.action}
   function when \code{data} contains variables to be cross-tabulated.
-  
+
   A more flexible and extensible implementation of mosaic plots written
   in the grid graphics system is provided in the function
   \code{\link[vcd]{mosaic}} in the contributed package \CRANpkg{vcd}
@@ -144,7 +144,7 @@ mosaicplot(x, \dots)
 
   Meyer, D., Zeileis, A., and Hornik, K. (2005)
   The strucplot framework: Visualizing multi-way contingency tables with vcd.
-  \emph{Report 22}, Department of Statistics and Mathematics, 
+  \emph{Report 22}, Department of Statistics and Mathematics,
   \enc{Wirtschaftsuniversität}{Wirtschaftsuniversitaet} Wien, Research Report Series.
   \url{http://epub.wu.ac.at/dyn/openURL?id=oai:epub.wu-wien.ac.at:epub-wu-01_8a1}
 
@@ -165,7 +165,7 @@ mosaicplot(~ Sex + Age + Survived, data = Titanic, color = TRUE)
 
 mosaicplot(HairEyeColor, shade = TRUE)
 ## Independence model of hair and eye color and sex.  Indicates that
-## there are more blue eyed blonde females than expected in the case 
+## there are more blue eyed blonde females than expected in the case
 ## of independence and too few brown eyed blonde females.
 ## The corresponding model is:
 fm <- loglin(HairEyeColor, list(1, 2, 3))

@@ -11,7 +11,7 @@
   statistic.
 }
 \usage{
-sweep(x, MARGIN, STATS, FUN="-", check.margin=TRUE, \dots)
+sweep(x, MARGIN, STATS, FUN = "-", check.margin = TRUE, \dots)
 }
 \arguments{
   \item{x}{an array.}
@@ -28,11 +28,11 @@ sweep(x, MARGIN, STATS, FUN="-", check.margin=TRUE, \dots)
 \details{
   \code{FUN} is found by a call to \code{\link{match.fun}}.  As in the
   default, binary operators can be supplied if quoted or backquoted.
-  
+
   \code{FUN} should be a function of two arguments: it will be called
   with arguments \code{x} and an array of the same dimensions generated
   from \code{STATS} by \code{\link{aperm}}.
-  
+
   The consistency check among \code{STATS}, \code{MARGIN} and \code{x}
   is stricter if \code{STATS} is an array than if it is a vector.
   In the vector case, some kinds of recycling are allowed without a
@@ -55,24 +55,24 @@ sweep(x, MARGIN, STATS, FUN="-", check.margin=TRUE, \dots)
 \examples{
 require(stats) # for median
 med.att <- apply(attitude, 2, median)
-sweep(data.matrix(attitude), 2, med.att)# subtract the column medians
+sweep(data.matrix(attitude), 2, med.att)  # subtract the column medians
 
 ## More sweeping:
 A <- array(1:24, dim = 4:2)
 
 ## no warnings in normal use
 sweep(A, 1, 5)
-(A.min <- apply(A, 1, min)) # == 1:4
+(A.min <- apply(A, 1, min))  # == 1:4
 sweep(A, 1, A.min)
 sweep(A, 1:2, apply(A, 1:2, median))
 
 ## warnings when mismatch
-sweep(A, 1, 1:3)## STATS does not recycle
-sweep(A, 1, 6:1)## STATS is longer
+sweep(A, 1, 1:3)  # STATS does not recycle
+sweep(A, 1, 6:1)  # STATS is longer
 
 ## exact recycling:
-sweep(A, 1, 1:2)## no warning
-sweep(A, 1, as.array(1:2))## warning
+sweep(A, 1, 1:2)  # no warning
+sweep(A, 1, as.array(1:2))  # warning
 }
 \keyword{array}
 \keyword{iteration}

@@ -34,7 +34,7 @@
   determined by the grouping factor.
 }
 
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{augPred}}, \code{\link{xyplot}}}
 

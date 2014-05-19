@@ -1,6 +1,6 @@
 % File src/library/base/man/formatc.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{formatC}
@@ -29,7 +29,7 @@ prettyNum(x, big.mark = "",   big.interval = 3L,
 \arguments{
   \item{x}{an atomic numerical or character object, possibly
     \code{\link{complex}} only for \code{prettyNum()}, typically a
-    vector of real numbers.}
+    vector of real numbers.  Any class is discarded, with a warning.}
 
   \item{digits}{the desired number of digits after the decimal
     point (\code{format = "f"}) or \emph{significant} digits
@@ -47,7 +47,7 @@ prettyNum(x, big.mark = "",   big.interval = 3L,
     \code{width} are unspecified, \code{width} defaults to 1,
     otherwise to \code{digits + 1}.  \code{width = 0} will use
     \code{width = digits}, \code{width < 0} means left
-    justify the number in this field (equivalent to \code{flag ="-"}).
+    justify the number in this field (equivalent to \code{flag = "-"}).
     If necessary, the result will have more characters than
     \code{width}.  For character data this is interpreted in characters
     (not bytes nor display width).
@@ -111,8 +111,9 @@ prettyNum(x, big.mark = "",   big.interval = 3L,
   \item{\dots}{arguments passed to \code{format}.}
 }
 \value{
-  A character object of same size and attributes as \code{x}, in the
-  current locale's encoding.
+  A character object of same size and attributes as \code{x} (after
+  discarding any class), in the current locale's encoding.
+  
   Unlike \code{\link{format}}, each number is formatted individually.
   Looping over each element of \code{x}, the C function
   \code{sprintf(\dots)} is called for numeric inputs (inside the C
@@ -123,13 +124,13 @@ prettyNum(x, big.mark = "",   big.interval = 3L,
 }
 \details{
   If you set \code{format} it overrides the setting of \code{mode}, so
-  \code{formatC(123.45, mode="double", format="d")} gives \code{123}.
+  \code{formatC(123.45, mode = "double", format = "d")} gives \code{123}.
 
   The rendering of scientific format is platform-dependent: some systems
   use \code{n.ddde+nnn} or \code{n.dddenn} rather than \code{n.ddde+nn}.
 
   \code{formatC} does not necessarily align the numbers on the decimal
-  point, so \code{formatC(c(6.11, 13.1), digits=2, format="fg")} gives
+  point, so \code{formatC(c(6.11, 13.1), digits = 2, format = "fg")} gives
   \code{c("6.1", " 13")}.  If you want common formatting for several
   numbers, use \code{\link{format}}.
 
@@ -141,18 +142,24 @@ prettyNum(x, big.mark = "",   big.interval = 3L,
   unexpectedly if \code{x} is a \code{character} vector not resulting from
   something like \code{format(<number>)}: in particular it assumes that
   a period is a decimal mark.
-  
+
   Because \code{\link{gsub}} is used to insert the \code{big.mark}
-  and \code{small.mark}, special characters need escaping.  In particular, 
-  to insert a single backslash, use \code{"\\\\\\\\"}.  
-  
+  and \code{small.mark}, special characters need escaping.  In particular,
+  to insert a single backslash, use \code{"\\\\\\\\"}.
+
   In versions of \R before 2.13.0, the \code{big.mark} would be
-  reversed on insertion if it contained more than one character.  
+  reversed on insertion if it contained more than one character.
+}
+\note{
+  Prior to \R 3.0.2 this copied the class of \code{x} to the return
+  value and could easily create invalid objects.
 }
 \author{
-  \code{formatC} was originally written by Bill Dunlap, later much
-  improved by Martin Maechler.
-  It was first adapted for \R by Friedrich Leisch.
+  \code{formatC} was originally written by Bill Dunlap for S-PLUS, later
+  much improved by Martin Maechler.
+
+  It was first adapted for \R by Friedrich Leisch and since much
+  improved by the R Core team.
 }
 \references{
   Kernighan, B. W. and Ritchie, D. M. (1988)
@@ -165,21 +172,23 @@ prettyNum(x, big.mark = "",   big.interval = 3L,
 }
 \examples{
 xx  <- pi * 10^(-5:4)
-cbind(format(xx, digits=4), formatC(xx))
+cbind(format(xx, digits = 4), formatC(xx))
 cbind(formatC(xx, width = 9, flag = "-"))
 cbind(formatC(xx, digits = 5, width = 8, format = "f", flag = "0"))
-cbind(format(xx, digits=4), formatC(xx, digits = 4, format = "fg"))
+cbind(format(xx, digits = 4), formatC(xx, digits = 4, format = "fg"))
 
 formatC(    c("a", "Abc", "no way"), width = -7)  # <=> flag = "-"
-formatC(c((-1:1)/0,c(1,100)*pi), width=8, digits=1)
+formatC(c((-1:1)/0,c(1,100)*pi), width = 8, digits = 1)
 
+## note that some of the results here depend on the implementation
+## of long-double arithmetic, which is platform-specific.
 xx <- c(1e-12,-3.98765e-10,1.45645e-69,1e-70,pi*1e37,3.44e4)
 ##       1        2             3        4      5       6
 formatC(xx)
-formatC(xx, format="fg")       # special "fixed" format.
-formatC(xx[1:4], format="f", digits=75) #>> even longer strings
+formatC(xx, format = "fg")       # special "fixed" format.
+formatC(xx[1:4], format = "f", digits = 75) #>> even longer strings
 
-formatC(c(3.24, 2.3e-6), format="f", digits=11, drop0trailing=TRUE)
+formatC(c(3.24, 2.3e-6), format = "f", digits = 11, drop0trailing = TRUE)
 
 r <- c("76491283764.97430", "29.12345678901", "-7.1234", "-100.1","1123")
 ## American:
@@ -187,8 +196,8 @@ prettyNum(r, big.mark = ",")
 ## Some Europeans:
 prettyNum(r, big.mark = "'", decimal.mark = ",")
 
-(dd <- sapply(1:10, function(i)paste((9:0)[1:i],collapse="")))
-prettyNum(dd, big.mark="'")
+(dd <- sapply(1:10, function(i) paste((9:0)[1:i], collapse = "")))
+prettyNum(dd, big.mark = "'")
 
 ## examples of 'small.mark'
 pN <- stats::pnorm(1:7, lower.tail = FALSE)
@@ -199,21 +208,21 @@ cbind(ff <- format(1.2345 + 10^(0:5), width = 11, big.mark = "'"))
 ## all with same width (one more than the specified minimum)
 
 ## individual formatting to common width:
-fc <- formatC(1.234 + 10^(0:8), format="fg", width=11, big.mark = "'")
+fc <- formatC(1.234 + 10^(0:8), format = "fg", width = 11, big.mark = "'")
 cbind(fc)
 
 ## complex numbers:
 r <- 10.0000001; rv <- (r/10)^(1:10)
 (zv <- (rv + 1i*rv))
-op <- options(digits=7) ## (system default)
+op <- options(digits = 7) ## (system default)
 (pnv <- prettyNum(zv))
 stopifnot(pnv == "1+1i", pnv == format(zv),
-          pnv == prettyNum(zv, drop0trailing=TRUE))
+          pnv == prettyNum(zv, drop0trailing = TRUE))
 ## more digits change the picture:
-options(digits=8)
+options(digits = 8)
 head(fv <- format(zv), 3)
 prettyNum(fv)
-prettyNum(fv, drop0trailing=TRUE) # a bit nicer
+prettyNum(fv, drop0trailing = TRUE) # a bit nicer
 options(op)
 }
 \keyword{character}

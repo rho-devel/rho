@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -108,6 +108,7 @@
 # define getc getc_unlocked
 #endif
 
+#ifndef __APPLE__
 /* The following static variable is declared 'volatile' to avoid a
    possible multithread problem in the function get_charset_aliases. If we
    are running in a threaded environment, and if two threads initialize
@@ -117,6 +118,7 @@
 #if __STDC__ != 1
 # define volatile /* empty */
 #endif
+
 /* Pointer to the contents of the charset.alias file, if it has already been
    read, else NULL.  Its format is:
    ALIAS_1 '\0' CANONICAL_1 '\0' ... ALIAS_n '\0' CANONICAL_n '\0' '\0'  */
@@ -296,6 +298,7 @@ get_charset_aliases (void)
 
   return cp;
 }
+#endif
 
 /* Determine the current locale's character encoding, and canonicalize it
    into one of the canonical names listed in config.charset.
@@ -305,7 +308,7 @@ get_charset_aliases (void)
 
 extern unsigned int localeCP; /* from Defn.h */
 #if __APPLE__ /* others could use this, too ... */
-extern char *locale2charset(char*);
+extern const char *locale2charset(char*);
 #endif
 
 #ifdef STATIC

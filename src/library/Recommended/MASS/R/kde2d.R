@@ -1,5 +1,5 @@
 # file MASS/R/kde2d.R
-# copyright (C) 1994-2009 W. N. Venables and B. D. Ripley
+# copyright (C) 1994-2012 W. N. Venables and B. D. Ripley
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@ kde2d <- function(x, y, h, n = 25, lims = c(range(x), range(y)) )
     gy <- seq.int(lims[3L], lims[4L], length.out = n[2L])
     h <- if (missing(h)) c(bandwidth.nrd(x), bandwidth.nrd(y))
     else rep(h, length.out = 2L)
+    if (any(h <= 0))
+        stop("bandwidths must be strictly positive")
     h <- h/4                            # for S's bandwidth scale
     ax <- outer(gx, x, "-" )/h[1L]
     ay <- outer(gy, y, "-" )/h[2L]

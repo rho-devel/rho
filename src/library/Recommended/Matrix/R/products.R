@@ -1,7 +1,7 @@
 #### All  %*%, crossprod() and tcrossprod() methods of the Matrix package
 #### ^^^  ----------------------------------------------------------
 ###  Exceptions: ./diagMatrix.R
-###		 ./pMatrix.R
+###		 ./indMatrix.R ./pMatrix.R
 
 ## For %*% (M = Matrix; v = vector (double or integer {complex maybe?}):
 .M.v <- function(x, y) { dim(y) <- c(length(y), 1L); callGeneric(x, y) }
@@ -79,21 +79,13 @@ setMethod("%*%", signature(x = "matrix", y = "dtrMatrix"),
 
 
 setMethod("%*%", signature(x = "dtpMatrix", y = "ddenseMatrix"),
-	  function(x, y) .Call(dtpMatrix_matrix_mm, x, y))
+	  function(x, y) .Call(dtpMatrix_matrix_mm, x, y, FALSE, FALSE))
 setMethod("%*%", signature(x = "dgeMatrix", y = "dtpMatrix"),
 	  function(x, y) .Call(dgeMatrix_dtpMatrix_mm, x, y))
-## DB: I don't think this is needed any more
-## %*% should always work for  <fooMatrix> %*% <fooMatrix>
-## setMethod("%*%", signature(x = "dtpMatrix", y = "dtpMatrix"),
-##           function(x, y)
-##           ## FIXME: this is cheap; could we optimize chosing the better of
-##           ## callGeneric(x, as(y, "dgeMatrix"))  and
-##           ## callGeneric(as(x "dgeMatrix"), y))  depending on their 'uplo' ?
-##           callGeneric(x, as(y, "dgeMatrix")))
 
 ## dtpMatrix <-> matrix : will be used by the "numeric" one
 setMethod("%*%", signature(x = "dtpMatrix", y = "matrix"),
-          function(x, y) .Call(dtpMatrix_matrix_mm, x, y))
+          function(x, y) .Call(dtpMatrix_matrix_mm, x, y, FALSE, FALSE))
 setMethod("%*%", signature(x = "matrix", y = "dtpMatrix"),
           function(x, y) as(x, "dgeMatrix") %*% y)
 
@@ -105,10 +97,10 @@ setMethod("%*%", signature(x = "matrix", y = "dtpMatrix"),
 ## For multiplication operations, sparseMatrix overrides other method
 ## selections.	Coerce a ddensematrix argument to a lsparseMatrix.
 setMethod("%*%", signature(x = "lsparseMatrix", y = "ldenseMatrix"),
-	  function(x, y) x %*% as(y, "lsparseMatrix"))
+	  function(x, y) x %*% as(y, "sparseMatrix"))
 
 setMethod("%*%", signature(x = "ldenseMatrix", y = "lsparseMatrix"),
-	  function(x, y) as(x, "lsparseMatrix") %*% y)
+	  function(x, y) as(x, "sparseMatrix") %*% y)
 
 ## and coerce lsparse* to lgC*
 setMethod("%*%", signature(x = "lsparseMatrix", y = "lsparseMatrix"),
@@ -123,7 +115,7 @@ for(c.x in c("lMatrix", "nMatrix")) {
     for(c.y in c("lMatrix", "nMatrix"))
     setMethod("%*%", signature(x = c.x, y = c.y),
 	      function(x, y) as(x, "dMatrix") %*% as(y, "dMatrix"))
-}
+}; rm(c.x, c.y)
 
 setMethod("%*%", signature(x = "CsparseMatrix", y = "CsparseMatrix"),
 	  function(x, y) .Call(Csparse_Csparse_prod, x, y))
@@ -132,7 +124,7 @@ setMethod("%*%", signature(x = "CsparseMatrix", y = "ddenseMatrix"),
 	  function(x, y) .Call(Csparse_dense_prod, x, y))
 
 setMethod("%*%", signature(x = "CsparseMatrix", y = "matrix"),
-	  function(x, y) .Call(Csparse_dense_prod, x, y))
+	  function(x, y) x %*% Matrix(y))
 
 ## Not needed because of c("Matrix", "numeric") method
 ##setMethod("%*%", signature(x = "CsparseMatrix", y = "numeric"),
@@ -192,7 +184,7 @@ setMethod("%*%", signature(x = "matrix", y = "Matrix"),
 ## bail-out methods in order to get better error messages
 .local.bail.out <- function (x, y)
     stop(gettextf('not-yet-implemented method for <%s> %%*%% <%s>',
-		  class(x), class(y)))
+		  class(x), class(y)), domain=NA)
 setMethod("%*%", signature(x = "ANY", y = "Matrix"), .local.bail.out)
 setMethod("%*%", signature(x = "Matrix", y = "ANY"), .local.bail.out)
 
@@ -216,8 +208,7 @@ setMethod("crossprod", signature(x = "dgeMatrix", y = "matrix"),
 	  function(x, y = NULL) .Call(dgeMatrix_matrix_crossprod, x, y, FALSE),
 	  valueClass = "dgeMatrix")
 setMethod("crossprod", signature(x = "dgeMatrix", y = "numeric"),
-	  function(x, y = NULL)
-	  .Call(dgeMatrix_matrix_crossprod, x, as.matrix(as.double(y)), FALSE),
+	  function(x, y = NULL) .Call(dgeMatrix_matrix_crossprod, x, y, FALSE),
 	  valueClass = "dgeMatrix")
 setMethod("crossprod", signature(x = "matrix", y = "dgeMatrix"),
 	  function(x, y = NULL) crossprod(as(x, "dgeMatrix"), y),
@@ -244,7 +235,18 @@ setMethod("crossprod", signature(x = "dtrMatrix", y = "ddenseMatrix"),
 setMethod("crossprod", signature(x = "dtrMatrix", y = "matrix"),
 	  function(x, y) .Call(dtrMatrix_matrix_mm, x, y, FALSE, TRUE),
 	  valueClass = "dgeMatrix")
+## "dtpMatrix"
+if(FALSE) ## not yet in C
+setMethod("crossprod", signature(x = "dtpMatrix", y = "dtpMatrix"),
+	  function(x, y) .Call(dtpMatrix_dtpMatrix_mm, x, y, FALSE, TRUE))
 
+setMethod("crossprod", signature(x = "dtpMatrix", y = "ddenseMatrix"),
+	  function(x, y) .Call(dtpMatrix_matrix_mm, x, y, FALSE, TRUE),
+	  valueClass = "dgeMatrix")
+
+setMethod("crossprod", signature(x = "dtpMatrix", y = "matrix"),
+	  function(x, y) .Call(dtpMatrix_matrix_mm, x, y, FALSE, TRUE),
+	  valueClass = "dgeMatrix")
 
 
 
@@ -284,10 +286,10 @@ setMethod("crossprod", signature(x = "CsparseMatrix", y = "ddenseMatrix"),
 	  function(x, y = NULL) .Call(Csparse_dense_crossprod, x, y))
 
 setMethod("crossprod", signature(x = "CsparseMatrix", y = "matrix"),
-	  function(x, y = NULL) .Call(Csparse_dense_crossprod, x, y))
+	  function(x, y = NULL) crossprod(x, Matrix(y)))
 
 setMethod("crossprod", signature(x = "CsparseMatrix", y = "numeric"),
-	  function(x, y = NULL) .Call(Csparse_dense_crossprod, x, y))
+	  function(x, y = NULL) crossprod(x, Matrix(y)))
 
 setMethod("crossprod", signature(x = "TsparseMatrix", y = "missing"),
 	  function(x, y = NULL) {
@@ -335,20 +337,20 @@ setMethod("crossprod", signature(x = "dsparseMatrix", y = "dgeMatrix"),
 
 
 setMethod("crossprod", signature(x = "lsparseMatrix", y = "ldenseMatrix"),
-	  function(x, y = NULL) crossprod(x, as(y, "lsparseMatrix")))
+	  function(x, y = NULL) crossprod(x, as(y, "sparseMatrix")))
 
 setMethod("crossprod", signature(x = "ldenseMatrix", y = "lsparseMatrix"),
-	  function(x, y = NULL) crossprod(as(x, "lsparseMatrix"), y))
+	  function(x, y = NULL) crossprod(as(x, "sparseMatrix"), y))
 
 setMethod("crossprod", signature(x = "lsparseMatrix", y = "lsparseMatrix"),
 	  function(x, y = NULL)
 	  crossprod(as(x, "lgCMatrix"), as(y, "lgCMatrix")))
 
 setMethod("crossprod", signature(x = "nsparseMatrix", y = "ndenseMatrix"),
-	  function(x, y = NULL) crossprod(x, as(y, "nsparseMatrix")))
+	  function(x, y = NULL) crossprod(x, as(y, "sparseMatrix")))
 
 setMethod("crossprod", signature(x = "ndenseMatrix", y = "nsparseMatrix"),
-	  function(x, y = NULL) crossprod(as(x, "nsparseMatrix"), y))
+	  function(x, y = NULL) crossprod(as(x, "sparseMatrix"), y))
 
 setMethod("crossprod", signature(x = "nsparseMatrix", y = "nsparseMatrix"),
 	  function(x, y = NULL)
@@ -361,8 +363,8 @@ setMethod("crossprod", signature(x = "ddenseMatrix", y = "CsparseMatrix"),
 	  valueClass = "dgeMatrix")
 
 setMethod("crossprod", signature(x = "matrix", y = "CsparseMatrix"),
-	  function(x, y) t(.Call(Csparse_dense_crossprod, y, x)),
-	  valueClass = "dgeMatrix")
+	  function(x, y) crossprod(Matrix(x), y))
+
 
 ## "Matrix"
 cross.v.M <- function(x, y) { dim(x) <- c(length(x), 1L); crossprod(x, y) }
@@ -399,8 +401,7 @@ setMethod("tcrossprod", signature(x = "dgeMatrix", y = "matrix"),
 	  function(x, y = NULL) .Call(dgeMatrix_matrix_crossprod, x, y, TRUE),
 	  valueClass = "dgeMatrix")
 setMethod("tcrossprod", signature(x = "dgeMatrix", y = "numeric"),
-	  function(x, y = NULL)
-	  .Call(dgeMatrix_matrix_crossprod, x, rbind(as.double(y)), TRUE),
+	  function(x, y = NULL) .Call(dgeMatrix_matrix_crossprod, x, y, TRUE),
 	  valueClass = "dgeMatrix")
 setMethod("tcrossprod", signature(x = "matrix", y = "dgeMatrix"),
 	  function(x, y = NULL) tcrossprod(as(x, "dgeMatrix"), y),
@@ -446,6 +447,15 @@ setMethod("tcrossprod", signature(x = "ddenseMatrix", y = "dtrMatrix"),
 
 setMethod("tcrossprod", signature(x = "matrix", y = "dtrMatrix"),
  	  function(x, y) .Call(dtrMatrix_matrix_mm, y, x, TRUE, TRUE))
+
+if(FALSE) { ## TODO in C
+setMethod("tcrossprod", signature(x = "ddenseMatrix", y = "dtpMatrix"),
+ 	  function(x, y) .Call(dtpMatrix_matrix_mm, y, x, TRUE, TRUE))
+
+setMethod("tcrossprod", signature(x = "matrix", y = "dtpMatrix"),
+ 	  function(x, y) .Call(dtpMatrix_matrix_mm, y, x, TRUE, TRUE))
+}
+
 
 
 

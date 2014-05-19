@@ -1,6 +1,6 @@
 % File src/library/grDevices/man/unix/png.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{png}
@@ -65,15 +65,15 @@ tiff(filename = "Rplot\%03d.tiff",
     For types \code{"cairo"} and \code{"quartz"}, the \code{family}
     argument can be supplied.  See the \sQuote{Cairo fonts}
     section in the help for \code{\link{X11}}.}
-  
+
   \item{type}{character string, one of \code{"Xlib"} or \code{"quartz"}
-    (some Mac OS X builds) or \code{"cairo"}.  The latter will only be
+    (some OS X builds) or \code{"cairo"}.  The latter will only be
     available if the system was compiled with support for cairo --
     otherwise \code{"Xlib"} will be used.  The default is set by
     \code{\link{getOption}("bitmapType")} -- the \sQuote{out of the box}
     default is \code{"quartz"} or \code{"cairo"} where available,
     otherwise \code{"Xlib"}.}
-  
+
   \item{antialias}{for \code{type = "cairo"}, giving the type of
     anti-aliasing (if any) to be used.  See \code{\link{X11}}.  The
     default is set by \code{\link{X11.options}}.  Also for \code{type =
@@ -110,7 +110,7 @@ tiff(filename = "Rplot\%03d.tiff",
   "Xlib"} they may not be usable unless the X11 display is available to
   the owner of the \R process.  \code{type = "cairo"} requires cairo 1.2
   or later.  \code{type = "quartz"} uses the \code{\link{quartz}} device
-  and so is only available where that is (on some Mac OS X builds: see
+  and so is only available where that is (on some OS X builds: see
   \code{\link{capabilities}("aqua")}).
 
   By default no resolution is recorded in the file.  Viewers will often
@@ -129,6 +129,10 @@ tiff(filename = "Rplot\%03d.tiff",
   backend which will never use a palette and normally creates a larger
   32-bit ARGB file---this may work better for specialist uses with
   semi-transparent colours.
+
+  Quartz-produced PNG and TIFF plots with a transparent background are
+  recorded with a dark grey matte which will show up in some viewers,
+  including \command{Preview} on OS X.
 }
 
 \value{
@@ -138,7 +142,7 @@ tiff(filename = "Rplot\%03d.tiff",
 \section{Warnings}{
   Note that by default the \code{width} and \code{height} values are in
   pixels not inches.  A warning will be issued if both are less than 20.
-  
+
   If you plot more than one page on one of these devices and do not
   include something like \code{\%d} for the sequence number in
   \code{file}, the file will contain the last page plotted.
@@ -154,7 +158,7 @@ tiff(filename = "Rplot\%03d.tiff",
     \item On platforms with support for X11, plotting to a hidden X11
     display.
 
-    \item On Mac OS X when working at the console and when \R is
+    \item On OS X when working at the console and when \R is
     compiled with suitable support, using Apple's Quartz plotting
     system.
 
@@ -214,18 +218,18 @@ tiff(filename = "Rplot\%03d.tiff",
 
 \examples{
 ## these examples will work only if the devices are available
-## and cairo or an X11 display or a Mac OS X display is available.
+## and cairo or an X11 display or an OS X display is available.
 
 ## copy current plot to a (large) PNG file
-\dontrun{dev.print(png, file="myplot.png", width=1024, height=768)}
+\dontrun{dev.print(png, file = "myplot.png", width = 1024, height = 768)}
 \donttest{
-png(file="myplot.png", bg="transparent")
+png(file = "myplot.png", bg = "transparent")
 plot(1:10)
-rect(1, 5, 3, 7, col="white")
+rect(1, 5, 3, 7, col = "white")
 dev.off()
 
 ## will make myplot1.jpeg and myplot2.jpeg
-jpeg(file="myplot\%d.jpeg")
+jpeg(file = "myplot\%d.jpeg")
 example(rect)
 dev.off()
 }}

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -84,12 +84,15 @@ Returns:        the (possibly updated) count value (a non-negative number), or
                 a negative error number
 */
 
-#ifdef COMPILE_PCRE8
+#if defined COMPILE_PCRE8
 PCRE_EXP_DEFN int PCRE_CALL_CONVENTION
 pcre_refcount(pcre *argument_re, int adjust)
-#else
+#elif defined COMPILE_PCRE16
 PCRE_EXP_DEFN int PCRE_CALL_CONVENTION
 pcre16_refcount(pcre16 *argument_re, int adjust)
+#elif defined COMPILE_PCRE32
+PCRE_EXP_DEFN int PCRE_CALL_CONVENTION
+pcre32_refcount(pcre32 *argument_re, int adjust)
 #endif
 {
 REAL_PCRE *re = (REAL_PCRE *)argument_re;

@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -31,8 +31,7 @@ STATIC_LIBR_PC = @WANT_R_STATIC_TRUE@ $(BLAS_LIBS) $(FLIBS) @R_XTRA_LIBS@ $(LIBI
 
 ALL_CPPFLAGS = $(R_XTRA_CPPFLAGS) $(X_CFLAGS) $(CPPFLAGS) $(DEFS)
 
-SOURCES_C_BASE = dynload.c edit.c stubs.c system.c sys-unix.c sys-std.c \
-  X11.c aqua.c Rembedded.c 
+SOURCES_C_BASE = Rembedded.c dynload.c system.c sys-unix.c sys-std.c X11.c
 SOURCES = $(SOURCES_C_BASE)
 DEPENDS = $(SOURCES:.c=.d)
 OBJECTS = $(SOURCES:.c=.o)

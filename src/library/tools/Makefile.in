@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -44,7 +44,7 @@ update:
 all: Makefile DESCRIPTION
 	@$(ECHO) "building package '$(pkg)'"
 	@$(MKINSTALLDIRS) $(top_builddir)/library/$(pkg)
-	@$(MAKE) mkR1 mkdesc2 mkpo
+	@$(MAKE) mkR1 mkdesc2
 	@$(MAKE) mksrc
 	@if ! test -f $(top_builddir)/library/$(pkg)/R/$(pkg); then \
 	  $(INSTALL_DATA) all.R $(top_builddir)/library/$(pkg)/R/$(pkg); \
@@ -59,7 +59,7 @@ mkR: mkR1
 
 include $(top_srcdir)/share/make/basepkg.mk
 
-$(top_builddir)/library/$(pkg)/R/$(pkg).rdb: all.R
+$(top_builddir)/library/$(pkg)/R/$(pkg).rdb: all.R $(top_srcdir)/share/licenses/license.db
 	@$(ECHO) "byte-compiling package '$(pkg)'"
 	@$(INSTALL_DATA) all.R $(top_builddir)/library/$(pkg)/R/$(pkg)
 	@(cat $(srcdir)/R/makeLazyLoad.R; \

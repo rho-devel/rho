@@ -17,6 +17,7 @@
 \alias{coerce,ngeMatrix,ntrMatrix-method}
 \alias{coerce,ngeMatrix,ntpMatrix-method}
 \alias{coerce,ngeMatrix,nspMatrix-method}
+\alias{diag<-,ngeMatrix-method}
 \alias{t,ngeMatrix-method}
 %
 \description{This is the class of general dense nonzero-pattern

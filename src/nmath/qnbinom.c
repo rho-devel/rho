@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -91,9 +91,15 @@ double qnbinom(double p, double size, double prob, int lower_tail, int log_p)
     if (ISNAN(p) || ISNAN(size) || ISNAN(prob))
 	return p + size + prob;
 #endif
-    if (prob <= 0 || prob > 1 || size <= 0) ML_ERR_return_NAN;
-    /* FIXME: size = 0 is well defined ! */
-    if (prob == 1) return 0;
+
+    /* this happens if specified via mu, size, since
+       prob == size/(size+mu)
+    */
+    if (prob == 0 && size == 0) return 0;
+
+    if (prob <= 0 || prob > 1 || size < 0) ML_ERR_return_NAN;
+ 
+    if (prob == 1 || size == 0) return 0;
 
     R_Q_P01_boundaries(p, 0, ML_POSINF);
 

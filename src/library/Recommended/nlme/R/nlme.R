@@ -60,8 +60,7 @@ nlme.nlsList <-
   ## checking the use of arguments defined within the function
   if (any(!is.na(match(names(thisCall),
 		       c("fixed", "data", "start"))))) {
-    warning(paste("nlme.nlsList will redefine \"fixed\"",
-		  "\"data\", and \"start\""))
+    warning("'nlme.nlsList' will redefine 'fixed', 'data', and 'start'")
   }
   method <- match.arg(method)
   REML <- method == "REML"
@@ -88,7 +87,7 @@ nlme.nlsList <-
     thisCall[["groups"]] <- groups <- getGroupsFormula(model)
   }
   if (length(reSt) > 1 || length(groups[[2]]) > 1) {
-    stop("Can only fit nlsList objects with single grouping variable")
+    stop("can only fit \"nlsList\" objects with single grouping variable")
   }
   ranForm <- formula(reSt)[[1]]
   if (!is.list(ranForm)) {
@@ -120,7 +119,7 @@ nlme.nlsList <-
     madRan <- unlist(lapply(cf, mad, na.rm = TRUE))
     madRan <- madRan[rnames]
     if (isInitialized(reSt)) {
-      warning("Initial value for reStruct overwritten in nlme.nlsList")
+      warning("initial value for 'reStruct' overwritten in 'nlme.nlsList'")
     }
     matrix(reSt) <- diag((madRan/madRes)^2, ncol = length(rnames))
   }
@@ -175,7 +174,7 @@ nlme.formula <-
   controlvals <- nlmeControl()
   if (!missing(control)) {
     if(!is.null(control$nlmStepMax) && control$nlmStepMax < 0) {
-      warning("Negative control$nlmStepMax - using default value")
+      warning("negative control$nlmStepMax - using default value")
       control$nlmStepMax <- NULL
     }
     controlvals[names(control)] <- control
@@ -184,7 +183,7 @@ nlme.formula <-
   ## checking arguments
   ##
   if (!inherits(model, "formula"))
-    stop("\"model\" must be a formula")
+    stop("'model' must be a formula")
   if (length(model)!=3)
     stop("model formula must be of the form \"resp ~ pred\"")
 
@@ -204,7 +203,7 @@ nlme.formula <-
       Q <- length(namGrp)
       if (length(reSt) != Q) { # may need to repeat reSt
 	if (length(reSt) != 1) {
-	  stop("Incompatible lengths for \"random\" and grouping factors")
+	  stop("incompatible lengths for 'random' and grouping factors")
 	}
         randL <- vector("list", Q)
         names(randL) <- rev(namGrp)
@@ -229,15 +228,15 @@ nlme.formula <-
   if (missing(start) && !is.null(attr(eval(model[[3]][[1]]), "initial"))) {
     nlmeCall <- Call
     nlsLCall <- nlmeCall[c("","model","data","groups")]
-    nlsLCall[[1]] <- as.name("nlsList")
+    nlsLCall[[1]] <- quote(nlme::nlsList)
     names(nlsLCall)[2] <- "model"
     for(i in c("data", "groups", "start")) {
       nlmeCall[[i]] <- NULL
     }
-    nlmeCall[[1]] <- as.name("nlme.nlsList")
+    nlmeCall[[1]] <- quote(nlme::nlme.nlsList)
     ## checking if "data" is not equal to sys.frame(sys.parent())
     if (is.null(dim(data))) {
-      stop("\"data\" must be given explicitly to use \"nlsList()\"")
+      stop("'data' must be given explicitly to use 'nlsList'")
     }
     nlsLObj <- eval(nlsLCall)
     nlmeCall[["model"]] <- as.name("nlsLObj")
@@ -273,11 +272,11 @@ nlme.formula <-
   for (i in seq_along(fixed)) {
     this <- eval(fixed[[i]])
     if (!inherits(this, "formula"))
-      stop ("fixed must be a formula or list of formulae")
+      stop ("'fixed' must be a formula or list of formulae")
     if (length(this) != 3)
-      stop ("formulae in fixed must be of the form \"parameter ~ expr\".")
+      stop ("formulae in 'fixed' must be of the form \"parameter ~ expr\"")
     if (!is.name(this[[2]]))
-      stop ("formulae in fixed must be of the form \"parameter ~ expr\".")
+      stop ("formulae in 'fixed' must be of the form \"parameter ~ expr\"")
     fnames[i] <- as.character(this[[2]])
   }
   names(fixed) <- fnames
@@ -292,11 +291,11 @@ nlme.formula <-
     for (j in seq_along(ranForm[[i]])) {
       this <- eval(ranForm[[i]][[j]])
       if (!inherits(this, "formula"))
-        stop ("random formula must be a formula or list of formulae")
+        stop ("'random' must be a formula or list of formulae")
       if (length(this) != 3)
-        stop ("formulae in random must be of the form \"parameter ~ expr\".")
+        stop ("formulae in 'random' must be of the form \"parameter ~ expr\"")
       if (!is.name(this[[2]]))
-        stop ("formulae in random must be of the form \"parameter ~ expr\".")
+        stop ("formulae in 'random' must be of the form \"parameter ~ expr\"")
       rnames[[i]][j] <- deparse(this[[2]])
     }
     names(ranForm[[i]]) <- rnames[[i]]
@@ -327,13 +326,10 @@ nlme.formula <-
       lmeQ <- length(lmeGrpsForm)
       if (corQ <= lmeQ) {
         if (any(corGrpsForm != lmeGrpsForm[1:corQ])) {
-          stop(paste("Incompatible formulas for groups in \"random\"",
-                     "and \"correlation\""))
+          stop("incompatible formulas for groups in \"random\" and \"correlation\"")
         }
         if (corQ < lmeQ) {
-          warning(paste("Cannot use smaller level of grouping for",
-                        "\"correlation\" than for \"random\". Replacing",
-                        "the former with the latter."))
+          warning("cannot use smaller level of grouping for \"correlation\" than for \"random\". Replacing the former with the latter.")
           attr(correlation, "formula") <-
             eval(parse(text = paste("~",
                     c_deparse(getCovariateFormula(formula(correlation))[[2]]),
@@ -341,8 +337,7 @@ nlme.formula <-
         }
       } else {
         if (any(lmeGrpsForm != corGrpsForm[1:lmeQ])) {
-          stop(paste("Incompatible formulas for groups in \"random\"",
-                     "and \"correlation\""))
+          stop("incompatible formulas for groups in \"random\" and \"correlation\"")
         }
       }
     } else {
@@ -483,7 +478,7 @@ nlme.formula <-
   contr[nms] <- lapply(nms, contrMat, contr = contr, data = dataMix)
 
   if (is.null(sfix <- start$fixed))
-    stop ("start must have a component called \"fixed\"")
+    stop ("'start' must have a component called 'fixed'")
   ##
   ## Fixed effects names
   ##
@@ -523,7 +518,7 @@ nlme.formula <-
   }
   fLen <- length(fn)
   if (length(sfix) != fLen)
-    stop ("starting values for the fixed component are not the correct length")
+    stop ("starting values for the 'fixed' component are not the correct length")
   names(sfix) <- fn
   ##
   ## Random effects names
@@ -561,9 +556,9 @@ nlme.formula <-
   ncols <- c(rlength, fLen, 1)
   Dims <- MEdims(grpShrunk, ncols)
   if (max(Dims$ZXlen[[1]]) < Dims$qvec[1]) {
-    warning(paste("Fewer observations than random effects in all level",
-                  Q,"groups"))
-  }
+    warning(gettextf("fewer observations than random effects in all level %s groups",
+                     Q), domain = NA)
+}
   sran <- vector("list", Q)
   names(sran) <- namGrp
   if (!is.null(sran0 <- start$random)) {
@@ -572,21 +567,23 @@ nlme.formula <-
     } else {
       if (!is.list(sran0)) {
         if (!is.matrix(sran0)) {
-          stop("Starting values for random effects should be a list, or a matrix")
+          stop("starting values for random effects should be a list, or a matrix")
         }
         sran0 <- list(as.matrix(sran0))
       }
     }
     if (is.null(namSran <- names(sran0))) {
       if (length(sran) != Q) {
-        stop(paste("List with starting values for random effects must have names",
-                   "or be of length", Q))
+          stop(gettextf("list with starting values for random effects must have names or be of length %d",
+                        Q), domain = NA)
       }
       names(sran0) <- rev(namGrp)        # assume given in outer-inner order
     } else {
       if (any(noMatch <- is.na(match(namSran, namGrp)))) {
-        stop(paste("Group names not matched in starting values",
-                   "for random effects:", paste(namSran[noMatch], collapse=", ")))
+          stop(sprintf(ngettext(sum(noMatch),
+                                "group name not matched in starting values for random effects: %s",
+                                "group names not matched in starting values for random effects: %s"),
+                       paste(namSran[noMatch], collapse=", ")), domain = NA)
       }
     }
   }
@@ -596,17 +593,15 @@ nlme.formula <-
                   list(rn[[i]], unique(as.character(grps[, Q-i+1]))))
     } else {
       if (!is.matrix(sran[[i]]))
-        stop (paste("starting values for the random components should be",
-                    "a list of matrices"))
+        stop("starting values for the random components should be a list of matrices")
       dimsran <- dim(sran[[i]])
       if (dimsran[1] != Dims$ngrps[i]) {
-        stop (paste("number of rows in starting values for random component",
-                  "at level", namGrp[i], "should be", Dims$ngrps[i]))
+          stop(gettextf("number of rows in starting values for random component at level %s should be %d",
+                        namGrp[i], Dims$ngrps[i]), domain = NA)
       }
       if (dimsran[2] != rlength[i]) {
-        stop (paste("number of columns in starting values for",
-                    "random component at level", namGrp[i],
-                    "should be", rlength[i]))
+          stop(gettextf("number of columns in starting values for random component at level %s should be %d",
+                        namGrp[i], rlength[i]), domain = NA)
       }
       dnamesran <- dimnames(sran[[i]])
       if (is.null(dnamesran[[1]])) {
@@ -614,8 +609,8 @@ nlme.formula <-
       } else {
         levGrps <- unique(as.character(grps[, Q-i+1]))
         if(!all(sort(dnamesran[[1]]) == sort(levGrps))) {
-          stop (paste("groups levels mismatch in random and starting values",
-                      "for random at level", namGrp[i]))
+          stop(gettextf("groups levels mismatch in 'random' and starting values for 'random' at level %s",
+                        namGrp[i]), domain = NA)
         }
         sran[[i]] <- sran[[i]][levGrps, , drop = FALSE]
       }
@@ -633,8 +628,8 @@ nlme.formula <-
                            paste(rn[[i]], "(Intercept)", sep = ".")))) {
                   dnamesran[[2]][j] <- rn[[i]][mDn]
                 } else {
-                  stop (paste("names mismatch in random and starting values",
-                              "for random at level", namGrp[i]))
+                  stop (gettextf("names mismatch in 'random' and starting values  for 'random' at level %s",
+                                 namGrp[i]), domain = NA)
                 }
               }
             }
@@ -826,10 +821,14 @@ nlme.formula <-
     }
     oldPars <- coef(nlmeSt)
     if (controlvals$opt == "nlminb") {
+        control <-  list(trace = controlvals$msVerbose,
+                         iter.max = controlvals$msMaxIter)
+        keep <- c("eval.max", "abs.tol", "rel.tol", "x.tol", "xf.tol",
+                  "step.min", "step.max", "sing.tol", "scale.init", "diff.g")
+        control <- c(control, controlvals[names(controlvals) %in% keep])
         optRes <- nlminb(c(coef(nlmeSt)),
                          function(nlmePars) -logLik(nlmeSt, nlmePars),
-                         control = list(trace = controlvals$msVerbose,
-                         iter.max = controlvals$msMaxIter))
+                         control = control)
         aConv <- coef(nlmeSt) <- optRes$par
         convIter <- optRes$iterations
     } else {
@@ -883,9 +882,9 @@ nlme.formula <-
     if (work$settings[4] == 1) {
 ##      convResult <- 2
       if (controlvals$returnObject) {
-        warning("Step halving factor reduced below minimum in PNLS step")
+        warning("step halving factor reduced below minimum in PNLS step")
       } else {
-        stop("Step halving factor reduced below minimum in PNLS step")
+        stop("step halving factor reduced below minimum in PNLS step")
       }
     }
     # dim(work$pdFactor) <- dim(pdMatrix(nlmeSt$reStruct[[1]]))
@@ -953,10 +952,10 @@ nlme.formula <-
     if (numIter >= controlvals$maxIter) {
 ##      convResult <- 1
       if (controlvals$returnObject) {
-	warning("Maximum number of iterations reached without convergence")
+	warning("maximum number of iterations reached without convergence")
 	break
       } else {
-	stop("Maximum number of iterations reached without convergence")
+	stop("maximum number of iterations reached without convergence")
       }
     }
   }
@@ -1114,7 +1113,7 @@ predict.nlme <-
     groups <- getGroupsFormula(reSt)
     if (any(is.na(match(all.vars(groups), names(newdata))))) {
       ## groups cannot be evaluated in newdata
-      stop("Cannot evaluate groups for desired levels on \"newdata\"")
+      stop("cannot evaluate groups for desired levels on 'newdata'")
     }
   } else {
     reSt <- NULL
@@ -1183,8 +1182,11 @@ predict.nlme <-
       levs <- levels(dataMix[,i])
       levsC <- dimnames(contr[[i]])[[1]]
       if (any(wch <- is.na(match(levs, levsC)))) {
-        stop(paste("Levels", paste(levs[wch], collapse = ","),
-                   "not allowed for", i))
+          stop(sprintf(ngettext(sum(wch),
+                                "level %s not allowed for %s",
+                                "levels %s not allowed for %s"),
+                       paste(levs[wch], collapse = ",")),
+               domain = NA)
       }
       attr(dataMix[,i], "contrasts") <- contr[[i]][levs, , drop = FALSE]
 #      if (length(levs) < length(levsC)) {
@@ -1454,7 +1456,7 @@ nlmeControl <-
            returnObject = FALSE, msVerbose = FALSE, gradHess = TRUE,
            apVar = TRUE, .relStep = (.Machine$double.eps)^(1/3),
            nlmStepMax = 100.0, minAbsParApVar = 0.05,
-	   opt = c("nlminb", "nlm"), natural = TRUE)
+	   opt = c("nlminb", "nlm"), natural = TRUE, ...)
 {
   list(maxIter = maxIter, pnlsMaxIter = pnlsMaxIter, msMaxIter = msMaxIter,
        minScale = minScale, tolerance = tolerance, niterEM = niterEM,
@@ -1462,7 +1464,7 @@ nlmeControl <-
        returnObject = returnObject, msVerbose = msVerbose,
        gradHess = gradHess, apVar = apVar, .relStep = .relStep,
        nlmStepMax = nlmStepMax, minAbsParApVar = minAbsParApVar,
-       opt = match.arg(opt), natural = natural)
+       opt = match.arg(opt), natural = natural, ...)
 }
 
 nonlinModel <- function( modelExpression, env,

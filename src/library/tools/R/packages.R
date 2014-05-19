@@ -1,6 +1,8 @@
 #  File src/library/tools/R/writePACKAGES.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -61,10 +63,10 @@ function(dir = ".", fields = NULL,
                 desci <- desc[i, !(is.na(desc[i, ]) | (desc[i, ] == "")),
                               drop = FALSE]
                 write.dcf(desci, file = out)
-                if(nzchar(path)) cat("Path: ", path, "\n", sep="", file = out)
+                if(nzchar(path)) cat("Path: ", path, "\n", sep = "", file = out)
                 cat("\n", file = out)
                 write.dcf(desci, file = outgz)
-                if(nzchar(path)) cat("Path: ", path, "\n", sep="", file = outgz)
+                if(nzchar(path)) cat("Path: ", path, "\n", sep = "", file = outgz)
                 cat("\n", file = outgz)
             }
             nfields <- nfields + nrow(desc)
@@ -104,7 +106,7 @@ function(dir, fields = NULL,
 
     ## Add the standard set of fields required to build a repository's
     ## PACKAGES file:
-    fields <- unique(c(.get_standard_repository_db_fields(), fields))
+    fields <- unique(c(.get_standard_repository_db_fields(type), fields))
     packages <- sapply(strsplit(files, "_", fixed = TRUE), "[", 1L)
     db <- vector(length(files), mode = "list")
     names(db) <- files
@@ -146,6 +148,11 @@ function(dir, fields = NULL,
                 temp <- tryCatch(read.dcf(p, fields = fields)[1L, ],
                                  error = identity)
                 if(!inherits(temp, "error")) {
+                    if(is.na(temp["NeedsCompilation"])) {
+                        l <- utils::untar(files[i], list = TRUE)
+                        temp["NeedsCompilation"] <-
+                            if(any(l == file.path(packages[i], "src/"))) "yes" else "no"
+                    }
                     temp["MD5sum"] <- md5sum(files[i])
                     db[[i]] <- temp
                 }
@@ -174,8 +181,15 @@ function(dir, fields = NULL, verbose = getOption("verbose"))
         temp <- tryCatch(read.dcf(file.path(paths[i], "DESCRIPTION"),
                                   fields = fields)[1L, ],
                          error = identity)
-        if(!inherits(temp, "error"))
+        if(!inherits(temp, "error")) {
+            if(is.na(temp["NeedsCompilation"])) {
+                temp["NeedsCompilation"] <-
+                    if(file_test("-d", file.path(paths[i], "src"))) "yes" else "no"
+            }
+            ## Cannot compute MD5 sum of the source tar.gz when working
+            ## on the unpacked sources ...
             db[[i]] <- temp
+        }
     }
     if(verbose) message("done")
     names(db) <- basename(paths)
@@ -193,7 +207,7 @@ function(pkgs, dependencies = c("Depends", "Imports", "LinkingTo"),
     else if(identical(dependencies, "most"))
         dependencies <-
             c("Depends", "Imports", "LinkingTo", "Suggests")
-    
+
     av <- installed[, dependencies, drop = FALSE]
     rn <- row.names(installed)
     need <- apply(av, 1L, function(x)
@@ -227,7 +241,7 @@ function(ap)
         wh <- which(dp == pkgs)
         vers <- package_version(ap[wh, "Version"])
         keep_ver <- max(vers)
-        keep_idx = which(vers == keep_ver)[1L] # they might all be max
+	keep_idx <- which.max(vers == keep_ver) # they might all be max
         wh <- wh[-keep_idx]
         end_i <- i + length(wh) - 1L
         stale_dups[i:end_i] <- wh
@@ -372,7 +386,8 @@ function(packages = NULL, db,
     }
     depends <-
         split(all_packages[pos[, 2L]],
-              factor(all_packages[pos[, 1L]], levels = packages))
+              factor(all_packages[pos[, 1L]],
+                     levels = unique(packages)))
     if(length(out_of_db_packages)) {
         depends <-
             c(depends,

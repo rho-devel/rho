@@ -1,6 +1,6 @@
 % File src/library/stats/man/ts.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{ts}
@@ -27,9 +27,9 @@ as.ts(x, \dots)
 is.ts(x)
 }
 \arguments{
-  \item{data}{a numeric vector or matrix of the observed time-series
+  \item{data}{a vector or matrix of the observed time-series
     values. A data frame will be coerced to a numeric matrix via
-    \code{data.matrix}.}
+    \code{data.matrix}.  (See also \sQuote{Details}.)}
   \item{start}{the time of the first observation.  Either a single
     number or a vector of two integers, which specify a natural time
     unit and a (1-based) number of samples into the time unit.  See
@@ -45,7 +45,7 @@ is.ts(x)
     \code{ts.eps}.}
   \item{class}{class to be given to the result, or none if \code{NULL}
     or \code{"none"}.  The default is \code{"ts"} for a single series,
-    \code{c("mts", "ts")} for multiple series.}
+    \code{c("mts", "ts", "matrix")} for multiple series.}
   \item{names}{a character vector of names for the series in a multiple
     series: defaults to the colnames of \code{data}, or \code{Series 1},
     \code{Series 2}, \dots.}
@@ -102,6 +102,10 @@ is.ts(x)
   \code{\link{window}};
   \code{\link{print.ts}}, the print method for time series objects;
   \code{\link{plot.ts}}, the plot method for time series objects.
+  
+  For other definitions of \sQuote{time series} (e.g.,
+  time-ordered observations) see the CRAN task view at
+  \url{http://cran.r-project.org/web/views/TimeSeries.html}.
 }
 \examples{
 require(graphics)
@@ -115,17 +119,18 @@ gnp <- ts(cumsum(1 + round(rnorm(100), 2)),
 plot(gnp) # using 'plot.ts' for time-series plot
 
 ## Multivariate
-z <- ts(matrix(rnorm(300), 100, 3), start=c(1961, 1), frequency=12)
+z <- ts(matrix(rnorm(300), 100, 3), start = c(1961, 1), frequency = 12)
 class(z)
+head(z) # as "matrix"
 plot(z)
-plot(z, plot.type="single", lty=1:3)
+plot(z, plot.type = "single", lty = 1:3)
 
 ## A phase plot:
-plot(nhtemp, c(nhtemp[-1], NA), cex = .8, col="blue",
+plot(nhtemp, c(nhtemp[-1], NA), cex = .8, col = "blue",
      main = "Lag plot of New Haven temperatures")
 ## a clearer way to do this would be
 \dontrun{
-plot(nhtemp, lag(nhtemp, 1), cex = .8, col="blue",
+plot(nhtemp, lag(nhtemp, 1), cex = .8, col = "blue",
      main = "Lag plot of New Haven temperatures")
 }}
 \keyword{ts}

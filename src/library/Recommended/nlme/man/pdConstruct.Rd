@@ -58,7 +58,7 @@ pdConstruct(object, value, form, nam, data, \dots)
   inheriting from the same classes as \code{object}.
 }
 
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{pdCompSymm}}, \code{\link{pdDiag}},
   \code{\link{pdIdent}}, \code{\link{pdNatural}}, \code{\link{pdSymm}}}

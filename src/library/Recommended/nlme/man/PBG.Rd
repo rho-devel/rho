@@ -36,7 +36,7 @@
 Data on an experiment to examine the effect of a antagonist MDL 72222
 on the change in blood pressure experienced with increasing dosage of
 phenylbiguanide are described in Ludbrook (1994) and analyzed
-in Venables and Ripley (1999, section 8.8).  Each of five rabbits was exposed to
+in Venables and Ripley (2002, section 10.3).  Each of five rabbits was exposed to
 increasing doses of phenylbiguanide after having either a placebo or
 the HD5-antagonist MDL 72222 administered.
 }
@@ -44,8 +44,8 @@ the HD5-antagonist MDL 72222 administered.
     Pinheiro, J. C. and Bates, D. M. (2000), \emph{Mixed-Effects Models in S
       and S-PLUS}, Springer, New York.  (Appendix A.21)
 
-    Venables, W. N. and Ripley, B. D. (1999) \emph{Modern Applied
-      Statistics with S-PLUS (3rd ed)}, Springer, New York.
+    Venables, W. N. and Ripley, B. D. (2002) \emph{Modern Applied
+      Statistics with S (4th ed)}, Springer, New York.
 
     Ludbrook, J. (1994), Repeated measurements and multiple comparisons
     in cardiovascular research, \emph{Cardiovascular Research},

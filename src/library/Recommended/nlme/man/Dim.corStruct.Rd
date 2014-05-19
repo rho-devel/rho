@@ -35,7 +35,7 @@
   \item{start}{an integer vector with the starting position for the
     observations in each group, beginning from zero}
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{Dim}}, \code{\link{Dim.corSpatial}}}
 
 \examples{

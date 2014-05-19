@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -109,7 +109,7 @@ void CellPool::checkCell(const void* p) const
 	if (offset >= 0
 	    && offset < static_cast<long>(m_admin->m_superblocksize)) {
 	    found = true;
-	    if (offset%m_admin->m_cellsize != 0) {
+	    if (std::size_t(offset)%m_admin->m_cellsize != 0) {
 		cerr << "CellPool::checkCell : designated block"
 		        " is misaligned\n";
 		abort();
@@ -173,14 +173,15 @@ CellPool::Cell* CellPool::seekMemory() throw (std::bad_alloc)
     m_admin->m_superblocks.push_back(superblock);
     // Initialise cells:
     {
-	int offset = m_admin->m_superblocksize - m_admin->m_cellsize;
+	ptrdiff_t offset
+	    = ptrdiff_t(m_admin->m_superblocksize - m_admin->m_cellsize);
 #ifdef CELLFIFO
 	m_last_free_cell = reinterpret_cast<Cell*>(superblock + offset);
 #endif
 	Cell* next = 0;
 	while (offset >= 0) {
 	    next = new (superblock + offset) Cell(next);
-	    offset -= m_admin->m_cellsize;
+	    offset -= ptrdiff_t(m_admin->m_cellsize);
 	}
 	return next;
     }

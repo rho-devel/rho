@@ -96,12 +96,12 @@ BM_Open(pDevDesc dd, pX11Desc xd, int width, int height)
 	}
 #endif
 	xd->cs = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
-					    (double)xd->windowWidth,
-					    (double)xd->windowHeight);
+					    xd->windowWidth,
+					    xd->windowHeight);
     } else if (xd->type == PNGdirect) {
 	xd->cs = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
-					    (double)xd->windowWidth,
-					    (double)xd->windowHeight);
+					    xd->windowWidth,
+					    xd->windowHeight);
     } else if(xd->type == SVG || xd->type == PDF || xd->type == PS) {
 	/* leave creation to BM_Newpage */
 	return TRUE;
@@ -464,6 +464,7 @@ SEXP in_Cairo(SEXP args)
     SEXP sc;
     const char *filename, *family;
     int type, quality, width, height, pointsize, bgcolor, res, antialias;
+    const void *vmax = vmaxget();
 
     args = CDR(args); /* skip entry point name */
     if (!isString(CAR(args)) || LENGTH(CAR(args)) < 1)
@@ -521,5 +522,6 @@ SEXP in_Cairo(SEXP args)
 	GEaddDevice2(gdd, devtable[type].name);
     } END_SUSPEND_INTERRUPTS;
 
+    vmaxset(vmax);
     return R_NilValue;
 }

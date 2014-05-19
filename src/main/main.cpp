@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2011   The R Core Team
+ *  Copyright (C) 1998-2013   The R Core Team
  *  Copyright (C) 2002-2005  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -56,6 +56,7 @@
 
 #define __MAIN__
 #include "Defn.h"
+#include <Internal.h>
 #include "Rinterface.h"
 #include "IOStuff.h"
 #include "Fileio.h"
@@ -161,6 +162,7 @@ attribute_hidden SEXP	R_NHeap;	    /* Start of the cons cell heap */
 attribute_hidden SEXP	R_FreeSEXP;	    /* Cons cell free list */
 attribute_hidden int	R_BrowseLines	= 0;	/* lines/per call in browser */
 attribute_hidden Rboolean R_KeepSource	= FALSE;	/* options(keep.source) */
+attribute_hidden Rboolean R_CBoundsCheck = FALSE;	/* options(CBoundsCheck) */
 attribute_hidden int	R_WarnLength	= 1000;	/* Error/warning max length */
 attribute_hidden int    R_nwarnings     = 50;
 attribute_hidden int	R_CStackDir	= 1;	/* C stack direction */
@@ -171,13 +173,13 @@ attribute_hidden int	R_ErrorCon	= 2;	/* Error connection */
 attribute_hidden char   *Sys_TempDir	= NULL;	/* Name of per-session dir
 						   if set by R itself */
 attribute_hidden char	R_StdinEnc[31]  = "";	/* Encoding assumed for stdin */
-attribute_hidden int	R_ParseError	= 0; /* Line where parse error occurred */
+int R_ParseError	= 0; /* Line where parse error occurred */
 attribute_hidden int	R_ParseErrorCol;    /* Column of start of token where parse error occurred */
 attribute_hidden SEXP	R_ParseErrorFile;   /* Source file where parse error was seen */
-attribute_hidden char	R_ParseErrorMsg[PARSE_ERROR_SIZE] = "";
-attribute_hidden char	R_ParseContext[PARSE_CONTEXT_SIZE] = "";
-attribute_hidden int	R_ParseContextLast = 0; /* last character in context buffer */
-attribute_hidden int	R_ParseContextLine; /* Line in file of the above */
+char R_ParseErrorMsg[PARSE_ERROR_SIZE] = "";
+char R_ParseContext[PARSE_CONTEXT_SIZE] = "";
+int R_ParseContextLast = 0; /* last character in context buffer */
+int R_ParseContextLine; /* Line in file of the above */
 attribute_hidden int	R_CollectWarnings = 0;	/* the number of warnings */
 GCRoot<>	R_Warnings;	    /* the warnings and their calls */
 attribute_hidden int	R_ShowErrorMessages = 1;     /* show error messages? */
@@ -187,13 +189,13 @@ attribute_hidden Rboolean R_ShowWarnCalls = FALSE;
 attribute_hidden Rboolean R_ShowErrorCalls = FALSE;
 attribute_hidden int R_NShowCalls = 50;
 attribute_hidden   Rboolean latin1locale = FALSE; /* is this a Latin-1 locale? */
-attribute_hidden char OutDec	= '.';  /* decimal point used for output */
+char OutDec = '.';  /* decimal point used for output */
 attribute_hidden Rboolean R_DisableNLinBrowser = FALSE;
 
 attribute_hidden int R_dec_min_exponent		= -308;
-attribute_hidden unsigned int max_contour_segments = 25000;
-attribute_hidden Rboolean known_to_be_latin1 = FALSE;
-attribute_hidden Rboolean known_to_be_utf8 = FALSE;
+unsigned int max_contour_segments = 25000;
+Rboolean known_to_be_latin1 = FALSE;
+Rboolean known_to_be_utf8 = FALSE;
 
 #ifdef BYTECODE
 attribute_hidden int R_jit_enabled = 0;
@@ -251,10 +253,11 @@ static void R_ReplFile(FILE *fp, SEXP rho)
 		PrintWarnings();
 	    break;
 	case PARSE_ERROR:
+	    R_FinalizeSrcRefState();
 	    parseError(R_NilValue, R_ParseError);
 	    break;
 	case PARSE_EOF:
-	    R_FinalizeSrcRefState(&ParseState);
+	    R_FinalizeSrcRefState();
 	    return;
 	    break;
 	case PARSE_INCOMPLETE:
@@ -268,8 +271,7 @@ static void R_ReplFile(FILE *fp, SEXP rho)
 static int prompt_type;
 static char BrowsePrompt[20];
 
-
-char *R_PromptString(int browselevel, int type)
+static const char *R_PromptString(int browselevel, int type)
 {
     if (R_Slave) {
 	BrowsePrompt[0] = '\0';
@@ -278,15 +280,13 @@ char *R_PromptString(int browselevel, int type)
     else {
 	if(type == 1) {
 	    if(browselevel) {
-		sprintf(BrowsePrompt, "Browse[%d]> ", browselevel);
+		snprintf(BrowsePrompt, 20, "Browse[%d]> ", browselevel);
 		return BrowsePrompt;
 	    }
-	    return const_cast<char *>(CHAR(STRING_ELT(GetOption(install("prompt"),
-								R_BaseEnv), 0)));
+	    return CHAR(STRING_ELT(GetOption1(install("prompt")), 0));
 	}
 	else {
-	    return const_cast<char *>(CHAR(STRING_ELT(GetOption(install("continue"),
-								R_BaseEnv), 0)));
+	    return CHAR(STRING_ELT(GetOption1(install("continue")), 0));
 	}
     }
 }
@@ -349,7 +349,7 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
     int c, browsevalue;
     SEXP value, thisExpr;
     Rboolean wasDisplayed = FALSE;
-    unsigned int browselevel = Browser::numberActive();
+    int browselevel = int(Browser::numberActive());
 
     if(!*state->bufp) {
 	    R_Busy(0);
@@ -465,7 +465,6 @@ static unsigned char DLLbuf[CONSOLE_BUFFER_SIZE+1], *DLLbufp;
 
 void R_ReplDLLinit(void)
 {
-    R_IoBufferInit(&R_ConsoleIob);
     R_IoBufferWriteReset(&R_ConsoleIob);
     prompt_type = 1;
     DLLbuf[0] = DLLbuf[CONSOLE_BUFFER_SIZE] = '\0';
@@ -823,14 +822,29 @@ unsigned int TimeToSeed(void); /* datetime.c */
 
 const char* get_workspace_name();  /* from startup.c */
 
+extern "C"
+void attribute_hidden BindDomain(char *R_Home)
+{
+#ifdef ENABLE_NLS
+    char localedir[PATH_MAX+20];
+    setlocale(LC_MESSAGES,"");
+    textdomain(PACKAGE);
+    char *p = getenv("R_TRANSLATIONS");
+    if (p) snprintf(localedir, PATH_MAX+20, "%s", p);
+    else snprintf(localedir, PATH_MAX+20, "%s/library/translations", R_Home);
+    bindtextdomain(PACKAGE, localedir); // PACKAGE = DOMAIN = "R"
+    bindtextdomain("R-base", localedir);
+# ifdef WIN32
+    bindtextdomain("RGui", localedir);
+# endif
+#endif
+}
+
 void setup_Rmainloop(void)
 {
     volatile SEXP baseEnv;
     SEXP cmd;
     FILE *fp;
-#ifdef ENABLE_NLS
-    char localedir[PATH_MAX+20];
-#endif
     char deferred_warnings[11][250];
     volatile int ndeferred_warnings = 0;
 
@@ -892,10 +906,10 @@ void setup_Rmainloop(void)
 #ifdef LC_MONETARY
     if(!setlocale(LC_MONETARY, ""))
 	snprintf(deferred_warnings[ndeferred_warnings++], 250,
-		 "Setting LC_PAPER failed, using \"C\"\n");
+		 "Setting LC_MONETARY failed, using \"C\"\n");
 #endif
 #ifdef LC_PAPER
-    if(!setlocale(LC_MONETARY, ""))
+    if(!setlocale(LC_PAPER, ""))
 	snprintf(deferred_warnings[ndeferred_warnings++], 250,
 		 "Setting LC_PAPER failed, using \"C\"\n");
 #endif
@@ -905,23 +919,6 @@ void setup_Rmainloop(void)
 		 "Setting LC_MEASUREMENT failed, using \"C\"\n");
 #endif
 #endif /* not Win32 */
-#ifdef ENABLE_NLS
-    /* This ought to have been done earlier, but be sure */
-    textdomain(PACKAGE);
-    {
-	char *p = getenv("R_SHARE_DIR");
-	if(p) {
-	    strcpy(localedir, p);
-	    strcat(localedir, "/locale");
-	} else {
-	    strcpy(localedir, R_Home);
-	    strcat(localedir, "/share/locale");
-	}
-    }
-    bindtextdomain(PACKAGE, localedir);
-    strcpy(localedir, R_Home); strcat(localedir, "/library/base/po");
-    bindtextdomain("R-base", localedir);
-#endif
 #endif
 
     /* make sure srand is called before R_tmpnam, PR#14381 */
@@ -935,7 +932,6 @@ void setup_Rmainloop(void)
     InitOptions();
     InitEd();
     InitArithmetic();
-    InitColors();
     InitGraphics();
     R_Is_Running = 1;
     R_check_locale();
@@ -974,7 +970,7 @@ void setup_Rmainloop(void)
        user's profile (in that order).  If there is an error, we
        drop through to further processing.
     */
-
+    R_IoBufferInit(&R_ConsoleIob);
     R_LoadProfile(R_OpenSysInitFile(), baseEnv);
     /* These are the same bindings, so only lock them once */
     R_LockEnvironment(R_BaseNamespace, TRUE);
@@ -1083,11 +1079,12 @@ void setup_Rmainloop(void)
 
     /* trying to do this earlier seems to run into bootstrapping issues. */
     R_init_jit_enabled();
+    R_Is_Running = 2;
 }
 
 extern SA_TYPE SaveAction; /* from src/main/startup.c */
 
-void end_Rmainloop(void)
+static void end_Rmainloop(void)
 {
     /* refrain from printing trailing '\n' in slave mode */
     if (!R_Slave)
@@ -1101,7 +1098,6 @@ void run_Rmainloop(void)
 {
     /* Here is the real R read-eval-loop. */
     /* We handle the console until end-of-file. */
-    R_IoBufferInit(&R_ConsoleIob);
     bool redo;
     do {
 	redo = false;
@@ -1179,7 +1175,7 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
 /* browser(text = "", condition = NULL, expr = TRUE, skipCalls = 0L) */
 SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    unsigned int savestack;
+    int savestack;
     GCStackRoot<> topExp(R_CurrentExpr);
     SEXP ap;
     RObject* ans = 0;
@@ -1214,7 +1210,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* Save the evaluator state information */
     /* so that it can be restored on exit. */
 
-    savestack = ProtectStack::size();
+    savestack = int(ProtectStack::size());
 
     if (!ENV_DEBUG(rho)) {
 	ClosureContext* cptr = ClosureContext::innermost();
@@ -1382,8 +1378,8 @@ Rf_addTaskCallback(R_ToplevelCallback cb, void *data,
     }
 
     if(!name) {
-	char buf[5];
-	sprintf(buf, "%d", which+1);
+	char buf[10];
+	snprintf(buf, 10, "%d", which+1);
 	el->name = strdup(buf);
     } else
 	el->name = strdup(name);
@@ -1531,6 +1527,7 @@ R_getTaskCallbackNames(void)
      Simple state to indicate that they are currently being run. */
 static Rboolean Rf_RunningToplevelHandlers = FALSE;
 
+/* This is not used in R and in no header */
 void
 Rf_callToplevelHandlers(SEXP expr, SEXP value, Rboolean succeeded,
 			Rboolean visible)
@@ -1660,5 +1657,13 @@ void attribute_hidden dummy12345(void)
 {
     int i = 0;
     F77_CALL(intpr)("dummy", &i, &i, &i);
+}
+
+/* Used in unix/system.c, avoid inlining */
+extern "C"
+uintptr_t dummy_ii(void)
+{
+    int ii;
+    return uintptr_t( &ii);
 }
 #endif

@@ -1,6 +1,8 @@
 #  File src/library/stats/R/quantile.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -99,10 +101,10 @@ quantile.default <-
         qs <- factor(qs, levels = seq_along(lx), labels = lx, ordered = TRUE)
     if(names && np > 0L) {
 	dig <- max(2L, getOption("digits"))
-	names(qs) <- paste(## formatC is slow for long probs
-			   if(np < 100) formatC(100*probs, format = "fg", width = 1, digits = dig)
-			   else format(100 * probs, trim = TRUE, digits = dig),
-			   "%", sep = "")
+	names(qs) <- paste0(## formatC is slow for long probs
+                            if(np < 100) formatC(100*probs, format = "fg", width = 1, digits = dig)
+                            else format(100 * probs, trim = TRUE, digits = dig),
+                            "%")
     }
     if(na.p) { # do this more elegantly (?!)
         o.pr[p.ok] <- qs

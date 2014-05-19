@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -213,8 +213,8 @@ void askchangedir()
 {
     char *s, msg[MAX_PATH + 40];
 
-/* if cod has never been used, set it to current directory */
-    if (!cod[0]) GetCurrentDirectory(MAX_PATH, cod);
+/* set cod to current directory */
+    GetCurrentDirectory(MAX_PATH, cod);
     s = askcdstring(G_(" Change working directory to:"), cod);
     if (s && (SetCurrentDirectory(s) == FALSE)) {
 	snprintf(msg, MAX_PATH + 40,

@@ -348,14 +348,15 @@ SEXP dense_to_symmetric(SEXP x, SEXP uplo, SEXP symm_test)
     enum dense_enum { ddense, ldense, ndense
     } M_type = ( (cl[0] == 'd') ? ddense :
 		((cl[0] == 'l') ? ldense : ndense));
+    int *adims = INTEGER(GET_SLOT(dx, Matrix_DimSym)), n = adims[0];
+    if(n != adims[1]) {
+	UNPROTECT(1);
+	error(_("ddense_to_symmetric(): matrix is not square!"));
+	return R_NilValue; /* -Wall */
+    }
 
     if(symm_tst) {
-	int *adims = INTEGER(GET_SLOT(dx, Matrix_DimSym)), n = adims[0], i,j;
-	if(n != adims[1]) {
-	    UNPROTECT(1);
-	    error(_("ddense_to_symmetric(): matrix is not square!"));
-	    return R_NilValue; /* -Wall */
-	}
+	int i,j;
 #define CHECK_SYMMETRIC							\
 	for (j = 0; j < n; j++)						\
 	    for (i = 0; i < j; i++)					\

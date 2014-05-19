@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -50,8 +50,8 @@ Evaluator* Evaluator::s_current = 0;
 bool Evaluator::s_profiling = false;
 
 namespace {
-    int R_MIN_EXPRESSIONS_OPT = 25;
-    int R_MAX_EXPRESSIONS_OPT = 500000;
+    unsigned int R_MIN_EXPRESSIONS_OPT = 25;
+    unsigned int R_MAX_EXPRESSIONS_OPT = 500000;
 }
 
 RObject* Evaluator::evaluate(RObject* object, Environment* env)
@@ -83,10 +83,10 @@ RObject* Evaluator::evaluate(RObject* object, Environment* env)
     return ans;
 }
 
-void Evaluator::setDepthLimit(int depth)
+void Evaluator::setDepthLimit(unsigned int depth)
 {
     if (depth < R_MIN_EXPRESSIONS_OPT || depth > R_MAX_EXPRESSIONS_OPT)
 	Rf_error(_("'expressions' parameter invalid, allowed %d...%d"),
-	      R_MIN_EXPRESSIONS_OPT, R_MAX_EXPRESSIONS_OPT);
+		 R_MIN_EXPRESSIONS_OPT, R_MAX_EXPRESSIONS_OPT);
     s_depth_threshold = s_depth_limit = depth;
 }

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -89,7 +89,7 @@ namespace CXXR {
 
     /** @brief Vector of strings.
      *
-     * Note that the <tt>StringVector(size_t)</tt> constructor will
+     * Note that the <tt>StringVector(size_type)</tt> constructor will
      * fill the constructed vector with blank strings rather than
      * with NULL.
      */
@@ -149,7 +149,7 @@ extern "C" {
  *
  * @param v Non-null pointer to CXXR::String representing the new value.
  */
-void SET_STRING_ELT(SEXP x, int i, SEXP v);
+void SET_STRING_ELT(SEXP x, R_xlen_t i, SEXP v);
 
 /**
  * @brief Examine element of a CXXR::StringVector.
@@ -163,12 +163,12 @@ void SET_STRING_ELT(SEXP x, int i, SEXP v);
  * @return Pointer to extracted \a i 'th element.
  */
 #ifndef __cplusplus
-SEXP STRING_ELT(SEXP x, int i);
+SEXP STRING_ELT(SEXP x, R_xlen_t i);
 #else
-inline SEXP STRING_ELT(SEXP x, int i)
+inline SEXP STRING_ELT(SEXP x, R_xlen_t i)
 {
     using namespace CXXR;
-    return (*SEXP_downcast<StringVector*>(x, false))[i];
+    return (*SEXP_downcast<StringVector*>(x, false))[VectorBase::size_type(i)];
 }
 #endif
 

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -27,7 +27,7 @@
  *    distribution function. Appl.Statist., 41, 478-482.
 
  *  Other parts
- *  Copyright (C) 2000-2009  The R Core Team
+ *  Copyright (C) 2000-2012  The R Core Team
  *  Copyright (C) 2003-2009  The R Foundation
  */
 
@@ -42,6 +42,13 @@
  * bad precision & non-convergence in some cases (x ~= f, both LARGE)
  */
 
+#ifdef HAVE_LONG_DOUBLE
+# define EXP expl
+# define FABS fabsl
+#else
+# define EXP exp
+# define FABS fabs
+#endif
 
 double pnchisq(double x, double df, double ncp, int lower_tail, int log_p)
 {
@@ -80,7 +87,7 @@ pnchisq_raw(double x, double f, double theta,
     double l_lam = -1., l_x = -1.; /* initialized for -Wall */
     int n;
     Rboolean lamSml, tSml, is_r, is_b, is_it;
-    long double ans, u, v, t, lt, lu =-1;
+    LDOUBLE ans, u, v, t, lt, lu =-1;
 
     static const double _dbl_min_exp = M_LN2 * DBL_MIN_EXP;
     /*= -708.3964 for IEEE double precision */
@@ -99,7 +106,8 @@ pnchisq_raw(double x, double f, double theta,
 #endif
 
     if(theta < 80) { /* use 110 for Inf, as ppois(110, 80/2, lower.tail=FALSE) is 2e-20 */
-	long double sum = 0, sum2 = 0, lambda = 0.5*theta, pr = exp(-lambda);
+	LDOUBLE sum = 0, sum2 = 0, lambda = 0.5*theta, 
+	    pr = EXP(-lambda); // does this need a feature test?
 	double ans;
 	int i;
 	/* we need to renormalize here: the result could be very close to 1 */
@@ -108,7 +116,7 @@ pnchisq_raw(double x, double f, double theta,
 	    sum += pr * pchisq(x, f+2*i, lower_tail, FALSE);
 	    if (sum2 >= 1-1e-15) break;
 	}
-	ans = sum/sum2;
+	ans = (double) (sum/sum2);
 	return ans;
     }
 
@@ -140,7 +148,7 @@ pnchisq_raw(double x, double f, double theta,
 #endif
 
     if(f2 * DBL_EPSILON > 0.125 && /* very large f and x ~= f: probably needs */
-       fabs(t = x2 - f2) <         /* another algorithm anyway */
+       FABS(t = x2 - f2) <         /* another algorithm anyway */
        sqrt(DBL_EPSILON) * f2) {
 	/* evade cancellation error */
 	/* t = exp((1 - t)*(2 - t/(f2 + 1))) / sqrt(2*M_PI*(f2 + 1));*/
@@ -164,14 +172,14 @@ pnchisq_raw(double x, double f, double theta,
 	    return lower_tail ? 1. : 0.; /* FIXME: We could be more accurate than 0. */
 	} /* else */
 	l_x = log(x);
-	ans = term = t = 0.;
+	ans = term = 0.; t = 0;
     }
     else {
-	t = exp(lt);
+	t = EXP(lt);
 #ifdef DEBUG_pnch
  	REprintf(", t=exp(lt)= %g\n", t);
 #endif
-	ans = term = v * t;
+	ans = term = (double) (v * t);
     }
 
     for (n = 1, f_2n = f + 2., f_x_2n += 2.;  ; n++, f_2n += 2, f_x_2n += 2) {
@@ -186,7 +194,7 @@ pnchisq_raw(double x, double f, double theta,
 	if (f_x_2n > 0) {
 	    /* find the error bound and check for convergence */
 
-	    bound = t * x / f_x_2n;
+	    bound = (double) (t * x / f_x_2n);
 #ifdef DEBUG_pnch
 	    REprintf("\n L10: n=%d; term= %g; bound= %g",n,term,bound);
 #endif
@@ -217,7 +225,7 @@ pnchisq_raw(double x, double f, double theta,
                 REprintf(" n=%d; nomore underflow in u = exp(lu) ==> change\n",
 			 n);
 #endif
-                v = u = exp(lu); /* the first non-0 'u' */
+                v = u = EXP(lu); /* the first non-0 'u' */
                 lamSml = FALSE;
             }
         } else {
@@ -232,14 +240,14 @@ pnchisq_raw(double x, double f, double theta,
                 REprintf("  n=%d; nomore underflow in t = exp(lt) ==> change\n",
 			 n);
 #endif
-                t = exp(lt); /* the first non-0 't' */
+                t = EXP(lt); /* the first non-0 't' */
                 tSml = FALSE;
             }
         } else {
 	    t *= x / f_2n;
 	}
         if(!lamSml && !tSml) {
-	    term = v * t;
+	    term = (double) (v * t);
 	    ans += term;
 	}
 
@@ -252,5 +260,5 @@ pnchisq_raw(double x, double f, double theta,
 #ifdef DEBUG_pnch
     REprintf("\n == L_End: n=%d; term= %g; bound=%g\n",n,term,bound);
 #endif
-    return lower_tail ? ans : 1 - ans;
+    return (double) (lower_tail ? ans : 1 - ans);
 }

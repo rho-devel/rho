@@ -1,6 +1,9 @@
 #  File src/library/base/R/kappa.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1998 B. D. Ripley
+#  Copyright (C) 1998-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -16,11 +19,11 @@
 
 norm <- function(x, type = c("O", "I", "F", "M", "2")) {
     if(identical("2", type)) {
-	svd(x, nu=0L, nv=0L)$d[1L]
+	svd(x, nu = 0L, nv = 0L)$d[1L]
 	## *faster* at least on some platforms {but possibly less accurate}:
 	##sqrt(eigen(crossprod(x), symmetric=TRUE, only.values=TRUE)$values[1L])
     } else
-	.Call("La_dlange", x, type, PACKAGE="base")
+	.Internal(La_dlange(x, type))
 } ## and define it as implicitGeneric, so S4 methods are consistent
 
 kappa <- function(z, ...) UseMethod("kappa")
@@ -34,15 +37,11 @@ rcond <- function(x, norm = c("O","I","1"), triangular = FALSE, ...) {
 
     ## x = square matrix :
     if(is.complex(x)) {
-        if(triangular)
-            .Call("La_ztrcon", x, norm, PACKAGE="base")
-        else .Call("La_zgecon", x, norm, PACKAGE="base")
-    }
-    else {
-        storage.mode(x) <- "double"
-        if(triangular)
-            .Call("La_dtrcon", x, norm, PACKAGE="base")
-        else .Call("La_dgecon", x, norm, PACKAGE="base")
+        if(triangular) .Internal(La_ztrcon(x, norm))
+        else .Internal(La_zgecon(x, norm))
+    } else {
+        if(triangular) .Internal(La_dtrcon(x, norm))
+        else .Internal(La_dgecon(x, norm))
     }
 }
 
@@ -53,7 +52,7 @@ kappa.default <- function(z, exact = FALSE,
     z <- as.matrix(z)
     norm <- if(!is.null(norm)) match.arg(norm, c("2", "1","O", "I")) else "2"
     if(exact && norm == "2") {
-        s <- svd(z, nu=0, nv=0)$d
+        s <- svd(z, nu = 0, nv = 0)$d
         max(s)/min(s[s > 0])
     }
     else { ## exact = FALSE or norm in "1", "O", "I"
@@ -63,8 +62,8 @@ kappa.default <- function(z, exact = FALSE,
         d <- dim(z)
         if(method == "qr" || d[1L] != d[2L])
 	    kappa.qr(qr(if(d[1L] < d[2L]) t(z) else z),
-		     exact=FALSE, norm=norm, ...)
-        else kappa.tri(z, exact=FALSE, norm=norm, ...)
+		     exact = FALSE, norm = norm, ...)
+        else .kappa_tri(z, exact = FALSE, norm = norm, ...)
     }
 }
 
@@ -75,10 +74,10 @@ kappa.qr <- function(z, ...)
     qr <- z$qr
     R <- qr[1L:min(dim(qr)), , drop = FALSE]
     R[lower.tri(R)] <- 0
-    kappa.tri(R, ...)
+    .kappa_tri(R, ...)
 }
 
-kappa.tri <- function(z, exact = FALSE, LINPACK = TRUE, norm=NULL, ...)
+.kappa_tri <- function(z, exact = FALSE, LINPACK = TRUE, norm=NULL, ...)
 {
     if(exact) {
         stopifnot(is.null(norm) || identical("2", norm))
@@ -89,27 +88,16 @@ kappa.tri <- function(z, exact = FALSE, LINPACK = TRUE, norm=NULL, ...)
         if(is.na(p)) stop("invalid nrow(x)")
 	if(p != ncol(z)) stop("triangular matrix should be square")
 	if(is.null(norm)) norm <- "1"
-	if(is.complex(z))
-	    1/.Call("La_ztrcon", z, norm, PACKAGE="base")
+	if(is.complex(z)) 1/.Internal(La_ztrcon(z, norm))
 	else if(LINPACK) {
 	    if(norm == "I") # instead of "1" / "O"
 		z <- t(z)
 	    ##	dtrco  *differs* from Lapack's dtrcon() quite a bit
 	    ## even though dtrco's doc also say to compute the
 	    ## 1-norm reciprocal condition
-            if(!is.double(z)) storage.mode(z) <- "double"
-	    1 / .Fortran("dtrco",
-			 z,
-			 p,
-			 p,
-			 k = double(1),
-			 double(p),
-			 1L,
-			 PACKAGE = "base")$k
+            storage.mode(z) <- "double"
+	    1 / .Fortran(.F_dtrco, z, p, p, k = double(1), double(p), 1L)$k
 	}
-	else { ## Lapack
-	    storage.mode(z) <- "double"
-	    1/.Call("La_dtrcon", z, norm, PACKAGE="base")
-	}
+	else 1/.Internal(La_dtrcon(z, norm))
     }
 }

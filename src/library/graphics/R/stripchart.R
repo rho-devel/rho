@@ -1,6 +1,8 @@
 #  File src/library/graphics/R/stripchart.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -112,7 +114,7 @@ stripchart.formula <-
     m$x <- NULL
     m$na.action <- na.action # force use of default for this method
     require(stats, quietly = TRUE)
-    m[[1L]] <- as.name("model.frame")
+    m[[1L]] <- quote(stats::model.frame)
     mf <- eval(m, parent.frame())
     response <- attr(attr(mf, "terms"), "response")
     if (is.null(dlab)) dlab <- names(mf)[response]

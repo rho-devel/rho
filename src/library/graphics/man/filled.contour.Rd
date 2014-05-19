@@ -14,9 +14,9 @@
 filled.contour(x = seq(0, 1, length.out = nrow(z)),
                y = seq(0, 1, length.out = ncol(z)),
                z,
-               xlim = range(x, finite=TRUE),
-               ylim = range(y, finite=TRUE),
-               zlim = range(z, finite=TRUE),
+               xlim = range(x, finite = TRUE),
+               ylim = range(y, finite = TRUE),
+               zlim = range(z, finite = TRUE),
                levels = pretty(zlim, nlevels), nlevels = 20,
                color.palette = cm.colors,
                col = color.palette(length(levels) - 1),
@@ -33,7 +33,7 @@ filled.contour(x = seq(0, 1, length.out = nrow(z)),
    By default, equally spaced values from 0 to 1 are used.  If \code{x}
    is a \code{list}, its components \code{x$x} and \code{x$y} are used
    for \code{x} and \code{y}, respectively.  If the list has component
-   \code{z} this is used for \code{z}.} 
+   \code{z} this is used for \code{z}.}
  \item{z}{a numeric matrix containing the values to be plotted..  Note that
    \code{x} can be used instead of \code{z} for convenience.}
  \item{xlim}{x limits for the plot.}
@@ -80,8 +80,8 @@ filled.contour(x = seq(0, 1, length.out = nrow(z)),
   is a single \code{NA} value the triangle opposite the \code{NA} is
   omitted.
 
-  As from \R 2.14.1 values to be plotted can be infinite: the effect is
-  similar to that described for \code{NA} values.
+  Values to be plotted can be infinite: the effect is similar to that
+  described for \code{NA} values.
 
   \code{.filled.contour} is a \sQuote{bare bones} interface to add
   just the contour plot to an already-set-up plot region.  It is is
@@ -113,7 +113,7 @@ filled.contour(x = seq(0, 1, length.out = nrow(z)),
 }
 \examples{
 require(grDevices) # for colours
-filled.contour(volcano, color = terrain.colors, asp = 1)# simple
+filled.contour(volcano, color = terrain.colors, asp = 1) # simple
 
 x <- 10*1:nrow(volcano)
 y <- 10*1:ncol(volcano)
@@ -122,8 +122,8 @@ filled.contour(x, y, volcano, color = terrain.colors,
     xlab = "Meters North", ylab = "Meters West"),
     plot.axes = { axis(1, seq(100, 800, by = 100))
                   axis(2, seq(100, 600, by = 100)) },
-    key.title = title(main="Height\n(meters)"),
-    key.axes = axis(4, seq(90, 190, by = 10)))# maybe also asp=1
+    key.title = title(main = "Height\n(meters)"),
+    key.axes = axis(4, seq(90, 190, by = 10)))  # maybe also asp = 1
 mtext(paste("filled.contour(.) from", R.version.string),
       side = 1, line = 4, adj = 1, cex = .66)
 
@@ -131,7 +131,7 @@ mtext(paste("filled.contour(.) from", R.version.string),
 a <- expand.grid(1:20, 1:20)
 b <- matrix(a[,1] + a[,2], 20)
 filled.contour(x = 1:20, y = 1:20, z = b,
-               plot.axes={ axis(1); axis(2); points(10,10) })
+               plot.axes = { axis(1); axis(2); points(10, 10) })
 
 ## Persian Rug Art:
 x <- y <- seq(-4*pi, 4*pi, len = 27)

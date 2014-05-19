@@ -35,9 +35,7 @@ case then the \code{tweedie} package is the place to start.
 
 %- maybe also `usage' for other objects documented here.
 
-\author{ Simon N. Wood \email{simon.wood@r-project.org}
-modified from Venables and Ripley's \code{negative.binomial} family.
-}
+\author{ Simon N. Wood \email{simon.wood@r-project.org}}
 
 \references{
 Dunn, P.K. and G.K. Smith (2005) Series evaluation of Tweedie exponential dispersion model densities. 

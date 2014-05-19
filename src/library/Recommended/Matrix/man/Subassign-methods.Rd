@@ -31,6 +31,7 @@
 \alias{[<-,diagonalMatrix,index,missing,replValue-method}
 \alias{[<-,diagonalMatrix,matrix,missing,replValue-method}
 \alias{[<-,diagonalMatrix,missing,index,replValue-method}
+\alias{[<-,diagonalMatrix,missing,missing,ANY-method}
 %
 \alias{[<-,diagonalMatrix,index,index,sparseMatrix-method}
 \alias{[<-,diagonalMatrix,index,missing,sparseMatrix-method}
@@ -45,10 +46,10 @@
 \alias{[<-,sparseMatrix,ANY,missing,sparseMatrix-method}
 \alias{[<-,sparseMatrix,missing,ANY,sparseMatrix-method}
 \alias{[<-,sparseMatrix,missing,missing,ANY-method}
-% -> ../R/pMatrix.R : -- these give errors
-\alias{[<-,pMatrix,index,ANY,ANY-method}
-\alias{[<-,pMatrix,missing,index,ANY-method}
-\alias{[<-,pMatrix,missing,missing,ANY-method}
+% -> ../R/indMatrix.R : -- these give errors
+\alias{[<-,indMatrix,index,ANY,ANY-method}
+\alias{[<-,indMatrix,missing,index,ANY-method}
+\alias{[<-,indMatrix,missing,missing,ANY-method}
 % -> ../R/Tsparse.R : replValue = { numeric, logical }
 \alias{[<-,TsparseMatrix,index,index,replValue-method}
 \alias{[<-,TsparseMatrix,index,missing,replValue-method}
@@ -93,7 +94,7 @@
   Methods for \code{"[<-"}, i.e., extraction or subsetting mostly of
   matrices, in package \pkg{Matrix}.
 
-  \bold{Note}: Contrary to standadrd \code{\link{matrix}} assignment in
+  \bold{Note}: Contrary to standard \code{\link{matrix}} assignment in
   base \R, in \code{x[..] <- val} it is typically an \bold{error} (see
   \code{\link{stop}}) when the \link{type} or \code{\link{class}} of
   \code{val} would require the class of \code{x} to be changed, e.g.,

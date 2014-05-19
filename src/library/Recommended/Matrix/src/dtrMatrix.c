@@ -122,7 +122,7 @@ SEXP dtrMatrix_matrix_mm(SEXP a, SEXP b, SEXP right, SEXP trans)
 	error(_("Matrices are not conformable for multiplication"));
     if (m < 1 || n < 1) {
 /* 	error(_("Matrices with zero extents cannot be multiplied")); */
-	} else /* BLAS */
+    } else /* BLAS */
 	F77_CALL(dtrmm)(rt ? "R" : "L", uplo_P(a),
 			/*trans_A = */ tr ? "T" : "N",
 			diag_P(a), &m, &n, &one,
@@ -236,6 +236,43 @@ SEXP ltrMatrix_getDiag(SEXP x) {
     GET_trMatrix_Diag(  int, LGLSXP, LOGICAL, 1);
 }
 
+#define SET_trMatrix_Diag(_C_TYPE_, _SEXP_)				\
+    int n = INTEGER(GET_SLOT(x, Matrix_DimSym))[0];			\
+    SEXP ret = PROTECT(duplicate(x));					\
+    SEXP r_x = GET_SLOT(ret, Matrix_xSym);				\
+    _C_TYPE_ *dv = _SEXP_(d),						\
+	     *rv = _SEXP_(r_x);						\
+									\
+    if ('U' == diag_P(x)[0]) 						\
+	error(_("cannot set diag() as long as 'diag = \"U\"'"));        \
+    for (int i = 0; i < n; i++) rv[i * (n + 1)] = dv[i];		\
+									\
+    UNPROTECT(1);							\
+    return ret
+
+SEXP dtrMatrix_setDiag(SEXP x, SEXP d) {
+    SET_trMatrix_Diag(double, REAL);
+}
+
+SEXP ltrMatrix_setDiag(SEXP x, SEXP d) {
+    SET_trMatrix_Diag(  int, LOGICAL);
+}
+
+SEXP dtrMatrix_addDiag(SEXP x, SEXP d) {
+    int n = INTEGER(GET_SLOT(x, Matrix_DimSym))[0];
+    SEXP ret = PROTECT(duplicate(x)),
+	r_x = GET_SLOT(ret, Matrix_xSym);
+    double *dv = REAL(d), *rv = REAL(r_x);
+
+    if ('U' == diag_P(x)[0])
+	error(_("cannot add diag() as long as 'diag = \"U\"'"));
+    for (int i = 0; i < n; i++) rv[i * (n + 1)] += dv[i];
+
+    UNPROTECT(1);
+    return ret;
+}
+
+
 SEXP dtrMatrix_as_dtpMatrix(SEXP from)
 {
     SEXP val = PROTECT(NEW_OBJECT(MAKE_CLASS("dtpMatrix"))),
@@ -252,6 +289,8 @@ SEXP dtrMatrix_as_dtpMatrix(SEXP from)
 	REAL(GET_SLOT(from, Matrix_xSym)), n,
 	*CHAR(STRING_ELT(uplo, 0)) == 'U' ? UPP : LOW,
 	*CHAR(STRING_ELT(diag, 0)) == 'U' ? UNT : NUN);
+    SET_SLOT(val, Matrix_DimNamesSym,
+	     duplicate(GET_SLOT(from, Matrix_DimNamesSym)));
     UNPROTECT(1);
     return val;
 }

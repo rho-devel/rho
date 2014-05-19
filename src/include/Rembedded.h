@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -33,6 +33,8 @@
  *  http://www.r-project.org/Licenses/
  */
 
+/* A header for use with alternative front-ends. Not formally part of
+ * the API so subject to change without notice. */
 
 #ifndef REMBEDDED_H_
 #define REMBEDDED_H_

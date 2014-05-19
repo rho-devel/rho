@@ -17,7 +17,7 @@ textConnection(object, open = "r", local = FALSE,
 textConnectionValue(con)
 }
 \arguments{
-  \item{object}{character.  A description of the \link{connection}. 
+  \item{object}{character.  A description of the \link{connection}.
     For an input this is an \R character vector object, and for an output
     connection the name for the \R character vector to receive the
     output, or \code{NULL} (for none).
@@ -87,7 +87,7 @@ textConnectionValue(con)
   line for output connections: longer lines will be truncated with a
   warning.
 }
- 
+
 \references{
   Chambers, J. M. (1998)
   \emph{Programming with Data.  A Guide to the S Language.} Springer.\cr
@@ -109,9 +109,9 @@ close(zz)
 
 zz <- textConnection("foo", "w")
 writeLines(c("testit1", "testit2"), zz)
-cat("testit3 ", file=zz)
+cat("testit3 ", file = zz)
 isIncomplete(zz)
-cat("testit4\n", file=zz)
+cat("testit4\n", file = zz)
 isIncomplete(zz)
 close(zz)
 foo

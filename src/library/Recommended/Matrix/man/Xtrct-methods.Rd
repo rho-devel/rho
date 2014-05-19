@@ -36,6 +36,8 @@
 \alias{[,sparseMatrix,missing,index,logical-method}
 \alias{[,sparseMatrix,index,missing,logical-method}
 \alias{[,sparseMatrix,index,index,logical-method}
+%
+\alias{[,indMatrix,index,missing,logical-method}
 %-------
 \description{
   Methods for \code{"["}, i.e., extraction or subsetting mostly of

@@ -1,6 +1,6 @@
 % File src/library/base/man/all.equal.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{all.equal}
@@ -13,6 +13,7 @@
 \alias{all.equal.formula}
 \alias{all.equal.list}
 \alias{all.equal.language}
+\alias{all.equal.POSIXct}
 \alias{all.equal.raw}
 \alias{attr.all.equal}
 \concept{numerical equality}
@@ -37,14 +38,13 @@ attr.all.equal(target, current,
     \code{tolerance} are not considered.}
   \item{scale}{numeric scalar > 0 (or \code{NULL}). See \sQuote{Details}.}
   \item{check.attributes}{logical indicating if the
-    \code{\link{attributes}(.)} of \code{target} and \code{current}
-    should be compared as well.}
+    \code{\link{attributes}} of \code{target} and \code{current}
+    (other than the names) should be compared.}
   \item{check.names}{logical indicating if the \code{\link{names}(.)}
-    of \code{target} and \code{current} should be compared as well (and
-    separately from the \code{attributes}).}
+    of \code{target} and \code{current} should be compared.}
 }
 \description{
-    \code{all.equal(x,y)} is a utility to compare \R objects \code{x}
+    \code{all.equal(x, y)} is a utility to compare \R objects \code{x}
     and \code{y} testing \sQuote{near equality}.  If they are different,
     comparison is still made to some extent, and a report of the
     differences is returned.    Don't use \code{all.equal} directly in
@@ -71,6 +71,9 @@ attr.all.equal(target, current,
   difference is used: \code{all.equal.numeric} is called so arguments
   \code{tolerance} and \code{scale} are available.
 
+  The method for the date-time class \code{"\link{POSIXct}"} by default
+  allows a tolerance of \code{tolerance = 0.001} seconds.
+
   \code{attr.all.equal} is used for comparing
   \code{\link{attributes}}, returning \code{NULL} or a
   \code{character} vector.
@@ -94,9 +97,9 @@ all.equal(pi, 355/113)
 
 d45 <- pi*(1/4 + 1:10)
 stopifnot(
-all.equal(tan(d45), rep(1,10)))        # TRUE, but
-all      (tan(d45) == rep(1,10))       # FALSE, since not exactly
-all.equal(tan(d45), rep(1,10), tol=0)  # to see difference
+all.equal(tan(d45), rep(1, 10)))          # TRUE, but
+all      (tan(d45) == rep(1, 10))         # FALSE, since not exactly
+all.equal(tan(d45), rep(1, 10), tol = 0)  # to see difference
 }
 \keyword{programming}% is.*
 \keyword{utilities}

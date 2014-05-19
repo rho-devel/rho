@@ -78,7 +78,7 @@
 \value{
   a diagnostic Trellis plot.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{lme}}, \code{\link{xyplot}},
    \code{\link{bwplot}}, \code{\link{histogram}}}
 \examples{

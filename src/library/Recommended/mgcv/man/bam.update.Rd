@@ -5,7 +5,7 @@
 \title{Update a strictly additive bam model for new data.}
 
 \description{ Gaussian with identity link models fitted by \code{\link{bam}} can be efficiently updated as new data becomes available,
-by simply updateing the QR decomposition on which estimation is based, and re-optimizing the smoothing parameters, starting
+by simply updating the QR decomposition on which estimation is based, and re-optimizing the smoothing parameters, starting
 from the previous estimates. This routine implements this.
 }
 \usage{
@@ -16,8 +16,8 @@ bam.update(b,data,chunk.size=10000)
 \arguments{ 
 \item{b}{ A \code{gam} object fitted by \code{\link{bam}} and representing a strictly additive model 
 (i.e. \code{gaussian} errors, \code{identity} link).}
-\item{data}{Extra data to augment the original data used to obtain \code{b}. Must include a column of weights if the 
-            original fit was weighted.}
+\item{data}{Extra data to augment the original data used to obtain \code{b}. Must include a \code{weights} column if the 
+            original fit was weighted and a \code{AR.start} column if \code{AR.start} was non \code{NULL} in original fit.}
 \item{chunk.size}{size of subsets of data to process in one go when getting fitted values.}
 }
 

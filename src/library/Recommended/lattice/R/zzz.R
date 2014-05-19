@@ -51,7 +51,7 @@ experimentalOptions <- function()
     ## library.dynam("lattice", pkgname, libname )
     lattice.options(.defaultLatticeOptions())
     lattice.options(experimentalOptions())
-    lattice.setStatus(.defaultLatticeStatus())
+    lattice.setStatus(.defaultLatticeStatus(), clean.first = TRUE)
 }
 
 .noGenerics <- TRUE

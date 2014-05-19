@@ -12,7 +12,7 @@
 \description{
   These functions locate objects containing particular lines of source
   code, using the information saved when the code was parsed with
-  \code{options(keep.source = TRUE)}.
+  \code{keep.source = TRUE}.
 }
 \usage{
 findLineNum(srcfile, line, nameonly = TRUE,
@@ -25,24 +25,24 @@ setBreakpoint(srcfile, line, nameonly = TRUE,
 \arguments{
   \item{srcfile}{The name of the file containing the source code.}
   \item{line}{The line number within the file.  See Details for an
-    alternate way to specify this.} 
+    alternate way to specify this.}
   \item{nameonly}{If \code{TRUE} (the default), we require only a match
-    to \code{basename(srcfile)}, not to the full path.} 
+    to \code{basename(srcfile)}, not to the full path.}
   \item{envir}{Where do we start looking for function objects?}
   \item{lastenv}{Where do we stop?  See the Details.}
   \item{verbose}{Should we print information on where breakpoints were set?}
   \item{tracer}{An optional \code{tracer} function to pass to
     \code{\link{trace}}.  By default, a call to \code{\link{browser}}
-    is inserted.} 
+    is inserted.}
   \item{print}{The \code{print} argument to pass to \code{\link{trace}}.}
-  \item{clear}{If \code{TRUE}, call \code{\link{untrace}} rather than 
+  \item{clear}{If \code{TRUE}, call \code{\link{untrace}} rather than
     \code{\link{trace}}.}
   \item{\dots}{Additional arguments to pass to \code{\link{trace}}.}
 }
 
 \details{
   The \code{findLineNum} function searches through all objects in
-  environment \code{envir}, it's parent, grandparent, etc., all the way
+  environment \code{envir}, its parent, grandparent, etc., all the way
   back to \code{lastenv}.
 
   \code{lastenv} defaults to the global environment if
@@ -52,7 +52,7 @@ setBreakpoint(srcfile, line, nameonly = TRUE,
   usually find all user code other than S4 methods; the second one is
   quite slow, as it will typically search all attached system
   libraries.)
-  
+
   For convenience, \code{envir} may be specified indirectly:  if it is
   not an environment, it will be replaced with
   \code{environment(envir)}.
@@ -74,14 +74,13 @@ setBreakpoint(srcfile, line, nameonly = TRUE,
   package NAMESPACE.  If you set \code{envir} to the environment of a
   function in the package, by default \code{findLineNum} will find both
   versions, and \code{setBreakpoint} will set the breakpoint in both.
-  (This can be controlled using \code{lastenv}; e.g. 
-  \code{envir=environment(foo)}, \code{lastenv=globalenv()} will find only the
-  private copy, as the search is stopped before seeing the public
-  copy.)
+  (This can be controlled using \code{lastenv}; e.g.  \code{envir =
+  environment(foo)}, \code{lastenv = globalenv()} will find only the
+  private copy, as the search is stopped before seeing the public copy.)
 
   S version 4 methods are also somewhat tricky to find.  They are stored
   with the generic function, which may be in the \pkg{base} or other
-  package, so it is usually necessary to have \code{lastenv=emptyenv()}
+  package, so it is usually necessary to have \code{lastenv = emptyenv()}
   in order to find them.  In some cases transformations are done by \R
   when storing them and \code{findLineNum} may not be able to find the
   original code.  Many special cases, e.g. methods on primitive
@@ -107,7 +106,7 @@ findLineNum("mysource.R#100")
 
 # Set a breakpoint in both copies of that function, assuming one is in the
 # same namespace as myfunction and the other is on the search path
-setBreakpoint("mysource.R#100", envir=myfunction)
+setBreakpoint("mysource.R#100", envir = myfunction)
 }
 }
 \keyword{ debugging }

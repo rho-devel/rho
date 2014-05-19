@@ -1,6 +1,8 @@
 #  File src/library/graphics/R/mtext.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -17,6 +19,6 @@
 mtext <-
 function (text, side = 3, line = 0, outer = FALSE, at = NA,
 	  adj = NA, padj = NA, cex = NA, col = NA, font = NA, ...)
-    .Internal(mtext(as.graphicsAnnot(text), side, line, outer,
-                    at, adj, padj, cex, col, font, ...))
+    invisible(.External.graphics(C_mtext, as.graphicsAnnot(text), side, line, outer,
+                       at, adj, padj, cex, col, font, ...))
 

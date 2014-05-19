@@ -125,7 +125,10 @@ do.breaks(endpoints, nint)
     Usually a numeric vector of length (number of bins + 1) defining the
     breakpoints of the bins.  Note that when breakpoints are not equally
     spaced, the only value of \code{type} that makes sense is density.
-    When unspecified, the default is to use
+
+    When \code{breaks} is unspecified, the value of
+    \code{lattice.getOption("histogram.breaks")} is first checked.  If
+    this value is \code{NULL}, then the default is to use
     \preformatted{
       breaks = seq_len(1 + nlevels(x)) - 0.5
     }
@@ -134,17 +137,18 @@ do.breaks(endpoints, nint)
       breaks = do.breaks(endpoints, nint)
     }
     otherwise.  Breakpoints calculated in such a manner are used in all
-    panels.
+    panels.  If the retrieved value is not \code{NULL}, or if
+    \code{breaks} is explicitly specified, it affects the display in
+    each panel independently.  Valid values are those accepted as the
+    \code{breaks} argument in \code{\link{hist}}.  In particular, this
+    allows specification of \code{breaks} as an integer giving the
+    number of bins (similar to \code{nint}), as a character string
+    denoting a method, or as a function.
 
-    Other values of \code{breaks} are possible, in which case they
-    affect the display in each panel differently.  A special value of
-    \code{breaks} is \code{NULL}, in which case the number of bins is
-    determined by \code{nint} and then breakpoints are chosen according
-    to the value of \code{equal.widths}.  Other valid values of
-    \code{breaks} are those of the \code{breaks} argument in
-    \code{\link{hist}}.  This allows specification of \code{breaks} as
-    an integer giving the number of bins (similar to \code{nint}), as a
-    character string denoting a method, or as a function.
+    When specified explicitly, a special value of \code{breaks} is
+    \code{NULL}, in which case the number of bins is determined by
+    \code{nint} and then breakpoints are chosen according to the value
+    of \code{equal.widths}.
   }
   \item{equal.widths}{
     A logical flag, relevant only when \code{breaks=NULL}.  If

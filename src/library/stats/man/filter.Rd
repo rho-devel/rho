@@ -20,9 +20,9 @@ filter(x, filter, method = c("convolution", "recursive"),
     can be abbreviated). If \code{"convolution"} a moving average is
     used: if \code{"recursive"} an autoregression is used.}
 
-  \item{sides}{for convolution filters only. If \code{sides=1} the
-    filter coefficients are for past values only; if \code{sides=2}
-    they are centred around lag 0. In this case the length of the
+  \item{sides}{for convolution filters only. If \code{sides = 1} the
+    filter coefficients are for past values only; if \code{sides = 2}
+    they are centred around lag 0.  In this case the length of the
     filter should be odd, but if it is even, more of the filter
     is forward in time than backward.}
 
@@ -58,7 +58,7 @@ filter(x, filter, method = c("convolution", "recursive"),
   where \code{o} is the offset: see \code{sides} for how it is determined.
 }
 \note{
-  \code{\link{convolve}(, type="filter")} uses the FFT for computations
+  \code{\link{convolve}(, type = "filter")} uses the FFT for computations
   and so \emph{may} be faster for long filters on univariate series,
   but it does not return a time series (and so the  time alignment is
   unclear), nor does it handle missing values.  \code{filter} is
@@ -76,6 +76,6 @@ filter(x, rep(1, 3))
 filter(x, rep(1, 3), sides = 1)
 filter(x, rep(1, 3), sides = 1, circular = TRUE)
 
-filter(presidents, rep(1,3))
+filter(presidents, rep(1, 3))
 }
 \keyword{ts}

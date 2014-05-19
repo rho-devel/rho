@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -502,7 +502,7 @@ static pager pagercreate(void)
     if (!pagerMultiple) {
 	MCHECK(newmenu(G_("View")));
 	for (i = 0; i < PAGERMAXKEPT; i++) {
-	    sprintf(pagerTitles[i], "&%c.  ", 'A' + i);
+	    snprintf(pagerTitles[i], PAGERMAXTITLE+8, "&%c.  ", 'A' + i);
 	    MCHECK(pagerMenus[i] = newmenuitem(&pagerTitles[i][1], 0,
 					       pagerchangeview));
 	    setvalue(pagerMenus[i], i);

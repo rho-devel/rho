@@ -1,6 +1,8 @@
 #  File src/library/tools/R/tools-defunct.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -14,5 +16,6 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-Rd_parse <-
-function(file, text = NULL) .Defunct("parse_Rd")
+## Defunct 2009-08-19
+## Removed for 3.0.0
+## Rd_parse <-function(file, text = NULL) .Defunct("parse_Rd")

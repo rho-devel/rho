@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2005   The R Core Team
+ *  Copyright (C) 2005-12   The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@
 
 /*  This file was contributed by Ei-ji Nakama.
  *  It exports locale2charset for use in gram.y, and rlocale.c on MacOS X.
+ *  And sysutils.c, grDevices/src/devPS.c
  */
 
 /* setlocale(LC_CTYPE,NULL) to encodingname cf nl_langinfo(LC_CTYPE) */
@@ -61,6 +62,7 @@
 # include <config.h>
 #endif
 
+#include <Defn.h>
 #include <string.h>
 #include <memory.h>
 #include <locale.h>
@@ -68,7 +70,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include <R_ext/rlocale.h> /* To get the correct linkage for locale2charset */
+//#include <rlocale.h> /* To get the correct linkage for locale2charset */
 
 #include "CXXR/uncxxr.h"
 
@@ -493,7 +495,7 @@ static const name_value guess[] = {
     {"zh_TW",                          ENC_BIG5},
     {"zu_ZA",                          ENC_ISO8859_1},
 };
-static const int guess_count = (sizeof(guess)/sizeof(name_value));
+static const int guess_count = (CXXRCONSTRUCT(int, sizeof(guess)/sizeof(name_value)));
 
 static const name_value known[] = {
     {"iso88591", "ISO8859-1"},
@@ -542,7 +544,7 @@ static const name_value known[] = {
     {"big5hkscs", "BIG5-HKSCS"},
 #endif
 };
-static const int known_count = (sizeof(known)/sizeof(name_value));
+static const int known_count = (CXXRCONSTRUCT(int, sizeof(known)/sizeof(name_value)));
 
 
 #ifndef __APPLE__
@@ -597,7 +599,7 @@ static CXXRCONST char* name_value_search(const char *name, const name_value tabl
 }
 #endif
 
-CXXRCONST char *locale2charset(const char *locale)
+const char *locale2charset(const char *locale)
 {
     static char charset[128];
 
@@ -655,7 +657,7 @@ CXXRCONST char *locale2charset(const char *locale)
 	*/
     case 1257: return "ISO8859-13";
     default:
-	sprintf(charset, "CP%u", cp);
+	snprintf(charset, 128, "CP%u", cp);
 	return charset;
     }
 #endif
@@ -672,32 +674,32 @@ CXXRCONST char *locale2charset(const char *locale)
     if (0 == strcmp(enc, "UTF-8")) strcpy(enc, "utf8");
 
     if(strcmp(enc, "") && strcmp(enc, "utf8")) {
-	for(i = 0; enc[i]; i++) enc[i] = tolower(enc[i]);
+	for(i = 0; enc[i]; i++) enc[i] = char( tolower(enc[i]));
 
 	for(i = 0; i < known_count; i++)
 	    if (0 == strcmp(known[i].name,enc)) return known[i].value;
 
 	/* cut encoding old linux cp- */
 	if (0 == strncmp(enc, "cp-", 3)){
-	    sprintf(charset,"CP%s", enc+3);
+	    snprintf(charset, 128, "CP%s", enc+3);
 	    return charset;
 	}
 	/* cut encoding IBM ibm- */
 	if (0 == strncmp(enc, "ibm", 3)){
 	    cp = atoi(enc + 3);
-	    sprintf(charset, "IBM-%d", abs(cp));
+	    snprintf(charset, 128, "IBM-%d", abs(cp));
 	    /* IBM-[0-9]+ case */
 	    if(cp != 0) return charset;
 	    /* IBM-eucXX case */
 	    strncpy(charset, (enc[3] == '-') ? enc+4: enc+3, sizeof(charset));
 	    if(strncmp(charset, "euc", 3)) {
 		if (charset[3] != '-') {
-		    for(i = strlen(charset)-3; 0 < i; i--)
+		    for(i = int( strlen(charset))-3; 0 < i; i--)
 			charset[i+1] = charset[i];
 		    charset[3] = '-';
 		}
 		for(i = 0; charset[i]; i++)
-		    charset[i] = toupper(charset[i]);
+		    charset[i] = char( toupper(charset[i]));
 		return charset;
 	    }
 	}
@@ -724,7 +726,7 @@ CXXRCONST char *locale2charset(const char *locale)
     if(0 == strcmp(enc, "utf8")) return "UTF-8";
 
     value = name_value_search(la_loc, guess, guess_count);
-    return value == NULL ? const_cast<char *>( "ASCII") : value;
+    return value == NULL ? "ASCII" : value;
 #endif
 }
 

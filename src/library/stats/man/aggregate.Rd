@@ -1,6 +1,6 @@
 % File src/library/stats/man/aggregate.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{aggregate}
@@ -30,7 +30,8 @@ aggregate(x, \dots)
 \arguments{
   \item{x}{an R object.}
   \item{by}{a list of grouping elements, each as long as the variables
-    in \code{x}.}
+    in the data frame \code{x}.  The elements are coerced to factors
+    before use.}
   \item{FUN}{a function to compute the summary statistics which can be
     applied to all data subsets.}
   \item{simplify}{a logical indicating whether results should be
@@ -58,8 +59,8 @@ aggregate(x, \dots)
 \details{
   \code{aggregate} is a generic function with methods for data frames
   and time series.
-  
-  The default method \code{aggregate.default} uses the time series
+
+  The default method, \code{aggregate.default}, uses the time series
   method if \code{x} is a time series, and otherwise coerces \code{x}
   to a data frame and calls the data frame method.
 
@@ -80,10 +81,10 @@ aggregate(x, \dots)
   missing values in any of the \code{by} variables will be omitted from
   the result.  (Note that versions of \R prior to 2.11.0 required
   \code{FUN} to be a scalar function.)
-  
+
   \code{aggregate.formula} is a standard formula interface to
   \code{aggregate.data.frame}.
-  
+
   \code{aggregate.ts} is the time series method, and requires \code{FUN}
   to be a scalar function.  If \code{x} is not a time series, it is
   coerced to one.  Then, the variables in \code{x} are split into
@@ -95,7 +96,7 @@ aggregate(x, \dots)
   the original series covers a whole number of quarters or years: in
   particular aggregating a monthly series to quarters starting in
   February does not give a conventional quarterly series.
-  
+
   \code{FUN} is passed to \code{\link{match.fun}}, and hence it can be a
   function or a symbol or character string naming a function.
 }
@@ -139,8 +140,8 @@ aggregate(state.x77,
 ## example with character variables and NAs
 testDF <- data.frame(v1 = c(1,3,5,7,8,3,5,NA,4,5,7,9),
                      v2 = c(11,33,55,77,88,33,55,NA,44,55,77,99) )
-by1 <- c("red","blue",1,2,NA,"big",1,2,"red",1,NA,12)
-by2 <- c("wet","dry",99,95,NA,"damp",95,99,"red",99,NA,NA)
+by1 <- c("red", "blue", 1, 2, NA, "big", 1, 2, "red", 1, NA, 12)
+by2 <- c("wet", "dry", 99, 95, NA, "damp", 95, 99, "red", 99, NA, NA)
 aggregate(x = testDF, by = list(by1, by2), FUN = "mean")
 
 # and if you want to treat NAs as a group

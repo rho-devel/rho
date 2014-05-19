@@ -1,6 +1,8 @@
 #  File src/library/stats/R/aggregate.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -41,7 +43,7 @@ function(x, by, FUN, ..., simplify = TRUE)
     }
     if(!is.list(by))
         stop("'by' must be a list")
-    if(is.null(names(by)))
+    if(is.null(names(by)) && length(by))
         names(by) <- paste("Group", seq_along(by), sep = ".")
     else {
         nam <- names(by)
@@ -79,8 +81,7 @@ function(x, by, FUN, ..., simplify = TRUE)
                                 all(sapply(cl, function(x) identical(x, cl1))))
                                 class(ans) <- cl1
                         } else if(len > 1L)
-                            ans <- matrix(unlist(ans,
-                                                 recursive = FALSE),
+                            ans <- matrix(unlist(ans, recursive = FALSE),
                                           nrow = nry,
                                           ncol = len,
                                           byrow = TRUE,
@@ -115,27 +116,48 @@ function(formula, data, FUN, ..., subset, na.action = na.omit)
     if(is.matrix(eval(m$data, parent.frame())))
         m$data <- as.data.frame(data)
     m$... <- m$FUN <- NULL
-    m[[1L]] <- as.name("model.frame")
+    m[[1L]] <- quote(stats::model.frame)
 
-    if(as.character(formula[[2L]] == ".")) {
+    if (formula[[2L]] == ".") {
         ## LHS is a dot, expand it ...
-        rhs <- unlist(strsplit(deparse(formula[[3L]]), " *[:+] *"))
+        ##rhs <- unlist(strsplit(deparse(formula[[3L]]), " *[:+] *"))
         ## <NOTE>
         ## Note that this will not do quite the right thing in case the
         ## RHS contains transformed variables, such that
         ##   setdiff(rhs, names(data))
         ## is non-empty ...
-        lhs <- sprintf("cbind(%s)",
-                       paste(setdiff(names(data), rhs), collapse = ","))
+        ##lhs <- sprintf("cbind(%s)",
+        ##              paste(setdiff(names(data), rhs), collapse = ","))
+        ## formula[[2L]] <- parse(text = lhs)[[1L]]
         ## </NOTE>
-        m[[2L]][[2L]] <- parse(text = lhs)[[1L]]
+
+        ## New logic May 2012 --pd
+
+        ## Dot expansion:
+        ## lhs ends up as quote(cbind(v1, v2, ....)) using all variables in
+        ## data, except those that are used on the RHS.
+
+        ## This version uses terms() to get the rhs variables, which means
+        ## that it will NOT remove a variable from the expansion if a
+        ## transformation of it is on the RHS of the formula.
+
+        rhs <- as.list(attr(terms(formula[-2L]),"variables")[-1])
+        lhs <- as.call(c(quote(cbind),
+                         setdiff(lapply(names(data), as.name),
+                                 rhs)
+                         )
+                       )
+        formula[[2L]] <- lhs
+        m[[2L]] <- formula
     }
     mf <- eval(m, parent.frame())
 
     if(is.matrix(mf[[1L]])) {
         ## LHS is a cbind() combo, convert to data frame and fix names.
+        ## Commented out May 2012 (seems to work without it) -- pd
+	##lhs <- setNames(as.data.frame(mf[[1L]]),
+	##		as.character(m[[2L]][[2L]])[-1L])
         lhs <- as.data.frame(mf[[1L]])
-        names(lhs) <- as.character(m[[2L]][[2L]])[-1L]
         aggregate.data.frame(lhs, mf[-1L], FUN = FUN, ...)
     }
     else

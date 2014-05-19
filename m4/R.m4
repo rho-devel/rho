@@ -1,6 +1,6 @@
 ### R.m4 -- extra macros for configuring R		-*- Autoconf -*-
 ###
-### Copyright (C) 1998-2010 R Core Team
+### Copyright (C) 1998-2013 R Core Team
 ###
 ### This file is part of R.
 ###
@@ -155,12 +155,18 @@ AC_SUBST(TEXI2DVICMD)
 AC_PATH_PROGS(KPSEWHICH, [${KPSEWHICH} kpsewhich], "")
 r_rd4pdf="times,inconsolata,hyper"
 if test -n "${KPSEWHICH}"; then
-  if test -z `${KPSEWHICH} inconsolata.sty`; then
-     r_rd4pdf="times,hyper"
-     if test -z "${R_RD4PDF}" ;  then
-       warn_pdf3="inconsolata.sty not found: PDF vignettes and package manuals will not be rendered optimally"
-       AC_MSG_WARN([${warn_pdf3}])
-     fi
+  ${KPSEWHICH} zi4.sty
+  if test $? -eq 0; then
+     r_rd4pdf="times,inconsolata,hyper"
+  else
+    ${KPSEWHICH} inconsolata.sty
+    if test $? -ne 0; then
+       r_rd4pdf="times,hyper"
+       if test -z "${R_RD4PDF}" ;  then
+         warn_pdf3="neither inconsolata.sty nor zi4.sty found: PDF vignettes and package manuals will not be rendered optimally"
+         AC_MSG_WARN([${warn_pdf3}])
+       fi
+    fi
   fi
 fi
 : ${R_RD4PDF=${r_rd4pdf}}
@@ -210,6 +216,8 @@ makeinfo_version_min=`echo ${makeinfo_version} | \
 if test -z "${makeinfo_version_maj}" \
      || test -z "${makeinfo_version_min}"; then
   r_cv_prog_makeinfo_v4=no
+elif test ${makeinfo_version_maj} -ge 5; then
+  r_cv_prog_makeinfo_v4=yes
 elif test ${makeinfo_version_maj} -lt 4 \
      || test ${makeinfo_version_min} -lt 7; then
   r_cv_prog_makeinfo_v4=no
@@ -325,6 +333,9 @@ for prog in "${cc_minus_MM}" "${CC} -M" "${CPP} -M" "cpp -M"; do
     break
   fi
 done])
+if test "${r_cv_prog_cc_m}" = "${cc_minus_MM}"; then
+  r_cv_prog_cc_m="\$(CC) -MM"
+fi
 if test -z "${r_cv_prog_cc_m}"; then
   AC_MSG_RESULT([no])
 else
@@ -1275,12 +1286,13 @@ AC_DEFUN([R_PROG_OBJC_RUNTIME],
   AC_CACHE_CHECK([for ObjC runtime library], [r_cv_objc_runtime], [
     save_OBJCFLAGS="$OBJCFLAGS"
     save_LIBS="$LIBS"
-    r_cv_objc_runtime=none
+    r_cv_objc_runtime=
     for libobjc in objc objc-gnu objc-lf objc-lf2; do
       LIBS="${save_LIBS} -l${libobjc}"
       #OBJCFLAGS="$OBJCFLAGS $PTHREAD_CFLAGS -fgnu-runtime"
       AC_LINK_IFELSE([
 	AC_LANG_PROGRAM([
+#undef __OBJC2__
 #include <objc/Object.h>
 			], [
   @<:@Object class@:>@;
@@ -1296,7 +1308,7 @@ AC_DEFUN([R_PROG_OBJC_RUNTIME],
 
   OBJC_LIBS="${r_cv_objc_runtime} ${OBJC_LIBS}"
 
-  if test "${r_cv_objc_runtime}" != none; then
+  if test "z${r_cv_objc_runtime}" != z; then
   AC_CACHE_CHECK([for ObjC runtime style], [r_cv_objc_runtime_style], [
     save_OBJCFLAGS="$OBJCFLAGS"
     save_LIBS="$LIBS"
@@ -1305,6 +1317,8 @@ AC_DEFUN([R_PROG_OBJC_RUNTIME],
     for objc_lookup_class in objc_lookup_class objc_lookUpClass; do
       AC_LINK_IFELSE([
         AC_LANG_PROGRAM([
+/* see PR#15107 */
+#undef __OBJC2__
 #include <objc/objc.h>
 #include <objc/objc-api.h>
 			], [
@@ -1345,7 +1359,9 @@ AC_DEFUN([R_PROG_OBJCXX_WORKS],
 [AC_MSG_CHECKING([whether $1 can compile ObjC++])
 ## we don't use AC_LANG_xx because ObjC++ is not defined as a language (yet)
 ## (the test program is from the gcc test suite)
+## but it needed an #undef (PR#15107)
 cat << \EOF > conftest.mm
+#undef __OBJC2__
 #include <objc/Object.h>
 #include <iostream>
 
@@ -1783,7 +1799,8 @@ fi
 if test "${use_aqua}" = yes; then
   AC_DEFINE(HAVE_AQUA, 1,
             [Define if you have the Aqua headers and libraries,
-             and want the Aqua GUI components and quartz() device to be built.])
+             and want to include support for R.app 
+	     and for the quartz() device to be built.])
 fi
 ])# R_AQUA
 
@@ -2007,15 +2024,25 @@ if test "${use_libpng}" = yes; then
 	      [Define if you have the PNG headers and libraries.])
   fi
 fi
-AC_CHECK_HEADERS(tiffio.h)
-# may need to resolve jpeg routines
-AC_CHECK_LIB(tiff, TIFFOpen, [have_tiff=yes], [have_tiff=no], [${BITMAP_LIBS}])
-if test "x${ac_cv_header_tiffio_h}" = xyes ; then
-  if test "x${have_tiff}" = xyes; then
-    AC_DEFINE(HAVE_TIFF, 1, [Define this if libtiff is available.])
-    BITMAP_LIBS="-ltiff ${BITMAP_LIBS}"
-  else
-    have_tiff=no
+if test "${use_libtiff}" = yes; then
+  AC_CHECK_HEADERS(tiffio.h)
+  if test "x${ac_cv_header_tiffio_h}" = xyes ; then
+    # may need to resolve jpeg routines
+    AC_CHECK_LIB(tiff, TIFFOpen, [have_tiff=yes], [have_tiff=no], [${BITMAP_LIBS}])
+    if test "x${have_tiff}" = xyes; then
+      AC_DEFINE(HAVE_TIFF, 1, [Define this if libtiff is available.])
+      BITMAP_LIBS="-ltiff ${BITMAP_LIBS}"
+    else
+      # tiff 4.0.x may need lzma too: SU's static build does
+      unset ac_cv_lib_tiff_TIFFOpen
+      AC_CHECK_LIB(tiff, TIFFOpen, [have_tiff=yes], [have_tiff=no], [-llzma ${BITMAP_LIBS} -llzma])
+      if test "x${have_tiff}" = xyes; then
+        AC_DEFINE(HAVE_TIFF, 1, [Define this if libtiff is available.])
+        BITMAP_LIBS="-ltiff -llzma ${BITMAP_LIBS}"
+      else
+        have_tiff=no
+      fi
+    fi
   fi
 fi
 AC_SUBST(BITMAP_LIBS)
@@ -2683,11 +2710,8 @@ fi
       AC_MSG_RESULT([yes])
       ## for vecLib we have a work-around by using cblas_..._sub
       use_veclib_g95fix=yes
-      ## The fix may not work with internal lapack, because
-      ## the lapack dylib won't have the fixed functions.
-      ## those are available to the lapack module only.
-      #      use_lapack=yes
-      #	     with_lapack=""
+      ## The fix may not work with internal lapack, but
+      ## is more likely to in R >= 2.15.2.
     else
       AC_MSG_RESULT([no])
       BLAS_LIBS=
@@ -2850,6 +2874,8 @@ AC_SUBST(BLAS_LIBS)
 ## broken LAPACKs out there.
 ## Based on acx_lapack.m4 version 1.3 (2002-03-12).
 
+## Test function was zgeev, changed to dpstrf which is LAPACK 3.2.
+
 AC_DEFUN([R_LAPACK_LIBS],
 [AC_REQUIRE([R_PROG_F77_FLIBS])
 AC_REQUIRE([R_PROG_F77_APPEND_UNDERSCORE])
@@ -2866,9 +2892,9 @@ case "${with_lapack}" in
 esac
 
 if test "${r_cv_prog_f77_append_underscore}" = yes; then
-  zgeev=zgeev_
+  lapack=dpstrf_
 else
-  zgeev=zgeev
+  lapack=dpstrf
 fi
 
 # We cannot use LAPACK if BLAS is not found
@@ -2881,15 +2907,15 @@ LIBS="${BLAS_LIBS} ${FLIBS} ${LIBS}"
 
 ## LAPACK linked to by default?  (Could be in the BLAS libs.)
 if test "${acx_lapack_ok}" = no; then
-  AC_CHECK_FUNC(${zgeev}, [acx_lapack_ok=yes])
+  AC_CHECK_FUNC(${lapack}, [acx_lapack_ok=yes])
 fi
 
 ## Next, check LAPACK_LIBS environment variable
 if test "${acx_lapack_ok}" = no; then
   if test "x${LAPACK_LIBS}" != x; then
     r_save_LIBS="${LIBS}"; LIBS="${LAPACK_LIBS} ${LIBS}"
-    AC_MSG_CHECKING([for ${zgeev} in ${LAPACK_LIBS}])
-    AC_TRY_LINK_FUNC(${zgeev}, [acx_lapack_ok=yes], [LAPACK_LIBS=""])
+    AC_MSG_CHECKING([for ${lapack} in ${LAPACK_LIBS}])
+    AC_TRY_LINK_FUNC(${lapack}, [acx_lapack_ok=yes], [LAPACK_LIBS=""])
     AC_MSG_RESULT([${acx_lapack_ok}])
     LIBS="${r_save_LIBS}"
   fi
@@ -2900,7 +2926,7 @@ fi
 
 ## Generic LAPACK library?
 if test "${acx_lapack_ok}" = no; then
-  AC_CHECK_LIB(lapack, ${zgeev},
+  AC_CHECK_LIB(lapack, ${lapack},
                [acx_lapack_ok=yes; LAPACK_LIBS="-llapack"])
 fi
 
@@ -2984,7 +3010,7 @@ AM_CONDITIONAL(USE_MMAP_ZLIB,
 ## Set shell variable r_cv_header_zlib_h to 'yes' if a recent enough
 ## zlib.h is found, and to 'no' otherwise.
 AC_DEFUN([_R_HEADER_ZLIB],
-[AC_CACHE_CHECK([if zlib version >= 1.2.3],
+[AC_CACHE_CHECK([if zlib version >= 1.2.5],
                 [r_cv_header_zlib_h],
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdlib.h>
@@ -2992,9 +3018,9 @@ AC_DEFUN([_R_HEADER_ZLIB],
 #include <zlib.h>
 int main() {
 #ifdef ZLIB_VERSION
-/* Workaround Debian bug: it uses 1.2.3.4 even though there is no such
+/* Work around Debian bug: it uses 1.2.3.4 even though there was no such
    version on the master site zlib.net */
-  exit(strncmp(ZLIB_VERSION, "1.2.3", 5) < 0);
+  exit(strncmp(ZLIB_VERSION, "1.2.5", 5) < 0);
 #else
   exit(1);
 #endif
@@ -3026,8 +3052,10 @@ caddr_t hello() {
 
 ## R_PCRE
 ## ------
-## Try finding pcre library and headers.
-## RedHat puts the headers in /usr/include/pcre.
+## If selected, try finding system pcre library and headers.
+## RedHat put the headers in /usr/include/pcre.
+## R (2.15.3, 3.0.0) includes 8.32: there are problems < 8.10 and
+## distros are often slow to update.
 AC_DEFUN([R_PCRE],
 [if test "x${use_system_pcre}" = xyes; then
   AC_CHECK_LIB(pcre, pcre_fullinfo, [have_pcre=yes], [have_pcre=no])
@@ -3042,7 +3070,7 @@ else
   have_pcre=no
 fi
 if test "x${have_pcre}" = xyes; then
-AC_CACHE_CHECK([if PCRE version >= 7.6], [r_cv_have_pcre76],
+AC_CACHE_CHECK([if PCRE version >= 8.10], [r_cv_have_pcre810],
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -3053,9 +3081,9 @@ AC_CACHE_CHECK([if PCRE version >= 7.6], [r_cv_have_pcre76],
 #endif
 int main() {
 #ifdef PCRE_MAJOR
-#if PCRE_MAJOR > 7
+#if PCRE_MAJOR > 8
   exit(0);
-#elif PCRE_MAJOR > 6 && PCRE_MAJOR >= 6
+#elif PCRE_MAJOR == 8 && PCRE_MINOR >= 10
   exit(0);
 #else
   exit(1);
@@ -3064,18 +3092,18 @@ int main() {
   exit(1);
 #endif
 }
-]])], [r_cv_have_pcre76=yes], [r_cv_have_pcre76=no], [r_cv_have_pcre76=no])])
+]])], [r_cv_have_pcre810=yes], [r_cv_have_pcre810=no], [r_cv_have_pcre810=no])])
 fi
-if test "x${r_cv_have_pcre76}" = xyes; then
+if test "x${r_cv_have_pcre810}" = xyes; then
   LIBS="-lpcre ${LIBS}"
 fi
 AC_MSG_CHECKING([whether PCRE support needs to be compiled])
-if test "x${r_cv_have_pcre76}" = xyes; then
+if test "x${r_cv_have_pcre810}" = xyes; then
   AC_MSG_RESULT([no])
 else
   AC_MSG_RESULT([yes])
 fi
-AM_CONDITIONAL(BUILD_PCRE, [test "x${r_cv_have_pcre76}" != xyes])
+AM_CONDITIONAL(BUILD_PCRE, [test "x${r_cv_have_pcre810}" != xyes])
 ])# R_PCRE
 
 ## R_BZLIB
@@ -3133,7 +3161,7 @@ AC_DEFUN([R_LZMA],
     AC_CHECK_HEADERS(lzma.h, [have_lzma=yes], [have_lzma=no])
   fi
 if test "x${have_lzma}" = xyes; then
-AC_CACHE_CHECK([if lzma version >= 4.999], [r_cv_have_lzma],
+AC_CACHE_CHECK([if lzma version >= 5.0.3], [r_cv_have_lzma],
 [AC_LANG_PUSH(C)
 r_save_LIBS="${LIBS}"
 LIBS="-llzma ${LIBS}"
@@ -3144,7 +3172,9 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdlib.h>
 int main() {
     unsigned int ver = lzma_version_number();
-    exit(ver < 49990000);
+    // This is 10000000*major + 10000*minor + 10*revision + [012]
+    // I.e. xyyyzzzs and 5.1.2 would be 50010020
+    exit(ver < 50000030);
 }
 ]])], [r_cv_have_lzma=yes], [r_cv_have_lzma=no], [r_cv_have_lzma=no])
 LIBS="${r_save_LIBS}"
@@ -3154,7 +3184,7 @@ if test "x${r_cv_have_lzma}" = xno; then
   have_lzma=no
 fi
 if test "x${have_lzma}" = xyes; then
-  AC_DEFINE(HAVE_LZMA, 1, [Define if your system has lzma >= 4.999.])
+  AC_DEFINE(HAVE_LZMA, 1, [Define if your system has lzma >= 5.0.3.])
   LIBS="-llzma ${LIBS}"
 fi
 else

@@ -499,7 +499,7 @@ finite_diff_Hess( double (*func)(double*), double *pars, int npar,
     return;
 }
 
-void				/* For optif0 or optif9 */
+void				/* For optif9 */
 mixed_fcn(longint n, double *pars, double *g, void *state)
 {
     statePTR st = (statePTR) state;
@@ -513,7 +513,7 @@ mixed_fcn(longint n, double *pars, double *g, void *state)
     Free(Delta); Free(zxcopy);
 }
 
-void				/* For optif0 or optif9 */
+void				/* For optif9 */
 mixed_grad(longint n, double *pars, double *g, void *state)
 {
     statePTR st = (statePTR) state;

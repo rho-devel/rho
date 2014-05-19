@@ -1,4 +1,3 @@
-# $Id: print.summary.survfit.S 11408 2010-07-07 12:15:58Z therneau $
 print.summary.survfit <- function(x, 
 				  digits = max(options()$digits - 4, 3), ...) {
     savedig <- options(digits=digits)
@@ -77,17 +76,3 @@ print.summary.survfit <- function(x,
 	    "observations.")
     invisible(x)
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

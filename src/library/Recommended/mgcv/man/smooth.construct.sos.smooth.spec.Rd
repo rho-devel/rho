@@ -82,6 +82,7 @@ Wood, S.N. (2003) Thin plate regression splines. J.R.Statist.Soc.B 65(1):95-114
 with help from Grace Wahba (m=0 case) and Jean Duchon (m = -1 case).}
 
 \examples{
+require(mgcv)
 set.seed(0)
 n <- 400
 

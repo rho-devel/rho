@@ -1,6 +1,8 @@
 #  File src/library/stats/R/ARMAtheory.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -54,9 +56,7 @@ ARMAacf <- function(ar = numeric(), ma = numeric(), lag.max = r,
         Acf <- Acf/Acf[1L]
     }
     names(Acf) <- 0:lag.max
-    if(pacf) .C(C_uni_pacf, as.double(Acf), pacf = double(lag.max),
-                as.integer(lag.max))$pacf
-    else Acf
+    if(pacf) drop(.Call(C_pacf1, Acf, lag.max)) else Acf
 }
 
 acf2AR <- function(acf)

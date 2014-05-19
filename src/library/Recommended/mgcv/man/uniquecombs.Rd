@@ -37,6 +37,7 @@ matrix that contains row i of the original matrix.
 
 
 \examples{
+require(mgcv)
 X<-matrix(c(1,2,3,1,2,3,4,5,6,1,3,2,4,5,6,1,1,1),6,3,byrow=TRUE)
 print(X)
 Xu <- uniquecombs(X);Xu

@@ -119,3 +119,10 @@ setMethod("any", signature(x = "lMatrix"),
 	  ## logical unit-triangular has TRUE diagonal:
 	  (prod(dim(x)) >= 1 && is(x, "triangularMatrix") && x@diag == "U") ||
 	  any(x@x, ..., na.rm = na.rm))
+
+
+setMethod("is.finite", signature(x = "lMatrix"), function(x) !is.na(x))
+setMethod("is.finite", signature(x = "nMatrix"), allTrueMatrix)
+
+setMethod("is.infinite", signature(x = "lMatrix"), is.na_nsp)# all FALSE
+setMethod("is.infinite", signature(x = "nMatrix"), is.na_nsp)# all FALSE

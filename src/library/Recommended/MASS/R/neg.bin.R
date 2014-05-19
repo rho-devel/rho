@@ -35,7 +35,7 @@ neg.bin <- function(theta = stop("'theta' must be given"))
     }
     initialize <- expression({
         if (any(y < 0))
-            stop("negative values not allowed for the Negative Binomal family")
+            stop("negative values not allowed for the negative binomial family")
         n <- rep(1, nobs)
         mustart <- y + (y == 0)/6
     })

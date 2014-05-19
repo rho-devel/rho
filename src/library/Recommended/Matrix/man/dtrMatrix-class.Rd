@@ -23,16 +23,13 @@
 \alias{determinant,dtrMatrix,logical-method}
 \alias{determinant,dtrMatrix,missing-method}
 \alias{diag,dtrMatrix-method}
+\alias{diag<-,dtrMatrix-method}
 \alias{norm,dtrMatrix,character-method}
 \alias{norm,dtrMatrix,missing-method}
 \alias{rcond,dtrMatrix,character-method}
 \alias{rcond,dtrMatrix,missing-method}
 \alias{show,dtrMatrix-method}
-\alias{solve,dtrMatrix,ddenseMatrix-method}
-\alias{solve,dtrMatrix,dMatrix-method}
-\alias{solve,dtrMatrix,Matrix-method}
-\alias{solve,dtrMatrix,matrix-method}
-\alias{solve,dtrMatrix,missing-method}
+%\alias{solve,dtrMatrix,matrix-method}--> solve-methods.Rd
 \alias{t,dtrMatrix-method}
 \alias{dtrMatrix-class}
 \description{
@@ -79,8 +76,13 @@
 
     \item{norm}{\code{signature(x = "dtrMatrix", type = "character")}}
     \item{rcond}{\code{signature(x = "dtrMatrix", norm = "character")}}
-    \item{solve}{\code{signature(a = "dtrMatrix", b = "missing")}}
-    \item{solve}{\code{signature(a = "dtrMatrix", b = "matrix")}}
+    \item{solve}{\code{signature(a = "dtrMatrix", b = "....")}}{efficientely
+      use a \dQuote{forwardsolve} or \code{backsolve} for a lower or
+      upper triangular matrix, respectively, see also
+      \code{\link{solve-methods}}.}
+    \item{+, -, *, \dots, ==, >=, \dots}{all the \code{\link{Ops}} group
+      methods are available.  When applied to two triangular matrices,
+      these return a triangular matrix when easily possible.}
   }
 }
 %\references{}

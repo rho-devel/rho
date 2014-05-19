@@ -1,6 +1,8 @@
 #  File src/library/stats/R/lsfit.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -14,7 +16,8 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-lsfit <- function(x, y, wt=NULL, intercept=TRUE, tolerance=1e-07, yname=NULL)
+lsfit <- function(x, y, wt = NULL, intercept = TRUE, tolerance = 1e-07,
+                  yname = NULL)
 {
     ## find names of x variables (design matrix)
 
@@ -22,7 +25,7 @@ lsfit <- function(x, y, wt=NULL, intercept=TRUE, tolerance=1e-07, yname=NULL)
     y <- as.matrix(y)
     xnames <- colnames(x)
     if( is.null(xnames) ) {
-	if(ncol(x)==1) xnames <- "X"
+	if(ncol(x) == 1L) xnames <- "X"
 	else xnames <- paste0("X", 1L:ncol(x))
     }
     if( intercept ) {
@@ -39,9 +42,12 @@ lsfit <- function(x, y, wt=NULL, intercept=TRUE, tolerance=1e-07, yname=NULL)
     good <- complete.cases(x, y, wt)
     dimy <- dim(as.matrix(y))
     if( any(!good) ) {
-	warning(gettextf("%d missing values deleted", sum(!good)), domain = NA)
-	x <- as.matrix(x)[good, ]
-	y <- as.matrix(y)[good, ]
+        warning(sprintf(ngettext(sum(!good),
+                                 "%d missing value deleted",
+                                 "%d missing values deleted"),
+                        sum(!good)), domain = NA)
+	x <- as.matrix(x)[good, , drop=FALSE]
+	y <- as.matrix(y)[good, , drop=FALSE]
 	wt <- wt[good]
     }
 
@@ -53,14 +59,26 @@ lsfit <- function(x, y, wt=NULL, intercept=TRUE, tolerance=1e-07, yname=NULL)
     ncy <- NCOL(y)
     nwts <- length(wt)
     if(nry != nrx)
-        stop(gettextf("'X' matrix has %d responses, 'Y' has %d responses",
-                      nrx, nry), domain = NA)
+        stop(sprintf(paste0(ngettext(nrx,
+                       "'X' matrix has %d case (row)",
+                       "'X' matrix has %d cases (rows)"),
+              ", ",
+              ngettext(nry,
+                       "'Y' has %d case (row)",
+                       "'Y' has %d cases (rows)")),
+                       nrx, nry),
+                       domain = NA)
     if(nry < ncx)
-        stop(gettextf("%d responses, but only %d variables", nry, ncx),
+        stop(sprintf(paste0(ngettext(nry,
+                              "only %d case",
+                              "only %d cases"),
+                     ", ",
+                     ngettext(ncx,
+                              "but %d variable",
+                              "but %d variables")),
+                     nry, ncx),
              domain = NA)
-
     ## check weights if necessary
-
     if( !is.null(wt) ) {
 	if(any(wt < 0)) stop("negative weights not allowed")
 	if(nwts != nry)
@@ -210,7 +228,7 @@ ls.diag <- function(ls.out)
 		cov.scaled=covmat.scaled, cov.unscaled=covmat.unscaled))
 }
 
-ls.print <- function(ls.out, digits=4, print.it=TRUE)
+ls.print <- function(ls.out, digits = 4L, print.it = TRUE)
 {
     ## calculate residuals to be used
 
@@ -220,7 +238,7 @@ ls.print <- function(ls.out, digits=4, print.it=TRUE)
 	    warning("observations with 0 weights not used")
 	resids <- resids * ls.out$wt^0.5
     }
-    n <- apply(resids, 2L, length)-colSums(is.na(resids))
+    n <- apply(resids, 2L, length) - colSums(is.na(resids))
     lsqr <- ls.out$qr
     p <- lsqr$rank
 
@@ -228,7 +246,7 @@ ls.print <- function(ls.out, digits=4, print.it=TRUE)
 
     if(ls.out$intercept) {
 	if(is.matrix(lsqr$qt))
-	    totss <- colSums(lsqr$qt[-1, ]^2)
+	    totss <- colSums(lsqr$qt[-1L, ]^2)
 	else totss <- sum(lsqr$qt[-1L]^2)
 	degfree <- p - 1
     } else {
@@ -294,5 +312,5 @@ ls.print <- function(ls.out, digits=4, print.it=TRUE)
     }
     names(coef.table) <- Ynames
 
-    invisible(list(summary=summary, coef.table=coef.table))
+    invisible(list(summary = summary, coef.table = coef.table))
 }

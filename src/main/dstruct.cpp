@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -69,6 +69,37 @@ R_len_t Rf_length(SEXP s)
     }
 }
 
+R_xlen_t Rf_xlength(SEXP s)
+{
+    int i;
+    switch (TYPEOF(s)) {
+    case NILSXP:
+	return 0;
+    case LGLSXP:
+    case INTSXP:
+    case REALSXP:
+    case CPLXSXP:
+    case STRSXP:
+    case CHARSXP:
+    case VECSXP:
+    case EXPRSXP:
+    case RAWSXP:
+	return XLENGTH(s);
+    case LISTSXP:
+    case LANGSXP:
+    case DOTSXP:
+	i = 0;
+	while (s != NULL && s != R_NilValue) {
+	    i++;
+	    s = CDR(s);
+	}
+	return i;
+    case ENVSXP:
+	return Rf_envlength(s);
+    default:
+	return 1;
+    }
+}
 /* This is called by function() {}, where an invalid
    body should be impossible. When called from
    other places (eg do_asfunction) they
@@ -77,7 +108,7 @@ R_len_t Rf_length(SEXP s)
 /*  mkCLOSXP - return a closure with formals f,  */
 /*             body b, and environment rho       */
 
-SEXP attribute_hidden Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
+SEXP Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
 {
     GCStackRoot<PairList> formrt(SEXP_downcast<PairList*>(formals));
     GCStackRoot<> bodyrt(body);

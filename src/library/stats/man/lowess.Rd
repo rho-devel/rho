@@ -1,6 +1,6 @@
 % File src/library/stats/man/lowess.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{lowess}
@@ -11,8 +11,7 @@
   regression (see the references).
 }
 \usage{
-lowess(x, y = NULL, f = 2/3, iter = 3,
-       delta = 0.01 * diff(range(xy$x[o])))
+lowess(x, y = NULL, f = 2/3, iter = 3, delta = 0.01 * diff(range(x)))
 }
 \alias{lowess}
 \arguments{
@@ -65,11 +64,11 @@ lowess(x, y = NULL, f = 2/3, iter = 3,
 
   Cleveland, W. S. (1979)
   Robust locally weighted regression and smoothing scatterplots.
-  \emph{J. Amer. Statist. Assoc.} \bold{74}, 829--836.
+  \emph{J. American Statistical Association} \bold{74}, 829--836.
 
   Cleveland, W. S. (1981)
   LOWESS: A program for smoothing scatterplots by robust locally weighted
-  regression. \emph{The American Statistician}, \bold{35}, 54.
+  regression. \emph{The American Statistician} \bold{35}, 54.
 }
 \seealso{\code{\link{loess}}, a newer
   formula based version of \code{lowess} (with different defaults!).
@@ -79,7 +78,7 @@ require(graphics)
 
 plot(cars, main = "lowess(cars)")
 lines(lowess(cars), col = 2)
-lines(lowess(cars, f=.2), col = 3)
+lines(lowess(cars, f = .2), col = 3)
 legend(5, 120, c(paste("f = ", c("2/3", ".2"))), lty = 1, col = 2:3)
 }
 \keyword{smooth}

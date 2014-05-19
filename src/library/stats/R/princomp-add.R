@@ -1,6 +1,8 @@
 #  File src/library/stats/R/princomp-add.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -42,7 +44,7 @@ summary.princomp <- function(object, loadings = FALSE, cutoff = 0.1, ...)
 }
 
 print.summary.princomp <-
-    function(x, digits = 3, loadings = x$print.loadings, cutoff = x$cutoff,
+    function(x, digits = 3L, loadings = x$print.loadings, cutoff = x$cutoff,
              ...)
 {
     vars <- x$sdev^2

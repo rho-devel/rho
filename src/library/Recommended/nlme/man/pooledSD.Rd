@@ -23,7 +23,7 @@ pooledSD(object)
   \code{object}, with an attribute \code{df} with the number of
   degrees-of-freedom used in the estimation.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{lmList}}, \code{\link{lm}}}
 

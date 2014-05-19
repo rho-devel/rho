@@ -24,7 +24,7 @@ corMatrix(object, \dots)
   will depend on the method function used; see the appropriate
   documentation. 
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{corMatrix.corStruct}},
   \code{\link{corMatrix.pdMat}}}
 \examples{

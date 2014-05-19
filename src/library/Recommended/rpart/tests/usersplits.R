@@ -108,11 +108,6 @@ temp3 <- function(y, offset, parms, wt) {
 
 alist <- list(eval=temp1, split=temp2, init=temp3)
 
-fit0 <- rpart(income ~population +illiteracy  + murder + hs.grad,
-	     mystate, control=rpart.control(minsplit=10, xval=0),
-	     method=alist)
-
-
 fit1 <- rpart(income ~population +illiteracy  + murder + hs.grad + region,
 	     mystate, control=rpart.control(minsplit=10, xval=0),
 	     method=alist)
@@ -146,22 +141,3 @@ zz2 <- sweep((mystate$income-xp1)^2,2, zz/nrow(xp1))
 zz2 <- sqrt(apply(zz2^2, 2, sum))/ fit1$frame$dev[1]
 aeq(zz2, fit3$cptable[,5])          #reproduce se(xerror)
 
-#
-# Now try timing it on a multiplied data set (100 copies of mystate)
-#
-temp <- rbind(mystate, mystate, mystate, mystate)
-temp <- rbind(temp, temp, temp, temp, temp)
-temp <- rbind(temp, temp, temp, temp, temp)
-t1 <-  system.time(rpart(income ~population +illiteracy  + murder +
-		       hs.grad + region +
-		life + area, temp,  control=rpart.control(minsplit=10, xval=0),
-	     method=alist))
-t2 <- system.time(rpart(income ~population +illiteracy  + murder +
-		      hs.grad + region +
-		life + area, temp,  control=rpart.control(minsplit=10, xval=0),
-	     method='anova'))
-cat("Timing ratio = ", round(t1[3]/t2[3], 1), "\n")
-
-rm(temp)
-
-q()

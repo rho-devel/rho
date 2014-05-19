@@ -32,8 +32,8 @@ read.dta(file, convert.dates = TRUE, convert.factors = TRUE,
   
   The variables in the Stata data set become the columns of the data
   frame.  Missing values are correctly handled.  The data label,
-  variable labels, and timestamp are stored as attributes of the data
-  frame.  Nothing is done with variable characteristics.
+  variable labels, timestamp, and variable/dataset characteristics
+  are stored as attributes of the data frame.
 
   By default Stata dates (\%d and \%td formats) are converted to \R's
   \code{Date} class and variables with Stata value labels are
@@ -55,7 +55,8 @@ read.dta(file, convert.dates = TRUE, convert.factors = TRUE,
   A data frame with attributes.  These will include \code{"datalabel"},
   \code{"time.stamp"}, \code{"formats"}, \code{"types"},
   \code{"val.labels"}, \code{"var.labels"} and \code{"version"} and may
-  include \code{"label.table"}.  Possible versions are \code{5, 6, 7},
+  include \code{"label.table"} and \code{"expansion.table"}.  
+  Possible versions are \code{5, 6, 7},
   \code{-7} (Stata 7SE, \sQuote{format-111}), \code{8} (Stata 8 and 9,
   \sQuote{format-113}) and \code{10} (Stata 10 and 11, \sQuote{format-114}).
   Stata 12 by default uses \sQuote{format-115}, which is read as

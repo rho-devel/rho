@@ -8,7 +8,8 @@ echo 'preliminary thisdir='$thisdir
 pkgDIR=`dirname $thisdir`
 pkg=`basename $pkgDIR`
 echo '  -->        pkgDIR='$pkgDIR' ; pkg='$pkg
-cd `R-devel RHOME`/po
+echo ''; echo '## FIXME ## use new Scheme from R 2.16.x on'
+cd `R-patched RHOME`/po
 make pkg-update PKG=$pkg PKGDIR=$pkgDIR
 echo 'end{make pkg-update}' ; echo ''
 echo 'Test with (e.g.)'

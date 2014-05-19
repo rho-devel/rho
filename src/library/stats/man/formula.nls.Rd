@@ -16,7 +16,7 @@
  \item{\dots}{further arguments passed to or from other methods.}
 }
 \description{
-  Returns the model used to fit \code{object}. 
+  Returns the model used to fit \code{object}.
 }
 \value{
   a formula representing the model used to obtain \code{object}.
@@ -25,7 +25,7 @@
 \seealso{\code{\link{nls}}, \code{\link{formula}}}
 \examples{
 fm1 <- nls(circumference ~ A/(1+exp((B-age)/C)), Orange,
-           start = list(A=160, B=700, C = 350))
+           start = list(A = 160, B = 700, C = 350))
 formula(fm1)
 }
 \keyword{models}

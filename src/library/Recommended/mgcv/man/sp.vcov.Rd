@@ -35,6 +35,7 @@ Wood, S.N. (2006) On confidence intervals for generalized additive models based 
 
 
 \examples{ 
+require(mgcv)
 n <- 100
 x <- runif(n);z <- runif(n)
 y <- sin(x*2*pi) + rnorm(n)*.2

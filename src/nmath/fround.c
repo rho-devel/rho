@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -88,7 +88,7 @@ double fround(double x, double digits) {
 #define MAX_DIGITS DBL_MAX_10_EXP
     /* = 308 (IEEE); was till R 0.99: (DBL_DIG - 1) */
     /* Note that large digits make sense for very small numbers */
-    long double pow10, sgn, intx;
+    LDOUBLE pow10, sgn, intx;
     int dig;
 
     if (ISNAN(x) || ISNAN(digits))
@@ -106,13 +106,13 @@ double fround(double x, double digits) {
     } else
 	sgn = 1.;
     if (dig == 0) {
-	return sgn * R_rint(x);
+	return (double)(sgn * R_rint(x));
     } else if (dig > 0) {
         pow10 = R_pow_di(10., dig);
 	intx = floor(x);
-	return sgn * (intx + R_rint((x-intx) * pow10) / pow10);
+	return (double)(sgn * (intx + R_rint((double)((x-intx) * pow10)) / pow10));
     } else {
         pow10 = R_pow_di(10., -dig);
-        return sgn * R_rint(x/pow10) * pow10;
+        return (double)(sgn * R_rint((double)(x/pow10)) * pow10);
     }
 }

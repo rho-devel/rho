@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -152,7 +152,7 @@ double gammafn(double x)
 	 * Reduce the interval and find gamma(1 + y) for 0 <= y < 1
 	 * first of all. */
 
-	n = x;
+	n = (int) x;
 	if(x < 0) --n;
 	y = x - n;/* n = floor(x)  ==>	y in [ 0, 1 ) */
 	--n;

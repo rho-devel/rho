@@ -47,10 +47,10 @@ ks.test(x, y, \dots,
   distributions do not generate them.  If the ties arose from rounding
   the tests may be approximately valid, but even modest amounts of
   rounding can have a significant effect on the calculated statistic.
-  
+
   Missing values are silently omitted from \code{x} and (in the
   two-sample case) \code{y}.
-  
+
   The possible values \code{"two.sided"}, \code{"less"} and
   \code{"greater"} of \code{alternative} specify the null hypothesis
   that the true distribution function of \code{x} is equal to, not less
@@ -65,7 +65,7 @@ ks.test(x, y, \dots,
   \code{y} (the CDF of \code{x} lies above and hence to the left of that
   for \code{y}), in contrast to \code{\link{t.test}} or
   \code{\link{wilcox.test}}.
-  
+
   Exact p-values are not available for the two-sample case if one-sided
   or in the presence of ties.  If \code{exact = NULL} (the default), an
   exact p-value is computed if the sample size is less than 100 in the
@@ -94,6 +94,10 @@ ks.test(x, y, \dots,
     performed.}
   \item{data.name}{a character string giving the name(s) of the data.}
 }
+\source{
+  The two-sided one-sample distribution comes \emph{via}
+  Marsaglia, Tsang and Wang (2003).
+}
 \references{
   Z. W. Birnbaum and Fred H. Tingey (1951),
   One-sided confidence contours for probability distribution functions.
@@ -105,7 +109,7 @@ ks.test(x, y, \dots,
   Pages 295--301 (one-sample Kolmogorov test),
   309--314 (two-sample Smirnov test).
 
-  Durbin, J. (1973)
+  Durbin, J. (1973),
   \emph{Distribution theory for tests based on the sample distribution
     function}.  SIAM.
 
@@ -133,10 +137,10 @@ ks.test(x+2, "pgamma", 3, 2, alternative = "gr")
 
 # test if x is stochastically larger than x2
 x2 <- rnorm(50, -1)
-plot(ecdf(x), xlim=range(c(x, x2)))
-plot(ecdf(x2), add=TRUE, lty="dashed")
-t.test(x, x2, alternative="g")
-wilcox.test(x, x2, alternative="g")
-ks.test(x, x2, alternative="l")
+plot(ecdf(x), xlim = range(c(x, x2)))
+plot(ecdf(x2), add = TRUE, lty = "dashed")
+t.test(x, x2, alternative = "g")
+wilcox.test(x, x2, alternative = "g")
+ks.test(x, x2, alternative = "l")
 }
 \keyword{htest}

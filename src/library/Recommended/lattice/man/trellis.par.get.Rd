@@ -150,6 +150,27 @@ show.settings(x = NULL)
 \value{
   \code{trellis.par.get} returns a list giving parameters for that
   component. If \code{name} is missing, it returns the full list.
+
+  Most of the settings are graphical parameters that control various
+  elements of a lattice plot.  For details, see the examples below.  The
+  more unusual settings are described here.
+  
+  \describe{
+    \item{grid.pars}{ Grid graphical parameters that are in effect
+      globally unless overridden by specific settings.}
+    \item{fontsize}{ A list of two components (each a numeric scalar),
+      \code{text} and \code{points}, for text and symbols
+      respectively.
+    } 
+    \item{clip}{ A list of two components (each a character string,
+      either \code{"on"} or \code{"off"}), \code{panel} and
+      \code{strip}.
+    } 
+    \item{axis.components}{}
+    \item{layout.heights}{}
+    \item{layout.widths}{}
+  }
+
 }
 \author{ Deepayan Sarkar \email{Deepayan.Sarkar@R-project.org}}
 \seealso{
@@ -159,6 +180,35 @@ show.settings(x = NULL)
 
 \examples{
 show.settings()
+
+tp <- trellis.par.get()
+
+unusual <- c("grid.pars", "fontsize", "clip", "axis.components",
+             "layout.heights", "layout.widths")
+
+for (u in unusual) tp[[u]] <- NULL
+names.tp <- lapply(tp, names)
+unames <- sort(unique(unlist(names.tp)))
+ans <- matrix(0, nrow = length(names.tp), ncol = length(unames))
+rownames(ans) <- names(names.tp)
+colnames(ans) <- unames
+for (i in seq(along = names.tp))
+    ans[i, ] <- as.numeric(unames \%in\% names.tp[[i]])
+ans <- ans[, order(-colSums(ans))]
+ans <- ans[order(rowSums(ans)), ]
+ans[ans == 0] <- NA
+
+levelplot(t(ans), colorkey = FALSE, 
+          scales = list(x = list(rot = 90)),
+          panel = function(x, y, z, ...) {
+              panel.abline(v = unique(as.numeric(x)), 
+                           h = unique(as.numeric(y)), 
+                           col = "darkgrey")
+              panel.xyplot(x, y, pch = 16 * z, ...)
+          },
+          xlab = "Graphical parameters", 
+          ylab = "Setting names")
+
 }
 \keyword{dplot}
 

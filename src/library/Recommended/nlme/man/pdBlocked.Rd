@@ -73,7 +73,7 @@ pdBlocked(value, form, nam, data, pdClass)
  Pinheiro, J.C., and Bates, D.M. (2000) "Mixed-Effects Models
  in S and S-PLUS", Springer, esp. p. 162.  
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 
 \seealso{\code{\link{as.matrix.pdMat}},

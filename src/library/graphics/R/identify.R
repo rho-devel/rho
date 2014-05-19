@@ -1,6 +1,8 @@
 #  File src/library/graphics/R/identify.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -34,8 +36,8 @@ identify.default <-
         else
             return(numeric())
     }
-    z <- .Internal(identify(x, y, as.character(labels), n, plot, offset,
-                            tolerance, atpen))
+    z <- .External2(C_identify, x, y, as.character(labels), n, plot,
+                    offset, tolerance, atpen)
     i <- seq.int(z[[1L]])[z[[1L]]]
     if(pos) list(ind = i, pos = z[[2L]][z[[1L]]]) else i
 }

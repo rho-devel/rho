@@ -1,0 +1,609 @@
+@
+\section{Cox models}
+\subsection{Predicted survival}
+The [[survfit]] method for a Cox model produces individual survival
+curves.  As might be expected these have much in common with
+ordinary survival curves, and share many of the same methods.
+The primary differences are first that a predicted curve always refers
+to a particular set of covariate values.   
+It is often the case that a user wants multiple values at once, in 
+which case the result will be a matrix of survival curves with a row
+for each time and a column for each covariate set.
+The second is that the computations are somewhat more difficult.
+
+The input arguments are
+\begin{description}
+  \item[formula] a fitted object of class 'coxph'.  The argument name of 
+    'formula' is historic, from when the survfit function was not a generic
+    and only did Kaplan-Meier type curves.
+  \item[newdata] contains the data values for which curves should be
+    produced, one per row
+  \item[se.fit] TRUE/FALSE, should standard errors be computed.
+  \item[individual] a particular option for time-dependent covariates
+  \item[type] computation type for the survival curve
+  \item[vartype] computation type for the variance
+  \item[censor] if FALSE, remove any times that have no events from the
+    output.  This is for 
+    backwards compatability with older versions of the code.
+  \item[id] replacement and extension for the individual argument
+  \item[newstrata] does the new data set contain strata, and I should obey it?
+\end{description}
+All the other arguments are common to all the methods, refer to the 
+help pages.
+
+<<survfit.coxph>>=
+survfit.coxph <-
+  function(formula, newdata, se.fit=TRUE, conf.int=.95, individual=FALSE,
+            type, vartype,
+            conf.type=c("log", "log-log", "plain", "none"),
+            censor=TRUE, id, newstrata=missing(id),
+            na.action=na.pass, ...) {
+
+    Call <- match.call()
+    Call[[1]] <- as.name("survfit")  #nicer output for the user
+    object <- formula     #'formula' because it has to match survfit
+
+    <<survfit.coxph-setup>>
+    <<survfit.coxph-result>>
+    <<survfit.coxph-finish>>
+    }
+@ 
+The third line [[as.name('survfit')]] causes the printout to say
+`survfit' instead of `survfit.coxph'.                              %'
+
+The setup for the routine is fairly pedestrian.
+If the newdata argument is missing we use [[object$means]] as the
+default value.  This choice has lots of statistical shortcomings,
+particularly in a stratified model, but is common in other
+packages and a historic option here.
+If the type or vartype are missing we use the appropriate one
+for the method in the Cox model.
+That is, the [[coxph]] computation used for [[method=``exact'']] is
+the same approximation used in the Kalbfleish-Prentice estimate,
+that for the Breslow method matches the Aalen survival estimate, and
+the Efron approximation the Efron survival estimate.
+The other two rows of labels in [[temp1]] are historical; 
+we include them for backwards
+compatability but they don't appear in the documentation.          %'
+
+<<survfit.coxph-setup>>=
+if (!is.null(attr(object$terms, "specials")$tt))
+    stop("The survfit function can not yet process coxph models with a tt term")
+
+if (missing(type)) {
+    # Use the appropriate one from the model
+    temp1 <- c("exact", "breslow", "efron")
+    survtype <- match(object$method, temp1)
+        }
+else {
+    temp1 <- c("kalbfleisch-prentice", "aalen", "efron",
+               "kaplan-meier", "breslow", "fleming-harrington",
+               "greenwood", "tsiatis", "exact")
+    survtype <- match(match.arg(type, temp1), temp1)
+    survtype <- c(1,2,3,1,2,3,1,2,3)[survtype]
+    }
+if (missing(vartype)) {
+    vartype <- survtype
+    }
+else {
+    temp2 <- c("greenwood", "aalen", "efron", "tsiatis")
+    vartype <- match(match.arg(vartype, temp2), temp2)
+    if (vartype==4) vartype<- 2
+    }
+
+if (!se.fit) conf.type <- "none"
+else conf.type <- match.arg(conf.type)
+@ 
+
+I need to retrieve a copy of the original data. 
+We always need the $X$ matrix and $y$, both of which may be found in 
+the data object.
+If the original call included either strata, offset, or weights, 
+or if either $x$
+or $y$ are missing from the [[coxph]] object, 
+then the model frame will need to be reconstructed.
+We have to use [[object['x']]] instead of [[object$x]] since the latter will
+pick off the [[xlevels]] component if the [[x]] component is missing (which
+is the default).
+<<survfit.coxph-setup>>=
+if (is.null(object$y) || is.null(object[['x']]) ||
+    !is.null(object$call$weights) || 
+    !is.null(attr(object$terms, 'specials')$strata) ||
+    !is.null(attr(object$terms, 'offset'))) {
+    
+    mf <- model.frame(object)
+    }
+else mf <- NULL  #useful for if statements later
+@ 
+If a model frame was created, then it is trivial to grab [[y]]
+from the new frame and compare it to [[object$y]] from the
+original one.  This is to avoid nonsense results that arise
+when someone changes the data set under our feet.  For instance
+\begin{verbatim}
+  fit <- coxph(Surv(time,status) ~ age, data=lung)
+  lung <- lung[1:100,]
+  survfit(fit)
+\end{verbatim}
+
+<<survfit.coxph-setup>>=
+if (is.null(mf)) y <- object[['y']]
+else {
+    y <- model.response(mf)
+    y2 <- object[['y']]
+    if (!is.null(y2) && any(as.matrix(y2) != as.matrix(y)))
+        stop("Could not reconstruct the y vector")
+    }
+
+if (is.null(object[['x']])) x <- model.matrix.coxph(object, data=mf)
+else x <- object[['x']]
+
+n <- nrow(y)
+if (n != object$n[1] || nrow(x) !=n) 
+    stop("Failed to reconstruct the original data set")
+
+if (is.null(mf)) wt <- rep(1., n)
+else {
+    wt <- model.weights(mf)
+    if (is.null(wt)) wt <- rep(1.0, n)
+    }
+
+type <- attr(y, 'type')
+if (type != 'right' && type != 'counting') 
+    stop("Cannot handle \"", type, "\" type survival data")
+missid <- missing(id) # I need this later, and setting id below makes
+                      # "missing(id)" always false
+if (!missid) individual <- TRUE
+else if (missid && individual) id <- rep(0,n)
+else id <- NULL
+
+if (individual && missing(newdata)) {
+    warning("the id and/or individual options only make sense with new data")
+    individual <- FALSE
+}
+
+if (individual && type!= 'counting')
+    stop("The individual option is  only valid for start-stop data")
+if (!missing(newstrata)) {
+    if (!is.logical(newstrata)) stop("newstrata must be TRUE/FALSE")
+    if (individual && !newstrata)
+        stop("newstrata must be TRUE for the individual or id options")
+}
+else newstrata <- individual
+
+if (is.null(mf)) offset <- 0
+else {
+    offset <- model.offset(mf)
+    if (is.null(offset)) offset <- 0
+    }
+    
+Terms <- object$terms
+temp <- untangle.specials(Terms, 'strata')
+if (length(temp$terms)==0) strata <- rep(0L,n)
+else {
+    if (length(temp$vars) ==1) strata <- mf[[temp$vars]]
+    else strata <- strata(mf[, temp$vars], shortlabel=TRUE)
+    }
+@ 
+
+A model with strata by covariate interactions forms a special case for
+the calculations, one that had not been recognized in versions of the code
+before 1/1/2011.  (Results were wrong, sometimes bizzare.)  For example 
+[[coxph(Surv(time, status) ~ age * strata(sex), data=lung]].
+Create a vector [[stype]] that contains 0 for ordinary variables, 1 for
+strata terms, and 2 for strata by covariate interactions;
+this will be used later.
+<<survfit.coxph-setup>>=
+if (!is.null(x) && ncol(x) >0) { #not a ~1 or ~offset(x) model
+    tempf <-attr(Terms, "factors")[-attr(Terms, 'response'),,drop=F] 
+    stype <- ifelse(colSums(tempf[temp$terms,,drop=FALSE]) >0,
+                    attr(Terms, "order"), 0)
+    }
+else stype <- 0  #dummy value
+@ 
+
+If a variable is deemed redundant the [[coxph]] routine will have set its
+coefficient to NA as a marker. 
+We want to ignore that coefficient: treating it as a zero has the 
+desired effect.
+Another special case is a null model, having either ~1 or only an offset
+on the right hand side.  In that case we create a dummy covariate to
+allow the rest of the code to work without special if/else.
+The last special case is a model with a sparse frailty term.  We treat
+the frailty coefficients as 0 variance (in essence as an offset).
+The frailty is removed from the model variables but kept in the risk score.
+This isn't statistically very defensible, but it is backwards compatatble. %'
+A non-sparse frailty does not need special code and works out like any
+other variable.  
+
+We also remove the means from each column of the $X$ matrix.  
+The reason for this is to avoid huge values when calculating $\exp(X\beta)$;
+this would happen if someone had a variable with a mean of 1000 and a
+variance of 1. 
+Any constant can be subtracted, mathematically the results are identical as long
+as the same values are subtracted from the old and new $X$ data.  
+The mean is used because it is handy, we just need to get $X\beta$ in the
+neighborhood of zero.
+One particular special case (that gave me fits for a while) is when there
+are non-heirarchical models, for example [[~ age + age:sex]].  
+The fit of such a model will \emph{not} be the same using the variable
+[[age2 <- age-50]]; I originally thought it was a flaw induced by my 
+subtraction.  This is simply a bad model and it is not clear that there
+is any ``correct'' behavior in creating predicted survival curves.
+
+<<survfit.coxph-setup>>=
+if (is.null(x) || ncol(x)==0) { # a model with ~1 on the right hand side
+    # Give it a dummy x so the rest of the code goes through
+    #  (This case is really rare)
+    x <- matrix(0., nrow=n)
+    coef <- 0.0
+    varmat <- matrix(0.0,1,1)
+    risk <- rep(exp(offset- mean(offset)), length=n)
+    }
+else {
+    varmat <- object$var
+    coef <- ifelse(is.na(object$coefficients), 0, object$coefficients)
+    xcenter <- object$means    
+    if (is.null(object$frail)) {
+        x <- scale(x, center=xcenter, scale=FALSE)    
+        risk <- c(exp(x%*% coef + offset - mean(offset)))
+        }
+   else {
+       keep <- !is.na(match(dimnames(x)[[2]], names(coef)))
+       x <- x[,keep, drop=F]
+#       varmat <- varmat[keep,keep]  #coxph already has trimmed it
+       risk <- exp(object$linear.predictor)
+       x <- scale(x, center=xcenter, scale=FALSE)    
+       }
+    }
+@ 
+The [[risk]] vector and [[x]] matrix come from the original data, and are
+the raw data for the survival curve and its variance.  
+We also need the risk score $\exp(X\beta)$ for the target subject(s).
+\begin{itemize}
+  \item For predictions with time-dependent covariates the user will have 
+    either included an [[id]] statement (newer style) or specified the
+    [[individual=TRUE]] option.  If the latter, then [[newdata]] is
+    presumed to contain only a single indivual represented by multiple
+    rows.  If the former then the [[id]] variable marks separate individuals.
+    In either case we need to retrieve
+    the covariates, strata, and repsonse from the new data set.
+  \item For ordinary predictions only the covariates are needed.
+  \item If newdata is not present we assume that this is the ordinary case, and
+    use the value of [[object$means]] as the default covariate set.  This is
+    not ideal statistically since many users view this as an
+    ``average'' survival curve, which it is not.
+\end{itemize}
+
+When grabbing [newdata] we want to use model.frame processing, both to 
+handle missing values correctly and, perhaps more importantly, to correctly
+map any factor variables between the original fit and the new data.  (The
+new data will often have only one of the original levels represented.)
+Also, we want to correctly handle data-dependent nonlinear terms such as
+ns and pspline.
+However, the simple call found in predict.lm, say,
+[[model.frame(Terms, data=newdata, ..]] won't work here for
+two reasons. 
+The first is the decision that for a stratified model, if newdata
+does not contain the strata variable we will produce curves for
+all the strata.  The above would fail in that case with a
+``variable not found'' message.  (If I could
+go back in time this feature might disappear.)
+The second is that we might have an [[id]] statement in this
+call, which is another variable to be fetched.
+There is no ability to use sparse frailties and newdata together;
+it is a hard case and so rare as to not be worth it.
+
+First, remove unnecessary terms from the orginal model formula. 
+Any [[cluster]] terms can be deleted,
+If [[individual]] is false then the repsonse variable can go.
+If [[!newstrata]] we can remove strata variables.
+The reason for this is so that the program won't ask for variables
+in the new data frame when we won't need them.
+We have to be careful in subscripting a terms object, since this will
+remove the predvars attribute (at least currently).
+Both clauses below are trial and error guesses based on a set of examples.
+The delete.response function works correctly, however.
+<<survfit.coxph-setup>>= 
+subterms <- function(x, i) {
+    dataClasses <- attr(x, "dataClasses")
+    predvars <- attr(x, "predvars")
+    x <- x[i]
+    if (!is.null(predvars)) 
+        attr(x, "predvars") <- attr(x, "variables")
+    if (!is.null(dataClasses)){
+        temp <- dimnames(attr(x, 'factors'))[[1]]
+        attr(x, "dataClasses") <- dataClasses[temp]
+    }
+    x
+}
+temp <- untangle.specials(Terms, 'cluster')
+if (length(temp$vars)) {
+    ptemp <- attr(temp, "predvars")
+    Terms <- subterms(Terms, -temp$terms)
+    stype <- stype[-temp$terms]
+}
+if (missing(newdata)) {
+    mf2 <- as.list(object$means)   #create a dummy newdata
+    names(mf2) <- names(object$coefficients)
+    mf2 <- as.data.frame(mf2)
+    }
+else {
+    if (!is.null(object$frail))
+        stop("Newdata cannot be used when a model has sparse frailty terms")
+
+    Terms2 <- Terms 
+    if (!individual)  Terms2 <- delete.response(Terms)
+    if (!newstrata && (any(stype>0))) 
+        Terms2 <- subterms(Terms2,stype==0) #remove strata and interactions
+    <<survfit.coxph-newdata2>>
+    }
+@ 
+Now get the newdata model frame.
+Two things need to be cleared up first.  
+If xlevels contains any variable that is no longer in the model 
+then one gets a spurious warning message
+out of the [[model.frame]] function.  
+This happens if there was a strata object removed using subterms above.
+Second, for backwards compatability, I allow someone to give an ordinary vector
+instead of a data frame (when only one curve is required).  In this case
+I also need to verify that the elements have a name. 
+Then turn it into a data frame, like it should have been from the beginning.
+(Documentation of this ability has been suppressed, however.  I'm hoping 
+people forget it ever existed.) 
+<<survfit.coxph-newdata2>>=
+if (!is.null(object$xlevels)) { 
+    myxlev <- object$xlevels[match(attr(Terms2, "term.labels"),
+                                   names(object$xlevels), nomatch=0)]
+    if (length(myxlev)==0) myxlev <- NULL
+    }
+else myxlev <- NULL
+ 
+if (is.vector(newdata, "numeric")) {
+    if (individual) stop("newdata must be a data frame")
+    if (is.null(names(newdata))) {
+        stop("Newdata argument must be a data frame")
+    }
+    newdata <- data.frame(as.list(newdata))
+}
+@ 
+Finally get my new model frame mf2.
+If all is particularly simple we can use a simple call.
+Otherwise get an abbreviated form of the original call that has only the
+calling function, na.action, and id.  The calling function is always
+element 1, the others are found by name.
+Now manipulate it: add the formula, data and xlev components (the last might be NULL),
+and then change the name of the call.
+If the original call was [[survfit(fit1, newdata=mydat, conf.int=.9)]]
+the result is [[model.frame(data= copy of newdat, formula=Terms2, xlev=myxlev)]].
+
+There is one more issue to trip you up, which is that model.frame is
+special.  
+It totally ignores any scoping arguments passed to it, e.g. the the second and
+third arguments to eval.  Variables are first searched for in the
+data, and then in the environment of the formula.
+What to do?
+\begin{itemize}
+  \item We don't dare modify the environment of the formula.
+    It is needed for the sneaky caller who uses his own function
+    inside the formula, 'mycosine' say, and that function can only be found if we
+    retain the environment.  
+  \item Assign the data argument. The code originally would retain the ``newdata''
+    part of the call, and then rename it to ``data'' in the tcall list.
+    But then it would not be found if survfit were called from inside another
+    function.  The assignment happens in this context so we are ok.
+\end{itemize}    
+
+<<survfit.coxph-newdata2>>= 
+if (newstrata && missid) 
+    mf2 <- model.frame(Terms2, data=newdata, na.action=na.action, xlev=myxlev)
+else {
+    tcall <- Call[c(1, match(c('id', "na.action"), names(Call), nomatch=0))]
+    tcall$data <- newdata
+    tcall$formula <- Terms2
+    if (!is.null(object$xlevels)) tcall$xlev <- myxlev
+    tcall[[1]] <- as.name('model.frame')
+    mf2 <- eval(tcall)
+}
+@     
+
+Now, finally, extract the [[x2]] matrix from the just-created frame.
+For individual=TRUE there must be a newdata argument, it must have any
+strata variables that were present in the original model, and the levels
+of those strata must exist in the original model.
+<<survfit.coxph-result>>=
+if (newstrata) {
+    temp <- untangle.specials(Terms2, 'strata')
+    if (length(temp$vars) >0) {
+        strata2 <- strata(mf2[temp$vars], shortlabel=TRUE)
+        strata2 <- factor(strata2, levels=levels(strata))
+        if (any(is.na(strata2)))
+            stop("New data set has strata levels not found in the original")
+        Terms2 <- Terms2[-temp$terms]
+        }
+    else strata2 <- factor(rep(0, nrow(mf2)))
+}
+
+if (individual) {
+    if (missing(newdata)) 
+        stop("The newdata argument must be present when individual=TRUE")
+    if (!missid) {  #grab the id variable
+        id <- model.extract(mf2, "id")
+        if (is.null(id)) stop("id=NULL is an invalid argument")
+        }
+    
+    x2 <- model.matrix(Terms2, mf2)[,-1, drop=FALSE]  #no intercept
+    if (length(x2)==0) stop("Individual survival but no variables")
+    x2 <- scale(x2, center=xcenter, scale=FALSE)
+
+    offset2 <- model.offset(mf2)
+    if (length(offset2) >0) offset2 <- offset2 - mean(offset)
+    else offset2 <- 0
+		
+    y2 <- model.extract(mf2, 'response')
+    if (attr(y2,'type') != type)
+        stop("Survival type of newdata does not match the fitted model")
+    if (attr(y2, "type") != "counting")
+        stop("Individual=TRUE is only valid for counting process data")
+    y2 <- y2[,1:2, drop=F]  #throw away status, it's never used
+
+    newrisk <- exp(c(x2 %*% coef) + offset2)
+    result <- survfitcoxph.fit(y, x, wt, x2, risk, newrisk, strata,
+                                se.fit, survtype, vartype, varmat, 
+                                id, y2, strata2)
+   }
+@ 
+
+The odd case is when there are strata by covariate interactions, but
+individual=FALSE.  In this case the x2 matrix is different for each 
+strata, something that the survfitcoxph.fit subroutine is not set up
+to do.  
+This case is also very, very rare; the package existed for 15+ years before
+I became aware there even was a problem.  
+Thus we take a low tech solution: call the fit routine for every possible
+strata combination, and pick off the result we want from each.
+This requires a model frame that is a blend of the original data [[mf]] and
+the new data [[mf2]]. 
+You can't just paste these together, as I discovered in an evening of
+failures;  %'
+the 'terms' component of a model frame needs to be present and be compatable
+or [[model.matrix]] will fail with one of several utterly confusing messages.
+Start with tframe, a subset of rows of [[mf]] containing each unique strata.
+Create mf3 as nrow(mf2) identical copies of one row of tframe, then fill in
+new values for the mf2 variables.  We now have an mf ``copy'' with all the
+right data, and it has all the right variable names in the right order, which
+is necessary to successfully paste the original mf terms attribute onto it.  
+<<survfit.coxph-result>>= 
+else if (any(stype==2)){
+    tframe <- mf[match(levels(strata), strata),]
+    temp <- vector('list', nrow(tframe))  #number of strata
+    for (i in 1:nrow(tframe)) {
+        mf3 <- tframe[rep(i, nrow(mf2)),]
+        mf3[names(mf2)] <- mf2
+        attr(mf3, 'terms') <- attr(mf, 'terms')
+        x2 <- model.matrix(Terms[stype!=1], data=mf3,
+                           xlev=object$xlevels)[,-1,drop=FALSE]
+        x2 <- scale(x2, center=xcenter, scale=FALSE)
+        offset2 <- model.offset(mf3)
+        if (is.null(offset2)) offset2 <-0
+        newrisk <- c(exp(x2%*%coef) + offset2)
+        zed<- survfitcoxph.fit(y, x, wt, x2, risk, newrisk, strata,
+                                           se.fit, survtype, vartype, varmat,
+                                           id=NULL, unlist=FALSE)
+        temp[[i]] <- zed[[i]]
+        }
+    tfun <- function(x, fun) as.vector(unlist(lapply(x,fun))) #no names
+    result <- list(n   =    tfun(temp, function(x) x$n),
+                   time=    tfun(temp, function(x) x$time),
+                   n.risk=  tfun(temp, function(x) x$n.risk),
+                   n.event= tfun(temp, function(x) x$n.event),
+                   n.censor=tfun(temp, function(x) x$n.censor),
+                   strata = sapply(temp, function(x) length(x$time)))
+    names(result$strata) <- levels(strata)
+    if (nrow(x2) >1) {  #matrix result
+        result$surv =  t(matrix(tfun(temp, function(x) t(x$surv)),
+                                nrow= nrow(x2)))
+        if (se.fit) result$std.err =  t(matrix(tfun(temp,function(x) t(x$std)),
+                                               nrow= nrow(x2)))
+        }
+    else {
+        result$surv =  tfun(temp, function(x) x$surv)
+        if (se.fit) result$std.err = tfun(temp, function(x) x$std.err)
+        }
+    }
+@ 
+
+The last two are the easy cases.  First if there is no newdata argument, the
+centering means that we need to predict for x2=0.
+The second the most common call to the routine.
+<<survfit.coxph-result>>=
+else {
+    if (missing(newdata)) {
+        x2 <- matrix(0.0, nrow=1, ncol=ncol(x))
+        offset2 <- 0
+    }
+    else {
+       offset2 <- model.offset(mf2)
+       if (length(offset2) >0) offset2 <- offset2 - mean(offset)
+       else offset2 <- 0
+       x2 <- model.matrix(Terms2, mf2)[,-1, drop=FALSE]  #no intercept
+       x2 <- scale(x2, center=xcenter, scale=FALSE)
+   }
+
+    newrisk <- exp(c(x2 %*% coef) + offset2)
+    result <- survfitcoxph.fit(y, x, wt, x2, risk, newrisk, strata,
+                                se.fit, survtype, vartype, varmat, 
+                                id, y2, strata2)
+    if (newstrata) {
+        <<newstrata-fixup>>
+    }
+}
+@ 
+
+The newstrata argument is a recent addition.  If someone
+used it, then they don't want the usual behavior of 
+all strata for each variable combination.
+We need to pick off of the right bits
+<<newstrata-fixup>>=
+warning("newstrata argument under construction, value ignored")
+@ 
+
+Finally, the last (somewhat boring) part of the code.  
+First, if given the argument [[censor=FALSE]] we need to
+remove all the time points from the output at which there
+was only censoring activity.  This action is mostly for
+backwards compatability with older releases that never
+returned censoring times.
+Second, add 
+in the variance and the confidence intervals to the result.
+The code is nearly identical to that in survfitKM.
+<<survfit.coxph-finish>>=
+if (!censor) {
+    kfun <- function(x, keep){ if (is.matrix(x)) x[keep,,drop=F] 
+                              else if (length(x)==length(keep)) x[keep]
+                              else x}
+    keep <- (result$n.event > 0)
+    if (!is.null(result$strata)) {
+        temp <- rep(names(result$strata), result$strata)
+        result$strata <- c(table(temp[keep]))
+        }
+    result <- lapply(result, kfun, keep)
+    }
+
+if (se.fit) {
+    zval <- qnorm(1- (1-conf.int)/2, 0,1)
+    if (conf.type=='plain') {
+	temp1 <- result$surv + zval* result$std.err * result$surv
+	temp2 <- result$surv - zval* result$std.err * result$surv
+	result <- c(result, list(upper=pmin(temp1,1), lower=pmax(temp2,0),
+			conf.type='plain', conf.int=conf.int))
+	}
+    if (conf.type=='log') {
+	xx <- ifelse(result$surv==0,1,result$surv)  #avoid some "log(0)" messages
+	temp1 <- ifelse(result$surv==0, 0*result$std.err, 
+                        exp(log(xx) + zval* result$std.err))
+	temp2 <- ifelse(result$surv==0, 0*result$std.err, 
+                        exp(log(xx) - zval* result$std.err))
+	result <- c(result, list(upper=pmin(temp1,1), lower=temp2,
+			conf.type='log', conf.int=conf.int))
+	}
+    if (conf.type=='log-log') {
+	who <- (result$surv==0 | result$surv==1) #special cases
+	xx <- ifelse(who, .1,result$surv)  #avoid some "log(0)" messages
+	temp1 <- exp(-exp(log(-log(xx)) + zval*result$std.err/log(xx)))
+	temp1 <- ifelse(who, result$surv + 0*result$std.err, temp1)
+	temp2 <- exp(-exp(log(-log(xx)) - zval*result$std.err/log(xx)))
+	temp2 <- ifelse(who, result$surv + 0*result$std.err, temp2)
+	result <- c(result, list(upper=temp1, lower=temp2,
+			conf.type='log-log', conf.int=conf.int))
+	}
+    }
+
+result$call <- Call
+
+# The "type" component is in the middle -- match history
+indx <- match('surv', names(result))
+result <- c(result[1:indx], type=attr(y, 'type'), result[-(1:indx)])
+if (is.R()) class(result) <- c('survfit.cox', 'survfit')
+else        oldClass(result) <- 'survfit.cox'
+result
+@ 

@@ -17,7 +17,7 @@ for large datasets. \code{bam} can also compute on a cluster set up by the \link
 bam(formula,family=gaussian(),data=list(),weights=NULL,subset=NULL,
     na.action=na.omit, offset=NULL,method="fREML",control=list(),
     scale=0,gamma=1,knots=NULL,sp=NULL,min.sp=NULL,paraPen=NULL,
-    chunk.size=10000,rho=0,sparse=FALSE,cluster=NULL,gc.level=1,
+    chunk.size=10000,rho=0,AR.start=NULL,sparse=FALSE,cluster=NULL,gc.level=1,
     use.chol=FALSE,samfrac=1,...)
 }
 %- maybe also `usage' for other objects documented here.
@@ -107,6 +107,10 @@ if smooths share smoothing parameters).}
 
 \item{rho}{An AR1 error model can be used for the residuals (based on dataframe order), of Gaussian-identity 
            link models. This is the AR1 correlation parameter.}
+
+\item{AR.start}{logical variable of same length as data, \code{TRUE} at first observation of an independent
+section of AR1 correlation. Very first observation in data frame does not need this. If \code{NULL} then 
+there are no breaks in AR1 correlaion.}
 
 \item{sparse}{If all smooths are P-splines and all tensor products are of the form \code{te(...,bs="ps",np=FALSE)} 
 then in principle computation could be made faster using sparse matrix methods, and you could set this to \code{TRUE}. 
@@ -200,9 +204,11 @@ The negbin family is only supported for the *known theta* case.
 
 \examples{
 library(mgcv)
-## Some not very large examples...
+## Some examples are marked 'Not run' purely to keep 
+## checking load on CRAN down. Sample sizes are small for 
+## the same reason.
 
-dat <- gamSim(1,n=40000,dist="normal",scale=20)
+dat <- gamSim(1,n=20000,dist="normal",scale=20)
 bs <- "cr";k <- 20
 b <- bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
            s(x3,bs=bs,k=k),data=dat)
@@ -210,14 +216,15 @@ summary(b)
 plot(b,pages=1,rug=FALSE)  ## plot smooths, but not rug
 plot(b,pages=1,rug=FALSE,seWithMean=TRUE) ## `with intercept' CIs
 
+\dontrun{ 
 ba <- bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
             s(x3,bs=bs,k=k),data=dat,method="GCV.Cp") ## use GCV
-summary(ba)
+summary(ba)}
 
 ## A Poisson example...
 
 k <- 15
-dat <- gamSim(1,n=15000,dist="poisson",scale=.1)
+dat <- gamSim(1,n=11000,dist="poisson",scale=.1)
 system.time(b1 <- bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
             s(x3,bs=bs,k=k),data=dat,family=poisson()))
 b1
@@ -235,8 +242,10 @@ system.time(b2 <- bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
 
 ## ... first call has startup overheads, repeat shows speed up...
 
+\dontrun{
 system.time(b2 <- bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
        s(x3,bs=bs,k=k),data=dat,family=poisson(),cluster=cl))
+}
 
 fv <- predict(b2,cluster=cl) ## parallel prediction
 
@@ -244,11 +253,12 @@ if (!is.null(cl)) stopCluster(cl)
 b2
 
 ## Sparse smoother example...
+\dontrun{
 dat <- gamSim(1,n=10000,dist="poisson",scale=.1)
 system.time( b3 <- bam(y ~ te(x0,x1,bs="ps",k=10,np=FALSE)+
              s(x2,bs="ps",k=30)+s(x3,bs="ps",k=30),data=dat,
              method="REML",family=poisson(),sparse=TRUE))
-b3
+b3}
 
 }
 

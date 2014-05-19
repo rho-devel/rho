@@ -34,7 +34,7 @@ agsurv <- function(y, x, wt, risk, survtype, vartype) {
     ntime  <- length(time)        
     if (survtype ==1) {
         indx <- (which(status==1))[order(dtime[status==1])] #deaths
-        km <- .C('agsurv4',
+        km <- .C(Cagsurv4,
              as.integer(ndeath),
              as.double(risk[indx]),
              as.double(wt[indx]),
@@ -46,7 +46,7 @@ agsurv <- function(y, x, wt, risk, survtype, vartype) {
     if (survtype==3 || vartype==3) {
         xsum2 <- rowsum((wrisk*death) *x, dtime)
         erisk <- rowsum(wrisk*death, dtime)  #risk score sums at each death
-        tsum  <- .C('agsurv5', 
+        tsum  <- .C(Cagsurv5, 
                     as.integer(length(nevent)),
                     as.integer(nvar),
                     as.integer(ndeath),

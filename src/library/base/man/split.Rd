@@ -1,6 +1,6 @@
 % File src/library/base/man/split.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{split}
@@ -36,11 +36,9 @@ unsplit(value, f, drop = FALSE)
 }
 \details{
   \code{split} and \code{split<-} are generic functions with default and
-  \code{data.frame} methods.
-  The data frame
-  method can also be used to split a matrix into a list of matrices,
-  and the replacement form likewise, provided they are invoked
-  explicitly.
+  \code{data.frame} methods.  The data frame method can also be used to
+  split a matrix into a list of matrices, and the replacement form
+  likewise, provided they are invoked explicitly.
 
   \code{unsplit} works with lists of vectors or data frames (assumed to
   have compatible structure, as if created by \code{split}). It puts
@@ -53,12 +51,16 @@ unsplit(value, f, drop = FALSE)
 
   Any missing values in \code{f} are dropped together with the
   corresponding values of \code{x}.
+
+  The default method calls \code{\link{interaction}}.  If the levels of
+  the factors contain \samp{.} they may not be split as expected, so
+  the method has argument \code{sep} which is use to join the levels.
 }
 \value{
   The value returned from \code{split} is a list of vectors containing
   the values for the groups.  The components of the list are named by
   the levels of \code{f} (after converting to a factor, or if already a
-  factor and \code{drop=TRUE}, dropping unused levels).
+  factor and \code{drop = TRUE}, dropping unused levels).
 
   The replacement forms return their right hand side.  \code{unsplit}
   returns a vector or data frame for which \code{split(x, f)} equals
@@ -107,8 +109,8 @@ l <- split(airquality, g)
 l <- lapply(l, transform, Oz.Z = scale(Ozone))
 aq2 <- unsplit(l, g)
 head(aq2)
-with(aq2, tapply(Oz.Z,  Month, sd, na.rm=TRUE))
- 
+with(aq2, tapply(Oz.Z,  Month, sd, na.rm = TRUE))
+
 
 ### Split a matrix into a list by columns
 ma <- cbind(x = 1:10, y = (-4:5)^2)

@@ -1,6 +1,6 @@
 
-R version 2.13.0 Patched (2011-06-06 r56067)
-Copyright (C) 2011 The R Foundation for Statistical Computing
+R version 2.15.1 Patched (2012-10-12 r60924) -- "Roasted Marshmallows"
+Copyright (C) 2012 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
@@ -61,7 +61,7 @@ Type 'q()' to quit R.
 17 171 184 246 215 196  NA 187 163 174 154  30   2  18   6  12  28
 > summary(d, na.rm = TRUE) # max = 270
    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-   2.00   27.25  147.50  114.60  188.50  270.00   16.00 
+   2.00   27.25  147.50  114.60  188.50  270.00      16 
 > ## First call with "trace" (seg.fault typically later ...):
 > try( clara(x, k=2, metric="manhattan", sampsize=10, trace = 3) )
 calling .C(cl_clara, ..., DUP = FALSE):
@@ -630,3 +630,6 @@ Error in clara(xclara, k = 3) :
   50 observations (74,126,137,308,411,423,438,451,642,686,689,735 ...)
 	have *only* NAs --> na.omit() them for clustering!
 > 
+> proc.time()
+   user  system elapsed 
+  0.228   0.024   0.240 

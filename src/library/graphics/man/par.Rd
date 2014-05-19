@@ -59,6 +59,7 @@
 \concept{oma}
 \concept{omd}
 \concept{omi}
+\concept{page}
 \concept{pch}
 \concept{pin}
 \concept{plt}
@@ -119,15 +120,15 @@ par(\dots, no.readonly = FALSE)
   Parameters are queried by giving one or more character vectors of
   parameter names to \code{par}.
 
-  \code{par()} (no arguments) or \code{par(no.readonly=TRUE)} is used to
+  \code{par()} (no arguments) or \code{par(no.readonly = TRUE)} is used to
   get \emph{all} the graphical parameters (as a named list).  Their
   names are currently taken from the unexported variable
   \code{graphics:::.Pars}.
 
   \emph{\bold{R.O.}} indicates \emph{\bold{read-only arguments}}: These
   may only be used in queries and cannot be set.  (\code{"cin"},
-  \code{"cra"}, \code{"csi"}, \code{"cxy"} and \code{"din"} are always
-  read-only.)
+  \code{"cra"}, \code{"csi"}, \code{"cxy"}, \code{"din"} and
+  \code{"page"} are always read-only.)
 
   Several parameters can only be set by a call to \code{par()}:
   \itemize{
@@ -165,6 +166,10 @@ par(\dots, no.readonly = FALSE)
   to physical margins.  (The same inter-line spacing multiplied by
   \code{lheight} is used for multi-line strings in \code{text} and
   \code{strheight}.)
+
+  Note that graphical parameters are suggestions: plotting functions and
+  devices need not make use of them (and this is particularly true of
+  non-default methods for e.g. \code{plot}).
 }
 
 \value{
@@ -213,7 +218,7 @@ par(\dots, no.readonly = FALSE)
     }
     \item{\code{bg}}{The color to be used for the background of the
       device region.  When called from \code{par()} it also sets
-      \code{new=FALSE}. See section \sQuote{Color Specification} for
+      \code{new = FALSE}. See section \sQuote{Color Specification} for
       suitable values.  For many devices the initial value is set from
       the \code{bg} argument of the device, and for the rest it is
       normally \code{"white"}.
@@ -251,7 +256,7 @@ par(\dots, no.readonly = FALSE)
       as \code{cra}, expressed in different units.}
     \item{\code{col}}{A specification for the default plotting color.  See
       section \sQuote{Color Specification}.
-      
+
       Some functions such as \code{\link{lines}} and \code{\link{text}}
       accept a vector of values which are recycled and may be
       interpreted slightly differently.
@@ -282,7 +287,7 @@ par(\dots, no.readonly = FALSE)
       Note that \code{c(\link{strwidth}(ch), \link{strheight}(ch))} for
       a given string \code{ch} is usually much more precise.}
     \item{\code{din}}{\emph{\bold{R.O.}}; the device dimensions,
-      \code{(width,height)}, in inches.  See also
+      \code{(width, height)}, in inches.  See also
       \code{\link{dev.size}}, which is updated immediately when an
       on-screen device windows is re-sized.}
     \item{\code{err}}{(\emph{Unimplemented}; \R is silent when points
@@ -309,9 +314,9 @@ par(\dots, no.readonly = FALSE)
         y2)} which gives the (NDC) coordinates of the figure region in
       the display region of the device. If you set this, unlike S, you
       start a new plot, so to add to an existing plot use
-      \code{new=TRUE} as well.}
+      \code{new = TRUE} as well.}
     \item{\code{fin}}{The figure region dimensions,
-      \code{(width,height)}, in inches. If you set this, unlike S, you
+      \code{(width, height)}, in inches. If you set this, unlike S, you
       start a new plot.}
     \item{\code{font}}{An integer which specifies which font to use for
       text.  If possible, device drivers arrange so that 1 corresponds
@@ -392,7 +397,9 @@ par(\dots, no.readonly = FALSE)
       (See the help on the device for details of the interpretation.)
 
       Functions such as \code{\link{lines}} and \code{\link{segments}}
-      accept a vector of values which are recycled.
+      accept a vector of values which are recycled: in such uses lines
+      corresponding to values \code{NA} or \code{NaN} are omitted.  The
+      interpretation of \code{0} is device-specific.
     }
     \item{\code{mai}}{A numerical vector of the form \code{c(bottom,
         left, top, right)} which gives the margin size specified in
@@ -466,6 +473,10 @@ par(\dots, no.readonly = FALSE)
       of the device region.}
     \item{\code{omi}}{A vector of the form \code{c(bottom, left, top,
         right)} giving the size of the outer margins in inches.}
+    \item{\code{page}}{\emph{\bold{R.O.}}; A boolean value indicating
+        whether the next call to \code{\link{plot.new}} is going
+        to start a new page.  This value may be \code{FALSE} if there
+        are multiple figures on the page.}
     \item{\code{pch}}{Either an integer specifying a symbol or a single
       character to be used as the default in plotting points.  See
       \code{\link{points}} for possible values and their interpretation.
@@ -475,7 +486,7 @@ par(\dots, no.readonly = FALSE)
       Some functions such as \code{\link{points}} accept a vector of values
       which are recycled.
     }
-    \item{\code{pin}}{The current plot dimensions, \code{(width,height)},
+    \item{\code{pin}}{The current plot dimensions, \code{(width, height)},
       in inches.}
     \item{\code{plt}}{A vector of the form \code{c(x1, x2, y1, y2)}
       giving the coordinates of the plot region as fractions of the
@@ -524,10 +535,10 @@ par(\dots, no.readonly = FALSE)
       \code{"usr"} coordinates are log10-transformed here!)
 
       \describe{
-        \item{n=1}{will produce tick marks at \eqn{10^j} for integer \eqn{j},}
-        \item{n=2}{gives marks  \eqn{k 10^j} with
+        \item{n = 1}{will produce tick marks at \eqn{10^j} for integer \eqn{j},}
+        \item{n = 2}{gives marks  \eqn{k 10^j} with
 	  \eqn{k \in \{1, 5\}}{k in {1,5}},}
-        \item{n=3}{gives marks  \eqn{k 10^j} with
+        \item{n = 3}{gives marks  \eqn{k 10^j} with
 	  \eqn{k \in \{1, 2, 5\}}{k in {1,2,5}}.}
       }
       See \code{\link{axTicks}()} for a pure \R implementation of this.
@@ -537,6 +548,9 @@ par(\dots, no.readonly = FALSE)
       \code{\link{plot.window}} or setting \code{par("usr")}: \code{n}
       is taken from \code{par("lab")}.  It affects the default behaviour
       of subsequent calls to \code{\link{axis}} for sides 1 or 3.
+
+      It is only relevant to default numeric axis systems, and not for
+      example to dates.
     }
     \item{\code{xaxs}}{The style of axis interval calculation to be used
       for the x-axis.  Possible values are \code{"r"}, \code{"i"},
@@ -592,15 +606,19 @@ par(\dots, no.readonly = FALSE)
   Colors can be specified in several different ways. The simplest way is
   with a character string giving the color name (e.g., \code{"red"}).  A
   list of the possible colors can be obtained with the function
-  \code{\link{colors}}.  Alternatively, colors can be specified directly in
-  terms of their RGB components with a string of the form \code{"#RRGGBB"}
-  where each of the pairs \code{RR}, \code{GG}, \code{BB} consist of two
-  hexadecimal digits giving a value in the range \code{00} to \code{FF}.
-  Colors can also be specified by giving an index into a small table of
-  colors, the \code{\link{palette}}.  This provides compatibility with
-  S.  Index \code{0} corresponds to the background color.  (Because
-  apparently some people have been assuming it, it is also possible to
-  specify integers as character strings, e.g. \code{"3"}.)
+  \code{\link{colors}}.  Alternatively, colors can be specified directly
+  in terms of their RGB components with a string of the form
+  \code{"#RRGGBB"} where each of the pairs \code{RR}, \code{GG},
+  \code{BB} consist of two hexadecimal digits giving a value in the
+  range \code{00} to \code{FF}.  Colors can also be specified by giving
+  an index into a small table of colors, the \code{\link{palette}}:
+  indices wrap round so with the default palette of size 8, \code{10} is
+  the same as \code{2}.  This provides compatibility with S.  Index
+  \code{0} corresponds to the background color.  Note that the palette
+  (apart from \code{0} which is per-device) is a per-session setting.
+
+  Negative integer colours were accepted prior to \R 3.0.0, but treated
+  inconsistently.  They are now errors.
 
   Additionally, \code{"transparent"} is \emph{transparent}, useful for
   filled areas (such as the background!), and just invisible for things
@@ -612,8 +630,10 @@ par(\dots, no.readonly = FALSE)
   them.
 
   The functions \code{\link{rgb}}, \code{\link{hsv}}, \code{\link{hcl}},
-  \code{\link{gray}} and \code{\link{rainbow}}
-  provide additional ways of generating colors.
+  \code{\link{gray}} and \code{\link{rainbow}} provide additional ways
+  of generating colors.
+
+  It was possible to specify color numbers as strings prior to \R 3.0.0.
 }
 
 \section{Line Type Specification}{
@@ -684,17 +704,17 @@ plot(1:2, xaxs = "i") # 'inner axis' w/o extra space
 par(c("usr", "xaxp"))
 
 ( nr.prof <-
-  c(prof.pilots=16,lawyers=11,farmers=10,salesmen=9,physicians=9,
-    mechanics=6,policemen=6,managers=6,engineers=5,teachers=4,
-    housewives=3,students=3,armed.forces=1))
+c(prof.pilots = 16, lawyers = 11, farmers = 10, salesmen = 9, physicians = 9,
+  mechanics = 6, policemen = 6, managers = 6, engineers = 5, teachers = 4,
+  housewives = 3, students = 3, armed.forces = 1))
 par(las = 3)
 barplot(rbind(nr.prof)) # R 0.63.2: shows alignment problem
-par(las = 0)# reset to default
+par(las = 0)  # reset to default
 
 require(grDevices) # for gray
 ## 'fg' use:
-plot(1:12, type = "b", main="'fg' : axes, ticks and box in gray",
-     fg = gray(0.7), bty="7" , sub=R.version.string)
+plot(1:12, type = "b", main = "'fg' : axes, ticks and box in gray",
+     fg = gray(0.7), bty = "7" , sub = R.version.string)
 
 ex <- function() {
    old.par <- par(no.readonly = TRUE) # all par settings which
@@ -706,8 +726,26 @@ ex <- function() {
    invisible() #-- now,  par(old.par)  will be executed
 }
 ex()
-}
 
+## Line types
+showLty <- function(ltys, xoff = 0, ...) {
+   stopifnot((n <- length(ltys)) >= 1)
+   op <- par(mar = rep(.5,4)); on.exit(par(op))
+   plot(0:1, 0:1, type = "n", axes = FALSE, ann = FALSE)
+   y <- (n:1)/(n+1)
+   clty <- as.character(ltys)
+   mytext <- function(x, y, txt)
+      text(x, y, txt, adj = c(0, -.3), cex = 0.8, ...)
+   abline(h = y, lty = ltys, ...); mytext(xoff, y, clty)
+   y <- y - 1/(3*(n+1))
+   abline(h = y, lty = ltys, lwd = 2, ...)
+   mytext(1/8+xoff, y, paste(clty," lwd = 2"))
+}
+showLty(c("solid", "dashed", "dotted", "dotdash", "longdash", "twodash"))
+par(new = TRUE)  # the same:
+showLty(c("solid", "44", "13", "1343", "73", "2262"), xoff = .2, col = 2)
+showLty(c("11", "22", "33", "44",   "12", "13", "14",   "21", "31"))
+}
 \keyword{iplot}
 \keyword{dplot}
 \keyword{environment}

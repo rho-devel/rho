@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-10   The R Core Team.
+ *  Copyright (C) 2000-12   The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -286,7 +286,7 @@ static void doneprogressbar(void *data)
 
 #define CPBUFSIZE 65536
 #define IBUFSIZE 4096
-static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
+static SEXP in_do_download(SEXP args)
 {
     SEXP scmd, sfile, smode, sheaders, agentFun;
     const char *url, *file, *mode, *headers;
@@ -297,7 +297,6 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
     int pc;
 #endif
 
-    checkArity(op, args);
     scmd = CAR(args); args = CDR(args);
     if(!isString(scmd) || length(scmd) < 1)
 	error(_("invalid '%s' argument"), "url");

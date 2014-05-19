@@ -15,8 +15,9 @@ assertError( new("dgeMatrix", Dim = as.integer(c(2,2)), x= as.double(1:5)))
 
 checkMatrix(m1 <- Matrix(1:6, ncol=2))
 checkMatrix(m2 <- Matrix(1:7 +0, ncol=3)) # a (desired) warning
-stopifnot(all(match(is(m1), c("dgeMatrix", "ddenseMatrix", "generalMatrix",
-	    "dMatrix", "denseMatrix", "Matrix", "compMatrix"),0) > 0),
+stopifnot(all(match(is(m1),
+   c("dgeMatrix", "ddenseMatrix", "generalMatrix", "dMatrix",
+     "denseMatrix", "compMatrix", "Matrix", "xMatrix", "mMatrix"), 0) > 0),
 	  dim(t(m1)) == 2:3,
 	  identical(m1, t(t(m1))))
 c.nam <- paste("C",1:2, sep='')
@@ -48,7 +49,7 @@ stopifnot(identical(mc., mcm),
 
 checkMatrix(eq <- cm == cs)
 stopifnot(all(eq@x),
-	  identical3(eq, cs == cp, cm == cp),
+	  identical3(pack(eq), cs == cp, cm == cp),
 	  as.logical(!(cs < cp)),
 	  identical4(!(cs < cp), !(cp > cs), cp <= cs, cs >= cp))
 
@@ -97,6 +98,8 @@ set.seed(3) ; (p9 <- as(sample(9), "pMatrix"))
 ind.try <- try(p9[1,1] <- 1, silent = TRUE)
 stopifnot(grep("replacing.*sensible", ind.try[1]) == 1,
 	  is.logical(p9[1,]),
+	  is(p9[2,, drop=FALSE], "indMatrix"),
+	  is(p9[9:1,], "indMatrix"),
 	  isTRUE(p9[-c(1:6, 8:9), 1]),
 	  identical(t(p9), solve(p9)),
 ##	  identical(p9[TRUE,], as(p9, "ngTMatrix")),
@@ -116,7 +119,9 @@ ip <- c(1:2, 4:3, 6:5) # permute the 'i' and 'x' slot just "inside column":
 m.@i <- m.i <- mm@i[ip]
 m.@x <- m.x <- mm@x[ip]
 stopifnot(grep("row indices are not", validObject(m., test=TRUE)) == 1)
-##
+Matrix:::.sortCsparse(m.) # don't use this at home, boys!
+m. # now is fixed
+
 ## Make sure that validObject() objects...
 ## 1) to wrong 'p'
 m. <- mm; m.@p[1] <- 1L

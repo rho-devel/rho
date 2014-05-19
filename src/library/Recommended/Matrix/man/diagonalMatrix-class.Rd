@@ -59,6 +59,7 @@
 % \alias{diag,ldiMatrix-method}
 \alias{which,ldiMatrix-method}
 %
+\alias{Ops,diagonalMatrix,triangularMatrix-method}
 \alias{Ops,ddiMatrix,sparseMatrix-method}
 \alias{Ops,sparseMatrix,ddiMatrix-method}
 \alias{Ops,ldiMatrix,sparseMatrix-method}
@@ -67,6 +68,10 @@
 \alias{Ops,numeric,ddiMatrix-method}
 \alias{Ops,ldiMatrix,numeric-method}
 \alias{Ops,numeric,ldiMatrix-method}
+\alias{Ops,ddiMatrix,logical-method}
+\alias{Ops,logical,ddiMatrix-method}
+\alias{Ops,ldiMatrix,logical-method}
+\alias{Ops,logical,ldiMatrix-method}
 %
 \alias{Ops,ddiMatrix,ANY-method}
 \alias{Ops,ANY,ddiMatrix-method}
@@ -85,10 +90,17 @@
 \alias{Ops,ddiMatrix,ldiMatrix-method}
 \alias{Ops,ldiMatrix,ddiMatrix-method}
 \alias{Ops,ldiMatrix,ldiMatrix-method}
+\alias{Arith,triangularMatrix,diagonalMatrix-method}
+\alias{Compare,triangularMatrix,diagonalMatrix-method}
+\alias{Logic,triangularMatrix,diagonalMatrix-method}
 \alias{Arith,numeric,ddiMatrix-method}
 \alias{Arith,numeric,ldiMatrix-method}
 \alias{Arith,ddiMatrix,numeric-method}
 \alias{Arith,ldiMatrix,numeric-method}
+\alias{Arith,logical,ddiMatrix-method}
+\alias{Arith,logical,ldiMatrix-method}
+\alias{Arith,ddiMatrix,logical-method}
+\alias{Arith,ldiMatrix,logical-method}
 \alias{-,ddiMatrix,missing-method}
 \alias{-,ldiMatrix,missing-method}
 
@@ -222,10 +234,8 @@
 \alias{tcrossprod,lgeMatrix,diagonalMatrix-method}
 \alias{tcrossprod,matrix,diagonalMatrix-method}
 \alias{tcrossprod,sparseMatrix,diagonalMatrix-method}
-
-\alias{solve,diagonalMatrix,Matrix-method}
-\alias{solve,diagonalMatrix,matrix-method}
-\alias{solve,diagonalMatrix,missing-method}
+%\alias{solve,diagonalMatrix,Matrix-method}--> solve-methods.Rd
+\alias{summary,diagonalMatrix-method}
 \description{
   Class "diagonalMatrix" is the virtual class of all diagonal matrices.
 }
@@ -267,7 +277,7 @@
     \cr and many more methods
 
     \item{solve}{\code{signature(a = "diagonalMatrix", b, ...)}: is
-      trivially implemented, of course.}
+      trivially implemented, of course; see also \code{\link{solve-methods}}.}
 
     \item{which}{\code{signature(x = "nMatrix")}, semantically
       equivalent to \pkg{base} function \code{\link{which}(x, arr.ind)}.}
@@ -281,10 +291,17 @@
       typically very desirable.  Note that when \code{e2} contains
       off-diagonal zeros or \code{\link{NA}}s, we implicitly use \eqn{0 / x = 0}, hence
       differing from traditional \R arithmetic (where \eqn{0 / 0
-      \mapsto \mbox{NaN}}{0/0 |-> NaN}), in order to preserve sparsity.}
+	\mapsto \mbox{NaN}}{0/0 |-> NaN}), in order to preserve sparsity.}
+
+    \item{summary}{\code{(object = "diagonalMatrix")}: Returns
+      an object of S3 class \code{"diagSummary"} which is the summary of
+      the vector \code{object@x} plus a simple heading, and an
+      appropriate \code{\link{print}} method.}
   }
 }
 \seealso{
+  \code{\link{Diagonal}()} as constructor of these matrices, and
+  \code{\link{isDiagonal}}.
   \code{\linkS4class{ddiMatrix}} and \code{\linkS4class{ldiMatrix}} are
   \dQuote{actual} classes extending \code{"diagonalMatrix"}.
 }

@@ -14,7 +14,7 @@
     = FUN(X[arrayindex.x], Y[arrayindex.y], \dots)}.
 }
 \usage{
-outer(X, Y, FUN="*", \dots)
+outer(X, Y, FUN = "*", \dots)
 X \%o\% Y
 }
 
@@ -29,7 +29,7 @@ X \%o\% Y
   \code{X} and \code{Y} must be suitable arguments for \code{FUN}.  Each
   will be extended by \code{\link{rep}} to length the products of the
   lengths of \code{X} and \code{Y} before \code{FUN} is called.
-    
+
   \code{FUN} is called with these two extended vectors as
   arguments. Therefore, it must be a vectorized function (or the
   name of one), expecting at
@@ -43,7 +43,7 @@ X \%o\% Y
   \code{FUN = "*"} is handled internally as a special case, \emph{via}
   \code{as.vector(X) \%*\% t(as.vector(Y))}, and is intended only for
   numeric vectors and arrays.
-  
+
   \code{\%o\%} is binary operator providing a wrapper for
   \code{outer(x, y, "*")}.
 }
@@ -63,7 +63,7 @@ X \%o\% Y
 x <- 1:9; names(x) <- x
 # Multiplication & Power Tables
 x \%o\% x
-y <- 2:8; names(y) <- paste(y,":",sep="")
+y <- 2:8; names(y) <- paste(y,":", sep = "")
 outer(y, x, "^")
 
 outer(month.abb, 1999:2003, FUN = "paste")

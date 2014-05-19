@@ -142,7 +142,9 @@ get_lib_header(FILE *fp, struct SAS_XPORT_header *head)
     int n;
 
     n = GET_RECORD(record, fp, 80);
-    if(n == 80 && strncmp(LIB_HEADER, record, 80) != 0)
+
+    /* GRW: Fail if not enough bytes OR wrong header record */
+    if(n != 80 || strncmp(LIB_HEADER, record, 80) != 0)
 	error(_("file not in SAS transfer format"));
 
     n = GET_RECORD(record, fp, 80);
@@ -163,8 +165,11 @@ get_lib_header(FILE *fp, struct SAS_XPORT_header *head)
 	return 0;
     record[80] = '\0';
     memcpy(head->sas_mod, record, 16);
-    if((strrchr(record+16, ' ') - record) != 79)
-	return 0;
+
+    /*GRW: The remaining field is an optional dataset label, 
+      which may contain data. */
+    /*if((strrchr(record+16, ' ') - record) != 79)*/
+    /*return 0;*/
     return 1;
 }
 
@@ -508,7 +513,11 @@ xport_info(SEXP xportFile)
     PROTECT(ans = allocVector(VECSXP, 0));
     PROTECT(ansNames = allocVector(STRSXP, 0));
 
-    while(namestrLength > 0 && (memLength = init_mem_info(fp, dsname)) > 0) {
+    /*GRW: File may contain *empty* datasets, so don't rely on
+      namestrLength==0 or memLength==0 to determine when to stop looping. */
+    while(!feof(fp))
+      {
+	memLength = init_mem_info(fp, dsname);
 
 	PROTECT(varInfo = allocVector(VECSXP, VAR_INFO_LENGTH));
 	setAttrib(varInfo, R_NamesSymbol, varInfoNames);

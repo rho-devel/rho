@@ -71,7 +71,7 @@
    Pinheiro, J. C. and Bates, D. M. (2000), \emph{Mixed-Effects Models in S
      and S-PLUS}, Springer, New York, esp. pp. 455-457.   
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{lme}}, %\code{\link{fixef.lme}},
   \code{\link{ranef.lme}},
   \code{\link{plot.ranef.lme}}, \code{\link{gsummary}}

@@ -17,7 +17,7 @@ if(FALSE) ## special case, relatively ugly, needed ??
 setAs("dgTMatrix", "dsCMatrix",
       function(from) {
           if (!isSymmetric(from))
-              stop("cannot coerce non-symmetric dgTMatrix to dsCMatrix class")
+	      stop("cannot coerce non-symmetric \"dgTMatrix\" to \"dsCMatrix\" class")
           upper <- from@i <= from@j
           uC <- as(new("dgTMatrix", Dim = from@Dim,  Dimnames = from@Dimnames,
                        i = from@i[upper],

@@ -84,6 +84,40 @@ SEXP dspMatrix_matrix_solve(SEXP a, SEXP b)
     return val;
 }
 
+SEXP dspMatrix_getDiag(SEXP x)
+
+{
+    int n = *INTEGER(GET_SLOT(x, Matrix_DimSym));
+    SEXP val = PROTECT(allocVector(REALSXP, n));
+
+    d_packed_getDiag(REAL(val), x, n);
+    UNPROTECT(1);
+    return val;
+}
+
+SEXP lspMatrix_getDiag(SEXP x)
+{
+    int n = *INTEGER(GET_SLOT(x, Matrix_DimSym));
+    SEXP val = PROTECT(allocVector(LGLSXP, n));
+
+    l_packed_getDiag(LOGICAL(val), x, n);
+    UNPROTECT(1);
+    return val;
+}
+
+SEXP dspMatrix_setDiag(SEXP x, SEXP d)
+{
+    int n = INTEGER(GET_SLOT(x, Matrix_DimSym))[0];
+    return d_packed_setDiag(REAL(d), LENGTH(d), x, n);
+}
+
+SEXP lspMatrix_setDiag(SEXP x, SEXP d)
+{
+    int n = INTEGER(GET_SLOT(x, Matrix_DimSym))[0];
+    return l_packed_setDiag(INTEGER(d), LENGTH(d), x, n);
+}
+
+
 SEXP dspMatrix_as_dsyMatrix(SEXP from)
 {
     SEXP val = PROTECT(NEW_OBJECT(MAKE_CLASS("dsyMatrix"))),

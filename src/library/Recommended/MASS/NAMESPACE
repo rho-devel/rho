@@ -36,9 +36,10 @@ export(denumerate.formula, renumerate.formula)
 #        summary.loglm, summary.negbin, summary.rlm)
 
 importFrom(graphics, pairs, plot)
-importFrom(stats, anova, biplot, coef, confint, extractAIC, family, fitted,
-	   logLik, model.frame, nobs, predict, profile, residuals, se.contrast,
-           simulate, terms, update, vcov)
+importFrom(stats, add1, anova, biplot, coef, confint, drop1,
+	   extractAIC, family, fitted, logLik, model.frame, nobs,
+	   predict, profile, residuals, se.contrast, simulate, terms,
+	   update, vcov)
 
 
 S3method("[", fractions)

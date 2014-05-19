@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2012  The R Core Team
+ *  Copyright (C) 1997--2013  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,6 +40,8 @@
 #endif
 
 #include <Defn.h>
+#include <Internal.h>
+#include <R_ext/Print.h>
 #include "basedecl.h"
 
 #include <vector>
@@ -51,7 +53,7 @@ using namespace CXXR;
 
 #undef COMPILING_R
 
-#define imax2(x, y) ((x < y) ? y : x)
+#define R_imax2(x, y) ((x < y) ? y : x)
 #include <Print.h>
 
 #ifdef HAVE_UNISTD_H
@@ -75,6 +77,7 @@ void F77_SYMBOL(rexitc)(char *msg, int *nchar);
 
 /* Many small functions are included from ../include/Rinlinedfuns.h */
 
+attribute_hidden
 Rboolean tsConform(SEXP x, SEXP y)
 {
     if ((x = getAttrib(x, R_TspSymbol)) != R_NilValue &&
@@ -126,7 +129,8 @@ int ncols(SEXP s)
 const static char type_msg[] = "invalid type passed to internal function\n";
 
 
-void attribute_hidden internalTypeCheck(SEXP call, SEXP s, SEXPTYPE type)
+#ifdef UNUSED
+void internalTypeCheck(SEXP call, SEXP s, SEXPTYPE type)
 {
     if (TYPEOF(s) != type) {
 	if (call)
@@ -135,6 +139,7 @@ void attribute_hidden internalTypeCheck(SEXP call, SEXP s, SEXPTYPE type)
 	    error(type_msg);
     }
 }
+#endif
 
 const static char * const truenames[] = {
     "T",
@@ -154,10 +159,10 @@ const static char * const falsenames[] = {
 
 SEXP asChar(SEXP x)
 {
-    if (LENGTH(x) >= 1) {
+    if (XLENGTH(x) >= 1) {
 	if (isVectorAtomic(x)) {
 	    int w, d, e, wi, di, ei;
-	    char buf[MAXELTSIZE];  /* probably 100 would suffice */
+	    char buf[MAXELTSIZE];  /* Probably 100 would suffice */
 
 	    switch (TYPEOF(x)) {
 	    case LGLSXP:
@@ -171,7 +176,7 @@ SEXP asChar(SEXP x)
 	    case INTSXP:
 		if (INTEGER(x)[0] == NA_INTEGER)
 		    return NA_STRING;
-		sprintf(buf, "%d", INTEGER(x)[0]);
+		snprintf(buf, MAXELTSIZE, "%d", INTEGER(x)[0]);
 		return mkChar(buf);
 	    case REALSXP:
 		PrintDefaults();
@@ -283,6 +288,7 @@ const char *type2char(SEXPTYPE t)
     return ""; /* for -Wall */
 }
 
+#ifdef UNUSED
 SEXP type2symbol(SEXPTYPE t)
 {
     int i;
@@ -296,7 +302,9 @@ SEXP type2symbol(SEXPTYPE t)
     error(_("type %d is unimplemented in '%s'"), t, "type2symbol");
     return R_NilValue; /* for -Wall */
 }
+#endif
 
+attribute_hidden
 void UNIMPLEMENTED_TYPEt(const char *s, SEXPTYPE t)
 {
     int i;
@@ -435,26 +443,6 @@ SEXP attribute_hidden EnsureString(SEXP s)
     return s;
 }
 
-/* used in modules */
-/*
-void Rf_checkArityCall(SEXP op, SEXP args, SEXP call)
-{
-    if (PRIMARITY(op) >= 0 && PRIMARITY(op) != length(args)) {
-	if (PRIMINTERNAL(op))
-	    error(ngettext("%d argument passed to .Internal(%s) which requires %d",
-		     "%d arguments passed to .Internal(%s) which requires %d",
-		     (unsigned long) length(args)),
-		  length(args), PRIMNAME(op), PRIMARITY(op));
-	else
-	    errorcall(call,
-		      ngettext("%d argument passed to '%s' which requires %d",
-			       "%d arguments passed to '%s' which requires %d",
-			       (unsigned long) length(args)),
-		      length(args), PRIMNAME(op), PRIMARITY(op));
-    }
-}
-*/
-
 void Rf_checkArityCall(SEXP op, SEXP args, SEXP call)
 {
     BuiltInFunction* func = SEXP_downcast<BuiltInFunction*>(op);
@@ -504,27 +492,23 @@ SEXP attribute_hidden do_nargs(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
+/* formerly used in subscript.c, in Utils.h */
 void attribute_hidden setIVector(int * vec, int len, int val)
 {
-    int i;
-    for (i = 0; i < len; i++)
-	vec[i] = val;
+    for (int i = 0; i < len; i++) vec[i] = val;
 }
 
 
+/* unused in R, in Utils.h, apparently used in Rcpp  */
 void attribute_hidden setRVector(double * vec, int len, double val)
 {
-    int i;
-    for (i = 0; i < len; i++)
-	vec[i] = val;
+    for (int i = 0; i < len; i++) vec[i] = val;
 }
 
 /* unused in R, in Rinternals.h */
 void setSVector(SEXP * vec, int len, SEXP val)
 {
-    int i;
-    for (i = 0; i < len; i++)
-	vec[i] = val;
+    for (int i = 0; i < len; i++) vec[i] = val;
 }
 
 
@@ -675,7 +659,7 @@ SEXP attribute_hidden do_merge(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP static intern_getwd(void)
 {
     SEXP rval = R_NilValue;
-    char buf[PATH_MAX+1];
+    char buf[4*PATH_MAX+1];
 
 #ifdef Win32
     {
@@ -744,7 +728,7 @@ SEXP attribute_hidden do_setwd(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_basename(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans, s = R_NilValue;	/* -Wall */
-    char sp[PATH_MAX];
+    char sp[4*PATH_MAX];
     wchar_t  buf[PATH_MAX], *p;
     const wchar_t *pp;
     int i, n;
@@ -767,7 +751,7 @@ SEXP attribute_hidden do_basename(SEXP call, SEXP op, SEXP args, SEXP rho)
 		while (p >= buf && *p == L'/') *(p--) = L'\0';
 	    }
 	    if ((p = wcsrchr(buf, L'/'))) p++; else p = buf;
-	    memset(sp, 0, PATH_MAX); /* safety */
+	    memset(sp, 0, 4*PATH_MAX); /* safety */
 	    wcstoutf8(sp, p, 4*wcslen(p) + 1);
 	    SET_STRING_ELT(ans, i, mkCharCE(sp, CE_UTF8));
 	}
@@ -821,7 +805,7 @@ SEXP attribute_hidden do_dirname(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP ans, s = R_NilValue;	/* -Wall */
     wchar_t buf[PATH_MAX], *p;
     const wchar_t *pp;
-    char sp[PATH_MAX];
+    char sp[4*PATH_MAX];
     int i, n;
 
     checkArity(op, args);
@@ -832,24 +816,26 @@ SEXP attribute_hidden do_dirname(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (STRING_ELT(s, i) == NA_STRING)
 	    SET_STRING_ELT(ans, i, NA_STRING);
 	else {
+	    memset(sp, 0, 4*PATH_MAX);
 	    pp = filenameToWchar(STRING_ELT(s, i), TRUE);
 	    if (wcslen(pp) > PATH_MAX - 1)
 		error(_("path too long"));
-	    wcscpy (buf, pp);
-	    R_wfixslash(buf);
-	    /* remove trailing file separator(s) */
-	    while ( *(p = buf + wcslen(buf) - 1) == L'/'  && p > buf
-		    && (p > buf+2 || *(p-1) != L':')) *p = L'\0';
-	    p = wcsrchr(buf, L'/');
-	    if(p == NULL) wcscpy(buf, L".");
-	    else {
-		while(p > buf && *p == L'/'
-		      /* this covers both drives and network shares */
-		      && (p > buf+2 || *(p-1) != L':')) --p;
-		p[1] = L'\0';
+	    if (wcslen(pp)) {
+		wcscpy (buf, pp);
+		R_wfixslash(buf);
+		/* remove trailing file separator(s) */
+		while ( *(p = buf + wcslen(buf) - 1) == L'/'  && p > buf
+			&& (p > buf+2 || *(p-1) != L':')) *p = L'\0';
+		p = wcsrchr(buf, L'/');
+		if(p == NULL) wcscpy(buf, L".");
+		else {
+		    while(p > buf && *p == L'/'
+			  /* this covers both drives and network shares */
+			  && (p > buf+2 || *(p-1) != L':')) --p;
+		    p[1] = L'\0';
+		}
+		wcstoutf8(sp, buf, 4*wcslen(buf)+1);
 	    }
-	    memset(sp, 0, PATH_MAX);
-	    wcstoutf8(sp, buf, 4*wcslen(buf)+1);
 	    SET_STRING_ELT(ans, i, mkCharCE(sp, CE_UTF8));
 	}
     }
@@ -875,16 +861,19 @@ SEXP attribute_hidden do_dirname(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    pp = R_ExpandFileName(translateChar(STRING_ELT(s, i)));
 	    if (strlen(pp) > PATH_MAX - 1)
 		error(_("path too long"));
-	    strcpy (buf, pp);
-	    /* remove trailing file separator(s) */
-	    while ( *(p = buf + strlen(buf) - 1) == fsp  && p > buf) *p = '\0';
-	    p = Rf_strrchr(buf, fsp);
-	    if(p == NULL)
-		strcpy(buf, ".");
-	    else {
-		while(p > buf && *p == fsp) --p;
-		p[1] = '\0';
-	    }
+	    size_t ll = strlen(pp);
+	    if (ll) { // svMisc calls this with ""
+		strcpy (buf, pp);
+		/* remove trailing file separator(s) */
+		while ( *(p = buf + ll - 1) == fsp  && p > buf) *p = '\0';
+		p = Rf_strrchr(buf, fsp);
+		if(p == NULL)
+		    strcpy(buf, ".");
+		else {
+		    while(p > buf && *p == fsp) --p;
+		    p[1] = '\0';
+		}
+	    } else buf[0] = '\0';
 	    SET_STRING_ELT(ans, i, mkChar(buf));
 	}
     }
@@ -967,7 +956,8 @@ SEXP attribute_hidden do_normalizepath(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_encodeString(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans, x, s;
-    int i, len, w, quote = 0, justify, na;
+    R_xlen_t i, len;
+    int w, quote = 0, justify, na;
     const char *cs;
     Rboolean findWidth;
 
@@ -995,21 +985,30 @@ SEXP attribute_hidden do_encodeString(SEXP call, SEXP op, SEXP args, SEXP rho)
     na = asLogical(CAD4R(args));
     if(na == NA_LOGICAL) error(_("invalid '%s' value"), "na.encode");
 
-    len = LENGTH(x);
+    len = XLENGTH(x);
     if(findWidth && justify < 3) {
 	w  = 0;
 	for(i = 0; i < len; i++) {
 	    s = STRING_ELT(x, i);
 	    if(na || s != NA_STRING)
-		w = imax2(w, Rstrlen(s, quote));
+		w = R_imax2(w, Rstrlen(s, quote));
 	}
 	if(quote) w +=2; /* for surrounding quotes */
     }
     PROTECT(ans = duplicate(x));
     for(i = 0; i < len; i++) {
 	s = STRING_ELT(x, i);
-	if(na || s != NA_STRING)
-	    SET_STRING_ELT(ans, i, mkChar(EncodeString(s, w, quote, Rprt_adj( justify))));
+	if(na || s != NA_STRING) {
+	    cetype_t ienc = getCharCE(s);
+	    if(ienc == CE_UTF8) {
+		const char *ss = EncodeString(s, w-1000000, quote, 
+					      Rprt_adj( justify));
+		SET_STRING_ELT(ans, i, mkCharCE(ss, ienc));
+	    } else {
+		const char *ss = EncodeString(s, w, quote, Rprt_adj( justify));
+		SET_STRING_ELT(ans, i, mkChar(ss));
+	    }
+	}
     }
     UNPROTECT(1);
     return ans;
@@ -1018,13 +1017,13 @@ SEXP attribute_hidden do_encodeString(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_encoding(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans, x;
-    int i, n;
+    R_xlen_t i, n;
     CXXRCONST char *tmp;
 
     checkArity(op, args);
     if (TYPEOF(x = CAR(args)) != STRSXP)
 	error(_("a character vector argument expected"));
-    n = LENGTH(x);
+    n = XLENGTH(x);
     PROTECT(ans = allocVector(STRSXP, n));
     for (i = 0; i < n; i++) {
 	if(IS_BYTES(STRING_ELT(x, i))) tmp = "bytes";
@@ -1040,7 +1039,8 @@ SEXP attribute_hidden do_encoding(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_setencoding(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP x, enc, tmp;
-    int i, m, n;
+    int m;
+    R_xlen_t i, n;
     const char *thiss;
 
     checkArity(op, args);
@@ -1053,7 +1053,7 @@ SEXP attribute_hidden do_setencoding(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("'value' must be of positive length"));
     if(NAMED(x)) x = duplicate(x);
     PROTECT(x);
-    n = LENGTH(x);
+    n = XLENGTH(x);
     for(i = 0; i < n; i++) {
 	cetype_t ienc = CE_NATIVE;
 	thiss = CHAR(STRING_ELT(enc, i % m)); /* ASCII */
@@ -1217,7 +1217,7 @@ static size_t Rwcrtomb(char *s, const wchar_t wc)
     return i + 1;
 }
 
-/* attribute_hidden? */
+attribute_hidden // but used in windlgs
 size_t wcstoutf8(char *s, const wchar_t *wc, size_t n)
 {
     ssize_t m, res=0;
@@ -1256,7 +1256,6 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 	vector<char> errv(4*strlen(s) + 1);
 	char *err = &errv[0], *q;
 	const char *p;
-	R_CheckStack();
 	for(p = s, q = err; *p; ) {
 	    /* don't do the first to keep ps state straight */
 	    if(p > s) used = mbrtowc(NULL, p, n, ps);
@@ -1278,11 +1277,13 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
     return used;
 }
 
+attribute_hidden
 Rboolean mbcsValid(const char *str)
 {
     return  CXXRCONSTRUCT(Rboolean, (int(mbstowcs(NULL, str, 0)) >= 0));
 }
 
+/* used in src/library/grDevices/src/cairo/cairoFns.c */
 #include "valid_utf8.h"
 Rboolean utf8Valid(const char *str)
 {
@@ -1407,7 +1408,9 @@ void F77_SYMBOL(rchkusr)(void)
     R_CheckUserInterrupt();
 }
 
-/* Return a copy of a string using memory from R_alloc */
+/* Return a copy of a string using memory from R_alloc.
+   NB: caller has to manage R_alloc stack.  Used in platform.c
+*/
 char *acopy_string(const char *in)
 {
     char *out;
@@ -1491,7 +1494,7 @@ int attribute_hidden Rf_AdobeSymbol2ucs2(int n)
 
 double R_strtod4(const char *str, char **endptr, char dec, Rboolean NA)
 {
-    long double ans = 0.0, p10 = 10.0, fac = 1.0;
+    LDOUBLE ans = 0.0, p10 = 10.0, fac = 1.0;
     int n, expn = 0, sign = 1, ndigits = 0, exph = -1;
     const char *p = str;
 
@@ -1623,7 +1626,7 @@ double R_atof(const char *str)
 SEXP attribute_hidden do_enc2(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, el;
-    int i;
+    R_xlen_t i;
     Rboolean duped = FALSE;
 
     checkArity(op, args);
@@ -1632,9 +1635,10 @@ SEXP attribute_hidden do_enc2(SEXP call, SEXP op, SEXP args, SEXP env)
     if (!isString(CAR(args)))
 	errorcall(call, "argumemt is not a character vector");
     ans = CAR(args);
-    for (i = 0; i < LENGTH(ans); i++) {
+    for (i = 0; i < XLENGTH(ans); i++) {
 	el = STRING_ELT(ans, i);
-	if(PRIMVAL(op) && !known_to_be_utf8) { /* enc2utf8 */
+	if (el == NA_STRING) { /* do nothing */ }
+	else if(PRIMVAL(op) && !known_to_be_utf8) { /* enc2utf8 */
 	    if(!IS_UTF8(el) && !IS_ASCII(el)) {
 		if (!duped) { PROTECT(ans = duplicate(ans)); duped = TRUE; }
 		SET_STRING_ELT(ans, i, 
@@ -1821,14 +1825,16 @@ SEXP attribute_hidden do_ICUset(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
+/* Caller has to manage the R_alloc stack */
 /* NB: strings can have equal collation weight without being identical */
+attribute_hidden
 int Scollate(SEXP a, SEXP b)
 {
     int result = 0;
     UErrorCode  status = U_ZERO_ERROR;
     UCharIterator aIter, bIter;
     const char *as = translateCharUTF8(a), *bs = translateCharUTF8(b);
-    size_t len1 = strlen(as), len2 = strlen(bs);
+    int len1 = int( strlen(as)), len2 = int( strlen(bs));
 
     if (collator == NULL && strcmp("C", setlocale(LC_COLLATE, NULL)) ) {
 	/* do better later */
@@ -1865,7 +1871,6 @@ static int Rstrcoll(const char *s1, const char *s2)
     vector<wchar_t> v1(strlen(s1)+1), v2(strlen(s2)+1);
     wchar_t* w1 = &v1[0];
     wchar_t* w2 = &v2[0];
-    R_CheckStack();
     utf8towcs(w1, s1, strlen(s1));
     utf8towcs(w2, s2, strlen(s2));
     return wcscoll(w1, w2);
@@ -1880,6 +1885,7 @@ int Scollate(SEXP a, SEXP b)
 }
 
 # else
+attribute_hidden
 int Scollate(SEXP a, SEXP b)
 {
     return strcoll(translateChar(a), translateChar(b));
@@ -1890,15 +1896,397 @@ int Scollate(SEXP a, SEXP b)
 
 #include <lzma.h>
 
-SEXP crc64ToString(SEXP in)
+SEXP attribute_hidden do_crc64(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    checkArity(op, args);
+    SEXP in = CAR(args);
     uint64_t crc = 0;
     char ans[17];
     if (!isString(in)) error("input must be a character string");
     const char *str = CHAR(STRING_ELT(in, 0));
 
-    /* Seems this is realy 64-bit only on 64-bit platforms */
+    /* Seems this is really 64-bit only on 64-bit platforms */
     crc = lzma_crc64(reinterpret_cast<CXXRCONST uint8_t *>(str), strlen(str), crc);
     snprintf(ans, 17, "%lx", static_cast<long unsigned int>( crc));
     return mkString(ans);
+}
+
+static void 
+bincode(double *x, R_xlen_t n, double *breaks, int nb,
+	int *code, int right, int include_border)
+{
+    int lo, hi, nb1 = nb - 1, newi;
+    int lft = !right;
+
+    /* This relies on breaks being sorted, so wise to check that */
+    for(int i = 1; i < nb; i++)
+	if(breaks[i-1] > breaks[i]) error(_("'breaks' is not sorted"));
+
+    for(R_xlen_t i = 0; i < n; i++) {
+	code[i] = NA_INTEGER;
+	if(!ISNAN(x[i])) {
+	    lo = 0;
+	    hi = nb1;
+	    if(x[i] <  breaks[lo] || breaks[hi] < x[i] ||
+	       (x[i] == breaks[lft ? hi : lo] && ! include_border)) ;
+	    else {
+		while(hi - lo >= 2) {
+		    newi = (hi + lo)/2;
+		    if(x[i] > breaks[newi] || (lft && x[i] == breaks[newi]))
+			lo = newi;
+		    else
+			hi = newi;
+		}
+		code[i] = lo + 1;
+	    }
+	}
+    }
+}
+
+/* 'breaks' cannot be a long vector as the return codes are integer. */
+SEXP attribute_hidden do_bincode(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    checkArity(op, args);
+    SEXP x, breaks, right, lowest;
+    x = CAR(args); args = CDR(args);
+    breaks = CAR(args); args = CDR(args);
+    right = CAR(args); args = CDR(args);
+    lowest = CAR(args);
+#ifdef LONG_VECTOR_SUPPORT
+    if (IS_LONG_VEC(breaks))
+	error(_("long vector '%s' is not supported"), "breaks");
+#endif
+    PROTECT(x = coerceVector(x, REALSXP));
+    PROTECT(breaks = coerceVector(breaks, REALSXP));
+    R_xlen_t n = XLENGTH(x);
+    int nB = LENGTH(breaks), sr = asLogical(right), sl = asLogical(lowest);
+    if (nB == NA_INTEGER) error(_("invalid '%s' argument"), "breaks");
+    if (sr == NA_INTEGER) error(_("invalid '%s' argument"), "right");
+    if (sl == NA_INTEGER) error(_("invalid '%s' argument"), "include.lowest");
+    SEXP codes;
+    PROTECT(codes = allocVector(INTSXP, n));
+    bincode(REAL(x), n, REAL(breaks), nB, INTEGER(codes), sr, sl);
+    UNPROTECT(3);
+    return codes;
+}
+
+SEXP attribute_hidden do_tabulate(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    checkArity(op, args);
+    SEXP in = CAR(args), nbin = CADR(args);
+    if (TYPEOF(in) != INTSXP)  error("invalid input");
+    R_xlen_t n = XLENGTH(in);
+    /* FIXME: could in principle be a long vector */
+    int nb = asInteger(nbin);
+    if (nb == NA_INTEGER || nb < 0) 
+	error(_("invalid '%s' argument"), "nbin");
+    SEXP ans = allocVector(INTSXP, nb);
+    int *x = INTEGER(in), *y = INTEGER(ans);
+    memset(y, 0, nb * sizeof(int));
+    for(R_xlen_t i = 0 ; i < n ; i++)
+	if (x[i] != NA_INTEGER && x[i] > 0 && x[i] <= nb) y[x[i] - 1]++;
+    return ans;
+}
+
+/* x can be a long vector but xt cannot since the result is integer */
+SEXP attribute_hidden do_findinterval(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    checkArity(op, args);
+    SEXP xt, x, right, inside;
+    xt = CAR(args); args = CDR(args);
+    x = CAR(args); args = CDR(args);
+    right = CAR(args); args = CDR(args);
+    inside = CAR(args);
+    if(TYPEOF(xt) != REALSXP || TYPEOF(x) != REALSXP) error("invalid input");
+#ifdef LONG_VECTOR_SUPPORT
+    if (IS_LONG_VEC(xt))
+	error(_("long vector '%s' is not supported"), "vec");
+#endif
+    int n = LENGTH(xt);
+    if (n == NA_INTEGER) error(_("invalid '%s' argument"), "vec");
+    R_xlen_t nx = XLENGTH(x);
+    int sr = asLogical(right), si = asLogical(inside);
+    if (sr == NA_INTEGER) 
+	error(_("invalid '%s' argument"), "rightmost.closed");
+    if (si == NA_INTEGER)
+	error(_("invalid '%s' argument"), "all.inside");
+    SEXP ans = allocVector(INTSXP, nx);
+    double *rxt = REAL(xt), *rx = REAL(x);
+    int ii = 1;
+    for(int i = 0; i < nx; i++) {
+	if (ISNAN(REAL(x)[i])) ii = NA_INTEGER;
+	else {
+	    int mfl = si;
+	    ii = findInterval(rxt, n, rx[i], CXXRCONSTRUCT(Rboolean, sr), CXXRCONSTRUCT(Rboolean, si), ii, &mfl);
+	}
+	INTEGER(ans)[i] = ii;
+    }
+    return ans;
+}
+
+#ifdef Win32
+// this includes RS.h
+# undef ERROR
+#endif
+#include <R_ext/Applic.h>
+SEXP attribute_hidden do_pretty(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    checkArity(op, args);
+    SEXP ans, nm, hi;
+    double l = asReal(CAR(args)); args = CDR(args);
+    if (!R_FINITE(l)) error(_("invalid '%s' argument"), "l");
+    double u = asReal(CAR(args)); args = CDR(args);
+    if (!R_FINITE(u)) error(_("invalid '%s' argument"), "u");
+    int n = asInteger(CAR(args)); args = CDR(args);
+    if (n == NA_INTEGER || n < 0) error(_("invalid '%s' argument"), "n");
+    int min_n = asInteger(CAR(args)); args = CDR(args);
+    if (min_n == NA_INTEGER || min_n < 0 || min_n > n) 
+	error(_("invalid '%s' argument"), "min.n");
+    double shrink = asReal(CAR(args)); args = CDR(args);
+    if (!R_FINITE(shrink) || shrink <= 0.) 
+	error(_("invalid '%s' argument"), "shrink.sml");
+    PROTECT(hi = coerceVector(CAR(args), REALSXP)); args = CDR(args);
+    double z;
+    if (!R_FINITE(z = REAL(hi)[0]) || z < 0.)
+	error(_("invalid '%s' argument"), "high.u.bias");
+    if (!R_FINITE(z = REAL(hi)[1]) || z < 0.)
+	error(_("invalid '%s' argument"), "u5.bias");
+    int eps = asInteger(CAR(args)); /* eps.correct */
+    if (eps == NA_INTEGER || eps < 0 || eps > 2) 
+	error(_("'eps.correct' must be 0, 1, or 2"));
+    R_pretty(&l, &u, &n, min_n, shrink, REAL(hi), eps, 1);
+    PROTECT(ans = allocVector(VECSXP, 3));
+    SET_VECTOR_ELT(ans, 0, ScalarReal(l));
+    SET_VECTOR_ELT(ans, 1, ScalarReal(u));
+    SET_VECTOR_ELT(ans, 2, ScalarInteger(n));
+    nm = allocVector(STRSXP, 3);
+    setAttrib(ans, R_NamesSymbol, nm);
+    SET_STRING_ELT(nm, 0, mkChar("l"));
+    SET_STRING_ELT(nm, 1, mkChar("u"));
+    SET_STRING_ELT(nm, 2, mkChar("n"));
+    UNPROTECT(2);
+    return ans;
+}
+
+/*
+    r <- .Internal(formatC(x, as.character(mode), width, digits, 
+                   as.character(format), as.character(flag), i.strlen))
+*/
+
+static void
+str_signif(void *x, R_xlen_t n, const char *type, int width, int digits,
+	   const char *format, const char *flag, char **result);
+
+SEXP attribute_hidden do_formatC(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    checkArity(op, args);
+    SEXP x = CAR(args); args = CDR(args);
+    if (!isVector(x)) error(_("'x' must be a vector"));
+    R_xlen_t n = XLENGTH(x);
+    const char *type = CHAR(STRING_ELT(CAR(args), 0)); args = CDR(args);
+    int width = asInteger(CAR(args)); args = CDR(args);
+    int digits = asInteger(CAR(args)); args = CDR(args);
+    const char *fmt = CHAR(STRING_ELT(CAR(args), 0)); args = CDR(args);
+    const char *flag = CHAR(STRING_ELT(CAR(args), 0)); args = CDR(args);
+    SEXP i_strlen = PROTECT(coerceVector(CAR(args), INTSXP));
+    char **cptr = static_cast<char **>( CXXR_alloc(n, sizeof(char*)));
+    for (R_xlen_t i = 0; i < n; i++) {
+	int ix = INTEGER(i_strlen)[i] + 2;
+	cptr[i] = static_cast<char *>( CXXR_alloc(ix + 1, sizeof(char)));
+	memset(cptr[i], ' ', ix);
+	cptr[i][ix] = 0;
+    }
+    void *px = NULL /* -Wall */;
+    switch(TYPEOF(x)) {
+    case INTSXP: px = INTEGER(x); break;
+    case REALSXP: px = REAL(x); break;
+    default: error("unsupported type ");
+    }
+    str_signif(px, n, type, width, digits, fmt, flag, cptr);
+    SEXP ans = PROTECT(allocVector(STRSXP, n));
+    for (R_xlen_t i = 0; i < n; i++) SET_STRING_ELT(ans, i, mkChar(cptr[i]));
+    UNPROTECT(2);
+    return ans;
+}
+
+/* Former src/appl/strsignif.c
+ *
+ *  Copyright (C) Martin Maechler, 1994, 1998
+ *  Copyright (C) 2001-2013 the R Core Team
+ *
+ *  I want you to preserve the copyright of the original author(s),
+ *  and encourage you to send me any improvements by e-mail. (MM).
+ *
+ *  Originally from Bill Dunlap
+ *  bill@stat.washington.edu
+ *  Wed Feb 21, 1990
+ *
+ *  Much improved by Martin Maechler, including the "fg" format.
+ *
+ *  Patched by Friedrich.Leisch@ci.tuwien.ac.at
+ *  Fri Nov 22, 1996
+ *
+ *  Some fixes by Ross Ihaka
+ *  ihaka@stat.auckland.ac.nz
+ *  Sat Dec 21, 1996
+ *  Integer arguments changed from "long" to "int"
+ *  Bus error due to non-writable strings fixed
+ *
+ *  BDR 2001-10-30 use R_alloc not Calloc as memory was not
+ *  reclaimed on error (and there are many error exits).
+ *
+ *	type	"double" or "integer" (R - numeric 'mode').
+ *
+ *	width	The total field width; width < 0 means to left justify
+ *		the number in this field (equivalent to flag = "-").
+ *		It is possible that the result will be longer than this,
+ *		but that should only happen in reasonable cases.
+ *
+ *	digits	The desired number of digits after the decimal point.
+ *		digits < 0 uses the default for C, namely 6 digits.
+ *
+ *	format	"d" (for integers) or "f", "e","E", "g", "G" (for 'real')
+ *		"f" gives numbers in the usual "xxx.xxx" format;
+ *		"e" and "E" give n.ddde<nn> or n.dddE<nn> (scientific format);
+ *		"g" and "G" puts them into scientific format if it saves
+ *		space to do so.
+ *	    NEW: "fg" gives numbers in "xxx.xxx" format as "f",
+ *		  ~~  however, digits are *significant* digits and,
+ *		      if digits > 0, no trailing zeros are produced, as in "g".
+ *
+ *	flag	Format modifier as in K&R "C", 2nd ed., p.243;
+ *		e.g., "0" pads leading zeros; "-" does left adjustment
+ *		the other possible flags are  "+", " ", and "#".
+ *	  New (Feb.98): if flag has more than one character, all are passed..
+ */
+
+/* <UTF8> char here is either ASCII or handled as a whole */
+
+#ifdef Win32
+/* avoid latest MinGW's redefinition in stdio.h */
+int trio_sprintf(char *buffer, const char *format, ...);
+#define sprintf trio_sprintf
+#endif
+
+#include <Rmath.h>		/* fround */
+
+static
+void str_signif(void *x, R_xlen_t n, const char *type, int width, int digits,
+		const char *format, const char *flag, char **result)
+{
+    int dig = abs(digits);
+    Rboolean rm_trailing_0 = CXXRCONSTRUCT(Rboolean, digits >= 0);
+    Rboolean do_fg = CXXRCONSTRUCT(Rboolean, !strcmp("fg", format)); /* TRUE  iff  format == "fg" */
+    double xx;
+    int iex;
+    size_t j, len_flag = strlen(flag);
+    const void *vmax = vmaxget();
+
+    char *f0  =	 R_alloc(size_t( do_fg) ? 1+1+len_flag+3 : 1, sizeof(char));
+    char *form = R_alloc(size_t( 1)+1+len_flag+3 + strlen(format),
+			 sizeof(char));
+
+    if (width == 0)
+	error("width cannot be zero");
+
+    if (strcmp("d", format) == 0) {
+	if (len_flag == 0)
+	    strcpy(form, "%*d");
+	else {
+	    strcpy(form, "%");
+	    strcat(form, flag);
+	    strcat(form, "*d");
+	}
+	if (strcmp("integer", type) == 0)
+	    for (R_xlen_t i = 0; i < n; i++)
+		snprintf(result[i], strlen(result[i]) + 1,
+			 form, width, (static_cast<int *>(x))[i]);
+	else
+	    error("'type' must be \"integer\" for  \"d\"-format");
+    }
+    else { /* --- floating point --- */
+	if (len_flag == 0)
+	    strcpy(form, "%*.*");
+	else {
+	    strcpy(form, "%");
+	    strcat(form, flag);
+	    strcat(form, "*.*");
+	}
+
+	if(do_fg) {
+	    strcpy(f0, "%");
+	    strcat(f0, flag);
+	    strcat(f0, ".*f");
+	    strcat(form, "g");
+	}
+	else
+	    strcat(form, format);
+#ifdef DEBUG
+	fprintf(stderr, "strsignif.c: form='%s', width=%d, dig=%d\n",
+		form, width, dig);
+	if(do_fg) fprintf(stderr, "\t\"fg\": f0='%s'.", f0);
+#endif
+	if (strcmp("double", type) == 0) {
+	    if(do_fg) /* do smart "f" : */
+		for (R_xlen_t i = 0; i < n; i++) {
+		    xx = (static_cast<double *>(x))[i];
+		    if(xx == 0.)
+			strcpy(result[i], "0");
+		    else {
+			/* This was iex= (int)floor(log10(fabs(xx)))
+			   That's wrong, as xx might get rounded up,
+			   and we do need some fuzz or 99.5 is correct.
+			*/
+			double xxx = fabs(xx), X;
+			iex = int(floor(log10(xxx) + 1e-12));
+			X = fround(xxx/pow(10.0, double(iex)) + 1e-12,
+				   double(dig-1));
+			if(iex > 0 &&  X >= 10) {
+			    xx = X * pow(10.0, double(iex));
+			    iex++;
+			}
+			if(iex == -4 && fabs(xx)< 1e-4) {/* VERY rare case */
+			    iex = -5;
+			}
+			if(iex < -4) {
+				/* "g" would result in 'e-' representation:*/
+			    snprintf(result[i], strlen(result[i]) + 1,
+				     f0, dig-1 + -iex, xx);
+#ifdef DEBUG
+			    fprintf(stderr, " x[%d]=%g, iex=%d\n", i, xx, iex);
+			    fprintf(stderr, "\tres. = '%s'; ", result[i]);
+#endif
+			    /* Remove trailing  "0"s __ IFF flag has no '#': */
+			    if(rm_trailing_0) {
+				j = strlen(result[i])-1;
+#ifdef DEBUG
+				int jL = j;
+#endif
+				while(result[i][j] == '0') j--;
+				result[i][j+1] = '\0';
+#ifdef DEBUG
+				fprintf(stderr, "\t>>> jL=%d, j=%d; new res= '%s'\n",
+					jL, j, result[i]);
+#endif
+			    }
+
+			} else { /* iex >= -4:	NOT "e-" */
+				/* if iex >= dig, would have "e+" representation */
+#ifdef DEBUG
+			    fprintf(stderr, "\t  iex >= -4; using %d for 'dig'\n",
+				    (iex >= dig) ? (iex+1) : dig);
+#endif
+			    snprintf(result[i], strlen(result[i]) + 1,
+				     form, width, (iex >= dig) ? (iex+1) : dig, xx);
+			}
+		    } /* xx != 0 */
+		} /* if(do_fg) for(i..) */
+	    else
+		for (R_xlen_t i = 0; i < n; i++)
+		    snprintf(result[i], strlen(result[i]) + 1, 
+			     form, width, dig, (static_cast<double *>(x))[i]);
+	} else
+	    error("'type' must be \"real\" for this format");
+    }
+    vmaxset(vmax);
 }

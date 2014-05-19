@@ -112,7 +112,7 @@ VR_sp_pp2(Sfloat *x, Sfloat *y, Sint *npt, Sint *k,
     g = 2.0 / (n * n);
     fs1 = min(fss, 0.5 * sqrt(ax * ax + ay * ay));
     s1 = kk / fss;
-    k1 = floor(s1 * fs1 + 1e-3);
+    k1 = (int) floor(s1 * fs1 + 1e-3);
     *k = k1;
     rr = fs1 * fs1;
     for (i = 0; i < kk; i++)
@@ -127,7 +127,7 @@ VR_sp_pp2(Sfloat *x, Sfloat *y, Sint *npt, Sint *k,
 	    if (a < rr) {
 		a = sqrt(a);
 		dm = min(a, dm);
-		ib = floor(s1 * a);
+		ib = (int) floor(s1 * a);
 		if (ib < k1)
 		    h[ib] += g * (edge(xi, yi, a) + edge(x[j], y[j], a));
 	    }
@@ -182,7 +182,7 @@ VR_simpat(Sint *npt, Sfloat *x, Sfloat *y, Sfloat *c,
     mm = 4 * n;
     if (*init > 0) mm = 10 * mm;
     for (i = 1; i <= mm; i++) {
-	id = floor(n * UNIF);
+	id = (int) floor(n * UNIF);
 	x[id] = x[0];
 	y[id] = y[0];
 	do {

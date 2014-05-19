@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -32,6 +32,10 @@
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
+
+/* 
+   Not part of the API, subject to change at any time.
+*/
 
 #ifndef R_CALLBACKS_H
 #define R_CALLBACKS_H
@@ -79,18 +83,19 @@ R_ToplevelCallbackEl* Rf_addTaskCallback(R_ToplevelCallback cb, void *data, void
 
 
 /*
- The following definitions are for callbacks to R functions and methods
- related to user-level tables. This is currently implemented in a 
- separate package and these declarations allow the package to 
- interface to the internal R code.
-
- See http://developer.r-project.org/RObjectTables.pdf.
- */
+  The following definitions are for callbacks to R functions and
+  methods related to user-level tables.  This was implemented in a
+  separate package on Omegahat and these declarations allow the package
+  to interface to the internal R code.
+  
+  See http://developer.r-project.org/RObjectTables.pdf,
+  http://www.omegahat.org/RObjectTables/
+*/
 
 typedef struct  _R_ObjectTable R_ObjectTable;
 
-/* Do we actually need the exists() since it is never called but R uses get to see if
-   the symbol is bound to anything? */
+/* Do we actually need the exists() since it is never called but R
+   uses get to see if the symbol is bound to anything? */
 typedef Rboolean (*Rdb_exists)(const char * const name, Rboolean *canCache, R_ObjectTable *);
 typedef SEXP     (*Rdb_get)(const char * const name, Rboolean *canCache, R_ObjectTable *);
 typedef int      (*Rdb_remove)(const char * const name, R_ObjectTable *);

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -623,6 +623,7 @@ void setforeground(control obj, rgb fg)
     	    COLORREF wincolour = RGB((fg&gaRed)>>16,(fg&gaGreen)>>8,(fg&gaBlue)); 
     	    format.cbSize = sizeof(format);
     	    format.dwMask = CFM_COLOR;
+    	    format.dwEffects = 0;
     	    format.crTextColor = wincolour;
 
 	    sendmessage(obj->handle, EM_SETCHARFORMAT, 0, (LPARAM)&format);

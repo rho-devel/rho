@@ -30,7 +30,7 @@ getCovariate(object, form, data)
   in S and S-PLUS", Springer, esp. p. 100.  
 }
 
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{
     \code{\link{getCovariate.corStruct}},

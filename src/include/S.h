@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -85,9 +85,11 @@ typedef struct {
 # define complex S_complex
 #endif
 
+#ifndef NO_CALL_R
 /* Not quite full compatibility: beware! */
 /* void	call_R(char*, long, void**, char**, long*, char**, long, char**);*/
 #define call_S call_R
+#endif
 
 
 #ifdef __cplusplus

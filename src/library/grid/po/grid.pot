@@ -1,14 +1,14 @@
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR The R Foundation
+# Copyright (C) YEAR The R Core Team
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: bugs@R-project.org\n"
-"POT-Creation-Date: 2012-01-13 11:24+0000\n"
+"Project-Id-Version: R 3.0.1\n"
+"Report-Msgid-Bugs-To: bugs.r-project.org\n"
+"POT-Creation-Date: 2013-06-09 21:53+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,55 +18,55 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: grid.c:214
-msgid "Cannot clip to rotated viewport"
+msgid "cannot clip to rotated viewport"
 msgstr ""
 
-#: grid.c:673 grid.c:678 grid.c:767 grid.c:772
-msgid "Cannot pop the top-level viewport (grid and graphics output mixed?)"
+#: grid.c:684 grid.c:689 grid.c:778 grid.c:783
+msgid "cannot pop the top-level viewport ('grid' and 'graphics' output mixed?)"
 msgstr ""
 
-#: grid.c:952
+#: grid.c:963
 msgid "attempt to plot on null device"
 msgstr ""
 
-#: grid.c:1232
-msgid "There is no layout defined"
+#: grid.c:1243
+msgid "there is no layout defined"
 msgstr ""
 
-#: grid.c:1452
-msgid "Polygon edge not found (zero-width or zero-height?)"
+#: grid.c:1463
+msgid "polygon edge not found (zero-width or zero-height?)"
 msgstr ""
 
-#: grid.c:1461
-msgid "Polygon edge not found"
+#: grid.c:1472
+msgid "polygon edge not found"
 msgstr ""
 
-#: grid.c:1615
-msgid "Require at least two points to draw arrow"
+#: grid.c:1626
+msgid "require at least two points to draw arrow"
 msgstr ""
 
-#: grid.c:1931
-msgid "Non-finite control point in Xspline"
+#: grid.c:1942
+msgid "non-finite control point in Xspline"
 msgstr ""
 
-#: grid.c:2796
+#: grid.c:2807
 msgid "non-finite x or y in graphics path"
 msgstr ""
 
-#: grid.c:3286
+#: grid.c:3297
 msgid "invalid plotting symbol"
 msgstr ""
 
-#: grid.c:3372
-msgid "Unable to clip to rotated rectangle"
+#: grid.c:3383
+msgid "unable to clip to rotated rectangle"
 msgstr ""
 
-#: layout.c:519
-msgid "invalid layout.pos.row"
+#: layout.c:587
+msgid "invalid 'layout.pos.row'"
 msgstr ""
 
-#: layout.c:523
-msgid "invalid layout.pos.col"
+#: layout.c:591
+msgid "invalid 'layout.pos.col'"
 msgstr ""
 
 #: matrix.c:49
@@ -74,15 +74,15 @@ msgid "singular transformation matrix"
 msgstr ""
 
 #: state.c:169
-msgid "Unable to store grid state.  Too many devices open?"
+msgid "unable to store 'grid' state.  Too many devices open?"
 msgstr ""
 
 #: unit.c:260 unit.c:410 unit.c:1204 unit.c:1284 unit.c:1364 unit.c:1444
-msgid "Unimplemented unit function"
+msgid "unimplemented unit function"
 msgstr ""
 
 #: unit.c:893 unit.c:1639
-msgid "Illegal unit or unit not yet implemented"
+msgid "invalid unit or unit not yet implemented"
 msgstr ""
 
 #: unit.c:1798
@@ -90,13 +90,13 @@ msgid "Invalid unit"
 msgstr ""
 
 #: unit.c:1814
-msgid "Units must be character"
+msgid "'units' must be character"
 msgstr ""
 
 #: unit.c:1817
-msgid "Units must be of length > 0"
+msgid "'units' must be of length > 0"
 msgstr ""
 
 #: viewport.c:317
-msgid "Non-finite location and/or size for viewport"
+msgid "non-finite location and/or size for viewport"
 msgstr ""

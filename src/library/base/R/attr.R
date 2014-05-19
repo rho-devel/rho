@@ -1,6 +1,8 @@
 #  File src/library/base/R/attr.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -17,7 +19,7 @@
 `mostattributes<-` <- function(obj, value)
 {
     if(length(value)) {
-	if(!is.list(value)) stop("RHS must be list")
+	if(!is.list(value)) stop("'value' must be a list")
 	if(h.nam <- !is.na(inam <- match("names", names(value)))) {
 	    n1 <- value[[inam]];	value <- value[-inam] }
 	if(h.dim <- !is.na(idin <- match("dim", names(value)))) {

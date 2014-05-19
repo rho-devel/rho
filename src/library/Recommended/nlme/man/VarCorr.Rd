@@ -47,7 +47,7 @@ VarCorr(x, sigma, rdig)
  Pinheiro, J.C., and Bates, D.M. (2000) "Mixed-Effects Models
  in S and S-PLUS", Springer, esp. pp. 100, 461.  
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{lme}}, \code{\link{nlme}}}
 \examples{
 fm1 <- lme(distance ~ age, data = Orthodont, random = ~age)

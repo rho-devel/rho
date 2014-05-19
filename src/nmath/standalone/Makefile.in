@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -81,7 +81,7 @@ libRmath_la_SOURCES = $(SOURCES)
 libRmath_la_OBJECTS = $(OBJECTS:.o=.lo)
 libRmath_la_LDFLAGS =
 
-CLEANFILES = Makedeps *.d *.o *.lo test $(SOURCES)
+CLEANFILES = Makedeps *.d *.o *.lo test check.log $(SOURCES)
 DISTCLEANFILES = Makefile $(Rexeclibdir_LIBRARIES) $(Rexeclibdir_LTLIBRARIES)
 
 DEFS = -DHAVE_CONFIG_H -DMATHLIB_STANDALONE
@@ -100,7 +100,16 @@ inc: Makefile
 
 ## can't run test, as that depends on OS-specific way to set library path.
 ## clean is useful, but forces a remake each time which MM did not want
-check: all # clean
+#check: all # clean
+
+check:
+	@rm -f check.log
+	@if test -n "${TEST_MC_CORES}"; then \
+	  $(MAKE) -j ${TEST_MC_CORES} all > check.log 2>&1; \
+	else \
+	  $(MAKE) all > check.log 2>&1; \
+	fi
+	@$(ECHO) "check output can be found in src/nmath/standalone/check.log"
 
 Copy:
 	@$(ECHO) "Copying source files"
@@ -130,8 +139,9 @@ libRmath.a: $(libRmath_a_OBJECTS)
 	$(AR) cr $@ $(libRmath_a_OBJECTS)
 	$(RANLIB) $@
 
+## under peculiar circumstances, $(LIBM) here helps.
 $(libRmath_la): $(libRmath_la_OBJECTS)
-	$(DYLIB_LINK) -o $@ $(libRmath_la_LDFLAGS) $(libRmath_la_OBJECTS)
+	$(DYLIB_LINK) -o $@ $(libRmath_la_LDFLAGS) $(libRmath_la_OBJECTS) $(LIBM)
 
 test: $(srcdir)/test.c
 	$(CC) -o $@ $(ALL_CPPFLAGS) $(ALL_CFLAGS) $(srcdir)/test.c \

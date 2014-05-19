@@ -37,6 +37,12 @@ setMethod("determinant", signature(x = "dtpMatrix", logarithm = "logical"),
 setMethod("diag", signature(x = "dtpMatrix"),
 	  function(x, nrow, ncol) .Call(dtpMatrix_getDiag, x),
 	  valueClass = "numeric")
+setMethod("diag<-", signature(x = "dtpMatrix"),
+	  function(x, value) {
+	      .Call(dtpMatrix_setDiag,
+		    if(x@diag == "U") .dense.diagU2N(x, "d", isPacked=TRUE) else x,
+		    value)
+	  })
 
 setMethod("norm", signature(x = "dtpMatrix", type = "character"),
 	  function(x, type, ...) .Call(dtpMatrix_norm, x, type),
@@ -68,11 +74,7 @@ setMethod("solve", signature(a = "dtpMatrix", b="matrix"),
 	  function(a, b, ...) .Call(dtpMatrix_matrix_solve, a, b),
 	  valueClass = "dgeMatrix")
 
+## FIXME: speed up
 setMethod("t", signature(x = "dtpMatrix"),
           function(x) as(t(as(x, "dtrMatrix")), "dtpMatrix"),
           valueClass = "dtpMatrix")
-
-setMethod("unpack", signature(x = "dtpMatrix"),
-          function(x, ...) as(x, "dtrMatrix"),
-          valueClass = "dtrMatrix")
-###

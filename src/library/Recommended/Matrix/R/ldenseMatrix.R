@@ -16,9 +16,9 @@ setAs("ltpMatrix", "dtpMatrix", function(from) l2d_Matrix(from, "ltpMatrix"))
 ## all need be coercable to "lgeMatrix":
 
 setAs("lsyMatrix", "lgeMatrix",	 function(from)
-      .Call(lsyMatrix_as_lgeMatrix, from, 0:0))
+      .Call(lsyMatrix_as_lgeMatrix, from, 0L))
 setAs("ltrMatrix", "lgeMatrix",	 function(from)
-      .Call(ltrMatrix_as_lgeMatrix, from, 0:0))
+      .Call(ltrMatrix_as_lgeMatrix, from, 0L))
 setAs("ltpMatrix", "lgeMatrix",
       function(from) as(as(from, "ltrMatrix"), "lgeMatrix"))
 setAs("lspMatrix", "lgeMatrix",
@@ -33,20 +33,16 @@ setAs("lgeMatrix", "lspMatrix",
 ## packed <->  non-packed :
 
 setAs("lspMatrix", "lsyMatrix",
-      function(from)
-      .Call(lspMatrix_as_lsyMatrix, from, 0:0))
+      function(from) .Call(lspMatrix_as_lsyMatrix, from, 0L))
 
 setAs("lsyMatrix", "lspMatrix",
-      function(from)
-      .Call(lsyMatrix_as_lspMatrix, from, 0:0))
+      function(from) .Call(lsyMatrix_as_lspMatrix, from, 0L))
 
 setAs("ltpMatrix", "ltrMatrix",
-      function(from)
-      .Call(ltpMatrix_as_ltrMatrix, from, 0:0))
+      function(from) .Call(ltpMatrix_as_ltrMatrix, from, 0L))
 
 setAs("ltrMatrix", "ltpMatrix",
-      function(from)
-      .Call(ltrMatrix_as_ltpMatrix, from, 0:0))
+      function(from) .Call(ltrMatrix_as_ltpMatrix, from, 0L))
 
 
 
@@ -123,20 +119,56 @@ setMethod("as.logical", signature(x = "ldenseMatrix"),
 
 ###----------------------------------------------------------------------
 
+setMethod("diag", signature(x = "lgeMatrix"),
+	  function(x, nrow, ncol) .Call(lgeMatrix_getDiag, x))
+
+setMethod("diag", signature(x = "lsyMatrix"),
+	  function(x, nrow, ncol) .Call(lgeMatrix_getDiag, x))
+setMethod("diag", signature(x = "lspMatrix"),
+	  function(x, nrow, ncol) .Call(lspMatrix_getDiag, x))
+
 setMethod("diag", signature(x = "ltrMatrix"),
           function(x, nrow, ncol) .Call(ltrMatrix_getDiag, x))
-
 setMethod("diag", signature(x = "ltpMatrix"),
           function(x, nrow, ncol) .Call(ltpMatrix_getDiag, x))
 
 
-setMethod("diag", signature(x = "ldenseMatrix"),
-	  function(x, nrow, ncol) diag(as(x, "lgeMatrix")))
 setMethod("diag", signature(x = "ndenseMatrix"),# << the "same"
-	  function(x, nrow, ncol) diag(as(x, "ldenseMatrix")))
+          function(x, nrow, ncol) diag(as(x, "ldenseMatrix")))
 
-setMethod("diag", signature(x = "lgeMatrix"),
-	  function(x, nrow, ncol) .Call(lgeMatrix_getDiag, x))
+
+## --- *SETTING* of diagonal :  diag(x) <- value ---------
+## --- =====================   faster than default  x[cbind[c(i,i)]] <- value
+setMethod("diag<-", signature(x = "lgeMatrix"),
+	  function(x, value) .Call(lgeMatrix_setDiag, x, value))
+setMethod("diag<-", signature(x = "lsyMatrix"),
+	  function(x, value) .Call(lgeMatrix_setDiag, x, value))
+setMethod("diag<-", signature(x = "lspMatrix"),
+	  function(x, value) .Call(lspMatrix_setDiag, x, value))
+.diag.set.ltr <- function(x, value) {
+    .Call(ltrMatrix_setDiag,
+          if(x@diag == "U") .dense.diagU2N(x, "l", isPacked=FALSE) else x,
+          value)
+}
+.diag.set.ltp <- function(x, value) {
+    .Call(ltpMatrix_setDiag,
+          if(x@diag == "U") .dense.diagU2N(x, "l", isPacked=TRUE) else x,
+          value)
+}
+setMethod("diag<-", signature(x = "ltrMatrix"), .diag.set.ltr)
+setMethod("diag<-", signature(x = "ltpMatrix"), .diag.set.ltp)
+
+## the *same* for the  "ndenseMatrix" elements:
+setMethod("diag<-", signature(x = "ngeMatrix"),
+	  function(x, value) .Call(lgeMatrix_setDiag, x, value))
+setMethod("diag<-", signature(x = "nsyMatrix"),
+	  function(x, value) .Call(lgeMatrix_setDiag, x, value))
+setMethod("diag<-", signature(x = "nspMatrix"),
+	  function(x, value) .Call(lspMatrix_setDiag, x, value))
+setMethod("diag<-", signature(x = "ntrMatrix"), .diag.set.ltr)
+setMethod("diag<-", signature(x = "ntpMatrix"), .diag.set.ltp)
+
+rm(.diag.set.ltr, .diag.set.ltp)
 
 setMethod("t", signature(x = "lgeMatrix"), t_geMatrix)
 setMethod("t", signature(x = "ltrMatrix"), t_trMatrix)

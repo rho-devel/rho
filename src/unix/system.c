@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2011  The R Core Team
+ *  Copyright (C) 1997--2012  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -66,6 +66,7 @@
 
 #include "Fileio.h"
 
+// This creates the interface pointers in this file
 #define __SYSTEM__
 #define R_INTERFACE_PTRS 1
 #include <Rinterface.h>
@@ -88,14 +89,20 @@ int R_ReadConsole(const char *prompt, unsigned char *buf, int len, int addtohist
 void R_WriteConsole(const char *buf, int len) {if (ptr_R_WriteConsole) ptr_R_WriteConsole(buf, len); else ptr_R_WriteConsoleEx(buf, len, 0); }
 void R_WriteConsoleEx(const char *buf, int len, int otype) {if (ptr_R_WriteConsole) ptr_R_WriteConsole(buf, len); else ptr_R_WriteConsoleEx(buf, len, otype); }
 void R_ResetConsole(void) { ptr_R_ResetConsole(); }
+#ifndef HAVE_AQUA
 void R_FlushConsole(void) { ptr_R_FlushConsole(); }
+#endif
 void R_ClearerrConsole(void) { ptr_R_ClearerrConsole(); }
 void R_Busy(int which) { ptr_R_Busy(which); }
 void R_CleanUp(SA_TYPE saveact, int status, int runLast)
 { ptr_R_CleanUp(saveact, status, runLast); }
+
+attribute_hidden
 int R_ShowFiles(int nfile, const char **file, const char **headers,
 		const char *wtitle, Rboolean del, const char *pager)
 { return ptr_R_ShowFiles(nfile, file, headers, wtitle, del, pager); }
+
+attribute_hidden
 int R_ChooseFile(int _new,  char *buf, int len)
 { return ptr_R_ChooseFile(_new, buf, len); }
 
@@ -104,10 +111,17 @@ void R_setStartTime(void); // in sys-unix.c
 */
 
 #ifdef HAVE_AQUA
-/*  this should be a global variable as it used in unix/devQuartz.c
-	and in unix/aqua.c
-*/
+/*  used here and in main/sysutils.c (for system). */
 Rboolean useaqua = FALSE;
+
+// This should have been fixed a long time ago ....
+// Finally in Sep 2012 R.app sets ptr_R_FlushConsole
+#include <R_ext/Rdynload.h>
+DL_FUNC ptr_do_flushconsole;
+void R_FlushConsole(void) {
+    if (ptr_R_FlushConsole) ptr_R_FlushConsole(); 
+    else if (ptr_do_flushconsole) ptr_do_flushconsole();
+}
 #endif
 
 
@@ -120,7 +134,7 @@ void R_setupHistory()
 	R_HistoryFile = ".Rhistory";
     R_HistorySize = 512;
     if ((p = getenv("R_HISTSIZE"))) {
-	value = R_Decode2Long(p, &ierr);
+	value = (int) R_Decode2Long(p, &ierr);
 	if (ierr != 0 || value < 0)
 	    R_ShowMessage("WARNING: invalid R_HISTSIZE ignored;");
 	else
@@ -146,6 +160,14 @@ extern void * __libc_stack_end;
 
 int R_running_as_main_program = 0;
 
+extern void BindDomain(char *R_Home);
+
+/* In src/main/main.c, to avoid inlining */
+extern uintptr_t dummy_ii(void);
+
+/* Protection against embedded misuse, PR#15420 */
+static int num_initialized = 0;
+
 int Rf_initialize_R(int ac, char **av)
 {
     int i, ioff = 1, j;
@@ -155,18 +177,21 @@ int Rf_initialize_R(int ac, char **av)
     Rstart Rp = &rstart;
     Rboolean force_interactive = FALSE;
 
-#ifdef ENABLE_NLS
-    char localedir[PATH_MAX+20];
-#endif
+    if (num_initialized++) {
+	fprintf(stderr, "%s", "R is already initialized\n");
+	exit(1);
+    }
+
 
 #if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT)
 {
     struct rlimit rlim;
 
     {
-	int ii;
+	uintptr_t ii = dummy_ii();
 	/* 1 is downwards */
-	R_CStackDir = ((uintptr_t)&i > (uintptr_t)&ii) ? 1 : -1;
+	
+	R_CStackDir = ((uintptr_t)&i > ii) ? 1 : -1;
     }
 
     if(getrlimit(RLIMIT_STACK, &rlim) == 0) {
@@ -220,21 +245,7 @@ int Rf_initialize_R(int ac, char **av)
 
     if((R_Home = R_HomeDir()) == NULL)
 	R_Suicide("R home directory is not defined");
-#ifdef ENABLE_NLS
-    setlocale(LC_MESSAGES,"");
-    textdomain(PACKAGE);
-    {
-	char *p = getenv("R_SHARE_DIR");
-	if(p) {
-	    strcpy(localedir, p);
-	    strcat(localedir, "/locale");
-	} else {
-	    strcpy(localedir, R_Home);
-	    strcat(localedir, "/share/locale");
-	}
-    }
-    bindtextdomain(PACKAGE, localedir);
-#endif
+    BindDomain(R_Home);
 
     process_system_Renviron();
 
@@ -246,7 +257,9 @@ int Rf_initialize_R(int ac, char **av)
     R_set_command_line_arguments(ac, av);
     cmdlines[0] = '\0';
 
-    /* first task is to select the GUI */
+    /* first task is to select the GUI.
+       If run from the shell script, only Tk|tk|X11|x11 are allowed.
+     */
     for(i = 0, avv = av; i < ac; i++, avv++) {
 	if(!strncmp(*avv, "--gui", 5) || !strncmp(*avv, "-g", 2)) {
 	    if(!strncmp(*avv, "--gui", 5) && strlen(*avv) >= 7)
@@ -255,21 +268,17 @@ int Rf_initialize_R(int ac, char **av)
 		if(i+1 < ac) {
 		    avv++; p = *avv; ioff++;
 		} else {
-		    sprintf(msg,
+		    snprintf(msg, 1024,
 			    _("WARNING: --gui or -g without value ignored"));
 		    R_ShowMessage(msg);
 		    p = "X11";
 		}
 	    }
 	    if(!strcmp(p, "none"))
-		useX11 = FALSE;
-	    else if(!strcmp(p, "gnome") || !strcmp(p, "GNOME"))
-		;
+		useX11 = FALSE; // not allowed from R.sh
 #ifdef HAVE_AQUA
-	    else if(!strcmp(p, "aqua") || !strcmp(p, "AQUA"))
-		useaqua = TRUE;
-	    else if(!strcmp(p, "cocoa") || !strcmp(p, "Cocoa"))
-		useaqua = TRUE;
+	    else if(!strcmp(p, "aqua"))
+		useaqua = TRUE; // not allowed from R.sh but used by R.app
 #endif
 	    else if(!strcmp(p, "X11") || !strcmp(p, "x11"))
 		useX11 = TRUE;
@@ -286,9 +295,8 @@ int Rf_initialize_R(int ac, char **av)
 		R_ShowMessage(msg);
 	    }
 	    /* now remove it/them */
-	    for(j = i; j < ac-ioff; j++) {
+	    for(j = i; j < ac - ioff; j++)
 		av[j] = av[j + ioff];
-	    }
 	    ac -= ioff;
 	    break;
 	}
@@ -297,15 +305,15 @@ int Rf_initialize_R(int ac, char **av)
 #ifdef HAVE_X11
     if(useX11) R_GUIType = "X11";
 #endif /* HAVE_X11 */
+
 #ifdef HAVE_AQUA
-    if(useaqua)
-	R_GUIType = "AQUA";
+    if(useaqua) R_GUIType = "AQUA";
 #endif
+
 #ifdef HAVE_TCLTK
-    if(useTk) {
-	R_GUIType = "Tk";
-    }
+    if(useTk) R_GUIType = "Tk";
 #endif
+
     R_common_command_line(&ac, av, Rp);
     while (--ac) {
 	if (**++av == '-') {
@@ -376,9 +384,8 @@ int Rf_initialize_R(int ac, char **av)
 		break;
 	    } else {
 #ifdef HAVE_AQUA
-		if(!strncmp(*av, "-psn", 4))
-		    break;
-		else
+		// r27492: in 2003 launching from 'Finder OSX' passed this
+		if(!strncmp(*av, "-psn", 4)) break; else
 #endif
 		snprintf(msg, 1024, _("WARNING: unknown option '%s'\n"), *av);
 		R_ShowMessage(msg);
@@ -421,7 +428,8 @@ int Rf_initialize_R(int ac, char **av)
 #ifdef HAVE_AQUA
     /* for Aqua and non-dumb terminal use callbacks instead of connections
        and pretty-print warnings/errors (ESS = dumb terminal) */
-    if(useaqua || (R_Interactive && getenv("TERM") && strcmp(getenv("TERM"),"dumb"))) {
+    if(useaqua || 
+       (R_Interactive && getenv("TERM") && strcmp(getenv("TERM"), "dumb"))) {
 	R_Outputfile = NULL;
 	R_Consolefile = NULL;
 	ptr_R_WriteConsoleEx = Rstd_WriteConsoleEx;
@@ -468,20 +476,15 @@ int R_EditFiles(int nfile, const char **file, const char **title,
 		const char *editor)
 {
     char  buf[1024];
-#if defined(HAVE_AQUA)
-    if (useaqua) return(ptr_R_EditFiles(nfile, file, title, editor));
-#endif
+
+    if (ptr_R_EditFiles) return(ptr_R_EditFiles(nfile, file, title, editor));
 
     if (nfile > 0) {
 	if (nfile > 1)
 	    R_ShowMessage(_("WARNING: Only editing the first in the list of files"));
 
-#if defined(HAVE_AQUA)
-	if (ptr_R_EditFile)
-	    ptr_R_EditFile((char *) file[0]);
-	else
-#endif
-	{
+	if (ptr_R_EditFile) ptr_R_EditFile((char *) file[0]);
+	else {
 	    /* Quote path if necessary */
 	    if (editor[0] != '"' && Rf_strchr(editor, ' '))
 		snprintf(buf, 1024, "\"%s\" \"%s\"", editor, file[0]);

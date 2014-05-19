@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -427,7 +427,7 @@ namespace CXXR {
      */
     inline size_t listLength(const ConsCell* start)
     {
-	return (start ? std::distance(start->begin(), start->end()) : 0);
+	return (start ? size_t(std::distance(start->begin(), start->end())) : 0);
     }
 
     /** @brief <tt>cc ? cc->tail() : 0</tt>
@@ -657,7 +657,9 @@ extern "C" {
     inline void SET_MISSING(SEXP x, int v)
     {
 	using namespace CXXR;
-	SEXP_downcast<ConsCell*>(x)->m_missing = v;
+	// The RHS is a kludge to avoid a -Wconversion warning:
+	SEXP_downcast<ConsCell*>(x)->m_missing
+	  = static_cast<unsigned int>(v & 3);
     }
 #endif  /* __cplusplus */
 

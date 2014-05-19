@@ -8,11 +8,11 @@
   path from the root to the selected nodes.
 }
 \usage{
-path.rpart(tree, nodes, pretty=0, print.it=TRUE)
+path.rpart(tree, nodes, pretty = 0, print.it = TRUE)
 }
 \arguments{
 \item{tree}{
-  fitted model object of class \code{rpart}.  This is assumed to be the
+  fitted model object of class \code{"rpart"}.  This is assumed to be the
   result of some function that produces an object with the same named
   components as that returned by the \code{rpart} function.
 }
@@ -62,8 +62,8 @@ path.rpart(tree, nodes, pretty=0, print.it=TRUE)
   \code{\link{rpart}}
 }
 \examples{
-fit <- rpart(Kyphosis ~ Age + Number + Start, data=kyphosis)
-summary(fit)
-path.rpart(fit, node=c(11, 22))
+fit <- rpart(Kyphosis ~ Age + Number + Start, data = kyphosis)
+print(fit)
+path.rpart(fit, node = c(11, 22))
 }
 \keyword{tree}

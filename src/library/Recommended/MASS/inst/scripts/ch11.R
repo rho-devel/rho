@@ -131,9 +131,9 @@ parcoord(log(ir)[, c(3, 4, 2, 1)], col = 1 + (0:149)%/%50)
 
 swiss.x <- as.matrix(swiss[,-1])
 library(cluster)
-# h <- hclust(dist(swiss.x), method = "connected")
+# S: h <- hclust(dist(swiss.x), method = "connected")
 h <- hclust(dist(swiss.x), method = "single")
-plclust(h)
+plot(h)
 cutree(h, 3)
 # S: plclust( clorder(h, cutree(h, 3) ))
 
@@ -175,7 +175,7 @@ fanny(swiss.px, 3)
 ##
 
 ## And later mclust was given a restrictive licence, so this example
-## has been removed.
+## has been removed.  Finally in 2012 it was given an OpenSource licence.
 
 
 # 11.3 Factor analysis

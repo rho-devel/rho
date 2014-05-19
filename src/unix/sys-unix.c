@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -48,6 +48,7 @@
 #endif
 
 #include <Defn.h>
+#include <Internal.h>
 #include <Fileio.h>
 #include <Rmath.h> /* for fround */
 #include "Runix.h"
@@ -281,7 +282,7 @@ SEXP attribute_hidden do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("cannot popen '%s', probable reason '%s'"),
 		  cmd, strerror(errno));
 	for (i = 0; fgets(buf, INTERN_BUFSIZE, fp); i++) {
-	    int read = strlen(buf);
+	    size_t read = strlen(buf);
 	    if(read >= INTERN_BUFSIZE - 1)
 		warning(_("line %d may be truncated in call to system(, intern = TRUE)"), i + 1);
 	    if (read > 0 && buf[read-1] == '\n')
@@ -315,24 +316,23 @@ SEXP attribute_hidden do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
 			    cmd, res);
 	}
 	
-	PROTECT(rval = allocVector(STRSXP, i));
+	rval = PROTECT(allocVector(STRSXP, i));
 	for (j = (i - 1); j >= 0; j--) {
 	    SET_STRING_ELT(rval, j, CAR(tlist));
 	    tlist = CDR(tlist);
 	}
 	if(res) {
-	    SEXP sstatus, sres;
-	    PROTECT(sstatus = install("status"));
+	    SEXP sres;
+	    SEXP lsym = install("status");
 	    PROTECT(sres = ScalarInteger(res));
-	    setAttrib(rval, sstatus, sres);
+	    setAttrib(rval, lsym, sres);
 	    if(errno) {
-		SEXP serrmsg, serrno;
-		PROTECT(serrmsg = install("errmsg"));
-		PROTECT(serrno = mkString(strerror(errno)));
-		setAttrib(rval, serrmsg, serrno);
-		UNPROTECT(2);
+	        SEXP serrno = PROTECT(mkString(strerror(errno)));
+		lsym = install("errmsg");
+		setAttrib(rval, lsym, serrno);
+		UNPROTECT(1);
 	    }
-	    UNPROTECT(2);
+	    UNPROTECT(1);
 	}
 	UNPROTECT(2);
 	return rval;
@@ -341,12 +341,13 @@ SEXP attribute_hidden do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
 #ifdef HAVE_AQUA
 	R_Busy(1);
 #endif
-	tlist = allocVector(INTSXP, 1);
+	tlist = PROTECT(allocVector(INTSXP, 1));
 	fflush(stdout);
 	INTEGER(tlist)[0] = R_system(translateChar(STRING_ELT(CAR(args), 0)));
 #ifdef HAVE_AQUA
 	R_Busy(0);
 #endif
+	UNPROTECT(1);
 	R_Visible = 0;
 	return tlist;
     }
@@ -427,7 +428,7 @@ SEXP do_sysinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 DL_FUNC ptr_R_ProcessEvents;
 void R_ProcessEvents(void)
 {
-#if HAVE_AQUA
+#ifdef HAVE_AQUA
     /* disable ProcessEvents in child,
        since we can't call CoreFoundation there. */
     if (ptr_R_ProcessEvents && !R_isForkedChild) ptr_R_ProcessEvents();

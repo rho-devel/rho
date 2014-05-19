@@ -47,36 +47,36 @@ methodSignatureMatrix(object, sigSlots = c("target", "defined"))
 }
 \section{Summary of Functions}{
   \describe{
-    \item{\code{allNames}:}{ 
+    \item{\code{allNames}:}{
       the character vector of names (unlike \code{names()}, never
       returns \code{NULL}).
     }
-    \item{\code{getFunction}:}{ 
+    \item{\code{getFunction}:}{
       find the object as a function.
     }
-    \item{\code{elNamed}:}{ 
+    \item{\code{elNamed}:}{
       get the element of the vector corresponding to name.  Unlike the
       \code{[}, \code{[[}, and \code{$} operators, this function %$
       requires \code{name} to match the element name exactly (no partial
       matching).
     }
-    \item{\code{formalArgs}:}{ 
+    \item{\code{formalArgs}:}{
       Returns the names of the formal arguments of this function.
     }
-    \item{\code{existsFunction}:}{ 
+    \item{\code{existsFunction}:}{
       Is there a function of this name?  If \code{generic} is
-      \code{FALSE}, generic functions are not counted. 
+      \code{FALSE}, generic functions are not counted.
     }
-    \item{\code{findFunction}:}{ 
+    \item{\code{findFunction}:}{
       return all the indices of the search list on which a function
-      definition for \code{name} exists.  
+      definition for \code{name} exists.
 
       If \code{generic} is \code{FALSE}, ignore generic functions.
     }
-    \item{\code{showDefault}:}{ 
+    \item{\code{showDefault}:}{
       Utility, used to enable \code{show} methods to be called by the
       automatic printing (via \code{print.default}).
- 
+
       Argument \code{oldMethods} controls whether old-style print
       methods are used for this object.  It is \code{TRUE} by default
       if called directly, but \code{FALSE} when called from the
@@ -84,8 +84,8 @@ methodSignatureMatrix(object, sigSlots = c("target", "defined"))
       recursion).
     }
     \item{\code{initMethodDispatch}:}{
-      Turn on the internal method dispatch code.  Called on attaching
-      the package.  Also, if dispatch has been turned off (by calling
+      Turn on the internal method dispatch code.  Called on loading
+      the namespace.  Also, if dispatch has been turned off (by calling
       \code{.isMethodsDispatchOn(FALSE)}---a very gutsy thing to do),
       calling this function should turn dispatch back on again.
     }

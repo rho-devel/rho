@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -183,12 +183,14 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 		fprintf(stderr, "command line too long\n");
 		return(27);
 	    }
-	    if(strchr(argv[i], ' ')) {
+	    if(strchr(argv[i], ' ') || !strlen(argv[i])) {
 		strcat(cmd, "\"");
 		strcat(cmd, argv[i]);
 		strcat(cmd, "\"");
 	    } else strcat(cmd, argv[i]);
 	}
+	/* R.exe should ignore Ctrl-C, and let Rterm.exe handle it */
+	SetConsoleCtrlHandler(NULL, TRUE);
 	return system(cmd);
     }
 

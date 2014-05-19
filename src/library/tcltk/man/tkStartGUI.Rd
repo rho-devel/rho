@@ -15,7 +15,7 @@ tkStartGUI()
 \details{
   Starts a GUI console implemented via a Tk text widget. This should
   probably be called at most once per session. Also redefines the file
-  pager (as used by \code{help()}) to be the Tk pager. 
+  pager (as used by \code{help()}) to be the Tk pager.
 }
 \author{Peter Dalgaard}
 \note{
@@ -28,9 +28,8 @@ tkStartGUI()
   accessed in order to extend the interface. The three main objects are
   named \code{Term}, \code{Menu}, and \code{Toolbar}, and the various
   submenus and callback functions can be seen with
-  \code{ls(envir=.GUIenv)}.
+  \code{ls(envir = .GUIenv)}.
 }
 
-  
-\keyword{misc}
 
+\keyword{misc}

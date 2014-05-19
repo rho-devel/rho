@@ -1,6 +1,8 @@
 #  File src/library/stats/R/prcomp.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -53,7 +55,7 @@ prcomp.formula <- function (formula, data = NULL, subset, na.action, ...)
     cl <- match.call()
     mf <- match.call(expand.dots = FALSE)
     mf$... <- NULL
-    mf[[1L]] <- as.name("model.frame")
+    mf[[1L]] <- quote(stats::model.frame)
     mf <- eval.parent(mf)
     ## this is not a `standard' model-fitting function,
     ## so no need to consider contrasts or levels
@@ -104,10 +106,10 @@ summary.prcomp <- function(object, ...)
 }
 
 print.summary.prcomp <-
-function(x, digits = max(3, getOption("digits") - 3), ...)
+function(x, digits = max(3L, getOption("digits") - 3L), ...)
 {
     cat("Importance of components:\n")
-    print(x$importance, digits = digits)
+    print(x$importance, digits = digits, ...)
     invisible(x)
 }
 

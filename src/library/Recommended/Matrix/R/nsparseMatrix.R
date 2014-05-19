@@ -13,6 +13,9 @@ setAs("nsparseMatrix", "dsparseMatrix", function(from) as(from, "dMatrix"))
 
 setMethod("is.na", signature(x = "nsparseMatrix"), is.na_nsp)
 
+if(getRversion() > "3.1.0")
+setMethod("anyNA", signature(x = "nsparseMatrix"), function(x) FALSE)
+
 setMethod("all", signature(x = "nsparseMatrix"),
 	  function(x, ..., na.rm = FALSE) {
 	      pd <- prod(d <- dim(x))

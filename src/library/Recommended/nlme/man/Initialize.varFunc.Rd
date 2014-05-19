@@ -37,7 +37,7 @@
   an initialized object with the same class as \code{object}
   representing a variance function structure.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{Initialize}}
 }
 \examples{

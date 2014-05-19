@@ -14,7 +14,7 @@ bkfe(x, drv, bandwidth, gridsize = 401L, range.x, binned = FALSE,
 }
 \arguments{
 \item{x}{
-vector of observations from the distribution whose density is to
+numeric vector of observations from the distribution whose density is to
 be estimated.
 Missing values are not allowed.
 }

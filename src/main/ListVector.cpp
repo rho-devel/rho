@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -48,13 +48,13 @@ using namespace CXXR;
 // from C:
 namespace CXXR {
     namespace ForceNonInline {
-	SEXP (*VECTOR_ELTp)(const SEXP x, int i) = VECTOR_ELT;
+	SEXP (*VECTOR_ELTp)(const SEXP x, R_xlen_t i) = VECTOR_ELT;
     }
 }
 
 // ***** C interface *****
 
-SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v)
+SEXP SET_VECTOR_ELT(SEXP x, R_xlen_t i, SEXP v)
 {
     ListVector* lv = SEXP_downcast<ListVector*>(x, false);
     (*lv)[i] = v;

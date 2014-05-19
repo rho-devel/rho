@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -79,7 +79,7 @@ namespace CXXR {
 	 *
 	 * @return the number of browser levels currently active.
 	 */
-	static unsigned int numberActive()
+	static size_t numberActive()
 	{
 	    return s_browsers.size();
 	}
@@ -114,7 +114,7 @@ namespace CXXR {
 	 *
 	 * @return Pointer to the Browser at level \a i.
 	 */
-	static Browser* fromOutermost(unsigned int i)
+	static Browser* fromOutermost(size_t i)
 	{
 	    return s_browsers.at(i);
 	}

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -69,6 +69,7 @@ typedef enum {
  CHARS = 15	/* multiples of text height (cex) */
 } GUnit;
 
+
 #define currentFigureLocation	Rf_currentFigureLocation
 #define GArrow			Rf_GArrow
 #define GBox			Rf_GBox
@@ -86,7 +87,6 @@ typedef enum {
 #define GForceClip		Rf_GForceClip
 #define GLine			Rf_GLine
 #define GLocator		Rf_GLocator
-#define GLPretty		Rf_GLPretty
 #define GMapUnits		Rf_GMapUnits
 #define GMapWin2Fig		Rf_GMapWin2Fig
 #define GMathText		Rf_GMathText
@@ -159,8 +159,6 @@ void GCheckState(pGEDevDesc);
  * Set to 0 when don't want drawing to go ahead */
 void GSetState(int, pGEDevDesc);
 
-
-
 /*-------------------------------------------------------------------
  *
  *  GRAPHICAL PRIMITIVES are the generic front-end for the functions
@@ -177,7 +175,7 @@ void GSetState(int, pGEDevDesc);
 
 
 /* Draw a circle, centred on (x,y) with radius r (in inches). */
-void GCircle(double, double, GUnit, double, int, int, pGEDevDesc);
+void GCircle(double, double, int, double, int, int, pGEDevDesc);
 /* Set clipping region (based on current setting of dd->gp.xpd).
  * Only clip if new clipping region is different from the current one */
 void GClip(pGEDevDesc);
@@ -187,9 +185,9 @@ int GClipPolygon(double *, double *, int, int, int,
 /* Always clips */
 void GForceClip(pGEDevDesc);
 /* Draw a line from (x1,y1) to (x2,y2): */
-void GLine(double, double, double, double, GUnit, pGEDevDesc);
+void GLine(double, double, double, double, int, pGEDevDesc);
 /* Return the location of the next mouse click: */
-Rboolean GLocator(double*, double*, GUnit, pGEDevDesc);
+Rboolean GLocator(double*, double*, int, pGEDevDesc);
 /* Return the height, depth, and width of the specified
  * character in the specified units: */
 void GMetricInfo(int, double*, double*, double*, GUnit, pGEDevDesc);
@@ -199,11 +197,11 @@ void GMode(int, pGEDevDesc);
 /* Draw a path using the specified lists of x and y values: */
 void GPath(double*, double*, int, int*, Rboolean, int, int, pGEDevDesc);
 /* Draw a polygon using the specified lists of x and y values: */
-void GPolygon(int, double*, double*, GUnit, int, int, pGEDevDesc);
+void GPolygon(int, double*, double*, int, int, int, pGEDevDesc);
 /* Draw series of straight lines using the specified lists of x and y values: */
-void GPolyline(int, double*, double*, GUnit, pGEDevDesc);
+void GPolyline(int, double*, double*, int, pGEDevDesc);
 /* Draw a rectangle given two opposite corners: */
-void GRect(double, double, double, double, GUnit, int, int, pGEDevDesc);
+void GRect(double, double, double, double, int, int, int, pGEDevDesc);
 /* Draw a raster image given two opposite corners: */
 void GRaster(unsigned int*, int, int,
              double, double, double, double,
@@ -214,7 +212,7 @@ double GStrHeight(const char *, cetype_t, GUnit, pGEDevDesc);
 double GStrWidth(const char *, cetype_t, GUnit, pGEDevDesc);
 /* Draw the specified text at location (x,y) with the specified
  * rotation and justification: */
-void GText(double, double, GUnit, const char *, cetype_t, double, double, double,
+void GText(double, double, int, const char *, cetype_t, double, double, double,
 	   pGEDevDesc);
 
 /* From plotmath.c, used in plot.c */
@@ -233,18 +231,17 @@ void GMMathText(SEXP, int, double, int, double, int, double, pGEDevDesc);
 
 /* Draw a line from (x1,y1) to (x2,y2) with an arrow head
  * at either or both ends. */
-void GArrow(double, double, double, double, GUnit, double, double, int, pGEDevDesc);
+void GArrow(double, double, double, double, int, double, double, int, pGEDevDesc);
 /* Draw a box around specified region:
  *  1=plot region, 2=figure region, 3=inner region, 4=device. */
 void GBox(int, pGEDevDesc);
 /* Return a "nice" min, max and number of intervals for a given
  * range on a linear or _log_ scale, respectively: */
 void GPretty(double*, double*, int*); /* used in plot3d.c */
-void GLPretty(double*, double*, int*);
 /* Draw text in margins. */
 void GMtext(const char *, cetype_t, int, double, int, double, int, double, pGEDevDesc);
 /* Draw one of the predefined symbols (circle, square, diamond, ...) */
-void GSymbol(double, double, GUnit, int, pGEDevDesc);
+void GSymbol(double, double, int, int, pGEDevDesc);
 
 /* From plotmath.c, used in plot.c */
 double GExpressionHeight(SEXP, GUnit, pGEDevDesc);

@@ -13,7 +13,7 @@
     \item{x, y}{numeric or factor. \code{y} may be missing.}
     \item{legend.text}{character vector for annotation of y axis in the
       case of a factor \code{y}: defaults to \code{levels(y)}.  This
-      sets the \code{yaxlabels} argument of \code{\link{spineplot}}.}      
+      sets the \code{yaxlabels} argument of \code{\link{spineplot}}.}
     \item{\dots}{Further arguments to \code{\link{barplot}},
       \code{\link{boxplot}}, \code{\link{spineplot}} or
       \code{\link{plot}} as appropriate.  All of these accept
@@ -41,12 +41,12 @@
 require(grDevices)
 % this does not call plot.factor!
 % plot(PlantGrowth)                                # -> plot.data.frame
-plot(weight ~ group, data = PlantGrowth)         # numeric vector ~ factor
-plot(cut(weight, 2) ~ group, data = PlantGrowth) # factor ~ factor
+plot(weight ~ group, data = PlantGrowth)           # numeric vector ~ factor
+plot(cut(weight, 2) ~ group, data = PlantGrowth)   # factor ~ factor
 ## passing "..." to spineplot() eventually:
 plot(cut(weight, 3) ~ group, data = PlantGrowth,
      col = hcl(c(0, 120, 240), 50, 70))
 
-plot(PlantGrowth$group, axes=FALSE, main="no axes")# extremely silly
+plot(PlantGrowth$group, axes = FALSE, main = "no axes")  # extremely silly
 }
 \keyword{hplot}

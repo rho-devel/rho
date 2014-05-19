@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -88,6 +88,12 @@
 using namespace std;
 using namespace CXXR;
 
+#if !defined(__STDC_ISO_10646__) && (defined(__APPLE__) || defined(__FreeBSD__))
+/* This may not be 100% true (see the comment in rlocales.h),
+   but it seems true in normal locales */
+# define __STDC_ISO_10646__
+#endif
+
 #ifdef Win32
 int trio_vsnprintf(char *buffer, size_t bufferSize, const char *format,
 		   va_list args);
@@ -96,10 +102,14 @@ int trio_vsnprintf(char *buffer, size_t bufferSize, const char *format,
 
 extern int R_OutputCon; /* from connections.c */
 
+#ifndef min
+#define min(a, b) (((a)<(b))?(a):(b))
+#endif
 
 #define BUFSIZE 8192  /* used by Rprintf etc */
 
 /* Only if ierr < 0 or not is currently used */
+attribute_hidden
 R_size_t R_Decode2Long(char *p, int *ierr)
 {
     R_size_t v = strtol(p, &p, 10);
@@ -110,11 +120,11 @@ R_size_t R_Decode2Long(char *p, int *ierr)
 	REprintf("R_Decode2Long(): v=%ld\n", v);
     if(p[0] == 'G') {
 	if((Giga * double(v)) > R_SIZE_T_MAX) { *ierr = 4; return(v); }
-	return CXXRCONSTRUCT(R_size_t, (Giga*v));
+	return R_size_t( Giga) * v;
     }
     else if(p[0] == 'M') {
 	if((Mega * double(v)) > R_SIZE_T_MAX) { *ierr = 1; return(v); }
-	return CXXRCONSTRUCT(R_size_t, (Mega*v));
+	return R_size_t( Mega) * v;
     }
     else if(p[0] == 'K') {
 	if((1024 * double(v)) > R_SIZE_T_MAX) { *ierr = 2; return(v); }
@@ -147,21 +157,24 @@ const char *EncodeInteger(int x, int w)
 {
     static char buff[NB];
     if(x == NA_INTEGER) snprintf(buff, NB, "%*s", w, CHAR(R_print.na_string));
-    else snprintf(buff, NB, "%*d", w, x);
+    else snprintf(buff, NB, "%*d", min(w, (NB-1)), x);
     buff[NB-1] = '\0';
     return buff;
 }
 
-const char *EncodeRaw(Rbyte x)
+attribute_hidden
+const char *EncodeRaw(Rbyte x, const char * prefix)
 {
     static char buff[10];
-    sprintf(buff, "%02x", x);
+    sprintf(buff, "%s%02x", prefix, x);
     return buff;
 }
 
+attribute_hidden
 const char *EncodeEnvironment(SEXP x)
 {
-    static char ch[100];
+    const void *vmax = vmaxget();
+    static char ch[1000];
     if (x == R_GlobalEnv)
 	sprintf(ch, "<environment: R_GlobalEnv>");
     else if (x == R_BaseEnv)
@@ -169,13 +182,14 @@ const char *EncodeEnvironment(SEXP x)
     else if (x == R_EmptyEnv)
 	sprintf(ch, "<environment: R_EmptyEnv>");
     else if (R_IsPackageEnv(x))
-	sprintf(ch, "<environment: %s>",
-		translateChar(STRING_ELT(R_PackageEnvName(x), 0)));
+	snprintf(ch, 1000, "<environment: %s>",
+		 translateChar(STRING_ELT(R_PackageEnvName(x), 0)));
     else if (R_IsNamespaceEnv(x))
-	sprintf(ch, "<environment: namespace:%s>",
-		translateChar(STRING_ELT(R_NamespaceEnvSpec(x), 0)));
-    else sprintf(ch, "<environment: %p>", CXXRNOCAST(void *)x);
+	snprintf(ch, 1000, "<environment: namespace:%s>",
+		 translateChar(STRING_ELT(R_NamespaceEnvSpec(x), 0)));
+    else snprintf(ch, 1000, "<environment: %p>", CXXRNOCAST(void *)x);
 
+    vmaxset(vmax);
     return ch;
 }
 
@@ -194,16 +208,16 @@ const char *EncodeReal(double x, int w, int d, int e, char cdec)
     }
     else if (e) {
 	if(d) {
-	    sprintf(fmt,"%%#%d.%de", w, d);
+	    sprintf(fmt,"%%#%d.%de", min(w, (NB-1)), d);
 	    snprintf(buff, NB, fmt, x);
 	}
 	else {
-	    sprintf(fmt,"%%%d.%de", w, d);
+	    sprintf(fmt,"%%%d.%de", min(w, (NB-1)), d);
 	    snprintf(buff, NB, fmt, x);
 	}
     }
     else { /* e = 0 */
-	sprintf(fmt,"%%%d.%df", w, d);
+	sprintf(fmt,"%%%d.%df", min(w, (NB-1)), d);
 	snprintf(buff, NB, fmt, x);
     }
     buff[NB-1] = '\0';
@@ -230,16 +244,16 @@ const char *EncodeReal2(double x, int w, int d, int e)
     }
     else if (e) {
 	if(d) {
-	    sprintf(fmt,"%%#%d.%de", w, d);
+	    sprintf(fmt,"%%#%d.%de", min(w, (NB-1)), d);
 	    snprintf(buff, NB, fmt, x);
 	}
 	else {
-	    sprintf(fmt,"%%%d.%de", w, d);
+	    sprintf(fmt,"%%%d.%de", min(w, (NB-1)), d);
 	    snprintf(buff, NB, fmt, x);
 	}
     }
     else { /* e = 0 */
-	sprintf(fmt,"%%#%d.%df", w, d);
+	sprintf(fmt,"%%#%d.%df", min(w, (NB-1)), d);
 	snprintf(buff, NB, fmt, x);
     }
     buff[NB-1] = '\0';
@@ -301,7 +315,7 @@ const char
    which Western versions at least do not.).
 */
 
-#include <R_ext/rlocale.h> /* redefines isw* functions */
+#include <rlocale.h> /* redefines isw* functions */
 
 #ifdef Win32
 #include "rgui_UTF8.h"
@@ -326,8 +340,8 @@ int Rstrwid(const char *str, int slen, cetype_t ienc, int quote)
 
 	if(ienc != CE_UTF8)  mbs_init(&mb_st);
 	for (i = 0; i < slen; i++) {
-	    res = (ienc == CE_UTF8) ? utf8toucs(&wc, p):
-		mbrtowc(&wc, p, MB_CUR_MAX, NULL);
+	    res = (ienc == CE_UTF8) ? int( utf8toucs(&wc, p)):
+		int( mbrtowc(&wc, p, MB_CUR_MAX, NULL));
 	    if(res >= 0) {
 		k = wc;
 		if(0x20 <= k && k < 0x7f && iswprint(wc)) {
@@ -433,11 +447,16 @@ int Rstrlen(SEXP s, int quote)
    format().
  */
 
+attribute_hidden
 const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 {
     int b, b0, i, j, cnt;
     const char *p; char *q, buf[11];
-    cetype_t ienc = CE_NATIVE;
+    cetype_t ienc = getCharCE(s);
+    Rboolean useUTF8 = CXXRCONSTRUCT(Rboolean, w < 0);
+    const void *vmax = vmaxget();
+
+    if (w < 0) w = w + 1000000;
 
     /* We have to do something like this as the result is returned, and
        passed on by EncodeElement -- so no way could be end user be
@@ -448,13 +467,12 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 
     if (s == NA_STRING) {
 	p = quote ? CHAR(R_print.na_string) : CHAR(R_print.na_string_noquote);
-	cnt = i = quote ? strlen(CHAR(R_print.na_string)) :
-	    strlen(CHAR(R_print.na_string_noquote));
+	cnt = i = int(quote ? strlen(CHAR(R_print.na_string)) :
+		      strlen(CHAR(R_print.na_string_noquote)));
 	quote = 0;
     } else {
 #ifdef Win32
 	if(WinUTF8out) {
-	    ienc = getCharCE(s);
 	    if(ienc == CE_UTF8) {
 		p = CHAR(s);
 		i = Rstrlen(s, quote);
@@ -474,8 +492,9 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 #endif
 	{
 	    if(IS_BYTES(s)) {
+		ienc = CE_NATIVE;
 		p = CHAR(s);
-		cnt = strlen(p);
+		cnt = int( strlen(p));
 		const char *q;
 		char *pp = R_alloc(4*cnt+1, 1), *qq = pp, buf[5];
 		for (q = p; *q; q++) {
@@ -492,13 +511,18 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 		*qq = '\0';
 		p = pp;
 		i = cnt;
+	    } else if (useUTF8 && ienc == CE_UTF8) {
+		p = CHAR(s);
+		i = Rstrlen(s, quote);
+		cnt = LENGTH(s);
 	    } else {
+		ienc = CE_NATIVE;
 		p = translateChar(s);
 		if(p == CHAR(s)) {
 		    i = Rstrlen(s, quote);
 		    cnt = LENGTH(s);
 		} else {
-		    cnt = strlen(p);
+		    cnt = int( strlen(p));
 		    i = Rstrwid(p, cnt, CE_NATIVE, quote);
 		}
 	    }
@@ -523,7 +547,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 	for(i = 0 ; i < b0 ; i++) *q++ = ' ';
 	b -= b0;
     }
-    if(quote) *q++ = quote;
+    if(quote) *q++ = char( quote);
     if(mbcslocale || ienc == CE_UTF8) {
 	int j, res;
 	mbstate_t mb_st;
@@ -537,8 +561,8 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 	else if(WinUTF8out) { memcpy(q, UTF8in, 3); q += 3; }
 #endif
 	for (i = 0; i < cnt; i++) {
-	    res = (ienc == CE_UTF8) ? utf8toucs(&wc, p):
-		mbrtowc(&wc, p, MB_CUR_MAX, NULL);
+	    res = int((ienc == CE_UTF8) ? utf8toucs(&wc, p):
+		      mbrtowc(&wc, p, MB_CUR_MAX, NULL));
 	    if(res >= 0) { /* res = 0 is a terminator */
 		k = wc;
 		/* To be portable, treat \0 explicitly */
@@ -591,7 +615,8 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 			else
 #endif
 			    snprintf(buf, 11, "\\u%04x", k);
-			memcpy(q, buf, j = strlen(buf));
+			j = int( strlen(buf));
+			memcpy(q, buf, j);
 			q += j;
 			p += res;
 		    }
@@ -656,15 +681,20 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 #ifdef Win32
     if(WinUTF8out && ienc == CE_UTF8)  { memcpy(q, UTF8out, 3); q += 3; }
 #endif
-    if(quote) *q++ = quote;
+    if(quote) *q++ = char( quote);
     if(b > 0 && justify != Rprt_adj_right) {
 	for(i = 0 ; i < b ; i++) *q++ = ' ';
     }
     *q = '\0';
+
+    vmaxset(vmax);
     return buffer->data;
 }
 
 /* EncodeElement is called by cat(), write.table() and deparsing. */
+
+/* NB this is called by R.app even though it is in no public header, so 
+   alter there if you alter this */
 const char *EncodeElement(SEXP x, int indx, int quote, char dec)
 {
     int w, d, e, wi, di, ei;
@@ -696,7 +726,7 @@ const char *EncodeElement(SEXP x, int indx, int quote, char dec)
 	res = EncodeComplex(COMPLEX(x)[indx], w, d, e, wi, di, ei, dec);
 	break;
     case RAWSXP:
-	res = EncodeRaw(RAW(x)[indx]);
+	res = EncodeRaw(RAW(x)[indx], "");
 	break;
     default:
 	res = NULL; /* -Wall */
@@ -797,7 +827,7 @@ void Rcons_vprintf(const char *format, va_list arg)
 	    res = R_BUFSIZE;
     }
 #endif /* HAVE_VA_COPY */
-    R_WriteConsole(p, strlen(p));
+    R_WriteConsole(p, int( strlen(p)));
 #ifdef HAVE_VA_COPY
     if(usedRalloc) vmaxset(vmax);
     if(usedVasprintf) free(p);
@@ -875,16 +905,16 @@ void REvprintf(const char *format, va_list arg)
 
 	vsnprintf(buf, BUFSIZE, format, arg);
 	buf[BUFSIZE-1] = '\0';
-	R_WriteConsoleEx(buf, strlen(buf), 1);
+	R_WriteConsoleEx(buf, int( strlen(buf)), 1);
     }
 }
 
-int attribute_hidden IndexWidth(int n)
+int attribute_hidden IndexWidth(R_xlen_t n)
 {
     return int (log10(n + 0.5) + 1);
 }
 
-void attribute_hidden VectorIndex(int i, int w)
+void attribute_hidden VectorIndex(R_xlen_t i, int w)
 {
 /* print index label "[`i']" , using total width `w' (left filling blanks) */
     Rprintf("%*s[%ld]", w-IndexWidth(i)-2, "", i);

@@ -1,6 +1,8 @@
 #  File src/library/graphics/R/spineplot.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -14,8 +16,7 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-## Spine plots/Spinograms
-## written by Achim Zeileis <Achim.Zeileis@R-project.org>
+## Spine plots/Spinograms contributed by Achim Zeileis
 
 spineplot <- function(x, ...) {
     UseMethod("spineplot")
@@ -33,7 +34,7 @@ function(formula, data = NULL,
     m <- match.call(expand.dots = FALSE)
     m <- m[c(1L, match(c("formula", "data", "subset"), names(m), 0L))]
     require(stats, quietly=TRUE)
-    m[[1L]] <- as.name("model.frame")
+    m[[1L]] <- quote(stats::model.frame)
     mf <- eval.parent(m)
     if(NCOL(mf) != 2L)
         stop("'formula' should specify exactly two variables")
@@ -94,14 +95,14 @@ function(x, y = NULL,
 
     ## graphical parameters
     if(is.null(col)) col <- gray.colors(ny)
-    col <- rep(col, length.out = ny)
+    col <- rep_len(col, ny)
     off <- if(!x.categorical) 0 else if(is.null(off)) 0.02 else off/100
-    yaxlabels <- if(is.null(yaxlabels)) ynam else rep(yaxlabels, length.out = ny)
+    yaxlabels <- if(is.null(yaxlabels)) ynam else rep_len(yaxlabels, ny)
 
     if(x.categorical) {
         ## compute rectangle positions on x axis
         xat <- c(0, cumsum(prop.table(margin.table(tab, 1)) + off))
-        xaxlabels <- if(is.null(xaxlabels)) xnam else rep(xaxlabels, length.out = nx)
+        xaxlabels <- if(is.null(xaxlabels)) xnam else rep_len(xaxlabels, nx)
     } else {
         ## handle non-numeric x
 	if(!(xnumeric <- is.numeric(x))) {
@@ -128,7 +129,7 @@ function(x, y = NULL,
         xaxlabels <- if(is.null(xaxlabels)) {
 	  if(xnumeric) breaks else c(xorig[1L], xorig[c(diff(as.numeric(x1)) > 0, TRUE)])
 	} else {
-	    rep(xaxlabels, length.out = (nx + 1L))
+	    rep_len(xaxlabels, nx + 1L)
 	}
     }
 

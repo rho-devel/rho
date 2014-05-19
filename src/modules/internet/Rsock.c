@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -18,8 +18,7 @@
  *  R : A Computer Language for Statistical Data Analysis
 
  *  Copyright (C) 1996, 1997  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2003   Robert Gentleman, Ross Ihaka and the
- *                            R Core Team
+ *  Copyright (C) 1998-2012   The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -63,8 +62,11 @@ extern void R_ProcessEvents(void);
 #endif
 #include "sock.h"
 
+#include <R_ext/Print.h> // for REprintf
+
 static int sock_inited = 0;
 
+static struct Sock_error_st perr;
 
 static int enter_sock(int fd)
 {
@@ -76,7 +78,13 @@ static int enter_sock(int fd)
 
 static int close_sock(int fd)
 {
-    return Sock_close(fd, NULL) == -1 ? 0 : 1 ;
+    perr.error = 0;
+    int res = Sock_close(fd, &perr);
+    if (res == -1) {
+	REprintf("socket error: %s\n", strerror(perr.error));
+	return -1;
+    }
+    return 0;
 }
 
 static void check_init(void)
@@ -93,13 +101,17 @@ static void check_init(void)
 void in_Rsockopen(int *port)
 {
     check_init();
-    *port = enter_sock(Sock_open(*port, NULL));
+    perr.error = 0;
+    *port = enter_sock(Sock_open((Sock_port_t)*port, &perr));
+    if(perr.error) REprintf("socket error: %s\n", strerror(perr.error));
 }
 
 void in_Rsocklisten(int *sockp, char **buf, int *len)
 {
     check_init();
-    *sockp = enter_sock(Sock_listen(*sockp, *buf , *len, NULL));
+    perr.error = 0;
+    *sockp = enter_sock(Sock_listen(*sockp, *buf , *len, &perr));
+    if(perr.error) REprintf("socket error: %s\n", strerror(perr.error));
 }
 
 void in_Rsockconnect(int *port, char **host)
@@ -108,7 +120,11 @@ void in_Rsockconnect(int *port, char **host)
 #ifdef DEBUG
     printf("connect to %d at %s\n",*port, *host);
 #endif
-    *port = enter_sock(Sock_connect(*port, *host, NULL));
+    perr.error = perr.h_error = 0;
+    *port = enter_sock(Sock_connect((Sock_port_t)*port, *host, &perr));
+//    if(perr.h_error) REprintf("host lookup error: %s\n", hstrerror(perr.h_error));
+    if(perr.error)
+	REprintf("socket error: %s\n", strerror(perr.error));
 }
 
 void in_Rsockclose(int *sockp)
@@ -122,7 +138,9 @@ void in_Rsockread(int *sockp, char **buf, int *maxlen)
 #ifdef DEBUG
     printf("Reading from %d\n",*sockp);
 #endif
-    *maxlen = (int) Sock_read(*sockp, *buf, *maxlen, NULL);
+    perr.error = 0;
+    *maxlen = (int) Sock_read(*sockp, *buf, *maxlen, &perr);
+    if(perr.error) REprintf("socket error: %s\n", strerror(perr.error));
 }
 
 void in_Rsockwrite(int *sockp, char **buf, int *start, int *end, int *len)
@@ -132,7 +150,7 @@ void in_Rsockwrite(int *sockp, char **buf, int *start, int *end, int *len)
 	*end = *len;
     if (*start < 0)
 	*start = 0;
-    if (*end < *start){
+    if (*end < *start) {
 	*len = -1;
 	return;
     }
@@ -140,8 +158,10 @@ void in_Rsockwrite(int *sockp, char **buf, int *start, int *end, int *len)
 #ifdef DEBUG
     printf("writing %s to %d", *buf, *sockp);
 #endif
-    n = Sock_write(*sockp, *buf + *start, *end - *start, NULL);
+    perr.error = 0;
+    n = Sock_write(*sockp, *buf + *start, *end - *start, &perr);
     *len = (int) n;
+    if(perr.error) REprintf("socket error: %s\n", strerror(perr.error));
 }
 
 /* --------- for use in socket connections ---------- */
@@ -298,12 +318,12 @@ int R_SocketWaitMultiple(int nsock, int *insockfd, int *ready, int *write,
 	    if (mytimeout < 0 || R_wait_usec / 1e-6 < mytimeout - used)
 		delta = R_wait_usec;
 	    else
-		delta = 1e6 * (mytimeout - used);
+		delta = (int)(1e6 * (mytimeout - used));
 	    tv.tv_sec = 0;
 	    tv.tv_usec = delta;
 	} else if (mytimeout >= 0) {
-	    tv.tv_sec = mytimeout - used;
-	    tv.tv_usec = 1e6 * (mytimeout - used - tv.tv_sec);
+	    tv.tv_sec = (int)(mytimeout - used);
+	    tv.tv_usec = (int)(1e6 * (mytimeout - used - tv.tv_sec));
 	} else {  /* always poll occationally--not really necessary */
 	    tv.tv_sec = 60;
 	    tv.tv_usec = 0;
@@ -512,19 +532,19 @@ int R_SockClose(int sockp)
     return closesocket(sockp);
 }
 
-int R_SockRead(int sockp, void *buf, int len, int blocking, int timeout)
+ssize_t R_SockRead(int sockp, void *buf, size_t len, int blocking, int timeout)
 {
-    int res;
+    ssize_t res;
 
     if(blocking && R_SocketWait(sockp, 0, timeout) != 0) return 0;
-    res = (int) recv(sockp, buf, len, 0);
+    res = recv(sockp, buf, len, 0);
     return (res >= 0) ? res : -socket_errno();
 }
 
 int R_SockOpen(int port)
 {
     check_init();
-    return Sock_open(port, NULL);
+    return Sock_open((Sock_port_t)port, NULL);
 }
 
 int R_SockListen(int sockp, char *buf, int len, int timeout)
@@ -537,9 +557,9 @@ int R_SockListen(int sockp, char *buf, int len, int timeout)
     return Sock_listen(sockp, buf, len, NULL);
 }
 
-int R_SockWrite(int sockp, const void *buf, int len, int timeout)
+ssize_t R_SockWrite(int sockp, const void *buf, size_t len, int timeout)
 {
-    int res, out = 0;
+    ssize_t res, out = 0;
 
     /* Rprintf("socket %d writing |%s|\n", sockp, buf); */
     /* This function is not passed a `blocking' argument so the code
@@ -549,7 +569,7 @@ int R_SockWrite(int sockp, const void *buf, int len, int timeout)
        has been written.  LT */
     do {
 	if(R_SocketWait(sockp, 1, timeout) != 0) return out;
-	res = (int) send(sockp, buf, len, 0);
+	res = send(sockp, buf, len, 0);
 	if (res < 0 && socket_errno() != EWOULDBLOCK)
 	    return -socket_errno();
 	else {

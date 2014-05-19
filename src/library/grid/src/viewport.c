@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -330,7 +330,7 @@ void calcViewportTransform(SEXP vp, SEXP parent, Rboolean incremental,
 	!R_FINITE(yINCHES) || 
 	!R_FINITE(vpWidthCM) || 
 	!R_FINITE(vpHeightCM))
-	error(_("Non-finite location and/or size for viewport"));
+	error(_("non-finite location and/or size for viewport"));
     /* Determine justification required
      */
     justification(vpWidthCM, vpHeightCM, vpl.hjust, vpl.vjust,

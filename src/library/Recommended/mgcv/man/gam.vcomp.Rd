@@ -63,7 +63,7 @@ models. Journal of the Royal Statistical Society (B) 73(1):3-36
 
 \examples{ 
   set.seed(3) 
-
+  require(mgcv)
   ## simulate some data, consisting of a smooth truth + random effects
 
   dat <- gamSim(1,n=400,dist="normal",scale=2)

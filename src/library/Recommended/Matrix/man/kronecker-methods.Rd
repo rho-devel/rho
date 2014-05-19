@@ -10,6 +10,7 @@
 \alias{kronecker,Matrix,diagonalMatrix-method}
 \alias{kronecker,diagonalMatrix,ANY-method}
 \alias{kronecker,diagonalMatrix,Matrix-method}
+\alias{kronecker,indMatrix,indMatrix-method}
 \alias{kronecker,sparseMatrix,ANY-method}
 \alias{kronecker,sparseMatrix,TsparseMatrix-method}
 %
@@ -39,6 +40,7 @@
     \item{kronecker}{\code{signature(X = "TsparseMatrix", Y = "TsparseMatrix")} .......}
     \item{kronecker}{\code{signature(X = "dgTMatrix", Y = "dgTMatrix")} .......}
     \item{kronecker}{\code{signature(X = "dtTMatrix", Y = "dtTMatrix")} .......}
+    \item{kronecker}{\code{signature(X = "indMatrix", Y = "indMatrix")} .......}
 
   }
 }

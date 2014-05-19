@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.15.0\n"
-"Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2012-01-18 12:26\n"
+"Project-Id-Version: R 2.15.1\n"
+"Report-Msgid-Bugs-To: bugs.r-project.org\n"
+"POT-Creation-Date: 2012-08-21 22:49\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -51,18 +51,6 @@ msgid "'samples' should be at least 1"
 msgstr ""
 
 msgid "when 'medoids.x' is FALSE, 'keep.data' must be too"
-msgstr ""
-
-msgid "Observation %d has *only* NAs --> omit it for clustering"
-msgstr ""
-
-msgid "Observations %s"
-msgstr ""
-
-msgid "%d observations (%s ...)"
-msgstr ""
-
-msgid "have *only* NAs --> na.omit() them for clustering!"
 msgstr ""
 
 msgid "Each of the random samples contains objects between which"
@@ -126,15 +114,6 @@ msgid "binary variable(s)"
 msgstr ""
 
 msgid "treated as interval scaled"
-msgstr ""
-
-msgid "setting 'logical' variable"
-msgstr ""
-
-msgid "s"
-msgstr ""
-
-msgid "to type 'asymm'"
 msgstr ""
 
 msgid "x"
@@ -213,6 +192,9 @@ msgid "x must be a matrix or data frame."
 msgstr ""
 
 msgid "All variables must be binary (factor with 2 levels)."
+msgstr ""
+
+msgid "No clustering performed,"
 msgstr ""
 
 msgid "an object was found with all values missing."
@@ -319,3 +301,8 @@ msgstr ""
 
 msgid "No valid silhouette information (#{clusters} =? 1)"
 msgstr ""
+
+msgid        "setting 'logical' variable %s to type 'asymm'"
+msgid_plural "setting 'logical' variables %s to type 'asymm'"
+msgstr[0]    ""
+msgstr[1]    ""

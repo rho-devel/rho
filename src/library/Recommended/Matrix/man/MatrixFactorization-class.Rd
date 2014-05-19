@@ -7,9 +7,7 @@
 \alias{dim,MatrixFactorization-method}
 \alias{expand,MatrixFactorization-method}
 \alias{show,MatrixFactorization-method}
-\alias{solve,MatrixFactorization,numeric-method}
-\alias{solve,MatrixFactorization,ANY-method}
-\alias{solve,MatrixFactorization,missing-method}
+%\alias{solve,MatrixFactorization,ANY-method}--> solve-methods.Rd
 \description{
   The class \code{"MatrixFactorization"} is the virtual (super) class of
   (potentially) all matrix factorizations of matrices from package
@@ -37,10 +35,8 @@
       return the original \code{\linkS4class{Matrix}} object.}
     \item{show}{\code{signature(object = "MatrixFactorization")}: simple
       printing, see \code{\link{show}}.}
-    \item{solve}{\code{signature(a = "MatrixFactorization", b= .)}:
-      solve \eqn{A x = b} for \eqn{x}; has not been implemented for
-      all factorizations, but e.g., for \code{\linkS4class{CHMfactor}},
-      see there.}
+    \item{solve}{\code{signature(a = "MatrixFactorization", b= .)}: solve
+      \eqn{A x = b} for \eqn{x}; see \code{\link{solve-methods}}.}
   }
 }
 \seealso{

@@ -1,8 +1,7 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.10.0\n"
-"Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-10-12 15:43\n"
+"Project-Id-Version: boot 1.3-9\n"
+"POT-Creation-Date: 2013-03-20 07:24\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -11,19 +10,22 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 
-msgid "'simple=TRUE' is only valid for 'sim=\"ordinary\", stype=\"i\", n=0, so ignored"
+msgid "'simple=TRUE' is only valid for 'sim=\"ordinary\", stype=\"i\", n=0', so ignored"
 msgstr ""
 
-msgid "no data in call to boot"
+msgid "no data in call to 'boot'"
 msgstr ""
 
-msgid "negative value of m supplied"
+msgid "negative value of 'm' supplied"
 msgstr ""
 
-msgid "length of m incompatible with strata"
+msgid "length of 'm' incompatible with 'strata'"
 msgstr ""
 
-msgid "dimensions of R and weights do not match"
+msgid "dimensions of 'R' and 'weights' do not match"
+msgstr ""
+
+msgid "arguments are not all the same type of \"boot\" object"
 msgstr ""
 
 msgid "index array not defined for model-based resampling"
@@ -35,43 +37,43 @@ msgstr ""
 msgid "array cannot be found for parametric bootstrap"
 msgstr ""
 
-msgid "distribution not supported using normal instead"
+msgid "%s distribution not supported: using normal instead"
 msgstr ""
 
-msgid "only first element of index used"
+msgid "only first element of 'index' used"
 msgstr ""
 
-msgid "K outside allowable range"
+msgid "'K' outside allowable range"
 msgstr ""
 
-msgid "K has been set to"
+msgid "'K' has been set to %f"
 msgstr ""
 
-msgid "t and t0 must be supplied together"
+msgid "'t' and 't0' must be supplied together"
 msgstr ""
 
 msgid "index out of bounds; minimum index only used."
 msgstr ""
 
-msgid "t must of length"
+msgid "'t' must of length %d"
 msgstr ""
 
 msgid "bootstrap variances needed for studentized intervals"
 msgstr ""
 
-msgid "BCa intervals not defined for time series bootstraps."
+msgid "BCa intervals not defined for time series bootstraps"
 msgstr ""
 
 msgid "bootstrap output object or 't0' required"
 msgstr ""
 
-msgid "unable to calculate var.t0"
+msgid "unable to calculate 'var.t0'"
 msgstr ""
 
 msgid "extreme order statistics used as endpoints"
 msgstr ""
 
-msgid "variance required for Studentized CI's"
+msgid "variance required for studentized intervals"
 msgstr ""
 
 msgid "estimated adjustment 'w' is infinite"
@@ -80,142 +82,127 @@ msgstr ""
 msgid "estimated adjustment 'a' is NA"
 msgstr ""
 
-msgid "only first element of index used in abc.ci"
+msgid "only first element of 'index' used in 'abc.ci'"
 msgstr ""
 
-msgid "missing values not allowed in data"
+msgid "missing values not allowed in 'data'"
 msgstr ""
 
-msgid "unknown value of sim"
+msgid "unknown value of 'sim'"
 msgstr ""
 
-msgid "data must be a matrix with at least 2 columns"
+msgid "'data' must be a matrix with at least 2 columns"
 msgstr ""
 
-msgid "index must contain 2 elements"
+msgid "'index' must contain 2 elements"
 msgstr ""
 
-msgid "only first 2 elements of index used"
+msgid "only first 2 elements of 'index' used"
 msgstr ""
 
-msgid "indices are incompatible with ncol(data)"
+msgid "indices are incompatible with 'ncol(data)'"
 msgstr ""
 
-msgid "sim=weird cannot be used with coxph object"
+msgid "sim = \"weird\" cannot be used with a \"coxph\" object"
 msgstr ""
 
-msgid "only columns"
+msgid "only columns %s and %s of 'data' used"
 msgstr ""
 
-msgid "and"
+msgid "no coefficients in Cox model -- model ignored"
 msgstr ""
 
-msgid "of data used"
+msgid "'F.surv' is required but missing"
 msgstr ""
 
-msgid "no coefficients in cox model -- model ignored"
+msgid "'G.surv' is required but missing"
 msgstr ""
 
-msgid "F.surv is required but missing"
-msgstr ""
-
-msgid "G.surv is required but missing"
-msgstr ""
-
-msgid "strata of wrong length"
+msgid "'strata' of wrong length"
 msgstr ""
 
 msgid "influence values cannot be found from a parametric bootstrap"
 msgstr ""
 
-msgid "no data or bootstrap object specified"
+msgid "neither 'data' nor bootstrap object specified"
 msgstr ""
 
-msgid "no statistic or bootstrap object specified"
+msgid "neither 'statistic' nor bootstrap object specified"
 msgstr ""
 
 msgid "'stype' must be \"w\" for type=\"inf\""
 msgstr ""
 
-msgid "input t ignored; type=\"inf\""
+msgid "input 't' ignored; type=\"inf\""
 msgstr ""
 
 msgid "bootstrap object needed for type=\"reg\""
 msgstr ""
 
-msgid "input t ignored; type=\"jack\""
+msgid "input 't' ignored; type=\"jack\""
 msgstr ""
 
-msgid "input t ignored; type=\"pos\""
+msgid "input 't' ignored; type=\"pos\""
 msgstr ""
 
-msgid "input t0 ignored: neither t nor L supplied"
+msgid "input 't0' ignored: neither 't' nor 'L' supplied"
 msgstr ""
 
 msgid "bootstrap output matrix missing"
 msgstr ""
 
-msgid "use boot.ci for scalar parameters"
+msgid "use 'boot.ci' for scalar parameters"
 msgstr ""
 
-msgid "unable to achieve requested overall error rate."
+msgid "unable to achieve requested overall error rate"
 msgstr ""
 
-msgid "unable to find multiplier for"
+msgid "unable to find multiplier for %f"
 msgstr ""
 
-msgid "theta or lambda required"
+msgid "'theta' or 'lambda' required"
 msgstr ""
 
-msgid "0 elements not allowed in q"
+msgid "0 elements not allowed in 'q'"
 msgstr ""
 
 msgid "bootstrap replicates must be supplied"
 msgstr ""
 
-msgid "either boot.out or w must be specified."
+msgid "either 'boot.out' or 'w' must be specified."
 msgstr ""
 
-msgid "only first column of t used"
+msgid "only first column of 't' used"
 msgstr ""
 
-msgid "invalid value of sim supplied"
+msgid "invalid value of 'sim' supplied"
 msgstr ""
 
-msgid "R and theta have incompatible lengths"
+msgid "'R' and 'theta' have incompatible lengths"
 msgstr ""
 
 msgid "R[1L] must be positive for frequency smoothing"
 msgstr ""
 
-msgid "R and alpha have incompatible lengths"
+msgid "'R' and 'alpha' have incompatible lengths"
 msgstr ""
 
 msgid "extreme values used for quantiles"
 msgstr ""
 
-msgid "theta must be supplied if R[1L] = 0"
+msgid "'theta' must be supplied if R[1L] = 0"
 msgstr ""
 
-msgid "alpha ignored; R[1L]=0"
+msgid "'alpha' ignored; R[1L] = 0"
 msgstr ""
 
-msgid "control methods undefined when boot.out has weights"
+msgid "control methods undefined when 'boot.out' has weights"
 msgstr ""
 
-msgid "invalid proportions input"
+msgid "number of columns of 'A' (%d) not equal to length of 'u' (%d)"
 msgstr ""
 
-msgid "number of columns of A ("
-msgstr ""
-
-msgid ") not equal to length of u ("
-msgstr ""
-
-msgid ")"
-msgstr ""
-
-msgid "either A and u or K.adj and K2 must be supplied"
+msgid "either 'A' and 'u' or 'K.adj' and 'K2' must be supplied"
 msgstr ""
 
 msgid "this type not implemented for Poisson"
@@ -224,38 +211,32 @@ msgstr ""
 msgid "this type not implemented for Binary"
 msgstr ""
 
-msgid "one of t or t0 required"
+msgid "one of 't' or 't0' required"
 msgstr ""
 
-msgid "function u missing"
+msgid "function 'u' missing"
 msgstr ""
 
-msgid "u must be a function"
+msgid "'u' must be a function"
 msgstr ""
 
 msgid "unable to find range"
 msgstr ""
 
-msgid "R must be positive"
+msgid "'R' must be positive"
 msgstr ""
 
-msgid "invalid value of l"
+msgid "invalid value of 'l'"
 msgstr ""
 
-msgid "unrecognized value of sim"
-msgstr ""
-
-msgid "irregular time series not allowed"
+msgid "unrecognized value of 'sim'"
 msgstr ""
 
 msgid "multivariate time series not allowed"
 msgstr ""
 
-msgid "likelihood never exceeds"
+msgid "likelihood never exceeds %f"
 msgstr ""
 
-msgid "likelihood exceeds"
-msgstr ""
-
-msgid "at only one point"
+msgid "likelihood exceeds %f at only one point"
 msgstr ""

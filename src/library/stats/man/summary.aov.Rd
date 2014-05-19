@@ -60,7 +60,7 @@
 ## For a simple example see example(aov)
 
 # Cochran and Cox (1957, p.164)
-# 3x3 factorial with ordered factors, each is average of 12. 
+# 3x3 factorial with ordered factors, each is average of 12.
 CC <- data.frame(
     y = c(449, 413, 326, 409, 358, 291, 341, 278, 312)/12,
     P = ordered(gl(3, 3)), N = ordered(gl(3, 1, 9))
@@ -78,6 +78,6 @@ summary(CC.aov, split = list("N:P" = list(L.L = 1, Q = 2:4)))
 # split on just one var
 summary(CC.aov, split = list(P = list(lin = 1, quad = 2)))
 summary(CC.aov, split = list(P = list(lin = 1, quad = 2)),
-        expand.split=FALSE)}
+        expand.split = FALSE)}
 \keyword{models}
 \keyword{regression}

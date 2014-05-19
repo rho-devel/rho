@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -104,7 +104,7 @@ extern "C" {
  *
  * @return The new value \a v.
  */
-SEXP SET_XVECTOR_ELT(SEXP x, int i, SEXP v);
+SEXP SET_XVECTOR_ELT(SEXP x, R_xlen_t i, SEXP v);
 
 /**
  * @brief Examine element of a CXXR::ExpressionVector.
@@ -116,13 +116,13 @@ SEXP SET_XVECTOR_ELT(SEXP x, int i, SEXP v);
  * @return Pointer to extracted \a i 'th element.
  */
 #ifndef __cplusplus
-SEXP XVECTOR_ELT(SEXP x, int i);
+SEXP XVECTOR_ELT(SEXP x, R_xlen_t i);
 #else
-inline SEXP XVECTOR_ELT(SEXP x, int i)
+inline SEXP XVECTOR_ELT(SEXP x, R_xlen_t i)
 {
     using namespace CXXR;
     ExpressionVector* ev = SEXP_downcast<ExpressionVector*>(x, false);
-    return (*ev)[i];
+    return (*ev)[VectorBase::size_type(i)];
 }
 #endif
 

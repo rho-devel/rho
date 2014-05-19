@@ -1,6 +1,8 @@
 #  File src/library/stats/R/stl.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -59,7 +61,7 @@ stl <- function(x, s.window,
     l.degree <- deg.check(l.degree)
     if(is.null(t.window))
 	t.window <- nextodd(ceiling( 1.5 * period / (1- 1.5/s.window)))
-    if (!is.double(x)) storage.mode(x) <- "double"
+    storage.mode(x) <- "double"
     z <- .Fortran(C_stl, x, n,
 		  as.integer(period),
 		  as.integer(s.window),
@@ -81,12 +83,12 @@ stl <- function(x, s.window,
 	z$seasonal <- tapply(z$seasonal, which.cycle, mean)[which.cycle]
     }
     remainder <- as.vector(x) - z$seasonal - z$trend
-    y <- cbind(seasonal=z$seasonal, trend=z$trend, remainder=remainder)
-    res <- list(time.series = ts(y, start=start(x), frequency = period),
-		weights=z$weights, call=match.call(),
+    y <- cbind(seasonal = z$seasonal, trend = z$trend, remainder = remainder)
+    res <- list(time.series = ts(y, start = start(x), frequency = period),
+		weights = z$weights, call = match.call(),
 		win = c(s = s.window, t = t.window, l = l.window),
 		deg = c(s = s.degree, t = t.degree, l = l.degree),
-		jump= c(s = s.jump,   t = t.jump,   l = l.jump),
+		jump = c(s = s.jump, t = t.jump, l = l.jump),
 		inner = z$ni, outer = z$no)
     class(res) <- "stl"
     res
@@ -111,7 +113,7 @@ summary.stl <- function(object, digits = getOption("digits"), ...)
     iqr <- apply(cbind(STL = object$time.series,
                        data = object$time.series %*% rep(1,3)),
 		 2L, IQR)
-    print(rbind(format(iqr, digits = max(2, digits - 3)),
+    print(rbind(format(iqr, digits = max(2L, digits - 3L)),
 		"   %"= format(round(100 * iqr / iqr["data"], 1))),
 	  quote = FALSE)
     cat("\n Weights:")

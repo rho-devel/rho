@@ -166,7 +166,8 @@ function(file)
         ## warning, and try reading until the next variable.
         ## This only works for unknown atomic types, so let us hope we
         ## have code for all recursive ones ...
-        warning("cannot handle unknown type ", sQuote(type))
+        warning(gettextf("cannot handle unknown type %s", sQuote(type)),
+                domain = NA)
         skip_lines_to_next_item(con)
         NULL
     }

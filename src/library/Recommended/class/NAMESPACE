@@ -6,5 +6,5 @@ export(batchSOM, condense, knn, knn.cv, knn1, lvq1, lvq2, lvq3, lvqinit,
 importFrom(graphics, plot)
 importFrom(stats, dist)
 
-S3method(plot,SOM)
-S3method(plot,somgrid)
+S3method(plot, SOM)
+S3method(plot, somgrid)

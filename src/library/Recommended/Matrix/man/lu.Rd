@@ -11,8 +11,8 @@ lu(x, \dots)
 \S4method{lu}{dgCMatrix}(x, errSing = TRUE, order = TRUE, tol = 1, \dots)
 }
 \description{
-  Computes (generalized) triangular decompositions of square and other
-  dense matrices.
+  Computes (generalized) triangular decompositions of square (sparse or
+  dense) and non-square dense matrices.
 }
 \arguments{
   \item{x}{a dense or sparse matrix, in the latter case of square

@@ -1,6 +1,8 @@
 #  File src/library/grDevices/R/xyz.coords.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -84,9 +86,9 @@ xy.coords <-
     if(length(x) != length(y)) {
 	if(recycle) {
 	    if((nx <- length(x)) < (ny <- length(y)))
-		x <- rep(x, length.out = ny)
+		x <- rep_len(x, ny)
 	    else
-		y <- rep(y, length.out = nx)
+		y <- rep_len(y, nx)
 	}
 	else
 	    stop("'x' and 'y' lengths differ")
@@ -203,9 +205,9 @@ xyz.coords <- function(x, y=NULL, z=NULL, xlab=NULL, ylab=NULL, zlab=NULL,
     if(((xl <- length(x)) != length(y)) || (xl != length(z))) {
 	if(recycle) {
 	    ml <- max(xl, (yl <- length(y)), (zl <- length(z)))
-	    if(xl < ml) x <- rep(x, length.out = ml)
-	    if(yl < ml) y <- rep(y, length.out = ml)
-	    if(zl < ml) z <- rep(z, length.out = ml)
+	    if(xl < ml && !is.null(x)) x <- rep_len(x, ml)
+	    if(yl < ml && !is.null(y)) y <- rep_len(y, ml)
+	    if(zl < ml && !is.null(z)) z <- rep_len(z, ml)
 	}
 	else stop("'x', 'y' and 'z' lengths differ")
     }

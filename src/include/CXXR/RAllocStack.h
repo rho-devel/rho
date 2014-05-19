@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -301,8 +301,8 @@ extern "C" {
 #else
     inline void vmaxset(const void* stack_sizep)
     {
-	size_t stack_size = static_cast<const char*>(stack_sizep)
-	                    - static_cast<const char*>(0);
+	size_t stack_size = size_t(static_cast<const char*>(stack_sizep)
+				   - static_cast<const char*>(0));
 	CXXR::RAllocStack::restoreSize(stack_size);
     }
 #endif

@@ -60,19 +60,18 @@ nlsList.formula <-
     if (inherits(data, "groupedData")) {
       if (missing(level)) level <- length(getGroupsFormula(data, asList = TRUE))
       else if (length(level) > 1) {
-	stop("Multiple levels not allowed")
+	stop("multiple levels not allowed")
       }
       groups <- getGroups(data, level = level)[drop = TRUE]
       grpForm <- getGroupsFormula(data)
     } else {
-      stop (paste("Data must be a groupedData object if formula",
-                  "does not include groups"))
+      stop("'data' must be a \"groupedData\" object if 'formula' does not include groups")
     }
   } else {
     if (missing(level)) {
       level <- length(getGroupsFormula(model, asList = TRUE))
     } else if (length(level) > 1) {
-      stop("Multiple levels not allowed")
+      stop("multiple levels not allowed")
     }
     model <- eval(parse(text = paste(paste(deparse(model[[2]]), collapse=" "),
                         paste(deparse(getCovariateFormula(model)[[2]]), collapse=" "),
@@ -95,7 +94,8 @@ nlsList.formula <-
                  "  SSlogis instead of logistic.\n",
                  "If writing your own selfStart model, see\n",
                  "  \"help(selfStart)\"\n",
-                 "for the new form of the \"initial\" attribute.", sep="" ))
+                 "for the new form of the \"initial\" attribute.", sep="" ),
+           domain = NA)
     }
   }
 
@@ -156,7 +156,7 @@ update.nlsList <-
 {
     call <- attr(object, "call")
     if (is.null(call))
-	stop("missing call attribute in nlsList object")
+	stop("missing call attribute in \"nlsList\" object")
     extras <- match.call(expand.dots = FALSE)$...
     if (!missing(model.))
 	call$model <- update.formula(formula(object), model.)

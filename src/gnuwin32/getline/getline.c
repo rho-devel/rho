@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -40,7 +40,7 @@ int 		(*gl_in_hook)() = 0;
 int 		(*gl_out_hook)() = 0;
 int 		(*gl_tab_hook)() = gl_tab;
 
-#include <R_ext/rlocale.h>
+#include <rlocale.h>
 extern Rboolean mbcslocale;
 #define mbs_init(x) memset(x, 0, sizeof(mbstate_t))
 

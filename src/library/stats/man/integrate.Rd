@@ -1,6 +1,6 @@
 % File src/library/stats/man/integrate.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{integrate}
@@ -12,7 +12,7 @@
   infinite interval.
 }
 \usage{
-integrate(f, lower, upper, \dots, subdivisions=100,
+integrate(f, lower, upper, \dots, subdivisions = 100L,
           rel.tol = .Machine$double.eps^0.25, abs.tol = rel.tol,
           stop.on.error = TRUE, keep.xy = FALSE, aux = NULL)
 }
@@ -33,7 +33,7 @@ integrate(f, lower, upper, \dots, subdivisions=100,
 }
 \details{
   Note that arguments after \code{\dots} must be matched exactly.
-  
+
   If one or both limits are infinite, the infinite range is mapped onto
   a finite interval.
 
@@ -59,7 +59,7 @@ integrate(f, lower, upper, \dots, subdivisions=100,
   behaviour of the function elsewhere, the function needs to be
   well-behaved, for example differentiable except perhaps for a small
   number of jumps or integrable singularities.
-  
+
   \code{f} must accept a vector of inputs and produce a vector of function
   evaluations at those points.  The \code{\link{Vectorize}} function
   may be helpful to convert \code{f} to this form.
@@ -73,12 +73,14 @@ integrate(f, lower, upper, \dots, subdivisions=100,
   \item{message}{\code{"OK"} or a character string giving the error message.}
   \item{call}{the matched call.}
 }
-\references{
-  Based on QUADPACK routines \code{dqags} and \code{dqagi} by
-  R. Piessens and E. deDoncker-Kapenga, available from Netlib.
 
-  See\cr
-  R. Piessens, E. deDoncker-Kapenga, C. Uberhuber, D. Kahaner (1983)
+\source{
+  Based on QUADPACK routines \code{dqags} and \code{dqagi} by
+  R. Piessens and E. deDoncker--Kapenga, available from Netlib.
+}
+
+\references{
+  R. Piessens, E. deDoncker--Kapenga, C. Uberhuber, D. Kahaner (1983)
   \emph{Quadpack: a Subroutine Package for Automatic Integration};
   Springer Verlag.
 }
@@ -97,17 +99,17 @@ integrate(integrand, lower = 0, upper = 1000000, stop.on.error = FALSE)
 
 ## some functions do not handle vector input properly
 f <- function(x) 2.0
-try(integrate(f, 0, 1)) 
+try(integrate(f, 0, 1))
 integrate(Vectorize(f), 0, 1)  ## correct
 integrate(function(x) rep(2.0, length(x)), 0, 1)  ## correct
 
 ## integrate can fail if misused
-integrate(dnorm,0,2)
-integrate(dnorm,0,20)
-integrate(dnorm,0,200)
-integrate(dnorm,0,2000)
-integrate(dnorm,0,20000) ## fails on many systems
-integrate(dnorm,0,Inf)   ## works
+integrate(dnorm, 0, 2)
+integrate(dnorm, 0, 20)
+integrate(dnorm, 0, 200)
+integrate(dnorm, 0, 2000)
+integrate(dnorm, 0, 20000) ## fails on many systems
+integrate(dnorm, 0, Inf)   ## works
 }
 \keyword{math}
 \keyword{utilities}

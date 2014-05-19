@@ -16,7 +16,7 @@ polygon(x, y = NULL, density = NULL, angle = 45,
         \dots, fillOddEven = FALSE)
 }
 \arguments{
-  \item{x,y}{vectors containing the coordinates of the vertices
+  \item{x, y}{vectors containing the coordinates of the vertices
     of the polygon.}
   \item{density}{the density of shading lines, in lines per inch.  The
     default value of \code{NULL} means that no shading lines are drawn.
@@ -33,7 +33,7 @@ polygon(x, y = NULL, density = NULL, angle = 45,
   \item{border}{the color to draw the border.  The default, \code{NULL},
     means to use \code{\link{par}("fg")}.  Use \code{border = NA} to
     omit borders.
-    
+
     For compatibility with S, \code{border} can also be logical, in
     which case \code{FALSE} is equivalent to \code{NA} (borders omitted)
     and \code{TRUE} is equivalent to \code{NULL} (use the foreground colour),
@@ -42,7 +42,7 @@ polygon(x, y = NULL, density = NULL, angle = 45,
   \item{\dots}{graphical parameters such as \code{xpd}, \code{lend},
     \code{ljoin} and \code{lmitre} can be given as arguments.}
   \item{fillOddEven}{logical controlling the polygon shading mode:  see
-      below for details.  Default \code{FALSE}.} 
+      below for details.  Default \code{FALSE}.}
 }
 \details{
   The coordinates can be passed in a plotting structure
@@ -51,7 +51,7 @@ polygon(x, y = NULL, density = NULL, angle = 45,
 
   It is assumed that the polygon is to be closed by joining the last
   point to the first point.
- 
+
   The coordinates can contain missing values.  The behaviour is similar
   to that of \code{\link{lines}}, except that instead of breaking a line
   into several lines, \code{NA} values break the polygon into several
@@ -93,41 +93,41 @@ polygon(x, y = NULL, density = NULL, angle = 45,
   \code{\link{par}} for how to specify colors.
 }
 \examples{
-x <- c(1:9,8:1)
-y <- c(1,2*(5:3),2,-1,17,9,8,2:9)
-op <- par(mfcol=c(3,1))
-for(xpd in c(FALSE,TRUE,NA)) {
+x <- c(1:9, 8:1)
+y <- c(1, 2*(5:3), 2, -1, 17, 9, 8, 2:9)
+op <- par(mfcol = c(3, 1))
+for(xpd in c(FALSE, TRUE, NA)) {
   plot(1:10, main = paste("xpd =", xpd))
-  box("figure", col = "pink", lwd=3)
-  polygon(x,y, xpd=xpd, col="orange", lty=2, lwd=2, border="red")
+  box("figure", col = "pink", lwd = 3)
+  polygon(x, y, xpd = xpd, col = "orange", lty = 2, lwd = 2, border = "red")
 }
 par(op)
 
 n <- 100
 xx <- c(0:n, n:0)
-yy <- c(c(0,cumsum(stats::rnorm(n))), rev(c(0,cumsum(stats::rnorm(n)))))
-plot   (xx, yy, type="n", xlab="Time", ylab="Distance")
-polygon(xx, yy, col="gray", border = "red")
+yy <- c(c(0, cumsum(stats::rnorm(n))), rev(c(0, cumsum(stats::rnorm(n)))))
+plot   (xx, yy, type = "n", xlab = "Time", ylab = "Distance")
+polygon(xx, yy, col = "gray", border = "red")
 title("Distance Between Brownian Motions")
 
 # Multiple polygons from NA values
 # and recycling of col, border, and lty
-op <- par(mfrow=c(2,1))
-plot(c(1,9), 1:2, type="n")
+op <- par(mfrow = c(2, 1))
+plot(c(1, 9), 1:2, type = "n")
 polygon(1:9, c(2,1,2,1,1,2,1,2,1),
-        col=c("red", "blue"),
-        border=c("green", "yellow"),
-        lwd=3, lty=c("dashed", "solid"))
-plot(c(1,9), 1:2, type="n")
+        col = c("red", "blue"),
+        border = c("green", "yellow"),
+        lwd = 3, lty = c("dashed", "solid"))
+plot(c(1, 9), 1:2, type = "n")
 polygon(1:9, c(2,1,2,1,NA,2,1,2,1),
-        col=c("red", "blue"),
-        border=c("green", "yellow"),
-        lwd=3, lty=c("dashed", "solid"))
+        col = c("red", "blue"),
+        border = c("green", "yellow"),
+        lwd = 3, lty = c("dashed", "solid"))
 par(op)
 
 # Line-shaded polygons
-plot(c(1,9), 1:2, type="n")
+plot(c(1, 9), 1:2, type = "n")
 polygon(1:9, c(2,1,2,1,NA,2,1,2,1),
-        density=c(10, 20), angle=c(-45, 45))
+        density = c(10, 20), angle = c(-45, 45))
 }
 \keyword{aplot}

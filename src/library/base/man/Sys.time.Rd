@@ -41,11 +41,13 @@ Sys.Date()
   string.
 
   \code{\link{Sys.timezone}}.
+  
+  \code{\link{system.time}} for measuring elapsed/CPU time of expressions.
 }
 \examples{\donttest{
 Sys.time()
 ## print with possibly greater accuracy:
-op <- options(digits.secs=6)
+op <- options(digits.secs = 6)
 Sys.time()
 options(op)
 

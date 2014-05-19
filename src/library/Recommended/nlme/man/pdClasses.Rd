@@ -31,7 +31,7 @@
  Pinheiro, J.C., and Bates, D.M. (2000) "Mixed-Effects Models
  in S and S-PLUS", Springer.  
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \note{
   Users may define their own \code{pdMat} classes by specifying a
   \code{constructor} function and, at a minimum, methods for the

@@ -11,9 +11,9 @@
 pred.rpart(fit, x)
 rpart.anova(y, offset, parms, wt)
 rpart.class(y, offset, parms, wt)
-rpart.exp(y, offset, parms, wt)
 rpart.matrix(frame)
 rpart.poisson(y, offset, parms, wt)
+rpartco(tree, parms)
 }
 \arguments{
   \item{fit}{a tree fitted by \code{rpart}.}
@@ -23,11 +23,13 @@ rpart.poisson(y, offset, parms, wt)
   \item{parms}{a list of parameters, usually empty.}
   \item{wt}{case weights.}
   \item{frame}{model frame (from call to \code{rpart})}
+  \item{tree}{a tree fitted by \code{rpart}.}
 }
 \value{
-  \code{rpart.anova}, \code{rpart.class}, \code{rpart.exp} and
-  \code{rpart.poisson} return a list with components
+  For \code{rpartco} the x,y plotting coordinates of the nodes.
   
+  \code{rpart.anova}, \code{rpart.class} and
+  \code{rpart.poisson} return a list with components
   \item{y}{(adjusting for \code{offset} if necessary),}
   \item{parms}{as input,}
   \item{numresp}{the number of responses,}

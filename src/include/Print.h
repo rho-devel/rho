@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -37,8 +37,9 @@
 #ifndef PRINT_H_
 #define PRINT_H_
 
-#include <R_ext/PrtUtil.h>
 #include "Defn.h"
+#include <R_ext/PrtUtil.h>
+#include <R_ext/Print.h>
 
 #ifdef __cplusplus
 namespace CXXR {
@@ -72,11 +73,12 @@ typedef struct {
     SEXP na_string;
     SEXP na_string_noquote;
     int useSource;
+    int cutoff; // for deparsed language objects
 } R_print_par_t;
 extern R_print_par_t R_print;
 
 /* Computation of printing formats */
-void formatRaw(Rbyte *, int, int *);
+void formatRaw(Rbyte *, R_xlen_t, int *);
 
 /* Formating of values */
 const char *EncodeElement(SEXP, int, int, char);
@@ -90,8 +92,8 @@ void printMatrix(SEXP, int, SEXP, int, int, SEXP, SEXP,
 		 const char*, const char*);
 void printNamedVector(SEXP, SEXP, int, const char*);
 void printVector(SEXP, int, int);
-void PrintClosure(SEXP, Rboolean);
-void PrintLanguage(SEXP, Rboolean);
+// void PrintClosure(SEXP, Rboolean);
+// void PrintLanguage(SEXP, Rboolean);
 
 /* Utilities for S compatibility and debuggging */
 int F77_SYMBOL(dblepr0)(const char *, int *, double *, int *);
@@ -104,7 +106,7 @@ void R_PV(SEXP s);
 
 #define R_MIN_WIDTH_OPT		10
 #define R_MAX_WIDTH_OPT		10000
-#define R_MIN_DIGITS_OPT	1
+#define R_MIN_DIGITS_OPT	0
 #define R_MAX_DIGITS_OPT	22
 
 #ifdef __cplusplus

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -55,7 +55,7 @@ namespace CXXR {
      * defined, released memory blocks are filled with 0x55 bytes
      * (though some of these may be overwritten by data used for free
      * list management).  This can be useful to show up premature
-     * deallocation of memory block, especially if used in conjunction
+     * deallocation of memory blocks, especially if used in conjunction
      * with the CELLFIFO preprocessor variable documented in
      * config.hpp .
      */
@@ -117,7 +117,7 @@ namespace CXXR {
 	    memset(p, 0x55, bytes);
 #endif
 	    // Assumes sizeof(double) == 8:
-	    if (use_new_directly(bytes))
+	    if (bytes >= s_new_threshold)
 		::operator delete(p);
 	    else s_pools[s_pooltab[(bytes + 7) >> 3]].deallocate(p);
 	    --s_blocks_allocated;
@@ -156,8 +156,8 @@ namespace CXXR {
     private:
 	typedef CellPool Pool;
 	static const size_t s_num_pools = 10;
-	// The size of allocation past which we use 'new' directly.
-	static const size_t s_alloc_threshold;
+	// We use ::operator new directly for allocations at least this big:
+	static const size_t s_new_threshold;
 	static size_t s_blocks_allocated;
 	static size_t s_bytes_allocated;
 	static Pool* s_pools;
@@ -176,12 +176,6 @@ namespace CXXR {
 
 	// Initialize the static data members:
 	static void initialize();
-
-	// We only use the pool for small allocations.  For larger ones we
-	// use 'new' and 'delete' directly.
-	static bool use_new_directly(size_t bytes) {
-	    return bytes >= s_alloc_threshold;
-	}
 
 	friend class SchwarzCounter<MemoryBank>;
     };

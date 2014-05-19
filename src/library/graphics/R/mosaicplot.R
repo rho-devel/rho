@@ -1,6 +1,8 @@
 #  File src/library/graphics/R/mosaicplot.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -178,8 +180,10 @@ function(x, main = deparse(substitute(x)), sub = NULL, xlab = NULL,
     dimd <- length(dx <- dim(x))
     if(dimd == 0L || any(dx == 0L))
         stop("'x' must not have 0 dimensionality")
-    if(length(list(...)))
-        warning(gettextf("extra argument(s) %s will be disregarded",
+    if(!missing(...))
+        warning(sprintf(ngettext(length(list(...)),
+                                 "extra argument %s will be disregarded",
+                                 "extra arguments %s will be disregarded"),
                          paste(sQuote(names(list(...))), collapse = ", ")),
                 domain = NA)
     ##-- Set up 'Ind' matrix : to contain indices and data
@@ -252,12 +256,12 @@ function(x, main = deparse(substitute(x)), sub = NULL, xlab = NULL,
     if(is.null(off))
         off <- if(dimd == 2) 2 * (dx - 1) else rep.int(10, dimd)
     if(length(off) != dimd)
-        off <- rep(off, length.out = dimd)
+        off <- rep_len(off, dimd)
     if(any(off > 50))
         off <- off * 50/max(off)
     ## Initialize directions.
     if (is.null(dir) || length(dir) != dimd) {
-        dir <- rep(c("v","h"), length.out = dimd)
+        dir <- rep_len(c("v","h"), dimd)
     }
     if (!is.null(sort)) {
         if(length(sort) != dimd)
@@ -296,7 +300,7 @@ function(x, main = deparse(substitute(x)), sub = NULL, xlab = NULL,
             else if(is.null(color))
                 rep.int("grey", ncolors)
             else                        # recycle
-                rep(color, length.out = ncolors)
+                rep_len(color, ncolors)
     }
 
     ##-- Plotting
@@ -406,7 +410,7 @@ function(formula, data = NULL, ...,
             m$data <- as.data.frame(data)
         m$main <- m$... <- NULL
         m$na.action <- na.action
-        m[[1L]] <- as.name("model.frame")
+        m[[1L]] <- quote(stats::model.frame)
         mf <- eval(m, parent.frame())
         mosaicplot(table(mf), main = main, ...)
     }

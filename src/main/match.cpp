@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2010   The R Core Team.
+ *  Copyright (C) 1998-2012   The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -99,6 +99,8 @@ Rboolean Rf_psmatch(const char *f, const char *t, Rboolean exact)
 Rboolean Rf_pmatch(SEXP formal, SEXP tag, Rboolean exact)
 {
     const char *f, *t;
+    const void *vmax = vmaxget();
+    Rboolean res;  // In CXXR this must be declared outside the span of the gotos
     switch (TYPEOF(formal)) {
     case SYMSXP:
 	f = CHAR(PRINTNAME(formal));
@@ -125,7 +127,9 @@ Rboolean Rf_pmatch(SEXP formal, SEXP tag, Rboolean exact)
     default:
 	goto fail;
     }
-    return Rf_psmatch(f, t, exact);
+    res = Rf_psmatch(f, t, exact);
+    vmaxset(vmax);
+    return res;
  fail:
     Rf_error(_("invalid partial string match"));
     return FALSE;/* for -Wall */
@@ -409,8 +413,11 @@ SEXP attribute_hidden Rf_matchArgs(SEXP formals, SEXP supplied, SEXP call)
                     SET_TAG(last, tagB);
                 }
             }
-	    Rf_error(_("unused argument(s) %s"),
-		     CHAR(STRING_ELT(Rf_deparse1line(unusedForError, CXXRFALSE), 0)) + 4);
+	    Rf_errorcall(call /* R_GlobalContext->call */,
+		      ngettext("unused argument %s",
+			       "unused arguments %s",
+			       static_cast<unsigned long>( length(unusedForError))),
+		      CHAR(STRING_ELT(Rf_deparse1line(unusedForError, CXXRFALSE), 0)) + 4);
                       /* '+ 4' is to remove 'list' from 'list(badTag1,...)' */
 	}
     }

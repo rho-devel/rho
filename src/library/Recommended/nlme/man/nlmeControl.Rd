@@ -2,7 +2,6 @@
 % Part of the nlme package for R
 % Distributed under GPL 2 or later: see nlme/LICENCE
 
-% $Id: nlmeControl.Rd,v 1.8 2002/03/05 14:59:39 bates Exp $
 \name{nlmeControl}
 \title{Control Values for nlme Fit}
 \usage{
@@ -10,7 +9,7 @@ nlmeControl(maxIter, pnlsMaxIter, msMaxIter, minScale,
             tolerance, niterEM, pnlsTol, msTol, msScale,
             returnObject, msVerbose, gradHess, apVar, .relStep,
             nlmStepMax = 100.0, minAbsParApVar = 0.05,
-            opt = c("nlminb", "nlm"), natural = TRUE)
+            opt = c("nlminb", "nlm"), natural = TRUE, \dots)
 }
 \alias{nlmeControl}
 \arguments{
@@ -59,17 +58,19 @@ nlmeControl(maxIter, pnlsMaxIter, msMaxIter, minScale,
    calculated. Default is \code{TRUE}.}
  \item{.relStep}{relative step for numerical derivatives
    calculations. Default is \code{.Machine$double.eps^(1/3)}.}
- \item{nlmStepMax}{stepmax value to be passed to nlm. See
+ \item{nlmStepMax}{stepmax value to be passed to \code{\link{nlm}}. See
      \code{\link{nlm}} for details. Default is 100.0}
  \item{minAbsParApVar}{numeric value - minimum absolute parameter value
    in the approximate variance calculation.  The default is \code{0.05}.}
- \item{opt}{the optimizer to be used, either \code{\link{nlminb}} (the
-   default since (\R 2.2.0) or \code{\link{nlm}} (the previous
-   default).}
+ \item{opt}{the optimizer to be used, either \code{"link{nlminb}"}(the
+   default) or \code{"link{nlm}"}.}
  \item{natural}{a logical value indicating whether the \code{pdNatural}
    parametrization should be used for general positive-definite matrices
    (\code{pdSymm}) in \code{reStruct}, when the approximate covariance
    matrix of the estimators is calculated. Default is \code{TRUE}.}
+ \item{\dots}{Further named control arguments to be passed to
+   \code{\link{nlminb}}, where used (\code{eval.max} and those from
+   \code{abs.tol} down).} 
 }
 \description{
   The values supplied in the function call replace the defaults and a
@@ -79,7 +80,7 @@ nlmeControl(maxIter, pnlsMaxIter, msMaxIter, minScale,
 \value{
   a list with components for each of the possible arguments.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{nlme}}, \code{\link{nlm}}, \code{\link{optim}},
   \code{\link{nlmeStruct}}}
 \examples{

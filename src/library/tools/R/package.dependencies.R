@@ -1,6 +1,8 @@
 #  File src/library/tools/R/package.dependencies.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -71,8 +73,7 @@ package.dependencies <-
                     x1 <- format(x1, justify="right")
                     x2 <- paste(x1[4:6], collapse=".")
                     x1 <- paste(x1[1L:3], collapse=".")
-                    comptext <- paste("'", x1, "' ", op,
-                                      " '", x2, "'", sep = "")
+                    comptext <- paste0("'", x1, "' ", op, " '", x2, "'")
                     compres <- try(eval(parse(text = comptext)))
                     if(!inherits(compres, "try-error")) {
                         z[k] <- compres

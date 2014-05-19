@@ -10,7 +10,7 @@ loss of numerical stability during fitting.  To change the default
 choise of fitting method, see \code{\link{gam}} arguments \code{method} and \code{optimizer}.
 }
 \usage{
-gam.control(irls.reg=0.0,epsilon = 1e-06, maxit = 100,
+gam.control(nthreads=1,irls.reg=0.0,epsilon = 1e-06, maxit = 100,
             mgcv.tol=1e-7,mgcv.half=15, trace = FALSE,
             rank.tol=.Machine$double.eps^0.5,
             nlm=list(),optim=list(),newton=list(),
@@ -18,7 +18,10 @@ gam.control(irls.reg=0.0,epsilon = 1e-06, maxit = 100,
             keepData=FALSE) 
 }
 \arguments{ 
-
+\item{nthreads}{Some parts of some smoothing parameter selection methods (e.g. REML) can use some
+parallelization in the C code if your R installation supports openMP, and \code{nthreads} is set to 
+more than 1. Note that it is usually better to use the number of physical cores here, rather than the 
+number of hyper-threading cores.}
 \item{irls.reg}{For most models this should be 0. The iteratively re-weighted least squares method
 by which GAMs are fitted  can fail to converge in some circumstances. For example, data with many zeroes can cause 
 problems in a model with a log link, because a mean of zero corresponds to an infinite range of linear predictor 

@@ -27,8 +27,7 @@ setAs("lgCMatrix", "lgeMatrix",
 	  new("lgeMatrix", x = c(as(from, "matrix")), # is fast,
 	      Dim = from@Dim, Dimnames = from@Dimnames))
 
-setAs("lgCMatrix", "matrix",
-      function(from) .Call(lcsc_to_matrix, from))
+setAs("lgCMatrix", "matrix", function(from) .Call(lgC_to_matrix, from))
 ## not this: .Call(Csparse_to_matrix, from)), since it goes via dense -> double precision
 
 

@@ -50,16 +50,21 @@ norm(x, type = c("O", "I", "F", "M", "2"))
 \value{
   The matrix norm, a non-negative number.
 }
+\source{
+  Except for \code{norm = "2"}, the LAPACK routine \code{DLANGE}.
+
+  LAPACK is from \url{http://www.netlib.org/lapack}.
+}
 \references{
   Anderson, E., et al. (1994).
-  \emph{LAPACK User's Guide,}
+  \emph{LAPACK User's Guide},
   2nd edition, SIAM, Philadelphia.
 }
 \seealso{
   \code{\link{rcond}} for the (reciprocal) condition number.
 }
 \examples{
-(x1 <- cbind(1,1:10))
+(x1 <- cbind(1, 1:10))
 norm(x1)
 norm(x1, "I")
 norm(x1, "M")
@@ -70,6 +75,6 @@ hilbert <- function(n) { i <- 1:n; 1 / outer(i - 1, i, "+") }
 h9 <- hilbert(9)
 ## all 5 types of norm:
 (nTyp <- eval(formals(base::norm)$type))
-sapply(nTyp, norm, x=h9)
+sapply(nTyp, norm, x = h9)
 }
 \keyword{math}

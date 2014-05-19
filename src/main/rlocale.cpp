@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -34,7 +34,7 @@
  */
 
 /*  This file was contributed by Ei-ji Nakama.
- *  See also the comments in R_ext/rlocale.h.
+ *  See also the comments in rlocale.h.
  *
  *  It provides replacements for the wctype functions on
  *  Windows (where they are not correct in e.g. Japanese)
@@ -51,11 +51,18 @@
 #include <config.h>
 #endif
 
+#ifdef HAVE_VISIBILITY_ATTRIBUTE
+# define attribute_hidden __attribute__ ((visibility ("hidden")))
+#else
+# define attribute_hidden
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 
 #define IN_RLOCALE_C 1 /* used in rlocale.h */
-#include <R_ext/rlocale.h>
+#include <rlocale.h>
+#include "CXXR/uncxxr.h"
 #include "rlocale_data.h"
 
 #include <wctype.h>
@@ -64,7 +71,6 @@
 #include <locale.h>
 #include <limits.h>
 #include <R_ext/Riconv.h>
-#include "CXXR/uncxxr.h"
 
 static int wcwidthsearch(int wint, const struct interval_wcwidth *table,
 			 int max, int locale)
@@ -121,6 +127,7 @@ static cjk_locale_name_t cjk_locale_name[] = {
     {"",				        MB_UTF8},
 };
 
+/* used in grDevices */
 int Ri18n_wcwidth(wchar_t c)
 {
     char lc_str[128];
@@ -131,8 +138,8 @@ int Ri18n_wcwidth(wchar_t c)
 
     if (0 != strcmp(setlocale(LC_CTYPE, NULL), lc_cache)) {
 	strncpy(lc_str, setlocale(LC_CTYPE, NULL), sizeof(lc_str));
-	for (i = 0, j = strlen(lc_str); i < j && i < sizeof(lc_str); i++)
-	    lc_str[i] = toupper(lc_str[i]);
+	for (i = 0, j = int( strlen(lc_str)); i < j && i < sizeof(lc_str); i++)
+	    lc_str[i] = char( toupper(lc_str[i]));
 	for (i = 0; i < (sizeof(cjk_locale_name)/sizeof(cjk_locale_name_t));
 	     i++) {
 	    if (0 == strncmp(cjk_locale_name[i].name, lc_str,
@@ -144,10 +151,12 @@ int Ri18n_wcwidth(wchar_t c)
     }
 
     return(wcwidthsearch(c, table_wcwidth,
-			 (sizeof(table_wcwidth)/sizeof(struct interval_wcwidth)),
+			 (CXXRCONSTRUCT(int, sizeof(table_wcwidth)/sizeof(struct interval_wcwidth))),
 			 lc));
 }
 
+/* Used in charcter.c, gnuwin32/console.c */
+attribute_hidden
 int Ri18n_wcswidth (const wchar_t *s, size_t n)
 {
     int rs = 0;
@@ -161,7 +170,7 @@ int Ri18n_wcswidth (const wchar_t *s, size_t n)
     return rs;
 }
 
-#if defined(Win32) || defined(_AIX) || defined(__APPLE_CC__)
+#if defined(Win32) || defined(_AIX) || defined(__APPLE__)
 static int wcsearch(int wint, const struct interval *table, int max)
 {
     int min = 0;
@@ -189,13 +198,17 @@ static int wcsearch(int wint, const struct interval *table, int max)
  *  (wchar_t != unicode)
  *  However, it is Unicode at the time of UTF-8.
  ********************************************************************/
-#if defined(__APPLE_CC__)
+#if defined(__APPLE__)
 /* allow for both PPC and Intel platforms */
 #ifdef WORDS_BIGENDIAN
 static const char UNICODE[] = "UCS-4BE";
 #else
 static const char UNICODE[] = "UCS-4LE";
 #endif
+
+/* in Defn.h which is not included here */
+extern const char *locale2charset(const char *);
+
 
 #define ISWFUNC(ISWNAME) static int Ri18n_isw ## ISWNAME (wint_t wc) \
 {	                                                             \
@@ -311,6 +324,7 @@ static const Ri18n_wctype_func_l Ri18n_wctype_func[] = {
     {NULL,     0,     NULL}
 };
 
+/* These two used (via macros) in X11 dataentry */
 wctype_t Ri18n_wctype(const char *name)
 {
     int i;

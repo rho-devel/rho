@@ -123,13 +123,13 @@ setClass("TsparseMatrix", representation(i = "integer", j = "integer", "VIRTUAL"
 
 setClass("CsparseMatrix", representation(i = "integer", p = "integer", "VIRTUAL"),
 	 contains = "sparseMatrix",
-	 prototype = prototype(p = 0:0),# to be valid
+	 prototype = prototype(p = 0L),# to be valid
          validity = function(object) .Call(Csparse_validate, object)
          )
 
 setClass("RsparseMatrix", representation(p = "integer", j = "integer", "VIRTUAL"),
 	 contains = "sparseMatrix",
-	 prototype = prototype(p = 0:0),# to be valid
+	 prototype = prototype(p = 0L),# to be valid
 	 validity = function(object) .Call(Rsparse_validate, object)
          )
 
@@ -234,7 +234,7 @@ setClass("lsyMatrix",
 setClass("lspMatrix",
 	 contains = c("ldenseMatrix", "symmetricMatrix"),
 	 validity = function(object) .Call(dspMatrix_validate, object)
-	 ## "dsp" and "lsp" have the same validate
+	 ## "dsp", "lsp" and "nsp" have the same validate
 	 )
 
 ##----- nonzero pattern dense Matrices -- "for completeness"
@@ -262,7 +262,7 @@ setClass("nsyMatrix",
 setClass("nspMatrix",
 	 contains = c("ndenseMatrix", "symmetricMatrix"),
 	 validity = function(object) .Call(dspMatrix_validate, object)
-	 ## "dsp" and "nsp" have the same validate
+	 ## "dsp", "lsp" and "nsp" have the same validate
 	 )
 
 
@@ -278,6 +278,8 @@ setClass("corMatrix", representation(sd = "numeric"), contains = "dpoMatrix",
 	     n <- object@Dim[2]
 	     if(length(sd <- object@sd) != n)
 		 return("'sd' slot must be of length 'dim(.)[1]'")
+	     if(any(!is.finite(sd)))# including NA
+		 return("'sd' slot has non-finite entries")
 	     if(any(sd < 0))
 		 return("'sd' slot has negative entries")
 	     TRUE
@@ -536,10 +538,23 @@ setClass("isRMatrix",
 	 )
 }##--not yet--
 
-##-------------------- permutation ----------------------------------------
+##-------------------- index and permutation matrices--------------------------
+
+setClass("indMatrix", representation(perm = "integer"),
+	 contains = c("sparseMatrix", "generalMatrix"),
+	 validity = function(object) {
+	     n <-  object@Dim[1]
+	     d <-  object@Dim[2]
+	     perm <- object@perm
+	     if (length(perm) != n)
+		 return(paste("length of 'perm' slot must be", n))
+	     if(n > 0 && (any(perm > d) | any(perm < 1)))
+		 return("'perm' slot is not a valid index")
+	     TRUE
+	 })
 
 setClass("pMatrix", representation(perm = "integer"),
-	 contains = c("sparseMatrix", "generalMatrix"),
+	 contains = c("indMatrix"),
 	 validity = function(object) {
 	     d <- object@Dim
 	     if (d[2] != (n <- d[1])) return("pMatrix must be square")
@@ -627,7 +642,8 @@ setClass("sparseLU", contains = "LU",
 
 setClass("sparseQR", contains = "MatrixFactorization",
 	 representation(V = "dgCMatrix", beta = "numeric",
-			p = "integer", R = "dgCMatrix", q = "integer"))
+			p = "integer", R = "dgCMatrix", q = "integer"),
+	 validity = function(object) .Call(sparseQR_validate, object))
 
 ##-- "SPQR" ---> ./spqr.R  for noew
 
@@ -670,6 +686,18 @@ setClass("Schur", contains = "MatrixFactorization",
 
 
 ### Class Union :  no inheritance, but is(*, <class>) :
+
+setClassUnion("mMatrix", members = c("matrix", "Matrix"))
+
+## CARE: Sometimes we'd want all those for which 'x' contains all the data.
+##       e.g. Diagonal() is "ddiMatrix" with 'x' slot of length 0, does *not* contain 1
+setClassUnion("xMatrix", ## those Matrix classes with an 'x' slot
+              c("dMatrix",
+                "iMatrix",
+                "lMatrix",
+                "ndenseMatrix",
+                "zMatrix"))
+
 
 ## Definition  Packed := dense with length( . @x) < prod( . @Dim)
 ##	       ~~~~~~

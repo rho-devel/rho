@@ -15,6 +15,9 @@ Schur(x, vectors, \dots)
 \alias{Schur,generalMatrix,missing-method}
 \alias{Schur,symmetricMatrix,logical-method}
 \alias{Schur,symmetricMatrix,missing-method}
+%
+\alias{Schur,matrix,logical-method}
+\alias{Schur,matrix,missing-method}
 
 \description{
   Computes the Schur decomposition and eigenvalues of a square matrix;
@@ -22,8 +25,9 @@ Schur(x, vectors, \dots)
 }
 \arguments{
   \item{x}{
-    numeric (or complex, in future) square Matrix (inheriting from class
-    \code{"Matrix"}). Missing values (NAs) are not allowed.
+    numeric %(or complex, in future)
+    square Matrix (inheriting from class \code{"Matrix"}) or traditional
+    \code{\link{matrix}}.  Missing values (NAs) are not allowed.
   }
   \item{vectors}{logical.  When \code{TRUE} (the default), the Schur
     vectors are computed, and the result is a proper
@@ -33,8 +37,11 @@ Schur(x, vectors, \dots)
   \item{\dots}{further arguments passed to or from other methods.}
 }
 \value{
-  If \code{vectors} are \code{TRUE}, as per default,
-  an object of class \code{\linkS4class{Schur}}.
+  If \code{vectors} are \code{TRUE}, as per default:
+  If \code{x} is a \code{\linkS4class{Matrix}}
+  an object of class \code{\linkS4class{Schur}}, otherwise, for a
+  traditional \code{\link{matrix}} \code{x}, a \code{\link{list}} with
+  components \code{T}, \code{Q}, and \code{EValues}.
 
   If \code{vectors} are \code{FALSE}, a list with components
   \item{T}{the upper quasi-triangular (square) matrix of the Schur decomposition.}
@@ -74,5 +81,16 @@ stopifnot(all.equal(eTA$values, eigen(A)$values, tol = 1e-13),
                            z[order(Mod(z), decreasing=TRUE)]}), tol = 1e-13),
           identical(SchA$T, Sch.A@T),
           identical(SchA$EValues, Sch.A@EValues))
+
+## For the faint of heart, we provide Schur() also for traditional matrices:
+
+a.m <- function(M) unname(as(M, "matrix"))
+a <- a.m(A)
+Sch.a <- Schur(a)
+stopifnot(identical(Sch.a, list(Q = a.m(Sch.A @ Q),
+				T = a.m(Sch.A @ T),
+				EValues = Sch.A@EValues)),
+	  all.equal(a, with(Sch.a, Q \%*\% T \%*\% t(Q)))
+)
 }
 \keyword{algebra}

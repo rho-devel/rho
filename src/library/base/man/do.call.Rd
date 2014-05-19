@@ -1,6 +1,6 @@
 % File src/library/base/man/do.call.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{do.call}
@@ -40,6 +40,10 @@ do.call(what, args, quote = FALSE, envir = parent.frame())
 \value{
   The result of the (evaluated) function call.
 }
+\section{Warning}{
+  This should not be used to attempt to evade restrictions on the use of
+  \code{.Internal} and other non-API calls.
+}
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
@@ -54,9 +58,9 @@ do.call("complex", list(imag = 1:3))
 ## if we already have a list (e.g. a data frame)
 ## we need c() to add further arguments
 tmp <- expand.grid(letters[1:2], 1:3, c("+", "-"))
-do.call("paste", c(tmp, sep=""))
+do.call("paste", c(tmp, sep = ""))
 
-do.call(paste, list(as.name("A"), as.name("B")), quote=TRUE)
+do.call(paste, list(as.name("A"), as.name("B")), quote = TRUE)
 
 ## examples of where objects will be found.
 A <- 2
@@ -65,17 +69,17 @@ env <- new.env()
 assign("A", 10, envir = env)
 assign("f", f, envir = env)
 f <- function(x) print(x)
-f(A)                                    # 2
-do.call("f", list(A))                   # 2
-do.call("f", list(A), envir=env)        # 4
-do.call(f, list(A), envir=env)          # 2
-do.call("f", list(quote(A)), envir=env) # 100
-do.call(f, list(quote(A)), envir=env)   # 10
-do.call("f", list(as.name("A")), envir=env) # 100
+f(A)                                      # 2
+do.call("f", list(A))                     # 2
+do.call("f", list(A), envir = env)        # 4
+do.call(f, list(A), envir = env)          # 2
+do.call("f", list(quote(A)), envir = env) # 100
+do.call(f, list(quote(A)), envir = env)   # 10
+do.call("f", list(as.name("A")), envir = env) # 100
 
 eval(call("f", A))                      # 2
 eval(call("f", quote(A)))               # 2
-eval(call("f", A), envir=env)           # 4
-eval(call("f", quote(A)), envir=env)    # 100
+eval(call("f", A), envir = env)         # 4
+eval(call("f", quote(A)), envir = env)  # 100
 }
 \keyword{programming}

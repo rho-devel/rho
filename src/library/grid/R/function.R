@@ -1,6 +1,8 @@
 #  File src/library/grid/R/function.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -17,11 +19,11 @@
 
 validDetails.functiongrob <- function(x, ...) {
     if (x$n < 1)
-        stop("Invalid 'n'")
+        stop("invalid 'n'")
     if (!(is.character(x$range) && x$range %in% c("x", "y")))
         x$range <- as.numeric(x$range)
     if (!is.function(x$f))
-        stop("Invalid 'f'")
+        stop("invalid 'f'")
     x
 }
 
@@ -38,9 +40,10 @@ genXY <- function(x) {
     x$f(input)
 }
 
-drawDetails.functiongrob <- function(x, ...) {
+makeContent.functiongrob <- function(x) {
     xy <- genXY(x)
-    grid.lines(xy$x, xy$y, default.units=x$units)
+    linesGrob(xy$x, xy$y, default.units=x$units,
+              name=x$name, gp=x$gp, vp=x$vp)
 }
 
 xDetails.functiongrob <- function(x, theta) {

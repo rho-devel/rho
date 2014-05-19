@@ -21,21 +21,15 @@
 @strong{C}
 @end macro
 
-@ifinfo
-This is the R language definition.
+@copying
+This manual is for R, version @value{VERSION}.
 
 @Rcopyright{2000}
 
-@ignore
-Permission is granted to process this file through TeX and print the
-results, provided the printed document carries a copying permission
-notice identical to this one except for the removal of this paragraph
-(this paragraph not being relevant to the printed manual).
-
-@end ignore
-
+@quotation
 @permission{}
-@end ifinfo
+@end quotation
+@end copying
 
 @titlepage
 @title R Language Definition
@@ -43,12 +37,12 @@ notice identical to this one except for the removal of this paragraph
 @author R Core Team
 @page
 @vskip 0pt plus 1filll
-@Rcopyright{2000}
-
-@permission{}
-
-@value{ISBN-lang}
+@insertcopying
 @end titlepage
+
+@ifplaintext
+@insertcopying
+@end ifplaintext
 
 @c @ifnothtml
 @contents
@@ -62,9 +56,8 @@ This is an introduction to the @R{} language, explaining evaluation,
 parsing, object oriented programming, computing on the language, and so
 forth.
 
-The current version of this document is @value{VERSION} @b{DRAFT}.
+@insertcopying
 
-@value{ISBN-lang}
 @end ifnottex
 
 @menu
@@ -3278,9 +3271,13 @@ As it happens, @R{}'s parser is not perfectly invertible, nor is its
 deparser, as the following examples show
 
 @example
-> deparse(quote(c(1, 2)))
+> str(quote(c(1,2)))
+ language c(1, 2)
+> str(c(1,2))
+ num [1:2] 1 2
+> deparse(quote(c(1,2)))
 [1] "c(1, 2)"
-> deparse(1:2)
+> deparse(c(1,2))
 [1] "c(1, 2)"
 > quote("-"(2, 2))
 2 - 2
@@ -3795,13 +3792,20 @@ Information from the operating system
 environment can be accessed and manipulated with
 @quotation
 @multitable @columnfractions 0.3 0.7
-@item @code{Sys.getenv} @tab OS environment variables @findex Sys.getenv
-@item @code{Sys.putenv}                               @findex Sys.putenv
-@item @code{Sys.getlocale} @tab System locale         @findex Sys.getlocale
-@item @code{Sys.putlocale}                            @findex Sys.putlocale
-@item @code{Sys.localeconv}                           @findex Sys.localeconv
-@item @code{Sys.time} @tab Current time               @findex Sys.time
-@item @code{Sys.timezone} @tab Time zone              @findex Sys.timezone
+@item @code{Sys.getenv} @tab OS environment variables
+@findex Sys.getenv
+@item @code{Sys.putenv}                               
+@findex Sys.putenv
+@item @code{Sys.getlocale} @tab System locale         
+@findex Sys.getlocale
+@item @code{Sys.putlocale}                            
+@findex Sys.putlocale
+@item @code{Sys.localeconv}                           
+@findex Sys.localeconv
+@item @code{Sys.time} @tab Current time               
+@findex Sys.time
+@item @code{Sys.timezone} @tab Time zone              
+@findex Sys.timezone
 @end multitable
 @end quotation
 
@@ -3809,17 +3813,28 @@ environment can be accessed and manipulated with
 A uniform set of file access functions is provided on all platforms:
 @quotation
 @multitable @columnfractions 0.3 0.7
-@item @code{file.access} @tab Ascertain File Accessibility @findex file.access
-@item @code{file.append} @tab Concatenate files            @findex file.append
-@item @code{file.choose} @tab Prompt user for file name    @findex file.choose
-@item @code{file.copy}  @tab Copy files                    @findex file.copy
-@item @code{file.create} @tab Create or truncate a files   @findex file.create
-@item @code{file.exists} @tab Test for existence           @findex file.exists
-@item @code{file.info} @tab Miscellaneous file information @findex file.info
-@item @code{file.remove} @tab remove files                 @findex file.remove
-@item @code{file.rename} @tab rename files                 @findex file.rename
-@item @code{file.show} @tab Display a text file            @findex file.show
-@item @code{unlink} @tab Remove files or directories.      @findex unlink
+@item @code{file.access} @tab Ascertain File Accessibility 
+@findex file.access
+@item @code{file.append} @tab Concatenate files            
+@findex file.append
+@item @code{file.choose} @tab Prompt user for file name    
+@findex file.choose
+@item @code{file.copy}  @tab Copy files                    
+@findex file.copy
+@item @code{file.create} @tab Create or truncate a files   
+@findex file.create
+@item @code{file.exists} @tab Test for existence           
+@findex file.exists
+@item @code{file.info} @tab Miscellaneous file information 
+@findex file.info
+@item @code{file.remove} @tab remove files                 
+@findex file.remove
+@item @code{file.rename} @tab rename files                 
+@findex file.rename
+@item @code{file.show} @tab Display a text file            
+@findex file.show
+@item @code{unlink} @tab Remove files or directories.      
+@findex unlink
 @end multitable
 @end quotation
 
@@ -3827,10 +3842,14 @@ There are also functions for manipulating file names and paths in a
 platform-independent way.
 @quotation
 @multitable @columnfractions 0.3 0.7
-@item @code{basename} @tab File name without directory     @findex basename
-@item @code{dirname} @tab Directory name                   @findex dirname
-@item @code{file.path} @tab Construct path to file         @findex file.path
-@item @code{path.expand} @tab Expand @code{~} in Unix path @findex path.expand
+@item @code{basename} @tab File name without directory     
+@findex basename
+@item @code{dirname} @tab Directory name                   
+@findex dirname
+@item @code{file.path} @tab Construct path to file         
+@findex file.path
+@item @code{path.expand} @tab Expand @code{~} in Unix path 
+@findex path.expand
 @end multitable
 @end quotation
 
@@ -4299,7 +4318,9 @@ once.
 @end example
 
 Numeric constants can also be hexadecimal, starting with @samp{0x} or
-@samp{0x} followed by zero or more digits, @samp{a-f} or @samp{A-F}.
+@samp{0x} followed by zero or more digits, @samp{a-f} or @samp{A-F}.  
+Hexadecimal floating point constants are supported using C99 syntax, e.g.
+@samp{0x1.1p1}.
 
 There is now a separate class of integer constants.  They are created
 by using the qualifier @code{L} at the end of the number.  For
@@ -4314,12 +4335,13 @@ constants and syntax errors.
 
 @example
 @r{Valid integer constants:}  1L, 0x10L, 1000000L, 1e6L
-@r{Valid numeric constants:}  1.1L, 1e-3L 
-@r{Syntax error:}  12iL
+@r{Valid numeric constants:}  1.1L, 1e-3L, 0x1.1p-2
+@r{Syntax error:}  12iL 0x1.1
 @end example
 
-A warning is emitted for values that contain an unnecessary
-decimal point, e.g. @code{1.L}.
+A warning is emitted for decimal values that contain an unnecessary
+decimal point, e.g. @code{1.L}.  It is an error to have a decimal
+point in a hexadecimal constant without the binary exponent.
 
 Note also that a preceding sign (@code{+} or @code{-}) is treated as a
 unary operator, not as part of the constant.
@@ -4471,7 +4493,8 @@ Newlines have a function which is a combination of token separator and
 expression terminator.  If an expression can terminate at the end of
 the line the parser will assume it does so, otherwise the newline is
 treated as whitespace.  Semicolons (@samp{;}) may be used to separate
-elementary @cindex expression
+elementary 
+@cindex expression
 expressions on the same line.
 
 

@@ -1,6 +1,8 @@
 #  File src/library/graphics/R/par.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -26,7 +28,7 @@
 	   "font", "font.axis", "font.lab", "font.main", "font.sub",
            "lab", "las", "lend", "lheight", "ljoin", "lmitre", "lty", "lwd",
            "mai", "mar", "mex", "mfcol", "mfg", "mfrow", "mgp", "mkh",
-	   "new", "oma", "omd", "omi", "pch", "pin", "plt", "ps", "pty",
+	   "new", "oma", "omd", "omi", "page", "pch", "pin", "plt", "ps", "pty",
 	   "smo", "srt", "tck", "tcl", "usr",
 	   "xaxp", "xaxs", "xaxt",  "xpd",
 	   "yaxp", "yaxs", "yaxt", "ylbias"
@@ -37,7 +39,7 @@
 
 par <- function (..., no.readonly = FALSE)
 {
-    .Pars.readonly <- c("cin","cra","csi","cxy","din")
+    .Pars.readonly <- c("cin","cra","csi","cxy","din","page")
     single <- FALSE
     args <- list(...)
     if (!length(args))
@@ -54,10 +56,11 @@ par <- function (..., no.readonly = FALSE)
 		    single <- TRUE
 	}
     }
-    value <- .Internal(par(args))
+    value <- .External2(C_par, args)
     if(single) value <- value[[1L]]
     if(!is.null(names(args))) invisible(value) else value
 }
 
-clip <- function(x1, x2, y1, y2) .Internal(clip(x1, x2, y1, y2))
+clip <- function(x1, x2, y1, y2)
+    invisible(.External.graphics(C_clip, x1, x2, y1, y2))
 

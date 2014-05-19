@@ -1,6 +1,6 @@
 % File src/library/base/man/duplicated.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{duplicated}
@@ -27,7 +27,7 @@
 duplicated(x, incomparables = FALSE, \dots)
 
 \method{duplicated}{default}(x, incomparables = FALSE,
-           fromLast = FALSE, \dots)
+           fromLast = FALSE, nmax = NA, \dots)
 
 \method{duplicated}{array}(x, incomparables = FALSE, MARGIN = 1,
            fromLast = FALSE, \dots)
@@ -47,7 +47,8 @@ anyDuplicated(x, incomparables = FALSE, \dots)
        \code{x}.}
   \item{fromLast}{logical indicating if duplication should be considered
     from the reverse side, i.e., the last (or rightmost) of identical
-    elements would correspond to \code{duplicated=FALSE}.}
+    elements would correspond to \code{duplicated = FALSE}.}
+  \item{nmax}{the maximum number of unique items expected.}
   \item{\dots}{arguments for particular methods.}
   \item{MARGIN}{the array margin to be held fixed: see
     \code{\link{apply}}, and note that \code{MARGIN = 0} maybe useful.}
@@ -58,14 +59,14 @@ anyDuplicated(x, incomparables = FALSE, \dots)
 
   For the default methods, and whenever there are equivalent method
   definitions for \code{duplicated} and \code{anyDuplicated},
-  \code{anyDuplicated(x,...)} is a \dQuote{generalized} shortcut for
-  \code{any(duplicated(x,...))}, in the sense that it returns the
+  \code{anyDuplicated(x, ...)} is a \dQuote{generalized} shortcut for
+  \code{any(duplicated(x, ...))}, in the sense that it returns the
   \emph{index} \code{i} of the first duplicated entry \code{x[i]} if
   there is one, and \code{0} otherwise.  Their behaviours may be
   different when at least one of \code{duplicated} and
   \code{anyDuplicated} has a relevant method.
 
-  \code{duplicated(x, fromLast=TRUE)} is equivalent to but faster than
+  \code{duplicated(x, fromLast = TRUE)} is equivalent to but faster than
   \code{rev(duplicated(rev(x)))}.
 
   The data frame method works by pasting together a character
@@ -75,7 +76,7 @@ anyDuplicated(x, incomparables = FALSE, \dots)
 
   The array method calculates for each element of the sub-array
   specified by \code{MARGIN} if the remaining dimensions are identical
-  to those for an earlier (or later, when \code{fromLast=TRUE}) element
+  to those for an earlier (or later, when \code{fromLast = TRUE}) element
   (in row-major order).  This would most commonly be used to find
   duplicated rows (the default) or columns (with \code{MARGIN = 2}).
   Note that \code{MARGIN = 0} returns an array of the same
@@ -96,6 +97,16 @@ anyDuplicated(x, incomparables = FALSE, \dots)
 
   Character strings will be compared as byte sequences if any input is
   marked as \code{"bytes"}.
+
+  Except for factors, logical and raw vectors the default \code{nmax = NA} is
+  equivalent to \code{nmax = length(x)}.  Since a hash table of size
+  \code{8*nmax} bytes is allocated, setting \code{nmax} suitably can
+  save large amounts of memory.  For factors it is automatically set to
+  the smaller of \code{length(x)} and the number of levels plus one (for
+  \code{NA})
+
+  \link{Long vectors} are supported for the default method of
+  \code{duplicated}, but may only be usable if \code{nmax} is supplied.
 }
 \value{
     \code{duplicated()}:
@@ -104,7 +115,7 @@ anyDuplicated(x, incomparables = FALSE, \dots)
     each row.  For a matrix or array, and when \code{MARGIN = 0}, a
     logical array with the same dimensions and dimnames.
 
-    \code{anyDuplicated()}: a non-negative integer (of length one).
+    \code{anyDuplicated()}: a non-negative integer vector of length one.
 }
 \section{Warning}{
   Using this for lists is potentially slow, especially if the elements

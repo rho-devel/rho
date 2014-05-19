@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -67,7 +67,9 @@ extern "C" {
     inline void SET_ARGUSED(SEXP x, unsigned char v)
     {
 	using namespace CXXR;
-	SEXP_downcast<PairList*>(x)->m_argused = v;
+	// The RHS is a kludge to avoid a -Wconversion warning:
+	SEXP_downcast<PairList*>(x)->m_argused
+	  = static_cast<unsigned int>(v & 3);
     }
 
 #endif  /* __cplusplus */

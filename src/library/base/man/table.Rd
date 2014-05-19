@@ -23,8 +23,8 @@
   table of the counts at each combination of factor levels.
 }
 \usage{
-table(\dots, exclude = if (useNA == "no") c(NA, NaN), useNA = c("no", 
-    "ifany", "always"), dnn = list.names(\dots), deparse.level = 1) 
+table(\dots, exclude = if (useNA == "no") c(NA, NaN), useNA = c("no",
+    "ifany", "always"), dnn = list.names(\dots), deparse.level = 1)
 
 as.table(x, \dots)
 is.table(x)
@@ -77,12 +77,12 @@ is.table(x)
   basis.  If you want to control the dimensions of a multiway table
   separately, modify each argument using \code{\link{factor}} or
   \code{\link{addNA}}.
-  
+
   It is best to supply factors rather than rely on coercion.  In
   particular, \code{exclude} will be used in coercion to a factor, and
   so values (not levels) which appear in \code{exclude} before coercion
   will be mapped to \code{NA} rather than be discarded.
-  
+
   The \code{summary} method for class \code{"table"} (used for objects
   created by \code{table} or \code{\link{xtabs}}) which gives basic
   information and performs a chi-squared test for independence of
@@ -106,7 +106,7 @@ is.table(x)
 }
 \seealso{
   \code{\link{tabulate}} is the underlying function and allows finer
-  control. 
+  control.
 
   Use \code{\link{ftable}} for printing (and more) of
   multidimensional tables.  \code{\link{margin.table}},
@@ -120,7 +120,7 @@ is.table(x)
 \examples{
 require(stats) # for rpois and xtabs
 ## Simple frequency distribution
-table(rpois(100,5))
+table(rpois(100, 5))
 ## Check the design:
 with(warpbreaks, table(wool, tension))
 table(state.division, state.region)
@@ -143,13 +143,13 @@ all.equal(dimnames(tab), dimnames(UCBAdmissions))
 
 a <- rep(c(NA, 1/0:3), 10)
 table(a)
-table(a, exclude=NULL)
+table(a, exclude = NULL)
 b <- factor(rep(c("A","B","C"), 10))
 table(b)
-table(b, exclude="B")
-d <- factor(rep(c("A","B","C"), 10), levels=c("A","B","C","D","E"))
-table(d, exclude="B")
-print(table(b,d), zero.print = ".")
+table(b, exclude = "B")
+d <- factor(rep(c("A","B","C"), 10), levels = c("A","B","C","D","E"))
+table(d, exclude = "B")
+print(table(b, d), zero.print = ".")
 
 ## NA counting:
 is.na(d) <- 3:4
@@ -157,15 +157,15 @@ d. <- addNA(d)
 d.[1:7]
 table(d.) # ", exclude = NULL" is not needed
 ## i.e., if you want to count the NA's of 'd', use
-table(d, useNA="ifany")
+table(d, useNA = "ifany")
 
 ## Two-way tables with NA counts. The 3rd variant is absurd, but shows
-## something that cannot be done using exclude or useNA. 
+## something that cannot be done using exclude or useNA.
 with(airquality,
-   table(OzHi=Ozone > 80, Month, useNA="ifany"))
+   table(OzHi = Ozone > 80, Month, useNA = "ifany"))
 with(airquality,
-   table(OzHi=Ozone > 80, Month, useNA="always"))
+   table(OzHi = Ozone > 80, Month, useNA = "always"))
 with(airquality,
-   table(OzHi=Ozone > 80, addNA(Month)))
+   table(OzHi = Ozone > 80, addNA(Month)))
 }
 \keyword{category}

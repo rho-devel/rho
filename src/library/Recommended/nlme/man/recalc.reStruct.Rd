@@ -36,7 +36,7 @@
   the condensed linear model with its \code{logLik} component updated.
 }
 
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{
   \code{\link{logLik}},

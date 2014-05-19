@@ -13,7 +13,7 @@ dpih(x, scalest = "minim", level = 2L, gridsize = 401L,
 }
 \arguments{
 \item{x}{
-vector containing the sample on which the
+numeric vector containing the sample on which the
 histogram is to be constructed.
 }
 \item{scalest}{

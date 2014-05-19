@@ -31,18 +31,18 @@
 \alias{coerce,pMatrix,nsparseMatrix-method}
 \alias{coerce,nMatrix,pMatrix-method}
 \alias{determinant,pMatrix,logical-method}
-\alias{is.na,pMatrix-method}
 \alias{Summary,pMatrix-method}
-%
-\alias{solve,pMatrix,missing-method}
-\alias{solve,pMatrix,Matrix-method}
-\alias{solve,pMatrix,matrix-method}
-\alias{solve,Matrix,pMatrix-method}
+%\alias{solve,pMatrix,missing-method}--> solve-methods.Rd
 \alias{t,pMatrix-method}
 %
 \title{Permutation matrices}
 \description{The \code{"pMatrix"} class is the class of permutation
-  matrices, stored as 1-based integer permutation vectors.}
+  matrices, stored as 1-based integer permutation vectors.
+
+  Matrix (vector) multiplication with permutation matrices is equivalent
+  to row or column permutation, and is implemented that way in the
+  \pkg{Matrix} package, see the \sQuote{Details} below.
+}
 \section{Objects from the Class}{
   Objects can be created by calls of the form \code{new("pMatrix", ...)}
   or by coercion from an integer permutation vector, see below.
@@ -61,8 +61,7 @@
   }
 }
 \section{Extends}{
-  Class \code{"\linkS4class{sparseMatrix}"} and
-  \code{"\linkS4class{generalMatrix}"}, directly.
+  Class \code{"\linkS4class{indMatrix}"}, directly.
 }
 \section{Methods}{
   \describe{
@@ -89,24 +88,55 @@
       +1 or -1.  In fact, it is exactly the \emph{sign of the
 	permutation}.}
     \item{solve}{\code{signature(a = "pMatrix", b = "missing")}: return
-      the inverse permutation matrix.}
+      the inverse permutation matrix; note that \code{solve(P)} is
+      identical to \code{t(P)} for permutation matrices.  See
+      \code{\link{solve-methods}} for other methods.}
+
     \item{t}{\code{signature(x = "pMatrix")}: return the transpose of
-      the permuation matrix (which is also the inverse of the
+      the permutation matrix (which is also the inverse of the
       permutation matrix).}
   }
 }
-\note{
-  The inverse of the typical \code{"pMatrix"} constructor,
-  \code{P <- as(ip, "pMatrix")} is simply \code{ip <- P@perm}.
+\details{
+  Matrix multiplication with permutation matrices is equivalent to row
+  or column permutation.
+  Here are the four different cases for an arbitrary matrix \eqn{M} and
+  a permutation matrix \eqn{P} (where we assume matching dimensions):
+  %% \describe{
+  %%   \item{\eqn{MP =  }}{\code{M \%*\% P}  ..}
+  %%   \item{\eqn{PM =  }}{\code{P \%*\% M}  ..}
+  %%   \item{\eqn{P'M = }}{\code{crossprod(P,M)} (less efficiently, \code{t(P) \%*\% M})  ..}
+  %%   \item{\eqn{MP' = }}{\code{trossprod(M,P)} (less efficiently, \code{M \%*\% t(P)})  ..}
+  %% }
+  \tabular{lclcl}{
+    \eqn{MP }\tab= \tab\code{M \%*\% P}					    \tab= \tab\code{M[, i(p)]}\cr
+    \eqn{PM }\tab= \tab\code{P \%*\% M}					    \tab= \tab\code{M[ p , ]} \cr
+    \eqn{P'M}\tab= \tab\code{crossprod(P,M)} (\eqn{\approx}{~=}\code{t(P) \%*\% M})\tab= \tab\code{M[i(p), ]}\cr
+    \eqn{MP'}\tab= \tab\code{tcrossprod(M,P)} (\eqn{\approx}{~=}\code{M \%*\% t(P)})\tab= \tab\code{M[ , p ]} \cr
+  }
+  where \code{p} is the \dQuote{permutation vector} corresponding to the
+  permutation matrix \code{P} (see first note), and \code{i(p)} is short
+  for \code{\link{invPerm}(p)}.
 
-  Subsetting (\dQuote{indexing}, including, \code{\link{diag}})
-  \code{"pMatrix"} objects treats themas nonzero-pattern matrices, i.e.,
-  as \code{"\linkS4class{ngTMatrix}"} such that non-matrix subsetting
-  result in \code{\link{logical}} vectors.
-  Sub-assignment (\code{M[i,j] <- v}) is not sensible and hence an error
-  for these permutation matrices.
+  Also one could argue that these are really only two cases if you take
+  into account that inversion (\code{\link{solve}}) and transposition
+  (\code{\link{t}}) are the same for permutation matrices \eqn{P}.
 }
-%\seealso{}
+\note{
+  For every permutation matrix \code{P}, there is a corresponding
+  permutation vector \code{p} (of indices, 1:n), and these are related by
+\preformatted{ P <- as(p, "pMatrix")
+ p <- P@perm
+}
+  see also the \sQuote{Examples}.
+
+  \dQuote{Row-indexing} a permutation matrix typically returns
+  an \code{"indMatrix"}.  See \code{"\linkS4class{indMatrix}"} for all other
+  subsetting/indexing and subassignment (\code{A[..] <- v}) operations.
+}
+\seealso{\code{\link{invPerm}(p)} computes the inverse permutation of an
+  integer (index) vector \code{p}.
+}
 \examples{
 (pm1 <- as(as.integer(c(2,3,1)), "pMatrix"))
 t(pm1) # is the same as
@@ -127,5 +157,8 @@ try(as(as.integer(c(3,3,1)), "pMatrix"))# Error: not a permutation
 
 as(pm1, "ngTMatrix")
 p10[1:7, 1:4] # gives an "ngTMatrix" (most economic!)
+
+## row-indexing of a <pMatrix> keeps it as an <indMatrix>:
+p10[1:3, ]
 }
 \keyword{classes}

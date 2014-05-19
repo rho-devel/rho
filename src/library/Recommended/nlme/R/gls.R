@@ -35,7 +35,7 @@ gls <-
     controlvals <- glsControl()
     if (!missing(control)) {
         if(!is.null(control$nlmStepMax) && control$nlmStepMax < 0) {
-            warning("Negative control$nlmStepMax - using default value")
+            warning("negative control$nlmStepMax - using default value")
             control$nlmStepMax <- NULL
         }
         controlvals[names(control)] <- control
@@ -45,7 +45,7 @@ gls <-
     ## checking arguments
     ##
     if (!inherits(model, "formula") || length(model) != 3) {
-        stop("\nModel must be a formula of the form \"resp ~ pred\"")
+        stop("\nmodel must be a formula of the form \"resp ~ pred\"")
     }
     method <- match.arg(method)
     REML <- method == "REML"
@@ -170,7 +170,7 @@ gls <-
             break
         }
         if (numIter > controlvals$maxIter) {
-            stop("Maximum number of iterations reached without convergence.")
+            stop("maximum number of iterations reached without convergence")
         }
     }
     ## wrapping up
@@ -320,7 +320,8 @@ glsEstimate <-
     rnk <- val[["rank"]]
     rnkm1 <- rnk - 1
     if (!(control$singular.ok) && (rnkm1 < p )) {
-        stop(paste("computed gls fit is singular, rank", rnk))
+        stop(gettextf("computed \"gls\" fit is singular, rank %s", rnk),
+             domain = NA)
     }
     N <- dd$N - dd$REML * p
     namCoef <- colnames(oXy)[val[["pivot"]][1:rnkm1] + 1]	# coef names
@@ -408,7 +409,7 @@ anova.gls <-
     dots <- list(...)
     if ((rt <- length(dots) + 1) == 1) {
         if (!inherits(object,"gls")) {
-            stop("Object must inherit from class \"gls\" ")
+            stop("object must inherit from class \"gls\"")
         }
         if (inherits(object, "gnls") && missing(adjustSigma)) {
             ## REML correction already applied to gnls objects
@@ -452,16 +453,20 @@ anova.gls <-
             if (Lmiss) {                 # terms is given
                 if (is.numeric(Terms) && all(Terms == as.integer(Terms))) {
                     if (min(Terms) < 1 || max(Terms) > nTerms) {
-                        stop(paste("Terms must be between 1 and", nTerms))
+                        stop(gettextf("'Terms' must be between 1 and %d",
+                                      nTerms), domain = NA)
                     }
                 } else {
                     if (is.character(Terms)) {
                         if (any(noMatch <- is.na(match(Terms, names(assign))))) {
-                            stop(paste("Term(s)", paste(Terms[noMatch], collapse = ", "),
-                                       "not matched"))
+                            stop(sprintf(ngettext(sum(noMatch),
+                                                  "term %s not matched",
+                                                  "terms %s not matched"),
+                                         paste(Terms[noMatch], collapse = ", ")),
+                                 domain = NA)
                         }
                     } else {
-                        stop("Terms can only be integers or characters")
+                        stop("terms can only be integers or characters")
                     }
                 }
                 lab <-
@@ -474,7 +479,10 @@ anova.gls <-
                 nrowL <- nrow(L)
                 ncolL <- ncol(L)
                 if (ncol(L) > p) {
-                    stop(paste("L must have at most", p,"columns"))
+                    stop(sprintf(ngettext(ncol(L),
+                                          "'L' must have at most %d column",
+                                          "'L' must have at most %d columns"),
+                                 ncol(L)), domain = NA)
                 }
                 dmsL1 <- rownames(L)
                 L0 <- array(0, c(nrowL, p), list(NULL, names(coef(object))))
@@ -483,8 +491,11 @@ anova.gls <-
                     L0[, 1:ncolL] <- L
                 } else {
                     if (any(noMatch <- is.na(match(dmsL2, colnames(L0))))) {
-                        stop(paste("Effects",paste(dmsL2[noMatch],collapse=", "),
-                                   "not matched"))
+                        stop(sprintf(ngettext(sum(noMatch),
+                                              "effect %s not matched",
+                                              "effects %s not matched"),
+                                     paste(dmsL2[noMatch],collapse=", ")),
+                             domain = NA)
                     }
                     L0[, dmsL2] <- L
                 }
@@ -521,7 +532,7 @@ anova.gls <-
     ##
     else {
         Call <- match.call()
-        Call[[1]] <- as.name("anova.lme")
+        Call[[1]] <- quote(nlme::anova.lme)
         eval.parent(Call)
     }
 }
@@ -532,13 +543,13 @@ augPred.gls <-
 {
     data <- eval(object$call$data)
     if (!inherits(data, "data.frame")) {
-        stop(paste("Data in", substitute(object),
-                   "call must evaluate to a data frame"))
+        stop(gettextf("data in %s call must evaluate to a data frame",
+                      sQuote(substitute(object))), domain = NA)
     }
     if(is.null(primary)) {
         if (!inherits(data, "groupedData")) {
-            stop(paste(sys.call()[[1]],
-                       "without \"primary\" can only be used with fits of groupedData objects"))
+            stop(gettextf("%s without \"primary\" can only be used with fits of \"groupedData\" objects",
+                          sys.call()[[1]]), domain = NA)
         }
         primary <- getCovariate(data)
         prName <- c_deparse(getCovariateFormula(data)[[2]])
@@ -621,7 +632,7 @@ comparePred.gls <-
              length.out = 51, level = NULL, ...)
 {
     if (length(level) > 1) {
-        stop("Only one level allowed for predictions")
+        stop("only one level allowed for predictions")
     }
     args <- list(object = object1,
                  primary = primary,
@@ -650,7 +661,8 @@ comparePred.gls <-
         lv1 <- sort(levels(val1[, 2]))
         lv2 <- sort(levels(val2[, 2]))
         if ((length(lv1) != length(lv2)) || any(lv1 != lv2)) {
-            stop(paste(c1, "and", c2, "must have the same group levels"))
+            stop(gettextf("%s and %s must have the same group levels", c1, c2),
+                 domain = NA)
         }
         val <- rbind(val1[, -4], val2[, -4])
         val[, ".type"] <-
@@ -663,7 +675,7 @@ comparePred.gls <-
             if ((length(levels(val2[, 2])) != 1) ||
                 (length(levels(val1[, 2])) != mult))
             {
-                stop("Wrong group levels")
+                stop("wrong group levels")
             }
             val <-
                 data.frame(c(val1[,1], rep(val2[,1], mult)), rep(val1[,1], 2),
@@ -677,7 +689,7 @@ comparePred.gls <-
             if ((length(levels(val1[, 2])) != 1) ||
                 (length(levels(val2[, 2])) != mult))
             {
-                stop("Wrong group levels")
+                stop("wrong group levels")
             }
             val <-
                 data.frame(c(rep(val1[,1], mult), val2[,1]), rep(val2[,1], 2),
@@ -764,8 +776,8 @@ intervals.gls <-
             attr(val[["sigma"]], "label") <- "Residual standard error:"
         } else {
             if (is.character(aV)) {
-                stop(paste("Cannot get confidence intervals on var-cov components:",
-                           aV))
+                stop(gettextf("cannot get confidence intervals on var-cov components: %s",
+                              aV), domain = NA)
             }
             len <- -qnorm((1-level)/2) * sqrt(diag(aV))
             est <- attr(aV, "Pars")
@@ -875,8 +887,11 @@ predict.gls <-
             levs <- levels(dataMod[,i])
             levsC <- dimnames(contr[[i]])[[1]]
             if (any(wch <- is.na(match(levs, levsC)))) {
-                stop(paste("Levels", paste(levs[wch], collapse = ","),
-                           "not allowed for", i))
+                stop(sprintf(ngettext(sum(wch),
+                                      "level %s not allowed for %s",
+                                      "levels %s not allowed for %s"),
+                             paste(levs[wch], collapse = ",")),
+                     domain = NA)
             }
             attr(dataMod[,i], "contrasts") <- contr[[i]][levs, , drop = FALSE]
                                         #      if (length(levs) < length(levsC)) {
@@ -1203,7 +1218,7 @@ Variogram.gls <-
                 breaks <- c(breaks, udist[2])
             }
             if (!missing(nint) && nint != (length(breaks) - 1)) {
-                stop("Nint is not consistent with breaks.")
+                stop("'nint' is not consistent with 'breaks'")
             }
             nint <- length(breaks) - 1
         }

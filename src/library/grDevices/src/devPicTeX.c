@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -41,15 +41,12 @@
 
 #include <Defn.h>
 
-# include <R_ext/rlocale.h> /* includes wchar.h */
+# include <rlocale.h> /* includes wchar.h */
 
 #define R_USE_PROTOTYPES 1
 #include <R_ext/GraphicsEngine.h>
 #include "Fileio.h"
 #include "grDevices.h"
-
-/* Formerly in headers, but only used in some devices */
-typedef unsigned int rcolor;
 
 	/* device-specific information per picTeX device */
 
@@ -209,7 +206,7 @@ static Rboolean PicTeX_Open(pDevDesc, picTeXDesc*);
 
 	/* Support routines */
 
-static void SetLinetype(int newlty, int newlwd, pDevDesc dd)
+static void SetLinetype(int newlty, double newlwd, pDevDesc dd)
 {
     picTeXDesc *ptd = (picTeXDesc *) dd->deviceSpecific;
 
@@ -218,7 +215,8 @@ static void SetLinetype(int newlty, int newlwd, pDevDesc dd)
     if (ptd->lty) {
 	fprintf(ptd->texfp,"\\setdashpattern <");
 	for(i=0 ; i<8 && newlty&15 ; i++) {
-	    fprintf(ptd->texfp,"%dpt", newlwd * newlty&15);
+	    int lwd = (int)newlwd * newlty;
+	    fprintf(ptd->texfp,"%dpt", lwd & 15);
 	    templty = newlty>>4;
 	    if ((i+1)<8 && templty&15) fprintf(ptd->texfp,", ");
 	    newlty = newlty>>4;
@@ -485,15 +483,15 @@ static double PicTeX_StrWidth(const char *str,
     int size;
     double sum;
 
-    size = gc->cex * gc->ps + 0.5;
+    size = (int)(gc->cex * gc->ps + 0.5);
     SetFont(gc->fontface, size, ptd);
     sum = 0;
     if(mbcslocale && ptd->fontface != 5) {
 	/* This version at least uses the state of the MBCS */
-	int i, status, ucslen = mbcsToUcs2(str, NULL, 0, CE_NATIVE);
+	size_t i, ucslen = mbcsToUcs2(str, NULL, 0, CE_NATIVE);
 	if (ucslen != (size_t)-1) {
 	    ucs2_t ucs[ucslen];
-	    status = (int) mbcsToUcs2(str, ucs, ucslen, CE_NATIVE);
+	    int status = (int) mbcsToUcs2(str, ucs, (int)ucslen, CE_NATIVE);
 	    if (status >= 0) 
 		for (i = 0; i < ucslen; i++)
 		    if(ucs[i] < 128) sum += charwidth[ptd->fontface-1][ucs[i]];
@@ -609,7 +607,7 @@ static void PicTeX_Text(double x, double y, const char *str,
     double xoff = 0.0, yoff = 0.0;
     picTeXDesc *ptd = (picTeXDesc *) dd->deviceSpecific;
 
-    size = gc->cex * gc->ps + 0.5;
+    size = (int)(gc->cex * gc->ps + 0.5);
     SetFont(gc->fontface, size, ptd);
     if(ptd->debug) 
 	fprintf(ptd->texfp,
@@ -732,12 +730,11 @@ Rboolean PicTeXDeviceDriver(pDevDesc dd, const char *filename,
 SEXP PicTeX(SEXP args)
 {
     pGEDevDesc dd;
-    char *vmax;
     const char *file, *bg, *fg;
     double height, width;
     Rboolean debug;
 
-    vmax = vmaxget();
+    const void *vmax = vmaxget();
     args = CDR(args); /* skip entry point name */
     file = translateChar(asChar(CAR(args))); args = CDR(args);
     bg = CHAR(asChar(CAR(args)));   args = CDR(args);

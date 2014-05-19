@@ -35,8 +35,7 @@ readLines(con = stdin(), n = -1L, ok = TRUE, warn = TRUE,
 \details{
   If the \code{con} is a character string, the function calls
   \code{\link{file}} to obtain a file connection which is opened for
-  the duration of the function call.  As from \R 2.10.0 this can be a
-  compressed file.
+  the duration of the function call.  This can be a compressed file.
 
   If the connection is open it is read from its current position.  If it
   is not open, it is opened in \code{"rt"} mode for the duration of
@@ -46,7 +45,7 @@ readLines(con = stdin(), n = -1L, ok = TRUE, warn = TRUE,
   depends on whether the connection is blocking or not.  For a
   non-blocking text-mode connection the incomplete line is pushed back,
   silently.  For all other connections the line will be accepted, with a
-  warning. 
+  warning.
 
   Whatever mode the connection is opened in, any of LF, CRLF or CR will
   be accepted as the EOL marker for a line.
@@ -71,9 +70,9 @@ readLines(con = stdin(), n = -1L, ok = TRUE, warn = TRUE,
   \code{\link{scan}}}
 
 \examples{
-cat("TITLE extra line", "2 3 5 7", "", "11 13 17", file="ex.data",
-    sep="\n")
-readLines("ex.data", n=-1)
+cat("TITLE extra line", "2 3 5 7", "", "11 13 17", file = "ex.data",
+    sep = "\n")
+readLines("ex.data", n = -1)
 unlink("ex.data") # tidy up
 
 ## difference in blocking
@@ -89,8 +88,8 @@ close(con)
 unlink("test1") # tidy up
 
 \dontrun{
-# read a 'Windows Unicode' file 
-A <- readLines(file("Unicode.txt", encoding="UCS-2LE"))
+# read a 'Windows Unicode' file
+A <- readLines(file("Unicode.txt", encoding = "UCS-2LE"))
 unique(Encoding(A)) # will most likely be UTF-8
 }}
 \keyword{file}

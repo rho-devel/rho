@@ -27,8 +27,8 @@ static const R_CallMethodDef callMethods[] = {
 #ifndef WIN32
     {"mc_children", (DL_FUNC) &mc_children, 0},
     {"mc_close_fds", (DL_FUNC) &mc_close_fds, 1},
-    {"mc_close_stderr", (DL_FUNC) &mc_close_stderr, 0},
-    {"mc_close_stdout", (DL_FUNC) &mc_close_stdout, 0},
+    {"mc_close_stderr", (DL_FUNC) &mc_close_stderr, 1},
+    {"mc_close_stdout", (DL_FUNC) &mc_close_stdout, 1},
     {"mc_exit", (DL_FUNC) &mc_exit, 1},
     {"mc_fds", (DL_FUNC) &mc_fds, 1},
     {"mc_fork", (DL_FUNC) &mc_fork, 0},
@@ -41,6 +41,8 @@ static const R_CallMethodDef callMethods[] = {
     {"mc_send_master", (DL_FUNC) &mc_send_master, 1},
     {"mc_select_children", (DL_FUNC) &mc_select_children, 2},
     {"mc_send_child_stdin", (DL_FUNC) &mc_send_child_stdin, 2},
+    {"mc_affinity", (DL_FUNC) &mc_affinity, 1},
+    {"mc_interactive", (DL_FUNC) &mc_interactive, 1},
 #else
     {"ncpus", (DL_FUNC) &ncpus, 1},
 #endif

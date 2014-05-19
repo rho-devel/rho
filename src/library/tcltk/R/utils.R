@@ -1,6 +1,8 @@
 #  File src/library/tcltk/R/utils.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -151,14 +153,18 @@ tkProgressBar <- function(title = "R progress bar", label = "",
 getTkProgressBar <- function(pb)
 {
     if(!inherits(pb, "tkProgressBar"))
-       stop("'pb' is not from class \"tkProgressBar\"")
+        stop(gettextf("'pb' is not from class %s",
+                      dQuote("tkProgressBar")),
+             domain = NA)
     pb$getVal()
 }
 
 setTkProgressBar <- function(pb, value, title = NULL, label = NULL)
 {
     if(!inherits(pb, "tkProgressBar"))
-       stop("'pb' is not from class \"tkProgressBar\"")
+        stop(gettextf("'pb' is not from class %s",
+                      dQuote("tkProgressBar")),
+             domain = NA)
     oldval <- pb$getVal()
     pb$up(value)
     if(!is.null(title)) pb$title(title)

@@ -49,7 +49,7 @@ lm.influence(model, do.coef = TRUE)
   number of rows \eqn{n}, which is the number of non-zero weights.
   Cases omitted in the fit are omitted unless a \code{\link{na.action}}
   method was used (such as \code{\link{na.exclude}}) which restores them.
-  
+
   \item{hat}{a vector containing the diagonal of the \sQuote{hat} matrix.}
   \item{coefficients}{(unless \code{do.coef} is false) a matrix whose
     i-th row contains the change in the estimated coefficients which
@@ -74,7 +74,7 @@ lm.influence(model, do.coef = TRUE)
   Note that cases with \code{weights == 0} are \emph{dropped} (contrary
   to the situation in S).
 
-  If a model has been fitted with \code{na.action=na.exclude} (see
+  If a model has been fitted with \code{na.action = na.exclude} (see
   \code{\link{na.exclude}}), cases excluded in the fit \emph{are}
   considered here.
 }

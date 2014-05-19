@@ -45,7 +45,7 @@ tempdir()
   The file name is made by concatenating the path given by
   \code{tmpdir}, the \code{pattern} string, a random string in hex and
   a suffix of \code{fileext}.
-  
+
   By default, \code{tmpdir} will be the directory given by
   \code{tempdir()}.  This will be a subdirectory of the per-session
   temporary directory found by the following rule when the \R session is
@@ -53,7 +53,7 @@ tempdir()
   \env{TEMP} are checked in turn and the first found which points to a
   writable directory is used:
 #ifdef unix
-  if none succeeds \file{/tmp} is used.
+  if none succeeds \file{/tmp} is used.  The path should not contain spaces.
 #endif
 #ifdef windows
   if none succeeds the value of \env{R_USER} (see
@@ -70,7 +70,7 @@ tempdir()
   package \pkg{parallel} (or \CRANpkg{multicore}) share a per-session
   temporary directory.  Further, the \sQuote{guaranteed not to be
     currently in use} applies only at the time of asking, and two
-  children could ask simultaneously.  As from \R 2.14.1 this is avoided
+  children could ask simultaneously.  This is circumvented
   by ensuring that \code{tempfile} calls in different children try
   different names.
 }
@@ -84,7 +84,7 @@ tempdir()
 \examples{\donttest{
 tempfile(c("ab", "a b c"))   # give file name with spaces in!
 
-tempfile("plot", fileext=c(".ps", ".pdf"))
+tempfile("plot", fileext = c(".ps", ".pdf"))
 
 tempdir() # works on all platforms with a platform-dependent result
 }}

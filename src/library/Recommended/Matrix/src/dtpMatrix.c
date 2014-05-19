@@ -64,44 +64,77 @@ SEXP dtpMatrix_solve(SEXP a)
 }
 
 
+// also applicable to dspMatrix , dppMatrix :
 SEXP dtpMatrix_getDiag(SEXP x)
 {
     int n = *INTEGER(GET_SLOT(x, Matrix_DimSym));
     SEXP val = PROTECT(allocVector(REALSXP, n));
 
-    d_packed_getDiag(REAL(val), x, n);
+    tr_d_packed_getDiag(REAL(val), x, n);
     UNPROTECT(1);
     return val;
 }
 
+// also applicable to lspMatrix :
 SEXP ltpMatrix_getDiag(SEXP x)
 {
     int n = *INTEGER(GET_SLOT(x, Matrix_DimSym));
     SEXP val = PROTECT(allocVector(LGLSXP, n));
 
-    l_packed_getDiag(LOGICAL(val), x, n);
+    tr_l_packed_getDiag(LOGICAL(val), x, n);
     UNPROTECT(1);
     return val;
 }
 
+SEXP dtpMatrix_setDiag(SEXP x, SEXP d)
+{
+    int n = INTEGER(GET_SLOT(x, Matrix_DimSym))[0];
+    return tr_d_packed_setDiag(REAL(d), LENGTH(d), x, n);
+}
 
-SEXP dtpMatrix_matrix_mm(SEXP x, SEXP y)
+SEXP ltpMatrix_setDiag(SEXP x, SEXP d)
+{
+    int n = INTEGER(GET_SLOT(x, Matrix_DimSym))[0];
+    return tr_l_packed_setDiag(INTEGER(d), LENGTH(d), x, n);
+}
+
+SEXP dtpMatrix_addDiag(SEXP x, SEXP d)
+{
+    int n = INTEGER(GET_SLOT(x, Matrix_DimSym))[0];
+    return tr_d_packed_addDiag(REAL(d), LENGTH(d), x, n);
+}
+
+
+SEXP dtpMatrix_matrix_mm(SEXP x, SEXP y, SEXP right, SEXP trans)
 {
     SEXP val = PROTECT(dup_mMatrix_as_dgeMatrix(y));
+    int rt = asLogical(right); // if(rt), compute b %*% op(a), else op(a) %*% b
+    int tr = asLogical(trans); // if(tr), op(a) = t(a), else op(a) = a
     /* Since 'x' is square (n x n ),   dim(x %*% y) = dim(y) */
     int *xDim = INTEGER(GET_SLOT(x, Matrix_DimSym)),
 	*yDim = INTEGER(GET_SLOT(val, Matrix_DimSym));
-    int ione = 1, j;
+    int m = yDim[0], n = yDim[1];
+    int ione = 1;
     const char *uplo = uplo_P(x), *diag = diag_P(x);
     double *xx = REAL(GET_SLOT(x, Matrix_xSym)),
 	*vx = REAL(GET_SLOT(val, Matrix_xSym));
 
     if (yDim[0] != xDim[1])
+    if ((rt && xDim[0] != n) || (!rt && xDim[1] != m))
 	error(_("Dimensions of a (%d,%d) and b (%d,%d) do not conform"),
 	      xDim[0], xDim[1], yDim[0], yDim[1]);
-    for (j = 0; j < yDim[1]; j++) /* X %*% y[,j]  via BLAS 2 DTPMV(.) */
-	F77_CALL(dtpmv)(uplo, "N", diag, yDim, xx,
-			vx + j * yDim[0], &ione);
+    if (m < 1 || n < 1) {
+/* 	error(_("Matrices with zero extents cannot be multiplied")); */
+    } else /* BLAS */
+	// go via BLAS 2  dtpmv(.); there is no dtpmm in Lapack!
+	if(rt) {
+	    error(_("right=TRUE is not yet implemented __ FIXME"));
+	} else {
+	    for (int j = 0; j < n; j++) // X %*% y[,j]
+		F77_CALL(dtpmv)(uplo, /*trans = */ tr ? "T" : "N",
+				diag, yDim, xx,
+				vx + j * m, &ione);
+	}
     UNPROTECT(1);
     return val;
 }
@@ -109,33 +142,39 @@ SEXP dtpMatrix_matrix_mm(SEXP x, SEXP y)
 SEXP dtpMatrix_matrix_solve(SEXP a, SEXP b)
 {
     SEXP val = PROTECT(dup_mMatrix_as_dgeMatrix(b));
-    /* Since 'x' is square (n x n ),   dim(x %*% b) = dim(b) */
+    /* Since 'a' is square (n x n ),   dim(a %*% b) = dim(b) */
     int *aDim = INTEGER(GET_SLOT(a, Matrix_DimSym)),
 	*bDim = INTEGER(GET_SLOT(val, Matrix_DimSym));
-    int ione = 1, j;
+    int ione = 1;
     const char *uplo = uplo_P(a), *diag = diag_P(a);
-    double *ax = REAL(GET_SLOT(a, Matrix_xSym)),
-	*vx = REAL(GET_SLOT(val, Matrix_xSym));
 
     if (bDim[0] != aDim[1])
 	error(_("Dimensions of a (%d,%d) and b (%d,%d) do not conform"),
 	      aDim[0], aDim[1], bDim[0], bDim[1]);
-    for (j = 0; j < bDim[1]; j++) /* a^{-1} %*% b[,j]  via BLAS 2 DTPSV(.) */
+#ifdef pre_2013_08_30
+    double *ax = REAL(GET_SLOT(a, Matrix_xSym)),
+	*vx = REAL(GET_SLOT(val, Matrix_xSym));
+    for (int j = 0; j < bDim[1]; j++) /* a^{-1} %*% b[,j]  via BLAS 2 DTPSV(.) */
 	F77_CALL(dtpsv)(uplo, "N", diag, bDim, ax,
 			vx + j * bDim[0], &ione);
+#else
+    F77_CALL(dtptrs)(uplo, "N", diag, /* n= */ aDim, /* nrhs = */ &bDim[1],
+	/* ap = */ REAL(GET_SLOT(a, Matrix_xSym)),
+	/* b  = */ REAL(GET_SLOT(val, Matrix_xSym)),
+	bDim, &ione);
+#endif
     UNPROTECT(1);
     return val;
 }
 
-/* FIXME: This function should be removed and a rtP argument added to
- * dtpMatrix_matrix_mm */
+/* FIXME: This function should be removed and a rt argument added to
+ * dtpMatrix_matrix_mm -- also to be more parallel to ./dtrMatrix.c code */
 SEXP dgeMatrix_dtpMatrix_mm(SEXP x, SEXP y)
 {
     SEXP val = PROTECT(duplicate(x));
     /* Since 'y' is square (n x n ),   dim(x %*% y) = dim(x) */
     int *xDim = INTEGER(GET_SLOT(x, Matrix_DimSym)),
 	*yDim = INTEGER(GET_SLOT(y, Matrix_DimSym));
-    int i;
     const char *uplo = uplo_P(y), *diag = diag_P(y);
     double *yx = REAL(GET_SLOT(y, Matrix_xSym)),
  	*vx = REAL(GET_SLOT(val, Matrix_xSym));
@@ -143,7 +182,7 @@ SEXP dgeMatrix_dtpMatrix_mm(SEXP x, SEXP y)
     if (yDim[0] != xDim[1])
 	error(_("Dimensions of a (%d,%d) and b (%d,%d) do not conform"),
 	      xDim[0], xDim[1], yDim[0], yDim[1]);
-    for (i = 0; i < xDim[0]; i++)/* val[i,] := Y' %*% x[i,]  */
+    for (int i = 0; i < xDim[0]; i++)/* val[i,] := Y' %*% x[i,]  */
 	F77_CALL(dtpmv)(uplo, "T", diag, yDim, yx,
 			vx + i, /* incr = */ xDim);
     UNPROTECT(1);
@@ -166,6 +205,8 @@ SEXP dtpMatrix_as_dtrMatrix(SEXP from)
     packed_to_full_double(REAL(ALLOC_SLOT(val, Matrix_xSym, REALSXP, n*n)),
 			  REAL(GET_SLOT(from, Matrix_xSym)), n,
 			  *CHAR(STRING_ELT(uplo, 0)) == 'U' ? UPP : LOW);
+    SET_SLOT(val, Matrix_DimNamesSym,
+	     duplicate(GET_SLOT(from, Matrix_DimNamesSym)));
     UNPROTECT(1);
     return val;
 }

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2003-11   The R Core Team
+ *  Copyright (C) 2003-12   The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,79 +38,97 @@
 #endif
 
 #include <Defn.h>
-#include "basedecl.h"
+#include <Internal.h>
 
 SEXP attribute_hidden
-do_mapply(SEXP f, SEXP varyingArgs, SEXP constantArgs, SEXP rho)
+do_mapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    checkArity(op, args);
 
-    int i, j, m, *lengths, *counters, named, longest = 0, zero = 0;
-    SEXP vnames, fcall = R_NilValue,  mindex, nindex, tmp1, tmp2, ans;
+    SEXP f = CAR(args), varyingArgs = CADR(args), constantArgs = CADDR(args);
+    int m, zero = 0;
+    R_xlen_t *lengths, *counters, longest = 0;
 
     m = length(varyingArgs);
-    vnames = PROTECT(getAttrib(varyingArgs, R_NamesSymbol));
-    named = vnames != R_NilValue;
+    SEXP vnames = PROTECT(getAttrib(varyingArgs, R_NamesSymbol));
+    Rboolean named = CXXRCONSTRUCT(Rboolean, vnames != R_NilValue);
 
-    lengths = static_cast<int *>(  CXXR_alloc(m, sizeof(int)));
-    for(i = 0; i < m; i++){
-	lengths[i] = length(VECTOR_ELT(varyingArgs, i));
-	if(lengths[i] == 0) zero++;
+    lengths = static_cast<R_xlen_t *>(  CXXR_alloc(m, sizeof(R_xlen_t)));
+    for (int i = 0; i < m; i++) {
+	SEXP tmp1 = VECTOR_ELT(varyingArgs, i);
+	lengths[i] = xlength(tmp1);
+	if (isObject(tmp1)) { // possibly dispatch on length()
+	    /* Cache the .Primitive: unclear caching is worthwhile. */
+	    static SEXP length_op = NULL;
+	    if (length_op == NULL) length_op = R_Primitive("length");
+	    // DispatchOrEval() needs 'args' to be a pairlist
+	    SEXP ans, tmp2 = PROTECT(list1(tmp1));
+	    if (DispatchOrEval(call, length_op, "length", tmp2, rho, &ans, 0, 1))
+		lengths[i] = R_xlen_t( (TYPEOF(ans) == REALSXP ?
+					REAL(ans)[0] : asInteger(ans)));
+	    UNPROTECT(1);
+	}
+	if (lengths[i] == 0) zero++;
 	if (lengths[i] > longest) longest = lengths[i];
     }
     if (zero && longest)
-	error(_("Zero-length inputs cannot be mixed with those of non-zero length"));
+	error(_("zero-length inputs cannot be mixed with those of non-zero length"));
 
-    counters = static_cast<int *>( CXXR_alloc(m, sizeof(int)));
-    for(i = 0; i < m; counters[i++] = 0);
+    counters = static_cast<R_xlen_t *>( CXXR_alloc(m, sizeof(R_xlen_t)));
+    memset(counters, 0, m * sizeof(R_xlen_t));
 
-    mindex = PROTECT(allocVector(VECSXP, m));
-    nindex = PROTECT(allocVector(VECSXP, m));
+    SEXP mindex = PROTECT(allocVector(VECSXP, m));
+    SEXP nindex = PROTECT(allocVector(VECSXP, m));
 
     /* build a call like
        f(dots[[1]][[4]], dots[[2]][[4]], dots[[3]][[4]], d=7)
     */
 
+    SEXP fcall = R_NilValue; // -Wall
     if (constantArgs == R_NilValue)
-	PROTECT(fcall = R_NilValue);
-    else if(isVectorList(constantArgs))
-	PROTECT(fcall = VectorToPairList(constantArgs));
+	;
+    else if (isVectorList(constantArgs))
+	fcall = VectorToPairList(constantArgs);
     else
 	error(_("argument 'MoreArgs' of 'mapply' is not a list"));
+    PROTECT_INDEX fi;
+    PROTECT_WITH_INDEX(fcall, &fi);
 
-    for(j = m - 1; j >= 0; j--) {
+    Rboolean realIndx = CXXRCONSTRUCT(Rboolean, longest > INT_MAX);
+    SEXP Dots = install("dots");
+    for (int j = m - 1; j >= 0; j--) {
 	SET_VECTOR_ELT(mindex, j, ScalarInteger(j + 1));
-	SET_VECTOR_ELT(nindex, j, allocVector(INTSXP, 1));
-	PROTECT(tmp1 = lang3(R_Bracket2Symbol,
-			     install("dots"),
-			     VECTOR_ELT(mindex, j)));
-	PROTECT(tmp2 = lang3(R_Bracket2Symbol,
-			     tmp1,
-			     VECTOR_ELT(nindex, j)));
-	UNPROTECT(3);
-	PROTECT(fcall = CONS(tmp2, fcall));
-	if (named && CHAR(STRING_ELT(vnames,j))[0] != '\0')
-	    SET_TAG(fcall, install(translateChar(STRING_ELT(vnames, j))));
+	SET_VECTOR_ELT(nindex, j, allocVector(realIndx ? REALSXP : INTSXP, 1));
+	SEXP tmp1 = PROTECT(lang3(R_Bracket2Symbol, Dots, VECTOR_ELT(mindex, j)));
+	SEXP tmp2 = PROTECT(lang3(R_Bracket2Symbol, tmp1, VECTOR_ELT(nindex, j)));
+	REPROTECT(fcall = CONS(tmp2, fcall), fi);
+	UNPROTECT(2);
+	if (named && CHAR(STRING_ELT(vnames, j))[0] != '\0')
+	    SET_TAG(fcall, installTrChar(STRING_ELT(vnames, j)));
     }
 
-    UNPROTECT(1);
-    PROTECT(fcall = LCONS(f, fcall));
+    REPROTECT(fcall = LCONS(f, fcall), fi);
 
-    PROTECT(ans = allocVector(VECSXP, longest));
+    SEXP ans = PROTECT(allocVector(VECSXP, longest));
 
-    for(i = 0; i < longest; i++) {
-	for(j = 0; j < m; j++) {
+    for (int i = 0; i < longest; i++) {
+	for (int j = 0; j < m; j++) {
 	    counters[j] = (++counters[j] > lengths[j]) ? 1 : counters[j];
-	    INTEGER(VECTOR_ELT(nindex, j))[0] = counters[j];
+	    if (realIndx)
+		REAL(VECTOR_ELT(nindex, j))[0] = double( counters[j]);
+	    else
+		INTEGER(VECTOR_ELT(nindex, j))[0] = int( counters[j]);
 	}
-	SET_VECTOR_ELT(ans, i, eval(fcall, rho));
+	SEXP tmp = eval(fcall, rho);
+	if (NAMED(tmp))
+	    tmp = duplicate(tmp);
+	SET_VECTOR_ELT(ans, i, tmp);
     }
 
-    for(j = 0; j < m; j++) {
+    for (int j = 0; j < m; j++)
 	if (counters[j] != lengths[j])
 	    warning(_("longer argument not a multiple of length of shorter"));
-    }
 
     UNPROTECT(5);
-
-    return(ans);
+    return ans;
 }

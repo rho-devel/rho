@@ -58,7 +58,7 @@ quade.test(y, \dots)
 \value{
   A list with class \code{"htest"} containing the following components:
   \item{statistic}{the value of Quade's F statistic.}
-  \item{parameter}{a vector with the numerator and denominator degrees 
+  \item{parameter}{a vector with the numerator and denominator degrees
     of freedom of the approximate F distribution of the test statistic.}
   \item{p.value}{the p-value of the test.}
   \item{method}{the character string \code{"Quade test"}.}
@@ -68,9 +68,9 @@ quade.test(y, \dots)
   D. Quade (1979),
   Using weighted rankings in the analysis of complete blocks with
   additive block effects.
-  \emph{Journal of the American Statistical Association}, \bold{74},
+  \emph{Journal of the American Statistical Association} \bold{74},
   680--683.
-    
+
   William J. Conover (1999),
   \emph{Practical nonparametric statistics}.
   New York: John Wiley & Sons.

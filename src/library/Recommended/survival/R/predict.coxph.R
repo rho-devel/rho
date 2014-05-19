@@ -39,7 +39,9 @@ predict.coxph <- function(object, newdata,
     has.weights <- any(names(object$call) == 'weights')
     na.action.used <- object$na.action
     n <- length(object$residuals)
-    reference <- match.arg(reference)
+
+    if (missing(reference) && type=="terms") reference <- "sample"
+    else reference <- match.arg(reference)
     have.mf <- FALSE
     if (type == 'expected') {
         y <- object[['y']]
@@ -203,7 +205,7 @@ predict.coxph <- function(object, newdata,
                         }
                     if (ncol(y)==2) {
                         if (se.fit) {
-                            dt <- (chaz * newx[indx2,]) - xbar[indx2,]
+                            dt <- (chaz * newx[indx2,]) - xbar
                             se[indx2] <- sqrt(varh + rowSums((dt %*% object$var) *dt)) *
                                 newrisk[indx2]
                             }
@@ -219,8 +221,8 @@ predict.coxph <- function(object, newdata,
                         if (se.fit) {
                             varh2 <- c(0, cumsum(afit$varhaz))[j1+1]
                             xbar2 <- rbind(0, afit$xbar)[j1+1,,drop=F]
-                            dt <- (chaz * newx[indx2,]) - xbar[indx2,]
-                            dt2 <- (chaz2 * newx[indx2,]) - xbar2[indx2,]
+                            dt <- (chaz * newx[indx2,]) - xbar
+                            dt2 <- (chaz2 * newx[indx2,]) - xbar2
 
                             v2 <- varh2 + rowSums((dt2 %*% object$var) *dt2)
                             v1 <- varh +  rowSums((dt %*% object$var) *dt)

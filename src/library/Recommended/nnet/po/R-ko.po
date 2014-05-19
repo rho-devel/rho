@@ -1,0 +1,101 @@
+# Korean translation for R nnet package
+# Recommended/nnet/po/R-ko.po
+# Maintainer: Brian Ripley <ripley@stats.ox.ac.uk>
+# Copyright (C) 1995-2013 The R Core Team
+# This file is distributed under the same license as the R nnet package.
+# R Development Translation Team - Korean
+# Chel Hee Lee <gnustats@korea.gnu.org>, 2013.
+# Chel Hee Lee <gnustats@gmail.com>, 2013.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: nnet 7.3-5\n"
+"POT-Creation-Date: 2012-10-08 10:54\n"
+"PO-Revision-Date: 2013-03-11 13:52-0600\n"
+"Last-Translator: Chel Hee Lee <gnustats@gmail.com>\n"
+"Language-Team: R Development Translation Teams (Korean) <gnustats@korea.gnu."
+"org>\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Poedit-Language: Korean\n"
+"X-Poedit-Country: KOREA, REPUBLIC OF\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+msgid "need two or more classes to fit a multinom model"
+msgstr "multinomial model을 적합하기 위해서는 두개 이상의 클래스들이 필요합니다"
+
+msgid "some case has no observations"
+msgstr "어떤 경우는 관측치가 없습니다"
+
+msgid "ncol(offset) is wrong"
+msgstr "ncol(offset)가 올바르지 않습니다"
+
+msgid "not a \"multinom\" fit"
+msgstr "\"multinom\" 적합이 아닙니다"
+
+msgid "'scope' is not a subset of term labels"
+msgstr "'scope'는 term labels의 부분집합이 아닙니다"
+
+msgid "number of rows in use has changed: remove missing values?"
+msgstr "사용중인 행들의 개수가 변경되었습니다:  결측치들을 삭제하시겠나요?"
+
+msgid "no terms in 'scope' for adding to object"
+msgstr ""
+
+msgid "anova is not implemented for a single \"multinom\" object"
+msgstr "anova는 단일 \"multinom\" 객체에는 구현되지 않았습니다"
+
+msgid "not all objects are of class \"multinom\""
+msgstr "모든 객체들이 \"multinom\" 클래스는 아닙니다"
+
+msgid "models were not all fitted to the same size of dataset"
+msgstr ""
+
+msgid "missing values in 'x'"
+msgstr "'x'에 결측치들이 있습니다"
+
+msgid "missing values in 'y'"
+msgstr "'y'에 결측치들이 있습니다"
+
+msgid "nrows of 'x' and 'y' must match"
+msgstr "'x'의 행의 개수와 'y'의 행의 개수는 반드시 일치해야 합니다"
+
+msgid "entropy fit only for logistic units"
+msgstr ""
+
+msgid "no weights to fit"
+msgstr ""
+
+msgid "too many (%d) weights"
+msgstr ""
+
+msgid "'softmax = TRUE' requires at least two response categories"
+msgstr "'softmax = TRUE'는 적어도 두개의 response categories들이 요구됩니다"
+
+msgid "weights vector of incorrect length"
+msgstr "잘못된 길이의 weights vector입니다"
+
+msgid "incorrect length of 'mask'"
+msgstr "'mask'의 길이가 잘못되었습니다"
+
+msgid "invalid weights vector"
+msgstr "유효하지 않은 weights vector입니다"
+
+msgid "object not of class \"nnet\""
+msgstr "클래스 \"nnet\"가 가진 객체입니다"
+
+msgid "inappropriate fit for class"
+msgstr ""
+
+msgid "dims of 'x' and 'y' must match"
+msgstr "'x'와 'y'의 dims는 반드시 일치해야 합니다"
+
+msgid "not a legitimate neural net fit"
+msgstr ""
+
+msgid "group %s is empty"
+msgid_plural "groups %s are empty"
+msgstr[0] "그룹 %s는 비어있습니다"

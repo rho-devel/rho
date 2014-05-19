@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.3.0\n"
+"Project-Id-Version: R 2.15.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-09-06 21:52\n"
+"POT-Creation-Date: 2012-09-12 14:10\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -10,6 +10,66 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+
+msgid "Choleski based method failed, switch to QR"
+msgstr ""
+
+msgid "'family' argument seems not to be a valid family object"
+msgstr ""
+
+msgid "cannot find valid starting values: please specify some"
+msgstr ""
+
+msgid "Non-finite deviance"
+msgstr ""
+
+msgid "non-finite coefficients at iteration"
+msgstr ""
+
+msgid "algorithm did not converge"
+msgstr ""
+
+msgid "fitted probabilities numerically 0 or 1 occurred"
+msgstr ""
+
+msgid "fitted rates numerically 0 occurred"
+msgstr ""
+
+msgid "family not recognized"
+msgstr ""
+
+msgid "un-supported smoothness selection method"
+msgstr ""
+
+msgid "min.sp not supported with fast REML computation, and ignored."
+msgstr ""
+
+msgid "sparse=TRUE not supported with fast REML, reset to REML."
+msgstr ""
+
+msgid "Not enough (non-NA) data to do anything meaningful"
+msgstr ""
+
+msgid "Model has more coefficients than data"
+msgstr ""
+
+msgid "model matrix too dense for any possible benefit from sparse"
+msgstr ""
+
+msgid "AR1 parameter rho unused with sparse fitting"
+msgstr ""
+
+msgid "AR1 parameter rho unused with generalized model"
+msgstr ""
+
+msgid "samfrac too small - ignored"
+msgstr ""
+
+msgid "Model can not be updated"
+msgstr ""
+
+msgid "fast REML optimizer reached iteration limit"
+msgstr ""
 
 msgid "unsupported order of differentiation requested of gam.fit3"
 msgstr ""
@@ -80,12 +140,6 @@ msgstr ""
 msgid "Algorithm stopped at boundary value"
 msgstr ""
 
-msgid "fitted probabilities numerically 0 or 1 occurred"
-msgstr ""
-
-msgid "fitted rates numerically 0 occurred"
-msgstr ""
-
 msgid "deriv should be 1 or 2"
 msgstr ""
 
@@ -143,6 +197,15 @@ msgstr ""
 msgid "link \"%s\" not available for poisson family."
 msgstr ""
 
+msgid "p must be in (1,2)"
+msgstr ""
+
+msgid "mean, mu, must be non negative"
+msgstr ""
+
+msgid "scale parameter must be positive"
+msgstr ""
+
 msgid "An object of length"
 msgstr ""
 
@@ -188,6 +251,15 @@ msgstr ""
 msgid "Tensor product penalty rank appears to be too low: please email Simon.Wood@R-project.org with details."
 msgstr ""
 
+msgid "Can not convert this smooth class to a random effect"
+msgstr ""
+
+msgid "te smooths not useable with gamm4: use t2 instead"
+msgstr ""
+
+msgid "only one level of smooth nesting is supported by gamm"
+msgstr ""
+
 msgid "object does not appear to be of class lme"
 msgstr ""
 
@@ -195,6 +267,9 @@ msgid "inner groupings not nested in outer!!"
 msgstr ""
 
 msgid "iteration"
+msgstr ""
+
+msgid "gamm not converged, try increasing niterPQL"
 msgstr ""
 
 msgid "gamm() requires package nlme to be installed"
@@ -209,19 +284,28 @@ msgstr ""
 msgid "gamm() can only handle random effects defined as named lists"
 msgstr ""
 
-msgid "Not enough (non-NA) data to do anything meaningful"
-msgstr ""
-
-msgid "family not recognized"
-msgstr ""
-
 msgid "gamm models must have at least 1 smooth with unknown smoothing parameter or at least one other random effect"
 msgstr ""
 
 msgid "weights must be like glm weights for generalized case"
 msgstr ""
 
+msgid "Nested smooths must be fully random"
+msgstr ""
+
 msgid "dist not recognised"
+msgstr ""
+
+msgid "silly tolerance supplied"
+msgstr ""
+
+msgid "argument k must be positive."
+msgstr ""
+
+msgid "A not square"
+msgstr ""
+
+msgid "Can not have more eigenvalues than nrow(A)"
 msgstr ""
 
 msgid "nrow(M$X) != length(M$y)"
@@ -264,9 +348,6 @@ msgid "Penalized model matrix must have no more columns than rows"
 msgstr ""
 
 msgid "Model matrix not full column rank"
-msgstr ""
-
-msgid "Can't mix fixed and estimated penalties in mgcv() - use magic()"
 msgstr ""
 
 msgid "model has repeated 1-d smooths of same variable."
@@ -344,9 +425,6 @@ msgstr ""
 msgid "in.out incorrect: see documentation"
 msgstr ""
 
-msgid "Model has more coefficients than data"
-msgstr ""
-
 msgid "IRLS regularizing parameter must be a non-negative number."
 msgstr ""
 
@@ -395,22 +473,31 @@ msgstr ""
 msgid "non-existent terms requested - ignoring"
 msgstr ""
 
-msgid "residuals argument to plot.gam is wrong length: ignored"
+msgid "requires an object of class gam"
 msgstr ""
 
-msgid "No terms to plot - nothing for plot.gam() to do."
+msgid "nothing to do for this model"
 msgstr ""
 
-msgid "No variance estimates available"
+msgid "lambda and h should have the same length!"
 msgstr ""
 
-msgid "Partial residuals do not have a natural x-axis location for linear functional terms"
+msgid "recov works with fitted gam objects only"
 msgstr ""
 
-msgid "no automatic plotting for smooths of more than two variables"
+msgid "m can't be in re"
 msgstr ""
 
-msgid "no automatic plotting for smooths of more than one variable"
+msgid "p-values may give low power in some circumstances"
+msgstr ""
+
+msgid "p-values un-reliable"
+msgstr ""
+
+msgid "p-values may give very low power"
+msgstr ""
+
+msgid "p-values for any terms that can be penalized to zero will be unreliable: refit model to fix this."
 msgstr ""
 
 msgid "The following arguments to anova.glm(..) are invalid and dropped:"
@@ -423,6 +510,9 @@ msgid "test argument ignored"
 msgstr ""
 
 msgid "anova.gam called with non gam object"
+msgstr ""
+
+msgid "not a gam object"
 msgstr ""
 
 msgid "argument is not a gam object"
@@ -438,33 +528,6 @@ msgid "data vectors are of different lengths"
 msgstr ""
 
 msgid "supplied dist negative"
-msgstr ""
-
-msgid "Model does not seem to have enough terms to do anything useful"
-msgstr ""
-
-msgid "view variables must be one of"
-msgstr ""
-
-msgid "Don't know what to do with parametric terms that are not simple numeric or factor variables"
-msgstr ""
-
-msgid "View variables must contain more than one value. view = c("
-msgstr ""
-
-msgid ")."
-msgstr ""
-
-msgid "type must be \"link\" or \"response\""
-msgstr ""
-
-msgid "Something wrong with zlim"
-msgstr ""
-
-msgid "color scheme not recognised"
-msgstr ""
-
-msgid "sorry no option for contouring with errors: try plot.gam"
 msgstr ""
 
 msgid "Supplied matrix not symmetric"
@@ -492,6 +555,57 @@ msgid "w different length from y!"
 msgstr ""
 
 msgid "X lost dimensions in magic!!"
+msgstr ""
+
+msgid "object is not a glm or gam"
+msgstr ""
+
+msgid "names of z and pc must match"
+msgstr ""
+
+msgid "Partial residuals do not have a natural x-axis location for linear functional terms"
+msgstr ""
+
+msgid "no automatic plotting for smooths of more than two variables"
+msgstr ""
+
+msgid "no automatic plotting for smooths of more than one variable"
+msgstr ""
+
+msgid "residuals argument to plot.gam is wrong length: ignored"
+msgstr ""
+
+msgid "No variance estimates available"
+msgstr ""
+
+msgid "No terms to plot - nothing for plot.gam() to do."
+msgstr ""
+
+msgid "Model does not seem to have enough terms to do anything useful"
+msgstr ""
+
+msgid "view variables must be one of"
+msgstr ""
+
+msgid "Don't know what to do with parametric terms that are not simple numeric or factor variables"
+msgstr ""
+
+msgid "View variables must contain more than one value. view = c("
+msgstr ""
+
+msgid ")."
+msgstr ""
+
+msgid "type must be \"link\" or \"response\""
+msgstr ""
+
+msgid "Something wrong with zlim"
+msgstr ""
+
+msgid "color scheme not recognised"
+msgstr ""
+
+msgid "sorry no option for contouring with errors: try plot.gam"
 msgstr ""
 
 msgid "At least three knots required in call to mono.con."
@@ -542,6 +656,12 @@ msgstr ""
 msgid "only first element of `id' used"
 msgstr ""
 
+msgid "ord is wrong. reset to NULL."
+msgstr ""
+
+msgid "ord contains out of range orders (which will be ignored)"
+msgstr ""
+
 msgid "by=. not allowed"
 msgstr ""
 
@@ -551,10 +671,19 @@ msgstr ""
 msgid "argument k of s() should be integer and has been rounded"
 msgstr ""
 
+msgid "attempt to use unsuitable marginal smooth class"
+msgstr ""
+
 msgid "Sorry, tensor products of smooths with multiple penalties are not supported."
 msgstr ""
 
 msgid "reparameterization unstable for margin: not done"
+msgstr ""
+
+msgid "fx length wrong from t2 term: ignored"
+msgstr ""
+
+msgid "length of sp incorrect in t2: ignored"
 msgstr ""
 
 msgid "d can not be negative in call to null.space.dimension()."
@@ -575,7 +704,13 @@ msgstr ""
 msgid "no data to predict at"
 msgstr ""
 
+msgid "Basis only handles 1D smooths"
+msgstr ""
+
 msgid "number of supplied knots != k for a cr smooth"
+msgstr ""
+
+msgid "F is missing from cr smooth - refit model with current mgcv"
 msgstr ""
 
 msgid "more knots than unique data values is not allowed"
@@ -608,6 +743,15 @@ msgstr ""
 msgid "penalty order too high for basis dimension"
 msgstr ""
 
+msgid "fs smooths can only have one factor argument"
+msgstr ""
+
+msgid "\"fs\" smooth cannot use a multiply penalized basis (wrong basis in xt)"
+msgstr ""
+
+msgid "\"fs\" terms can not be fixed here"
+msgstr ""
+
 msgid "the adaptive smooth class is limited to 1 or 2 covariates."
 msgstr ""
 
@@ -615,6 +759,63 @@ msgid "penalty basis too large for smoothing basis"
 msgstr ""
 
 msgid "penalty basis too small"
+msgstr ""
+
+msgid "random effects don't work with ids."
+msgstr ""
+
+msgid "MRF basis dimension set too high"
+msgstr ""
+
+msgid "data contain regions that are not contained in the knot specification"
+msgstr ""
+
+msgid "penalty matrix, boundary polygons and/or neighbours list must be supplied in xt"
+msgstr ""
+
+msgid "no spatial information provided!"
+msgstr ""
+
+msgid "mismatch between nb/polys supplied area names and data area names"
+msgstr ""
+
+msgid "Something wrong with auto- penalty construction"
+msgstr ""
+
+msgid "supplied penalty not square!"
+msgstr ""
+
+msgid "supplied penalty wrong dimension!"
+msgstr ""
+
+msgid "penalty column names don't match supplied area names!"
+msgstr ""
+
+msgid "Can only deal with a sphere"
+msgstr ""
+
+msgid "more knots than data in an sos term: knots ignored."
+msgstr ""
+
+msgid "more knots than data in a ds term: knots ignored."
+msgstr ""
+
+msgid "A term has fewer unique covariate combinations than specified maximum degrees of freedom"
+msgstr ""
+
+msgid "s value reduced"
+msgstr ""
+
+msgid "s value increased"
+msgstr ""
+
+msgid "No suitable s (i.e. m[2]) try increasing m[1]"
+msgstr ""
+
+msgid "s value modified to give continuous function"
+msgstr ""
+
+msgid "basis dimension reset to minimum possible"
 msgstr ""
 
 msgid "smooth objects should not have a qrc attribute."
@@ -635,5 +836,71 @@ msgstr ""
 msgid "`by' variable must be same dimension as smooth arguments"
 msgstr ""
 
-msgid "Basis only handles 1D smooths"
+msgid "Number of prediction and fit constraints must match"
+msgstr ""
+
+msgid "x and y must be same length"
+msgstr ""
+
+msgid "variable names don't match boundary names"
+msgstr ""
+
+msgid "x and y not same length"
+msgstr ""
+
+msgid "bnd must be a list."
+msgstr ""
+
+msgid "lengths of k and bnd are not compatible."
+msgstr ""
+
+msgid "attempt to select non existent basis function"
+msgstr ""
+
+msgid "coefficient vector wrong length"
+msgstr ""
+
+msgid "knots must be specified for soap"
+msgstr ""
+
+msgid "soap films are bivariate only"
+msgstr ""
+
+msgid "need at least one interior knot"
+msgstr ""
+
+msgid "can't soap smooth without a boundary"
+msgstr ""
+
+msgid "bnd must be a list of boundary loops"
+msgstr ""
+
+msgid "faulty bnd"
+msgstr ""
+
+msgid "k and bnd lengths are inconsistent"
+msgstr ""
+
+msgid "data outside soap boundary"
+msgstr ""
+
+msgid "no free coefs in sf smooth"
+msgstr ""
+
+msgid "only deals with 2D case"
+msgstr ""
+
+msgid "not enough unique values to find k nearest"
+msgstr ""
+
+msgid "k too small for balanced neighbours"
+msgstr ""
+
+msgid "only 2D case available so far"
+msgstr ""
+
+msgid "cubic spline only deals with 1D data"
+msgstr ""
+
+msgid "object not fully initialized"
 msgstr ""

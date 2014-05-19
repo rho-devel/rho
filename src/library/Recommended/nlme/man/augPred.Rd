@@ -64,7 +64,7 @@ augPred(object, primary, minimum, maximum, length.out, \dots)
    Pinheiro, J. C. and Bates, D. M. (2000), \emph{Mixed-Effects Models in S
      and S-PLUS}, Springer, New York.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \note{
   This function is generic; method functions can be written to handle
   specific classes of objects. Classes which already have methods for

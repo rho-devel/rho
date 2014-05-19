@@ -1,27 +1,36 @@
 Package: nlme
-Version: 3.1-104
-Date: 2012-05-21
+Version: 3.1-111
+Date: 2013-08-05
 Priority: recommended
 Title: Linear and Nonlinear Mixed Effects Models
-Authors@R: c(person("Jose", "Pinheiro", comment = "S version"),
-        person("Douglas", "Bates", comment = "up to 2007"),
-        person("Saikat", "DebRoy", comment = "up to 2002"),
-        person("Deepayan", "Sarkar", comment = "up to 2005"),
-        person("R-core", email = "R-core@R-project.org", role =
-        c("aut", "cre")))
-Author: Jose Pinheiro (S version), Douglas Bates (up to 2007), Saikat
-        DebRoy (up to 2002), Deepayan Sarkar (up to 2005), the R Core
-        team.
+Authors@R: c(person("José", "Pinheiro", role = "aut",
+                    comment = "S version"),
+             person("Douglas", "Bates", role = "aut",
+                    comment = "up to 2007"),
+             person("Saikat", "DebRoy", role = "ctb",
+                    comment = "up to 2002"),
+             person("Deepayan", "Sarkar", role = "ctb",
+                    comment = "up to 2005"),
+	     person("R-core", email = "R-core@R-project.org",
+                    role = c("aut", "cre")),
+             person("EISPACK authors", role = "ctb"))
+Author: José Pinheiro [aut] (S version),
+  Douglas Bates [aut] (up to 2007),
+  Saikat DebRoy [ctb] (up to 2002),
+  Deepayan Sarkar [ctb] (up to 2005),
+  EISPACK authors [ctb],
+  R-core [aut, cre]
 Maintainer: R-core <R-core@R-project.org>
-Description: Fit and compare Gaussian linear and nonlinear
-        mixed-effects models.
-Depends: graphics, stats, R (>= 2.13)
+Description: Fit and compare Gaussian linear and nonlinear mixed-effects models.
+Depends: graphics, stats, R (>= 3.0.0)
 Imports: lattice
 Suggests: Hmisc, MASS
-LazyLoad: yes
 LazyData: yes
+ByteCompile: yes
+Encoding: UTF-8
 License: GPL (>= 2)
 BugReports: http://bugs.r-project.org
-Packaged: 2012-05-23 07:28:59 UTC; ripley
+Packaged: 2013-09-08 10:40:05 UTC; ripley
+NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2012-05-23 07:39:14
+Date/Publication: 2013-09-08 12:40:23

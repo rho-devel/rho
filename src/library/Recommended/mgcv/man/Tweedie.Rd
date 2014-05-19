@@ -50,7 +50,7 @@ modified from Venables and Ripley's \code{negative.binomial} family.
 }
 
 \references{
-Dunn, P.K. and G.K. Smith (2005) Series evaluation of Tweedie exponential dispersion model densities. 
+Dunn, P.K. and G.K. Smyth (2005) Series evaluation of Tweedie exponential dispersion model densities. 
 Statistics and Computing 15:267-280
 
 Tweedie, M. C. K. (1984). An index which distinguishes between

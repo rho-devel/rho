@@ -1,5 +1,5 @@
 # file MASS/R/polr.R
-# copyright (C) 1994-2010 W. N. Venables and B. D. Ripley
+# copyright (C) 1994-2013 W. N. Venables and B. D. Ripley
 # Use of transformed intercepts contributed by David Firth
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -23,7 +23,7 @@ polr <- function(formula, data, weights, start, ..., subset,
     method <- match.arg(method)
     if(is.matrix(eval.parent(m$data))) m$data <- as.data.frame(data)
     m$start <- m$Hess <- m$method <- m$model <- m$... <- NULL
-    m[[1L]] <- as.name("model.frame")
+    m[[1L]] <- quote(stats::model.frame)
     m <- eval.parent(m)
     Terms <- attr(m, "terms")
     x <- model.matrix(Terms, m, contrasts)
@@ -255,7 +255,7 @@ model.frame.polr <- function(formula, ...)
     if(length(nargs) || is.null(formula$model)) {
         m <- formula$call
         m$start <- m$Hess <- m$... <- NULL
-        m[[1L]] <- as.name("model.frame")
+        m[[1L]] <- quote(stats::model.frame)
         m[names(nargs)] <- nargs
         if (is.null(env <- environment(formula$terms))) env <- parent.frame()
         data <- eval(m, env)
@@ -436,7 +436,7 @@ profile.polr <- function(fitted, which = 1L:p, alpha = 0.01,
         }
         si <- order(zi)
         prof[[pi]] <- structure(data.frame(zi[si]), names = profName)
-        prof[[pi]]$par.vals <- pvi[si, ]
+        prof[[pi]]$par.vals <- pvi[si, , drop = FALSE]
     }
     val <- structure(prof, original.fit = fitted, summary = summ)
     class(val) <- c("profile.polr", "profile")

@@ -36,7 +36,7 @@
   is selected, the returned value may be converted to a vector,
   according to the rules above.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{[}}, \code{\link{pdMat}}}
 
 \examples{

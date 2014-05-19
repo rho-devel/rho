@@ -1,6 +1,8 @@
 #  File src/library/base/R/max.col.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -14,18 +16,9 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-max.col <- function(m, ties.method=c("random", "first", "last"))
+max.col <- function(m, ties.method = c("random", "first", "last"))
 {
     ties.method <- match.arg(ties.method)
-    m <- as.matrix(m)
-    n <- nrow(m)
-    .C("R_max_col",
-       as.double(m),
-       n,
-       ncol(m),
-       rmax = integer(n),
-       tieM = which(ties.method == eval(formals()[["ties.method"]])),
-       NAOK = TRUE,
-       DUP  = FALSE,
-       PACKAGE = "base")$rmax
+    tieM <- which(ties.method == eval(formals()[["ties.method"]]))
+    .Internal(max.col(as.matrix(m), tieM))
 }

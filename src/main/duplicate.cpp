@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -18,7 +18,7 @@
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *            (C) 2004  The R Foundation
- *  Copyright (C) 1998-2009 The R Core Team.
+ *  Copyright (C) 1998-2012 The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -80,10 +80,10 @@ SEXP duplicate(SEXP s){
 
 void copyVector(SEXP s, SEXP t)
 {
-    int i, ns, nt;
+    R_xlen_t i, ns, nt;
 
-    nt = LENGTH(t);
-    ns = LENGTH(s);
+    nt = XLENGTH(t);
+    ns = XLENGTH(s);
     switch (TYPEOF(s)) {
     case STRSXP:
 	for (i = 0; i < ns; i++)
@@ -122,20 +122,22 @@ void copyVector(SEXP s, SEXP t)
     }
 }
 
-void attribute_hidden copyListMatrix(SEXP s, SEXP t, Rboolean byrow)
+void copyListMatrix(SEXP s, SEXP t, Rboolean byrow)
 {
     SEXP pt, tmp;
-    int i, j, nr, nc, ns;
+    int i, j, nr, nc;
+    R_xlen_t ns;
 
     nr = nrows(s);
     nc = ncols(s);
-    ns = nr*nc;
+    ns = (R_xlen_t( nr)) * nc;
     pt = t;
     if(byrow) {
-	PROTECT(tmp = allocVector(STRSXP, nr*nc));
+	R_xlen_t NR = nr;
+	PROTECT(tmp = allocVector(STRSXP, ns));
 	for (i = 0; i < nr; i++)
 	    for (j = 0; j < nc; j++) {
-		SET_STRING_ELT(tmp, i + j * nr, duplicate(CAR(pt)));
+		SET_STRING_ELT(tmp, i + j * NR, duplicate(CAR(pt)));
 		pt = CDR(pt);
 		if(pt == R_NilValue) pt = t;
 	    }
@@ -157,49 +159,51 @@ void attribute_hidden copyListMatrix(SEXP s, SEXP t, Rboolean byrow)
 
 void copyMatrix(SEXP s, SEXP t, Rboolean byrow)
 {
-    int i, j, k, nr, nc, nt;
+    int i, j, nr, nc;
+    R_xlen_t k, nt;
 
     nr = nrows(s);
     nc = ncols(s);
-    nt = LENGTH(t);
+    nt = XLENGTH(t);
     k = 0;
 
     if (byrow) {
+	R_xlen_t NR = nr;
 	switch (TYPEOF(s)) {
 	case STRSXP:
 	    for (i = 0; i < nr; i++)
 		for (j = 0; j < nc; j++)
-		    SET_STRING_ELT(s, i + j * nr, STRING_ELT(t, k++ % nt));
+		    SET_STRING_ELT(s, i + j * NR, STRING_ELT(t, k++ % nt));
 	    break;
 	case LGLSXP:
 	    for (i = 0; i < nr; i++)
 		for (j = 0; j < nc; j++)
-		    LOGICAL(s)[i + j * nr] = LOGICAL(t)[k++ % nt];
+		    LOGICAL(s)[i + j * NR] = LOGICAL(t)[k++ % nt];
 	    break;
 	case INTSXP:
 	    for (i = 0; i < nr; i++)
 		for (j = 0; j < nc; j++)
-		    INTEGER(s)[i + j * nr] = INTEGER(t)[k++ % nt];
+		    INTEGER(s)[i + j * NR] = INTEGER(t)[k++ % nt];
 	    break;
 	case REALSXP:
 	    for (i = 0; i < nr; i++)
 		for (j = 0; j < nc; j++)
-		    REAL(s)[i + j * nr] = REAL(t)[k++ % nt];
+		    REAL(s)[i + j * NR] = REAL(t)[k++ % nt];
 	    break;
 	case CPLXSXP:
 	    for (i = 0; i < nr; i++)
 		for (j = 0; j < nc; j++)
-		    COMPLEX(s)[i + j * nr] = COMPLEX(t)[k++ % nt];
+		    COMPLEX(s)[i + j * NR] = COMPLEX(t)[k++ % nt];
 	    break;
 	case VECSXP:
 	    for (i = 0; i < nr; i++)
 		for (j = 0; j < nc; j++)
-		    SET_VECTOR_ELT(s, i + j * nr, VECTOR_ELT(t, k++ % nt));
+		    SET_VECTOR_ELT(s, i + j * NR, VECTOR_ELT(t, k++ % nt));
 	    break;
 	case RAWSXP:
 	    for (i = 0; i < nr; i++)
 		for (j = 0; j < nc; j++)
-		    RAW(s)[i + j * nr] = RAW(t)[k++ % nt];
+		    RAW(s)[i + j * NR] = RAW(t)[k++ % nt];
 	    break;
 	default:
 	    UNIMPLEMENTED_TYPE("copyMatrix", s);

@@ -1,6 +1,8 @@
 #  File src/library/stats/R/princomp.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -24,7 +26,7 @@ princomp.formula <- function(formula, data = NULL, subset, na.action, ...)
     cl <- match.call()
     mf <- match.call(expand.dots = FALSE)
     mf$... <- NULL
-    mf[[1L]] <- as.name("model.frame")
+    mf[[1L]] <- quote(stats::model.frame)
     mf <- eval.parent(mf)
     ## this is not a `standard' model-fitting function,
     ## so no need to consider contrasts or levels
@@ -78,7 +80,7 @@ princomp.default <-
     if (cor) {
         sds <- sqrt(diag(cv))
         if(any(sds == 0))
-            stop("cannot use cor=TRUE with a constant variable")
+            stop("cannot use 'cor = TRUE' with a constant variable")
         cv <- cv/(sds %o% sds)
     }
     edc <- eigen(cv, symmetric = TRUE)
@@ -95,8 +97,8 @@ princomp.default <-
     dimnames(edc$vectors) <- if(missing(x))
         list(dimnames(cv)[[2L]], cn) else list(dimnames(x)[[2L]], cn)
     sdev <- sqrt(ev)
-    sc <- if (cor) sds else rep(1, ncol(cv))
-    names(sc) <- colnames(cv)
+    sc <- setNames(if (cor) sds else rep.int(1, ncol(cv)),
+		   colnames(cv))
     scr <- if (scores && !missing(x) && !is.null(cen))
         scale(z, center = cen, scale = sc) %*% edc$vectors
     if (is.null(cen)) cen <- rep(NA_real_, nrow(cv))

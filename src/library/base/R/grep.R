@@ -1,6 +1,8 @@
 #  File src/library/base/R/grep.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -130,7 +132,7 @@ function(x = 0.1)
     ##
     ## Unspecified bounds are taken as NA_real_, and set to INT_MAX by
     ## the C code.
-    
+
     if(!is.list(x)) {
         ## Sanity checks.
         if(!is.numeric(x) || (x < 0))
@@ -186,7 +188,7 @@ function(x = NULL)
             stop("cost components must be non-negative")
         costs[pos] <- x
     }
-    
+
     costs
 }
 
@@ -279,7 +281,7 @@ function(x, m, invert = FALSE)
 function(x, m, invert = FALSE, value)
 {
     if(!length(x)) return(x)
-    
+
     y <- regmatches(x, m, !invert)
 
     ili <- is.list(m)
@@ -298,12 +300,10 @@ function(x, m, invert = FALSE, value)
         if(np != nv) {
             if(!nv)
                 stop("must have replacement values for matches")
-            value <- rep(value, length.out = np)
+            value <- rep_len(value, np)
         }
-        x[pos] <- paste(sapply(y, `[`, 1L),
-                        value,
-                        sapply(y, `[`, 2L),
-                        sep = "")
+        y <- y[pos]
+        x[pos] <- paste0(sapply(y, `[`, 1L), value, sapply(y, `[`, 2L))
         return(x)
     }
 
@@ -314,7 +314,7 @@ function(x, m, invert = FALSE, value)
         stop("missing replacement values are not allowed")
     if(!length(value))
         stop("value does not provide any replacement values")
-    value <- rep(value, length.out = length(x))
+    value <- rep_len(value, length(x))
 
     y <- if(invert) {
         ## Replace non-matches.
@@ -326,7 +326,7 @@ function(x, m, invert = FALSE, value)
             if(nv != (nu + 1L)) {
                 if(!nv)
                     stop("must have replacements for non-matches")
-                v <- rep(v, length.out = nu + 1L)
+                v <- rep_len(v, nu + 1L)
             }
             paste0(v, c(u, ""), collapse = "")
         },
@@ -341,7 +341,7 @@ function(x, m, invert = FALSE, value)
             if(nv != (nu - 1L)) {
                 if(!nv)
                     stop("must have replacements for matches")
-                v <- rep(v, length.out = nu - 1L)
+                v <- rep_len(v, nu - 1L)
             }
             paste0(u, c(v, ""), collapse = "")
         },

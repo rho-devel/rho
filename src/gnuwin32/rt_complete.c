@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  file rt_complete.c
- *  Copyright (C) 2007 The R Core Team.
+ *  Copyright (C) 2007-13 The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -113,9 +113,11 @@ static int rt_completion(char *buf, int offset, int *loc)
     alen = strlen(pline);
     for (i = 0; i < alen; i++) if (pline[i] == '"') pline[i] = '\'';
 
-    char cmd[strlen(pline) + 100];
-    sprintf(cmd, "utils:::.win32consoleCompletion(\"%s\", %d)",
-	    pline, cursor_position);
+    size_t len = strlen(pline) + 100; 
+    char cmd[len];
+    snprintf(cmd, len,
+	     "utils:::.win32consoleCompletion(\"%s\", %d)",
+	     pline, cursor_position);
     PROTECT(cmdSexp = mkString(cmd));
     cmdexpr = PROTECT(R_ParseVector(cmdSexp, -1, &status, R_NilValue));
     if (status != PARSE_OK) {

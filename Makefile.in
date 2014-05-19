@@ -10,17 +10,17 @@ top_builddir = .
 include $(top_builddir)/Makeconf
 
 distdir = $(PACKAGE)-$(VERSION)
-INSTFILES = COPYING
+INSTFILES = COPYING NEWS.2 NEWS.1 NEWS.0
 ## plus NEWS and NEWS.pdf, but need to wait until they are generated
 NON_SVN_INSTFILES = SVN-REVISION
 DISTFILES = $(INSTFILES) \
-	ChangeLog INSTALL ONEWS OONEWS README VERSION VERSION-NICK \
+	ChangeLog INSTALL README VERSION VERSION-NICK \
 	Makeconf.in Makefile.in Makefile.fw \
 	config.site configure configure.ac
-SUBDIRS = m4 tools doc etc share src tests @USE_NLS_TRUE@ po
-SUBDIRS_WITH_NO_BUILD = @USE_NLS_FALSE@ po
+SUBDIRS = m4 tools doc etc share src tests
+SUBDIRS_WITH_NO_BUILD = po
 
-all: Makefile Makeconf R docs recommended svn-vignettes
+all: Makefile Makeconf R docs recommended vignettes javaconf
 recommended: @USE_RECOMMENDED_PACKAGES_TRUE@ stamp-recommended
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
@@ -64,14 +64,19 @@ FORCE:
 stamp-recommended: R docs
 	@(cd src/library/Recommended && $(MAKE))
 
+## One of the grid vignettes requires lattice
 vignettes: stamp-recommended
 	@(cd src/library && $(MAKE) $@)
 
-## One of the grid vignettes requires lattice
-svn-vignettes: stamp-recommended
-	-@if test -f "non-tarball"; then \
-	   (cd src/library && $(MAKE) vignettes); \
-	fi
+## This needs packages built, hence 'R' dependence on 'javaconf'
+## javareconf gets remade often.
+stamp-java : etc/javaconf $(srcdir)/src/scripts/javareconf.in
+	@$(ECHO) "configuring Java ..."
+	@-bin/R CMD javareconf
+	@touch stamp-java
+
+javaconf: R
+	@$(MAKE) stamp-java
 
 install install-strip:
 	@echo "CXXR is currently in an immature state."
@@ -79,7 +84,7 @@ install install-strip:
 	@echo "consequently, installation is currently disabled."
 	@false
 
-CXXR-install: installdirs svnonly
+CXXR-install CXXR-install-strip: installdirs svnonly
 	@for d in $(SUBDIRS); do \
 	  (cd $${d} && $(MAKE) install) || exit 1; \
 	done
@@ -95,9 +100,13 @@ svnonly:
 	@if test ! -f "$(srcdir)/doc/FAQ" || test -f non-tarball ; then \
 	  (cd doc/manual && $(MAKE) front-matter html-non-svn) ; \
 	  touch non-tarball ; \
-	  (cd $(srcdir); LC_ALL=C TZ=GMT svn info || $(ECHO) "Revision: unknown") 2> /dev/null \
+	  (cd $(srcdir); LC_ALL=C TZ=GMT svn info || $(ECHO) "Revision: -99") 2> /dev/null \
 	    | sed -n -e '/^Revision/p' -e '/^Last Changed Date/'p \
 	    | cut -d' ' -f1,2,3,4 > SVN-REVISION-tmp ; \
+	  if test "`cat SVN-REVISION-tmp`" = "Revision: -99"; then \
+	    $(ECHO) "ERROR: not an svn checkout"; \
+	    exit 1; \
+	  fi; \
 	  $(SHELL) $(top_srcdir)/tools/move-if-change SVN-REVISION-tmp SVN-REVISION ; \
 	  rm -f SVN-REVISION-tmp ; \
 	else \
@@ -138,16 +147,18 @@ clean:
 distclean: clean
 	@(for d in $(SUBDIRS); do rsd="$${d} $${rsd}"; done; \
 	  for d in $${rsd}; do (cd $${d} && $(MAKE) $@); done)
+	@rm -f po/Makefile
 	-@rm -rf bin include lib library modules gnome
 	@if test -f non-tarball ; then \
 	  rm -f $(NON_SVN_INSTFILES) NEWS NEWS.pdf non-tarball doc/FAQ doc/RESOURCES doc/html/resources.html doc/html/NEWS.html; \
 	fi
 	@if test "$(BUILDDIR_IS_SRCDIR)" = no ; then \
 	  rm -f $(NON_SVN_INSTFILES); \
+	  rm -rf $(SUBDIRS) $(SUBDIRS_WITH_NO_BUILD); \
 	fi
 	-@rm -rf libconftest.dSYM
 	-@rm -f Makeconf Makefile Makefile.bak Makefrag.* \
-	  config.cache config.log config.status libtool \
+	  config.cache config.log config.status libtool stamp-java \
 	  $(ACLOCAL_M4) acinclude.m4 $(distdir).tar.gz
 maintainer-clean: distclean
 	@$(ECHO) "This command is intended for maintainers to use; it"

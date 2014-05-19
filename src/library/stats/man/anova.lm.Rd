@@ -1,17 +1,17 @@
 % File src/library/stats/man/anova.lm.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{anova.lm}
+\alias{anova.lm}
+\alias{anova.lmlist}
 \title{ANOVA for Linear Model Fits}
 \usage{
 \method{anova}{lm}(object, \dots)
 
-anova.lmlist(object, \dots, scale = 0, test = "F")
+\method{anova}{lmlist}(object, \dots, scale = 0, test = "F")
 }
-\alias{anova.lm}
-\alias{anova.lmlist}
 \description{
   Compute an analysis of variance table for one or more linear model fits.
 }
@@ -52,11 +52,6 @@ anova.lmlist(object, \dots, scale = 0, test = "F")
 \value{
   An object of class \code{"anova"} inheriting from class \code{"data.frame"}.
 }
-\note{
-  Versions of \R prior to 1.2.0 based F tests on pairwise comparisons,
-  and this behaviour can still be obtained by a direct call to
-  \code{anovalist.lm}.
-}
 \section{Warning}{
   The comparison between two or more models will only be valid if they
   are fitted to the same dataset. This may be a problem if there are
@@ -87,9 +82,9 @@ fit1 <- update(fit0, . ~ . + pop15)
 fit2 <- update(fit1, . ~ . + pop75)
 fit3 <- update(fit2, . ~ . + dpi)
 fit4 <- update(fit3, . ~ . + ddpi)
-anova(fit0, fit1, fit2, fit3, fit4, test="F")
+anova(fit0, fit1, fit2, fit3, fit4, test = "F")
 
-anova(fit4, fit2, fit0, test="F") # unconventional order
+anova(fit4, fit2, fit0, test = "F") # unconventional order
 }
 \keyword{regression}
 \keyword{models}

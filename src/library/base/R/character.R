@@ -1,6 +1,8 @@
 #  File src/library/base/R/character.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -24,7 +26,7 @@ substring <- function(text, first, last=1000000L)
 {
     if(!is.character(text)) text <- as.character(text)
     n <- max(lt <- length(text), length(first), length(last))
-    if(lt && lt < n) text <- rep(text, length.out = n)
+    if(lt && lt < n) text <- rep_len(text, length.out = n)
     .Internal(substr(text, as.integer(first), as.integer(last)))
 }
 
@@ -98,11 +100,13 @@ chartr <- function(old, new, x)
     if(!is.character(x)) x <- as.character(x)
     .Internal(chartr(old, new, x))
 }
-tolower <- function(x) {
+tolower <- function(x)
+{
     if(!is.character(x)) x <- as.character(x)
     .Internal(tolower(x))
 }
-toupper <- function(x) {
+toupper <- function(x)
+{
     if(!is.character(x)) x <- as.character(x)
     .Internal(toupper(x))
 }
@@ -110,7 +114,9 @@ toupper <- function(x) {
 casefold <- function(x, upper = FALSE)
     if(upper) toupper(x) else tolower(x)
 
-sQuote <- function(x) {
+sQuote <- function(x)
+{
+    if (!length(x)) return(character())
     before <- after <- "'"
     q <- getOption("useFancyQuotes")
     if(!is.null(q)) {
@@ -145,7 +151,9 @@ sQuote <- function(x) {
     paste0(before, x, after)
 }
 
-dQuote <- function(x) {
+dQuote <- function(x)
+{
+    if (!length(x)) return(character())
     before <- after <- "\""
     q <- getOption("useFancyQuotes")
     if(!is.null(q)) {
@@ -178,6 +186,4 @@ dQuote <- function(x) {
 
 strtoi <-
 function(x, base = 0L)
-{
     .Internal(strtoi(as.character(x), as.integer(base)))
-}

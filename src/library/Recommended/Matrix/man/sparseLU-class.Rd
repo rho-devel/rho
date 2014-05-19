@@ -42,11 +42,13 @@
 %\references{}
 \note{
   The decomposition is of the form
-  \deqn{A = P'LUQ}{A = P'LUQ}
+  \deqn{A = P'LUQ,}
+  %%    ---------
+  or equivalently  \eqn{PAQ' = LU},
   where all matrices are sparse and of size \eqn{n\times n}{n by n}.
-  The matrices \eqn{P}, its transpose \eqn{P'}, and \eqn{Q} are
-  permutation matrices, \eqn{L} is lower triangular and \eqn{U} is upper
-  triangular.
+  The matrices \eqn{P} and \eqn{Q}, and their transposes \eqn{P'} and
+  \eqn{Q'} are permutation matrices,
+  \eqn{L} is lower triangular and \eqn{U} is upper triangular.
 }
 \seealso{
   \code{\link{lu}}, \code{\link[base]{solve}}, \code{\linkS4class{dgCMatrix}}

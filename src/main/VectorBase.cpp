@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -39,20 +39,20 @@
 
 #include "CXXR/VectorBase.h"
 
-#include "R_ext/Error.h"
 #include "CXXR/IntVector.h"
 #include "CXXR/ListVector.h"
 #include "CXXR/PairList.h"
 #include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
+#include "CXXR/errors.h"
 
 using namespace CXXR;
 
 namespace CXXR {
     namespace ForceNonInline {
-	int (*LENGTHptr)(SEXP x) = LENGTH;
-	void (*SET_TRUELENGTHptr)(SEXP x, int v) = SET_TRUELENGTH;
-	int (*TRUELENGTHptr)(SEXP x) = TRUELENGTH;
+	R_xlen_t (*XLENGTHptr)(SEXP x) = XLENGTH;
+	void (*SET_XTRUELENGTHptr)(SEXP x, R_xlen_t v) = SET_XTRUELENGTH;
+	R_xlen_t (*XTRUELENGTHptr)(SEXP x) = XTRUELENGTH;
     }
 }
 
@@ -107,7 +107,7 @@ void VectorBase::setDimensionNames(ListVector* names)
 
 void VectorBase::setDimensionNames(unsigned int d, StringVector* names)
 {
-    unsigned int ndims = dimensions()->size();
+    size_t ndims = dimensions()->size();
     if (d == 0 || d > ndims)
 	Rf_error(_("Attempt to associate dimnames"
 		   " with a non-existent dimension"));
@@ -130,11 +130,25 @@ void VectorBase::setNames(StringVector* names)
     setAttribute(NamesSymbol, names);
 }
 
-void VectorBase::setSize(std::size_t)
+void VectorBase::setSize(size_type)
 {
     Rf_error(_("this object cannot be resized"));
 }
 
+// The error messages here match those used by CR (as of 3.0.2),
+// including the malformed unit abbreviations.
+void VectorBase::tooBig(std::size_t bytes)
+{
+    double dsize = double(bytes)/1024.0;
+    if (dsize > 1024.0*1024.0)
+	Rf_errorcall(0, _("cannot allocate vector of size %0.1f Gb"),
+		     dsize/1024.0/1024.0);
+    if (dsize > 1024.0)
+	Rf_errorcall(0, _("cannot allocate vector of size %0.1f Mb"),
+		     dsize/1024.0);
+    Rf_errorcall(0, _("cannot allocate vector of size %0.1f Kb"), dsize);
+}
+		     
 // Rf_allocVector is still in memory.cpp (for the time being).
 
 Rboolean Rf_isVector(SEXP s)
@@ -162,5 +176,5 @@ void SETLENGTH(SEXP x, int v)
     CXXR::VectorBase* vb = dynamic_cast<CXXR::VectorBase*>(x);
     if (!vb)
 	Rf_error("SETLENGTH invoked for a non-vector.");
-    vb->setSize(v);
+    vb->setSize(VectorBase::size_type(v));
 }

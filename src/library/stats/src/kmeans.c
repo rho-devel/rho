@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -160,3 +160,20 @@ void kmeans_MacQueen(double *x, int *pn, int *pp, double *cen, int *pk,
 	}
     }
 }
+
+// tracing for  kmeans() in  ./kmns.f
+
+void F77_SUB(kmns1)(int *k, int *it, int *indx) {
+    Rprintf("KMNS(*, k=%d): iter=%3d, indx=%d\n", *k, *it, *indx);
+}
+
+void F77_SUB(kmnsqpr)(int *istep, int *icoun, int *NCP, int *k, int *trace)
+{
+    Rprintf(" QTRAN(): istep=%d, icoun=%d", *istep, *icoun);
+    if(*trace >= 2) {
+	Rprintf(", NCP[1:%d]=", k[0]);
+	for(int i=0; i < k[0]; i++) Rprintf(" %d", NCP[i]);
+    }
+    Rprintf("\n");
+}
+

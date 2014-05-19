@@ -38,6 +38,8 @@
   %% No methods defined with class "symmetricMatrix" in the signature.
 }
 \seealso{
+  \code{\link{isSymmetric}} which has efficient methods
+  (\link{isSymmetric-methods}) for the \pkg{Matrix} classes.
   Classes \code{\linkS4class{triangularMatrix}}, and, e.g.,
   \code{\linkS4class{dsyMatrix}} for numeric \emph{dense} matrices, or
   \code{\linkS4class{lsCMatrix}} for a logical \emph{sparse} matrix class.

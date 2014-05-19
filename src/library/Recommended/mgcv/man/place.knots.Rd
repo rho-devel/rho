@@ -29,6 +29,7 @@ even coverage, where even means having approximately the same number of data bet
 \seealso{ \code{\link{smooth.construct.cc.smooth.spec}}  }
 
 \examples{
+require(mgcv)
 x<-runif(30)
 place.knots(x,7)
 rm(x)

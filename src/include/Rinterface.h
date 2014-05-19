@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -34,9 +34,12 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* This header file is to provide hooks for external GUIs such as
-   GNOME and Cocoa.  It is only used on Unix-alikes.  All entries
-   here should be documented in doc/manual/R-exts.texi
+/* This header file is to provide hooks for alternative front-ends,
+   e.g. GUIs such as GNOME and Cocoa.  It is only used on Unix-alikes.
+   All entries here should be documented in doc/manual/R-exts.texi.
+
+   It should not be included by package sources unless they are
+   providing such a front-end.
 */
 
 #ifndef RINTERFACE_H_
@@ -140,12 +143,16 @@ extern void (*ptr_R_loadhistory)(SEXP, SEXP, SEXP, SEXP);
 extern void (*ptr_R_savehistory)(SEXP, SEXP, SEXP, SEXP);
 extern void (*ptr_R_addhistory)(SEXP, SEXP, SEXP, SEXP);
 
-#ifdef HAVE_AQUA
+// added in 3.0.0
 extern int  (*ptr_R_EditFiles)(int, const char **, const char **, const char *);
-#endif
+// naming follows earlier versions in R.app
+extern SEXP (*ptr_do_selectlist)(SEXP, SEXP, SEXP, SEXP);
+extern SEXP (*ptr_do_dataentry)(SEXP, SEXP, SEXP, SEXP);
+extern SEXP (*ptr_do_dataviewer)(SEXP, SEXP, SEXP, SEXP);
+extern void (*ptr_R_ProcessEvents)();
 
-/* These two are not used by R itself, but are used by the GNOME front-end
-   and the tcltk package */
+
+/* These two are not used by R itself, but are used by the tcltk package */
 extern int  (*R_timeout_handler)(void);
 extern long R_timeout_val;
 

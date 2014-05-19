@@ -1,6 +1,8 @@
 #  File src/library/base/R/message.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -40,7 +42,7 @@ function(..., domain = NULL, appendLF = TRUE)
     }
     defaultHandler <- function(c) {
         ## Maybe use special connection here?
-        cat(conditionMessage(c), file=stderr(), sep="")
+        cat(conditionMessage(c), file=stderr(), sep = "")
     }
     withRestarts({
         signalCondition(cond)

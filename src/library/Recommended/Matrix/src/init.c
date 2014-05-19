@@ -27,6 +27,8 @@
 #include "Syms.h"
 
 #define CALLDEF(name, n)  {#name, (DL_FUNC) &name, n}
+#define EXTDEF(name, n)   {#name, (DL_FUNC) &name, n}
+
 
 static R_CallMethodDef CallEntries[] = {
     CALLDEF(BunchKaufman_validate, 1),
@@ -37,6 +39,7 @@ static R_CallMethodDef CallEntries[] = {
     CALLDEF(CHMfactor_ldetL2, 1),
     CALLDEF(CHMfactor_ldetL2up, 3),
     CALLDEF(CHMfactor_update, 3),
+    CALLDEF(CHMfactor_updown,3),
     CALLDEF(destructive_CHM_update, 3),
     CALLDEF(Cholesky_validate, 1),
     CALLDEF(Csparse_Csparse_prod, 2),
@@ -50,10 +53,12 @@ static R_CallMethodDef CallEntries[] = {
     CALLDEF(Csparse_diagU2N, 1),
     CALLDEF(Csparse_drop, 2),
     CALLDEF(Csparse_horzcat, 2),
+    CALLDEF(Csparse_sort, 1),
     CALLDEF(Csparse_to_Tsparse, 2),
     CALLDEF(Csparse_to_dense, 1),
     CALLDEF(Csparse_to_nz_pattern, 2),
     CALLDEF(Csparse_to_matrix, 1),
+    CALLDEF(Csparse_to_vector, 1),
     CALLDEF(Csparse_submatrix, 3),
     CALLDEF(dCsparse_subassign, 4),
     CALLDEF(lCsparse_subassign, 4),
@@ -103,14 +108,14 @@ static R_CallMethodDef CallEntries[] = {
     CALLDEF(ngCMatrix_colSums, 5),
     CALLDEF(dgCMatrix_cholsol, 2),
     /* CALLDEF(dgCMatrix_lusol, 2), */
-    CALLDEF(dgCMatrix_matrix_solve, 2),
+    CALLDEF(dgCMatrix_matrix_solve, 3),
     CALLDEF(dgCMatrix_qrsol, 3),
     CALLDEF(dgTMatrix_to_dgeMatrix, 1),
     CALLDEF(lgTMatrix_to_lgeMatrix, 1),
     CALLDEF(dgTMatrix_to_matrix, 1),
     CALLDEF(lgTMatrix_to_matrix, 1),
     CALLDEF(dgeMatrix_LU, 2),
-    CALLDEF(dgeMatrix_Schur, 2),
+    CALLDEF(dgeMatrix_Schur, 3),
     CALLDEF(dgeMatrix_colsums, 4),
     CALLDEF(dgeMatrix_crossprod, 2),
     CALLDEF(dgeMatrix_determinant, 2),
@@ -119,8 +124,11 @@ static R_CallMethodDef CallEntries[] = {
     CALLDEF(dgeMatrix_matrix_solve, 2),
     CALLDEF(dgeMatrix_dtpMatrix_mm, 2),
     CALLDEF(dgeMatrix_exp, 1),
+    CALLDEF(dgeMatrix_addDiag, 2),
     CALLDEF(dgeMatrix_getDiag, 1),
     CALLDEF(lgeMatrix_getDiag, 1),
+    CALLDEF(dgeMatrix_setDiag, 2),
+    CALLDEF(lgeMatrix_setDiag, 2),
     CALLDEF(dgeMatrix_matrix_crossprod, 3),
     CALLDEF(dgeMatrix_norm, 2),
     CALLDEF(dgeMatrix_rcond, 2),
@@ -137,6 +145,8 @@ static R_CallMethodDef CallEntries[] = {
     CALLDEF(dppMatrix_rcond, 2),
     CALLDEF(dppMatrix_solve, 1),
     CALLDEF(dppMatrix_validate, 1),
+    CALLDEF(R_chkName_Cholesky, 4),
+    CALLDEF(R_chm_factor_name, 3),
     CALLDEF(dsCMatrix_Cholesky, 5),
     CALLDEF(dsCMatrix_LDL_D, 3),
     CALLDEF(dsCMatrix_chol, 2),
@@ -166,6 +176,10 @@ static R_CallMethodDef CallEntries[] = {
     CALLDEF(dspMatrix_solve, 1),
     CALLDEF(dspMatrix_trf, 1),
     CALLDEF(dspMatrix_validate, 1),
+    CALLDEF(dspMatrix_getDiag, 1),
+    CALLDEF(lspMatrix_getDiag, 1),
+    CALLDEF(dspMatrix_setDiag, 2),
+    CALLDEF(lspMatrix_setDiag, 2),
 /*     CALLDEF(dtCMatrix_solve, 1), */
     CALLDEF(dtCMatrix_matrix_solve, 3),
     CALLDEF(dtCMatrix_sparse_solve, 2),
@@ -173,9 +187,12 @@ static R_CallMethodDef CallEntries[] = {
     CALLDEF(ltTMatrix_as_ltrMatrix, 1),
     CALLDEF(ntTMatrix_as_ntrMatrix, 1),
     CALLDEF(dtpMatrix_as_dtrMatrix, 1),
+    CALLDEF(dtpMatrix_addDiag, 2),
     CALLDEF(dtpMatrix_getDiag, 1),
     CALLDEF(ltpMatrix_getDiag, 1),
-    CALLDEF(dtpMatrix_matrix_mm, 2),
+    CALLDEF(dtpMatrix_setDiag, 2),
+    CALLDEF(ltpMatrix_setDiag, 2),
+    CALLDEF(dtpMatrix_matrix_mm, 4),
     CALLDEF(dtpMatrix_matrix_solve, 2),
     CALLDEF(dtpMatrix_norm, 2),
     CALLDEF(dtpMatrix_rcond, 2),
@@ -186,8 +203,11 @@ static R_CallMethodDef CallEntries[] = {
     CALLDEF(dtrMatrix_matrix_mm,    4),
     CALLDEF(dtrMatrix_dtrMatrix_mm, 4),
     CALLDEF(dtrMatrix_chol2inv, 1),
+    CALLDEF(dtrMatrix_addDiag, 2),
     CALLDEF(dtrMatrix_getDiag, 1),
     CALLDEF(ltrMatrix_getDiag, 1),
+    CALLDEF(dtrMatrix_setDiag, 2),
+    CALLDEF(ltrMatrix_setDiag, 2),
     CALLDEF(dtrMatrix_matrix_solve, 2),
     CALLDEF(dtrMatrix_norm, 2),
     CALLDEF(dtrMatrix_rcond, 2),
@@ -206,8 +226,8 @@ static R_CallMethodDef CallEntries[] = {
 
     CALLDEF(lapack_qr, 2),
 
-    CALLDEF(lcsc_to_matrix, 1),
-    CALLDEF(ncsc_to_matrix, 1),
+    CALLDEF(lgC_to_matrix, 1),
+    CALLDEF(ngC_to_matrix, 1),
 
     CALLDEF(lspMatrix_as_lsyMatrix, 2),
     CALLDEF(lsyMatrix_as_lspMatrix, 2),
@@ -232,12 +252,20 @@ static R_CallMethodDef CallEntries[] = {
 
     CALLDEF(CHM_set_common_env, 1),
 
+    CALLDEF(inv_permutation, 3),
     CALLDEF(m_encodeInd, 3),
     CALLDEF(m_encodeInd2, 4),
 
     CALLDEF(Matrix_rle_i, 2),
     CALLDEF(Matrix_rle_d, 2),
 
+    CALLDEF(R_set_factors, 3),
+
+    {NULL, NULL, 0}
+};
+
+static const R_ExternalMethodDef ExtEntries[] = {
+    EXTDEF(Mmatrix, 7),
     {NULL, NULL, 0}
 };
 
@@ -247,7 +275,7 @@ __attribute__ ((visibility ("default")))
 #endif
 R_init_Matrix(DllInfo *dll)
 {
-    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_registerRoutines(dll, NULL, CallEntries, NULL, ExtEntries);
     R_useDynamicSymbols(dll, FALSE);
 
 /* These are callable from other packages' C code: */
@@ -303,12 +331,10 @@ R_init_Matrix(DllInfo *dll)
     RREGDEF(cholmod_transpose);
     RREGDEF(cholmod_triplet_to_sparse);
     RREGDEF(cholmod_vertcat);
+    RREGDEF(cholmod_updown);
 
     RREGDEF(dpoMatrix_chol);
     RREGDEF(numeric_as_chm_dense);
-#if R_VERSION < R_Version(2, 15, 0)
-    RREGDEF(Matrix_check_class_etc);
-#endif
 
     R_cholmod_start(&c);
 //    R_cholmod_l_start(&cl);

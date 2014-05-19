@@ -9,7 +9,7 @@
 \description{
   Plot time series against lagged versions of themselves.
   Helps visualizing \sQuote{auto-dependence} even when auto-correlations
-  vanish. 
+  vanish.
 }
 \usage{
 lag.plot(x, lags = 1, layout = NULL, set.lags = 1:lags,
@@ -66,7 +66,7 @@ lag.plot(x, lags = 1, layout = NULL, set.lags = 1:lags,
 require(graphics)
 
 lag.plot(nhtemp, 8, diag.col = "forest green")
-lag.plot(nhtemp, 5, main="Average Temperatures in New Haven")
+lag.plot(nhtemp, 5, main = "Average Temperatures in New Haven")
 ## ask defaults to TRUE when we have more than one page:
 lag.plot(nhtemp, 6, layout = c(2,1), asp = NA,
          main = "New Haven Temperatures", col.main = "blue")

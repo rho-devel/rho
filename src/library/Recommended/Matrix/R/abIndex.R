@@ -16,7 +16,8 @@ rleMaybe <- function(i, force = FALSE) {
         if(r <- isTRUE(all(is.na(i) | i. == i))) i <- i.
         r }
     ## if(int),  'i' will be coerced to integer on C level
-   .Call(if(int) Matrix_rle_i else Matrix_rle_d, i, force)
+    Matrix.rle <- if(int) Matrix_rle_i else Matrix_rle_d
+    .Call(Matrix.rle, i, force)
 }
 
 .rle <- function(lengths, values)
@@ -517,8 +518,7 @@ setMethod("Arith", signature(e1 = "abIndex", e2 = "numLike"),
                          if(is0(e2) ## division by 0
                             && length(unique(sign(ee <- ends.rleD(e1@rleD)))) > 1) {
                              ## at least one subsequence contains 0, i.e., changes sign:
-                             warning("x / 0 for an <abIndex> x with sign-change\n",
-                                     "no longer representable as 'rleDiff'")
+			     warning("x / 0 for an <abIndex> x with sign-change\n no longer representable as 'rleDiff'")
                              return(vec2abI(abI2num(e1) / 0))
                          }
                          e1@rleD@first <- e1@rleD@first / e2
@@ -645,12 +645,12 @@ setMethod("is.infinite", signature(x = "abIndex"),
 all.equal.abI <- function(target, current, ...)
 {
     if(!is(target, "abIndex") || !is(current, "abIndex"))
-	return(paste("target is ", data.class(target), ", current is ",
-		     data.class(current), sep = ""))
+	return(paste0("target is ", data.class(target), ", current is ",
+		      data.class(current)))
     lt <- length(target)
     lc <- length(current)
     if(lt != lc)
-	paste("abIndex", ": lengths (", lt, ", ", lc, ") differ", sep = "")
+	paste0("abIndex", ": lengths (", lt, ", ", lc, ") differ")
     else if(target@kind == current@kind) {
 	all.equal.default(target, current, ...)
     } else ## different 'kinds' -- take "easy" exit:

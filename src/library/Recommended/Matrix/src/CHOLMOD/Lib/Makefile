@@ -7,7 +7,7 @@ default: lib
 
 PKG_CPPFLAGS = -I../../AMD/Include -I../../AMD/Source \
         -I../../COLAMD/Include \
-	-I../Include -I../../UFconfig -DNPARTITION -DNPRINT
+	-I../Include -I../../SuiteSparse_config -DNPARTITION -DNPRINT
 #	 -I../../CCOLAMD \
 #        -I../../CAMD/Include -I../../CAMD/Source \
 #	-I../../Metis \
@@ -405,6 +405,7 @@ cholmod_l_updown.o: ../Modify/cholmod_updown.c \
 #-------------------------------------------------------------------------------
 
 cholmod_super_numeric.o: ../Supernodal/cholmod_super_numeric.c \
+        ../Supernodal/t_cholmod_gpu.c \
 	../Supernodal/t_cholmod_super_numeric.c
 	$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -c ../Supernodal/cholmod_super_numeric.c -o $@
 cholmod_super_symbolic.o: ../Supernodal/cholmod_super_symbolic.c

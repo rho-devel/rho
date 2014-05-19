@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2011  The R Core Team
+ *  Copyright (C) 1997--2012  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -106,6 +106,7 @@
 #endif
 
 #include <Defn.h>
+#include <Internal.h>
 #include <float.h> /* for DBL_DIG */
 #include <Print.h>
 #include <Fileio.h>
@@ -128,7 +129,7 @@ typedef R_StringBuffer DeparseBuffer;
 
 typedef struct {
     int linenumber;
-    int len;
+    int len; // FIXME: size_t
     int incurly;
     int inlist;
     Rboolean startline; /* = TRUE; */
@@ -175,7 +176,7 @@ SEXP attribute_hidden do_deparse(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(!isNull(CAR(args))) {
 	cut0 = asInteger(CAR(args));
 	if(cut0 == NA_INTEGER|| cut0 < MIN_Cutoff || cut0 > MAX_Cutoff) {
-	    warning(_("invalid 'cutoff' for deparse, using default"));
+	    warning(_("invalid 'cutoff' value for 'deparse', using default"));
 	    cut0 = DEFAULT_Cutoff;
 	}
     }
@@ -215,6 +216,15 @@ namespace CXXR {
     }
 }
 	
+/* used for language objects in print() */
+attribute_hidden
+SEXP deparse1w(SEXP call, Rboolean abbrev, int opts)
+{
+    Rboolean backtick = TRUE;
+    return deparse1WithCutoff(call, abbrev, R_print.cutoff, backtick,
+			      opts, -1);
+}
+
 static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
 			       Rboolean backtick, int opts, int nlines)
 {
@@ -293,13 +303,14 @@ SEXP deparse1line(SEXP call, Rboolean abbrev)
 			     SIMPLEDEPARSE, -1));
     if ((lines = length(temp)) > 1) {
 	char *buf;
-	int i, len;
+	int i;
+	size_t len;
 	const void *vmax;
 	cetype_t enc = CE_NATIVE;
-	for (len=0, i = 0; i < length(temp); i++) {
+	for (len = 0, i = 0; i < length(temp); i++) {
 	    SEXP s = STRING_ELT(temp, i);
 	    cetype_t thisenc = getCharCE(s);
-	    len += strlen(CHAR(s));
+	    len += strlen(CHAR(s));  // FIXME: check for overflow?
 	    if (thisenc != CE_NATIVE) 
 	    	enc = thisenc; /* assume only one non-native encoding */ 
 	}    
@@ -334,7 +345,8 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP saveenv, tval;
     int i, ifile, res;
-    Rboolean wasopen, havewarned = FALSE, opts;
+    Rboolean wasopen, havewarned = FALSE;
+    int opts;
     Rconnection con = Rconnection( 1); /* stdout */
 
     checkArity(op, args);
@@ -345,9 +357,9 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(saveenv = CLOENV(tval));
 	SET_CLOENV(tval, R_GlobalEnv);
     }
-    opts = CXXRCONSTRUCT(Rboolean, SHOWATTRIBUTES);
+    opts = SHOWATTRIBUTES;
     if(!isNull(CADDR(args)))
-	opts = CXXRCONSTRUCT(Rboolean, asInteger(CADDR(args)));
+	opts = asInteger(CADDR(args));
 
     tval = deparse1(tval, CXXRFALSE, opts);
     if (TYPEOF(CAR(args)) == CLOSXP) {
@@ -407,7 +419,7 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error( _("character arguments expected"));
     nobjs = length(names);
     if(nobjs < 1 || length(file) < 1)
-	error(_("zero length argument"));
+	error(_("zero-length argument"));
     source = CADDR(args);
     if (source != R_NilValue && TYPEOF(source) != ENVSXP)
 	error(_("invalid '%s' argument"), "envir");
@@ -421,7 +433,7 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(o = objs = allocList(nobjs));
 
     for (j = 0, nout = 0; j < nobjs; j++, o = CDR(o)) {
-	SET_TAG(o, install(translateChar(STRING_ELT(names, j))));
+	SET_TAG(o, installTrChar(STRING_ELT(names, j)));
 	SETCAR(o, findVar(TAG(o), source));
 	if (CAR(o) == R_UnboundValue)
 	    warning(_("object '%s' not found"), CHAR(PRINTNAME(TAG(o))));
@@ -590,6 +602,11 @@ static Rboolean needsparens(PPinfo mainop, SEXP arg, unsigned int left)
 		default:
 		    return FALSE;
 		}
+	    } else if (isUserBinop(CAR(arg))) { 
+	        if (mainop.precedence > CXXRBUILTINFUNCTION::PREC_PERCENT
+	            || (mainop.precedence == CXXRBUILTINFUNCTION::PREC_PERCENT && left == mainop.rightassoc)) {
+	            return TRUE;
+	        }
 	    }
 	}
     }
@@ -673,6 +690,7 @@ static void printcomment(SEXP s, LocalParseData *d)
 {
     SEXP cmt;
     int i, ncmt;
+    const void *vmax = vmaxget();
 
     /* look for old-style comments first */
 
@@ -690,6 +708,7 @@ static void printcomment(SEXP s, LocalParseData *d)
 	    writeline(d);
 	}
     }
+    vmaxset(vmax);
 }
 
 
@@ -703,6 +722,40 @@ static const char * quotify(SEXP name, int quote)
     if (isValidName(s) || *s == '\0') return s;
 
     return EncodeString(name, 0, quote, Rprt_adj_none);
+}
+
+/* check for whether we need to parenthesize a caller.  The unevaluated ones
+   are tricky:
+   We want
+     x$f(z)
+     x[n](z)
+     base::mean(x)
+   but
+     (f+g)(z)
+     (function(x) 1)(x)
+     etc.
+*/
+static Rboolean parenthesizeCaller(SEXP s)
+{   
+    SEXP op, sym;
+    if (TYPEOF(s) == LANGSXP) { /* unevaluated */
+    	op = CAR(s);
+    	if (TYPEOF(op) == SYMSXP) {
+    	    if (isUserBinop(op)) return TRUE;   /* %foo% */
+    	    sym = SYMVALUE(op);
+    	    if (TYPEOF(sym) == BUILTINSXP
+    	        || TYPEOF(sym) == SPECIALSXP) {
+    	        if (PPINFO(sym).precedence >= CXXRBUILTINFUNCTION::PREC_DOLLAR
+    	            || PPINFO(sym).kind == CXXRBUILTINFUNCTION::PP_FUNCALL
+    	            || PPINFO(sym).kind == CXXRBUILTINFUNCTION::PP_PAREN
+    	            || PPINFO(sym).kind == CXXRBUILTINFUNCTION::PP_CURLY) return FALSE; /* x$f(z) or x[n](z) or f(z) or (f) or {f} */
+    	        else return TRUE;		/* (f+g)(z) etc. */
+    	    }
+    	    return FALSE;			/* regular function call */
+    	 } else
+	    return TRUE; 			/* something strange, like (1)(x) */
+    } else 
+        return CXXRCONSTRUCT(Rboolean, TYPEOF(s) == CLOSXP);
 }
 
 /* This is the recursive part of deparsing. */
@@ -744,10 +797,12 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	break;
     case CHARSXP:
     {
+	const void *vmax = vmaxget();
 	const char *ts = translateChar(s);
 	/* versions of R < 2.7.0 cannot parse strings longer than 8192 chars */
 	if(strlen(ts) >= 8192) d->longstring = TRUE;
 	print2buff(ts, d);
+	vmaxset(vmax);
 	break;
     }
     case SPECIALSXP:
@@ -765,7 +820,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	    d->opts = localOpts;
 	    print2buff(">", d);
 	} else {
-	    PROTECT(s = eval(s, NULL)); /* eval uses env of promise */
+	    PROTECT(s = eval(s, R_EmptyEnv)); /* eval uses env of promise */
 	    deparse2buff(s, d);
 	    UNPROTECT(1);
 	}
@@ -847,11 +902,21 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	    d->opts &= SIMPLE_OPTS;
 	}
 	if (TYPEOF(CAR(s)) == SYMSXP) {
-	    if ((TYPEOF(SYMVALUE(CAR(s))) == BUILTINSXP) ||
-		(TYPEOF(SYMVALUE(CAR(s))) == SPECIALSXP)) {
-		op = CAR(s);
-		fop = PPINFO(SYMVALUE(op));
+	    int userbinop = 0; 
+	    op = CAR(s);
+	    if ((TYPEOF(SYMVALUE(op)) == BUILTINSXP) ||
+		(TYPEOF(SYMVALUE(op)) == SPECIALSXP) ||
+		(userbinop = isUserBinop(op))) {
 		s = CDR(s);
+		if (userbinop) {
+		    if (isNull(getAttrib(s, R_NamesSymbol))) {  
+			fop.kind = CXXRBUILTINFUNCTION::PP_BINARY2;    /* not quite right for spacing, but can't be unary */
+			fop.precedence = CXXRBUILTINFUNCTION::PREC_PERCENT;
+			fop.rightassoc = 0;
+		    } else 
+			fop.kind = CXXRBUILTINFUNCTION::PP_FUNCALL;  /* if args are named, deparse as function call (PR#15350) */
+		} else 
+		    fop = PPINFO(SYMVALUE(op));
 		if (fop.kind == CXXRBUILTINFUNCTION::PP_BINARY) {
 		    switch (length(s)) {
 		    case 1:
@@ -869,6 +934,8 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		else if (fop.kind == CXXRBUILTINFUNCTION::PP_BINARY2) {
 		    if (length(s) != 2)
 			fop.kind = CXXRBUILTINFUNCTION::PP_FUNCALL;
+	 	    else if (userbinop)
+	 	    	fop.kind = CXXRBUILTINFUNCTION::PP_BINARY;
 		}
 		switch (fop.kind) {
 		case CXXRBUILTINFUNCTION::PP_IF:
@@ -982,10 +1049,12 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    } else {
 			s = CADDR(s);
 			n = length(s);
+			const void *vmax = vmaxget();
 			for(i = 0 ; i < n ; i++) {
 			    print2buff(translateChar(STRING_ELT(s, i)), d);
 			    writeline(d);
 			}
+			vmaxset(vmax);
 		    }
 		    break;
 		case CXXRBUILTINFUNCTION::PP_ASSIGN:
@@ -1089,67 +1158,60 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		}
 	    }
 	    else {
-		if(isSymbol(CAR(s)) && isUserBinop(CAR(s))) {
-		    op = CAR(s);
-		    s = CDR(s);
-		    deparse2buff(CAR(s), d);
-		    print2buff(" ", d);
-		    print2buff(translateChar(PRINTNAME(op)), d);
-		    print2buff(" ", d);
-		    linebreak(&lbreak, d);
+		SEXP val = R_NilValue; /* -Wall */
+		if (isSymbol(CAR(s))) {
+		    val = SYMVALUE(CAR(s));
+		    if (TYPEOF(val) == PROMSXP)
+			val = eval(val, R_BaseEnv);
+		}
+		if ( isSymbol(CAR(s))
+		     && TYPEOF(val) == CLOSXP
+		     && streql(CHAR(PRINTNAME(CAR(s))), "::") ){ /*  :: is special case */
 		    deparse2buff(CADR(s), d);
-		    if (lbreak) {
-			d->indent--;
-			lbreak = FALSE;
-		    }
-		    break;
+		    print2buff("::", d);
+		    deparse2buff(CADDR(s), d);
+		}
+		else if ( isSymbol(CAR(s))
+			  && TYPEOF(val) == CLOSXP
+			  && streql(CHAR(PRINTNAME(CAR(s))), ":::") ){ /*  ::: is special case */
+		    deparse2buff(CADR(s), d);
+		    print2buff(":::", d);
+		    deparse2buff(CADDR(s), d);
 		}
 		else {
-		    SEXP val = R_NilValue; /* -Wall */
-		    if (isSymbol(CAR(s))) {
-			val = SYMVALUE(CAR(s));
-			if (TYPEOF(val) == PROMSXP)
-			    val = eval(val, R_BaseEnv);
+		    if ( isSymbol(CAR(s)) ){
+			if(d->opts & S_COMPAT) 
+			    print2buff(quotify(PRINTNAME(CAR(s)), '\''), d);
+			else 
+			    print2buff(quotify(PRINTNAME(CAR(s)), '`'), d);
 		    }
-		    if ( isSymbol(CAR(s))
-		      && TYPEOF(val) == CLOSXP
-		      && streql(CHAR(PRINTNAME(CAR(s))), "::") ){ /*  :: is special case */
-			deparse2buff(CADR(s), d);
-			print2buff("::", d);
-			deparse2buff(CADDR(s), d);
-		    }
-		    else if ( isSymbol(CAR(s))
-		      && TYPEOF(val) == CLOSXP
-		      && streql(CHAR(PRINTNAME(CAR(s))), ":::") ){ /*  ::: is special case */
-			deparse2buff(CADR(s), d);
-			print2buff(":::", d);
-			deparse2buff(CADDR(s), d);
-		    }
-		    else {
-			if ( isSymbol(CAR(s)) ){
-			    if(d->opts & S_COMPAT) 
-			        print2buff(quotify(PRINTNAME(CAR(s)), '\''), d);
-			    else 
-				print2buff(quotify(PRINTNAME(CAR(s)), '`'), d);
-			}
-			else
-			    deparse2buff(CAR(s), d);
-			print2buff("(", d);
-			args2buff(CDR(s), 0, 0, d);
-			print2buff(")", d);
-		    }
+		    else
+			deparse2buff(CAR(s), d);
+		    print2buff("(", d);
+		    args2buff(CDR(s), 0, 0, d);
+		    print2buff(")", d);
 		}
 	    }
 	}
 	else if (TYPEOF(CAR(s)) == CLOSXP || TYPEOF(CAR(s)) == SPECIALSXP
 		 || TYPEOF(CAR(s)) == BUILTINSXP) {
-	    deparse2buff(CAR(s), d);
+	    if (parenthesizeCaller(CAR(s))) {
+	    	print2buff("(", d);
+	    	deparse2buff(CAR(s), d);
+	    	print2buff(")", d);
+	    } else
+		deparse2buff(CAR(s), d);
 	    print2buff("(", d);
 	    args2buff(CDR(s), 0, 0, d);
 	    print2buff(")", d);
 	}
 	else { /* we have a lambda expression */
-	    deparse2buff(CAR(s), d);
+	    if (parenthesizeCaller(CAR(s))) {
+	    	print2buff("(", d);
+	    	deparse2buff(CAR(s), d);
+	    	print2buff(")", d);
+	    } else
+		deparse2buff(CAR(s), d);
 	    print2buff("(", d);
 	    args2buff(CDR(s), 0, 0, d);
 	    print2buff(")", d);
@@ -1228,7 +1290,7 @@ static void print2buff(const char *strng, LocalParseData *d)
     bufflen = strlen(d->buffer.data);
     R_AllocStringBuffer(bufflen + tlen, &(d->buffer));
     strcat(d->buffer.data, strng);
-    d->len += tlen;
+    d->len += int( tlen);
 }
 
 static void vector2buff(SEXP vector, LocalParseData *d)
@@ -1337,6 +1399,9 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		surround = TRUE;
 		print2buff("as.character(", d);
 	    }
+	} else if(TYPEOF(vector) == RAWSXP) {
+	    surround = TRUE;
+	    print2buff("as.raw(", d);
 	}
 	if(tlen > 1) print2buff("c(", d);
 	allNA = CXXRCONSTRUCT(Rboolean, allNA && !(d->opts & S_COMPAT));
@@ -1356,10 +1421,14 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		formatReal(&REAL(vector)[i], 1, &w, &d, &e, 0);
 		strp = EncodeReal2(REAL(vector)[i], w, d, e);
 	    } else if (TYPEOF(vector) == STRSXP) {
+		const void *vmax = vmaxget();
 		const char *ts = translateChar(STRING_ELT(vector, i));
 		/* versions of R < 2.7.0 cannot parse strings longer than 8192 chars */
 		if(strlen(ts) >= 8192) d->longstring = TRUE;
 		strp = EncodeElement(vector, i, quote, '.');
+		vmaxset(vmax);
+	    } else if (TYPEOF(vector) == RAWSXP) {
+		strp = EncodeRaw(RAW(vector)[i], "0x");
 	    } else
 		strp = EncodeElement(vector, i, quote, '.');
 	    print2buff(strp, d);
@@ -1377,6 +1446,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 static void src2buff1(SEXP srcref, LocalParseData *d)
 {
     int i,n;
+    const void *vmax = vmaxget();
     PROTECT(srcref);
 
     PROTECT(srcref = lang2(install("as.character"), srcref));
@@ -1387,6 +1457,7 @@ static void src2buff1(SEXP srcref, LocalParseData *d)
 	if(i < n-1) writeline(d);
     }
     UNPROTECT(3);
+    vmaxset(vmax);
 }
 
 /* src2buff : Deparse source element k to buffer, if possible; return FALSE on failure */
@@ -1411,6 +1482,7 @@ static void vec2buff(SEXP v, LocalParseData *d)
     SEXP nv, sv;
     int i, n /*, localOpts = d->opts */;
     Rboolean lbreak = FALSE;
+    const void *vmax = vmaxget();
 
     n = length(v);
     nv = getAttrib(v, R_NamesSymbol);
@@ -1454,6 +1526,7 @@ static void vec2buff(SEXP v, LocalParseData *d)
     }
     if (lbreak)
 	d->indent--;
+    vmaxset(vmax);
 }
 
 static void args2buff(SEXP arglist, int lineb, int formals, LocalParseData *d)

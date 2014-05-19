@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -33,6 +33,8 @@
  *  http://www.r-project.org/Licenses/
  */
 
+/* Included by R.h: API */
+
 #ifndef R_ERROR_H_
 #define R_ERROR_H_
 
@@ -40,10 +42,20 @@
 extern "C" {
 #endif
 
-void	Rf_error(const char *, ...);
+/* valid from gcc 2.95.3, at least.
+   Suggested by Anton Korobeynikov.
+ */
+#if defined(__GNUC__) && __GNUC__ >= 3
+void Rf_error(const char *, ...) __attribute__((noreturn));
+void UNIMPLEMENTED(const char *) __attribute__((noreturn));
+void WrongArgCount(const char *) __attribute__((noreturn));
+#else
+void Rf_error(const char *, ...);
+void UNIMPLEMENTED(const char *);
+void WrongArgCount(const char *);
+#endif
+
 void	Rf_warning(const char *, ...);
-void	WrongArgCount(const char *);
-void	UNIMPLEMENTED(const char *);
 void 	R_ShowMessage(const char *s);
     
 

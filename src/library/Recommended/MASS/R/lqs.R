@@ -1,5 +1,5 @@
 # file lqs/R/lqs.R
-# copyright (C) 1998-2005 B. D. Ripley
+# copyright (C) 1998-2013 B. D. Ripley
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ lqs.formula <-
     method <- match.arg(method)
     mf <- match.call(expand.dots = FALSE)
     mf$method <- mf$contrasts <- mf$model <- mf$x.ret <- mf$y.ret <- mf$... <- NULL
-    mf[[1L]] <- as.name("model.frame")
+    mf[[1L]] <- quote(stats::model.frame)
     mf <- eval.parent(mf)
     if (method == "model.frame") return(mf)
     mt <- attr(mf, "terms")
@@ -103,8 +103,10 @@ lqs.default <-
     if(is.character(nsamp) && nsamp == "best") {
 	nsamp <- if(nexact < 5000) "exact" else "sample"
     } else if(is.numeric(nsamp) && nsamp > nexact) {
-	warning(gettextf("only %d sets, so all sets will be tried", nexact),
-                domain = NA)
+        warning(sprintf(ngettext(nexact,
+                                 "only %d set, so all sets will be tried",
+                                 "only %d sets, so all sets will be tried"),
+                        nexact), domain = NA)
 	nsamp <- "exact"
     }
     samp <- nsamp != "exact"
@@ -128,7 +130,7 @@ lqs.default <-
 	     coefficients=double(p), as.double(k0), as.double(beta)
 	     )[c("crit", "sing", "coefficients", "bestone")]
     if(z$sing == nsamp)
-        stop("lqs failed: all the samples were singular", call.=FALSE)
+        stop("'lqs' failed: all the samples were singular", call.=FALSE)
     z$sing <- paste(z$sing, "singular samples of size", ps, "out of", nsamp)
     z$bestone <- sort(z$bestone)
     names(z$coefficients) <- nm
@@ -219,8 +221,10 @@ cov.rob <- function(x, cor = FALSE, quantile.used = floor((n+p+1)/2),
 	if(is.character(nsamp) && nsamp == "best")
 	    nsamp <- if(nexact < 5000) "exact" else "sample"
 	if(is.numeric(nsamp) && nsamp > nexact) {
-            warning(gettextf("only %d sets, so all sets will be tried", nexact),
-                    domain = NA)
+            warning(sprintf(ngettext(nexact,
+                                     "only %d set, so all sets will be tried",
+                                     "only %d sets, so all sets will be tried"),
+                            nexact), domain = NA)
 	    nsamp <- "exact"
 	}
 	samp <- nsamp != "exact"

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999--2010  The R Core Team.
+ *  Copyright (C) 1999--2012  The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,7 +38,9 @@
 #include <config.h>
 #endif
 
-#include "Defn.h"
+#include <Defn.h>
+#include <Internal.h>
+
 #include "boost/lambda/lambda.hpp"
 #include "CXXR/BinaryFunction.hpp"
 #include "CXXR/GCStackRoot.hpp"
@@ -96,23 +98,35 @@ namespace {
 	return 0;  // -Wall
     }
 
+    struct BitwiseAnd {
+	unsigned char operator()(unsigned char l, unsigned char r) const
+	{
+	    return l & r;
+	}
+    };
+
+    struct BitwiseOr {
+	unsigned char operator()(unsigned char l, unsigned char r) const
+	{
+	    return l | r;
+	}
+    };
+
     RawVector* bitwiseBinary(int opcode, const RawVector* l, const RawVector* r)
     {
 	using namespace boost::lambda;
 	switch (opcode) {
 	case 1:
 	    {
-		return
-		    makeBinaryFunction<GeneralBinaryAttributeCopier,
-		                       NullBinaryFunctorWrapper>(_1 & _2)
-		    .apply<RawVector>(l, r);
+		BinaryFunction<BitwiseAnd, GeneralBinaryAttributeCopier,
+			       NullBinaryFunctorWrapper> bf;
+		return bf.apply<RawVector>(l, r);
 	    }
 	case 2:
 	    {
-		return
-		    makeBinaryFunction<GeneralBinaryAttributeCopier,
-		                       NullBinaryFunctorWrapper>(_1 | _2)
-		    .apply<RawVector>(l, r);
+		BinaryFunction<BitwiseOr, GeneralBinaryAttributeCopier,
+			       NullBinaryFunctorWrapper> bf;
+		return bf.apply<RawVector>(l, r);
 	    }
 	}
 	return 0;  // -Wall
@@ -244,11 +258,12 @@ SEXP attribute_hidden do_logic2(SEXP call, SEXP op, SEXP args, SEXP env)
 #define _OP_ALL 1
 #define _OP_ANY 2
 
-static int checkValues(int op, int na_rm, int * x, int n)
+static int checkValues(int op, int na_rm, int *x, R_xlen_t n)
 {
-    int i;
+    R_xlen_t i;
     int has_na = 0;
     for (i = 0; i < n; i++) {
+//	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
         if (!na_rm && x[i] == NA_LOGICAL) has_na = 1;
         else {
             if (x[i] == TRUE && op == _OP_ANY) return TRUE;
@@ -295,7 +310,7 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
 	t = CAR(s);
 	/* Avoid memory waste from coercing empty inputs, and also
 	   avoid warnings with empty lists coming from sapply */
-	if(length(t) == 0) continue;
+	if(xlength(t) == 0) continue;
 	/* coerceVector protects its argument so this actually works
 	   just fine */
 	if (TYPEOF(t) != LGLSXP) {
@@ -309,7 +324,7 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
 			    type2char(TYPEOF(t)));
 	    t = coerceVector(t, LGLSXP);
 	}
-	val = CXXRCONSTRUCT(Rboolean, checkValues(PRIMVAL(op), narm, LOGICAL(t), LENGTH(t)));
+	val = CXXRCONSTRUCT(Rboolean, checkValues(PRIMVAL(op), narm, LOGICAL(t), XLENGTH(t)));
         if (val != NA_LOGICAL) {
             if ((PRIMVAL(op) == _OP_ANY && val)
                 || (PRIMVAL(op) == _OP_ALL && !val)) {

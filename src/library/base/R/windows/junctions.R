@@ -1,6 +1,8 @@
 #  File src/library/base/R/windows/junctions.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -25,7 +27,7 @@ Sys.junction <- function(from, to)
 
     okay <- rep(FALSE, nf)
     for(i in seq_len(nf)) {
-        fr <- paste("\\??\\", normalizePath(from[i]), sep = "")
+        fr <- paste0("\\??\\", normalizePath(from[i]))
         link <- to[i]
         if(file.exists(link)) {
             warning(gettextf("link '%s' already exists", link), domain = NA)

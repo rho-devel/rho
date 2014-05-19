@@ -1,6 +1,8 @@
 #  File src/library/base/R/Deprecated.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2013 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -36,14 +38,16 @@
 ## consider keeping one (commented) entry here, for easier additions
 
 ## <entry>
-## Deprecated in 2.5.0
-## Sys.putenv <- function(...) {
-##     .Deprecated("Sys.setenv")
-##     Sys.setenv(...)
-## }
+## Deprecated in 3.0.0
+.find.package <- function(...)
+{
+    .Deprecated("find.package")
+    find.package(...)
+}
+
+.path.package <- function(...)
+{
+    .Deprecated("path.package")
+    path.package(...)
+}
 ## </entry>
-
-
-## Allow for future deprecation/defunct
-.find.package <- function(...) find.package(...)
-.path.package <- function(...) path.package(...)

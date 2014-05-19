@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -284,7 +284,7 @@ namespace CXXR {
 	  // object is given a unique serial number.  This serial
 	  // number is not preserved during serialisation.
 
-	unsigned int m_num_parents;
+	size_t m_num_parents;
 	GCEdge<const Symbol> m_symbol;
 	GCEdge<const CommandChronicle> m_chronicle;
 	GCEdge<const RObject> m_value;

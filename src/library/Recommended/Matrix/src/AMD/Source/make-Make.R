@@ -6,7 +6,11 @@
 
 
 AMD <- c("aat", "1", "2", "postorder", "post_tree", "defaults",
-         "order", "control", "info", "valid", "preprocess", "dump")
+         "order", "control", "info", "valid", "preprocess", "dump", "global")
+cat("OBJS = ")
+for (i in AMD) cat(sprintf("amd_i_%s.o amd_l_%s.o ", i, i))
+cat("\n\n")
+        
 CC1 <- "\t$(CC) $(ALL_CPPFLAGS) $(ALL_CFLAGS) -I../Include"
 for (i in AMD)
      cat(sprintf("amd_i_%s.o: amd_%s.c $(INC)", i, i),

@@ -1,7 +1,6 @@
 
-R version 2.15.0 Patched (2012-04-10 r58965) -- "Easter Beagle"
-Copyright (C) 2012 The R Foundation for Statistical Computing
-ISBN 3-900051-07-0
+R version 3.0.2 RC (2013-09-22 r63960) -- "Frisbee Sailing"
+Copyright (C) 2013 The R Foundation for Statistical Computing
 Platform: i686-pc-linux-gnu (32-bit)
 
 CXXR Copyright (C) 2008-12 Andrew R. Runnalls.  CXXR like
@@ -1017,7 +1016,7 @@ Coefficients:
 
 Degrees of Freedom: 11 Total (i.e. Null);  11 Residual
 Null Deviance:	    32.83 
-Residual Deviance: 32.83 	AIC: 92.52 
+Residual Deviance: 32.83 	AIC: 92.52
 > step(detg1.m0,scope=list(upper=~M.user*Temp*Soft))
 Start:  AIC=92.52
 cbind(X, M) ~ 1
@@ -1064,7 +1063,7 @@ Coefficients:
 
 Degrees of Freedom: 11 Total (i.e. Null);  8 Residual
 Null Deviance:	    32.83 
-Residual Deviance: 5.656 	AIC: 71.35 
+Residual Deviance: 5.656 	AIC: 71.35
 > 
 > ## PR 829 (empty values in all.vars)
 > ## This example by Uwe Ligges <ligges@statistik.uni-dortmund.de>
@@ -1460,7 +1459,7 @@ Y    4   10   16   22
 > sink(type="message")
 > sink()
 > try(log("a"))
-Error in log("a") : Non-numeric argument to mathematical function
+Error in log("a") : non-numeric argument to mathematical function
 > 
 > ## capture all the output to a file.
 > zz <- file("all.Rout", open="wt")
@@ -1474,7 +1473,7 @@ Error in log("a") : Non-numeric argument to mathematical function
      description class mode text isopen can read can write
 > stopifnot(nrow(foo) == 0)
 > try(log("a"))
-Error in log("a") : Non-numeric argument to mathematical function
+Error in log("a") : non-numeric argument to mathematical function
 > unlink("all.Rout")
 > ## many of these were untested before 1.4.0.
 > 
@@ -1676,7 +1675,7 @@ In sum(x, x) : Integer overflow - use sum(as.numeric(.))
 > sum(c(x, x)) # did warn
 [1] NA
 Warning message:
-In sum(c(x, x)) : Integer overflow - use sum(as.numeric(.))
+In sum(c(x, x)) : integer overflow - use sum(as.numeric(.))
 > (z <- sum(x, x, 0.0)) # was NA in 1.4.1
 [1] 2147483648
 > typeof(z)
@@ -1759,7 +1758,7 @@ Sep 1961  20  30
 > try(glm(y ~ x, family = poisson(identity)))
 Error : no valid set of coefficients has been found: please supply starting values
 In addition: Warning message:
-In log(ifelse(y == 0, 1, y/mu)) : NaNs produced
+In log(y/mu) : NaNs produced
 > ## failed because start = NULL in 1.4.1
 > ## now gives useful error message
 > glm(y ~ x, family = poisson(identity), start = c(1,0))
@@ -1773,7 +1772,7 @@ Coefficients:
 
 Degrees of Freedom: 99 Total (i.e. Null);  98 Residual
 Null Deviance:	    68.01 
-Residual Deviance: 60.66 	AIC: 168.7 
+Residual Deviance: 60.66 	AIC: 168.7
 Warning messages:
 1: step size truncated: out of bounds 
 2: step size truncated: out of bounds 
@@ -1791,7 +1790,7 @@ Coefficients:
 
 Degrees of Freedom: 99 Total (i.e. Null);  98 Residual
 Null Deviance:	    317.2 
-Residual Deviance: 228.5 	AIC: 344.7 
+Residual Deviance: 228.5 	AIC: 344.7
 There were 27 warnings (use warnings() to see them)
 > warnings()
 Warning messages:
@@ -1881,20 +1880,89 @@ Coefficients:
 > 
 > 
 > ## quantile extremes, MM 13 Apr 2000 and PR#1852
-> for(k in 0:5)
-+     print(quantile(c(rep(-Inf,k+1), 0:k, rep(Inf, k)), pr=seq(0,1, .1)))
-  0%  10%  20%  30%  40%  50%  60%  70%  80%  90% 100% 
--Inf -Inf -Inf -Inf -Inf -Inf -Inf -Inf -Inf -Inf    0 
-  0%  10%  20%  30%  40%  50%  60%  70%  80%  90% 100% 
--Inf -Inf -Inf -Inf -Inf  0.0  0.4  0.8  Inf  Inf  Inf 
-  0%  10%  20%  30%  40%  50%  60%  70%  80%  90% 100% 
--Inf -Inf -Inf -Inf -Inf  0.5  1.2  1.9  Inf  Inf  Inf 
-  0%  10%  20%  30%  40%  50%  60%  70%  80%  90% 100% 
--Inf -Inf -Inf -Inf    0    1    2    3  Inf  Inf  Inf 
-  0%  10%  20%  30%  40%  50%  60%  70%  80%  90% 100% 
--Inf -Inf -Inf -Inf  0.2  1.5  2.8  Inf  Inf  Inf  Inf 
-  0%  10%  20%  30%  40%  50%  60%  70%  80%  90% 100% 
--Inf -Inf -Inf -Inf  0.4  2.0  3.6  Inf  Inf  Inf  Inf 
+> (qq <- sapply(0:5, function(k) {
++     x <- c(rep(-Inf,k+1), 0:k, rep(Inf, k))
++     sapply(1:9, function(typ)
++            quantile(x, pr=(2:10)/10, type=typ))
++ }, simplify="array"))
+, , 1
+
+     [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9]
+20%  -Inf -Inf -Inf -Inf -Inf -Inf -Inf -Inf -Inf
+30%  -Inf -Inf -Inf -Inf -Inf -Inf -Inf -Inf -Inf
+40%  -Inf -Inf -Inf -Inf -Inf -Inf -Inf -Inf -Inf
+50%  -Inf -Inf -Inf -Inf -Inf -Inf -Inf -Inf -Inf
+60%     0    0 -Inf -Inf -Inf -Inf -Inf -Inf -Inf
+70%     0    0 -Inf -Inf -Inf    0 -Inf -Inf -Inf
+80%     0    0    0 -Inf    0    0 -Inf    0    0
+90%     0    0    0 -Inf    0    0 -Inf    0    0
+100%    0    0    0    0    0    0    0    0    0
+
+, , 2
+
+     [,1] [,2] [,3] [,4] [,5] [,6] [,7]      [,8]  [,9]
+20%  -Inf -Inf -Inf -Inf -Inf -Inf -Inf      -Inf  -Inf
+30%  -Inf -Inf -Inf -Inf -Inf -Inf -Inf      -Inf  -Inf
+40%  -Inf -Inf -Inf -Inf -Inf -Inf -Inf      -Inf  -Inf
+50%     0  0.0 -Inf -Inf  0.0  0.0  0.0 0.0000000 0.000
+60%     0  0.5    0  0.0  0.5  0.6  0.4 0.5333333 0.525
+70%     1  1.0    1  0.5  1.0  Inf  0.8       Inf   Inf
+80%     1  Inf    1  1.0  Inf  Inf  Inf       Inf   Inf
+90%   Inf  Inf    1  Inf  Inf  Inf  Inf       Inf   Inf
+100%  Inf  Inf  Inf  Inf  Inf  Inf  Inf       Inf   Inf
+
+, , 3
+
+     [,1] [,2] [,3] [,4] [,5] [,6] [,7]     [,8]  [,9]
+20%  -Inf -Inf -Inf -Inf -Inf -Inf -Inf     -Inf  -Inf
+30%  -Inf -Inf -Inf -Inf -Inf -Inf -Inf     -Inf  -Inf
+40%     0  0.0 -Inf -Inf -Inf -Inf -Inf     -Inf  -Inf
+50%     0  0.5    0  0.0  0.5  0.5  0.5 0.500000 0.500
+60%     1  1.0    1  0.8  1.3  1.4  1.2 1.333333 1.325
+70%     2  2.0    2  1.6  Inf  Inf  1.9      Inf   Inf
+80%   Inf  Inf    2  Inf  Inf  Inf  Inf      Inf   Inf
+90%   Inf  Inf  Inf  Inf  Inf  Inf  Inf      Inf   Inf
+100%  Inf  Inf  Inf  Inf  Inf  Inf  Inf      Inf   Inf
+
+, , 4
+
+     [,1] [,2] [,3] [,4] [,5] [,6] [,7]     [,8]  [,9]
+20%  -Inf -Inf -Inf -Inf -Inf -Inf -Inf     -Inf  -Inf
+30%  -Inf -Inf -Inf -Inf -Inf -Inf -Inf     -Inf  -Inf
+40%     0    0 -Inf -Inf -Inf -Inf    0     -Inf  -Inf
+50%     1    1    1  0.5  1.0  1.0    1 1.000000 1.000
+60%     2    2    2  1.6  2.1  2.2    2 2.133333 2.125
+70%     3    3    3  2.7  Inf  Inf    3      Inf   Inf
+80%   Inf  Inf  Inf  Inf  Inf  Inf  Inf      Inf   Inf
+90%   Inf  Inf  Inf  Inf  Inf  Inf  Inf      Inf   Inf
+100%  Inf  Inf  Inf  Inf  Inf  Inf  Inf      Inf   Inf
+
+, , 5
+
+     [,1] [,2] [,3] [,4] [,5] [,6] [,7]       [,8]  [,9]
+20%  -Inf -Inf -Inf -Inf -Inf -Inf -Inf       -Inf  -Inf
+30%  -Inf -Inf -Inf -Inf -Inf -Inf -Inf       -Inf  -Inf
+40%     0  0.0    0 -Inf  0.1  0.0  0.2 0.06666667 0.075
+50%     1  1.5    1  1.0  1.5  1.5  1.5 1.50000000 1.500
+60%     3  3.0    2  2.4  2.9  3.0  2.8 2.93333333 2.925
+70%     4  4.0    4  3.8  Inf  Inf  Inf        Inf   Inf
+80%   Inf  Inf  Inf  Inf  Inf  Inf  Inf        Inf   Inf
+90%   Inf  Inf  Inf  Inf  Inf  Inf  Inf        Inf   Inf
+100%  Inf  Inf  Inf  Inf  Inf  Inf  Inf        Inf   Inf
+
+, , 6
+
+     [,1] [,2] [,3] [,4] [,5] [,6] [,7]      [,8]  [,9]
+20%  -Inf -Inf -Inf -Inf -Inf -Inf -Inf      -Inf  -Inf
+30%  -Inf -Inf -Inf -Inf -Inf -Inf -Inf      -Inf  -Inf
+40%     0    0    0 -Inf  0.3  0.2  0.4 0.2666667 0.275
+50%     2    2    1  1.5  2.0  2.0  2.0 2.0000000 2.000
+60%     4    4    3  3.2  3.7  3.8  3.6 3.7333333 3.725
+70%     5    5    5  4.9  Inf  Inf  Inf       Inf   Inf
+80%   Inf  Inf  Inf  Inf  Inf  Inf  Inf       Inf   Inf
+90%   Inf  Inf  Inf  Inf  Inf  Inf  Inf       Inf   Inf
+100%  Inf  Inf  Inf  Inf  Inf  Inf  Inf       Inf   Inf
+
 > x <- c(-Inf, -Inf, Inf, Inf)
 > median(x)
 [1] NaN
@@ -2382,8 +2450,8 @@ x2                NA         NA      NA       NA
 x3            0.2587     0.3509   0.737    0.485
 
 Residual standard error: 0.8063 on 7 degrees of freedom
-Multiple R-squared: 0.9326,	Adjusted R-squared: 0.9134 
-F-statistic: 48.43 on 2 and 7 DF,  p-value: 7.946e-05 
+Multiple R-squared:  0.9326,	Adjusted R-squared:  0.9134 
+F-statistic: 48.43 on 2 and 7 DF,  p-value: 7.946e-05
 
 Correlation of Coefficients:
    (Intercept) x1   
@@ -2400,7 +2468,7 @@ Coefficients:
 
 Degrees of Freedom: 9 Total (i.e. Null);  7 Residual
 Null Deviance:	    67.53 
-Residual Deviance: 4.551 	AIC: 28.51 
+Residual Deviance: 4.551 	AIC: 28.51
 > summary(fit, cor = TRUE)
 
 Call:
@@ -2470,7 +2538,7 @@ x3  0.81       -0.97
 15     72
 Warning message:
 In `[.data.frame`(women, "height", drop = FALSE) :
-  drop argument will be ignored
+  'drop' argument will be ignored
 > women["height", drop = TRUE]   # ditto
    height
 1      58
@@ -2490,7 +2558,7 @@ In `[.data.frame`(women, "height", drop = FALSE) :
 15     72
 Warning message:
 In `[.data.frame`(women, "height", drop = TRUE) :
-  drop argument will be ignored
+  'drop' argument will be ignored
 > women[,"height", drop = FALSE] # no warning
    height
 1      58
@@ -2603,7 +2671,8 @@ Residuals 10 2.7404 0.27404
  0  0  0  0  0  0  0  0  0  0 
 > predict(fit, data.frame(x=x), se=TRUE)
 $fit
- [1] 0 0 0 0 0 0 0 0 0 0
+ 1  2  3  4  5  6  7  8  9 10 
+ 0  0  0  0  0  0  0  0  0  0 
 
 $se.fit
  [1] 0 0 0 0 0 0 0 0 0 0
@@ -2777,7 +2846,7 @@ No coefficients
 
 Degrees of Freedom: 10 Total (i.e. Null);  10 Residual
 Null Deviance:	    2.74 
-Residual Deviance: 2.74 	AIC: 17.43 
+Residual Deviance: 2.74 	AIC: 17.43
 > summary(fit)
 
 Call:
@@ -2814,7 +2883,8 @@ NULL                    10     2.7404
  0  0  0  0  0  0  0  0  0  0 
 > predict(fit, data.frame(x=x), se=TRUE)
 $fit
- [1] 0 0 0 0 0 0 0 0 0 0
+ 1  2  3  4  5  6  7  8  9 10 
+ 0  0  0  0  0  0  0  0  0  0 
 
 $se.fit
  [1] 0 0 0 0 0 0 0 0 0 0
@@ -2865,7 +2935,7 @@ NA
 
 Degrees of Freedom: 10 Total (i.e. Null);  10 Residual
 Null Deviance:	    2.74 
-Residual Deviance: 2.74 	AIC: 17.43 
+Residual Deviance: 2.74 	AIC: 17.43
 > summary(fit)
 
 Call:
@@ -3200,11 +3270,11 @@ Error in `[.data.frame`(x, 1, c("a", "c")) : undefined columns selected
 [11] as.data.frame as.list       as.matrix     by            cbind        
 [16] dim           dimnames      dimnames<-    droplevels    duplicated   
 [21] edit          format        formula       head          is.na        
-[26] mean          merge         na.exclude    na.omit       plot         
-[31] print         prompt        rbind         row.names     row.names<-  
-[36] rowsum        split         split<-       stack         str          
-[41] subset        summary       t             tail          transform    
-[46] unique        unstack       within       
+[26] merge         na.exclude    na.omit       plot          print        
+[31] prompt        rbind         row.names     row.names<-   rowsum       
+[36] split         split<-       stack         str           subset       
+[41] summary       t             tail          transform     unique       
+[46] unstack       within       
 > meth2gen("dendrogram")
  [1] [[         as.hclust  cophenetic cut        labels     merge     
  [7] plot       print      reorder    rev        str       
@@ -3596,7 +3666,7 @@ NULL
 Call:
 aov(formula = y ~ a + b + Error(c), data = test.df)
 
-Grand Mean: 0.8066534 
+Grand Mean: 0.8066534
 
 Stratum 1: c
 
@@ -3614,7 +3684,7 @@ Terms:
 Sum of Squares  1.389453 2.148149  5.048689
 Deg. of Freedom        1        1         4
 
-Residual standard error: 1.123464 
+Residual standard error: 1.123464
 Estimated effects may be unbalanced
 > aov(y ~ a + b - 1 + Error(c), data=test.df)
 
@@ -3638,7 +3708,7 @@ Terms:
 Sum of Squares  1.389453 2.148149  5.048689
 Deg. of Freedom        1        1         4
 
-Residual standard error: 1.123464 
+Residual standard error: 1.123464
 1 out of 3 effects not estimable
 Estimated effects may be unbalanced
 > ## wrong assignment to strata labels < 1.9.0
@@ -3648,35 +3718,15 @@ Estimated effects may be unbalanced
 
 	Exact binomial test
 
-data:  c(800, 10) 
+data:  c(800, 10)
 number of successes = 800, number of trials = 810, p-value < 2.2e-16
-alternative hypothesis: true probability of success is not equal to 0.5 
+alternative hypothesis: true probability of success is not equal to 0.5
 95 percent confidence interval:
- 0.9774134 0.9940643 
+ 0.9774134 0.9940643
 sample estimates:
 probability of success 
              0.9876543 
 
-> 
-> 
-> ## Misleading error messages on integer overflow
-> ## Uwe Ligges, R-devel, 2004-02-19
-> ## (modified to make printed result the same whether numeric() is
-> ##  compiled or interpreted)
-> ## try(numeric(2^31))
-> tryCatch(numeric(2^31),
-+          error = function(e) paste("Error:", conditionMessage(e)))
-[1] "Error: vector size specified is too large"
-> try(matrix( , 2^31, 1))
-Error in matrix(, 2^31, 1) : invalid 'nrow' value (too large or NA)
-In addition: Warning message:
-In matrix(, 2^31, 1) : NAs introduced by coercion
-> try(matrix( , 2^31/10, 100))
-Error in matrix(, 2^31/10, 100) : too many elements specified
-> try(array(dim=c(2^31/10, 100)))
-Error in array(dim = c(2^31/10, 100)) : 
-  'dim' specifies too large an array
-> ## reported negative values (really integer NA) for R < 1.9.0
 > 
 > 
 > ## aov with a singular error model
@@ -3701,7 +3751,7 @@ Call:
 aov(formula = dep.variable ~ f1 * f2 + Error(subject/(f1 + f2)), 
     data = sample.df)
 
-Grand Mean: 65.07444 
+Grand Mean: 65.07444
 
 Stratum 1: subject
 
@@ -3729,7 +3779,7 @@ Terms:
 Sum of Squares   29204.13
 Deg. of Freedom        42
 
-Residual standard error: 26.36923 
+Residual standard error: 26.36923
 > summary(sample.aov)
 
 Error: subject
@@ -3756,7 +3806,7 @@ Call:
 aov(formula = dep.variable ~ f1 * f2 + Error(subject/(f2 + f1)), 
     data = sample.df)
 
-Grand Mean: 65.07444 
+Grand Mean: 65.07444
 
 Stratum 1: subject
 
@@ -3784,7 +3834,7 @@ Terms:
 Sum of Squares   29204.13
 Deg. of Freedom        42
 
-Residual standard error: 26.36923 
+Residual standard error: 26.36923
 > summary(sample.aov)
 
 Error: subject
@@ -4107,7 +4157,7 @@ Coefficients:
           7           8           9          10 
  0.08867482  0.25896653  0.27533143 -0.47793778 
 Warning message:
-'newdata' had 2 rows but variable(s) found have 10 rows 
+'newdata' had 2 rows but variables found have 10 rows 
 > ## warns as from 2.0.0
 > 
 > 
@@ -4516,7 +4566,7 @@ Error in stats:::add1.default(fit, ~. + x2) :
 [2,]  11.2301  3.5301  3.1812  0.001467 ** 
 [3,]   9.9161  3.0927  3.2063  0.001344 ** 
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > printCoefmat(cmat, signif.stars = TRUE, signif.legend = FALSE)
      Estimate Std.Err Z value    Pr(>z)    
 [1,]  11.3092  2.8636  3.9493 7.837e-05 ***
@@ -4534,7 +4584,7 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 [2,]  11.2301  3.5301  3.1812  0.001467 ** 
 [3,]   9.9161  3.0927  3.2063  0.001344 ** 
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > ## did not work in 2.1.0
 > 
 > 
@@ -4686,7 +4736,7 @@ Model 2: y ~ z
 1      9 89.130                                 
 2      8  6.316  1    82.814 104.9 7.099e-06 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > add1(lm1, scope = ~ z)
 Single term additions
 
@@ -5001,14 +5051,13 @@ Error : no valid set of coefficients has been found: please supply starting valu
 > rownames(temp) <- as.character(1:5)
 > colnames(temp) <- as.character(1:4)
 > try(solve(temp))
-Error in solve.default(temp) : only square matrices can be inverted
+Error in solve.default(temp) : 'a' (5 x 4) must be square
 > # also complex
 > try(solve(temp+0i))
-Error in solve.default(temp + (0+0i)) : 
-  only square matrices can be inverted
+Error in solve.default(temp + (0+0i)) : 'a' (5 x 4) must be square
 > # and non-comformant systems
 > try(solve(temp, diag(3)))
-Error in solve.default(temp, diag(3)) : 'b' must be compatible with 'a'
+Error in solve.default(temp, diag(3)) : 'a' (5 x 4) must be square
 > ## gave errors from rownames<- in 2.2.1
 > 
 > 
@@ -5046,8 +5095,8 @@ Reaction ~ Days + (Days | Subject) + I(Days^2)
 > op <- options(deparse.max.lines = 3)
 > f <- function(...) browser()
 > do.call(f, mtcars)
-Called from: function (...) 
-browser()(mpg = c(21, 21, 22.8, 21.4, 18.7, 18.1, 14.3, 24.4, 
+Called from: (function (...) 
+browser())(mpg = c(21, 21, 22.8, 21.4, 18.7, 18.1, 14.3, 24.4, 
 22.8, 19.2, 17.8, 16.4, 17.3, 15.2, 10.4, 10.4, 14.7, 32.4, 30.4, 
   ...
 Browse[1]> c
@@ -5055,12 +5104,12 @@ Browse[1]> c
 > options(error = expression(NULL))
 > f <- function(...) stop()
 > do.call(f, mtcars)
-Error in function (...)  : 
+Error in (function (...)  : 
 Calls: do.call -> <Anonymous>
 > traceback()
 3: stop()
-2: function (...) 
-   stop()(mpg = c(21, 21, 22.8, 21.4, 18.7, 18.1, 14.3, 24.4, 22.8, 
+2: (function (...) 
+   stop())(mpg = c(21, 21, 22.8, 21.4, 18.7, 18.1, 14.3, 24.4, 22.8, 
    19.2, 17.8, 16.4, 17.3, 15.2, 10.4, 10.4, 14.7, 32.4, 30.4, 33.9, 
      ...
 1: do.call(f, mtcars)
@@ -5556,7 +5605,7 @@ Coefficients:
             Estimate Std. Error t value Pr(>|t|)    
 (Intercept)   1.1866     0.1797   6.602  4.4e-08 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Residual standard error: 1.206 on 44 degrees of freedom
   (5 observations deleted due to missingness)
@@ -5575,7 +5624,7 @@ Coefficients:
             Estimate Std. Error t value Pr(>|t|)    
 (Intercept)   2.8988     0.2586   11.21 1.75e-14 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Residual standard error: 1.735 on 44 degrees of freedom
   (5 observations deleted due to missingness)
@@ -5727,7 +5776,7 @@ z 3
   height weight
 1     58    115
 Warning message:
-In `[.data.frame`(w, , drop = TRUE) : drop argument will be ignored
+In `[.data.frame`(w, , drop = TRUE) : 'drop' argument will be ignored
 > w[1,]
   height weight
 1     58    115
@@ -6093,7 +6142,7 @@ zero  one
 > ## corner cases for cor
 > set.seed(1)
 > X <- cbind(NA, 1:3, rnorm(3))
-> cor(X, use = "complete")
+> try(cor(X, use = "complete"))
 Error in cor(X, use = "complete") : no complete element pairs
 > try(cor(X, use = "complete", method="spearman"))
 Error in cor(X, use = "complete", method = "spearman") : 
@@ -6266,29 +6315,6 @@ Error in aggregate.data.frame(z, by = z[1], FUN = sum) :
 foo(1, bar = 2)
 > ## unnamed call in 2.8.1
 > 
-> 
-> ## .Call on symbol objects (not strings)
-> ## https://stat.ethz.ch/pipermail/r-devel/2008-December/051669.html
-> try(.Call("R_GD_nullDevice", NULL))
-Error in .Call("R_GD_nullDevice", NULL) : 
-  Incorrect number of arguments (1), expecting 0 for 'R_GD_nullDevice'
-> sym <- getDLLRegisteredRoutines("grDevices")$.Call[["R_GD_nullDevice"]]
-> try(.Call(sym, NULL))
-Error in .Call(sym, NULL) : 
-  Incorrect number of arguments (1), expecting 0 for 'R_GD_nullDevice'
-> try(.Call(sym$address, NULL))
-Error in .Call(sym$address, NULL) : 
-  Incorrect number of arguments (1), expecting 0 for 'R_GD_nullDevice'
-> ## wrong error in 2.8.1
-> sym <- getDLLRegisteredRoutines("stats")$.C$prho
-> try(.C(sym, NULL))
-Error in .C(sym, NULL) : 
-  Incorrect number of arguments (1), expecting 5 for 'prho'
-> try(.C(sym$address, NULL))
-Error in .C(sym$address, NULL) : 
-  Incorrect number of arguments (1), expecting 5 for 'prho'
-> ## were OK
-> 
 > options(keep.source = TRUE)
 > ## $<- on pairlists failed to duplicate (from Felix Andrews,
 > ## https://stat.ethz.ch/pipermail/r-devel/2009-January/051698.html)
@@ -6377,15 +6403,15 @@ function ()
 > print.function
 function (x, ...)  
  - attr(*, "srcref")=Class 'srcref'  atomic [1:8] 1 19 1 63 19 63 1 1
-  .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x2c92e80> 
+  .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x2afb490> 
 > f
 function ()  
  - attr(*, "srcref")=Class 'srcref'  atomic [1:8] 1 17 1 28 17 28 1 1
-  .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x2cb4a80> 
+  .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x2a0ef60> 
  - attr(*, "note")= chr "just a note"
  - attr(*, "yada")=function ()  
   ..- attr(*, "srcref")=Class 'srcref'  atomic [1:8] 2 24 2 48 24 48 2 2
-  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x2cb4a80> 
+  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x2a0ef60> 
 > rm(print.function)
 > ## auto-printing and printing differed up to R 2.9.x
 > 
@@ -6401,9 +6427,9 @@ function ()
 
 	Kendall's rank correlation tau
 
-data:  c(1, 2, 3, 4, 5) and c(8, 6, 7, 5, 3) 
+data:  c(1, 2, 3, 4, 5) and c(8, 6, 7, 5, 3)
 T = 1, p-value = 0.08333
-alternative hypothesis: true tau is not equal to 0 
+alternative hypothesis: true tau is not equal to 0
 sample estimates:
  tau 
 -0.8 
@@ -6413,9 +6439,9 @@ sample estimates:
 
 	Kendall's rank correlation tau
 
-data:  c(1, 2, 3, 4, 5) and c(8, 6, 7, 5, 3) 
+data:  c(1, 2, 3, 4, 5) and c(8, 6, 7, 5, 3)
 z = -1.9596, p-value = 0.05004
-alternative hypothesis: true tau is not equal to 0 
+alternative hypothesis: true tau is not equal to 0
 sample estimates:
  tau 
 -0.8 
@@ -6425,9 +6451,9 @@ sample estimates:
 
 	Kendall's rank correlation tau
 
-data:  c(1, 2, 3, 4, 5) and c(8, 6, 7, 5, 3) 
+data:  c(1, 2, 3, 4, 5) and c(8, 6, 7, 5, 3)
 z = -1.7146, p-value = 0.08641
-alternative hypothesis: true tau is not equal to 0 
+alternative hypothesis: true tau is not equal to 0
 sample estimates:
  tau 
 -0.8 
@@ -6438,9 +6464,9 @@ sample estimates:
 
 	Spearman's rank correlation rho
 
-data:  c(1, 2, 3, 4, 5) and c(8, 6, 7, 5, 3) 
+data:  c(1, 2, 3, 4, 5) and c(8, 6, 7, 5, 3)
 S = 38, p-value = 0.08333
-alternative hypothesis: true rho is not equal to 0 
+alternative hypothesis: true rho is not equal to 0
 sample estimates:
  rho 
 -0.9 
@@ -6450,9 +6476,9 @@ sample estimates:
 
 	Spearman's rank correlation rho
 
-data:  c(1, 2, 3, 4, 5) and c(8, 6, 7, 5, 3) 
+data:  c(1, 2, 3, 4, 5) and c(8, 6, 7, 5, 3)
 S = 38, p-value = 0.03739
-alternative hypothesis: true rho is not equal to 0 
+alternative hypothesis: true rho is not equal to 0
 sample estimates:
  rho 
 -0.9 
@@ -6462,9 +6488,9 @@ sample estimates:
 
 	Spearman's rank correlation rho
 
-data:  c(1, 2, 3, 4, 5) and c(8, 6, 7, 5, 3) 
+data:  c(1, 2, 3, 4, 5) and c(8, 6, 7, 5, 3)
 S = 38, p-value = 0.09689
-alternative hypothesis: true rho is not equal to 0 
+alternative hypothesis: true rho is not equal to 0
 sample estimates:
  rho 
 -0.9 
@@ -6660,11 +6686,11 @@ Frequency = 0.2
 
 	Exact conditional test of independence in 2 x 2 x k tables
 
-data:  Nitrous 
+data:  Nitrous
 S = 57, p-value = 0.1959
-alternative hypothesis: true common odds ratio is less than 1 
+alternative hypothesis: true common odds ratio is less than 1
 95 percent confidence interval:
- 0.000000 1.388197 
+ 0.000000 1.388197
 sample estimates:
 common odds ratio 
         0.6652418 
@@ -6673,11 +6699,11 @@ common odds ratio
 
 	Mantel-Haenszel chi-squared test with continuity correction
 
-data:  Nitrous 
+data:  Nitrous
 Mantel-Haenszel X-squared = 0.7143, df = 1, p-value = 0.199
-alternative hypothesis: true common odds ratio is less than 1 
+alternative hypothesis: true common odds ratio is less than 1
 95 percent confidence interval:
- 0.000000 1.260053 
+ 0.000000 1.260053
 sample estimates:
 common odds ratio 
         0.6645374 
@@ -6852,12 +6878,212 @@ Coefficients:
 (Intercept)  0.03949    0.08612   0.459    0.663    
 x            0.99788    0.01502  66.419 7.83e-10 ***
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Residual standard error: 0.1232 on 6 degrees of freedom
-Multiple R-squared: 0.9986,	Adjusted R-squared: 0.9984 
-F-statistic:  4412 on 1 and 6 DF,  p-value: 7.834e-10 
+Multiple R-squared:  0.9986,	Adjusted R-squared:  0.9984 
+F-statistic:  4412 on 1 and 6 DF,  p-value: 7.834e-10
 
 > ## issue is how the 5-number summary is labelled
-> ## (also seem in example(case.names))
+> ## (also seen in example(case.names))
+> 
+> 
+> ## is.unsorted got it backwards for dataframes of more than one column
+> ## it is supposed to look for violations of x[2] > x[1], x[3] > x[2], etc.
+> is.unsorted(data.frame(x=2:1))
+[1] FALSE
+> is.unsorted(data.frame(x=1:2, y=3:4))
+[1] FALSE
+> is.unsorted(data.frame(x=3:4, y=1:2))
+[1] TRUE
+> ## R < 2.15.1 got these as FALSE, TRUE, FALSE.
+> 
+> 
+> library("methods")# (not needed here)
+> assertCondition <- tools::assertCondition
+> assertCondition( getMethod(ls, "bar", fdef=ls), "error", verbose=TRUE)
+assertCondition: caught "error"
+> assertCondition( getMethod(show, "bar"),        "error", verbose=TRUE)
+assertCondition: caught "error"
+> ## R < 2.15.1 gave
+> ##   cannot coerce type 'closure' to vector of type 'character'
+> 
+> 
+> ## corner cases for array
+> # allowed, gave non-array in 2.15.x
+> try(array(1, integer()))
+Error in array(1, integer()) : 'dims' cannot be of length 0
+> # if no dims, an error to supply dimnames
+> try(array(1, integer(), list(1, 2)))
+Error in array(1, integer(), list(1, 2)) : 'dims' cannot be of length 0
+> ##
+> 
+> 
+> ## is.na() on an empty dataframe (PR#14059)
+> DF <- data.frame(row.names=1:3)
+> is.na(DF); str(.Last.value)
+
+1
+2
+3
+ logi[1:3, 0 ] 
+ - attr(*, "dimnames")=List of 2
+  ..$ : chr [1:3] "1" "2" "3"
+  ..$ : NULL
+> is.na(DF[FALSE, ]); str(.Last.value)
+<0 x 0 matrix>
+ logi[0 , 0 ] 
+> ## first failed in R 2.15.1, second gave NULL
+> 
+> 
+> ## split() with dots in levels
+> df <- data.frame(x = rep(c("a", "a.b"), 3L), y = rep(c("b.c", "c"), 3L),
++                  z = 1:6)
+> df
+    x   y z
+1   a b.c 1
+2 a.b   c 2
+3   a b.c 3
+4 a.b   c 4
+5   a b.c 5
+6 a.b   c 6
+> split(df, df[, 1:2]) # default is sep = "."
+$a.b.c
+    x   y z
+1   a b.c 1
+2 a.b   c 2
+3   a b.c 3
+4 a.b   c 4
+5   a b.c 5
+6 a.b   c 6
+
+$a.b.b.c
+[1] x y z
+<0 rows> (or 0-length row.names)
+
+$a.c
+[1] x y z
+<0 rows> (or 0-length row.names)
+
+> split(df, df[, 1:2], sep = ":")
+$`a:b.c`
+  x   y z
+1 a b.c 1
+3 a b.c 3
+5 a b.c 5
+
+$`a.b:b.c`
+[1] x y z
+<0 rows> (or 0-length row.names)
+
+$`a:c`
+[1] x y z
+<0 rows> (or 0-length row.names)
+
+$`a.b:c`
+    x y z
+2 a.b c 2
+4 a.b c 4
+6 a.b c 6
+
+> ##
+> 
+> 
+> ## The difference between sort.list and order
+> z <- c(4L, NA, 2L, 3L, NA, 1L)
+> order(z, na.last = NA)
+[1] 6 3 4 1
+> sort.list(z, na.last = NA)
+[1] 4 2 3 1
+> sort.list(z, na.last = NA, method = "shell")
+[1] 4 2 3 1
+> sort.list(z, na.last = NA, method = "quick")
+[1] 4 2 3 1
+> sort.list(z, na.last = NA, method = "radix")
+[1] 4 2 3 1
+> ## Differences first documented in R 2.15.2
+> 
+> 
+> ## PR#15028: names longer than cutoff NB (= 1000)
+> NB <- 1000
+> lns <- capture.output(
++     setNames(c(255, 1000, 30000),
++              c(paste(rep.int("a", NB+2), collapse=""),
++                paste(rep.int("b", NB+2), collapse=""),
++                paste(rep.int("c", NB+2), collapse=""))))
+> sub("^ +", '', lns[2* 1:3])
+[1] "255 "   "1000 "  "30000 "
+> ## *values* were cutoff when printed
+> 
+> ## allows deparse limits to be set
+> form <- reallylongnamey ~ reallylongnamex0 + reallylongnamex1 + reallylongnamex2 + reallylongnamex3
+> form
+reallylongnamey ~ reallylongnamex0 + reallylongnamex1 + reallylongnamex2 + 
+    reallylongnamex3
+> op <- options(deparse.cutoff=80)
+> form
+reallylongnamey ~ reallylongnamex0 + reallylongnamex1 + reallylongnamex2 + reallylongnamex3
+> options(deparse.cutoff=50)
+> form
+reallylongnamey ~ reallylongnamex0 + reallylongnamex1 + 
+    reallylongnamex2 + reallylongnamex3
+> options(op)
+> ## fixed to 60 in R 2.15.x
+> 
+> ## PR#15179: user defined binary ops were not deparsed properly
+> quote( `%^%`(x, `%^%`(y,z)) )
+x %^% (y %^% z)
+> quote( `%^%`(x) )
+`%^%`(x)
+> ##
+> 
+> ## Anonymous function calls were not deparsed properly
+> substitute(f(x), list(f = function(x) x + 1))
+(function (x) 
+x + 1)(x)
+> substitute(f(x), list(f = quote(function(x) x + 1)))
+(function(x) x + 1)(x)
+> substitute(f(x), list(f = quote(f+g)))
+(f + g)(x)
+> substitute(f(x), list(f = quote(base::mean)))
+base::mean(x)
+> substitute(f(x), list(f = quote(a[n])))
+a[n](x)
+> substitute(f(x), list(f = quote(g(y))))
+g(y)(x)
+> ## The first three need parens, the last three don't.
+> 
+> ## PR#15247 : str() on invalid data frame names (where print() works):
+> d <- data.frame(1:3, "B", 4); names(d) <- c("A", "B\xba","C\xabcd")
+> str(d)
+'data.frame':	3 obs. of  3 variables:
+ $ A      : int  1 2 3
+ $ Bº  : Factor w/ 1 level "B": 1 1 1
+ $ C«cd: num  4 4 4
+> ## gave an error in R <= 3.0.0
+> 
+> ## PR#15299 : adding a simple vector to a classed object produced a bad result:
+> 1:2 + table(1:2)
+
+1 2 
+2 3 
+> ## Printed the class attribute in R <= 3.0.0
+> 
+> ## PR#15311 : regmatches<- mishandled regexpr results.
+>   x <- c('1', 'B', '3')
+>   m <- regexpr('\\d', x)
+>   regmatches(x, m) <- c('A', 'C')
+>   print(x)
+[1] "A" "B" "C"
+> ## Gave a warning and a wrong result up to 3.0.1
+> 
+> ## Bad warning found by Radford Neal
+>   saveopt <- options(warnPartialMatchDollar=TRUE)
+>   pl <- pairlist(abc=1, def=2)
+>   pl$ab
+[1] 1
+Warning message:
+In pl$ab : partial match of 'ab' to 'abc'
+>   if (!is.null(saveopt[["warnPartialMatchDollar"]])) options(saveopt)
+> ## 'abc' was just ''
 > 

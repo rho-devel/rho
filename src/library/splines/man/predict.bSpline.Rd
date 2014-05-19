@@ -19,11 +19,11 @@
   argument missing, then plots the resulting \code{xyVector} with
   \code{type = "l"}.}
 \usage{
-\method{predict}{bSpline}(object, x, nseg=50, deriv=0, \dots)
-\method{predict}{nbSpline}(object, x, nseg=50, deriv=0, \dots)
-\method{predict}{pbSpline}(object, x, nseg=50, deriv=0, \dots)
-\method{predict}{npolySpline}(object, x, nseg=50, deriv=0, \dots)
-\method{predict}{ppolySpline}(object, x, nseg=50, deriv=0, \dots)
+\method{predict}{bSpline}(object, x, nseg = 50, deriv = 0, \dots)
+\method{predict}{nbSpline}(object, x, nseg = 50, deriv = 0, \dots)
+\method{predict}{pbSpline}(object, x, nseg = 50, deriv = 0, \dots)
+\method{predict}{npolySpline}(object, x, nseg = 50, deriv = 0, \dots)
+\method{predict}{ppolySpline}(object, x, nseg = 50, deriv = 0, \dots)
 }
 \arguments{
   \item{object}{An object that inherits from the \code{bSpline} or the
@@ -57,17 +57,17 @@ ispl <- interpSpline( weight ~ height,  women )
 opar <- par(mfrow = c(2, 2), las = 1)
 plot(predict(ispl, nseg = 201),     # plots over the range of the knots
      main = "Original data with interpolating spline", type = "l",
-     xlab = "height", ylab = "weight") 
+     xlab = "height", ylab = "weight")
 points(women$height, women$weight, col = 4)
 plot(predict(ispl, nseg = 201, deriv = 1),
      main = "First derivative of interpolating spline", type = "l",
-     xlab = "height", ylab = "weight") 
+     xlab = "height", ylab = "weight")
 plot(predict(ispl, nseg = 201, deriv = 2),
      main = "Second derivative of interpolating spline", type = "l",
-     xlab = "height", ylab = "weight") 
+     xlab = "height", ylab = "weight")
 plot(predict(ispl, nseg = 401, deriv = 3),
      main = "Third derivative of interpolating spline", type = "l",
-     xlab = "height", ylab = "weight") 
+     xlab = "height", ylab = "weight")
 par(opar)
 }
 \keyword{models}

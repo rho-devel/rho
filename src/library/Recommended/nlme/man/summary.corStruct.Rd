@@ -42,7 +42,7 @@
   \code{structName}. The returned value inherits from the same classes
   as \code{object}.
 }
-\author{Jose Pinheiro and Douglas Bates }
+\author{José Pinheiro and Douglas Bates }
 \seealso{
   \code{\link{corClasses}}, 
   \code{\link{corNatural}},

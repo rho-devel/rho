@@ -1,6 +1,6 @@
 % File src/library/stats/man/anova.glm.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{anova.glm}
@@ -20,7 +20,7 @@
     \code{objects} for the \code{"glmlist"} method.}
   \item{dispersion}{the dispersion parameter for the fitting family.
     By default it is obtained from the object(s).}
-  \item{test}{a character string, (partially) matching one of \code{"Chisq"}, 
+  \item{test}{a character string, (partially) matching one of \code{"Chisq"},
   \code{"LRT"}, \code{"Rao"},
     \code{"F"} or \code{"Cp"}. See \code{\link{stat.anova}}.}
 }
@@ -46,10 +46,10 @@
   most appropriate.  Mallows' \eqn{C_p}{Cp} statistic is the residual
   deviance plus twice the estimate of \eqn{\sigma^2} times
   the residual degrees of freedom, which is closely related to AIC (and
-  a multiple of it if the dispersion is known). 
-  You can also choose \code{"LRT"} and 
-    \code{"Rao"} for likelihood ratio tests and Rao's efficient score test. 
-    The former is synonymous with \code{"Chisq"} (although both have 
+  a multiple of it if the dispersion is known).
+  You can also choose \code{"LRT"} and
+    \code{"Rao"} for likelihood ratio tests and Rao's efficient score test.
+    The former is synonymous with \code{"Chisq"} (although both have
     an asymptotic chi-square distribution).
 
   The dispersion estimate will be taken from the largest model, using
@@ -61,11 +61,10 @@
   An object of class \code{"anova"} inheriting from class \code{"data.frame"}.
 }
 \section{Warning}{
-  The comparison between two or more models by \code{anova} or
-  \code{anova.glmlist} will only be valid if they
+  The comparison between two or more models will only be valid if they
   are fitted to the same dataset. This may be a problem if there are
   missing values and \R's default of \code{na.action = na.omit} is used,
-  and \code{anova.glmlist} will detect this with an error.
+  and \code{anova} will detect this with an error.
 }
 \references{
   Hastie, T. J. and Pregibon, D. (1992)
@@ -87,7 +86,8 @@ example("glm", echo = FALSE)}
 anova(glm.D93)
 anova(glm.D93, test = "Cp")
 anova(glm.D93, test = "Chisq")
-glm.D93a <- update(glm.D93, ~treatment*outcome) ## equivalent to Pearson Chi-square
+glm.D93a <-
+   update(glm.D93, ~treatment*outcome) # equivalent to Pearson Chi-square
 anova(glm.D93, glm.D93a, test = "Rao")
 }
 \keyword{models}

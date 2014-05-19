@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -30,7 +30,6 @@
 #endif
 
 #include <R_ext/Boolean.h>	/* TRUE,... */
-#include <R_ext/Applic.h>
 
 static void split(int n, double *x,
 		  int m, int *in,
@@ -135,9 +134,8 @@ static void split(int n, double *x,
     }
 }
 
-void R_chull(int *n, double *x, int *m, int *in,
-	     int *ia, int *ib,
-	     int *ih, int *nh, int *il)
+static void in_chull(int *n, double *x, int *m, int *in,
+		  int *ia, int *ib, int *ih, int *nh, int *il)
 {
 /* this subroutine determines which of the m points of array
  x whose subscripts are in array in are vertices of the
@@ -440,3 +438,20 @@ void R_chull(int *n, double *x, int *m, int *in,
 #undef y
 } /* chull */
 
+#include <Rinternals.h>
+SEXP chull(SEXP x)
+{
+    // x is a two-column matrix
+    int n = nrows(x), nh;
+    int *in = (int*)R_alloc(n, sizeof(int));
+    for (int i = 0; i < n; i++) in[i] = i+1;
+    int *ih = (int*)R_alloc(4*n, sizeof(int));
+    x = PROTECT(coerceVector(x, REALSXP));
+    if(TYPEOF(x) != REALSXP) error("'x' is not numeric");
+    in_chull(&n, REAL(x), &n, in, ih+n, ih+2*n, ih, &nh, ih+3*n);
+    SEXP ans = allocVector(INTSXP, nh);
+    int *ians = INTEGER(ans);
+    for (int i = 0; i < nh; i++) ians[i] = ih[nh - 1 -i];
+    UNPROTECT(1);
+    return ans;
+}

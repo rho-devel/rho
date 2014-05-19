@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -42,7 +42,8 @@ all: Makefile DESCRIPTION
 	@$(ECHO) "building package '$(pkg)'"
 	@$(MKINSTALLDIRS) $(top_builddir)/library/$(pkg)
 	@$(MKINSTALLDIRS) $(top_builddir)/library/$(pkg)/doc
-	@$(MAKE) mkR1 mkdesc mkpo instdirs iconvlist
+	@$(MAKE) mkR1 mkdesc instdirs iconvlist
+	@$(MAKE) mksrc
 @BYTE_COMPILE_PACKAGES_FALSE@	@$(MAKE) mklazy
 @BYTE_COMPILE_PACKAGES_TRUE@	@$(MAKE) mklazycomp
 

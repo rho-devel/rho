@@ -28,7 +28,7 @@ gnlsStruct(corStruct, varStruct)
   parameters to be estimated for the associated nonlinear model.
 }
 
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{gnls}}, \code{\link{corClasses}},
   \code{\link{residuals.gnlsStruct}}

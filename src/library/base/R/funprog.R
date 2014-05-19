@@ -1,6 +1,8 @@
 #  File src/library/base/R/funprog.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -93,7 +95,7 @@ function(f, x, init, right = FALSE, accumulate = FALSE)
         ## If all results have length one, we can simplify.
         ## (Note that we do not simplify to arrays in case all results
         ## have a common length > 1.)
-        if(all(sapply(out, length) == 1L))
+	if(all(vapply(out, length, 1.) == 1L))
             out <- unlist(out, recursive = FALSE)
         out
     }
@@ -102,7 +104,7 @@ function(f, x, init, right = FALSE, accumulate = FALSE)
 Filter <-
 function(f, x)
 {
-    ind <- as.logical(sapply(x, f))
+    ind <- as.logical(unlist(lapply(x, f)))
     x[!is.na(ind) & ind]
 }
 

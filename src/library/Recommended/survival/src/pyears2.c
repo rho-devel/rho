@@ -1,4 +1,3 @@
-/* $Id$ */
 /*
 **  Person-years calculations.
 **     same as pyears1, but no expected rates
@@ -39,7 +38,7 @@ void pyears2(Sint   *sn,      Sint   *sny,   Sint   *sdoevent,
 	     double *pyears,  double *pn,    double *pcount, 
 	     double *offtable)
     {
-S_EVALUATOR
+
     int i,j;
     int     n,
 	    ny,

@@ -39,13 +39,15 @@ clusterMap(cl = NULL, fun, ..., MoreArgs = NULL, RECYCLE = TRUE,
 clusterSplit(cl = NULL, seq)
 
 parLapply(cl = NULL, X, fun, ...)
-parSapply(cl = NULL, X, FUN, ..., simplify = TRUE, USE.NAMES = TRUE) 
+parSapply(cl = NULL, X, FUN, ..., simplify = TRUE,
+          USE.NAMES = TRUE)
 parApply(cl = NULL, X, MARGIN, FUN, ...)
 parRapply(cl = NULL, x, FUN, ...)
 parCapply(cl = NULL, x, FUN, ...)
 
 parLapplyLB(cl = NULL, X, fun, ...)
-parSapplyLB(cl = NULL, X, FUN, ..., simplify = TRUE, USE.NAMES = TRUE) 
+parSapplyLB(cl = NULL, X, FUN, ..., simplify = TRUE,
+            USE.NAMES = TRUE)
 }
 \arguments{
   \item{cl}{a cluster object, created by this package or by package
@@ -74,8 +76,8 @@ parSapplyLB(cl = NULL, X, FUN, ..., simplify = TRUE, USE.NAMES = TRUE)
   arguments \code{...} on each node.
 
   \code{clusterEvalQ} evaluates a literal expression on each cluster
-  node.  It a parallel version of \code{\link{evalq}}, and is a convenience
-  function invoking \code{clusterCall}.
+  node.  It is a parallel version of \code{\link{evalq}}, and is a
+  convenience function invoking \code{clusterCall}.
 
   \code{clusterApply} calls \code{fun} on the first node with
   arguments \code{seq[[1]]} and \code{...}, on the second node with
@@ -100,7 +102,7 @@ parSapplyLB(cl = NULL, X, FUN, ..., simplify = TRUE, USE.NAMES = TRUE)
   the result is greater than the number of nodes.  (\code{mapply} always
   uses \code{RECYCLE = TRUE}, and has argument \code{SIMPLIFY = TRUE}.
   \code{Map} always uses \code{RECYCLE = TRUE}.)
-  
+
   \code{clusterExport} assigns the values on the master \R process of
   the variables named in \code{varlist} to variables of the same names
   in the global environment (aka \sQuote{workspace}) of each node.  The
@@ -111,7 +113,7 @@ parSapplyLB(cl = NULL, X, FUN, ..., simplify = TRUE, USE.NAMES = TRUE)
   each cluster and returns the result as a list with length equal to the
   number of nodes.  Currently the pieces are chosen to be close
   to equal in length: the computation is done on the master.
-  
+
   \code{parLapply}, \code{parSapply}, and \code{parApply} are parallel
   versions of \code{lapply}, \code{sapply} and \code{apply}.
   \code{parLapplyLB}, \code{parSapplyLB} are load-balancing versions,
@@ -132,7 +134,7 @@ parSapplyLB(cl = NULL, X, FUN, ..., simplify = TRUE, USE.NAMES = TRUE)
   length as \code{seq}.
 
   \code{clusterMap} follows \code{\link{mapply}}.
-  
+
   \code{clusterExport} returns nothing.
 
   \code{parLapply} returns a list the length of \code{X}.
@@ -144,7 +146,7 @@ parSapplyLB(cl = NULL, X, FUN, ..., simplify = TRUE, USE.NAMES = TRUE)
   \code{FUN} always returns a scalar result this will be of length the
   number of rows or columns: otherwise it will be the concatenation of
   the returned values.
-  
+
   An error is signalled on the master if any of the workers produces an
   error.
 }
@@ -162,7 +164,7 @@ parSapplyLB(cl = NULL, X, FUN, ..., simplify = TRUE, USE.NAMES = TRUE)
 }
 % donttest, as access to ports might be denied.  Tested in the 'tests' directory
 \examples{\donttest{
-## Use option cl.core to choose an appropriate cluster size.
+## Use option cl.cores to choose an appropriate cluster size.
 cl <- makeCluster(getOption("cl.cores", 2))
 
 clusterApply(cl, 1:2, get("+"), 3)
@@ -171,7 +173,7 @@ clusterExport(cl, "xx")
 clusterCall(cl, function(y) xx + y, 2)
 
 ## Use clusterMap like an mapply example
-clusterMap(cl, function(x,y) seq_len(x) + y,
+clusterMap(cl, function(x, y) seq_len(x) + y,
           c(a =  1, b = 2, c = 3), c(A = 10, B = 0, C = -10))
 
 

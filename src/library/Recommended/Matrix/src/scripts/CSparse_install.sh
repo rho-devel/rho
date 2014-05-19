@@ -26,6 +26,7 @@ if [ ! -d $sDir ]; then echo "no directory $sDir .. exiting"; exit 2 ; fi
 echo -n "cat (and sed)'ing files from $sDir ..	 "
 cd $sDir
 cat cs_*.c | sed -e '1 p' -e '/^#include/d' -e 's/\bprintf/Rprintf/g' > $MatrixDir/cs.c
+cd $MatrixDir
 patch -p0 < scripts/cs.patch
 echo '[Ok]'
 echo -n "cleaning up $iDir $sDir ..			 "

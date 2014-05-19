@@ -54,6 +54,7 @@ Demmel, J. (1997) Applied Numerical Linear Algebra. SIAM
 \seealso{\code{\link{cyclic.p.spline}}}
 
 \examples{
+ require(mgcv)
  ## create some x's and knots...
  set.seed(1);
  n <- 700;A <- matrix(runif(n*n),n,n);A <- A+t(A)

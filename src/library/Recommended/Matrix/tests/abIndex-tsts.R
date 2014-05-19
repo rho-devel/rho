@@ -90,16 +90,17 @@ grMeth <- "Arith"
     for(ng in getGroupMembers(grMeth)) {
         cat(ng, ": ")
         G <- get(ng)
-        t.tol <- if(ng == "/") 8e-16 else 0
-        ## now using special all.equal() method!
-        AEq <- function(a,b, ...) all.equal(a, b, tol=t.tol)
+	t.tol <- if(ng == "/") 1e-12 else 0
+	## "/" with no long double (e.g. on Sparc Solaris): 1.125e-14
+	AEq <- function(a,b, ...) assert.EQ(a, b, tol=t.tol, giveRE=TRUE)
         for(v in ex.) {
             va <- as(v, "abIndex")
-            for(s in list(-1, 17L, TRUE, FALSE)) {# numeric *and* logical
-                if(!(identical(s, FALSE) && ng == "/")) ## division by 0 often "fails"
-                stopifnot(AEq(as(G(v, s), "abIndex"), G(va, s)),
-                          AEq(as(G(s, v), "abIndex"), G(s, va)))
-            }
+            for(s in list(-1, 17L, TRUE, FALSE)) # numeric *and* logical
+		if(!((identical(s, FALSE) && ng == "/"))) { ## division by 0 may "fail"
+
+		    AEq(as(G(v, s), "abIndex"), G(va, s))
+		    AEq(as(G(s, v), "abIndex"), G(s, va))
+		}
             cat(".")
         }
         cat(" [Ok]\n")

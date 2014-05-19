@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -39,6 +39,13 @@
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
+#endif
+
+/* Required by C99 but might be slow */
+#ifdef HAVE_LONG_DOUBLE
+#  define LDOUBLE long double
+#else
+#  define LDOUBLE double
 #endif
 
 #include <math.h>
@@ -203,7 +210,7 @@ double  attribute_hidden pnchisq_raw(double, double, double, double, double, int
 double  attribute_hidden pgamma_raw(double, double, int, int);
 double	attribute_hidden pbeta_raw(double, double, double, int, int);
 double  attribute_hidden qchisq_appr(double, double, double, int, int, double tol);
-long double attribute_hidden pnbeta_raw(double, double, double, double, double);
+LDOUBLE attribute_hidden pnbeta_raw(double, double, double, double, double);
 double	attribute_hidden pnbeta2(double, double, double, double, double, int, int);
 
 int	Rf_i1mach(int);

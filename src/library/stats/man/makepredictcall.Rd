@@ -11,7 +11,7 @@
 \description{
   A utility to help \code{\link{model.frame.default}} create the right
   matrices when predicting from models with terms like \code{poly} or
-  \code{ns}. 
+  \code{ns}.
 }
 \usage{
 makepredictcall(var, call)
@@ -44,7 +44,7 @@ makepredictcall(var, call)
 \seealso{
   \code{\link{model.frame}}, \code{\link{poly}}, \code{\link{scale}};
   \code{\link{bs}} and \code{\link{ns}} in package \pkg{splines}.
-  
+
   \code{\link{cars}} for an example of prediction from a polynomial fit.
 }
 \examples{
@@ -54,7 +54,7 @@ require(graphics)
 fm <- lm(weight ~ poly(height, 2), data = women)
 plot(women, xlab = "Height (in)", ylab = "Weight (lb)")
 ht <- seq(57, 73, len = 200)
-lines(ht, predict(fm, data.frame(height=ht)))
+lines(ht, predict(fm, data.frame(height = ht)))
 
 ## see also example(cars)
 

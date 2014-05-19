@@ -3,7 +3,7 @@
 library(Matrix)
 
 source(system.file("test-tools.R", package = "Matrix"))# identical3() etc
-
+doExtras
 
 ### "sparseQR" : Check consistency of methods
 ##   --------
@@ -11,18 +11,219 @@ data(KNex); mm <- KNex$mm; y <- KNex$y
 stopifnot(is((Y <- Matrix(y)), "dgeMatrix"))
 md <- as(mm, "matrix")                  # dense
 
-system.time(mmq <- qr(mm))
-system.time(mdq <- qr(md))# much (~ 150 x) slower
+(cS <- system.time(Sq <- qr(mm)))
+(cD <- system.time(Dq <- qr(md))) # 1.1 sec. (lynne, 2011)
+cD[1] / cS[1] # dense is  much ( ~ 100--170 times) slower
 
-## qr.qy and qr.qty should be inverses
-stopifnot(all.equal(qr.qy (mmq, qr.qty(mmq, y))@x, y),
-          all.equal(qr.qty(mmq, qr.qy (mmq, y))@x, y),
-          all.equal(qr.qty(mmq, y), qr.qty(mmq, Y)) )
+chkQR <- function(a,
+                  y = seq_len(nrow(a)),## RHS: made to contain no 0
+                  a.qr = qr(a), tol = 1e-13, # 1e-13 failing very rarely (interesting)
+                  ##----------
+                  Qinv.chk = !sp.rank.def, QtQ.chk = !sp.rank.def,
+                  verbose=getOption("verbose"))
+{
+    d <- dim(a)
+    stopifnot((n <- d[1]) >= (p <- d[2]), is.numeric(y))
+    kind <- if(is.qr(a.qr)) "qr" else
+    if(is(a.qr, "sparseQR")) "spQR" else stop("unknown qr() class: ", class(a.qr))
+
+    ## rank.def <- switch(kind,
+    ##     	       "qr"  = a.qr$rank < length(a.qr$pivot),
+    ##     	       "spQR" = a.qr@V@Dim[1] > a.qr@Dim[1])
+    sp.rank.def <- (kind == "spQR") && (a.qr@V@Dim[1] > a.qr@Dim[1])
+    if(sp.rank.def && (missing(Qinv.chk) || missing(QtQ.chk)))
+	message("is sparse *structurally* rank deficient:  Qinv.chk=",
+		Qinv.chk,", QtQ.chk=",QtQ.chk)
+    if(is.na(QtQ.chk )) QtQ.chk  <- !sp.rank.def
+    if(is.na(Qinv.chk)) Qinv.chk <- !sp.rank.def
+
+    if(Qinv.chk) ## qr.qy and qr.qty should be inverses,	 Q'Q y = y = QQ' y :
+        ## FIXME: Fails for structurally rank deficient sparse a's, but never for classical
+	stopifnot(all.equal(drop(qr.qy (a.qr, qr.qty(a.qr, y))), y),
+		  all.equal(drop(qr.qty(a.qr, qr.qy (a.qr, y))), y))
+
+    piv <- switch(kind,
+                  "qr" = a.qr$pivot,
+                  "spQR" = 1L + a.qr@q)# 'q', not 'p' !!
+    invP <- sort.list(piv)
+
+    .ckQR <- function(cmpl) { ## local function, using parent's variables
+        if(verbose) cat("complete = ",cmpl,":\n", sep="")
+        Q <- qr.Q(a.qr, complete=cmpl)
+        R <- qr.R(a.qr, complete=cmpl)
+        rr <- if(cmpl) n else p
+        stopifnot(dim(Q) == c(n,rr),
+                  dim(R) == c(rr,p))
+        assert.EQ.Mat(a, Q %*% R[, invP], tol = tol)
+        ##            =  ===============
+	if(QtQ.chk)
+	    assert.EQ.mat(crossprod(Q), diag(rr), tol = tol)
+        ##                ===========   ====
+    }
+    .ckQR(FALSE)
+    .ckQR(TRUE)
+    invisible(a.qr)
+}## end{chkQR}
+
+##' Check QR-consistency of dense and sparse
+chk.qr.D.S <- function(d., s., y, Y = Matrix(y), force = FALSE) {
+    stopifnot(is.qr(d.), is(s., "sparseQR"))
+    cc <- qr.coef(d.,y)
+    rank.def <- any(is.na(cc)) && d.$rank < length(d.$pivot)
+    if(rank.def && force) cc <- mkNA.0(cc) ## set NA's to 0 .. ok, in some case
+
+    ## when system is rank deficient, have differing cases, not always just NA <-> 0 coef
+    ## FIXME though:  resid & fitted should be well determined
+    if(force || !rank.def) stopifnot(
+	is.all.equal3(	    cc	     , drop(qr.coef  (s.,y)), drop(qr.coef  (s.,Y))) ,
+	is.all.equal3(qr.resid (d.,y), drop(qr.resid (s.,y)), drop(qr.resid (s.,Y))) ,
+	is.all.equal3(qr.fitted(d.,y), drop(qr.fitted(s.,y)), drop(qr.fitted(s.,Y)))
+	)
+}
+
+##' "Combi" calling chkQR() on both "(sparse)Matrix" and 'traditional' version
+##' ------  and combine the two qr decomp.s using chk.qr.D.S()
+##'
+##' @title check QR-decomposition, and compare sparse and dense one
+##' @param A a 'Matrix' , typically 'sparseMatrix'
+##' @param Qinv.chk
+##' @param QtQ.chk
+##' @param quiet
+##' @return list with 'qA' (sparse QR) and 'qa' (traditional (dense) QR)
+##' @author Martin Maechler
+checkQR.DS.both <- function(A, Qinv.chk, QtQ.chk=NA,
+                            quiet=FALSE, tol = 1e-13)
+{
+    stopifnot(is(A,"Matrix"))
+    if(!quiet) cat("classical: ")
+    qa <- chkQR(as.matrix(A), Qinv.chk=TRUE, QtQ.chk=TRUE, tol=tol)# works always
+    if(!quiet) cat("[Ok] ---  sparse: ")
+    qA <- chkQR(A, Qinv.chk=Qinv.chk, QtQ.chk=QtQ.chk, tol=tol)
+    validObject(qA)
+    if(!quiet) cat("[Ok]\n")
+    chk.qr.D.S(qa, qA, y = 10 + 1:nrow(A))# ok [not done in rank deficient case!]
+    invisible(list(qA=qA, qa=qa))
+}
+
+if(doExtras) system.time({ ## ~ 20 sec {"large" example}   + 2x qr.R() warnings
+    cat("chkQR( <KNex> ) .. takes time .. ")
+    chkQR(mm, y=y, a.qr = Sq)
+    chkQR(md, y=y, a.qr = Dq)
+    cat(" done: [Ok]\n")
+})
 
 ## consistency of results dense and sparse
-stopifnot(is.all.equal3(qr.coef  (mdq, y), qr.coef  (mmq,y)@x, qr.coef  (mmq,Y)@x) ,
-          is.all.equal3(qr.resid (mdq, y), qr.resid (mmq,y)@x, qr.resid (mmq,Y)@x) ,
-          is.all.equal3(qr.fitted(mdq, y), qr.fitted(mmq,y)@x, qr.fitted(mmq,Y)@x) )
+chk.qr.D.S(Dq, Sq, y, Y)
+
+## rank deficient QR cases: ---------------
+
+## From Simon (15 Jul 2009):
+set.seed(10)
+a <- matrix(round(10 * runif(90)), 10,9); a[a < 7.5] <- 0
+(A <- Matrix(a))# first column = all zeros
+qD <- chkQR(a) ## using base qr
+qS <- chkQR(A) ## using Matrix "sparse qr" -- "structurally rank deficient!
+validObject(qS)# with the validity now (2012-11-18) -- ok, also for "bad" case
+chk.qr.D.S(qD, qS, y = 10 + 1:nrow(A), force=TRUE)
+try( ## NOTE: *Both* checks  currently fail here:
+    chkQR(A, Qinv.chk=TRUE, QtQ.chk=TRUE)
+)
+
+## Larger Scale random testing
+xtrChk <- TRUE  ## should work, but fails for *some* structurally rank deficient cases
+xtrChk <- FALSE ## for now [FIXME]
+oo <- options(Matrix.quiet.qr.R = TRUE, Matrix.verbose = TRUE)
+set.seed(101)
+
+for(N in 1:(if(doExtras) 1008 else 24)) {
+    A <- rSparseMatrix(8,5, nnz = rpois(1, lambda=16))
+    cat(sprintf("%4d -", N))
+    checkQR.DS.both(A, Qinv.chk= NA, QtQ.chk=NA)
+    ##                          --- => FALSE if struct. rank deficient
+}
+
+
+## Look at single "hard" cases: --------------------------------------
+
+## This is *REALLY* nice and small :
+A0 <- new("dgCMatrix", Dim = 4:3, i = c(0:3, 3L), p = c(0L, 3:5), x = rep(1,5))
+A0
+checkQR.DS.both(A0, Qinv.chk = FALSE, QtQ.chk=FALSE)
+##                                           ----- *both* still needed :
+try( checkQR.DS.both(A0,  TRUE, FALSE) )
+try( checkQR.DS.both(A0, FALSE,  TRUE) )
+
+## and the same when dropping the first row  { --> 3 x 3 }:
+A1 <- A0[-1 ,]
+checkQR.DS.both(A1, Qinv.chk = FALSE, QtQ.chk=FALSE)
+##                                           ----- *both* still needed :
+try( checkQR.DS.both(A1,  TRUE, FALSE) )
+try( checkQR.DS.both(A1, FALSE,  TRUE) )
+
+
+qa <- qr(as.matrix(A0))
+qA <- qr(A0)
+
+drop0(crossprod( Qd <- qr.Q(qa) ), 1e-15) # perfect = diag( 3 )
+drop0(crossprod( Qs <- qr.Q(qA) ), 1e-15) # R[3,3] == 0 -- OOPS!
+## OTOH, qr.R() is fine, as checked in the checkQR.DS.both(A0, *) above
+
+
+## zero-row *and* zero-column :
+(A2 <- new("dgCMatrix", i = c(0L, 1L, 4L, 7L, 5L, 2L, 4L)
+           , p = c(0L, 3L, 4L, 4L, 5L, 7L)
+           , Dim = c(8L, 5L)
+           , x = c(0.92, 1.06, -1.74, 0.74, 0.19, -0.63, 0.68)))
+checkQR.DS.both(A2, Qinv.chk = FALSE, QtQ.chk=FALSE)
+##                                           ----- *both* still needed :
+try( checkQR.DS.both(A2,  TRUE, FALSE) )
+try( checkQR.DS.both(A2, FALSE,  TRUE) )
+
+
+## Case of *NO* zero-row or zero-column:
+(A3 <- new("dgCMatrix", Dim = 6:5
+           , i = c(0L, 2L, 4L, 0L, 1L, 5L, 1L, 3L, 0L)
+           , p = c(0L, 1L, 3L, 6L, 8L, 9L)
+           , x = c(40, -54, -157, -28, 75, 166, 134, 3, -152)))
+checkQR.DS.both(A3, Qinv.chk = FALSE, QtQ.chk=FALSE)
+##                                           ----- *both* still needed :
+try( checkQR.DS.both(A3,  TRUE, FALSE) )
+try( checkQR.DS.both(A3, FALSE,  TRUE) )
+
+
+
+(A4 <- new("dgCMatrix", Dim = c(7L, 5L)
+           , i = c(1:2, 4L, 6L, 1L, 5L, 0:3, 0L, 2:4)
+           , p = c(0L, 4L, 6L, 10L, 10L, 14L)
+           , x = c(9, -8, 1, -9, 1, 10, -1, -2, 6, 14, 10, 2, 12, -9)))
+checkQR.DS.both(A4, Qinv.chk = FALSE, QtQ.chk=FALSE)
+##                                           ----- *both* still needed :
+try( checkQR.DS.both(A4,  TRUE, FALSE) )
+try( checkQR.DS.both(A4, FALSE,  TRUE) )
+
+(A5 <- new("dgCMatrix", Dim = c(4L, 4L)
+           , i = c(2L, 2L, 0:1, 0L, 2:3), p = c(0:2, 4L, 7L)
+           , x = c(48, 242, 88, 18, -167, -179, 18)))
+checkQR.DS.both(A5, Qinv.chk = FALSE, QtQ.chk=FALSE)
+##                                           ----- *both* still needed :
+try( checkQR.DS.both(A5,  TRUE, FALSE) )
+try( checkQR.DS.both(A5, FALSE,  TRUE) )
+
+
+for(N in 1:(if(doExtras) 2^12 else 128)) {
+    A <- round(100*rSparseMatrix(5,3, nnz = min(15,rpois(1, lambda=10))))
+    if(any(apply(A, 2, function(x) all(x == 0)))) ## "column of all 0"
+        next
+    cat(sprintf("%4d -", N))
+    checkQR.DS.both(A, Qinv.chk=NA, tol = 1e-12)
+    ##                         --- => FALSE if struct. rank deficient
+}
+
+1
+
+
+options(oo)
+
 
 
 ### "denseLU"
@@ -55,14 +256,15 @@ Ppm <- pmLU@L %*% pmLU@U
 stopifnot(identical3(lu1, pmLU, pm@factors$LU),# TODO === por1@factors$LU
 	  identical(ppm, with(xp, P %*% pm %*% t(Q))),
 	  sapply(xp, is, class="Matrix"))
-## make sure 'factors' are *NOT* kept, when they should not:
-spm <- solve(pm)
-stopifnot(abs(as.vector(solve(Diagonal(30, x=10) %*% pm) / spm) - 1/10) < 1e-7,
-	  abs(as.vector(solve(rep.int(4, 30)	  *  pm) / spm) - 1/ 4) < 1e-7)
 
+Ipm <- solve(pm, sparse=FALSE)
+Spm <- solve(pm, sparse=TRUE)  # is not sparse at all, here
+assert.EQ.Mat(Ipm, Spm, giveRE=TRUE)
+stopifnot(abs(as.vector(solve(Diagonal(30, x=10) %*% pm) / Ipm) - 1/10) < 1e-7,
+	  abs(as.vector(solve(rep.int(4, 30)	  *  pm) / Ipm) - 1/ 4) < 1e-7)
 
 ## these two should be the same, and `are' in some ways:
-assert.EQ.mat(ppm, as(Ppm, "matrix"), tol = 1e-14)
+assert.EQ.mat(ppm, as(Ppm, "matrix"), tol = 1e-14, giveRE=TRUE)
 ## *however*
 length(ppm@x)# 180
 length(Ppm@x)# 317 !
@@ -134,16 +336,16 @@ for(n in c(5:12)) {
 set.seed(17)
 (rr <- mkLDL(4))
 (CA <- Cholesky(rr$A))
-stopifnot(all.equal(determinant(rr$A),
-		    determinant(as(rr$A, "matrix"))))
+stopifnot(all.equal(determinant(rr$A) -> detA,
+                    determinant(as(rr$A, "matrix"))),
+          is.all.equal3(c(detA$modulus), log(det(rr$D)), sum(log(rr$D@x))))
 A12 <- mkLDL(12, 1/10)
-
-(r12 <- allCholesky(A12$A))
+(r12 <- allCholesky(A12$A))[-1]
 aCh.hash <- r12$r.all %*% (2^(2:0))
 if(FALSE)## if(require("sfsmisc"))
 split(rownames(r12$r.all), Duplicated(aCh.hash))
 
-## TODO: find cases for both choices when we leave it to CHOLMOD to chose
+## TODO: find cases for both choices when we leave it to CHOLMOD to choose
 for(n in 1:50) { ## used to seg.fault at n = 10 !
     mkA <- mkLDL(1+rpois(1, 30), 1/10)
     cat(sprintf("n = %3d, LDL-dim = %d x %d ", n, nrow(mkA$A), ncol(mkA$A)))
@@ -247,7 +449,7 @@ stopifnot(names(mtm@factors) == paste(c("sPD", "spD", "SPd"),
                "Cholesky", sep=''))
 
 r <- allCholesky(mtm)
-r
+r[-1]
 
 ## is now taken from cache
 c1 <- Cholesky(mtm)
@@ -292,16 +494,40 @@ system.time(D3 <- sapply(r, function(rho) Matrix:::ldet3.dsC(mtm + (1/rho) * I))
 stopifnot(is.all.equal3(D1,D2,D3, tol = 1e-13))
 
 ## Updating LL'  should remain LL' and not become  LDL' :
-##_ R CMD check is giving a false positive warning, if use if(FALSE) {..}
+cholCheck <- function(Ut, tol = 1e-12, super = FALSE, LDL = !super) {
+    L <- Cholesky(UtU <- tcrossprod(Ut), super=super, LDL=LDL, Imult = 1)
+    L1 <- update(L, UtU, mult = 1)
+    L2 <- update(L, Ut,  mult = 1)
+    stopifnot(is.all.equal3(L, L1, L2, tol = tol),
+              all.equal(update(L, UtU, mult = pi),
+                        update(L, Ut,  mult = pi), tol = tol)
+              )
+}
+
+## Inspired by
 ## data(Dyestuff, package = "lme4")
 ## Zt <- as(Dyestuff$Batch, "sparseMatrix")
-Zt <- new("dgCMatrix", Dim = c(6L, 30L), x = rep(1, 30),
+Zt <- new("dgCMatrix", Dim = c(6L, 30L), x = 2*1:30,
           i = rep(0:5, each=5),
           p = 0:30, Dimnames = list(LETTERS[1:6], NULL))
-Ut <- 0.78 * Zt
-L <- Cholesky(tcrossprod(Ut), LDL = FALSE, Imult = 1)
-L1 <- update(L, tcrossprod(Ut), mult = 1)
-stopifnot(all.equal(L, L1))
+cholCheck(0.78 * Zt, tol=1e-14)
+
+for(i in 1:120) {
+    set.seed(i); cat(sprintf("%3d: ", i))
+    M <- rspMat(n=rpois(1,50), m=rpois(1,20), density = 1/(4*rpois(1, 4)))
+    for(super in c(FALSE,TRUE)) {
+        cat("super=",super," M: ")
+        cholCheck( M  , super=super); cat(" M': ")
+        cholCheck(t(M), super=super)
+    }
+    cat(" [Ok]\n")
+}
+
+.updateCHMfactor
+## TODO: (--> ../TODO "Cholesky"):
+## ----
+## allow Cholesky(A,..) when A is not symmetric *AND*
+## we really want to factorize  AA' ( + beta * I)
 
 
 ## Schur() ----------------------

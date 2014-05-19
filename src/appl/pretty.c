@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,9 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998	      Robert Gentleman, Ross Ihaka and the
- *                            R Core Team
+ *  Copyright (C) 1995-2013  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -78,8 +76,15 @@
 # include <R_ext/Print.h>
 #endif
 
-double R_pretty0(double *lo, double *up, int *ndiv, int min_n,
-	       double shrink_sml, double high_u_fact[],
+#ifdef HAVE_VISIBILITY_ATTRIBUTE
+# define attribute_hidden __attribute__ ((visibility ("hidden")))
+#else
+# define attribute_hidden
+#endif
+
+attribute_hidden
+double R_pretty(double *lo, double *up, int *ndiv, int min_n,
+		double shrink_sml, double high_u_fact[],
 	       int eps_correction, int return_bounds)
 {
 /* From version 0.65 on, we had rounding_eps := 1e-5, before, r..eps = 0
@@ -168,7 +173,7 @@ double R_pretty0(double *lo, double *up, int *ndiv, int min_n,
 #endif
     while(nu*unit < *up - rounding_eps*unit) nu++;
 
-    k = .5 + nu - ns;
+    k = (int)(0.5 + nu - ns);
     if(k < min_n) {
 	/* ensure that	nu - ns	 == min_n */
 #ifdef DEBUGpr
@@ -202,11 +207,4 @@ double R_pretty0(double *lo, double *up, int *ndiv, int min_n,
     return unit;
 #undef h
 #undef h5
-}
-
-void R_pretty(double *lo, double *up, int *ndiv, int *min_n,
-	      double *shrink_sml, double *high_u_fact, int *eps_correction)
-{
-    R_pretty0(lo, up, ndiv,
-	    *min_n, *shrink_sml, high_u_fact, *eps_correction, 1);
 }

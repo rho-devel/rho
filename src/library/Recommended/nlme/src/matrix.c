@@ -23,6 +23,14 @@
 */
 
 #include "matrix.h"
+/* find qr decomposition, dqrdc2() is basis of R's qr(), also used by nlme */
+void F77_NAME(dqrdc2)(double *x, int *ldx, int *n, int *p,
+		      double *tol, int *rank,
+		      double *qraux, int *pivot, double *work);
+void F77_NAME(dqrls)(double *x, int *n, int *p, double *y, int *ny,
+		     double *tol, double *b, double *rsd,
+		     double *qty, int *k,
+		     int *jpvt, double *qraux, double *work);
 
 void
 d_axpy(double *y, double a, double *x, longint n)

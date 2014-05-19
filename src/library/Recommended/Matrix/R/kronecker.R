@@ -9,8 +9,6 @@
 tmp <- function (X, Y, FUN = "*", make.dimnames = FALSE, ...) {
     kronecker(as(X, "TsparseMatrix"), Y,
 	      FUN = FUN, make.dimnames = make.dimnames, ...)
-    ##	      X <- as(X, "TsparseMatrix")
-    ##	      callGeneric()
 }
 setMethod("kronecker", signature(X="diagonalMatrix", Y="ANY"	    ), tmp)
 setMethod("kronecker", signature(X="diagonalMatrix", Y="Matrix"	    ), tmp)
@@ -21,8 +19,6 @@ setMethod("kronecker", signature(X="sparseMatrix", Y="TsparseMatrix"), tmp)
 tmp <- function (X, Y, FUN = "*", make.dimnames = FALSE, ...) {
     kronecker(X, as(Y, "TsparseMatrix"),
 	      FUN = FUN, make.dimnames = make.dimnames, ...)
-    ##	      Y <- as(Y, "TsparseMatrix")
-    ##	      callGeneric()
 }
 setMethod("kronecker", signature(X="ANY",	  Y="diagonalMatrix"), tmp)
 setMethod("kronecker", signature(X="Matrix",	  Y="diagonalMatrix"), tmp)

@@ -28,7 +28,8 @@ are also provided, for extracting information from a fitted \code{\link{gamObjec
 Use of \code{\link{gam}} is much like use of \code{\link{glm}}, except that
 within a \code{gam} model formula, isotropic smooths of any number of predictors can be specified using
 \code{\link{s}} terms, while scale invariant smooths of any number of
-predictors can be specified using \code{\link{te}} terms. \code{\link{smooth.terms}} provides an 
+predictors can be specified using \code{\link{te}},  \code{\link{ti}} or \code{\link{t2}}  terms. 
+\code{\link{smooth.terms}} provides an 
 overview of the built in smooth classes, and \code{\link{random.effects}} should be refered to for an overview 
 of random effects terms (see also \code{\link{mrf}} for Markov random fields). Estimation is by
 penalized likelihood or quasi-likelihood maximization, with smoothness
@@ -75,8 +76,11 @@ For a complete list of functions type \code{library(help=mgcv)}. See also \code{
 \author{
 Simon Wood <simon.wood@r-project.org>
 
-with contributions and/or help from Thomas Kneib, Kurt Hornik, Mike Lonergan, Henric Nilsson
-and Brian Ripley. 
+with contributions and/or help from Thomas Kneib, Kurt Hornik, Mike Lonergan, Henric Nilsson,
+Fabian Scheipl and Brian Ripley. 
+
+Polish translation - Lukasz Daniel; German translation - Chris Leick, Detlef Steuer; 
+French Translation - Philippe Grosjean
 
 Maintainer: Simon Wood <simon.wood@r-project.org>
 

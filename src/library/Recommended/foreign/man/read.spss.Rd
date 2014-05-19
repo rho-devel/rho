@@ -72,7 +72,7 @@ read.spss(file, use.value.labels = TRUE, to.data.frame = FALSE,
   Occasionally in SPSS, value labels will be added to some values of a
   continuous variable (e.g. to distinguish different types of missing
   data), and you will not want these variables converted to factors.  By
-  setting \code{max.val.labels} you can specify that variables with a
+  setting \code{max.value.labels} you can specify that variables with a
   large number of distinct values are not converted to factors even if
   they have value labels.  In addition, variables will not be converted
   to factors if there are non-missing values that have no value label.
@@ -124,7 +124,7 @@ read.spss("datafile")
 read.spss("datafile", use.value.labels = FALSE)
 ## convert value labels to factors for variables with at most
 ## ten distinct values.
-read.spss("datafile", max.val.labels = 10)
+read.spss("datafile", max.value.labels = 10)
 }
 }
 \keyword{file}

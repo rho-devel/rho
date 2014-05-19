@@ -1,6 +1,8 @@
 #  File src/library/stats/R/cancor.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -32,7 +34,7 @@ cancor <- function(x, y, xcenter=TRUE, ycenter=TRUE)
 	else xcenter <- rep.int(0, ncx)
     }
     else {
-	xcenter <- rep(xcenter, length.out = ncx)
+	xcenter <- rep_len(xcenter, ncx)
 	x <- x - rep(xcenter, rep.int(nr, ncx))
     }
     if(is.logical(ycenter)) {
@@ -43,8 +45,8 @@ cancor <- function(x, y, xcenter=TRUE, ycenter=TRUE)
 	else ycenter <- rep.int(0, ncy)
     }
     else {
-	ycenter <- rep(ycenter, length.out = ncy)
-	y <- y - rep(ycenter, rep.int(nr,ncy))
+	ycenter <- rep_len(ycenter, ncy)
+	y <- y - rep(ycenter, rep.int(nr, ncy))
     }
     qx <- qr(x)
     qy <- qr(y)

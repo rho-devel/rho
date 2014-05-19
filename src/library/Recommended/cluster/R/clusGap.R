@@ -26,7 +26,8 @@ clusGap <- function (x, FUNcluster, K.max, B = 100, verbose = interactive(), ...
         clus <- if(kk > 1) FUNcluster(X, kk, ...)$cluster else rep.int(1L, nrow(X))
         ##                 ---------- =  =       -------- kmeans() has 'cluster'; pam() 'clustering'
 	0.5* sum(vapply(split(ii, clus),
-			function(I) { xs <- X[I,, drop=FALSE] ; sum(dist(xs)/nrow(xs)) }, 0.))
+			function(I) { xs <- X[I,, drop=FALSE]
+				      sum(dist(xs)/nrow(xs)) }, 0.))
     }
     logW <- E.logW <- SE.sim <- numeric(K.max)
     if(verbose) cat("Clustering k = 1,2,..., K.max (= ",K.max,"): .. ", sep='')
@@ -34,15 +35,18 @@ clusGap <- function (x, FUNcluster, K.max, B = 100, verbose = interactive(), ...
         logW[k] <- log(W.k(x, k))
     if(verbose) cat("done\n")
 
+    ## Scale 'x' into "hypercube" -- we later fill with H0-generated data
     xs <- scale(x, center=TRUE, scale=FALSE)
     m.x <- rep(attr(xs,"scaled:center"), each = n)# for back transforming
     V.sx <- svd(xs)$v
     rng.x1 <- apply(xs %*% V.sx, # = transformed(x)
                     2, range)
+
     logWks <- matrix(0., B, K.max)
     if(verbose) cat("Bootstrapping, b = 1,2,..., B (= ", B,
                     ")  [one \".\" per sample]:\n", sep="")
     for (b in 1:B) {
+        ## Generate "H0"-data as "parametric bootstrap sample" :
         z1 <- apply(rng.x1, 2,
                     function(M, nn) runif(nn, min=M[1], max=M[2]),
                     nn=n)

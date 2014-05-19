@@ -24,7 +24,8 @@ multinom <-
     {
         n <- length(cl)
         x <- matrix(0, n, length(levels(cl)))
-        x[(1L:n) + n * (as.vector(unclass(cl)) - 1L)] <- 1
+        ## get codes of a factor
+        x[(1L:n) + n * (as.integer(cl) - 1L)] <- 1
         dimnames(x) <- list(names(cl), levels(cl))
         x
     }
@@ -76,7 +77,7 @@ multinom <-
         }
         if(length(lev) < 2L)
             stop("need two or more classes to fit a multinom model")
-        if(length(lev) == 2L) Y <- as.vector(unclass(Y)) - 1
+        if(length(lev) == 2L) Y <- as.integer(Y) - 1
         else Y <- class.ind(Y)
     }
     if(summ == 1) {
@@ -143,7 +144,7 @@ multinom <-
                                 entropy=TRUE, rang=0, ...)
         }
     }
-    fit$formula <- as.vector(attr(Terms, "formula"))
+    fit$formula <- attr(Terms, "formula")
     fit$terms <- Terms
     fit$call <- call
     fit$weights <- w
@@ -464,4 +465,5 @@ confint.multinom <- function (object, parm, level = 0.95, ...)
 }
 
 logLik.multinom <- function(object, ...)
-    structure(-0.5 * object$deviance, df = object$edf, class = "logLik")
+    structure(-0.5 * object$deviance, df = object$edf,
+              nobs = sum(object$weights), class = "logLik")

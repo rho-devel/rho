@@ -13,6 +13,7 @@ the basis coefficients. Cyclic P-splines are specified by model terms like \code
 These bases can be used in tensor product smooths (see \code{\link{te}}).
 
 The advantage of P-splines is the flexible way that penalty and basis order can be mixed. This often provides a useful way of `taming' an otherwise poorly behave smooth. However, in regular use, splines with derivative based penalties (e.g. \code{"tp"} or \code{"cr"} bases) tend to result in slightly better MSE performance, presumably because the good approximation theoretic properties of splines are rather closely connected to the use of derivative penalties.  
+
 }
 
 \usage{
@@ -43,13 +44,16 @@ with a third order difference penalty (0th order is a ridge penalty) on the coef
 The default basis dimension, \code{k}, is the larger of 10 and \code{m[1]+1} for a \code{"ps"} terms and the larger of 10 and \code{m[1]} for a \code{"cp"} term. \code{m[1]+1} and \code{m[1]} are the lower limits on basis dimension for the two types. 
 
 If knots are supplied, then the number of knots should be one more than the basis dimension 
-(i.e. \code{k+1}) for a \code{"cp"}smooth. For the \code{"ps"} basis the number of supplied knots should be \code{k + m[1] + 2}, and the range of the middle 
-\code{k-m[1]} knots should include all the covariate values. See example.
+(i.e. \code{k+1}) for a \code{"cp"}smooth. For the \code{"ps"} basis the number of supplied knots should be \code{k + m[1] + 2}, and the range of the middle \code{k-m[1]} knots should include all the covariate values. See example.
 
 Alternatively, for both types of smooth, 2 knots can be supplied, denoting the 
 lower and upper limits between which the spline can be evaluated (Don't make this range too wide, however, or you 
 can end up with no information about some basis coefficients, because the corresponding basis functions have a 
 span that includes no data!). Note that P-splines don't make much sense with uneven knot spacing.
+
+Linear extrapolation is used for prediction that requires extrapolation 
+(i.e. prediction outside the range of the interior \code{k-m[1]} knots). Such extrapolation is not
+allowed in basis construction, but is when predicting.
 }
 
 \references{
@@ -64,6 +68,7 @@ Statistical Science, 11(2):89-121
 \examples{
 ## see ?gam
 ## cyclic example ...
+  require(mgcv)
   set.seed(6)
   x <- sort(runif(200)*10)
   z <- runif(200)

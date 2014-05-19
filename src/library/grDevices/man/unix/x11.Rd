@@ -31,63 +31,63 @@ X11.options(\dots, reset = FALSE)
     The default is to use the value in the user's environment variable
     \env{DISPLAY}.  This is ignored (with a warning) if an X11 device is
     already open on another display.}
-  
+
   \item{width, height}{the width and height of the plotting window, in
     inches.  If \code{NA}, taken from the resources and if
     not specified there defaults to \code{7} inches.  See also
     \sQuote{Resources}.}
-  
+
   \item{pointsize}{the default pointsize to be used.  Defaults to \code{12}.}
-  
+
   \item{gamma}{gamma correction fudge factor.
     Colours in R are sRGB;  if your monitor does not conform to
     sRGB, you might be able to improve things by tweaking this
     parameter to apply additional gamma correction to the RGB channels.
     By default 1 (no additional gamma correction).}
-  
+
   \item{bg}{colour, the initial background colour.  Default
     \code{"transparent"}.}
-  
+
   \item{canvas}{colour.  The colour of the canvas, which is visible only
     when the background colour is transparent.  Should be an opaque colour
     (and any alpha value will be ignored).  Default \code{"white"}.}
-  
+
   \item{fonts}{for \code{type = "Xlib"} only:
     X11 font description strings into which weight, slant and
     size will be substituted.  There are two, the first for fonts 1 to 4
     and the second for font 5, the symbol font.  See section \sQuote{Fonts}.}
-  
+
   \item{family}{The default family: a length-one character string.  This
     is primarily intended for cairo-based devices, but for \code{type =
     "Xlib"}, the \code{\link{X11Fonts}()} database is used to map family
     names to \code{fonts} (and this argument takes precedence over that
     one).}
-  
+
   \item{xpos, ypos}{integer: initial position of the top left corner of the
     window, in pixels.  Negative values are from the opposite corner,
-    e.g. \code{xpos=-100} says the top right corner should be 100 pixels
+    e.g. \code{xpos = -100} says the top right corner should be 100 pixels
     from the right edge of the screen.  If \code{NA} (the default),
     successive devices are cascaded in 20 pixel steps from the top left.
     See also \sQuote{Resources}.}
-  
+
   \item{title}{character string, up to 100 bytes.  With the default,
     \code{""}, a suitable title is created internally.  A C-style format
     for an integer will be substituted by the device number (see the
     \code{file} argument to \code{\link{postscript}} for further
     details).  How non-ASCII titles are handled is
     implementation-dependent.}
-  
+
   \item{type}{character string, one of \code{"Xlib"}, \code{"cairo"},
     \code{"nbcairo"} or \code{"dbcairo"}.  Only the first will be
     available if the system was compiled without support for
     cairographics.  The default is \code{"cairo"} where available except
-    on Mac OS X, otherwise \code{"Xlib"}.}
-  
+    on OS X, otherwise \code{"Xlib"}.}
+
   \item{antialias}{for cairo types, the type of anti-aliasing (if any)
     to be used.  One of \code{c("default", "none", "gray", "subpixel")}.}
-  
+
   \item{reset}{logical: should the defaults be reset to their defaults?}
-  
+
   \item{\dots}{Any of the arguments to \code{X11}, plus \code{colortype}
     and \code{maxcubesize} (see section \sQuote{Colour Rendering}).}
 }
@@ -117,7 +117,7 @@ X11.options(\dots, reset = FALSE)
     plot in many languages on a single figure (and this will work even
     in non-UTF-8 locales).  The output should be locale-independent.
   }
-  
+
   There are three variants of the cairo-based device.  \code{type =
   "nbcairo"} has no buffering.  \code{type = "cairo"} has some
   buffering, and supports \code{\link{dev.hold}} and \code{dev.flush}.
@@ -131,11 +131,11 @@ X11.options(\dots, reset = FALSE)
   Which version will be fastest depends on the X11 connection and the
   type of plotting.  You will probably want to use a buffered type
   unless backing store is in use on the X server (which for example it
-  always is on Mac OS X displays), as otherwise repainting when the
+  always is on OS X displays), as otherwise repainting when the
   window is exposed will be slow.  On slow connections \code{type =
     "dbcairo"} will probably give the best performance.
-  
-  Because of known problems with font selection on Mac OS X without
+
+  Because of known problems with font selection on OS X without
   Pango (for example, the CRAN distribution), \code{type = "cairo"} is
   not the default there.  These problems have included mixing up bold
   and italic (since worked around), selecting incorrect glyphs and ugly
@@ -146,7 +146,7 @@ X11.options(\dots, reset = FALSE)
   internal structures, which means that they must use the same
   \code{display} and visual.  If you want to change display, first close
   all such devices.
-  
+
   The cursor shown indicates the state of the device.  If quiescent the
   cursor is an arrow: when the locator is in use it is a crosshair
   cursor, and when plotting computations are in progress (and this can
@@ -159,7 +159,7 @@ X11.options(\dots, reset = FALSE)
 
   An initial/default font family for the device can be specified via
   the \code{fonts} argument, but if a device-independent R graphics font
-  family is specified (e.g., via \code{par(family=)} in the graphics
+  family is specified (e.g., via \code{par(family =)} in the graphics
   package), the X11 device makes use of the X11 font database (see
   \code{X11Fonts}) to convert the R graphics font family to an
   X11-specific font family description.  If \code{family} is supplied as
@@ -195,7 +195,7 @@ X11.options(\dots, reset = FALSE)
   \code{"Courier"}).
 
   The font selection is handled by \code{Pango} (usually \emph{via}
-  \code{fontconfig}) or \code{fontconfig} (on Mac OS X and perhaps
+  \code{fontconfig}) or \code{fontconfig} (on OS X and perhaps
   elsewhere).  The results depend on the fonts installed on the system
   running \R -- setting the environmnent variable \env{FC_DEBUG} to 1
   normally allows some tracing of the selection process.
@@ -213,7 +213,7 @@ X11.options(\dots, reset = FALSE)
   \code{"FreeSans"}).  For those who prefer fonts with serifs, try
   \code{"Times New Roman"}, \code{"DejaVu Serif"} and \code{"Liberation
   Serif"}.  To match LaTeX text, use something like \code{"CM Roman"}.
-  
+
   %  https://bugs.launchpad.net/ubuntu/+source/fontconfig/+bug/551977
   Problems with incorrect rendering of symbols (e.g. of
   \code{quote(pi)} and \code{expression(10^degree))})
@@ -260,7 +260,7 @@ If that shows \code{symbol.ttf} that may be the Wine symbol font -- use
   black/white.  The palette is shared between all X11 clients, so it can
   be necessary to limit the number of colours used by \R.
 
-  The default for \code{type="Xlib"} is to use the best possible colour
+  The default for \code{type = "Xlib"} is to use the best possible colour
   model for the visual of the X11 server: these days this will almost
   always be \sQuote{truecolor}.  This can be overridden by the
   \code{colortype} argument of \code{X11.options}.  \bold{Note:} All
@@ -268,7 +268,7 @@ If that shows \code{symbol.ttf} that may be the Wine symbol font -- use
   \code{png} and \code{tiff} devices share a \code{colortype} which is
   set when the first device to be opened.  To change the
   \code{colortype} you need to close \emph{all} open such devices, and
-  then use \code{X11.options(colortype=)}.
+  then use \code{X11.options(colortype =)}.
 
   The colortype types are tried in the order \code{"true"},
   \code{"pseudo"}, \code{"gray"} and \code{"mono"} (black or white
@@ -286,7 +286,7 @@ If that shows \code{symbol.ttf} that may be the Wine symbol font -- use
   revert to \code{"mono"}.  For \code{"gray"} the search starts at 256
   grays for a display with depth greater than 8, otherwise with half
   the available colours.  For \code{"pseudo.cube"} the maximum cube size
-  is set by \code{X11.options(maxcolorsize=)} and defaults to
+  is set by \code{X11.options(maxcolorsize =)} and defaults to
   256.  With that setting the largest cube tried is 4 levels each for
   RGB, using 64 colours in the palette.
 
@@ -336,7 +336,7 @@ If that shows \code{symbol.ttf} that may be the Wine symbol font -- use
 \examples{\dontrun{
 ## put something like this is your .Rprofile to customize the defaults
 setHook(packageEvent("grDevices", "onLoad"),
-        function(...) grDevices::X11.options(width=8, height=6, xpos=0,
-                                             pointsize=10))
+        function(...) grDevices::X11.options(width = 8, height = 6, xpos = 0,
+                                             pointsize = 10))
 }}
 \keyword{device}

@@ -1,6 +1,8 @@
 #  File src/library/utils/R/question.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -119,7 +121,7 @@ function(expr, envir, doEval = TRUE)
                           dQuote(class(f)), sQuote(deparse(expr))),
                  domain = NA)
         h <- .tryHelp(f)
-        if(is.null(h)) 
+        if(is.null(h))
             stop(gettextf("no methods for %s and no documentation for it as a function",
                           sQuote(f)),
                  domain = NA)
@@ -166,7 +168,7 @@ function(expr, envir, doEval = TRUE)
         if(methods::is(method, "MethodDefinition")) {
             sigClasses <- method@defined
             if(length(sigClasses) < length(sigNames))
-                sigClasses<-
+                sigClasses <-
                     c(sigClasses,
                       rep.int("ANY", length(sigNames) - length(sigClasses)))
         }

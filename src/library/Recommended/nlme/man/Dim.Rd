@@ -25,7 +25,7 @@ Dim(object, \dots)
 \value{
   will depend on the method function used; see the appropriate documentation.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \note{
   If \code{dim} allowed more than one argument, there would be no
   need for this generic function.

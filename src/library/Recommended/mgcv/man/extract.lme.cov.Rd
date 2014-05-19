@@ -87,6 +87,8 @@ and Hall/CRC Press.
 }
 
 \examples{
+## see also ?formXtViX for use of extract.lme.cov2
+require(mgcv)
 library(nlme)
 data(Rail)
 b <- lme(travel~1,Rail,~1|Rail)

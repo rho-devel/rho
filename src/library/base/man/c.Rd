@@ -1,12 +1,12 @@
 % File src/library/base/man/c.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{c}
 \title{Combine Values into a Vector or List}
 \usage{
-c(\dots, recursive=FALSE)
+c(\dots, recursive = FALSE)
 }
 \alias{c}
 \description{
@@ -24,7 +24,7 @@ c(\dots, recursive=FALSE)
 }
 \details{
   The output type is determined from the highest type of the components
-  in the hierarchy NULL < raw < logical < integer < real < complex < character
+  in the hierarchy NULL < raw < logical < integer < double < complex < character
   < list < expression.  Pairlists are treated as lists, but non-vector
   components (such names and calls) are treated as one-element lists
   which cannot be unlisted even if \code{recursive = TRUE}.
@@ -34,12 +34,12 @@ c(\dots, recursive=FALSE)
   \code{as.vector} is a more intuitive way to do this, but also drops
   names.  Note too that methods other than the default are not required
   to do this (and they will almost certainly preserve a class attribute).
-  
+
   This is a \link{primitive} function.
 }
 \value{
   \code{NULL} or an expression or a vector of an appropriate mode.
-  (With no arguments the value is \code{NULL}.)  
+  (With no arguments the value is \code{NULL}.)
 }
 \section{S4 methods}{
   This function is S4 generic, but with argument list
@@ -70,15 +70,15 @@ c(x)
 as.vector(x)
 
 ## append to a list:
-ll <- list(A = 1, c="C")
+ll <- list(A = 1, c = "C")
 ## do *not* use
-c(ll, d = 1:3) # which is == c(ll, as.list(c(d=1:3))
+c(ll, d = 1:3) # which is == c(ll, as.list(c(d = 1:3))
 ## but rather
-c(ll, d = list(1:3))# c() combining two lists
+c(ll, d = list(1:3))  # c() combining two lists
 
-c(list(A=c(B=1)), recursive=TRUE)
+c(list(A = c(B = 1)), recursive = TRUE)
 
-c(options(), recursive=TRUE)
-c(list(A=c(B=1,C=2), B=c(E=7)), recursive=TRUE)
+c(options(), recursive = TRUE)
+c(list(A = c(B = 1, C = 2), B = c(E = 7)), recursive = TRUE)
 }
 \keyword{manip}

@@ -3,7 +3,7 @@
 #include "dgCMatrix.h"
 /* validate: -> xCMatrix_validate() in ./dgCMatrix.c */
 
-SEXP lcsc_to_matrix(SEXP x)/* <- now a misnomer, rename to lgC_to_matrix() */
+SEXP lgC_to_matrix(SEXP x)
 {
     SEXP ans, pslot = GET_SLOT(x, Matrix_pSym),
 	dn = GET_SLOT(x, Matrix_DimNamesSym);
@@ -27,7 +27,7 @@ SEXP lcsc_to_matrix(SEXP x)/* <- now a misnomer, rename to lgC_to_matrix() */
 }
 
 /* as above,  '1' instead of 'x' slot: */
-SEXP ncsc_to_matrix(SEXP x)/* << rename to ngC_to_matrix() */
+SEXP ngC_to_matrix(SEXP x)
 {
     SEXP ans, pslot = GET_SLOT(x, Matrix_pSym),
 	dn = GET_SLOT(x, Matrix_DimNamesSym);

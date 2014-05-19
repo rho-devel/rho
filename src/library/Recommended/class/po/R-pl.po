@@ -1,0 +1,129 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: class 7.3-3\n"
+"Report-Msgid-Bugs-To: bugs@r-project.org\n"
+"POT-Creation-Date: 2012-09-23 17:22\n"
+"PO-Revision-Date: \n"
+"Last-Translator: Łukasz Daniel <lukasz.daniel@gmail.com>\n"
+"Language-Team: Łukasz Daniel <lukasz.daniel@gmail.com>\n"
+"Language: pl_PL\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"na-Revision-Date: 2012-05-29 07:55+0100\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
+"|| n%100>=20) ? 1 : 2);\n"
+"X-Poedit-SourceCharset: iso-8859-1\n"
+"X-Generator: Poedit 1.5.3\n"
+
+# class/R/SOM.R: 52
+# stop("wrong plot method used")
+# class/R/SOM.R: 62
+# stop("wrong plot method used")
+msgid "wrong plot method used"
+msgstr "błędnie użyta metoda rysowania wykresu"
+
+# class/R/SOM.R: 77
+# stop("'SOM' called with no data")
+msgid "'SOM' called with no data"
+msgstr "'SOM' zostało wywołane bez danych"
+
+# class/R/SOM.R: 83
+# stop("'radii' must be a list of the same length as 'alpha'")
+msgid "'radii' must be a list of the same length as 'alpha'"
+msgstr "'radii' musi być listą tej samej długości co 'alpha'"
+
+# class/R/SOM.R: 92
+# stop("'alpha' and 'radii' do not have the same lengths")
+msgid "'alpha' and 'radii' do not have the same lengths"
+msgstr "'alpha' oraz 'radii' nie posiadają tych samych długości"
+
+# class/R/SOM.R: 108
+# stop("'alpha' and 'radii' do not match")
+msgid "'alpha' and 'radii' do not match"
+msgstr "'alpha' oraz 'radii' nie zgadzają się"
+
+# class/R/knn.R: 24
+# stop("no missing values are allowed")
+# class/R/knn.R: 53
+# stop("no missing values are allowed")
+# class/R/knn.R: 93
+# stop("no missing values are allowed")
+# class/R/lvq.R: 26
+# stop("no missing values are allowed")
+# class/R/lvq.R: 51
+# stop("no missing values are allowed")
+# class/R/lvq.R: 78
+# stop("no missing values are allowed")
+# class/R/lvq.R: 106
+# stop("no missing values are allowed")
+# class/R/lvq.R: 135
+# stop("no missing values are allowed")
+msgid "no missing values are allowed"
+msgstr "żadne brakujące wartości nie są dozwolone"
+
+# class/R/knn.R: 27
+# stop("'train' and 'class' have different lengths")
+# class/R/knn.R: 56
+# stop("'train' and 'class' have different lengths")
+# class/R/knn.R: 96
+# stop("'train' and 'class' have different lengths")
+msgid "'train' and 'class' have different lengths"
+msgstr "'train' oraz 'class' mają różne długości"
+
+# class/R/knn.R: 29
+# stop("dims of 'test' and 'train' differ")
+# class/R/knn.R: 65
+# stop("dims of 'test' and 'train' differ")
+msgid "dims of 'test' and 'train' differ"
+msgstr "wymiary 'test' oraz 'train' różnią się"
+
+# class/R/knn.R: 58
+# warning(gettextf("k = %d exceeds number %d of patterns", k, ntr),
+#                     domain = NA)
+# class/R/knn.R: 98
+# warning(gettextf("k = %d exceeds number %d of patterns", k, ntr-1),
+#                     domain = NA)
+msgid "k = %d exceeds number %d of patterns"
+msgstr "k = %d przekracza liczbę %d ścieżek"
+
+# class/R/knn.R: 63
+# stop(gettextf("k = %d must be at least 1", k), domain = NA)
+# class/R/knn.R: 103
+# stop(gettextf("k = %d must be at least 1", k), domain = NA)
+msgid "k = %d must be at least 1"
+msgstr "k = %d musi być co najmniej 1"
+
+# class/R/lvq.R: 23
+# stop("'x' and 'cl' have different lengths")
+# class/R/lvq.R: 55
+# stop("'x' and 'cl' have different lengths")
+# class/R/lvq.R: 82
+# stop("'x' and 'cl' have different lengths")
+# class/R/lvq.R: 110
+# stop("'x' and 'cl' have different lengths")
+# class/R/lvq.R: 139
+# stop("'x' and 'cl' have different lengths")
+msgid "'x' and 'cl' have different lengths"
+msgstr "'x' oraz 'cl'mają różne długości"
+
+# class/R/lvq.R: 33
+# stop("invalid 'prior'")
+msgid "invalid 'prior'"
+msgstr "niepoprawny 'prior'"
+
+# class/R/lvq.R: 34
+# stop("'prior' is of incorrect length")
+msgid "'prior' is of incorrect length"
+msgstr "'prior' posiada niepoprawną długość"
+
+# class/R/multiedit.R: 26
+# warning("retained set is now too small to proceed")
+msgid "retained set is now too small to proceed"
+msgstr "zachowany zbiór jest teraz zbyt mały aby kontynuować"
+
+# class/R/multiedit.R: 43
+# message(gettextf("pass %s size %d", pass, n2),
+#                            domain = NA)
+msgid "pass %s size %d"
+msgstr "przekazano %s rozmiar %d"

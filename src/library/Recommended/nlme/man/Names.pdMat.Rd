@@ -32,7 +32,7 @@
   if \code{object} has a \code{Dimnames} attribute then the first
   element of this attribute is returned; otherwise \code{NULL}. 
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \section{SIDE EFFECTS}{
   On the left side of an assignment, sets the \code{Dimnames} attribute
   of \code{object} to \code{list(value, value)}.

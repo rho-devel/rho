@@ -19,9 +19,9 @@ my $cs = "[^/%<=>\*+()-]*";
 my $castscope = "\\s*[~!+&\*-]*(?:$cs(?:->$cs)*|\\[[^\\]]*\\]|$brack2)*";
 #print $castscope;
 
-my $constype1 = "ARITHOP_TYPE|apse_bool_t|apse_size_t|char|double|float";
-my $constype2 = "HINSTANCE|iconv_t|int|int_least64_t|Int32|intptr_t|_lli_t|long|N01type";
-my $constype3 = "R_len_t|R_size_t|R_varloc_t|Rboolean|Rbyte|Rconnection|RELOP_TYPE";
+my $constype1 = "ARITHOP_TYPE|apse_bool_t|apse_size_t|char|DL_FUNC|DllInfoInitCall|double|float";
+my $constype2 = "HINSTANCE|hlen|iconv_t|int|int_least64_t|INTt|Int32|intptr_t|_lli_t|long|mode_t|N01type";
+my $constype3 = "R_ExternalRoutine|R_ExternalRoutine2|R_len_t|R_size_t|R_varloc_t|R_xlen_t|Rboolean|Rbyte|Rconnection|RELOP_TYPE";
 my $constype4 = "RNGtype|Rprt_adj|Rrawconn|SEXPTYPE|short|size_t|ssize_t|time_t";
 my $constype5 = "uInt|uint_least64_t|uint64_t|uIntuintptr_t|uintptr_t|uLong";
 my $constype6 = "wchar_t|wint_t|z_off_t";
@@ -46,6 +46,7 @@ while (<>) {
   s/newbuff/new/g;
   s/newconn/new/g;
   s/newd\b/new/g;
+  s/newf\b/new/g;
   s/newi\b/new/g;
   s/newplot/new/g;
   s/newv\b/new/g;

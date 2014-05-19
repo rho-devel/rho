@@ -12,7 +12,7 @@ getCovariate.data.frame <-
 {
   ## Return the primary covariate
   if (!(inherits(form, "formula"))) {
-    stop("\"Form\" must be a formula")
+    stop("'form' must be a formula")
   }
   aux <- getCovariateFormula(form)
   if (length(all.vars(aux)) > 0) {
@@ -49,7 +49,7 @@ getGroups.data.frame <-
   function(object, form = formula(object), level, data, sep = "/")
 {
   if (!missing(data)) {
-    stop( "data argument to data.frame method for getGroups doesn't make sense" )
+    stop( "data argument to \"data.frame\" method for 'getGroups' does not make sense" )
   }
   if (inherits(form, "formula")) {
     grpForm <- getGroupsFormula(form, asList = TRUE, sep = sep)
@@ -63,15 +63,15 @@ getGroups.data.frame <-
     if (any(unlist(lapply(grpForm,
 #                          function(el) length(el[[length(el)]]))) != 1)) {
                           function(el) length(all.vars(el)))) != 1)) {
-      stop("Invalid formula for groups")
+      stop("invalid formula for groups")
     }
     form <- grpForm
   } else if (data.class(form) == "list") {
     if (!all(unlist(lapply(form, function(el) inherits(el, "formula"))))) {
-      stop("Form must have all components as formulas")
+      stop("'form' must have all components as formulas")
     }
   } else {
-    stop("Form can only be a formula, or a list of formulas")
+    stop("'form' can only be a formula, or a list of formulas")
   }
   vlist <- lapply(form,
                   function(x, dat, N) {
@@ -89,14 +89,14 @@ getGroups.data.frame <-
   if (is.character(level)) {
     nlevel <- match(level, names(vlist))
     if (any(aux <- is.na(nlevel))) {
-      stop(paste("Level of", level[aux],"does not match formula \"",
-		 deparse(form), "\""))
+        stop(gettextf("level of %s does not match formula ",
+                      level[aux], sQuote(deparse(form))), domain = NA)
     }
   } else {
     nlevel <- as.numeric(level)
     if (any(aux <- is.na(match(nlevel, 1:ncol(value))))) {
-      stop(paste("level of ", level[aux]," does not match formula \"",
-	       deparse(form), "\""))
+        stop(gettextf("level of %s does not match formula ",
+                      level[aux], sQuote(deparse(form))), domain = NA)
     }
   }
   if (length(nlevel) > 1)  return(value[, nlevel]) # multicolumn selection
@@ -120,7 +120,7 @@ getResponse.data.frame <-
   ## Return the response, the evaluation of the left hand side of a formula
   ## on object
   if (!(inherits(form, "formula") && (length(form) == 3))) {
-    stop("\"Form\" must be a two sided formula")
+    stop("'form' must be a two-sided formula")
   }
   eval(form[[2]], object)
 }
@@ -133,7 +133,7 @@ getGroupsFormula.default <-
 {
   form <- formula(object)
   if (!inherits(form, "formula")){
-    stop("\"Form\" argument must be a formula")
+    stop("'form' argument must be a formula")
   }
   form <- form[[length(form)]]
   if (!((length(form) == 3) && (form[[1]] == as.name("|")))) {
@@ -208,7 +208,7 @@ pairs.compareFits <-
   }
   dims <- dim(object)
   if(dims[3] == 1) {
-    stop("At least two coefficients are needed.")
+    stop("at least two coefficients are needed")
   }
   dn <- dimnames(object)
   coefs <- array(c(object), c(dims[1]*dims[2], dims[3]),
@@ -272,7 +272,7 @@ plot.nls <-
 {
   object <- x
   if (!inherits(form, "formula")) {
-    stop("\"Form\" must be a formula")
+    stop("'form' must be a formula")
   }
   ## constructing data
   allV <- all.vars(asOneFormula(form, id, idLabels))
@@ -287,8 +287,11 @@ plot.nls <-
       data <- eval(alist, sys.parent(1))
     } else {
       if (any(naV <- is.na(match(allV, names(data))))) {
-	stop(paste(allV[naV], "not found in data"))
-      }
+          stop(sprintf(ngettext(sum(naV),
+                                "%s not found in data",
+                                "%s not found in data"),
+                       allV[naV]), domain = NA)
+     }
     }
   } else data <- NULL
   if (inherits(data, "groupedData")) {	# save labels and units, if present
@@ -313,7 +316,7 @@ plot.nls <-
   covF <- getCovariateFormula(form)
   .x <- eval(covF[[2]], data)
   if (!is.numeric(.x)) {
-    stop("Covariate must be numeric")
+    stop("covariate must be numeric")
   }
   argForm <- ~ .x
   argData <- data.frame(.x = .x, check.names = FALSE)
@@ -366,13 +369,13 @@ plot.nls <-
       switch(mode(id),
 	     numeric = {
 	       if ((id <= 0) || (id >= 1)) {
-		 stop("Id must be between 0 and 1")
+		 stop("'id' must be between 0 and 1")
 	       }
 	       as.logical(abs(resid(object, type = idResType)) >
                           -qnorm(id / 2))
 	     },
 	     call = eval(asOneSidedFormula(id)[[2]], data),
-	     stop("\"Id\" can only be a formula or numeric.")
+	     stop("'id' can only be a formula or numeric")
 	     )
     if (is.null(idLabels)) {
       idLabels <- getGroups(object)
@@ -384,11 +387,11 @@ plot.nls <-
 	  as.character(eval(asOneSidedFormula(idLabels)[[2]], data))
       } else if (is.vector(idLabels)) {
 	if (length(idLabels <- unlist(idLabels)) != length(id)) {
-	  stop("\"IdLabels\" of incorrect length")
+	  stop("'idLabels' of incorrect length")
 	}
 	idLabels <- as.character(idLabels)
       } else {
-	stop("\"IdLabels\" can only be a formula or a vector")
+	stop("'idLabels' can only be a formula or a vector")
       }
     }
   }
@@ -615,7 +618,7 @@ plot.Variogram <-
   }
   if (showModel) {
     if (is.null(modVrg)) {
-      stop("No model variogram available, with showModel = TRUE")
+      stop("no model variogram available with 'showModel = TRUE'")
     }
     assign("ltyM", trlLin$lty[lineT])
     assign("colM", trlLin$col[lineT])
@@ -689,7 +692,7 @@ qqnorm.nls <-
 {
   object <- y
   if (!inherits(form, "formula")) {
-    stop("\"Form\" must be a formula")
+    stop("'form' must be a formula")
   }
   ## constructing data
   allV <- all.vars(asOneFormula(form, id, idLabels))
@@ -704,7 +707,10 @@ qqnorm.nls <-
       data <- eval(alist, sys.parent(1))
     } else {
       if (any(naV <- is.na(match(allV, names(data))))) {
-	stop(paste(allV[naV], "not found in data"))
+        stop(sprintf(ngettext(sum(naV),
+                              "%s not found in data",
+                              "%s not found in data"),
+                     allV[naV]), domain = NA)
       }
     }
   } else data <- NULL
@@ -722,7 +728,7 @@ qqnorm.nls <-
   if (is.null(labs) || ((labs != "Standardized residuals") &&
                         (labs != "Normalized residuals") &&
                         (substring(labs, 1, 9) != "Residuals"))) {
-    stop("Only residuals allowed")
+    stop("only residuals allowed")
   }
   if (is.null(args$xlab)) args$xlab <- labs
   if (is.null(args$ylab)) args$ylab <- "Quantiles of standard normal"
@@ -738,7 +744,7 @@ qqnorm.nls <-
       switch(mode(id),
              numeric = {
                if ((id <= 0) || (id >= 1)) {
-                 stop("Id must be between 0 and 1")
+                 stop("'id' must be between 0 and 1")
                }
                if (labs == "Normalized residuals") {
                  as.logical(abs(resid(object, type="normalized"))
@@ -749,7 +755,7 @@ qqnorm.nls <-
                }
              },
              call = eval(asOneSidedFormula(id)[[2]], data),
-             stop("\"Id\" can only be a formula or numeric.")
+             stop("'id' can only be a formula or numeric")
              )
     if (is.null(idLabels)) {
       idLabels <- getGroups(object)
@@ -761,11 +767,11 @@ qqnorm.nls <-
           as.character(eval(asOneSidedFormula(idLabels)[[2]], data))
       } else if (is.vector(idLabels)) {
         if (length(idLabels <- unlist(idLabels)) != length(id)) {
-          stop("\"IdLabels\" of incorrect length")
+          stop("'idLabels' of incorrect length")
         }
         idLabels <- as.character(idLabels)
       } else {
-        stop("\"IdLabels\" can only be a formula or a vector")
+        stop("'idLabels' can only be a formula or a vector")
       }
     }
   }
@@ -807,7 +813,7 @@ Variogram.default <-
   ld <- length(distance)
   lo <- length(object)
   if (ld != round(lo*(lo-1)/2)) {
-    stop("Distance and object have incompatible lengths")
+    stop("'distance' and 'object' have incompatible lengths")
   }
   val <- outer(object, object, function(x,y) ((x - y)^2)/2)
   val <- val[lower.tri(val)]

@@ -1,6 +1,8 @@
 #  File src/library/stats/R/optim.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 2000-12 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -14,10 +16,11 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-optim <- function(par, fn, gr = NULL, ...,
-		  method = c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN", "Brent"),
-		  lower = -Inf, upper = Inf,
-		  control = list(), hessian = FALSE)
+optim <-
+    function(par, fn, gr = NULL, ...,
+             method = c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN", "Brent"),
+             lower = -Inf, upper = Inf,
+             control = list(), hessian = FALSE)
 {
     fn1 <- function(par) fn(par,...)
     gr1 <- if (!is.null(gr)) function(par) gr(par,...)
@@ -55,12 +58,11 @@ optim <- function(par, fn, gr = NULL, ...,
 	any(!is.na(match(c("reltol","abstol"), namc))))
 	warning("method L-BFGS-B uses 'factr' (and 'pgtol') instead of 'reltol' and 'abstol'")
     if(npar == 1 && method == "Nelder-Mead")
-        warning("one-diml optimization by Nelder-Mead is unreliable:\n",
-                "use \"Brent\" or optimize() directly")
+        warning("one-dimensional optimization by Nelder-Mead is unreliable:\nuse \"Brent\" or optimize() directly")
     if(npar > 1 && method == "Brent")
 	stop('method = "Brent" is only available for one-dimensional optimization')
-    lower <- as.double(rep(lower, length.out = npar))
-    upper <- as.double(rep(upper, length.out = npar))
+    lower <- as.double(rep_len(lower, npar))
+    upper <- as.double(rep_len(upper, npar))
     res <- if(method == "Brent") { ## 1-D
         if(any(!is.finite(c(upper, lower))))
            stop("'lower' and 'upper' must be finite values")
@@ -70,9 +72,9 @@ optim <- function(par, fn, gr = NULL, ...,
         res$value <- res$value * con$fnscale
 	c(res, list(counts = c(`function` = NA, gradient = NA),
                     convergence = 0L, message = NULL))
-    } else .Internal(optim(par, fn1, gr1, method, con, lower, upper))
+    } else .External2(C_optim, par, fn1, gr1, method, con, lower, upper)
     if (hessian)
-        res$hessian <- .Internal(optimhess(res$par, fn1, gr1, con))
+        res$hessian <- .External2(C_optimhess, res$par, fn1, gr1, con)
     res
 }
 
@@ -84,5 +86,5 @@ optimHess <- function(par, fn, gr = NULL, ..., control = list())
     con <- list(fnscale = 1, parscale = rep.int(1, npar),
                 ndeps = rep.int(1e-3, npar))
     con[(names(control))] <- control
-    .Internal(optimhess(par, fn1, gr1, con))
+    .External2(C_optimhess, par, fn1, gr1, con)
 }

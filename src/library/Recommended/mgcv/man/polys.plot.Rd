@@ -45,6 +45,7 @@ as being exterior. The routine is provided to facilitate plotting with models co
 }
 \examples{
 ## see also ?mrf for use of z
+require(mgcv)
 data(columb.polys)
 polys.plot(columb.polys)
 }

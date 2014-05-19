@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  file dounzip.c
- *  first part Copyright (C) 2002-11  The R Core Team
+ *  first part Copyright (C) 2002-12  The R Core Team
  *  second part Copyright (C) 1998-2010 Gilles Vollant
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -275,7 +275,7 @@ static SEXP ziplist(const char *zipname)
     err = unzGetGlobalInfo64 (uf, &gi);
     if (err != UNZ_OK)
         error("error %d with zipfile in unzGetGlobalInfo", err);
-    nfiles = gi.number_entry;
+    nfiles = int( gi.number_entry);
     /* name, length, datetime */
     PROTECT(ans = allocVector(VECSXP, 3));
     SET_VECTOR_ELT(ans, 0, names = allocVector(STRSXP, nfiles));
@@ -293,7 +293,7 @@ static SEXP ziplist(const char *zipname)
 	/* In theory at least bit 11 of the flag tells us that the
 	   filename is in UTF-8, so FIXME */
 	SET_STRING_ELT(names, i, mkChar(filename_inzip));
-	REAL(lengths)[i] = file_info.uncompressed_size;
+	REAL(lengths)[i] = double(file_info.uncompressed_size);
 	snprintf(date, 50, "%d-%02d-%02d %02d:%02d",
 		 file_info.tmu_date.tm_year,
 		 file_info.tmu_date.tm_mon + 1,
@@ -314,13 +314,16 @@ static SEXP ziplist(const char *zipname)
     return ans;
 }
 
-
-SEXP attribute_hidden do_unzip(SEXP call, SEXP op, SEXP args, SEXP env)
+/* called from a .External in package 'utils', so managing
+   the R_alloc stack here is prudence */
+extern "C"
+SEXP Runzip(SEXP args)
 {
     SEXP  fn, ans, names = R_NilValue;
     char  zipname[PATH_MAX], dest[PATH_MAX];
     const char *p, **topics = NULL;
     int   i, ntopics, list, overwrite, junk, setTime, rc, nnames = 0;
+    const void *vmax = vmaxget();
 
     if (!isString(CAR(args)) || LENGTH(CAR(args)) != 1)
 	error(_("invalid zip name argument"));
@@ -384,7 +387,7 @@ SEXP attribute_hidden do_unzip(SEXP call, SEXP op, SEXP args, SEXP env)
 	    break;
 	case UNZ_PARAMERROR:
 	case UNZ_INTERNALERROR:
-	    warning(_("internal error in unz code"));
+	    warning("internal error in 'unz' code");
 	    break;
 	case -200:
 	    warning(_("write error in extracting from zip file"));
@@ -396,6 +399,7 @@ SEXP attribute_hidden do_unzip(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(names = lengthgets(names, nnames));
     setAttrib(ans, install("extracted"), names);
     UNPROTECT(3);
+    vmaxset(vmax);
     return ans;
 }
 
@@ -425,7 +429,7 @@ static Rboolean unz_open(Rconnection con)
     strcpy(path, tmp);
     p = Rf_strrchr(path, ':');
     if(!p) {
-	warning(_("invalid description of unz connection"));
+	warning(_("invalid description of 'unz' connection"));
 	return FALSE;
     }
     *p = '\0';
@@ -474,7 +478,7 @@ static size_t unz_read(void *ptr, size_t size, size_t nitems,
 		       Rconnection con)
 {
     unzFile uf = (static_cast<Runzconn>((con->connprivate)))->uf;
-    return unzReadCurrentFile(uf, ptr, size*nitems)/size;
+    return unzReadCurrentFile(uf, ptr, static_cast<unsigned int>(size*nitems))/size;
 }
 
 static int null_vfprintf(Rconnection con, const char *format, va_list ap)
@@ -506,17 +510,17 @@ R_newunz(const char *description, const char *const mode)
 {
     Rconnection newconn;
     newconn = static_cast<Rconnection>( malloc(sizeof(struct Rconn)));
-    if(!newconn) error(_("allocation of unz connection failed"));
+    if(!newconn) error(_("allocation of 'unz' connection failed"));
     newconn->connclass = static_cast<char *>( malloc(strlen("unz") + 1));
     if(!newconn->connclass) {
 	free(newconn);
-	error(_("allocation of unz connection failed"));
+	error(_("allocation of 'unz' connection failed"));
     }
     strcpy(newconn->connclass, "unz");
     newconn->description = static_cast<char *>( malloc(strlen(description) + 1));
     if(!newconn->description) {
 	free(newconn->connclass); free(newconn);
-	error(_("allocation of unz connection failed"));
+	error(_("allocation of 'unz' connection failed"));
     }
     init_con(newconn, description, CE_NATIVE, mode);
 
@@ -533,7 +537,7 @@ R_newunz(const char *description, const char *const mode)
     newconn->connprivate = CXXRNOCAST(void *) malloc(sizeof(struct unzconn));
     if(!newconn->connprivate) {
 	free(newconn->description); free(newconn->connclass); free(newconn);
-	error(_("allocation of unz connection failed"));
+	error(_("allocation of 'unz' connection failed"));
     }
     return newconn;
 }
@@ -2013,14 +2017,14 @@ static int unzOpenCurrentFile3 (unzFile file, int* method,
             pfile_in_zip_read_info->bstream.avail_in       = 
 		pfile_in_zip_read_info->stream.avail_in;
             pfile_in_zip_read_info->bstream.total_in_lo32  = 
-		pfile_in_zip_read_info->stream.total_in;
+		(unsigned int) pfile_in_zip_read_info->stream.total_in;
             pfile_in_zip_read_info->bstream.total_in_hi32  = 0;
             pfile_in_zip_read_info->bstream.next_out       = 
 		(char*)pfile_in_zip_read_info->stream.next_out;
             pfile_in_zip_read_info->bstream.avail_out      = 
 		pfile_in_zip_read_info->stream.avail_out;
             pfile_in_zip_read_info->bstream.total_out_lo32 = 
-		pfile_in_zip_read_info->stream.total_out;
+		(unsigned int) pfile_in_zip_read_info->stream.total_out;
             pfile_in_zip_read_info->bstream.total_out_hi32 = 0;
 
             uTotalOutBefore = pfile_in_zip_read_info->bstream.total_out_lo32;

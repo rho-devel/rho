@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,6 +17,7 @@
 /* Copyright (C) 1995   Berwin A. Turlach <berwin@alphasun.anu.edu.au>
  * Copyright (C) 2000-2 Martin Maechler <maechler@stat.math.ethz.ch>
  * Copyright (C) 2003   The R Foundation
+ * Copyright (C) 2012   The R Core Team
 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,10 +50,6 @@
  *
  * Added  print_level  and end_rule  arguments
  */
-
-/* this includes R.h, hence lots of system headers.
-   Avoid their name, e.g. for heapsort() */
-#include "modreg.h"
 
 /* Variable	name	descri- | Identities from paper
  * name here	paper	ption   | (1-indexing)
@@ -131,7 +128,7 @@ R_heapsort(int low, int up, double *window, int *outlist, int *nrlist,
 }
 
 static void
-inittree(int n, int k, int k2, const double *data, double *window,
+inittree(R_xlen_t n, int k, int k2, const double *data, double *window,
 	 int *outlist, int *nrlist, int print_level)
 {
     int i, k2p1;
@@ -171,13 +168,13 @@ inittree(int n, int k, int k2, const double *data, double *window,
 } /* inittree*/
 
 static void
-toroot(int outvirt, int k, int nrnew, int outnext,
+toroot(int outvirt, int k, R_xlen_t nrnew, int outnext,
        const double *data, double *window, int *outlist, int *nrlist,
        int print_level)
 {
     int father;
 
-    if(print_level >= 2) Rprintf("toroot(%d, %d,%d) ", k, nrnew, outnext);
+    if(print_level >= 2) Rprintf("toroot(%d, %d,%d) ", k, (int) nrnew, outnext);
 
     do {
 	father			  = outvirt/2;
@@ -248,7 +245,7 @@ upperoutupperin(int outvirt, int k,
 }
 
 static void
-upperoutdownin(int outvirt, int k, int nrnew, int outnext,
+upperoutdownin(int outvirt, int k, R_xlen_t nrnew, int outnext,
 	       const double *data, double *window, int *outlist, int *nrlist,
 	       int print_level)
 {
@@ -278,7 +275,7 @@ downoutdownin(int outvirt, int k,
 }
 
 static void
-downoutupperin(int outvirt, int k, int nrnew, int outnext,
+downoutupperin(int outvirt, int k, R_xlen_t nrnew, int outnext,
 	       const double *data, double *window, int *outlist, int *nrlist,
 	       int print_level)
 {
@@ -319,7 +316,7 @@ wentouttwo(int k, double *window, int *outlist, int *nrlist, int print_level)
 						: outlist[j - k2])
 
 static void
-runmedint(int n, int k, int k2, const double *data, double *median,
+runmedint(R_xlen_t n, int k, int k2, const double *data, double *median,
 	  double *window, int *outlist, int *nrlist,
 	  int end_rule, int print_level)
 {
@@ -327,20 +324,20 @@ runmedint(int n, int k, int k2, const double *data, double *median,
      * end_rule == 0: leave values at the end,
      *          otherwise: "constant" end values
      */
-    int i, nrnew, outnext, out, outvirt;
+    int outnext, out, outvirt;
 
     if(end_rule)
-	for(i = 0; i <= k2; median[i++] = window[k]);
+	for(int i = 0; i <= k2; median[i++] = window[k]);
     else {
-	for(i = 0; i <  k2; median[i] = data[i], i++);
+	for(int i = 0; i <  k2; median[i] = data[i], i++);
 	median[k2] = window[k];
     }
     outnext = 0;
-    for(i = k2+1; i < n-k2; i++) {/* compute (0-index) median[i] == X*_{i+1} */
-	out	    = outlist[outnext];
-	nrnew	    = i+k2;
+    for(R_xlen_t i = k2+1; i < n-k2; i++) {/* compute (0-index) median[i] == X*_{i+1} */
+	out  = outlist[outnext];
+	R_xlen_t nrnew = i+k2;
 	window[out] = data[nrnew];
-	outvirt	    = out-k;
+	outvirt	= out-k;
 	if (out > k)
 	    if(data[nrnew] >= window[k])
 		upperoutupperin(outvirt, k, window, outlist, nrlist, print_level);
@@ -361,37 +358,35 @@ runmedint(int n, int k, int k2, const double *data, double *median,
 	outnext	  = (outnext+1)%k;
     }
     if(end_rule)
-	for(i = n-k2; i < n; median[i++] = window[k]);
+	for(R_xlen_t i = n-k2; i < n; median[i++] = window[k]);
     else
-	for(i = n-k2; i < n; median[i] = data[i], i++);
+	for(R_xlen_t i = n-k2; i < n; median[i] = data[i], i++);
 }/* runmedint() */
 
 /* This is the function called from R or S: */
-void Trunmed(Sint *nn,/* = length(data) */
-	     Sint *kk,/* is odd <= nn */
-	     const double *data,
-	     double *median, /* (n) */
-	     Sint   *outlist,/* (k+1) */
-	     Sint   *nrlist,/* (2k+1) */
-	     double *window,/* (2k+1) */
-	     Sint   *end_rule,
-	     Sint   *print_level)
+static void Trunmed(R_xlen_t n,/* = length(data) */
+		    int k,/* is odd <= n */
+		    const double *data,
+		    double *median, /* (n) */
+		    int   *outlist,/* (k+1) */
+		    int   *nrlist,/* (2k+1) */
+		    double *window,/* (2k+1) */
+		    int   end_rule,
+		    int   print_level)
 {
-    int k = (int)*kk,
-	k2 = (k - 1)/2, /* k == *kk == 2 * k2 + 1 */
+    int k2 = (k - 1)/2, /* k == *kk == 2 * k2 + 1 */
 	j;
 
-    inittree ((int)*nn, k, k2, data,
+    inittree (n, k, k2, data,
 	      /* initialize these: */
-	      window, (int *)outlist, (int *)nrlist, (int) *print_level);
+	      window, (int *)outlist, (int *)nrlist, (int) print_level);
 
     /* window[], outlist[], and nrlist[] are all 1-based (indices) */
 
-    if(*print_level) {
+    if(print_level) {
 	Rprintf("After inittree():\n");
 	R_PRINT_4vec();
     }
-    runmedint((int)*nn, k, k2, data, median,
-	      window, (int *)outlist, (int *)nrlist,
-	      (int) *end_rule, (int) *print_level);
+    runmedint(n, k, k2, data, median, window, outlist, nrlist,
+	      end_rule, print_level);
 }

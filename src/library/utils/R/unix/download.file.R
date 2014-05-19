@@ -1,6 +1,8 @@
 #  File src/library/utils/R/unix/download.file.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -40,7 +42,7 @@ download.file <-
             stop("no download method found")
     }
     if(method == "internal") {
-        status <- .Internal(download(url, destfile, quiet, mode, cacheOK))
+        status <- .External(C_download, url, destfile, quiet, mode, cacheOK)
         ## needed for Mac GUI from download.packages etc
         if(!quiet) flush.console()
     } else if(method == "wget") {
@@ -68,5 +70,4 @@ download.file <-
     invisible(status)
 }
 
-nsl <- function(hostname)
-    .Internal(nsl(hostname))
+nsl <- function(hostname) .Call(C_nsl, hostname)

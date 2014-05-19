@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -102,7 +102,7 @@ void GCManager::gcController()
 
     if (s_pre_gc) (*s_pre_gc)();
     GCNode::gc();
-    s_threshold = std::max(size_t(0.9*s_threshold),
+    s_threshold = std::max(size_t(0.9*double(s_threshold)),
 			   std::max(s_min_threshold,
 				    2*MemoryBank::bytesAllocated()));
     if (s_post_gc) (*s_post_gc)();

@@ -1,6 +1,6 @@
 % File src/library/base/man/library.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{library}
@@ -20,12 +20,10 @@
 library(package, help, pos = 2, lib.loc = NULL,
         character.only = FALSE, logical.return = FALSE,
         warn.conflicts = TRUE, quietly = FALSE,
-        keep.source = getOption("keep.source.pkgs"),
         verbose = getOption("verbose"))
 
 require(package, lib.loc = NULL, quietly = FALSE,
         warn.conflicts = TRUE,
-        keep.source = getOption("keep.source.pkgs"),
         character.only = FALSE)
 }
 \arguments{
@@ -50,10 +48,6 @@ require(package, lib.loc = NULL, quietly = FALSE,
     package.  A conflict is a function masking a function,
     or a non-function masking a non-function.
   }
-  \item{keep.source}{logical. Now ignored.
-    This argument does not apply to packages using lazy-loading:
-    whether they have kept source is determined when they are installed.
-  }
   \item{verbose}{a logical.  If \code{TRUE}, additional diagnostics are
     printed.}
   \item{quietly}{a logical.  If \code{TRUE}, no message confirming
@@ -62,22 +56,22 @@ require(package, lib.loc = NULL, quietly = FALSE,
 }
 \details{
   \code{library(package)} and \code{require(package)} both load the
-  package with name \code{package}.  \code{require} is designed for use
+  package with name \code{package} and put it on the search list.
+  \code{require} is designed for use
   inside other functions; it returns \code{FALSE} and gives a warning
   (rather than an error as \code{library()} does by default) if the
   package does not exist.  Both functions check and update the list of
   currently loaded packages and do not reload a package which is already
-  loaded.  (Furthermore, if the package has a namespace and a name
-  space of that name is already loaded, they work from the existing
-  namespace rather than reloading from the file system.  If you want to
+  loaded.  (If you want to
   reload such a package, call \code{\link{detach}(unload = TRUE)} or
-  \code{\link{unloadNamespace}} first.)
+  \code{\link{unloadNamespace}} first.)  If you want to load a package
+  without putting it on the search list, use \code{\link{requireNamespace}}.
 
   To suppress messages during the loading of packages use
   \code{\link{suppressPackageStartupMessages}}: this will suppress all
   messages from \R itself but not necessarily all those from package
   authors.
-  
+
   If \code{library} is called with no \code{package} or \code{help}
   argument, it lists all available packages in the libraries specified
   by \code{lib.loc}, and returns the corresponding information in an
@@ -93,12 +87,6 @@ require(package, lib.loc = NULL, quietly = FALSE,
   \code{"packageInfo"}.  The structure of this class may change in
   future versions.  When used with the default value (\code{NULL}) for
   \code{lib.loc}, the attached packages are searched before the libraries.
-
-  In versions of \R{} prior to 2.14.0, a \code{.First.lib} function 
-  would be called when a package without a namespace was attached.
-  As of 2.14.0, all functions have namespaces; see 
-  \code{\link{.onLoad}} for current behaviour, and \sQuote{Writing R Extensions}
-  for a description of the older mechanism.
 }
 \value{
   Normally \code{library} returns (invisibly) the list of attached
@@ -159,19 +147,20 @@ require(package, lib.loc = NULL, quietly = FALSE,
 
   The package name given to \code{library} and \code{require} must match
   the name given in the package's \file{DESCRIPTION} file exactly, even
-  on case-insensitive file systems such as are common on MS Windows and
-  Mac OS X.
+  on case-insensitive file systems such as are common on Windows and
+  OS X.
 }
 \seealso{
   \code{\link{.libPaths}}, \code{\link{.packages}}.
 
   \code{\link{attach}}, \code{\link{detach}}, \code{\link{search}},
-  \code{\link{objects}}, \code{\link{autoload}},
+  \code{\link{objects}}, \code{\link{autoload}}, 
+  \code{\link{requireNamespace}},
   \code{\link{library.dynam}}, \code{\link{data}},
   \code{\link{install.packages}} and
   \code{\link{installed.packages}};
   \code{\link{INSTALL}}, \code{\link{REMOVE}}.
-
+  
   The initial set of packages attached is set by
   \code{\link{options}(defaultPackages=)}: see also \code{\link{Startup}}.
 }
@@ -192,10 +181,10 @@ detach("package:splines")
 # if the package name is in a character vector, use
 pkg <- "splines"
 library(pkg, character.only = TRUE)
-detach(pos = match(paste("package", pkg, sep=":"), search()))
+detach(pos = match(paste("package", pkg, sep = ":"), search()))
 
 require(pkg, character.only = TRUE)
-detach(pos = match(paste("package", pkg, sep=":"), search()))
+detach(pos = match(paste("package", pkg, sep = ":"), search()))
 
 require(nonexistent)        # FALSE
 \dontrun{

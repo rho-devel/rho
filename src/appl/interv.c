@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -43,28 +43,12 @@
 #include <R_ext/Boolean.h>
 #include <R_ext/Utils.h>
 
-/* This is called from bvalue() and others in ../library/modreg/src/ : */
+/* This is called from stats/src/bvalue.f, and packages gam and mda */
 int F77_SUB(interv)(double *xt, int *n, double *x,
 		    Rboolean *rightmost_closed, Rboolean *all_inside,
 		    int *ilo, int *mflag)
 {
   return findInterval(xt, *n, *x, *rightmost_closed, *all_inside, *ilo, mflag);
-}
-
-/* This one to be called from R {via .C(..)} :
- * FIXME: Replace by a .Call()able version!
- */
-void find_interv_vec(double *xt, int *n,	double *x,  int *nx,
-		     int *rightmost_closed, int *all_inside, int *indx)
-{
-    int i, ii, mfl;
-    ii = 1;
-    for(i=0; i < *nx; i++) {
-	mfl = *all_inside;
-	ii = findInterval(xt, *n, x[i],
-			  *rightmost_closed, *all_inside, ii,  &mfl);
-	indx[i] = ii;
-    }
 }
 
 int findInterval(double *xt, int n, double x,

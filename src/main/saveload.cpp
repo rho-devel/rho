@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2011  The R Core Team
+ *  Copyright (C) 1997--2013  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@
 
 #define NEED_CONNECTION_PSTREAMS
 #include <Defn.h>
+#include <Internal.h>
 #include <Rinterface.h>
 #include <Rmath.h>
 #include <Fileio.h>
@@ -290,7 +291,7 @@ static char *AsciiInString(FILE *fp, SaveLoadData *d)
 	    default:  break;
 	    }
 	}
-	*bufp++ = c;
+	*bufp++ = char( c);
     }
     *bufp = '\0';
     return d->buffer.data;
@@ -367,7 +368,7 @@ static Rcomplex XdrInComplex(FILE * fp, SaveLoadData *d)
 static char *XdrInString(FILE *fp, SaveLoadData *d)
 {
     char *bufp = d->buffer.data;
-    if (!xdr_string(&d->xdrs, &bufp, d->buffer.bufsize)) {
+    if (!xdr_string(&d->xdrs, &bufp, static_cast<unsigned int>(d->buffer.bufsize))) {
 	xdr_destroy(&d->xdrs);
 	error(_("a S read error occurred"));
     }
@@ -418,7 +419,7 @@ static char *BinaryInString(FILE *fp, SaveLoadData *d)
 {
     char *bufp = d->buffer.data;
     do {
-	*bufp = R_fgetc(fp);
+	*bufp = char( R_fgetc(fp));
     }
     while (*bufp++);
     return d->buffer.data;
@@ -832,7 +833,7 @@ static SEXP NewLoadSpecialHook (SEXPTYPE type)
 
 #define HASHSIZE 1099
 
-#define PTRHASH(obj) ((uintptr_t( (obj))) >> 2)
+#define PTRHASH(obj) ((R_size_t( (obj))) >> 2)
 
 #define HASH_TABLE_KEYS_LIST(ht) CAR(ht)
 #define SET_HASH_TABLE_KEYS_LIST(ht, v) SETCAR(ht, v)
@@ -864,7 +865,7 @@ static void FixHashEntries(SEXP ht)
 
 static void HashAdd(SEXP obj, SEXP ht)
 {
-    int pos = PTRHASH(obj) % HASH_TABLE_SIZE(ht);
+    R_size_t pos = PTRHASH(obj) % HASH_TABLE_SIZE(ht);
     int count = HASH_TABLE_COUNT(ht) + 1;
     SEXP val = ScalarInteger(count);
     SEXP cell = CONS(val, HASH_BUCKET(ht, pos));
@@ -878,7 +879,7 @@ static void HashAdd(SEXP obj, SEXP ht)
 
 static int HashGet(SEXP item, SEXP ht)
 {
-    int pos = PTRHASH(item) % HASH_TABLE_SIZE(ht);
+    R_size_t pos = PTRHASH(item) % HASH_TABLE_SIZE(ht);
     SEXP cell;
     for (cell = HASH_BUCKET(ht, pos); cell != R_NilValue; cell = CDR(cell))
 	if (item == TAG(cell))
@@ -1173,7 +1174,7 @@ static SEXP InCHARSXP (FILE *fp, InputRoutines *m, SaveLoadData *d)
 {
     SEXP s;
     char *tmp;
-    int len;
+    size_t len;
 
     /* FIXME: rather than use strlen, use actual length of string when
      * sized strings get implemented in R's save/load code.  */
@@ -1229,14 +1230,14 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 {
     SEXPTYPE type;
     SEXP s;
-    int pos, levs, objf;
+    int pos, levs;
 
     R_assert(TYPEOF(sym_table) == VECSXP && TYPEOF(env_table) == VECSXP);
     type = CXXRCONSTRUCT(SEXPTYPE, m->InInteger(fp, d));
     if ((s = NewLoadSpecialHook(type)))
 	return s;
     levs = m->InInteger(fp, d);
-    objf = m->InInteger(fp, d);
+    /*objf =*/ m->InInteger(fp, d);
     switch (type) {
     case SYMSXP:
 	pos = m->InInteger(fp, d);
@@ -1318,7 +1319,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
     default:
 	error(_("NewReadItem: unknown type %i"), type);
     }
-    SETLEVELS(s, levs);
+    SETLEVELS(s, static_cast<unsigned short>( levs));
     SET_ATTRIB(s, NewReadItem(sym_table, env_table, fp, m, d));
     UNPROTECT(1); /* s */
     return s;
@@ -1418,9 +1419,9 @@ static int InIntegerAscii(FILE *fp, SaveLoadData *unused)
 
 static void OutStringAscii(FILE *fp, const char *x, SaveLoadData *unused)
 {
-    int i, nbytes;
+    size_t i, nbytes;
     nbytes = strlen(x);
-    fprintf(fp, "%d ", nbytes);
+    fprintf(fp, "%d ", int( nbytes));
     for (i = 0; i < nbytes; i++) {
 	switch(x[i]) {
 	case '\n': fprintf(fp, "\\n");  break;
@@ -1494,13 +1495,13 @@ static char *InStringAscii(FILE *fp, SaveLoadData *unused)
 		    c = fgetc(fp);
 		    j++;
 		}
-		buf[i] = d;
+		buf[i] = char( d);
 		ungetc(c, fp);
 		break;
-	    default  : buf[i] = c;
+	    default  : buf[i] = char( c);
 	    }
 	}
-	else buf[i] = c;
+	else buf[i] = char( c);
     }
     buf[i] = '\0';
     return buf;
@@ -1683,7 +1684,7 @@ static int InIntegerXdr(FILE *fp, SaveLoadData *d)
 
 static void OutStringXdr(FILE *fp, const char *s, SaveLoadData *d)
 {
-    unsigned int n = strlen(s);
+    unsigned int n = static_cast<unsigned int>( strlen(s));
     char *t = CallocCharBuf(n);
     bool_t res;
     /* This copy may not be needed, will xdr_bytes ever modify 2nd arg? */
@@ -1801,10 +1802,10 @@ static void R_WriteMagic(FILE *fp, int number)
 	strcpy(reinterpret_cast<char*>(buf), "RDX2");
 	break;
     default:
-	buf[0] = (number/1000) % 10 + '0';
-	buf[1] = (number/100) % 10 + '0';
-	buf[2] = (number/10) % 10 + '0';
-	buf[3] = number % 10 + '0';
+	buf[0] = static_cast<unsigned char>((number/1000) % 10 + '0');
+	buf[1] = static_cast<unsigned char>((number/100) % 10 + '0');
+	buf[2] = static_cast<unsigned char>((number/10) % 10 + '0');
+	buf[3] = static_cast<unsigned char>(number % 10 + '0');
     }
     buf[4] = '\n';
     res = fwrite(reinterpret_cast<char*>(buf), sizeof(char), 5, fp);
@@ -1814,7 +1815,8 @@ static void R_WriteMagic(FILE *fp, int number)
 static int R_ReadMagic(FILE *fp)
 {
     unsigned char buf[6];
-    int d1, d2, d3, d4, count;
+    int d1, d2, d3, d4;
+    size_t count;
 
     count = fread(reinterpret_cast<char*>(buf), sizeof(char), 5, fp);
     if (count != 5) {
@@ -2290,7 +2292,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 	if (con->text)
 	    Rconn_printf(con, "%s", magic);
 	else {
-	    CXXRUNSIGNED int len = strlen(magic);
+	    size_t len = strlen(magic);
 	    if (len != con->write(magic, 1, len, con))
 		error(_("error writing to connection"));
 	}
@@ -2328,16 +2330,19 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 
 /* Read and checks the magic number, open the connection if needed */
 
+extern int R_ReadItemDepth;
+extern int R_InitReadItemDepth;
+
 SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    /* loadFromConn2(conn, environment) */
+    /* loadFromConn2(conn, environment, verbose) */
 
     struct R_inpstream_st in;
     Rconnection con;
     SEXP aenv;
     GCStackRoot<> res(0);
     unsigned char buf[6];
-    int count;
+    size_t count;
     Rboolean wasopen;
 
     checkArity(op, args);
@@ -2370,7 +2375,9 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
 	    strncmp(reinterpret_cast<char*>(buf), "RDX2\n", 5) == 0) {
 	    R_InitConnInPStream(&in, con, R_pstream_any_format, NULL, NULL);
 	    GCStackRoot<> unser(R_Unserialize(&in));
+	    R_InitReadItemDepth = R_ReadItemDepth = -asInteger(CADDR(args));
 	    res = RestoreToEnv(unser, aenv);
+	    R_ReadItemDepth = 0;
 	    if(!wasopen)
 		con->close(con);
 	} else

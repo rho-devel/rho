@@ -49,19 +49,78 @@ setMethod("forceSymmetric", signature(x="sparseMatrix"),
 	      callGeneric()
 	  })
 
+forceCspSymmetric <- function(x, uplo, isTri = is(x, "triangularMatrix"))
+{
+    ## isTri ==> effectively *diagonal*
+    if(isTri && x@diag == "U")
+	x <- .Call(Csparse_diagU2N, x)
+    if(missing(uplo))
+	uplo <- if(isTri) x@uplo else "U"
+    .Call(Csparse_general_to_symmetric, x, uplo)
+}
 setMethod("forceSymmetric", signature(x="CsparseMatrix"),
-	  function(x, uplo) {
-	      isTri <- is(x, "triangularMatrix")
-	      if (isTri && x@diag == "U")
-		  x <- .Call(Csparse_diagU2N, x)
-	      if(missing(uplo))
-		  uplo <- if(isTri) x@uplo else "U"
-	      .Call(Csparse_general_to_symmetric, x, uplo)
-          })
+	  function(x, uplo) forceCspSymmetric(x, uplo))
 
 
 setMethod("symmpart", signature(x = "symmetricMatrix"), function(x) x)
 setMethod("skewpart", signature(x = "symmetricMatrix"), setZero)
+
+###------- pack() and unpack() --- for *dense*  symmetric & triangular matrices:
+packM <-  function(x, Mtype, kind, unpack) {
+    cd <- getClassDef(cx <- class(x))
+    if(extends(cd, "sparseMatrix"))
+	stop(sprintf("(un)packing only applies to dense matrices, class(x)='%s'",
+		     cx))
+    if(!missing(kind) && kind == "symmetric") { ## use 'unpack' but not 'Mtype'
+	## special treatment for positive definite ones:
+	as(x, if(unpack) {
+	    if(extends(cd, "dppMatrix")) "dpoMatrix"
+	    else paste0(.M.kindC(cd), "syMatrix")
+	} else { ## !unpack : "pack" :
+	    if(extends(cd, "dpoMatrix")) "dppMatrix"
+	    else paste0(.M.kindC(cd), "spMatrix")
+	})
+    } else as(x, paste0(.M.kindC(cd), Mtype))
+}
+setMethod("unpack", "symmetricMatrix", function(x, ...)
+	  packM(x, kind="symmetric", unpack=TRUE))
+setMethod("pack",   "symmetricMatrix", function(x, ...)
+	  packM(x, kind="symmetric", unpack=FALSE))
+setMethod("unpack", "triangularMatrix", function(x, ...) packM(x,"trMatrix"))
+setMethod("pack",   "triangularMatrix", function(x, ...) packM(x,"tpMatrix"))
+## to produce a nicer error message:
+pckErr <- function(x, ...)
+    stop(sprintf("(un)packing only applies to dense matrices, class(x)='%s'",
+		 class(x)))
+setMethod("unpack", "sparseMatrix", pckErr)
+setMethod("pack",   "sparseMatrix", pckErr)
+rm(pckErr)
+
+##' pack (<matrix>)  -- smartly:
+setMethod("pack", signature(x = "matrix"),
+	  function(x, symmetric=NA, upperTri = NA, ...) {
+	      if(is.na(symmetric)) ## must guess symmetric / triangular
+		  symmetric <- isSymmetric.matrix(x)
+	      if(symmetric) {
+		  pack(.Call(dense_to_symmetric, x, "U", TRUE), ...)
+	      } else { # triangular
+		  ## isTriMat(..) : should still check fully (speed up ?) ..
+		  if(isTr <- isTriMat(x, upper=upperTri)) {
+		      uplo <- attr(isTr, "kind")
+		      pack(new(paste0(.M.kind(x),"tpMatrix"),
+			       x = x[indTri(nrow(x), upper=(uplo == "U"), diag=TRUE)],
+			       Dim = dim(x), Dimnames = .M.DN(x), uplo = uplo), ...)
+		  } else
+		      stop("'x' is not symmetric nor triangular")
+	      }
+	  })
+
+## {"traditional"} specific methods
+setMethod("unpack", signature(x = "dspMatrix"),
+          function(x, ...) as(x, "dsyMatrix"), valueClass = "dsyMatrix")
+setMethod("unpack", signature(x = "dtpMatrix"),
+          function(x, ...) as(x, "dtrMatrix"), valueClass = "dtrMatrix")
+###
 
 
 ## autogenerate coercions

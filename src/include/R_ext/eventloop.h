@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -31,6 +31,13 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
+ */
+
+/* 
+   For use by alternative front-ends and packages which need to share
+   the R event loop (on all platforms).
+
+   Not part of the API and subject to change without notice.
  */
 
 #ifndef R_EXT_EVENTLOOP_H

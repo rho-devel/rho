@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -38,7 +38,7 @@
 #include <R.h>
 #include "modreg.h"
 
-SEXP R_isoreg(SEXP y)
+SEXP isoreg(SEXP y)
 {
     int n = LENGTH(y), i, ip, known, n_ip;
     double tmp, slope;
@@ -77,7 +77,8 @@ SEXP R_isoreg(SEXP y)
 	    REAL(yf)[i] = (REAL(yc)[ip] - REAL(yc)[known]) / (ip - known);
     } while ((known = ip) < n);
 
-    SETLENGTH(iKnots, n_ip);
+    if (n_ip < n)
+	SET_VECTOR_ELT(ans, 3, lengthgets(iKnots, n_ip));
     UNPROTECT(1);
     return(ans);
 }

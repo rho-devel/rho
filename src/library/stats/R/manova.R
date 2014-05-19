@@ -1,6 +1,8 @@
 #  File src/library/stats/R/manova.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -17,16 +19,16 @@
 manova <- function(...)
 {
     Call <- fcall <- match.call()
-    fcall[[1L]] <- as.name("aov")
+    fcall[[1L]] <- quote(stats::aov)
     result <- eval(fcall, parent.frame())
     if(inherits(result, "aovlist")) {
         for(i in seq_along(result)) {
-            if(!inherits(result[[i]], "maov")) stop("need multiple response")
+            if(!inherits(result[[i]], "maov")) stop("need multiple responses")
             class(result[[i]]) <- c("manova", oldClass(result[[i]]))
         }
         attr(result, "call") <- Call
     } else {
-        if(!inherits(result, "maov")) stop("need multiple response")
+        if(!inherits(result, "maov")) stop("need multiple responses")
         class(result) <- c("manova", oldClass(result))
         result$call <- Call
     }
@@ -39,7 +41,9 @@ summary.manova <-
              intercept = FALSE, tol = 1e-7, ...)
 {
     if(!inherits(object, "maov"))
-        stop("object must be of class \"manova\" or \"maov\"")
+        stop(gettextf("object must be of class %s or %s",
+                      dQuote("manova"), dQuote("maov")),
+             domain = NA)
     test <- match.arg(test)
 
     asgn <- object$assign[object$qr$pivot[1L:object$rank]]

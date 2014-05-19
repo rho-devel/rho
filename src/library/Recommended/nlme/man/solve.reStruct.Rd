@@ -29,7 +29,7 @@
   matrices represented by the components of \code{a}.
 }
 
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{solve.pdMat}}, \code{\link{reStruct}}}
 

@@ -29,7 +29,7 @@ make.unique(names, sep = ".")
   In other words, you can append one string at a time to a vector,
   making it unique each time, and get the same result as applying
   \code{make.unique} to all of the strings at once.
-    
+
   If character vector \code{A} is already unique, then
   \code{make.unique(c(A, B))} preserves \code{A}.
 }
@@ -44,7 +44,7 @@ make.unique(c(make.unique(c("a", "a")), "a"))
 make.unique(c("a", "a", "a.2", "a"))
 make.unique(c(make.unique(c("a", "a")), "a.2", "a"))
 
-rbind(data.frame(x=1), data.frame(x=2), data.frame(x=3))
-rbind(rbind(data.frame(x=1), data.frame(x=2)), data.frame(x=3))
+rbind(data.frame(x = 1), data.frame(x = 2), data.frame(x = 3))
+rbind(rbind(data.frame(x = 1), data.frame(x = 2)), data.frame(x = 3))
 }
 \keyword{character}

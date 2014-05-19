@@ -1,6 +1,8 @@
 #  File src/library/base/R/unix/system.unix.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -42,7 +44,7 @@ system <- function(command, intern = FALSE,
         on.exit(unlink(f))
         writeLines(input, f)
         # cat(input, file=f, sep="\n")
-        command <- paste(command, "<", f)
+        command <- paste(command, "<", shQuote(f))
     }
     if(!wait && !intern) command <- paste(command, "&")
     .Internal(system(command, intern))
@@ -96,12 +98,13 @@ system2 <- function(command, args = character(),
         on.exit(unlink(f))
         writeLines(input, f)
         # cat(input, file=f, sep="\n")
-        command <- paste(command, "<", f)
+        command <- paste(command, "<", shQuote(f))
     } else if (nzchar(stdin)) command <- paste(command, "<", stdin)
     if(!wait && !intern) command <- paste(command, "&")
     .Internal(system(command, intern))
 }
 
+## Some people try to use this with NA inputs (PR#15147)
 Sys.which <- function(names)
 {
     res <- character(length(names)); names(res) <- names
@@ -111,11 +114,11 @@ Sys.which <- function(names)
         warning("'which' was not found on this platform")
         return(res)
     }
-    for(i in names) {
-        ## NB: this does not quote names, so user has to.
-        ## This is documented as from R 2.15.1
-        ans <- suppressWarnings(system(paste(which, i), intern=TRUE,
-                                       ignore.stderr=TRUE))
+    for(i in seq_along(names)) {
+        if(is.na(names[i])) {res[i] <- NA; next}
+        ## Quoting was added in 3.0.0
+        ans <- suppressWarnings(system(paste(which, shQuote(names[i])),
+                                       intern = TRUE, ignore.stderr = TRUE))
         ## Solaris' which gives 'no foo in ...' message on stdout,
         ## GNU which does it on stderr
         if(grepl("solaris", R.version$os)) {

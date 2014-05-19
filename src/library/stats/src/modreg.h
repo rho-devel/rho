@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -38,59 +38,47 @@
 #define R_MODREG_H
 
 #include <R.h>
-/* for Sint .. */
 #include <Rinternals.h>
-/* FIXME: shouldn't we  do the  ENABLE_NLS .. include <libintl.h> part here? */
+#ifdef ENABLE_NLS
+#include <libintl.h>
+#define _(String) dgettext ("stats", String)
+#else
+#define _(String) (String)
+#endif
 
-SEXP R_isoreg(SEXP y);
+SEXP isoreg(SEXP y);
 
 /* monoSpl.c : */
-SEXP R_monoFC_m(SEXP m, SEXP Sx);
+SEXP monoFC_m(SEXP m, SEXP Sx);
 void monoFC_mod(double *m, double Sx[], int n);
 
-void BDRksmooth(double *x, double *y, int *n,
-		double *xp, double *yp, int *np,
-		int *kern, double *bandwidth);
-
 void
-loess_raw(double *y, double *x, double *weights, double *robust, Sint *d,
-	  Sint *n, double *span, Sint *degree, Sint *nonparametric,
-	  Sint *drop_square, Sint *sum_drop_sqr, double *cell,
-	  char **surf_stat, double *surface, Sint *parameter,
-	  Sint *a, double *xi, double *vert, double *vval, double *diagonal,
-	  double *trL, double *one_delta, double *two_delta, Sint *setLf);
+loess_raw(double *y, double *x, double *weights, double *robust, int *d,
+	  int *n, double *span, int *degree, int *nonparametric,
+	  int *drop_square, int *sum_drop_sqr, double *cell,
+	  char **surf_stat, double *surface, int *parameter,
+	  int *a, double *xi, double *vert, double *vval, double *diagonal,
+	  double *trL, double *one_delta, double *two_delta, int *setLf);
 void
 loess_dfit(double *y, double *x, double *x_evaluate, double *weights,
-	   double *span, Sint *degree, Sint *nonparametric,
-	   Sint *drop_square, Sint *sum_drop_sqr,
-	   Sint *d, Sint *n, Sint *m, double *fit);
+	   double *span, int *degree, int *nonparametric,
+	   int *drop_square, int *sum_drop_sqr,
+	   int *d, int *n, int *m, double *fit);
 void
 loess_dfitse(double *y, double *x, double *x_evaluate, double *weights,
-	     double *robust, Sint *family, double *span, Sint *degree,
-	     Sint *nonparametric, Sint *drop_square,
-	     Sint *sum_drop_sqr,
-	     Sint *d, Sint *n, Sint *m, double *fit, double *L);
+	     double *robust, int *family, double *span, int *degree,
+	     int *nonparametric, int *drop_square,
+	     int *sum_drop_sqr,
+	     int *d, int *n, int *m, double *fit, double *L);
 void
-loess_ifit(Sint *parameter, Sint *a, double *xi, double *vert,
-	   double *vval, Sint *m, double *x_evaluate, double *fit);
+loess_ifit(int *parameter, int *a, double *xi, double *vert,
+	   double *vval, int *m, double *x_evaluate, double *fit);
 void
 loess_ise(double *y, double *x, double *x_evaluate, double *weights,
-	  double *span, Sint *degree, Sint *nonparametric,
-	  Sint *drop_square, Sint *sum_drop_sqr, double *cell,
-	  Sint *d, Sint *n, Sint *m, double *fit, double *L);
+	  double *span, int *degree, int *nonparametric,
+	  int *drop_square, int *sum_drop_sqr, double *cell,
+	  int *d, int *n, int *m, double *fit, double *L);
 
-void Srunmed(double *y, double *smo,
-	     Sint *n, Sint *band, Sint *end_rule, Sint *debug);
-
-void Trunmed(Sint *nn,/* = length(data) */
-	     Sint *kk,/* is odd <= nn */
-	     const double *data,
-	     double *median, /* (n) */
-	     Sint   *outlist,/* (k+1) */
-	     Sint   *nrlist,/* (2k+1) */
-	     double *window,/* (2k+1) */
-	     Sint   *end_rule,
-	     Sint   *print_level);
 void kmeans_Lloyd(double *x, int *pn, int *pp, double *cen, int *pk, int *cl,
 		  int *pmaxiter, int *nc, double *wss);
 
@@ -111,12 +99,12 @@ void F77_SUB(smart)(int *m, int *mu, int *p, int * q, int *n,
 void F77_SUB(setsmu)(void);
 void F77_SUB(pppred)(int *np, double *x, double *smod,
 		     double *y, double *sc);
-void F77_SUB(qsbart)(double *penalt, double *dofoff,
-		     double *xs, double *ys, double *ws, double *ssw,
-		     int *n, double *knot, int *nk, double *coef,
-		     double *sz, double *lev, double *crit, int *iparms,
-		     double *spar, double *parms, int *isetup,
-		     double *scrtch, int *ld4, int *ldnk, int *ier);
+void F77_SUB(rbart)(double *penalt, double *dofoff,
+		    double *xs, double *ys, double *ws, double *ssw,
+		    int *n, double *knot, int *nk, double *coef,
+		    double *sz, double *lev, double *crit, int *iparms,
+		    double *spar, double *parms,
+		    double *scrtch, int *ld4, int *ldnk, int *ier);
 
 void F77_NAME(sbart)
     (double *penalt, double *dofoff,

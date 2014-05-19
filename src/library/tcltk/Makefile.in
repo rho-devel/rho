@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -42,8 +42,8 @@ all: Makefile DESCRIPTION
 	@$(MKINSTALLDIRS) $(top_builddir)/library/$(pkg)/R
 	@(f=$${TMPDIR:-/tmp}/R$$$$; \
 	  if test @use_tcltk@ = yes; then \
-	    cat $(RSRC) > $${f}; \
-	    $(SHELL) $(top_srcdir)/tools/move-if-change $${f} all.R ; \
+	    cat $(RSRC) > "$${f}"; \
+	    $(SHELL) $(top_srcdir)/tools/move-if-change "$${f}" all.R ; \
 	  else \
 	    $(SHELL) $(top_srcdir)/tools/copy-if-change \
 	      $(srcdir)/R/unix/zzzstub.R \
@@ -51,7 +51,7 @@ all: Makefile DESCRIPTION
 	  fi)
 	@$(INSTALL_DATA) $(srcdir)/NAMESPACE $(top_builddir)/library/$(pkg)
 	@rm -f $(top_builddir)/library/$(pkg)/Meta/nsInfo.rds
-	@$(MAKE) mkdesc mkexec mkdemos mkpo
+	@$(MAKE) mkdesc mkexec mkdemos
 	@if test -d src -a @use_tcltk@ = yes; then \
 	  (cd src && $(MAKE)) || exit 1; \
 	fi

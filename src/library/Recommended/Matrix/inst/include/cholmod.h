@@ -277,7 +277,7 @@ typedef struct cholmod_common_struct
      *	    i = 0: user-provided ordering (cholmod_analyze_p only)
      *	    i = 1: AMD (for both A and A*A')
      *	    i = 2: METIS
-ou     *	    i = 3: CHOLMOD's nested dissection (NESDIS), default parameters
+     *	    i = 3: CHOLMOD's nested dissection (NESDIS), default parameters
      *	    i = 4: natural
      *	    i = 5: NESDIS with nd_small = 20000
      *	    i = 6: NESDIS with nd_small = 4, no constrained minimum degree

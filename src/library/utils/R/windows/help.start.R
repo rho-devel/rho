@@ -1,6 +1,8 @@
 #  File src/library/utils/R/windows/help.start.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -22,11 +24,11 @@ help.start <-
         if (tools:::httpdPort == 0L) tools::startDynamicHelp()
         if (tools:::httpdPort > 0L) {
             if (update) make.packages.html(temp = TRUE)
-            paste("http://127.0.0.1:", tools:::httpdPort, sep = "")
+            paste0("http://127.0.0.1:", tools:::httpdPort)
         } else stop("help.start() requires the HTTP server to be running",
                     call. = FALSE)
     } else remote
-    url <- paste(home, "/doc/html/index.html", sep = "")
+    url <- paste0(home, "/doc/html/index.html")
     cat(gettextf("If nothing happens, you should open\n%s yourself\n",
                  sQuote(url)))
     browseURL(url, browser = browser)
@@ -45,8 +47,8 @@ browseURL <- function(url, browser = getOption("browser"), encodeIfNeeded=FALSE)
     else {
         if(!is.character(browser) || length(browser) != 1L || !nzchar(browser))
         stop("'browser' must be a non-empty character string")
-        cmd <- paste('"', browser, '" ',
-                     if(encodeIfNeeded) URLencode(url) else url, sep="")
+        cmd <- paste0('"', browser, '" ',
+                     if(encodeIfNeeded) URLencode(url) else url)
         system(cmd, wait=FALSE)
     }
 }

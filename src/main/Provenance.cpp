@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -140,7 +140,7 @@ Provenance::parents() const
 {
     CommandChronicle::ParentVector::const_iterator bgn
 	= m_chronicle->bindingsRead().begin();
-    return make_pair(bgn, bgn + m_num_parents);
+    return make_pair(bgn, bgn + std::ptrdiff_t(m_num_parents));
 }
 
 void Provenance::setXenogenous(const RObject* value)
@@ -151,7 +151,7 @@ void Provenance::setXenogenous(const RObject* value)
 
 double Provenance::timestamp() const
 {
-    return m_timestamp.tv_sec + 1.0E-6*m_timestamp.tv_usec;
+    return double(m_timestamp.tv_sec) + 1.0E-6*double(m_timestamp.tv_usec);
 }
 
 void Provenance::visitReferents(const_visitor* v) const

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -47,6 +47,8 @@
 #include <Rinternals.h>
 #define R_USE_PROTOTYPES 1
 #include <R_ext/GraphicsEngine.h>
+/* This sets ptr_QuartzBackend as a symbol in this file */
+#define IN_AQUA_C 1
 #include <R_ext/QuartzDevice.h>
 
 #include "grDevices.h"
@@ -341,6 +343,12 @@ static void* QuartzDevice_SetParameter(QuartzDesc_t desc, const char *key, void 
     return NULL;
 }
 
+void setup_RdotApp(void)
+{
+    int eflags = QP_Flags_CFLoop | QP_Flags_Cocoa | QP_Flags_Front;
+    QuartzDevice_SetParameter(NULL, QuartzParam_EmbeddingFlags, &eflags);
+}
+
 static void*  QuartzDevice_GetParameter(QuartzDesc_t desc, const char *key)
 {
     if (desc) { /* backend-specific? pass it on */
@@ -509,6 +517,7 @@ static QuartzFunctions_t qfn = {
     QuartzDevice_GetParameter
 };
 
+/* currrently unused: was used by R.app via aqua.c */
 QuartzFunctions_t *getQuartzAPI() {
     return &qfn;
 }
@@ -769,7 +778,7 @@ void RQuartz_Set(CGContextRef ctx,const pGEcontext gc,int flags) {
         CGFloat dashlist[8];
         int   i, ndash = 0;
         int   lty = gc->lty;
-	float lwd = gc->lwd * 0.75;
+	float lwd = (float)(gc->lwd * 0.75);
         CGContextSetLineWidth(ctx, lwd);
 
         for(i = 0; i < 8 && lty; i++) {
@@ -935,31 +944,29 @@ static double RQuartz_StrWidth(const char *text, CTXDESC)
     DEVSPEC;
     if (!ctx) NOCTXR(strlen(text) * 10.0); /* for sanity reasons */
     RQuartz_SetFont(ctx, gc, xd);
-    {
-        CGFontRef font = CGContextGetFont(ctx);
-        float aScale   = (gc->cex * gc->ps * xd->tscale) / CGFontGetUnitsPerEm(font);
-        UniChar *buffer;
-        CGGlyph *glyphs;
-        int     *advances;
-        int Free = 0, len,i;
-        CFStringRef str = text2unichar(gc, dd, text, &buffer, &Free);
-	if (!str) return 0.0; /* invalid text contents */
-        len = CFStringGetLength(str);
-	/* FIXME: check allocations */
-        glyphs = malloc(sizeof(CGGlyph) * len);
-        advances = malloc(sizeof(int) * len);
-        CGFontGetGlyphsForUnichars(font, buffer, glyphs,len);
-        CGFontGetGlyphAdvances(font, glyphs, len, advances);
-        {
-            float width = 0.0; /* aScale*CGFontGetLeading(CGContextGetFont(ctx)); */
-            for(i = 0; i < len; i++) width += aScale * advances[i];
-            free(advances);
-            free(glyphs);
-            if(Free) free(buffer);
-            CFRelease(str);
-            return width;
-        }
-    }
+
+    CGFontRef font = CGContextGetFont(ctx);
+    float aScale   = (float)((gc->cex * gc->ps * xd->tscale) /
+			     CGFontGetUnitsPerEm(font));
+    UniChar *buffer;
+    CGGlyph *glyphs;
+    int     *advances;
+    int Free = 0, len;
+    CFStringRef str = text2unichar(gc, dd, text, &buffer, &Free);
+    if (!str) return 0.0; /* invalid text contents */
+    len = (int) CFStringGetLength(str);
+    /* FIXME: check allocations */
+    glyphs = malloc(sizeof(CGGlyph) * len);
+    advances = malloc(sizeof(int) * len);
+    CGFontGetGlyphsForUnichars(font, buffer, glyphs, len);
+    CGFontGetGlyphAdvances(font, glyphs, len, advances);
+    float width = 0.0; /* aScale*CGFontGetLeading(CGContextGetFont(ctx)); */
+    for(int i = 0; i < len; i++) width += aScale * advances[i];
+    free(advances);
+    free(glyphs);
+    if(Free) free(buffer);
+    CFRelease(str);
+    return width;
 }
 
 static void RQuartz_Text(double x, double y, const char *text, double rot, double hadj, CTXDESC)
@@ -973,7 +980,8 @@ static void RQuartz_Text(double x, double y, const char *text, double rot, doubl
     RQuartz_SetFont(ctx, gc, xd);
     gc->fill = fill;
     CGFontRef font = CGContextGetFont(ctx);
-    float aScale   = (gc->cex * gc->ps * xd->tscale) / CGFontGetUnitsPerEm(font);
+    float aScale   = (float) ((gc->cex * gc->ps * xd->tscale) /
+			      CGFontGetUnitsPerEm(font));
     UniChar *buffer;
     CGGlyph   *glyphs;
 
@@ -981,7 +989,7 @@ static void RQuartz_Text(double x, double y, const char *text, double rot, doubl
     float width = 0.0;
     CFStringRef str = text2unichar(gc, dd, text, &buffer, &Free);
     if (!str) return; /* invalid text contents */
-    len = CFStringGetLength(str);
+    len = (int) CFStringGetLength(str);
     /* FIXME: check allocations */
     glyphs = malloc(sizeof(CGGlyph) * len);
     CGFontGetGlyphsForUnichars(font, buffer, glyphs, len);
@@ -1056,7 +1064,7 @@ static void RQuartz_Raster(unsigned int *raster, int w, int h,
 
     cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
 
- /* Create a quartz image from the data provider */
+    /* Create a quartz image from the data provider */
     img = CGImageCreate(w, h, 
                         8,   /* bits per channel */
                         32,  /* bits per pixel */
@@ -1088,11 +1096,10 @@ static void RQuartz_Raster(unsigned int *raster, int w, int h,
     /* Rotate */
     CGContextRotateCTM(ctx, rot*M_PI/180.0);
     /* Determine interpolation method */
-    if (interpolate) {
+    if (interpolate)
         CGContextSetInterpolationQuality(ctx, kCGInterpolationDefault);
-    } else {
+    else
         CGContextSetInterpolationQuality(ctx, kCGInterpolationNone);
-    }
     /* Draw the quartz image */
     CGContextDrawImage(ctx, CGRectMake(0, 0, width, height), img);
     CGContextRestoreGState(ctx);
@@ -1147,7 +1154,15 @@ static void RQuartz_Polyline(int n, double *x, double *y, CTXDESC)
     if (!ctx) NOCTX;
     SET(RQUARTZ_STROKE | RQUARTZ_LINE);
 
-    /* CGContextStrokeLineSegments turned out to be a bad idea due to Leopard restarting dashes for each segment. CGContextAddLineToPoint is fast enough. The only remaining porblem is that Quartz seems to restart dashes at segment breakup points. We should make the segments break-up an optional feature and possibly fix the underlying problem (software rendering). */
+    /* CGContextStrokeLineSegments turned out to be a bad idea due to
+       Leopard restarting dashes for each segment.
+       CGContextAddLineToPoint is fast enough. 
+       The only remaining problem is that Quartz seems to restart
+       dashes at segment breakup points. We should make the segments
+       break-up an optional feature and possibly fix the underlying
+       problem (software rendering).  
+    */
+
     while (i < n) {
         int j = i + max_segments;
         if (j > n) j = n;
@@ -1232,17 +1247,18 @@ RQuartz_MetricInfo(int c, const pGEcontext gc,
     RQuartz_SetFont(ctx, gc, xd);
     {
 	CGFontRef font = CGContextGetFont(ctx);
-        float aScale   = (gc->cex * gc->ps * xd->tscale) / CGFontGetUnitsPerEm(font);
+        float aScale   = (float)((gc->cex * gc->ps * xd->tscale) /
+				 CGFontGetUnitsPerEm(font));
 	UniChar  *buffer, single;
         CGGlyph  glyphs[8];
 	CFStringRef str = NULL;
         int free_buffer = 0, len;
 	*width = *ascent = *descent = 0.0; /* data for bail-out cases */
 	if (c >= 0 && c <= ((mbcslocale && gc->fontface != 5) ? 127 : 255)) {
-	    char    text[2] = { c, 0 };
+	    char    text[2] = { (char)c, 0 };
 	    str = text2unichar(gc, dd, text, &buffer, &free_buffer);
 	    if(!str) return;
-	    len = CFStringGetLength(str);
+	    len = (int) CFStringGetLength(str);
 	    if (len > 7) return; /* this is basically impossible,
 				    but you never know */
 	} else {
@@ -1290,7 +1306,8 @@ static Rboolean RQuartz_Locator(double *x, double *y, DEVDESC)
 /* disabled for now until we get to test in on 10.3 #include "qdCarbon.h" */
 
 /* current fake */
-QuartzDesc_t QuartzCarbon_DeviceCreate(pDevDesc dd, QuartzFunctions_t *fn, QuartzParameters_t *par)
+QuartzDesc_t 
+QuartzCarbon_DeviceCreate(pDevDesc dd, QuartzFunctions_t *fn, QuartzParameters_t *par)
 {
     return NULL;
 }
@@ -1298,8 +1315,10 @@ QuartzDesc_t QuartzCarbon_DeviceCreate(pDevDesc dd, QuartzFunctions_t *fn, Quart
 #define ARG(HOW,WHAT) HOW(CAR(WHAT));WHAT = CDR(WHAT)
 
 /* C version of the Quartz call (experimental)
-   Quartz descriptor on success, NULL on failure. if errorCode is not NULL, it will contain the error code on exit */
-QuartzDesc_t Quartz_C(QuartzParameters_t *par, quartz_create_fn_t q_create, int *errorCode)
+   Quartz descriptor on success, NULL on failure. 
+   If errorCode is not NULL, it will contain the error code on exit */
+QuartzDesc_t 
+Quartz_C(QuartzParameters_t *par, quartz_create_fn_t q_create, int *errorCode)
 {
     if (!q_create || !par) {
 	if (errorCode) errorCode[0] = -4;
@@ -1338,13 +1357,13 @@ QuartzDesc_t Quartz_C(QuartzParameters_t *par, quartz_create_fn_t q_create, int 
     }
 }
 
-/* ARGS: type, file, width, height, ps, family, antialias, fontsm,
+/* ARGS: type, file, width, height, ps, family, antialias,
    title, bg, canvas, dpi */
 SEXP Quartz(SEXP args)
 {
     SEXP tmps, bgs, canvass;
     double   width, height, ps;
-    Rboolean antialias, smooth;
+    Rboolean antialias;
     int      quartzpos, bg, canvas, module = 0;
     double   mydpi[2], *dpi = 0;
     const char *type, *mtype = 0, *family, *title;
@@ -1374,7 +1393,6 @@ SEXP Quartz(SEXP args)
     ps        = ARG(asReal,args);
     family    = CHAR(STRING_ELT(CAR(args), 0)); args = CDR(args);
     antialias = ARG(asLogical,args);
-    smooth    = ARG(asLogical,args);
     title     = CHAR(STRING_ELT(CAR(args), 0)); args = CDR(args);
     bgs       = CAR(args); args = CDR(args);
     bg        = RGBpar(bgs, 0);
@@ -1396,7 +1414,7 @@ SEXP Quartz(SEXP args)
     if (dpi && (ISNAN(dpi[0]) || ISNAN(dpi[1]))) dpi=0;
 
     if (ISNAN(width) || ISNAN(height) || width <= 0.0 || height <= 0.0)
-        error(_("invalid Quartz device size"));
+        error(_("invalid quartz() device size"));
 
     if (type) {
         const quartz_module_t *m = quartz_modules;
@@ -1424,7 +1442,7 @@ SEXP Quartz(SEXP args)
 	pDevDesc dev = calloc(1, sizeof(DevDesc));
 
 	if (!dev)
-	    error(_("Unable to create device description."));
+	    error(_("unable to create device description"));
 
 	QuartzParameters_t qpar = {
 	    sizeof(qpar),
@@ -1474,7 +1492,7 @@ SEXP Quartz(SEXP args)
 	if (qd == NULL) {
 	    vmaxset(vmax);
 	    free(dev);
-	    error(_("Unable to create Quartz device target, given type may not be supported."));
+	    error(_("unable to create quartz() device target, given type may not be supported"));
 	}
 	const char *devname = "quartz_off_screen";
 	if(streql(type, "") || streql(type, "native") || streql(type, "cocoa") 
@@ -1513,18 +1531,18 @@ extern kern_return_t bootstrap_info(mach_port_t , /* bootstrap port */
                                     bool_array_t*, mach_msg_type_number_t*); /* active */
 
 /* returns 1 if window server session service
- (com.apple.windowserver.session) is present in the boostrap
- namespace (pre-Lion) or when a current session is present, active
- and there is no SSH_CONNECTION (Lion and later).
- returns 0 if an error occurred or the service is not
- present. For all practical purposes this returns 1 only if run
- interactively via LS. Although ssh to a machine that has a running
- session for the same user will allow a WS connection, this function
- will still return 0 in that case.
- NOTE: on Mac OS X 10.5 we are currently NOT searching the parent
- namespaces. This is currently OK, because the session service will
- be registered in the session namespace which is the last in the
- chain. However, this could change in the future.
+   (com.apple.windowserver.session) is present in the boostrap
+   namespace (pre-Lion) or when a current session is present, active
+   and there is no SSH_CONNECTION (Lion and later).
+   returns 0 if an error occurred or the service is not
+   present. For all practical purposes this returns 1 only if run
+   interactively via LS. Although ssh to a machine that has a running
+   session for the same user will allow a WS connection, this function
+   will still return 0 in that case.
+   NOTE: on Mac OS X 10.5 we are currently NOT searching the parent
+   namespaces. This is currently OK, because the session service will
+   be registered in the session namespace which is the last in the
+   chain. However, this could change in the future.
  */
 static int has_wss() {
     int res = 0;
@@ -1566,10 +1584,13 @@ static int has_wss() {
 	    mach_port_deallocate(mach_task_self(), bport);
     } else {
 	/* On Mac OS X 10.7 (Lion) and higher two things changed:
-	   a) there is no com.apple.windowserver.session anymore so the above will fail
-	   b) every process has now the full bootstrap info, so in fact even remote
-	      connections will be able to run on-screen tasks if the user is logged in
-	   So we need to add some heuristics to decide when the user actually wants Quartz ... */   
+	   a) there is no com.apple.windowserver.session anymore 
+	   so the above will fail
+	   b) every process has now the full bootstrap info, 
+	   so in fact even remote connections will be able to 
+	   run on-screen tasks if the user is logged in
+	   So we need to add some heuristics to decide when the user 
+	   actually wants Quartz ... */   
 	/* check user's session */
 	CFDictionaryRef dict = CGSessionCopyCurrentDictionary();
 	if (dict) { /* allright, let's see if the session is current */
@@ -1606,7 +1627,8 @@ SEXP makeQuartzDefault() {
     return ScalarLogical(FALSE);
 }
 
-QuartzDesc_t Quartz_C(QuartzParameters_t *par, quartz_create_fn_t q_create, int *errorCode)
+QuartzDesc_t 
+Quartz_C(QuartzParameters_t *par, quartz_create_fn_t q_create, int *errorCode)
 {
     if (errorCode) errorCode[0] = -1;
     return NULL;

@@ -1,5 +1,5 @@
 
-/* Copyright (C) 2003-2008 Simon N. Wood  simon.wood@r-project.org
+/* Copyright (C) 2003-2013 Simon N. Wood  simon.wood@r-project.org
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,16 +22,19 @@ USA. */
 #include "general.h"
 #include "mgcv.h"
 #include "matrix.h"
-/*#include <dmalloc.h>*/
+#include <Rconfig.h>
+#ifdef SUPPORT_OPENMP
+#include <omp.h>
+#endif
 
 
 double ***array3d(int ni,int nj,int nk)
 /* allocate 3d array */
 { double ***a,***p,**p1,*p2;
   int j;
-  a=(double ***)calloc((size_t)(ni),sizeof(double **));
-  *a=(double **)calloc((size_t)(ni*nj),sizeof(double *));
-  **a=(double *)calloc((size_t)(ni*nj*nk),sizeof(double));
+  a=(double ***)R_chk_calloc((size_t)(ni),sizeof(double **));
+  *a=(double **)R_chk_calloc((size_t)(ni*nj),sizeof(double *));
+  **a=(double *)R_chk_calloc((size_t)(ni*nj*nk),sizeof(double));
   p2 = **a; p1= *a;p=a;
   for (p=a;p<a+ni;p++) 
   { *p = p1; /* a[i]=a[0]+i*nj   */
@@ -41,24 +44,24 @@ double ***array3d(int ni,int nj,int nk)
 }
 
 void free3d(double ***a)
-{ free(**a);free(*a);free(a);
+{ R_chk_free(**a);R_chk_free(*a);R_chk_free(a);
 }
 
 double **array2d(int ni,int nj)
 
 { double **a,*p,**dum;
-  a=(double **)calloc((size_t)ni,sizeof(double *));
-  *a=(double *)calloc((size_t)(ni*nj),sizeof(double));
+  a=(double **)R_chk_calloc((size_t)ni,sizeof(double *));
+  *a=(double *)R_chk_calloc((size_t)(ni*nj),sizeof(double));
   for (p= *a,dum=a;dum<a+ni;dum++,p+=nj) *dum = p; 
   return(a);
 }
 
-void free2d(double **a) {free(*a);free(a);}
+void free2d(double **a) {R_chk_free(*a);R_chk_free(a);}
 
 void fit_magic(double *X,double *sp,double **S,double *H,double *gamma,double *scale,
                int *control,double rank_tol,double yy,double *y0,double *y1,double *U1,
                double *V,double *d,double *b,double *score,double *norm,double *delta,int *rank,
-               double *norm_const,int *n_score)
+               double *norm_const,int *n_score,int *nt)
 
 /* Routine to actually do the model fitting, rank determination and score calculation, returning 
    information needed for derivative calculation.
@@ -102,7 +105,7 @@ void fit_magic(double *X,double *sp,double **S,double *H,double *gamma,double *s
   int i,j,k,m,n,q,rank_S=-1,r;
   m=control[4];n=control[1];q=control[2];
   /* first form S = H + \sum_i \theta_i S_i */
-  St=(double *)calloc((size_t)(q*q),sizeof(double));
+  St=(double *)R_chk_calloc((size_t)(q*q),sizeof(double));
   if (control[3]) /* then there is a non null H */
   for (p=St;p<St+q*q;p++,H++) *p = *H; 
   for (k=0;k<m;k++) { xx=exp(sp[k]);for (p=St,p1=S[k];p<St+q*q;p++,p1++) *p += *p1 * xx;}
@@ -112,17 +115,17 @@ void fit_magic(double *X,double *sp,double **S,double *H,double *gamma,double *s
  
   /* Now form the augmented R matrix [R',St']' */
   r=rank_S+q;
-  R=(double *)calloc((size_t)(r*q),sizeof(double));  
-  for (j=0;j<q;j++) for (i=0;i<=j;i++) R[i+r*j]=X[i+n*j];
+  R=(double *)R_chk_calloc((size_t)(r*q),sizeof(double));  
+  getRpqr(R,X,&n,&q,&r,nt);
+  //for (j=0;j<q;j++) for (i=0;i<=j;i++) R[i+r*j]=X[i+n*j];
   for (j=0;j<q;j++) for (i=q;i<r;i++) R[i+r*j]=St[(i-q)+rank_S*j];
   /* Get singular value decomposition, and hang the expense */
-  a=(double *)calloc((size_t)q,sizeof(double));
-  Vt=(double *)calloc((size_t)(q*q),sizeof(double));
+  a=(double *)R_chk_calloc((size_t)q,sizeof(double));
+  Vt=(double *)R_chk_calloc((size_t)(q*q),sizeof(double));
   mgcv_svd_full(R,Vt,d,&r,&q);  
   /* now truncate the svd in order to deal with rank deficiency */
   *rank=q;xx=d[0]*rank_tol;
   while(d[*rank-1]<xx) (*rank)--;
-  /*if (*rank < q) Rprintf("\n RANK DEFICIENCY!! rank = %d n",*rank);  */
   /* produce the truncated V (q by rank): columns dropped so V'V=I but VV'!=I   */
   for (i=0;i<q;i++) for (j=0;j< *rank;j++) V[i+q*j]=Vt[j+q*i];
   /* produce the truncated U1 (q by rank): rows and columns dropped - no-longer orthogonal */
@@ -145,22 +148,22 @@ void fit_magic(double *X,double *sp,double **S,double *H,double *gamma,double *s
   xx = n - *gamma * trA;*delta=xx;
   if (control[0]) {*score = n* (*norm+*norm_const)/(xx*xx);*scale= (*norm + *norm_const)/(n-trA);} /* use GCV */
   else {*score = (*norm + *norm_const) / n - 2* *scale / n * xx + *scale; } /* UBRE/ approximate AIC */  
-  free(a);free(Vt);free(R);free(St);
+  R_chk_free(a);R_chk_free(Vt);R_chk_free(R);R_chk_free(St);
 }
 
 double *crude_grad(double *X,double *sp,double **Si,double *H,double *gamma,double *scale,
                int *control,double rank_tol,double yy,double *y0,double *y1,double *U1,
                double *V,double *d,double *b,double *score,double *norm,double *delta,int *rank,
-               double *norm_const,int *n_score)
+		   double *norm_const,int *n_score,int *nt)
 /* finite difference the GCV score to get approximate gradient  */
 { double ftol=1e-6,*grad,sc1,sc0,ds;
   int i;
-  fit_magic(X,sp,Si,H,gamma,scale,control,rank_tol,yy,y0,y1,U1,V,d,b,&sc0,norm,delta,rank,norm_const,n_score);
-  grad=(double *)calloc((size_t)control[4],sizeof(double));
+  fit_magic(X,sp,Si,H,gamma,scale,control,rank_tol,yy,y0,y1,U1,V,d,b,&sc0,norm,delta,rank,norm_const,n_score,nt);
+  grad=(double *)R_chk_calloc((size_t)control[4],sizeof(double));
   for (i=0;i<control[4];i++)
   { ds=fabs(sp[i])*ftol;
     sp[i] += ds;
-    fit_magic(X,sp,Si,H,gamma,scale,control,rank_tol,yy,y0,y1,U1,V,d,b,&sc1,norm,delta,rank,norm_const,n_score);
+    fit_magic(X,sp,Si,H,gamma,scale,control,rank_tol,yy,y0,y1,U1,V,d,b,&sc1,norm,delta,rank,norm_const,n_score,nt);
     grad[i]=(sc1-sc0)/ds;sp[i] -= ds;
   }
   return(grad);
@@ -169,17 +172,17 @@ double *crude_grad(double *X,double *sp,double **Si,double *H,double *gamma,doub
 double **crude_hess(double *X,double *sp,double **Si,double *H,double *gamma,double *scale,
                int *control,double rank_tol,double yy,double *y0,double *y1,double *U1,
                double *V,double *d,double *b,double *score,double *norm,double *delta,int *rank,
-               double *norm_const,int *n_score)
+		    double *norm_const,int *n_score,int *nt)
 /* FD to check hessian */
 { int m,i,j;
   double *g0,*g1,**hess,ftol=1e-4,ds;
   m=control[4];
   hess=array2d(m,m);
-  g0=crude_grad(X,sp,Si,H,gamma,scale,control,rank_tol,yy,y0,y1,U1,V,d,b,score,norm,delta,rank,norm_const,n_score);
+  g0=crude_grad(X,sp,Si,H,gamma,scale,control,rank_tol,yy,y0,y1,U1,V,d,b,score,norm,delta,rank,norm_const,n_score,nt);
   for (i=0;i<m;i++)
   { ds=fabs(sp[i])*ftol;
     sp[i] += ds;
-    g1=crude_grad(X,sp,Si,H,gamma,scale,control,rank_tol,yy,y0,y1,U1,V,d,b,score,norm,delta,rank,norm_const,n_score);
+    g1=crude_grad(X,sp,Si,H,gamma,scale,control,rank_tol,yy,y0,y1,U1,V,d,b,score,norm,delta,rank,norm_const,n_score,nt);
     for (j=0;j<m;j++) hess[i][j] = (g1[j]-g0[j])/ds; 
     sp[i] -= ds;
   }  
@@ -188,37 +191,52 @@ double **crude_hess(double *X,double *sp,double **Si,double *H,double *gamma,dou
 
 void magic_gH(double *U1U1,double **M,double **K,double *VS,double **My,double **Ky,double **yK,double **hess,
               double *grad,double *dnorm,double *ddelta,double *sp,double **d2norm,double **d2delta,double *S,
-              double *U1,double *V,double *d,double *y1,int rank,int q,int m,int *cS,int gcv,double *gamma,double *scale,
+              double *U1,double *V,double *d,double *y1,int rank,int q,int m,int *cS,int *cucS,int gcv,double *gamma,double *scale,
               double norm,double delta,int n,double *norm_const)
 
 /* service routine for magic that calculates gradient and hessian of score w.r.t. sp. 
-   Note that n is assumed to be ued only in the score calculation, not as an actual physical 
+   Note that n is assumed to be used only in the score calculation, not as an actual physical 
    dimension!
 
 */
 
-{ double *p,*p1,*p2,*p3,*p4,xx,xx1,x1,x2;
-  int i,j,*ip,bt,ct,r,c; 
+{ double *p,*p1,*p2,*p3,*p4,xx,xx1,x1,x2,*VSi;
+  int i,j,*ip,bt,ct,r,c,tid=0; 
   /* U_1'U_1 U1 is q by rank ... */
   getXtX(U1U1,U1,&q,&rank);
-  for (p=S,ip=cS,i=0;ip<cS+m;p+= *ip *q,ip++,i++) /* work through all smooths */ 
-  { bt=1;ct=0;r=rank;c= *ip;
-    mgcv_mmult(VS,V,p,&bt,&ct,&r,&c,&q); /* V'S_i^0.5 result is rank by cS[i] */ 
-    for (p2=VS,j=0;j<*ip;j++)
-    for (p1=d;p1<d+rank;p1++,p2++) *p2 /= *p1;   /* D^{-1} V' S_i^0.5 */
-    bt=1;ct=0;r= *ip;c= rank;
-    mgcv_mmult(M[i],VS,U1U1,&bt,&ct,&r,&c,&rank); /* S_i^0.5 V D^{-1} U_1'U_1 */
-    bt=ct=0;r=c=rank;
-    mgcv_mmult(K[i],VS,M[i],&bt,&ct,&r,&c,ip); /* K_i = D^{-1}V'S_iVD^{-1}U_1'U_1 */
-    bt=0;ct=1;r=c=rank;
-    mgcv_mmult(M[i],VS,VS,&bt,&ct,&r,&c,ip); /* M_i= D^{-1}V'S_iVD^{-1} */
-    for (p1=My[i],p2=M[i];p1<My[i]+rank;p1++) /* M_i y */
-    { for (xx=0.0,p3=y1;p3<y1+rank;p3++,p2++) xx += *p3 * *p2;*p1 = xx;}
-    for (p1=yK[i],p2=K[i];p1<yK[i]+rank;p1++) /* y' K_i */
-    { for (xx=0.0,p3=y1;p3<y1+rank;p3++,p2++) xx += *p3 * *p2;*p1 = xx;}
-    for (p1=Ky[i],p2=K[i];p1<Ky[i]+rank;p1++,p2++) /* K_i y */
-    { for (xx=0.0,p4=p2,p3=y1;p3<y1+rank;p3++,p4+=rank) xx += *p3 * *p4;*p1 = xx;}
-  }
+  //for (p=S,ip=cS,i=0;ip<cS+m;p+= *ip *q,ip++,i++) /* work through all smooths */ 
+  #ifdef SUPPORT_OPENMP
+  #pragma omp parallel private(i,j,ip,bt,ct,c,r,p,p1,p2,p3,p4,xx,tid,VSi)
+  #endif
+  { /* open parallel section */
+    #ifdef SUPPORT_OPENMP
+    #pragma omp for
+    #endif
+    for (i=0;i<m;i++) { 
+      #ifdef SUPPORT_OPENMP
+      tid = omp_get_thread_num(); /* thread running this bit */
+      #endif
+      ip = cS + i;
+      p = S + cucS[i] * q;
+      bt=1;ct=0;r=rank;c= *ip;
+      VSi = VS + tid * q * q;
+      mgcv_mmult(VSi,V,p,&bt,&ct,&r,&c,&q); /* V'S_i^0.5 result is rank by cS[i] */ 
+      for (p2=VSi,j=0;j<*ip;j++)
+      for (p1=d;p1<d+rank;p1++,p2++) *p2 /= *p1;   /* D^{-1} V' S_i^0.5 */
+      bt=1;ct=0;r= *ip;c= rank;
+      mgcv_mmult(M[i],VSi,U1U1,&bt,&ct,&r,&c,&rank); /* S_i^0.5 V D^{-1} U_1'U_1 */
+      bt=ct=0;r=c=rank;
+      mgcv_mmult(K[i],VSi,M[i],&bt,&ct,&r,&c,ip); /* K_i = D^{-1}V'S_iVD^{-1}U_1'U_1 */
+      bt=0;ct=1;r=c=rank;
+      mgcv_mmult(M[i],VSi,VSi,&bt,&ct,&r,&c,ip); /* M_i= D^{-1}V'S_iVD^{-1} */
+      for (p1=My[i],p2=M[i];p1<My[i]+rank;p1++) /* M_i y */
+      { for (xx=0.0,p3=y1;p3<y1+rank;p3++,p2++) xx += *p3 * *p2;*p1 = xx;}
+      for (p1=yK[i],p2=K[i];p1<yK[i]+rank;p1++) /* y' K_i */
+      { for (xx=0.0,p3=y1;p3<y1+rank;p3++,p2++) xx += *p3 * *p2;*p1 = xx;}
+      for (p1=Ky[i],p2=K[i];p1<Ky[i]+rank;p1++,p2++) /* K_i y */
+      { for (xx=0.0,p4=p2,p3=y1;p3<y1+rank;p3++,p4+=rank) xx += *p3 * *p4;*p1 = xx;}
+    }
+  } /* end of parallel */
   /* note at this stage that y1, M[i] and K[i] are all dimension rank */
   for (i=0;i<m;i++) 
   { for (xx=0.0,p=K[i];p<K[i]+rank*rank;p+=rank+1) xx += *p;ddelta[i]= *gamma * xx * exp(sp[i]);
@@ -255,12 +273,12 @@ void magic_gH(double *U1U1,double **M,double **K,double *VS,double **My,double *
       for (j=0;j<=i;j++) hess[i][j]=hess[j][i]=(d2norm[i][j]-2* *scale*d2delta[i][j])/ n;
     }
   }
-}
+} /* magic_gH */
 
 
 void magic(double *y,double *X,double *sp0,double *def_sp,double *S,double *H,double *L,double *lsp0,
            double *gamma,double *scale,int *control,int *cS,double *rank_tol,double *tol,double *b,
-           double *rV,double *norm_const,int *n_score) 
+           double *rV,double *norm_const,int *n_score,int *nt) 
 
 /* Maximally stable multiple gcv/ubre optimizer, based on pivoted QR decomposition and SVD, but without 
    a line search. At each point in the smoothing parameter space, the numerical rank of the problem 
@@ -272,7 +290,8 @@ void magic(double *y,double *X,double *sp0,double *def_sp,double *S,double *H,do
    space of the log of the smoothing parameters.
 
    y - an n dimensional response vector
-   X - an n by q model matrix
+   X - an n by q model matrix (on exit q by q unpivoted factor R from QR=X) 
+       if nt>1 then X should have nt*q^2 extra (double) memory tagged on the end
    sp0 - an mp-array of (underlying) smoothing parameters (any -ve => autoinitialize)
    def_sp - an array of default values for sp0's (any -ve => set up internally)
    b - a q dimensional parameter vector
@@ -303,6 +322,8 @@ void magic(double *y,double *X,double *sp0,double *def_sp,double *S,double *H,do
    tol is the convergence tolerance for the iterative score optimisation.
    b is the q dimensional parameter vector.
    rV is a square root of the parameter covariance matrix (to within the scale factor) cov(b)=rV rV' scale      
+   nt is the number of threads to use for parts of the calculation if openMP is supported
+
 
    The m square roots of smoothing penalty matrices are packed one after another in S.
    
@@ -340,27 +361,38 @@ void magic(double *y,double *X,double *sp0,double *def_sp,double *S,double *H,do
    derivative magnitude. 
 
  */
-{ int *pi,*pivot,q,n,autoinit,left,ScS,m,mp,i,j,tp,k,use_sd=0,rank,converged,iter=0,ok,
+{ int *pi,*pivot,q,n,autoinit,ScS,m,mp,i,j,tp,k,use_sd=0,rank,converged,iter=0,ok,*cucS,
     gcv,try,fit_call=0,step_fail=0,max_half,*spok,def_supplied,use_dsyevd=1,L_exists,TRUE=1,FALSE=0;
   double *sp=NULL,*p,*p1,*p2,*tau,xx,*y1,*y0,yy,**Si=NULL,*work,score,*sd_step,*n_step,*U1,*V,*d,**M,**K,
          *VS,*U1U1,**My,**Ky,**yK,*dnorm,*ddelta,**d2norm,**d2delta,norm,delta,*grad,**hess,*nsp,
-         min_score,*step,d_score=1e10,*ev=NULL,*u,msg=0.0,Xms,*rSms,*bag,*bsp,sign,*grad1,*u0;
+    min_score,*step,d_score=1e10,*ev=NULL,*u,msg=0.0,Xms,*rSms,*bag,*bsp,sign,*grad1,*u0,*R;
+  #ifdef SUPPORT_OPENMP
+  m = omp_get_num_procs(); /* detected number of processors */
+  if (*nt > m || *nt < 1) *nt = m; /* no point in more threads than m */
+  omp_set_num_threads(*nt); /* set number of threads to use */
+  #else
+  *nt = 1;
+  #endif
+
   gcv=control[0];q=control[2];n=control[1];m=control[4];max_half=control[5];mp=control[6];
   
   /* first get the QR decomposition of X */
-  tau=(double *)calloc((size_t)q,sizeof(double)); /* part of reflector storage */
-  pivot=(int *)calloc((size_t)q,sizeof(int));
+  tau=(double *)R_chk_calloc((size_t)q *(1 + *nt),sizeof(double)); /* part of reflector storage */
+  pivot=(int *)R_chk_calloc((size_t)q,sizeof(int));
   /* Accuracy can be improved by pivoting on some occasions even though it's not going to be 
      `used' as such here - see Golub and Van Loan (1983) section 6.4. page 169 for reference. */
-  mgcv_qr(X,&n,&q,pivot,tau);
+  // mgcv_qr(X,&n,&q,pivot,tau);
+  mgcv_pqr(X,&n,&q,pivot,tau,nt);
   /* Apply pivoting to the parameter space - this simply means reordering the rows of the S_i
      stored in S doing the same for H, and then unscrambling the parameter vector at the end 
      (along with covariance matrix)
      pivot[i] gives the unpivoted position of the ith pivoted parameter.
   */
-  
+  cucS = (int *)R_chk_calloc((size_t)m,sizeof(int)); /* cumulative cols in S */
+  for (i=1;i<m;i++) cucS[i] = cucS[i-1] + cS[i-1];
   ScS=0;for (pi=cS;pi<cS+m;pi++) ScS+= *pi;  /* total columns of input S */
-  work=(double *)calloc((size_t)q,sizeof(double)); 
+  
+  work=(double *)R_chk_calloc((size_t)q,sizeof(double)); 
   for (p=S,i=0;i<ScS;i++,p+=q) /* work across columns */
   { for (pi=pivot,p2=work;p2<work+q;pi++,p2++) *p2 = p[*pi];  /* apply pivot into work */
     for (p1=p,p2=work;p1<p+q;p1++,p2++) *p1 = *p2;  /* copy back into S */
@@ -368,7 +400,7 @@ void magic(double *y,double *X,double *sp0,double *def_sp,double *S,double *H,do
  
   if (control[3])
   { for (j=0;j<q;j++)
-    { for (i=0;i<q;i++) work[i]=H[pivot[i]+q*j];
+     { for (i=0;i<q;i++) work[i]=H[pivot[i]+q*j];
       for (i=0;i<q;i++) H[i+q*j]=work[i]; 
     }
     for (i=0;i<q;i++)
@@ -379,9 +411,10 @@ void magic(double *y,double *X,double *sp0,double *def_sp,double *S,double *H,do
 
   /* form y_1 = Q_1'y */
  
-  y0=(double *)calloc((size_t)n,sizeof(double));
+  y0=(double *)R_chk_calloc((size_t)n,sizeof(double));
   for (p=y,p1=y0;p<y+n;p++,p1++) *p1 = *p;
-  left=1;tp=1;i=1;mgcv_qrqy(y0,X,tau,&n,&i,&q,&left,&tp); /* first q elements are y1 */
+  tp=1;i=1;//left=1;mgcv_qrqy(y0,X,tau,&n,&i,&q,&left,&tp); /* first q elements are y1 */
+  mgcv_pqrqy(y0,X,tau,&n,&q,&i,&tp,nt);
   /* form y'y */
  
   for (yy=0.0,p=y;p<y+n;p++) yy += *p * *p;
@@ -397,7 +430,7 @@ void magic(double *y,double *X,double *sp0,double *def_sp,double *S,double *H,do
 
   if (mp<0) { L_exists=0;mp=m;} else L_exists=1;
 
-  if (m>0) sp = (double *)calloc((size_t)m,sizeof(double)); /* to hold actual log(sp[i]) terms multiplying penalties */
+  if (m>0) sp = (double *)R_chk_calloc((size_t)m,sizeof(double)); /* to hold actual log(sp[i]) terms multiplying penalties */
 
   autoinit=0;for (p=sp0;p<sp0+mp;p++) if (*p <=0.0) { autoinit=1;break;} /* autoinitialize s.p.s? */ 
   def_supplied=1; for (p=def_sp;p<def_sp+mp;p++) if (*p <=0.0) { def_supplied=0;break;} 
@@ -405,12 +438,14 @@ void magic(double *y,double *X,double *sp0,double *def_sp,double *S,double *H,do
   if (L_exists&&!def_supplied) 
     error(_("magic requires smoothing parameter starting values if L supplied"));
   
- 
+  /* extract the R factor, to get a norm for X, and for returning later */
+  R = (double *)R_chk_calloc((size_t)q*q,sizeof(double));
+  getRpqr(R,X,&n,&q,&q,nt);
 
   if (m>0&&!def_supplied) /* generate default sp's (only possible if there is no L)*/
-  { rSms=(double *)calloc((size_t)m,sizeof(double));
+  { rSms=(double *)R_chk_calloc((size_t)m,sizeof(double));
     /* first get some sort of norm for X */
-    Xms=0.0;for (j=0;j<q;j++) for (i=0;i<=j;i++) { xx=X[i+n*j];Xms+=xx*xx;}
+    Xms=0.0;for (j=0;j<q;j++) for (i=0;i<=j;i++) { xx=R[i+q*j];Xms+=xx*xx;}
     p=S;Xms/=n*q;
     for (i=0;i<m;i++)
     { for (xx=0.0,p=Si[i];p<Si[i]+q*q;p+=q+1) xx += *p;
@@ -430,42 +465,43 @@ void magic(double *y,double *X,double *sp0,double *def_sp,double *S,double *H,do
   }
 /*  for (i=0;i<m;i++) Rprintf("%g  ",exp(sp[i]));Rprintf("\n");*/
 
-  y1=(double *)calloc((size_t)q,sizeof(double)); /* Storage for U_1'Q_1'y */
-  U1=(double *)calloc((size_t)(q*q),sizeof(double));
-  V=(double *)calloc((size_t)(q*q),sizeof(double));
-  d=(double *)calloc((size_t)q,sizeof(double));
+  y1=(double *)R_chk_calloc((size_t)q,sizeof(double)); /* Storage for U_1'Q_1'y */
+  U1=(double *)R_chk_calloc((size_t)(q*q),sizeof(double));
+  V=(double *)R_chk_calloc((size_t)(q*q),sizeof(double));
+  d=(double *)R_chk_calloc((size_t)q,sizeof(double));
   if (mp>0) /* allocate derivative related storage */
-  { M=array2d(m,q*q);K=array2d(m,q*q);VS=(double *)calloc((size_t)(q*q),sizeof(double));
+  { M=array2d(m,q*q);K=array2d(m,q*q);
+    VS=(double *)R_chk_calloc((size_t)(q * q * *nt),sizeof(double));
     My=array2d(m,q);Ky=array2d(m,q);yK=array2d(m,q);
     hess=array2d(m,m);
-    grad=(double *)calloc((size_t)mp,sizeof(double));
-    grad1=(double *)calloc((size_t)m,sizeof(double));
-    dnorm=(double *)calloc((size_t)m,sizeof(double));
-    ddelta=(double *)calloc((size_t)m,sizeof(double));
-    nsp=(double *)calloc((size_t)mp,sizeof(double));
+    grad=(double *)R_chk_calloc((size_t)mp,sizeof(double));
+    grad1=(double *)R_chk_calloc((size_t)m,sizeof(double));
+    dnorm=(double *)R_chk_calloc((size_t)m,sizeof(double));
+    ddelta=(double *)R_chk_calloc((size_t)m,sizeof(double));
+    nsp=(double *)R_chk_calloc((size_t)mp,sizeof(double));
     d2norm=array2d(m,m);d2delta=array2d(m,m);
-    ev=(double *)calloc((size_t)mp,sizeof(double));
-    u=(double *)calloc((size_t)(m*m),sizeof(double));
-    u0=(double *)calloc((size_t)(m*mp),sizeof(double));
-    U1U1=(double *)calloc((size_t)(q*q),sizeof(double));
-    spok=(int *)calloc((size_t)m,sizeof(int));
-    /*dir_sp=(int *)calloc((size_t)m,sizeof(int));*/
-    bsp=(double *)calloc((size_t)m,sizeof(double));
-    bag=(double *)calloc((size_t)m,sizeof(double));
+    ev=(double *)R_chk_calloc((size_t)mp,sizeof(double));
+    u=(double *)R_chk_calloc((size_t)(m*m),sizeof(double));
+    u0=(double *)R_chk_calloc((size_t)(m*mp),sizeof(double));
+    U1U1=(double *)R_chk_calloc((size_t)(q*q),sizeof(double));
+    spok=(int *)R_chk_calloc((size_t)m,sizeof(int));
+    /*dir_sp=(int *)R_chk_calloc((size_t)m,sizeof(int));*/
+    bsp=(double *)R_chk_calloc((size_t)m,sizeof(double));
+    bag=(double *)R_chk_calloc((size_t)m,sizeof(double));
   } else 
   { M=K=My=Ky=yK=hess=d2norm=d2delta=NULL;
     u0=VS=grad1=grad=dnorm=ddelta=nsp=ev=u=U1U1=bsp=bag=NULL;
     spok=NULL;/*dir_sp=NULL;*/
   }
 
-  fit_magic(X,sp,Si,H,gamma,scale,control,*rank_tol,yy,y0,y1,U1,V,d,b,&score,&norm,&delta,&rank,norm_const,n_score);
+  fit_magic(X,sp,Si,H,gamma,scale,control,*rank_tol,yy,y0,y1,U1,V,d,b,&score,&norm,&delta,&rank,norm_const,n_score,nt);
   fit_call++;  
   /* .... U1 and V are q by rank matrices, d is a dimension rank vector */
   /* Now check that all derivatives are large enough that SD or Newton can be expected to work... */
 
   if (mp>0&&!autoinit)
   { magic_gH(U1U1,M,K,VS,My,Ky,yK,hess,grad1,dnorm,ddelta,sp,d2norm,d2delta,S,
-                 U1,V,d,y1,rank,q,m,cS,gcv,gamma,scale,norm,delta,*n_score,norm_const);
+             U1,V,d,y1,rank,q,m,cS,cucS,gcv,gamma,scale,norm,delta,*n_score,norm_const);
     xx=1e-4*(1+fabs(score));
     ok=1;
     /* reset to default any sp w.r.t. which score is flat */
@@ -487,17 +523,17 @@ void magic(double *y,double *X,double *sp0,double *def_sp,double *S,double *H,do
       for (i=0;i<m;i++) sp[i]=sp0[i];
     }
 
-    if (!ok) 
-    { fit_magic(X,sp,Si,H,gamma,scale,control,*rank_tol,yy,y0,y1,
-                U1,V,d,b,&score,&norm,&delta,&rank,norm_const,n_score);
+    if (!ok) { 
+      fit_magic(X,sp,Si,H,gamma,scale,control,*rank_tol,yy,y0,y1,
+      U1,V,d,b,&score,&norm,&delta,&rank,norm_const,n_score,nt);
       fit_call++;
     }
   }
   
 
   min_score=score;
-  sd_step=(double *)calloc((size_t)mp,sizeof(double));
-  n_step=(double *)calloc((size_t)mp,sizeof(double));
+  sd_step=(double *)R_chk_calloc((size_t)mp,sizeof(double));
+  n_step=(double *)R_chk_calloc((size_t)mp,sizeof(double));
  
   if (autoinit&&!def_supplied) /* can't get here if L exists */
   { /* second guesses are scale*rank(S_i) / b'S_ib */
@@ -533,7 +569,7 @@ void magic(double *y,double *X,double *sp0,double *def_sp,double *S,double *H,do
           for (i=0;i<m;i++) sp[i]=nsp[i];
         }
         fit_magic(X,sp,Si,H,gamma,scale,control,*rank_tol,yy,y0,y1,
-                  U1,V,d,b,&score,&norm,&delta,&rank,norm_const,n_score);
+                  U1,V,d,b,&score,&norm,&delta,&rank,norm_const,n_score,nt);
         fit_call++;
         if (score<min_score) /* accept step */
         { ok=0;
@@ -564,7 +600,7 @@ void magic(double *y,double *X,double *sp0,double *def_sp,double *S,double *H,do
           for (i=0;i<m;i++) sp[i]=sp0[i];
         }
         magic_gH(U1U1,M,K,VS,My,Ky,yK,hess,grad1,dnorm,ddelta,sp,d2norm,d2delta,S,
-                 U1,V,d,y1,rank,q,m,cS,gcv,gamma,scale,norm,delta,*n_score,norm_const);
+		 U1,V,d,y1,rank,q,m,cS,cucS,gcv,gamma,scale,norm,delta,*n_score,norm_const);
         /* Now get the search directions */
         for (i=0;i<m;i++) for (j=0;j<m;j++) u[i+m*j]=hess[i][j]; 
 	if (L_exists) { /* transform grad and hess */
@@ -602,7 +638,7 @@ void magic(double *y,double *X,double *sp0,double *def_sp,double *S,double *H,do
           for (i=0;i<m;i++) sp[i]=sp0[i];
         } 
         ok--; /* don't do more than 5 of these steps in any case! */
-        fit_magic(X,sp,Si,H,gamma,scale,control,*rank_tol,yy,y0,y1,U1,V,d,b,&score,&norm,&delta,&rank,norm_const,n_score);
+        fit_magic(X,sp,Si,H,gamma,scale,control,*rank_tol,yy,y0,y1,U1,V,d,b,&score,&norm,&delta,&rank,norm_const,n_score,nt);
         if (score<min_score)
         { min_score=score; 
         } else /* last step was failure - undo it and leave this s.p.*/ 
@@ -616,13 +652,13 @@ void magic(double *y,double *X,double *sp0,double *def_sp,double *S,double *H,do
     } else { /* nsp and sp are identical */
       for (i=0;i<m;i++) sp[i]=sp0[i];
     }
-    fit_magic(X,sp,Si,H,gamma,scale,control,*rank_tol,yy,y0,y1,U1,V,d,b,&score,&norm,&delta,&rank,norm_const,n_score);
+    fit_magic(X,sp,Si,H,gamma,scale,control,*rank_tol,yy,y0,y1,U1,V,d,b,&score,&norm,&delta,&rank,norm_const,n_score,nt);
    
     /* free search related memory */
     free2d(M);free2d(K);free2d(My);free2d(Ky);free2d(yK);free2d(hess);
-    free2d(d2norm);free2d(d2delta);free(U1U1);free(rSms);free(u);
-    free(VS);free(grad);free(dnorm);free(ddelta);free(nsp);free(ev);
-    free(bsp);free(bag);free(spok);free(grad1);free(u0);
+    free2d(d2norm);free2d(d2delta);R_chk_free(U1U1);R_chk_free(rSms);R_chk_free(u);
+    R_chk_free(VS);R_chk_free(grad);R_chk_free(dnorm);R_chk_free(ddelta);R_chk_free(nsp);R_chk_free(ev);
+    R_chk_free(bsp);R_chk_free(bag);R_chk_free(spok);R_chk_free(grad1);R_chk_free(u0);
   } /* end of smoothness selection (if (mp>0) {... )*/
 
   /* prepare ``outputs''... */
@@ -643,13 +679,22 @@ void magic(double *y,double *X,double *sp0,double *def_sp,double *S,double *H,do
   control[3]=iter; /* iterations used */
   control[4]=fit_call; /* number of evaluations of GCV/UBRE score */
 
-  if (m>0) {free(sp);free2d(Si);}
+  if (m>0) {R_chk_free(sp);free2d(Si);}
   
-  free(tau);free(pivot);free(work);free(y0);free(y1);free(U1);free(V);free(d);free(sd_step);
-  free(n_step);
+  /* unpivot R from QR factor of X */
+  for (i=0;i<q;i++) { 
+    for (j=0;j<i;j++) V[i + q * j] = 0.0; 
+    for (j=i;j<q;j++) V[i + q * j] = R[i + q * j]; 
+  }
+
+  pivoter(V,&q,&q,pivot,&TRUE,&TRUE); /* unpivoting the columns of R1 */
+  for (p1=X,p2=V,p=V+q*q;p2<p;p1++,p2++) *p1 = *p2; /* copy back to X */
+
+  R_chk_free(tau);R_chk_free(pivot);R_chk_free(work);R_chk_free(y0);R_chk_free(y1);
+  R_chk_free(U1);R_chk_free(V);R_chk_free(d);R_chk_free(sd_step);
+  R_chk_free(n_step);R_chk_free(R);R_chk_free(cucS);
     
- /* dmalloc_verify(NULL);dmalloc_log_stats();*/
-}
+} /* magic */
 
 
 

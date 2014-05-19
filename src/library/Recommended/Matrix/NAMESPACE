@@ -5,7 +5,7 @@ useDynLib(Matrix, .registration=TRUE)
 importFrom("lattice", levelplot)
 importFrom("graphics", image)
 importFrom("utils", head, tail, assignInNamespace)
-importFrom("stats", cov2cor, update#, vcov
+importFrom("stats", cov2cor, toeplitz, update#, vcov
            )
 
 importFrom("grid", grid.rect, gpar, grob)# others via 'grid::'
@@ -25,7 +25,7 @@ importFrom("methods",
 ## Generics and functions defined in this package
 export("Cholesky",
        "Diagonal", ".symDiagonal", ".sparseDiagonal",
-       "Hilbert",
+       "Hilbert", "KhatriRao",
        "Matrix",
        "spMatrix",
        "sparseMatrix",
@@ -39,36 +39,43 @@ export("Cholesky",
        ## "rowMeans", "rowSums",
        "condest", "onenormest",
        "det",# << "identical" as base - but with correct determinant()
-       "diagN2U", "diagU2N",
+       ".diag.dsC",# -> R/dsCMatrix.R --has FIXME
+       "diagN2U", "diagU2N", ".diagU2N",
        "drop0",
        "expand",
        "expm",
        "facmul",
        "forceSymmetric",
-#	 "isTriangular",
-#	 "isDiagonal",
+       "isTriangular",
+       "isDiagonal",
        "isLDL",
+       "is.null.DN",
+       "invPerm",
        "lu",
        "nearPD",
        "nnzero",
        "formatSpMatrix", "formatSparseM", ".formatSparseSimple",
        "printSpMatrix",
        "printSpMatrix2",
+       "qrR",
        "rankMatrix",
        "readHB",
        "readMM",
        "sparse.model.matrix",
+       "sparseVector",
        "symmpart",
        "skewpart",
        "tcrossprod",
        "tril",
        "triu",
-       "unpack"
+       "updown",
+       "pack", "unpack"
+       , ".updateCHMfactor"
        , ".validateCsparse"
 #        "writeHB",
        , "writeMM"
        )
-if(getRversion() < "2.15.0" || R.version$`svn rev` < 57849)
+if(getRversion() < "2.15.0")
     export(".M.classEnv")
 
 ## substitute for using  cbind() / rbind()
@@ -164,7 +171,8 @@ exportClasses(
 	      "ntRMatrix",
 	      "ntTMatrix",
 
-	      "pMatrix",
+	      "indMatrix",
+          "pMatrix",
 
 	      "corMatrix", # unused
 
@@ -221,6 +229,7 @@ exportMethods(## for both own and "other" generics:
 
               ## re-export S4 methods, for "stats"-S3-generics:
               "cov2cor",
+              "toeplitz",
               "update",
 
 	      "!",
@@ -248,7 +257,7 @@ exportMethods(## for both own and "other" generics:
 	      "coerce",
 	      "crossprod",
 	      "determinant",
-	      "diag",
+	      "diag", "diag<-",
 	      "diff",
 	      "dim",
 	      "dim<-",
@@ -264,7 +273,8 @@ exportMethods(## for both own and "other" generics:
 	      "isSymmetric",
 ##	       "isDiagonal",
 ##	       "isTriangular",
-              "is.na",
+	      "is.na",
+	      "is.finite", "is.infinite",
 	      "kronecker",
 	      "length",
               "mean",
@@ -272,7 +282,7 @@ exportMethods(## for both own and "other" generics:
               "nnzero",
               "print",# print(x, ...) when show(x) is not sufficient
 	      "qr",
-	      "qr.R",
+	      "qr.R", "qr.Q",
 	      "qr.qy",
 	      "qr.qty",
 	      "qr.coef",
@@ -293,15 +303,20 @@ exportMethods(## for both own and "other" generics:
 	      "tcrossprod",
 	      "tril",
 	      "triu",
+	      "updown",
               "unname",
               "which",
 	      "zapsmall"
 	      )
+if(getRversion() > "3.1.0")
+exportMethods("anyNA")
+
 
 exportMethods("rbind2")
 exportMethods("cbind2")
 
 S3method(print, sparseSummary)
+S3method(print, diagSummary)
 S3method(c, abIndex)# < for now -- S4 method on c() seems "difficult"
 
 ## So that such dispatch also works inside base functions:

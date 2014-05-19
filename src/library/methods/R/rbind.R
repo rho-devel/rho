@@ -1,6 +1,8 @@
 #  File src/library/methods/R/rbind.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -30,9 +32,8 @@ rbind <- function(..., deparse.level = 1)
     while(na > 0 && is.null(argl[[na]])) { argl <- argl[-na]; na <- na - 1 }
     if(na == 0) return(NULL)
     if(na == 1) {
-	if(isS4(..1))
-	    return(rbind2(..1))
-	else return(.Internal(rbind(deparse.level, ...)))
+	if(isS4(..1)) return(rbind2(..1))
+	else return(.__H__.rbind(..., deparse.level = deparse.level))
     }
 
     ## else :  na >= 2

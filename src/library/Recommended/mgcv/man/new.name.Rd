@@ -28,6 +28,7 @@ so that there is no clash.}
 \seealso{  \code{\link{gamm} } }
 
 \examples{
+require(mgcv)
 old <- c("a","tuba","is","tubby")
 new.name("tubby",old)
 }

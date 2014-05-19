@@ -43,7 +43,8 @@
   \code{triangularMatrix} in their signature.
 }
 \seealso{
-  Classes \code{\linkS4class{symmetricMatrix}}, and, e.g.,
+  \code{\link{isTriangular}()} for testing any matrix for triangularity;
+  classes \code{\linkS4class{symmetricMatrix}}, and, e.g.,
   \code{\linkS4class{dtrMatrix}} for numeric \emph{dense} matrices, or
   \code{\linkS4class{ltCMatrix}} for a logical \emph{sparse} matrix
   subclass of \code{"triangularMatrix"}.

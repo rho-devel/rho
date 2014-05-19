@@ -4,17 +4,17 @@ source(system.file("test-tools.R", package = "Matrix"))# identical3() etc
 
 h9 <- Hilbert(9)
 stopifnot(c(0,0) == dim(Hilbert(0)),
-          c(9,9) == dim(h9))
-str(h9)
+          c(9,9) == dim(h9),
+	  identical(h9@factors, list()))
+str(h9)# no 'factors'
 all.equal(c(determinant(h9)$modulus), -96.7369456, tol= 2e-8)
-stopifnot(0 == length(h9@factors))# nothing yet
-round(ch9 <- chol(h9), 3) ## round() preserves 'triangular' !
-str(f9 <- as(ch9, "dtrMatrix"))
-## h9 now has factorization
+## determinant() now working via chol(): ==> h9 now has factorization
 stopifnot(names(h9@factors) == "Cholesky",
-          all.equal(rcond(h9), 9.0938e-13),
+          identical(ch9 <- chol(h9), h9@factors$Cholesky))
+round(ch9, 3) ## round() preserves 'triangular' !
+str(f9 <- as(ch9, "dtrMatrix"))
+stopifnot(all.equal(rcond(h9), 9.0938e-13),
           all.equal(rcond(f9), 9.1272e-7, tol = 1e-6))# more precision fails
-str(h9)# has 'factors $ Cholesky'
 options(digits=4)
 (cf9 <- crossprod(f9))# looks the same as  h9 :
 assert.EQ.mat(h9, as.matrix(cf9), tol=1e-15)
@@ -24,7 +24,8 @@ h9. <- round(h9, 2)# actually loses pos.def. "slightly"
 h9p  <- as(h9,  "dppMatrix")
 h9.p <- as(h9., "dppMatrix")
 ch9p <- chol(h9p)
-stopifnot(identical(ch9p, h9p@factors$pCholesky))
+stopifnot(identical(ch9p, h9p@factors$pCholesky),
+	  identical(names(h9p@factors), c("Cholesky", "pCholesky")))
 h4  <- h9.[1:4, 1:4] # this and the next
 h9.[1,1] <- 10       # had failed in 0.995-14
 h9p[1,1] <- 10
@@ -105,15 +106,18 @@ stopifnot(
 		0.7252316891977, 0.5972811755863, 0.5818673040157, 0.7444549621769,
 		0.7308954865819, 0.7713984381710, 0.8124321235679),
 	      tol = 1e-9))
+showProc.time()
 
 
 set.seed(27)
 m9 <- h9 + rnorm(9^2)/1000 ; m9 <- (m9 + t(m9))/2
 nm9 <- nearPD(m9)
+showProc.time()
 
+nRep <- if(doExtras) 50 else 4
 CPU <- 0
 for(M in c(5, 12))
-    for(i in 1:50) {
+    for(i in 1:nRep) {
 	m <- matrix(round(rnorm(M^2),2), M, M)
 	m <- m + t(m)
 	diag(m) <- pmax(0, diag(m)) + 1
@@ -124,7 +128,8 @@ for(M in c(5, 12))
 		  all.equal(eigen(n.m$mat, only.values=TRUE)$values,
 			    n.m$eigenvalues, tol = 4e-8))
     }
-cat('Time elapsed for nearPD(): ', CPU,'\n')
+cat('Time elapsed for ',nRep, 'nearPD(): ', CPU,'\n')
+showProc.time()
 
 ## cov2cor()
 m <- diag(6:1) %*% as(pr,"matrix") %*% diag(6:1) # so we can "vector-index"
@@ -164,5 +169,5 @@ assert.EQ.mat(c2, co.x) # failed in Matrix 0.999375-9, because of
 stopifnot(identical(dimnames(c1), dimnames(mM)),
 	  all.equal(c1, c3, tol=1e-15))
 
+showProc.time()
 
-cat('Time elapsed: ', proc.time(),'\n') # for ``statistical reasons''

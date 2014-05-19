@@ -1,6 +1,8 @@
 #  File src/library/tools/R/Rd2pdf.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -189,21 +191,26 @@
             }
             if (!silent) message(domain = NA)
         } else {
-            files <- c(Sys.glob(file.path(pkgdir, "*.Rd")),
-                       Sys.glob(file.path(pkgdir, "*.rd")))
-            if (!length(files)) {
-                ## is this a source package?  That has man/*.Rd files.
-                files <- c(Sys.glob(file.path(pkgdir, "man", "*.Rd")),
-                           Sys.glob(file.path(pkgdir, "man", "*.rd")))
+            ## As from R 2.15.3, give priority to a man dir.
+            mandir <- file.path(pkgdir, "man")
+            if (file_test("-d", mandir)) {
+                files <- c(Sys.glob(file.path(mandir, "*.Rd")),
+                           Sys.glob(file.path(mandir, "*.rd")))
+                if (is.null(extraDirs)) extraDirs <- .Platform$OS.type
+                for(e in extraDirs)
+                    files <- c(files,
+                               Sys.glob(file.path(mandir, e, "*.Rd")),
+                               Sys.glob(file.path(mandir, e, "*.rd")))
+                if (!length(files))
+                    stop("this package has a ", sQuote("man"), " directory but no .Rd files",
+                         domain = NA)
+           } else {
+                files <- c(Sys.glob(file.path(pkgdir, "*.Rd")),
+                           Sys.glob(file.path(pkgdir, "*.rd")))
                 if (!length(files))
                     stop("this package does not have either a ", sQuote("latex"),
                          " or a (source) ", sQuote("man"), " directory",
                          domain = NA)
-                if (is.null(extraDirs)) extraDirs <- .Platform$OS.type
-                for(e in extraDirs)
-                    files <- c(files,
-                               Sys.glob(file.path(pkgdir, "man", e, "*.Rd")),
-                               Sys.glob(file.path(pkgdir, "man", e, "*.rd")))
             }
             paths <- files
             ## Use a partial Rd db if there is one.
@@ -466,12 +473,17 @@ function(pkgdir, outfile, title, batch = FALSE,
     inputenc <- Sys.getenv("RD2PDF_INPUTENC", "inputenc")
     ## this needs to be canonical, e.g. 'utf8'
     ## trailer is for detection if we want to edit it later.
+    latex_outputEncoding <- latex_canonical_encoding(outputEncoding)
     setEncoding <-
         paste("\\usepackage[",
-              latex_canonical_encoding(outputEncoding), "]{",
+              latex_outputEncoding, "]{",
               inputenc, "} % @SET ENCODING@", sep="")
     useGraphicx <- "% \\usepackage{graphicx} % @USE GRAPHICX@"
     writeLines(c(setEncoding,
+                 if (inputenc == "inputenx" &&
+                     latex_outputEncoding == "utf8") {
+                     "\\IfFileExists{ix-utf8enc.dfu}{\\input{ix-utf8enc.dfu}}{}"
+                 },
     		 useGraphicx,
                  if (index) "\\makeindex{}",
                  "\\begin{document}"), out)
@@ -498,15 +510,16 @@ function(pkgdir, outfile, title, batch = FALSE,
         "{\\textbf{\\huge ", title, "}}\n",
         "\\par\\bigskip{\\large \\today}\n",
         "\\end{center}\n", sep = "", file = out)
-    if (description && file.exists(f <- file.path(pkgdir, "DESCRIPTION")))
-        .DESCRIPTION_to_latex(f, out)
-    ## running on the sources of a base package will have DESCRIPTION.in,
-    ## only.
-    if (description &&
-        file.exists(f <- file.path(pkgdir, "DESCRIPTION.in"))) {
-        version <- readLines(file.path(pkgdir, "../../../VERSION"))
-        .DESCRIPTION_to_latex(file.path(pkgdir, "DESCRIPTION.in"),
-                              out, version)
+    if(description) {
+        if(file.exists(f <- file.path(pkgdir, "DESCRIPTION")))
+            .DESCRIPTION_to_latex(f, out)
+        else if(file.exists(f <- file.path(pkgdir, "DESCRIPTION.in"))) {
+            ## running on the sources of a base package will have
+            ## DESCRIPTION.in, only.
+            version <- readLines(file.path(pkgdir, "../../../VERSION"))
+            .DESCRIPTION_to_latex(file.path(pkgdir, "DESCRIPTION.in"),
+                                  out, version)
+        }
     }
 
     ## Rd2.tex part 2: body
@@ -545,21 +558,28 @@ function(pkgdir, outfile, title, batch = FALSE,
     latexEncodings <- unique(latexEncodings)
     latexEncodings <- latexEncodings[!is.na(latexEncodings)]
     cyrillic <- if (nzchar(Sys.getenv("_R_CYRILLIC_TEX_"))) "utf8" %in% latexEncodings else FALSE
-    latex_outputEncoding <- latex_canonical_encoding(outputEncoding)
     encs <- latexEncodings[latexEncodings != latex_outputEncoding]
     if (length(encs) || hasFigures || cyrillic) {
         lines <- readLines(outfile)
+        moreUnicode <- inputenc == "inputenx" && "utf8" %in% encs
 	encs <- paste(encs, latex_outputEncoding, collapse=",", sep=",")
 
 	if (!cyrillic) {
-	    lines[lines == setEncoding] <-
+	    setEncoding2 <-
 		paste0("\\usepackage[", encs, "]{", inputenc, "}")
 	} else {
-	    lines[lines == setEncoding] <-
+	    setEncoding2 <-
 		paste(
 "\\usepackage[", encs, "]{", inputenc, "}
 \\IfFileExists{t2aenc.def}{\\usepackage[T2A]{fontenc}}{}", sep = "")
 	}
+	if (moreUnicode) {
+	    setEncoding2 <-
+		paste0(
+setEncoding2, "
+\\IfFileExists{ix-utf8enc.dfu}{\\input{ix-utf8enc.dfu}}{}")
+        }
+        lines[lines == setEncoding] <- setEncoding2
 	if (hasFigures)
 	    lines[lines == useGraphicx] <- "\\usepackage{graphicx}\\setkeys{Gin}{width=0.7\\textwidth}"
 	writeLines(lines, outfile)
@@ -741,7 +761,7 @@ function(pkgdir, outfile, title, batch = FALSE,
         } else if (substr(a, 1, 17) == "--outputEncoding=") {
             outenc <- substr(a, 18, 1000)
         } else if (substr(a, 1, 12) == "--build-dir=") {
-            build_dir<- substr(a, 13, 1000)
+            build_dir <- substr(a, 13, 1000)
         } else if (a == "--no-index") {
             index <- FALSE
         } else if (a == "--no-description") {
@@ -809,7 +829,7 @@ function(pkgdir, outfile, title, batch = FALSE,
 
     res <- try(texi2pdf('Rd2.tex', quiet = FALSE, index = index))
     if (inherits(res, "try-error")) {
-        message("Error in running tools::texi2pdf")
+        message("Error in running tools::texi2pdf()")
         do_cleanup()
         q("no", status = 1L, runLast = FALSE)
     }

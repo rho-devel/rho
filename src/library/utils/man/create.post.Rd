@@ -33,7 +33,7 @@ create.post(instructions = character(), description = "post",
     See \sQuote{Details}.}
   \item{address}{Recipient's email address, where applicable: for
     package bug reports sent by email this defaults to the address of
-    the package maintainer (the first if more than one is listed).} 
+    the package maintainer (the first if more than one is listed).}
   \item{ccaddress}{Optional email address for copies with the
     \code{"mailx"} and \code{"mailto"} methods.
     Use \code{ccaddress = ""} for no copy.}
@@ -57,26 +57,26 @@ create.post(instructions = character(), description = "post",
       (including address, Cc: address and subject) for you to edit and
       send.
 
-      This works where default mailers are set up (usual on Mac OS X and
+      This works where default mailers are set up (usual on OS X and
       Windows, and where \command{xdg-open} is available and configured on
       other Unix-alikes: if that fails it tries the browser set by
       \env{R_BROWSER}).
 
       This is the \sQuote{factory-fresh} default method as from \R 2.13.0.
     }
-    
+
     \item{\code{mailx}}{(Unix-alikes only.)
       A file editor (see \code{\link{file.edit}}) is
       opened with instructions and the template email.  When this
       returns, it is mailed using a Unix command line mail utility such
       as \code{mailx}, to the address (and optionally, the Cc: address)
       given.}
-    
+
     \item{\code{gnudoit}}{
       An (X)emacs mail buffer is opened for the email to be edited and
       sent: this requires the \command{gnudoit} program to be
       available.  Currently \code{subject} is ignored.}
-    
+
     \item{\code{ess}}{
       The body of the template email is sent to \code{stdout}.}
   }

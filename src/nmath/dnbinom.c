@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -63,6 +63,8 @@ double dnbinom(double x, double size, double prob, int give_log)
     if (prob <= 0 || prob > 1 || size < 0) ML_ERR_return_NAN;
     R_D_nonint_check(x);
     if (x < 0 || !R_FINITE(x)) return R_D__0;
+    /* limiting case as size approaches zero is point mass at zero */
+    if (x == 0 && size==0) return R_D__1;
     x = R_D_forceint(x);
 
     ans = dbinom_raw(size, x+size, prob, 1-prob, give_log);
@@ -84,6 +86,13 @@ double dnbinom_mu(double x, double size, double mu, int give_log)
     if (mu < 0 || size < 0) ML_ERR_return_NAN;
     R_D_nonint_check(x);
     if (x < 0 || !R_FINITE(x)) return R_D__0;
+
+    /* limiting case as size approaches zero is point mass at zero,
+     * even if mu is kept constant. limit distribution does not 
+     * have mean mu, though.
+     */
+    if (x == 0 && size==0) return R_D__1;
+
     x = R_D_forceint(x);
     if(x == 0)/* be accurate, both for n << mu, and n >> mu :*/
 	return R_D_exp(size * (size < mu ? log(size/(size+mu)) : log1p(- mu/(size+mu))));

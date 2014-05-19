@@ -95,7 +95,7 @@ clara <- function(x, k, metric = "euclidean", stand = FALSE,
 			  paste(if(nNA < 13) sprintf("Observations %s", pasteC(i))
 			  else sprintf("%d observations (%s ...)", nNA, pasteC(i[1:12])),
 				"\thave *only* NAs --> na.omit() them for clustering!",
-				sep = "\n")))
+				sep = "\n")), domain = NA)
 	} ## else
 	if(res$jstop == 1)
 	    stop("Each of the random samples contains objects between which\n",

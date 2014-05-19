@@ -14,7 +14,7 @@ bkde(x, kernel = "normal", canonical = FALSE, bandwidth,
 }
 \arguments{
 \item{x}{
-  vector of observations from the distribution whose density is to
+  numeric vector of observations from the distribution whose density is to
   be estimated.  Missing values are not allowed.
 }
 \item{bandwidth}{

@@ -1,6 +1,9 @@
 \name{dtpMatrix-class}
+\title{Packed Triangular Dense Matrices - "dtpMatrix"}
 \docType{class}
 \alias{dtpMatrix-class}
+\alias{crossprod,dtpMatrix,ddenseMatrix-method}
+\alias{crossprod,dtpMatrix,matrix-method}
 \alias{\%*\%,dtpMatrix,ddenseMatrix-method}
 \alias{\%*\%,dgeMatrix,dtpMatrix-method}
 \alias{\%*\%,dtpMatrix,matrix-method}
@@ -13,16 +16,13 @@
 \alias{determinant,dtpMatrix,missing-method}
 \alias{determinant,dtpMatrix,logical-method}
 \alias{diag,dtpMatrix-method}
+\alias{diag<-,dtpMatrix-method}
 \alias{norm,dtpMatrix,character-method}
 \alias{norm,dtpMatrix,missing-method}
 \alias{rcond,dtpMatrix,character-method}
 \alias{rcond,dtpMatrix,missing-method}
-\alias{solve,dtpMatrix,missing-method}
-\alias{solve,dtpMatrix,matrix-method}
-\alias{solve,dtpMatrix,ddenseMatrix-method}
+%\alias{solve,dtpMatrix,...-method}%--> solve-methods.Rd
 \alias{t,dtpMatrix-method}
-\alias{unpack,dtpMatrix-method}
-\title{Packed triangular dense matrices}
 \description{The \code{"dtpMatrix"} class is the class of triangular,
   dense, numeric matrices in packed storage.  The \code{"dtrMatrix"}
   class is the same except in nonpacked storage.}
@@ -60,17 +60,19 @@
       combinations, see \code{showMethods("\%*\%", class = "dtpMatrix")}.}
     \item{coerce}{\code{signature(from = "dtpMatrix", to = "dtrMatrix")}}
     \item{coerce}{\code{signature(from = "dtpMatrix", to = "matrix")}}
-    \item{determinant}{\code{signature(x = "dtpMatrix", logarithm = "missing")}: ... }
-    \item{determinant}{\code{signature(x = "dtpMatrix", logarithm = "logical")}: ... }
+    \item{determinant}{\code{signature(x = "dtpMatrix", logarithm = "logical")}:
+      the \code{\link{determinant}(x)} trivially is
+      \code{prod(diag(x))}, but computed on log scale to prevent over-
+      and underflow.}
     \item{diag}{\code{signature(x = "dtpMatrix")}: ... }
     \item{norm}{\code{signature(x = "dtpMatrix", type = "character")}: ... }
-    \item{norm}{\code{signature(x = "dtpMatrix", type = "missing")}: ... }
     \item{rcond}{\code{signature(x = "dtpMatrix", norm = "character")}: ... }
-    \item{rcond}{\code{signature(x = "dtpMatrix", norm = "missing")}: ... }
-    \item{solve}{\code{signature(a = "dtpMatrix", b = "missing")}: ... }
-    \item{solve}{\code{signature(a = "dtpMatrix", b = "matrix")}: ... }
-    \item{t}{\code{signature(x = "dtpMatrix")}: ... }
-    \item{unpack}{\code{signature(x = "dtpMatrix")}: ... }
+    \item{solve}{\code{signature(a = "dtpMatrix", b = "...")}:
+      efficiently using internal backsolve or forwardsolve, see
+      \code{\link{solve-methods}}.}
+    \item{t}{\code{signature(x = "dtpMatrix")}: \code{t(x)} remains
+      a \code{"dtpMatrix"}, lower triangular if \code{x} is upper
+      triangular, and vice versa.}
   }
 }
 \seealso{
@@ -79,11 +81,18 @@
 \examples{
 showClass("dtrMatrix")
 
-example("dtrMatrix-class")
+example("dtrMatrix-class", echo=FALSE)
 (p1 <- as(T2, "dtpMatrix"))
 str(p1)
 (pp <- as(T, "dtpMatrix"))
+ip1 <- solve(p1)
 stopifnot(length(p1@x) == 3, length(pp@x) == 3,
-          p1 @ uplo == T2 @ uplo, pp @ uplo == T @ uplo)
+          p1 @ uplo == T2 @ uplo, pp @ uplo == T @ uplo,
+	  identical(t(pp), p1), identical(t(p1), pp),
+	  all((l.d <- p1 - T2) == 0), is(l.d, "dtpMatrix"),
+	  all((u.d <- pp - T ) == 0), is(u.d, "dtpMatrix"),
+	  l.d@uplo == T2@uplo, u.d@uplo == T@uplo,
+	  identical(t(ip1), solve(pp)), is(ip1, "dtpMatrix"),
+	  all.equal(as(solve(p1,p1), "diagonalMatrix"), Diagonal(2)))
 }
 \keyword{classes}

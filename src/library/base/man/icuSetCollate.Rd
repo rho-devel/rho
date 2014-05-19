@@ -21,7 +21,7 @@ icuSetCollate(...)
   (\url{http://site.icu-project.org}).  For such systems,
   \code{icuSetCollate} can be used to tune the way collation is done.
   On other builds calling this function does nothing, with a warning.
-  
+
   Possible arguments are
   \describe{
     \item{\code{locale}:}{A character string such as \code{"da_DK"} giving the
@@ -51,23 +51,23 @@ icuSetCollate(...)
     \item{\code{hiragana_quaternary}:}{Possible values \code{"on"} (sort
       Hiragana first at quaternary level) and \code{"off"}.}
   }
-  Only the first three are likely to be of interest except to those with a 
+  Only the first three are likely to be of interest except to those with a
   detailed understanding of collation and specialized requirements.
 
-  Some examples are \code{case_level="on", strength="primary"} to ignore
-  accent differences and \code{alternate_handling="shifted"} to ignore
+  Some examples are \code{case_level = "on", strength = "primary"} to ignore
+  accent differences and \code{alternate_handling = "shifted"} to ignore
   space and punctuation characters.
 
   Note that these settings have no effect if collation is set to the
   \code{C} locale, unless \code{locale} is specified.
 }
 \note{
-  As from \R 2.9.0, ICU is used by default wherever it is available:
+  ICU is used by default wherever it is available:
   this include Mac OS >= 10.4 and many Linux installations.
 }
 \seealso{
   \link{Comparison}, \code{\link{sort}}
-  
+
   The ICU user guide chapter on collation
   (\url{http://userguide.icu-project.org/collation}).
 }
@@ -75,10 +75,10 @@ icuSetCollate(...)
 ## these examples depend on having ICU available, and on the locale
 x <- c("Aarhus", "aarhus", "safe", "test", "Zoo")
 sort(x)
-icuSetCollate(case_first="upper"); sort(x)
-icuSetCollate(case_first="lower"); sort(x)
+icuSetCollate(case_first = "upper"); sort(x)
+icuSetCollate(case_first = "lower"); sort(x)
 
-icuSetCollate(locale="da_DK", case_first="default"); sort(x)
-icuSetCollate(locale="et_EE"); sort(x)
+icuSetCollate(locale = "da_DK", case_first = "default"); sort(x)
+icuSetCollate(locale = "et_EE"); sort(x)
 }}
 \keyword{ utilities }

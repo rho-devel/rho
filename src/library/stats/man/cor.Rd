@@ -1,7 +1,9 @@
 % File src/library/stats/man/cor.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
+
+\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{cor}
 \title{Correlation, Variance and Covariance (Matrices)}
@@ -12,7 +14,7 @@ cov(x, y = NULL, use = "everything",
     method = c("pearson", "kendall", "spearman"))
 
 cor(x, y = NULL, use = "everything",
-     method = c("pearson", "kendall", "spearman"))
+    method = c("pearson", "kendall", "spearman"))
 
 cov2cor(V)
 }
@@ -54,13 +56,13 @@ cov2cor(V)
 \details{
   For \code{cov} and \code{cor} one must \emph{either} give a matrix or
   data frame for \code{x} \emph{or} give both \code{x} and \code{y}.
-  
+
   The inputs must be numeric (as determined by \code{\link{is.numeric}}:
   logical values are also allowed for historical compatibility): the
   \code{"kendall"} and \code{"spearman"} methods make sense for ordered
   inputs but \code{\link{xtfrm}} can be used to find a suitable prior
   transformation to numbers.
-  
+
   \code{var} is just another interface to \code{cov}, where
   \code{na.rm} is used to determine the default for \code{use} when that
   is unspecified.  If \code{na.rm} is \code{TRUE} then the complete
@@ -85,7 +87,7 @@ cov2cor(V)
   pairs for that pair of variables.   For \code{cov} and \code{var},
   \code{"pairwise.complete.obs"} only works with the \code{"pearson"}
   method.
-  Note that (the equivalent of) \code{var(double(0), use=*)} gives
+  Note that (the equivalent of) \code{var(double(0), use = *)} gives
   \code{NA} for \code{use = "everything"} and \code{"na.or.complete"},
   and gives an error in the other cases.
 
@@ -102,8 +104,8 @@ cov2cor(V)
   data do not necessarily come from a bivariate normal distribution.\cr
   For \code{cov()}, a non-Pearson method is unusual but available for
   the sake of completeness.  Note that \code{"spearman"} basically
-  computes \code{cor(R(x), R(y))} (or \code{cov(.,.)}) where
-  \code{R(u) := rank(u, na.last="keep")}. In the case of missing values, the
+  computes \code{cor(R(x), R(y))} (or \code{cov(., .)}) where \code{R(u)
+  := rank(u, na.last = "keep")}. In the case of missing values, the
   ranks are calculated depending on the value of \code{use}, either
   based on complete observations, or based on pairwise completeness with
   reranking for each pair.
@@ -114,6 +116,12 @@ cov2cor(V)
   \code{\link{sweep}(.., FUN = "/")} twice.  The \code{cov2cor} function
   is even a bit more efficient, and provided mostly for didactical
   reasons.
+}
+\note{
+  Some people have noted that the code for Kendall's tau is slow for
+  very large datasets (many more than 1000 cases).  It rarely makes
+  sense to do such a computation, but see function
+  \code{\link[pcaPP:cor.fk]{cor.fk}} in package \CRANpkg{pcaPP}.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
@@ -128,12 +136,12 @@ cov2cor(V)
   \code{\link{sd}} for standard deviation (vectors).
 }
 \examples{
-var(1:10)# 9.166667
+var(1:10)  # 9.166667
 
-var(1:5,1:5)# 2.5
+var(1:5, 1:5) # 2.5
 
 ## Two simple vectors
-cor(1:10,2:11)# == 1
+cor(1:10, 2:11) # == 1
 
 ## Correlation Matrix of Multivariate sample:
 (Cl <- cor(longley))
@@ -152,23 +160,40 @@ cor(cbind(P = Cl[i], S = clS[i], K = clK[i]))
 ##           to become the correlation matrix.
 cov2cor # see the function definition {and learn ..}
 stopifnot(all.equal(Cl, cov2cor(cov(longley))),
-          all.equal(cor(longley, method="kendall"),
-            cov2cor(cov(longley, method="kendall"))))
+          all.equal(cor(longley, method = "kendall"),
+            cov2cor(cov(longley, method = "kendall"))))
 
 ##--- Missing value treatment:
+% "everything", "all.obs", "complete.obs", "na.or.complete", "pairwise.complete.obs"
 C1 <- cov(swiss)
-range(eigen(C1, only.values=TRUE)$values) # 6.19        1921
-swM <- swiss
-swM[1,2] <- swM[7,3] <- swM[25,5] <- NA # create 3 "missing"
-try(cov(swM)) # Error: missing obs...
-C2 <- cov(swM, use = "complete")
-range(eigen(C2, only.values=TRUE)$values) # 6.46        1930
-C3 <- cov(swM, use = "pairwise")
-range(eigen(C3, only.values=TRUE)$values) # 6.19        1938
+range(eigen(C1, only.values = TRUE)$values) # 6.19        1921
 
-symnum(cor(swM, method = "kendall", use = "complete"))
+## swM := "swiss" with  3 "missing"s :
+swM <- swiss
+colnames(swM) <- abbreviate(colnames(swiss), min=6)
+swM[1,2] <- swM[7,3] <- swM[25,5] <- NA # create 3 "missing"
+
+## Consider all 5 "use" cases :
+(C. <- cov(swM)) # use="everything"  quite a few NA's in cov.matrix
+try(cov(swM, use = "all")) # Error: missing obs...
+C2 <- cov(swM, use = "complete")
+stopifnot(identical(C2, cov(swM, use = "na.or.complete")))
+range(eigen(C2, only.values = TRUE)$values) # 6.46   1930
+C3 <- cov(swM, use = "pairwise")
+range(eigen(C3, only.values = TRUE)$values) # 6.19   1938
+
 ## Kendall's tau doesn't change much:
-symnum(cor(swiss, method = "kendall"))
+symnum(Rc <- cor(swM, method = "kendall", use = "complete"))
+symnum(Rp <- cor(swM, method = "kendall", use = "pairwise"))
+symnum(R. <- cor(swiss, method = "kendall"))
+
+## "pairwise" is closer componentwise,
+summary(abs(c(1 - Rp/R.)))
+summary(abs(c(1 - Rc/R.)))
+
+## but "complete" is closer in Eigen space:
+EV <- function(m) eigen(m, only.values=TRUE)$values
+summary(abs(1 - EV(Rp)/EV(R.)) / abs(1 - EV(Rc)/EV(R.)))
 }
 \keyword{univar}
 \keyword{multivariate}

@@ -50,7 +50,7 @@ corMatrix.pdMat <-
   function(object, ...)
 {
   if (!isInitialized(object)) {
-    stop("Cannot access the matrix of uninitialized objects")
+    stop("cannot access the matrix of uninitialized objects")
   }
   Var <- pdMatrix(object)
   if (length(unlist(dimnames(Var))) == 0) {
@@ -87,7 +87,7 @@ pdConstruct.pdMat <-
     if (inherits(value, "formula") || data.class(value) == "call") {
       ## constructing from a formula
       if (!is.null(form)) {
-	warning("Ignoring argument \"form\"")
+	warning("ignoring argument 'form'")
       }
       form <- formula(value)
       if (length(form) == 3) {          #two-sided case - nlme
@@ -95,24 +95,23 @@ pdConstruct.pdMat <-
       }
     } else if (is.character(value)) {	# constructing from character array
       if (length(nam) > 0) {
-	warning("Ignoring argument \"nam\"")
+	warning("ignoring argument 'nam'")
       }
       nam <- value
     } else if (is.matrix(value)) {	# constructing from a pd matrix
       vdim <- dim(value)
       if (length(vdim) != 2 || diff(vdim) != 0) {
-        stop("\"value\" must be a square matrix")
+        stop("'value' must be a square matrix")
       }
       if (length(unlist(vnam <- dimnames(value))) > 0) {
         vnam <- unique(unlist(vnam))
         if (length(vnam) != vdim[1]) {
-          stop("dimnames of value must match or be NULL")
+          stop("dimnames of 'value' must match or be NULL")
         }
         dimnames(value) <- list(vnam, vnam)
         if (length(nam) > 0) {          # check consistency
 	  if (any(is.na(match(nam, vnam))) || any(is.na(match(vnam, nam)))) {
-	    stop(paste("Names of \"value\" are not consistent",
-		       "with \"nam\" argument"))
+	    stop("names of 'value' are not consistent with 'nam' argument")
 	  }
 	  value <- value[nam, nam, drop = FALSE]
 	} else {
@@ -131,11 +130,12 @@ pdConstruct.pdMat <-
     } else if (data.class(value) == "list") {
       ## constructing from a list of two-sided formulae - nlme case
       if (!is.null(form)) {
-	warning("Ignoring argument \"form\"")
+	warning("ignoring argument 'form'")
       }
       form <- value
     } else {
-      stop(paste(deparse(object), "is not a valid object for \"pdMat\""))
+        stop(gettextf("%s is not a valid object for \"pdMat\"",
+                      sQuote(deparse(object))), domain = NA)
     }
   }
 
@@ -148,7 +148,7 @@ pdConstruct.pdMat <-
                              function(el) {
                                inherits(el, "formula") && length(el) == 3
                              })))) {
-        stop("All elements of \"form\" list must be two-sided formulas")
+        stop("all elements of 'form' list must be two-sided formulas")
       }
       val <- list()
       for(i in seq_along(form)) {
@@ -168,7 +168,7 @@ pdConstruct.pdMat <-
         namesForm <- Names(asOneSidedFormula(form), data)
 ##        namesForm1 <- NULL
       } else {
-        stop("\"form\" can only be a formula or a list of formulae")
+        stop("'form' can only be a formula or a list of formulae")
       }
     }
     if (length(namesForm) > 0) {
@@ -198,7 +198,7 @@ pdConstruct.pdMat <-
           if (!any(is.na(match(namCopy, namesForm)))) {
             err <- FALSE
           }
-          if (err) stop("\"form\" not consistent with \"nam\"")
+          if (err) stop("'form' not consistent with 'nam'")
         }
       }
     }
@@ -206,8 +206,7 @@ pdConstruct.pdMat <-
 
   if (is.matrix(object)) {	# initialized as matrix, check consistency
     if (length(nam) > 0 && (length(nam) != dim(object)[2])) {
-      stop(paste("Length of nam not consistent with dimensions",
-		 "of initial value"))
+      stop("length of 'nam' not consistent with dimensions of initial value")
     }
   }
   attr(object, "formula") <- form
@@ -225,11 +224,10 @@ pdMatrix.pdMat <-
   function(object, factor = FALSE)
 {
   if (!isInitialized(object)) {
-    stop("Cannot access the matrix of uninitialized objects")
+    stop("cannot access the matrix of uninitialized objects")
   }
   if (factor) {
-    stop(paste("No default method for extracting the square",
-               "root of a pdMat object"))
+    stop("no default method for extracting the square root of a \"pdMat\" object")
   } else {
     crossprod(pdMatrix(object, factor = TRUE))
   }
@@ -246,7 +244,7 @@ coef.pdMat <-
   if (unconstrained || !isInitialized(object)) {
     as.vector(object)
   } else {
-    stop("Don't know how to obtain constrained coefficients")
+    stop("do not know how to obtain constrained coefficients")
   }
 }
 
@@ -256,7 +254,7 @@ coef.pdMat <-
   value <- as.numeric(value)
   if (isInitialized(object)) {
     if (length(value) != length(object)) {
-      stop("Cannot change the length of the parameter after initialization")
+      stop("cannot change the length of the parameter after initialization")
     }
   } else {
     return(pdConstruct(object, value))
@@ -274,8 +272,7 @@ Dim.pdMat <-
   } else if (isInitialized(object)) {
     return(dim(as.matrix(object)))
   }
-  stop(paste("Cannot access the number of columns of",
-	     "uninitialized objects without names."))
+  stop("cannot access the number of columns of uninitialized objects without names")
 }
 
 formula.pdMat <-
@@ -291,8 +288,7 @@ logDet.pdMat <-
   function(object, ...)
 {
   if (!isInitialized(object)) {
-    stop(paste("Cannot extract the log of the determinant",
-	       "from an uninitialized object"))
+    stop("cannot extract the log of the determinant from an uninitialized object")
   }
   sum(log(svd(pdMatrix(object, factor = TRUE))$d))
 }
@@ -303,7 +299,7 @@ logDet.pdMat <-
   value <- as.matrix(value)
   ## check for consistency of dimensions when object is initialized
   if (isInitialized(object) && any(dim(value) != Dim(object))) {
-    stop("Cannot change dimensions on an initialized pdMat object")
+    stop("cannot change dimensions on an initialized \"pdMat\" object")
   }
   pdConstruct(object, value)
 }
@@ -325,14 +321,14 @@ Names.pdMat <-
     if (length(dn <- Names(object)) == 0) {
       if (isInitialized(object)) {	# object is initialized without names
 	if (length(value) != (aux <- Dim(object)[2])) {
-	  stop(paste("Length of names should be", aux))
+            stop(gettextf("Length of names should be %d", aux), domain = NA)
 	}
       }
       attr(object, "Dimnames") <- list(value, value)
       return(object)
     }
     if (length(dn) != length(value)) {
-      stop(paste("Length of names should be", length(dn)))
+        stop(gettextf("Length of names should be %d", length(dn)), domain = NA)
     }
     err <- FALSE
     if (any(noMatch <- is.na(match(value, dn)))) {
@@ -370,8 +366,7 @@ Names.pdMat <-
       }
     }
     if (err) {
-      stop(paste("Names being assigned do not correspond to a permutation",
-                 "of previous names", sep = "\n"))
+      stop("names being assigned do not correspond to a permutation of previous names")
     }
     indMatch <- match(value, dn)
     if ((length(indMatch) == 1) || all(diff(indMatch) == 1)) {
@@ -530,7 +525,7 @@ solve.pdMat <-
   function(a, b, ...)
 {
   if (!isInitialized(a)) {
-    stop("Cannot get the inverse of an uninitialized object")
+    stop("cannot get the inverse of an uninitialized object")
   }
   matrix(a) <- solve(as.matrix(a))
   a
@@ -616,8 +611,8 @@ pdConstruct.pdSymm <-
   }
   Ncol <- round((sqrt(8*length(val) + 1) - 1)/2)
   if (length(val) != round((Ncol * (Ncol + 1))/2)) {
-    stop(paste("An object of length", length(val),
-	       "does not match the required parameter size"))
+      stop(gettextf("an object of length %d does not match the required parameter size",
+                    length(val)), domain = NA)
   }
   class(val) <- c("pdSymm", "pdMat")
   val
@@ -637,7 +632,7 @@ pdMatrix.pdSymm <-
   function(object, factor = FALSE)
 {
   if (!isInitialized(object)) {
-    stop("Cannot extract matrix from an uninitialized object")
+    stop("cannot extract matrix from an uninitialized object")
   }
   if (factor) {
     Ncol <- Dim(object)[2]
@@ -683,8 +678,7 @@ logDet.pdSymm <-
   function(object, ...)
 {
   if (!isInitialized(object)) {
-    stop(paste("Cannot extract the log of the determinant",
-	       "from an uninitialized object"))
+    stop("cannot extract the log of the determinant from an uninitialized object")
   }
   attr(pdMatrix(object, factor = TRUE), "logDet")
 }
@@ -693,7 +687,7 @@ solve.pdSymm <-
   function(a, b, ...)
 {
   if (!isInitialized(a)) {
-    stop("Cannot extract the inverse from an uninitialized object")
+    stop("cannot extract the inverse from an uninitialized object")
   }
   coef(a) <- -coef(a, TRUE)
   a
@@ -743,8 +737,8 @@ pdConstruct.pdLogChol <-
   }
   Ncol <- round((sqrt(8*length(val) + 1) - 1)/2)
   if (length(val) != round((Ncol * (Ncol + 1))/2)) {
-    stop(paste("An object of length", length(val),
-	       "does not match a Cholesky factor"))
+      stop(gettextf("an object of length %d does not match a Cholesky factor",
+                    length(val)), domain = NA)
   }
   class(val) <- c("pdLogChol", "pdSymm", "pdMat")
   val
@@ -766,7 +760,7 @@ solve.pdLogChol <-
   function(a, b, ...)
 {
   if (!isInitialized(a)) {
-    stop("Cannot get the inverse of an uninitialized object")
+    stop("cannot get the inverse of an uninitialized object")
   }
   Ncol <- (-1 + sqrt(1 + 8 * length(a))) / 2
 #  val <- array(.Fortran("dbksl",
@@ -850,7 +844,7 @@ summary.pdLogChol <-
 #  function(a, b)
 #{
 #  if (!isInitialized(a)) {
-#    stop("Cannot get the inverse of an uninitialized object")
+#    stop("cannot get the inverse of an uninitialized object")
 #  }
 #  Ncol <- (-1 + sqrt(1 + 8 * length(a))) / 2
 #  val <- array(.Fortran("dbksl",
@@ -998,7 +992,7 @@ summary.pdLogChol <-
 #  function(a, b)
 #{
 #  if (!isInitialized(a)) {
-#    stop("Cannot extract the inverse from an uninitialized object")
+#    stop("cannot extract the inverse from an uninitialized object")
 #  }
 #  coef(a) <- -coef(a, TRUE)
 #  a
@@ -1149,8 +1143,8 @@ pdConstruct.pdNatural <-
   }
   Ncol <- round((sqrt(8*length(val) + 1) - 1)/2)
   if (length(val) != round((Ncol * (Ncol + 1))/2)) {
-    stop(paste("An object of length", length(val),
-	       "does not match the required parameter size"))
+      stop(gettextf("an object of length %d does not match the required parameter size",
+                    length(val)), domain = NA)
   }
   class(val) <- c("pdNatural", "pdMat")
   val
@@ -1170,7 +1164,7 @@ pdMatrix.pdNatural <-
   function(object, factor = FALSE)
 {
   if (!isInitialized(object)) {
-    stop("Cannot extract matrix from an uninitialized object")
+    stop("cannot extract matrix from an uninitialized object")
   }
   if (factor) {
     Ncol <- Dim(object)[2]
@@ -1218,8 +1212,7 @@ logDet.pdNatural <-
   function(object, ...)
 {
   if (!isInitialized(object)) {
-    stop(paste("Cannot extract the log of the determinant",
-	       "from an uninitialized object"))
+    stop("cannot extract the log of the determinant from an uninitialized object")
   }
   attr(pdMatrix(object, factor = TRUE), "logDet")
 }
@@ -1229,7 +1222,7 @@ solve.pdNatural <-
   function(a, b, ...)
 {
   if (!isInitialized(a)) {
-    stop("Cannot get the inverse of an uninitialized object")
+    stop("cannot get the inverse of an uninitialized object")
   }
   Ncol <- round((-1 + sqrt(1 + 8 * length(a))) / 2)
   if (Ncol > 1) {
@@ -1312,8 +1305,8 @@ pdConstruct.pdDiag <-
   }
   if ((aux <- length(Names(val))) > 0) {
     if (aux && (aux != length(val))) {
-      stop(paste("An object of length", length(val),
-		 "does not match the required parameter size"))
+        stop(gettextf("an object of length %d does not match the required parameter size",
+                      length(val)), domain = NA)
     }
   }
   val
@@ -1329,7 +1322,7 @@ pdMatrix.pdDiag <-
   function(object, factor = FALSE)
 {
   if (!isInitialized(object)) {
-    stop("Cannot extract the matrix from an uninitialized object")
+    stop("cannot extract the matrix from an uninitialized object")
   }
   len <- length(as.vector(object))
   if (factor) {
@@ -1370,8 +1363,7 @@ logDet.pdDiag <-
   function(object, ...)
 {
   if (!isInitialized(object)) {
-    stop(paste("Cannot extract the log of the determinant",
-	       "from an uninitialized object"))
+    stop("cannot extract the log of the determinant from an uninitialized object")
   }
   sum(as.vector(object))
 }
@@ -1380,7 +1372,7 @@ solve.pdDiag <-
   function(a, b, ...)
 {
   if (!isInitialized(a)) {
-    stop("Cannot extract the inverse from an uninitialized object")
+    stop("cannot extract the inverse from an uninitialized object")
   }
   coef(a) <- -coef(a, TRUE)
   a
@@ -1414,10 +1406,10 @@ corMatrix.pdIdent <-
   function(object, ...)
 {
   if (!isInitialized(object)) {
-    stop("Cannot extract the matrix from an uninitialized pdMat object")
+    stop("cannot extract the matrix from an uninitialized \"pdIdent\" object")
   }
   if (is.null(Ncol <- attr(object, "ncol"))) {
-    stop(paste("Cannot extract the matrix with uninitialized dimensions"))
+    stop("cannot extract the matrix with uninitialized dimensions")
   }
   val <- diag(nrow = Ncol)
   attr(val, "stdDev") <- rep(exp(as.vector(object)), Ncol)
@@ -1454,12 +1446,11 @@ pdConstruct.pdIdent <-
     return(value)
   }
   if (length(val) > 1) {
-    stop(paste("An object of length", length(val),
-	       "does not match the required parameter size"))
+      stop(gettextf("an object of length %d does not match the required parameter size",
+                    length(val)), domain = NA)
   }
   if (((aux <- length(Names(val))) == 0) && is.null(formula(val))) {
-    stop(paste("Must give names when initializing pdIdent from parameter.",
-	       "without a formula"))
+    stop("must give names when initializing \"pdIdent\" from parameter without a formula")
   } else {
     attr(val, "ncol") <- aux
   }
@@ -1477,10 +1468,10 @@ pdMatrix.pdIdent <-
   function(object, factor = FALSE)
 {
   if (!isInitialized(object)) {
-    stop("Cannot extract the matrix from an uninitialized pdMat object")
+    stop("cannot extract the matrix from an uninitialized \"pdIdent\" object")
   }
   if (is.null(Ncol <- attr(object, "ncol"))) {
-    stop(paste("Cannot extract the matrix with uninitialized dimensions"))
+    stop("cannot extract the matrix with uninitialized dimensions")
   }
   value <- diag(Ncol)
   if (factor) {
@@ -1509,7 +1500,7 @@ Dim.pdIdent <-
   if (!is.null(val <- attr(object, "ncol"))) {
     c(val, val)
   } else {
-    stop("Cannot extract the dimensions")
+    stop("cannot extract the dimensions")
   }
 }
 
@@ -1523,7 +1514,7 @@ solve.pdIdent <-
   function(a, b, ...)
 {
   if (!isInitialized(a)) {
-    stop("Cannot extract the inverse from an uninitialized object")
+    stop("cannot extract the inverse from an uninitialized object")
   }
   coef(a) <- -coef(a, TRUE)
   a
@@ -1554,10 +1545,10 @@ corMatrix.pdCompSymm <-
   function(object, ...)
 {
   if (!isInitialized(object)) {
-    stop("Cannot extract the matrix from an uninitialized pdMat object")
+    stop("cannot extract the matrix from an uninitialized \"pdCompSymm\" object")
   }
   if (is.null(Ncol <- attr(object, "ncol"))) {
-    stop(paste("Cannot extract the matrix with uninitialized dimensions"))
+    stop("cannot extract the matrix with uninitialized dimensions")
   }
   obj <- as.vector(object)
   aux <- exp(obj[2])
@@ -1597,7 +1588,7 @@ pdConstruct.pdCompSymm <-
     aux <- aux * t(value * aux)
     if ((aux <- mean(aux[row(aux) != col(aux)])) <= -1/(nc - 1)) {
       aux <- -1/nc
-      warning("Initializing pdCompSymm object is not positive definite")
+      warning("initializing \"pdCompSymm\" object is not positive definite")
     }
     value <- c(log(mean(diag(value)))/2, log((aux + 1/(nc - 1))/(1 - aux)))
     attributes(value) <- attributes(val)[names(attributes(val)) != "dim"]
@@ -1606,12 +1597,11 @@ pdConstruct.pdCompSymm <-
     return(value)
   }
   if (length(val) != 2) {
-    stop(paste("An object of length", length(val),
-	       "does not match the required parameter size"))
+      stop(gettextf("an object of length %d does not match the required parameter size",
+                    length(val)), domain = NA)
   }
   if (((aux <- length(Names(val))) == 0) && is.null(formula(val))) {
-    stop(paste("Must give names when initializing pdCompSymm from parameter.",
-	       "without a formula"))
+    stop("must give names when initializing \"pdCompSymm\" from parameter without a formula")
   } else {
     attr(val, "ncol") <- aux
   }
@@ -1632,10 +1622,10 @@ pdMatrix.pdCompSymm <-
   function(object, factor = FALSE)
 {
   if (!isInitialized(object)) {
-    stop("Cannot extract the matrix from an uninitialized pdMat object")
+    stop("cannot extract the matrix from an uninitialized \"pdCompSymm\" object")
   }
   if (is.null(Ncol <- attr(object, "ncol"))) {
-    stop(paste("Cannot extract the matrix with uninitialized dimensions"))
+    stop("cannot extract the matrix with uninitialized dimensions")
   }
 
   obj <- as.vector(object)
@@ -1662,8 +1652,7 @@ coef.pdCompSymm <-
   if (unconstrained || !isInitialized(object)) NextMethod()
   else {
     if (is.null(Ncol <- attr(object, "ncol"))) {
-      stop(paste("Cannot obtain constrained coefficients with",
-		 "uninitialized dimensions"))
+      stop("cannot obtain constrained coefficients with uninitialized dimensions")
     }
     val <- as.vector(object)
     aux <- exp(val[2])
@@ -1679,7 +1668,7 @@ Dim.pdCompSymm <-
   if (!is.null(val <- attr(object, "ncol"))) {
     c(val, val)
   } else {
-    stop("Cannot extract the dimensions")
+    stop("cannot extract the dimensions")
   }
 }
 
@@ -1715,10 +1704,10 @@ corMatrix.pdBlocked <-
   function(object, ...)
 {
   if (!isInitialized(object)) {
-    stop("Cannot access the matrix of uninitialized objects")
+    stop("cannot access the matrix of uninitialized objects")
   }
   if (length(Names(object)) == 0) {
-    stop("Cannot access the matrix of object without names")
+    stop("cannot access the matrix of object without names")
   }
   namesList <- Names(object, TRUE)
   Ncol <- Dim(object)[2]
@@ -1756,7 +1745,7 @@ pdConstruct.pdBlocked <-
   ## checking validity and consistency of form, nam, and pdClass
   if (!is.null(form)) {
     if (data.class(form) != "list") {
-      stop("\"form\" must be a list")
+      stop("'form' must be a list")
     }
     nF <- length(form)
   } else {
@@ -1765,11 +1754,11 @@ pdConstruct.pdBlocked <-
 
   if (!is.null(nam)) {
     if (data.class(nam) != "list") {
-      stop("\"nam\" must be a list")
+      stop("'nam' must be a list")
     }
     nN <- length(nam)
     if ((nF > 0) && (nN != nF)) {
-      stop("\"form\" and \"nam\" have incompatible lengths")
+      stop("'form' and 'nam' have incompatible lengths")
     }
   } else {
     nN <- 0
@@ -1777,15 +1766,15 @@ pdConstruct.pdBlocked <-
 
   if (!missing(pdClass)) {
     if (!is.character(pdClass)) {
-      stop("\"pdClass\" must be a character vector")
+      stop("'pdClass' must be a character vector")
     }
     nP <- length(pdClass)
     if ((nP > 1)) {
       if ((nF > 0) && (nF != nP)) {
-	stop("\"form\" and \"pdClass\" have incompatible lengths")
+	stop("'form' and 'pdClass' have incompatible lengths")
       }
       if ((nN > 0) && (nN != nP)) {
-	stop("\"nam\" and \"pdClass\" have incompatible lengths")
+	stop("'nam' and 'pdClass' have incompatible lengths")
       }
     }
   } else {
@@ -1797,18 +1786,17 @@ pdConstruct.pdBlocked <-
   oVal <- value
   if (length(value) == 0 || is.matrix(value) || is.numeric(value)) {
     if (nB == 1) {
-      stop("None of the arguments specify more than one block")
+      stop("LNone of the arguments specify more than one block")
     }
     ## will first do a null initialization when value is a matrix or numeric
     value <- lapply(vector("list", nB), function(el) numeric(0))
   } else {
     if (data.class(value) != "list") {
-      stop(paste("\"object\" must be a list, when not missing,",
-		 "not a matrix, and not numeric"))
+      stop("'object' must be a list when not missing, not a matrix, and not numeric")
     }
     nO <- length(value)
     if ((nB > 1) && (nB != nO)) {
-      stop("Arguments imply different number of blocks")
+      stop("arguments imply different number of blocks")
     }
     nB <- nO
   }
@@ -1880,7 +1868,7 @@ pdConstruct.pdBlocked <-
     object[[i]] <- pdMat(value[[i]], form[[i]], nam[[i]], data, pdClass[i])
   }
   if (!all(unlist(lapply(object, inherits, "pdMat")))) {
-    stop("all elements in the argument must generate pdMat objects")
+    stop("all elements in the argument must generate \"pdMat\" objects")
   }
   namesList <- lapply(object, Names)
   lNam <- unlist(lapply(namesList, length))
@@ -1903,26 +1891,26 @@ pdConstruct.pdBlocked <-
     }
   }
   if (sum(namInterc) > 1 && (length(unique(lNam[namInterc])) == 1)) {
-    stop("Cannot have duplicated column names in a pdMat object")
+    stop("cannot have duplicated column names in a \"pdMat\" object")
   }
   if ((sum(namInterc) == length(lNam)) ||
       !any(lNam[!namInterc])) {			# no names
     class(object) <- c("pdBlocked", "pdMat")
     if (is.null(formula(object))) {
-      stop("Must have formula, when no names are given")
+      stop("must have formula when no names are given")
     }
     if (length(oVal) && (is.matrix(oVal) || is.numeric(oVal))) {
-      stop("Must give names when initializing from matrix or parameter")
+      stop("must give names when initializing from matrix or parameter")
     }
     return(object)
   } else {
     if (!all(lNam)) {
-      stop("All elements must have names, when any has names.")
+      stop("all elements must have names when any has names")
     }
     attr(object, "namesList") <- namesList
     allNames <- unlist(namesList)
     if (any(duplicated(allNames))) {
-      stop("Cannot have duplicated column names in a pdMat object")
+      stop("cannot have duplicated column names in a \"pdMat\" object")
     }
     plen <- unlist(lapply(object, function(el)
 			  {
@@ -1934,7 +1922,7 @@ pdConstruct.pdBlocked <-
 			    }
 			  }))
     if (!all(plen)) {
-      stop("All elements must have a non-zero size")
+      stop("all elements must have a non-zero size")
     }
     attr(object, "plen") <- plen
     attr(object, "Dimnames") <- list(allNames, allNames)
@@ -1955,10 +1943,10 @@ pdMatrix.pdBlocked <-
   function(object, factor = FALSE)
 {
   if (!isInitialized(object)) {
-    stop("Cannot access the matrix of uninitialized objects")
+    stop("cannot access the matrix of uninitialized objects")
   }
   if (length(Names(object)) == 0) {
-    stop("Cannot access the matrix of object without names")
+    stop("cannot access the matrix of object without names")
   }
   namesList <- Names(object, TRUE)
   Ncol <- Dim(object)[2]
@@ -1987,11 +1975,10 @@ coef.pdBlocked <-
   function(object, ..., value)
 {
   if (is.null(plen <- attr(object, "plen"))) {
-    stop(paste("Cannot change the parameter when",
-	       "length of parameters is undefined"))
+    stop("cannot change the parameter when length of parameters is undefined")
   }
   if (length(value) != sum(plen)) {
-    stop("Cannot change parameter length of initialized pdMat object")
+    stop("cannot change parameter length of initialized \"pdMat\" object")
   }
   ends <- cumsum(plen)
   starts <- 1 + c(0, ends[-length(ends)])
@@ -2008,7 +1995,7 @@ formula.pdBlocked <-
   isNULL <- unlist(lapply(val, is.null))
   if (all(isNULL)) return(NULL)
   if (any(isNULL)) {
-    stop("All elements must have formulas, when any has a formula.")
+    stop("all elements must have formulas when any has a formula")
   }
   if (asList) return(val)
   isTwoSided <- unlist(lapply(val,
@@ -2026,8 +2013,7 @@ formula.pdBlocked <-
     return(val)
   }
   if (any(isTwoSided)) {
-    stop(paste("All elements of formula must be list of two-sided formulae",
-               "or two-sided formulae"))
+    stop("all elements of formula must be list of two-sided formulae or two-sided formulae")
   }
   val <- lapply(val, terms)
   aux <- paste(unlist(lapply(val, function(el) attr(el, "term.labels"))),
@@ -2059,14 +2045,14 @@ logDet.pdBlocked <-
   Ncol <- Dim(object)[2]
   dims <- dim(value)
   if (!((dims[1] == dims[2]) && (dims[1] == Ncol))) {
-    stop("Cannot change the number of columns on an initialized object")
+    stop("cannot change the number of columns on an initialized object")
   }
   if (is.null(vNames <- rownames(value))) {
     vNames <- unlist(namesList)
     dimnames(value) <- list(vNames, vNames)
   } else {
     if (!(all(match(unlist(namesList), vNames, nomatch = 0)))) {
-      stop("Names of object and value must match.")
+      stop("names of object and value must match")
     }
     attr(object, "Dimnames") <- list(vNames, vNames)
   }
@@ -2103,7 +2089,7 @@ solve.pdBlocked <-
   function(a, b, ...)
 {
   if (!isInitialized(a)) {
-    stop("Cannot get the inverse of an uninitialized object")
+    stop("cannot get the inverse of an uninitialized object")
   }
   coef(a) <- unlist(lapply(a, function(el) coef(solve(el), TRUE)))
   a

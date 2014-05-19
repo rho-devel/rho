@@ -16,7 +16,8 @@ example(topic, package = NULL, lib.loc = NULL,
         character.only = FALSE, give.lines = FALSE, local = FALSE,
         echo = TRUE, verbose = getOption("verbose"),
         setRNG = FALSE, ask = getOption("example.ask"),
-        prompt.prefix = abbreviate(topic, 6))
+        prompt.prefix = abbreviate(topic, 6),
+        run.dontrun = FALSE)
 }
 \arguments{
   \item{topic}{name or literal character string: the online
@@ -45,7 +46,7 @@ example(topic, package = NULL, lib.loc = NULL,
     running a package's examples.  This is currently equivalent to
     \code{setRNG = \{RNGkind("default", "default"); set.seed(1)\}}.}
   \item{ask}{logical (or \code{"default"}) indicating if
-    \code{\link{devAskNewPage}(ask=TRUE)} should be called
+    \code{\link{devAskNewPage}(ask = TRUE)} should be called
     before graphical output happens from the example code.  The value
     \code{"default"} (the factory-fresh default) means to ask if
     \code{echo == TRUE} and the graphics device appears to be
@@ -53,6 +54,8 @@ example(topic, package = NULL, lib.loc = NULL,
     device and to any devices opened by the example code.}
   \item{prompt.prefix}{character; prefixes the prompt to be used if
     \code{echo = TRUE}.}
+  \item{run.dontrun}{logical indicating that \verb{\dontrun}
+    should be ignored.}
 }
 \value{
   The value of the last evaluated expression, unless \code{give.lines}
@@ -89,7 +92,7 @@ example(topic, package = NULL, lib.loc = NULL,
 \examples{
 example(InsectSprays)
 ## force use of the standard package 'stats':
-example("smooth", package="stats", lib.loc=.Library)
+example("smooth", package = "stats", lib.loc = .Library)
 
 ## set RNG *before* example as when R CMD check is run:
 
@@ -106,8 +109,8 @@ x1; x2
 
 ## Exploring examples code:
 ## How large are the examples of "lm...()" functions?
-lmex <- sapply(apropos("^lm", mode="function"),
-               example, character.only=TRUE, give.lines=TRUE)
+lmex <- sapply(apropos("^lm", mode = "function"),
+               example, character.only = TRUE, give.lines = TRUE)
 sapply(lmex, length)
 }
 \keyword{documentation}

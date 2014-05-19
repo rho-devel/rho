@@ -1,6 +1,8 @@
 #  File src/library/base/R/outer.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2013 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -16,15 +18,12 @@
 
 outer <- function (X, Y, FUN = "*", ...)
 {
-    # no.nx <- is.null(nx <- dimnames(X <- as.array(X))); dX <- dim(X)
-    # no.ny <- is.null(ny <- dimnames(Y <- as.array(Y))); dY <- dim(Y)
-
     if(is.array(X)) {
         dX <- dim(X)
         nx <- dimnames(X)
         no.nx <- is.null(nx)
     } else { # a vector
-        dX <- length(X)
+        dX <- length(X)  # cannot be long, as form a matrix below
         no.nx <- is.null(names(X))
         if(!no.nx) nx <- list(names(X))
     }
@@ -38,6 +37,7 @@ outer <- function (X, Y, FUN = "*", ...)
         if(!no.ny) ny <- list(names(Y))
     }
     if (is.character(FUN) && FUN=="*") {
+        if(!missing(...)) stop('using ... with FUN = "*" is an error')
         # this is for numeric vectors, so dropping attributes is OK
         robj <- as.vector(X) %*% t(as.vector(Y))
         dim(robj) <- c(dX, dY)
@@ -53,10 +53,11 @@ outer <- function (X, Y, FUN = "*", ...)
         dim(robj) <- c(dX, dY) # careful not to lose class here
     }
     ## no dimnames if both don't have ..
-    if(no.nx) nx <- vector("list", length(dX)) else
-    if(no.ny) ny <- vector("list", length(dY))
-    if(!(no.nx && no.ny))
+    if(!(no.nx && no.ny)) {
+	if(no.nx) nx <- vector("list", length(dX)) else
+	if(no.ny) ny <- vector("list", length(dY))
 	dimnames(robj) <- c(nx, ny)
+    }
     robj
 }
 

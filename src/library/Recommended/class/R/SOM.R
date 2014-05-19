@@ -74,7 +74,7 @@ SOM <- function(data, grid = somgrid(), rlen = 10000,
 {
     data <- as.matrix(data)
     nd <- nrow(data)
-    if(!nd) stop("SOM called with no data")
+    if(!nd) stop("'SOM' called with no data")
     ng <- nrow(grid$pts)
     nphases <- 1L
     if(is.list(alpha)) {

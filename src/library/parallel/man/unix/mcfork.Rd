@@ -1,6 +1,6 @@
 % File src/library/parallel/man/unix/mcfork.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2009-11 R Core Team
+% Copyright 2009-13 R Core Team
 % Distributed under GPL 2 or later
 
 \newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
@@ -12,9 +12,9 @@
 \description{
   These are low-level functions, not available on Windows, and not
   exported from the namespace.
-  
+
   \code{mcfork} creates a new child process as a copy of the current \R process.
- 
+
   \code{mcexit} closes the current child process, informing the master
   process as necessary.
 }
@@ -77,8 +77,16 @@ mcexit(exit.code = 0L, send = NULL)
   because it leads to several processes sharing the same GUI which will
   likely cause chaos (and possibly crashes).  Child processes should
   never use on-screen graphics devices.  Some precautions have been
-  taken to make this usable in \command{R.app} on Mac OS X, but users of
+  taken to make this usable in \command{R.app} on OS X, but users of
   third-party front-ends should consult their documentation.
+
+  This can also apply to other connections, e.g. to an X server, created
+  before forking.
+
+  Note that \pkg{tcltk} counts as a GUI for these purposes since
+  \command{Tcl} runs an event loop.  That event loop is inhibited in a
+  child process but there could still be problems with Tk graphical
+  connections.
 }
 
 \author{
@@ -87,7 +95,7 @@ mcexit(exit.code = 0L, send = NULL)
   Derived from the \CRANpkg{multicore} package.
 }
 \section{Warning}{
-  This is a very low-level API for expert use only. 
+  This is a very low-level API for expert use only.
 }
 \seealso{
   \code{\link{mcparallel}}, \code{\link{sendMaster}}

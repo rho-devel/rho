@@ -1,6 +1,8 @@
 #  File src/library/base/R/seq.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -22,8 +24,10 @@ seq.default <-
 {
     if((One <- nargs() == 1L) && !missing(from)) {
 	lf <- length(from)
-	return(if(mode(from) == "numeric" && lf == 1L) 1L:from else
-	       if(lf) 1L:lf else integer())
+	return(if(mode(from) == "numeric" && lf == 1L) {
+            if(!is.finite(from)) stop("'from' cannot be NA, NaN or infinite")
+            1L:from
+        } else if(lf) 1L:lf else integer())
     }
     if(!missing(along.with)) {
 	length.out <- length(along.with)
@@ -38,12 +42,18 @@ seq.default <-
         }
 	length.out <- ceiling(length.out)
     }
-    if(length(list(...)))
-	warning(gettextf("extra argument(s) %s will be disregarded",
+    if(!missing(...))
+        warning(sprintf(ngettext(length(list(...)),
+                                 "extra argument %s will be disregarded",
+                                 "extra arguments %s will be disregarded"),
 			 paste(sQuote(names(list(...))), collapse = ", ")),
 		domain = NA)
     if (!missing(from) && length(from) != 1L) stop("'from' must be of length 1")
     if (!missing(to) && length(to) != 1L) stop("'to' must be of length 1")
+    if (!missing(from) && !is.finite(from))
+        stop("'from' cannot be NA, NaN or infinite")
+    if (!missing(to) && !is.finite(to))
+        stop("'to' cannot be NA, NaN or infinite")
     if(is.null(length.out))
 	if(missing(by))
 	    from:to

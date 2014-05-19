@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -40,6 +40,7 @@
 #include <string.h>
 
 #include <Defn.h>
+#include <Internal.h>
 #include <R_ext/RStartup.h>
 
 
@@ -113,7 +114,7 @@ R_common_command_line(int *pac, char **argv, Rstart Rp)
     while(--ac) {
 	if(processing && **++av == '-') {
 	    if (!strcmp(*av, "--version")) {
-		PrintVersion(msg);
+		PrintVersion(msg, 1024);
 		R_ShowMessage(msg);
 		exit(0);
 	    }
@@ -214,11 +215,9 @@ R_common_command_line(int *pac, char **argv, Rstart Rp)
 	    /* mop up --min-[nv]size */
 	    else if( !strncmp(*av, "--min-nsize", 11) ||
 		     !strncmp(*av, "--min-vsize", 11) ) {
-		R_ShowMessage(msg);
 		if(strlen(*av) < 13) {
 		    if(ac > 1) {ac--; av++; p = *av;} else p = NULL;
-		}
-		else p = &(*av)[12];
+		} else p = &(*av)[12];
 		if (p == NULL) {
 		    snprintf(msg, 1024,
 			     _("WARNING: no value given for '%s'"), *av);

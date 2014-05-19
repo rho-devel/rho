@@ -2,7 +2,8 @@
 COPYRIGHT STATUS
 
 The bulk of this code is copyright by members of or all of the R Core
-Team.
+Team.  ('The R Core Team' in copyright statements in individual files
+refers to some or all of the team.)
 
 See the file COPYING for the exact conditions under which you may
 redistribute it.  R as a whole is distributed under GPL version 2 or
@@ -15,8 +16,10 @@ The status of files used only in the Windows port is in file
 src/gnuwin32/COPYRIGHTS.win, which is appended to this file in binary
 Windows distributions.
 
-Note that all the code *is* copyright and may only be reproduced if
-the copyright notice (that in the file or this notice) is preserved.
+Note that almost all the code *is* copyright and may only be
+reproduced if the copyright notice (that in the file or this notice)
+is preserved.  The status of the included LINPACK routines is unclear:
+they are said to be in the public domain in the USA.
 
 	---------------------------------------------------
 
@@ -47,7 +50,7 @@ From the announcement of the change (2001-Feb-05)
 
     We encourage packages to be distributed under Open Source conditions,
     but accept that this is not possible for some contributions.  Our
-    intention is that export files and import libraries be `accessors'
+    intention is that export files and import libraries be 'accessors'
     under clause 5 of the LGPL, so that in most cases no (additional)
     restrictions are imposed by compiling a package using the LGPL-ed
     components of R.
@@ -55,8 +58,7 @@ From the announcement of the change (2001-Feb-05)
     To avoid any anomalies, the versions of the same files in R versions
     1.0.0 to 1.2.1 may also be used under LGPL or GPL.
 
-As from R 2.3.0 import libraries are no longer used under Windows, and
-as from R 2.4.0 fewer export files are used under AIX.
+Import libraries are no longer used under Windows.
 
 Some contributed files are also covered by the Library General Public License.
 These include (see also below)
@@ -95,7 +97,7 @@ src/library/grDevices/inst/afm/CM_*.afm
 src/library/grDevices/inst/afm/cm*.afm
 
 	are derived from afms which are copyright by the American
-	Mathematical Society, but `the AMS does require that the
+	Mathematical Society, but 'the AMS does require that the
 	AMS copyright notice be removed from any derivative versions
 	of the fonts which have been altered in any way'.
 
@@ -108,22 +110,17 @@ in part
 	Copyright (C) 1997 R. Gentleman & R. Ihaka
 	Copyright (C) 1997, 1998 M. Maechler
 
-shares/licenses/*
+share/licenses/*
 
 	See the individual files.
 
 share/texmf/bibtex/bst/jss.bst
 
-	Copyright 1994-2005 Patrick W Daly
+	Copyright 1994-2007 Patrick W Daly
 
 share/texmf/tex/latex/jss.cls
 
 	Copyright: (C) Achim Zeileis
-
-share/texmf/tex/latex/upquote.sty
-
-	Copyright 2000 Michael A. Covington.
-	Copyright 2003 Michael A. Covington, Frank Mittelbach.
 
 src/library/graphics/R/mosaicplot.R
 
@@ -144,12 +141,16 @@ src/library/splines/R/splineClasses.R
 src/library/datasets/man/austres.Rd
 src/library/datasets/man/beavers.Rd
 src/library/datasets/man/lh.Rd
+src/library/datasets/man/npk.Rd
 src/library/datasets/man/rock.Rd
 src/library/datasets/man/UKLungDeaths.Rd
 src/library/datasets/man/USAccDeaths.Rd
+src/library/stats/R/add.R
 src/library/stats/R/bandwidths.R
+src/library/stats/R/confint.R
 src/library/stats/R/cpgram.R
 src/library/stats/R/spectrum.R
+src/library/stats/R/vcov.R
 src/library/stats/src//bandwidths.c
 src/appl/maxcol.c
 
@@ -174,11 +175,6 @@ src/library/stats/src/PPsum.c
 	Copyright (C) 1997-1999	 Adrian Trapletti
 
 
-src/library/stats/src/carray.c, mburg.c, myw.c, qr.c
-
-	Copyright (C) 1999 Martyn Plummer
-
-
 src/library/stats/R/nls.R
 
 	In part, Copyright 1999-1999 Saikat DebRoy
@@ -188,7 +184,7 @@ src/library/stats/R/nlsFunc.R
 src/library/stats/R/selfStart.R
 src/library/stats/R/zzModels.R
 
-	Copyright 1997,1999 Jose C. Pinheiro
+	Copyright 1997,1999 Jose C. Pinheiro, Douglas M. Bates
 
 src/library/stats/R/runmed.R
 src/library/stats/src/Trunmed.c
@@ -199,6 +195,10 @@ src/library/stats/src/loessc.c
 src/library/stats/src/loessf.f
 
 	In part Copyright (c) 1989, 1992 by AT&T
+
+src/library/stats/R/spline.R
+
+	In part, Copyright (C) 2002 Simon N. Wood
 
 src/library/tcltk/exec/{hierarchy,util*,widget}.tcl
 
@@ -216,8 +216,7 @@ src/library/stats/src/nscor.c
 src/library/stats/src/prho.c
 src/library/stats/src/swilk.c
 src/library/stats/src/kmns.f
-src/library/ts/src/starma.c
-src/nmath/pgamma.c
+src/library/stats/src/starma.c
 src/nmath/pnbeta.c
 src/nmath/pnchisq.c
 src/nmath/pnt.c
@@ -225,14 +224,13 @@ src/nmath/qbeta.c
 src/nmath/qgamma.c
 src/nmath/qnorm.c
 src/nmath/qtukey.c
-src/nmath/sunif.c
   are based in whole or in part on Applied Statistics algorithms
   (C) Royal Statistical Society
 
 src/nmath/stirlerr.c
 src/nmath/dbinom.c
 src/nmath/dpois.c
-  are partly based on Clive Loader's (1999) work,
+  are partly based on Catherine/Clive Loader's (1999) work,
   (C) 1999-2000 Lucent Technologies, Bell Laboratories.
 
 
@@ -261,19 +259,74 @@ src/main/xspline.c
  * notice remain intact.
 
 
-src/modules/lapack/dlapack[0123].f, cmplx.f, dlamc.f
+src/modules/lapack/dlapack.f, cmplx.f, dlamc.f
 
   Extracted from
-  *  -- LAPACK routine (version 3.1) --
-  *     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
-  *     Courant Institute, Argonne National Lab, and Rice University
+  *  -- LAPACK computational routine (version 3.4.0) --
+  *  -- LAPACK is a software package provided by Univ. of Tennessee,    --
+  *  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..--
+  *     November 2011
 
-  The README says
+  where the version number, providers and date vary by subroutine.
+
+  The LAPACK README says
 
     It is freely-available software, and is copyrighted.
 
-  although no actual copyright statement appears in the code.
+  but no copyright statements appear in the sources.
 
+  LAPACK 3.4.2 contains a LICENSE file (but the routines included in R
+  were originally copied from earlier versions of LAPACK).  For binary
+  distributions it is reproduced here:
+
+  Copyright (c) 1992-2011 The University of Tennessee and The University
+                          of Tennessee Research Foundation.  All rights
+                          reserved.
+  Copyright (c) 2000-2011 The University of California Berkeley. All
+                          rights reserved.
+  Copyright (c) 2006-2012 The University of Colorado Denver.  All rights
+                          reserved.
+
+  $COPYRIGHT$
+
+  Additional copyrights may follow
+
+  $HEADER$
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are
+  met:
+
+  - Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  - Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer listed
+    in this license in the documentation and/or other materials
+    provided with the distribution.
+
+  - Neither the name of the copyright holders nor the names of its
+    contributors may be used to endorse or promote products derived from
+    this software without specific prior written permission.
+
+   The copyright holders provide no reassurances that the source code
+   provided does not infringe any patent, copyright, or any other
+  intellectual property rights of third parties.  The copyright holders
+  disclaim any liability to any recipient for claims brought against
+  recipient by any third party for infringement of that parties
+  intellectual property rights.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 src/extra/xdr/*
 
@@ -284,7 +337,7 @@ src/extra/xdr/*
 
 src/extra/zlib/README, *.c, *.h
 
-  Taken from zlib-1.2.7 (C) 1995-2012 Jean-loup Gailly and Mark Adler
+  Taken from zlib-1.2.8 (C) 1995-2013 Jean-loup Gailly and Mark Adler
   See src/extra/zlib/README for the licence.
 
 src/main/connections.c, src/main/gzio.h
@@ -302,9 +355,9 @@ src/extra/pcre/LICENCE
 src/extra/pcre/*.[ch]
 src/main/valid_utf8.h
 
-   Copyright (c) 1997-2012 University of Cambridge
+   Copyright (c) 1997-2013 University of Cambridge
    All rights reserved.
-   Copyright(c) 2009-2012 Zoltan Herczeg
+   Copyright(c) 2009-2013 Zoltan Herczeg
 
 See file src/extra/pcre/LICENCE.  For binary builds of R that requires
 us to include
@@ -424,7 +477,6 @@ src/main/Rstrptime.h
    Distributed under the GNU Library General Public License
    version 2 or later.
 
-po/*.po
 src/library/*/po/*.po
 
    Some of the translations are (C) the translator as marked in the files.
@@ -441,9 +493,7 @@ share/licenses/LGPL-2
 share/licenses/LGPL-2.1
 share/licenses/LGPL-3
 src/main/strdup.c
-tools/config.quess
 tools/config.rpath
-tools/config.sub
 tools/help2man.pl
 tools/ltmain.sh
 tools/mdate-sh
@@ -451,6 +501,11 @@ tools/missing
 
    Copyright various dates Free Software Foundation
 
+tools/config.quess
+tools/config.sub
+
+   Copyright 1992-2013 Free Software Foundation.  
+   The Exception to GPL-3 applies.
 
 tools/install-sh:
 
@@ -466,3 +521,23 @@ From GNU coreutils 8.12
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
+
+src/main/gram.y
+src/main/gram.c
+
+Portions of these files are based on the parser package,
+
+   Copyright (C) 2009--2011  Romain Francois
+   
+
+Some of the files in src/appl were originally taken from the Netlib
+archive now at www.netlib.org and do not clearly state their
+copyright status.
+
+src/appl/{dchdc,dpfa,dpbsl,dpoco,dpodi,dpofa,dposl,dqrdc,
+          dqrsl,dsvdc,dtrco,dtrsl}.f 
+
+are part of LINPACK, with authors J.J. Dongarra, Cleve Moler and
+G.W. Stewart
+
+src/appl/dqrdc2.f is based on dqrdc.f by G.W. Stewart.

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -102,7 +102,8 @@ void NodeStack::pop(unsigned int count)
 
 void NodeStack::protectAll()
 {
-    std::vector<RObject*>::iterator start = m_vector.begin() + m_protected_count;
+    std::vector<RObject*>::iterator start
+	= m_vector.begin() + std::ptrdiff_t(m_protected_count);
     std::vector<RObject*>::iterator end = m_vector.end();
     for (std::vector<RObject*>::iterator it = start; it != end; ++it)
 	GCNode::incRefCount(*it);
@@ -111,7 +112,7 @@ void NodeStack::protectAll()
 
 // Foll. is inlined under NDEBUG:
 #ifndef NDEBUG
-void NodeStack::retarget(RObject* node, unsigned int index)
+void NodeStack::retarget(RObject* node, size_t index)
 {
     GCNode::maybeCheckExposed(node);
     if (index >= m_vector.size())

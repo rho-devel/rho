@@ -29,7 +29,7 @@
   the logarithms of the determinants) of the correlation matrix (or
   matrices) represented by \code{object}.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{logDet.corStruct}},
   \code{\link{logLik.lme}},

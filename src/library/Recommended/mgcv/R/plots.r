@@ -83,12 +83,23 @@ qq.gam <- function(object, rep=0, level=.9,s.rep=10,
                    pch=".", rl.col=2, rep.col="gray80",...) {
 ## get deviance residual quantiles under good fit
   type <- match.arg(type)
+  ylab <- paste(type,"residuals")
+
   if (inherits(object,c("glm","gam"))) {
     if (is.null(object$sig2)) object$sig2 <- summary(object)$dispersion
   } else stop("object is not a glm or gam")
+
   ## in case of NA & na.action="na.exclude", we need the "short" residuals:
   object$na.action <- NULL
   D <- residuals(object,type=type)
+
+  if (object$method %in% c("PQL","lme.ML","lme.REML","lmer.REML","lmer.ML","glmer.ML")) {
+    ## then it's come out of a gamm fitter and qq.gam can't see the random effects
+    ## that would be necessary to get quantiles. Fall back to normal QQ plot.
+    qqnorm(D,ylab=ylab,pch=pch,...)
+    return()
+  }
+
   lim <- Dq <- NULL
   if (rep==0) { 
     fam <- fix.family.qf(object$family)
@@ -144,8 +155,6 @@ qq.gam <- function(object, rep=0, level=.9,s.rep=10,
     }
   }
  
-  ylab <- paste(type,"residuals")
-
   if (!is.null(Dq))  
   { qqplot(Dq,D,ylab=ylab,xlab="theoretical quantiles",ylim=range(c(lim,D)),
            pch=pch,...)
@@ -182,7 +191,7 @@ k.check <- function(b,subsample=5000,n.rep=400) {
   } else modf <- b$model
   nr <- length(rsd)
   for (k in 1:m) { ## work through smooths
-    dat <- as.data.frame(mgcv:::ExtractData(b$smooth[[k]],modf,NULL)$data)
+    dat <- as.data.frame(ExtractData(b$smooth[[k]],modf,NULL)$data)
     snames[k] <- b$smooth[[k]]$label
     ind <- b$smooth[[k]]$first.para:b$smooth[[k]]$last.para
     kc[k] <- length(ind)
@@ -221,7 +230,7 @@ k.check <- function(b,subsample=5000,n.rep=400) {
           }
         }
         nn <- 3
-        ni <- mgcv:::nearest(nn,as.matrix(dat))$ni
+        ni <- nearest(nn,as.matrix(dat))$ni
         e <- rsd - rsd[ni[,1]]
         for (j in 2:nn) e <- c(e,rsd-rsd[ni[,j]])
         v.obs[k] <- mean(e^2)/2
@@ -374,7 +383,9 @@ repole <- function(lo,la,lop,lap) {
   ## get distances to meridian point
   d <- sqrt((x-xm)^2+(y-ym)^2+(z-zm)^2)
   ## angles to meridian plane (i.e. plane containing origin, meridian point and pole)...
-  theta <- acos((1+cos(phi)^2-d^2)/(2*cos(phi)))
+  theta <- (1+cos(phi)^2-d^2)/(2*cos(phi))
+  theta[theta < -1] <- -1; theta[theta > 1] <- 1
+  theta <- acos(theta)
   
   ## now decide which side of meridian plane...
 
@@ -574,7 +585,7 @@ polys.plot <- function(pc,z=NULL,scheme="heat",lab="",...) {
     xlim[1] <- xlim[1] - .1 * (xlim[2]-xlim[1]) ## allow space for scale
 
     n.col <- 100
-    if (scheme=="heat") scheme <- heat.colors(n.col) else 
+    if (scheme=="heat") scheme <- heat.colors(n.col+1) else 
     scheme <- gray(0:n.col/n.col)
    
     zlim <- range(pretty(z))
@@ -588,7 +599,7 @@ polys.plot <- function(pc,z=NULL,scheme="heat",lab="",...) {
     ylim <- zlim
     plot(0,0,ylim=ylim,xlim=xlim,type="n",xaxt="n",bty="n",xlab="",ylab=lab,...)
     for (i in 1:length(pc)) {
-      coli <- round((z[i] - zlim[1])/(zlim[2]-zlim[1])*100)    
+      coli <- round((z[i] - zlim[1])/(zlim[2]-zlim[1])*n.col)+1    
       poly2(pc[[i]],col=scheme[coli])
     }
   
@@ -621,7 +632,8 @@ plot.mrf.smooth <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2,
     if (!x$plot.me||is.null(x$xt$polys)) return(NULL) ## shouldn't or can't plot
     ## get basic plot data 
     raw <- data[x$term][[1]]
-    dat <- data.frame(x=factor(names(x$xt$polys),levels=levels(x$knots)));names(dat) <- x$term
+    dat <- data.frame(x=factor(names(x$xt$polys),levels=levels(x$knots)))
+    names(dat) <- x$term
     X <- PredictMat(x,dat)   # prediction matrix for this term
     if (is.null(xlab)) xlabel<- "" else xlabel <- xlab
     if (is.null(ylab)) ylabel <- "" else ylabel <- ylab
@@ -648,7 +660,8 @@ plot.fs.interaction <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=
     fac <- rep(x$flev,rep(n,nf))
     dat <- data.frame(fac,xx)
     names(dat) <- c(x$fterm,x$base$term)
-    X <- Predict.matrix.fs.interaction(x,dat)
+#    X <- Predict.matrix.fs.interaction(x,dat)
+    X <- PredictMat(x,dat)
     if (is.null(xlab)) xlabel <- x$base$term else xlabel <- xlab
     if (is.null(ylab)) ylabel <- label else ylabel <- ylab
     return(list(X=X,scale=TRUE,se=FALSE,raw=raw,xlab=xlabel,ylab=ylabel,
@@ -670,7 +683,9 @@ plot.mgcv.smooth <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2,
                      ylim=NULL,xlim=NULL,too.far=0.1,shade=FALSE,shade.col="gray80",
                      shift=0,trans=I,by.resids=FALSE,scheme=0,...) {
 ## default plot method for smooth objects `x' inheriting from "mgcv.smooth"
-## `x' is a smooth object, usually part of a `gam' fit.
+## `x' is a smooth object, usually part of a `gam' fit. It has an attribute
+##     'coefficients' containg the coefs for the smooth, but usually these
+##     are not needed.
 ## `P' is a list of plot data. 
 ##     If `P' is NULL then the routine should compute some of this plot data
 ##     and return without plotting...  
@@ -683,6 +698,9 @@ plot.mgcv.smooth <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2,
 ##             y scale is required.
 ##     * any raw data information.
 ##     * axis labels and plot titles 
+##     As an alternative, P may contain a 'fit' field directly, in which case the 
+##     very little processing is done outside the routine, except for partial residual
+##     computations.
 ##     Alternatively return P as NULL if x should not be plotted.
 ##     If P is not NULL it will contain 
 ##     * fit - the values for plotting 
@@ -772,7 +790,8 @@ plot.mgcv.smooth <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2,
     if (!x$plot.me||x$dim>2) return(NULL) ## shouldn't or can't plot
     if (x$dim==1) { ## get basic plotting data for 1D terms 
       raw <- data[x$term][[1]]
-      xx<-seq(min(raw),max(raw),length=n) # generate x sequence for prediction
+      if (is.null(xlim)) xx <- seq(min(raw),max(raw),length=n) else # generate x sequence for prediction
+      xx <- seq(xlim[1],xlim[2],length=n)
       if (x$by!="NA")         # deal with any by variables
       { by<-rep(1,n);dat<-data.frame(x=xx,by=by)
         names(dat)<-c(x$term,x$by)
@@ -793,8 +812,10 @@ plot.mgcv.smooth <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2,
       raw <- data.frame(x=as.numeric(data[xterm][[1]]),
                         y=as.numeric(data[yterm][[1]]))
       n2 <- max(10,n2)
-      xm <- seq(min(raw$x),max(raw$x),length=n2)
-      ym <- seq(min(raw$y),max(raw$y),length=n2)  
+      if (is.null(xlim)) xm <- seq(min(raw$x),max(raw$x),length=n2) else 
+        xm <- seq(xlim[1],xlim[2],length=n2)
+      if (is.null(ylim)) ym <- seq(min(raw$y),max(raw$y),length=n2) else
+        ym <- seq(ylim[1],ylim[2],length=n2)
       xx <- rep(xm,n2)
       yy <- rep(ym,rep(n2,n2))
       if (too.far>0)
@@ -1035,13 +1056,14 @@ plot.gam <- function(x,residuals=FALSE,rug=TRUE,se=TRUE,pages=0,select=NULL,scal
     term.lab <- sub.edf(x$smooth[[i]]$label,edf)
     #P <- plot(x$smooth[[i]],P=NULL,data=x$model,n=n,n2=n2,xlab=xlab,ylab=ylab,too.far=too.far,label=term.lab,
     #          se1.mult=se1.mult,se2.mult=se2.mult,xlim=xlim,ylim=ylim,main=main,scheme=scheme[i],...)
+    attr(x$smooth[[i]],"coefficients") <- x$coefficients[first:last]   ## relevent coefficients
     P <- plot(x$smooth[[i]],P=NULL,data=x$model,partial.resids=partial.resids,rug=rug,se=se,scale=scale,n=n,n2=n2,
                      pers=pers,theta=theta,phi=phi,jit=jit,xlab=xlab,ylab=ylab,main=main,label=term.lab,
                      ylim=ylim,xlim=xlim,too.far=too.far,shade=shade,shade.col=shade.col,
                      se1.mult=se1.mult,se2.mult=se2.mult,shift=shift,trans=trans,
                      by.resids=by.resids,scheme=scheme[i],...)
 
-    if (is.null(P)) pd[[i]] <- list(plot.me=FALSE) else {
+    if (is.null(P)) pd[[i]] <- list(plot.me=FALSE) else if (is.null(P$fit)) {
       p <- x$coefficients[first:last]   ## relevent coefficients 
       offset <- attr(P$X,"offset")      ## any term specific offset
       ## get fitted values ....
@@ -1056,7 +1078,7 @@ plot.gam <- function(x,residuals=FALSE,rug=TRUE,se=TRUE,pages=0,select=NULL,scal
           X1[,first:last] <- P$X
           se.fit <- sqrt(rowSums((X1%*%x$Vp)*X1))
         } else se.fit <- ## se in centred (or anyway unconstained) space only
-        sqrt(rowSums((P$X%*%x$Vp[first:last,first:last])*P$X))
+        sqrt(rowSums((P$X%*%x$Vp[first:last,first:last,drop=FALSE])*P$X))
         if (!is.null(P$exclude)) P$se.fit[P$exclude] <- NA
       } ## standard errors for fit completed
       if (partial.resids) { P$p.resid <- fv.terms[,length(order)+i] + w.resid }
@@ -1064,7 +1086,11 @@ plot.gam <- function(x,residuals=FALSE,rug=TRUE,se=TRUE,pages=0,select=NULL,scal
       P$X <- NULL
       P$plot.me <- TRUE
       pd[[i]] <- P;rm(P) 
-    } ## plot data setup complete
+    } else { ## P$fit created directly
+      if (partial.resids) { P$p.resid <- fv.terms[,length(order)+i] + w.resid }
+      P$plot.me <- TRUE
+      pd[[i]] <- P;rm(P)
+    }
   } ## end of data setup loop through smooths
 
   
@@ -1161,7 +1187,7 @@ plot.gam <- function(x,residuals=FALSE,rug=TRUE,se=TRUE,pages=0,select=NULL,scal
   { class(x) <- c("gam","glm","lm") # needed to get termplot to call model.frame.glm 
     if (is.null(select)) {
       attr(x,"para.only") <- TRUE
-      termplot(x,se=se,rug=rug,col.se=1,col.term=1)
+      termplot(x,se=se,rug=rug,col.se=1,col.term=1,...)
     } else { # figure out which plot is required
       if (select > m) { 
         select <- select - m # i.e. which parametric term
@@ -1169,7 +1195,7 @@ plot.gam <- function(x,residuals=FALSE,rug=TRUE,se=TRUE,pages=0,select=NULL,scal
         term.labels <- term.labels[order==1]
         if (select <= length(term.labels)) {
           # if (interactive() && m &&i%%ppp==0) 
-          termplot(x,terms=term.labels[select],se=se,rug=rug,col.se=1,col.term=1)
+          termplot(x,terms=term.labels[select],se=se,rug=rug,col.se=1,col.term=1,...)
         }  
       }
     }

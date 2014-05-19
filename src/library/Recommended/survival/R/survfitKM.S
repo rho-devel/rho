@@ -13,6 +13,12 @@ survfitKM <- function(x, y, casewt=rep(1,length(x)),
     error.int <- match(error, c("greenwood", "tsiatis"))
     conf.type <- match.arg(conf.type)
     conf.lower<- match.arg(conf.lower)
+    if (is.logical(conf.int)) {
+        # A common error is for users to use "conf.int = FALSE"
+        #  it's illegal, but allow it
+        if (!conf.int) conf.type <- "none"
+        conf.int <- .95
+    }
 
     if (!is.Surv(y)) stop("y must be a Surv object")
     if (!is.factor(x)) stop("x must be a factor")
@@ -122,11 +128,10 @@ survfitKM <- function(x, y, casewt=rep(1,length(x)),
 	    surv[[i]] <- exp(- cumsum(hazard))
 	    }
 	if (method==3) {
-	    tsum  <- .C('survfit4', as.integer(length(ncens)),
+	    tsum  <- .C(Csurvfit4, as.integer(length(ncens)),
 			            as.integer(ndead),
 			            sum1 = as.double(nrisk),
-			            sum2 = as.double(nevent),
-			copy=c(FALSE,FALSE,TRUE,TRUE))
+			            sum2 = as.double(nevent))
 	    hazard <- nevent *tsum$sum1
 	    surv[[i]] <- exp(-cumsum(hazard))
 	    }

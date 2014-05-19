@@ -10,7 +10,7 @@ nearPD(x, corr = FALSE, keepDiag = FALSE, do2eigen = TRUE,
        doSym = FALSE, doDykstra = TRUE, only.values = FALSE,
        ensureSymmetry = !isSymmetric(x),
        eig.tol = 1e-06, conv.tol = 1e-07, posd.tol = 1e-08,
-       maxit = 100, trace = FALSE)
+       maxit = 100, conv.norm.type = "I", trace = FALSE)
 }
 \arguments{
   \item{x}{numeric \eqn{n \times n}{n * n} approximately positive
@@ -45,6 +45,10 @@ nearPD(x, corr = FALSE, keepDiag = FALSE, do2eigen = TRUE,
   \item{posd.tol}{tolerance for enforcing positive definiteness (in the
     final \code{posdefify} step when \code{do2eigen} is \code{TRUE}).}
   \item{maxit}{maximum number of iterations allowed.}
+  \item{conv.norm.type}{convergence norm type (\code{\link{norm}(*,
+      type)}) used for Higham algorithm.  The default is \code{"I"}
+    (infinity), for reasons of speed (and back compatibility); using
+    \code{"F"} is more in line with Higham's proposal.}
   \item{trace}{logical or integer specifying if convergence monitoring
     should be traced.}
 }
@@ -144,6 +148,9 @@ ncr   <- nearPD(pr, conv.tol = 1e-15)
 str(ncr)# still 2 iterations
 ncr.1 <- nearPD(pr, conv.tol = 1e-15, corr = TRUE)
 ncr.1 $ iterations # 27 / 30 !
+
+ncF <- nearPD(pr, conv.tol = 1e-15, conv.norm = "F")
+stopifnot(all.equal(ncr, ncF))# norm type does not matter at all in this example
 
 ## But indeed, the 'corr = TRUE' constraint did ensure a better solution;
 ## cov2cor() does not just fix it up equivalently :

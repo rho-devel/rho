@@ -1,6 +1,8 @@
 #  File src/library/base/R/windows/system.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -50,10 +52,7 @@ system <- function(command, intern = FALSE,
         if(stdout == "") stdout <- TRUE
         if(!ignore.stderr && .Platform$GUI == "Rgui") stderr <- TRUE
     } else {
-        if  (wait)
-            flag <- ifelse(show.output.on.console, 2L, 1L)
-        else
-            flag <- 0L
+        flag <- if (wait) ifelse(show.output.on.console, 2L, 1L) else 0L
     }
     if (invisible) flag <- 20L + flag
     else if (minimized) flag <- 10L + flag
@@ -120,13 +119,13 @@ shell <- function(cmd, shell, flag = "/c", intern = FALSE,
     if(intern) res else invisible(res)
 }
 
-shell.exec <- function(file) invisible(.Internal(shell.exec(file)))
+shell.exec <- function(file) .Internal(shell.exec(file))
 
 Sys.timezone <- function()
 {
     z <- as.POSIXlt(Sys.time())
     zz <- attr(z, "tzone")
-    if(length(zz) == 3L) zz[2 + z$isdst] else zz[1L]
+    if(length(zz) == 3L) zz[2L + z$isdst] else zz[1L]
 }
 
 Sys.which <- function(names) .Internal(Sys.which(as.character(names)))

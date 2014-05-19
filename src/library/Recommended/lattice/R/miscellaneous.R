@@ -28,7 +28,7 @@
 
 
 getFunctionOrName <- function(FUN)
-     ## Try lattice namespace first? Does that happens automatically?
+     ## Try lattice namespace first? Does that happen automatically?
 {
     if (is.function(FUN)) FUN
     else if (is.character(FUN)) get(FUN)
@@ -44,6 +44,23 @@ checkArgsAndCall <- function(FUN, args) ## unnamed arguments not allowed
 }
 
 
+## Modified from methods::hasArg.  According to docs, name must be an
+## 'unquoted name', but a quoted string also seems to work.
+hasGroupNumber <- function()
+{
+    aname <- name <- "group.number"
+    fnames <- names(formals(sys.function(sys.parent())))
+    if(is.na(match(aname, fnames))) {
+        if(is.na(match("...", fnames)))
+            FALSE
+        else {
+            dotsCall <- eval(quote(substitute(list(...))), sys.parent())
+            !is.na(match(aname, names(dotsCall)))
+        }
+    }
+    else
+        eval(substitute(!missing(name)), sys.frame(sys.parent()))
+}
     
 
 logLimits <- function(lim, base)
@@ -253,7 +270,7 @@ lpolygon <-
 
     ## new version (uses grid.polygon concept of id)
 
-    if (hasArg(group.number))
+    if (hasGroupNumber())
         group <- list(...)$group.number
     else
         group <- 0
@@ -300,7 +317,7 @@ lsegments <-
     x1 <- rep(x1, length.out = ml)
     y0 <- rep(y0, length.out = ml)
     y1 <- rep(y1, length.out = ml)
-    if (hasArg(group.number))
+    if (hasGroupNumber())
         group <- list(...)$group.number
     else
         group <- 0
@@ -338,7 +355,7 @@ lrect <-
             else "transparent"
         }
         else border
-    if (hasArg(group.number))
+    if (hasGroupNumber())
         group <- list(...)$group.number
     else
         group <- 0
@@ -378,7 +395,7 @@ larrows <-
     y0 <- rep(y0, length.out = ml)
     y1 <- rep(y1, length.out = ml)
     gp <- gpar(col = col, lty=lty, lwd = lwd, alpha = alpha, fill = fill, ...)
-    if (hasArg(group.number))
+    if (hasGroupNumber())
         group <- list(...)$group.number
     else
         group <- 0
@@ -478,7 +495,7 @@ ltext.default <-
     }
     ## replace non-finite srt by 0
     srt[!is.finite(srt)] <- 0
-    if (hasArg(group.number))
+    if (hasGroupNumber())
         group <- list(...)$group.number
     else
         group <- 0
@@ -570,7 +587,7 @@ lplot.xy <-
     ## the main difference between this and panel.xyplot is that the
     ## latter allows vector 'type', this doesn't
 
-    if (hasArg(group.number))
+    if (hasGroupNumber())
         group <- list(...)$group.number
     else
         group <- 0

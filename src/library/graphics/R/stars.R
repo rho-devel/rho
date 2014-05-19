@@ -1,6 +1,8 @@
 #  File src/library/graphics/R/stars.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -16,7 +18,7 @@
 
 ### This code started life as spatial star plots by David A. Andrews.
 ### See http://www.udallas.edu:8080/~andrews/software/software.html
-### T. Dye <tdye@lava.net>, July 1999;  many improvements by MM
+### T. Dye July 1999;  many improvements by MM
 
 stars <-
 function(x, full = TRUE, scale = TRUE, radius = TRUE,
@@ -49,7 +51,7 @@ function(x, full = TRUE, scale = TRUE, radius = TRUE,
 	if(is.null(ncol))
             ncol <- ceiling(n.loc/nrow)
         if(nrow * ncol < n.loc)
-            stop("nrow * ncol <  number of observations")
+            stop("'nrow * ncol' is less than the number of observations")
         ff <- if(!is.null(labels)) 2.3 else 2.1
         locations <- expand.grid(ff * 1L:ncol, ff * nrow:1)[1L:n.loc, ]
         if(!is.null(labels) && (missing(flip.labels) ||
@@ -196,7 +198,7 @@ function(x, full = TRUE, scale = TRUE, radius = TRUE,
                   1 - (lab.angl[k] - 270*deg) / (180*deg)
                   )
 	    text(label.x[k], label.y[k],
-                 labels= key.labels[k], cex = cex, adj = text.adj)
+                 labels = key.labels[k], cex = cex, adj = text.adj)
 	}
     } # Unit key is drawn and labelled
 

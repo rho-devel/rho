@@ -21,10 +21,11 @@ lmwork <- function(object)
     hat <- hat[hat > 0]
     ok <- !(is.na(resid))
     n.miss <- sum(!ok)
-    switch(ifelse(n.miss > 2, 2, n.miss),
-           warning("1 missing observation deleted"),
-           warning(n.miss, " missing observations deleted")
-           )
+    if(n.miss)
+        warning(sprintf(ngettext(n.miss,
+                                 "%d missing observation deleted",
+                                 "%d missing observations deleted"),
+                        n.miss), domain = NA)
     resid <- resid[ok]
     n <- length(resid)
     p <- object$rank
@@ -36,7 +37,10 @@ lmwork <- function(object)
         resid <- resid * wt^0.5
         excl <- wt == 0
         if(any(excl)){
-            warning(sum(excl), " rows with zero weights not counted")
+            warning(sprintf(ngettext(sum(excl),
+                                     "%d row with zero weights not counted",
+                                     "%d rows with zero weights not counted"),
+                            sum(excl)), domain = NA)
             resid <- resid[!excl]
             if(is.null(object$df.resid))
                 rdf <- rdf - sum(excl)

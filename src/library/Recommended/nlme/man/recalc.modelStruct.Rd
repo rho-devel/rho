@@ -29,7 +29,7 @@
 \value{
   the recalculated condensed linear model object.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \note{This method function is generally only used inside model fitting
   functions, such as \code{lme} and \code{gls}, that allow model
   components, such as correlated error terms and variance functions.

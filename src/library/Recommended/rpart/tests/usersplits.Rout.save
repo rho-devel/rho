@@ -1,7 +1,8 @@
 
-R : Copyright 2006, The R Foundation for Statistical Computing
-Version 2.3.0 beta (2006-04-12 r37734)
+R version 2.15.0 (2012-03-30)
+Copyright (C) 2012 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -125,11 +126,6 @@ Type 'q()' to quit R.
 > 
 > alist <- list(eval=temp1, split=temp2, init=temp3)
 > 
-> fit0 <- rpart(income ~population +illiteracy  + murder + hs.grad,
-+ 	     mystate, control=rpart.control(minsplit=10, xval=0),
-+ 	     method=alist)
-> 
-> 
 > fit1 <- rpart(income ~population +illiteracy  + murder + hs.grad + region,
 + 	     mystate, control=rpart.control(minsplit=10, xval=0),
 + 	     method=alist)
@@ -171,23 +167,7 @@ Type 'q()' to quit R.
 > aeq(zz2, fit3$cptable[,5])          #reproduce se(xerror)
 [1] TRUE
 > 
-> #
-> # Now try timing it on a multiplied data set (100 copies of mystate)
-> #
-> temp <- rbind(mystate, mystate, mystate, mystate)
-> temp <- rbind(temp, temp, temp, temp, temp)
-> temp <- rbind(temp, temp, temp, temp, temp)
-> t1 <-  system.time(rpart(income ~population +illiteracy  + murder +
-+ 		       hs.grad + region +
-+ 		life + area, temp,  control=rpart.control(minsplit=10, xval=0),
-+ 	     method=alist))
-> t2 <- system.time(rpart(income ~population +illiteracy  + murder +
-+ 		      hs.grad + region +
-+ 		life + area, temp,  control=rpart.control(minsplit=10, xval=0),
-+ 	     method='anova'))
-> cat("Timing ratio = ", round(t1[3]/t2[3], 1), "\n")
-Timing ratio =  5.9 
 > 
-> rm(temp)
-> 
-> q()
+> proc.time()
+   user  system elapsed 
+  0.322   0.064   0.419 

@@ -1,6 +1,8 @@
 #  File src/library/utils/R/windows/download.file.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -41,7 +43,7 @@ download.file <-
             stop("no download method found")
     }
     if(method == "internal")
-        status <- .Internal(download(url, destfile, quiet, mode, cacheOK))
+        status <- .External(C_download, url, destfile, quiet, mode, cacheOK)
     else if(method == "wget") {
         if(quiet) extra <- c(extra, "--quiet")
         if(!cacheOK) extra <- c(extra, "--cache=off")

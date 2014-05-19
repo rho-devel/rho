@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2007   The R Core Team.
+ *  Copyright (C) 1999-2012  The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,8 +52,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-/* Probably not able to use C99 semantics in gcc < 4.3.0 but who knows what
-   unofficial versions Debian or RedHat will distribute */
+/* Probably not able to use C99 semantics in gcc < 4.3.0 */
 #if __GNUC__ == 4 && __GNUC_MINOR__ >= 3 && defined(__GNUC_STDC_INLINE__) && !defined(C99_INLINE_SEMANTICS)
 #define C99_INLINE_SEMANTICS 1
 #endif
@@ -102,11 +101,16 @@ extern "C" {
 
 /*  length - length of objects  */
 
-/* In CXXR, Rf_length() is not inlined, and is back in dstruct.cpp. */
-R_len_t Rf_length(SEXP s);
+/* In CXXR, Rf_length() are Rf_xlength() are not inlined, and are
+   defined in dstruct.cpp. */
+
 /* TODO: a  Length(.) {say} which is  length() + dispatch (S3 + S4) if needed
          for one approach, see do_seq_along() in ../main/seq.c
 */
+R_len_t Rf_length(SEXP s);
+
+R_xlen_t Rf_xlength(SEXP s);
+
 
 /* from list.c */
 /* Return a dotted pair with the given CAR and CDR. */
@@ -469,7 +473,7 @@ INLINE_FUN Rboolean Rf_isNumber(SEXP s)
 /* As from R 2.4.0 we check that the value is allowed. */
 INLINE_FUN SEXP Rf_ScalarLogical(int x)
 {
-    SEXP ans = Rf_allocVector(LGLSXP, 1);
+    SEXP ans = Rf_allocVector(LGLSXP, (R_xlen_t)1);
     if (x == NA_LOGICAL) LOGICAL(ans)[0] = NA_LOGICAL;
     else LOGICAL(ans)[0] = (x != 0);
     return ans;
@@ -477,14 +481,14 @@ INLINE_FUN SEXP Rf_ScalarLogical(int x)
 
 INLINE_FUN SEXP Rf_ScalarInteger(int x)
 {
-    SEXP ans = Rf_allocVector(INTSXP, 1);
+    SEXP ans = Rf_allocVector(INTSXP, (R_xlen_t)1);
     INTEGER(ans)[0] = x;
     return ans;
 }
 
 INLINE_FUN SEXP Rf_ScalarReal(double x)
 {
-    SEXP ans = Rf_allocVector(REALSXP, 1);
+    SEXP ans = Rf_allocVector(REALSXP, (R_xlen_t)1);
     REAL(ans)[0] = x;
     return ans;
 }
@@ -492,7 +496,7 @@ INLINE_FUN SEXP Rf_ScalarReal(double x)
 
 INLINE_FUN SEXP Rf_ScalarComplex(Rcomplex x)
 {
-    SEXP ans = Rf_allocVector(CPLXSXP, 1);
+    SEXP ans = Rf_allocVector(CPLXSXP, (R_xlen_t)1);
     COMPLEX(ans)[0] = x;
     return ans;
 }
@@ -501,15 +505,15 @@ INLINE_FUN SEXP Rf_ScalarString(SEXP x)
 {
     SEXP ans;
     PROTECT(x);
-    ans = Rf_allocVector(STRSXP, 1);
-    SET_STRING_ELT(ans, 0, x);
+    ans = Rf_allocVector(STRSXP, (R_xlen_t)1);
+    SET_STRING_ELT(ans, (R_xlen_t)0, x);
     UNPROTECT(1);
     return ans;
 }
 
 INLINE_FUN SEXP Rf_ScalarRaw(Rbyte x)
 {
-    SEXP ans = Rf_allocVector(RAWSXP, 1);
+    SEXP ans = Rf_allocVector(RAWSXP, (R_xlen_t)1);
     RAW(ans)[0] = x;
     return ans;
 }
@@ -522,11 +526,11 @@ INLINE_FUN Rboolean Rf_isVectorizable(SEXP s)
 {
     if (s == R_NilValue) return TRUE;
     else if (Rf_isNewList(s)) {
-	int i, n;
+	R_xlen_t i, n;
 
-	n = LENGTH(s);
+	n = XLENGTH(s);
 	for (i = 0 ; i < n; i++)
-	    if (!Rf_isVector(VECTOR_ELT(s, i)) || LENGTH(VECTOR_ELT(s, i)) > 1)
+	    if (!Rf_isVector(VECTOR_ELT(s, i)) || XLENGTH(VECTOR_ELT(s, i)) > 1)
 		return FALSE;
 	return TRUE;
     }
@@ -554,7 +558,7 @@ INLINE_FUN Rboolean Rf_isVectorizable(SEXP s)
 INLINE_FUN SEXP mkNamed(SEXPTYPE TYP, const char **names)
 {
     SEXP ans, nms;
-    int i, n;
+    R_xlen_t i, n;
 
     for (n = 0; strlen(names[n]) > 0; n++) {}
     ans = PROTECT(Rf_allocVector(TYP, n));
@@ -574,8 +578,8 @@ INLINE_FUN SEXP Rf_mkString(const char *s)
 {
     SEXP t;
 
-    PROTECT(t = Rf_allocVector(STRSXP, 1));
-    SET_STRING_ELT(t, 0, Rf_mkChar(s));
+    PROTECT(t = Rf_allocVector(STRSXP, (R_xlen_t)1));
+    SET_STRING_ELT(t, (R_xlen_t)0, Rf_mkChar(s));
     UNPROTECT(1);
     return t;
 }

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1998	Robert Gentleman and Ross Ihaka.
- *  Copyright (C) 2000-2011	The R Core Team.
+ *  Copyright (C) 2000-2012	The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -78,6 +78,7 @@
 #endif
 
 #include "Defn.h"
+#include <Internal.h>
 #include "Print.h"
 #include "Fileio.h"
 #include "Rconnections.h"
@@ -87,7 +88,7 @@
 using namespace CXXR;
 
 /* Global print parameter struct: */
-attribute_hidden R_print_par_t R_print;
+R_print_par_t R_print;
 
 static void printAttributes(SEXP, SEXP, Rboolean);
 static void PrintSpecial(SEXP);
@@ -100,13 +101,14 @@ static char tagbuf[TAGBUFLEN + 5];
 static GCRoot<> na_string_noquote(mkChar("<NA>"));
 
 /* Used in X11 module for dataentry */
-/* 'rho' is unused */
+/* NB this is called by R.app even though it is in no public header, so 
+   alter there if you alter this */
 void PrintDefaults(void)
 {
     R_print.na_string = NA_STRING;
     R_print.na_string_noquote = na_string_noquote;
-    R_print.na_width = strlen(CHAR(R_print.na_string));
-    R_print.na_width_noquote = strlen(CHAR(R_print.na_string_noquote));
+    R_print.na_width = int( strlen(CHAR(R_print.na_string)));
+    R_print.na_width_noquote = int( strlen(CHAR(R_print.na_string_noquote)));
     R_print.quote = 1;
     R_print.right = Rprt_adj_left;
     R_print.digits = GetOptionDigits();
@@ -114,9 +116,11 @@ void PrintDefaults(void)
     if (R_print.scipen == NA_INTEGER) R_print.scipen = 0;
     R_print.max = asInteger(GetOption1(install("max.print")));
     if (R_print.max == NA_INTEGER || R_print.max < 0) R_print.max = 99999;
+    else if(R_print.max == INT_MAX) R_print.max--; // so we can add
     R_print.gap = 1;
     R_print.width = GetOptionWidth();
     R_print.useSource = USESOURCE;
+    R_print.cutoff = GetOptionCutoff();
 }
 
 SEXP attribute_hidden do_invisible(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -162,7 +166,7 @@ SEXP attribute_hidden do_prmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("invalid 'na.print' specification"));
 	R_print.na_string = R_print.na_string_noquote = STRING_ELT(naprint, 0);
 	R_print.na_width = R_print.na_width_noquote =
-	    strlen(CHAR(R_print.na_string));
+	    int( strlen(CHAR(R_print.na_string)));
     }
 
     if (length(rowlab) == 0) rowlab = R_NilValue;
@@ -205,7 +209,7 @@ static void PrintLanguageEtc(SEXP s, Rboolean useSource, Rboolean isClosure)
     int i;
     SEXP t = getAttrib(s, R_SrcrefSymbol);
     if (!isInteger(t) || !useSource)
-	t = deparse1(s, CXXRFALSE, useSource | DEFAULTDEPARSE);
+	t = deparse1w(s, CXXRFALSE, useSource | DEFAULTDEPARSE);
     else {
         PROTECT(t = lang2(install("as.character"), t));
         t = eval(t, R_BaseEnv);
@@ -223,11 +227,13 @@ static void PrintLanguageEtc(SEXP s, Rboolean useSource, Rboolean isClosure)
     }
 }
 
+static
 void PrintClosure(SEXP s, Rboolean useSource)
 {
     PrintLanguageEtc(s, useSource, TRUE);
 }
 
+static
 void PrintLanguage(SEXP s, Rboolean useSource)
 {
     PrintLanguageEtc(s, useSource, FALSE);
@@ -266,7 +272,7 @@ SEXP attribute_hidden do_printdefault(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("invalid 'na.print' specification"));
 	R_print.na_string = R_print.na_string_noquote = STRING_ELT(naprint, 0);
 	R_print.na_width = R_print.na_width_noquote =
-	    strlen(CHAR(R_print.na_string));
+	    int( strlen(CHAR(R_print.na_string)));
     }
     args = CDR(args);
 
@@ -286,6 +292,7 @@ SEXP attribute_hidden do_printdefault(SEXP call, SEXP op, SEXP args, SEXP rho)
 	R_print.max = asInteger(CAR(args));
 	if(R_print.max == NA_INTEGER || R_print.max < 0)
 	    error(_("invalid '%s' argument"), "max");
+	else if(R_print.max == INT_MAX) R_print.max--; // so we can add
     }
     args = CDR(args);
 
@@ -394,9 +401,10 @@ static void PrintGenericVector(SEXP s, SEXP env)
 		break;
 	    case STRSXP:
 		if (LENGTH(tmp) == 1) {
+		    const void *vmax = vmaxget();
 		    /* This can potentially overflow */
 		    const char *ctmp = translateChar(STRING_ELT(tmp, 0));
-		    int len = strlen(ctmp);
+		    int len = int( strlen(ctmp));
 		    if(len < 100)
 			snprintf(pbuf, 115, "\"%s\"", ctmp);
 		    else {
@@ -404,6 +412,7 @@ static void PrintGenericVector(SEXP s, SEXP env)
 			pbuf[100] = '"'; pbuf[101] = '\0';
 			strcat(pbuf, " [truncated]");
 		    }
+		    vmaxset(vmax);
 		} else
 		snprintf(pbuf, 115, "Character,%d", LENGTH(tmp));
 		break;
@@ -441,7 +450,7 @@ static void PrintGenericVector(SEXP s, SEXP env)
     }
     else { /* .. no dim() .. */
 	names = getAttrib(s, R_NamesSymbol);
-	taglen = strlen(tagbuf);
+	taglen = int( strlen(tagbuf));
 	ptag = tagbuf + taglen;
 	{
 	    GCStackRoot<PairList> tl(CXXR_NEW(PairList));
@@ -457,6 +466,7 @@ static void PrintGenericVector(SEXP s, SEXP env)
 		if (names != R_NilValue &&
 		    STRING_ELT(names, i) != R_NilValue &&
 		    *CHAR(STRING_ELT(names, i)) != '\0') {
+		    const void *vmax = vmaxget();
 		    const char *ss = translateChar(STRING_ELT(names, i));
 		    if (taglen + strlen(ss) > TAGBUFLEN) {
 		    	if (taglen <= TAGBUFLEN)
@@ -471,6 +481,7 @@ static void PrintGenericVector(SEXP s, SEXP env)
 			else
 			    sprintf(ptag, "$`%s`", ss);
 		    }
+		    vmaxset(vmax);
 		}
 		else {
 		    if (taglen + IndexWidth(i) > TAGBUFLEN) {
@@ -496,6 +507,7 @@ static void PrintGenericVector(SEXP s, SEXP env)
 			ns - n_pr);
 	}
 	else { /* ns = length(s) == 0 */
+	    const void *vmax = vmaxget();
 	    /* Formal classes are represented as empty lists */
 	    const char *className = NULL;
 	    SEXP klass;
@@ -514,12 +526,14 @@ static void PrintGenericVector(SEXP s, SEXP env)
 		Rprintf("An object of class \"%s\"\n", className);
 		UNPROTECT(1);
 		printAttributes(s, env, TRUE);
+		vmaxset(vmax);
 		return;
 	    }
 	    else {
 		if(names != R_NilValue) Rprintf("named ");
 		Rprintf("list()\n");
 	    }
+	    vmaxset(vmax);
 	}
 	UNPROTECT(1);
     }
@@ -596,7 +610,7 @@ static void printList(SEXP s, SEXP env)
     }
     else {
 	i = 1;
-	taglen = strlen(tagbuf);
+	taglen = int( strlen(tagbuf));
 	ptag = tagbuf + taglen;
 	{
 	    GCStackRoot<PairList> tl(CXXR_NEW(PairList));
@@ -652,7 +666,7 @@ static void PrintExpression(SEXP s)
     SEXP u;
     int i, n;
 
-    u = deparse1(s, CXXRFALSE, R_print.useSource | DEFAULTDEPARSE);
+    u = deparse1w(s, CXXRFALSE, R_print.useSource | DEFAULTDEPARSE);
     n = LENGTH(u);
     for (i = 0; i < n; i++)
 	Rprintf("%s\n", CHAR(STRING_ELT(u, i))); /*translated */
@@ -773,6 +787,7 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
 	PROTECT(t = getAttrib(s, R_DimSymbol));
 	if (TYPEOF(t) == INTSXP) {
 	    if (LENGTH(t) == 1) {
+		const void *vmax = vmaxget();
 		PROTECT(t = getAttrib(s, R_DimNamesSymbol));
 		if (t != R_NilValue && VECTOR_ELT(t, 0) != R_NilValue) {
 		    SEXP nn = getAttrib(t, R_NamesSymbol);
@@ -786,6 +801,7 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
 		else
 		    printVector(s, 1, R_print.quote);
 		UNPROTECT(1);
+		vmaxset(vmax);
 	    }
 	    else if (LENGTH(t) == 2) {
 		SEXP rl, cl;
@@ -1033,9 +1049,9 @@ int F77_NAME(dblep0) (const char *label, int *nchar, double *data, int *ndata)
 {
     int k, nc = *nchar;
 
-    if(nc < 0) nc = strlen(label);
+    if(nc < 0) nc = int( strlen(label));
     if(nc > 255) {
-	warning(_("invalid character length in dblepr"));
+	warning(_("invalid character length in 'dblepr'"));
 	nc = 0;
     } else if(nc > 0) {
 	for (k = 0; k < nc; k++)
@@ -1051,9 +1067,9 @@ int F77_NAME(intpr0) (const char *label, int *nchar, int *data, int *ndata)
 {
     int k, nc = *nchar;
 
-    if(nc < 0) nc = strlen(label);
+    if(nc < 0) nc = int( strlen(label));
     if(nc > 255) {
-	warning(_("invalid character length in intpr"));
+	warning(_("invalid character length in 'intpr'"));
 	nc = 0;
     } else if(nc > 0) {
 	for (k = 0; k < nc; k++)
@@ -1070,9 +1086,9 @@ int F77_NAME(realp0) (const char *label, int *nchar, float *data, int *ndata)
     int k, nc = *nchar, nd = *ndata;
     double *ddata;
 
-    if(nc < 0) nc = strlen(label);
+    if(nc < 0) nc = int( strlen(label));
     if(nc > 255) {
-	warning(_("invalid character length in realpr"));
+	warning(_("invalid character length in 'realpr'"));
 	nc = 0;
     }
     else if(nc > 0) {
@@ -1082,7 +1098,7 @@ int F77_NAME(realp0) (const char *label, int *nchar, float *data, int *ndata)
     }
     if(nd > 0) {
 	ddata = (double *) malloc(nd*sizeof(double));
-	if(!ddata) error(_("memory allocation error in realpr"));
+	if(!ddata) error(_("memory allocation error in 'realpr'"));
 	for (k = 0; k < nd; k++) ddata[k] = (double) data[k];
 	printRealVector(ddata, nd, 1);
 	free(ddata);

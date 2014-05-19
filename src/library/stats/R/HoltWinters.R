@@ -1,6 +1,8 @@
 #  File src/library/stats/R/HoltWinters.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 2002-12 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -13,6 +15,8 @@
 #
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
+
+# Originally contributed by David Meyer
 
 HoltWinters <-
 function (x,
@@ -39,15 +43,15 @@ function (x,
     f <- frequency(x)
 
     if(!is.null(alpha) && (alpha == 0))
-        stop ("cannot fit models without level ('alpha' must not be 0 or FALSE).")
+        stop ("cannot fit models without level ('alpha' must not be 0 or FALSE)")
     if(!all(is.null(c(alpha, beta, gamma))) &&
         any(c(alpha, beta, gamma) < 0 || c(alpha, beta, gamma) > 1))
-        stop ("'alpha', 'beta' and 'gamma' must be within the unit interval.")
+        stop ("'alpha', 'beta' and 'gamma' must be within the unit interval")
     if((is.null(gamma) || gamma > 0)) {
         if (seasonal == "multiplicative" && any(x == 0))
-            stop ("data must be non-zero for multiplicative Holt-Winters.")
+            stop ("data must be non-zero for multiplicative Holt-Winters")
         if (start.periods < 2)
-            stop ("need at least 2 periods to compute seasonal start values.")
+            stop ("need at least 2 periods to compute seasonal start values")
     }
 
     ## initialization
@@ -92,6 +96,7 @@ function (x,
            as.double(max(min(beta, 1), 0)),
            as.double(max(min(gamma, 1), 0)),
            as.integer(start.time),
+           ## no idea why this is so: same as seasonal != "multiplicative"
            as.integer(! + (seasonal == "multiplicative")),
            as.integer(f),
            as.integer(!is.logical(beta) || beta),
@@ -105,9 +110,7 @@ function (x,
            SSE = as.double(0),
            level = double(len + 1L),
            trend = double(len + 1L),
-           seasonal = double(len + f),
-
-	   PACKAGE = "stats"
+           seasonal = double(len + f)
            )
 
     ## if alpha and/or beta and/or gamma are omitted, use optim to find the
@@ -248,7 +251,7 @@ function (x,
 
 ## Predictions, optionally with prediction intervals
 predict.HoltWinters <-
-    function (object, n.ahead = 1, prediction.interval = FALSE,
+    function (object, n.ahead = 1L, prediction.interval = FALSE,
               level = 0.95, ...)
 {
     f <- frequency(object$x)
@@ -267,7 +270,7 @@ predict.HoltWinters <-
 
     ## compute predictions
     # level
-    fit <- rep(as.vector(object$coefficients[1L]),n.ahead)
+    fit <- rep(as.vector(object$coefficients[1L]) ,n.ahead)
     # trend
     if (!is.logical(object$beta) || object$beta)
         fit <- fit + as.vector((1L:n.ahead)*object$coefficients[2L])
@@ -340,12 +343,12 @@ print.HoltWinters <- function (x, ...)
         if (is.logical(x$beta) && !x$beta) "without" else "with", "trend and",
         if (is.logical(x$gamma) && !x$gamma) "without" else
         paste0(if (is.logical(x$beta) && !x$beta) "with ", x$seasonal),
-        "seasonal component.\n")
-    cat("\nCall:\n", deparse (x$call), "\n\n")
+        "seasonal component.")
+    cat("\n\nCall:\n", deparse (x$call), "\n\n", sep = "")
     cat("Smoothing parameters:\n")
-    cat(" alpha: ", x$alpha, "\n")
-    cat(" beta : ", x$beta, "\n")
-    cat(" gamma: ", x$gamma, "\n\n")
+    cat(" alpha: ", x$alpha, "\n", sep = "")
+    cat(" beta : ", x$beta, "\n", sep = "")
+    cat(" gamma: ", x$gamma, "\n\n", sep = "")
 
     cat("Coefficients:\n")
     print(t(t(x$coefficients)))

@@ -30,19 +30,20 @@ if(interactive()) {
 (z4 <- Matrix(0*diag(4)))
 (o4 <- Matrix(1+diag(4)))
 (tr <- Matrix(cbind(1,0:1)))
-(m4 <- Matrix(cbind(0,rbind(6*diag(3),0))))
-dm4 <- Matrix(m4, sparse = FALSE)
+(M4 <- Matrix(m4 <- cbind(0,rbind(6*diag(3),0))))
+dM4 <- Matrix(M4, sparse = FALSE)
 class(mN <-  Matrix(NA, 3,4)) # NA *is* logical
 validObject(Matrix(NA))
-bd4 <- bdiag(m4,dm4,m4)
+bd4 <- bdiag(M4,dM4,M4)
 stopifnot(isValid(o4, "dsyMatrix"),
-          isValid(m4, "dtCMatrix"),
-          validObject(dm4), validObject(mN),
-          identical(bdiag(m4), bdiag(dm4)),
+          isValid(M4, "dtCMatrix"),
+          validObject(dM4), validObject(mN),
+          identical(bdiag(M4), bdiag(dM4)),
           identical(bd4@p, c(0L,0:3,3:6,6:9)),
           identical(bd4@i, c(0:2, 4:6, 8:10)), bd4@x == 6
           )
-assert.EQ.mat(dm4, as(m4, "matrix"))
+assert.EQ.mat(dM4, m4)
+assert.EQ.mat(M4^M4, m4^m4)
 assert.EQ.mat(mN, matrix(NA, 3,4))
 assert.EQ.mat(bdiag(diag(4)), diag(4))
 sL <- Matrix(, 3,4, sparse=TRUE)# -> "lgC"
@@ -69,7 +70,24 @@ if(FALSE) { ## TODO -- once R itself does better ...
     MLp <- Matrix(.Leap.seconds)## --> error (for now)
 }
 
-I <- Diagonal(3); I[,1] <- NA; I[2,2] <- NA ; I[3,] <- NaN
+### Unit-diagonal and unitriangular  {methods need diagU2N() or similar}
+I <- Diagonal(3)
+(T <- as(I,"TsparseMatrix")) # unitriangular
+(C <- as(I,"CsparseMatrix")) #   (ditto)
+lT <- as(T,"lMatrix")
+lC <- as(C,"lMatrix")
+stopifnot(
+    identical((n0 <- I != 0), Diagonal(3, TRUE)), I@diag == "U",
+    identical(n0, I & TRUE), identical(n0, I | FALSE),
+    identical(n0, TRUE & I), identical(n0, FALSE | I),
+    all(n0 == !(I == 0)), all(I == n0), identical(n0 == I, I == n0)
+    ,
+    identical4(lT, as(Diagonal(3, x=TRUE),"TsparseMatrix"), T & TRUE, TRUE & T),
+    identical4(lC, as(Diagonal(3, x=TRUE),"CsparseMatrix"), C & TRUE, TRUE & C),
+    identical3(lT, T | FALSE, FALSE | T),
+    identical3(lC, C | FALSE, FALSE | C),
+    TRUE)
+I[,1] <- NA; I[2,2] <- NA ; I[3,] <- NaN
 stopifnot(isValid(I, "sparseMatrix"))
 I # gave error in printSpMatrix() - because of R bug in format.info()
 
@@ -117,8 +135,18 @@ stopifnot(all(!l0),
 
 if(!interactive()) warnings()
 ## really large {length(<dense equivalent>) is beyond R's limits}:
-op <- options(warn = 2) # warnings here are errors
+op <- options(warn = 2) # warnings (e.g. integer overflow!) become errors:
 n <- 50000L
+stopifnot(n^2 > .Machine$integer.max)
+## had integer overflow in index constructions:
+x <- 1:n
+D <- Diagonal(n, x=x[n:1])
+summary(D)# special method
+summary(D != 0)
+stopifnot(identical(x*D, (Dx <- D*x)),
+	  identical(D != 0, as(D, "lMatrix")),
+	  identical(Dx, local({d <- D; d@x <- d@x * x; d})))
+
 Lrg <- new("dgTMatrix", Dim = c(n,n))
 diag(Lrg[2:9,1:8]) <- 1:8
 ## ==:  Lrg[2:9,1:8] <- `diag<-`(Lrg[2:9,1:8], 1:8)
@@ -182,8 +210,8 @@ stopifnot(validObject(t1),
           c(class(t2), class(t1c), class(t2c), class(tt2)) == "dtCMatrix",
           identical(t(tt2), t2))
 assert.EQ.mat(t1, as(t1c, "matrix"))
-D4. <- D4 * (M4 <- Matrix(1:4, 4,4))
-D4p <- M4 + D4
+D4. <- D4 * (A4 <- Matrix(1:4, 4,4))
+D4p <- A4 + D4
 Lg1 <- D4 > 0 & D4 > 1
 nLg <- !Lg1
 nnLg <- !nLg
@@ -230,13 +258,13 @@ stopifnot(range(L) == 0:1, all.equal(mean(L), 5/8))
 tu <- t1 ; tu@diag <- "U"
 tu
 validObject(cu <- as(tu, "dtCMatrix"))
-validObject(cnu <- Matrix:::diagU2N(cu))# <- testing diagU2N
+validObject(cnu <- diagU2N(cu))# <- testing diagU2N
 validObject(tu. <- as(cu, "dtTMatrix"))
 validObject(tt <- as(cu, "TsparseMatrix"))
 stopifnot(## NOT: identical(tu, tu.), # since T* is not unique!
 	  identical(cu, as(tu., "dtCMatrix")),
           length(cnu@i) == length(cu@i) + nrow(cu),
-          identical(cu, Matrix:::diagN2U(cnu)),# <- testing diagN2U
+          identical(cu, diagN2U(cnu)),# <- testing diagN2U
 	  all(cu >= 0, na.rm = TRUE), all(cu >= 0),
 	  any(cu >= 7))
 validObject(tcu <- t(cu))
@@ -251,11 +279,11 @@ assert.EQ.mat(cu,  as(tu,"matrix"), tol=0)
 assert.EQ.mat(cnu, as(tu,"matrix"), tol=0)
 
 C <- suppressWarnings(Matrix(c(0,1,0,0), 5,5)) + Diagonal(5)
-(tU <- Matrix:::diagN2U(tril(C))) # dtC Unitriangular
+(tU <- diagN2U(tril(C))) # dtC Unitriangular
 ntU <- as(tU, "nMatrix")
 nT <- as(ntU, "TsparseMatrix")
 R <- as(tU, "RsparseMatrix")
-Tt <- Matrix:::diagU2N(R) # used to accidentally drop the diag.
+Tt <- diagU2N(R) # used to accidentally drop the diag.
 stopifnot(R@x == c(1,1,1), diag(Tt) == 1)
 
 lcu <- new("ltCMatrix", Dim = c(4L, 4L), i = c(0:1, 0L), p = c(0L, 0:3),
@@ -263,7 +291,7 @@ lcu <- new("ltCMatrix", Dim = c(4L, 4L), i = c(0:1, 0L), p = c(0L, 0:3),
 (lTu <- as(lcu,"TsparseMatrix"))# prints wrongly (in Matrix 0.999375-31)
 stopifnot(identical3(rowSums(lcu), rowSums(lTu), rowSums(drop0(lcu))))
 (ncu <- as(lcu, "nMatrix"))# -- gives the "pattern" of lcu, i.e. FALSE are *there*
-ncn <- Matrix:::diagU2N(ncu)
+ncn <- diagU2N(ncu)
 (cncn <- crossprod(ncn))# works -> "nsCMatrix"
 stopifnot(identical(ncu, as(lcu,"nsparseMatrix")),
 	  identical(rowSums(ncu), c(3:1, 1L)),
@@ -282,7 +310,7 @@ stopifnot(validObject(U), ## had a case where solve(U) modified U !
 	  validObject(iU),
 	  validObject(U.),
 	  ## no rounding error, since have iU@x * 8 is integer :
-	  identical(U, Matrix:::diagN2U(drop0(U.))))
+	  identical(U, diagN2U(drop0(U.))))
 
 ## <sparse> o <numeric> (of length > 1):
 stopifnot(isValid(tm <- tu * 1:8, "sparseMatrix"),
@@ -293,6 +321,7 @@ mu <- as(tu,"matrix")
 stopifnot(isValid(cu, "CsparseMatrix"), isValid(cu, "triangularMatrix"),
           isValid(tu, "TsparseMatrix"), isValid(tu, "triangularMatrix"),
           identical(cu * 1:8, tu * 1:8), # but are no longer triangular
+          identical(cu > .1, as(tu > .1, "CsparseMatrix")),
           all(cu >= 0, na.rm=TRUE), !all(cu >= 1), is.na(all(tu >= 0)),
           ## Csparse_drop: preserves triangularity incl diag="U"
           identical(cu, .Call(Matrix:::Csparse_drop, cu, 0.))
@@ -305,6 +334,16 @@ stopifnot(all(ina == is.na(cu)),
 	  all(ina == is.na(as(cu,"generalMatrix"))),
 	  all(ina == as(is.na(as(cu,"matrix")),"nMatrix")))
 
+
+set.seed(7)
+xx <- rpois(10, 50)
+Samp <- function(n,size) sample(n, size, replace=TRUE)
+Tn <- sparseMatrix(i=Samp(8, 50), j=Samp(9,50), x=xx, giveCsparse=FALSE)
+Tn
+stopifnot(xx == Tn@x,
+	  max(xx) < max(Tn), 0 == min(Tn),
+	  (sT <- sum(Tn)) == sum(colSums(Tn)), sT == sum(Tn@x),
+	  range(Tn) == range(as(Tn, "CsparseMatrix")))
 
 ## tu. is diag "U", but tu2 not:
 tu2 <- as(as(tu., "generalMatrix"), "triangularMatrix")
@@ -345,7 +384,7 @@ mm. <- mm <- Matrix(rnorm(500 * 150), nc = 150)
 stopifnot(validObject(mm))
 xpx <- crossprod(mm)
 stopifnot(identical(mm, mm.),# once upon a time, mm was altered by crossprod()
-          validObject(xpx))
+          isValid(xpx, "dpoMatrix"))
 str(mm) # 'dge*"
 str(xpx)# 'dpo*"
 xpy <- crossprod(mm, rnorm(500))
@@ -387,7 +426,7 @@ stopifnot(identical(i6, as(cbind(c(-4, rep(1,5))), "dgeMatrix")),
 i.m <- solve(as.mat(m))
 I1 <- m %*% i.m
 o4 <- diag(I1)
-im <- solve(m)
+im <- solve(m)# is now sparse {not yet}
 (I2 <- m %*% im)
 (ms <- as(m, "symmetricMatrix"))
 ## solve(<sparse>, <sparse>):
@@ -398,7 +437,7 @@ s.ms2 <- solve(ms, ms)
 s.msm <- solve(ms, m)
 I4c <- as(Matrix(diag(4),sparse=TRUE), "generalMatrix")
 stopifnot(isValid(im, "Matrix"), isValid(I2, "Matrix"), class(I4c) == "dgCMatrix",
-          all.equal(I1, I2, tol = 1e-14),
+          all.equal(I1, as(I2,"dgeMatrix"), tol = 1e-14),
           all.equal(diag(4), as.mat(I2), tol = 1e-12),
           all.equal(s.mm,  I2, tol = 1e-14),
           all.equal(s.mms, I2, tol = 1e-14),
@@ -411,7 +450,7 @@ image(T125 <- kronecker(kronecker(t5,t5),t5),
 dim(T3k <- kronecker(t5,kronecker(T125, t5)))
 system.time(IT3 <- solve(T3k))# incredibly fast
 I. <- drop0(zapsmall(IT3 %*% T3k))
-I.. <- Matrix:::diagN2U(I.)
+I.. <- diagN2U(I.)
 I <- Diagonal(5^5)
 stopifnot(isValid(IT3, "dtCMatrix"),
           ## something like the equivalent of  all(I. == Diagonal(3125)) :
@@ -553,10 +592,28 @@ sm <- as(Matrix(diag(5) + 1),"dspMatrix")
 pm <- as(sm,"dpoMatrix")## gave infinite recursion (for a day or so)
 pp <- as(pm,"dppMatrix")
 
+x <- round(100 * crossprod(Matrix(runif(25),5)))
+D <- Diagonal(5, round(1000*runif(5)))
+px <- pack(x)
+stopifnot(is(x, "dpoMatrix"), is(px,"dppMatrix"), is(D, "ddiMatrix"))
+
+class(x+D)#--> now "dsyMatrix"
+stopifnot(is(x+D, "symmetricMatrix"),
+	  is(D+px, "dspMatrix"),
+	  identical(x+D, D+x), identical(px+D, D+px), identical(pack(x-D), px-D))
+
+
+tx <- tril(x)
+ptx <- pack(tx)
+stopifnot(is(tx, "dtrMatrix"), is(ptx, "dtpMatrix"),
+          is(t(tx), "dtrMatrix"), is(t(ptx), "dtpMatrix"),
+          is(D + tx, "dtrMatrix"), is(tx + D, "dtrMatrix"),
+          is(ptx + D, "dtpMatrix"), is(D + ptx, "dtpMatrix"))
+
+
 ###-- dense nonzero pattern:
 class(m <- Matrix(TRUE,2,2)) # lsy
-(n <- as(m, "nMatrix")) # nsy
-validObject(n)
+isValid(n <- as(m, "nMatrix"), "nsyMatrix")
 
 ## 1)
 as(n,"CsparseMatrix") # used to give CHOLMOD error: invalid xtype...
@@ -569,8 +626,7 @@ as(m,"sparseMatrix")
 ### -- now when starting with nsparse :
 nT <- new("ngTMatrix",
           i = as.integer(c(0, 1, 0)),
-          j = as.integer(c(0, 0, 1)), Dim = as.integer(c(2,2)),
-          Dimnames = list(NULL, NULL))
+          j = as.integer(c(0, 0, 1)), Dim = as.integer(c(2,2)))
 (nC <- as(nT, "ngCMatrix"))
 str(nC)# of course, no 'x' slot
 
@@ -747,8 +803,11 @@ M <- spMatrix(n, m,
               x = round(rnorm(nnz),1))
 validObject(Mv <- as(M, "sparseVector"))
 validObject(Dv <- as(Diagonal(60000), "sparseVector"))
+validObject(LD <- Diagonal(60000, TRUE))
+validObject(Lv <- as(LD, "sparseVector"))
 Dm <- Dv; dim(Dm) <- c(180000L, 20000L)
-stopifnot(isValid(Md <- M * rowSums(M, sparseResult=TRUE), "sparseMatrix"),
+stopifnot(!doExtras || isValid(Md <- M * rowSums(M, sparseResult=TRUE), "sparseMatrix"),
+	  LD@diag == "U",
           isValid(Dm, "sparseMatrix"),
 	  identical(Dv, as(Dm, "sparseVector")))
 
@@ -766,20 +825,24 @@ table(uniC <- sapply(lst[istri], function(.) get(.)@diag == "U"))
 lsUtr <- lst[istri][uniC]
 (di <- sapply(lsUtr, function(.) dim(get(.))))
 ## TODO: use %*%, crossprod(), .. on all those  4 x 4 -- and check "triangular rules"
-
 cat('Time elapsed: ', (.pt <- proc.time()),'\n') # "stats"
 ##
-cat("checkMatrix() of all: \n---------\n")
-Sys.setlocale("LC_COLLATE", "C")# to keep ls() reproducible
-for(nm in ls()) if(is(.m <- get(nm), "Matrix")) {
-    cat("\n", rep("-",nchar(nm)),"\n",nm, ":\n", sep='')
-    checkMatrix(.m)
+
+cat("doExtras:",doExtras,"\n")
+if(doExtras) {
+    cat("checkMatrix() of all: \n---------\n")
+    Sys.setlocale("LC_COLLATE", "C")    # to keep ls() reproducible
+    for(nm in ls()) if(is(.m <- get(nm), "Matrix")) {
+	cat("\n", rep("-",nchar(nm)),"\n",nm, ":\n", sep='')
+	checkMatrix(.m)
+    }
+    cat('Time elapsed: ', proc.time() - .pt,'\n') # "stats"
 }
-cat('Time elapsed: ', proc.time() - .pt,'\n') # "stats"
 
 if(!interactive()) warnings()
 
 ## Platform - and other such info -- so we find it in old saved outputs
+.libPaths()
 SysI <- Sys.info()
 structure(Sys.info()[c(4,5,1:3)], class="simple.list")
 sessionInfo()

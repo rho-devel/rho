@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1995--2012  The R Core Team.
+ *  Copyright (C) 1995--2013  The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,12 +48,14 @@
 #endif
 
 #include <Defn.h>
+#include <Internal.h>
 /* -> Errormsg.h */
 #include <Startup.h> /* rather cleanup ..*/
 #include <Rconnections.h>
 #include <Rinterface.h>
 #include <R_ext/GraphicsEngine.h> /* for GEonExit */
 #include <Rmath.h> /* for imax2 */
+#include <R_ext/Print.h>
 #include <cstdarg>
 
 #include "CXXR/ClosureContext.hpp"
@@ -66,6 +68,13 @@ using namespace CXXR;
 #ifndef min
 #define min(a, b) (a<b?a:b)
 #endif
+
+#if defined(__GNUC__) && __GNUC__ >= 3
+#define NORET __attribute__((noreturn))
+#else
+#define NORET
+#endif
+
 
 /* Total line length, in chars, before splitting in warnings/errors */
 #define LONGWARN 75
@@ -80,13 +89,15 @@ static int inPrintWarnings = 0;
 static int immediateWarning = 0;
 
 static void try_jump_to_restart(void);
-static void jump_to_top_ex(Rboolean, Rboolean, Rboolean, Rboolean, Rboolean);
+// The next is crucial to the use of NORET attributes.
+static void NORET
+jump_to_top_ex(Rboolean, Rboolean, Rboolean, Rboolean, Rboolean);
 static void signalInterrupt(void);
 static CXXRCONST char * R_ConciseTraceback(SEXP call, int skip);
 
 /* Interface / Calling Hierarchy :
 
-  R__stop()   -> do_error ->   errorcall --> jump_to_top_ex
+  R__stop()   -> do_error ->   errorcall --> (eventually) jump_to_top_ex
 			 /
 		    error
 
@@ -109,12 +120,37 @@ void R_CheckStack(void)
 	/* We do need some stack space to process error recovery,
 	   so temporarily raise the limit.
 	 */
-	unsigned int stacklimit = R_CStackLimit;
+	uintptr_t stacklimit = R_CStackLimit;
 	R_CStackLimit += CXXRCONSTRUCT(uintptr_t, 0.05*R_CStackLimit);
 
 	try {
 	    errorcall(R_NilValue, "C stack usage is too close to the limit");
 	    /* Do not translate this, to save stack space */
+	}
+	catch (...) {
+	    R_CStackLimit = stacklimit;
+	    throw;
+	}
+    }
+}
+
+void R_CheckStack2(size_t extra)
+{
+    int dummy;
+    intptr_t usage = R_CStackDir * (R_CStackStart - uintptr_t(&dummy));
+
+    /* do it this way, as some compilers do usage + extra 
+       in unsigned arithmetic */
+    usage += extra;
+    if(R_CStackLimit != -1 && usage > 0.95 * R_CStackLimit) {
+	/* We do need some stack space to process error recovery,
+	   so temporarily raise the limit.
+	 */
+	uintptr_t stacklimit = R_CStackLimit;
+	R_CStackLimit += 0.05*R_CStackLimit;
+	try {
+	   errorcall(R_NilValue, "C stack usage is too close to the limit");
+	   /* Do not translate this, to save stack space */
 	}
 	catch (...) {
 	    R_CStackLimit = stacklimit;
@@ -264,20 +300,17 @@ void warning(const char *format, ...)
     warningcall(c ? CXXRCCAST(Expression*, c->call()) : CXXRSCAST(RObject*, R_NilValue), "%s", buf);
 }
 
-/* temporary hook to allow experimenting with alternate warning mechanisms */
-static void (*R_WarningHook)(SEXP, char *) = NULL;
-
 /* declarations for internal condition handling */
 
 static void vsignalError(SEXP call, const char *format, va_list ap);
 static void vsignalWarning(SEXP call, const char *format, va_list ap);
 static void invokeRestart(SEXP, SEXP);
 
-#include <R_ext/rlocale.h>
+#include <rlocale.h>
 
 static int wd(const char * buf)
 {
-    int nc = mbstowcs(NULL, buf, 0), nw;
+    int nc = int( mbstowcs(NULL, buf, 0)), nw;
     if(nc > 0 && nc < 2000) {
 	wchar_t wc[2000];
 	mbstowcs(wc, buf, nc + 1);
@@ -351,7 +384,6 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
 	    }
 	}
 	else if(w == 0) {	/* collect them */
-	    CXXRCONST char *tr; int nc;
 	    if(!R_CollectWarnings) setupwarnings();
 	    if(R_CollectWarnings < R_nwarnings ) {
 		SET_VECTOR_ELT(R_Warnings, R_CollectWarnings, call);
@@ -359,8 +391,9 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
 		if(R_WarnLength < BUFSIZE - 20 && CXXRCONSTRUCT(int, strlen(buf)) == R_WarnLength)
 		    strcat(buf, " [... truncated]");
 		if(R_ShowWarnCalls && call != R_NilValue) {
-		    tr =  R_ConciseTraceback(call, 0); nc = strlen(tr);
-		    if (nc && nc + strlen(buf) + 8 < BUFSIZE) {
+		CXXRCONST char *tr =  R_ConciseTraceback(call, 0); 
+		size_t nc = strlen(tr);
+		if (nc && nc + int(strlen(buf)) + 8 < BUFSIZE) {
 			strcat(buf, "\nCalls: ");
 			strcat(buf, tr);
 		    }
@@ -407,6 +440,7 @@ void warningcall_immediate(SEXP call, const char *format, ...)
     immediateWarning = 0;
 }
 
+attribute_hidden
 void PrintWarnings(void)
 {
     int i;
@@ -448,7 +482,7 @@ void PrintWarnings(void)
 		    } else msgline1 = wd(msg);
 		    if (6 + wd(dcall) + msgline1 > LONGWARN) sep = "\n  ";
 		} else {
-		    int msgline1 = strlen(msg);
+		    size_t msgline1 = strlen(msg);
 		    CXXRCONST char *p = strchr(msg, '\n');
 		    if (p) msgline1 = int(p - msg);
 		    if (6+strlen(dcall) + msgline1 > LONGWARN) sep = "\n  ";
@@ -474,7 +508,7 @@ void PrintWarnings(void)
 			} else msgline1 = wd(msg);
 			if (10 + wd(dcall) + msgline1 > LONGWARN) sep = "\n  ";
 		    } else {
-			int msgline1 = strlen(msg);
+			size_t msgline1 = strlen(msg);
 			CXXRCONST char *p = strchr(msg, '\n');
 			if (p) msgline1 = int(p - msg);
 			if (10+strlen(dcall) + msgline1 > LONGWARN) sep = "\n  ";
@@ -525,14 +559,15 @@ static SEXP GetSrcLoc(SEXP srcref)
 {
     SEXP sep, line, result;
     SEXP srcfile = R_GetSrcFilename(srcref);
-    if (TYPEOF(srcref) != INTSXP || length(srcref) < 4) {
+    if (TYPEOF(srcref) != INTSXP || length(srcref) < 4)
 	return ScalarString(mkChar(""));
-    }
-    PROTECT(srcfile = eval( lang2( install("basename"), srcfile ), R_BaseEnv ) );
+    SEXP e2 = PROTECT(lang2( install("basename"), srcfile));
+    PROTECT(srcfile = eval(e2, R_BaseEnv ) );
     PROTECT(sep = ScalarString(mkChar("#")));
     PROTECT(line = ScalarInteger(INTEGER(srcref)[0]));
-    result = eval( lang4( install("paste0"), srcfile, sep, line ), R_BaseEnv );
-    UNPROTECT(3);
+    SEXP e = PROTECT(lang4( install("paste0"), srcfile, sep, line ));
+    result = eval(e, R_BaseEnv );
+    UNPROTECT(5);
     return result;
 }
 
@@ -545,12 +580,13 @@ const char *R_curErrorBuf() {
 /* temporary hook to allow experimenting with alternate error mechanisms */
 static void (*R_ErrorHook)(SEXP, char *) = NULL;
 
-static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
+static void NORET
+verrorcall_dflt(SEXP call, const char *format, va_list ap)
 {
     const char *dcall;
     char *p;
     const char *tr;
-    int oldInError, nc;
+    int oldInError;
 
     if (inError) {
 	/* fail-safe handler for recursive errors */
@@ -610,7 +646,7 @@ static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
 	    Rvsnprintf(tmp, min(BUFSIZE, R_WarnLength) - strlen(head), format, ap);
 	    dcall = CHAR(STRING_ELT(deparse1s(call), 0));
 	    if (len + strlen(dcall) + strlen(tmp) < BUFSIZE) {
-		sprintf(errbuf, "%s%s%s", head, dcall, mid);
+		snprintf(errbuf, BUFSIZE,  "%s%s%s", head, dcall, mid);
 		if (mbcslocale) {
 		    int msgline1;
 		    char *p = strchr(tmp, '\n');
@@ -622,7 +658,7 @@ static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
 		    if (14 + wd(dcall) + msgline1 > LONGWARN)
 			strcat(errbuf, tail);
 		} else {
-		    int msgline1 = strlen(tmp);
+		    size_t msgline1 = strlen(tmp);
 		    char *p = strchr(tmp, '\n');
 		    if (p) msgline1 = int(p - tmp);
 		    if (14 + strlen(dcall) + msgline1 > LONGWARN)
@@ -630,13 +666,13 @@ static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
 		}
 		strcat(errbuf, tmp);
 	    } else {
-		sprintf(errbuf, _("Error: "));
-		strcat(errbuf, tmp);
+		snprintf(errbuf, BUFSIZE, _("Error: "));
+		strcat(errbuf, tmp); // FIXME
 	    }
 	UNPROTECT(protectct);
 	}
 	else {
-	    sprintf(errbuf, _("Error: "));
+	    snprintf(errbuf, BUFSIZE, _("Error: "));
 	    p = errbuf + strlen(errbuf);
 	    Rvsnprintf(p, min(BUFSIZE, R_WarnLength) - strlen(errbuf), format, ap);
 	}
@@ -645,7 +681,8 @@ static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
 	if(*p != '\n') strcat(errbuf, "\n");
 
 	if(R_ShowErrorCalls && call != R_NilValue) {  /* assume we want to avoid deparse */
-	    tr = R_ConciseTraceback(call, 0); nc = strlen(tr);
+	    tr = R_ConciseTraceback(call, 0);
+	    size_t nc = strlen(tr);
 	    if (nc && nc + strlen(errbuf) + 8 < BUFSIZE) {
 		strcat(errbuf, "Calls: ");
 		strcat(errbuf, tr);
@@ -670,7 +707,7 @@ static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
     inError = oldInError;
 }
 
-static void errorcall_dflt(SEXP call, const char *format,...)
+static void NORET errorcall_dflt(SEXP call, const char *format,...)
 {
     va_list(ap);
 
@@ -679,7 +716,7 @@ static void errorcall_dflt(SEXP call, const char *format,...)
     va_end(ap);
 }
 
-void errorcall(SEXP call, const char *format,...)
+void NORET errorcall(SEXP call, const char *format,...)
 {
     va_list(ap);
 
@@ -834,7 +871,10 @@ static void jump_to_top_ex(Rboolean traceback,
 	    }
 	}
 
-	if ( !R_Interactive && !haveHandler ) {
+	if ( !R_Interactive && !haveHandler
+	     /* only bail out if at session top level, not in R_tryEval calls */
+	     // CXXR FIXME: this test not yet implemented in CXXR:
+	     /*&& R_ToplevelContext == R_SessionContext*/ ) {
 	    REprintf(_("Execution halted\n"));
 	    R_CleanUp(SA_NOSAVE, 1, 0); /* quit, no save, no .Last, status=1 */
 	}
@@ -901,13 +941,15 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    rho = ENCLOS(rho);
 	}
 	if(strlen(domain)) {
-	    buf = static_cast<char *>( alloca(strlen(domain)+3));
-	    R_CheckStack();
-	    sprintf(buf, "R-%s", domain);
+	    size_t len = strlen(domain)+3;
+	    R_CheckStack2(len);
+	    buf = static_cast<char *>( alloca(len));
+	    snprintf(buf, len, "R-%s", domain);
 	    domain = buf;
 	}
     } else if(isString(CAR(args)))
 	domain = translateChar(STRING_ELT(CAR(args),0));
+    else if(isLogical(CAR(args)) && LENGTH(CAR(args)) == 1 && LOGICAL(CAR(args))[0] == NA_LOGICAL) ;
     else errorcall(call, _("invalid '%s' value"), "domain");
 
     if(strlen(domain)) {
@@ -916,8 +958,8 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    int ihead = 0, itail = 0;
 	    const char * This = translateChar(STRING_ELT(string, i));
 	    char *tmp, *head = NULL, *tail = NULL, *p, *tr;
+	    R_CheckStack2(strlen(This) + 1);
 	    tmp = static_cast<char *>( alloca(strlen(This) + 1));
-	    R_CheckStack();
 	    strcpy(tmp, This);
 	    /* strip leading and trailing white spaces and
 	       add back after translation */
@@ -925,8 +967,8 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 		*p && (*p == ' ' || *p == '\t' || *p == '\n');
 		p++, ihead++) ;
 	    if(ihead > 0) {
+		R_CheckStack2(ihead + 1);
 		head = static_cast<char *>( alloca(ihead + 1));
-		R_CheckStack();
 		strncpy(head, tmp, ihead);
 		head[ihead] = '\0';
 		tmp += ihead;
@@ -936,18 +978,18 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    p >= tmp && (*p == ' ' || *p == '\t' || *p == '\n');
 		    p--, itail++) ;
 	    if(itail > 0) {
+		R_CheckStack2(itail + 1);
 		tail = static_cast<char *>( alloca(itail + 1));
-		R_CheckStack();
 		strcpy(tail, tmp+strlen(tmp)-itail);
 		tmp[strlen(tmp)-itail] = '\0';
-		}
+	    }
 	    if(strlen(tmp)) {
 #ifdef DEBUG_GETTEXT
 		REprintf("translating '%s' in domain '%s'\n", tmp, domain);
 #endif
 		tr = dgettext(domain, tmp);
+		R_CheckStack2(strlen(tr) + ihead + itail + 1);
 		tmp = static_cast<char *>( alloca(strlen(tr) + ihead + itail + 1));
-		R_CheckStack();
 		tmp[0] ='\0';
 		if(ihead > 0) strcat(tmp, head);
 		strcat(tmp, tr);
@@ -998,13 +1040,15 @@ SEXP attribute_hidden do_ngettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    rho = ENCLOS(rho);
 	}
 	if(strlen(domain)) {
-	    buf = static_cast<char *>( alloca(strlen(domain)+3));
-	    R_CheckStack();
-	    sprintf(buf, "R-%s", domain);
+	    size_t len = strlen(domain)+3;
+	    R_CheckStack2(len);
+	    buf = static_cast<char *>( alloca(len));
+	    snprintf(buf, len, "R-%s", domain);
 	    domain = buf;
 	}
     } else if(isString(sdom))
 	domain = CHAR(STRING_ELT(sdom,0));
+    else if(isLogical(sdom) && LENGTH(sdom) == 1 && LOGICAL(sdom)[0] == NA_LOGICAL) ;
     else errorcall(call, _("invalid '%s' value"), "domain");
 
     /* libintl seems to malfunction if given a message of "" */
@@ -1146,6 +1190,7 @@ WarningDB[] = {
 };
 
 
+attribute_hidden
 void ErrorMessage(SEXP call, int which_error, ...)
 {
     int i;
@@ -1165,6 +1210,7 @@ void ErrorMessage(SEXP call, int which_error, ...)
     errorcall(call, "%s", buf);
 }
 
+attribute_hidden
 void WarningMessage(SEXP call, R_WARNING which_warn, ...)
 {
     int i;
@@ -1185,15 +1231,9 @@ void WarningMessage(SEXP call, R_WARNING which_warn, ...)
 }
 
 
-/* Temporary hooks to allow experimenting with alternate error and
-   warning mechanisms.  They are not in the header files for now, but
-   the following snippet can serve as a header file: */
-
-void R_PrintDeferredWarnings(void);
-void R_SetErrmessage(const char *s);
-void R_SetErrorHook(void (*hook)(SEXP, char *));
-void R_SetWarningHook(void (*hook)(SEXP, char *));
-
+#ifdef UNUSED
+/* temporary hook to allow experimenting with alternate warning mechanisms */
+static void (*R_WarningHook)(SEXP, char *) = NULL;
 
 void R_SetWarningHook(void (*hook)(SEXP, char *))
 {
@@ -1204,14 +1244,15 @@ void R_SetErrorHook(void (*hook)(SEXP, char *))
 {
     R_ErrorHook = hook;
 }
+#endif
 
-void R_SetErrmessage(const char *s)
+static void R_SetErrmessage(const char *s)
 {
     strncpy(errbuf, s, sizeof(errbuf));
     errbuf[sizeof(errbuf) - 1] = 0;
 }
 
-void R_PrintDeferredWarnings(void)
+static void R_PrintDeferredWarnings(void)
 {
     if( R_ShowErrorMessages && R_CollectWarnings ) {
 	REprintf(_("In addition: "));
@@ -1219,6 +1260,7 @@ void R_PrintDeferredWarnings(void)
     }
 }
 
+attribute_hidden
 SEXP R_GetTraceback(int skip)
 {
     int nback = 0, ns;
@@ -1285,7 +1327,8 @@ static CXXRCONST char * R_ConciseTraceback(SEXP call, int skip)
 {
     static char buf[560];
     FunctionContext *c;
-    int nl, ncalls = 0;
+    size_t nl;
+    int ncalls = 0;
     Rboolean too_many = FALSE;
     const char *top = "" /* -Wall */;
 

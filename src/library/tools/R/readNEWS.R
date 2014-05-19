@@ -1,6 +1,8 @@
 #  File src/library/tools/R/readNEWS.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -17,6 +19,7 @@
 readNEWS <- function(file = file.path(R.home(), "NEWS"),
                      trace = FALSE, chop = c("first", "1", "par1", "keepAll"))
 {
+    .Deprecated()
     ## Purpose: read R's NEWS file - or a file similarly organized
     ## ----------------------------------------------------------------------
     ## Arguments: trace: is used in  "inner functions"
@@ -39,7 +42,7 @@ readNEWS <- function(file = file.path(R.home(), "NEWS"),
 	n <- length(cvec); if(n <= 1L) return(cvec)
 	## else	 n >= 2
 	empty <- grep("^[\t ]*$", cvec)
-	cvec[if(any(!empty)) which(!empty)[1L] else 1L]
+	cvec[if(any(!empty)) which.max(!empty) else 1L]
     }
 
     chopPara <- function(cvec) {
@@ -49,7 +52,7 @@ readNEWS <- function(file = file.path(R.home(), "NEWS"),
 	## the first non-empty ``from the right''
 	nm <- 1L:n %nIN% (n + 1 - rev(empty))
 	if(any(nm))
-	    cvec[1L:(n - (which(nm)[1L] - 1))]
+	    cvec[1L:(n - (which.max(nm) - 1L))]
 	else ## all are empty; return just one
 	    cvec[1L]
     }
@@ -82,10 +85,10 @@ readNEWS <- function(file = file.path(R.home(), "NEWS"),
 	## Purpose: parse one section (e.g., "BUG FIXES") of NEWS
 	## Arguments: ll: lines of text (character vector)
 	nl <- length(ll)
-	if(trace) cat("	    section '", kind,"' : ", nl, " lines", sep="")
+	if(trace) cat("	    section '", kind,"' : ", nl, " lines", sep = "")
 
 	## if(trace) cat(head(ll, min(3, nl)), if(nl > 5) ".............", "", sep="\n")
-	## if (nl > 3) if(trace) cat(tail(ll, min(2, nl-3)), "", sep="\n")
+	## if (nl > 3) if(trace) cat(tail(ll, min(2, nl-3)), "", sep = "\n")
 
 	iS <- grep(E.prefix, ll)
 	if(trace) cat("	 with ", length(iS), "entries\n")
@@ -165,9 +168,9 @@ readNEWS <- function(file = file.path(R.home(), "NEWS"),
     if(trace) {
         if(is.character(tfile))
             cat("successfully read ", nl, " lines from ",
-                sQuote(tfile), "\n", sep="")
+                sQuote(tfile), "\n", sep = "")
         else
-            cat("successfully read ", nl, " lines\n", sep="")
+            cat("successfully read ", nl, " lines\n", sep = "")
     }
 
     s.pre <- "^\t*\\*[\t ]+ " ##  REGEXP prefix used to identify series begin
@@ -209,6 +212,7 @@ readNEWS <- function(file = file.path(R.home(), "NEWS"),
 # Check for common formatting errors in a NEWS file.
 
 checkNEWS <- function(file = file.path(R.home(), "NEWS")) {
+    .Deprecated()
     check <- function(item) {
 	if (is.list(item)) return(all(unlist(lapply(item, check))))
 

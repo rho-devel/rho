@@ -28,10 +28,10 @@ groupedData <-
            inner = NULL, labels = NULL, units = NULL)
 {
   if (!(inherits(formula, "formula") && length(formula) == 3)) {
-    stop("first argument to groupedData must be a two-sided formula")
+    stop("first argument to 'groupedData' must be a two-sided formula")
   }
   if (is.null(grpForm <- getGroupsFormula(formula, asList = TRUE))) {
-    stop("Right hand side of first argument must be a conditional expression")
+    stop("right-hand side of first argument must be a conditional expression")
   }
   mCall <- match.call()
   mCall[[1]] <- as.name(ifelse(length(grpForm) == 1, "nfGroupedData",
@@ -48,14 +48,14 @@ nfGroupedData <-
            inner = NULL, labels = NULL, units = NULL)
 {
   if (!(inherits(formula, "formula") && length(formula) == 3)) {
-    stop("first argument to nfGroupedData must be a two-sided formula")
+    stop("first argument to 'nfGroupedData' must be a two-sided formula")
   }
   grpForm <- getGroupsFormula(formula, asList = TRUE)
   if (is.null(grpForm)) {
-    stop("Right hand side of first argument must be a conditional expression")
+    stop("right-hand side of first argument must be a conditional expression")
   }
   if (length(grpForm) > 1) {
-    stop("Only one level of grouping allowed")
+    stop("only one level of grouping allowed")
   }
   ## create a data frame in which formula, inner, and outer can be evaluated
   if (missing(data)) {
@@ -65,7 +65,7 @@ nfGroupedData <-
     data <- do.call('data.frame', alist)
   } else {
     if (!inherits(data, "data.frame")) {
-      stop("second argument to groupedData must inherit from data.frame")
+      stop("second argument to 'groupedData' must inherit from data.frame")
     }
   }
   ## Although response and primary are not always used, they are
@@ -148,11 +148,11 @@ nmGroupedData <-
     object
   }
   if (!(inherits(formula, "formula") && length(formula) == 3)) {
-    stop("first argument to nmGroupedData must be a two-sided formula")
+    stop("first argument to 'nmGroupedData' must be a two-sided formula")
   }
   grpForm <- getGroupsFormula(formula, asList = TRUE)
   if (is.null(grpForm)) {
-    stop("Right hand side of first argument must be a conditional expression")
+    stop("right-hand side of first argument must be a conditional expression")
   }
   if (length(grpForm) == 1) {           # single group
     mCall <- match.call()[-1]
@@ -174,7 +174,7 @@ nmGroupedData <-
     data <- do.call('data.frame', alist)
   } else {
     if (!inherits(data, "data.frame")) {
-      stop("second argument to groupedData must inherit from data.frame")
+      stop("second argument to 'groupedData' must inherit from data.frame")
     }
   }
   ## Although response and primary are not always used, they are
@@ -217,7 +217,7 @@ collapse.groupedData <-
   Q <- length(grpForm)                  # number of levels
   if (Q == 1) {                         # no collapsing
     if (!missing(subset)) {
-      warning("Subset ignored with single grouping factor")
+      warning("'subset' ignored with single grouping factor")
     }
     return(object)
   }
@@ -225,14 +225,14 @@ collapse.groupedData <-
   if (!is.null(subset)) {
     ## choosing some levels of grouping factors
     if (!is.list(subset)) {
-      stop("\"Subset\" must be a list")
+      stop("'subset' must be a list")
     }
     if (!any(is.na(match(names(subset), 1:Q)))) {
       ## subset names given as integers
       names(subset) <- grpNames[names(subset)]
     }
     if (any(is.na(match(names(subset), grpNames)))) {
-      stop("Undefined group declared in \"subset\"")
+      stop("undefined group declared in 'subset'")
     }
     auxSubset <- rep(TRUE, dim(object)[1])
     for(i in names(subset)) {
@@ -243,11 +243,11 @@ collapse.groupedData <-
     groups[] <- lapply(groups, function(x) x[drop = TRUE])
   }
   if (length(displayLevel) != 1) {
-    stop("Only one display level allowed")
+    stop("only one display level allowed")
   }
   if (is.null(grpForm[[displayLevel]])) {
-    stop(paste("Undefined display level",displayLevel,"for",
-	       substitute(object)))
+      stop(gettextf("undefined display level %s for %s",
+                    displayLevel, sQuote(substitute(object))), domain = NA)
   }
   attribs <- attributes(object)
   ord <- attribs[["order.groups"]][[displayLevel]]
@@ -272,8 +272,8 @@ collapse.groupedData <-
 	    }
   if (dlevel < Q) {			# may need to collapse object
     if (is.null(grpForm[[collapseLevel]])) {
-      stop(paste("Undefined collapsing level", collapseLevel,
-		 "for", substitute(object)))
+        stop(gettextf("undefined collapsing level %s for %s",
+                      collapseLevel, sQuote(substitute(object))), domain = NA)
     }
     clevel <- if (is.character(collapseLevel)) {
       match(collapseLevel, grpNames)
@@ -282,8 +282,7 @@ collapse.groupedData <-
     }
     if (clevel < dlevel) {
       clevel <- dlevel
-      warning(paste("Collapsing level cannot be smaller than display level;",
-		    "setting it to the display level"))
+      warning("collapsing level cannot be smaller than display level; setting it to the display level")
     }
     if ((dlevel < clevel) || (clevel < Q)) {
       collapseGroups <-
@@ -294,7 +293,7 @@ collapse.groupedData <-
       }
       if (!is.null(preserve)) {
         if (!(inherits(preserve, "formula") && length(preserve) == 2)) {
-          stop("\"Preserve\" must be a two-sided formula")
+          stop("'preserve' must be a two-sided formula")
         }
         collapseGroups <- paste(collapseGroups, eval(preserve[[2]], object),
                                 sep = "\007")
@@ -627,11 +626,11 @@ asTable.groupedData <-
   function(object)
 {
   if (length(getGroupsFormula(object, asList = TRUE)) > 1) {
-    stop("asTable cannot be used with multilevel grouped data")
+    stop("'asTable' cannot be used with multilevel grouped data")
   }
   tab <- table( getGroups(object), getCovariate(object) )
   if (1 != length(unique(tab)))
-    stop("asTable can only be used with balanced groupedData objects")
+    stop("'asTable' can only be used with balanced 'groupedData' objects")
   tab[] <- getResponse(object)[order(getCovariate(object),getGroups(object))]
   tab
 }

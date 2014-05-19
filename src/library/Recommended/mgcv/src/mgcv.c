@@ -19,14 +19,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307,
 USA. */
 
-    /*#define WINDOWS*/ 
-
-#ifdef WINDOWS
-#include <windows.h>   /* For easy self window porting, without neading everything R.h needs */
-#include <stdarg.h>
-#else
 #include <R.h>
-#endif
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,46 +35,13 @@ USA. */
 #define round(a) ((a)-floor(a) <0.5 ? (int)floor(a):(int) floor(a)+1)
 
 
-#ifdef WINDOWS
-/* following routine provides a version of Rprintf that outputs to a file instead 
-   of console, to facilitate debugging under windows.....
-*/
-typedef struct{
-double a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20;
-} _dodgy_print_storage;
 
-void Rprintf(char *str,...)
-{ _dodgy_print_storage ug; 
-  FILE *f;
-  va_list argptr;
-  f=fopen("d:/simon/Rdump.txt","at");
-  va_start(argptr,str);
-  ug=va_arg(argptr,_dodgy_print_storage);
-  fprintf(f,str,ug);
-  va_end(argptr);
-  fclose(f);
-}
-#endif
 
 void ErrorMessage(char *msg,int fatal)
 
-{ 
-#ifdef WINDOWS
-  MessageBox(HWND_DESKTOP,msg,"Info!",MB_ICONEXCLAMATION|MB_OK); 
-#else  
-if (fatal) error("%s",msg);else warning("%s",msg);
-#endif
+{ if (fatal) error("%s",msg);else warning("%s",msg);
 }
 
-void infobox(char *msg)
-
-{ 
-#ifdef WINDOWS
-MessageBox(HWND_DESKTOP,msg,"Info!",MB_ICONEXCLAMATION|MB_OK); 
-#else
-warning("%s",msg);
-#endif
-}
 
 /* The following are some rather ancient routines used to set up an example
    additive model using regression (cubic) splines, via RGAMsetup(). */
@@ -232,23 +192,23 @@ void getFS(double *x,int n,double *S,double *F) {
   double *D,*ldB,*sdB,*h,*Di,*Di1,*Di2,*Fp,*Sp,a,b,c;
   int i,j,n1,n2;
   /* create knot spacing vector h */
-  h = (double *)calloc((size_t)(n-1),sizeof(double));
+  h = (double *)R_chk_calloc((size_t)(n-1),sizeof(double));
   for (i=1;i<n;i++) h[i-1] = x[i]-x[i-1];
 
   /* create n-2 by n matrix D: D[i,i] = 1/h[i], D[i,i+1] = -1/h[i]-1/h[i+1]
      D[i,i+2] = 1/h[i+1], for i=0..(n-3). D is n-2 by n. */
-  D = (double *)calloc((size_t)(n*(n-2)),sizeof(double));
+  D = (double *)R_chk_calloc((size_t)(n*(n-2)),sizeof(double));
   n1 = n-1;n2=n-2;
   for (Di=D,Di1=D+n2,Di2=Di1+n2,i=0;i<n2;i++,Di+=n1,Di1+=n1,Di2+=n1) {
     *Di = 1/h[i];*Di2 = 1/h[i+1];*Di1 = - *Di - *Di2;
   }
   /* create leading diagonal of B*/
-  ldB = (double *)calloc((size_t)(n2),sizeof(double));
+  ldB = (double *)R_chk_calloc((size_t)(n2),sizeof(double));
   for (i=0;i<n2;i++) ldB[i] = (h[i]+h[i+1])/3;
-  sdB = (double *)calloc((size_t)(n2-1),sizeof(double));
+  sdB = (double *)R_chk_calloc((size_t)(n2-1),sizeof(double));
   for (i=1;i<n2;i++) sdB[i-1] = h[i]/6;
   /* Now find B^{-1}D using LAPACK routine DPTSV (result in D) */
-  F77_NAME(dptsv)(&n2,&n,ldB,sdB,D,&n2,&i);
+  F77_CALL(dptsv)(&n2,&n,ldB,sdB,D,&n2,&i);
 
   /* copy B^{-1}D into appropriate part of F */
   Di=D;
@@ -282,7 +242,7 @@ void getFS(double *x,int n,double *S,double *F) {
   a = 1/h[j]; /* row n-1 */
   for (Sp=S+n1,Di=D+n2-1,i=0;i<n;i++,Sp+=n,Di+=n2) *Sp = *Di * a;
 
-  free(ldB);free(sdB);free(h);free(D);
+  R_chk_free(ldB);R_chk_free(sdB);R_chk_free(h);R_chk_free(D);
 } /* end of getFS*/
 
 
@@ -293,8 +253,8 @@ void crspl(double *x,int *n,double *xk, int *nk,double *X,double *S, double *F,i
    * If Fsupplied!=0 then F' is matrix mapping function values at knots to second derivs,
      otherwise F and the penalty matrix S are computed and returned, along with X.         
 */
-  int i,j,k,extrapolate,jup,jmid;
-  double xlast=0.0,h,xi,kmax,kmin,ajm,ajp,cjm,cjp,*Fp,*Fp1,*Xp,xj,xj1,xik;
+  int i,j=0,k,extrapolate,jup,jmid;
+  double xlast=0.0,h=0.0,xi,kmax,kmin,ajm,ajp,cjm,cjp,*Fp,*Fp1,*Xp,xj,xj1,xik;
   if (! *Fsupplied) getFS(xk,*nk,S,F);
   kmax = xk[*nk-1];kmin = xk[0];
   for (i=0;i<*n;i++) { /* loop through x */
@@ -303,8 +263,11 @@ void crspl(double *x,int *n,double *xk, int *nk,double *X,double *S, double *F,i
     if (xi < kmin||xi>kmax) {
       extrapolate=1;
     } else if (i>0 && fabs(xlast-xi) < 2*h) { /* use simple direct search */
-      while (xi<xk[j]&&j>0) j--;
-      while (xi>xk[j+1] && j+1 < *nk-1) j++;
+      while (xi <= xk[j] && j > 0) j--;
+      while (xi > xk[j+1] && j < *nk-2) j++;
+      /* next line should not be needed, except under dodgy use of 
+         fpu registers during optimization... */
+      if (j<0) j=0;if (j > *nk-2) j = *nk - 2; 
       /* now xk[j] <= x[i] <= xk[j+1] */ 
     } else { /* bisection search required */ 
       j=0;jup=*nk-1;
@@ -402,14 +365,12 @@ void RuniqueCombs(double *X,int *ind,int *r, int *c)
   Xd.c--; /* hide index array  */
   RArrayFromMatrix(X,Xd.r,&Xd);  /* NOTE: not sure about rows here!!!! */
   *r = (int)Xd.r; 
-  freemat(Xd);free(ind1);
-#ifdef MEM_CHECK
-  dmalloc_log_unfreed();  dmalloc_verify(NULL);
-#endif 
+  freemat(Xd);R_chk_free(ind1);
+
 }
 
 void RMonoCon(double *Ad,double *bd,double *xd,int *control,double *lower,double *upper,int *n)
-/* obtains coefficient matrices for imposing monotoicity (and optionally bounds) on a 
+/* obtains coefficient matrices for imposing monotonicity (and optionally bounds) on a 
    cubic regression spline with n knots located as specified in xd. 
    
    control indicates type of constraints:
@@ -435,66 +396,9 @@ void RMonoCon(double *Ad,double *bd,double *xd,int *control,double *lower,double
   RArrayFromMatrix(bd,b.r,&b);
  
   freemat(x);freemat(A);freemat(b);  
-#ifdef MEM_CHECK
-  dmalloc_log_unfreed();  dmalloc_verify(NULL);
-#endif 
+
 }
 
-
-
-void RQT(double *A,int *r,int*c)
-
-/* Obtains the QT decomposition of matrix A (stored according to R conventions)
-   AQ=[0,T] where T is reverse lower triangular (upper left is zero). r<c and 
-   first c-r columns of Q are basis vectors for the null space of A 
-   (Q orthogonal). Let this null space basis be Z. It is actually stored as 
-   a series of r Householder rotations over the rows of A. Let u_i be the ith
-   row of A (A[i,], i>=1) then the last i-1 elements of u_i are zero, while if 
-   H_i=(I-u_i u_i') then Q=H_1 H_2 H_3 ...H_r.
-   
-   The main purpose of this routine *was* to provide a suitable representation 
-   of the null space of any equality constraints on the problem addressed by 
-   mgcv(). So if the constraints are Cp=0, RQT() was called to get an 
-   appropriate null space basis in A. The non-obvious representation usually 
-   saves much computing, since there are usually few constraints, resulting in 
-   a high dimensional null space - in this case the Householder representation
-   is very efficient. 
-
-   However, the current version of mgcv() expects to get the constraint matrix    itself and not the null space. 
-*/
-
-{ matrix Q,B;
-  B=Rmatrix(A,(long)(*r),(long)(*c));
-  Q=initmat(B.r,B.c);
-  QT(Q,B,0);
-  RArrayFromMatrix(A,(long)(*r),&Q);
-  freemat(Q);freemat(B); 
-#ifdef MEM_CHECK
-  dmalloc_log_unfreed();  dmalloc_verify(NULL);
-#endif
-}
-
-
-
-
-
-
-
-void RprintM(matrix *A)
-
-{ 
-#ifdef WINDOWS
-#else
-int i,j;
-  if (A->c==1L) 
-  { for (i=0;i<A->r;i++) 
-   Rprintf("%8.3g ",A->V[i]);Rprintf("\n");
-  } 
-else
- for (i=0;i<A->r;i++)
-     { for (j=0;j<A->c;j++) Rprintf("%8.3g ",A->M[i][j]);Rprintf("\n");}
-#endif
-}
 
 void  RPCLS(double *Xd,double *pd,double *yd, double *wd,double *Aind,double *bd,
             double *Afd,double *Hd,double *Sd,
@@ -538,13 +442,13 @@ void  RPCLS(double *Xd,double *pd,double *yd, double *wd,double *Aind,double *bd
   if (nar[3]>0) Af=Rmatrix(Afd,(long)nar[3],(long)np); else Af.r=0L;
   if (nar[2]>0) b=Rmatrix(bd,(long)nar[2],1L);else b.r=0L;
  
-  if (*m) S=(matrix *)calloc((size_t) *m,sizeof(matrix));
+  if (*m) S=(matrix *)R_chk_calloc((size_t) *m,sizeof(matrix));
   else S=&H; /* avoid spurious compiler warning */
   for (i=0;i< *m;i++) S[i]=initmat((long)dim[i],(long)dim[i]);
   RUnpackSarray(*m,S,Sd);
   
   if (nar[4]) H=initmat(y.r,y.r); else H.r=H.c=0L;
-  active=(int *)calloc((size_t)(p.r+1),sizeof(int)); /* array for active constraints at best fit active[0] will be  number of them */
+  active=(int *)R_chk_calloc((size_t)(p.r+1),sizeof(int)); /* array for active constraints at best fit active[0] will be  number of them */
   /* call routine that actually does the work */
  
   PCLS(&X,&p,&y,&w,&Ain,&b,&Af,&H,S,off,theta,*m,active);
@@ -554,10 +458,10 @@ void  RPCLS(double *Xd,double *pd,double *yd, double *wd,double *Aind,double *bd
  
   if (H.r) RArrayFromMatrix(Hd,H.r,&H);
   /* clear up .... */
-  free(active);
+  R_chk_free(active);
  
   for (i=0;i< *m;i++) freemat(S[i]);
-  if (*m) free(S);
+  if (*m) R_chk_free(S);
  
   freemat(X);freemat(p);freemat(y);freemat(w);
   if (H.r) freemat(H);

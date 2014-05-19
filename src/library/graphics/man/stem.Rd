@@ -1,6 +1,6 @@
 % File src/library/graphics/man/stem.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{stem}
@@ -12,7 +12,7 @@ stem(x, scale = 1, width = 80, atom = 1e-08)
 \description{
   \code{stem} produces a stem-and-leaf plot of the values in \code{x}.
   The parameter \code{scale} can be used to expand the scale of the
-  plot.  A value of \code{scale=2} will cause the plot to be roughly
+  plot.  A value of \code{scale = 2} will cause the plot to be roughly
   twice as long as the default.
 }
 \arguments{
@@ -20,6 +20,9 @@ stem(x, scale = 1, width = 80, atom = 1e-08)
   \item{scale}{This controls the plot length.}
   \item{width}{The desired width of plot.}
   \item{atom}{a tolerance.}
+}
+\details{
+  Infinite and missing values in \code{x} are discarded.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)

@@ -23,12 +23,8 @@
 */
 
 #include "matrix.h"
-
-#ifndef USING_R
-extern void F77_NAME(dqrdca)();
-#else
 #include <R_ext/Applic.h>
-#endif /* USING_R */
+
 
 /* Factor list and Recalc for general corStruct object */
 

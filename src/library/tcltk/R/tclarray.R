@@ -1,6 +1,8 @@
 #  File src/library/tcltk/R/tclarray.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -25,8 +27,8 @@ tclArray <- function() {
 "[[.tclArray" <- function(x, ...) {
     name <- as.character(x)
     i <- paste(...,sep=",")
-    rval <- .External("RTcl_GetArrayElem", name, i, PACKAGE = "tcltk")
-    if (!is.null(rval)) class(rval)<-"tclObj"
+    rval <- .External(.C_RTcl_GetArrayElem, name, i)
+    if (!is.null(rval)) class(rval) <- "tclObj"
     rval
 }
 
@@ -34,10 +36,10 @@ tclArray <- function() {
     name <- as.character(x)
     i <- paste(..., sep=",")
     if (is.null(value))
-        .External("RTcl_RemoveArrayElem", name, i, PACKAGE = "tcltk")
+        .External(.C_RTcl_RemoveArrayElem, name, i)
     else {
         value <- as.tclObj(value)
-        .External("RTcl_SetArrayElem", name, i, value, PACKAGE = "tcltk")
+        .External(.C_RTcl_SetArrayElem, name, i, value)
     }
     x
 }
@@ -45,8 +47,8 @@ tclArray <- function() {
 "$.tclArray" <- function(x, i) {
     name <- as.character(x)
     i <- as.character(i)
-    rval <- .External("RTcl_GetArrayElem", name, i, PACKAGE = "tcltk")
-    if (!is.null(rval)) class(rval)<-"tclObj"
+    rval <- .External(.C_RTcl_GetArrayElem, name, i)
+    if (!is.null(rval)) class(rval) <- "tclObj"
     rval
 }
 
@@ -54,10 +56,10 @@ tclArray <- function() {
     name <- as.character(x)
     i <- as.character(i)
     if (is.null(value))
-        .External("RTcl_RemoveArrayElem", name, i, PACKAGE = "tcltk")
+        .External(.C_RTcl_RemoveArrayElem, name, i)
     else {
         value <- as.tclObj(value)
-        .External("RTcl_SetArrayElem", name, i, value, PACKAGE = "tcltk")
+        .External(.C_RTcl_SetArrayElem, name, i, value)
     }
     x
 }

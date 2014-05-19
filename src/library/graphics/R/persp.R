@@ -1,6 +1,8 @@
 #  File src/library/graphics/R/persp.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -60,11 +62,12 @@ function (x = seq(0, 1, length.out = nrow(z)),
             warning("surface extends beyond the box")
     }
     ticktype <- pmatch(ticktype, c("simple", "detailed"))
-    r <- .Internal(persp(x, y, z, xlim, ylim, zlim, theta, phi, r, d,
-                         scale, expand, col, border, ltheta, lphi, shade,
-                         box, axes, nticks, ticktype,
-                         as.character(xlab), as.character(ylab),
-                         as.character(zlab), ...))
+    plot.new()
+    r <- .External.graphics(C_persp, x, y, z, xlim, ylim, zlim, theta, phi, r, d,
+                            scale, expand, col, border, ltheta, lphi, shade,
+                            box, axes, nticks, ticktype,
+                            as.character(xlab), as.character(ylab),
+                            as.character(zlab), ...)
     for(fun in getHook("persp")) {
         if(is.character(fun)) fun <- get(fun)
         try(fun())

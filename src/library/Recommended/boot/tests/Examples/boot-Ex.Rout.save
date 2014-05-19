@@ -1,6 +1,6 @@
 
-R Under development (unstable) (2011-07-12 r56366)
-Copyright (C) 2011 The R Foundation for Statistical Computing
+R Under development (unstable) (2013-02-09 r61878) -- "Unsuffered Consequences"
+Copyright (C) 2013 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
@@ -23,7 +23,7 @@ Type 'q()' to quit R.
 > options(warn = 1)
 > library('boot')
 > 
-> assign(".oldSearch", search(), pos = 'CheckExEnv')
+> base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
 > cleanEx()
 > nameEx("Imp.Estimates")
 > ### * Imp.Estimates
@@ -494,9 +494,9 @@ Calculations and Intervals on Original Scale
 > library(survival)
 Loading required package: splines
 
-Attaching package: ‘survival’
+Attaching package: 'survival'
 
-The following object(s) are masked from ‘package:boot’:
+The following object is masked from 'package:boot':
 
     aml
 
@@ -716,7 +716,7 @@ Warning in min(surv$time[inds[1 - surv$surv[inds] >= 0.5]]) :
 > 
 > cleanEx()
 
-detaching ‘package:survival’, ‘package:splines’
+detaching 'package:survival', 'package:splines'
 
 > nameEx("control")
 > ### * control
@@ -1244,10 +1244,10 @@ $zeta.hat
 > # Alternatively this can be done using a conditional poisson
 > saddle(A = cbind(aircondit$hours/12,1), u = c(80, 12),
 +        wdist = "p", type = "cond")
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 10.090909
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.909091
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 10.090909
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.909091
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 10.090909
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.909091
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 10.090909
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.909091
 $spa
        pdf        cdf 
 0.01005943 0.24438736 
@@ -1264,10 +1264,10 @@ $zeta2.hat
 > saddle(A = cbind(aircondit$hours/12,1), u = c(80, 12),
 +        wdist = "p", type = "cond", 
 +        LR = TRUE)
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 10.090909
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.909091
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 10.090909
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.909091
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 10.090909
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.909091
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 10.090909
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.909091
 $spa
        pdf        cdf 
 0.01005943 0.24447362 
@@ -1327,94 +1327,94 @@ $zeta.hat
 > # alternatively using the conditional poisson
 > saddle.distn(A = cbind(aircondit$hours/12, 1), u = 12, wdist = "p",
 +              type = "cond", t0 = air.t0)
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 11.344718
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.655282
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 11.344718
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.655282
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 11.832240
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.167760
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 11.832240
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.167760
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.444538
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.555462
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.444538
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.555462
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.494449
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.505551
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.494449
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.505551
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.594269
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 10.405731
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.594269
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 10.405731
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.544359
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 8.455641
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.544359
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 8.455641
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.519404
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.480596
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.519404
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.480596
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 11.561394
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.438606
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 11.561394
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.438606
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 11.290549
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.709451
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 11.290549
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.709451
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 11.019703
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.980297
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 11.019703
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.980297
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 10.748857
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.251143
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 10.748857
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.251143
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 10.478011
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.521989
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 10.478011
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.521989
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 10.207165
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.792835
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 10.207165
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.792835
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 9.936320
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.063680
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 9.936320
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.063680
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 9.665474
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.334526
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 9.665474
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.334526
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 8.785225
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.214775
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 8.785225
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.214775
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 8.175822
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.824178
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 8.175822
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.824178
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.566419
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.433581
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.566419
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.433581
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.957016
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.042984
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.957016
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.042984
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.347613
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.652387
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.347613
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.652387
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.738210
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.261790
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.738210
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.261790
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.128807
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.871193
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.128807
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.871193
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 11.344718
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.655282
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 11.344718
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.655282
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 11.832240
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.167760
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 11.832240
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.167760
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.444538
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.555462
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.444538
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.555462
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.494449
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.505551
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.494449
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.505551
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.594269
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 10.405731
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.594269
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 10.405731
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.544359
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 8.455641
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.544359
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 8.455641
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.519404
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.480596
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.519404
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.480596
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 11.561394
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.438606
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 11.561394
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.438606
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 11.290549
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.709451
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 11.290549
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.709451
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 11.019703
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.980297
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 11.019703
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.980297
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 10.748857
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.251143
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 10.748857
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.251143
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 10.478011
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.521989
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 10.478011
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.521989
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 10.207165
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.792835
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 10.207165
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.792835
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 9.936320
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.063680
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 9.936320
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.063680
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 9.665474
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.334526
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 9.665474
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.334526
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 8.785225
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.214775
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 8.785225
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.214775
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 8.175822
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.824178
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 8.175822
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.824178
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.566419
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.433581
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.566419
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.433581
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.957016
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.042984
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.957016
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.042984
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.347613
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.652387
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.347613
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.652387
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.738210
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.261790
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.738210
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.261790
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.128807
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.871193
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.128807
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.871193
 
 Saddlepoint Distribution Approximations
 
@@ -1566,138 +1566,138 @@ Smoothing spline used 20 points in the range 1.014 to 1.96.
 > city.t0 <- c(mean(city$x)/mean(city$u), sqrt(city.v))
 > saddle.distn(A = Afn, u = ufn, wdist = "p", type = "cond", t0 = city.t0, 
 +              data = city)
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.866400
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 8.511350
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.622251
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.866400
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 8.511350
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.622251
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.210844
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.107208
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.681949
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.210844
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.107208
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.681949
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.038622
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.809279
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.152100
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.038622
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.809279
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.152100
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.452511
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.160314
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.387175
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.452511
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.160314
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.387175
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.159455
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.835832
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.004713
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.159455
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.835832
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.004713
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.155629
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.115412
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.728960
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.155629
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.115412
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.728960
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.205022
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.133273
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.661705
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.205022
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.133273
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.661705
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.722845
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.033105
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.244049
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.722845
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.033105
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.244049
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.787431
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.388294
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.824275
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.787431
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.388294
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.824275
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.415407
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.940756
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.643837
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.415407
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.940756
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.643837
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.043383
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.493218
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.463399
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.043383
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.493218
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.463399
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.671359
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.045680
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.282961
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.671359
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.045680
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.282961
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.299336
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.598142
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.102523
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.299336
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.598142
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.102523
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.433935
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.409277
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.156788
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.433935
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.409277
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.156788
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.360158
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.271008
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.368834
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.360158
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.271008
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.368834
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.319252
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.639889
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.040859
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.319252
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.639889
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.040859
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.278346
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.008770
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.712884
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.278346
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.008770
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 4.712884
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.237440
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.377650
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.384909
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.237440
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 1.377650
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 5.384909
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.196534
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.746531
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.056935
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.196534
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.746531
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.056935
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.155629
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.115412
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.728960
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 3.155629
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.115412
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.728960
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.734728
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.299661
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.965612
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.734728
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.299661
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 6.965612
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.228786
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.666383
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.104831
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 2.228786
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 0.666383
-Warning in aic(y, n, mu, weights, dev) : non-integer x = 7.104831
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.866400
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 8.511350
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.622251
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.866400
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 8.511350
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.622251
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.210844
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.107208
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.681949
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.210844
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.107208
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.681949
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.038622
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.809279
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.152100
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.038622
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.809279
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.152100
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.452511
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.160314
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.387175
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.452511
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.160314
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.387175
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.159455
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.835832
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.004713
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.159455
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.835832
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.004713
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.155629
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.115412
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.728960
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.155629
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.115412
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.728960
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.205022
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.133273
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.661705
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.205022
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.133273
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.661705
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.722845
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.033105
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.244049
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.722845
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.033105
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.244049
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.787431
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.388294
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.824275
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.787431
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.388294
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.824275
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.415407
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.940756
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.643837
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.415407
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.940756
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.643837
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.043383
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.493218
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.463399
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.043383
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.493218
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.463399
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.671359
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.045680
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.282961
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.671359
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.045680
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.282961
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.299336
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.598142
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.102523
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.299336
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.598142
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.102523
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.433935
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.409277
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.156788
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.433935
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.409277
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.156788
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.360158
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.271008
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.368834
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.360158
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.271008
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.368834
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.319252
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.639889
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.040859
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.319252
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.639889
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.040859
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.278346
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.008770
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.712884
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.278346
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.008770
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 4.712884
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.237440
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.377650
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.384909
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.237440
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 1.377650
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 5.384909
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.196534
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.746531
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.056935
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.196534
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.746531
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.056935
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.155629
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.115412
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.728960
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 3.155629
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.115412
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.728960
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.734728
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.299661
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.965612
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.734728
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.299661
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 6.965612
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.228786
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.666383
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.104831
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 2.228786
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 0.666383
+Warning in dpois(y, mu, log = TRUE) : non-integer x = 7.104831
 
 Saddlepoint Distribution Approximations
 
@@ -2016,8 +2016,8 @@ t3* 0.000000 -0.8862944    2.208945
 > 
 > ### * <FOOTER>
 > ###
-> cat("Time elapsed: ", proc.time() - get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  35.015 0.065 35.309 0 0 
+> base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
+Time elapsed:  19.343 0.03 19.437 0 0 
 > grDevices::dev.off()
 null device 
           1 

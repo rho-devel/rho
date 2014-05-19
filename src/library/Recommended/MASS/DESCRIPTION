@@ -1,25 +1,34 @@
 Package: MASS
 Priority: recommended
-Version: 7.3-18
-Date: 2012-05-28
-Revision: $Rev: 3167 $
-Depends: R (>= 2.14.0), grDevices, graphics, stats, utils
+Version: 7.3-29
+Date: 2013-08-17
+Revision: $Rev: 3344 $
+Depends: R (>= 3.0.0), grDevices, graphics, stats, utils
 Suggests: lattice, nlme, nnet, survival
 Authors@R: c(person("Brian", "Ripley", role = c("aut", "cre", "cph"),
-        email = "ripley@stats.ox.ac.uk"), person("Kurt", "Hornik", role
-        = "trl", comment = "partial port ca 1998"), person("Albrecht",
-        "Gebhardt", role = "trl", comment = "partial port ca 1998"),
-        person("David", "Firth", role = "ctb"))
+                    email = "ripley@stats.ox.ac.uk"),
+	     person("Bill", "Venables", role = "ctb"),
+	     person(c("Douglas", "M."), "Bates", role = "ctb"),
+	     person("Kurt", "Hornik", role = "trl",
+                     comment = "partial port ca 1998"),
+	     person("Albrecht", "Gebhardt", role = "trl",
+                     comment = "partial port ca 1998"),
+	     person("David", "Firth", role = "ctb"))
 Description: Functions and datasets to support Venables and Ripley,
-        'Modern Applied Statistics with S' (4th edition, 2002).
+  'Modern Applied Statistics with S' (4th edition, 2002).
 Title: Support Functions and Datasets for Venables and Ripley's MASS
+LazyData: yes
+ByteCompile: yes
 License: GPL-2 | GPL-3
 URL: http://www.stats.ox.ac.uk/pub/MASS4/
-LazyData: yes
-Packaged: 2012-05-28 08:47:38 UTC; ripley
-Author: Brian Ripley [aut, cre, cph], Kurt Hornik [trl] (partial port
-        ca 1998), Albrecht Gebhardt [trl] (partial port ca 1998), David
-        Firth [ctb]
+Packaged: 2013-08-31 17:26:54 UTC; ripley
+Author: Brian Ripley [aut, cre, cph],
+  Bill Venables [ctb],
+  Douglas M. Bates [ctb],
+  Kurt Hornik [trl] (partial port ca 1998),
+  Albrecht Gebhardt [trl] (partial port ca 1998),
+  David Firth [ctb]
 Maintainer: Brian Ripley <ripley@stats.ox.ac.uk>
+NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2012-05-28 08:53:03
+Date/Publication: 2013-08-31 19:29:13

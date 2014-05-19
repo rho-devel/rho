@@ -25,7 +25,7 @@
   \code{pdMat} components of \code{object}.
 }
 
-\author{Jose Pinheiro}
+\author{José Pinheiro}
 
 \seealso{\code{\link{reStruct}},
   \code{\link{pdMat}}, \code{\link{logDet}}

@@ -36,7 +36,7 @@
   A Trellis \code{dotplot} of the values being compared, with rows
   determined by the groups and panels by the coefficients.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{compareFits}}, \code{\link{pairs.compareFits}},
   \code{\link{dotplot}} }
 \examples{

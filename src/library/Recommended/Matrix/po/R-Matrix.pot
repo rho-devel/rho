@@ -1,8 +1,7 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.16.0\n"
-"Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2012-03-06 17:05\n"
+"Project-Id-Version: Matrix 1.0-12\n"
+"POT-Creation-Date: 2013-03-26 16:33\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -10,6 +9,9 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+
+msgid "invalid 'mod': %s"
+msgstr ""
 
 msgid "not-yet-implemented method for %s(<%s>).\n ->>  Ask the package authors to implement the missing feature."
 msgstr ""
@@ -35,37 +37,40 @@ msgstr ""
 msgid "Matrices must have same number of columns in %s"
 msgstr ""
 
-msgid "[[ suppressing %d column names %s%s ]]"
+msgid "[[ suppressing %d column names %s ... ]]"
 msgstr ""
 
-msgid ","
+msgid "[[ suppressing %d column names %s ]]"
 msgstr ""
 
-msgid "..."
+msgid "'x' must be \"sparseMatrix\""
 msgstr ""
 
-msgid "'x' must be sparseMatrix"
-msgstr ""
-
-msgid "not yet implemented for class"
+msgid "not yet implemented for class %s"
 msgstr ""
 
 msgid "not a triangular matrix"
 msgstr ""
 
-msgid "not yet implemented for matrix w/ typeof"
+msgid "not yet implemented for matrix with typeof %s"
 msgstr ""
 
-msgid "not yet be implemented for"
+msgid "not yet implemented for %s"
 msgstr ""
 
-msgid "general Matrix class not yet implemented for"
+msgid "general Matrix class not yet implemented for %s"
 msgstr ""
 
-msgid "arguments in"
+msgid "arguments %s are disregarded in\n %s"
 msgstr ""
 
-msgid "are disregarded"
+msgid "Quadratic matrix '%s' (=: A) is not formally\n\tsymmetric.  Will be treated as\tA A'"
+msgstr ""
+
+msgid "'update' must be logical or '+' or '-'; 'C' a matrix, and 'L' a \"CHMfactor\""
+msgstr ""
+
+msgid "update must be TRUE/FALSE or '+' or '-'"
 msgstr ""
 
 msgid "not a symmetric matrix; consider forceSymmetric() or symmpart()"
@@ -98,34 +103,31 @@ msgstr ""
 msgid "'file' must be a character string or connection"
 msgstr ""
 
-msgid "Invalid storage type:"
+msgid "Invalid storage type: %s"
 msgstr ""
 
 msgid "Only numeric sparse matrices allowed"
 msgstr ""
 
-msgid "Invalid storage format:"
+msgid "Invalid storage format: %s"
 msgstr ""
 
-msgid "Invalid assembled indicator:"
+msgid "Invalid assembled indicator: %s"
 msgstr ""
 
 msgid "file is not a MatrixMarket file"
 msgstr ""
 
-msgid "type '"
+msgid "type '%s' not recognized"
 msgstr ""
 
-msgid "' not recognized"
+msgid "representation '%s' not recognized"
 msgstr ""
 
-msgid "representation '"
+msgid "element type '%s' not recognized"
 msgstr ""
 
-msgid "element type '"
-msgstr ""
-
-msgid "symmetry form '"
+msgid "symmetry form '%s' not recognized"
 msgstr ""
 
 msgid "readMM(): row\t values 'i' are not in 1:nr"
@@ -161,13 +163,10 @@ msgstr ""
 msgid "diag(.) had 0 or NA entries; non-finite result is doubtful"
 msgstr ""
 
-msgid "invalid dimnames given for '%s' object"
+msgid "invalid dimnames given for %s object"
 msgstr ""
 
-msgid "dimnames(.) <- NULL:  translated to"
-msgstr ""
-
-msgid "dimnames(.) <- list(NULL,NULL)  <==>  unname(.)"
+msgid "dimnames(.) <- NULL:  translated to \ndimnames(.) <- list(NULL,NULL)  <==>  unname(.)"
 msgstr ""
 
 msgid "'nrow', 'ncol', etc, are disregarded when 'data' is \"Matrix\" already"
@@ -191,6 +190,9 @@ msgstr ""
 msgid "'lag' and 'differences' must be integers >= 1"
 msgstr ""
 
+msgid "programming error: min() should have dispatched w/ 1st arg much earlier"
+msgstr ""
+
 msgid "invalid or not-yet-implemented 'Matrix' subsetting"
 msgstr ""
 
@@ -203,10 +205,7 @@ msgstr ""
 msgid "m[ <ij-matrix> ]: inefficiently indexing single elements"
 msgstr ""
 
-msgid ".M.sub.i.2col(): 'i' has no integer column number;"
-msgstr ""
-
-msgid "should never happen; please report"
+msgid ".M.sub.i.2col(): 'i' has no integer column number;\n should never happen; please report"
 msgstr ""
 
 msgid "such indexing must be by logical or 2-column numeric matrix"
@@ -215,7 +214,7 @@ msgstr ""
 msgid "nargs() = %d.  Extraneous illegal arguments inside '[ .. ]' (i.2col)?"
 msgstr ""
 
-msgid ".M.repl.i.2col(): 'i' has no integer column number;"
+msgid ".M.repl.i.2col(): 'i' has no integer column number;\n should never happen; please report"
 msgstr ""
 
 msgid ".M.repl.i.2col(): drop 'matrix' case ..."
@@ -242,19 +241,19 @@ msgstr ""
 msgid "inefficient method used for \"- e1\""
 msgstr ""
 
-msgid "<Matrix>"
-msgstr ""
-
-msgid "(0) is undefined"
+msgid "<Matrix> %s %s is undefined"
 msgstr ""
 
 msgid "internal bug in \"Compare\" method (Cmp.Mat.atomic); please report"
 msgstr ""
 
+msgid "Cmp.Mat.atomic() should not be called for diagonalMatrix"
+msgstr ""
+
 msgid "Matrices must have same number of rows for arithmetic"
 msgstr ""
 
-msgid "number of rows are not compatible for"
+msgid "number of rows are not compatible for %s"
 msgstr ""
 
 msgid "length of 2nd arg does not match dimension of first"
@@ -263,13 +262,19 @@ msgstr ""
 msgid "length of 1st arg does not match dimension of 2nd"
 msgstr ""
 
-msgid "internal bug in \"Logic\" method (.Logic.Mat.atomic); please report"
+msgid "internal bug in \"Logic\" method (Logic.Mat.atomic); please report"
 msgstr ""
 
-msgid "(0)"
+msgid "Logic.Mat.atomic() should not be called for diagonalMatrix"
 msgstr ""
 
-msgid "<Matrix> is undefined"
+msgid "vector too long in Matrix - vector operation"
+msgstr ""
+
+msgid "longer object length\n\tis not a multiple of shorter object length"
+msgstr ""
+
+msgid "%s %s <Matrix> is undefined"
 msgstr ""
 
 msgid "longer object length"
@@ -281,7 +286,7 @@ msgstr ""
 msgid "dim [product %d] do not match the length of object [%d]"
 msgstr ""
 
-msgid "invalid class:"
+msgid "invalid class: %s"
 msgstr ""
 
 msgid "not-yet-implemented coercion to \"TsparseMatrix\""
@@ -293,7 +298,7 @@ msgstr ""
 msgid "you cannot mix negative and positive indices"
 msgstr ""
 
-msgid "index larger than maximal"
+msgid "index larger than maximal %d"
 msgstr ""
 
 msgid "logical subscript too long (%d, should be %d)"
@@ -320,10 +325,16 @@ msgstr ""
 msgid "internal bug: matrix 'i' in replTmat(): please report"
 msgstr ""
 
-msgid "x[.] <- val: x is \"%s\", val not in {TRUE, FALSE} is coerced%s."
+msgid "x[.] <- val: x is %s, val not in {TRUE, FALSE} is coerced NA |--> TRUE."
 msgstr ""
 
-msgid "x[.,.] <- val: x is \"%s\", val not in {TRUE, FALSE} is coerced%s."
+msgid "x[.] <- val: x is %s, val not in {TRUE, FALSE} is coerced."
+msgstr ""
+
+msgid "x[.,.] <- val: x is %s, val not in {TRUE, FALSE} is coerced NA |--> TRUE."
+msgstr ""
+
+msgid "x[.,.] <- val: x is %s, val not in {TRUE, FALSE} is coerced."
 msgstr ""
 
 msgid "x[.,.] <- val : x being coerced from Tsparse* to CsparseMatrix"
@@ -332,10 +343,10 @@ msgstr ""
 msgid "nargs() = %d should never happen; please report."
 msgstr ""
 
-msgid "row indices must be <= nrow(.) which is"
+msgid "row indices must be <= nrow(.) which is %d"
 msgstr ""
 
-msgid "column indices must be <= ncol(.) which is"
+msgid "column indices must be <= ncol(.) which is %d"
 msgstr ""
 
 msgid "duplicate ij-entries in 'Matrix[ ij ] <- value'; using last"
@@ -377,13 +388,7 @@ msgstr ""
 msgid "not yet implemented"
 msgstr ""
 
-msgid "longer object length\n\tis not a multiple of shorter object length"
-msgstr ""
-
-msgid "x / 0 for an <abIndex> x with sign-change"
-msgstr ""
-
-msgid "no longer representable as 'rleDiff'"
+msgid "x / 0 for an <abIndex> x with sign-change\n no longer representable as 'rleDiff'"
 msgstr ""
 
 msgid "<abIndex>  -->  <seqMat>  is not yet implemented"
@@ -398,16 +403,10 @@ msgstr ""
 msgid "'diagonals' must have the same length (%d) as 'k'"
 msgstr ""
 
-msgid "for symmetric band matrix, only specify upper or lower triangle"
+msgid "for symmetric band matrix, only specify upper or lower triangle\n hence, all k must have the same sign"
 msgstr ""
 
-msgid "hence, all k must have the same sign"
-msgstr ""
-
-msgid "the %d-th (sub)-diagonal (k = %d) is %s"
-msgstr ""
-
-msgid "too short; filling with NA's"
+msgid "the %d-th (sub)-diagonal (k = %d) is too short; filling with NA's"
 msgstr ""
 
 msgid "'A' must be a square matrix"
@@ -419,10 +418,7 @@ msgstr ""
 msgid "when 'A' is specified, 'A.x' and 'At.x' are disregarded"
 msgstr ""
 
-msgid "not converged in"
-msgstr ""
-
-msgid "iterations"
+msgid "not converged in %d iterations"
 msgstr ""
 
 msgid "hit a cycle (1) -- stop iterations"
@@ -440,7 +436,7 @@ msgstr ""
 msgid "diagonalMatrix in .dense2C() -- should never happen, please report!"
 msgstr ""
 
-msgid "undefined method for class"
+msgid "undefined method for class %s"
 msgstr ""
 
 msgid "dim(.) value must be numeric of length 2"
@@ -449,10 +445,10 @@ msgstr ""
 msgid "dimensions don't match the number of cells"
 msgstr ""
 
-msgid "invalid nargs()="
+msgid "invalid nargs()= %d"
 msgstr ""
 
-msgid "cannot coerce non-symmetric dgTMatrix to dsCMatrix class"
+msgid "cannot coerce non-symmetric \"dgTMatrix\" to \"dsCMatrix\" class"
 msgstr ""
 
 msgid "the matrix is not triangular"
@@ -470,25 +466,19 @@ msgstr ""
 msgid "some arguments are not matrices"
 msgstr ""
 
-msgid "'"
-msgstr ""
-
-msgid "' kind not yet implemented"
+msgid "%s kind not yet implemented"
 msgstr ""
 
 msgid "non-square matrix"
 msgstr ""
 
-msgid "matrix with non-zero off-diagonals cannot be coerced to diagonalMatrix"
+msgid "matrix with non-zero off-diagonals cannot be coerced to \"diagonalMatrix\""
 msgstr ""
 
 msgid "matrix is not diagonal"
 msgstr ""
 
-msgid "Internal bug: nargs()="
-msgstr ""
-
-msgid "; please report"
+msgid "Internal bug: nargs()=%d; please report"
 msgstr ""
 
 msgid "chol() is undefined for diagonal matrix with negative entries"
@@ -500,7 +490,7 @@ msgstr ""
 msgid "incompatible matrix dimensions"
 msgstr ""
 
-msgid "intermediate 'r' is of type"
+msgid "intermediate 'r' is of type %s"
 msgstr ""
 
 msgid "not yet implemented .. please report"
@@ -509,7 +499,7 @@ msgstr ""
 msgid "not a positive definite matrix"
 msgstr ""
 
-msgid "as(.,\"dsCMatrix\") is deprecated; do use as(., \"symmetricMatrix\")"
+msgid "as(.,\"dsCMatrix\") is deprecated (since 2008); do use as(., \"symmetricMatrix\")"
 msgstr ""
 
 msgid "inefficient coercion (lost triangularity); please report"
@@ -524,7 +514,7 @@ msgstr ""
 msgid "Matrix seems negative semi-definite"
 msgstr ""
 
-msgid "nearPD() did not converge in"
+msgid "'nearPD()' did not converge in %d iterations"
 msgstr ""
 
 msgid "cannot coerce 'NA's to \"nsparseMatrix\""
@@ -533,7 +523,7 @@ msgstr ""
 msgid "temporarily disabled"
 msgstr ""
 
-msgid "coercion to 'pMatrix' only works from integer numeric"
+msgid "coercion to \"pMatrix\" only works from integer numeric"
 msgstr ""
 
 msgid "not a square matrix"
@@ -551,7 +541,7 @@ msgstr ""
 msgid "not-yet-implemented method for <%s> %%*%% <%s>"
 msgstr ""
 
-msgid "method '%s' not applicable for qr() result class '%s'"
+msgid "method %s not applicable for qr() result class %s"
 msgstr ""
 
 msgid "model frame and formula mismatch in model.matrix()"
@@ -590,7 +580,7 @@ msgstr ""
 msgid "Matrix-internal error in <sparseM>[i,,d]; please report"
 msgstr ""
 
-msgid "invalid 'col.names' string:"
+msgid "invalid 'col.names' string: %s"
 msgstr ""
 
 msgid "logic programming error in printSpMatrix2(), please report"
@@ -605,7 +595,7 @@ msgstr ""
 msgid "'V' is not a *square* matrix"
 msgstr ""
 
-msgid "qr.R(<sparse>) may differ from qr.R(<dense>) because of permutations"
+msgid "qr.R(<sparse>) may differ from qr.R(<dense>) because of permutations.  Possibly use our qrR() instead"
 msgstr ""
 
 msgid "cannot coerce 'NA's to \"nsparseVector\""
@@ -620,17 +610,35 @@ msgstr ""
 msgid "'nrow' must be >= 0"
 msgstr ""
 
+msgid "Must specify 'nrow' when 'symmetric' is true"
+msgstr ""
+
+msgid "'nrow' and 'ncol' must be the same when 'symmetric' is true"
+msgstr ""
+
+msgid "'x' must have length nrow^2 when 'symmetric' is true"
+msgstr ""
+
 msgid "'ncol' is not a factor of length(x)"
 msgstr ""
 
 msgid "'nrow' is not a factor of length(x)"
 msgstr ""
 
-msgid "too large index i > n ="
+msgid "Class %s is not yet implemented"
+msgstr ""
+
+msgid "too large index i > n = %d"
 msgstr ""
 
 msgid "index must be numeric, logical or sparseVector for indexing sparseVectors"
 msgstr ""
 
 msgid "'times >= 0' is required"
+msgstr ""
+
+msgid "(un)packing only applies to dense matrices, class(x)='%s'"
+msgstr ""
+
+msgid "'x' is not symmetric nor triangular"
 msgstr ""

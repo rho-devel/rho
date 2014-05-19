@@ -17,8 +17,8 @@ value decomposition approach.
 \usage{
 magic(y,X,sp,S,off,L=NULL,lsp0=NULL,rank=NULL,H=NULL,C=NULL,
       w=NULL,gamma=1,scale=1,gcv=TRUE,ridge.parameter=NULL,
-      control=list(tol=1e-6,step.half=25,
-      rank.tol=.Machine$double.eps^0.5),extra.rss=0,n.score=length(y))
+      control=list(tol=1e-6,step.half=25,rank.tol=
+      .Machine$double.eps^0.5),extra.rss=0,n.score=length(y),nthreads=1)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -108,6 +108,7 @@ sets.}
 calculation: usually the actual number of data, but there are methods 
 for dealing with very large datasets that change this.}
 
+\item{nthreads}{\code{magic} can make use of multiple threads if this is set to >1.}
 }
 
 \details{ 
@@ -186,7 +187,9 @@ by failing to decrease the score along the search direction.}
 \item{iter}{is the number of Newton/Steepest descent iterations taken.}
 \item{score.calls}{is the number of times that the GCV/UBRE score had to be evaluated.}
 \item{rms.grad}{is the root mean square of the gradient of the UBRE/GCV score w.r.t. the smoothing parameters.}
-}}
+\item{R}{The factor R from the QR decomposition of the weighted model matrix. This is un-pivoted so that column 
+order corresponds to \code{X}. So it may not be upper triangular.}}
+}
 Note that some further useful quantities can be obtained using \code{\link{magic.post.proc}}.
 
 }

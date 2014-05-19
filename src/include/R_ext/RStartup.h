@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -32,6 +32,12 @@
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
+
+/*
+  C functions to be called from alternative front-ends.
+
+  Part of the API for such front-ends but not for packages.
+*/
 
 #ifndef R_EXT_RSTARTUP_H_
 #define R_EXT_RSTARTUP_H_
@@ -106,7 +112,7 @@ void R_common_command_line(int *, char **, Rstart);
 
 void R_set_command_line_arguments(int argc, char **argv);
 
-void setup_Rmainloop(void);
+void setup_Rmainloop(void); // also in Rembedded.h
 
 #ifdef __cplusplus
 }

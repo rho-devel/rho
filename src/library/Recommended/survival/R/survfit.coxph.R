@@ -3,11 +3,15 @@ survfit.coxph <-
   function(formula, newdata, se.fit=TRUE, conf.int=.95, individual=FALSE,
             type, vartype,
             conf.type=c("log", "log-log", "plain", "none"),
-            censor=TRUE, id, ...) {
+            censor=TRUE, id, newstrata=missing(id),
+            na.action=na.pass, ...) {
 
     Call <- match.call()
     Call[[1]] <- as.name("survfit")  #nicer output for the user
     object <- formula     #'formula' because it has to match survfit
+
+    if (!is.null(attr(object$terms, "specials")$tt))
+        stop("The survfit function can not yet process coxph models with a tt term")
 
     if (missing(type)) {
         # Use the appropriate one from the model
@@ -70,8 +74,19 @@ survfit.coxph <-
     else if (missid && individual) id <- rep(0,n)
     else id <- NULL
 
+    if (individual && missing(newdata)) {
+        warning("the id and/or individual options only make sense with new data")
+        individual <- FALSE
+    }
+
     if (individual && type!= 'counting')
         stop("The individual option is  only valid for start-stop data")
+    if (!missing(newstrata)) {
+        if (!is.logical(newstrata)) stop("newstrata must be TRUE/FALSE")
+        if (individual && !newstrata)
+            stop("newstrata must be TRUE for the individual or id options")
+    }
+    else newstrata <- individual
 
     if (is.null(mf)) offset <- 0
     else {
@@ -117,16 +132,14 @@ survfit.coxph <-
            }
         }
     subterms <- function(x, i) {
+        dataClasses <- attr(x, "dataClasses")
         predvars <- attr(x, "predvars")
         x <- x[i]
-        if (!is.null(predvars)) {
-            #predvars is a call.  When subscripting we need to keep the
-            #  first element, which is as.name("list"), and optionally
-            #  the response which will be second.  Our index i aligns
-            #  with the remainder of the elements
-            k <- 1:(1+ attr(x, 'response')) #either 1 or 1:2
-            j <- seq(along=predvars)[-k] #what we index to
-            attr(x, "predvars") <- predvars[c(k, j[i])]
+        if (!is.null(predvars)) 
+            attr(x, "predvars") <- attr(x, "variables")
+        if (!is.null(dataClasses)){
+            temp <- dimnames(attr(x, 'factors'))[[1]]
+            attr(x, "dataClasses") <- dataClasses[temp]
         }
         x
     }
@@ -145,43 +158,36 @@ survfit.coxph <-
         if (!is.null(object$frail))
             stop("Newdata cannot be used when a model has sparse frailty terms")
 
-        if (!individual) {
-            Terms2 <- delete.response(Terms)
-            if (any(stype>0)) Terms2 <- subterms(Terms2,stype==0) #strata and interactions
+        Terms2 <- Terms 
+        if (!individual)  Terms2 <- delete.response(Terms)
+        if (!newstrata && (any(stype>0))) 
+            Terms2 <- subterms(Terms2,stype==0) #remove strata and interactions
+        if (!is.null(object$xlevels)) { 
+            myxlev <- object$xlevels[match(attr(Terms2, "term.labels"),
+                                           names(object$xlevels), nomatch=0)]
+            if (length(myxlev)==0) myxlev <- NULL
             }
-        else Terms2 <- Terms
-        tcall <- Call[c(1, match(c('newdata', 'id'), names(Call), nomatch=0))]
-        names(tcall)[2] <- 'data'  #rename newdata to data
-        tcall$formula <- Terms2
-        if (!is.null(object$xlevels) &&
-             any(!is.na(match(names(object$xlevels), attr(Terms2, "term.labels")))))
-            tcall$xlev <- object$xlevels[match( attr(Terms2, "term.labels"),
-                                               names(object$xlevels), nomatch=0)]
-        tcall[[1]] <- as.name('model.frame')
-        #mf2 <- eval(tcall)
-
+        else myxlev <- NULL
+         
         if (is.vector(newdata, "numeric")) {
             if (individual) stop("newdata must be a data frame")
-            if (length(newdata)==length(object$coefficients)) {
-                if (is.null(names(newdata))) {
-                    names(newdata) <- names(object$coefficients)
-                    }
-
-                if (any(is.null(match(names(object$coefficient), names(newdata)))))
-                    stop("newdata names do not match the coxph names")
-                tcall$data <- as.list(newdata)
-                }
-            else stop ("Invalid newdata object")
+            if (is.null(names(newdata))) {
+                stop("Newdata argument must be a data frame")
             }
-        mf2 <- eval(tcall, parent.frame())
+            newdata <- data.frame(as.list(newdata))
         }
-    if (individual) {
-        if (missing(newdata)) 
-            stop("The newdata argument must be present when individual=TRUE")
-        if (!missid) {  #grab the id variable
-            id <- model.extract(mf2, "id")
-            if (is.null(id)) stop("id=NULL is an invalid argument")
-            }
+        if (newstrata && missid) 
+            mf2 <- model.frame(Terms2, data=newdata, na.action=na.action, xlev=myxlev)
+        else {
+            tcall <- Call[c(1, match(c('id', "na.action"), names(Call), nomatch=0))]
+            tcall$data <- newdata
+            tcall$formula <- Terms2
+            if (!is.null(object$xlevels)) tcall$xlev <- myxlev
+            tcall[[1]] <- as.name('model.frame')
+            mf2 <- eval(tcall)
+        }
+        }
+    if (newstrata) {
         temp <- untangle.specials(Terms2, 'strata')
         if (length(temp$vars) >0) {
             strata2 <- strata(mf2[temp$vars], shortlabel=TRUE)
@@ -191,6 +197,15 @@ survfit.coxph <-
             Terms2 <- Terms2[-temp$terms]
             }
         else strata2 <- factor(rep(0, nrow(mf2)))
+    }
+
+    if (individual) {
+        if (missing(newdata)) 
+            stop("The newdata argument must be present when individual=TRUE")
+        if (!missid) {  #grab the id variable
+            id <- model.extract(mf2, "id")
+            if (is.null(id)) stop("id=NULL is an invalid argument")
+            }
         
         x2 <- model.matrix(Terms2, mf2)[,-1, drop=FALSE]  #no intercept
         if (length(x2)==0) stop("Individual survival but no variables")
@@ -207,7 +222,7 @@ survfit.coxph <-
             stop("Individual=TRUE is only valid for counting process data")
         y2 <- y2[,1:2, drop=F]  #throw away status, it's never used
 
-        newrisk <- exp(c(x2 %*% coef)) + offset2
+        newrisk <- exp(c(x2 %*% coef) + offset2)
         result <- survfitcoxph.fit(y, x, wt, x2, risk, newrisk, strata,
                                     se.fit, survtype, vartype, varmat, 
                                     id, y2, strata2)
@@ -224,7 +239,7 @@ survfit.coxph <-
             x2 <- scale(x2, center=xcenter, scale=FALSE)
             offset2 <- model.offset(mf3)
             if (is.null(offset2)) offset2 <-0
-            newrisk <- c(exp(x2%*%coef)) + offset2 
+            newrisk <- c(exp(x2%*%coef) + offset2)
             zed<- survfitcoxph.fit(y, x, wt, x2, risk, newrisk, strata,
                                                se.fit, survtype, vartype, varmat,
                                                id=NULL, unlist=FALSE)
@@ -253,20 +268,23 @@ survfit.coxph <-
         if (missing(newdata)) {
             x2 <- matrix(0.0, nrow=1, ncol=ncol(x))
             offset2 <- 0
-            }
+        }
         else {
            offset2 <- model.offset(mf2)
            if (length(offset2) >0) offset2 <- offset2 - mean(offset)
            else offset2 <- 0
            x2 <- model.matrix(Terms2, mf2)[,-1, drop=FALSE]  #no intercept
            x2 <- scale(x2, center=xcenter, scale=FALSE)
-           }
+       }
 
-        newrisk <- exp(c(x2 %*% coef)) + offset2
+        newrisk <- exp(c(x2 %*% coef) + offset2)
         result <- survfitcoxph.fit(y, x, wt, x2, risk, newrisk, strata,
                                     se.fit, survtype, vartype, varmat, 
                                     id, y2, strata2)
+        if (newstrata) {
+            warning("newstrata argument under construction, value ignored")
         }
+    }
     if (!censor) {
         kfun <- function(x, keep){ if (is.matrix(x)) x[keep,,drop=F] 
                                   else if (length(x)==length(keep)) x[keep]

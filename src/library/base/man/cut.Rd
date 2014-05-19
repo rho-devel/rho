@@ -1,6 +1,6 @@
 % File src/library/base/man/cut.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{cut}
@@ -16,7 +16,7 @@ cut(x, \dots)
 \alias{cut.default}
 \arguments{
   \item{x}{a numeric vector which is to be converted to a factor by cutting.}
-  \item{breaks}{either a numeric vector of two or more cut points or a
+  \item{breaks}{either a numeric vector of two or more unique cut points or a
     single number (greater than or equal to 2) giving the number of
     intervals into which \code{x} is to be cut.}
   \item{labels}{labels for the levels of the resulting category.  By default,
@@ -44,9 +44,9 @@ cut(x, \dots)
   data is divided into \code{breaks} pieces of equal length, and then
   the outer limits are moved away by 0.1\% of the range to ensure that
   the extreme values both fall within the break intervals.  (If \code{x}
-  is a constant vector, equal-length intervals are created that cover
-  the single value.)
-  
+  is a constant vector, equal-length intervals are created, one of
+  which includes the single value.)
+
   If a \code{labels} parameter is specified, its values are used
   to name the factor levels.  If none is specified, the factor
   level labels are constructed as \code{"(b1, b2]"}, \code{"(b2, b3]"}
@@ -57,10 +57,17 @@ cut(x, \dots)
   A larger value (up to 12) will be used if needed to distinguish
   between any pair of  endpoints: if this fails labels such as
   \code{"Range3"} will be used.
+
+  The default method will sort a numeric vector of \code{breaks}, but
+  other methods are not required to and \code{labels} will correspond to
+  the intervals after sorting.
 }
 \value{
   A \code{\link{factor}} is returned, unless \code{labels = FALSE} which
-  results in the mere integer level codes.
+  results in an integer vector of level codes.
+
+  Values which fall outside the range of \code{breaks} are coded as
+  \code{NA}, as are \code{NaN} and \code{NA} values.
 }
 \note{
   Instead of \code{table(cut(x, br))}, \code{hist(x, br, plot = FALSE)} is
@@ -75,18 +82,20 @@ cut(x, \dots)
 \seealso{
   \code{\link{split}} for splitting a variable according to a group factor;
   \code{\link{factor}}, \code{\link{tabulate}}, \code{\link{table}},
-  \code{\link{findInterval}()}.
+  \code{\link{findInterval}}.
 
   \code{\link{quantile}} for ways of choosing breaks of roughly equal
   content (rather than length).
+
+  \code{\link{.bincode}} for a bare-bones version.
 }
 \examples{
 Z <- stats::rnorm(10000)
 table(cut(Z, breaks = -6:6))
-sum(table(cut(Z, breaks = -6:6, labels=FALSE)))
-sum(graphics::hist(Z, breaks = -6:6, plot=FALSE)$counts)
+sum(table(cut(Z, breaks = -6:6, labels = FALSE)))
+sum(graphics::hist(Z, breaks = -6:6, plot = FALSE)$counts)
 
-cut(rep(1,5),4)#-- dummy
+cut(rep(1,5), 4) #-- dummy
 tx0 <- c(9, 4, 6, 5, 3, 10, 5, 3, 5)
 x <- rep(0:8, tx0)
 stopifnot(table(x) == tx0)
@@ -105,9 +114,9 @@ which(is.na(cxl)); x[is.na(cxl)] #-- the last  5  values  8
 ## Label construction:
 y <- stats::rnorm(100)
 table(cut(y, breaks = pi/3*(-3:3)))
-table(cut(y, breaks = pi/3*(-3:3), dig.lab=4))
+table(cut(y, breaks = pi/3*(-3:3), dig.lab = 4))
 
-table(cut(y, breaks =  1*(-3:3), dig.lab=4))
+table(cut(y, breaks =  1*(-3:3), dig.lab = 4))
 # extra digits don't "harm" here
 table(cut(y, breaks =  1*(-3:3), right = FALSE))
 #- the same, since no exact INT!
@@ -115,7 +124,7 @@ table(cut(y, breaks =  1*(-3:3), right = FALSE))
 ## sometimes the default dig.lab is not enough to be avoid confusion:
 aaa <- c(1,2,3,4,5,2,3,4,5,6,7)
 cut(aaa, 3)
-cut(aaa, 3, dig.lab=4, ordered = TRUE)
+cut(aaa, 3, dig.lab = 4, ordered = TRUE)
 
 ## one way to extract the breakpoints
 labs <- levels(cut(aaa, 3))

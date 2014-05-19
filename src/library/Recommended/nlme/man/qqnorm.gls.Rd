@@ -59,7 +59,7 @@
 \value{
   a diagnostic Trellis plot for assessing normality of residuals.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{gls}}, \code{\link{plot.gls}}}
 \examples{
 fm1 <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time), Ovary,

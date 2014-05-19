@@ -1,6 +1,8 @@
 #  File src/library/base/R/array.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -17,19 +19,25 @@
 array <-
 function(data = NA, dim = length(data), dimnames = NULL)
 {
+    ## allow for as.vector.factor (converts to character)
+    if(is.atomic(data) && !is.object(data))
+        return(.Internal(array(data, dim, dimnames)))
     data <- as.vector(data)
-    dim <- as.integer(dim)
-    vl <- prod(dim)
-    if(length(data) != vl) {
-        if(vl > .Machine$integer.max)
-            stop("'dim' specifies too large an array")
-        data <- rep(data, length.out=vl)
-    }
-    if(length(dim))
-	dim(data) <- dim
-    if(is.list(dimnames) && length(dimnames))
-	dimnames(data) <- dimnames
-    data
+    ## package rv has an as.vector() method which leave this as a classed list
+    if(is.object(data)) {
+        dim <- as.integer(dim)
+        if (!length(dim)) stop("'dims' cannot be of length 0")
+        vl <- prod(dim)
+        if(length(data) != vl) {
+            ## C code allows long vectors, but rep() does not.
+            if(vl > .Machine$integer.max)
+                stop("'dim' specifies too large an array")
+            data <- rep_len(data, vl)
+        }
+        if(length(dim)) dim(data) <- dim
+        if(is.list(dimnames) && length(dimnames)) dimnames(data) <- dimnames
+        data
+    } else .Internal(array(data, dim, dimnames))
 }
 
 slice.index <-
@@ -50,4 +58,22 @@ function(x, MARGIN)
 		 prod(d[seq.int(from = MARGIN + 1L, length.out = n - MARGIN)]))
     dim(y) <- d
     y
+}
+
+provideDimnames <- function(x, sep="", base = list(LETTERS)) {
+    ## provide dimnames where missing - not copying x unnecessarily
+    dx <- dim(x)
+    dnx <- dimnames(x)
+    if(new <- is.null(dnx))
+	dnx <- vector("list", length(dx))
+    k <- length(M <- vapply(base, length, 1L))
+    for(i in which(vapply(dnx, is.null, NA))) {
+	ii <- 1L+(i-1L) %% k # recycling
+	dnx[[i]] <-
+	    make.unique(base[[ii]][1L+ 0:(dx[i]-1L) %% M[ii]],
+			sep = sep)
+	new <- TRUE
+    }
+    if(new) dimnames(x) <- dnx
+    x
 }

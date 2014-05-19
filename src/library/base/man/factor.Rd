@@ -33,7 +33,7 @@
 }
 \usage{
 factor(x = character(), levels, labels = levels,
-       exclude = NA, ordered = is.ordered(x))
+       exclude = NA, ordered = is.ordered(x), nmax = NA)
 
 ordered(x, \dots)
 
@@ -51,7 +51,7 @@ addNA(x, ifany = FALSE)
   \item{levels}{an optional vector of the values that \code{x} might
     have taken.  The default is the unique set of values taken by
     \code{\link{as.character}(x)}, sorted into increasing order \emph{of
-      \code{x}}.  Note that this set can be smaller than
+      \code{x}}.  Note that this set can be specified as smaller than
     \code{sort(unique(x))}.}
   \item{labels}{\emph{either} an optional vector of labels for the
     levels (in the same order as \code{levels} after removing those in
@@ -61,6 +61,7 @@ addNA(x, ifany = FALSE)
     will be coerced if necessary.}
   \item{ordered}{logical flag to determine if the levels should be regarded
     as ordered (in the order given).}
+  \item{nmax}{an upper bound on the number of levels; see \sQuote{Details}.}
   \item{\dots}{(in \code{ordered(.)}): any of the above, apart from
     \code{ordered} itself.}
   \item{ifany}{(only add an \code{NA} level if it is used, i.e.
@@ -114,14 +115,14 @@ addNA(x, ifany = FALSE)
   which case the levels are that character string with a sequence
   number appended.
 
-  \code{factor(x, exclude=NULL)} applied to a factor is a no-operation
+  \code{factor(x, exclude = NULL)} applied to a factor is a no-operation
   unless there are unused levels: in that case, a factor with the
   reduced level set is returned.  If \code{exclude} is used it should
   also be a factor with the same level set as \code{x} or a set of codes
   for the levels to be excluded.
 
   The codes of a factor may contain \code{\link{NA}}.  For a numeric
-  \code{x}, set \code{exclude=NULL} to make \code{\link{NA}} an extra
+  \code{x}, set \code{exclude = NULL} to make \code{\link{NA}} an extra
   level (prints as \code{<NA>}); by default, this is the last level.
 
   If \code{NA} is a level, the way to set a code to be missing (as
@@ -133,6 +134,11 @@ addNA(x, ifany = FALSE)
 
   \code{is.factor} is generic: you can write methods to handle
   specific classes of objects, see \link{InternalMethods}.
+
+  Where \code{levels} is not supplied, \code{\link{unique}} is called.
+  Since factors typically have quite a small number of levels, for large
+  vectors \code{x} it is helpful to supply \code{nmax} as an upper bound
+  on the number of unique values.
 }
 \section{Warning}{
   The interpretation of a factor depends on both the codes and the
@@ -158,7 +164,7 @@ addNA(x, ifany = FALSE)
   There are \code{"factor"} and \code{"ordered"} methods for the
   \link{group generic} \code{\link[=S3groupGeneric]{Ops}} which
   provide methods for the \link{Comparison} operators,
-  and for the \code{\link{min}},\code{\link{max}}, and
+  and for the \code{\link{min}}, \code{\link{max}}, and
   \code{\link{range}} generics in \code{\link[=S3groupGeneric]{Summary}}
   of \code{"ordered"}.  (The rest of the groups and the
   \code{\link[=S3groupGeneric]{Math}} group generate an error as they
@@ -177,8 +183,8 @@ addNA(x, ifany = FALSE)
 \note{
   In earlier versions of \R, storing character data as a factor was more
   space efficient if there is even a small proportion of
-  repeats.  However, identical character strings share storage, so
-  the difference is now small in most cases.  (Integer values are stored
+  repeats.  However, identical character strings now share storage, so
+  the difference is small in most cases.  (Integer values are stored
   in 4 bytes whereas each reference to a character string needs a
   pointer of 4 or 8 bytes.)
 }
@@ -196,12 +202,12 @@ addNA(x, ifany = FALSE)
   levels, and \code{\link{unclass}} to get integer codes.
 }
 \examples{
-(ff <- factor(substring("statistics", 1:10, 1:10), levels=letters))
-as.integer(ff)  # the internal codes
-(f. <- factor(ff))# drops the levels that do not occur
-ff[, drop=TRUE] # the same, more transparently
+(ff <- factor(substring("statistics", 1:10, 1:10), levels = letters))
+as.integer(ff)      # the internal codes
+(f. <- factor(ff))  # drops the levels that do not occur
+ff[, drop = TRUE]   # the same, more transparently
 
-factor(letters[1:20], labels="letter")
+factor(letters[1:20], labels = "letter")
 
 class(ordered(4:1)) # "ordered", inheriting from "factor"
 z <- factor(LETTERS[3:1], ordered = TRUE)
@@ -223,7 +229,7 @@ is.na(x)
 ## Using addNA()
 Month <- airquality$Month
 table(addNA(Month))
-table(addNA(Month, ifany=TRUE))
+table(addNA(Month, ifany = TRUE))
 }
 \keyword{category}
 \keyword{NA}

@@ -8,7 +8,7 @@
 \title{A function to install unresolved dependencies}
 \description{
   This function will take the \code{Found} element of a
-  \code{pkgDependsList} object and attempt to install 
+  \code{pkgDependsList} object and attempt to install
   all of the listed packages from the specified repositories.
 }
 \usage{
@@ -32,7 +32,7 @@ installFoundDepends(depPkgList, ...)
 tmp <- tempfile()
 dir.create(tmp)
 
-pDL <- pkgDepends("tools",local=FALSE)
-installFoundDepends(pDL$Found, destdir=tmp)
+pDL <- pkgDepends("tools", local = FALSE)
+installFoundDepends(pDL$Found, destdir = tmp)
 }
 \keyword{utilities}

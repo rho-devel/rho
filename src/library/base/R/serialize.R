@@ -1,6 +1,8 @@
 #  File src/library/base/R/serialize.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -33,7 +35,7 @@ saveRDS <-
     }
     else
         stop("bad 'file' argument")
-    invisible(.Internal(serializeToConn(object, con, ascii, version, refhook)))
+    .Internal(serializeToConn(object, con, ascii, version, refhook))
 }
 
 readRDS <- function(file, refhook = NULL)
@@ -57,12 +59,10 @@ serialize <-
         if (missing(ascii)) ascii <- summary(connection)$text == "text"
     }
     if (!ascii && inherits(connection, "sockconn"))
-        .Call("R_serializeb", object, connection, xdr, version, refhook,
-              PACKAGE="base")
+        .Internal(serializeb(object, connection, xdr, version, refhook))
     else {
         if (!isTRUE(ascii) && !xdr) ascii <- NA
-        .Call("R_serialize", object, connection, ascii, version, refhook,
-              PACKAGE="base")
+        .Internal(serialize(object, connection, ascii, version, refhook))
     }
 }
 
@@ -72,5 +72,5 @@ unserialize <- function(connection, refhook = NULL)
         !is.character(connection) &&
         !inherits(connection, "connection"))
         stop("'connection' must be a connection")
-    .Call("R_unserialize", connection, refhook, PACKAGE="base")
+    .Internal(unserialize(connection, refhook))
 }

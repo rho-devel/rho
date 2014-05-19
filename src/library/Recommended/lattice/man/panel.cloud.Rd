@@ -109,7 +109,7 @@ panel.3dwire(x, y, z, rot.mat = diag(4), distance,
     data before being plotted. The initial position starts with the
     viewing point along the positive z-axis, and the x and y axes in the
     usual position. Each component of the list should be named one of
-    \code{"x"}, \code{"y"} or \code{"z"} (repititions are allowed), with
+    \code{"x"}, \code{"y"} or \code{"z"} (repetitions are allowed), with
     their values indicating the amount of rotation about that axis in
     degrees.
   }

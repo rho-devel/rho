@@ -1,0 +1,570 @@
+\section{Cox Models}
+\subsection{Coxph}
+The [[coxph]] routine is the underlying basis for all the models.
+The source was converted to noweb when adding time-transform terms.
+
+The call starts out with the basic building of a model frame
+and proceeds from there.
+<<coxph>>=
+tt <- function(x) x
+coxph <- function(formula, data, weights, subset, na.action,
+	init, control, ties= c("efron", "breslow", "exact"),
+	singular.ok =TRUE, robust=FALSE,
+	model=FALSE, x=FALSE, y=TRUE,  tt, method=ties, ...) {
+
+    ties <- match.arg(ties)
+    Call <- match.call()
+
+    # create a call to model.frame() that contains the formula (required)
+    #  and any other of the relevant optional arguments
+    # then evaluate it in the proper frame
+    indx <- match(c("formula", "data", "weights", "subset", "na.action"),
+                  names(Call), nomatch=0) 
+    if (indx[1] ==0) stop("A formula argument is required")
+    temp <- Call[c(1,indx)]  # only keep the arguments we wanted
+    temp[[1]] <- as.name('model.frame')  # change the function called
+    
+    special <- c("strata", "cluster", "tt")
+    temp$formula <- if(missing(data)) terms(formula, special)
+                    else              terms(formula, special, data=data)
+    if (is.R()) m <- eval(temp, parent.frame())
+    else        m <- eval(temp, sys.parent())
+
+    if (nrow(m) ==0) stop("No (non-missing) observations")
+    Terms <- terms(m)
+
+    
+    ## We want to pass any ... args to coxph.control, but not pass things
+    ##  like "dats=mydata" where someone just made a typo.  The use of ...
+    ##  is simply to allow things like "eps=1e6" with easier typing
+    extraArgs <- list(...)
+    if (length(extraArgs)) {
+	controlargs <- names(formals(coxph.control)) #legal arg names
+	indx <- pmatch(names(extraArgs), controlargs, nomatch=0L)
+	if (any(indx==0L))
+            stop(gettextf("Argument %s not matched", names(extraArgs)[indx==0L]),
+                 domain = NA)
+    }
+    if (missing(control)) control <- coxph.control(...)
+
+    Y <- model.extract(m, "response")
+    if (!inherits(Y, "Surv")) stop("Response must be a survival object")
+    type <- attr(Y, "type")
+    if (type!='right' && type!='counting')
+	stop(paste("Cox model doesn't support \"", type,
+			  "\" survival data", sep=''))
+    weights <- model.weights(m)
+    data.n <- nrow(Y)   #remember this before any time transforms
+    
+    strats <- attr(Terms, "specials")$strata
+    if (length(strats)) {
+	stemp <- untangle.specials(Terms, 'strata', 1)
+	if (length(stemp$terms) >0) #beware strata by covariate interactions
+            Terms2 <- Terms[-stemp$terms] #not needed for model.matrix later
+        else Terms2 <- Terms  
+	if (length(stemp$vars)==1) strata.keep <- m[[stemp$vars]]
+	else strata.keep <- strata(m[,stemp$vars], shortlabel=TRUE)
+	strats <- as.numeric(strata.keep)
+	}
+    else Terms2 <- Terms
+    
+    timetrans <- attr(Terms, "specials")$tt
+    if (length(timetrans)) {
+        <<coxph-transform>>
+        }
+
+    <<coxph-setup>>
+    <<coxph-penal>>
+    <<coxph-compute>>
+    <<coxph-finish>>
+    }
+@     
+    
+At this point we deal with any time transforms.  
+The model frame is expanded to a ``fake'' data set that has a
+separate stratum for each unique event-time/strata combination,
+and any tt() terms in the formula are processed.  
+The first step is to create the index vector [[tindex]] and
+new strata [[.strata.]].  
+A (modestly) fast C-routine first counts up and indexes the observations.
+We start out with error checks; since the computation can be slow we want
+to complain early.
+<<coxph-transform>>=
+timetrans <- untangle.specials(Terms, 'tt')
+ntrans <- length(timetrans$terms)
+
+if (missing(tt) || is.null(tt)) {
+    tt <- function(x, time, riskset, weights){ #default to O'Brien's logit rank
+        obrien <- function(x) {
+            r <- rank(x)
+            (r-.5)/(.5+length(r)-r)
+        }
+        unlist(tapply(x, riskset, obrien))
+    }
+}
+if (is.function(tt)) tt <- list(tt)  #single function becomes a list
+    
+if (is.list(tt)) {
+    if (any(!sapply(tt, is.function))) 
+        stop("The tt argument must contain function or list of functions")
+    if (length(tt) != ntrans) {
+        if (length(tt) ==1) {
+            temp <- vector("list", ntrans)
+            for (i in 1:ntrans) temp[[i]] <- tt[[1]]
+            tt <- temp
+        }
+        else stop("Wrong length for tt argument")
+    }
+}
+else stop("The tt argument must contain function or list of functions")
+
+if (ncol(Y)==2) {
+    if (length(strats)==0) {
+	sorted <- order(-Y[,1], Y[,2])
+	newstrat <- rep.int(0L, nrow(Y))
+        newstrat[1] <- 1L
+	}
+    else {
+	sorted <- order(strats, -Y[,1], Y[,2])
+        #newstrat marks the first obs of each strata
+	newstrat <-  as.integer(c(1, 1*(diff(strats[sorted])!=0))) 
+	}
+    if (storage.mode(Y) != "double") storage.mode(Y) <- "double"
+    counts <- .Call(Ccoxcount1, Y[sorted,], 
+                    as.integer(newstrat))
+    tindex <- sorted[counts$index]
+}
+else {
+    if (length(strats)==0) {
+	sort.end  <- order(-Y[,2], Y[,3])
+	sort.start<- order(-Y[,1])
+	newstrat  <- c(1L, rep(0, nrow(Y) -1))
+    }
+    else {
+	sort.end  <- order(strats, -Y[,2], Y[,3])
+	sort.start<- order(strats, -Y[,1])
+	newstrat  <- c(1L, as.integer(diff(strats[sort.end])!=0))
+    }
+    if (storage.mode(Y) != "double") storage.mode(Y) <- "double"
+    counts <- .Call(Ccoxcount2, Y, 
+                    as.integer(sort.start -1L),
+                    as.integer(sort.end -1L), 
+                    as.integer(newstrat))
+    tindex <- counts$index
+}
+@ 
+
+The C routine has returned a list with 4 elements
+\begin{description}
+  \item[nrisk] a vector containing the number at risk at each event time
+  \item[time] the vector of event times
+  \item[status] a vector of status values
+  \item[index] a vector containing the set of subjects at risk for event time
+    1, followed by those at risk at event time 2, those at risk at event time 3,
+    etc.
+\end{description}
+The new data frame is then a simple creation.
+<<coxph-transform>>=
+m <- m[tindex,]
+Y <- Surv(rep(counts$time, counts$nrisk), counts$status)
+type <- 'right'  # new Y is right censored, even if the old was (start, stop]
+strats <- factor(rep(1:length(counts$nrisk), counts$nrisk)) 
+weights <- model.weights(m)
+for (i in 1:ntrans) 
+    m[[timetrans$var[i]]] <- (tt[[i]])(m[[timetrans$var[i]]], Y[,1], strats, 
+                                       weights)
+@ 
+
+This is the C code for time-transformation.
+For the first case it expects y to contain time and status sorted from
+longest time to shortest, and strata=1 for the first observation of
+each strata.  
+<<coxcount1>>=
+#include "survS.h"
+SEXP coxcount1(SEXP y2, SEXP strat2) {
+    int ntime, nrow;
+    int i, j, n;
+    int stratastart=0;  /* start row for this strata */
+    int nrisk=0;  /* number at risk (=0 to stop -Wall complaint)*/
+    double *time, *status;
+    int *strata;
+    double dtime;
+    SEXP rlist, rlistnames, rtime, rn, rindex, rstatus;
+    int *rrindex, *rrstatus;
+    
+    n = nrows(y2);
+    time = REAL(y2);
+    status = time +n;
+    strata = INTEGER(strat2);
+    
+    /* 
+    ** First pass: count the total number of death times (risk sets)
+    **  and the total number of rows in the new data set.
+    */
+    ntime=0; nrow=0;
+    for (i=0; i<n; i++) {
+        if (strata[i] ==1) nrisk =0;
+        nrisk++;
+	if (status[i] ==1) {
+	    ntime++;
+	    dtime = time[i];
+	    /* walk across tied times, if any */
+            for (j=i+1; j<n && time[j]==dtime && status[j]==1 && strata[j]==0;
+                 j++) nrisk++;
+            i = j-1;
+	    nrow += nrisk;
+        }
+    }
+    <<coxcount-alloc-memory>>
+    
+    /*
+    ** Pass 2, fill them in
+    */
+    ntime=0; 
+    for (i=0; i<n; i++) {
+	if (strata[i] ==1) stratastart =i;
+	if (status[i]==1) {
+	    dtime = time[i];
+            for (j=stratastart; j<i; j++) *rrstatus++=0; /*non-deaths */
+	    *rrstatus++ =1; /* this death */
+            /* tied deaths */
+	    for(j= i+1; j<n && status[j]==1 && time[j]==dtime  && strata[j]==0;
+		j++) *rrstatus++ =1;
+            i = j-1;
+
+	    REAL(rtime)[ntime] = dtime;
+	    INTEGER(rn)[ntime] = i +1 -stratastart;
+            ntime++;
+	    for (j=stratastart; j<=i; j++) *rrindex++ = j+1;
+            }
+    }
+    <<coxcount-list-return>>
+}
+@ 
+
+The start-stop case is a bit more work.
+The set of subjects still at risk is an arbitrary set so we have to 
+keep an index vector [[atrisk]].
+At each new death time we write out the set of those at risk, with the
+deaths last.
+I toyed with the idea of a binary tree then realized it was not useful:
+at each death we need to list out all the subjects at risk into the index
+vector which is an $O(n)$ process, tree or not.
+<<coxcount1>>=
+#include "survS.h"
+SEXP coxcount2(SEXP y2, SEXP isort1, SEXP isort2, SEXP strat2) {
+    int ntime, nrow;
+    int i, j, istart, n;
+    int nrisk=0, *atrisk;
+    double *time1, *time2, *status;
+    int *strata;
+    double dtime;
+    int iptr, jptr;
+
+    SEXP rlist, rlistnames, rtime, rn, rindex, rstatus;
+    int *rrindex, *rrstatus;
+    int *sort1, *sort2;
+    
+    n = nrows(y2);
+    time1 = REAL(y2);
+    time2 =  time1+n;
+    status = time2 +n;
+    strata = INTEGER(strat2);
+    sort1 = INTEGER(isort1);
+    sort2 = INTEGER(isort2);
+    
+    /* 
+    ** First pass: count the total number of death times (risk sets)
+    **  and the total number of rows in the new data set
+    */
+    ntime=0; nrow=0;
+    istart =0;  /* walks along the sort1 vector (start times) */
+        for (i=0; i<n; i++) {
+        iptr = sort2[i];
+        if (strata[i]==1) nrisk=0;
+	nrisk++;
+	if (status[iptr] ==1) {
+	    ntime++;
+	    dtime = time2[iptr];
+            for (; istart <i && time1[sort1[istart]] >= dtime; istart++) 
+                         nrisk--;
+            for(j= i+1; j<n; j++) {
+                jptr = sort2[j];
+                if (status[jptr]==1 && time2[jptr]==dtime && strata[jptr]==0)
+		    nrisk++;
+		else break;
+		}
+	    i= j-1;
+	    nrow += nrisk;
+	    }
+	}
+
+    <<coxcount-alloc-memory>>
+    atrisk = (int *)R_alloc(n, sizeof(int)); /* marks who is at risk */
+    
+    /*
+    ** Pass 2, fill them in
+    */
+    ntime=0; nrisk=0;
+    j=0;  /* pointer to time1 */;
+    istart=0;
+    for (i=0; i<n; ) {
+        iptr = sort2[i];
+        if (strata[i] ==1) {
+            nrisk=0;
+            for (j=0; j<n; j++) atrisk[j] =0;
+	    }
+	nrisk++;
+	if (status[iptr]==1) {
+	    dtime = time2[iptr];
+            for (; istart<i && time1[sort1[istart]] >=dtime; istart++) {
+                atrisk[sort1[istart]]=0;
+                nrisk--;
+		}
+            for (j=1; j<nrisk; j++) *rrstatus++ =0;
+	    for (j=0; j<n; j++) if (atrisk[j]) *rrindex++ = j+1;
+
+	    atrisk[iptr] =1;
+	    *rrstatus++ =1; 
+	    *rrindex++ = iptr +1;
+            for (j=i+1; j<n; j++) {
+		jptr = sort2[j];
+		if (time2[jptr]==dtime && status[jptr]==1 && strata[jptr]==0){
+		    atrisk[jptr] =1;
+		    *rrstatus++ =1;
+		    *rrindex++ = jptr +1;
+		    nrisk++;
+		    }
+		else break;
+		}
+            i = j;
+	    REAL(rtime)[ntime] = dtime;
+	    INTEGER(rn)[ntime] = nrisk;
+            ntime++;
+	}
+        else {
+            atrisk[iptr] =1;
+            i++;
+        }
+    }    
+    <<coxcount-list-return>>
+}
+@ 
+
+<<coxcount-alloc-memory>>=
+/*
+**  Allocate memory
+*/
+PROTECT(rtime = allocVector(REALSXP, ntime));
+PROTECT(rn = allocVector(INTSXP, ntime));
+PROTECT(rindex=allocVector(INTSXP, nrow));
+PROTECT(rstatus=allocVector(INTSXP,nrow));
+rrindex = INTEGER(rindex);
+rrstatus= INTEGER(rstatus);
+@
+
+<<coxcount-list-return>>=
+/* return the list */
+PROTECT(rlist = allocVector(VECSXP, 4));
+SET_VECTOR_ELT(rlist, 0, rn);
+SET_VECTOR_ELT(rlist, 1, rtime);
+SET_VECTOR_ELT(rlist, 2, rindex);
+SET_VECTOR_ELT(rlist, 3, rstatus);
+PROTECT(rlistnames = allocVector(STRSXP, 4));
+SET_STRING_ELT(rlistnames, 0, mkChar("nrisk"));
+SET_STRING_ELT(rlistnames, 1, mkChar("time"));
+SET_STRING_ELT(rlistnames, 2, mkChar("index"));
+SET_STRING_ELT(rlistnames, 3, mkChar("status"));
+setAttrib(rlist, R_NamesSymbol, rlistnames);
+
+unprotect(6);
+return(rlist);
+@ 
+ 
+We now return to the original thread of the program, though perhaps
+with new data, and build the $X$ matrix.
+<<coxph-setup>>=
+offset <- model.offset(m)
+if (is.null(offset) | all(offset==0)) offset <- rep(0., nrow(m))
+
+cluster<- attr(Terms, "specials")$cluster
+if (length(cluster)) {
+    robust <- TRUE  #flag to later compute a robust variance
+    tempc <- untangle.specials(Terms2, 'cluster', 1:10)
+    ord <- attr(Terms2, 'order')[tempc$terms]
+    if (any(ord>1)) stop ("Cluster can not be used in an interaction")
+    cluster <- strata(m[,tempc$vars], shortlabel=TRUE)  #allow multiples
+    Terms2 <- Terms2[-tempc$terms]
+    }
+else {
+    if (!missing(robust)) warning("The robust option is depricated")
+    else robust <- FALSE
+}
+
+attr(Terms2, 'intercept') <- 1  #baseline hazard is always present
+X <- model.matrix(Terms2, m)
+# Attributes of X need to be saved away before the X <- X[,-1] line removes the
+#  intercept, since subscripting removes some of them!
+Xatt <- attributes(X)
+if (is.R()) {
+     assign <- lapply(attrassign(X, Terms2)[-1], function(x) x-1)
+     xlevels <- .getXlevels(Terms2, m)
+     contr.save <- attr(X, 'contrasts')
+     }
+else {
+    assign <- lapply(attr(X, 'assign')[-1], function(x) x -1)
+    xvars <- as.character(attr(Terms2, 'variables'))
+    xvars <- xvars[-attr(Terms2, 'response')]
+    if (length(xvars) >0) {
+            xlevels <- lapply(m[xvars], levels)
+            xlevels <- xlevels[!unlist(lapply(xlevels, is.null))]
+            if(length(xlevels) == 0)
+                    xlevels <- NULL
+            }
+    else xlevels <- NULL
+    contr.save <- attr(X, 'contrasts')
+    }
+
+X <- X[,-1, drop=F]  #remove the intercept column
+
+if (missing(init)) init <- NULL
+@
+
+Check for penalized terms in the model, and set up infrastructure for
+the fitting routines to deal with them.
+<<coxph-penal>>=
+pterms <- sapply(m, inherits, 'coxph.penalty')
+if (any(pterms)) {
+    pattr <- lapply(m[pterms], attributes)
+    pname <- names(pterms)[pterms]
+    # 
+    # Check the order of any penalty terms
+    ord <- attr(Terms, "order")[match(pname, attr(Terms, 'term.labels'))]
+    if (any(ord>1)) stop ('Penalty terms cannot be in an interaction')
+    pcols <- assign[match(pname, names(assign))] 
+    
+    fit <- coxpenal.fit(X, Y, strats, offset, init=init,
+                        control,
+                        weights=weights, method=method,
+                        row.names(m), pcols, pattr, assign)
+}
+@ 
+
+<<coxph-compute>>=
+else {
+    if( method=="breslow" || method =="efron") {
+        if (type== 'right')  fitter <- get("coxph.fit")
+        else                 fitter <- get("agreg.fit")
+    }
+    else if (method=='exact') {
+        if (type== "right")  fitter <- get("coxexact.fit")
+        else  fitter <- get("agexact.fit")
+    }
+    else stop(paste ("Unknown method", method))
+
+    fit <- fitter(X, Y, strats, offset, init, control, weights=weights,
+                  method=method, row.names(m))
+}
+@ 
+
+<<coxph-finish>>=
+if (is.character(fit)) {
+    fit <- list(fail=fit)
+    if (is.R()) class(fit) <- 'coxph'
+    else oldClass(fit) <- 'coxph'
+}
+else {
+    if (!is.null(fit$coefficients) && any(is.na(fit$coefficients))) {
+       vars <- (1:length(fit$coefficients))[is.na(fit$coefficients)]
+       msg <-paste("X matrix deemed to be singular; variable",
+    		   paste(vars, collapse=" "))
+       if (singular.ok) warning(msg)
+       else             stop(msg)
+    }
+    fit$n <- data.n
+    fit$nevent <- sum(Y[,ncol(Y)])
+    fit$terms <- Terms
+    fit$assign <- assign
+    if (is.R()) class(fit) <- fit$method	
+    else       oldClass(fit) <-  fit$method[1]
+    if (robust) {
+        fit$naive.var <- fit$var
+        fit$method    <- method
+        # a little sneaky here: by calling resid before adding the
+        #   na.action method, I avoid having missings re-inserted
+        # I also make sure that it doesn't have to reconstruct X and Y
+        fit2 <- c(fit, list(x=X, y=Y, weights=weights))
+        if (length(strats)) fit2$strata <- strats
+        if (length(cluster)) {
+    	temp <- residuals.coxph(fit2, type='dfbeta', collapse=cluster,
+    				  weighted=TRUE)
+    	# get score for null model
+    	if (is.null(init))
+    		fit2$linear.predictors <- 0*fit$linear.predictors
+    	else fit2$linear.predictors <- c(X %*% init)
+    	temp0 <- residuals.coxph(fit2, type='score', collapse=cluster,
+    				 weighted=TRUE)
+    }
+        else {
+    	temp <- residuals.coxph(fit2, type='dfbeta', weighted=TRUE)
+    	fit2$linear.predictors <- 0*fit$linear.predictors
+    	temp0 <- residuals.coxph(fit2, type='score', weighted=TRUE)
+    }
+        fit$var <- t(temp) %*% temp
+        u <- apply(as.matrix(temp0), 2, sum)
+        fit$rscore <- coxph.wtest(t(temp0)%*%temp0, u, control$toler.chol)$test
+    }
+    #Wald test
+    if (length(fit$coefficients) && is.null(fit$wald.test)) {  
+        #not for intercept only models, or if test is already done
+        nabeta <- !is.na(fit$coefficients)
+        # The init vector might be longer than the betas, for a sparse term
+        if (is.null(init)) temp <- fit$coefficients[nabeta]
+        else temp <- (fit$coefficients - 
+    		  init[1:length(fit$coefficients)])[nabeta]
+        fit$wald.test <-  coxph.wtest(fit$var[nabeta,nabeta], temp,
+    				  control$toler.chol)$test
+    }
+    na.action <- attr(m, "na.action")
+    if (length(na.action)) fit$na.action <- na.action
+    if (model) {
+        if (length(timetrans)) {
+            # Fix up the model frame -- still in the thinking stage
+            m[[".surv."]]   <- Y
+            m[[".strata."]] <- strats
+            stop("Time transform + model frame: code incomplete")
+        }
+        fit$model <- m
+    }
+    if (x)  {
+        Xatt$dim <- attr(X, 'dim')
+        Xatt$dimnames <- attr(X, 'dimnames')
+        Xatt$assign <- Xatt$assign[-1]
+        attributes(X) <- Xatt
+        fit$x <- X
+        if (length(strats)) {
+            if (length(timetrans)) fit$strata <- strats
+            else     fit$strata <- strata.keep
+        }
+    }
+    if (y)     fit$y <- Y
+}
+@ 
+If any of the weights were not 1, save the results.
+Add names to the means component, which are occassionally
+useful to survfit.coxph.
+Other objects below are used when we need to recreate a 
+model frame.
+
+<<coxph-finish>>=
+if (!is.null(weights) && any(weights!=1)) fit$weights <- weights
+names(fit$means) <- names(fit$coefficients)
+
+fit$formula <- formula(Terms)
+if (length(xlevels) >0) fit$xlevels <- xlevels
+fit$contrasts <- contr.save
+if (any(offset !=0)) fit$offset <- offset
+fit$call <- Call
+fit$method <- method
+fit
+@ 

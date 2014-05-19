@@ -1,5 +1,5 @@
 # file MASS/R/glmmPQL.R
-# copyright (C) 2002-2007 W. N. Venables and B. D. Ripley
+# copyright (C) 2002-2013 W. N. Venables and B. D. Ripley
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ glmmPQL <- function(fixed, random, family, data, correlation, weights,
     m$formula <- as.formula(paste("~", paste(allvars, collapse="+")))
     environment(m$formula) <- environment(fixed)
     m$drop.unused.levels <- TRUE
-    m[[1L]] <- as.name("model.frame")
+    m[[1L]] <- quote(stats::model.frame)
     mf <- eval.parent(m)
     off <- model.offset(mf)
     if(is.null(off)) off <- 0
@@ -67,7 +67,7 @@ glmmPQL <- function(fixed, random, family, data, correlation, weights,
     for(i in nm[!keep]) mcall[[i]] <- NULL
     fixed[[2L]] <- quote(zz)
     mcall[["fixed"]] <- fixed
-    mcall[[1L]] <- as.name("lme")
+    mcall[[1L]] <- quote(nlme::lme)
     mcall$random <- random
     mcall$method <- "ML"
     if(!missing(correlation))
@@ -78,7 +78,7 @@ glmmPQL <- function(fixed, random, family, data, correlation, weights,
     mcall$data <- mf
 
     for(i in seq_len(niter)) {
-        if(verbose) message("iteration ", i)
+        if(verbose) message(gettextf("iteration %d", i), domain = NA)
         fit <- eval(mcall)
         etaold <- eta
         ## update zz and invwt

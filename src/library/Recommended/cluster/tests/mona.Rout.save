@@ -1,7 +1,8 @@
 
-R version 2.9.0 Under development (unstable) (2009-01-06 r47489)
-Copyright (C) 2009 The R Foundation for Statistical Computing
+R version 3.0.0 beta (2013-03-25 r62402) -- "Masked Marvel"
+Copyright (C) 2013 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -84,24 +85,24 @@ List of 6
 + }
 Loading required package: MASS
    V1  V2  V3  V4
-0 269 264 258 238
-1 243 248 254 274
+0 244 245 261 238
+1 268 267 251 274
 List of 5
- $ data    : int [1:512, 1:4] 1 1 1 1 0 0 0 1 0 1 ...
- $ order   : int [1:512] 1 4 8 10 12 15 34 38 39 51 ...
- $ variable: int [1:511] 0 0 0 0 0 0 0 0 0 0 ...
- $ step    : int [1:511] 0 0 0 0 0 0 0 0 0 0 ...
+ $ data    : int [1:512, 1:4] 0 0 0 0 1 1 1 0 1 0 ...
+ $ order   : int [1:512] 1 137 154 204 353 398 30 52 69 85 ...
+ $ variable: int [1:511] 0 0 0 0 0 3 0 0 0 0 ...
+ $ step    : int [1:511] 0 0 0 0 0 4 0 0 0 0 ...
  $ call    : language mona(x = x)
  - attr(*, "class")= chr "mona"
 $data
 
    0    1 
-1029 1019 
+ 988 1060 
 
 $variable
 
   0   1   2   3   4 
-496   3   1   6   5 
+496   4   1   5   5 
 
 $step
 
@@ -110,5 +111,8 @@ $step
 
 Warning message:
 In RNGkind("Marsaglia-Multicarry", "Buggy Kinderman-Ramage") :
-  Buggy version of Kinderman-Ramage generator used
+  buggy version of Kinderman-Ramage generator used
 > 
+> proc.time()
+   user  system elapsed 
+  0.350   0.054   0.504 

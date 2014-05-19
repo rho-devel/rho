@@ -7,7 +7,9 @@
 
 \description{\code{\link{gam}} can use isotropic smooths of any number of variables, specified via terms like
 \code{s(x,z,bs="tp",m=3)} (or just \code{s(x,z)} as this is the default basis). These terms are based on thin plate 
-regression splines. \code{m} specifies the order of the derivatives in the thin plate spline penalty.
+regression splines. \code{m} specifies the order of the derivatives in the thin plate spline penalty. If \code{m} is 
+a vector of length 2 and the second element is zero, then the penalty null space of the smooth is not included in
+the smooth.  
 
  Thin plate regression splines are constructed by starting with the
   basis and penalty for a full thin plate spline and then truncating this basis in
@@ -79,11 +81,11 @@ To use for basis setup it is recommended to use \code{\link{smooth.construct2}}.
 
 For these classes the specification \code{object} will contain
 information on how to handle large datasets in their \code{xt} field. The default is to randomly
-subsample 3000 `knots' from which to produce a tprs basis, if the number of
-unique predictor variable combinations in excess of 3000. The default can be
+subsample 2000 `knots' from which to produce a tprs basis, if the number of
+unique predictor variable combinations in excess of 2000. The default can be
 modified via the \code{xt} argument to \code{\link{s}}. This is supplied as a
 list with elements \code{max.knots} and \code{seed} containing a number
-to use in place of 3000, and the random number seed to use (either can be
+to use in place of 2000, and the random number seed to use (either can be
 missing). 
 
 For these bases \code{knots} has two uses. Firstly, as mentioned already, for large datasets 

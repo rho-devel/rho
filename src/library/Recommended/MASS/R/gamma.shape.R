@@ -28,7 +28,7 @@ gamma.shape.glm <- function(object, it.lim = 10,
     Dbar <- object$deviance/object$df.residual
     alpha <- (6 + 2*Dbar)/(Dbar*(6 + Dbar))
     if(verbose) {
-	message("Initial estimate: ", format(alpha))
+        message(gettextf("Initial estimate: %s", format(alpha)), domain = NA)
 	utils::flush.console()
     }
     fixed <-  -y/u - log(u) + log(A) + 1 + log(y + (y == 0))
@@ -39,7 +39,8 @@ gamma.shape.glm <- function(object, it.lim = 10,
         inf <- sum(A * (A * trigamma(A * alpha) - 1/alpha))
         alpha <- alpha + (eps <- sc/inf)
         if(verbose) {
-	    message("Iter. ", itr, " Alpha: ", format(alpha))
+            message(gettextf("Iter. %d Alpha: %s", itr, format(alpha)),
+                    domain = NA)
 	    utils::flush.console()
 	}
     }

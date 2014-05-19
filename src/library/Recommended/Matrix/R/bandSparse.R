@@ -24,19 +24,18 @@ bandSparse <- function(n, m = n, k, diagonals,
         if(diag.isMat) {
             if(ncol(diagonals) != len.k)
 		stop(gettextf("'diagonals' matrix must have %d columns (= length(k) )",
-			      len.k))
+			      len.k), domain=NA)
             getD <- function(j) diagonals[,j]
 
         } else { ## is.list(diagonals):
             if(length(diagonals) != len.k)
 		stop(gettextf("'diagonals' must have the same length (%d) as 'k'",
-			      len.k))
+			      len.k), domain=NA)
             getD <- function(j) diagonals[[j]]
         }
     }
     if(symmetric && any(k < 0) && any(k > 0))
-	stop("for symmetric band matrix, only specify upper or lower triangle",
-	     "\n hence, all k must have the same sign")
+	stop("for symmetric band matrix, only specify upper or lower triangle\n hence, all k must have the same sign")
     dims <- c(n,m)
     k.lengths <- ## This is a bit "ugly"; I got the cases "by inspection"
 	if(n >= m) {
@@ -64,8 +63,8 @@ bandSparse <- function(n, m = n, k, diagonals,
 	if(use.x) {
 	    xx <- getD(s)
 	    if(length(xx) < l.kk)
-		warning(sprintf("the %d-th (sub)-diagonal (k = %d) is %s",
-				s, kk, "too short; filling with NA's"))
+		warning(gettextf("the %d-th (sub)-diagonal (k = %d) is too short; filling with NA's",
+				 s, kk), domain=NA)
 	    x[ind] <- xx[ii1]
 	}
 	off.i <- off.i + l.kk
@@ -74,7 +73,7 @@ bandSparse <- function(n, m = n, k, diagonals,
 	UpLo <- if(min(k) >= 0) "U" else "L"
 	T <- if(use.x) {
 	    if(is.integer(x)) x <- as.double(x)
-	    cc <- paste(Matrix:::.M.kind(x), "sTMatrix", sep = "")
+	    cc <- paste0(.M.kind(x), "sTMatrix")
 	    new(cc, i= i-1L, j= j-1L, x = x, Dim= dims, uplo=UpLo)
 	}
 	else

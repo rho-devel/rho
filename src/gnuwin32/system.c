@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2011  The R Core Team
+ *  Copyright (C) 1997--2013  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -343,7 +343,7 @@ FileReadConsole(const char *prompt, char *buf, int len, int addhistory)
 	char obuf[len+1], *ob = obuf;
 	if(!cd) {
 	    cd = Riconv_open("", R_StdinEnc);
-	    if(!cd) error(_("encoding '%s' is not recognised"), R_StdinEnc);
+	    if(cd == (void *)-1) error(_("encoding '%s' is not recognised"), R_StdinEnc);
 	}
 	res = Riconv(cd, &ib, &inb, &ob, &onb);
 	*ob = '\0';
@@ -463,6 +463,8 @@ void R_CleanUp(SA_TYPE saveact, int status, int runLast)
 		saveact = SA_NOSAVE;
 		break;
 	    case CANCEL:
+		// There might be residual events with destroyed handles
+		R_ProcessEvents();
 		jump_to_toplevel();
 		break;
 
@@ -664,7 +666,7 @@ static int char_YesNoCancel(const char *s)
     char  ss[128];
     unsigned char a[3];
 
-    sprintf(ss, "%s [y/n/c]: ", s);
+    snprintf(ss, 128, "%s [y/n/c]: ", s);
     R_ReadConsole(ss, a, 3, 0);
     switch (a[0]) {
     case 'y':
@@ -711,7 +713,7 @@ void R_SetWin32(Rstart Rp)
     R_CStackDir = 1;
     R_Home = Rp->rhome;
     if(strlen(R_Home) >= MAX_PATH) R_Suicide("Invalid R_HOME");
-    sprintf(RHome, "R_HOME=%s", R_Home);
+    snprintf(RHome, MAX_PATH+7, "R_HOME=%s", R_Home);
     for (char *p = RHome; *p; p++) if (*p == '\\') *p = '/';
     putenv(RHome);
     strcpy(UserRHome, "R_USER=");
@@ -855,6 +857,8 @@ static int isDir(char *path)
     return isdir;
 }
 
+extern void BindDomain(char *R_Home);
+
 int cmdlineoptions(int ac, char **av)
 {
     int   i, ierr;
@@ -862,9 +866,6 @@ int cmdlineoptions(int ac, char **av)
     char *p;
     char  s[1024], cmdlines[10000];
     R_size_t Virtual;
-#ifdef ENABLE_NLS
-    char localedir[PATH_MAX+20];
-#endif
     structRstart rstart;
     Rstart Rp = &rstart;
     Rboolean usedRdata = FALSE, processing = TRUE;
@@ -873,13 +874,9 @@ int cmdlineoptions(int ac, char **av)
     R_Home = getRHOME(3);
     /* need this for moduleCdynload for iconv.dll */
     InitFunctionHashing();
-    sprintf(RHome, "R_HOME=%s", R_Home);
+    snprintf(RHome, MAX_PATH+7, "R_HOME=%s", R_Home);
     putenv(RHome);
-#ifdef ENABLE_NLS
-    strcpy(localedir, R_Home); strcat(localedir, "/share/locale");
-    bindtextdomain("RGui", localedir);
-    bindtextdomain(PACKAGE, localedir);
-#endif
+    BindDomain(R_Home);
 
     R_setStartTime();
 
@@ -980,7 +977,8 @@ int cmdlineoptions(int ac, char **av)
     if (q && q[0]) {
 	value = R_Decode2Long(q, &ierr);
 	if(ierr || value < 32 * Mega || value > Virtual) {
-	    sprintf(s, _("WARNING: R_MAX_MEM_SIZE value is invalid: ignored\n"));
+	    snprintf(s, 1024,
+		     _("WARNING: R_MAX_MEM_SIZE value is invalid: ignored\n"));
 	    R_ShowMessage(s);
 	} else R_max_memory = value;
     }
@@ -1018,20 +1016,24 @@ int cmdlineoptions(int ac, char **av)
 		value = R_Decode2Long(p, &ierr);
 		if(ierr) {
 		    if(ierr < 0)
-			sprintf(s, _("WARNING: --max-mem-size value is invalid: ignored\n"));
+			snprintf(s, 1024,
+				 _("WARNING: --max-mem-size value is invalid: ignored\n"));
 		    else
-			sprintf(s, _("WARNING: --max-mem-size=%lu%c: too large and ignored\n"),
+			snprintf(s, 1024,
+				 _("WARNING: --max-mem-size=%lu%c: too large and ignored\n"),
 				(unsigned long) value,
 				(ierr == 1) ? 'M': ((ierr == 2) ? 'K': 'G'));
 		    R_ShowMessage(s);
 		} else if (value < 32 * Mega) {
-		    sprintf(s, _("WARNING: --max-mem-size=%4.1fM: too small and ignored\n"),
-			    value/(1024.0 * 1024.0));
+		    snprintf(s, 1024,
+			     _("WARNING: --max-mem-size=%4.1fM: too small and ignored\n"),
+			     value/(1024.0 * 1024.0));
 		    R_ShowMessage(s);
 		} else if (value > Virtual) {
-		    sprintf(s, _("WARNING: --max-mem-size=%4.0fM: too large and taken as %uM\n"),
-			    value/(1024.0 * 1024.0),
-			    (unsigned int) (Virtual/(1024.0 * 1024.0)));
+		    snprintf(s, 1024,
+			     _("WARNING: --max-mem-size=%4.0fM: too large and taken as %uM\n"),
+			     value/(1024.0 * 1024.0),
+			     (unsigned int) (Virtual/(1024.0 * 1024.0)));
 		    R_max_memory = Virtual;
 		    R_ShowMessage(s);
 		} else
@@ -1043,6 +1045,12 @@ int cmdlineoptions(int ac, char **av)
 		break;
 	    } else if(CharacterMode == RTerm && !strcmp(*av, "-f")) {
 		ac--; av++;
+		if (!ac) {
+		    snprintf(s, 1024,
+			    _("option '%s' requires an argument"),
+			    "-f");
+		    R_Suicide(s);
+		}
 		Rp->R_Interactive = FALSE;
 		Rp->ReadConsole = FileReadConsole;
 		if(strcmp(*av, "-")) {
@@ -1068,6 +1076,12 @@ int cmdlineoptions(int ac, char **av)
 		}
 	    } else if(CharacterMode == RTerm && !strcmp(*av, "-e")) {
 		ac--; av++;
+		if (!ac || !strlen(*av)) {
+		    snprintf(s, 1024,
+			    _("option '%s' requires a non-empty argument"),
+			    "-e");
+		    R_Suicide(s);
+		}
 		if(strlen(cmdlines) + strlen(*av) + 2 <= 10000) {
 		    strcat(cmdlines, *av);
 		    strcat(cmdlines, "\n");
@@ -1119,8 +1133,8 @@ int cmdlineoptions(int ac, char **av)
 		}
 	    }
 	    /* in case getpid() is not unique -- has been seen under Windows */
-	    sprintf(ifile, "%s/Rscript%x%x", tm, getpid(), 
-		    (unsigned int) GetTickCount());
+	    snprintf(ifile, 1024, "%s/Rscript%x%x", tm, getpid(), 
+		     (unsigned int) GetTickCount());
 	    ifp = fopen(ifile, "w+b");
 	    if(!ifp) R_Suicide(_("creation of tmpfile failed -- set TMPDIR suitably?"));
 	}

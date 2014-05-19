@@ -16,7 +16,7 @@ prune(tree, \dots)
 }
 \arguments{
 \item{tree}{
-fitted model object of class \code{rpart}.  This is assumed to be the result 
+fitted model object of class \code{"rpart"}.  This is assumed to be the result 
 of some function that produces an object with the same named 
 components as that returned by the \code{rpart} function. 
 }
@@ -33,7 +33,7 @@ A new \code{rpart} object that is trimmed to the value \code{cp}.
 }
 \examples{
 z.auto <- rpart(Mileage ~ Weight, car.test.frame)
-zp <- prune(z.auto, cp=0.1)
+zp <- prune(z.auto, cp = 0.1)
 plot(zp) #plot smaller rpart object
 }
 \keyword{tree}

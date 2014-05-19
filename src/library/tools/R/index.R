@@ -1,6 +1,8 @@
 #  File src/library/tools/R/index.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -144,11 +146,11 @@ function(x, ...)
 {
     if(length(x$missing_from_index)) {
         writeLines("Demos with missing or empty index information:")
-        print(x$missing_from_index)
+        print(x$missing_from_index, ...)
     }
     if(length(x$missing_from_demos)) {
         writeLines("Demo index entries without corresponding demo:")
-        print(x$missing_from_demos)
+        print(x$missing_from_demos, ...)
     }
     invisible(x)
 }

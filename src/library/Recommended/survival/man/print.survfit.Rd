@@ -36,7 +36,7 @@ if the input data to survfit were in days,
   \code{table} component of \code{summary.survfit}.)  
 }
 \section{Side Effects}{
-he number of observations, the number of events,  the median survival
+The number of observations, the number of events,  the median survival
 with its confidence interval, and optionally the
 restricted mean survival (\code{rmean}) and its standard error, are printed.
 If there are multiple curves, there is one line of output for each. 
@@ -64,13 +64,12 @@ default (only) one in earlier releases of the code.
 The \code{"common"} option uses the maximum time for all curves in the
 object as a common upper limit for the auc calculation.
 
-
 The median and its confidence interval are defined by drawing a horizontal 
 line at 0.5 on the plot of the survival curve and its confidence bands. 
 The intersection of the line with the lower CI band defines the lower limit 
 for the median's interval, and similarly for the upper band.  If any of the 
 intersections is not a point, then we use the smallest point of intersection, 
-e.g., if the survival curve were exactly equal to 0.5 over an interval. 
+e.g., if the survival curve were exactly equal to 0.5 over an interval.
 }
 \section{References}{
 Miller, Rupert G., Jr. (1981).  

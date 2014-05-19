@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997,  Robert Gentleman and Ross Ihaka
- *                2007 The R Core Team
+ *                2007-12 The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -148,7 +148,7 @@ int attribute_hidden R_IoBufferPutc(int c, IoBuffer *iob)
 {
     if (iob->write_offset == IOBSIZE)
 	NextWriteBufferListItem(iob);
-    *(iob->write_ptr)++ = c;
+    *(iob->write_ptr)++ = char( c);
     iob->write_offset++;
     return 0;/*not used*/
 }
@@ -204,16 +204,19 @@ int attribute_hidden R_TextBufferInit(TextBuffer *txtb, SEXP text)
 {
     int i, k, l, n;
     if (isString(text)) {
+	// translateChar might allocate
+	void *vmax = vmaxget();
 	n = length(text);
 	l = 0;
 	for (i = 0; i < n; i++) {
 	    if (STRING_ELT(text, i) != R_NilValue) {
-		k = strlen(translateChar(STRING_ELT(text, i)));
+		k = int( strlen(translateChar(STRING_ELT(text, i))));
 		if (k > l)
 		    l = k;
 	    }
 	}
-	txtb->vmax = vmaxget();
+	vmaxset(vmax);
+	txtb->vmax = vmax;
 	txtb->buf = static_cast<unsigned char *>(CXXR_alloc(l+2, sizeof(char))); /* '\n' and '\0' */
 	txtb->bufp = txtb->buf;
 	txtb->text = text;
@@ -253,12 +256,13 @@ int attribute_hidden R_TextBufferGetc(TextBuffer *txtb)
 	if (txtb->offset == txtb->ntext) {
 	    txtb->buf = NULL;
 	    return EOF;
-	}
-	else {
+	} else {
+	    const void *vmax = vmaxget();
 	    transferChars(txtb->buf,
 			  translateChar(STRING_ELT(txtb->text, txtb->offset)));
 	    txtb->bufp = txtb->buf;
 	    txtb->offset++;
+	    vmaxset(vmax);
 	}
     }
     return *txtb->bufp++;

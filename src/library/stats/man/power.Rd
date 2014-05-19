@@ -37,11 +37,11 @@ power(lambda = 1)
 
   To raise a number to a power, see \code{\link{Arithmetic}}.
 
-  To calculate the power of a test, see various functions in the 
+  To calculate the power of a test, see various functions in the
   \pkg{stats} package, e.g., \code{\link{power.t.test}}.
 }
 \examples{
 power()
-quasi(link=power(1/3))[c("linkfun", "linkinv")]
+quasi(link = power(1/3))[c("linkfun", "linkinv")]
 }
 \keyword{models}

@@ -1,6 +1,8 @@
 #  File src/library/tools/R/citation.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -109,6 +111,8 @@ function(file, encoding = "ASCII")
            })
 
     out <- Filter(Negate(is.null), out)
+    ## If we found nothing return nothing ...
+    if(!length(out)) return(NULL)
     entries <- sapply(out, `[[`, 1L)
     fields <- lapply(out, `[[`, 2L)
     out <- data.frame(File = file,

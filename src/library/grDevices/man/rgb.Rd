@@ -1,6 +1,6 @@
 % File src/library/grDevices/man/rgb.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
@@ -38,14 +38,14 @@ rgb(red, green, blue, alpha, names = NULL, maxColorValue = 1)
     range, see above.}
 }
 \details{
-  The colors may be specified by passing a matrix or dataframe as argument
+  The colors may be specified by passing a matrix or data frame as argument
   \code{red}, and leaving \code{blue} and \code{green} missing.
   In this case the first three columns of \code{red} are taken to be
   the \code{red}, \code{green} and \code{blue} values.
 
   Semi-transparent colors (\code{0 < alpha < 1}) are supported only on
   some devices: at the time of writing on the \code{\link{pdf}},
-  \code{windows}, \code{quartz} and \code{X11(type="cairo")} devices and
+  \code{windows}, \code{quartz} and \code{X11(type = "cairo")} devices and
   associated bitmap devices (\code{jpeg}, \code{png}, \code{bmp},
   \code{tiff} and \code{bitmap}). They are supported by several
   third-party devices such as those in packages \CRANpkg{Cairo},
@@ -60,7 +60,7 @@ rgb(red, green, blue, alpha, names = NULL, maxColorValue = 1)
   followed by the red, blue, green and optionally alpha values in
   hexadecimal (after rescaling to \code{0 ... 255}).  The optional alpha
   values range from \code{0} (fully transparent) to \code{255} (opaque).
-  
+
   \R does \strong{not} use \sQuote{premultiplied alpha}.
 }
 \seealso{
@@ -69,11 +69,11 @@ rgb(red, green, blue, alpha, names = NULL, maxColorValue = 1)
   \code{\link{gray}}.
 }
 \examples{
-rgb(0,1,0)
+rgb(0, 1, 0)
 
-rgb((0:15)/15, green=0, blue=0, names=paste("red",0:15,sep="."))
+rgb((0:15)/15, green = 0, blue = 0, names = paste("red", 0:15, sep = "."))
 
-rgb(0, 0:12, 0, max = 255)# integer input
+rgb(0, 0:12, 0, max = 255) # integer input
 
 ramp <- colorRamp(c("red", "white"))
 rgb( ramp(seq(0, 1, length = 5)), max = 255)

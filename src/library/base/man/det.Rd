@@ -13,12 +13,12 @@ det(x, \dots)
 determinant(x, logarithm = TRUE, \dots)
 }
 \description{
-  \code{det} calculates the determinant of a matrix. \code{determinant}
+  \code{det} calculates the determinant of a matrix.  \code{determinant}
   is a generic function that returns separately the modulus of the determinant,
   optionally on the logarithm scale, and the sign of the determinant.
   }
 \arguments{
-  \item{x}{numeric matrix.}
+  \item{x}{numeric matrix: logical matrices are coerced to numeric.}
   \item{logarithm}{logical; if \code{TRUE} (default) return the
     logarithm of the modulus of the determinant.}
   \item{\dots}{Optional arguments.  At present none are used.  Previous
@@ -26,9 +26,9 @@ determinant(x, logarithm = TRUE, \dots)
     This argument will be ignored but will not produce an error.}
 }
 \details{
-  The \code{determinant} function
-  uses an LU decomposition and the \code{det} function is simply a
-  wrapper around a call to \code{determinant}.
+  The \code{determinant} function uses an LU decomposition and the
+  \code{det} function is simply a wrapper around a call to
+  \code{determinant}.
 
   Often, computing the determinant is \emph{not} what you should be doing
   to solve a given problem.
@@ -43,11 +43,11 @@ determinant(x, logarithm = TRUE, \dots)
     the determinant is positive or negative.}
 }
 \examples{
-(x <- matrix(1:4, ncol=2))
+(x <- matrix(1:4, ncol = 2))
 unlist(determinant(x))
 det(x)
 
-det(print(cbind(1,1:3,c(2,0,1))))
+det(print(cbind(1, 1:3, c(2,0,1))))
 }
 
 \keyword{array}

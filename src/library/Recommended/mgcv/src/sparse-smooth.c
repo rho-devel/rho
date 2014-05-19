@@ -1,4 +1,4 @@
-/* Copyright Simon N. Wood, 2011.
+/* Copyright Simon N. Wood, 2011-13
 
    Code to implement kd tree based nearest neighbour routines in C.
    Based on approach of Press et al Numerical Recipes 3rd ed. 21.2, but 
@@ -12,6 +12,7 @@
    to build.
    dyn.load("kd-tree.so")
    to load into R.
+
 */
 
 #include <R.h>
@@ -20,6 +21,35 @@
 #include <math.h>
 #include <stdlib.h>
 #include "mgcv.h"
+
+/* 
+  kd-tree tasks:
+  1. Build and return kd tree.
+  2. Find nearest neighbour of points x in given kd tree.
+  3. Find k nearest neighbours of points x in given kd tree.
+  4. Build kd tree, compute k nearest neighbours for all nodes,
+     return these, and optionally tree.
+  5. Find all points in given tree within r-ball of each point 
+     in x. 
+
+
+  key routines:
+   * kd_tree and free_kdtree for creating and freeing kd trees.
+   * closest - find closest point in kd tree to a new point x.
+   * k_nn_work finds k nearest neighbours of each node in kd tree
+   * k_nn forms kd tree and then obtains k nearest neighbours
+  
+   * kd_sizes, kd_dump, kd_read are concerned with encoding 
+     kd tree in form suitable for storage in R and reading 
+     from this format.
+ 
+   needed: 
+   * k_closest - find k nearest neighbours in kd tree to points not 
+                 in kd tree.
+   * r_ball - find points in kd tree within  r-balls around points 
+              not in kd tree. 
+
+*/
 
 typedef struct { /* defines structure for kd-tree box */
   double *lo,*hi;    /* box defining co-ordinates */
@@ -34,14 +64,97 @@ typedef struct {
   int *ind, /* index of points in coordinate matrix which tree relates to */
       *rind, /* where is ith row of X in ind? */
       n_box, /* number of boxes */
-      d; /* dimension */
+      d, /* dimension */
+    n; /* number of points that tree relates to */
   double huge; /* number indicating an open boundary */
 } kdtree_type;
+
+
+void kd_sizes(kdtree_type kd,int *ni,int *nd) {
+/* reports size of integer array and double array (ni and nd)
+   required to hold full kd tree in packed storage for passing 
+   back to R */
+  *nd = 1 + kd.d * kd.n_box * 2; /* to hold huge, lo and hi data for boxes */
+  *ni = 2 + /* n_box and d */
+    2 * kd.n + /* ind, rind */ 
+    5 * kd.n_box; /* parent,child1,child2,p0,p1*/        
+}
+
+void kd_dump(kdtree_type kd,int *idat,double *ddat) {
+/* writes a kdtree structure to arrays idat and ddat, initialized
+   to the sizes determined by kd_sizes for kd. The point is that
+   these are suitable for passing to R, say. */
+  int *p,*p0,*p1,i,nb,d,*pc1,*pc2,*pp,n;
+  double *pd,*pd1;
+  nb = idat[0] = kd.n_box; /* number of boxes */
+  d = idat[1] = kd.d; /* dimension of boxes/points */
+  n = idat[2] = kd.n; /* number of points tree relates to */
+  *ddat = kd.huge;ddat++;
+  /* copy kd.ind... */
+  for (p=idat+3,p0=kd.ind,p1=p0+n;p0<p1;p++,p0++) *p = *p0;
+  /* copy kd.rind... */
+  for (p0=kd.rind,p1=p0+n;p0<p1;p++,p0++) *p = *p0;
+  /* now work through boxes dumping contents */
+  pp = idat + 3 + 2 * n; /* parents */
+  pc1 = pp + nb; /* child1 */
+  pc2 = pc1 + nb; /* child2 */
+  p0 = pc2 + nb; /* p0 */
+  p1 = p0 + nb; /* p1 */
+  for (i=0;i<nb;i++) {
+    /* copy d array kd.box[i].lo... */
+    for (pd=kd.box[i].lo,pd1=pd+d;pd<pd1;pd++,ddat++) *ddat = *pd;
+    /* copy  kd.box[i].hi... */
+    for (pd=kd.box[i].hi,pd1=pd+d;pd<pd1;pd++,ddat++) *ddat = *pd;
+    *pp = kd.box[i].parent;pp++;
+    *pc1 = kd.box[i].child1;pc1++;
+    *pc2 = kd.box[i].child2;pc2++;
+    *p0 = kd.box[i].p0;p0++;
+    *p1 = kd.box[i].p1;p1++;
+  }
+}
+
+void kd_read(kdtree_type *kd,int *idat,double *ddat) {
+/* creates a kd tree from the information packed into idat and ddat by
+   kd_dump. Note that ind, rind, and kd.box[0].lo should not be freed 
+   when freeing this structure, as no storage is allocated for these.
+   Only kd.box, should be freed!!
+
+   Point of this is that kd_dump can be used to export structure to R for 
+   storage, and this routine then reads in again.
+*/
+  int nb,d,*pp,*pc1,*pc2,*p0,*p1,i,n;
+  box_type *box;
+  nb = kd->n_box = idat[0]; /* number of boxes */
+  d = kd->d = idat[1]; /* dimensions of boxes etc. */
+  n = kd->n = idat[2]; /* number of points tree relates to */
+  kd->ind = idat + 3;
+  kd->rind = idat + 3 + n;
+  kd->huge = *ddat;ddat++;
+  /* Now make an array of boxes (all cleared to zero)... */
+  kd->box = (box_type *)R_chk_calloc((size_t)nb,sizeof(box_type));
+  /* now work through boxes loading contents */
+  pp = idat + 3 + 2*n; /* parents */
+  pc1 = pp + nb; /* child1 */
+  pc2 = pc1 + nb; /* child2 */
+  p0 = pc2 + nb; /* p0 */
+  p1 = p0 + nb; /* p1 */
+  box = kd->box;
+  for (i=0;i<nb;i++,box++) {
+    box->lo = ddat;ddat += d;
+    box->hi = ddat;ddat += d;
+    box->parent = *pp;pp++;
+    box->child1 = *pc1;pc1++;
+    box->child2 = *pc2;pc2++;
+    box->p0 = *p0;p0++;
+    box->p1 = *p1;p1++;
+  }
+}
+
 
 void kd_sanity(kdtree_type kd) {
   int ok=1,i,*count,n=0;
   for (i=0;i<kd.n_box;i++) if (kd.box[i].p1>n) n = kd.box[i].p1;
-  count = (int *)calloc((size_t)n,sizeof(int));
+  count = (int *)R_chk_calloc((size_t)n,sizeof(int));
   for (i=0;i<kd.n_box;i++) if (!kd.box[i].child1) { /* terminal node */
     if (kd.box[i].p1-kd.box[i].p0>1) { Rprintf("More than 2 points in a box!!\n");ok=0;}
     count[kd.box[i].p0]++;
@@ -51,7 +164,7 @@ void kd_sanity(kdtree_type kd) {
     if (count[i]!=1) { Rprintf("point %d in %d boxes!\n",i,count[i]);ok=0;}
   }
   if (ok) Rprintf("kd tree sanity checks\n");
-  free(count);
+  R_chk_free(count);
 }
 
 void k_order(int *k,int *ind,double *x,int *n) {
@@ -139,10 +252,12 @@ void k_order(int *k,int *ind,double *x,int *n) {
 }
 
 void free_kdtree(kdtree_type kd) {
-/* free a kdtree */
-  free(kd.ind);free(kd.rind);
-  free(kd.box[0].lo); /* storage for box coordinates */
-  free(kd.box);
+/* free a kdtree. Only use for tree created entirely from complied code,
+   not one read from R. For R only versions R_chk_free(kd.box) is all 
+   that is needed, as rest uses memory sent in from R.*/
+  R_chk_free(kd.ind);R_chk_free(kd.rind);
+  R_chk_free(kd.box[0].lo); /* storage for box coordinates */
+  R_chk_free(kd.box);
 }
 
 void kd_tree(double *X,int *n, int *d,kdtree_type *kd) {
@@ -160,16 +275,16 @@ void kd_tree(double *X,int *n, int *d,kdtree_type *kd) {
   box_type *box;
   double huge=1e100,*pd,*x,*dum1,*dum2,*dum3;
   /* create index for points... */
-  ind = (int *)calloc((size_t) *n,sizeof(int)); 
+  ind = (int *)R_chk_calloc((size_t) *n,sizeof(int)); 
   for (i=0,p=ind;i < *n;i++,p++) *p = i; 
   /* Find the number of boxes in the tree */
   m=2;while (m < *n) m *= 2;
   nb = *n * 2 - m / 2 - 1;
   if (nb > m-1) nb = m - 1; 
   /* Now make an array of boxes (all cleared to zero)... */
-  box = (box_type *)calloc((size_t)nb,sizeof(box_type));
+  box = (box_type *)R_chk_calloc((size_t)nb,sizeof(box_type));
   /* allocate storage for box defining coordinates... */ 
-  pd = (double *)calloc((size_t)nb * (2 * *d),sizeof(double));
+  pd = (double *)R_chk_calloc((size_t)nb * (2 * *d),sizeof(double));
   for (i=0;i<nb;i++) {
     box[i].lo = pd;pd += *d;
     box[i].hi = pd;pd += *d;
@@ -241,37 +356,36 @@ void kd_tree(double *X,int *n, int *d,kdtree_type *kd) {
     }
   }  
   if (bi!=nb-1) Rprintf("bi not equal to nb-1 %d %d\n",bi,nb-1);
-  rind = (int *)calloc((size_t) *n,sizeof(int));
+  rind = (int *)R_chk_calloc((size_t) *n,sizeof(int));
   /* now create index of where ith row of X is in ind */
   for (i=0;i<*n;i++) rind[ind[i]]=i; 
   /* now put tree into kd object */
   kd->box = box;kd->ind = ind;kd->rind = rind;kd->n_box = nb;kd->huge = huge;
-  kd->d = *d;
+  kd->d = *d;kd->n = *n;
 } /* end of kd_tree */
 
 
-void Rkdtree(double *X,int *n, int *d,double *lo,double *hi,int *ind, int *rind) { 
+void Rkdtree(double *X,int *n, int *d,int *idat,double *ddat) { 
 /* Routine to export kdtree data to R 
      m <- 2;
      while (m<n) m <- m*2
      nb <- min(m-1,2*n-m/2-1)
-     hi and lo are nb by d matrices
-     ind and rind are n vectors
-     X is an n by d matrix
+     see rd_dump for structure of idat and ddat
+     * input:
+       X is n by d matrix, each row a point.
+     * output
+       ddat is an nb*2*d vector
+       idat is a 2 + 7*nb vector
+       - together they encode the kd tree 
+
 */
   kdtree_type kd;
-  int i,j;
-  kd_tree(X,n,d,&kd);
-  for (i=0;i<*n;i++) {ind[i] = kd.ind[i];rind[i]=kd.rind[i];}
-  for (j=0;j<*d;j++) for (i=0;i<kd.n_box;i++,lo++,hi++) { 
-    *lo = kd.box[i].lo[j];
-    *hi = kd.box[i].hi[j];
-  }
-  free_kdtree(kd);
+  kd_tree(X,n,d,&kd); /* create kd tree */
+  kd_dump(kd,idat,ddat); /* dump it to idat,ddat */
+  free_kdtree(kd); /* free structure */
 }
 
 
-//inline 
 void update_heap(double *h,int *ind,int n) {
 /* h contains n numbers, such that h[i] > h[2*i+1] and
    h[i] > h[2*i+2] (each applying whenever elements exist).
@@ -300,7 +414,6 @@ void update_heap(double *h,int *ind,int n) {
   ind[i0] = ind0;
 }
 
-//inline 
 double box_dist(box_type *box,double *x,int d) {
 /* find distance from d dimensional box to point x */
   double d2 = 0.0,z,*bl,*bh,*xd;
@@ -311,81 +424,7 @@ double box_dist(box_type *box,double *x,int d) {
   return(sqrt(d2));
 }
 
-double sector_box_dist(box_type *box,double *x,double theta0,double theta1,double na_code) {
-/* find distance from 2 dimensional box to point x, if the box has some part overlapping the 
-   segment through x starting at angle theta0 and extending to theta1. Angles are on 
-   [0,2 pi] and 0 is angle denotes the x axis. 
-   na_code is the number to use to signify that the box is out of sector.
-*/
-  double d2 = 0.0,z,*bl,*bh,*xd,thetaU,thetaL,x0,x1,y0,y1;
-  int ok;
-  bl = box->lo;bh = box->hi; 
-  /* first determine the co-ordinates of the relevant corners */
-  if (x[0]<bl[0]) { /* box right of point */
-    if (x[1]<bl[1]) { /* box above point */
-      x0 = bh[0];y0 = bl[1];
-      x1 = bl[0];y1 = bh[1];
-    } else if (x[1]>bh[1]) { /* box below point */
-      x0 = bl[0];y0 = bl[1];
-      x1 = bh[0];y1 = bh[1];
-    } else { /* box straddles vertically */
-      x0 = bl[0];y0 = bl[1];
-      x1 = bl[0];y1 = bh[1];
-    } 
-  } else if (x[0]>bh[0]) { /* box left of point */
-    if (x[1]<bl[1]) { /* box above point */
-      x0 = bh[0];y0 = bh[1];
-      x1 = bl[0];y1 = bl[1];
-    } else if (x[1]>bh[1]) { /* box below point */
-      x0 = bl[0];y0 = bh[1];
-      x1 = bh[0];y1 = bl[1];
-    } else { /* box straddles vertically */
-      x0 = bh[0];y0 = bh[1];
-      x1 = bh[0];y1 = bl[1];
-    } 
-  } else { /* box straddles horizontally */
-     if (x[1]<bl[1]) { /* box above point */
-      x0 = bh[0];y0 = bl[1];
-      x1 = bl[0];y1 = bl[1];
-    } else if (x[1]>bh[1]) { /* box below point */
-      x0 = bl[0];y0 = bh[1];
-      x1 = bh[0];y1 = bh[1];
-    } else { /* box straddles vertically */
-       return(0.0); /* point is in box, min distance is zero */ 
-    } 
-  } /* determined locations of outermost (angular) box points relative to x */
-  
-  /* Now have to determine whether box overlaps relevant sector */
-  x0 -= x[0];z = x0*x0;
-  y0 -= x[1];z += y0*y0; z = sqrt(z);
-  thetaL = acos(x0/z);
-  if (y0<0) thetaL = 2*PI - thetaL;
  
-  x1 -= x[0];z = x1*x1;
-  y1 -= x[1];z += y1*y1; z = sqrt(z);
-  thetaU = acos(x1/z);
-  if (y1<0) thetaU = 2*PI - thetaU;
-  
-  ok = 0;
-  if ((thetaL<theta0&&theta0<=thetaU)||((thetaU<thetaL)&&(theta0<thetaL||theta0>=thetaU))) ok = 1;
-  if ((thetaL<theta1&&theta1<=thetaU)||((thetaU<thetaL)&&(theta1<thetaL||theta1>=thetaU))) ok = 1;
-
-  if ((theta0<thetaL&&thetaL<=theta1)||((theta1<theta0)&&(thetaL<theta0||thetaL>=theta1))) ok = 1;
-  if ((theta0<thetaU&&thetaU<=theta1)||((theta1<theta0)&&(thetaU<theta0||thetaU>=theta1))) ok = 1;
-  
-  if (ok) { /* then the box is within sector, so distance is computed */
-    for (xd=x+2; x < xd;x++,bl++,bh++) {
-      if (*x < *bl) { z = *x - *bl;d2 += z*z;}
-      if (*x > *bh) { z = *x - *bh;d2 += z*z;}
-    }  
-    return(sqrt(d2));
-  } else {
-    return(na_code);
-  }				     
-}
-
-
-//inline 
 int which_box(kdtree_type *kd,int j) {
 /* Finds smallest box in kd tree containing jth point 
    from point set used to create tree */ 
@@ -426,7 +465,6 @@ int xbox(kdtree_type *kd,double *x) {
 }
 
 
-// inline 
 double ijdist(int i, int j, double *X,int n,int d) {
 /* return Euclidian distance between ith and jth rows of n by d 
    matrix X */
@@ -445,20 +483,6 @@ double xidist(double *x,double *X,int i,int d, int n) {
   }
   return(sqrt(dist));
 }
-
-
-double sector_xidist(double *x,double *X,int i, int n,double theta0,double theta1,double na_code) {
-/* distance between point x and point in ith row of X, provided that the point is in the 
-   sector between theta0 and theta1 with origin at x. theta0/1 are in [0,2 pi]. 
-*/
-  double r,theta,x0,y0;
-  x0 = x[0] - X[i];y0 = x[1] - X[i + n];
-  r = sqrt(x0*x0+y0*y0); theta = acos(x0/r);
-  if (y0 < 0) theta = 2*PI - theta;
-  if ((theta0<theta && theta<=theta1)||((theta1<theta0)&&(theta<theta0||theta>=theta1))) return(r); 
-  else return(na_code);
-}
-
 
 
 int closest(kdtree_type *kd, double *X,double *x,int n,int *ex,int nex) {
@@ -525,12 +549,14 @@ int closest(kdtree_type *kd, double *X,double *x,int n,int *ex,int nex) {
     } /* end of else branch */
   } /* todo list end */
   return(ni);
-}
+} /* closest */
 
 
 
 void star(kdtree_type *kd, double *X,int n,int i0,int *ni,double dist) {
- /* find indices of 5 points near points of a star centred on point i0
+ /* REDUNDANT
+
+   find indices of 5 points near points of a star centred on point i0
     and return these in ni. points are unique and do not include i0.
     start points are at dist from i0.
     kd is kd tree, relating to points stored in n rows of X.
@@ -558,12 +584,12 @@ void p_area(double *a,double *X,kdtree_type kd,int n,int d) {
   double *wa,*lo,*hi,*x0,*x1,min_w,x;
   int np,bi,i,j,k,ok=1,*count,check;
 
-  wa = (double *)calloc((size_t)d,sizeof(double));
-  lo = (double *)calloc((size_t)d,sizeof(double));
-  hi = (double *)calloc((size_t)d,sizeof(double));
-  x0 = (double *)calloc((size_t)d,sizeof(double));
-  x1 = (double *)calloc((size_t)d,sizeof(double));
-  count = (int *)calloc((size_t)d,sizeof(int));
+  wa = (double *)R_chk_calloc((size_t)d,sizeof(double));
+  lo = (double *)R_chk_calloc((size_t)d,sizeof(double));
+  hi = (double *)R_chk_calloc((size_t)d,sizeof(double));
+  x0 = (double *)R_chk_calloc((size_t)d,sizeof(double));
+  x1 = (double *)R_chk_calloc((size_t)d,sizeof(double));
+  count = (int *)R_chk_calloc((size_t)d,sizeof(int));
 
   /* get average box widths, for fallback purposes */
   for (bi=0;bi<kd.n_box;bi++) {
@@ -634,8 +660,215 @@ void p_area(double *a,double *X,kdtree_type kd,int n,int d) {
     x /= np; /* share it out */
     a[i] = x; /* store it */ 
   }
-  free(count);
-  free(x0);free(x1);free(lo);free(hi);free(wa);
+  R_chk_free(count);
+  R_chk_free(x0);R_chk_free(x1);R_chk_free(lo);R_chk_free(hi);R_chk_free(wa);
+} /* p_area */
+
+
+void k_radius(double r, kdtree_type kd, double *X,double *x,int *list,int *nlist) {
+/* Find all points in kd tree defined by kd, X within radius r of point x,
+   and return these in list (initialized to length n.) on output nlist is
+   number of points returned. Could be made more efficient by checking if
+   boxes are completely inside r-ball, and simply adding, rather than opening, 
+   if they are. 
+*/
+  int todo[100],item,bi,bi_old,dim,d,c1,c2,*ind,n,i;
+  box_type *box;
+  box = kd.box;
+  d = kd.d;
+  n = kd.n;
+  ind = kd.ind;
+  *nlist = 0; /* neighbour counter */
+  bi = 0; /* box index */
+  dim = 0; /* box dividing dimension (cycles as we move down tree) */
+  /* find the index, bi, of the smallest box completely enclosing r-ball around x... */ 
+  while (box[bi].child1) { /* box has children */
+    bi_old = bi; 
+    c1 = box[bi].child1;c2 = box[bi].child2;
+    /* need to find out if r ball around x could be contained in one
+       of the children. Idea is that we know it's in bi, so only need
+       both children, if r-ball cuts the divider between children. */
+    if (x[dim]+r <= box[c1].hi[dim]) bi = c1; /* r-ball is completely inside child 1 */     
+    else if (x[dim]-2 >= box[c2].lo[dim]) bi = c2; /* r-ball completely in child 2 */
+    dim++; if (dim==d) dim = 0;
+    if (bi==bi_old) break; /* neither child contained whole r-ball, so use box[bi] */
+  }
+  /* box[bi] completely encloses the r-ball around x. Now check whether its points
+     lie within r-ball around x... */  
+  item=0;  /* index of end of task list */
+  todo[0] = bi; /* initial task - box bi */
+  while (item>=0) {
+    bi = todo[item];item--;
+    if (box_dist(box+bi,x,d) < r) { /* box could contain a point in r-ball so check */
+      if (box[bi].child1) { /* box has children, so add them to todo list */
+        item++;todo[item] = box[bi].child1;
+        item++;todo[item] = box[bi].child2;
+      } else { /* reached small end of tree - check actual points */
+        for (i=box[bi].p0;i<=box[bi].p1;i++) {
+          if (xidist(x,X,ind[i],d,n) < r) {
+            list[*nlist] = ind[i]; (*nlist)++;             
+          }
+        }
+      }
+    }
+  }
+} /* k_radius */
+
+
+void Rkradius(double *r,int *idat,double *ddat,double *X,double *x,int *m,int *off,int *ni,int *op) {
+/* Given kd tree defined by idat, ddat and X, from R, this routine finds all points in  
+   the tree less than distance r from each point in x. x contains the points stored end-to-end.
+   Routine must be called twice. First with op==0, which does the work, but only returns the 
+   length required for ni, in off[m+1].
+   The second call must have op==1, and ni initialized to the correct length. Then neighbour
+   information is returned in off, ni.
+   neighbours of ith point are in ni[off[i]:(off[i+1]-1)], where off is an m+1 vector. All indexes
+   0 based (C style). Add one to off and ni to get R style.
+ */
+  static int *nei,nn; 
+  kdtree_type kd;
+  double *xx;
+  int d,i,j,n_buff=0,nlist,*list;
+  if (*op) { /* output saved nei data */
+    for (i=0;i<nn;i++) ni[i]=nei[i];
+    R_chk_free(nei);nn=0;
+    return;
+  }
+  kd_read(&kd,idat,ddat); /* unpack kd tree */
+  d = kd.d; /* dimension */
+  /* get the r-radius neighbour information... */
+  list = (int *)R_chk_calloc((size_t)kd.n,sizeof(int)); /* list of neighbours of ith point */
+  n_buff = kd.n*10;
+  nei = (int *)R_chk_calloc((size_t)n_buff,sizeof(int)); /* global list of neighbours */
+  xx=x;nn=0;off[0]=0;
+  for (i=0;i<*m;i++) { /* work through points in x */
+    k_radius(*r, kd, X,xx,list,&nlist);
+    if (nn+nlist>n_buff) { /* expand nei */
+      n_buff *= 2;
+      nei = (int *)R_chk_realloc(nei,(size_t)n_buff*sizeof(int));
+    }
+    for (j=nn;j<nn+nlist;j++) nei[j] = list[j-nn];
+    nn += nlist;
+    off[i+1] = nn;
+    xx += d; /* next point */
+  }
+  R_chk_free(list);
+  R_chk_free(kd.box); /* free storage created by kd_read */
+}
+
+void k_newn_work(double *Xm,kdtree_type kd,double *X,double *dist,int *ni,int*m,int *n,int *d,int *k) {
+/* Given a kd tree, this routine does the actual work of finding the nearest neighbours
+   within the tree (defined by kd, X), to a new set of m points in x
+   * inputs: 
+     d is dimension.
+     k is number of neighbours to find
+     kd is a kd tree structure, for points stored in n by d matrix X
+     Xm is m by d matrix of new points. 
+   * outputs:
+     ni is m by k matrix of indices of k nearest neighbours in X
+     dist is m by k matrix of distances to nearest neighbours indexed in ni.
+*/
+  int i,j,bi,*ik,bii,todo[100],item,pcount,*ind;
+  box_type *box;
+  double *dk,huge,*p,*p1,*p2,dij,*x;
+ 
+  huge = kd.huge;
+  ind = kd.ind;
+  box = kd.box;
+
+  dk = (double *)R_chk_calloc((size_t)*k,sizeof(double)); /* distance k-array */
+  ik = (int *)R_chk_calloc((size_t)*k,sizeof(int)); /* corresponding index array */
+  x = (double *)R_chk_calloc((size_t)*d,sizeof(double)); /* array for current point */    
+  pcount=0;
+
+  for (i=0;i < *m;i++) { /* work through all the points in Xm */
+    for (p=Xm+i,p1=x,p2=p1 + *d;p1<p2;p1++, p+= *m) *p1 = *p; /* copy ith point (ith row of Xm) to x */
+    for (p=dk,p1=dk + *k;p<p1;p++) *p = huge; /* initialize distances to huge */
+    /* here I have followed Press et al. in descending tree to smallest 
+       box and then re-ascending to find box with enough points. This is
+       probably more efficient than checking box size all the way down 
+       if n >> k .... */
+   
+    /*bi = which_box(&kd,i);*/ /* bi is smallest box containing ith point */
+    bi = xbox(&kd,x); /* bi is smallest box containing ith point, x */
+
+    while (box[bi].p1-box[bi].p0 < *k) bi = box[bi].parent; /* note k does not include self */    
+    
+    /*  Rprintf("Initial box %d contains %d need %d\n",bi,kd.box[bi].p1-kd.box[bi].p0+1,*k); */
+ 
+   /* now find k nearest points in the box and put in dk... */     
+    for (j=box[bi].p0;j<=box[bi].p1;j++) { 
+      pcount++;
+      /*dij = ijdist(i,ind[j],X,*n,*d);*/ /* distance between points i and j */
+      dij = xidist(x,X,ind[j],*d,*n); 
+      if (dij<dk[0]) { /* distance smaller than top of heap */
+        dk[0] = dij;       /* so replace top of distance heap */
+        ik[0] = ind[j]; /* and put index on index heap */
+        if (*k>1) update_heap(dk,ik,*k); /* update heap so it still obeys heap ordering */  
+      } 
+    } /* finished initialising heap (dk, ik) */
+    
+    /* Now search the rest of the tree. Basic idea is that if a box is further from the 
+       ith point than dk[0] (the largest of the current neighbour distances), then we 
+       can ignore all the points it contains (and hence its descendents) */ 
+    todo[0] = 0; /* index of root box... first to check */
+    item=0;
+    bii = bi; /* index of initializing box */ 
+    while (item>=0) { /* items on the todo list */
+      if (todo[item]==bii) { /* this is the initializing box - already dealt with */
+        item--;
+      } else {
+        bi = todo[item]; /* box to deal with now */
+        item--;
+        if (box_dist(box+bi,x,*d)<dk[0]) { /* box edge is closer than some of existing points 
+                                              -- need to check further */
+          if (box[bi].child1) { /* box has children --- add to todo list */
+            item++;
+            todo[item] = box[bi].child1;
+            item++;
+            todo[item] = box[bi].child2;
+          } else { /* at smallest box end of tree */
+            for (j=box[bi].p0;j<=box[bi].p1;j++) {
+              pcount++;
+              /*dij = ijdist(i,ind[j],X,*n,*d);*/ /* distance between points i and j */ 
+              dij = xidist(x,X,ind[j],*d,*n);
+              if (dij<dk[0]) { /* point closer than largest of current candidates -- add to heap */
+                dk[0] = dij; /* add distance to heap */
+                ik[0] = ind[j]; /* and corresponding index to heap index */
+                if (*k>1) update_heap(dk,ik,*k); /* update heap so it still obeys heap ordering */  
+              } /* end of point addition */
+            } /* done the one or two points in this box */
+          } /* finished with this small box */
+        } /* finished with possible candiate box */
+      } /* end of else branch */
+    } /* todo list end */
+    /* So now the dk, ik contain the distances and indices of the k nearest neighbours */
+    for (j=0;j<*k;j++) { /* copy to output matrices */
+      dist[i + j * *m] = dk[j];
+      ni[i + j * *m] = ik[j];
+    }     
+  } /* end of points loop (i) */
+ 
+  R_chk_free(dk);
+  R_chk_free(ik);
+  R_chk_free(x);
+  *n = pcount;
+} /* k_newn_work */
+
+void Rkdnearest(double *X,int *idat,double *ddat,int *n,double *x, int *m, int *ni, double *dist,int *k) {
+/* given points in n rows of X and a kd tree stored in idat, ddat in R, find the 
+   k neares neighbours to each row of x m by d matrix x.
+   * outputs 
+     ni is m by k matrix of neighbour indices 
+     dist is m by k matrix of neighbour distances
+*/
+  kdtree_type kd;
+  int d;
+  kd_read(&kd,idat,ddat); /* unpack kd tree */
+  d = kd.d; /* dimension */
+  /* get the nearest neighbour information... */
+  k_newn_work(x,kd,X,dist,ni,m,n,&d,k);
+  R_chk_free(kd.box); /* free storage created by kd_read */
 }
 
 
@@ -650,9 +883,9 @@ void k_nn_work(kdtree_type kd,double *X,double *dist,int *ni,int *n,int *d,int *
   ind = kd.ind;
   box = kd.box;
 
-  dk = (double *)calloc((size_t)*k,sizeof(double)); /* distance k-array */
-  ik = (int *)calloc((size_t)*k,sizeof(int)); /* corresponding index array */
-  x = (double *)calloc((size_t)*n,sizeof(double)); /* array for current point */    
+  dk = (double *)R_chk_calloc((size_t)*k,sizeof(double)); /* distance k-array */
+  ik = (int *)R_chk_calloc((size_t)*k,sizeof(int)); /* corresponding index array */
+  x = (double *)R_chk_calloc((size_t)*d,sizeof(double)); /* array for current point */    
   pcount=0;
 
   for (i=0;i < *n;i++) { /* work through all the points in X */
@@ -733,11 +966,11 @@ void k_nn_work(kdtree_type kd,double *X,double *dist,int *ni,int *n,int *d,int *
     }     
   } /* end of points loop (i) */
  
-  free(dk);
-  free(ik);
-  free(x);
+  R_chk_free(dk);
+  R_chk_free(ik);
+  R_chk_free(x);
   *n = pcount;
-}
+} /* k_nn_work */
 
 void k_nn(double *X,double *dist,double *a,int *ni,int *n,int *d,int *k,int *get_a) {
 /* NOTE: n modified on exit!!
@@ -792,7 +1025,8 @@ void k_nn(double *X,double *dist,double *a,int *ni,int *n,int *d,int *k,int *get
 
 void kba_nn(double *X,double *dist,double *a,int *ni,int *n,int *d,int *k,
             int *get_a,double *cut_off) {
-/* Obtains a roughly balanced set of 2d + k nearish neighbours. Idea is to take nearest neighbour 
+/* REDUNDANT
+   Obtains a roughly balanced set of 2d + k nearish neighbours. Idea is to take nearest neighbour 
    from kd box immediately above or below each point's box, in each dimension, and to add 
    k further points from the nearest neigbours not already included.  
    For each point:
@@ -814,10 +1048,10 @@ void kba_nn(double *X,double *dist,double *a,int *ni,int *n,int *d,int *k,
   /* d0 = average of distance to 2d+k nearest neighbours - a useful basic length scale */
   for (d0=0.0,p=dist,p1=dist+ *n * d2k;p<p1;p++) d0 += *p;d0 /= *n * d2k;
 
-  x = (double *)calloc((size_t) *d,sizeof(double));
+  x = (double *)R_chk_calloc((size_t) *d,sizeof(double));
   /* need to get typical box scale */ 
-  db = (double *)calloc((size_t)*d,sizeof(double));
-  count = (int *)calloc((size_t)*d,sizeof(int));
+  db = (double *)R_chk_calloc((size_t)*d,sizeof(double));
+  count = (int *)R_chk_calloc((size_t)*d,sizeof(int));
   for (bi=0;bi<kd.n_box;bi++) {
     for (j=0;j<*d;j++) 
     if (kd.box[bi].lo[j] > -kd.huge&&kd.box[bi].hi[j] < kd.huge) {
@@ -976,7 +1210,7 @@ void kba_nn(double *X,double *dist,double *a,int *ni,int *n,int *d,int *k,
        if (ni[ii]<0) ni[ii] = -ni[ii] - 1; 
     }
   }
-  free(x); free_kdtree(kd);free(db);free(count);
+  R_chk_free(x); free_kdtree(kd);R_chk_free(db);R_chk_free(count);
 }
 
 
@@ -996,7 +1230,7 @@ void tri2nei(int *t,int *nt,int *n,int *d,int *off) {
   /* now turn off into an intial version of the final off vector */
   for (i=1;i< *n ;i++) off[i] += off[i-1]; 
   /* create oversized storage for neighbour lists */ 
-  nn = (int *)calloc((size_t)off[*n-1],sizeof(int));
+  nn = (int *)R_chk_calloc((size_t)off[*n-1],sizeof(int));
   for (p=nn,p1 = nn + off[*n-1];p<p1;p++) *p = -1; /* -1 codes unused space */
   /* now work through triangles, adding vertices to relevant neighbour lists */
   for (i=0;i<*nt;i++) { /* triangle loop */
@@ -1028,7 +1262,7 @@ void tri2nei(int *t,int *nt,int *n,int *d,int *off) {
     k0 = k1;
   }
   /* so now neighbour lists are stored in t and indexed by off */
-  free(nn);
+  R_chk_free(nn);
 } /* end of tri2nei */
 
 void ni_dist_filter(double *X,int *n,int *d,int *ni,int *off,double *mult) {
@@ -1039,7 +1273,7 @@ void ni_dist_filter(double *X,int *n,int *d,int *ni,int *off,double *mult) {
 */
   int i,j,k,i0,i1;
   double *dist,z,z2,md=0.0;
-  dist = (double *)calloc((size_t) off[*n-1],sizeof(double)); /* interpoint distances */
+  dist = (double *)R_chk_calloc((size_t) off[*n-1],sizeof(double)); /* interpoint distances */
 
   /* now find the average distance to neighbours */
   i0 = 0;
@@ -1071,7 +1305,7 @@ void ni_dist_filter(double *X,int *n,int *d,int *ni,int *off,double *mult) {
     off[j]=k; /* reset off[i] to how far we actually got */
     i0 = i1;
   }
-  free(dist);
+  R_chk_free(dist);
 }
 
 void nei_penalty(double *X,int *n,int *d,double *D,int *ni,int *ii,int *off,
@@ -1118,10 +1352,10 @@ void nei_penalty(double *X,int *n,int *d,double *D,int *ni,int *ii,int *off,
   max_nn++; /* self! */
   if (max_nn<6) max_nn=6;
 
-  M = (double *)calloc((size_t) 6 * max_nn,sizeof(double));
-  Mi = (double *)calloc((size_t) 6 * max_nn,sizeof(double)); 
-  Vt = (double *)calloc((size_t) 6 * 6,sizeof(double));
-  sv = (double *)calloc((size_t) 6,sizeof(double));
+  M = (double *)R_chk_calloc((size_t) 6 * max_nn,sizeof(double));
+  Mi = (double *)R_chk_calloc((size_t) 6 * max_nn,sizeof(double)); 
+  Vt = (double *)R_chk_calloc((size_t) 6 * 6,sizeof(double));
+  sv = (double *)R_chk_calloc((size_t) 6,sizeof(double));
 
   /*  Rprintf("Starting main loop...\n");*/
   di = i0 = 0;
@@ -1200,192 +1434,13 @@ void nei_penalty(double *X,int *n,int *d,double *D,int *ni,int *ii,int *off,
     i0=i1;
   }
   /* free memory... */ 
-  free(M);
-  free(Mi);
-  free(Vt);
-  free(sv);
+  R_chk_free(M);
+  R_chk_free(Mi);
+  R_chk_free(Vt);
+  R_chk_free(sv);
 } /* end of tri_penalty */
 
 
-void sparse_penalty(double *X,int *n,int *d,double *D,int *ni,int *k,
-                                  int *m,int *a_weight,double *kappa) {
-/* Creates the sqrt penalty matrix entries for a sparse smoother
-
-   This version examines conditioning when choosing meighbours.
-   A 5 pointed star is proposed around each point, and the closest points to the
-   star points are taken as neighbours, disallowing repeats and the central point.  
-
-   X is n by d, and each row of X contains the location of a point. 
-   There are no repeat points in X.
-
-   D is n by m*(k+1), where m is the number of derivatives in the penalty
-     and k is the number of neighbours (excluding self) required to 
-     approximate the derivatives. D[i + m*n*l + n*(j+1)] is the coefficient 
-     associated with the neighbour referenced by ni[i + n*j] and the lth
-     derivative.   
-
-   Set up is general to allow for future extension of this routine, but currently 
-   only the d==2, m=3, k=6 TPS like case is dealt with here. 
-
-*/
-  int i,j,kk,true=1,k1,ii,l,ni5[5];
-  double *M,*Mi,*Vt,*sv, /* matrix mapping derivatives to function values */
-    *dist,*area,x,z,avd,*p,*p1,md,ll;
-  kdtree_type kd; 
-
-  k1 = *k + 1;
-  M = (double *)calloc((size_t) k1 * k1,sizeof(double));
-  Mi = (double *)calloc((size_t) k1 * k1,sizeof(double)); 
-  Vt = (double *)calloc((size_t) k1 * k1,sizeof(double));
-  sv = (double *)calloc((size_t) k1,sizeof(double));
-
-  dist = (double *)calloc((size_t) *n * *k,sizeof(double)); /* corresponding distances */
-  area = (double *)calloc((size_t) *n,sizeof(double)); /* area associated with each point */
-
-  /* get the nearest neighbours */ 
-  j=*n;
-  kd_tree(X,&j,d,&kd); /* set up the tree */ 
-  if (*a_weight) p_area(area,X,kd,*n,*d);
-  k_nn_work(kd,X,dist,ni,&j,d,k);
- 
-  /* now find the average distance to the nearest neighbours */
-  for (md=avd=0.0,p=dist,p1=dist + *n * *k;p<p1;p++) { avd += *p;if (*p > md) md= *p;}
-  avd /= *n * *k;  
-  md /= 2; /* half maximum neighbour distance */
-
-  /*  Rprintf("Starting main loop...\n");*/
-  for (i=0;i<*n;i++) { /* work through all points */
-    /* get local length scale */
-    /* for (md=0.0,j=0;j<5;j++) { z=dist[i + j * *n]; if (z>md) md=z;}
-       md /= 2;*/ 
-    /* find the star neighbours of the ith point */
-    for (kk=1;kk<4;kk++) { /* try expanding star at most 3 times */
-      star(&kd,X,*n,i,ni5,md); 
-
-      M[0] = 1.0;for (j=1;j<6;j++) M[j*6] = 0.0;
-      for (ll=0.0,j=1;j<6;j++) {
-        M[j] = 1.0;
-        ii = ni5[j-1]; /* neighbour index */
-        x = X[ii] - X[i];     
-        z = X[ii + *n] - X[i + *n];
-        ll += sqrt(x*x+z*z); /* distance to this neighbour */
-        M[j + 6] = x;
-        M[j + 12] = z;
-        M[j + 18] = x*x/2;
-        M[j + 24] = z*z/2;
-        M[j + 30] = x*z;
-      }
-      /* Let g = [f,f_x,f_z,f_xx,f_zz,f_xz], then f -> Mg as neighbours
-       approach point i. Now invert M, to estimate g using g = M^{-1}f */
-      ll = ll/5; /* average distance */
-      area[i] = ll*ll; /* rough measure of area associated with this */ 
-      /* call mgcv_svd_full to pseudoinvert M */
-      j = 6;
-      mgcv_svd_full(M,Vt,sv,&j,&j);
-      /* Rprintf("%d done svd...\n",i);*/
-      kappa[i] = sv[0]/sv[5]; /* condition number */
-      if (kappa[i]<1e6) break; /* happy with conditioning */
-      md *= 2; /* expand star */
-    }
-    
-    for (j=0;j<6;j++) if (sv[j]>sv[0]*1e-7) sv[j] = 1/sv[j]; else {sv[j]=0.0;} 
-    /* Now form V diag(sv) M' */
-    for (ii=0;ii<6;ii++) { 
-      x=sv[ii];
-      for (j=0;j<6;j++) M[j+ii*6] *= x;
-    }
-    j=6;
-    mgcv_mmult(Mi,Vt,M,&true,&true,&j,&j,&j);
-    /*  Rprintf("done mmult...\n"); */
-    /* Now read coefficients of second derivatives out into D matrix */
-    if (*a_weight) x = sqrt(area[i]); else x = 1.0; 
-    for (l=0;l<3;l++) for (j=0;j<6;j++)
-      D[i + 6 * *n * l + *n * j] = x*Mi[3+l + 6*j];
-    
-  }
-  /* free memory... */ 
-  free_kdtree(kd);
-  free(M);free(Mi);free(Vt);
-  free(sv);free(dist);free(area);
-} /* end of sparse_penalty */
-
-
-
-void sparse_penalty1(double *X,int *n,int *d,double *D,int *ni,int *k,int *m,int *a_weight,double *kappa) {
-/* Creates the sqrt penalty matrix entries for a sparse smoother
-
-   X is n by d, and each row of X contains the location of a point. 
-   There are no repeat points in X.
-
-   D is n by m*(k+1), where m is the number of derivatives in the penalty
-     and k is the number of neighbours (excluding self) required to 
-     approximate the derivatives. D[i + m*n*l + n*(j+1)] is the coefficient 
-     associated with the neighbour referenced by ni[i + n*j] and the lth
-     derivative.   
-
-   Set up is general to allow for future extension of this routine, but currently 
-   only the d==2, m=3, k=6 TPS like case is dealt with here. 
-
-*/
-  int i,j,true=1,k1,ii,l,k_add;
-  double *M,*Mi,*Vt,*sv, /* matrix mapping derivatives to function values */
-    *dist,*area,cut_off=5,x,z;
-
-  k1 = *k + 1;
-  M = (double *)calloc((size_t) k1 * k1,sizeof(double));
-  Mi = (double *)calloc((size_t) k1 * k1,sizeof(double)); 
-  Vt = (double *)calloc((size_t) k1 * k1,sizeof(double));
-  sv = (double *)calloc((size_t) k1,sizeof(double));
-
-  dist = (double *)calloc((size_t) *n * *k,sizeof(double)); /* corresponding distances */
-  area = (double *)calloc((size_t) *n,sizeof(double)); /* area associated with each point */
-
-  /* get a balanced version of the nearest neighbours */
-  /* j=*n;
-     k_nn(X,dist,area,ni,&j,d,k,a_weight);*/ /* pure nearest neighbour code */
-  k_add = *k - 2 * *d; 
-  kba_nn(X,dist,area,ni,n,d,&k_add,a_weight,&cut_off);
-  /*  Rprintf("Starting main loop...\n");*/
-  for (i=0;i<*n;i++) { /* work through all points */ 
-    M[0] = 1.0;for (j=1;j<6;j++) M[j*6] = 0.0;
-    for (j=1;j<6;j++) {
-      M[j] = 1.0;
-      ii = ni[i + (j-1) * *n]; /* neighbour index */
-      x = X[ii] - X[i];     
-      z = X[ii + *n] - X[i + *n];
-      M[j + 6] = x;
-      M[j + 12] = z;
-      M[j + 18] = x*x/2;
-      M[j + 24] = z*z/2;
-      M[j + 30] = x*z;
-    }
-    /* Let g = [f,f_x,f_z,f_xx,f_zz,f_xz], then f -> Mg as neighbours
-       approach point i. Now invert M, to estimate g using g = M^{-1}f */
-    
-    /* call mgcv_svd_full to pseudoinvert M */
-    j = 6;
-    mgcv_svd_full(M,Vt,sv,&j,&j);
-    /* Rprintf("%d done svd...\n",i);*/
-    kappa[i] = sv[0]/sv[5]; /* condition number */
-    for (j=0;j<6;j++) if (sv[j]>sv[0]*0) sv[j] = 1/sv[j]; 
-    /* Now form V diag(sv) M' */
-    for (ii=0;ii<6;ii++) { 
-      x=sv[ii];
-      for (j=0;j<6;j++) M[j+ii*6] *= x;
-    }
-    j=6;
-    mgcv_mmult(Mi,Vt,M,&true,&true,&j,&j,&j);
-    /*  Rprintf("done mmult...\n"); */
-    /* Now read coefficients of second derivatives out into D matrix */
-    if (*a_weight) x = sqrt(area[i]); else x = 1.0; 
-    for (l=0;l<3;l++) for (j=0;j<6;j++)
-      D[i + 6 * *n * l + *n * j] = x*Mi[3+l + 6*j];
-    
-  }
-  /* free memory... */
-  free(M);free(Mi);free(Vt);
-  free(sv);free(dist);free(area);
-} /* end of sparse_penalty1 */
 
 
 /************************************************************/
@@ -1393,7 +1448,7 @@ void sparse_penalty1(double *X,int *n,int *d,double *D,int *ni,int *k,int *m,int
    deHoog and Hutchinson, 1987 and Hutchinson and deHoog,
    1985.... All O(n) by exploiting band structure. */ 
 /************************************************************/
-// inline
+
 void QTz(int i,int j,double c,double s, double *z) { 
 /* applies a Givens rotation to z */   
   double temp;
@@ -1402,7 +1457,6 @@ void QTz(int i,int j,double c,double s, double *z) {
   z[i]=temp;
 }
 
-//inline 
 void givens(double a, double b,double *c,double *s) {
 /* Obtain Givens rotation c and s to annihilate b (setting 
    a = sqrt(a^2 + b^2))*/
@@ -1418,14 +1472,15 @@ void givens(double a, double b,double *c,double *s) {
     *s=(*c)*t;
   }
 }
+
 void ss_setup(double *ub,double *lb,double *x,double *w, int *n) {
 /* The upper and lower bands ,ub and lb of the matrix C of H&dH (3.2) are 
    set up the lower band coming from the Choleski decomposition of H (3.1)*/
   double *h,*hh,*hh1,*lb1,*ub2,*ub1;
   int i;
-  h = (double *)calloc((size_t) *n,sizeof(double));
-  hh=(double *)calloc((size_t) *n,sizeof(double));
-  hh1=(double *)calloc((size_t) *n,sizeof(double));
+  h = (double *)R_chk_calloc((size_t) *n,sizeof(double));
+  hh=(double *)R_chk_calloc((size_t) *n,sizeof(double));
+  hh1=(double *)R_chk_calloc((size_t) *n,sizeof(double));
   for (i=0;i< *n-1;i++) h[i]=x[i+1]-x[i];
   for (i=0;i< *n-2;i++) hh[i]=2.0*(h[i]+h[i+1])/3.0;
   for (i=0;i< *n-3;i++) hh1[i]=h[i+1]/3.0;
@@ -1444,7 +1499,7 @@ void ss_setup(double *ub,double *lb,double *x,double *w, int *n) {
     ub1[i] = -w[i+1]*(1/h[i]+1/h[i+1]);
     ub2[i] = w[i+2]/h[i+1];
   }
-  free(h);free(hh);free(hh1);
+  R_chk_free(h);R_chk_free(hh);R_chk_free(hh1);
 }
 
 
@@ -1474,7 +1529,7 @@ void sspl_construct(double *lambda,double *x,double *w,double *U,double *V,
    x values within tol of each other are treated as duplicates.
 */   
   double *ub,rho,*p,*p1,*ub1,*ub2,*lb1,c,s,*U0s,*U0c,*U1s,*U1c,
-    *V0s,*V0c,*V1s,*V1c,upper,w2,
+    *V0s,*V0c,*V1s,*V1c,upper,w2=0.0,
     L11=0.0,L12=0.0,L13,L21,L22,L23,L31,L32,L33,X1,X2,X3,Lt,temp;
   int i,k,ok;
   /* first check for duplicates */
@@ -1494,7 +1549,7 @@ void sspl_construct(double *lambda,double *x,double *w,double *U,double *V,
 
   for (i=0;i<*n;i++) w[i] = 1/w[i];  /* convert to H and de H convention */
 
-  ub = (double *)calloc((size_t)(*n * 3),sizeof(double));
+  ub = (double *)R_chk_calloc((size_t)(*n * 3),sizeof(double));
   ss_setup(ub,lb,x,w,n);
   rho = sqrt(*lambda);
   /* multiply the upper band of the matrix by the smoothing parameter */
@@ -1621,7 +1676,7 @@ void sspl_construct(double *lambda,double *x,double *w,double *U,double *V,
   diagA[1]=L22*L22+L12*L12;
   diagA[0]=L11*L11;
   for (i=0;i<*n;i++) diagA[i] = 1.0 - diagA[i];
-  free(ub);
+  R_chk_free(ub);
 }
 
 
@@ -1638,7 +1693,7 @@ void sspl_apply(double *y,double *x,double *w,double *U,double *V,int *n,int *nf
   double *Wy,*U0s,*U0c,*U1s,*U1c,
     *V0s,*V0c,*V1s,*V1c,*p,*p1,*p2,w2,*xx;
   if (*nf > *n) { /* deal with duplicates */
-   xx = (double *)calloc((size_t)*nf,sizeof(double));
+   xx = (double *)R_chk_calloc((size_t)*nf,sizeof(double));
    for (p=x,p1=x + *nf,p2=xx;p<p1;p++,p2++) *p2 = *p;
    k=0;ok=1;
    for (i=1;i<*nf;i++) if (xx[k] + *tol < xx[i]) { 
@@ -1653,14 +1708,14 @@ void sspl_apply(double *y,double *x,double *w,double *U,double *V,int *n,int *nf
      ok=0;
    }
    if (!ok) { w[k] = sqrt(w2);y[k]/=w2;}
-   free(xx);
+   R_chk_free(xx);
   }
 
   for (i=0;i<*n;i++) w[i] = 1/w[i];  /* convert to H and de H convention */
 
   /* ... y now contains weighted averages at unique x values, w corresponding weights */
   
-  Wy = (double *)calloc((size_t) 2 * *n,sizeof(double));
+  Wy = (double *)R_chk_calloc((size_t) 2 * *n,sizeof(double));
   for (i=0;i < *n;i++) Wy[i] = y[i]/w[i];
   /* set up pointers to various rotation pairs.. */
   U0s = U;U0c = U + *n;
@@ -1708,7 +1763,7 @@ void sspl_apply(double *y,double *x,double *w,double *U,double *V,int *n,int *nf
   } else {
     for (i=0;i<*n;i++) y[i] = Wy[i];
   }
-  free(Wy);
+  R_chk_free(Wy);
 }
 
 void sspl_mapply(double *y,double *x,double *w,double *U,double *V,int *n,int *nf,double *tol,int *m) {
@@ -1717,8 +1772,8 @@ void sspl_mapply(double *y,double *x,double *w,double *U,double *V,int *n,int *n
   double *xx,*ww,*p,*p1,*p2;
   if (*m > 1 && *nf != *n) xw_store=1;
   if (xw_store) { /* must store original x and w */
-    xx = (double *)calloc((size_t)*nf,sizeof(double));
-    ww = (double *)calloc((size_t)*nf,sizeof(double));
+    xx = (double *)R_chk_calloc((size_t)*nf,sizeof(double));
+    ww = (double *)R_chk_calloc((size_t)*nf,sizeof(double));
     for (p=xx,p1=xx + *nf,p2=x;p<p1;p++,p2++) *p = *p2;
     for (p=ww,p1=ww + *nf,p2=w;p<p1;p++,p2++) *p = *p2;
   } 
@@ -1730,7 +1785,7 @@ void sspl_mapply(double *y,double *x,double *w,double *U,double *V,int *n,int *n
     sspl_apply(y,x,w,U,V,n,nf,tol); /* smooth y */
     y += *nf;
   }
-  if (xw_store) {free(xx);free(ww);}
+  if (xw_store) {R_chk_free(xx);R_chk_free(ww);}
 }
 
 void ss_coeffs(double *lb,double *a,double *b,double *c,double *d,double *x, int *n) { 
@@ -1743,9 +1798,9 @@ void ss_coeffs(double *lb,double *a,double *b,double *c,double *d,double *x, int
  */
   double *GTA,*z,*h,*lb1;
   int i;
-  GTA=(double *)calloc((size_t)*n,sizeof(double));
-  z=(double *)calloc((size_t)*n,sizeof(double));
-  h=(double *)calloc((size_t)*n-1,sizeof(double));
+  GTA=(double *)R_chk_calloc((size_t)*n,sizeof(double));
+  z=(double *)R_chk_calloc((size_t)*n,sizeof(double));
+  h=(double *)R_chk_calloc((size_t)*n-1,sizeof(double));
   for (i=0;i<*n-1;i++) h[i]=x[i+1]-x[i];
   for (i=0;i<*n-2;i++)
   GTA[i]=a[i]/h[i]-a[i+1]*(1/h[i]+1/h[i+1])+a[i+2]/h[i+1];
@@ -1760,7 +1815,7 @@ void ss_coeffs(double *lb,double *a,double *b,double *c,double *d,double *x, int
   { d[i]=(c[i+1]-c[i])/(3*h[i]);
     b[i]=(a[i+1]-a[i])/h[i]-c[i]*h[i]-d[i]*h[i]*h[i];
   }
-  free(GTA);free(z);free(h);
+  R_chk_free(GTA);R_chk_free(z);R_chk_free(h);
 }
 
 

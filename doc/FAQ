@@ -1,7 +1,6 @@
 R FAQ
 Frequently Asked Questions on R
-Version 2.15.2012-09-19
-ISBN 3-900051-08-9
+Version 3.0.2013-09-16
 Kurt Hornik
 
 
@@ -126,7 +125,7 @@ questions about R.
 1.1 Legalese
 ============
 
-This document is copyright (C) 1998-2012 by Kurt Hornik.
+This document is copyright (C) 1998-2013 by Kurt Hornik.
 
    This document is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the Free
@@ -159,14 +158,13 @@ site (*note What is CRAN?::).
 1.3 Citing this document
 ========================
 
-In publications, please refer to this FAQ as Hornik (2012), "The R FAQ",
-and give the above, _official_ URL and the ISBN 3-900051-08-9:
+In publications, please refer to this FAQ as Hornik (2013), "The R FAQ",
+and give the above, _official_ URL:
 
      @Misc{,
        author        = {Kurt Hornik},
        title         = {The {R} {FAQ}},
-       year          = {2012},
-       note          = {{ISBN} 3-900051-08-9},
+       year          = {2013},
        url           = {http://CRAN.R-project.org/doc/FAQ/R-FAQ.html}
      }
 
@@ -258,7 +256,7 @@ i386-freebsd, rs6000-ibm-aix, and sparc-sun-solaris.
 2.3 What is the current version of R?
 =====================================
 
-The current released version is 2.15.1.  Based on this
+The current released version is 3.0.2.  Based on this
 `major.minor.patchlevel' numbering scheme, there are two development
 versions of R, a patched version of the current release (`r-patched') and
 one working towards the next minor or eventually major (`r-devel') releases
@@ -354,15 +352,14 @@ install-dvi', `make install-info' and `make install-pdf', respectively.
 --------------------------------------
 
 The `bin/windows' directory of a CRAN site contains binaries for a base
-distribution and a large number of add-on packages from CRAN to run on
-Windows 2000 and later (including 64-bit versions of Windows) on ix86 and
-x86_64 chips. The Windows version of R was created by Robert Gentleman and
-Guido Masarotto, and is now being developed and maintained by Duncan
-Murdoch <murdoch@stats.uwo.ca> and Brian D. Ripley
-<Brian.Ripley@R-project.org>.
+distribution and add-on packages from CRAN to run on Windows XP and later
+(including 64-bit versions of Windows) on ix86 and x86_64 chips. The
+Windows version of R was created by Robert Gentleman and Guido Masarotto,
+and is now being developed and maintained by Duncan Murdoch
+<murdoch@stats.uwo.ca> and Brian D. Ripley <Brian.Ripley@R-project.org>.
 
-   For most installations the Windows installer program will be the easiest
-tool to use.
+   The same directory has links to snapshots of the r-patched and r-devel
+versions of R.
 
    See the "R for Windows FAQ"
 (http://CRAN.R-project.org/bin/windows/base/rw-FAQ.html) for more details.
@@ -371,21 +368,15 @@ tool to use.
 ----------------------------------------
 
 The `bin/macosx' directory of a CRAN site contains a standard Apple
-installer package inside a disk image named `R.dmg'.  Once downloaded and
-executed, the installer will install the current non-developer release of
-R.  RAqua is a native Mac OS X Darwin version of R with a R.app Mac OS X
-GUI.  Inside `bin/macosx/powerpc/contrib/X.Y' there are prebuilt binary
-packages (for powerpc version of Mac OS X) to be used with RAqua
-corresponding to the "X.Y" release of R. The installation of these packages
-is available through the "Package" menu of the R.app GUI.  This port of R
-for Mac OS X is maintained by Stefano Iacus <Stefano.Iacus@R-project.org>.
-The "R for Mac OS X FAQ
+installer package to run on OS X 10.6 (`Snow Leopard') and later.  Once
+downloaded and executed, the installer will install the current release of
+R and a R.app Mac OS X GUI.  This port of R for Mac OS X is maintained by
+Simon Urbanek <Simon.Urbanek@R-project.org> (and previously by Stefano
+Iacus).  The "R for Mac OS X FAQ
 (http://CRAN.R-project.org/bin/macosx/RMacOSX-FAQ.html) has more details.
 
-   The `bin/macos' directory of a CRAN site contains bin-hexed (`hqx') and
-stuffit (`sit') archives for a base distribution and a large number of
-add-on packages of R 1.7.1 to run under Mac OS 8.6 to Mac OS 9.2.2.  This
-port of R for Macintosh is no longer supported.
+   Snapshots of the r-patched and r-devel versions of R are available as
+Apple installer packages at `http://r.research.att.com'.
 
 2.6 Are there Unix-like binaries for R?
 =======================================
@@ -424,7 +415,7 @@ version of R is released, there may be a delay of up to 2 weeks until the
 Fedora RPM becomes publicly available, as it must pass through the
 statutory Fedora review process.
 
-   See `http://cran.r-project.org/bin/linux/suse/README.html' for
+   See `http://CRAN.R-project.org/bin/linux/suse/README.html' for
 information about RPMs for openSUSE.
 
    No other binary distributions are currently publically available via
@@ -530,8 +521,7 @@ To cite R in publications, use
        author       = {{R Core Team}},
        organization = {R Foundation for Statistical Computing},
        address      = {Vienna, Austria},
-       year         = 2012,
-       note         = {{ISBN} 3-900051-07-0},
+       year         = 2013,
        url          = {http://www.R-project.org}
      }
 
@@ -613,8 +603,8 @@ The "Comprehensive R Archive Network" (CRAN) is a collection of sites which
 carry identical material, consisting of the R distribution(s), the
 contributed extensions, documentation for R, and binaries.
 
-   The CRAN master site at Wirtschaftsuniversität Wien, Austria, can be
-found at the URL
+   The CRAN master site at WU (Wirtschaftsuniversität Wien) in Austria can
+be found at the URL
 
      `http://CRAN.R-project.org/'
 
@@ -644,17 +634,6 @@ tar files, a wealth of additional contributed code, as well as prebuilt
 binaries for various operating systems (Linux, Mac OS Classic, Mac OS X,
 and MS Windows).  CRAN also provides access to documentation on R, existing
 mailing lists and the R Bug Tracking system.
-
-   To "submit" to CRAN, check that your submission meets the CRAN
-Repository Policy (http://CRAN.R-project.org/web/packages/policies.html),
-upload to `ftp://CRAN.R-project.org/incoming/' and send an email to
-<CRAN@R-project.org>.  Note that CRAN generally does not accept submissions
-of precompiled binaries due to security reasons.  In particular, binary
-packages for Windows and Mac OS X are provided by the respective binary
-package maintainers.
-
-     Note: It is very important that you indicate the copyright (license)
-     information (GPL-2, GPL-3, BSD, Artistic, ...) in your submission.
 
    Please always use the URL of the master site when referring to CRAN.
 
@@ -1298,8 +1277,7 @@ resource.
    Rwui (http://sysbio.mrc-bsu.cam.ac.uk/Rwui) is a web application to
 create user-friendly web interfaces for R scripts.  All code for the web
 interface is created automatically.  There is no need for the user to do
-any extra scripting or learn any new scripting techniques.  Rwui can also
-be found at `http://rwui.cryst.bbk.ac.uk'.
+any extra scripting or learn any new scripting techniques.
 
    The *R.rsp* (http://CRAN.R-project.org/package=R.rsp) package by Henrik
 Bengtsson introduces "R Server Pages".  Analogous to Java Server Pages, an
@@ -2487,7 +2465,7 @@ Okular (Linux/KDE)
      There is not an option in the GUI to enable/disable anti-aliasing.
      From a console command line, use:
           $ kwriteconfig --file okularpartrc --group 'Dlg Performance' \
-                         --key TextAntialias Disabled
+                         --key GraphicsAntialias Disabled
      Then restart Okular.  Change the final word to `Enabled' to restore
      the original setting.
 
@@ -2589,7 +2567,7 @@ In most cases, typing the name of the function will print its source code.
 However, code is sometimes hidden in a namespace, or compiled.  For a
 complete overview on how to access source code, see Uwe Ligges (2006),
 "Help Desk: Accessing the sources", _R News_, *6/4*, 43-45
-(`http://cran.r-project.org/doc/Rnews/Rnews_2006-4.pdf').
+(`http://CRAN.R-project.org/doc/Rnews/Rnews_2006-4.pdf').
 
 7.41 Why does summary() report strange results for the R^2 estimate when I fit a linear model with no intercept?
 ================================================================================================================

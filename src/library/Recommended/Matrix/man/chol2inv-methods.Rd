@@ -54,4 +54,3 @@ stopifnot(all(chol2inv(cM) \%*\% M - Diagonal(nrow(M))) < 1e-10)
 }
 \keyword{methods}
 \keyword{algebra}
-

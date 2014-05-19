@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -84,7 +84,7 @@ namespace CXXR {
 	 * @return Index of the stack cell thus created, for
 	 *          subsequent use with reprotect().
 	 */
-	static unsigned int protect(RObject* node)
+	static size_t protect(RObject* node)
 	{
 	    return s_stack->push(node);
 	}
@@ -106,7 +106,7 @@ namespace CXXR {
 	 *          the current size of the C pointer protection
 	 *          stack (checked).
 	 */
-	static void reprotect(RObject* node, unsigned int index)
+	static void reprotect(RObject* node, size_t index)
 	{
 	    s_stack->retarget(node, index);
 	}
@@ -209,7 +209,7 @@ extern "C" {
 
     /* ***** C interface ***** */
 
-    typedef unsigned int PROTECT_INDEX;
+    typedef size_t PROTECT_INDEX;
 
     /** @brief Push a node pointer onto the C pointer protection stack.
      *
@@ -315,7 +315,7 @@ extern "C" {
 #else
     inline void Rf_unprotect(int count)
     {
-	CXXR::ProtectStack::unprotect(count);
+	CXXR::ProtectStack::unprotect(static_cast<unsigned int>(count));
     }
 #endif	
 

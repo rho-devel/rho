@@ -1,6 +1,8 @@
 #  File src/library/utils/R/unix/bug.report.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -52,7 +54,7 @@ bug.report <- function(subject = "", address,
 
     DESC <- packageDescription(package, lib.loc)
     if (!inherits(DESC, "packageDescription"))
-        stop(gettextf("Package %s: DESCRIPTION not found",
+        stop(gettextf("Package %s: DESCRIPTION file not found",
                       sQuote(package)), domain = NA)
     info <- paste0(c("Package", " Version", " Maintainer", " Built"),
 		   ": ",
@@ -66,7 +68,7 @@ bug.report <- function(subject = "", address,
             "to open.  The information above may be useful in your report. If the web\n",
             "page doesn't work, you should send email to the maintainer,\n",
             DESC$Maintainer, ".\n",
-            sep="")
+            sep = "")
         flush.console()
         Sys.sleep(2)
         browseURL(DESC$BugReports)

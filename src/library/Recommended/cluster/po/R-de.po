@@ -1,14 +1,13 @@
 # Translation of src/library/Recommended/cluster/po/R-cluster.pot to German
-# Copyright (C) 2011 The R Foundation
+# Copyright (C) 2013 The R Foundation
 # This file is distributed under the same license as the R package.
-# Detlef Steuer <detlef.steuer@hsu-hh.de>, 2011.
-#
+# Detlef Steuer <detlef.steuer@hsu-hh.de>, 2013.
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.14.0\n"
-"Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2012-01-18 12:26\n"
-"PO-Revision-Date: 2011-10-16 19:32+0200\n"
+"Project-Id-Version: R 3.0.0\n"
+"Report-Msgid-Bugs-To: bugs.r-project.org\n"
+"POT-Creation-Date: 2012-08-21 22:49\n"
+"PO-Revision-Date: 2013-03-18 10:39+0100\n"
 "Last-Translator: Detlef Steuer <steuer@hsu-hh.de>\n"
 "Language-Team: R Core Team <r-core@r-project.org\n"
 "Language: \n"
@@ -58,18 +57,6 @@ msgstr "'samples' sollte mindestens 1 sein"
 
 msgid "when 'medoids.x' is FALSE, 'keep.data' must be too"
 msgstr "wenn 'medoids.x' FALSE ist, dann muss es auch 'keep.data' sein"
-
-msgid "Observation %d has *only* NAs --> omit it for clustering"
-msgstr "Beobachtung %d hat *nur* NAs --> ausgelassen für Clustering"
-
-msgid "Observations %s"
-msgstr "Beobachtungen %s"
-
-msgid "%d observations (%s ...)"
-msgstr "%d Beobachtungen (%s ...)"
-
-msgid "have *only* NAs --> na.omit() them for clustering!"
-msgstr "haben *nur* NAs --> na.omit() diese für das Clustern"
 
 msgid "Each of the random samples contains objects between which"
 msgstr "Jede der Zufallsstichproben enthält Objekte, zwischen denen"
@@ -135,15 +122,6 @@ msgstr "binäre Variable(n)"
 
 msgid "treated as interval scaled"
 msgstr "als intervallskaliert behandelt"
-
-msgid "setting 'logical' variable"
-msgstr "setze 'logical' Variable"
-
-msgid "s"
-msgstr "n"
-
-msgid "to type 'asymm'"
-msgstr "auf Typ 'asymm'"
 
 msgid "x"
 msgstr "x"
@@ -228,6 +206,9 @@ msgstr "x muss eine Matrix oder Datafram sein"
 
 msgid "All variables must be binary (factor with 2 levels)."
 msgstr "Alle Variablen müssen binär sein (Faktor mit 2 Stufen)"
+
+msgid "No clustering performed,"
+msgstr "Clustering nicht durchgeführt,"
 
 msgid "an object was found with all values missing."
 msgstr "Objekt gefunden  bei dem alle Werte fehlend sind"
@@ -341,3 +322,26 @@ msgstr "unzulässiges 'silhouette' Objekt"
 
 msgid "No valid silhouette information (#{clusters} =? 1)"
 msgstr "keine gültige Silhouetteninformation (#{clusters} =? 1)"
+
+msgid "setting 'logical' variable %s to type 'asymm'"
+msgid_plural "setting 'logical' variables %s to type 'asymm'"
+msgstr[0] "setze 'logical' Variable %s auf Typ 'asymm'"
+msgstr[1] "setze 'logical' Variablen %s auf Typ 'asymm'"
+
+#~ msgid "Observation %d has *only* NAs --> omit it for clustering"
+#~ msgstr "Beobachtung %d hat *nur* NAs --> ausgelassen für Clustering"
+
+#~ msgid "Observations %s"
+#~ msgstr "Beobachtungen %s"
+
+#~ msgid "%d observations (%s ...)"
+#~ msgstr "%d Beobachtungen (%s ...)"
+
+#~ msgid "have *only* NAs --> na.omit() them for clustering!"
+#~ msgstr "haben *nur* NAs --> na.omit() diese für das Clustern"
+
+#~ msgid "s"
+#~ msgstr "n"
+
+#~ msgid "to type 'asymm'"
+#~ msgstr "auf Typ 'asymm'"

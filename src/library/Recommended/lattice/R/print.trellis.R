@@ -260,7 +260,6 @@ plot.trellis <-
         on.exit(lattice.options(oopt), add = TRUE)
     }
 
-
     ## We'll also allow arguments to print.trellis (or plot.trellis)
     ## to be included within a trellis object.  Partial matching is
     ## not done.
@@ -294,8 +293,14 @@ plot.trellis <-
     on.exit(lattice.setStatus(print.more = more), add = TRUE)
     usual  <- (is.null(position) && is.null(split))
 
-    ## This means this plot will be the first one on a new page, so reset counter
-    if (new) lattice.setStatus(plot.index = 0L)
+    ## This means this plot will be the first one on a new page, so
+    ## delete all previously recorded information and reset counter
+    if (new)
+    {
+        lattice.setStatus(.defaultLatticeStatus(), clean.first = TRUE)
+        ## .LatticeEnv$lattice.status <- .defaultLatticeStatus()
+        lattice.setStatus(plot.index = 0L)
+    }
 
     ## get default prefix for grid viewport/object names
     pindex <- 1L + lattice.getStatus("plot.index")
@@ -335,10 +340,16 @@ plot.trellis <-
     else
         lattice.setStatus(current.plot.saved = FALSE, prefix = prefix)
 
+    ## Use general grid parameters in 'grid.pars', but for historical
+    ## reasons, override by 'trellis.par.get("fontsize")$text' if set
+    tp.fontsize <- trellis.par.get("fontsize")$text
     global.gpar <-
-        do.call(gpar,
-                updateList(trellis.par.get("grid.pars"),
-                           list(fontsize = trellis.par.get("fontsize")$text)))
+        if (is.null(tp.fontsize))
+            do.call(gpar, trellis.par.get("grid.pars"))
+        else 
+            do.call(gpar,
+                    updateList(trellis.par.get("grid.pars"),
+                               list(fontsize = tp.fontsize)))
 
     if (!is.null(position))
     {

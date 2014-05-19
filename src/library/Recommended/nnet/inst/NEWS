@@ -19,6 +19,8 @@ This file documents software changes since the third edition.
 - added logLik() method for multinom.
 - summary() for multinom now defaults to correlation=FALSE.
 - nnet() reports on 'convergence'.
-- confint.multinom() works better with a non-default 'parm'
+- confint.multinom() works better with a non-default 'parm'.
 - multinom() and nnet(softmax=TRUE) give an explicit error message for
   one-category responses.
+- the loglik() method for multinom() returns an "nobs" attribute. 
+

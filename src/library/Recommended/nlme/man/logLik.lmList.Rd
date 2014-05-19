@@ -38,7 +38,7 @@
   \code{object}. 
 }
 
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 
 \seealso{\code{\link{lmList}},
   \code{\link{logLik.lme}},

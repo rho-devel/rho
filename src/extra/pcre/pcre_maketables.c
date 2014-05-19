@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -82,12 +82,15 @@ Arguments:   none
 Returns:     pointer to the contiguous block of data
 */
 
-#ifdef COMPILE_PCRE8
+#if defined COMPILE_PCRE8
 const unsigned char *
 pcre_maketables(void)
-#else
+#elif defined COMPILE_PCRE16
 const unsigned char *
 pcre16_maketables(void)
+#elif defined COMPILE_PCRE32
+const unsigned char *
+pcre32_maketables(void)
 #endif
 {
 unsigned char *yield, *p;
@@ -143,7 +146,7 @@ within regexes. */
 for (i = 0; i < 256; i++)
   {
   int x = 0;
-  if (i != 0x0b && isspace(i)) x += ctype_space;
+  if (i != CHAR_VT && isspace(i)) x += ctype_space;
   if (isalpha(i)) x += ctype_letter;
   if (isdigit(i)) x += ctype_digit;
   if (isxdigit(i)) x += ctype_xdigit;

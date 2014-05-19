@@ -1,6 +1,8 @@
 #  File src/library/base/R/get.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -15,16 +17,16 @@
 #  http://www.r-project.org/Licenses/
 
 get <-
-    function (x, pos = -1, envir = as.environment(pos), mode = "any",
+    function (x, pos = -1L, envir = as.environment(pos), mode = "any",
               inherits = TRUE)
     .Internal(get(x, envir, mode, inherits))
 
-mget <- function(x, envir, mode = "any",
-                 ifnotfound= list(function(x)
-				stop(paste0("value for '", x, "' not found"),
-				     call.=FALSE)),
-          inherits = FALSE)
-     .Internal(mget(x, envir, mode, ifnotfound, inherits))
+mget <- function(x, envir = as.environment(-1L), mode = "any",
+                 ifnotfound, inherits = FALSE)
+    .Internal(mget(x, envir, mode,
+                   if(missing(ifnotfound))
+                   list(function(x) stop(gettextf("value for %s not found", sQuote(x)), call. = FALSE)) else ifnotfound,
+                   inherits))
 
 ## DB's proposed name "getSlotOrComponent" is more precise but harder to type
 getElement <- function(object, name) {

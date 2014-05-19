@@ -1,6 +1,8 @@
 #  File src/library/utils/R/package.skeleton.R
 #  Part of the R package, http://www.R-project.org
 #
+#  Copyright (C) 1995-2012 The R Core Team
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -102,7 +104,7 @@ package.skeleton <-
 	file = description, sep = "")
     close(description)
 
-    if(!namespace)
+    if(!missing(namespace))
 	warning("From R 2.14.0 on, every package gets a NAMESPACE.",
 		" Argument 'namespace' is deprecated.", domain = NA)
     ## NAMESPACE
@@ -152,15 +154,16 @@ package.skeleton <-
         message("Saving functions and data ...", domain = NA)
         if(length(internalObjInds))
             dump(internalObjs,
-                 file = file.path(code_dir,
-                 sprintf("%s-internal.R", name)))
+                 file = file.path(code_dir, sprintf("%s-internal.R", name)),
+                 envir = environment)
         for(item in list){
             objItem <- get(item, envir = environment)
             if(is.function(objItem))  {
                 if(isS4(objItem))
-                    stop(gettextf("Generic functions and other S4 objects (e.g., '%s') cannot be dumped; use the code_files= argument", item), domain = NA)
+                    stop(gettextf("generic functions and other S4 objects (e.g., '%s') cannot be dumped; use the 'code_files' argument", item), domain = NA)
                 dump(item,
-                     file = file.path(code_dir, sprintf("%s.R", list0[item])))
+                     file = file.path(code_dir, sprintf("%s.R", list0[item])),
+                     envir = environment)
             }
             else       # we cannot guarantee this is a valid file name
                 try(save(list = item, envir = environment,
@@ -263,7 +266,7 @@ package.skeleton <-
             list0[!ok] <- paste0("z", list0[!ok])
         ## now on Mac/Windows lower/uppercase will collide too
         list1 <- tolower(list0)
-        list2 <- make.unique(list1, sep="_")
+        list2 <- make.unique(list1, sep = "_")
         changed <- (list2 != list1)
         list0[changed] <- list2[changed]
         list0

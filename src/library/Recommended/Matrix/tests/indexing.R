@@ -6,6 +6,7 @@ stopifnot(suppressPackageStartupMessages(require(Matrix)))
 
 source(system.file("test-tools.R", package = "Matrix"), keep.source = FALSE)
 ##-> identical3() etc
+cat("doExtras:",doExtras,"\n")
 
 if(interactive()) {
     options(error = recover, warn = 1)
@@ -14,7 +15,7 @@ if(interactive()) {
 } else {
     options(Matrix.verbose = TRUE, warn = 1)
 }
-
+
 
 ### Dense Matrices
 
@@ -160,9 +161,9 @@ m0 <- Matrix(m, nrow = 40)
 m1 <- add.simpleDimnames(m0)
 for(kind in c("n", "l", "d")) {
  for(m in list(m0,m1)) { ## -- with and without dimnames -------------------------
-    kClass <- paste(kind, "Matrix", sep="")
-    Ckind <- paste(kind, "gCMatrix", sep="")
-    Tkind <- paste(kind, "gTMatrix", sep="")
+    kClass <-paste0(kind, "Matrix"  )
+    Ckind <- paste0(kind, "gCMatrix")
+    Tkind <- paste0(kind, "gTMatrix")
     str(mC <- as(m, Ckind))
     str(mT <- as(as(as(m, kClass), "TsparseMatrix"), Tkind))
     mm <- as(mC, "matrix") # also logical or double
@@ -199,7 +200,7 @@ for(kind in c("n", "l", "d")) {
     ##
     ## set.seed(7)
     cat(" for(): ")
-    for(n in 1:50) {
+    for(n in 1:(if(doExtras) 50 else 5)) {
         chkAssign(mC, mm)
         chkAssign(mC[-3,-2], mm[-3,-2])
         cat(".")
@@ -234,7 +235,7 @@ stopifnot(as.logical(grep("indices.*sparse Matrices", er$message)))
 
 N <- nrow(T)
 set.seed(11)
-for(n in 1:50) {
+for(n in 1:(if(doExtras) 50 else 3)) {
     i <- sample(N, max(2, sample(N,1)), replace = FALSE)
     validObject(Tii <- T[i,i]) ; tTi <- t(T)[i,i]
     stopifnot(is(Tii, "dsTMatrix"), # remained symmetric Tsparse
@@ -268,7 +269,7 @@ diag(A.) <- 10 * (1:6)
 a. <- as(A., "matrix")
 ## More testing {this was not working for a long time..}
 set.seed(1)
-for(n in 1:100) {
+for(n in 1:(if(doExtras) 100 else 6)) {
     i <- sample(1:nrow(A), 3+2*rpois(1, lam=3), replace=TRUE)
     Aii  <- A[i,i]
     A.ii <- A.[i,i]
@@ -371,7 +372,7 @@ Nn <- as(N0, "nMatrix"); nn <- as(Nn,"matrix")
 
 set.seed(1)
 Nn0 <- Nn00; nn0 <- nn00
-for(i in 1:200) {
+for(i in 1:(if(doExtras) 200 else 25)) {
     Nn <- Nn0
     nn <- nn0
     i. <- getDuplIndex(nrow(N0), 6)
@@ -409,8 +410,8 @@ m0 <- Diagonal(5)
 stopifnot(identical(m0[2,], m0[,2]),
 	  identical(m0[,1], c(1,0,0,0,0)))
 ### Diagonal -- Sparse:
-(m1 <- as(m0, "TsparseMatrix")) # dtTMatrix
-(m2 <- as(m0, "CsparseMatrix")) # dtCMatrix
+(m1 <- as(m0, "TsparseMatrix")) # dtTMatrix unitriangular
+(m2 <- as(m0, "CsparseMatrix")) # dtCMatrix unitriangular
 m1g <- as(m1, "generalMatrix")
 stopifnot(is(m1g, "dgTMatrix"))
 assert.EQ.mat(m2[1:3,],    diag(5)[1:3,])
@@ -425,7 +426,9 @@ uTr[1,] <- 0
 assert.EQ.mat(uTr, cbind(0, rbind(0,diag(2))))
 
 M <- m0; M[1,] <- 0
-stopifnot(identical(M, Diagonal(x=c(0, rep(1,4)))))
+Z <- m0; Z[] <- 0; z <- array(0, dim(M))
+stopifnot(identical(M, Diagonal(x=c(0, rep(1,4)))),
+          all(Z == 0), Qidentical(as(Z, "matrix"), z))
 M <- m0; M[,3] <- 3 ; M ; stopifnot(is(M, "sparseMatrix"), M[,3] == 3)
 checkMatrix(M)
 M <- m0; M[1:3, 3] <- 0 ;M
@@ -435,19 +438,23 @@ stopifnot(identical(M, Diagonal(x=c(1,1, 0, 1,1))),
 
 M <- m1; M[1,] <- 0 ; M ; assert.EQ.mat(M, diag(c(0,rep(1,4))), tol=0)
 M <- m1; M[,3] <- 3 ; stopifnot(is(M,"sparseMatrix"), M[,3] == 3)
+Z <- m1; Z[] <- 0
 checkMatrix(M)
 M <- m1; M[1:3, 3] <- 0 ;M
 assert.EQ.mat(M, diag(c(1,1, 0, 1,1)), tol=0)
 T <- m1; T[1:3, 3] <- 10; checkMatrix(T)
-stopifnot(is(T, "triangularMatrix"), identical(T[,3], c(10,10,10,0,0)))
+stopifnot(is(T, "triangularMatrix"), identical(T[,3], c(10,10,10,0,0)),
+	  Qidentical(as(Z, "matrix"), z))
 
 M <- m2; M[1,] <- 0 ; M ; assert.EQ.mat(M, diag(c(0,rep(1,4))), tol=0)
 M <- m2; M[,3] <- 3 ; stopifnot(is(M,"sparseMatrix"), M[,3] == 3)
 checkMatrix(M)
+Z <- m2; Z[] <- 0
 M <- m2; M[1:3, 3] <- 0 ;M
 assert.EQ.mat(M, diag(c(1,1, 0, 1,1)), tol=0)
 T <- m2; T[1:3, 3] <- 10; checkMatrix(T)
-stopifnot(is(T, "dtCMatrix"), identical(T[,3], c(10,10,10,0,0)))
+stopifnot(is(T, "dtCMatrix"), identical(T[,3], c(10,10,10,0,0)),
+	  Qidentical(as(Z, "matrix"), z))
 showProc.time()
 
 
@@ -471,7 +478,7 @@ M[i] <- v; assert.EQ.mat(M,m) # dge
 D[i] <- v; assert.EQ.mat(D,m) # ddi -> dtT -> dgT
 s[i] <- v; assert.EQ.mat(s,m) # dtT -> dgT
 S[i] <- v; assert.EQ.mat(S,m); S # dtC -> dtT -> dgT -> dgC
-stopifnot(identical(s,D))
+stopifnot(Q.C.identical(D,s, checkClass=FALSE))
 ## logical
 eval(.iniDiag.example)
 m[L] <- z
@@ -572,7 +579,7 @@ mc0 <- mc
 mt0 <- as(mc0, "TsparseMatrix")
 m0  <- as(mc0, "matrix")
 set.seed(1); options(Matrix.verbose = FALSE)
-for(i in 1:50) {
+for(i in 1:(if(doExtras) 50 else 4)) {
     mc <- mc0; mt <- mt0 ; m <- m0
     ev <- 1:5 %% 2 == round(runif(1))# 0 or 1
     j <- sample(ncol(mc), 1 + round(runif(1)))
@@ -695,7 +702,7 @@ showProc.time()
 m.[ cbind(3:5, 1:3) ] <- 1:3
 stopifnot(m.[3,1] == 1, m.[4,2] == 2)
 nt. <- nt ; nt[rbind(2:3, 3:4, c(3,3))] <- FALSE
-s. <- m. ; m.[cbind(3:4,2:3)] <- 0 ## assigning 0 where there *is* 0 ..
+s. <- m. ; m.[cbind(3,4:6)] <- 0 ## assigning 0 where there *is* 0 ..
 stopifnot(identical(nt.,nt),       ## should not have changed
 	  identical(s., m.))
 x.x[ cbind(2:6, 2:6)] <- 12:16
@@ -807,6 +814,7 @@ validObject(spCol <- f[,5000, drop=FALSE])
 ## *not* identical(): as(spCol, "sparseVector")@length is "double"prec:
 stopifnot(all.equal(as(spCol, "sparseVector"),
                     as(sv,   "nsparseVector"), tol=0))
+if(doExtras) {#-----------------------------------------------------------------
 f[,5762] <- thisCol # now "fine" <<<<<<<<<< FIXME uses LARGE objects -- slow --
 ## is using  replCmat() in ../R/Csparse.R, then
 ##           replTmat() in ../R/Tsparse.R
@@ -832,5 +840,6 @@ for(nm in ls()) if(is(.m <- get(nm), "Matrix")) {
     checkMatrix(.m, verbose = FALSE)
 }
 showProc.time()
+}#--------------end if(doExtras) -----------------------------------------------
 
 if(!interactive()) warnings()

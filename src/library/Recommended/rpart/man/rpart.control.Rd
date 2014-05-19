@@ -1,7 +1,7 @@
 \name{rpart.control}
 \alias{rpart.control}
 \title{
-  Control for Rpart Models
+  Control for Rpart Fits
 }
 \description{
 Various parameters that control aspects of the \code{rpart} fit. 
@@ -25,7 +25,7 @@ rpart.control(minsplit = 20, minbucket = round(minsplit/3), cp = 0.01,
   \item{cp}{
     complexity parameter.  Any split that does not decrease the overall
     lack of fit by a factor of \code{cp} is not attempted.  For instance,
-    with \code{anova} splitting, this means that the overall Rsquare must
+    with \code{anova} splitting, this means that the overall R-squared must
     increase by \code{cp} at each step. The main role of this parameter
     is to save computing time by pruning off splits that are obviously
     not worthwhile. Essentially,the user informs the program that any
@@ -52,7 +52,8 @@ rpart.control(minsplit = 20, minbucket = round(minsplit/3), cp = 0.01,
     if all surrogates are missing the observation is not split.  For value
     \code{2} ,if all surrogates are missing, then send the observation in
     the majority direction.  A value of \code{0} corresponds to the action
-    of \code{tree}, and \code{2} to the recommendations of Breiman et.al.
+    of \code{tree}, and \code{2} to the recommendations of Breiman
+    \emph{et.al} (1984).
   }
   \item{xval}{
     number of cross-validations.

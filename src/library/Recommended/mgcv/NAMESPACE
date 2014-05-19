@@ -4,11 +4,11 @@ export(anova.gam, bam, bam.update, concurvity, cSplineDes,
        exclude.too.far,extract.lme.cov, extract.lme.cov2,
        formXtViX, full.score, formula.gam,fixDependence,fix.family.link,
        fix.family.var, fix.family.ls, fix.family.qf,fix.family.rd,   
-       gam, gam2derivative, 
+       fs.test,fs.boundary,gam, gam2derivative, 
        gam2objective,
        gamm, gam.check, gam.control,gam.fit3,
        gam.fit, gam.outer,gam.vcomp, gamSim , influence.gam, 
-       in.out,interpret.gam, 
+       in.out,inSide,interpret.gam, 
        gam.side,
        get.var,ldTweedie,
        initial.sp,logLik.gam,ls.size,
@@ -27,6 +27,9 @@ export(anova.gam, bam, bam.update, concurvity, cSplineDes,
        Predict.matrix.tprs.smooth,
        Predict.matrix.ts.smooth,
        Predict.matrix.sos.smooth,
+       Predict.matrix.soap.film,
+       Predict.matrix.sf,
+       Predict.matrix.sw,
        Predict.matrix.mrf.smooth,
        Predict.matrix.pspline.smooth,
        Predict.matrix.random.effect,
@@ -46,10 +49,13 @@ export(anova.gam, bam, bam.update, concurvity, cSplineDes,
        smooth.construct.re.smooth.spec,
        smooth.construct.mrf.smooth.spec,
        smooth.construct.sos.smooth.spec,
+       smooth.construct.so.smooth.spec,
+       smooth.construct.sf.smooth.spec,
+       smooth.construct.sw.smooth.spec,   
        smooth.construct.ad.smooth.spec,
        summary.gam,sp.vcov,
        spasm.construct,spasm.sp,spasm.smooth,
-       t2,te,tensor.prod.model.matrix,tensor.prod.penalties,
+       t2,te,ti,tensor.prod.model.matrix,tensor.prod.penalties,
        Tweedie,uniquecombs, vcov.gam, vis.gam)
 
 importFrom(grDevices,cm.colors,gray,heat.colors,terrain.colors,topo.colors)
@@ -63,11 +69,12 @@ importFrom(graphics,axis,box,contour,hist,lines,mtext, par, persp,plot,points,
 #           runif,termplot,terms,terms.formula, uniroot, 
 #           var,vcov)
 
-importFrom(stats,anova,influence,cooks.distance,logLik,vcov,residuals,predict,
-           model.matrix)
-importFrom(nlme,Dim,corMatrix,logDet,pdConstruct,pdFactor,pdMatrix)
-#importFrom(Matrix,t,mean,colMeans,colSums,chol,solve,diag)
-import(Matrix)
+importFrom(stats,anova,influence,cooks.distance,logLik,vcov,residuals,predict,model.matrix)
+#importFrom(nlme,Dim,corMatrix,logDet,pdConstruct,pdFactor,pdMatrix,getGroupsFormula,lme,varFixed,lmeControl)
+import(nlme)
+importMethodsFrom(Matrix,t,colMeans,colSums,chol,solve,lu,expand)
+importFrom(Matrix,Diagonal,sparseMatrix,Matrix)
+#import(Matrix)
 importFrom(methods,cbind2)
 
 S3method(anova, gam)

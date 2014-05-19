@@ -1,6 +1,6 @@
 
-R Under development (unstable) (2012-05-26 r59449) -- "Unsuffered Consequences"
-Copyright (C) 2012 The R Foundation for Statistical Computing
+R Under development (unstable) (2013-08-18 r63616) -- "Unsuffered Consequences"
+Copyright (C) 2013 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
@@ -23,7 +23,7 @@ Type 'q()' to quit R.
 > options(warn = 1)
 > library('MASS')
 > 
-> assign(".oldSearch", search(), pos = 'CheckExEnv')
+> base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
 > cleanEx()
 > nameEx("Insurance")
 > ### * Insurance
@@ -52,7 +52,7 @@ Coefficients:
 
 Degrees of Freedom: 63 Total (i.e. Null);  54 Residual
 Null Deviance:	    236.3 
-Residual Deviance: 51.42 	AIC: 388.7 
+Residual Deviance: 51.42 	AIC: 388.7
 > 
 > # same via loglm
 > loglm(Claims ~ District + Group + Age + offset(log(Holders)),
@@ -119,38 +119,38 @@ function (M)
 > nls(Correct/Trials ~ fp1(Loud, L75, scal), data = OME,
 +     start = c(L75=45, scal=3))
 Nonlinear regression model
-  model:  Correct/Trials ~ fp1(Loud, L75, scal) 
-   data:  OME 
+  model: Correct/Trials ~ fp1(Loud, L75, scal)
+   data: OME
    L75   scal 
 44.149  3.775 
  residual sum-of-squares: 69.88
 
 Number of iterations to convergence: 4 
-Achieved convergence tolerance: 7.016e-06 
+Achieved convergence tolerance: 7.016e-06
 > nls(Correct/Trials ~ fp1(Loud, L75, scal),
 +     data = OME[OME$Noise == "coherent",],
 +     start=c(L75=45, scal=3))
 Nonlinear regression model
-  model:  Correct/Trials ~ fp1(Loud, L75, scal) 
-   data:  OME[OME$Noise == "coherent", ] 
+  model: Correct/Trials ~ fp1(Loud, L75, scal)
+   data: OME[OME$Noise == "coherent", ]
    L75   scal 
 47.993  1.259 
  residual sum-of-squares: 30.35
 
 Number of iterations to convergence: 5 
-Achieved convergence tolerance: 4.895e-06 
+Achieved convergence tolerance: 4.895e-06
 > nls(Correct/Trials ~ fp1(Loud, L75, scal),
 +     data = OME[OME$Noise == "incoherent",],
 +     start = c(L75=45, scal=3))
 Nonlinear regression model
-  model:  Correct/Trials ~ fp1(Loud, L75, scal) 
-   data:  OME[OME$Noise == "incoherent", ] 
+  model: Correct/Trials ~ fp1(Loud, L75, scal)
+   data: OME[OME$Noise == "incoherent", ]
   L75  scal 
 38.87  2.17 
  residual sum-of-squares: 23.73
 
 Number of iterations to convergence: 11 
-Achieved convergence tolerance: 3.846e-06 
+Achieved convergence tolerance: 3.846e-06
 > 
 > # individual fits for each experiment
 > 
@@ -194,12 +194,12 @@ Noiseincoherent     -4.87352    1.11247  -4.381 1.92e-05 ***
 Noisecoherent:Age   -0.02785    0.02349  -1.186    0.237    
 Noiseincoherent:Age -0.12219    0.02589  -4.719 4.50e-06 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Residual standard error: 3.774 on 196 degrees of freedom
   (17 observations deleted due to missingness)
-Multiple R-squared: 0.5246,	Adjusted R-squared: 0.5173 
-F-statistic: 72.09 on 3 and 196 DF,  p-value: < 2.2e-16 
+Multiple R-squared:  0.5246,	Adjusted R-squared:  0.5173 
+F-statistic: 72.09 on 3 and 196 DF,  p-value: < 2.2e-16
 
 > summary(lm(L75 ~ Noise/(Age + OME), data = OMEif,
 +            subset = (Age >= 30 & Age <= 60),
@@ -222,12 +222,12 @@ Noiseincoherent:Age    -0.15155    0.04151  -3.651  0.00039 ***
 Noisecoherent:OMElow    0.45103    1.07594   0.419  0.67583    
 Noiseincoherent:OMElow -0.14075    1.24537  -0.113  0.91021    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Residual standard error: 3.7 on 119 degrees of freedom
   (17 observations deleted due to missingness)
-Multiple R-squared: 0.6073,	Adjusted R-squared: 0.5908 
-F-statistic: 36.81 on 5 and 119 DF,  p-value: < 2.2e-16 
+Multiple R-squared:  0.6073,	Adjusted R-squared:  0.5908 
+F-statistic: 36.81 on 5 and 119 DF,  p-value: < 2.2e-16
 
 > 
 > # Or fit by weighted least squares
@@ -238,26 +238,26 @@ F-statistic: 36.81 on 5 and 119 DF,  p-value: < 2.2e-16
 +     data = OME[OME$Noise == "coherent",],
 +     start = c(L75=45, scal=3))
 Nonlinear regression model
-  model:  0 ~ fpl75(Correct, Trials, Loud, L75, scal) 
-   data:  OME[OME$Noise == "coherent", ] 
+  model: 0 ~ fpl75(Correct, Trials, Loud, L75, scal)
+   data: OME[OME$Noise == "coherent", ]
    L75   scal 
 47.798  1.296 
  residual sum-of-squares: 91.72
 
 Number of iterations to convergence: 5 
-Achieved convergence tolerance: 9.302e-06 
+Achieved convergence tolerance: 9.302e-06
 > nls(0 ~ fpl75(Correct, Trials, Loud, L75, scal),
 +     data = OME[OME$Noise == "incoherent",],
 +     start = c(L75=45, scal=3))
 Nonlinear regression model
-  model:  0 ~ fpl75(Correct, Trials, Loud, L75, scal) 
-   data:  OME[OME$Noise == "incoherent", ] 
+  model: 0 ~ fpl75(Correct, Trials, Loud, L75, scal)
+   data: OME[OME$Noise == "incoherent", ]
    L75   scal 
 38.553  2.078 
  residual sum-of-squares: 60.19
 
 Number of iterations to convergence: 8 
-Achieved convergence tolerance: 4.55e-06 
+Achieved convergence tolerance: 4.55e-06
 > 
 > # Test to see if the curves shift with age
 > fpl75age <- deriv(~sqrt(n)*(r/n -  0.5 - 0.5/(1 +
@@ -309,7 +309,7 @@ Achieved convergence tolerance: 4.55e-06
 > 
 > cleanEx()
 
-detaching ‘package:nlme’
+detaching 'package:nlme'
 
 > nameEx("Skye")
 > ### * Skye
@@ -387,7 +387,7 @@ Sex     1    0.5969 106.190 -42.483  0.8094 0.3698057
 Age     3    4.7469 102.040 -44.303  2.2019 0.0904804 .  
 Lrn     1    0.0043 106.783 -41.670  0.0058 0.9392083    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > 
 > house.glm0 <- glm(Freq ~ Infl*Type*Cont + Sat, family=poisson,
 +                    data=housing)
@@ -402,7 +402,7 @@ Infl:Sat  4   111.08 512.05 106.371 < 2.2e-16 ***
 Type:Sat  6   156.79 561.76  60.669 3.292e-11 ***
 Cont:Sat  2   212.33 609.30   5.126   0.07708 .  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > house.glm1 <- update(house.glm0, . ~ . + Sat*(Infl+Type+Cont))
 > addterm(house.glm1, ~. + Sat:(Infl+Type+Cont)^2, test = "Chisq")
 Single term additions
@@ -416,7 +416,7 @@ Infl:Type:Sat 12   16.107 457.08 22.5550 0.03175 *
 Infl:Cont:Sat  4   37.472 462.44  1.1901 0.87973  
 Type:Cont:Sat  6   28.256 457.23 10.4064 0.10855  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > 
 > 
 > 
@@ -473,7 +473,7 @@ Eth:Age:Sex  3   4.8218       123     177.26  0.185319
 Eth:Lrn:Sex  1   3.3160       122     173.94  0.068608 .  
 Age:Lrn:Sex  2   6.3941       120     167.55  0.040882 *  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > 
 > 
 > 
@@ -529,7 +529,7 @@ week              -0.11814    0.04460  -2.649  0.00807 **
 trtdrug:week      -0.01722    0.10570  -0.163  0.87061    
 trtencourage:week -0.07043    0.10964  -0.642  0.52060    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 (Dispersion parameter for binomial family taken to be 1)
 
@@ -555,7 +555,7 @@ trtdrug      -1.10667    0.42519  -2.603  0.00925 **
 trtencourage  0.45502    0.42766   1.064  0.28735    
 week         -0.11577    0.04414  -2.623  0.00872 ** 
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 (Dispersion parameter for binomial family taken to be 1)
 
@@ -581,7 +581,7 @@ trtdrug          -1.1187     0.4288  -2.609  0.00909 **
 trtencourage      0.4815     0.4330   1.112  0.26614    
 I(week > 2)TRUE  -1.2949     0.4104  -3.155  0.00160 ** 
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 (Dispersion parameter for binomial family taken to be 1)
 
@@ -679,7 +679,7 @@ Number of Groups: 50
 > 
 > cleanEx()
 
-detaching ‘package:nlme’, ‘package:survival’, ‘package:splines’
+detaching 'package:nlme', 'package:survival', 'package:splines'
 
 > nameEx("bandwidth.nrd")
 > ### * bandwidth.nrd
@@ -740,8 +740,8 @@ function (x)
 > 
 > ### ** Examples
 > 
-> attach(beav1)
-> beav1$hours <- 24*(day-346) + trunc(time/100) + (time%%100)/60
+> beav1 <- within(beav1,
++                hours <- 24*(day-346) + trunc(time/100) + (time%%100)/60)
 > plot(beav1$hours, beav1$temp, type="l", xlab="time",
 +    ylab="temperature", main="Beaver 1")
 > usr <- par("usr"); usr[3:4] <- c(-0.2, 8); par(usr=usr)
@@ -762,7 +762,7 @@ Coefficients:
      1  
 0.8222  
 
-Order selected 1  sigma^2 estimated as  0.01011 
+Order selected 1  sigma^2 estimated as  0.01011
 > act <- c(rep(0, 10), activ)
 > X <- cbind(1, act = act[11:125], act1 = act[10:124],
 +           act2 = act[9:123], act3 = act[8:122])
@@ -787,14 +787,14 @@ sXact1  0.17096    0.05100   3.352  0.00112 **
 sXact2  0.16202    0.05147   3.148  0.00215 ** 
 sXact3  0.10548    0.04310   2.448  0.01605 *  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Residual standard error: 0.08096 on 104 degrees of freedom
   (5 observations deleted due to missingness)
-Multiple R-squared: 0.9999,	Adjusted R-squared: 0.9999 
-F-statistic: 1.81e+05 on 5 and 104 DF,  p-value: < 2.2e-16 
+Multiple R-squared:  0.9999,	Adjusted R-squared:  0.9999 
+F-statistic: 1.81e+05 on 5 and 104 DF,  p-value: < 2.2e-16
 
-> detach("beav1"); rm(temp, activ)
+> rm(temp, activ)
 > 
 > 
 > 
@@ -831,7 +831,7 @@ Coefficients:
      1  
 0.7392  
 
-Order selected 1  sigma^2 estimated as  0.02011 
+Order selected 1  sigma^2 estimated as  0.02011
 
 Call:
 ar(x = temp[activ == 1])
@@ -840,7 +840,7 @@ Coefficients:
      1  
 0.7894  
 
-Order selected 1  sigma^2 estimated as  0.01792 
+Order selected 1  sigma^2 estimated as  0.01792
 > 
 > arima(temp, order = c(1,0,0), xreg = activ)
 
@@ -866,7 +866,7 @@ s.e.  0.0681     0.0939  0.1282     0.105    0.0997
 
 sigma^2 estimated as 0.01434:  log likelihood = 69.83,  aic = -127.67
 > 
-> library(nlme)
+> library(nlme) # for gls and corAR1
 > beav2.gls <- gls(temp ~ activ, data = beav2, corr = corAR1(0.8),
 +                  method = "ML")
 > summary(beav2.gls)
@@ -933,7 +933,7 @@ Degrees of freedom: 95 total; 93 residual
 > graphics::par(get("par.postscript", pos = 'CheckExEnv'))
 > cleanEx()
 
-detaching ‘package:nlme’
+detaching 'package:nlme'
 
 > nameEx("birthwt")
 > ### * birthwt
@@ -947,14 +947,14 @@ detaching ‘package:nlme’
 > 
 > ### ** Examples
 > 
-> attach(birthwt)
-> race <- factor(race, labels = c("white", "black", "other"))
-> ptd <- factor(ptl > 0)
-> ftv <- factor(ftv)
-> levels(ftv)[-(1:2)] <- "2+"
-> bwt <- data.frame(low = factor(low), age, lwt, race,
-+     smoke = (smoke > 0), ptd, ht = (ht > 0), ui = (ui > 0), ftv)
-> detach("birthwt")
+> bwt <- with(birthwt, {
++ race <- factor(race, labels = c("white", "black", "other"))
++ ptd <- factor(ptl > 0)
++ ftv <- factor(ftv)
++ levels(ftv)[-(1:2)] <- "2+"
++ data.frame(low = factor(low), age, lwt, race, smoke = (smoke > 0),
++            ptd, ht = (ht > 0), ui = (ui > 0), ftv)
++ })
 > options(contrasts = c("contr.treatment", "contr.poly"))
 > glm(low ~ ., binomial, bwt)
 
@@ -968,11 +968,11 @@ Coefficients:
 
 Degrees of Freedom: 188 Total (i.e. Null);  178 Residual
 Null Deviance:	    234.7 
-Residual Deviance: 195.5 	AIC: 217.5 
+Residual Deviance: 195.5 	AIC: 217.5
 > 
 > 
 > 
-> options(contrasts = c(unordered = "contr.treatment",ordered = "contr.poly"))
+> base::options(contrasts = c(unordered = "contr.treatment",ordered = "contr.poly"))
 > cleanEx()
 > nameEx("boxcox")
 > ### * boxcox
@@ -1129,7 +1129,7 @@ Waiting for profiling to be done...
 > 
 > ### ** Examples
 > 
-> contr.sdif(6)
+> (A <- contr.sdif(6))
          2-1        3-2  4-3        5-4        6-5
 1 -0.8333333 -0.6666667 -0.5 -0.3333333 -0.1666667
 2  0.1666667 -0.6666667 -0.5 -0.3333333 -0.1666667
@@ -1137,7 +1137,7 @@ Waiting for profiling to be done...
 4  0.1666667  0.3333333  0.5 -0.3333333 -0.1666667
 5  0.1666667  0.3333333  0.5  0.6666667 -0.1666667
 6  0.1666667  0.3333333  0.5  0.6666667  0.8333333
-> zapsmall(ginv(contr.sdif(6)))
+> zapsmall(ginv(A))
      [,1] [,2] [,3] [,4] [,5] [,6]
 [1,]   -1    1    0    0    0    0
 [2,]    0   -1    1    0    0    0
@@ -1369,7 +1369,7 @@ Eth:Sex:Lrn  1   1.57879 65.678 -66.631 2.95567 0.08816 .
 Eth:Age:Lrn  2   2.12841 66.227 -67.415 1.99230 0.14087  
 Sex:Age:Lrn  2   1.46623 65.565 -68.882 1.37247 0.25743  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > quine.stp <- stepAIC(quine.nxt,
 +     scope = list(upper = ~Eth*Sex*Age*Lrn, lower = ~1),
 +     trace = FALSE)
@@ -1385,7 +1385,7 @@ Sex:Age      3   10.7959 77.396 -56.663  6.7542 0.0002933 ***
 Eth:Sex:Lrn  1    3.0325 69.632 -68.096  5.6916 0.0185476 *  
 Eth:Age:Lrn  2    2.0960 68.696 -72.072  1.9670 0.1441822    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > quine.3 <- update(quine.stp, . ~ . - Eth:Age:Lrn)
 > dropterm(quine.3, test = "F")
 Single term deletions
@@ -1400,7 +1400,7 @@ Sex:Age      3   11.4272 80.123 -55.607  7.0419 0.0002037 ***
 Age:Lrn      2    2.8149 71.511 -70.209  2.6020 0.0780701 .  
 Eth:Sex:Lrn  1    4.6956 73.391 -64.419  8.6809 0.0038268 ** 
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > quine.4 <- update(quine.3, . ~ . - Eth:Age)
 > dropterm(quine.4, test = "F")
 Single term deletions
@@ -1414,7 +1414,7 @@ Sex:Age      3   11.5656 83.292 -55.942  6.9873 0.0002147 ***
 Age:Lrn      2    2.9118 74.639 -69.959  2.6387 0.0752793 .  
 Eth:Sex:Lrn  1    6.8181 78.545 -60.511 12.3574 0.0006052 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > quine.5 <- update(quine.4, . ~ . - Age:Lrn)
 > dropterm(quine.5, test = "F")
 Single term deletions
@@ -1427,7 +1427,7 @@ log(Days + 2.5) ~ Eth + Sex + Age + Lrn + Eth:Sex + Eth:Lrn +
 Sex:Age      3    9.9002 84.539 -57.774  5.8362 0.0008944 ***
 Eth:Sex:Lrn  1    6.2988 80.937 -60.130 11.1396 0.0010982 ** 
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > 
 > house.glm0 <- glm(Freq ~ Infl*Type*Cont + Sat, family=poisson,
 +                    data = housing)
@@ -1445,7 +1445,7 @@ Type:Sat        6  100.889 505.86  62.227 1.586e-11 ***
 Cont:Sat        2   54.722 467.69  16.060 0.0003256 ***
 Infl:Type:Cont  6   43.952 448.92   5.290 0.5072454    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > 
 > 
 > 
@@ -1512,7 +1512,7 @@ lage                0.88760    0.11650   7.619 2.56e-14 ***
 V4                 -0.15977    0.05458  -2.927  0.00342 ** 
 lbase:trtprogabide  0.56154    0.06352   8.841  < 2e-16 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 (Dispersion parameter for poisson family taken to be 1)
 
@@ -1610,7 +1610,7 @@ factor(subject)57  2.674e-01  2.709e-01   0.987 0.323618
 factor(subject)58 -6.017e-01  3.436e-01  -1.751 0.079911 .  
 factor(subject)59 -7.556e-02  2.942e-01  -0.257 0.797331    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 (Dispersion parameter for poisson family taken to be 1)
 
@@ -1709,7 +1709,7 @@ Number of Groups: 59
 > 
 > cleanEx()
 
-detaching ‘package:nlme’
+detaching 'package:nlme'
 
 > nameEx("farms")
 > ### * farms
@@ -1938,7 +1938,7 @@ AgeF1:EthN:SexM:LrnSL  2.13480    2.08685   1.023 0.306317
 AgeF2:EthN:SexM:LrnSL  2.11886    2.27882   0.930 0.352473    
 AgeF3:EthN:SexM:LrnSL       NA         NA      NA       NA    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 (Dispersion parameter for quasi family taken to be 0.7822615)
 
@@ -2061,7 +2061,7 @@ coxph(formula = Surv(time, cens) ~ treat, data = gehan)
                coef exp(coef) se(coef)     z Pr(>|z|)    
 treatcontrol 1.5721    4.8169   0.4124 3.812 0.000138 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
              exp(coef) exp(-coef) lower .95 upper .95
 treatcontrol     4.817     0.2076     2.147     10.81
@@ -2077,7 +2077,7 @@ Score (logrank) test = 17.25  on 1 df,   p=3.283e-05
 > 
 > cleanEx()
 
-detaching ‘package:survival’, ‘package:splines’
+detaching 'package:survival', 'package:splines'
 
 > nameEx("ginv")
 > ### * ginv
@@ -2188,9 +2188,9 @@ Coefficients:
 
 Degrees of Freedom: 41 Total (i.e. Null);  38 Residual
 Null Deviance:	    100.2 
-Residual Deviance: 90.34 	AIC: 225.6 
+Residual Deviance: 90.34 	AIC: 225.6
 > try(glm.nb(y ~ lag1+lag2+lag3, link=identity))
-Warning in log(ifelse(y == 0, 1, y/mu)) : NaNs produced
+Warning in log(y/mu) : NaNs produced
 Error : no valid set of coefficients has been found: please supply starting values
 > glm.nb(y ~ lag1+lag2+lag3, link=identity,  start=c(2, 0.1, 0.1, 0.1))
 
@@ -2203,7 +2203,7 @@ Coefficients:
 
 Degrees of Freedom: 41 Total (i.e. Null);  38 Residual
 Null Deviance:	    55.07 
-Residual Deviance: 50.09 	AIC: 215.9 
+Residual Deviance: 50.09 	AIC: 215.9
 > glm.nb(y ~ lag1+lag2+lag3, link=identity,  start=coef(fit))
 
 Call:  glm.nb(formula = y ~ lag1 + lag2 + lag3, start = coef(fit), link = identity, 
@@ -2215,7 +2215,7 @@ Coefficients:
 
 Degrees of Freedom: 41 Total (i.e. Null);  38 Residual
 Null Deviance:	    55.07 
-Residual Deviance: 50.09 	AIC: 215.9 
+Residual Deviance: 50.09 	AIC: 215.9
 > glm.nb(y ~ lag1+lag2+lag3, link=identity, etastart=rep(5, 42))
 
 Call:  glm.nb(formula = y ~ lag1 + lag2 + lag3, etastart = rep(5, 42), 
@@ -2227,7 +2227,7 @@ Coefficients:
 
 Degrees of Freedom: 41 Total (i.e. Null);  38 Residual
 Null Deviance:	    55.07 
-Residual Deviance: 50.09 	AIC: 215.9 
+Residual Deviance: 50.09 	AIC: 215.9
 > ## End Don't show
 > 
 > 
@@ -2369,7 +2369,7 @@ Number of Groups: 50
 > 
 > cleanEx()
 
-detaching ‘package:nlme’
+detaching 'package:nlme'
 
 > nameEx("housing")
 > ### * housing
@@ -2427,7 +2427,7 @@ InflHigh:TypeAtrium:ContHigh       4.782e-01  4.441e-01   1.077 0.281619
 InflMedium:TypeTerrace:ContHigh   -4.980e-01  3.671e-01  -1.357 0.174827    
 InflHigh:TypeTerrace:ContHigh     -4.470e-01  4.545e-01  -0.984 0.325326    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 (Dispersion parameter for poisson family taken to be 1)
 
@@ -2449,7 +2449,7 @@ Infl:Sat  4   111.08 512.05 106.371 < 2.2e-16 ***
 Type:Sat  6   156.79 561.76  60.669 3.292e-11 ***
 Cont:Sat  2   212.33 609.30   5.126   0.07708 .  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > 
 > house.glm1 <- update(house.glm0, . ~ . + Sat*(Infl+Type+Cont))
 > summary(house.glm1, cor = FALSE)
@@ -2504,7 +2504,7 @@ InflHigh:TypeAtrium:ContHigh       0.478611   0.444244   1.077 0.281320
 InflMedium:TypeTerrace:ContHigh   -0.500162   0.367135  -1.362 0.173091    
 InflHigh:TypeTerrace:ContHigh     -0.463099   0.454713  -1.018 0.308467    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 (Dispersion parameter for poisson family taken to be 1)
 
@@ -2531,7 +2531,7 @@ Type:Sat        6  100.889 505.86  62.227 1.586e-11 ***
 Cont:Sat        2   54.722 467.69  16.060 0.0003256 ***
 Infl:Type:Cont  6   43.952 448.92   5.290 0.5072454    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > 
 > addterm(house.glm1, ~. + Sat:(Infl+Type+Cont)^2, test  =  "Chisq")
 Single term additions
@@ -2545,7 +2545,7 @@ Infl:Type:Sat 12   16.107 457.08 22.5550 0.03175 *
 Infl:Cont:Sat  4   37.472 462.44  1.1901 0.87973  
 Type:Cont:Sat  6   28.256 457.23 10.4064 0.10855  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > 
 > hnames <- lapply(housing[, -5], levels) # omit Freq
 > newData <- expand.grid(hnames)
@@ -2774,10 +2774,10 @@ Sat ~ Infl + Type + Cont + Infl:Type + Type:Cont
 > 
 > 
 > 
-> options(contrasts = c(unordered = "contr.treatment",ordered = "contr.poly"))
+> base::options(contrasts = c(unordered = "contr.treatment",ordered = "contr.poly"))
 > cleanEx()
 
-detaching ‘package:nnet’
+detaching 'package:nnet'
 
 > nameEx("huber")
 > ### * huber
@@ -2852,7 +2852,7 @@ Loc          5 17829.8  3566.0 21.8923 1.751e-07 ***
 Var          4  2756.6   689.2  4.2309   0.01214 *  
 Residuals   20  3257.7   162.9                      
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
  Response Y2 :
             Df  Sum Sq Mean Sq F value    Pr(>F)    
@@ -2860,7 +2860,7 @@ Loc          5 10285.0 2056.99 10.3901 5.049e-05 ***
 Var          4  2845.2  711.29  3.5928   0.02306 *  
 Residuals   20  3959.5  197.98                      
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 > 
 > immer.aov <- aov((Y1+Y2)/2 ~ Var + Loc, data = immer)
@@ -2870,7 +2870,7 @@ Var          4   2655   663.7   5.989  0.00245 **
 Loc          5  10610  2122.1  19.148 5.21e-07 ***
 Residuals   20   2217   110.8                     
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > model.tables(immer.aov, type = "means", se = TRUE, cterms = "Var")
 Tables of means
 Grand mean
@@ -3046,7 +3046,7 @@ coxph(formula = Surv(time) ~ ag + log(wbc), data = leuk)
 agpresent -1.0691    0.3433   0.4293 -2.490  0.01276 * 
 log(wbc)   0.3677    1.4444   0.1360  2.703  0.00687 **
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
           exp(coef) exp(-coef) lower .95 upper .95
 agpresent    0.3433     2.9126     0.148    0.7964
@@ -3063,7 +3063,7 @@ Score (logrank) test = 16.49  on 2 df,   p=0.0002629
 > 
 > cleanEx()
 
-detaching ‘package:survival’, ‘package:splines’
+detaching 'package:survival', 'package:splines'
 
 > nameEx("lm.ridge")
 > ### * lm.ridge
@@ -3133,50 +3133,36 @@ smallest value of GCV  at 0.0057
   3   4   7   2   0 
 > ## hs phs fol sex f
 > ##  3   4   7   2 0
-> minn38a <- array(0, c(3,4,7,2), lapply(minn38[, -5], levels))
-> minn38a[data.matrix(minn38[,-5])] <- minn38$fol
-> fm <- loglm(~1 + 2 + 3 + 4, minn38a)  # numerals as names.
+> ##minn38a <- array(0, c(3,4,7,2), lapply(minn38[, -5], levels))
+> ##minn38a[data.matrix(minn38[,-5])] <- minn38$f
+> 
+> ## or more simply
+> minn38a <- xtabs(f ~ ., minn38)
+> 
+> fm <- loglm(~ 1 + 2 + 3 + 4, minn38a)  # numerals as names.
 > deviance(fm)
-[1] 0
-> ##[1] 3711.9
+[1] 3711.914
+> ## [1] 3711.9
 > fm1 <- update(fm, .~.^2)
 > fm2 <- update(fm, .~.^3, print = TRUE)
-2 iterations: deviation 0 
-> ## 5 iterations: deviation 0.0750732
+5 iterations: deviation 0.07512432 
+> ## 5 iterations: deviation 0.075
 > anova(fm, fm1, fm2)
 LR tests for hierarchical log-linear models
 
 Model 1:
- ~`1` + `2` + `3` + `4` 
+ ~1 + 2 + 3 + 4 
 Model 2:
- . ~ .v2 + .v1 + .v3 
+ . ~ `1` + `2` + `3` + `4` + `1`:`2` + `1`:`3` + `1`:`4` + `2`:`3` + `2`:`4` + `3`:`4` 
 Model 3:
- . ~ .v2 + .v1 + .v3 
+ . ~ `1` + `2` + `3` + `4` + `1`:`2` + `1`:`3` + `1`:`4` + `2`:`3` + `2`:`4` + `3`:`4` + `1`:`2`:`3` + `1`:`2`:`4` + `1`:`3`:`4` + `2`:`3`:`4` 
 
-          Deviance  df Delta(Dev) Delta(df) P(> Delta(Dev)
-Model 1          0 155                                    
-Model 2          0 108          0        47              1
-Model 3          0  36          0        72              1
-Saturated        0   0          0        36              1
-> ## Not run: 
-> ##D LR tests for hierarchical log-linear models
-> ##D 
-> ##D Model 1:
-> ##D   ~  1 + 2 + 3 + 4
-> ##D Model 2:
-> ##D  .  ~  1 + 2 + 3 + 4 + 1:2 + 1:3 + 1:4 + 2:3 + 2:4 + 3:4
-> ##D Model 3:
-> ##D  .  ~  1 + 2 + 3 + 4 + 1:2 + 1:3 + 1:4 + 2:3 + 2:4 + 3:4 +
-> ##D         1:2:3 + 1:2:4 + 1:3:4 + 2:3:4
-> ##D 
-> ##D 
-> ##D           Deviance  df Delta(Dev) Delta(df) P(> Delta(Dev)
-> ##D   Model 1 3711.915 155
-> ##D   Model 2  220.043 108   3491.873        47        0.00000
-> ##D   Model 3   47.745  36    172.298        72        0.00000
-> ##D Saturated    0.000   0     47.745        36        0.09114
-> ##D 
-> ## End(Not run)
+            Deviance  df Delta(Dev) Delta(df) P(> Delta(Dev)
+Model 1   3711.91367 155                                    
+Model 2    220.04285 108 3491.87082        47        0.00000
+Model 3     47.74492  36  172.29794        72        0.00000
+Saturated    0.00000   0   47.74492        36        0.09114
+> 
 > # Case 1. An array generated with xtabs.
 > 
 > loglm(~ Type + Origin, xtabs(~ Type + Origin, Cars93))
@@ -3188,17 +3174,7 @@ Statistics:
                       X^2 df   P(> X^2)
 Likelihood Ratio 18.36179  5 0.00252554
 Pearson          14.07985  5 0.01511005
-> ## Not run: 
-> ##D Call:
-> ##D loglm(formula = ~Type + Origin, data = xtabs(~Type + Origin,
-> ##D     Cars93))
-> ##D 
-> ##D Statistics:
-> ##D                     X^2 df  P(> X^2)
-> ##D Likelihood Ratio 18.362  5 0.0025255
-> ##D          Pearson 14.080  5 0.0151101
-> ##D 
-> ## End(Not run)
+> 
 > # Case 2.  Frequencies given as a vector in a data frame
 > names(quine)
 [1] "Eth"  "Sex"  "Age"  "Lrn"  "Days"
@@ -3367,7 +3343,7 @@ coxph(formula = Surv(time, cens) ~ temp, data = motors)
         coef exp(coef) se(coef)     z Pr(>|z|)    
 temp 0.09185   1.09620  0.02736 3.358 0.000786 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
      exp(coef) exp(-coef) lower .95 upper .95
 temp     1.096     0.9122     1.039     1.157
@@ -3401,7 +3377,7 @@ Call: survfit(formula = motor.cox, newdata = data.frame(temp = 130))
 > 
 > cleanEx()
 
-detaching ‘package:survival’, ‘package:splines’
+detaching 'package:survival', 'package:splines'
 
 > nameEx("muscle")
 > ### * muscle
@@ -3418,8 +3394,7 @@ detaching ‘package:survival’, ‘package:splines’
 > A <- model.matrix(~ Strip - 1, data=muscle)
 > rats.nls1 <- nls(log(Length) ~ cbind(A, rho^Conc),
 +    data = muscle, start = c(rho=0.1), algorithm="plinear")
-> B <- coef(rats.nls1)
-> B
+> (B <- coef(rats.nls1))
           rho .lin.StripS01 .lin.StripS02 .lin.StripS03 .lin.StripS04 
    0.07776401    3.08304824    3.30137838    3.44562531    2.80464434 
 .lin.StripS05 .lin.StripS06 .lin.StripS07 .lin.StripS08 .lin.StripS09 
@@ -3435,8 +3410,8 @@ detaching ‘package:survival’, ‘package:splines’
 > (rats.nls2 <- nls(log(Length) ~ alpha[Strip] + beta*rho^Conc,
 +                   data = muscle, start = st))
 Nonlinear regression model
-  model:  log(Length) ~ alpha[Strip] + beta * rho^Conc 
-   data:  muscle 
+  model: log(Length) ~ alpha[Strip] + beta * rho^Conc
+   data: muscle
 alpha..lin.StripS01 alpha..lin.StripS02 alpha..lin.StripS03 alpha..lin.StripS04 
             3.08305             3.30138             3.44563             2.80464 
 alpha..lin.StripS05 alpha..lin.StripS06 alpha..lin.StripS07 alpha..lin.StripS08 
@@ -3452,34 +3427,29 @@ alpha..lin.StripS21         beta..lin22             rho.rho
  residual sum-of-squares: 1.045
 
 Number of iterations to convergence: 0 
-Achieved convergence tolerance: 4.923e-06 
+Achieved convergence tolerance: 4.923e-06
 > 
-> attach(muscle)
-> Muscle <- expand.grid(Conc = sort(unique(Conc)), Strip = levels(Strip))
-> Muscle$Yhat <- predict(rats.nls2, Muscle)
-> Muscle <- cbind(Muscle, logLength = rep(as.numeric(NA), 126))
-> ind <- match(paste(Strip, Conc),
+> Muscle <- with(muscle, {
++ Muscle <- expand.grid(Conc = sort(unique(Conc)), Strip = levels(Strip))
++ Muscle$Yhat <- predict(rats.nls2, Muscle)
++ Muscle <- cbind(Muscle, logLength = rep(as.numeric(NA), 126))
++ ind <- match(paste(Strip, Conc),
 +             paste(Muscle$Strip, Muscle$Conc))
-> Muscle$logLength[ind] <- log(Length)
-> detach()
++ Muscle$logLength[ind] <- log(Length)
++ Muscle})
 > 
-> require(lattice)
-Loading required package: lattice
-> xyplot(Yhat ~ Conc | Strip, Muscle, as.table = TRUE,
+> lattice::xyplot(Yhat ~ Conc | Strip, Muscle, as.table = TRUE,
 +    ylim = range(c(Muscle$Yhat, Muscle$logLength), na.rm = TRUE),
 +    subscripts = TRUE, xlab = "Calcium Chloride concentration (mM)",
 +    ylab = "log(Length in mm)", panel =
 +    function(x, y, subscripts, ...) {
-+       lines(spline(x, y))
 +       panel.xyplot(x, Muscle$logLength[subscripts], ...)
++       llines(spline(x, y))
 +    })
 > 
 > 
 > 
 > cleanEx()
-
-detaching ‘package:lattice’
-
 > nameEx("mvrnorm")
 > ### * mvrnorm
 > 
@@ -3554,7 +3524,7 @@ EthN:SexM:AgeF2:LrnSL  EthN:SexM:AgeF3:LrnSL
 
 Degrees of Freedom: 145 Total (i.e. Null);  118 Residual
 Null Deviance:	    280.2 
-Residual Deviance: 172 	AIC: 1095 
+Residual Deviance: 172 	AIC: 1095
 > 
 > 
 > 
@@ -3571,18 +3541,15 @@ Residual Deviance: 172 	AIC: 1095
 > 
 > ### ** Examples
 > 
-> library(nlme)
-> nl1 <- nlschools
-> attach(nl1)
-> classMeans <- tapply(IQ, class, mean)
-> nl1$IQave <- classMeans[as.character(class)]
-> nl1$IQ <- nl1$IQ - nl1$IQave
-> detach()
+> nl1 <- within(nlschools, {
++ IQave <- tapply(IQ, class, mean)[as.character(class)]
++ IQ <- IQ - IQave
++ })
 > cen <- c("IQ", "IQave", "SES")
 > nl1[cen] <- scale(nl1[cen], center = TRUE, scale = FALSE)
 > 
-> nl.lme <- lme(lang ~ IQ*COMB + IQave + SES,
-+               random = ~ IQ | class, data = nl1)
+> nl.lme <- nlme::lme(lang ~ IQ*COMB + IQave + SES,
++                     random = ~ IQ | class, data = nl1)
 > summary(nl.lme)
 Linear mixed-effects model fit by REML
  Data: nl1 
@@ -3623,9 +3590,6 @@ Number of Groups: 133
 > 
 > 
 > cleanEx()
-
-detaching ‘package:nlme’
-
 > nameEx("npk")
 > ### * npk
 > 
@@ -3652,7 +3616,7 @@ Deg. of Freedom        5        1        1        1        1        1        1
 Sum of Squares   185.2867
 Deg. of Freedom        12
 
-Residual standard error: 3.929447 
+Residual standard error: 3.929447
 1 out of 13 effects not estimable
 Estimated effects may be unbalanced
 > summary(npk.aov)
@@ -3666,7 +3630,7 @@ N:K          1   33.1   33.14   2.146 0.16865
 P:K          1    0.5    0.48   0.031 0.86275   
 Residuals   12  185.3   15.44                   
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > alias(npk.aov)
 Model :
 yield ~ block + N * P * K
@@ -3704,11 +3668,11 @@ block6         2.325      2.787   0.834  0.41646
 N1             5.617      1.609   3.490  0.00302 ** 
 K1            -3.983      1.609  -2.475  0.02487 *  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Residual standard error: 3.942 on 16 degrees of freedom
-Multiple R-squared: 0.7163,	Adjusted R-squared: 0.5922 
-F-statistic: 5.772 on 7 and 16 DF,  p-value: 0.001805 
+Multiple R-squared:  0.7163,	Adjusted R-squared:  0.5922 
+F-statistic: 5.772 on 7 and 16 DF,  p-value: 0.001805
 
 > se.contrast(npk.aov1, list(N=="0", N=="1"), data = npk)
 [1] 1.609175
@@ -3740,7 +3704,7 @@ replic.     4    12    12
 > 
 > 
 > 
-> options(contrasts = c(unordered = "contr.treatment",ordered = "contr.poly"))
+> base::options(contrasts = c(unordered = "contr.treatment",ordered = "contr.poly"))
 > cleanEx()
 > nameEx("oats")
 > ### * oats
@@ -3773,7 +3737,7 @@ Nf         3  20020    6673  37.686 2.46e-12 ***
 Nf:V       6    322      54   0.303    0.932    
 Residuals 45   7969     177                     
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > summary(oats.aov, split = list(Nf=list(L=1, Dev=2:3)))
 
 Error: B
@@ -3795,7 +3759,7 @@ Nf:V         6    322      54   0.303    0.932
   Nf:V: Dev  4    153      38   0.217    0.928    
 Residuals   45   7969     177                     
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > par(mfrow = c(1,2), pty = "s")
 > plot(fitted(oats.aov[[4]]), studres(oats.aov[[4]]))
 > abline(h = 0, lty = 2)
@@ -3875,7 +3839,7 @@ pet3.lme     2  7 149.3833 159.6435 -67.69166 1 vs 2 4.22855  0.1207
 > 
 > cleanEx()
 
-detaching ‘package:nlme’
+detaching 'package:nlme'
 
 > nameEx("plot.mca")
 > ### * plot.mca
@@ -4106,7 +4070,7 @@ Infl:Type  6 3484.6 22.5093 0.0009786 ***
 Infl:Cont  2 3498.9  0.2090 0.9007957    
 Type:Cont  3 3492.5  8.6662 0.0340752 *  
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > house.plr2 <- stepAIC(house.plr, ~.^2)
 Start:  AIC=3495.15
 Sat ~ Infl + Type + Cont
@@ -4179,7 +4143,7 @@ ContHigh       0.1733589  0.54792854
 > 
 > 
 > 
-> options(contrasts = c(unordered = "contr.treatment",ordered = "contr.poly"))
+> base::options(contrasts = c(unordered = "contr.treatment",ordered = "contr.poly"))
 > cleanEx()
 > nameEx("predict.glmmPQL")
 > ### * predict.glmmPQL
@@ -4301,7 +4265,7 @@ attr(,"label")
 > 
 > cleanEx()
 
-detaching ‘package:nlme’
+detaching 'package:nlme'
 
 > nameEx("predict.lda")
 > ### * predict.lda
@@ -4402,7 +4366,7 @@ Levels: c s v
 > 
 > 
 > 
-> options(contrasts = c(unordered = "contr.treatment",ordered = "contr.poly"))
+> base::options(contrasts = c(unordered = "contr.treatment",ordered = "contr.poly"))
 > cleanEx()
 > nameEx("qda")
 > ### * qda
@@ -4557,14 +4521,14 @@ Scale estimate: 2.28
 > (Purfit1 <- nls(rate ~ mmcurve(Vm, K, conc), data = Treated,
 +                 start = list(Vm=200, K=0.1)))
 Nonlinear regression model
-  model:  rate ~ mmcurve(Vm, K, conc) 
-   data:  Treated 
+  model: rate ~ mmcurve(Vm, K, conc)
+   data: Treated
        Vm         K 
 212.68363   0.06412 
  residual sum-of-squares: 1195
 
 Number of iterations to convergence: 6 
-Achieved convergence tolerance: 6.096e-06 
+Achieved convergence tolerance: 6.096e-06
 > rms.curv(Purfit1)
 Parameter effects: c^theta x sqrt(F) = 0.2121 
         Intrinsic: c^iota  x sqrt(F) = 0.092 
@@ -4654,11 +4618,9 @@ log(Days + 2.5) ~ Eth + Sex + Age + Lrn + Eth:Sex + Eth:Age +
 3 - Sex:Age:Lrn  2 1.526754       125   66.59962 -72.59652
 > 
 > cpus1 <- cpus
-> attach(cpus)
 > for(v in names(cpus)[2:7])
 +   cpus1[[v]] <- cut(cpus[[v]], unique(quantile(cpus[[v]])),
 +                     include.lowest = TRUE)
-> detach()
 > cpus0 <- cpus1[, 2:8]  # excludes names, authors' predictions
 > cpus.samp <- sample(1:209, 100)
 > cpus.lm <- lm(log10(perf) ~ ., data = cpus1[cpus.samp,2:8])
@@ -4682,20 +4644,14 @@ log10(perf) ~ mmax + cach + chmax
 > 
 > example(birthwt)
 
-brthwt> attach(birthwt)
-
-brthwt> race <- factor(race, labels = c("white", "black", "other"))
-
-brthwt> ptd <- factor(ptl > 0)
-
-brthwt> ftv <- factor(ftv)
-
-brthwt> levels(ftv)[-(1:2)] <- "2+"
-
-brthwt> bwt <- data.frame(low = factor(low), age, lwt, race,
-brthwt+     smoke = (smoke > 0), ptd, ht = (ht > 0), ui = (ui > 0), ftv)
-
-brthwt> detach("birthwt")
+brthwt> bwt <- with(birthwt, {
+brthwt+ race <- factor(race, labels = c("white", "black", "other"))
+brthwt+ ptd <- factor(ptl > 0)
+brthwt+ ftv <- factor(ftv)
+brthwt+ levels(ftv)[-(1:2)] <- "2+"
+brthwt+ data.frame(low = factor(low), age, lwt, race, smoke = (smoke > 0),
+brthwt+            ptd, ht = (ht > 0), ui = (ui > 0), ftv)
+brthwt+ })
 
 brthwt> options(contrasts = c("contr.treatment", "contr.poly"))
 
@@ -4711,7 +4667,7 @@ Coefficients:
 
 Degrees of Freedom: 188 Total (i.e. Null);  178 Residual
 Null Deviance:	    234.7 
-Residual Deviance: 195.5 	AIC: 217.5 
+Residual Deviance: 195.5 	AIC: 217.5
 > birthwt.glm <- glm(low ~ ., family = binomial, data = bwt)
 > birthwt.step <- stepAIC(birthwt.glm, trace = FALSE)
 > birthwt.step$anova
@@ -4857,7 +4813,7 @@ EthN:AgeF1:LrnSL:SexM   2.1711     1.9192   1.131 0.257963
 EthN:AgeF2:LrnSL:SexM   2.1029     2.3444   0.897 0.369718    
 EthN:AgeF3:LrnSL:SexM       NA         NA      NA       NA    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 (Dispersion parameter for Negative Binomial(1.9284) family taken to be 1)
 
@@ -4962,7 +4918,7 @@ Coefficients:
             Estimate Std. Error z value Pr(>|z|)    
 (Intercept) -0.38199    0.06603  -5.785 7.25e-09 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 (Dispersion parameter for Negative Binomial(3.5861) family taken to be 1)
 
@@ -4977,21 +4933,15 @@ Number of Fisher Scoring iterations: 1
           Std. Err.:  1.75 
 
  2 x log-likelihood:  -893.063 
-> attach(yeast)
 > mu <- fitted(fit)
-> theta.md(numbers, mu, dfr = 399, weights = fr)
+> theta.md(yeast$numbers, mu, dfr = 399, weights = yeast$fr)
 [1] 3.027079
-> theta.ml(numbers, mu, weights = fr)
-Warning in theta.ml(numbers, mu, weights = fr) :
-  iteration limit reached
-[1] 3.586071
-attr(,"warn")
-[1] "iteration limit reached"
+> theta.ml(yeast$numbers, mu, limit = 15, weights = yeast$fr)
+[1] 3.586087
 attr(,"SE")
-[1] 1.743658
-> theta.mm(numbers, mu, dfr = 399, weights = fr)
+[1] 1.749609
+> theta.mm(yeast$numbers, mu, dfr = 399, weights = yeast$fr)
 [1] 3.549593
-> detach()
 > 
 > 
 > 
@@ -5072,11 +5022,11 @@ Coefficients:
 (Intercept)  6.85383    0.11842   57.88   <2e-16 ***
 Temp        -0.39324    0.01959  -20.08   <2e-16 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Residual standard error: 0.2813 on 24 degrees of freedom
-Multiple R-squared: 0.9438,	Adjusted R-squared: 0.9415 
-F-statistic: 403.1 on 1 and 24 DF,  p-value: < 2.2e-16 
+Multiple R-squared:  0.9438,	Adjusted R-squared:  0.9415 
+F-statistic: 403.1 on 1 and 24 DF,  p-value: < 2.2e-16
 
 > summary(gasA)
 
@@ -5093,11 +5043,11 @@ Coefficients:
 (Intercept)  4.72385    0.12974   36.41  < 2e-16 ***
 Temp        -0.27793    0.02518  -11.04 1.05e-11 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Residual standard error: 0.3548 on 28 degrees of freedom
-Multiple R-squared: 0.8131,	Adjusted R-squared: 0.8064 
-F-statistic: 121.8 on 1 and 28 DF,  p-value: 1.046e-11 
+Multiple R-squared:  0.8131,	Adjusted R-squared:  0.8064 
+F-statistic: 121.8 on 1 and 28 DF,  p-value: 1.046e-11
 
 > gasBA <- lm(Gas ~ Insul/Temp - 1, whiteside)
 > summary(gasBA)
@@ -5116,11 +5066,11 @@ InsulAfter        4.72385    0.11810   40.00   <2e-16 ***
 InsulBefore:Temp -0.39324    0.02249  -17.49   <2e-16 ***
 InsulAfter:Temp  -0.27793    0.02292  -12.12   <2e-16 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Residual standard error: 0.323 on 52 degrees of freedom
-Multiple R-squared: 0.9946,	Adjusted R-squared: 0.9942 
-F-statistic:  2391 on 4 and 52 DF,  p-value: < 2.2e-16 
+Multiple R-squared:  0.9946,	Adjusted R-squared:  0.9942 
+F-statistic:  2391 on 4 and 52 DF,  p-value: < 2.2e-16
 
 > 
 > gasQ <- lm(Gas ~ Insul/(Temp + I(Temp^2)) - 1, whiteside)
@@ -5143,7 +5093,7 @@ Model 2: Gas ~ Insul/Temp - 1
 1     53 6.7704                                  
 2     52 5.4252  1    1.3451 12.893 0.0007307 ***
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 > options(contrasts = c("contr.treatment", "contr.poly"))
 > gasBA1 <- lm(Gas ~ Insul*Temp, whiteside)
 > coef(summary(gasBA1))
@@ -5155,10 +5105,10 @@ InsulAfter:Temp  0.1153039 0.03211212   3.590665 7.306852e-04
 > 
 > 
 > 
-> options(contrasts = c(unordered = "contr.treatment",ordered = "contr.poly"))
+> base::options(contrasts = c(unordered = "contr.treatment",ordered = "contr.poly"))
 > cleanEx()
 
-detaching ‘package:lattice’
+detaching 'package:lattice'
 
 > nameEx("width.SJ")
 > ### * width.SJ
@@ -5172,12 +5122,10 @@ detaching ‘package:lattice’
 > 
 > ### ** Examples
 > 
-> attach(geyser)
-> width.SJ(duration, method = "dpi")
+> width.SJ(geyser$duration, method = "dpi")
 [1] 0.5747852
-> width.SJ(duration)
+> width.SJ(geyser$duration)
 [1] 0.360518
-> detach()
 > 
 > width.SJ(galaxies, method = "dpi")
 [1] 3256.151
@@ -5203,14 +5151,14 @@ detaching ‘package:lattice’
 +     data = wtloss, start = list(b0=90, b1=95, th=120))
 > wtloss.fm
 Nonlinear regression model
-  model:  Weight ~ b0 + b1 * 2^(-Days/th) 
-   data:  wtloss 
+  model: Weight ~ b0 + b1 * 2^(-Days/th)
+   data: wtloss
     b0     b1     th 
  81.37 102.68 141.91 
  residual sum-of-squares: 39.24
 
 Number of iterations to convergence: 3 
-Achieved convergence tolerance: 4.324e-06 
+Achieved convergence tolerance: 4.324e-06
 > plot(wtloss)
 > with(wtloss, lines(Days, fitted(wtloss.fm)))
 > 
@@ -5218,8 +5166,8 @@ Achieved convergence tolerance: 4.324e-06
 > 
 > ### * <FOOTER>
 > ###
-> cat("Time elapsed: ", proc.time() - get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  14.809 0.117 20.658 0 0 
+> base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
+Time elapsed:  13.042 0.119 13.224 0 0 
 > grDevices::dev.off()
 null device 
           1 

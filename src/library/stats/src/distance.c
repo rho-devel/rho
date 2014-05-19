@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -35,8 +35,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* As from R 2.16.0 this might need long vectors for result. */
-
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -46,9 +44,8 @@
 #include <R.h>
 #include <Rmath.h>
 #include <float.h>
-#include "mva.h"
 #include "stats.h"
-#ifdef HAVE_OPENMP
+#ifdef _OPENMP
 # include <R_ext/MathThreads.h>
 #endif
 
@@ -220,7 +217,7 @@ void R_distance(double *x, int *nr, int *nc, double *d, int *diag,
     int dc, i, j;
     size_t  ij;  /* can exceed 2^31 - 1 */
     double (*distfun)(double*, int, int, int, int) = NULL;
-#ifdef HAVE_OPENMP
+#ifdef _OPENMP
     int nthreads;
 #endif
 
@@ -248,7 +245,7 @@ void R_distance(double *x, int *nr, int *nc, double *d, int *diag,
 	error(_("distance(): invalid distance"));
     }
     dc = (*diag) ? 0 : 1; /* diag=1:  we do the diagonal */
-#ifdef HAVE_OPENMP
+#ifdef _OPENMP
     if (R_num_math_threads > 0)
 	nthreads = R_num_math_threads;
     else
@@ -293,16 +290,19 @@ SEXP Cdist(SEXP x, SEXP smethod, SEXP attrs, SEXP p)
 {
     SEXP ans;
     int nr = nrows(x), nc = ncols(x), method = asInteger(smethod);
-    int N, diag = 0;
+    int diag = 0;
+    R_xlen_t N;
     double rp = asReal(p);
-    N = (double)nr * (nr-1)/2; /* avoid overflow for N ~ 50,000 */
+    N = (R_xlen_t)nr * (nr-1)/2; /* avoid int overflow for N ~ 50,000 */
     PROTECT(ans = allocVector(REALSXP, N));
+    if(TYPEOF(x) != REALSXP) x = coerceVector(x, REALSXP);
+    PROTECT(x);
     R_distance(REAL(x), &nr, &nc, REAL(ans), &diag, &method, &rp);
     /* tack on attributes */
     SEXP names = getAttrib(attrs, R_NamesSymbol);
     for (int i = 0; i < LENGTH(attrs); i++)
 	setAttrib(ans, install(translateChar(STRING_ELT(names, i))),
 		  VECTOR_ELT(attrs, i));
-    UNPROTECT(1);
+    UNPROTECT(2);
     return ans;
 }

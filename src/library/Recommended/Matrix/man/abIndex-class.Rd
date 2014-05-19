@@ -86,6 +86,7 @@
     \item{show}{\code{("abIndex")}: simple \code{\link{show}} method,
       building on \code{show(<rleDiff>)}.}
     \item{is.na}{\code{("abIndex")}: works analogously to regular vectors.}
+    \item{is.finite, is.infinite}{\code{("abIndex")}: ditto.}
   }
 }
 \note{

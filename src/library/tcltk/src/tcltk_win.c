@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -59,21 +59,27 @@ static void _R_tcldo(void)
 typedef void (*DO_FUNC)();
 extern void set_R_Tcldo(DO_FUNC ptr);
 extern void unset_R_Tcldo(DO_FUNC ptr);
+static int TkUp = 0, Tcl_polled = 0;
+
 
 void tcltk_start(void)
 {
-    int TkUp;
     HWND active = GetForegroundWindow(); /* ActiveTCL steals the focus */
 
-    tcltk_init(&TkUp); /* won't return on error */
-    set_R_Tcldo(&_R_tcldo);
+    if(!TkUp) tcltk_init(&TkUp); /* won't return on error */
+    if (!Tcl_polled) {
+	set_R_Tcldo(&_R_tcldo);
+	Tcl_polled = 1;
+    }
     _R_tcldo();  /* one call to trigger the focus stealing bug */
     SetForegroundWindow(active); /* and fix it */
 }
 
 void tcltk_end(void)
 {
-    Tcl_DeleteInterp(RTcl_interp);
-    Tcl_Finalize();
+//    Tcl_DeleteInterp(RTcl_interp);
+//    Tcl_Finalize();
     unset_R_Tcldo(&_R_tcldo);
+    Tcl_polled = 0;
+//    TkUp = 0;
 }

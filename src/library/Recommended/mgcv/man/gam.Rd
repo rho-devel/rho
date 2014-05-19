@@ -222,10 +222,10 @@ facilitate optimization, and \code{\link{gam.fit3}} is used in place of
 
 Several alternative basis-penalty types  are built in for representing model
 smooths, but alternatives can easily be added (see \code{\link{smooth.terms}} 
-for an overview and \code{\link{smooth.construct}} for how to add smooth classes). In practice the 
-default basis is usually the best choice, but the choice of the basis dimension (\code{k} in the 
-\code{s} and \code{te} terms) is something that should be considered carefully (the exact value is not critical,
-but it is important not to make it restrictively small, nor very large and computationally costly). The basis should 
+for an overview and \code{\link{smooth.construct}} for how to add smooth classes). The choice of the basis dimension 
+(\code{k} in the \code{s}, \code{te}, \code{ti} and \code{t2} terms) is something that should be considered carefully 
+(the exact value is not critical, but it is important not to make it restrictively small, nor very large and 
+computationally costly). The basis should 
 be chosen to be larger than is believed to be necessary to approximate the smooth function concerned. 
 The effective degrees of freedom for the smooth will then be controlled by the smoothing penalty on 
 the term, and (usually) selected automatically (with an upper limit set by
@@ -386,6 +386,12 @@ bt <- gam(y~te(x0,x1,k=7)+s(x2)+s(x3),data=dat,
 plot(bt,pages=1) 
 plot(bt,pages=1,scheme=2) ## alternative visualization
 AIC(b0,bt) ## interaction worse than additive
+
+## Alternative: test for interaction with a smooth ANOVA 
+## decomposition (this time between x2 and x1)
+bt <- gam(y~s(x0)+s(x1)+s(x2)+s(x3)+ti(x1,x2,k=6),
+            data=dat,method="REML")
+summary(bt)
 
 ## If it is believed that x0 and x1 are naturally on 
 ## the same scale, and should be treated isotropically 

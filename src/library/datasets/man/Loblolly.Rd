@@ -13,8 +13,9 @@
 }
 \usage{Loblolly}
 \format{
-  This object of class \code{c("nfnGroupedData", "nfGroupedData",
-    "groupedData", "data.frame")} containing the following columns:
+  An object of class
+  \code{c("nfnGroupedData", "nfGroupedData", "groupedData", "data.frame")}
+  containing the following columns:
   \describe{
     \item{height}{
       a numeric vector of tree heights (ft).
@@ -28,10 +29,10 @@
     }
   }
 }
-\details{   
+\details{
   This dataset was originally part of package \code{nlme}, and that has
   methods (including for \code{[}, \code{as.data.frame}, \code{plot} and
-  \code{print}) for its grouped-data classes. 
+  \code{print}) for its grouped-data classes.
 }
 \source{
   Kung, F. H. (1986),

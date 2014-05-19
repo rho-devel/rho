@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -291,7 +291,7 @@ bool WeakRef::runFinalizers()
     while (lit != s_f10n_pending->end()) {
 	WeakRef* wr = *lit++;
 	GCStackRoot<> topExp(R_CurrentExpr);
-	unsigned int savestack = ProtectStack::size();
+	size_t savestack = ProtectStack::size();
 	{
 	    // An Evaluator is declared for the finalizer to
 	    // insure that any errors that might occur do not spill into

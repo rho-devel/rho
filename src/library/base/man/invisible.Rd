@@ -17,7 +17,7 @@
   This function can be useful when it is desired to have functions
   return values which can be assigned, but which do not print when they
   are not assigned.
-  
+
   This is a \link{primitive} function.
 }
 \references{
@@ -34,7 +34,7 @@
 # These functions both return their argument
 f1 <- function(x) x
 f2 <- function(x) invisible(x)
-f1(1)# prints
-f2(1)# does not
+f1(1)  # prints
+f2(1)  # does not
 }
 \keyword{programming}

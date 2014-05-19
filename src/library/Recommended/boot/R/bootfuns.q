@@ -108,14 +108,14 @@ boot <- function(data, statistic, R, sim = "ordinary",
         if (!have_mc && !have_snow) ncpus <- 1L
     }
     if (simple && (sim != "ordinary" || stype != "i" || sum(m))) {
-        warning("'simple=TRUE' is only valid for 'sim=\"ordinary\", stype=\"i\", n=0, so ignored")
+        warning("'simple=TRUE' is only valid for 'sim=\"ordinary\", stype=\"i\", n=0', so ignored")
         simple <- FALSE
     }
     if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) runif(1)
     seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
     n <- NROW(data)
     if ((n == 0) || is.null(n))
-        stop("no data in call to boot")
+        stop("no data in call to 'boot'")
     temp.str <- strata
     strata <- tapply(seq_len(n),as.numeric(strata))
     t0 <- if (sim != "parametric") {
@@ -123,12 +123,12 @@ boot <- function(data, statistic, R, sim = "ordinary",
             L <- empinf(data = data, statistic = statistic,
                         stype = stype, strata = strata, ...)
         if (sim != "ordinary") m <- 0
-        else if (any(m < 0)) stop("negative value of m supplied")
+        else if (any(m < 0)) stop("negative value of 'm' supplied")
         if ((length(m) != 1L) && (length(m) != length(table(strata))))
-            stop("length of m incompatible with strata")
+            stop("length of 'm' incompatible with 'strata'")
         if ((sim == "ordinary") || (sim == "balanced")) {
             if (isMatrix(weights) && (nrow(weights) != length(R)))
-                stop("dimensions of R and weights do not match")}
+                stop("dimensions of 'R' and 'weights' do not match")}
         else weights <- NULL
         if (!is.null(weights))
             weights <- t(apply(matrix(weights, n, length(R), byrow = TRUE),
@@ -356,8 +356,7 @@ plot.boot <- function(x,index=1, t0=NULL, t=NULL, jack=FALSE,
     }
     else {
 	if (qdist!="norm")
-            warning(sQuote(qdist),
-                    " distribution not supported using normal instead")
+            warning(gettextf("%s distribution not supported: using normal instead", sQuote(qdist)), domain = NA)
         qq <- qnorm((seq_len(R))/(R+1))
         qlab <-"Quantiles of Standard Normal"
     }
@@ -697,7 +696,7 @@ jack.after.boot <- function(boot.out, index=1, t=NULL, L=NULL,
     if (is.null(t)) {
         if (length(index) > 1L) {
             index <- index[1L]
-            warning("only first element of index used")
+            warning("only first element of 'index' used")
         }
         t <- boot.out$t[, index]
     }
@@ -820,14 +819,14 @@ cv.glm <- function(data, glmfit, cost=function(y,yhat) mean((y-yhat)^2),
     n <- nrow(data)
     out <- NULL
     if ((K > n) || (K <= 1))
-        stop("K outside allowable range")
+        stop("'K' outside allowable range")
     K.o <- K
     K <- round(K)
     kvals <- unique(round(n/(1L:floor(n/2))))
     temp <- abs(kvals-K)
     if (!any(temp == 0))
         K <- kvals[temp == min(temp)][1L]
-    if (K!=K.o) warning("K has been set to ", K)
+    if (K!=K.o) warning(gettextf("'K' has been set to %f", K), domain = NA)
     f <- ceiling(n/K)
     s <- sample0(rep(1L:K, f), n)
     n.s <- table(s)
@@ -874,7 +873,7 @@ boot.ci <- function(boot.out,conf = 0.95,type = "all",
 #  Get and transform the statistic values and their variances,
     if ((is.null(t) && !is.null(t0)) ||
         (!is.null(t) && is.null(t0)))
-        stop("t and t0 must be supplied together")
+        stop("'t' and 't0' must be supplied together")
     t.o <- t; t0.o <- t0
 #    vt.o <- var.t
     vt0.o <- var.t0
@@ -902,7 +901,7 @@ boot.ci <- function(boot.out,conf = 0.95,type = "all",
         return(NULL)
     }
     if (length(t) != boot.out$R)
-        stop(paste("t must of length",boot.out$R))
+        stop(gettextf("'t' must of length %d", boot.out$R), domain = NA)
     if (is.null(var.t))
         fins <- seq_along(t)[is.finite(t)]
     else {
@@ -935,7 +934,7 @@ boot.ci <- function(boot.out,conf = 0.95,type = "all",
         output <- c(output, list(percent=perc.ci(t,conf,hinv=hinv)))
     if (any(type == "all" | type == "bca")) {
         if (as.character(boot.out$call[1L]) == "tsboot")
-            warning("BCa intervals not defined for time series bootstraps.")
+            warning("BCa intervals not defined for time series bootstraps")
         else
             output <- c(output, list(bca=bca.ci(boot.out,conf,
                                      index[1L],L=L,t=t.o, t0=t0.o,
@@ -1088,7 +1087,7 @@ norm.ci <-
     if (is.null(var.t0)) {
         if (is.null(t)) {
             if (is.null(L))
-                stop("unable to calculate var.t0")
+                stop("unable to calculate 'var.t0'")
             else	var.t0 <- sum((hdot(t0)*L/length(L))^2)
         }
         else	var.t0 <- var(t)
@@ -1151,7 +1150,7 @@ stud.ci <- function(tv0, tv, conf = 0.95, hinv=function(t) t)
 #
 {
     if ((length(tv0) < 2) || (ncol(tv) < 2)) {
-        warning("variance required for Studentized CI's")
+        warning("variance required for studentized intervals")
         NA
     } else {
         z <- (tv[,1L]-tv0[1L])/sqrt(tv[,2L])
@@ -1214,7 +1213,7 @@ abc.ci <- function(data, statistic, index = 1, strata = rep(1, n), conf = 0.95,
     n <- NROW(y)
     strata1 <- tapply(strata,as.numeric(strata))
     if (length(index) != 1L) {
-	warning("only first element of index used in abc.ci")
+	warning("only first element of 'index' used in 'abc.ci'")
         index <- index[1L]
     }
     S <- length(table(strata1))
@@ -1279,7 +1278,7 @@ censboot <-
 #
     mstrata <- missing(strata)
     if (any(is.na(data)))
-        stop("missing values not allowed in data")
+        stop("missing values not allowed in 'data'")
     if ((sim != "ordinary") && (sim != "model") && (sim != "cond")
         && (sim != "weird")) stop("unknown value of 'sim'")
     if ((sim == "model") && (is.null(cox))) sim <- "ordinary"
@@ -1295,34 +1294,35 @@ censboot <-
     seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
     call <- match.call()
     if (isMatrix(data)) n <- nrow(data)
-    else stop("data must be a matrix with at least 2 columns")
+    else stop("'data' must be a matrix with at least 2 columns")
     if (ncol(data) < 2L)
-        stop("data must be a matrix with at least 2 columns")
+        stop("'data' must be a matrix with at least 2 columns")
     if (length(index) < 2L)
-        stop("index must contain 2 elements")
+        stop("'index' must contain 2 elements")
     if (length(index) > 2L) {
-        warning("only first 2 elements of index used")
+        warning("only first 2 elements of 'index' used")
         index <- index[1L:2L]
     }
     if (ncol(data) < max(index))
-        stop("indices are incompatible with ncol(data)")
+        stop("indices are incompatible with 'ncol(data)'")
     if (sim == "weird") {
         if (!is.null(cox))
-            stop("sim = \"weird\" cannot be used with coxph object")
+            stop("sim = \"weird\" cannot be used with a \"coxph\" object")
         if (ncol(data) > 2L)
-            warning("only columns ", index[1L], " and ", index[2L], " of data used")
+            warning(gettextf("only columns %s and %s of 'data' used",
+                             index[1L], index[2L]), domain = NA)
         data <- data[,index]
     }
     if (!is.null(cox) && is.null(cox$coefficients) &&
         ((sim == "cond") || (sim == "model"))) {
-        warning("no coefficients in cox model -- model ignored")
+        warning("no coefficients in Cox model -- model ignored")
         cox <- NULL
     }
     if ((sim != "ordinary")  && missing(F.surv))
-        stop("F.surv is required but missing")
+        stop("'F.surv' is required but missing")
     if (missing(G.surv) && ((sim == "cond") || (sim == "model")))
-        stop("G.surv is required but missing")
-    if (NROW(strata) != n) stop("strata of wrong length")
+        stop("'G.surv' is required but missing")
+    if (NROW(strata) != n) stop("'strata' of wrong length")
     if (!isMatrix(strata)) {
         if (!((sim == "weird") || (sim == "ordinary")))
             strata <- cbind(strata, 1)
@@ -1614,9 +1614,9 @@ empinf <- function(boot.out = NULL, data = NULL, statistic = NULL,
     else
     {
 	if (is.null(data))
-            stop("no data or bootstrap object specified")
+            stop("neither 'data' nor bootstrap object specified")
         if (is.null(statistic))
-            stop("no statistic or bootstrap object specified")
+            stop("neither 'statistic' nor bootstrap object specified")
         if (is.null(stype)) stype <- "w"
     }
     n <- NROW(data)
@@ -1633,11 +1633,11 @@ empinf <- function(boot.out = NULL, data = NULL, statistic = NULL,
 # calculate the infinitesimal jackknife values by numerical differentiation
     	if (stype !="w") stop("'stype' must be \"w\" for type=\"inf\"")
         if (length(index) != 1L) {
-            warning("only first element of index used")
+            warning("only first element of 'index' used")
             index <- index[1L]
         }
         if (!is.null(t))
-            warning("input t ignored; type=\"inf\"")
+            warning("input 't' ignored; type=\"inf\"")
         L <- inf.jack(data, statistic, index, strata, eps, ...)
     } else if (type == "reg") {
 # calculate the regression estimates of the influence values
@@ -1645,7 +1645,7 @@ empinf <- function(boot.out = NULL, data = NULL, statistic = NULL,
             stop("bootstrap object needed for type=\"reg\"")
         if (is.null(t)) {
             if (length(index) != 1L) {
-                warning("only first element of index used")
+                warning("only first element of 'index' used")
                 index <- index[1L]
             }
             t <- boot.out$t[,index]
@@ -1653,17 +1653,17 @@ empinf <- function(boot.out = NULL, data = NULL, statistic = NULL,
         L <- empinf.reg(boot.out, t)
     } else if (type == "jack") {
         if (!is.null(t))
-            warning("input t ignored; type=\"jack\"")
+            warning("input 't' ignored; type=\"jack\"")
         if (length(index) != 1L) {
-            warning("only first element of index used")
+            warning("only first element of 'index' used")
             index <- index[1L]
         }
         L <- usual.jack(data, statistic, stype, index, strata, ...)
     } else if (type == "pos") {
         if (!is.null(t))
-            warning("input t ignored; type=\"pos\"")
+            warning("input 't' ignored; type=\"pos\"")
         if (length(index) != 1L) {
-            warning("only first element of index used")
+            warning("only first element of 'index' used")
             index <- index[1L]
         }
         L <- positive.jack(data, statistic, stype, index, strata, ...)
@@ -1818,7 +1818,7 @@ linear.approx <- function(boot.out, L = NULL, index = 1, type = NULL,
     f <- boot.array(boot.out)
     n <- length(f[1,  ])
     if ((length(index) > 1L) && (is.null(t0) || is.null(t))) {
-        warning("only first element of index used")
+        warning("only first element of 'index' used")
         index <- index[1L]
     }
     if (is.null(t0)) {
@@ -1826,7 +1826,7 @@ linear.approx <- function(boot.out, L = NULL, index = 1, type = NULL,
         if (is.null(L))
             L <- empinf(boot.out, index=index, type=type, ...)
     } else if (is.null(t) && is.null(L)) {
-        warning("input t0 ignored: neither t nor L supplied")
+        warning("input 't0' ignored: neither 't' nor 'L' supplied")
         t0 <- t0[index]
         L <- empinf(boot.out, index=index, type=type, ...)
     }
@@ -1870,7 +1870,7 @@ envelope <-
     if (!is.null(boot.out) && isMatrix(boot.out$t)) mat <- boot.out$t
     if (!isMatrix(mat)) stop("bootstrap output matrix missing")
     n <- ncol(mat)
-    if (length(index) < 2L) stop("use boot.ci for scalar parameters")
+    if (length(index) < 2L) stop("use 'boot.ci' for scalar parameters")
     mat <- mat[,index]
     rmat <- apply(mat,2L,rank)
     R <- nrow(mat)
@@ -1882,7 +1882,7 @@ envelope <-
     ee <- err.pt
     al <- 1-level[2L]
     if (ov[3L] > al)
-        warning("unable to achieve requested overall error rate.")
+        warning("unable to achieve requested overall error rate")
     else {
         continue <- !(ee[3L] < al)
         while(continue) {
@@ -2070,11 +2070,12 @@ exp.tilt <- function(L, theta = NULL, t0 = 0, lambda = NULL,
             lambda[i] <- optim(0, tilt.dis, method = "BFGS")$par
             msd <- tilt.dis(lambda[i])
             if (is.na(msd) || (abs(msd) > 1e-6))
-                stop("unable to find multiplier for ", theta[i])
+                stop(gettextf("unable to find multiplier for %f", theta[i]),
+                     domain = NA)
         }
     }
     else if (is.null(lambda))
-        stop("theta or lambda required")
+        stop("'theta' or 'lambda' required")
     probs <- tilted.prob( lambda, L, strata )
     if (is.null(theta)) theta <- t0 + sum(probs * L)
     else theta <- theta+t0
@@ -2102,7 +2103,7 @@ imp.weights <- function(boot.out, def = TRUE, q = NULL)
     strata <- tapply(boot.out$strata,as.numeric(boot.out$strata))
 #    ns <- table(strata)
     if (is.null(q))  q <- rep(1,ncol(f))
-    if (any(q == 0)) stop("0 elements not allowed in q")
+    if (any(q == 0)) stop("0 elements not allowed in 'q'")
     p <- boot.out$weights
     if ((length(R) == 1L) && all(abs(p - q)/p < 1e-10))
         return(rep(1, R))
@@ -2141,9 +2142,9 @@ imp.moments <- function(boot.out=NULL, index=1, t=boot.out$t[,index],
     if (is.null(w))
         if (!is.null(boot.out))
             w <- imp.weights(boot.out, def, q)
-        else	stop("either boot.out or w must be specified.")
+        else	stop("either 'boot.out' or 'w' must be specified.")
     if ((length(index) > 1L) && missing(t)) {
-        warning("only first element of index used")
+        warning("only first element of 'index' used")
         t <- boot.out$t[,index[1L]]
     }
     fins <- seq_along(t)[is.finite(t)]
@@ -2197,9 +2198,9 @@ imp.quantile <- function(boot.out=NULL, alpha=NULL, index=1,
     if (is.null(w))
         if (!is.null(boot.out))
             w <- imp.weights(boot.out, def, q)
-        else	stop("either boot.out or w must be specified.")
+        else	stop("either 'boot.out' or 'w' must be specified.")
     if ((length(index) > 1L) && missing(t)){
-        warning("only first element of index used")
+        warning("only first element of 'index' used")
         t <- boot.out$t[,index[1L]]
     }
     fins <- seq_along(t)[is.finite(t)]
@@ -2238,9 +2239,9 @@ imp.prob <- function(boot.out=NULL, index=1, t0=boot.out$t0[index],
     if (is.null(w))
         if (!is.null(boot.out))
             w <- imp.weights(boot.out, def, q)
-        else	stop("either boot.out or w must be specified.")
+        else	stop("either 'boot.out' or 'w' must be specified.")
     if ((length(index) > 1L) && (missing(t) || missing(t0))) {
-        warning("only first element of index used")
+        warning("only first element of 'index' used")
         index <- index[1L]
         if (is.missing(t)) t <- boot.out$t[,index]
         if (is.missing(t0)) t0 <- boot.out$t0[index]
@@ -2268,11 +2269,11 @@ smooth.f <- function(theta, boot.out, index=1, t=boot.out$t[,index],
 # Does frequency smoothing of the frequency array for boot.out with
 # bandwidth A to give frequencies for 'typical' distribution at theta
     if ((length(index) > 1L) && missing(t)) {
-        warning("only first element of index used")
+        warning("only first element of 'index' used")
         t <- boot.out$t[,index[1L]]
     }
     if (isMatrix(t)) {
-        warning("only first column of t used")
+        warning("only first column of 't' used")
         t <- t[,1L]
     }
     fins <- seq_along(t)[is.finite(t)]
@@ -2320,9 +2321,9 @@ tilt.boot <- function(data, statistic, R, sim="ordinary",
 #  The function assumes at present that q=0 is the median of the distribution
 #  of t*.
     if ((sim != "ordinary") && (sim != "balanced"))
-        stop("invalid value of sim supplied")
+        stop("invalid value of 'sim' supplied")
     if (!is.null(theta) && (length(R) != length(theta)+1))
-        stop("R and theta have incompatible lengths")
+        stop("'R' and 'theta' have incompatible lengths")
     if (!tilt && (R[1L] == 0))
         stop("R[1L] must be positive for frequency smoothing")
     call <- match.call()
@@ -2330,7 +2331,7 @@ tilt.boot <- function(data, statistic, R, sim="ordinary",
     if (R[1L]>0) {
 # If required run an initial bootstrap with equal weights.
         if (is.null(theta) && (length(R) != length(alpha)+1))
-            stop("R and alpha have incompatible lengths")
+            stop("'R' and 'alpha' have incompatible lengths")
         boot0 <- boot(data, statistic, R = R[1L], sim=sim, stype=stype,
                       strata = strata, ... )
         if (is.null(theta)) {
@@ -2344,9 +2345,9 @@ tilt.boot <- function(data, statistic, R, sim="ordinary",
 # used.  Also set up a dummy bootstrap object to hold the output.
         tilt <- TRUE
         if (is.null(theta))
-            stop("theta must be supplied if R[1L] = 0")
+            stop("'theta' must be supplied if R[1L] = 0")
         if (!missing(alpha))
-            warning("alpha ignored; R[1L]=0")
+            warning("'alpha' ignored; R[1L] = 0")
         if (stype == "i") orig <- seq_len(n)
         else if (stype == "f") orig <- rep(1,n)
         else orig <- rep(1,n)/n
@@ -2385,7 +2386,7 @@ control <- function(boot.out, L=NULL, distn=NULL, index=1, t0=NULL, t=NULL,
 #  moments and quantiles can be estimated.
 #
     if (!is.null(boot.out$call$weights))
-        stop("control methods undefined when boot.out has weights")
+        stop("control methods undefined when 'boot.out' has weights")
     if (is.null(alpha))
         alpha <- c(1,2.5,5,10,20,50,80,90,95,97.5,99)/100
     tL <- dL <- bias <- bias.L <- var.L <- NULL
@@ -2397,7 +2398,7 @@ control <- function(boot.out, L=NULL, distn=NULL, index=1, t0=NULL, t=NULL,
     if (bias.adj) {
 # Find the adjusted bias estimate using post-simulation balance.
         if (length(index) > 1L) {
-            warning("only first element of index used")
+            warning("only first element of 'index' used")
             index <- index[1L]
         }
         f.big <- apply(f, 2L, sum)
@@ -2418,7 +2419,7 @@ control <- function(boot.out, L=NULL, distn=NULL, index=1, t0=NULL, t=NULL,
 # of the moments and quantiles of the statistic of interest.
         if (is.null(t) || is.null(t0)) {
             if (length(index) > 1L) {
-                warning("only first element of index used")
+                warning("only first element of 'index' used")
                 index <- index[1L]
             }
             if (is.null(L))
@@ -2800,12 +2801,11 @@ saddle <-
         A <- as.matrix(A)
         d <- ncol(A)
         if (length(u) != d)
-            stop(paste("number of columns of A (", d,
-                       ") not equal to length of u (", length(u),")",
-                       sep=""))
+            stop(gettextf("number of columns of 'A' (%d) not equal to length of 'u' (%d)",
+                          d, length(u)), domain = NA)
         n <- nrow(A)
     } else if (is.null(K.adj))
-        stop("either A and u or K.adj and K2 must be supplied")
+        stop("either 'A' and 'u' or 'K.adj' and 'K2' must be supplied")
     if (!is.null(K.adj)) {
 #  If K.adj and K2 are supplied then calculate the simple saddlepoint.
         if (is.null(d)) d <- 1
@@ -2979,7 +2979,7 @@ saddle.distn <-
     if (is.null(alpha)) alpha <- c(0.001,0.005,0.01,0.025,0.05,0.1,0.2,0.5,
                                    0.8,0.9,0.95,0.975,0.99,0.995,0.999)
     if (is.null(t) && is.null(t0))
-        stop("one of t or t0 required")
+        stop("one of 't' or 't0' required")
     ep1 <- min(c(alpha,0.01))/10
     ep2 <- (1-max(c(alpha,0.99)))/10
     d <- if (type == "simp") 1
@@ -2993,8 +2993,8 @@ saddle.distn <-
     pts <- NULL
     if (is.function(A)) {
         n <- nrow(as.matrix(A(t0[1L], ...)))
-        if (is.null(u)) stop("function u missing")
-        if (!is.function(u)) stop("u must be a function")
+        if (is.null(u)) stop("function 'u' missing")
+        if (!is.function(u)) stop("'u' must be a function")
         if (is.null(t)) {
             t1 <- t0[1L]-2*t0[2L]
             sad <- saddle(A = A(t1, ...), u = u(t1, ...),
@@ -3385,7 +3385,7 @@ tsboot <- function(tseries, statistic, R, l = NULL, sim = "model",
 
     tscl <- class(tseries)
     R <- floor(R)
-    if (R <= 0) stop("R must be positive")
+    if (R <= 0) stop("'R' must be positive")
     call <- match.call()
     if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) runif(1)
     seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
@@ -3397,7 +3397,7 @@ tsboot <- function(tseries, statistic, R, l = NULL, sim = "model",
     if ((sim == "model") || (sim == "scramble"))
         l <- NULL
     else if ((is.null(l) || (l <= 0) || (l > n)))
-        stop("invalid value of l")
+        stop("invalid value of 'l'")
     fn <- if (sim == "scramble") {
         rm(ts.orig)
         ## Phase scrambling
@@ -3427,7 +3427,7 @@ tsboot <- function(tseries, statistic, R, l = NULL, sim = "model",
             statistic(ran.gen(ts.orig[inds, ], n.sim, ran.args), ...)
         }
     } else
-        stop("unrecognized value of sim")
+        stop("unrecognized value of 'sim'")
 
     res <- if (ncpus > 1L && (have_mc || have_snow)) {
         if (have_mc) {

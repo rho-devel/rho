@@ -26,7 +26,7 @@ sammon <- function(d, y = cmdscale(d, k), k = 2, niter = 100, trace = TRUE,
     if(is.null(n <- attr(d, "Size"))) {
         x <- as.matrix(d)
         if((n <- nrow(x)) != ncol(x))
-            stop("distances must be result of dist or a square matrix")
+            stop("distances must be result of 'dist' or a square matrix")
         rn <- rownames(x)
     } else {
         x <- matrix(0, n, n)

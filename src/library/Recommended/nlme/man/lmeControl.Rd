@@ -2,7 +2,6 @@
 % Part of the nlme package for R
 % Distributed under GPL 2 or later: see nlme/LICENCE
 
-% $Id: lmeControl.Rd,v 1.8 2002/03/05 14:59:39 bates Exp $
 \name{lmeControl}
 \title{Control Values for lme Fit}
 \usage{
@@ -10,7 +9,7 @@ lmeControl(maxIter, msMaxIter, tolerance, niterEM, msMaxEval, msTol,
            msScale, msVerbose, returnObject, gradHess, apVar,
            .relStep, minAbsParApVar, nlmStepMax,
            opt = c("nlminb", "optim"), optimMethod,
-           natural)
+           natural, \dots)
 }
 \alias{lmeControl}
 \arguments{
@@ -26,9 +25,8 @@ lmeControl(maxIter, msMaxIter, tolerance, niterEM, msMaxEval, msTol,
    coefficients. Default is 25.}
  \item{msMaxEval}{maximum number of evaluations of the objective
    function permitted for nlminb. Default is 200. }
- \item{msTol}{tolerance for the convergence criterion in \code{nlm},
-   passed as the \code{rel.tolerance} argument to the function (see
-   documentation on \code{nlm}). Default is 1e-7. }
+ \item{msTol}{tolerance for the convergence criterion the first
+   iteration.  Default is 1e-7. }
  \item{msScale}{scale function passed as the \code{scale} argument to
    the \code{nlm} function (see documentation on that function). Default
    is \code{lmeScale}.}
@@ -55,9 +53,8 @@ lmeControl(maxIter, msMaxIter, tolerance, niterEM, msMaxEval, msTol,
    calculations. Default is \code{.Machine$double.eps^(1/3)}.}
  \item{nlmStepMax}{stepmax value to be passed to nlm. See
      \code{\link{nlm}} for details. Default is 100.0}
- \item{opt}{the optimizer to be used, either \code{\link{nlminb}} (the
-   default since (\R 2.2.0) or \code{\link{optim}} (the previous
-   default).}
+ \item{opt}{the optimizer to be used, either \code{"\link{nlminb}"} (the
+   default) or \code{"\link{optim}"}.}
  \item{optimMethod}{character - the optimization method to be used with
    the \code{\link{optim}} optimizer. The default is
    \code{"BFGS"}.  An alternative is \code{"L-BFGS-B"}.}
@@ -67,6 +64,10 @@ lmeControl(maxIter, msMaxIter, tolerance, niterEM, msMaxEval, msTol,
    parametrization should be used for general positive-definite matrices
    (\code{pdSymm}) in \code{reStruct}, when the approximate covariance
    matrix of the estimators is calculated. Default is \code{TRUE}.}
+ \item{\dots}{Further named control arguments to be passed to
+   \code{\link{nlminb}} (those from \code{abs.tol} down)
+   or \code{\link{optim}} (those except \code{trace} and \code{maxit};
+   \code{reltol}: is used only from the second iteration).}
 }
 \description{
   The values supplied in the function call replace the defaults and a
@@ -76,7 +77,7 @@ lmeControl(maxIter, msMaxIter, tolerance, niterEM, msMaxEval, msTol,
 \value{
   a list with components for each of the possible arguments.
 }
-\author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
+\author{José Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}
 \seealso{\code{\link{lme}}, \code{\link{nlm}}, \code{\link{optim}},
   \code{\link{lmeScale}}}
 \examples{

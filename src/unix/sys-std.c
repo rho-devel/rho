@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -50,6 +50,7 @@
 
 #define R_USE_SIGNALS 1
 #include <Defn.h>
+#include <Internal.h>
 
 #ifdef HAVE_STRINGS_H
    /* may be needed to define bzero in FD_ZERO (eg AIX) */
@@ -60,6 +61,7 @@
 #include "Runix.h"
 #include "Startup.h"
 #include <R_ext/Riconv.h>
+#include <R_ext/Print.h> // for REprintf
 #include "CXXR/WeakRef.h"
 
 #ifdef HAVE_UNISTD_H
@@ -559,7 +561,6 @@ static void popReadline(void)
 
 static void readline_handler(char *line)
 {
-    int l;
     R_size_t buflen = rl_top->readline_len;
 
     popReadline();
@@ -576,7 +577,7 @@ static void readline_handler(char *line)
 	   the caller.
 	*/
 	strncpy((char *)rl_top->readline_buf, line, buflen);
-	l = strlen(line);
+	size_t l = strlen(line);
 	if(l < buflen - 1) {
 	    rl_top->readline_buf[l] = '\n';
 	    rl_top->readline_buf[l+1] = '\0';
@@ -800,6 +801,7 @@ static char *R_completion_generator(const char *text, int state)
 	    assignCall = PROTECT(lang2(RComp_assignTokenSym, mkString(text))),
 	    completionCall = PROTECT(lang1(RComp_completeTokenSym)),
 	    retrieveCall = PROTECT(lang1(RComp_retrieveCompsSym));
+	const void *vmax = vmaxget();
 
 	eval(assignCall, rcompgen_rho);
 	eval(completionCall, rcompgen_rho);
@@ -813,6 +815,7 @@ static char *R_completion_generator(const char *text, int state)
 		compstrings[i] = strdup(translateChar(STRING_ELT(completions, i)));
 	}
 	UNPROTECT(4);
+	vmaxset(vmax);
     }
 
     if (list_index < ncomp)
@@ -849,7 +852,8 @@ Rstd_ReadConsole(const char *prompt, unsigned char *buf, int len,
 		 int addtohistory)
 {
     if(!R_Interactive) {
-	int ll, err = 0;
+	size_t ll;
+	int err = 0;
 	if (!R_Slave) {
 	    fputs(prompt, stdout);
 	    fflush(stdout); /* make sure prompt is output */
@@ -873,7 +877,7 @@ Rstd_ReadConsole(const char *prompt, unsigned char *buf, int len,
 	    char *ob = obuf;
 	    if(!cd) {
 		cd = Riconv_open("", R_StdinEnc);
-		if(!cd) error(_("encoding '%s' is not recognised"), R_StdinEnc);
+		if(cd == (void *)-1) error(_("encoding '%s' is not recognised"), R_StdinEnc);
 	    }
 	    res = Riconv(cd, &ib, &inb, &ob, &onb);
 	    *ob = '\0';
@@ -1029,6 +1033,9 @@ void attribute_hidden Rstd_Busy(int which)
  */
 
 
+/* in platform.c */
+void R_CleanTempDir2(void);
+
 void R_CleanTempDir(void)
 {
     char buf[1024];
@@ -1038,9 +1045,12 @@ void R_CleanTempDir(void)
 	/* On Solaris the working directory must be outside this one */
 	chdir(R_HomeDir());
 #endif
-	snprintf(buf, 1024, "rm -rf %s", Sys_TempDir);
-	buf[1023] = '\0';
-	R_system(buf);
+	char *p = getenv("R_OSX_VALGRIND");
+	if (!p) {
+	    snprintf(buf, 1024, "rm -rf %s", Sys_TempDir);
+	    buf[1023] = '\0';
+	    R_system(buf);
+	} else R_CleanTempDir2();
     }
 }
 
@@ -1170,7 +1180,7 @@ Rstd_ShowFiles(int nfile,		/* number of files */
 	    }
 	    fclose(tfp);
 	}
-	snprintf(buf, 1024, "%s < %s", pager, filename);
+	snprintf(buf, 1024, "'%s' < '%s'", pager, filename); //might contain spaces
 	res = R_system(buf);
 	unlink(filename);
 	free(filename);
@@ -1190,14 +1200,14 @@ Rstd_ShowFiles(int nfile,		/* number of files */
 
 int attribute_hidden Rstd_ChooseFile(int _new, char *buf, int len)
 {
-    int namelen;
+    size_t namelen;
     char *bufp;
     R_ReadConsole("Enter file name: ", (unsigned char *)buf, len, 0);
     namelen = strlen(buf);
     bufp = &buf[namelen - 1];
     while (bufp >= buf && isspace((int)*bufp))
 	*bufp-- = '\0';
-    return strlen(buf);
+    return (int) strlen(buf);
 }
 
 

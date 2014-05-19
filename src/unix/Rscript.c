@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2006-10  The R Core Team
+ *  Copyright (C) 2006-13  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -87,7 +87,12 @@ R --slave --no-restore --vanilla --file=foo [script_args]
 #endif
 
 #ifndef WIN32
+#ifndef R_ARCH /* R_ARCH should be always defined, but for safety ... */
+#define R_ARCH ""
+#endif
+
 static char rhome[] = R_HOME;
+static char rarch[] = R_ARCH;
 #else
 # ifndef BINDIR
 #  define BINDIR "bin"
@@ -158,7 +163,7 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "impossibly long path for RHOME\n");
 	exit(1);
     }
-    sprintf(cmd, "%s/bin/R", p);
+    snprintf(cmd, PATH_MAX+1, "%s/bin/R", p);
 #endif
     av[ac++] = cmd;
     av[ac++] = "--slave";
@@ -174,7 +179,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "R scripting front-end version %s.%s (%s-%s-%s)\n", 
 			R_MAJOR, R_MINOR, R_YEAR, R_MONTH, R_DAY);
 	    else 
-		fprintf(stderr, "R scripting front-end version %s.%s %s (%s-%s-%s r%s)\n", 
+		fprintf(stderr, "R scripting front-end version %s.%s %s (%s-%s-%s r%d)\n", 
 			R_MAJOR, R_MINOR, R_STATUS, R_YEAR, R_MONTH, R_DAY,
 			R_SVN_REVISION);
 	    exit(0);
@@ -206,7 +211,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "unable to set R_DEFAULT_PACKAGES\n");
 		exit(1);
 	    }
-	    sprintf(buf2, "R_DEFAULT_PACKAGES=%s", argv[i]+19);
+	    snprintf(buf2, 1100, "R_DEFAULT_PACKAGES=%s", argv[i]+19);
 	    if(verbose)
 		fprintf(stderr, "setting '%s'\n", buf2);
 #ifdef HAVE_PUTENV
@@ -224,15 +229,15 @@ int main(int argc, char *argv[])
     }
 
     if(!e_mode) {
-      if(++i0 >= argc) {
-        fprintf(stderr, "file name is missing\n");
-        exit(1);
-      }
-      if(strlen(argv[i0]) > PATH_MAX) {
+	if(++i0 >= argc) {
+	    fprintf(stderr, "file name is missing\n");
+	    exit(1);
+	}
+	if(strlen(argv[i0]) > PATH_MAX) {
 	    fprintf(stderr, "file name is too long\n");
 	    exit(1);
 	}
-	sprintf(buf, "--file=%s", argv[i0]);
+	snprintf(buf, PATH_MAX+8, "--file=%s", argv[i0]);
 	av[ac++] = buf;
     }
     av[ac++] = "--args";
@@ -241,6 +246,20 @@ int main(int argc, char *argv[])
 #ifdef HAVE_PUTENV
     if(!set_dp && !getenv("R_DEFAULT_PACKAGES"))
 	putenv("R_DEFAULT_PACKAGES=datasets,utils,grDevices,graphics,stats");
+
+#ifndef WIN32
+    /* pass on r_arch from this binary to R as a default */
+    if (!getenv("R_ARCH") && *rarch) {
+	/* we have to prefix / so we may as well use putenv */
+	if (strlen(rarch) + 9 > sizeof(buf2)) {
+	    fprintf(stderr, "impossibly long string for R_ARCH\n");
+	    exit(1);
+	}
+	strcpy(buf2, "R_ARCH=/");
+	strcat(buf2, rarch);
+	putenv(buf2);
+    }
+#endif
 #endif
     if(verbose) {
 	fprintf(stderr, "running\n  '%s", cmd);

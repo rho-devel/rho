@@ -44,7 +44,7 @@ contr.sdif(n, contrasts = TRUE, sparse = FALSE)
   \code{\link{contr.helmert}}.
 }
 \examples{
-contr.sdif(6)
-zapsmall(ginv(contr.sdif(6)))
+(A <- contr.sdif(6))
+zapsmall(ginv(A))
 }
 \keyword{models}

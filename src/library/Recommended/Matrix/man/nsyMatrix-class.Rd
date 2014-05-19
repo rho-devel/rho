@@ -12,6 +12,8 @@
 \alias{coerce,nsyMatrix,nspMatrix-method}
 \alias{coerce,matrix,nsyMatrix-method}
 \alias{coerce,matrix,nspMatrix-method}
+\alias{diag<-,nspMatrix-method}
+\alias{diag<-,nsyMatrix-method}
 \alias{t,nspMatrix-method}
 \alias{t,nsyMatrix-method}
 %

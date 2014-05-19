@@ -1,6 +1,6 @@
 % File src/library/stats/man/nls.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2012 R Core Team
 % Distributed under GPL 2 or later
 
 \name{nls}
@@ -143,10 +143,16 @@ nls(formula, data, start, control, algorithm,
   \url{http://www.netlib.org/port/} for the Port library
   documentation.
 }
-\author{Douglas M. Bates and Saikat DebRoy}
+\author{
+  Douglas M. Bates and Saikat DebRoy: David M. Gay for the Fortran code
+  used by \code{algorithm = "port"}.
+}
 \seealso{
   \code{\link{summary.nls}}, \code{\link{predict.nls}},
   \code{\link{profile.nls}}.
+
+  Self starting models (with \sQuote{automatic initial values}):
+  \code{\link{selfStart}}.
 }
 \examples{
 \testonly{od <- options(digits=5)}
@@ -263,10 +269,11 @@ y <- 100 + 10 * exp(x / 2) + rnorm(x)/10
 nlmod <- nls(y ~  Const + A * exp(B * x))
 
 plot(x,y, main = "nls(*), data, true function and fit, n=100")
-curve(100 + 10 * exp(x / 2), col=4, add = TRUE)
-lines(x, predict(nlmod), col=2)
+curve(100 + 10 * exp(x / 2), col = 4, add = TRUE)
+lines(x, predict(nlmod), col = 2)
 
 
+\donttest{
 ## The muscle dataset in MASS is from an experiment on muscle
 ## contraction on 21 animals.  The observed variables are Strip
 ## (identifier of muscle), Conc (Cacl concentration) and Length
@@ -277,13 +284,13 @@ utils::data(muscle, package = "MASS")
 ##       Length = alpha + beta*exp(-Conc/theta) + error
 ## where theta is constant but alpha and beta may vary with Strip.
 
-with(muscle, table(Strip)) # 2,3 or 4 obs per strip
+with(muscle, table(Strip)) # 2, 3 or 4 obs per strip
 
 ## We first use the plinear algorithm to fit an overall model,
 ## ignoring that alpha and beta might vary with Strip.
 
 musc.1 <- nls(Length ~ cbind(1, exp(-Conc/th)), muscle,
-              start = list(th=1), algorithm="plinear")
+              start = list(th = 1), algorithm = "plinear")
 summary(musc.1)
 
 ## Then we use nls' indexing feature for parameters in non-linear
@@ -293,10 +300,9 @@ summary(musc.1)
 ## Note that with indexed parameters, the starting values must be
 ## given in a list (with names):
 b <- coef(musc.1)
-musc.2 <- nls(Length ~ a[Strip] + b[Strip]*exp(-Conc/th),
-              muscle,
-              start = list(a=rep(b[2],21), b=rep(b[3],21), th=b[1]))
-summary(musc.2)
+musc.2 <- nls(Length ~ a[Strip] + b[Strip]*exp(-Conc/th), muscle,
+              start = list(a = rep(b[2], 21), b = rep(b[3], 21), th = b[1]))
+summary(musc.2)}
 \testonly{options(od)}
 }
 \keyword{nonlinear}

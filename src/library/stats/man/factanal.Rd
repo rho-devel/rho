@@ -71,7 +71,7 @@ factanal(x, factors, data = NULL, covmat = NULL, n.obs = NA,
   variance, and that the errors be independent with variances
   \eqn{\Psi}{Psi}, the \emph{uniquenesses}.  It is also common to
   scale the observed variables to unit variance, and done in this function.
-  
+
   Thus factor analysis is in essence a model for the correlation matrix
   of \eqn{x},
   \deqn{\Sigma = \Lambda^\prime\Lambda + \Psi}{\Sigma = \Lambda'\Lambda + \Psi}
@@ -80,7 +80,7 @@ factanal(x, factors, data = NULL, covmat = NULL, n.obs = NA,
   any orthogonal matrix \eqn{G}.  Such matrices \eqn{G} are known as
   \emph{rotations} (although the term is applied also to non-orthogonal
   invertible matrices).
-  
+
   If \code{covmat} is supplied it is used.  Otherwise \code{x} is used
   if it is a matrix, or a formula \code{x} is used with \code{data} to
   construct a model matrix, and that is used to construct a covariance
@@ -154,7 +154,7 @@ factanal(x, factors, data = NULL, covmat = NULL, n.obs = NA,
   maximum likelihood factor analysis is hard, and many other examples we
   compared had less good fits than produced by this function.  In
   particular, solutions which are \sQuote{Heywood cases} (with one or more
-  uniquenesses essentially zero) are much often common than most texts
+  uniquenesses essentially zero) are much more common than most texts
   and some other programs would lead one to believe.
 }
 
@@ -164,10 +164,10 @@ factanal(x, factors, data = NULL, covmat = NULL, n.obs = NA,
 
   Bartlett, M. S. (1938) Methods of estimating mental
   factors. \emph{Nature}, \bold{141}, 609--610.
-  
+
   \enc{Jöreskog}{Joreskog}, K. G. (1963)
   \emph{Statistical Estimation in Factor Analysis.}  Almqvist and Wicksell.
-  
+
   Lawley, D. N. and Maxwell, A. E. (1971) \emph{Factor Analysis as a
     Statistical Method.} Second edition. Butterworths.
 
@@ -180,7 +180,7 @@ factanal(x, factors, data = NULL, covmat = NULL, n.obs = NA,
   \code{print} method), \code{\link{varimax}}, \code{\link{princomp}},
   \code{\link{ability.cov}}, \code{\link{Harman23.cor}},
   \code{\link{Harman74.cor}}.
-  
+
   Other rotation methods are available in various contributed packages,
   including \CRANpkg{GPArotation} and \CRANpkg{psych}.
 }

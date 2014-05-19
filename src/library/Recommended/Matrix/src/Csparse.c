@@ -37,67 +37,23 @@ SEXP Csparse_validate(SEXP x) {
     return Csparse_validate_(x, FALSE);
 }
 
+
+#define _t_Csparse_validate
+#include "t_Csparse_validate.c"
+
+#define _t_Csparse_sort
+#include "t_Csparse_validate.c"
+
+// R: .validateCsparse(x, sort.if.needed = FALSE) :
 SEXP Csparse_validate2(SEXP x, SEXP maybe_modify) {
     return Csparse_validate_(x, asLogical(maybe_modify));
 }
 
-SEXP Csparse_validate_(SEXP x, Rboolean maybe_modify)
-{
-    /* NB: we do *NOT* check a potential 'x' slot here, at all */
-    SEXP pslot = GET_SLOT(x, Matrix_pSym),
-	islot = GET_SLOT(x, Matrix_iSym);
-    Rboolean sorted, strictly;
-    int j, k,
-	*dims = INTEGER(GET_SLOT(x, Matrix_DimSym)),
-	nrow = dims[0],
-	ncol = dims[1],
-	*xp = INTEGER(pslot),
-	*xi = INTEGER(islot);
-
-    if (length(pslot) != dims[1] + 1)
-	return mkString(_("slot p must have length = ncol(.) + 1"));
-    if (xp[0] != 0)
-	return mkString(_("first element of slot p must be zero"));
-    if (length(islot) < xp[ncol]) /* allow larger slots from over-allocation!*/
-	return
-	    mkString(_("last element of slot p must match length of slots i and x"));
-    for (j = 0; j < xp[ncol]; j++) {
-	if (xi[j] < 0 || xi[j] >= nrow)
-	    return mkString(_("all row indices must be between 0 and nrow-1"));
-    }
-    sorted = TRUE; strictly = TRUE;
-    for (j = 0; j < ncol; j++) {
-	if (xp[j] > xp[j + 1])
-	    return mkString(_("slot p must be non-decreasing"));
-	if(sorted) /* only act if >= 2 entries in column j : */
-	    for (k = xp[j] + 1; k < xp[j + 1]; k++) {
-		if (xi[k] < xi[k - 1])
-		    sorted = FALSE;
-		else if (xi[k] == xi[k - 1])
-		    strictly = FALSE;
-	    }
-    }
-    if (!sorted) {
-	if(maybe_modify) {
-	    CHM_SP chx = (CHM_SP) alloca(sizeof(cholmod_sparse));
-	    R_CheckStack();
-	    as_cholmod_sparse(chx, x, FALSE, TRUE);/*-> cholmod_l_sort() ! */
-	    /* as chx = AS_CHM_SP__(x)  but  ^^^^ sorting x in_place !!! */
-
-	    /* Now re-check that row indices are *strictly* increasing
-	     * (and not just increasing) within each column : */
-	    for (j = 0; j < ncol; j++) {
-		for (k = xp[j] + 1; k < xp[j + 1]; k++)
-		    if (xi[k] == xi[k - 1])
-			return mkString(_("slot i is not *strictly* increasing inside a column (even after cholmod_l_sort)"));
-	    }
-	} else { /* no modifying sorting : */
-	    return mkString(_("row indices are not sorted within columns"));
-	}
-    } else if(!strictly) {  /* sorted, but not strictly */
-	return mkString(_("slot i is not *strictly* increasing inside a column"));
-    }
-    return ScalarLogical(1);
+// R: Matrix:::.sortCsparse(x) :
+SEXP Csparse_sort (SEXP x) {
+   int ok = Csparse_sort_2(x, TRUE); // modifying x directly
+   if(!ok) warning(_("Csparse_sort(x): x is not a valid (apart from sorting) CsparseMatrix"));
+   return x;
 }
 
 SEXP Rsparse_validate(SEXP x)
@@ -189,7 +145,8 @@ SEXP nz2Csparse(SEXP x, enum x_slot_kind r_kind)
     if(cl_x[2] != 'C') error(_("not a CsparseMatrix"));
     int nnz = LENGTH(GET_SLOT(x, Matrix_iSym));
     SEXP ans;
-    char *ncl = strdup(cl_x);
+    char *ncl = alloca(strlen(cl_x) + 1); /* not much memory required */
+    strcpy(ncl, cl_x);
     double *dx_x; int *ix_x;
     ncl[0] = (r_kind == x_double ? 'd' :
 	      (r_kind == x_logical ? 'l' :
@@ -234,6 +191,10 @@ SEXP Csparse_to_matrix(SEXP x)
     return chm_dense_to_matrix(cholmod_sparse_to_dense(AS_CHM_SP__(x), &c),
 			       1 /*do_free*/, GET_SLOT(x, Matrix_DimNamesSym));
 }
+SEXP Csparse_to_vector(SEXP x)
+{
+    return chm_dense_to_vector(cholmod_sparse_to_dense(AS_CHM_SP__(x), &c), 1);
+}
 
 SEXP Csparse_to_Tsparse(SEXP x, SEXP tri)
 {
@@ -266,11 +227,15 @@ SEXP Csparse_symmetric_to_general(SEXP x)
 
 SEXP Csparse_general_to_symmetric(SEXP x, SEXP uplo)
 {
+    int *adims = INTEGER(GET_SLOT(x, Matrix_DimSym)), n = adims[0];
+    if(n != adims[1]) {
+	error(_("Csparse_general_to_symmetric(): matrix is not square!"));
+	return R_NilValue; /* -Wall */
+    }
     CHM_SP chx = AS_CHM_SP__(x), chgx;
     int uploT = (*CHAR(STRING_ELT(uplo,0)) == 'U') ? 1 : -1;
     int Rkind = (chx->xtype != CHOLMOD_PATTERN) ? Real_kind(x) : 0;
     R_CheckStack();
-
     chgx = cholmod_copy(chx, /* stype: */ uploT, chx->xtype, &c);
     /* xtype: pattern, "real", complex or .. */
     return chm_sparse_to_SEXP(chgx, 1, 0, Rkind, "",
@@ -566,7 +531,6 @@ SEXP Csparse_diagN2U(SEXP x)
     }
     else { /* triangular with diag='N'): now drop the diagonal */
 	/* duplicate, since chx will be modified: */
-	SEXP ans;
 	SEXP xx = PROTECT(duplicate(x));
 	CHM_SP chx = AS_CHM_SP__(xx);
 	int uploT = (*uplo_P(x) == 'U') ? 1 : -1,
@@ -575,10 +539,10 @@ SEXP Csparse_diagN2U(SEXP x)
 
 	chm_diagN2U(chx, uploT, /* do_realloc */ FALSE);
 
-	ans = chm_sparse_to_SEXP(chx, /*dofree*/ 0/* or 1 ?? */,
-				 uploT, Rkind, "U",
-				 GET_SLOT(x, Matrix_DimNamesSym));
-	UNPROTECT(1);
+	SEXP ans = chm_sparse_to_SEXP(chx, /*dofree*/ 0/* or 1 ?? */,
+				      uploT, Rkind, "U",
+				      GET_SLOT(x, Matrix_DimNamesSym));
+	UNPROTECT(1);// only now !
 	return ans;
     }
 }
@@ -686,11 +650,11 @@ SEXP diag_tC_ptr(int n, int *x_p, double *x_x, int *perm, SEXP resultKind)
     double *v = REAL(ans);
 /*  ^^^^^^      ^^^^  FIXME[Generalize] */
 
-#define for_DIAG(v_ASSIGN)						\
-    for(i = 0; i < n; i++, i_from += n_x) {				\
-	/* looking at i-th column */					\
+#define for_DIAG(v_ASSIGN)					\
+    for(i = 0; i < n; i++, i_from += n_x) {			\
+	/* looking at i-th column */				\
 	n_x = x_p[i+1] - x_p[i];/* #{entries} in this column */	\
-	v_ASSIGN;							\
+	v_ASSIGN;						\
     }
 
     /* NOTA BENE: we assume  -- uplo = "L" i.e. lower triangular matrix
@@ -722,7 +686,8 @@ SEXP diag_tC_ptr(int n, int *x_p, double *x_x, int *perm, SEXP resultKind)
     case diag_backpermuted:
 	for_DIAG(v[i] = x_x[i_from]);
 
-	warning(_("resultKind = 'diagBack' (back-permuted) is experimental"));
+	warning(_("%s = '%s' (back-permuted) is experimental"),
+		"resultKind", "diagBack");
 	/* now back_permute : */
 	for(i = 0; i < n; i++) {
 	    double tmp = v[i]; v[i] = v[perm[i]]; v[perm[i]] = tmp;

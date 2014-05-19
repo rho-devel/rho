@@ -27,7 +27,19 @@ coxph <- function(formula, data, weights, subset, na.action,
     Terms <- terms(m)
 
     
+    ## We want to pass any ... args to coxph.control, but not pass things
+    ##  like "dats=mydata" where someone just made a typo.  The use of ...
+    ##  is simply to allow things like "eps=1e6" with easier typing
+    extraArgs <- list(...)
+    if (length(extraArgs)) {
+        controlargs <- names(formals(coxph.control)) #legal arg names
+        indx <- pmatch(names(extraArgs), controlargs, nomatch=0L)
+        if (any(indx==0L))
+            stop(gettextf("Argument %s not matched", names(extraArgs)[indx==0L]),
+                 domain = NA)
+    }
     if (missing(control)) control <- coxph.control(...)
+
     Y <- model.extract(m, "response")
     if (!inherits(Y, "Surv")) stop("Response must be a survival object")
     type <- attr(Y, "type")
@@ -91,7 +103,7 @@ coxph <- function(formula, data, weights, subset, na.action,
                 newstrat <-  as.integer(c(1, 1*(diff(strats[sorted])!=0))) 
                 }
             if (storage.mode(Y) != "double") storage.mode(Y) <- "double"
-            counts <- .Call("coxcount1", Y[sorted,], 
+            counts <- .Call(Ccoxcount1, Y[sorted,], 
                             as.integer(newstrat))
             tindex <- sorted[counts$index]
         }
@@ -103,11 +115,11 @@ coxph <- function(formula, data, weights, subset, na.action,
             }
             else {
                 sort.end  <- order(strats, -Y[,2], Y[,3])
-                sort.start<- order(strata, -Y[,1])
+                sort.start<- order(strats, -Y[,1])
                 newstrat  <- c(1L, as.integer(diff(strats[sort.end])!=0))
             }
             if (storage.mode(Y) != "double") storage.mode(Y) <- "double"
-            counts <- .Call("coxcount2", Y, 
+            counts <- .Call(Ccoxcount2, Y, 
                             as.integer(sort.start -1L),
                             as.integer(sort.end -1L), 
                             as.integer(newstrat))
@@ -276,8 +288,9 @@ coxph <- function(formula, data, weights, subset, na.action,
             }
         }
         if (y)     fit$y <- Y
-    }        
+    }
     if (!is.null(weights) && any(weights!=1)) fit$weights <- weights
+    names(fit$means) <- names(fit$coefficients)
 
     fit$formula <- formula(Terms)
     if (length(xlevels) >0) fit$xlevels <- xlevels

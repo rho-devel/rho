@@ -46,7 +46,7 @@ graphics.off()
   list not including the null device.  \code{dev.next} and
   \code{dev.prev} select the next open device in the appropriate
   direction, unless no device is open.
-  
+
   \code{dev.off} shuts down the specified (by default the current)
   device.  If the current device is shut down and any other devices are
   open, the next open device is made current.  It is an error to
@@ -67,8 +67,8 @@ graphics.off()
   \file{Rplots.pdf}, \file{Rplots1.pdf}, \dots, \file{Rplots999.pdf} are
   tried in turn.  Only named arguments are passed to the device, and
   then only if they match the argument list of the device.  Even so,
-  case is needed with the interpretation of e.g. \code{width}, and for
-  the standard bitmap devices \code{units="in", res=72} is forced if
+  care is needed with the interpretation of e.g. \code{width}, and for
+  the standard bitmap devices \code{units = "in", res = 72} is forced if
   neither is supplied but both \code{width} and \code{height} are.
 }
 \value{
@@ -106,11 +106,11 @@ plot(1:10)
 x11()
 plot(rnorm(10))
 dev.set(dev.prev())
-abline(0,1)# through the 1:10 points
+abline(0, 1) # through the 1:10 points
 dev.set(dev.next())
-abline(h=0, col="gray")# for the residual plot
+abline(h = 0, col = "gray") # for the residual plot
 dev.set(dev.prev())
-dev.off(); dev.off()#- close the two X devices
+dev.off(); dev.off() #- close the two X devices
 }
 }
 \keyword{device}

@@ -144,7 +144,9 @@ panel.levelplot <-
 ##             col.regions[round(seq(1, numcol.r, length.out = numcol))]
 ##     zcol <- cut(z, at, include.lowest = TRUE, labels = FALSE)
 
-    zcol <- level.colors(z, at, col.regions, colors = TRUE)
+    zcol <-
+        if (region) level.colors(z, at, col.regions, colors = TRUE)
+        else "transparent"
 
     x <- x[subscripts]
     y <- y[subscripts]
@@ -152,9 +154,9 @@ panel.levelplot <-
     minYwid <- if (length(unique(y)) > 1) min(diff(sort(unique(y)))) else 1
     fullZrange <- range(as.numeric(z), finite = TRUE) # for shrinking
     z <- z[subscripts]
-    zcol <- zcol[subscripts]
+    if (region) zcol <- zcol[subscripts]
 
-    if (hasArg(group.number))
+    if (hasGroupNumber())
         group <- list(...)$group.number
     else
         group <- 0
@@ -290,8 +292,12 @@ panel.levelplot <-
                          nlevels = length(at), ## necessary ?
                          levels = at)
 
+        ccount <- 0
+        
         for (val in clines) {
 
+            ccount <- ccount + 1
+            
             ## each val looks like:
 
             ## $ :List of 3
@@ -303,7 +309,7 @@ panel.levelplot <-
 
             llines(val, ## hopefully $levels won't matter
                    col = col, lty = lty, lwd = lwd,
-                   identifier = paste(identifier, "lines",
+                   identifier = paste(identifier, "line", ccount,
                      sep = "."))
 
             ## if too small, don't add label. How small is small ?
@@ -373,7 +379,7 @@ panel.levelplot <-
                           fontface = labels$fontface,
                           x = .5 * (val$x[textloc]+val$x[textloc + 1]),
                           y = .5 * (val$y[textloc]+val$y[textloc + 1]),
-                          identifier = paste(identifier, "labels",
+                          identifier = paste(identifier, "label", ccount,
                             sep = "."))
                 }
             }
@@ -916,7 +922,7 @@ panel.levelplot.raster <-
     z <- z[subscripts]
     zcol <- zcol[subscripts]
 
-    if (hasArg(group.number))
+    if (hasGroupNumber())
         group <- list(...)$group.number
     else
         group <- 0
