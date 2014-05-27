@@ -343,7 +343,17 @@ namespace boost {
 				 const unsigned int version)
 	{
 	    size_t size;
-	    ar >> BOOST_SERIALIZATION_NVP(size);
+	    size_t size_hi;
+	    ar >> BOOST_SERIALIZATION_NVP(size_hi);
+	    size_t size_lo;
+	    ar >> BOOST_SERIALIZATION_NVP(size_lo);
+#if SIZEOF_SIZE_T < 8
+	    if (size_hi != 0)
+		Rf_error("vector length too large for this platform");
+	    size = size_lo;
+#else
+	    size = (size_hi << 32 | size_lo);
+#endif
 	    new (t) CXXR::FixedVector<T, ST, Initr>(size);
 	}
 
@@ -382,7 +392,14 @@ namespace boost {
 				 const unsigned int version)
 	{
 	    size_t size = t->size();
-	    ar << BOOST_SERIALIZATION_NVP(size);
+#if SIZEOF_SIZE_T > 4
+	    int32_t size_hi = int32_t(size << 32);
+#else
+	    int32_t size_hi = 0;
+#endif
+	    ar << BOOST_SERIALIZATION_NVP(size_hi);
+	    int32_t size_lo = int32_t(size & 0xffffffff);
+	    ar << BOOST_SERIALIZATION_NVP(size_lo);
 	}
     }  // namespace serialization
 }  // namespace boost

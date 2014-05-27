@@ -337,6 +337,8 @@ namespace CXXR {
 	void serialize(Archive & ar, const unsigned int version)
 	{
 	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
+	    // Maybe FIXME: sort out portability of m_xtruelength from 64-bit
+	    // to 32-bit architectures.
 	    ar & BOOST_SERIALIZATION_NVP(m_xtruelength);
 	}
     };
