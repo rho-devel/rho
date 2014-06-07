@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -35,6 +51,10 @@
 
 #include "Print.h"
 #include "RBufferUtils.h"
+#include <vector>
+
+using namespace std;
+
 static R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
 
 /*
@@ -52,11 +72,12 @@ static R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
 SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, collapse, sep, x;
-    int sepw, u_sepw, ienc;
+    int sepw, u_sepw;
     R_xlen_t i, j, k, maxlen, nx, pwidth;
+    cetype_t ienc;
     const char *s, *cbuf, *csep=NULL, *u_csep=NULL;
     char *buf;
-    Rboolean allKnown, anyKnown, use_UTF8, use_Bytes,
+    bool allKnown, anyKnown, use_UTF8, use_Bytes,
 	sepASCII = TRUE, sepUTF8 = FALSE, sepBytes = FALSE, sepKnown = FALSE,
 	use_sep = (PRIMVAL(op) == 0);
     const void *vmax;
@@ -80,7 +101,7 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 	    error(_("invalid separator"));
 	sep = STRING_ELT(sep, 0);
 	csep = translateChar(sep);
-	u_sepw = sepw = (int) strlen(csep); // will be short
+	u_sepw = sepw = int( strlen(csep)); // will be short
 	sepASCII = strIsASCII(csep);
 	sepKnown = ENC_KNOWN(sep) > 0;
 	sepUTF8 = IS_UTF8(sep);
@@ -166,13 +187,13 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(use_sep) {
 	    if (use_UTF8 && !u_csep) {
 		u_csep = translateCharUTF8(sep);
-		u_sepw = (int) strlen(u_csep); // will be short
+		u_sepw = int( strlen(u_csep)); // will be short
 	    }
 	    pwidth += (nx - 1) * (use_UTF8 ? u_sepw : sepw);
 	}
 	if (pwidth > INT_MAX)
 	    error(_("result would exceed 2^31-1 bytes"));
-	cbuf = buf = R_AllocStringBuffer(pwidth, &cbuff);
+	cbuf = buf = static_cast<char*>(R_AllocStringBuffer(pwidth, &cbuff));
 	vmax = vmaxget();
 	for (j = 0; j < nx; j++) {
 	    k = xlength(VECTOR_ELT(x, j));
@@ -201,7 +222,7 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 	    vmax = vmaxget();
 	}
-	ienc = 0;
+	ienc = CE_NATIVE;
 	if(use_UTF8) ienc = CE_UTF8;
 	else if(use_Bytes) ienc = CE_BYTES;
 	else if(anyKnown && allKnown) {
@@ -228,7 +249,7 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 	    csep = translateCharUTF8(sep);
 	else
 	    csep = translateChar(sep);
-	sepw = (int) strlen(csep);
+	sepw = int( strlen(csep));
 	anyKnown = ENC_KNOWN(sep) > 0;
 	allKnown = anyKnown || strIsASCII(csep);
 	pwidth = 0;
@@ -242,7 +263,7 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 	pwidth += (nx - 1) * sepw;
 	if (pwidth > INT_MAX)
 	    error(_("result would exceed 2^31-1 bytes"));
-	cbuf = buf = R_AllocStringBuffer(pwidth, &cbuff);
+	cbuf = buf = static_cast<char*>(R_AllocStringBuffer(pwidth, &cbuff));
 	vmax = vmaxget();
 	for (i = 0; i < nx; i++) {
 	    if(i > 0) {
@@ -299,7 +320,7 @@ SEXP attribute_hidden do_filepath(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("invalid separator"));
     sep = STRING_ELT(sep, 0);
     csep = CHAR(sep);
-    sepw = (int) strlen(csep); /* hopefully 1 */
+    sepw = int( strlen(csep)); /* hopefully 1 */
 
     /* Any zero-length argument gives zero-length result */
     maxlen = 0; nzero = 0;
@@ -331,10 +352,10 @@ SEXP attribute_hidden do_filepath(SEXP call, SEXP op, SEXP args, SEXP env)
 	pwidth = 0;
 	for (j = 0; j < nx; j++) {
 	    k = length(VECTOR_ELT(x, j));
-	    pwidth += (int) strlen(translateChar(STRING_ELT(VECTOR_ELT(x, j), i % k)));
+	    pwidth += int( strlen(translateChar(STRING_ELT(VECTOR_ELT(x, j), i % k))));
 	}
 	pwidth += (nx - 1) * sepw;
-	cbuf = buf = R_AllocStringBuffer(pwidth, &cbuff);
+	cbuf = buf = static_cast<char*>(R_AllocStringBuffer(pwidth, &cbuff));
 	for (j = 0; j < nx; j++) {
 	    k = length(VECTOR_ELT(x, j));
 	    if (k > 0) {
@@ -490,7 +511,7 @@ SEXP attribute_hidden do_format(SEXP call, SEXP op, SEXP args, SEXP env)
 		    const char *p = CHAR(tmp), *q;
 		    char *pp = R_alloc(4*strlen(p)+1, 1), *qq = pp, buf[5];
 		    for (q = p; *q; q++) {
-			unsigned char k = (unsigned char) *q;
+			unsigned char k = static_cast<unsigned char>( *q);
 			if (k >= 0x20 && k < 0x80) {
 			    *qq++ = *q;
 			} else {
@@ -518,7 +539,8 @@ SEXP attribute_hidden do_format(SEXP call, SEXP op, SEXP args, SEXP env)
 		    cnt = imax2(cnt, LENGTH(STRING_ELT(xx, i)) + imax2(0, w-il));
 		} else if (na) cnt  = imax2(cnt, R_print.na_width + imax2(0, w-R_print.na_width));
 	    R_CheckStack2(cnt+1);
-	    char buff[cnt+1];
+	    vector<char> buffv(cnt+1);
+	    char* buff = &buffv[0];
 	    PROTECT(y = allocVector(STRSXP, n));
 	    for (i = 0; i < n; i++) {
 		if(!na && STRING_ELT(xx, i) == NA_STRING) {

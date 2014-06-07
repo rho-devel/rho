@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-3 Paul Murrell
@@ -28,9 +44,17 @@
 #include <Rinternals.h>
 #ifdef ENABLE_NLS
 #include <libintl.h>
+#ifndef __cplusplus
 #define _(String) dgettext ("grid", String)
+#endif
 #else
+#ifndef __cplusplus
 #define _(String) (String)
+#endif
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /* All grid type names are prefixed with an "L" 
@@ -619,3 +643,6 @@ SEXP validUnits(SEXP units);
 SEXP L_getGPar(void);
 SEXP L_setGPar(SEXP gpars);
     
+#ifdef __cplusplus
+}  // extern "C"
+#endif

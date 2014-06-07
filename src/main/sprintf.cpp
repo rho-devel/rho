@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2002--2013     The R Core Team
@@ -129,12 +145,12 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 
     CHECK_maxlen;
 
-    outputString = R_AllocStringBuffer(0, &outbuff);
+    outputString = CXXRCONSTRUCT(static_cast<char*>, R_AllocStringBuffer(0, &outbuff));
 
     /* We do the format analysis a row at a time */
     for(ns = 0; ns < maxlen; ns++) {
 	outputString[0] = '\0';
-	use_UTF8 = getCharCE(STRING_ELT(format, ns % nfmt)) == CE_UTF8;
+	use_UTF8 = CXXRCONSTRUCT(Rboolean, getCharCE(STRING_ELT(format, ns % nfmt)) == CE_UTF8);
 	if (!use_UTF8) {
 	    for(i = 0; i < nargs; i++) {
 		if (!isString(a[i])) continue;
@@ -277,7 +293,7 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 			    case 'X':
 				if(TYPEOF(_this) == REALSXP) {
 				    double r = REAL(_this)[0];
-				    if((double)((int) r) == r)
+				    if(double(int( r)) == r)
 					_this = coerceVector(_this, INTSXP);
 				    PROTECT(a[nthis] = _this);
 				    nprotect++;
@@ -301,7 +317,7 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 				    nprotect++;				\
 				    did_this = TRUE;			\
 				    CHECK_this_length;			\
-				    do_check = (lens[nthis] == maxlen);	\
+				    do_check = (CXXRCONSTRUCT(Rboolean, lens[nthis] == maxlen)); \
 				    lens[nthis] = thislen; /* may have changed! */ \
 				    if(do_check && thislen < maxlen) {	\
 					CHECK_maxlen;			\
@@ -424,17 +440,17 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 	    else { /* not '%' : handle string part */
 		char *ch = Rf_strchr(curFormat, '%'); /* MBCS-aware version used */
-		chunk = (ch) ? (size_t) (ch - curFormat) : strlen(curFormat);
+		chunk = (ch) ? size_t (ch - curFormat) : strlen(curFormat);
 		strncpy(bit, curFormat, chunk);
 		bit[chunk] = '\0';
 	    }
 	    if(ss) {
-		outputString = R_AllocStringBuffer(strlen(outputString) +
-						   strlen(ss) + 1, &outbuff);
+		outputString = static_cast<char*>(R_AllocStringBuffer(strlen(outputString) +
+						   strlen(ss) + 1, &outbuff));
 		strcat(outputString, ss);
 	    } else {
-		outputString = R_AllocStringBuffer(strlen(outputString) +
-						   strlen(bit) + 1, &outbuff);
+		outputString = static_cast<char*>(R_AllocStringBuffer(strlen(outputString) +
+						   strlen(bit) + 1, &outbuff));
 		strcat(outputString, bit);
 	    }
 	}  /* end for ( each chunk ) */

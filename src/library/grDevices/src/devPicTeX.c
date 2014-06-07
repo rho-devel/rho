@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  A PicTeX device, (C) 1996 Valerio Aimale, for
  *  R : A Computer Language for Statistical Data Analysis
@@ -170,7 +186,7 @@ static void PicTeX_MetricInfo(int c,
 			      double* ascent, double* descent,
 			      double* width, pDevDesc dd);
 static void PicTeX_NewPage(const pGEcontext gc, pDevDesc dd);
-static void PicTeX_Polygon(int n, double *x, double *y, 
+static void PicTeX_Polygon(int n, const double *x, const double *y,
 			   const pGEcontext gc,
 			   pDevDesc dd);
 static void PicTeX_Rect(double x0, double y0, double x1, double y1,
@@ -431,7 +447,7 @@ static void PicTeX_Line(double x1, double y1, double x2, double y2,
     }
 }
 
-static void PicTeX_Polyline(int n, double *x, double *y, 
+static void PicTeX_Polyline(int n, const double *x, const double *y, 
 			    const pGEcontext gc,
 			    pDevDesc dd)
 {
@@ -518,7 +534,7 @@ static void PicTeX_Circle(double x, double y, double r,
 	    x, (y + r), x, y);
 }
 
-static void PicTeX_Polygon(int n, double *x, double *y, 
+static void PicTeX_Polygon(int n, const double *x, const double *y, 
 			   const pGEcontext gc,
 			   pDevDesc dd)
 {

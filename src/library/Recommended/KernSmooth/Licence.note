@@ -1,0 +1,5 @@
+By agreement with Dr Wand (1998-June-22), the R port can be used and
+distributed freely, superseding the comments in orig/KernSmooth.tex.
+
+The original S code is copyright Matt Wand, the R port copyright
+Brian Ripley

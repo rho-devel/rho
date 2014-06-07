@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -24,13 +40,16 @@
 
 #include <Defn.h>
 #include <Internal.h>
+#include "CXXR/GCStackRoot.hpp"
+
+using namespace CXXR;
 
 #define R_MSG_type	_("invalid 'type' (%s) of argument")
 #define imax2(x, y) ((x < y) ? y : x)
 
 #define R_INT_MIN	(1+INT_MIN)
 	/* since INT_MIN is the NA_INTEGER value ! */
-#define Int2Real(i)	((i == NA_INTEGER) ? NA_REAL : (double)i)
+#define Int2Real(i)	((i == NA_INTEGER) ? NA_REAL : double(i))
 
 #ifdef DEBUG_sum
 #define DbgP1(s) REprintf(s)
@@ -76,7 +95,7 @@ static Rboolean isum(int *x, R_xlen_t n, int *value, Rboolean narm, SEXP call)
 	warningcall(call, _("integer overflow - use sum(as.numeric(.))"));
 	*value = NA_INTEGER;
     }
-    else *value = (int) s;
+    else *value = int( s);
 
     return updated;
 }
@@ -101,7 +120,7 @@ static Rboolean isum(int *x, R_xlen_t n, int *value, Rboolean narm, SEXP call)
 	warningcall(call, _("integer overflow - use sum(as.numeric(.))"));
 	*value = NA_INTEGER;
     }
-    else *value = (int) s;
+    else *value = int( s);
 
     return updated;
 }
@@ -118,7 +137,7 @@ static Rboolean rsum(double *x, R_xlen_t n, double *value, Rboolean narm)
 	    s += x[i];
 	}
     }
-    *value = (double) s;
+    *value = double( s);
 
     return updated;
 }
@@ -135,8 +154,8 @@ static Rboolean csum(Rcomplex *x, R_xlen_t n, Rcomplex *value, Rboolean narm)
 	    si += x[i].i;
 	}
     }
-    value->r = (double) sr;
-    value->i = (double) si;
+    value->r = double( sr);
+    value->i = double( si);
 
     return updated;
 }
@@ -301,7 +320,7 @@ static Rboolean iprod(int *x, R_xlen_t n, double *value, Rboolean narm)
 	    return updated;
 	}
     }
-    *value = (double) s;
+    *value = double( s);
 
     return updated;
 }
@@ -317,7 +336,7 @@ static Rboolean rprod(double *x, R_xlen_t n, double *value, Rboolean narm)
 	    s *= x[i];
 	}
     }
-    *value = (double) s;
+    *value = double( s);
 
     return updated;
 }
@@ -334,8 +353,8 @@ static Rboolean cprod(Rcomplex *x, R_xlen_t n, Rcomplex *value, Rboolean narm)
 	    si = tr * x[i].i + ti * x[i].r;
 	}
     }
-    value->r = (double) sr;
-    value->i = (double) si;
+    value->r = double( sr);
+    value->i = double( si);
 
     return updated;
 }
@@ -344,10 +363,10 @@ static Rboolean cprod(Rcomplex *x, R_xlen_t n, Rcomplex *value, Rboolean narm)
 attribute_hidden
 SEXP fixup_NaRm(SEXP args)
 {
-    SEXP t, na_value;
+    SEXP t;
 
     /* Need to make sure na.rm is last and exists */
-    na_value = ScalarLogical(FALSE);
+    GCStackRoot<> na_value(ScalarLogical(FALSE));
     for(SEXP a = args, prev = R_NilValue; a != R_NilValue; a = CDR(a)) {
 	if(TAG(a) == R_NaRmSymbol) {
 	    if(CDR(a) == R_NilValue) return args;
@@ -358,9 +377,7 @@ SEXP fixup_NaRm(SEXP args)
 	prev = a;
     }
 
-    PROTECT(na_value);
     t = CONS(na_value, R_NilValue);
-    UNPROTECT(1);
     PROTECT(t);
     SET_TAG(t, R_NaRmSymbol);
     if (args == R_NilValue)
@@ -411,17 +428,17 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 		}
 		s += INTEGER(x)[i];
 	    }
-	    REAL(ans)[0] = (double) (s/n);
+	    REAL(ans)[0] = double( s/n);
 	    break;
 	case REALSXP:
 	    PROTECT(ans = allocVector(REALSXP, 1));
 	    for (i = 0; i < n; i++) s += REAL(x)[i];
 	    s /= n;
-	    if(R_FINITE((double)s)) {
+	    if(R_FINITE(double(s))) {
 		for (i = 0; i < n; i++) t += (REAL(x)[i] - s);
 		s += t/n;
 	    }
-	    REAL(ans)[0] = (double) s;
+	    REAL(ans)[0] = double( s);
 	    break;
 	case CPLXSXP:
 	    PROTECT(ans = allocVector(CPLXSXP, 1));
@@ -430,15 +447,15 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 		si += COMPLEX(x)[i].i;
 	    }
 	    s /= n; si /= n;
-	    if( R_FINITE((double)s) && R_FINITE((double)si) ) {
+	    if( R_FINITE(double(s)) && R_FINITE(double(si)) ) {
 		for (i = 0; i < n; i++) {
 		    t += COMPLEX(x)[i].r - s;
 		    ti += COMPLEX(x)[i].i - si;
 		}
 		s += t/n; si += ti/n;
 	    }
-	    COMPLEX(ans)[0].r = (double) s;
-	    COMPLEX(ans)[0].i = (double) si;
+	    COMPLEX(ans)[0].r = double( s);
+	    COMPLEX(ans)[0].i = double( si);
 	    break;
 	default:
 	    error(R_MSG_type, type2char(TYPEOF(x)));
@@ -464,7 +481,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 
     ans = matchArgExact(R_NaRmSymbol, &args);
-    narm = asLogical(ans);
+    narm = CXXRCONSTRUCT(Rboolean, asLogical(ans));
     updated = 0;
     empty = 1;/*- =1: only zero-length arguments, or NA with na.rm=T */
 
@@ -607,7 +624,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 		    if(updated) {
 			if(itmp == NA_INTEGER) goto na_answer;
 			if(ans_type == INTSXP) {
-			    s = (double) icum + (double) itmp;
+			    s = double( icum) + double( itmp);
 			    if(s > INT_MAX || s < R_INT_MIN){
 				warningcall(call,_("Integer overflow - use sum(as.numeric(.))"));
 				goto na_answer;
@@ -733,6 +750,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
     case REALSXP:  REAL(ans)[0] = zcum.r; break;
     case CPLXSXP:  COMPLEX(ans)[0].r = zcum.r; COMPLEX(ans)[0].i = zcum.i;break;
     case STRSXP:   SET_STRING_ELT(ans, 0, scum); break;
+    default:       break;  // -Wswitch
     }
     UNPROTECT(1);  /* args */
     return ans;
@@ -744,6 +762,7 @@ na_answer: /* only INTSXP case currently used */
     case REALSXP:	REAL(ans)[0] = NA_REAL; break;
     case CPLXSXP:	COMPLEX(ans)[0].r = COMPLEX(ans)[0].i = NA_REAL; break;
     case STRSXP:        SET_STRING_ELT(ans, 0, NA_STRING); break;
+    default:            break;  // -Wswitch
     }
     UNPROTECT(1);  /* args */
     return ans;
@@ -772,7 +791,11 @@ SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(prargs = promiseArgs(args, R_GlobalEnv));
     for (a = args, b = prargs; a != R_NilValue; a = CDR(a), b = CDR(b))
 	SET_PRVALUE(CAR(b), CAR(a));
-    ans = applyClosure(call, op, prargs, env, R_BaseEnv);
+    Closure* closure = SEXP_downcast<Closure*>(op);
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    ArgList arglist(SEXP_downcast<PairList*>(prargs), ArgList::PROMISED);
+    Environment* callenv = SEXP_downcast<Environment*>(env);
+    ans = closure->invoke(callenv, &arglist, callx);
     UNPROTECT(3);
     return(ans);
 }
@@ -833,7 +856,7 @@ SEXP attribute_hidden do_which(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!isLogical(v))
         error(_("argument to 'which' is not logical"));
     len = length(v);
-    buf = (int *) R_alloc(len, sizeof(int));
+    buf = reinterpret_cast<int *>( R_alloc(len, sizeof(int)));
 
     for (i = 0; i < len; i++) {
         if (LOGICAL(v)[i] == TRUE) {
@@ -858,7 +881,6 @@ SEXP attribute_hidden do_which(SEXP call, SEXP op, SEXP args, SEXP rho)
     UNPROTECT(1);
     return ans;
 }
-
 
 /* op = 0 is pmin, op = 1 is pmax
    NULL and logicals are handled as if they had been coerced to integer.

@@ -1,0 +1,79 @@
+\RequirePackage{hyperref}
+\RequirePackage{url}
+\RequirePackage{amsmath}
+\RequirePackage{bm}%-> \bm (= bold math)
+\newcommand{\Slang}{\textsf{S} language}
+\newcommand{\RR}{\textsf{R}}
+\newcommand{\email}[1]{\href{mailto:#1}{\normalfont\texttt{#1}}}
+%- R programming markup
+\newcommand\code{\bgroup\@codex}
+\def\@codex#1{{\normalfont\ttfamily\hyphenchar\font=-1 #1}\egroup}
+\let\env=\code
+\let\command=\code
+\newcommand*{\Rfun}[1]{\code{#1()}\index{\RR~function #1}}
+\newcommand*{\class}[1]{\code{#1}\index{class #1}}%
+\newcommand*{\pkg}[1]{\code{#1}\index{\RR~package #1}}
+%
+\newcommand{\kbd}[1]{{\normalfont\texttt{#1}}}
+\newcommand{\key}[1]{{\normalfont\texttt{\uppercase{#1}}}}
+\newcommand\samp{`\bgroup\@noligs\@sampx}
+\def\@sampx#1{{\normalfont\texttt{#1}}\egroup'}
+\let\option=\samp
+\newcommand{\var}[1]{{\normalfont\textsl{#1}}}
+\newcommand{\file}[1]{{`\normalfont\textsf{#1}'}}
+\newcommand{\dfn}[1]{{\normalfont\textsl{#1}}}
+\newcommand{\acronym}[1]{{\normalfont\textsc{\lowercase{#1}}}}
+\newcommand{\strong}[1]{{\normalfont\fontseries{b}\selectfont #1}}
+\let\pkg=\strong
+%
+\RequirePackage{alltt}
+\newenvironment{example}{\begin{alltt}}{\end{alltt}}
+\newenvironment{smallexample}{\begin{alltt}\small}{\end{alltt}}
+\newenvironment{display}{\list{}{}\item\relax}{\endlist}
+\newenvironment{smallverbatim}{\small\verbatim}{\endverbatim}
+% This is already in ``Sweave'' -- but withOUT the  fontsize=\small part !!
+%% \RequirePackage{fancyvrb}
+%% \DefineVerbatimEnvironment{Sinput}{Verbatim}{fontsize=\small,fontshape=sl}
+%% \DefineVerbatimEnvironment{Soutput}{Verbatim}{fontsize=\small}
+%% \DefineVerbatimEnvironment{Scode}{Verbatim}{fontsize=\small,fontshape=sl}
+%
+\newcommand{\FIXME}[1]{\marginpar{ \dots FIXME \emph{#1} \dots}}
+\newcommand{\TODO}[1]{\par\noindent\textsc{Todo:} \textit{#1}\par}
+%
+%% Matrix stuff :
+%
+\newcommand{\trans}{\ensuremath{^\mathsf{T}}}
+\newcommand{\bA}{\ensuremath{\bm{A}}}
+\newcommand{\bD}{\ensuremath{\bm{D}}}
+\newcommand{\bDelta}{\ensuremath{\bm{\Delta}}}
+\newcommand{\bI}{\ensuremath{\bm{I}}}
+\newcommand{\bL}{\ensuremath{\bm{L}}}
+\newcommand{\LXXi}[1]{\ensuremath{\bL_{\mathit{XX}({#1})}}}
+\newcommand{\LXX}{\ensuremath{\bL_\mathit{XX}}}
+\newcommand{\LXZi}[1]{\ensuremath{\bL_{\mathit{XZ}({#1})}}}
+\newcommand{\LXZ}{\ensuremath{\bL_\mathit{XZ}}}
+\newcommand{\LZZi}[1]{\ensuremath{\bL_{\mathit{ZZ}({#1})}}}
+\newcommand{\LZZ}{\ensuremath{\bL_\mathit{ZZ}}}
+\newcommand{\LZZoo}{\ensuremath{\bL_{\mathit{ZZ}11}}}
+\newcommand{\LZZot}{\ensuremath{\bL_{\mathit{ZZ}12}}}
+\newcommand{\LZZtt}{\ensuremath{\bL_{\mathit{ZZ}22}}}
+\newcommand{\bOmega}{\ensuremath{\bm{\Omega}}}
+\newcommand{\bPhi}{\ensuremath{\bm{\Phi}}}
+\newcommand{\bR}{\ensuremath{\bm{R}}}
+\newcommand{\bX}{\ensuremath{\bm{X}}}
+\newcommand{\bZ}{\ensuremath{\bm{Z}}}
+\newcommand{\bbeta}{\ensuremath{\bm{\beta}}}
+\newcommand{\bb}{\ensuremath{\bm{b}}}
+\newcommand{\beps}{\ensuremath{\bm{\epsilon}}}
+\newcommand{\dX}{\ensuremath{\bm{d}_{\mathit{X}}}}
+\newcommand{\dZ}{\ensuremath{\bm{d}_{\mathit{Z}}}}
+\newcommand{\dy}{\ensuremath{d_{\mathit{y}}}}
+\newcommand{\lyXi}[1]{\ensuremath{\bm{\ell}_{\mathit{yX}(#1)}}}
+\newcommand{\lyX}{\ensuremath{\bm{\ell}_\mathit{yX}}}
+\newcommand{\lyZi}[1]{\ensuremath{\bm{\ell}_{\mathit{yZ}(#1)}}}
+\newcommand{\lyZ}{\ensuremath{\bm{\ell}_\mathit{yZ}}}
+\newcommand{\lyyi}[1]{\ensuremath{\bm{\ell}_{\mathit{yy}(#1)}}}
+\newcommand{\lyy}{\ensuremath{\ell_\mathit{yy}}}
+\newcommand{\btheta}{\ensuremath{\bm{\theta}}}
+\newcommand{\by}{\ensuremath{\bm{y}}}
+\newcommand{\bzer}{\ensuremath{\bm{0}}}

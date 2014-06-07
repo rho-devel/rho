@@ -1,0 +1,29 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: KernSmooth 2.23-9\n"
+"POT-Creation-Date: 2013-03-18 09:48\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+
+msgid "'bandwidth' must be strictly positive"
+msgstr ""
+
+msgid "Binning grid too coarse for current (small) bandwidth: consider increasing 'gridsize'"
+msgstr ""
+
+msgid "Level should be between 0 and 5"
+msgstr ""
+
+msgid "scale estimate is zero for input data"
+msgstr ""
+
+msgid "'bandwidth' must be a scalar or an array of length 'gridsize'"
+msgstr ""
+
+msgid "KernSmooth 2.23 loaded\nCopyright M. P. Wand 1997-2009"
+msgstr ""

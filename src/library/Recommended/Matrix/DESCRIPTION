@@ -1,0 +1,30 @@
+Package: Matrix
+Version: 1.0-14
+Date: 2013-09-12
+Priority: recommended
+Title: Sparse and Dense Matrix Classes and Methods
+Author: Douglas Bates <bates@stat.wisc.edu> and Martin Maechler <maechler@stat.math.ethz.ch>
+Maintainer: Martin Maechler <mmaechler+Matrix@gmail.com>
+Contact: Doug and Martin <Matrix-authors@R-project.org>
+Description: Classes and methods for dense and sparse matrices and
+    operations on them using LAPACK and SuiteSparse.
+Depends: R (>= 2.15.0), stats, methods, utils, lattice
+Imports: graphics, grid
+Suggests: expm, MASS
+Enhances: MatrixModels, graph, SparseM, sfsmisc
+Encoding: UTF-8
+LazyData: no
+LazyDataNote: no longer available, since we use data/*.R *and* our
+        classes
+ByteCompile: yes
+BuildResaveData: no
+License: GPL (>= 2)
+LicenseNote: The Matrix package includes libraries AMD, CHOLMOD,
+        COLAMD, CSparse and SPQR from the SuiteSparse collection of Tim
+        Davis.  All sections of that code are covered by the GPL or
+        LGPL licenses.  See the directory doc/UFsparse for details.
+URL: http://Matrix.R-forge.R-project.org/
+Packaged: 2013-09-12 22:26:01 UTC; maechler
+NeedsCompilation: yes
+Repository: CRAN
+Date/Publication: 2013-09-13 13:16:03

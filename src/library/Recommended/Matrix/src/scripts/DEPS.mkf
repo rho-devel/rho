@@ -1,0 +1,101 @@
+CHMfactor.o: CHMfactor.c CHMfactor.h Mutils.h Syms.h \
+  chm_common.h SuiteSparse_config/SuiteSparse_config.h CHOLMOD/Include/cholmod.h \
+  CHOLMOD/Include/cholmod_io64.h CHOLMOD/Include/cholmod_config.h \
+  CHOLMOD/Include/cholmod_core.h CHOLMOD/Include/cholmod_check.h \
+  CHOLMOD/Include/cholmod_cholesky.h CHOLMOD/Include/cholmod_partition.h \
+  CHOLMOD/Include/cholmod_supernodal.h \
+  CHOLMOD/Include/cholmod_matrixops.h CHOLMOD/Include/cholmod_modify.h
+Csparse.o: Csparse.c Csparse.h Tsparse.h Mutils.h Syms.h t_Csparse_subassign.c t_Csparse_validate.c \
+  chm_common.h SuiteSparse_config/SuiteSparse_config.h CHOLMOD/Include/cholmod.h \
+  CHOLMOD/Include/cholmod_io64.h CHOLMOD/Include/cholmod_config.h \
+  CHOLMOD/Include/cholmod_core.h CHOLMOD/Include/cholmod_check.h \
+  CHOLMOD/Include/cholmod_cholesky.h CHOLMOD/Include/cholmod_partition.h \
+  CHOLMOD/Include/cholmod_supernodal.h \
+  CHOLMOD/Include/cholmod_matrixops.h CHOLMOD/Include/cholmod_modify.h
+Mutils.o: Mutils.c Mutils.h Syms.h
+TMatrix_as.o: TMatrix_as.c TMatrix_as.h Mutils.h Syms.h
+Tsparse.o: Tsparse.c Tsparse.h Mutils.h Syms.h \
+  chm_common.h SuiteSparse_config/SuiteSparse_config.h CHOLMOD/Include/cholmod.h \
+  CHOLMOD/Include/cholmod_io64.h CHOLMOD/Include/cholmod_config.h \
+  CHOLMOD/Include/cholmod_core.h CHOLMOD/Include/cholmod_check.h \
+  CHOLMOD/Include/cholmod_cholesky.h CHOLMOD/Include/cholmod_partition.h \
+  CHOLMOD/Include/cholmod_supernodal.h \
+  CHOLMOD/Include/cholmod_matrixops.h CHOLMOD/Include/cholmod_modify.h
+chm_common.o: chm_common.c chm_common.h Mutils.h Syms.h \
+  SuiteSparse_config/SuiteSparse_config.h \
+  CHOLMOD/Include/cholmod.h CHOLMOD/Include/cholmod_io64.h \
+  CHOLMOD/Include/cholmod_config.h CHOLMOD/Include/cholmod_core.h \
+  CHOLMOD/Include/cholmod_check.h CHOLMOD/Include/cholmod_cholesky.h \
+  CHOLMOD/Include/cholmod_partition.h \
+  CHOLMOD/Include/cholmod_supernodal.h \
+  CHOLMOD/Include/cholmod_matrixops.h CHOLMOD/Include/cholmod_modify.h
+cs.o: cs.c cs.h
+cs_utils.o: cs_utils.c cs_utils.h cs.h Mutils.h Syms.h
+dense.o: dense.c dense.h Mutils.h Syms.h \
+  chm_common.h SuiteSparse_config/SuiteSparse_config.h CHOLMOD/Include/cholmod.h \
+  CHOLMOD/Include/cholmod_io64.h CHOLMOD/Include/cholmod_config.h \
+  CHOLMOD/Include/cholmod_core.h CHOLMOD/Include/cholmod_check.h \
+  CHOLMOD/Include/cholmod_cholesky.h CHOLMOD/Include/cholmod_partition.h \
+  CHOLMOD/Include/cholmod_supernodal.h \
+  CHOLMOD/Include/cholmod_matrixops.h CHOLMOD/Include/cholmod_modify.h
+
+dgCMatrix.o: dgCMatrix.c dgCMatrix.h t_gCMatrix_colSums.c \
+  Csparse.h Mutils.h Syms.h \
+  cs_utils.h cs.h  chm_common.h SuiteSparse_config/SuiteSparse_config.h \
+  CHOLMOD/Include/cholmod.h CHOLMOD/Include/cholmod_io64.h \
+  CHOLMOD/Include/cholmod_config.h CHOLMOD/Include/cholmod_core.h \
+  CHOLMOD/Include/cholmod_check.h CHOLMOD/Include/cholmod_cholesky.h \
+  CHOLMOD/Include/cholmod_partition.h \
+  CHOLMOD/Include/cholmod_supernodal.h \
+  CHOLMOD/Include/cholmod_matrixops.h CHOLMOD/Include/cholmod_modify.h
+dgTMatrix.o: dgTMatrix.c dgTMatrix.h Mutils.h Syms.h Tsparse.h \
+  chm_common.h SuiteSparse_config/SuiteSparse_config.h CHOLMOD/Include/cholmod.h \
+  CHOLMOD/Include/cholmod_io64.h CHOLMOD/Include/cholmod_config.h \
+  CHOLMOD/Include/cholmod_core.h CHOLMOD/Include/cholmod_check.h \
+  CHOLMOD/Include/cholmod_cholesky.h CHOLMOD/Include/cholmod_partition.h \
+  CHOLMOD/Include/cholmod_supernodal.h \
+  CHOLMOD/Include/cholmod_matrixops.h CHOLMOD/Include/cholmod_modify.h
+dgeMatrix.o: dgeMatrix.c dgeMatrix.h Mutils.h Syms.h
+dpoMatrix.o: dpoMatrix.c dpoMatrix.h Mutils.h Syms.h
+dppMatrix.o: dppMatrix.c dppMatrix.h Mutils.h Syms.h dspMatrix.h dgeMatrix.h
+dsCMatrix.o: dsCMatrix.c dsCMatrix.h Mutils.h Syms.h \
+  chm_common.h SuiteSparse_config/SuiteSparse_config.h CHOLMOD/Include/cholmod.h \
+  CHOLMOD/Include/cholmod_io64.h CHOLMOD/Include/cholmod_config.h \
+  CHOLMOD/Include/cholmod_core.h CHOLMOD/Include/cholmod_check.h \
+  CHOLMOD/Include/cholmod_cholesky.h CHOLMOD/Include/cholmod_partition.h \
+  CHOLMOD/Include/cholmod_supernodal.h \
+  CHOLMOD/Include/cholmod_matrixops.h CHOLMOD/Include/cholmod_modify.h
+dspMatrix.o: dspMatrix.c dspMatrix.h dgeMatrix.h Mutils.h Syms.h
+dsyMatrix.o: dsyMatrix.c dsyMatrix.h Mutils.h Syms.h
+
+dtCMatrix.o: dtCMatrix.c dtCMatrix.h Mutils.h Syms.h dgCMatrix.h cs_utils.h cs.h
+dtTMatrix.o: dtTMatrix.c dtTMatrix.h dgTMatrix.h Mutils.h Syms.h \
+  chm_common.h SuiteSparse_config/SuiteSparse_config.h CHOLMOD/Include/cholmod.h \
+  CHOLMOD/Include/cholmod_io64.h CHOLMOD/Include/cholmod_config.h \
+  CHOLMOD/Include/cholmod_core.h CHOLMOD/Include/cholmod_check.h \
+  CHOLMOD/Include/cholmod_cholesky.h CHOLMOD/Include/cholmod_partition.h \
+  CHOLMOD/Include/cholmod_supernodal.h \
+  CHOLMOD/Include/cholmod_matrixops.h CHOLMOD/Include/cholmod_modify.h
+dtpMatrix.o: dtpMatrix.c dtpMatrix.h Mutils.h Syms.h
+dtrMatrix.o: dtrMatrix.c dtrMatrix.h Mutils.h Syms.h
+
+factorizations.o: factorizations.c factorizations.h Mutils.h Syms.h
+init.o: init.c Mutils.h Syms.h \
+  chm_common.h SuiteSparse_config/SuiteSparse_config.h CHOLMOD/Include/cholmod.h \
+  CHOLMOD/Include/cholmod_io64.h CHOLMOD/Include/cholmod_config.h \
+  CHOLMOD/Include/cholmod_core.h CHOLMOD/Include/cholmod_check.h \
+  CHOLMOD/Include/cholmod_cholesky.h CHOLMOD/Include/cholmod_partition.h \
+  CHOLMOD/Include/cholmod_supernodal.h \
+  CHOLMOD/Include/cholmod_matrixops.h CHOLMOD/Include/cholmod_modify.h \
+  CHMfactor.h Csparse.h Tsparse.h dense.h dgCMatrix.h \
+  cs_utils.h cs.h dgTMatrix.h dgeMatrix.h dpoMatrix.h \
+  dppMatrix.h dspMatrix.h dsCMatrix.h TMatrix_as.h dsyMatrix.h \
+  dtCMatrix.h dtTMatrix.h dtrMatrix.h dtpMatrix.h factorizations.h \
+  ldense.h lgCMatrix.h sparseQR.h
+
+ldense.o: ldense.c ldense.h Mutils.h Syms.h
+lgCMatrix.o: lgCMatrix.c lgCMatrix.h Mutils.h Syms.h dgCMatrix.h \
+  cs_utils.h cs.h
+sparseQR.o: sparseQR.c sparseQR.h Mutils.h Syms.h cs_utils.h cs.h
+
+sparseVector.o: sparseVector.c Mutils.h t_sparseVector.c

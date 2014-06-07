@@ -1,0 +1,24 @@
+Package: lattice
+Version: 0.20-23
+Date: 2013/08/21
+Priority: recommended
+Title: Lattice Graphics
+Author: Deepayan Sarkar <deepayan.sarkar@r-project.org>
+Maintainer: Deepayan Sarkar <deepayan.sarkar@r-project.org>
+Description: Lattice is a powerful and elegant high-level data
+  visualization system, with an emphasis on multivariate data, that is
+  sufficient for typical graphics needs, and is also flexible enough
+  to handle most nonstandard requirements.  See ?Lattice for an
+  introduction.
+Depends: R (>= 2.15.1)
+Suggests: KernSmooth, MASS
+Imports: grid, grDevices, graphics, stats, utils
+Enhances: chron
+LazyLoad: yes
+LazyData: yes
+License: GPL (>= 2)
+URL: http://lattice.r-forge.r-project.org/
+Packaged: 2013-08-21 09:46:57 UTC; deepayan
+NeedsCompilation: yes
+Repository: CRAN
+Date/Publication: 2013-08-21 18:16:22

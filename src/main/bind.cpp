@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -31,9 +47,12 @@
 #define imax2(x, y) ((x < y) ? y : x)
 
 #include "RBufferUtils.h"
-static R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
+#include "CXXR/GCStackRoot.hpp"
 
-#define LIST_ASSIGN(x) {SET_VECTOR_ELT(data->ans_ptr, data->ans_length, x); data->ans_length++;}
+using namespace std;
+using namespace CXXR;
+
+static R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
 
 static SEXP cbind(SEXP, SEXP, SEXPTYPE, SEXP, int);
 static SEXP rbind(SEXP, SEXP, SEXPTYPE, SEXP, int);
@@ -45,7 +64,7 @@ static SEXP rbind(SEXP, SEXP, SEXPTYPE, SEXP, int);
 struct BindData {
  int  ans_flags;
  SEXP ans_ptr;
- R_xlen_t ans_length;
+ R_xlen_t  ans_length;
  SEXP ans_names;
  int  ans_nnames;
 /* int  deparse_level; Initialize to 1. */
@@ -106,7 +125,6 @@ AnswerType(SEXP x, int recurse, int usenames, struct BindData *data, SEXP call)
 	break;
 #endif
     case VECSXP:
-    case EXPRSXP:
 	if (recurse) {
 	    R_xlen_t i, n = xlength(x);
 	    if (usenames && !data->ans_nnames &&
@@ -119,10 +137,24 @@ AnswerType(SEXP x, int recurse, int usenames, struct BindData *data, SEXP call)
 	    }
 	}
 	else {
-	    if (TYPEOF(x) == EXPRSXP)
-		data->ans_flags |= 512;
-	    else
-		data->ans_flags |= 256;
+	    data->ans_flags |= 256;
+	    data->ans_length += xlength(x);
+	}
+	break;
+    case EXPRSXP:
+	if (recurse) {
+	    R_xlen_t i, n = xlength(x);
+	    if (usenames && !data->ans_nnames &&
+		!isNull(getAttrib(x, R_NamesSymbol)))
+		data->ans_nnames = 1;
+	    for (i = 0; i < n; i++) {
+		if (usenames && !data->ans_nnames)
+		    data->ans_nnames = HasNames(XVECTOR_ELT(x, i));
+		AnswerType(XVECTOR_ELT(x, i), recurse, usenames, data, call);
+	    }
+	}
+	else {
+	    data->ans_flags |= 512;
 	    data->ans_length += xlength(x);
 	}
 	break;
@@ -166,6 +198,18 @@ AnswerType(SEXP x, int recurse, int usenames, struct BindData *data, SEXP call)
 /* The following functions are used to coerce arguments to */
 /* the appropriate type for inclusion in the returned value. */
 
+namespace {
+    inline void LIST_ASSIGN(struct BindData* data, SEXP x)
+    {
+	if (ExpressionVector* ev
+	    = dynamic_cast<ExpressionVector*>(data->ans_ptr))
+	    (*ev)[data->ans_length] = x;
+	else
+	    SET_VECTOR_ELT(data->ans_ptr, data->ans_length, x);
+	data->ans_length++;
+    }
+}
+
 static void
 ListAnswer(SEXP x, int recurse, struct BindData *data, SEXP call)
 {
@@ -176,37 +220,46 @@ ListAnswer(SEXP x, int recurse, struct BindData *data, SEXP call)
 	break;
     case LGLSXP:
 	for (i = 0; i < XLENGTH(x); i++)
-	    LIST_ASSIGN(ScalarLogical(LOGICAL(x)[i]));
+	    LIST_ASSIGN(data, ScalarLogical(LOGICAL(x)[i]));
 	break;
     case RAWSXP:
 	for (i = 0; i < XLENGTH(x); i++)
-	    LIST_ASSIGN(ScalarRaw(RAW(x)[i]));
+	    LIST_ASSIGN(data, ScalarRaw(RAW(x)[i]));
 	break;
     case INTSXP:
 	for (i = 0; i < XLENGTH(x); i++)
-	    LIST_ASSIGN(ScalarInteger(INTEGER(x)[i]));
+	    LIST_ASSIGN(data, ScalarInteger(INTEGER(x)[i]));
 	break;
     case REALSXP:
 	for (i = 0; i < XLENGTH(x); i++)
-	    LIST_ASSIGN(ScalarReal(REAL(x)[i]));
+	    LIST_ASSIGN(data, ScalarReal(REAL(x)[i]));
 	break;
     case CPLXSXP:
 	for (i = 0; i < XLENGTH(x); i++)
-	    LIST_ASSIGN(ScalarComplex(COMPLEX(x)[i]));
+	    LIST_ASSIGN(data, ScalarComplex(COMPLEX(x)[i]));
 	break;
     case STRSXP:
 	for (i = 0; i < XLENGTH(x); i++)
-	    LIST_ASSIGN(ScalarString(STRING_ELT(x, i)));
+	    LIST_ASSIGN(data, ScalarString(STRING_ELT(x, i)));
 	break;
     case VECSXP:
-    case EXPRSXP:
 	if (recurse) {
 	    for (i = 0; i < XLENGTH(x); i++)
 		ListAnswer(VECTOR_ELT(x, i), recurse, data, call);
 	}
 	else {
 	    for (i = 0; i < XLENGTH(x); i++)
-		LIST_ASSIGN(duplicate(VECTOR_ELT(x, i)));
+		LIST_ASSIGN(data, duplicate(VECTOR_ELT(x, i)));
+	}
+	break;
+    case EXPRSXP:
+	if (recurse) {
+	    for (i = 0; i < XLENGTH(x); i++)
+		ListAnswer(XVECTOR_ELT(x, i), recurse, data, call);
+	}
+	else {
+	    for (i = 0; i < XLENGTH(x); i++)
+		LIST_ASSIGN(data, duplicate(XVECTOR_ELT(x, i)));
 	}
 	break;
     case LISTSXP:
@@ -218,12 +271,12 @@ ListAnswer(SEXP x, int recurse, struct BindData *data, SEXP call)
 	}
 	else
 	    while (x != R_NilValue) {
-		LIST_ASSIGN(duplicate(CAR(x)));
+		LIST_ASSIGN(data, duplicate(CAR(x)));
 		x = CDR(x);
 	    }
 	break;
     default:
-	LIST_ASSIGN(duplicate(x));
+	LIST_ASSIGN(data, duplicate(x));
 	break;
     }
 }
@@ -242,6 +295,9 @@ StringAnswer(SEXP x, struct BindData *data, SEXP call)
 	}
 	break;
     case EXPRSXP:
+	for (i = 0; i < XLENGTH(x); i++)
+	    StringAnswer(XVECTOR_ELT(x, i), data, call);
+	break;
     case VECSXP:
 	for (i = 0; i < XLENGTH(x); i++)
 	    StringAnswer(VECTOR_ELT(x, i), data, call);
@@ -269,6 +325,9 @@ LogicalAnswer(SEXP x, struct BindData *data, SEXP call)
 	}
 	break;
     case EXPRSXP:
+	for (i = 0; i < XLENGTH(x); i++)
+	    LogicalAnswer(XVECTOR_ELT(x, i), data, call);
+	break;
     case VECSXP:
 	for (i = 0; i < XLENGTH(x); i++)
 	    LogicalAnswer(VECTOR_ELT(x, i), data, call);
@@ -283,7 +342,7 @@ LogicalAnswer(SEXP x, struct BindData *data, SEXP call)
 	break;
     case RAWSXP:
 	for (i = 0; i < XLENGTH(x); i++)
-	    LOGICAL(data->ans_ptr)[data->ans_length++] = (int)RAW(x)[i];
+	    LOGICAL(data->ans_ptr)[data->ans_length++] = int(RAW(x)[i]);
 	break;
     default:
 	errorcall(call, _("type '%s' is unimplemented in '%s'"),
@@ -305,6 +364,9 @@ IntegerAnswer(SEXP x, struct BindData *data, SEXP call)
 	}
 	break;
     case EXPRSXP:
+	for (i = 0; i < XLENGTH(x); i++)
+	    IntegerAnswer(XVECTOR_ELT(x, i), data, call);
+	break;
     case VECSXP:
 	for (i = 0; i < XLENGTH(x); i++)
 	    IntegerAnswer(VECTOR_ELT(x, i), data, call);
@@ -319,7 +381,7 @@ IntegerAnswer(SEXP x, struct BindData *data, SEXP call)
 	break;
     case RAWSXP:
 	for (i = 0; i < XLENGTH(x); i++)
-	    INTEGER(data->ans_ptr)[data->ans_length++] = (int)RAW(x)[i];
+	    INTEGER(data->ans_ptr)[data->ans_length++] = int(RAW(x)[i]);
 	break;
     default:
 	errorcall(call, _("type '%s' is unimplemented in '%s'"),
@@ -342,9 +404,12 @@ RealAnswer(SEXP x, struct BindData *data, SEXP call)
 	}
 	break;
     case VECSXP:
-    case EXPRSXP:
 	for (i = 0; i < XLENGTH(x); i++)
 	    RealAnswer(VECTOR_ELT(x, i), data, call);
+	break;
+    case EXPRSXP:
+	for (i = 0; i < XLENGTH(x); i++)
+	    RealAnswer(XVECTOR_ELT(x, i), data, call);
 	break;
     case REALSXP:
 	for (i = 0; i < XLENGTH(x); i++)
@@ -368,7 +433,7 @@ RealAnswer(SEXP x, struct BindData *data, SEXP call)
 	break;
     case RAWSXP:
 	for (i = 0; i < XLENGTH(x); i++)
-	    REAL(data->ans_ptr)[data->ans_length++] = (int)RAW(x)[i];
+	    REAL(data->ans_ptr)[data->ans_length++] = int(RAW(x)[i]);
 	break;
     default:
 	errorcall(call, _("type '%s' is unimplemented in '%s'"),
@@ -391,6 +456,9 @@ ComplexAnswer(SEXP x, struct BindData *data, SEXP call)
 	}
 	break;
     case EXPRSXP:
+	for (i = 0; i < XLENGTH(x); i++)
+	    ComplexAnswer(XVECTOR_ELT(x, i), data, call);
+	break;
     case VECSXP:
 	for (i = 0; i < XLENGTH(x); i++)
 	    ComplexAnswer(VECTOR_ELT(x, i), data, call);
@@ -437,7 +505,7 @@ ComplexAnswer(SEXP x, struct BindData *data, SEXP call)
 
     case RAWSXP:
 	for (i = 0; i < XLENGTH(x); i++) {
-	    COMPLEX(data->ans_ptr)[data->ans_length].r = (int)RAW(x)[i];
+	    COMPLEX(data->ans_ptr)[data->ans_length].r = int(RAW(x)[i]);
 	    COMPLEX(data->ans_ptr)[data->ans_length].i = 0.0;
 	    data->ans_length++;
 	}
@@ -486,7 +554,7 @@ static SEXP NewBase(SEXP base, SEXP tag)
     if (*CHAR(base) && *CHAR(tag)) { /* test of length */
 	const void *vmax = vmaxget();
 	const char *sb = translateCharUTF8(base), *st = translateCharUTF8(tag);
-	cbuf = R_AllocStringBuffer(strlen(st) + strlen(sb) + 1, &cbuff);
+	cbuf = static_cast<char*>(R_AllocStringBuffer(strlen(st) + strlen(sb) + 1, &cbuff));
 	sprintf(cbuf, "%s.%s", sb, st);
 	/* This isn't strictly correct as we do not know that all the
 	   components of the name were correctly translated. */
@@ -520,14 +588,14 @@ static SEXP NewName(SEXP base, SEXP tag, int seqno)
     tag = EnsureString(tag);
     if (*CHAR(base) && *CHAR(tag)) {
 	const char *sb = translateCharUTF8(base), *st = translateCharUTF8(tag);
-	cbuf = R_AllocStringBuffer(strlen(sb) + strlen(st) + 1, &cbuff);
+	cbuf = static_cast<char*>(R_AllocStringBuffer(strlen(sb) + strlen(st) + 1, &cbuff));
 	sprintf(cbuf, "%s.%s", sb, st);
 	ans = mkCharCE(cbuf, CE_UTF8);
     }
     else if (*CHAR(base)) {
 	const char *sb = translateChar(base);
-	cbuf = R_AllocStringBuffer(strlen(sb) + (size_t) IndexWidth(seqno),
-				   &cbuff);
+	cbuf = static_cast<char*>(R_AllocStringBuffer(strlen(sb) + size_t( IndexWidth(seqno)),
+						      &cbuff));
 	sprintf(cbuf, "%s%d", sb, seqno);
 	ans = mkCharCE(cbuf, CE_UTF8);
     }
@@ -535,7 +603,7 @@ static SEXP NewName(SEXP base, SEXP tag, int seqno)
 	if(tag == NA_STRING) ans = NA_STRING;
 	else {
 	    const char *st = translateCharUTF8(tag);
-	    cbuf = R_AllocStringBuffer(strlen(st), &cbuff);
+	    cbuf = static_cast<char*>(R_AllocStringBuffer(strlen(st), &cbuff));
 	    sprintf(cbuf, "%s", st);
 	    ans = mkCharCE(cbuf, CE_UTF8);
 	}
@@ -617,11 +685,25 @@ static void NewExtractNames(SEXP v, SEXP base, SEXP tag, int recurse,
 	}
 	break;
     case VECSXP:
-    case EXPRSXP:
 	for (i = 0; i < n; i++) {
 	    namei = ItemName(names, i);
 	    if (recurse) {
 		NewExtractNames(VECTOR_ELT(v, i), base, namei, recurse, data, nameData);
+	    }
+	    else {
+		if (namei == R_NilValue && nameData->count == 0)
+		    nameData->firstpos = data->ans_nnames;
+		nameData->count++;
+		namei = NewName(base, namei, ++(nameData->seqno));
+		SET_STRING_ELT(data->ans_names, (data->ans_nnames)++, namei);
+	    }
+	}
+	break;
+    case EXPRSXP:
+	for (i = 0; i < n; i++) {
+	    namei = ItemName(names, i);
+	    if (recurse) {
+		NewExtractNames(XVECTOR_ELT(v, i), base, namei, recurse, data, nameData);
 	    }
 	    else {
 		if (namei == R_NilValue && nameData->count == 0)
@@ -678,7 +760,7 @@ static SEXP ExtractOptionals(SEXP ans, int *recurse, int *usenames, SEXP call)
     for (a = ans; a != R_NilValue; a = next) {
 	n = TAG(a);
 	next = CDR(a);
-	if (n != R_NilValue && pmatch(R_RecursiveSymbol, n, 1)) {
+	if (n != R_NilValue && pmatch(R_RecursiveSymbol, n, CXXRTRUE)) {
 	    if (n_recurse++ == 1)
 		errorcall(call, _("repeated formal argument 'recursive'"));
 	    if ((v = asLogical(CAR(a))) != NA_INTEGER) {
@@ -689,7 +771,7 @@ static SEXP ExtractOptionals(SEXP ans, int *recurse, int *usenames, SEXP call)
 	    else
 		SETCDR(last, next);
 	}
-	else if (n != R_NilValue && pmatch(R_UseNamesSymbol, n, 1)) {
+	else if (n != R_NilValue && pmatch(R_UseNamesSymbol, n, CXXRTRUE)) {
 	    if (n_usenames++ == 1)
 		errorcall(call, _("repeated formal argument 'use.names'"));
 	    if ((v = asLogical(CAR(a))) != NA_INTEGER) {
@@ -735,7 +817,8 @@ SEXP attribute_hidden do_c(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_c_dflt(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, t;
-    int mode, recurse, usenames;
+    int recurse, usenames;
+    SEXPTYPE mode;
     struct BindData data;
     struct NameData nameData;
 
@@ -837,7 +920,7 @@ SEXP attribute_hidden do_c_dflt(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_unlist(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, t;
-    int mode;
+    SEXPTYPE mode;
     R_xlen_t i, n = 0;
     struct BindData data;
     struct NameData nameData;
@@ -986,7 +1069,8 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP a, t, obj, classlist, classname, method, classmethod, rho;
     const char *generic;
-    int mode, deparse_level;
+    SEXPTYPE mode;
+    int deparse_level;
     Rboolean compatible = TRUE;
     struct BindData data;
     char buf[512];
@@ -1063,7 +1147,11 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     if (method != R_NilValue) {
 	PROTECT(method);
-	args = applyClosure(call, method, args, env, R_BaseEnv);
+	Closure* closure = SEXP_downcast<Closure*>(method);
+	Expression* callx = SEXP_downcast<Expression*>(call);
+	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::PROMISED);
+	Environment* callenv = SEXP_downcast<Environment*>(env);
+	args = closure->invoke(callenv, &arglist, callx);
 	UNPROTECT(2);
 	return args;
     }
@@ -1152,7 +1240,7 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
     Rboolean have_rnames = FALSE, have_cnames = FALSE, warned = FALSE;
     int nnames, mnames;
     int rows, cols, mrows, lenmin = 0;
-    SEXP dn, t, u, result, dims, expr;
+    SEXP dn, t, u, result, dims;
 
     nnames = 0;
     mnames = 0;
@@ -1324,7 +1412,7 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 			    LOGICAL(result)[n++] = RAW(u)[i % k] ? TRUE : FALSE;
 		    else
 			for (i = 0; i < idx; i++)
-			    INTEGER(result)[n++] = (unsigned char) RAW(u)[i % k];
+			    INTEGER(result)[n++] = static_cast<unsigned char>( RAW(u)[i % k]);
 		}
 	    }
 	}
@@ -1370,7 +1458,7 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		if (TAG(t) != R_NilValue)
 		    SET_STRING_ELT(nam, j++, PRINTNAME(TAG(t)));
 		else {
-		    expr = substitute(CAR(t), R_NilValue);
+		    GCStackRoot<> expr(substitute(CAR(t), R_NilValue));
 		    if (deparse_level == 1 && isSymbol(expr))
 			SET_STRING_ELT(nam, j++, PRINTNAME(expr));
 		    else if (deparse_level == 2)
@@ -1396,7 +1484,7 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
     Rboolean have_rnames = FALSE, have_cnames = FALSE, warned = FALSE;
     int nnames, mnames;
     int rows, cols, mcols, lenmin = 0;
-    SEXP dn, t, u, result, dims, expr;
+    SEXP dn, t, u, result, dims;
 
     nnames = 0;
     mnames = 0;
@@ -1573,7 +1661,7 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 			for (i = 0; i < idx; i++)
 			    for (j = 0; j < cols; j++)
 				INTEGER(result)[i + n + (j * rows)]
-				    = (unsigned char) RAW(u)[(i + j * idx) % k];
+				    = static_cast<unsigned char>( RAW(u)[(i + j * idx) % k]);
 		}
 	    }
 	}
@@ -1622,7 +1710,7 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		if (TAG(t) != R_NilValue)
 		    SET_STRING_ELT(nam, j++, PRINTNAME(TAG(t)));
 		else {
-		    expr = substitute(CAR(t), R_NilValue);
+		    GCStackRoot<> expr(substitute(CAR(t), R_NilValue));
 		    if (deparse_level == 1 && isSymbol(expr))
 			SET_STRING_ELT(nam, j++, PRINTNAME(expr));
 		    else if (deparse_level == 2)

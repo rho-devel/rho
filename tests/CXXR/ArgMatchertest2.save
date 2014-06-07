@@ -1,0 +1,10 @@
+Formal arguments:
+
+orange : ORANGE
+... : 
+green : GREEN
+... : JUNK
+blue : BLUE
+Error: formals list contains more than one '...'
+
+ArgMatchertest: Error encountered while processing formals

@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-11 The R Core Team.
@@ -21,6 +37,8 @@
 
 #ifndef R_GRAPHICSENGINE_H_
 #define R_GRAPHICSENGINE_H_
+
+#include "CXXR/String.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -190,9 +208,16 @@ typedef struct {
 
 typedef R_GE_gcontext* pGEcontext;
 
-
+#ifdef __cplusplus
+}  // extern "C"
+#endif
+    
 #include <R_ext/GraphicsDevice.h> /* needed for DevDesc */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
 typedef struct _GEDevDesc GEDevDesc;
 
 typedef SEXP (* GEcallback)(GEevent, GEDevDesc *, SEXP);
@@ -221,6 +246,9 @@ typedef struct {
 } GESystemDesc;
 
 struct _GEDevDesc {
+    /* Location within the R_Devices table, or -1 if not (yet) in
+     * table. (Temporary CXXR kludge.) */
+    int index;
     /*
      * Stuff that the devices can see (and modify).
      * All detailed in GraphicsDevice.h
@@ -228,7 +256,10 @@ struct _GEDevDesc {
     pDevDesc dev;
     /*
      * Stuff about the device that only the graphics engine sees
-     * (the devices don't see it).
+     * (the devices don't see it).  Note that in CXXR, displayList and
+     * savedSnapshot must be modified only by using the functions
+     * setDisplayList() and saveSnapshot() respectively.  (In future,
+     * this should be enforced by class access controls.)
      */
     Rboolean displayListOn;  /* toggle for display list status */
     SEXP displayList;        /* display list */
@@ -257,7 +288,16 @@ struct _GEDevDesc {
     Rboolean ask;
 };
 
+/* 2007/06/02 arr: Stuff previously here moved to GraphicsContext.h to avoid
+ * reciprocal dependencies between this file and GraphicsDevice.h.
+ */
+
 typedef GEDevDesc* pGEDevDesc;
+
+/* Mutator functions introduced in CXXR pending fuller refactorisation:
+ */
+void setDisplayList(pGEDevDesc dev, SEXP newDisplayList);
+void saveSnapshot(pGEDevDesc dev, SEXP newSnapshot);
 
 /* functions from devices.c for use by graphics devices */
 

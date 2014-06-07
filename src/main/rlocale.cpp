@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2005-7   The R Core Team
@@ -46,6 +62,7 @@
 
 #define IN_RLOCALE_C 1 /* used in rlocale.h */
 #include <rlocale.h>
+#include "CXXR/uncxxr.h"
 #include "rlocale_data.h"
 
 #include <wctype.h>
@@ -77,7 +94,7 @@ static int wcwidthsearch(int wint, const struct interval_wcwidth *table,
 }
 
 typedef struct {
-    char *name;
+    CXXRCONST char *name;
     int locale;
 } cjk_locale_name_t;
 
@@ -116,13 +133,13 @@ int Ri18n_wcwidth(wchar_t c)
     char lc_str[128];
     unsigned int i, j;
 
-    static char *lc_cache = "";
+    static CXXRCONST char *lc_cache = "";
     static int lc = 0;
 
     if (0 != strcmp(setlocale(LC_CTYPE, NULL), lc_cache)) {
 	strncpy(lc_str, setlocale(LC_CTYPE, NULL), sizeof(lc_str));
-	for (i = 0, j = (int) strlen(lc_str); i < j && i < sizeof(lc_str); i++)
-	    lc_str[i] = (char) toupper(lc_str[i]);
+	for (i = 0, j = int( strlen(lc_str)); i < j && i < sizeof(lc_str); i++)
+	    lc_str[i] = char( toupper(lc_str[i]));
 	for (i = 0; i < (sizeof(cjk_locale_name)/sizeof(cjk_locale_name_t));
 	     i++) {
 	    if (0 == strncmp(cjk_locale_name[i].name, lc_str,
@@ -134,7 +151,7 @@ int Ri18n_wcwidth(wchar_t c)
     }
 
     return(wcwidthsearch(c, table_wcwidth,
-			 (sizeof(table_wcwidth)/sizeof(struct interval_wcwidth)),
+			 (CXXRCONSTRUCT(int, sizeof(table_wcwidth)/sizeof(struct interval_wcwidth))),
 			 lc));
 }
 
@@ -286,7 +303,7 @@ static int Ri18n_iswalnum (wint_t wc)
  * iswctype
  */
 typedef struct {
-    char * name;
+    CXXRCONST char * name;
     wctype_t wctype;
     int(*func)(wint_t);
 } Ri18n_wctype_func_l ;

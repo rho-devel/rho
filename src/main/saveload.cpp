@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -25,7 +41,6 @@
 #endif
 
 #define NEED_CONNECTION_PSTREAMS
-#define R_USE_SIGNALS 1
 #include <Defn.h>
 #include <Internal.h>
 #include <Rinterface.h>
@@ -34,6 +49,13 @@
 #include <R_ext/RS.h>
 #include <errno.h>
 #include <ctype.h>		/* for isspace */
+#include "CXXR/BuiltInFunction.h"
+#include "CXXR/DottedArgs.hpp"
+#include "CXXR/GCStackRoot.hpp"
+#include "CXXR/ProvenanceTracker.h"
+#include "CXXR/WeakRef.h"
+
+using namespace CXXR;
 
 /* From time to time changes in R, such as the addition of a new SXP,
  * may require changes in the save file format.  Here are some
@@ -152,18 +174,6 @@ typedef struct {
  void	(*InTerm)(FILE*, SaveLoadData *d);
 } InputRoutines;
 
-typedef struct {
-  FILE *fp;
-  OutputRoutines *methods;
-  SaveLoadData *data;
-} OutputCtxtData;
-
-typedef struct {
-  FILE *fp;
-  InputRoutines *methods;
-  SaveLoadData *data;
-} InputCtxtData;
-
 
 static SEXP DataLoad(FILE*, int startup, InputRoutines *m, int version, SaveLoadData *d);
 
@@ -280,7 +290,7 @@ static char *AsciiInString(FILE *fp, SaveLoadData *d)
 	    default:  break;
 	    }
 	}
-	*bufp++ = (char) c;
+	*bufp++ = char( c);
     }
     *bufp = '\0';
     return d->buffer.data;
@@ -357,7 +367,7 @@ static Rcomplex XdrInComplex(FILE * fp, SaveLoadData *d)
 static char *XdrInString(FILE *fp, SaveLoadData *d)
 {
     char *bufp = d->buffer.data;
-    if (!xdr_string(&d->xdrs, &bufp, (unsigned int)d->buffer.bufsize)) {
+    if (!xdr_string(&d->xdrs, &bufp, static_cast<unsigned int>(d->buffer.bufsize))) {
 	xdr_destroy(&d->xdrs);
 	error(_("a S read error occurred"));
     }
@@ -408,7 +418,7 @@ static char *BinaryInString(FILE *fp, SaveLoadData *d)
 {
     char *bufp = d->buffer.data;
     do {
-	*bufp = (char) R_fgetc(fp);
+	*bufp = char( R_fgetc(fp));
     }
     while (*bufp++);
     return d->buffer.data;
@@ -468,7 +478,7 @@ static SEXP OffsetToNode(int offset, NodeInfo *node)
     return R_NilValue;
 }
 
-static unsigned int FixupType(unsigned int type, int VersionId)
+static SEXPTYPE FixupType(unsigned int type, int VersionId)
 {
     if (VersionId) {
 	switch(VersionId) {
@@ -494,12 +504,13 @@ static unsigned int FixupType(unsigned int type, int VersionId)
     if (type == 11 || type == 12)
 	type = 13;
 
-    return type;
+    return CXXRCONSTRUCT(SEXPTYPE, type);
 }
 
 static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines *m, SaveLoadData *d)
 {
-    unsigned int j, idx, type;
+    unsigned int j, idx;
+    SEXPTYPE type;
     int len;
     SEXP s = R_NilValue;	/* -Wall */
 
@@ -512,11 +523,17 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
     /* ATTRIB(s) = */ m->InInteger(fp, d);
     switch (type) {
     case LISTSXP:
+	s = CXXR_NEW(PairList);
+	break;
     case LANGSXP:
+	s = CXXR_NEW(Expression);
+	break;
     case CLOSXP:
     case PROMSXP:
     case ENVSXP:
-	s = allocSExp(type);
+	Rf_error("Loading pre-version-1 serialization not (yet) supported in CXXR");
+	// All this code needs fixing in CXXR!
+	// s = CXXR_NEW(RObject(type));
 	/* skip over CAR, CDR, and TAG */
 	/* CAR(s) = */ m->InInteger(fp, d);
 	/* CDR(s) = */ m->InInteger(fp, d);
@@ -524,31 +541,28 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	break;
     case SPECIALSXP:
     case BUILTINSXP:
-	s = allocSExp(type);
 	/* skip over length and name fields */
 	/* length = */ m->InInteger(fp, d);
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	/* name = */ m->InString(fp, d);
+	s = BuiltInFunction::obtain(m->InString(fp, d));
 	break;
     case CHARSXP:
 	len = m->InInteger(fp, d);
-	s = allocCharsxp(len); /* This is not longer correct */
 	R_AllocStringBuffer(len, &(d->buffer));
-	/* skip over the string */
-	/* string = */ m->InString(fp, d);
+	s = String::obtain(m->InString(fp, d));
 	break;
     case REALSXP:
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < len; j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    /*REAL(s)[j] = */ m->InReal(fp, d);
 	break;
     case CPLXSXP:
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < len; j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    /* COMPLEX(s)[j] = */ m->InComplex(fp, d);
 	break;
     case INTSXP:
@@ -556,7 +570,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);;
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < len; j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    /* INTEGER(s)[j] = */ m->InInteger(fp, d);
 	break;
     case STRSXP:
@@ -565,7 +579,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < len; j++) {
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++) {
 	    /* VECTOR(s)[j] = */ m->InInteger(fp, d);
 	}
 	break;
@@ -578,14 +592,14 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 
 static void RestoreSEXP(SEXP s, FILE *fp, InputRoutines *m, NodeInfo *node, int version, SaveLoadData *d)
 {
-    unsigned int j, type;
+    unsigned int j;
+    SEXPTYPE type;
     int len;
 
     type = FixupType(m->InInteger(fp, d), version);
     if (type != TYPEOF(s))
       error(_("mismatch on types"));
 
-    SET_OBJECT(s, m->InInteger(fp, d));
     SETLEVELS(s, m->InInteger(fp, d));
     SET_ATTRIB(s, OffsetToNode(m->InInteger(fp, d), node));
     switch (TYPEOF(s)) {
@@ -602,44 +616,42 @@ static void RestoreSEXP(SEXP s, FILE *fp, InputRoutines *m, NodeInfo *node, int 
     case BUILTINSXP:
 	len = m->InInteger(fp, d);
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	int index = StrToInternal(m->InString(fp, d));
-	if (index == NA_INTEGER) {
-	    warning(_("unrecognized internal function name \"%s\""), d->buffer.data); 
-	    index = 0;   /* zero doesn't make sense, but is back compatible with 3.0.0 and earlier */
-	}
-	SET_PRIMOFFSET(s, index);
+	// Skip offset field:
+	m->InString(fp, d);
 	break;
     case CHARSXP:
 	len = m->InInteger(fp, d);
 	R_AllocStringBuffer(len, &(d->buffer));
 	/* Better to use a fresh copy in the cache */
-	strcpy(CHAR_RW(s), m->InString(fp, d));
+	// CXXR FIXME
+	// strcpy(CHAR_RW(s), m->InString(fp, d));
+	m->InString(fp, d);  // Just skip the string for the mo.
 	break;
     case REALSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < len; j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    REAL(s)[j] = m->InReal(fp, d);
 	break;
     case CPLXSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < len; j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    COMPLEX(s)[j] = m->InComplex(fp, d);
 	break;
     case INTSXP:
     case LGLSXP:
 	len = m->InInteger(fp, d);;
-	for (j = 0; j < len; j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    INTEGER(s)[j] = m->InInteger(fp, d);
 	break;
     case STRSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < len; j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    SET_STRING_ELT(s, j, OffsetToNode(m->InInteger(fp, d), node));
 	break;
     case VECSXP:
     case EXPRSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < len; j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    SET_VECTOR_ELT(s, j, OffsetToNode(m->InInteger(fp, d), node));
 	break;
     default: error(_("bad SEXP type in data file"));
@@ -677,7 +689,7 @@ static SEXP DataLoad(FILE *fp, int startup, InputRoutines *m,
     /* save the current non-relocatable base */
 
     vmaxsave = vmaxget();
-    node.OldOffset = (int*)R_alloc(node.NSymbol + node.NSave, sizeof(int));
+    node.OldOffset = static_cast<int*>(CXXR_alloc(node.NSymbol + node.NSave, sizeof(int)));
     PROTECT(node.NewAddress = allocVector(VECSXP, node.NSymbol + node.NSave));
     for (i = 0 ; i < node.NTotal ; i++) {
 	node.OldOffset[i] = 0;
@@ -786,13 +798,13 @@ static int NewSaveSpecialHook (SEXP item)
 
 static SEXP NewLoadSpecialHook (SEXPTYPE type)
 {
-    switch (type) {
+    switch (CXXRCONSTRUCT(int, type)) {
     case -1: return R_NilValue;
     case -2: return R_GlobalEnv;
     case -3: return R_UnboundValue;
     case -4: return R_MissingArg;
     }
-    return (SEXP) 0;	/* not strictly legal... */
+    return CXXRNOCAST(SEXP) 0;	/* not strictly legal... */
 }
 
 
@@ -820,7 +832,7 @@ static SEXP NewLoadSpecialHook (SEXPTYPE type)
 
 #define HASHSIZE 1099
 
-#define PTRHASH(obj) (((R_size_t) (obj)) >> 2)
+#define PTRHASH(obj) ((R_size_t( (obj))) >> 2)
 
 #define HASH_TABLE_KEYS_LIST(ht) CAR(ht)
 #define SET_HASH_TABLE_KEYS_LIST(ht, v) SETCAR(ht, v)
@@ -941,6 +953,9 @@ in version 1 workspaces"));
 	break;
     case WEAKREFSXP:
 	error(_("cannot save weak references in version 1 workspaces"));
+	break;
+    default:  // -Wswitch
+	break;
     }
     NewMakeLists(ATTRIB(obj), sym_list, env_list);
 }
@@ -1095,59 +1110,47 @@ static void NewWriteItem (SEXP s, SEXP sym_list, SEXP env_list, FILE *fp, Output
  *  symbols or environments are encountered, references to them are
  *  made instead of writing them out totally.  */
 
-static void newdatasave_cleanup(void *data)
-{
-    OutputCtxtData *cinfo = (OutputCtxtData*)data;
-    FILE *fp = cinfo->fp;
-    cinfo->methods->OutTerm(fp, cinfo->data);
-}
-
 static void NewDataSave (SEXP s, FILE *fp, OutputRoutines *m, SaveLoadData *d)
 {
-    SEXP sym_table, env_table, iterator;
+    GCStackRoot<> sym_table, env_table;
+    SEXP iterator;
     int sym_count, env_count;
-    RCNTXT cntxt;
-    OutputCtxtData cinfo;
-    cinfo.fp = fp; cinfo.methods = m;  cinfo.data = d;
 
-    PROTECT(sym_table = MakeHashTable());
-    PROTECT(env_table = MakeHashTable());
+    sym_table = MakeHashTable();
+    env_table = MakeHashTable();
     NewMakeLists(s, sym_table, env_table);
     FixHashEntries(sym_table);
     FixHashEntries(env_table);
 
     m->OutInit(fp, d);
-    /* set up a context which will call OutTerm if there is an error */
-    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		 R_NilValue, R_NilValue);
-    cntxt.cend = &newdatasave_cleanup;
-    cntxt.cenddata = &cinfo;
 
-    m->OutInteger(fp, sym_count = HASH_TABLE_COUNT(sym_table), d); m->OutSpace(fp, 1, d);
-    m->OutInteger(fp, env_count = HASH_TABLE_COUNT(env_table), d); m->OutNewline(fp, d);
-    for (iterator = HASH_TABLE_KEYS_LIST(sym_table);
-	 sym_count--;
-	 iterator = CDR(iterator)) {
-	R_assert(TYPEOF(CAR(iterator)) == SYMSXP);
-	m->OutString(fp, CHAR(PRINTNAME(CAR(iterator))), d);
-	m->OutNewline(fp, d);
+    /* use try-catch to call OutTerm if there is an error */
+    try {
+	m->OutInteger(fp, sym_count = HASH_TABLE_COUNT(sym_table), d); m->OutSpace(fp, 1, d);
+	m->OutInteger(fp, env_count = HASH_TABLE_COUNT(env_table), d); m->OutNewline(fp, d);
+	for (iterator = HASH_TABLE_KEYS_LIST(sym_table);
+	     sym_count--;
+	     iterator = CDR(iterator)) {
+	    R_assert(TYPEOF(CAR(iterator)) == SYMSXP);
+	    m->OutString(fp, CHAR(PRINTNAME(CAR(iterator))), d);
+	    m->OutNewline(fp, d);
+	}
+	for (iterator = HASH_TABLE_KEYS_LIST(env_table);
+	     env_count--;
+	     iterator = CDR(iterator)) {
+	    R_assert(TYPEOF(CAR(iterator)) == ENVSXP);
+	    NewWriteItem(ENCLOS(CAR(iterator)), sym_table, env_table, fp, m, d);
+	    NewWriteItem(FRAME(CAR(iterator)), sym_table, env_table, fp, m, d);
+	    NewWriteItem(TAG(CAR(iterator)), sym_table, env_table, fp, m, d);
+	}
+	NewWriteItem(s, sym_table, env_table, fp, m, d);
     }
-    for (iterator = HASH_TABLE_KEYS_LIST(env_table);
-	 env_count--;
-	 iterator = CDR(iterator)) {
-	R_assert(TYPEOF(CAR(iterator)) == ENVSXP);
-	NewWriteItem(ENCLOS(CAR(iterator)), sym_table, env_table, fp, m, d);
-	NewWriteItem(FRAME(CAR(iterator)), sym_table, env_table, fp, m, d);
-	NewWriteItem(TAG(CAR(iterator)), sym_table, env_table, fp, m, d);
+    catch (...) {
+	m->OutTerm(fp, d);
+	throw;
     }
-    NewWriteItem(s, sym_table, env_table, fp, m, d);
-
-    /* end the context after anything that could raise an error but before
-       calling OutTerm so it doesn't get called twice */
-    endcontext(&cntxt);
 
     m->OutTerm(fp, d);
-    UNPROTECT(2);
 }
 
 #define InVec(fp, obj, accessor, infunc, length, d)			\
@@ -1163,6 +1166,8 @@ static void NewDataSave (SEXP s, FILE *fp, OutputRoutines *m, SaveLoadData *d)
 #define SET_INTEGER_ELT(x,__i__,v)	(INTEGER_ELT(x,__i__)=(v))
 #define SET_REAL_ELT(x,__i__,v)		(REAL_ELT(x,__i__)=(v))
 #define SET_COMPLEX_ELT(x,__i__,v)	(COMPLEX_ELT(x,__i__)=(v))
+#undef TRUE
+#undef FALSE
 
 static SEXP InCHARSXP (FILE *fp, InputRoutines *m, SaveLoadData *d)
 {
@@ -1203,7 +1208,7 @@ static SEXP NewReadVec(SEXPTYPE type, SEXP sym_table, SEXP env_table, FILE *fp, 
     case STRSXP:
 	do {
 	    int cnt;
-	    for (cnt = 0; cnt < length(my_vec); ++cnt)
+	    for (cnt = 0; cnt < Rf_length(my_vec); ++cnt)
 		SET_STRING_ELT(my_vec, cnt, InCHARSXP(fp, m, d));
 	} while (0);
 	break;
@@ -1224,14 +1229,14 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 {
     SEXPTYPE type;
     SEXP s;
-    int pos, levs, objf;
+    int pos, levs;
 
     R_assert(TYPEOF(sym_table) == VECSXP && TYPEOF(env_table) == VECSXP);
-    type = m->InInteger(fp, d);
+    type = CXXRCONSTRUCT(SEXPTYPE, m->InInteger(fp, d));
     if ((s = NewLoadSpecialHook(type)))
 	return s;
     levs = m->InInteger(fp, d);
-    objf = m->InInteger(fp, d);
+    /*objf =*/ m->InInteger(fp, d);
     switch (type) {
     case SYMSXP:
 	pos = m->InInteger(fp, d);
@@ -1242,18 +1247,49 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 	PROTECT(s = pos ? VECTOR_ELT(env_table, pos - 1) : R_NilValue);
 	break;
     case LISTSXP:
+	PROTECT(s = CXXR_NEW(PairList));
+	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
+	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
+	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));
+	/*UNPROTECT(1);*/
+	break;
     case LANGSXP:
+	PROTECT(s = CXXR_NEW(Expression));
+	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
+	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
+	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));
+	/*UNPROTECT(1);*/
+	break;
     case CLOSXP:
+	{
+	    GCStackRoot<> env(NewReadItem(sym_table, env_table, fp, m, d));
+	    GCStackRoot<> formals(NewReadItem(sym_table, env_table, fp, m, d));
+	    GCStackRoot<> body(NewReadItem(sym_table, env_table, fp, m, d));
+	    PROTECT(s = mkCLOSXP(formals, body, env));
+	}
+	break;
     case PROMSXP:
+	{
+	    GCStackRoot<Environment>
+		env(SEXP_downcast<Environment*>(NewReadItem(sym_table,
+							    env_table,
+							    fp, m, d)));
+	    GCStackRoot<> val(NewReadItem(sym_table, env_table, fp, m, d));
+	    GCStackRoot<> valgen(NewReadItem(sym_table, env_table, fp, m, d));
+	    GCStackRoot<Promise> prom(CXXR_NEW(Promise(valgen, env)));
+	    prom->setValue(val);
+	    PROTECT(s = prom);
+	}
+	break;
     case DOTSXP:
-	PROTECT(s = allocSExp(type));
+	PROTECT(s = CXXR_NEW(DottedArgs));
 	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	/*UNPROTECT(1);*/
 	break;
     case EXTPTRSXP:
-	PROTECT(s = allocSExp(type));
+	PROTECT(s = CXXR_NEW(ExternalPointer));
 	R_SetExternalPtrAddr(s, NULL);
 	R_SetExternalPtrProtected(s, NewReadItem(sym_table, env_table, fp, m, d));
 	R_SetExternalPtrTag(s, NewReadItem(sym_table, env_table, fp, m, d));
@@ -1265,12 +1301,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
     case SPECIALSXP:
     case BUILTINSXP:
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	int index = StrToInternal(m->InString(fp, d));
-	if (index == NA_INTEGER) {
-	    warning(_("unrecognized internal function name \"%s\""), d->buffer.data); 
-	    PROTECT(s = R_NilValue);
-	} else
-	    PROTECT(s = mkPRIMSXP(index, type == BUILTINSXP));
+	PROTECT(s = BuiltInFunction::obtain(m->InString(fp, d)));
 	break;
     case CHARSXP:
     case LGLSXP:
@@ -1287,71 +1318,68 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
     default:
 	error(_("NewReadItem: unknown type %i"), type);
     }
-    SETLEVELS(s, (unsigned short) levs);
-    SET_OBJECT(s, objf);
+    SETLEVELS(s, static_cast<unsigned short>( levs));
     SET_ATTRIB(s, NewReadItem(sym_table, env_table, fp, m, d));
     UNPROTECT(1); /* s */
     return s;
 }
 
-static void newdataload_cleanup(void *data)
-{
-    InputCtxtData *cinfo = (InputCtxtData*)data;
-    FILE *fp = (FILE *) data;
-    cinfo->methods->InTerm(fp, cinfo->data);
-}
-
 static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
 {
     int sym_count, env_count, count;
-    SEXP sym_table, env_table, obj;
-    RCNTXT cntxt;
-    InputCtxtData cinfo;
-    cinfo.fp = fp; cinfo.methods = m; cinfo.data = d;
+    GCStackRoot<> sym_table, env_table;
+    SEXP obj;
 
     m->InInit(fp, d);
 
-    /* set up a context which will call InTerm if there is an error */
-    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		 R_NilValue, R_NilValue);
-    cntxt.cend = &newdataload_cleanup;
-    cntxt.cenddata = &cinfo;
+    /* Use try-catch to call InTerm if there is an error */
+    try {
+	/* Read the table sizes */
+	sym_count = m->InInteger(fp, d);
+	env_count = m->InInteger(fp, d);
 
-    /* Read the table sizes */
-    sym_count = m->InInteger(fp, d);
-    env_count = m->InInteger(fp, d);
+	/* Allocate the symbol and environment tables */
+	sym_table = allocVector(VECSXP, sym_count);
+	env_table = allocVector(VECSXP, env_count);
 
-    /* Allocate the symbol and environment tables */
-    PROTECT(sym_table = allocVector(VECSXP, sym_count));
-    PROTECT(env_table = allocVector(VECSXP, env_count));
+	/* Read back and install symbols */
+	for (count = 0; count < sym_count; ++count) {
+	    SET_VECTOR_ELT(sym_table, count, install(m->InString(fp, d)));
+	}
+	/* Allocate the environments */
+	for (count = 0; count < env_count; ++count) {
+	    GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
+	    SET_VECTOR_ELT(env_table, count, new Environment(0, frame));
+	}
 
-    /* Read back and install symbols */
-    for (count = 0; count < sym_count; ++count) {
-	SET_VECTOR_ELT(sym_table, count, install(m->InString(fp, d)));
+	/* Now fill them in  */
+	for (count = 0; count < env_count; ++count) {
+	    Environment* env
+		= static_cast<Environment*>(VECTOR_ELT(env_table, count));
+	    Environment* enc
+		= SEXP_downcast<Environment*>(NewReadItem(sym_table, env_table,
+							  fp, m, d));
+	    env->setEnclosingEnvironment(enc);
+	    PairList* bindings
+		= SEXP_downcast<PairList*>(NewReadItem(sym_table, env_table,
+						       fp, m, d));
+	    frameReadPairList(env->frame(), bindings);
+	    // Throw away the hash table:
+	    NewReadItem(sym_table, env_table, fp, m, d);
+	
+	    env->expose();
+	}
+
+	/* Read the actual object back */
+	obj =  NewReadItem(sym_table, env_table, fp, m, d);
     }
-    /* Allocate the environments */
-    for (count = 0; count < env_count; ++count)
-	SET_VECTOR_ELT(env_table, count, allocSExp(ENVSXP));
-
-    /* Now fill them in  */
-    for (count = 0; count < env_count; ++count) {
-	obj = VECTOR_ELT(env_table, count);
-	SET_ENCLOS(obj, NewReadItem(sym_table, env_table, fp, m, d));
-	SET_FRAME(obj, NewReadItem(sym_table, env_table, fp, m, d));
-	SET_TAG(obj, NewReadItem(sym_table, env_table, fp, m, d));
-	R_RestoreHashCount(obj);
+    catch (...) {
+	m->InTerm(fp, d);
+	throw;
     }
-
-    /* Read the actual object back */
-    obj =  NewReadItem(sym_table, env_table, fp, m, d);
-
-    /* end the context after anything that could raise an error but before
-       calling InTerm so it doesn't get called twice */
-    endcontext(&cntxt);
 
     /* Wrap up */
     m->InTerm(fp, d);
-    UNPROTECT(2);
     return obj;
 }
 
@@ -1392,7 +1420,7 @@ static void OutStringAscii(FILE *fp, const char *x, SaveLoadData *unused)
 {
     size_t i, nbytes;
     nbytes = strlen(x);
-    fprintf(fp, "%d ", (int) nbytes);
+    fprintf(fp, "%d ", int( nbytes));
     for (i = 0; i < nbytes; i++) {
 	switch(x[i]) {
 	case '\n': fprintf(fp, "\\n");  break;
@@ -1413,7 +1441,7 @@ static void OutStringAscii(FILE *fp, const char *x, SaveLoadData *unused)
 	       is handled above, x[i] > 126 can't happen, but
 	       I'm superstitious...  -pd */
 	    if (x[i] <= 32 || x[i] > 126)
-		fprintf(fp, "\\%03o", (unsigned char) x[i]);
+		fprintf(fp, "\\%03o", static_cast<unsigned char>( x[i]));
 	    else
 		fputc(x[i], fp);
 	}
@@ -1434,8 +1462,8 @@ static char *InStringAscii(FILE *fp, SaveLoadData *unused)
     if (nbytes >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
-	if(buf) newbuf = (char *) realloc(buf, nbytes + 1);
-	else newbuf = (char *) malloc(nbytes + 1);
+	if(buf) newbuf = static_cast<char *>( realloc(buf, nbytes + 1));
+	else newbuf = static_cast<char *>( malloc(nbytes + 1));
 	if (newbuf == NULL) /* buf remains allocated */
 	    error(_("out of memory reading ascii string"));
 	buf = newbuf;
@@ -1466,13 +1494,13 @@ static char *InStringAscii(FILE *fp, SaveLoadData *unused)
 		    c = fgetc(fp);
 		    j++;
 		}
-		buf[i] = (char) d;
+		buf[i] = char( d);
 		ungetc(c, fp);
 		break;
-	    default  : buf[i] = (char) c;
+	    default  : buf[i] = char( c);
 	    }
 	}
-	else buf[i] = (char) c;
+	else buf[i] = char( c);
     }
     buf[i] = '\0';
     return buf;
@@ -1574,14 +1602,14 @@ static char *InStringBinary(FILE *fp, SaveLoadData *unused)
     if (nbytes >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
-	if(buf) newbuf = (char *) realloc(buf, nbytes + 1);
-	else newbuf = (char *) malloc(nbytes + 1);
+	if(buf) newbuf = static_cast<char *>( realloc(buf, nbytes + 1));
+	else newbuf = static_cast<char *>( malloc(nbytes + 1));
 	if (newbuf == NULL)
 	    error(_("out of memory reading binary string"));
 	buf = newbuf;
 	buflen = nbytes + 1;
     }
-    if (fread(buf, sizeof(char), nbytes, fp) != nbytes)
+    if (CXXRCONSTRUCT(int, fread(buf, sizeof(char), nbytes, fp)) != nbytes)
 	error(_("a binary string read error occurred"));
     buf[nbytes] = '\0';
     return buf;
@@ -1655,7 +1683,7 @@ static int InIntegerXdr(FILE *fp, SaveLoadData *d)
 
 static void OutStringXdr(FILE *fp, const char *s, SaveLoadData *d)
 {
-    unsigned int n = (unsigned int) strlen(s);
+    unsigned int n = static_cast<unsigned int>( strlen(s));
     char *t = CallocCharBuf(n);
     bool_t res;
     /* This copy may not be needed, will xdr_bytes ever modify 2nd arg? */
@@ -1672,11 +1700,11 @@ static char *InStringXdr(FILE *fp, SaveLoadData *d)
     static char *buf = NULL;
     static int buflen = 0;
     unsigned int nbytes = InIntegerXdr(fp, d);
-    if (nbytes >= buflen) {
+    if (CXXRCONSTRUCT(int, nbytes) >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
-	if(buf) newbuf = (char *) realloc(buf, nbytes + 1);
-	else newbuf = (char *) malloc(nbytes + 1);
+	if(buf) newbuf = static_cast<char *>( realloc(buf, nbytes + 1));
+	else newbuf = static_cast<char *>( malloc(nbytes + 1));
 	if (newbuf == NULL)
 	    error(_("out of memory reading binary string"));
 	buf = newbuf;
@@ -1755,31 +1783,31 @@ static void R_WriteMagic(FILE *fp, int number)
     number = abs(number);
     switch (number) {
     case R_MAGIC_ASCII_V1:   /* Version 1 - R Data, ASCII Format */
-	strcpy((char*)buf, "RDA1");
+	strcpy(reinterpret_cast<char*>(buf), "RDA1");
 	break;
     case R_MAGIC_BINARY_V1:  /* Version 1 - R Data, Binary Format */
-	strcpy((char*)buf, "RDB1");
+	strcpy(reinterpret_cast<char*>(buf), "RDB1");
 	break;
     case R_MAGIC_XDR_V1:     /* Version 1 - R Data, XDR Binary Format */
-	strcpy((char*)buf, "RDX1");
+	strcpy(reinterpret_cast<char*>(buf), "RDX1");
 	break;
     case R_MAGIC_ASCII_V2:   /* Version >=2 - R Data, ASCII Format */
-	strcpy((char*)buf, "RDA2");
+	strcpy(reinterpret_cast<char*>(buf), "RDA2");
 	break;
     case R_MAGIC_BINARY_V2:  /* Version >=2 - R Data, Binary Format */
-	strcpy((char*)buf, "RDB2");
+	strcpy(reinterpret_cast<char*>(buf), "RDB2");
 	break;
     case R_MAGIC_XDR_V2:     /* Version >=2 - R Data, XDR Binary Format */
-	strcpy((char*)buf, "RDX2");
+	strcpy(reinterpret_cast<char*>(buf), "RDX2");
 	break;
     default:
-	buf[0] = (unsigned char)((number/1000) % 10 + '0');
-	buf[1] = (unsigned char)((number/100) % 10 + '0');
-	buf[2] = (unsigned char)((number/10) % 10 + '0');
-	buf[3] = (unsigned char)(number % 10 + '0');
+	buf[0] = static_cast<unsigned char>((number/1000) % 10 + '0');
+	buf[1] = static_cast<unsigned char>((number/100) % 10 + '0');
+	buf[2] = static_cast<unsigned char>((number/10) % 10 + '0');
+	buf[3] = static_cast<unsigned char>(number % 10 + '0');
     }
     buf[4] = '\n';
-    res = fwrite((char*)buf, sizeof(char), 5, fp);
+    res = fwrite(reinterpret_cast<char*>(buf), sizeof(char), 5, fp);
     if(res != 5) error(_("write failed"));
 }
 
@@ -1789,7 +1817,7 @@ static int R_ReadMagic(FILE *fp)
     int d1, d2, d3, d4;
     size_t count;
 
-    count = fread((char*)buf, sizeof(char), 5, fp);
+    count = fread(reinterpret_cast<char*>(buf), sizeof(char), 5, fp);
     if (count != 5) {
 	if (count == 0)
 	    return R_MAGIC_EMPTY;
@@ -1797,25 +1825,25 @@ static int R_ReadMagic(FILE *fp)
 	    return R_MAGIC_CORRUPT;
     }
 
-    if (strncmp((char*)buf, "RDA1\n", 5) == 0) {
+    if (strncmp(reinterpret_cast<char*>(buf), "RDA1\n", 5) == 0) {
 	return R_MAGIC_ASCII_V1;
     }
-    else if (strncmp((char*)buf, "RDB1\n", 5) == 0) {
+    else if (strncmp(reinterpret_cast<char*>(buf), "RDB1\n", 5) == 0) {
 	return R_MAGIC_BINARY_V1;
     }
-    else if (strncmp((char*)buf, "RDX1\n", 5) == 0) {
+    else if (strncmp(reinterpret_cast<char*>(buf), "RDX1\n", 5) == 0) {
 	return R_MAGIC_XDR_V1;
     }
-    if (strncmp((char*)buf, "RDA2\n", 5) == 0) {
+    if (strncmp(reinterpret_cast<char*>(buf), "RDA2\n", 5) == 0) {
 	return R_MAGIC_ASCII_V2;
     }
-    else if (strncmp((char*)buf, "RDB2\n", 5) == 0) {
+    else if (strncmp(reinterpret_cast<char*>(buf), "RDB2\n", 5) == 0) {
 	return R_MAGIC_BINARY_V2;
     }
-    else if (strncmp((char*)buf, "RDX2\n", 5) == 0) {
+    else if (strncmp(reinterpret_cast<char*>(buf), "RDX2\n", 5) == 0) {
 	return R_MAGIC_XDR_V2;
     }
-    else if (strncmp((char *)buf, "RD", 2) == 0)
+    else if (strncmp(reinterpret_cast<char *>(buf), "RD", 2) == 0)
 	return R_MAGIC_MAYBE_TOONEW;
 
     /* Intel gcc seems to screw up a single expression here */
@@ -1917,21 +1945,14 @@ SEXP attribute_hidden R_LoadFromFile(FILE *fp, int startup)
     }
 }
 
-static void saveload_cleanup(void *data)
-{
-    FILE *fp = (FILE *) data;
-    fclose(fp);
-}
-
 /* Only used for version 1 saves */
 SEXP attribute_hidden do_save(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     /* save(list, file, ascii, version, environment) */
 
-    SEXP s, t, source, tmp;
+    SEXP t, source;
     int len, j, version, ep;
     FILE *fp;
-    RCNTXT cntxt;
 
     checkArity(op, args);
 
@@ -1961,35 +1982,29 @@ SEXP attribute_hidden do_save(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("cannot open file '%s': %s"), cfile, strerror(errno));
     }
 
-    /* set up a context which will close the file if there is an error */
-    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		 R_NilValue, R_NilValue);
-    cntxt.cend = &saveload_cleanup;
-    cntxt.cenddata = fp;
+    /* Use try-catch to close the file if there is an error */
+    try {
+	len = length(CAR(args));
+	GCStackRoot<> s(allocList(len));
 
-    len = length(CAR(args));
-    PROTECT(s = allocList(len));
-
-    t = s;
-    for (j = 0; j < len; j++, t = CDR(t)) {
-	SET_TAG(t, install(CHAR(STRING_ELT(CAR(args), j))));
-	tmp = findVar(TAG(t), source);
-	if (tmp == R_UnboundValue)
-	    error(_("object '%s' not found"), CHAR(PRINTNAME(TAG(t))));
-	if(ep && TYPEOF(tmp) == PROMSXP) {
-	    PROTECT(tmp);
-	    tmp = eval(tmp, source);
-	    UNPROTECT(1);
+	t = s;
+	for (j = 0; j < len; j++, t = CDR(t)) {
+	    SET_TAG(t, install(CHAR(STRING_ELT(CAR(args), j))));
+	    GCStackRoot<> tmp(findVar(TAG(t), source));
+	    if (tmp == R_UnboundValue)
+		error(_("object '%s' not found"), CHAR(PRINTNAME(TAG(t))));
+	    if(ep && TYPEOF(tmp) == PROMSXP)
+		tmp = eval(tmp, source);
+	    SETCAR(t, tmp);
 	}
-	SETCAR(t, tmp);
-   }
 
-    R_SaveToFileV(s, fp, INTEGER(CADDR(args))[0], version);
+	R_SaveToFileV(s, fp, INTEGER(CADDR(args))[0], version);
+    }
+    catch (...) {
+	fclose(fp);
+	throw;
+    }
 
-    UNPROTECT(1);
-    /* end the context after anything that could raise an error but before
-       closing the file so it doesn't get done twice */
-    endcontext(&cntxt);
     fclose(fp);
     return R_NilValue;
 }
@@ -2010,6 +2025,7 @@ static SEXP RestoreToEnv(SEXP ans, SEXP aenv)
 	PROTECT(names = getAttrib(ans, R_NamesSymbol)); /* PROTECT needed?? */
 	if (TYPEOF(names) != STRSXP || LENGTH(names) != LENGTH(ans))
 	    error(_("not a valid named list"));
+	ProvenanceTracker::flagXenogenesis();
 	for (i = 0; i < LENGTH(ans); i++) {
 	    SEXP sym = install(CHAR(STRING_ELT(names, i)));
 	    obj = VECTOR_ELT(ans, i);
@@ -2032,6 +2048,7 @@ static SEXP RestoreToEnv(SEXP ans, SEXP aenv)
     PROTECT(names = allocVector(STRSXP, cnt));
     cnt = 0;
     a = ans;
+    ProvenanceTracker::flagXenogenesis();
     while (a != R_NilValue) {
 	SET_STRING_ELT(names, cnt++, PRINTNAME(TAG(a)));
 	defineVar(TAG(a), CAR(a), aenv);
@@ -2053,9 +2070,9 @@ static SEXP R_LoadSavedData(FILE *fp, SEXP aenv)
 /* This is only used for version 1 or earlier formats */
 SEXP attribute_hidden do_load(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP fname, aenv, val;
+    SEXP fname, aenv;
+    GCStackRoot<> val;
     FILE *fp;
-    RCNTXT cntxt;
 
     checkArity(op, args);
 
@@ -2075,19 +2092,16 @@ SEXP attribute_hidden do_load(SEXP call, SEXP op, SEXP args, SEXP env)
     fp = RC_fopen(STRING_ELT(fname, 0), "rb", TRUE);
     if (!fp) error(_("unable to open file"));
 
-    /* set up a context which will close the file if there is an error */
-    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		 R_NilValue, R_NilValue);
-    cntxt.cend = &saveload_cleanup;
-    cntxt.cenddata = fp;
+    /* Use try-catch to close the file if there is an error */
+    try {
+	val = R_LoadSavedData(fp, aenv);
+    }
+    catch (...) {
+	fclose(fp);
+	throw;
+    }
 
-    PROTECT(val = R_LoadSavedData(fp, aenv));
-
-    /* end the context after anything that could raise an error but before
-       closing the file so it doesn't get done twice */
-    endcontext(&cntxt);
     fclose(fp);
-    UNPROTECT(1);
     return val;
 }
 
@@ -2101,7 +2115,7 @@ void attribute_hidden R_XDREncodeDouble(double d, void *buf)
     XDR xdrs;
     int success;
 
-    xdrmem_create(&xdrs, (char *) buf, R_XDR_DOUBLE_SIZE, XDR_ENCODE);
+    xdrmem_create(&xdrs, static_cast<char *>( buf), R_XDR_DOUBLE_SIZE, XDR_ENCODE);
     success = xdr_double(&xdrs, &d);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2114,7 +2128,7 @@ double attribute_hidden R_XDRDecodeDouble(void *buf)
     double d;
     int success;
 
-    xdrmem_create(&xdrs, (char *) buf, R_XDR_DOUBLE_SIZE, XDR_DECODE);
+    xdrmem_create(&xdrs, static_cast<char *>( buf), R_XDR_DOUBLE_SIZE, XDR_DECODE);
     success = xdr_double(&xdrs, &d);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2127,7 +2141,7 @@ void attribute_hidden R_XDREncodeInteger(int i, void *buf)
     XDR xdrs;
     int success;
 
-    xdrmem_create(&xdrs, (char *) buf, R_XDR_INTEGER_SIZE, XDR_ENCODE);
+    xdrmem_create(&xdrs, static_cast<char *>( buf), R_XDR_INTEGER_SIZE, XDR_ENCODE);
     success = xdr_int(&xdrs, &i);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2139,7 +2153,7 @@ int attribute_hidden R_XDRDecodeInteger(void *buf)
     XDR xdrs;
     int i, success;
 
-    xdrmem_create(&xdrs, (char *) buf, R_XDR_INTEGER_SIZE, XDR_DECODE);
+    xdrmem_create(&xdrs, static_cast<char *>( buf), R_XDR_INTEGER_SIZE, XDR_DECODE);
     success = xdr_int(&xdrs, &i);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2162,7 +2176,7 @@ void R_SaveGlobalEnvToFile(const char *name)
     }
     else {
 	SEXP args, call;
-	args = LCONS(ScalarString(mkChar(name)), R_NilValue);
+	args = CONS(ScalarString(mkChar(name)), R_NilValue);
 	PROTECT(call = LCONS(sym, args));
 	eval(call, R_GlobalEnv);
 	UNPROTECT(1);
@@ -2184,8 +2198,8 @@ void R_RestoreGlobalEnvFromFile(const char *name, Rboolean quiet)
     else {
 	SEXP args, call, sQuiet;
 	sQuiet = quiet ? mkTrue() : mkFalse();
-	PROTECT(args = LCONS(sQuiet, R_NilValue));
-	args = LCONS(ScalarString(mkChar(name)), args);
+	PROTECT(args = CONS(sQuiet, R_NilValue));
+	args = CONS(ScalarString(mkChar(name)), args);
 	PROTECT(call = LCONS(sym, args));
 	eval(call, R_GlobalEnv);
 	UNPROTECT(2);
@@ -2194,13 +2208,6 @@ void R_RestoreGlobalEnvFromFile(const char *name, Rboolean quiet)
 
 
 #include <Rconnections.h>
-
-static void con_cleanup(void *data)
-{
-    Rconnection con = data;
-    if(con->isopen) con->close(con);
-}
-
 
 /* Ideally it should be possible to do this entirely in R code with
    something like
@@ -2229,8 +2236,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     Rconnection con;
     struct R_outpstream_st out;
     R_pstream_format_t type;
-    char *magic;
-    RCNTXT cntxt;
+    CXXRCONST char *magic;
 
     checkArity(op, args);
 
@@ -2242,7 +2248,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (TYPEOF(CADDR(args)) != LGLSXP)
 	error(_("'ascii' must be logical"));
-    ascii = INTEGER(CADDR(args))[0];
+    ascii = CXXRCONSTRUCT(Rboolean, INTEGER(CADDR(args))[0]);
 
     if (CADDDR(args) == R_NilValue)
 	version = R_DefaultSaveFormatVersion;
@@ -2266,58 +2272,58 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 	strcpy(con->mode, "wb");
 	if(!con->open(con)) error(_("cannot open the connection"));
 	strcpy(con->mode, mode);
-	/* set up a context which will close the connection
- 	   if there is an error */
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	cntxt.cend = &con_cleanup;
-	cntxt.cenddata = con;
     }
-    if(!con->canwrite)
-	error(_("connection not open for writing"));
+    try {
+	if(!con->canwrite)
+	    error(_("connection not open for writing"));
 
-    if (ascii) {
-	magic = "RDA2\n";
-	type = R_pstream_ascii_format;
-    }
-    else {
-	if (con->text)
-	    error(_("cannot save XDR format to a text-mode connection"));
-	magic = "RDX2\n";
-	type = R_pstream_xdr_format;
-    }
-
-    if (con->text)
-	Rconn_printf(con, "%s", magic);
-    else {
-	size_t len = strlen(magic);
-	if (len != con->write(magic, 1, len, con))
-	    error(_("error writing to connection"));
-    }
-
-    R_InitConnOutPStream(&out, con, type, version, NULL, NULL);
-
-    len = length(list);
-    PROTECT(s = allocList(len));
-
-    t = s;
-    for (j = 0; j < len; j++, t = CDR(t)) {
-	SET_TAG(t, install(CHAR(STRING_ELT(list, j))));
-	SETCAR(t, findVar(TAG(t), source));
-	tmp = findVar(TAG(t), source);
-	if (tmp == R_UnboundValue)
-	    error(_("object '%s' not found"), CHAR(PRINTNAME(TAG(t))));
-	if(ep && TYPEOF(tmp) == PROMSXP) {
-	    PROTECT(tmp);
-	    tmp = eval(tmp, source);
-	    UNPROTECT(1);
+	if (ascii) {
+	    magic = "RDA2\n";
+	    type = R_pstream_ascii_format;
 	}
-	SETCAR(t, tmp);
-    }
+	else {
+	    if (con->text)
+		error(_("cannot save XDR format to a text-mode connection"));
+	    magic = "RDX2\n";
+	    type = R_pstream_xdr_format;
+	}
 
-    R_Serialize(s, &out);
-    if (!wasopen) con->close(con);
-    UNPROTECT(1);
+	if (con->text)
+	    Rconn_printf(con, "%s", magic);
+	else {
+	    size_t len = strlen(magic);
+	    if (len != con->write(magic, 1, len, con))
+		error(_("error writing to connection"));
+	}
+
+	R_InitConnOutPStream(&out, con, type, version, NULL, NULL);
+
+	len = length(list);
+	PROTECT(s = allocList(len));
+
+	t = s;
+	for (j = 0; j < len; j++, t = CDR(t)) {
+	    SET_TAG(t, install(CHAR(STRING_ELT(list, j))));
+	    SETCAR(t, findVar(TAG(t), source));
+	    tmp = findVar(TAG(t), source);
+	    if (tmp == R_UnboundValue)
+		error(_("object '%s' not found"), CHAR(PRINTNAME(TAG(t))));
+	    if(ep && TYPEOF(tmp) == PROMSXP) {
+		PROTECT(tmp);
+		tmp = eval(tmp, source);
+		UNPROTECT(1);
+	    }
+	    SETCAR(t, tmp);
+	}
+
+	R_Serialize(s, &out);
+	if (!wasopen) con->close(con);
+	UNPROTECT(1);
+    } catch (...) {
+	if (!wasopen && con->isopen)
+	    con->close(con);
+	throw;
+    }
     return R_NilValue;
 }
 
@@ -2332,16 +2338,15 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
 
     struct R_inpstream_st in;
     Rconnection con;
-    SEXP aenv, res = R_NilValue;
+    SEXP aenv;
+    GCStackRoot<> res(0);
     unsigned char buf[6];
     size_t count;
     Rboolean wasopen;
-    RCNTXT cntxt;
 
     checkArity(op, args);
 
     con = getConnection(asInteger(CAR(args)));
-    
     wasopen = con->isopen;
     if(!wasopen) {
 	char mode[5];	
@@ -2349,37 +2354,37 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
 	strcpy(con->mode, "rb");
 	if(!con->open(con)) error(_("cannot open the connection"));
 	strcpy(con->mode, mode);
-	/* set up a context which will close the connection
- 	   if there is an error */
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	cntxt.cend = &con_cleanup;
-	cntxt.cenddata = con;
     }
-    if(!con->canread) error(_("connection not open for reading"));
-    if(con->text) error(_("can only load() from a binary connection"));
+    try {
+	if(!con->canread) error(_("connection not open for reading"));
+	if(con->text) error(_("can only load() from a binary connection"));
 
-    aenv = CADR(args);
-    if (TYPEOF(aenv) == NILSXP)
-	error(_("use of NULL environment is defunct"));
-    else if (TYPEOF(aenv) != ENVSXP)
-	error(_("invalid '%s' argument"), "envir");
+	aenv = CADR(args);
+	if (TYPEOF(aenv) == NILSXP)
+	    error(_("use of NULL environment is defunct"));
+	else if (TYPEOF(aenv) != ENVSXP)
+	    error(_("invalid '%s' argument"), "envir");
 
-    /* check magic */
-    memset(buf, 0, 6);
-    count = con->read(buf, sizeof(char), 5, con);
-    if (count == 0) error(_("no input is available"));
-    if (strncmp((char*)buf, "RDA2\n", 5) == 0 ||
-	strncmp((char*)buf, "RDB2\n", 5) == 0 ||
-	strncmp((char*)buf, "RDX2\n", 5) == 0) {
-	R_InitConnInPStream(&in, con, R_pstream_any_format, NULL, NULL);
-	/* PROTECT is paranoia: some close() method might allocate */
-	R_InitReadItemDepth = R_ReadItemDepth = -asInteger(CADDR(args));
-	PROTECT(res = RestoreToEnv(R_Unserialize(&in), aenv));
-	R_ReadItemDepth = 0;
-	if(!wasopen) {endcontext(&cntxt); con->close(con);}
-	UNPROTECT(1);
-    } else
-	error(_("the input does not start with a magic number compatible with loading from a connection"));
+	/* check magic */
+	memset(buf, 0, 6);
+	count = con->read(buf, sizeof(char), 5, con);
+	if (count == 0) error(_("no input is available"));
+	if (strncmp(reinterpret_cast<char*>(buf), "RDA2\n", 5) == 0 ||
+	    strncmp(reinterpret_cast<char*>(buf), "RDB2\n", 5) == 0 ||
+	    strncmp(reinterpret_cast<char*>(buf), "RDX2\n", 5) == 0) {
+	    R_InitConnInPStream(&in, con, R_pstream_any_format, NULL, NULL);
+	    GCStackRoot<> unser(R_Unserialize(&in));
+	    R_InitReadItemDepth = R_ReadItemDepth = -asInteger(CADDR(args));
+	    res = RestoreToEnv(unser, aenv);
+	    R_ReadItemDepth = 0;
+	    if(!wasopen)
+		con->close(con);
+	} else
+	    error(_("the input does not start with a magic number compatible with loading from a connection"));
+    } catch (...) {
+	if (!wasopen && con->isopen)
+	    con->close(con);
+	throw;
+    }
     return res;
 }

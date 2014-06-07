@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2002-2012   The R Core Team.
@@ -53,15 +69,14 @@ SEXP attribute_hidden do_qsort(SEXP call, SEXP op, SEXP args, SEXP rho)
     x = CAR(args);
     if (!isNumeric(x))
 	error(_("argument is not a numeric vector"));
-    x_real= TYPEOF(x) == REALSXP;
-    x_int = !x_real && (TYPEOF(x) == INTSXP || TYPEOF(x) == LGLSXP);
+    x_real= Rboolean(TYPEOF(x) == REALSXP);
+    x_int = Rboolean(!x_real && (TYPEOF(x) == INTSXP || TYPEOF(x) == LGLSXP));
     PROTECT(sx = (x_real || x_int) ? duplicate(x) : coerceVector(x, REALSXP));
-    SET_ATTRIB(sx, R_NilValue);
-    SET_OBJECT(sx, 0);
+    sx->clearAttributes();
     indx_ret = asLogical(CADR(args));
     R_xlen_t n = XLENGTH(x);
 #ifdef LONG_VECTOR_SUPPORT
-    Rboolean isLong = n > INT_MAX;
+    Rboolean isLong = CXXRCONSTRUCT(Rboolean, n > INT_MAX);
 #endif
     if(x_int) ivx = INTEGER(sx); else vx = REAL(sx);
     if(indx_ret) {
@@ -73,7 +88,7 @@ SEXP attribute_hidden do_qsort(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (isLong) {
 	    PROTECT(indx = allocVector(REALSXP, n));
 	    double *ix = REAL(indx);
-	    for(R_xlen_t i = 0; i < n; i++) ix[i] = (double) (i+1);
+	    for(R_xlen_t i = 0; i < n; i++) ix[i] = double( (i+1));
 	    if(x_int) R_qsort_int_R(ivx, ix, 1, n);
 	    else R_qsort_R(vx, ix, 1, n);
 	} else
@@ -81,12 +96,11 @@ SEXP attribute_hidden do_qsort(SEXP call, SEXP op, SEXP args, SEXP rho)
 	{
 	    PROTECT(indx = allocVector(INTSXP, n));
 	    int *ix = INTEGER(indx);
-	    int nn = (int) n;
+	    int nn = int( n);
 	    for(int i = 0; i < nn; i++) ix[i] = i+1;
 	    if(x_int) R_qsort_int_I(ivx, ix, 1, nn);
 	    else R_qsort_I(vx, ix, 1, nn);
 	}
-
 	SET_VECTOR_ELT(ans, 0, sx);
 	SET_VECTOR_ELT(ans, 1, indx);
 	SET_STRING_ELT(ansnames, 0, mkChar("x"));
@@ -123,12 +137,12 @@ void F77_SUB(qsort3)(double *v, int *ii, int *jj)
 
 #define NUMERIC double
 void R_qsort_I(double *v, int *I, int i, int j)
-#include "qsort-body.c"
+#include "qsort-body.cpp"
 #undef NUMERIC
 
 #define NUMERIC int
 void R_qsort_int_I(int *v, int *I, int i, int j)
-#include "qsort-body.c"
+#include "qsort-body.cpp"
 #undef NUMERIC
 
 #undef INTt
@@ -138,12 +152,12 @@ void R_qsort_int_I(int *v, int *I, int i, int j)
 #define INDt double
 #define NUMERIC double
 static void R_qsort_R(double *v, double *I, size_t i, size_t j)
-#include "qsort-body.c"
+#include "qsort-body.cpp"
 #undef NUMERIC
 
 #define NUMERIC int
 static void R_qsort_int_R(int *v, double *I, size_t i, size_t j)
-#include "qsort-body.c"
+#include "qsort-body.cpp"
 #undef NUMERIC
 #endif // LONG_VECTOR_SUPPORT
 
@@ -151,10 +165,10 @@ static void R_qsort_int_R(int *v, double *I, size_t i, size_t j)
 
 #define NUMERIC double
 void R_qsort(double *v, size_t i, size_t j)
-#include "qsort-body.c"
+#include "qsort-body.cpp"
 #undef NUMERIC
 
 #define NUMERIC int
 void R_qsort_int(int *v, size_t i, size_t j)
-#include "qsort-body.c"
+#include "qsort-body.cpp"
 #undef NUMERIC

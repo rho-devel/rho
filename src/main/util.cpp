@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -23,11 +39,17 @@
 #include <config.h>
 #endif
 
-#define R_USE_SIGNALS 1
 #include <Defn.h>
 #include <Internal.h>
 #include <R_ext/Print.h>
-#include <ctype.h>		/* for isspace */
+#include "basedecl.h"
+
+#include <vector>
+#include "CXXR/BuiltInFunction.h"
+#include "CXXR/ClosureContext.hpp"
+
+using namespace std;
+using namespace CXXR;
 
 #undef COMPILING_R
 
@@ -44,8 +66,6 @@ static void R_wfixslash(wchar_t *s);
 #endif
 
 #ifdef __cplusplus
-#include "Clinkage.h"
-
 extern "C" {
 #endif
 void F77_SYMBOL(rwarnc)(char *msg, int *nchar);
@@ -65,9 +85,9 @@ Rboolean tsConform(SEXP x, SEXP y)
 	/* tspgets should enforce this, but prior to 2.4.0
 	   had INTEGER() here */
 	if(TYPEOF(x) == REALSXP && TYPEOF(y) == REALSXP)
-	    return REAL(x)[0] == REAL(x)[0] &&
+            return Rboolean(REAL(x)[0] == REAL(x)[0] &&
 		REAL(x)[1] == REAL(x)[1] &&
-		REAL(x)[2] == REAL(x)[2];
+                REAL(x)[2] == REAL(x)[2]);
 	/* else fall through */
     }
     return FALSE;
@@ -108,6 +128,7 @@ int ncols(SEXP s)
 
 const static char type_msg[] = "invalid type passed to internal function\n";
 
+
 #ifdef UNUSED
 void internalTypeCheck(SEXP call, SEXP s, SEXPTYPE type)
 {
@@ -125,7 +146,7 @@ const static char * const truenames[] = {
     "True",
     "TRUE",
     "true",
-    (char *) NULL,
+    CXXRNOCAST(char *) NULL,
 };
 
 const static char * const falsenames[] = {
@@ -133,7 +154,7 @@ const static char * const falsenames[] = {
     "False",
     "FALSE",
     "false",
-    (char *) NULL,
+    CXXRNOCAST(char *) NULL,
 };
 
 SEXP asChar(SEXP x)
@@ -180,22 +201,22 @@ SEXP asChar(SEXP x)
 
 Rboolean isUnordered(SEXP s)
 {
-    return (TYPEOF(s) == INTSXP
-	    && inherits(s, "factor")
-	    && !inherits(s, "ordered"));
+    return Rboolean(TYPEOF(s) == INTSXP
+		    && inherits(s, "factor")
+		    && !inherits(s, "ordered"));
 }
 
 Rboolean isOrdered(SEXP s)
 {
-    return (TYPEOF(s) == INTSXP
-	    && inherits(s, "factor")
-	    && inherits(s, "ordered"));
+    return Rboolean(TYPEOF(s) == INTSXP
+		    && inherits(s, "factor")
+		    && inherits(s, "ordered"));
 }
 
 
 const static struct {
     const char * const str;
-    const int type;
+    const SEXPTYPE type;
 }
 TypeTable[] = {
     { "NULL",		NILSXP	   },  /* real types */
@@ -222,11 +243,13 @@ TypeTable[] = {
     { "weakref",	WEAKREFSXP },
     { "raw",		RAWSXP },
     { "S4",		S4SXP },
+    { "CXXR_extended",  CXXSXP },
+    { "CXXR_bailout",   BAILSXP },
     /* aliases : */
     { "numeric",	REALSXP	   },
     { "name",		SYMSXP	   },
 
-    { (char *)NULL,	-1	   }
+    { CXXRNOCAST(char *)NULL,     CXXRCONSTRUCT(SEXPTYPE, -1)         }
 };
 
 
@@ -235,10 +258,9 @@ SEXPTYPE str2type(const char *s)
     int i;
     for (i = 0; TypeTable[i].str; i++) {
 	if (!strcmp(s, TypeTable[i].str))
-	    return (SEXPTYPE) TypeTable[i].type;
+	    return TypeTable[i].type;
     }
-    /* SEXPTYPE is an unsigned int, so the compiler warns us w/o the cast. */
-    return (SEXPTYPE) -1;
+    return SEXPTYPE( -1);
 }
 
 
@@ -247,7 +269,7 @@ SEXP type2str(SEXPTYPE t)
     int i;
 
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == t)
+	if (TypeTable[i].type == CXXRCONSTRUCT(int, t))
 	    return mkChar(TypeTable[i].str);
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2str");
@@ -259,7 +281,7 @@ const char *type2char(SEXPTYPE t)
     int i;
 
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == t)
+	if (TypeTable[i].type == CXXRCONSTRUCT(int, t))
 	    return TypeTable[i].str;
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2char");
@@ -274,8 +296,8 @@ SEXP type2symbol(SEXPTYPE t)
        with TypeTable pointing to both the
        character string and to the symbol would be better */
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == t)
-	    return install((const char *)&TypeTable[i].str);
+	if (TypeTable[i].type == CXXRCONSTRUCT(int, t))
+	    return install(CXXRNOCAST(const char *) TypeTable[i].str);
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2symbol");
     return R_NilValue; /* for -Wall */
@@ -288,7 +310,7 @@ void UNIMPLEMENTED_TYPEt(const char *s, SEXPTYPE t)
     int i;
 
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == t)
+	if (TypeTable[i].type == CXXRCONSTRUCT(int, t))
 	    error(_("unimplemented type '%s' in '%s'\n"), TypeTable[i].str, s);
     }
     error(_("unimplemented type (%d) in '%s'\n"), t, s);
@@ -327,29 +349,29 @@ size_t mbcsToUcs2(const char *in, ucs2_t *out, int nout, int enc)
     size_t  i_len, o_len, status, wc_len;
     /* out length */
     wc_len = (enc == CE_UTF8)? utf8towcs(NULL, in, 0) : mbstowcs(NULL, in, 0);
-    if (out == NULL || (int)wc_len < 0) return wc_len;
+    if (out == NULL || int(wc_len) < 0) return wc_len;
 
-    if ((void*)-1 == (cd = Riconv_open(UCS2ENC, (enc == CE_UTF8) ? "UTF-8": "")))
-	return (size_t) -1;
+    if (reinterpret_cast<void*>(-1) == (cd = Riconv_open(UCS2ENC, (enc == CE_UTF8) ? "UTF-8": "")))
+	return size_t( -1);
 
-    i_buf = (char *)in;
+    i_buf = CXXRNOCAST(char *)in;
     i_len = strlen(in); /* not including terminator */
-    o_buf = (char *)out;
-    o_len = ((size_t) nout) * sizeof(ucs2_t);
-    status = Riconv(cd, &i_buf, (size_t *)&i_len, &o_buf, (size_t *)&o_len);
+    o_buf = reinterpret_cast<char *>(out);
+    o_len = (size_t( nout)) * sizeof(ucs2_t);
+    status = Riconv(cd, &i_buf, CXXRNOCAST(size_t *)&i_len, &o_buf, CXXRNOCAST(size_t *)&o_len);
     int serrno = errno;
     Riconv_close(cd);
-    if (status == (size_t)-1) {
+    if (status == size_t(-1)) {
 	switch(serrno){
 	case EINVAL:
-	    return (size_t) -2;
+	    return size_t( -2);
 	case EILSEQ:
-	    return (size_t) -1;
+	    return size_t( -1);
 	case E2BIG:
 	    break;
 	default:
 	    errno = EILSEQ;
-	    return (size_t) -1;
+	    return size_t( -1);
 	}
     }
     return wc_len; /* status would be better? */
@@ -365,19 +387,19 @@ Rboolean isBlankString(const char *s)
 	wchar_t wc; size_t used; mbstate_t mb_st;
 	mbs_init(&mb_st);
 	while( (used = Mbrtowc(&wc, s, MB_CUR_MAX, &mb_st)) ) {
-	    if(!iswspace((wint_t) wc)) return FALSE;
+	    if(!iswspace(wint_t( wc))) return FALSE;
 	    s += used;
 	}
     } else
 	while (*s)
-	    if (!isspace((int)*s++)) return FALSE;
+	    if (!isspace(int(*s++))) return FALSE;
     return TRUE;
 }
 
 Rboolean StringBlank(SEXP x)
 {
     if (x == R_NilValue) return TRUE;
-    else return CHAR(x)[0] == '\0';
+    else return CXXRCONSTRUCT(Rboolean, CHAR(x)[0] == '\0');
 }
 
 /* Function to test whether a string is a true value */
@@ -421,22 +443,12 @@ SEXP attribute_hidden EnsureString(SEXP s)
     return s;
 }
 
-
 void Rf_checkArityCall(SEXP op, SEXP args, SEXP call)
 {
-    if (PRIMARITY(op) >= 0 && PRIMARITY(op) != length(args)) {
-	if (PRIMINTERNAL(op))
-	    error(ngettext("%d argument passed to .Internal(%s) which requires %d",
-		     "%d arguments passed to .Internal(%s) which requires %d",
-			   (unsigned long) length(args)),
-		  length(args), PRIMNAME(op), PRIMARITY(op));
-	else
-	    errorcall(call,
-		      ngettext("%d argument passed to '%s' which requires %d",
-			       "%d arguments passed to '%s' which requires %d",
-			       (unsigned long) length(args)),
-		      length(args), PRIMNAME(op), PRIMARITY(op));
-    }
+    BuiltInFunction* func = SEXP_downcast<BuiltInFunction*>(op);
+    PairList* arglist = SEXP_downcast<PairList*>(args);
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    func->checkNumArgs(arglist, callx);
 }
 
 void attribute_hidden Rf_check1arg(SEXP arg, SEXP call, const char *formal)
@@ -446,7 +458,7 @@ void attribute_hidden Rf_check1arg(SEXP arg, SEXP call, const char *formal)
     size_t ns;
     if (tag == R_NilValue) return;
     supplied = CHAR(PRINTNAME(tag)); ns = strlen(supplied);
-    if (ns > strlen(formal) || strncmp(supplied, formal, ns))
+    if (ns > CXXRCONSTRUCT(int, strlen(formal)) || strncmp(supplied, formal, ns))
 	errorcall(call, _("supplied argument name '%s' does not match '%s'"),
 		  supplied, formal);
 }
@@ -470,16 +482,12 @@ SEXP nthcdr(SEXP s, int n)
 /* This is a primitive (with no arguments) */
 SEXP attribute_hidden do_nargs(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    RCNTXT *cptr;
+    ClosureContext *cptr = ClosureContext::innermost();
     int nargs = NA_INTEGER;
-
-    checkArity(op, args);
-    for (cptr = R_GlobalContext; cptr != NULL; cptr = cptr->nextcontext) {
-	if ((cptr->callflag & CTXT_FUNCTION) && cptr->cloenv == rho) {
-	    nargs = length(cptr->promargs);
-	    break;
-	}
-    }
+    while (cptr && cptr->workingEnvironment() != rho)
+	cptr = ClosureContext::innermost(cptr->nextOut());
+    if (cptr)
+	nargs = length(CXXRCCAST(PairList*, cptr->promiseArgs()));
     return ScalarInteger(nargs);
 }
 
@@ -521,7 +529,7 @@ Rboolean isFree(SEXP val)
 
 int dtype(SEXP q)
 {
-    return((int)TYPEOF(q));
+    return(int(TYPEOF(q)));
 }
 
 
@@ -583,8 +591,8 @@ SEXP attribute_hidden do_merge(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("'all.y' must be TRUE or FALSE"));
 
     /* 0. sort the indices */
-    ix = (int *) R_alloc((size_t) nx, sizeof(int));
-    iy = (int *) R_alloc((size_t) ny, sizeof(int));
+    ix = static_cast<int *>( CXXR_alloc(size_t( nx), sizeof(int)));
+    iy = static_cast<int *>( CXXR_alloc(size_t( ny), sizeof(int)));
     for(i = 0; i < nx; i++) ix[i] = i+1;
     for(i = 0; i < ny; i++) iy[i] = i+1;
     isort_with_index(INTEGER(xi), ix, nx);
@@ -962,7 +970,7 @@ SEXP attribute_hidden do_encodeString(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if(w != NA_INTEGER && w < 0)
 	    error(_("invalid '%s' value"), "width");
     }
-    findWidth = (w == NA_INTEGER);
+    findWidth = CXXRCONSTRUCT(Rboolean, (w == NA_INTEGER));
     s = CADDR(args);
     if(LENGTH(s) != 1 || TYPEOF(s) != STRSXP)
 	error(_("invalid '%s' value"), "quote");
@@ -994,10 +1002,10 @@ SEXP attribute_hidden do_encodeString(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    cetype_t ienc = getCharCE(s);
 	    if(ienc == CE_UTF8) {
 		const char *ss = EncodeString(s, w-1000000, quote, 
-					      (Rprt_adj) justify);
+					      Rprt_adj( justify));
 		SET_STRING_ELT(ans, i, mkCharCE(ss, ienc));
 	    } else {
-		const char *ss = EncodeString(s, w, quote, (Rprt_adj) justify);
+		const char *ss = EncodeString(s, w, quote, Rprt_adj( justify));
 		SET_STRING_ELT(ans, i, mkChar(ss));
 	    }
 	}
@@ -1010,7 +1018,7 @@ SEXP attribute_hidden do_encoding(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans, x;
     R_xlen_t i, n;
-    char *tmp;
+    CXXRCONST char *tmp;
 
     checkArity(op, args);
     if (TYPEOF(x = CAR(args)) != STRSXP)
@@ -1033,7 +1041,7 @@ SEXP attribute_hidden do_setencoding(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP x, enc, tmp;
     int m;
     R_xlen_t i, n;
-    const char *this;
+    const char *thiss;
 
     checkArity(op, args);
     if (TYPEOF(x = CAR(args)) != STRSXP)
@@ -1048,10 +1056,10 @@ SEXP attribute_hidden do_setencoding(SEXP call, SEXP op, SEXP args, SEXP rho)
     n = XLENGTH(x);
     for(i = 0; i < n; i++) {
 	cetype_t ienc = CE_NATIVE;
-	this = CHAR(STRING_ELT(enc, i % m)); /* ASCII */
-	if(streql(this, "latin1")) ienc = CE_LATIN1;
-	else if(streql(this, "UTF-8")) ienc = CE_UTF8;
-	else if(streql(this, "bytes")) ienc = CE_BYTES;
+	thiss = CHAR(STRING_ELT(enc, i % m)); /* ASCII */
+	if(streql(thiss, "latin1")) ienc = CE_LATIN1;
+	else if(streql(thiss, "UTF-8")) ienc = CE_UTF8;
+	else if(streql(thiss, "bytes")) ienc = CE_BYTES;
 	tmp = STRING_ELT(x, i);
 	if(tmp == NA_STRING) continue;
 	if (! ((ienc == CE_LATIN1 && IS_LATIN1(tmp)) ||
@@ -1066,7 +1074,7 @@ SEXP attribute_hidden do_setencoding(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden markKnown(const char *s, SEXP ref)
 {
-    int ienc = 0;
+    cetype_t ienc = CE_NATIVE;
     if(ENC_KNOWN(ref)) {
 	if(known_to_be_latin1) ienc = CE_LATIN1;
 	if(known_to_be_utf8) ienc = CE_UTF8;
@@ -1078,7 +1086,7 @@ Rboolean strIsASCII(const char *str)
 {
     const char *p;
     for(p = str; *p; p++)
-	if((unsigned int)*p > 0x7F) return FALSE;
+	if(static_cast<unsigned int>(*p) > 0x7F) return FALSE;
     return TRUE;
 }
 
@@ -1103,59 +1111,59 @@ utf8toucs(wchar_t *wc, const char *s)
 {
     unsigned int byte;
     wchar_t local, *w;
-    byte = *((unsigned char *)s);
+    byte = static_cast<unsigned char>(*s);
     w = wc ? wc: &local;
 
     if (byte == 0) {
-	*w = (wchar_t) 0;
+	*w = wchar_t( 0);
 	return 0;
     } else if (byte < 0xC0) {
-	*w = (wchar_t) byte;
+	*w = wchar_t( byte);
 	return 1;
     } else if (byte < 0xE0) {
-	if(strlen(s) < 2) return (size_t)-2;
+	if(strlen(s) < 2) return size_t(-2);
 	if ((s[1] & 0xC0) == 0x80) {
-	    *w = (wchar_t) (((byte & 0x1F) << 6) | (s[1] & 0x3F));
+	    *w = wchar_t ((((byte & 0x1F) << 6) | (s[1] & 0x3F)));
 	    return 2;
-	} else return (size_t)-1;
+	} else return size_t(-1);
     } else if (byte < 0xF0) {
-	if(strlen(s) < 3) return (size_t)-2;
+	if(strlen(s) < 3) return size_t(-2);
 	if (((s[1] & 0xC0) == 0x80) && ((s[2] & 0xC0) == 0x80)) {
-	    *w = (wchar_t) (((byte & 0x0F) << 12)
-			    | (unsigned int) ((s[1] & 0x3F) << 6)
-			    | (s[2] & 0x3F));
-	    byte = (unsigned int) *w;
+	    *w = wchar_t (((byte & 0x0F) << 12)
+			  | static_cast<unsigned int>((s[1] & 0x3F) << 6)
+			  | (s[2] & 0x3F));
+	    byte = static_cast<unsigned int>( *w);
 	    /* Surrogates range */
-	    if(byte >= 0xD800 && byte <= 0xDFFF) return (size_t)-1;
-	    if(byte == 0xFFFE || byte == 0xFFFF) return (size_t)-1;
+	    if(byte >= 0xD800 && byte <= 0xDFFF) return size_t(-1);
+	    if(byte == 0xFFFE || byte == 0xFFFF) return size_t(-1);
 	    return 3;
-	} else return (size_t)-1;
+	} else return size_t(-1);
     }
-    if(sizeof(wchar_t) < 4) return (size_t)-2;
+    if(sizeof(wchar_t) < 4) return size_t(-2);
     /* So now handle 4,5.6 byte sequences with no testing */
     if (byte < 0xf8) {
-	if(strlen(s) < 4) return (size_t)-2;
-	*w = (wchar_t) (((byte & 0x0F) << 18)
-			| (unsigned int) ((s[1] & 0x3F) << 12)
-			| (unsigned int) ((s[2] & 0x3F) << 6)
-			| (s[3] & 0x3F));
+	if(strlen(s) < 4) return size_t(-2);
+	*w = wchar_t (((byte & 0x0F) << 18)
+		      | static_cast<unsigned int>( ((s[1] & 0x3F) << 12))
+		      | static_cast<unsigned int>( ((s[2] & 0x3F) << 6))
+		      | (s[3] & 0x3F));
 	return 4;
     } else if (byte < 0xFC) {
-	if(strlen(s) < 5) return (size_t)-2;
-	*w = (wchar_t) (((byte & 0x0F) << 24)
-			| (unsigned int) ((s[1] & 0x3F) << 12)
-			| (unsigned int) ((s[2] & 0x3F) << 12)
-			| (unsigned int) ((s[3] & 0x3F) << 6)
-			| (s[4] & 0x3F));
+	if(strlen(s) < 5) return size_t(-2);
+	*w = wchar_t (((byte & 0x0F) << 24)
+		      | static_cast<unsigned int>( ((s[1] & 0x3F) << 12))
+		      | static_cast<unsigned int>( ((s[2] & 0x3F) << 12))
+		      | static_cast<unsigned int>( ((s[3] & 0x3F) << 6))
+		      | (s[4] & 0x3F));
 	return 5;
     } else {
-	if(strlen(s) < 6) return (size_t)-2;
-	*w = (wchar_t) (((byte & 0x0F) << 30)
-			| (unsigned int) ((s[1] & 0x3F) << 24)
-			| (unsigned int) ((s[2] & 0x3F) << 18)
-			| (unsigned int) ((s[3] & 0x3F) << 12)
-			| (unsigned int) ((s[4] & 0x3F) << 6)
-			| (s[5] & 0x3F));
+	if(strlen(s) < 6) return size_t(-2);
+	*w = wchar_t (((byte & 0x0F) << 30)
+		      | static_cast<unsigned int>( ((s[1] & 0x3F) << 24))
+		      | static_cast<unsigned int>( ((s[2] & 0x3F) << 18))
+		      | static_cast<unsigned int>( ((s[3] & 0x3F) << 12))
+		      | static_cast<unsigned int>( ((s[4] & 0x3F) << 6))
+		      | (s[5] & 0x3F));
 	return 6;
     }
 }
@@ -1170,19 +1178,19 @@ utf8towcs(wchar_t *wc, const char *s, size_t n)
 
     if(wc)
 	for(p = wc, t = s; ; p++, t += m) {
-	    m  = (ssize_t) utf8toucs(p, t);
+	    m  = ssize_t( utf8toucs(p, t));
 	    if (m < 0) error(_("invalid input '%s' in 'utf8towcs'"), s);
 	    if (m == 0) break;
 	    res ++;
-	    if (res >= n) break;
+	    if (res >= CXXRCONSTRUCT(int, n)) break;
 	}
     else
 	for(t = s; ; res++, t += m) {
-	    m  = (ssize_t) utf8toucs(&local, t);
+	    m  = ssize_t( utf8toucs(&local, t));
 	    if (m < 0) error(_("invalid input '%s' in 'utf8towcs'"), s);
 	    if (m == 0) break;
 	}
-    return (size_t) res;
+    return size_t( res);
 }
 
 /* based on pcre.c */
@@ -1193,19 +1201,19 @@ static const unsigned int utf8_table2[] = { 0, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc};
 static size_t Rwcrtomb(char *s, const wchar_t wc)
 {
     register size_t i, j;
-    unsigned int cvalue = (unsigned int) wc;
+    unsigned int cvalue = static_cast<unsigned int>( wc);
     char buf[10], *b;
 
     b = s ? s : buf;
     if(cvalue == 0) {*b = 0; return 0;}
-    for (i = 0; i < sizeof(utf8_table1)/sizeof(int); i++)
-	if (cvalue <= utf8_table1[i]) break;
+    for (i = 0; i < CXXRCONSTRUCT(int, sizeof(utf8_table1)/sizeof(int)); i++)
+	if (CXXRCONSTRUCT(int, cvalue) <= utf8_table1[i]) break;
     b += i;
     for (j = i; j > 0; j--) {
-	*b-- = (char) (0x80 | (cvalue & 0x3f));
+	*b-- = char( (0x80 | (cvalue & 0x3f)));
 	cvalue >>= 6;
     }
-    *b = (char) (utf8_table2[i] | cvalue);
+    *b = char( (utf8_table2[i] | cvalue));
     return i + 1;
 }
 
@@ -1217,20 +1225,20 @@ size_t wcstoutf8(char *s, const wchar_t *wc, size_t n)
     const wchar_t *p;
     if(s) {
 	for(p = wc, t = s; ; p++) {
-	    m  = (ssize_t) Rwcrtomb(t, *p);
+	    m  = ssize_t( Rwcrtomb(t, *p));
 	    if(m <= 0) break;
 	    res += m;
-	    if(res >= n) break;
+	    if(res >= CXXRCONSTRUCT(int, n)) break;
 	    t += m;
 	}
     } else {
 	for(p = wc; ; p++) {
-	    m  = (ssize_t) Rwcrtomb(NULL, *p);
+	    m  = ssize_t( Rwcrtomb(NULL, *p));
 	    if(m <= 0) break;
 	    res += m;
 	}
     }
-    return (size_t) res;
+    return size_t( res);
 }
 
 
@@ -1239,26 +1247,26 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 {
     size_t used;
 
-    if(n <= 0 || !*s) return (size_t)0;
+    if(n <= 0 || !*s) return size_t(0);
     used = mbrtowc(wc, s, n, ps);
-    if((int) used < 0) {
+    if(int( used) < 0) {
 	/* This gets called from the menu setup in RGui */
-	if (!R_Is_Running) return (size_t)-1;
+	if (!R_Is_Running) return size_t(-1);
 	/* let's try to print out a readable version */
-	R_CheckStack2(4*strlen(s) + 10);
-	char err[4*strlen(s) + 1], *q;
+	vector<char> errv(4*strlen(s) + 1);
+	char *err = &errv[0], *q;
 	const char *p;
 	for(p = s, q = err; *p; ) {
 	    /* don't do the first to keep ps state straight */
 	    if(p > s) used = mbrtowc(NULL, p, n, ps);
 	    if(used == 0) break;
-	    else if((int) used > 0) {
+	    else if(int( used) > 0) {
 		memcpy(q, p, used);
 		p += used;
 		q += used;
 		n -= used;
 	    } else {
-		sprintf(q, "<%02x>", (unsigned char) *p++);
+		sprintf(q, "<%02x>", static_cast<unsigned char>(*p++));
 		q += 4;
 		n--;
 	    }
@@ -1272,41 +1280,40 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 attribute_hidden
 Rboolean mbcsValid(const char *str)
 {
-    return  ((int)mbstowcs(NULL, str, 0) >= 0);
+    return  CXXRCONSTRUCT(Rboolean, (int(mbstowcs(NULL, str, 0)) >= 0));
 }
-
 
 /* used in src/library/grDevices/src/cairo/cairoFns.c */
 #include "valid_utf8.h"
 Rboolean utf8Valid(const char *str)
 {
-    return valid_utf8(str, strlen(str)) == 0;
+    return  CXXRCONSTRUCT(Rboolean, valid_utf8(str, strlen(str)) == 0);
 }
 
 
 /* MBCS-aware versions of common comparisons.  Only used for ASCII c */
 char *Rf_strchr(const char *s, int c)
 {
-    char *p = (char *)s;
+    char *p = const_cast<char *>(s);
     mbstate_t mb_st;
     size_t used;
 
-    if(!mbcslocale || utf8locale) return strchr(s, c);
+    if(!mbcslocale || utf8locale) return CXXRCCAST(char*, strchr(s, c));
     mbs_init(&mb_st);
     while( (used = Mbrtowc(NULL, p, MB_CUR_MAX, &mb_st)) ) {
 	if(*p == c) return p;
 	p += used;
     }
-    return (char *)NULL;
+    return CXXRNOCAST(char *)NULL;
 }
 
 char *Rf_strrchr(const char *s, int c)
 {
-    char *p = (char *)s, *plast = NULL;
+    char *p = const_cast<char *>(s), *plast = NULL;
     mbstate_t mb_st;
     size_t used;
 
-    if(!mbcslocale || utf8locale) return strrchr(s, c);
+    if(!mbcslocale || utf8locale) return CXXRCCAST(char*, strrchr(s, c));
     mbs_init(&mb_st);
     while( (used = Mbrtowc(NULL, p, MB_CUR_MAX, &mb_st)) ) {
 	if(*p == c) plast = p;
@@ -1368,6 +1375,8 @@ void R_fixbackslash(char *s)
 }
 #endif
 
+extern "C" {
+
 void F77_SYMBOL(rexitc)(char *msg, int *nchar)
 {
     int nc = *nchar;
@@ -1376,7 +1385,7 @@ void F77_SYMBOL(rexitc)(char *msg, int *nchar)
 	warning(_("error message truncated to 255 chars"));
 	nc = 255;
     }
-    strncpy(buf, msg, (size_t) nc);
+    strncpy(buf, msg, size_t( nc));
     buf[nc] = '\0';
     error("%s", buf);
 }
@@ -1389,7 +1398,7 @@ void F77_SYMBOL(rwarnc)(char *msg, int *nchar)
 	warning(_("warning message truncated to 255 chars"));
 	nc = 255;
     }
-    strncpy(buf, msg, (size_t) nc);
+    strncpy(buf, msg, size_t( nc));
     buf[nc] = '\0';
     warning("%s", buf);
 }
@@ -1410,7 +1419,7 @@ char *acopy_string(const char *in)
 	out = (char *) R_alloc(1 + len, sizeof(char));
 	strcpy(out, in);
     } else
-	out = "";
+	out = CXXRCONSTRUCT(const_cast<char*>, "");
     return out;
 }
 
@@ -1452,25 +1461,25 @@ static int s2u[224] = {
     0xF8F8, 0xF8F9, 0xF8FA, 0xF8FB, 0xF8FC, 0xF8FD, 0xF8FE, 0x0020
 };
 
-void *Rf_AdobeSymbol2utf8(char *work, const char *c0, size_t nwork)
+void *Rf_AdobeSymbol2utf8(char *work, const char *c0, int nwork)
 {
-    const unsigned char *c = (unsigned char *) c0;
-    unsigned char *t = (unsigned char *) work;
+    const unsigned char *c = reinterpret_cast<CXXRCONST unsigned char *>( c0);
+    unsigned char *t = reinterpret_cast<unsigned char *>( work);
     while (*c) {
 	if (*c < 32) *t++ = ' ';
 	else {
-	    unsigned int u = (unsigned int) s2u[*c - 32];
-	    if (u < 128) *t++ = (unsigned char) u;
+	    unsigned int u = static_cast<unsigned int>( s2u[*c - 32]);
+	    if (u < 128) *t++ = static_cast<unsigned char>( u);
 	    else if (u < 0x800) {
-		*t++ = (unsigned char) (0xc0 | (u >> 6));
-		*t++ = (unsigned char) (0x80 | (u & 0x3f));
+		*t++ = static_cast<unsigned char>( (0xc0 | (u >> 6)));
+		*t++ = static_cast<unsigned char>( (0x80 | (u & 0x3f)));
 	    } else {
-		*t++ = (unsigned char) (0xe0 | (u >> 12));
-		*t++ = (unsigned char) (0x80 | ((u >> 6) & 0x3f));
-		*t++ = (unsigned char) (0x80 | (u & 0x3f));
+		*t++ = static_cast<unsigned char>( (0xe0 | (u >> 12)));
+		*t++ = static_cast<unsigned char>( (0x80 | ((u >> 6) & 0x3f)));
+		*t++ = static_cast<unsigned char>( (0x80 | (u & 0x3f)));
 	    }
 	}
-	if (t+6 > (unsigned char *)(work + nwork)) break;
+	if (t+6 > reinterpret_cast<unsigned char *>(work + nwork)) break;
 	c++;
     }
     *t = '\0';
@@ -1610,6 +1619,7 @@ double R_atof(const char *str)
 {
     return R_strtod4(str, NULL, '.', FALSE);
 }
+} // extern "C"
 
 /* enc2native and enc2utf8, but they are the same in a UTF-8 locale */
 /* primitive */
@@ -1651,73 +1661,75 @@ SEXP attribute_hidden do_enc2(SEXP call, SEXP op, SEXP args, SEXP env)
 # include <locale.h>
 #ifdef USE_ICU_APPLE
 /* Mac OS X is missing the headers */
-typedef int UErrorCode; /* really an enum these days */
-struct UCollator;
-typedef struct UCollator UCollator;
+extern "C" {
+    typedef int UErrorCode; /* really an enum these days */
+    struct UCollator;
+    typedef struct UCollator UCollator;
 
-typedef enum {
-  UCOL_EQUAL    = 0,
-  UCOL_GREATER    = 1,
-  UCOL_LESS    = -1
-} UCollationResult ;
+    typedef enum {
+	UCOL_EQUAL    = 0,
+	UCOL_GREATER    = 1,
+	UCOL_LESS    = -1
+    } UCollationResult ;
 
-typedef enum {
-  UCOL_DEFAULT = -1,
-  UCOL_PRIMARY = 0,
-  UCOL_SECONDARY = 1,
-  UCOL_TERTIARY = 2,
-  UCOL_DEFAULT_STRENGTH = UCOL_TERTIARY,
-  UCOL_CE_STRENGTH_LIMIT,
-  UCOL_QUATERNARY=3,
-  UCOL_IDENTICAL=15,
-  UCOL_STRENGTH_LIMIT,
-  UCOL_OFF = 16,
-  UCOL_ON = 17,
-  UCOL_SHIFTED = 20,
-  UCOL_NON_IGNORABLE = 21,
-  UCOL_LOWER_FIRST = 24,
-  UCOL_UPPER_FIRST = 25,
-  UCOL_ATTRIBUTE_VALUE_COUNT
-} UColAttributeValue;
+    typedef enum {
+	UCOL_DEFAULT = -1,
+	UCOL_PRIMARY = 0,
+	UCOL_SECONDARY = 1,
+	UCOL_TERTIARY = 2,
+	UCOL_DEFAULT_STRENGTH = UCOL_TERTIARY,
+	UCOL_CE_STRENGTH_LIMIT,
+	UCOL_QUATERNARY=3,
+	UCOL_IDENTICAL=15,
+	UCOL_STRENGTH_LIMIT,
+	UCOL_OFF = 16,
+	UCOL_ON = 17,
+	UCOL_SHIFTED = 20,
+	UCOL_NON_IGNORABLE = 21,
+	UCOL_LOWER_FIRST = 24,
+	UCOL_UPPER_FIRST = 25,
+	UCOL_ATTRIBUTE_VALUE_COUNT
+    } UColAttributeValue;
 
-typedef UColAttributeValue UCollationStrength;
+    typedef UColAttributeValue UCollationStrength;
 
-typedef enum {
-      UCOL_FRENCH_COLLATION,
-      UCOL_ALTERNATE_HANDLING,
-      UCOL_CASE_FIRST,
-      UCOL_CASE_LEVEL,
-      UCOL_NORMALIZATION_MODE,
-      UCOL_DECOMPOSITION_MODE = UCOL_NORMALIZATION_MODE,
-      UCOL_STRENGTH,
-      UCOL_HIRAGANA_QUATERNARY_MODE,
-      UCOL_NUMERIC_COLLATION,
-      UCOL_ATTRIBUTE_COUNT
-} UColAttribute;
+    typedef enum {
+	UCOL_FRENCH_COLLATION, 
+	UCOL_ALTERNATE_HANDLING, 
+	UCOL_CASE_FIRST, 
+	UCOL_CASE_LEVEL,
+	UCOL_NORMALIZATION_MODE, 
+	UCOL_DECOMPOSITION_MODE = UCOL_NORMALIZATION_MODE,
+	UCOL_STRENGTH,
+	UCOL_HIRAGANA_QUATERNARY_MODE,
+	UCOL_NUMERIC_COLLATION, 
+	UCOL_ATTRIBUTE_COUNT
+    } UColAttribute;
 
-/* UCharIterator struct has to be defined since we use its instances as
-   local variables, but we don't actually use any of its members. */
-typedef struct UCharIterator {
-  const void *context;
-  int32_t length, start, index, limit, reservedField;
-  void *fns[16]; /* we overshoot here (there is just 10 fns in ICU 3.6),
-		    but we have to make sure that enough stack space
-		    is allocated when used as a local var in future
-		    versions */
-} UCharIterator;
+    /* UCharIterator struct has to be defined since we use its instances as
+       local variables, but we don't actually use any of its members. */
+    typedef struct UCharIterator {
+	const void *context;
+	int32_t length, start, index, limit, reservedField;
+	void *fns[16]; /* we overshoot here (there is just 10 fns in ICU 3.6),
+			  but we have to make sure that enough stack space
+			  is allocated when used as a local var in future
+			  versions */
+    } UCharIterator;
 
-UCollator* ucol_open(const char *loc, UErrorCode *status);
-void ucol_close(UCollator *coll);
-void ucol_setAttribute(UCollator *coll, UColAttribute attr,
-		       UColAttributeValue value, UErrorCode *status);
-void ucol_setStrength(UCollator *coll, UCollationStrength strength);
-UCollationResult ucol_strcollIter(const UCollator *coll,
-				  UCharIterator *sIter,
-				  UCharIterator *tIter,
-				  UErrorCode *status);
-void uiter_setUTF8(UCharIterator *iter, const char *s, int32_t length);
+    UCollator* ucol_open(const char *loc, UErrorCode *status);
+    void ucol_close(UCollator *coll);
+    void ucol_setAttribute(UCollator *coll, UColAttribute attr, 
+			   UColAttributeValue value, UErrorCode *status);
+    void ucol_setStrength(UCollator *coll, UCollationStrength strength);
+    UCollationResult ucol_strcollIter(const UCollator *coll,
+				      UCharIterator *sIter,
+				      UCharIterator *tIter,
+				      UErrorCode *status);
+    void uiter_setUTF8(UCharIterator *iter, const char *s, int32_t length);
 
-void uloc_setDefault(const char* localeID, UErrorCode* status);
+    void uloc_setDefault(const char* localeID, UErrorCode* status);
+}  // extern "C"
 
 #define U_ZERO_ERROR 0
 #define U_FAILURE(x) ((x)>U_ZERO_ERROR)
@@ -1771,15 +1783,16 @@ SEXP attribute_hidden do_ICUset(SEXP call, SEXP op, SEXP args, SEXP rho)
     UErrorCode  status = U_ZERO_ERROR;
 
     for (; args != R_NilValue; args = CDR(args)) {
-	if (isNull(TAG(args))) error(_("all arguments must be named"));
-	const char *this = CHAR(PRINTNAME(TAG(args)));
+	SEXP tag = TAG(args);
+	if (isNull(tag)) error(_("all arguments must be named"));
+	const char *thiss = CHAR(PRINTNAME(tag));
 	const char *s;
 
 	x = CAR(args);
 	if (!isString(x) || LENGTH(x) != 1)
-	    error(_("invalid '%s' argument"), this);
+	    error(_("invalid '%s' argument"), thiss);
 	s = CHAR(STRING_ELT(x, 0));
-	if (streql(this, "locale")) {
+	if (streql(thiss, "locale")) {
 	    if (collator) ucol_close(collator);
 	    uloc_setDefault(s, &status);
 	    if(U_FAILURE(status))
@@ -1789,7 +1802,7 @@ SEXP attribute_hidden do_ICUset(SEXP call, SEXP op, SEXP args, SEXP rho)
 	} else {
 	    int i, at = -1, val = -1;
 	    for (i = 0; ATtable[i].str; i++)
-		if (streql(this, ATtable[i].str)) {
+		if (streql(thiss, ATtable[i].str)) {
 		    at = ATtable[i].val;
 		    break;
 		}
@@ -1799,9 +1812,9 @@ SEXP attribute_hidden do_ICUset(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    break;
 		}
 	    if (collator && at == 999 && val >= 0) {
-		ucol_setStrength(collator, val);
+		ucol_setStrength(collator, CXXRCONSTRUCT(UCollationStrength, val));
 	    } else if (collator && at >= 0 && val >= 0) {
-		ucol_setAttribute(collator, at, val, &status);
+		ucol_setAttribute(collator, CXXRCONSTRUCT(UColAttribute, at), CXXRCONSTRUCT(UColAttributeValue, val), &status);
 		if (U_FAILURE(status))
 		    error("failed to set ICU collator attribute");
 	    }
@@ -1821,7 +1834,7 @@ int Scollate(SEXP a, SEXP b)
     UErrorCode  status = U_ZERO_ERROR;
     UCharIterator aIter, bIter;
     const char *as = translateCharUTF8(a), *bs = translateCharUTF8(b);
-    int len1 = (int) strlen(as), len2 = (int) strlen(bs);
+    int len1 = int( strlen(as)), len2 = int( strlen(bs));
 
     if (collator == NULL && strcmp("C", setlocale(LC_COLLATE, NULL)) ) {
 	/* do better later */
@@ -1855,8 +1868,9 @@ void attribute_hidden resetICUcollator(void) {}
 
 static int Rstrcoll(const char *s1, const char *s2)
 {
-    R_CheckStack2(sizeof(wchar_t) * (2 + strlen(s1) + strlen(s2)));
-    wchar_t w1[strlen(s1)+1], w2[strlen(s2)+1];
+    vector<wchar_t> v1(strlen(s1)+1), v2(strlen(s2)+1);
+    wchar_t* w1 = &v1[0];
+    wchar_t* w2 = &v2[0];
     utf8towcs(w1, s1, strlen(s1));
     utf8towcs(w2, s2, strlen(s2));
     return wcscoll(w1, w2);
@@ -1892,8 +1906,8 @@ SEXP attribute_hidden do_crc64(SEXP call, SEXP op, SEXP args, SEXP rho)
     const char *str = CHAR(STRING_ELT(in, 0));
 
     /* Seems this is really 64-bit only on 64-bit platforms */
-    crc = lzma_crc64((uint8_t *)str, strlen(str), crc);
-    snprintf(ans, 17, "%lx", (long unsigned int) crc);
+    crc = lzma_crc64(reinterpret_cast<CXXRCONST uint8_t *>(str), strlen(str), crc);
+    snprintf(ans, 17, "%lx", static_cast<long unsigned int>( crc));
     return mkString(ans);
 }
 
@@ -1901,7 +1915,7 @@ static void
 bincode(double *x, R_xlen_t n, double *breaks, int nb,
 	int *code, int right, int include_border)
 {
-    int lo, hi, nb1 = nb - 1, new;
+    int lo, hi, nb1 = nb - 1, newi;
     int lft = !right;
 
     /* This relies on breaks being sorted, so wise to check that */
@@ -1917,11 +1931,11 @@ bincode(double *x, R_xlen_t n, double *breaks, int nb,
 	       (x[i] == breaks[lft ? hi : lo] && ! include_border)) ;
 	    else {
 		while(hi - lo >= 2) {
-		    new = (hi + lo)/2;
-		    if(x[i] > breaks[new] || (lft && x[i] == breaks[new]))
-			lo = new;
+		    newi = (hi + lo)/2;
+		    if(x[i] > breaks[newi] || (lft && x[i] == breaks[newi]))
+			lo = newi;
 		    else
-			hi = new;
+			hi = newi;
 		}
 		code[i] = lo + 1;
 	    }
@@ -2003,7 +2017,7 @@ SEXP attribute_hidden do_findinterval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (ISNAN(REAL(x)[i])) ii = NA_INTEGER;
 	else {
 	    int mfl = si;
-	    ii = findInterval(rxt, n, rx[i], sr, si, ii, &mfl);
+	    ii = findInterval(rxt, n, rx[i], CXXRCONSTRUCT(Rboolean, sr), CXXRCONSTRUCT(Rboolean, si), ii, &mfl);
 	}
 	INTEGER(ans)[i] = ii;
     }
@@ -2075,10 +2089,10 @@ SEXP attribute_hidden do_formatC(SEXP call, SEXP op, SEXP args, SEXP rho)
     const char *fmt = CHAR(STRING_ELT(CAR(args), 0)); args = CDR(args);
     const char *flag = CHAR(STRING_ELT(CAR(args), 0)); args = CDR(args);
     SEXP i_strlen = PROTECT(coerceVector(CAR(args), INTSXP));
-    char **cptr = (char **) R_alloc(n, sizeof(char*));
+    char **cptr = static_cast<char **>( CXXR_alloc(n, sizeof(char*)));
     for (R_xlen_t i = 0; i < n; i++) {
 	int ix = INTEGER(i_strlen)[i] + 2;
-	cptr[i] = (char *) R_alloc(ix + 1, sizeof(char));
+	cptr[i] = static_cast<char *>( CXXR_alloc(ix + 1, sizeof(char)));
 	memset(cptr[i], ' ', ix);
 	cptr[i][ix] = 0;
     }
@@ -2161,15 +2175,15 @@ void str_signif(void *x, R_xlen_t n, const char *type, int width, int digits,
 		const char *format, const char *flag, char **result)
 {
     int dig = abs(digits);
-    Rboolean rm_trailing_0 = digits >= 0;
-    Rboolean do_fg = !strcmp("fg", format); /* TRUE  iff  format == "fg" */
+    Rboolean rm_trailing_0 = CXXRCONSTRUCT(Rboolean, digits >= 0);
+    Rboolean do_fg = CXXRCONSTRUCT(Rboolean, !strcmp("fg", format)); /* TRUE  iff  format == "fg" */
     double xx;
     int iex;
     size_t j, len_flag = strlen(flag);
     const void *vmax = vmaxget();
 
-    char *f0  =	 R_alloc((size_t) do_fg ? 1+1+len_flag+3 : 1, sizeof(char));
-    char *form = R_alloc((size_t) 1+1+len_flag+3 + strlen(format),
+    char *f0  =	 R_alloc(size_t( do_fg) ? 1+1+len_flag+3 : 1, sizeof(char));
+    char *form = R_alloc(size_t( 1)+1+len_flag+3 + strlen(format),
 			 sizeof(char));
 
     if (width == 0)
@@ -2186,7 +2200,7 @@ void str_signif(void *x, R_xlen_t n, const char *type, int width, int digits,
 	if (strcmp("integer", type) == 0)
 	    for (R_xlen_t i = 0; i < n; i++)
 		snprintf(result[i], strlen(result[i]) + 1,
-			 form, width, ((int *)x)[i]);
+			 form, width, (static_cast<int *>(x))[i]);
 	else
 	    error("'type' must be \"integer\" for  \"d\"-format");
     }
@@ -2215,7 +2229,7 @@ void str_signif(void *x, R_xlen_t n, const char *type, int width, int digits,
 	if (strcmp("double", type) == 0) {
 	    if(do_fg) /* do smart "f" : */
 		for (R_xlen_t i = 0; i < n; i++) {
-		    xx = ((double *)x)[i];
+		    xx = (static_cast<double *>(x))[i];
 		    if(xx == 0.)
 			strcpy(result[i], "0");
 		    else {
@@ -2224,11 +2238,11 @@ void str_signif(void *x, R_xlen_t n, const char *type, int width, int digits,
 			   and we do need some fuzz or 99.5 is correct.
 			*/
 			double xxx = fabs(xx), X;
-			iex = (int)floor(log10(xxx) + 1e-12);
-			X = fround(xxx/pow(10.0, (double)iex) + 1e-12,
-				   (double)(dig-1));
+			iex = int(floor(log10(xxx) + 1e-12));
+			X = fround(xxx/pow(10.0, double(iex)) + 1e-12,
+				   double(dig-1));
 			if(iex > 0 &&  X >= 10) {
-			    xx = X * pow(10.0, (double)iex);
+			    xx = X * pow(10.0, double(iex));
 			    iex++;
 			}
 			if(iex == -4 && fabs(xx)< 1e-4) {/* VERY rare case */
@@ -2270,7 +2284,7 @@ void str_signif(void *x, R_xlen_t n, const char *type, int width, int digits,
 	    else
 		for (R_xlen_t i = 0; i < n; i++)
 		    snprintf(result[i], strlen(result[i]) + 1, 
-			     form, width, dig, ((double *)x)[i]);
+			     form, width, dig, (static_cast<double *>(x))[i]);
 	} else
 	    error("'type' must be \"real\" for this format");
     }

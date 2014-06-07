@@ -1,0 +1,5012 @@
+2013-08-27 Fabian Scheipl  <fabian.scheipl@stat.uni-muenchen.de>
+
+	* man/indMatrix-class.Rd: new "indMatrix" class, a natural
+	superclass of "pMatrix".  Many methods moved from "pMatrix" to
+	"indMatrix".
+
+2013-05-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-13
+
+	* R/KhatriRao.R: Efficient KhatriRao() by Michael Cysouw
+
+2012-11-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-11
+
+	* R/SparseM-conv.R: as(<csr>, "dgCMatrix") now works again
+	* tests/other-pkgs.R: test that.
+
+	* src/Mutils.c: do *not* use '#if R_VERSION < ..' so this also
+	*runs* in older R when installed in R >= 2.15.2.
+
+2012-10-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Mutils.c (Mmatrix): new, to be used by .External()
+	in order to replace .Internal(matrix(....))
+
+2012-10-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R (.sparseDiagonal): new 'unitri' argument;
+	more flexibility; new: solve(<dsCMatrix>, <missing>)
+
+2012-09-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-10, CRAN-released: 2012-10-16, r2845
+
+2012-09-01  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseVector.R (sparseVector): new constructor
+
+	* inst/test-tools-Matrix.R (rspMat): smarter; also useful for large
+	dimensions.
+
+2012-07-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/group-methods.R: now do much more testing, notably <Ops> of
+	pairs of matrices ... however only when 'doExtras' is true, which
+	it is not by default, e.g., on CRAN.
+
+2012-07-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R, R/diagMatrix.R: many fixes, notably for rare operations
+	that were not triggered before.
+
+	* R/Auxiliaries.R (allTrueMat): new utility.
+
+2012-07-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dsparseMatrix.R, R/sparseVector.R, ...: Newly defined
+	is.finite() and is.infinite() methods for all our *Matrix and *sparseVector.
+
+2012-07-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/d??Matrix.R (diag<-): many "diag<-" methods, which preserve
+	symmetricity, triangularity (even uni-triangularity sometimes);
+	Partly by also making   A[cbind(i,i)]  preserve such properties.
+
+	* src/Mutils.c (SET_packed_setDiag) {and similar}:
+	*_setDiag() C functions implementing "diag<-" R methods.
+
+2012-06-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R (Ops.x.x): now, dense symmetric and triangular matrices
+	are preserved for many arithmetic and logic binary operators.
+
+	* src/ldense.c (lsyMatrix_as_lspMatrix, ..): more coercions keep
+	the dimnames().
+
+	* R/symmetricMatrix.R (pack, unpack): new pack() {"inverse" of
+	unpack(), including pack(<matrix>)}; new unpack() methods.
+
+2012-06-20  Douglas Bates <bates@stat.wisc.edu>
+
+	* src/scripts/DEPS.mkf,	...
+	* src/*.c: Update to version 4.0.0 of SuiteSparse
+
+2012-06-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-8, CRAN-released: 2012-06-20, r2789
+
+	* R/CHMfactor.R (update): *DO* allow non-symmetric parent.
+	* man/CHMfactor-class.Rd: be more clear about the two ways.
+	* tests/factorizing.R: more update(<Chol>) testing
+
+2012-06-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/matprod.R (chkDnProd): new testing function
+
+2012-06-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/CHMfactor.R (update): now *warn* when parent is not formally
+	symmetric and coerce it.
+
+2012-06-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (chk.s): "check dots" - new utility -- possibly
+	for base R ?
+
+2012-04-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (sparseMatrix): now also works for
+	'symmetric=TRUE' and lower triangular indices.
+
+2012-04-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/CHMfactor.R (updown): new generic and methods,
+	* man/updown.Rd: provided by Nicholas Nagle.
+
+2012-03-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-7, CRAN-released: for a few days only.
+
+2012-03-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-6, CRAN-released: 2012-03-30, r2775
+	* DESCRIPTION (Depends): R >= 2.15.0
+
+2012-03-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (sparseInt.r): recursion free (which does not help much).
+
+2012-03-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dtCMatrix.c (dtCMatrix_sparse_solve): no longer use Alloca()
+	here.
+	* tests/factorizing.R (checkSchur): check against segfault example.
+
+	* R/Matrix.R (chol2inv(<diagonalMatrix>)) new method.
+
+2012-03-01  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (sparse.model.matrix, model.spmatrix): add 'verbose'
+	argument in order to show to the user what's going on.
+	* man/sparse.model.matrix.Rd: ditto
+
+2012-02-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R (A.M.n, A.n.M): <sparse> o <numeric> now correct, newly
+	via sparseVector.
+
+2012-02-25  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-5, CRAN-released: 2012-03-15, r2773
+	* src/chm_common.c (chm_factor_to_SEXP): in case of failure,
+	* src/dsCMatrix.c (internal_chm_factor): ensure memory cleanup;
+	memory leak reported by Kasper Kristensen at dtu.dk.
+
+2012-02-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-4, CRAN-released: 2012-02-21, r2765
+	* R/Ops.R: Fix "-" method for diagonalMatrix types.
+
+2012-01-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Suggests): MASS, as we use a data set in a vignette
+
+2011-12-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-3, CRAN-released: 2012-01-12, r2749
+	* R/diagMatrix.R (.bdiag): now works correctly when all blocks are "lMatrix"
+
+2011-11-02  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/zzz.R (.onLoad): when R version >= 2.15.0, no longer
+	need to assignInNamespace( ns = "base"), methods provides S4 generic.
+
+2011-10-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-2, CRAN-released: 2011-11-19, r2739
+
+	* tests/other-pkgs.R: print more, don't run SparseM on Solaris for now.
+	* tests/Simple.R: encoding warning should not be promoted to error.
+
+2011-10-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/rankMatrix.R (rankMatrix): 'method = "qrLINPACK"' now also
+	works for sparse matrices, but using \code{sparseQR()}.
+
+	* man/sparseQR-class.Rd: document options "Matrix.quiet" (old) and
+	new "Matrix.quiet.qr.R" for suppressiong the permutation warning.
+	* R/sparseQR.R:
+
+2011-10-17  Douglas Bates <bates@stat.wisc.edu>
+
+	* src/Csparse.c (Csparse_submatrix): plugging memory leak
+
+2011-10-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/bind2.R (cbind2Sparse, rbind2Sparse): auxiliaries,
+	used, also in new methods for <sparse, dense>.
+	* tests/bind.R: testing some of these.
+
+	* R/Matrix.R, man/Matrix.Rd: optional argument 'doDiag'.
+
+	* DESCRIPTION (Version): 1.0-1, CRAN-released: 2011-10-18, r2732
+
+2011-09-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-0 -- to be released for R 2.14.0
+
+2011-09-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dsCMatrix.R (solve.dsC.mat): new utility which calls lu() if
+	CHOLMOD'S Cholesky() errors (when matrix is not pos.def.).
+
+2011-09-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/bandSparse.R (bandSparse): and
+	* R/sparseMatrix.R (sparseMatrix): add 'giveCsparse = TRUE'
+	argument and allow returning Tsparse*, useful e.g. when used in
+	bdiag().
+
+2011-08-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* NAMESPACE: export diagN2U() & diagU2N(). They were "missing" for
+	at least one user (GG).
+	* man/diagU2N.Rd: docu + example.
+
+	* DESCRIPTION (Version): 0.9996875-4 (*not* yet released)
+
+2011-08-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.9996875-3, for CRAN
+
+2011-08-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseVector.R (head): method; used in a few cases, eliminating
+	two FIXMEs.
+
+	* DESCRIPTION (Version): 0.9996875-1
+
+	* R/ngTMatrix.R: stop() instead of warning() when NA's are coerced.
+	* R/Csparse.R, R/Tsparse.R
+	* src/t_Csparse_subassign.c, src/Csparse.c: <Csparse>[..] <- val
+	now works via .Call(*Csparse_subassign, ...) and no longer suffers
+	from unnecessary memory-blowup.
+
+2011-07-29  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgTMatrix.R (image): add 'useRaster = FALSE' argument,
+	providing the possibility of using raster (instead of rectangle
+	drawing vector) images.
+
+2011-07-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/nearPD.R: allow 'ensureSymmetry' argument for speedup.
+
+2011-06-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R (Cspdiagprod, diagCspprod): fixup for symmetric
+	sparse, and non constant-diagonal.
+
+2011-05-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dsCMatrix.R (determinant(<dsCMatrix>): fix for Matrix(0, 1) case.
+
+2011-05-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (sparseMatrix): add 'symmetric' argument.
+
+2011-04-04  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Csparse.c (Csparse_subassign): unfinished prototype
+
+	* src/....: Finally no longer hack "UFlong := int", but rather
+	* src/UFconfig/UFconfig.h: use standard CHOLMOD headers
+
+	* DESCRIPTION (Version): 0.9996875-0
+
+2011-03-31  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-49
+
+2011-03-30  Douglas Bates <bates@stat.wisc.edu>
+
+	* Matrix/src/chm_common.c: [r2658] Install symbols first -
+	{preventing seg.fault under -gct}
+
+2011-03-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-48
+	*only* difference to CRAN released *-47, is the work around Sweave bug
+	in inst/doc/sparseModels.Rnw.
+
+2011-02-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/factorizations.c (LU_expand): now also works for non-square (m x n)
+	* tests/factorizing.R: testing that
+
+2011-02-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (t_geMatrix): drop 'factors', as they can be
+	wrong.
+
+2011-02-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R (replTmat): fix bug for  M[i,j] <- v,
+	when j had duplicated entries.
+	* tests/indexing.R (chkAssign): new function; testing the above.
+
+2011-02-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllClass.R, R/sparseVector.R, man/sparseVector-class.Rd: now
+	require explicitly that i-slot must be sorted for sparseVectors.
+
+2011-02-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (formatSparseM): align="right" accidentally did
+	not use zero.print at all.
+	print/format sparse Matrix: fix align="right" and improve docu
+
+2011-02-17  Douglas Bates <bates@stat.wisc.edu>
+
+	* DESCRIPTION: Remove Encoding: directive.
+
+2011-02-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* inst/doc/sparseModels.Rnw: use png for large graphics (suggestion from
+	  Brian)
+
+2011-02-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* man/symmpart.Rd: update, thanks to Spencer Graves' prompting.
+
+2011-01-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/CHMfactor.R (determinant(<CHMfactor>)): no longer warn about
+	incompatible change of 2009-09-01.
+
+2011-01-04  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/nearPD.R (nearPD): better error message when all eigenvalues
+	are (at least close to) negative.
+
+2010-12-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-47, CRAN-released: 2011-02-23, r2653
+
+	* R/spModels.R, NAMESPACE: remove model.Matrix();
+	we had deprecated it for about four months now.
+
+2010-12-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/eigen.R,...: use full argument names;
+	* R/*.R: get rid of more from
+		checkUsagePackage("Matrix", suppressPartialMatchArgs = FALSE)
+
+2010-12-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-46, CRAN-released: 2010-12-14, r2633
+
+	* R/products.R: dimension fixing in some Matrix o vector  [t]crossprod()s.
+
+	* src/Csparse.c (nz2Csparse, nz_pattern_to_Csparse): new utilities,
+	callable from C and R.
+	(Csparse_dense_prod): check pattern matrix and coerce to "d..".
+	* tests/Simple.R: testing  <n.Matrix> %*% <dense>
+
+	* R/ngCMatrix.R, R/nsCMatrix.R, .. : use the new fast coercions.
+
+2010-10-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-45, CRAN-released: 2010-11-10, r2624
+
+	* R/sparseMatrix.R (graph.wgtMatrix): add 'graph::' in a few
+	places; as 'graph' package is not imported and may well be loaded
+	only.
+
+2010-09-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (setAs): graph |-> Matrix: via CsparseMatrix
+
+2010-08-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (sparse.model.matrix): argument 'drop.unused.levels = FALSE'
+	NB: was *true* implicitly, before.  Compatibility with model.matrix().
+
+	* R/sparseMatrix.R (formatSpMatrix, formatSparseM): factored out of
+	printSpMatrix(); export as potentially useful for standard
+	matrices, even.
+
+2010-08-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/eigen.R (Schur): correct setMethod() such that
+	Schur(<dgCMatrix>) works.
+
+2010-08-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R, man/bdiag.Rd, NAMESPACE: export .bdiag() as well.
+
+2010-08-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-44, CRAN-released: 2010-09-11, r2618
+
+	* R/diagMatrix.R (diagCspprod, Cspdiagprod): drop (possibly wrong) @factors
+	* R/Ops.R (.Arith.CM.atom, .Arith.atom.CM, A.M.n, A.n.M): ditto
+
+	* tests/factorizing.R: check some of the above.
+
+
+2010-08-04  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/spModels.R (fac2sparse): Fix name resolution problem
+	(R-SIG-Mixed-Models post by Florent Duyme).
+
+2010-07-25  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Depends): require R >= 2.10.0  --> can clean up
+	* R/spModels.R: prepare to move most parts to new package
+	MatrixModels
+
+2010-07-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (prMatrix): add " (unitriangular)" as we already
+	have for sparse matrices.
+
+2010-07-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (.diagU2N): implement for "dtpMatrix" = old 'FIXME';
+	(.dense.diagU2N): new utility, called from .diagU2N()
+
+2010-07-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dtrMatrix.c (dtrMatrix_dtrMatrix_mm): new for tri %*% tri
+	* R/products.R (%*%): ditto
+	* tests/matprod.R: test it
+
+2010-07-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (do.defaults): add 'nonMatched.action' with default
+	ensuring that typos are caught.
+
+2010-07-16  Douglas Bates <bates@stat.wisc.edu>
+
+	* R/spModels.R (do.defaults): utility function; TODO: move to R
+
+2010-07-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-43, CRAN-released: 2010-08-05, r 2599
+
+	* R/AllClass.R (Model): as mother class (of "glpModel")
+
+	* R/spModels.R (IRLS): more options()
+	(updateModel): update(<glm4>)
+
+2010-07-13  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-42, CRAN-released: 2010-07-15, r 2566
+
+	* R/spModels.R (glm4, IRLS): glm4 [was 'glm1']; tweaks.
+
+2010-07-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* NAMESPACE: rename, export and
+	* man/glpModel-class.Rd: document Doug's new "glpModel" class.
+
+2010-07-08  Douglas Bates <bates@stat.wisc.edu>
+
+	* R/AllClass.R: new "lpMod" class (-> later =: "glpModel"), and
+	working function:
+	* R/spModels.R (glm1): using linear pred.Model class, and
+	Bates-Watts convergence criterion.
+
+2010-07-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/lMatrix.R (whichDense): use arrayInd()
+	* R/zzz.R (arrayInd): provide for older R versions
+
+2010-07-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/chm_common.c (chm_triplet_to_SEXP): deal more carefully with
+	NAs, needed e.g., on Solaris; thanks to Ruth and Brian Ripley.
+
+	* R/Ops.R (Compare <Csparse>): fix bug uncovered by "alongside" the
+	above.
+
+2010-07-02  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (x[] <- 0): fix shortcut code.
+	* tests/indexing.R: and test
+
+	* R/nearPD.R (nearPD): 'doDykstra = TRUE' and *do* use Dykstra's
+	correction which was *not* used in Jens' code; thanks to Bernhard
+	Spangl for a report
+
+2010-06-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R: fix mean() method; add sparse one, remaining sparse
+	at least for trim = 0.
+
+2010-06-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-41, CRAN-released: 2010-07-03, r 2555
+
+	* R/sparseVector.R (spV2M): enable sparseVector -> (sparse)Matrix
+	as(*,.) coercion.
+
+2010-06-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R (.TM.repl.i.mat): renamed from .TM.repl.i.2col().
+	* R/Matrix.R (.repl.i.lSMat): implement logical sparse
+	sub-assignment: M[<lsparseMatrix>] <- v; ditto for dense & nsparse.
+
+	* R/Csparse.R (.CM.repl.i.lSMat, ..): direct logical sparse
+	sub-assignment for "Csparse".
+
+2010-06-04  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (sparseMatrix): re-enable 'dimnames' argument.
+
+2010-06-03  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (model.Matrix): tweak for NULL contrasts in dense case.
+
+2010-06-02  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/spModel.matrix.R (Sparse.model.matrix): adapt to the fact, that
+	sparse.model.matrix() returns not just a dgCMatrix.
+
+2010-05-29  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-40, CRAN-released: 2010-06-04, r 2546
+
+	* R/AllClass.R: new classes "ModelMatrix", "sparseModelMatrix", etc.
+
+	* R/spModels.R (sparse.model.matrix): now return
+	"dsparseModelMatrix" object, notably with 'assign' slot.
+	* R/spModels.R (model.spmatrix): faster, using lower level
+	cbind2/rbind2 directly.
+
+	* R/spModels.R (model.Matrix): new function,
+	returning "ddenseModelMatrix".
+
+	* NAMESPACE: export new classes.
+
+2010-05-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Csparse.c (Csparse_horzcat, Csparse_vertcat): ensure that
+	rBind()/cBind() i.e., rbind2()/cbind2() return logical sparse
+	matrices when the components are.
+	* tests/bind.R: test
+
+2010-05-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R: A[] <- v ; differentiate dense & sparse
+	* R/pMatrix.R: disallow <pMatrix>[] <- v  more consequently
+
+	* tests/indexing.R: test above
+
+
+2010-05-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (model.spmatrix): deal with "AsIs" components
+	* tests/spModel.matrix.R: test that
+
+2010-05-01  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/condest.R (onenormest, condest): allow to estimate condition
+	number for large sparse matrices.
+	* condest.Rd: docu
+
+	* R/pMatrix.R (.inv.perm): utility; add [t]crossprod() methods
+
+	* man/sparseLU-class.Rd: A = P'LUQ; add examples, with "identities"
+
+	* R/Auxiliaries.R (mmultCheck): new arg. 'kind'
+
+2010-04-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-39, CRAN-released: 2010-05-19, r 2540
+
+	* R/spModels.R (fac2sparse): using names(formals(new))[[1]] to
+	adapt to a future change in new()'s first argument *name*.
+
+2010-03-31  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (lm.fit.sparse): update, allowing weights; also
+	return residuals, notably for "cholesky" case.
+
+	* man/lm.fit.sparse.Rd: examples; comparing with dense case.
+
+	* src/dgCMatrix.c (dgCMatrix_cholsol): comments; also compute
+	residuals.
+
+2010-03-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (sparse.model.matrix, model.spmatrix): border case
+	'~ 1' should also work.  Add  'transpose = FALSE' argument.
+
+	* tests/spModel.matrix.R: test that.
+
+2010-03-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (printSpMatrix): ensure returning original argument
+
+2010-03-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseVector.R (coercion from TsparseMatrix): diagU2N() when
+	needed.
+
+	* inst/test-tools.R (checkMatrix): explicit which() test for
+	"l" and "nMatrix".  New sparseVector (coercion "and back") check.
+
+2010-03-25  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/lMatrix.R (which): define methods for which(<[ln]Matrix>).
+
+	* inst/test-tools.R (Q.eq.symmpart): new utility, now called in
+	 checkMatrix().
+
+	* R/nearPD.R: use symmpart() for non-symmetric x
+	* man/nearPD.Rd: improve title
+
+2010-03-24  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/colSums.R (.diag.Mean): define methods for "diagonalMatrix"
+
+	* src/Mutils.c (m_encodeInd, do_ii_FILL):
+	coerce ij to integer if necessary; check that ij are within "dim[]"
+	values.  Parametrize do_ii_FILL() to be used in m_encodeInd2() as well:
+	* src/Mutils.c (m_encodeInd2): also check bounds (if desired).
+
+	* tests/indexing.R: test the above.
+
+2010-03-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dgeMatrix.c (dgeMatrix_solve): compute the recip.cond.number
+	and also bail out for *computational* singularity {as "base R"
+	does}, from (code) suggestion by Daniel Sabanés Bové.
+
+	* tests/dg_Matrix.R: "test" the above.
+
+2010-03-01  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* man/rep2abI.Rd: rep2abI() utility is exported now.
+
+	* R/Csparse.R (subCsp_cols, subCsp_rows, subCsp_ij): dimnames() <-
+	fix for character subsetting.
+
+	* tests/indexing.R: testing it.
+
+2010-02-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (model.spmatrix): warn and coerce to sparseMatrix if
+	result would end up dense (e.g., in case of *no* factors in formula).
+
+	* tests/spModel.matrix.R: test the above.
+
+2010-02-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dtrMatrix.R: add solve(<dtrMatrix>, <dMatrix>): e.g., for
+	 solve(<Cholesky>, <dgCMatrix>) in lme4.
+
+2010-02-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-38, CRAN-released: 2010-03-31, r 2529
+
+	* NAMESPACE, R/AllGeneric.R, R/zzz.R: change det() into a regularly exported
+	function (masking base::det) instead of load-time hack.
+	* man/Matrix-class.Rd: \alias, docu
+
+2010-02-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-37, CRAN-released: 2010-02-05
+
+	* inst/test-tools.R (Qidentical.DN): new
+	(Qidentical): all Qidentical.DN(<dimnames>)
+
+	* R/Csparse.R (subCsp_ij, subCsp_cols, subCsp_rows): use
+	CHOLMOD's submatrix C code, instead of matrix multiplication;
+	now *do* keep dimnames of result, wherever classical matrix
+	subsetting does.
+
+2010-02-04  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-36, CRAN-released: 2010-02-04
+
+	* R/Csparse.R (subCsp_ij): Fix <sparse>[0,0] bug
+
+2010-02-03  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R (.TM.repl.i.2col): <nsparse>[ <ij> ] <- FALSE fix
+	* tests/indexing.R, *.Rout.save: test that
+
+2010-01-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Csparse.c (Csparse_crossprod): PROTECT() Tsparse_diagU2N()
+	result, from a suggestion by Andrew Runnalls.
+
+2010-01-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/SparseM-conv.R (setAs(., "matrix.csc")): fix typo in method.
+
+2010-01-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllGeneric.R: nnzero() is now generic,
+	* R/nnzero.R: newly containing all nnzero() methods.
+
+	* R/zzz.R (det): assign base::det such that it uses S4 generic kronecker.
+
+2010-01-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (contr.poly): [the back-compatible-only version]:
+	do not use a default for 'scores'; rather rely on stats::contr.poly.
+
+	* tests/spModel.matrix.R: test that case
+
+2009-12-28  Douglas Bates <bates@stat.wisc.edu>
+
+	* DESCRIPTION (Version): 0.999375-35, CRAN-released: 2010-02-03
+
+	* src/init.c, inst/include/Matrix_stubs.c: cholmod_band_inplace()
+	exported.
+
+2009-12-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/indexing.R: slightly adapt to the very slight [] changes.
+	* inst/test-tools.R (Q.C.identical): + checkClass
+
+	* R/Tsparse.R ([-methods): for now go via "Csparse" and drop
+	all the sophisticated code dealing with the many cases.
+
+	* R/Csparse.R (subCsp_cols, etc): faster [i,j] via matrix
+	multiplication, thanks to suggestions by Greg Jorstad.
+
+	* R/Auxiliaries.R (paste0): more use of paste0()
+
+2009-12-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R (.sparseDiagonal): made more general, allowing
+	to directly build the equivalent of   Diagonal(n)[, j]
+
+	* man/Diagonal.Rd: document .sparseDiagonal() as well.
+
+2009-12-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllClass.R: abIndex@x and rleDiff@first are now "numLike",
+	such that also logical can be converted to "abIndex".
+
+	* R/abIndex.R (.diff): new utility, used in num2abI()
+
+2009-12-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/abIndex.c: include new
+	* src/t_Matrix_rle.c (Matrix_RLE_): is template for
+	Matrix_rle_i() and Matrix_rle_d(); now obeys a 'force' argument.
+
+	* R/abIndex.R: implement <Arith> methods, at least with scalars.
+	(all.equal.abI): add also all.equal() methods.
+
+	* tests/abIndex-tsts.R: testing <Arith>, using all.equal().
+
+	* R/AllClass.R: classUnion  "numLike" := {"numeric", "logical"}
+
+2009-12-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/abIndex.c (Matrix_int_rle): UNPROTECT() needed in trivial case.
+
+	* R/abIndex.R (abIseq1, abIseq): new functions for building
+	"abIndex" vectors.
+
+	* tests/abIndex-tsts.R (tst.c.abI): test new c("<abIndex>") method.
+
+	* DESCRIPTION (Version): 0.999375-34, CRAN-released: -never-
+
+	* R/Ops.R: use prod(d) instead of d[1]*d[2], as the latter may
+	integer overflow; fixes  <large sparseMatrix>  o  <sparseVector>
+
+	* tests/Simple.R: test that.
+
+2009-12-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseVector.R (TsparseM* -> sparseV): symmetricMatrix needs to
+	be expanded.  This fixes a bug reported by Yu-Sung Su.
+	* tests/indexing.R: testing the fix.
+
+	* inst/test-tools.R (all.equalX): new util
+
+2009-12-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R (A.n.M, A.n.M): <sparseMatrix> o <numeric> : remain
+	sparse also when *majority* (instead of all) of   0 o v  is 0.
+
+	* tests/group-methods.R: test one such case.
+
+2009-12-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-33, CRAN-released: 2009-12-11
+
+	* R/Ops.R (Compare<Csp><Csp>): fix case with NA x.
+
+	* R/not.R: fix "typo" in !<sparseVector>
+
+	* R/Ops.R (Ops.spV.spV): fix thinko
+
+2009-12-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseVector.R: setAs(nsparseV*, lsparseV*) etc
+
+	* R/Ops.R (Ops.spM.spV, Ops.spV.spM): sparseVec. o sparseMat.
+
+2009-11-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R (Ops.spV.spV): enable sparseVector operations in more cases.
+
+	* R/sparseVector.R (is.na): methods defined.
+	* R/sparseVector.R (intIv): also accept "sparseVector"s
+
+	* tests/Simple.R: check the above
+
+2009-11-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseVector.R (newSpV, newSpVec): new utility, dropping 0 "on the fly".
+	* R/sparseVector.R (atomic -> sparse*): fix for NA case.
+
+	* R/Ops.R (<spV>): using newSpVec()
+
+	* R/not.R: fix thinko in !<sparseVector>
+
+2009-11-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/other-pkgs.R: detach(*, unload) Rgraphviz too
+
+2009-11-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllClass.R: "abIndex" (and "rleDiff") class
+	* R/abIndex.R: with some methods; commit these finally, even if
+	it's mostly unfinished.
+	* src/abIndex.[ch]: new: currently only for .Call(Matrix_int_rle,*)
+	* tests/abIndex-tsts.R: basic consistency checks for "abIndex".
+
+	* R/diagMatrix.R (diagOdiag): "exploding" Matrix.msg() only level 2;
+	* tests/indexing.Rout.save: update
+
+2009-11-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-32, CRAN-released: 2009-11-20
+
+	* src/Csparse.c (Csparse_Csparse_prod, Csparse_Csparse_crossprod):
+	PROTECT(.) the dimnames; thanks to Kaspar Kristensen
+
+2009-10-24  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R (Logic.lCMat): to be used for lsC* and ltC* as well,
+	effectively replacing previous suboptimal methods.
+
+	* src/chm_common.c (chm2Ralloc): Fix unidiagonal ntC segfault:
+	assign 'x' only when non-pattern.
+	* src/chm_common.c (as_cholmod_triplet): reallocate now in a way
+	that works; fix documentation about return value in diagU2N case;
+	ditto for
+	* src/chm_common.c (as_cholmod_sparse):
+
+
+	* R/sparseMatrix.R (printSpMatrix): add 'cld' argument, typically
+	passed from printSpMatrix2; and indicate "unit-diagonal"
+
+2009-10-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/lsparseMatrix.R (C2l): fix for case with NA.
+
+	* R/Csparse.R (replCmat): drop "stale" cached @factors
+	factorizations after sub-assignments.
+	* R/Tsparse.R (replTmat, .TM.repl.i.2col): ditto
+
+2009-10-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dgCMatrix.c (dgCMatrix_LU): new boolean argument
+	'error_on_sing' to allow no error in case of singularity;
+	needed for determinant(), e.g.
+
+	* R/Auxiliaries.R (detSparseLU): using lu(*, errSing=FALSE)
+
+	* R/dgCMatrix.R, R/dsparseMatrix.R: lu() methods, using 'errSing'
+
+	* R/sparseMatrix.R (printSpMatrix): fix bug introduced on *-09-10
+	* tests/Simple.R: test for that.
+
+2009-10-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dgeMatrix.c (dgeMatrix_crossprod): do not fail in 0-column case.
+
+	* inst/test-tools.R (Q.eq): new utility
+	(checkMatrix): minimally check %*%, crossprod() and tcrossprod()
+
+	* R/products.R: more '%*%' methods for "[ln]?Matrix", "missing"
+
+2009-10-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-31, CRAN-released: 2009-10-06
+
+	* inst/include/Matrix_stubs.c (M_R_cholmod_error): revert (2009-09-18),
+	i.e., no longer restore cholmod_common. {{M_cholmod_defaults()
+	still seems not usable from lme4's init.c}}
+
+2009-10-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+ 	* src/dtrMatrix.c (dtrMatrix_chol2inv): use "dpoMatrix" instead of "dsy"
+
+	* R/dtrMatrix.R: make use of implicit generic for chol2inv() in
+	newer R versions.
+
+2009-09-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/CHMfactor.R (solve): fix methods for "ddiMatrix" and "missing" RHS.
+	* tests/factorizing.R: test these
+
+	* R/Matrix.R (image): fix Matrix method to work for "ddiMatrix"
+	* R/diagMatrix.R: coercion to "dsparse*"
+	* tests/Simple.R: test image(<ddiMatrix>)
+
+2009-09-29  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllGeneric.R: rcond is implicit generic in latest versions of R
+
+2009-09-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R (A.M.n,A.n.M): replace "Ops" methods by explicit "Arith",
+	"Logic", etc, getting rid of ambiguity (notes), and of infinite recursions.
+
+	* tests/group-methods.R: test these systematically.
+
+2009-09-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* inst/include/Matrix_stubs.c (M_R_cholmod_start): print_function = NULL
+	as in src/chm_common.c (2009-07-20)
+	(M_R_cholmod_error): ditto, using new M_cholmod_default(), declared in
+	* inst/include/cholmod.h
+
+	* R/Tsparse.R (intI): do *not* allow logical subscript (row or
+	column) to be too long, compatibly with traditional matrix
+	indexing.
+	* tests/indexing.R: and assert the error.
+
+2009-09-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/pMatrix.R: as(sparseMatrix, pMatrix)
+
+	* R/CHMfactor.R (solve): method for (CHMfactor, missing)
+
+	* inst/test-tools.R (assertError): use tryCatch()
+
+	* R/diagMatrix.R (.sparseDiagonal): fix shape "g" case.
+
+	* R/Auxiliaries.R (isTriC): do not wrongly return TRUE for a *sCMatrix.
+
+	* man/chol2inv-methods.Rd: document & example
+
+2009-09-16   Douglas Bates <bates@stat.wisc.edu>
+
+	* NAMESPACE, R/dtrMatrix.R, src/dtrMatrix.[ch]: add chol2inv()
+	method for dtrMatrix.
+
+2009-09-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseVector.R ([): allow *indexing* with "lsparseVector"
+
+2009-09-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseVector.R (prSpVector): using ":" as in printSpMatrix()
+	(Summary): add "Summary" group methods
+	* man/sparseVector-class.Rd: and test a bit
+
+2009-09-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (printSpMatrix): visually differentiate
+	non-structural zeros in *logical* sparse matrices, using ":"
+
+	* R/Auxiliaries.R (setparts): new utility, for
+	* R/Ops.R (Ops.spV.spV): start implementing sparseVector arithmetic etc
+
+2009-09-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgCMatrix.R (qr): for sparseMatrix must coerce to "dgCMatrix".
+	* tests/factorizing.R: test qr(<dsCMatrix>)
+
+2009-09-01  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/CHMfactor.R (determinant): divide previous log(det(.)) by 2;
+	now returning det(L); and modify the "CHMfactor.warn" message.
+
+	* man/CHMfactor-class.Rd: modify documentation accordingly.
+
+2009-08-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (`contrasts<-`): a version that can also work with a
+	"sparseMatrix" value.  This is put into R 2.10.0 (devel) as well.
+
+	* src/Mutils.h: rename any_NA to any_NA_in_x
+	* src/Mutils.c (check_scalar_string): add doxygen doc
+
+2009-08-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (fac2Sparse): make also work for 'contrasts.arg' =
+	matrix;
+
+2009-07-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (contr.sum): need also to define contr.*() as long
+	as we document (./man/) them.
+
+2009-07-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-30, CRAN-released: 2009-07-28
+
+	* R/Matrix.R (all.equal_Mat): add factorsCheck=FALSE argument
+	* R/Auxiliaries.R (attr.all_Mat, attrSlots): ditto
+
+2009-07-25  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (attr.all_Mat): fix checking of non-content slots.
+	* R/Matrix.R (all.equal_Mat): thinko needed  s/&&/&/
+	* R/sparseMatrix.R (all.equal(.) methods): ditto
+	===> Note:  all.equal() is more stringent for "Matrix" arguments now!
+
+2009-07-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (model.spmatrix, sparse2int): "complete" re-write
+
+	* tests/spModel.matrix.R: many tests added
+
+2009-07-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/chm_common.c (R_cholmod_l_start): set print_function to NULL,
+	as we have long suggested ==> get rid of random strings seen in
+	some cholmod warnings.
+	(R_cholmod_error): call cholmod_l_defaults() before error(), so
+	we restore the Cholmod global in case of errors.
+
+	* R/ldenseMatrix.R (.rcond_via_d): fix thinko
+
+2009-07-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/CHMfactor.R (isLDL): need a "!" as 'type' is "is_ll"
+	* src/dsCMatrix.c (dsCMatrix_Cholesky): update, notably when caching.
+
+	* tests/indexing.R: test col.names printing of sparseMatrix
+
+2009-07-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* inst/test-tools.R (allCholesky): new testing function
+
+2009-07-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dsCMatrix.c (dsCMatrix_Cholesky): add possibility to set each
+	of 'perm', 'LDL', and 'super' to NA (in addition to TRUE / FALSE).
+	in these case, a CHOLMOD-heuristic choses the option "sensibly".
+	* man/Cholesky.Rd: document the new possibility.
+
+2009-07-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/rankMatrix.R (rankMatrix): diff(sval) <= 0
+
+	* R/spModels.R (model.spmatrix): fix case of missing main effect
+	* tests/spModel.matrix.R: new file
+
+2009-07-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (show, printSpMatrix2): both print() and show()
+	now use printSpMatrix2(), and that now already prints
+	"<n> x <m> sparse Matrix of class ...".
+
+	* R/CHMfactor.R (isLDL): fix and
+	* NAMESPACE: export  isLDL()
+
+2009-07-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spModels.R (model.spmatrix): mf may be simple data.frame
+
+2009-07-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* NAMESPACE: export sparse.model.matrix() and
+	* man/sparse.model.matrix.Rd: document it
+
+2009-07-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R (intI): also work for integer dimnames (well ..)
+
+2009-07-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R: "factor out" sparse model things into
+
+	* R/spModels.R (sparse.model.matrix): new model matrix functions
+
+2009-06-20  Douglas Bates <bates@stat.wisc.edu>
+
+	* src/CHMfactor.c: Ensure updated LL stays LL
+
+2009-06-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-29, CRAN-released: 2009-06-11
+
+2009-06-10  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2404] src/Mutils.c: Change value of set_factor to be the cached factor
+	* [r2403] src/dgCMatrix.c, src/dgCMatrix.h, src/init.c: Comment out
+	  unused dgCMatrix_lusol function
+	* [r2402] R/dgCMatrix.R: R-level implementation of solve("dgCMatrix",
+	  "missing")
+	* [r2401] src/dgCMatrix.c: Re-arrange LU factorization to always use the
+	  cached value.
+
+2009-06-09  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2399] src/dgCMatrix.c: PROTECT the result from dgCMatrix_LU in
+	  dgCMatrix_matrix_solve
+
+2009-06-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R: add numeric -> Tsparse* coercion
+
+2009-06-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Mutils.h, src/dgeMatrix.c: using dngettext(.) only
+	on future versions of R.
+
+2009-06-04  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-28, CRAN-released: 2009-06-08
+
+	* po/de.po, po/R-de.po: German translations from Chris Leick.
+	* inst/po/de/: ditto, via po/update-me.sh
+
+2009-05-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/chm_common.c, src/cs_utils.c, etc: internationalize more
+	messages; fix some; thanks to feedback from Chris Leick.
+
+2009-05-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* man/denseMatrix-class.Rd, etc: 'factors' is *not* a slot in this
+	class; found by the upcoming R 2.10.0 codocClasses().
+
+2009-05-25  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* po/update-me.sh, Matrix.pot, etc: updated *.pot / *.po files
+
+	* DESCRIPTION (Version, Date): 0.999375-27, CRAN-released today.
+
+	* R/sparseVector.R: add as(<atomic>, "dsparseVector")
+	(spV2M): now works (again!?) for "isparseVector" (-> "dgTMatrix").
+
+	* tests/matprod.R: tcrossprod(), sparseVector multiplications, i.e.,
+	features of next paragraph.
+
+2009-05-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/products.R: move almost all %*%, crossprod(), tcrossprod()
+	methods to a new file.  tcrossprod() compatibility with *fixed*
+	base-R; enable operations with "sparseVector"s; some extra methods
+	to avoid ambiguity messages.
+
+2009-05-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (.M.v, .v.M): slight speedup, and *use* them in
+	* R/Matrix.R (crossprod)
+
+2009-05-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseVector.R (dim<-): prod(as.integer(.)) may overflow!
+
+	* R/Matrix.R (Matrix): Matrix(sv, ..) now works for a sparseVector
+
+	* R/sparseVector.R (spV2M): allow zero nrow or ncol.
+
+2009-05-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (dim<-): should also work for diagonalMatrix.
+
+	* inst/test-tools.R (vec): add test for dim(x) <- c(n, 1)
+
+
+2009-05-13  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/rankMatrix.R (rankMatrix): new function for matrix rank;
+	"to be discussed".
+
+2009-05-07  Doug Bates and Martin Maechler <Matrix-authors@r-project.org>
+
+	* src/Mutils.c (Matrix_check_class_etc): diverse smallish
+	improvements, stuffing a small leak, adding PROTECT()ion,
+	but, alas, not enough.
+
+2009-05-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/HBMM.R (readMM): add checkIJ() to produce nicer error messages,
+	on malformed input.
+	* tests/write-read.R: and test that..
+
+2009-04-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version, Date): 0.999375-26, CRAN-released on 2009-04-29
+
+	* src/Mutils.h (Matrix_check_class_etc): try to ensure it works
+	also when Matrix is loaded but not attached.
+
+	* src/init.c (R_init_Matrix): get Matrix namespace in C.
+
+	* R/zzz.R (.onLoad): a *working* fix aka "hack"
+
+
+2009-04-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-25 packaged --> CRAN
+
+2009-04-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (Matrix.msg): new utility
+	(.M.vectorSub): ditto, for vector-indexing; in
+	* R/Matrix.R ([): M[i, drop=<LOGI>] should do *vector*-indexing.
+	* R/Tsparse.R ([): ditto;
+	* R/diagMatrix.R ([, subDiag): ditto.
+
+	* R/Tsparse.R ([): more careful indexing of (triangular)
+	TsparseMatrix.
+
+	* tests/indexing.R: testing the above
+
+	* R/Auxiliaries.R (gT2tT, check.gT2tT): consistency and efficiency
+	improvement, using 'do.n' argument.
+
+2009-04-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R: add  as(., "vector")  etc
+	* man/Matrix-class.Rd: ditto
+	* inst/test-tools.R (checkMatrix): and check them
+
+2009-04-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version, Date): 0.999375-24 ... released to CRAN
+
+	* R/sparseVector.R: fix coercion from xsparse*
+	* tests/Simple.R: and check it.
+
+	* man/lu.Rd: document 'warnSing' argument
+	* tests/dg_Matrix.R: and test it
+
+	* src/dgeMatrix.c (dgeMatrix_LU): missing 'return'
+
+2009-04-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version, Date): 0.999375-24 only for 2.9.0 (and newer)
+
+2009-03-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Mutils.h (Matrix_check_class_etc): new version that *computes*
+	the environment to be used.
+	* src/Tsparse.c, src/cs_utils.c, src/chm_common.c, src/dgCMatrix.c:
+	use the above in place of Matrix_check_class_and_super().
+
+2009-03-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (MatrixClass): use cld@package, not packageSlot(.) !
+
+2009-03-25  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version, Date): 0.999375-23
+
+	* tests/Class+Meth.R (dotestMat): use getClassDef() for speed;
+	adaptions to also work with "Matrix-extensions".
+	* inst/test-tools.R (checkMatrix): similar adaptions.
+
+2009-03-24  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (MatrixClass, l2d_meth, ...): make use of
+	MatrixClass(): functionality for setClass("foo", contains="dgCMatrix")
+
+	* src/Mutils.h (Matrix_check_class_and_super): new utility, to be
+	used in lieu of  Matrix_check_class() in most cases.
+	* src/Tsparse.c, src/cs_utils.c, src/chm_common.c, src/dgCMatrix.c: use it,
+	currently only with R_GlobalEnv {otherwise: API change}
+
+2009-03-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* man/band.Rd: note and example about band(<dense>) |-> dense
+
+	* R/ddenseMatrix.R (.bandDense): fix typo in argument check.
+	* R/Csparse.R: ditto
+	* src/dense.c (dense_band): limit index range; thanks to Bill Dunlap.
+	* tests/Simple.R (band): check it
+
+2009-03-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dMatrix.R (Summary): (dsparseMatrix): new logic, fixing
+	prod(<sparse with NA>).
+
+	* inst/test-tools.R (eqDeterminant): improve after suggestions from Doug
+	* inst/test-tools.R (checkMatrix): message(), not warning(),
+	for differing prod().
+
+	* src/dgeMatrix.h, src/init.c: dgeMatrix_LU(x, warn_singularity)
+	* src/dgeMatrix.c (dgeMatrix_LU): allow to suppress singularity warning.
+	(dgeMatrix_determinant, dgeMatrix_rcond): do *not* warn on exact singularity
+
+2009-03-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (Summary.l, Summary.np): no conversion to "dMatrix" for all()/any()
+
+	* tests/Simple.R: do not use memory-expensive all(I.. == Diagonal(n))
+		for R >= 2.9.0, keep option 'warn = 2', i.e. warnings
+		producing errors  ==>
+
+	* R/Ops.R: small fixes, getting rid of warnings in tests/Simple.R
+
+	* TODO: think about providing something like  allCompare(.,., "==")
+
+2009-03-02  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-22, ready but not submitted
+
+2009-03-01  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* inst/test-tools.R (eqDeterminant): fix for NAs
+
+2009-02-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R (prod, all): fix methods (cut & paste remnant);
+	for NA.
+
+	* R/Auxiliaries.R (detSparseLU): determinant(<..NA..>) now gives NaN
+
+	* R/sparseMatrix.R (printSpMatrix): workaround format.info() R bug
+	* tests/Simple.R: test that
+
+2009-02-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (Matrix): Matrix(x,*) returns x unaltered when
+	is(x, "diagonalMatrix"); OTOH, Matrix(x,1,1) should typically
+	*not* return a diagonalMatrix.
+
+	* R/diagMatrix.R (setAs(matrix, *)): fix for NAs.
+	* tests/Simple.R: test things like Matrix(NA, 1,1)
+
+2009-02-25  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* NAMESPACE: add bandSparse() "properly"
+	* man/bandSparse.Rd: doc including examples
+
+2009-02-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/bandSparse.R (bandSparse): constructor for band(diagonal)
+	sparse matrices.
+
+2009-02-13  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-21, released to CRAN
+
+	* src/Mutils.h (Matrix_with_SPQR): #define (or #undef), in order to
+	allow easy building "SPQR-free version" of Matrix.
+
+2009-02-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Csparse.R (replCmat): another check for 'has.x'
+	* tests/indexing.R: very large (very sparse) sub-indexing.
+
+2009-01-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-20
+	* man/spqr.Rd: disable example on Windows for now
+
+	* inst/test-tools.R (checkMatrix): simpler for "logical" pMatrix.
+
+	* R/ngTMatrix.R: fix ngT -> nge / lge coercion, and
+	* tests/Simple.R: adapt test.
+
+	* R/pMatrix.R: coercion to "matrix": more sensical to coerce to logical
+	instead of 0/1 integer.   This a mild back-compatibility breach.
+	* man/pMatrix-class.Rd: adapt, including example
+	* R/sparseMatrix.R (printSpMatrix): print as logical, too.
+
+2009-01-29  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (geClass): define for "pMatrix"
+	* R/pMatrix.R: pMatrix  ->  ngeMatrix coercion
+	* man/pMatrix-class.Rd:
+
+	* DESCRIPTION (Version): 0.999375-19  considering release.
+
+	* R/ngTMatrix.R: coercing correctly to ngeMatrix via lge*.
+
+	* man/dgTMatrix-class.Rd: remove no-more-existing coercion method;
+	mention a bit less, and note.
+
+	* R/diagMatrix.R: ensure that <diagonal> * <dgeMatrix> is diagonal
+	even with new method dispatch
+
+	* R/Matrix.R (.M.sub.i.logical): change comments only, and extend
+	error message which is never called currently.
+
+	* R/Ops.R (Ops.x.x): fix for new "inherited method" dispatch
+
+2009-01-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/spqr.R: put spqr() / class "SPQR" related code in one file for now.
+	* NAMESPACE: export "SPQR" class
+	* man/SPQR-class.Rd: document it
+
+2009-01-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (is.na_nsp): should produce "nsCMatrix" only when
+	dimnames are symmetric too.
+
+	* R/sparseQR.R (solve): method for (<sparseQR>, <ANY>)
+
+2009-01-26  Douglas Bates <bates@stat.wisc.edu>
+
+	* src/cs_utils.c (Matrix_as_cs): in diagU2N case: Force sorted
+	columns after expanding unit diagonal.
+
+2009-01-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R (intI): for now give intelligible error on NA indices.
+
+	* R/Matrix.R (subset.ij): should deal correctly with NA indices in
+	the 2-column-matrix index case.
+
+	* src/Mutils.c (m_encodeInd, m_encodeInd2): prepare to deal better
+	with NA in indices.
+
+2009-01-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* inst/doc/Intro2Matrix.Rnw: mention sparseMatrix
+	* man/sparseMatrix.Rd: fix typos found by parse_Rd
+
+2009-01-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version,Date): release 0.999375-18 (as of yesterday)
+
+2009-01-18  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2319] src/Csparse.c, src/Csparse.h: Added an untested create_Csparse
+	  function
+
+2009-01-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (sparseMatrix): recycle 'x' if necessary;
+	use 'index1' rather than 'index0' {as proposed by Doug}.
+
+	* R/dgeMatrix.R: drop two unnecessary (maybe very very slightly
+	faster) methods for %*%.
+
+2009-01-12  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2313] R/sparseMatrix.R, man/sparseMatrix.rd: Use intermediate
+	triplet rep in sparseMatrix.
+
+2009-01-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (sparseMatrix): new function to be used in
+	place of new(), notably for CsparseMatrix objects.
+	* man/sparseMatrix.Rd: its doc; plus examples
+
+	* man/CsparseMatrix-class.Rd: fix long-standing thinko; update the
+	\note{} to reflect the fact that the validity method no longer
+	modifies its argument.
+
+	* R/Csparse.R (.validateCsparse): new utility accessing
+	* src/Csparse.c (Csparse_validate_, Csparse_validate2): new
+	utilities allowing the "sort-in-place" that used to be part of
+	former Csparse_validate().
+
+2008-12-10  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2309] DESCRIPTION: Release 0.99375-17
+
+2008-12-05  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2308] inst/include/Matrix_stubs.c, inst/include/cholmod.h: Adding
+	  const for picky compilers; Using CHM_FR typedef
+
+2008-11-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* [r2307] ChangeLog, tests/validObj.R: update (as of Oct.26)
+
+2008-10-31  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2306] inst/include/Matrix_stubs.c: Consistency with cholmod.h re
+	  const qualifier
+
+2008-10-26  Douglas Bates <bates@stat.wisc.edu>
+
+	* src/Csparse.c (Csparse_validate): do not sort, but report error
+	on unsorted row-indices within column.
+
+	* tests/validObj.R: adapt the regression test.
+
+2008-10-17  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2300] inst/include/Matrix_stubs.c: Consistency with SparseSuite names
+	* [r2299] src/AMD/Source/Makefile, src/CHMfactor.c,
+	  src/CHOLMOD/Lib/Makefile, src/COLAMD/Source/Makefile, src/Csparse.c,
+	  src/Tsparse.c, src/UFconfig/UFconfig.h, src/chm_common.c,
+	  src/chm_common.h, src/dense.c, src/dgCMatrix.c, src/dsCMatrix.c,
+	  src/init.c, src/t_gCMatrix_colSums.c: Compile only the UF_long version
+	  of SparseSuite but setting UF_long to be int
+
+2008-10-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Mutils.h: include <alloca.h> also for AIX
+
+2008-10-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/scripts/ : move *.sh, *.mkf and *.mk files from src/ to src/scripts/
+
+	* src/*/{Lib|Source}/Makefile: change to non-GNU-make style, and
+	other improvements from Brian Ripley.
+
+2008-10-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Makevars, src/Makevars.win: replacing
+	* src/Makefile, src/Makefile.win which are no longer needed
+
+2008-10-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Makefile, src/*/Makefile: changes from Brian Ripley enabling
+	parallel make.
+
+2008-10-13  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2285] src/SPQR/Include/spqr.hpp: Include the C string declarations.
+
+2008-10-06  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2284] src/Makefile, src/SPQR/Lib/Makefile_SPQR, src/SPQR/Makefile,
+	  src/Win.mk: Modifications for compilation under Windows
+	* [r2283] tests/validObj.R: remove reference to undefined object
+	* [r2282] inst/doc/UFsparse/SPQR.txt: SPQR license information
+
+2008-10-04  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2281] src/Makefile, src/chm_common.c, src/chm_common.h,
+	  src/dgCMatrix.c, src/init.c: SparseSuiteQR interface
+
+2008-10-03  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Csparse.c (isValid_Csparse): new utility
+	* src/chm_common.c (as_cholmod_sparse): add validity check early
+	* tests/validObj.R: test the above
+
+2008-10-02  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2277] TODO: Think of a better way of structuring include files
+	* [r2276] src/AMD/Source/Makefile, src/CHOLMOD/Lib/Makefile,
+	  src/COLAMD/Source/Makefile, src/Makefile,
+	  src/SPQR/Include/SuiteSparseQR_C.h, src/chm_common.h, src/dgCMatrix.c,
+	  src/dgCMatrix.h, src/init.c, src/sparseQR.h: Add dgCMatrix_SPQR and
+	  modify other code to allow its compilation and linkage
+
+2008-10-02  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (printSpMatrix2): another validObject(.) call
+	* src/Makefile: getting rid of SUBSTAMP etc, thanks to Simon U.
+
+2008-10-01  Douglas Bates <bates@stat.wisc.edu>
+
+	* src/Makefile, inst/doc/UFsparse/, inst/include/: Adjustments for
+	SuiteSparse configuration.
+	* src/CHOLMOD, src/UFconfig: update versions of SuiteSparse
+	libraries.
+	* src/SPQR/*  add "SPQR", from Tim Davis' "SuiteSparse" collection,
+	not yet with an R interface.
+
+2008-09-25  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* Release 0.999375-15 to CRAN.
+
+2008-09-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dsyMatrix.c (dsyMatrix_as_dspMatrix): copy 'factors' slot
+	* tests/dpo-test.R: test for it
+
+	* R/Tsparse.R (intI): improve one error message.
+
+2008-09-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-15 to be released
+
+	* R/diagMatrix.R (diag o <Matrix>): explicit setMethods,
+	in order to keep result diagonal in many more cases.
+	(coerce) to denseMatrix now *does* coerce.
+
+	* man/diagonalMatrix-class.Rd: \alias{} for these.
+
+	* R/Auxiliaries.R (.dense.prefixes): ".diMatrix" has not been dense
+	anymore!
+
+	* R/dMatrix.R: as(<dMatrix>, <nMatrix>): enable Cholesky/BunchKaufman
+
+2008-09-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/lsparseMatrix.R (C2l): as(<d.Csparse>, "lMatrix") should
+	preserve NAs.
+
+	* R/Ops.R (Arith, Compare): keep diag="U" in more cases when sensible
+
+2008-09-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R (Arith): better <ddenseMatrix> o <numeric> which
+	preserves symmetry / triangularity in "obvious" cases.
+
+	* R/dpoMatrix.R: setAs(., "lMatrix") and setAs(., "nMatrix")
+	* R/dppMatrix.R: ditto
+	* man/dpoMatrix-class.Rd:
+
+	* inst/test-tools.R (checkMatrix): add [dln]Matrix <-> [dln]Matrix
+	coercion checks.
+	* tests/indexing.Rout.save: more ambiguity warnings from the new checks.
+
+	* R/dMatrix.R: dMatrix -> nMatrix: fix dense case.
+
+2008-09-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/factorizing.R: test expand(<sparseLU>)
+
+	* src/dgCMatrix.c (dgCMatrix_LU): fill @Dim slot correctly.
+
+	* R/Tsparse.R (replTmat): also optionally warn when sub-assignment
+	loses symmetry of Matrix.
+
+2008-09-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R (.TM.repl.i.2col): fix sub-assignment of "dsCMatrix";
+	bug reported by Jacob van Etten.
+
+	* tests/indexing.R, tests/indexing.Rout.save: testing it
+
+2008-09-10  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2260] src/Mutils.h, src/chm_common.c, src/cs_utils.c,
+	  src/dsCMatrix.c: Update doxygen comments
+
+2008-09-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* man/ddiMatrix-class.Rd: docu update : sparse, not dense (see 2008-07-28).
+	* man/ldiMatrix-class.Rd , man/diagonalMatrix-class.Rd: ditto.
+
+2008-09-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-14  to be released to CRAN,
+	in order to comply to to pending changes in R-devel (2.8.0).
+
+2008-09-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (solve,..): use (Matrix,ANY)... instead of (Matrix,Matrix)
+	* R/Ops.R: ditto; most of these from John Chambers.
+	* man/Matrix-class.Rd
+
+	* R/Auxiliaries.R (.diagU2N): fix for Rsparse*
+	* tests/Simple.R: test it
+
+2008-09-02  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* man/drop0.Rd:
+	* R/Auxiliaries.R (drop0): new argument 'tol = 0' (and
+	'is.Csparse'); entails updates in
+	* R/Csparse.R, R/lMatrix.R, R/dMatrix.R
+
+2008-08-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-13 released to CRAN
+
+2008-08-29  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (attrSlotNames, attrSlots, attr.all_Mat): new
+	utilities, for now to be used in all.equal() methods.
+
+	* R/Matrix.R (all.equal_Mat): be more careful (less tolerant) in
+	all.equal() methods.
+	* R/sparseMatrix.R: ditto
+
+2008-08-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-12 released to CRAN
+
+	* R/Ops.R (Compare(<Csparse>,<Csparse>): fix for nsparseMatrix
+
+2008-08-27  Douglas Bates <bates@stat.wisc.edu>
+
+	* R/sparseMatrix.R: fac2sparse() for NA's
+
+2008-08-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseVector.R (all.equal.sparseV): make work for nsparseVector's
+
+2008-08-25  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dgCMatrix.c (dgCMatrix_LU): partially revert change
+	r2175 (2008-04-23) and do give an error for a singular matrix.
+	* man/lu.Rd, R/Auxiliaries.R (detSparseLU): adapt to that.
+
+	* R/LU.R: expand( <sparseLU> )
+
+	* NAMESPACE, man/all.equal-methods.Rd:
+	* R/Matrix.R (all.equal): methods for Matrices,
+	* R/sparseMatrix.R, R/sparseVector.R: sparseMatrices and -Vectors
+
+
+2008-08-23  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2243] R/CHMfactor.R, man/CHMfactor-class.Rd: Added expand method and
+	  documentation for CHMfactor class
+	* [r2241] R/CHMfactor.R: Added trivial coercion method for CHMfactor ->
+	  pMatrix
+
+2008-08-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/nsCMatrix.R (setAs(., dgTMatrix))): remove unused method
+
+2008-08-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R (.Ops2dge.via.x, and many others): eliminate never-used
+	variable assignments {from "next version" codetools}.
+	* R/Csparse.R, R/Tsparse.R: ditto
+
+2008-08-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseVector.R (sp2vec, coerce to sparseVector):
+	make sure no integer overflows happen, and use double precision
+	(n, index) where appropriate.
+
+	* tests/Simple.R: test "large" sparse vectors.
+
+2008-08-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllClass.R (sparseVector): 'length' and 'i' are "numeric", not
+	just integer (allowing much longer length).
+
+2008-07-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllClass.R (diagonalMatrix): extend  "sparseMatrix" instead of
+	"denseMatrix".  This renders "scarceMatrix" dispensable and
+	invalidates part of MM's presentations on "space of Matrix
+	classes", but seems cleaner overall.
+
+	* R/diagMatrix.R, etc: eliminate "scarceMatrix", replacing it by
+	"sparseMatrix" in method signatures;
+	further, instead of coercing to "sparseMatrix", coerce to
+	"TsparseMatrix" now.
+
+2008-07-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dgCMatrix.c (dgCMatrix_qrsol): allow third argument 'order' in
+	.Call(.)
+	* R/sparseMatrix.R (lm.fit.sparse), src/dgCMatrix.h, src/init.c: ditto
+
+2008-07-24  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgeMatrix.R: need solve(<dge>, <sparse>) against infinite
+	recursion in new test in
+	* tests/matprod.R: testing the above and another solve() case, below
+
+	* R/sparseMatrix.R (lm.fit.sparse): slightly more efficient for
+	e.g. triangular 'x'.
+
+	* src/dgCMatrix.c (dgCMatrix_qrsol): use AS_CSP() hence allowing dtC*
+	* src/dgCMatrix.c (dgCMatrix_cholsol): use AS_CHM_SP() to work
+	correctly with unit-triangular x
+
+	* src/dsCMatrix.c (dsCMatrix_Csparse_solve): use AS_CHM_SP()
+	instead of not checking diagU.
+
+	* R/diagMatrix.R, R/Auxiliaries.R: tweaks to allow later
+	experiments where diagonalMatrix would extend sparse*.
+
+
+2008-07-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dgCMatrix.c (compressed_non_0_ij): for nnzero(), use
+	"x@p[ncol(x)]" instead of length(x@i).
+	* R/Auxiliaries.R (nnzero): ditto
+
+	* src/chm_common.c (as_cholmod_sparse): Do not use LENGTH(islot)
+	since that fails for over-allocated i.
+
+	* tests/validObj.R: more testing of over-allocated (i,x) slots
+
+2008-07-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/chm_common.c (as_cholmod_sparse): Add 4th argument
+	'sort_in_place' and set it to TRUE in call from
+	* src/Csparse.c (Csparse_validate): sort in place, making sure that
+	validObject() continues sort the columns if needed.
+
+	* tests/validObj.R: now tests that more thoroughly, and
+	* man/CsparseMatrix-class.Rd: documents it.
+
+2008-07-22  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2233] src/chm_common.c: sort columns more carefully in
+	  as_cholmod_sparse
+	* [r2231] src/chm_common.c: check for sorted columns in
+	  as_cholmod_sparse instead of assuming it
+	* [r2228] src/cs_utils.c: Use R_alloc for semi-permanent storage when
+	  expanding diagonal
+
+
+2008-07-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/cs_utils.c (Matrix_as_cs): add check_Udiag switch
+	* src/cs_utils.h (AS_CSP & AS_CSP__): two versions
+	* src/dtCMatrix.c (dtCMatrix_sparse_solve): no longer needs
+	diagU2N().
+
+	* R/diagMatrix.R (.sparseDiagonal): new utility, used in "old"
+	.spDiagonal() and new .trDiagonal().
+
+	* R/dtCMatrix.R (solve): make use of .trDiagonal()
+
+2008-07-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (dimNamesCheck): fix very long standing buglet,
+	stumbled upon by Michael H.
+
+	* tests/validObj.R: testing the bug-fix
+
+	* src/chm_common.h (AS_CHM_SP__, AS_CHM_TR__): the non-diagU2N
+	versions.
+
+	* src/chm_common.c (as_cholmod_sparse, as_cholmod_triplet): new
+	boolean argument 'check_Udiag' (formerly implicitly was FALSE).
+
+	* src/Csparse.c (Csparse_Csparse_prod, ...): etc: use the new
+	  AS_CHM_SP() which includes diagU2N.
+
+	* inst/include/Matrix_stubs.c (M_as_cholmod_sparse): similarly
+	adapt to 3 arguments.
+
+2008-07-17  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2220] src/dtCMatrix.c: Correct number of columns for rhs in
+	  dtCMatrix_sparse_solve
+	* [r2219] src/cs_utils.c: eye->nz should be -1 for compressed column
+	  storage
+	* [r2217] R/dtCMatrix.R, src/dtCMatrix.c, src/dtCMatrix.h, src/init.c:
+	  Replace dtCMatrix_solve by more general dtCMatrix_sparse_solve and add
+	  new solve method
+	* [r2216] src/cs_utils.c: Utility csp_eye in case we want to fold
+	  Csparse_diagU2N functionality into Matrix_as_cs
+
+2008-07-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* inst/doc/factor2sparse.Rnw: revive a year-old unfinished vignette
+
+2008-07-16  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2212] R/sparseMatrix.R: fac2sparse gets a drop.unused.levels
+	  argument with default TRUE
+	* [r2211] inst/include/Matrix.h, inst/include/Matrix_stubs.c: Export
+	  Csparse_diagU2N
+	* [r2210] R/dtCMatrix.R, man/dtCMatrix-class.Rd, src/dtCMatrix.c,
+	  src/dtCMatrix.h, src/init.c: Remove vestigial methods based on the
+	  parent array; new solve method for signature(a = "dtCMatrix", b =
+	  "sparseMatrix")
+
+2008-07-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R (.bdiag): also keep result triangular
+
+2008-07-13  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r2208] src/dtCMatrix.c, src/dtTMatrix.c: Revise wording in error
+	  messages
+
+2008-07-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R (.bdiag): make more sophisticated, keeping
+	symmetric- or nsparse-Matrix, also fixing the bug introduced with
+	the new version (.999375-10).
+
+	* tests/Simple.R: regression test for the bugs.
+
+2008-07-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseVector.R (spV2M): fix for "isparseVector".
+	Further, fix <diag> -> <sparseVector> coercion
+	(repSpV): add rep(<sparseVector>, .) method
+
+	* R/sparseMatrix.R ([<-): when the RHS is a "scarce"Matrix, do *not*
+	use as.vector(.).
+
+	* R/Tsparse.R ([<-): & [CR]sparse.R: methods for value = "sparseVector"
+
+	* R/AllClass.R: new (hidden) class union "scarceMatrix"
+	* R/AllClass.R: sparseVector: add prototype
+
+	* src/dsCMatrix.c (chk_nm): fix "Cholesky" check, thanks to
+	Kasper Kristensen
+
+2008-06-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/other-pkgs.R: add more interesting Matrix -> graph
+
+2008-06-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (Tsp2grNEL): add 'need.uniq' argument for speed
+	improvement in "[CR]sparseMatrix" -> "graphNEL" coercion.
+
+2008-06-25  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION: release 0.999375-10 to CRAN
+
+	* R/diagMatrix.R (.bdiag): use more efficient Bates-algorithm for
+	.bdiag().
+	* man/bdiag.Rd: update, including test.
+
+2008-06-24  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/Simple.R: add minimal bdiag() checks
+
+	* R/diagMatrix.R (bdiag): fix bdiag(diag(4:5)) case;
+	  factor out the Tsparse - internal computation into new .bdiag()
+
+2008-06-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/nsparseMatrix.R: specific fast all() and any() methods.
+
+	* src/dgTMatrix.c (MAKE_gTMatrix_to_geMatrix): better error message
+	when trying to produce too large result.
+
+	* inst/test-tools.R (checkMatrix): add 'do.matrix' with a check for
+	very large matrices.
+
+	* R/sparseMatrix.R (printSpMatrix2): new function, used by
+	show(<sparseMatrix>).
+
+	* R/diagMatrix.R (show): print only diagonal entries when nrow(.) >= 50.
+
+2008-06-13  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Mutils.c (m_encodeInd, m_encodeInd2):
+	* R/*.R: .Call(m_encodeInd2?, ..) instead of encodeInd2?(..).
+
+	* R/Auxiliaries.R (encodeInd2?): care against integer overflow (for
+	big matrices): -> 2nd argument 'di' instead of 'nr' !
+
+2008-06-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dtCMatrix.R: faster dgC* -> dtC* method
+	* tests/Simple.R: (hence removed "FIXME")
+
+	* R/Auxiliaries.R (copyClass): add 'check = .copyClass.check'
+	which can be be turned off for possible speed gains.
+
+2008-06-02  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dMatrix.R, R/Tsparse.R: get rid of some disambiguation warnings
+
+	* R/not.R: fix !<ldiMatrix>
+	implement two old "FIXME"s:  !<ldenseMatrix> & !<ndenseMatrix>
+
+	* R/diagMatrix.R (Ops): fix one-off thinko in
+	<diagonal> o <numeric> methods
+
+	* inst/test-tools.R: checkMatrix(): drop0(m12) unconditionally
+
+2008-05-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R (Ops): more <diagonal> o <Matrix> methods
+	* tests/Simple.R: testing the above
+
+2008-05-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* NAMESPACE: also import "Ops" {found via new tools:::get_S4_generics_with_methods()}
+
+2008-05-03  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (dimnames<-): dimnames(.) <- NULL works with a message;
+	* NAMESPACE (unname): finally exported
+
+2008-04-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (cholMat): possibly keep packed
+
+	* inst/test-tools.R (checkMatrix): add fixed determinant.matrix()
+	for R < 2.7.0.
+
+	* R/Tsparse.R ([): for triangularMatrix, check if result may be
+	triangular.
+	* tests/indexing.R: regression test
+
+2008-04-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* inst/test-tools.R (checkMatrix): test <Ops> not only for dMatrix
+	* R/Ops.R: more methods, for lMatrix/nMatrix
+
+2008-04-24  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/expm.R: new file for all expm() methods; notably new ones for
+	diagonal*, triangular*, symmetric* and also simple "matrix".
+
+2008-04-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dsyMatrix.R: setAs(.) rather than setIs(.)  "to dpoMatrix"
+
+	* inst/test-tools.R (assert.EQ.mat): better message when not equal
+
+	* src/dgeMatrix.c (dgeMatrix_matrix_crossprod): allow integer RHS.
+
+	* R/AllClass.R (ddiMatrix,ldiMatrix): extend [dl]Matrix instead of
+	[dl]denseMatrix {identical slots; but more logical method dispatch}
+
+2008-04-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (summary): use length(<i-slot>) instead of nnzero()
+
+	* R/diagMatrix.R (determinant): method
+
+2008-04-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dsCMatrix.c (dsCMatrix_Cholesky): suppress CHOLMOD printing too
+
+	* R/Rsparse.R (.viaC.to.R): uplo fix for symmetric & triangular
+
+	* R/dsCMatrix.R (determinant): switch to use Cholesky( 'LDL' ) and
+	its diagonal
+
+2008-04-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dMatrix.R (Summary): short-cut for prod(<sparse>)
+
+	* R/not.R: fix !<"U"-diag-ltrMatrix> ; drop {R < 2.6.0}-branch
+
+	* R/Auxiliaries.R (tT2gT): fix for "U"-diag-ltTMatrix
+
+	* R/AllClass.R: ltTMatrix validity: call (more stringent) tTMatrix_validate
+
+2008-04-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R (Ops.x.x): aux.function, not just for (dMatrix,dMatrix)
+
+	* R/Ops.R (.do.Logic.lsparse): fix NA case
+
+	* R/Tsparse.R (replTmat): fix r.sym case, using indTri()
+
+	* R/Auxiliaries.R (nnzero): fix special cases, using
+	* R/Auxiliaries.R (indDiag): new utility
+	* R/Auxiliaries.R (indTri): new argument 'diag'
+
+	* R/dMatrix.R: Summmary(<ddenseMatrix>): different branch for dsy*
+
+2008-04-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R: "Summary" methods, and more "Arith" / "Ops"
+
+	* src/Csparse.c (Csparse_drop): preserve (uplo,diag) for
+	".tCMatrix" triangular matrix.
+
+	* R/Auxiliaries.R (drop0): use diagU2N(); according to helpfile,
+	'clx' can be class *or* class representation.
+	(nnzSparse): new.
+	(non0ind): new 'xtendSymm' argument; used in
+	* R/Ops.R:
+
+	* R/pMatrix.R: more efficient determinant() method
+
+2008-04-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* [deactivated] R/Matrix.R (det): det() as base::det(), but with Matrix environment
+	* [deactivated] NAMESPACE: export(det)
+
+	* R/diagMatrix.R (mkDiag): new substitute for diag()
+
+	* R/Auxiliaries.R (nnzero): fix for "diagU2N"-case
+	(as0, as1): new utility.
+
+	* R/Csparse.R (diag, band): need diagU2N()
+
+	* src/dgeMatrix.c (get_norm): return NA when 'x' slot has NA/NaN.
+
+	* R/lMatrix.R: coerce(nMatrix |-> lMatrix) fix
+
+	* R/Ops.R (Compare): fix <nsp> o <nsp> case
+
+	* R/nsparseMatrix.R, R/pMatrix.R: is.na() method
+
+2008-04-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (signPerm): new utility for
+	* R/Auxiliaries.R (detSparseLU): determinant() via sparseLU
+
+	* src/dsCMatrix.c (dsCMatrix_LDL_D): suppress 'CHOLMOD warning';
+	since we have our own error handler (and can use tryCatch() from R).
+
+2008-04-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgTMatrix.R (image): ha! set col=NA if lwd is small -- very nice!
+
+	* R/dsCMatrix.R (determinant): use tryCatch() and switch to lu()
+	when not positive definite.
+
+	* R/Auxiliaries.R (asTri): new auxiliary
+	(non0.i): make *much* faster for Tsparse with many non-zero
+	entries; add 'uniqT = TRUE' argument to be used when sorting is undesired.
+
+	* tests/Class+Meth.R (dotestMat): now build on checkMatrix() from
+	test-tools.R , see below
+
+	* R/dMatrix.R: fix "Summary" method: + diagU2N()
+
+	* NAMESPACE, R/Matrix.R: add mean() method
+
+2008-04-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgTMatrix.R (image): allow to *not* take abs(), and use
+	cold-hot colors; try *changed* default useAbs = FALSE
+	* man/image-methods.Rd:  nice examples
+
+2008-04-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* inst/test-tools.R (checkMatrix): new function for modularizing part
+	of tstMatrixClass() in tests/Class+Meth.R
+
+	* R/dsCMatrix.R: coercion from "matrix"
+	* R/ltTMatrix.R, R/ntTMatrix.R: ditto (change it).
+
+	* tests/Class+Meth.R (tstMatrixClass): some cleanup;
+	add test for as(matrix(,0,0), <class>)
+
+2008-04-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dgeMatrix.c (dgeMatrix_determinant): for n == 0,
+	work as determinant(matrix(,0,0)).
+
+	* src/dgCMatrix.c (dgCMatrix_LU): return {L,U} as dtCMatrix
+	* man/sparseLU-class.Rd: ditto
+
+	* R/dgCMatrix.R (determinant): method building on lu()
+	* R/sparseMatrix.R, Matrix.R, ...: ditto
+
+	* R/Auxiliaries.R (mkDet): auxiliary for determinant()
+
+2008-04-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (summary<sparseMatrix>): no 'x' column for
+	pattern matrices.
+
+2008-04-02  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dense.c (dense_to_Csparse): all declarations *before*
+	R_CheckStack(); needed e.g. for ancient gcc 2.96.
+
+
+2008-03-29  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-9 --- need to release
+	for R-devel (and R 2.7.0 alpha soon).
+
+	* R/AllClass.R: drop "double" from "atomicVector" class union
+
+	* R/AllGeneric.R (rcond): check for base::rcond instead of R version
+	* R/dgeMatrix.R: ditto
+
+	* R/sparseMatrix.R (summary): count NAs
+
+	* inst/doc/Intro2Matrix.Rnw: changes, aim for *one* introduction.
+
+2008-03-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllGeneric.R: rcond(., norm) instead of rcond(., type), in
+	order to become compatible to new R 2.7.0 base::rcond().
+
+2008-03-25  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version,Date): 0.999375-8 --- released to CRAN
+
+	* R/diagMatrix.R (Ops): fix newly introduce bug in <.di> o <numeric>
+
+	* inst/test-tools.R (isValid): new utility, used much in
+	* tests/simple.R:
+
+	* man/BunchKaufman-methods.Rd: added too
+
+2008-03-24  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dsyMatrix.R: add BunchKaufman() methods.
+	* R/dspMatrix.R:
+
+	* src/init.c: add dsyMatrix_trf
+
+2008-03-23  Douglas Bates <bates@stat.wisc.edu>
+
+	* DESCRIPTION (Version): release 0.999375-7
+	* src/CHMfactor.c (CHMfactor_update): fix
+
+2008-03-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dsCMatrix.c (dsCMatrix_LDL_D): cleanup, also using
+	internal_chm_factor().
+
+	* R/AllGeneric.R: do *not* define a "chol" generic
+		(but rather use the implicit one *without* making pivot
+		part of the signature)
+	* R/*.R: drop the 'pivot' from chol's signature and make
+		'pivot=FALSE' a default argument of method definitions.
+
+	* .Rbuildignore: add 'wrld_1deg': I.e. do not put it into released
+	version of Matrix
+
+2008-03-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R (.T.2.n): drop 0's before coercion to "nMatrix"
+
+	* R/sparseMatrix.R (is.na): new simple method
+	* R/denseMatrix.R (is.na): ditto.
+
+	* R/diagMatrix.R (.symDiagonal): newly exported utility.
+
+	* R/diagMatrix.R (Ops): <diag> * <numeric> should not become dgeMatrix!
+
+	* src/UFsparse_download.sh: -->
+	* src/CHOLMOD/: update to CHOLMOD version 1.6 (Nov.2007)
+
+2008-03-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dsCMatrix.c (dsCMatrix_LDL_D): even faster utility with same
+	functionality; barely tested in
+	* tests/factorizing.R
+
+	* src/Csparse.c (diag_tC): new functionality to enable faster
+	determinant(<dsCMatrix>, .) in
+	* R/dsCMatrix.R
+
+2008-03-17 18:53  Douglas Bates <bates@stat.wisc.edu>
+
+	* R/CHMfactor.R, inst/include/Matrix.h, inst/include/Matrix_stubs.c,
+	  src/CHMfactor.c, src/CHMfactor.h,
+	  man/CHMfactor-class.Rd, src/init.c, tests/factorizing.R:
+	  Log-determinant of the parent matrix from a CHMfactor object as
+	  chm_factor_ldetL2; documentation and support
+
+2008-03-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dsCMatrix.R: enable determinant(<dsCMatrix>, .) via chol(.)
+
+2008-03-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dsCMatrix.R: setAs(., "dsCMatrix") but with a deprecation
+	warning.
+
+2008-03-13  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version, Date): bug-fix release 0.999375-6
+
+	* R/diagMatrix.R (diag2tT.u): utility to be smarter in
+	  <diagonal> o <sparse_triangular>
+	  setAs(., "nMatrix") added.
+
+	* R/diagMatrix.R (Diagonal): Diagonal(4, x=3) now works too
+
+	* R/Auxiliaries.R (.diagU2N): more careful coercion in 2 steps
+		new argument 'checkDense = FALSE'.
+
+
+2008-03-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dgeMatrix.c (dgeMatrix_exp): fix the octave-origin bug in the
+	back-permutation of the matrix exponential.
+
+	* tests/matr-exp.R: test the fix (for an example where expm() was wrong).
+
+	* DESCRIPTION (Date,Version): ready to release 0.999375-5
+
+	* tests/simple.R: testing diagN2U
+
+2008-03-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (diagN2U): interface to
+
+	* src/Csparse.c (Csparse_diagN2U): .Call()able SEXP version of chm_diagN2U()
+
+	* tests/matprod.R: test for triangularity preserving <dtC> %*% <dtC>
+
+2008-03-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/chm_common.c (chm_diagN2U): new utility.
+
+	* src/Csparse.c (Csparse_Csparse_crossprod, Csparse_Csparse_prod):
+	make use of chm_diagN2U() and hence now preserve triangularity and
+	unit-triangularity.
+
+	* DESCRIPTION (LicenseDetails): new; such that 'License:' becomes "canonical"
+
+2008-03-04  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R (subDiag): fix when x[..] became a vector
+
+	* src/Tsparse.c (Tsparse_diagU2N): new utility, necessary for e.g.
+	* src/Csparse.c (Csparse_crossprod): use [CT]sparse_diagU2N() !!
+
+	* R/Auxiliaries.R (.diagU2N): make use of new Tsparse_diagU2N
+
+	* R/Ops.R ("-" (<sparseMatrix>)): use diagU2N()
+
+	* src/chm_common.c (AS_CHM_FINISH): add note about problem
+	for triangular (diag = "U").
+
+2008-02-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (as_Csparse2): drop this, replacing by
+	* R/bind.R:  .Call(dense_to_Csparse, *)
+
+2008-02-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (Matrix): no longer use coercions to specific classes
+		(since we are discouraging them in user code).
+
+	* tests/*.R: also replaces coercions to specific classes by
+	coercions to super classes.
+
+	* R/denseMatrix.R (.dense2C): simplified by using forceSymmetric()
+
+
+2008-02-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* man/CAex.Rd: example: coerce to symmetric*, not dsC*
+
+	* src/dense.c (dense_band): generalized from ddense_band
+
+	* R/ddenseMatrix.R (.trilDense,.triuDense, .bandDense):
+	  now for "denseMatrix" (instead of just "ddense*"); much
+	  simplified setMethod()s for these.
+
+	* src/dense.c (dense_to_symmetric): generalized from ddense_*
+
+2008-02-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllGeneric.R: forceSymmetric() generic: fast no-checking
+	version of as(*, "symmetricMatric").
+
+	* src/dense.c (ddense_to_symmetric): add 'symm_test' argument, and
+	* R/symmetricMatrix.R: set it TRUE in coercion to "symmetricMatrix"
+
+2008-02-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (subset.ij): utility, as first step to faster
+	   M [ <ij-matrix> ] indexing.
+
+	* R/Matrix.R (.M.sub.i.logical): M[ <logical> ] : try better.
+
+	* src/dense.c (ddense_symmpart, ddense_skewpart): new functions
+	for more efficient symmpart() and skewpart() methods.
+
+	* src/Mutils.c (equal_string_vectors): utility
+
+	* src/dense.c (ddense_to_symmetric): new function used in
+
+	* R/symmetricMatrix.R: setAs(., "symmetricMatrix")
+
+	* R/sparseMatrix.R, et_al (isSymmetric): add '...' to formals, in
+	order to match the generic (and evade .local(..)).
+
+	* R/dsCMatrix.R: dgC -> dsC: use C code!
+
+	* NAMESPACE, R/AllGeneric.R (symmpart, skewpart): new functions
+	as per TODO
+
+	* R/Auxiliaries.R (setZero, all0Matrix): new utilities
+
+	* R/symmetricMatrix.R: obvious symmpart(), skewpart() methods
+
+
+2008-02-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R (.Arith.Csparse): use diagU2N when needed in triangular
+
+	* R/Auxiliaries.R (non0.i): take out of non0ind
+
+	* R/ddenseMatrix.R (.trilDense, .triuDense, .bandDense):
+	make tril(), triu(), band() work for "matrix" and all "dense*"
+
+	* R/triangularMatrix.R (.tri[lu].tr): need .diagU2N(*)
+	* tests/simple.R: test the fix above
+
+	* R/sparseMatrix.R ([): simplification: no coerce to <general>
+		before we use as(., <Tsparse>)[...] anyway
+
+	* R/Rsparse.R (.viaC.to.R): mostly instead of .viaC.to.dgR()
+
+	* R/triangularMatrix.R (isTriangular): methods for all subclasses
+	instead of "triangularMatrix" -- just to disambiguate
+
+2008-02-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/Class+Meth.R (dotestMat): add m[FALSE, FALSE] { <-> TODO}
+	* tests/indexing.R: example that fails above
+
+2008-01-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (.M.sub.i.2col): fix for logical matrix indexing
+	* R/Tsparse.R (.TM.sub.i.2col, .TM.repl.i.2col): ditto;
+		now, M[lower.tri(M)] and  M[lower.tri(M)] <- v  work better
+
+	* src/Tsparse.c (Tsparse_to_tCsparse): new fast utility.
+	* src/Tsparse.h, init.c: ditto
+	* R/Auxiliaries.R (isTriT): new; faster than going via Csparse
+	     both isTriC() and isTriT() now return TRUE with "kind" or FALSE.
+	* R/sparseMatrix.R (isTriangular): hence simplified
+
+2008-01-24  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R (.Arith.Csparse): new utility factored out of former
+	  <dgC> o <dgC>, extended for triangular and also used in  <dtC> o <dtC>.
+
+2008-01-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/factorizing.R (checkSchur): and more tests for checking Schur()
+
+	* inst/test-tools.R (isOrthogonal): new function; also file restructured
+
+2008-01-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/ngTMatrix.R: allow as(<numeric matrix>, "ngTMatrix") and hence
+	coercion to "nMatrix" and "pMatrix"
+
+	* R/AllClass.R: "Schur" class;  "number" class union
+	* man/number-class.Rd:
+	* man/Schur-class.Rd:
+
+	* R/eigen.R (.dgeSchur): utility, and return "Schur" class
+	(.simpleSchur): Schur() method for diagonal matrices
+	(.triSchur):    Schur() method for triangular matrices
+	(Schur.sym):    Schur() for symmetric matrices {building on eigen()}.
+
+
+2008-01-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dgCMatrix.c (dgCMatrix_QR): set @Dim slot (as per doc)
+
+2008-01-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/CHMfactor.R (solve): method for b="numeric", but also b="ANY"
+		in order to ensure 'system = *' is not lost;
+		formals()$system instead of cut&paste.
+	* tests/factorizing.R: test solve(<CHM..>, <numeric>)
+
+2008-01-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Date): make ready for release --> 0.999375-4
+
+	* R/dgeMatrix.R: fix rcond() method for "dgeMatrix".
+
+2007-12-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/pMatrix.R: as(*, "matrix") now returns 0/1 *integer* matrix,
+		and hence does as.vector(.).
+	* man/pMatrix-class.Rd: docs
+	* R/sparseMatrix.R: fix for printing "integer sparse"
+
+	* tests/Class+Meth.R (tstMatrixClass): test M[FALSE], M[2] etc
+
+	* R/Matrix.R and others: use "exact" function argument list for
+		both "["   : (x, i,j, ..., drop)
+		and  "[<-" : (x, i,j, ..., value)
+
+	* R/denseMatrix.R: M[i] and M[i] <- v  (i vector) now work
+	* R/Tsparse.R (replTmat):    ditto
+	* R/diagMatrix.R (replDiag): ditto
+	* R/Csparse.R (replCmat):    ditto {was it worth the pain?}
+	* tests/indexing.R: testing the above
+
+2007-12-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (cov2cor): method for sparse matrices
+
+	* R/diagMatrix.R ([<-): fix   D[ cbind(i,j) ] <- v
+
+	* R/bind2.R: fix for Rsparse* and rbind2(dense,dense)
+
+	* tests/Class+Meth.R: test cbind2, rbind2  and  diag<-
+
+2007-12-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R: "generic" cov2cor() method
+
+	* R/nearPD.R: new 'only.values', 'keepDiag' arguments;
+		speed up Q %*% D %*% t(Q)
+	* tests/dpoMatrix.R: test nearPD()
+
+2007-12-05  Doug Bates and Martin Maechler
+
+	* R/sparseMatrix.R: xtabs(*, sparse=.) function; an extention of
+	stats::xtabs() allowing to create sparse matrices.
+
+2007-10-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): *-4 (released *-3 two days ago)
+
+2007-10-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/pMatrix.R: solve(<Matrix>, <pMatrix>)
+
+2007-10-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/LU.R: solve() method for "denseLU"
+
+2007-10-01  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-3 preparing for release
+
+	* R/AllGeneric.R: simplify  if(.) .. else .. for R <= 2.5.1
+
+	* R/Matrix.R (Matrix): .Internal(matrix(..)) different for R >= 2.7.0
+
+2007-09-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/pMatrix.R (.m.mult.pMat): fix <matrix> %*% <pMatrix>,
+	  thanks to Kasper Kristensen.
+	* tests/matprod.R: regression test for that.
+
+2007-09-23 17:32  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4778] R/AllGeneric.R: Check R version before defining generics for
+	  primitives
+
+2007-09-13  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/denseMatrix.R (rcond): method
+	* R/sparseQR.R (rcond): method, use x or t(x)
+
+2007-09-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgeMatrix.R (rcond): method: work via qr.R() for non-square
+	matrices.
+	* R/sparseMatrix.R: Ditto for all other rcond() method definitions.
+
+	* man/rcond.Rd: mention the more general definition, and add
+	example for non-square matrices.
+
+	* man/chol.Rd: new file, for the S4 chol() generic and all methods.
+
+2007-09-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseQR.R: add qr.R() method [to be used for rcond()]
+
+2007-09-01  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R ([<-): add (Matrix,missing,ANY,Matrix) etc
+	* tests/indexing.R: add new regression for the above cases.
+
+2007-08-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Mutils.h (__sun): clause for alloca.h on Solaris
+
+2007-08-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Date, Version): 0.999375-2
+
+2007-08-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/HBMM.R (readMM): make work for pattern matrices as well
+
+2007-08-14 13:07  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4730] src/Mutils.h: declare alloca
+	* [r4734] NAMESPACE, R/AllGeneric.R, R/Csparse.R, R/HBMM.R, R/Tsparse.R,
+	  R/dgCMatrix.R, R/dgTMatrix.R, R/dsCMatrix.R, R/dsTMatrix.R,
+	  man/externalFormats.Rd, src/Csparse.c, src/Csparse.h, src/DEPS.mkf,
+	  src/HBMM.c, src/HBMM.h, src/Mutils.h, src/SOURCES_C.mkf, src/init.c,
+	  src/mmio.c, src/mmio.h: Remove deprecated function writeHB and its
+	  methods; switch writeMM to use CHOLMOD code; repair readMM
+
+2007-08-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/nearPD.R, man/nearPD.Rd (nearPD): new function built on Jens
+	Oehlschlaegel's ... result type still to be discussed!
+
+2007-08-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* man/image-methods.Rd: new, combining all image() methods
+
+2007-08-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgCMatrix.R: define qr() and lu() methods for "sparseMatrix"
+	to work via dgC...
+
+	* R/Matrix.R (Matrix): special treatment for "table" (S3)
+
+2007-08-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgTMatrix.R (image): change defaults to
+		aspect = "iso", colorkey = FALSE
+
+2007-08-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dsyMatrix.c (dsyMatrix_matrix_mm): 'b' might be matrix;
+	must copy its *expanded* x slot before LAPACK call.
+
+	* tests/matprod.R: test the last days' changes.
+
+2007-08-06 16:43  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4712] inst/include/Matrix_stubs.c: Change R_cholmod_printf in stubs
+	  as well as in sources
+	* [r4713] src/dsyMatrix.c: Duplicate the contents of the RHS before
+	  Lapack call
+
+2007-08-03  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (%*%, crossprod, tcrossprod): add method for
+		("Matrix", "matrix") which is needed in some cases.
+	Ditto for solve().
+
+	* R/colSums.R (.as.dge.Fun): need ddenseMatrix methods to avoid
+	infinite recursion in dispatch for some cases.
+
+2007-08-02 08:48  Martin Maechler <maechler@stat.math.ethz.ch>
+
+	* [r4693] src/chm_common.c: R_cholmod_printf() instead of Rprintf() just
+	  so pointers match
+
+2007-08-02  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Date): set ready for release -- 0.999375-1
+
+2007-08-01 15:44  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4686] inst/include/Matrix.h, inst/include/Matrix_stubs.c,
+	  src/chm_common.c, src/chm_common.h: Change API for
+	  numeric_as_chm_dense and N_AS_CHM_DN
+
+2007-08-01  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dtrMatrix.c (dtrMatrix_matrix_mm): fix dimensionality check (!)
+	* tests/matprod.R: regr.test for it
+
+2007-07-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dMatrix.R: fix from Brian for   Math2(., digits = "missing")
+	* tests/group-methods.R: and regression-test it
+
+2007-07-19 19:45  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4642] inst/include/Matrix.h, inst/include/Matrix_stubs.c,
+	  inst/include/cholmod.h, src/chm_common.c, src/init.c: Export
+	  triplet_to_sparse, documentation, use typedefs
+
+2007-07-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* man/dpoMatrix-class.Rd: added 'corMatrix' example
+
+	* src/dsyMatrix.[ch] (dsyMatrix_as_matrix): new 'keep_dimnames' arg
+	* src/dtrMatrix.[ch] (dtrMatrix_as_matrix): ditto
+	* src/init.c, R/dsyMatrix.R, R/dtrMatrix.R, R/lgTMatrix.R: ditto
+
+	* R/lsparseMatrix.R: bug fix in "all" method
+	* R/Ops.R (.do.Logic.lsparse): "|" bug in borderline case
+
+	* R/dsyMatrix.R (coerce->dsTMatrix): (i,j) slots should *not* have names
+	* R/ngTMatrix.R (coerce->ngTMatrix): ditto;
+		+ matrix |-> nMatrix coercion
+	* R/pMatrix.R: + setAs()  to dMatrix and from nMatrix
+	* man/pMatrix-class.Rd: ditto
+
+	* R/Matrix.R (Summary): method for non-dMatrix
+
+	* tests/Class+Meth.R (extraValid): new check about "dirty" slots
+	* tests/Class+Meth.R (tstMatrixClass): test norm(.);
+		test all Summary methods.
+
+2007-07-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgeMatrix.R (norm, rcond): methods for 'matrix'
+
+2007-07-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (norm): simple methods for sparseMatrix
+
+	* R/pMatrix.R (t?crossprod): methods for pMatrix
+
+2007-07-10  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/dgeMatrix.c (dgeMatrix_colsums): Get the logic straight.
+
+2007-07-09 20:45  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4579] src/dgeMatrix.c: Untangle horrible code in dgeMatrix_colsums
+	  trying to fix a subtle bug - which has been somewhere else.
+
+2007-07-09 19:43  Martin Maechler <maechler@stat.math.ethz.ch>
+
+	* [r4578] src/dgeMatrix.c: "cleaned" dgeMatrix_colsums() - but did not
+	  solve the bug
+
+2007-07-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dgCMatrix.c (compressed_to_TMatrix):
+
+2007-07-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Csparse.c (Rsparse_validate): new, to have some validity
+	checking for RsparseMatrix
+	* src/dgCMatrix.c (xRMatrix_validate): ditto
+	* src/dtCMatrix.c (tRMatrix_validate): ditto
+
+2007-07-07  Douglas Bates <bates@stat.wisc.edu>
+
+        * [r4567] R/AllClass.R: Slots already in RsparseMatrix were redefined in
+          lgRMatrix
+        * [r4568] DESCRIPTION: Prepare for bug-fix release
+        * [r4570] src/CHOLMOD/Check/cholmod_write.c: Include cholmod_matrixops.h
+          for declaration of cholmod_symmetry
+
+2007-07-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375 merged into the trunk; ready for
+	release.
+
+2007-07-06 14:11  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4559] src/iohb.c, src/iohb.h: Remove Harwell-Boeing input/output
+	  functions - no longer used
+	* [r4560] src/HBMM.c, src/Mutils.c, src/dgTMatrix.c, src/dgeMatrix.c,
+	  src/dspMatrix.c, src/dsyMatrix.c, src/dtCMatrix.c,
+	  src/factorizations.c, src/sparseQR.c: Replace most calls to Calloc by
+	  Alloca
+
+2007-07-06 13:14  Martin Maechler <maechler@stat.math.ethz.ch>
+
+	* [r4558] inst/doc/Comparisons.Rnw, src/CHMfactor.c, src/Csparse.c,
+	  src/Tsparse.c, src/chm_common.c, src/chm_common.h, src/dense.c,
+	  src/dgCMatrix.c, src/dsCMatrix.c, src/dtTMatrix.c, src/sparseQR.c,
+	  src/t_gCMatrix_colSums.c: more R_CheckStack()s
+
+2007-07-05 18:12  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4550] inst/include/Matrix.h: Add the macro N_AS_CHM_DN to "alloca"
+	  the required amount of memory then call M_numeric_as_chm_dense.
+	* [r4556] src/Mutils.h, src/dgCMatrix.c: Define and use the Alloca macro
+	  (like Calloc but calling alloca)
+
+2007-07-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (printSpMatrix): renamed from prSpMatrix()
+	and extended with more sophisticated 'col.names' option.
+	* NAMESPACE: export  printSparseMatrix()
+	* man/printSpMatrix.Rd: document, incl. examples
+
+2007-07-04 16:21  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4543] src/cs_utils.c, src/cs_utils.h, src/dgCMatrix.c,
+	  src/dtCMatrix.c, src/sparseQR.c: CSP typedef for *cs and macro
+	  AS_CSP. API change - pass the empty structure to Matrix_as_cs.
+
+2007-07-04  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.99875-4
+
+	* tests/Class+Meth.R (tstMatrixClass): add dimnames, and hence test
+	some dimnames perservation.
+
+	* R/dsTMatrix.R (t-method): keep dimnames
+	* R/dtTMatrix.R:  ditto
+
+	* R/sparseMatrix.R (prSpMatrix): print colnames when non-trivial
+	and ncol(.) < 10
+
+	* src/cs_utils.c: drop check_class() and use Matrix_check_class()
+	from Mutils.h
+
+	* src/lgCMatrix.c ([ln]csc_to_matrix): no longer lose dimnames,
+	e.g. in as(<ngCMatrix>, "matrix")
+
+2007-07-01 13:27  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4529] .: Create a branch for the API changes from the 0.99875
+	  series to the 0.999375 series
+	* [r4530] DESCRIPTION, inst/include/Matrix.h,
+	  inst/include/Matrix_stubs.c, src/CHMfactor.c, src/Csparse.c,
+	  src/Mutils.h, src/Tsparse.c, src/chm_common.c, src/chm_common.h,
+	  src/dense.c, src/dgCMatrix.c, src/dsCMatrix.c, src/dtTMatrix.c,
+	  src/t_gCMatrix_colSums.c: API change - pass the empty structure to the
+	  as_cholmod_x functions
+
+2007-06-30 09:05  Martin Maechler <maechler@stat.math.ethz.ch>
+
+	* [r4527] trunk/Matrix/DESCRIPTION, trunk/Matrix/NAMESPACE,
+	  trunk/Matrix/inst/doc/Comparisons.Rnw: add session- and hardware-info
+	  to Comparisons
+
+>>>>>>> .merge-right.r4561
+2007-06-29  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.99875-3 ready to be released.
+
+	* R/sparseMatrix.R (spMatrix): make spMatrix(3,4) working
+
+	* R/AllGeneric.R: set "Math" (and "Math2") group generics in a way
+	that should also work in a future version of R.
+
+2007-06-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* NAMESPACE, R/AllClass.R: "xsparseVector" class union.
+
+	* R/sparseVector.R: more *sparseVector coercions, notably for
+	non - double ones.
+
+2007-06-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/colSums.R: new file for all (col|row)(Sums|Means) methods,
+	  notably the new ones building on the new .Call(.)s:
+
+	* src/dgCMatrix.c (DEF_gCMatrix_COLSUMS): use to define
+	all 4 of [dlin]gCMatrix_colSums().
+
+2007-06-18 16:12  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4472] src/Syms.h, src/init.c: Added Matrix_lengthSym
+	* [r4473] src/dgCMatrix.c: Modified dgCMatrix_colSums for sparseVector
+	  result
+
+2007-06-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/kronecker.R: fix typo (could lead to inf.recursion)
+	* test/simple.R: testing that
+
+	* R/sparseMatrix.R (prSpMatrix): change to be used as print()
+	method as well (which can have arguments, show() can't).
+
+2007-06-16 15:52  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4466] R/dgCMatrix.R, src/dgCMatrix.c, src/dgCMatrix.h, src/init.c:
+	  added dgCMatrix_colSums for [col,row][Sums,Means]
+
+2007-06-15 23:15  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4460] R/sparseMatrix.R, man/dgCMatrix-class.Rd, src/dgCMatrix.c,
+	  src/dgCMatrix.h, src/init.c: added lm.fit.sparse (unexported),
+	  coercion of "factor" to "dgCMatrix" and dgCMatrix_cholsol
+	* [r4461] R/AllClass.R, man/sparseMatrix-class.Rd: draft "indicators"
+	  class
+	* [r4463] R/sparseMatrix.R, man/dgCMatrix-class.Rd,
+	  man/sparseMatrix-class.Rd: Don't need an "indicators" class - use the
+	  row names to store the levels - duh!	Added an example.
+
+2007-06-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Csparse.c (Csparse_validate): check for *repeated* entries
+	thanks to example from Christian Buchta; with a test here:
+	* tests/simple.R:
+
+2007-06-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (callGeneric): another fix, needed for some cases
+	of colSums(*, sparseResult = TRUE)
+
+2007-06-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/lsparseMatrix.R, R/ldenseMatrix.R (all, any): change default to
+	'na.rm = FALSE' as "everywhere" else in R.
+
+2007-06-05 Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4421] src/CSparse_install.sh: Modify for new organization of
+	  CSparse package
+	* [r4425] src/UFsparse_download.sh: Update to version 3.0.0 of
+	  SuiteSparse
+	* [r4426] src/Makefile: add ./UFconfig to the include path for
+	  compilation
+	* [r4427] src/cs.[ch]: update to CSparse version 2.2.0
+	* [r4428] inst/doc/UFsparse/* src/{AMD,CHOLMOD,COLAMD}/*
+	  src/UFconfig/UFconfig.h: Update to version 3.0.0 of SuiteSparse
+
+2007-06-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (emptyColnames): + argument msg.if.not.empty, used in
+	* R/sparseMatrix.R (prSpMatrix): now gives a message about
+	suppressed column names.
+
+2007-06-04 17:13  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4418] src/Csparse.c, src/HBMM.c, src/Mutils.c, src/Mutils.h,
+	  src/Tsparse.c, src/chm_common.c, src/chm_common.h, src/dgCMatrix.c,
+	  src/dgeMatrix.c, src/dpoMatrix.c, src/dpoMatrix.h, src/dppMatrix.c,
+	  src/dppMatrix.h, src/dsCMatrix.c, src/dspMatrix.c, src/dspMatrix.h,
+	  src/dsyMatrix.c, src/dsyMatrix.h, src/dtpMatrix.c, src/dtrMatrix.c:
+	  Remove warnings after change to const char* CHAR
+
+2007-06-04 17:11  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4417] inst/include/Matrix_stubs.c, inst/include/cholmod.h: Corrected
+	  type of M_cholmod_ssmult
+
+2007-06-03 14:42  Douglas Bates <bates@stat.wisc.edu>
+
+	* [r4412] inst/include/Matrix_stubs.c, inst/include/cholmod.h,
+	  src/init.c: Yet another cholmod export - cholmod_ssmult
+
+2007-05-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* NAMESPACE: exported drop0(), since
+	* man/drop0.Rd: I have seen several cases, I really wanted to use
+	it, so our users may want too.
+
+2007-05-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* man/colSums.Rd: separately document colSums() etc, since these
+	have the extra argument 'sparseResult'.
+
+2007-05-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (spMatrix): utility (T)sparse Matrix constructor;
+	* man/spMatrix.Rd: docu., including examples
+
+	* R/Auxiliaries.R (sp.colMeans): etc, using a patched callGeneric(),
+	in order to make colMeans() etc fast *and* correct.
+	* R/sparseVector.R (replSPvec): "[<-" functionality for
+	sparseVectors; tested in
+	* tests/simple.R:
+
+2007-05-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (print.sparseSummary): and summary() method for
+	(very) sparse Matrices; output similar to Matlab's print().
+
+2007-05-17  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/HBMM.c (Matrix_writeMatrixMarket): Write 1-based, not
+	0-based, indices (Jose Quesada <quesada@gmail.com>).
+
+2007-05-16  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/CHMfactor.R: Added solve methods for a CHMfactor object.
+
+2007-05-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (sparsapply): new utility, much faster than
+	tapply1() for large sparse matrices.
+
+2007-05-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (dim<-): reshape now via sparseVector.
+
+	* R/sparseVector.R: methods and function for
+	* R/AllClass.R: new "sparseVector" class and daughters.
+	* NAMESPACE: export new classes
+
+2007-05-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.99875-1
+	* src/Makefile.win: also remove Lapack code from here (cf. 04-25).
+
+2007-05-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R ([, Tsparse): fix last case: *duplicated*, symmetric
+	indexing
+	* tests/indexing.R: test set for that.
+
+2007-05-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R (replTmat): fix the case of *duplicated* index
+	entries.
+	* tests/indexing.R(out): add regression test for it
+
+2007-04-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/(l(dense|sparse))?Matrix.R (!): use 'x', not 'e1' as argument
+	name for "!" method definitions.
+
+2007-04-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R (intI): new utility, used for "[" :
+		Cleanup up there, and fixes for duplicated indices - more TODO!
+
+	* tests/indexing.R(out): more tests
+
+2007-04-25  Douglas Bates  <bates@stat.wisc.edu>
+
+	* DESCRIPTION,src/Makefile: require R>= 2.5.0 and remove Lapack
+	code that is now part of the R Lapack library.
+
+	* src/init.c,inst/include/{Matrix_stubs.c,cholmod.h}:export
+	cholmod_factorize_p (used in lme4 for GLMMs and NLMMs).
+
+2007-04-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (image): method for all Matrices, not just sparse ones.
+
+2007-04-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (tapply1): unname(.) -> colSums() etc don't end
+	up with extraneous names '0'...'<n-1>'
+
+2007-04-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgTMatrix.R (mat2dgT): care about NAs
+
+2007-04-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/kronecker.R: triangularity preserving methods
+
+2007-03-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/kronecker.R: new file collecting kronecker() methods in one
+		place.  Goal: become much faster!
+
+2007-03-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dtCMatrix.c (dtCMatrix_solve): use the new code from Kasper
+	Kristensen based cs_spsolve() instead of _lsolve & _usolve which
+	can be much faster.
+
+	* tests/matprod.R: add regression tests for these (upper & lower).
+
+2007-03-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (diff): method for our Matrices.
+
+	* R/sparseMatrix.R (isDiagonal): check dim()!
+
+2007-03-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (dim<-): new method for "reshape()" built on a
+	proposal from Tamas Papp.
+
+2007-03-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllGeneric.R: remove all  if(!isGeneric(.))  clauses
+
+	* R/zzz.R (.onLoad, .onUnload): do *not* leave bind_activation(TRUE);
+	rather define and export  cBind() and rBind() only.
+	--> useRs *must* change code that used to have cbind()/rbind() !!
+
+	* R/bind.R: change tests from cbind() to cBind() and similarly to rBind()
+	* R/bind.Rout.save: ditto
+
+2007-02-16  Douglas Bates  <bates@r-project.org>
+
+	* DESCRIPTION (Date, Version): 0.9975-11 with new date
+	* src/dgCMatrix.c (R_to_CMatrix, compressed_to_TMatrix): remove
+	const modifier on declaration of the array 'valid'
+
+2007-02-12  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/CHMfactor.R: Add image method (coercion to sparseMatrix).
+
+2007-02-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Date, Version): 0.9975-10 with new date.
+
+	* R/Ops.R (Arith): make sure Csparse o Csparse also works for e.g. ntCMatrix
+	* tests/simple.R: test the above and some of these coercions:
+
+	* R/nsparseMatrix.R: coercing "Csparse" to "lsparseMatrix";
+		be careful to avoid infinite recursion, using new coercions in
+	* R/ngCMatrix.R and nsC... and ntC...
+	* R/lsparseMatrix.R: ditto
+
+	* R/SparseM-conv.R: more conversion, notably for triplet matrices.
+
+	* src/dgCMatrix.c (R_to_C_Matrix): port Doug's fix and
+	* R/Rsparse.R: reactivate .Call()s
+
+	* tests/Class+Meth.R: a bit more on actual classes
+
+2007-02-04  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/dgCMatrix.c (compressed_to_TMatrix): fix memory bug using strdup()
+
+2007-02-03  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.9975-10 to upload
+
+	* tests/Class+Meth.R (tstMatrixClass): require coercions to
+	specific classes less unconditionally.
+
+	* R/Auxiliaries.R: get rid of as_Tsparse() and as_Rsparse()
+
+	* R/Tsparse.R (triu): etc, use as(*, "TsparseMatrix") instead of as_Tsparse()
+
+	* R/Rsparse.R (.R.2.T): R-level workaround using compressed_to_TMatrix.
+	* R/Rsparse.R (.R.2.C): R-level workaround since C-level
+	R_to_CMatrix segfaults on one platform.
+	Eliminate most coercion method to *specific* classes, and replace
+	with virtual classes coercions.
+
+
+2007-02-01  Martin Maechler <maechler@stat.math.ethz.ch>
+
+	* src/init.c: export the CHM...._validate() placeholders, since
+	they *are* called.
+
+	* tests/Class+Meth.R (classCanCoerce): and starting to test
+	all as(<from>, <to>)
+
+2007-01-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R ([): more care when subsetting triangular Tsparse
+	* tests/indexing.R: tested now
+	* tests/indexing.Rout.save: updated
+
+	* src/Csparse.c (Csparse_to_dense): use Rkind = -1 for PATTERN to
+	* src/chm_common.c (chm_dense_to_SEXP): return "ngeMatrix" when
+	appropriate.
+
+	* NAMESPACE: export a trivial
+	* R/Matrix.R: drop() Matrix-method
+
+	* R/AllClass.R: moved all prototypes to virtual super classes.
+
+	* R/Rsparse.R: many more coercions to have less exceptions in
+	* tests/Class+Meth.R:
+
+	* R/Ops.R (Compare): tweak for case with NA
+	* tests/simpl.R: hence another 'FIXME' eliminated
+
+2007-01-29  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R (solve): the obvious methods for diagonalMatrix
+	objects.
+
+	* tests/Class+Meth.R (tstMatrixClass): now testing diag(), nnzero(),
+	  and more of "!", "&", "|", all, any; coercions
+
+	* R/Rsparse.R: many coercions (which enable quite a few other
+	methods), thanks to enhancements in
+	* src/dgCMatrix.c (R_to_CMatrix): new, and
+	* src/dgCMatrix.c (compressed_to_TMatrix): now for (d,l,n) ,
+	symmetric & triangular and ..RMatrix objects.
+
+	* src/TMatrix_as.c (Matrix_T_as_DENSE,Matrix_T_as_GENERAL):
+	renamed file from src/dsTMatrix.c;
+	now dealing with symmetric and triangular Tsparse coercions, both
+	to dense and general.
+
+2007-01-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dsTMatrix.c: has now "l" and "n" methods besides the "d" ones.
+
+	* R/Ops.R (Arith): <dgCMatrix> o <numeric> now remains sparse
+	where sensible when the <numeric> is of length > 1.
+
+2007-01-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R ([<-): for M[] <- value: fix length
+
+2007-01-25  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (n2l_Matrix): new, to be used in
+	* R/ndenseMatrix.R: new coercions n* -> l*
+
+2007-01-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/triangularMatrix.R: new file; simple triu() and tril() methods.
+
+	* R/Ops.R ("Logic"): and other "Ops", many updates
+
+2007-01-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Mutils.h (SET_DimNames): new utility
+
+	* R/Auxiliaries.R (nnzero): improved and now exported via
+
+	* NAMESPACE: + nnzero(); length() == prod(dim(.)) method for all "Matrix" objects
+
+2007-01-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R (!): fix typo.
+
+2007-01-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (as_Csparse): and quite a few others:
+		allow to pass class definition --> speedup
+	* R/sparseMatrix.R: apply the above
+
+	* R/Csparse.R: coercion Csparse* to dense* now preserves shape properties.
+
+	* src/Mutils.h (mMatrix_as_geMatrix): new, based on
+	* src/Mutils.c (dup_mMatrix_as_geMatrix): new; generalization of
+	old dup_mMatrix_as_dgeMatrix), eliminating a long-standing "FIXME".
+
+	* src/dense.c (dense_to_Csparse): use new mMatrix_as_geMatrix()
+
+	* R/denseMatrix.R (.dense2C): based on dense_to_Csparse: name it,
+	and use it for "sparse*" as well, since it's faster than the
+	as_Csparse(.) way.
+
+2007-01-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R ("Logic"): more methods, notably an  <lgC> o <lgC> one.
+
+2007-01-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R (.TM.repl.i.2col): new internal function to be used
+	as method for   M[ ij ] <- v
+	* R/Csparse.R:: go via Tsparse for "M[ij] <- v"
+
+	* R/Ops.R: "Compare" for (C|R)sparse: need pointer slot for all
+	FALSE answer
+
+	* R/Csparse.R (replCmat): fix the "all non-zero" case with reordering
+	* tests/indexing.R: test it, and some of the above
+
+2007-01-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (is_duplicatedT): new utility
+
+2007-01-05  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/init.c (R_init_Matrix): export cholmod_scale
+
+2006-12-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/zzz.R (tmp): for R >= 2.5.0, extend formals of our
+	base::as.matrix to (x, ...)
+
+2006-12-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Ops.R ("Arith" etc): move almost all "Ops" methods to new R
+	file; start using "Logic", hence
+
+	* DESCRIPTION (Depends): R >= 2.4.1 (since we want "Logic")
+	* NAMESPACE: import and export "Logic"
+
+2006-12-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/zpotfr.f and dependencies: use LAPACK 3.1 version
+	only needed previously to R version 2.5.0.
+
+2006-12-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Date, Version): 0.9975-8, ready for release
+
+	* R/Tsparse.R (replTmat): fix subassignment of triangular
+	* R/Csparse.R (replCmat): ditto
+	* tests/indexing.R: more tests, incl the above fix
+
+2006-12-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (drop0): extend for non CSparse
+	* R/Auxiliaries.R (diagU2N): should work for all sparseMatrix
+
+	* src/Csparse.c (Csparse_to_Tsparse, Csparse_general_to_symmetric):
+		use uplo correctly (!); other places: use uplo_P() macro
+
+	* R/Csparse.R (replCmat): call diagU2N() when needed
+	* R/Tsparse.R (replTmat): ditto
+
+	* src/dtCMatrix.c (tCMatrix_validate): new
+	* src/dtTMatrix.c (tTMatrix_validate): new, used in
+	* R/AllClass.R: for validity of dtC, dsC, and dtT, dsT.
+
+	* R/diagMatrix.R (replDiag): to use in [<-
+
+2006-12-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (as_Csparse2, as_geSimpl): new functions;
+		also more general diagU2N().
+
+2006-12-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/bind2.R: new file for all cbind2(), rbind() methods moved here
+	from R/<foo>Matrix.R files. Better diagonal & improved sparse methods.
+
+2006-12-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/bind.R: a few more cases
+	* R/Auxiliaries.R (.M.kind): also work for atomic vectors
+
+	* R/denseMatrix.R (cbind2/rbind2): moved here (and generalized) from
+	* R/ddenseMatrix.R (cbind2/rbind2)
+	* R/Tsparse.R (replTmat): final(?!) fix for "[<-" ..
+	* tests/indexing.R
+	* tests/indexing.Rout.save: updated
+
+2006-12-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R (replTmat): fixed a remaining "[<-" bug in
+	* tests/indexing.R
+
+2006-12-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (prSpMatrix): "." alignment much improved:
+	align with proper position of "0", i.e., right for integers.
+	argument 'align' by default is "fancy".
+
+2006-12-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R: delegate "Compare" to "Csparse.."
+	* R/Csparse.R: and fix "Compare" for more cases.
+	* tests/Class+Meth.R: test some of these (m == m, m != m)
+
+2006-12-13  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/lsparseMatrix.R: all() and any() methods
+	* R/ldenseMatrix.R:	 ditto
+	* NAMESPACE, R/Matrix.R: ditto
+
+	* man/all-methods.Rd: document them minimally
+
+	* tests/simple.R: add a few examples for these
+
+2006-12-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R ([): fix long standing typo in symmetric case
+	* man/dsCMatrix-class.Rd: add example exhibiting the above case
+
+2006-12-10  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/CHMfactor.c (CHMfactor_to_sparse): change LDL factorization
+	to LL before converting to a sparse matrix. (The LDL form can be
+	converted to a sparse matrix but it is implicitly a unit
+	triangular matrix and a diagonal matrix overwritten on the diagonal.)
+
+2006-12-09  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/chm_common.c (chm_factor_to_SEXP): allocate and fill the Dim slot.
+
+2006-12-08  Douglas Bates  <bates@stat.wisc.edu>
+
+	* DESCRIPTION (Version): updated -> release 0.9975-7
+	* src/{init.c,chm_common.c}, inst/include/*: export cholmod_analyze_p
+
+2006-11-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R (%*%): write a direct [diag o Csparse] method
+
+2006-11-29  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/dgeMatrix.c (dgeMatrix_solve): Check error code from dgetri.
+	* tests/dg_Matrix.R: Add Barry Rowlingson's test of a matrix that
+	is exactly singular.
+
+2006-11-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Date): updated -> release 0.9975-6
+
+2006-11-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Csparse.R (replCmat): symmetric indexing of symmetric matrix
+	now returns symmetric.
+
+	* R/zzz.R ("diag<-"): replace "diag<-" in base for R <= 2.4.x
+
+	* R/Matrix.R (.M.sub.i.2col):  new, for  M[ cbind(i,j) ] indexing.
+	* R/Matrix.R (.M.repl.i.2col): new, for  M[ cbind(i,j) ] <- value
+
+	* R/Auxiliaries.R (.type.kind): added
+
+2006-11-04  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/cs.[ch]: updated to CSparse Version 2.0.3 by simply
+	running src/CSparse_install.sh
+
+	* R/denseMatrix.R: "[": keep symmetric on symmetric indexing.
+
+2006-11-03  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dsCMatrix.c (dsCMatrix_Csparse_solve): new
+	* R/dsCMatrix.R (solve): "fully-sparse" using the above.
+
+	* R/AllClass.R: "pMatrix" now also inherits from "generalMatrix"
+
+	* tests/Class+Meth.R (tstMatrixClass): now assure
+	the (important in method programming) property :
+
+		###>>  Every "Matrix" is either
+		###>>  "general*", "symmetric*", "triangular*" or "diagonal*"
+
+		(where "*" stands for "Matrix")
+
+	* R/Auxiliaries.R (diagU2N): now .Call()s Csparse_diagU2N for <Csparse>
+
+	* R/dMatrix.R (Compare(<dMatrix>,<dMatrix>): update and
+	* tests/validObj.R: checks for "comparison"
+
+	* R/sparseMatrix.R ([): improved indexing for sparse;
+		trying to keep <symmetric>[ n, n] symmmetric
+
+	* tests/indexing.R: indexing for logical sparse now ok
+
+
+2006-11-02  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+        * src/Tsparse.c: use xTsparse_validate() , and hence remove
+
+        * src/{ltC,lsC,lgT}Matrix.[ch]: removed
+
+2006-11-02  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllClass.R (Matrix-class): check length of dimnames in validity.
+
+	* tests/simple.R: validObject() checking the above.
+
+	* src/dgCMatrix.c (xCMatrix_validate): new, small and simple,
+	replacing both dgCMatrix_validate and lgCM*.
+
+	* src/Csparse.c (Csparse_dense_prod, etc): do not lose dimnames;
+	fix dimnames setting in other places.
+	* src/chm_common.c (chm_dense_to_SEXP): now can pass dimnames
+
+2006-11-01  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Csparse.R,src/Csparse.c, etc: tcrossprod(<CsparseM>,<CsparseM>)
+
+	* R/sparseMatrix.R (isSymmetric): drop 'factors' slot for
+	symmetry test, via
+	* R/Auxiliaries.R (.as.dgC.0.factors):
+
+2006-11-01  Douglas Bates  <bates@r-project.org>
+
+	* R/Csparse.R,src/Csparse.c,tests/matprod.R,
+	man/CsparseMatrix-class.Rd: crossprod(<CsparseMatrix>,
+	<CsparseMatrix>) added
+
+2006-10-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/matprod.R: add a variation of Harri's example
+
+	* R/dsparseMatrix.R: fix crossprod(<dsparse>, <dge>) to *not*
+	recursive infinitely.
+
+	* R/dgCMatrix.R: + solve(<sparse>, <sparse>)
+
+	* tests/indexing.R: add test for the "<" bug fixed 10-27 in R/dMatrix.R
+
+2006-10-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/Class+Meth.R (tstMatrixClass): more: use non-trivial
+	matrix if possible; test m+m == 2*m; now test dgRMatrix.
+	* R/dgRMatrix.R (.to.dgR): a few more coercions, in order to
+	satisfy the above test.
+
+2006-10-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (Ops):  <Matrix> o <matrix>  method added
+
+	* R/dgCMatrix.R: solve(a, b="missing") based on
+	* src/dgCMatrix.c (dgCMatrix_matrix_solve): extend to work with
+	RHS = NULL.
+
+	* R/diagMatrix.R (diagdiagprod): extend %*% etc to ldiMatrix;
+	add more (needed) [t]crossprod() methods.
+
+	* man/ddiMatrix-class.Rd: more info, notably on 'diag'
+
+	* R/Auxiliaries.R (as_CspClass): cleanup
+	(drop0): internal utility for "Csparse_drop(*, 0)"
+	(.bail.out.2): encourage active feedback
+
+2006-10-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dMatrix.R(Compare): new(), then slots [no validity check]
+
+	* src/Csparse.c (Csparse_validate): fixed (and more efficient in
+	non-valid or 'sorted' case).
+
+	* R/dsparseMatrix.R: add "chol" method.
+	* R/ddenseMatrix.R: ditto
+
+	* R/diagMatrix.R (Ops): group methods for  <diagonal> o <sparse>
+	* NAMESPACE (Ops)
+	* R/diagMatrix.R (diag2T): simple utility used "higher level"
+	coercion; deprecating direct lower level coercions.
+
+	* R/*.R (seq): use seq_len() and seq_along() where possible.
+
+
+2006-10-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.9975-5 ready for release
+
+2006-10-20  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/init.c (R_init_Matrix): export more cholmod CCallable functions.
+
+2006-10-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllClass.R (corMatrix): add 'validity' check;
+		comment out unused "LDL" class definition
+	* NAMESPACE: mention, but do not export "LDL" class
+	* R/corMatrix.R: new (simple), needed for R-devel with
+	* tests/Class+Meth.R (tstMatrixClass): 1 exception for corMatrix
+	  coerce and t() exceptions for all 5 'Mat.MatFact' classes.
+
+2006-10-19  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/chm_common.h: Add R_cholmod_start to initialize cholmod to
+	use Rprintf and R's error handling.
+
+2006-10-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R (%*%): rep(*, each = .) in Matrix %*% diagonal.
+	* tests/matprod.R: add tests for the bug fixed.
+
+2006-10-11  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/HBMM.[ch]: remove HarwellBoeing format for writing.
+	* src/SOURCES_C.mkf (SOURCES_C): no longer compile iohb.c
+
+2006-10-06  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/d[gs]CMatrix.R: deprecate the writeHB function.  Use writeMM instead.
+
+2006-10-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.9975-3
+
+	* R/diagMatrix.R (bdiag): new function constructing block diagonal
+	(sparse) matrices.
+	* man/bdiag.Rd: docu + examples
+
+	* R/Csparse.R (replCmat): calling new Csparse_drop() now.
+
+	* src/Csparse.c (Csparse_general_to_symmetric, Csparse_drop): new functions
+	* R/lsCMatrix.R: three more coercions to lsC (thanks to the above)
+
+	* R/diagMatrix.R (Diagonal): '[<-' method for diag.matrices such
+	that result is sparse or diagonal (and not dense).
+
+	* man/Subassign-methods.Rd: fix examples
+
+	* R/Matrix.R (Matrix):  Matrix(0, *) or Matrix(*, sparse=TRUE)
+	should always return a sparse (and not sometimes a diagonal) matrix.
+
+2006-10-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R ([<-): also for value "Matrix" or "matrix"
+
+2006-10-04  Douglas Bates  <bates@stat.wisc.edu>
+
+	* DESCRIPTION (Version): 0.9975-2
+
+	* inst/include/Matrix_stubs.c (M_cholmod_sparse_to_triplet): export more symbols
+
+2006-10-02  Douglas Bates  <bates@R-project.org>
+
+	* tests/dg_Matrix.R: Simplify test taking into account new code.
+
+2006-09-29  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Csparse.R (replCmat): improve for missing i / j in non-simple cases
+
+	* R/lsTMatrix.R: new files w/ missing methods
+	* R/nsTMatrix.R:  "  'for completeness'
+
+	* tests/Class+Meth.R: a bit less 'not.ok.classes'
+
+	* R/Tsparse.R (t): generalized "t" method from "dgT*" to "Tsparse*"
+
+
+2006-09-28  Douglas Bates  <bates@R-project.org>
+
+	* src/dppMatrix.h: Ensure definition of dspMatrix_validate is
+	included.
+
+	* src/init.c, inst/include/{Matrix.h,Matrix_stubs.h,cholmod.h}:
+	Export C-callable functions used in Zt_create in lme4.
+
+2006-09-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.9975-1
+
+	* tests/simple.R: less checks fail; using NA, found that our
+		kronecker() is not base-compatible with NA's.
+
+	* R/dMatrix.R: "Compare" method now implemented for all cases
+
+	* R/Auxiliaries.R (indTri): == which([lower/upper].tri( * )) new utility
+
+	* man/dtpMatrix-class.Rd: mention length of 'x' slot
+
+	* src/dtpMatrix.c (dtpMatrix_validate): fix check
+	* src/dspMatrix.c (dspMatrix_validate): ditto
+
+	* R/dtTMatrix.R (gt2tT): fix ("l" -> "n")
+	  including coercion to [nl]tTMatrix.
+
+	* R/diagMatrix.R (show): print a header line as for other classes.
+
+2006-09-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Makefile.win (SUBDIRS): fix typo
+
+2006-09-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Date): ready to release 0.9975-0 to CRAN
+
+2006-09-18  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/[CT]sparse.R (crossprod and tcrossprod): Handle the cases for x
+	symmetric and y missing in R code using %*% (cholmod_aat doesn't
+	accept a symmetric matrix).
+	* tests/group-methods.R: Uncomment test of crossprod applied to
+	lsCMatrix objects.
+
+2006-09-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllClass.R (symmetricMatrix): add validity method (available
+	in C for a long time). Many "n..Matrix": drop (wrong) validity arg.
+
+	* src/lgCMatrix.c (lgCMatrix_validate): check 'x' slot (!)
+
+	* tests/indexing.Rout.save:
+	* tests/indexing.R: additions, mainly for 'lsparse'
+
+	* R/diagMatrix.R (Diagonal) & coercion to lgTMatrix: fixes for NA
+	case.
+
+	* R/Auxiliaries.R (nz.NA): new utility now used in nnzero()
+
+2006-09-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (prSpMatrix): print logical NAs "visibly"
+		as 'N' (1-letter - Ok?)
+
+	* tests/group-methods.R: add test for logical + NAs
+
+	* R/dMatrix.R ("Compare"): fix to work with NA's
+
+	* R/AllClass.R: "Cholesky" etc now inherit from MatrixFactorization.
+
+	* src/lgCMatrix.c (ncsc_to_matrix): renamed from lcsc_to_matrix()
+		which is implemented.
+
+2006-09-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/chm_common.c: coerce logical <-> double instead of
+	typecasting;  needed for "l" matrix handling in cholmod.
+
+	* tests/other-pkgs.R (graph): small extension in "graph" checks.
+
+	* R/sparseMatrix.R (graphNEL -> Tsparse): method for weight case.
+	(Tsp2grNEL): other fixes needed
+
+2006-09-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllClass.R ("nMatrix"): and subclasses for "nonzero pattern"
+		Matrices, since "lMatrix", also "lsparseM" can have NA
+	* R/ndenseMatrix.R, etc: new source files
+	* man/nsparseMatrix-classes.Rd, etc: new help files
+	* tests/: adaptions
+	* src/chm_common.c (chm_dense_to_SEXP): and others:
+		new 'Rkind' argument: "l*" and "d*" both use CHOLMOD_REAL
+	* src/Csparse.c, etc: ditto
+
+2006-09-11  Douglas Bates  <bates@R-project.org>
+
+	* src/Mutils.[ch],init.c inst/include/*.h: Move the
+	alloc_d**Matrix functions to the lme4 package.
+
+2006-09-09  Douglas Bates  <bates@R-project.org>
+
+	* src/dsCMatrix.c (dsCMatrix_Cholesky): igoring LDL = FALSE now
+	fixed
+
+2006-09-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/lMatrix.R: new
+
+	* R/sparseMatrix.R (Tsp2grNEL): do not yet use graph::foo()
+
+	* R/dgeMatrix.R: do not define tcrossprod() methods for "matrix"
+	* man/tcrossprod.Rd: ditto
+
+2006-09-08  Douglas Bates  <bates@stat.wisc.edu>
+
+	* inst/include/Matrix_stubs.c,Matrix.h: Add declarations and stubs
+	for exported functions
+	* src/Makefile, src/CHOLMOD/Lib/Makefile, src/Metis,CAMD,CCOLAMD:
+	Remove partitioning algorithms for sparse matrix reordering.  The
+	copyright on the Metis code was problematic and the methods were
+	rarely used.
+	* src/triplet_to_col.[ch],MMHB.[ch]: Remove triplet_to_col.  Such
+	operations are now done entirely in CHOLMOD code.
+
+2006-09-06  Douglas Bates  <bates@R-project.org>
+
+	* src/Mutils.h: Remove functions that are no longer used.
+
+2006-09-04  Douglas Bates  <bates@R-project.org>
+
+	* src/dtCMatrix.c (dtCMatrix_validate): rename functions.
+	* src/DEPS.mkf: update
+
+2006-09-02  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* created branches/Matrix-for-R-2.3.x;  on trunk: do
+	* DESCRIPTION (Version): 0.9975-0
+	(Depends): R (>= 2.4.0)
+
+2006-09-01  Douglas Bates  <bates@R-project.org>
+
+	* R/sparseMatrix.R: Added direct method to CsparseMatrix from graphNEL
+
+2006-09-01  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R: add coercion from "ANY" to "sparseMatrix"
+	* R/denseMatrix.R:  add coercion from "ANY" to "denseMatrix"
+
+	* R/Matrix.R ([): use nargs() to disambiguate M[i] and M[i,]
+
+2006-08-31  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (Arith): moved Arith group method one-level up
+	from "dsparse" to "sparse" and now go via "Csparse" instead of "dgC"
+	* R/dsparseMatrix.R: ditto
+	* R/Csparse.R: ditto
+
+2006-08-31  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dMatrix.R (Compare): improve availability of "<", etc
+	* R/Auxiliaries.R (asTuniq): new; also make use of R 2.4.x print(*,max)
+
+2006-08-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgCMatrix.R: aargh: "Arith(<dgC>, numeric)" was wrong because
+	of a 0-index which was used as 1-index (..hmm)
+
+	* R/sparseMatrix.R (prSpMatrix): fix printing an all-0 sparse Matrix
+
+	* R/Auxiliaries.R (all0, is0): for 0-testing in presence of NA's
+	* R/Auxiliaries.R (isTriMat): use all0() for 0-testing.
+	(.is.diagonal): ditto
+
+	* R/lgTMatrix.R: as("matrix", "lgTMatrix"): warn about NA's
+
+	* R/Matrix.R (Matrix): also work for NA data
+
+2006-08-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (Matrix): + 'forceCheck' argument; dimnames setting
+	in all cases.
+
+2006-08-27  Douglas Bates  <bates@R-project.org>
+
+	* src/dense.[ch],init.c, R/ddenseMatrix.R, man/band.Rd
+	(ddense_band): Added triu, tril and band for ddenseMatrix objects.
+
+2006-08-25  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Mutils.c (dup_mMatrix_as_dgeMatrix): added all subclasses of
+	subclasses of "ddenseMatrix"
+	* src/init.c et al: outcomment dtrM*_as_dge* and dsyM*_as_dge*_
+	* R/ddenseMatrix.R et al: setAs("ddenseMatrix", "dgeMatrix", ..)
+	instead of half dozen specialized ones.
+
+2006-08-25  Douglas Bates  <bates@R-project.org>
+
+	* R/lmer.R (qqmath method): Bug fix provided by Emmanuel Tillard
+	<tillard@cirad.fr> - ordering standard errors to match effects.
+
+2006-08-24  Douglas Bates  <bates@R-project.org>
+
+	* src/lsCMatrix.c (lsCMatrix_trans): Remove lsCMatrix_chol based
+	on R_ldl.
+	* R/lCholCMatrix.R,
+	src/[dl]CholCMatrix.[ch],R_ldl.[ch],Metis_utils.[ch]: removed
+	* src/dsCMatrix.c (dsCMatrix_to_dgTMatrix): use CHOLMOD
+	* many files in ./R and ./src: Use more general version of
+	dup_mMatrix_as_dgeMatrix to simplify method definitions.
+	* src/Mutils.c (dup_mMatrix_as_dgeMatrix): Add ddiMatrix,
+	dtpMatrix, dspMatrix and dppMatrix conversions.
+
+
+2006-08-23  Douglas Bates  <bates@R-project.org>
+
+	* R/AllClass.R,lCholCMatrix.R,src/SOURCES_C.mkf,init.c,NAMESPACE:
+	Remove classes lCholCMatrix and dCholCMatrix based on R_ldl code.
+	* src/dgeMatrix.c: Ensure 'factors' slot exists in result of
+	dgeMatrix_crossprod (may need to do this in other places).
+	* R/AllGeneric.R,dsCMatrix.R, src/dscMatrix.[ch]: Add Cholesky
+	generic and method for dsCMatrix.  Use CHOLMOD for chol().
+
+2006-08-22  Douglas Bates  <bates@R-project.org>
+
+	* src/Mutils.c (dup_mMatrix_as_dgeMatrix): updated for general
+	types of classed Matrices, matrices or numeric or logical vectors.
+	* src/init.c: register dup_mMatrix_as_dgeMatrix for coercions.
+	* src/chm_common.c,Mutils.h (as_cholmod_factor): Move check_class
+	to Mutils.h (as an inline) and change name to Matrix_check_class;
+	fixes in as_cholmod_factor and chm_factor_to_SEXP.
+	* src/dsCMatrix.[ch]: Use CHOLMOD for dsCMatrix_chol and
+	dsCMatrix_matrix_solve.  Comment out vestigial functions.
+	* src/Csparse.c: use diag_P and uplo_P macros.
+
+2006-08-21  Douglas Bates  <bates@R-project.org>
+
+	* src/lmer.c (internal_mer_RZXinv): Fix memory leak caught by
+	valgrind.
+	* tests/matprod.R: Add tests to verify that 'solve' and '%*%' are
+	inverses.
+	* src/sparseQR.c (sparseQR_validate): add new validation test, fix
+	-Wall warnings.
+	* src/dppMatrix.c,dtrMatrix.c,dgCMatrix.c,dgeMatrix.c,dspMatrix.c:
+	Use dup_mMatrix_as_dgeMatrix.
+
+2006-08-20  Douglas Bates  <bates@R-project.org>
+
+	* src/sparseQR.c: Fix thinko in sparseQR_resid_fitted.
+	* tests/sparseQR.R: Added
+	* man/sparseQR-class.Rd: Document methods for qr.* generics
+	* R/sparseQR.R: Return correct # of coefs; fix cut-and-paste errors
+
+2006-08-19  Douglas Bates  <bates@R-project.org>
+
+	* NAMESPACE, R/sparseQR.R, src/init.c,sparseQR.[ch],SOURCES_C.mkf:
+	Added methods for sparseQR for qr.qy, qr.qty, qr.coef, qr.resid
+	and qr.fitted.
+	* src/Mutils.[ch]: Added dup_mMatrix_as_dgeMatrix utility
+	* src/dgCMatrix.c: Check for ordering before storing q in dgCMatrix_QR
+
+2006-08-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllGeneric.R: add "qr" and "chol" generics; via 'trick' since
+	the base version has no "..." argument.
+
+	* R/sparseMatrix.R (prSpMatrix): fix the triangular unit diagonal case.
+
+	* R/Matrix.R: define and
+	* NAMESPACE: export as.numeric() and as.logical() methods.
+		Let's hope these do not badly slow down something...
+	Finally export the zapsmall() method.
+
+2006-08-17  Douglas Bates  <bates@R-project.org>
+
+	* src/dgCMatrix.[ch] (dgCMatrix_matrix_solve), src/init.c,
+	R/dgCMatrix.R: solve methods for dgCMatrix and dense RHS.
+	* src/dtCMatrix.c :Remove code that is no longer used
+	* R/dtCMatrix.R: Use C code for diagU2N in CsparseMatrix classes
+
+2006-08-14  Douglas Bates  <bates@R-project.org>
+
+	* src/Csparse.[ch],init.c (Csparse_to_logical): Added utilities
+	Csparse_to_logical and Csparse_symmetric_to_general.
+	* R/dgCMatrix.R,dsCMatrix.R,Csparse.R : Consolidate general
+	coercion methods between CsparseMatrix and TsparseMatrix.
+
+2006-08-14  Douglas Bates  <bates@R-project.org>
+
+	* R/dtCMatrix.R,dgCMatrix.R,Csparse.R src/init.c,dgCMatrix.[ch],
+	Csparse.[ch],chm_common.c,dense.c : Use CHOLMOD code and methods
+	for CsparseMatrix, TsparseMatrix, denseMatrix or matrix when
+	possible.
+
+2006-08-12  Douglas Bates  <bates@R-project.org>
+
+	* src/chm_common.[ch],Csparse.[ch],Tsparse.[ch],CHMfactor.c,dtTMatrix.c,
+	  dgTMatrix.c,dgCMatrix.c,dsCMatrix.c,dtTMatrix.c, R/dsTMatrix.R,
+	  Tsparse.R,Csparse.R,dgTMatrix.R,dsCMatrix.R,lsCMatrix.R:
+	  generalize conversions between TsparseMatrix, CsparseMatrix,
+	  denseMatrix and matrix.  Preserve triangularity property and
+	  propagate Dimnames in the easy cases.
+
+2006-08-10  Douglas Bates  <bates@R-project.org>
+
+	* src/lmer.c: adjust checks in glmer_init for S4SXP
+	* tests/validObj.R: check of all(eq) should be all(eq@x) - worked
+	before S4SXP but for the wrong reasons.
+
+2006-08-08  Douglas Bates  <bates@R-project.org>
+
+	* src/Csparse.c (Csparse_crossprod): tcrossprod result has stype = -1.
+	Later modified to return the upper triangle only.
+	* R/dgTMatrix.R: Remove vestigial crossprod and tcrossprod methods.
+
+2006-08-07  Douglas Bates  <bates@R-project.org>
+
+	* src/Csparse.c (Csparse_crossprod): Set stype on result to avoid
+	R-level conversion to a sparse symmetric class.
+	* R/Tsparse.R,R/Csparse.R (crossprod and tcrossprod methods):
+	Remove conversion to sparse symmetric classes (now done in C code).
+
+2006-08-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgCMatrix.R: disable old crossprod and tcrossprod methods
+	* man/band.Rd:  adapt the \dontshow{} unit test.
+
+2006-08-07  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.995-14  for CRAN
+
+	* tests/other-pkgs.R: oops: library(Matrix) outside *if* !
+
+	* R/sparseMatrix.R (Tsp2grNEL): fixed Tsparse -> graph coercion
+	* tests/other-pkgs.R:  more checks, sparseMatrix -> graph
+
+	* R/Auxiliaries.R (as_Tsparse, as_Rsparse): new
+	* R/Tsparse.R (tril, triu, band): methods
+	* R/dgRMatrix.R (tril, ...):	ditto
+	* man/band.Rd:			ditto
+
+2006-08-04  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (head, tail): directly use utils:::head.matrix
+		to be up-to-date automatically.
+
+2006-08-03  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.995-13 to be released to CRAN
+
+	* DESCRIPTION (Lazydata): no, instead of 'yes' because it fails for:
+	* data/CAex.R, inst/external/CAex_slots.rda: replacing data/CAex.rda
+	* data/KNex.R, inst/external/KNex_slots.rda: replacing data/KNex.rda
+	such that the S4 objects are always created by the current version
+	of R and 'Matrix' class definitions.
+
+2006-08-01  Douglas Bates  <bates@R-project.org>
+
+	* R/lmer.R (LMEoptimize method), tests/lmer.R,
+	inst/external/test3comp.rda: Added warnings for convergence on
+	boundary and test cases.
+
+	* src/lmer.c (mer_postVar): Modified to return the variances that
+	are marginal to the fixed effects, not conditional on them (which
+	is what the bVar slot contents represent).
+
+2006-07-31  Douglas Bates  <bates@R-project.org>
+
+	* NAMESPACE, src/lmer.c, R/lmer.R (hatTrace):  Add the hatTrace
+	function which calls the C function mer_hat_trace2.
+
+	* man/ranef.Rd: Include description of "postVar" argument and
+	producing a caterpillar plot.
+
+2006-07-31  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* NAMESPACE:    change  "correlation" to "corMatrix"
+	* R/AllClass.R: to avoid clash with S3 class in 'nlme'.
+	* R/dpoMatrix.R: ditto
+	* R/lmer.R:	 ditto
+
+2006-07-28  Douglas Bates  <bates@R-project.org>
+
+	* src/lmer.c (internal_mer_RZXinv): Split the calculation of the
+	RZXinv slot's contents into a separate internal function that can
+	be used in mer_hat_trace.
+
+2006-07-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R: Coercions "Matrix" -> (sparse|dense)Matrix
+	via new smart
+	* R/Auxiliaries.R (as_Csparse, as_dense, .M.shapse): new
+	utility functions.
+
+
+2006-07-21  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Csparse.R (tril, triu, band): do return *triangular* classed
+	matrices when appropriate; band() even symmetric ones.
+	(replCmat): extend to potentially all "CsparseMatrix"
+	* R/Tsparse.R (replTmat): extend to all "TsparseMatrix"; hence
+	allow subassignment for special sparse matrices.
+
+	* R/Auxiliaries.R (as_geClass): factor out the  .M.kind() functionality
+
+	* src/lmer.c (mer_MCMCsamp, glmer_MCMCsamp): new 'verbose'
+	argument; in glmer_*(): print only if(verbose).
+
+	speed-optimize a few places by moving REAL(.) out of loops.
+
+	* src/lmer.h, src/init.h, R/lmer.R:  related to above.
+
+2006-07-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R("["): disable ("Matrix", i = "logical", j = "missing"),
+		since that wrongly triggers also for M[ logi , ]
+
+	* R/denseMatrix.R: "[" methods now also work e.g. when indexing
+	a symmetric matrix that results in a non-symmetric one.
+	* R/Auxiliaries.R (as_geClass): new function used in "[" above.
+
+	* R/dMatrix.R: make round(M) work as round(M, 0)
+
+	* R/dgTMatrix.R (image): coordinate system and axis now use
+	1-based indices, not 0-based ones.
+
+	* R/Tsparse.R (.ind.prep for "["): get rid of max(<empty>) warning.
+	* tests/indexing.R: test it.
+
+	* NAMESPACE: export isSymmetric(); has been a generic in "base"	for a while;
+	* man/isSymmetric-methods.Rd: and document it.
+
+	* R/SparseM-conv.R: added coercion methods for some 'SparseM' matrices.
+	* man/SparseM-conv.Rd: docu them
+
+	* tests/other-pkgs.R: renamed from tests/graph.R and add example
+		for 'SparseM' conversions
+
+2006-07-17  Douglas Bates  <Douglas.Bates@R-project.org>
+
+	* R/Matrix.R (head): added head() and tail() methods.
+
+2006-07-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.995-12 released to CRAN
+
+2006-07-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/simple.R: add check for correct dsT -> dgT coercion;
+		add check for correct printing of symmetric sparse matrices.
+
+	* R/Auxiliaries.R (non0ind): return *all* non-0 entry indices also
+	for sparse symmetric matrices.
+
+	* src/dsTMatrix.c (dsTMatrix_as_dgTMatrix): do not copy the
+	diagonal twice.
+
+2006-07-11  Douglas Bates  <Douglas.Bates@R-project.org>
+
+	* src/dsTMatrix.c (dsTMatrix_as_dgTMatrix): Fix a case of INTEGER
+	being applied to the x slot (detected by Brian Ripley).
+
+2006-07-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dgCMatrix.c (dgCMatrix_validate): 'p' slot must have correct length.
+
+	* R/Auxiliaries.R (isTriC): fix buglet (we were 1-based!)
+
+2006-07-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/lgCMatrix.c (lgCMatrix_diag): new function
+	* R/lgCMatrix.R (diag): for new method
+
+	* R/AllClass.R (TsparseMatrix): do use Tsparse_validate
+	     ==> construction of illegal "*gTMatrix" via new() should
+	     now be much less easy:
+	* tests/Class+Meth.R: assertError() for some illegal "dgT*"
+
+	* R/Matrix.R (Matrix): Matrix(0, nrow,ncol) now "goes sparse"
+		directly.
+	* man/Matrix.Rd: documents it.
+
+2006-07-06  Douglas Bates  <bates@R-project.org>
+
+	* src/pedigree.c (pedigree_inbreeding): Correction in
+	initialization.  This function is not currently being used and is
+	not fully tested.
+
+	* NAMESPACE, R/{AllClass.R,lmer.R}, src/{init.c,lmer.c}:
+	Introduced the glmer class.  Added code for mcmcmsamp on glmer
+	objects.  Modified validity check on pedigree objects to account
+	for nonparallel patterns of missingness of parents.
+
+	* man/{lmer-class.Rd,mcmcsamp.Rd}: Update documentation for glmer
+	class.
+
+2006-07-01  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/pMatrix.R: coercion pMatrix -> Tsparse
+
+2006-06-12  Douglas Bates  <bates@R-project.org>
+
+	* DESCRIPTION (Version): 0.995-11 released to CRAN
+
+	* R/lmer.R (mcmcsamp method): Corrected arrangments of names on
+	the output from mcmcsamp.
+
+2006-06-10  Douglas Bates  <bates@R-project.org>
+
+	* R/lmer.R (simulestimate): added C code for calculating the trace
+	of the hat matrix.
+
+2006-06-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R (setAs): define coercion methods to sparse matrix
+	classes.
+	* R/sparseMatrix.R etc: multiplication of diagonal and sparse
+
+2006-06-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgTMatrix.R (colSums): etc. All four of
+	colSums(), rowSums(), colMeans(), rowMeans() now should work for
+	all "Matrices".
+
+2006-06-01  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/lmer.R (panel.ci): Add a reference line at zero and a
+	background grid to the qqmath plot of ranef.lmer.
+
+2006-05-30  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/lmer.R (expandSlash): Functions (non-exported) to allow nested
+	grouping factors to be specified in the formula as (1|foo/bar).
+
+2006-05-27  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/lmer.R (findbars and others): Change check of is.numeric to
+	!is.language to resolve the bug reported by Jacob Wegelin.
+
+	* src/pedigree.c (pedigree_inbreeding): Initial implementation of
+	code to evaluate inbreeding coefficients without calculating T,
+	based on code in Sargolzaei and Iwaisaki's paper.
+
+2006-05-27  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/{lmer.R,AllGeneric.R}, src/{init.c,lmer.[ch]}: Added local
+	generic and mer methods for isNested and denomDF. This denomDF was
+	an attempt to emulate that in lme but I don't think that makes
+	sense.  Use the trace of the hat matrix instead.
+
+2006-05-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R: Matrix <-> graph methods: can no longer use
+	the C code depending on a slot structure that's no longer valid.
+	* src/dgTMatrix.c: ditto (also: src/init.c src/dgTMatrix.h)
+
+
+2006-05-17  Douglas Bates  <bates@stat.wisc.edu>
+
+	*  R/{AllGeneric.R,Csparse.R},man/band.Rd,NAMESPACE: changed name
+	of lowerTriMatrix generic and methods to tril (also upper to triu)
+	and added a general band extractor.
+
+2006-05-16  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/pedigree.R (pedigree): Replace sire and dam values outside the
+	allowable range with NAs. Added a corresponding check in the
+	validity check for the pedigree class.
+
+	* R/[CT]sparse.R ([t]crossprod): The result of single-argument
+	crossprod methods now inherits from symmetricMatrix.
+
+2006-05-15  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/AllGeneric.R (lowerTriMatrix): Added (but did not export)
+	generics lowerTriMatrix and upperTriMatrix along with methods for
+	the Csparse virtual class.  Also added a C function Csparse_band
+	that implements these methods by calling cholmod_band.
+
+2006-05-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Tsparse.R ("["): column or row subsetting; @Dimnames[k] got
+	erased when it was NULL.  This led to invalid subselections!
+
+2006-04-25  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/dtCMatrix.R: avoid coercion of dtCMatrix object to dgCMatrix
+	in method for "t" so as not to lose the unit diagonal property.
+
+2006-04-19  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/lmer.R, R/AllGeneric.R, NAMESPACE: Remove the postVar generic
+	and methods.  This is now an option to the ranef method for the
+	mer class.
+
+	* src/cs_utils.c: Ensure that the nz component is -1 for a
+	compressed column-oriented matrix.  Minor formatting cleanup.
+
+	* man/lmer-class.Rd: Document the qqmath method for ranef.lmer
+	objects.
+
+2006-04-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (diagU2N): new for the solve() methods in
+	* R/dtCMatrix.R: where dgC -> dgT coercion now preserves diag = "U".
+
+2006-04-15  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/cs.[ch],src/cs_utils.[ch] : Added Tim Davis' CSparse library
+	in cs.[ch] and utilities to interface to that code in cs_utils.[ch].
+
+	* R/dtCMatrix.R, src/dtCMatrix.[ch] : CSparse-based solve methods
+	for the dtCMatrix class.
+
+2006-04-12  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/pedigree.R, R/AllClass.R, NAMESPACE: added a pedigree class
+	and methods for it.
+
+2006-04-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgCMatrix.R: add  storage.mode(.) <- "double" for "matrix"
+	arguments, such that M %*% 1:6 now works
+	* Tests/matprod.R: test the above
+
+2006-04-03  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/lmer.R (qqmath,ranef.lmer-method): added a qqmath method for
+	the ranef.lmer class.
+
+	* R/AllClass.R, NAMESPACE, R/lmer.R: Added a postVar generic and
+	methods to extract the posterior variances from the bVar slot.
+
+2006-03-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dtCMatrix.R: allow coercion from  dgC* to triangular (dtC*)
+	* R/dsCMatrix.R: and symmetric (dsC*) 'Csparse' matrices.
+
+	* R/Tsparse.R: Tsparse* -> Csparse* coercion now works and is tested in
+	* tests/simple: (extended)
+
+	* R/sparseMatrix.R (isTriangular): now using much improved
+	* R/Auxiliaries.R (isTriC): new triangularity check for *CMatrix
+
+2006-03-23  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/dsyMatrix.c (dsyMatrix_as_dspMatrix): Propagate DimNames
+	(problem report from Franklin Parlamis).  This should be done
+	generally.
+
+2006-03-21  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/AllClass.R,lmer.R: Change the name of the lmer.ranef class to
+	ranef.lmer (like summary.lmer).  Add the coef.lmer class and
+	update the plot methods.
+
+2006-03-20  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/lmer.R (resid and ranef methods):  Added methods for the
+	"residuals" and "resid" generic but only for linear mixed model
+	fits.  Changed the ranef method to return a list of data frames so
+	that the plot methods now work.
+
+2006-03-16  Douglas Bates  <bates@bates2>
+
+	* src/dpoMatrix.c (dpoMatrix_chol): Require n > 0 in call to
+	dpotrf - otherwise the BLAS on Mac OS X complains and quits.
+
+	* DESCRIPTION (Date): New release
+
+2006-03-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.995-6  -- to be released to CRAN
+
+	* data/KNex.rda: replacing 'mm' and 'y' by KNex <- list(mm=mm, y=y)
+	* man/KNex.Rd: and other help files
+	* tests/*.R: several ones needed adaption
+	* inst/doc/Comparisons.Rnw: ditto
+
+2006-03-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgCMatrix.R (replCmat): "[<-" methods for dgCMatrix
+
+	* tests/indexing.R: tests for new [<- methods for sparse matrices.
+
+2006-03-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgTMatrix.R (replTmat): "[<-" methods for dgTMatrix
+
+	* R/Tsparse.R (.ind.prep): fix out-of-range indexing
+
+2006-03-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dMatrix.R: enable things like  M [ M < 10 ]
+	* R/dgeMatrix.R: implement it
+
+2006-03-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllClass.R: define "summary.mer" and "*.lmer"
+	* R/lmer.R (summary): summary(<mer>) computes & returns the above;
+	* R/lmer.R (show): now works with summary()
+
+2006-03-04  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgCMatrix.R: finally direct "Arith"  dgC o dgC
+	* R/Auxiliaries.R (WhichintersectInd): and other utilities to
+		support the above
+
+2006-02-07  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/lmer.R (lmer): fix initial values of offset and weights for glm.fit.
+	Use glmFit$prior.weights for weights in a glmm.
+	Allow an option usePQL = FALSE to skip the PQL steps for the
+	Laplace method (and, in time, the AGQ method).
+
+	* src/lmer.c (mer_factor): Move downdating and factoring of XtX
+	into a separate function internal_mer_Xfactor to be able to call
+	it from internal_bhat.
+
+2006-01-23  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/Class+Meth.R (tstMatrixClass): function for much better
+	testing; now again of all actual classes.
+
+	* src/Mutils.c (MAKE_TRIANGULAR_BODY, MAKE_SYMMETRIC_BODY):
+		use macros and define make_d_matrix_* and make_i_matrix_*
+		where _i_ is for the ldense routines:
+
+	* src/ldense.c (ltrMatrix_as_lgeMatrix): provide functions
+	* src/ldense.c (lsyMatrix_as_lgeMatrix):
+
+	* R/ldenseMatrix.R: use the above in setAs(*,"lgeMatrix")
+
+
+2006-01-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (Matrix): has become much "smarter" now auto-producing
+		many different kinds of matrices.
+	* R/*.R: quite a few new methods were needed for R CMD check with
+		new Matrix().  Very good for users playing around.
+
+
+2006-01-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dgeMatrix.c (dMatrix_validate): new
+	* src/Mutils.c (dense_nonpacked_validate): new
+
+	* src/dtrMatrix.c (dtrMatrix_validate): improved/fixed
+
+
+2006-01-14  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/AllClass.R (compMatrix), (generalMatrix): new virtual classes
+
+2006-01-07  Douglas Bates  <bates@stat.wisc.edu>
+
+	* DESCRIPTION (Version): 0.99-6 released to CRAN
+
+	* src/dgBCMatrix.c (cscb_trcbsm): Fix due to Peter Dalgaard for
+	segfault in cases with multiple non-nested grouping factors.
+
+2006-01-03  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.99-4 to be released to CRAN
+		(Depends): also on 'utils'
+
+	* R/AllClass.R (diagonalMatrix): new class with "ddi*" and "ldi*"
+	* R/diagMatrix.R (Diagonal): constructor and methods for
+	diagonal matrices
+
+	* R/ltTMatrix.R: new "minimal methods"
+
+2005-12-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllGeneric.R (tcrossprod): 2-argument version; here, and for
+	all methods (and help files).
+
+2005-12-09  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (dimNamesCheck): fixed thinko -> bug
+		for case (dimn.	 op  no_dimn.)
+
+2005-11-14  Douglas Bates  <bates@stat.wisc.edu>
+
+	* DESCRIPTION (Version): 0.99-2	 released to CRAN
+
+2005-10-21  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/lmer.R (simulate method): Fixed a drop=FALSE problem reported
+	by Julian Faraway.
+
+2005-10-06  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (try_as): new utility
+	* R/sparseMatrix.R: use try_as() in coercion to original class
+
+2005-09-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/dgCMatrix.c (double_to_csc): and dgeMatrix_to_csc()
+
+2005-09-29  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (dimNamesCheck): added
+
+	* R/Matrix.R (as.array), (as.vector): new
+
+2005-09-28  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (Matrix): get logical argument 'sparse' with a smart
+		default.
+	* R/AllClass.R: move 'factors' slot toplevel "Matrix";
+		"pMatrix" now contains "sparseMatrix"
+
+2005-09-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* tests/Class+Meth.R: new tests; t(t(m)) == m
+
+	* src/dtCMatrix.c (tsc_transpose): add forgotten "diag" slot
+
+	* src/dsTMatrix.c (dsTMatrix_as_dsCMatrix): bad typo (segfault!)
+	* src/dtTMatrix.c (dtTMatrix_as_dtCMatrix): new
+
+	* R/dspMatrix.R: typo in "t" method
+
+2005-09-18  Douglas Bates  <bates@wisc.edu>
+
+	* R/AllClass.R (TsparseMatrix), CsparseM* and RsparseM*
+	* R/Tsparse.R: instead of R/gTMatrix.R
+	* R/Csparse.R: new
+	* src/Tsparse.c (Tsparse_to_Csparse): new; -> cholmod_()
+	* src/Tsparse.c: new; many trivial methods calling cholmod_()
+	* src/Csparse.c (Csparse_to_Tsparse), transpose, (mat|cross)prod:
+			via cholmod
+
+2005-09-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Auxiliaries.R (non0ind): new function using new C code
+	* src/dgCMatrix.c (compressed_non_0_ij): new utility
+
+2005-09-15  Douglas Bates  <bates@localhost.localdomain>
+
+	* src/chm_common.h: header file required by all C sources that
+	call CHOLMOD functions.	 It defines a cholmod_common structure
+	called 'c' whose address is passed as the last argument to
+	(virtually) every CHOLMOD function.
+
+	* src/Pattern.c: Simple example of the use of CHOLMOD.
+
+	* src/init.c: initialize and finalize the cholmod_common structure.
+
+	* src/Makefile: Added source packages CHOLMOD UMFPACK AMD COLAMD
+	LDL and CCOLAMD from the U. of Florida sparse matrix library.
+
+2005-09-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* inst/test-tools.R: new file collecting the utility functions used
+		in ./tests/*.R
+
+	* R/ddenseMatrix.R (cbind2): new methods for "numeric" and "matrix"
+	* R/Matrix.R (cbind2): methods for NULL and missing
+
+2005-08-31  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllClass.R: new "index" class for "[" and "[<-":
+		First cut at "symmetricMatrix" and "triangularMatrix"
+	* R/gTMatrix.R (.ind.prep): new function;
+		Logical and character indexing now work too.
+	* R/Matrix.R: cheap "[<-" methods for denseMatrix now work
+	* tests/indexing.R: new, including *.Rout.save
+	* tests/dgTMatrix.R: new
+
+2005-08-29  Douglas Bates  <bates@wisc.edu>
+
+	* src/dgTMatrix.c (graphNEL_as_dgTMatrix): Corrected the position
+	indicator pos not being updated.  Also enforced upper triangular
+	for symmetric case.  Need to coerce edges component of elements of
+	edge list - grr! (Why don't they define their classes cleanly?)
+
+2005-08-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R:  added first "[<-" methods; not yet functional
+	* R/denseMatrix.R: ditto
+	* man/Subassign-methods.Rd: new help file for these
+
+2005-08-25  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.98-6
+
+	* R/denseMatrix.R: new file for "[" fallback methods for all dense
+	matrices.
+
+2005-08-19  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/lgCMatrix.c (lcsc_to_matrix): new; need for
+		as( <logical>, "matrix")
+
+	* R/pMatrix.R: coercion to "lgTMatrix"
+
+	* R/gTMatrix.R: new virtual class to define "[" methods for.
+	* man/gTMatrix-class.Rd:
+	* General slight re-organization of where "[" methods are defined.
+	  more to come.
+
+2005-08-18  Douglas Bates  <bates@wisc.edu>
+
+	* DESCRIPTION (Version): 0.98-5	 released to CRAN
+
+	* src/dgTMatrix.c (graphNEL_as_dgTMatrix): add first graphNEL methods
+	* .....
+
+2005-08-18  Douglas Bates  <bates@localhost.localdomain>
+
+	* R/lmer.R: Corrected naming scheme in mcmcsamp to work with lmer
+	or glmer objects.
+
+2005-08-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.98-4 : upload to CRAN
+
+2005-08-16  Douglas Bates  <bates@localhost.localdomain>
+
+	* R/HBMM.R: finish re-writing R-only code.
+
+2005-08-15  Douglas Bates  <bates@localhost.localdomain>
+
+	* man/externalFormats.Rd: move documentation for writeHB and
+	writeMM here.
+
+	* src/mmio.c: replace inclusion of <malloc.h> by <stdlib.h>
+	(suggested by Paul Roecker).
+
+	* tests/validObj.R (assertError): Comment out test that is failing
+	after recent changes in r-devel.
+
+
+2005-08-11  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllClass.R: intermediate virtual class "denseMatrix"
+	* man/denseMatrix-class.Rd
+	* NAMESPACE: export it, and also export
+	* man/unused-classes.Rd: "iMatrix", "zMatrix" and "ldenseMatrix"
+
+2005-08-10  Douglas Bates  <bates@wisc.edu>
+
+	* DESCRIPTION (Version): 0.98-3 to CRAN
+
+	* src/dtrMatrix.c (dtrMatrix_validate): fixed up validation and
+	matrix_solve code (which was really, really wrong).
+
+2005-08-07  Douglas Bates  <bates@wisc.edu>
+
+	* DESCRIPTION (Version): 0.98-2
+
+	* R/HBMM.R (readHB), (readMM): read Matrix Market formats
+
+	* R/lmer.R (abbrvNms): new
+	* R/lmer.R (mcmcsamp): allow transformed parameters
+	* src/HBMM.c (Matrix_writeMatrixMarket): Added read/write routines
+	for the Harwell-Boeing and the MatrixMarket formats.
+
+2005-08-04  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* man/dtrMatrix-class.Rd: add examples
+	* man/dtpMatrix-class.Rd: ditto; plus note about PROBLEM
+
+	* TODO: note the dtpMatrix (docu) bug
+
+	* R/zzz.R (.onLoad): assignInNamespace("as.matrix", *, "base")
+	in order to ensure that new as.matrix() is used by old functions,
+	e.g., svd(), qr(), eigen(), dist(),..;
+	      apply(), also matplot() or pairs().
+
+
+2005-08-03  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/lmer.R: add 'fixme' comments and move the linear vs glm check;
+	  add comments about 'control' / lmerControl() arguments
+
+2005-07-27  Douglas Bates  <bates@wisc.edu>
+
+	* man/sleepstudy.Rd: Added the sleep data set.
+	* DESCRIPTION (Version): 0.98-1	 released to CRAN
+
+2005-07-12  Douglas Bates  <bates@wisc.edu>
+	* man/sleepstudy.Rd: Added the sleep data set.
+
+	* R/lmer.R (glmmMCMC): Added PACKAGE = "Matrix" in a couple of
+	.Call calls that were producing spurious output.
+
+2005-07-05  Douglas Bates  <bates@wisc.edu>
+
+	* R/lmer.R (lmer): stored updated variance component estimates in
+	mer object for the generalized model.  (Bug reported by Renaud
+	Lancelot).
+
+2005-07-03  Douglas Bates  <bates@wisc.edu>
+
+	* src/lmer.c (glmer_devAGQ): Added AGQ for single grouping factor,
+	unidimensional case.
+
+2005-06-08  Douglas Bates  <bates@wisc.edu>
+
+	* DESCRIPTION (Version): 0.96-1
+
+	* moved	 lmer-class' R and C code moved from lme4 to here
+
+2005-06-04  Douglas Bates  <bates@wisc.edu>
+
+	* R/dgCMatrix.R: Call to csc_matrix_mm used undefined arguments
+	(reported by Guissepe Ragusa <gragusa@ucsd.edu>)
+
+2005-06-02  Douglas Bates  <bates@wisc.edu>
+
+	* src/Makefile.win: Forgot to update this when Makefile changed.
+
+2005-05-11  Douglas Bates  <bates@wisc.edu>
+
+	* src/dgCMatrix.c (csc_transpose): Simplified function fixing a
+	bug reported by Kurt Hornik and Michael Hahsler.
+
+2005-05-10  Douglas Bates  <bates@wisc.edu>
+
+	* src/lgCMatrix.c (Matrix_lgClgCmm): Implementation of methods for
+	logical sparse matrices.  These will also be used in the symbolic
+	analysis for lmer objects.
+
+	* src/dsCMatrix.c (dsCMatrix_matrix_solve): Copied the dimensions
+	of b to the result.  Fixes bug reported by Jean.Coursol@math.u-psud.fr
+
+2005-05-06  Douglas Bates  <bates@wisc.edu>
+
+	* src/dgeMatrix.c (dgeMatrix_colsums): Added an implementation of
+	colMeans, colSums, rowMeans and rowSums.
+
+2005-04-18  Douglas Bates  <bates@wisc.edu>
+
+	* src/lgCMatrix.[ch]: code for _validate method and stub for
+	multiplication operation.
+
+	* src/dgeMatrix.c (dgeMatrix_matrix_solve): Passing wrong argument
+	to dgetrs.
+
+	* src/init.c: Fix cut-and-paste error in definition of
+	dgeMatrix_matrix_solve
+
+	* src/{many files}: Tighten code by using ALLOC_SLOT.
+
+2005-04-15  Douglas Bates  <bates@wisc.edu>
+
+	* R/AllClass.R: Add lgTMatrix and lgCMatrix classes
+
+	* DESCRIPTION: Eliminate import of stats.
+
+
+2005-04-06  Douglas Bates  <bates@wisc.edu>
+
+	* R/AllClass.R : add logical sparse matrix classes
+
+2005-04-01  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgTMatrix.R: add "[" method for triplet matrices
+	* R/sparseMatrix.R: and other sparse ones; --> add show() for sparse
+
+2005-03-31  Douglas Bates  <bates@wisc.edu>
+
+	* DESCRIPTION (Version): release 0.95-5 to CRAN
+
+	* R/dMatrix.R: add %*%, crossprod and solve "fallback" methods
+	* R/sparseMatrix.R: %*%, crossprod()
+	* R/dgeMatrix.R: more "fallback" methods for numeric/dense matrices
+	* man/*.Rd: move method definitions to 'Matrix' and 'dMatrix'
+	* src/lmer.c (lmer_fitted): fix thinko
+
+2005-03-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllClass.R: add two virtual sparse classes ``on top''
+
+2005-03-24  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/AllClass.R (setClass): use "VIRTUAL" for the virtual classes;
+		correspondingly fix examples and tests/ since new()
+		doesn't work for virtual classes.
+
+2005-03-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R (as.matrix): method and one for unname()
+	* tests/dpoMatrix.R: tests should now be less platform dependent;
+	  also run for R 2.1.0; using as.matrix()
+
+2005-03-15  Douglas Bates  <bates@wisc.edu>
+
+	* R/pMatrix.R: "pMatrix" class added
+	* ....
+
+2005-03-14  Douglas Bates  <bates@wisc.edu>
+
+	* R/dtpMatrix.R: Add unpack method and an example.
+
+	* src/dsyMatrix.c (dsyMatrix_trf): Add BunchKaufman factorization
+	of general symmetric matrices and associated S4 methods.
+
+2005-03-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+	+
+2005-03-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgeMatrix.R (setAs): and many other files: more coercion,
+	  crossprod() and "%*%" methods added; tests, too.
+	* tests/matprod.R: new, for testing these
+
+2005-03-03  Douglas Bates  <bates@wisc.edu>
+
+	* src/lmer.c (lmer_fitted): Added.
+
+2005-03-02  Douglas Bates  <bates@wisc.edu>
+
+	* R/dsTMatrix.R: Conversion from dsTMatrix to dsCMatrix
+
+2005-02-28  Douglas Bates  <bates@wisc.edu>
+
+	* src/*.c,po/,inst/po: Internationalization and localization of
+	the package.
+
+	* src/ldl.[ch]: Removed these as their contents are referenced in the
+	R_ldl.c file.
+
+	* src/flame.[ch]: Removed these source files.
+
+	* src/dtrMatrix.c (make_array_triangular): Move to Mutils
+
+	* src/LU.[ch],src/init.c: absorb in factorizations
+
+	* src/Mutils.h: prepare for internationalization
+
+	* src/cblas.h: move the enum definitions to Mutils.h and remove
+	this file
+
+2005-02-26  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgeMatrix.R: provide "dimnames" and "dimnames<-" methods
+
+	* R/dtrMatrix.R: fix t() method
+
+	* R/dgeMatrix.R: define group methods "Arith", "Math", "Math2"
+	* NAMESPACE: export them (and import generics from "methods")
+	* tests/group-methods.R : and test them.
+
+	* src/dtrMatrix.c (dtrMatrix_as_dgeMatrix): prevent seg.fault in
+	border case
+
+2005-02-24  Douglas Bates  <bates@stat.wisc.edu>
+
+	* DESCRIPTION (Version): 0.95-2	 released to CRAN
+
+	* src/dgBCMatrix.c:
+	* src/lmer.c: many changes
+	* ...
+
+2005-02-04  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/Matrix.R: add more sophisticated show() method.
+
+2005-02-02  Douglas Bates  <bates@stat.wisc.edu>
+
+	* */* : almost complete reorganization of classes.
+
+2005-01-26  Douglas Bates  <bates@wisc.edu>
+
+	* R/AllGeneric.R: Added matrix exponential generic expm and a method
+	for the geMatrix class.
+
+2005-01-24  Douglas Bates  <bates@wisc.edu>
+
+	* src/Makefile (clean): Remove *.a and *.so
+
+	* man/cscBlocked-class.Rd: Remove reference to the lmer-class.
+
+2005-01-23  Douglas Bates  <bates@wisc.edu>
+
+	* src/lmer.c (Lind): Definition of Lind was backwards.	This only
+	had an effect in cases with more than 2 grouping factors.
+
+2005-01-03  Douglas Bates  <bates@wisc.edu>
+
+	* src/lmeRep.c (lmer_variances): change from lmeRep to lmer
+
+2004-12-23  Douglas Bates  <bates@wisc.edu>
+
+	* src/init.c (R_init_Matrix): Reorder calls to R_registerRoutines
+	and R_useDynamicSymbols (suggested by B.D.Ripley).
+
+2004-12-14  Douglas Bates  <bates@wisc.edu>
+
+	* R/sscMatrix.R: Add determinant methods
+
+	* src/triplet.[ch],src/init.c (triplet_to_matrix): Add a coercion
+	for tripletMatrix to matrix.
+
+2004-12-13  Douglas Bates  <bates@wisc.edu>
+
+	* R/AllClass.R (.onLoad): Eliminate the bbCrosstab class, which is
+	no longer used.
+
+	* src/R_ldl.c: Created an R-specific version of the ldl.[ch] files
+	with dynamic allocation of scratch arrays.
+
+	* src/ssclme.c (ssclme_copy_ctab): Fixed bug in creation of ZtZ
+	for multivariate random effects with multiple grouping factors.
+	Fixes part but not all of #15.
+
+2004-12-03  Douglas Bates  <bates@wisc.edu>
+
+	* src/lmeRep.c (lmeRep_factor): order of operations for multiple
+	scalar grouping factors corrected.
+
+2004-11-29  Douglas Bates  <bates@wisc.edu>
+
+	* src/bCrosstab.c: remove diag_update which is no longer used
+
+2004-11-16  Douglas Bates  <bates@wisc.edu>
+
+	* src/Metis_utils.c: Move metis.h include to C sources so that the
+	.h file can be included.
+
+2004-11-12  Douglas Bates  <bates@wisc.edu>
+
+	* src/LU.c,geMatrix.c,trMatrix.c, etc.:
+	Complete allocation of slots in NEW_OBJECT.
+
+	* src/Mutils.h: Moved list of symbols to an include file
+
+2004-11-11  Douglas Bates  <bates@wisc.edu>
+
+	* src/geMutils.c (Matrix_init): remove unused function
+
+2004-11-10  Douglas Bates  <bates@wisc.edu>
+
+	* src/cscMatrix.c (csc_to_imagemat): removed unused function
+
+2004-11-05  Douglas Bates  <bates@wisc.edu>
+
+	* src/Makefile.win (SOURCES_C): Keep consistent with Makefile
+
+2004-10-27  Douglas Bates  <bates@wisc.edu>
+
+	* R/pdmatrix.R: remove PACKAGE="Matrix" in .Call calls
+
+2004-10-04  Douglas Bates  <bates@wisc.edu>
+
+	* src/init.c: Created R_init_Matrix and added registration of C
+	routines.
+
+2004-10-02  Douglas Bates  <bates@wisc.edu>
+
+	* R/tripletMatrix.R: Force a require(lattice) for the image methods.
+
+2004-06-15  Douglas Bates  <bates@wisc.edu>
+
+	* man/trMatrix-class.Rd: Escape the % chars in .Rd files.
+
+2004-04-20  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/Makefile.win ($(SHLIB)): Modifications per Uwe Ligges.
+
+2004-04-19  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/ssclme.c (ssclme_update_mm): fix logic error in
+	ssclme_update_mm
+
+2004-04-18  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/ssclme.c (ssclme_coef, ssclme_coefGets): Create consistency
+	in the order of unconstrained and constrained parameters.
+	(ssclme_gradient): Added the gradients (not yet correct for
+	multidimensional, unconstrained case).
+
+2004-04-14  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/ssclme.c (ssclme_EMsteps): Fix logic in REML update
+
+	* src/Makefile.win: Remove unneeded ranlib call
+
+2004-04-12  Douglas Bates  <bates@stat.wisc.edu>
+
+	* DESCRIPTION (Version): New release
+
+	* src/Makefile.win: Update Makefile.win to umfpack removal.
+
+2004-04-05  Douglas Bates  <bates@bates2_home>
+
+	* src/triplet_to_col.c: Create triplet_to_col as a native
+	function, not the version from umfpack.	 There were problems with
+	the configuration of UMFPACK for 64-bit processors and there was
+	only one umfpack routine being used so I moved it here.
+
+2004-04-04  Douglas Bates  <bates@bates2_home>
+
+	* src/ssclme.c (ssclme_variances): New function.
+
+2004-03-28  Douglas Bates  <bates@bates2_home>
+
+	* src/ssclme.c (ssclme_fitted): Added function.
+
+2004-03-27  Douglas Bates  <bates@bates2_home>
+
+	* src/ssclme.c (ssclme_transfer_dimnames): Add new function to
+	store the dimnames in the XtX and bVar slots
+	(ssclme_update_mm): Change the dimensions of the bVar slot
+	components and the returned value from ssclme_ranef.
+
+2004-03-18  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/{pdMat.R,pdIdent.R,pdLogChol.R,pdMatrixLog.R,pdNatural.R},
+	  src/{pdMat.c,pdIdent.c,pdLogChol.c,pdNatural.c},
+	  tests/{pdCompSymm.R,pdDiag.R,pdIdent.R,pdLogChol.R,pdNatural.R},
+	  man/{pdMat-class.Rd,pdmatrix-class.Rd,corrmatrix-class.Rd,
+	  pdDiag-class.Rd,pdIdent-class.Rd,pdNatural-class.Rd,
+	  pdLogChol-class.Rd,coefGets.Rd,pdCompSymm-class.Rd,
+	  pdfactor-class.Rd,pdFactor.Rd,pdMatrix.Rd,
+	  pdBlocked-class.Rd},AllClass.R,AllGeneric.R:
+	Moved the pdMat classes from the lme4 package.
+
+2004-03-02  Douglas Bates  <bates@stat.wisc.edu>
+
+	* man/ssclme-class.Rd: Update definition and documentation of the
+	ssclme class to include the DIsqrt slot.
+
+	* src/ssclme.c (ssclme_deviance): Modify order of computation
+	(much faster using dsyrk, a level 3 BLAS routine).
+
+	* src/Makefile (SUBLIBS): Change definition (K. Hornik)
+
+2004-02-28  Douglas Bates  <bates@stat.wisc.edu>
+
+	* tests/ssclme.R: Modify the test to account for the permutation
+	of the levels of the grouping factors.
+
+2004-02-23  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/ssclme.R,src/ssclme.c (ssclme): Move slots of sscCrosstab slot
+	directly into the ssclme class definition.
+
+2004-02-22  Douglas Bates  <bates@stat.wisc.edu>
+
+	* DESCRIPTION (Date): New release
+
+	* man/ssclme-class.Rd: new file.
+
+	* src/ssclme.c (ssclme_loglik): major revisions in design.  It
+	works and it's fast!
+
+2004-02-17  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/taucs/Makefile.win (lib): Change "ar" to "$(AR)" (B.Ripley)
+
+2004-02-16  Douglas Bates  <bates@stat.wisc.edu>
+
+	* DESCRIPTION (Date): New release
+
+	* NAMESPACE: Don't export ssclme.
+
+	* data/ScotsSec.rda, man/ScotsSec.Rd: Add Scottish secondary
+	school data.
+
+2004-02-11  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/sscCrosstab.c (sscCrosstab): Added a row to the incidence to
+	keep track of the fixed-effects and the response.  Counts also
+	gets an extra element, which is always one.
+
+	* src/ldl.c: Include these routines from Tim Davis' LDL package.
+
+2004-02-10  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/cscMatrix.c (csc_transpose): new function
+
+	* src/Mutils.c (csc_sort_columns): perm/iperm confusion corrected
+	(csc_components_transpose): new function
+
+2004-02-06  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/triplet.c (triplet_validate): Fix Dim slot on generated
+	triplets
+
+2004-01-30  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/sscCrosstab.R (sscCrosstab): Added sscCrosstab generator function.
+
+	* src/LU.h (MATRIX_LU_H): Add #ifndef #define ... #endif to this
+	and all other .h files in src.
+
+	* src/Makefile.win: This and other Makefile.win files contributed
+	by Brian Ripley.
+
+2004-01-27  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/syMatrix.R: Added methods for "%*%".
+
+	* R/Hilbert.R (Hilbert): Changed Hilbert function to return a
+	poMatrix object.
+
+2004-01-26  Douglas Bates  <bates@stat.wisc.edu>
+
+	* man/sscChol-class.Rd,man/mm.Rd,man/y.Rd: Added man pages.
+
+2004-01-25  Douglas Bates  <bates@bates2_home>
+
+	* inst/doc/Introduction.Rnw,Comparisons.Rnw: Added vignettes.
+
+	* R/csc.R: Convert all cscMatrix classes to use Dim slot instead
+	of nrow.
+
+2003-12-31  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/taucs/taucs.h: Moved taucs.h, amd.h, and umfpack.h into
+	subdirectories.
+
+2003-12-08  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/taucs.h: Accidently referred to global header files
+	instead of local files.
+
+2003-12-04  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/AllClass.R: Lots of changes.  Removed all the lapack++ code
+	and methods and replaced all classes with S4 classes.
+
+2003-04-19  Douglas Bates  <bates@stat.wisc.edu>
+
+	* R/det.R,man/det.Rd: Change name of det generic to determinant
+
+	* src/R_LapackPP.cc: Change method of calculating determinants
+
+2003-02-03  Douglas Bates  <bates@stat.wisc.edu>
+
+	* DESCRIPTION (Version): removed empty data directory as requested
+	by CRAN maintainers.  Changed version number and date.
+
+2002-10-23  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/laindex.h: Applied patches from Brian Ripley for compilation
+	under Windows.
+
+	* Added configure.win and src/Makevars.win as requested by Brian
+	Ripley.
+
+2002-05-03  Douglas Bates  <bates@stat.wisc.edu>
+
+	* src/lamatrix.h: Removing pre-1.2.0 compatibility code per Kurt
+	Hornik.
+
+2002-04-24  Douglas Bates  <bates@stat.wisc.edu>
+
+	* configure.ac: Replaced configure.in with configure.ac
+	contributed by Kurt Hornik.
+
+	* aclocal.m4 (ac_clean_files): Replaced this with Kurt Hornik's
+	version for R-1.5.0
+
+
+2001-12-10  Douglas Bates  <bates@stat.wisc.edu>
+
+	* man/eigen.Rd: Removed the .Alias in the example

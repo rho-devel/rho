@@ -3,6 +3,7 @@ R version 3.0.2 RC (2013-09-22 r63960) -- "Frisbee Sailing"
 Copyright (C) 2013 The R Foundation for Statistical Computing
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
+CXXR Copyright (C) 2008-10 Andrew Runnalls.  CXXR like
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
 Type 'license()' or 'licence()' for distribution details.
@@ -15,6 +16,8 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+CXXR is not part of the R project, so please do not report bugs
+via r-bugs or the R website; instead refer to the CXXR website.
 > .proctime00 <- proc.time()
 > 
 > isall.equal <- function(x,y)
@@ -1323,8 +1326,7 @@ IS: [1] TRUE
 [1] TRUE
 > res <- try(as.numeric_version( x ), silent = TRUE)
 Warning message:
-In lapply(strsplit(x[ok], "[.-]"), as.integer) :
-  inaccurate integer conversion in coercion
+In FUN(X[[1L]], ...) : inaccurate integer conversion in coercion
 > if(!inherits(res, 'try-error')) report(is.numeric_version(res))
 [1] TRUE
 > res <- try(as.ordered( x ), silent = TRUE)
@@ -1332,8 +1334,7 @@ In lapply(strsplit(x[ok], "[.-]"), as.integer) :
 [1] TRUE
 > res <- try(as.package_version( x ), silent = TRUE)
 Warning message:
-In lapply(strsplit(x[ok], "[.-]"), as.integer) :
-  inaccurate integer conversion in coercion
+In FUN(X[[1L]], ...) : inaccurate integer conversion in coercion
 > if(!inherits(res, 'try-error')) report(is.package_version(res))
 [1] TRUE
 > res <- try(as.pairlist( x ), silent = TRUE)
@@ -1444,8 +1445,7 @@ IS: [1] TRUE
 IS: [1] TRUE
 > res <- try(as.numeric_version( x ), silent = TRUE)
 Warning message:
-In lapply(strsplit(x[ok], "[.-]"), as.integer) :
-  inaccurate integer conversion in coercion
+In FUN(X[[1L]], ...) : inaccurate integer conversion in coercion
 > if(!inherits(res, 'try-error'))
 +    report({if(is.numeric_version(x)) { cat('IS: ');all.equal(x, res, tol=0)
 +    } else   !isall.equal(x, res)})
@@ -1457,8 +1457,7 @@ In lapply(strsplit(x[ok], "[.-]"), as.integer) :
 [1] TRUE
 > res <- try(as.package_version( x ), silent = TRUE)
 Warning message:
-In lapply(strsplit(x[ok], "[.-]"), as.integer) :
-  inaccurate integer conversion in coercion
+In FUN(X[[1L]], ...) : inaccurate integer conversion in coercion
 > if(!inherits(res, 'try-error'))
 +    report({if(is.package_version(x)) { cat('IS: ');all.equal(x, res, tol=0)
 +    } else   !isall.equal(x, res)})
@@ -1562,8 +1561,7 @@ IS: [1] TRUE
 [1] TRUE
 > f <- try(as.numeric_version( x ), silent = TRUE)
 Warning message:
-In lapply(strsplit(x[ok], "[.-]"), as.integer) :
-  inaccurate integer conversion in coercion
+In FUN(X[[1L]], ...) : inaccurate integer conversion in coercion
 >   if(!inherits(f, 'try-error')) report(identical(f, as.numeric_version( f )))
 [1] TRUE
 > f <- try(as.octmode( x ), silent = TRUE)
@@ -1573,8 +1571,7 @@ In lapply(strsplit(x[ok], "[.-]"), as.integer) :
 [1] TRUE
 > f <- try(as.package_version( x ), silent = TRUE)
 Warning message:
-In lapply(strsplit(x[ok], "[.-]"), as.integer) :
-  inaccurate integer conversion in coercion
+In FUN(X[[1L]], ...) : inaccurate integer conversion in coercion
 >   if(!inherits(f, 'try-error')) report(identical(f, as.package_version( f )))
 [1] TRUE
 > f <- try(as.pairlist( x ), silent = TRUE)
@@ -2306,8 +2303,7 @@ IS: [1] TRUE
 > if(!inherits(res, 'try-error')) report(is.qr(res))
 > res <- try(as.raw( x ), silent = TRUE)
 Warning message:
-In doTryCatch(return(expr), name, parentenv, handler) :
-  out-of-range values treated as 0 in coercion to raw
+In as.raw(x) : out-of-range values treated as 0 in coercion to raw
 > if(!inherits(res, 'try-error')) report(is.raw(res))
 [1] TRUE
 > res <- try(as.symbol( x ), silent = TRUE)
@@ -2430,8 +2426,7 @@ Error: x are not all TRUE
 +    } else   !isall.equal(x, res)})
 > res <- try(as.raw( x ), silent = TRUE)
 Warning message:
-In doTryCatch(return(expr), name, parentenv, handler) :
-  out-of-range values treated as 0 in coercion to raw
+In as.raw(x) : out-of-range values treated as 0 in coercion to raw
 > if(!inherits(res, 'try-error'))
 +    report({if(is.raw(x)) { cat('IS: ');all.equal(x, res, tol=0)
 +    } else   !isall.equal(x, res)})
@@ -2531,8 +2526,7 @@ Error: x is not TRUE
 >   if(!inherits(f, 'try-error')) report(identical(f, as.qr( f )))
 > f <- try(as.raw( x ), silent = TRUE)
 Warning message:
-In doTryCatch(return(expr), name, parentenv, handler) :
-  out-of-range values treated as 0 in coercion to raw
+In as.raw(x) : out-of-range values treated as 0 in coercion to raw
 >   if(!inherits(f, 'try-error')) report(identical(f, as.raw( f )))
 [1] TRUE
 > f <- try(as.single( x ), silent = TRUE)

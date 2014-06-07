@@ -1,0 +1,14 @@
+silver : argent
+whit : blan
+: noir
+brown : brun
+: corail
+gre : gris
+ye : jaune
+: bleu
+gold : or
+: notmatchedtowhite
+pink : rose
+red : rouge
+green : vert
+violet : violette

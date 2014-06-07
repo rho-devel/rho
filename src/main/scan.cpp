@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -28,18 +44,25 @@
    probably continue to ignore).
 */
 
+/** @file scan.cpp
+ *
+ * Input scanning routines including scan and readline.
+ */
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-#define R_USE_SIGNALS 1
 #include <Defn.h>
 #include <Internal.h>
 #include <float.h>  /* for DBL_DIG */
 #include <Fileio.h>
 #include <Rconnections.h>
 #include <errno.h>
-#include <Print.h>
+#include "CXXR/GCStackRoot.hpp"
+#include "CXXR/ProvenanceTracker.h"
+
+using namespace CXXR;
 
 static R_INLINE int imin2(int x, int y)
 {
@@ -70,7 +93,7 @@ typedef struct {
     int quiet;
     int sepchar; /*  = 0 */      /* This gets compared to ints */
     char decchar; /* = '.' */    /* This only gets compared to chars */
-    char *quoteset; /* = NULL */
+    CXXRCONST char *quoteset; /* = NULL */
     int comchar; /* = NO_COMCHAR */
     int ttyflag; /* = 0 */
     Rconnection con; /* = NULL */
@@ -116,11 +139,11 @@ static int ConsoleGetchar(void)
 	    return R_EOF;
 	}
 	ConsoleBufp = ConsoleBuf;
-	ConsoleBufCnt = (int) strlen((char *)ConsoleBuf);
+	ConsoleBufCnt = int( strlen(reinterpret_cast<char *>(ConsoleBuf)));
 	ConsoleBufCnt--;
     }
     /* at this point we need to use unsigned char or similar */
-    return (int) *ConsoleBufp++;
+    return int( *ConsoleBufp++);
 }
 
 /* used by scan() */
@@ -132,7 +155,7 @@ static int ConsoleGetcharWithPushBack(Rconnection con)
     if(con->nPushBack > 0) {
 	curLine = con->PushBack[con->nPushBack-1];
 	c = curLine[con->posPushBack++];
-	if(con->posPushBack >= strlen(curLine)) {
+	if(con->posPushBack >= CXXRCONSTRUCT(int, strlen(curLine))) {
 	    /* last character on a line, so pop the line */
 	    free(curLine);
 	    con->nPushBack--;
@@ -156,7 +179,7 @@ static int Strtoi(const char *nptr, int base)
     /* next can happen on a 64-bit platform */
     if (res > INT_MAX || res < INT_MIN) res = NA_INTEGER;
     if (errno == ERANGE) res = NA_INTEGER;
-    return (int) res;
+    return int( res);
 }
 
 static double
@@ -186,7 +209,7 @@ strtoc(const char *nptr, char **endptr, Rboolean NA, LocalData *d)
 	    endp++;
 	} else {
 	    z.r = 0; z.i = 0;
-	    endp = (char *) nptr; /* -Wall */
+	    endp = const_cast<char *>( nptr); /* -Wall */
 	}
     }
     *endptr = endp;
@@ -208,8 +231,8 @@ strtoraw (const char *nptr, char **endptr)
 	else if (*p >= 'a' && *p <= 'f') val += *p - 'a' + 10;
 	else {val = 0; break;}
     }
-    *endptr = (char *) p;
-    return (Rbyte) val;
+    *endptr = const_cast<char *>( p);
+    return Rbyte( val);
 }
 
 static R_INLINE int scanchar_raw(LocalData *d)
@@ -297,14 +320,6 @@ static int scanchar(Rboolean inQuote, LocalData *d)
     return next;
 }
 
-/* utility to close connections after interrupts */
-static void scan_cleanup(void *data)
-{
-    LocalData *ld = data;
-    if(!ld->ttyflag && !ld->wasopen) ld->con->close(ld->con);
-    if (ld->quoteset[0]) free(ld->quoteset);
-}
-
 #include "RBufferUtils.h"
 
 /*XX  Can we pass this routine an R_StringBuffer? appears so.
@@ -324,7 +339,7 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 */
     char *bufp;
     int c, quote, filled, nbuf = MAXELTSIZE, m, mm = 0;
-    Rboolean dbcslocale = (MB_CUR_MAX == 2);
+    Rboolean dbcslocale = CXXRCONSTRUCT(Rboolean, (MB_CUR_MAX == 2));
 
     m = 0;
     filled = 1;
@@ -350,9 +365,9 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 		    if (c == R_EOF) break;
 		    if(c != quote) buffer->data[m++] = '\\';
 		}
-		buffer->data[m++] = (char) c;
+		buffer->data[m++] = char( c);
 		if(dbcslocale && btowc(c) == WEOF)
-		    buffer->data[m++] = (char) scanchar2(d);
+		    buffer->data[m++] = char( scanchar2(d));
 	    }
 	    if (c == R_EOF)
 	    	warning(_("EOF within quoted string"));
@@ -365,9 +380,9 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 		    nbuf *= 2;
 		    R_AllocStringBuffer(nbuf, buffer);
 		}
-		buffer->data[m++] = (char) c;
+		buffer->data[m++] = char( c);
 		if(dbcslocale && btowc(c) == WEOF)
-		    buffer->data[m++] = (char) scanchar2(d);
+		    buffer->data[m++] = char( scanchar2(d));
 		c = scanchar(FALSE, d);
 	    } while (!Rspace(c) && c != R_EOF);
 	}
@@ -400,9 +415,9 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 			    nbuf *= 2;
 			    R_AllocStringBuffer(nbuf, buffer);
 			}
-			buffer->data[m++] = (char) c;
+			buffer->data[m++] = char( c);
 			if(dbcslocale && btowc(c) == WEOF)
-			    buffer->data[m++] = (char) scanchar2(d);
+			    buffer->data[m++] = char( scanchar2(d));
 		    }
 		    if (c == R_EOF)
 		    	warning(_("EOF within quoted string"));
@@ -413,7 +428,7 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 			    nbuf *= 2;
 			    R_AllocStringBuffer(nbuf, buffer);
 			}
-			buffer->data[m++] = (char) quote;
+			buffer->data[m++] = char( quote);
 			goto inquote; /* FIXME: Ick! Clean up logic */
 		    }
 		    mm = m;
@@ -431,9 +446,9 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 			nbuf *= 2;
 			R_AllocStringBuffer(nbuf, buffer);
 		    }
-		    buffer->data[m++] = (char) c;
+		    buffer->data[m++] = char( c);
 		    if(dbcslocale && btowc(c) == WEOF)
-			buffer->data[m++] = (char) scanchar2(d);
+			buffer->data[m++] = char( scanchar2(d));
 		}
 	    }
 	filled = c; /* last lead byte in a DBCS */
@@ -442,7 +457,7 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
     /* strip trailing white space, if desired and if item is non-null */
     bufp = &buffer->data[m];
     if (strip && m > mm) {
-	do {c = (int)*--bufp;} while(m-- > mm && Rspace(c));
+	do {c = int(*--bufp);} while(m-- > mm && Rspace(c));
 	bufp++;
     }
     *bufp = '\0';
@@ -468,7 +483,7 @@ static R_INLINE int isNAstring(const char *buf, int mode, LocalData *d)
     return 0;
 }
 
-static R_INLINE void expected(char *what, char *got, LocalData *d)
+static R_INLINE void expected(CXXRCONST char *what, char *got, LocalData *d)
 {
     int c;
     if (d->ttyflag) { /* This is safe in a MBCS */
@@ -654,7 +669,7 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
 		      int fill, SEXP stripwhite, int blskip, int multiline,
 		      LocalData *d)
 {
-    SEXP ans, new, old, w;
+    SEXP ans, newv, old, w;
     char *buffer = NULL;
     int blksize, c, i, ii, j, n, nc, linesread, colsread, strip, bch;
     int badline, nstring = 0;
@@ -728,9 +743,9 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
 	    for (i = 0; i < nc; i++) {
 		old = VECTOR_ELT(ans, i);
 		if(!isNull(old)) {
-		    new = allocVector(TYPEOF(old), blksize);
-		    copyVector(new, old);
-		    SET_VECTOR_ELT(ans, i, new);
+		    newv = allocVector(TYPEOF(old), blksize);
+		    copyVector(newv, old);
+		    SET_VECTOR_ELT(ans, i, newv);
 		}
 	    }
 	}
@@ -778,35 +793,35 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
 
     for (i = 0; i < nc; i++) {
 	old = VECTOR_ELT(ans, i);
-	new = allocVector(TYPEOF(old), n);
+	newv = allocVector(TYPEOF(old), n);
 	switch (TYPEOF(old)) {
 	case LGLSXP:
 	case INTSXP:
 	    for (j = 0; j < n; j++)
-		INTEGER(new)[j] = INTEGER(old)[j];
+		INTEGER(newv)[j] = INTEGER(old)[j];
 	    break;
 	case REALSXP:
 	    for (j = 0; j < n; j++)
-		REAL(new)[j] = REAL(old)[j];
+		REAL(newv)[j] = REAL(old)[j];
 	    break;
 	case CPLXSXP:
 	    for (j = 0; j < n; j++)
-		COMPLEX(new)[j] = COMPLEX(old)[j];
+		COMPLEX(newv)[j] = COMPLEX(old)[j];
 	    break;
 	case STRSXP:
 	    for (j = 0; j < n; j++)
-		SET_STRING_ELT(new, j, STRING_ELT(old, j));
+		SET_STRING_ELT(newv, j, STRING_ELT(old, j));
 	    break;
 	case RAWSXP:
 	    for (j = 0; j < n; j++)
-		RAW(new)[j] = RAW(old)[j];
+		RAW(newv)[j] = RAW(old)[j];
 	    break;
 	case NILSXP:
 	    break;
 	default:
 	    UNIMPLEMENTED_TYPE("scanFrame", old);
 	}
-	SET_VECTOR_ELT(ans, i, new);
+	SET_VECTOR_ELT(ans, i, newv);
     }
     UNPROTECT(1);
     R_FreeStringBuffer(&buf);
@@ -818,7 +833,6 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP ans, file, sep, what, stripwhite, dec, quotes, comstr;
     int i, c, nlines, nmax, nskip, flush, fill, blskip, multiline, escapes;
     const char *p, *encoding;
-    RCNTXT cntxt;
     LocalData data = {NULL, 0, 0, '.', NULL, NO_COMCHAR, 0, NULL, FALSE,
 		      FALSE, 0, FALSE, FALSE};
     data.NAstrings = R_NilValue;
@@ -870,7 +884,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    const char *sc = translateChar(STRING_ELT(sep, 0));
 	    if(strlen(sc) > 1)
 		error(_("invalid 'sep' value: must be one byte"));
-	    data.sepchar = (unsigned char) sc[0];
+	    data.sepchar = static_cast<unsigned char>( sc[0]);
 	}
 	/* gets compared to chars: bug prior to 1.7.0 */
     } else error(_("invalid '%s' argument"), "sep");
@@ -901,10 +915,10 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     data.comchar = NO_COMCHAR; /*  here for -Wall */
     if (strlen(p) > 1)
 	error(_("invalid '%s' argument"), "comment.char");
-    else if (strlen(p) == 1) data.comchar = (unsigned char)*p;
+    else if (strlen(p) == 1) data.comchar = static_cast<unsigned char>(*p);
     if(escapes == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "allowEscapes");
-    data.escapes = escapes != 0;
+    data.escapes = CXXRCONSTRUCT(Rboolean, escapes != 0);
 
     i = asInteger(file);
     data.con = getConnection(i);
@@ -912,7 +926,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
 	data.atStart = FALSE;
 	data.ttyflag = 1;
     } else {
-	data.atStart = (nskip == 0);
+	data.atStart = CXXRCONSTRUCT(Rboolean, (nskip == 0));
 	data.ttyflag = 0;
 	data.wasopen = data.con->isopen;
 	if(!data.wasopen) {
@@ -935,43 +949,45 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     ans = R_NilValue;		/* -Wall */
     data.save = 0;
 
-    /* set up a context which will close the connection if there is
+    /* Use try-catch to close the connection if there is
        an error or user interrupt */
-    begincontext(&cntxt, CTXT_CCODE, call, R_BaseEnv, R_BaseEnv,
-		 R_NilValue, R_NilValue);
-    cntxt.cend = &scan_cleanup;
-    cntxt.cenddata = &data;
+    try {
+	switch (TYPEOF(what)) {
+	case LGLSXP:
+	case INTSXP:
+	case REALSXP:
+	case CPLXSXP:
+	case STRSXP:
+	case RAWSXP:
+	    ans = scanVector(TYPEOF(what), nmax, nlines, flush, stripwhite,
+			     blskip, &data);
+	    break;
 
-    switch (TYPEOF(what)) {
-    case LGLSXP:
-    case INTSXP:
-    case REALSXP:
-    case CPLXSXP:
-    case STRSXP:
-    case RAWSXP:
-	ans = scanVector(TYPEOF(what), nmax, nlines, flush, stripwhite,
-			 blskip, &data);
-	break;
-
-    case VECSXP:
-	ans = scanFrame(what, nmax, nlines, flush, fill, stripwhite,
-			blskip, multiline, &data);
-	break;
-    default:
-	error(_("invalid '%s' argument"), "what");
+	case VECSXP:
+	    ans = scanFrame(what, nmax, nlines, flush, fill, stripwhite,
+			    blskip, multiline, &data);
+	    break;
+	default:
+	    error(_("invalid '%s' argument"), "what");
+	}
     }
-    endcontext(&cntxt);
+    catch (...) {
+	if(!data.ttyflag && !data.wasopen) data.con->close(data.con);
+	if (data.quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, data.quoteset));
+	throw;
+    }
 
     /* we might have a character that was unscanchar-ed.
        So pushback if possible */
     if (data.save && !data.ttyflag && data.wasopen) {
 	char line[2] = " ";
-	line[0] = (char) data.save;
+	line[0] = char( data.save);
 	con_pushback(data.con, FALSE, line);
     }
     if (!data.ttyflag && !data.wasopen)
 	data.con->close(data.con);
-    if (data.quoteset[0]) free(data.quoteset);
+    if (data.quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, data.quoteset));
+    ProvenanceTracker::flagXenogenesis();
     return ans;
 }
 
@@ -998,10 +1014,10 @@ SEXP attribute_hidden do_readln(SEXP call, SEXP op, SEXP args, SEXP rho)
 	/* skip space or tab */
 	while ((c = ConsoleGetchar()) == ' ' || c == '\t') ;
 	if (c != '\n' && c != R_EOF) {
-	    *bufp++ = (char) c;
+	    *bufp++ = char( c);
 	    while ((c = ConsoleGetchar())!= '\n' && c != R_EOF) {
 		if (bufp >= &buffer[MAXELTSIZE - 2]) continue;
-		*bufp++ = (char) c;
+		*bufp++ = char( c);
 	    }
 	}
 	/* now strip white space off the end as well */
@@ -1019,3 +1035,4 @@ SEXP attribute_hidden do_readln(SEXP call, SEXP op, SEXP args, SEXP rho)
     UNPROTECT(1);
     return ans;
 }
+

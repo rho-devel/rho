@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C)  2001-12   The R Core Team.
@@ -28,46 +44,37 @@
 
 /* ------------------- socket connections  --------------------- */
 
-#define R_USE_SIGNALS 1
 #include <Defn.h>
 #include <Rconnections.h>
 #include <R_ext/R-ftp-http.h>
 #include "sock.h"
 #include <errno.h>
 
-static void listencleanup(void *data)
-{
-    int *psock = data;
-    R_SockClose(*psock);
-}
-
 static Rboolean sock_open(Rconnection con)
 {
-    Rsockconn this = (Rsockconn)con->private;
+    Rsockconn thisconn = (Rsockconn)con->connprivate;
     int sock, sock1, mlen;
-    int timeout = this->timeout;
+    int timeout = thisconn->timeout;
     char buf[256];
 
     if(timeout == NA_INTEGER || timeout <= 0) timeout = 60;
-    this->pend = this->pstart = this->inbuf;
+    thisconn->pend = thisconn->pstart = thisconn->inbuf;
 
-    if(this->server) {
-	sock1 = R_SockOpen(this->port);
+    if(thisconn->server) {
+	sock1 = R_SockOpen(thisconn->port);
 	if(sock1 < 0) {
-	    warning("port %d cannot be opened", this->port);
+	    warning("port %d cannot be opened", thisconn->port);
 	    return FALSE;
 	}
-	{
-	    RCNTXT cntxt;
-
-	    /* set up a context which will close socket on jump. */
-	    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv,
-			 R_BaseEnv, R_NilValue, R_NilValue);
-	    cntxt.cend = &listencleanup;
-	    cntxt.cenddata = &sock1;
+	/* use try-catch to close socket on jump. */
+	try {
 	    sock = R_SockListen(sock1, buf, 256, timeout);
-	    endcontext(&cntxt);
 	}
+	catch (...) {
+	    R_SockClose(sock1);
+	    throw;
+	}
+
 	if(sock < 0) {
 	    warning("problem in listening on this socket");
 	    R_SockClose(sock1);
@@ -75,20 +82,20 @@ static Rboolean sock_open(Rconnection con)
 	}
 	free(con->description);
 	con->description = (char *) malloc(strlen(buf) + 10);
-	sprintf(con->description, "<-%s:%d", buf, this->port);
+	sprintf(con->description, "<-%s:%d", buf, thisconn->port);
 	R_SockClose(sock1);
     } else {
-	sock = R_SockConnect(this->port, con->description, timeout);
+	sock = R_SockConnect(thisconn->port, con->description, timeout);
 	if(sock < 0) {
-	    warning("%s:%d cannot be opened", con->description, this->port);
+	    warning("%s:%d cannot be opened", con->description, thisconn->port);
 	    return FALSE;
 	}
-	sprintf(buf, "->%s:%d", con->description, this->port);
+	sprintf(buf, "->%s:%d", con->description, thisconn->port);
 	strcpy(con->description, buf);
     }
-    this->fd = sock;
+    thisconn->fd = sock;
 
-    mlen = (int) strlen(con->mode);
+    mlen = int( strlen(con->mode));
     con->isopen = TRUE;
     if(mlen >= 2 && con->mode[mlen - 1] == 'b') con->text = FALSE;
     else con->text = TRUE;
@@ -99,25 +106,25 @@ static Rboolean sock_open(Rconnection con)
 
 static void sock_close(Rconnection con)
 {
-    Rsockconn this = (Rsockconn)con->private;
-    R_SockClose(this->fd);
+    Rsockconn thisconn = (Rsockconn)con->connprivate;
+    R_SockClose(thisconn->fd);
     con->isopen = FALSE;
 }
 
 static size_t sock_read_helper(Rconnection con, void *ptr, size_t size)
 {
-    Rsockconn this = (Rsockconn)con->private;
+    Rsockconn thisconn = (Rsockconn)con->connprivate;
     ssize_t res;
     size_t nread = 0, n;
 
     con->incomplete = FALSE;
     do {
 	/* read data into the buffer if it's empty and size > 0 */
-	if (size > 0 && this->pstart == this->pend) {
-	    this->pstart = this->pend = this->inbuf;
+	if (size > 0 && thisconn->pstart == thisconn->pend) {
+	    thisconn->pstart = thisconn->pend = thisconn->inbuf;
 	    do
-		res = R_SockRead(this->fd, this->inbuf, 4096, 
-				 con->blocking, this->timeout);
+		res = R_SockRead(thisconn->fd, thisconn->inbuf, 4096, 
+				 con->blocking, thisconn->timeout);
 	    while (-res == EINTR);
 	    if (! con->blocking && -res == EAGAIN) {
 		con->incomplete = TRUE;
@@ -126,17 +133,17 @@ static size_t sock_read_helper(Rconnection con, void *ptr, size_t size)
 	    else if (res == 0) /* should mean EOF */
 		return nread;
 	    else if (res < 0) return res;
-	    else this->pend = this->inbuf + res;
+	    else thisconn->pend = thisconn->inbuf + res;
 	}
 
 	/* copy data from buffer to ptr */
-	if (this->pstart + size <= this->pend)
+	if (thisconn->pstart + size <= thisconn->pend)
 	    n = size;
 	else
-	    n = this->pend - this->pstart;
-	memcpy(ptr, this->pstart, n);
+	    n = thisconn->pend - thisconn->pstart;
+	memcpy(ptr, thisconn->pstart, n);
 	ptr = ((char *) ptr) + n;
-	this->pstart += n;
+	thisconn->pstart += n;
 	size -= n;
 	nread += n;
     } while (size > 0);
@@ -163,46 +170,46 @@ static size_t sock_read(void *ptr, size_t size, size_t nitems,
 static size_t sock_write(const void *ptr, size_t size, size_t nitems,
 			 Rconnection con)
 {
-    Rsockconn this = (Rsockconn)con->private;
+    Rsockconn thisconn = (Rsockconn)con->connprivate;
 
-    return R_SockWrite(this->fd, ptr, (int)(size * nitems), this->timeout)/size;
+    return R_SockWrite(thisconn->fd, ptr, size * nitems, thisconn->timeout)/size;
 }
 
 Rconnection in_R_newsock(const char *host, int port, int server,
 			 const char * const mode, int timeout)
 {
-    Rconnection new;
+    Rconnection newconn;
 
-    new = (Rconnection) malloc(sizeof(struct Rconn));
-    if(!new) error(_("allocation of socket connection failed"));
-    new->class = (char *) malloc(strlen("sockconn") + 1);
-    if(!new->class) {
-	free(new);
+    newconn = (Rconnection) malloc(sizeof(struct Rconn));
+    if(!newconn) error(_("allocation of socket connection failed"));
+    newconn->connclass = (char *) malloc(strlen("sockconn") + 1);
+    if(!newconn->connclass) {
+	free(newconn);
 	error(_("allocation of socket connection failed"));
     }
-    strcpy(new->class, "sockconn");
-    new->description = (char *) malloc(strlen(host) + 10);
-    if(!new->description) {
-	free(new->class); free(new);
+    strcpy(newconn->connclass, "sockconn");
+    newconn->description = (char *) malloc(strlen(host) + 10);
+    if(!newconn->description) {
+	free(newconn->connclass); free(newconn);
 	error(_("allocation of socket connection failed"));
     }
-    init_con(new, host, CE_NATIVE, mode);
-    new->open = &sock_open;
-    new->close = &sock_close;
-    new->vfprintf = &dummy_vfprintf;
-    new->fgetc_internal = &sock_fgetc_internal;
-    new->fgetc = &dummy_fgetc;
-    new->read = &sock_read;
-    new->write = &sock_write;
-    new->private = (void *) malloc(sizeof(struct sockconn));
-    if(!new->private) {
-	free(new->description); free(new->class); free(new);
+    init_con(newconn, host, CE_NATIVE, mode);
+    newconn->open = &sock_open;
+    newconn->close = &sock_close;
+    newconn->vfprintf = &dummy_vfprintf;
+    newconn->fgetc_internal = &sock_fgetc_internal;
+    newconn->fgetc = &dummy_fgetc;
+    newconn->read = &sock_read;
+    newconn->write = &sock_write;
+    newconn->connprivate = (void *) malloc(sizeof(struct sockconn));
+    if(!newconn->connprivate) {
+	free(newconn->description); free(newconn->connclass); free(newconn);
 	error(_("allocation of socket connection failed"));
     }
-    ((Rsockconn)new->private)-> port = port;
-    ((Rsockconn)new->private)-> server = server;
-    ((Rsockconn)new->private)-> timeout = timeout;
-    return new;
+    ((Rsockconn)newconn->connprivate)-> port = port;
+    ((Rsockconn)newconn->connprivate)-> server = server;
+    ((Rsockconn)newconn->connprivate)-> timeout = timeout;
+    return newconn;
 }
 
 #endif /* HAVE_SOCKETS */

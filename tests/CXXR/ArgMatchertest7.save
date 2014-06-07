@@ -1,0 +1,17 @@
+Formal arguments:
+
+black : BLACK
+brown : 
+red : RED
+orange : ORANGE
+yellow : 
+... : DOTS
+green : 
+blue : BLUE
+violet : 
+grey : GREY
+white : 
+silver : SILVER
+Error: '...' formal cannot have a default value
+
+ArgMatchertest: Error encountered while processing formals

@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
   R : A Computer Language for Statistical Data Analysis
   Copyright (C) 1995-1996   Robert Gentleman and Ross Ihaka
@@ -154,9 +170,7 @@ void R_DefParams(Rstart Rp)
     Rp->LoadInitFile = TRUE;
     Rp->DebugInitFile = FALSE;
     Rp->vsize = R_VSIZE;
-    Rp->nsize = R_NSIZE;
     Rp->max_vsize = R_SIZE_T_MAX;
-    Rp->max_nsize = R_SIZE_T_MAX;
     Rp->ppsize = R_PPSSIZE;
     Rp->NoRenviron = FALSE;
     R_SizeFromEnv(Rp);
@@ -181,41 +195,26 @@ void R_SizeFromEnv(Rstart Rp)
 	else
 	    Rp->vsize = value;
     }
-    if((p = getenv("R_NSIZE"))) {
-	value = R_Decode2Long(p, &ierr);
-	if(ierr != 0 || value > Max_Nsize || value < Min_Nsize)
-	    R_ShowMessage("WARNING: invalid R_NSIZE ignored\n");
-	else
-	    Rp->nsize = value;
-    }
 }
 
-static void SetSize(R_size_t vsize, R_size_t nsize)
+static void SetSize(R_size_t vsize)
 {
     char msg[1024];
 
     /* vsize > 0 to catch long->int overflow */
     if (vsize < 1000 && vsize > 0) {
 	R_ShowMessage("WARNING: vsize ridiculously low, Megabytes assumed\n");
-	vsize *= (R_size_t) Mega;
+	vsize *= R_size_t( Mega);
     }
     if(vsize < Min_Vsize || vsize > Max_Vsize) {
 	snprintf(msg, 1024, 
 		 "WARNING: invalid v(ector heap)size `%lu' ignored\n"
-		 "using default = %gM\n", (unsigned long) vsize,
+		 "using default = %gM\n", static_cast<unsigned long>( vsize),
 		 R_VSIZE / Mega);
 	R_ShowMessage(msg);
 	R_VSize = R_VSIZE;
     } else
 	R_VSize = vsize;
-    if(nsize < Min_Nsize || nsize > Max_Nsize) {
-	snprintf(msg, 1024,
-		 "WARNING: invalid language heap (n)size `%lu' ignored,"
-		 " using default = %ld\n", (unsigned long) nsize, R_NSIZE);
-	R_ShowMessage(msg);
-	R_NSize = R_NSIZE;
-    } else
-	R_NSize = nsize;
 }
 
 
@@ -230,10 +229,7 @@ void R_SetParams(Rstart Rp)
     LoadSiteFile = Rp->LoadSiteFile;
     LoadInitFile = Rp->LoadInitFile;
     DebugInitFile = Rp->DebugInitFile;
-    SetSize(Rp->vsize, Rp->nsize);
-    R_SetMaxNSize(Rp->max_nsize);
-    R_SetMaxVSize(Rp->max_vsize);
-    R_SetPPSize(Rp->ppsize);
+    SetSize(Rp->vsize);
 #ifdef Win32
     R_SetWin32(Rp);
 #endif

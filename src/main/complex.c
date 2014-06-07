@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
@@ -19,9 +35,7 @@
  *  http://www.r-project.org/Licenses/
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include "Rcomplex.h"
 
 /* Note: gcc may warn in several places about C99 features as extensions.
    This is a very-long-standing GCC bug, http://gcc.gnu.org/PR7263
@@ -57,7 +71,6 @@
 #undef HAVE_CPOW
 #endif
 
-#include <Defn.h>		/* -> ../include/R_ext/Complex.h */
 #include <Internal.h>
 #include <Rmath.h>
 
@@ -217,6 +230,7 @@ SEXP attribute_hidden complex_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 
     n = (n1 > n2) ? n1 : n2;
     ans = allocVector(CPLXSXP, n);
+    maybeTraceMemory2(ans, s1, s2);
 
     switch (code) {
     case PLUSOP:
@@ -365,6 +379,7 @@ SEXP attribute_hidden do_cmathfuns(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(y);
     DUPLICATE_ATTRIB(y, x);
     UNPROTECT(2);
+    maybeTraceMemory1(y, x);
     return y;
 }
 

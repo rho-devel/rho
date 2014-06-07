@@ -1,8 +1,9 @@
 
 R version 3.0.2 RC (2013-09-22 r63960) -- "Frisbee Sailing"
 Copyright (C) 2013 The R Foundation for Statistical Computing
-Platform: x86_64-unknown-linux-gnu (64-bit)
+Platform: i686-pc-linux-gnu (32-bit)
 
+CXXR Copyright (C) 2008-12 Andrew R. Runnalls.  CXXR like
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
 Type 'license()' or 'licence()' for distribution details.
@@ -15,6 +16,8 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+CXXR is not part of the R project, so please do not report bugs
+via r-bugs or the R website; instead refer to the CXXR website.
 > ## Regression tests for which the printed output is the issue
 > ### _and_ must work (no Recommended packages, please)
 > 
@@ -463,7 +466,7 @@ numeric(0)
    100 -1e-13    Inf   -Inf    NaN   3.14     NA 
    100      0     NA     NA     NA      3     NA 
 Warning message:
-In structure(as.integer(x), names = names(x)) : NAs introduced by coercion
+In as.integer(x) : NAs introduced by coercion
 > ##-   100 -1e-13    Inf   -Inf    NaN   3.14     NA
 > ##-   100      0     NA     NA     NA      3     NA
 > all(is.na(ix) != is.finite(ix) | is.infinite(ix)) # TRUE (still)
@@ -4386,10 +4389,10 @@ Levels: a a " test b
 [1] a        <NA>     b        a " test
 Levels: a a " test b <NA>
 > print(factor(x), quote=TRUE)
-[1] "a"         NA          "b"         "a \" test"
+[1] "a"        NA         "b"        "a \" test"
 Levels: "a" "a \" test" "b"
 > print(factor(x, exclude=""), quote=TRUE)
-[1] "a"         NA          "b"         "a \" test"
+[1] "a"        NA         "b"        "a \" test"
 Levels: "a" "a \" test" "b" NA
 > ## last two printed levels differently from values in 2.0.1
 > 
@@ -4757,11 +4760,12 @@ z       1    82.814 89.130 23.8751
 > as.raw(1234)
 [1] 00
 Warning message:
-out-of-range values treated as 0 in coercion to raw 
+In as.raw(1234) : out-of-range values treated as 0 in coercion to raw
 > as.raw(list(a=1234))
 [1] 00
 Warning message:
-out-of-range values treated as 0 in coercion to raw 
+In as.raw(list(a = 1234)) :
+  out-of-range values treated as 0 in coercion to raw
 > ## 2.1.1: spurious and missing messages, wrong result for second.
 > 
 > 
@@ -4807,10 +4811,10 @@ out-of-range values treated as 0 in coercion to raw
 > ## try(m2[m2 == 2] <- 1:2)
 > tryCatch(df2[df2 == 2] <- 1:2,
 +          error = function(e) paste("Error:", conditionMessage(e)))
-[1] "Error: NAs are not allowed in subscripted assignments"
+[1] "Error: NA subscripts are not allowed in this context"
 > tryCatch(m2[m2 == 2] <- 1:2,
 +          error = function(e) paste("Error:", conditionMessage(e)))
-[1] "Error: NAs are not allowed in subscripted assignments"
+[1] "Error: NA subscripts are not allowed in this context"
 > ##
 > 
 > 
@@ -6099,7 +6103,7 @@ $`NA`
 > attr(x, NA_character_)
 NULL
 > try(attr(x, NA_character_) <- 5)
-Error in attr(x, NA_character_) <- 5 : 
+Error in `attr<-`(`*tmp*`, NA_character_, value = 5) : 
   'name' must be non-null character string
 > ## prior to 2.5.0 NA was treated as "NA"
 > 
@@ -6811,7 +6815,7 @@ Levels: a b c d e f g h i j k l m n o
 Error in double(FALSE) : invalid 'length' argument
 > x <- 1:3
 > try(length(x) <- TRUE)
-Error in length(x) <- TRUE : invalid value
+Error in `length<-`(`*tmp*`, value = TRUE) : invalid value
 > ## coerced to integer in 2.13.x
 > 
 > 

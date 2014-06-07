@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -28,6 +44,11 @@
 #include <Rmath.h>
 #include <R_ext/RS.h>     /* for Calloc/Free */
 #include <R_ext/Applic.h> /* for dgemm */
+
+#include "CXXR/GCStackRoot.hpp"
+#include "CXXR/Subscripting.hpp"
+
+using namespace CXXR;
 
 /* "GetRowNames" and "GetColNames" are utility routines which
  * locate and return the row names and column names from the
@@ -108,17 +129,17 @@ SEXP attribute_hidden do_matrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     if (miss_nr && miss_nc) {
 	if (lendat > INT_MAX) error("data is too long");
-	nr = (int) lendat;
+	nr = int( lendat);
     } else if (miss_nr) {
-	if (lendat > (double) nc * INT_MAX) error("data is too long");
-	nr = (int) ceil((double) lendat / (double) nc);
+	if (lendat > double( nc) * INT_MAX) error("data is too long");
+	nr = int( ceil(double( lendat) / double( nc)));
     } else if (miss_nc) {
-	if (lendat > (double) nr * INT_MAX) error("data is too long");
-	nc = (int) ceil((double) lendat / (double) nr);
+	if (lendat > double( nr) * INT_MAX) error("data is too long");
+	nc = int( ceil(double( lendat) / double( nr)));
     }
 
     if(lendat > 0) {
-	R_xlen_t nrc = (R_xlen_t) nr * nc;
+	R_xlen_t nrc = R_xlen_t( nr) * nc;
 	if (lendat > 1 && nrc % lendat != 0) {
 	    if (((lendat > nr) && (lendat / nr) * nr != lendat) ||
 		((lendat < nr) && (nr / lendat) * lendat != nr))
@@ -133,18 +154,18 @@ SEXP attribute_hidden do_matrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
 #ifndef LONG_VECTOR_SUPPORT
-    if ((double)nr * (double)nc > INT_MAX)
+    if (double(nr) * double(nc) > INT_MAX)
 	error(_("too many elements specified"));
 #endif
 
     PROTECT(ans = allocMatrix(TYPEOF(vals), nr, nc));
     if(lendat) {
 	if (isVector(vals))
-	    copyMatrix(ans, vals, byrow);
+	    copyMatrix(ans, vals, CXXRCONSTRUCT(Rboolean, byrow));
 	else
-	    copyListMatrix(ans, vals, byrow);
+	    copyListMatrix(ans, vals, CXXRCONSTRUCT(Rboolean, byrow));
     } else if (isVector(vals)) { /* fill with NAs */
-	R_xlen_t N = (R_xlen_t) nr * nc, i;
+	R_xlen_t N = R_xlen_t( nr) * nc, i;
 	switch(TYPEOF(vals)) {
 	case STRSXP:
 	    for (i = 0; i < N; i++)
@@ -194,10 +215,10 @@ SEXP allocMatrix(SEXPTYPE mode, int nrow, int ncol)
     if (nrow < 0 || ncol < 0)
 	error(_("negative extents to matrix"));
 #ifndef LONG_VECTOR_SUPPORT
-    if ((double)nrow * (double)ncol > INT_MAX)
+    if (double(nrow) * double(ncol) > INT_MAX)
 	error(_("allocMatrix: too many elements specified"));
 #endif
-    n = ((R_xlen_t) nrow) * ncol;
+    n = (R_xlen_t( nrow)) * ncol;
     PROTECT(s = allocVector(mode, n));
     PROTECT(t = allocVector(INTSXP, 2));
     INTEGER(t)[0] = nrow;
@@ -225,10 +246,10 @@ SEXP alloc3DArray(SEXPTYPE mode, int nrow, int ncol, int nface)
     if (nrow < 0 || ncol < 0 || nface < 0)
 	error(_("negative extents to 3D array"));
 #ifndef LONG_VECTOR_SUPPORT
-    if ((double)nrow * (double)ncol * (double)nface > INT_MAX)
-	error(_("'alloc3Darray': too many elements specified"));
+    if (double(nrow) * double(ncol) * double(nface) > INT_MAX)
+	error(_("alloc3Darray: too many elements specified"));
 #endif
-    n = ((R_xlen_t) nrow) * ncol * nface;
+    n = (R_xlen_t( nrow)) * ncol * nface;
     PROTECT(s = allocVector(mode, n));
     PROTECT(t = allocVector(INTSXP, 3));
     INTEGER(t)[0] = nrow;
@@ -271,116 +292,20 @@ SEXP allocArray(SEXPTYPE mode, SEXP dims)
 
 SEXP DropDims(SEXP x)
 {
-    SEXP dims, dimnames, newnames = R_NilValue;
-    int i, n, ndims;
-
-    PROTECT(x);
-    dims = getAttrib(x, R_DimSymbol);
-    dimnames = getAttrib(x, R_DimNamesSymbol);
-
-    /* Check that dropping will actually do something. */
-    /* (1) Check that there is a "dim" attribute. */
-
-    if (dims == R_NilValue) {
-	UNPROTECT(1);
-	return x;
-    }
-    ndims = LENGTH(dims);
-
-    /* (2) Check whether there are redundant extents */
-    n = 0;
-    for (i = 0; i < ndims; i++)
-	if (INTEGER(dims)[i] != 1) n++;
-    if (n == ndims) {
-	UNPROTECT(1);
-	return x;
-    }
-
-    if (n <= 1) {
-	/* We have reduced to a vector result.
-	   If that has length one, it is ambiguous which dimnames to use,
-	   so use it if there is only one (as from R 2.7.0).
-	 */
-	if (dimnames != R_NilValue) {
-	    if(XLENGTH(x) != 1) {
-		for (i = 0; i < LENGTH(dims); i++) {
-		    if (INTEGER(dims)[i] != 1) {
-			newnames = VECTOR_ELT(dimnames, i);
-			break;
-		    }
-		}
-	    } else { /* drop all dims: keep names if unambiguous */
-		int cnt;
-		for(i = 0, cnt = 0; i < LENGTH(dims); i++)
-		    if(VECTOR_ELT(dimnames, i) != R_NilValue) cnt++;
-		if(cnt == 1)
-		    for (i = 0; i < LENGTH(dims); i++) {
-			newnames = VECTOR_ELT(dimnames, i);
-			if(newnames != R_NilValue) break;
-		    }
-	    }
-	}
-	PROTECT(newnames);
-	setAttrib(x, R_DimNamesSymbol, R_NilValue);
-	setAttrib(x, R_DimSymbol, R_NilValue);
-	setAttrib(x, R_NamesSymbol, newnames);
-	/* FIXME: the following is desirable, but pointless as long as
-	   subset.c & others have a contrary version that leaves the
-	   S4 class in, incorrectly, in the case of vectors.  JMC
-	   3/3/09 */
-/* 	if(IS_S4_OBJECT(x)) {/\* no longer valid subclass of array or
- 	matrix *\/ */
-/* 	    setAttrib(x, R_ClassSymbol, R_NilValue); */
-/* 	    UNSET_S4_OBJECT(x); */
-/* 	} */
-	UNPROTECT(1);
-    } else {
-	/* We have a lower dimensional array. */
-	SEXP newdims, dnn, newnamesnames = R_NilValue;
-	dnn = getAttrib(dimnames, R_NamesSymbol);
-	PROTECT(newdims = allocVector(INTSXP, n));
-	for (i = 0, n = 0; i < ndims; i++)
-	    if (INTEGER(dims)[i] != 1)
-		INTEGER(newdims)[n++] = INTEGER(dims)[i];
-	if (!isNull(dimnames)) {
-	    int havenames = 0;
-	    for (i = 0; i < ndims; i++)
-		if (INTEGER(dims)[i] != 1 &&
-		    VECTOR_ELT(dimnames, i) != R_NilValue)
-		    havenames = 1;
-	    if (havenames) {
-		PROTECT(newnames = allocVector(VECSXP, n));
-		PROTECT(newnamesnames = allocVector(STRSXP, n));
-		for (i = 0, n = 0; i < ndims; i++) {
-		    if (INTEGER(dims)[i] != 1) {
-			if(!isNull(dnn))
-			    SET_STRING_ELT(newnamesnames, n,
-					   STRING_ELT(dnn, i));
-			SET_VECTOR_ELT(newnames, n++, VECTOR_ELT(dimnames, i));
-		    }
-		}
-	    }
-	    else dimnames = R_NilValue;
-	}
-	PROTECT(dimnames);
-	setAttrib(x, R_DimNamesSymbol, R_NilValue);
-	setAttrib(x, R_DimSymbol, newdims);
-	if (dimnames != R_NilValue)
-	{
-	    if(!isNull(dnn))
-		setAttrib(newnames, R_NamesSymbol, newnamesnames);
-	    setAttrib(x, R_DimNamesSymbol, newnames);
-	    UNPROTECT(2);
-	}
-	UNPROTECT(2);
-    }
-    UNPROTECT(1);
-    return x;
+    // The following is a kludge.  It is possible that the object
+    // pointed to by x is not actually a VectorBase; however, provided
+    // its 'dims' and/or 'dimnames' attributes, if present, are
+    // configured in the standard way, Subscripting::dropDimensions()
+    // should behave correctly.
+    VectorBase* vb = static_cast<VectorBase*>(x);
+    Subscripting::dropDimensions(vb);
+    return vb;
 }
 
 SEXP attribute_hidden do_drop(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP x, xdims;
+    GCStackRoot<> x;
+    SEXP xdims;
     int i, n, shorten;
 
     checkArity(op, args);
@@ -410,6 +335,7 @@ SEXP attribute_hidden do_length(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (isObject(x) &&
        DispatchOrEval(call, op, "length", args, rho, &ans, 0, 1)) {
 	if (length(ans) == 1 && TYPEOF(ans) == REALSXP) {
+	    GCStackRoot<> ansrt(ans);
 	    double d = REAL(ans)[0];
 	    if (R_FINITE(d) && d >= 0. && d <= INT_MAX && floor(d) == d)
 		return coerceVector(ans, INTSXP);
@@ -420,7 +346,7 @@ SEXP attribute_hidden do_length(SEXP call, SEXP op, SEXP args, SEXP rho)
 #ifdef LONG_VECTOR_SUPPORT
     // or use IS_LONG_VEC
     R_xlen_t len = xlength(x);
-    if (len > INT_MAX) return ScalarReal((double) len);
+    if (len > INT_MAX) return ScalarReal(double( len));
 #endif
     return ScalarInteger(length(x));
 }
@@ -462,7 +388,7 @@ SEXP attribute_hidden do_rowscols(SEXP call, SEXP op, SEXP args, SEXP rho)
 static void matprod(double *x, int nrx, int ncx,
 		    double *y, int nry, int ncy, double *z)
 {
-    char *transa = "N", *transb = "N";
+    CXXRCONST char *transa = "N", *transb = "N";
     double one = 1.0, zero = 0.0;
     LDOUBLE sum;
     Rboolean have_na = FALSE;
@@ -483,7 +409,7 @@ static void matprod(double *x, int nrx, int ncx,
 		    sum = 0.0;
 		    for (int j = 0; j < ncx; j++)
 			sum += x[i + j * NRX] * y[j + k * NRY];
-		    z[i + k * NRX] = (double) sum;
+		    z[i + k * NRX] = double( sum);
 		}
 	} else
 	    F77_CALL(dgemm)(transa, transb, &nrx, &ncy, &ncx, &one,
@@ -496,7 +422,7 @@ static void cmatprod(Rcomplex *x, int nrx, int ncx,
 		     Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
 #ifdef HAVE_FORTRAN_DOUBLE_COMPLEX
-    char *transa = "N", *transb = "N";
+    CXXRCONST char *transa = "N", *transb = "N";
     Rcomplex one, zero;
 
     one.r = 1.0; one.i = zero.r = zero.i = 0.0;
@@ -540,7 +466,7 @@ static void cmatprod(Rcomplex *x, int nrx, int ncx,
 
 static void symcrossprod(double *x, int nr, int nc, double *z)
 {
-    char *trans = "T", *uplo = "U";
+    CXXRCONST char *trans = "T", *uplo = "U";
     double one = 1.0, zero = 0.0;
     R_xlen_t NC = nc;
     if (nr > 0 && nc > 0) {
@@ -556,7 +482,7 @@ static void symcrossprod(double *x, int nr, int nc, double *z)
 static void crossprod(double *x, int nrx, int ncx,
 		      double *y, int nry, int ncy, double *z)
 {
-    char *transa = "T", *transb = "N";
+    CXXRCONST char *transa = "T", *transb = "N";
     double one = 1.0, zero = 0.0;
     if (nrx > 0 && ncx > 0 && nry > 0 && ncy > 0) {
 	F77_CALL(dgemm)(transa, transb, &ncx, &ncy, &nrx, &one,
@@ -570,7 +496,7 @@ static void crossprod(double *x, int nrx, int ncx,
 static void ccrossprod(Rcomplex *x, int nrx, int ncx,
 		       Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
-    char *transa = "T", *transb = "N";
+    CXXRCONST char *transa = "T", *transb = "N";
     Rcomplex one, zero;
 
     one.r = 1.0; one.i = zero.r = zero.i = 0.0;
@@ -585,7 +511,7 @@ static void ccrossprod(Rcomplex *x, int nrx, int ncx,
 
 static void symtcrossprod(double *x, int nr, int nc, double *z)
 {
-    char *trans = "N", *uplo = "U";
+    CXXRCONST char *trans = "N", *uplo = "U";
     double one = 1.0, zero = 0.0;
     if (nr > 0 && nc > 0) {
 	F77_CALL(dsyrk)(uplo, trans, &nr, &nc, &one, x, &nr, &zero, z, &nr);
@@ -601,7 +527,7 @@ static void symtcrossprod(double *x, int nr, int nc, double *z)
 static void tcrossprod(double *x, int nrx, int ncx,
 		      double *y, int nry, int ncy, double *z)
 {
-    char *transa = "N", *transb = "T";
+    CXXRCONST char *transa = "N", *transb = "T";
     double one = 1.0, zero = 0.0;
     if (nrx > 0 && ncx > 0 && nry > 0 && ncy > 0) {
 	F77_CALL(dgemm)(transa, transb, &nrx, &nry, &ncx, &one,
@@ -615,7 +541,7 @@ static void tcrossprod(double *x, int nrx, int ncx,
 static void tccrossprod(Rcomplex *x, int nrx, int ncx,
 			Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
-    char *transa = "N", *transb = "T";
+    CXXRCONST char *transa = "N", *transb = "T";
     Rcomplex one, zero;
 
     one.r = 1.0; one.i = zero.r = zero.i = 0.0;
@@ -632,18 +558,20 @@ static void tccrossprod(Rcomplex *x, int nrx, int ncx,
 /* "%*%" (op = 0), crossprod (op = 1) or tcrossprod (op = 2) */
 SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    int ldx, ldy, nrx, ncx, nry, ncy, mode;
+    int ldx, ldy, nrx, ncx, nry, ncy;
+    SEXPTYPE mode;
     SEXP x = CAR(args), y = CADR(args), xdims, ydims, ans;
     Rboolean sym;
 
     if (PRIMVAL(op) == 0 && /* %*% is primitive, the others are .Internal() */
        (IS_S4_OBJECT(x) || IS_S4_OBJECT(y))
        && R_has_methods(op)) {
-	SEXP s, value;
+	SEXP s;
 	/* Remove argument names to ensure positional matching */
 	for(s = args; s != R_NilValue; s = CDR(s)) SET_TAG(s, R_NilValue);
-	value = R_possible_dispatch(call, op, args, rho, FALSE);
-	if (value) return value;
+	std::pair<bool, SEXP> pr
+	    = R_possible_dispatch(call, op, args, rho, FALSE);
+	if (pr.first) return pr.second;
     }
 
     sym = isNull(y);
@@ -968,11 +896,11 @@ SEXP attribute_hidden do_transpose(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    break;
 	default:
-	    goto not_matrix;
+	    error(_("argument is not a matrix"));
 	}
     }
     else
-	goto not_matrix;
+	error(_("argument is not a matrix"));
     PROTECT(r = allocVector(TYPEOF(a), len));
     R_xlen_t i, j, l_1 = len-1;
     switch (TYPEOF(a)) {
@@ -1016,7 +944,7 @@ SEXP attribute_hidden do_transpose(SEXP call, SEXP op, SEXP args, SEXP rho)
         break;
     default:
         UNPROTECT(1);
-        goto not_matrix;
+        error(_("argument is not a matrix"));
     }
     PROTECT(dims = allocVector(INTSXP, 2));
     INTEGER(dims)[0] = ncol;
@@ -1044,9 +972,6 @@ SEXP attribute_hidden do_transpose(SEXP call, SEXP op, SEXP args, SEXP rho)
     copyMostAttrib(a, r);
     UNPROTECT(1);
     return r;
- not_matrix:
-    error(_("argument is not a matrix"));
-    return call;/* never used; just for -Wall */
 }
 
 /*
@@ -1088,7 +1013,7 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* check the permutation */
 
-    int *pp = (int *) R_alloc((size_t) n, sizeof(int));
+    int *pp = static_cast<int *>( CXXR_alloc(size_t( n), sizeof(int)));
     perm = CADR(args);
     if (length(perm) == 0) {
 	for (i = 0; i < n; i++) pp[i] = n-1-i;
@@ -1104,10 +1029,10 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if (isNull(dnna))
 		error(_("'a' does not have named dimnames"));
 	    for (i = 0; i < n; i++) {
-		const char *this = translateChar(STRING_ELT(perm, i));
+		const char *thiss = translateChar(STRING_ELT(perm, i));
 		for (j = 0; j < n; j++)
 		    if (streql(translateChar(STRING_ELT(dnna, j)),
-			       this)) {pp[i] = j; break;}
+			       thiss)) {pp[i] = j; break;}
 		if (j >= n)
 		    error(_("'perm[%d]' does not match a dimension name"), i+1);
 	    }
@@ -1118,7 +1043,7 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
     }
 
-    R_xlen_t *iip = (R_xlen_t *) R_alloc((size_t) n, sizeof(R_xlen_t));
+    R_xlen_t *iip = static_cast<R_xlen_t *>( CXXR_alloc(size_t( n), sizeof(R_xlen_t)));
     for (i = 0; i < n; iip[i++] = 0);
     for (i = 0; i < n; i++)
 	if (pp[i] >= 0 && pp[i] < n) iip[pp[i]]++;
@@ -1128,7 +1053,7 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* create the stride object and permute */
 
-    R_xlen_t *stride = (R_xlen_t *) R_alloc((size_t) n, sizeof(R_xlen_t));
+    R_xlen_t *stride = static_cast<R_xlen_t *>( CXXR_alloc(size_t( n), sizeof(R_xlen_t)));
     for (iip[0] = 1, i = 1; i<n; i++) iip[i] = iip[i-1] * isa[i-1];
     for (i = 0; i < n; i++) stride[i] = iip[pp[i]];
 
@@ -1248,13 +1173,13 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
     x = CAR(args); args = CDR(args);
     int n = asInteger(CAR(args)); args = CDR(args);
     int p = asInteger(CAR(args)); args = CDR(args);
-    NaRm = asLogical(CAR(args));
+    NaRm = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));
     if (n == NA_INTEGER || n < 0)
 	error(_("invalid '%s' argument"), "n");
     if (p == NA_INTEGER || p < 0)
 	error(_("invalid '%s' argument"), "p");
     if (NaRm == NA_LOGICAL) error(_("invalid '%s' argument"), "na.rm");
-    keepNA = !NaRm;
+    keepNA = CXXRCONSTRUCT(Rboolean, !NaRm);
 
     int OP = PRIMVAL(op);
     switch (type = TYPEOF(x)) {
@@ -1283,7 +1208,7 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    switch (type) {
 	    case REALSXP:
 	    {
-		double *rx = REAL(x) + (R_xlen_t)n*j;
+		double *rx = REAL(x) + R_xlen_t(n)*j;
 		if (keepNA)
 		    for (sum = 0., i = 0; i < n; i++) sum += *rx++;
 		else {
@@ -1295,7 +1220,7 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    case INTSXP:
 	    {
-		int *ix = INTEGER(x) + (R_xlen_t)n*j;
+		int *ix = INTEGER(x) + R_xlen_t(n)*j;
 		for (cnt = 0, sum = 0., i = 0; i < n; i++, ix++)
 		    if (*ix != NA_INTEGER) {cnt++; sum += *ix;}
 		    else if (keepNA) {sum = NA_REAL; break;}
@@ -1303,7 +1228,7 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    case LGLSXP:
 	    {
-		int *ix = LOGICAL(x) + (R_xlen_t)n*j;
+		int *ix = LOGICAL(x) + R_xlen_t(n)*j;
 		for (cnt = 0, sum = 0., i = 0; i < n; i++, ix++)
 		    if (*ix != NA_LOGICAL) {cnt++; sum += *ix;}
 		    else if (keepNA) {sum = NA_REAL; break;}
@@ -1311,7 +1236,7 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    }
 	    if (OP == 1) sum /= cnt; /* gives NaN for cnt = 0 */
-	    REAL(ans)[j] = (double) sum;
+	    REAL(ans)[j] = double( sum);
 	}
     }
     else { /* rows */
@@ -1323,7 +1248,7 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
 	LDOUBLE *rans;
 	if(n <= 10000) {
 	    R_CheckStack2(n * sizeof(LDOUBLE));
-	    rans = (LDOUBLE *) alloca(n * sizeof(LDOUBLE));
+	    rans = static_cast<LDOUBLE *>( alloca(n * sizeof(LDOUBLE)));
 	    Memzero(rans, n);
 	} else rans = Calloc(n, LDOUBLE);
 	if (!keepNA && OP == 3) Cnt = Calloc(n, int);
@@ -1333,7 +1258,7 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    switch (type) {
 	    case REALSXP:
 	    {
-		double *rx = REAL(x) + (R_xlen_t)n * j;
+		double *rx = REAL(x) + R_xlen_t(n) * j;
 		if (keepNA)
 		    for (int i = 0; i < n; i++) *ra++ += *rx++;
 		else
@@ -1346,7 +1271,7 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    case INTSXP:
 	    {
-		int *ix = INTEGER(x) + (R_xlen_t)n * j;
+		int *ix = INTEGER(x) + R_xlen_t(n) * j;
 		for (int i = 0; i < n; i++, ra++, ix++)
 		    if (keepNA) {
 			if (*ix != NA_INTEGER) *ra += *ix;
@@ -1360,7 +1285,7 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    case LGLSXP:
 	    {
-		int *ix = LOGICAL(x) + (R_xlen_t)n * j;
+		int *ix = LOGICAL(x) + R_xlen_t(n) * j;
 		for (int i = 0; i < n; i++, ra++, ix++)
 		    if (keepNA) {
 			if (*ix != NA_LOGICAL) *ra += *ix;
@@ -1380,7 +1305,7 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    else
 		for (int i = 0; i < n; i++) rans[i] /= Cnt[i];
 	}
-	for (int i = 0; i < n; i++) REAL(ans)[i] = (double) rans[i];
+	for (int i = 0; i < n; i++) REAL(ans)[i] = double( rans[i]);
 
 	if (!keepNA && OP == 3) Free(Cnt);
 	if(n > 10000) Free(rans);
@@ -1442,7 +1367,7 @@ SEXP attribute_hidden do_array(SEXP call, SEXP op, SEXP args, SEXP rho)
 #ifndef LONG_VECTOR_SUPPORT
     if (d > INT_MAX) error(_("too many elements specified"));
 #endif
-    nans = (R_xlen_t) d;
+    nans = R_xlen_t( d);
 
     PROTECT(ans = allocVector(TYPEOF(vals), nans));
     switch(TYPEOF(vals)) {
@@ -1535,7 +1460,7 @@ SEXP attribute_hidden do_diag(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("'x' must have positive length"));
 
  #ifndef LONG_VECTOR_SUPPORT
-   if ((double)nr * (double)nc > INT_MAX)
+    if (double(nr) * double(nc) > INT_MAX)
 	error(_("too many elements specified"));
 #endif
 
@@ -1600,7 +1525,7 @@ SEXP attribute_hidden do_backsolve(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (k > 0 && ncb > 0) {
        /* copy (part) cols of b to ans */
 	for(R_xlen_t j = 0; j < ncb; j++)
-	    memcpy(REAL(ans) + j*k, REAL(b) + j*nrb, (size_t)k *sizeof(double));
+	    memcpy(REAL(ans) + j*k, REAL(b) + j*nrb, size_t(k) *sizeof(double));
 	double one = 1.0;
 	F77_CALL(dtrsm)("L", upper ? "U" : "L", trans ? "T" : "N", "N",
 			&k, &ncb, &one, rr, &nrr, REAL(ans), &k);

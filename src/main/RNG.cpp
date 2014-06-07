@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -55,7 +71,7 @@ extern N01type N01_kind; /* from ../nmath/snorm.c */
 typedef struct {
     RNGtype kind;
     N01type Nkind;
-    char *name; /* print name */
+    CXXRCONST char *name; /* print name */
     int n_seed; /* length of seed vector */
     Int32 *i_seed;
 } RNGTAB;
@@ -112,7 +128,7 @@ double unif_rand(void)
 	I2 = I2 * 172 % 30307;
 	I3 = I3 * 170 % 30323;
 	value = I1 / 30269.0 + I2 / 30307.0 + I3 / 30323.0;
-	return fixup(value - (int) value);/* in [0,1) */
+	return fixup(value - int( value));/* in [0,1) */
 
     case MARSAGLIA_MULTICARRY:/* 0177777(octal) == 65535(decimal)*/
 	I1= 36969*(I1 & 0177777) + (I1>>16);
@@ -136,7 +152,7 @@ double unif_rand(void)
 	return fixup(KT_next() * KT);
 
     case USER_UNIF:
-	return *((double *) User_unif_fun());
+	return *(static_cast<double *>( User_unif_fun()));
 
     case LECUYER_CMRG:
     {
@@ -144,32 +160,32 @@ double unif_rand(void)
 	   http://www.iro.umontreal.ca/~lecuyer/myftp/streams00/c2010/RngStream.c
 	   but using int_least64_t, which C99 guarantees.
 	*/
-	int k;
+	int_least64_t k;  // CXXR change
 	int_least64_t p1, p2;
 
 #define II(i) (RNG_Table[RNG_kind].i_seed[i])
 #define m1    4294967087
 #define m2    4294944443
 #define normc  2.328306549295727688e-10
-#define a12     (int_least64_t)1403580
-#define a13n    (int_least64_t)810728
-#define a21     (int_least64_t)527612
-#define a23n    (int_least64_t)1370589
+#define a12     int_least64_t(1403580)
+#define a13n    int_least64_t(810728)
+#define a21     int_least64_t(527612)
+#define a23n    int_least64_t(1370589)
 
-	p1 = a12 * (unsigned int)II(1) - a13n * (unsigned int)II(0);
+	p1 = a12 * static_cast<unsigned int>(II(1)) - a13n * static_cast<unsigned int>(II(0));
 	/* p1 % m1 would surely do */
-	k = (int) (p1 / m1);
+	k = int( (p1 / m1));
 	p1 -= k * m1;
 	if (p1 < 0.0) p1 += m1;
-	II(0) = II(1); II(1) = II(2); II(2) = (int) p1;
+	II(0) = II(1); II(1) = II(2); II(2) = Int32( p1);
 
-	p2 = a21 * (unsigned int)II(5) - a23n * (unsigned int)II(3);
-	k = (int) (p2 / m2);
+	p2 = a21 * static_cast<unsigned int>(II(5)) - a23n * static_cast<unsigned int>(II(3));
+	k = int( (p2 / m2));
 	p2 -= k * m2;
 	if (p2 < 0.0) p2 += m2;
-	II(3) = II(4); II(4) = II(5); II(5) = (int) p2;
+	II(3) = II(4); II(4) = II(5); II(5) = Int32( p2);
 
-	return (double)((p1 > p2) ? (p1 - p2) : (p1 - p2 + m1)) * normc;
+	return double(((p1 > p2) ? (p1 - p2) : (p1 - p2 + m1))) * normc;
     }
     default:
 	error(_("unif_rand: unimplemented RNG kind %d"), RNG_kind);
@@ -300,7 +316,7 @@ static void RNG_Init(RNGtype kind, Int32 seed)
     case USER_UNIF:
 	User_unif_fun = R_FindSymbol("user_unif_rand", "", NULL);
 	if (!User_unif_fun) error(_("'user_unif_rand' not in load table"));
-	User_unif_init = (UnifInitFun) R_FindSymbol("user_unif_init", "", NULL);
+	User_unif_init = reinterpret_cast<UnifInitFun>( R_FindSymbol("user_unif_init", "", NULL));
 	if (User_unif_init) (void) User_unif_init(seed);
 	User_unif_nseed = R_FindSymbol("user_unif_nseed", "", NULL);
 	User_unif_seedloc = R_FindSymbol("user_unif_seedloc", "",  NULL);
@@ -310,13 +326,13 @@ static void RNG_Init(RNGtype kind, Int32 seed)
 		warning(_("cannot read seeds unless 'user_unif_nseed' is supplied"));
 		break;
 	    }
-	    ns = *((int *) User_unif_nseed());
+	    ns = *(static_cast<int *>( User_unif_nseed()));
 	    if (ns < 0 || ns > 625) {
 		warning(_("seed length must be in 0...625; ignored"));
 		break;
 	    }
 	    RNG_Table[kind].n_seed = ns;
-	    RNG_Table[kind].i_seed = (Int32 *) User_unif_seedloc();
+	    RNG_Table[kind].i_seed = static_cast<Int32 *>( User_unif_seedloc());
 	}
 	break;
     default:
@@ -363,8 +379,8 @@ static void GetRNGkind(SEXP seeds)
 	warning(_("'.Random.seed[1]' is not a valid integer, so ignored"));
 	goto invalid;
     }
-    newRNG = (RNGtype) (tmp % 100);
-    newN01 = (N01type) (tmp / 100);
+    newRNG = RNGtype( (tmp % 100));
+    newN01 = N01type( (tmp / 100));
     if (newN01 > KINDERMAN_RAMAGE) {
 	warning(_("'.Random.seed[1]' is not a valid Normal type, so ignored"));
 	goto invalid;
@@ -418,7 +434,7 @@ void GetRNGstate()
 	else {
 	    int j, *is = INTEGER(seeds);
 	    for(j = 1; j <= len_seed; j++)
-		RNG_Table[RNG_kind].i_seed[j - 1] = is[j];
+		RNG_Table[RNG_kind].i_seed[j - 1] = CXXRCONSTRUCT(Int32, is[j]);
 	    FixupSeeds(RNG_kind, 0);
 	}
     }
@@ -441,8 +457,8 @@ void PutRNGstate()
 
     INTEGER(seeds)[0] = RNG_kind + 100 * N01_kind;
     for(j = 0; j < len_seed; j++)
-	INTEGER(seeds)[j+1] = RNG_Table[RNG_kind].i_seed[j];
-
+	INTEGER(seeds)[j+1] = CXXRCONSTRUCT(int, RNG_Table[RNG_kind].i_seed[j]);
+					    
     /* assign only in the workspace */
     defineVar(R_SeedsSymbol, seeds, R_GlobalEnv);
     UNPROTECT(1);
@@ -453,7 +469,7 @@ static void RNGkind(RNGtype newkind)
 /* Choose a new kind of RNG.
  * Initialize its seed by calling the old RNG's unif_rand()
  */
-    if (newkind == (RNGtype)-1) newkind = RNG_DEFAULT;
+    if (newkind == RNGtype(-1)) newkind = RNG_DEFAULT;
     switch(newkind) {
     case WICHMANN_HILL:
     case MARSAGLIA_MULTICARRY:
@@ -468,7 +484,7 @@ static void RNGkind(RNGtype newkind)
 	error(_("RNGkind: unimplemented RNG kind %d"), newkind);
     }
     GetRNGstate();
-    RNG_Init(newkind, (Int32) (unif_rand() * UINT_MAX));
+    RNG_Init(newkind, Int32( (unif_rand() * UINT_MAX)));
     RNG_kind = newkind;
     PutRNGstate();
 }
@@ -477,7 +493,7 @@ static void Norm_kind(N01type kind)
 {
     /* N01type is an enumeration type, so this will probably get
        mapped to an unsigned integer type. */
-    if (kind == (N01type)-1) kind = N01_DEFAULT;
+    if (kind == N01type(-1)) kind = N01_DEFAULT;
     if (kind > KINDERMAN_RAMAGE)
 	error(_("invalid Normal type in 'RNGkind'"));
     if (kind == USER_NORM) {
@@ -507,10 +523,10 @@ SEXP attribute_hidden do_RNGkind (SEXP call, SEXP op, SEXP args, SEXP env)
     norm = CADR(args);
     GetRNGkind(R_NilValue); /* pull from .Random.seed if present */
     if(!isNull(rng)) { /* set a new RNG kind */
-	RNGkind((RNGtype) asInteger(rng));
+	RNGkind(RNGtype( asInteger(rng)));
     }
     if(!isNull(norm)) { /* set a new normal kind */
-	Norm_kind((N01type) asInteger(norm));
+	Norm_kind(N01type( asInteger(norm)));
     }
     UNPROTECT(1);
     return ans;
@@ -527,14 +543,14 @@ SEXP attribute_hidden do_setseed (SEXP call, SEXP op, SEXP args, SEXP env)
 	seed = asInteger(CAR(args));
 	if (seed == NA_INTEGER)
 	    error(_("supplied seed is not a valid integer"));
-    } else seed = TimeToSeed();
+    } else seed = CXXRCONSTRUCT(int, TimeToSeed());
     skind = CADR(args);
     nkind = CADDR(args);
     GetRNGkind(R_NilValue); /* pull RNG_kind, N01_kind from 
 			       .Random.seed if present */
-    if (!isNull(skind)) RNGkind((RNGtype) asInteger(skind));
-    if (!isNull(nkind)) Norm_kind((N01type) asInteger(nkind));
-    RNG_Init(RNG_kind, (Int32) seed); /* zaps BM history */
+    if (!isNull(skind)) RNGkind(RNGtype( asInteger(skind)));
+    if (!isNull(nkind)) Norm_kind(N01type( asInteger(nkind)));
+    RNG_Init(RNG_kind, Int32( seed)); /* zaps BM history */
     PutRNGstate();
     return R_NilValue;
 }
@@ -629,7 +645,7 @@ static double MT_genrand(void)
     static Int32 mag01[2]={0x0, MATRIX_A};
     /* mag01[x] = x * MATRIX_A  for x=0,1 */
 
-    mti = dummy[0];
+    mti = CXXRCONSTRUCT(int, dummy[0]);
 
     if (mti >= N) { /* generate N words at one time */
 	int kk;
@@ -656,9 +672,9 @@ static double MT_genrand(void)
     y ^= TEMPERING_SHIFT_S(y) & TEMPERING_MASK_B;
     y ^= TEMPERING_SHIFT_T(y) & TEMPERING_MASK_C;
     y ^= TEMPERING_SHIFT_L(y);
-    dummy[0] = mti;
+    dummy[0] = CXXRCONSTRUCT(Int32, mti);
 
-    return ( (double)y * 2.3283064365386963e-10 ); /* reals: [0,1)-interval */
+    return ( double(y) * 2.3283064365386963e-10 ); /* reals: [0,1)-interval */
 }
 
 /*
@@ -691,13 +707,13 @@ static void ran_array(long aa[],int n)    /* put n new random numbers in aa */
 }
 #define QUALITY 1009 /* recommended quality level for high-res use */
 static long ran_arr_buf[QUALITY];
-static long ran_arr_sentinel=(long)-1;
+static long ran_arr_sentinel=long(-1);
 static long *ran_arr_ptr=&ran_arr_sentinel; /* the next random number, or -1 */
 
 static long ran_arr_cycle(void)
 {
   ran_array(ran_arr_buf,QUALITY);
-  ran_arr_buf[KK]=(long)(-1);
+  ran_arr_buf[KK]=long(-1);
   ran_arr_ptr=ran_arr_buf+1;
   return ran_arr_buf[0];
 }
@@ -764,7 +780,7 @@ static void RNG_Init_R_KT(Int32 seed)
     fun = findVar1(install(".TAOCP1997init"), R_BaseEnv, CLOSXP, FALSE);
     if(fun == R_UnboundValue)
 	error("function '.TAOCP1997init' is missing");
-    PROTECT(sseed = ScalarInteger((int)(seed % 1073741821)));
+    PROTECT(sseed = ScalarInteger(int(seed % 1073741821)));
     PROTECT(call = lang2(fun, sseed));
     ans = eval(call, R_GlobalEnv);
     memcpy(dummy, INTEGER(ans), 100*sizeof(int));

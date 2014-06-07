@@ -1,3 +1,18 @@
+#CXXR $Id$
+#CXXR 
+#CXXR This file is part of CXXR, a project to refactor the R interpreter
+#CXXR into C++.  It may consist in whole or in part of program code and
+#CXXR documentation taken from the R project itself, incorporated into
+#CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+#CXXR Licence.
+#CXXR 
+#CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+#CXXR copyrights and copyright restrictions as may be stated below.
+#CXXR 
+#CXXR CXXR is not part of the R project, and bugs and other issues should
+#CXXR not be reported via r-bugs or other R project channels; instead refer
+#CXXR to the CXXR website.
+
 #
 # ${R_HOME}/src/modules/X11/Makefile
 
@@ -14,18 +29,19 @@ include $(top_builddir)/Makeconf
 ALL_CPPFLAGS = $(R_XTRA_CPPFLAGS) $(X_CFLAGS) @CAIROX11_CPPFLAGS@ \
   -I$(top_srcdir)/src/library/grDevices/src/cairo $(CPPFLAGS) $(DEFS)
 ALL_CFLAGS = $(ALL_CFLAGS_LO)
+ALL_CXXFLAGS = $(ALL_CXXFLAGS_LO)
 ALL_X_LIBS = $(X_PRE_LIBS) @CAIROX11_LIBS@ $(X_LIBS) $(X_EXTRA_LIBS)
 
-SOURCES = devX11.c rotated.c rbitmap.c 
-DEPENDS = $(SOURCES:.c=.d)
-OBJECTS = $(SOURCES:.c=.o)
-DE_SOURCES = dataentry.c
-DE_OBJECTS = $(DE_SOURCES:.c=.o)
+SOURCES_C = devX11.c rotated.c rbitmap.c 
+DEPENDS = $(SOURCES_C:.c=.d) dataentry.d
+OBJECTS = $(SOURCES_C:.c=.o) dataentry.o
+DE_SOURCES = dataentry.cpp
+DE_OBJECTS = $(DE_SOURCES:.cpp=.o)
 HEADERS = bitmap.h devX11.h rotated.h rlogo_icon.h
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 DISTFILES = \
-	Makefile.in $(SOURCES) $(HEADERS) $(DE_SOURCES)
+	Makefile.in $(SOURCES_C) $(HEADERS) $(DE_SOURCES)
 
 R_X11_la = R_X11$(SHLIB_EXT)
 ## AIX needs LIBM
@@ -38,11 +54,10 @@ all: Makefile Makedeps R
 
 Makefile: $(srcdir)/Makefile.in \
   $(top_builddir)/config.status \
-  $(SOURCES)
+  $(SOURCES_C) dataentry.cpp
 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 Makedeps: Makefile $(DEPENDS)
-	@cat $(DEPENDS) >> Makefile
 	@touch $@
 
 R: Makefile
@@ -89,5 +104,5 @@ distdir: $(DISTFILES)
 	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
 	done
 
-## Automagically generated dependencies:
+include $(DEPENDS)
 

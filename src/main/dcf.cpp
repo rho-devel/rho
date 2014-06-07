@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-12   The R Core Team.
@@ -21,7 +37,6 @@
 # include <config.h>
 #endif
 
-#define R_USE_SIGNALS 1
 #include <Defn.h>
 #include <Internal.h>
 #include <Rconnections.h>
@@ -30,12 +45,6 @@
 
 static SEXP allocMatrixNA(SEXPTYPE, int, int);
 static void transferVector(SEXP s, SEXP t);
-
-static void con_cleanup(void *data)
-{
-    Rconnection con = data;
-    if(con->isopen) con->close(con);
-}
 
 static Rboolean field_is_foldable_p(const char *, SEXP);
 
@@ -54,7 +63,7 @@ static char *Rconn_getline2(Rconnection con)
 	    buf = buf2;
 	}
 	if(c != '\n'){
-	    buf[++nbuf] = (char) c;
+	    buf[++nbuf] = char( c);
 	} else {
 	    buf[++nbuf] = '\0';
 	    break;
@@ -78,7 +87,6 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP file, what, what2, retval, retval2, dims, dimnames;
     Rconnection con = NULL;
     Rboolean wasopen, is_eblankline;
-    RCNTXT cntxt;
 
     SEXP fold_excludes;
     Rboolean field_fold = TRUE, has_fold_excludes;
@@ -90,120 +98,75 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
     file = CAR(args);
     con = getConnection(asInteger(file));
     wasopen = con->isopen;
-    if(!wasopen) {
-	if(!con->open(con)) error(_("cannot open the connection"));
-	/* Set up a context which will close the connection on error */
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	cntxt.cend = &con_cleanup;
-	cntxt.cenddata = con;
-    }
-    if(!con->canread) error(_("cannot read from this connection"));
+    if(!wasopen && !con->open(con))
+	error(_("cannot open the connection"));	
 
-    args = CDR(args);
-    PROTECT(what = coerceVector(CAR(args), STRSXP)); /* argument fields */
-    nwhat = LENGTH(what);
-    dynwhat = (nwhat == 0);
+    try {
+	if(!con->canread) error(_("cannot read from this connection"));
 
-    args = CDR(args);
-    PROTECT(fold_excludes = coerceVector(CAR(args), STRSXP));
-    has_fold_excludes = (LENGTH(fold_excludes) > 0);
+	args = CDR(args);
+	PROTECT(what = coerceVector(CAR(args), STRSXP)); /* argument fields */
+	nwhat = LENGTH(what);
+	dynwhat = (nwhat == 0);
 
-    buf = (char *) malloc(buflen);
-    if(!buf) error(_("could not allocate memory for 'read.dcf'"));
-    nret = 20;
-    /* it is easier if we first have a record per column */
-    PROTECT(retval = allocMatrixNA(STRSXP, LENGTH(what), nret));
+	args = CDR(args);
+	PROTECT(fold_excludes = coerceVector(CAR(args), STRSXP));
+	has_fold_excludes = CXXRCONSTRUCT(Rboolean, (LENGTH(fold_excludes) > 0));
 
-    /* These used to use [:blank:] but that can match \xa0 as part of
-       a UTF-8 character (and is nbspace on Windows). */ 
-    tre_regcomp(&blankline, "^[[:blank:]]*$", REG_NOSUB & REG_EXTENDED);
-    tre_regcomp(&trailblank, "[ \t]+$", REG_EXTENDED);
-    tre_regcomp(&contline, "^[[:blank:]]+", REG_EXTENDED);
-    tre_regcomp(&regline, "^[^:]+:[[:blank:]]*", REG_EXTENDED);
-    tre_regcomp(&eblankline, "^[[:space:]]+\\.[[:space:]]*$", REG_EXTENDED);
+	buf = static_cast<char *>( malloc(buflen));
+	if(!buf) error(_("could not allocate memory for 'read.dcf'"));
+	nret = 20;
+	/* it is easier if we first have a record per column */
+	PROTECT(retval = allocMatrixNA(STRSXP, LENGTH(what), nret));
 
-    k = 0;
-    lastm = -1; /* index of the field currently being recorded */
-    blank_skip = TRUE;
-    void *vmax = vmaxget();
-    while((line = Rconn_getline2(con))) {
-	if(strlen(line) == 0 ||
-	   tre_regexecb(&blankline, line, 0, 0, 0) == 0) {
-	    /* A blank line.  The first one after a record ends a new
-	     * record, subsequent ones are skipped */
-	    if(!blank_skip) {
-		k++;
-		if(k > nret - 1){
-		    nret *= 2;
-		    PROTECT(retval2 = allocMatrixNA(STRSXP, LENGTH(what), nret));
-		    transferVector(retval2, retval);
-		    UNPROTECT_PTR(retval);
-		    retval = retval2;
-		}
-		blank_skip = TRUE;
-		lastm = -1;
-		field_skip = FALSE;
-		field_fold = TRUE;
-	    }
-	} else {
-	    blank_skip = FALSE;
-	    if(tre_regexecb(&contline, line, 1, regmatch, 0) == 0) {
-		/* A continuation line: wrong if at the beginning of a
-		   record. */
-		if((lastm == -1) && !field_skip) {
-		    line[20] = '\0';
-		    error(_("Found continuation line starting '%s ...' at begin of record."),
-			  line);
-		}
-		if(lastm >= 0) {
-		    need = (int) strlen(CHAR(STRING_ELT(retval,
-							lastm + nwhat * k))) + 2;
-		    if(tre_regexecb(&eblankline, line, 0, NULL, 0) == 0) {
-			is_eblankline = TRUE;
-		    } else {
-			is_eblankline = FALSE;
-			if(field_fold) {
-			    offset = regmatch[0].rm_eo;
-			    /* Also remove trailing whitespace. */
-			    if((tre_regexecb(&trailblank, line, 1,
-					     regmatch, 0) == 0))
-				line[regmatch[0].rm_so] = '\0';
-			} else {
-			    offset = 0;
-			}
-			need += (int) strlen(line + offset);
+	/* These used to use [:blank:] but that can match \xa0 as part of
+	   a UTF-8 character (and is nbspace on Windows). */ 
+	tre_regcomp(&blankline, "^[[:blank:]]*$", REG_NOSUB & REG_EXTENDED);
+	tre_regcomp(&trailblank, "[ \t]+$", REG_EXTENDED);
+	tre_regcomp(&contline, "^[[:blank:]]+", REG_EXTENDED);
+	tre_regcomp(&regline, "^[^:]+:[[:blank:]]*", REG_EXTENDED);
+	tre_regcomp(&eblankline, "^[[:space:]]+\\.[[:space:]]*$", REG_EXTENDED);
+
+	k = 0;
+	lastm = -1; /* index of the field currently being recorded */
+	blank_skip = TRUE;
+	CXXR::RAllocStack::Scope rscope;
+	while((line = Rconn_getline2(con))) {
+	    if(strlen(line) == 0 ||
+	       tre_regexecb(&blankline, line, 0, 0, 0) == 0) {
+		/* A blank line.  The first one after a record ends a new
+		 * record, subsequent ones are skipped */
+		if(!blank_skip) {
+		    k++;
+		    if(k > nret - 1){
+			nret *= 2;
+			PROTECT(retval2 = allocMatrixNA(STRSXP, LENGTH(what), nret));
+			transferVector(retval2, retval);
+			UNPROTECT_PTR(retval);
+			retval = retval2;
 		    }
-		    if(buflen < need) {
-			char *tmp = (char *) realloc(buf, need);
-			if(!tmp) {
-			    free(buf);
-			    error(_("could not allocate memory for 'read.dcf'"));
-			} else buf = tmp;
-			buflen = need;
-		    }
-		    strcpy(buf,CHAR(STRING_ELT(retval, lastm + nwhat * k)));
-		    strcat(buf, "\n");
-		    if(!is_eblankline) strcat(buf, line + offset);
-		    SET_STRING_ELT(retval, lastm + nwhat * k, mkChar(buf));
+		    blank_skip = TRUE;
+		    lastm = -1;
+		    field_skip = FALSE;
+		    field_fold = TRUE;
 		}
 	    } else {
-		if(tre_regexecb(&regline, line, 1, regmatch, 0) == 0) {
-		    for(m = 0; m < nwhat; m++){
-			whatlen = (int) strlen(CHAR(STRING_ELT(what, m)));
-			if(strlen(line) > whatlen &&
-			   line[whatlen] == ':' &&
-			   strncmp(CHAR(STRING_ELT(what, m)),
-				   line, whatlen) == 0) {
-			    /* An already known field we are recording. */
-			    lastm = m;
-			    field_skip = FALSE;
-			    field_name = CHAR(STRING_ELT(what, lastm));
-			    if(has_fold_excludes) {
-				field_fold =
-				    field_is_foldable_p(field_name,
-							fold_excludes);
-			    }
+		blank_skip = FALSE;
+		if(tre_regexecb(&contline, line, 1, regmatch, 0) == 0) {
+		    /* A continuation line: wrong if at the beginning of a
+		       record. */
+		    if((lastm == -1) && !field_skip) {
+			line[20] = '\0';
+			error(_("Found continuation line starting '%s ...' at begin of record."),
+			      line);
+		    }
+		    if(lastm >= 0) {
+			need = int( strlen(CHAR(STRING_ELT(retval,
+							   lastm + nwhat * k)))) + 2;
+			if(tre_regexecb(&eblankline, line, 0, NULL, 0) == 0) {
+			    is_eblankline = TRUE;
+			} else {
+			    is_eblankline = FALSE;
 			    if(field_fold) {
 				offset = regmatch[0].rm_eo;
 				/* Also remove trailing whitespace. */
@@ -213,79 +176,124 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
 			    } else {
 				offset = 0;
 			    }
-			    SET_STRING_ELT(retval, m + nwhat * k,
-					   mkChar(line + offset));
-			    break;
-			} else {
-			    /* This is a field, but not one prespecified */
-			    lastm = -1;
-			    field_skip = TRUE;
+			    need += int( strlen(line + offset));
 			}
-		    }
-		    if(dynwhat && (lastm == -1)) {
-			/* A previously unseen field and we are
-			 * recording all fields */
-			field_skip = FALSE;
-			PROTECT(what2 = allocVector(STRSXP, nwhat+1));
-			PROTECT(retval2 = allocMatrixNA(STRSXP,
-							nrows(retval)+1,
-							ncols(retval)));
-			if(nwhat > 0) {
-			    copyVector(what2, what);
-			    for(nr = 0; nr < nrows(retval); nr++){
-				for(nc = 0; nc < ncols(retval); nc++){
-				    SET_STRING_ELT(retval2, nr+nc*nrows(retval2),
-						   STRING_ELT(retval,
-							      nr+nc*nrows(retval)));
-				}
-			    }
-			}
-			UNPROTECT_PTR(retval);
-			UNPROTECT_PTR(what);
-			retval = retval2;
-			what = what2;
-			/* Make sure enough space was used */
-			need = (int) (Rf_strchr(line, ':') - line + 1);
-			if(buflen < need){
-			    char *tmp = (char *) realloc(buf, need);
+			if(buflen < need) {
+			    char *tmp = static_cast<char *>( realloc(buf, need));
 			    if(!tmp) {
 				free(buf);
 				error(_("could not allocate memory for 'read.dcf'"));
 			    } else buf = tmp;
 			    buflen = need;
 			}
-			strncpy(buf, line, Rf_strchr(line, ':') - line);
-			buf[Rf_strchr(line, ':') - line] = '\0';
-			SET_STRING_ELT(what, nwhat, mkChar(buf));
-			nwhat++;
-			/* lastm uses C indexing, hence nwhat - 1 */
-			lastm = nwhat - 1;
-			field_name = CHAR(STRING_ELT(what, lastm));
-			if(has_fold_excludes) {
-			    field_fold =
-				field_is_foldable_p(field_name,
-						    fold_excludes);
-			}
-			offset = regmatch[0].rm_eo;
-			if(field_fold) {
-			    /* Also remove trailing whitespace. */
-			    if((tre_regexecb(&trailblank, line, 1,
-					     regmatch, 0) == 0))
-				line[regmatch[0].rm_so] = '\0';
-			}
-			SET_STRING_ELT(retval, lastm + nwhat * k,
-				       mkChar(line + offset));
+			strcpy(buf,CHAR(STRING_ELT(retval, lastm + nwhat * k)));
+			strcat(buf, "\n");
+			if(!is_eblankline) strcat(buf, line + offset);
+			SET_STRING_ELT(retval, lastm + nwhat * k, mkChar(buf));
 		    }
 		} else {
-		    /* Must be a regular line with no tag ... */
-		    line[20] = '\0';
-		    error(_("Line starting '%s ...' is malformed!"), line);
+		    if(tre_regexecb(&regline, line, 1, regmatch, 0) == 0){
+			for(m = 0; m < nwhat; m++){
+			    whatlen = int( strlen(CHAR(STRING_ELT(what, m))));
+			    if(CXXRSCAST(int, strlen(line)) > whatlen &&
+			       line[whatlen] == ':' &&
+			       strncmp(CHAR(STRING_ELT(what, m)),
+				       line, whatlen) == 0) {
+				/* An already known field we are recording. */
+				lastm = m;
+				field_skip = FALSE;
+				field_name = CHAR(STRING_ELT(what, lastm));
+				if(has_fold_excludes) {
+				    field_fold =
+					field_is_foldable_p(field_name,
+							    fold_excludes);
+				}
+				if(field_fold) {
+				    offset = regmatch[0].rm_eo;
+				    /* Also remove trailing whitespace. */
+				    if((tre_regexecb(&trailblank, line, 1,
+						     regmatch, 0) == 0))
+					line[regmatch[0].rm_so] = '\0';
+				} else {
+				    offset = 0;
+				}
+				SET_STRING_ELT(retval, m + nwhat * k,
+					       mkChar(line + offset));
+				break;
+			    } else {
+				/* This is a field, but not one prespecified */
+				lastm = -1;
+				field_skip = TRUE;
+			    }
+			}
+			if(dynwhat && (lastm == -1)) {
+			    /* A previously unseen field and we are
+			     * recording all fields */
+			    field_skip = FALSE;
+			    PROTECT(what2 = allocVector(STRSXP, nwhat+1));
+			    PROTECT(retval2 = allocMatrixNA(STRSXP,
+							    nrows(retval)+1,
+							    ncols(retval)));
+			    if(nwhat > 0) {
+				copyVector(what2, what);
+				for(nr = 0; nr < nrows(retval); nr++){
+				    for(nc = 0; nc < ncols(retval); nc++){
+					SET_STRING_ELT(retval2, nr+nc*nrows(retval2),
+						       STRING_ELT(retval,
+								  nr+nc*nrows(retval)));
+				    }
+				}
+			    }
+			    UNPROTECT_PTR(retval);
+			    UNPROTECT_PTR(what);
+			    retval = retval2;
+			    what = what2;
+			    /* Make sure enough space was used */
+			    need = int( (Rf_strchr(line, ':') - line + 1));
+			    if(buflen < need){
+				char *tmp = static_cast<char *>( realloc(buf, need));
+				if(!tmp) {
+				    free(buf);
+				    error(_("could not allocate memory for 'read.dcf'"));
+				} else buf = tmp;
+				buflen = need;
+			    }
+			    strncpy(buf, line, Rf_strchr(line, ':') - line);
+			    buf[Rf_strchr(line, ':') - line] = '\0';
+			    SET_STRING_ELT(what, nwhat, mkChar(buf));
+			    nwhat++;
+			    /* lastm uses C indexing, hence nwhat - 1 */
+			    lastm = nwhat - 1;
+			    field_name = CHAR(STRING_ELT(what, lastm));
+			    if(has_fold_excludes) {
+				field_fold =
+				    field_is_foldable_p(field_name,
+							fold_excludes);
+			    }
+			    offset = regmatch[0].rm_eo;
+			    if(field_fold) {
+				/* Also remove trailing whitespace. */
+				if((tre_regexecb(&trailblank, line, 1,
+						 regmatch, 0) == 0))
+				    line[regmatch[0].rm_so] = '\0';
+			    }
+			    SET_STRING_ELT(retval, lastm + nwhat * k,
+					   mkChar(line + offset));
+			}
+		    } else {
+			/* Must be a regular line with no tag ... */
+			line[20] = '\0';
+			error(_("Line starting '%s ...' is malformed!"), line);
+		    }
 		}
 	    }
 	}
+	if(!wasopen) con->close(con);
+    } catch (...) {
+	if (!wasopen && con->isopen)
+	    con->close(con);
+	throw;
     }
-    vmaxset(vmax);
-    if(!wasopen) {endcontext(&cntxt); con->close(con);}
     free(buf);
     tre_regfree(&blankline);
     tre_regfree(&contline);
@@ -297,7 +305,7 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* and now transpose the whole matrix */
     PROTECT(retval2 = allocMatrixNA(STRSXP, k, LENGTH(what)));
-    copyMatrix(retval2, retval, 1);
+    copyMatrix(retval2, retval, CXXRTRUE);
 
     PROTECT(dimnames = allocVector(VECSXP, 2));
     PROTECT(dims = allocVector(INTSXP, 2));

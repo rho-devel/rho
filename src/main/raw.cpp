@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001--2012 The R Core Team
@@ -60,7 +76,7 @@ SEXP attribute_hidden do_rawToChar(SEXP call, SEXP op, SEXP args, SEXP env)
 	buf[1] = '\0';
 	PROTECT(ans = allocVector(STRSXP, nc));
 	for (i = 0; i < nc; i++) {
-	    buf[0] = (char) RAW(x)[i];
+	    buf[0] = char( RAW(x)[i]);
 	    SET_STRING_ELT(ans, i, mkChar(buf));
 	}
 	/* do we want to copy e.g. names here? */
@@ -72,7 +88,7 @@ SEXP attribute_hidden do_rawToChar(SEXP call, SEXP op, SEXP args, SEXP env)
 	nc = j + 1;
 	PROTECT(ans = allocVector(STRSXP, 1));
 	SET_STRING_ELT(ans, 0,
-		       mkCharLenCE((const char *)RAW(x), j+1, CE_NATIVE));
+		       mkCharLenCE(reinterpret_cast<const char *>(RAW(x)), j+1, CE_NATIVE));
     }
     UNPROTECT(1);
     return ans;
@@ -110,7 +126,7 @@ SEXP attribute_hidden do_rawToBits(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("argument 'x' must be a raw vector"));
     PROTECT(ans = allocVector(RAWSXP, 8*XLENGTH(x)));
     for (i = 0; i < XLENGTH(x); i++) {
-	tmp = (unsigned int) RAW(x)[i];
+	tmp = static_cast<unsigned int>( RAW(x)[i]);
 	for (int k = 0; k < 8; k++, tmp >>= 1)
 	    RAW(ans)[j++] = tmp & 0x1;
     }
@@ -129,7 +145,7 @@ SEXP attribute_hidden do_intToBits(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("argument 'x' must be an integer vector"));
     PROTECT(ans = allocVector(RAWSXP, 32*XLENGTH(x)));
     for (i = 0; i < XLENGTH(x); i++) {
-	tmp = (unsigned int) INTEGER(x)[i];
+	tmp = static_cast<unsigned int>( INTEGER(x)[i]);
 	for (int k = 0; k < 32; k++, tmp >>= 1)
 	    RAW(ans)[j++] = tmp & 0x1;
     }
@@ -148,7 +164,7 @@ SEXP attribute_hidden do_packBits(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("argument 'x' must be raw, integer or logical"));
     if (!isString(stype)  || LENGTH(stype) != 1)
 	error(_("argument 'type' must be a character string"));
-    useRaw = strcmp(CHAR(STRING_ELT(stype, 0)), "integer");
+    useRaw = CXXRCONSTRUCT(Rboolean, strcmp(CHAR(STRING_ELT(stype, 0)), "integer"));
     fac = useRaw ? 8 : 32;
     if (len% fac)
 	error(_("argument 'x' must be a multiple of %d long"), fac);
@@ -182,7 +198,7 @@ SEXP attribute_hidden do_packBits(SEXP call, SEXP op, SEXP args, SEXP env)
 		    itmp |= j & 0x1;
 		}
 	    }
-	    INTEGER(ans)[i] = (int) itmp;
+	    INTEGER(ans)[i] = int( itmp);
 	}
     UNPROTECT(1);
     return ans;
@@ -191,24 +207,24 @@ SEXP attribute_hidden do_packBits(SEXP call, SEXP op, SEXP args, SEXP env)
 static int mbrtoint(int *w, const char *s)
 {
     unsigned int byte;
-    byte = *((unsigned char *)s);
+    byte = *(reinterpret_cast<unsigned char *>(CXXRCCAST(char*, s)));
 
     if (byte == 0) {
 	*w = 0;
 	return 0;
     } else if (byte < 0xC0) {
-	*w = (int) byte;
+	*w = int( byte);
 	return 1;
     } else if (byte < 0xE0) {
 	if (!s[1]) return -2;
 	if ((s[1] & 0xC0) == 0x80) {
-	    *w = (int) (((byte & 0x1F) << 6) | (s[1] & 0x3F));
+	    *w = int ((((byte & 0x1F) << 6) | (s[1] & 0x3F)));
 	    return 2;
 	} else return -1;
     } else if (byte < 0xF0) {
 	if (!s[1] || !s[2]) return -2;
 	if (((s[1] & 0xC0) == 0x80) && ((s[2] & 0xC0) == 0x80)) {
-	    *w = (int) (((byte & 0x0F) << 12)
+	    *w = int (((byte & 0x0F) << 12)
 			| ((s[1] & 0x3F) << 6) | (s[2] & 0x3F));
 	    byte = *w;
 	    if (byte >= 0xD800 && byte <= 0xDFFF) return -1; /* surrogate */
@@ -220,7 +236,7 @@ static int mbrtoint(int *w, const char *s)
 	if (((s[1] & 0xC0) == 0x80)
 	    && ((s[2] & 0xC0) == 0x80)
 	    && ((s[3] & 0xC0) == 0x80)) {
-	    *w = (int) (((byte & 0x07) << 18)
+	    *w = int (((byte & 0x07) << 18)
 			| ((s[1] & 0x3F) << 12)
 			| ((s[2] & 0x3F) << 6)
 			| (s[3] & 0x3F));
@@ -233,7 +249,7 @@ static int mbrtoint(int *w, const char *s)
 	    && ((s[2] & 0xC0) == 0x80)
 	    && ((s[3] & 0xC0) == 0x80)
 	    && ((s[4] & 0xC0) == 0x80)) {
-	    *w = (int) (((byte & 0x03) << 24)
+	    *w = int (((byte & 0x03) << 24)
 			| ((s[1] & 0x3F) << 18)
 			| ((s[2] & 0x3F) << 12)
 			| ((s[3] & 0x3F) << 6)
@@ -248,7 +264,7 @@ static int mbrtoint(int *w, const char *s)
 	    && ((s[3] & 0xC0) == 0x80)
 	    && ((s[4] & 0xC0) == 0x80)
 	    && ((s[5] & 0xC0) == 0x80)) {
-	    *w = (int) (((byte & 0x01) << 30)
+	    *w = int (((byte & 0x01) << 30)
 			| ((s[1] & 0x3F) << 24)
 			| ((s[2] & 0x3F) << 18)
 			| ((s[3] & 0x3F) << 12)
@@ -265,7 +281,7 @@ SEXP attribute_hidden do_utf8ToInt(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, x = CAR(args);
     int tmp, used = 0; /* -Wall */
-    const char *s = CHAR(STRING_ELT(x, 0));
+    const char *s;
     R_xlen_t i, j, nc;
 
     checkArity(op, args);
@@ -274,8 +290,9 @@ SEXP attribute_hidden do_utf8ToInt(SEXP call, SEXP op, SEXP args, SEXP env)
     if (LENGTH(x) > 1)
 	warning(_("argument should be a character vector of length 1\nall but the first element will be ignored"));
     if (STRING_ELT(x, 0) == NA_STRING) return ScalarInteger(NA_INTEGER);
+    s = CHAR(STRING_ELT(x, 0));
     nc = XLENGTH(STRING_ELT(x, 0)); /* ints will be shorter */
-    int *ians = (int *) R_alloc(nc, sizeof(int));
+    int *ians = static_cast<int *>( CXXR_alloc(nc, sizeof(int)));
     for (i = 0, j = 0; i < nc; i++) {
 	used = mbrtoint(&tmp, s);
 	if (used <= 0) break;
@@ -301,14 +318,14 @@ static size_t inttomb(char *s, const int wc)
 
     b = s ? s : buf;
     if (cvalue == 0) {*b = 0; return 0;}
-    for (i = 0; i < sizeof(utf8_table1)/sizeof(int); i++)
-	if (cvalue <= utf8_table1[i]) break;
+    for (i = 0; i < CXXRCONSTRUCT(int, sizeof(utf8_table1)/sizeof(int)); i++)
+	if (CXXRCONSTRUCT(int, cvalue) <= utf8_table1[i]) break;
     b += i;
     for (j = i; j > 0; j--) {
-	*b-- = (char)(0x80 | (cvalue & 0x3f));
+	*b-- = char((0x80 | (cvalue & 0x3f)));
 	cvalue >>= 6;
     }
-    *b = (char)(utf8_table2[i] | cvalue);
+    *b = char((utf8_table2[i] | cvalue));
     return i + 1;
 }
 
@@ -359,7 +376,7 @@ SEXP attribute_hidden do_intToUtf8(SEXP call, SEXP op, SEXP args, SEXP env)
 	    tmp = Calloc(len+1, char);
 	} else {
 	    R_CheckStack2(len+1);
-	    tmp = alloca(len+1); tmp[len] = '\0';
+	    tmp = CXXRSCAST(char*, alloca(len+1)); tmp[len] = '\0';
 	}
 	for (i = 0, len = 0; i < nc; i++) {
 	    used = inttomb(buf, INTEGER(x)[i]);
@@ -367,7 +384,7 @@ SEXP attribute_hidden do_intToUtf8(SEXP call, SEXP op, SEXP args, SEXP env)
 	    len += used;
 	}
 	PROTECT(ans = allocVector(STRSXP, 1));
-	SET_STRING_ELT(ans, 0, mkCharLenCE(tmp, (int) len, CE_UTF8));
+	SET_STRING_ELT(ans, 0, mkCharLenCE(tmp, int( len), CE_UTF8));
 	if(len >= 10000) Free(tmp);
     }
     UNPROTECT(2);

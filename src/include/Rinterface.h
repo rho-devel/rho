@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -54,7 +70,7 @@ extern void R_ClearerrConsole(void);
 extern void R_Suicide(const char *);
 extern char *R_HomeDir(void);
 extern int R_DirtyImage;	/* Current image dirty */
-extern char *R_GUIType;
+extern const char *R_GUIType;
 extern void R_setupHistory(void);
 extern char *R_HistoryFile;	/* Name of the history file */
 extern int R_HistorySize;	/* Size of the history file */
@@ -67,9 +83,6 @@ extern char *R_Home;		    /* Root of the R tree */
 void jump_to_toplevel(void);
 void mainloop(void);
 void onintr(void);
-#ifndef DEFN_H_
-extern void* R_GlobalContext;    /* Need opaque pointer type for export */
-#endif
 
 void process_site_Renviron(void);
 void process_system_Renviron(void);
@@ -96,7 +109,17 @@ extern uintptr_t R_CStackStart;	/* Initial stack address */
 /* formerly in src/unix/devUI.h */
 
 #ifdef R_INTERFACE_PTRS
+
+/* In CXXR, Rinternals.h must not itself be wrapped in extern "C": */
+#ifdef __cplusplus
+}
+#endif
+
 #include <Rinternals.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef __SYSTEM__
 # define extern

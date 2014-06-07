@@ -1,8 +1,31 @@
-/* For inclusion by datetime.c. 
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
+/* For inclusion by datetime.cpp. 
 
    A modified version of code from the GNU C library with locale
    support removed and wchar support added.
 */
+
+#ifndef RSTRPTIME_H
+#define RSTRPTIME_H 1
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Convert a string representation of time to a time value.
    Copyright (C) 1996, 1997, 1998, 1999, 2000 Free Software Foundation, Inc.
@@ -72,7 +95,7 @@
       val += *rp++ - '0';						      \
 /*  } while (--__n > 0 && val * 10 <= to && *rp >= '0' && *rp <= '9');*/      \
     } while (--__n > 0 && *rp >= '0' && *rp <= '9');	      \
-    if (val < from || val > to)						      \
+    if (int(val) < from || val > to)					\
       return NULL;							      \
   } while (0)
 # define get_alt_number(from, to, n) \
@@ -460,15 +483,17 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, struct tm *tm,
 	    have_wday = 1;
 	    break;
 	case L'y':
-	    /* Match year within century.  */
-	    get_number (0, 99, 2);
-	    /* The "Year 2000: The Millennium Rollover" paper suggests that
-	       values in the range 69-99 refer to the twentieth century.  */
-	    int ival = val;
-	    tm->tm_year = ival >= 69 ? ival : ival + 100;
-	    /* Indicate that we want to use the century, if specified.  */
-	    want_century = 1;
-	    want_xday = 1;
+	    {
+		/* Match year within century.  */
+		get_number (0, 99, 2);
+		/* The "Year 2000: The Millennium Rollover" paper suggests that
+		   values in the range 69-99 refer to the twentieth century.  */
+		int ival = val;
+		tm->tm_year = ival >= 69 ? ival : ival + 100;
+		/* Indicate that we want to use the century, if specified.  */
+		want_century = 1;
+		want_xday = 1;
+	    }
 	    break;
 	case L'Y':
 	    /* Match year including century number.  */
@@ -558,7 +583,7 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, struct tm *tm,
 		    wchar_t *end;
 		    sval = wcstod(rp, &end);
 		    if( sval >= 0.0 && sval <= 61.0) {
-			tm->tm_sec = (int) sval;
+		        tm->tm_sec = int( sval);
 			*psecs = sval;
 		    }
 		    rp = end;
@@ -586,11 +611,13 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, struct tm *tm,
 		have_wday = 1;
 		break;
 	    case L'y':
-		/* Match year within century using alternate numeric symbols.  */
-		get_alt_number (0, 99, 2);
-	        int ival = val;
-	        tm->tm_year = ival >= 69 ? ival : ival + 100;
-		want_xday = 1;
+		{
+		    /* Match year within century using alternate numeric symbols.  */
+		    get_alt_number (0, 99, 2);
+		    int ival = val;
+		    tm->tm_year = ival >= 69 ? ival : ival + 100;
+		    want_xday = 1;
+		}
 		break;
 	    default:
 		return NULL;
@@ -923,18 +950,20 @@ strptime_internal (const char *rp, const char *fmt, struct tm *tm,
 	    have_wday = 1;
 	    break;
 	case 'y':
-	    /* Match year within century.  */
-	    get_number (0, 99, 2);
-	    /* The "Year 2000: The Millennium Rollover" paper suggests that
-	       values in the range 69-99 refer to the twentieth century.
-	       And this is mandated by the POSIX 2001 standard, with a
-	       caveat that it might change in future.
-	    */
-	    int ival = val;
-	    tm->tm_year = ival >= 69 ? ival : ival + 100;
-	    /* Indicate that we want to use the century, if specified.  */
-	    want_century = 1;
-	    want_xday = 1;
+	    {
+		/* Match year within century.  */
+		get_number (0, 99, 2);
+		/* The "Year 2000: The Millennium Rollover" paper suggests that
+		   values in the range 69-99 refer to the twentieth century.
+		   And this is mandated by the POSIX 2001 standard, with a
+		   caveat that it might change in future.
+		*/
+		int ival = val;
+		tm->tm_year = ival >= 69 ? ival : ival + 100;
+		/* Indicate that we want to use the century, if specified.  */
+		want_century = 1;
+		want_xday = 1;
+	    }
 	    break;
 	case 'Y':
 	    /* Match year including century number.  */
@@ -1025,7 +1054,7 @@ strptime_internal (const char *rp, const char *fmt, struct tm *tm,
 		       char *end;
 		       sval = strtod(rp, &end);
 		       if( sval >= 0.0 && sval <= 61.0) {
-			   tm->tm_sec = (int) sval;
+			   tm->tm_sec = int( sval);
 			   *psecs = sval;
 		       }
 		       rp = end;
@@ -1053,11 +1082,13 @@ strptime_internal (const char *rp, const char *fmt, struct tm *tm,
 		have_wday = 1;
 		break;
 	    case 'y':
-		/* Match year within century using alternate numeric symbols.  */
-		get_alt_number (0, 99, 2);
-		int ival = val;
-		tm->tm_year = ival >= 69 ? ival : ival + 100;
-		want_xday = 1;
+		{
+		    /* Match year within century using alternate numeric symbols.  */
+		    get_alt_number (0, 99, 2);
+		    int ival = val;
+		    tm->tm_year = ival >= 69 ? ival : ival + 100;
+		    want_xday = 1;
+		}
 		break;
 	    default:
 		return NULL;
@@ -1225,12 +1256,12 @@ R_strptime (const char *buf, const char *format, struct tm *tm,
 	n = mbstowcs(NULL, buf, 1000);
 	if(n > 1000) error(_("input string is too long"));
 	n = mbstowcs(wbuf, buf, 1000);
-	if(n == -1) error(_("invalid multibyte input string"));
+	if(CXXRCONSTRUCT(int, n) == -1) error(_("invalid multibyte input string"));
 
 	n = mbstowcs(NULL, format, 1000);
 	if(n > 1000) error(_("format string is too long"));
 	n = mbstowcs(wfmt, format, 1000);
-	if(n == -1) error(_("invalid multibyte format string"));
+	if(CXXRCONSTRUCT(int, n) == -1) error(_("invalid multibyte format string"));
 	return (char *) w_strptime_internal (wbuf, wfmt, tm, &decided, psecs, poffset);
     } else
 #endif
@@ -1241,3 +1272,9 @@ R_strptime (const char *buf, const char *format, struct tm *tm,
     return strptime_internal (buf, format, tm, &decided, psecs, poffset);
     }
 }
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* RSTRPTIME_H */

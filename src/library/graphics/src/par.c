@@ -271,7 +271,7 @@ static void Specify(const char *what, SEXP value, pGEDevDesc dd)
 	ix = RGBpar3(value, 0, dpptr(dd)->bg);
 	/*	naIntCheck(ix, what); */
 	R_DEV__(bg) = ix;
-	R_DEV__(new) = FALSE;
+	R_DEV__(newplot) = FALSE;
     }
 /*--- and these are "Specify() only" {i.e. par(nam = val)} : */
     else if (streql(what, "ask")) {
@@ -463,7 +463,7 @@ static void Specify(const char *what, SEXP value, pGEDevDesc dd)
 	R_DEV_2(currentFigure);
 	/* R_DEV_2(defaultFigure) = TRUE;
 	   R_DEV_2(layout) = FALSE; */
-	R_DEV_2(new) = TRUE;
+	R_DEV_2(newplot) = TRUE;
 	GReset(dd);
 	/* Force a device clip */
 	if (dd->dev->canClip) GForceClip(dd);
@@ -475,7 +475,7 @@ static void Specify(const char *what, SEXP value, pGEDevDesc dd)
 	if(!gpptr(dd)->state) {
 	    /* no need to warn with new=FALSE and no plot */
 	    if(ix != 0) warning(_("calling par(new=TRUE) with no plot"));
-	} else R_DEV__(new) = (ix != 0);
+	} else R_DEV__(newplot) = (ix != 0);
     }
     /* -- */
 
@@ -893,7 +893,7 @@ static SEXP Query(const char *what, pGEDevDesc dd)
     }
     else if (streql(what, "new")) {
 	value = allocVector(LGLSXP, 1);
-	LOGICAL(value)[0] = dpptr(dd)->new;
+	LOGICAL(value)[0] = dpptr(dd)->newplot;
     }
     else if (streql(what, "oma")) {
 	value = allocVector(REALSXP, 4);
@@ -922,7 +922,7 @@ static SEXP Query(const char *what, pGEDevDesc dd)
          */
         value = allocVector(LGLSXP, 1);
         LOGICAL(value)[0] = 0;
-        if (dpptr(dd)->new) {
+        if (dpptr(dd)->newplot) {
             if (!dpptr(dd)->state) 
                 LOGICAL(value)[0] = 1;
         } else {

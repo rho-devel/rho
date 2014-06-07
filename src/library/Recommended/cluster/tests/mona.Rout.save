@@ -1,0 +1,118 @@
+
+R version 3.0.0 beta (2013-03-25 r62402) -- "Masked Marvel"
+Copyright (C) 2013 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+Platform: x86_64-unknown-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(cluster)
+> 
+> data(animals)
+> (mani <- mona(animals))
+Revised data:
+    war fly ver end gro hai
+ant   0   0   0   0   1   0
+bee   0   1   0   0   1   1
+cat   1   0   1   0   0   1
+cpl   0   0   0   0   0   1
+chi   1   0   1   1   1   1
+cow   1   0   1   0   1   1
+duc   1   1   1   0   1   0
+eag   1   1   1   1   0   0
+ele   1   0   1   1   1   0
+fly   0   1   0   0   0   0
+fro   0   0   1   1   0   0
+her   0   0   1   0   1   0
+lio   1   0   1   1   1   1
+liz   0   0   1   0   0   0
+lob   0   0   0   0   0   0
+man   1   0   1   1   1   1
+rab   1   0   1   0   1   1
+sal   0   0   1   0   0   0
+spi   0   0   0   0   0   1
+wha   1   0   1   1   1   0
+Order of objects:
+ [1] ant cpl spi lob bee fly fro her liz sal cat cow rab chi lio man ele wha duc
+[20] eag
+Variable used:
+ [1] gro  NULL hai  fly  gro  ver  end  gro  NULL war  gro  NULL end  NULL NULL
+[16] hai  NULL fly  end 
+Separation step:
+ [1] 4 0 5 3 4 2 3 4 0 1 4 0 3 0 0 4 0 2 3
+
+Available components:
+[1] "data"      "order"     "variable"  "step"      "call"      "order.lab"
+> 
+> str(mani)
+List of 6
+ $ data     : int [1:20, 1:6] 0 0 1 0 1 1 1 1 1 0 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : chr [1:20] "ant" "bee" "cat" "cpl" ...
+  .. ..$ : chr [1:6] "war" "fly" "ver" "end" ...
+ $ order    : int [1:20] 1 4 19 15 2 10 11 12 14 18 ...
+ $ variable : chr [1:19] "gro" "NULL" "hai" "fly" ...
+ $ step     : int [1:19] 4 0 5 3 4 2 3 4 0 1 ...
+ $ call     : language mona(x = animals)
+ $ order.lab: chr [1:20] "ant" "cpl" "spi" "lob" ...
+ - attr(*, "class")= chr "mona"
+> 
+> if(require(MASS)) {
++ 
++     if(R.version$major != "1" || as.numeric(R.version$minor) >= 7)
++         RNGversion("1.6")
++     set.seed(253)
++     n <- 512; p <- 3
++     Sig <- diag(p); Sig[] <- 0.8 ^ abs(col(Sig) - row(Sig))
++     x3 <- mvrnorm(n, rep(0,p), Sig) >= 0
++     x <- cbind(x3, rbinom(n, size=1, prob = 1/2))
++ 
++     print(sapply(as.data.frame(x), table))
++ 
++     mx <- mona(x)
++     str(mx)
++     print(lapply(mx[c(1,3,4)], table))
++ }
+Loading required package: MASS
+   V1  V2  V3  V4
+0 244 245 261 238
+1 268 267 251 274
+List of 5
+ $ data    : int [1:512, 1:4] 0 0 0 0 1 1 1 0 1 0 ...
+ $ order   : int [1:512] 1 137 154 204 353 398 30 52 69 85 ...
+ $ variable: int [1:511] 0 0 0 0 0 3 0 0 0 0 ...
+ $ step    : int [1:511] 0 0 0 0 0 4 0 0 0 0 ...
+ $ call    : language mona(x = x)
+ - attr(*, "class")= chr "mona"
+$data
+
+   0    1 
+ 988 1060 
+
+$variable
+
+  0   1   2   3   4 
+496   4   1   5   5 
+
+$step
+
+  0   1   2   3   4 
+496   1   2   4   8 
+
+Warning message:
+In RNGkind("Marsaglia-Multicarry", "Buggy Kinderman-Ramage") :
+  buggy version of Kinderman-Ramage generator used
+> 
+> proc.time()
+   user  system elapsed 
+  0.350   0.054   0.504 

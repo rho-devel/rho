@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -18,6 +34,11 @@
  *  http://www.r-project.org/Licenses/
  */
 
+/** @file character.cpp
+ *
+ * All sorts of character manipulation, including grep and agrep.
+ */
+ 
 /* The character functions in this file are
 
 nzchar nchar substr substr<- abbreviate tolower toupper chartr strtrim
@@ -76,6 +97,8 @@ abbreviate chartr make.names strtrim tolower toupper give error.
 #include <R_ext/RS.h>  /* for Calloc/Free */
 
 #include <rlocale.h>
+
+using namespace CXXR;
 
 /* We use a shared buffer here to avoid reallocing small buffers, and
    keep a standard-size (MAXELTSIZE = 8192) buffer allocated shared
@@ -164,12 +187,12 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
 		    error(_("number of characters is not computable for element %d in \"bytes\" encoding"), i+1);
 		INTEGER(s)[i] = NA_INTEGER;
 	    } else if (mbcslocale) {
-		nc = (int) mbstowcs(NULL, translateChar(sxi), 0);
+		nc = int( mbstowcs(NULL, translateChar(sxi), 0));
 		if (!allowNA && nc < 0)
 		    error(_("invalid multibyte string %d"), i+1);
 		INTEGER(s)[i] = nc >= 0 ? nc : NA_INTEGER;
 	    } else
-		INTEGER(s)[i] = (int) strlen(translateChar(sxi));
+		INTEGER(s)[i] = int( strlen(translateChar(sxi)));
 	} else if (strncmp(type, "width", ntype) == 0) {
 	    if (IS_UTF8(sxi)) { /* assume this is valid */
 		const char *p = CHAR(sxi);
@@ -186,9 +209,9 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
 		INTEGER(s)[i] = NA_INTEGER;
 	    } else if (mbcslocale) {
 		xi = translateChar(sxi);
-		nc = (int) mbstowcs(NULL, xi, 0);
+		nc = int( mbstowcs(NULL, xi, 0));
 		if (nc >= 0) {
-		    wc = (wchar_t *) R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff);
+		    wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 
 		    mbstowcs(wc, xi, nc + 1);
 		    INTEGER(s)[i] = Ri18n_wcswidth(wc, 2147483647);
@@ -198,7 +221,7 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
 		else
 		    INTEGER(s)[i] = NA_INTEGER;
 	    } else
-		INTEGER(s)[i] = (int) strlen(translateChar(sxi));
+		INTEGER(s)[i] = int( strlen(translateChar(sxi)));
 	} else
 	    error(_("invalid '%s' argument"), "type");
 	vmaxset(vmax);
@@ -233,7 +256,7 @@ static void substr(char *buf, const char *str, int ienc, int sa, int so)
 	    mbs_init(&mb_st);
 	    for (i = 1; i < sa; i++) str += Mbrtowc(NULL, str, MB_CUR_MAX, &mb_st);
 	    for (i = sa; i <= so; i++) {
-		used = (int) Mbrtowc(NULL, str, MB_CUR_MAX, &mb_st);
+		used = int( Mbrtowc(NULL, str, MB_CUR_MAX, &mb_st));
 		for (j = 0; j < used; j++) *buf++ = *str++;
 	    }
 	} else
@@ -278,12 +301,12 @@ SEXP attribute_hidden do_substr(SEXP call, SEXP op, SEXP args, SEXP env)
 	    ienc = getCharCE(el);
 	    ss = CHAR(el);
 	    slen = strlen(ss); /* FIXME -- should handle embedded nuls */
-	    buf = R_AllocStringBuffer(slen+1, &cbuff);
+	    buf = static_cast<char*>(R_AllocStringBuffer(slen+1, &cbuff));
 	    if (start < 1) start = 1;
-	    if (start > stop || start > slen) {
+	    if (start > stop || start > CXXRCONSTRUCT(int, slen)) {
 		buf[0] = '\0';
 	    } else {
-		if (stop > slen) stop = (int) slen;
+		if (stop > CXXRCONSTRUCT(int, slen)) stop = int( slen);
 		substr(buf, ss, ienc, start, stop);
 	    }
 	    SET_STRING_ELT(s, i, mkCharCE(buf, ienc));
@@ -312,7 +335,7 @@ substrset(char *buf, const char *const str, cetype_t ienc, int sa, int so)
 	if (in != out) memmove(buf+in, buf+out, strlen(buf+out)+1);
 	memcpy(buf, str, in);
     } else if (ienc == CE_LATIN1 || ienc == CE_BYTES) {
-	in = (int) strlen(str);
+	in = int( strlen(str));
 	out = so - sa + 1;
 	memcpy(buf + sa - 1, str, (in < out) ? in : out);
     } else {
@@ -321,14 +344,14 @@ substrset(char *buf, const char *const str, cetype_t ienc, int sa, int so)
 	    for (i = 1; i < sa; i++) buf += Mbrtowc(NULL, buf, MB_CUR_MAX, NULL);
 	    /* now work out how many bytes to replace by how many */
 	    for (i = sa; i <= so; i++) {
-		in += (int) Mbrtowc(NULL, str+in, MB_CUR_MAX, NULL);
-		out += (int) Mbrtowc(NULL, buf+out, MB_CUR_MAX, NULL);
+		in += int( Mbrtowc(NULL, str+in, MB_CUR_MAX, NULL));
+		out += int( Mbrtowc(NULL, buf+out, MB_CUR_MAX, NULL));
 		if (!str[in]) break;
 	    }
 	    if (in != out) memmove(buf+in, buf+out, strlen(buf+out)+1);
 	    memcpy(buf, str, in);
 	} else {
-	    in = (int) strlen(str);
+	    in = int( strlen(str));
 	    out = so - sa + 1;
 	    memcpy(buf + sa - 1, str, (in < out) ? in : out);
 	}
@@ -380,12 +403,12 @@ SEXP attribute_hidden do_substrgets(SEXP call, SEXP op, SEXP args, SEXP env)
 	    ss = CHAR(el);
 	    slen = strlen(ss);
 	    if (start < 1) start = 1;
-	    if (stop > slen) stop = (int) slen; /* SBCS optimization */
+	    if (stop > slen) stop = int( slen); /* SBCS optimization */
 	    if (start > stop) {
 		/* just copy element across */
 		SET_STRING_ELT(s, i, STRING_ELT(x, i));
 	    } else {
-		int ienc2 = ienc;
+		cetype_t ienc2 = ienc;
 		v_ss = CHAR(v_el);
 		/* is the value in the same encoding?
 		   FIXME: could prefer UTF-8 here
@@ -398,7 +421,7 @@ SEXP attribute_hidden do_substrgets(SEXP call, SEXP op, SEXP args, SEXP env)
 		    ienc2 = CE_NATIVE;
 		}
 		/* might expand under MBCS */
-		buf = R_AllocStringBuffer(slen+strlen(v_ss), &cbuff);
+		buf = static_cast<char*>(R_AllocStringBuffer(slen+strlen(v_ss), &cbuff));
 		strcpy(buf, ss);
 		substrset(buf, v_ss, ienc2, start, stop);
 		SET_STRING_ELT(s, i, mkCharCE(buf, ienc2));
@@ -427,12 +450,24 @@ SEXP attribute_hidden do_substrgets(SEXP call, SEXP op, SEXP args, SEXP env)
    names, minlength, use.classes, dot
 */
 
+namespace {
+    inline bool FIRSTCHAR(const char* buff1, unsigned int i)
+    {
+	return isspace(int(buff1[i-1]));
+    }
 
-#define FIRSTCHAR(i) (isspace((int)buff1[i-1]))
-#define LASTCHAR(i) (!isspace((int)buff1[i-1]) && (!buff1[i+1] || isspace((int)buff1[i+1])))
-#define LOWVOW(i) (buff1[i] == 'a' || buff1[i] == 'e' || buff1[i] == 'i' || \
-		   buff1[i] == 'o' || buff1[i] == 'u')
+    inline bool LASTCHAR(const char* buff1, unsigned int i)
+    {
+	return !isspace(int(buff1[i-1]))
+	    && (!buff1[i+1] || isspace(int(buff1[i+1])));
+    }
 
+    inline bool LOWVOW(const char* buff1, unsigned int i)
+    {
+	return buff1[i] == 'a' || buff1[i] == 'e' || buff1[i] == 'i' ||
+	    buff1[i] == 'o' || buff1[i] == 'u';
+    }
+}
 
 /* memmove does allow overlapping src and dest */
 static void mystrcpy(char *dest, const char *src)
@@ -451,24 +486,24 @@ static SEXP stripchars(const char * const inchar, int minlen)
     char *buff1 = cbuff.data;
 
     mystrcpy(buff1, inchar);
-    upper = (int)(strlen(buff1) - 1);
+    upper = int(strlen(buff1) - 1);
 
     /* remove leading blanks */
     j = 0;
     for (i = 0 ; i < upper ; i++)
-	if (isspace((int)buff1[i]))
+	if (isspace(int(buff1[i])))
 	    j++;
 	else
 	    break;
 
     mystrcpy(buff1, &buff1[j]);
-    upper = (int)(strlen(buff1) - 1);
+    upper = int(strlen(buff1) - 1);
 
-    if (strlen(buff1) < minlen)
+    if (CXXRCONSTRUCT(int, strlen(buff1)) < minlen)
 	goto donesc;
 
     for (i = upper, j = 1; i > 0; i--) {
-	if (isspace((int)buff1[i])) {
+	if (isspace(int(buff1[i]))) {
 	    if (j)
 		buff1[i] = '\0' ;
 	    else
@@ -477,58 +512,58 @@ static SEXP stripchars(const char * const inchar, int minlen)
 	else
 	    j = 0;
 	/*strcpy(buff1[i],buff1[i+1]);*/
-	if (strlen(buff1) - nspace <= minlen)
+	if (CXXRCONSTRUCT(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
-    upper = (int)(strlen(buff1) - 1);
+    upper = int(strlen(buff1) - 1);
     for (i = upper; i > 0; i--) {
-	if (LOWVOW(i) && LASTCHAR(i))
+	if (LOWVOW(buff1, i) && LASTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (strlen(buff1) - nspace <= minlen)
+	if (CXXRCONSTRUCT(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
-    upper = (int)(strlen(buff1) - 1);
-   for (i = upper; i > 0; i--) {
-	if (LOWVOW(i) && !FIRSTCHAR(i))
-	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (strlen(buff1) - nspace <= minlen)
-	    goto donesc;
-    }
-
-    upper = (int)(strlen(buff1) - 1);
+    upper = int(strlen(buff1) - 1);
     for (i = upper; i > 0; i--) {
-	if (islower((int)buff1[i]) && LASTCHAR(i))
+	if (LOWVOW(buff1, i) && !FIRSTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (strlen(buff1) - nspace <= minlen)
+	if (CXXRCONSTRUCT(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
-    upper = (int)(strlen(buff1) - 1);
+    upper = int(strlen(buff1) - 1);
     for (i = upper; i > 0; i--) {
-	if (islower((int)buff1[i]) && !FIRSTCHAR(i))
+	if (islower(int(buff1[i])) && LASTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (strlen(buff1) - nspace <= minlen)
+	if (CXXRCONSTRUCT(int, strlen(buff1)) - nspace <= minlen)
+	    goto donesc;
+    }
+
+    upper = int(strlen(buff1) - 1);
+    for (i = upper; i > 0; i--) {
+	if (islower(int(buff1[i])) && !FIRSTCHAR(buff1, i))
+	    mystrcpy(&buff1[i], &buff1[i + 1]);
+	if (CXXRCONSTRUCT(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
     /* all else has failed so we use brute force */
 
-    upper = (int)(strlen(buff1) - 1);
+    upper = int(strlen(buff1) - 1);
     for (i = upper; i > 0; i--) {
-	if (!FIRSTCHAR(i) && !isspace((int)buff1[i]))
+	if (!FIRSTCHAR(buff1, i) && !isspace(int(buff1[i])))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (strlen(buff1) - nspace <= minlen)
+	if (CXXRCONSTRUCT(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
 donesc:
 
-    upper = (int) strlen(buff1);
+    upper = int( strlen(buff1));
     if (upper > minlen)
 	for (i = upper - 1; i > 0; i--)
-	    if (isspace((int)buff1[i]))
+	    if (isspace(int(buff1[i])))
 		mystrcpy(&buff1[i], &buff1[i + 1]);
 
     return(mkChar(buff1));
@@ -540,7 +575,7 @@ SEXP attribute_hidden do_abbrev(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP x, ans;
     R_xlen_t i, len;
     int minlen;
-    Rboolean warn = FALSE;
+    bool warn = false;
     const char *s;
     const void *vmax;
 
@@ -597,7 +632,7 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
     vmax = vmaxget();
     for (i = 0 ; i < n ; i++) {
 	This = translateChar(STRING_ELT(arg, i));
-	l = (int) strlen(This);
+	l = int( strlen(This));
 	/* need to prefix names not beginning with alpha or ., as
 	   well as . followed by a number */
 	need_prefix = FALSE;
@@ -607,7 +642,7 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 	    mbstate_t mb_st;
 	    const char *pp = This;
 	    mbs_init(&mb_st);
-	    used = (int) Mbrtowc(&wc, pp, MB_CUR_MAX, &mb_st);
+	    used = int( Mbrtowc(&wc, pp, MB_CUR_MAX, &mb_st));
 	    pp += used; nc -= used;
 	    if (wc == L'.') {
 		if (nc > 0) {
@@ -617,8 +652,8 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 	    } else if (!iswalpha(wc)) need_prefix = TRUE;
 	} else {
 	    if (This[0] == '.') {
-		if (l >= 1 && isdigit(0xff & (int) This[1])) need_prefix = TRUE;
-	    } else if (!isalpha(0xff & (int) This[0])) need_prefix = TRUE;
+		if (l >= 1 && isdigit(0xff & int( This[1]))) need_prefix = TRUE;
+	    } else if (!isalpha(0xff & int( This[0]))) need_prefix = TRUE;
 	}
 	if (need_prefix) {
 	    tmp = Calloc(l+2, char);
@@ -632,14 +667,14 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 	    /* This cannot lengthen the string, so safe to overwrite it.
 	       Would also be possible a char at a time.
 	     */
-	    int nc = (int) mbstowcs(NULL, tmp, 0);
+	    int nc = int( mbstowcs(NULL, tmp, 0));
 	    wchar_t *wstr = Calloc(nc+1, wchar_t), *wc;
 	    if (nc >= 0) {
 		mbstowcs(wstr, tmp, nc+1);
 		for (wc = wstr; *wc; wc++) {
 		    if (*wc == L'.' || (allow_ && *wc == L'_'))
 			/* leave alone */;
-		    else if (!iswalnum((int)*wc)) *wc = L'.';
+		    else if (!iswalnum(int(*wc))) *wc = L'.';
 		    /* If it changes into dot here,
 		     * length will become short on mbcs.
 		     * The name which became short will contain garbage.
@@ -654,11 +689,11 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 	} else {
 	    for (p = tmp; *p; p++) {
 		if (*p == '.' || (allow_ && *p == '_')) /* leave alone */;
-		else if (!isalnum(0xff & (int)*p)) *p = '.';
+		else if (!isalnum(0xff & int(*p))) *p = '.';
 		/* else leave alone */
 	    }
 	}
-	l = (int) strlen(tmp);        /* needed? */
+	l = int( strlen(tmp));        /* needed? */
 	SET_STRING_ELT(ans, i, mkChar(tmp));
 	/* do we have a reserved word?  If so the name is invalid */
 	if (!isValidName(tmp)) {
@@ -720,27 +755,27 @@ SEXP attribute_hidden do_tolower(SEXP call, SEXP op, SEXP args, SEXP env)
 		ienc = getCharCE(el);
 		if (use_UTF8 && ienc == CE_UTF8) {
 		    xi = CHAR(el);
-		    nc = (int) utf8towcs(NULL, xi, 0);
+		    nc = int( utf8towcs(NULL, xi, 0));
 		} else {
 		    xi = translateChar(el);
-		    nc = (int) mbstowcs(NULL, xi, 0);
+		    nc = int( mbstowcs(NULL, xi, 0));
 		    ienc = CE_NATIVE;
 		}
 		if (nc >= 0) {
 		    /* FIXME use this buffer for new string as well */
-		    wc = (wchar_t *)
-			R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff);
+		    wc = static_cast<wchar_t *>
+			(R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 		    if (ienc == CE_UTF8) {
 			utf8towcs(wc, xi, nc + 1);
 			for (j = 0; j < nc; j++) wc[j] = towctrans(wc[j], tr);
-			nb = (int) wcstoutf8(NULL, wc, 0);
+			nb = int( wcstoutf8(NULL, wc, 0));
 			cbuf = CallocCharBuf(nb);
 			wcstoutf8(cbuf, wc, nb + 1);
 			SET_STRING_ELT(y, i, mkCharCE(cbuf, CE_UTF8));
 		    } else {
 			mbstowcs(wc, xi, nc + 1);
 			for (j = 0; j < nc; j++) wc[j] = towctrans(wc[j], tr);
-			nb = (int) wcstombs(NULL, wc, 0);
+			nb = int( wcstombs(NULL, wc, 0));
 			cbuf = CallocCharBuf(nb);
 			wcstombs(cbuf, wc, nb + 1);
 			SET_STRING_ELT(y, i, markKnown(cbuf, el));
@@ -763,7 +798,7 @@ SEXP attribute_hidden do_tolower(SEXP call, SEXP op, SEXP args, SEXP env)
 		xi = CallocCharBuf(strlen(CHAR(STRING_ELT(x, i))));
 		strcpy(xi, translateChar(STRING_ELT(x, i)));
 		for (p = xi; *p != '\0'; p++)
-		    *p = (char) (ul ? toupper(*p) : tolower(*p));
+		    *p = char( ul ? toupper(*p) : tolower(*p));
 		SET_STRING_ELT(y, i, markKnown(xi, STRING_ELT(x, i)));
 		Free(xi);
 	    }
@@ -792,7 +827,7 @@ struct wtr_spec {
 
 static void
 wtr_build_spec(const wchar_t *s, struct wtr_spec *trs) {
-    int i, len = (int) wcslen(s);
+    int i, len = int( wcslen(s));
     struct wtr_spec *This, *_new;
 
     This = trs;
@@ -878,7 +913,7 @@ struct tr_spec {
 
 static void
 tr_build_spec(const char *s, struct tr_spec *trs) {
-    int i, len = (int) strlen(s);
+    int i, len = int( strlen(s));
     struct tr_spec *This, *_new;
 
     This = trs;
@@ -953,12 +988,12 @@ typedef struct { wchar_t c_old, c_new; } xtable_t;
 
 static R_INLINE int xtable_comp(const void *a, const void *b)
 {
-    return ((xtable_t *)a)->c_old - ((xtable_t *)b)->c_old;
+    return (static_cast<CXXRCONST xtable_t *>(a))->c_old - (static_cast<CXXRCONST xtable_t *>(b))->c_old;
 }
 
 static R_INLINE int xtable_key_comp(const void *a, const void *b)
 {
-    return *((wchar_t *)a) - ((xtable_t *)b)->c_old;
+    return *(static_cast<CXXRCONST wchar_t *>(a)) - (static_cast<CXXRCONST xtable_t *>(b))->c_old;
 }
 
 #define SWAP(_a, _b, _TYPE)                                    \
@@ -996,7 +1031,7 @@ static R_INLINE int xtable_key_comp(const void *a, const void *b)
 
 #define BSEARCH(_rc,_key,_base,_nmemb,_TYPE,_comp)             \
 {                                                              \
-    size_t l, u, idx;                                          \
+    std::size_t l, u, idx;                                          \
     _TYPE *p;                                                  \
     int comp;                                                  \
     l = 0;                                                     \
@@ -1075,15 +1110,15 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* Build the old and new wtr_spec lists. */
 	if (use_UTF8 && getCharCE(STRING_ELT(old, 0)) == CE_UTF8) {
 	    s = CHAR(STRING_ELT(old, 0));
-	    nc = (int) utf8towcs(NULL, s, 0);
+	    nc = int( utf8towcs(NULL, s, 0));
 	    if (nc < 0) error(_("invalid UTF-8 string 'old'"));
-	    wc = (wchar_t *) R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff);
+	    wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 	    utf8towcs(wc, s, nc + 1);
 	} else {
 	    s = translateChar(STRING_ELT(old, 0));
-	    nc = (int) mbstowcs(NULL, s, 0);
+	    nc = int( mbstowcs(NULL, s, 0));
 	    if (nc < 0) error(_("invalid multibyte string 'old'"));
-	    wc = (wchar_t *) R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff);
+	    wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 	    mbstowcs(wc, s, nc + 1);
 	}
 	wtr_build_spec(wc, trs_old);
@@ -1094,15 +1129,15 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 
 	if (use_UTF8 && getCharCE(STRING_ELT(_new, 0)) == CE_UTF8) {
 	    s = CHAR(STRING_ELT(_new, 0));
-	    nc = (int) utf8towcs(NULL, s, 0);
+	    nc = int( utf8towcs(NULL, s, 0));
 	    if (nc < 0) error(_("invalid UTF-8 string 'new'"));
-	    wc = (wchar_t *) R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff);
+	    wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 	    utf8towcs(wc, s, nc + 1);
 	} else {
 	    s = translateChar(STRING_ELT(_new, 0));
-	    nc = (int) mbstowcs(NULL, s, 0);
+	    nc = int( mbstowcs(NULL, s, 0));
 	    if (nc < 0) error(_("invalid multibyte string 'new'"));
-	    wc = (wchar_t *) R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff);
+	    wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 	    mbstowcs(wc, s, nc + 1);
 	}
 	wtr_build_spec(wc, trs_new);
@@ -1117,7 +1152,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 	      xtable_cnt++) ;
 	wtr_free_spec(trs_cnt);
 	Free(trs_cnt_ptr);
-	xtable = (xtable_t *) R_alloc(xtable_cnt+1, sizeof(xtable_t));
+	xtable = static_cast<xtable_t *>( CXXR_alloc(xtable_cnt+1, sizeof(xtable_t)));
 
 	trs_old_ptr = Calloc(1, struct wtr_spec *);
 	*trs_old_ptr = trs_old->next;
@@ -1154,16 +1189,16 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 		ienc = getCharCE(el);
 		if (use_UTF8 && ienc == CE_UTF8) {
 		    xi = CHAR(el);
-		    nc = (int) utf8towcs(NULL, xi, 0);
+		    nc = int( utf8towcs(NULL, xi, 0));
 		} else {
 		    xi = translateChar(el);
-		    nc = (int) mbstowcs(NULL, xi, 0);
+		    nc = int( mbstowcs(NULL, xi, 0));
 		    ienc = CE_NATIVE;
 		}
 		if (nc < 0)
 		    error(_("invalid input multibyte string %d"), i+1);
-		wc = (wchar_t *) R_AllocStringBuffer((nc+1)*sizeof(wchar_t),
-						     &cbuff);
+                wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t),
+								 &cbuff));
 		if (ienc == CE_UTF8) utf8towcs(wc, xi, nc + 1);
 		else mbstowcs(wc, xi, nc + 1);
 		for (j = 0; j < nc; j++){
@@ -1172,12 +1207,12 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 		    if (tbl) wc[j] = tbl->c_new;
 		}
 		if (ienc == CE_UTF8) {
-		    nb = (int) wcstoutf8(NULL, wc, 0);
+		    nb = int( wcstoutf8(NULL, wc, 0));
 		    cbuf = CallocCharBuf(nb);
 		    wcstoutf8(cbuf, wc, nb + 1);
 		    SET_STRING_ELT(y, i, mkCharCE(cbuf, CE_UTF8));
 		} else {
-		    nb = (int) wcstombs(NULL, wc, 0);
+		    nb = int( wcstombs(NULL, wc, 0));
 		    cbuf = CallocCharBuf(nb);
 		    wcstombs(cbuf, wc, nb + 1);
 		    SET_STRING_ELT(y, i, markKnown(cbuf, el));
@@ -1193,7 +1228,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 	struct tr_spec *trs_new, **trs_new_ptr;
 
 	for (unsigned int ii = 0; ii <= UCHAR_MAX; ii++) 
-	    xtable[ii] = (unsigned char) ii;
+	    xtable[ii] = static_cast<unsigned char>( ii);
 
 	/* Initialize the old and new tr_spec lists. */
 	trs_old = Calloc(1, struct tr_spec);
@@ -1237,7 +1272,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 		const char *xi = translateChar(STRING_ELT(x, i));
 		cbuf = CallocCharBuf(strlen(xi));
 		strcpy(cbuf, xi);
-		for (p = (unsigned char *) cbuf; *p != '\0'; p++)
+		for (p = reinterpret_cast<unsigned char *>( cbuf); *p != '\0'; p++)
 		    *p = xtable[*p];
 		SET_STRING_ELT(y, i, markKnown(cbuf, STRING_ELT(x, i)));
 		Free(cbuf);
@@ -1287,12 +1322,12 @@ SEXP attribute_hidden do_strtrim(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 	w = INTEGER(width)[i % nw];
 	This = translateChar(STRING_ELT(x, i));
-	nc = (int) strlen(This);
-	buf = R_AllocStringBuffer(nc, &cbuff);
+	nc = int( strlen(This));
+	buf = static_cast<char*>(R_AllocStringBuffer(nc, &cbuff));
 	wsum = 0;
 	mbs_init(&mb_st);
 	for (p = This, w0 = 0, q = buf; *p ;) {
-	    nb =  (int) Mbrtowc(&wc, p, MB_CUR_MAX, &mb_st);
+	    nb =  int( Mbrtowc(&wc, p, MB_CUR_MAX, &mb_st));
 	    w0 = Ri18n_wcwidth(wc);
 	    if (w0 < 0) { p += nb; continue; } /* skip non-printable chars */
 	    wsum += w0;
@@ -1323,7 +1358,7 @@ static int strtoi(SEXP s, int base)
     res = strtol(CHAR(s), &endp, base); /* ASCII */
     if(errno || *endp != '\0') res = NA_INTEGER;
     if(res > INT_MAX || res < INT_MIN) res = NA_INTEGER;
-    return (int) res;
+    return int( res);
 }
 
 SEXP attribute_hidden do_strtoi(SEXP call, SEXP op, SEXP args, SEXP env)

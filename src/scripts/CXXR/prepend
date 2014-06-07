@@ -1,0 +1,4 @@
+#/bin/sh
+
+grep -v 'opyright.*Runnalls' $2 > $2.bak
+cat $1 $2.bak > $2

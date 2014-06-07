@@ -3,7 +3,7 @@
 
 # @configure_input@
 
-revision='$Rev$'
+revision='$Rev: 63540 $'
 version=`set - ${revision}; echo ${2}`
 version="R compilation front end: ${R_VERSION} (r${version})
 

@@ -1,0 +1,619 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                           %
+% Template LaTex file for documentation of  %
+%                                           %
+%              Splus module :               %
+%                                           %
+%               KernSmooth                  %
+%                                           %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\documentstyle[12pt,S]{article}
+\setlength{\oddsidemargin}{0in}
+\setlength{\evensidemargin}{0in}
+\setlength{\textwidth}{6.5in}
+\setlength{\topmargin}{-0.6in}
+\setlength{\textheight}{8.9in}
+\def\jump{\vskip2mm\noindent}
+\parindent=0pt
+\parskip=10pt
+\begin{document}
+%
+%
+%
+%
+\title{\bf KernSmooth 2.2\\ Reference Manual}
+\author{M. P. Wand
+\\
+\\ {\em Australian Graduate School of Management}
+\\ {\em University of New South Wales}
+\\ {\em Sydney 2052, Australia}
+\\
+\\ {\tt wand@agsm.unsw.edu.au }}
+\date{\sl 18th June, 1997}
+\maketitle
+
+\section*{\sc Introduction}
+%
+% Insert INTRODUCTORY REMARKS below 
+{\tt Kernel Smoothing/S-PLUS} is a module of {\tt S-PLUS} functions 
+that facilitates the computation of several kernel smoothing estimators, 
+as described in the book: 
+
+{\it Kernel Smoothing} by M.P. Wand and M.C. Jones,
+Chapman and Hall, London, 1995, ISBN 0 412 55270 1.  
+
+Note that {\tt Fortran 77} is used for
+most of the heavy computations, so a compiler for this language is
+required to use the module. 
+
+Although this software has been tested it is quite possible that there may be
+some bugs. I would be very interested in knowing about these and receiving
+any other comments that you might have. If you do have problems I will try to
+do my best to help.
+%
+
+
+
+\section*{\sc Copyright}
+
+\copyright Copyright M. P. Wand 1997     
+
+\vskip3mm\noindent
+Permission to use, copy, and distribute this software and its
+documentation for any non-commercial purpose
+is hereby granted, provided that the above copyright notice appear
+in all copies and that both that copyright notice and this permission
+notice appear in supporting documentation.
+
+Permission to modify the software is granted, but not the right to
+distribute the modified code.
+  
+This software is provided ``as is'' without express or implied warranty.
+
+Please reference this work as if it were a published paper. 
+
+\section*{\sc Acknowledgment}
+
+The {\tt s.to.latex} macros of John Chambers
+and Trevor Hastie on {\tt Statlib} were used to produce the documentation. 
+
+\section*{\sc Documentation}
+
+The following pages document each of the main 
+{\tt KernSmooth} functions.
+
+\pagebreak
+%  
+% Insert output from *doc_to_tex* below 
+\begin{Helpfile}{bkde}{Compute a Binned Kernel Density Estimate}
+Returns x and y coordinates of the binned
+kernel density estimate of the probability
+density of the data.  
+\begin{Example}
+bkde (x,kernel="normal",canonical=F,bandwidth,
+      gridsize=401,range.x=range(x),truncate=T)
+\end{Example}
+\begin{Argument}{REQUIRED ARGUMENTS}
+\item[\Co{x:}]
+vector of observations from the distribution whose density is to
+be estimated.
+Missing values are not allowed.
+\item[\Co{bandwidth:}]
+the kernel bandwidth smoothing parameter.
+Larger values of \Co{bandwidth} make smoother estimates,
+smaller values of \Co{bandwidth} make less smooth estimates.
+\end{Argument}
+\begin{Argument}{OPTIONAL ARGUMENTS}
+\item[\Co{kernel:}]
+character string which determines the smoothing kernel.
+\Co{kernel} can be:
+\Co{"normal"} - the Gaussian density function (the default).
+\Co{"box"} - a rectangular box.
+\Co{"epanech"} - the centred beta(2,2) density.
+\Co{"biweight"} - the centred beta(3,3) density.
+\Co{"triweight"} - the centred beta(4,4) density.
+\item[\Co{canonical:}]
+logical flag: if TRUE, canonically scaled kernels are used.
+\item[\Co{gridsize:}]
+the number of equally spaced points at which to estimate
+the density.
+\item[\Co{range.x:}]
+vector containing the minimum and maximum values of x
+at which to compute the estimate.
+The default is the minimum and maximum data values.
+\item[\Co{truncate:}]
+logical flag: if TRUE, data with x values outside the
+range specified by range.x are ignored.
+\end{Argument}
+\Paragraph{VALUE}
+a list containing the following components:
+\item[\Co{x:}]
+vector of sorted x values at which the estimate was computed.
+\item[\Co{y:}]
+vector of density estimates
+at the corresponding \Co{x}.
+This is the binned approximation to the ordinary kernel density estimate.
+Linear binning is used to obtain the bin counts.  
+For each \Co{x} value in the sample, the kernel is
+centered on that \Co{x} and the heights of the kernel at each datapoint are summed.
+This sum, after a normalization, is the corresponding \Co{y} value in the output.
+\Paragraph{BACKGROUND}
+Density estimation is a smoothing operation.
+Inevitably there is a trade-off between bias in the estimate and the
+estimate's variability: large bandwidths will produce smooth estimates that
+may hide local features of the density; small bandwidths may introduce
+spurious bumps into the estimate.
+\Paragraph{REFERENCES}
+Wand, M. P. and Jones, M. C. (1995).
+Kernel Smoothing.
+Chapman and Hall, London.
+\Paragraph{SEE ALSO}
+\Co{density}, \Co{dpik}, \Co{hist}, \Co{ksmooth}.
+\need 15pt
+\Paragraph{EXAMPLE}
+\vspace{-16pt}
+\begin{Example}
+x <- geyser\$duration
+est <- bkde(x,bandwidth=0.25)
+plot(est,type="l")
+\end{Example}
+\end{Helpfile}
+\begin{Helpfile}{bkde2D}{Compute a 2D Binned Kernel Density Estimate}
+Returns the set of grid points in each coordinate direction,
+and the matrix of density estimates over the mesh induced by
+the grid points. The kernel is the standard bivariate normal
+density. 
+\begin{Example}
+bkde2D(x, bandwidth, gridsize=c(51, 51), range.x=<<see below>>, 
+       truncate=T)
+\end{Example}
+\begin{Argument}{REQUIRED ARGUMENTS}
+\item[\Co{x:}]
+a two-column matrix containing the observations from the  
+distribution whose density is to be estimated.
+Missing values are not allowed.
+\item[\Co{bandwidth:}]
+vector containing the bandwidth to be used in each coordinate
+direction.
+\end{Argument}
+\begin{Argument}{OPTIONAL ARGUMENTS}
+\item[\Co{gridsize:}]
+vector containing the number of equally spaced points in each direction
+over which the density is to be estimated.
+\item[\Co{range.x:}]
+a list containing two vectors, where each vector 
+contains the minimum and maximum values of x
+at which to compute the estimate for each direction.
+The default is the minimum and maximum data values in each direction.
+\item[\Co{truncate:}]
+logical flag: if TRUE, data with x values outside the
+range specified by range.x are ignored.
+\end{Argument}
+\Paragraph{VALUE}
+a list containing the following components:
+\item[\Co{x1:}]
+vector of values of the grid points in the first coordinate
+direction at which the estimate was computed. 
+\item[\Co{x2:}]
+vector of values of the grid points in the second coordinate
+direction at which the estimate was computed. 
+\item[\Co{fhat:}]
+matrix of density estimates 
+over the mesh induced by \Co{x1} and \Co{x2}.
+This is the binned approximation to the 2D kernel density estimate.
+Linear binning is used to obtain the bin counts and the
+Fast Fourier Transform is used to perform the discrete convolutions.
+For each \Co{x1},\Co{x2} pair the bivariate Gaussian kernel is
+centered on that location and the heights of the 
+kernel, scaled by the bandwidths, at each datapoint are summed.
+This sum, after a normalization, is the corresponding 
+\Co{fhat} value in the output.
+\Paragraph{REFERENCES}
+Wand, M. P. (1994).
+Fast Computation of Multivariate Kernel Estimators.
+Journal of Computational and Graphical Statistics,
+3, 433-445.
+Wand, M. P. and Jones, M. C. (1995).
+Kernel Smoothing.
+Chapman and Hall, London.
+\Paragraph{SEE ALSO}
+\Co{bkde}, \Co{density}, \Co{hist}, \Co{ksmooth}.
+\need 15pt
+\Paragraph{EXAMPLE}
+\vspace{-16pt}
+\begin{Example}
+x <- cbind(geyser\$duration,geyser\$waiting)
+est <- bkde2D(x,bandwidth=c(0.7,7))
+contour(est\$x1,est\$x2,est\$fhat)
+persp(est\$fhat)
+\end{Example}
+\end{Helpfile}
+\begin{Helpfile}{bkfe}{Compute a Binned Kernel Functional Estimate }
+Returns an estimate of a binned approximation to
+the kernel estimate of the specified density functional. 
+The kernel is the standard normal density.
+\begin{Example}
+bkfe(x, drv, bandwidth, gridsize=401, range.x=range(x), binned=F, 
+     truncate=F)
+\end{Example}
+\begin{Argument}{REQUIRED ARGUMENTS}
+\item[\Co{x:}]
+vector of observations from the distribution whose density is to
+be estimated.
+Missing values are not allowed.
+\item[\Co{drv:}]
+order of derivative in the density functional. Must be a
+non-negative even integer.
+\item[\Co{bandwidth:}]
+the kernel bandwidth smoothing parameter.
+\end{Argument}
+\begin{Argument}{OPTIONAL ARGUMENTS}
+\item[\Co{gridsize:}]
+the number of equally-spaced points over which binning is
+performed.
+\item[\Co{range.x:}]
+vector containing the minimum and maximum values of x
+at which to compute the estimate.
+The default is the minimum and maximum data values.
+\item[\Co{binned:}]
+logical flag: if TRUE, then x and y are taken to be grid counts
+rather than raw data.
+\item[\Co{truncate:}]
+logical flag: if TRUE, data with x values outside the
+range specified by range.x are ignored.
+\end{Argument}
+\Paragraph{VALUE}
+the estimated functional.
+The density functional of order "drv" is the integral of the
+product of the density and its "drv"'th derivative. 
+The kernel estimates
+of such quantities are computed using a binned implementation,
+and the kernel is the standard normal density.
+\Paragraph{BACKGROUND}
+Estimates of this type were proposed by Sheather and
+Jones (1991).
+\Paragraph{REFERENCES}
+Sheather, S. J. and Jones, M. C. (1991).
+A reliable data-based bandwidth selection method for
+kernel density estimation.
+Journal of the Royal Statistical Society, Series B, 53, 683-690.
+Wand, M. P. and Jones, M. C. (1995).
+Kernel Smoothing.
+Chapman and Hall, London.
+\need 15pt
+\Paragraph{EXAMPLE}
+\vspace{-16pt}
+\begin{Example}
+x <- geyser\$duration
+est <- bkfe(x,drv=4,bandwidth=0.3)
+\end{Example}
+\end{Helpfile}
+\begin{Helpfile}{dpih}{Select a Histogram Bin Width }
+Uses direct plug-in methodology to select the bin width of 
+a histogram.
+\begin{Example}
+dpih(x, scalest="minim", level=2, gridsize=401, 
+     range.x=range(x), truncate=F)
+\end{Example}
+\begin{Argument}{REQUIRED ARGUMENTS}
+\item[\Co{x:}]
+vector containing the sample on which the
+histogram is to be constructed.
+\end{Argument}
+\begin{Argument}{OPTIONAL ARGUMENTS}
+\item[\Co{scalest:}]
+estimate of scale.
+ \Co{"stdev"} - standard deviation is used.
+ \Co{"iqr"} - inter-quartile range divided by 1.349 is used.
+ \Co{"minim"} - minimum of \Co{"stdev"} and \Co{"iqr"} is used.
+\item[\Co{level:}]
+number of levels of functional estimation used in the
+plug-in rule.
+\item[\Co{gridsize:}]
+number of grid points used in the binned approximations
+to functional estimates.
+\item[\Co{range.x:}]
+range over which functional estimates are obtained.
+The default is the minimum and maximum data values.
+\item[\Co{truncate:}]
+if \Co{truncate} is \Co{TRUE} then observations outside
+of the interval specified by range.x are omitted.
+Otherwise, they are used to weight the extreme grid points.
+\end{Argument}
+\Paragraph{VALUE}
+the selected bin width.
+The direct plug-in approach, where unknown functionals
+that appear in expressions for the asymptotically
+optimal bin width and bandwidths
+are replaced by kernel estimates, is used.
+The normal distribution is used to provide an
+initial estimate.
+\Paragraph{BACKGROUND}
+This method for selecting the bin width of a histogram is
+described in Wand (1995). It is an extension of the
+normal scale rule of Scott (1979) and uses plug-in ideas
+from bandwidth selection for kernel density estimation
+(e.g. Sheather and Jones, 1991).
+\Paragraph{REFERENCES}
+Scott, D. W. (1979). 
+On optimal and data-based histograms.
+Biometrika, 66, 605-610.
+Sheather, S. J. and Jones, M. C. (1991).
+A reliable data-based bandwidth selection method for
+kernel density estimation.
+Journal of the Royal Statistical Society, Series B, 53, 683-690. 
+Wand, M. P. (1995).
+Data-based choice of histogram binwidth.
+University of New South Wales,
+Australian Graduate School of Management 
+Working Paper Series No. 95-011.
+\Paragraph{SEE ALSO}
+\Co{hist}
+\need 15pt
+\Paragraph{EXAMPLE}
+\vspace{-16pt}
+\begin{Example}
+x <- geyser\$duration
+h <- dpih(x)
+bins <- seq(min(x)-0.1,max(x)+0.1+h,by=h)
+hist(x,breaks=bins)
+\end{Example}
+\end{Helpfile}
+\begin{Helpfile}{dpik}{Select a Bandwidth for Kernel Density Estimation}
+Use direct plug-in methodology to select the bandwidth
+of a kernel density estimate.
+\begin{Example}
+dpik(x, scalest="minim", level=2, kernel="normal",   
+     canonical=F, gridsize=401, range.x=range(x), 
+     truncate=F)
+\end{Example}
+\begin{Argument}{REQUIRED ARGUMENTS}
+\item[\Co{x:}]
+vector containing the sample on which the
+kernel density estimate is to be constructed.
+\end{Argument}
+\begin{Argument}{OPTIONAL ARGUMENTS}
+\item[\Co{scalest:}]
+estimate of scale.
+ \Co{"stdev"} - standard deviation is used.
+ \Co{"iqr"} - inter-quartile range divided by 1.349 is used.
+ \Co{"minim"} - minimum of \Co{"stdev"} and \Co{"iqr"} is used.
+\item[\Co{level:}]
+number of levels of functional estimation used in the
+plug-in rule.
+\item[\Co{kernel:}]
+character string which determines the smoothing kernel.
+\Co{kernel} can be:
+\Co{"normal"} - the Gaussian density function (the default).
+\Co{"box"} - a rectangular box.
+\Co{"epanech"} - the centred beta(2,2) density.
+\Co{"biweight"} - the centred beta(3,3) density.
+\Co{"triweight"} - the centred beta(4,4) density.
+\item[\Co{canonical:}]
+logical flag: if TRUE, canonically scaled kernels are used
+\item[\Co{gridsize:}]
+the number of equally-spaced points over which binning is 
+performed to obtain kernel functional approximation. 
+\item[\Co{range.x:}]
+vector containing the minimum and maximum values of x
+at which to compute the estimate.
+The default is the minimum and maximum data values.
+\item[\Co{truncate:}]
+logical flag: if TRUE, data with x values outside the
+range specified by range.x are ignored.
+\end{Argument}
+\Paragraph{VALUE}
+the selected bandwidth.
+The direct plug-in approach, where unknown functionals
+that appear in expressions for the asymptotically
+optimal bandwidths
+are replaced by kernel estimates, is used.
+The normal distribution is used to provide an
+initial estimate.
+\Paragraph{BACKGROUND}
+This method for selecting the bandwidth of a kernel
+density estimate was proposed by Sheather and
+Jones (1991)
+and is
+described in Section 3.6 of Wand and Jones (1995). 
+\Paragraph{REFERENCES}
+Sheather, S. J. and Jones, M. C. (1991).
+A reliable data-based bandwidth selection method for
+kernel density estimation.
+Journal of the Royal Statistical Society, Series B, 53, 683-690.
+Wand, M. P. and Jones, M. C. (1995).
+Kernel Smoothing.
+Chapman and Hall, London.
+\Paragraph{SEE ALSO}
+\Co{bkde}, \Co{density}, \Co{ksmooth}
+\need 15pt
+\Paragraph{EXAMPLE}
+\vspace{-16pt}
+\begin{Example}
+x <- geyser\$duration
+h <- dpik(x)
+est <- bkde(x,bandwidth=h)
+plot(est,type="l")
+\end{Example}
+\end{Helpfile}
+\begin{Helpfile}{dpill}{Select a Bandwidth for Local Linear Regression}
+Use direct plug-in methodology to select the bandwidth
+of a local linear Gaussian kernel regression estimate, as described
+by Ruppert, Sheather and Wand (1995). 
+\begin{Example}
+dpill(x, y, blockmax=5, divisor=20, trim=0.01, proptrun=0.05, 
+      gridsize=401, range.x=<<see below>>, truncate=T)
+\end{Example}
+\begin{Argument}{REQUIRED ARGUMENTS}
+\item[\Co{x:}]
+vector of x data.
+Missing values are not accepted.
+\item[\Co{y:}]
+vector of y data.
+This must be same length as \Co{x}, and
+missing values are not accepted.
+\end{Argument}
+\begin{Argument}{OPTIONAL ARGUMENTS}
+\item[\Co{blockmax:}]
+the maximum number of blocks of the data for construction
+of an initial parametric estimate. 
+\item[\Co{divisor:}]
+the value that the sample size is divided by to determine
+a lower limit on the number of blocks of the data for
+construction of an initial parametric estimate.
+\item[\Co{trim:}]
+the proportion of the sample trimmed from each end in the
+x direction before application of the plug-in methodology.
+\item[\Co{proptrun:}]
+the proportion of the range of x at each end truncated in the
+functional estimates.
+\item[\Co{gridsize:}]
+number of equally-spaced grid points over which the
+function is to be estimated.
+\item[\Co{range.x:}]
+vector containing the minimum and maximum values of \Co{x} at which to
+compute the estimate.
+For density estimation the default is the minimum and maximum data values
+with 5\(\backslash\)% of the range added to each end.
+For regression estimation the default is the minimum and maximum data values.
+\item[\Co{truncate:}]
+logical flag: if TRUE, data with x values outside the range specified
+by range.x are ignored.
+\end{Argument}
+\Paragraph{VALUE}
+the selected bandwidth.
+The direct plug-in approach, where unknown functionals
+that appear in expressions for the asymptotically
+optimal bandwidths
+are replaced by kernel estimates, is used.
+The kernel is the standard normal density.
+Least squares quartic fits over blocks of data are used to 
+obtain an initial estimate. Mallow's Cp is used to select
+the number of blocks.
+\Paragraph{WARNING}
+If there are severe irregularities (i.e. outliers, sparse regions)
+in the x values then the local polynomial smooths required for the
+bandwidth selection algorithm may become degenerate and the function
+will crash. Outliers in the y direction may lead to deterioration
+of the quality of the selected bandwidth.
+\Paragraph{REFERENCES}
+Ruppert, D., Sheather, S. J. and Wand, M. P. (1995).
+An effective bandwidth selector for local least squares
+regression.
+Journal of the American Statistical Association,
+90, 1257-1270.
+Wand, M. P. and Jones, M. C. (1995).
+Kernel Smoothing.
+Chapman and Hall, London.
+\Paragraph{SEE ALSO}
+\Co{ksmooth}, \Co{locpoly}.
+\need 15pt
+\Paragraph{EXAMPLE}
+\vspace{-16pt}
+\begin{Example}
+x <- geyser\$duration
+y <- geyser\$waiting
+plot(x,y)
+h <- dpill(x,y)
+fit <- locpoly(x,y,bandwidth=h)
+lines(fit)
+\end{Example}
+\end{Helpfile}
+\begin{Helpfile}{locpoly}{Estimate Functions Using Local Polynomials}
+Estimates a probability density function,  
+regression function or their derivatives
+using local polynomials. A fast binned implementation
+over an equally-spaced grid is used.
+\begin{Example}
+locpoly(x, y, drv=0, degree=<<see below>>, kernel="normal", 
+        bandwidth, gridsize=401, bwdisc=25, 
+        range.x=<<see below>>,  binned=F, truncate=T)
+\end{Example}
+\begin{Argument}{REQUIRED ARGUMENTS}
+\item[\Co{x:}]
+vector of x data.
+Missing values are not accepted.
+\item[\Co{bandwidth:}]
+the kernel bandwidth smoothing parameter.
+It may be a single number or an array having
+length \Co{gridsize}, representing a bandwidth
+that varies according to the location of
+estimation.
+\end{Argument}
+\begin{Argument}{OPTIONAL ARGUMENTS}
+\item[\Co{y:}]
+vector of y data.
+This must be same length as \Co{x}, and
+missing values are not accepted.
+\item[\Co{drv:}]
+order of derivative to be estimated.
+\item[\Co{degree:}]
+degree of local polynomial used. Its value
+must be greater than or equal to the value
+of \Co{drv}. The default value is of \Co{degree} is
+\Co{drv} + 1.
+\item[\Co{kernel:}]
+\Co{"normal"} - the Gaussian density function.
+\item[\Co{gridsize:}]
+number of equally-spaced grid points over which the 
+function is to be estimated.
+\item[\Co{bwdisc:}]
+number of logarithmically-equally-spaced bandwidths
+on which \Co{bandwidth} is discretised, to speed up
+computation.
+\item[\Co{range.x:}]
+vector containing the minimum and maximum values of \Co{x} at which to
+compute the estimate.
+\item[\Co{binned:}]
+logical flag: if TRUE, then x and y are taken to be grid counts
+rather than raw data. 
+\item[\Co{truncate:}]
+logical flag: if TRUE, data with x values outside the range specified
+by range.x are ignored.
+\end{Argument}
+\Paragraph{VALUE}
+if \Co{y} is specified, a local polynomial regression estimate of 
+E[Y|X] (or its derivative) is computed.
+If \Co{y} is missing, a local polynomial estimate of the density
+of \Co{x} (or its derivative) is computed.
+
+a list containing the following components:
+\item[\Co{x:}]
+vector of sorted x values at which the estimate was computed.
+\item[\Co{y:}]
+vector of smoothed estimates for either the density or the regression
+at the corresponding \Co{x}.
+Local polynomial fitting with a kernel weight is used to
+estimate either a density, regression function or their
+derivatives. In the case of density estimation, the 
+data are binned and the local fitting procedure is applied to 
+the bin counts. In either case, binned approximations over
+an equally-spaced grid is used for fast computation. The
+bandwidth may be either scalar or a vector of length
+\Co{gridsize}.
+\Paragraph{REFERENCES}
+Wand, M. P. and Jones, M. C. (1995).
+Kernel Smoothing.
+Chapman and Hall, London.
+\Paragraph{SEE ALSO}
+\Co{bkde}, \Co{density}, \Co{dpill}, \Co{ksmooth}, \Co{loess}, \Co{smooth}, \Co{supsmu}.
+\need 15pt
+\Paragraph{EXAMPLE}
+\vspace{-16pt}
+\begin{Example}
+x <- geyser\$duration
+est <- locpoly(x,bandwidth=0.25)
+plot(est,type="l")
+# local linear density estimate
+y <- geyser\$waiting
+plot(x,y)
+fit <- locpoly(x,y,bandwidth=0.25)
+lines(fit)
+# local linear regression estimate
+\end{Example}
+\end{Helpfile}
+%
+\end{document}
+
+

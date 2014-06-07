@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1999-2013 The R Core Team.
@@ -28,6 +44,10 @@
 
 #include <Rinternals.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  *  Much is from John Chambers' "Programming With Data".
  *  Some of this is from Doug Bates.
@@ -57,35 +77,30 @@
 #define AS_LIST(x)		coerceVector(x,VECSXP)
 #define AS_RAW(x)		coerceVector(x,RAWSXP)
 
-#define IS_LOGICAL(x)		isLogical(x)
-#define IS_INTEGER(x)		isInteger(x)
-#define IS_NUMERIC(x)		isReal(x)
-#define IS_CHARACTER(x)		isString(x)
-#define IS_COMPLEX(x)		isComplex(x)
+#define IS_LOGICAL(x)		Rf_isLogical(x)
+#define IS_INTEGER(x)		Rf_isInteger(x)
+#define IS_NUMERIC(x)		Rf_isReal(x)
+#define IS_CHARACTER(x)		Rf_isString(x)
+#define IS_COMPLEX(x)		Rf_isComplex(x)
 /* NB: is this right? It means atomic or VECSXP or EXPRSXP */
-#define IS_VECTOR(x)		isVector(x)
+#define IS_VECTOR(x)		Rf_isVector(x)
 /* And this cannot be right: isVectorList(x)? */
 #define IS_LIST(x)		IS_VECTOR(x)
 #define IS_RAW(x)		(TYPEOF(x) == RAWSXP)
 
-#define NEW_LOGICAL(n)		allocVector(LGLSXP,n)
-#define NEW_INTEGER(n)		allocVector(INTSXP,n)
-#define NEW_NUMERIC(n)		allocVector(REALSXP,n)
-#define NEW_CHARACTER(n)	allocVector(STRSXP,n)
-#define NEW_COMPLEX(n)		allocVector(CPLXSXP,n)
-#define NEW_LIST(n)		allocVector(VECSXP,n)
+#define NEW_LOGICAL(n)		Rf_allocVector(LGLSXP,n)
+#define NEW_INTEGER(n)		Rf_allocVector(INTSXP,n)
+#define NEW_NUMERIC(n)		Rf_allocVector(REALSXP,n)
+#define NEW_CHARACTER(n)	Rf_allocVector(STRSXP,n)
+#define NEW_COMPLEX(n)		Rf_allocVector(CPLXSXP,n)
+#define NEW_LIST(n)		Rf_allocVector(VECSXP,n)
 #define NEW_STRING(n)		NEW_CHARACTER(n)
-#define NEW_RAW(n)		allocVector(RAWSXP,n)
+#define NEW_RAW(n)		Rf_allocVector(RAWSXP,n)
 
 #define LOGICAL_POINTER(x)	LOGICAL(x)
 #define INTEGER_POINTER(x)	INTEGER(x)
 #define NUMERIC_POINTER(x)	REAL(x)
-#define CHARACTER_POINTER(x)	STRING_PTR(x)
 #define COMPLEX_POINTER(x)	COMPLEX(x)
-/* Use of VECTOR_PTR will fail unless USE_RINTERNALS is in use
-   This is probably unused.
-*/
-#define LIST_POINTER(x)		VECTOR_PTR(x)
 #define RAW_POINTER(x)		RAW(x)
 
 /* The following are not defined in `Programming with Data' but are
@@ -100,14 +115,7 @@
 #define INTEGER_DATA(x)		(INTEGER(x))
 #define DOUBLE_DATA(x)		(REAL(x))
 #define NUMERIC_DATA(x)		(REAL(x))
-#define CHARACTER_DATA(x)	(STRING_PTR(x))
 #define COMPLEX_DATA(x)		(COMPLEX(x))
-/* Use of VECTOR_PTR will fail unless USE_RINTERNALS is in use
-   VECTOR_DATA seems unused, and RECURSIVE_DATA is used only in
-   the Expat part of XML.
-*/
-#define RECURSIVE_DATA(x)	(VECTOR_PTR(x))
-#define VECTOR_DATA(x)		(VECTOR_PTR(x))
 
 #define LOGICAL_VALUE(x)	asLogical(x)
 #define INTEGER_VALUE(x)	asInteger(x)
@@ -175,5 +183,8 @@
 
 #define EVAL(x)			eval(x,R_GlobalEnv)
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -307,7 +307,7 @@ function(x, value, ns, pos = -1, envir = as.environment(pos))
             stop("locked binding of ", sQuote(x), " cannot be changed",
                  domain = NA)
     }
-    if(bindingIsLocked(x, ns)) {
+    if(exists(x, envir = ns, inherits = FALSE) && bindingIsLocked(x, ns)) {
         in_load <- Sys.getenv("_R_NS_LOAD_")
         if (nzchar(in_load)) {
             ns_name <- getNamespaceName(ns)

@@ -142,6 +142,13 @@ Rdiff <- function(from, to, useDiff = FALSE, forEx = FALSE,
         if (nullPointers)
         ## remove pointer addresses from listings
             txt <- gsub("<(environment|bytecode|pointer|promise): [x[:xdigit:]]+>", "<\\1: 0>", txt)
+        ## In error and warning messages, the location of the error may be reported
+        ## differently by CR and CXXR, and this may in turn give differences
+        ## in line breaking within these messages.  Ignore such differences:
+        broken <- grep("^(([[:digit:]]+: )?In|Error in) .* : ?$", txt)
+        txt[broken] <- paste(txt[broken], txt[broken + 1])
+        if (length(broken)) txt <- txt[-(broken + 1)]
+        txt <- sub("^(([[:digit:]]+: )?In|Error in) .* :[[:space:]]*", "\\1 ? : ", txt)
         ## regularize fancy quotes.  First UTF-8 ones:
         txt <- gsub("(\xe2\x80\x98|\xe2\x80\x99)", "'", txt,
                       perl = TRUE, useBytes = TRUE)
@@ -154,7 +161,7 @@ Rdiff <- function(from, to, useDiff = FALSE, forEx = FALSE,
             txt <- txt[!grepl('options(pager = "console")', txt,
                               fixed = TRUE, useBytes = TRUE)]
         }
-        pat <- '(^Time |^Loading required package|^Package [A-Za-z][A-Za-z0-9]+ loaded|^<(environment|promise|pointer|bytecode):|^/CreationDate |^/ModDate |^/Producer )'
+        pat <- '(^Time |^Loading required package|^Package [A-Za-z][A-Za-z0-9]+ loaded|^<(environment|promise|pointer|bytecode):|^/CreationDate |^/ModDate |^/Producer|CXXR )'
         txt[!grepl(pat, txt, perl = TRUE, useBytes = TRUE)]
     }
     clean2 <- function(txt)

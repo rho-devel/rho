@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -24,49 +40,66 @@
 #endif
 
 #include "Defn.h"
+#include "CXXR/GCStackRoot.hpp"
 
+using namespace CXXR;
 
-/*  mkPRIMSXP - return a builtin function      */
-/*              either "builtin" or "special"  */
-
-/*  The value produced is cached do avoid the need for GC protection
-    in cases where a .Primitive is produced by unserializing or
-    reconstructed after a package has clobbered the value assigned to
-    a symbol in the base package. */
-
-SEXP attribute_hidden mkPRIMSXP(int offset, int eval)
+R_len_t Rf_length(SEXP s)
 {
-    SEXP result;
-    SEXPTYPE type = eval ? BUILTINSXP : SPECIALSXP;
-    static SEXP PrimCache = NULL;
-    static int FunTabSize = 0;
-    
-    if (PrimCache == NULL) {
-	/* compute the number of entires in R_FunTab */
-	while (R_FunTab[FunTabSize].name)
-	    FunTabSize++;
-
-	/* allocate and protect the cache */
-	PrimCache = allocVector(VECSXP, FunTabSize);
-	R_PreserveObject(PrimCache);
+    if (Rf_isVector(s))
+	return LENGTH(s);
+    switch (TYPEOF(s)) {
+    case NILSXP:
+	return 0;
+    case LISTSXP:
+    case LANGSXP:
+    case DOTSXP:
+	{
+	    int i = 0;
+	    while (s != NULL && s != R_NilValue) {
+		i++;
+		s = CDR(s);
+	    }
+	    return i;
+	}
+    case ENVSXP:
+	return Rf_envlength(s);
+    default:
+	return 1;
     }
-
-    if (offset < 0 || offset >= FunTabSize)
-	error("offset is out of R_FunTab range");
-
-    result = VECTOR_ELT(PrimCache, offset);
-
-    if (result == R_NilValue) {
-	result = allocSExp(type);
-	SET_PRIMOFFSET(result, offset);
-	SET_VECTOR_ELT(PrimCache, offset, result);
-    }
-    else if (TYPEOF(result) != type)
-	error("requested primitive type is not consistent with cached value");
-
-    return result;
 }
 
+R_xlen_t Rf_xlength(SEXP s)
+{
+    int i;
+    switch (TYPEOF(s)) {
+    case NILSXP:
+	return 0;
+    case LGLSXP:
+    case INTSXP:
+    case REALSXP:
+    case CPLXSXP:
+    case STRSXP:
+    case CHARSXP:
+    case VECSXP:
+    case EXPRSXP:
+    case RAWSXP:
+	return XLENGTH(s);
+    case LISTSXP:
+    case LANGSXP:
+    case DOTSXP:
+	i = 0;
+	while (s != NULL && s != R_NilValue) {
+	    i++;
+	    s = CDR(s);
+	}
+	return i;
+    case ENVSXP:
+	return Rf_envlength(s);
+    default:
+	return 1;
+    }
+}
 /* This is called by function() {}, where an invalid
    body should be impossible. When called from
    other places (eg do_asfunction) they
@@ -75,77 +108,22 @@ SEXP attribute_hidden mkPRIMSXP(int offset, int eval)
 /*  mkCLOSXP - return a closure with formals f,  */
 /*             body b, and environment rho       */
 
-SEXP attribute_hidden mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
+SEXP Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
 {
-    SEXP c;
-    PROTECT(formals);
-    PROTECT(body);
-    PROTECT(rho);
-    c = allocSExp(CLOSXP);
-
-#ifdef not_used_CheckFormals
-    if(isList(formals))
-	SET_FORMALS(c, formals);
-    else
-	error(_("invalid formal arguments for 'function'"));
-#else
-    SET_FORMALS(c, formals);
-#endif
+    GCStackRoot<PairList> formrt(SEXP_downcast<PairList*>(formals));
+    GCStackRoot<> bodyrt(body);
+    GCStackRoot<Environment> envrt(rho ? SEXP_downcast<Environment*>(rho)
+				   : Environment::global());
     switch (TYPEOF(body)) {
     case CLOSXP:
     case BUILTINSXP:
     case SPECIALSXP:
     case DOTSXP:
     case ANYSXP:
-	error(_("invalid body argument for 'function'"));
+	Rf_error(_("invalid body argument for 'function'"));
 	break;
     default:
-	SET_BODY(c, body);
 	break;
     }
-
-    if(rho == R_NilValue)
-	SET_CLOENV(c, R_GlobalEnv);
-    else
-	SET_CLOENV(c, rho);
-    UNPROTECT(3);
-    return c;
-}
-
-/* mkChar - make a character (CHARSXP) variable -- see Rinlinedfuns.h */
-
-/*  mkSYMSXP - return a symsxp with the string  */
-/*             name inserted in the name field  */
-
-static int isDDName(SEXP name)
-{
-    const char *buf;
-    char *endp;
-
-    buf = CHAR(name);
-    if( !strncmp(buf, "..", 2) && strlen(buf) > 2 ) {
-	buf += 2;
-	strtol(buf, &endp, 10); // discard value
-	if( *endp != '\0')
-	    return 0;
-	else
-	    return 1;
-    }
-    return 0;
-}
-
-SEXP attribute_hidden mkSYMSXP(SEXP name, SEXP value)
-
-{
-    SEXP c;
-    int i;
-    PROTECT(name);
-    PROTECT(value);
-    i = isDDName(name);
-    c = allocSExp(SYMSXP);
-    SET_PRINTNAME(c, name);
-    SET_SYMVALUE(c, value);
-    SET_DDVAL(c, i);
-    UNPROTECT(2);
-    return c;
+    return CXXR_NEW(Closure(formrt, bodyrt, envrt));
 }

@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-12   The R Core Team.
@@ -28,6 +44,7 @@
 #include <Rdynpriv.h>
 #include <R_ext/R-ftp-http.h>
 #include <Rmodules/Rinternet.h>
+#include "basedecl.h"
 
 static R_InternetRoutines routines, *ptr = &routines;
 
@@ -94,6 +111,7 @@ static void internet_Init(void)
     return;
 }
 
+extern "C"
 SEXP Rdownload(SEXP args)
 {
     if(!initialized) internet_Init();
@@ -139,7 +157,7 @@ Rconnection attribute_hidden R_newurl(const char *description,
 	return (*ptr->newurl)(description, mode);
     else {
 	error(_("internet routines cannot be loaded"));
-	return (Rconnection)0;
+	return CXXRNOCAST(Rconnection)0;
     }
 }
 
@@ -152,7 +170,7 @@ R_newsock(const char *host, int port, int server, const char * const mode,
 	return (*ptr->newsock)(host, port, server, mode, timeout);
     else {
 	error(_("internet routines cannot be loaded"));
-	return (Rconnection)0;
+	return CXXRNOCAST(Rconnection)0;
     }
 }
 
@@ -218,6 +236,7 @@ void  R_FTPClose(void *ctx)
 	error(_("internet routines cannot be loaded"));
 }
 
+extern "C"
 int extR_HTTPDCreate(const char *ip, int port)
 {
     if(!initialized) internet_Init();
@@ -228,6 +247,7 @@ int extR_HTTPDCreate(const char *ip, int port)
     return -1;
 }
 
+extern "C"
 void extR_HTTPDStop(void)
 {
     if(!initialized) internet_Init();
@@ -237,13 +257,13 @@ void extR_HTTPDStop(void)
 	error(_("internet routines cannot be loaded"));
 }
 
-
+extern "C"
 SEXP Rsockconnect(SEXP sport, SEXP shost)
 {
     if (length(sport) != 1) error("invalid 'socket' argument");
     int port = asInteger(sport);
     char *host[1];
-    host[0] = (char *) translateChar(STRING_ELT(shost, 0));
+    host[0] = const_cast<char *>( translateChar(STRING_ELT(shost, 0)));
     if(!initialized) internet_Init();
     if(initialized > 0)
 	(*ptr->sockconnect)(&port, host);
@@ -252,6 +272,7 @@ SEXP Rsockconnect(SEXP sport, SEXP shost)
     return ScalarInteger(port); // The socket number
 }
 
+extern "C"
 SEXP Rsockread(SEXP ssock, SEXP smaxlen)
 {
     if (length(ssock) != 1) error("invalid 'socket' argument");
@@ -270,6 +291,7 @@ SEXP Rsockread(SEXP ssock, SEXP smaxlen)
 		       
 }
 
+extern "C"
 SEXP Rsockclose(SEXP ssock)
 {
     if (length(ssock) != 1) error("invalid 'socket' argument");
@@ -282,6 +304,7 @@ SEXP Rsockclose(SEXP ssock)
     return ScalarLogical(sock);
 }
 
+extern "C"
 SEXP Rsockopen(SEXP sport)
 {
     if (length(sport) != 1) error("invalid 'port' argument");
@@ -294,6 +317,7 @@ SEXP Rsockopen(SEXP sport)
     return ScalarInteger(port); // The socket number
 }
 
+extern "C"
 SEXP Rsocklisten(SEXP ssock)
 {
     if (length(ssock) != 1) error("invalid 'socket' argument");
@@ -313,12 +337,13 @@ SEXP Rsocklisten(SEXP ssock)
     return ans;
 }
 
+extern "C"
 SEXP Rsockwrite(SEXP ssock, SEXP sstring)
 {
     if (length(ssock) != 1) error("invalid 'socket' argument");
     int sock = asInteger(ssock), start = 0, end, len;
-    char *buf = (char *) translateChar(STRING_ELT(sstring, 0)), *abuf[1];
-    end = len = (int) strlen(buf);
+    char *buf = const_cast<char *>( translateChar(STRING_ELT(sstring, 0))), *abuf[1];
+    end = len = int( strlen(buf));
     abuf[0] = buf;
     if(!initialized) internet_Init();
     if(initialized > 0)

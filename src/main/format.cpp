@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -26,7 +42,7 @@
  *  See ./print.c  for do_printdefault, do_prmatrix, etc.
  *
  * Exports
- *	formatString
+ *	formatString  (not in CXXR)
  *	formatLogical
  *	formatInteger
  *	formatReal
@@ -41,8 +57,12 @@
 
 #include <Defn.h>
 #include <float.h> /* for DBL_EPSILON */
+#include "Rcomplex.h"
 #include <Rmath.h>
 #include <Print.h>
+
+using namespace std;
+using namespace CXXR;
 
 /* this is just for conformity with other types */
 attribute_hidden
@@ -51,19 +71,23 @@ void formatRaw(Rbyte *x, R_xlen_t n, int *fieldwidth)
     *fieldwidth = 2;
 }
 
-attribute_hidden
-void formatString(SEXP *x, R_xlen_t n, int *fieldwidth, int quote)
+// Designed for use with std::accumulate():
+unsigned int CXXR::stringWidth(unsigned int minwidth, const String* string)
 {
-    int xmax = 0;
-    int l;
+    unsigned int width = R_print.na_width_noquote;
+    if (string != NA_STRING)
+	width = Rstrlen(const_cast<String*>(string), false);
+    return max(minwidth, width);
+}
 
-    for (R_xlen_t i = 0; i < n; i++) {
-	if (x[i] == NA_STRING) {
-	    l = quote ? R_print.na_width : R_print.na_width_noquote;
-	} else l = Rstrlen(x[i], quote) + (quote ? 2 : 0);
-	if (l > xmax) xmax = l;
-    }
-    *fieldwidth = xmax;
+// Designed for use with std::accumulate():
+unsigned int CXXR::stringWidthQuote(unsigned int minwidth,
+				    const String* string)
+{
+    unsigned int width = R_print.na_width;
+    if (string != NA_STRING)
+	width = Rstrlen(const_cast<String*>(string), true) + 2;
+    return max(minwidth, width);
 }
 
 void formatLogical(int *x, R_xlen_t n, int *fieldwidth)
@@ -160,7 +184,7 @@ static void format_via_sprintf(double r, int d, int *kpower, int *nsig)
     static char buff[NB];
     int i;
     snprintf(buff, NB, "%#.*e", d - 1, r);
-    *kpower = (int) strtol(buff + (d + 2), NULL, 10);
+    *kpower = int( strtol(buff + (d + 2), NULL, 10));
     for (i = d; i >= 2; i--)
         if (buff[i] != '0') break;
     *nsig = i;
@@ -176,6 +200,7 @@ static const long double tbl[] =
     1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
     1e20, 1e21, 1e22, 1e23, 1e24, 1e25, 1e26, 1e27
 };
+
 #else
 static const double tbl[] =
 {
@@ -218,7 +243,7 @@ scientific(double *x, int *sgn, int *kpower, int *nsig, int *roundingwidens)
 	    *roundingwidens = 0;
             return;
         }
-        kp = (int) floor(log10(r)) - R_print.digits + 1;/* r = |x|; 10^(kp + digits - 1) <= r */
+        kp = int( floor(log10(r))) - R_print.digits + 1;/* r = |x|; 10^(kp + digits - 1) <= r */
 #if defined(HAVE_LONG_DOUBLE) && (SIZEOF_LONG_DOUBLE > SIZEOF_DOUBLE)
         long double r_prec = r;
         /* use exact scaling factor in long double precision, if possible */
@@ -227,7 +252,7 @@ scientific(double *x, int *sgn, int *kpower, int *nsig, int *roundingwidens)
         }
 #ifdef HAVE_POWL
 	else
-            r_prec /= powl(10.0, (long double) kp);
+            r_prec /= powl(10.0, static_cast<long double>( kp));
 #else
         else if (kp <= R_dec_min_exponent)
             r_prec = (r_prec * 1e+303)/pow(10.0, (double)(kp+303));
@@ -241,7 +266,7 @@ scientific(double *x, int *sgn, int *kpower, int *nsig, int *roundingwidens)
         /* round alpha to integer, 10^(digits-1) <= alpha <= 10^digits
 	   accuracy limited by double rounding problem,
 	   alpha already rounded to 64 bits */
-        alpha = (double) R_nearbyintl(r_prec);
+        alpha = double( R_nearbyintl(r_prec));
 #else
 	double r_prec = r;
         /* use exact scaling factor in double precision, if possible */
@@ -257,7 +282,7 @@ scientific(double *x, int *sgn, int *kpower, int *nsig, int *roundingwidens)
             r_prec = (r_prec * 1e+303)/pow(10.0, (double)(kp+303));
         else
             r_prec /= pow(10.0, (double)kp);
-        if (r_prec < tbl[R_print.digits]) {
+        if (r_prec < tbl[R_print.digits - 1]) {
             r_prec *= 10.0;
             kp--;
         }
@@ -320,7 +345,7 @@ void formatReal(double *x, R_xlen_t n, int *w, int *d, int *e, int nsmall)
 
 	    left = kpower + 1;
 	    if (roundingwidens) left--;
-	    
+
 	    sleft = sgn + ((left <= 0) ? 1 : left); /* >= 1 */
 	    right = nsig - left; /* #{digits} right of '.' ( > 0 often)*/
 	    if (sgn) neg = 1;	 /* if any < 0, need extra space for sign */
@@ -380,7 +405,9 @@ void formatReal(double *x, R_xlen_t n, int *w, int *d, int *e, int nsmall)
 
 /* As from 2.2.0 the number of digits applies to real and imaginary parts
    together, not separately */
+/* Use header files!  2007/06/11 arr
 void z_prec_r(Rcomplex *r, Rcomplex *x, double digits);
+*/
 
 void formatComplex(Rcomplex *x, R_xlen_t n, int *wr, int *dr, int *er,
 		   int *wi, int *di, int *ei, int nsmall)

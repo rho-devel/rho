@@ -1,0 +1,467 @@
+# All this catalog "translates" are quotation characters.
+# The msgids must be ASCII and therefore cannot contain real quotation
+# characters, only substitutes like grave accent (0x60), apostrophe (0x27)
+# and double quote (0x22). These substitutes look strange; see
+# http://www.cl.cam.ac.uk/~mgk25/ucs/quotes.html
+#
+# This catalog translates grave accent (0x60) and apostrophe (0x27) to
+# left single quotation mark (U+2018) and right single quotation mark (U+2019).
+# It also translates pairs of apostrophe (0x27) to
+# left single quotation mark (U+2018) and right single quotation mark (U+2019)
+# and pairs of quotation mark (0x22) to
+# left double quotation mark (U+201C) and right double quotation mark (U+201D).
+#
+# When output to an UTF-8 terminal, the quotation characters appear perfectly.
+# When output to an ISO-8859-1 terminal, the single quotation marks are
+# transliterated to apostrophes (by iconv in glibc 2.2 or newer) or to
+# grave/acute accent (by libiconv), and the double quotation marks are
+# transliterated to 0x22.
+# When output to an ASCII terminal, the single quotation marks are
+# transliterated to apostrophes, and the double quotation marks are
+# transliterated to 0x22.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: R 2.10.0\n"
+"Report-Msgid-Bugs-To: bugs.r-project.org\n"
+"POT-Creation-Date: 2012-08-23 17:12\n"
+"PO-Revision-Date: 2009-09-30 04:37\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#, fuzzy
+msgid "Invalid value of 'log'"
+msgstr "Invalid value of ‘aspect’"
+
+msgid "range too small for min.n"
+msgstr ""
+
+msgid "'at' missing or incompatible with 'labels'"
+msgstr "‘at’ missing or incompatible with ‘labels’"
+
+msgid "'origin' forced to 0 for stacked bars"
+msgstr "‘origin’ forced to 0 for stacked bars"
+
+msgid "explicit 'data' specification ignored"
+msgstr "explicit ‘data’ specification ignored"
+
+msgid "mismatch in number of packets"
+msgstr "mismatch in number of packets"
+
+msgid "'type' has unsupported values"
+msgstr "‘type’ has unsupported values"
+
+msgid "Inappropriate arguments"
+msgstr "Inappropriate arguments"
+
+msgid "shingles can not be concatenated"
+msgstr "shingles can not be concatenated"
+
+msgid "model must be a formula object"
+msgstr "model must be a formula object"
+
+msgid "'multiple=TRUE' ignored ('groups' non-null with 'outer=FALSE')"
+msgstr "‘multiple=TRUE’ ignored ('groups' non-null with 'outer=FALSE')"
+
+msgid "invalid dimension '%s'"
+msgstr "invalid dimension ‘%s’"
+
+msgid "invalid model"
+msgstr "invalid model"
+
+msgid "newFactor cannot be NULL; you have found a bug!"
+msgstr "newFactor cannot be NULL; you have found a bug!"
+
+msgid "newFactor != NULL && groups == NULL does not hold; you have found a bug!"
+msgstr "newFactor != NULL && groups == NULL does not hold; you have found a bug!"
+
+msgid "Length check mismatch; you have found a bug!"
+msgstr "Length check mismatch; you have found a bug!"
+
+msgid "Non matching lengths"
+msgstr "Non matching lengths"
+
+msgid "'length' and 'prop' cannot both be specified"
+msgstr "‘length’ and ‘prop’ cannot both be specified"
+
+msgid "'length' must be positive"
+msgstr "‘length’ must be positive"
+
+msgid "improper length of 'lim'"
+msgstr "improper length of ‘lim’"
+
+msgid "Invalid value of perm.cond"
+msgstr "Invalid value of perm.cond"
+
+msgid "Invalid value of index.cond"
+msgstr "Invalid value of index.cond"
+
+msgid "skip cannot be all TRUE"
+msgstr "skip cannot be all TRUE"
+
+msgid "layout must have at least 2 elements"
+msgstr "layout must have at least 2 elements"
+
+#, fuzzy
+msgid "Inadmissible value of layout."
+msgstr "inadmissible value of layout"
+
+msgid "invalid value for layout"
+msgstr "invalid value for layout"
+
+msgid "More pages in layout than seem to be necessary."
+msgstr ""
+
+msgid "Density"
+msgstr "Density"
+
+msgid "Can't have log Y-scale"
+msgstr "Can't have log Y-scale"
+
+msgid "problem with 'hist' computations"
+msgstr "problem with ‘hist’ computations"
+
+msgid "type='%s' can be misleading in this context"
+msgstr "type='%s' can be misleading in this context"
+
+msgid "Count"
+msgstr "Count"
+
+msgid "Percent of Total"
+msgstr "Percent of Total"
+
+msgid "no observations within"
+msgstr "no observations within"
+
+msgid "points"
+msgstr "points"
+
+msgid "nearest observation already identified"
+msgstr "nearest observation already identified"
+
+msgid "column must be specified"
+msgstr "column must be specified"
+
+msgid "row must be specified"
+msgstr "row must be specified"
+
+msgid "panel position unspecified or invalid"
+msgstr "panel position unspecified or invalid"
+
+msgid "'trellis.switchFocus' cannot be used to switch to a different 'prefix'.  Use 'trellis.focus' first"
+msgstr ""
+
+#, fuzzy
+msgid "Plot object was not saved, cannot retrieve panel data"
+msgstr "current plot was not saved, can't retrieve panel data"
+
+#, fuzzy
+msgid "Plot spans multiple pages, only last page can be updated"
+msgstr "plot spans multiple pages, only last page can be updated"
+
+#, fuzzy
+msgid "You have to first select a panel using trellis.focus()"
+msgstr "you have to first select a panel using trellis.focus()"
+
+msgid "Selecting panel at position (%g, %g)"
+msgstr "Selecting panel at position (%g, %g)"
+
+msgid "No panels available"
+msgstr "No panels available"
+
+msgid "Click on panel to focus"
+msgstr "Click on panel to focus"
+
+msgid "'f.value' not supported; ignoring"
+msgstr "‘f.value’ not supported; ignoring"
+
+msgid "Click to choose one point to highlight"
+msgstr "Click to choose one point to highlight"
+
+msgid "no points within"
+msgstr "no points within"
+
+msgid "points of click"
+msgstr "points of click"
+
+msgid "component '%s' duplicated in key and legend"
+msgstr "component ‘%s’ duplicated in key and legend"
+
+msgid "key must be a list"
+msgstr "key must be a list"
+
+#, fuzzy
+msgid "first component of text must be vector of labels"
+msgstr "first component of text has to be vector of labels"
+
+msgid "Invalid key, need at least one component named lines, text, rect or points"
+msgstr "Invalid key, need at least one component named lines, text, rect or points"
+
+msgid "not enough rows for columns"
+msgstr "not enough rows for columns"
+
+#, fuzzy
+msgid "Sorry, align=FALSE is not supported"
+msgstr "sorry, align=F not supported (yet ?)"
+
+msgid "'at' values are not equispaced; output may be wrong"
+msgstr ""
+
+msgid "malformed colorkey"
+msgstr "malformed colorkey"
+
+msgid "Invalid 'shrink' parameter ignored"
+msgstr "Invalid ‘shrink’ parameter ignored"
+
+msgid "Invalid label.style"
+msgstr "Invalid label.style"
+
+msgid "device support for raster images unknown, ignoring 'raster=TRUE'"
+msgstr ""
+
+msgid "device has no raster support, ignoring 'raster=TRUE'"
+msgstr ""
+
+msgid "device does not support raster images with NA, ignoring 'raster=TRUE'"
+msgstr ""
+
+msgid "'x' values are not equispaced; output may be wrong"
+msgstr ""
+
+msgid "'y' values are not equispaced; output may be wrong"
+msgstr ""
+
+msgid "x must be (coercible to be) a factor"
+msgstr "x must be (coercible to be) a factor"
+
+msgid "error"
+msgstr "error"
+
+#, fuzzy
+msgid "Invalid value of 'pos' ignored."
+msgstr "Invalid value of ‘pos’"
+
+msgid "(loaded the KernSmooth namespace)"
+msgstr "(loaded the KernSmooth namespace)"
+
+msgid "panel.smoothScatter() requires the KernSmooth package, but unable to load KernSmooth namespace"
+msgstr "panel.smoothScatter() requires the KernSmooth package, but unable to load KernSmooth namespace"
+
+msgid "'nbin' must be numeric of length 1 or 2"
+msgstr "‘nbin’ must be numeric of length 1 or 2"
+
+msgid "'bandwidth' must be numeric"
+msgstr "‘bandwidth’ must be numeric"
+
+msgid "'nrpoints' should be numeric scalar with value >= 0."
+msgstr "‘nrpoints’ should be numeric scalar with value >= 0."
+
+msgid "'a' is overridden by 'reg'"
+msgstr "‘a’ is overridden by ‘reg’"
+
+msgid "only using the first two of"
+msgstr "only using the first two of"
+
+msgid "regression coefficients"
+msgstr "regression coefficients"
+
+msgid "'a' and 'b' are overridden by 'coef'"
+msgstr "‘a’ and ‘b’ are overridden by ‘coef’"
+
+msgid "'expr' must be a function or an expression containing 'x'"
+msgstr "‘expr’ must be a function or an expression containing ‘x’"
+
+#, fuzzy
+msgid "'varnames' has wrong length."
+msgstr "supplied ‘dimnames’ have wrong length"
+
+msgid "Parallel Coordinate Plot"
+msgstr "Parallel Coordinate Plot"
+
+msgid "cannot have log y-scale"
+msgstr "cannot have log y-scale"
+
+msgid ""
+"Error using packet %g\n"
+"%s"
+msgstr ""
+"Error using packet %g\n"
+"%s"
+
+msgid "y must have exactly 2 levels"
+msgstr "y must have exactly 2 levels"
+
+msgid "missing values and NaN's not allowed if 'na.rm' is FALSE"
+msgstr "missing values and NaN's not allowed if ‘na.rm’ is FALSE"
+
+msgid "'probs' outside [0,1]"
+msgstr "‘probs’ outside [0,1]"
+
+msgid "Can't have log X-scale"
+msgstr "Can't have log X-scale"
+
+msgid "Fitted Values minus Mean"
+msgstr "Fitted Values minus Mean"
+
+msgid "Residuals"
+msgstr "Residuals"
+
+msgid "Invalid or ambiguous component names:"
+msgstr ""
+
+msgid ","
+msgstr ""
+
+msgid "Multiple matches to component name"
+msgstr ""
+
+#, fuzzy
+msgid "the 'at' and 'labels' components of 'scales' may not be lists when 'relation = \"same\"'"
+msgstr "the at and labels components of scales may not be lists when relation = same"
+
+msgid "limits cannot be a list when relation = same"
+msgstr "limits cannot be a list when relation = same"
+
+msgid "Explicitly specified limits ignored"
+msgstr "Explicitly specified limits ignored"
+
+msgid "need at least one panel"
+msgstr "need at least one panel"
+
+msgid "'aspect=\"iso\"' approximate since 'relation=\"free\"'"
+msgstr "‘aspect=“iso”’ approximate since ‘relation=“free”’"
+
+msgid "Note: The default device has been opened to honour attempt to modify trellis settings"
+msgstr "Note: The default device has been opened to honour attempt to modify trellis settings"
+
+msgid "Invalid 'theme' specified"
+msgstr "Invalid ‘theme’ specified"
+
+msgid "Could not find device function '%s'"
+msgstr "Could not find device function ‘%s’"
+
+msgid "'trellis.device' has changed, 'bg' may not be doing what you think it is"
+msgstr "‘trellis.device’ has changed, ‘bg’ may not be doing what you think it is"
+
+msgid "x must be a shingle"
+msgstr "x must be a shingle"
+
+msgid "x must be matrix with 2 columns"
+msgstr "x must be matrix with 2 columns"
+
+msgid "bad value of 'intervals'"
+msgstr "bad value of ‘intervals’"
+
+msgid "Data:"
+msgstr "Data:"
+
+msgid "no intervals"
+msgstr "no intervals"
+
+msgid "Intervals:"
+msgstr "Intervals:"
+
+msgid "Overlap between adjacent intervals:"
+msgstr "Overlap between adjacent intervals:"
+
+msgid "Range"
+msgstr "Range"
+
+msgid "Panel"
+msgstr "Panel"
+
+msgid "Scatter Plot Matrix"
+msgstr "Scatter Plot Matrix"
+
+msgid "Call:"
+msgstr "Call:"
+
+msgid "Number of observations:"
+msgstr "Number of observations:"
+
+msgid "supplied 'dimnames' have wrong length"
+msgstr "supplied ‘dimnames’ have wrong length"
+
+msgid "some components of supplied 'dimnames' have wrong length"
+msgstr "some components of supplied ‘dimnames’ have wrong length"
+
+msgid "mean"
+msgstr "mean"
+
+msgid "difference"
+msgstr "difference"
+
+#, fuzzy
+msgid "Requested 'trellis' object was not saved"
+msgstr "No trellis object currently saved"
+
+msgid "Inappropriate value of 'as.table'"
+msgstr "Inappropriate value of ‘as.table’"
+
+msgid "'par.strip.text' must be a list"
+msgstr "‘par.strip.text’ must be a list"
+
+msgid "'par.settings' must be a list"
+msgstr "‘par.settings’ must be a list"
+
+msgid "'plot.args' must be a list"
+msgstr "‘plot.args’ must be a list"
+
+msgid "'lattice.options' must be a list"
+msgstr "‘lattice.options’ must be a list"
+
+msgid "Invalid value of 'perm.cond'"
+msgstr "Invalid value of ‘perm.cond’"
+
+msgid ""
+"Note: 'auto.key' ignored since legend already present.\n"
+"Use 'update(..., legend = NULL)' to remove existing legend(s)"
+msgstr ""
+"Note: ‘auto.key’ ignored since legend already present.\n"
+"Use ‘update(..., legend = NULL)’ to remove existing legend(s)"
+
+msgid "log scales cannot be changed via 'update'"
+msgstr "log scales cannot be changed via ‘update’"
+
+msgid "the at and labels components of scales may not be lists when relation = same"
+msgstr "the at and labels components of scales may not be lists when relation = same"
+
+msgid "Unrecognized value of 'aspect': '%s'"
+msgstr "Unrecognized value of 'aspect': ‘%s’"
+
+msgid "Invalid value of 'aspect'"
+msgstr "Invalid value of ‘aspect’"
+
+msgid "'drop=TRUE' ignored"
+msgstr "‘drop=TRUE’ ignored"
+
+msgid "Invalid indices"
+msgstr "Invalid indices"
+
+#~ msgid ""
+#~ "Note: you shouldn't be seeing this message unless\n"
+#~ "you are using a non-standard version of lattice"
+#~ msgstr ""
+#~ "Note: you shouldn't be seeing this message unless\n"
+#~ "you are using a non-standard version of lattice"
+
+#~ msgid ""
+#~ "The grid package couldn't be loaded.\n"
+#~ "Please check your installation of R"
+#~ msgstr ""
+#~ "The grid package couldn't be loaded.\n"
+#~ "Please check your installation of R"
+
+#~ msgid "at least one element of layout must be positive"
+#~ msgstr "at least one element of layout must be positive"
+
+#~ msgid "'packet.number' and 'panel.number' are no longer supplied to the panel function.  See ?packet.number"
+#~ msgstr "‘packet.number’ and ‘panel.number’ are no longer supplied to the panel function.  See ?packet.number"
+
+#~ msgid "currently saved object is not the last one plotted"
+#~ msgstr "currently saved object is not the last one plotted"

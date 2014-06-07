@@ -37,6 +37,10 @@
 
 #include "zlib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef Win32
 # define OS_CODE  0x06
 #else
@@ -534,3 +538,7 @@ int R_gzclose (gzFile file)
     }
     return destroy((gz_stream*) file);
 }
+
+#ifdef __cplusplus
+}
+#endif

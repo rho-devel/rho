@@ -7,7 +7,7 @@
 \alias{Memory-limits}
 \concept{memory}
 \concept{limits}
-\title{Memory Limits in R}
+\title{Memory Limits in R (adapted for CXXR)}
 \description{
   \R holds objects it is using in virtual memory.  This help file
   documents the current design limitations on large objects: these
@@ -23,9 +23,6 @@
   \R holds all objects in virtual memory, and there are limits based on the
   amount of memory that can be used by all objects:
   \itemize{
-    \item There may be limits on the size of the heap and the number of
-    cons cells allowed -- see \code{\link{Memory}} -- but these are
-    usually not imposed.
     \item There is a limit on the (user) address space of a single
     process such as the \R executable.  This is system-specific, and can
     depend on the executable.

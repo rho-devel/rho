@@ -1,0 +1,24 @@
+Package: cluster
+Version: 1.14.4
+Date: 2013-03-26
+Priority: recommended
+Author: Martin Maechler, based on S original by Peter Rousseeuw
+        <rousse@uia.ua.ac.be>, Anja.Struyf@uia.ua.ac.be and
+        Mia.Hubert@uia.ua.ac.be, and initial R port by
+        Kurt.Hornik@R-project.org
+Maintainer: Martin Maechler <maechler@stat.math.ethz.ch>
+Title: Cluster Analysis Extended Rousseeuw et al.
+Description: Cluster Analysis, extended original from Peter Rousseeuw,
+        Anja Struyf and Mia Hubert.
+Depends: R (>= 2.10.0), stats, graphics, utils
+Suggests: MASS
+SuggestsNote: two small examples using MASS' cov.rob() and mvrnorm()
+LazyLoad: yes
+LazyData: yes
+ByteCompile: yes
+BuildResaveData: no
+License: GPL (>= 2)
+Packaged: 2013-03-26 15:11:50 UTC; maechler
+NeedsCompilation: yes
+Repository: CRAN
+Date/Publication: 2013-03-26 16:50:32

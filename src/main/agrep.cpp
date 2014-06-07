@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2002--2012  The R Core Team
@@ -138,7 +154,7 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
 
     n = XLENGTH(vec);
     if(!useBytes) {
-	Rboolean haveBytes = IS_BYTES(STRING_ELT(pat, 0));
+	Rboolean haveBytes = CXXRCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
 	if(!haveBytes)
 	    for (i = 0; i < n; i++)
 		if(IS_BYTES(STRING_ELT(vec, i))) {
@@ -148,7 +164,7 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(haveBytes) useBytes = TRUE;
     }
     if(!useBytes) {
-	useWC = !IS_ASCII(STRING_ELT(pat, 0));
+	useWC = CXXRCONSTRUCT(Rboolean, !IS_ASCII(STRING_ELT(pat, 0)));
 	if(!useWC) {
 	    for (i = 0 ; i < n ; i++) {
 		if(STRING_ELT(vec, i) == NA_STRING) continue;
@@ -267,14 +283,14 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
 	PROTECT(ans = allocVector(REALSXP, nmatches));
 	for (j = i = 0 ; i < n ; i++)
 	    if(LOGICAL(ind)[i] == 1)
-		REAL(ans)[j++] = (double)(i + 1);
+		REAL(ans)[j++] = double((i + 1));
     }
 #endif
     else {
 	PROTECT(ans = allocVector(INTSXP, nmatches));
 	for (j = i = 0 ; i < n ; i++)
 	    if(LOGICAL(ind)[i] == 1)
-		INTEGER(ans)[j++] = (int)(i + 1);
+		INTEGER(ans)[j++] = int((i + 1));
     }
 
     UNPROTECT(2);
@@ -521,7 +537,7 @@ SEXP attribute_hidden do_adist(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     if(!opt_partial)
-	return(adist_full(x, y, REAL(opt_costs), opt_counts));
+	return(adist_full(x, y, REAL(opt_costs), CXXRCONSTRUCT(Rboolean, opt_counts)));
 
     counts = R_NilValue;	/* -Wall */
     offsets = R_NilValue;	/* -Wall */
@@ -619,7 +635,7 @@ SEXP attribute_hidden do_adist(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 	    if(opt_counts) {
 		nmatch = reg.re_nsub + 1;
-		pmatch = (regmatch_t *) malloc(nmatch * sizeof(regmatch_t));
+		pmatch = static_cast<regmatch_t *>( malloc(nmatch * sizeof(regmatch_t)));
 	    }
 
 	    for(j = 0; j < ny; j++) {
@@ -660,7 +676,7 @@ SEXP attribute_hidden do_adist(SEXP call, SEXP op, SEXP args, SEXP env)
 			vmaxset(vmax);
 		    }
 		    if(rc == REG_OK) {
-			ANS(i, j) = (double) match.cost;
+			ANS(i, j) = double( match.cost);
 			if(opt_counts) {
 			    COUNTS(i, j, 0) = match.num_ins;
 			    COUNTS(i, j, 1) = match.num_del;
@@ -777,7 +793,7 @@ SEXP attribute_hidden do_aregexec(SEXP call, SEXP op, SEXP args, SEXP env)
     n = XLENGTH(vec);
 
     if(!useBytes) {
-        haveBytes = IS_BYTES(STRING_ELT(pat, 0));
+        haveBytes = CXXRCONSTRUCT(Rboolean, IS_BYTES(STRING_ELT(pat, 0)));
 	if(!haveBytes)
             for(i = 0; i < n; i++) {
                 if(IS_BYTES(STRING_ELT(vec, i))) {
@@ -789,7 +805,7 @@ SEXP attribute_hidden do_aregexec(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     if(!useBytes) {
-        useWC = !IS_ASCII(STRING_ELT(pat, 0));
+        useWC = CXXRCONSTRUCT(Rboolean, !IS_ASCII(STRING_ELT(pat, 0)));
         if(!useWC) {
             for(i = 0 ; i < n ; i++) {
                 if(STRING_ELT(vec, i) == NA_STRING) continue;
@@ -830,7 +846,7 @@ SEXP attribute_hidden do_aregexec(SEXP call, SEXP op, SEXP args, SEXP env)
 
     nmatch = reg.re_nsub + 1;
 
-    pmatch = (regmatch_t *) malloc(nmatch * sizeof(regmatch_t));
+    pmatch = static_cast<regmatch_t *>( malloc(nmatch * sizeof(regmatch_t)));
 
     tre_regaparams_default(&params);
     amatch_regaparams(&params, patlen,
@@ -872,7 +888,7 @@ SEXP attribute_hidden do_aregexec(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if(rc == REG_OK) {
 		PROTECT(matchpos = allocVector(INTSXP, nmatch));
 		PROTECT(matchlen = allocVector(INTSXP, nmatch));
-		for(j = 0; j < match.nmatch; j++) {
+		for(j = 0; j < CXXRCONSTRUCT(int, match.nmatch); j++) {
 		    so = match.pmatch[j].rm_so;
 		    INTEGER(matchpos)[j] = so + 1;
 		    INTEGER(matchlen)[j] = match.pmatch[j].rm_eo - so;

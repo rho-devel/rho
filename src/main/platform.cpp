@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -47,6 +63,14 @@
 
 # include <errno.h>
 
+#include "basedecl.h"
+#include <vector>
+#include "CXXR/Evaluator.h"
+#include "CXXR/StringVector.h"
+
+using namespace std;
+using namespace CXXR;
+
 /* Machine Constants */
 
 static void
@@ -72,7 +96,7 @@ static void Init_R_Machine(SEXP rho)
 	   &R_AccuracyInfo.xmin,
 	   &R_AccuracyInfo.xmax);
 
-    R_dec_min_exponent = (int) floor(log10(R_AccuracyInfo.xmin)); /* smallest decimal exponent */
+    R_dec_min_exponent = int( floor(log10(R_AccuracyInfo.xmin))); /* smallest decimal exponent */
     PROTECT(ans = allocVector(VECSXP, 18));
     PROTECT(nms = allocVector(STRSXP, 18));
     SET_STRING_ELT(nms, 0, mkChar("double.eps"));
@@ -237,7 +261,7 @@ void attribute_hidden R_check_locale(void)
 # endif
     }
 #endif
-    mbcslocale = MB_CUR_MAX > 1;
+    mbcslocale = CXXRCONSTRUCT(Rboolean, MB_CUR_MAX > 1);
 #ifdef Win32
     {
 	char *ctype = setlocale(LC_CTYPE, NULL), *p;
@@ -297,7 +321,7 @@ SEXP attribute_hidden do_fileshow(SEXP call, SEXP op, SEXP args, SEXP rho)
     fn = CAR(args); args = CDR(args);
     hd = CAR(args); args = CDR(args);
     tl = CAR(args); args = CDR(args);
-    dl = (Rboolean) asLogical(CAR(args)); args = CDR(args);
+    dl = Rboolean( asLogical(CAR(args))); args = CDR(args);
     pg = CAR(args);
     n = 0;			/* -Wall */
     if (!isString(fn) || (n = length(fn)) < 1)
@@ -308,8 +332,8 @@ SEXP attribute_hidden do_fileshow(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("invalid '%s' argument"), "title");
     if (!isString(pg))
 	error(_("invalid '%s' argument"), "pager");
-    f = (const char**) R_alloc(n, sizeof(char*));
-    h = (const char**) R_alloc(n, sizeof(char*));
+    f = static_cast<const char**>( CXXR_alloc(n, sizeof(char*)));
+    h = static_cast<const char**>( CXXR_alloc(n, sizeof(char*)));
     for (i = 0; i < n; i++) {
 	SEXP el = STRING_ELT(fn, i);
 	if (!isNull(el) && el != NA_STRING)
@@ -332,7 +356,7 @@ SEXP attribute_hidden do_fileshow(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (isValidStringF(pg)) {
 	SEXP pg0 = STRING_ELT(pg, 0);
         if (pg0 != NA_STRING)
-            pager = acopy_string(CHAR(pg0));
+	    pager = acopy_string(CHAR(pg0));
         else
             error(_("invalid '%s' argument"), "pager");
     } else
@@ -400,8 +424,8 @@ SEXP attribute_hidden do_fileappend(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (n1 == 1) { /* common case */
 	FILE *fp1, *fp2;
 	char buf[APPENDBUFSIZE];
+        size_t nchar;
 	int status = 0;
-	size_t nchar;
 	if (STRING_ELT(f1, 0) == NA_STRING ||
 	    !(fp1 = RC_fopen(STRING_ELT(f1, 0), "ab", TRUE)))
 	   goto done;
@@ -852,24 +876,24 @@ SEXP attribute_hidden do_fileinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    stat(efn, &sb)
 #endif
 	    == 0) {
-	    REAL(fsize)[i] = (double) sb.st_size;
+	    REAL(fsize)[i] = double( sb.st_size);
 	    LOGICAL(isdir)[i] = (sb.st_mode & S_IFDIR) > 0;
-	    INTEGER(mode)[i]  = (int) sb.st_mode & 0007777;
+	    INTEGER(mode)[i]  = int( sb.st_mode) & 0007777;
 
 #if defined STAT_TIMESPEC
 	    /* POSIX 2008 changed this to a struct timespec st_mtim etc
 	       Not all OSes (e.g. Darwin) agree on this. */
-	    REAL(mtime)[i] = (double) STAT_TIMESPEC(sb, st_mtim).tv_sec
-		+ 1e-9 * (double) STAT_TIMESPEC(sb, st_mtim).tv_nsec;
-	    REAL(ctime)[i] = (double) STAT_TIMESPEC(sb, st_ctim).tv_sec
-		+ 1e-9 * (double) STAT_TIMESPEC(sb, st_ctim).tv_nsec;
-	    REAL(atime)[i] = (double) STAT_TIMESPEC(sb, st_atim).tv_sec
-		+ 1e-9 * (double) STAT_TIMESPEC(sb, st_atim).tv_nsec;
+	    REAL(mtime)[i] = double( STAT_TIMESPEC(sb, st_mtim).tv_sec)
+		+ 1e-9 * double( STAT_TIMESPEC(sb, st_mtim).tv_nsec);
+	    REAL(ctime)[i] = double( STAT_TIMESPEC(sb, st_ctim).tv_sec)
+		+ 1e-9 * double( STAT_TIMESPEC(sb, st_ctim).tv_nsec);
+	    REAL(atime)[i] = double( STAT_TIMESPEC(sb, st_atim).tv_sec)
+		+ 1e-9 * double( STAT_TIMESPEC(sb, st_atim).tv_nsec);
 #else
 	    /* FIXME: there are higher-resolution ways to do this on Windows */
-	    REAL(mtime)[i] = (double) sb.st_mtime;
-	    REAL(ctime)[i] = (double) sb.st_ctime;
-	    REAL(atime)[i] = (double) sb.st_atime;
+	    REAL(mtime)[i] = double( sb.st_mtime);
+	    REAL(ctime)[i] = double( sb.st_ctime);
+	    REAL(atime)[i] = double( sb.st_atime);
 # ifdef STAT_TIMESPEC_NS
 	    REAL(mtime)[i] += STAT_TIMESPEC_NS (sb, st_mtim);
 	    REAL(ctime)[i] += STAT_TIMESPEC_NS (sb, st_ctim);
@@ -877,8 +901,8 @@ SEXP attribute_hidden do_fileinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 # endif
 #endif
 #ifdef UNIX_EXTRAS
-	    INTEGER(uid)[i] = (int) sb.st_uid;
-	    INTEGER(gid)[i] = (int) sb.st_gid;
+	    INTEGER(uid)[i] = int( sb.st_uid);
+	    INTEGER(gid)[i] = int( sb.st_gid);
 	    stpwd = getpwuid(sb.st_uid);
 	    if (stpwd) SET_STRING_ELT(uname, i, mkChar(stpwd->pw_name));
 	    else SET_STRING_ELT(uname, i, NA_STRING);
@@ -995,7 +1019,7 @@ list_files(const char *dnp, const char *stem, int *count, SEXP *pans,
     if ((dir = opendir(dnp)) != NULL) {
 	while ((de = readdir(dir))) {
 	    if (allfiles || !R_HiddenFile(de->d_name)) {
-		Rboolean not_dot = strcmp(de->d_name, ".") && strcmp(de->d_name, "..");
+		Rboolean not_dot = CXXRCONSTRUCT(Rboolean, strcmp(de->d_name, ".") && strcmp(de->d_name, ".."));
 		if (recursive) {
 #ifdef Win32
 		    if (strlen(dnp) == 2 && dnp[1] == ':') // e.g. "C:"
@@ -1097,13 +1121,14 @@ SEXP attribute_hidden do_listfiles(SEXP call, SEXP op, SEXP args, SEXP rho)
     for (int i = 0; i < LENGTH(d) ; i++) {
 	if (STRING_ELT(d, i) == NA_STRING) continue;
 	const char *dnp = R_ExpandFileName(translateChar(STRING_ELT(d, i)));
-	list_files(dnp, fullnames ? dnp : NULL, &count, &ans, allfiles,
-		   recursive, pattern ? &reg : NULL, &countmax, idx,
-		   idirs, /* allowdots = */ !nodots);
+	list_files(dnp, fullnames ? dnp : NULL, &count, &ans, CXXRCONSTRUCT(Rboolean, allfiles),
+		   CXXRCONSTRUCT(Rboolean, recursive), pattern ? &reg : NULL, &countmax, idx,
+		   CXXRCONSTRUCT(Rboolean, idirs), /* allowdots = */ CXXRCONSTRUCT(Rboolean, !nodots));
     }
     REPROTECT(ans = lengthgets(ans, count), idx);
     if (pattern) tre_regfree(&reg);
-    ssort(STRING_PTR(ans), count);
+    StringVector* sv = static_cast<StringVector*>(ans);
+    ssort(sv, count);
     UNPROTECT(1);
     return ans;
 }
@@ -1193,10 +1218,11 @@ SEXP attribute_hidden do_listdirs(SEXP call, SEXP op, SEXP args, SEXP rho)
     for (i = 0; i < LENGTH(d) ; i++) {
 	if (STRING_ELT(d, i) == NA_STRING) continue;
 	dnp = R_ExpandFileName(translateChar(STRING_ELT(d, i)));
-	list_dirs(dnp, "", fullnames, &count, &ans, &countmax, idx, recursive);
+	list_dirs(dnp, "", CXXRCONSTRUCT(Rboolean, fullnames), &count, &ans, &countmax, idx, CXXRCONSTRUCT(Rboolean, recursive));
     }
     REPROTECT(ans = lengthgets(ans, count), idx);
-    ssort(STRING_PTR(ans), count);
+    StringVector* sv = static_cast<StringVector*>(ans);
+    ssort(sv, count);
     UNPROTECT(1);
     return ans;
 }
@@ -1416,7 +1442,8 @@ void R_CleanTempDir(void)
 	size_t n = strlen(Sys_TempDir);
 	/* Windows cannot delete the current working directory */
 	SetCurrentDirectory(R_HomeDir());
-	wchar_t w[2*(n+1)];
+	vector<wchar_t> wv(2*(n+1));
+	wchar_t* w = &wv[0];
 	mbstowcs(w, Sys_TempDir, n+1);
 	R_unlink(w, 1, 1); /* recursive=TRUE, force=TRUE */
     }
@@ -1476,6 +1503,10 @@ static int R_unlink(const char *name, int recursive, int force)
 }
 
 /* for use under valgrind on OS X */
+extern "C" {
+    void attribute_hidden R_CleanTempDir2(void);
+}
+
 void attribute_hidden R_CleanTempDir2(void)
 {
     if (Sys_TempDir)
@@ -1533,7 +1564,8 @@ SEXP attribute_hidden do_unlink(SEXP call, SEXP op, SEXP args, SEXP env)
     int i, nfiles, failures = 0, recursive, force;
     const char *names;
 #if defined(HAVE_GLOB)
-    int j, res;
+    unsigned int j;
+    int res;
     glob_t globbuf;
 #endif
 
@@ -1797,28 +1829,28 @@ SEXP attribute_hidden do_localeconv(SEXP call, SEXP op, SEXP args, SEXP rho)
     SET_STRING_ELT(ansnames, i++, mkChar("positive_sign"));
     SET_STRING_ELT(ans, i, mkChar(lc->negative_sign));
     SET_STRING_ELT(ansnames, i++, mkChar("negative_sign"));
-    sprintf(buff, "%d", (int)lc->int_frac_digits);
+    sprintf(buff, "%d", int(lc->int_frac_digits));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("int_frac_digits"));
-    sprintf(buff, "%d", (int)lc->frac_digits);
+    sprintf(buff, "%d", int(lc->frac_digits));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("frac_digits"));
-    sprintf(buff, "%d", (int)lc->p_cs_precedes);
+    sprintf(buff, "%d", int(lc->p_cs_precedes));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("p_cs_precedes"));
-    sprintf(buff, "%d", (int)lc->p_sep_by_space);
+    sprintf(buff, "%d", int(lc->p_sep_by_space));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("p_sep_by_space"));
-    sprintf(buff, "%d", (int)lc->n_cs_precedes);
+    sprintf(buff, "%d", int(lc->n_cs_precedes));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("n_cs_precedes"));
-    sprintf(buff, "%d", (int)lc->n_sep_by_space);
+    sprintf(buff, "%d", int(lc->n_sep_by_space));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("n_sep_by_space"));
-    sprintf(buff, "%d", (int)lc->p_sign_posn);
+    sprintf(buff, "%d", int(lc->p_sign_posn));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("p_sign_posn"));
-    sprintf(buff, "%d", (int)lc->n_sign_posn);
+    sprintf(buff, "%d", int(lc->n_sign_posn));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("n_sign_posn"));
     setAttrib(ans, R_NamesSymbol, ansnames);
@@ -1852,7 +1884,9 @@ SEXP attribute_hidden do_pathexpand(SEXP call, SEXP op, SEXP args, SEXP rho)
 #ifdef Unix
 static int var_R_can_use_X11 = -1;
 
-extern Rboolean R_access_X11(void); /* from src/unix/X11.c */
+/* Use header files!  2007/06/11 arr
+extern Rboolean R_access_X11(void); // from src/unix/X11.c
+*/
 
 static Rboolean R_can_use_X11(void)
 {
@@ -1869,7 +1903,7 @@ static Rboolean R_can_use_X11(void)
 #endif
     }
 
-    return var_R_can_use_X11 > 0;
+    return CXXRCONSTRUCT(Rboolean, var_R_can_use_X11 > 0);
 }
 #endif
 
@@ -2139,7 +2173,7 @@ SEXP attribute_hidden do_dircreate(SEXP call, SEXP op, SEXP args, SEXP env)
 		serrno = errno;
 		goto end;
 	    } else
-		res = mkdir(dir, (mode_t) mode);
+		res = mkdir(dir, mode_t( mode));
 
 	    /* Solaris 10 returns ENOSYS on automount, PR#13834
 	       EROFS is allowed by POSIX, so we skip that too */
@@ -2149,7 +2183,7 @@ SEXP attribute_hidden do_dircreate(SEXP call, SEXP op, SEXP args, SEXP env)
 	    *p = '/';
 	}
     }
-    res = mkdir(dir, (mode_t) mode);
+    res = mkdir(dir, mode_t( mode));
     serrno = errno;
     if (show && res && serrno == EEXIST)
 	warning(_("'%s' already exists"), dir);
@@ -2385,10 +2419,10 @@ static int do_copy(const char* from, const char* name, const char* to,
 
     struct stat sb;
     int nfail = 0, res, mask;
-    char dest[PATH_MAX+1], this[PATH_MAX+1];
+    char dest[PATH_MAX+1], thispath[PATH_MAX+1];
 
 #ifdef HAVE_UMASK
-    int um = umask(0); umask((mode_t) um);
+    int um = umask(0); umask(mode_t( um));
     mask = 0777 & ~um;
 #else
     mask = 0777;
@@ -2398,9 +2432,9 @@ static int do_copy(const char* from, const char* name, const char* to,
 	warning(_("over-long path length"));
 	return 1;
     }
-    snprintf(this, PATH_MAX+1, "%s%s", from, name);
+    snprintf(thispath, PATH_MAX+1, "%s%s", from, name);
     /* Here we want the target not the link */
-    stat(this, &sb);
+    stat(thispath, &sb);
     if ((sb.st_mode & S_IFDIR) > 0) { /* a directory */
 	DIR *dir;
 	struct dirent *de;
@@ -2418,11 +2452,11 @@ static int do_copy(const char* from, const char* name, const char* to,
 	res = mkdir(dest, 0700);
 	if (res && errno != EEXIST) {
 	    warning(_("problem creating directory %s: %s"),
-		    this, strerror(errno));
+		    thispath, strerror(errno));
 	    return 1;
 	}
 	strcat(dest, "/");
-	if ((dir = opendir(this)) != NULL) {
+	if ((dir = opendir(thispath)) != NULL) {
 	    depth++;
 	    while ((de = readdir(dir))) {
 		if (streql(de->d_name, ".") || streql(de->d_name, ".."))
@@ -2437,10 +2471,10 @@ static int do_copy(const char* from, const char* name, const char* to,
 	    closedir(dir);
 	} else {
 	    warning(_("problem reading directory %s: %s"),
-		    this, strerror(errno));
+		    thispath, strerror(errno));
 	    nfail++; /* we were unable to read a dir */
 	}
-	chmod(dest, (mode_t) (perms ? (sb.st_mode & mask): mask));
+	chmod(dest, mode_t( perms ? (sb.st_mode & mask): mask));
     } else { /* a file */
 	FILE *fp1 = NULL, *fp2 = NULL;
 	char buf[APPENDBUFSIZE];
@@ -2455,10 +2489,10 @@ static int do_copy(const char* from, const char* name, const char* to,
 	snprintf(dest, PATH_MAX+1, "%s%s", to, name);
 	if (over || !R_FileExists(dest)) {
 	    /* REprintf("copying %s to %s\n", this, dest); */
-	    if ((fp1 = R_fopen(this, "rb")) == NULL ||
+	    if ((fp1 = R_fopen(thispath, "rb")) == NULL ||
 		(fp2 = R_fopen(dest, "wb")) == NULL) {
 		warning(_("problem copying %s to %s: %s"),
-			this, dest, strerror(errno));
+			thispath, dest, strerror(errno));
 		nfail++;
 		goto copy_error;
 	    }
@@ -2592,8 +2626,8 @@ SEXP attribute_hidden do_syschmod(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
     PROTECT(ans = allocVector(LGLSXP, n));
     for (i = 0; i < n; i++) {
-	mode_t mode = (mode_t) modes[i % m];
-	if (mode == NA_INTEGER) mode = 0777;
+	mode_t mode = mode_t( modes[i % m]);
+	if (CXXRCONSTRUCT(int, mode) == NA_INTEGER) mode = 0777;
 #ifdef HAVE_UMASK
 	if(useUmask) mode = mode & ~um;
 #endif
@@ -2646,7 +2680,7 @@ SEXP attribute_hidden do_sysumask(SEXP call, SEXP op, SEXP args, SEXP env)
 	umask(res);
 	R_Visible = TRUE;
     } else {
-	res = umask((mode_t) mode);
+	res = umask(mode_t( mode));
 	R_Visible = FALSE;
     }
 #else
@@ -2698,11 +2732,11 @@ SEXP attribute_hidden do_Cstack_info(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(ans = allocVector(INTSXP, 4));
     PROTECT(nms = allocVector(STRSXP, 4));
     /* FIXME: could be out of range */
-    INTEGER(ans)[0] = (R_CStackLimit == -1) ? NA_INTEGER : (int) R_CStackLimit;
-    INTEGER(ans)[1] = (R_CStackLimit == -1) ? NA_INTEGER : (int)
-	(R_CStackDir * (R_CStackStart - (uintptr_t) &ans));
+    INTEGER(ans)[0] = (R_CStackLimit == CXXRCONSTRUCT(uintptr_t, -1)) ? NA_INTEGER : int( R_CStackLimit);
+    INTEGER(ans)[1] = (R_CStackLimit ==  CXXRCONSTRUCT(uintptr_t, -1)) ? NA_INTEGER : int
+	(R_CStackDir * (R_CStackStart - uintptr_t( &ans)));
     INTEGER(ans)[2] = R_CStackDir;
-    INTEGER(ans)[3] = R_EvalDepth;
+    INTEGER(ans)[3] = Evaluator::depth();
     SET_STRING_ELT(nms, 0, mkChar("size"));
     SET_STRING_ELT(nms, 1, mkChar("current"));
     SET_STRING_ELT(nms, 2, mkChar("direction"));
@@ -2946,7 +2980,7 @@ machar(int *ibeta, int *it, int *irnd, int *ngrd, int *machep, int *negep,
 	do {
 		b = b + b;
 		temp = a + b;
-		itemp = (int)(temp - a);
+		itemp = int(temp - a);
 	}
 	while (itemp == 0);
 	*ibeta = itemp;

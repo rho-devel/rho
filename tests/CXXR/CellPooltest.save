@@ -1,0 +1,22 @@
+Cell size: 8
+Superblock size: 40
+Allocating dptrs[0]
+Allocating dptrs[1]
+Allocating dptrs[2]
+Allocating dptrs[3]
+Allocating dptrs[4]
+Allocating dptrs[5]
+Allocating dptrs[6]
+Allocating dptrs[7]
+Allocating dptrs[8]
+Allocating dptrs[9]
+Cells allocated: 10
+Deallocating dptrs[3]
+Deallocating dptrs[5]
+Deallocating dptrs[7]
+Deallocating dptrs[9]
+Cells allocated: 6
+Allocating dptrs[11]
+Allocating dptrs[13]
+Allocating dptrs[15]
+Cells allocated: 9

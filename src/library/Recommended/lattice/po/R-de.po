@@ -1,0 +1,440 @@
+# Translation of R-lattice.pot to German
+# Copyright (C) 2007-2012 The R Foundation
+# This file is distributed under the same license as the lattice R package.
+# Chris Leick <c.leick@vollbio.de>, 2009.
+# Detlef Steuer <steuer@hsu-hh.de>, 2010-2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: R 2.15.2 / Lattice 0.20.10\n"
+"Report-Msgid-Bugs-To: bugs.r-project.org\n"
+"POT-Creation-Date: 2013-01-08 23:17\n"
+"PO-Revision-Date: 2012-09-10 15:20+0200\n"
+"Last-Translator: Detlef Steuer <steuer@hsu-hh.de>\n"
+"Language-Team: German <debian-l10n-german@lists.debian.org>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Invalid value of 'log'"
+msgstr "Ungültiger Wert von 'log'"
+
+msgid "range too small for min.n"
+msgstr "Spannweite zu klein für min.n"
+
+msgid "'at' missing or incompatible with 'labels'"
+msgstr "'at' fehlt oder ist inkompatibel mit 'labels'"
+
+msgid "'origin' forced to 0 for stacked bars"
+msgstr "'origin' wurde für gestapelte Balken zwangsweise auf 0 gesetzt"
+
+msgid "explicit 'data' specification ignored"
+msgstr "ausdrückliche 'data'-Spezifikation ignoriert"
+
+msgid "mismatch in number of packets"
+msgstr "fehlende Übereinstimmung in Anzahl der Pakete"
+
+msgid "'type' has unsupported values"
+msgstr "'type' enthält nicht unterstützte Werte"
+
+msgid "Inappropriate arguments"
+msgstr "Unangemessene Argumente"
+
+msgid "shingles can not be concatenated"
+msgstr "Kacheln können nicht zusammengefügt werden"
+
+msgid "model must be a formula object"
+msgstr "Modell muss ein Formelobjekt sein"
+
+msgid "'multiple=TRUE' ignored ('groups' non-null with 'outer=FALSE')"
+msgstr "'multiple=TRUE' ignoriert ('groups' nicht Null mit 'outer=FALSE')"
+
+msgid "invalid dimension '%s'"
+msgstr "ungültige Dimension '%s'"
+
+msgid "invalid model"
+msgstr "ungültiges Modell"
+
+msgid "newFactor cannot be NULL; you have found a bug!"
+msgstr "newFactor kann nicht NULL sein. Sie haben einen Fehler gefunden!"
+
+msgid "newFactor != NULL && groups == NULL does not hold; you have found a bug!"
+msgstr "newFactor != NULL && groups == NULL gilt nicht. Sie haben einen Fehler gefunden!"
+
+msgid "Length check mismatch; you have found a bug!"
+msgstr "Längenprüfung stimmt nicht überein. Sie haben einen Fehler gefunden!"
+
+msgid "Non matching lengths"
+msgstr "Nicht übereinstimmende Längen"
+
+msgid "'length' and 'prop' cannot both be specified"
+msgstr "'length' und 'prop' können nicht beide angegeben werden"
+
+msgid "'length' must be positive"
+msgstr "'length' muss positiv sein"
+
+msgid "improper length of 'lim'"
+msgstr "ungeeignete Länge von 'lim'"
+
+msgid "Invalid value of perm.cond"
+msgstr "Ungültiger Wert von perm.cond"
+
+msgid "Invalid value of index.cond"
+msgstr "Ungültiger Wert von index.cond"
+
+msgid "skip cannot be all TRUE"
+msgstr "'skip' kann nicht nur TRUE sein"
+
+msgid "layout must have at least 2 elements"
+msgstr "Layout muss mindestens 2 Elemente haben"
+
+msgid "Inadmissible value of layout."
+msgstr "unzulässiger Wert für layout"
+
+msgid "invalid value for layout"
+msgstr "ungültiger Wert für Layout"
+
+msgid "More pages in layout than seem to be necessary."
+msgstr "Mehr Seiten im Layout als anscheinend nötig"
+
+msgid "Density"
+msgstr "Dichte"
+
+msgid "Can't have log Y-scale"
+msgstr "Y-Achse kann keine logarithmische Skala haben"
+
+msgid "problem with 'hist' computations"
+msgstr "Problem mit 'hist'-Berechnungen"
+
+msgid "type='%s' can be misleading in this context"
+msgstr "type='%s' kann in diesem Zusammenhang irreführend sein"
+
+msgid "Count"
+msgstr "Anzahl"
+
+msgid "Percent of Total"
+msgstr "Prozent der Gesamtheit"
+
+msgid "no observations within"
+msgstr "keine Beobachtungen in"
+
+msgid "points"
+msgstr "Punkte"
+
+msgid "nearest observation already identified"
+msgstr "nächstliegende Beobachtung bereits erkannt"
+
+msgid "column must be specified"
+msgstr "Spalte muss angegeben werden"
+
+msgid "row must be specified"
+msgstr "Zeile muss angegeben werden"
+
+msgid "panel position unspecified or invalid"
+msgstr "Position des Bedienfeldes nicht angegeben oder ungültig"
+
+msgid "'trellis.switchFocus' cannot be used to switch to a different 'prefix'.  Use 'trellis.focus' first"
+msgstr "'trellis.switchFocus' kann nicht benutzt werden, um auf einen anderen 'prefix' zu schalten. Zuerst 'trellis.focus' benutzen"
+
+msgid "Plot object was not saved, cannot retrieve panel data"
+msgstr "Plot-Objekt wurde nicht gespeichert. Panel Daten können nicht abgefragt werden."
+
+msgid "Plot spans multiple pages, only last page can be updated"
+msgstr "Plot umfasst mehrere Seiten. Nur die letzte Seite kann aktualisiert werden"
+
+msgid "You have to first select a panel using trellis.focus()"
+msgstr "Sie müssen zuerst ein Panel mittels trellis.focus() auswählen."
+
+msgid "Selecting panel at position (%g, %g)"
+msgstr "Bedienfeld an Position (%g, %g) wird ausgewählt."
+
+msgid "No panels available"
+msgstr "Keine Bedienfelder verfügbar"
+
+msgid "Click on panel to focus"
+msgstr "Zum Fokussieren auf das Bedienfeld klicken."
+
+msgid "'f.value' not supported; ignoring"
+msgstr "'f.value' nicht unterstützt. Wird ignoriert."
+
+msgid "Click to choose one point to highlight"
+msgstr "Klicken Sie einen Punkt, um ihn hervorzuheben"
+
+msgid "no points within"
+msgstr "keine Punkte innerhalb"
+
+msgid "points of click"
+msgstr "Anklickpunkte"
+
+msgid "component '%s' duplicated in key and legend"
+msgstr "Komponente '%s' doppelt in Schlüssel und Beschriftung"
+
+msgid "key must be a list"
+msgstr "Schlüssel muss eine Liste sein"
+
+msgid "first component of text must be vector of labels"
+msgstr "erste Komponente des Textes muss ein Vektor aus Bezeichnungen sein"
+
+msgid "Invalid key, need at least one component named lines, text, rect or points"
+msgstr "Ungültiger Schlüssel. Es wird mindestens eine Komponente mit Namen 'lines', 'text', 'rect' oder 'points' benötigt."
+
+msgid "not enough rows for columns"
+msgstr "nicht genug Zeilen für Spalten"
+
+msgid "Sorry, align=FALSE is not supported"
+msgstr "Entschuldigung. align=FALSE wird nicht unterstützt."
+
+msgid "'at' values are not equispaced; output may be wrong"
+msgstr "'at' Werte sind nicht äquidistant; Ausgabe kann falsch sein"
+
+msgid "malformed colorkey"
+msgstr "missgestalteter Farbschlüssel"
+
+msgid "Invalid 'shrink' parameter ignored"
+msgstr "Falscher 'shrink'-Parameter ignoriert"
+
+msgid "Invalid label.style"
+msgstr "Ungültiger label.style"
+
+msgid "device support for raster images unknown, ignoring 'raster=TRUE'"
+msgstr "Geräteunterstützung für Rastergrafiken unbekannt, ignoriere 'raster=TRUE'"
+
+msgid "device has no raster support, ignoring 'raster=TRUE'"
+msgstr "Gerät unterstützt keine Rastergrafik, ignoriere 'raster=TRUE'"
+
+msgid "device does not support raster images with NA, ignoring 'raster=TRUE'"
+msgstr "Gerät unterstützt keine Rastergrafiken mit NA, ignoriere 'raster=TRUE'"
+
+msgid "'x' values are not equispaced; output may be wrong"
+msgstr "'x' Werte sind nicht äquidistant; Ausgabe kann falsch sein"
+
+msgid "'y' values are not equispaced; output may be wrong"
+msgstr "'y' Werte sind nicht äquidistant; Ausgabe kann falsch sein"
+
+msgid "x must be (coercible to be) a factor"
+msgstr "x muss (zwingend) ein Faktor sein"
+
+msgid "error"
+msgstr "Fehler"
+
+msgid "Invalid value of 'pos' ignored."
+msgstr "Unzulässiger Wert für 'pos' ignoriert."
+
+msgid "(loaded the KernSmooth namespace)"
+msgstr "(lud den KernSmooth-Namensraum)"
+
+msgid "panel.smoothScatter() requires the KernSmooth package, but unable to load KernSmooth namespace"
+msgstr "panel.smoothScatter() benötigt das KernSmooth-Paket, aber der KernSmooth-Namensraum kann nicht geladen werden."
+
+msgid "'nbin' must be numeric of length 1 or 2"
+msgstr "'nbin' muss numerisch und von der Länge 1 oder 2 sein"
+
+msgid "'bandwidth' must be numeric"
+msgstr "'bandwidth' muss numerisch sein"
+
+msgid "'nrpoints' should be numeric scalar with value >= 0."
+msgstr "'nrpoints' sollte numerisch skalar mit Wert >= 0 sein."
+
+msgid "'a' is overridden by 'reg'"
+msgstr "'a' wurde mit 'reg' überschrieben"
+
+msgid "only using the first two of"
+msgstr "benutze nur die ersten beiden von"
+
+msgid "regression coefficients"
+msgstr "Regressionskoeffizienten"
+
+msgid "'a' and 'b' are overridden by 'coef'"
+msgstr "'a' und 'b' wurden mit 'coef' überschrieben"
+
+msgid "'expr' must be a function or an expression containing 'x'"
+msgstr "'expr' muss eine Funktion oder ein Ausdruck sein, der 'x' enthält"
+
+msgid "'varnames' has wrong length."
+msgstr "'varnames' hat falsche Länge"
+
+msgid "Parallel Coordinate Plot"
+msgstr "Plot paralleler Koordinaten"
+
+msgid "cannot have log y-scale"
+msgstr "Y-Achse kann keine logarithmische Skala haben"
+
+msgid ""
+"Error using packet %g\n"
+"%s"
+msgstr ""
+"Fehler beim Benutzen des Paketes %g\n"
+"%s"
+
+msgid "y must have exactly 2 levels"
+msgstr "y muss genau 2 Stufen haben"
+
+msgid "missing values and NaN's not allowed if 'na.rm' is FALSE"
+msgstr "fehlende Werte und NaNs nicht erlaubt, wenn 'na.rm' FALSE ist"
+
+msgid "'probs' outside [0,1]"
+msgstr "'probs' außerhalb [0,1]"
+
+msgid "Can't have log X-scale"
+msgstr "X-Achse kann keine logarithmische Skala haben"
+
+msgid "Fitted Values minus Mean"
+msgstr "Angepasste Werte abzüglich Mittelwert"
+
+msgid "Residuals"
+msgstr "Residuen"
+
+msgid "Invalid or ambiguous component names:"
+msgstr "Unzulässige oder zweideutige Komponentennamen:"
+
+msgid ","
+msgstr ","
+
+msgid "Multiple matches to component name"
+msgstr "Mehrere Übereinstimmungen mit dem Komponentennamen"
+
+msgid "the 'at' and 'labels' components of 'scales' may not be lists when 'relation = \"same\"'"
+msgstr "die 'at'- und 'labels'-Komponenten der Skalen sind möglicherweise keine Listen, wenn 'relation = \"same\"'"
+
+msgid "limits cannot be a list when relation = same"
+msgstr "Begrenzungen können keine Liste sein, wenn 'relation = same'"
+
+msgid "Explicitly specified limits ignored"
+msgstr "Ausdrücklich angegebene Begrenzungen ignoriert"
+
+msgid "need at least one panel"
+msgstr "mindestens ein Bedienfeld wird benötigt"
+
+msgid "'aspect=\"iso\"' approximate since 'relation=\"free\"'"
+msgstr "'aspect=\"iso\"' ungefähr seit 'relation=\"free\"'"
+
+msgid "Note: The default device has been opened to honour attempt to modify trellis settings"
+msgstr "Anmerkung: Das Standardgerät wurde geöffnet, um zu versuchen, das Verändern von Trellis-Einstellungen zu akzeptieren."
+
+msgid "Invalid 'theme' specified"
+msgstr "Ungültiges 'theme' angegeben"
+
+msgid "Could not find device function '%s'"
+msgstr "Gerätefunktion '%s' konnte nicht gefunden werden"
+
+msgid "'trellis.device' has changed, 'bg' may not be doing what you think it is"
+msgstr "'trellis.device' wurde geändert, 'bg' tut möglicherweise nicht das, was Sie denken"
+
+msgid "x must be a shingle"
+msgstr "x muss eine Kachel sein"
+
+msgid "x must be matrix with 2 columns"
+msgstr "x muss eine Matrix mit 2 Spalten sein"
+
+msgid "bad value of 'intervals'"
+msgstr "falscher Wert von 'intervals'"
+
+msgid "Data:"
+msgstr "Daten:"
+
+msgid "no intervals"
+msgstr "keine Intervalle"
+
+msgid "Intervals:"
+msgstr "Intervalle:"
+
+msgid "Overlap between adjacent intervals:"
+msgstr "Überlappung zwischen benachbarten Intervallen:"
+
+msgid "Range"
+msgstr "Bereich"
+
+msgid "Panel"
+msgstr "Bedienfeld"
+
+msgid "Scatter Plot Matrix"
+msgstr "Streudiagramm-Matrix"
+
+msgid "Call:"
+msgstr "Aufruf:"
+
+msgid "Number of observations:"
+msgstr "Anzahl der Beobachtungen:"
+
+msgid "supplied 'dimnames' have wrong length"
+msgstr "angegebene 'dimnames' haben falsche Längen"
+
+msgid "some components of supplied 'dimnames' have wrong length"
+msgstr "einige Bestandteile der angegebenen 'dimnames' haben falsche Längen"
+
+msgid "mean"
+msgstr "Mittelwert"
+
+msgid "difference"
+msgstr "Unterschied"
+
+msgid "Requested 'trellis' object was not saved"
+msgstr "Angefordertes Trellis-Objekt wurde nicht gespeichert"
+
+msgid "Inappropriate value of 'as.table'"
+msgstr "Unangemessener Wert von 'as.table'"
+
+msgid "'par.strip.text' must be a list"
+msgstr "'par.strip.text' muss eine Liste sein"
+
+msgid "'par.settings' must be a list"
+msgstr "'par.settings' muss eine Liste sein"
+
+msgid "'plot.args' must be a list"
+msgstr "'plot.args' muss eine Liste sein"
+
+msgid "'lattice.options' must be a list"
+msgstr "'lattice.options' muss eine Liste sein"
+
+msgid "Invalid value of 'perm.cond'"
+msgstr "Ungültiger Wert von 'perm.cond'"
+
+msgid ""
+"Note: 'auto.key' ignored since legend already present.\n"
+"Use 'update(..., legend = NULL)' to remove existing legend(s)"
+msgstr ""
+"Anmerkung: 'auto.key' ignoriert, da Beschriftung bereits vorhanden.\n"
+"Benutzen Sie 'update(..., legend = NULL)', um existierende\n"
+"Beschriftung(en) zu entfernen."
+
+msgid "log scales cannot be changed via 'update'"
+msgstr "logarithmische Skalen können nicht per 'update' geändert werden"
+
+msgid "the at and labels components of scales may not be lists when relation = same"
+msgstr "die 'at'- und 'labels'-Komponenten der Skalen sind möglicherweise keine Listen, wenn 'relation = same'"
+
+msgid "Unrecognized value of 'aspect': '%s'"
+msgstr "Nicht erkannter Wert von 'aspect': '%s'"
+
+msgid "Invalid value of 'aspect'"
+msgstr "Ungültiger Wert von 'aspect'"
+
+msgid "'drop=TRUE' ignored"
+msgstr "'drop=TRUE' ignoriert"
+
+msgid "Invalid indices"
+msgstr "Falsche Indizes"
+
+#~ msgid ""
+#~ "Note: you shouldn't be seeing this message unless\n"
+#~ "you are using a non-standard version of lattice"
+#~ msgstr ""
+#~ "Anmerkung: Sie sollten die Nachricht nicht sehen, außer\n"
+#~ "Sie benutzen eine Nicht-Standard-Version von Lattice."
+
+#~ msgid ""
+#~ "The grid package couldn't be loaded.\n"
+#~ "Please check your installation of R"
+#~ msgstr ""
+#~ "Das grid-Paket konnte nicht geladen werden.\n"
+#~ "Bitte prüfen Sie Ihre Installation von R."
+
+#~ msgid "at least one element of layout must be positive"
+#~ msgstr "mindestens ein Element des Layouts muss positiv sein"
+
+#~ msgid "'packet.number' and 'panel.number' are no longer supplied to the panel function.  See ?packet.number"
+#~ msgstr "'packet.number' und 'panel.number' werden nicht länger an die 'panel'-Funktion weitergereicht. Siehe ?packet.number"
+
+#~ msgid "currently saved object is not the last one plotted"
+#~ msgstr "derzeit gespeichertes Objekt ist nicht das zuletzt dargestellte"

@@ -1,0 +1,44 @@
+Allocating #0 with size 0
+Allocating #1 with size 633
+Monitored allocation of 633 bytes
+Allocating #2 with size 938
+Monitored allocation of 938 bytes
+Allocating #3 with size 467
+Monitored allocation of 467 bytes
+Allocating #4 with size 308
+Monitored allocation of 308 bytes
+Allocating #5 with size 13
+Allocating #6 with size 670
+Monitored allocation of 670 bytes
+Allocating #7 with size 807
+Monitored allocation of 807 bytes
+Allocating #8 with size 488
+Monitored allocation of 488 bytes
+Allocating #9 with size 289
+Monitored allocation of 289 bytes
+Blocks allocated: 10
+Bytes allocated: 4613
+Allocating #10 with size 274
+Allocating #11 with size 1019
+Deallocating #6
+Deallocating #4
+Allocating #12 with size 774
+Allocating #13 with size 79
+Deallocating #5
+Deallocating #10
+Allocating #14 with size 122
+Allocating #15 with size 35
+Deallocating #3
+Deallocating #15
+Blocks allocated: 10
+Bytes allocated: 5149
+Deallocating #0
+Deallocating #1
+Deallocating #2
+Deallocating #14
+Deallocating #12
+Deallocating #13
+Deallocating #11
+Deallocating #7
+Deallocating #8
+Deallocating #9

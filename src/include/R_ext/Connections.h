@@ -42,7 +42,7 @@
 typedef struct Rconn  *Rconnection;
 #endif
 struct Rconn {
-    char* class;
+    char* connclass;
     char* description;
     int enc; /* the encoding of 'description' */
     char mode[5];
@@ -72,7 +72,7 @@ struct Rconn {
     Rboolean UTF8out;
     void *id;
     void *ex_ptr;
-    void *private;
+    void *connprivate;
     int status; /* for pipes etc */
 };
 
@@ -82,7 +82,7 @@ extern "C" {
 
 SEXP   R_new_custom_connection(const char *description, const char *mode, const char *class_name, Rconnection *ptr);
 size_t R_ReadConnection(Rconnection con, void *buf, size_t n);
-size_t R_WriteConnection(Rconnection con, void *buf, size_t n);
+size_t R_WriteConnection(Rconnection con, const void *buf, size_t n);
 
 #ifdef  __cplusplus
 }

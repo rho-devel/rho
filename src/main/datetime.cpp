@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2000-2012  The R Core Team.
@@ -18,6 +34,11 @@
  *
  *
  *      Interfaces to POSIX date and time functions.
+ */
+
+/** @file datetime.cpp
+ *
+ * Date and time manipulation functions.
  */
 
 /*
@@ -113,6 +134,10 @@ extern time_t mktime (struct tm*);
 #include <Defn.h>
 #include <Internal.h>
 
+#include <vector>
+
+using namespace std;
+
 /* The glibc in RH8.0 was broken and assumed that dates before
    1970-01-01 do not exist.  So does Windows, but its code was replaced
    in R 2.7.0.  As from 1.6.2, test the actual mktime code and cache
@@ -137,9 +162,9 @@ static Rboolean have_broken_mktime(void)
 	t.tm_year = 68;
 	t.tm_isdst = -1;
 	res = mktime(&t);
-	test_result = (res == (time_t)-1);
+	test_result = (res == time_t(-1));
     }
-    return test_result > 0;
+    return CXXRCONSTRUCT(Rboolean, test_result > 0);
 #else
     return FALSE;
 #endif
@@ -153,8 +178,14 @@ static Rboolean have_broken_mktime(void)
 static const int days_in_month[12] =
 {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-#define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
-#define days_in_year(year) (isleap(year) ? 366 : 365)
+namespace {
+    inline bool isleap(int y)
+    {
+	return (((y % 4) == 0 && (y % 100) != 0) || (y % 400) == 0);
+    }
+
+    inline int days_in_year(int year) {return isleap(year) ? 366 : 365;}
+}
 
 #ifndef HAVE_POSIX_LEAPSECONDS
 /* There have been 25 leapseconds: see .leap.seconds in R
@@ -268,11 +299,11 @@ static double mktime00 (struct tm *tm)
     year0 = 1900 + tm->tm_year;
     /* safety check for unbounded loops */
     if (year0 > 3000) {
-	excess = (int)(year0/2000) - 1;
-	year0 -= (int)(excess * 2000);
+	excess = int(year0/2000) - 1;
+	year0 -= int(excess * 2000);
     } else if (year0 < 0) {
-	excess = -1 - (int)(-year0/2000);
-	year0 -= (int)(excess * 2000);
+	excess = -1 - int(-year0/2000);
+	year0 -= int(excess * 2000);
     }
 
     for(i = 0; i < tm->tm_mon; i++) day += days_in_month[i];
@@ -314,7 +345,7 @@ static double guess_offset (struct tm *tm)
     if(!have_broken_mktime() && tm->tm_year < 2) { /* no DST */
 	tm->tm_year = 2;
 	mktime(tm);
-	offset1 = (double) mktime(tm) - mktime00(tm);
+	offset1 = double( mktime(tm)) - mktime00(tm);
 	memcpy(tm, &oldtm, sizeof(struct tm));
 	tm->tm_isdst = 0;
 	return offset1;
@@ -352,12 +383,12 @@ static double guess_offset (struct tm *tm)
     tm->tm_mon = 0;
     tm->tm_year = year;
     tm->tm_isdst = -1;
-    offset1 = (double) mktime(tm) - mktime00(tm);
+    offset1 = double( mktime(tm)) - mktime00(tm);
     /* and in July */
     tm->tm_year = year;
     tm->tm_mon = 6;
     tm->tm_isdst = -1;
-    offset2 = (double) mktime(tm) - mktime00(tm);
+    offset2 = double( mktime(tm)) - mktime00(tm);
     if(oldisdst > 0) {
 	offset = (offset1 > offset2) ? offset2 : offset1;
     } else {
@@ -367,7 +398,7 @@ static double guess_offset (struct tm *tm)
     tm->tm_mon = oldmonth;
     tm->tm_isdst = -1;
     if(oldisdst < 0) {
-	offset1 = (double) mktime(tm) - mktime00(tm);
+	offset1 = double( mktime(tm)) - mktime00(tm);
 	oldisdst = (offset1 < offset) ? 1:0;
 	if(oldisdst) offset = offset1;
     }
@@ -393,14 +424,14 @@ static double mktime0 (struct tm *tm, const int local)
 #else
 	errno = 79;
 #endif
-	return (double)(-1);
+	return double((-1));
     }
     if(!local) return mktime00(tm);
 
-    OK = tm->tm_year < 138 && tm->tm_year >= (have_broken_mktime() ? 70 : 02);
+    OK = CXXRCONSTRUCT(Rboolean, tm->tm_year < 138 && tm->tm_year >= (have_broken_mktime() ? 70 : 02));
     if(OK) {
-	res = (double) mktime(tm);
-	if (res == (double)-1) return res;
+	res = double( mktime(tm));
+	if (res == double(-1)) return res;
 #ifndef HAVE_POSIX_LEAPSECONDS
 	for(i = 0; i < n_leapseconds; i++)
 	    if(res > leapseconds[i]) res -= 1.0;
@@ -419,19 +450,19 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
     time_t t;
 
     if(d < 2147483647.0 && d > (have_broken_mktime() ? 0. : -2147483647.0)) {
-	t = (time_t) d;
+	t = time_t( d);
 	/* if d is negative and non-integer then t will be off by one day
 	   since we really need floor(). But floor() is slow, so we just
 	   fix t instead as needed. */
-	if (d < 0.0 && (double) t != d) t--;
+	if (d < 0.0 && double( t) != d) t--;
 #ifndef HAVE_POSIX_LEAPSECONDS
 	for(y = 0; y < n_leapseconds; y++) if(t > leapseconds[y] + y - 1) t++;
 #endif
 	return local ? localtime(&t) : gmtime(&t);
     }
 
-    int day = (int) floor(d/86400.0);
-    left = (int) (d - day * 86400.0 + 1e-6); // allow for fractional secs
+    int day = int( floor(d/86400.0));
+    left = int( (d - day * 86400.0 + 1e-6)); // allow for fractional secs
 
     /* hour, min, and sec */
     res->tm_hour = left / 3600;
@@ -465,7 +496,7 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
 	res->tm_isdst = -1;
 
 	/* Try to fix up timezone differences */
-	diff = (int)(guess_offset(res)/60);
+	diff = int(guess_offset(res)/60);
 	shift = res->tm_min + 60*res->tm_hour;
 	res->tm_min -= diff;
 	validate_tm(res);
@@ -473,7 +504,7 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
 	/* now this might be a different day */
 	if(shift - diff < 0) res->tm_yday--;
 	if(shift - diff > 24) res->tm_yday++;
-	diff2 = (int)(guess_offset(res)/60);
+	diff2 = int(guess_offset(res)/60);
 	if(diff2 != diff) {
 	    res->tm_min += (diff - diff2);
 	    validate_tm(res);
@@ -492,6 +523,10 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
 # include <sys/time.h>
 #endif
 
+extern "C" {
+    double currentTime(void);
+}
+
 double currentTime(void)
 {
     double ans = NA_REAL;
@@ -500,26 +535,26 @@ double currentTime(void)
     struct timespec tp;
     int res = timespec_get(&tp, TIME_UTC);
     if(res != 0)
-	ans = (double) tp.tv_sec + 1e-9 * (double) tp.tv_nsec;
+        ans = double( tp.tv_sec) + 1e-9 * double( tp.tv_nsec);
 #elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_REALTIME)
     struct timespec tp;
     int res = clock_gettime(CLOCK_REALTIME, &tp);
     if(res == 0)
-	ans = (double) tp.tv_sec + 1e-9 * (double) tp.tv_nsec;
+	ans = double( tp.tv_sec) + 1e-9 * double( tp.tv_nsec);
 
 #elif defined(HAVE_GETTIMEOFDAY)
     /* Mac OS X, mingw.org */
     struct timeval tv;
     int res = gettimeofday(&tv, NULL);
     if(res == 0)
-	ans = (double) tv.tv_sec + 1e-6 * (double) tv.tv_usec;
+	ans = double( tv.tv_sec) + 1e-6 * double( tv.tv_usec);
 
 #else
     /* No known current OSes */
     time_t res = time(NULL);
-    if(res != (time_t)(-1)) /* -1 must be an error as the real value -1
+    if(res != time_t((-1))) /* -1 must be an error as the real value -1
 			       was ca 1969 */
-	ans = (double) res;
+	ans = double( res);
 #endif
 
 #ifndef HAVE_POSIX_LEAPSECONDS
@@ -553,13 +588,13 @@ unsigned int TimeToSeed(void)
     {
 	struct timespec tp;
 	clock_gettime(CLOCK_REALTIME, &tp);
-	seed = (unsigned int)(((uint_least64_t) tp.tv_nsec << 16) ^ tp.tv_sec);
+	seed = static_cast<unsigned int>(((uint_least64_t( tp.tv_nsec) << 16) ^ tp.tv_sec));
     }
 #elif defined(HAVE_GETTIMEOFDAY)
     {
 	struct timeval tv;
 	gettimeofday (&tv, NULL);
-	seed = (unsigned int)(((uint_least64_t) tv.tv_usec << 16) ^ tv.tv_sec);
+	seed = static_cast<unsigned int>(((uint_least64_t( tv.tv_usec) << 16) ^ tv.tv_sec));
     }
 #else
     /* C89, so must work */
@@ -780,7 +815,7 @@ SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(ans = allocVector(REALSXP, n));
     for(R_xlen_t i = 0; i < n; i++) {
 	double secs = REAL(VECTOR_ELT(x, 0))[i%nlen[0]], fsecs = floor(secs);
-	tm.tm_sec   = (int) fsecs;
+	tm.tm_sec   = int( fsecs);
 	tm.tm_min   = INTEGER(VECTOR_ELT(x, 1))[i%nlen[1]];
 	tm.tm_hour  = INTEGER(VECTOR_ELT(x, 2))[i%nlen[2]];
 	tm.tm_mday  = INTEGER(VECTOR_ELT(x, 3))[i%nlen[3]];
@@ -798,10 +833,10 @@ SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
 #ifdef MKTIME_SETS_ERRNO
 	    REAL(ans)[i] = errno ? NA_REAL : tmp + (secs - fsecs);
 #else
-	    REAL(ans)[i] = ((tmp == (double)(-1))
+	    REAL(ans)[i] = ((tmp == double((-1)))
 			    /* avoid silly gotcha at epoch minus one sec */
 			    && (tm.tm_sec == 59)
-			    && ((tm.tm_sec = 58), (mktime0(&tm, 1 - isgmt) != (double)(-2)))
+			    && ((tm.tm_sec = 58), (mktime0(&tm, 1 - isgmt) != double((-2))))
 			    ) ?
 	      NA_REAL : tmp + (secs - fsecs);
 #endif
@@ -862,13 +897,13 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     if(n > 0) {
 	for(i = 0; i < 9; i++)
 	    if(nlen[i] == 0)
-		error(_("zero-length component in non-empty \"POSIXlt\" structure"));
+		error(_("zero length component in non-empty \"POSIXlt\" structure"));
     }
     if(n > 0) N = (m > n) ? m:n; else N = 0;
     PROTECT(ans = allocVector(STRSXP, N));
     for(i = 0; i < N; i++) {
 	double secs = REAL(VECTOR_ELT(x, 0))[i%nlen[0]], fsecs = floor(secs);
-	tm.tm_sec   = (int) fsecs;
+	tm.tm_sec   = int( fsecs);
 	tm.tm_min   = INTEGER(VECTOR_ELT(x, 1))[i%nlen[1]];
 	tm.tm_hour  = INTEGER(VECTOR_ELT(x, 2))[i%nlen[2]];
 	tm.tm_mday  = INTEGER(VECTOR_ELT(x, 3))[i%nlen[3]];
@@ -885,8 +920,9 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if(validate_tm(&tm) < 0) SET_STRING_ELT(ans, i, NA_STRING);
 	    else {
 		const char *q = CHAR(STRING_ELT(sformat, i%m));
-		int n = (int) strlen(q) + 50;
-		char buf2[n];
+		int n = int( strlen(q)) + 50;
+		vector<char> buf2v(n);
+		char* buf2 = &buf2v[0];
 #ifdef Win32
 		/* We want to override Windows' TZ names */
 		p = strstr(q, "%Z");
@@ -914,8 +950,8 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 		    if(ns > 6) ns = 6;
 		    if(ns > 0) {
 			/* truncate to avoid nuisances such as PR#14579 */
-			double s = secs, t = pow(10.0, (double) ns);
-			s = ((int) (s*t))/t;
+			double s = secs, t = pow(10.0, double( ns));
+			s = (int( (s*t)))/t;
 			sprintf(p2, "%0*.*f", ns+3, ns, s);
 			strcat(buf2, p+nused);
 		    } else {
@@ -1114,7 +1150,7 @@ SEXP attribute_hidden do_D2POSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 
     for(i = 0; i < n; i++) {
 	if(R_FINITE(REAL(x)[i])) {
-	    day = (int) floor(REAL(x)[i]);
+	    day = int( floor(REAL(x)[i]));
 	    tm.tm_hour = tm.tm_min = tm.tm_sec = 0;
 	    /* weekday: 1970-01-01 was a Thursday */
 	    if ((tm.tm_wday = ((4 + day) % 7)) < 0) tm.tm_wday += 7;

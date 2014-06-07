@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-2013   The R Core Team.
@@ -115,9 +131,10 @@ SEXP R_initMethodDispatch(SEXP envir)
     R_PreserveObject(R_TRUE);
 
     /* some strings (NOT symbols) */
-    s_missing = mkString("missing");
+    PROTECT(s_missing = mkString("missing"));
     setAttrib(s_missing, R_PackageSymbol, mkString("methods"));
     R_PreserveObject(s_missing);
+    UNPROTECT(1);
     s_base = mkString("base");
     R_PreserveObject(s_base);
     /*  Initialize method dispatch, using the static */
@@ -497,7 +514,7 @@ SEXP R_standardGeneric(SEXP fname, SEXP ev, SEXP fdef)
     switch(TYPEOF(f)) {
     case CLOSXP:
 	{
-	    SEXP R_execMethod(SEXP, SEXP);
+//	    SEXP R_execMethod(SEXP, SEXP); /* Use header files! 2007/06/14 arr */
 	    PROTECT(f); nprotect++; /* is this needed?? */
 	    val = R_execMethod(f, ev);
 	}
@@ -667,7 +684,7 @@ SEXP R_nextMethodCall(SEXP matched_call, SEXP ev)
     {PROTECT(e = duplicate(matched_call)); nprotect++;}
     if(!dotsDone) {
 	SEXP ee = e, dots;
-	PROTECT(dots = allocVector(LANGSXP, 1)); nprotect++;
+	PROTECT(dots = allocVector(LISTSXP, 1)); nprotect++;
 	SETCAR(dots, R_DotsSymbol);
 	for(ee = e; CDR(ee) != R_NilValue; ee = CDR(ee));
 	SETCDR(ee, dots); /* append ... symbol, with NULL CDR() */

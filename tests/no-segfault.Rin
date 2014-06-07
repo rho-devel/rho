@@ -32,7 +32,9 @@ misc.int <- c("browser", "browseVignettes", "bug.report", "checkCRAN",
               "readLines", "package.skeleton", "trace", "recover",
               "rm", "remove", "parent.env<-",
               "builtins", "data", "help", "news", "rtags", "vignette",
-              "installed.packages")
+              "installed.packages",
+              ## Temporary CXXR functions:
+              "bdeserialize", "bserialize")
 inet.list <- c(apropos("download\\."),
                apropos("^url\\."), apropos("\\.url"),
                apropos("packageStatus"),

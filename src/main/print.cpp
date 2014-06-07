@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1998	Robert Gentleman and Ross Ihaka.
@@ -67,7 +83,9 @@
 #include "Fileio.h"
 #include "Rconnections.h"
 #include <S.h>
+#include "CXXR/GCStackRoot.hpp"
 
+using namespace CXXR;
 
 /* Global print parameter struct: */
 R_print_par_t R_print;
@@ -80,6 +98,7 @@ static void PrintLanguageEtc(SEXP, Rboolean, Rboolean);
 #define TAGBUFLEN 256
 static char tagbuf[TAGBUFLEN + 5];
 
+static GCRoot<> na_string_noquote(mkChar("<NA>"));
 
 /* Used in X11 module for dataentry */
 /* NB this is called by R.app even though it is in no public header, so 
@@ -87,9 +106,9 @@ static char tagbuf[TAGBUFLEN + 5];
 void PrintDefaults(void)
 {
     R_print.na_string = NA_STRING;
-    R_print.na_string_noquote = mkChar("<NA>");
-    R_print.na_width = (int) strlen(CHAR(R_print.na_string));
-    R_print.na_width_noquote = (int) strlen(CHAR(R_print.na_string_noquote));
+    R_print.na_string_noquote = na_string_noquote;
+    R_print.na_width = int( strlen(CHAR(R_print.na_string)));
+    R_print.na_width_noquote = int( strlen(CHAR(R_print.na_string_noquote)));
     R_print.quote = 1;
     R_print.right = Rprt_adj_left;
     R_print.digits = GetOptionDigits();
@@ -140,14 +159,14 @@ SEXP attribute_hidden do_prmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     collab = CAR(a); a = CDR(a);
 
     quote = asInteger(CAR(a)); a = CDR(a);
-    R_print.right = (Rprt_adj) asInteger(CAR(a)); a = CDR(a);
+    R_print.right = Rprt_adj( asInteger(CAR(a))); a = CDR(a);
     naprint = CAR(a);
     if(!isNull(naprint))  {
 	if(!isString(naprint) || LENGTH(naprint) < 1)
 	    error(_("invalid 'na.print' specification"));
 	R_print.na_string = R_print.na_string_noquote = STRING_ELT(naprint, 0);
 	R_print.na_width = R_print.na_width_noquote =
-	    (int) strlen(CHAR(R_print.na_string));
+	    int( strlen(CHAR(R_print.na_string)));
     }
 
     if (length(rowlab) == 0) rowlab = R_NilValue;
@@ -169,7 +188,7 @@ SEXP attribute_hidden do_printfunction(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP s = CAR(args);
     switch (TYPEOF(s)) {
     case CLOSXP:
-	PrintLanguageEtc(s, asLogical(CADR(args)), /*is closure = */ TRUE);
+	PrintLanguageEtc(s, CXXRCONSTRUCT(Rboolean, asLogical(CADR(args))), /*is closure = */ TRUE);
 	printAttributes(s, rho, FALSE);
 	break;
     case BUILTINSXP:
@@ -190,7 +209,7 @@ static void PrintLanguageEtc(SEXP s, Rboolean useSource, Rboolean isClosure)
     int i;
     SEXP t = getAttrib(s, R_SrcrefSymbol);
     if (!isInteger(t) || !useSource)
-	t = deparse1w(s, 0, useSource | DEFAULTDEPARSE);
+	t = deparse1w(s, CXXRFALSE, useSource | DEFAULTDEPARSE);
     else {
         PROTECT(t = lang2(install("as.character"), t));
         t = eval(t, R_BaseEnv);
@@ -253,7 +272,7 @@ SEXP attribute_hidden do_printdefault(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("invalid 'na.print' specification"));
 	R_print.na_string = R_print.na_string_noquote = STRING_ELT(naprint, 0);
 	R_print.na_width = R_print.na_width_noquote =
-	    (int) strlen(CHAR(R_print.na_string));
+	    int( strlen(CHAR(R_print.na_string)));
     }
     args = CDR(args);
 
@@ -264,7 +283,7 @@ SEXP attribute_hidden do_printdefault(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     args = CDR(args);
 
-    R_print.right = (Rprt_adj) asLogical(CAR(args)); /* Should this be asInteger()? */
+    R_print.right = Rprt_adj( asLogical(CAR(args))); /* Should this be asInteger()? */
     if(R_print.right == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "right");
     args = CDR(args);
@@ -385,7 +404,7 @@ static void PrintGenericVector(SEXP s, SEXP env)
 		    const void *vmax = vmaxget();
 		    /* This can potentially overflow */
 		    const char *ctmp = translateChar(STRING_ELT(tmp, 0));
-		    int len = (int) strlen(ctmp);
+		    int len = int( strlen(ctmp));
 		    if(len < 100)
 			snprintf(pbuf, 115, "\"%s\"", ctmp);
 		    else {
@@ -431,11 +450,13 @@ static void PrintGenericVector(SEXP s, SEXP env)
     }
     else { /* .. no dim() .. */
 	names = getAttrib(s, R_NamesSymbol);
-	taglen = (int) strlen(tagbuf);
+	taglen = int( strlen(tagbuf));
 	ptag = tagbuf + taglen;
-	PROTECT(newcall = allocList(2));
+	{
+	    GCStackRoot<PairList> tl(CXXR_NEW(PairList));
+	    PROTECT(newcall = CXXR_NEW(Expression(0, tl)));
+	}
 	SETCAR(newcall, install("print"));
-	SET_TYPEOF(newcall, LANGSXP);
 
 	if(ns > 0) {
 	    int n_pr = (ns <= R_print.max +1) ? ns : R_print.max;
@@ -589,11 +610,13 @@ static void printList(SEXP s, SEXP env)
     }
     else {
 	i = 1;
-	taglen = (int) strlen(tagbuf);
+	taglen = int( strlen(tagbuf));
 	ptag = tagbuf + taglen;
-	PROTECT(newcall = allocList(2));
+	{
+	    GCStackRoot<PairList> tl(CXXR_NEW(PairList));
+	    PROTECT(newcall = CXXR_NEW(Expression(0, tl)));
+	}
 	SETCAR(newcall, install("print"));
-	SET_TYPEOF(newcall, LANGSXP);
 	while (TYPEOF(s) == LISTSXP) {
 	    if (i > 1) Rprintf("\n");
 	    if (TAG(s) != R_NilValue && isSymbol(TAG(s))) {
@@ -643,7 +666,7 @@ static void PrintExpression(SEXP s)
     SEXP u;
     int i, n;
 
-    u = deparse1w(s, 0, R_print.useSource | DEFAULTDEPARSE);
+    u = deparse1w(s, CXXRFALSE, R_print.useSource | DEFAULTDEPARSE);
     n = LENGTH(u);
     for (i = 0; i < n; i++)
 	Rprintf("%s\n", CHAR(STRING_ELT(u, i))); /*translated */
@@ -652,7 +675,7 @@ static void PrintExpression(SEXP s)
 static void PrintSpecial(SEXP s)
 {
     /* This is OK as .Internals are not visible to be printed */
-    char *nm = PRIMNAME(s);
+    CXXRCONST char *nm = PRIMNAME(s);
     SEXP env, s2;
     PROTECT_INDEX xp;
     PROTECT_WITH_INDEX(env = findVarInFrame3(R_BaseEnv,
@@ -671,7 +694,7 @@ static void PrintSpecial(SEXP s)
     if(s2 != R_UnboundValue) {
 	SEXP t;
 	PROTECT(s2);
-	t = deparse1(s2, 0, DEFAULTDEPARSE);
+	t = deparse1(s2, CXXRFALSE, DEFAULTDEPARSE);
 	Rprintf("%s ", CHAR(STRING_ELT(t, 0))); /* translated */
 	Rprintf(".Primitive(\"%s\")\n", PRIMNAME(s));
 	UNPROTECT(1);
@@ -718,7 +741,7 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
 	break;
     case SYMSXP: /* Use deparse here to handle backtick quotification
 		  * of "weird names" */
-	t = deparse1(s, 0, SIMPLEDEPARSE);
+	t = deparse1(s, CXXRFALSE, SIMPLEDEPARSE);
 	Rprintf("%s\n", CHAR(STRING_ELT(t, 0))); /* translated */
 	break;
     case SPECIALSXP:
@@ -917,10 +940,12 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 		    digits = R_print.digits, gap = R_print.gap,
 		    na_width = R_print.na_width,
 		    na_width_noquote = R_print.na_width_noquote;
-		Rprt_adj right = R_print.right;
+		Rprt_adj right = CXXRCONSTRUCT(Rprt_adj, R_print.right);
 
-		PROTECT(t = s = allocList(3));
-		SET_TYPEOF(s, LANGSXP);
+		{
+		    GCStackRoot<PairList> tl(PairList::make(2));
+		    PROTECT(t = s = CXXR_NEW(Expression(0, tl)));
+		}
 		SETCAR(t, install("print")); t = CDR(t);
 		SETCAR(t,  CAR(a)); t = CDR(t);
 		SETCAR(t, ScalarInteger(digits));
@@ -1017,12 +1042,14 @@ void attribute_hidden CustomPrintValue(SEXP s, SEXP env)
    The actual interfaces are now in xxxpr.f
  */
 
+extern "C" {
+
 attribute_hidden
 int F77_NAME(dblep0) (const char *label, int *nchar, double *data, int *ndata)
 {
     int k, nc = *nchar;
 
-    if(nc < 0) nc = (int) strlen(label);
+    if(nc < 0) nc = int( strlen(label));
     if(nc > 255) {
 	warning(_("invalid character length in 'dblepr'"));
 	nc = 0;
@@ -1040,7 +1067,7 @@ int F77_NAME(intpr0) (const char *label, int *nchar, int *data, int *ndata)
 {
     int k, nc = *nchar;
 
-    if(nc < 0) nc = (int) strlen(label);
+    if(nc < 0) nc = int( strlen(label));
     if(nc > 255) {
 	warning(_("invalid character length in 'intpr'"));
 	nc = 0;
@@ -1059,7 +1086,7 @@ int F77_NAME(realp0) (const char *label, int *nchar, float *data, int *ndata)
     int k, nc = *nchar, nd = *ndata;
     double *ddata;
 
-    if(nc < 0) nc = (int) strlen(label);
+    if(nc < 0) nc = int( strlen(label));
     if(nc > 255) {
 	warning(_("invalid character length in 'realpr'"));
 	nc = 0;
@@ -1089,3 +1116,5 @@ void F77_NAME(xerbla)(const char *srname, int *info)
     buf[6] = '\0';
     error(_("BLAS/LAPACK routine '%6s' gave error code %d"), buf, -(*info));
 }
+
+} /* extern "C" */

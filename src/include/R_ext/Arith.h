@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -29,8 +45,12 @@
 # define _BSD_SOURCE 1
 #endif
 
+#include <R_ext/Boolean.h>
 #include <R_ext/libextern.h>
+
 #ifdef  __cplusplus
+#include <cmath>
+
 extern "C" {
 #elif !defined(NO_C_HEADERS)
 /* needed for isnan and isfinite, neither of which are used under C++ */
@@ -44,7 +64,7 @@ LibExtern double R_NegInf;	/* IEEE -Inf */
 LibExtern double R_NaReal;	/* NA_REAL: IEEE */
 LibExtern int	 R_NaInt;	/* NA_INTEGER:= INT_MIN currently */
 #ifdef __MAIN__
-#undef extern
+//#undef extern  /* 2007/06/03 arr */
 #undef LibExtern
 #endif
 
@@ -55,8 +75,8 @@ LibExtern int	 R_NaInt;	/* NA_INTEGER:= INT_MIN currently */
 /* NA_STRING is a SEXP, so defined in Rinternals.h */
 
 int R_IsNA(double);		/* True for R's NA only */
-int R_IsNaN(double);		/* True for special NaN, *not* for NA */
-int R_finite(double);		/* True if none of NA, NaN, +/-Inf */
+Rboolean R_IsNaN(double);		/* True for special NaN, *not* for NA */
+Rboolean R_finite(double);		/* True if none of NA, NaN, +/-Inf */
 #define ISNA(x)	       R_IsNA(x)
 
 /* ISNAN(): True for *both* NA and NaN.
@@ -66,10 +86,40 @@ int R_finite(double);		/* True if none of NA, NaN, +/-Inf */
    hence the workaround.  This code also appears in Rmath.h
 */
 #ifdef __cplusplus
-  int R_isnancpp(double); /* in arithmetic.c */
+    /* CXXR Notes:
+     *
+     * isnan() was introduced by C99, which prescribes that it shall
+     * be a macro. ISO14882, even in its 2003 issue, requires only
+     * that <cmath> offer the facilities of math.h as defined in
+     * ISO/IEC 9899:1990.  TR1 proposed that <cmath> make isnan()
+     * available to C++ programs as a templated function within the
+     * std namespace.  On Linux, gcc appears to make the ordinary
+     * isnan() macro available to C++ programs.  However, on Mac OS X
+     * (at least as of 10.5.6) gcc appears to make isnan() available
+     * to C++ programs only as std::isnan().
+     *
+     * The following covers these two cases.  Another possibility that
+     * may need to be addressed is that C++'s isnan() is to be found
+     * in namespace std::tr1.
+     */
+    inline Rboolean R_isnancpp(double x)
+    {
+#ifdef isnan
+	return Rboolean(isnan(x)!=0);
+#else
+	return Rboolean(std::isnan(x)!=0);
+#endif
+    }
+
+    /* This anticipates C++ 0x. */
+    inline Rboolean R_finite(double x)
+    {
+	return Rboolean(std::isfinite(x) != 0);
+    }
+
 #  define ISNAN(x)     R_isnancpp(x)
 #else
-#  define ISNAN(x)     (isnan(x)!=0)
+#  define ISNAN(x)     ((Rboolean)(isnan(x)!=0))
 #endif
 
 /* The following is only defined inside R */
@@ -77,6 +127,7 @@ int R_finite(double);		/* True if none of NA, NaN, +/-Inf */
 /* isfinite is defined in <math.h> according to C99 */
 # define R_FINITE(x)    isfinite(x)
 #else
+
 # define R_FINITE(x)    R_finite(x)
 #endif
 

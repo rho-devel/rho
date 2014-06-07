@@ -1,0 +1,66 @@
+# Translation of src/library/Recommended/class/R-class.pot to German
+# Copyright (C) 2007-2009 The R Foundation
+# This file is distributed under the same license as the lattice R package.
+# Chris Leick <c.leick@vollbio.de>, 2009.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: R 2.15.2 / class 7.3-1\n"
+"Report-Msgid-Bugs-To: bugs@r-project.org\n"
+"POT-Creation-Date: 2012-09-23 17:22\n"
+"PO-Revision-Date: 2012-09-30 12:25+0100\n"
+"Last-Translator: Chris Leick <c.leick@vollbio.de>\n"
+"Language-Team: German <debian-l10n-german@lists.debian.org>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "wrong plot method used"
+msgstr "falsche Ausgabemethode benutzt"
+
+msgid "'SOM' called with no data"
+msgstr "»SOM« ohne Daten aufgerufen"
+
+msgid "'radii' must be a list of the same length as 'alpha'"
+msgstr "»radii« muss eine Liste mit der gleichen Länge wie »alpha« sein"
+
+msgid "'alpha' and 'radii' do not have the same lengths"
+msgstr "»alpha« und »radii« haben nicht die gleiche Länge"
+
+msgid "'alpha' and 'radii' do not match"
+msgstr "»alpha« und »radii« passen nicht zusammen"
+
+msgid "no missing values are allowed"
+msgstr "fehlende Werte sind nicht erlaubt"
+
+msgid "'train' and 'class' have different lengths"
+msgstr "»train« und »class« haben unterschiedliche Längen"
+
+msgid "dims of 'test' and 'train' differ"
+msgstr "Abmessungen von »test« und »train« sind unterschiedlich"
+
+msgid "k = %d exceeds number %d of patterns"
+msgstr "k = %d überschreitet die Zahl %d der Muster"
+
+msgid "k = %d must be at least 1"
+msgstr "k = %d muss mindestens 1 sein"
+
+msgid "'x' and 'cl' have different lengths"
+msgstr "»x« und »cl« haben unterschiedliche Längen"
+
+msgid "invalid 'prior'"
+msgstr "ungültiges »prior«"
+
+msgid "'prior' is of incorrect length"
+msgstr "»prior« hat falsche Länge"
+
+msgid "retained set is now too small to proceed"
+msgstr "verbliebene Menge ist nun zu klein, um fortzufahren"
+
+msgid "pass %s size %d"
+msgstr "%s übergeben, Größe %d"
+
+#~ msgid "dims of 'test' and 'train differ"
+#~ msgstr "Abmessungen von »test« und »train« sind unterschiedlich"

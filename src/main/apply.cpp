@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2000-12  The R Core Team
@@ -40,7 +56,7 @@ SEXP attribute_hidden do_lapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     FUN = CADR(args);  /* must be unevaluated for use in e.g. bquote */
     n = xlength(XX);
     if (n == NA_INTEGER) error(_("invalid length"));
-    Rboolean realIndx = n > INT_MAX;
+    Rboolean realIndx = CXXRCONSTRUCT(Rboolean, n > INT_MAX);
 
     PROTECT(ans = allocVector(VECSXP, n));
     names = getAttrib(XX, R_NamesSymbol);
@@ -62,16 +78,16 @@ SEXP attribute_hidden do_lapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(ind = allocVector(realIndx ? REALSXP : INTSXP, 1));
 	if(isVectorAtomic(XX))
 	    PROTECT(tmp = LCONS(R_Bracket2Symbol,
-				LCONS(XX, LCONS(ind, R_NilValue))));
+				CONS(XX, CONS(ind, R_NilValue))));
 	else
 	    PROTECT(tmp = LCONS(R_Bracket2Symbol,
-				LCONS(X, LCONS(ind, R_NilValue))));
+				CONS(X, CONS(ind, R_NilValue))));
 	PROTECT(R_fcall = LCONS(FUN,
-				LCONS(tmp, LCONS(R_DotsSymbol, R_NilValue))));
+				CONS(tmp, CONS(R_DotsSymbol, R_NilValue))));
 
 	for(i = 0; i < n; i++) {
-	    if (realIndx) REAL(ind)[0] = (double)(i + 1);
-	    else INTEGER(ind)[0] = (int)(i + 1);
+	    if (realIndx) REAL(ind)[0] = double(i + 1);
+	    else INTEGER(ind)[0] = int(i + 1);
 	    tmp = eval(R_fcall, rho);
 	    if (NAMED(tmp))
 		tmp = duplicate(tmp);
@@ -96,7 +112,7 @@ SEXP attribute_hidden do_vapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     int useNames, rnk_v = -1; // = array_rank(value) := length(dim(value))
     Rboolean array_value;
     SEXPTYPE commonType;
-    PROTECT_INDEX index;
+    PROTECT_INDEX index = 0;  // -Wall
 
     checkArity(op, args);
     PROTECT(X = CAR(args));
@@ -109,14 +125,14 @@ SEXP attribute_hidden do_vapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     n = xlength(XX);
     if (n == NA_INTEGER) error(_("invalid length"));
-    Rboolean realIndx = n > INT_MAX;
+    Rboolean realIndx = CXXRCONSTRUCT(Rboolean, n > INT_MAX);
 
     commonLen = length(value);
     if (commonLen > 1 && n > INT_MAX)
 	error(_("long vectors are not supported for matrix/array results"));
     commonType = TYPEOF(value);
     dim_v = getAttrib(value, R_DimSymbol);
-    array_value = (TYPEOF(dim_v) == INTSXP && LENGTH(dim_v) >= 1);
+    array_value = CXXRCONSTRUCT(Rboolean, (TYPEOF(dim_v) == INTSXP && LENGTH(dim_v) >= 1));
     PROTECT(ans = allocVector(commonType, n*commonLen));
     if (useNames) {
     	PROTECT(names = getAttrib(XX, R_NamesSymbol));
@@ -145,18 +161,18 @@ SEXP attribute_hidden do_vapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(ind = allocVector(INTSXP, 1));
 	if(isVectorAtomic(XX))
 	    PROTECT(tmp = LCONS(R_Bracket2Symbol,
-				LCONS(XX, LCONS(ind, R_NilValue))));
+				CONS(XX, CONS(ind, R_NilValue))));
 	else
 	    PROTECT(tmp = LCONS(R_Bracket2Symbol,
-				LCONS(X, LCONS(ind, R_NilValue))));
+				CONS(X, CONS(ind, R_NilValue))));
 	PROTECT(R_fcall = LCONS(FUN,
-				LCONS(tmp, LCONS(R_DotsSymbol, R_NilValue))));
+				CONS(tmp, CONS(R_DotsSymbol, R_NilValue))));
 
 	for(i = 0; i < n; i++) {
 	    SEXP val; SEXPTYPE valType;
 	    PROTECT_INDEX indx;
-	    if (realIndx) REAL(ind)[0] = (double)(i + 1);
-	    else INTEGER(ind)[0] = (int)(i + 1);
+	    if (realIndx) REAL(ind)[0] = double(i + 1);
+	    else INTEGER(ind)[0] = int(i + 1);
 	    val = eval(R_fcall, rho);
 	    if (NAMED(val))
 		val = duplicate(val);
@@ -166,12 +182,14 @@ SEXP attribute_hidden do_vapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 	               commonLen, i+1, length(val));
 	    valType = TYPEOF(val);
 	    if (valType != commonType) {
-	    	Rboolean okay = FALSE;
+	    	bool okay = FALSE;
 	    	switch (commonType) {
 	    	case CPLXSXP: okay = (valType == REALSXP) || (valType == INTSXP)
 	    	                    || (valType == LGLSXP); break;
 	    	case REALSXP: okay = (valType == INTSXP) || (valType == LGLSXP); break;
 	    	case INTSXP:  okay = (valType == LGLSXP); break;
+		default:
+		    Rf_error(_("Internal error: unexpected SEXPTYPE"));
 	        }
 	        if (!okay)
 	            error(_("values must be type '%s',\n but FUN(X[[%d]]) result is type '%s'"),
@@ -210,7 +228,7 @@ SEXP attribute_hidden do_vapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 		INTEGER(dim)[j] = INTEGER(dim_v)[j];
 	else
 	    INTEGER(dim)[0] = commonLen;
-	INTEGER(dim)[rnk_v] = (int) n;  // checked above
+	INTEGER(dim)[rnk_v] = int( n);  // checked above
 	setAttrib(ans, R_DimSymbol, dim);
 	UNPROTECT(1);
     }
@@ -299,7 +317,7 @@ SEXP attribute_hidden do_rapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     deflt = CAR(args); args = CDR(args);
     how = CAR(args);
     if(!isString(how)) error(_("invalid '%s' argument"), "how");
-    replace = strcmp(CHAR(STRING_ELT(how, 0)), "replace") == 0; /* ASCII */
+    replace = CXXRCONSTRUCT(Rboolean, strcmp(CHAR(STRING_ELT(how, 0)), "replace") == 0); /* ASCII */
     n = length(X);
     PROTECT(ans = allocVector(VECSXP, n));
     names = getAttrib(X, R_NamesSymbol);
@@ -319,10 +337,16 @@ static Rboolean islistfactor(SEXP X)
     if(n == 0) return FALSE;
     switch(TYPEOF(X)) {
     case VECSXP:
-    case EXPRSXP:
 	for(i = 0; i < LENGTH(X); i++)
 	    if(!islistfactor(VECTOR_ELT(X, i))) return FALSE;
 	return TRUE;
+	break;
+    case EXPRSXP:
+	for(i = 0; i < LENGTH(X); i++)
+	    if(!islistfactor(XVECTOR_ELT(X, i))) return FALSE;
+	return TRUE;
+	break;
+    default:  // -Wswitch
 	break;
     }
     return isFactor(X);
@@ -339,7 +363,7 @@ SEXP attribute_hidden do_islistfactor(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     checkArity(op, args);
     X = CAR(args);
-    recursive = asLogical(CADR(args));
+    recursive = CXXRCONSTRUCT(Rboolean, asLogical(CADR(args)));
     n = length(X);
     if(n == 0 || !isVectorList(X)) {
 	lans = FALSE;
@@ -354,16 +378,22 @@ SEXP attribute_hidden do_islistfactor(SEXP call, SEXP op, SEXP args, SEXP rho)
     } else {
 	switch(TYPEOF(X)) {
 	case VECSXP:
+	    for(i = 0; i < LENGTH(X); i++)
+		if(!islistfactor(VECTOR_ELT(X, i))) {
+		    lans = FALSE;
+		    break;
+		}
+	    break;
 	case EXPRSXP:
+	    for(i = 0; i < LENGTH(X); i++)
+		if(!islistfactor(XVECTOR_ELT(X, i))) {
+		    lans = FALSE;
+		    break;
+		}
 	    break;
 	default:
-	    goto do_ans;
+	    break;
 	}
-	for(i = 0; i < LENGTH(X); i++)
-	    if(!islistfactor(VECTOR_ELT(X, i))) {
-		lans = FALSE;
-		break;
-	    }
     }
 do_ans:
     return ScalarLogical(lans);

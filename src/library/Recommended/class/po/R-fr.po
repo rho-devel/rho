@@ -1,0 +1,64 @@
+# Translation of R-class.pot to French
+# Copyright (C) 2005 The R Foundation
+# This file is distributed under the same license as the class R package.
+# Philippe Grosjean <phgrosjean@sciviews.org>, 2005.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: class 7.2-20\n"
+"Report-Msgid-Bugs-To: bugs@r-project.org\n"
+"POT-Creation-Date: 2012-09-23 17:22\n"
+"PO-Revision-Date: 2012-10-03 15:26+0100\n"
+"Last-Translator: Philippe Grosjean <phgrosjean@sciviews.org>\n"
+"Language-Team: French <R-core@r-project.org>\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ISO-8859-1\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 1.5.3\n"
+
+msgid "wrong plot method used"
+msgstr "type de méthode graphique incorrecte"
+
+msgid "'SOM' called with no data"
+msgstr "'SOM' appelé sans données"
+
+msgid "'radii' must be a list of the same length as 'alpha'"
+msgstr "'radii' doit être une liste de même longueur que 'alpha'"
+
+msgid "'alpha' and 'radii' do not have the same lengths"
+msgstr "'alpha' et 'radii' n'ont pas la même longueur"
+
+msgid "'alpha' and 'radii' do not match"
+msgstr "'alpha' et 'radii' ne correspondent pas"
+
+msgid "no missing values are allowed"
+msgstr "aucune valeur manquante n'est admise"
+
+msgid "'train' and 'class' have different lengths"
+msgstr "'train' et 'class' ont des longueurs différentes"
+
+msgid "dims of 'test' and 'train' differ"
+msgstr "les dimensions de 'test' et de 'train' diffèrent"
+
+msgid "k = %d exceeds number %d of patterns"
+msgstr "k = %d est supérieur au nombre %d de motifs"
+
+msgid "k = %d must be at least 1"
+msgstr "k = %d doit être au moins 1"
+
+msgid "'x' and 'cl' have different lengths"
+msgstr "'x' et 'cl' ont des longueurs différentes"
+
+msgid "invalid 'prior'"
+msgstr "'prior' invalide"
+
+msgid "'prior' is of incorrect length"
+msgstr "'prior' est de longueur incorrecte"
+
+msgid "retained set is now too small to proceed"
+msgstr "l'ensemble retenu est maintenant trop petit pour continuer"
+
+msgid "pass %s size %d"
+msgstr "passage %s taille %d"

@@ -1,0 +1,8 @@
+#!/bin/sh
+# Execute a command having previously sources /etc/ldpaths
+
+CMD=$1
+. ../../etc/ldpaths
+shift
+exec $CMD "$@"
+

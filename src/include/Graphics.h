@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -38,6 +54,10 @@
 #define MAX_LAYOUT_COLS 200
 #define MAX_LAYOUT_CELLS 10007 /* must be less than 65535,
 				3 copies, 3bytes each */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct {
 	double ax;
@@ -212,7 +232,7 @@ typedef struct {
 
     /* Layout parameter: Internal flags */
 
-    Rboolean new;	/* Clean plot ? */
+    Rboolean newplot;	/* Clean plot ? */
     int	devmode;	/* creating new image or adding to existing one */
 
     /* Coordinate System Mappings */
@@ -305,5 +325,9 @@ void gcontextFromGP(pGEcontext gc, pGEDevDesc dd);
 #define dpptr Rf_dpptr
 GPar* Rf_gpptr(pGEDevDesc dd);
 GPar* Rf_dpptr(pGEDevDesc dd);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRAPHICS_H_ */

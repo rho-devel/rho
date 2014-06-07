@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -30,6 +46,7 @@
 #include <Graphics.h>
 #include <Print.h>
 #include <R_ext/Boolean.h>
+#include "basedecl.h"
 
 /* filled contours and perspective plots were originally here,
    now in graphics/src/plot3d.c .
@@ -110,11 +127,11 @@ int addContourLines(double *x, int nx, double *y, int ny,
 		s = start;
 		ns = 0;
 		/* max_contour_segments: prevent inf.loop (shouldn't be needed) */
-		while (s && ns < max_contour_segments) {
+		while (s && ns < CXXRCONSTRUCT(int, max_contour_segments)) {
 		    ns++;
 		    s = s->next;
 		}
-		if(ns == max_contour_segments)
+		if(ns == CXXRCONSTRUCT(int, max_contour_segments))
 		    warning(_("contour(): circular/long seglist -- set %s > %d?"), 
 		            "options(\"max.contour.segments\")", max_contour_segments);
 		/*
@@ -130,7 +147,7 @@ int addContourLines(double *x, int nx, double *y, int ny,
 		REAL(xsxp)[0] = s->x0;
 		REAL(ysxp)[0] = s->y0;
 		ns = 1;
-		while (s->next && ns < max_contour_segments) {
+		while (s->next && ns < CXXRCONSTRUCT(int, max_contour_segments)) {
 		    s = s->next;
 		    REAL(xsxp)[ns] = s->x0;
 		    REAL(ysxp)[ns++] = s->y0;

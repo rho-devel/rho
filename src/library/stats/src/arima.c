@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2002-2011   The R Core Team.
@@ -167,20 +183,19 @@ KalmanSmooth(SEXP sy, SEXP sZ, SEXP sa, SEXP sP, SEXP sT,
 	     SEXP sV, SEXP sh, SEXP sPn, SEXP sUP)
 {
     SEXP ssa, ssP, ssPn, res, states = R_NilValue, sN;
-    int n = LENGTH(sy), p = LENGTH(sa);
-    double *y = REAL(sy), *Z = REAL(sZ), *a, *P,
-	*T = REAL(sT), *V = REAL(sV), h = asReal(sh), *Pnew;
     double resid0, gain, tmp, *anew, *mm, *M;
     double *at, *rt, *Pt, *gains, *resids, *Mt, *L, gn, *Nt;
     int i, j, k, l;
     Rboolean var = TRUE;
 
-    /* It would be better to check types before using LENGTH and REAL
-       on these, but should still work this way.  LT */
     if (TYPEOF(sy) != REALSXP || TYPEOF(sZ) != REALSXP ||
 	TYPEOF(sa) != REALSXP || TYPEOF(sP) != REALSXP ||
 	TYPEOF(sT) != REALSXP || TYPEOF(sV) != REALSXP)
 	error(_("invalid argument type"));
+
+    int n = LENGTH(sy), p = LENGTH(sa);
+    double *y = REAL(sy), *Z = REAL(sZ), *a, *P,
+	*T = REAL(sT), *V = REAL(sV), h = asReal(sh), *Pnew;
 
     PROTECT(ssa = duplicate(sa)); a = REAL(ssa);
     PROTECT(ssP = duplicate(sP)); P = REAL(ssP);
@@ -345,18 +360,18 @@ KalmanFore(SEXP nahead, SEXP sZ, SEXP sa0, SEXP sP0, SEXP sT, SEXP sV,
 	   SEXP sh, SEXP fast)
 {
     SEXP res, forecasts, se;
-    int  n = asInteger(nahead), p = LENGTH(sa0);
-    double *Z = REAL(sZ), *a = REAL(sa0), *P = REAL(sP0), *T = REAL(sT),
-	*V = REAL(sV), h = asReal(sh);
+    int  n = asInteger(nahead);
     int i, j, k, l;
     double fc, tmp, *mm, *anew, *Pnew;
 
-    /* It would be better to check types before using LENGTH and REAL
-       on these, but should still work this way.  LT */
     if (TYPEOF(sZ) != REALSXP ||
 	TYPEOF(sa0) != REALSXP || TYPEOF(sP0) != REALSXP ||
 	TYPEOF(sT) != REALSXP || TYPEOF(sV) != REALSXP)
 	error(_("invalid argument type"));
+
+    int p = LENGTH(sa0);
+    double *Z = REAL(sZ), *a = REAL(sa0), *P = REAL(sP0), *T = REAL(sT),
+	*V = REAL(sV), h = asReal(sh);
 
     anew = (double *) R_alloc(p, sizeof(double));
     Pnew = (double *) R_alloc(p * p, sizeof(double));

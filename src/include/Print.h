@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -25,8 +41,18 @@
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Print.h>
 
+#ifdef __cplusplus
+namespace CXXR {
+    unsigned int stringWidth(unsigned int minwidth,
+                             const CXXR::String* string);
+    unsigned int stringWidthQuote(unsigned int minwidth,
+			          const CXXR::String* string);
+}
+
+extern "C" {
+#endif
+
 #define formatRaw           Rf_formatRaw
-#define formatString        Rf_formatString
 #define EncodeElement       Rf_EncodeElement
 #define EncodeEnvironment   Rf_EncodeEnvironment
 #define printArray          Rf_printArray
@@ -53,7 +79,6 @@ extern R_print_par_t R_print;
 
 /* Computation of printing formats */
 void formatRaw(Rbyte *, R_xlen_t, int *);
-void formatString(SEXP*, R_xlen_t, int*, int);
 
 /* Formating of values */
 const char *EncodeElement(SEXP, int, int, char);
@@ -84,4 +109,8 @@ void R_PV(SEXP s);
 #define R_MIN_DIGITS_OPT	0
 #define R_MAX_DIGITS_OPT	22
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* PRINT_H_ */

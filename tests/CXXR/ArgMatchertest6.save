@@ -1,0 +1,33 @@
+Formal arguments:
+
+black : BLACK
+brown : 
+red : RED
+orange : ORANGE
+yellow : 
+green : 
+blue : BLUE
+violet : 
+grey : GREY
+white : 
+silver : SILVER
+
+Supplied arguments:
+
+silver : argent
+whit : blan
+ : noir
+brown : brun
+ : corail
+gre : gris
+ye : jaune
+ : bleu
+gold : or
+ : notmatchedtowhite
+pink : rose
+red : rouge
+green : vert
+violet : violette
+Error: unused argument(s) (gold = or, notmatchedtowhite, pink = rose)
+
+ArgMatchertest: Error encountered while matching arguments

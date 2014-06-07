@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -34,15 +50,17 @@
 #include <Defn.h>
 #include <Internal.h>
 #include <Graphics.h>
-#include <GraphicsBase.h> 
+#include <GraphicsBase.h>
 #include <R_ext/GraphicsEngine.h>
+
+using namespace CXXR;
 
 int baseRegisterIndex = -1;
 
 GPar* dpptr(pGEDevDesc dd) {
     if (baseRegisterIndex == -1)
 	error(_("the base graphics system is not registered"));
-    baseSystemState *bss = dd->gesd[baseRegisterIndex]->systemSpecific;
+    baseSystemState *bss = CXXRSCAST(baseSystemState*, dd->gesd[baseRegisterIndex]->systemSpecific);
     return &(bss->dp);
 }
 
@@ -106,6 +124,14 @@ static int R_NumDevices = 1;
  */
 static pGEDevDesc R_Devices[R_MaxDevices];
 static Rboolean active[R_MaxDevices];
+
+/* The following are used in CXXR to protect the displayList and
+ * savedSnapshot fields of a device from garbage collection.
+ * Functions setDisplayList() and saveSnapshot() update them in
+ * parallel with the fields concerned.
+ */
+static GCRoot<> displayListGuards[R_MaxDevices];
+static GCRoot<> savedSnapshotGuards[R_MaxDevices];
 
 /* a dummy description to point to when there are no active devices */
 
@@ -279,7 +305,7 @@ int selectDevice(int devNum)
 }
 
 /* historically the close was in the [kK]illDevices.
-   only use findNext = FALSE when shutting R dowm, and .Device[s] are not
+   only use findNext= FALSE when shutting R dowm, and .Device[s] are not
    updated.
 */
 static
@@ -423,6 +449,7 @@ void GEaddDevice(pGEDevDesc gdd)
     R_CurrentDevice = i;
     R_NumDevices++;
     R_Devices[i] = gdd;
+    gdd->index = i;
     active[i] = TRUE;
 
     GEregisterWithDevice(gdd);
@@ -466,13 +493,14 @@ pGEDevDesc GEcreateDevDesc(pDevDesc dev)
      * device description (add graphics engine information
      * to the device description).
      */
-    pGEDevDesc gdd = (GEDevDesc*) calloc(1, sizeof(GEDevDesc));
+    pGEDevDesc gdd = static_cast<GEDevDesc*>( calloc(1, sizeof(GEDevDesc)));
     /* NULL the gesd array
      */
     int i;
     if (!gdd)
 	error(_("not enough memory to allocate device (in GEcreateDevDesc)"));
     for (i = 0; i < MAX_GRAPHICS_SYSTEMS; i++) gdd->gesd[i] = NULL;
+    gdd->index = -1;
     gdd->dev = dev;
     gdd->displayListOn = dev->displayListOn;
     gdd->displayList = R_NilValue; /* gc needs this */
@@ -514,4 +542,20 @@ void NewFrameConfirm(pDevDesc dd)
 	unsigned char buf[1024];
 	R_ReadConsole(_("Hit <Return> to see next plot: "), buf, 1024, 0);
     }
+}
+
+// CXXR mutator functions:
+
+void setDisplayList(pGEDevDesc dev, SEXP newDisplayList)
+{
+    dev->displayList = newDisplayList;
+    if (dev->index >= 0)
+	displayListGuards[dev->index] = newDisplayList;
+}
+
+void saveSnapshot(pGEDevDesc dev, SEXP newSnapshot)
+{
+    dev->savedSnapshot = newSnapshot;
+    if (dev->index >= 0)
+	savedSnapshotGuards[dev->index] = newSnapshot;
 }

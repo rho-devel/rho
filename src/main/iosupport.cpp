@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997,  Robert Gentleman and Ross Ihaka
@@ -46,7 +62,7 @@ static int NextWriteBufferListItem(IoBuffer *iob)
     }
     else {
 	BufferListItem *_new;
-	if (!(_new = (BufferListItem*)malloc(sizeof(BufferListItem))))
+	if (!(_new = static_cast<BufferListItem*>(malloc(sizeof(BufferListItem)))))
 	    return 0;
 	_new->next = NULL;
 	iob->write_buf->next = _new;
@@ -102,7 +118,7 @@ int attribute_hidden R_IoBufferReadReset(IoBuffer *iob)
 int attribute_hidden R_IoBufferInit(IoBuffer *iob)
 {
     if (iob == NULL) return 0;
-    iob->start_buf = (BufferListItem*)malloc(sizeof(BufferListItem));
+    iob->start_buf = static_cast<BufferListItem*>(malloc(sizeof(BufferListItem)));
     if (iob->start_buf == NULL) return 0;
     iob->start_buf->next = NULL;
     return R_IoBufferWriteReset(iob);
@@ -132,7 +148,7 @@ int attribute_hidden R_IoBufferPutc(int c, IoBuffer *iob)
 {
     if (iob->write_offset == IOBSIZE)
 	NextWriteBufferListItem(iob);
-    *(iob->write_ptr)++ = (char) c;
+    *(iob->write_ptr)++ = char( c);
     iob->write_offset++;
     return 0;/*not used*/
 }
@@ -194,14 +210,14 @@ int attribute_hidden R_TextBufferInit(TextBuffer *txtb, SEXP text)
 	l = 0;
 	for (i = 0; i < n; i++) {
 	    if (STRING_ELT(text, i) != R_NilValue) {
-		k = (int) strlen(translateChar(STRING_ELT(text, i)));
+		k = int( strlen(translateChar(STRING_ELT(text, i))));
 		if (k > l)
 		    l = k;
 	    }
 	}
 	vmaxset(vmax);
 	txtb->vmax = vmax;
-	txtb->buf = (unsigned char *)R_alloc(l+2, sizeof(char)); /* '\n' and '\0' */
+	txtb->buf = static_cast<unsigned char *>(CXXR_alloc(l+2, sizeof(char))); /* '\n' and '\0' */
 	txtb->bufp = txtb->buf;
 	txtb->text = text;
 	txtb->ntext = n;

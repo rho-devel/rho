@@ -31,6 +31,7 @@ m4_define([R_VERSION],
                        [\([0-9.]*\)\(\w\|\W\)*],
                        [\1]))
 AC_INIT([R],[R_VERSION],[http://bugs.r-project.org],[R],[http://www.r-project.org])
+AC_USE_SYSTEM_EXTENSIONS
 AC_CONFIG_SRCDIR([src/include/Defn.h])
 AC_CONFIG_AUX_DIR([tools])
 
@@ -192,6 +193,19 @@ AC_SUBST([rsharedir])
 config_opts="${ac_configure_args}"
 AC_SUBST(config_opts)
 
+### ** CXXR Optional features.
+## Allow the user to specify support for memory profiling.
+AC_ARG_ENABLE([provenance-tracking],
+[AS_HELP_STRING([--enable-provenance-tracking],[enable CXXR provenance tracking facilities @<:@no@:>@])],
+[if test "${enableval}" = no; then
+  want_provenance_tracking=no
+elif test "${enableval}" = yes; then
+  want_provenance_tracking=yes
+else
+  want_provenance_tracking=no
+fi],
+[want_provenance_tracking=no])
+
 ### ** Optional features.
 
 ## Allow the user to specify support for R profiling.
@@ -331,6 +345,19 @@ AC_SUBST(LTO)
 AC_SUBST(LTOALL)
 AM_CONDITIONAL(BUILD_LTO, [test "x${want_lto}" != xno])
 
+### CXXR Requires Boost of at least a given version,
+### including the boost::regex and boost::serialization libraries
+
+AX_BOOST_BASE([1.53.0],
+	      [],
+              [AC_MSG_ERROR([CXXR requires boost, which was not found.])]
+             )
+AX_BOOST_REGEX
+AX_BOOST_SERIALIZATION
+if test -n "$BOOST_LDFLAGS"; then
+    BOOST_LD_LIBRARY_PATH=`echo $BOOST_LDFLAGS | sed -e 's/^-L//'`
+fi
+AC_SUBST(BOOST_LD_LIBRARY_PATH)
 
 ### ** Optional packages.
 
@@ -599,6 +626,7 @@ R_PROG_BROWSER
 R_PROG_PDFVIEWER
 ## Noweb
 AC_PATH_PROG(NOTANGLE, notangle, false)
+AM_CONDITIONAL(HAVE_NOTANGLE, "${NOTANGLE}" != "false")
 ## javareconf needs this
 AC_PATH_PROG(REALPATH, realpath, false)
 
@@ -895,9 +923,9 @@ R_PROG_F77_CC_COMPAT_COMPLEX
 AM_CONDITIONAL(COMPILE_FORTRAN_DOUBLE_COMPLEX,
                [test "x${HAVE_FORTRAN_DOUBLE_COMPLEX}" != x])
 
-AC_LANG_PUSH(Fortran 77)
-AC_OPENMP
-AC_LANG_POP(Fortran 77)
+#AC_LANG_PUSH(Fortran 77)
+#AC_OPENMP
+#AC_LANG_POP(Fortran 77)
 
 
 ### *** C++ compiler.
@@ -1974,9 +2002,13 @@ AC_SEARCH_LIBS(gethostbyname, [nsl socket])
 AC_SEARCH_LIBS(xdr_string, [nsl tirpc])
 R_FUNC___SETFPUCW
 R_FUNC_CALLOC
-if test "${ac_cv_have_decl_isfinite}" = "yes"; then
-R_FUNC_ISFINITE
-fi
+
+## isfinite() is in territory where C++98 clashes with C99,
+## so is not used in CXXR.
+## if test "${ac_cv_have_decl_isfinite}" = "yes"; then
+## R_FUNC_ISFINITE
+## fi
+
 ## check accuracy of log1p
 R_FUNC_LOG1P
 R_FUNC_FTELL
@@ -2226,6 +2258,11 @@ R_SYS_POSIX_LEAPSECONDS
 
 ## stat times
 gl_STAT_TIME
+
+## CXXR provenance tracking.
+if test "${want_provenance_tracking}" = yes; then
+  AC_DEFINE(PROVENANCE_TRACKING, 1, [Define this to enable CXXR provenance tracking.])
+fi
  
 ## R profiling.
 if test "${want_R_profiling}" = yes; then
@@ -2244,12 +2281,6 @@ fi
 ## Large-file-support
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
-
-## Valgrind instrumentation
-if test ${valgrind_level} -eq 0; then
-  AC_DEFINE(NVALGRIND, 1, [Define to disable Valgrind instrumentation])
-fi
-AC_DEFINE_UNQUOTED(VALGRIND_LEVEL, ${valgrind_level}, [Define as 1 or 2 to specify levels of Valgrind instrumentation])
 
 ## KERN_USRSTACK support (BSD, Darwin, ...)
 R_KERN_USRSTACK
@@ -2326,7 +2357,7 @@ AC_PROG_FC()
 AC_LANG_PUSH(Fortran)
 AC_FC_SRCEXT(f90, [dummy=1], [dummy=0])
 AC_FC_SRCEXT(f95, [dummy=1], [dummy=0])
-AC_OPENMP
+#AC_OPENMP
 AC_LANG_POP()
 if test -z "${SHLIB_FCLD}"; then
   shlib_fcld_was_given=no
@@ -2602,6 +2633,8 @@ AC_CONFIG_FILES(
   src/include/Makefile
   src/include/Rmath.h0
   src/include/R_ext/Makefile
+  src/include/CXXR/Makefile
+  src/include/boost/serialization/Makefile
   src/library/Recommended/Makefile
   src/library/Makefile
   src/library/base/DESCRIPTION
@@ -2664,6 +2697,8 @@ AC_CONFIG_FILES(
   src/scripts/rtags
   src/unix/Makefile
   tests/Makefile
+  tests/CXXR/Makefile
+  tests/CXXR2/Makefile
   tests/Embedding/Makefile
   tests/Examples/Makefile
   tools/Makefile
@@ -2747,6 +2782,7 @@ if test "${r_cv_cairo_works}" = yes; then
   R_SH_VAR_ADD(r_capabilities, [cairo], [, ])
 fi
 r_options=
+cxxr_options=
 if test "${want_R_framework}" = yes; then
   R_SH_VAR_ADD(r_options, [framework], [, ])
 elif test "${want_R_shlib}" = yes; then
@@ -2776,9 +2812,13 @@ if test "${want_prebuilt_html}" = yes; then
   R_SH_VAR_ADD(r_options, [static HTML], [, ])
 fi
 
+if test "${want_provenance_tracking}" = yes; then
+  R_SH_VAR_ADD(cxxr_options, [Provenance Tracking], [, ])
+fi
+
 AC_MSG_RESULT(
 [
-R is now configured for ${host}
+CXXR is now configured for ${host}
 
   Source directory:          ${srcdir}
   Installation directory:    ${prefix}
@@ -2793,7 +2833,8 @@ R is now configured for ${host}
   Interfaces supported:      ${r_interfaces}
   External libraries:        ${r_external_libs}
   Additional capabilities:   ${r_capabilities}
-  Options enabled:           ${r_options}
+  CR Options enabled:        ${r_options}
+  CXXR Options enabled:      ${cxxr_options}
 
   Recommended packages:      ${use_recommended_packages} 
 ])

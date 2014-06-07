@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2000-2013   The R Core Team.
@@ -22,6 +38,11 @@
 
 /* the visible part of the connections */
 #include <R_ext/Connections.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* NB: this is a private header, and not installed.  The internals of
        connections are private and subject to change without notice.
@@ -63,7 +84,7 @@ int Rconn_printf(Rconnection con, const char *format, ...);
 Rconnection getConnection(int n);
 Rconnection getConnection_no_err(int n);
 Rboolean switch_stdout(int icon, int closeOnExit);
-void init_con(Rconnection new, const char *description, int enc,
+void init_con(Rconnection newconn, const char *description, int enc,
 	      const char * const mode);
 Rconnection R_newurl(const char *description, const char * const mode);
 Rconnection R_newsock(const char *host, int port, int server, const char * const mode, int timeout);
@@ -78,5 +99,10 @@ int Rsockselect(int nsock, int *insockfd, int *ready, int *write, double timeout
 
 #define set_iconv Rf_set_iconv
 void set_iconv(Rconnection con);
+
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* R_CONNECTIONS_H_ */
 

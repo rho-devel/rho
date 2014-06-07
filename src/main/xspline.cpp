@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  * Source code from Xfig 3.2.4 modified to work with arrays of doubles
  * instead linked lists of F_points and to remove some globals(!)
@@ -60,15 +76,15 @@ add_point(double x, double y, pGEDevDesc dd)
 	    error(_("add_point - reached MAXNUMPTS (%d)"),tmp_n);
 	}
 	if (max_points == 0) {
-	    tmp_px = (double *) R_alloc(tmp_n, sizeof(double));
-	    tmp_py = (double *) R_alloc(tmp_n, sizeof(double));
+	    tmp_px = static_cast<double *>( CXXR_alloc(tmp_n, sizeof(double)));
+	    tmp_py = static_cast<double *>( CXXR_alloc(tmp_n, sizeof(double)));
 	} else {
-	    tmp_px = (double *) S_realloc((char *) xpoints,
-					  tmp_n, max_points,
-					  sizeof(double));
-	    tmp_py = (double *) S_realloc((char *) ypoints,
-					  tmp_n, max_points,
-					  sizeof(double));
+	    tmp_px = reinterpret_cast<double *>( S_realloc(reinterpret_cast<char *>( xpoints),
+							  tmp_n, max_points,
+							  sizeof(double)));
+	    tmp_py = reinterpret_cast<double *>( S_realloc(reinterpret_cast<char *>( ypoints),
+							  tmp_n, max_points,
+							  sizeof(double)));
 	}
 	if (tmp_px == NULL || tmp_py == NULL) {
 	    error(_("insufficient memory to allocate point array"));
@@ -328,7 +344,7 @@ step_computing(int k,
   number_of_steps = sqrt(start_to_end_dist)/2;
 
   /* more steps if the curve is high */
-  number_of_steps += (int)((1 + angle_cos)*10);
+  number_of_steps += int((1 + angle_cos)*10);
 
   if (number_of_steps == 0)
     step = 1;

@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -24,9 +40,13 @@
 #include <config.h>
 #endif
 
-#define R_USE_SIGNALS 1
 #include <Defn.h>
 #include <Internal.h>
+#include "basedecl.h"
+#include "CXXR/ClosureContext.hpp"
+#include "CXXR/DottedArgs.hpp"
+
+using namespace CXXR;
 
 #define NIL -1
 #define ARGUSED(x) LEVELS(x)
@@ -85,13 +105,13 @@ static hlen scatter(unsigned int key, HashData *d)
 static hlen lhash(SEXP x, R_xlen_t indx, HashData *d)
 {
     if (LOGICAL(x)[indx] == NA_LOGICAL) return 2U;
-    return (hlen) LOGICAL(x)[indx];
+    return hlen( LOGICAL(x)[indx]);
 }
 
 static hlen ihash(SEXP x, R_xlen_t indx, HashData *d)
 {
     if (INTEGER(x)[indx] == NA_INTEGER) return 0;
-    return scatter((unsigned int) (INTEGER(x)[indx]), d);
+    return scatter(static_cast<unsigned int>( (INTEGER(x)[indx])), d);
 }
 
 /* We use unions here because Solaris gcc -O2 has trouble with
@@ -152,10 +172,10 @@ static hlen chash(SEXP x, R_xlen_t indx, HashData *d)
  * we do (upper ^ lower) */
 static hlen cshash(SEXP x, R_xlen_t indx, HashData *d)
 {
-    intptr_t z = (intptr_t) STRING_ELT(x, indx);
-    unsigned int z1 = (unsigned int)(z & 0xffffffff), z2 = 0;
+    intptr_t z = intptr_t( STRING_ELT(x, indx));
+    unsigned int z1 = static_cast<unsigned int>((z & 0xffffffff)), z2 = 0;
 #if SIZEOF_LONG == 8
-    z2 = (unsigned int)(z/0x100000000L);
+    z2 = static_cast<unsigned int>(z/0x100000000L);
 #endif
     return scatter(z1 ^ z2, d);
 }
@@ -170,7 +190,7 @@ static hlen shash(SEXP x, R_xlen_t indx, HashData *d)
     p = translateCharUTF8(STRING_ELT(x, indx));
     k = 0;
     while (*p++)
-	k = 11 * k + (unsigned int) *p; /* was 8 but 11 isn't a power of 2 */
+	k = 11 * k + static_cast<unsigned int>( *p); /* was 8 but 11 isn't a power of 2 */
     vmaxset(vmax); /* discard any memory used by translateChar */
     return scatter(k, d);
 }
@@ -231,7 +251,7 @@ static int sequal(SEXP x, R_xlen_t i, SEXP y, R_xlen_t j)
 
 static hlen rawhash(SEXP x, R_xlen_t indx, HashData *d)
 {
-    return (hlen) RAW(x)[indx];
+    return hlen( RAW(x)[indx]);
 }
 
 static int rawequal(SEXP x, R_xlen_t i, SEXP y, R_xlen_t j)
@@ -246,7 +266,7 @@ static hlen vhash(SEXP x, R_xlen_t indx, HashData *d)
     unsigned int key;
     SEXP _this = VECTOR_ELT(x, indx);
 
-    key = OBJECT(_this) + 2*TYPEOF(_this) + 100U*(unsigned int) length(_this);
+    key = OBJECT(_this) + 2*TYPEOF(_this) + 100U*static_cast<unsigned int>( length(_this));
     /* maybe we should also look at attributes, but that slows us down */
     switch (TYPEOF(_this)) {
     case LGLSXP:
@@ -282,7 +302,7 @@ static hlen vhash(SEXP x, R_xlen_t indx, HashData *d)
 	break;
     case RAWSXP:
 	for(i = 0; i < LENGTH(_this); i++) {
-	    key ^= scatter((unsigned int)rawhash(_this, i, d), d);
+	    key ^= scatter(static_cast<unsigned int>(rawhash(_this, i, d)), d);
 	    key *= 97;
 	}
 	break;
@@ -307,7 +327,7 @@ static int vequal(SEXP x, R_xlen_t i, SEXP y, R_xlen_t j)
 /*
   Choose M to be the smallest power of 2
   not less than 2*n and set K = log2(M).
-  Need K >= 1 and hence M >= 2, and 2^M < 2^31-1, hence n <= 2^29.
+  Need K >= 1 and hence M >= 2, and 2^M <= 2^31 -1, hence n <= 2^29.
 
   Dec 2004: modified from 4*n to 2*n, since in the worst case we have
   a 50% full table, and that is still rather efficient -- see
@@ -325,7 +345,7 @@ static void MKsetup(R_xlen_t n, HashData *d, R_xlen_t nmax)
 #endif
 
     if (nmax != NA_INTEGER) n = nmax;
-    size_t n2 = 2U * (size_t) n;
+    size_t n2 = 2U * size_t( n);
     d->M = 2;
     d->K = 1;
     while (d->M < n2) {
@@ -390,14 +410,14 @@ static void HashTableSetup(SEXP x, HashData *d, R_xlen_t nmax)
 	UNIMPLEMENTED_TYPE("HashTableSetup", x);
     }
 #ifdef LONG_VECTOR_SUPPORT
-    d->isLong = IS_LONG_VEC(x);
+    d->isLong = CXXRCONSTRUCT(Rboolean, IS_LONG_VEC(x));
     if (d->isLong) {
-	d->HashTable = allocVector(REALSXP, (R_xlen_t) d->M);
+	d->HashTable = allocVector(REALSXP, R_xlen_t( d->M));
 	for (R_xlen_t i = 0; i < d->M; i++) REAL(d->HashTable)[i] = NIL;
     } else 
 #endif
     {
-	d->HashTable = allocVector(INTSXP, (R_xlen_t) d->M);
+	d->HashTable = allocVector(INTSXP, R_xlen_t( d->M));
 	for (R_xlen_t i = 0; i < d->M; i++) INTEGER(d->HashTable)[i] = NIL;
     }
 }
@@ -413,12 +433,12 @@ static int isDuplicated(SEXP x, R_xlen_t indx, HashData *d)
 	double *h = REAL(d->HashTable);
 	hlen i = d->hash(x, indx, d);
 	while (h[i] != NIL) {
-	    if (d->equal(x, (R_xlen_t) h[i], x, indx))
+	    if (d->equal(x, R_xlen_t( h[i]), x, indx))
 		return h[i] >= 0 ? 1 : 0;
 	    i = (i + 1) % d->M;
 	}
 	if (d->nmax-- < 0) error("hash table is full");
-	h[i] = (double) indx;
+	h[i] = double( indx);
     } else 
 #endif
     {
@@ -430,7 +450,7 @@ static int isDuplicated(SEXP x, R_xlen_t indx, HashData *d)
 	    i = (i + 1) % d->M;
 	}
 	if (d->nmax-- < 0) error("hash table is full");
-	h[i] = (int) indx;
+	h[i] = int( indx);
     }
     return 0;
 }
@@ -442,7 +462,7 @@ static void removeEntry(SEXP table, SEXP x, R_xlen_t indx, HashData *d)
 	double *h = REAL(d->HashTable);
 	hlen i = d->hash(x, indx, d);
 	while (h[i] >= 0) {
-	    if (d->equal(table, (R_xlen_t) h[i], x, indx)) {
+	    if (d->equal(table, R_xlen_t( h[i]), x, indx)) {
 		h[i] = NA_INTEGER;  /* < 0, only index values are inserted */
 		return;
 	    }
@@ -474,9 +494,6 @@ static void removeEntry(SEXP table, SEXP x, R_xlen_t indx, HashData *d)
 	    }                                                   \
     	    if(ENC_KNOWN(STRING_ELT(x, i))) {                   \
 		data.useUTF8 = TRUE;                            \
-	    }							\
-	    if(!IS_CACHED(STRING_ELT(x, i))) {                  \
-		data.useCache = FALSE; break;                   \
 	    }							\
 	}							\
     }
@@ -670,7 +687,7 @@ SEXP attribute_hidden do_duplicated(SEXP call, SEXP op, SEXP args, SEXP env)
     if (fromLast == NA_LOGICAL)
 	error(_("'fromLast' must be TRUE or FALSE"));
 
-    Rboolean fL = (Rboolean) fromLast;
+    Rboolean fL = Rboolean( fromLast);
 
     /* handle zero length vectors, and NULL */
     if ((n = xlength(x)) == 0)
@@ -868,10 +885,6 @@ SEXP match5(SEXP itable, SEXP ix, int nmatch, SEXP incomp, SEXP env)
 	    if(ENC_KNOWN(s)) {
 		useUTF8 = TRUE;
 	    }
-            if(!IS_CACHED(s)) {
-		useCache = FALSE;
-		break;
-	    }
         }
 	if(!useBytes || useCache) {
 	    for(int i = 0; i < length(table); i++) {
@@ -883,10 +896,6 @@ SEXP match5(SEXP itable, SEXP ix, int nmatch, SEXP incomp, SEXP env)
 		}
 		if(ENC_KNOWN(s)) {
 		    useUTF8 = TRUE;
-		}
-		if(!IS_CACHED(s)) {
-		    useCache = FALSE;
-		    break;
 		}
             }
         }
@@ -964,13 +973,13 @@ SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
     dups_ok = asLogical(CADDDR(args));
     if (dups_ok == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "duplicates.ok");
-    no_dups = !dups_ok;
+    no_dups = CXXRCONSTRUCT(Rboolean, !dups_ok);
 
     if (!isString(input) || !isString(target))
 	error(_("argument is not of mode character"));
 
     if(no_dups) {
-	used = (int *) R_alloc((size_t) n_target, sizeof(int));
+	used = static_cast<int *>( CXXR_alloc(size_t( n_target), sizeof(int)));
 	for (int j = 0; j < n_target; j++) used[j] = 0;
     }
 
@@ -995,8 +1004,8 @@ SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
 
-    in = (const char **) R_alloc((size_t) n_input, sizeof(char *));
-    tar = (const char **) R_alloc((size_t) n_target, sizeof(char *));
+    in = static_cast<const char **>( CXXR_alloc(size_t( n_input), sizeof(char *)));
+    tar = static_cast<const char **>( CXXR_alloc(size_t( n_target), sizeof(char *)));
     PROTECT(ans = allocVector(INTSXP, n_input));
     ians = INTEGER(ans);
     if(useBytes) {
@@ -1198,8 +1207,6 @@ SEXP attribute_hidden do_charmatch(SEXP call, SEXP op, SEXP args, SEXP env)
 /* formal arguments of functions.  The returned value */
 /* is a list with all components named. */
 
-#define ARGUSED(x) LEVELS(x)
-
 static SEXP StripUnmatched(SEXP s)
 {
     if (s == R_NilValue) return s;
@@ -1219,10 +1226,16 @@ static SEXP StripUnmatched(SEXP s)
 static SEXP ExpandDots(SEXP s, int expdots)
 {
     SEXP r;
+    // The call to ConsCell::convert below will allocate memory:
+    GCStackRoot<> sr(s);
     if (s == R_NilValue)
 	return s;
     if (TYPEOF(CAR(s)) == DOTSXP ) {
-	SET_TYPEOF(CAR(s), LISTSXP);	/* a safe mutation */
+	// Convert CAR(s) to a PairList:
+	{
+	    ConsCell* cc = static_cast<ConsCell*>(CAR(s));
+	    SETCAR(s, ConsCell::convert<PairList>(cc));
+	}
 	if (expdots) {
 	    r = CAR(s);
 	    while (CDR(r) != R_NilValue ) {
@@ -1243,7 +1256,6 @@ static SEXP subDots(SEXP rho)
 {
     SEXP rval, dots, a, b, t;
     int len,i;
-    char tbuf[10];
 
     dots = findVar(R_DotsSymbol, rho);
 
@@ -1256,13 +1268,12 @@ static SEXP subDots(SEXP rho)
     len = length(dots);
     PROTECT(rval=allocList(len));
     for(a = dots, b = rval, i = 1; i <= len; a = CDR(a), b = CDR(b), i++) {
-	snprintf(tbuf, 10, "..%d",i);
 	SET_TAG(b, TAG(a));
 	t = CAR(a);
 	while (TYPEOF(t) == PROMSXP)
 	    t = PREXPR(t);
 	if( isSymbol(t) || isLanguage(t) )
-	    SETCAR(b, mkSYMSXP(mkChar(tbuf), R_UnboundValue));
+	    SETCAR(b, Symbol::obtainDotDotSymbol(i));
 	else
 	    SETCAR(b, t);
     }
@@ -1275,7 +1286,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP formals, actuals, rlist;
     SEXP funcall, f, b, rval, sysp, t1, t2, tail;
-    RCNTXT *cptr;
+    ClosureContext *cptr;
     int expdots;
 
     checkArity(op,args);
@@ -1289,23 +1300,20 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("invalid '%s' argument"), "call");
 
     /* Get the function definition */
-    sysp = R_GlobalContext->sysparent;
+    sysp = ClosureContext::innermost()->callEnvironment();
 
     if (TYPEOF(CAR(args)) == NILSXP) {
 	/* Get the env that the function containing */
 	/* matchcall was called from. */
-	cptr = R_GlobalContext;
-	while (cptr != NULL) {
-	    if (cptr->callflag & CTXT_FUNCTION && cptr->cloenv == sysp)
-		break;
-	    cptr = cptr->nextcontext;
-	}
+	cptr = ClosureContext::innermost();
+	while (cptr && cptr->workingEnvironment() != sysp)
+	    cptr = ClosureContext::innermost(cptr->nextOut());
 	if ( cptr == NULL ) {
 	    sysp = R_GlobalEnv;
 	    errorcall(R_NilValue,
 		      "match.call() was called from outside a function");
 	} else
-	    sysp = cptr->sysparent;
+	    sysp = cptr->callEnvironment();
 	if (cptr != NULL)
 	    /* Changed to use the function from which match.call was
 	       called as recorded in the context.  This change is
@@ -1332,7 +1340,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	       context only if the call was not supplied explicitly.
 	       The documentation should also be changed to be
 	       consistent with this behavior.  LT */
-	    PROTECT(b = duplicate(cptr->callfun));
+	    PROTECT(b = cptr->function()->clone());
 	else if ( TYPEOF(CAR(funcall)) == SYMSXP )
 	    PROTECT(b = findFun(CAR(funcall), sysp));
 	else
@@ -1422,7 +1430,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 
     rlist = StripUnmatched(rlist);
 
-    PROTECT(rval = allocSExp(LANGSXP));
+    PROTECT(rval = CXXR_NEW(CXXR::Expression));
     SETCAR(rval, duplicate(CAR(funcall)));
     SETCDR(rval, rlist);
     UNPROTECT(4);
@@ -1435,7 +1443,6 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 #ifdef _AIX  /*some people just have to be different: is this still needed? */
 #    include <memory.h>
 #endif
-
 
 static SEXP
 rowsum(SEXP x, SEXP g, SEXP uniqueg, SEXP snarm, SEXP rn)
@@ -1494,8 +1501,9 @@ rowsum(SEXP x, SEXP g, SEXP uniqueg, SEXP snarm, SEXP rn)
 	}
 	break;
     default:
-	error("non-numeric matrix in rowsum(): this should not happen");
+	error(_("non-numeric matrix in rowsum(): this should not happen"));
     }
+
     if (TYPEOF(rn) != STRSXP) error("row names are not character");
     SEXP dn = allocVector(VECSXP, 2), dn2, dn3;
     setAttrib(ans, R_DimNamesSymbol, dn);
@@ -1568,6 +1576,7 @@ rowsum_df(SEXP x, SEXP g, SEXP uniqueg, SEXP snarm, SEXP rn)
 	}
     }
     namesgets(ans, getAttrib(x, R_NamesSymbol));
+
     if (TYPEOF(rn) != STRSXP) error("row names are not character");
     setAttrib(ans, R_RowNamesSymbol, rn);
     classgets(ans, mkString("data.frame"));
@@ -1645,21 +1654,21 @@ SEXP attribute_hidden do_makeunique(SEXP call, SEXP op, SEXP args, SEXP env)
     vmax = vmaxget();
     for(i = 0; i < n; i++) {
 	SET_STRING_ELT(ans, i, STRING_ELT(names, i));
-	len = (int) strlen(translateChar(STRING_ELT(names, i)));
+	len = int (strlen(translateChar(STRING_ELT(names, i))));
 	if(len > maxlen) maxlen = len;
 	vmaxset(vmax);
     }
     if(n > 1) {
 	/* +2 for terminator and rounding error */
-	char buf[maxlen + (int) strlen(csep)
-		 + (int) (log((double)n)/log(10.0)) + 2];
+	char buf[maxlen + int( strlen(csep))
+                 + int (log(double(n))/log(10.0)) + 2];
 	if(n < 10000) {
-	    R_CheckStack2((size_t)n * sizeof(int));
-	    cnts = (int *) alloca(((size_t) n) * sizeof(int));
+	    R_CheckStack2(size_t(n) * sizeof(int));
+	    cnts = static_cast<int *>( alloca((size_t( n)) * sizeof(int)));
 	} else {
 	    /* This is going to be slow so use expensive allocation
 	       that will be recovered if interrupted. */
-	    cnts = (int *) R_alloc((size_t) n,  sizeof(int));
+	    cnts = static_cast<int *>( CXXR_alloc(size_t( n),  sizeof(int)));
 	}
 	for(i = 0; i < n; i++) cnts[i] = 1;
 	data.nomatch = 0;
@@ -1704,7 +1713,7 @@ static void HashTableSetup1(SEXP x, HashData *d)
     d->isLong = FALSE;
 #endif
     MKsetup(LENGTH(x), d, NA_INTEGER);
-    d->HashTable = allocVector(INTSXP, (R_xlen_t) d->M);
+    d->HashTable = allocVector(INTSXP, R_xlen_t( d->M));
     for (R_xlen_t i = 0; i < d->M; i++) INTEGER(d->HashTable)[i] = NIL;
 }
 
@@ -1716,7 +1725,7 @@ SEXP csduplicated(SEXP x)
     HashData data;
 
     if(TYPEOF(x) != STRSXP)
-	error("C function 'csduplicated' not called on a STRSXP");
+	error(_("C function 'csduplicated' not called on a STRSXP"));
     n = LENGTH(x);
     HashTableSetup1(x, &data);
     PROTECT(data.HashTable);
@@ -1767,7 +1776,7 @@ SEXP attribute_hidden do_sample2(SEXP call, SEXP op, SEXP args, SEXP env)
 	PROTECT(data.HashTable);
 	for (int i = 0; i < k; i++)
 	    for(int j = 0; j < 100; j++) { // average < 2
-		iy[i] = (int)(dn * unif_rand() + 1);
+		iy[i] = int(dn * unif_rand() + 1);
 		if(!isDuplicated(ans, i, &data)) break;
 	    }
     }

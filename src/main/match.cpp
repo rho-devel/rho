@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -38,29 +54,35 @@
  *
  */
 
+#define R_NO_REMAP
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
 #include "Defn.h"
+#include "CXXR/ArgMatcher.hpp"
+#include "CXXR/DottedArgs.hpp"
+#include "CXXR/FunctionContext.hpp"
 
+using namespace CXXR;
 
 /* used in subscript.c and subassign.c */
-Rboolean NonNullStringMatch(SEXP s, SEXP t)
+Rboolean Rf_NonNullStringMatch(SEXP s, SEXP t)
 {
     /* "" or NA string matches nothing */
     if (s == NA_STRING || t == NA_STRING) return FALSE;
-    if (CHAR(s)[0] && CHAR(t)[0] && Seql(s, t))
+    if (CHAR(s)[0] && CHAR(t)[0] && Rf_Seql(s, t))
 	return TRUE;
     else
 	return FALSE;
 }
 
 /* currently unused outside this file */
-Rboolean psmatch(const char *f, const char *t, Rboolean exact)
+Rboolean Rf_psmatch(const char *f, const char *t, Rboolean exact)
 {
     if (exact)
-	return (Rboolean)!strcmp(f, t);
+	return Rboolean(!strcmp(f, t));
     /* else */
     while (*t) {
 	if (*t != *f)   return FALSE;
@@ -74,10 +96,11 @@ Rboolean psmatch(const char *f, const char *t, Rboolean exact)
 /* Matching formals and arguments */
 
 /* Are these are always native charset? */
-Rboolean pmatch(SEXP formal, SEXP tag, Rboolean exact)
+Rboolean Rf_pmatch(SEXP formal, SEXP tag, Rboolean exact)
 {
     const char *f, *t;
     const void *vmax = vmaxget();
+    Rboolean res;  // In CXXR this must be declared outside the span of the gotos
     switch (TYPEOF(formal)) {
     case SYMSXP:
 	f = CHAR(PRINTNAME(formal));
@@ -86,7 +109,7 @@ Rboolean pmatch(SEXP formal, SEXP tag, Rboolean exact)
 	f = CHAR(formal);
 	break;
     case STRSXP:
-	f = translateChar(STRING_ELT(formal, 0));
+	f = Rf_translateChar(STRING_ELT(formal, 0));
 	break;
     default:
 	goto fail;
@@ -99,20 +122,39 @@ Rboolean pmatch(SEXP formal, SEXP tag, Rboolean exact)
 	t = CHAR(tag);
 	break;
     case STRSXP:
-	t = translateChar(STRING_ELT(tag, 0));
+	t = Rf_translateChar(STRING_ELT(tag, 0));
 	break;
     default:
 	goto fail;
     }
-    Rboolean res = psmatch(f, t, exact);
+    res = Rf_psmatch(f, t, exact);
     vmaxset(vmax);
     return res;
  fail:
-    error(_("invalid partial string match"));
+    Rf_error(_("invalid partial string match"));
     return FALSE;/* for -Wall */
 }
 
-
+void ArgMatcher::unusedArgsError(const SuppliedList& supplied_list)
+{
+    GCStackRoot<PairList> unused_list;
+    // Produce a PairList of the unused args:
+    for (SuppliedList::const_reverse_iterator rit = supplied_list.rbegin();
+	 rit != supplied_list.rend(); ++rit) {
+	const SuppliedData& supplied_data = *rit;
+	RObject* value = supplied_data.value;
+	if (value->sexptype() == PROMSXP)
+	    value = const_cast<RObject*>(PREXPR(value));
+	unused_list = PairList::cons(value, unused_list, supplied_data.tag);
+    }
+    // Prepare error message:
+    GCStackRoot<StringVector>
+	argstrv(static_cast<StringVector*>(Rf_deparse1line(unused_list, FALSE)));
+    // '+ 4' is to remove 'list' from 'list(badTag1, ...' :
+    const char* errdetails = (*argstrv)[0]->c_str() + 4;
+    Rf_error(_("unused argument(s) %s"), errdetails);
+}		 
+	
 /* Destructively Extract A Named List Element. */
 /* Returns the first partially matching tag found. */
 /* Pattern is a C string. */
@@ -122,7 +164,7 @@ static SEXP matchPar_int(const char *tag, SEXP *list, Rboolean exact)
     if (*list == R_NilValue)
 	return R_MissingArg;
     else if (TAG(*list) != R_NilValue &&
-	     psmatch(tag, CHAR(PRINTNAME(TAG(*list))), exact)) {
+	     Rf_psmatch(tag, CHAR(PRINTNAME(TAG(*list))), exact)) {
 	SEXP s = *list;
 	*list = CDR(*list);
 	return CAR(s);
@@ -132,7 +174,7 @@ static SEXP matchPar_int(const char *tag, SEXP *list, Rboolean exact)
 	SEXP next = CDR(*list);
 	while (next != R_NilValue) {
 	    if (TAG(next) != R_NilValue &&
-		psmatch(tag, CHAR(PRINTNAME(TAG(next))), exact)) {
+		Rf_psmatch(tag, CHAR(PRINTNAME(TAG(next))), exact)) {
 		SETCDR(last, CDR(next));
 		return CAR(next);
 	    }
@@ -167,7 +209,7 @@ SEXP attribute_hidden matchArg(SEXP tag, SEXP * list)
 /* Returns the first exactly matching tag found. */
 /* Pattern is a symbol. */
 
-SEXP attribute_hidden matchArgExact(SEXP tag, SEXP * list)
+SEXP attribute_hidden Rf_matchArgExact(SEXP tag, SEXP * list)
 {
       return matchPar_int(CHAR(PRINTNAME(tag)), list, TRUE);
 }
@@ -176,15 +218,11 @@ SEXP attribute_hidden matchArgExact(SEXP tag, SEXP * list)
 /* Match the supplied arguments with the formals and */
 /* return the matched arguments in actuals. */
 
-#define ARGUSED(x) LEVELS(x)
-#define SET_ARGUSED(x,v) SETLEVELS(x,v)
-
-
 /* We need to leave 'supplied' unchanged in case we call UseMethod */
 /* MULTIPLE_MATCHES was added by RI in Jan 2005 but never activated:
    code in R-2-8-branch */
 
-SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
+SEXP attribute_hidden Rf_matchArgs(SEXP formals, SEXP supplied, SEXP call)
 {
     int i, seendots, arg_i = 0;
     SEXP f, a, b, dots, actuals;
@@ -196,8 +234,8 @@ SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
     }
     /* We use fargused instead of ARGUSED/SET_ARGUSED on elements of
        formals to avoid modification of the formals SEXPs.  A gc can
-       cause matchArgs to be called from finalizer code, resulting in
-       another matchArgs call with the same formals.  In R-2.10.x, this
+       cause Rf_matchArgs to be called from finalizer code, resulting in
+       another Rf_matchArgs call with the same formals.  In R-2.10.x, this
        corrupted the ARGUSED data of the formals and resulted in an
        incorrect "formal argument 'foo' matched by multiple actual
        arguments" error.
@@ -205,7 +243,7 @@ SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
     int fargused[arg_i];
     memset(fargused, 0, sizeof(fargused));
 
-    for(b = supplied; b != R_NilValue; b = CDR(b)) SET_ARGUSED(b, 0);
+    for(b = supplied; b != R_NilValue; b=CDR(b)) SET_ARGUSED(b, 0);
 
     PROTECT(actuals);
 
@@ -220,12 +258,12 @@ SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
 	if (TAG(f) != R_DotsSymbol) {
 	    i = 1;
 	    for (b = supplied; b != R_NilValue; b = CDR(b)) {
-		if (TAG(b) != R_NilValue && pmatch(TAG(f), TAG(b), 1)) {
+		if (TAG(b) != R_NilValue && Rf_pmatch(TAG(f), TAG(b), CXXRTRUE)) {
 		    if (fargused[arg_i] == 2)
-			error(_("formal argument \"%s\" matched by multiple actual arguments"),
+			Rf_error(_("formal argument \"%s\" matched by multiple actual arguments"),
 			      CHAR(PRINTNAME(TAG(f))));
 		    if (ARGUSED(b) == 2)
-			error(_("argument %d matches multiple formal arguments"), i);
+			Rf_error(_("argument %d matches multiple formal arguments"), i);
 		    SETCAR(a, CAR(b));
 		    if(CAR(b) != R_MissingArg) SET_MISSING(a, 0);
 		    SET_ARGUSED(b, 2);
@@ -258,14 +296,14 @@ SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
 		i = 1;
 		for (b = supplied; b != R_NilValue; b = CDR(b)) {
 		    if (ARGUSED(b) != 2 && TAG(b) != R_NilValue &&
-			pmatch(TAG(f), TAG(b), seendots)) {
+			Rf_pmatch(TAG(f), TAG(b), CXXRCONSTRUCT(Rboolean, seendots))) {
 			if (ARGUSED(b))
-			    error(_("argument %d matches multiple formal arguments"), i);
+			    Rf_error(_("argument %d matches multiple formal arguments"), i);
 			if (fargused[arg_i] == 1)
-			    error(_("formal argument \"%s\" matched by multiple actual arguments"),
+			    Rf_error(_("formal argument \"%s\" matched by multiple actual arguments"),
 				  CHAR(PRINTNAME(TAG(f))));
-			if (R_warn_partial_match_args) {
-			    warningcall(call,
+			if (ArgMatcher::warnOnPartialMatch()) {
+			    Rf_warningcall(call,
 					_("partial argument match of '%s' to '%s'"),
 					CHAR(PRINTNAME(TAG(b))),
 					CHAR(PRINTNAME(TAG(f))) );
@@ -329,17 +367,17 @@ SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
 	/* Gobble up all unused actuals */
 	SET_MISSING(dots, 0);
 	i = 0;
-	for(a = supplied; a != R_NilValue ; a = CDR(a)) if(!ARGUSED(a)) i++;
+	for(a = supplied; a != R_NilValue ; a = CDR(a) ) if(!ARGUSED(a)) i++;
 
 	if (i) {
-	    a = allocList(i);
-	    SET_TYPEOF(a, DOTSXP);
-	    f = a;
-	    for(b = supplied; b != R_NilValue; b = CDR(b))
+	    GCStackRoot<PairList> tl(PairList::make(i - 1));
+	    a = CXXR_NEW(DottedArgs(0, tl));
+	    f=a;
+	    for(b=supplied;b!=R_NilValue;b=CDR(b))
 		if(!ARGUSED(b)) {
 		    SETCAR(f, CAR(b));
 		    SET_TAG(f, TAG(b));
-		    f = CDR(f);
+		    f=CDR(f);
 		}
 	    SETCAR(dots, a);
 	}
@@ -361,26 +399,25 @@ SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
 
 	if(last != R_NilValue) {
             /* show bad arguments in call without evaluating them */
-            SEXP unusedForError = R_NilValue, last = R_NilValue;
-
+            SEXP unusedForError = R_NilValue, last = R_NilValue ;
             for(b = unused ; b != R_NilValue ; b = CDR(b)) {
                 SEXP tagB = TAG(b), carB = CAR(b) ;
                 if (TYPEOF(carB) == PROMSXP) carB = PREXPR(carB) ;
                 if (last == R_NilValue) {
                     PROTECT(last = CONS(carB, R_NilValue));
                     SET_TAG(last, tagB);
-                    unusedForError = last;
+                    unusedForError = last ;
                 } else {
                     SETCDR(last, CONS(carB, R_NilValue));
-                    last = CDR(last);
+                    last = CDR(last) ;
                     SET_TAG(last, tagB);
                 }
             }
-	    errorcall(call /* R_GlobalContext->call */,
+	    Rf_errorcall(call /* R_GlobalContext->call */,
 		      ngettext("unused argument %s",
 			       "unused arguments %s",
-			       (unsigned long) length(unusedForError)),
-		      CHAR(STRING_ELT(deparse1line(unusedForError, 0), 0)) + 4);
+			       static_cast<unsigned long>( length(unusedForError))),
+		      CHAR(STRING_ELT(Rf_deparse1line(unusedForError, CXXRFALSE), 0)) + 4);
                       /* '+ 4' is to remove 'list' from 'list(badTag1,...)' */
 	}
     }

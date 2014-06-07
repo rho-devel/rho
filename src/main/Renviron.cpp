@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *   R : A Computer Language for Statistical Data Analysis
  *   Copyright (C) 1997-2012   The R Core Team
@@ -29,17 +45,23 @@
 
 #include <stdlib.h> /* for setenv or putenv */
 #include <Defn.h> /* for PATH_MAX */
+#include <Internal.h>
 #include <Rinterface.h>
 #include <Fileio.h>
 #include <ctype.h>		/* for isspace */
+
+#include <vector>
+
+using namespace std;
 
 /* remove leading and trailing space */
 static char *rmspace(char *s)
 {
     ssize_t i; // to be safe
 
-    for (i = strlen(s) - 1; i >= 0 && isspace((int)s[i]); i--) s[i] = '\0';
-    for (i = 0; isspace((int)s[i]); i++);
+    for (i = ssize_t(strlen(s)) - 1; i >= 0 && isspace(int(s[i])); i--)
+	s[i] = '\0';
+    for (i = 0; isspace(int(s[i])); i++);
     return s + i;
 }
 
@@ -47,7 +69,7 @@ static char *rmspace(char *s)
    return "" on an error condition.
  */
 
-static char *subterm(char *s)
+static CXXRCONST char *subterm(char *s)
 {
     char *p, *q;
 
@@ -65,7 +87,7 @@ static char *subterm(char *s)
     } else q = NULL;
     p = getenv(s);
     if(p && strlen(p)) return p; /* variable was set and non-empty */
-    return q ? subterm(q) : (char *) "";
+    return q ? subterm(q) : CXXRNOCAST(char *) "";
 }
 
 /* skip along until we find an unmatched right brace */
@@ -88,9 +110,11 @@ static char *findRbrace(char *s)
 }
 
 #define BUF_SIZE 10000
-static char *findterm(char *s)
+static CXXRCONST char *findterm(CXXRCONST char *s)
 {
-    char *p, *q, *r2, *ss=s;
+    char *p, *q;
+    const char* ss=s;
+    const char* r2;
     static char ans[BUF_SIZE];
 
     if(!strlen(s)) return "";
@@ -103,9 +127,10 @@ static char *findterm(char *s)
 	if(!q) break;
 	/* copy over leading part */
 	size_t nans = strlen(ans);
-	strncat(ans, s, (size_t) (p - s)); ans[nans + p - s] = '\0';
-	char r[q - p + 2];
-	strncpy(r, p, (size_t) (q - p + 1));
+	strncat(ans, s, size_t (p - s)); ans[nans + p - s] = '\0';
+	vector<char> rv(size_t(q - p + 2));
+	char* r = &rv[0];
+	strncpy(r, p, size_t (q - p + 1));
 	r[q - p + 1] = '\0';
 	r2 = subterm(r);
 	if(strlen(ans) + strlen(r2) < BUF_SIZE) strcat(ans, r2); else return ss;
@@ -116,13 +141,14 @@ static char *findterm(char *s)
     return ans;
 }
 
-static void Putenv(char *a, char *b)
+static void Putenv(char *a, CXXRCONST char *b)
 {
-    char *buf, *value, *p, *q, quote='\0';
+    char *buf, *value, *q, quote='\0';
+    const char *p;
     int inquote = 0;
 
 #ifdef HAVE_SETENV
-    buf = (char *) malloc((strlen(b) + 1) * sizeof(char));
+    buf = static_cast<char *>( malloc((strlen(b) + 1) * sizeof(char)));
     if(!buf) R_Suicide("allocation failure in reading Renviron");
     value = buf;
 #else
@@ -174,7 +200,8 @@ static void Putenv(char *a, char *b)
 static int process_Renviron(const char *filename)
 {
     FILE *fp;
-    char *s, *p, sm[BUF_SIZE], *lhs, *rhs, msg[MSG_SIZE+50];
+    char *s, *p, sm[BUF_SIZE], *lhs, msg[MSG_SIZE+50];
+    const char *rhs;
     int errs = 0;
 
     if (!filename || !(fp = R_fopen(filename, "r"))) return 0;

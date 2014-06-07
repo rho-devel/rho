@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1998-2010    The R Core Team
@@ -25,6 +41,8 @@
 #ifdef  __cplusplus
 /* If the vprintf interface is defined at all in C++ it may only be
    defined in namespace std. */
+/* CXXR comment 2011-07-28: ISO14882:2003 specifies that vprintf() be
+   included in cstdio. */
 # ifdef R_USE_C99_IN_CXX
 #  include <cstdarg>
 #  ifdef __SUNPRO_CC
@@ -38,10 +56,8 @@ extern "C" {
 
 void Rprintf(const char *, ...);
 void REprintf(const char *, ...);
-#if !defined(__cplusplus) || defined R_USE_C99_IN_CXX
 void Rvprintf(const char *, va_list);
 void REvprintf(const char *, va_list);
-#endif
 
 #ifdef  __cplusplus
 }

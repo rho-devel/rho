@@ -1,0 +1,28 @@
+Package: rpart
+Priority: recommended
+Version: 4.1-3
+Date: 2013-09-01
+Authors@R: c(person("Terry", "Therneau", role = "aut",
+	             email = "therneau@mayo.edu"),
+             person("Beth", "Atkinson", role = "aut",	
+	             email = "atkinson@mayo.edu"),
+             person("Brian", "Ripley", role = c("aut", "trl", "cre"),
+                    email = "ripley@stats.ox.ac.uk",
+		    comment = "author of R port"))
+Description: Recursive partitioning and regression trees
+Title: Recursive Partitioning
+Depends: R (>= 2.15.0), graphics, stats, grDevices
+Suggests: survival
+License: GPL-2 | GPL-3
+LazyData: yes
+ByteCompile: yes
+Note: Maintainers are not available to give advice on using a package
+        they did not author.
+Packaged: 2013-09-01 20:36:20 UTC; ripley
+Author: Terry Therneau [aut],
+  Beth Atkinson [aut],
+  Brian Ripley [aut, trl, cre] (author of R port)
+Maintainer: Brian Ripley <ripley@stats.ox.ac.uk>
+NeedsCompilation: yes
+Repository: CRAN
+Date/Publication: 2013-09-02 07:19:15

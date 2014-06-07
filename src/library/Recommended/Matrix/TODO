@@ -1,0 +1,301 @@
+##-*- mode: org -*-
+
+* *Urgent* in some sense ---------------------------------------------------
+** TODO src/CHOLMOD/MatrixOps/cholmod_symmetry.c  is "cool" and fast;
+Definitely should use it for solve(<dgCMatrix>)  {it seems MATLAB does};
+alternatively also is_sym() [in src/cs_utils.c], see below.
+** TODO diagonalMatrix inherits from sparseMatrix, *BUT*
+ "ddiMatrix" does not inherit from "dsparseMatrix", nor does
+ "ldiMatrix" from "lparseMatrix".   Seems an undesirable inconsistency.
+  Try changing
+   setClass("ddiMatrix", contains = c("diagonalMatrix", "dMatrix"))
+  to
+   setClass("ddiMatrix", contains = c("diagonalMatrix", "dsparseMatrix"))
+
+** TODO Look at Paul Bailey's problem -- CHOLMOD error (even seg.fault for him)
+  --> ~/R/MM/Pkg-ex/Matrix/sparseOrderedLogit.R
+** TODO BunchKaufman()'s result is not really useful yet {but it is used on C
+ level e.g. for solve(<dsyMatrix>).   Should define  expand() method or
+ similar, see man/BunchKaufman-methods.Rd and R/dsyMatrix.R (at end).
+** TODO src/cs_utils.c : I think is_sym() [only used in Matrix_cs_to_SEXP()] can be made sped up:
+leave the for loops, as soon as is_lower == is_upper == 0.
+
+* New smallish ideas, relatively urgent for MM -----------------------------
+** DONE generalize new "indMatrix" class, to allow 0 repetitions
+ of some samples, i.e., columns of all 0 s. It's mathematically more
+ natural --> typically will be useful.
+** TODO Investigate the "band changing (and getting) ideas  'band<-' etc,
+  from Jeremy D Silver, per posts to R-devel on Aug.26,2011
+  {MM: ~/R/MM/Pkg-ex/Matrix/bands-Jeremy_Silver-ex.R }
+
+** TODO FIXME(2) and (3) in R/products.R: t(.Call(Csparse_dense_*))
+** TODO cbind2() / rbind2() for sparseMatrices: dimnames propagation should
+  happen in C, see  R/bind2.R and src/Csparse.c (Csparse_horzcat etc).
+
+** TODO Check for DimNames propagation in coercion and other operations.
+  Done for (%*%, crossprod, tcrossprod).
+
+** TODO Report the problem in the Linux ldexp manual page.  The second and
+  third calls in the Synopsis should be to ldexpf and ldexpl.
+
+** TODO provide methods for "dspMatrix" and "dppMatrix"!
+  2012-07: mostly(?) DONE, with Ops, etc, also pack() / unpack()
+
+** TODO combine the C functions for multiplication by special forms and
+  solution wrt special forms by using a 'right' argument and a
+  'classed' argument.
+   [done with dgeMatrix_matrix_mm();  not yet for other classes;
+    and for _crossprod()]
+
+** DONE Cache '@factors' components also from R, e.g., for "Tsparse.."
+   via .set.factors()
+** TODO chol() and Cholesky() caching unfinished: the *name* [Ss][Pp][Dd]Cholesky
+   depends on (perm, LDL, super) arguments:
+*** DONE .chkName.CHM(name, perm, LDL, super) and .CHM.factor.name()
+*** TODO use the above
+** TODO new arg 'cache=FALSE': allow  cache=FALSE to disable the caching
+** TODO cor(<sparseMatrix>) and cov(<sparseMatrix>)  at least for y=NULL ("no y").
+-> ~/R/MM/Pkg-ex/Matrix/cor_sparse-propos.R <- http://stackoverflow.com/questions/5888287/
+* Generalization of Existing Classes and Methods ---------------------------
+** TODO "Math2" , "Math", "Arith": keep triangular and symmetric
+ Matrices when appropriate:
+ particularly desirable for  "Math2": round(), signif()
+** TODO For triangular matrices, ensure the four rules of "triangular matrix algebra"
+  (Golub+Van Loan 1996, 3.1.8, p.93)"
+*** DONE since 2008-03-06 for Csparse
+*** DONE since 2010-07-23 for <dtr> %*% <dtr>
+*** TODO e.g. for  <ltr> %*% <dtC>
+** TODO "d" <-> "l" coercion for all "[TCR]" sparse matrices is really trivial:
+  "d" -> "l" : drops the 'x' slot
+  "l" -> "d" : construct an 'x' slot of all '1'
+  We currently have many of these conversions explicitly, e.g.
+   setAs("dsTMatrix", "lsTMatrix",
+      function(from) new("lsTMatrix", i = from@i, j = from@j, uplo = from@uplo,
+                         Dim = from@Dim, Dimnames = from@Dimnames))
+  but I would rather want to automatically construct all these coercion
+  methods at once by a ``method constructor'', i.e.,
+  for all  "dsparse*" -> "lsparse*" and vice versa.
+  How can one do this {in a documented way} ?
+
+** TODO Think of constructing  setAs(...) calls automatically in order to
+  basically enable all ``sensible'' as(fromMatrix, toMatrix)  calls,
+  possibly using canCoerce(.)
+
+** TODO When we have a packed matrix, it's a waste to go through "full" to "sparse":
+  ==> implement
+	setAs("dspMatrix", "sparseMatrix")
+	setAs("dppMatrix", "sparseMatrix")
+	setAs("dtpMatrix", "sparseMatrix")
+  and the same for "lsp" , "ltp"  and  "nsp" , "ntp" !
+
+** TODO tcrossprod(x, y) : do provide methods for y != NULL
+  calling Lapack's DGEMM for "dense"
+  [2005-12-xx: done for dgeMatrix at least]
+
+** TODO Factorizations: LU done; also Schur()  for  *sparse*  Matrices.
+
+** TODO use  .Call(Csparse_drop, M, tol) in more places,
+  both with 'tol = 0.' to drop "values that happen to be 0" and for
+  zapsmall() methods for Csparse*
+
+** TODO implement .Call(Csparse_scale, ....) interfacing to cholmod_scale()
+  in src/CHOLMOD/Include/cholmod_matrixops.h : for another function
+  specifically for multiplying a cholmod_sparse object by a diagonal matrix.
+  Use it in %*% and [t]crossprod methods.
+
+** TODO make sure *all* group methods have (maybe "bail-out") setMethod for "Matrix".
+  e.g. zapsmall(<pMatrix>) fails "badly"
+
+** TODO rbind2(<sparse>, <dense>) does not work  (e.g. <dgC>, <dge>)
+
+** TODO <sparse> %*% <dense>  {also in crossprod/tcrossprod}  currently always
+  returns <dense>, since --> Csparse_dense_prod --> cholmod_sdmult
+  and that does only return dense.
+  When the sparse matrix is very sparse, i.e. has many rows with only zero
+  entries, it would make much sense to return sparse.
+
+** TODO ! <symmetricMatrix>  loses symmetry, both for dense and sparse matrices.
+  !M  where M is "sparseMatrix", currently always gives dense. This only
+  makes sense when M is ``really sparse''.
+
+** TODO diag(m) <- val currently automatically works via  m[cbind(i,i)] <- val
+  This (`[<-` method) is now "smart" for diagonalMatrix, but needs also to
+  be for triangularMatrix, and probably also "dense*general*Matrix" since the
+  above currently goes via "matrix" and back instead of using the 'x' slot
+  directly; in particular, the triangular* "class property" is lost!
+  [current ??]
+
+** TODO The "[<-" now uses  src/t_Csparse_subassign.c and no longer explodes
+  memory.  *However* it is still too slow when the replacment region is large.
+
+* Cholesky(), chol() etc ---------------------------------------------------
+** chol() should ``work'': proper result or "good" error message.
+  (mostly done ?)
+
+** example(Cholesky, echo=FALSE) ; cm <- chol(mtm); str(cm); str(mtm)
+
+  shows that chol() does not seem to make use of an already
+  present factorization and rather uses one with more '0' in x slot.
+
+** examples for solve( Cholesky(.), b, system = c("A", "LDLt"....))
+  probably rather in man/CHMfactor-class.Rd than man/Cholesky.Rd
+
+** LDL(<CHMsimpl>) looks relatively easy; via  "tCsparse_diag()"
+   {diagonal entries of *triangular* Csparse}
+  --> see comment in determinant(<dsC>) in R/dsCMatrix.R, will give
+  faster determinant
+
+** Allow  Cholesky(A,..) when A is not symmetric *AND*
+  we really _mean_ to factorize  AA' ( + beta * I)
+
+** update(Cholesky(..), *): make *also* use of the possibility to update
+  with non-symmetric A and then  AA' + mult * I   is really meant.
+  .updateCHMfactor() ## allows that already(?)
+
+** TODO add examples (and tests!) for update(<CHMfactor>, ..) and
+  Cholesky(......, Imult), also tests for hidden {hence no examples}
+  ldetL2up() { R/CHMfactor.R }; see ex in man/wrld_1deg.Rd
+  MM: See e.g. ~/R/MM/Pkg-ex/Matrix/CholUpdate.R -- for solve(<CHM>, <type>)
+
+** TODO implement fast diag(<triangularCsparse>) via calling new
+  src/Csparse.c's diag_tC_ptr() .
+ - diag_tC_ptr() functionality now exported via
+  R/dsCMatrix.R   .diag.dsC() : the name is silly, but
+  functionality nice.  See (hidden) example in man/Cholesky.Rd
+
+** TODO chol(<nsCMatrix>)  gives "temporarily disabled"
+  but should give the *symbolic* factorization;
+  similarly Cholesky(.) is not enabled
+
+* "Basic" new functionality -- "nice to have" (non-urgent) -----------------
+** TODO tr(A %*% B) {and even  tr(A %*% B %*% C) ...} are also needed
+  frequently in some computations {conditional normal distr. ...}.
+  Since this can be done faster than by
+    sum(diag(A %*% B))  even for traditional matrices, e.g.
+    	       sum(A * t(B)) or {even faster for "full" mat}
+	       crossprod(as.vector(A), as.vector(B))
+  and even more so for, e.g.  <sparse> %*% <dense>
+  {used in Soeren's 'gR' computations},
+  we should also provide a generic and methods.
+** TODO diag(A %*% B) might look like a "generalization" of tr(A %*% B),
+  but as the above tricks show, is not really.
+  Still, it's well worth to provide  diag.prod(A, B):
+
+  Well, if A %*% B is square,   diag(A %*% B)  ===  colSums(t(A) * B)
+  and we should probably teach people about that !
+
+** TODO eigen() should become generic, and get a method at least for diagonal,
+  but also for symmetric -> dsyMatrix  [LAPACK dsyev() uses UPLO !],
+  but also simply for dgeMatrix (without going via tradition matrices).
+  What about Sparse?  There's fill-in, but it may still be sensible, e.g.
+  mlist <- list(1, 2:3, diag(x=5:3), 27, cbind(1,3:6), 100:101)
+  ee <- eigen(tcrossprod(bdiag(lapply(mlist, as.matrix))))
+  Matrix( signif(ee$vectors, 3) )
+
+* Everything else aka "Miscellaneous" --------------------------------------
+** qr.R(qr(x)) may differ for the "same" matrix, depending on it being
+  sparse or dense:
+    "qr.R(<sparse>) may differ from qr.R(<dense>) because of permutations"
+
+  This is not really acceptable and currently influences  rcond() as well.
+
+** facmul() has no single method defined;  it looks like a good idea though
+  (instead of the infamous qr.qy, qr.qty,.... functions)
+
+** TODO symmpart() and skewpart()  for *sparse* matrices still use (x +/- t(x))/2
+  and could be made more efficient.
+  Consider going via  asTuniq() or something very close to
+  .Arith.Csparse() in R/Ops.R
+  For a traditional "matrix" object, we should speedup, using C code ..
+
+** TODO many setAs(*, "[dl]..Matrix") are still needed, as long as e.g.
+  replCmat() uses as_CspClass() and drop0(.) which itself call
+  as_CspClass() quite a bit.  --> try to replace these by
+  as(*, "CsparseMatrix"); forceSymmetric, etc.
+
+** writeMM(obj, file=stdout()) creates file "1" since file is silently
+  assumed to be a string, i.e. cannot be a connection.
+  An R (instead of C) version should be pretty simple, and would work with
+  connections automatically ["lsparse" become either "real" or
+  "pattern", "depending if they have NAs or not].
+
+** <diagMatrix> o <ddenseMatrix> still works via sparse in some cases, but
+  could return <diagMatrix> in the same cases where <diagMatrix> o <numeric> does.
+
+** look at solve.QP.compact() in \pkg{quadprog} and how to do that using
+  our sparse matrices.  Maybe this needs to be re-implemented using CHOLMOD
+  routines.
+
+** We allow "over-allocated" (i,x)-slots for CsparseMatrix objects,
+  as per Csparse_validate() and the tests in tests/validObj.R. This is as
+  in CHOLMOD/CSparse, where nzmax (>= .@p[n]) corresponds to length(.@i),
+  and makes sense e.g. for M[.,.] <- v  assignments which could allocate in
+  chunks and would not need to re-allocate anything in many cases.
+  HOWEVER, replCmat() in R/Csparse.R is still far from making use of that.
+
+** TODO advertize  rbind2() / cbind2() and (rather?) rBind() / cBind()
+   	      ------                            -----
+  in all vignettes / talks / ... !!
+  People erronously try rbind/cbind see that they don't work and then
+  reinvent the wheel!
+
+  --> Consider using the new  'dotMethods' functionality to define
+      cbind() and rbind() versions that work with Matrix.
+      The "Rmpfr" package does that now.
+
+** TODO In  all(M1 == M2)  for sparse large matrices M1, M2 (e.g. M2 <- M1 !),
+  the intermediate 'M1 == M2' typically is dense, hence potentially using
+  humongous amount of memory.
+  We should/could devise something like   allCompare(M1, M2, `==`)
+  which would remain sparse in all its computations.
+
+--------
+
+** Reconsider the linkages in the include files for the SuiteSparse
+  packages.  It may be better simply to add all the src/<nm>/Include
+  directories to the include path for all compilations.  I don't think
+  there is a big overhead.  Right now we need to modify the include
+  file src/SPQR/Include/SuiteSparseQR_C.h so that it does not expect
+  to have src/UFsparse and src/CHOLMOD/Include on the include path.
+  Maybe just those two should be added to the include path.
+
+** (systematically check that LAPACK-calling functions check for
+   0-dimensional input themselves; LAPACK gives an integer error code)
+
+** the  f[,5762] <- thisCol  now go via Csparse_subassign() call ...
+  [ in tests/indexing.R ].
+  Still would be nice to be able to use abIndex (see replTmat in R/Tsparse.R)
+
+** {IS THIS CURRENT?}
+  Sept. 2009:
+  Subject: chol2inv() |-> solve(<CHMfactor>)
+
+  when testing and documenting  chol2inv(),
+  I found that it's pretty simple to also define a method for
+  "CHMfactor" objects, namely simply the solve(*, Diagonal(.) "A")
+  method.
+  This is not particularly exciting, and also does *not*, I think
+  help for defining a chol2inv() method for  *sparse* (upper)
+  triangular matrices.
+
+** sort(<sparseVector>, partial=..), needed, for mean(*, trim = .) or median().
+  Note that defining xtfrm() does not "help" (as sort() then goes via dense
+  index).  See "mean" in R/Matrix.R
+
+** TODO rcond(<sparseMatrix>)  for square currently goes via *dense* -- BAD --
+  can we go via qr() in any case?
+  In some cases, e.g. lmer()'s  "Lambda" (block triangular, small blocks)
+       rcond(L) :=  1 / (norm(L) * norm(solve(L)))
+  is simple {and remains sparse, as solve(L) is still block triangular}
+
+** TODO How can we ensure that     inst/include/cholmod.h		 remains
+  correct and equivalent to  src/CHOLMOD/Include/cholmod_core.h  and  siblings ???
+  {currently need to do this manually (Emacs M-x compare-windows) for the   typedefs}
+
+** finalize and activate the new *unused* code in src/t_sparseVector.c
+
+** check all uses of  alloca()/Alloca() in  src/*.[ch]
+  ensuring that the *size* allocated cannot grow with the
+  vector/matrix/nnzero sizes of the input.
+  [see the change needed in svn r2770 in src/dtCMatrix.c !]
+

@@ -1,0 +1,639 @@
+# Translation of R-mgcv.pot to German
+# Copyright (C) 2005-2009 The R Foundation
+# This file is distributed under the same license as the mgcv package.
+# Chris Leick <c.leick@vollbio.de>, 2009.
+#
+# see
+# http://lists.debian.org/debian-l10n-german/2009/04/msg00272.html
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: R 2.10.0 / mgcv 1.5-5\n"
+"Report-Msgid-Bugs-To: bugs@r-project.org\n"
+"POT-Creation-Date: 2005-12-09 07:31\n"
+"PO-Revision-Date: 2009-10-08 16:16+0200\n"
+"Last-Translator: Chris Leick <c.leick@vollbio.de>\n"
+"Language-Team: German <debian-l10n-german@lists.debian.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "illegal `family' argument"
+msgstr "unerlaubtes »family«-Argument"
+
+# http://de.wikipedia.org/wiki/Prädiktor
+msgid "Invalid linear predictor values in empty model"
+msgstr "Ungültige lineare Prognosewerte in leerem Modell"
+
+msgid "Invalid fitted means in empty model"
+msgstr "Ungültig angepasste Mittel in leerem Modell"
+
+# R/mgcv.r + R/gam.fit3.r
+msgid "Length of start should equal"
+msgstr "Länge von start sollte gleich sein"
+
+msgid "and correspond to initial coefs for"
+msgstr "und entsprechend den Anfangs-coefs für"
+
+msgid "Can't find valid starting values: please specify some"
+msgstr ""
+"Es wurden keine gültigen Startwerte gefunden: Bitte geben Sie einige an"
+
+msgid "NAs in V(mu)"
+msgstr "NAs in V(mu)"
+
+msgid "0s in V(mu)"
+msgstr "0s in V(mu)"
+
+msgid "NAs in d(mu)/d(eta)"
+msgstr "NAs in d(mu)/d(eta)"
+
+msgid "No observations informative at iteration"
+msgstr "Keine informativen Beobachtungen bei der Iteration"
+
+msgid "Not enough informative observations."
+msgstr "Nicht genug informative Beobachtungen."
+
+msgid "Non-finite coefficients at iteration"
+msgstr "Nicht-endliche Koeffizienten bei der Iteration"
+
+msgid ""
+"no valid set of coefficients has been found:please supply starting values"
+msgstr ""
+"es wurde keine gültige Menge von Koeffizienten gefunden: Bitte stellen Sie "
+"Startwerte bereit"
+
+msgid "Step size truncated due to divergence"
+msgstr "Schrittweite wurde wegen Divergenz reduziert"
+
+msgid "inner loop 1; can't correct step size"
+msgstr "innere Schleife 1; Schrittweite kann nicht korrigiert werden"
+
+msgid "Step size truncated: out of bounds"
+msgstr "Schrittweite verkleinert: Außerhalb der Begrenzung"
+
+msgid "inner loop 2; can't correct step size"
+msgstr "innere Schleife 2; Schrittweite kann nicht korrigiert werden"
+
+msgid "inner loop 3; can't correct step size"
+msgstr "innere Schleife 3; Schrittweite kann nicht korrigiert werden"
+
+msgid "Algorithm did not converge"
+msgstr "Algorithmus konvergierte nicht"
+
+msgid "Algorithm stopped at boundary value"
+msgstr "Algorithmus stoppte beim Randwert"
+
+msgid "fitted probabilities numerically 0 or 1 occurred"
+msgstr ""
+"Es trat der Fall auf, dass die angenäherten Wahrscheinlichkeiten numerisch 0 "
+"oder 1 waren"
+
+msgid "fitted rates numerically 0 occurred"
+msgstr ""
+"Es trat der Fall auf, dass die angenäherten Quoten numerisch 0 oder 1 waren"
+
+msgid "fam not a family object"
+msgstr "fam ist kein family-Objekt"
+
+msgid "unrecognized (vector?) link"
+msgstr "unerkannter (Vektor?) Verweis"
+
+msgid "link not recognised"
+msgstr "Verweis nicht erkannt"
+
+msgid "variance function not recognized for quasi"
+msgstr "Varianzfunktion für quasi nicht erkannt"
+
+# R/gam.fit3.r
+msgid "family not recognised"
+msgstr "family nicht erkannt"
+
+msgid "H has wrong dimension"
+msgstr "H hat falsche Dimension"
+
+msgid "An object of length"
+msgstr "Ein Objekt der Länge"
+
+msgid "does not match the required parameter size"
+msgstr "entspricht nicht der erforderlichen Parametergröße"
+
+msgid "NA's in pdTens factor"
+msgstr "NA's in pdTens-Faktor"
+
+msgid "Cannot extract the matrix from an uninitialized object"
+msgstr ""
+"Die Matrix kann nicht aus einem uninitialisierten Objekt extrahiert werden"
+
+msgid "NA's in pdTens matrix"
+msgstr "NA's in pdTens-Matrix"
+
+msgid "Cannot extract the matrix from an uninitialized pdMat object"
+msgstr ""
+"Die Matrix kann nicht aus einem uninitialisierten pdMat-Objekt extrahiert "
+"werden"
+
+msgid "Cannot extract the matrix with uninitialized dimensions"
+msgstr ""
+"Die Matrix kann nicht mit uninitialisierten Dimensionen extrahiert werden"
+
+msgid "Must give names when initializing pdIdnot from parameter."
+msgstr ""
+"Wenn pdIdnot vom Parameter initialisiert wird, müssen Namen vergeben werden."
+
+msgid "without a formula"
+msgstr "ohne eine Formel"
+
+msgid "Cannot extract the dimensions"
+msgstr "Die Dimensionen können nicht extrahiert werden"
+
+msgid "Cannot extract the inverse from an uninitialized object"
+msgstr ""
+"Die Inverse kann nicht von einem uninitialisierten Objekt extrahiert werden"
+
+msgid "No data supplied to gam.setup"
+msgstr "Keine Daten für gam.setup bereitgestellt"
+
+msgid "NA's passed to eig: please email Simon.Wood@R-project.org with details"
+msgstr ""
+"NAs an eig übergeben: Bitte E-Mail mit Details an Simon.Wood@R-project.org "
+"senden."
+
+msgid ""
+"NA eigenvalues returned by eigen: please email Simon.Wood@R-project.org with "
+"details"
+msgstr ""
+"NA-Eigenwerte von eigen zurückgegeben: Bitte E-Mail mit Details an Simon."
+"Wood@R-project.org senden."
+
+msgid ""
+"NA's in eigenvectors from eigen: please email Simon.Wood@R-project.org with "
+"details"
+msgstr ""
+"NAs in Eigenvektoren von eigen: Bitte E-Mail mit Details an Simon.Wood@R-"
+"project.org senden."
+
+msgid ""
+"NA singular values returned by svd: please email Simon.Wood@R-project.org "
+"with details"
+msgstr ""
+"NA-Singulärwerte von svd zurückgegeben: Bitte E-Mail mit Details an Simon."
+"Wood@R-project.org senden."
+
+msgid ""
+"NA's in singular vectors from svd: please email Simon.Wood@R-project.org "
+"with details"
+msgstr ""
+"NAs in Singulärvektoren von svd: Bitte E-Mail mit Details an Simon.Wood@R-"
+"project.org senden."
+
+msgid ""
+"NA problem resolved using svd, but please email Simon.Wood@R-project.org "
+"anyway"
+msgstr ""
+"NA-Problem durch Benutzen von svd gelöst, aber bitte trotzdem eine E-Mail an "
+"Simon.Wood@R-project.org sendne."
+
+msgid "Problem with linear algebra routines."
+msgstr "Problem mit linearen Algebra-Routinen."
+
+msgid "First argument is no sort of formula!"
+msgstr "Erstes Argument ist keine Art von Formel"
+
+msgid "You've got no model...."
+msgstr "Sie haben kein Modell ..."
+
+msgid "gamm can not fix only some margins of tensor product."
+msgstr "gamm kann nicht nur einige Ränder des Tensorproduktes reparieren."
+
+msgid ""
+"Tensor product penalty rank appears to be too low: please email Simon.Wood@R-"
+"project.org with details."
+msgstr ""
+"Tensorprodukt-Strafrang scheint zu niedrig zu sein: Bitte E-Mail mit Details "
+"an Simon.Wood@R-project.org"
+
+msgid "object does not appear to be of class lme"
+msgstr "Objekt scheint nicht von der Klasse lme zu sein"
+
+msgid "inner groupings not nested in outer!!"
+msgstr "innere Gruppierungen nicht in äußeren verschachtelt!"
+
+msgid "gamm() requires package nlme to be installed"
+msgstr "gamm() benötigt nlme, um installiert zu werden"
+
+msgid "gamm() requires package MASS to be installed"
+msgstr "gamm() benötigt das Paket MASS, um installiert zu werden"
+
+# R/gamm.r
+msgid "random argument must be a *named* list."
+msgstr "random-Argument muss eine *benannte* Liste sein."
+
+msgid "all elements of random list must be named"
+msgstr "alle Elemente der random-Liste müssen benannt sein"
+
+msgid "gamm() can only handle random effects defined as named lists"
+msgstr ""
+"gamm() kann nur random-Effekte handhaben, die als benannte Liste definiert "
+"sind"
+
+msgid "Not enough (non-NA) data to do anything meaningful"
+msgstr "Nicht genug (nicht-NA-) Daten, um etwas Sinnvolles zu tun"
+
+msgid "family not recognized"
+msgstr "family nicht erkannt"
+
+msgid ""
+"gamm models must have at least 1 smooth with unknown smoothing parameter or "
+"at least one other random effect"
+msgstr ""
+"gamm-Modelle müssen mindestens 1 Glättung mit unbekanntem Glättungsparameter "
+"haben oder mindestens eine mit anderem random-Effekt"
+
+msgid "At least three knots required in call to mono.con."
+msgstr "Mindestens drei Knoten im Aufruf von mono.con benötigt."
+
+msgid "lower bound >= upper bound in call to mono.con()"
+msgstr "untere Grenze >= obere Grenze im Aufruf von mono.con()"
+
+msgid "x is null"
+msgstr "x ist Null"
+
+# R/smooth.r
+msgid "x has no row attribute"
+msgstr "x hat kein Zeilenattribut"
+
+msgid "x has no col attribute"
+msgstr "x hat kein Spaltenattribut"
+
+msgid "d can not be negative in call to null.space.dimension()."
+msgstr "d kann im Aufruf von null.space.dimension() nicht negativ sein."
+
+msgid "nrow(M$X) != length(M$y)"
+msgstr "nrow(M$X) != length(M$y)"
+
+msgid "ncol(M$X) != length(M$p)"
+msgstr "ncol(M$X) != length(M$p)"
+
+msgid "length(M$w) != length(M$y)"
+msgstr "length(M$w) != length(M$y)"
+
+msgid "nrow(M$Ain) != length(M$bin)"
+msgstr "nrow(M$Ain) != length(M$bin)"
+
+msgid "nrow(M$Ain) != length(M$p)"
+msgstr "nrow(M$Ain) != length(M$p)"
+
+msgid "initial parameters very close to inequality constraints"
+msgstr "Anfangsparameter sehr nah zu den Ungleichungsnebenbedingungen"
+
+msgid "ncol(M$C) != length(M$p)"
+msgstr "ncol(M$C) != length(M$p)"
+
+msgid "M$S and M$off have different lengths"
+msgstr "M$S und M$off haben unterschiedliche Längen"
+
+msgid "M$sp has different length to M$S and M$off"
+msgstr "M$sp hat unterschiedliche Länge zu M$S und M$off"
+
+msgid "M$S["
+msgstr "M$S["
+
+msgid "] is too large given M$off["
+msgstr "] ist zu groß zum gegeben M$off["
+
+msgid "]"
+msgstr "]"
+
+msgid "Can't mix fixed and estimated penalties in mgcv() - use magic()"
+msgstr ""
+"Feste und geschätzte Strafen in mgcv() können nicht gemischt werden - "
+"benutzen Sie magic()"
+
+msgid "something wrong with argument d."
+msgstr "etwas stimmt nicht mit Argument d."
+
+msgid "one or more supplied k too small - reset to default"
+msgstr ""
+"ein oder mehrere bereitgestellte k zu klein - wird auf Standard zurückgesetzt"
+
+msgid "dimension of fx is wrong"
+msgstr "Dimension von fx ist falsch"
+
+msgid "bs wrong length and ignored."
+msgstr "bs hat falsche Länge und wird ignoriert."
+
+msgid "m wrong length and ignored."
+msgstr "m hat falsche Länge und wird ignoriert."
+
+msgid "Repeated variables as arguments of a smooth are not permitted"
+msgstr "Wiederholte Variablen als Argumente einer Glättung sind nicht erlaubt"
+
+msgid "by=. not allowed"
+msgstr "by=. nicht erlaubt"
+
+msgid "s(.) not yet supported."
+msgstr "s(.) wird noch nicht unterstützt."
+
+msgid "argument k of s() should be integer and has been rounded"
+msgstr "Argument k von s() sollte ganzzahlig sein und wurde gerundet"
+
+msgid "meaninglessly low k; reset to 2"
+msgstr "bedeutungslos niedriges k; wird auf 2 zurückgesetzt"
+
+msgid "cr basis only works with 1-d smooths!"
+msgstr "cr-Basis arbeitet nur mit 1-d-Glättungen"
+
+msgid "Can't find by variable"
+msgstr "Kann nicht über Variable gefunden werden"
+
+msgid "components of knots relating to a single smooth must be of same length"
+msgstr ""
+"Komponenten der Knoten, die sich auf eine einzige Glättung beziehen, müssen "
+"die gleiche Länge haben"
+
+msgid "more knots than data in a tp term: knots ignored."
+msgstr "mehr Knoten als Daten in einem tp-Term: Knoten ignoriert."
+
+msgid "basis dimension, k, increased to minimum possible"
+msgstr "Basisdimension, k, erhöht auf mögliches Minimum"
+
+msgid "number of supplied knots != k for a cr smooth"
+msgstr "Anzahl der angegebenen Knoten != k für eine cr-Glättung"
+
+msgid "more knots than unique data values is not allowed"
+msgstr "mehr Knoten als einheitliche Datenwerte sind nicht erlaubt"
+
+msgid "too few knots"
+msgstr "zu wenige Knoten"
+
+msgid "number of supplied knots != k for a cc smooth"
+msgstr "Anzahl der angegebenen Knoten != k für eine cc-Glättung"
+
+msgid "can't predict outside range of knots with periodic smoother"
+msgstr ""
+"es kann nicht außerhalb des Bereichs von Knoten mit periodischem Glätter "
+"vorausberechnet werden"
+
+msgid "no data to predict at"
+msgstr "keine Daten zum Vorausberechnen von"
+
+msgid "smooth objects should not have a qrc attribute."
+msgstr "Glättungsobjekte sollten kein qrc-Attribut haben"
+
+msgid "model has repeated 1-d smooths of same variable."
+msgstr "Modell hat 1-d-Glättungen der gleichen Variable wiederholt."
+
+msgid "supplied sp has wrong length"
+msgstr "angegebener sp hat falsche Länge"
+
+msgid "supplied min.sp has wrong length"
+msgstr "angegebener min.sp hat falsche Länge"
+
+msgid "Supplied smoothing parameter vector is too short - ignored."
+msgstr "Angegebener Glättungsparameter-Vektor ist zu kurz - ignoriert."
+
+msgid "NA's in supplied smoothing parameter vector - ignoring."
+msgstr "NAs in angegebenem Glättungsparameter-Vektor ist zu kurz - ignoriert."
+
+msgid "length of min.sp is wrong."
+msgstr "Länge von min.sp ist falsch."
+
+msgid "NA's in min.sp."
+msgstr "NA's in min.sp."
+
+msgid "elements of min.sp must be non negative."
+msgstr "Elemente von min.sp dürfen nicht negativ sein."
+
+msgid "Unknown additive model fit method."
+msgstr "Unbekannte zusätzliche Modellanpassungsmethode."
+
+msgid "Unknown *generalized* additive model fit method."
+msgstr "Unbekannte *verallgemeinerte* zusätzliche Modellanpassungsmethode."
+
+msgid "Unknown GAM outer optimizing method."
+msgstr "Unbekannte GAM äußere Optimierungsmethode"
+
+msgid "pearson should be TRUE or FALSE - set to FALSE."
+msgstr "pearson sollte TRUE oder FALSE sein - auf FALSE gesetzt."
+
+msgid "Model has more coefficients than data"
+msgstr "Modell hat mehr Koeffizienten als Daten"
+
+msgid "IRLS regularizing parameter must be a non-negative number."
+msgstr "IRLS-regelnder Parameter muss eine nicht-negative Zahl sein."
+
+msgid "value of epsilon must be > 0"
+msgstr "Wert von epsilon muss > 0 sein"
+
+msgid "maximum number of iterations must be > 0"
+msgstr "maximale Anzahl der Iterationen muss > 0 sein"
+
+msgid "nb.theta.mult must be >= 2"
+msgstr "nb.theta.mult muss >= 2 sein"
+
+msgid ""
+"silly value supplied for rank.tol: reset to square root of machine precision."
+msgstr ""
+"dummer Wert für rank.tol angegeben: Wird auf Quadratwurzel der "
+"Maschinenpräzision zurückgesetzt."
+
+msgid "Model seems to contain no terms"
+msgstr "Modell scheint keine Terme zu enthalten"
+
+# http://de.wikipedia.org/wiki/Transferfunktionsmodell
+msgid "y must be univariate unless binomial"
+msgstr "Y muss univariat sein, falls nicht binomisch"
+
+msgid "and correspond to initial coefs."
+msgstr "und den Anfangs-coefs entsprechen."
+
+msgid ""
+"iterative weights or data non-finite in gam.fit - regularization may help. "
+"See ?gam.control."
+msgstr ""
+"iterative Gewichte oder nicht-endliche Daten in gam.fit - Regularisierung "
+"könnte helfen. Siehe ?gam.control."
+
+msgid "Step size truncated: out of bounds."
+msgstr "Schrittgröße verkleinert: Außerhalb der Begrenzungen."
+
+msgid "Unknown type, reset to terms."
+msgstr "Unbekannte Typ, wird auf terms zurückgesetzt."
+
+msgid "predict.gam can only be used to predict from gam objects"
+msgstr ""
+"predict.gam kann nur benutzt werden, um von gam-Objekten vorauszuberechnen"
+
+msgid "newdata is a model.frame: it should contain all required variables"
+msgstr ""
+"newdata ist ein model.frame: Es soll alle benötigten Variablen enthalten"
+
+msgid "not all required variables have been supplied in  newdata!"
+msgstr "nicht alle benötigten Variablen wurden in newdata angegeben!"
+
+msgid "non-existent terms requested - ignoring"
+msgstr "nicht existierende Terme angefordert - wird ignoriert"
+
+msgid "residuals argument to plot.gam is wrong length: ignored"
+msgstr "Residuen-Argument für plot.gam hat falsche Länge: Ignoriert"
+
+msgid "No terms to plot - nothing for plot.gam() to do."
+msgstr "Keine Terme zum Darstellen - nichts für plot.gam() zu tun."
+
+msgid "No variance estimates available"
+msgstr "Keine Varianzschätzungen verfügbar"
+
+msgid "no automatic plotting for smooths of more than two variables"
+msgstr ""
+"keine automatische Darstellung für Glättungen von mehr als zwei Variablen"
+
+msgid "no automatic plotting for smooths of more than one variable"
+msgstr ""
+"keine automatische Darstellung für Glättungen von mehr als einer Variable"
+
+msgid "The following arguments to anova.glm(..) are invalid and dropped:"
+msgstr "Die folgenden Argumente für anova.glm(..) sind ungültig und entfallen:"
+
+msgid ","
+msgstr ","
+
+msgid "dispersion argument ignored"
+msgstr "Argument dispersion ignoriert"
+
+msgid "test argument ignored"
+msgstr "Argument test ignoriert"
+
+msgid "anova.gam called with non gam object"
+msgstr "anova.gam mit einem nicht-gam-Objekt aufgerufen"
+
+msgid "extra arguments discarded"
+msgstr "zusätzliche Argumente verworfen"
+
+msgid "grid vectors are different lengths"
+msgstr "Gittervektoren haben unterschiedliche Längen"
+
+msgid "data vectors are of different lengths"
+msgstr "Datenvektoren haben unterschiedliche Längen"
+
+msgid "supplied dist negative"
+msgstr "angegebene Entfernung negativ"
+
+msgid "Model doesn't seem to have enough terms to do anything useful"
+msgstr "Modell scheint nicht genug Terme zu haben, um etwas Nützliches zu tun"
+
+msgid "view variables must be one of"
+msgstr "Die view Variablen müssen gewählt werden aus"
+
+msgid "View variables must contain more than one value. view = c("
+msgstr "View-Variablen müssen mehr als einen Wert enthalten. view = c("
+
+msgid ")."
+msgstr ")."
+
+msgid "type must be \"link\" or \"response\""
+msgstr "Typ muss »link« oder »response« sein"
+
+msgid "Something wrong with zlim"
+msgstr "Etwas stimmt nicht mit zlim"
+
+msgid "color scheme not recognised"
+msgstr "Farbschema nicht erkannt"
+
+msgid "sorry no option for contouring with errors: try plot.gam"
+msgstr ""
+"Entschuldigung. Keine Option für Formgebung mit Fehlern: Versuchen Sie plot."
+"gam"
+
+msgid "Supplied matrix not symmetric"
+msgstr "Angegebene Matrix nicht symmetrisch"
+
+msgid "singular values not returned in order"
+msgstr "Singulärwerte wurden nicht sortiert zurückgeliefert"
+
+msgid "Something wrong - matrix probably not +ve semi definite"
+msgstr "Etwas stimmt nicht - Matrix wahrscheinlich nicht +ve halb definit"
+
+msgid "method not recognised."
+msgstr "Methode nicht erkannt."
+
+msgid "S[["
+msgstr "S[["
+
+msgid "]] matrix is not +ve definite."
+msgstr "]] Matrix ist nicht +ve definit."
+
+msgid "dimensions of supplied w wrong."
+msgstr "Dimensionen des angegebenen w sind falsch."
+
+msgid "w different length from y!"
+msgstr "w hat eine von y verschiedene Länge!"
+
+msgid "X lost dimensions in magic!!"
+msgstr "X verlor Dimensionen in magic!!"
+
+msgid "weights must be like glm weights for generalized case"
+msgstr "Gewichte müssen wie glm-Gewichte sein für verallgemeinerten Fall"
+
+msgid "Unkwown flavour of GCV"
+msgstr "Unbekannte Art von GCV"
+
+msgid "GACV only supported with newton optimization, GCV type reset"
+msgstr "GACV nur mit newton-Optimierung unterstützt, GCV-Typ zurückgesetzt"
+
+msgid "Pearson based GCV is unsupported for newton or nlm outer methods, reset"
+msgstr ""
+"Pearson-basierte GCV ist nicht unterstützt für newton- oder äußere nlm-"
+"Methoden. Wird zurückgesetzt."
+
+msgid "`object' is not of class \"gam\""
+msgstr "»object« ist nicht aus der Klasse »gam«"
+
+msgid "xt argument is faulty"
+msgstr "xt-Argument ist fehlerhaft"
+
+msgid ""
+"Smoothing parameter derivate iteration diverging. Decrease fit tolerance! "
+"See `epsilon' in `gam.contol'"
+msgstr ""
+"Glättungsparameter leitet Iterationsabweichung ab. Näherungstoleranz "
+"vermindern! Siehe »epsilon« in »gam.control«"
+
+msgid "L must be a matrix."
+msgstr "L muss eine Matrix sein."
+
+msgid "L must have at least as many rows as columns."
+msgstr "L muss mindestens so viele Zeilen wie Spalten haben."
+
+msgid "L has inconsistent dimensions."
+msgstr "L hat inkonsistente Dimensionen."
+
+msgid "\"perf.magic\" is deprecated: reset to \"perf\""
+msgstr "»perf.magic« ist missbilligt: wird auf »perf« zurückgesetzt"
+
+msgid ""
+"only outer method `newton' supports `negbin' family and theta selection: "
+"reset"
+msgstr ""
+"nur äußere Methode »newton« unterstützt »negbin«-Familie und theta-Auswahl: "
+"Wird zurückgesetzt"
+
+msgid "Discrete Theta search not available with performance iteration"
+msgstr "Diskrete Theta-Suche nicht mit Leistungsiteration verfügbar"
+
+msgid "arguments of smooth not same dimension"
+msgstr "Argumente der Glättung haben nicht die gleiche Dimension"
+
+msgid "factor `by' variables can not be used with matrix arguments."
+msgstr "Faktor-»by«-Variablen können nicht mit Matrixargumenten benutzt werden."
+
+msgid "`by' variable must be same dimension as smooth arguments"
+msgstr ""
+"»by«-Variable muss die gleiche Dimension wie die Glättungsargumente haben"
+
+msgid "Penalized model matrix must have no more columns than rows"
+msgstr "Die penalized model matrix darf nicht mehr Spalten als Zeilen haben"
+
+msgid "Model matrix not full column rank"
+msgstr "Modellmatrix hat keinen vollen Spaltenrang"

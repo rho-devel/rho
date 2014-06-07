@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2005-12   The R Core Team
@@ -46,6 +62,7 @@
 # include <config.h>
 #endif
 
+#include <Defn.h>
 #include <string.h>
 #include <memory.h>
 #include <locale.h>
@@ -55,10 +72,12 @@
 
 //#include <rlocale.h> /* To get the correct linkage for locale2charset */
 
+#include "CXXR/uncxxr.h"
+
 /* name_value struct */
 typedef struct {
-    char *name;
-    char *value;
+    CXXRCONST char *name;
+    CXXRCONST char *value;
 } name_value;
 
 
@@ -476,7 +495,7 @@ static const name_value guess[] = {
     {"zh_TW",                          ENC_BIG5},
     {"zu_ZA",                          ENC_ISO8859_1},
 };
-static const int guess_count = (sizeof(guess)/sizeof(name_value));
+static const int guess_count = (CXXRCONSTRUCT(int, sizeof(guess)/sizeof(name_value)));
 
 static const name_value known[] = {
     {"iso88591", "ISO8859-1"},
@@ -525,11 +544,11 @@ static const name_value known[] = {
     {"big5hkscs", "BIG5-HKSCS"},
 #endif
 };
-static const int known_count = (sizeof(known)/sizeof(name_value));
+static const int known_count = (CXXRCONSTRUCT(int, sizeof(known)/sizeof(name_value)));
 
 
 #ifndef __APPLE__
-static char* name_value_search(const char *name, const name_value table[],
+static CXXRCONST char* name_value_search(const char *name, const name_value table[],
 			       const int table_count)
 {
     int min, mid, max;
@@ -589,7 +608,7 @@ const char *locale2charset(const char *locale)
     int i;
     int  cp;
 #ifndef __APPLE__
-    char *value;
+    CXXRCONST char *value;
 #endif
 
     if ((locale == NULL) || (0 == strcmp(locale, "NULL")))
@@ -606,7 +625,7 @@ const char *locale2charset(const char *locale)
      */
     memset(la_loc, 0, sizeof(la_loc));
     memset(enc, 0, sizeof(enc));
-    p = strrchr(locale, '.');
+    p = const_cast<char*>(strrchr(locale, '.'));
     if(p) {
 	strncpy(enc, p+1, sizeof(enc)-1);
 	strncpy(la_loc, locale, sizeof(la_loc)-1);
@@ -655,7 +674,7 @@ const char *locale2charset(const char *locale)
     if (0 == strcmp(enc, "UTF-8")) strcpy(enc, "utf8");
 
     if(strcmp(enc, "") && strcmp(enc, "utf8")) {
-	for(i = 0; enc[i]; i++) enc[i] = (char) tolower(enc[i]);
+	for(i = 0; enc[i]; i++) enc[i] = char( tolower(enc[i]));
 
 	for(i = 0; i < known_count; i++)
 	    if (0 == strcmp(known[i].name,enc)) return known[i].value;
@@ -675,12 +694,12 @@ const char *locale2charset(const char *locale)
 	    strncpy(charset, (enc[3] == '-') ? enc+4: enc+3, sizeof(charset));
 	    if(strncmp(charset, "euc", 3)) {
 		if (charset[3] != '-') {
-		    for(i = (int) strlen(charset)-3; 0 < i; i--)
+		    for(i = int( strlen(charset))-3; 0 < i; i--)
 			charset[i+1] = charset[i];
 		    charset[3] = '-';
 		}
 		for(i = 0; charset[i]; i++)
-		    charset[i] = (char) toupper(charset[i]);
+		    charset[i] = char( toupper(charset[i]));
 		return charset;
 	    }
 	}
@@ -688,7 +707,7 @@ const char *locale2charset(const char *locale)
 	/* let's hope it is a ll_* name */
 	if (0 == strcmp(enc, "euc")) {
 	    /* This is OK as encoding names are ASCII */
-	    if(isalpha((int)la_loc[0]) && isalpha((int)la_loc[1])
+	    if(isalpha(int(la_loc[0])) && isalpha(int(la_loc[1]))
 	       && (la_loc[2] == '_')) {
 		if (0 == strncmp("ja", la_loc, 2)) return "EUC-JP";
 		if (0 == strncmp("ko", la_loc, 2)) return "EUC-KR";

@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2006-8  The R Core Team.
@@ -44,7 +60,7 @@ void setup_Rmainloop(void);
 extern void R_ReplDLLinit(void);
 extern int R_ReplDLLdo1(void);
 
-void R_setStartTime(void);
+void R_setStartTime(void);  /* 2007/06/11 arr: also prototyped in Rinterface.h */
 extern void R_RunExitFinalizers(void);
 extern void CleanEd(void);
 extern void Rf_KillAllDevices(void);

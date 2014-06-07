@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -32,7 +48,7 @@ static SEXP cumsum(SEXP x, SEXP s)
     for (R_xlen_t i = 0 ; i < xlength(x) ; i++) {
 	if (ISNAN(rx[i])) break;
 	sum += rx[i];
-	rs[i] = (double) sum;
+	rs[i] = double( sum);
     }
     return s;
 }
@@ -49,7 +65,7 @@ static SEXP icumsum(SEXP x, SEXP s)
 	    warning(_("integer overflow in 'cumsum'; use 'cumsum(as.numeric(.))'"));
 	    break;
 	}
-	is[i] = (int) sum;
+	is[i] = int( sum);
     }
     return s;
 }
@@ -76,7 +92,7 @@ static SEXP cumprod(SEXP x, SEXP s)
     prod = 1.0;
     for (i = 0 ; i < length(x) ; i++) {
 	prod *= rx[i];
-	rs[i] = (double) prod;
+	rs[i] = double( prod);
     }
     return s;
 }

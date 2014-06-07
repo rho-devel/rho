@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  file dounzip.c
@@ -210,7 +226,7 @@ zipunzip(const char *zipname, const char *dest, int nfiles, const char **files,
     if (nfiles == 0) { /* all files */
 	unz_global_info64 gi;
 	unzGetGlobalInfo64(uf, &gi);
-	for (i = 0; i < gi.number_entry; i++) {
+	for (i = 0; i < CXXRCONSTRUCT(int, gi.number_entry); i++) {
 	    if (i > 0) if ((err = unzGoToNextFile(uf)) != UNZ_OK) break;
 	    if (*nnames+1 >= LENGTH(names)) {
 		SEXP onames = names;
@@ -259,14 +275,14 @@ static SEXP ziplist(const char *zipname)
     err = unzGetGlobalInfo64 (uf, &gi);
     if (err != UNZ_OK)
         error("error %d with zipfile in unzGetGlobalInfo", err);
-    nfiles = (int) gi.number_entry;
+    nfiles = int( gi.number_entry);
     /* name, length, datetime */
     PROTECT(ans = allocVector(VECSXP, 3));
     SET_VECTOR_ELT(ans, 0, names = allocVector(STRSXP, nfiles));
     SET_VECTOR_ELT(ans, 1, lengths = allocVector(REALSXP, nfiles));
     SET_VECTOR_ELT(ans, 2, dates = allocVector(STRSXP, nfiles));
 
-    for (i = 0; i < nfiles; i++) {
+    for (i = 0; CXXRCONSTRUCT(int, i) < nfiles; i++) {
         char filename_inzip[PATH_MAX], date[50];
         unz_file_info64 file_info;
 
@@ -277,7 +293,7 @@ static SEXP ziplist(const char *zipname)
 	/* In theory at least bit 11 of the flag tells us that the
 	   filename is in UTF-8, so FIXME */
 	SET_STRING_ELT(names, i, mkChar(filename_inzip));
-	REAL(lengths)[i] = file_info.uncompressed_size;
+	REAL(lengths)[i] = double(file_info.uncompressed_size);
 	snprintf(date, 50, "%d-%02d-%02d %02d:%02d",
 		 file_info.tmu_date.tm_year,
 		 file_info.tmu_date.tm_mon + 1,
@@ -286,7 +302,7 @@ static SEXP ziplist(const char *zipname)
 		 file_info.tmu_date.tm_min);
 	SET_STRING_ELT(dates, i, mkChar(date));
 
-        if (i < nfiles - 1) {
+        if (CXXRCONSTRUCT(int, i) < nfiles - 1) {
             err = unzGoToNextFile(uf);
             if (err != UNZ_OK)
                 error("error %d with zipfile in unzGoToNextFile\n",err);
@@ -300,6 +316,7 @@ static SEXP ziplist(const char *zipname)
 
 /* called from a .External in package 'utils', so managing
    the R_alloc stack here is prudence */
+extern "C"
 SEXP Runzip(SEXP args)
 {
     SEXP  fn, ans, names = R_NilValue;
@@ -320,7 +337,7 @@ SEXP Runzip(SEXP args)
     if (ntopics > 0) {
 	if (!isString(fn))
 	    error(_("invalid '%s' argument"), "files");
-	topics = (const char **) R_alloc(ntopics, sizeof(char *));
+	topics = static_cast<const char **>( CXXR_alloc(ntopics, sizeof(char *)));
 	for (i = 0; i < ntopics; i++)
 	    topics[i] = translateChar(STRING_ELT(fn, i));
     }
@@ -427,7 +444,7 @@ static Rboolean unz_open(Rconnection con)
 	return FALSE;
     }
     unzOpenCurrentFile(uf);
-    ((Runzconn)(con->private))->uf = uf;
+    (static_cast<Runzconn>((con->connprivate)))->uf = uf;
     con->isopen = TRUE;
     con->canwrite = FALSE;
     con->canread = TRUE;
@@ -440,7 +457,7 @@ static Rboolean unz_open(Rconnection con)
 
 static void unz_close(Rconnection con)
 {
-    unzFile uf = ((Runzconn)(con->private))->uf;
+    unzFile uf = (static_cast<Runzconn>((con->connprivate)))->uf;
     unzCloseCurrentFile(uf);
     unzClose(uf);
     con->isopen = FALSE;
@@ -448,7 +465,7 @@ static void unz_close(Rconnection con)
 
 static int unz_fgetc_internal(Rconnection con)
 {
-    unzFile uf = ((Runzconn)(con->private))->uf;
+    unzFile uf = (static_cast<Runzconn>((con->connprivate)))->uf;
     char buf[1];
     int err, p;
 
@@ -460,8 +477,8 @@ static int unz_fgetc_internal(Rconnection con)
 static size_t unz_read(void *ptr, size_t size, size_t nitems,
 		       Rconnection con)
 {
-    unzFile uf = ((Runzconn)(con->private))->uf;
-    return unzReadCurrentFile(uf, ptr, (unsigned int)(size*nitems))/size;
+    unzFile uf = (static_cast<Runzconn>((con->connprivate)))->uf;
+    return unzReadCurrentFile(uf, ptr, static_cast<unsigned int>(size*nitems))/size;
 }
 
 static int null_vfprintf(Rconnection con, const char *format, va_list ap)
@@ -491,41 +508,45 @@ static int null_fflush(Rconnection con)
 Rconnection attribute_hidden
 R_newunz(const char *description, const char *const mode)
 {
-    Rconnection new;
-    new = (Rconnection) malloc(sizeof(struct Rconn));
-    if(!new) error(_("allocation of 'unz' connection failed"));
-    new->class = (char *) malloc(strlen("unz") + 1);
-    if(!new->class) {
-	free(new);
+    Rconnection newconn;
+    newconn = static_cast<Rconnection>( malloc(sizeof(struct Rconn)));
+    if(!newconn) error(_("allocation of 'unz' connection failed"));
+    newconn->connclass = static_cast<char *>( malloc(strlen("unz") + 1));
+    if(!newconn->connclass) {
+	free(newconn);
 	error(_("allocation of 'unz' connection failed"));
     }
-    strcpy(new->class, "unz");
-    new->description = (char *) malloc(strlen(description) + 1);
-    if(!new->description) {
-	free(new->class); free(new);
+    strcpy(newconn->connclass, "unz");
+    newconn->description = static_cast<char *>( malloc(strlen(description) + 1));
+    if(!newconn->description) {
+	free(newconn->connclass); free(newconn);
 	error(_("allocation of 'unz' connection failed"));
     }
-    init_con(new, description, CE_NATIVE, mode);
+    init_con(newconn, description, CE_NATIVE, mode);
 
-    new->canseek = TRUE;
-    new->open = &unz_open;
-    new->close = &unz_close;
-    new->vfprintf = &null_vfprintf;
-    new->fgetc_internal = &unz_fgetc_internal;
-    new->fgetc = &dummy_fgetc;
-    new->seek = &null_seek;
-    new->fflush = &null_fflush;
-    new->read = &unz_read;
-    new->write = &null_write;
-    new->private = (void *) malloc(sizeof(struct unzconn));
-    if(!new->private) {
-	free(new->description); free(new->class); free(new);
+    newconn->canseek = TRUE;
+    newconn->open = &unz_open;
+    newconn->close = &unz_close;
+    newconn->vfprintf = &null_vfprintf;
+    newconn->fgetc_internal = &unz_fgetc_internal;
+    newconn->fgetc = &dummy_fgetc;
+    newconn->seek = &null_seek;
+    newconn->fflush = &null_fflush;
+    newconn->read = &unz_read;
+    newconn->write = &null_write;
+    newconn->connprivate = CXXRNOCAST(void *) malloc(sizeof(struct unzconn));
+    if(!newconn->connprivate) {
+	free(newconn->description); free(newconn->connclass); free(newconn);
 	error(_("allocation of 'unz' connection failed"));
     }
-    return new;
+    return newconn;
 }
 
        /* =================== second part ====================== */
+
+// In CXXR the following has been modified minimally to allow
+// compilation as C++.  In particular old-style casts are tolerated,
+// contrary to general CXXR practice.
 
 /* From minizip contribution to zlib 1.2.3, updated for 1.2.5 */
 
@@ -1814,7 +1835,7 @@ static int unzOpenCurrentFile3 (unzFile file, int* method,
       pfile_in_zip_read_info->stream.zalloc = (alloc_func)0;
       pfile_in_zip_read_info->stream.zfree = (free_func)0;
       pfile_in_zip_read_info->stream.opaque = (voidpf)0;
-      pfile_in_zip_read_info->stream.next_in = (voidpf)0;
+      pfile_in_zip_read_info->stream.next_in = CXXRNOCAST(voidpf)0;
       pfile_in_zip_read_info->stream.avail_in = 0;
 
       err = BZ2_bzDecompressInit(&pfile_in_zip_read_info->bstream, 0, 0);
@@ -1871,7 +1892,7 @@ static int unzOpenCurrentFile3 (unzFile file, int* method,
     return UNZ_OK;
 }
 
-static int unzOpenCurrentFile (unzFile file)
+/*static*/ int unzOpenCurrentFile (unzFile file)
 {
     return unzOpenCurrentFile3(file, NULL, NULL, 0, NULL);
 }
@@ -1886,7 +1907,7 @@ static int unzOpenCurrentFile (unzFile file)
   return <0 with error code if there is an error
     (UNZ_ERRNO for IO error, or zLib error for uncompress error)
 */
-static int unzReadCurrentFile  (unzFile file, voidp buf, unsigned len)
+/*static*/ int unzReadCurrentFile  (unzFile file, voidp buf, unsigned len)
 {
     int err = UNZ_OK;
     uInt iRead = 0;
@@ -2094,7 +2115,7 @@ static int unzReadCurrentFile  (unzFile file, voidp buf, unsigned len)
   Close the file in zip opened with unzipOpenCurrentFile
   Return UNZ_CRCERROR if all the file was read but the CRC is not good
 */
-static int unzCloseCurrentFile (unzFile file)
+/*static*/ int unzCloseCurrentFile (unzFile file)
 {
     int err = UNZ_OK;
 
@@ -2159,7 +2180,7 @@ static voidpf fopen_func(const void* filename, int mode)
         mode_fopen = "wb";
 
     if ((filename != NULL) && (mode_fopen != NULL))
-        file = fopen(filename, mode_fopen);
+        file = fopen(CXXRSCAST(const char*, filename), mode_fopen);
     return file;
 }
 

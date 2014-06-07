@@ -118,6 +118,8 @@ except <- c("call", "switch", ".C", ".Fortran", ".Call", ".External",
             ".subset", ".subset2", ".primTrace", ".primUntrace",
             "lazyLoadDBfetch", ".Internal", ".Primitive", "^", "|",
             "%*%", "rep", "seq.int",
+            ## not mature in CXXR:
+            "bdeserialize", "bserialize", "provenance",
             ## these may not be enabled
             "tracemem", "retracemem", "untracemem")
 
@@ -149,6 +151,6 @@ for(f in ls(.ArgsEnv, all.names=TRUE))
     } else a <- list(zZ=NULL)
     res <- try(do.call(f, a), silent = TRUE)
     m <- geterrmessage()
-    if(!grepl('does not match|unused argument|requires 0|native symbol', m))
+    if(!grepl('does not match|unused argument|requires 0|native symbol|inappropriate', m))
         stop("failure on ", f)
 }

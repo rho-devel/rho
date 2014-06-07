@@ -87,6 +87,8 @@ makeJSS <- function()
 	fmtEprint <- plain
 	fmtHowpublished <- plainclean
 	fmtISBN <- label(prefix = "ISBN ")
+##if (!interactive()) stop("makeJSS")
+##browser()
 	fmtISSN <- label(prefix="ISSN ")
 	fmtInstitution <- plainclean
 	fmtNote <- plainclean

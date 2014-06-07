@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2000-12   The R Core Team.
@@ -23,13 +39,14 @@
 #include <config.h>
 #endif
 
-#define R_USE_SIGNALS 1
 #include <Defn.h>
 #include <Fileio.h>
 #include <Rconnections.h>
 #include <R_ext/R-ftp-http.h>
 #include <errno.h>
-#include <R_ext/Print.h>
+#include <cstdarg>
+
+using namespace std;
 
 static void *in_R_HTTPOpen(const char *url, const char *headers, const int cacheOK);
 static int   in_R_HTTPRead(void *ctx, char *dest, int len);
@@ -64,7 +81,7 @@ static Rboolean url_open(Rconnection con)
 {
     void *ctxt;
     char *url = con->description;
-    UrlScheme type = ((Rurlconn)(con->private))->type;
+    UrlScheme type = ((Rurlconn)(con->connprivate))->type;
 
     if(con->mode[0] != 'r') {
 	REprintf("can only open URLs for reading");
@@ -98,7 +115,7 @@ static Rboolean url_open(Rconnection con)
 	  /* error("cannot open URL '%s'", url); */
 	    return FALSE;
 	}
-	((Rurlconn)(con->private))->ctxt = ctxt;
+	((Rurlconn)(con->connprivate))->ctxt = ctxt;
     }
 	break;
     case FTPsh:
@@ -109,7 +126,7 @@ static Rboolean url_open(Rconnection con)
 	  /* error("cannot open URL '%s'", url); */
 	    return FALSE;
 	}
-	((Rurlconn)(con->private))->ctxt = ctxt;
+	((Rurlconn)(con->connprivate))->ctxt = ctxt;
 	break;
     default:
 	warning(_("unsupported URL scheme"));
@@ -117,8 +134,8 @@ static Rboolean url_open(Rconnection con)
     }
 
     con->isopen = TRUE;
-    con->canwrite = (con->mode[0] == 'w' || con->mode[0] == 'a');
-    con->canread = !con->canwrite;
+    con->canwrite = (CXXRCONSTRUCT(Rboolean, con->mode[0] == 'w' || con->mode[0] == 'a'));
+    con->canread = CXXRCONSTRUCT(Rboolean, !con->canwrite);
     if(strlen(con->mode) >= 2 && con->mode[1] == 'b') con->text = FALSE;
     else con->text = TRUE;
     con->save = -1000;
@@ -128,14 +145,14 @@ static Rboolean url_open(Rconnection con)
 
 static void url_close(Rconnection con)
 {
-    UrlScheme type = ((Rurlconn)(con->private))->type;
+    UrlScheme type = ((Rurlconn)(con->connprivate))->type;
     switch(type) {
     case HTTPSsh:
     case HTTPsh:
-	in_R_HTTPClose(((Rurlconn)(con->private))->ctxt);
+	in_R_HTTPClose(((Rurlconn)(con->connprivate))->ctxt);
 	break;
     case FTPsh:
-	in_R_FTPClose(((Rurlconn)(con->private))->ctxt);
+	in_R_FTPClose(((Rurlconn)(con->connprivate))->ctxt);
 	break;
     }
     con->isopen = FALSE;
@@ -143,8 +160,8 @@ static void url_close(Rconnection con)
 
 static int url_fgetc_internal(Rconnection con)
 {
-    UrlScheme type = ((Rurlconn)(con->private))->type;
-    void * ctxt = ((Rurlconn)(con->private))->ctxt;
+    UrlScheme type = ((Rurlconn)(con->connprivate))->type;
+    void * ctxt = ((Rurlconn)(con->connprivate))->ctxt;
     unsigned char c;
     size_t n = 0; /* -Wall */
 
@@ -163,17 +180,17 @@ static int url_fgetc_internal(Rconnection con)
 static size_t url_read(void *ptr, size_t size, size_t nitems,
 		       Rconnection con)
 {
-    UrlScheme type = ((Rurlconn)(con->private))->type;
-    void * ctxt = ((Rurlconn)(con->private))->ctxt;
+    UrlScheme type = ((Rurlconn)(con->connprivate))->type;
+    void * ctxt = ((Rurlconn)(con->connprivate))->ctxt;
     size_t n = 0; /* -Wall */
 
     switch(type) {
     case HTTPSsh:
     case HTTPsh:
-	n = in_R_HTTPRead(ctxt, ptr, (int)(size*nitems));
+	n = in_R_HTTPRead(ctxt, CXXRSCAST(char*, ptr), size*nitems);
 	break;
     case FTPsh:
-	n = in_R_FTPRead(ctxt, ptr, (int)(size*nitems));
+	n = in_R_FTPRead(ctxt, CXXRSCAST(char*, ptr), size*nitems);
 	break;
     }
     return n/size;
@@ -182,46 +199,46 @@ static size_t url_read(void *ptr, size_t size, size_t nitems,
 
 static Rconnection in_R_newurl(const char *description, const char * const mode)
 {
-    Rconnection new;
+    Rconnection newconn;
 
-    new = (Rconnection) malloc(sizeof(struct Rconn));
-    if(!new) error(_("allocation of url connection failed"));
-    new->class = (char *) malloc(strlen("url") + 1);
-    if(!new->class) {
-	free(new);
+    newconn = (Rconnection) malloc(sizeof(struct Rconn));
+    if(!newconn) error(_("allocation of url connection failed"));
+    newconn->connclass = (char *) malloc(strlen("url") + 1);
+    if(!newconn->connclass) {
+	free(newconn);
 	error(_("allocation of url connection failed"));
     }
-    strcpy(new->class, "url");
-    new->description = (char *) malloc(strlen(description) + 1);
-    if(!new->description) {
-	free(new->class); free(new);
+    strcpy(newconn->connclass, "url");
+    newconn->description = (char *) malloc(strlen(description) + 1);
+    if(!newconn->description) {
+	free(newconn->connclass); free(newconn);
 	error(_("allocation of url connection failed"));
     }
-    init_con(new, description, CE_NATIVE, mode);
-    new->canwrite = FALSE;
-    new->open = &url_open;
-    new->close = &url_close;
-    new->fgetc_internal = &url_fgetc_internal;
-    new->fgetc = &dummy_fgetc;
-    new->read = &url_read;
-    new->private = (void *) malloc(sizeof(struct urlconn));
-    if(!new->private) {
-	free(new->description); free(new->class); free(new);
+    init_con(newconn, description, CE_NATIVE, mode);
+    newconn->canwrite = FALSE;
+    newconn->open = &url_open;
+    newconn->close = &url_close;
+    newconn->fgetc_internal = &url_fgetc_internal;
+    newconn->fgetc = &dummy_fgetc;
+    newconn->read = &url_read;
+    newconn->connprivate = (void *) malloc(sizeof(struct urlconn));
+    if(!newconn->connprivate) {
+	free(newconn->description); free(newconn->connclass); free(newconn);
 	error(_("allocation of url connection failed"));
     }
 
     IDquiet = TRUE;
-    return new;
+    return newconn;
 }
 
 
 
 #ifndef Win32
-static void putdots(int *pold, int new)
+static void putdots(int *pold, int newi)
 {
     int i, old = *pold;
-    *pold = new;
-    for(i = old; i < new; i++) {
+    *pold = newi;
+    for(i = old; i < newi; i++) {
 	REprintf(".");
 	if((i+1) % 50 == 0) REprintf("\n");
 	else if((i+1) % 10 == 0) REprintf(" ");
@@ -229,11 +246,11 @@ static void putdots(int *pold, int new)
     if(R_Consolefile) fflush(R_Consolefile);
 }
 
-static void putdashes(int *pold, int new)
+static void putdashes(int *pold, int newi)
 {
     int i, old = *pold;
-    *pold = new;
-    for(i = old; i < new; i++)  REprintf("=");
+    *pold = newi;
+    for(i = old; i < newi; i++)  REprintf("=");
     if(R_Consolefile) fflush(R_Consolefile);
 }
 #endif
@@ -252,7 +269,7 @@ typedef struct {
     window wprog;
     progressbar pb;
     label l_url;
-    RCNTXT cntxt;
+    Context cntxt;
     int pc;
 } winprogressbar;
 
@@ -273,7 +290,8 @@ static SEXP in_do_download(SEXP args)
 {
     SEXP scmd, sfile, smode, sheaders, agentFun;
     const char *url, *file, *mode, *headers;
-    int quiet, status = 0, cacheOK;
+    Rboolean quiet;
+    int status = 0, cacheOK;
 #ifdef Win32
     char pbuf[30];
     int pc;
@@ -291,7 +309,7 @@ static SEXP in_do_download(SEXP args)
     if(length(sfile) > 1)
 	warning(_("only first element of 'destfile' argument used"));
     file = translateChar(STRING_ELT(sfile, 0));
-    IDquiet = quiet = asLogical(CAR(args)); args = CDR(args);
+    IDquiet = quiet = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args))); args = CDR(args);
     if(quiet == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "quiet");
     smode =  CAR(args); args = CDR(args);
@@ -397,7 +415,7 @@ static SEXP in_do_download(SEXP args)
 		setprogressbar(pbar.pb, 0);
 		settext(pbar.wprog, "Download progress");
 		show(pbar.wprog);
-		begincontext(&(pbar.cntxt), CTXT_CCODE, R_NilValue, R_NilValue,
+		begincontext(&(pbar.cntxt), Context::CCODE, R_NilValue, R_NilValue,
 			     R_NilValue, R_NilValue, R_NilValue);
 		pbar.cntxt.cend = &doneprogressbar;
 		pbar.cntxt.cenddata = &pbar;
@@ -406,7 +424,7 @@ static SEXP in_do_download(SEXP args)
 #endif
 	    while ((len = in_R_HTTPRead(ctxt, buf, sizeof(buf))) > 0) {
 		size_t res = fwrite(buf, 1, len, out);
-		if(res != len) error(_("write failed"));
+		if(CXXRCONSTRUCT(int, res) != len) error(_("write failed"));
 		nbytes += len;
 #ifdef Win32
 		if(!quiet) {
@@ -501,7 +519,7 @@ static SEXP in_do_download(SEXP args)
 		show(pbar.wprog);
 
 		/* set up a context which will close progressbar on error. */
-		begincontext(&(pbar.cntxt), CTXT_CCODE, R_NilValue, R_NilValue,
+		begincontext(&(pbar.cntxt), Context::CCODE, R_NilValue, R_NilValue,
 			     R_NilValue, R_NilValue, R_NilValue);
 		pbar.cntxt.cend = &doneprogressbar;
 		pbar.cntxt.cenddata = &pbar;
@@ -511,7 +529,7 @@ static SEXP in_do_download(SEXP args)
 #endif
 	    while ((len = in_R_FTPRead(ctxt, buf, sizeof(buf))) > 0) {
 		size_t res = fwrite(buf, 1, len, out);
-		if(res != len) error(_("write failed"));
+		if(CXXRCONSTRUCT(int, res) != len) error(_("write failed"));
 		nbytes += len;
 #ifdef Win32
 		if(!quiet) {
@@ -1040,6 +1058,15 @@ void RxmlMessage(int level, const char *format, ...)
 #define STRICT_R_HEADERS
 #include <R_ext/RS.h> /* for R_Calloc */
 #include <R_ext/Rdynload.h>
+
+extern "C" {
+    void
+#ifdef USE_WININET
+    R_init_internet2(DllInfo *info);
+#else
+    R_init_internet(DllInfo *info);
+#endif
+}
 
 void
 #ifdef HAVE_VISIBILITY_ATTRIBUTE

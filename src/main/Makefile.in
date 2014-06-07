@@ -1,3 +1,18 @@
+#CXXR $Id$
+#CXXR 
+#CXXR This file is part of CXXR, a project to refactor the R interpreter
+#CXXR into C++.  It may consist in whole or in part of program code and
+#CXXR documentation taken from the R project itself, incorporated into
+#CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+#CXXR Licence.
+#CXXR 
+#CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+#CXXR copyrights and copyright restrictions as may be stated below.
+#CXXR 
+#CXXR CXXR is not part of the R project, and bugs and other issues should
+#CXXR not be reported via r-bugs or other R project channels; instead refer
+#CXXR to the CXXR website.
+
 #
 # ${R_HOME}/src/main/Makefile
 
@@ -12,40 +27,71 @@ R_HOME=$(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES_C = \
-	CommandLineArgs.c \
-	Rdynload.c Renviron.c RNG.c \
-	agrep.c apply.c arithmetic.c array.c attrib.c \
-	bind.c builtin.c \
-	character.c coerce.c colors.c complex.c connections.c context.c cum.c \
-	dcf.c datetime.c debug.c deparse.c devices.c \
-	dotcode.c dounzip.c dstruct.c duplicate.c \
-	edit.c engine.c envir.c errors.c eval.c \
-	format.c \
-	gevents.c gram.c gram-ex.c graphics.c grep.c \
-	identical.c inlined.c inspect.c internet.c iosupport.c \
-	lapack.c list.c localecharset.c logic.c \
-	main.c mapply.c match.c memory.c \
-	names.c \
-	objects.c options.c \
-	paste.c platform.c plot.c plot3d.c plotmath.c \
-	print.c printarray.c printvector.c printutils.c qsort.c \
-	random.c raw.c registration.c relop.c rlocale.c \
-	saveload.c scan.c seq.c serialize.c sort.c source.c split.c \
-	sprintf.c startup.c subassign.c subscript.c subset.c summary.c sysutils.c \
-	unique.c util.c \
-	version.c vfonts.c
+SOURCES_C = complex.c inlined.c
+
+SOURCES_CXX = \
+	ArgList.cpp ArgMatcher.cpp \
+	BinaryFunction.cpp Browser.cpp BuiltInFunction.cpp ByteCode.cpp \
+	CellPool.cpp Closure.cpp \
+	ClosureContext.cpp CommandChronicle.cpp CommandLineArgs.cpp \
+	ComplexVector.cpp ConsCell.cpp \
+	DotInternal.cpp DottedArgs.cpp \
+	Environment.cpp Evaluator.cpp Evaluator_Context.cpp Expression.cpp \
+	ExpressionVector.cpp ExternalPointer.cpp \
+        Frame.cpp FunctionBase.cpp FunctionContext.cpp \
+        GCEdge.cpp GCManager.cpp GCNode.cpp GCNode_PtrS11n.cpp GCRoot.cpp \
+	GCStackRoot.cpp \
+	HeterogeneousList.cpp \
+        IntVector.cpp inspect.cpp \
+	ListFrame.cpp ListVector.cpp LogicalVector.cpp LoopBailout.cpp \
+	MemoryBank.cpp \
+	NodeStack.cpp \
+        PairList.cpp Promise.cpp ProtectStack.cpp Provenance.cpp \
+	ProvenanceTracker.cpp \
+        RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
+        RealVector.cpp Renviron.cpp ReturnBailout.cpp \
+        S11nScope.cpp S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp \
+        StdFrame.cpp String.cpp StringVector.cpp Subscripting.cpp Symbol.cpp \
+	UnaryFunction.cpp \
+        VectorBase.cpp \
+        WeakRef.cpp \
+	apply.cpp agrep.cpp arithmetic.cpp array.cpp attrib.cpp \
+	bind.cpp builtin.cpp \
+	character.cpp coerce.cpp colors.cpp connections.cpp context.cpp \
+	cum.cpp \
+	dcf.cpp datetime.cpp debug.cpp deparse.cpp devices.cpp \
+	dotcode.cpp dounzip.cpp dstruct.cpp duplicate.cpp \
+	edit.cpp engine.cpp envir.cpp errors.cpp eval.cpp \
+	format.cpp \
+	gevents.cpp gram-ex.cpp gram.cpp graphics.cpp grep.cpp \
+	identical.cpp internet.cpp iosupport.cpp \
+	lapack.cpp list.cpp localecharset.cpp logic.cpp \
+	main.cpp mapply.cpp match.cpp memory.cpp \
+	names.cpp \
+        objects.cpp options.cpp \
+	paste.cpp platform.cpp plot.cpp plot3d.cpp plotmath.cpp \
+	print.cpp printarray.cpp printvector.cpp printutils.cpp \
+	provenance_do.cpp \
+	qsort.cpp \
+	random.cpp raw.cpp registration.cpp relop.cpp rlocale.cpp \
+	saveload.cpp scan.cpp seq.cpp serialize.cpp sort.cpp \
+        source.cpp split.cpp sprintf.cpp startup.cpp subassign.cpp \
+        subscript.cpp subset.cpp summary.cpp sysutils.cpp \
+	unique.cpp util.cpp \
+	version.cpp vfonts.cpp
 
 SOURCES_F =  xxxpr.f
 
 ## If the substitutes are needed, the corresponding objects are put by
 ## configure in @LIBOBJS@ @ALLOCA@
-EXTRA_SOURCES_C = \
-	Rmain.c alloca.c mkdtemp.c strdup.c strncasecmp.c
+EXTRA_SOURCES_CXX = \
+	Rmain.cpp alloca.cpp mkdtemp.cpp strdup.cpp strncasecmp.cpp
 
-DEPENDS = $(SOURCES_C:.c=.d) $(EXTRA_SOURCES_C:.c=.d)
-SOURCES = $(SOURCES_C) $(SOURCES_F)
-OBJECTS = $(SOURCES_C:.c=.o) $(SOURCES_F:.f=.o) @LIBOBJS@ @ALLOCA@
+DEPENDS = $(SOURCES_C:.c=.d) $(SOURCES_CXX:.cpp=.d) \
+          $(EXTRA_SOURCES_CXX:.cpp=.d)
+SOURCES = $(SOURCES_C) $(SOURCES_CXX) $(SOURCES_F)
+OBJECTS = $(SOURCES_C:.c=.o) $(SOURCES_CXX:.cpp=.o) $(SOURCES_F:.f=.o) \
+          @LIBOBJS@ @ALLOCA@
 HEADERS = \
 	RBufferUtils.h Rstrptime.h \
 	arithmetic.h \
@@ -61,8 +107,9 @@ HEADERS = \
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 DISTFILES = Makefile.in Makefile.win \
 	$(HEADERS) \
-	$(SOURCES_C) \
-	$(EXTRA_SOURCES_C) \
+        $(SOURCES_C) \
+	$(SOURCES_CXX) \
+	$(EXTRA_SOURCES_CXX) \
 	$(SOURCES_F) \
 	gram.y
 
@@ -95,13 +142,15 @@ EXTRA_STATIC_LIBS = \
   $(R_ZLIBS) $(R_BZLIBS) $(R_PCRE) $(R_TRE) $(R_XDR) $(R_XZ) $(R_LIBINTL)
 STATIC_LIBS = $(MAIN_LIBS) $(EXTRA_STATIC_LIBS)
 
-EXTRA_LIBS = $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS) @LIBINTL@ $(READLINE_LIBS) $(LIBS)
+EXTRA_LIBS = $(BOOST_LIBS) $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS) @LIBINTL@ $(READLINE_LIBS) $(LIBS)
 
 R_binary = R.bin
+
 R_bin_OBJECTS = Rmain.o @WANT_R_SHLIB_FALSE@$(OBJECTS)
 @WANT_R_SHLIB_FALSE@R_bin_LDADD = $(MAIN_OBJS) $(EXTRA_STATIC_LIBS) $(EXTRA_LIBS)
+
 ## Linked against -lRblas becasue -lR is and otherwise ld complains.
-@WANT_R_SHLIB_TRUE@R_bin_LDADD = -L../../lib@R_ARCH@ -lR @BLAS_SHLIB_TRUE@-lRblas
+@WANT_R_SHLIB_TRUE@R_bin_LDADD = -L../../lib@R_ARCH@ -lR $(BOOST_LIBS) @LIBINTL@ @BLAS_SHLIB_TRUE@-lRblas
 @BUILD_LTO_FALSE@R_bin_DEPENDENCIES =@WANT_R_SHLIB_FALSE@ libR.a @USE_EXPORTFILES_TRUE@ $(top_builddir)/etc/R.exp
 
 libR_la = libR$(DYLIB_EXT)
@@ -112,18 +161,18 @@ libR_la_DEPENDENCIES = $(STATIC_LIBS) @WANT_R_SHLIB_TRUE@ @USE_EXPORTFILES_TRUE@
 ## The next is needed on darwin only at present
 LIBR_LDFLAGS = @LIBR_LDFLAGS@
 
+%.bakc : %.cpp ../scripts/CXXR/uncxxr.pl
+	../scripts/CXXR/uncxxr.pl $< > $@
 
 all: Makefile Makedeps R
 
 Makefile: $(srcdir)/Makefile.in \
   $(top_builddir)/config.status \
   ../include/config.h \
-  ../include/Rversion.h \
-  $(SOURCES_C) $(EXTRA_SOURCES_C)
+  ../include/Rversion.h
 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 Makedeps: Makefile $(DEPENDS)
-	@cat $(DEPENDS) >> Makefile
 	@touch $@
 
 ## This target has been changed to ensure that R.bin and libR get
@@ -143,7 +192,7 @@ R: Makefile
 	(cd $(@D); $(MAKE) $(@F))
 
 $(R_binary): $(R_bin_OBJECTS) $(R_bin_DEPENDENCIES)
-	$(MAIN_LINK) -o $@ $(R_bin_OBJECTS) $(R_bin_LDADD)
+	$(LINK.cpp) $(MAIN_LDFLAGS) -o $@ $(R_bin_OBJECTS) $(R_bin_LDADD)
 
 libR.a: $(OBJECTS) $(STATIC_LIBS)
 	-@mkdir libs
@@ -182,12 +231,12 @@ install-lib-local: $(libR_la)
 
 
 # suppress #line directives
-YFLAGS=-l
+#YFLAGS=-l
 
-$(srcdir)/gram.c: @MAINTAINER_MODE_TRUE@ $(srcdir)/gram.y
-	@$(ECHO) "re-making gram.c"
-	$(YACC) $(YFLAGS) $(srcdir)/gram.y
-	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gram.c	
+$(srcdir)/gram.cpp: @MAINTAINER_MODE_TRUE@ $(srcdir)/gram.y
+	@$(ECHO) "re-making gram.cpp"
+	$(YACC) $(YFLAGS) -p gram_ $(srcdir)/gram.y
+	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gram.cpp
 
 install: installdirs
 	@$(MAKE) install-bin
@@ -235,8 +284,8 @@ maintainer-clean: distclean
 	@-rm -f $(srcdir)/gram.c $(srcdir)/gramLatex.c $(srcdir)/gramRd.c
 
 tags: TAGS
-TAGS: $(SOURCES) $(EXTRA_SOURCES_C) $(HEADERS)
-	etags $(SOURCES) $(EXTRA_SOURCES_C) $(HEADERS)
+TAGS: $(SOURCES) $(EXTRA_SOURCES_CXX) $(HEADERS)
+	etags $(SOURCES) $(EXTRA_SOURCES_CXX) $(HEADERS)
 
 ## Unused targets
 info dvi check:
@@ -248,5 +297,4 @@ distdir: $(DISTFILES)
 	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
 	done
 
-## Automagically generated dependencies:
-
+include $(DEPENDS)

@@ -1,7 +1,23 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996	Robert Gentleman and Ross Ihaka
- *  Copyright (C) 2000--2012	The R Core Team
+ *  Copyright (C) 2000--2012	The R Core Team.
  *  Copyright (C) 2001--2012	The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -32,15 +48,20 @@
 #include <config.h>
 #endif
 
+#include <numeric>
 #include "Defn.h"
 #include "Print.h"
 
 #include <stdlib.h> /* for div() */
+#include "CXXR/GCStackRoot.hpp"
+
+using namespace std;
+using namespace CXXR;
 
 /* FIXME: sort out encodings */
 /* We need display width of a string */
-int Rstrwid(const char *str, int slen, int enc, int quote);  /* from printutils.c */
-#define strwidth(x) Rstrwid(x, (int) strlen(x), CE_NATIVE, 0)
+int Rstrwid(const char *str, int slen, cetype_t enc, int quote);  /* from printutils.c */
+#define strwidth(x) Rstrwid(x, int( strlen(x)), CE_NATIVE, 0)
 
 /* ceil_DIV(a,b) :=  ceil(a / b)  in _int_ arithmetic : */
 static R_INLINE
@@ -131,18 +152,20 @@ static void MatrixRowLabel(SEXP rl, int i, int rlabw, int lbloff)
  * and comment the common code here (only):
 */
 static void printLogicalMatrix(SEXP sx, int offset, int r_pr, int r, int c,
-			       SEXP rl, SEXP cl, const char *rn, const char *cn)
+			       StringVector* rl, SEXP cl,
+                               const char *rn, const char *cn)
 {
 /* initialization; particularly of row labels, rl= dimnames(.)[[1]] and
  * rn = names(dimnames(.))[1] : */
 #define _PRINT_INIT_rl_rn				\
-    int *w = (int *) R_alloc(c, sizeof(int));		\
+    int *w = static_cast<int *>( CXXR_alloc(c, sizeof(int)));	\
     int width, rlabw = -1, clabw = -1; /* -Wall */	\
     int i, j, jmin = 0, jmax = 0, lbloff = 0;		\
 							\
-    if (!isNull(rl))					\
-	formatString(STRING_PTR(rl), r, &rlabw, 0);	\
-    else						\
+    if (!isNull(rl)) {					\
+	StringVector::const_iterator beg = rl->begin(); \
+        rlabw = accumulate(beg, beg + r, 0, stringWidth); \
+    } else						\
 	rlabw = IndexWidth(r + 1) + 3;			\
 							\
     if (rn) {						\
@@ -160,7 +183,7 @@ static void printLogicalMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 
     /* compute w[j] = column-width of j(+1)-th column : */
     for (j = 0; j < c; j++) {
-	formatLogical(&x[j * r], (R_xlen_t) r, &w[j]);
+	formatLogical(&x[j * r], R_xlen_t( r), &w[j]);
 
 #	define _PRINT_SET_clabw					\
 								\
@@ -170,7 +193,7 @@ static void printLogicalMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 		clabw = R_print.na_width_noquote;		\
 	    else clabw = strwidth(translateChar(STRING_ELT(cl, j)));	\
 	    vmaxset(vmax);					\
-	} else							\
+		} else							\
 	    clabw = IndexWidth(j + 1) + 3;
 
 	_PRINT_SET_clabw;
@@ -226,13 +249,14 @@ static void printLogicalMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 }
 
 static void printIntegerMatrix(SEXP sx, int offset, int r_pr, int r, int c,
-			       SEXP rl, SEXP cl, const char *rn, const char *cn)
+			       StringVector* rl, SEXP cl,
+			       const char *rn, const char *cn)
 {
     _PRINT_INIT_rl_rn;
     int *x = INTEGER(sx) + offset;
 
     for (j = 0; j < c; j++) {
-	formatInteger(&x[j * r], (R_xlen_t) r, &w[j]);
+	formatInteger(&x[j * r], R_xlen_t( r), &w[j]);
 	_PRINT_SET_clabw;
 	if (w[j] < clabw)
 	    w[j] = clabw;
@@ -263,16 +287,17 @@ static void printIntegerMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 }
 
 static void printRealMatrix(SEXP sx, int offset, int r_pr, int r, int c,
-			    SEXP rl, SEXP cl, const char *rn, const char *cn)
+			    StringVector* rl, SEXP cl,
+			    const char *rn, const char *cn)
 {
     _PRINT_INIT_rl_rn;
     double *x = REAL(sx) + offset;
 
-    int *d = (int *) R_alloc(c, sizeof(int)),
-	*e = (int *) R_alloc(c, sizeof(int));
+    int *d = static_cast<int *>( CXXR_alloc(c, sizeof(int))),
+	*e = static_cast<int *>( CXXR_alloc(c, sizeof(int)));
 
     for (j = 0; j < c; j++) {
-	formatReal(&x[j * r], (R_xlen_t) r, &w[j], &d[j], &e[j], 0);
+	formatReal(&x[j * r], R_xlen_t( r), &w[j], &d[j], &e[j], 0);
 	_PRINT_SET_clabw;
 	if (w[j] < clabw)
 	    w[j] = clabw;
@@ -303,22 +328,23 @@ static void printRealMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 }
 
 static void printComplexMatrix(SEXP sx, int offset, int r_pr, int r, int c,
-			       SEXP rl, SEXP cl, const char *rn, const char *cn)
+			       StringVector* rl, SEXP cl,
+			       const char *rn, const char *cn)
 {
     _PRINT_INIT_rl_rn;
     Rcomplex *x = COMPLEX(sx) + offset;
 
-    int *dr = (int *) R_alloc(c, sizeof(int)),
-	*er = (int *) R_alloc(c, sizeof(int)),
-	*wr = (int *) R_alloc(c, sizeof(int)),
-	*di = (int *) R_alloc(c, sizeof(int)),
-	*ei = (int *) R_alloc(c, sizeof(int)),
-	*wi = (int *) R_alloc(c, sizeof(int));
+    int *dr = static_cast<int *>( CXXR_alloc(c, sizeof(int))),
+	*er = static_cast<int *>( CXXR_alloc(c, sizeof(int))),
+	*wr = static_cast<int *>( CXXR_alloc(c, sizeof(int))),
+	*di = static_cast<int *>( CXXR_alloc(c, sizeof(int))),
+	*ei = static_cast<int *>( CXXR_alloc(c, sizeof(int))),
+	*wi = static_cast<int *>( CXXR_alloc(c, sizeof(int)));
 
     /* Determine the column widths */
 
     for (j = 0; j < c; j++) {
-	formatComplex(&x[j * r], (R_xlen_t) r,
+	formatComplex(&x[j * r], R_xlen_t( r),
 		      &wr[j], &dr[j], &er[j],
 		      &wi[j], &di[j], &ei[j], 0);
 	_PRINT_SET_clabw;
@@ -358,15 +384,18 @@ static void printComplexMatrix(SEXP sx, int offset, int r_pr, int r, int c,
     }
 }
 
-static void printStringMatrix(SEXP sx, int offset, int r_pr, int r, int c,
-			      int quote, int right, SEXP rl, SEXP cl,
+static void printStringMatrix(const StringVector* sx, int offset, int r_pr,
+			      int r, int c, int quote, int right,
+			      StringVector* rl, SEXP cl,
 			      const char *rn, const char *cn)
 {
     _PRINT_INIT_rl_rn;
-    SEXP *x = STRING_PTR(sx)+offset;
 
+    StringVector::const_iterator beg = sx->begin() + offset;
     for (j = 0; j < c; j++) {
-	formatString(&x[j * r], (R_xlen_t) r, &w[j], quote);
+	StringVector::const_iterator jbeg = beg + j*r;
+	w[j] = accumulate(jbeg, jbeg + r, 0,
+			  (quote ? stringWidthQuote : stringWidth));
 	_PRINT_SET_clabw;
 	if (w[j] < clabw)
 	    w[j] = clabw;
@@ -394,7 +423,7 @@ static void printStringMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 	    MatrixRowLabel(rl, i, rlabw, lbloff);
 	    for (j = jmin; j < jmax; j++) {
 		Rprintf("%*s%s", R_print.gap, "",
-			EncodeString(x[i + j * r], w[j], quote, right));
+			EncodeString(*(beg + i + j*r), w[j], quote, Rprt_adj(right)));
 	    }
 	}
 	Rprintf("\n");
@@ -403,13 +432,14 @@ static void printStringMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 }
 
 static void printRawMatrix(SEXP sx, int offset, int r_pr, int r, int c,
-			   SEXP rl, SEXP cl, const char *rn, const char *cn)
+			   StringVector* rl, SEXP cl,
+			   const char *rn, const char *cn)
 {
     _PRINT_INIT_rl_rn;
     Rbyte *x = RAW(sx) + offset;
 
     for (j = 0; j < c; j++) {
-	formatRaw(&x[j * r], (R_xlen_t) r, &w[j]);
+	formatRaw(&x[j * r], R_xlen_t( r), &w[j]);
 	_PRINT_SET_clabw;
 	if (w[j] < clabw)
 	    w[j] = clabw;
@@ -458,28 +488,33 @@ void printMatrix(SEXP x, int offset, SEXP dim, int quote, int right,
 	return;
     }
     r_pr = r;
+    StringVector* rlabs = SEXP_downcast<StringVector*>(rl);
     if(c > 0 && R_print.max / c < r) /* avoid integer overflow */
 	/* using floor(), not ceil(), since 'c' could be huge: */
 	r_pr = R_print.max / c;
     switch (TYPEOF(x)) {
     case LGLSXP:
-	printLogicalMatrix(x, offset, r_pr, r, c, rl, cl, rn, cn);
+	printLogicalMatrix(x, offset, r_pr, r, c, rlabs, cl, rn, cn);
 	break;
     case INTSXP:
-	printIntegerMatrix(x, offset, r_pr, r, c, rl, cl, rn, cn);
+	printIntegerMatrix(x, offset, r_pr, r, c, rlabs, cl, rn, cn);
 	break;
     case REALSXP:
-	printRealMatrix	  (x, offset, r_pr, r, c, rl, cl, rn, cn);
+	printRealMatrix	  (x, offset, r_pr, r, c, rlabs, cl, rn, cn);
 	break;
     case CPLXSXP:
-	printComplexMatrix(x, offset, r_pr, r, c, rl, cl, rn, cn);
+	printComplexMatrix(x, offset, r_pr, r, c, rlabs, cl, rn, cn);
 	break;
     case STRSXP:
-	if (quote) quote = '"';
-	printStringMatrix (x, offset, r_pr, r, c, quote, right, rl, cl, rn, cn);
-	break;
+	{
+	    if (quote) quote = '"';
+	    const StringVector* sv = SEXP_downcast<StringVector*>(x);
+	    printStringMatrix (sv, offset, r_pr, r, c, quote,
+			       right, rlabs, cl, rn, cn);
+	    break;
+	}
     case RAWSXP:
-	printRawMatrix	  (x, offset, r_pr, r, c, rl, cl, rn, cn);
+	printRawMatrix	  (x, offset, r_pr, r, c, rlabs, cl, rn, cn);
 	break;
     default:
 	UNIMPLEMENTED_TYPE("printMatrix", x);
@@ -491,7 +526,7 @@ void printMatrix(SEXP x, int offset, SEXP dim, int quote, int right,
 			 r - r_pr),
 		r - r_pr);
 #else
-    if(r_pr < r) 
+    if(r_pr < r)
 	Rprintf(" [ reached getOption(\"max.print\") -- omitted %d rows ]\n",
 		r - r_pr);
 #endif
@@ -514,7 +549,8 @@ void printArray(SEXP x, SEXP dim, int quote, int right, SEXP dimnames)
 	printMatrix(x, 0, dim, quote, 0, rl, cl, rn, cn);
     }
     else { /* ndim >= 3 */
-	SEXP dn, dnn, dn0, dn1;
+	SEXP dn, dnn, dn1;
+	StringVector* dn0;
 	int i, j, has_dimnames, has_dnn, nb, nb_pr;
 	int nr = INTEGER(dim)[0], nr_last;
 	int nc = INTEGER(dim)[1];
@@ -529,14 +565,14 @@ void printArray(SEXP x, SEXP dim, int quote, int right, SEXP dimnames)
 	    dnn = R_NilValue; /* -Wall */
 	}
 	else {
-	    dn0 = VECTOR_ELT(dimnames, 0);
+	    dn0 = SEXP_downcast<StringVector*>(VECTOR_ELT(dimnames, 0));
 	    dn1 = VECTOR_ELT(dimnames, 1);
 	    has_dimnames = 1;
 	    dnn = getAttrib(dimnames, R_NamesSymbol);
 	    has_dnn = !isNull(dnn);
 	    if ( has_dnn ) {
-		rn = (char *) translateChar(STRING_ELT(dnn, 0));
-		cn = (char *) translateChar(STRING_ELT(dnn, 1));
+		rn = CXXRNOCAST(char *) translateChar(STRING_ELT(dnn, 0));
+		cn = CXXRNOCAST(char *) translateChar(STRING_ELT(dnn, 1));
 	    }
 	}
 	/* nb := #{entries} in a slice such as x[1,1,..] or equivalently,
@@ -544,7 +580,7 @@ void printArray(SEXP x, SEXP dim, int quote, int right, SEXP dimnames)
 	 *       are printed as matrices -- if options("max.print") allows */
 	for (i = 2, nb = 1; i < ndim; i++)
 	    nb *= INTEGER(dim)[i];
-	max_reached = (b > 0 && R_print.max / b < nb);
+	max_reached = Rboolean(b > 0 && R_print.max / b < nb);
 	if (max_reached) { /* i.e., also  b > 0, nr > 0, nc > 0, nb > 0 */
 	    /* nb_pr := the number of matrix slices to be printed */
 	    nb_pr = ceil_DIV(R_print.max, b);
@@ -591,12 +627,17 @@ void printArray(SEXP x, SEXP dim, int quote, int right, SEXP dimnames)
 		printComplexMatrix(x, i * b, use_nr, nr, nc, dn0, dn1, rn, cn);
 		break;
 	    case STRSXP:
-		if (quote) quote = '"';
-		printStringMatrix (x, i * b, use_nr, nr, nc,
-				   quote, right, dn0, dn1, rn, cn);
-		break;
+		{
+		    if (quote) quote = '"';
+		    const StringVector* sv = SEXP_downcast<StringVector*>(x);
+		    printStringMatrix (sv, i * b, use_nr, nr, nc,
+				       quote, right, dn0, dn1, rn, cn);
+		    break;
+		}
 	    case RAWSXP:
 		printRawMatrix    (x, i * b, use_nr, nr, nc, dn0, dn1, rn, cn);
+		break;
+	    default:  // -Wswitch
 		break;
 	    }
 	    Rprintf("\n");
@@ -610,4 +651,3 @@ void printArray(SEXP x, SEXP dim, int quote, int right, SEXP dimnames)
     }
     vmaxset(vmax);
 }
-

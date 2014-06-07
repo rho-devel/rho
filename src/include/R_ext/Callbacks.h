@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-2 The R Core Team.
@@ -24,14 +40,14 @@
 #ifndef R_CALLBACKS_H
 #define R_CALLBACKS_H
 
-/**
+/*
   These structures are for C (and R function) top-level task handlers.
   Such routines are called at the end of every (successful) top-level task
   in the regular REPL. 
  */
 
 #include <Rinternals.h>
-/**
+/*
   The signature of the C routine that a callback must implement.
   expr - the expression for the top-level task that was evaluated.
   value - the result of the top-level task, i.e. evaluating expr.
@@ -42,7 +58,7 @@
 typedef Rboolean (*R_ToplevelCallback)(SEXP expr, SEXP value, Rboolean succeeded, Rboolean visible, void *);
 
 typedef struct _ToplevelCallback  R_ToplevelCallbackEl;
-/** 
+/* 
  Linked list element for storing the top-level task callbacks.
  */
 struct _ToplevelCallback {

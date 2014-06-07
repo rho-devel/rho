@@ -153,7 +153,7 @@ static void restoredpSaved(pGEDevDesc dd)
     dpptr(dd)->rspct = dpSavedptr(dd)->rspct;
     dpptr(dd)->layout = dpSavedptr(dd)->layout;
     dpptr(dd)->mfind = dpSavedptr(dd)->mfind;
-    dpptr(dd)->new = dpSavedptr(dd)->new;
+    dpptr(dd)->newplot = dpSavedptr(dd)->newplot;
     dpptr(dd)->oma[0] = dpSavedptr(dd)->oma[0];
     dpptr(dd)->oma[1] = dpSavedptr(dd)->oma[1];
     dpptr(dd)->oma[2] = dpSavedptr(dd)->oma[2];

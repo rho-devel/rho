@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1999-2007 The R Core Team.
@@ -57,6 +73,20 @@ extern void *R_chk_calloc(size_t, size_t);
 extern void *R_chk_realloc(void *, size_t);
 extern void R_chk_free(void *);
 
+#ifdef __cplusplus
+#ifndef STRICT_R_HEADERS
+/* S-PLUS 3.x but not 5.x NULLs the pointer in the following */
+#define Calloc(n, t)   reinterpret_cast<t *>(R_chk_calloc(size_t(n), sizeof(t) ))
+#define Realloc(p,n,t) reinterpret_cast<t *>(R_chk_realloc( p, size_t((n) * sizeof(t)) ))
+#define Free(p)        (R_chk_free(p), (p) = NULL)
+#endif
+#define R_Calloc(n, t)   reinterpret_cast<t *>(R_chk_calloc( size_t(n), sizeof(t) ))
+#define R_Realloc(p,n,t) reinterpret_cast<t *>(R_chk_realloc( (p), (size_t)((n) * sizeof(t)) ))
+#define R_Free(p)      (R_chk_free(p), (p) = NULL)
+#define Memcpy(p,q,n)  memcpy( p, q, size_t( (n) * sizeof(*p) ) )
+/* added for 3.0.0 */
+#define Memzero(p,n)  memset(p, 0, size_t(n) * sizeof(*p))
+#else  /* not __cplusplus */
 #ifndef STRICT_R_HEADERS
 /* S-PLUS 3.x but not 5.x NULLs the pointer in the following */
 #define Calloc(n, t)   (t *) R_chk_calloc( (size_t) (n), sizeof(t) )
@@ -66,13 +96,18 @@ extern void R_chk_free(void *);
 #define R_Calloc(n, t)   (t *) R_chk_calloc( (size_t) (n), sizeof(t) )
 #define R_Realloc(p,n,t) (t *) R_chk_realloc( (void *)(p), (size_t)((n) * sizeof(t)) )
 #define R_Free(p)      (R_chk_free( (void *)(p) ), (p) = NULL)
-
 #define Memcpy(p,q,n)  memcpy( p, q, (size_t)(n) * sizeof(*p) )
-
 /* added for 3.0.0 */
 #define Memzero(p,n)  memset(p, 0, (size_t)(n) * sizeof(*p))
 
+#endif  /* __cplusplus */
+
+
+#ifdef __cplusplus
+#define CallocCharBuf(n) reinterpret_cast<char *>(R_chk_calloc(size_t((n)+1), sizeof(char)))
+#else
 #define CallocCharBuf(n) (char *) R_chk_calloc((size_t) ((n)+1), sizeof(char))
+#endif
 
 /* S Like Fortran Interface */
 /* These may not be adequate everywhere. Convex had _ prepending common

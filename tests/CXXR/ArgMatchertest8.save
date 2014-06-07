@@ -1,0 +1,52 @@
+Formal arguments:
+
+black : BLACK
+brown : 
+red : RED
+orange : ORANGE
+yellow : 
+green : 
+blue : BLUE
+violet : 
+grey : GREY
+... : 
+white : 
+silver : SILVER
+
+Supplied arguments:
+
+silver : argent
+whit : blan
+ : noir
+brown : brun
+ : corail
+gre : gris
+ye : jaune
+ : bleu
+gold : or
+ : notmatchedtowhite
+pink : rose
+red : rouge
+green : vert
+violet : violette
+
+Prior bindings:
+
+red : rot
+silver : silbern
+white : weiss
+
+Match result:
+
+EXPLICIT  ... : DottedArgs(whit : blan, gold : or, : notmatchedtowhite, pink : rose)
+EXPLICIT  black : noir
+EXPLICIT  blue : bleu
+EXPLICIT  brown : brun
+EXPLICIT  green : vert
+EXPLICIT  grey : gris
+EXPLICIT  orange : corail
+EXPLICIT  red : rouge
+EXPLICIT  silver : argent
+EXPLICIT  violet : violette
+EXPLICIT  white : weiss
+EXPLICIT  yellow : jaune

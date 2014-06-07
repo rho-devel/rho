@@ -1,3 +1,18 @@
+#CXXR $Id$
+#CXXR 
+#CXXR This file is part of CXXR, a project to refactor the R interpreter
+#CXXR into C++.  It may consist in whole or in part of program code and
+#CXXR documentation taken from the R project itself, incorporated into
+#CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+#CXXR Licence.
+#CXXR 
+#CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+#CXXR copyrights and copyright restrictions as may be stated below.
+#CXXR 
+#CXXR CXXR is not part of the R project, and bugs and other issues should
+#CXXR not be reported via r-bugs or other R project channels; instead refer
+#CXXR to the CXXR website.
+
 #
 # ${R_HOME}/src/modules/internet/Makefile
 
@@ -11,30 +26,33 @@ R_HOME = $(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES = Rhttpd.c Rsock.c internet.c nanoftp.c nanohttp.c sock.c sockconn.c
+SOURCES_C = Rhttpd.c Rsock.c nanoftp.c nanohttp.c sock.c
+SOURCES_CPP = internet.cpp sockconn.cpp
 HEADERS = sock.h
-DEPENDS = $(SOURCES:.c=.d)
-OBJECTS = $(SOURCES:.c=.o)
+DEPENDS = $(SOURCES_C:.c=.d) $(SOURCES_CPP:.cpp=.d)
+OBJECTS = $(SOURCES_C:.c=.o) $(SOURCES_CPP:.cpp=.o)
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 DISTFILES = \
-	README Makefile.in Makefile.win $(SOURCES) $(HEADERS) \
+	README Makefile.in Makefile.win $(SOURCES_C) $(SOURCES_CPP) $(HEADERS) \
 	dllversion.rc
 
 internet_la = internet$(SHLIB_EXT)
 internet_la_LIBADD = $(LIBR) @DYLIB_UNDEFINED_ALLOWED_FALSE@ $(LIBINTL)
 
 ALL_CFLAGS = $(ALL_CFLAGS_LO) @C_VISIBILITY@
+# 2010-03-30, with g++ (SUSE Linux) 4.4.1 [gcc-4_4-branch revision 150839],
+# including -fvisibility-hidden among the flags caused an obscure bug.
+ALL_CXXFLAGS = $(ALL_CXXFLAGS_LO) # @C_VISIBILITY@
 
 all: Makefile Makedeps R
 
 Makefile: $(srcdir)/Makefile.in \
   $(top_builddir)/config.status \
-  $(SOURCES)
+  $(SOURCES_C) $(SOURCES_CPP)
 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 Makedeps: Makefile $(DEPENDS)
-	@cat $(DEPENDS) >> Makefile
 	@touch $@
 
 R: Makefile
@@ -77,5 +95,4 @@ distdir: $(DISTFILES)
 	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
 	done
 
-## Automagically generated dependencies:
-
+include $(DEPENDS)

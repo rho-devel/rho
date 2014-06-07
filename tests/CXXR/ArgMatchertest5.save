@@ -1,0 +1,29 @@
+Formal arguments:
+
+black : BLACK
+brown : 
+red : RED
+orange : ORANGE
+yellow : 
+green : 
+blue : BLUE
+violet : 
+grey : GREY
+... : 
+white : 
+silver : SILVER
+
+Supplied arguments:
+
+brown : brun
+red : rouge
+yellow : jaune
+green : vert
+bl : noir
+spurious : canard
+violet : violette
+grey : gris
+white : blanc
+Error: argument 5 matches multiple formal arguments
+
+ArgMatchertest: Error encountered while matching arguments

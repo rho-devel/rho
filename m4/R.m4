@@ -3239,8 +3239,7 @@ AC_DEFUN([R_RECOMMENDED_PACKAGES],
 recommended_pkgs=`grep '^R_PKGS_RECOMMENDED *=' \
   ${srcdir}/share/make/vars.mk | sed 's/.*=//'`
 for pkg in ${recommended_pkgs}; do
-  n_pkg=`ls ${srcdir}/src/library/Recommended/${pkg}_*.tar.gz | wc -l`
-  if test ${n_pkg} -ne 1; then
+  if test ! -d ${srcdir}/src/library/Recommended/${pkg}; then
     r_cv_misc_recommended_packages=no
     break
   fi

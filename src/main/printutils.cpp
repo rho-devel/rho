@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -62,10 +78,15 @@
 #include <Rmath.h>
 #include <Print.h>
 #include <R_ext/RS.h>
+#include "Rcomplex.h"
 #include <Rconnections.h>
+#include <cstdarg>
 
 #include "RBufferUtils.h"
+#include "CXXR/StringVector.h"
 
+using namespace std;
+using namespace CXXR;
 
 #if !defined(__STDC_ISO_10646__) && (defined(__APPLE__) || defined(__FreeBSD__))
 /* This may not be 100% true (see the comment in rlocales.h),
@@ -98,19 +119,19 @@ R_size_t R_Decode2Long(char *p, int *ierr)
     if(R_Verbose)
 	REprintf("R_Decode2Long(): v=%ld\n", v);
     if(p[0] == 'G') {
-	if((Giga * (double)v) > R_SIZE_T_MAX) { *ierr = 4; return(v); }
-	return (R_size_t) Giga * v;
+	if((Giga * double(v)) > R_SIZE_T_MAX) { *ierr = 4; return(v); }
+	return R_size_t( Giga) * v;
     }
     else if(p[0] == 'M') {
-	if((Mega * (double)v) > R_SIZE_T_MAX) { *ierr = 1; return(v); }
-	return (R_size_t) Mega * v;
+	if((Mega * double(v)) > R_SIZE_T_MAX) { *ierr = 1; return(v); }
+	return R_size_t( Mega) * v;
     }
     else if(p[0] == 'K') {
-	if((1024 * (double)v) > R_SIZE_T_MAX) { *ierr = 2; return(v); }
+	if((1024 * double(v)) > R_SIZE_T_MAX) { *ierr = 2; return(v); }
 	return (1024*v);
     }
     else if(p[0] == 'k') {
-	if((1000 * (double)v) > R_SIZE_T_MAX) { *ierr = 3; return(v); }
+	if((1000 * double(v)) > R_SIZE_T_MAX) { *ierr = 3; return(v); }
 	return (1000*v);
     }
     else {
@@ -162,11 +183,11 @@ const char *EncodeEnvironment(SEXP x)
 	sprintf(ch, "<environment: R_EmptyEnv>");
     else if (R_IsPackageEnv(x))
 	snprintf(ch, 1000, "<environment: %s>",
-		translateChar(STRING_ELT(R_PackageEnvName(x), 0)));
+		 translateChar(STRING_ELT(R_PackageEnvName(x), 0)));
     else if (R_IsNamespaceEnv(x))
 	snprintf(ch, 1000, "<environment: namespace:%s>",
-		translateChar(STRING_ELT(R_NamespaceEnvSpec(x), 0)));
-    else snprintf(ch, 1000, "<environment: %p>", (void *)x);
+		 translateChar(STRING_ELT(R_NamespaceEnvSpec(x), 0)));
+    else snprintf(ch, 1000, "<environment: %p>", CXXRNOCAST(void *)x);
 
     vmaxset(vmax);
     return ch;
@@ -239,7 +260,9 @@ const char *EncodeReal2(double x, int w, int d, int e)
     return buff;
 }
 
+/* Use header files!  2007/06/11 arr
 void z_prec_r(Rcomplex *r, Rcomplex *x, double digits);
+*/
 
 const char
 *EncodeComplex(Rcomplex x, int wr, int dr, int er, int wi, int di, int ei,
@@ -317,8 +340,8 @@ int Rstrwid(const char *str, int slen, cetype_t ienc, int quote)
 
 	if(ienc != CE_UTF8)  mbs_init(&mb_st);
 	for (i = 0; i < slen; i++) {
-	    res = (ienc == CE_UTF8) ? (int) utf8toucs(&wc, p):
-		(int) mbrtowc(&wc, p, MB_CUR_MAX, NULL);
+	    res = (ienc == CE_UTF8) ? int( utf8toucs(&wc, p)):
+		int( mbrtowc(&wc, p, MB_CUR_MAX, NULL));
 	    if(res >= 0) {
 		k = wc;
 		if(0x20 <= k && k < 0x7f && iswprint(wc)) {
@@ -352,7 +375,7 @@ int Rstrwid(const char *str, int slen, cetype_t ienc, int quote)
 		    }
 		    p++;
 		} else {
-		    len += iswprint((wint_t)wc) ? Ri18n_wcwidth(wc) :
+		    len += iswprint(wint_t(wc)) ? Ri18n_wcwidth(wc) :
 #ifdef Win32
 			6;
 #else
@@ -369,8 +392,8 @@ int Rstrwid(const char *str, int slen, cetype_t ienc, int quote)
     } else
 	for (i = 0; i < slen; i++) {
 	    /* ASCII */
-	    if((unsigned char) *p < 0x80) {
-		if(isprint((int)*p)) {
+	    if(static_cast<unsigned char>( *p) < 0x80) {
+		if(isprint(int(*p))) {
 		    switch(*p) {
 		    case '\\':
 			len += 2; break;
@@ -399,7 +422,7 @@ int Rstrwid(const char *str, int slen, cetype_t ienc, int quote)
 #ifdef Win32 /* It seems Windows does not know what is printable! */
 		len++;
 #else
-		len += isprint((int)*p) ? 1 : 4;
+		len += isprint(int(*p)) ? 1 : 4;
 #endif
 		p++;
 	    }
@@ -430,7 +453,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
     int b, b0, i, j, cnt;
     const char *p; char *q, buf[11];
     cetype_t ienc = getCharCE(s);
-    Rboolean useUTF8 = w < 0;
+    Rboolean useUTF8 = CXXRCONSTRUCT(Rboolean, w < 0);
     const void *vmax = vmaxget();
 
     if (w < 0) w = w + 1000000;
@@ -444,8 +467,8 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 
     if (s == NA_STRING) {
 	p = quote ? CHAR(R_print.na_string) : CHAR(R_print.na_string_noquote);
-	cnt = i = (int)(quote ? strlen(CHAR(R_print.na_string)) :
-			strlen(CHAR(R_print.na_string_noquote)));
+	cnt = i = int(quote ? strlen(CHAR(R_print.na_string)) :
+		      strlen(CHAR(R_print.na_string_noquote)));
 	quote = 0;
     } else {
 #ifdef Win32
@@ -471,11 +494,11 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 	    if(IS_BYTES(s)) {
 		ienc = CE_NATIVE;
 		p = CHAR(s);
-		cnt = (int) strlen(p);
+		cnt = int( strlen(p));
 		const char *q;
 		char *pp = R_alloc(4*cnt+1, 1), *qq = pp, buf[5];
 		for (q = p; *q; q++) {
-		    unsigned char k = (unsigned char) *q;
+		    unsigned char k = static_cast<unsigned char>( *q);
 		    if (k >= 0x20 && k < 0x80) {
 			*qq++ = *q;
 			if (quote && *q == '"') cnt++;
@@ -499,7 +522,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 		    i = Rstrlen(s, quote);
 		    cnt = LENGTH(s);
 		} else {
-		    cnt = (int) strlen(p);
+		    cnt = int( strlen(p));
 		    i = Rstrwid(p, cnt, CE_NATIVE, quote);
 		}
 	    }
@@ -516,7 +539,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 
        +2 allows for quotes, +6 for UTF_8 escapes.
      */
-    q = R_AllocStringBuffer(imax2(5*cnt+8, w), buffer);
+    q = static_cast<char*>(R_AllocStringBuffer(imax2(5*cnt+8, w), buffer));
     b = w - i - (quote ? 2 : 0); /* total amount of padding */
     if(justify == Rprt_adj_none) b = 0;
     if(b > 0 && justify != Rprt_adj_left) {
@@ -524,7 +547,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 	for(i = 0 ; i < b0 ; i++) *q++ = ' ';
 	b -= b0;
     }
-    if(quote) *q++ = (char) quote;
+    if(quote) *q++ = char( quote);
     if(mbcslocale || ienc == CE_UTF8) {
 	int j, res;
 	mbstate_t mb_st;
@@ -538,8 +561,8 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 	else if(WinUTF8out) { memcpy(q, UTF8in, 3); q += 3; }
 #endif
 	for (i = 0; i < cnt; i++) {
-	    res = (int)((ienc == CE_UTF8) ? utf8toucs(&wc, p):
-			mbrtowc(&wc, p, MB_CUR_MAX, NULL));
+	    res = int((ienc == CE_UTF8) ? utf8toucs(&wc, p):
+		      mbrtowc(&wc, p, MB_CUR_MAX, NULL));
 	    if(res >= 0) { /* res = 0 is a terminator */
 		k = wc;
 		/* To be portable, treat \0 explicitly */
@@ -592,7 +615,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 			else
 #endif
 			    snprintf(buf, 11, "\\u%04x", k);
-			j = (int) strlen(buf);
+			j = int( strlen(buf));
 			memcpy(q, buf, j);
 			q += j;
 			p += res;
@@ -601,7 +624,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 		}
 
 	    } else { /* invalid char */
-		snprintf(q, 5, "\\x%02x", *((unsigned char *)p));
+		snprintf(q, 5, "\\x%02x", *(reinterpret_cast<CXXRCONST unsigned char *>(p)));
 		q += 4; p++;
 	    }
 	}
@@ -614,8 +637,8 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 	for (i = 0; i < cnt; i++) {
 
 	    /* ASCII */
-	    if((unsigned char) *p < 0x80) {
-		if(*p != '\t' && isprint((int)*p)) { /* Windows has \t as printable */
+	    if(static_cast<unsigned char>( *p) < 0x80) {
+		if(*p != '\t' && isprint(int(*p))) { /* Windows has \t as printable */
 		    switch(*p) {
 		    case '\\': *q++ = '\\'; *q++ = '\\'; break;
 		    case '\'':
@@ -636,7 +659,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 
 		    default:
 			/* print in octal */
-			snprintf(buf, 5, "\\%03o", (unsigned char) *p);
+			snprintf(buf, 5, "\\%03o", static_cast<unsigned char>( *p));
 			for(j = 0; j < 4; j++) *q++ = buf[j];
 			break;
 		    }
@@ -645,9 +668,9 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 #ifdef Win32 /* It seems Windows does not know what is printable! */
 		*q++ = *p++;
 #else
-		if(!isprint((int)*p & 0xff)) {
+		if(!isprint(int(*p) & 0xff)) {
 		    /* print in octal */
-		    snprintf(buf, 5, "\\%03o", (unsigned char) *p);
+		    snprintf(buf, 5, "\\%03o", static_cast<unsigned char>( *p));
 		    for(j = 0; j < 4; j++) *q++ = buf[j];
 		    p++;
 		} else *q++ = *p++;
@@ -658,7 +681,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 #ifdef Win32
     if(WinUTF8out && ienc == CE_UTF8)  { memcpy(q, UTF8out, 3); q += 3; }
 #endif
-    if(quote) *q++ = (char) quote;
+    if(quote) *q++ = char( quote);
     if(b > 0 && justify != Rprt_adj_right) {
 	for(i = 0 ; i < b ; i++) *q++ = ' ';
     }
@@ -691,9 +714,13 @@ const char *EncodeElement(SEXP x, int indx, int quote, char dec)
 	res = EncodeReal(REAL(x)[indx], w, d, e, dec);
 	break;
     case STRSXP:
-	formatString(&STRING_PTR(x)[indx], 1, &w, quote);
-	res = EncodeString(STRING_ELT(x, indx), w, quote, Rprt_adj_left);
-	break;
+	{
+	    StringVector* sv = static_cast<StringVector*>(x);
+	    String* str = (*sv)[indx];
+	    w = (quote ? stringWidthQuote(0, str) : stringWidth(0, str));
+	    res = EncodeString(str, w, quote, Rprt_adj_left);
+	    break;
+	}
     case CPLXSXP:
 	formatComplex(&COMPLEX(x)[indx], 1, &w, &d, &e, &wi, &di, &ei, 0);
 	res = EncodeComplex(COMPLEX(x)[indx], w, d, e, wi, di, ei, dec);
@@ -738,12 +765,28 @@ int vasprintf(char **strp, const char *fmt, va_list ap)
 ;
 #endif
 
+// 2007/06/14 arr: C++98 ain't C99.  FIXME : handle in configure script
+#ifdef __cplusplus
+#undef HAVE_VA_COPY
+#endif
+
+#if !HAVE_VA_COPY && HAVE___VA_COPY
+# undef va_copy
+# define va_copy __va_copy
+# undef HAVE_VA_COPY
+# define HAVE_VA_COPY 1
+#endif
+
+#ifdef HAVE_VA_COPY
 # define R_BUFSIZE BUFSIZE
-attribute_hidden
+#else
+# define R_BUFSIZE 100000
+#endif
 void Rcons_vprintf(const char *format, va_list arg)
 {
     char buf[R_BUFSIZE], *p = buf;
     int res;
+#ifdef HAVE_VA_COPY
     const void *vmax = vmaxget();
     int usedRalloc = FALSE, usedVasprintf = FALSE;
     va_list aq;
@@ -775,16 +818,29 @@ void Rcons_vprintf(const char *format, va_list arg)
 	}
     }
 #endif /* HAVE_VASPRINTF */
-    R_WriteConsole(p, (int) strlen(p));
+#else
+    res = vsnprintf(p, R_BUFSIZE, format, arg);
+    if(res >= R_BUFSIZE || res < 0) {
+	/* res is the desired output length or just a failure indication */
+	    buf[R_BUFSIZE - 1] = '\0';
+	    warning(_("printing of extremely long output is truncated"));
+	    res = R_BUFSIZE;
+    }
+#endif /* HAVE_VA_COPY */
+    R_WriteConsole(p, int( strlen(p)));
+#ifdef HAVE_VA_COPY
     if(usedRalloc) vmaxset(vmax);
     if(usedVasprintf) free(p);
+#endif
 }
 
 void Rvprintf(const char *format, va_list arg)
 {
     int i=0, con_num=R_OutputCon;
     Rconnection con;
+#ifdef HAVE_VA_COPY
     va_list argcopy;
+#endif
     static int printcount = 0;
 
     if (++printcount > 100) {
@@ -794,12 +850,19 @@ void Rvprintf(const char *format, va_list arg)
 
     do{
       con = getConnection(con_num);
+#ifdef HAVE_VA_COPY
       va_copy(argcopy, arg);
       /* Parentheses added for Fedora with -D_FORTIFY_SOURCE=2 */
       (con->vfprintf)(con, format, argcopy);
       va_end(argcopy);
+#else /* don't support sink(,split=TRUE) */
+      (con->vfprintf)(con, format, arg);
+#endif
       con->fflush(con);
       con_num = getActiveSink(i++);
+#ifndef HAVE_VA_COPY
+      if (con_num>0) error("Internal error: this platform does not support split output");
+#endif
     } while(con_num>0);
 
 
@@ -842,13 +905,13 @@ void REvprintf(const char *format, va_list arg)
 
 	vsnprintf(buf, BUFSIZE, format, arg);
 	buf[BUFSIZE-1] = '\0';
-	R_WriteConsoleEx(buf, (int) strlen(buf), 1);
+	R_WriteConsoleEx(buf, int( strlen(buf)), 1);
     }
 }
 
 int attribute_hidden IndexWidth(R_xlen_t n)
 {
-    return (int) (log10(n + 0.5) + 1);
+    return int (log10(n + 0.5) + 1);
 }
 
 void attribute_hidden VectorIndex(R_xlen_t i, int w)

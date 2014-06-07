@@ -1,7 +1,23 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 2001-13     The R Core Team
+ *  Copyright (C) 2001-13      The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,9 +38,9 @@
 #include <config.h>
 #endif
 
-#define R_USE_SIGNALS 1
 #include <Defn.h>
 #include <Internal.h>
+#include <Fileio.h>
 #include <Fileio.h>
 #include <IOStuff.h>
 #include <Parse.h>
@@ -93,11 +109,11 @@ static void getParseFilename(char* buffer, size_t buflen)
 	    SEXP filename;
 	    PROTECT(filename = findVar(install("filename"), R_ParseErrorFile));
 	    if (isString(filename) && length(filename))
-	        strncpy(buffer, CHAR(STRING_ELT(filename, 0)), buflen - 1);
+		strncpy(buffer, CHAR(STRING_ELT(filename, 0)), buflen - 1);
 	    UNPROTECT(1);
         } else if (isString(R_ParseErrorFile) && length(R_ParseErrorFile)) 
             strncpy(buffer, CHAR(STRING_ELT(R_ParseErrorFile, 0)), buflen - 1);
-    }           
+    }
 }
 
 static SEXP tabExpand(SEXP strings)
@@ -174,12 +190,6 @@ void parseError(SEXP call, int linenum)
     UNPROTECT(1);
 }
 
-static void con_cleanup(void *data)
-{
-    Rconnection con = data;
-    if(con->isopen) con->close(con);
-}
-
 /* "do_parse" - the user interface input/output to files.
 
  The internal R_Parse.. functions are defined in ./gram.y (-> gram.c)
@@ -196,7 +206,6 @@ SEXP attribute_hidden do_parse(SEXP call, SEXP op, SEXP args, SEXP env)
     int ifile, num, i;
     const char *encoding;
     ParseStatus status;
-    RCNTXT cntxt;
 
     checkArity(op, args);
     R_ParseError = 0;
@@ -261,17 +270,17 @@ SEXP attribute_hidden do_parse(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     else if (ifile >= 3) {/* file != "" */
 	if (num == NA_INTEGER) num = -1;
-	if(!wasopen) {
-	    if(!con->open(con)) error(_("cannot open the connection"));
-	    /* Set up a context which will close the connection on error */
-	    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-			 R_NilValue, R_NilValue);
-	    cntxt.cend = &con_cleanup;
-	    cntxt.cenddata = con;
+	try {
+	    if(!wasopen && !con->open(con))
+		error(_("cannot open the connection"));
+	    if(!con->canread) error(_("cannot read from this connection"));
+	    s = R_ParseConn(con, num, &status, source);
+	    if(!wasopen) con->close(con);
+	} catch (...) {
+	    if (!wasopen && con->isopen)
+		con->close(con);
+	    throw;
 	}
-	if(!con->canread) error(_("cannot read from this connection"));
-	s = R_ParseConn(con, num, &status, source);
-	if(!wasopen) {endcontext(&cntxt); con->close(con);}
 	if (status != PARSE_OK) parseError(call, R_ParseError);
     }
     else {

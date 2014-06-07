@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1997  Robert Gentleman and Ross Ihaka
@@ -35,6 +51,10 @@
 
 #define IOBSIZE 4096
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct BufferListItem {
 	unsigned char			buf[IOBSIZE];
 	struct BufferListItem	*next;
@@ -52,7 +72,7 @@ typedef struct IoBuffer {
 
 
 typedef struct TextBuffer {
-	void	*vmax;				/* Memory stack top */
+	void    *vmax;			        /* Memory stack top */
 	unsigned char	*buf;			/* Line buffer */
 	unsigned char	*bufp;			/* Line buffer location */
 	SEXP	text;				/* String Vector */
@@ -80,5 +100,9 @@ int R_IoBufferReadOffset(IoBuffer*);
 int R_TextBufferInit(TextBuffer*, SEXP);
 int R_TextBufferFree(TextBuffer*);
 int R_TextBufferGetc(TextBuffer*);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* not R_IOSTUFF_H */

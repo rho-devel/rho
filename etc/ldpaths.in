@@ -1,5 +1,6 @@
 : ${JAVA_HOME=@JAVA_HOME@}
 : ${R_JAVA_LD_LIBRARY_PATH=@R_JAVA_LD_LIBRARY_PATH@}
+: ${BOOST_LD_LIBRARY_PATH=@BOOST_LD_LIBRARY_PATH@}
 if test -n "@R_LD_LIBRARY_PATH@"; then
 : ${R_LD_LIBRARY_PATH=${R_HOME}/lib@R_ARCH@:@R_LD_LIBRARY_PATH@}
 else
@@ -7,6 +8,9 @@ else
 fi
 if test -n "${R_JAVA_LD_LIBRARY_PATH}"; then
   R_LD_LIBRARY_PATH="${R_LD_LIBRARY_PATH}:${R_JAVA_LD_LIBRARY_PATH}"
+fi
+if test -n "${BOOST_LD_LIBRARY_PATH}"; then
+  R_LD_LIBRARY_PATH="${R_LD_LIBRARY_PATH}:${BOOST_LD_LIBRARY_PATH}"
 fi
 ## This is DYLD_FALLBACK_LIBRARY_PATH on Darwin (OS X) and LD_LIBRARY_PATH elsewhere
 if test -z "${@Rshlibpath_var@}"; then

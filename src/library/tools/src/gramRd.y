@@ -33,8 +33,8 @@
 
 /* bison creates a non-static symbol yylloc in both gramLatex.o and gramRd.o,
    so remap */
-
-#define yylloc yyllocR
+// 2011-12-09: In CXXR this #define appears deleterious.
+//#define yylloc yyllocR
 
 #define DEBUGVALS 0		/* 1 causes detailed internal state output to R console */	
 #define DEBUGMODE 0		/* 1 causes Bison output of parse state, to stdout or stderr */
@@ -717,7 +717,10 @@ static void xxsavevalue(SEXP Rd, YYLTYPE *lloc)
 
 static SEXP xxtag(SEXP item, int type, YYLTYPE *lloc)
 {
-    setAttrib(item, install("Rd_tag"), mkString(yytname[YYTRANSLATE(type)]));
+    SEXP tag;
+    PROTECT(tag = mkString(yytname[YYTRANSLATE(type)]));
+    setAttrib(item, install("Rd_tag"), tag);
+    UNPROTECT(1);
     setAttrib(item, R_SrcrefSymbol, makeSrcref(lloc, SrcFile));
     return item;
 }
@@ -748,7 +751,7 @@ static int (*ptr_getc)(void);
 	if (npush >= pushsize - 1) {             \
 	    int *old = pushbase;              \
             pushsize *= 2;                    \
-	    pushbase = malloc(pushsize*sizeof(int));         \
+	    pushbase = static_cast<int*>(malloc(pushsize*sizeof(int)));	\
 	    if(!pushbase) error(_("unable to allocate buffer for long macro at line %d"), parseState.xxlineno);\
 	    memmove(pushbase, old, npush*sizeof(int));        \
 	    if(old != pushback) free(old); }	    \
@@ -983,7 +986,7 @@ SEXP R_ParseRd(Rconnection con, ParseStatus *status, SEXP srcfile, Rboolean frag
 /* Section and R code headers */
 
 struct {
-    char *name;
+    const char *name;
     int token;
 }
 
@@ -1220,7 +1223,7 @@ static void yyerror(const char *s)
     if (!strncmp(s, yyunexpected, sizeof yyunexpected -1)) {
 	int i, translated = FALSE;
     	/* Edit the error message */    
-    	expecting = strstr(s + sizeof yyunexpected -1, yyexpecting);
+    	expecting = const_cast<char*>(strstr(s + sizeof yyunexpected -1, yyexpecting));
     	if (expecting) *expecting = '\0';
     	for (i = 0; yytname_translations[i]; i += 2) {
     	    if (!strcmp(s + sizeof yyunexpected - 1, yytname_translations[i])) {
@@ -1296,7 +1299,7 @@ static void yyerror(const char *s)
 	if (nc >= nstext - 1) {             \
 	    char *old = stext;              \
             nstext *= 2;                    \
-	    stext = malloc(nstext);         \
+	    stext = static_cast<char*>(malloc(nstext));			\
 	    if(!stext) error(_("unable to allocate buffer for long string at line %d"), parseState.xxlineno);\
 	    memmove(stext, old, nc);        \
 	    if(old != st0) free(old);	    \
@@ -1686,12 +1689,6 @@ static int yylex(void)
     return tok;
 }
 
-static void con_cleanup(void *data)
-{
-    Rconnection con = data;
-    if(con->isopen) con->close(con);
-}
-
 static void PutState(ParseState *state) {
     state->xxinRString = parseState.xxinRString;
     state->xxQuoteLine = parseState.xxQuoteLine;
@@ -1734,7 +1731,7 @@ static void UseState(ParseState *state) {
 
 static void PushState() {
     if (busy) {
-    	ParseState *prev = malloc(sizeof(ParseState));
+    	ParseState *prev = static_cast<ParseState*>(malloc(sizeof(ParseState)));
     	PutState(prev);
     	parseState.prevState = prev;
     } else 
@@ -1757,6 +1754,7 @@ static void PopState() {
  If there is text then that is read and the other arguments are ignored.
 */
 
+extern "C"
 SEXP C_parseRd(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     args = CDR(args);
@@ -1766,7 +1764,6 @@ SEXP C_parseRd(SEXP call, SEXP op, SEXP args, SEXP env)
     Rboolean wasopen, fragment;
     int ifile, wcall;
     ParseStatus status;
-    RCNTXT cntxt;
 
 #if DEBUGMODE
     yydebug = 1;
@@ -1788,24 +1785,23 @@ SEXP C_parseRd(SEXP call, SEXP op, SEXP args, SEXP env)
     	error(_("invalid '%s' value"), "verbose");
     parseState.xxDebugTokens = asInteger(CAR(args));		args = CDR(args);
     parseState.xxBasename = CHAR(STRING_ELT(CAR(args), 0));	args = CDR(args);
-    fragment = asLogical(CAR(args));				args = CDR(args);
+    fragment = Rboolean(asLogical(CAR(args)));			args = CDR(args);
     wcall = asLogical(CAR(args));
     if (wcall == NA_LOGICAL)
     	error(_("invalid '%s' value"), "warningCalls");
-    wCalls = wcall;
+    wCalls = Rboolean(wcall);
 
     if (ifile >= 3) {/* file != "" */
-	if(!wasopen) {
-	    if(!con->open(con)) error(_("cannot open the connection"));
-	    /* Set up a context which will close the connection on error */
-	    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-			 R_NilValue, R_NilValue);
-	    cntxt.cend = &con_cleanup;
-	    cntxt.cenddata = con;
+	try {
+	    if(!wasopen && !con->open(con))
+		error(_("cannot open the connection"));
+	    if(!con->canread) error(_("cannot read from this connection"));
+	    s = R_ParseRd(con, &status, source, fragment);
+	} catch (...) {
+	    if (!wasopen && con->isopen)
+		con->close(con);
+	    throw;
 	}
-	if(!con->canread) error(_("cannot read from this connection"));
-	s = R_ParseRd(con, &status, source, fragment);
-	if(!wasopen) endcontext(&cntxt);
 	PopState();
 	if (status != PARSE_OK) parseError(call, R_ParseError);
     }
@@ -1821,6 +1817,7 @@ SEXP C_parseRd(SEXP call, SEXP op, SEXP args, SEXP env)
  .External2(C_deparseRd, element, state)
 */
 
+extern "C"
 SEXP C_deparseRd(SEXP e, SEXP state)
 {
     SEXP result;
@@ -1854,7 +1851,7 @@ SEXP C_deparseRd(SEXP e, SEXP state)
     	/* any special char might be escaped */
     	if (*c == '{' || *c == '}' || *c == '%' || *c == '\\') outlen++;
     }
-    out = outbuf = R_chk_calloc(outlen+1, sizeof(char));
+    out = outbuf = static_cast<char*>(R_chk_calloc(outlen+1, sizeof(char)));
     inRComment = FALSE;
     for (c = CHAR(e); *c; c++) {
     	escape = FALSE;

@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -306,12 +322,17 @@ SEXP attribute_hidden do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    tlist = CDR(tlist);
 	}
 	if(res) {
+	    SEXP sres;
 	    SEXP lsym = install("status");
-	    setAttrib(rval, lsym, ScalarInteger(res));
+	    PROTECT(sres = ScalarInteger(res));
+	    setAttrib(rval, lsym, sres);
 	    if(errno) {
+	        SEXP serrno = PROTECT(mkString(strerror(errno)));
 		lsym = install("errmsg");
-		setAttrib(rval, lsym, mkString(strerror(errno)));
+		setAttrib(rval, lsym, serrno);
+		UNPROTECT(1);
 	    }
+	    UNPROTECT(1);
 	}
 	UNPROTECT(2);
 	return rval;

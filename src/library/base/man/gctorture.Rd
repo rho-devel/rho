@@ -24,6 +24,10 @@ gctorture2(step, wait = step, inhibit_release = FALSE)
   Provokes garbage collection on (nearly) every memory allocation.
   Intended to ferret out memory protection bugs.  Also makes \R run
   \emph{very} slowly, unfortunately.
+
+  This function has no effect in CXXR, whose aggressive approach to
+  garbage collection will readily manifest most memory protection bugs
+  anyway.
 }
 \details{
   Calling \code{gctorture(TRUE)} instructs the memory manager to force a

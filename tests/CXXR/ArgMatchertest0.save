@@ -1,0 +1,46 @@
+Formal arguments:
+
+black : BLACK
+brown : 
+red : RED
+orange : ORANGE
+yellow : 
+green : 
+blue : BLUE
+violet : 
+grey : GREY
+... : 
+white : 
+silver : SILVER
+
+Supplied arguments:
+
+ : noir
+brown : brun
+ : corail
+gre : gris
+ye : jaune
+ : bleu
+red : rouge
+green : vert
+
+Prior bindings:
+
+red : rot
+silver : silbern
+white : weiss
+
+Match result:
+
+MISSING   ... : Symbol::missingArgument()
+EXPLICIT  black : noir
+EXPLICIT  blue : bleu
+EXPLICIT  brown : brun
+EXPLICIT  green : vert
+EXPLICIT  grey : gris
+EXPLICIT  orange : corail
+EXPLICIT  red : rouge
+DEFAULTED silver : Promise(SILVER, fenv)
+MISSING   violet : Symbol::missingArgument()
+EXPLICIT  white : weiss
+EXPLICIT  yellow : jaune

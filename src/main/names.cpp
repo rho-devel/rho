@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -23,8 +39,11 @@
 #include <config.h>
 #endif
 
-#define __R_Names__ /* used in Defn.h for extern on R_FunTab */
-#define R_USE_SIGNALS 1
+#include <iostream>
+
+#include "CXXR/Evaluator_Context.hpp"
+#include "CXXR/GCStackRoot.hpp"
+
 #include <Defn.h>
 #include <Internal.h>
 
@@ -32,6 +51,8 @@
 #include "arithmetic.h" /* for do_math[1234], do_cmathfuns */
 
 #include <Rinterface.h>
+
+using namespace CXXR;
 
 /* Table of  .Internal(.) and .Primitive(.)  R functions
  * =====     =========	      ==========
@@ -80,8 +101,13 @@
  *
  */
 
-FUNTAB R_FunTab[] =
+void BuiltInFunction::initialize()
 {
+    static map the_map;
+    s_cache = &the_map;
+
+    static TableEntry function_table[] = {
+	// Now begins the function table, deliberately retaining CR's indentation:
 
 /* printname	c-entry		offset	eval	arity	pp-kind	     precedence	rightassoc
  * ---------	-------		------	----	-----	-------      ----------	----------*/
@@ -93,8 +119,8 @@ FUNTAB R_FunTab[] =
 {"while",	do_while,	0,	100,	-1,	{PP_WHILE,   PREC_FN,	  0}},
 {"for",		do_for,		0,	100,	-1,	{PP_FOR,     PREC_FN,	  0}},
 {"repeat",	do_repeat,	0,	100,	-1,	{PP_REPEAT,  PREC_FN,	  0}},
-{"break",	do_break, CTXT_BREAK,	0,	-1,	{PP_BREAK,   PREC_FN,	  0}},
-{"next",	do_break, CTXT_NEXT,	0,	-1,	{PP_NEXT,    PREC_FN,	  0}},
+{"break",	do_break,       2,	0,	-1,	{PP_BREAK,   PREC_FN,	  0}},
+{"next",	do_break,       1,	0,	-1,	{PP_NEXT,    PREC_FN,	  0}},
 {"return",	do_return,	0,	0,	-1,	{PP_RETURN,  PREC_FN,	  0}},
 {"function",	do_function,	0,	0,	-1,	{PP_FUNCTION,PREC_FN,	  0}},
 {"<-",		do_set,		1,	100,	-1,	{PP_ASSIGN,  PREC_LEFT,	  1}},
@@ -139,12 +165,12 @@ FUNTAB R_FunTab[] =
 {".addRestart",do_addRestart,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	  0}},
 {".getRestart",do_getRestart,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	  0}},
 {".invokeRestart",do_invokeRestart,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	  0}},
-{".addTryHandlers",do_addTryHandlers,	0,	111,	0,	{PP_FUNCALL, PREC_FN,	  0}},
+//{".addTryHandlers",do_addTryHandlers,	0,	111,	0,	{PP_FUNCALL, PREC_FN,	  0}},
 {"geterrmessage",do_geterrmessage, 0,	11,	0,	{PP_FUNCALL, PREC_FN,	  0}},
 {"seterrmessage",do_seterrmessage, 0,	111,	1,	{PP_FUNCALL, PREC_FN,	  0}},
 {"printDeferredWarnings",do_printDeferredWarnings, 0,	111,	0,	{PP_FUNCALL, PREC_FN,	  0}},
 {"interruptsSuspended",do_interruptsSuspended, 0,	11,	-1,	{PP_FUNCALL, PREC_FN,	  0}},
-{"restart",	do_restart,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	  0}},
+//{"restart",	do_restart,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	  0}},
 {"as.function.default",do_asfunction,0,	11,	2,	{PP_FUNCTION,PREC_FN,	  0}},
 {"debug",	do_debug,	0,	111,	3,	{PP_FUNCALL, PREC_FN,	  0}},
 {"undebug",	do_debug,	1,	111,	1,	{PP_FUNCALL, PREC_FN,	  0}},
@@ -632,7 +658,6 @@ FUNTAB R_FunTab[] =
 {"Version",	do_version,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"machine",	do_machine,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"commandArgs", do_commandArgs, 0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
-
 #ifdef Win32
 {"system",	do_system,	0,	211,	5,	{PP_FUNCALL, PREC_FN,	0}},
 #else
@@ -645,7 +670,6 @@ FUNTAB R_FunTab[] =
 {"useInternet2",do_setInternet2,0,	211,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"mkjunction", do_mkjunction,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 #endif
-
 {"parse",	do_parse,	0,	11,	6,	{PP_FUNCALL, PREC_FN,	0}},
 //{"parse_Rd", 	do_parseRd,	0,	11,	7,	{PP_FUNCALL, PREC_FN,	0}},
 //{"deparseRd", 	do_deparseRd, 	0, 	11, 	2,	{PP_FUNCALL, PREC_FN, 	0}},
@@ -778,7 +802,6 @@ FUNTAB R_FunTab[] =
 /* Complex Valued Functions */
 {"polyroot",	do_polyroot,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 
-
 /* Objects */
 {"inherits",	do_inherits,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"UseMethod",	do_usemethod,	0,     200,	-1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -828,13 +851,13 @@ FUNTAB R_FunTab[] =
 {"close",	do_close,	0,      111,     2,      {PP_FUNCALL, PREC_FN,	0}},
 {"flush",	do_flush,	0,      111,     1,      {PP_FUNCALL, PREC_FN,	0}},
 {"file",	do_url,		1,      11,     5,      {PP_FUNCALL, PREC_FN,	0}},
-{"url",		do_url,		0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
+{"url",	        do_url,		0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
 {"pipe",	do_pipe,	0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
 {"fifo",	do_fifo,	0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
 {"gzfile",	do_gzfile,	0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
 {"bzfile",	do_gzfile,	1,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
 {"xzfile",	do_gzfile,	2,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
-{"unz",		do_unz,		0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
+{"unz",         do_unz,		0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
 {"seek",	do_seek,	0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
 {"truncate",	do_truncate,	0,      11,     1,      {PP_FUNCALL, PREC_FN,	0}},
 {"pushBack",	do_pushback,	0,     111,     3,      {PP_FUNCALL, PREC_FN,	0}},
@@ -853,6 +876,13 @@ FUNTAB R_FunTab[] =
 {"memCompress",do_memCompress,	0,	11,     2,      {PP_FUNCALL, PREC_FN,	0}},
 {"memDecompress",do_memDecompress,0,	11,     2,      {PP_FUNCALL, PREC_FN,	0}},
 
+/* Provenance Functions */
+{"provenance", do_provenance,   0,       0,     1,      {PP_FUNCALL, PREC_FN, 0}},
+{"provenance.graph", do_provenance_graph,0,11,  1,      {PP_FUNCALL, PREC_FN, 0}},
+
+/* and my serialization function */
+{"bserialize", do_bserialize,   0,     100,     1,      {PP_FUNCALL, PREC_FN, 0}},
+{"bdeserialize", do_bdeserialize, 0,   100,     1,      {PP_FUNCALL, PREC_FN, 0}},
 
 {"readDCF",	do_readDCF,	0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
 
@@ -940,19 +970,26 @@ FUNTAB R_FunTab[] =
 {NULL,		NULL,		0,	0,	0,	{PP_INVALID, PREC_FN,	0}},
 };
 
-/* also used in eval.c */
-SEXP attribute_hidden R_Primitive(const char *primname)
-{
-    for (int i = 0; R_FunTab[i].name; i++)
-	if (strcmp(primname, R_FunTab[i].name) == 0) { /* all names are ASCII */
-	    if ((R_FunTab[i].eval % 100 )/10)
-		return R_NilValue; /* it is a .Internal */
-	    else
-		return mkPRIMSXP(i, R_FunTab[i].eval % 10);
-	}
-    return R_NilValue;
+    // code of BuiltInFunction::initialize() now continues:
+    s_function_table = function_table;
+    DotInternalTable::initialize();
+    for (int i = 0; s_function_table[i].name; ++i) {
+	const char* symname = s_function_table[i].name;
+	Symbol* sym = Symbol::obtain(symname);
+	BuiltInFunction* bif = expose(new BuiltInFunction(i));
+	if ((s_function_table[i].flags%100)/10)
+	    DotInternalTable::set(sym, bif);
+	else
+	    Environment::base()->frame()->obtainBinding(sym)->setValue(bif);
+    }
+    
 }
 
+SEXP attribute_hidden R_Primitive(const char *primname)
+{
+    return BuiltInFunction::obtain(primname);
+}
+    
 SEXP attribute_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP name, prim;
@@ -967,227 +1004,16 @@ SEXP attribute_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
     return prim;
 }
 
-attribute_hidden
-int StrToInternal(const char *s)
-{
-    int i;
-    for (i = 0; R_FunTab[i].name; i++)
-	if (strcmp(s, R_FunTab[i].name) == 0) return i;
-    return NA_INTEGER;
-}
-
-static void installFunTab(int i)
-{
-    SEXP prim;
-    /* prim needs to be protected since install can (and does here) allocate */
-    PROTECT(prim = mkPRIMSXP(i, R_FunTab[i].eval % 10));
-    if ((R_FunTab[i].eval % 100 )/10)
-	SET_INTERNAL(install(R_FunTab[i].name), prim);
-    else
-	SET_SYMVALUE(install(R_FunTab[i].name), prim);
-    UNPROTECT(1);
-}
-
-static void SymbolShortcuts(void)
-{  /* ../include/Rinternals.h : */
-    R_Bracket2Symbol = install("[[");
-    R_BracketSymbol = install("[");
-    R_BraceSymbol = install("{");
-    R_ClassSymbol = install("class");
-    R_DeviceSymbol = install(".Device");
-    R_DimNamesSymbol = install("dimnames");
-    R_DimSymbol = install("dim");
-    R_DollarSymbol = install("$");
-    R_DotsSymbol = install("...");
-    R_DropSymbol = install("drop");
-    R_LastvalueSymbol = install(".Last.value");
-    R_LevelsSymbol = install("levels");
-    R_ModeSymbol = install("mode");
-    R_NameSymbol  = install("name");
-    R_NamesSymbol = install("names");
-    R_NaRmSymbol = install("na.rm");
-    R_PackageSymbol = install("package");
-    R_QuoteSymbol = install("quote");
-    R_RowNamesSymbol = install("row.names");
-    R_SeedsSymbol = install(".Random.seed");
-    R_SourceSymbol = install("source");   /* Still present for back compatibility, but not used */
-    R_TspSymbol = install("tsp");
-    /* ../include/Defn.h , i.e. non-public : */
-    R_CommentSymbol = install("comment");
-    R_DotEnvSymbol = install(".Environment");
-    R_ExactSymbol = install("exact");
-    R_RecursiveSymbol = install("recursive");
-    R_SrcfileSymbol = install("srcfile");
-    R_SrcrefSymbol = install("srcref");
-    R_WholeSrcrefSymbol = install("wholeSrcref");
-    R_TmpvalSymbol = install("*tmp*");
-    R_UseNamesSymbol = install("use.names");
-    R_DoubleColonSymbol = install("::");
-    R_TripleColonSymbol = install(":::");
-    R_ConnIdSymbol = install("conn_id");
-    R_DevicesSymbol = install(".Devices");
-
-    R_dot_Generic = install(".Generic");
-    R_dot_Method = install(".Method");
-    R_dot_Methods = install(".Methods");
-    R_dot_defined = install(".defined");
-    R_dot_target = install(".target");
-    R_dot_Group = install(".Group");
-    R_dot_Class = install(".Class");
-    R_dot_GenericCallEnv = install(".GenericCallEnv");
-    R_dot_GenericDefEnv = install(".GenericDefEnv");
-}
-
 /* initialize the symbol table */
+// Well, now just odds and ends in CXXR.
 void attribute_hidden InitNames()
 {
-    /* allocate the symbol table */
-    if (!(R_SymbolTable = (SEXP *) calloc(HSIZE, sizeof(SEXP))))
-	R_Suicide("couldn't allocate memory for symbol table");
-
-    /* R_UnboundValue */
-    R_UnboundValue = allocSExp(SYMSXP);
-    SET_SYMVALUE(R_UnboundValue, R_UnboundValue);
-    SET_PRINTNAME(R_UnboundValue, R_NilValue);
-    SET_ATTRIB(R_UnboundValue, R_NilValue);
-    /* R_MissingArg */
-    R_MissingArg = allocSExp(SYMSXP);
-    SET_SYMVALUE(R_MissingArg, R_MissingArg);
-    SET_PRINTNAME(R_MissingArg, mkChar(""));
-    SET_ATTRIB(R_MissingArg, R_NilValue);
-    /* R_RestartToken */
-    R_RestartToken = allocSExp(SYMSXP);
-    SET_SYMVALUE(R_RestartToken, R_RestartToken);
-    SET_PRINTNAME(R_RestartToken, mkChar(""));
-    SET_ATTRIB(R_RestartToken, R_NilValue);
     /* String constants (CHARSXP values) */
-    /* Note: we don't want NA_STRING to be in the CHARSXP cache, so that
-       mkChar("NA") is distinct from NA_STRING */
     /* NA_STRING */
-    NA_STRING = allocCharsxp(strlen("NA"));
-    strcpy(CHAR_RW(NA_STRING), "NA");
-    SET_CACHED(NA_STRING);  /* Mark it */
+    // CXXR: NA_STRING is initialised in String.cpp
     R_print.na_string = NA_STRING;
-    /* R_BlankString */
-    R_BlankString = mkChar("");
-    /* Initialize the symbol Table */
-    for (int i = 0; i < HSIZE; i++) R_SymbolTable[i] = R_NilValue;
-    /* Set up a set of globals so that a symbol table search can be
-       avoided when matching something like dim or dimnames. */
-    SymbolShortcuts();
-    /*  Builtin Functions */
-    for (int i = 0; R_FunTab[i].name; i++) installFunTab(i);
-
     R_initialize_bcode();
 }
-
-
-/*  install - probe the symbol table */
-/*  If "name" is not found, it is installed in the symbol table.
-    The symbol corresponding to the string "name" is returned. */
-
-SEXP install(const char *name)
-{
-    SEXP sym;
-    int i, hashcode;
-
-    if (*name == '\0')
-	error(_("attempt to use zero-length variable name"));
-    if (strlen(name) > MAXIDSIZE)
-	error(_("variable names are limited to %d bytes"), MAXIDSIZE);
-    hashcode = R_Newhashpjw(name);
-    i = hashcode % HSIZE;
-    /* Check to see if the symbol is already present;  if it is, return it. */
-    for (sym = R_SymbolTable[i]; sym != R_NilValue; sym = CDR(sym))
-	if (strcmp(name, CHAR(PRINTNAME(CAR(sym)))) == 0) return (CAR(sym));
-    /* Create a new symbol node and link it into the table. */
-    sym = mkSYMSXP(mkChar(name), R_UnboundValue);
-    SET_HASHVALUE(PRINTNAME(sym), hashcode);
-    SET_HASHASH(PRINTNAME(sym), 1);
-    R_SymbolTable[i] = CONS(sym, R_SymbolTable[i]);
-    return (sym);
-}
-
-
-/*  do_internal - This is the code for .Internal(). */
-
-SEXP attribute_hidden do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    SEXP s, fun, ans;
-    int save = R_PPStackTop;
-    int flag;
-    const void *vmax = vmaxget();
-
-    checkArity(op, args);
-    s = CAR(args);
-    if (!isPairList(s))
-	errorcall(call, _("invalid .Internal() argument"));
-    fun = CAR(s);
-    if (!isSymbol(fun))
-	errorcall(call, _("invalid .Internal() argument"));
-    if (INTERNAL(fun) == R_NilValue)
-	errorcall(call, _("there is no .Internal function '%s'"),
-		  CHAR(PRINTNAME(fun)));
-
-#ifdef CHECK_INTERNALS
-    if(R_Is_Running > 1 && getenv("_R_CHECK_INTERNALS2_")) {
-	// find out if we were called from a namespace.
-	// inlining by the compiler can defeat this.
-	const char *ns = "";
-	SEXP e = env;
-	for (int i = 0; i < 10; i++) {
-	    if(R_IsNamespaceEnv(e)) {
-		ns = CHAR(STRING_ELT(R_NamespaceEnvSpec(e), 0));
-		break;
-	    }
-	    e = ENCLOS(e);
-	    if (isNull(e)) break;
-	}
-	const char *fn = CHAR(PRINTNAME(fun));
-	// nspackloader.R contained a .Internal call, so need this
-	// until all packages have been re-installed.
-	if (!strlen(ns) && strcmp(fn, "getRegisteredNamespace"))
-	    errorcall(call,
-		      ".Internal(%s()) not called from a base namespace\n", fn);
-	if (strlen(ns)
-#if CHECK_INTERNALS < 2
-	    && strcmp(ns, "Matrix")
-#endif
-	    && strcmp(ns, "base") && strcmp(ns, "tools")
-	    && strcmp(ns, "utils") && strcmp(ns, "compiler"))
-	    errorcall(call,
-		      ".Internal(%s()) called from namespace '%s'\n", fn, ns);
-    }
-#endif
-
-
-    args = CDR(s);
-    if (TYPEOF(INTERNAL(fun)) == BUILTINSXP)
-	args = evalList(args, env, call, 0);
-    PROTECT(args);
-    flag = PRIMPRINT(INTERNAL(fun));
-    R_Visible = flag != 1;
-    ans = PRIMFUN(INTERNAL(fun)) (s, INTERNAL(fun), args, env);
-    /* This resetting of R_Visible = FALSE was to fix PR#7397,
-       now fixed in GEText */
-    if (flag < 2) R_Visible = flag != 1;
-#ifdef CHECK_VISIBILITY
-    if(flag < 2 && flag == R_Visible) {
-	char *nm = CHAR(PRINTNAME(fun));
-	if(strcmp(nm, "eval") && strcmp(nm, "options") && strcmp(nm, "Recall")
-	   && strcmp(nm, "do.call") && strcmp(nm, "switch")
-	   && strcmp(nm, "recordGraphics") && strcmp(nm, "writeBin")
-	   && strcmp(nm, "NextMethod"))
-	    printf("vis: internal %s\n", nm);
-    }
-#endif
-    UNPROTECT(1);
-    check_stack_balance(INTERNAL(fun), save);
-    vmaxset(vmax);
-    return (ans);
-}
-#undef __R_Names__
-
 	/* Internal code for the ~ operator */
 
 SEXP attribute_hidden do_tilde(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -1206,7 +1032,9 @@ SEXP attribute_hidden do_tilde(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 /* For use in packages */
+extern "C"
 const char *getPRIMNAME(SEXP object)
 {
     return PRIMNAME(object);
 }
+

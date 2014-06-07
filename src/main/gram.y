@@ -1,4 +1,20 @@
 %{
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-12 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
@@ -47,6 +63,11 @@ static void incrementId(void);
 static void initData(void);
 static void initId(void);
 static void record_( int, int, int, int, int, int, char* ) ;
+
+// CXXR FIXME: 2012-02-21.  We encountered parse errors building the
+// tools package with YYINITDEPTH at its default value (200).  But we
+// really need to get to the bottom of what was going wrong.
+#define YYINITDEPTH 400
 
 static void yyerror(const char *);
 static int yylex();
@@ -171,7 +192,7 @@ static int	KeywordLookup(const char *);
 static SEXP	NewList(void);
 static SEXP	NextArg(SEXP, SEXP, SEXP);
 static SEXP	TagArg(SEXP, SEXP, YYLTYPE *);
-static int 	processLineDirective();
+static int 	processLineDirective(int*);
 
 /* These routines allocate constants */
 
@@ -455,7 +476,7 @@ cr	:					{ EatLines = 1; }
 
 /*----------------------------------------------------------------------------*/
 
-static int (*ptr_getc)(void);
+//static int (*ptr_getc)(void);
 
 /* Private pushback, since file ungetc only guarantees one byte.
    We need up to one MBCS-worth */
@@ -518,6 +539,8 @@ static int xxgetc(void)
     R_ParseContextLine = ParseState.xxlineno;    
 
     xxcharcount++;
+    // putchar(c);
+    // if (c == '\n') fputs("R:: ", stdout);
     return c;
 }
 
@@ -539,6 +562,8 @@ static int xxungetc(int c)
     R_ParseContextLast = (R_ParseContextLast + PARSE_CONTEXT_SIZE -1) % PARSE_CONTEXT_SIZE;
     if(npush >= PUSHBACK_BUFSIZE) return EOF;
     pushback[npush++] = c;
+    // putchar('\\');
+    // putchar('b');
     return c;
 }
 
@@ -610,7 +635,7 @@ static int xxvalue(SEXP v, int k, YYLTYPE *lloc)
 	    REPROTECT(SrcRefs = GrowList(SrcRefs, makeSrcref(lloc, ParseState.SrcFile)), srindex);
 	UNPROTECT_PTR(v);
     }
-    R_CurrentExpr = v;
+    Rf_setCurrentExpression(v);
     return k;
 }
 
@@ -855,7 +880,7 @@ static SEXP xxforcond(SEXP sym, SEXP expr)
     SEXP ans;
     EatLines = 1;
     if (GenerateCode)
-	PROTECT(ans = LCONS(sym, expr));
+	PROTECT(ans = lang2(sym, expr));  /* CXXR change */
     else
 	PROTECT(ans = R_NilValue);
     UNPROTECT_PTR(expr);
@@ -867,7 +892,7 @@ static SEXP xxfor(SEXP forsym, SEXP forcond, SEXP body)
 {
     SEXP ans;
     if (GenerateCode)
-	PROTECT(ans = lang4(forsym, CAR(forcond), CDR(forcond), body));
+	PROTECT(ans = lang4(forsym, CAR(forcond), CADR(forcond), body));  /* CXXR change */
     else
 	PROTECT(ans = R_NilValue);
     UNPROTECT_PTR(body);
@@ -1015,24 +1040,31 @@ static SEXP xxsubscript(SEXP a1, SEXP a2, SEXP a3)
 
 static SEXP xxexprlist(SEXP a1, YYLTYPE *lloc, SEXP a2)
 {
-    SEXP ans;
+    SEXP anslist, ans;
     SEXP prevSrcrefs;
 
     EatLines = 0;
     if (GenerateCode) {
-	SET_TYPEOF(a2, LANGSXP);
+	/* SET_TYPEOF(a2, LANGSXP); -- not allowed in CXXR */
 	SETCAR(a2, a1);
 	if (ParseState.keepSrcRefs) {
 	    PROTECT(prevSrcrefs = getAttrib(a2, R_SrcrefSymbol));
 	    REPROTECT(SrcRefs = Insert(SrcRefs, makeSrcref(lloc, ParseState.SrcFile)), srindex);
-	    PROTECT(ans = attachSrcrefs(a2));
+	    PROTECT(anslist = attachSrcrefs(a2));
 	    REPROTECT(SrcRefs = prevSrcrefs, srindex);
 	    /* SrcRefs got NAMED by being an attribute... */
 	    SET_NAMED(SrcRefs, 0);
 	    UNPROTECT_PTR(prevSrcrefs);
 	}
 	else
-	    PROTECT(ans = a2);
+	    PROTECT(anslist = a2);
+	/* CXXR: Transform anslist to class Expression: */
+	{
+	    PROTECT(ans = Rf_lcons(CAR(anslist), CDR(anslist)));
+	    SET_TAG(ans, TAG(anslist));
+	    DUPLICATE_ATTRIB(ans, anslist);
+	    UNPROTECT_PTR(anslist);
+	}
     }
     else
 	PROTECT(ans = R_NilValue);
@@ -1172,8 +1204,8 @@ static SEXP NextArg(SEXP l, SEXP s, SEXP tag)
  */
 
 #define CONTEXTSTACK_SIZE 50
-static int	SavedToken;
-static SEXP	SavedLval;
+//static int	SavedToken;
+//static SEXP	SavedLval;
 static char	contextstack[CONTEXTSTACK_SIZE], *contextp;
 
 static void PutSrcRefState(SrcRefState *state);
@@ -1183,7 +1215,7 @@ attribute_hidden
 void R_InitSrcRefState(SrcRefState *state)
 {
     if (busy) {
-    	state->prevState = malloc(sizeof(SrcRefState));
+    	state->prevState = static_cast<SrcRefState*>(malloc(sizeof(SrcRefState)));
     	PutSrcRefState(state->prevState);
     } else
         state->prevState = NULL;
@@ -1338,10 +1370,10 @@ static SEXP R_Parse1(ParseStatus *status)
 	*status = PARSE_OK;
 	break;
     }
-    return R_CurrentExpr;
+    return Rf_currentExpression();
 }
 
-static FILE *fp_parse;
+//static FILE *fp_parse;
 
 static int file_getc(void)
 {
@@ -1352,18 +1384,18 @@ static int file_getc(void)
 attribute_hidden
 SEXP R_Parse1File(FILE *fp, int gencode, ParseStatus *status, SrcRefState *state)
 {
-    int savestack;
     UseSrcRefState(state);
-    savestack = R_PPStackTop;    
-    ParseInit();
-    ParseContextInit();
-    GenerateCode = gencode;
-    fp_parse = fp;
-    ptr_getc = file_getc;
-    R_Parse1(status);
-    R_PPStackTop = savestack;
+    {
+	CXXR::ProtectStack::Scope psscope;
+	ParseInit();
+	ParseContextInit();
+	GenerateCode = gencode;
+	fp_parse = fp;
+	ptr_getc = file_getc;
+	R_Parse1(status);
+    }
     PutSrcRefState(state);
-    return R_CurrentExpr;
+    return Rf_currentExpression();
 }
 
 static IoBuffer *iob;
@@ -1378,47 +1410,47 @@ attribute_hidden
 SEXP R_Parse1Buffer(IoBuffer *buffer, int gencode, ParseStatus *status)
 {
     Rboolean keepSource = FALSE; 
-    int savestack;    
 
     R_InitSrcRefState(&ParseState);
-    savestack = R_PPStackTop;       
-    if (gencode) {
-    	keepSource = asLogical(GetOption1(install("keep.source")));
-    	if (keepSource) {
-    	    ParseState.keepSrcRefs = TRUE;
-    	    REPROTECT(ParseState.SrcFile = NewEnvironment(R_NilValue, R_NilValue, R_EmptyEnv), ParseState.SrcFileProt);
-	    REPROTECT(ParseState.Original = ParseState.SrcFile, ParseState.OriginalProt);
-	    PROTECT_WITH_INDEX(SrcRefs = NewList(), &srindex);
+    {
+	CXXR::ProtectStack::Scope psscope;
+	if (gencode) {
+	    keepSource = CXXRCONSTRUCT(Rboolean, asLogical(GetOption1(install("keep.source"))));
+	    if (keepSource) {
+		ParseState.keepSrcRefs = TRUE;
+		REPROTECT(ParseState.SrcFile = NewEnvironment(R_NilValue, R_NilValue, R_EmptyEnv), ParseState.SrcFileProt);
+		REPROTECT(ParseState.Original = ParseState.SrcFile, ParseState.OriginalProt);
+		PROTECT_WITH_INDEX(SrcRefs = NewList(), &srindex);
+	    }
 	}
-    }
-    ParseInit();
-    ParseContextInit();
-    GenerateCode = gencode;
-    iob = buffer;
-    ptr_getc = buffer_getc;
-    R_Parse1(status);
-    if (gencode && keepSource) {
-    	if (ParseState.didAttach) {
-   	    int buflen = R_IoBufferReadOffset(buffer);
-   	    char buf[buflen+1];
-   	    SEXP class;
-   	    R_IoBufferReadReset(buffer);
-   	    for (int i=0; i<buflen; i++)
-   	    	buf[i] = (char) R_IoBufferGetc(buffer);
+	ParseInit();
+	ParseContextInit();
+	GenerateCode = gencode;
+	iob = buffer;
+	ptr_getc = buffer_getc;
+	R_Parse1(status);
+	if (gencode && keepSource) {
+	    if (ParseState.didAttach) {
+		int buflen = R_IoBufferReadOffset(buffer);
+		char buf[buflen+1];
+		SEXP class_sv;
+		R_IoBufferReadReset(buffer);
+		for (int i=0; i<buflen; i++)
+		    buf[i] = (char) R_IoBufferGetc(buffer);
 
-   	    buf[buflen] = 0;
-    	    defineVar(install("filename"), ScalarString(mkChar("")), ParseState.Original);
-    	    defineVar(install("lines"), ScalarString(mkChar(buf)), ParseState.Original);
-    	    PROTECT(class = allocVector(STRSXP, 2));
-            SET_STRING_ELT(class, 0, mkChar("srcfilecopy"));
-            SET_STRING_ELT(class, 1, mkChar("srcfile"));
-	    setAttrib(ParseState.Original, R_ClassSymbol, class);
-	    UNPROTECT(1);
+		buf[buflen] = 0;
+		defineVar(install("filename"), ScalarString(mkChar("")), ParseState.Original);
+		defineVar(install("lines"), ScalarString(mkChar(buf)), ParseState.Original);
+		PROTECT(class_sv = allocVector(STRSXP, 2));
+		SET_STRING_ELT(class_sv, 0, mkChar("srcfilecopy"));
+		SET_STRING_ELT(class_sv, 1, mkChar("srcfile"));
+		setAttrib(ParseState.Original, R_ClassSymbol, class_sv);
+		UNPROTECT(1);
+	    }
 	}
     }
-    R_PPStackTop = savestack;
     R_FinalizeSrcRefState();
-    return R_CurrentExpr;
+    return Rf_currentExpression();
 }
 
 static TextBuffer *txtb;
@@ -1430,12 +1462,12 @@ static int text_getc(void)
 
 static SEXP R_Parse(int n, ParseStatus *status, SEXP srcfile)
 {
-    int savestack;
+    size_t savestack;
     int i;
     SEXP t, rval;
 
     R_InitSrcRefState(&ParseState);
-    savestack = R_PPStackTop;
+    savestack = Rf_ppsSize();
     
     ParseContextInit();
     PROTECT(t = NewList());
@@ -1463,7 +1495,7 @@ static SEXP R_Parse(int n, ParseStatus *status, SEXP srcfile)
 	case PARSE_ERROR:
 	    if (ParseState.keepSrcRefs) 
 	        finalizeData();
-	    R_PPStackTop = savestack;
+	    Rf_ppsRestoreSize(savestack);
 	    R_FinalizeSrcRefState();	    
 	    return R_NilValue;
 	    break;
@@ -1478,12 +1510,12 @@ finish:
     t = CDR(t);
     PROTECT(rval = allocVector(EXPRSXP, length(t)));
     for (n = 0 ; n < LENGTH(rval) ; n++, t = CDR(t))
-	SET_VECTOR_ELT(rval, n, CAR(t));
+	SET_XVECTOR_ELT(rval, n, CAR(t));
     if (ParseState.keepSrcRefs) {
 	finalizeData();
 	rval = attachSrcrefs(rval);
     }
-    R_PPStackTop = savestack;    /* UNPROTECT lots! */
+    Rf_ppsRestoreSize(savestack);    /* UNPROTECT lots! */
     R_FinalizeSrcRefState();
     *status = PARSE_OK;
     return rval;
@@ -1559,13 +1591,13 @@ SEXP R_ParseBuffer(IoBuffer *buffer, int n, ParseStatus *status, SEXP prompt,
     SEXP rval, t;
     char *bufp, buf[CONSOLE_BUFFER_SIZE];
     int c, i, prompt_type = 1;
-    int savestack;
+    size_t savestack;
 
     R_IoBufferWriteReset(buffer);
     buf[0] = '\0';
     bufp = buf;
     R_InitSrcRefState(&ParseState);    
-    savestack = R_PPStackTop;
+    savestack = Rf_ppsSize();
     PROTECT(t = NewList());
     
     GenerateCode = 1;
@@ -1598,7 +1630,7 @@ SEXP R_ParseBuffer(IoBuffer *buffer, int n, ParseStatus *status, SEXP prompt,
 	ParseInit();
 	ParseContextInit();
 	R_Parse1(status);
-	rval = R_CurrentExpr;
+	rval = Rf_currentExpression();
 	ParseContextClear();
 
 	switch(*status) {
@@ -1611,7 +1643,7 @@ SEXP R_ParseBuffer(IoBuffer *buffer, int n, ParseStatus *status, SEXP prompt,
 	case PARSE_INCOMPLETE:
 	case PARSE_ERROR:
 	    R_IoBufferWriteReset(buffer);
-	    R_PPStackTop = savestack;
+	    Rf_ppsRestoreSize(savestack);
 	    R_FinalizeSrcRefState();
 	    return R_NilValue;
 	    break;
@@ -1630,7 +1662,7 @@ finish:
 	finalizeData();
 	rval = attachSrcrefs(rval);
     }
-    R_PPStackTop = savestack; /* UNPROTECT lots! */
+    Rf_ppsRestoreSize(savestack); /* UNPROTECT lots! */
     R_FinalizeSrcRefState();    
     *status = PARSE_OK;
     return rval;
@@ -1705,7 +1737,7 @@ static int nextchar(int expect)
 /* Syntactic Keywords + Symbolic Constants */
 
 struct {
-    char *name;
+    CXXRCONST char *name;
     int token;
 }
 static keywords[] = {
@@ -1920,7 +1952,7 @@ static void yyerror(const char *s)
     if (!strncmp(s, yyunexpected, sizeof yyunexpected -1)) {
 	int i;
 	/* Edit the error message */
-	expecting = strstr(s + sizeof yyunexpected -1, yyexpecting);
+	expecting = CXXRCCAST(char*, strstr(s + sizeof yyunexpected -1, yyexpecting));
 	if (expecting) *expecting = '\0';
 	for (i = 0; yytname_translations[i]; i += 2) {
 	    if (!strcmp(s + sizeof yyunexpected - 1, yytname_translations[i])) {
@@ -2013,7 +2045,7 @@ static int SkipComment(void)
     int _first_parsed = ParseState.xxparseno ;
     int type = COMMENT ;
 
-    Rboolean maybeLine = (ParseState.xxcolno == 1);
+    Rboolean maybeLine = CXXRCONSTRUCT(Rboolean, (ParseState.xxcolno == 1));
     Rboolean doSave;
 
     DECLARE_YYTEXT_BUFP(yyp);
@@ -2042,13 +2074,13 @@ static int SkipComment(void)
         _last_parsed = prevparse[prevpos];
     }
     
-    doSave = !maybeLine;
+    doSave = CXXRCONSTRUCT(Rboolean, !maybeLine);
     
     while (c != '\n' && c != R_EOF) {
         // Comments can be any length; we only record the ones that fit in yytext.
         if (doSave) {
             YYTEXT_PUSH(c, yyp);
-            doSave = (yyp - yytext) < sizeof(yytext) - 2;
+            doSave = CXXRCONSTRUCT(Rboolean, (yyp - yytext) < sizeof(yytext) - 2);
         }
  	_last_column = ParseState.xxcolno ;
 	_last_parsed = ParseState.xxparseno ;
@@ -2194,7 +2226,7 @@ static int NumericValue(int c)
 	if (nc >= nstext - 1) {             \
 	    char *old = stext;              \
 	    nstext *= 2;                    \
-	    stext = malloc(nstext);         \
+	    stext = CXXRSCAST(char*, malloc(nstext));         \
 	    if(!stext) error(_("unable to allocate buffer for long string at line %d"), ParseState.xxlineno);\
 	    memmove(stext, old, nc);        \
 	    if(old != st0) free(old);	    \
@@ -2628,7 +2660,7 @@ static int SymbolValue(int c)
 }
 
 static void setParseFilename(SEXP newname) {
-    SEXP class;
+    SEXP class_sv;
     
     if (isEnvironment(ParseState.SrcFile)) {
     	SEXP oldname = findVar(install("filename"), ParseState.SrcFile);
@@ -2639,10 +2671,10 @@ static void setParseFilename(SEXP newname) {
 	defineVar(install("filename"), newname, ParseState.SrcFile);
 	defineVar(install("original"), ParseState.Original, ParseState.SrcFile);
 
-	PROTECT(class = allocVector(STRSXP, 2));
-	SET_STRING_ELT(class, 0, mkChar("srcfilealias"));
-	SET_STRING_ELT(class, 1, mkChar("srcfile"));
-	setAttrib(ParseState.SrcFile, R_ClassSymbol, class);
+        PROTECT(class_sv = allocVector(STRSXP, 2));
+        SET_STRING_ELT(class_sv, 0, mkChar("srcfilealias"));
+        SET_STRING_ELT(class_sv, 1, mkChar("srcfile"));
+	setAttrib(ParseState.SrcFile, R_ClassSymbol, class_sv);
 	UNPROTECT(1);
     } else {
     	REPROTECT(ParseState.SrcFile = duplicate(newname), ParseState.SrcFileProt);
@@ -2673,14 +2705,14 @@ static int processLineDirective(int *type)
 }
 
 /* Get the R symbol, and set yytext at the same time */
-static SEXP install_and_save(char * text)
+static SEXP install_and_save(CXXRCONST char * text)
 {
     strcpy(yytext, text);
     return install(text);
 }
 
 /* Get an R symbol, and set different yytext.  Used for translation of -> to <-. ->> to <<- */
-static SEXP install_and_save2(char * text, char * savetext)
+static SEXP install_and_save2(CXXRCONST char * text, CXXRCONST char * savetext)
 {
     strcpy(yytext, savetext);
     return install(text);

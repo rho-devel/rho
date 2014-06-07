@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -27,6 +43,9 @@
 #include <Internal.h>
 #include <Rmath.h>
 #include <R_ext/RS.h>  /* for Calloc/Free */
+
+// 'using namespace std' causes ambiguity of 'greater'
+using namespace CXXR;
 
 			/*--- Part I: Comparison Utilities ---*/
 
@@ -78,6 +97,13 @@ static int scmp(SEXP x, SEXP y, Rboolean nalast)
     if (y == NA_STRING) return nalast ? -1 : 1;
     if (x == y) return 0;  /* same string in cache */
     return Scollate(x, y);
+}
+
+bool CXXR::String::Comparator::operator()(const String* l,
+					  const String* r) const
+{
+    return scmp(const_cast<String*>(l), const_cast<String*>(r),
+		Rboolean(m_na_last)) < 0;
 }
 
 Rboolean isUnsorted(SEXP x, Rboolean strictly)
@@ -163,7 +189,7 @@ SEXP attribute_hidden do_isunsorted(SEXP call, SEXP op, SEXP args, SEXP rho)
     R_xlen_t n = xlength(x);
     if(n < 2) return ScalarLogical(FALSE);
     if(isVectorAtomic(x))
-	return ScalarLogical(isUnsorted(x, strictly));
+	return ScalarLogical(isUnsorted(x, CXXRCONSTRUCT(Rboolean, strictly)));
     if(isObject(x)) {
 	/* try dispatch */
 	SEXP call;
@@ -221,9 +247,10 @@ void R_csort(Rcomplex *x, int n)
 
 
 /* used in platform.c */
-void attribute_hidden ssort(SEXP *x, int n)
+void attribute_hidden ssort(StringVector* sv, int n)
 {
-    SEXP v;
+    StringVector& x(*sv);
+    String* v;
 #define TYPE_CMP scmp
     sort_body
 #undef TYPE_CMP
@@ -305,7 +332,7 @@ SEXP attribute_hidden do_sort(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     checkArity(op, args);
 
-    decreasing = asLogical(CADR(args));
+    decreasing = CXXRCONSTRUCT(Rboolean, asLogical(CADR(args)));
     if(decreasing == NA_LOGICAL)
 	error(_("'decreasing' must be TRUE or FALSE"));
     if(CAR(args) == R_NilValue) return R_NilValue;
@@ -316,8 +343,7 @@ SEXP attribute_hidden do_sort(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* we need consistent behaviour here, including dropping attibutes,
        so as from 2.3.0 we always duplicate. */
     PROTECT(ans = duplicate(CAR(args)));
-    SET_ATTRIB(ans, R_NilValue);  /* this is never called with names */
-    SET_OBJECT(ans, 0);		  /* we may have just stripped off the class */
+    ans->clearAttributes();  /* this is never called with names */
     sortVector(ans, decreasing);
     UNPROTECT(1);
     return(ans);
@@ -350,6 +376,7 @@ static const int incs[NI + 1] = {
 	    while (j >= h && x[j - h] less v) { x[j] = x[j - h]; j -= h; } \
 	    x[j] = v; \
 	}
+
 
 /* These are only called with n >= 2 */
 static void R_isort2(int *x, R_xlen_t n, Rboolean decreasing)
@@ -409,24 +436,24 @@ static void R_csort2(Rcomplex *x, R_xlen_t n, Rboolean decreasing)
 	}
 }
 
-static void ssort2(SEXP *x, R_xlen_t n, Rboolean decreasing)
+static void ssort2(StringVector* sv, R_xlen_t n, Rboolean decreasing)
 {
-    SEXP v;
+    String* v;
     R_xlen_t i, j, h, t;
 
     if (n < 2) error("'n >= 2' is required");
     for (t = 0; incs[t] > n; t++);
     for (h = incs[t]; t < NI; h = incs[++t])
 	for (i = h; i < n; i++) {
-	    v = x[i];
+	    v = (*sv)[i];
 	    j = i;
 	    if(decreasing)
-		while (j >= h && scmp(x[j - h], v, TRUE) < 0)
-		{ x[j] = x[j - h]; j -= h; }
+		while (j >= h && scmp((*sv)[j - h], v, TRUE) < 0)
+		{ (*sv)[j] = (*sv)[j - h]; j -= h; }
 	    else
-		while (j >= h && scmp(x[j - h], v, TRUE) > 0)
-		{ x[j] = x[j - h]; j -= h; }
-	    x[j] = v;
+		while (j >= h && scmp((*sv)[j - h], v, TRUE) > 0)
+		{ (*sv)[j] = (*sv)[j - h]; j -= h; }
+	    (*sv)[j] = v;
 	}
 }
 
@@ -447,8 +474,11 @@ void sortVector(SEXP s, Rboolean decreasing)
 	    R_csort2(COMPLEX(s), n, decreasing);
 	    break;
 	case STRSXP:
-	    ssort2(STRING_PTR(s), n, decreasing);
-	    break;
+	    {
+		StringVector* sv = static_cast<StringVector*>(s);
+		ssort2(sv, n, decreasing);
+		break;
+	    }
 	default:
 	    UNIMPLEMENTED_TYPE("sortVector", s);
 	}
@@ -505,14 +535,14 @@ static void cPsort2(Rcomplex *x, R_xlen_t lo, R_xlen_t hi, R_xlen_t k)
 }
 
 
-static void sPsort2(SEXP *x, R_xlen_t lo, R_xlen_t hi, R_xlen_t k)
+static void sPsort2(StringVector* sv, R_xlen_t lo, R_xlen_t hi, R_xlen_t k)
 {
-    SEXP v, w;
+    StringVector& x(*sv);
+    String *v, *w;
 #define TYPE_CMP scmp
     psort_body
 #undef TYPE_CMP
 }
-
 
 /* Needed for mistaken decision to put these in the API */
 void iPsort(int *x, int n, int k)
@@ -546,13 +576,15 @@ static void Psort(SEXP x, R_xlen_t lo, R_xlen_t hi, R_xlen_t k)
 	cPsort2(COMPLEX(x), lo, hi, k);
 	break;
     case STRSXP:
-	sPsort2(STRING_PTR(x), lo, hi, k);
-	break;
+	{
+	    StringVector* sv = static_cast<StringVector*>(x);
+	    sPsort2(sv, lo, hi, k);
+	    break;
+	}
     default:
 	UNIMPLEMENTED_TYPE("Psort", x);
     }
 }
-
 
 /* Here ind are 1-based indices passed from R */
 static void
@@ -590,12 +622,12 @@ SEXP attribute_hidden do_psort(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SETCADR(args, coerceVector(p, INTSXP));
     p = CADR(args);
     int nind = LENGTH(p);
-    R_xlen_t *l = (R_xlen_t *) R_alloc(nind, sizeof(R_xlen_t));
+    R_xlen_t *l = static_cast<R_xlen_t *>( CXXR_alloc(nind, sizeof(R_xlen_t)));
     if (TYPEOF(p) == REALSXP) {
 	double *rl = REAL(p);
 	for (int i = 0; i < nind; i++) {
 	    if (!R_FINITE(rl[i])) error(_("NA or infinite index"));
-	    l[i] = (R_xlen_t) rl[i];
+	    l[i] = R_xlen_t( rl[i]);
 	    if (l[i] < 1 || l[i] > n)
 		error(_("index %ld outside bounds"), l[i]);
 	}
@@ -621,8 +653,8 @@ SEXP attribute_hidden do_psort(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 #endif
     SETCAR(args, duplicate(x));
-    SET_ATTRIB(CAR(args), R_NilValue);  /* remove all attributes */
-    SET_OBJECT(CAR(args), 0);           /* and the object bit    */
+    CAR(args)->clearAttributes();  /* remove all attributes */
+                                   /* and the object bit    */
     Psort0(CAR(args), 0, n - 1, l, nind);
     return CAR(args);
 }
@@ -636,12 +668,11 @@ static int equal(R_xlen_t i, R_xlen_t j, SEXP x, Rboolean nalast, SEXP rho)
 
     if (isObject(x) && !isNull(rho)) { /* so never any NAs */
 	/* evaluate .gt(x, i, j) */
-	SEXP si, sj, call;
-	si = ScalarInteger((int)i+1);
-	sj = ScalarInteger((int)j+1);
-	PROTECT(call = lang4(install(".gt"), x, si, sj));
+	GCStackRoot<> si, sj, call;
+	si = ScalarInteger(int(i)+1);
+	sj = ScalarInteger(int(j)+1);
+	call = lang4(install(".gt"), x, si, sj);
 	c = asInteger(eval(call, rho));
-	UNPROTECT(1);
     } else {
 	switch (TYPEOF(x)) {
 	case LGLSXP:
@@ -674,12 +705,11 @@ static int greater(R_xlen_t i, R_xlen_t j, SEXP x, Rboolean nalast,
 
     if (isObject(x) && !isNull(rho)) { /* so never any NAs */
 	/* evaluate .gt(x, i, j) */
-	SEXP si, sj, call;
-	si = ScalarInteger((int)i+1);
-	sj = ScalarInteger((int)j+1);
-	PROTECT(call = lang4(install(".gt"), x, si, sj));
+	GCStackRoot<> si, sj, call;
+	si = ScalarInteger(int(i)+1);
+	sj = ScalarInteger(int(j)+1);
+	call = lang4(install(".gt"), x, si, sj);
 	c = asInteger(eval(call, rho));
-	UNPROTECT(1);
     } else {
 	switch (TYPEOF(x)) {
 	case LGLSXP:
@@ -740,7 +770,6 @@ static int listgreater(int i, int j, SEXP key, Rboolean nalast,
     if (c == 0 && i < j) return 0; else return 1;
 }
 
-
 #define GREATER_2_SUB_DEF(FNAME, TYPE_1, TYPE_2, CMP_FN_1, CMP_FN_2)	\
 static int FNAME(int i, int j,						\
 		 TYPE_1 *x, TYPE_2 *y,					\
@@ -791,7 +820,7 @@ orderVector(int *indx, int n, SEXP key, Rboolean nalast,
 	    itmp = indx[i];
 	    j = i;
 	    while (j >= h &&
-		   greater_sub(indx[j - h], itmp, key, nalast^decreasing,
+		   greater_sub(indx[j - h], itmp, key, CXXRCONSTRUCT(Rboolean, nalast^decreasing),
 			       decreasing)) {
 		indx[j] = indx[j - h];
 		j -= h;
@@ -854,7 +883,7 @@ orderVectorl(R_xlen_t *indx, R_xlen_t n, SEXP key, Rboolean nalast,
 	    itmp = indx[i];
 	    j = i;
 	    while (j >= h &&
-		   greater_sub(indx[j - h], itmp, key, nalast^decreasing,
+		   greater_sub(indx[j - h], itmp, key, CXXRCONSTRUCT(Rboolean, nalast^decreasing),
 			       decreasing)) {
 		indx[j] = indx[j - h];
 		j -= h;
@@ -925,8 +954,8 @@ void R_orderVector(int *indx, // must be pre-allocated to length >= n
 
 
 
-/* Needs indx set to  0:(n-1)  initially.
-   Also used by do_options and  ../gnuwin32/extra.c
+/* Needs indx set to 0:(n-1) initially.
+   Also used by do_options and ../gnuwin32/extra.c
    Called with rho != R_NilValue only from do_rank, when NAs are not involved.
  */
 void attribute_hidden
@@ -938,7 +967,7 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
     int *ix = NULL /* -Wall */;
     double *x = NULL /* -Wall */;
     Rcomplex *cx = NULL /* -Wall */;
-    SEXP *sx = NULL /* -Wall */;
+    StringVector* sv = NULL /* -Wall */;
 
     if (n < 2) return;
     switch (TYPEOF(key)) {
@@ -950,10 +979,12 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
 	x = REAL(key);
 	break;
     case STRSXP:
-	sx = STRING_PTR(key);
+	sv = static_cast<StringVector*>(key);
 	break;
     case CPLXSXP:
 	cx = COMPLEX(key);
+	break;
+    default:  // -Wswitch
 	break;
     }
 
@@ -969,7 +1000,7 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
 	    for (i = 0; i < n; i++) isna[i] = ISNAN(x[i]);
 	    break;
 	case STRSXP:
-	    for (i = 0; i < n; i++) isna[i] = (sx[i] == NA_STRING);
+	    for (i = 0; i < n; i++) isna[i] = ((*sv)[i] == NA_STRING);
 	    break;
 	case CPLXSXP:
 	    for (i = 0; i < n; i++) isna[i] = ISNAN(cx[i].r) || ISNAN(cx[i].i);
@@ -992,6 +1023,8 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
 		sort2_with_index
 #undef less
 		    if(nalast) hi -= numna; else lo += numna;
+	    default:  // -Wswitch
+		break;
 	    }
     }
 
@@ -1002,7 +1035,7 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
 
     if (isObject(key) && !isNull(rho)) {
 /* only reached from do_rank */
-#define less(a, b) greater(a, b, key, nalast^decreasing, decreasing, rho)
+#define less(a, b) greater(a, b, key, CXXRCONSTRUCT(Rboolean, nalast^decreasing), decreasing, rho)
 	    sort2_with_index
 #undef less
     } else {
@@ -1032,27 +1065,27 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
 	    break;
 	case CPLXSXP:
 	    if (decreasing) {
-#define less(a, b) (ccmp(cx[a], cx[b], 0) < 0 || (cx[a].r == cx[b].r && cx[a].i == cx[b].i && a > b))
+#define less(a, b) (ccmp(cx[a], cx[b], CXXRFALSE) < 0 || (cx[a].r == cx[b].r && cx[a].i == cx[b].i && a > b))
 		sort2_with_index
 #undef less
 	    } else {
-#define less(a, b) (ccmp(cx[a], cx[b], 0) > 0 || (cx[a].r == cx[b].r && cx[a].i == cx[b].i && a > b))
+#define less(a, b) (ccmp(cx[a], cx[b], CXXRFALSE) > 0 || (cx[a].r == cx[b].r && cx[a].i == cx[b].i && a > b))
 		sort2_with_index
 #undef less
 	    }
 	    break;
 	case STRSXP:
 	    if (decreasing)
-#define less(a, b) (c = Scollate(sx[a], sx[b]), c < 0 || (c == 0 && a > b))
+#define less(a, b) (c = Scollate((*sv)[a], (*sv)[b]), c < 0 || (c == 0 && a > b))
 		sort2_with_index
 #undef less
 	    else
-#define less(a, b) (c = Scollate(sx[a], sx[b]), c > 0 || (c == 0 && a > b))
+#define less(a, b) (c = Scollate((*sv)[a], (*sv)[b]), c > 0 || (c == 0 && a > b))
 		sort2_with_index
 #undef less
 	    break;
 	default:  /* only reached from do_rank */
-#define less(a, b) greater(a, b, key, nalast^decreasing, decreasing, rho)
+#define less(a, b) greater(a, b, key, CXXRCONSTRUCT(Rboolean, nalast^decreasing), decreasing, rho)
 	    sort2_with_index
 #undef less
 	}
@@ -1071,7 +1104,7 @@ orderVector1l(R_xlen_t *indx, R_xlen_t n, SEXP key, Rboolean nalast,
     int *ix = NULL /* -Wall */;
     double *x = NULL /* -Wall */;
     Rcomplex *cx = NULL /* -Wall */;
-    SEXP *sx = NULL /* -Wall */;
+    StringVector* sv = NULL /* -Wall */;
     R_xlen_t itmp;
 
     if (n < 2) return;
@@ -1084,10 +1117,12 @@ orderVector1l(R_xlen_t *indx, R_xlen_t n, SEXP key, Rboolean nalast,
 	x = REAL(key);
 	break;
     case STRSXP:
-	sx = STRING_PTR(key);
+	sv = static_cast<StringVector*>(key);
 	break;
     case CPLXSXP:
 	cx = COMPLEX(key);
+	break;
+    default:  // -Wswitch
 	break;
     }
 
@@ -1103,7 +1138,7 @@ orderVector1l(R_xlen_t *indx, R_xlen_t n, SEXP key, Rboolean nalast,
 	    for (i = 0; i < n; i++) isna[i] = ISNAN(x[i]);
 	    break;
 	case STRSXP:
-	    for (i = 0; i < n; i++) isna[i] = (sx[i] == NA_STRING);
+	    for (i = 0; i < n; i++) isna[i] = ((*sv)[i] == NA_STRING);
 	    break;
 	case CPLXSXP:
 	    for (i = 0; i < n; i++) isna[i] = ISNAN(cx[i].r) || ISNAN(cx[i].i);
@@ -1126,6 +1161,8 @@ orderVector1l(R_xlen_t *indx, R_xlen_t n, SEXP key, Rboolean nalast,
 		sort2_with_index
 #undef less
 		    if(nalast) hi -= numna; else lo += numna;
+	    default:  // -Wswitch
+		break;
 	    }
     }
 
@@ -1136,7 +1173,7 @@ orderVector1l(R_xlen_t *indx, R_xlen_t n, SEXP key, Rboolean nalast,
 
     if (isObject(key) && !isNull(rho)) {
 /* only reached from do_rank */
-#define less(a, b) greater(a, b, key, nalast^decreasing, decreasing, rho)
+#define less(a, b) greater(a, b, key, CXXRCONSTRUCT(Rboolean, nalast^decreasing), decreasing, rho)
 	    sort2_with_index
 #undef less
     } else {
@@ -1166,27 +1203,27 @@ orderVector1l(R_xlen_t *indx, R_xlen_t n, SEXP key, Rboolean nalast,
 	    break;
 	case CPLXSXP:
 	    if (decreasing) {
-#define less(a, b) (ccmp(cx[a], cx[b], 0) < 0 || (cx[a].r == cx[b].r && cx[a].i == cx[b].i && a > b))
+#define less(a, b) (ccmp(cx[a], cx[b], CXXRFALSE) < 0 || (cx[a].r == cx[b].r && cx[a].i == cx[b].i && a > b))
 		sort2_with_index
 #undef less
 	    } else {
-#define less(a, b) (ccmp(cx[a], cx[b], 0) > 0 || (cx[a].r == cx[b].r && cx[a].i == cx[b].i && a > b))
+#define less(a, b) (ccmp(cx[a], cx[b], CXXRFALSE) > 0 || (cx[a].r == cx[b].r && cx[a].i == cx[b].i && a > b))
 		sort2_with_index
 #undef less
 	    }
 	    break;
 	case STRSXP:
 	    if (decreasing)
-#define less(a, b) (c=Scollate(sx[a], sx[b]), c < 0 || (c == 0 && a > b))
+#define less(a, b) (c=Scollate((*sv)[a], (*sv)[b]), c < 0 || (c == 0 && a > b))
 		sort2_with_index
 #undef less
 	    else
-#define less(a, b) (c=Scollate(sx[a], sx[b]), c > 0 || (c == 0 && a > b))
+#define less(a, b) (c=Scollate((*sv)[a], (*sv)[b]), c > 0 || (c == 0 && a > b))
 		sort2_with_index
 #undef less
 	    break;
 	default:  /* only reached from do_rank */
-#define less(a, b) greater(a, b, key, nalast^decreasing, decreasing, rho)
+#define less(a, b) greater(a, b, key, CXXRCONSTRUCT(Rboolean, nalast^decreasing), decreasing, rho)
 	    sort2_with_index
 #undef less
 	}
@@ -1203,11 +1240,11 @@ SEXP attribute_hidden do_order(SEXP call, SEXP op, SEXP args, SEXP rho)
     R_xlen_t n = -1;
     Rboolean nalast, decreasing;
 
-    nalast = asLogical(CAR(args));
+    nalast = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));
     if(nalast == NA_LOGICAL)
 	error(_("invalid '%s' value"), "na.last");
     args = CDR(args);
-    decreasing = asLogical(CAR(args));
+    decreasing = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));
     if(decreasing == NA_LOGICAL)
 	error(_("'decreasing' must be TRUE or FALSE"));
     args = CDR(args);
@@ -1228,7 +1265,7 @@ SEXP attribute_hidden do_order(SEXP call, SEXP op, SEXP args, SEXP rho)
 #ifdef LONG_VECTOR_SUPPORT
 	    if (n > INT_MAX)  {
 		PROTECT(ans = allocVector(REALSXP, n));
-		R_xlen_t *in = (R_xlen_t *) R_alloc(n, sizeof(R_xlen_t));
+		R_xlen_t *in = static_cast<R_xlen_t *>( CXXR_alloc(n, sizeof(R_xlen_t)));
 		for (R_xlen_t i = 0; i < n; i++) in[i] = i;
 		orderVector1l(in, n, CAR(args), nalast, decreasing,
 			      R_NilValue);
@@ -1237,8 +1274,8 @@ SEXP attribute_hidden do_order(SEXP call, SEXP op, SEXP args, SEXP rho)
 #endif
 	    {
 		PROTECT(ans = allocVector(INTSXP, n));
-		for (R_xlen_t i = 0; i < n; i++) INTEGER(ans)[i] = (int) i;
-		orderVector1(INTEGER(ans), (int)n, CAR(args), nalast,
+		for (R_xlen_t i = 0; i < n; i++) INTEGER(ans)[i] = int( i);
+		orderVector1(INTEGER(ans), int(n), CAR(args), nalast,
 			     decreasing, R_NilValue);
 		for (R_xlen_t i = 0; i < n; i++) INTEGER(ans)[i]++;
 	    }
@@ -1246,7 +1283,7 @@ SEXP attribute_hidden do_order(SEXP call, SEXP op, SEXP args, SEXP rho)
 #ifdef LONG_VECTOR_SUPPORT
 	    if (n > INT_MAX)  {
 		PROTECT(ans = allocVector(REALSXP, n));
-		R_xlen_t *in = (R_xlen_t *) R_alloc(n, sizeof(R_xlen_t));
+		R_xlen_t *in = static_cast<R_xlen_t *>( CXXR_alloc(n, sizeof(R_xlen_t)));
 		for (R_xlen_t i = 0; i < n; i++) in[i] = i;
 		orderVectorl(in, n, CAR(args), nalast, decreasing,
 			     listgreaterl);
@@ -1255,8 +1292,8 @@ SEXP attribute_hidden do_order(SEXP call, SEXP op, SEXP args, SEXP rho)
 #endif
 	    {
 		PROTECT(ans = allocVector(INTSXP, n));
-		for (R_xlen_t i = 0; i < n; i++) INTEGER(ans)[i] = (int) i;
-		orderVector(INTEGER(ans), (int) n, args, nalast,
+		for (R_xlen_t i = 0; i < n; i++) INTEGER(ans)[i] = int( i);
+		orderVector(INTEGER(ans), int( n), args, nalast,
 			    decreasing, listgreater);
 		for (R_xlen_t i = 0; i < n; i++) INTEGER(ans)[i]++;
 	    }
@@ -1287,7 +1324,7 @@ SEXP attribute_hidden do_rank(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if(ISNAN(d)) error(_("vector size cannot be NA/NaN"));
 	if(!R_FINITE(d)) error(_("vector size cannot be infinite"));
 	if(d > R_XLEN_T_MAX) error(_("vector size specified is too large"));
-	n = (R_xlen_t) d;
+	n = R_xlen_t( d);
 	if (n < 0) error(_("invalid '%s' value"), "length(xx)");
     } else {
 	int nn = asInteger(sn);
@@ -1295,7 +1332,7 @@ SEXP attribute_hidden do_rank(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("invalid '%s' value"), "length(xx)");
 	n = nn;
     }
-    isLong = n > INT_MAX;
+    isLong = CXXRCONSTRUCT(Rboolean, n > INT_MAX);
 #else
     int n = asInteger(CADR(args));
     if (n == NA_INTEGER || n < 0)
@@ -1317,7 +1354,7 @@ SEXP attribute_hidden do_rank(SEXP call, SEXP op, SEXP args, SEXP rho)
 #ifdef LONG_VECTOR_SUPPORT
 	if(isLong) {
 	    R_xlen_t i, j, k;
-	    R_xlen_t *in = (R_xlen_t *) R_alloc(n, sizeof(R_xlen_t));
+	    R_xlen_t *in = static_cast<R_xlen_t *>( CXXR_alloc(n, sizeof(R_xlen_t)));
 	    for (i = 0; i < n; i++) in[i] = i;
 	    orderVector1l(in, n, x, TRUE, FALSE, rho);
 	    for (i = 0; i < n; i = j+1) {
@@ -1337,9 +1374,9 @@ SEXP attribute_hidden do_rank(SEXP call, SEXP op, SEXP args, SEXP rho)
 #endif
 	{
 	    int i, j, k;
-	    int *in = (int *) R_alloc(n, sizeof(int));
+	    int *in = static_cast<int *>( CXXR_alloc(n, sizeof(int)));
 	    for (i = 0; i < n; i++) in[i] = i;
-	    orderVector1(in, (int) n, x, TRUE, FALSE, rho);
+	    orderVector1(in, int( n), x, TRUE, FALSE, rho);
 	    for (i = 0; i < n; i = j+1) {
 		j = i;
 		while ((j < n - 1) && equal(in[j], in[j + 1], x, TRUE, rho)) j++;
@@ -1372,16 +1409,16 @@ SEXP attribute_hidden do_radixsort(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
 
     x = CAR(args);
-    nalast = asLogical(CADR(args));
+    nalast = CXXRCONSTRUCT(Rboolean, asLogical(CADR(args)));
     if(nalast == NA_LOGICAL)
 	error(_("invalid '%s' value"), "na.last");
-    decreasing = asLogical(CADDR(args));
+    decreasing = CXXRCONSTRUCT(Rboolean, asLogical(CADDR(args)));
     if(decreasing == NA_LOGICAL)
 	error(_("'decreasing' must be TRUE or FALSE"));
     off = nalast^decreasing ? 0 : 1;
     n = XLENGTH(x);
 #ifdef LONG_VECTOR_SUPPORT
-    Rboolean isLong = n > INT_MAX;
+    Rboolean isLong = CXXRCONSTRUCT(Rboolean, n > INT_MAX);
     if(isLong)
 	ans = allocVector(REALSXP, n);
     else
@@ -1400,11 +1437,11 @@ SEXP attribute_hidden do_radixsort(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(xmin == NA_INTEGER) {  /* all NAs, so nothing to do */
 #ifdef LONG_VECTOR_SUPPORT
 	if (isLong) {
-	    for(i = 0; i < n; i++) REAL(ans)[i] = (double)(i+1);
+	    for(i = 0; i < n; i++) REAL(ans)[i] = double(i+1);
 	} else
 #endif
 	{
-	    for(i = 0; i < n; i++) INTEGER(ans)[i] = (int)(i+1);
+	    for(i = 0; i < n; i++) INTEGER(ans)[i] = int(i+1);
 	}
 	UNPROTECT(1);
 	return ans;
@@ -1414,9 +1451,8 @@ SEXP attribute_hidden do_radixsort(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(xmax > 100000) error(_("too large a range of values in 'x'"));
     napos = off ? 0 : xmax + 1;
     off -= xmin;
-    /* automatic allocation should be fine here: we know this is small */
-    R_CheckStack2((xmax+2) * sizeof(R_xlen_t));
-    R_xlen_t cnts[xmax+2];
+    std::vector<unsigned int> cntsv(xmax+2);
+    unsigned int* cnts = &cntsv[0];
 
     for(i = 0; i <= xmax+1; i++) cnts[i] = 0;
     for(i = 0; i < n; i++) {
@@ -1431,13 +1467,13 @@ SEXP attribute_hidden do_radixsort(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    for(i = 0; i < n; i++) {
 		tmp = INTEGER(x)[i];
 		REAL(ans)[n-(cnts[(tmp == NA_INTEGER) ? napos : off+tmp]--)] =
-		    (double)(i+1);
+		    double(i+1);
 	    }
 	else
 	    for(i = n-1; i >= 0; i--) {
 		tmp = INTEGER(x)[i];
 		REAL(ans)[--cnts[(tmp == NA_INTEGER) ? napos : off+tmp]] =
-		    (double)(i+1);
+		    double(i+1);
 	    }
     } else
 #endif
@@ -1446,15 +1482,16 @@ SEXP attribute_hidden do_radixsort(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    for(i = 0; i < n; i++) {
 		tmp = INTEGER(x)[i];
 		INTEGER(ans)[n-(cnts[(tmp == NA_INTEGER) ? napos : off+tmp]--)] =
-		    (int)(i+1);
+		    int(i+1);
 	    }
 	else
 	    for(i = n-1; i >= 0; i--) {
 		tmp = INTEGER(x)[i];
 		INTEGER(ans)[--cnts[(tmp == NA_INTEGER) ? napos : off+tmp]] =
-		    (int)(i+1);
+		    int(i+1);
 	    }
     }
+
     UNPROTECT(1);
     return ans;
 }
@@ -1471,7 +1508,11 @@ SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(fn = findFun(install("xtfrm.default"), rho));
     PROTECT(prargs = promiseArgs(args, R_GlobalEnv));
     SET_PRVALUE(CAR(prargs), CAR(args));
-    ans = applyClosure(call, fn, prargs, rho, R_NilValue);
+    Closure* closure = SEXP_downcast<Closure*>(fn);
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    ArgList arglist(SEXP_downcast<PairList*>(prargs), ArgList::PROMISED);
+    Environment* callenv = SEXP_downcast<Environment*>(rho);
+    ans = closure->invoke(callenv, &arglist, callx);
     UNPROTECT(2);
     return ans;
 

@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995  Robert Gentleman and Ross Ihaka
@@ -23,7 +39,6 @@
 # include <config.h>
 #endif
 
-#define R_USE_SIGNALS 1
 #include <Defn.h>
 #include <Internal.h>
 #include <ctype.h> /* for tolower */
@@ -32,10 +47,13 @@
 
 #include <Rmath.h>
 
+#include "CXXR/ClosureContext.hpp"
 
 #ifndef max
 #define max(a, b) ((a > b)?(a):(b))
 #endif
+
+using namespace CXXR;
 
 /* Was 'name' prior to 2.13.0, then .NAME, but checked as
    'name' up to 2.15.1. */
@@ -106,7 +124,7 @@ checkValidSymbolId(SEXP op, SEXP call, DL_FUNC *fun,
 	   *fun = R_ExternalPtrAddrFn(op);
 	else if(R_ExternalPtrTag(op) == install("registered native symbol")) {
 	   R_RegisteredNativeSymbol *tmp;
-	   tmp = (R_RegisteredNativeSymbol *) R_ExternalPtrAddr(op);
+	   tmp = static_cast<R_RegisteredNativeSymbol *>( R_ExternalPtrAddr(op));
 	   if(tmp) {
 	      if(symbol->type != R_ANY_SYM && symbol->type != tmp->type)
 		 errorcall(call, _("NULL value passed as symbol address"));
@@ -237,7 +255,7 @@ resolveNativeRoutine(SEXP args, DL_FUNC *fun,
 	    error(_("symbol '%s' is too long"), p);
 	q = buf;
 	while ((*q = *p) != '\0') {
-	    if(symbol->type == R_FORTRAN_SYM) *q = (char) tolower(*q);
+	    if(symbol->type == R_FORTRAN_SYM) *q = char( tolower(*q));
 	    p++;
 	    q++;
 	}
@@ -303,25 +321,25 @@ checkNativeType(int targetType, int actualType)
 {
     if(targetType > 0) {
 	if(targetType == INTSXP || targetType == LGLSXP) {
-	    return(actualType == INTSXP || actualType == LGLSXP);
+	    return(CXXRCONSTRUCT(Rboolean, actualType == INTSXP || actualType == LGLSXP));
 	}
-	return(targetType == actualType);
+	return(CXXRCONSTRUCT(Rboolean, targetType == actualType));
     }
 
     return(TRUE);
 }
 
-
 static Rboolean
 comparePrimitiveTypes(R_NativePrimitiveArgType type, SEXP s, Rboolean dup)
 {
-   if(type == ANYSXP || TYPEOF(s) == type)
-      return(TRUE);
+    SEXPTYPE stype = SEXPTYPE(type);
+    if(stype == ANYSXP || TYPEOF(s) == stype)
+	return(TRUE);
 
-   if(dup && type == SINGLESXP)
-      return(asLogical(getAttrib(s, install("Csingle"))) == TRUE);
+    if(dup && stype == SINGLESXP)
+	return Rboolean(asLogical(getAttrib(s, install("Csingle"))) == TRUE);
 
-   return(FALSE);
+    return(FALSE);
 }
 
 
@@ -367,17 +385,18 @@ static SEXP naokfind(SEXP args, int * len, int *naok, int *dup,
 	    } else {
 		/* Have a DLL object, which is not something documented .... */
 		if(TYPEOF(CAR(s)) == EXTPTRSXP) {
-		    dll->dll = (HINSTANCE) R_ExternalPtrAddr(CAR(s));
+		    dll->dll = static_cast<HINSTANCE>( R_ExternalPtrAddr(CAR(s)));
 		    dll->type = DLL_HANDLE;
 		} else if(TYPEOF(CAR(s)) == VECSXP) {
 		    dll->type = R_OBJECT;
 		    dll->obj = s;
 		    strcpy(dll->DLLname,
 			   translateChar(STRING_ELT(VECTOR_ELT(CAR(s), 1), 0)));
-		    dll->dll = (HINSTANCE) R_ExternalPtrAddr(VECTOR_ELT(s, 4));
+		    dll->dll = static_cast<HINSTANCE>( R_ExternalPtrAddr(VECTOR_ELT(s, 4)));
 		} else 
 		    error("incorrect type (%s) of PACKAGE argument\n",
 			  type2char(TYPEOF(CAR(s))));
+
 	    }
 	} else {
 	    nargs++;
@@ -423,14 +442,14 @@ static SEXP pkgtrim(SEXP args, DllReference *dll)
 	   this is the last one (which will only happen for one arg),
 	   and remove it */
 	if(ss == R_NilValue && TAG(s) == PkgSymbol) {
-	    if(pkgused++ == 1) 
+	    if(pkgused++ == 1)
 		warning(_("'%s' used more than once"), "PACKAGE");
 	    setDLLname(s, dll->DLLname);
 	    dll->type = FILENAME;
 	    return R_NilValue;
 	}
 	if(TAG(ss) == PkgSymbol) {
-	    if(pkgused++ == 1) 
+	    if(pkgused++ == 1)
 		warning(_("'%s' used more than once"), "PACKAGE");
 	    setDLLname(ss, dll->DLLname);
 	    dll->type = FILENAME;
@@ -523,21 +542,17 @@ SEXP attribute_hidden do_External(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     if (PRIMVAL(op) == 1) {
-	R_ExternalRoutine2 fun = (R_ExternalRoutine2) ofun;
+	R_ExternalRoutine2 fun = R_ExternalRoutine2( ofun);
 	retval = fun(call, op, args, env);
     } else {
-	R_ExternalRoutine fun = (R_ExternalRoutine) ofun;
+	R_ExternalRoutine fun = R_ExternalRoutine( ofun);
 	retval = fun(args);
     }
     vmaxset(vmax);
     return retval;
 }
 
-#ifdef __cplusplus
 typedef SEXP (*VarFun)(...);
-#else
-typedef DL_FUNC VarFun;
-#endif
 
 /* .Call(name, <args>) */
 SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
@@ -553,7 +568,6 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (length(args) < 1) errorcall(call, _("'.NAME' is missing"));
     check1arg2(args, call, ".NAME");
-
     args = resolveNativeRoutine(args, &ofun, &symbol, buf, NULL, NULL,
 				NULL, call, env);
     args = CDR(args);
@@ -572,119 +586,119 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     retval = R_NilValue;	/* -Wall */
-    fun = (VarFun) ofun;
+    fun = reinterpret_cast<VarFun>( ofun);
     switch (nargs) {
     case 0:
-	retval = (SEXP)ofun();
+	retval = static_cast<SEXP>(ofun());
 	break;
     case 1:
-	retval = (SEXP)fun(cargs[0]);
+	retval = CXXRNOCAST(SEXP)fun(cargs[0]);
 	break;
     case 2:
-	retval = (SEXP)fun(cargs[0], cargs[1]);
+	retval = CXXRNOCAST(SEXP)fun(cargs[0], cargs[1]);
 	break;
     case 3:
-	retval = (SEXP)fun(cargs[0], cargs[1], cargs[2]);
+	retval = CXXRNOCAST(SEXP)fun(cargs[0], cargs[1], cargs[2]);
 	break;
     case 4:
-	retval = (SEXP)fun(cargs[0], cargs[1], cargs[2], cargs[3]);
+	retval = CXXRNOCAST(SEXP)fun(cargs[0], cargs[1], cargs[2], cargs[3]);
 	break;
     case 5:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4]);
 	break;
     case 6:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5]);
 	break;
     case 7:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6]);
 	break;
     case 8:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7]);
 	break;
     case 9:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8]);
 	break;
     case 10:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9]);
 	break;
     case 11:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10]);
 	break;
     case 12:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11]);
 	break;
     case 13:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12]);
 	break;
     case 14:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13]);
 	break;
     case 15:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14]);
 	break;
     case 16:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
 	    cargs[15]);
 	break;
     case 17:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
 	    cargs[15], cargs[16]);
 	break;
     case 18:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
 	    cargs[15], cargs[16], cargs[17]);
 	break;
     case 19:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
 	    cargs[15], cargs[16], cargs[17], cargs[18]);
 	break;
     case 20:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
 	    cargs[15], cargs[16], cargs[17], cargs[18], cargs[19]);
 	break;
     case 21:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -692,7 +706,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[20]);
 	break;
     case 22:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -700,7 +714,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[20], cargs[21]);
 	break;
     case 23:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -708,7 +722,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[20], cargs[21], cargs[22]);
 	break;
     case 24:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -716,7 +730,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[20], cargs[21], cargs[22], cargs[23]);
 	break;
     case 25:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -724,7 +738,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[20], cargs[21], cargs[22], cargs[23], cargs[24]);
 	break;
     case 26:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -733,7 +747,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[25]);
 	break;
     case 27:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -742,7 +756,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[25], cargs[26]);
 	break;
     case 28:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -751,7 +765,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[25], cargs[26], cargs[27]);
 	break;
     case 29:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -760,7 +774,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[25], cargs[26], cargs[27], cargs[28]);
 	break;
     case 30:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -769,7 +783,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[25], cargs[26], cargs[27], cargs[28], cargs[29]);
 	break;
     case 31:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -779,7 +793,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[30]);
 	break;
     case 32:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -789,7 +803,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[30], cargs[31]);
 	break;
     case 33:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -799,7 +813,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[30], cargs[31], cargs[32]);
 	break;
     case 34:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -809,7 +823,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[30], cargs[31], cargs[32], cargs[33]);
 	break;
     case 35:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -819,7 +833,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[30], cargs[31], cargs[32], cargs[33], cargs[34]);
 	break;
     case 36:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -830,7 +844,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[35]);
 	break;
     case 37:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -841,7 +855,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[35], cargs[36]);
 	break;
     case 38:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -852,7 +866,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[35], cargs[36], cargs[37]);
 	break;
     case 39:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -863,7 +877,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[35], cargs[36], cargs[37], cargs[38]);
 	break;
     case 40:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -874,7 +888,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[35], cargs[36], cargs[37], cargs[38], cargs[39]);
 	break;
     case 41:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -886,7 +900,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[40]);
 	break;
     case 42:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -898,7 +912,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[40], cargs[41]);
 	break;
     case 43:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -910,7 +924,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[40], cargs[41], cargs[42]);
 	break;
     case 44:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -922,7 +936,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[40], cargs[41], cargs[42], cargs[43]);
 	break;
     case 45:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -934,7 +948,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[40], cargs[41], cargs[42], cargs[43], cargs[44]);
 	break;
     case 46:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -947,7 +961,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[45]);
 	break;
     case 47:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -960,7 +974,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[45], cargs[46]);
 	break;
     case 48:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -973,7 +987,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[45], cargs[46], cargs[47]);
 	break;
     case 49:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -986,7 +1000,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[45], cargs[46], cargs[47], cargs[48]);
 	break;
     case 50:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -999,7 +1013,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[45], cargs[46], cargs[47], cargs[48], cargs[49]);
 	break;
     case 51:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1013,7 +1027,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[50]);
 	break;
     case 52:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1027,7 +1041,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[50], cargs[51]);
 	break;
     case 53:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1041,7 +1055,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[50], cargs[51], cargs[52]);
 	break;
     case 54:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1055,7 +1069,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[50], cargs[51], cargs[52], cargs[53]);
 	break;
     case 55:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1069,7 +1083,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[50], cargs[51], cargs[52], cargs[53], cargs[54]);
 	break;
     case 56:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1084,7 +1098,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[55]);
 	break;
     case 57:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1099,7 +1113,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[55], cargs[56]);
 	break;
     case 58:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1114,7 +1128,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[55], cargs[56], cargs[57]);
 	break;
     case 59:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1129,7 +1143,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[55], cargs[56], cargs[57], cargs[58]);
 	break;
     case 60:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1144,7 +1158,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[55], cargs[56], cargs[57], cargs[58], cargs[59]);
 	break;
     case 61:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1160,7 +1174,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[60]);
 	break;
     case 62:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1176,7 +1190,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[60], cargs[61]);
 	break;
     case 63:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1192,7 +1206,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[60], cargs[61], cargs[62]);
 	break;
     case 64:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1208,7 +1222,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[60], cargs[61], cargs[62], cargs[63]);
 	break;
     case 65:
-	retval = (SEXP)fun(
+	retval = CXXRNOCAST(SEXP)fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1286,21 +1300,18 @@ static SEXP
 Rf_getCallingDLL(void)
 {
     SEXP e, ans;
-    RCNTXT *cptr;
     SEXP rho = R_NilValue;
     Rboolean found = FALSE;
 
     /* First find the environment of the caller.
        Testing shows this is the right caller, despite the .C/.Call ...
      */
-    for (cptr = R_GlobalContext;
-	 cptr != NULL && cptr->callflag != CTXT_TOPLEVEL;
-	 cptr = cptr->nextcontext)
-	    if (cptr->callflag & CTXT_FUNCTION) {
-		/* PrintValue(cptr->call); */
-		rho = cptr->cloenv;
-		break;
-	    }
+    {
+	ClosureContext* cptr = ClosureContext::innermost();
+	if (cptr)
+	    rho = cptr->workingEnvironment();
+    }
+
     /* Then search up until we hit a namespace or globalenv.
        The idea is that we will not find a namespace unless the caller
        was defined in one. */
@@ -1331,7 +1342,7 @@ Rf_getCallingDLL(void)
 */
 static DL_FUNC
 R_FindNativeSymbolFromDLL(char *name, DllReference *dll,
-			  R_RegisteredNativeSymbol *symbol, 
+			  R_RegisteredNativeSymbol *symbol,
 			  SEXP env)
 {
     int numProtects = 0;
@@ -1340,6 +1351,7 @@ R_FindNativeSymbolFromDLL(char *name, DllReference *dll,
 
     if(dll->obj == NULL) {
 	/* Rprintf("\nsearching for %s\n", name); */
+	dll->obj = Rf_getCallingDLL();
 	if (env != R_NilValue) {
 	    SEXP e;
 	    PROTECT(e = lang2(install("getCallingDLLe"), env));
@@ -1352,7 +1364,7 @@ R_FindNativeSymbolFromDLL(char *name, DllReference *dll,
     if(inherits(dll->obj, "DLLInfo")) {
 	SEXP tmp;
 	tmp = VECTOR_ELT(dll->obj, 4);
-	info = (DllInfo *) R_ExternalPtrAddr(tmp);
+	info = static_cast<DllInfo *>( R_ExternalPtrAddr(tmp));
 	if(!info)
 	    error(_("NULL value for DLLInfoReference when looking for DLL"));
 	fun = R_dlsym(info, name, symbol);
@@ -1410,7 +1422,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     args = enctrim(args);
     args = resolveNativeRoutine(args, &ofun, &symbol, symName, &nargs,
 				&naok, &dup, call, env);
-    fun = (VarFun) ofun;
+    fun = reinterpret_cast<VarFun>( ofun);
 
     if(symbol.symbol.c && symbol.symbol.c->numArgs > -1) {
 	if(symbol.symbol.c->numArgs != nargs)
@@ -1445,11 +1457,11 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     /* Convert the arguments for use in foreign function calls. */
-    cargs = (void**) R_alloc(nargs, sizeof(void*));
-    if (copy) cargs0 = (void**) R_alloc(nargs, sizeof(void*));
+    cargs = static_cast<void**>( CXXR_alloc(nargs, sizeof(void*)));
+    if (copy) cargs0 = static_cast<void**>( CXXR_alloc(nargs, sizeof(void*)));
     for(na = 0, pa = args ; pa != R_NilValue; pa = CDR(pa), na++) {
 	if(checkTypes &&
-	   !comparePrimitiveTypes(checkTypes[na], CAR(pa), dup)) {
+	   !comparePrimitiveTypes(checkTypes[na], CAR(pa), CXXRCONSTRUCT(Rboolean, dup))) {
 	    /* We can loop over all the arguments and report all the
 	       erroneous ones, but then we would also want to avoid
 	       the conversions.  Also, in the future, we may just
@@ -1476,7 +1488,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		   until copied in the switch.
 		   But R_alloc allocates, so missed protection < R 2.15.0.
 		*/
-		PROTECT(s = coerceVector(s, targetType));
+		PROTECT(s = coerceVector(s, CXXRCONSTRUCT(SEXPTYPE, targetType)));
 		nprotect++;
 	    }
 	}
@@ -1502,95 +1514,101 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		memset(ptr, FILL, n * sizeof(Rbyte) + 2 * NG);
 		ptr += NG;
 		memcpy(ptr, RAW(s), n);
-		cargs[na] = (void *) ptr;
+		cargs[na] = CXXRNOCAST(void *) ptr;
 	    } else if (dup && NAMED(s)) {
 		n = XLENGTH(s);
 		SEXP ss = allocVector(t, n);
 		memcpy(RAW(ss), RAW(s), n * sizeof(Rbyte));
 		SET_VECTOR_ELT(ans, na, ss);
-		cargs[na] = (void*) RAW(ss);
+		cargs[na] = CXXRNOCAST(void*) RAW(ss);
 #ifdef R_MEMORY_PROFILING
 		if (RTRACE(s)) memtrace_report(s, ss);
 #endif
-	    } else cargs[na] = (void *) RAW(s);
+	    } else cargs[na] = CXXRNOCAST(void *) RAW(s);
 	    break;
 	case LGLSXP:
 	case INTSXP:
 	    n = XLENGTH(s);
-	    int *iptr = INTEGER(s);
-	    if (!naok)
-		for (R_xlen_t i = 0 ; i < n ; i++)
-		    if(iptr[i] == NA_INTEGER)
-			error(_("NAs in foreign function call (arg %d)"), na + 1);
-	    if (copy && dup) {
-		char *ptr = R_alloc(n * sizeof(int) + 2 * NG, 1);
-		memset(ptr, FILL, n * sizeof(int) + 2 * NG);
-		ptr += NG;
-		memcpy(ptr, INTEGER(s), n * sizeof(int));
-		cargs[na] = (void*) ptr;
-	    } else if (dup && NAMED(s)) {
-		SEXP ss = allocVector(t, n);
-		memcpy(INTEGER(ss), INTEGER(s), n * sizeof(int));
-		SET_VECTOR_ELT(ans, na, ss);
-		cargs[na] = (void*) INTEGER(ss);
+	    {
+		int *iptr = INTEGER(s);
+		if (!naok)
+		    for (R_xlen_t i = 0 ; i < n ; i++)
+			if(iptr[i] == NA_INTEGER)
+			    error(_("NAs in foreign function call (arg %d)"), na + 1);
+		if (copy && dup) {
+		    char *ptr = R_alloc(n * sizeof(int) + 2 * NG, 1);
+		    memset(ptr, FILL, n * sizeof(int) + 2 * NG);
+		    ptr += NG;
+		    memcpy(ptr, INTEGER(s), n * sizeof(int));
+		    cargs[na] = CXXRNOCAST(void*) ptr;
+		} else if (dup && NAMED(s)) {
+		    SEXP ss = allocVector(t, n);
+		    memcpy(INTEGER(ss), INTEGER(s), n * sizeof(int));
+		    SET_VECTOR_ELT(ans, na, ss);
+		    cargs[na] = CXXRNOCAST(void*) INTEGER(ss);
 #ifdef R_MEMORY_PROFILING
-		if (RTRACE(s)) memtrace_report(s, ss);
+		    if (RTRACE(s)) memtrace_report(s, ss);
 #endif
-	    } else cargs[na] = (void*) iptr;
+		} else cargs[na] = CXXRNOCAST(void*) iptr;
+	    }
 	    break;
 	case REALSXP:
-	    n = XLENGTH(s);
-	    double *rptr = REAL(s);
-	    if (!naok)
-		for (R_xlen_t i = 0 ; i < n ; i++)
-		    if(!R_FINITE(rptr[i]))
-			error(_("NA/NaN/Inf in foreign function call (arg %d)"), na + 1);
-	    if (asLogical(getAttrib(s, CSingSymbol)) == 1) {
-		float *sptr = (float*) R_alloc(n, sizeof(float));
-		for (R_xlen_t i = 0 ; i < n ; i++) sptr[i] = (float) REAL(s)[i];
-		cargs[na] = (void*) sptr;
-		if (!dup) warning(_("single values not returned if not duplicated"));
+	    {
+		n = XLENGTH(s);
+		double *rptr = REAL(s);
+		if (!naok)
+		    for (R_xlen_t i = 0 ; i < n ; i++)
+			if(!R_FINITE(rptr[i]))
+			    error(_("NA/NaN/Inf in foreign function call (arg %d)"), na + 1);
+		if (asLogical(getAttrib(s, CSingSymbol)) == 1) {
+		    float *sptr = static_cast<float*>( CXXR_alloc(n, sizeof(float)));
+		    for (R_xlen_t i = 0 ; i < n ; i++) sptr[i] = float( REAL(s)[i]);
+		    cargs[na] = CXXRNOCAST(void*) sptr;
+		    if (!dup) warning(_("single values not returned if not duplicated"));
 #ifdef R_MEMORY_PROFILING
-		if (RTRACE(s)) memtrace_report(s, sptr);
+		    if (RTRACE(s)) memtrace_report(s, sptr);
 #endif
-	    } else if (copy && dup) {
-		char *ptr = R_alloc(n * sizeof(double) + 2 * NG, 1);
-		memset(ptr, FILL, n * sizeof(double) + 2 * NG);
-		ptr += NG;
-		memcpy(ptr, REAL(s), n * sizeof(double));
-		cargs[na] = (void*) ptr;
-	    } else if (dup && NAMED(s)) {
-		SEXP ss  = allocVector(t, n);
-		memcpy(REAL(ss), REAL(s), n * sizeof(double));
-		SET_VECTOR_ELT(ans, na, ss);
-		cargs[na] = (void*) REAL(ss);
+		} else if (copy && dup) {
+		    char *ptr = R_alloc(n * sizeof(double) + 2 * NG, 1);
+		    memset(ptr, FILL, n * sizeof(double) + 2 * NG);
+		    ptr += NG;
+		    memcpy(ptr, REAL(s), n * sizeof(double));
+		    cargs[na] = CXXRNOCAST(void*) ptr;
+		} else if (dup && NAMED(s)) {
+		    SEXP ss  = allocVector(t, n);
+		    memcpy(REAL(ss), REAL(s), n * sizeof(double));
+		    SET_VECTOR_ELT(ans, na, ss);
+		    cargs[na] = CXXRNOCAST(void*) REAL(ss);
 #ifdef R_MEMORY_PROFILING
-		if (RTRACE(s)) memtrace_report(s, ss);
+		    if (RTRACE(s)) memtrace_report(s, ss);
 #endif
-	    } else cargs[na] = (void*) rptr;
+		} else cargs[na] = CXXRNOCAST(void*) rptr;
+	    }
 	    break;
 	case CPLXSXP:
-	    n = XLENGTH(s);
-	    Rcomplex *zptr = COMPLEX(s);
-	    if (!naok)
-		for (R_xlen_t i = 0 ; i < n ; i++)
-		    if(!R_FINITE(zptr[i].r) || !R_FINITE(zptr[i].i))
-			error(_("complex NA/NaN/Inf in foreign function call (arg %d)"), na + 1);
-	    if (copy && dup) {
-		char *ptr = R_alloc(n * sizeof(Rcomplex) + 2 * NG, 1);
-		memset(ptr, FILL, n * sizeof(Rcomplex) + 2 * NG);
-		ptr += NG;
-		memcpy(ptr, COMPLEX(s), n * sizeof(Rcomplex));
-		cargs[na] = (void*) ptr;
-	    } else if (dup && NAMED(s)) {
-		SEXP ss = allocVector(t, n);
-		memcpy(COMPLEX(ss), COMPLEX(s), n * sizeof(Rcomplex));
-		SET_VECTOR_ELT(ans, na, ss);
-		cargs[na] = (void*) COMPLEX(ss);
+	    {
+		n = XLENGTH(s);
+		Rcomplex *zptr = COMPLEX(s);
+		if (!naok)
+		    for (R_xlen_t i = 0 ; i < n ; i++)
+			if(!R_FINITE(zptr[i].r) || !R_FINITE(zptr[i].i))
+			    error(_("complex NA/NaN/Inf in foreign function call (arg %d)"), na + 1);
+		if (copy && dup) {
+		    char *ptr = R_alloc(n * sizeof(Rcomplex) + 2 * NG, 1);
+		    memset(ptr, FILL, n * sizeof(Rcomplex) + 2 * NG);
+		    ptr += NG;
+		    memcpy(ptr, COMPLEX(s), n * sizeof(Rcomplex));
+		    cargs[na] = CXXRNOCAST(void*) ptr;
+		} else if (dup && NAMED(s)) {
+		    SEXP ss = allocVector(t, n);
+		    memcpy(COMPLEX(ss), COMPLEX(s), n * sizeof(Rcomplex));
+		    SET_VECTOR_ELT(ans, na, ss);
+		    cargs[na] = CXXRNOCAST(void*) COMPLEX(ss);
 #ifdef R_MEMORY_PROFILING
-		if (RTRACE(s)) memtrace_report(s, ss);
+		    if (RTRACE(s)) memtrace_report(s, ss);
 #endif
-	    } else cargs[na] = (void *) zptr;
+		} else cargs[na] = CXXRNOCAST(void *) zptr;
+	    }
 	    break;
 	case STRSXP:
 	    if (!dup)
@@ -1600,59 +1618,57 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		const char *ss = translateChar(STRING_ELT(s, 0));
 		if (n > 1)
 		    warning(_("only first string in char vector used in .Fortran"));
-		char *fptr = (char*) R_alloc(max(255, strlen(ss)) + 1, sizeof(char));
+		char *fptr = static_cast<char*>( CXXR_alloc(max(255, strlen(ss)) + 1, sizeof(char)));
 		strcpy(fptr, ss);
-		cargs[na] =  (void*) fptr;
+		cargs[na] =  CXXRNOCAST(void*) fptr;
 	    } else if (copy) {
-		char **cptr = (char**) R_alloc(n, sizeof(char*)),
-		    **cptr0 = (char**) R_alloc(n, sizeof(char*));
+		char **cptr = static_cast<char**>( CXXR_alloc(n, sizeof(char*))),
+		    **cptr0 = static_cast<char**>( CXXR_alloc(n, sizeof(char*)));
 		for (R_xlen_t i = 0 ; i < n ; i++) {
 		    const char *ss = translateChar(STRING_ELT(s, i));
 		    size_t nn = strlen(ss) + 1 + 2 * NG;
-		    char *ptr = (char*) R_alloc(nn, sizeof(char));
+		    char *ptr = static_cast<char*>( CXXR_alloc(nn, sizeof(char)));
 		    memset(ptr, FILL, nn);
 		    cptr[i] = cptr0[i] = ptr + NG;
 		    strcpy(cptr[i], ss);
 		}
-		cargs[na] = (void*) cptr;
-		cargs0[na] = (void*) cptr0;
+		cargs[na] = CXXRNOCAST(void*) cptr;
+		cargs0[na] = CXXRNOCAST(void*) cptr0;
 #ifdef R_MEMORY_PROFILING
 		if (RTRACE(s)) memtrace_report(s, cargs[na]);
 #endif
 	    } else {
-		char **cptr = (char**) R_alloc(n, sizeof(char*));
+		char **cptr = static_cast<char**>( CXXR_alloc(n, sizeof(char*)));
 		for (R_xlen_t i = 0 ; i < n ; i++) {
 		    const char *ss = translateChar(STRING_ELT(s, i));
 		    size_t nn = strlen(ss) + 1;
 		    if(nn > 1) {
-			cptr[i] = (char*) R_alloc(nn, sizeof(char));
+			cptr[i] = static_cast<char*>( CXXR_alloc(nn, sizeof(char)));
 			strcpy(cptr[i], ss);
 		    } else {
 			/* Protect ourselves against those who like to
 			   extend "", maybe using strncpy */
 			nn = 128;
-			cptr[i] = (char*) R_alloc(nn, sizeof(char));
+			cptr[i] = static_cast<char*>( CXXR_alloc(nn, sizeof(char)));
 			memset(cptr[i], 0, nn);
 		    }
-		}
-		cargs[na] = (void*) cptr;
+		    cargs[na] = CXXRNOCAST(void*) cptr;
 #ifdef R_MEMORY_PROFILING
-		if (RTRACE(s)) memtrace_report(s, cargs[na]);
+		    if (RTRACE(s)) memtrace_report(s, cargs[na]);
 #endif
+		}
 	    }
 	    break;
 	case VECSXP:
-	    if (Fort) error(_("invalid mode (%s) to pass to Fortran (arg %d)"),
-			    type2char(t), na + 1);
-	    /* Used read-only, so this is safe */
-#ifdef USE_RINTERNALS
-	    cargs[na] = (void*) DATAPTR(s);
-#else
-	    n = XLENGTH(s);
-	    SEXP *lptr = (SEXP *) R_alloc(n, sizeof(SEXP));
-	    for (R_xlen_t i = 0 ; i < n ; i++) lptr[i] = VECTOR_ELT(s, i);
-	    cargs[na] = (void*) lptr;
-#endif
+	    {
+		if (Fort) error(_("invalid mode (%s) to pass to Fortran (arg %d)"),
+				type2char(t), na + 1);
+		/* Used read-only, so this is safe */
+		n = XLENGTH(s);
+		SEXP *lptr = static_cast<SEXP *>( CXXR_alloc(n, sizeof(SEXP)));
+		for (R_xlen_t i = 0 ; i < n ; i++) lptr[i] = VECTOR_ELT(s, i);
+		cargs[na] = CXXRNOCAST(void*) lptr;
+	    }
 	    break;
 	case CLOSXP:
 	case BUILTINSXP:
@@ -1660,12 +1676,12 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 	case ENVSXP:
 	    if (Fort) error(_("invalid mode (%s) to pass to Fortran (arg %d)"), 
 			    type2char(t), na + 1);
-	    cargs[na] =  (void*) s;
+	    cargs[na] =  CXXRNOCAST(void*) s;
 	    break;
 	case NILSXP:
 	    error(_("invalid mode (%s) to pass to C or Fortran (arg %d)"), 
 		  type2char(t), na + 1);
-	    cargs[na] =  (void*) s;
+	    cargs[na] =  CXXRNOCAST(void*) s;
 	    break;
 	default:
 	    /* Includes pairlists from R 2.15.0 */
@@ -1675,7 +1691,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		    type2char(t), na + 1);
 	    if (t == LISTSXP)
 		warning(_("pairlists are passed as SEXP as from R 2.15.0"));
-	    cargs[na] =  (void*) s;
+	    cargs[na] =  CXXRNOCAST(void*) s;
 	    continue;
 	}
 	if (nprotect) UNPROTECT(nprotect);
@@ -2277,7 +2293,6 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     if (dup) {
-
 	for (na = 0, pa = args ; pa != R_NilValue ; pa = CDR(pa), na++) {
 	    if(argStyles && argStyles[na] == R_ARG_IN) {
 		SET_VECTOR_ELT(ans, na, R_NilValue);
@@ -2293,47 +2308,47 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		switch(type) {
 		case RAWSXP:
 		    if (copy) {
-			s = allocVector(type, n);
-			unsigned char *ptr = (unsigned char *) p;
+			s = allocVector(CXXRCONSTRUCT(SEXPTYPE, type), n);
+			unsigned char *ptr = static_cast<unsigned char *>( p);
 			memcpy(RAW(s), ptr, n * sizeof(Rbyte));
 			ptr += n * sizeof(Rbyte);
 			for (int i = 0; i < NG; i++)
 			    if(*ptr++ != FILL)
 				error("array over-run in %s(\"%s\") in %s argument %d\n", 
 				      Fort ? ".Fortran" : ".C",
-				      symName, type2char(type), na+1);
-			ptr = (unsigned char *) p;
+				      symName, type2char(CXXRCONSTRUCT(SEXPTYPE, type)), na+1);
+			ptr = static_cast<unsigned char *>( p);
 			for (int i = 0; i < NG; i++)
 			    if(*--ptr != FILL)
 				error("array under-run in %s(\"%s\") in %s argument %d\n", 
 				      Fort ? ".Fortran" : ".C",
-				      symName, type2char(type), na+1);
+				      symName, type2char(CXXRCONSTRUCT(SEXPTYPE, type)), na+1);
 		    }
 		    break;
 		case INTSXP:
 		    if (copy) {
-			s = allocVector(type, n);
-			unsigned char *ptr = (unsigned char *) p;
+			s = allocVector(CXXRCONSTRUCT(SEXPTYPE, type), n);
+			unsigned char *ptr = static_cast<unsigned char *>( p);
 			memcpy(INTEGER(s), ptr, n * sizeof(int));
 			ptr += n * sizeof(int);
 			for (int i = 0; i < NG; i++)
 			    if(*ptr++ != FILL)
 				error("array over-run in %s(\"%s\") in %s argument %d\n", 
 				      Fort ? ".Fortran" : ".C",
-				      symName, type2char(type), na+1);
-			ptr = (unsigned char *) p;
+				      symName, type2char(CXXRCONSTRUCT(SEXPTYPE, type)), na+1);
+			ptr = static_cast<unsigned char *>( p);
 			for (int i = 0; i < NG; i++)
 			    if(*--ptr != FILL)
 				error("array under-run in %s(\"%s\") in %s argument %d\n", 
 				      Fort ? ".Fortran" : ".C",
-				      symName, type2char(type), na+1);
+				      symName, type2char(CXXRCONSTRUCT(SEXPTYPE, type)), na+1);
 		    }
 		    break;
 		case LGLSXP:
 		    if (copy) {
-			s = allocVector(type, n);
-			unsigned char *ptr = (unsigned char *) p;
-			int *iptr = (int*) ptr, tmp;
+			s = allocVector(CXXRCONSTRUCT(SEXPTYPE, type), n);
+			unsigned char *ptr = static_cast<unsigned char *>( p);
+			int *iptr = reinterpret_cast<int*>( ptr), tmp;
 			for (R_xlen_t i = 0 ; i < n ; i++) {
 			    tmp =  iptr[i];
 			    LOGICAL(s)[i] = (tmp == NA_INTEGER || tmp == 0) ? tmp : 1;
@@ -2343,13 +2358,13 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 			    if(*ptr++ != FILL)
 				error("array over-run in %s(\"%s\") in %s argument %d\n", 
 				      Fort ? ".Fortran" : ".C",
-				      symName, type2char(type), na+1);
-			ptr = (unsigned char *) p;
+				      symName, type2char(CXXRCONSTRUCT(SEXPTYPE, type)), na+1);
+			ptr = static_cast<unsigned char *>( p);
 			for (int i = 0; i < NG; i++)
 			    if(*--ptr != FILL)
 				error("array under-run in %s(\"%s\") in %s argument %d\n", 
 				      Fort ? ".Fortran" : ".C",
-				      symName, type2char(type), na+1);
+				      symName, type2char(CXXRCONSTRUCT(SEXPTYPE, type)), na+1);
 		    } else {
 			int *iptr = INTEGER(arg), tmp;
 			for (R_xlen_t i = 0 ; i < n ; i++) {
@@ -2363,76 +2378,76 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		    if (copy) {
 			s = allocVector(REALSXP, n);
 			if (type == SINGLESXP || asLogical(getAttrib(arg, CSingSymbol)) == 1) {
-			    float *sptr = (float*) p;
+			    float *sptr = static_cast<float*>( p);
 			    for(R_xlen_t i = 0 ; i < n ; i++) 
-				REAL(s)[i] = (double) sptr[i];
+				REAL(s)[i] = double( sptr[i]);
 			} else {
-			    unsigned char *ptr = (unsigned char *) p;
+			    unsigned char *ptr = static_cast<unsigned char *>( p);
 			    memcpy(REAL(s), ptr, n * sizeof(double));
 			    ptr += n * sizeof(double);
 			    for (int i = 0; i < NG; i++)
 				if(*ptr++ != FILL)
 				    error("array over-run in %s(\"%s\") in %s argument %d\n", 
 					  Fort ? ".Fortran" : ".C",
-					  symName, type2char(type), na+1);
-			    ptr = (unsigned char *) p;
+					  symName, type2char(CXXRCONSTRUCT(SEXPTYPE, type)), na+1);
+			    ptr = static_cast<unsigned char *>( p);
 			    for (int i = 0; i < NG; i++)
 				if(*--ptr != FILL)
 				    error("array under-run in %s(\"%s\") in %s argument %d\n", 
 					  Fort ? ".Fortran" : ".C",
-					  symName, type2char(type), na+1);
+					  symName, type2char(CXXRCONSTRUCT(SEXPTYPE, type)), na+1);
 			}
 		    } else {
 			if (type == SINGLESXP || asLogical(getAttrib(arg, CSingSymbol)) == 1) {
 			    s = allocVector(REALSXP, n);
-			    float *sptr = (float*) p;
+			    float *sptr = static_cast<float*>( p);
 			    for(int i = 0 ; i < n ; i++) 
-				REAL(s)[i] = (double) sptr[i];
+				REAL(s)[i] = double( sptr[i]);
 			}
 		    }
-		    break;			
+		    break;
 		case CPLXSXP:
 		    if (copy) {
-			s = allocVector(type, n);
-			unsigned char *ptr = (unsigned char *) p;
+			s = allocVector(CXXRCONSTRUCT(SEXPTYPE, type), n);
+			unsigned char *ptr = static_cast<unsigned char *>( p);
 			memcpy(COMPLEX(s), p, n * sizeof(Rcomplex));
 			ptr += n * sizeof(Rcomplex);
 			for (int i = 0; i < NG;  i++) 
 			    if(*ptr++ != FILL)
 				error("array over-run in %s(\"%s\") in %s argument %d\n", 
 				      Fort ? ".Fortran" : ".C",
-				      symName, type2char(type), na+1);
-			ptr = (unsigned char *) p;
+				      symName, type2char(CXXRCONSTRUCT(SEXPTYPE, type)), na+1);
+			ptr = static_cast<unsigned char *>( p);
 			for (int i = 0; i < NG; i++)
 			    if(*--ptr != FILL)
 				error("array under-run in %s(\"%s\") in %s argument %d\n", 
 				      Fort ? ".Fortran" : ".C",
-				      symName, type2char(type), na+1);
+				      symName, type2char(CXXRCONSTRUCT(SEXPTYPE, type)), na+1);
 		    }
 		    break;
 		case STRSXP:
 		    if(Fort) {
 			char buf[256];
 			/* only return one string: warned on the R -> Fortran step */
-			strncpy(buf, (char*)p, 255);
+			strncpy(buf, static_cast<char*>(p), 255);
 			buf[255] = '\0';
-			PROTECT(s = allocVector(type, 1));
+			PROTECT(s = allocVector(CXXRCONSTRUCT(SEXPTYPE, type), 1));
 			SET_STRING_ELT(s, 0, mkChar(buf));
 			UNPROTECT(1);
 		    } else if (copy) {
 			SEXP ss = arg;
-			PROTECT(s = allocVector(type, n));
-			char **cptr = (char**) p, **cptr0 = (char**) cargs0[na];
+			PROTECT(s = allocVector(CXXRCONSTRUCT(SEXPTYPE, type), n));
+			char **cptr = static_cast<char**>( p), **cptr0 = static_cast<char**>( cargs0[na]);
 			for (R_xlen_t i = 0 ; i < n ; i++) {
-			    unsigned char *ptr = (unsigned char *) cptr[i];
+			    unsigned char *ptr = reinterpret_cast<unsigned char *>( cptr[i]);
 			    SET_STRING_ELT(s, i, mkChar(cptr[i]));
 			    if (cptr[i] == cptr0[i]) {
 				    const char *z = translateChar(STRING_ELT(ss, i));
 				for (int j = 0; j < NG; j++)
 				    if(*--ptr != FILL)
 					error("array under-run in .C(\"%s\") in character argument %d, element %d", 
-					      symName, na+1, (int)(i+1));
-				ptr = (unsigned char *) cptr[i];
+					      symName, na+1, int(i+1));
+				ptr = reinterpret_cast<unsigned char *>( cptr[i]);
 				ptr += strlen(z) + 1;
 				for (int j = 0; j < NG;  j++) 
 				    if(*ptr++ != FILL) {
@@ -2441,15 +2456,15 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 					for (int k = 1; k < NG - j; k++, p++)
 					    if (*p == FILL) *p = '\0';
 					error("array over-run in .C(\"%s\") in character argument %d, element %d\n'%s'->'%s'\n", 
-					      symName, na+1, (int)(i+1), 
+					      symName, na+1, int(i+1), 
 					      z, cptr[i]);
 				    }
 			    }
 			}
 			UNPROTECT(1);
 		    } else {
-			PROTECT(s = allocVector(type, n));
-			char **cptr = (char**) p;
+			PROTECT(s = allocVector(CXXRCONSTRUCT(SEXPTYPE, type), n));
+			char **cptr = static_cast<char**>( p);
 			for (R_xlen_t i = 0 ; i < n ; i++)
 			    SET_STRING_ELT(s, i, mkChar(cptr[i]));
 			UNPROTECT(1);
@@ -2485,10 +2500,10 @@ typeinfo[] = {
     {"complex",	  CPLXSXP},
     {"character", STRSXP },
     {"list",	  VECSXP },
-    {NULL,	  0      }
+    {NULL,	  NILSXP }
 };
 
-static int string2type(char *s)
+static SEXPTYPE string2type(char *s)
 {
     int i;
     for (i = 0 ; typeinfo[i].name ; i++) {
@@ -2497,7 +2512,7 @@ static int string2type(char *s)
 	}
     }
     error(_("type \"%s\" not supported in interlanguage calls"), s);
-    return 1; /* for -Wall */
+    return NILSXP; /* for -Wall */
 }
 
 /* This is entirely legacy, with no known users (Mar 2012).
@@ -2511,46 +2526,57 @@ static void *RObjToCPtr2(SEXP s)
     switch(TYPEOF(s)) {
     case LGLSXP:
     case INTSXP:
-	n = LENGTH(s);
-	int *iptr = INTEGER(s);
-	iptr = (int*) R_alloc(n, sizeof(int));
-	for (int i = 0 ; i < n ; i++) iptr[i] = INTEGER(s)[i];
-	return (void*) iptr;
+	{
+	    n = LENGTH(s);
+	    int *iptr = INTEGER(s);
+	    iptr = static_cast<int*>( CXXR_alloc(n, sizeof(int)));
+	    for (int i = 0 ; i < n ; i++) iptr[i] = INTEGER(s)[i];
+	    return CXXRNOCAST(void*) iptr;
+	}
 	break;
     case REALSXP:
-	n = LENGTH(s);
-	double *rptr = REAL(s);
-	rptr = (double*) R_alloc(n, sizeof(double));
-	for (int i = 0 ; i < n ; i++) rptr[i] = REAL(s)[i];
-	return (void*) rptr;
+	{
+	    n = LENGTH(s);
+	    double *rptr = REAL(s);
+	    rptr = static_cast<double*>( CXXR_alloc(n, sizeof(double)));
+	    for (int i = 0 ; i < n ; i++) rptr[i] = REAL(s)[i];
+	    return CXXRNOCAST(void*) rptr;
+	}
 	break;
     case CPLXSXP:
-	n = LENGTH(s);
-	Rcomplex *zptr = COMPLEX(s);
-	zptr = (Rcomplex*) R_alloc(n, sizeof(Rcomplex));
-	for (int i = 0 ; i < n ; i++) zptr[i] = COMPLEX(s)[i];
-	return (void*) zptr;
+	{
+	    n = LENGTH(s);
+	    Rcomplex *zptr = COMPLEX(s);
+	    zptr = static_cast<Rcomplex*>( CXXR_alloc(n, sizeof(Rcomplex)));
+	    for (int i = 0 ; i < n ; i++) zptr[i] = COMPLEX(s)[i];
+	    return CXXRNOCAST(void*) zptr;
+	}
 	break;
     case STRSXP:
-	n = LENGTH(s);
-	char **cptr = (char**) R_alloc(n, sizeof(char*));
-	for (int i = 0 ; i < n ; i++) {
-	    const char *ss = translateChar(STRING_ELT(s, i));
-	    cptr[i] = (char*) R_alloc(strlen(ss) + 1, sizeof(char));
-	    strcpy(cptr[i], ss);
+	{
+	    n = LENGTH(s);
+	    char **cptr = static_cast<char**>( CXXR_alloc(n, sizeof(char*)));
+	    for (int i = 0 ; i < n ; i++) {
+		const char *ss = translateChar(STRING_ELT(s, i));
+		cptr[i] = CXXRNOCAST(char*) R_alloc(strlen(ss) + 1, sizeof(char));
+		strcpy(cptr[i], ss);
+	    }
+	    return CXXRNOCAST(void*) cptr;
 	}
-	return (void*) cptr;
 	break;
 	/* From here down, probably not right */
     case VECSXP:
-	n = length(s);
-	SEXP *lptr = (SEXP *) R_alloc(n, sizeof(SEXP));
-	for (int i = 0 ; i < n ; i++) lptr[i] = VECTOR_ELT(s, i);
-	return (void*) lptr;
+	{
+	    n = length(s);
+	    SEXP *lptr = static_cast<SEXP *>( CXXR_alloc(n, sizeof(SEXP)));
+	    for (int i = 0 ; i < n ; i++) lptr[i] = VECTOR_ELT(s, i);
+	    return CXXRNOCAST(void*) lptr;
+	}
 	break;
     default:
-	return (void*) s;
+	return CXXRNOCAST(void*) s;
     }
+    return 0;  // -Wall
 }
 
 
@@ -2562,15 +2588,15 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
     SEXPTYPE type;
     int i, j, n;
 
-    if (!isFunction((SEXP)func))
+    if (!isFunction(reinterpret_cast<SEXP>(func)))
 	error("invalid function in call_R");
     if (nargs < 0)
 	error("invalid argument count in call_R");
     if (nres < 0)
 	error("invalid return value count in call_R");
-    PROTECT(pcall = call = allocList((int) nargs + 1));
-    SET_TYPEOF(call, LANGSXP);
-    SETCAR(pcall, (SEXP)func);
+    GCStackRoot<PairList> tl(PairList::make(nargs));
+    PROTECT(pcall = call = CXXR_NEW(Expression(0, tl)));
+    SETCAR(pcall, reinterpret_cast<SEXP>(func));
     s = R_NilValue;		/* -Wall */
     for (i = 0 ; i < nargs ; i++) {
 	pcall = CDR(pcall);
@@ -2578,25 +2604,25 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
 	switch(type) {
 	case LGLSXP:
 	case INTSXP:
-	    n = (int) lengths[i];
+	    n = int( lengths[i]);
 	    SETCAR(pcall, allocVector(type, n));
 	    memcpy(INTEGER(CAR(pcall)), arguments[i], n * sizeof(int));
 	    break;
 	case REALSXP:
-	    n = (int) lengths[i];
+	    n = int( lengths[i]);
 	    SETCAR(pcall, allocVector(REALSXP, n));
 	    memcpy(REAL(CAR(pcall)), arguments[i], n * sizeof(double));
 	    break;
 	case CPLXSXP:
-	    n = (int) lengths[i];
+	    n = int( lengths[i]);
 	    SETCAR(pcall, allocVector(CPLXSXP, n));
 	    memcpy(REAL(CAR(pcall)), arguments[i], n * sizeof(Rcomplex));
 	    break;
 	case STRSXP:
-	    n = (int) lengths[i];
+	    n = int( lengths[i]);
 	    SETCAR(pcall, allocVector(STRSXP, n));
 	    for (j = 0 ; j < n ; j++) {
-		char *str = (char*)(arguments[i]);
+		char *str = static_cast<char*>((arguments[i]));
 		SET_STRING_ELT(CAR(pcall), i, mkChar(str));
 	    }
 	    break;
@@ -2615,21 +2641,23 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
     case CPLXSXP:
     case STRSXP:
 	if(nres > 0)
-	    results[0] = (char *) RObjToCPtr2(s);
+	    results[0] = static_cast<char *>( RObjToCPtr2(s));
 	break;
     case VECSXP:
 	n = length(s);
-	if (nres < n) n = (int) nres;
+	if (nres < n) n = int( nres);
 	for (i = 0 ; i < n ; i++)
-	    results[i] = (char *) RObjToCPtr2(VECTOR_ELT(s, i));
+	    results[i] = static_cast<char *>( RObjToCPtr2(VECTOR_ELT(s, i)));
 	break;
     case LISTSXP:
 	n = length(s);
-	if(nres < n) n = (int) nres;
+	if(nres < n) n = int( nres);
 	for(i = 0 ; i < n ; i++) {
-	    results[i] = (char *) RObjToCPtr2(s);
+	    results[i] = static_cast<char *>( RObjToCPtr2(s));
 	    s = CDR(s);
 	}
+	break;
+    default:  // -Wswitch
 	break;
     }
     UNPROTECT(2);

@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /* unzip.h -- IO for uncompress .zip files using zlib
    Version 1.1, February 14h, 2010
    part of the MiniZip project - ( http://www.winimage.com/zLibDll/minizip.html )
@@ -137,14 +153,14 @@ typedef struct unz_file_info64_s
 } unz_file_info64;
 
 
-static int unzStringFileNameCompare OF ((const char* fileName1,
+int unzStringFileNameCompare OF ((const char* fileName1,
 					 const char* fileName2,
 					 int iCaseSensitivity));
 
-static unzFile unzOpen64 OF((const void *path));
+unzFile unzOpen64 OF((const void *path));
 
 
-static int unzClose OF((unzFile file));
+int unzClose OF((unzFile file));
 
 static int unzGetGlobalInfo64 OF((unzFile file,
                                         unz_global_info64 *pglobal_info));
@@ -153,20 +169,20 @@ static int unzGetGlobalInfo64 OF((unzFile file,
 /***************************************************************************/
 /* Unzip package allow you browse the directory of the zipfile */
 
-static int unzGoToFirstFile OF((unzFile file));
+int unzGoToFirstFile OF((unzFile file));
 /*
   Set the current file of the zipfile to the first file.
   return UNZ_OK if there is no problem
 */
 
-static int unzGoToNextFile OF((unzFile file));
+int unzGoToNextFile OF((unzFile file));
 /*
   Set the current file of the zipfile to the next file.
   return UNZ_OK if there is no problem
   return UNZ_END_OF_LIST_OF_FILE if the actual file was the latest.
 */
 
-static int unzLocateFile OF((unzFile file,
+int unzLocateFile OF((unzFile file,
 			     const char *szFileName,
 			     int iCaseSensitivity));
 /*
@@ -182,7 +198,7 @@ static int unzLocateFile OF((unzFile file,
 
 /* ****************************************** */
 
-static int unzGetCurrentFileInfo64 OF((unzFile file,
+int unzGetCurrentFileInfo64 OF((unzFile file,
                          unz_file_info64 *pfile_info,
                          char *szFileName,
                          uLong fileNameBufferSize,
@@ -209,19 +225,19 @@ static int unzGetCurrentFileInfo64 OF((unzFile file,
    from it, and close it (you can close it before reading all the file)
    */
 
-static int unzOpenCurrentFile OF((unzFile file));
+int unzOpenCurrentFile OF((unzFile file));
 /*
   Open for reading data the current file in the zipfile.
   If there is no error, the return value is UNZ_OK.
 */
 
-static int unzCloseCurrentFile OF((unzFile file));
+int unzCloseCurrentFile OF((unzFile file));
 /*
   Close the file in zip opened with unzOpenCurrentFile
   Return UNZ_CRCERROR if all the file was read but the CRC is not good
 */
 
-static int unzReadCurrentFile OF((unzFile file,
+int unzReadCurrentFile OF((unzFile file,
 				  voidp buf,
 				  unsigned len));
 /*

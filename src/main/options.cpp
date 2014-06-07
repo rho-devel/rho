@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -26,9 +42,9 @@
 #include <Internal.h>
 #include "Print.h"
 
-/* The global var. R_Expressions is in Defn.h */
-#define R_MIN_EXPRESSIONS_OPT	25
-#define R_MAX_EXPRESSIONS_OPT	500000
+#include "CXXR/Evaluator.h"
+
+using namespace CXXR;
 
 /* Interface to the (polymorphous!)  options(...)  command.
  *
@@ -97,12 +113,11 @@ static SEXP FindTaggedItem(SEXP lst, SEXP tag)
 
 static SEXP makeErrorCall(SEXP fun)
 {
-  SEXP call;
-  PROTECT(call = allocList(1));
-  SET_TYPEOF(call, LANGSXP);
-  SETCAR(call, fun);
-  UNPROTECT(1);
-  return call;
+    SEXP call;
+    PROTECT(call = CXXR_NEW(Expression));
+    SETCAR(call, fun);
+    UNPROTECT(1);
+    return call;
 }
 
 SEXP GetOption(SEXP tag, SEXP rho)
@@ -162,7 +177,7 @@ Rboolean Rf_GetOptionDeviceAsk(void)
 	warning(_("invalid value for \"device.ask.default\", using FALSE"));
 	return FALSE;
     }
-    return ask != 0;
+    return CXXRCONSTRUCT(Rboolean, ask != 0);
 }
 
 
@@ -252,7 +267,7 @@ void attribute_hidden InitOptions(void)
     v = CDR(v);
 
     SET_TAG(v, install("expressions"));
-    SETCAR(v, ScalarInteger(R_Expressions));
+    SETCAR(v, ScalarInteger(Evaluator::depthLimit()));
     v = CDR(v);
 
     SET_TAG(v, install("width"));
@@ -280,7 +295,7 @@ void attribute_hidden InitOptions(void)
     v = CDR(v);
 
     p = getenv("R_KEEP_PKG_SOURCE");
-    R_KeepSource = (p && (strcmp(p, "yes") == 0)) ? 1 : 0;
+    R_KeepSource = (p && (strcmp(p, "yes") == 0)) ? CXXRTRUE : CXXRFALSE;
 
     SET_TAG(v, install("keep.source")); /* overridden in common.R */
     SETCAR(v, ScalarLogical(R_KeepSource));
@@ -307,7 +322,7 @@ void attribute_hidden InitOptions(void)
     v = CDR(v);
 
     p = getenv("R_C_BOUNDS_CHECK");
-    R_CBoundsCheck = (p && (strcmp(p, "yes") == 0)) ? 1 : 0;
+    R_CBoundsCheck = CXXRCONSTRUCT(Rboolean, (p && (strcmp(p, "yes") == 0)) ? 1 : 0);
 
     SET_TAG(v, install("CBoundsCheck"));
     SETCAR(v, ScalarLogical(R_CBoundsCheck));
@@ -436,17 +451,14 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    else if (streql(CHAR(namei), "expressions")) {
 		k = asInteger(argi);
-		if (k < R_MIN_EXPRESSIONS_OPT || k > R_MAX_EXPRESSIONS_OPT)
-		    error(_("'expressions' parameter invalid, allowed %d...%d"),
-			  R_MIN_EXPRESSIONS_OPT, R_MAX_EXPRESSIONS_OPT);
-		R_Expressions = R_Expressions_keep = k;
+		Evaluator::setDepthLimit(k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarInteger(k)));
 	    }
 	    else if (streql(CHAR(namei), "keep.source")) {
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		k = asLogical(argi);
-		R_KeepSource = k;
+		R_KeepSource = CXXRCONSTRUCT(Rboolean, k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "editor") && isString(argi)) {
@@ -533,7 +545,7 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 		/* Should be quicker than checking options(echo)
 		   every time R prompts for input:
 		   */
-		R_Slave = !k;
+		R_Slave = CXXRCONSTRUCT(Rboolean, !k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "OutDec")) {
@@ -562,35 +574,35 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		k = asLogical(argi);
-		R_warn_partial_match_dollar = k;
+		R_warn_partial_match_dollar = CXXRCONSTRUCT(Rboolean, k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "warnPartialMatchArgs")) {
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		k = asLogical(argi);
-		R_warn_partial_match_args = k;
+		ArgMatcher::enableWarnOnPartialMatch(k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "warnPartialMatchAttr")) {
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		k = asLogical(argi);
-		R_warn_partial_match_attr = k;
+		R_warn_partial_match_attr = CXXRCONSTRUCT(Rboolean, k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "showWarnCalls")) {
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		k = asLogical(argi);
-		R_ShowWarnCalls = k;
+		R_ShowWarnCalls = CXXRCONSTRUCT(Rboolean, k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "showErrorCalls")) {
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		k = asLogical(argi);
-		R_ShowErrorCalls = k;
+		R_ShowErrorCalls = CXXRCONSTRUCT(Rboolean, k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "showNCalls")) {
@@ -609,14 +621,14 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 		k = asLogical(argi);
 		if (k == NA_LOGICAL)
 		    error(_("invalid value for '%s'"), CHAR(namei));
-		R_DisableNLinBrowser = k;
+		R_DisableNLinBrowser = CXXRCONSTRUCT(Rboolean, k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "CBoundsCheck")) {
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		k = asLogical(argi);
-		R_CBoundsCheck = k;
+		R_CBoundsCheck = CXXRCONSTRUCT(Rboolean, k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else {

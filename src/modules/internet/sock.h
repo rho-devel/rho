@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
 
@@ -24,9 +40,13 @@
 */
 #include <sys/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef unsigned short Sock_port_t;
 
-typedef struct Sock_error_t {
+typedef struct Sock_error_st {
     int error;
     int h_error;
 } *Sock_error_t;
@@ -60,3 +80,7 @@ ssize_t R_SockWrite(int sockp, const void *buf, size_t len, int timeout);
 /* from Rhttpd.c */
 int in_R_HTTPDCreate(const char *ip, int port);
 void in_R_HTTPDStop(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif

@@ -1117,7 +1117,7 @@ SEXP C_axis(SEXP args)
 		/* Clip tick labels to user coordinates. */
 		if (x > low && x < high) {
 		    if (isExpression(lab)) {
-			GMMathText(VECTOR_ELT(lab, ind[i]), side,
+			GMMathText(XVECTOR_ELT(lab, ind[i]), side,
 				   axis_lab, 0, x, gpptr(dd)->las,
 				   padjval, dd);
 		    }
@@ -1258,7 +1258,7 @@ SEXP C_axis(SEXP args)
 		/* Clip tick labels to user coordinates. */
 		if (y > low && y < high) {
 		    if (isExpression(lab)) {
-			GMMathText(VECTOR_ELT(lab, ind[i]), side,
+			GMMathText(XVECTOR_ELT(lab, ind[i]), side,
 				   axis_lab, 0, y, gpptr(dd)->las,
 				   padjval, dd);
 		    }
@@ -2213,7 +2213,7 @@ SEXP C_text(SEXP args)
 		}
 	    }
 	    if (isExpression(txt)) {
-		GMathText(xx, yy, INCHES, VECTOR_ELT(txt, i % ntxt),
+		GMathText(xx, yy, INCHES, XVECTOR_ELT(txt, i % ntxt),
 			  adjx, adjy, gpptr(dd)->srt, dd);
 	    } else {
 		string = STRING_ELT(txt, i % ntxt);
@@ -2445,8 +2445,8 @@ SEXP C_mtext(SEXP args)
     /* we don't want to mark the plot as dirty. */
 
     dirtyplot = FALSE;
-    gpnewsave = gpptr(dd)->new;
-    dpnewsave = dpptr(dd)->new;
+    gpnewsave = gpptr(dd)->newplot;
+    dpnewsave = dpptr(dd)->newplot;
     cexsave = gpptr(dd)->cex;
     fontsave = gpptr(dd)->font;
     colsave = gpptr(dd)->col;
@@ -2457,8 +2457,8 @@ SEXP C_mtext(SEXP args)
 	gpptr(dd)->xpd = 1;
 
     if (outer) {
-	gpnewsave = gpptr(dd)->new;
-	dpnewsave = dpptr(dd)->new;
+	gpnewsave = gpptr(dd)->newplot;
+	dpnewsave = dpptr(dd)->newplot;
 	/* override par("xpd") and force clipping to device region */
 	gpptr(dd)->xpd = 2;
     }
@@ -2492,7 +2492,7 @@ SEXP C_mtext(SEXP args)
 			       outerval, dd);
 
 	if (isExpression(text))
-	    GMMathText(VECTOR_ELT(text, i % ntext),
+	    GMMathText(XVECTOR_ELT(text, i % ntext),
 		       sideval, lineval, outerval, atval, gpptr(dd)->las,
 		       padjval, dd);
 	else {
@@ -2508,8 +2508,8 @@ SEXP C_mtext(SEXP args)
 
     GRestorePars(dd);
     if (!dirtyplot) {
-	gpptr(dd)->new = gpnewsave;
-	dpptr(dd)->new = dpnewsave;
+	gpptr(dd)->newplot = gpnewsave;
+	dpptr(dd)->newplot = dpnewsave;
     }
     UNPROTECT(10);
     return R_NilValue;
@@ -2537,19 +2537,19 @@ SEXP C_title(SEXP args)
 
     Main = sub = xlab = ylab = R_NilValue;
 
-    if (CAR(args) != R_NilValue && LENGTH(CAR(args)) > 0)
+    if (CAR(args) != R_NilValue && Rf_length(CAR(args)) > 0)
 	Main = CAR(args);
     args = CDR(args);
 
-    if (CAR(args) != R_NilValue && LENGTH(CAR(args)) > 0)
+    if (CAR(args) != R_NilValue && Rf_length(CAR(args)) > 0)
 	sub = CAR(args);
     args = CDR(args);
 
-    if (CAR(args) != R_NilValue && LENGTH(CAR(args)) > 0)
+    if (CAR(args) != R_NilValue && Rf_length(CAR(args)) > 0)
 	xlab = CAR(args);
     args = CDR(args);
 
-    if (CAR(args) != R_NilValue && LENGTH(CAR(args)) > 0)
+    if (CAR(args) != R_NilValue && Rf_length(CAR(args)) > 0)
 	ylab = CAR(args);
     args = CDR(args);
 
@@ -2607,7 +2607,7 @@ SEXP C_title(SEXP args)
 	    where = MAR3;
 	}
 	if (isExpression(Main)) {
-	    GMathText(hpos, vpos, where, VECTOR_ELT(Main, 0),
+	    GMathText(hpos, vpos, where, XVECTOR_ELT(Main, 0),
 		      adj, 0.5, 0.0, dd);
 	}
 	else {
@@ -2645,7 +2645,7 @@ SEXP C_title(SEXP args)
 	    where = 0;
 	}
 	if (isExpression(sub))
-	    GMMathText(VECTOR_ELT(sub, 0), 1, vpos, where,
+	    GMMathText(XVECTOR_ELT(sub, 0), 1, vpos, where,
 		       hpos, 0, 0.0, dd);
 	else {
 	    n = length(sub);
@@ -2681,7 +2681,7 @@ SEXP C_title(SEXP args)
 	    where = 0;
 	}
 	if (isExpression(xlab))
-	    GMMathText(VECTOR_ELT(xlab, 0), 1, vpos, where,
+	    GMMathText(XVECTOR_ELT(xlab, 0), 1, vpos, where,
 		       hpos, 0, 0.0, dd);
 	else {
 	    n = length(xlab);
@@ -2717,7 +2717,7 @@ SEXP C_title(SEXP args)
 	    where = 0;
 	}
 	if (isExpression(ylab))
-	    GMMathText(VECTOR_ELT(ylab, 0), 2, vpos, where,
+	    GMMathText(XVECTOR_ELT(ylab, 0), 2, vpos, where,
 		       hpos, 0, 0.0, dd);
 	else {
 	    n = length(ylab);
@@ -3329,7 +3329,7 @@ SEXP C_identify(SEXP call, SEXP op, SEXP args, SEXP rho)
     gpptr(dd)->cex = cex * gpptr(dd)->cexbase;				\
     for (i = 0; i < n; i++)						\
 	if (isExpression(str))						\
-	    REAL(ans)[i] = GExpression ## KIND(VECTOR_ELT(str, i),	\
+	    REAL(ans)[i] = GExpression ## KIND(XVECTOR_ELT(str, i),	\
 					     GMapUnits(units), dd);	\
 	else {								\
 	    ch = STRING_ELT(str, i);					\

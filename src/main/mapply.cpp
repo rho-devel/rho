@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2003-12   The R Core Team
@@ -22,6 +38,7 @@
 #endif
 
 #include <Defn.h>
+#include <Internal.h>
 
 SEXP attribute_hidden
 do_mapply(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -34,9 +51,9 @@ do_mapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     m = length(varyingArgs);
     SEXP vnames = PROTECT(getAttrib(varyingArgs, R_NamesSymbol));
-    Rboolean named = vnames != R_NilValue;
+    Rboolean named = CXXRCONSTRUCT(Rboolean, vnames != R_NilValue);
 
-    lengths = (R_xlen_t *)  R_alloc(m, sizeof(R_xlen_t));
+    lengths = static_cast<R_xlen_t *>(  CXXR_alloc(m, sizeof(R_xlen_t)));
     for (int i = 0; i < m; i++) {
 	SEXP tmp1 = VECTOR_ELT(varyingArgs, i);
 	lengths[i] = xlength(tmp1);
@@ -47,8 +64,8 @@ do_mapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    // DispatchOrEval() needs 'args' to be a pairlist
 	    SEXP ans, tmp2 = PROTECT(list1(tmp1));
 	    if (DispatchOrEval(call, length_op, "length", tmp2, rho, &ans, 0, 1))
-		lengths[i] = (R_xlen_t) (TYPEOF(ans) == REALSXP ?
-					 REAL(ans)[0] : asInteger(ans));
+		lengths[i] = R_xlen_t( (TYPEOF(ans) == REALSXP ?
+					REAL(ans)[0] : asInteger(ans)));
 	    UNPROTECT(1);
 	}
 	if (lengths[i] == 0) zero++;
@@ -57,7 +74,7 @@ do_mapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (zero && longest)
 	error(_("zero-length inputs cannot be mixed with those of non-zero length"));
 
-    counters = (R_xlen_t *) R_alloc(m, sizeof(R_xlen_t));
+    counters = static_cast<R_xlen_t *>( CXXR_alloc(m, sizeof(R_xlen_t)));
     memset(counters, 0, m * sizeof(R_xlen_t));
 
     SEXP mindex = PROTECT(allocVector(VECSXP, m));
@@ -77,14 +94,14 @@ do_mapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT_INDEX fi;
     PROTECT_WITH_INDEX(fcall, &fi);
 
-    Rboolean realIndx = longest > INT_MAX;
+    Rboolean realIndx = CXXRCONSTRUCT(Rboolean, longest > INT_MAX);
     SEXP Dots = install("dots");
     for (int j = m - 1; j >= 0; j--) {
 	SET_VECTOR_ELT(mindex, j, ScalarInteger(j + 1));
 	SET_VECTOR_ELT(nindex, j, allocVector(realIndx ? REALSXP : INTSXP, 1));
 	SEXP tmp1 = PROTECT(lang3(R_Bracket2Symbol, Dots, VECTOR_ELT(mindex, j)));
 	SEXP tmp2 = PROTECT(lang3(R_Bracket2Symbol, tmp1, VECTOR_ELT(nindex, j)));
-	REPROTECT(fcall = LCONS(tmp2, fcall), fi);
+	REPROTECT(fcall = CONS(tmp2, fcall), fi);
 	UNPROTECT(2);
 	if (named && CHAR(STRING_ELT(vnames, j))[0] != '\0')
 	    SET_TAG(fcall, installTrChar(STRING_ELT(vnames, j)));
@@ -98,9 +115,9 @@ do_mapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 	for (int j = 0; j < m; j++) {
 	    counters[j] = (++counters[j] > lengths[j]) ? 1 : counters[j];
 	    if (realIndx)
-		REAL(VECTOR_ELT(nindex, j))[0] = (double) counters[j];
+		REAL(VECTOR_ELT(nindex, j))[0] = double( counters[j]);
 	    else
-		INTEGER(VECTOR_ELT(nindex, j))[0] = (int) counters[j];
+		INTEGER(VECTOR_ELT(nindex, j))[0] = int( counters[j]);
 	}
 	SEXP tmp = eval(fcall, rho);
 	if (NAMED(tmp))

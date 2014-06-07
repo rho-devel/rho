@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -27,6 +43,9 @@
 #ifndef R_INTERNAL_H
 #define R_INTERNAL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Function Names */
 
@@ -489,6 +508,14 @@ SEXP do_gzcon(SEXP, SEXP, SEXP, SEXP);
 SEXP do_memCompress(SEXP, SEXP, SEXP, SEXP);
 SEXP do_memDecompress(SEXP, SEXP, SEXP, SEXP);
 
+SEXP do_castestfun(SEXP, SEXP, SEXP, SEXP);
+SEXP do_hasProvenance(SEXP, SEXP, SEXP, SEXP);
+SEXP do_provCommand(SEXP, SEXP, SEXP, SEXP);
+SEXP do_provenance(SEXP, SEXP, SEXP, SEXP);
+SEXP do_provenance_graph(SEXP, SEXP, SEXP, SEXP);
+SEXP do_bserialize(SEXP, SEXP, SEXP, SEXP);
+SEXP do_bdeserialize(SEXP, SEXP, SEXP, SEXP);
+
 SEXP do_lockEnv(SEXP, SEXP, SEXP, SEXP);
 SEXP do_envIsLocked(SEXP, SEXP, SEXP, SEXP);
 SEXP do_lockBnd(SEXP, SEXP, SEXP, SEXP);
@@ -507,4 +534,9 @@ SEXP do_envprofile(SEXP call, SEXP op, SEXP args, SEXP rho);
 SEXP do_tracemem(SEXP, SEXP, SEXP, SEXP);
 SEXP do_retracemem(SEXP, SEXP, SEXP, SEXP);
 SEXP do_untracemem(SEXP, SEXP, SEXP, SEXP);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* not R_INTERNAL_H */

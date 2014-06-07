@@ -1,0 +1,107 @@
+#CXXR $Id$
+#CXXR 
+#CXXR This file is part of CXXR, a project to refactor the R interpreter
+#CXXR into C++.  It may consist in whole or in part of program code and
+#CXXR documentation taken from the R project itself, incorporated into
+#CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+#CXXR Licence.
+#CXXR 
+#CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+#CXXR copyrights and copyright restrictions as may be stated below.
+#CXXR 
+#CXXR CXXR is not part of the R project, and bugs and other issues should
+#CXXR not be reported via r-bugs or other R project channels; instead refer
+#CXXR to the CXXR website.
+
+#
+# ${R_HOME}/src/include/CXXR/Makefile
+
+VPATH = @srcdir@
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+
+top_builddir = ../../..
+subdir = src/include/CXXR
+
+include $(top_builddir)/Makeconf
+
+distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
+
+CXXR_HS = \
+  BuiltInFunction.h Closure.h ComplexVector.h ConsCell.h \
+  DotInternal.h \
+  Environment.h Evaluator.h Expression.h ExpressionVector.h ExternalPointer.h \
+  FunctionBase.h GCRoot.h IntVector.h \
+  ListVector.h LogicalVector.h \
+  PairList.h Promise.h ProtectStack.h ProvenanceTracker.h \
+  RAllocStack.h RObject.h RawVector.h RealVector.h \
+  S4Object.h SEXPTYPE.h String.h StringVector.h Symbol.h \
+  VectorBase.h WeakRef.h errors.h uncxxr.h
+
+CXXR_HPPS = \
+  Allocator.hpp ArgList.hpp ArgMatcher.hpp BinaryFunction.hpp \
+  CellPool.hpp CommandChronicle.hpp \
+  ElementTraits.hpp Evaluator_Context.hpp \
+  FixedVector.hpp Frame.hpp GCEdge.hpp GCNode.hpp GCNode_PtrS11n.hpp \
+  GCStackRoot.hpp \
+  HeterogeneousList.hpp MemoryBank.hpp NAAugment.hpp NodeStack.hpp \
+  Provenance.hpp RHandle.hpp S11nScope.hpp \
+  SEXP_downcast.hpp SchwarzCounter.hpp StdFrame.hpp Subscripting.hpp \
+  UnaryFunction.hpp config.hpp
+
+CXXR_HEADERS = $(CXXR_HS) $(CXXR_HPPS)
+
+DISTFILES = Makefile.in $(CXXR_HS) $(CXXR_HPPS)
+TIMESTAMPS = $(CXXR_HS:.h=.ts) $(CXXR_HPPS:.hpp=.ts)
+
+CLEANFILES = stamp-R $(TIMESTAMPS)
+DISTCLEANFILES = Makefile config.hpp
+
+.SUFFIXES:
+.SUFFIXES: .h .hpp .ts
+
+.h.ts: 
+	@$(INSTALL_DATA) $< $(top_builddir)/include/CXXR/`basename $<`
+	@touch $@
+
+.hpp.ts: 
+	@$(INSTALL_DATA) $< $(top_builddir)/include/CXXR/`basename $<`
+	@touch $@
+
+all: Makefile R config.hpp
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+
+R: Makefile stamp-R $(TIMESTAMPS)
+stamp-R: 
+	@$(MKINSTALLDIRS) $(top_builddir)/include/CXXR
+	@touch $@
+$(TIMESTAMPS): stamp-R
+
+install: installdirs
+	@for f in $(CXXR_HEADERS); do \
+	  $(INSTALL_DATA) $(srcdir)/$${f} "$(DESTDIR)$(rincludedir)/CXXR"; \
+	done
+installdirs:
+	@$(MKINSTALLDIRS) "$(DESTDIR)$(rincludedir)/CXXR"
+install-strip:
+	$(MAKE) INSTALL_PROGRAM="${INSTALL_PROGRAM} -s" install
+uninstall:
+	@rm -rf "$(DESTDIR)$(rincludedir)/CXXR"
+
+mostlyclean: clean
+clean:
+	-@test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
+distclean: clean
+	-@test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
+maintainer-clean: distclean
+
+TAGS info dvi check:
+
+distdir: $(DISTFILES)
+	@for f in $(DISTFILES); do \
+	  test -f $(distdir)/$${f} \
+	    || ln $(srcdir)/$${f} $(distdir)/$${f} 2>/dev/null \
+	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
+	done

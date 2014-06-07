@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -18,6 +34,25 @@
  *  http://www.r-project.org/Licenses/
  */
 
+/** @file Rinternals.h
+ * @brief (As described in 'Writing R Extensions'.)
+ *
+ * As CXXR development proceeds, the type definitions, function
+ * prototypes etc. defined in this header file will be progressively
+ * factored out into individual class-related header files, which will
+ * be <tt>\#include</tt>d back into this 'master' header file.  CXXR
+ * code should use the class-related header files directly, as required,
+ * rather than <tt>\#include</tt>ing this file.
+ *
+ * In most cases, function prototypes and extern declarations that
+ * have been factored out into CXXR's own header files are
+ * nevertheless also retained in this file.  This is so that any
+ * changes to these declarations that appear in a new release of CR
+ * are picked up automatically during the 'svn merge' process.  The
+ * compiler will then detect any inconsistencies between the new
+ * declaration in this file and the 'factored-out' declaration.
+ */
+
 #ifndef R_INTERNALS_H_
 #define R_INTERNALS_H_
 
@@ -27,21 +62,40 @@
 using std::FILE;
 # endif
 # include <climits>
-extern "C" {
 #else
 # include <stdio.h>
 # include <limits.h> /* for INT_MAX */
 #endif
 
 #include <R_ext/Arith.h>
-#include <R_ext/Boolean.h>
-#include <R_ext/Complex.h>
 #include <R_ext/Error.h>
 #include <R_ext/Memory.h>
 #include <R_ext/Utils.h>
 #include <R_ext/Print.h>
 
 #include <R_ext/libextern.h>
+
+#include "CXXR/Closure.h"
+#include "CXXR/ComplexVector.h"
+#include "CXXR/DotInternal.h"
+#include "CXXR/GCRoot.h"
+#include "CXXR/Environment.h"
+#include "CXXR/Expression.h"
+#include "CXXR/ExpressionVector.h"
+#include "CXXR/ExternalPointer.h"
+#include "CXXR/IntVector.h"
+#include "CXXR/ListVector.h"
+#include "CXXR/LogicalVector.h"
+#include "CXXR/PairList.h"
+#include "CXXR/Promise.h"
+#include "CXXR/ProtectStack.h"
+#include "CXXR/RawVector.h"
+#include "CXXR/RealVector.h"
+#include "CXXR/S4Object.h"
+#include "CXXR/String.h"
+#include "CXXR/StringVector.h"
+#include "CXXR/Symbol.h"
+#include "CXXR/WeakRef.h"
 
 typedef unsigned char Rbyte;
 
@@ -60,241 +114,47 @@ typedef int R_len_t;
 #endif
 
 #ifdef LONG_VECTOR_SUPPORT
-    typedef ptrdiff_t R_xlen_t;
     typedef struct { R_xlen_t lv_length, lv_truelength; } R_long_vec_hdr_t;
 # define R_XLEN_T_MAX 4503599627370496
 # define R_SHORT_LEN_MAX 2147483647
 # define R_LONG_VEC_TOKEN -1
 #else
-    typedef int R_xlen_t;
 # define R_XLEN_T_MAX R_LEN_T_MAX
 #endif
 
 
-/* Fundamental Data Types:  These are largely Lisp
- * influenced structures, with the exception of LGLSXP,
- * INTSXP, REALSXP, CPLXSXP and STRSXP which are the
- * element types for S-like data objects.
- *
- *			--> TypeTable[] in ../main/util.c for  typeof()
- */
-
-/*  These exact numeric values are seldom used, but they are, e.g., in
- *  ../main/subassign.c, and they are serialized.
-*/
-#ifndef enum_SEXPTYPE
-/* NOT YET using enum:
- *  1)	The SEXPREC struct below has 'SEXPTYPE type : 5'
- *	(making FUNSXP and CLOSXP equivalent in there),
- *	giving (-Wall only ?) warnings all over the place
- * 2)	Many switch(type) { case ... } statements need a final `default:'
- *	added in order to avoid warnings like [e.g. l.170 of ../main/util.c]
- *	  "enumeration value `FUNSXP' not handled in switch"
- */
-typedef unsigned int SEXPTYPE;
-
-#define NILSXP	     0	  /* nil = NULL */
-#define SYMSXP	     1	  /* symbols */
-#define LISTSXP	     2	  /* lists of dotted pairs */
-#define CLOSXP	     3	  /* closures */
-#define ENVSXP	     4	  /* environments */
-#define PROMSXP	     5	  /* promises: [un]evaluated closure arguments */
-#define LANGSXP	     6	  /* language constructs (special lists) */
-#define SPECIALSXP   7	  /* special forms */
-#define BUILTINSXP   8	  /* builtin non-special forms */
-#define CHARSXP	     9	  /* "scalar" string type (internal only)*/
-#define LGLSXP	    10	  /* logical vectors */
 /* 11 and 12 were factors and ordered factors in the 1990s */
-#define INTSXP	    13	  /* integer vectors */
-#define REALSXP	    14	  /* real variables */
-#define CPLXSXP	    15	  /* complex variables */
-#define STRSXP	    16	  /* string vectors */
-#define DOTSXP	    17	  /* dot-dot-dot object */
-#define ANYSXP	    18	  /* make "any" args work.
-			     Used in specifying types for symbol
-			     registration to mean anything is okay  */
-#define VECSXP	    19	  /* generic vectors */
-#define EXPRSXP	    20	  /* expressions vectors */
-#define BCODESXP    21    /* byte code */
-#define EXTPTRSXP   22    /* external pointer */
-#define WEAKREFSXP  23    /* weak reference */
-#define RAWSXP      24    /* raw bytes */
-#define S4SXP       25    /* S4, non-vector */
-
 /* used for detecting PROTECT issues in memory.c */
 #define NEWSXP      30    /* fresh node creaed in new page */
 #define FREESXP     31    /* node released by GC */
 
-#define FUNSXP      99    /* Closure or Builtin or Special */
 
+#ifdef __cplusplus
+extern "C" {
 
-#else /* NOT YET */
-/*------ enum_SEXPTYPE ----- */
-typedef enum {
-    NILSXP	= 0,	/* nil = NULL */
-    SYMSXP	= 1,	/* symbols */
-    LISTSXP	= 2,	/* lists of dotted pairs */
-    CLOSXP	= 3,	/* closures */
-    ENVSXP	= 4,	/* environments */
-    PROMSXP	= 5,	/* promises: [un]evaluated closure arguments */
-    LANGSXP	= 6,	/* language constructs (special lists) */
-    SPECIALSXP	= 7,	/* special forms */
-    BUILTINSXP	= 8,	/* builtin non-special forms */
-    CHARSXP	= 9,	/* "scalar" string type (internal only)*/
-    LGLSXP	= 10,	/* logical vectors */
-    INTSXP	= 13,	/* integer vectors */
-    REALSXP	= 14,	/* real variables */
-    CPLXSXP	= 15,	/* complex variables */
-    STRSXP	= 16,	/* string vectors */
-    DOTSXP	= 17,	/* dot-dot-dot object */
-    ANYSXP	= 18,	/* make "any" args work */
-    VECSXP	= 19,	/* generic vectors */
-    EXPRSXP	= 20,	/* expressions vectors */
-    BCODESXP	= 21,	/* byte code */
-    EXTPTRSXP	= 22,	/* external pointer */
-    WEAKREFSXP	= 23,	/* weak reference */
-    RAWSXP	= 24,	/* raw bytes */
-    S4SXP	= 25,	/* S4 non-vector */
-
-    NEWSXP      = 30,   /* fresh node creaed in new page */
-    FREESXP     = 31,   /* node released by GC */
-
-    FUNSXP	= 99	/* Closure or Builtin */
-} SEXPTYPE;
 #endif
 
-#ifdef USE_RINTERNALS
-/* This is intended for use only within R itself.
- * It defines internal structures that are otherwise only accessible
- * via SEXP, and macros to replace many (but not all) of accessor functions
- * (which are always defined).
- */
-
-/* Flags */
-struct sxpinfo_struct {
-    SEXPTYPE type      :  5;/* ==> (FUNSXP == 99) %% 2^5 == 3 == CLOSXP
-			     * -> warning: `type' is narrower than values
-			     *              of its type
-			     * when SEXPTYPE was an enum */
-    unsigned int obj   :  1;
-    unsigned int named :  2;
-    unsigned int gp    : 16;
-    unsigned int mark  :  1;
-    unsigned int debug :  1;
-    unsigned int trace :  1;  /* functions and memory tracing */
-    unsigned int spare :  1;  /* currently unused */
-    unsigned int gcgen :  1;  /* old generation number */
-    unsigned int gccls :  3;  /* node class */
-}; /*		    Tot: 32 */
-
-struct vecsxp_struct {
-    R_len_t	length;
-    R_len_t	truelength;
-};
-
-struct primsxp_struct {
-    int offset;
-};
-
-struct symsxp_struct {
-    struct SEXPREC *pname;
-    struct SEXPREC *value;
-    struct SEXPREC *internal;
-};
-
-struct listsxp_struct {
-    struct SEXPREC *carval;
-    struct SEXPREC *cdrval;
-    struct SEXPREC *tagval;
-};
-
-struct envsxp_struct {
-    struct SEXPREC *frame;
-    struct SEXPREC *enclos;
-    struct SEXPREC *hashtab;
-};
-
-struct closxp_struct {
-    struct SEXPREC *formals;
-    struct SEXPREC *body;
-    struct SEXPREC *env;
-};
-
-struct promsxp_struct {
-    struct SEXPREC *value;
-    struct SEXPREC *expr;
-    struct SEXPREC *env;
-};
-
-/* Every node must start with a set of sxpinfo flags and an attribute
-   field. Under the generational collector these are followed by the
-   fields used to maintain the collector's linked list structures. */
-#define SEXPREC_HEADER \
-    struct sxpinfo_struct sxpinfo; \
-    struct SEXPREC *attrib; \
-    struct SEXPREC *gengc_next_node, *gengc_prev_node
-
-/* The standard node structure consists of a header followed by the
-   node data. */
-typedef struct SEXPREC {
-    SEXPREC_HEADER;
-    union {
-	struct primsxp_struct primsxp;
-	struct symsxp_struct symsxp;
-	struct listsxp_struct listsxp;
-	struct envsxp_struct envsxp;
-	struct closxp_struct closxp;
-	struct promsxp_struct promsxp;
-    } u;
-} SEXPREC, *SEXP;
-
-/* The generational collector uses a reduced version of SEXPREC as a
-   header in vector nodes.  The layout MUST be kept consistent with
-   the SEXPREC definition.  The standard SEXPREC takes up 7 words on
-   most hardware; this reduced version should take up only 6 words.
-   In addition to slightly reducing memory use, this can lead to more
-   favorable data alignment on 32-bit architectures like the Intel
-   Pentium III where odd word alignment of doubles is allowed but much
-   less efficient than even word alignment. */
-typedef struct VECTOR_SEXPREC {
-    SEXPREC_HEADER;
-    struct vecsxp_struct vecsxp;
-} VECTOR_SEXPREC, *VECSEXP;
-
-typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
-
-/* General Cons Cell Attributes */
-#define ATTRIB(x)	((x)->attrib)
-#define OBJECT(x)	((x)->sxpinfo.obj)
-#define MARK(x)		((x)->sxpinfo.mark)
-#define TYPEOF(x)	((x)->sxpinfo.type)
-#define NAMED(x)	((x)->sxpinfo.named)
-#define RTRACE(x)	((x)->sxpinfo.trace)
-#define LEVELS(x)	((x)->sxpinfo.gp)
-#define SET_OBJECT(x,v)	(((x)->sxpinfo.obj)=(v))
-#define SET_TYPEOF(x,v)	(((x)->sxpinfo.type)=(v))
-#define SET_NAMED(x,v)	(((x)->sxpinfo.named)=(v))
-#define SET_RTRACE(x,v)	(((x)->sxpinfo.trace)=(v))
-#define SETLEVELS(x,v)	(((x)->sxpinfo.gp)=((unsigned short)v))
-
-/* S4 object bit, set by R_do_new_object for all new() calls */
-#define S4_OBJECT_MASK ((unsigned short)(1<<4))
-#define IS_S4_OBJECT(x) ((x)->sxpinfo.gp & S4_OBJECT_MASK)
-#define SET_S4_OBJECT(x) (((x)->sxpinfo.gp) |= S4_OBJECT_MASK)
-#define UNSET_S4_OBJECT(x) (((x)->sxpinfo.gp) &= ~S4_OBJECT_MASK)
-
+// Commentings out done during CXXR 3.0.2 upgrade.  FIXME delete altogether
 /* Vector Access Macros */
 #ifdef LONG_VECTOR_SUPPORT
     R_len_t R_BadLongVector(SEXP, const char *, int);
-# define IS_LONG_VEC(x) (SHORT_VEC_LENGTH(x) == R_LONG_VEC_TOKEN)
+//# define IS_LONG_VEC(x) (SHORT_VEC_LENGTH(x) == R_LONG_VEC_TOKEN)
+# define IS_LONG_VEC(x) (XLENGTH(x) > R_SHORT_LEN_MAX)
 # define SHORT_VEC_LENGTH(x) (((VECSEXP) (x))->vecsxp.length)
 # define SHORT_VEC_TRUELENGTH(x) (((VECSEXP) (x))->vecsxp.truelength)
 # define LONG_VEC_LENGTH(x) ((R_long_vec_hdr_t *) (x))[-1].lv_length
 # define LONG_VEC_TRUELENGTH(x) ((R_long_vec_hdr_t *) (x))[-1].lv_truelength
-# define XLENGTH(x) (IS_LONG_VEC(x) ? LONG_VEC_LENGTH(x) : SHORT_VEC_LENGTH(x))
-# define XTRUELENGTH(x)	(IS_LONG_VEC(x) ? LONG_VEC_TRUELENGTH(x) : SHORT_VEC_TRUELENGTH(x))
-# define LENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : SHORT_VEC_LENGTH(x))
-# define TRUELENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : SHORT_VEC_TRUELENGTH(x))
+//# define XLENGTH(x) (IS_LONG_VEC(x) ? LONG_VEC_LENGTH(x) : SHORT_VEC_LENGTH(x))
+//# define XTRUELENGTH(x)	(IS_LONG_VEC(x) ? LONG_VEC_TRUELENGTH(x) : SHORT_VEC_TRUELENGTH(x))
+//# define LENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : SHORT_VEC_LENGTH(x))
+//# define TRUELENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : SHORT_VEC_TRUELENGTH(x))
+#ifdef __cplusplus
+# define LENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : R_len_t(XLENGTH(x)))
+# define TRUELENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : R_len_t(XTRUELENGTH(x)))
+#else
+# define LENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : (R_len_t)XLENGTH(x))
+# define TRUELENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : (R_len_t)XTRUELENGTH(x))
+#endif
 # define SET_SHORT_VEC_LENGTH(x,v) (SHORT_VEC_LENGTH(x) = (v))
 # define SET_SHORT_VEC_TRUELENGTH(x,v) (SHORT_VEC_TRUELENGTH(x) = (v))
 # define SET_LONG_VEC_LENGTH(x,v) (LONG_VEC_LENGTH(x) = (v))
@@ -306,91 +166,19 @@ typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
 	  SET_LONG_VEC_LENGTH(sl__x__,  sl__v__); \
       else SET_SHORT_VEC_LENGTH(sl__x__, (R_len_t) sl__v__); \
   } while (0)
-# define SET_TRUELENGTH(x,v) do { \
-      SEXP sl__x__ = (x); \
-      R_xlen_t sl__v__ = (v); \
-      if (IS_LONG_VEC(sl__x__)) \
-	  SET_LONG_VEC_TRUELENGTH(sl__x__, sl__v__); \
-      else SET_SHORT_VEC_TRUELENGTH(sl__x__, (R_len_t) sl__v__); \
-  } while (0)
+# define SET_TRUELENGTH(x,v) SET_XTRUELENGTH(x,v)
 #else
-# define LENGTH(x)	(((VECSEXP) (x))->vecsxp.length)
-# define TRUELENGTH(x)	(((VECSEXP) (x))->vecsxp.truelength)
-# define XLENGTH(x) LENGTH(x)
-# define XTRUELENGTH(x) TRUELENGTH(x)
-# define SETLENGTH(x,v)		((((VECSEXP) (x))->vecsxp.length)=(v))
-# define SET_TRUELENGTH(x,v)	((((VECSEXP) (x))->vecsxp.truelength)=(v))
+//# define LENGTH(x)	(((VECSEXP) (x))->vecsxp.length)
+#define LENGTH(x) XLENGTH(x)
+//# define TRUELENGTH(x)	(((VECSEXP) (x))->vecsxp.truelength)
+# define TRUELENGTH(x) XTRUELENGTH(x)
+//# define SETLENGTH(x,v)		((((VECSEXP) (x))->vecsxp.length)=(v))
+//# define SET_TRUELENGTH(x,v)	((((VECSEXP) (x))->vecsxp.truelength)=(v))
+# define SET_TRUELENGTH SET_XTRUELENGTH
 # define SET_SHORT_VEC_LENGTH SETLENGTH
 # define SET_SHORT_VEC_TRUELENGTH SET_TRUELENGTH
 # define IS_LONG_VEC(x) 0
 #endif
-
-/* Under the generational allocator the data for vector nodes comes
-   immediately after the node structure, so the data address is a
-   known offset from the node SEXP. */
-#define DATAPTR(x)	(((SEXPREC_ALIGN *) (x)) + 1)
-#define CHAR(x)		((const char *) DATAPTR(x))
-#define LOGICAL(x)	((int *) DATAPTR(x))
-#define INTEGER(x)	((int *) DATAPTR(x))
-#define RAW(x)		((Rbyte *) DATAPTR(x))
-#define COMPLEX(x)	((Rcomplex *) DATAPTR(x))
-#define REAL(x)		((double *) DATAPTR(x))
-#define STRING_ELT(x,i)	((SEXP *) DATAPTR(x))[i]
-#define VECTOR_ELT(x,i)	((SEXP *) DATAPTR(x))[i]
-#define STRING_PTR(x)	((SEXP *) DATAPTR(x))
-#define VECTOR_PTR(x)	((SEXP *) DATAPTR(x))
-
-/* List Access Macros */
-/* These also work for ... objects */
-#define LISTVAL(x)	((x)->u.listsxp)
-#define TAG(e)		((e)->u.listsxp.tagval)
-#define CAR(e)		((e)->u.listsxp.carval)
-#define CDR(e)		((e)->u.listsxp.cdrval)
-#define CAAR(e)		CAR(CAR(e))
-#define CDAR(e)		CDR(CAR(e))
-#define CADR(e)		CAR(CDR(e))
-#define CDDR(e)		CDR(CDR(e))
-#define CADDR(e)	CAR(CDR(CDR(e)))
-#define CADDDR(e)	CAR(CDR(CDR(CDR(e))))
-#define CAD4R(e)	CAR(CDR(CDR(CDR(CDR(e)))))
-#define MISSING_MASK	15 /* reserve 4 bits--only 2 uses now */
-#define MISSING(x)	((x)->sxpinfo.gp & MISSING_MASK)/* for closure calls */
-#define SET_MISSING(x,v) do { \
-  SEXP __x__ = (x); \
-  int __v__ = (v); \
-  int __other_flags__ = __x__->sxpinfo.gp & ~MISSING_MASK; \
-  __x__->sxpinfo.gp = __other_flags__ | __v__; \
-} while (0)
-
-/* Closure Access Macros */
-#define FORMALS(x)	((x)->u.closxp.formals)
-#define BODY(x)		((x)->u.closxp.body)
-#define CLOENV(x)	((x)->u.closxp.env)
-#define RDEBUG(x)	((x)->sxpinfo.debug)
-#define SET_RDEBUG(x,v)	(((x)->sxpinfo.debug)=(v))
-#define RSTEP(x)	((x)->sxpinfo.spare)
-#define SET_RSTEP(x,v)	(((x)->sxpinfo.spare)=(v))
-
-/* Symbol Access Macros */
-#define PRINTNAME(x)	((x)->u.symsxp.pname)
-#define SYMVALUE(x)	((x)->u.symsxp.value)
-#define INTERNAL(x)	((x)->u.symsxp.internal)
-#define DDVAL_MASK	1
-#define DDVAL(x)	((x)->sxpinfo.gp & DDVAL_MASK) /* for ..1, ..2 etc */
-#define SET_DDVAL_BIT(x) (((x)->sxpinfo.gp) |= DDVAL_MASK)
-#define UNSET_DDVAL_BIT(x) (((x)->sxpinfo.gp) &= ~DDVAL_MASK)
-#define SET_DDVAL(x,v) ((v) ? SET_DDVAL_BIT(x) : UNSET_DDVAL_BIT(x)) /* for ..1, ..2 etc */
-
-/* Environment Access Macros */
-#define FRAME(x)	((x)->u.envsxp.frame)
-#define ENCLOS(x)	((x)->u.envsxp.enclos)
-#define HASHTAB(x)	((x)->u.envsxp.hashtab)
-#define ENVFLAGS(x)	((x)->sxpinfo.gp)	/* for environments */
-#define SET_ENVFLAGS(x,v)	(((x)->sxpinfo.gp)=(v))
-
-#else /* not USE_RINTERNALS */
-
-typedef struct SEXPREC *SEXP;
 
 #define CHAR(x)		R_CHAR(x)
 const char *(R_CHAR)(SEXP x);
@@ -406,28 +194,24 @@ Rboolean (Rf_isEnvironment)(SEXP s);
 Rboolean (Rf_isString)(SEXP s);
 Rboolean (Rf_isObject)(SEXP s);
 
-#endif /* USE_RINTERNALS */
-
 /* Accessor functions.  Many are declared using () to avoid the macro
-   definitions in the USE_RINTERNALS section.
+   definitions in the USE_RINTERNALS section (phased out in CXXR).
    The function STRING_ELT is used as an argument to arrayAssign even
    if the macro version is in use.
 */
 
 /* General Cons Cell Attributes */
 SEXP (ATTRIB)(SEXP x);
-int  (OBJECT)(SEXP x);
+Rboolean (OBJECT)(SEXP x);
 int  (MARK)(SEXP x);
-int  (TYPEOF)(SEXP x);
+SEXPTYPE (TYPEOF)(SEXP x);
 int  (NAMED)(SEXP x);
-void (SET_OBJECT)(SEXP x, int v);
-void (SET_TYPEOF)(SEXP x, int v);
 void (SET_NAMED)(SEXP x, int v);
 void SET_ATTRIB(SEXP x, SEXP v);
 void DUPLICATE_ATTRIB(SEXP to, SEXP from);
 
 /* S4 object testing */
-int (IS_S4_OBJECT)(SEXP x);
+Rboolean (IS_S4_OBJECT)(SEXP x);
 void (SET_S4_OBJECT)(SEXP x);
 void (UNSET_S4_OBJECT)(SEXP x);
 
@@ -451,13 +235,11 @@ SEXP (STRING_ELT)(SEXP x, R_xlen_t i);
 SEXP (VECTOR_ELT)(SEXP x, R_xlen_t i);
 void SET_STRING_ELT(SEXP x, R_xlen_t i, SEXP v);
 SEXP SET_VECTOR_ELT(SEXP x, R_xlen_t i, SEXP v);
-SEXP *(STRING_PTR)(SEXP x);
-SEXP *(VECTOR_PTR)(SEXP x);
 
 /* List Access Functions */
 /* These also work for ... objects */
-#define CONS(a, b)	cons((a), (b))		/* data lists */
-#define LCONS(a, b)	lcons((a), (b))		/* language lists */
+#define CONS(a, b)	Rf_cons((a), (b))	/* data lists */
+#define LCONS(a, b)	Rf_lcons((a), (b))	/* language lists */
 SEXP (TAG)(SEXP e);
 SEXP (CAR)(SEXP e);
 SEXP (CDR)(SEXP e);
@@ -482,21 +264,19 @@ SEXP SETCAD4R(SEXP e, SEXP y);
 SEXP (FORMALS)(SEXP x);
 SEXP (BODY)(SEXP x);
 SEXP (CLOENV)(SEXP x);
-int  (RDEBUG)(SEXP x);
+Rboolean (RDEBUG)(SEXP x);
 int  (RSTEP)(SEXP x);
 int  (RTRACE)(SEXP x);
-void (SET_RDEBUG)(SEXP x, int v);
+void (SET_RDEBUG)(SEXP x, Rboolean v);
 void (SET_RSTEP)(SEXP x, int v);
 void (SET_RTRACE)(SEXP x, int v);
-void SET_FORMALS(SEXP x, SEXP v);
-void SET_BODY(SEXP x, SEXP v);
 void SET_CLOENV(SEXP x, SEXP v);
 
 /* Symbol Access Functions */
 SEXP (PRINTNAME)(SEXP x);
 SEXP (SYMVALUE)(SEXP x);
 SEXP (INTERNAL)(SEXP x);
-int  (DDVAL)(SEXP x);
+Rboolean (DDVAL)(SEXP x);
 void (SET_DDVAL)(SEXP x, int v);
 void SET_PRINTNAME(SEXP x, SEXP v);
 void SET_SYMVALUE(SEXP x, SEXP v);
@@ -505,42 +285,24 @@ void SET_INTERNAL(SEXP x, SEXP v);
 /* Environment Access Functions */
 SEXP (FRAME)(SEXP x);
 SEXP (ENCLOS)(SEXP x);
-SEXP (HASHTAB)(SEXP x);
-int  (ENVFLAGS)(SEXP x);
-void (SET_ENVFLAGS)(SEXP x, int v);
-void SET_FRAME(SEXP x, SEXP v);
-void SET_ENCLOS(SEXP x, SEXP v);
-void SET_HASHTAB(SEXP x, SEXP v);
 
 /* Promise Access Functions */
 /* First five have macro versions in Defn.h */
 SEXP (PRCODE)(SEXP x);
 SEXP (PRENV)(SEXP x);
 SEXP (PRVALUE)(SEXP x);
-int  (PRSEEN)(SEXP x);
-void (SET_PRSEEN)(SEXP x, int v);
-void SET_PRENV(SEXP x, SEXP v);
 void SET_PRVALUE(SEXP x, SEXP v);
-void SET_PRCODE(SEXP x, SEXP v);
 void SET_PRSEEN(SEXP x, int v);
 
 /* Hashing Functions */
-/* There are macro versions in Defn.h */
-int  (HASHASH)(SEXP x);
 int  (HASHVALUE)(SEXP x);
-void (SET_HASHASH)(SEXP x, int v);
-void (SET_HASHVALUE)(SEXP x, int v);
-
 
 /* External pointer access macros */
-#define EXTPTR_PTR(x)	CAR(x)
-#define EXTPTR_PROT(x)	CDR(x)
-#define EXTPTR_TAG(x)	TAG(x)
+/* (only for backwards compatibility in CXXR) */
+#define EXTPTR_PTR(x)	R_ExternalPtrAddr(x)
+#define EXTPTR_PROT(x)  R_ExternalPtrProtected(x)
+#define EXTPTR_TAG(x)	R_ExternalPtrTag(x)
 
-/* Bytecode access macros */
-#define BCODE_CODE(x)	CAR(x)
-#define BCODE_CONSTS(x) CDR(x)
-#define BCODE_EXPR(x)	TAG(x)
 #define isByteCode(x)	(TYPEOF(x)==BCODESXP)
 
 /* Pointer Protection and Unprotection */
@@ -552,7 +314,6 @@ void (SET_HASHVALUE)(SEXP x, int v);
    coerced value under protection.  For these cases PROTECT_WITH_INDEX
    saves an index of the protection location that can be used to
    replace the protected value using REPROTECT. */
-typedef int PROTECT_INDEX;
 #define PROTECT_WITH_INDEX(x,i) R_ProtectWithIndex(x,i)
 #define REPROTECT(x,i) R_Reprotect(x,i)
 
@@ -567,16 +328,13 @@ LibExtern SEXP	R_NamespaceRegistry;/* Registry for registered namespaces */
 
 LibExtern SEXP	R_Srcref;           /* Current srcref, for debuggers */
 
-/* Special Values */
-LibExtern SEXP	R_NilValue;	    /* The nil object */
+/* Note that NULL will in turn typically expand to (void*)0 in C, and
+ *  simply to 0 in C++.
+ */
+#define R_NilValue NULL
+
 LibExtern SEXP	R_UnboundValue;	    /* Unbound marker */
 LibExtern SEXP	R_MissingArg;	    /* Missing argument marker */
-#ifdef __MAIN__
-attribute_hidden
-#else
-extern
-#endif
-SEXP	R_RestartToken;     /* Marker for restarted function calls */
 
 /* Symbol Table Shortcuts */
 LibExtern SEXP	R_Bracket2Symbol;   /* "[[" */
@@ -637,13 +395,12 @@ char * Rf_acopy_string(const char *);
 SEXP Rf_alloc3DArray(SEXPTYPE, int, int, int);
 SEXP Rf_allocArray(SEXPTYPE, SEXP);
 SEXP Rf_allocMatrix(SEXPTYPE, int, int);
-SEXP Rf_allocList(int);
+SEXP Rf_allocList(unsigned int);
 SEXP Rf_allocS4Object(void);
 SEXP Rf_allocSExp(SEXPTYPE);
 SEXP Rf_allocVector(SEXPTYPE, R_xlen_t);
 int  Rf_any_duplicated(SEXP x, Rboolean from_last);
 int  Rf_any_duplicated3(SEXP x, SEXP incomp, Rboolean from_last);
-SEXP Rf_applyClosure(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP Rf_arraySubscript(int, SEXP, SEXP, SEXP (*)(SEXP,SEXP),
                        SEXP (*)(SEXP, int), SEXP);
 SEXP Rf_classgets(SEXP, SEXP);
@@ -652,7 +409,6 @@ void Rf_copyMatrix(SEXP, SEXP, Rboolean);
 void Rf_copyListMatrix(SEXP, SEXP, Rboolean);
 void Rf_copyMostAttrib(SEXP, SEXP);
 void Rf_copyVector(SEXP, SEXP);
-int Rf_countContexts(int, int);
 SEXP Rf_CreateTag(SEXP);
 void Rf_defineVar(SEXP, SEXP, SEXP);
 SEXP Rf_dimgets(SEXP, SEXP);
@@ -723,15 +479,6 @@ SEXP Rf_asS4(SEXP, Rboolean, int);
 SEXP Rf_S3Class(SEXP);
 int Rf_isBasicClass(const char *);
 
-typedef enum {
-    CE_NATIVE = 0,
-    CE_UTF8   = 1,
-    CE_LATIN1 = 2,
-    CE_BYTES  = 3,
-    CE_SYMBOL = 5,
-    CE_ANY    =99
-} cetype_t;
-
 cetype_t Rf_getCharCE(SEXP);
 SEXP Rf_mkCharCE(const char *, cetype_t);
 SEXP Rf_mkCharLenCE(const char *, int, cetype_t);
@@ -757,7 +504,6 @@ void R_SetExternalPtrTag(SEXP s, SEXP tag);
 void R_SetExternalPtrProtected(SEXP s, SEXP p);
 
 /* Finalization interface */
-typedef void (*R_CFinalizer_t)(SEXP);
 void R_RegisterFinalizer(SEXP s, SEXP fun);
 void R_RegisterCFinalizer(SEXP s, R_CFinalizer_t fun);
 void R_RegisterFinalizerEx(SEXP s, SEXP fun, Rboolean onexit);
@@ -770,12 +516,8 @@ SEXP R_WeakRefKey(SEXP w);
 SEXP R_WeakRefValue(SEXP w);
 void R_RunWeakRefFinalizer(SEXP w);
 
-SEXP R_PromiseExpr(SEXP);
 SEXP R_ClosureExpr(SEXP);
 void R_initialize_bcode(void);
-SEXP R_bcEncode(SEXP);
-SEXP R_bcDecode(SEXP);
-#define PREXPR(e) R_PromiseExpr(e)
 #define BODY_EXPR(e) R_ClosureExpr(e)
 
 /* Protected evaluation */
@@ -833,7 +575,7 @@ struct R_outpstream_st {
     R_pstream_format_t type;
     int version;
     void (*OutChar)(R_outpstream_t, int);
-    void (*OutBytes)(R_outpstream_t, void *, int);
+    void (*OutBytes)(R_outpstream_t, const void *, int);
     SEXP (*OutPersistHookFunc)(SEXP, SEXP);
     SEXP OutPersistHookData;
 };
@@ -856,7 +598,7 @@ void R_InitInPStream(R_inpstream_t stream, R_pstream_data_t data,
 void R_InitOutPStream(R_outpstream_t stream, R_pstream_data_t data,
 		      R_pstream_format_t type, int version,
 		      void (*outchar)(R_outpstream_t, int),
-		      void (*outbytes)(R_outpstream_t, void *, int),
+		      void (*outbytes)(R_outpstream_t, const void *, int),
 		      SEXP (*phook)(SEXP, SEXP), SEXP pdata);
 
 void R_InitFileInPStream(R_inpstream_t stream, FILE *fp,
@@ -926,6 +668,12 @@ Rboolean R_compute_identical(SEXP, SEXP, int);
    e.g.  arglist = Rf_lang2(x,y)  or  Rf_lang3(x,y,z) */
 void R_orderVector(int *indx, int n, SEXP arglist, Rboolean nalast, Rboolean decreasing);
 
+/* These Rf_ macros are retained for backwards compatibility, but
+ * their use is deprecated within CXXR.  In particular header files
+ * should always use the Rf_ prefix explicitly, and not rely on these
+ * macros to paste it in.
+ */
+
 #ifndef R_NO_REMAP
 #define acopy_string		Rf_acopy_string
 #define alloc3DArray            Rf_alloc3DArray
@@ -937,7 +685,6 @@ void R_orderVector(int *indx, int n, SEXP arglist, Rboolean nalast, Rboolean dec
 #define allocVector		Rf_allocVector
 #define any_duplicated		Rf_any_duplicated
 #define any_duplicated3		Rf_any_duplicated3
-#define applyClosure		Rf_applyClosure
 #define arraySubscript		Rf_arraySubscript
 #define asChar			Rf_asChar
 #define asCharacterFactor	Rf_asCharacterFactor
@@ -954,7 +701,6 @@ void R_orderVector(int *indx, int n, SEXP arglist, Rboolean nalast, Rboolean dec
 #define copyMatrix		Rf_copyMatrix
 #define copyMostAttrib		Rf_copyMostAttrib
 #define copyVector		Rf_copyVector
-#define countContexts		Rf_countContexts
 #define CreateTag		Rf_CreateTag
 #define defineVar		Rf_defineVar
 #define dimgets			Rf_dimgets
@@ -1026,7 +772,16 @@ void R_orderVector(int *indx, int n, SEXP arglist, Rboolean nalast, Rboolean dec
 #define lang6			Rf_lang6
 #define lastElt			Rf_lastElt
 #define lcons			Rf_lcons
-#define length(x)		Rf_length(x)
+
+#ifndef __cplusplus
+/* Under gcc, this macro can play havoc with some standard C++ header
+ * files.  Consequently, the alternative approach is taken of defining
+ * length as an inline function within the namespace CXXR.  The
+ * relevant definition is at the end of this file.
+ */
+#define length                  Rf_length
+#endif
+
 #define lengthgets		Rf_lengthgets
 #define list1			Rf_list1
 #define list2			Rf_list2
@@ -1080,8 +835,7 @@ void R_orderVector(int *indx, int n, SEXP arglist, Rboolean nalast, Rboolean dec
 #define warningcall_immediate	Rf_warningcall_immediate
 #define xlength(x)		Rf_xlength(x)
 #define xlengthgets		Rf_xlengthgets
-
-#endif
+#endif /* R_NO_REMAP */
 
 #if defined(CALLED_FROM_DEFN_H) && !defined(__MAIN__) && (defined(COMPILING_R) || ( __GNUC__ && !defined(__INTEL_COMPILER) ))
 #include "Rinlinedfuns.h"
@@ -1144,32 +898,21 @@ SEXP	 Rf_ScalarString(SEXP);
 R_xlen_t  Rf_xlength(SEXP);
 #endif
 
-#ifdef USE_RINTERNALS
-
-/* Test macros with function versions above */
-#undef isNull
-#define isNull(s)	(TYPEOF(s) == NILSXP)
-#undef isSymbol
-#define isSymbol(s)	(TYPEOF(s) == SYMSXP)
-#undef isLogical
-#define isLogical(s)	(TYPEOF(s) == LGLSXP)
-#undef isReal
-#define isReal(s)	(TYPEOF(s) == REALSXP)
-#undef isComplex
-#define isComplex(s)	(TYPEOF(s) == CPLXSXP)
-#undef isExpression
-#define isExpression(s) (TYPEOF(s) == EXPRSXP)
-#undef isEnvironment
-#define isEnvironment(s) (TYPEOF(s) == ENVSXP)
-#undef isString
-#define isString(s)	(TYPEOF(s) == STRSXP)
-#undef isObject
-#define isObject(s)	(OBJECT(s) != 0)
-
-#endif
-
-
 #ifdef __cplusplus
+}  // extern "C"
+
+namespace CXXR {
+    /** @brief Shorthand for Rf_length().
+     *
+     * @deprecated This is provided only for use in code inherited
+     * from CR, and is a workaround for the problems that CR's length
+     * macro can cause with C++ header files.  New code should invoke
+     * Rf_length() explicitly.
+     */
+    inline R_len_t length(RObject* s)
+    {
+	return Rf_length(s);
+    }
 }
 #endif
 

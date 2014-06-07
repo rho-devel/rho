@@ -1,3 +1,18 @@
+#CXXR $Id$
+#CXXR 
+#CXXR This file is part of CXXR, a project to refactor the R interpreter
+#CXXR into C++.  It may consist in whole or in part of program code and
+#CXXR documentation taken from the R project itself, incorporated into
+#CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+#CXXR Licence.
+#CXXR 
+#CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+#CXXR copyrights and copyright restrictions as may be stated below.
+#CXXR 
+#CXXR CXXR is not part of the R project, and bugs and other issues should
+#CXXR not be reported via r-bugs or other R project channels; instead refer
+#CXXR to the CXXR website.
+
 #
 # ${R_HOME}/src/library/methods/Makefile
 
@@ -40,9 +55,9 @@ RfilesLazy: $(top_builddir)/library/$(pkg)/R/$(pkg).rdb
 ## dumped copy (it is rebuilt later), and we have already installed
 ## NAMESPACE in the library tree.
 ## This depends on many other things, including the list of primitives.
-## Depending on names.c at least catches the latter.
+## Depending on names.cpp at least catches the latter.
 $(top_builddir)/library/$(pkg)/R/$(pkg).rdb: all.R  $(srcdir)/NAMESPACE \
-  $(top_srcdir)/src/main/names.c
+  $(top_srcdir)/src/main/names.cpp
 	@rm -f $(top_builddir)/library/$(pkg)/Meta/nsInfo.rds $@
 	@$(INSTALL_DATA) all.R $(top_builddir)/library/$(pkg)/R/$(pkg)
 	@if test -n "$(EXTRAS2)"; then \

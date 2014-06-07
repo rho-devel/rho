@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -27,6 +43,9 @@
 #include <float.h>  /* for DBL_MAX */
 #include <Graphics.h>
 #include <Print.h>
+#include "CXXR/GCStackRoot.hpp"
+
+using namespace CXXR;
 
 #define imax2(x, y) ((x < y) ? y : x)
 
@@ -47,7 +66,7 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
     double umin, umax, dn, rng, small;
     int i, n, ne;
     if (!logflag || axp[2] < 0) { /* --- linear axis --- Only use axp[] arg. */
-	n = (int)(fabs(axp[2]) + 0.25);/* >= 0 */
+	n = int(fabs(axp[2]) + 0.25);/* >= 0 */
 	dn = imax2(1, n);
 	rng = axp[1] - axp[0];
 	small = fabs(rng)/(100.*dn);
@@ -61,14 +80,14 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
     else { /* ------ log axis ----- */
 	Rboolean reversed = FALSE;
 
-	n = (int)(axp[2] + 0.5);
+	n = int(axp[2] + 0.5);
 	/* {xy}axp[2] for 'log': GLpretty() [./graphics.c] sets
 	   n < 0: very small scale ==> linear axis, above, or
 	   n = 1,2,3.  see switch() below */
 	umin = usr[0];
 	umax = usr[1];
 	if (umin > umax) {
-	    reversed = (axp[0] > axp[1]);
+	    reversed = CXXRCONSTRUCT(Rboolean, (axp[0] > axp[1]));
 	    if (reversed) {
 		/* have *reversed* log axis -- whereas
 		 * the switch(n) { .. } below assumes *increasing* values
@@ -99,7 +118,7 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
 	 */
 	switch(n) {
 	case 1: /* large range:	1	 * 10^k */
-	    i = (int)(floor(log10(axp[1])) - ceil(log10(axp[0])) + 0.25);
+	    i = int(floor(log10(axp[1])) - ceil(log10(axp[0])) + 0.25);
 	    ne = i / nint + 1;
 #ifdef DEBUG_axis
 	    REprintf("CreateAtVector [log-axis(), case 1]: (nint, ne) = (%d,%d)\n",
@@ -110,7 +129,7 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
 		      "ne = %d <= 0 !!\n"
 		      "\t axp[0:1]=(%g,%g) ==> i = %d;	nint = %d",
 		      ne, axp[0],axp[1], i, nint);
-	    rng = pow(10., (double)ne);/* >= 10 */
+	    rng = pow(10., double(ne));/* >= 10 */
 	    n = 0;
 	    while (dn < umax) {
 		n++;
@@ -197,4 +216,3 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
     } /* linear / log */
     return at;
 }
-

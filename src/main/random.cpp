@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -27,7 +43,11 @@
 #include <R_ext/Random.h>
 #include <R_ext/RS.h>		/* for Calloc() */
 #include <Rmath.h>		/* for rxxx functions */
+#include "basedecl.h"
 #include <errno.h>
+#include "CXXR/GCStackRoot.hpp"
+
+using namespace CXXR;
 
 /* Code down to do_random3 (inclusive) can be removed once the byte
   compiler knows how to optimize to .External rather than .Internal */
@@ -73,7 +93,7 @@ SEXP attribute_hidden do_random1(SEXP call, SEXP op, SEXP args, SEXP rho)
 	double dn = asReal(CAR(args));
 	if (ISNAN(dn) || dn < 0 || dn > R_XLEN_T_MAX)
 	    invalid(call);
-	n = (R_xlen_t) dn;
+	n = R_xlen_t( dn);
 #else
 	n = asInteger(CAR(args));
 	if (n == NA_INTEGER || n < 0)
@@ -154,7 +174,7 @@ SEXP attribute_hidden do_random2(SEXP call, SEXP op, SEXP args, SEXP rho)
 	double dn = asReal(CAR(args));
 	if (ISNAN(dn) || dn < 0 || dn > R_XLEN_T_MAX)
 	    invalid(call);
-	n = (R_xlen_t) dn;
+	n = R_xlen_t( dn);
 #else
 	n = asInteger(CAR(args));
 	if (n == NA_INTEGER || n < 0)
@@ -246,7 +266,7 @@ SEXP attribute_hidden do_random3(SEXP call, SEXP op, SEXP args, SEXP rho)
 	double dn = asReal(CAR(args));
 	if (ISNAN(dn) || dn < 0 || dn > R_XLEN_T_MAX)
 	    invalid(call);
-	n = (R_xlen_t) dn;
+	n = R_xlen_t( dn);
 #else
 	n = asInteger(CAR(args));
 	if (n == NA_INTEGER || n < 0)
@@ -362,8 +382,8 @@ walker_ProbSampleReplace(int n, double *p, int *a, int nans, int *ans)
     if(n <= SMALL) {
 	R_CheckStack2(n *(sizeof(int) + sizeof(double)));
 	/* might do this repeatedly, so speed matters */
-	HL = (int *) alloca(n * sizeof(int));
-	q = (double *) alloca(n * sizeof(double));
+	HL = static_cast<int *>( alloca(n * sizeof(int)));
+	q = static_cast<double *>( alloca(n * sizeof(double)));
     } else {
 	/* Slow enough anyway not to risk overflow */
 	HL = Calloc(n, int);
@@ -389,7 +409,7 @@ walker_ProbSampleReplace(int n, double *p, int *a, int nans, int *ans)
     /* generate sample */
     for (i = 0; i < nans; i++) {
 	rU = unif_rand() * n;
-	k = (int) rU;
+	k = int( rU);
 	ans[i] = (rU < q[k]) ? k+1 : a[k]+1;
     }
     if(n > SMALL) {
@@ -496,7 +516,7 @@ SEXP attribute_hidden do_sample(SEXP call, SEXP op, SEXP args, SEXP rho)
 	double *p = REAL(prob);
 	if (length(prob) != n)
 	    error(_("incorrect number of probabilities"));
-	FixupProb(p, n, k, (Rboolean)replace);
+	FixupProb(p, n, k, Rboolean(replace));
 	PROTECT(x = allocVector(INTSXP, n));
 	if (replace) {
 	    int i, nc = 0;
@@ -524,12 +544,12 @@ SEXP attribute_hidden do_sample(SEXP call, SEXP op, SEXP args, SEXP rho)
 		for (R_xlen_t i = 0; i < k; i++) ry[i] = floor(dn * ru() + 1);
 	    } else {
 #ifdef LONG_VECTOR_SUPPORT
-		R_xlen_t n = (R_xlen_t) dn;
-		double *x = (double *)R_alloc(n, sizeof(double));
+		R_xlen_t n = R_xlen_t( dn);
+		double *x = static_cast<double *>(CXXR_alloc(n, sizeof(double)));
 		double *ry = REAL(y);
-		for (R_xlen_t i = 0; i < n; i++) x[i] = (double) i;
+		for (R_xlen_t i = 0; i < n; i++) x[i] = double( i);
 		for (R_xlen_t i = 0; i < k; i++) {
-		    R_xlen_t j = (R_xlen_t)floor(n * ru());
+		    R_xlen_t j = R_xlen_t(floor(n * ru()));
 		    ry[i] = x[j] + 1;
 		    x[j] = x[--n];
 		}
@@ -538,17 +558,17 @@ SEXP attribute_hidden do_sample(SEXP call, SEXP op, SEXP args, SEXP rho)
 #endif
 	    }
 	} else {
-	    int n = (int) dn;
+	    int n = int( dn);
 	    PROTECT(y = allocVector(INTSXP, k));
 	    int *iy = INTEGER(y);
 	    /* avoid allocation for a single sample */
 	    if (replace || k < 2) {
-		for (int i = 0; i < k; i++) iy[i] = (int)(dn * unif_rand() + 1);
+		for (int i = 0; i < k; i++) iy[i] = int(dn * unif_rand() + 1);
 	    } else {
-		int *x = (int *)R_alloc(n, sizeof(int));
+		int *x = static_cast<int *>(CXXR_alloc(n, sizeof(int)));
 		for (int i = 0; i < n; i++) x[i] = i;
 		for (int i = 0; i < k; i++) {
-		    int j = (int)(n * unif_rand());
+		    int j = int(n * unif_rand());
 		    iy[i] = x[j] + 1;
 		    x[j] = x[--n];
 		}

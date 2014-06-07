@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997 Robert Gentleman and Ross Ihaka
@@ -33,7 +49,9 @@
 
 #include <Rmath.h>
 #include <R_ext/GraphicsEngine.h>
+#include "CXXR/GCStackRoot.hpp"
 
+using namespace CXXR;
 
 /*
  *  TeX Math Styles
@@ -303,7 +321,7 @@ static double TeX(TEXPAR which, pGEcontext gc, pGEDevDesc dd)
     case xi13:	  /* big_op_spacing5 */
 	return 0.15 * XHeight(gc, dd);
     default:/* never happens (enum type) */
-	error("invalid `which' in C function TeX"); return 0;/*-Wall*/
+	error(_("invalid `which' in C function TeX")); return 0;/*-Wall*/
     }
 }
 
@@ -547,7 +565,7 @@ static double CenterShift(BBOX bbox)
 
 
 typedef struct {
-    char *name;
+    CXXRCONST char *name;
     int code;
 } SymTab;
 
@@ -754,7 +772,7 @@ SymbolTable[] = {
     { "element",	206 },
     { "notelement",	207 },
     { "angle",		208 },
-    { "nabla",		209 },/* = 0321, Adobe name 'gradient' */
+    { "nabla",  	209 },/* = 0321, Adobe name 'gradient' */
     { "registerserif",	210 },
     { "copyrightserif", 211 },
     { "trademarkserif", 212 },
@@ -860,12 +878,12 @@ static int StringAtom(SEXP expr)
 
 static FontType GetFont(pGEcontext gc)
 {
-    return gc->fontface;
+    return CXXRCONSTRUCT(FontType, gc->fontface);
 }
 
 static FontType SetFont(FontType font, pGEcontext gc)
 {
-    FontType prevfont = gc->fontface;
+    FontType prevfont = CXXRCONSTRUCT(FontType, gc->fontface);
     gc->fontface = font;
     return prevfont;
 }
@@ -876,7 +894,6 @@ static int UsingItalics(pGEcontext gc)
 	    gc->fontface == BoldItalicFont);
 }
 
-extern int Rf_AdobeSymbol2ucs2(int n);
 static BBOX GlyphBBox(int chr, pGEcontext gc, pGEDevDesc dd)
 {
     BBOX bbox;
@@ -938,7 +955,7 @@ static BBOX RenderSymbolChar(int ascii, int draw, mathContext *mc,
 	prev = SetFont(SymbolFont, gc);
     bbox = GlyphBBox(ascii, gc, dd);
     if (draw) {
-	asciiStr[0] = (char) ascii;
+	asciiStr[0] = char( ascii);
 	asciiStr[1] = '\0';
 	GEText(ConvertedX(mc ,dd), ConvertedY(mc, dd), asciiStr,
 	       CE_SYMBOL,
@@ -978,7 +995,7 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
 	    while (*s) {
 		wc = 0;
 		res = mbrtowc(&wc, s, MB_LEN_MAX, &mb_st);
-		if(res == -1) error("invalid multibyte string '%s'", s);
+		if(res == CXXRCONSTRUCT(size_t, -1)) error("invalid multibyte string '%s'", s);
 		if (iswdigit(wc) && font != PlainFont) {
 		    font = PlainFont;
 		    SetFont(PlainFont, gc);
@@ -987,7 +1004,7 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
 		    font = prevfont;
 		    SetFont(prevfont, gc);
 		}
-		glyphBBox = GlyphBBox((unsigned int) wc, gc, dd);
+		glyphBBox = GlyphBBox(static_cast<unsigned int>( wc), gc, dd);
 		if (UsingItalics(gc))
 		    bboxItalic(glyphBBox) =
 			ItalicFactor * bboxHeight(glyphBBox);
@@ -996,7 +1013,7 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
 		if (draw) {
 		    memset(chr, 0, sizeof(chr));
 		    /* should not be possible, as we just converted to wc */
-		    if(wcrtomb(chr, wc, &mb_st) == -1)
+		    if(wcrtomb(chr, wc, &mb_st) == CXXRCONSTRUCT(size_t, -1))
 			error("invalid multibyte string");
 		    PMoveAcross(lastItalicCorr, mc);
 		    GEText(ConvertedX(mc ,dd), ConvertedY(mc, dd), chr,
@@ -1011,7 +1028,7 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
 	    }
 	} else {
 	    while (*s) {
-		if (isdigit((int)*s) && font != PlainFont) {
+		if (isdigit(int(*s)) && font != PlainFont) {
 		    font = PlainFont;
 		    SetFont(PlainFont, gc);
 		}
@@ -1019,7 +1036,7 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
 		    font = prevfont;
 		    SetFont(prevfont, gc);
 		}
-		glyphBBox = GlyphBBox((unsigned char) *s, gc, dd);
+		glyphBBox = GlyphBBox(static_cast<unsigned char>( *s), gc, dd);
 		if (UsingItalics(gc))
 		    bboxItalic(glyphBBox) =
 			ItalicFactor * bboxHeight(glyphBBox);
@@ -1060,10 +1077,10 @@ static BBOX RenderChar(int ascii, int draw, mathContext *mc,
 	memset(asciiStr, 0, sizeof(asciiStr));
 	if(mbcslocale) {
 	    size_t res = wcrtomb(asciiStr, ascii, NULL);
-	    if(res == -1)
+	    if(res == CXXRCONSTRUCT(size_t, -1))
 		error("invalid character in current multibyte locale");
 	} else
-	    asciiStr[0] = (char) ascii;
+	    asciiStr[0] = char( ascii);
 	GEText(ConvertedX(mc ,dd), ConvertedY(mc, dd), asciiStr, CE_NATIVE,
 	       0.0, 0.0, mc->CurrentAngle, gc,
 	       dd);
@@ -1091,7 +1108,7 @@ static BBOX RenderStr(const char *str, int draw, mathContext *mc,
 	    mbs_init(&mb_st);
 	    while ((used = Mbrtowc(&wc, p, n, &mb_st)) > 0) {
 		/* On Windows could have sign extension here */
-		glyphBBox = GlyphBBox((unsigned int) wc, gc, dd);
+		glyphBBox = GlyphBBox(static_cast<unsigned int>( wc), gc, dd);
 		resultBBox = CombineBBoxes(resultBBox, glyphBBox);
 		p += used; n -= used; nc++;
 	    }
@@ -1099,7 +1116,7 @@ static BBOX RenderStr(const char *str, int draw, mathContext *mc,
 	    const char *s = str;
 	    while (*s) {
 		/* Watch for sign extension here - fixed > 2.7.1 */
-		glyphBBox = GlyphBBox((unsigned char) *s, gc, dd);
+		glyphBBox = GlyphBBox(static_cast<unsigned char>( *s), gc, dd);
 		resultBBox = CombineBBoxes(resultBBox, glyphBBox);
 		s++; nc++;
 	    }
@@ -1154,8 +1171,8 @@ static BBOX RenderNumber(SEXP expr, int draw, mathContext *mc,
 {
     BBOX bbox;
     FontType prevfont = SetFont(PlainFont, gc);
-    PrintDefaults();
-    bbox = RenderStr(CHAR(asChar(expr)), draw, mc, gc, dd);
+    GCStackRoot<> str(asChar(expr));
+    bbox = RenderStr(CHAR(str), draw, mc, gc, dd);
     SetFont(prevfont, gc);
     return bbox;
 }
@@ -1640,7 +1657,7 @@ static BBOX RenderBar(SEXP expr, int draw, mathContext *mc,
 }
 
 static struct {
-    char *name;
+    CXXRCONST char *name;
     int code;
 }
 AccentTable[] = {
@@ -2108,7 +2125,7 @@ static BBOX RenderDelim(int which, double dist, int draw, mathContext *mc,
 		- (bboxHeight(topBBox) + bboxDepth(topBBox));
 	    ybot = axisHeight - dist
 		+ (bboxHeight(botBBox) + bboxDepth(botBBox));
-	    n = (int) ceil((ytop - ybot) / (0.99 * extHeight));
+	    n = int( ceil((ytop - ybot) / (0.99 * extHeight)));
 	    if (n > 0) {
 		delta = (ytop - ybot) / n;
 		for (i = 0; i < n; i++) {
@@ -2727,7 +2744,7 @@ static BBOX RenderPlain(SEXP expr, int draw, mathContext *mc,
 			pGEcontext gc, pGEDevDesc dd)
 {
     BBOX bbox;
-    int prevfont = SetFont(PlainFont, gc);
+    FontType prevfont = SetFont(PlainFont, gc);
     bbox = RenderElement(CADR(expr), draw, mc, gc, dd);
     SetFont(prevfont, gc);
     return bbox;
@@ -2755,7 +2772,7 @@ static BBOX RenderSymbolFace(SEXP expr, int draw, mathContext *mc,
 			     pGEcontext gc, pGEDevDesc dd)
 {
     BBOX bbox;
-    int prevfont = SetFont(SymbolFont, gc);
+    FontType prevfont = SetFont(SymbolFont, gc);
     bbox = RenderElement(CADR(expr), draw, mc, gc, dd);
     SetFont(prevfont, gc);
     return bbox;
@@ -2777,7 +2794,7 @@ static BBOX RenderBoldItalic(SEXP expr, int draw, mathContext *mc,
 			     pGEcontext gc, pGEDevDesc dd)
 {
     BBOX bbox;
-    int prevfont = SetFont(BoldItalicFont, gc);
+    FontType prevfont = SetFont(BoldItalicFont, gc);
     bbox = RenderElement(CADR(expr), draw, mc, gc, dd);
     SetFont(prevfont, gc);
     return bbox;

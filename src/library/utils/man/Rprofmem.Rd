@@ -7,7 +7,7 @@
 \alias{Rprofmem}
 \title{Enable Profiling of R's Memory Use}
 \description{
- Enable or disable reporting of memory allocation in R.
+ Enable or disable reporting of memory allocation in R.  (Adapted for CXXR.)
 }
 \usage{
 Rprofmem(filename = "Rprofmem.out", append = FALSE, threshold = 0)
@@ -16,22 +16,18 @@ Rprofmem(filename = "Rprofmem.out", append = FALSE, threshold = 0)
   \item{filename}{The file to be used for recording the memory
     allocations. Set to \code{NULL} or \code{""} to disable reporting. }
   \item{append}{logical: should the file be over-written or appended to? }
-  \item{threshold}{numeric: allocations on R's "large vector" heap
-    larger than this number of bytes will be reported.
+  \item{threshold}{numeric: allocations from CXXR's internal heap at least as
+    great as this number of bytes will be reported.
   }
 }
 \details{
   Enabling profiling automatically disables any existing profiling to
   another or the same file.
 
-  Profiling writes the call stack to the specified file every time
-  \code{malloc} is called to allocate a large vector object or to
-  allocate a page of memory for small objects. The size of a page of
-  memory and the size above which \code{malloc} is used for vectors are
-  compile-time constants, by default 2000 and 128 bytes respectively.
-
-  The profiler tracks allocations, some of which will be to previously
-  used memory and will not increase the total memory use of R.
+  Profiling writes the call stack to the specified file every time an
+  allocation from \code{CXXR::Heap} is at least as great as the specified
+  threshold number of bytes.  Allocations may well be to previously
+  used memory and will not increase the total memory use of R. 
 }
 \note{
   The memory profiler slows down R even when not in use, and so is a

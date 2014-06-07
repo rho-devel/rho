@@ -286,14 +286,14 @@ static int scanchar(Rboolean inQuote, LocalData *d)
 
 #include "RBufferUtils.h"
 
-
+extern "C"
 SEXP countfields(SEXP args)
 {
     SEXP ans, file, sep,  bns, quotes, comstr;
     int nfields, nskip, i, c, inquote, quote = 0;
     int blocksize, nlines, blskip;
     const char *p;
-    Rboolean dbcslocale = (MB_CUR_MAX == 2);
+    Rboolean dbcslocale = Rboolean(MB_CUR_MAX == 2);
     LocalData data = {NULL, 0, 0, '.', NULL, NO_COMCHAR, 0, NULL, FALSE,
 		      FALSE, 0, FALSE,	 FALSE};
     data.NAstrings = R_NilValue;
@@ -364,7 +364,7 @@ SEXP countfields(SEXP args)
     data.save = 0;
 
     for (;;) {
-	c = scanchar(inquote, &data);
+	c = scanchar(Rboolean(inquote), &data);
 	if (c == R_EOF)	 {
 	    if (nfields != 0)
 		INTEGER(ans)[nlines] = nfields;
@@ -411,7 +411,7 @@ SEXP countfields(SEXP args)
 	    if (strchr(data.quoteset, c)) {
 		quote = c;
 		inquote = nlines + 1;
-		while ((c = scanchar(inquote, &data)) != quote) {
+		while ((c = scanchar(Rboolean(inquote), &data)) != quote) {
 		    if (c == R_EOF) {
 			if(!data.wasopen) data.con->close(data.con);
 		        error(_("quoted string on line %d terminated by EOF"), inquote);
@@ -524,11 +524,11 @@ static void ruleout_types(const char *s, Typecvt_Info *typeInfo, LocalData *data
    the result is a character string if as.is == TRUE
    or a factor if as.is == FALSE. */
 
-
+extern "C"
 SEXP typeconvert(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP cvec, a, dup, levs, dims, names, dec;
-    SEXP rval = R_NilValue; /* -Wall */
+    CXXR::GCStackRoot<> rval;
     int i, j, len, asIs;
     Rboolean done = FALSE;
     char *endp;
@@ -586,7 +586,7 @@ SEXP typeconvert(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     if (typeInfo.islogical) {
-	PROTECT(rval = allocVector(LGLSXP, len));
+	rval = allocVector(LGLSXP, len);
 	for (i = 0; i < len; i++) {
 	    tmp = CHAR(STRING_ELT(cvec, i));
 	    if (STRING_ELT(cvec, i) == NA_STRING || strlen(tmp) == 0
@@ -604,11 +604,11 @@ SEXP typeconvert(SEXP call, SEXP op, SEXP args, SEXP env)
 		}
 	    }
 	}
-	if (typeInfo.islogical) done = TRUE; else UNPROTECT(1);
+	if (typeInfo.islogical) done = TRUE;
     }
 
     if (!done && typeInfo.isinteger) {
-	PROTECT(rval = allocVector(INTSXP, len));
+	rval = allocVector(INTSXP, len);
 	for (i = 0; i < len; i++) {
 	    tmp = CHAR(STRING_ELT(cvec, i));
 	    if (STRING_ELT(cvec, i) == NA_STRING || strlen(tmp) == 0
@@ -623,11 +623,11 @@ SEXP typeconvert(SEXP call, SEXP op, SEXP args, SEXP env)
 		}
 	    }
 	}
-	if(typeInfo.isinteger) done = TRUE; else UNPROTECT(1);
+	if(typeInfo.isinteger) done = TRUE;
     }
 
     if (!done && typeInfo.isreal) {
-	PROTECT(rval = allocVector(REALSXP, len));
+	rval = allocVector(REALSXP, len);
 	for (i = 0; i < len; i++) {
 	    tmp = CHAR(STRING_ELT(cvec, i));
 	    if (STRING_ELT(cvec, i) == NA_STRING || strlen(tmp) == 0
@@ -642,11 +642,11 @@ SEXP typeconvert(SEXP call, SEXP op, SEXP args, SEXP env)
 		}
 	    }
 	}
-	if(typeInfo.isreal) done = TRUE; else UNPROTECT(1);
+	if(typeInfo.isreal) done = TRUE;
     }
 
     if (!done && typeInfo.iscomplex) {
-	PROTECT(rval = allocVector(CPLXSXP, len));
+	rval = allocVector(CPLXSXP, len);
 	for (i = 0; i < len; i++) {
 	    tmp = CHAR(STRING_ELT(cvec, i));
 	    if (STRING_ELT(cvec, i) == NA_STRING || strlen(tmp) == 0
@@ -662,12 +662,12 @@ SEXP typeconvert(SEXP call, SEXP op, SEXP args, SEXP env)
 		}
 	    }
 	}
-	if(typeInfo.iscomplex) done = TRUE; else UNPROTECT(1);
+	if(typeInfo.iscomplex) done = TRUE;
     }
 
     if (!done) {
 	if (asIs) {
-	    PROTECT(rval = duplicate(cvec));
+	    rval = duplicate(cvec);
 	    for (i = 0; i < len; i++)
 		if(isNAstring(CHAR(STRING_ELT(rval, i)), 1, &data))
 		    SET_STRING_ELT(rval, i, NA_STRING);
@@ -690,11 +690,7 @@ SEXP typeconvert(SEXP call, SEXP op, SEXP args, SEXP env)
 		    SET_STRING_ELT(levs, j++, STRING_ELT(cvec, i));
 	    }
 
-	    /* We avoid an allocation by reusing dup,
-	     * a LGLSXP of the right length
-	     */
-	    rval = dup;
-	    SET_TYPEOF(rval, INTSXP);
+	    rval = CXXR_NEW(CXXR::IntVector(len));
 
 	    /* put the levels in lexicographic order */
 
@@ -707,18 +703,19 @@ SEXP typeconvert(SEXP call, SEXP op, SEXP args, SEXP env)
 	    setAttrib(rval, R_LevelsSymbol, levs);
 	    PROTECT(a = mkString("factor"));
 	    setAttrib(rval, R_ClassSymbol, a);
-	    UNPROTECT(3);
+	    UNPROTECT(4);
 	}
     }
 
     setAttrib(rval, R_DimSymbol, dims);
     setAttrib(rval, isArray(cvec) ? R_DimNamesSymbol : R_NamesSymbol, names);
-    UNPROTECT(3);
+    UNPROTECT(2);
     return rval;
 }
 
 
 /* Works with digits, but OK in UTF-8 */
+extern "C"
 SEXP menu(SEXP choices)
 {
     int c, j;
@@ -761,6 +758,7 @@ SEXP menu(SEXP choices)
 /* simplified version of readLines, with skip of blank lines and
    comment-only lines */
 #define BUF_SIZE 1000
+extern "C"
 SEXP readtablehead(SEXP args)
 {
     SEXP file, comstr, ans = R_NilValue, ans2, quotes, sep;
@@ -921,20 +919,20 @@ static Rboolean isna(SEXP x, int indx)
     Rcomplex rc;
     switch(TYPEOF(x)) {
     case LGLSXP:
-	return LOGICAL(x)[indx] == NA_LOGICAL;
+	return Rboolean(LOGICAL(x)[indx] == NA_LOGICAL);
 	break;
     case INTSXP:
-	return INTEGER(x)[indx] == NA_INTEGER;
+	return Rboolean(INTEGER(x)[indx] == NA_INTEGER);
 	break;
     case REALSXP:
 	return ISNAN(REAL(x)[indx]);
 	break;
     case STRSXP:
-	return STRING_ELT(x, indx) == NA_STRING;
+	return Rboolean(STRING_ELT(x, indx) == NA_STRING);
 	break;
     case CPLXSXP:
 	rc = COMPLEX(x)[indx];
-	return ISNAN(rc.r) || ISNAN(rc.i);
+	return Rboolean(ISNAN(rc.r) || ISNAN(rc.i));
 	break;
     default:
 	break;
@@ -980,14 +978,14 @@ typedef struct wt_info {
 } wt_info;
 
 /* utility to cleanup e.g. after interrpts */
-static void wt_cleanup(void *data)
+static void wt_cleanup(wt_info* ld)
 {
-    wt_info *ld = data;
     if(!ld->wasopen) ld->con->close(ld->con);
     R_FreeStringBuffer(ld->buf);
     R_print.digits = ld->savedigits;
 }
 
+extern "C"
 SEXP writetable(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP x, sep, rnames, eol, na, dec, quote, xj;
@@ -999,7 +997,6 @@ SEXP writetable(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP *levels;
     R_StringBuffer strBuf = {NULL, 0, MAXELTSIZE};
     wt_info wi;
-    RCNTXT cntxt;
 
     args = CDR(args);
 
@@ -1044,9 +1041,9 @@ SEXP writetable(SEXP call, SEXP op, SEXP args, SEXP env)
     quote_col = (Rboolean *) R_alloc(nc, sizeof(Rboolean));
     for(j = 0; j < nc; j++) quote_col[j] = FALSE;
     for(i = 0; i < length(quote); i++) { /* NB, quote might be NULL */
-	int this = INTEGER(quote)[i];
-	if(this == 0) quote_rn = TRUE;
-	if(this >  0) quote_col[this - 1] = TRUE;
+	int thiss = INTEGER(quote)[i];
+	if(thiss == 0) quote_rn = TRUE;
+	if(thiss >  0) quote_col[thiss - 1] = TRUE;
     }
     R_AllocStringBuffer(0, &strBuf);
     PrintDefaults();
@@ -1054,89 +1051,89 @@ SEXP writetable(SEXP call, SEXP op, SEXP args, SEXP env)
     wi.con = con;
     wi.wasopen = wasopen;
     wi.buf = &strBuf;
-    begincontext(&cntxt, CTXT_CCODE, call, R_BaseEnv, R_BaseEnv,
-		 R_NilValue, R_NilValue);
-    cntxt.cend = &wt_cleanup;
-    cntxt.cenddata = &wi;
 
-    if(isVectorList(x)) { /* A data frame */
+    try {
+	if(isVectorList(x)) { /* A data frame */
 
-	/* handle factors internally, check integrity */
-	levels = (SEXP *) R_alloc(nc, sizeof(SEXP));
-	for(j = 0; j < nc; j++) {
-	    xj = VECTOR_ELT(x, j);
-	    if(LENGTH(xj) != nr)
-		error(_("corrupt data frame -- length of column %d does not not match nrows"), j+1);
-	    if(inherits(xj, "factor")) {
-		levels[j] = getAttrib(xj, R_LevelsSymbol);
-	    } else levels[j] = R_NilValue;
-	}
-
-	for(i = 0; i < nr; i++) {
-	    if(i % 1000 == 999) R_CheckUserInterrupt();
-	    if(!isNull(rnames))
-		Rconn_printf(con, "%s%s",
-			     EncodeElement2(rnames, i, quote_rn, qmethod,
-					    &strBuf, cdec), csep);
+	    /* handle factors internally, check integrity */
+	    levels = (SEXP *) R_alloc(nc, sizeof(SEXP));
 	    for(j = 0; j < nc; j++) {
 		xj = VECTOR_ELT(x, j);
-		if(j > 0) Rconn_printf(con, "%s", csep);
-		if(isna(xj, i)) tmp = cna;
-		else {
-		    if(!isNull(levels[j])) {
-			/* We do not assume factors have integer levels,
-			   although they should. */
-			if(TYPEOF(xj) == INTSXP)
-			    tmp = EncodeElement2(levels[j], INTEGER(xj)[i] - 1,
-						 quote_col[j], qmethod,
+		if(LENGTH(xj) != nr)
+		    error(_("corrupt data frame -- length of column %d does not not match nrows"), j+1);
+		if(inherits(xj, "factor")) {
+		    levels[j] = getAttrib(xj, R_LevelsSymbol);
+		} else levels[j] = R_NilValue;
+	    }
+
+	    for(i = 0; i < nr; i++) {
+		if(i % 1000 == 999) R_CheckUserInterrupt();
+		if(!isNull(rnames))
+		    Rconn_printf(con, "%s%s",
+				 EncodeElement2(rnames, i, quote_rn, Rboolean(qmethod),
+						&strBuf, cdec), csep);
+		for(j = 0; j < nc; j++) {
+		    xj = VECTOR_ELT(x, j);
+		    if(j > 0) Rconn_printf(con, "%s", csep);
+		    if(isna(xj, i)) tmp = cna;
+		    else {
+			if(!isNull(levels[j])) {
+			    /* We do not assume factors have integer levels,
+			       although they should. */
+			    if(TYPEOF(xj) == INTSXP)
+				tmp = EncodeElement2(levels[j], INTEGER(xj)[i] - 1,
+						     quote_col[j], Rboolean(qmethod),
+						     &strBuf, cdec);
+			    else if(TYPEOF(xj) == REALSXP)
+				tmp = EncodeElement2(levels[j], 
+						     (int) (REAL(xj)[i] - 1),
+						     quote_col[j], Rboolean(qmethod),
+						     &strBuf, cdec);
+			    else
+				error(_("column %s claims to be a factor but does not have numeric codes"), j+1);
+			} else {
+			    tmp = EncodeElement2(xj, i, quote_col[j], Rboolean(qmethod),
 						 &strBuf, cdec);
-			else if(TYPEOF(xj) == REALSXP)
-			    tmp = EncodeElement2(levels[j], 
-						 (int) (REAL(xj)[i] - 1),
-						 quote_col[j], qmethod,
-						 &strBuf, cdec);
-			else
-			    error(_("column %s claims to be a factor but does not have numeric codes"), j+1);
-		    } else {
-			tmp = EncodeElement2(xj, i, quote_col[j], qmethod,
-					     &strBuf, cdec);
+			}
+			/* if(cdec) change_dec(tmp, cdec, TYPEOF(xj)); */
 		    }
-		    /* if(cdec) change_dec(tmp, cdec, TYPEOF(xj)); */
+		    Rconn_printf(con, "%s", tmp);
 		}
-		Rconn_printf(con, "%s", tmp);
+		Rconn_printf(con, "%s", ceol);
 	    }
-	    Rconn_printf(con, "%s", ceol);
-	}
 
-    } else { /* A matrix */
+	} else { /* A matrix */
 
-	if(!isVectorAtomic(x))
-	    UNIMPLEMENTED_TYPE("write.table, matrix method", x);
-	/* quick integrity check */
-	if(LENGTH(x) != nr * nc)
-	    error(_("corrupt matrix -- dims not not match length"));
+	    if(!isVectorAtomic(x))
+		UNIMPLEMENTED_TYPE("write.table, matrix method", x);
+	    /* quick integrity check */
+	    if(LENGTH(x) != nr * nc)
+		error(_("corrupt matrix -- dims not not match length"));
 
-	for(i = 0; i < nr; i++) {
-	    if(i % 1000 == 999) R_CheckUserInterrupt();
-	    if(!isNull(rnames))
-		Rconn_printf(con, "%s%s",
-			     EncodeElement2(rnames, i, quote_rn, qmethod,
-					    &strBuf, cdec), csep);
-	    for(j = 0; j < nc; j++) {
-		if(j > 0) Rconn_printf(con, "%s", csep);
-		if(isna(x, i + j*nr)) tmp = cna;
-		else {
-		    tmp = EncodeElement2(x, i + j*nr, quote_col[j], qmethod,
-					&strBuf, cdec);
-		    /* if(cdec) change_dec(tmp, cdec, TYPEOF(x)); */
+	    for(i = 0; i < nr; i++) {
+		if(i % 1000 == 999) R_CheckUserInterrupt();
+		if(!isNull(rnames))
+		    Rconn_printf(con, "%s%s",
+				 EncodeElement2(rnames, i, quote_rn, Rboolean(qmethod),
+						&strBuf, cdec), csep);
+		for(j = 0; j < nc; j++) {
+		    if(j > 0) Rconn_printf(con, "%s", csep);
+		    if(isna(x, i + j*nr)) tmp = cna;
+		    else {
+			tmp = EncodeElement2(x, i + j*nr, quote_col[j], Rboolean(qmethod),
+					     &strBuf, cdec);
+			/* if(cdec) change_dec(tmp, cdec, TYPEOF(x)); */
+		    }
+		    Rconn_printf(con, "%s", tmp);
 		}
-		Rconn_printf(con, "%s", tmp);
+		Rconn_printf(con, "%s", ceol);
 	    }
-	    Rconn_printf(con, "%s", ceol);
-	}
 
+	}
+    } catch (...) {
+	wt_cleanup(&wi);
+	throw;
     }
-    endcontext(&cntxt);
     wt_cleanup(&wi);
     return R_NilValue;
 }

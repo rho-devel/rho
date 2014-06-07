@@ -1,0 +1,25 @@
+useDynLib(spatial, .registration = TRUE)
+
+export(anova.trls, anovalist.trls, correlogram, expcov, gaucov, Kaver,
+       Kenvl, Kfn, plot.trls, ppgetregion, ppinit, pplik, ppregion,
+       predict.trls, prmat, Psim, semat, sphercov, SSI, Strauss,
+       surf.gls, surf.ls, trls.influence, trmat, variogram)
+
+importFrom(graphics, plot)
+importFrom(stats, anova)
+importFrom(stats, deviance)
+importFrom(stats, df.residual)
+importFrom(stats, extractAIC)
+importFrom(stats, fitted)
+importFrom(stats, predict)
+importFrom(stats, residuals)
+
+S3method(anova,trls)
+S3method(deviance,trls)
+S3method(df.residual,trls)
+S3method(extractAIC,trls)
+S3method(fitted,trls)
+S3method(plot,trls)
+S3method(predict,trls)
+S3method(residuals,trls)
+S3method(summary,trls)

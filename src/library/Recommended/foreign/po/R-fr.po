@@ -1,0 +1,191 @@
+# Translation of R-foreign.pot to French
+# Copyright (C) 2005 The R Foundation
+# This file is distributed under the same license as the foreign R package.
+# Philippe Grosjean <phgrosjean@sciviews.org>, 2005.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: foreign 0.8-10\n"
+"Report-Msgid-Bugs-To: bugs@r-project.org\n"
+"POT-Creation-Date: 2012-09-23 17:34\n"
+"PO-Revision-Date: 2012-10-03 15:02+0100\n"
+"Last-Translator: Philippe Grosjean <phgrosjean@sciviews.org>\n"
+"Language-Team: French <R-core@r-project.org>\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 1.5.3\n"
+
+msgid "only one file"
+msgstr "seulement un fichier"
+
+msgid "'file' must be character"
+msgstr "'file' doit être une chaîne de caractères"
+
+msgid "internal error - illegal S code value"
+msgstr "erreur interne - valeur de code S incorrecte"
+
+msgid "not an S object"
+msgstr "ceci n'est pas un objet S"
+
+msgid "S mode %s (near byte offset %s) not supported"
+msgstr "mode S %s (dans les environs du décalage d'octet %s) non supporté"
+
+msgid "Argument 'file' must be a character string or connection."
+msgstr "l'argument 'file' doit être une chaîne de caractères ou une connexion"
+
+msgid "Invalid attribute specification."
+msgstr "Spécification d'attribut incorrect."
+
+msgid "Type 'relational' currently not implemented."
+msgstr "Type 'relational' non encore implémenté."
+
+msgid "Missing data section."
+msgstr "Section 'data' manquante."
+
+msgid "Missing attribute section."
+msgstr "Section 'attribute' manquante."
+
+msgid "Invalid type specification."
+msgstr "Spécification de type incorrect."
+
+msgid "Field name: %s changed to: %s"
+msgstr "Nom de champ : %s modifié en : %s"
+
+msgid "cannot handle matrix/array columns"
+msgstr "impossible de traiter les colonnes de la matrice/du tableau"
+
+msgid "character column %d will be truncated to %d bytes"
+msgstr "la colonne de chaîne de caractères %d sera tronquée à %d octets"
+
+msgid "unknown column type in data frame"
+msgstr "type inconnu pour une colonne dans le tableau de données"
+
+msgid "NA in precision"
+msgstr "NA dans précision"
+
+msgid "NA in scale"
+msgstr "NA dans scale"
+
+msgid "cannot handle unknown type %s"
+msgstr "impossible de traiter un type inconnu %s"
+
+msgid "'missing.type' only applicable to version >= 8 files"
+msgstr "'missing.type' est seulement applicable pour des fichiers version >= 8"
+
+msgid "cannot read factor labels from Stata 5 files"
+msgstr ""
+"impossible de lire les étiquettes des variables facteur depuis les fichiers "
+"Stata 5"
+
+msgid "value labels (%s) for %s are missing"
+msgstr "valeurs de libellé (%s) manquantes pour %s"
+
+msgid "The object \"dataframe\" must have class data.frame"
+msgstr "L'objet \""
+
+msgid "Version must be 6-12"
+msgstr "La version doit être 6-12"
+
+msgid "Version must be 6-12: using 7"
+msgstr "La version doit être 6-12 : la version 7 est utilisée"
+
+msgid "cannot uniquely abbreviate variable names"
+msgstr "impossible d'abbréger de manière unique les noms de variables"
+
+msgid "abbreviating variable names"
+msgstr "abbréviation des noms de variables"
+
+msgid "cannot handle multicolumn columns"
+msgstr "impossible de traiter des colonnes de type 'multicolumn'"
+
+msgid "argument 'file' must be a character string or connection"
+msgstr "l'argument 'file' doit être une chaîne de caractères ou une connexion"
+
+msgid "file has zero or fewer variables: probably not an EpiInfo file"
+msgstr ""
+"le fichier aurait zéro variables ou moins : ce n'est probablement pas un "
+"fichier EpiInfo"
+
+msgid "no records in file"
+msgstr "aucun enregistrement dans le fichier"
+
+msgid "wrong number of records"
+msgstr "nombre d'enregistrements incorrect"
+
+msgid "sectionname %s not found"
+msgstr "nom de section %s non trouvée"
+
+msgid "SAS return code was %d"
+msgstr "Le code renvoyé par SAS est %d"
+
+msgid "re-encoding from %s"
+msgstr "réencodage depuis %s"
+
+msgid "missingness type %s is not handled"
+msgstr "type de valeur manquante %s non pris en compte"
+
+msgid "I cannot abbreviate the variable names to eight or fewer letters"
+msgstr "Impossible d'abbréger les noms de variables à huit lettres au maximum"
+
+msgid "some variable names were abbreviated"
+msgstr "quelques noms de variables ont été abbrégées"
+
+msgid "Cannot handle character variables longer than 255"
+msgstr ""
+"Les chaînes de caractères plus longues que 255 ne sont pas prises en compte"
+
+msgid "Cannot uniquely abbreviate the variable names to %d or fewer characters"
+msgstr ""
+"Impossible d'abbréger de manière unique les noms de variables vers %d ou "
+"moins de caractères"
+
+msgid "Cannot uniquely abbreviate format names to conform to"
+msgstr ""
+"Impossible d'abbréger de manière unique les noms de format pour se conformer "
+"à"
+
+msgid "eight-character limit and not ending in a digit"
+msgstr "limite de 8 caractères et sans terminer par un chiffre"
+
+msgid "Some variable names were abbreviated or otherwise altered."
+msgstr "Quelques noms de variables on été abbrégées ou altérées."
+
+msgid "data frame contains columns of unsupported class %s"
+msgid_plural "data frame contains columns of unsupported classes %s"
+msgstr[0] ""
+"le tableau de données contient des colonnes de classe non supportée %s"
+msgstr[1] ""
+"le tableau de données contient des colonnes de classes non supportées %s"
+
+#~ msgid "S mode"
+#~ msgstr "mode S"
+
+#~ msgid "(near byte offset"
+#~ msgstr "(decalage 'near byte'"
+
+#~ msgid ") not supported"
+#~ msgstr ") non support?"
+
+#~ msgid "Field name:"
+#~ msgstr "Nom de champ :"
+
+#~ msgid "changed to:"
+#~ msgstr "chang? en :"
+
+#~ msgid ","
+#~ msgstr ","
+
+#~ msgid "value labels ("
+#~ msgstr "les ?tiquettes de valeur ("
+
+#~ msgid ") for"
+#~ msgstr ") pour"
+
+#~ msgid "are missing"
+#~ msgstr "sont manquantes"
+
+#~ msgid "or fewer characters"
+#~ msgstr "ou moins de caract?res"

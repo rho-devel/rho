@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-11 The R Core Team.
@@ -26,6 +42,8 @@
 #ifndef R_GRAPHICSDEVICE_H_
 #define R_GRAPHICSDEVICE_H_
 
+/*#include <R_ext/GraphicsContext.h>*/
+#include "CXXR/RObject.h"
 
 /* ideally we would use prototypes in DevDesc.  
    Some devices have taken to passing pointers to their own structure
@@ -384,7 +402,7 @@ struct _DevDesc {
      *   col, fill, gamma, lty, lwd
      */
 #if R_USE_PROTOTYPES
-    void (*polygon)(int n, double *x, double *y, const pGEcontext gc, pDevDesc dd);
+    void (*polygon)(int n, const double *x, const double *y, const pGEcontext gc, pDevDesc dd);
 #else
     void (*polygon)();
 #endif
@@ -402,7 +420,7 @@ struct _DevDesc {
      *   col, gamma, lty, lwd
      */
 #if R_USE_PROTOTYPES
-    void (*polyline)(int n, double *x, double *y, const pGEcontext gc, pDevDesc dd);
+    void (*polyline)(int n, const double *x, const double *y, const pGEcontext gc, pDevDesc dd);
 #else
     void (*polyline)();
 #endif
@@ -574,7 +592,7 @@ struct _DevDesc {
 #if R_USE_PROTOTYPES
     void (*onExit)(pDevDesc dd);
 #else
-    void (*onExit)();
+    void (*onExit)(struct _NewDevDesc*);
 #endif
     /*
      * device_getEvent is no longer used, but the slot is kept for back
@@ -851,6 +869,7 @@ LibExtern Rboolean mbcslocale;
 
 /* Useful for devices: translates Adobe symbol encoding to UTF-8 */
 extern void *AdobeSymbol2utf8(char*out, const char *in, int nwork);
+int Rf_AdobeSymbol2ucs2(int n);  // arr 2008/07/10
 /* Translates Unicode point to UTF-8 */
 extern size_t Rf_ucstoutf8(char *s, const unsigned int c);
 
