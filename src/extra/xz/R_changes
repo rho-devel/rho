@@ -1,0 +1,20 @@
+This is subdirectory src/liblzma of xz-utils-5.0.0, except for files
+Makefile.in, Makefile.win and R_changes
+
+common/{bswap,mythread,tuklib*}.h are from xz-utils-5.0.0/src/common.
+
+check/{sha256.c,crc_macros.h} is modified to look on the usual include path.
+
+common/local.h is a set of definitions of features to be built, and
+common/sysdefs.h is a modified copy of
+xz-utils-5.0.0/src/common/sysdefs.h which includes it.
+
+All the files from xz-utils are in the public domain.
+
+x86 performance optimizations are only used on (32-bit) Windows: 
+it is assumed that on other OSes an optimized system liblzma is or 
+could be made available.
+
+common/sysdefs.h:
+  Change _Bool to _Bool8 to avoid clashes on one Solaris 10 system.
+  (Solaris 10 has stdbool.h, but it was not being found.)
