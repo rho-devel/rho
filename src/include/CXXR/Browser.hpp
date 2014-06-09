@@ -42,9 +42,10 @@
 
 #include "CXXR/Evaluator_Context.hpp"
 #include "CXXR/GCStackRoot.hpp"
-#include "CXXR/RObject.h"
 
 namespace CXXR {
+    class RObject;
+
     /** @brief Class recording the use of R browsers.
      *
      * Browser objects must be declared on the processor stack

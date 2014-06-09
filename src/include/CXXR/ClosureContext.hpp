@@ -40,7 +40,6 @@
 #ifndef CLOSURECONTEXT_HPP
 #define CLOSURECONTEXT_HPP 1
 
-#include "CXXR/FunctionBase.h"
 #include "CXXR/FunctionContext.hpp"
 
 extern "C" {
@@ -50,6 +49,8 @@ extern "C" {
 }
 
 namespace CXXR {
+    class FunctionBase;
+
     /** @brief Context typically recording the call of a Closure.
      *
      * The normal use of a ClosureContext is to record the application
@@ -88,9 +89,24 @@ namespace CXXR {
 	 */
 	ClosureContext(const Expression* the_call, Environment* call_env,
 		       const FunctionBase* function, Environment* working_env,
-		       const PairList* promise_args);
+		       const PairList* promise_args)
+	    : FunctionContext(the_call, call_env, function),
+	      m_interrupts_suspended(R_interrupts_suspended),
+	      m_handlerstack(R_HandlerStack), m_restartstack(R_RestartStack),
+	      m_working_env(working_env), m_promise_args(promise_args)
+	{
+	    setType(CLOSURE);
+	}
 
-	~ClosureContext();
+
+	~ClosureContext() {
+	    R_RestartStack = m_restartstack;
+	    R_HandlerStack = m_handlerstack;
+	    if (m_onexit) {
+		runOnExit();
+	    }
+	    R_interrupts_suspended = m_interrupts_suspended;
+	}
 
 	/** @brief (Not for general use.)
 	 *
@@ -162,7 +178,21 @@ namespace CXXR {
 	{
 	    return m_working_env;
 	}
+
+	static ClosureContext* findClosureWithWorkingEnvironment(
+	    const Environment* env,
+	    ClosureContext* start = ClosureContext::innermost())
+	{
+	    ClosureContext* context = start;
+	    while (context && context->workingEnvironment() != env) {
+		context = ClosureContext::innermost(context->nextOut());
+	    }
+	    return context;
+	}
+
     private:
+	void runOnExit();
+
 	Rboolean m_interrupts_suspended;
 	GCStackRoot<> m_handlerstack;
 	GCStackRoot<> m_restartstack;

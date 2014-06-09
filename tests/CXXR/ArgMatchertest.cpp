@@ -76,7 +76,7 @@ namespace {
 	    while (getline(astrm, line)) {
 		boost::smatch kv_match;
 		if (!boost::regex_match(line, kv_match, kv_regex)) {
-		    cerr << "Lines must match " << kv_regex_string << '\n';
+		    cerr << "Lines must match_" << kv_regex_string << '\n';
 		    exit(1);
 		}
 		cout << kv_match[1] << " : " << kv_match[2] << endl;
@@ -215,7 +215,7 @@ namespace {
 	     it != fmap.end(); ++it) {
 	    const Frame::Binding* bdg = (*it).second;
 	    string tag = bdg->symbol()->name()->stdstring();
-	    RObject* value = bdg->value();
+	    RObject* value = bdg->unforcedValue();
 	    cout << originString(bdg->origin()) << tag << " : ";
 	    showValue(value);
 	    cout << endl;

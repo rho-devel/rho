@@ -49,10 +49,10 @@
 #include "CXXR/BuiltInFunction.h"
 #include "CXXR/GCRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
-#include "CXXR/StdFrame.hpp"
-#include "CXXR/Symbol.h"
 
 namespace CXXR {
+    class Symbol;
+
     /** @brief Table of functions invoked \e via <tt>.Internal()</tt>.
      *
      * This class, all of whose members are static, defines a mapping

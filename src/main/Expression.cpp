@@ -73,11 +73,10 @@ RObject* Expression::evaluate(Environment* env)
     RObject* head = car();
     if (head->sexptype() == SYMSXP) {
 	Symbol* symbol = static_cast<Symbol*>(head);
-	pair<Environment*, FunctionBase*> pr = findFunction(symbol, env);
-	if (!pr.first)
+	func = findFunction(symbol, env);
+	if (!func)
 	    error(_("could not find function \"%s\""),
 		  symbol->name()->c_str());
-	func = pr.second;
     } else {
 	RObject* val = Evaluator::evaluate(head, env);
 	if (!FunctionBase::isA(val))

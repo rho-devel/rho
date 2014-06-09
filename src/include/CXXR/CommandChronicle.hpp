@@ -47,6 +47,7 @@
 #include <boost/serialization/nvp.hpp>
 
 #include "CXXR/GCEdge.hpp"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/RObject.h"
 
 namespace CXXR {

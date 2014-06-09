@@ -112,8 +112,9 @@
 #include <Defn.h>
 #include <Internal.h>
 #include <R_ext/Callbacks.h>
-#include "CXXR/ProvenanceTracker.h"
 #include "CXXR/ClosureContext.hpp"
+#include "CXXR/ProvenanceTracker.h"
+#include "CXXR/StdFrame.hpp"
 
 using namespace CXXR;
 
@@ -158,7 +159,7 @@ void Frame::Binding::assign(RObject* new_value, Origin origin)
     }
 }
 
-RObject* Frame::Binding::value() const
+RObject* Frame::Binding::unforcedValue() const
 {
     RObject* ans = (isActive() ? getActiveValue(m_value) : m_value);
     m_frame->monitorRead(*this);
@@ -280,8 +281,7 @@ void attribute_hidden unbindVar(SEXP symbol, SEXP rho)
 
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
-    if (env->frame()->erase(sym) && env == Environment::global())
-	R_DirtyImage = 1;
+    env->frame()->erase(sym);
 }
 
 
@@ -325,7 +325,7 @@ R_varloc_t R_findVarLocInFrame(SEXP rho, SEXP symbol)
 attribute_hidden
 SEXP R_GetVarLocValue(R_varloc_t vl)
 {
-    return vl->value();
+    return vl->unforcedValue();
 }
 
 attribute_hidden
@@ -373,7 +373,7 @@ SEXP findVarInFrame3(SEXP rho, SEXP symbol, Rboolean /*doGet*/)
     Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Frame::Binding* bdg = env->frame()->binding(sym);
     if (bdg)
-	return bdg->value();
+	return bdg->unforcedValue();
     // Reproduce the CR behaviour:
     if (sym == Symbol::missingArgument())
 	return sym;
@@ -404,8 +404,8 @@ SEXP findVar(SEXP symbol, SEXP rho)
 
     Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = static_cast<Environment*>(rho);
-    Frame::Binding* bdg = env->findBinding(sym).second;
-    return (bdg ? bdg->value() : R_UnboundValue);
+    Frame::Binding* bdg = env->findBinding(sym);
+    return (bdg ? bdg->unforcedValue() : R_UnboundValue);
 }
 
 
@@ -453,8 +453,8 @@ findVar1(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits)
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
     TypeTester typetest(mode);
-    std::pair<bool, RObject*> pr = findTestedValue(sym, env, typetest, inherits);
-    return (pr.first ? pr.second : R_UnboundValue);
+    RObject* value = findTestedValue(sym, env, typetest, inherits);
+    return (value ? value : R_UnboundValue);
 }
 
 /*
@@ -510,12 +510,12 @@ findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits,
 	Frame::Binding* bdg;
 	if (!inherits)
 	    bdg = env->frame()->binding(sym);
-	else bdg = env->findBinding(sym).second;
-	return bdg ? bdg->value() : R_UnboundValue;
+	else bdg = env->findBinding(sym);
+	return bdg ? bdg->unforcedValue() : R_UnboundValue;
     }
     ModeTester modetest(mode);
-    std::pair<bool, RObject*> pr = findTestedValue(sym, env, modetest, inherits);
-    return (pr.first ? pr.second : R_UnboundValue);
+    RObject* value = findTestedValue(sym, env, modetest, inherits);
+    return (value ? value : R_UnboundValue);
 }
 
 
@@ -618,9 +618,9 @@ SEXP findFun(SEXP symbol, SEXP rho)
 {
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
-    std::pair<Environment*, FunctionBase*> pr = findFunction(sym, env);
-    if (pr.first)
-	return pr.second;
+    FunctionBase* fun = findFunction(sym, env);
+    if (fun)
+	return fun;
     error(_("could not find function \"%s\""), sym->name()->c_str());
     /* NOT REACHED */
     return R_UnboundValue;
@@ -637,9 +637,6 @@ SEXP findFun(SEXP symbol, SEXP rho)
 
 void defineVar(SEXP symbol, SEXP value, SEXP rho)
 {
-    /* R_DirtyImage should only be set if assigning to R_GlobalEnv. */
-    if (rho == R_GlobalEnv) R_DirtyImage = 1;
-
     if (rho == R_EmptyEnv)
 	error(_("cannot assign values in the empty environment"));
 
@@ -671,15 +668,10 @@ void setVar(SEXP symbol, SEXP value, SEXP rho)
 {
     Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
-    std::pair<Environment*, Frame::Binding*> pr = env->findBinding(sym);
-    Frame::Binding* bdg = pr.second;
-    env = pr.first;
-    if (!env) {
-	env = Environment::global();
-	bdg = env->frame()->obtainBinding(sym);
+    Frame::Binding* bdg = env->findBinding(sym);
+    if (!bdg) {
+	bdg = Environment::global()->frame()->obtainBinding(sym);
     }
-    if (env == Environment::global())
-	R_DirtyImage = 1;
     bdg->assign(value);
 }
 
@@ -799,8 +791,6 @@ static int RemoveVariable(SEXP name, SEXP env)
     Environment* envir = SEXP_downcast<Environment*>(env);
     const Symbol* sym = SEXP_downcast<Symbol*>(name);
     bool found = envir->frame()->erase(sym);
-    if (found && env == R_GlobalEnv)
-	R_DirtyImage = 1;
     return found;
 }
 
@@ -1188,18 +1178,18 @@ SEXP attribute_hidden do_emptyenv(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP name, x;
-    int pos;
-    GCStackRoot<Environment> newenv;
+    SEXP x;
+    GCStackRoot<Environment> env_to_attach;
 
     checkArity(op, args);
 
-    pos = asInteger(CADR(args));
+    int pos = asInteger(CADR(args));
     if (pos == NA_INTEGER)
 	error(_("'pos' must be an integer"));
-    name = CADDR(args);
-    if (!isValidStringF(name))
+
+    if (!isValidStringF(CADDR(args)))
 	error(_("invalid '%s' argument"), "name");
+    StringVector* name = SEXP_downcast<StringVector*>(CADDR(args));
 
     if (isNewList(CAR(args))) {
 	SETCAR(args, VectorToPairList(CAR(args)));
@@ -1208,37 +1198,17 @@ SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (TAG(x) == R_NilValue)
 		error(_("all elements of a list must be named"));
 	GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
-	newenv = CXXR_NEW(Environment(0, frame));
+	GCStackRoot<Environment> newenv(CXXR_NEW(Environment(0, frame)));
 	GCStackRoot<PairList> dupcar(static_cast<PairList*>(duplicate(CAR(args))));
 	frameReadPairList(newenv->frame(), dupcar);
+	env_to_attach = newenv;
     } else if (isEnvironment(CAR(args))) {
-	SEXP p, loadenv = CAR(args);
-
-	GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
-	newenv = CXXR_NEW(Environment(0, frame));
-	GCStackRoot<> framelist(FRAME(loadenv));
-	for(p = framelist; p != R_NilValue; p = CDR(p))
-	    defineVar(TAG(p), duplicate(CAR(p)), newenv);
+	env_to_attach = SEXP_downcast<Environment*>(CAR(args));
     } else {
 	error(_("'attach' only works for lists, data frames and environments"));
-	newenv = R_NilValue; /* -Wall */
     }
-
-    setAttrib(newenv, install("name"), name);
-
-    // Interpolate the new environment into the chain of enclosing environments:
-    {
-	Environment* anchor = Environment::global();
-	while (anchor->enclosingEnvironment() != Environment::base()
-	       && pos > 2) {
-	    anchor = anchor->enclosingEnvironment();
-	    --pos;
-	}
-	newenv->slotBehind(anchor);
-    }
-    return newenv;
+    return env_to_attach->attachToSearchPath(pos, name);
 }
-
 
 
 /*----------------------------------------------------------------------
@@ -1252,31 +1222,10 @@ SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 
 SEXP attribute_hidden do_detach(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    GCStackRoot<> s;
-    SEXP t;
-    int pos, n;
-
     checkArity(op, args);
-    pos = asInteger(CAR(args));
+    int pos = asInteger(CAR(args));
 
-    for (n = 2, t = ENCLOS(R_GlobalEnv); t != R_BaseEnv; t = ENCLOS(t))
-	n++;
-
-    if (pos == n) /* n is the length of the search list */
-	error(_("detaching \"package:base\" is not allowed"));
-
-    for (t = R_GlobalEnv ; ENCLOS(t) != R_BaseEnv && pos > 2 ; t = ENCLOS(t))
-	pos--;
-    if (pos != 2) {
-	error(_("invalid '%s' argument"), "pos");
-	s = t;	/* for -Wall */
-    }
-    else {
-	Environment* tenv = static_cast<Environment*>(t);
-	s = tenv->enclosingEnvironment();
-	tenv->skipEnclosing();
-    }
-    return s;
+    return Environment::detachFromSearchPath(pos);
 }
 
 

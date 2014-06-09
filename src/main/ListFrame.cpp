@@ -50,6 +50,14 @@
 using namespace std;
 using namespace CXXR;
 
+ListFrame::ListFrame(const ListFrame &pattern)
+{
+    importBindings(&pattern);
+    if (pattern.isLocked())
+	lock(false);
+
+}
+
 Frame::Binding* ListFrame::binding(const Symbol* symbol)
 {
     List::iterator end = m_list.end();

@@ -41,7 +41,6 @@
 #define LOOPBAILOUT_HPP 1
 
 #include "CXXR/Bailout.hpp"
-#include "CXXR/Evaluator.h"
 
 namespace CXXR {
     class Environment;

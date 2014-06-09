@@ -29,36 +29,19 @@ using namespace CXXR;
 GCRoot<> R_HandlerStack;
 GCRoot<> R_RestartStack;
 
-ClosureContext::ClosureContext(const Expression* the_call, Environment* call_env,
-			       const FunctionBase* function,
-			       Environment* working_env,
-			       const PairList* promise_args)
-    : FunctionContext(the_call, call_env, function),
-      m_interrupts_suspended(R_interrupts_suspended),
-      m_handlerstack(R_HandlerStack), m_restartstack(R_RestartStack),
-      m_working_env(working_env), m_promise_args(promise_args)
+void ClosureContext::runOnExit()
 {
-    setType(CLOSURE);
-}
-
-ClosureContext::~ClosureContext()
-{
-    R_RestartStack = m_restartstack;
-    R_HandlerStack = m_handlerstack;
-    if (m_onexit) {
-	GCStackRoot<> onx(m_onexit);
-	Rboolean savevis = R_Visible;
-	// Prevent recursion:
-	m_onexit = 0;
-	Evaluator::enableExtraDepth(true);
-	try {
-	    Evaluator::evaluate(onx, m_working_env);
-	}
-	// Don't allow exceptions to escape:
-	catch (...) {}
-	R_Visible = savevis;
+    GCStackRoot<> onx(m_onexit);
+    Rboolean savevis = R_Visible;
+    // Prevent recursion:
+    m_onexit = 0;
+    Evaluator::enableExtraDepth(true);
+    try {
+	Evaluator::evaluate(onx, m_working_env);
     }
-    R_interrupts_suspended = m_interrupts_suspended;
+    // Don't allow exceptions to escape:
+    catch (...) {}
+    R_Visible = savevis;
 }
     
 ClosureContext* ClosureContext::innermost(Evaluator::Context* start)

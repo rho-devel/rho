@@ -99,14 +99,18 @@ void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
 
 void MemoryBank::check()
 {
+#ifndef NO_CELLPOOLS
     for (unsigned int i = 0; i < s_num_pools; ++i)
 	s_pools[i].check();
+#endif
 }
 
 void MemoryBank::defragment()
 {
+#ifndef NO_CELLPOOLS
     for (unsigned int i = 0; i < s_num_pools; ++i)
 	s_pools[i].defragment();
+#endif
 }    
 
 void MemoryBank::initialize()

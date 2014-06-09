@@ -50,13 +50,13 @@
 #include <boost/serialization/nvp.hpp>
 
 #include "CXXR/GCNode.hpp"
-#include "CXXR/PairList.h"
 #include "CXXR/Provenance.hpp"
 #include "CXXR/Symbol.h"
 
 namespace CXXR {
     class Environment;
     class FunctionBase;
+    class PairList;
 
     /** @brief Mapping from Symbols to R objects.
      *
@@ -168,6 +168,28 @@ namespace CXXR {
 	     * function forces the Promise if necessary, and returns a
 	     * pointer to the value of the Promise.
 	     *
+	     * @return A pointer - possibly null - to the bound value, or the
+	     * Promise value if the bound value is a Promise.
+	     *
+	     * @note If this Binding's frame has a read monitor set,
+	     * the function will call it only in the event that a
+	     * Promise is forced (and in that event the evaluation of
+	     * the Promise may trigger other read and write monitors).
+	     *
+	     * @note It is conceivable that forcing a Promise will
+	     * result in the destruction of this Binding object.
+	     */
+	    RObject* forcedValue();
+
+	    /** @brief Look up bound value, forcing Promises if
+	     * necessary.
+	     *
+	     * If the value of this Binding is anything other than a
+	     * Promise, this function returns a pointer to that bound
+	     * value.  However, if the value is a Promise, the
+	     * function forces the Promise if necessary, and returns a
+	     * pointer to the value of the Promise.
+	     *
 	     * @return The first element of the returned pair is a
 	     * pointer - possibly null - to the bound value, or the
 	     * Promise value if the bound value is a Promise.  The
@@ -182,7 +204,7 @@ namespace CXXR {
 	     * @note It is conceivable that forcing a Promise will
 	     * result in the destruction of this Binding object.
 	     */
-	    std::pair<RObject*, bool> forcedValue();
+	    std::pair<RObject*, bool> forcedValue2();
 
 	    /** @brief Get pointer to Frame.
 	     *
@@ -317,7 +339,7 @@ namespace CXXR {
 	    }
 
 #ifdef PROVENANCE_TRACKING
-	    /** @brief Set provenance object association with this binding
+	    /** @brief Set provenance object association with this binding.
 	     *
 	     * @param prov Pointer to Provenance object to associate with this
 	     * 		Binding.
@@ -339,7 +361,7 @@ namespace CXXR {
 	     *
 	     * @param origin Origin of the newly assigned value.
 	     *
-	     * @param quiet Don't trigger monitor
+	     * @param quiet Don't trigger monitor.
 	     */
 	    void setValue(RObject* new_value, Origin origin = EXPLICIT,
 	                  bool quiet = false);
@@ -359,9 +381,11 @@ namespace CXXR {
 	     * function and returns the result rather than returning a
 	     * pointer to the encapsulated function itself.
 	     *
+	     * Does not force promises.
+	     *
 	     * @return The value bound to a Symbol by this Binding.
 	     */
-	    RObject* value() const;
+	    RObject* unforcedValue() const;
 
 	    /** @brief Auxiliary function to Frame::visitReferents().
 	     *
@@ -375,6 +399,7 @@ namespace CXXR {
 	    void visitReferents(const_visitor* v) const;
 	private:
 	    friend class boost::serialization::access;
+	    friend class Frame;
 
 	    Frame* m_frame;
 	    const Symbol* m_symbol;
@@ -649,6 +674,30 @@ namespace CXXR {
 	 */
 	Binding* obtainBinding(const Symbol* symbol);
 
+	/** @brief Import a Binding from another Frame into this one.
+	 *
+	 * Inserts a binding with the same Symbol, value and metadata as the
+	 * supplied binding into this frame.  Retains active bindings and does
+	 * not force promises.
+	 *
+	 * @param binding The binding to copy into this frame.
+	 *
+	 * @param quiet Don't trigger monitor.
+	 */
+	void importBinding(const Binding *binding, bool quiet = false);
+
+	/** @brief Import all the Bindings from another frame into this one.
+	 *
+	 * Inserts bindings with the same Symbol, value and metadata as those
+	 * in the supplied frame.  Retains active bindings and does
+	 * not force promises.
+	 *
+	 * @param frame The Frame to copy bindings from.
+	 *
+	 * @param quiet Don't trigger monitor.
+	 */
+	void importBindings(const Frame *frame, bool quiet = false);
+
 	/** @brief Define function to monitor reading of Symbol values.
 	 *
 	 * This function allows the user to define a function to be
@@ -731,8 +780,7 @@ namespace CXXR {
 	 *
 	 * This function should be called when a Symbol that was not
 	 * formerly bound within this Frame becomes bound, or <em>vice
-	 * versa</em>.  If called with a null pointer, this signifies
-	 * that all bindings are about to be removed from the Frame.
+	 * versa</em>.
 	 */
 	void statusChanged(const Symbol* sym)
 	{

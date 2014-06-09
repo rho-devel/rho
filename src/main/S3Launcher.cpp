@@ -72,9 +72,9 @@ std::pair<FunctionBase*, bool>
 S3Launcher::findMethod(const Symbol* symbol, Environment* call_env,
 		       Environment* table_env)
 {
-    pair<Environment*, FunctionBase*> pr = findFunction(symbol, call_env);
-    if (pr.first)
-	return make_pair(pr.second, true);
+    FunctionBase* fun = findFunction(symbol, call_env);
+    if (fun)
+	return make_pair(fun, true);
     if (!table_env)
 	return pair<FunctionBase*, bool>(0, false);
     Environment* table = 0;
@@ -83,7 +83,7 @@ S3Launcher::findMethod(const Symbol* symbol, Environment* call_env,
 	Frame::Binding* tblbdg
 	    = table_env->frame()->binding(S3MethodsTableSymbol);
 	if (tblbdg) {
-	    RObject* tblbdgval = tblbdg->forcedValue().first;
+	    RObject* tblbdgval = tblbdg->forcedValue();
 	    if (tblbdgval && tblbdgval->sexptype() == ENVSXP)
 		table = static_cast<Environment*>(tblbdgval);
 	}
@@ -92,7 +92,7 @@ S3Launcher::findMethod(const Symbol* symbol, Environment* call_env,
     if (table) {
 	Frame::Binding* symbdg = table->frame()->binding(symbol);
 	if (symbdg) {
-	    RObject* symbdgval = symbdg->forcedValue().first;
+	    RObject* symbdgval = symbdg->forcedValue();
 	    // Assume that the result is a FunctionBase:
 	    return make_pair(static_cast<FunctionBase*>(symbdgval), false);
 	}

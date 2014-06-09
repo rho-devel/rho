@@ -51,7 +51,6 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
 
-#include "CXXR/Expression.h"
 #include "CXXR/Environment.h"
 #include "CXXR/Symbol.h"
 
@@ -195,7 +194,7 @@ namespace CXXR {
 	mutable bool m_under_evaluation;
 	mutable bool m_interrupted;
 
-	// Declared private to ensure that Environment objects are
+	// Declared private to ensure that Promise objects are
 	// created only using 'new':
 	~Promise() {}
 

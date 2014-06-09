@@ -81,6 +81,8 @@ namespace CXXR {
 	// a 32-bit architecture, this will fit well into two 64-byte
 	// cache lines.
 
+	StdFrame(const StdFrame &source);
+	
 	// Virtual functions of Frame (qv):
 #ifdef __GNUG__
 	__attribute__((hot,fastcall))

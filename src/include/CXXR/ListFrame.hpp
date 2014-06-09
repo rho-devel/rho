@@ -59,6 +59,9 @@ namespace CXXR {
 	typedef
 	std::list<Binding, CXXR::Allocator<Binding> > List;
     public:
+	ListFrame() { }
+	ListFrame(const ListFrame &pattern);
+
 	// Virtual functions of Frame (qv):
 #ifdef __GNUG__
 	__attribute__((hot,fastcall))

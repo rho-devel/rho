@@ -65,8 +65,13 @@ PairList* Frame::Binding::asPairList(PairList* tail) const
 
 // Frame::Binding::assign() is defined in envir.cpp (for the time being).
 	
+RObject* Frame::Binding::forcedValue()
+{
+    return forcedValue2().first;
+}
+
 pair<RObject*, bool>
-Frame::Binding::forcedValue()
+Frame::Binding::forcedValue2()
 {
     bool promise_forced = false;
     RObject* val = m_value;
@@ -151,7 +156,7 @@ vector<const Symbol*> Frame::symbols(bool include_dotsymbols) const
 }
 
 // Frame::Binding::value() is defined in envir.cpp (for the time being).
-	
+
 void Frame::Binding::visitReferents(const_visitor* v) const
 {
     // We assume the visitor has just come from m_frame, so we don't
@@ -211,7 +216,7 @@ void Frame::enableWriteMonitoring(bool on) const
 
 void Frame::flush(const Symbol* sym)
 {
-    Environment::flushFromCache(sym);
+    Environment::flushFromSearchPathCache(sym);
 }
 
 Frame::Binding* Frame::obtainBinding(const Symbol* symbol)
@@ -228,6 +233,24 @@ Frame::Binding* Frame::obtainBinding(const Symbol* symbol)
     return ans;
 }
 
+void Frame::importBinding(const Binding* binding_to_import, bool quiet) {
+    if (!binding_to_import)
+	return;
+    Binding *new_binding = obtainBinding(binding_to_import->symbol());
+    *new_binding = *binding_to_import;
+    new_binding->m_frame = this;
+    if (!quiet)
+	monitorWrite(*new_binding);
+}
+
+void Frame::importBindings(const Frame* frame, bool quiet) {
+    BindingRange bindings = frame->bindingRange();
+    for (BindingRange::const_iterator i = bindings.begin();
+	 i != bindings.end(); ++i) {
+	importBinding(&(*i), quiet);
+    }
+}
+	
 void Frame::visitReferents(const_visitor* v) const
 {
     BindingRange bdgs = bindingRange();

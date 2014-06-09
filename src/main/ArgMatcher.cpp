@@ -249,7 +249,7 @@ void ArgMatcher::propagateFormalBindings(const Environment* fromenv,
 	    Rf_error(_("could not find symbol \"%s\" "
 		       "in environment of the generic function"),
 		     symbol->name()->c_str());
-	RObject* val = frombdg->value();
+	RObject* val = frombdg->unforcedValue();
 	// Discard generic's defaults:
 	if (frombdg->origin() != Frame::Binding::EXPLICIT)
 	    val = Symbol::missingArgument();
@@ -258,8 +258,7 @@ void ArgMatcher::propagateFormalBindings(const Environment* fromenv,
     // m_formal_data excludes '...', so:
     if (m_has_dots) {
 	const Frame::Binding* frombdg = fromf->binding(DotsSymbol);
-	Frame::Binding* tobdg = toenv->frame()->obtainBinding(DotsSymbol);
-	tobdg->setValue(frombdg->value(), frombdg->origin());
+	toenv->frame()->importBinding(frombdg);
     }
 }
 	    

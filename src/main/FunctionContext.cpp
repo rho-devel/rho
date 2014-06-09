@@ -28,20 +28,6 @@ using namespace CXXR;
 
 RObject* R_Srcref;
 
-FunctionContext::FunctionContext(const Expression* the_call,
-				 Environment* call_env,
-			         const FunctionBase* function)
-    : m_srcref(R_Srcref), m_call(the_call), m_call_env(call_env),
-      m_function(function)
-{
-    setType(FUNCTION);
-}
-
-FunctionContext::~FunctionContext()
-{
-    R_Srcref = m_srcref;
-}
-    
 FunctionContext* FunctionContext::innermost(Evaluator::Context* start)
 {
     while (start && start->type() < FUNCTION)

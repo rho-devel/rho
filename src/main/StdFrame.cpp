@@ -68,6 +68,13 @@ StdFrame::StdFrame(size_t initial_capacity)
     m_map.max_load_factor(maximum_load_factor);
 }
 
+StdFrame::StdFrame(const StdFrame &pattern)
+{
+    importBindings(&pattern);
+    if (pattern.isLocked())
+	lock(false);
+}
+
 Frame::Binding* StdFrame::binding(const Symbol* symbol)
 {
     map::iterator it = m_map.find(symbol);

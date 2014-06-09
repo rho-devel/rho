@@ -49,6 +49,7 @@
 #include "CXXR/FunctionBase.h"
 #include "CXXR/ListFrame.hpp"
 #include "CXXR/StdFrame.hpp"
+#include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
 
 using namespace std;
@@ -74,7 +75,7 @@ namespace {
     const unsigned int GLOBAL_FRAME_MASK = 1<<15;
 }
 
-Environment::Cache* Environment::s_cache;
+Environment::Cache* Environment::s_search_path_cache;
 Environment* Environment::s_base;
 Environment* Environment::s_base_namespace;
 Environment* Environment::s_empty;
@@ -100,21 +101,20 @@ void Environment::LeakMonitor::operator()(const GCNode* node)
 
 void Environment::cleanup()
 {
-    delete s_cache;
+    delete s_search_path_cache;
+    s_search_path_cache = 0;
 }
 
 void Environment::detachFrame()
 {
-    if (m_cached && m_frame)
-	m_frame->decCacheCount();
+    setOnSearchPath(false);
     m_frame = 0;
 }
 
 void Environment::detachReferents()
 {
+    setOnSearchPath(false);
     m_enclosing.detach();
-    if (m_cached && m_frame)
-	m_frame->decCacheCount();
     m_frame.detach();
     RObject::detachReferents();
 }
@@ -122,54 +122,55 @@ void Environment::detachReferents()
 // Define the preprocessor variable CHECK_CACHE to verify that the
 // search list cache is delivering correct results.
 
-pair<Environment*, Frame::Binding*>
-Environment::findBinding(const Symbol* symbol)
+Frame::Binding* Environment::findBinding(const Symbol* symbol)
 {
     bool cache_miss = false;
     Environment* env = this;
 #ifdef CHECK_CACHE
-    EBPair cachepr(0, 0);
+    Frame::Binding cache_binding = 0;
 #endif
     while (env) {
-	if (env->isCachePortal()) {
-	    Cache::iterator it = s_cache->find(symbol);
-	    if (it == s_cache->end())
+	if (env->isSearchPathCachePortal()) {
+	    Cache::iterator it = s_search_path_cache->find(symbol);
+	    if (it == s_search_path_cache->end())
 		cache_miss = true;
 #ifdef CHECK_CACHE
-	    else cachepr = (*it).second;
+	    else cache_binding = it->second;
 #else
-	    else return (*it).second;
+	    else return it->second;
 #endif
 	}
 	Frame::Binding* bdg = env->frame()->binding(symbol);
 	if (bdg) {
-	    EBPair ans(env, bdg);
 #ifdef CHECK_CACHE
-	    if (cachepr.first && cachepr != ans)
+	    if (cache_binding && cache_binding != bdg)
 		abort();
 #endif
 	    if (cache_miss)
-		(*s_cache)[symbol] = ans;
-	    return ans;
+		(*s_search_path_cache)[symbol] = bdg;
+	    return bdg;
 	}
 	env = env->enclosingEnvironment();
     }
-    return EBPair(0, 0);
+    return 0;
 }
 
 // Environment::findNamespace() is in envir.cpp
 
 // Environment::findPackage() is in envir.cpp
 
-void Environment::flushFromCache(const Symbol* sym)
+void Environment::flushFromSearchPathCache(const Symbol* sym)
 {
+    if (!s_search_path_cache)
+	return;
+
     if (sym)
-	s_cache->erase(sym);
+	s_search_path_cache->erase(sym);
     else {
 	// Clear the cache, but retain the current number of buckets:
-	size_t buckets = s_cache->bucket_count();
-	s_cache->clear();
-	s_cache->rehash(buckets);
+	size_t buckets = s_search_path_cache->bucket_count();
+	s_search_path_cache->clear();
+	s_search_path_cache->rehash(buckets);
     }
 }
 
@@ -177,8 +178,8 @@ void Environment::initialize()
 {
     // 509 is largest prime <= 512.  This will have capacity for 254
     // Symbols at load factor 0.5.
-    s_cache = new Cache(509);
-    s_cache->max_load_factor(0.5);
+    s_search_path_cache = new Cache(509);
+    s_search_path_cache->max_load_factor(0.5);
     GCStackRoot<Frame> empty_frame(CXXR_NEW(ListFrame));
     static GCRoot<Environment> empty_env(CXXR_NEW(Environment(0, empty_frame)));
     s_empty = empty_env.get();
@@ -187,13 +188,13 @@ void Environment::initialize()
     static GCRoot<Environment>
 	base_env(CXXR_NEW(Environment(empty_env, base_frame)));
     s_base = base_env.get();
-    s_base->makeCached();
+    s_base->setOnSearchPath(true);
     R_BaseEnv = s_base;
     GCStackRoot<Frame> global_frame(CXXR_NEW(StdFrame));
     static GCRoot<Environment>
 	global_env(CXXR_NEW(Environment(s_base, global_frame)));
     s_global = global_env.get();
-    s_global->makeCached();
+    s_global->setOnSearchPath(true);
     R_GlobalEnv = s_global;
     static GCRoot<Environment>
 	base_namespace(CXXR_NEW(Environment(s_global, s_base->frame())));
@@ -201,11 +202,25 @@ void Environment::initialize()
     R_BaseNamespace = s_base_namespace;
 }
 
-void Environment::makeCached()
-{
-    if (!m_cached && m_frame)
+void Environment::setOnSearchPath(bool status) {
+    if (status == m_on_search_path)
+	return;
+
+    m_on_search_path = status;
+    if (!m_frame)
+	return;
+
+    if (status)
 	m_frame->incCacheCount();
-    m_cached = true;
+    else
+	m_frame->decCacheCount();
+
+    // Invalidate cache entries.
+    std::vector<const Symbol*> symbols = frame()->symbols(true);
+    for (std::vector<const Symbol*>::const_iterator symbol = symbols.begin();
+	 symbol != symbols.end(); ++symbol) {
+	flushFromSearchPathCache(*symbol);
+    }
 }
 
 // Environment::namespaceSpec() is in envir.cpp
@@ -231,36 +246,59 @@ void  Environment::setEnclosingEnvironment(Environment* new_enclos)
 {
     m_enclosing = new_enclos;
     // Recursively propagate participation in search list cache:
-    if (m_cached) {
+    if (m_on_search_path) {
 	Environment* env = m_enclosing;
-	while (env && !env->m_cached) {
-	    env->makeCached();
+	while (env && !env->m_on_search_path) {
+	    env->setOnSearchPath(true);
 	    env = env->m_enclosing;
 	}
-	flushFromCache(0);
     }
 }
 
-void Environment::skipEnclosing()
+Environment* Environment::attachToSearchPath(int pos, StringVector* name)
 {
-    if (!m_enclosing)
-	Rf_error(_("this Environment has no enclosing Environment."));
-    if (m_enclosing->m_cached)
-	flushFromCache(0);
-    m_enclosing = m_enclosing->m_enclosing;
+    // Duplicate the environment.
+    GCStackRoot<Frame> frame(static_cast<Frame*>(m_frame->clone()));
+    GCStackRoot<Environment> new_env(expose(new Environment(0, frame)));
+    new_env->setAttribute(NameSymbol, name);
+
+    // Iterate through the search path to the environment just before where we
+    // want to insert.
+    // This will be either pos - 1 or the environment prior to base().
+    Environment* where = global();
+    for (int n = 1; n < pos - 1 && where->enclosingEnvironment() != base(); n++)
+	where = where->enclosingEnvironment();
+
+    // Insert the new environment after where.
+    new_env->m_enclosing = where->m_enclosing;
+    where->m_enclosing = new_env;
+    new_env->setOnSearchPath(true);
+
+    return new_env;
 }
 
-void Environment::slotBehind(Environment* anchor)
-{
-    if (!anchor || anchor == this)
-	Rf_error("internal error in Environment::slotBehind()");
-    // Propagate participation in search list cache:
-    if (anchor->m_cached) {
-	makeCached();
-	flushFromCache(0);
-    }
-    m_enclosing = anchor->m_enclosing;
-    anchor->m_enclosing = this;
+Environment* Environment::detachFromSearchPath(int pos) {
+    if (pos == 1)
+	error(_("invalid '%s' argument"), "pos");
+
+    // Iterate through the search path to the environment just before where we
+    // want to detach.
+    Environment* where = global();
+    for (int n = 1; n < pos - 1 && where->enclosingEnvironment() != empty(); n++)
+	where = where->enclosingEnvironment();
+
+    Environment *env_to_detach = where->enclosingEnvironment();
+    if (env_to_detach == base())
+	error(_("detaching \"package:base\" is not allowed"));
+    if (env_to_detach == empty())
+	error(_("invalid '%s' argument"), "pos");
+
+    // Detach the environment after where.
+    where->m_enclosing = env_to_detach->m_enclosing;
+    env_to_detach->m_enclosing = 0;
+    env_to_detach->setOnSearchPath(false);
+
+    return env_to_detach;
 }
 
 const char* Environment::typeName() const
@@ -314,13 +352,12 @@ namespace {
 }
 
 namespace CXXR {
-    pair<Environment*, FunctionBase*>
+    FunctionBase*
     findFunction(const Symbol* symbol, Environment* env, bool inherits)
     {
 	FunctionTester functest(symbol);
-	pair<Environment*, RObject*> pr
-	    = findTestedValue(symbol, env, functest, inherits);
-	return make_pair(pr.first, static_cast<FunctionBase*>(pr.second));
+	RObject *value = findTestedValue(symbol, env, functest, inherits);
+	return static_cast<FunctionBase*>(value);
     }
 }
 

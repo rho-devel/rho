@@ -51,6 +51,7 @@
 
 #include "CXXR/Frame.hpp"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/PairList.h"
 #include "CXXR/Symbol.h"
 
 /** @def DETACH_LOCAL_FRAMES
@@ -168,7 +169,7 @@ namespace CXXR {
 	 */
 	Environment(Environment* enclosing, Frame* frame)
 	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(frame),
-	      m_single_stepping(false), m_locked(false), m_cached(false),
+	      m_single_stepping(false), m_locked(false), m_on_search_path(false),
 	      m_leaked(false), m_in_loop(false), m_can_return(false)
 	{}
 
@@ -245,17 +246,13 @@ namespace CXXR {
 	 * @param symbol Pointer to the Symbol for which a Binding is
 	 *          sought.
 	 *
-	 * @return The first element of the pair is a pointer to the
-	 * sought Binding, or a null pointer if no Binding was found.
-	 * The second element of the pair is a pointer to the
-	 * Environment in whose frame the Binding was found, or a null
-	 * pointer if no Binding was found.
+	 * @return A pointer to the sought Binding, or a null pointer if no
+         *         Binding was found.
 	 */
 #ifdef __GNUC__
 	__attribute__((hot,fastcall))
 #endif
-	std::pair<Environment*, Frame::Binding*>
-	findBinding(const Symbol* symbol);
+	Frame::Binding* findBinding(const Symbol* symbol);
 
 	/** @brief Search for a Binding for a Symbol (const variant).
 	 *
@@ -266,18 +263,12 @@ namespace CXXR {
 	 * @param symbol Pointer to the Symbol for which a Binding is
 	 *          sought.
 	 *
-	 * @return The first element of the pair is a pointer to the
-	 * Environment in whose frame the Binding was found, or a null
-	 * pointer if no Binding was found.  The second element of the
-	 * pair is a pointer to the sought Binding, or a null pointer
-	 * if no Binding was found.
+	 * @return A pointer to the sought Binding, or a null pointer if no
+         *         Binding was found.
 	 */
-	std::pair<const Environment*, const Frame::Binding*>
-	findBinding(const Symbol* symbol) const
+	const Frame::Binding* findBinding(const Symbol* symbol) const
 	{
-	    EBPair ebpr = const_cast<Environment*>(this)->findBinding(symbol);
-	    return std::pair<const Environment*,
-		             const Frame::Binding*>(ebpr.first, ebpr.second);
+	    return const_cast<Environment*>(this)->findBinding(symbol);
 	}
 
 	/** @brief Locate a namespace environment from its
@@ -446,32 +437,23 @@ namespace CXXR {
 	    return m_single_stepping;
 	}
 
-	/** @brief Interpolate this Environment between a given
-	 * Environment and its enclosing Environment.
+        /** @brief Attach a copy of this environment to the search path.
 	 *
-	 * This causes this Environment T to be interpolated between
-	 * \a anchor and the current enclosing Environment of \a
-	 * anchor.  Suppose that prior to the call E (possibly null)
-	 * is the enclosing Environment of \a anchor.  Then after the
-	 * call, E will be the enclosing Environment of T, and T will
-	 * be the enclosing Environment of \a anchor.
+	 * @param pos The position in the search list to attach to.
 	 *
-	 * @param anchor Pointer to the Environment 'behind' which this
-	 *          Environment is to be interpolated.  Must not
-	 *          be a null pointer.
+	 * @param name The name to used for the attached environment.
+	 *
+	 * @return The environment that was attached.
 	 */
-	void slotBehind(Environment* anchor);
+	Environment* attachToSearchPath(int pos, StringVector* name);
 
-	/** @brief Grandparent becomes parent.
+	/** @brief Detach an element from the search path.
 	 *
-	 * Suppose that prior to the call, E is the enclosing
-	 * Environment of this Environment (it is an error for E to be
-	 * null), and that EE (possibly null) is the enclosing
-	 * Environment of E.  Then after the call EE will be the
-	 * enclosing Environment both of this Environment and of E.
-	 * (However, this change may expose E to garbage collection.)
+	 * @param pos The position in the search list to detach.
+	 *
+	 * @return The environment that was detached.
 	 */
-	void skipEnclosing();
+	static Environment* detachFromSearchPath(int pos);
 	    
 	/** @brief The name by which this type is known in R.
 	 *
@@ -513,16 +495,15 @@ namespace CXXR {
 	// The class maintains a cache of Symbol Bindings found along
 	// the search path:
 
-	typedef std::pair<Environment*, Frame::Binding*> EBPair;
 	typedef
-	std::tr1::unordered_map<const Symbol*, EBPair,
+	std::tr1::unordered_map<const Symbol*, Frame::Binding*,
 				std::tr1::hash<const Symbol*>,
 				std::equal_to<const Symbol*>,
 				CXXR::Allocator<std::pair<const Symbol*,
-							  EBPair> >
+							  Frame::Binding*> >
 	                        > Cache;
 
-	static Cache* s_cache;
+	static Cache* s_search_path_cache;
 
 	// Predefined environments:
 	static Environment* s_base;
@@ -534,7 +515,7 @@ namespace CXXR {
 	GCEdge<Frame> m_frame;
 	bool m_single_stepping;
 	bool m_locked;
-	bool m_cached;
+	bool m_on_search_path;
 	// For local environments, m_leaked is set to true to signify
 	// that the environment may continue to be reachable after the
 	// return of the Closure call that created it.  It has no
@@ -552,21 +533,20 @@ namespace CXXR {
 	// created only using 'new':
 	~Environment()
 	{
-	    if (m_cached && m_frame)
-		m_frame->decCacheCount();
+	    setOnSearchPath(false);
 	}
 
 	static void cleanup();
 
 	void detachFrame();
 
-	// Remove any mapping of 'sym' from the cache.  If called with
-	// a null pointer, clear the cache entirely.
-	static void flushFromCache(const Symbol* sym);
+	// Remove any mapping of 'sym' from the search path cache.  If called
+        // with a null pointer, clear the cache entirely.
+	static void flushFromSearchPathCache(const Symbol* sym);
 
 	static void initialize();
 
-	bool isCachePortal() const
+	bool isSearchPathCachePortal() const
 	{
 	    return (this == s_global);
 	}
@@ -574,9 +554,9 @@ namespace CXXR {
 	template<class Archive>
 	void load(Archive& ar, const unsigned int version);
 
-	// Designate this Environment as a participant in the search
+	// Set whether or not this Environment is a participant in the search
 	// list cache:
-	void makeCached();
+        void setOnSearchPath(bool status);
 
 	// Warn about package possibly not being available when
 	// loading, and extract package name.
@@ -625,15 +605,10 @@ namespace CXXR {
      *          Binding to a FunctionBase is found, or the chain of
      *          enclosing environments is exhausted.
      *
-     * @return If a Binding to a FunctionBase was found, the first
-     * element of the pair is a pointer to the Environment in which it
-     * was found, and the second element is the value of the Binding,
-     * except that if the value was a Promise, the second element is
-     * the result of evaluating the Promise.  If no Binding to a
-     * FunctionBase was found, both elements of the pair are null
-     * pointers.
+     * @return Returns the sought function if a Binding to a FunctionBase was
+     *         found.  Otherwise returns null.
      */
-    std::pair<Environment*, FunctionBase*>
+    FunctionBase*
     findFunction(const Symbol* symbol, Environment* env, bool inherits = true);
 
     /** @brief Search for a Binding whose value satisfies a predicate.
@@ -673,38 +648,31 @@ namespace CXXR {
      *          Binding satisfying the predicate is found, or the
      *          chain of enclosing environments is exhausted.
      *
-     * @return If a Binding satisfying the predicate was found, the
-     * first element of of the pair is a pointer to the Environment in
-     * which it was found, and the second element is the value of the
-     * Binding, except that if the value was a Promise, the second
-     * element is the result of evaluating the Promise.  If no Binding
-     * satisfying the predicate was found, both elements of the pair
-     * are null pointers.
+     * @return Returns the sought function if a Binding to a FunctionBase was
+     *         found.  Otherwise returns null.
+     * @return If a Binding satisfying the predicate was found, returns the
+     *   value of the Binding, except that if the value was a Promise, returns
+     *   the result of evaluating the Promise instead.  If no Binding
+     *   satisfying the predicate was found, returns null.
      */
     template <typename UnaryPredicate>
-    std::pair<Environment*, RObject*>
-    findTestedValue(const Symbol* symbol, Environment* env,
-		    UnaryPredicate pred, bool inherits)
+    RObject* findTestedValue(const Symbol* symbol, Environment* env,
+			     UnaryPredicate pred, bool inherits)
     {
 	using namespace std;
-	pair<Environment*, RObject*> ans(0, 0);
-	bool found = false;
+
 	do {
-	    Frame::Binding* bdg;
-	    if (!inherits) {
-		// Note that the cache is not updated in this case:
-		bdg = env->frame()->binding(symbol);
+	    Frame::Binding *bdg;
+	    if (inherits && env == Environment::global()) {
+		// findBinding() handles the details of the cache correctly.
+		bdg = env->findBinding(symbol);
 	    } else {
-		pair<Environment*, Frame::Binding*> pr
-		    = env->findBinding(symbol);
-		env = pr.first;
-		bdg = pr.second;
+		bdg = env->frame()->binding(symbol);
 	    }
 	    if (bdg) {
-		pair<RObject*, bool> fpr = bdg->forcedValue();
+		pair<RObject*, bool> fpr = bdg->forcedValue2();
 		RObject* val = fpr.first;
-		found = pred(val);
-		if (found) {
+		if (pred(val)) {
 		    // Invoke read monitor (if any) only if
 		    // forcedValue() did not force a Promise.  (If a
 		    // Promise was forced, the read monitor will have
@@ -712,12 +680,12 @@ namespace CXXR {
 		    // junk.)
 		    if (!fpr.second)
 			bdg->rawValue();
-		    ans = make_pair(env, val);
+		    return val;
 		}
-		env = env->enclosingEnvironment();
 	    }
-	} while (!found && inherits && env);
-	return ans;
+            env = env->enclosingEnvironment();
+	} while (inherits && env);
+	return NULL;
     }
 }  // namespace CXXR
 
@@ -1002,7 +970,7 @@ extern "C" {
 	using namespace CXXR;
 	const Symbol* sym = SEXP_downcast<Symbol*>(x);
 	Frame::Binding* bdg = Environment::base()->frame()->binding(sym);
-	return bdg ? bdg->value() : Symbol::unboundValue();
+	return bdg ? bdg->unforcedValue() : Symbol::unboundValue();
     }
 #endif
 
