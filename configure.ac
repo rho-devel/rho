@@ -872,6 +872,9 @@ AC_CHECK_TYPES([intptr_t, uintptr_t], , , [#ifdef HAVE_INTTYPES_H
 
 ### *** C compiler.
 
+CFLAGS="${CFLAGS} -fexceptions" # TODO(kmillar): not the right way to do this.
+CXXFLAGS="${CXXFLAGS} -std=c++98 -Wno-attributes"
+
 R_BIGENDIAN
 AC_C_CONST
 R_C_INLINE
@@ -2847,8 +2850,8 @@ fi
 if test -n "${warn_type_socklen}"; then
   AC_MSG_WARN([${warn_type_socklen}])
 fi
-if test -n "${warn_cxxpicflags}"; then
-  AC_MSG_WARN([${warn_cxxpicflags}])
+if test -n "${warn_cpicflags}"; then
+  AC_MSG_WARN([${warn_picflags}])
 fi
 if test -n "${warn_shlib_cxxldflags}"; then
   AC_MSG_WARN([${warn_shlib_cxxldflags}])
