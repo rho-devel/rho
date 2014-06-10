@@ -152,7 +152,7 @@ pair<bool, RObject*> ArgList::firstArg(Environment* env)
 	if (arg1 != DotsSymbol) {
 	    m_first_arg = arg1->evaluate(env);
 	    m_first_arg_env = env;
-	    return make_pair(true, m_first_arg);
+	    return make_pair(true, m_first_arg.get());
 	}
 	// If we get here it must be DotSymbol.
 	Frame::Binding* bdg = env->findBinding(DotsSymbol);
