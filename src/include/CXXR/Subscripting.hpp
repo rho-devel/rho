@@ -1022,7 +1022,7 @@ namespace CXXR {
 			 " a multiple of replacement length"));
 	for (std::size_t i = 0; i < ni; ++i) {
 	    std::size_t index = indices[i];
-	    if (!index == 0) {
+	    if (index != 0) {
 		// Be careful not to create a temporary RHandle.
 		Lval& lval = (*ans)[index - 1];
 		const Rval& rval = (*rhs)[i % rhs_size];
