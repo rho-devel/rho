@@ -88,6 +88,7 @@ namespace CXXR {
 	 */
 	Closure(const Closure& pattern)
 	    : FunctionBase(pattern), m_debug(false),
+              m_num_invokes(0), m_compiled_body(0),
 	      m_matcher(pattern.m_matcher), m_body(pattern.m_body),
 	      m_environment(pattern.m_environment)
 	{}
@@ -282,6 +283,9 @@ namespace CXXR {
 	};
 
 	bool m_debug;
+        mutable int m_num_invokes;
+        mutable RObject* (*m_compiled_body)(Environment*);
+
 	GCEdge<const ArgMatcher> m_matcher;
 	GCEdge<> m_body;
 	GCEdge<Environment> m_environment;

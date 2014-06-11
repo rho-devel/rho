@@ -2265,6 +2265,9 @@ R_SYS_POSIX_LEAPSECONDS
 ## stat times
 gl_STAT_TIME
 
+## LLVM
+AX_LLVM(core mcjit native linker instrumentation ipo vectorize)
+
 ## CXXR provenance tracking.
 if test "${want_provenance_tracking}" = yes; then
   AC_DEFINE(PROVENANCE_TRACKING, 1, [Define this to enable CXXR provenance tracking.])
@@ -2686,6 +2689,7 @@ AC_CONFIG_FILES(
   src/library/utils/Makefile
   src/library/utils/src/Makefile
   src/main/Makefile
+  src/main/jit/Makefile
   src/modules/Makefile
   src/modules/X11/Makefile
   src/modules/internet/Makefile
