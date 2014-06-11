@@ -64,10 +64,11 @@ class WeakRef;
  */
 namespace llvm {
 
-#define DECLARE_TYPEBUILDER_FOR(CXXR_TYPE)                                    \
-    template <bool xcompile> class TypeBuilder<::CXXR::CXXR_TYPE, xcompile> { \
-    public:                                                                   \
-        static StructType* get(LLVMContext& context);                         \
+#define DECLARE_TYPEBUILDER_FOR(CXXR_TYPE)                                     \
+    template <bool xcompile>                                                   \
+    class TypeBuilder<::CXXR::CXXR_TYPE, xcompile> {                           \
+    public:                                                                    \
+	static StructType* get(LLVMContext& context);                          \
     };
 
 // TODO: handle vector types: IntegerVector etc.
