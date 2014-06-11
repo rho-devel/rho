@@ -56,55 +56,51 @@ llvm::Module* getModule(llvm::IRBuilder<>* builder);
 
 namespace Runtime {
 
-    // This closely follows the way LLVM handles Intrinsics, except that there
-    // is no overloading.
-    enum FunctionId {
-	NOT_A_RUNTIME_FUNCTION = 0,
-	EVALUATE,
-	LOOKUP_SYMBOL,
-	LOOKUP_FUNCTION,
-	CALL_FUNCTION,
-	// When adding to this list, make sure to add to allFunctionIds[] in
-	// Runtime.cpp.
-	FIRST_FUNCTION = EVALUATE,
-	LAST_FUNCTION = CALL_FUNCTION,
-    };
+// This closely follows the way LLVM handles Intrinsics, except that there
+// is no overloading.
+enum FunctionId {
+    NOT_A_RUNTIME_FUNCTION = 0,
+    EVALUATE,
+    LOOKUP_SYMBOL,
+    LOOKUP_FUNCTION,
+    CALL_FUNCTION,
+    // When adding to this list, make sure to add to allFunctionIds[] in
+    // Runtime.cpp.
+    FIRST_FUNCTION = EVALUATE,
+    LAST_FUNCTION = CALL_FUNCTION,
+};
 
-    std::string getName(FunctionId function);
+std::string getName(FunctionId function);
 
-    llvm::Function* getDeclaration(FunctionId id,
-				   llvm::Module* module);
+llvm::Function* getDeclaration(FunctionId id, llvm::Module* module);
 
-    // returns NOT_A_RUNTIME_FUNCTION if function isn't a runtime function.
-    FunctionId getFunctionId(llvm::Function* function);
+// returns NOT_A_RUNTIME_FUNCTION if function isn't a runtime function.
+FunctionId getFunctionId(llvm::Function* function);
 
-    // Adds the Runtime functions into the module.
-    void mergeInRuntimeModule(llvm::Module* module);
+// Adds the Runtime functions into the module.
+void mergeInRuntimeModule(llvm::Module* module);
 
 /**
  * These functions generate simple calls into the interpreter.  They make no
  * attempt to generate more efficient code.
  */
 llvm::Value* emitEvaluate(llvm::Value* value, llvm::Value* environment,
-                          llvm::IRBuilder<>* builder);
+			  llvm::IRBuilder<>* builder);
 
 llvm::Value* emitLookupSymbol(llvm::Value* symbol, llvm::Value* environment,
-                              llvm::IRBuilder<>* builder);
+			      llvm::IRBuilder<>* builder);
 llvm::Value* emitLookupSymbol(const Symbol* symbol, llvm::Value* environment,
-                              llvm::IRBuilder<>* builder);
+			      llvm::IRBuilder<>* builder);
 
-llvm::Value* emitLookupFunction(llvm::Value* symbol,
-                                llvm::Value* environment,
-                                llvm::IRBuilder<>* builder);
-llvm::Value* emitLookupFunction(const Symbol* symbol,
-                                llvm::Value* environment,
-                                llvm::IRBuilder<>* builder);
+llvm::Value* emitLookupFunction(llvm::Value* symbol, llvm::Value* environment,
+				llvm::IRBuilder<>* builder);
+llvm::Value* emitLookupFunction(const Symbol* symbol, llvm::Value* environment,
+				llvm::IRBuilder<>* builder);
 
 llvm::Value* emitCallFunction(llvm::Value* function_base,
-                              llvm::Value* pairlist_args,
-                              llvm::Value* call,
-                              llvm::Value* environment,
-                              llvm::IRBuilder<>* builder);
+			      llvm::Value* pairlist_args, llvm::Value* call,
+			      llvm::Value* environment,
+			      llvm::IRBuilder<>* builder);
 } // namespace Runtime
 } // namespace JIT
 } // namespace CXXR

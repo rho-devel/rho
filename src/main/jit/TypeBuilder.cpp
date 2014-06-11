@@ -37,13 +37,13 @@ using namespace CXXR;
 
 namespace llvm {
 
-#define DEFINE_TYPEBUILDER_FOR(CXXR_TYPE)                                    \
-    template <>                                                              \
-    StructType* TypeBuilder<CXXR_TYPE, false>::get(LLVMContext& context)     \
-    {                                                                        \
-        static StructType* result =                                          \
-	    StructType::create(context, std::string("CXXR::") + #CXXR_TYPE); \
-        return result;                                                       \
+#define DEFINE_TYPEBUILDER_FOR(CXXR_TYPE)                                      \
+    template <>                                                                \
+    StructType* TypeBuilder<CXXR_TYPE, false>::get(LLVMContext& context)       \
+    {                                                                          \
+	static StructType* result                                              \
+	    = StructType::create(context, std::string("CXXR::") + #CXXR_TYPE); \
+	return result;                                                         \
     }
 
 DEFINE_TYPEBUILDER_FOR(Bailout);

@@ -87,23 +87,23 @@ JITCompiledExpression compileFunctionBody(const Closure* closure)
 
     // Create a function with signature RObject* (*f)(Environment* environment)
     llvm::Function* function = llvm::Function::Create(
-        llvm::TypeBuilder<RObject*(Environment*), false>::get(context),
+	llvm::TypeBuilder<RObject*(Environment*), false>::get(context),
 	llvm::Function::InternalLinkage,
-        "anonymous_function", // TODO: give it a useful name
-        module);
+	"anonymous_function", // TODO: give it a useful name
+	module);
     Value* environment = &*(function->getArgumentList().begin());
     environment->setName("environment");
 
     // Setup the entry block.
     BasicBlock* entry_block
-        = BasicBlock::Create(context, "EntryBlock", function);
+	= BasicBlock::Create(context, "EntryBlock", function);
     IRBuilder<> builder(entry_block);
 
     // Generate code for the function body.
     Value* return_value = emitEval(body, environment, &builder);
 
     if (!return_value->hasName())
-        return_value->setName("return_value");
+	return_value->setName("return_value");
     builder.CreateRet(return_value);
 
     // The IR is now complete.  Compile to native code.

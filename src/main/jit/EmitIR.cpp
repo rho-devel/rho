@@ -53,8 +53,8 @@ llvm::Constant* emitConstantPointer(const void* value, llvm::Type* type)
 {
     llvm::LLVMContext& context = llvm::getGlobalContext();
     llvm::ConstantInt* pointer_as_integer = llvm::ConstantInt::get(
-        llvm::TypeBuilder<intptr_t, false>::get(context),
-        reinterpret_cast<intptr_t>(value));
+	llvm::TypeBuilder<intptr_t, false>::get(context),
+	reinterpret_cast<intptr_t>(value));
     return llvm::ConstantExpr::getIntToPtr(pointer_as_integer, type);
 }
 
@@ -76,34 +76,34 @@ Value* emitEval(const RObject* object, Value* environment, IRBuilder<>* builder)
     // This has a non-trivial implementation for all the objects which have
     // non-default object->evaluate() implementations.
     if (!object) {
-        return emitNullValue();
+	return emitNullValue();
     }
 
     switch (object->sexptype()) {
     case SYMSXP: {
-        const Symbol* symbol = SEXP_downcast<const Symbol*>(object);
-        return Runtime::emitLookupSymbol(symbol, environment, builder);
+	const Symbol* symbol = SEXP_downcast<const Symbol*>(object);
+	return Runtime::emitLookupSymbol(symbol, environment, builder);
     }
     case LANGSXP:
-        return emitExpressionEval(SEXP_downcast<const Expression*>(object),
-    				  environment, builder);
+	return emitExpressionEval(SEXP_downcast<const Expression*>(object),
+				  environment, builder);
     case DOTSXP:
-        // Call the interpreter.
-        return Runtime::emitEvaluate(emitConstantPointer(object), environment,
-    	    builder);
+	// Call the interpreter.
+	return Runtime::emitEvaluate(emitConstantPointer(object), environment,
+				     builder);
     case BCODESXP:
-        assert(0 && "Unexpected eval of bytecode in JIT compilation.");
-        return nullptr;
+	assert(0 && "Unexpected eval of bytecode in JIT compilation.");
+	return nullptr;
     case PROMSXP:
-        assert(0 && "Unexpected eval of a promise in JIT compilation.");
-        return nullptr;
+	assert(0 && "Unexpected eval of a promise in JIT compilation.");
+	return nullptr;
     default:
-        return emitConstantPointer(object);
+	return emitConstantPointer(object);
     }
 }
 
 Value* emitExpressionEval(const Expression* expression, Value* environment,
-                          IRBuilder<>* builder)
+			  IRBuilder<>* builder)
 {
     RObject* function = expression->car();
     Value* resolved_function = nullptr;
@@ -114,13 +114,11 @@ Value* emitExpressionEval(const Expression* expression, Value* environment,
     } else {
 	// Lookup the function.
 	resolved_function = Runtime::emitLookupFunction(
-	    SEXP_downcast<Symbol*>(function),
-	    environment, builder);
+	    SEXP_downcast<Symbol*>(function), environment, builder);
     }
 
     return Runtime::emitCallFunction(
-	resolved_function,
-	emitConstantPointer(expression->tail()),
+	resolved_function, emitConstantPointer(expression->tail()),
 	emitConstantPointer(expression), environment, builder);
 }
 

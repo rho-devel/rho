@@ -55,7 +55,7 @@ llvm::Constant* emitConstantPointer(const T* value)
 {
     llvm::LLVMContext& context = llvm::getGlobalContext();
     return emitConstantPointer(reinterpret_cast<const void*>(value),
-                               llvm::TypeBuilder<T*, false>::get(context));
+			       llvm::TypeBuilder<T*, false>::get(context));
 }
 
 llvm::Constant* emitSymbol(const Symbol* symbol);
@@ -64,10 +64,10 @@ llvm::Constant* emitNullValue();
 
 // This emits the code to do: eval(object, environment).
 llvm::Value* emitEval(const RObject* object, llvm::Value* environment,
-                      llvm::IRBuilder<>* builder);
+		      llvm::IRBuilder<>* builder);
 
 llvm::Value* emitExpressionEval(const Expression* object,
-                                llvm::Value* environment,
+				llvm::Value* environment,
 				llvm::IRBuilder<>* builder);
 
 } // namespace JIT
