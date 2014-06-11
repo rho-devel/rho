@@ -1,0 +1,31 @@
+#-*- Makefile -*-
+include ../../gnuwin32/MkRules
+
+all: makeMakedeps libjit.a
+
+SOURCES = \
+	EmitIR.cpp \
+	Globals.cpp \
+	JIT.cpp \
+	Runtime.cpp \
+	TypeBuilder.cpp
+OBJECTS = $(SOURCES:.cpp=.o)
+
+# TODO: needs more flags here.
+CPPFLAGS=-I../../include -DHAVE_CONFIG_H
+
+libjit.a: $(OBJECTS)
+
+clean:
+	@$(RM) *.o *~ *.d Makedeps
+distclean: clean
+	@$(RM) libjit.a
+
+# Dependencies
+DEPS=$(SOURCES:.cpp=.d)
+
+makeMakedeps: $(DEPS)
+	@$(RM) Makedeps
+	@cat $(DEPS) >> Makedeps
+
+-include Makedeps

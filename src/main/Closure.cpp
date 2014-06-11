@@ -51,6 +51,7 @@
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
 #include "CXXR/errors.h"
+#include "CXXR/jit/JIT.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -72,6 +73,7 @@ namespace CXXR {
 
 Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
     : FunctionBase(CLOSXP), m_debug(false),
+      m_num_invokes(0), m_compiled_body(0),
       m_matcher(expose(new ArgMatcher(formal_args))),
       m_body(body), m_environment(env)
 {
@@ -106,9 +108,16 @@ RObject* Closure::execute(Environment* env) const
     Environment::ReturnScope returnscope(env);
     Closure::DebugScope debugscope(this); 
     try {
-	{
+	++m_num_invokes;
+	if (m_compiled_body) {
+	    ans = m_compiled_body(env);
+	} else {
 	    BailoutContext boctxt;
 	    ans = Evaluator::evaluate(m_body, env);
+
+	    if (m_num_invokes >= 100) {
+		m_compiled_body = JIT::compileFunctionBody(this);
+	    }
 	}
 	if (ans && ans->sexptype() == BAILSXP) {
 	    ReturnBailout* rbo = dynamic_cast<ReturnBailout*>(ans);
