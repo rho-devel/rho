@@ -66,8 +66,6 @@ enum FunctionId {
     CALL_FUNCTION,
     // When adding to this list, make sure to add to allFunctionIds[] in
     // Runtime.cpp.
-    FIRST_FUNCTION = EVALUATE,
-    LAST_FUNCTION = CALL_FUNCTION,
 };
 
 std::string getName(FunctionId function);
@@ -77,9 +75,16 @@ llvm::Function* getDeclaration(FunctionId id, llvm::Module* module);
 // returns NOT_A_RUNTIME_FUNCTION if function isn't a runtime function.
 FunctionId getFunctionId(llvm::Function* function);
 
-// Adds the Runtime functions into the module.
-void mergeInRuntimeModule(llvm::Module* module);
+// Return a module that has been setup to work with the runtime.
+llvm::Module* createModule(llvm::LLVMContext& context);
 
+// Links any needed runtime functions and definitions into the module.
+void linkInRuntimeModule(llvm::Module* module);
+
+// Returns the LLVM type that the runtime uses for the given class name.
+// Most code should use TypeBuilder instead of calling this directly.
+llvm::StructType* getCxxrType(const std::string& name,
+			      llvm::LLVMContext& context);
 /**
  * These functions generate simple calls into the interpreter.  They make no
  * attempt to generate more efficient code.

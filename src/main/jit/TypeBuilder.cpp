@@ -32,6 +32,7 @@
  */
 
 #include "CXXR/jit/TypeBuilder.hpp"
+#include "CXXR/jit/Runtime.hpp"
 
 using namespace CXXR;
 
@@ -42,7 +43,7 @@ namespace llvm {
     StructType* TypeBuilder<CXXR_TYPE, false>::get(LLVMContext& context)       \
     {                                                                          \
 	static StructType* result                                              \
-	    = StructType::create(context, std::string("CXXR::") + #CXXR_TYPE); \
+	    = CXXR::JIT::Runtime::getCxxrType(#CXXR_TYPE, context);            \
 	return result;                                                         \
     }
 

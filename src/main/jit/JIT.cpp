@@ -46,6 +46,7 @@
 #include "llvm/LinkAllIR.h"
 #include "llvm/LinkAllPasses.h"
 #include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetOptions.h"
 
 #include "CXXR/Closure.h"
 #include "CXXR/Environment.h"
@@ -75,15 +76,23 @@ JITCompiledExpression compileFunctionBody(const Closure* closure)
     // Create a module to compile the code in.  MCJIT requires that each
     // separate invocation of the JIT compiler uses its own module.
     llvm::LLVMContext& context = llvm::getGlobalContext();
-    Module* module = new Module("module", context);
+    Module* module = Runtime::createModule(context);
 
-    // TODO: cleanup objects when the closure is destroyed.
-    engine = llvm::EngineBuilder(module).setUseMCJIT(true).create();
+    // TODO(kmillar): cleanup objects when the closure is destroyed.
+    llvm::TargetOptions options;
+    // TODO(kmillar): set options dynamically.
+    options.JITEmitDebugInfo = true;
+    options.NoFramePointerElim = true;
+    options.EnableFastISel = true;
+
+    engine = llvm::EngineBuilder(module)
+		 .setUseMCJIT(true)
+		 .setTargetOptions(options)
+		 .create();
     if (!engine) {
 	assert(engine);
 	return nullptr;
     }
-    Runtime::mergeInRuntimeModule(module);
 
     // Create a function with signature RObject* (*f)(Environment* environment)
     llvm::Function* function = llvm::Function::Create(
