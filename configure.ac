@@ -2266,7 +2266,7 @@ R_SYS_POSIX_LEAPSECONDS
 gl_STAT_TIME
 
 ## LLVM
-AX_LLVM(core mcjit native linker instrumentation ipo vectorize)
+AX_LLVM(core mcjit native linker instrumentation ipo vectorize irreader)
 
 ## CXXR provenance tracking.
 if test "${want_provenance_tracking}" = yes; then

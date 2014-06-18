@@ -4,8 +4,10 @@
 #include "CXXR/jit/Globals.hpp"
 #include "CXXR/jit/TypeBuilder.hpp"
 #include "CXXR/RObject.h"
+#include "Defn.h"
 #include "Rinternals.h"
 
+#undef _
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Function.h"
@@ -14,8 +16,12 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/TypeBuilder.h"
+#include "llvm/IRReader/IRReader.h"
 #include "llvm/Linker.h"
 #include "llvm/Support/Casting.h"
+#include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/system_error.h"
+#include "llvm/Transforms/Utils/Cloning.h"
 
 using llvm::Constant;
 using llvm::ConstantExpr;
@@ -26,6 +32,7 @@ using llvm::IRBuilder;
 using llvm::LLVMContext;
 using llvm::Linker;
 using llvm::Module;
+using llvm::StructType;
 using llvm::Type;
 using llvm::TypeBuilder;
 using llvm::Value;
@@ -42,9 +49,13 @@ llvm::Module* getModule(IRBuilder<>* builder)
 
 namespace Runtime {
 
+static Module* getRuntimeModule(LLVMContext& context);
+
 llvm::Function* getDeclaration(FunctionId function, llvm::Module* module)
 {
-    return module->getFunction(getName(function));
+    std::string name = getName(function);
+    llvm::Function* resolved_function = module->getFunction(name);
+    return resolved_function;
 }
 
 static llvm::Function* getDeclaration(FunctionId fun, IRBuilder<>* builder)
@@ -52,20 +63,10 @@ static llvm::Function* getDeclaration(FunctionId fun, IRBuilder<>* builder)
     return getDeclaration(fun, getModule(builder));
 }
 
-extern "C" RObject* evaluate(RObject* value, Environment* environment)
-{
-    return value->evaluate(environment);
-}
-
 Value* emitEvaluate(Value* value, Value* environment, IRBuilder<>* builder)
 {
     Function* f = getDeclaration(EVALUATE, builder);
     return builder->CreateCall2(f, value, environment);
-}
-
-extern "C" RObject* lookupSymbol(Symbol* value, Environment* environment)
-{
-    return value->evaluate(environment);
 }
 
 Value* emitLookupSymbol(Value* value, Value* environment, IRBuilder<>* builder)
@@ -79,13 +80,6 @@ Value* emitLookupSymbol(const Symbol* value, Value* environment,
 {
     Value* symbol = emitSymbol(value);
     return emitLookupSymbol(symbol, environment, builder);
-}
-
-extern "C" FunctionBase* lookupFunction(const Symbol* symbol,
-					const Environment* environment)
-{
-    return SEXP_downcast<FunctionBase*>(Rf_findFun(
-	const_cast<Symbol*>(symbol), const_cast<Environment*>(environment)));
 }
 
 Value* emitLookupFunction(Value* value, Value* environment,
@@ -102,14 +96,6 @@ Value* emitLookupFunction(const Symbol* value, Value* environment,
     return emitLookupFunction(symbol, environment, builder);
 }
 
-extern "C" RObject* callFunction(const FunctionBase* function,
-				 const PairList* args, const Expression* call,
-				 Environment* environment)
-{
-    ArgList arglist(args, ArgList::RAW);
-    return function->apply(&arglist, environment, call);
-}
-
 Value* emitCallFunction(llvm::Value* function_base, llvm::Value* pairlist_args,
 			llvm::Value* call, llvm::Value* environment,
 			IRBuilder<>* builder)
@@ -119,43 +105,46 @@ Value* emitCallFunction(llvm::Value* function_base, llvm::Value* pairlist_args,
 				environment);
 }
 
-static Module* runtime_module = nullptr;
-
-template <class FUNCTION>
-static void createRuntimeFunction(FunctionId functionId, FUNCTION* fun)
+static Module* createRuntimeModule(LLVMContext& context)
 {
-    FunctionType* type = TypeBuilder
-	<FUNCTION, false>::get(runtime_module->getContext());
-    Function* function = Function::Create(type, Function::ExternalLinkage,
-					  getName(functionId), runtime_module);
-    engine->addGlobalMapping(function, reinterpret_cast<void*>(fun));
-}
+    std::string module_filename = std::string(R_Home) + "/jit/RuntimeImpl.bc";
 
-// TODO: read the module in from a bytecode file compiled from C++ by clang,
-// where all the functions have static linkage, so llvm can ignore them if
-// unused.
-static void setupRuntimeModule(LLVMContext& context)
-{
-    if (runtime_module != nullptr) {
-	return;
+    llvm::SMDiagnostic err;
+    Module* runtime_module = llvm::ParseIRFile(module_filename, err, context);
+    if (!runtime_module) {
+	// TODO(kmillar): better error handling
+	printf("parse failed\n");
+	exit(1);
     }
 
-    runtime_module = new Module("cxxr.module", context);
-    assert(engine != nullptr);
-    engine->addModule(runtime_module);
-
-    createRuntimeFunction(EVALUATE, evaluate);
-    createRuntimeFunction(LOOKUP_SYMBOL, lookupSymbol);
-    createRuntimeFunction(LOOKUP_FUNCTION, lookupFunction);
-    createRuntimeFunction(CALL_FUNCTION, callFunction);
+    return runtime_module;
 }
 
-void mergeInRuntimeModule(llvm::Module* module)
+static Module* getRuntimeModule(LLVMContext& context)
 {
-    setupRuntimeModule(module->getContext());
-    // TODO: error handling
-    Linker::LinkModules(module, runtime_module, Linker::PreserveSource,
-			nullptr);
+    // TODO(kmillar): need multiple modules if we have multiple contexts.
+    static Module* runtime_module = createRuntimeModule(context);
+    return runtime_module;
+}
+
+llvm::Module* createModule(llvm::LLVMContext& context)
+{
+    // LLVM has an annoying bug where linking removes the type names in the
+    // runtime module, even with Linker::PreserveSource (LLVM bug 20068).
+    // Because of this, initialize modules with an entire copy of the
+    // runtime module, which eliminates the need for linking.
+    // TODO(kmillar): improve this.
+    return llvm::CloneModule(getRuntimeModule(context));
+}
+
+void linkInRuntimeModule(llvm::Module* module)
+{
+    // Nothing needed at present.  See comments in createModule().
+}
+
+StructType* getCxxrType(const std::string& name, LLVMContext& context)
+{
+    return getRuntimeModule(context)->getTypeByName("class.CXXR::" + name);
 }
 
 std::string getName(FunctionId function)
@@ -165,13 +154,13 @@ std::string getName(FunctionId function)
 	assert(0 && "Invalid FunctionId value passed.");
 	return nullptr; // TODO: throw an exception.
     case EVALUATE:
-	return "evaluate";
+	return "cxxr_runtime_evaluate";
     case LOOKUP_SYMBOL:
-	return "lookupSymbol";
+	return "cxxr_runtime_lookupSymbol";
     case LOOKUP_FUNCTION:
-	return "lookupFunction";
+	return "cxxr_runtime_lookupFunction";
     case CALL_FUNCTION:
-	return "callFunction";
+	return "cxxr_runtime_callFunction";
     };
 }
 
