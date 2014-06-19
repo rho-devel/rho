@@ -1,3 +1,36 @@
+/*CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR
+ *CXXR CXXR is Copyright (C) 2008-13 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
+/*
+ *  R : A Computer Language for Statistical Data Analysis
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2.1 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
+ */
+
 #include "CXXR/jit/Runtime.hpp"
 
 #include "CXXR/jit/EmitIR.hpp"
@@ -75,6 +108,14 @@ Value* emitLookupSymbol(Value* value, Value* environment, IRBuilder<>* builder)
     return builder->CreateCall2(f, value, environment);
 }
 
+Value* emitLookupSymbolInCompiledFrame(Value* value, Value* environment,
+				       int position, IRBuilder<>* builder)
+{
+    Function* f = getDeclaration(LOOKUP_SYMBOL_IN_COMPILED_FRAME, builder);
+    return builder->CreateCall3(f, value, environment,
+				builder->getInt32(position));
+}
+
 Value* emitLookupFunction(Value* value, Value* environment,
 			  IRBuilder<>* builder)
 {
@@ -143,6 +184,8 @@ std::string getName(FunctionId function)
 	return "cxxr_runtime_evaluate";
     case LOOKUP_SYMBOL:
 	return "cxxr_runtime_lookupSymbol";
+    case LOOKUP_SYMBOL_IN_COMPILED_FRAME:
+	return "cxxr_runtime_lookupSymbolInCompiledFrame";
     case LOOKUP_FUNCTION:
 	return "cxxr_runtime_lookupFunction";
     case CALL_FUNCTION:
@@ -151,7 +194,8 @@ std::string getName(FunctionId function)
 }
 
 static const FunctionId allFunctionIds[]
-    = { EVALUATE, LOOKUP_SYMBOL, LOOKUP_FUNCTION, CALL_FUNCTION };
+    = { EVALUATE, LOOKUP_SYMBOL, LOOKUP_SYMBOL_IN_COMPILED_FRAME,
+	LOOKUP_FUNCTION, CALL_FUNCTION };
 
 FunctionId getFunctionId(llvm::Function* function)
 {

@@ -41,6 +41,7 @@
 #include "CXXR/RObject.h"
 #include "CXXR/SEXP_downcast.hpp"
 #include "CXXR/Symbol.h"
+#include "CXXR/jit/FrameDescriptor.hpp"
 #include "CXXR/jit/Runtime.hpp"
 #include "CXXR/jit/TypeBuilder.hpp"
 
@@ -50,12 +51,13 @@ using llvm::Value;
 namespace CXXR {
 namespace JIT {
 
-Compiler::Compiler(CompilerContext context)
-    : IRBuilder<>(context.getLLVMContext()), m_context(context)
+Compiler::Compiler(CompilerContext* context)
+    : IRBuilder<>(context->getLLVMContext()), m_context(context)
 {
     // Setup the entry block.
     BasicBlock* entry_block
-	= BasicBlock::Create(getContext(), "EntryBlock", context.getFunction());
+	= BasicBlock::Create(getContext(), "EntryBlock",
+			     context->getFunction());
     SetInsertPoint(entry_block);
 }
 
@@ -110,8 +112,21 @@ Value* Compiler::emitEval(const RObject* object)
 
 Value* Compiler::emitSymbolEval(const Symbol* symbol)
 {
+    assert(m_context->m_frame_descriptor != nullptr);
+    int location = m_context->m_frame_descriptor->getLocation(symbol);
+    if (location != -1) {
+	if (symbol != DotsSymbol
+	    && !symbol->isDotDotSymbol()
+	    && symbol != Symbol::missingArgument()) {
+	    // Lookup the symbol directly.
+	    return Runtime::emitLookupSymbolInCompiledFrame(
+		emitSymbol(symbol), m_context->getEnvironment(), location,
+		this);
+	}
+    }
+    // Otherwise fallback to the interpreter for now.
     return Runtime::emitLookupSymbol(emitSymbol(symbol),
-				     m_context.getEnvironment(), this);
+				     m_context->getEnvironment(), this);
 }
 
 Value* Compiler::emitExpressionEval(const Expression* expression)
@@ -127,20 +142,21 @@ Value* Compiler::emitExpressionEval(const Expression* expression)
 	// TODO(kmillar): verify that we actually got a symbol here.
 	llvm::Value* fn = emitSymbol(SEXP_downcast<Symbol*>(function));
 	resolved_function
-	    = Runtime::emitLookupFunction(fn, m_context.getEnvironment(), this);
+	    = Runtime::emitLookupFunction(fn, m_context->getEnvironment(),
+					  this);
     }
 
     // Call the function.
     return Runtime::emitCallFunction(
 	resolved_function, emitConstantPointer(expression->tail()),
-	emitConstantPointer(expression), m_context.getEnvironment(), this);
+	emitConstantPointer(expression), m_context->getEnvironment(), this);
 }
 
 Value* Compiler::emitDotsEval(const DottedArgs* expression)
 {
     // Call the interpreter.
     return Runtime::emitEvaluate(emitConstantPointer(expression),
-				 m_context.getEnvironment(), this);
+				 m_context->getEnvironment(), this);
 }
 
 } // namespace JIT

@@ -53,7 +53,7 @@ namespace JIT {
 
 class Compiler : public llvm::IRBuilder<> {
 public:
-    explicit Compiler(CompilerContext context);
+    explicit Compiler(CompilerContext* context);
 
     // Code generation functions.
     // These generate optimized code.
@@ -69,7 +69,7 @@ public:
     llvm::Constant* emitNullValue();
 
 private:
-    CompilerContext m_context;
+    CompilerContext* m_context;
 
     llvm::Constant* emitConstantPointer(const void* value, llvm::Type* type);
 };
