@@ -79,6 +79,12 @@ Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
 {
 }
 
+Closure::~Closure() {
+    if (m_compiled_body) {
+	delete m_compiled_body;
+    }
+}
+
 RObject* Closure::apply(ArgList* arglist, Environment* env,
 			const Expression* call) const
 {
@@ -109,15 +115,15 @@ RObject* Closure::execute(Environment* env) const
     Closure::DebugScope debugscope(this); 
     try {
 	++m_num_invokes;
+	if (!m_compiled_body && m_num_invokes >= 100) {
+	    m_compiled_body
+		= JIT::JITCompiledExpression::compileFunctionBody(this);
+	}
 	if (m_compiled_body) {
-	    ans = m_compiled_body(env);
+	    ans = m_compiled_body->evalInEnvironment(env);
 	} else {
 	    BailoutContext boctxt;
 	    ans = Evaluator::evaluate(m_body, env);
-
-	    if (m_num_invokes >= 100) {
-		m_compiled_body = JIT::compileFunctionBody(this);
-	    }
 	}
 	if (ans && ans->sexptype() == BAILSXP) {
 	    ReturnBailout* rbo = dynamic_cast<ReturnBailout*>(ans);

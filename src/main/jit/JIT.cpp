@@ -61,47 +61,54 @@ using llvm::Value;
 namespace CXXR {
 namespace JIT {
 
-JITCompiledExpression compileFunctionBody(const Closure* closure)
+JITCompiledExpression*
+JITCompiledExpression::compileFunctionBody(const Closure* closure)
+{
+    return new JITCompiledExpression(closure);
+}
+
+JITCompiledExpression::JITCompiledExpression(const Closure* closure)
 {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     EnsureGlobalsInitialized();
 
     const RObject* body = closure->body();
-    // const Environment* enclosing_env = closure->environment();
 
     // Create a module to compile the code in.  MCJIT requires that each
     // separate invocation of the JIT compiler uses its own module.
     llvm::LLVMContext& context = llvm::getGlobalContext();
     Module* module = Runtime::createModule(context);
 
-    // TODO(kmillar): cleanup objects when the closure is destroyed.
     llvm::TargetOptions options;
     // TODO(kmillar): set options dynamically.
     options.JITEmitDebugInfo = true;
     options.NoFramePointerElim = true;
     options.EnableFastISel = true;
 
+    // TODO(kmillar): we're creating and leaking an ExecutionEngine for every
+    //   compilation we do.
     engine = llvm::EngineBuilder(module)
-		 .setUseMCJIT(true)
-		 .setTargetOptions(options)
-		 .create();
+	.setUseMCJIT(true)
+	.setOptLevel(llvm::CodeGenOpt::None)
+	.setTargetOptions(options)
+	.create();
     if (!engine) {
 	assert(engine);
-	return nullptr;
     }
 
     // Create a function with signature RObject* (*f)(Environment* environment)
-    llvm::Function* function = llvm::Function::Create(
-	llvm::TypeBuilder<RObject*(Environment*), false>::get(context),
-	llvm::Function::InternalLinkage,
-	"anonymous_function", // TODO: give it a useful name
-	module);
+    std::unique_ptr<llvm::Function> function(
+	llvm::Function::Create(
+	    llvm::TypeBuilder<RObject*(Environment*), false>::get(context),
+	    llvm::Function::InternalLinkage,
+	    "anonymous_function", // TODO: give it a useful name
+	    module));
     Value* environment = &*(function->getArgumentList().begin());
     environment->setName("environment");
 
     // Setup the compiler and generate code.
-    CompilerContext compiler_context(closure, environment, function);
+    CompilerContext compiler_context(closure, environment, function.get());
     Compiler compiler(compiler_context);
     Value* return_value = compiler.emitEval(body);
 
@@ -117,8 +124,13 @@ JITCompiledExpression compileFunctionBody(const Closure* closure)
 
     auto ptr = engine->getFunctionAddress(function->getName());
     assert(ptr && "JIT compilation failed");
-    return reinterpret_cast<JITCompiledExpression>(ptr);
+
+    m_function = reinterpret_cast<CompiledExpressionPointer>(ptr);
 }
 
+JITCompiledExpression::~JITCompiledExpression()
+{
+    // m_engine->freeMachineCodeForFunction(m_function);
+}
 } // namespace JIT
 } // namespace CXXR
