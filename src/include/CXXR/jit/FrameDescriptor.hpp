@@ -31,72 +31,60 @@
  *  http://www.r-project.org/Licenses/
  */
 
-#ifndef CXXR_JIT_COMPILER_CONTEXT_HPP
-#define CXXR_JIT_COMPILER_CONTEXT_HPP
+#ifndef CXXR_JIT_FRAME_DESCRIPTOR_HPP
+#define CXXR_JIT_FRAME_DESCRIPTOR_HPP
 
-namespace llvm {
-    class BasicBlock;
-    class Function;
-    class LLVMContext;
-    class Value;
-class Module;
-} // namespace llvm
+#include <vector>
 
 namespace CXXR {
-
-    class Closure;
-    class Environment;
-    class Symbol;
+class Closure;
+class Symbol;
 
 namespace JIT {
 
-class FrameDescriptor;
-
-class CompilerContext {
+/**
+ * A FrameDescriptor creates a static mapping between the symbols expected to
+ * be used in a function and integers that can be used as array offsets.
+ *
+ * This is used to create the layout for CompiledFrame.
+ *
+ * Note that it is not guaranteed that all symbols used in the function will
+ * be listed in the FrameDescriptor.
+ */
+class FrameDescriptor {
 public:
-    CompilerContext(const Closure* closure,
-		    llvm::Value* environment,
-		    // The function to emit code into.
-		    llvm::Function* function);
+    FrameDescriptor(const Closure* closure);
 
-    ~CompilerContext();
+    // Returns the index where the symbol is stored.  Returns -1 if the
+    // symbol has not been added to the descriptor.
+    int getLocation(const Symbol* symbol) const;
 
-    llvm::Function* getFunction() {
-	return m_function;
+    //* Check if the symbol is one of the formal parameters to the function.
+    bool isFormalParameter(const Symbol* symbol) const
+    {
+	return isFormalParameter(getLocation(symbol));
     }
 
-    llvm::Module* getModule();
-    llvm::Module* getRuntimeModule();
-    llvm::LLVMContext& getLLVMContext();
-
-    // The closure that is currently being compiled.
-    const Closure* getClosure() {
-	return m_closure;
+    /**
+     * Check if the symbol at location is one of the formal parameters to the
+     * function.
+     */
+    bool isFormalParameter(int location) const
+    {
+	return location >= 0 && location < m_num_formals;
     }
 
-    // The local environment of the closure.
-    llvm::Value* getEnvironment() {
-	return m_environment;
-    }
-
-    // The environment that encloses the closure's local environment.
-    const Environment* getEnclosingEnvironment();
-
-
-    // These variables are read-write and publicly accessible for use by the
-    // compiler.
-    FrameDescriptor* m_frame_descriptor;
+    int getNumberOfSymbols() const
+    {
+	return m_local_vars.size();
+    };
 
 private:
-    const Closure* m_closure;
-    llvm::Value* m_environment;
-    llvm::Function* m_function;
-
-    CompilerContext(const CompilerContext&) = delete;
-    CompilerContext& operator=(const CompilerContext&) = delete;
+    std::vector<const Symbol*> m_local_vars;
+    int m_num_formals;
 };
 
 } // namespace JIT
 } // namespace CXXR
 
-#endif // CXXR_JIT_COMPILER_CONTEXT_HPP
+#endif // CXXR_JIT_FRAME_DESCRIPTOR_HPP

@@ -62,6 +62,7 @@ enum FunctionId {
     NOT_A_RUNTIME_FUNCTION = 0,
     EVALUATE,
     LOOKUP_SYMBOL,
+    LOOKUP_SYMBOL_IN_COMPILED_FRAME,
     LOOKUP_FUNCTION,
     CALL_FUNCTION,
     // When adding to this list, make sure to add to allFunctionIds[] in
@@ -94,6 +95,11 @@ llvm::Value* emitEvaluate(llvm::Value* value, llvm::Value* environment,
 
 llvm::Value* emitLookupSymbol(llvm::Value* symbol, llvm::Value* environment,
 			      llvm::IRBuilder<>* builder);
+
+llvm::Value* emitLookupSymbolInCompiledFrame(llvm::Value* symbol,
+					     llvm::Value* environment,
+					     int position,
+					     llvm::IRBuilder<>* builder);
 
 llvm::Value* emitLookupFunction(llvm::Value* symbol, llvm::Value* environment,
 				llvm::IRBuilder<>* builder);

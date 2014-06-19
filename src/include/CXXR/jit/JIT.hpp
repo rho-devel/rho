@@ -34,17 +34,20 @@
 #ifndef CXXR_JIT_JIT_HPP
 #define CXXR_JIT_JIT_HPP
 
-namespace llvm {
-    class ExecutionEngine;
-}
+#include <memory>
 
+#include "CXXR/jit/FrameDescriptor.hpp"
 namespace CXXR {
 
 class Closure;
-class RObject;
+class CompilerContext;
 class Environment;
+class Frame;
+class RObject;
 
 namespace JIT {
+
+class FrameDescriptor;
 
 class JITCompiledExpression {
 public:
@@ -55,14 +58,21 @@ public:
 	return m_function(env);
     }
 
+    Frame* createFrame() const;
+
     static JITCompiledExpression* compileFunctionBody(const Closure* function);
 
 private:
     JITCompiledExpression() { }
     JITCompiledExpression(const Closure* closure);
 
+    // The compiled function itself.
     typedef RObject* (*CompiledExpressionPointer)(Environment* env);
     CompiledExpressionPointer m_function;
+
+    // The interpreter requires the frame descriptor to work with the frames
+    // that the compiled code generates.
+    std::unique_ptr<FrameDescriptor> m_frame_descriptor;
 
     JITCompiledExpression(const JITCompiledExpression&) = delete;
     JITCompiledExpression& operator=(const JITCompiledExpression&) = delete;

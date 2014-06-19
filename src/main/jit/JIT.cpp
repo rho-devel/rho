@@ -49,6 +49,7 @@
 #include "CXXR/Closure.h"
 #include "CXXR/Environment.h"
 #include "CXXR/RObject.h"
+#include "CXXR/jit/CompiledFrame.hpp"
 #include "CXXR/jit/CompilerContext.hpp"
 #include "CXXR/jit/EmitIR.hpp"
 #include "CXXR/jit/Globals.hpp"
@@ -109,7 +110,7 @@ JITCompiledExpression::JITCompiledExpression(const Closure* closure)
 
     // Setup the compiler and generate code.
     CompilerContext compiler_context(closure, environment, function.get());
-    Compiler compiler(compiler_context);
+    Compiler compiler(&compiler_context);
     Value* return_value = compiler.emitEval(body);
 
     if (!return_value->hasName())
@@ -126,11 +127,19 @@ JITCompiledExpression::JITCompiledExpression(const Closure* closure)
     assert(ptr && "JIT compilation failed");
 
     m_function = reinterpret_cast<CompiledExpressionPointer>(ptr);
+    // Steal the frame descriptor from the compiler context.
+    m_frame_descriptor.reset(compiler_context.m_frame_descriptor);
+    compiler_context.m_frame_descriptor = nullptr;
 }
 
 JITCompiledExpression::~JITCompiledExpression()
 {
     // m_engine->freeMachineCodeForFunction(m_function);
 }
+
+Frame* JITCompiledExpression::createFrame() const {
+    return CXXR_NEW(CompiledFrame(m_frame_descriptor.get()));
+}
+
 } // namespace JIT
 } // namespace CXXR
