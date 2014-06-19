@@ -94,12 +94,8 @@ llvm::Value* emitEvaluate(llvm::Value* value, llvm::Value* environment,
 
 llvm::Value* emitLookupSymbol(llvm::Value* symbol, llvm::Value* environment,
 			      llvm::IRBuilder<>* builder);
-llvm::Value* emitLookupSymbol(const Symbol* symbol, llvm::Value* environment,
-			      llvm::IRBuilder<>* builder);
 
 llvm::Value* emitLookupFunction(llvm::Value* symbol, llvm::Value* environment,
-				llvm::IRBuilder<>* builder);
-llvm::Value* emitLookupFunction(const Symbol* symbol, llvm::Value* environment,
 				llvm::IRBuilder<>* builder);
 
 llvm::Value* emitCallFunction(llvm::Value* function_base,

@@ -31,58 +31,56 @@
  *  http://www.r-project.org/Licenses/
  */
 
-#ifndef CXXR_JIT_EMIT_IR_HPP
-#define CXXR_JIT_EMIT_IR_HPP
+#ifndef CXXR_JIT_COMPILER_CONTEXT_HPP
+#define CXXR_JIT_COMPILER_CONTEXT_HPP
 
-#include "CXXR/jit/CompilerContext.hpp"
-
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/TypeBuilder.h"
+namespace llvm {
+    class BasicBlock;
+    class Function;
+    class LLVMContext;
+    class Value;
+class Module;
+} // namespace llvm
 
 namespace CXXR {
 
-class DottedArgs;
-class Environment;
-class Expression;
-class FunctionBase;
-class RObject;
-class Symbol;
+    class Closure;
+    class Environment;
+    class Symbol;
 
 namespace JIT {
 
-class Compiler : public llvm::IRBuilder<> {
+class CompilerContext {
 public:
-    explicit Compiler(CompilerContext context);
+    CompilerContext(const Closure* closure,
+		    llvm::Value* environment,
+		    llvm::Function* function);
 
-    // Code generation functions.
-    // These generate optimized code.
-    llvm::Value* emitEval(const RObject* object);
-    llvm::Value* emitSymbolEval(const Symbol* symbol);
-    llvm::Value* emitExpressionEval(const Expression* object);
-    llvm::Value* emitDotsEval(const DottedArgs* object);
+    llvm::Function* getFunction() {
+	return m_function;
+    }
 
-    template <class T>
-    llvm::Constant* emitConstantPointer(const T* value);
-    // Aliases for emitConstantPointer for improved code readability.
-    llvm::Constant* emitSymbol(const Symbol* symbol);
-    llvm::Constant* emitNullValue();
+    llvm::Module* getModule();
+    llvm::Module* getRuntimeModule();
+    llvm::LLVMContext& getLLVMContext();
 
+    // The closure that is currently being compiled.
+    const Closure* getClosure() {
+	return m_closure;
+    }
+    // The local environment of the closure.
+    llvm::Value* getEnvironment() {
+	return m_environment;
+    }
+    // The environment that encloses the closure's local environment.
+    const Environment* getEnclosingEnvironment();
 private:
-    CompilerContext m_context;
-
-    llvm::Constant* emitConstantPointer(const void* value, llvm::Type* type);
+    const Closure* m_closure;
+    llvm::Value* m_environment;
+    llvm::Function* m_function;
 };
-
-template <class T>
-llvm::Constant* Compiler::emitConstantPointer(const T* value)
-{
-    llvm::LLVMContext& context = llvm::getGlobalContext();
-    return emitConstantPointer(reinterpret_cast<const void*>(value),
-			       llvm::TypeBuilder<T*, false>::get(context));
-}
 
 } // namespace JIT
 } // namespace CXXR
 
-#endif // CXXR_JIT_EMIT_IR__HPP
+#endif // CXXR_JIT_COMPILER_CONTEXT_HPP

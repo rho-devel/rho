@@ -35,43 +35,53 @@
 
 #include "llvm/IR/Function.h"
 
-#include "CXXR/RObject.h"
+#include "CXXR/DottedArgs.hpp"
 #include "CXXR/Expression.h"
 #include "CXXR/FunctionBase.h"
+#include "CXXR/RObject.h"
 #include "CXXR/SEXP_downcast.hpp"
 #include "CXXR/Symbol.h"
 #include "CXXR/jit/Runtime.hpp"
 #include "CXXR/jit/TypeBuilder.hpp"
 
-using llvm::IRBuilder;
+using llvm::BasicBlock;
 using llvm::Value;
 
 namespace CXXR {
 namespace JIT {
 
-llvm::Constant* emitConstantPointer(const void* value, llvm::Type* type)
+Compiler::Compiler(CompilerContext context)
+    : IRBuilder<>(context.getLLVMContext()), m_context(context)
 {
-    llvm::LLVMContext& context = llvm::getGlobalContext();
+    // Setup the entry block.
+    BasicBlock* entry_block
+	= BasicBlock::Create(getContext(), "EntryBlock", context.getFunction());
+    SetInsertPoint(entry_block);
+}
+
+llvm::Constant* Compiler::emitConstantPointer(const void* value,
+					      llvm::Type* type)
+{
     llvm::ConstantInt* pointer_as_integer = llvm::ConstantInt::get(
-	llvm::TypeBuilder<intptr_t, false>::get(context),
+	llvm::TypeBuilder<intptr_t, false>::get(getContext()),
 	reinterpret_cast<intptr_t>(value));
     return llvm::ConstantExpr::getIntToPtr(pointer_as_integer, type);
 }
 
-llvm::Constant* emitSymbol(const Symbol* symbol)
+llvm::Constant* Compiler::emitSymbol(const Symbol* symbol)
 {
-    // TODO: consider caching these.
-    // TODO: give the symbol a useful name in the IR.
+    // TODO(kmillar): consider caching these.
+    // TODO(kmillar): give the symbol a useful name in the IR.
     return emitConstantPointer(symbol);
 }
 
-llvm::Constant* emitNullValue()
+llvm::Constant* Compiler::emitNullValue()
 {
     RObject* null = nullptr;
     return emitConstantPointer(null);
 }
 
-Value* emitEval(const RObject* object, Value* environment, IRBuilder<>* builder)
+Value* Compiler::emitEval(const RObject* object)
 {
     // This has a non-trivial implementation for all the objects which have
     // non-default object->evaluate() implementations.
@@ -81,16 +91,12 @@ Value* emitEval(const RObject* object, Value* environment, IRBuilder<>* builder)
 
     switch (object->sexptype()) {
     case SYMSXP: {
-	const Symbol* symbol = SEXP_downcast<const Symbol*>(object);
-	return Runtime::emitLookupSymbol(symbol, environment, builder);
+	return emitSymbolEval(SEXP_downcast<const Symbol*>(object));
     }
     case LANGSXP:
-	return emitExpressionEval(SEXP_downcast<const Expression*>(object),
-				  environment, builder);
+	return emitExpressionEval(SEXP_downcast<const Expression*>(object));
     case DOTSXP:
-	// Call the interpreter.
-	return Runtime::emitEvaluate(emitConstantPointer(object), environment,
-				     builder);
+	return emitDotsEval(SEXP_downcast<const DottedArgs*>(object));
     case BCODESXP:
 	assert(0 && "Unexpected eval of bytecode in JIT compilation.");
 	return nullptr;
@@ -102,8 +108,13 @@ Value* emitEval(const RObject* object, Value* environment, IRBuilder<>* builder)
     }
 }
 
-Value* emitExpressionEval(const Expression* expression, Value* environment,
-			  IRBuilder<>* builder)
+Value* Compiler::emitSymbolEval(const Symbol* symbol)
+{
+    return Runtime::emitLookupSymbol(emitSymbol(symbol),
+				     m_context.getEnvironment(), this);
+}
+
+Value* Compiler::emitExpressionEval(const Expression* expression)
 {
     RObject* function = expression->car();
     Value* resolved_function = nullptr;
@@ -113,13 +124,23 @@ Value* emitExpressionEval(const Expression* expression, Value* environment,
 	    = emitConstantPointer(SEXP_downcast<FunctionBase*>(function));
     } else {
 	// Lookup the function.
-	resolved_function = Runtime::emitLookupFunction(
-	    SEXP_downcast<Symbol*>(function), environment, builder);
+	// TODO(kmillar): verify that we actually got a symbol here.
+	llvm::Value* fn = emitSymbol(SEXP_downcast<Symbol*>(function));
+	resolved_function
+	    = Runtime::emitLookupFunction(fn, m_context.getEnvironment(), this);
     }
 
+    // Call the function.
     return Runtime::emitCallFunction(
 	resolved_function, emitConstantPointer(expression->tail()),
-	emitConstantPointer(expression), environment, builder);
+	emitConstantPointer(expression), m_context.getEnvironment(), this);
+}
+
+Value* Compiler::emitDotsEval(const DottedArgs* expression)
+{
+    // Call the interpreter.
+    return Runtime::emitEvaluate(emitConstantPointer(expression),
+				 m_context.getEnvironment(), this);
 }
 
 } // namespace JIT

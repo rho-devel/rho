@@ -36,10 +36,8 @@
 #include "llvm/Analysis/Verifier.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/MCJIT.h"
-#include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/GlobalValue.h"
-#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/TypeBuilder.h"
@@ -51,13 +49,12 @@
 #include "CXXR/Closure.h"
 #include "CXXR/Environment.h"
 #include "CXXR/RObject.h"
+#include "CXXR/jit/CompilerContext.hpp"
 #include "CXXR/jit/EmitIR.hpp"
 #include "CXXR/jit/Globals.hpp"
 #include "CXXR/jit/Runtime.hpp"
 #include "CXXR/jit/TypeBuilder.hpp"
 
-using llvm::BasicBlock;
-using llvm::IRBuilder;
 using llvm::Module;
 using llvm::Value;
 
@@ -103,17 +100,14 @@ JITCompiledExpression compileFunctionBody(const Closure* closure)
     Value* environment = &*(function->getArgumentList().begin());
     environment->setName("environment");
 
-    // Setup the entry block.
-    BasicBlock* entry_block
-	= BasicBlock::Create(context, "EntryBlock", function);
-    IRBuilder<> builder(entry_block);
-
-    // Generate code for the function body.
-    Value* return_value = emitEval(body, environment, &builder);
+    // Setup the compiler and generate code.
+    CompilerContext compiler_context(closure, environment, function);
+    Compiler compiler(compiler_context);
+    Value* return_value = compiler.emitEval(body);
 
     if (!return_value->hasName())
 	return_value->setName("return_value");
-    builder.CreateRet(return_value);
+    compiler.CreateRet(return_value);
 
     // The IR is now complete.  Compile to native code.
     function->dump(); // So we can see what's going on while developing.

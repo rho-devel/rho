@@ -75,25 +75,11 @@ Value* emitLookupSymbol(Value* value, Value* environment, IRBuilder<>* builder)
     return builder->CreateCall2(f, value, environment);
 }
 
-Value* emitLookupSymbol(const Symbol* value, Value* environment,
-			IRBuilder<>* builder)
-{
-    Value* symbol = emitSymbol(value);
-    return emitLookupSymbol(symbol, environment, builder);
-}
-
 Value* emitLookupFunction(Value* value, Value* environment,
 			  IRBuilder<>* builder)
 {
     Function* f = getDeclaration(LOOKUP_FUNCTION, builder);
     return builder->CreateCall2(f, value, environment);
-}
-
-Value* emitLookupFunction(const Symbol* value, Value* environment,
-			  IRBuilder<>* builder)
-{
-    Value* symbol = emitSymbol(value);
-    return emitLookupFunction(symbol, environment, builder);
 }
 
 Value* emitCallFunction(llvm::Value* function_base, llvm::Value* pairlist_args,
