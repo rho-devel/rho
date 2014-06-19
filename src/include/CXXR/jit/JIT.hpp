@@ -34,6 +34,10 @@
 #ifndef CXXR_JIT_JIT_HPP
 #define CXXR_JIT_JIT_HPP
 
+namespace llvm {
+    class ExecutionEngine;
+}
+
 namespace CXXR {
 
 class Closure;
@@ -42,9 +46,27 @@ class Environment;
 
 namespace JIT {
 
-typedef RObject* (*JITCompiledExpression)(Environment* env);
+class JITCompiledExpression {
+public:
+    ~JITCompiledExpression();
 
-JITCompiledExpression compileFunctionBody(const Closure* function);
+    RObject* evalInEnvironment(Environment* env) const
+    {
+	return m_function(env);
+    }
+
+    static JITCompiledExpression* compileFunctionBody(const Closure* function);
+
+private:
+    JITCompiledExpression() { }
+    JITCompiledExpression(const Closure* closure);
+
+    typedef RObject* (*CompiledExpressionPointer)(Environment* env);
+    CompiledExpressionPointer m_function;
+
+    JITCompiledExpression(const JITCompiledExpression&) = delete;
+    JITCompiledExpression& operator=(const JITCompiledExpression&) = delete;
+};
 
 } // namespace JIT
 } // namespace CXXR

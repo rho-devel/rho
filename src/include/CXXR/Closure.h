@@ -57,6 +57,10 @@
 namespace CXXR {
     class ClosureContext;
 
+    namespace JIT {
+        class JITCompiledExpression;
+    }
+
     /** @brief Class representing a functional programming closure.
      *
      * A closure associates a function definition (the body) with a
@@ -284,15 +288,15 @@ namespace CXXR {
 
 	bool m_debug;
         mutable int m_num_invokes;
-        mutable RObject* (*m_compiled_body)(Environment*);
+        mutable JIT::JITCompiledExpression* m_compiled_body;
 
 	GCEdge<const ArgMatcher> m_matcher;
 	GCEdge<> m_body;
 	GCEdge<Environment> m_environment;
 
-	// Declared private to ensure that Environment objects are
+	// Declared private to ensure that Closure objects are
 	// created only using 'new':
-	~Closure() {}
+	~Closure();
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
