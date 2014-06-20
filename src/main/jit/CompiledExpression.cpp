@@ -31,7 +31,7 @@
  *  http://www.r-project.org/Licenses/
  */
 
-#include "CXXR/jit/JIT.hpp"
+#include "CXXR/jit/CompiledExpression.hpp"
 
 #include "llvm/Analysis/Verifier.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
@@ -50,8 +50,8 @@
 #include "CXXR/Environment.h"
 #include "CXXR/RObject.h"
 #include "CXXR/jit/CompiledFrame.hpp"
+#include "CXXR/jit/Compiler.hpp"
 #include "CXXR/jit/CompilerContext.hpp"
-#include "CXXR/jit/EmitIR.hpp"
 #include "CXXR/jit/Globals.hpp"
 #include "CXXR/jit/Runtime.hpp"
 #include "CXXR/jit/TypeBuilder.hpp"
@@ -62,13 +62,13 @@ using llvm::Value;
 namespace CXXR {
 namespace JIT {
 
-JITCompiledExpression*
-JITCompiledExpression::compileFunctionBody(const Closure* closure)
+CompiledExpression*
+CompiledExpression::compileFunctionBody(const Closure* closure)
 {
-    return new JITCompiledExpression(closure);
+    return new CompiledExpression(closure);
 }
 
-JITCompiledExpression::JITCompiledExpression(const Closure* closure)
+CompiledExpression::CompiledExpression(const Closure* closure)
 {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
@@ -132,12 +132,12 @@ JITCompiledExpression::JITCompiledExpression(const Closure* closure)
     compiler_context.m_frame_descriptor = nullptr;
 }
 
-JITCompiledExpression::~JITCompiledExpression()
+CompiledExpression::~CompiledExpression()
 {
     // m_engine->freeMachineCodeForFunction(m_function);
 }
 
-Frame* JITCompiledExpression::createFrame() const {
+Frame* CompiledExpression::createFrame() const {
     return CXXR_NEW(CompiledFrame(m_frame_descriptor.get()));
 }
 

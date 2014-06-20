@@ -51,7 +51,7 @@
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
 #include "CXXR/errors.h"
-#include "CXXR/jit/JIT.hpp"
+#include "CXXR/jit/CompiledExpression.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -122,7 +122,7 @@ RObject* Closure::execute(Environment* env) const
 		// Compile the body, but stay in the interpreter because the
 		// frame hasn't been setup for a compiled function.
 		m_compiled_body
-		    = JIT::JITCompiledExpression::compileFunctionBody(this);
+		    = JIT::CompiledExpression::compileFunctionBody(this);
 	    }
 	    BailoutContext boctxt;
 	    ans = Evaluator::evaluate(m_body, env);

@@ -58,7 +58,7 @@ namespace CXXR {
     class ClosureContext;
 
     namespace JIT {
-        class JITCompiledExpression;
+        class CompiledExpression;
     }
 
     /** @brief Class representing a functional programming closure.
@@ -288,7 +288,7 @@ namespace CXXR {
 
 	bool m_debug;
         mutable int m_num_invokes;
-        mutable JIT::JITCompiledExpression* m_compiled_body;
+        mutable JIT::CompiledExpression* m_compiled_body;
 
 	GCEdge<const ArgMatcher> m_matcher;
 	GCEdge<> m_body;

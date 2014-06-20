@@ -31,7 +31,7 @@
  *  http://www.r-project.org/Licenses/
  */
 
-#include "CXXR/jit/EmitIR.hpp"
+#include "CXXR/jit/Compiler.hpp"
 
 #include "llvm/IR/Function.h"
 

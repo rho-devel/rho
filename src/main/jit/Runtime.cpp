@@ -33,7 +33,7 @@
 
 #include "CXXR/jit/Runtime.hpp"
 
-#include "CXXR/jit/EmitIR.hpp"
+#include "CXXR/jit/Compiler.hpp"
 #include "CXXR/jit/Globals.hpp"
 #include "CXXR/jit/TypeBuilder.hpp"
 #include "CXXR/RObject.h"
