@@ -31,58 +31,54 @@
  *  http://www.r-project.org/Licenses/
  */
 
-#ifndef CXXR_JIT_EMIT_IR_HPP
-#define CXXR_JIT_EMIT_IR_HPP
+#ifndef CXXR_JIT_COMPILED_EXPRESSION_HPP
+#define CXXR_JIT_COMPILED_EXPRESSION_HPP
 
-#include "CXXR/jit/CompilerContext.hpp"
+#include <memory>
 
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/TypeBuilder.h"
-
+#include "CXXR/jit/FrameDescriptor.hpp"
 namespace CXXR {
 
-class DottedArgs;
+class Closure;
+class CompilerContext;
 class Environment;
-class Expression;
-class FunctionBase;
+class Frame;
 class RObject;
-class Symbol;
 
 namespace JIT {
 
-class Compiler : public llvm::IRBuilder<> {
+class FrameDescriptor;
+
+class CompiledExpression {
 public:
-    explicit Compiler(CompilerContext* context);
+    ~CompiledExpression();
 
-    // Code generation functions.
-    // These generate optimized code.
-    llvm::Value* emitEval(const RObject* object);
-    llvm::Value* emitSymbolEval(const Symbol* symbol);
-    llvm::Value* emitExpressionEval(const Expression* object);
-    llvm::Value* emitDotsEval(const DottedArgs* object);
+    RObject* evalInEnvironment(Environment* env) const
+    {
+	return m_function(env);
+    }
 
-    template <class T>
-    llvm::Constant* emitConstantPointer(const T* value);
-    // Aliases for emitConstantPointer for improved code readability.
-    llvm::Constant* emitSymbol(const Symbol* symbol);
-    llvm::Constant* emitNullValue();
+    Frame* createFrame() const;
+
+    static CompiledExpression* compileFunctionBody(const Closure* function);
 
 private:
-    CompilerContext* m_context;
+    CompiledExpression() { }
+    CompiledExpression(const Closure* closure);
 
-    llvm::Constant* emitConstantPointer(const void* value, llvm::Type* type);
+    // The compiled function itself.
+    typedef RObject* (*CompiledExpressionPointer)(Environment* env);
+    CompiledExpressionPointer m_function;
+
+    // The interpreter requires the frame descriptor to work with the frames
+    // that the compiled code generates.
+    std::unique_ptr<FrameDescriptor> m_frame_descriptor;
+
+    CompiledExpression(const CompiledExpression&) = delete;
+    CompiledExpression& operator=(const CompiledExpression&) = delete;
 };
-
-template <class T>
-llvm::Constant* Compiler::emitConstantPointer(const T* value)
-{
-    llvm::LLVMContext& context = llvm::getGlobalContext();
-    return emitConstantPointer(reinterpret_cast<const void*>(value),
-			       llvm::TypeBuilder<T*, false>::get(context));
-}
 
 } // namespace JIT
 } // namespace CXXR
 
-#endif // CXXR_JIT_EMIT_IR__HPP
+#endif // CXXR_JIT_COMPILED_EXPRESSION_HPP

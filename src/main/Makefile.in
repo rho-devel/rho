@@ -79,9 +79,10 @@ SOURCES_CXX = \
         subscript.cpp subset.cpp summary.cpp sysutils.cpp \
 	unique.cpp util.cpp \
 	version.cpp vfonts.cpp \
-	jit/CompiledFrame.cpp jit/CompilerContext.cpp jit/EmitIR.cpp \
+	jit/CompiledExpression.cpp jit/CompiledFrame.cpp \
+	jit/Compiler.cpp jit/CompilerContext.cpp \
 	jit/FrameDescriptor.cpp \
-	jit/Globals.cpp jit/JIT.cpp jit/Runtime.cpp jit/TypeBuilder.cpp
+	jit/Globals.cpp jit/Runtime.cpp jit/TypeBuilder.cpp
 
 SOURCES_F =  xxxpr.f
 
