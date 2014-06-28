@@ -38,7 +38,7 @@
 
 namespace CXXR {
 class Bailout;
-class BuiltinFunction;
+class BuiltInFunction;
 class ByteCode;
 class Closure;
 class ConsCell;
@@ -73,7 +73,7 @@ namespace llvm {
 
 // TODO: handle vector types: IntegerVector etc.
 DECLARE_TYPEBUILDER_FOR(Bailout);
-DECLARE_TYPEBUILDER_FOR(BuiltinFunction);
+DECLARE_TYPEBUILDER_FOR(BuiltInFunction);
 DECLARE_TYPEBUILDER_FOR(ByteCode);
 DECLARE_TYPEBUILDER_FOR(Closure);
 DECLARE_TYPEBUILDER_FOR(ConsCell);
