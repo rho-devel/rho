@@ -1872,7 +1872,7 @@ Optional Features:
   --enable-prebuilt-html  build static HTML help pages [no]
   --enable-lto            enable link-time optimization [no]
   --enable-byte-compiled-packages
-                          byte-compile base and recommended packages [yes]
+                          byte-compile base and recommended packages [no]
   --enable-static[=PKGS]  (libtool) build static libraries [default=no]
   --enable-shared[=PKGS]  (libtool) build shared libraries [default=yes]
 
@@ -6581,7 +6581,7 @@ fi
 if test "${enable_byte_compiled_packages+set}" = set; then :
   enableval=$enable_byte_compiled_packages; want_byte_compiled_packages="${enableval}"
 else
-  want_byte_compiled_packages=yes
+  want_byte_compiled_packages=no
 fi
 
  if test "x${want_byte_compiled_packages}" = xyes; then
