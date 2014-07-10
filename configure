@@ -35829,7 +35829,7 @@ fi
 		if test -e "$ac_llvm_config_path"; then
 			LLVM_CPPFLAGS=`$ac_llvm_config_path --cppflags`
 			LLVM_LDFLAGS="$($ac_llvm_config_path --ldflags)"
-                        LLVM_LIBS="$($ac_llvm_config_path --libs core mcjit native linker instrumentation ipo vectorize)"
+                        LLVM_LIBS="$($ac_llvm_config_path --libs core mcjit native linker instrumentation ipo vectorize irreader)"
 
 
 			CPPFLAGS_SAVED="$CPPFLAGS"
@@ -35844,8 +35844,8 @@ fi
                         LIBS="$LIBS $LLVM_LIBS"
                         export LIBS
 
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking can compile with and link with llvm(core mcjit native linker instrumentation ipo vectorize)" >&5
-$as_echo_n "checking can compile with and link with llvm(core mcjit native linker instrumentation ipo vectorize)... " >&6; }
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking can compile with and link with llvm(core mcjit native linker instrumentation ipo vectorize irreader)" >&5
+$as_echo_n "checking can compile with and link with llvm(core mcjit native linker instrumentation ipo vectorize irreader)... " >&6; }
 if ${ax_cv_llvm+:} false; then :
   $as_echo_n "(cached) " >&6
 else
