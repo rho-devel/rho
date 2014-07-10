@@ -56,7 +56,7 @@ public:
     CompiledFrame(const CompiledFrame& pattern);
     ~CompiledFrame() override;
 
-    Binding* binding(const Symbol* symbol) override;
+  Binding* binding(const Symbol* symbol) __attribute__((fastcall)) override;
 
     const Binding* binding(const Symbol* symbol) const override
     {
