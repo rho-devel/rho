@@ -119,7 +119,7 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     compiler.CreateRet(return_value);
 
     // The IR is now complete.  Compile to native code.
-    function->dump(); // So we can see what's going on while developing.
+    // function->dump(); // So we can see what's going on while developing.
     llvm::verifyFunction(*function);
 
     // TODO: add optimization passes and re-verify.
