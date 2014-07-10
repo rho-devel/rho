@@ -112,6 +112,7 @@ Value* Compiler::emitEval(const RObject* object)
 
 Value* Compiler::emitSymbolEval(const Symbol* symbol)
 {
+#if 0
     assert(m_context->m_frame_descriptor != nullptr);
     int location = m_context->m_frame_descriptor->getLocation(symbol);
     if (location != -1) {
@@ -124,6 +125,7 @@ Value* Compiler::emitSymbolEval(const Symbol* symbol)
 		this);
 	}
     }
+#endif
     // Otherwise fallback to the interpreter for now.
     return Runtime::emitLookupSymbol(emitSymbol(symbol),
 				     m_context->getEnvironment(), this);

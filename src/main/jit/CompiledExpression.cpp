@@ -48,6 +48,7 @@
 
 #include "CXXR/Closure.h"
 #include "CXXR/Environment.h"
+#include "CXXR/ListFrame.hpp"
 #include "CXXR/RObject.h"
 #include "CXXR/jit/CompiledFrame.hpp"
 #include "CXXR/jit/Compiler.hpp"
@@ -138,7 +139,8 @@ CompiledExpression::~CompiledExpression()
 }
 
 Frame* CompiledExpression::createFrame() const {
-    return CXXR_NEW(CompiledFrame(m_frame_descriptor.get()));
+    return CXXR_NEW(ListFrame());
+    //return CXXR_NEW(CompiledFrame(m_frame_descriptor.get()));
 }
 
 } // namespace JIT
