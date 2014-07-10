@@ -1,5 +1,5 @@
 language: cpp
 compiler: clang
 before_install: sudo apt-get update -qq
-install: sudo apt-get install -y llvm-3.4-dev libboost1.48-all-dev
+install: sudo apt-get install -y llvm-3.4-dev libboost1.48-all-dev gfortran
 script: ./configure && make && make test
