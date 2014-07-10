@@ -122,6 +122,12 @@ void NodeStack::retarget(RObject* node, size_t index)
 	retarget_aux(m_vector[index], node);
     m_vector[index] = node;
 }
+#else
+namespace CXXR {
+namespace ForceNonInline {
+void (NodeStack::*nodeStackRetargetP)(RObject*, size_t) = &NodeStack::retarget;
+}
+}
 #endif
 
 void NodeStack::retarget_aux(RObject* oldnode, RObject* newnode)
