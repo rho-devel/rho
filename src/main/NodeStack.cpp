@@ -125,6 +125,7 @@ void NodeStack::retarget(RObject* node, size_t index)
 #else
 namespace CXXR {
 namespace ForceNonInline {
+void (NodeStack::*nodeStackPopP)(unsigned int) = &NodeStack::pop;
 void (NodeStack::*nodeStackRetargetP)(RObject*, size_t) = &NodeStack::retarget;
 }
 }
