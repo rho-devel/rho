@@ -85,6 +85,13 @@ namespace CXXR {
 #endif
 	}
 
+	/** @brief Return the uncompiled form of the code.
+	 */
+	const RObject* source_expression() const
+	{
+	    return (*m_constants)[0];
+	}
+
 	// Interim accessor functions.  Try to get rid of these:
 
 	/** @brief Not for general use.

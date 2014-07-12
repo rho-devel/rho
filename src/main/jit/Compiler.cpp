@@ -35,6 +35,7 @@
 
 #include "llvm/IR/Function.h"
 
+#include "CXXR/ByteCode.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/Expression.h"
 #include "CXXR/FunctionBase.h"
@@ -100,8 +101,11 @@ Value* Compiler::emitEval(const RObject* object)
     case DOTSXP:
 	return emitDotsEval(SEXP_downcast<const DottedArgs*>(object));
     case BCODESXP:
-	assert(0 && "Unexpected eval of bytecode in JIT compilation.");
-	return nullptr;
+    {
+	// Ignore the bytecode and compile the corresponding source.
+	const ByteCode* bytecode = SEXP_downcast<const ByteCode*>(object);
+	return emitEval(bytecode->source_expression());
+    }
     case PROMSXP:
 	assert(0 && "Unexpected eval of a promise in JIT compilation.");
 	return nullptr;
