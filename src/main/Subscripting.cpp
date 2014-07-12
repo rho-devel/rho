@@ -318,14 +318,14 @@ Subscripting::canonicalize(const RObject* raw_indices, std::size_t range_size,
 	    std::size_t index = indices[i];
 	    (*canvec)[i] = (index == 0 ? NA<double>() : double(index));
 	}
-	return std::make_pair(canvec, maxindex);
+	return std::make_pair(canvec.get(), maxindex);
     } else {
 	GCStackRoot<IntVector> canvec(CXXR_NEW(IntVector(indices.size())));
 	for (std::size_t i = 0; i < indices.size(); ++i) {
 	    std::size_t index = indices[i];
 	    (*canvec)[i] = (index == 0 ? NA<int>() : int(index));
 	}
-	return std::make_pair(canvec, maxindex);
+	return std::make_pair(canvec.get(), maxindex);
     }
 }
 	
