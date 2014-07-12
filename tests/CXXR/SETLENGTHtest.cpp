@@ -19,8 +19,7 @@
 
 #include <algorithm>
 #include <iostream>
-#include <boost/lambda/lambda.hpp>
-#include <boost/lambda/bind.hpp>
+#include <functional>
 
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/StringVector.h"
@@ -31,16 +30,15 @@ using namespace CXXR;
 namespace {
     void show(const StringVector* sv)
     {
-	using namespace boost::lambda;
 	std::transform(sv->begin(), sv->end(),
 		       ostream_iterator<const char*>(cout, "|"),
-		       bind(&String::c_str, _1));
+		       std::mem_fun(&String::c_str));
 	const StringVector* names = sv->names();
 	if (names) {
 	    cout << "  Names: ";
 	    std::transform(names->begin(), names->end(),
 			   ostream_iterator<const char*>(cout, "|"),
-			   bind(&String::c_str, _1));
+			   std::mem_fun(&String::c_str));
 	}
 	cout << "\n";
     }
