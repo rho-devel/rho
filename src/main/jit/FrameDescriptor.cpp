@@ -91,14 +91,14 @@ struct LocalVariableVisitor : public GCNode::const_visitor {
 	    }
 	    const Symbol* local_var = dynamic_cast
 		<const Symbol*>(expression->tail()->car());
-	    
+
 	    // Add the symbol to the set of local variable names.
 	    // TODO(kmillar): this is O(N^2) in the number of symbols in a
 	    //   function.  Probably not an issue in practice since functions
 	    //   generally don't have a lot of symbols.
 	    if (local_var
 		&& (std::find(m_locals->begin(), m_locals->end(), local_var)
-		    != m_locals->end())) {
+		    == m_locals->end())) {
 		m_locals->push_back(local_var);
 	    }
 	}
