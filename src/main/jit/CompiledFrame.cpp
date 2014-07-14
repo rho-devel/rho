@@ -104,6 +104,20 @@ CompiledFrame* CompiledFrame::clone() const
     return expose(new CompiledFrame(*this));
 }
 
+std::size_t CompiledFrame::size() const
+{
+  std::size_t result = 0;
+  for (int i = 0; i < m_descriptor->getNumberOfSymbols(); ++i) {
+    if (isSet(m_bindings[i])) {
+      result += 1;
+    }
+  }
+  if (m_extension) {
+    result += m_extension->size();
+  }
+  return result;
+}
+
 void CompiledFrame::lockBindings()
 {
     int size = m_descriptor->getNumberOfSymbols();

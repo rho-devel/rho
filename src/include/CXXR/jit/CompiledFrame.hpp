@@ -56,7 +56,7 @@ public:
     CompiledFrame(const CompiledFrame& pattern);
     ~CompiledFrame() override;
 
-  Binding* binding(const Symbol* symbol) __attribute__((fastcall)) override;
+    Binding* binding(const Symbol* symbol) __attribute__((fastcall)) override;
 
     const Binding* binding(const Symbol* symbol) const override
     {
@@ -87,11 +87,7 @@ public:
 
     void lockBindings() override;
 
-    std::size_t size() const override
-    {
-	return m_descriptor->getNumberOfSymbols()
-	       + (m_extension ? m_extension->size() : 0);
-    }
+    std::size_t size() const override;
 
     const FrameDescriptor* getDescriptor() const
     {
