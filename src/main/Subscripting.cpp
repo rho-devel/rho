@@ -20,7 +20,11 @@
  */
 
 #include <set>
+#if defined(__APPLE__) && defined(__MACH__)
+#include <unordered_map>
+#else
 #include <tr1/unordered_map>
+#endif
 #include "CXXR/RAllocStack.h"
 #include "CXXR/RealVector.h"
 #include "CXXR/Subscripting.hpp"
@@ -240,7 +244,11 @@ void Subscripting::Indices::initialize(const StringVector* raw_indices,
 				       const StringVector* range_names)
 {
     const std::size_t rawsize = raw_indices->size();
+#if defined(__APPLE__) && defined(__MACH__)
+    typedef std::unordered_map<GCRoot<String>, std::size_t> Nmap;
+#else
     typedef std::tr1::unordered_map<GCRoot<String>, std::size_t> Nmap;
+#endif
     Nmap names_map;
     m_max_index = (range_names ? 0 : range_size);
     resize(rawsize);

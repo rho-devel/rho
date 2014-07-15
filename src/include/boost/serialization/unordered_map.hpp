@@ -17,7 +17,11 @@
 
 //  See http://www.boost.org for updates, documentation, and revision history.
 
+#if defined(__APPLE__) && defined(__MACH__)
+#include <unordered_map>
+#else
 #include <tr1/unordered_map>
+#endif
 
 #include <boost/config.hpp>
 
@@ -94,17 +98,23 @@ template<
 >
 inline void save(
     Archive & ar,
-    const std::tr1::unordered_map<
-        Key, HashFcn, EqualKey, Allocator
-    > &t,
+#if defined(__APPLE__) && defined(__MACH__)
+    const std::unordered_map<Key, HashFcn, EqualKey, Allocator> &t,
     const unsigned int /*file_version*/
-){
+                 ) {
     boost::serialization::stl::save_unordered_collection<
         Archive, 
-        std::tr1::unordered_map<
-            Key, HashFcn, EqualKey, Allocator
-        >
-    >(ar, t);
+        std::unordered_map< Key, HashFcn, EqualKey, Allocator >
+        >(ar, t);
+#else
+    const std::tr1::unordered_map<Key, HashFcn, EqualKey, Allocator> &t,
+    const unsigned int /*file_version*/
+                 ) {
+    boost::serialization::stl::save_unordered_collection<
+        Archive, 
+        std::tr1::unordered_map< Key, HashFcn, EqualKey, Allocator >
+        >(ar, t);
+#endif
 }
 
 template<
@@ -116,23 +126,31 @@ template<
 >
 inline void load(
     Archive & ar,
-    std::tr1::unordered_map<
-        Key, HashFcn, EqualKey, Allocator
-    > &t,
+#if defined(__APPLE__) && defined(__MACH__)
+    std::unordered_map< Key, HashFcn, EqualKey, Allocator > &t,
     const unsigned int /*file_version*/
-){
+                 ) {
     boost::serialization::stl::load_unordered_collection<
         Archive,
-        std::tr1::unordered_map<
-            Key, HashFcn, EqualKey, Allocator
-        >,
+        std::unordered_map< Key, HashFcn, EqualKey, Allocator >,
         boost::serialization::stl::archive_input_unordered_map<
             Archive, 
-            std::tr1::unordered_map<
-                Key, HashFcn, EqualKey, Allocator
+            std::unordered_map< Key, HashFcn, EqualKey, Allocator >
             >
-        >
-    >(ar, t);
+        >(ar, t);
+#else
+    std::tr1::unordered_map< Key, HashFcn, EqualKey, Allocator > &t,
+    const unsigned int /*file_version*/
+                 ) {
+    boost::serialization::stl::load_unordered_collection<
+        Archive,
+        std::tr1::unordered_map< Key, HashFcn, EqualKey, Allocator >,
+        boost::serialization::stl::archive_input_unordered_map<
+            Archive, 
+            std::tr1::unordered_map< Key, HashFcn, EqualKey, Allocator >
+            >
+        >(ar, t);
+#endif
 }
 
 // split non-intrusive serialization function member into separate
@@ -146,15 +164,16 @@ template<
 >
 inline void serialize(
     Archive & ar,
-    std::tr1::unordered_map<
-        Key, HashFcn, EqualKey, Allocator
-    > &t,
+#if defined(__APPLE__) && defined(__MACH__)
+    std::unordered_map<Key, HashFcn, EqualKey, Allocator> &t,
+#else
+    std::tr1::unordered_map<Key, HashFcn, EqualKey, Allocator> &t,
+#endif
     const unsigned int file_version
-){
+                      ){
     boost::serialization::split_free(ar, t, file_version);
 }
 
-// unordered_multimap
 template<
     class Archive, 
     class Key, 
@@ -164,19 +183,24 @@ template<
 >
 inline void save(
     Archive & ar,
-    const std::tr1::unordered_multimap<
-        Key, HashFcn, EqualKey, Allocator
-    > &t,
+#if defined(__APPLE__) && defined(__MACH__)
+    const std::unordered_multimap< Key, HashFcn, EqualKey, Allocator > &t,
     const unsigned int /*file_version*/
-){
+                 ){
     boost::serialization::stl::save_unordered_collection<
         Archive, 
-        std::tr1::unordered_multimap<
-            Key, HashFcn, EqualKey, Allocator
-        >
-    >(ar, t);
+        std::unordered_multimap< Key, HashFcn, EqualKey, Allocator >
+        >(ar, t);
+#else
+    const std::tr1::unordered_multimap< Key, HashFcn, EqualKey, Allocator > &t,
+    const unsigned int /*file_version*/
+                 ){
+    boost::serialization::stl::save_unordered_collection<
+        Archive, 
+        std::tr1::unordered_multimap< Key, HashFcn, EqualKey, Allocator >
+        >(ar, t);
+#endif
 }
-
 template<
     class Archive, 
     class Key, 
@@ -186,23 +210,31 @@ template<
 >
 inline void load(
     Archive & ar,
-    std::tr1::unordered_multimap<
-        Key, HashFcn, EqualKey, Allocator
-    > &t,
+#if defined(__APPLE__) && defined(__MACH__)
+    std::unordered_multimap< Key, HashFcn, EqualKey, Allocator> &t,
     const unsigned int /*file_version*/
-){
+                 ){
     boost::serialization::stl::load_unordered_collection<
         Archive,
-        std::tr1::unordered_multimap<
-            Key, HashFcn, EqualKey, Allocator
-        >,
+        std::unordered_multimap< Key, HashFcn, EqualKey, Allocator >,
         boost::serialization::stl::archive_input_unordered_multimap<
             Archive, 
-            std::tr1::unordered_multimap<
-                Key, HashFcn, EqualKey, Allocator
+            std::unordered_multimap< Key, HashFcn, EqualKey, Allocator >
             >
-        >
-    >(ar, t);
+        >(ar, t);
+#else
+    std::tr1::unordered_multimap< Key, HashFcn, EqualKey, Allocator> &t,
+    const unsigned int /*file_version*/
+                 ){
+    boost::serialization::stl::load_unordered_collection<
+        Archive,
+        std::tr1::unordered_multimap< Key, HashFcn, EqualKey, Allocator >,
+        boost::serialization::stl::archive_input_unordered_multimap<
+            Archive, 
+            std::tr1::unordered_multimap< Key, HashFcn, EqualKey, Allocator >
+            >
+        >(ar, t);
+#endif
 }
 
 // split non-intrusive serialization function member into separate
@@ -216,14 +248,15 @@ template<
 >
 inline void serialize(
     Archive & ar,
-    std::tr1::unordered_multimap<
-        Key, HashFcn, EqualKey, Allocator
-    > &t,
+#if defined(__APPLE__) && defined(__MACH__)
+    std::unordered_multimap< Key, HashFcn, EqualKey, Allocator > &t,
+#else
+    std::tr1::unordered_multimap< Key, HashFcn, EqualKey, Allocator > &t,
+#endif
     const unsigned int file_version
-){
+                      ){
     boost::serialization::split_free(ar, t, file_version);
 }
-
 } // namespace serialization
 } // namespace boost
 

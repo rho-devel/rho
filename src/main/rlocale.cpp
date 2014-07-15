@@ -72,6 +72,11 @@
 #include <limits.h>
 #include <R_ext/Riconv.h>
 
+/* not sure why this is necessary, worked without it on my system (jreese) */
+#if defined(__APPLE__) && defined(__MACH__)
+#include <Defn.h>   
+#endif
+
 static int wcwidthsearch(int wint, const struct interval_wcwidth *table,
 			 int max, int locale)
 {

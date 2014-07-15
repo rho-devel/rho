@@ -46,7 +46,11 @@
 #ifdef __cplusplus
 
 #include <list>
+#if defined(__APPLE__) && defined(__MACH__)
+#include <unordered_map>
+#else
 #include <tr1/unordered_map>
+#endif
 #include "CXXR/GCNode.hpp"
 
 namespace CXXR {
@@ -257,16 +261,27 @@ namespace CXXR {
 
 // For hashing, simply hash the encapsulated pointer:
 namespace std {
+#if defined(__APPLE__) && defined(__MACH__)
+    template <class T>
+        struct hash<CXXR::GCRoot<T> > {
+        std::size_t operator()(const CXXR::GCRoot<T>& gcrt) const
+        {
+            std::hash<T*> make_hash;
+            return make_hash(gcrt);
+        }
+    };
+#else
     namespace tr1 {
-	template <class T>
-	struct hash<CXXR::GCRoot<T> > {
-	    std::size_t operator()(const CXXR::GCRoot<T>& gcrt) const
-	    {
-		std::tr1::hash<T*> make_hash;
-		return make_hash(gcrt);
-	    }
-	};
+        template <class T>
+            struct hash<CXXR::GCRoot<T> > {
+            std::size_t operator()(const CXXR::GCRoot<T>& gcrt) const
+            {
+                std::hash<T*> make_hash;
+                return make_hash(gcrt);
+            }
+        };
     }
+#endif
 }
 
 extern "C" {

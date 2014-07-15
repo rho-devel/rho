@@ -72,7 +72,13 @@ using namespace std;
 #endif
 
 #ifdef HAVE_AQUA
+
+#if defined(__APPLE__) && defined(__MACH__)
+int (*ptr_CocoaSystem)(const char*);
+#else
 int (*ptr_CocoaSystem)(char*);
+#endif
+
 extern	Rboolean useaqua;
 #endif
 

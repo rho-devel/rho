@@ -56,7 +56,11 @@ typedef enum {
 #ifdef __cplusplus
 
 #include <boost/serialization/nvp.hpp>
+#if defined(__APPLE__) && defined(__MACH__)
+#include <unordered_map>
+#else
 #include <tr1/unordered_map>
+#endif
 #include <string>
 
 #include "CXXR/Allocator.hpp"
@@ -261,17 +265,19 @@ namespace CXXR {
 		return s_string_hasher(k.first);
 	    }
 	private:
-	    static std::tr1::hash<std::string> s_string_hasher;
+#if defined(__APPLE__) && defined(__MACH__)
+	    static std::hash<std::string> s_string_hasher;
 	};
 
 	// The cache is implemented as a mapping from keys to pointers
 	// to String objects.  Each String simply contains a pointer
 	// locating its entry within the cache.
-	typedef
-	std::tr1::unordered_map<key, String*, Hasher, std::equal_to<key>,
-				CXXR::Allocator<std::pair<const key,
-							  String*> >
-	                        > map;
+        typedef std::unordered_map<key, String*, Hasher> map;
+#else
+            static std::tr1::hash<std::string> s_string_hasher;
+	};
+        typedef std::tr1::unordered_map<key, String*, Hasher> map;
+#endif
 
 	static map* s_cache;
 	static std::string* s_na_string;

@@ -42,7 +42,12 @@
 #ifndef STDFRAME_HPP
 #define STDFRAME_HPP
 
+#if defined(__APPLE__) && defined(__MACH__)
+#include <unordered_map>
+#else
 #include <tr1/unordered_map>
+#endif
+
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
@@ -57,13 +62,17 @@ namespace CXXR {
      */
     class StdFrame : public Frame {
     private:
-	typedef
-	std::tr1::unordered_map<const Symbol*, Binding,
-				std::tr1::hash<const Symbol*>,
-				std::equal_to<const Symbol*>,
-				CXXR::Allocator<std::pair<const Symbol* const,
-							  Binding> >
-	                        > map;
+        typedef
+#if defined(__APPLE__) && defined(__MACH__)
+        std::unordered_map<const Symbol*, Binding> map;
+#else
+        std::tr1::unordered_map<const Symbol*, Binding,
+                                std::tr1::hash<const Symbol*>,
+                                std::equal_to<const Symbol*>,
+                                CXXR::Allocator<std::pair<const Symbol* const,
+                                                          Binding> >
+                                > map;
+#endif
     public:
 	/**
 	 * @param initial_capacity A hint to the implementation that
