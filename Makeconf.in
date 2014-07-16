@@ -117,7 +117,7 @@ ALL_FFLAGS_LO = $(R_XTRA_FFLAGS) $(R_OPENMP_FFLAGS) $(FPICFLAGS) $(SHLIB_FFLAGS)
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c $< -o $@
 .cpp.d:
 	@echo "making $@ from $<"
-	@gcc -MM -MT $*.o  $(ALL_CPPFLAGS) $< > $@
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -MM -MF $@ -MT $*.o $< 
 .f.o:
 	$(F77) $(ALL_FFLAGS) -c $< -o $@
 
