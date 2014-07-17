@@ -267,7 +267,11 @@ namespace CXXR {
 	// The cache is implemented as a mapping from keys to pointers
 	// to String objects.  Each String simply contains a pointer
 	// locating its entry within the cache.
-        typedef std::unordered_map<key, String*, Hasher> map;
+        typedef 
+            std::unordered_map<key, String*, Hasher, std::equal_to<key>,
+                               CXXR::Allocator<std::pair<const key,
+                                                         String*> >
+                               > map;
 
 	static map* s_cache;
 	static std::string* s_na_string;
