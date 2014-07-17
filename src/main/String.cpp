@@ -59,8 +59,7 @@ namespace CXXR {
 	SEXP (*mkCharLenp)(const char*, int) = Rf_mkCharLen;
     }
 }
-
-std::tr1::hash<std::string> String::Hasher::s_string_hasher;
+std::hash<std::string> String::Hasher::s_string_hasher;
 
 String::map* String::s_cache = 0;
 std::string* String::s_na_string;

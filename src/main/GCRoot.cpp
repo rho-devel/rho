@@ -42,7 +42,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
-#include <tr1/unordered_map>
+#include <unordered_map>
 
 using namespace std;
 using namespace CXXR;
@@ -82,7 +82,7 @@ void GCRootBase::visitRoots(GCNode::const_visitor* v)
 // ***** C interface *****
 
 // This is not a busy list, so we don't bother to use CXXR::Allocator:
-tr1::unordered_map<const RObject*, GCRoot<> > precious;
+unordered_map<const RObject*, GCRoot<> > precious;
 
 void R_PreserveObject(SEXP object)
 {

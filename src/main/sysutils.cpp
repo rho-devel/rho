@@ -72,7 +72,7 @@ using namespace std;
 #endif
 
 #ifdef HAVE_AQUA
-int (*ptr_CocoaSystem)(char*);
+int (*ptr_CocoaSystem)(const char*);
 extern	Rboolean useaqua;
 #endif
 

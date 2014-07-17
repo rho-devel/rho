@@ -46,7 +46,7 @@
 #ifdef __cplusplus
 
 #include <list>
-#include <tr1/unordered_map>
+#include <unordered_map>
 #include "CXXR/GCNode.hpp"
 
 namespace CXXR {
@@ -257,16 +257,14 @@ namespace CXXR {
 
 // For hashing, simply hash the encapsulated pointer:
 namespace std {
-    namespace tr1 {
-	template <class T>
-	struct hash<CXXR::GCRoot<T> > {
-	    std::size_t operator()(const CXXR::GCRoot<T>& gcrt) const
-	    {
-		std::tr1::hash<T*> make_hash;
-		return make_hash(gcrt);
-	    }
-	};
-    }
+    template <class T>
+        struct hash<CXXR::GCRoot<T> > {
+        std::size_t operator()(const CXXR::GCRoot<T>& gcrt) const
+        {
+            std::hash<T*> make_hash;
+            return make_hash(gcrt);
+        }
+    };
 }
 
 extern "C" {

@@ -20,7 +20,7 @@
  */
 
 #include <set>
-#include <tr1/unordered_map>
+#include <unordered_map>
 #include "CXXR/RAllocStack.h"
 #include "CXXR/RealVector.h"
 #include "CXXR/Subscripting.hpp"
@@ -240,7 +240,8 @@ void Subscripting::Indices::initialize(const StringVector* raw_indices,
 				       const StringVector* range_names)
 {
     const std::size_t rawsize = raw_indices->size();
-    typedef std::tr1::unordered_map<GCRoot<String>, std::size_t> Nmap;
+    typedef std::unordered_map<GCRoot<String>, std::size_t> Nmap;
+
     Nmap names_map;
     m_max_index = (range_names ? 0 : range_size);
     resize(rawsize);

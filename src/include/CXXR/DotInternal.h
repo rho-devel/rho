@@ -88,17 +88,15 @@ namespace CXXR {
 	 */
 	static void set(const Symbol* sym, BuiltInFunction* fun);
     private:
-	typedef
-	std::tr1::unordered_map<const Symbol*,
-				GCRoot<BuiltInFunction>,
-				std::tr1::hash<const Symbol*>,
-				std::equal_to<const Symbol*>,
-				CXXR::Allocator<std::pair<const Symbol* const,
-							  GCRoot<BuiltInFunction> > >
-	                        > map;
-
+ 	typedef
+            std::unordered_map<const Symbol*,
+                               GCRoot<BuiltInFunction>,
+                               std::hash<const Symbol*>,
+                               std::equal_to<const Symbol*>,
+                               CXXR::Allocator<std::pair<const Symbol* const,
+                                                         GCRoot<BuiltInFunction> > >
+                               > map;
 	static map* s_table;
-
 	// Called from BuiltInFunction::initialize():
 	static void initialize();
 

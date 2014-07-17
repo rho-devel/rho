@@ -25783,10 +25783,10 @@ if test "${r_cv_prog_cxx_m}" = yes; then
   cat << \EOF >> ${r_cxx_rules_frag}
 .cc.d:
 	@echo "making $@ from $<"
-	@$(CXX) -M $(ALL_CPPFLAGS) $< > $@
+	@$(CXX) -M $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $< > $@
 .cpp.d:
 	@echo "making $@ from $<"
-	@$(CXX) -M $(ALL_CPPFLAGS) $< > $@
+	@$(CXX) -M $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $< > $@
 EOF
 else
   cat << \EOF >> ${r_cxx_rules_frag}
