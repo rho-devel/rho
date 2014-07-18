@@ -59,13 +59,7 @@ namespace CXXR {
 	SEXP (*mkCharLenp)(const char*, int) = Rf_mkCharLen;
     }
 }
-
-#if defined(__APPLE__) && defined(__MACH__)
 std::hash<std::string> String::Hasher::s_string_hasher;
-#else
-std::tr1::hash<std::string> String::Hasher::s_string_hasher;
-
-#endif
 
 String::map* String::s_cache = 0;
 std::string* String::s_na_string;

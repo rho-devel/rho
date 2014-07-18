@@ -42,11 +42,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
-#if defined(__APPLE__) && defined(__MACH__)
 #include <unordered_map>
-#else
-#include <tr1/unordered_map>
-#endif
 
 using namespace std;
 using namespace CXXR;
@@ -86,11 +82,7 @@ void GCRootBase::visitRoots(GCNode::const_visitor* v)
 // ***** C interface *****
 
 // This is not a busy list, so we don't bother to use CXXR::Allocator:
-#if defined(__APPLE__) && defined(__MACH__)
 unordered_map<const RObject*, GCRoot<> > precious;
-#else
-tr1::unordered_map<const RObject*, GCRoot<> > precious;
-#endif
 
 void R_PreserveObject(SEXP object)
 {

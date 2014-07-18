@@ -494,18 +494,7 @@ namespace CXXR {
 
 	// The class maintains a cache of Symbol Bindings found along
 	// the search path:
-#if defined(__APPLE__) && defined(__MACH__)
         typedef std::unordered_map<const Symbol*, Frame::Binding*> Cache;
-#else
-        typedef
-            std::tr1::unordered_map<const Symbol*, Frame::Binding*,
-                                    std::tr1::hash<const Symbol*>,
-                                    std::equal_to<const Symbol*>,
-                                    CXXR::Allocator<std::pair<const Symbol* const,
-                                                              Frame::Binding*> >
-                                    > Cache;
-#endif        
-
 	static Cache* s_search_path_cache;
 
 	// Predefined environments:
