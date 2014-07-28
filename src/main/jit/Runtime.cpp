@@ -122,6 +122,15 @@ Value* emitCallFunction(llvm::Value* function_base, llvm::Value* pairlist_args,
 	{ function_base, pairlist_args, call, environment });
 }
 
+Value* emitCoerceToTrueOrFalse(llvm::Value* value,
+			       const Expression* call,
+			       Compiler* compiler)
+{
+    Function* coerce = getDeclaration(COERCE_TO_TRUE_OR_FALSE, compiler);
+    Value* callp = compiler->emitConstantPointer(call);
+    return compiler->emitCallOrInvoke(coerce, { value, callp });
+}
+
 static Module* createRuntimeModule(LLVMContext& context)
 {
     std::string module_filename = std::string(R_Home) + "/jit/RuntimeImpl.bc";
@@ -180,12 +189,14 @@ std::string getName(FunctionId function)
 	return "cxxr_runtime_lookupFunction";
     case CALL_FUNCTION:
 	return "cxxr_runtime_callFunction";
+    case COERCE_TO_TRUE_OR_FALSE:
+	return "cxxr_runtime_coerceToTrueOrFalse";
     };
 }
 
 static const FunctionId allFunctionIds[]
     = { EVALUATE, LOOKUP_SYMBOL, LOOKUP_SYMBOL_IN_COMPILED_FRAME,
-	LOOKUP_FUNCTION, CALL_FUNCTION };
+	LOOKUP_FUNCTION, CALL_FUNCTION, COERCE_TO_TRUE_OR_FALSE };
 
 FunctionId getFunctionId(llvm::Function* function)
 {

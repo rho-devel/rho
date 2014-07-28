@@ -33,6 +33,7 @@
 
 #include "CXXR/ArgList.hpp"
 #include "CXXR/Environment.h"
+#include "CXXR/Expression.h"
 #include "CXXR/FunctionBase.h"
 #include "CXXR/PairList.h"
 #include "CXXR/RObject.h"
@@ -124,4 +125,13 @@ RObject* cxxr_runtime_callFunction(const FunctionBase* function,
     ArgList arglist(args, ArgList::RAW);
     return function->apply(&arglist, environment, call);
 }
+
+// In src/main/eval.cpp
+extern "C++"
+Rboolean asLogicalNoNA(SEXP s, SEXP call);
+
+bool cxxr_runtime_coerceToTrueOrFalse(RObject* object, Expression* call) {
+    return asLogicalNoNA(object, call) == TRUE;
+}
+
 }

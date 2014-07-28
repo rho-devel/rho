@@ -88,6 +88,7 @@ private:
     llvm::Value* emitInlinedParen(const Expression* expression);
     llvm::Value* emitInlinedBegin(const Expression* expression);
     llvm::Value* emitInlinedReturn(const Expression* expression);
+    llvm::Value* emitInlinedIf(const Expression* expression);
 
     typedef llvm::Value* (Compiler::*EmitBuiltinFn)(const Expression*);
     static const std::vector<std::pair<FunctionBase*, EmitBuiltinFn>>&
@@ -98,6 +99,9 @@ private:
     llvm::Constant* emitConstantPointer(const void* value, llvm::Type* type);
     llvm::BasicBlock* createBasicBlock(const char* name,
 				       llvm::BasicBlock* insert_before = 0);
+    llvm::BasicBlock* createBranch(const char*name, const RObject* expression,
+				   llvm::PHINode* merge_point,
+				   llvm::BasicBlock* insert_before = 0);
 };
 
 template <class T>

@@ -818,7 +818,7 @@ static SEXP assignCall(SEXP op, SEXP symbol, SEXP fun,
 }
 
 
-static R_INLINE Rboolean asLogicalNoNA(SEXP s, SEXP call)
+Rboolean asLogicalNoNA(SEXP s, SEXP call)
 {
     Rboolean cond = CXXRCONSTRUCT(Rboolean, NA_LOGICAL);
 

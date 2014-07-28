@@ -212,6 +212,23 @@ BasicBlock* Compiler::createBasicBlock(const char* name,
 			      insert_before);
 }
 
+BasicBlock* Compiler::createBranch(const char* name,
+				   const RObject* expression,
+				   llvm::PHINode* merge_point,
+				   llvm::BasicBlock* insert_before)
+{
+    InsertPointGuard preserve_insert_point(*this);
+
+    BasicBlock* block = createBasicBlock(name, insert_before);
+    SetInsertPoint(block);
+
+    Value* result = emitEval(expression); // This line changes depending on what we're doing.
+    CreateBr(merge_point->getParent());
+    merge_point->addIncoming(result, GetInsertBlock());
+
+    return block;
+}
+
 /*
  * The rest of this file contains the code to emit inlined versions of special
  * functions, primarily those that implement flow control.
@@ -227,6 +244,8 @@ Compiler::getInlineableBuiltins()
 		       &Compiler::emitInlinedBegin),
 	std::make_pair(BuiltInFunction::obtain("return"),
 		       &Compiler::emitInlinedReturn),
+	std::make_pair(BuiltInFunction::obtain("if"),
+		       &Compiler::emitInlinedIf),
     };
     return inlineable_builtins;
 }
@@ -347,6 +366,56 @@ Value* Compiler::emitInlinedReturn(const Expression* expression)
     }
     // Note: 'return' isn't valid at top-level, but since only functions get
     // compiled, there's no need to check for that here.
+}
+
+Value* Compiler::emitInlinedIf(const Expression* expression)
+{
+    int length = listLength(expression);
+    if (length != 3 && length != 4) {
+	// This is probably a syntax error.  Let the interpreter handle it.
+	return nullptr;
+    }
+
+    InsertPoint incoming_insert_point = saveIP();
+
+    // Create the merge point.
+    BasicBlock* continue_block = createBasicBlock("continue");
+    SetInsertPoint(continue_block);
+    llvm::Type* robject_type = TypeBuilder<RObject*, false>::get(getContext());
+    llvm::PHINode* result_value = CreatePHI(robject_type, 2);
+
+    // Create the if_true branch.
+    BasicBlock* if_true_block = createBranch(
+	"if_true",
+	CADDR(const_cast<Expression*>(expression)),
+	result_value, continue_block);
+
+    // Generate code to handle the 'else' case.
+    BasicBlock* if_false_block;
+    if (length == 3) {
+	// No 'else' branch.
+	// Drop straight to the continue block and return R_NilValue.
+	if_false_block = continue_block;
+	result_value->addIncoming(emitConstantPointer((RObject*)nullptr),
+				  incoming_insert_point.getBlock());
+
+    } else {
+	// Create the else branch.
+	if_false_block = createBranch(
+	    "if_false",
+	    CADDDR(const_cast<Expression*>(expression)),
+	    result_value, continue_block);
+    }
+
+    // Evaluate the condition and branch.
+    restoreIP(incoming_insert_point);
+    Value* r_condition = emitEval(CADR(const_cast<Expression*>(expression)));
+    Value* boolean_condition = Runtime::emitCoerceToTrueOrFalse(
+	r_condition, expression, this);
+    CreateCondBr(boolean_condition, if_true_block, if_false_block);
+
+    SetInsertPoint(continue_block);
+    return result_value;
 }
 
 } // namespace JIT
