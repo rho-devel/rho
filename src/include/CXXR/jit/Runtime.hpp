@@ -34,11 +34,14 @@
 #ifndef CXXR_JIT_RUNTIME_HPP
 #define CXXR_JIT_RUNTIME_HPP
 
-#include "llvm/IR/IRBuilder.h"
+#include <string>
 
 namespace llvm {
 class Function;
+class LLVMContext;
 class Module;
+class StructType;
+class Value;
 } // namespace llvm
 
 namespace CXXR {
@@ -52,7 +55,7 @@ class PairList;
 
 namespace JIT {
 
-llvm::Module* getModule(llvm::IRBuilder<>* builder);
+class Compiler;
 
 namespace Runtime {
 
@@ -91,23 +94,23 @@ llvm::StructType* getCxxrType(const std::string& name,
  * attempt to generate more efficient code.
  */
 llvm::Value* emitEvaluate(llvm::Value* value, llvm::Value* environment,
-			  llvm::IRBuilder<>* builder);
+			  Compiler* compiler);
 
 llvm::Value* emitLookupSymbol(llvm::Value* symbol, llvm::Value* environment,
-			      llvm::IRBuilder<>* builder);
+			      Compiler* compiler);
 
 llvm::Value* emitLookupSymbolInCompiledFrame(llvm::Value* symbol,
 					     llvm::Value* environment,
 					     int position,
-					     llvm::IRBuilder<>* builder);
+					     Compiler* compiler);
 
 llvm::Value* emitLookupFunction(llvm::Value* symbol, llvm::Value* environment,
-				llvm::IRBuilder<>* builder);
+				Compiler* compiler);
 
 llvm::Value* emitCallFunction(llvm::Value* function_base,
 			      llvm::Value* pairlist_args, llvm::Value* call,
 			      llvm::Value* environment,
-			      llvm::IRBuilder<>* builder);
+			      Compiler* compiler);
 } // namespace Runtime
 } // namespace JIT
 } // namespace CXXR

@@ -56,20 +56,7 @@
 #include "llvm/Support/system_error.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 
-using llvm::Constant;
-using llvm::ConstantExpr;
-using llvm::ConstantInt;
-using llvm::Function;
-using llvm::FunctionType;
-using llvm::IRBuilder;
-using llvm::LLVMContext;
-using llvm::Linker;
-using llvm::Module;
-using llvm::StructType;
-using llvm::Type;
-using llvm::TypeBuilder;
-using llvm::Value;
-using llvm::dyn_cast;
+using namespace llvm;
 
 namespace CXXR {
 
@@ -91,45 +78,45 @@ llvm::Function* getDeclaration(FunctionId function, llvm::Module* module)
     return resolved_function;
 }
 
-static llvm::Function* getDeclaration(FunctionId fun, IRBuilder<>* builder)
+static llvm::Function* getDeclaration(FunctionId fun, Compiler* compiler)
 {
-    return getDeclaration(fun, getModule(builder));
+    return getDeclaration(fun, getModule(compiler));
 }
 
-Value* emitEvaluate(Value* value, Value* environment, IRBuilder<>* builder)
+Value* emitEvaluate(Value* value, Value* environment, Compiler* compiler)
 {
-    Function* f = getDeclaration(EVALUATE, builder);
-    return builder->CreateCall2(f, value, environment);
+    Function* f = getDeclaration(EVALUATE, compiler);
+    return compiler->CreateCall2(f, value, environment);
 }
 
-Value* emitLookupSymbol(Value* value, Value* environment, IRBuilder<>* builder)
+Value* emitLookupSymbol(Value* value, Value* environment, Compiler* compiler)
 {
-    Function* f = getDeclaration(LOOKUP_SYMBOL, builder);
-    return builder->CreateCall2(f, value, environment);
+    Function* f = getDeclaration(LOOKUP_SYMBOL, compiler);
+    return compiler->CreateCall2(f, value, environment);
 }
 
 Value* emitLookupSymbolInCompiledFrame(Value* value, Value* environment,
-				       int position, IRBuilder<>* builder)
+				       int position, Compiler* compiler)
 {
-    Function* f = getDeclaration(LOOKUP_SYMBOL_IN_COMPILED_FRAME, builder);
-    return builder->CreateCall3(f, value, environment,
-				builder->getInt32(position));
+    Function* f = getDeclaration(LOOKUP_SYMBOL_IN_COMPILED_FRAME, compiler);
+    return compiler->CreateCall3(f, value, environment,
+				 compiler->getInt32(position));
 }
 
 Value* emitLookupFunction(Value* value, Value* environment,
-			  IRBuilder<>* builder)
+			  Compiler* compiler)
 {
-    Function* f = getDeclaration(LOOKUP_FUNCTION, builder);
-    return builder->CreateCall2(f, value, environment);
+    Function* f = getDeclaration(LOOKUP_FUNCTION, compiler);
+    return compiler->CreateCall2(f, value, environment);
 }
 
 Value* emitCallFunction(llvm::Value* function_base, llvm::Value* pairlist_args,
 			llvm::Value* call, llvm::Value* environment,
-			IRBuilder<>* builder)
+			Compiler* compiler)
 {
-    Function* f = getDeclaration(CALL_FUNCTION, builder);
-    return builder->CreateCall4(f, function_base, pairlist_args, call,
-				environment);
+    Function* f = getDeclaration(CALL_FUNCTION, compiler);
+    return compiler->CreateCall4(f, function_base, pairlist_args, call,
+				 environment);
 }
 
 static Module* createRuntimeModule(LLVMContext& context)
