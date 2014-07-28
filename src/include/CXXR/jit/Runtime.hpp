@@ -68,6 +68,8 @@ enum FunctionId {
     LOOKUP_SYMBOL_IN_COMPILED_FRAME,
     LOOKUP_FUNCTION,
     CALL_FUNCTION,
+    DO_BREAK,
+    DO_NEXT,
     COERCE_TO_TRUE_OR_FALSE,
     // When adding to this list, make sure to add to allFunctionIds[] in
     // Runtime.cpp.
@@ -112,6 +114,9 @@ llvm::Value* emitCallFunction(llvm::Value* function_base,
 			      llvm::Value* pairlist_args, llvm::Value* call,
 			      llvm::Value* environment,
 			      Compiler* compiler);
+
+void emitBreak(llvm::Value* environment, Compiler* compiler);
+void emitNext(llvm::Value* environment, Compiler* compiler);
 
 // Coerce value to either 0 or 1.
 // Throws a runtime error if the coercion fails.

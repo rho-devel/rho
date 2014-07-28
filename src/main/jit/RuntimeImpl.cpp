@@ -35,10 +35,12 @@
 #include "CXXR/Environment.h"
 #include "CXXR/Expression.h"
 #include "CXXR/FunctionBase.h"
+#include "CXXR/LoopBailout.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/RObject.h"
 #include "CXXR/Symbol.h"
 #include "CXXR/jit/CompiledFrame.hpp"
+#include "Defn.h"
 
 /*
  * This file contains functions that are available in the runtime module.
@@ -124,6 +126,18 @@ RObject* cxxr_runtime_callFunction(const FunctionBase* function,
 {
     ArgList arglist(args, ArgList::RAW);
     return function->apply(&arglist, environment, call);
+}
+
+void cxxr_runtime_do_break(Environment* environment) {
+    if (!environment->loopActive())
+	Rf_error(_("no loop to break from"));
+    CXXR_NEW(LoopBailout(environment, false))->throwException();
+}
+
+void cxxr_runtime_do_next(Environment* environment) {
+    if (!environment->loopActive())
+	Rf_error(_("no loop to break from"));
+    CXXR_NEW(LoopBailout(environment, true))->throwException();
 }
 
 // In src/main/eval.cpp

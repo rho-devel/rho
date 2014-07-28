@@ -122,6 +122,16 @@ Value* emitCallFunction(llvm::Value* function_base, llvm::Value* pairlist_args,
 	{ function_base, pairlist_args, call, environment });
 }
 
+void emitBreak(llvm::Value* environment, Compiler* compiler) {
+    Function* do_break = getDeclaration(DO_BREAK, compiler);
+    compiler->emitCallOrInvoke(do_break, { environment });
+}
+
+void emitNext(llvm::Value* environment, Compiler* compiler) {
+    Function* do_next = getDeclaration(DO_NEXT, compiler);
+    compiler->emitCallOrInvoke(do_next, { environment });
+}
+
 Value* emitCoerceToTrueOrFalse(llvm::Value* value,
 			       const Expression* call,
 			       Compiler* compiler)
@@ -189,6 +199,10 @@ std::string getName(FunctionId function)
 	return "cxxr_runtime_lookupFunction";
     case CALL_FUNCTION:
 	return "cxxr_runtime_callFunction";
+    case DO_BREAK:
+	return "cxxr_runtime_do_break";
+    case DO_NEXT:
+	return "cxxr_runtime_do_next";
     case COERCE_TO_TRUE_OR_FALSE:
 	return "cxxr_runtime_coerceToTrueOrFalse";
     };
@@ -196,7 +210,8 @@ std::string getName(FunctionId function)
 
 static const FunctionId allFunctionIds[]
     = { EVALUATE, LOOKUP_SYMBOL, LOOKUP_SYMBOL_IN_COMPILED_FRAME,
-	LOOKUP_FUNCTION, CALL_FUNCTION, COERCE_TO_TRUE_OR_FALSE };
+	LOOKUP_FUNCTION, CALL_FUNCTION, DO_BREAK, DO_NEXT,
+	COERCE_TO_TRUE_OR_FALSE };
 
 FunctionId getFunctionId(llvm::Function* function)
 {
