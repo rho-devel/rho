@@ -35,8 +35,11 @@
 
 #include "llvm/IR/Function.h"
 
+#include "CXXR/BuiltInFunction.h"
 #include "CXXR/ByteCode.hpp"
+#include "CXXR/Closure.h"
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/Environment.h"
 #include "CXXR/Expression.h"
 #include "CXXR/FunctionBase.h"
 #include "CXXR/RObject.h"
@@ -47,6 +50,7 @@
 #include "CXXR/jit/TypeBuilder.hpp"
 
 using llvm::BasicBlock;
+using llvm::TypeBuilder;
 using llvm::Value;
 
 namespace CXXR {
@@ -56,9 +60,7 @@ Compiler::Compiler(CompilerContext* context)
     : IRBuilder<>(context->getLLVMContext()), m_context(context)
 {
     // Setup the entry block.
-    BasicBlock* entry_block
-	= BasicBlock::Create(getContext(), "EntryBlock",
-			     context->getFunction());
+    BasicBlock* entry_block = createBasicBlock("EntryBlock");
     SetInsertPoint(entry_block);
 }
 
@@ -66,7 +68,7 @@ llvm::Constant* Compiler::emitConstantPointer(const void* value,
 					      llvm::Type* type)
 {
     llvm::ConstantInt* pointer_as_integer = llvm::ConstantInt::get(
-	llvm::TypeBuilder<intptr_t, false>::get(getContext()),
+	TypeBuilder<intptr_t, false>::get(m_context->getLLVMContext()),
 	reinterpret_cast<intptr_t>(value));
     return llvm::ConstantExpr::getIntToPtr(pointer_as_integer, type);
 }
@@ -89,9 +91,7 @@ llvm::Value* Compiler::emitCallOrInvoke(llvm::Function* function,
 {
     BasicBlock* exception_handler = m_context->getExceptionLandingPad();
     if (exception_handler) {
-	BasicBlock *continue_block = BasicBlock::Create(
-	    getContext(), "cont",
-	    GetInsertBlock()->getParent());
+	BasicBlock *continue_block = createBasicBlock("cont");
 	Value* result = CreateInvoke(function,
 				     continue_block, exception_handler,
 				     args);
@@ -135,16 +135,17 @@ Value* Compiler::emitEval(const RObject* object)
 Value* Compiler::emitSymbolEval(const Symbol* symbol)
 {
     assert(m_context->m_frame_descriptor != nullptr);
+    // Optimize the lookup in the likely case that this is a regular symbol
+    // found in the local environment.
     int location = m_context->m_frame_descriptor->getLocation(symbol);
-    if (location != -1) {
-	if (symbol != DotsSymbol
-	    && !symbol->isDotDotSymbol()
-	    && symbol != Symbol::missingArgument()) {
-	    // Lookup the symbol directly.
-	    return Runtime::emitLookupSymbolInCompiledFrame(
-		emitSymbol(symbol), m_context->getEnvironment(), location,
-		this);
-	}
+    if (location != -1
+	&& symbol != DotsSymbol
+	&& !symbol->isDotDotSymbol()
+	&& symbol != Symbol::missingArgument()) {
+	// Lookup the symbol directly.
+	return Runtime::emitLookupSymbolInCompiledFrame(
+	    emitSymbol(symbol), m_context->getEnvironment(), location,
+	    this);
     }
     // Otherwise fallback to the interpreter for now.
     return Runtime::emitLookupSymbol(emitSymbol(symbol),
@@ -156,19 +157,31 @@ Value* Compiler::emitExpressionEval(const Expression* expression)
     RObject* function = expression->car();
     Value* resolved_function = nullptr;
 
-    if (FunctionBase::isA(function)) {
+    // Evaluate the function argument and get a prediction of its likely value.
+    FunctionBase* likely_function = dynamic_cast<FunctionBase*>(function);
+    if (likely_function) {
+	// The first element of the expression is a literal function.
+        // TODO(kmillar): no need for a guard in the emitted code in this case.
 	resolved_function
 	    = emitConstantPointer(SEXP_downcast<FunctionBase*>(function));
+    } else if (Symbol* symbol = dynamic_cast<Symbol*>(function)) {
+	// The first element is a symbol.  Look it up.
+	resolved_function = emitFunctionLookup(symbol, &likely_function);
     } else {
-	// Lookup the function.
-	// TODO(kmillar): verify that we actually got a symbol here.
-	llvm::Value* fn = emitSymbol(SEXP_downcast<Symbol*>(function));
-	resolved_function
-	    = Runtime::emitLookupFunction(fn, m_context->getEnvironment(),
-					  this);
+	// The first element is a (function-valued) expression.
+	resolved_function = emitEval(function);
+	// TODO(kmillar): is a cast from RObject* to FunctionBase* needed?
     }
 
-    // Call the function.
+    if (likely_function) {
+	Value* result = emitInlineableBuiltinCall(
+	    expression, resolved_function, likely_function);
+	if (result) {
+	    return result;
+	}
+    }
+
+    // The function wasn't inlined, so emit a call to the interpreter.
     return Runtime::emitCallFunction(
 	resolved_function, emitConstantPointer(expression->tail()),
 	emitConstantPointer(expression), m_context->getEnvironment(), this);
@@ -179,6 +192,161 @@ Value* Compiler::emitDotsEval(const DottedArgs* expression)
     // Call the interpreter.
     return Runtime::emitEvaluate(emitConstantPointer(expression),
 				 m_context->getEnvironment(), this);
+}
+
+Value* Compiler::emitFunctionLookup(const Symbol* symbol,
+				    FunctionBase** expected_result) {
+    *expected_result = findFunction(symbol,
+				    m_context->getClosure()->environment());
+    llvm::Value* fn = emitSymbol(symbol);
+    // TODO(kmillar): emit optimized code for this.
+    return Runtime::emitLookupFunction(fn, m_context->getEnvironment(),
+				       this);
+}
+
+BasicBlock* Compiler::createBasicBlock(const char* name,
+				       llvm::BasicBlock* insert_before)
+{
+    return BasicBlock::Create(getContext(), name,
+			      m_context->getFunction(),
+			      insert_before);
+}
+
+/*
+ * The rest of this file contains the code to emit inlined versions of special
+ * functions, primarily those that implement flow control.
+ */
+const std::vector<std::pair<FunctionBase*, Compiler::EmitBuiltinFn>>&
+Compiler::getInlineableBuiltins()
+{
+    static std::vector<std::pair<FunctionBase*, EmitBuiltinFn>>
+	inlineable_builtins = {
+	std::make_pair(BuiltInFunction::obtain("("),
+		       &Compiler::emitInlinedParen),
+	std::make_pair(BuiltInFunction::obtain("{"),
+		       &Compiler::emitInlinedBegin),
+	std::make_pair(BuiltInFunction::obtain("return"),
+		       &Compiler::emitInlinedReturn),
+    };
+    return inlineable_builtins;
+}
+
+Compiler::EmitBuiltinFn Compiler::getInlinedBuiltInEmitter(
+    BuiltInFunction* builtin)
+{
+    // Only functions that are primitive can be inlined directly.  Functions
+    // that require argument matching or create a new function context are not
+    // inlined here.
+    if (!builtin || builtin->viaDotInternal()) {
+	return nullptr;
+    }
+    for (auto inlineable_builtin : getInlineableBuiltins()) {
+	if (builtin == inlineable_builtin.first) {
+	    return inlineable_builtin.second;
+	}
+    }
+    return nullptr;
+}
+
+Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
+					   Value* resolved_function,
+					   FunctionBase* likely_function)
+{
+    BuiltInFunction* builtin = dynamic_cast<BuiltInFunction*>(likely_function);
+    EmitBuiltinFn emit_builtin = getInlinedBuiltInEmitter(builtin);
+    if (!emit_builtin) {
+	return nullptr;
+    }
+
+    // TODO(kmillar): write an 'emitGuardedCode' function, and use that here.
+    InsertPoint incoming_insert_point = saveIP();
+    BasicBlock* inlined_builtin_block = createBasicBlock(builtin->name());
+    BasicBlock* merge_block = createBasicBlock("continue");
+    BasicBlock* fallback_block = createBasicBlock("fallback");
+
+    // Emit inlined code.
+    SetInsertPoint(inlined_builtin_block);
+
+    llvm::Value* inlined_builtin_value = (this->*emit_builtin)(expression);
+    if (!inlined_builtin_value) {
+	// Code generation failed.
+	return nullptr;
+    }
+    CreateBr(merge_block);
+
+    // If the function isn't the one we expected, fall back to the interpreter.
+    // TODO(kmillar): do OSR or similar on guard failure to improve fast
+    //   codepath performance and reduce the time spent compiling unlikely
+    //   codepaths.
+    // TODO(kmillar): allow this check to be skipped at some optimization
+    //   levels.
+    SetInsertPoint(fallback_block);
+    Value* fallback_value
+	=  Runtime::emitCallFunction(resolved_function,
+				     emitConstantPointer(expression->tail()),
+				     emitConstantPointer(expression),
+				     m_context->getEnvironment(), this);
+    CreateBr(merge_block);
+
+    // Check if (resolved_function == likely_function) and setup the control
+    // flow.
+    restoreIP(incoming_insert_point);
+
+    Value* likely_fn_value = emitConstantPointer(
+	static_cast<FunctionBase*>(likely_function));
+    Value* is_expected_builtin = CreateICmpEQ(resolved_function,
+					      likely_fn_value);
+    CreateCondBr(is_expected_builtin,
+		 inlined_builtin_block,
+		 fallback_block); // TODO(kmillar): set branch weights
+    
+    // Setup the merge point.
+    SetInsertPoint(merge_block);
+
+    llvm::Type* robject_type = TypeBuilder<RObject*, false>::get(getContext());
+    llvm::PHINode* result = CreatePHI(robject_type, 2);
+    result->addIncoming(inlined_builtin_value, inlined_builtin_block);
+    result->addIncoming(fallback_value, fallback_block);
+    return result;
+}
+
+Value* Compiler::emitInlinedParen(const Expression* expression)
+{
+    // '(' has a single argument -- the expression to evaluate.
+    if (listLength(expression) == 2) {
+	return emitEval(CADR(const_cast<Expression*>(expression)));
+    } else {
+	// This is probably a syntax error.  Let the interpreter handle it.
+	return nullptr;
+    }
+}
+
+Value* Compiler::emitInlinedBegin(const Expression* expression)
+{
+    // 'begin' is the '{' builtin.  It evaluates each argument and returns the
+    // result of the last one.
+    llvm::Value* value = nullptr;
+    for (const ConsCell& argument : *expression->tail()) {
+	value = emitEval(argument.car());
+    }
+    return value ? value : emitNullValue();
+}
+
+Value* Compiler::emitInlinedReturn(const Expression* expression)
+{
+    // Both return() and return(expr) are legal.
+    int length = listLength(expression);
+    if (length == 1) {
+	return CreateRetVoid();
+    } else if (length == 2) {
+	Value* return_value = emitEval(CADR(const_cast<Expression*>(expression)));
+	return CreateRet(return_value);
+    } else {
+	// This is probably a syntax error.  Let the interpreter handle it.
+	return nullptr;
+    }
+    // Note: 'return' isn't valid at top-level, but since only functions get
+    // compiled, there's no need to check for that here.
 }
 
 } // namespace JIT

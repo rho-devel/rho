@@ -42,6 +42,7 @@
 
 namespace CXXR {
 
+class BuiltInFunction;
 class DottedArgs;
 class Environment;
 class Expression;
@@ -75,7 +76,28 @@ public:
 private:
     CompilerContext* m_context;
 
+    llvm::Value* emitFunctionLookup(const Symbol* symbol,
+				    FunctionBase** likely_function);
+    
+    // Code to generate inlined functions.
+    llvm::Value* emitInlineableBuiltinCall(const Expression* expression,
+					   llvm::Value* resolved_function,
+					   FunctionBase* likely_function);
+
+    // Specific functions to inline.
+    llvm::Value* emitInlinedParen(const Expression* expression);
+    llvm::Value* emitInlinedBegin(const Expression* expression);
+    llvm::Value* emitInlinedReturn(const Expression* expression);
+
+    typedef llvm::Value* (Compiler::*EmitBuiltinFn)(const Expression*);
+    static const std::vector<std::pair<FunctionBase*, EmitBuiltinFn>>&
+	getInlineableBuiltins();
+    static EmitBuiltinFn getInlinedBuiltInEmitter(BuiltInFunction* builtin);
+
+    // Utility functions.
     llvm::Constant* emitConstantPointer(const void* value, llvm::Type* type);
+    llvm::BasicBlock* createBasicBlock(const char* name,
+				       llvm::BasicBlock* insert_before = 0);
 };
 
 template <class T>
