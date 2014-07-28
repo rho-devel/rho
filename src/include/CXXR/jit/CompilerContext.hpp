@@ -82,6 +82,10 @@ public:
     // The environment that encloses the closure's local environment.
     const Environment* getEnclosingEnvironment();
 
+    // Flow-control related functions.
+    llvm::BasicBlock* getExceptionLandingPad() {
+	return m_exception_landing_pad;
+    }
 
     // These variables are read-write and publicly accessible for use by the
     // compiler.
@@ -91,6 +95,8 @@ private:
     const Closure* m_closure;
     llvm::Value* m_environment;
     llvm::Function* m_function;
+
+    llvm::BasicBlock* m_exception_landing_pad;
 
     CompilerContext(const CompilerContext&) = delete;
     CompilerContext& operator=(const CompilerContext&) = delete;

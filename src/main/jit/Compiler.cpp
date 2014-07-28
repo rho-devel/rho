@@ -84,6 +84,24 @@ llvm::Constant* Compiler::emitNullValue()
     return emitConstantPointer(null);
 }
 
+llvm::Value* Compiler::emitCallOrInvoke(llvm::Function* function,
+					llvm::ArrayRef<llvm::Value*> args)
+{
+    BasicBlock* exception_handler = m_context->getExceptionLandingPad();
+    if (exception_handler) {
+	BasicBlock *continue_block = BasicBlock::Create(
+	    getContext(), "cont",
+	    GetInsertBlock()->getParent());
+	Value* result = CreateInvoke(function,
+				     continue_block, exception_handler,
+				     args);
+	SetInsertPoint(continue_block);
+	return result;
+    } else {
+	return CreateCall(function, args);
+    }
+}
+
 Value* Compiler::emitEval(const RObject* object)
 {
     // This has a non-trivial implementation for all the objects which have

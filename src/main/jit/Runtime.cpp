@@ -62,7 +62,7 @@ namespace CXXR {
 
 namespace JIT {
 
-llvm::Module* getModule(IRBuilder<>* builder)
+static llvm::Module* getModule(IRBuilder<>* builder)
 {
     return builder->GetInsertBlock()->getParent()->getParent();
 }
@@ -85,38 +85,41 @@ static llvm::Function* getDeclaration(FunctionId fun, Compiler* compiler)
 
 Value* emitEvaluate(Value* value, Value* environment, Compiler* compiler)
 {
-    Function* f = getDeclaration(EVALUATE, compiler);
-    return compiler->CreateCall2(f, value, environment);
+    Function* evaluate = getDeclaration(EVALUATE, compiler);
+    return compiler->emitCallOrInvoke(evaluate, { value, environment });
 }
 
 Value* emitLookupSymbol(Value* value, Value* environment, Compiler* compiler)
 {
-    Function* f = getDeclaration(LOOKUP_SYMBOL, compiler);
-    return compiler->CreateCall2(f, value, environment);
+    Function* lookup_symbol = getDeclaration(LOOKUP_SYMBOL, compiler);
+    return compiler->emitCallOrInvoke(lookup_symbol, { value, environment });
 }
 
 Value* emitLookupSymbolInCompiledFrame(Value* value, Value* environment,
 				       int position, Compiler* compiler)
 {
-    Function* f = getDeclaration(LOOKUP_SYMBOL_IN_COMPILED_FRAME, compiler);
-    return compiler->CreateCall3(f, value, environment,
-				 compiler->getInt32(position));
+    Function* lookup_symbol_in_compiled_frame
+	= getDeclaration(LOOKUP_SYMBOL_IN_COMPILED_FRAME, compiler);
+    return compiler->emitCallOrInvoke(
+	lookup_symbol_in_compiled_frame,
+	{ value, environment, compiler->getInt32(position) });
 }
 
 Value* emitLookupFunction(Value* value, Value* environment,
 			  Compiler* compiler)
 {
-    Function* f = getDeclaration(LOOKUP_FUNCTION, compiler);
-    return compiler->CreateCall2(f, value, environment);
+    Function* lookup_function = getDeclaration(LOOKUP_FUNCTION, compiler);
+    return compiler->emitCallOrInvoke(lookup_function, { value, environment });
 }
 
 Value* emitCallFunction(llvm::Value* function_base, llvm::Value* pairlist_args,
 			llvm::Value* call, llvm::Value* environment,
 			Compiler* compiler)
 {
-    Function* f = getDeclaration(CALL_FUNCTION, compiler);
-    return compiler->CreateCall4(f, function_base, pairlist_args, call,
-				 environment);
+    Function* call_function = getDeclaration(CALL_FUNCTION, compiler);
+    return compiler->emitCallOrInvoke(
+	call_function,
+	{ function_base, pairlist_args, call, environment });
 }
 
 static Module* createRuntimeModule(LLVMContext& context)

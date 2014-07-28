@@ -49,6 +49,7 @@ CompilerContext::CompilerContext(const Closure* closure,
     m_closure = closure;
     m_environment = environment;
     m_function = function;
+    m_exception_landing_pad = nullptr;
     m_frame_descriptor = new FrameDescriptor(closure);
 }
 

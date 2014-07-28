@@ -62,11 +62,15 @@ public:
     llvm::Value* emitExpressionEval(const Expression* object);
     llvm::Value* emitDotsEval(const DottedArgs* object);
 
+    // Utility functions.
     template <class T>
     llvm::Constant* emitConstantPointer(const T* value);
     // Aliases for emitConstantPointer for improved code readability.
     llvm::Constant* emitSymbol(const Symbol* symbol);
     llvm::Constant* emitNullValue();
+
+    llvm::Value* emitCallOrInvoke(llvm::Function* function,
+				  llvm::ArrayRef<llvm::Value*> args);
 
 private:
     CompilerContext* m_context;
