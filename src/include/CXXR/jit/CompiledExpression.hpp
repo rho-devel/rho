@@ -37,6 +37,12 @@
 #include <memory>
 
 #include "CXXR/jit/FrameDescriptor.hpp"
+
+namespace llvm {
+
+class ExecutionEngine;
+}
+
 namespace CXXR {
 
 class Closure;
@@ -63,7 +69,7 @@ public:
     static CompiledExpression* compileFunctionBody(const Closure* function);
 
 private:
-    CompiledExpression() { }
+    CompiledExpression();
     CompiledExpression(const Closure* closure);
 
     // The compiled function itself.
@@ -73,6 +79,10 @@ private:
     // The interpreter requires the frame descriptor to work with the frames
     // that the compiled code generates.
     std::unique_ptr<FrameDescriptor> m_frame_descriptor;
+
+    // TODO(kmillar): we ought to have a single engine that is shared by many
+    //   functions.
+    std::unique_ptr<llvm::ExecutionEngine> m_engine;
 
     CompiledExpression(const CompiledExpression&) = delete;
     CompiledExpression& operator=(const CompiledExpression&) = delete;

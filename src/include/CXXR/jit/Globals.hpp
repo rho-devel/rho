@@ -34,19 +34,10 @@
 #ifndef CXXR_JIT_GLOBALS_HPP
 #define CXXR_JIT_GLOBALS_HPP
 
-namespace llvm {
-
-class ExecutionEngine;
-class LLVMContext;
-
-} // namespace llvm
-
 namespace CXXR {
 namespace JIT {
 
 void EnsureGlobalsInitialized();
-
-extern llvm::ExecutionEngine* engine;
 
 } // namespace JIT
 } // namespace CXXR

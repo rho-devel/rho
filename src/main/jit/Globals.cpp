@@ -37,8 +37,6 @@
 namespace CXXR {
 namespace JIT {
 
-llvm::ExecutionEngine* engine = nullptr;
-
 void EnsureGlobalsInitialized()
 {
     // nothing right now.

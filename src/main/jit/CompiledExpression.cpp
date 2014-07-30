@@ -68,6 +68,11 @@ CompiledExpression::compileFunctionBody(const Closure* closure)
     return new CompiledExpression(closure);
 }
 
+CompiledExpression::CompiledExpression()
+{
+    // nothing needed.
+}
+
 CompiledExpression::CompiledExpression(const Closure* closure)
 {
     llvm::InitializeNativeTarget();
@@ -87,29 +92,24 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     options.NoFramePointerElim = true;
     options.EnableFastISel = true;
 
-    // TODO(kmillar): we're creating and leaking an ExecutionEngine for every
-    //   compilation we do.
-    engine = llvm::EngineBuilder(module)
-	.setUseMCJIT(true)
-	.setOptLevel(llvm::CodeGenOpt::None)
-	.setTargetOptions(options)
-	.create();
-    if (!engine) {
-	assert(engine);
-    }
+    m_engine.reset(llvm::EngineBuilder(module)
+		   .setUseMCJIT(true)
+		   .setOptLevel(llvm::CodeGenOpt::None)
+		   .setTargetOptions(options)
+		   .create());
+    assert(m_engine);
 
     // Create a function with signature RObject* (*f)(Environment* environment)
-    const std::unique_ptr<llvm::Function> function(
-	llvm::Function::Create(
-	    llvm::TypeBuilder<RObject*(Environment*), false>::get(context),
-	    llvm::Function::InternalLinkage,
-	    "anonymous_function", // TODO: give it a useful name
-	    module));
+    llvm::Function* function = llvm::Function::Create(
+	llvm::TypeBuilder<RObject*(Environment*), false>::get(context),
+	llvm::Function::InternalLinkage,
+	"anonymous_function", // TODO: give it a useful name
+	module);
     Value* environment = &*(function->getArgumentList().begin());
     environment->setName("environment");
 
     // Setup the compiler and generate code.
-    CompilerContext compiler_context(closure, environment, function.get());
+    CompilerContext compiler_context(closure, environment, function);
     Compiler compiler(&compiler_context);
     Value* return_value = compiler.emitEval(body);
 
@@ -123,7 +123,7 @@ CompiledExpression::CompiledExpression(const Closure* closure)
 
     // TODO: add optimization passes and re-verify.
 
-    auto ptr = engine->getFunctionAddress(function->getName());
+    auto ptr = m_engine->getFunctionAddress(function->getName());
     assert(ptr && "JIT compilation failed");
 
     m_function = reinterpret_cast<CompiledExpressionPointer>(ptr);
