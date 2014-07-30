@@ -99,7 +99,7 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     }
 
     // Create a function with signature RObject* (*f)(Environment* environment)
-    std::unique_ptr<llvm::Function> function(
+    const std::unique_ptr<llvm::Function> function(
 	llvm::Function::Create(
 	    llvm::TypeBuilder<RObject*(Environment*), false>::get(context),
 	    llvm::Function::InternalLinkage,
