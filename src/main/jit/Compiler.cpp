@@ -34,6 +34,8 @@
 #include "CXXR/jit/Compiler.hpp"
 
 #include "llvm/IR/Function.h"
+#include "llvm/IR/Intrinsics.h"
+#include "llvm/IR/Module.h"
 
 #include "CXXR/BuiltInFunction.h"
 #include "CXXR/ByteCode.hpp"
@@ -50,6 +52,7 @@
 #include "CXXR/jit/TypeBuilder.hpp"
 
 using llvm::BasicBlock;
+using llvm::PHINode;
 using llvm::TypeBuilder;
 using llvm::Value;
 
@@ -238,6 +241,8 @@ Compiler::getInlineableBuiltins()
 {
     static std::vector<std::pair<FunctionBase*, EmitBuiltinFn>>
 	inlineable_builtins = {
+	// std::make_pair(BuiltInFunction::obtain("<-"),
+	// 	       &Compiler::emitInlinedAssign),
 	std::make_pair(BuiltInFunction::obtain("("),
 		       &Compiler::emitInlinedParen),
 	std::make_pair(BuiltInFunction::obtain("{"),
@@ -246,6 +251,16 @@ Compiler::getInlineableBuiltins()
 		       &Compiler::emitInlinedReturn),
 	std::make_pair(BuiltInFunction::obtain("if"),
 		       &Compiler::emitInlinedIf),
+	// std::make_pair(BuiltInFunction::obtain("for"),
+	// 	       &Compiler::emitInlinedFor),
+	std::make_pair(BuiltInFunction::obtain("while"),
+		       &Compiler::emitInlinedWhile),
+	std::make_pair(BuiltInFunction::obtain("repeat"),
+		       &Compiler::emitInlinedRepeat),
+	std::make_pair(BuiltInFunction::obtain("break"),
+		       &Compiler::emitInlinedBreak),
+	std::make_pair(BuiltInFunction::obtain("next"),
+		       &Compiler::emitInlinedNext)
     };
     return inlineable_builtins;
 }
@@ -416,6 +431,185 @@ Value* Compiler::emitInlinedIf(const Expression* expression)
 
     SetInsertPoint(continue_block);
     return result_value;
+}
+
+Value* Compiler::emitInlinedRepeat(const Expression* expression)
+{
+    const RObject* body = expression->car();
+
+    BasicBlock* loop_body = createBasicBlock("repeat_body");
+    BasicBlock* continue_block = createBasicBlock("continue");
+
+    CreateBr(loop_body);
+
+    SetInsertPoint(loop_body);
+    {
+	// The loop scope ensures that 'break' and 'next' work correctly.
+	LoopScope loop(m_context,
+		       continue_block, loop_body,
+		       this);
+	emitEval(body);
+    }
+    CreateBr(loop_body);
+
+    SetInsertPoint(continue_block);
+    return emitNullValue(); // TODO(kmillar): make invisible.
+}
+
+Value* Compiler::emitInlinedWhile(const Expression* expression)
+{
+    const RObject* condition = expression->car();
+    const RObject* body = expression->tail()->car(); 
+
+    BasicBlock* loop_header = createBasicBlock("while_header");
+    BasicBlock* loop_body = createBasicBlock("while_body");
+    BasicBlock* continue_block = createBasicBlock("continue");
+
+    CreateBr(loop_header);
+
+    SetInsertPoint(loop_header);
+    llvm::Value* evaluated_condition = emitEval(condition);
+    llvm::Value* condition_as_bool = Runtime::emitCoerceToTrueOrFalse(
+	evaluated_condition, expression, this);
+    CreateCondBr(condition_as_bool, loop_body, continue_block);
+
+    SetInsertPoint(loop_body);
+    {
+	LoopScope loop(m_context,
+		       continue_block, loop_header,
+		       this);
+	emitEval(body);
+    }
+    CreateBr(loop_header);
+
+    SetInsertPoint(continue_block);
+    return emitNullValue(); // TODO(kmillar): make invisible.
+}
+
+Value* Compiler::emitInlinedBreak(const Expression* expression) {
+    BasicBlock* dest = m_context->getBreakDestination();
+    if (dest) {
+	return CreateBr(dest);
+    } else {
+	// This is probably user error. Let the interpreter deal with it.
+	return Runtime::emitBreak(m_context->getEnvironment(), this);
+    }
+}
+
+Value* Compiler::emitInlinedNext(const Expression* expression) {
+    BasicBlock* dest = m_context->getNextDestination();
+    if (dest) {
+	return CreateBr(dest);
+    } else {
+	return Runtime::emitNext(m_context->getEnvironment(), this);
+    }
+}
+
+
+llvm::Type* Compiler::exceptionInfoType() {
+    llvm::LLVMContext& context = getContext();
+    return llvm::StructType::get(TypeBuilder<void*, false>::get(context),
+				 TypeBuilder<int32_t, false>::get(context),
+				 nullptr);
+}
+
+BasicBlock* Compiler::emitLandingPad(PHINode* dispatch) {
+    InsertPointGuard preserve_insert_point(*this);
+
+    BasicBlock* block = createBasicBlock("landing_pad");
+    SetInsertPoint(block);
+
+    llvm::Function* exception_personality_function
+	= m_context->getModule()->getFunction("__gxx_personality_v0");
+    assert(exception_personality_function != nullptr);
+    llvm::LandingPadInst* landing_pad = CreateLandingPad(
+	exceptionInfoType(),
+	exception_personality_function, 0);
+    // It's entirely possible that the landing pad only needs to handle some
+    // exception types, so using a cleanup is overly general.  However exception
+    // handling should be rare, catching and rethrowing exceptions that aren't
+    // handled is perfectly valid, so this simplification makes sense.
+    landing_pad->setCleanup(true);
+
+    CreateBr(dispatch->getParent());
+    dispatch->addIncoming(landing_pad, block);
+    return block;
+}
+
+PHINode* Compiler::emitDispatchToExceptionHandler(const std::type_info* type,
+						  PHINode* handler,
+						  PHINode* fallthrough) {
+    InsertPointGuard preserve_insert_point(*this);
+
+    BasicBlock* block = createBasicBlock("dispatch");
+    SetInsertPoint(block);
+
+    PHINode* exception_info = CreatePHI(exceptionInfoType(), 1);
+    Value* exception_type_id = CreateExtractValue(exception_info, 1);
+
+    llvm::Function* get_type_id
+	= llvm::Intrinsic::getDeclaration(m_context->getModule(),
+					  llvm::Intrinsic::eh_typeid_for);
+    Value* matched_type_id = CreateCall(get_type_id,
+					emitConstantPointer((void*)type));
+
+    Value* matches = CreateICmpEQ(exception_type_id, matched_type_id);
+    CreateCondBr(matches,
+		 handler->getParent(),
+		 fallthrough->getParent());
+    
+    handler->addIncoming(exception_info, block);
+    fallthrough->addIncoming(exception_info, block);
+    return exception_info;
+}
+
+PHINode* Compiler::emitLoopExceptionHandler(llvm::BasicBlock* break_destination,
+					    llvm::BasicBlock* next_destination)
+{
+    assert(next_destination != nullptr);
+    assert(break_destination != nullptr);
+    InsertPointGuard preserve_insert_point(*this);
+
+    BasicBlock* block = createBasicBlock("loop_exception_handler");
+    SetInsertPoint(block);
+    
+    PHINode* exception_info = CreatePHI(exceptionInfoType(), 1);
+    Value* exception_ref = CreateExtractValue(exception_info, 0);
+    Value* exception = Runtime::emitBeginCatch(exception_ref, this);
+    Value* isNext = Runtime::emitLoopExceptionIsNext(exception, this);
+    Runtime::emitEndCatch(this);
+
+    CreateCondBr(isNext, next_destination, break_destination);
+    return exception_info;
+}
+
+PHINode* Compiler::emitReturnExceptionHandler()
+{
+    InsertPointGuard preserve_insert_point(*this);
+
+    BasicBlock* block = createBasicBlock("return_exception_handler");
+    SetInsertPoint(block);
+    
+    PHINode* exception_info = CreatePHI(exceptionInfoType(), 1);
+    Value* exception_ref = CreateExtractValue(exception_info, 0);
+    Value* exception = Runtime::emitBeginCatch(exception_ref, this);
+    Value* return_value = Runtime::emitGetReturnExceptionValue(exception, this);
+    Runtime::emitEndCatch(this);
+
+    CreateRet(return_value);
+    return exception_info;
+}
+
+PHINode* Compiler::emitRethrowException()
+{
+    InsertPointGuard preserve_insert_point(*this);
+
+    BasicBlock* block = createBasicBlock("rethrow_exception");
+    SetInsertPoint(block);
+    
+    PHINode* exception_info = CreatePHI(exceptionInfoType(), 1);
+    CreateResume(exception_info);
+    return exception_info;
 }
 
 } // namespace JIT

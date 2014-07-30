@@ -58,6 +58,11 @@ using namespace CXXR;
 
 extern "C" {
 
+// Implemented in the C++ runtime library.  Redeclared here for convenience.
+int __gxx_personality_v0(...);
+void* __cxa_begin_catch(void*);
+void __cxa_end_catch();
+
 RObject* cxxr_runtime_evaluate(RObject* value, Environment* environment)
 {
     return value->evaluate(environment);

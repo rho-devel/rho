@@ -75,6 +75,7 @@ llvm::Function* getDeclaration(FunctionId function, llvm::Module* module)
 {
     std::string name = getName(function);
     llvm::Function* resolved_function = module->getFunction(name);
+    assert(resolved_function != nullptr);
     return resolved_function;
 }
 
@@ -122,14 +123,16 @@ Value* emitCallFunction(llvm::Value* function_base, llvm::Value* pairlist_args,
 	{ function_base, pairlist_args, call, environment });
 }
 
-void emitBreak(llvm::Value* environment, Compiler* compiler) {
+llvm::Value* emitBreak(llvm::Value* environment, Compiler* compiler) {
     Function* do_break = getDeclaration(DO_BREAK, compiler);
     compiler->emitCallOrInvoke(do_break, { environment });
+    return compiler->CreateUnreachable();
 }
 
-void emitNext(llvm::Value* environment, Compiler* compiler) {
+llvm::Value* emitNext(llvm::Value* environment, Compiler* compiler) {
     Function* do_next = getDeclaration(DO_NEXT, compiler);
     compiler->emitCallOrInvoke(do_next, { environment });
+    return compiler->CreateUnreachable();
 }
 
 Value* emitCoerceToTrueOrFalse(llvm::Value* value,
@@ -139,6 +142,45 @@ Value* emitCoerceToTrueOrFalse(llvm::Value* value,
     Function* coerce = getDeclaration(COERCE_TO_TRUE_OR_FALSE, compiler);
     Value* callp = compiler->emitConstantPointer(call);
     return compiler->emitCallOrInvoke(coerce, { value, callp });
+}
+
+Value* emitBeginCatch(Value* exception_reference,
+		      Compiler* compiler)
+{
+    Function* cxa_begin_catch = getModule(compiler)
+	->getFunction("__cxa_begin_catch");
+    assert(cxa_begin_catch != nullptr);
+    // Never throws.
+    return compiler->CreateCall(cxa_begin_catch, exception_reference);
+}
+
+void emitEndCatch(Compiler* compiler)
+	
+{
+    Function* cxa_end_catch = getModule(compiler)
+	->getFunction("__cxa_end_catch");
+    assert(cxa_end_catch != nullptr);
+    // Throws only if a destructor throws.  That should never happen, so it
+    // gets ignored here.
+    compiler->CreateCall(cxa_end_catch);
+}
+
+Value* emitLoopExceptionIsNext(Value* loop_exception, Compiler* compiler)
+{
+    Function* loop_exception_is_next = getModule(compiler)
+	->getFunction("cxxr_runtime_loopFunctionIsNext");
+    assert(loop_exception_is_next != nullptr);
+    // Never throws.
+    return compiler->CreateCall(loop_exception_is_next, loop_exception);
+}
+
+Value* emitGetReturnExceptionValue(Value* return_exception, Compiler* compiler)
+{
+     Function* get_return_exception_value = getModule(compiler)
+	 ->getFunction("cxxr_runtime_getReturnExceptionValue");
+     assert(get_return_exception_value != nullptr);
+     // Never throws.
+     return compiler->CreateCall(get_return_exception_value, return_exception);
 }
 
 static Module* createRuntimeModule(LLVMContext& context)

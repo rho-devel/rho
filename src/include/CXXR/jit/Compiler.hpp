@@ -89,17 +89,33 @@ private:
     llvm::Value* emitInlinedBegin(const Expression* expression);
     llvm::Value* emitInlinedReturn(const Expression* expression);
     llvm::Value* emitInlinedIf(const Expression* expression);
+    llvm::Value* emitInlinedWhile(const Expression* expression);
+    llvm::Value* emitInlinedRepeat(const Expression* expression);
+    llvm::Value* emitInlinedBreak(const Expression* expression);
+    llvm::Value* emitInlinedNext(const Expression* expression);
 
     typedef llvm::Value* (Compiler::*EmitBuiltinFn)(const Expression*);
     static const std::vector<std::pair<FunctionBase*, EmitBuiltinFn>>&
 	getInlineableBuiltins();
     static EmitBuiltinFn getInlinedBuiltInEmitter(BuiltInFunction* builtin);
 
+    // Exception handling.
+    friend class CompilerContext;
+    llvm::Type* exceptionInfoType();
+    llvm::BasicBlock* emitLandingPad(llvm::PHINode* dispatch);
+    llvm::PHINode* emitDispatchToExceptionHandler(const std::type_info* type,
+    						  llvm::PHINode* handler,
+    						  llvm::PHINode* fallthrough);
+    llvm::PHINode* emitLoopExceptionHandler(llvm::BasicBlock* break_destination,
+					    llvm::BasicBlock* next_destination);
+    llvm::PHINode* emitReturnExceptionHandler();
+    llvm::PHINode* emitRethrowException();
+
     // Utility functions.
     llvm::Constant* emitConstantPointer(const void* value, llvm::Type* type);
     llvm::BasicBlock* createBasicBlock(const char* name,
 				       llvm::BasicBlock* insert_before = 0);
-    llvm::BasicBlock* createBranch(const char*name, const RObject* expression,
+    llvm::BasicBlock* createBranch(const char* name, const RObject* expression,
 				   llvm::PHINode* merge_point,
 				   llvm::BasicBlock* insert_before = 0);
 };

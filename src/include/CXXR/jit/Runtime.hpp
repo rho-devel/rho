@@ -61,6 +61,7 @@ namespace Runtime {
 
 // This closely follows the way LLVM handles Intrinsics, except that there
 // is no overloading.
+// TODO(kmillar): do we need the FunctionId?
 enum FunctionId {
     NOT_A_RUNTIME_FUNCTION = 0,
     EVALUATE,
@@ -115,14 +116,25 @@ llvm::Value* emitCallFunction(llvm::Value* function_base,
 			      llvm::Value* environment,
 			      Compiler* compiler);
 
-void emitBreak(llvm::Value* environment, Compiler* compiler);
-void emitNext(llvm::Value* environment, Compiler* compiler);
+llvm::Value* emitBreak(llvm::Value* environment, Compiler* compiler);
+llvm::Value* emitNext(llvm::Value* environment, Compiler* compiler);
 
 // Coerce value to either 0 or 1.
 // Throws a runtime error if the coercion fails.
 llvm::Value* emitCoerceToTrueOrFalse(llvm::Value* value,
 				     const Expression* call,
 				     Compiler* compiler);
+
+// Exception handling code.
+// These functions currently don't have FunctionIds assigned.
+llvm::Value* emitBeginCatch(llvm::Value* exception_reference,
+			    Compiler* compiler);
+void emitEndCatch(Compiler* compiler);
+
+llvm::Value* emitLoopExceptionIsNext(llvm::Value* loop_exception,
+				     Compiler* compiler);
+llvm::Value* emitGetReturnExceptionValue(llvm::Value* return_exception,
+					 Compiler* compiler);
 
 } // namespace Runtime
 } // namespace JIT

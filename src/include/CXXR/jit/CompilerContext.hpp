@@ -34,12 +34,16 @@
 #ifndef CXXR_JIT_COMPILER_CONTEXT_HPP
 #define CXXR_JIT_COMPILER_CONTEXT_HPP
 
+#include <stack>
+#include <typeinfo>
+
 namespace llvm {
     class BasicBlock;
     class Function;
     class LLVMContext;
+    class Module;
+    class PHINode;
     class Value;
-class Module;
 } // namespace llvm
 
 namespace CXXR {
@@ -50,6 +54,7 @@ namespace CXXR {
 
 namespace JIT {
 
+class Compiler;
 class FrameDescriptor;
 
 class CompilerContext {
@@ -83,9 +88,19 @@ public:
     const Environment* getEnclosingEnvironment();
 
     // Flow-control related functions.
-    llvm::BasicBlock* getExceptionLandingPad() {
-	return m_exception_landing_pad;
-    }
+    llvm::BasicBlock* getBreakDestination();
+    llvm::BasicBlock* getNextDestination();
+    llvm::BasicBlock* getExceptionLandingPad();
+
+    void pushLoopContext(llvm::BasicBlock* continue_block,
+			 llvm::BasicBlock* loop_header,
+			 Compiler* compiler);
+    void popLoopContext();
+
+    void pushExceptionHandlerContext(const std::type_info* type,
+				     llvm::PHINode* handler,
+				     Compiler* compiler);
+    void popExceptionHandlerContext();
 
     // These variables are read-write and publicly accessible for use by the
     // compiler.
@@ -96,10 +111,37 @@ private:
     llvm::Value* m_environment;
     llvm::Function* m_function;
 
-    llvm::BasicBlock* m_exception_landing_pad;
+    std::stack<llvm::BasicBlock*> m_break_destinations;
+    std::stack<llvm::BasicBlock*> m_next_destinations;
+
+    std::stack<llvm::PHINode*> m_exception_handlers;
+    std::stack<llvm::BasicBlock*> m_exception_landing_pads;
 
     CompilerContext(const CompilerContext&) = delete;
     CompilerContext& operator=(const CompilerContext&) = delete;
+};
+
+
+class LoopScope {
+public:
+    LoopScope(CompilerContext* context,
+	      llvm::BasicBlock* continue_block,
+	      llvm::BasicBlock* loop_header,
+	      Compiler* compiler)
+    {
+	m_context = context;
+	context->pushLoopContext(continue_block, loop_header, compiler);
+    }
+    
+    ~LoopScope()
+    {
+	m_context->popLoopContext();
+    }
+private:
+    CompilerContext* m_context;
+    
+    LoopScope(const LoopScope&) = delete;
+    LoopScope& operator=(const LoopScope&) = delete;
 };
 
 } // namespace JIT
