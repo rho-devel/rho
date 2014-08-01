@@ -2613,6 +2613,7 @@ esac
 
 ### * Output.
 
+AS_MKDIR_P(src/extra/gtest/fused-src/gtest)
 AC_CONFIG_HEADERS([src/include/config.h])
 AC_CONFIG_FILES(
 [Makeconf
@@ -2633,6 +2634,7 @@ AC_CONFIG_FILES(
   src/extra/Makefile
   src/extra/blas/Makefile
   src/extra/bzip2/Makefile
+  src/extra/gtest/Makefile
   src/extra/intl/Makefile
   src/extra/pcre/Makefile
   src/extra/tre/Makefile

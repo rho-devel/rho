@@ -42,6 +42,8 @@ FLIBS_IN_SO = @FLIBS_IN_SO@
 FPICFLAGS = @FPICFLAGS@
 F77 = @F77@
 GETWD = @GETWD@
+GTEST_CPPFLAGS = -isystem $(top_srcdir)/src/extra/gtest/fused-src
+GTEST_LDFLAGS = -L$(top_builddir)/src/extra/gtest
 GZIP = --best
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -110,12 +112,17 @@ ALL_CXXFLAGS_LO = $(R_XTRA_CXXFLAGS) $(CPICFLAGS) $(SHLIB_CFLAGS) $(CXXFLAGS)
 ALL_FFLAGS_LO = $(R_XTRA_FFLAGS) $(R_OPENMP_FFLAGS) $(FPICFLAGS) $(SHLIB_FFLAGS) $(FFLAGS)
 
 .SUFFIXES:
-.SUFFIXES: .c .cpp .f .m .d .o
+.SUFFIXES: .c .cpp .cc .f .m .d .o
 
 @r_cc_rules_frag@
 .cpp.o:
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c $< -o $@
 .cpp.d:
+	@echo "making $@ from $<"
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -MM -MF $@ -MT $*.o $< 
+.cc.o:
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c $< -o $@
+.cc.d:
 	@echo "making $@ from $<"
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -MM -MF $@ -MT $*.o $< 
 .f.o:

@@ -14,7 +14,7 @@ include $(top_builddir)/Makeconf
 
 maindir = $(top_srcdir)/src/main
 
-#ALL_CPPFLAGS = $(CPPFLAGS) -I../../include
+CPPFLAGS := $(CPPFLAGS) $(GTEST_CPPFLAGS)
 
 EXTRA_LIBS = $(BOOST_LIBS) $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS)  $(READLINE_LIBS) $(LIBS) @LIBINTL@
 
@@ -32,7 +32,10 @@ sources_cxx = ArgMatchertest.cpp Allocatortest.cpp CellPooltest.cpp \
               GCManagertest.cpp HeterogeneousListtest.cpp MemoryBanktest.cpp \
               RObject_sizer.cpp splice_test.cpp
 
-depends = $(sources_cxx:.cpp=.d)
+unit_test_sources = FrameTests.cpp
+UNIT_TEST_OBJECTS = $(unit_test_sources:.cpp=.o)
+
+depends = $(sources_cxx:.cpp=.d) $(unit_test_sources:.cpp=.d)
 
 # CellHeaptest omitted: CellHeap is no longer used, and it needs
 # fixing on 64-bit Linux (reported by Sam Nicholls 2010-03-18).
@@ -40,9 +43,22 @@ depends = $(sources_cxx:.cpp=.d)
 tests = CellPooltest MemoryBanktest Allocatortest \
         HeterogeneousListtest splice_test SETLENGTHtest ArgMatchertest0 \
         ArgMatchertest1 ArgMatchertest2 ArgMatchertest3 ArgMatchertest4 \
-        ArgMatchertest5 ArgMatchertest6 ArgMatchertest7 ArgMatchertest8
+        ArgMatchertest5 ArgMatchertest6 ArgMatchertest7 ArgMatchertest8 \
+	UnitTests
 
 check : $(tests:=.ts)
+
+# Using FORCE in place of a proper dependency on libR.
+UnitTests: $(UNIT_TEST_OBJECTS) FORCE # ../../src/main/libR.a
+	$(MAKE) -C $(top_builddir)/src/extra/gtest all
+	$(LINK.cc) -o $@ $(UNIT_TEST_OBJECTS) $(GTEST_LDFLAGS) -lgtest_main \
+		 -L../../src/main -lR $(MAIN_LDFLAGS) $(EXTRA_LIBS)
+
+FORCE:
+
+UnitTests.ts : UnitTests
+	./$<
+	touch $@
 
 ArgMatchertest.o : ArgMatchertest.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -c -o $@ $<
