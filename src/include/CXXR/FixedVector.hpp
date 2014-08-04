@@ -160,7 +160,7 @@ namespace CXXR {
 	 * @param An initializer list containing the values to store in the
 	 *          FixedVector.
 	 */
-	FixedVector(std::initializer_list<T> items)
+	explicit FixedVector(std::initializer_list<T> items)
 	    : FixedVector(items.begin(), items.end()) { }
 
 	/** @brief Element access.
