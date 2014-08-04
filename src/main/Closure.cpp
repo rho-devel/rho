@@ -145,6 +145,25 @@ RObject* Closure::execute(Environment* env) const
     return ans;
 }
 
+// Version of execute called by R_execMethod in src/main/eval.cpp.
+// Because the environment wasn't setup by the closure, this function
+// can't use any JIT code, so the compiled code is temporarily forgotten.
+// TODO(kmillar): remove the need for this function.
+RObject* Closure::executeInEnv(Environment* env) const
+{
+    JIT::CompiledExpression* stored_compiled_body = m_compiled_body;
+    try
+    {
+	m_compiled_body = nullptr;
+	RObject* result = result = execute(env);
+	m_compiled_body = stored_compiled_body;
+	return result;
+    } catch(...) {
+	m_compiled_body = stored_compiled_body;
+	throw;
+    }
+}
+
 RObject* Closure::invoke(Environment* env, const ArgList* arglist,
 			 const Expression* call,
 			 const Frame* method_bindings) const
