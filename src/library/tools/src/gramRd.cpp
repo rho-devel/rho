@@ -62,14 +62,14 @@
 #define YYLSP_NEEDED 1
 
 /* Substitute the variable and function names.  */
-#define yyparse         gram_parse
-#define yylex           gram_lex
-#define yyerror         gram_error
-#define yylval          gram_lval
-#define yychar          gram_char
-#define yydebug         gram_debug
-#define yynerrs         gram_nerrs
-#define yylloc          gram_lloc
+#define yyparse         gramRd_parse
+#define yylex           gramRd_lex
+#define yyerror         gramRd_error
+#define yylval          gramRd_lval
+#define yychar          gramRd_char
+#define yydebug         gramRd_debug
+#define yynerrs         gramRd_nerrs
+#define yylloc          gramRd_lloc
 
 /* Copy the first part of user declarations.  */
 

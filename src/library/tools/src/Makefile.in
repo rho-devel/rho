@@ -75,7 +75,7 @@ maintainer-clean: distclean
 
 $(srcdir)/gramRd.cpp: @MAINTAINER_MODE_TRUE@ $(srcdir)/gramRd.y
 	@$(ECHO) "re-making gramRd.cpp"
-	$(YACC) $(YFLAGS) -p gram_ $(srcdir)/gramRd.y
+	$(YACC) $(YFLAGS) -p gramRd_ $(srcdir)/gramRd.y
 	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gramRd.cpp
 $(srcdir)/gramLatex.c: @MAINTAINER_MODE_TRUE@ $(srcdir)/gramLatex.y
 	@$(ECHO) "re-making gramLatex.c"
