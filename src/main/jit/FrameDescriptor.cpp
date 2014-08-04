@@ -150,6 +150,16 @@ FrameDescriptor::FrameDescriptor(const Closure* closure)
     LocalVariableVisitor(&m_local_vars).visit(closure->body());
 }
 
+FrameDescriptor::FrameDescriptor(std::initializer_list<const Symbol*> formals,
+				 std::initializer_list<const Symbol*> locals)
+{
+    m_local_vars.insert(m_local_vars.end(),
+			formals.begin(), formals.end());
+    m_num_formals = formals.size();
+    m_local_vars.insert(m_local_vars.end(),
+			locals.begin(), locals.end());
+}
+
 int FrameDescriptor::getLocation(const Symbol* symbol) const
 {
     for (int i = 0; i < m_local_vars.size(); ++i) {

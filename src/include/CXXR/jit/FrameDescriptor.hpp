@@ -53,7 +53,10 @@ namespace JIT {
  */
 class FrameDescriptor {
 public:
-    FrameDescriptor(const Closure* closure);
+    explicit FrameDescriptor(const Closure* closure);
+
+    explicit FrameDescriptor(std::initializer_list<const Symbol*> formals,
+			     std::initializer_list<const Symbol*> locals);
 
     // Returns the index where the symbol is stored.  Returns -1 if the
     // symbol has not been added to the descriptor.
