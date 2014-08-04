@@ -748,7 +748,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
     {
 	ClosureContext ctxt(cptr->call(), callerenv, func,
 			    newrho, cptr->promiseArgs());
-	ans = func->execute(newrho);
+	ans = func->executeInEnv(newrho);
     }
     return ans;
 }
