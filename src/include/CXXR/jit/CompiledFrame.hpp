@@ -52,7 +52,7 @@ class FrameDescriptor;
  */
 class CompiledFrame : public Frame {
 public:
-    CompiledFrame(const FrameDescriptor* descriptor);
+    explicit CompiledFrame(const FrameDescriptor* descriptor);
     CompiledFrame(const CompiledFrame& pattern);
     ~CompiledFrame() override;
 
