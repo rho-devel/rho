@@ -1,10 +1,14 @@
 #include "gtest/gtest.h"
+#include "CXXR/jit/CompiledFrame.hpp"
+#include "CXXR/jit/FrameDescriptor.hpp"
 #include "CXXR/Frame.hpp"
 #include "CXXR/ListFrame.hpp"
 #include "CXXR/RealVector.h"
 #include "CXXR/StdFrame.hpp"
 
 using namespace CXXR;
+using CXXR::JIT::CompiledFrame;
+using CXXR::JIT::FrameDescriptor;
 
 typedef Frame* (*FrameConstructor)();
 
@@ -19,7 +23,6 @@ public:
 	value1 = CXXR_NEW(RealVector({ 1.1 }));
 	value2 = CXXR_NEW(RealVector({ 2.1 }));
     }
-
 
     Frame* new_frame()
     {
@@ -118,3 +121,48 @@ static Frame* MakeListFrame() {
 INSTANTIATE_TEST_CASE_P(ListFrameTest,
 			FrameTest,
 			::testing::Values(MakeListFrame));
+
+static Frame* MakeEmptyCompiledFrame() {
+    static FrameDescriptor descriptor(std::initializer_list<const Symbol*>{},
+				      std::initializer_list<const Symbol*>{});
+    return CXXR_NEW(CompiledFrame(&descriptor));
+}
+INSTANTIATE_TEST_CASE_P(EmptyCompiledFrameTest,
+			FrameTest,
+			::testing::Values(
+			    MakeEmptyCompiledFrame));
+
+// The tests are slightly different depending on which of symbol1, symbol2 and
+// symbol3 are in the frame descriptor, so do all three.
+static Frame* MakeOneItemCompiledFrame1() {
+    static FrameDescriptor descriptor(
+	std::initializer_list<const Symbol*>{ Symbol::obtain("test_symbol_1") },
+	std::initializer_list<const Symbol*>{});
+    return CXXR_NEW(CompiledFrame(&descriptor));
+}
+INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest1,
+			FrameTest,
+			::testing::Values(
+			    MakeOneItemCompiledFrame1));
+
+static Frame* MakeOneItemCompiledFrame2() {
+    static FrameDescriptor descriptor(
+	std::initializer_list<const Symbol*>{ Symbol::obtain("test_symbol_2") },
+	std::initializer_list<const Symbol*>{});
+    return CXXR_NEW(CompiledFrame(&descriptor));
+}
+INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest2,
+			FrameTest,
+			::testing::Values(
+			    MakeOneItemCompiledFrame2));
+
+static Frame* MakeOneItemCompiledFrame3() {
+    static FrameDescriptor descriptor(
+	std::initializer_list<const Symbol*>{ Symbol::obtain("test_symbol_3") },
+	std::initializer_list<const Symbol*>{});
+    return CXXR_NEW(CompiledFrame(&descriptor));
+}
+INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest3,
+			FrameTest,
+			::testing::Values(
+			    MakeOneItemCompiledFrame3));
