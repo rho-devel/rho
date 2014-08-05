@@ -526,10 +526,10 @@ BasicBlock* Compiler::emitLandingPad(PHINode* dispatch) {
 	exceptionInfoType(),
 	exception_personality_function, 0);
     // It's entirely possible that the landing pad only needs to handle some
-    // exception types, so using a cleanup is overly general.  However exception
-    // handling should be rare, catching and rethrowing exceptions that aren't
-    // handled is perfectly valid, so this simplification makes sense.
-    landing_pad->setCleanup(true);
+    // exception types, so catching everything is overly general.  However
+    // exception handling should be rare, catching and rethrowing exceptions that
+    // aren't handled is perfectly valid, so this simplification makes sense.
+    landing_pad->addClause(nullptr);  // Catches everything.
 
     CreateBr(dispatch->getParent());
     dispatch->addIncoming(landing_pad, block);
