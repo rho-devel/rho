@@ -321,7 +321,7 @@ namespace CXXR {
 
 	// Mapping from function names to pointers to BuiltInFunction
 	// objects:
-	typedef std::map<std::string, BuiltInFunction*> map;
+	typedef std::map<std::string, GCRoot<BuiltInFunction>> map;
 	static map* s_cache;
 
 	unsigned int m_offset;

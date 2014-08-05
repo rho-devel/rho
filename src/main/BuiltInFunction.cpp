@@ -182,25 +182,13 @@ int BuiltInFunction::indexInTable(const char* name)
 
 BuiltInFunction* BuiltInFunction::obtain(const std::string& name)
 {
-    int offset = indexInTable(name.c_str());
-    if (offset < 0) {
+    auto location = s_cache->find(name);
+    if (location == s_cache->end()) {
 	Rf_warning(_("%s is not the name of a built-in or special function"),
 		   name.c_str());
 	return 0;
     }
-    std::pair<map::iterator, bool> pr
-	= s_cache->insert(map::value_type(name, 0));
-    map::iterator it = pr.first;
-    if (pr.second) {
-	try {
-	    map::value_type& val = *it;
-	    val.second = CXXR_NEW(BuiltInFunction(offset));
-	} catch (...) {
-	    s_cache->erase(it);
-	    throw;
-	}
-    }
-    return (*it).second;
+    return location->second;
 }
 
 const char* BuiltInFunction::typeName() const
