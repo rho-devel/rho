@@ -157,7 +157,7 @@ RObject* Closure::executeInEnv(Environment* env) const
     try
     {
 	m_compiled_body = nullptr;
-	RObject* result = result = execute(env);
+	RObject* result = execute(env);
 	m_compiled_body = stored_compiled_body;
 	return result;
     } catch(...) {
