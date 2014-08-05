@@ -65,7 +65,6 @@
 #include "CXXR/ListFrame.hpp"
 #include "CXXR/LoopBailout.hpp"
 #include "CXXR/LoopException.hpp"
-#include "CXXR/PlainContext.hpp"
 #include "CXXR/ProvenanceTracker.h"
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
@@ -875,6 +874,16 @@ namespace {
 	    v = Rf_allocVector(val_type, 1);
 	return v;
     }
+
+    RObject* propagateBailout(RObject* bailout)
+    {
+	Evaluator::Context* callctxt
+	    = Evaluator::Context::innermost()->nextOut();
+	if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT) {
+	    static_cast<Bailout*>(bailout)->throwException();
+	}
+	return bailout;
+    }
 }
 
 SEXP attribute_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -909,10 +918,7 @@ SEXP attribute_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    ans = Rf_eval(Stmt, rho);
 	}
 	if (ans && ans->sexptype() == BAILSXP) {
-	    Evaluator::Context* callctxt
-		= Evaluator::Context::innermost()->nextOut();
-	    if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
-		static_cast<Bailout*>(ans)->throwException();
+	    return propagateBailout(ans);
 	}
 	return ans;
     }
@@ -1051,12 +1057,7 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 		else break;
 	    } else {  // This must be a ReturnBailout:
 		SET_ENV_DEBUG(rho, dbg);
-		Evaluator::Context* callctxt
-		    = Evaluator::Context::innermost()->nextOut();
-		if (!callctxt
-		    || callctxt->type() != Evaluator::Context::BAILOUT)
-		    static_cast<Bailout*>(ans.get())->throwException();
-		return ans;
+		return propagateBailout(ans.get());
 	    }
 	}
     }
@@ -1112,12 +1113,7 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 		else break;
 	    } else {  // This must be a ReturnBailout:
 		SET_ENV_DEBUG(rho, dbg);
-		Evaluator::Context* callctxt
-		    = Evaluator::Context::innermost()->nextOut();
-		if (!callctxt
-		    || callctxt->type() != Evaluator::Context::BAILOUT)
-		    static_cast<Bailout*>(ans)->throwException();
-		return ans;
+		return propagateBailout(ans);
 	    }
 	}
     }
@@ -1172,12 +1168,7 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 		else break;
 	    } else {  // This must be a ReturnBailout:
 		SET_ENV_DEBUG(rho, dbg);
-		Evaluator::Context* callctxt
-		    = Evaluator::Context::innermost()->nextOut();
-		if (!callctxt
-		    || callctxt->type() != Evaluator::Context::BAILOUT)
-		    static_cast<Bailout*>(ans)->throwException();
-		return ans;
+		return propagateBailout(ans);
 	    }
 	}
     }
@@ -1193,10 +1184,7 @@ SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!env->loopActive())
 	Rf_error(_("no loop to break from"));
     LoopBailout* lbo = CXXR_NEW(LoopBailout(env, PRIMVAL(op) == 1));
-    Evaluator::Context* callctxt = Evaluator::Context::innermost()->nextOut();
-    if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
-	lbo->throwException();
-    return lbo;
+    return propagateBailout(lbo);
 }
 
 SEXP attribute_hidden do_paren(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -1223,12 +1211,8 @@ SEXP attribute_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
 		s = Rf_eval(CAR(args), rho);
 	    }
 	    if (s && s->sexptype() == BAILSXP) {
-		Evaluator::Context* callctxt
-		    = Evaluator::Context::innermost()->nextOut();
-		if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
-		    static_cast<Bailout*>(s)->throwException();
 		R_Srcref = 0;
-		return s;
+		return propagateBailout(s);
 	    }
 	    args = CDR(args);
 	}
@@ -1255,10 +1239,7 @@ SEXP attribute_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!envir->canReturn())
 	Rf_error(_("no function to return from, jumping to top level"));
     ReturnBailout* rbo = CXXR_NEW(ReturnBailout(envir, v));
-    Evaluator::Context* callctxt = Evaluator::Context::innermost()->nextOut();
-    if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
-	rbo->throwException();
-    return rbo;
+    return propagateBailout(rbo);
 }
 
 /* Declared with a variable number of args in names.c */
