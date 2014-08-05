@@ -48,6 +48,7 @@
 #include "CXXR/Expression.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ListFrame.hpp"
+#include "CXXR/PlainContext.hpp"
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
 #include "CXXR/errors.h"
@@ -116,7 +117,7 @@ RObject* Closure::execute(Environment* env) const
     try {
 	++m_num_invokes;
 	if (m_compiled_body) {
-	    BailoutContext boctxt;
+	    PlainContext boctxt;
 	    ans = m_compiled_body->evalInEnvironment(env);
 	} else {
 	    if (m_num_invokes >= 100) {
