@@ -116,6 +116,7 @@ RObject* Closure::execute(Environment* env) const
     try {
 	++m_num_invokes;
 	if (m_compiled_body) {
+	    BailoutContext boctxt;
 	    ans = m_compiled_body->evalInEnvironment(env);
 	} else {
 	    if (m_num_invokes >= 100) {
@@ -146,7 +147,7 @@ RObject* Closure::execute(Environment* env) const
 }
 
 // Version of execute called by R_execMethod in src/main/eval.cpp.
-// Because the environment wasn't setup by the closure, this function
+// Because the environment wasn't setup for this closure, the function
 // can't use any JIT code, so the compiled code is temporarily forgotten.
 // TODO(kmillar): remove the need for this function.
 RObject* Closure::executeInEnv(Environment* env) const
