@@ -53,7 +53,6 @@
 
 using llvm::BasicBlock;
 using llvm::PHINode;
-using llvm::TypeBuilder;
 using llvm::Value;
 
 namespace CXXR {
@@ -70,8 +69,8 @@ Compiler::Compiler(CompilerContext* context)
 llvm::Constant* Compiler::emitConstantPointer(const void* value,
 					      llvm::Type* type)
 {
-    llvm::ConstantInt* pointer_as_integer = llvm::ConstantInt::get(
-	TypeBuilder<intptr_t, false>::get(m_context->getLLVMContext()),
+    llvm::Constant* pointer_as_integer = llvm::ConstantInt::get(
+	getType<intptr_t>(),
 	reinterpret_cast<intptr_t>(value));
     return llvm::ConstantExpr::getIntToPtr(pointer_as_integer, type);
 }
@@ -85,8 +84,8 @@ llvm::Constant* Compiler::emitSymbol(const Symbol* symbol)
 
 llvm::Constant* Compiler::emitNullValue()
 {
-    RObject* null = nullptr;
-    return emitConstantPointer(null);
+    llvm::PointerType* type = (llvm::PointerType*)getType<RObject*>();
+    return llvm::ConstantPointerNull::get(type);
 }
 
 llvm::Value* Compiler::emitCallOrInvoke(llvm::Function* function,
@@ -308,7 +307,7 @@ Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
 
     // Setup the merge point.
     SetInsertPoint(merge_block);
-    llvm::Type* robject_type = TypeBuilder<RObject*, false>::get(getContext());
+    llvm::Type* robject_type = getType<RObject*>();
     llvm::PHINode* result = CreatePHI(robject_type, 2);
 
     // Emit inlined code.
@@ -399,7 +398,7 @@ Value* Compiler::emitInlinedIf(const Expression* expression)
     // Create the merge point.
     BasicBlock* continue_block = createBasicBlock("continue");
     SetInsertPoint(continue_block);
-    llvm::Type* robject_type = TypeBuilder<RObject*, false>::get(getContext());
+    llvm::Type* robject_type = getType<RObject*>();
     llvm::PHINode* result_value = CreatePHI(robject_type, 2);
 
     // Create the if_true branch.
@@ -414,7 +413,7 @@ Value* Compiler::emitInlinedIf(const Expression* expression)
 	// No 'else' branch.
 	// Drop straight to the continue block and return R_NilValue.
 	if_false_block = continue_block;
-	result_value->addIncoming(emitConstantPointer((RObject*)nullptr),
+	result_value->addIncoming(emitNullValue(),
 				  branch_point.getBlock());
 
     } else {
@@ -506,9 +505,8 @@ Value* Compiler::emitInlinedNext(const Expression* expression) {
 
 
 llvm::Type* Compiler::exceptionInfoType() {
-    llvm::LLVMContext& context = getContext();
-    return llvm::StructType::get(TypeBuilder<void*, false>::get(context),
-				 TypeBuilder<int32_t, false>::get(context),
+    return llvm::StructType::get(getType<void*>(),
+				 getType<int32_t>(),
 				 nullptr);
 }
 

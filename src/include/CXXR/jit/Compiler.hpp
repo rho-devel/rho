@@ -70,9 +70,14 @@ public:
     llvm::Constant* emitSymbol(const Symbol* symbol);
     llvm::Constant* emitNullValue();
 
+    template<class T>
+    llvm::Value* emitUncheckedCast(llvm::Value* value);
+
     llvm::Value* emitCallOrInvoke(llvm::Function* function,
 				  llvm::ArrayRef<llvm::Value*> args);
 
+    template<class T>
+    llvm::Type* getType();
 private:
     CompilerContext* m_context;
 
@@ -123,9 +128,20 @@ private:
 template <class T>
 llvm::Constant* Compiler::emitConstantPointer(const T* value)
 {
-    llvm::LLVMContext& context = llvm::getGlobalContext();
-    return emitConstantPointer(reinterpret_cast<const void*>(value),
-			       llvm::TypeBuilder<T*, false>::get(context));
+    llvm::Type* type = llvm::TypeBuilder<T*, false>::get(getContext());
+    return emitConstantPointer(reinterpret_cast<const void*>(value), type);
+}
+
+template<class T>
+llvm::Value* Compiler::emitUncheckedCast(llvm::Value* value)
+{
+    llvm::Type* type = llvm::TypeBuilder<T, false>::get(getContext());
+    return CreatePointerCast(value, type);
+}
+
+template<class T>
+llvm::Type* Compiler::getType() {
+    return llvm::TypeBuilder<T, false>::get(getContext());
 }
 
 } // namespace JIT
