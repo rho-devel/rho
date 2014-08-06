@@ -224,10 +224,11 @@ BasicBlock* Compiler::createBranch(const char* name,
     BasicBlock* block = createBasicBlock(name, insert_before);
     SetInsertPoint(block);
 
-    Value* result = emitEval(expression); // This line changes depending on what we're doing.
-    CreateBr(merge_point->getParent());
-    merge_point->addIncoming(result, GetInsertBlock());
-
+    Value* result = emitEval(expression);
+    if (GetInsertBlock()->getTerminator() == nullptr) {
+	CreateBr(merge_point->getParent());
+	merge_point->addIncoming(result, GetInsertBlock());
+    }
     return block;
 }
 
@@ -318,9 +319,11 @@ Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
 	// Code generation failed.
 	return nullptr;
     }
-    assert(inlined_builtin_value->getType() == robject_type);
-    CreateBr(merge_block);
-    result->addIncoming(inlined_builtin_value, GetInsertBlock());
+    if (GetInsertBlock()->getTerminator() == nullptr) {
+	assert(inlined_builtin_value->getType() == robject_type);
+	CreateBr(merge_block);
+	result->addIncoming(inlined_builtin_value, GetInsertBlock());
+    }
 
     // If the function isn't the one we expected, fall back to the interpreter.
     // TODO(kmillar): do OSR or similar on guard failure to improve fast
@@ -334,8 +337,10 @@ Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
 				     emitConstantPointer(expression->tail()),
 				     emitConstantPointer(expression),
 				     m_context->getEnvironment(), this);
-    CreateBr(merge_block);
-    result->addIncoming(fallback_value, GetInsertBlock());
+    if (GetInsertBlock()->getTerminator() == nullptr) {
+	CreateBr(merge_block);
+	result->addIncoming(fallback_value, GetInsertBlock());
+    }
 
     // Continuing code should be in the merged block.
     SetInsertPoint(merge_block);
