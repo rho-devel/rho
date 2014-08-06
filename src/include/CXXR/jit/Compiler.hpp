@@ -118,6 +118,10 @@ private:
 
     // Utility functions.
     llvm::Constant* emitConstantPointer(const void* value, llvm::Type* type);
+
+    void emitErrorUnless(llvm::Value* condition,
+			 const char* error_msg,
+			 llvm::ArrayRef<llvm::Value*> extra_args = {});
     llvm::BasicBlock* createBasicBlock(const char* name,
 				       llvm::BasicBlock* insert_before = 0);
     llvm::BasicBlock* createBranch(const char* name, const RObject* expression,

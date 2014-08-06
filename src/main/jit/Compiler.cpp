@@ -88,6 +88,24 @@ llvm::Constant* Compiler::emitNullValue()
     return llvm::ConstantPointerNull::get(type);
 }
 
+void Compiler::emitErrorUnless(Value* condition,
+			       const char* error_msg,
+			       llvm::ArrayRef<Value*> extra_args) {
+    BasicBlock* error_block = createBasicBlock("error_msg");
+    BasicBlock* continue_block = createBasicBlock("continue", error_block);
+
+    llvm::Type* type = condition->getType();
+    if (type != llvm::Type::getInt1Ty(getContext())) {
+	condition = CreateIsNotNull(condition);
+    }
+    CreateCondBr(condition, continue_block, error_block);
+
+    SetInsertPoint(error_block);
+    Runtime::emitError(error_msg, extra_args, this);
+
+    SetInsertPoint(continue_block);
+}
+
 llvm::Value* Compiler::emitCallOrInvoke(llvm::Function* function,
 					llvm::ArrayRef<llvm::Value*> args)
 {
@@ -154,6 +172,7 @@ Value* Compiler::emitSymbolEval(const Symbol* symbol)
 				     m_context->getEnvironment(), this);
 }
 
+// This function is the JIT version of Expression::evaluate().
 Value* Compiler::emitExpressionEval(const Expression* expression)
 {
     RObject* function = expression->car();
@@ -169,10 +188,17 @@ Value* Compiler::emitExpressionEval(const Expression* expression)
     } else if (Symbol* symbol = dynamic_cast<Symbol*>(function)) {
 	// The first element is a symbol.  Look it up.
 	resolved_function = emitFunctionLookup(symbol, &likely_function);
+	emitErrorUnless(resolved_function,
+			_("could not find function \"%s\""),
+			emitConstantPointer(symbol->name()->c_str()));
     } else {
 	// The first element is a (function-valued) expression.
 	resolved_function = emitEval(function);
-	// TODO(kmillar): is a cast from RObject* to FunctionBase* needed?
+	llvm::Value* isFunction = Runtime::emitIsAFunction(resolved_function,
+							   this);
+	emitErrorUnless(isFunction,
+			_("attempt to apply non-function"));
+	resolved_function = emitUncheckedCast<FunctionBase*>(resolved_function);
     }
 
     if (likely_function) {

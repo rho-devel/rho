@@ -35,6 +35,7 @@
 #define CXXR_JIT_RUNTIME_HPP
 
 #include <string>
+#include "llvm/ADT/ArrayRef.h"
 
 namespace llvm {
 class Function;
@@ -135,6 +136,16 @@ llvm::Value* emitLoopExceptionIsNext(llvm::Value* loop_exception,
 				     Compiler* compiler);
 llvm::Value* emitGetReturnExceptionValue(llvm::Value* return_exception,
 					 Compiler* compiler);
+
+// Utility functions.
+llvm::Value* emitIsAFunction(llvm::Value* robject, Compiler* compiler);
+
+// Error handling.
+void emitError(const char* error_msg, llvm::ArrayRef<llvm::Value*> args,
+	       Compiler* compiler);
+void emitWarning(const char* warning_msg,
+		 llvm::ArrayRef<llvm::Value*> args,
+		 Compiler* compiler);
 
 } // namespace Runtime
 } // namespace JIT

@@ -153,4 +153,11 @@ bool cxxr_runtime_coerceToTrueOrFalse(RObject* object, Expression* call) {
     return asLogicalNoNA(object, call) == TRUE;
 }
 
+bool cxxr_runtime_is_function(RObject* object) {
+    return Rf_isFunction(object);
+}
+
+// From R's C API.
+void Rf_error(const char*, ...) __attribute__((noreturn));
+void Rf_warning(const char*, ...);
 }

@@ -183,6 +183,40 @@ Value* emitGetReturnExceptionValue(Value* return_exception, Compiler* compiler)
      return compiler->CreateCall(get_return_exception_value, return_exception);
 }
 
+Value* emitIsAFunction(llvm::Value* object, Compiler* compiler)
+{
+     Function* is_a_function = getModule(compiler)
+	 ->getFunction("cxxr_runtime_is_function");
+     assert(is_a_function != nullptr);
+     return compiler->emitCallOrInvoke(is_a_function, object);
+}
+
+void emitError(const char* error_msg, llvm::ArrayRef<llvm::Value*> extra_args,
+	       Compiler* compiler)
+{
+    std::vector<llvm::Value*> args;
+    args.push_back(compiler->emitConstantPointer(error_msg));
+    args.insert(args.end(), extra_args.begin(), extra_args.end());
+
+    Function* error = getModule(compiler)->getFunction("Rf_error");
+    assert(error != nullptr);
+    compiler->emitCallOrInvoke(error, args);
+    compiler->CreateUnreachable();
+}
+
+void emitWarning(const char* warning_msg,
+		 llvm::ArrayRef<llvm::Value*> extra_args,
+		 Compiler* compiler)
+{
+    std::vector<llvm::Value*> args;
+    args.push_back(compiler->emitConstantPointer(warning_msg));
+    args.insert(args.end(), extra_args.begin(), extra_args.end());
+
+    Function* warning = getModule(compiler)->getFunction("Rf_warning");
+    assert(warning != nullptr);
+    compiler->emitCallOrInvoke(warning, args);
+}
+
 static Module* createRuntimeModule(LLVMContext& context)
 {
     std::string module_filename = std::string(R_Home) + "/jit/RuntimeImpl.bc";
