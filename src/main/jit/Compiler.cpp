@@ -293,10 +293,23 @@ Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
     }
 
     // TODO(kmillar): write an 'emitGuardedCode' function, and use that here.
-    InsertPoint incoming_insert_point = saveIP();
     BasicBlock* inlined_builtin_block = createBasicBlock(builtin->name());
     BasicBlock* merge_block = createBasicBlock("continue");
     BasicBlock* fallback_block = createBasicBlock("fallback");
+
+    // Code to check if the function is the predicted one.
+    Value* likely_fn_value = emitConstantPointer(
+	static_cast<FunctionBase*>(likely_function));
+    Value* is_expected_builtin = CreateICmpEQ(resolved_function,
+					      likely_fn_value);
+    CreateCondBr(is_expected_builtin,
+		 inlined_builtin_block,
+		 fallback_block); // TODO(kmillar): set branch weights
+
+    // Setup the merge point.
+    SetInsertPoint(merge_block);
+    llvm::Type* robject_type = TypeBuilder<RObject*, false>::get(getContext());
+    llvm::PHINode* result = CreatePHI(robject_type, 2);
 
     // Emit inlined code.
     SetInsertPoint(inlined_builtin_block);
@@ -306,7 +319,9 @@ Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
 	// Code generation failed.
 	return nullptr;
     }
+    assert(inlined_builtin_value->getType() == robject_type);
     CreateBr(merge_block);
+    result->addIncoming(inlined_builtin_value, GetInsertBlock());
 
     // If the function isn't the one we expected, fall back to the interpreter.
     // TODO(kmillar): do OSR or similar on guard failure to improve fast
@@ -321,26 +336,10 @@ Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
 				     emitConstantPointer(expression),
 				     m_context->getEnvironment(), this);
     CreateBr(merge_block);
+    result->addIncoming(fallback_value, GetInsertBlock());
 
-    // Check if (resolved_function == likely_function) and setup the control
-    // flow.
-    restoreIP(incoming_insert_point);
-
-    Value* likely_fn_value = emitConstantPointer(
-	static_cast<FunctionBase*>(likely_function));
-    Value* is_expected_builtin = CreateICmpEQ(resolved_function,
-					      likely_fn_value);
-    CreateCondBr(is_expected_builtin,
-		 inlined_builtin_block,
-		 fallback_block); // TODO(kmillar): set branch weights
-    
-    // Setup the merge point.
+    // Continuing code should be in the merged block.
     SetInsertPoint(merge_block);
-
-    llvm::Type* robject_type = TypeBuilder<RObject*, false>::get(getContext());
-    llvm::PHINode* result = CreatePHI(robject_type, 2);
-    result->addIncoming(inlined_builtin_value, inlined_builtin_block);
-    result->addIncoming(fallback_value, fallback_block);
     return result;
 }
 
@@ -391,7 +390,11 @@ Value* Compiler::emitInlinedIf(const Expression* expression)
 	return nullptr;
     }
 
-    InsertPoint incoming_insert_point = saveIP();
+    // Evaluate the condition and branch.
+    Value* r_condition = emitEval(CADR(const_cast<Expression*>(expression)));
+    Value* boolean_condition = Runtime::emitCoerceToTrueOrFalse(
+	r_condition, expression, this);
+    InsertPoint branch_point = saveIP();
 
     // Create the merge point.
     BasicBlock* continue_block = createBasicBlock("continue");
@@ -412,7 +415,7 @@ Value* Compiler::emitInlinedIf(const Expression* expression)
 	// Drop straight to the continue block and return R_NilValue.
 	if_false_block = continue_block;
 	result_value->addIncoming(emitConstantPointer((RObject*)nullptr),
-				  incoming_insert_point.getBlock());
+				  branch_point.getBlock());
 
     } else {
 	// Create the else branch.
@@ -422,11 +425,7 @@ Value* Compiler::emitInlinedIf(const Expression* expression)
 	    result_value, continue_block);
     }
 
-    // Evaluate the condition and branch.
-    restoreIP(incoming_insert_point);
-    Value* r_condition = emitEval(CADR(const_cast<Expression*>(expression)));
-    Value* boolean_condition = Runtime::emitCoerceToTrueOrFalse(
-	r_condition, expression, this);
+    restoreIP(branch_point);
     CreateCondBr(boolean_condition, if_true_block, if_false_block);
 
     SetInsertPoint(continue_block);
@@ -593,6 +592,7 @@ PHINode* Compiler::emitReturnExceptionHandler()
     PHINode* exception_info = CreatePHI(exceptionInfoType(), 1);
     Value* exception_ref = CreateExtractValue(exception_info, 0);
     Value* exception = Runtime::emitBeginCatch(exception_ref, this);
+
     Value* return_value = Runtime::emitGetReturnExceptionValue(exception, this);
     Runtime::emitEndCatch(this);
 
