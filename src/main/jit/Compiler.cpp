@@ -106,19 +106,42 @@ void Compiler::emitErrorUnless(Value* condition,
     SetInsertPoint(continue_block);
 }
 
+std::vector<llvm::Value*> Compiler::castFunctionArguments(
+    llvm::ArrayRef<llvm::Value*> args,
+    llvm::Function* function)
+{
+    int num_args = args.size();
+    assert(function->isVarArg() || function->arg_size() == num_args);
+
+    // Upcast any arguments that require it.
+    std::vector<llvm::Value*> type_checked_args;
+    int i = 0;
+    for (const llvm::Argument& argument : function->getArgumentList()) {
+	type_checked_args.push_back(
+	    // TODO(kmillar): these really ought to be upcasts,
+	    //   in which case we can statically check that the cast is valid.
+	    CreatePointerCast(args[i], argument.getType()));
+	++i;
+    }
+    return type_checked_args;
+}
+
 llvm::Value* Compiler::emitCallOrInvoke(llvm::Function* function,
 					llvm::ArrayRef<llvm::Value*> args)
 {
+    std::vector<llvm::Value*> type_checked_args = castFunctionArguments(
+	args, function);
+
     BasicBlock* exception_handler = m_context->getExceptionLandingPad();
     if (exception_handler) {
 	BasicBlock *continue_block = createBasicBlock("cont");
 	Value* result = CreateInvoke(function,
 				     continue_block, exception_handler,
-				     args);
+				     type_checked_args);
 	SetInsertPoint(continue_block);
 	return result;
     } else {
-	return CreateCall(function, args);
+	return CreateCall(function, type_checked_args);
     }
 }
 

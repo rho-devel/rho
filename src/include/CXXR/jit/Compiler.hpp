@@ -117,6 +117,10 @@ private:
     llvm::PHINode* emitRethrowException();
 
     // Utility functions.
+    std::vector<llvm::Value*> castFunctionArguments(
+	llvm::ArrayRef<llvm::Value*> args,
+	llvm::Function* function);
+
     llvm::Constant* emitConstantPointer(const void* value, llvm::Type* type);
 
     void emitErrorUnless(llvm::Value* condition,
