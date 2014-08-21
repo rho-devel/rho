@@ -1667,7 +1667,7 @@ static SEXP VectorToPairListNamed(SEXP x)
 SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP encl, x, xptr;
-    volatile SEXP expr, env, tmp;
+    volatile SEXP expr, env;
 
     int frame;
 
@@ -1741,7 +1741,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    catch (ReturnException& rx) {
 		if (rx.environment() != working_env)
 		    throw;
-		tmp = rx.value();
+		expr = rx.value();
 	    }
 	}
 	UNPROTECT(1);
@@ -1751,7 +1751,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SEXP srcrefs = getBlockSrcrefs(expr);
 	PROTECT(expr);
 	n = LENGTH(expr);
-	tmp = R_NilValue;
+	SEXP tmp = R_NilValue;
 	{
 	    Expression* callx = SEXP_downcast<Expression*>(call);
 	    Environment* call_env = SEXP_downcast<Environment*>(rho);
