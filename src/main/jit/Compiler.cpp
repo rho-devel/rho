@@ -421,16 +421,19 @@ Value* Compiler::emitInlinedBegin(const Expression* expression)
 Value* Compiler::emitInlinedReturn(const Expression* expression)
 {
     // Both return() and return(expr) are legal.
+    Value* return_value;
+
     int length = listLength(expression);
     if (length == 1) {
-	return CreateRetVoid();
+	return_value = emitNullValue();
     } else if (length == 2) {
-	Value* return_value = emitEval(CADR(const_cast<Expression*>(expression)));
-	return CreateRet(return_value);
+	return_value = emitEval(CADR(const_cast<Expression*>(expression)));
     } else {
 	// This is probably a syntax error.  Let the interpreter handle it.
 	return nullptr;
     }
+    return CreateRet(return_value);
+
     // Note: 'return' isn't valid at top-level, but since only functions get
     // compiled, there's no need to check for that here.
 }
