@@ -150,7 +150,7 @@ extern "C++"
 Rboolean asLogicalNoNA(SEXP s, SEXP call);
 
 bool cxxr_runtime_coerceToTrueOrFalse(RObject* object, Expression* call) {
-    return asLogicalNoNA(object, call) == TRUE;
+    return asLogicalNoNA(object, call);
 }
 
 bool cxxr_runtime_is_function(RObject* object) {
