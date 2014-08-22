@@ -490,7 +490,12 @@ Value* Compiler::emitInlinedIf(const Expression* expression)
 
 Value* Compiler::emitInlinedRepeat(const Expression* expression)
 {
-    const RObject* body = expression->car();
+    if (listLength(expression) != 2) {
+	// This is probably a syntax error.  Let the interpreter handle it.
+	return nullptr;
+    }
+
+    const RObject* body = expression->tail()->car();
 
     BasicBlock* loop_body = createBasicBlock("repeat_body");
     BasicBlock* continue_block = createBasicBlock("continue");
@@ -513,8 +518,13 @@ Value* Compiler::emitInlinedRepeat(const Expression* expression)
 
 Value* Compiler::emitInlinedWhile(const Expression* expression)
 {
-    const RObject* condition = expression->car();
-    const RObject* body = expression->tail()->car(); 
+    if (listLength(expression) != 3) {
+	// This is probably a syntax error.  Let the interpreter handle it.
+	return nullptr;
+    }
+
+    const RObject* condition = expression->tail()->car();
+    const RObject* body = expression->tail()->tail()->car(); 
 
     BasicBlock* loop_header = createBasicBlock("while_header");
     BasicBlock* loop_body = createBasicBlock("while_body");
@@ -542,6 +552,11 @@ Value* Compiler::emitInlinedWhile(const Expression* expression)
 }
 
 Value* Compiler::emitInlinedBreak(const Expression* expression) {
+    if (listLength(expression) != 1) {
+	// This is probably a syntax error.  Let the interpreter handle it.
+	return nullptr;
+    }
+
     BasicBlock* dest = m_context->getBreakDestination();
     if (dest) {
 	return CreateBr(dest);
@@ -552,6 +567,11 @@ Value* Compiler::emitInlinedBreak(const Expression* expression) {
 }
 
 Value* Compiler::emitInlinedNext(const Expression* expression) {
+    if (listLength(expression) != 1) {
+	// This is probably a syntax error.  Let the interpreter handle it.
+	return nullptr;
+    }
+
     BasicBlock* dest = m_context->getNextDestination();
     if (dest) {
 	return CreateBr(dest);
