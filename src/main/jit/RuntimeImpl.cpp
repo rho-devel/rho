@@ -36,6 +36,7 @@
 #include "CXXR/Expression.h"
 #include "CXXR/FunctionBase.h"
 #include "CXXR/LoopBailout.hpp"
+#include "CXXR/LoopException.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/RObject.h"
 #include "CXXR/Symbol.h"
@@ -143,6 +144,11 @@ void cxxr_runtime_do_next(Environment* environment) {
     if (!environment->loopActive())
 	Rf_error(_("no loop to break from"));
     CXXR_NEW(LoopBailout(environment, true))->throwException();
+}
+
+bool cxxr_runtime_loopFunctionIsNext(void* exception) {
+    LoopException* loop_exception = static_cast<LoopException*>(exception);
+    return loop_exception->next();
 }
 
 // In src/main/eval.cpp
