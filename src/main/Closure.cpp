@@ -106,7 +106,6 @@ RObject* Closure::execute(Environment* env) const
     Environment::ReturnScope returnscope(env);
     Closure::DebugScope debugscope(this); 
     try {
-	{
 	    BailoutContext boctxt;
 	    ans = Evaluator::evaluate(m_body, env);
 	}
@@ -174,6 +173,10 @@ RObject* Closure::invoke(Environment* env, const ArgList* arglist,
 	ans = execute(newenv);
     }
     return ans;
+}
+
+void Closure::compile() const {
+    m_compiled_body = JIT::CompiledExpression::compileFunctionBody(this);
 }
 
 const char* Closure::typeName() const
