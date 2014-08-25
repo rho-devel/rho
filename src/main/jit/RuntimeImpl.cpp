@@ -31,6 +31,8 @@
  *  http://www.r-project.org/Licenses/
  */
 
+#define R_NO_REMAP
+
 #include "CXXR/ArgList.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/Expression.h"

@@ -31,6 +31,8 @@
  *  http://www.r-project.org/Licenses/
  */
 
+#define R_NO_REMAP
+
 #include "CXXR/jit/CompiledFrame.hpp"
 #include "CXXR/jit/FrameDescriptor.hpp"
 #include "CXXR/StdFrame.hpp"
