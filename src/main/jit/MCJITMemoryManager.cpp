@@ -81,25 +81,36 @@ uint64_t MCJITMemoryManager::getSymbolAddress(const std::string& name)
 GlobalVariable* MCJITMemoryManager::getSymbol(const Symbol* symbol)
 {
     Type* type = TypeBuilder<Symbol, false>::get(m_module->getContext());
+    std::string name = symbol_prefix + symbol->name()->stdstring();
+
+    GlobalVariable* result = m_module->getNamedGlobal(name);
+    if (result) {
+	return result;
+    }
     return new GlobalVariable(*m_module, type, true,
 			      GlobalValue::ExternalLinkage, 0,
-			      symbol_prefix + symbol->name()->stdstring());
+			      name);
 }
 
 GlobalVariable* MCJITMemoryManager::getBuiltIn(const BuiltInFunction* function)
 {
     Type* type = TypeBuilder<BuiltInFunction, false>::get(
 	m_module->getContext());
+    std::string name = builtin_prefix + function->name();
+
+    GlobalVariable* result = m_module->getNamedGlobal(name);
+    if (result) {
+	return result;
+    }
     return new GlobalVariable(*m_module, type, true,
-			      GlobalValue::ExternalLinkage, 0,
-			      builtin_prefix + function->name());
+     			      GlobalValue::ExternalLinkage, 0,
+			      name);
 }
 
 static std::string addCounter(const std::string& prefix) {
 	// Create our own, unique name.
 	static int counter = 0;
-	return prefix + std::to_string(++counter);
-
+	return prefix + "." + std::to_string(++counter);
 }
 
 GlobalVariable* MCJITMemoryManager::addGlobal(Type* type, void* address,
@@ -108,7 +119,7 @@ GlobalVariable* MCJITMemoryManager::addGlobal(Type* type, void* address,
 {
     std::string name = prefix;
     if (prefix.empty()) {
-	prefix = "cxxr.global.";
+	prefix = "cxxr.global";
 	name = addCounter(prefix);
     }
     // Find a unique name in the global table.

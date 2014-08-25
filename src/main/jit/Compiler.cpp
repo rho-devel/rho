@@ -348,8 +348,10 @@ Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
     BasicBlock* fallback_block = createBasicBlock("fallback");
 
     // Code to check if the function is the predicted one.
-    Value* likely_fn_value = emitConstantPointer(
-	static_cast<FunctionBase*>(likely_function));
+    Value* likely_fn_value = m_context->getMemoryManager()
+	->getBuiltIn(builtin);
+    likely_fn_value = CreateBitCast(likely_fn_value,
+				    llvm::TypeBuilder<FunctionBase*, false>::get(getContext()));
     Value* is_expected_builtin = CreateICmpEQ(resolved_function,
 					      likely_fn_value);
     CreateCondBr(is_expected_builtin,
@@ -604,11 +606,22 @@ BasicBlock* Compiler::emitLandingPad(PHINode* dispatch) {
     // exception types, so catching everything is overly general.  However
     // exception handling should be rare, catching and rethrowing exceptions that
     // aren't handled is perfectly valid, so this simplification makes sense.
-    landing_pad->addClause(nullptr);  // Catches everything.
+    landing_pad->addClause(emitConstantPointer((void*)nullptr));  // Catches everything.
 
     CreateBr(dispatch->getParent());
     dispatch->addIncoming(landing_pad, block);
     return block;
+}
+
+Value* Compiler::getExceptionTypeId(const std::type_info* type) {
+    llvm::Function* get_type_id
+	= llvm::Intrinsic::getDeclaration(m_context->getModule(),
+					  llvm::Intrinsic::eh_typeid_for);
+    Value* exception_type_info = m_context->getMemoryManager()
+	->addGlobal((char*)type, true,
+		    std::string("type.info.") + type->name());
+
+    return CreateCall(get_type_id, exception_type_info);
 }
 
 PHINode* Compiler::emitDispatchToExceptionHandler(const std::type_info* type,
@@ -622,13 +635,8 @@ PHINode* Compiler::emitDispatchToExceptionHandler(const std::type_info* type,
     PHINode* exception_info = CreatePHI(exceptionInfoType(), 1);
     Value* exception_type_id = CreateExtractValue(exception_info, 1);
 
-    llvm::Function* get_type_id
-	= llvm::Intrinsic::getDeclaration(m_context->getModule(),
-					  llvm::Intrinsic::eh_typeid_for);
-    Value* matched_type_id = CreateCall(get_type_id,
-					emitConstantPointer((void*)type));
-
-    Value* matches = CreateICmpEQ(exception_type_id, matched_type_id);
+    Value* handled_exception_type_id = getExceptionTypeId(type);
+    Value* matches = CreateICmpEQ(exception_type_id, handled_exception_type_id);
     CreateCondBr(matches,
 		 handler->getParent(),
 		 fallthrough->getParent());

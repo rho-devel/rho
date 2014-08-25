@@ -70,6 +70,19 @@ TEST_F(MCJITMemoryManagerTest, FindSymbol) {
     EXPECT_EQ(test_symbol, reinterpret_cast<Symbol*>(address));
 }
 
+TEST_F(MCJITMemoryManagerTest, DuplicateSymbol) {
+    Symbol* test_symbol = Symbol::obtain("mcjit_mm_test_symbol");
+    ASSERT_TRUE(test_symbol != nullptr);
+    
+    GlobalVariable* global = m_manager->getSymbol(test_symbol);
+    ASSERT_TRUE(global != nullptr);
+    GlobalVariable* global2 = m_manager->getSymbol(test_symbol);
+    ASSERT_TRUE(global == global2);
+
+    uint64_t address = m_manager->getSymbolAddress(global->getName());
+    EXPECT_EQ(test_symbol, reinterpret_cast<Symbol*>(address));
+}
+
 TEST_F(MCJITMemoryManagerTest, FindBuiltin) {
     BuiltInFunction* function = BuiltInFunction::obtain("all.names");
     ASSERT_TRUE(function != nullptr);
