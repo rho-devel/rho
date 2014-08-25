@@ -31,10 +31,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-#define R_NO_REMAP
-
-#include "CXXR/jit/CompiledExpression.hpp"
-
 #include "llvm/Analysis/Verifier.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/MCJIT.h"
@@ -48,15 +44,19 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Target/TargetOptions.h"
 
-#include "CXXR/Closure.h"
-#include "CXXR/Environment.h"
-#include "CXXR/RObject.h"
+#define R_NO_REMAP
+#include "CXXR/jit/CompiledExpression.hpp"
+
 #include "CXXR/jit/CompiledFrame.hpp"
 #include "CXXR/jit/Compiler.hpp"
 #include "CXXR/jit/CompilerContext.hpp"
 #include "CXXR/jit/Globals.hpp"
 #include "CXXR/jit/Runtime.hpp"
 #include "CXXR/jit/TypeBuilder.hpp"
+
+#include "CXXR/Closure.h"
+#include "CXXR/Environment.h"
+#include "CXXR/RObject.h"
 
 using llvm::Module;
 using llvm::Value;

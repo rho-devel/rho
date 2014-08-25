@@ -31,13 +31,16 @@
  *  http://www.r-project.org/Licenses/
  */
 
-#define R_NO_REMAP
-
-#include "CXXR/jit/Compiler.hpp"
-
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/Module.h"
+
+#define R_NO_REMAP
+#include "CXXR/jit/Compiler.hpp"
+
+#include "CXXR/jit/FrameDescriptor.hpp"
+#include "CXXR/jit/Runtime.hpp"
+#include "CXXR/jit/TypeBuilder.hpp"
 
 #include "CXXR/BuiltInFunction.h"
 #include "CXXR/ByteCode.hpp"
@@ -49,9 +52,6 @@
 #include "CXXR/RObject.h"
 #include "CXXR/SEXP_downcast.hpp"
 #include "CXXR/Symbol.h"
-#include "CXXR/jit/FrameDescriptor.hpp"
-#include "CXXR/jit/Runtime.hpp"
-#include "CXXR/jit/TypeBuilder.hpp"
 
 using llvm::BasicBlock;
 using llvm::PHINode;

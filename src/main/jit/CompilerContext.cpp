@@ -31,17 +31,16 @@
  *  http://www.r-project.org/Licenses/
  */
 
-#define R_NO_REMAP
-
-#include "CXXR/jit/CompilerContext.hpp"
-
-#include "CXXR/LoopException.hpp"
-#include "CXXR/jit/Compiler.hpp"
-#include "CXXR/jit/FrameDescriptor.hpp"
+#include <typeinfo>
 
 #include "llvm/IR/Function.h"
 
-#include <typeinfo>
+#define R_NO_REMAP
+#include "CXXR/jit/CompilerContext.hpp"
+
+#include "CXXR/jit/Compiler.hpp"
+#include "CXXR/jit/FrameDescriptor.hpp"
+#include "CXXR/LoopException.hpp"
 
 using llvm::BasicBlock;
 using llvm::Function;

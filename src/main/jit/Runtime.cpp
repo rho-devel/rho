@@ -31,24 +31,11 @@
  *  http://www.r-project.org/Licenses/
  */
 
-#define R_NO_REMAP
-
-#include "CXXR/jit/Runtime.hpp"
-
-#include "CXXR/jit/Compiler.hpp"
-#include "CXXR/jit/Globals.hpp"
-#include "CXXR/jit/TypeBuilder.hpp"
-#include "CXXR/RObject.h"
-#include "Defn.h"
-#include "Rinternals.h"
-
-#undef _
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/TypeBuilder.h"
 #include "llvm/IRReader/IRReader.h"
@@ -57,6 +44,16 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/system_error.h"
 #include "llvm/Transforms/Utils/Cloning.h"
+
+#define R_NO_REMAP
+#include "CXXR/jit/Runtime.hpp"
+
+#include "CXXR/jit/Compiler.hpp"
+#include "CXXR/jit/Globals.hpp"
+#include "CXXR/jit/TypeBuilder.hpp"
+#include "CXXR/RObject.h"
+#include "Defn.h"
+#include "Rinternals.h"
 
 using namespace llvm;
 
