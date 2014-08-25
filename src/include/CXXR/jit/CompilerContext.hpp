@@ -56,13 +56,15 @@ namespace JIT {
 
 class Compiler;
 class FrameDescriptor;
+class MCJITMemoryManager;
 
 class CompilerContext {
 public:
     CompilerContext(const Closure* closure,
 		    llvm::Value* environment,
 		    // The function to emit code into.
-		    llvm::Function* function);
+		    llvm::Function* function,
+		    MCJITMemoryManager* memory_manager);
 
     ~CompilerContext();
 
@@ -73,6 +75,9 @@ public:
     llvm::Module* getModule();
     llvm::Module* getRuntimeModule();
     llvm::LLVMContext& getLLVMContext();
+    MCJITMemoryManager* getMemoryManager() {
+	return m_memory_manager;
+    }
 
     // The closure that is currently being compiled.
     const Closure* getClosure() {
@@ -110,6 +115,7 @@ private:
     const Closure* m_closure;
     llvm::Value* m_environment;
     llvm::Function* m_function;
+    MCJITMemoryManager* m_memory_manager;
 
     std::stack<llvm::BasicBlock*> m_break_destinations;
     std::stack<llvm::BasicBlock*> m_next_destinations;

@@ -168,4 +168,8 @@ bool cxxr_runtime_is_function(RObject* object) {
 // From R's C API.
 void Rf_error(const char*, ...) __attribute__((noreturn));
 void Rf_warning(const char*, ...);
+
+// To force the symbol to be emitted.
+// TODO(kmillar): remove this once BuiltInFunction is used in this file.
+void force_symbol_emission_built_in_function(BuiltInFunction*) { }
 }

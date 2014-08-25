@@ -82,7 +82,8 @@ SOURCES_CXX = \
 	jit/CompiledExpression.cpp jit/CompiledFrame.cpp \
 	jit/Compiler.cpp jit/CompilerContext.cpp \
 	jit/FrameDescriptor.cpp \
-	jit/Globals.cpp jit/Runtime.cpp jit/TypeBuilder.cpp
+	jit/Globals.cpp jit/MCJITMemoryManager.cpp jit/Runtime.cpp \
+	jit/TypeBuilder.cpp
 
 SOURCES_F =  xxxpr.f
 

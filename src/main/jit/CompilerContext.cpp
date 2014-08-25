@@ -54,11 +54,13 @@ namespace JIT {
 
 CompilerContext::CompilerContext(const Closure* closure,
 				 llvm::Value* environment,
-				 llvm::Function* function)
+				 llvm::Function* function,
+				 MCJITMemoryManager* memory_manager)
 {
     m_closure = closure;
     m_environment = environment;
     m_function = function;
+    m_memory_manager = memory_manager;
     m_frame_descriptor = new FrameDescriptor(closure);
 }
 
@@ -97,6 +99,7 @@ void CompilerContext::pushLoopContext(BasicBlock* continue_block,
 				      BasicBlock* loop_header,
 				      Compiler* compiler)
 {
+    // TODO(kmillar): this needs to set and reset m_environment->m_in_loop.
     m_break_destinations.push(continue_block);
     m_next_destinations.push(loop_header);
 

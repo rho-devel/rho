@@ -66,7 +66,6 @@ public:
     // Utility functions.
     template <class T>
     llvm::Constant* emitConstantPointer(const T* value);
-    // Aliases for emitConstantPointer for improved code readability.
     llvm::Constant* emitSymbol(const Symbol* symbol);
     llvm::Constant* emitNullValue();
 

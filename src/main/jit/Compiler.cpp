@@ -39,6 +39,7 @@
 #include "CXXR/jit/Compiler.hpp"
 
 #include "CXXR/jit/FrameDescriptor.hpp"
+#include "CXXR/jit/MCJITMemoryManager.hpp"
 #include "CXXR/jit/Runtime.hpp"
 #include "CXXR/jit/TypeBuilder.hpp"
 
@@ -79,9 +80,7 @@ llvm::Constant* Compiler::emitConstantPointer(const void* value,
 
 llvm::Constant* Compiler::emitSymbol(const Symbol* symbol)
 {
-    // TODO(kmillar): consider caching these.
-    // TODO(kmillar): give the symbol a useful name in the IR.
-    return emitConstantPointer(symbol);
+    return m_context->getMemoryManager()->getSymbol(symbol);
 }
 
 llvm::Constant* Compiler::emitNullValue()
@@ -201,15 +200,14 @@ Value* Compiler::emitSymbolEval(const Symbol* symbol)
 Value* Compiler::emitExpressionEval(const Expression* expression)
 {
     RObject* function = expression->car();
-    Value* resolved_function = nullptr;
+    Value* resolved_function;
 
     // Evaluate the function argument and get a prediction of its likely value.
     FunctionBase* likely_function = dynamic_cast<FunctionBase*>(function);
     if (likely_function) {
 	// The first element of the expression is a literal function.
         // TODO(kmillar): no need for a guard in the emitted code in this case.
-	resolved_function
-	    = emitConstantPointer(SEXP_downcast<FunctionBase*>(function));
+	resolved_function = emitConstantPointer(likely_function);
     } else if (Symbol* symbol = dynamic_cast<Symbol*>(function)) {
 	// The first element is a symbol.  Look it up.
 	resolved_function = emitFunctionLookup(symbol, &likely_function);
@@ -218,6 +216,7 @@ Value* Compiler::emitExpressionEval(const Expression* expression)
 			emitConstantPointer(symbol->name()->c_str()));
     } else {
 	// The first element is a (function-valued) expression.
+	// TODO(kmillar): resolved_function needs GC protection here.
 	resolved_function = emitEval(function);
 	llvm::Value* isFunction = Runtime::emitIsAFunction(resolved_function,
 							   this);

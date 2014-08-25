@@ -14,7 +14,8 @@ include $(top_builddir)/Makeconf
 
 maindir = $(top_srcdir)/src/main
 
-CPPFLAGS := $(CPPFLAGS) $(GTEST_CPPFLAGS)
+LLVM_CPPFLAGS = @LLVM_CPPFLAGS@
+CPPFLAGS := $(CPPFLAGS) $(GTEST_CPPFLAGS) $(LLVM_CPPFLAGS)
 
 EXTRA_LIBS = $(BOOST_LIBS) $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS)  $(READLINE_LIBS) $(LIBS) @LIBINTL@
 
@@ -34,7 +35,8 @@ sources_cxx = ArgMatchertest.cpp Allocatortest.cpp CellPooltest.cpp \
 
 unit_test_sources = \
 	EvaluationTests.cpp \
-	FrameTests.cpp
+	FrameTests.cpp \
+	MCJITMemoryManagerTests.cpp
 
 UNIT_TEST_OBJECTS = $(unit_test_sources:.cpp=.o)
 

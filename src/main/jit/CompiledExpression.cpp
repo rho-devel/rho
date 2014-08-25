@@ -51,6 +51,7 @@
 #include "CXXR/jit/Compiler.hpp"
 #include "CXXR/jit/CompilerContext.hpp"
 #include "CXXR/jit/Globals.hpp"
+#include "CXXR/jit/MCJITMemoryManager.hpp"
 #include "CXXR/jit/Runtime.hpp"
 #include "CXXR/jit/TypeBuilder.hpp"
 
@@ -94,8 +95,10 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     options.NoFramePointerElim = true;
     options.EnableFastISel = true;
 
+    MCJITMemoryManager* memory_manager = new MCJITMemoryManager(module);
     m_engine.reset(llvm::EngineBuilder(module)
 		   .setUseMCJIT(true)
+		   .setMCJITMemoryManager(memory_manager)
 		   .setOptLevel(llvm::CodeGenOpt::None)
 		   .setTargetOptions(options)
 		   .create());
@@ -111,7 +114,8 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     environment->setName("environment");
 
     // Setup the compiler and generate code.
-    CompilerContext compiler_context(closure, environment, function);
+    CompilerContext compiler_context(closure, environment, function,
+				     memory_manager);
     Compiler compiler(&compiler_context);
     Value* return_value = compiler.emitEval(body);
 

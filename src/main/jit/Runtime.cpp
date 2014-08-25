@@ -255,7 +255,10 @@ void linkInRuntimeModule(llvm::Module* module)
 
 StructType* getCxxrType(const std::string& name, LLVMContext& context)
 {
-    return getRuntimeModule(context)->getTypeByName("class.CXXR::" + name);
+    StructType* type = getRuntimeModule(context)->getTypeByName(
+	"class.CXXR::" + name);
+    assert(type != nullptr);
+    return type;
 }
 
 std::string getName(FunctionId function)
