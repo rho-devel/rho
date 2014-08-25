@@ -60,7 +60,7 @@ UnitTests: $(UNIT_TEST_OBJECTS) GTestWithR_main.o FORCE # ../../src/main/libR.a
 FORCE:
 
 UnitTests.ts : UnitTests
-	R_DEFAULT_PACKAGES=NULL R_HOME=$(R_HOME) ./$<
+	LD_LIBRARY_PATH=../../lib R_DEFAULT_PACKAGES=NULL R_HOME=$(R_HOME) ./$<
 	touch $@
 
 ArgMatchertest.o : ArgMatchertest.cpp
