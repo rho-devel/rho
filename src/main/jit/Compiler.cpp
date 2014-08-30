@@ -215,14 +215,10 @@ Value* Compiler::emitExpressionEval(const Expression* expression)
 			_("could not find function \"%s\""),
 			emitConstantPointer(symbol->name()->c_str()));
     } else {
-	// The first element is a (function-valued) expression.
-	// TODO(kmillar): resolved_function needs GC protection here.
-	resolved_function = emitEval(function);
-	llvm::Value* isFunction = Runtime::emitIsAFunction(resolved_function,
-							   this);
-	emitErrorUnless(isFunction,
-			_("attempt to apply non-function"));
-	resolved_function = emitUncheckedCast<FunctionBase*>(resolved_function);
+	// The first element is a (function-valued) expression.  Fallback
+	// to the interpreter for now.
+	return Runtime::emitEvaluate(emitConstantPointer(expression),
+				     m_context->getEnvironment(), this);
     }
 
     if (likely_function) {
