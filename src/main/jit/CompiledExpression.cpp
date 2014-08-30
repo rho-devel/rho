@@ -71,11 +71,6 @@ CompiledExpression::compileFunctionBody(const Closure* closure)
     return new CompiledExpression(closure);
 }
 
-CompiledExpression::CompiledExpression()
-{
-    // nothing needed.
-}
-
 CompiledExpression::CompiledExpression(const Closure* closure)
 {
     llvm::InitializeNativeTarget();

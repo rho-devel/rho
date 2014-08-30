@@ -69,7 +69,6 @@ public:
     static CompiledExpression* compileFunctionBody(const Closure* function);
 
 private:
-    CompiledExpression();
     CompiledExpression(const Closure* closure);
 
     // The compiled function itself.
