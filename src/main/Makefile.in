@@ -262,6 +262,11 @@ jit/RuntimeImpl.bc: @MAINTAINER_MODE_TRUE@ jit/RuntimeImpl.o
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -fno-use-cxa-atexit \
 	  -emit-llvm -c $(top_srcdir)/src/main/jit/RuntimeImpl.cpp -o $@ 
 
+# This exists to create a human-readable version of the runtime IR code.
+jit/RuntimeImpl.ll: @MAINTAINER_MODE_TRUE@ jit/RuntimeImpl.o
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -fno-use-cxa-atexit \
+	  -emit-llvm -S $(top_srcdir)/src/main/jit/RuntimeImpl.cpp -o $@ 
+
 install: installdirs
 	@$(MAKE) install-bin
 	@if test -f $(libR_la); then $(MAKE) install-lib; fi
