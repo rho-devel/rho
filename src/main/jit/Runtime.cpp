@@ -70,18 +70,30 @@ namespace Runtime {
 
 static Module* getRuntimeModule(LLVMContext& context);
 
-llvm::Function* getDeclaration(FunctionId function, llvm::Module* module)
+static llvm::Function* getDeclaration(const std::string& name,
+				      llvm::Module* module)
 {
-    std::string name = getName(function);
     llvm::Function* resolved_function = module->getFunction(name);
     assert(resolved_function != nullptr);
     return resolved_function;
+}
+
+llvm::Function* getDeclaration(FunctionId function, llvm::Module* module)
+{
+    return getDeclaration(getName(function), module);
 }
 
 static llvm::Function* getDeclaration(FunctionId fun, Compiler* compiler)
 {
     return getDeclaration(fun, getModule(compiler));
 }
+
+static llvm::Function* getDeclaration(const std::string& name,
+				      Compiler* compiler)
+{
+    return getDeclaration(name, getModule(compiler));
+}
+
 
 Value* emitEvaluate(Value* value, Value* environment, Compiler* compiler)
 {
@@ -146,9 +158,7 @@ Value* emitCoerceToTrueOrFalse(llvm::Value* value,
 Value* emitBeginCatch(Value* exception_reference,
 		      Compiler* compiler)
 {
-    Function* cxa_begin_catch = getModule(compiler)
-	->getFunction("__cxa_begin_catch");
-    assert(cxa_begin_catch != nullptr);
+    Function* cxa_begin_catch = getDeclaration("__cxa_begin_catch", compiler);
     // Never throws.
     return compiler->CreateCall(cxa_begin_catch, exception_reference);
 }
@@ -156,9 +166,7 @@ Value* emitBeginCatch(Value* exception_reference,
 void emitEndCatch(Compiler* compiler)
 	
 {
-    Function* cxa_end_catch = getModule(compiler)
-	->getFunction("__cxa_end_catch");
-    assert(cxa_end_catch != nullptr);
+    Function* cxa_end_catch = getDeclaration("__cxa_end_catch", compiler);
     // Throws only if a destructor throws.  That should never happen, so it
     // gets ignored here.
     compiler->CreateCall(cxa_end_catch);
@@ -166,27 +174,24 @@ void emitEndCatch(Compiler* compiler)
 
 Value* emitLoopExceptionIsNext(Value* loop_exception, Compiler* compiler)
 {
-    Function* loop_exception_is_next = getModule(compiler)
-	->getFunction("cxxr_runtime_loopFunctionIsNext");
-    assert(loop_exception_is_next != nullptr);
+    Function* loop_exception_is_next = getDeclaration(
+	"cxxr_runtime_loopFunctionIsNext", compiler);
     // Never throws.
     return compiler->CreateCall(loop_exception_is_next, loop_exception);
 }
 
 Value* emitGetReturnExceptionValue(Value* return_exception, Compiler* compiler)
 {
-     Function* get_return_exception_value = getModule(compiler)
-	 ->getFunction("cxxr_runtime_getReturnExceptionValue");
-     assert(get_return_exception_value != nullptr);
+    Function* get_return_exception_value = getDeclaration(
+	"cxxr_runtime_getReturnExceptionValue", compiler);
      // Never throws.
      return compiler->CreateCall(get_return_exception_value, return_exception);
 }
 
 Value* emitIsAFunction(llvm::Value* object, Compiler* compiler)
 {
-     Function* is_a_function = getModule(compiler)
-	 ->getFunction("cxxr_runtime_is_function");
-     assert(is_a_function != nullptr);
+    Function* is_a_function = getDeclaration(
+	"cxxr_runtime_is_function", compiler);
      return compiler->emitCallOrInvoke(is_a_function, object);
 }
 
@@ -197,8 +202,7 @@ void emitError(const char* error_msg, llvm::ArrayRef<llvm::Value*> extra_args,
     args.push_back(compiler->emitConstantPointer(error_msg));
     args.insert(args.end(), extra_args.begin(), extra_args.end());
 
-    Function* error = getModule(compiler)->getFunction("Rf_error");
-    assert(error != nullptr);
+    Function* error = getDeclaration("Rf_error", compiler);
     compiler->emitCallOrInvoke(error, args);
     compiler->CreateUnreachable();
 }
@@ -211,8 +215,7 @@ void emitWarning(const char* warning_msg,
     args.push_back(compiler->emitConstantPointer(warning_msg));
     args.insert(args.end(), extra_args.begin(), extra_args.end());
 
-    Function* warning = getModule(compiler)->getFunction("Rf_warning");
-    assert(warning != nullptr);
+    Function* warning = getDeclaration("Rf_warning", compiler);
     compiler->emitCallOrInvoke(warning, args);
 }
 
