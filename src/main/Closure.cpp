@@ -113,14 +113,15 @@ RObject* Closure::execute(Environment* env) const
 {
     RObject* ans;
     Environment::ReturnScope returnscope(env);
-    Closure::DebugScope debugscope(this); 
+    Closure::DebugScope debugscope(this);
     try {
 	++m_num_invokes;
-	if (m_compiled_body) {
+	if (m_compiled_body
+	    && m_compiled_body->hasMatchingFrameLayout(env)) {
 	    PlainContext boctxt;
 	    ans = m_compiled_body->evalInEnvironment(env);
 	} else {
-	    if (m_num_invokes >= 100) {
+	    if (!m_compiled_body && m_num_invokes >= 100) {
 		// Compile the body, but stay in the interpreter because the
 		// frame hasn't been setup for a compiled function.
 		compile();
@@ -144,25 +145,6 @@ RObject* Closure::execute(Environment* env) const
     Environment::monitorLeaks(ans);
     env->maybeDetachFrame();
     return ans;
-}
-
-// Version of execute called by R_execMethod in src/main/eval.cpp.
-// Because the environment wasn't setup for this closure, the function
-// can't use any JIT code, so the compiled code is temporarily forgotten.
-// TODO(kmillar): remove the need for this function.
-RObject* Closure::executeInEnv(Environment* env) const
-{
-    JIT::CompiledExpression* stored_compiled_body = m_compiled_body;
-    try
-    {
-	m_compiled_body = nullptr;
-	RObject* result = execute(env);
-	m_compiled_body = stored_compiled_body;
-	return result;
-    } catch(...) {
-	m_compiled_body = stored_compiled_body;
-	throw;
-    }
 }
 
 RObject* Closure::invoke(Environment* env, const ArgList* arglist,

@@ -142,5 +142,13 @@ Frame* CompiledExpression::createFrame() const {
   return CXXR_NEW(CompiledFrame(m_frame_descriptor.get()));
 }
 
+bool CompiledExpression::hasMatchingFrameLayout(const Environment* env) const
+{
+  const CompiledFrame* frame = dynamic_cast<const CompiledFrame*>(env->frame());
+  if (!frame)
+    return false;
+  return frame->getDescriptor() == m_frame_descriptor.get();
+}
+
 } // namespace JIT
 } // namespace CXXR

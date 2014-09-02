@@ -66,6 +66,8 @@ public:
 
     Frame* createFrame() const;
 
+    bool hasMatchingFrameLayout(const Environment* env) const;
+
     static CompiledExpression* compileFunctionBody(const Closure* function);
 
 private:

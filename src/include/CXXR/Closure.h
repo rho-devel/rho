@@ -125,7 +125,6 @@ namespace CXXR {
 	    return m_environment;
 	}
 
-    private:
 	/** @brief Evaluate the Closure's body in a given environment.
 	 *
 	 * This function evaluates the Closure's body with \a env as
@@ -144,11 +143,6 @@ namespace CXXR {
 	 * the calling code.
 	 */
 	RObject* execute(Environment* env) const;
-
-    public:
-        // Same as above, but callable from external classes.
-	RObject* executeInEnv(Environment* env) const;
-
 
 	/** @brief Invoke the function.
 	 *
