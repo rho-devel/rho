@@ -94,8 +94,9 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     m_engine.reset(llvm::EngineBuilder(module)
 		   .setUseMCJIT(true)
 		   .setMCJITMemoryManager(memory_manager)
-		   .setOptLevel(llvm::CodeGenOpt::None)
-		   .setTargetOptions(options)
+                   // TODO(kmillar): work out why this causes problems.
+                   // .setOptLevel(llvm::CodeGenOpt::None)
+                   .setTargetOptions(options)
 		   .create());
     assert(m_engine);
 
