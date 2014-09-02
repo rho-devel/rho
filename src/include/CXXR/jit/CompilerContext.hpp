@@ -37,6 +37,8 @@
 #include <stack>
 #include <typeinfo>
 
+#include "CXXR/GCRoot.h"
+
 namespace llvm {
     class BasicBlock;
     class Function;
@@ -109,7 +111,7 @@ public:
 
     // These variables are read-write and publicly accessible for use by the
     // compiler.
-    FrameDescriptor* m_frame_descriptor;
+    GCRoot<FrameDescriptor> m_frame_descriptor;
 
 private:
     const Closure* m_closure;

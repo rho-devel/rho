@@ -56,7 +56,7 @@ CompiledFrame::CompiledFrame(const CompiledFrame& pattern)
     m_descriptor = pattern.m_descriptor;
     m_bindings = new Binding[m_descriptor->getNumberOfSymbols()];
     m_extension = nullptr;
-    
+
     importBindings(&pattern);
     if (pattern.isLocked()) {
 	lock(false);
@@ -131,6 +131,18 @@ void CompiledFrame::lockBindings()
 	    item.second.setLocking(true);
 	}
     }
+}
+
+void CompiledFrame::detachReferents()
+{
+    Frame::detachReferents();
+    m_descriptor.detach();
+}
+
+void CompiledFrame::visitReferents(const_visitor* v) const
+{
+    Frame::visitReferents(v);
+    m_descriptor->visitReferents(v);
 }
 
 void CompiledFrame::v_clear()

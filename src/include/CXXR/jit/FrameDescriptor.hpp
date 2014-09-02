@@ -35,6 +35,7 @@
 #define CXXR_JIT_FRAME_DESCRIPTOR_HPP
 
 #include <vector>
+#include "CXXR/GCNode.hpp"
 
 namespace CXXR {
 class Closure;
@@ -51,7 +52,7 @@ namespace JIT {
  * Note that it is not guaranteed that all symbols used in the function will
  * be listed in the FrameDescriptor.
  */
-class FrameDescriptor {
+class FrameDescriptor : public GCNode {
 public:
     explicit FrameDescriptor(const Closure* closure);
 
@@ -83,6 +84,8 @@ public:
     };
 
 private:
+  ~FrameDescriptor() { }
+
     std::vector<const Symbol*> m_local_vars;
     int m_num_formals;
 };

@@ -36,6 +36,7 @@
 
 #include <memory>
 
+#include "CXXR/GCRoot.h"
 #include "CXXR/jit/FrameDescriptor.hpp"
 
 namespace llvm {
@@ -79,7 +80,7 @@ private:
 
     // The interpreter requires the frame descriptor to work with the frames
     // that the compiled code generates.
-    std::unique_ptr<FrameDescriptor> m_frame_descriptor;
+    GCRoot<FrameDescriptor> m_frame_descriptor;
 
     // TODO(kmillar): we ought to have a single engine that is shared by many
     //   functions.

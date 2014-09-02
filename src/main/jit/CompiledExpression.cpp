@@ -128,9 +128,7 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     assert(ptr && "JIT compilation failed");
 
     m_function = reinterpret_cast<CompiledExpressionPointer>(ptr);
-    // Steal the frame descriptor from the compiler context.
-    m_frame_descriptor.reset(compiler_context.m_frame_descriptor);
-    compiler_context.m_frame_descriptor = nullptr;
+    m_frame_descriptor = compiler_context.m_frame_descriptor;
 }
 
 CompiledExpression::~CompiledExpression()
@@ -139,7 +137,7 @@ CompiledExpression::~CompiledExpression()
 }
 
 Frame* CompiledExpression::createFrame() const {
-  return CXXR_NEW(CompiledFrame(m_frame_descriptor.get()));
+  return CXXR_NEW(CompiledFrame(m_frame_descriptor));
 }
 
 bool CompiledExpression::hasMatchingFrameLayout(const Environment* env) const

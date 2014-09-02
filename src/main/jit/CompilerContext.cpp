@@ -61,11 +61,11 @@ CompilerContext::CompilerContext(const Closure* closure,
     m_environment = environment;
     m_function = function;
     m_memory_manager = memory_manager;
-    m_frame_descriptor = new FrameDescriptor(closure);
+    m_frame_descriptor = CXXR_NEW(FrameDescriptor(closure));
 }
 
 CompilerContext::~CompilerContext() {
-    delete m_frame_descriptor;
+  // nothing needed.
 }
 
 Module* CompilerContext::getModule()

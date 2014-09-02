@@ -35,6 +35,7 @@
 #define CXXR_JIT_COMPILED_FRAME_HPP
 
 #include "CXXR/Frame.hpp"
+#include "CXXR/GCEdge.hpp"
 #include "CXXR/jit/FrameDescriptor.hpp"
 #include <map>
 
@@ -94,6 +95,9 @@ public:
 	return m_descriptor;
     }
 
+    void detachReferents() override;
+    void visitReferents(const_visitor* v) const override;
+
 protected:
     void v_clear() override;
     bool v_erase(const Symbol* symbol) override;
@@ -102,7 +106,7 @@ protected:
 private:
     Binding* m_bindings;
 
-    const FrameDescriptor* m_descriptor;
+    GCEdge<const FrameDescriptor> m_descriptor;
 
     // Used to store any bindings not described in the descriptor.
     // Usually this is nullptr.
