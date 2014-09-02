@@ -61,11 +61,6 @@ using namespace CXXR;
 
 extern "C" {
 
-// Implemented in the C++ runtime library.  Redeclared here for convenience.
-int __gxx_personality_v0(...);
-void* __cxa_begin_catch(void*);
-void __cxa_end_catch();
-
 RObject* cxxr_runtime_evaluate(RObject* value, Environment* environment)
 {
     return value->evaluate(environment);
@@ -172,4 +167,12 @@ void Rf_warning(const char*, ...);
 // To force the symbol to be emitted.
 // TODO(kmillar): remove this once BuiltInFunction is used in this file.
 void force_symbol_emission_built_in_function(BuiltInFunction*) { }
+}
+
+void force_exception_handling_symbol_emission() {
+    try {
+	Rf_warning("unused");
+    } catch (...) {
+	Rf_error("also unused");
+    }
 }
