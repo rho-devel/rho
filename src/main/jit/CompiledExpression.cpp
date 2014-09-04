@@ -125,6 +125,7 @@ CompiledExpression::CompiledExpression(const Closure* closure)
 
     // TODO: add optimization passes and re-verify.
 
+    m_engine->finalizeObject();
     auto ptr = m_engine->getFunctionAddress(function->getName());
     assert(ptr && "JIT compilation failed");
 
