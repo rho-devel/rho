@@ -41,6 +41,7 @@
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Linker.h"
 #include "llvm/Support/Casting.h"
+#include "llvm/Support/DynamicLibrary.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/system_error.h"
 #include "llvm/Transforms/Utils/Cloning.h"
@@ -164,7 +165,6 @@ Value* emitBeginCatch(Value* exception_reference,
 }
 
 void emitEndCatch(Compiler* compiler)
-	
 {
     Function* cxa_end_catch = getDeclaration("__cxa_end_catch", compiler);
     // Throws only if a destructor throws.  That should never happen, so it
@@ -219,6 +219,20 @@ void emitWarning(const char* warning_msg,
     compiler->emitCallOrInvoke(warning, args);
 }
 
+static void cleanupRuntimeModule(Module* module)
+{
+    // The Runtime module contains a lot of functions that have already been
+    // compiled into the current process.  There's no point in recompiling those
+    // functions, so replace them with their declarations.
+    for (Function& function : *module) {
+	if (llvm::sys::DynamicLibrary::SearchForAddressOfSymbol(
+		function.getName()))
+	{
+	    function.deleteBody();
+	}
+    }
+}
+
 static Module* createRuntimeModule(LLVMContext& context)
 {
     std::string module_filename = std::string(R_Home) + "/jit/RuntimeImpl.bc";
@@ -230,6 +244,7 @@ static Module* createRuntimeModule(LLVMContext& context)
 	printf("parse failed\n");
 	exit(1);
     }
+    cleanupRuntimeModule(runtime_module);
 
     return runtime_module;
 }
