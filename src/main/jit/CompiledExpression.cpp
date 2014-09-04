@@ -41,6 +41,7 @@
 #include "llvm/IR/TypeBuilder.h"
 #include "llvm/LinkAllIR.h"
 #include "llvm/LinkAllPasses.h"
+#include "llvm/Support/Host.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Target/TargetOptions.h"
 
@@ -84,6 +85,8 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     llvm::LLVMContext& context = llvm::getGlobalContext();
     Module* module = Runtime::createModule(context);
 
+    module->setTargetTriple(llvm::sys::getProcessTriple());
+
     llvm::TargetOptions options;
     // TODO(kmillar): set options dynamically.
     options.JITEmitDebugInfo = true;
@@ -97,13 +100,17 @@ CompiledExpression::CompiledExpression(const Closure* closure)
                    // TODO(kmillar): work out why this causes problems.
                    // .setOptLevel(llvm::CodeGenOpt::None)
                    .setTargetOptions(options)
+                   .setMCPU(llvm::sys::getHostCPUName())
 		   .create());
     assert(m_engine);
+
+    module->setDataLayout(
+        m_engine->getDataLayout()->getStringRepresentation());
 
     // Create a function with signature RObject* (*f)(Environment* environment)
     llvm::Function* function = llvm::Function::Create(
 	llvm::TypeBuilder<RObject*(Environment*), false>::get(context),
-	llvm::Function::InternalLinkage,
+	llvm::Function::ExternalLinkage,
 	"anonymous_function", // TODO: give it a useful name
 	module);
     Value* environment = &*(function->getArgumentList().begin());
