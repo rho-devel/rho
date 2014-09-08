@@ -146,22 +146,13 @@ namespace CXXR {
 	  // m_protecting && m_next implies m_next->m_protecting .
 
 	// Helper function for destructor:
-#ifdef __GNUC__
-	__attribute__((hot, fastcall))
-#endif
-        void destruct_aux();
+        void destruct_aux() HOT_FUNCTION;
 
 	// Put all GCStackRootBase objects into the protecting state:
-#ifdef __GNUC__
-	__attribute__((hot, fastcall))
-#endif
-	static void protectAll();
+	static void protectAll() HOT_FUNCTION;
 
 	// Helper function for retarget():
-#ifdef __GNUC__
-	__attribute__((hot, fastcall))
-#endif
-	    void retarget_aux(const GCNode* node);
+	void retarget_aux(const GCNode* node) HOT_FUNCTION;
 
 	// Report out-of-sequence destructor call and abort program.
 	// (We can't use an exception here because it's called from a

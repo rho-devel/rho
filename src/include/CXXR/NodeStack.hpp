@@ -394,17 +394,12 @@ namespace CXXR {
 
 	// Helper function for retarget(), handling the case where
 	// 'index' is within the protected range:
-#ifdef __GNUC__
-	__attribute__((hot,fastcall))
-#endif
-	static void retarget_aux(RObject* oldnode, RObject* newnode);
+	static void retarget_aux(RObject* oldnode, RObject* newnode)
+	    HOT_FUNCTION;
 
 	// Helper function for trim(), handling the case where the trim
 	// cuts down into protected nodes:
-#ifdef __GNUC__
-	__attribute__((hot,fastcall))
-#endif
-	void resize_aux(size_t new_size);
+	void resize_aux(size_t new_size) HOT_FUNCTION;
     };
 }  // namespace CXXR
 

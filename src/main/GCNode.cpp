@@ -80,10 +80,7 @@ unsigned char GCNode::s_mark = 0;
 
 // Some versions of gcc (e.g. 4.2.1) give a spurious "throws different
 // exceptions" error if the attributes aren't repeated here.
-#ifdef __GNUC__
-	__attribute__((hot,fastcall))
-#endif
-void* GCNode::operator new(size_t bytes)
+void* GCNode::operator new(size_t bytes) HOT_FUNCTION
 {
 #ifndef RARE_GC
     if (
