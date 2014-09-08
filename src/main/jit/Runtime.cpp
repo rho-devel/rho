@@ -156,6 +156,21 @@ Value* emitCoerceToTrueOrFalse(llvm::Value* value,
     return compiler->emitCallOrInvoke(coerce, { value, callp });
 }
 
+Type* exceptionInfoType(Compiler* compiler)
+{
+    return llvm::StructType::get(compiler->getType<void*>(),
+				 compiler->getType<int32_t>(),
+				 nullptr);
+}
+
+LandingPadInst* emitLandingPad(Compiler* compiler)
+{
+  Function* exception_personality_function
+      = getDeclaration("__gxx_personality_v0", compiler);
+  return compiler->CreateLandingPad(exceptionInfoType(compiler),
+                                    exception_personality_function, 0);
+}
+ 
 Value* emitBeginCatch(Value* exception_reference,
 		      Compiler* compiler)
 {
@@ -175,7 +190,7 @@ void emitEndCatch(Compiler* compiler)
 Value* emitLoopExceptionIsNext(Value* loop_exception, Compiler* compiler)
 {
     Function* loop_exception_is_next = getDeclaration(
-	"cxxr_runtime_loopFunctionIsNext", compiler);
+	"cxxr_runtime_loopExceptionIsNext", compiler);
     // Never throws.
     return compiler->CreateCall(loop_exception_is_next, loop_exception);
 }

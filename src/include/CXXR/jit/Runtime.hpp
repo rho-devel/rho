@@ -40,6 +40,7 @@
 namespace llvm {
 class Function;
 class LLVMContext;
+class LandingPadInst;
 class Module;
 class StructType;
 class Value;
@@ -128,6 +129,9 @@ llvm::Value* emitCoerceToTrueOrFalse(llvm::Value* value,
 
 // Exception handling code.
 // These functions currently don't have FunctionIds assigned.
+llvm::Type* exceptionInfoType(Compiler* compiler);
+llvm::LandingPadInst* emitLandingPad(Compiler* compiler);
+
 llvm::Value* emitBeginCatch(llvm::Value* exception_reference,
 			    Compiler* compiler);
 void emitEndCatch(Compiler* compiler);

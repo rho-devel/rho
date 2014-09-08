@@ -592,12 +592,7 @@ BasicBlock* Compiler::emitLandingPad(PHINode* dispatch) {
     BasicBlock* block = createBasicBlock("landing_pad");
     SetInsertPoint(block);
 
-    llvm::Function* exception_personality_function
-	= m_context->getModule()->getFunction("__gxx_personality_v0");
-    assert(exception_personality_function != nullptr);
-    llvm::LandingPadInst* landing_pad = CreateLandingPad(
-	exceptionInfoType(),
-	exception_personality_function, 0);
+    llvm::LandingPadInst* landing_pad = Runtime::emitLandingPad(this);
     // It's entirely possible that the landing pad only needs to handle some
     // exception types, so catching everything is overly general.  However
     // exception handling should be rare, catching and rethrowing exceptions that

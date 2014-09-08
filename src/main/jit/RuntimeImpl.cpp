@@ -143,7 +143,7 @@ void cxxr_runtime_do_next(Environment* environment) {
     CXXR_NEW(LoopBailout(environment, true))->throwException();
 }
 
-bool cxxr_runtime_loopFunctionIsNext(void* exception) {
+bool cxxr_runtime_loopExceptionIsNext(void* exception) {
     LoopException* loop_exception = static_cast<LoopException*>(exception);
     return loop_exception->next();
 }
@@ -173,6 +173,6 @@ void force_exception_handling_symbol_emission() {
     try {
 	Rf_warning("unused");
     } catch (...) {
-	Rf_error("also unused");
+	Rf_warning("also unused");
     }
 }
