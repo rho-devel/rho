@@ -229,10 +229,8 @@ namespace CXXR {
 	 *
 	 * @return Pointer to the result of evaluation.
 	 */
-#ifdef __GNUC__
-	__attribute__((hot,fastcall))
-#endif
-	static RObject* evaluate(RObject* object, Environment* env);
+	static RObject* evaluate(RObject* object, Environment* env)
+          HOT_FUNCTION;
 
 	/** @brief Innermost Context belonging to this Evaluator.
 	 *

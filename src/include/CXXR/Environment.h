@@ -249,10 +249,7 @@ namespace CXXR {
 	 * @return A pointer to the sought Binding, or a null pointer if no
          *         Binding was found.
 	 */
-#ifdef __GNUC__
-	__attribute__((hot,fastcall))
-#endif
-	Frame::Binding* findBinding(const Symbol* symbol);
+	Frame::Binding* findBinding(const Symbol* symbol) HOT_FUNCTION;
 
 	/** @brief Search for a Binding for a Symbol (const variant).
 	 *

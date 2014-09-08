@@ -69,10 +69,7 @@ namespace CXXR {
 	 *
 	 * @throws bad_alloc if a cell cannot be allocated.
 	 */
-#ifdef __GNUC__
-	__attribute__((hot,fastcall))
-#endif
-	static void* allocate(size_t bytes) throw (std::bad_alloc);
+	static void* allocate(size_t bytes) throw (std::bad_alloc) HOT_FUNCTION;
 
 	/** @brief Number of blocks currently allocated.
 	 *
