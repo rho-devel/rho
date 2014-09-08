@@ -56,6 +56,8 @@
 #include "Defn.h"
 #include "Rinternals.h"
 
+#include "RuntimeImpl.cpp"
+
 using namespace llvm;
 
 namespace CXXR {
@@ -75,7 +77,19 @@ static llvm::Function* getDeclaration(const std::string& name,
 				      llvm::Module* module)
 {
     llvm::Function* resolved_function = module->getFunction(name);
-    assert(resolved_function != nullptr);
+    if (!resolved_function) {
+	// Copy the declaration from the runtime to the module.
+	// TODO(kmillar): omitting the function body eliminates opportunities
+	//   for inlining, which will be required to generate fast code.
+	Function* runtime_function = getRuntimeModule(module->getContext())
+	    ->getFunction(name);
+	assert(runtime_function);
+	resolved_function = Function::Create(runtime_function->getFunctionType(),
+					     Function::ExternalLinkage,
+					     runtime_function->getName(),
+					     module);
+	resolved_function->setAttributes(runtime_function->getAttributes());
+    }
     return resolved_function;
 }
 
@@ -273,17 +287,12 @@ static Module* getRuntimeModule(LLVMContext& context)
 
 llvm::Module* createModule(llvm::LLVMContext& context)
 {
-    // LLVM has an annoying bug where linking removes the type names in the
-    // runtime module, even with Linker::PreserveSource (LLVM bug 20068).
-    // Because of this, initialize modules with an entire copy of the
-    // runtime module, which eliminates the need for linking.
-    // TODO(kmillar): improve this.
-    return llvm::CloneModule(getRuntimeModule(context));
+    return new Module("anonymous_module", context);
 }
 
 void linkInRuntimeModule(llvm::Module* module)
 {
-    // Nothing needed at present.  See comments in createModule().
+    // Nothing needed.
 }
 
 StructType* getCxxrType(const std::string& name, LLVMContext& context)
@@ -334,6 +343,20 @@ FunctionId getFunctionId(llvm::Function* function)
 	}
     }
     return NOT_A_RUNTIME_FUNCTION;
+}
+
+namespace ForceCodeEmission {
+#define FORCE_EMISSION(FUNCTION) auto FUNCTION ## _p = &FUNCTION;
+    FORCE_EMISSION(cxxr_runtime_evaluate);
+    FORCE_EMISSION(cxxr_runtime_lookupSymbol);
+    FORCE_EMISSION(cxxr_runtime_lookupSymbolInCompiledFrame);
+    FORCE_EMISSION(cxxr_runtime_lookupFunction);
+    FORCE_EMISSION(cxxr_runtime_callFunction);
+    FORCE_EMISSION(cxxr_runtime_do_break);
+    FORCE_EMISSION(cxxr_runtime_do_next);
+    FORCE_EMISSION(cxxr_runtime_loopExceptionIsNext);
+    FORCE_EMISSION(cxxr_runtime_coerceToTrueOrFalse);
+    FORCE_EMISSION(cxxr_runtime_is_function);
 }
 
 } // namespace Runtime

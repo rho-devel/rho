@@ -97,8 +97,7 @@ CompiledExpression::CompiledExpression(const Closure* closure)
     m_engine.reset(llvm::EngineBuilder(module)
 		   .setUseMCJIT(true)
 		   .setMCJITMemoryManager(memory_manager)
-                   // TODO(kmillar): work out why this causes problems.
-                   // .setOptLevel(llvm::CodeGenOpt::None)
+		   .setOptLevel(llvm::CodeGenOpt::None)
                    .setTargetOptions(options)
                    .setMCPU(llvm::sys::getHostCPUName())
 		   .create());
