@@ -105,7 +105,6 @@ private:
 
     // Exception handling.
     friend class CompilerContext;
-    llvm::Type* exceptionInfoType();
     llvm::Value* getExceptionTypeId(const std::type_info* type);
     llvm::BasicBlock* emitLandingPad(llvm::PHINode* dispatch);
     llvm::PHINode* emitDispatchToExceptionHandler(const std::type_info* type,

@@ -111,8 +111,7 @@ std::vector<llvm::Value*> Compiler::castFunctionArguments(
     llvm::ArrayRef<llvm::Value*> args,
     llvm::Function* function)
 {
-    int num_args = args.size();
-    assert(function->isVarArg() || function->arg_size() == num_args);
+    assert(function->isVarArg() || function->arg_size() == args.size());
 
     // Upcast any arguments that require it.
     std::vector<llvm::Value*> type_checked_args;
@@ -579,13 +578,6 @@ Value* Compiler::emitInlinedNext(const Expression* expression) {
     }
 }
 
-
-llvm::Type* Compiler::exceptionInfoType() {
-    return llvm::StructType::get(getType<void*>(),
-				 getType<int32_t>(),
-				 nullptr);
-}
-
 BasicBlock* Compiler::emitLandingPad(PHINode* dispatch) {
     InsertPointGuard preserve_insert_point(*this);
 
@@ -623,7 +615,7 @@ PHINode* Compiler::emitDispatchToExceptionHandler(const std::type_info* type,
     BasicBlock* block = createBasicBlock("dispatch");
     SetInsertPoint(block);
 
-    PHINode* exception_info = CreatePHI(exceptionInfoType(), 1);
+    PHINode* exception_info = CreatePHI(Runtime::exceptionInfoType(this), 1);
     Value* exception_type_id = CreateExtractValue(exception_info, 1);
 
     Value* handled_exception_type_id = getExceptionTypeId(type);
@@ -647,7 +639,7 @@ PHINode* Compiler::emitLoopExceptionHandler(llvm::BasicBlock* break_destination,
     BasicBlock* block = createBasicBlock("loop_exception_handler");
     SetInsertPoint(block);
     
-    PHINode* exception_info = CreatePHI(exceptionInfoType(), 1);
+    PHINode* exception_info = CreatePHI(Runtime::exceptionInfoType(this), 1);
     Value* exception_ref = CreateExtractValue(exception_info, 0);
     Value* exception = Runtime::emitBeginCatch(exception_ref, this);
     Value* isNext = Runtime::emitLoopExceptionIsNext(exception, this);
@@ -664,7 +656,7 @@ PHINode* Compiler::emitReturnExceptionHandler()
     BasicBlock* block = createBasicBlock("return_exception_handler");
     SetInsertPoint(block);
     
-    PHINode* exception_info = CreatePHI(exceptionInfoType(), 1);
+    PHINode* exception_info = CreatePHI(Runtime::exceptionInfoType(this), 1);
     Value* exception_ref = CreateExtractValue(exception_info, 0);
     Value* exception = Runtime::emitBeginCatch(exception_ref, this);
 
@@ -682,7 +674,7 @@ PHINode* Compiler::emitRethrowException()
     BasicBlock* block = createBasicBlock("rethrow_exception");
     SetInsertPoint(block);
     
-    PHINode* exception_info = CreatePHI(exceptionInfoType(), 1);
+    PHINode* exception_info = CreatePHI(Runtime::exceptionInfoType(this), 1);
     CreateResume(exception_info);
     return exception_info;
 }
