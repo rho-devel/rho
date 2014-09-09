@@ -71,7 +71,7 @@ static RObject* GetObject(ClosureContext *cptr)
 	if (op->sexptype() == SYMSXP)
 	    func = findFunction(static_cast<Symbol*>(op), callenv);
 	else
-	    func = op->evaluate(callenv);
+	    func = Evaluator::evaluate(op, callenv);
 	if (func->sexptype() != CLOSXP)
 	    Rf_error(_("generic 'function' is not a function"));
 	closure = static_cast<Closure*>(func);
@@ -222,7 +222,7 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
     {
 	RObject* opcar = cptr->call()->car();
 	if (opcar->sexptype() == LANGSXP)
-	    opcar = opcar->evaluate(cptr->callEnvironment());
+	    opcar = Evaluator::evaluate(opcar, cptr->callEnvironment());
 	switch (opcar->sexptype()) {
 	case SYMSXP: {
 	    const Symbol* symbol = static_cast<Symbol*>(opcar);
@@ -305,7 +305,7 @@ static void matchArgsForUseMethod(SEXP call, SEXP args, Environment* argsenv,
     {
 	RObject* objval = matchenv->frame()->binding(objectsym)->forcedValue();
 	if (objval != Symbol::missingArgument()) {
-	    *obj = objval->evaluate(argsenv);
+	    *obj = Evaluator::evaluate(objval, argsenv);
 	}
 	else *obj = GetObject(cptr);
     }
@@ -614,7 +614,8 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     {
 	Frame::Binding* bdg = nmcallenv->frame()->binding(DotGenericSymbol);
 	RObject* genval
-	    = (bdg ? bdg->forcedValue() : callargs->car()->evaluate(callenv));
+	    = (bdg ? bdg->forcedValue()
+	       : Evaluator::evaluate(callargs->car(), callenv));
 	if (!genval)
 	    Rf_error(_("generic function not specified"));
 	if (genval->sexptype() == STRSXP)

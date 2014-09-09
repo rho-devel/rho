@@ -63,7 +63,7 @@ extern "C" {
 
 RObject* cxxr_runtime_evaluate(RObject* value, Environment* environment)
 {
-    return value->evaluate(environment);
+    return Evaluator::evaluate(value, environment);
 }
 
 RObject* cxxr_runtime_lookupSymbol(const Symbol* value,
