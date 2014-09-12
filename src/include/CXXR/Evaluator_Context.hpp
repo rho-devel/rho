@@ -156,6 +156,9 @@ namespace CXXR {
 	Context *m_next_out;
 	unsigned int m_eval_depth;
 	Type m_type;
+
+	Context(Context&) = delete;
+	Context& operator=(const Context&) = delete;
     };
 }  // namespace CXXR
 
