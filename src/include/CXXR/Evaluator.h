@@ -283,6 +283,17 @@ namespace CXXR {
 	 *          unchanged.
 	 */
 	static void setDepthLimit(unsigned int depth);
+
+        //* @brief Check for user interrupts. 
+        static void maybeCheckForUserInterrupts() {
+          if (--s_countdown == 0) {
+            checkForUserInterrupts();
+          }
+        }
+
+        //* @brief Check for user interrupts. 
+        static void checkForUserInterrupts();
+
    private:
 	friend class Context;  // Unnecessary in C++ 0x
 

@@ -130,6 +130,7 @@ private:
     llvm::BasicBlock* createBranch(const char* name, const RObject* expression,
 				   llvm::PHINode* merge_point,
 				   llvm::BasicBlock* insert_before = 0);
+    llvm::Value* createBackEdge(llvm::BasicBlock* destination);
 };
 
 template <class T>

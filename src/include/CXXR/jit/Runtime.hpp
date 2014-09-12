@@ -127,6 +127,8 @@ llvm::Value* emitCoerceToTrueOrFalse(llvm::Value* value,
 				     const Expression* call,
 				     Compiler* compiler);
 
+void emitMaybeCheckForUserInterrupt(Compiler* compiler);
+
 // Exception handling code.
 // These functions currently don't have FunctionIds assigned.
 llvm::Type* exceptionInfoType(Compiler* compiler);

@@ -112,6 +112,7 @@ void Closure::detachReferents()
 RObject* Closure::execute(Environment* env) const
 {
     RObject* ans;
+    Evaluator::maybeCheckForUserInterrupts();
     Environment::ReturnScope returnscope(env);
     Closure::DebugScope debugscope(this);
     try {

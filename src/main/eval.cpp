@@ -978,6 +978,7 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     Environment* env = SEXP_downcast<Environment*>(rho);
     Environment::LoopScope loopscope(env);
     for (i = 0; i < n; i++) {
+	Evaluator::maybeCheckForUserInterrupts();
 	DO_LOOP_RDEBUG(call, op, args, rho, bgn);
 
 	switch (val_type) {
@@ -1090,6 +1091,7 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
     Environment::LoopScope loopscope(env);
 
     while (asLogicalNoNA(Rf_eval(CAR(args), rho), call)) {
+	Evaluator::maybeCheckForUserInterrupts();
 	RObject* ans;
 	DO_LOOP_RDEBUG(call, op, args, rho, bgn);
 	try {
@@ -1145,6 +1147,7 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
     Environment* env = SEXP_downcast<Environment*>(rho);
     Environment::LoopScope loopscope(env);
     for (;;) {
+	Evaluator::maybeCheckForUserInterrupts();
 	RObject* ans;
 	DO_LOOP_RDEBUG(call, op, args, rho, bgn);
 	try {

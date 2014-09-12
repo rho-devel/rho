@@ -160,6 +160,10 @@ bool cxxr_runtime_is_function(RObject* object) {
     return Rf_isFunction(object);
 }
 
+void cxxr_runtime_maybeCheckForUserInterrupts() {
+    Evaluator::maybeCheckForUserInterrupts();
+}
+
 // From R's C API.
 void Rf_error(const char*, ...) __attribute__((noreturn));
 void Rf_warning(const char*, ...);

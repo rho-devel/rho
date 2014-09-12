@@ -170,6 +170,13 @@ Value* emitCoerceToTrueOrFalse(llvm::Value* value,
     return compiler->emitCallOrInvoke(coerce, { value, callp });
 }
 
+void emitMaybeCheckForUserInterrupt(Compiler* compiler)
+{
+    Function* maybe_check_for_interrupt
+	= getDeclaration("cxxr_runtime_maybeCheckForUserInterrupts", compiler);
+    compiler->emitCallOrInvoke(maybe_check_for_interrupt, {});
+}
+
 Type* exceptionInfoType(Compiler* compiler)
 {
     return llvm::StructType::get(compiler->getType<void*>(),

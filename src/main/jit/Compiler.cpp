@@ -277,6 +277,12 @@ BasicBlock* Compiler::createBranch(const char* name,
     return block;
 }
 
+Value* Compiler::createBackEdge(llvm::BasicBlock* destination)
+{
+    Runtime::emitMaybeCheckForUserInterrupt(this);
+    return CreateBr(destination);
+}
+
 /*
  * The rest of this file contains the code to emit inlined versions of special
  * functions, primarily those that implement flow control.
@@ -508,7 +514,7 @@ Value* Compiler::emitInlinedRepeat(const Expression* expression)
 		       this);
 	emitEval(body);
     }
-    CreateBr(loop_body);
+    createBackEdge(loop_body);
 
     SetInsertPoint(continue_block);
     return emitNullValue(); // TODO(kmillar): make invisible.
@@ -543,7 +549,7 @@ Value* Compiler::emitInlinedWhile(const Expression* expression)
 		       this);
 	emitEval(body);
     }
-    CreateBr(loop_header);
+    createBackEdge(loop_header);
 
     SetInsertPoint(continue_block);
     return emitNullValue(); // TODO(kmillar): make invisible.
@@ -572,7 +578,7 @@ Value* Compiler::emitInlinedNext(const Expression* expression) {
 
     BasicBlock* dest = m_context->getNextDestination();
     if (dest) {
-	return CreateBr(dest);
+	return createBackEdge(dest);
     } else {
 	return Runtime::emitNext(m_context->getEnvironment(), this);
     }
