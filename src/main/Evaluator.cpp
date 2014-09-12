@@ -65,10 +65,7 @@ RObject* Evaluator::evaluate(RObject* object, Environment* env)
 	Rf_errorcall(0, _("evaluation nested too deeply: "
 			  "infinite recursion / options(expressions=)?"));
     }
-    if (--s_countdown == 0) {
-	R_CheckUserInterrupt();
-	s_countdown = s_countdown_start;
-    }
+
 #ifdef Win32
     // This is an inlined version of Rwin_fpreset (src/gnuwin/extra.c)
     // and resets the precision, rounding and exception modes of a
@@ -89,4 +86,10 @@ void Evaluator::setDepthLimit(unsigned int depth)
 	Rf_error(_("'expressions' parameter invalid, allowed %d...%d"),
 		 R_MIN_EXPRESSIONS_OPT, R_MAX_EXPRESSIONS_OPT);
     s_depth_threshold = s_depth_limit = depth;
+}
+
+void Evaluator::checkForUserInterrupts()
+{
+    R_CheckUserInterrupt();
+    s_countdown = s_countdown_start;
 }
