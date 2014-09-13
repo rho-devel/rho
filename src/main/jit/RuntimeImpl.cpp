@@ -41,6 +41,7 @@
 #include "CXXR/LoopException.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/RObject.h"
+#include "CXXR/StackChecker.hpp"
 #include "CXXR/Symbol.h"
 #include "CXXR/jit/CompiledFrame.hpp"
 #include "Defn.h"
@@ -127,6 +128,8 @@ RObject* cxxr_runtime_callFunction(const FunctionBase* function,
 				   const PairList* args, const Expression* call,
 				   Environment* environment)
 {
+    IncrementStackDepthScope scope;
+
     ArgList arglist(args, ArgList::RAW);
     return function->apply(&arglist, environment, call);
 }
