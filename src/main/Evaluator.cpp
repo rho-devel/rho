@@ -21,13 +21,8 @@
 
 #include "CXXR/Evaluator.h"
 
-#include "CXXR/DottedArgs.hpp"
 #include "CXXR/Environment.h"
-#include "CXXR/Expression.h"
-#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/StackChecker.hpp"
-#include "CXXR/Symbol.h"
-#include "CXXR/errors.h"
 
 using namespace std;
 using namespace CXXR;
@@ -50,13 +45,6 @@ bool Evaluator::s_profiling = false;
 RObject* Evaluator::evaluate(RObject* object, Environment* env)
 {
     IncrementStackDepthScope scope;
-
-#ifdef Win32
-    // This is an inlined version of Rwin_fpreset (src/gnuwin/extra.c)
-    // and resets the precision, rounding and exception modes of a
-    // ix86 fpu.
-    __asm__ ( "fninit" );
-#endif
 
     enableResultPrinting(true);
     return object ? object->evaluate(env) : nullptr;

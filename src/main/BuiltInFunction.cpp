@@ -124,6 +124,16 @@ RObject* BuiltInFunction::apply(ArgList* arglist, Environment* env,
 #ifndef NDEBUG
     size_t pps_size = ProtectStack::size();
 #endif
+
+#ifdef Win32
+    // This is an inlined version of Rwin_fpreset (src/gnuwin/extra.c)
+    // and resets the precision, rounding and exception modes of a
+    // ix86 fpu.
+    // It gets called prior to every builtin function, just in case a badly
+    // behaved DLL has changed the fpu control word.
+    __asm__ ( "fninit" );
+#endif
+
     Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
     GCStackRoot<> ans;
     if (m_transparent) {
