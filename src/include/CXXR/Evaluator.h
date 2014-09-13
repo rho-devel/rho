@@ -157,43 +157,6 @@ namespace CXXR {
 
 	/** @brief (Not for general use.)
 	 *
-	 * Used in context.cpp to save the evaluation depth
-	 * associated with an RCNTXT.  Also used in do_Cstack_info()
-	 * in platform.cpp.
-	 *
-	 * @return The current evaluation depth.
-	 */
-	static unsigned int depth()
-	{
-	    return s_depth;
-	}
-
-	/** @brief Maximum depth of R expression nesting.
-	 *
-	 * @return The current maximum nesting depth (disregarding any
-	 * extra depth that may have been introduced by extraDepth()
-	 * ).
-	 */
-	static unsigned int depthLimit()
-	{
-	    return s_depth_limit;
-	}
-
-	/** @brief (Not for general use.)
-	 *
-	 * @param on If true, and extra depth is not already enabled,
-	 *          an increase is applied to the permissible depth of
-	 *          nested evaluations to allow error reporting to be
-	 *          carried out.  If false, any such extra depth
-	 *          currently in force is removed.
-	 */
-	static void enableExtraDepth(bool on)
-	{
-	    s_depth_threshold = s_depth_limit + (on ? 500 : 0);
-	}
-
-	/** @brief (Not for general use.)
-	 *
 	 * This function is for use by the profiling code in eval.cpp
 	 * to record whether profiling is currently enabled.
 	 *
@@ -262,28 +225,6 @@ namespace CXXR {
 	    return R_Visible;
 	}
 
-	/** @brief (Not for general use.)
-	 *
-	 * Used in context.cpp to restore the evaluation depth
-	 * associated with an RCNTXT.  Also used in main.cpp to reset
-	 * the evaluation depth to zero.
-	 *
-	 * @param depth The required depth.
-	 */
-	static void setDepth(unsigned int depth)
-	{
-	    s_depth = depth;
-	}
-
-	/** @brief Set maximum depth of R expression nesting.
-	 *
-	 * @param depth The required maximum nesting depth.  If the
-	 *          supplied value lies outside the permissible range,
-	 *          an error is reported and the nesting depth is left
-	 *          unchanged.
-	 */
-	static void setDepthLimit(unsigned int depth);
-
         //* @brief Check for user interrupts. 
         static void maybeCheckForUserInterrupts() {
           if (--s_countdown == 0) {
@@ -297,17 +238,6 @@ namespace CXXR {
    private:
 	friend class Context;  // Unnecessary in C++ 0x
 
-	static unsigned int s_depth;  // Current depth of expression evaluation 
-	static unsigned int s_depth_threshold;  // An error will be
-			      // reported if s_depth exceeds this
-			      // value.  s_depth_threshold is normally
-			      // equal to s_depth_limit, but may be
-			      // temporarily increased above s_depth_limit
-			      // to allow error reporting.
-	static unsigned int s_depth_limit;  // The value (controlled
-			      // by the 'expressions' R option) to
-			      // which s_depth_threshold is set except
-			      // during error reporting.
 	static unsigned int s_countdown;  // Number of calls of
 			      // Evaluator::evaluate() to go before a
 			      // check is made for user interrupts.

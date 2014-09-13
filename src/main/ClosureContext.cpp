@@ -22,6 +22,7 @@
 #include "CXXR/ClosureContext.hpp"
 
 #include "CXXR/Environment.h"
+#include "CXXR/StackChecker.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -35,8 +36,8 @@ void ClosureContext::runOnExit()
     Rboolean savevis = R_Visible;
     // Prevent recursion:
     m_onexit = 0;
-    Evaluator::enableExtraDepth(true);
     try {
+	DisableStackCheckingScope scope;
 	Evaluator::evaluate(onx, m_working_env);
     }
     // Don't allow exceptions to escape:

@@ -25,6 +25,7 @@
 #include "CXXR/Environment.h"
 #include "CXXR/Expression.h"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/StackChecker.hpp"
 #include "CXXR/Symbol.h"
 #include "CXXR/errors.h"
 
@@ -41,30 +42,14 @@ Rboolean R_Visible = TRUE;
 int R_interrupts_pending = 0;
 Rboolean R_interrupts_suspended = FALSE;
 
-unsigned int Evaluator::s_depth = 0;
-unsigned int Evaluator::s_depth_threshold = 5000;
-unsigned int Evaluator::s_depth_limit = 5000;
 unsigned int Evaluator::s_countdown = 1000;
 unsigned int Evaluator::s_countdown_start = 1000;
 Evaluator* Evaluator::s_current = 0;
 bool Evaluator::s_profiling = false;
 
-namespace {
-    unsigned int R_MIN_EXPRESSIONS_OPT = 25;
-    unsigned int R_MAX_EXPRESSIONS_OPT = 500000;
-}
-
 RObject* Evaluator::evaluate(RObject* object, Environment* env)
 {
-    // The use of depthsave below is necessary because of the
-    // possibility of non-local returns from evaluation.  Without this
-    // an "expression too complex error" is quite likely.
-    unsigned int depthsave = s_depth++;
-    if (s_depth > s_depth_threshold) {
-	enableExtraDepth(true);
-	Rf_errorcall(0, _("evaluation nested too deeply: "
-			  "infinite recursion / options(expressions=)?"));
-    }
+    IncrementStackDepthScope scope;
 
 #ifdef Win32
     // This is an inlined version of Rwin_fpreset (src/gnuwin/extra.c)
@@ -72,20 +57,9 @@ RObject* Evaluator::evaluate(RObject* object, Environment* env)
     // ix86 fpu.
     __asm__ ( "fninit" );
 #endif
-    enableResultPrinting(true);
-    RObject* ans = 0;
-    if (object)
-	ans = object->evaluate(env);
-    s_depth = depthsave;
-    return ans;
-}
 
-void Evaluator::setDepthLimit(unsigned int depth)
-{
-    if (depth < R_MIN_EXPRESSIONS_OPT || depth > R_MAX_EXPRESSIONS_OPT)
-	Rf_error(_("'expressions' parameter invalid, allowed %d...%d"),
-		 R_MIN_EXPRESSIONS_OPT, R_MAX_EXPRESSIONS_OPT);
-    s_depth_threshold = s_depth_limit = depth;
+    enableResultPrinting(true);
+    return object ? object->evaluate(env) : nullptr;
 }
 
 void Evaluator::checkForUserInterrupts()
