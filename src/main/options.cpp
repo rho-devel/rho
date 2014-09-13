@@ -43,6 +43,7 @@
 #include "Print.h"
 
 #include "CXXR/Evaluator.h"
+#include "CXXR/StackChecker.hpp"
 
 using namespace CXXR;
 
@@ -267,7 +268,7 @@ void attribute_hidden InitOptions(void)
     v = CDR(v);
 
     SET_TAG(v, install("expressions"));
-    SETCAR(v, ScalarInteger(Evaluator::depthLimit()));
+    SETCAR(v, ScalarInteger(StackChecker::depthLimit()));
     v = CDR(v);
 
     SET_TAG(v, install("width"));
@@ -451,7 +452,7 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    else if (streql(CHAR(namei), "expressions")) {
 		k = asInteger(argi);
-		Evaluator::setDepthLimit(k);
+		StackChecker::setDepthLimit(k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarInteger(k)));
 	    }
 	    else if (streql(CHAR(namei), "keep.source")) {

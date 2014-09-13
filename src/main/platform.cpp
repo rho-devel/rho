@@ -66,6 +66,7 @@
 #include "basedecl.h"
 #include <vector>
 #include "CXXR/Evaluator.h"
+#include "CXXR/StackChecker.hpp"
 #include "CXXR/StringVector.h"
 
 using namespace std;
@@ -2736,7 +2737,7 @@ SEXP attribute_hidden do_Cstack_info(SEXP call, SEXP op, SEXP args, SEXP rho)
     INTEGER(ans)[1] = (R_CStackLimit ==  CXXRCONSTRUCT(uintptr_t, -1)) ? NA_INTEGER : int
 	(R_CStackDir * (R_CStackStart - uintptr_t( &ans)));
     INTEGER(ans)[2] = R_CStackDir;
-    INTEGER(ans)[3] = Evaluator::depth();
+    INTEGER(ans)[3] = StackChecker::depth();
     SET_STRING_ELT(nms, 0, mkChar("size"));
     SET_STRING_ELT(nms, 1, mkChar("current"));
     SET_STRING_ELT(nms, 2, mkChar("direction"));

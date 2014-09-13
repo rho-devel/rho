@@ -240,7 +240,6 @@ static void R_ReplFile(FILE *fp, SEXP rho)
 	    break;
 	case PARSE_OK:
 	    R_Visible = FALSE;
-	    Evaluator::setDepth(0);
 	    resetTimeLimits();
 	    count++;
 	    PROTECT(R_CurrentExpr);
@@ -401,7 +400,6 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
 		}
 	    }
 	    R_Visible = FALSE;
-	    Evaluator::setDepth(0);
 	    resetTimeLimits();
 	    PROTECT(thisExpr = R_CurrentExpr);
 	    R_Busy(1);
@@ -503,7 +501,6 @@ int R_ReplDLLdo1(void)
 	R_IoBufferReadReset(&R_ConsoleIob);
 	R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 1, &status);
 	R_Visible = FALSE;
-	Evaluator::setDepth(0);
 	resetTimeLimits();
 	PROTECT(R_CurrentExpr);
 	R_Busy(1);
