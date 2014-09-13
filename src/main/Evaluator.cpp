@@ -44,8 +44,6 @@ bool Evaluator::s_profiling = false;
 
 RObject* Evaluator::evaluate(RObject* object, Environment* env)
 {
-    IncrementStackDepthScope scope;
-
     enableResultPrinting(true);
     return object ? object->evaluate(env) : nullptr;
 }

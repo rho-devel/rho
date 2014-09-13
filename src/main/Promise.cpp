@@ -45,6 +45,7 @@
 #include "CXXR/Bailout.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/PlainContext.hpp"
+#include "CXXR/StackChecker.hpp"
 
 using namespace CXXR;
 
@@ -80,6 +81,7 @@ RObject* Promise::evaluate(Environment* /*env*/)
 		       "or earlier problems?"));
 	m_under_evaluation = true;
 	try {
+	    IncrementStackDepthScope scope;
 	    PlainContext cntxt;
 	    RObject* val = Evaluator::evaluate(m_valgen, environment());
 	    setValue(val);

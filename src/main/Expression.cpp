@@ -47,6 +47,7 @@
 #include "CXXR/Evaluator.h"
 #include "CXXR/FunctionBase.h"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/StackChecker.hpp"
 #include "CXXR/Symbol.h"
 
 using namespace std;
@@ -69,6 +70,8 @@ Expression* Expression::clone() const
 
 RObject* Expression::evaluate(Environment* env)
 {
+    IncrementStackDepthScope scope;
+
     GCStackRoot<FunctionBase> func;
     RObject* head = car();
     if (head->sexptype() == SYMSXP) {

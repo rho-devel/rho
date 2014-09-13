@@ -41,6 +41,7 @@
 
 #include "CXXR/IntVector.h"
 #include "CXXR/errors.h"
+#include "CXXR/StackChecker.hpp"
 
 using namespace CXXR;
 
@@ -57,6 +58,7 @@ void ByteCode::detachReferents()
 RObject* ByteCode::evaluate(Environment* env)
 {
 #ifdef BYTECODE
+    IncrementStackDepthScope scope;
     return interpret(this, env);
 #else
     Rf_error(_("bytecode evaluation not enabled"));
