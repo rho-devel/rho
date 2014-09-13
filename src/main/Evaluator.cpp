@@ -42,12 +42,6 @@ unsigned int Evaluator::s_countdown_start = 1000;
 Evaluator* Evaluator::s_current = 0;
 bool Evaluator::s_profiling = false;
 
-RObject* Evaluator::evaluate(RObject* object, Environment* env)
-{
-    enableResultPrinting(true);
-    return object ? object->evaluate(env) : nullptr;
-}
-
 void Evaluator::checkForUserInterrupts()
 {
     R_CheckUserInterrupt();

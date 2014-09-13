@@ -192,8 +192,11 @@ namespace CXXR {
 	 *
 	 * @return Pointer to the result of evaluation.
 	 */
-	static RObject* evaluate(RObject* object, Environment* env)
-          HOT_FUNCTION;
+	static RObject* evaluate(RObject* object, Environment* env) {
+          enableResultPrinting(true);
+          return object ? object->evaluate(env) : nullptr;
+        };
+
 
 	/** @brief Innermost Context belonging to this Evaluator.
 	 *
