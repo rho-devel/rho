@@ -51,6 +51,9 @@ struct SingleTest {
 //   errors or warnings.  The edge cases need testing too.
 class Executor {
 public:
+    static Executor* InterpreterExecutor();
+    static Executor* JITExecutor();
+
     virtual CXXR::RObject* parseAndEval(
 	const std::string& expression,
 	CXXR::Environment* env = newTestEnv()) = 0;
@@ -67,7 +70,5 @@ public:
     void runEvaluatorTests(const std::vector<SingleTest> &tests);
     void runSingleTest(SingleTest test);
 };
-
-class ControlFlowTest : public EvaluatorTest { };
 
 #endif  // CXXR_TESTS_CXXR_EVALUATION_TESTS_HPP

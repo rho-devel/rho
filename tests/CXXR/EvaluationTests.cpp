@@ -98,74 +98,7 @@ RObject* Executor::parseAndEvalWithInterpreter(const std::string& expression,
     return Evaluator::evaluate(parsed_expression, env);
 }
 
-
-TEST_P(ControlFlowTest, Braces)
-{
-    runEvaluatorTests({
-	{ "{ }", "NULL" },
-	{ "{ 1 }", "1" },
-	{ "{ 1; 2 }", "2" },
-	{ "{ cos(0) }", "1" },
-	});
-}
-
-TEST_P(ControlFlowTest, Parens)
-{
-    runEvaluatorTests({
-	{ "( NULL )", "NULL" },
-	{ "( 1 )", "1" },
-	{ "( cos(0) )", "1" },
-	});
-}	
-
-TEST_P(ControlFlowTest, If)
-{
-    runEvaluatorTests({
-	// if() with a scalar logical.
-	{ "if (TRUE) 1", "1" },
-	{ "if (FALSE) 1", "NULL" },
-	{ "if (TRUE) 1 else 2", "1" },
-	{ "if (FALSE) 1 else 2", "2" },
-	
-	// if() with a scalar numeric.
-	{ "if (0.0) 1", "NULL" },
-	{ "if (1.1) 1", "1" },
-	{ "if (2.1) 1", "1" },
-	{ "if (0.0) 1 else 2", "2" },
-	{ "if (1.1) 1 else 2", "1" },
-	{ "if (2.1) 1 else 2", "1" },
-	
-	// if() with a scalar integer.
-	{ "if (1L) 1", "1" },
-	{ "if (2L) 1", "1" },
-	{ "if (0L) 1", "NULL" },
-	{ "if (1L) 1 else 2", "1" },
-	{ "if (2L) 1 else 2", "1" },
-	{ "if (0L) 1 else 2", "2" },
-	});
-}
-
-TEST_P(ControlFlowTest, While)
-{
-    runEvaluatorTests({
-	    { "while(FALSE) 1", "NULL" },
-	    { "while(FALSE) identity()", "NULL" },
-	    { "{ i <- 0; while(i < 3) i <- i + 1; i }", "3" }
-	});
-}
-
-TEST_P(ControlFlowTest, Repeat)
-{
-    runEvaluatorTests({
-	    { "repeat { break }", "NULL" },
-	    { "{ i <- 0; repeat { if (i > 3) break; i <- i + 1 }; i }", "4" },
-	});
-}
-
-// TODO(kmillar): Test break, next, for
-
-
-// Instantiations of the test types.
+// Executors to use.
 
 class InterpreterExecutor : public Executor {
 public:
@@ -176,10 +109,9 @@ public:
     }
 };
 
-INSTANTIATE_TEST_CASE_P(InterpreterControlFlowTest,
-                        ControlFlowTest,
-			testing::Values(
-			    (Executor*)new InterpreterExecutor()));
+Executor* Executor::InterpreterExecutor() {
+    return new class InterpreterExecutor();
+}
 
 class JITExecutor : public Executor {
 public:
@@ -204,8 +136,6 @@ public:
     }
 };
 
-INSTANTIATE_TEST_CASE_P(JITControlFlowTest,
-                        ControlFlowTest,
-			testing::Values(
-			    (Executor*)new JITExecutor()));
-
+Executor* Executor::JITExecutor() {
+    return new class JITExecutor();
+}
