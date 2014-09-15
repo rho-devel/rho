@@ -224,14 +224,6 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-#ifdef _R_HAVE_TIMING_
-
-/* Use header files! 2007/06/11 arr
-// defined in unix/sys-unix.c :
-double R_getClockIncrement(void);
-void R_getProcTime(double *data);
-*/
-
 static double gctimes[5], gcstarttimes[5];
 static Rboolean gctime_enabled = FALSE;
 
@@ -275,23 +267,13 @@ static void gc_end_timing(void)
 	gctimes[4] += times[4] - gcstarttimes[4];
     }
 }
-#else /* not _R_HAVE_TIMING_ */
-SEXP attribute_hidden do_gctime(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    error(_("gc.time() is not implemented on this system"));
-    return R_NilValue;		/* -Wall */
-}
-#endif /* not _R_HAVE_TIMING_ */
-
 
 /* InitMemory : Initialise the memory to be used in R. */
 /* This includes: stack space, node space and vector space */
 
 void InitMemory()
 {
-#ifdef _R_HAVE_TIMING_
     GCManager::setMonitors(gc_start_timing, gc_end_timing);
-#endif
     GCManager::setReporting(R_Verbose ? &std::cerr : 0);
     GCManager::setGCThreshold(R_VSize);
 
