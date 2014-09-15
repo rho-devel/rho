@@ -32,7 +32,7 @@ GCRoot<> R_RestartStack;
 
 void ClosureContext::runOnExit()
 {
-    GCStackRoot<> onx(m_onexit);
+    GCStackRoot<> onx(m_onexit.get());
     Rboolean savevis = R_Visible;
     // Prevent recursion:
     m_onexit = 0;

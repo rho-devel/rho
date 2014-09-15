@@ -213,18 +213,20 @@ namespace CXXR {
 
 	/** @brief Copy constructor.
 	 *
-	 * The constructed GCStackRoot will protect the same GCNode as
-	 * source.  (There is probably no reason to use this
-	 * constructor.)
+	 * The copy constructor has been explicitly deleted to prevent stack
+	 * roots from being returned from functions.  This is required as the
+	 * compiler is allowed to extend the lifetime of the returned values
+	 * via copy elision, which in turn violates the requirement that stack
+	 * roots be destroyed in the reverse order of creation.
+	 * (There is probably no reason to use this constructor anyway.)
 	 */
-	GCStackRoot(const GCStackRoot& source) : GCStackRootBase(source) {}
+        GCStackRoot(const GCStackRoot& source) = delete;
 
 	/**
 	 * This will cause this GCStackRoot to protect the same GCNode as
-	 * is protected by source.  (There is probably no reason to
-	 * use this method.)
+	 * is protected by source.
 	 */
-	GCStackRoot& operator=(const GCStackRoot& source)
+        GCStackRoot& operator=(const GCStackRoot& source)
 	{
 	    GCStackRootBase::operator=(source);
 	    return *this;
