@@ -134,17 +134,18 @@ RObject* BuiltInFunction::apply(ArgList* arglist, Environment* env,
     __asm__ ( "fninit" );
 #endif
 
-    Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
     GCStackRoot<> ans;
     if (m_transparent) {
 	PlainContext cntxt;
 	if (arglist->status() != ArgList::EVALUATED && sexptype() == BUILTINSXP)
 	    arglist->evaluate(env);
+	Evaluator::enableResultPrinting(true);
 	ans = invoke(env, arglist, call);
     } else {
 	FunctionContext cntxt(const_cast<Expression*>(call), env, this);
 	if (arglist->status() != ArgList::EVALUATED && sexptype() == BUILTINSXP)
 	    arglist->evaluate(env);
+	Evaluator::enableResultPrinting(true);
 	ans = invoke(env, arglist, call);
     }
     if (m_result_printing_mode != SOFT_ON)

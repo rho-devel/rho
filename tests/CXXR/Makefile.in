@@ -37,7 +37,8 @@ unit_test_sources = \
 	ControlFlowTests.cpp \
 	EvaluationTests.cpp \
 	FrameTests.cpp \
-	MCJITMemoryManagerTests.cpp
+	MCJITMemoryManagerTests.cpp \
+	VisibilityTests.cpp
 
 UNIT_TEST_OBJECTS = $(unit_test_sources:.cpp=.o)
 
