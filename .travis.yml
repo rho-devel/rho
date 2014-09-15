@@ -8,4 +8,4 @@ install:
 script:
         - ./configure
         - travis_wait 60 make -j 2
-        - travis_wait 60 make -j 2 check-devel
+        - travis_wait 60 make -j 2 check
