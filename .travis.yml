@@ -1,5 +1,11 @@
 language: cpp
 compiler: clang
 before_install: sudo apt-get update -qq
-install: sudo apt-get install -y llvm-3.4-dev libboost-all-dev
-script: ./configure && make && make test
+install:
+        - sudo apt-get install -y
+          libboost1.48-all-dev
+          gfortran
+script:
+        - ./configure
+        - travis_wait 60 make -j 2
+        - make -j 2 check
