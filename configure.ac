@@ -348,7 +348,7 @@ AM_CONDITIONAL(BUILD_LTO, [test "x${want_lto}" != xno])
 ### CXXR Requires Boost of at least a given version,
 ### including the boost::regex and boost::serialization libraries
 
-AX_BOOST_BASE([1.53.0],
+AX_BOOST_BASE([1.48.0],
 	      [],
               [AC_MSG_ERROR([CXXR requires boost, which was not found.])]
              )
