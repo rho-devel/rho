@@ -451,7 +451,7 @@ Vout* CXXR::VectorOps::UnaryFunction<Functor,
     GCStackRoot<Vout> ans(CXXR_NEW(Vout(v->size())));
     FunctorWrapper<Inelt, Outelt, Functor> fwrapper(m_f);
     std::transform(v->begin(), v->end(), ans->begin(),
-    		   bind<Outelt>(var(fwrapper), _1));
+		   [&](Inelt in) { return fwrapper(in); });
     fwrapper.warnings();
     AttributeCopier::copyAttributes(ans, v);
     return ans;

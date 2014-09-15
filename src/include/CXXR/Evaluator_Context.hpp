@@ -104,7 +104,6 @@ namespace CXXR {
 
 	~Context()
 	{
-	    Evaluator::setDepth(m_eval_depth);
 	    Evaluator::current()->m_innermost_context = m_next_out;
 	}
 
@@ -139,7 +138,7 @@ namespace CXXR {
 	}
     protected:
 	Context()
-	    : m_next_out(innermost()), m_eval_depth(Evaluator::depth())
+	    : m_next_out(innermost())
 	{
 	    Evaluator::current()->m_innermost_context = this;
 	}
@@ -154,8 +153,10 @@ namespace CXXR {
 	}
     private:
 	Context *m_next_out;
-	unsigned int m_eval_depth;
 	Type m_type;
+
+	Context(Context&) = delete;
+	Context& operator=(const Context&) = delete;
     };
 }  // namespace CXXR
 

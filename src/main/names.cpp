@@ -945,8 +945,8 @@ void BuiltInFunction::initialize()
 {"La_rs_cmplx",do_lapack,     	2,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"La_rg",	do_lapack,     	3,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"La_rg_cmplx",do_lapack,     	41,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_rs",	do_lapack,     	5,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_rs_cmplx",	do_lapack,     	51,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+// {"La_rs",	do_lapack,     	5,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+// {"La_rs_cmplx",	do_lapack,     	51,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"La_dlange",	do_lapack,     	6,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"La_dgecon",	do_lapack,     	7,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"La_dtrcon",	do_lapack,     	8,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
@@ -976,7 +976,8 @@ void BuiltInFunction::initialize()
     for (int i = 0; s_function_table[i].name; ++i) {
 	const char* symname = s_function_table[i].name;
 	Symbol* sym = Symbol::obtain(symname);
-	BuiltInFunction* bif = expose(new BuiltInFunction(i));
+	GCStackRoot<BuiltInFunction> bif(CXXR_NEW(BuiltInFunction(i)));
+	(*s_cache)[symname] = bif;
 	if ((s_function_table[i].flags%100)/10)
 	    DotInternalTable::set(sym, bif);
 	else

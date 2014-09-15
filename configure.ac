@@ -873,7 +873,7 @@ AC_CHECK_TYPES([intptr_t, uintptr_t], , , [#ifdef HAVE_INTTYPES_H
 ### *** C compiler.
 
 CFLAGS="${CFLAGS} -fexceptions" # TODO(kmillar): not the right way to do this.
-CXXFLAGS="${CXXFLAGS} -std=c++98 -Wno-attributes"
+CXXFLAGS="${CXXFLAGS} -Wno-attributes"
 
 R_BIGENDIAN
 AC_C_CONST
@@ -938,6 +938,9 @@ R_PROG_CXX_MAKEFRAG
 AC_LANG_PUSH(C++)
 AC_OPENMP
 AC_LANG_POP(C++)
+
+# Require C++ 11
+AX_CXX_COMPILE_STDCXX_11(noext,mandatory)
 
 ### *** ObjC compiler
 
@@ -2607,6 +2610,7 @@ esac
 
 ### * Output.
 
+AS_MKDIR_P(src/extra/gtest/fused-src/gtest)
 AC_CONFIG_HEADERS([src/include/config.h])
 AC_CONFIG_FILES(
 [Makeconf
@@ -2627,6 +2631,7 @@ AC_CONFIG_FILES(
   src/extra/Makefile
   src/extra/blas/Makefile
   src/extra/bzip2/Makefile
+  src/extra/gtest/Makefile
   src/extra/intl/Makefile
   src/extra/pcre/Makefile
   src/extra/tre/Makefile

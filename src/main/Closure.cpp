@@ -103,13 +103,13 @@ void Closure::detachReferents()
 RObject* Closure::execute(Environment* env) const
 {
     RObject* ans;
+    Evaluator::maybeCheckForUserInterrupts();
     Environment::ReturnScope returnscope(env);
     Closure::DebugScope debugscope(this); 
     try {
-	{
-	    BailoutContext boctxt;
-	    ans = Evaluator::evaluate(m_body, env);
-	}
+        BailoutContext boctxt;
+        ans = Evaluator::evaluate(m_body, env);
+
 	if (ans && ans->sexptype() == BAILSXP) {
 	    ReturnBailout* rbo = dynamic_cast<ReturnBailout*>(ans);
 	    if (!rbo || rbo->environment() != env)

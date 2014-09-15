@@ -32,56 +32,21 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file LoopException.hpp
- *
- * @brief Class CXXR::LoopException.
- */
+#ifndef CXXR_TESTS_CXXR_TEST_HELPERS_HPP
+#define CXXR_TESTS_CXXR_TEST_HELPERS_HPP
 
-#ifndef LOOPEXCEPTION_HPP
-#define LOOPEXCEPTION_HPP 1
+#include "gtest/gtest.h"
+#include "CXXR/RObject.h"
+#include "Rinternals.h"
 
-#include "CXXR/Environment.h"
-#include "CXXR/GCRoot.h"
+#define EXPECT_IDENTICAL(x, y) EXPECT_PRED3(R_compute_identical, (x), (y), 0)
 
 namespace CXXR {
-    /** @brief Exception thrown by R commands 'break' and 'next'.
-     */
-    class LoopException {
-    public:
-	/** @brief Constructor
-	 *
-	 * @param env Evaluation environment in which 'break' or
-	 *          'next' occurred.
-	 *
-	 * @param next_iteration true for 'next'; false for 'break'.
-	 */
-	LoopException(Environment* env, bool next_iteration)
-	    : m_environment(env), m_next(next_iteration)
-	{}
-
-	/** @brief Evaluation environment.
-	 *
-	 * @return Pointer to the evaluation environment in which
-	 *         'break' or 'next' occurred.
-	 */
-	Environment* environment() const
-	{
-	    return m_environment;
-	}
-
-	/** @brief Continue with next iteration of the loop (if any)?
-	 *
-	 * @return true if this LoopException arose from the R 'next'
-	 * command; false if it arose from 'break'.
-	 */
-	bool next() const
-	{
-	    return m_next;
-	}
-    private:
-	GCRoot<Environment> m_environment;
-	bool m_next;
-    };
+inline std::ostream& operator<<(std::ostream& os, const RObject* object) {
+    // TODO(kmillar): output to *os instead.
+    Rf_PrintValue(const_cast<CXXR::RObject*>(object));
+    return os;
 }
+}  // namespace CXXR
 
-#endif  // LOOPEXCEPTION_HPP
+#endif  // CXXR_TESTS_CXXR_TEST_HELPERS_HPP

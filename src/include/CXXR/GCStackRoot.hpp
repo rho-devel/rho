@@ -146,22 +146,13 @@ namespace CXXR {
 	  // m_protecting && m_next implies m_next->m_protecting .
 
 	// Helper function for destructor:
-#ifdef __GNUC__
-	__attribute__((hot, fastcall))
-#endif
-        void destruct_aux();
+        void destruct_aux() HOT_FUNCTION;
 
 	// Put all GCStackRootBase objects into the protecting state:
-#ifdef __GNUC__
-	__attribute__((hot, fastcall))
-#endif
-	static void protectAll();
+	static void protectAll() HOT_FUNCTION;
 
 	// Helper function for retarget():
-#ifdef __GNUC__
-	__attribute__((hot, fastcall))
-#endif
-	    void retarget_aux(const GCNode* node);
+	void retarget_aux(const GCNode* node) HOT_FUNCTION;
 
 	// Report out-of-sequence destructor call and abort program.
 	// (We can't use an exception here because it's called from a
@@ -222,18 +213,20 @@ namespace CXXR {
 
 	/** @brief Copy constructor.
 	 *
-	 * The constructed GCStackRoot will protect the same GCNode as
-	 * source.  (There is probably no reason to use this
-	 * constructor.)
+	 * The copy constructor has been explicitly deleted to prevent stack
+	 * roots from being returned from functions.  This is required as the
+	 * compiler is allowed to extend the lifetime of the returned values
+	 * via copy elision, which in turn violates the requirement that stack
+	 * roots be destroyed in the reverse order of creation.
+	 * (There is probably no reason to use this constructor anyway.)
 	 */
-	GCStackRoot(const GCStackRoot& source) : GCStackRootBase(source) {}
+        GCStackRoot(const GCStackRoot& source) = delete;
 
 	/**
 	 * This will cause this GCStackRoot to protect the same GCNode as
-	 * is protected by source.  (There is probably no reason to
-	 * use this method.)
+	 * is protected by source.
 	 */
-	GCStackRoot& operator=(const GCStackRoot& source)
+        GCStackRoot& operator=(const GCStackRoot& source)
 	{
 	    GCStackRootBase::operator=(source);
 	    return *this;

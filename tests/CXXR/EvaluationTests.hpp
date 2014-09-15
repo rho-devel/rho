@@ -32,56 +32,42 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file LoopException.hpp
- *
- * @brief Class CXXR::LoopException.
- */
+#ifndef CXXR_TESTS_CXXR_EVALUATION_TESTS_HPP
+#define CXXR_TESTS_CXXR_EVALUATION_TESTS_HPP
 
-#ifndef LOOPEXCEPTION_HPP
-#define LOOPEXCEPTION_HPP 1
-
+#include "gtest/gtest.h"
 #include "CXXR/Environment.h"
-#include "CXXR/GCRoot.h"
+#include "CXXR/RObject.h"
+#include "TestHelpers.hpp"
 
-namespace CXXR {
-    /** @brief Exception thrown by R commands 'break' and 'next'.
-     */
-    class LoopException {
-    public:
-	/** @brief Constructor
-	 *
-	 * @param env Evaluation environment in which 'break' or
-	 *          'next' occurred.
-	 *
-	 * @param next_iteration true for 'next'; false for 'break'.
-	 */
-	LoopException(Environment* env, bool next_iteration)
-	    : m_environment(env), m_next(next_iteration)
-	{}
+#include <vector>
 
-	/** @brief Evaluation environment.
-	 *
-	 * @return Pointer to the evaluation environment in which
-	 *         'break' or 'next' occurred.
-	 */
-	Environment* environment() const
-	{
-	    return m_environment;
-	}
+struct SingleTest {
+    const char* expression;
+    const char* expected_result;
+};
 
-	/** @brief Continue with next iteration of the loop (if any)?
-	 *
-	 * @return true if this LoopException arose from the R 'next'
-	 * command; false if it arose from 'break'.
-	 */
-	bool next() const
-	{
-	    return m_next;
-	}
-    private:
-	GCRoot<Environment> m_environment;
-	bool m_next;
-    };
-}
+// TODO(kmillar): This is only capable of testing operations that don't cause
+//   errors or warnings.  The edge cases need testing too.
+class Executor {
+public:
+    virtual CXXR::RObject* parseAndEval(
+	const std::string& expression,
+	CXXR::Environment* env = newTestEnv()) = 0;
 
-#endif  // LOOPEXCEPTION_HPP
+    static CXXR::Environment* newTestEnv();
+    static CXXR::RObject* parse(std::string expression);
+    static CXXR::RObject* parseAndEvalWithInterpreter(
+	const std::string& expression,
+	CXXR::Environment* env = newTestEnv());
+};
+
+class EvaluatorTest : public ::testing::TestWithParam<Executor*> {
+public:
+    void runEvaluatorTests(const std::vector<SingleTest> &tests);
+    void runSingleTest(SingleTest test);
+};
+
+class ControlFlowTest : public EvaluatorTest { };
+
+#endif  // CXXR_TESTS_CXXR_EVALUATION_TESTS_HPP

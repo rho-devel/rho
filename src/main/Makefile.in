@@ -51,6 +51,7 @@ SOURCES_CXX = \
         RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
         RealVector.cpp Renviron.cpp ReturnBailout.cpp \
         S11nScope.cpp S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp \
+	StackChecker.cpp \
         StdFrame.cpp String.cpp StringVector.cpp Subscripting.cpp Symbol.cpp \
 	UnaryFunction.cpp \
         VectorBase.cpp \

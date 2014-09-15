@@ -155,6 +155,14 @@ namespace CXXR {
 	template <typename FwdIter>
 	FixedVector(FwdIter from, FwdIter to);
 
+	/** @brief Constructor from initializer list.
+	 *
+	 * @param An initializer list containing the values to store in the
+	 *          FixedVector.
+	 */
+	explicit FixedVector(std::initializer_list<T> items)
+	    : FixedVector(items.begin(), items.end()) { }
+
 	/** @brief Element access.
 	 *
 	 * @param index Index of required element (counting from

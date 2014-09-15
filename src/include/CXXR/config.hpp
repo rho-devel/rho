@@ -197,4 +197,14 @@
 #define UNCHECKED_SEXP_DOWNCAST
 #endif
 
+#ifdef __GNUC__
+#  ifdef __i386__
+#    define HOT_FUNCTION __attribute__((hot, fastcall))
+#  else
+#    define HOT_FUNCTION __attribute__((hot))
+#  endif
+#else
+#  define HOT_FUNCTION
+#endif
+
 #endif // CXXR_CONFIG_HPP

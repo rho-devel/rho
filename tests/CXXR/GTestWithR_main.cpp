@@ -32,56 +32,20 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file LoopException.hpp
- *
- * @brief Class CXXR::LoopException.
- */
+#include "gtest/gtest.h"
+#include "Rembedded.h"
+#include "CXXR/Evaluator.h"
 
-#ifndef LOOPEXCEPTION_HPP
-#define LOOPEXCEPTION_HPP 1
+int main(int argc, char**argv)
+{
+ ::testing::InitGoogleTest(&argc, argv);
 
-#include "CXXR/Environment.h"
-#include "CXXR/GCRoot.h"
+  const char *r_args[] = { "R", "--vanilla", "--slave" };
 
-namespace CXXR {
-    /** @brief Exception thrown by R commands 'break' and 'next'.
-     */
-    class LoopException {
-    public:
-	/** @brief Constructor
-	 *
-	 * @param env Evaluation environment in which 'break' or
-	 *          'next' occurred.
-	 *
-	 * @param next_iteration true for 'next'; false for 'break'.
-	 */
-	LoopException(Environment* env, bool next_iteration)
-	    : m_environment(env), m_next(next_iteration)
-	{}
+  // TODO(kmillar): remove the need for an evaluator here.  It breaks all
+  //  existing code that uses Rf_initEmbeddedR.
+  CXXR::Evaluator evaluator;
+  Rf_initEmbeddedR(3, const_cast<char **>(r_args));
 
-	/** @brief Evaluation environment.
-	 *
-	 * @return Pointer to the evaluation environment in which
-	 *         'break' or 'next' occurred.
-	 */
-	Environment* environment() const
-	{
-	    return m_environment;
-	}
-
-	/** @brief Continue with next iteration of the loop (if any)?
-	 *
-	 * @return true if this LoopException arose from the R 'next'
-	 * command; false if it arose from 'break'.
-	 */
-	bool next() const
-	{
-	    return m_next;
-	}
-    private:
-	GCRoot<Environment> m_environment;
-	bool m_next;
-    };
+  return RUN_ALL_TESTS();
 }
-
-#endif  // LOOPEXCEPTION_HPP
