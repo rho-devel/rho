@@ -74,6 +74,7 @@ enum FunctionId {
     DO_BREAK,
     DO_NEXT,
     COERCE_TO_TRUE_OR_FALSE,
+    SET_VISIBILITY,
     // When adding to this list, make sure to add to allFunctionIds[] in
     // Runtime.cpp.
 };
@@ -126,6 +127,8 @@ llvm::Value* emitNext(llvm::Value* environment, Compiler* compiler);
 llvm::Value* emitCoerceToTrueOrFalse(llvm::Value* value,
 				     const Expression* call,
 				     Compiler* compiler);
+
+void emitSetVisibility(llvm::Value* visible, Compiler* compiler);
 
 void emitMaybeCheckForUserInterrupt(Compiler* compiler);
 

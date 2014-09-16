@@ -68,6 +68,7 @@ public:
     llvm::Constant* emitConstantPointer(const T* value);
     llvm::Constant* emitSymbol(const Symbol* symbol);
     llvm::Constant* emitNullValue();
+    llvm::Constant* emitInvisibleNullValue();
 
     template<class T>
     llvm::Value* emitUncheckedCast(llvm::Value* value);
@@ -121,6 +122,8 @@ private:
 	llvm::Function* function);
 
     llvm::Constant* emitConstantPointer(const void* value, llvm::Type* type);
+
+    void emitSetVisibility(bool visible);
 
     void emitErrorUnless(llvm::Value* condition,
 			 const char* error_msg,

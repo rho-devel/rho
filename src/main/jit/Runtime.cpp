@@ -170,6 +170,12 @@ Value* emitCoerceToTrueOrFalse(llvm::Value* value,
     return compiler->emitCallOrInvoke(coerce, { value, callp });
 }
 
+void emitSetVisibility(llvm::Value* visible, Compiler* compiler)
+{
+    Function* setVisibility = getDeclaration(SET_VISIBILITY, compiler);
+    compiler->CreateCall(setVisibility, visible);
+}
+
 void emitMaybeCheckForUserInterrupt(Compiler* compiler)
 {
     Function* maybe_check_for_interrupt
@@ -332,13 +338,15 @@ std::string getName(FunctionId function)
 	return "cxxr_runtime_do_next";
     case COERCE_TO_TRUE_OR_FALSE:
 	return "cxxr_runtime_coerceToTrueOrFalse";
+    case SET_VISIBILITY:
+	return "cxxr_runtime_setVisibility";
     };
 }
 
 static const FunctionId allFunctionIds[]
     = { EVALUATE, LOOKUP_SYMBOL, LOOKUP_SYMBOL_IN_COMPILED_FRAME,
 	LOOKUP_FUNCTION, CALL_FUNCTION, DO_BREAK, DO_NEXT,
-	COERCE_TO_TRUE_OR_FALSE };
+	COERCE_TO_TRUE_OR_FALSE, SET_VISIBILITY };
 
 FunctionId getFunctionId(llvm::Function* function)
 {
@@ -364,6 +372,7 @@ namespace ForceCodeEmission {
     FORCE_EMISSION(cxxr_runtime_loopExceptionIsNext);
     FORCE_EMISSION(cxxr_runtime_coerceToTrueOrFalse);
     FORCE_EMISSION(cxxr_runtime_is_function);
+    FORCE_EMISSION(cxxr_runtime_setVisibility);
 }
 
 } // namespace Runtime

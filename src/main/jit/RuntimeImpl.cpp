@@ -163,6 +163,10 @@ bool cxxr_runtime_is_function(RObject* object) {
     return Rf_isFunction(object);
 }
 
+void cxxr_runtime_setVisibility(bool visible) {
+    Evaluator::enableResultPrinting(visible);
+}
+
 void cxxr_runtime_maybeCheckForUserInterrupts() {
     Evaluator::maybeCheckForUserInterrupts();
 }

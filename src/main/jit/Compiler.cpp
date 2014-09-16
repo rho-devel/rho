@@ -89,6 +89,18 @@ llvm::Constant* Compiler::emitNullValue()
     return llvm::ConstantPointerNull::get(type);
 }
 
+llvm::Constant* Compiler::emitInvisibleNullValue()
+{
+    emitSetVisibility(false);
+    llvm::PointerType* type = (llvm::PointerType*)getType<RObject*>();
+    return llvm::ConstantPointerNull::get(type);
+}
+
+void Compiler::emitSetVisibility(bool visible)
+{
+    Runtime::emitSetVisibility(getInt1(visible), this);
+}
+
 void Compiler::emitErrorUnless(Value* condition,
 			       const char* error_msg,
 			       llvm::ArrayRef<Value*> extra_args) {
@@ -147,6 +159,8 @@ llvm::Value* Compiler::emitCallOrInvoke(llvm::Function* function,
 
 Value* Compiler::emitEval(const RObject* object)
 {
+    emitSetVisibility(true);
+
     // This has a non-trivial implementation for all the objects which have
     // non-default object->evaluate() implementations.
     if (!object) {
@@ -403,8 +417,11 @@ Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
 Value* Compiler::emitInlinedParen(const Expression* expression)
 {
     // '(' has a single argument -- the expression to evaluate.
+    // As a side-effect, it also enables result printing.
     if (listLength(expression) == 2) {
-	return emitEval(CADR(const_cast<Expression*>(expression)));
+	Value* result = emitEval(CADR(const_cast<Expression*>(expression)));
+	emitSetVisibility(true);
+	return result;
     } else {
 	// This is probably a syntax error.  Let the interpreter handle it.
 	return nullptr;
@@ -471,12 +488,13 @@ Value* Compiler::emitInlinedIf(const Expression* expression)
     // Generate code to handle the 'else' case.
     BasicBlock* if_false_block;
     if (length == 3) {
-	// No 'else' branch.
-	// Drop straight to the continue block and return R_NilValue.
-	if_false_block = continue_block;
+	// No 'else' branch.  Return an invisible NULL.
+	if_false_block = createBasicBlock("if_false");
+	SetInsertPoint(if_false_block);
+	emitSetVisibility(false);
+	CreateBr(continue_block);
 	result_value->addIncoming(emitNullValue(),
-				  branch_point.getBlock());
-
+				  GetInsertBlock());
     } else {
 	// Create the else branch.
 	if_false_block = createBranch(
@@ -517,7 +535,8 @@ Value* Compiler::emitInlinedRepeat(const Expression* expression)
     createBackEdge(loop_body);
 
     SetInsertPoint(continue_block);
-    return emitNullValue(); // TODO(kmillar): make invisible.
+
+    return emitInvisibleNullValue();
 }
 
 Value* Compiler::emitInlinedWhile(const Expression* expression)
@@ -552,7 +571,7 @@ Value* Compiler::emitInlinedWhile(const Expression* expression)
     createBackEdge(loop_header);
 
     SetInsertPoint(continue_block);
-    return emitNullValue(); // TODO(kmillar): make invisible.
+    return emitInvisibleNullValue();
 }
 
 Value* Compiler::emitInlinedBreak(const Expression* expression) {
