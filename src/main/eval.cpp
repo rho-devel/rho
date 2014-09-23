@@ -1090,7 +1090,8 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
     Environment* env = SEXP_downcast<Environment*>(rho);
     Environment::LoopScope loopscope(env);
 
-    while (asLogicalNoNA(Rf_eval(CAR(args), rho), call)) {
+    GCStackRoot<> condition;
+    while (asLogicalNoNA(condition = Rf_eval(CAR(args), rho), call)) {
 	Evaluator::maybeCheckForUserInterrupts();
 	RObject* ans;
 	DO_LOOP_RDEBUG(call, op, args, rho, bgn);

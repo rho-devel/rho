@@ -356,22 +356,12 @@ Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
     if (!emit_builtin) {
 	return nullptr;
     }
+    InsertPoint incoming_block = saveIP();
 
     // TODO(kmillar): write an 'emitGuardedCode' function, and use that here.
     BasicBlock* inlined_builtin_block = createBasicBlock(builtin->name());
     BasicBlock* merge_block = createBasicBlock("continue");
     BasicBlock* fallback_block = createBasicBlock("fallback");
-
-    // Code to check if the function is the predicted one.
-    Value* likely_fn_value = m_context->getMemoryManager()
-	->getBuiltIn(builtin);
-    likely_fn_value = CreateBitCast(likely_fn_value,
-				    llvm::TypeBuilder<FunctionBase*, false>::get(getContext()));
-    Value* is_expected_builtin = CreateICmpEQ(resolved_function,
-					      likely_fn_value);
-    CreateCondBr(is_expected_builtin,
-		 inlined_builtin_block,
-		 fallback_block); // TODO(kmillar): set branch weights
 
     // Setup the merge point.
     SetInsertPoint(merge_block);
@@ -384,6 +374,10 @@ Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
     llvm::Value* inlined_builtin_value = (this->*emit_builtin)(expression);
     if (!inlined_builtin_value) {
 	// Code generation failed.
+	inlined_builtin_block->eraseFromParent();
+	merge_block->eraseFromParent();
+	fallback_block->eraseFromParent();
+	restoreIP(incoming_block);
 	return nullptr;
     }
     if (GetInsertBlock()->getTerminator() == nullptr) {
@@ -391,6 +385,18 @@ Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
 	CreateBr(merge_block);
 	result->addIncoming(inlined_builtin_value, GetInsertBlock());
     }
+
+    // Code to check if the function is the predicted one.
+    restoreIP(incoming_block);
+    Value* likely_fn_value = m_context->getMemoryManager()
+	->getBuiltIn(builtin);
+    likely_fn_value = CreateBitCast(likely_fn_value,
+				    llvm::TypeBuilder<FunctionBase*, false>::get(getContext()));
+    Value* is_expected_builtin = CreateICmpEQ(resolved_function,
+					      likely_fn_value);
+    CreateCondBr(is_expected_builtin,
+		 inlined_builtin_block,
+		 fallback_block); // TODO(kmillar): set branch weights
 
     // If the function isn't the one we expected, fall back to the interpreter.
     // TODO(kmillar): do OSR or similar on guard failure to improve fast
@@ -469,6 +475,7 @@ Value* Compiler::emitInlinedIf(const Expression* expression)
 
     // Evaluate the condition and branch.
     Value* r_condition = emitEval(CADR(const_cast<Expression*>(expression)));
+    // TODO(kmillar): r_condition needs GC protection.
     Value* boolean_condition = Runtime::emitCoerceToTrueOrFalse(
 	r_condition, expression, this);
     InsertPoint branch_point = saveIP();

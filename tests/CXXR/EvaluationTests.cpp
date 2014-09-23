@@ -36,8 +36,10 @@
 
 #include "gtest/gtest.h"
 #include "CXXR/Closure.h"
+#include "CXXR/CommandTerminated.hpp"
 #include "CXXR/Evaluator.h"
 #include "CXXR/StdFrame.hpp"
+#include "Defn.h"
 #include "Parse.h"
 
 #undef parse
@@ -51,14 +53,70 @@ void EvaluatorTest::runEvaluatorTests(const std::vector<SingleTest>& tests)
     }
 }
 
+static bool errorMatches(const std::string& expected_error,
+			 const std::string& actual_error)
+{
+    return actual_error.find(expected_error) != std::string::npos;
+}
+
+void EvaluatorTest::runErrorTest(SingleTest test)
+{
+    // This is a test that should cause a failure.
+    // Check that it does fail, and that the error message is correct.
+    ASSERT_NE(nullptr, test.expected_error_message_);
+    EXPECT_THROW(GetParam()->parseAndEval(test.expression_),
+		 CommandTerminated);
+    
+    std::string error_message = R_curErrorBuf();
+    EXPECT_PRED2(errorMatches,
+		 test.expected_error_message_, error_message);
+
+    // TODO(kmillar): verrorcall_dflt prints the warnings, so this fails.
+    // checkWarnings(test);
+}
+
+void EvaluatorTest::checkWarnings(SingleTest test)
+{
+    ASSERT_EQ(test.expected_warnings_.size(), R_CollectWarnings);
+    if (test.expected_warnings_.empty())
+    {
+	return;
+    }
+
+    const StringVector* actual_warnings
+	= SEXP_downcast<StringVector*>(R_Warnings->getAttribute(NamesSymbol));
+    for (int i = 0; i < R_CollectWarnings; ++i)
+    {
+	EXPECT_PRED2(errorMatches,
+		     test.expected_warnings_[i],
+		     (*actual_warnings)[i]->stdstring());
+    }
+}
+
+void EvaluatorTest::clearWarnings()
+{
+    R_CollectWarnings = 0;
+    R_Warnings = R_NilValue;
+}
+
 void EvaluatorTest::runSingleTest(SingleTest test)
 {
+    clearWarnings();
+
+    if (test.expected_error_message_) {
+	runErrorTest(test);
+	return;
+    }
+
     // Evaluate the expression with the configured evaluator.
-    GCStackRoot<> result(GetParam()->parseAndEval(test.expression));
+    GCStackRoot<> result(GetParam()->parseAndEval(test.expression_));
+    
     // Evaluate the expected result with the interpreter.
     GCStackRoot<> expected_result(
-	Executor::parseAndEvalWithInterpreter(test.expected_result));
+	Executor::parseAndEvalWithInterpreter(test.expected_result_));
     EXPECT_IDENTICAL(expected_result.get(), result.get());
+
+    checkWarnings(test);
 }
 
 Environment* Executor::newTestEnv()
@@ -120,6 +178,7 @@ public:
     {
 	GCStackRoot<> protect_env(env);
 	
+	// Wrap the expression in a function so it can be compiled.
 	std::string function = "function() " + expression;
 	GCStackRoot<> parsed_funtion(parse(function));
     
@@ -128,8 +187,10 @@ public:
 	GCStackRoot<Closure> closure(dynamic_cast<Closure*>(parse_eval));
 	EXPECT_TRUE(closure.get() != nullptr);
 	
+	// Compile the function.
 	closure->compile();
 
+	// And call it.
 	ArgList args(nullptr, ArgList::Status::PROMISED);
 	GCStackRoot<Expression> call(CXXR_NEW(Expression(closure)));
 	return closure->invoke(env, &args, call);

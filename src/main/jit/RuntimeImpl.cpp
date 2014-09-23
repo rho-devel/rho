@@ -156,6 +156,8 @@ extern "C++"
 Rboolean asLogicalNoNA(SEXP s, SEXP call);
 
 bool cxxr_runtime_coerceToTrueOrFalse(RObject* object, Expression* call) {
+    // TODO(kmillar): the caller should ensure the object is protected from GC instead.
+    GCStackRoot<> tmp(object);
     return asLogicalNoNA(object, call);
 }
 

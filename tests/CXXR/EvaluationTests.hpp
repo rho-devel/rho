@@ -42,13 +42,42 @@
 
 #include <vector>
 
-struct SingleTest {
-    const char* expression;
-    const char* expected_result;
+struct Error {
+    Error(const char* message)
+	: expected_error_message_(message) {}
+    const char* expected_error_message_;
 };
 
-// TODO(kmillar): This is only capable of testing operations that don't cause
-//   errors or warnings.  The edge cases need testing too.
+struct Warning {
+    Warning() {}
+    Warning(const char* expected_warning_message) {
+	expected_warning_messages_.push_back(expected_warning_message);
+    }
+    Warning(std::vector<const char*> expected_warning_messages)
+	: expected_warning_messages_(expected_warning_messages) { }
+
+    std::vector<const char*> expected_warning_messages_;
+};
+
+struct SingleTest {
+    SingleTest(const char* expression, const char* expected_result,
+	       Warning expected_warnings = Warning()) :
+	expression_(expression), expected_result_(expected_result),
+     	expected_error_message_(nullptr),
+	expected_warnings_(expected_warnings.expected_warning_messages_) { }
+	
+    SingleTest(const char* expression, Error expected_error,
+	       Warning expected_warnings = Warning()) :
+	expression_(expression), expected_result_(nullptr),
+     	expected_error_message_(expected_error.expected_error_message_),
+	expected_warnings_(expected_warnings.expected_warning_messages_) { }
+
+    const char* expression_;
+    const char* expected_result_;
+    const char* expected_error_message_;
+    std::vector<const char*> expected_warnings_;
+};
+
 class Executor {
 public:
     static Executor* InterpreterExecutor();
@@ -69,6 +98,10 @@ class EvaluatorTest : public ::testing::TestWithParam<Executor*> {
 public:
     void runEvaluatorTests(const std::vector<SingleTest> &tests);
     void runSingleTest(SingleTest test);
+private:
+    void runErrorTest(SingleTest test);
+    void clearWarnings();
+    void checkWarnings(SingleTest test);
 };
 
 #endif  // CXXR_TESTS_CXXR_EVALUATION_TESTS_HPP
