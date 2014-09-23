@@ -128,7 +128,7 @@ TEST_P(ControlFlowTest, While)
 	    { "while('foo') 1",
 		    Error("argument is not interpretable as logical") },
 
-	    { "`while`()", Error("0 arguments passed to 'while'") },
+	    { "`while`()", Error("argument is of length zero") },
 	    // As of R 3.1.1, these aren't errors.
 	    // { "`while`(TRUE)", Error("1 arguments passed to 'while'") },
 	    // { "`while`(TRUE, 1, 2)", Error("3 arguments passed to 'while'") },
