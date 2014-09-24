@@ -822,8 +822,11 @@ Rboolean asLogicalNoNA(SEXP s, SEXP call)
     Rboolean cond = CXXRCONSTRUCT(Rboolean, NA_LOGICAL);
 
     if (length(s) > 1)
+    {
+	GCStackRoot<> gc_protect(s);
 	Rf_warningcall(call,
 		    _("the condition has length > 1 and only the first element will be used"));
+    }
     if (length(s) > 0) {
 	/* inline common cases for efficiency */
 	switch(TYPEOF(s)) {
@@ -1090,8 +1093,7 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
     Environment* env = SEXP_downcast<Environment*>(rho);
     Environment::LoopScope loopscope(env);
 
-    GCStackRoot<> condition;
-    while (asLogicalNoNA(condition = Rf_eval(CAR(args), rho), call)) {
+    while (asLogicalNoNA(Rf_eval(CAR(args), rho), call)) {
 	Evaluator::maybeCheckForUserInterrupts();
 	RObject* ans;
 	DO_LOOP_RDEBUG(call, op, args, rho, bgn);
