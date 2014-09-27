@@ -161,6 +161,23 @@ Value* Compiler::emitEval(const RObject* object)
 {
     emitSetVisibility(true);
 
+    Value* result = emitEvalInternal(object);
+
+    if (GetInsertBlock()->getTerminator()) {
+	// Any subsequent code is dead.  Create a dummy basic block for it.
+	SetInsertPoint(createBasicBlock("dead_code"));
+
+	if (dynamic_cast<llvm::TerminatorInst*>(result)) {
+	    // There is no current value either.  Use undef as a placeholder.
+	    return llvm::UndefValue::get(getType<RObject*>());
+	}
+    }
+
+    return result;
+}
+
+Value* Compiler::emitEvalInternal(const RObject* object)
+{
     // This has a non-trivial implementation for all the objects which have
     // non-default object->evaluate() implementations.
     if (!object) {
@@ -168,9 +185,8 @@ Value* Compiler::emitEval(const RObject* object)
     }
 
     switch (object->sexptype()) {
-    case SYMSXP: {
+    case SYMSXP:
 	return emitSymbolEval(SEXP_downcast<const Symbol*>(object));
-    }
     case LANGSXP:
 	return emitExpressionEval(SEXP_downcast<const Expression*>(object));
     case DOTSXP:
@@ -179,7 +195,7 @@ Value* Compiler::emitEval(const RObject* object)
     {
 	// Ignore the bytecode and compile the corresponding source.
 	const ByteCode* bytecode = SEXP_downcast<const ByteCode*>(object);
-	return emitEval(bytecode->source_expression());
+	return emitEvalInternal(bytecode->source_expression());
     }
     case PROMSXP:
 	assert(0 && "Unexpected eval of a promise in JIT compilation.");
@@ -284,10 +300,9 @@ BasicBlock* Compiler::createBranch(const char* name,
     SetInsertPoint(block);
 
     Value* result = emitEval(expression);
-    if (GetInsertBlock()->getTerminator() == nullptr) {
-	CreateBr(merge_point->getParent());
-	merge_point->addIncoming(result, GetInsertBlock());
-    }
+    CreateBr(merge_point->getParent());
+    merge_point->addIncoming(result, GetInsertBlock());
+
     return block;
 }
 

@@ -56,12 +56,8 @@ class Compiler : public llvm::IRBuilder<> {
 public:
     explicit Compiler(CompilerContext* context);
 
-    // Code generation functions.
-    // These generate optimized code.
+    // Code generation.
     llvm::Value* emitEval(const RObject* object);
-    llvm::Value* emitSymbolEval(const Symbol* symbol);
-    llvm::Value* emitExpressionEval(const Expression* object);
-    llvm::Value* emitDotsEval(const DottedArgs* object);
 
     // Utility functions.
     template <class T>
@@ -84,6 +80,13 @@ private:
     llvm::Value* emitFunctionLookup(const Symbol* symbol,
 				    FunctionBase** likely_function);
     
+    // Code generation functions.
+    // These generate optimized code.
+    llvm::Value* emitEvalInternal(const RObject* object);
+    llvm::Value* emitSymbolEval(const Symbol* symbol);
+    llvm::Value* emitExpressionEval(const Expression* object);
+    llvm::Value* emitDotsEval(const DottedArgs* object);
+
     // Code to generate inlined functions.
     llvm::Value* emitInlineableBuiltinCall(const Expression* expression,
 					   llvm::Value* resolved_function,

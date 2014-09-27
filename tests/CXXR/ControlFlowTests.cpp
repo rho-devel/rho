@@ -43,6 +43,10 @@ TEST_P(ControlFlowTest, Braces)
 	{ "{ 1 }", "1" },
 	{ "{ 1; 2 }", "2" },
 	{ "{ cos(0) }", "1" },
+
+	// Dealing with instructions that terminate basic blocks.
+	{ "while (TRUE) { break; 1 }", "NULL" },
+	{ "while (TRUE) { 1; break }", "NULL" },
 	});
 }
 
@@ -55,6 +59,8 @@ TEST_P(ControlFlowTest, Parens)
 
 	{ "`(`()", Error("0 arguments passed to '(' which requires 1") },
 	{ "`(`(1, 2)", Error("2 arguments passed to '(' which requires 1") },
+
+	{ "while(TRUE) (break)", "NULL" },
      });
 }
 
@@ -109,6 +115,11 @@ TEST_P(ControlFlowTest, If)
 	{ "if (c(NA, TRUE)) 1 else 2",
 		Error("missing value where TRUE/FALSE needed"),
 		Warning("only the first element will be used") },
+	// Dealing with instructions that terminate basic blocks.
+	{ "while (TRUE) if(break) 1", "NULL" },
+	{ "while (TRUE) if(TRUE) break", "NULL" },
+	{ "while (TRUE) if(FALSE) 1 else break", "NULL" },
+	{ "while (TRUE) if(TRUE) break else break", "NULL" },
 	});
 }
 
