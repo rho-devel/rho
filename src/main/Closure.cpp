@@ -122,9 +122,10 @@ RObject* Closure::execute(Environment* env) const
 	    PlainContext boctxt;
 	    ans = m_compiled_body->evalInEnvironment(env);
 	} else {
-	    if (!m_compiled_body && m_num_invokes >= 100) {
+	    if (!m_compiled_body && m_num_invokes == 100) {
 		// Compile the body, but stay in the interpreter because the
 		// frame hasn't been setup for a compiled function.
+		// TODO(kmillar): recompile functions as needed.
 		compile();
 	    }
 	    BailoutContext boctxt;
@@ -198,7 +199,11 @@ RObject* Closure::invoke(Environment* env, const ArgList* arglist,
 }
 
 void Closure::compile() const {
-    m_compiled_body = JIT::CompiledExpression::compileFunctionBody(this);
+    try {
+	m_compiled_body = JIT::CompiledExpression::compileFunctionBody(this);
+    } catch (...) {
+	// Compilation failed.  Continue on with the interpreter.
+    }
 }
 
 const char* Closure::typeName() const
