@@ -40,6 +40,10 @@
 
 #include "CXXR/jit/Compiler.hpp"
 #include "CXXR/jit/FrameDescriptor.hpp"
+#include "CXXR/jit/OptimizationOptions.hpp"
+#include "CXXR/BuiltInFunction.h"
+#include "CXXR/Closure.h"
+#include "CXXR/Frame.hpp"
 #include "CXXR/LoopException.hpp"
 
 using llvm::BasicBlock;
@@ -76,6 +80,73 @@ Module* CompilerContext::getModule()
 LLVMContext& CompilerContext::getLLVMContext()
 {
     return getFunction()->getContext();
+}
+
+const Environment* CompilerContext::getEnclosingEnvironment()
+{
+    return getClosure()->environment();
+}
+
+FunctionBase* CompilerContext::staticallyResolveFunction(const Symbol* symbol)
+{
+    // A symbol can be statically resolved if:
+    // - it is a control flow operator and AssumeSaneControlFlowOperators is set.
+    // - OR it is an assignment and AssumeSaneAssignementOperators is set.
+    // In both cases we still need to check for shadowing.
+    bool isSaneControlFlowOp
+	= (getOptimizationOptions().AssumeSaneControlFlowOperators
+	   && controlFlowOperatorNames().count(symbol));
+    bool isSaneAssignmentOp
+	= (getOptimizationOptions().AssumeSaneAssignmentOperators
+	   && assignmentOperatorNames().count(symbol));
+
+    if (!isSaneControlFlowOp && !isSaneAssignmentOp) {
+	return nullptr;
+    }
+
+    if (m_frame_descriptor->getLocation(symbol) != -1) {
+	// The symbol is shadowed in the local frame.
+	return nullptr;
+    }
+
+    const Frame::Binding* binding
+	= getEnclosingEnvironment()->findBinding(symbol);
+    if (binding->frame() != Environment::base()->frame()
+	&& binding->frame() != Environment::baseNamespace()->frame()) {
+	// Lookup returned a binding that isn't in base, so the symbol is
+	// shadowed somewhere else.
+	return nullptr;
+    }
+
+    FunctionBase* builtin_definition = BuiltInFunction::obtain(
+	symbol->name()->stdstring());
+    if (binding->rawValue() != builtin_definition) {
+	// The value in base has been changed.
+	return nullptr;
+    }
+
+    return builtin_definition;
+}
+
+const OptimizationOptions& CompilerContext::getOptimizationOptions()
+{
+    // TODO(kmillar): make this settable.
+    static OptimizationOptions options;
+    return options;
+}
+
+bool CompilerContext::canInlineControlFlow()
+{
+    // Control flow can be inlined if all the control flow operators can be
+    // statically resolved.
+    for (const Symbol* symbol : controlFlowOperatorNames())
+    {
+	if (!staticallyResolveFunction(symbol))
+	{
+	    return false;
+	}
+    }
+    return true;
 }
 
 template<class T>
@@ -143,6 +214,32 @@ void CompilerContext::popExceptionHandlerContext() {
     assert(!m_exception_landing_pads.empty());
     m_exception_handlers.pop();
     m_exception_landing_pads.pop();
+}
+
+// Helper function for the two functions below.
+static std::set<const Symbol*> obtain_symbols(
+    std::initializer_list<const char*> names)
+{
+    std::set<const Symbol*> result;
+    for (const char* name : names) {
+	result.insert(Symbol::obtain(name));
+    }
+    return result;
+}
+
+const std::set<const Symbol*>& CompilerContext::controlFlowOperatorNames()
+{
+    static std::set<const Symbol*> symbols = 
+	obtain_symbols({ "{", "(", "if",
+		    "for", "while", "repeat", "next", "break", "return",
+		    "||", "&&" });
+    return symbols;
+}
+
+const std::set<const Symbol*>& CompilerContext::assignmentOperatorNames()
+{
+    static std::set<const Symbol*> symbols = obtain_symbols({ "<-", "=" });
+    return symbols;
 }
 
 } // namespace JIT

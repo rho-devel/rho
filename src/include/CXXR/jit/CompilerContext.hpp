@@ -37,6 +37,7 @@
 #include <stack>
 #include <typeinfo>
 
+#include "CXXR/Frame.hpp"
 #include "CXXR/GCRoot.h"
 
 namespace llvm {
@@ -59,6 +60,7 @@ namespace JIT {
 class Compiler;
 class FrameDescriptor;
 class MCJITMemoryManager;
+struct OptimizationOptions;
 
 class CompilerContext {
 public:
@@ -94,6 +96,18 @@ public:
     // The environment that encloses the closure's local environment.
     const Environment* getEnclosingEnvironment();
 
+    // If the symbol's definition can be determined with certainty (under
+    // the current optimization options), returns the function definition.
+    // Otherwise returns nullptr.
+    FunctionBase* staticallyResolveFunction(const Symbol* symbol);
+
+    // Optimization options.
+    const OptimizationOptions& getOptimizationOptions();
+
+    // Returns true if all control flow operations can be statically resolved,
+    // so that they can be inlined without requiring guards.
+    bool canInlineControlFlow();
+
     // Flow-control related functions.
     llvm::BasicBlock* getBreakDestination();
     llvm::BasicBlock* getNextDestination();
@@ -124,6 +138,9 @@ private:
 
     std::stack<llvm::PHINode*> m_exception_handlers;
     std::stack<llvm::BasicBlock*> m_exception_landing_pads;
+
+    static const std::set<const Symbol*>& controlFlowOperatorNames();
+    static const std::set<const Symbol*>& assignmentOperatorNames();
 
     CompilerContext(const CompilerContext&) = delete;
     CompilerContext& operator=(const CompilerContext&) = delete;

@@ -38,6 +38,7 @@
 #define R_NO_REMAP
 #include "CXXR/jit/Compiler.hpp"
 
+#include "CXXR/jit/CompilationException.hpp"
 #include "CXXR/jit/FrameDescriptor.hpp"
 #include "CXXR/jit/MCJITMemoryManager.hpp"
 #include "CXXR/jit/Runtime.hpp"
@@ -64,6 +65,11 @@ namespace JIT {
 Compiler::Compiler(CompilerContext* context)
     : IRBuilder<>(context->getLLVMContext()), m_context(context)
 {
+    // Check that the minimum requirements for compilation are satisfied.
+    if (!context->canInlineControlFlow()) {
+	throw CompilationException();
+    }
+
     // Setup the entry block.
     BasicBlock* entry_block = createBasicBlock("EntryBlock");
     SetInsertPoint(entry_block);
@@ -235,14 +241,17 @@ Value* Compiler::emitExpressionEval(const Expression* expression)
     FunctionBase* likely_function = dynamic_cast<FunctionBase*>(function);
     if (likely_function) {
 	// The first element of the expression is a literal function.
-        // TODO(kmillar): no need for a guard in the emitted code in this case.
 	resolved_function = emitConstantPointer(likely_function);
     } else if (Symbol* symbol = dynamic_cast<Symbol*>(function)) {
 	// The first element is a symbol.  Look it up.
 	resolved_function = emitFunctionLookup(symbol, &likely_function);
-	emitErrorUnless(resolved_function,
-			_("could not find function \"%s\""),
-			emitConstantPointer(symbol->name()->c_str()));
+	// Check that the lookup succeeded, unless the function was resolved
+	// at compile time.
+	if (!dynamic_cast<llvm::Constant*>(resolved_function)) {
+	    emitErrorUnless(resolved_function,
+			    _("could not find function \"%s\""),
+			    emitConstantPointer(symbol->name()->c_str()));
+	}
     } else {
 	// The first element is a (function-valued) expression.  Fallback
 	// to the interpreter for now.
@@ -273,6 +282,13 @@ Value* Compiler::emitDotsEval(const DottedArgs* expression)
 
 Value* Compiler::emitFunctionLookup(const Symbol* symbol,
 				    FunctionBase** expected_result) {
+    // Resolve the function statically if possible.
+    *expected_result = m_context->staticallyResolveFunction(symbol);
+    if (*expected_result) {
+	return emitConstantPointer(*expected_result);
+    }
+
+    // Otherwise do a dynamic function lookup.
     *expected_result = findFunction(symbol,
 				    m_context->getClosure()->environment());
     llvm::Value* fn = emitSymbol(symbol);
@@ -371,6 +387,13 @@ Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
     if (!emit_builtin) {
 	return nullptr;
     }
+
+    if (dynamic_cast<llvm::Constant*>(resolved_function)) {
+	// When the resolved function is a compile-time constant, everything is
+	// simple.
+	return (this->*emit_builtin)(expression);
+    }
+
     InsertPoint incoming_block = saveIP();
 
     // TODO(kmillar): write an 'emitGuardedCode' function, and use that here.
