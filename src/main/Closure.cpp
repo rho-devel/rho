@@ -81,9 +81,11 @@ Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
 }
 
 Closure::~Closure() {
+#ifdef ENABLE_LLVM_JIT
     if (m_compiled_body) {
 	delete m_compiled_body;
     }
+#endif
 }
 
 RObject* Closure::apply(ArgList* arglist, Environment* env,
@@ -117,6 +119,7 @@ RObject* Closure::execute(Environment* env) const
     Closure::DebugScope debugscope(this);
     try {
 	++m_num_invokes;
+#ifdef ENABLE_LLVM_JIT
 	if (m_compiled_body
 	    && m_compiled_body->hasMatchingFrameLayout(env)) {
 	    PlainContext boctxt;
@@ -128,9 +131,12 @@ RObject* Closure::execute(Environment* env) const
 		// TODO(kmillar): recompile functions as needed.
 		compile();
 	    }
+#endif
 	    BailoutContext boctxt;
 	    ans = Evaluator::evaluate(m_body, env);
+#ifdef ENABLE_LLVM_JIT
 	}
+#endif
 	if (ans && ans->sexptype() == BAILSXP) {
 	    ReturnBailout* rbo = dynamic_cast<ReturnBailout*>(ans);
 	    if (!rbo || rbo->environment() != env)
@@ -158,7 +164,10 @@ RObject* Closure::invoke(Environment* env, const ArgList* arglist,
 	Rf_error("Internal error: unwrapped arguments to Closure::invoke");
 #endif
     GCStackRoot<Frame> newframe(
-	m_compiled_body ? m_compiled_body->createFrame() : CXXR_NEW(ListFrame));
+#ifdef ENABLE_LLVM_JIT
+	m_compiled_body ? m_compiled_body->createFrame() :
+#endif
+	CXXR_NEW(ListFrame));
     GCStackRoot<Environment>
 	newenv(CXXR_NEW(Environment(environment(), newframe)));
     // Perform argument matching:
@@ -199,11 +208,13 @@ RObject* Closure::invoke(Environment* env, const ArgList* arglist,
 }
 
 void Closure::compile() const {
+#ifdef ENABLE_LLVM_JIT
     try {
 	m_compiled_body = JIT::CompiledExpression::compileFunctionBody(this);
     } catch (...) {
 	// Compilation failed.  Continue on with the interpreter.
     }
+#endif
 }
 
 const char* Closure::typeName() const

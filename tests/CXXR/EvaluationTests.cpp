@@ -171,6 +171,7 @@ Executor* Executor::InterpreterExecutor() {
     return new class InterpreterExecutor();
 }
 
+#ifdef ENABLE_LLVM_JIT
 class JITExecutor : public Executor {
 public:
     virtual RObject* parseAndEval(
@@ -200,3 +201,11 @@ public:
 Executor* Executor::JITExecutor() {
     return new class JITExecutor();
 }
+#else
+
+// The JIT is disabled.  Use the interpreter instead.
+Executor* Executor::JITExecutor() {
+    return Executor::InterpreterExecutor();
+}
+
+#endif  // ENABLE_LLVM_JIT

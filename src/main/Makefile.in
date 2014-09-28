@@ -80,7 +80,7 @@ SOURCES_CXX = \
         subscript.cpp subset.cpp summary.cpp sysutils.cpp \
 	unique.cpp util.cpp \
 	version.cpp vfonts.cpp \
-	jit/CompiledExpression.cpp jit/CompiledFrame.cpp \
+	@BUILD_LLVM_JIT_TRUE@ jit/CompiledExpression.cpp jit/CompiledFrame.cpp \
 	jit/Compiler.cpp jit/CompilerContext.cpp \
 	jit/FrameDescriptor.cpp \
 	jit/Globals.cpp jit/MCJITMemoryManager.cpp jit/Runtime.cpp \
@@ -92,7 +92,7 @@ SOURCES_F =  xxxpr.f
 ## configure in @LIBOBJS@ @ALLOCA@
 EXTRA_SOURCES_CXX = \
 	Rmain.cpp alloca.cpp mkdtemp.cpp strdup.cpp strncasecmp.cpp \
-	jit/RuntimeImpl.cpp
+	@BUILD_LLVM_JIT_TRUE@ jit/RuntimeImpl.cpp
 
 DEPENDS = $(SOURCES_C:.c=.d) $(SOURCES_CXX:.cpp=.d) \
           $(EXTRA_SOURCES_CXX:.cpp=.d)

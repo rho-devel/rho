@@ -1,14 +1,17 @@
 #include "gtest/gtest.h"
-#include "CXXR/jit/CompiledFrame.hpp"
-#include "CXXR/jit/FrameDescriptor.hpp"
 #include "CXXR/Frame.hpp"
 #include "CXXR/ListFrame.hpp"
 #include "CXXR/RealVector.h"
 #include "CXXR/StdFrame.hpp"
 
-using namespace CXXR;
+#ifdef ENABLE_LLVM_JIT
+#include "CXXR/jit/CompiledFrame.hpp"
+#include "CXXR/jit/FrameDescriptor.hpp"
 using CXXR::JIT::CompiledFrame;
 using CXXR::JIT::FrameDescriptor;
+#endif
+
+using namespace CXXR;
 
 typedef Frame* (*FrameConstructor)();
 
@@ -122,6 +125,7 @@ INSTANTIATE_TEST_CASE_P(ListFrameTest,
 			FrameTest,
 			::testing::Values(MakeListFrame));
 
+#ifdef ENABLE_LLVM_JIT
 static Frame* MakeEmptyCompiledFrame() {
   GCStackRoot<FrameDescriptor> descriptor(
       CXXR_NEW(FrameDescriptor(std::initializer_list<const Symbol*>{},
@@ -170,3 +174,4 @@ INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest3,
 			FrameTest,
 			::testing::Values(
 			    MakeOneItemCompiledFrame3));
+#endif

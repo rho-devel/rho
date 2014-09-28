@@ -8,6 +8,7 @@ install:
           gfortran
 script:
         - ./configure
+          --with-llvm-jit=yes
           --with-llvm=/usr/bin/llvm-config-3.4
         - travis_wait 60 make -j 2
         - make -j 2 check

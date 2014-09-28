@@ -206,6 +206,11 @@ else
 fi],
 [want_provenance_tracking=no])
 
+## Enable the LLVM jit.
+AC_ARG_ENABLE([llvm-jit],
+[AS_HELP_STRING([--enable-llvm-jit],
+        [enable JIT compilation of R code with LLVM @<:@no@:>@])])
+
 ### ** Optional features.
 
 ## Allow the user to specify support for R profiling.
@@ -2266,7 +2271,12 @@ R_SYS_POSIX_LEAPSECONDS
 gl_STAT_TIME
 
 ## LLVM
-AX_LLVM(core mcjit native linker instrumentation ipo vectorize irreader)
+if test "${enable_llvm_jit}" = yes; then
+   AX_LLVM(core mcjit native linker instrumentation ipo vectorize irreader)
+   AC_DEFINE(ENABLE_LLVM_JIT, 1, [Define this to enable the LLVM JIT compiler])
+fi
+AC_SUBST(ENABLE_LLVM_JIT)
+AM_CONDITIONAL(BUILD_LLVM_JIT, [test "${enable_llvm_jit}" = yes])
 
 ## CXXR provenance tracking.
 if test "${want_provenance_tracking}" = yes; then
