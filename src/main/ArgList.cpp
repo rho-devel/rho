@@ -166,7 +166,7 @@ pair<bool, RObject*> ArgList::firstArg(Environment* env)
 		    Rf_error(_("value in '...' is not a promise"));
 		m_first_arg = Evaluator::evaluate(dots1, env);
 		m_first_arg_env = env;
-		return make_pair(true, m_first_arg);
+		return make_pair(true, m_first_arg.get());
 	    }
 	}
 	elt = elt->tail();  // elt was unbound or missing DotsSymbol
