@@ -488,9 +488,9 @@ AC_ARG_WITH([ICU],
 ## Byte-compilation of packages.
 AC_ARG_ENABLE([byte-compiled-packages],
 [AS_HELP_STRING([--enable-byte-compiled-packages],
-                [byte-compile base and recommended packages @<:@no@:>@])],
+                [byte-compile base and recommended packages @<:@yes@:>@])],
 [want_byte_compiled_packages="${enableval}"],
-[want_byte_compiled_packages=no])
+[want_byte_compiled_packages=yes])
 AM_CONDITIONAL(BYTE_COMPILE_PACKAGES,
                [test "x${want_byte_compiled_packages}" = xyes])
 
@@ -2701,7 +2701,6 @@ AC_CONFIG_FILES(
   src/library/utils/Makefile
   src/library/utils/src/Makefile
   src/main/Makefile
-  src/main/jit/Makefile
   src/modules/Makefile
   src/modules/X11/Makefile
   src/modules/internet/Makefile
