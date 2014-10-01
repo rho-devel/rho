@@ -44,9 +44,6 @@ UNIT_TEST_OBJECTS = $(unit_test_sources:.cpp=.o)
 
 depends = $(sources_cxx:.cpp=.d) $(unit_test_sources:.cpp=.d)
 
-# CellHeaptest omitted: CellHeap is no longer used, and it needs
-# fixing on 64-bit Linux (reported by Sam Nicholls 2010-03-18).
-
 tests = CellPooltest MemoryBanktest Allocatortest \
         HeterogeneousListtest splice_test SETLENGTHtest ArgMatchertest0 \
         ArgMatchertest1 ArgMatchertest2 ArgMatchertest3 ArgMatchertest4 \
@@ -168,23 +165,6 @@ Allocatortest.ts : Allocatortest Allocatortest.save
 	$(valgrind) ./$< 10 12 > Allocatortest.out
 	diff $(srcdir)/Allocatortest.save Allocatortest.out
 	rm Allocatortest.out
-	touch $@
-
-CellHeap.o : $(maindir)/CellHeap.cpp
-	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -c -o $@ $<
-
-CellHeaptest.o : CellHeaptest.cpp
-	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -c -o $@ $<
-
-CellHeaptest_objs = CellHeaptest.o CellHeap.o
-
-CellHeaptest : $(CellHeaptest_objs)
-	$(LINK.cc) -o $@ $(CellHeaptest_objs)
-
-CellHeaptest.ts : CellHeaptest CellHeaptest.save
-	$(valgrind) ./$< > CellHeaptest.out
-	diff $(srcdir)/CellHeaptest.save CellHeaptest.out
-	rm CellHeaptest.out
 	touch $@
 
 CellPool.o : $(maindir)/CellPool.cpp
