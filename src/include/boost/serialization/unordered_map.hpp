@@ -17,7 +17,7 @@
 
 //  See http://www.boost.org for updates, documentation, and revision history.
 
-#include <tr1/unordered_map>
+#include <unordered_map>
 
 #include <boost/config.hpp>
 
@@ -94,14 +94,14 @@ template<
 >
 inline void save(
     Archive & ar,
-    const std::tr1::unordered_map<
+    const std::unordered_map<
         Key, HashFcn, EqualKey, Allocator
     > &t,
     const unsigned int /*file_version*/
 ){
     boost::serialization::stl::save_unordered_collection<
         Archive, 
-        std::tr1::unordered_map<
+        std::unordered_map<
             Key, HashFcn, EqualKey, Allocator
         >
     >(ar, t);
@@ -116,19 +116,19 @@ template<
 >
 inline void load(
     Archive & ar,
-    std::tr1::unordered_map<
+    std::unordered_map<
         Key, HashFcn, EqualKey, Allocator
     > &t,
     const unsigned int /*file_version*/
 ){
     boost::serialization::stl::load_unordered_collection<
         Archive,
-        std::tr1::unordered_map<
+        std::unordered_map<
             Key, HashFcn, EqualKey, Allocator
         >,
         boost::serialization::stl::archive_input_unordered_map<
             Archive, 
-            std::tr1::unordered_map<
+            std::unordered_map<
                 Key, HashFcn, EqualKey, Allocator
             >
         >
@@ -146,7 +146,7 @@ template<
 >
 inline void serialize(
     Archive & ar,
-    std::tr1::unordered_map<
+    std::unordered_map<
         Key, HashFcn, EqualKey, Allocator
     > &t,
     const unsigned int file_version
@@ -164,14 +164,14 @@ template<
 >
 inline void save(
     Archive & ar,
-    const std::tr1::unordered_multimap<
+    const std::unordered_multimap<
         Key, HashFcn, EqualKey, Allocator
     > &t,
     const unsigned int /*file_version*/
 ){
     boost::serialization::stl::save_unordered_collection<
         Archive, 
-        std::tr1::unordered_multimap<
+        std::unordered_multimap<
             Key, HashFcn, EqualKey, Allocator
         >
     >(ar, t);
@@ -186,19 +186,19 @@ template<
 >
 inline void load(
     Archive & ar,
-    std::tr1::unordered_multimap<
+    std::unordered_multimap<
         Key, HashFcn, EqualKey, Allocator
     > &t,
     const unsigned int /*file_version*/
 ){
     boost::serialization::stl::load_unordered_collection<
         Archive,
-        std::tr1::unordered_multimap<
+        std::unordered_multimap<
             Key, HashFcn, EqualKey, Allocator
         >,
         boost::serialization::stl::archive_input_unordered_multimap<
             Archive, 
-            std::tr1::unordered_multimap<
+            std::unordered_multimap<
                 Key, HashFcn, EqualKey, Allocator
             >
         >
@@ -216,7 +216,7 @@ template<
 >
 inline void serialize(
     Archive & ar,
-    std::tr1::unordered_multimap<
+    std::unordered_multimap<
         Key, HashFcn, EqualKey, Allocator
     > &t,
     const unsigned int file_version

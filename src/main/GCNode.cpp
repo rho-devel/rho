@@ -64,11 +64,6 @@ vector<const GCNode*>* GCNode::s_moribund;
 GCNode::List* GCNode::s_reachable;
 unsigned int GCNode::s_num_nodes = 0;
 unsigned int GCNode::s_inhibitor_count = 0;
-#ifdef GCID
-unsigned int GCNode::s_last_id = 0;
-const GCNode* GCNode::s_watch_addr = 0;
-unsigned int GCNode::s_watch_id = 0;
-#endif
 const unsigned char GCNode::s_decinc_refcount[]
 = {0,    2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x1e,
    0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x3e,
@@ -80,10 +75,7 @@ unsigned char GCNode::s_mark = 0;
 
 // Some versions of gcc (e.g. 4.2.1) give a spurious "throws different
 // exceptions" error if the attributes aren't repeated here.
-#ifdef __GNUC__
-	__attribute__((hot,fastcall))
-#endif
-void* GCNode::operator new(size_t bytes)
+void* GCNode::operator new(size_t bytes) HOT_FUNCTION
 {
 #ifndef RARE_GC
     if (
@@ -237,16 +229,7 @@ void GCNode::initialize()
     static vector<const GCNode*> moribund;
     s_moribund = &moribund;
     s_gclite_threshold = s_gclite_margin;
-#ifdef GCID
-    s_last_id = 0;
-    s_watch_addr = 0;
-    s_watch_id = 0;
-    // To monitor operations on a node with a particular id (or nodes at a
-    // particular address), put a breakpoint on the following line, and
-    // on arrival at that bp, use the debugger to set s_watch_id (or
-    // s_watch_addr) to the required value.  Also set a breakpoint as
-    // indicated within the watch() function below.
-#endif
+
     GCRootBase::initialize();  // BREAKPOINT A
     ProtectStack::initialize();
     GCManager::initialize();
@@ -254,9 +237,6 @@ void GCNode::initialize()
 
 void GCNode::makeMoribund() const
 {
-#ifdef GCID
-    watch();
-#endif
     m_rcmmu |= s_moribund_mask;
     s_moribund->push_back(this);
 }
@@ -315,16 +295,6 @@ void GCNode::sweep()
     // get rid of them.  The destructor of 'zombies' will do this
     // automatically.
 }
-
-#ifdef GCID
-void GCNode::watch() const
-{
-    if ((s_watch_id && m_id == s_watch_id)
-	|| (s_watch_addr && this == s_watch_addr))
-	// This is just somewhere to put a breakpoint:
-	m_rcmmu = m_rcmmu;  // BREAKPOINT B
-}
-#endif
 
 void GCNode::Marker::operator()(const GCNode* node)
 {

@@ -46,10 +46,9 @@ using namespace std;
 using namespace CXXR;
 
 // If NO_CELLPOOLS is defined, all memory blocks are allocated
-// directly via ::operator new.  This enables valgrind's memcheck tool
-// to do a more thorough job.  (Previously we tried instrumenting
-// class CellPool with Valgrind client requests, but the result was
-// intolerably slow running.)
+// directly via ::operator new.  Combined with address sanitizer
+// (or valgrind's memcheck tool) and AGGRESSIVE_GC, this makes
+// finding memory protection errors very simple.
 #ifdef NO_CELLPOOLS
 const size_t MemoryBank::s_new_threshold = 0;
 #else

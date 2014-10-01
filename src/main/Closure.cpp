@@ -48,9 +48,11 @@
 #include "CXXR/Expression.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ListFrame.hpp"
+#include "CXXR/PlainContext.hpp"
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
 #include "CXXR/errors.h"
+#include "CXXR/jit/CompiledExpression.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -72,9 +74,18 @@ namespace CXXR {
 
 Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
     : FunctionBase(CLOSXP), m_debug(false),
+      m_num_invokes(0), m_compiled_body(0),
       m_matcher(expose(new ArgMatcher(formal_args))),
       m_body(body), m_environment(env)
 {
+}
+
+Closure::~Closure() {
+#ifdef ENABLE_LLVM_JIT
+    if (m_compiled_body) {
+	delete m_compiled_body;
+    }
+#endif
 }
 
 RObject* Closure::apply(ArgList* arglist, Environment* env,
@@ -103,13 +114,29 @@ void Closure::detachReferents()
 RObject* Closure::execute(Environment* env) const
 {
     RObject* ans;
+    Evaluator::maybeCheckForUserInterrupts();
     Environment::ReturnScope returnscope(env);
-    Closure::DebugScope debugscope(this); 
+    Closure::DebugScope debugscope(this);
     try {
-	{
+	++m_num_invokes;
+#ifdef ENABLE_LLVM_JIT
+	if (m_compiled_body
+	    && m_compiled_body->hasMatchingFrameLayout(env)) {
+	    PlainContext boctxt;
+	    ans = m_compiled_body->evalInEnvironment(env);
+	} else {
+	    if (!m_compiled_body && m_num_invokes == 100) {
+		// Compile the body, but stay in the interpreter because the
+		// frame hasn't been setup for a compiled function.
+		// TODO(kmillar): recompile functions as needed.
+		compile();
+	    }
+#endif
 	    BailoutContext boctxt;
 	    ans = Evaluator::evaluate(m_body, env);
+#ifdef ENABLE_LLVM_JIT
 	}
+#endif
 	if (ans && ans->sexptype() == BAILSXP) {
 	    ReturnBailout* rbo = dynamic_cast<ReturnBailout*>(ans);
 	    if (!rbo || rbo->environment() != env)
@@ -136,7 +163,11 @@ RObject* Closure::invoke(Environment* env, const ArgList* arglist,
     if (arglist->status() != ArgList::PROMISED)
 	Rf_error("Internal error: unwrapped arguments to Closure::invoke");
 #endif
-    GCStackRoot<Frame> newframe(CXXR_NEW(ListFrame));
+    GCStackRoot<Frame> newframe(
+#ifdef ENABLE_LLVM_JIT
+	m_compiled_body ? m_compiled_body->createFrame() :
+#endif
+	CXXR_NEW(ListFrame));
     GCStackRoot<Environment>
 	newenv(CXXR_NEW(Environment(environment(), newframe)));
     // Perform argument matching:
@@ -174,6 +205,16 @@ RObject* Closure::invoke(Environment* env, const ArgList* arglist,
 	ans = execute(newenv);
     }
     return ans;
+}
+
+void Closure::compile() const {
+#ifdef ENABLE_LLVM_JIT
+    try {
+	m_compiled_body = JIT::CompiledExpression::compileFunctionBody(this);
+    } catch (...) {
+	// Compilation failed.  Continue on with the interpreter.
+    }
+#endif
 }
 
 const char* Closure::typeName() const

@@ -11,6 +11,9 @@
 /* Define to 1 if using `alloca.c'. */
 #undef C_ALLOCA
 
+/* Define this to enable the LLVM JIT compiler */
+#undef ENABLE_LLVM_JIT
+
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */
 #undef ENABLE_NLS
@@ -152,6 +155,9 @@
 
 /* Define to 1 if you have the `ctanh' function. */
 #undef HAVE_CTANH
+
+/* define if the compiler supports basic C++11 syntax */
+#undef HAVE_CXX11
 
 /* Define if the GNU dcgettext() function is already present or preinstalled.
    */
@@ -443,6 +449,9 @@
 
 /* Define to 1 if you have the `link' function. */
 #undef HAVE_LINK
+
+/* define if the llvm library is available */
+#undef HAVE_LLVM
 
 /* Define to 1 if you have the <locale.h> header file. */
 #undef HAVE_LOCALE_H

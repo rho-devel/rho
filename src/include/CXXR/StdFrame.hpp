@@ -42,7 +42,7 @@
 #ifndef STDFRAME_HPP
 #define STDFRAME_HPP
 
-#include <tr1/unordered_map>
+#include <unordered_map>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
@@ -57,13 +57,13 @@ namespace CXXR {
      */
     class StdFrame : public Frame {
     private:
-	typedef
-	std::tr1::unordered_map<const Symbol*, Binding,
-				std::tr1::hash<const Symbol*>,
-				std::equal_to<const Symbol*>,
-				CXXR::Allocator<std::pair<const Symbol* const,
-							  Binding> >
-	                        > map;
+        typedef 
+        std::unordered_map<const Symbol*, Binding,
+                           std::hash<const Symbol*>,
+                           std::equal_to<const Symbol*>,
+                           CXXR::Allocator<std::pair<const Symbol* const,
+                                                     Binding> >
+                           > map;
     public:
 	/**
 	 * @param initial_capacity A hint to the implementation that
@@ -84,10 +84,7 @@ namespace CXXR {
 	StdFrame(const StdFrame &source);
 	
 	// Virtual functions of Frame (qv):
-#ifdef __GNUG__
-	__attribute__((hot,fastcall))
-#endif
-	Binding* binding(const Symbol* symbol);
+	Binding* binding(const Symbol* symbol) HOT_FUNCTION;
 
 	const Binding* binding(const Symbol* symbol) const;
 	BindingRange bindingRange() const;

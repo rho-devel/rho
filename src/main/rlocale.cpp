@@ -72,6 +72,8 @@
 #include <limits.h>
 #include <R_ext/Riconv.h>
 
+#include <Defn.h>   
+
 static int wcwidthsearch(int wint, const struct interval_wcwidth *table,
 			 int max, int locale)
 {

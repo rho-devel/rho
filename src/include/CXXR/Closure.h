@@ -57,6 +57,10 @@
 namespace CXXR {
     class ClosureContext;
 
+    namespace JIT {
+        class CompiledExpression;
+    }
+
     /** @brief Class representing a functional programming closure.
      *
      * A closure associates a function definition (the body) with a
@@ -88,6 +92,7 @@ namespace CXXR {
 	 */
 	Closure(const Closure& pattern)
 	    : FunctionBase(pattern), m_debug(false),
+              m_num_invokes(0), m_compiled_body(0),
 	      m_matcher(pattern.m_matcher), m_body(pattern.m_body),
 	      m_environment(pattern.m_environment)
 	{}
@@ -232,6 +237,8 @@ namespace CXXR {
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
+
+        void compile() const;
     protected:
 	// Virtual function of GCNode:
 	void detachReferents();
@@ -282,13 +289,16 @@ namespace CXXR {
 	};
 
 	bool m_debug;
+        mutable int m_num_invokes;
+        mutable JIT::CompiledExpression* m_compiled_body;
+
 	GCEdge<const ArgMatcher> m_matcher;
 	GCEdge<> m_body;
 	GCEdge<Environment> m_environment;
 
-	// Declared private to ensure that Environment objects are
+	// Declared private to ensure that Closure objects are
 	// created only using 'new':
-	~Closure() {}
+	~Closure();
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:

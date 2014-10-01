@@ -97,12 +97,6 @@ using std::FILE;
 #include "CXXR/Symbol.h"
 #include "CXXR/WeakRef.h"
 
-typedef unsigned char Rbyte;
-
-/* type for length of (standard, not long) vectors etc */
-typedef int R_len_t;
-#define R_LEN_T_MAX INT_MAX
-
 /* both config.h and Rconfig.h set SIZEOF_SIZE_T, but Rconfig.h is
    skipped if config.h has already been included. */
 #ifndef R_CONFIG_H

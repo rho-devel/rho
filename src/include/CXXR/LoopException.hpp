@@ -40,6 +40,9 @@
 #ifndef LOOPEXCEPTION_HPP
 #define LOOPEXCEPTION_HPP 1
 
+#include "CXXR/Environment.h"
+#include "CXXR/GCRoot.h"
+
 namespace CXXR {
     /** @brief Exception thrown by R commands 'break' and 'next'.
      */

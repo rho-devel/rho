@@ -63,10 +63,7 @@ namespace CXXR {
 	ListFrame(const ListFrame &pattern);
 
 	// Virtual functions of Frame (qv):
-#ifdef __GNUG__
-	__attribute__((hot,fastcall))
-#endif
-	Binding* binding(const Symbol* symbol);
+	Binding* binding(const Symbol* symbol) HOT_FUNCTION;
 
 	const Binding* binding(const Symbol* symbol) const;
 	BindingRange bindingRange() const;

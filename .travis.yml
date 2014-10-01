@@ -3,9 +3,13 @@ compiler: clang
 before_install: sudo apt-get update -qq
 install:
         - sudo apt-get install -y
+          llvm-3.4-dev
           libboost1.48-all-dev
           gfortran
 script:
         - ./configure
+          --enable-llvm-jit=yes
+          --enable-byte-compiled-packages=no
+          --with-llvm=/usr/bin/llvm-config-3.4
         - travis_wait 60 make -j 2
-        - make -j 2 check
+        - travis_wait 60 make -j 2 check

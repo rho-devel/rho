@@ -61,6 +61,7 @@
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/CommandTerminated.hpp"
 #include "CXXR/ReturnException.hpp"
+#include "CXXR/StackChecker.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -112,51 +113,12 @@ static CXXRCONST char * R_ConciseTraceback(SEXP call, int skip);
 
 void R_CheckStack(void)
 {
-    int dummy;
-    intptr_t usage = R_CStackDir * (R_CStackStart - uintptr_t(&dummy));
-
-    /* printf("usage %ld\n", usage); */
-    if(R_CStackLimit != CXXRCONSTRUCT(uintptr_t, -1) && usage > 0.95 * R_CStackLimit) {
-	/* We do need some stack space to process error recovery,
-	   so temporarily raise the limit.
-	 */
-	uintptr_t stacklimit = R_CStackLimit;
-	R_CStackLimit += CXXRCONSTRUCT(uintptr_t, 0.05*R_CStackLimit);
-
-	try {
-	    errorcall(R_NilValue, "C stack usage is too close to the limit");
-	    /* Do not translate this, to save stack space */
-	}
-	catch (...) {
-	    R_CStackLimit = stacklimit;
-	    throw;
-	}
-    }
+    StackChecker::checkAvailableStackSpace();
 }
 
 void R_CheckStack2(size_t extra)
 {
-    int dummy;
-    intptr_t usage = R_CStackDir * (R_CStackStart - uintptr_t(&dummy));
-
-    /* do it this way, as some compilers do usage + extra 
-       in unsigned arithmetic */
-    usage += extra;
-    if(R_CStackLimit != -1 && usage > 0.95 * R_CStackLimit) {
-	/* We do need some stack space to process error recovery,
-	   so temporarily raise the limit.
-	 */
-	uintptr_t stacklimit = R_CStackLimit;
-	R_CStackLimit += 0.05*R_CStackLimit;
-	try {
-	   errorcall(R_NilValue, "C stack usage is too close to the limit");
-	   /* Do not translate this, to save stack space */
-	}
-	catch (...) {
-	    R_CStackLimit = stacklimit;
-	    throw;
-	}
-    }
+    StackChecker::checkAvailableStackSpace(extra);
 }
 
 void R_CheckUserInterrupt(void)
@@ -603,7 +565,7 @@ verrorcall_dflt(SEXP call, const char *format, va_list ap)
 	    R_Warnings = R_NilValue;
 	    REprintf(_("Lost warning messages\n"));
 	}
-	Evaluator::enableExtraDepth(false);
+	DisableStackCheckingScope scope;
 	jump_to_top_ex(FALSE, FALSE, FALSE, FALSE, FALSE);
     }
 
@@ -696,11 +658,11 @@ verrorcall_dflt(SEXP call, const char *format, va_list ap)
 	    PrintWarnings();
 	}
 
+	DisableStackCheckingScope scope;
 	jump_to_top_ex(TRUE, TRUE, TRUE, TRUE, FALSE);
     }
     catch (...) {
 	inError = oldInError;
-	Evaluator::enableExtraDepth(false);
 	throw;
     }
 
@@ -883,7 +845,6 @@ static void jump_to_top_ex(Rboolean traceback,
     }
     catch (...) {
 	inError = oldInError;
-	Evaluator::enableExtraDepth(false);
 	throw;
     }
 

@@ -1952,10 +1952,6 @@ SEXP attribute_hidden do_math4(SEXP call, SEXP op, SEXP args, SEXP env)
 
 
     switch (PRIMVAL(op)) {
-
-	/* Completely dummy for -Wall -- math4() at all! : */
-    case -99: return Math4(args, CXXRNOCAST(double (*)(double, double, double, double))NULL);
-
     case  1: return Math4_1(args, dhyper);
     case  2: return Math4_2(args, phyper);
     case  3: return Math4_2(args, qhyper);

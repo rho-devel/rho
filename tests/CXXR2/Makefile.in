@@ -22,7 +22,7 @@ tests = miscR xml_s11n @BYTE_COMPILE_PACKAGES_FALSE@ xml_s11n_2
 check : $(tests:=.ts)
 
 miscR.ts : $(REXEC) misc.R misc.save
-	$(R) < $(srcdir)/misc.R > misc.Rout 2>&1
+	$(R) < $(srcdir)/misc.R 2>&1 | tee misc.Rout
 	diff $(srcdir)/misc.save misc.Rout
 	rm misc.Rout
 	touch $@

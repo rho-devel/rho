@@ -118,22 +118,34 @@ BuiltInFunction::~BuiltInFunction()
 RObject* BuiltInFunction::apply(ArgList* arglist, Environment* env,
 				const Expression* call) const
 {
+    Evaluator::maybeCheckForUserInterrupts();
     RAllocStack::Scope ras_scope;
     ProtectStack::Scope ps_scope;
 #ifndef NDEBUG
     size_t pps_size = ProtectStack::size();
 #endif
-    Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
+
+#ifdef Win32
+    // This is an inlined version of Rwin_fpreset (src/gnuwin/extra.c)
+    // and resets the precision, rounding and exception modes of a
+    // ix86 fpu.
+    // It gets called prior to every builtin function, just in case a badly
+    // behaved DLL has changed the fpu control word.
+    __asm__ ( "fninit" );
+#endif
+
     GCStackRoot<> ans;
     if (m_transparent) {
 	PlainContext cntxt;
 	if (arglist->status() != ArgList::EVALUATED && sexptype() == BUILTINSXP)
 	    arglist->evaluate(env);
+	Evaluator::enableResultPrinting(true);
 	ans = invoke(env, arglist, call);
     } else {
 	FunctionContext cntxt(const_cast<Expression*>(call), env, this);
 	if (arglist->status() != ArgList::EVALUATED && sexptype() == BUILTINSXP)
 	    arglist->evaluate(env);
+	Evaluator::enableResultPrinting(true);
 	ans = invoke(env, arglist, call);
     }
     if (m_result_printing_mode != SOFT_ON)
@@ -182,25 +194,13 @@ int BuiltInFunction::indexInTable(const char* name)
 
 BuiltInFunction* BuiltInFunction::obtain(const std::string& name)
 {
-    int offset = indexInTable(name.c_str());
-    if (offset < 0) {
+    auto location = s_cache->find(name);
+    if (location == s_cache->end()) {
 	Rf_warning(_("%s is not the name of a built-in or special function"),
 		   name.c_str());
 	return 0;
     }
-    std::pair<map::iterator, bool> pr
-	= s_cache->insert(map::value_type(name, 0));
-    map::iterator it = pr.first;
-    if (pr.second) {
-	try {
-	    map::value_type& val = *it;
-	    val.second = CXXR_NEW(BuiltInFunction(offset));
-	} catch (...) {
-	    s_cache->erase(it);
-	    throw;
-	}
-    }
-    return (*it).second;
+    return location->second;
 }
 
 const char* BuiltInFunction::typeName() const

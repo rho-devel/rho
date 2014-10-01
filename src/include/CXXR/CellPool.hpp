@@ -55,17 +55,12 @@ namespace CXXR {
      * operator new and operator delete to enable the allocation and
      * deallocation of small objects quickly.
      *
-     * Normally class CellPool operates a last-in-first-out allocation
+     * Class CellPool operates a last-in-first-out allocation
      * policy; that is to say, if there are cells that have been
      * deallocated and not yet reallocated, the next one to be
      * reallocated will be the one that was most recently
      * deallocated.  This makes for efficient utilisation of the
-     * processor caches.  However, if the class is compiled with the
-     * preprocessor variable CELLFIFO defined, it instead operates a
-     * first-in-first-out policy.  This results in a longer turnround
-     * time in reallocating cells, which improves the lethality of the
-     * FILL55 preprocessor variable in showing up premature
-     * deallocation of cells.
+     * processor caches.
      */
     class CellPool {
     public:
@@ -76,9 +71,6 @@ namespace CXXR {
 	 */
 	CellPool()
 	    : m_free_cells(0),
-#ifdef CELLFIFO
-	      m_last_free_cell(0),
-#endif
 	      m_admin(0)
 	{}
 
@@ -105,10 +97,6 @@ namespace CXXR {
 		m_free_cells = seekMemory();
 	    Cell* c = m_free_cells;
 	    m_free_cells = c->m_next;
-#ifdef CELLFIFO
-	    if (!m_free_cells)
-		m_last_free_cell = 0;
-#endif
 	    return c;
 	}
 
@@ -155,18 +143,8 @@ namespace CXXR {
 	    checkAllocatedCell(p);
 #endif
 	    Cell* c = static_cast<Cell*>(p);
-#ifdef CELLFIFO
-	    c->m_next = 0;
-	    if (!m_free_cells)
-		m_free_cells = m_last_free_cell = c;
-	    else {
-		m_last_free_cell->m_next = c;
-		m_last_free_cell = c;
-	    }
-#else
 	    c->m_next = m_free_cells;
 	    m_free_cells = c;
-#endif
 	}
 
 	/** @brief Reorganise list of free cells within the CellPool.
@@ -234,9 +212,7 @@ namespace CXXR {
 	};
 
 	Cell* m_free_cells;
-#ifdef CELLFIFO
-	Cell* m_last_free_cell;
-#endif
+
 	Admin* m_admin;
 
 	// Number of cells on the free list:

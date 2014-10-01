@@ -80,7 +80,7 @@ Frame::Binding::forcedValue2()
 	if (prom->environment()) {
 	    GCStackRoot<Promise> promrt(prom);
 	    frame()->monitorRead(*this);
-	    val = evaluate(val, 0);
+	    val = Evaluator::evaluate(val, 0);
 	    promise_forced = true;
 	}
 	val = prom->value();

@@ -206,6 +206,11 @@ else
 fi],
 [want_provenance_tracking=no])
 
+## Enable the LLVM jit.
+AC_ARG_ENABLE([llvm-jit],
+[AS_HELP_STRING([--enable-llvm-jit],
+        [enable JIT compilation of R code with LLVM @<:@no@:>@])])
+
 ### ** Optional features.
 
 ## Allow the user to specify support for R profiling.
@@ -873,7 +878,7 @@ AC_CHECK_TYPES([intptr_t, uintptr_t], , , [#ifdef HAVE_INTTYPES_H
 ### *** C compiler.
 
 CFLAGS="${CFLAGS} -fexceptions" # TODO(kmillar): not the right way to do this.
-CXXFLAGS="${CXXFLAGS} -std=c++98 -Wno-attributes"
+CXXFLAGS="${CXXFLAGS} -Wno-attributes"
 
 R_BIGENDIAN
 AC_C_CONST
@@ -938,6 +943,9 @@ R_PROG_CXX_MAKEFRAG
 AC_LANG_PUSH(C++)
 AC_OPENMP
 AC_LANG_POP(C++)
+
+# Require C++ 11
+AX_CXX_COMPILE_STDCXX_11(noext,mandatory)
 
 ### *** ObjC compiler
 
@@ -2262,6 +2270,14 @@ R_SYS_POSIX_LEAPSECONDS
 ## stat times
 gl_STAT_TIME
 
+## LLVM
+if test "${enable_llvm_jit}" = yes; then
+   AX_LLVM(core mcjit native linker instrumentation ipo vectorize irreader)
+   AC_DEFINE(ENABLE_LLVM_JIT, 1, [Define this to enable the LLVM JIT compiler])
+fi
+AC_SUBST(ENABLE_LLVM_JIT)
+AM_CONDITIONAL(BUILD_LLVM_JIT, [test "${enable_llvm_jit}" = yes])
+
 ## CXXR provenance tracking.
 if test "${want_provenance_tracking}" = yes; then
   AC_DEFINE(PROVENANCE_TRACKING, 1, [Define this to enable CXXR provenance tracking.])
@@ -2607,6 +2623,7 @@ esac
 
 ### * Output.
 
+AS_MKDIR_P(src/extra/gtest/fused-src/gtest)
 AC_CONFIG_HEADERS([src/include/config.h])
 AC_CONFIG_FILES(
 [Makeconf
@@ -2627,6 +2644,7 @@ AC_CONFIG_FILES(
   src/extra/Makefile
   src/extra/blas/Makefile
   src/extra/bzip2/Makefile
+  src/extra/gtest/Makefile
   src/extra/intl/Makefile
   src/extra/pcre/Makefile
   src/extra/tre/Makefile

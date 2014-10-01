@@ -211,17 +211,11 @@ namespace CXXR {
 
 	GCNode()
             : HeterogeneousListBase::Link(s_live),
-#ifdef GCID
-	      m_id(++s_last_id),
-#endif
 	      m_rcmmu(s_mark | s_moribund_mask | 1)
 	{
 	    ++s_num_nodes;
 	    ++s_inhibitor_count;
 	    s_moribund->push_back(this);
-#ifdef GCID
-	    watch();
-#endif
 	}
 
 	/** @brief Allocate memory.
@@ -239,10 +233,7 @@ namespace CXXR {
 	 * object is currently under construction, or if at least one
 	 * GCInhibitor object is in existence.
 	 */
-#ifdef __GNUC__
-	__attribute__((hot,fastcall))
-#endif
-	static void* operator new(size_t bytes);
+	static void* operator new(size_t bytes) HOT_FUNCTION;
 
 	/** @brief Placement new for GCNode.
 	 */
@@ -433,9 +424,6 @@ namespace CXXR {
 	 */
 	virtual ~GCNode()
 	{
-#ifdef GCID
-	    watch();
-#endif
 	    // Is the node still under construction?
 	    if (m_rcmmu & 1)
 		destruct_aux();
@@ -498,19 +486,7 @@ namespace CXXR {
 	static unsigned int s_inhibitor_count;  // Number of GCInhibitor
 	  // objects in existence, plus the number of nodes currently
 	  // under construction (i.e. not yet exposed).
-#ifdef GCID
-	// If GCID is defined, each GCNode is given an identity
-	// number.  The numbers are not unique: they wrap around
-	// eventually.  This is the number that was most recently
-	// assigned to a node:
-	static unsigned int s_last_id;
 
-	// Using a debugger, the following can be set to non-null values
-	// to monitor operations on nodes at a particular address, or
-	// a node with a particular id:
-	static const GCNode* s_watch_addr;
-	static unsigned int s_watch_id;
-#endif
 	// Bit patterns XORd into m_rcmmu to decrement or increment the
 	// reference count.  Patterns 0, 2, 4, ... are used to
 	// decrement; 1, 3, 5, .. to increment.
@@ -519,9 +495,6 @@ namespace CXXR {
 	  // node is considered marked if its s_mark_mask bit matches the
 	  // corresponding bit of s_mark.  (Only this bit will ever be
 	  // set in s_mark.)
-#ifdef GCID
-	unsigned int m_id;
-#endif
 
 	static const unsigned char s_mark_mask = 0x80;
 	static const unsigned char s_moribund_mask = 0x40;
@@ -606,10 +579,7 @@ namespace CXXR {
 	}
 
 	// Mark this node as moribund:
-#ifdef __GNUC__
-	__attribute__((hot,fastcall))
-#endif
-	void makeMoribund() const;
+	void makeMoribund() const HOT_FUNCTION;
 
 	/** @brief Carry out the mark phase of garbage collection.
 	 */
@@ -626,11 +596,6 @@ namespace CXXR {
 	/** @brief Carry out the sweep phase of garbage collection.
 	 */
 	static void sweep();
-#ifdef GCID
-	// Used to monitor a particular node (or nodes at a particular
-	// address) using a debugger.
-	void watch() const;
-#endif
 
 	friend class GCEdgeBase;
 	friend class SchwarzCounter<GCNode>;
@@ -645,9 +610,6 @@ void CXXR::GCNode::serialize(Archive & ar, const unsigned int version) {
 	std::string addr = oss.str();
 	ar & BOOST_SERIALIZATION_NVP(addr);
 	unsigned int id = 0;
-#ifdef GCID
-	id = m_id;
-#endif
 	ar & BOOST_SERIALIZATION_NVP(id);
     }
 }

@@ -150,9 +150,9 @@ pair<bool, RObject*> ArgList::firstArg(Environment* env)
 	if (!arg1)
 	    return pair<bool, RObject*>(true, 0);
 	if (arg1 != DotsSymbol) {
-	    m_first_arg = arg1->evaluate(env);
+	    m_first_arg = Evaluator::evaluate(arg1, env);
 	    m_first_arg_env = env;
-	    return make_pair(true, m_first_arg);
+	    return make_pair(true, m_first_arg.get());
 	}
 	// If we get here it must be DotSymbol.
 	Frame::Binding* bdg = env->findBinding(DotsSymbol);
@@ -164,9 +164,9 @@ pair<bool, RObject*> ArgList::firstArg(Environment* env)
 		RObject* dots1 = static_cast<DottedArgs*>(val)->car();
 		if (dots1->sexptype() != PROMSXP)
 		    Rf_error(_("value in '...' is not a promise"));
-		m_first_arg = dots1->evaluate(env);
+		m_first_arg = Evaluator::evaluate(dots1, env);
 		m_first_arg_env = env;
-		return make_pair(true, m_first_arg);
+		return make_pair(true, m_first_arg.get());
 	    }
 	}
 	elt = elt->tail();  // elt was unbound or missing DotsSymbol

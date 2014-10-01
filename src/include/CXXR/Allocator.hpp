@@ -88,9 +88,10 @@ namespace CXXR {
 	}
 
 	// initialize elements of allocated storage p with value value
-	void construct (pointer p, const T& value) {
+        template<class... Args>
+	void construct (pointer p, Args&&... value) {
 	    // initialize memory with placement new
-	    new (p) T(value);
+	    new (p) T(value...);
 	}
 
 	// destroy elements of initialized storage p
