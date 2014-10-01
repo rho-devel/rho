@@ -140,9 +140,6 @@ void CellPool::defragment()
     {
 	Cell* next = 0;
 	vector<Cell*>::reverse_iterator rit = vf.rbegin();
-#ifdef CELLFIFO
-	m_last_free_cell = (rit == vf.rend() ? 0 : *rit);
-#endif
 	for ( ; rit != vf.rend(); ++rit) {
 	    Cell* c = *rit;
 	    c->m_next = next;
@@ -175,9 +172,6 @@ CellPool::Cell* CellPool::seekMemory() throw (std::bad_alloc)
     {
 	ptrdiff_t offset
 	    = ptrdiff_t(m_admin->m_superblocksize - m_admin->m_cellsize);
-#ifdef CELLFIFO
-	m_last_free_cell = reinterpret_cast<Cell*>(superblock + offset);
-#endif
 	Cell* next = 0;
 	while (offset >= 0) {
 	    next = new (superblock + offset) Cell(next);

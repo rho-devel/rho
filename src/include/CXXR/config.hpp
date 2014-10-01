@@ -62,35 +62,14 @@
  * after the last such collection.  However, if CXXR is compiled with
  * the preprocessor variable AGGRESSIVE_GC define, every call to
  * GCNode::operator new will initiate a reference-count-based garbage
- * collection.  When used in conjunction with FILL55, GCID and
- * (optionally) CELLFIFO, this can help to detect and diagnose gaps in
+ * collection.  When used in conjunction with NO_CELLPOOLS and address
+ * sanitizer (or valgrind), this can help to detect and diagnose gaps in
  * the protection of nodes against garbage collection.
  */
 #ifdef DOXYGEN
 #define AGGRESSIVE_GC
 #endif
 #define AGGRESSIVE_GC
-
-/** @def CELLFIFO
- *
- * @brief First-in first-out memory block allocation.
- *
- * By default, class CXXR::CellPool (which class CXXR::MemoryBank uses
- * to manage memory blocks smaller than 128 bytes) operates a
- * last-in-first-out allocation policy; that is to say, if there are
- * memory blocks that have been deallocated and not yet reallocated,
- * the next one to be reallocated will be the one that was most
- * recently deallocated. This makes for efficient utilisation of the
- * processor caches. However, if CXXR is compiled with the
- * preprocessor variable CELLFIFO defined, it instead operates a
- * first-in-first-out policy. This results in a longer turnround time
- * in reallocating cells, which improves the lethality of the FILL55
- * preprocessor variable (described below) in showing up premature
- * deallocation of cells.
- */
-#ifdef DOXYGEN
-#define CELLFIFO
-#endif
 
 /** @def CHECK_EXPOSURE
  *
@@ -108,35 +87,6 @@
 #define CHECK_EXPOSURE
 #endif
 #define CHECK_EXPOSURE
-
-/** @def FILL55
- *
- * @brief Fill deallocated memory blocks with 0x55.
- *
- * CXXR::MemoryBank::deallocate() fills the released memory with 0x55
- * bytes (though some of these may be overwritten by pointers used for
- * free list management). This can be useful in helping to manifest or
- * diagnose premature garbage collection.
- */
-#ifdef DOXYGEN
-#define FILL55
-#endif
-#define FILL55
-
-/** @def GCID
- *
- * @brief Give CXXR::GCNode objects serial numbers.
- *
- * This causes each object of a class derived from CXXR::GCNode to be
- * given a unique identification number. (Well, unique modulo the
- * wordlength!) This can be useful in debugging problems with
- * premature garbage collection: refer to the comments in GCNode.cpp
- * for hints on how to do this.
- */
-#ifdef DOXYGEN
-#define GCID
-#endif
-#define GCID
 
 /** @def NDEBUG
  *
@@ -164,18 +114,11 @@
  *
  * By default, CXXR will delete any CXXR::GCNode whose reference count
  * has fallen to zero as a preliminary to allocating memory for a new
- * CXXR::GCNode. Because the memory of CXXR::GCNode objects thus
- * deleted is likely to be reused almost immediately, it can be
- * difficult to identify bugs caused by premature garbage collection
- * (i.e. insufficient protection against garbage collection). In
- * particular, the FILL55 preprocessor variable is less effective in
- * this regard than it was before CXXR used reference counting.
+ * CXXR::GCNode.
  * Defining RARE_GC suppresses the default behaviour, and results in
  * CXXR::GCNode objects being deleted only as part of the mark-sweep
  * garbage collection process, initiated when a memory utilisation
- * threshold is exceeded. In summary, if a bug stops manifesting
- * itself when RARE_GC is defined, it is probably due to premature
- * garbage collection.
+ * threshold is exceeded.
  */
 #ifdef DOXYGEN
 #define RARE_GC

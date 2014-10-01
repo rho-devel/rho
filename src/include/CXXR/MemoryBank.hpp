@@ -50,14 +50,6 @@ namespace CXXR {
      * 
      * Small objects are quickly allocated from pools of various cell
      * sizes; large objects are obtained directly from the main heap.
-     *
-     * If the class is compiled with the FILL55 preprocessor variable
-     * defined, released memory blocks are filled with 0x55 bytes
-     * (though some of these may be overwritten by data used for free
-     * list management).  This can be useful to show up premature
-     * deallocation of memory blocks, especially if used in conjunction
-     * with the CELLFIFO preprocessor variable documented in
-     * config.hpp .
      */
     class MemoryBank {
     public:
@@ -109,10 +101,6 @@ namespace CXXR {
 	static void deallocate(void* p, size_t bytes)
 	{
 	    if (!p) return;
-#ifdef FILL55
-	    // This helps to diagnose premature GC:
-	    memset(p, 0x55, bytes);
-#endif
 	    // Assumes sizeof(double) == 8:
 	    if (bytes >= s_new_threshold)
 		::operator delete(p);
