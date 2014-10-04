@@ -57,7 +57,7 @@ namespace CXXR {
     }
 }
 
-NodeStack* ProtectStack::s_stack = 0;
+NodeStack* ProtectStack::s_stack = nullptr;
 
 void ProtectStack::cleanup()
 {

@@ -211,7 +211,7 @@ static int _current_token ;
 static void setId( SEXP expr, yyltype loc){
     record_( 
 	    (loc).first_parsed, (loc).first_column, (loc).last_parsed, (loc).last_column, 
-	    _current_token, (loc).id, 0 ) ;
+	    _current_token, (loc).id, nullptr ) ;
 }
 
 # define YYLTYPE yyltype
@@ -319,7 +319,7 @@ static int mbcs_get_next(int c, wchar_t *wc)
 	    if(s[i] == R_EOF) error(_("EOF whilst reading MBCS char at line %d"), ParseState.xxlineno);
 	}
 	s[clen] ='\0'; /* x86 Solaris requires this */
-	res = (int) mbrtowc(wc, s, clen, NULL);
+	res = (int) mbrtowc(wc, s, clen, nullptr);
 	if(res == -1) error(_("invalid multibyte character in parser at line %d"), ParseState.xxlineno);
     } else {
 	/* This is not necessarily correct for stateful MBCS */
@@ -904,7 +904,7 @@ static const char *const yytname[] =
   "SPECIAL", "':'", "UPLUS", "UMINUS", "'^'", "'$'", "'@'", "'('", "'['",
   "'\\n'", "';'", "'{'", "'}'", "')'", "'!'", "'%'", "']'", "','",
   "$accept", "prog", "expr_or_assign", "equal_assign", "expr", "cond",
-  "ifcond", "forcond", "exprlist", "sublist", "sub", "formlist", "cr", 0
+  "ifcond", "forcond", "exprlist", "sublist", "sub", "formlist", "cr", nullptr
 };
 #endif
 
@@ -1611,12 +1611,12 @@ static int
 yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
                 yytype_int16 *yyssp, int yytoken)
 {
-  YYSIZE_T yysize0 = yytnamerr (0, yytname[yytoken]);
+  YYSIZE_T yysize0 = yytnamerr (nullptr, yytname[yytoken]);
   YYSIZE_T yysize = yysize0;
   YYSIZE_T yysize1;
   enum { YYERROR_VERBOSE_ARGS_MAXIMUM = 5 };
   /* Internationalized format string. */
-  const char *yyformat = 0;
+  const char *yyformat = nullptr;
   /* Arguments of yyformat. */
   char const *yyarg[YYERROR_VERBOSE_ARGS_MAXIMUM];
   /* Number of reported tokens (one for the "unexpected", one per
@@ -1676,7 +1676,7 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
                     break;
                   }
                 yyarg[yycount++] = yytname[yyx];
-                yysize1 = yysize + yytnamerr (0, yytname[yyx]);
+                yysize1 = yysize + yytnamerr (nullptr, yytname[yyx]);
                 if (! (yysize <= yysize1
                        && yysize1 <= YYSTACK_ALLOC_MAXIMUM))
                   return 2;
@@ -2099,7 +2099,7 @@ yyreduce:
 
 /* Line 1806 of yacc.c  */
 #line 355 "./gram.y"
-    { return xxvalue(NULL,2,NULL); }
+    { return xxvalue(nullptr,2,nullptr); }
     break;
 
   case 4:
@@ -3124,7 +3124,7 @@ static int xxvalue(SEXP v, int k, YYLTYPE *lloc)
 static SEXP xxnullformal()
 {
     SEXP ans;
-    PROTECT(ans = R_NilValue);
+    PROTECT(ans = nullptr);
     return ans;
 }
 
@@ -3135,7 +3135,7 @@ static SEXP xxfirstformal0(SEXP sym)
     if (GenerateCode)
 	PROTECT(ans = FirstArg(R_MissingArg, sym));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     return ans;
 }
 
@@ -3145,7 +3145,7 @@ static SEXP xxfirstformal1(SEXP sym, SEXP expr)
     if (GenerateCode)
 	PROTECT(ans = FirstArg(expr, sym));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(expr);
     UNPROTECT_PTR(sym);
     return ans;
@@ -3159,7 +3159,7 @@ static SEXP xxaddformal0(SEXP formlist, SEXP sym, YYLTYPE *lloc)
 	PROTECT(ans = NextArg(formlist, R_MissingArg, sym));
     }
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(sym);
     UNPROTECT_PTR(formlist);
     return ans;
@@ -3173,7 +3173,7 @@ static SEXP xxaddformal1(SEXP formlist, SEXP sym, SEXP expr, YYLTYPE *lloc)
 	PROTECT(ans = NextArg(formlist, expr, sym));
     }
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(expr);
     UNPROTECT_PTR(sym);
     UNPROTECT_PTR(formlist);
@@ -3191,7 +3191,7 @@ static SEXP xxexprlist0(void)
 	}
     }
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     return ans;
 }
 
@@ -3209,7 +3209,7 @@ static SEXP xxexprlist1(SEXP expr, YYLTYPE *lloc)
 	UNPROTECT_PTR(tmp);
     }
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(expr);
     return ans;
 }
@@ -3223,7 +3223,7 @@ static SEXP xxexprlist2(SEXP exprlist, SEXP expr, YYLTYPE *lloc)
 	PROTECT(ans = GrowList(exprlist, expr));
     }
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(expr);
     UNPROTECT_PTR(exprlist);
     return ans;
@@ -3233,9 +3233,9 @@ static SEXP xxsub0(void)
 {
     SEXP ans;
     if (GenerateCode)
-	PROTECT(ans = lang2(R_MissingArg,R_NilValue));
+	PROTECT(ans = lang2(R_MissingArg,nullptr));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     return ans;
 }
 
@@ -3243,9 +3243,9 @@ static SEXP xxsub1(SEXP expr, YYLTYPE *lloc)
 {
     SEXP ans;
     if (GenerateCode)
-	PROTECT(ans = TagArg(expr, R_NilValue, lloc));
+	PROTECT(ans = TagArg(expr, nullptr, lloc));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(expr);
     return ans;
 }
@@ -3256,7 +3256,7 @@ static SEXP xxsymsub0(SEXP sym, YYLTYPE *lloc)
     if (GenerateCode)
 	PROTECT(ans = TagArg(R_MissingArg, sym, lloc));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(sym);
     return ans;
 }
@@ -3267,7 +3267,7 @@ static SEXP xxsymsub1(SEXP sym, SEXP expr, YYLTYPE *lloc)
     if (GenerateCode)
 	PROTECT(ans = TagArg(expr, sym, lloc));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(expr);
     UNPROTECT_PTR(sym);
     return ans;
@@ -3276,22 +3276,22 @@ static SEXP xxsymsub1(SEXP sym, SEXP expr, YYLTYPE *lloc)
 static SEXP xxnullsub0(YYLTYPE *lloc)
 {
     SEXP ans;
-    UNPROTECT_PTR(R_NilValue);
+    UNPROTECT_PTR(nullptr);
     if (GenerateCode)
 	PROTECT(ans = TagArg(R_MissingArg, install("NULL"), lloc));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     return ans;
 }
 
 static SEXP xxnullsub1(SEXP expr, YYLTYPE *lloc)
 {
     SEXP ans = install("NULL");
-    UNPROTECT_PTR(R_NilValue);
+    UNPROTECT_PTR(nullptr);
     if (GenerateCode)
 	PROTECT(ans = TagArg(expr, ans, lloc));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(expr);
     return ans;
 }
@@ -3303,7 +3303,7 @@ static SEXP xxsublist1(SEXP sub)
     if (GenerateCode)
 	PROTECT(ans = FirstArg(CAR(sub),CADR(sub)));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(sub);
     return ans;
 }
@@ -3314,7 +3314,7 @@ static SEXP xxsublist2(SEXP sublist, SEXP sub)
     if (GenerateCode)
 	PROTECT(ans = NextArg(sublist, CAR(sub), CADR(sub)));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(sub);
     UNPROTECT_PTR(sublist);
     return ans;
@@ -3338,7 +3338,7 @@ static SEXP xxif(SEXP ifsym, SEXP cond, SEXP expr)
     if (GenerateCode)
 	PROTECT(ans = lang3(ifsym, cond, expr));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(expr);
     UNPROTECT_PTR(cond);
     return ans;
@@ -3350,7 +3350,7 @@ static SEXP xxifelse(SEXP ifsym, SEXP cond, SEXP ifexpr, SEXP elseexpr)
     if( GenerateCode)
 	PROTECT(ans = lang4(ifsym, cond, ifexpr, elseexpr));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(elseexpr);
     UNPROTECT_PTR(ifexpr);
     UNPROTECT_PTR(cond);
@@ -3364,7 +3364,7 @@ static SEXP xxforcond(SEXP sym, SEXP expr)
     if (GenerateCode)
 	PROTECT(ans = lang2(sym, expr));  /* CXXR change */
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(expr);
     UNPROTECT_PTR(sym);
     return ans;
@@ -3376,7 +3376,7 @@ static SEXP xxfor(SEXP forsym, SEXP forcond, SEXP body)
     if (GenerateCode)
 	PROTECT(ans = lang4(forsym, CAR(forcond), CADR(forcond), body));  /* CXXR change */
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(body);
     UNPROTECT_PTR(forcond);
     return ans;
@@ -3388,7 +3388,7 @@ static SEXP xxwhile(SEXP whilesym, SEXP cond, SEXP body)
     if (GenerateCode)
 	PROTECT(ans = lang3(whilesym, cond, body));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(body);
     UNPROTECT_PTR(cond);
     return ans;
@@ -3400,7 +3400,7 @@ static SEXP xxrepeat(SEXP repeatsym, SEXP body)
     if (GenerateCode)
 	PROTECT(ans = lang2(repeatsym, body));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(body);
     return ans;
 }
@@ -3410,7 +3410,7 @@ static SEXP xxnxtbrk(SEXP keyword)
     if (GenerateCode)
 	PROTECT(keyword = lang1(keyword));
     else
-	PROTECT(keyword = R_NilValue);
+	PROTECT(keyword = nullptr);
     return keyword;
 }
 
@@ -3429,7 +3429,7 @@ static SEXP xxfuncall(SEXP expr, SEXP args)
 	PROTECT(ans);
     }
     else {
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     }
     UNPROTECT_PTR(args);
     UNPROTECT_PTR(sav_expr);
@@ -3463,7 +3463,7 @@ static SEXP xxdefun(SEXP fname, SEXP formals, SEXP body, YYLTYPE *lloc)
     	    srcref = R_NilValue;
 	PROTECT(ans = lang4(fname, CDR(formals), body, srcref));
     } else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(body);
     UNPROTECT_PTR(formals);
     return ans;
@@ -3475,7 +3475,7 @@ static SEXP xxunary(SEXP op, SEXP arg)
     if (GenerateCode)
 	PROTECT(ans = lang2(op, arg));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(arg);
     return ans;
 }
@@ -3486,7 +3486,7 @@ static SEXP xxbinary(SEXP n1, SEXP n2, SEXP n3)
     if (GenerateCode)
 	PROTECT(ans = lang3(n1, n2, n3));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(n2);
     UNPROTECT_PTR(n3);
     return ans;
@@ -3498,7 +3498,7 @@ static SEXP xxparen(SEXP n1, SEXP n2)
     if (GenerateCode)
 	PROTECT(ans = lang2(n1, n2));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(n2);
     return ans;
 }
@@ -3514,7 +3514,7 @@ static SEXP xxsubscript(SEXP a1, SEXP a2, SEXP a3)
     if (GenerateCode)
 	PROTECT(ans = LCONS(a2, CONS(a1, CDR(a3))));
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(a3);
     UNPROTECT_PTR(a1);
     return ans;
@@ -3549,7 +3549,7 @@ static SEXP xxexprlist(SEXP a1, YYLTYPE *lloc, SEXP a2)
 	}
     }
     else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
     UNPROTECT_PTR(a2);
     return ans;
 }
@@ -3700,14 +3700,14 @@ void R_InitSrcRefState(SrcRefState *state)
     	state->prevState = static_cast<SrcRefState*>(malloc(sizeof(SrcRefState)));
     	PutSrcRefState(state->prevState);
     } else
-        state->prevState = NULL;
+        state->prevState = nullptr;
     state->keepSrcRefs = FALSE;
     state->didAttach = FALSE;
-    PROTECT_WITH_INDEX(state->SrcFile = R_NilValue, &(state->SrcFileProt));
-    PROTECT_WITH_INDEX(state->Original = R_NilValue, &(state->OriginalProt));
-    PROTECT_WITH_INDEX(state->data = R_NilValue, &(state->DATA_INDEX)) ;
-    PROTECT_WITH_INDEX(state->text = R_NilValue, &(state->TEXT_INDEX)) ;
-    PROTECT_WITH_INDEX(state->ids = R_NilValue, &(state->ID_INDEX)) ;
+    PROTECT_WITH_INDEX(state->SrcFile = nullptr, &(state->SrcFileProt));
+    PROTECT_WITH_INDEX(state->Original = nullptr, &(state->OriginalProt));
+    PROTECT_WITH_INDEX(state->data = nullptr, &(state->DATA_INDEX)) ;
+    PROTECT_WITH_INDEX(state->text = nullptr, &(state->TEXT_INDEX)) ;
+    PROTECT_WITH_INDEX(state->ids = nullptr, &(state->ID_INDEX)) ;
     state->data_count = 0;
     state->xxlineno = 1;
     state->xxcolno = 0;
@@ -3733,7 +3733,7 @@ void R_FinalizeSrcRefState(void)
     if (ParseState.prevState) {
     	UseSrcRefState(ParseState.prevState);
     	free(ParseState.prevState);
-    	ParseState.prevState = NULL;
+    	ParseState.prevState = nullptr;
     } else
         busy = FALSE;
 }
@@ -3811,9 +3811,9 @@ static void initData(void)
 
 static void ParseContextClear(void)
 {
-    REPROTECT( ParseState.data = R_NilValue, ParseState.DATA_INDEX ) ;
-    REPROTECT( ParseState.text = R_NilValue, ParseState.TEXT_INDEX ) ;
-    REPROTECT( ParseState.ids = R_NilValue, ParseState.ID_INDEX ) ;
+    REPROTECT( ParseState.data = nullptr, ParseState.DATA_INDEX ) ;
+    REPROTECT( ParseState.text = nullptr, ParseState.TEXT_INDEX ) ;
+    REPROTECT( ParseState.ids = nullptr, ParseState.ID_INDEX ) ;
 }
 
 static void ParseContextInit(void)
@@ -3900,7 +3900,7 @@ SEXP R_Parse1Buffer(IoBuffer *buffer, int gencode, ParseStatus *status)
 	    keepSource = CXXRCONSTRUCT(Rboolean, asLogical(GetOption1(install("keep.source"))));
 	    if (keepSource) {
 		ParseState.keepSrcRefs = TRUE;
-		REPROTECT(ParseState.SrcFile = NewEnvironment(R_NilValue, R_NilValue, R_EmptyEnv), ParseState.SrcFileProt);
+		REPROTECT(ParseState.SrcFile = NewEnvironment(nullptr, nullptr, R_EmptyEnv), ParseState.SrcFileProt);
 		REPROTECT(ParseState.Original = ParseState.SrcFile, ParseState.OriginalProt);
 		PROTECT_WITH_INDEX(SrcRefs = NewList(), &srindex);
 	    }
@@ -4243,7 +4243,7 @@ static keywords[] = {
     { "next",	    NEXT       },
     { "break",	    BREAK      },
     { "...",	    SYMBOL     },
-    { 0,	    0	       }
+    { nullptr,	    0	       }
 };
 
 /* KeywordLookup has side effects, it sets yylval */
@@ -4255,7 +4255,7 @@ static int KeywordLookup(const char *s)
 	if (strcmp(keywords[i].name, s) == 0) {
 	    switch (keywords[i].token) {
 	    case NULL_CONST:
-		PROTECT(yylval = R_NilValue);
+		PROTECT(yylval = nullptr);
 		break;
 	    case NUM_CONST:
 		if(GenerateCode) {
@@ -4295,7 +4295,7 @@ static int KeywordLookup(const char *s)
 			break;
 		    }
 		} else
-		    PROTECT(yylval = R_NilValue);
+		    PROTECT(yylval = nullptr);
 		break;
 	    case FUNCTION:
 	    case WHILE:
@@ -4411,7 +4411,7 @@ static void yyerror(const char *s)
 	"OR2",		"'||'",
 	"NS_GET",	"'::'",
 	"NS_GET_INT",	"':::'",
-	0
+	nullptr
     };
     static char const yyunexpected[] = "syntax error, unexpected ";
     static char const yyexpecting[] = ", expecting ";
@@ -4572,7 +4572,7 @@ static int SkipComment(void)
     incrementId( ) ;
     YYTEXT_PUSH('\0', yyp);
     record_( _first_parsed, _first_column, _last_parsed, _last_column,
-	     type, identifier, doSave ? yytext : 0 ) ;
+	     type, identifier, doSave ? yytext : nullptr ) ;
     return c;
 }
 
@@ -5008,7 +5008,7 @@ static int StringValue(int c, Rboolean forSymbol)
 	    wchar_t wc;
 	    char s[2] = " ";
 	    s[0] = (char) c;
-	    mbrtowc(&wc, s, 2, NULL);
+	    mbrtowc(&wc, s, 2, nullptr);
 #endif
 	    WTEXT_PUSH(wc);
 	}
@@ -5018,7 +5018,7 @@ static int StringValue(int c, Rboolean forSymbol)
     yytext[0] = '\0';
     if (c == R_EOF) {
         if(stext != st0) free(stext);
-        PROTECT(yylval = R_NilValue);
+        PROTECT(yylval = nullptr);
     	return INCOMPLETE_STRING;
     } else {
     	CTEXT_PUSH(c);
@@ -5075,7 +5075,7 @@ int isValidName(const char *name)
 	   use the wchar variants */
 	size_t n = strlen(name), used;
 	wchar_t wc;
-	used = Mbrtowc(&wc, p, n, NULL); p += used; n -= used;
+	used = Mbrtowc(&wc, p, n, nullptr); p += used; n -= used;
 	if(used == 0) return 0;
 	if (wc != L'.' && !iswalpha(wc) ) return 0;
 	if (wc == L'.') {
@@ -5083,7 +5083,7 @@ int isValidName(const char *name)
 	    if(isdigit(0xff & (int)*p)) return 0;
 	    /* Mbrtowc(&wc, p, n, NULL); if(iswdigit(wc)) return 0; */
 	}
-	while((used = Mbrtowc(&wc, p, n, NULL))) {
+	while((used = Mbrtowc(&wc, p, n, nullptr))) {
 	    if (!(iswalnum(wc) || wc == L'.' || wc == L'_')) break;
 	    p += used; n -= used;
 	}
@@ -5098,7 +5098,7 @@ int isValidName(const char *name)
 
     if (strcmp(name, "...") == 0) return 1;
 
-    for (i = 0; keywords[i].name != NULL; i++)
+    for (i = 0; keywords[i].name != nullptr; i++)
 	if (strcmp(keywords[i].name, name) == 0) return 0;
 
     return 1;
@@ -5149,7 +5149,7 @@ static void setParseFilename(SEXP newname) {
     	if (isString(oldname) && length(oldname) > 0 &&
     	    strcmp(CHAR(STRING_ELT(oldname, 0)),
     	           CHAR(STRING_ELT(newname, 0))) == 0) return;
-	REPROTECT(ParseState.SrcFile = NewEnvironment(R_NilValue, R_NilValue, R_EmptyEnv), ParseState.SrcFileProt);
+	REPROTECT(ParseState.SrcFile = NewEnvironment(nullptr, nullptr, R_EmptyEnv), ParseState.SrcFileProt);
 	defineVar(install("filename"), newname, ParseState.SrcFile);
 	defineVar(install("original"), ParseState.Original, ParseState.SrcFile);
 

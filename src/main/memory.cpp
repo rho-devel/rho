@@ -180,13 +180,13 @@ SEXP attribute_hidden do_gctorture2(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_gcinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
-    std::ostream* report_os = GCManager::setReporting(0);
+    std::ostream* report_os = GCManager::setReporting(nullptr);
     bool want_reporting = asLogical(CAR(args));
     if (want_reporting != NA_LOGICAL)
-	GCManager::setReporting(want_reporting ? &std::cerr : 0);
+	GCManager::setReporting(want_reporting ? &std::cerr : nullptr);
     else
 	GCManager::setReporting(report_os);
-    return ScalarLogical(report_os != 0);
+    return ScalarLogical(report_os != nullptr);
 }
 
 /* reports memory use to profiler in eval.c */
@@ -206,7 +206,7 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     std::ostream* report_os
-	= GCManager::setReporting(asLogical(CAR(args)) ? &std::cerr : 0);
+	= GCManager::setReporting(asLogical(CAR(args)) ? &std::cerr : nullptr);
     bool reset_max = asLogical(CADR(args));
     GCManager::gc();
     GCManager::setReporting(report_os);
@@ -274,7 +274,7 @@ static void gc_end_timing(void)
 void InitMemory()
 {
     GCManager::setMonitors(gc_start_timing, gc_end_timing);
-    GCManager::setReporting(R_Verbose ? &std::cerr : 0);
+    GCManager::setReporting(R_Verbose ? &std::cerr : nullptr);
     GCManager::setGCThreshold(R_VSize);
 
 #ifdef BYTECODE
@@ -320,22 +320,22 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 
 SEXP allocVector(SEXPTYPE type, R_xlen_t length)
 {
-    SEXP s = 0;  // -Wall
+    SEXP s = nullptr;  // -Wall
 
     if (length > R_XLEN_T_MAX) {
 	FunctionContext* ctxt = FunctionContext::innermost();
-	errorcall(ctxt ? const_cast<Expression*>(ctxt->call()) : static_cast<RObject*>(0),
+	errorcall(ctxt ? const_cast<Expression*>(ctxt->call()) : static_cast<RObject*>(nullptr),
 		  _("vector is too large"));; /**** put length into message */
     }
     else if (length < 0 ) {
 	FunctionContext* ctxt = FunctionContext::innermost();
-	errorcall(ctxt ? const_cast<Expression*>(ctxt->call()) : static_cast<RObject*>(0),
+	errorcall(ctxt ? const_cast<Expression*>(ctxt->call()) : static_cast<RObject*>(nullptr),
 		  _("negative length vectors are not allowed"));
     }
     /* number of vector cells to allocate */
     switch (type) {
     case NILSXP:
-	return 0;
+	return nullptr;
     case RAWSXP:
 	s = new RawVector(length);
 	break;
@@ -366,12 +366,12 @@ SEXP allocVector(SEXPTYPE type, R_xlen_t length)
     case LANGSXP:
 	{
 	    if (length == 0)
-		return 0;
+		return nullptr;
 #ifdef LONG_VECTOR_SUPPORT
 	    if (length > R_SHORT_LEN_MAX) error("invalid length for pairlist");
 #endif
 	    GCStackRoot<PairList> tl(PairList::make(length - 1));
-	    s = new Expression(0, tl);
+	    s = new Expression(nullptr, tl);
 	    break;
 	}
     case LISTSXP:
@@ -382,7 +382,7 @@ SEXP allocVector(SEXPTYPE type, R_xlen_t length)
     default:
 	error(_("invalid type/length (%s/%d) in vector allocation"),
 	      type2char(type), length);
-	return 0;  // -Wall
+	return nullptr;  // -Wall
     }
     return GCNode::expose(s);
 }
@@ -588,7 +588,7 @@ void *R_AllocStringBuffer(std::size_t blen, R_StringBuffer *buf)
     if(blen == std::size_t(-1)) {
 	warning("R_AllocStringBuffer(-1) used: please report");
 	R_FreeStringBufferL(buf);
-	return NULL;
+	return nullptr;
     }
 
     if(blen * sizeof(char) < buf->bufsize) return buf->data;
@@ -596,7 +596,7 @@ void *R_AllocStringBuffer(std::size_t blen, R_StringBuffer *buf)
     blen = (blen / bsize) * bsize;
     if(blen < blen1) blen += bsize;
 
-    if(buf->data == NULL) {
+    if(buf->data == nullptr) {
 	buf->data = static_cast<char *>( malloc(blen));
 	buf->data[0] = '\0';
     } else
@@ -614,10 +614,10 @@ void *R_AllocStringBuffer(std::size_t blen, R_StringBuffer *buf)
 void
 R_FreeStringBuffer(R_StringBuffer *buf)
 {
-    if (buf->data != NULL) {
+    if (buf->data != nullptr) {
 	free(buf->data);
 	buf->bufsize = 0;
-	buf->data = NULL;
+	buf->data = nullptr;
     }
 }
 
@@ -627,7 +627,7 @@ R_FreeStringBufferL(R_StringBuffer *buf)
     if (buf->bufsize > buf->defaultSize) {
 	free(buf->data);
 	buf->bufsize = 0;
-	buf->data = NULL;
+	buf->data = nullptr;
     }
 }
 

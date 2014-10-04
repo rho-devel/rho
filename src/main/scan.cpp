@@ -561,7 +561,7 @@ static SEXP scanVector(SEXPTYPE type, int maxitems, int maxlines,
     SEXP ans, bns;
     int blocksize, c, i, n, linesread, nprev,strip, bch;
     char *buffer;
-    R_StringBuffer strBuf = {NULL, 0, MAXELTSIZE};
+    R_StringBuffer strBuf = {nullptr, 0, MAXELTSIZE};
 
     if (maxitems > 0) blocksize = maxitems;
     else blocksize = SCAN_BLOCKSIZE;
@@ -670,10 +670,10 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
 		      LocalData *d)
 {
     SEXP ans, newv, old, w;
-    char *buffer = NULL;
+    char *buffer = nullptr;
     int blksize, c, i, ii, j, n, nc, linesread, colsread, strip, bch;
     int badline, nstring = 0;
-    R_StringBuffer buf = {NULL, 0, MAXELTSIZE};
+    R_StringBuffer buf = {nullptr, 0, MAXELTSIZE};
 
     nc = length(what);
     if (!nc) {
@@ -833,7 +833,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP ans, file, sep, what, stripwhite, dec, quotes, comstr;
     int i, c, nlines, nmax, nskip, flush, fill, blskip, multiline, escapes;
     const char *p, *encoding;
-    LocalData data = {NULL, 0, 0, '.', NULL, NO_COMCHAR, 0, NULL, FALSE,
+    LocalData data = {nullptr, 0, 0, '.', nullptr, NO_COMCHAR, 0, nullptr, FALSE,
 		      FALSE, 0, FALSE, FALSE};
     data.NAstrings = R_NilValue;
 

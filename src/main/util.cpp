@@ -146,7 +146,7 @@ const static char * const truenames[] = {
     "True",
     "TRUE",
     "true",
-    CXXRNOCAST(char *) NULL,
+    CXXRNOCAST(char *) nullptr,
 };
 
 const static char * const falsenames[] = {
@@ -154,7 +154,7 @@ const static char * const falsenames[] = {
     "False",
     "FALSE",
     "false",
-    CXXRNOCAST(char *) NULL,
+    CXXRNOCAST(char *) nullptr,
 };
 
 SEXP asChar(SEXP x)
@@ -249,7 +249,7 @@ TypeTable[] = {
     { "numeric",	REALSXP	   },
     { "name",		SYMSXP	   },
 
-    { CXXRNOCAST(char *)NULL,     CXXRCONSTRUCT(SEXPTYPE, -1)         }
+    { CXXRNOCAST(char *)nullptr,     CXXRCONSTRUCT(SEXPTYPE, -1)         }
 };
 
 
@@ -343,13 +343,13 @@ static const char UCS2ENC[] = "UCS-2LE";
  */
 size_t mbcsToUcs2(const char *in, ucs2_t *out, int nout, int enc)
 {
-    void   *cd = NULL ;
+    void   *cd = nullptr ;
     const char *i_buf;
     char *o_buf;
     size_t  i_len, o_len, status, wc_len;
     /* out length */
-    wc_len = (enc == CE_UTF8)? utf8towcs(NULL, in, 0) : mbstowcs(NULL, in, 0);
-    if (out == NULL || int(wc_len) < 0) return wc_len;
+    wc_len = (enc == CE_UTF8)? utf8towcs(nullptr, in, 0) : mbstowcs(nullptr, in, 0);
+    if (out == nullptr || int(wc_len) < 0) return wc_len;
 
     if (reinterpret_cast<void*>(-1) == (cd = Riconv_open(UCS2ENC, (enc == CE_UTF8) ? "UTF-8": "")))
 	return size_t( -1);
@@ -867,7 +867,7 @@ SEXP attribute_hidden do_dirname(SEXP call, SEXP op, SEXP args, SEXP rho)
 		/* remove trailing file separator(s) */
 		while ( *(p = buf + ll - 1) == fsp  && p > buf) *p = '\0';
 		p = Rf_strrchr(buf, fsp);
-		if(p == NULL)
+		if(p == nullptr)
 		    strcpy(buf, ".");
 		else {
 		    while(p > buf && *p == fsp) --p;
@@ -1233,7 +1233,7 @@ size_t wcstoutf8(char *s, const wchar_t *wc, size_t n)
 	}
     } else {
 	for(p = wc; ; p++) {
-	    m  = ssize_t( Rwcrtomb(NULL, *p));
+	    m  = ssize_t( Rwcrtomb(nullptr, *p));
 	    if(m <= 0) break;
 	    res += m;
 	}
@@ -1258,7 +1258,7 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 	const char *p;
 	for(p = s, q = err; *p; ) {
 	    /* don't do the first to keep ps state straight */
-	    if(p > s) used = mbrtowc(NULL, p, n, ps);
+	    if(p > s) used = mbrtowc(nullptr, p, n, ps);
 	    if(used == 0) break;
 	    else if(int( used) > 0) {
 		memcpy(q, p, used);
@@ -1280,7 +1280,7 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 attribute_hidden
 Rboolean mbcsValid(const char *str)
 {
-    return  CXXRCONSTRUCT(Rboolean, (int(mbstowcs(NULL, str, 0)) >= 0));
+    return  CXXRCONSTRUCT(Rboolean, (int(mbstowcs(nullptr, str, 0)) >= 0));
 }
 
 /* used in src/library/grDevices/src/cairo/cairoFns.c */
@@ -1300,22 +1300,22 @@ char *Rf_strchr(const char *s, int c)
 
     if(!mbcslocale || utf8locale) return CXXRCCAST(char*, strchr(s, c));
     mbs_init(&mb_st);
-    while( (used = Mbrtowc(NULL, p, MB_CUR_MAX, &mb_st)) ) {
+    while( (used = Mbrtowc(nullptr, p, MB_CUR_MAX, &mb_st)) ) {
 	if(*p == c) return p;
 	p += used;
     }
-    return CXXRNOCAST(char *)NULL;
+    return CXXRNOCAST(char *)nullptr;
 }
 
 char *Rf_strrchr(const char *s, int c)
 {
-    char *p = const_cast<char *>(s), *plast = NULL;
+    char *p = const_cast<char *>(s), *plast = nullptr;
     mbstate_t mb_st;
     size_t used;
 
     if(!mbcslocale || utf8locale) return CXXRCCAST(char*, strrchr(s, c));
     mbs_init(&mb_st);
-    while( (used = Mbrtowc(NULL, p, MB_CUR_MAX, &mb_st)) ) {
+    while( (used = Mbrtowc(nullptr, p, MB_CUR_MAX, &mb_st)) ) {
 	if(*p == c) plast = p;
 	p += used;
     }
@@ -1617,7 +1617,7 @@ double R_strtod(const char *str, char **endptr)
 
 double R_atof(const char *str)
 {
-    return R_strtod4(str, NULL, '.', FALSE);
+    return R_strtod4(str, nullptr, '.', FALSE);
 }
 } // extern "C"
 
@@ -2096,7 +2096,7 @@ SEXP attribute_hidden do_formatC(SEXP call, SEXP op, SEXP args, SEXP rho)
 	memset(cptr[i], ' ', ix);
 	cptr[i][ix] = 0;
     }
-    void *px = NULL /* -Wall */;
+    void *px = nullptr /* -Wall */;
     switch(TYPEOF(x)) {
     case INTSXP: px = INTEGER(x); break;
     case REALSXP: px = REAL(x); break;

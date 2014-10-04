@@ -341,7 +341,7 @@ int Rstrwid(const char *str, int slen, cetype_t ienc, int quote)
 	if(ienc != CE_UTF8)  mbs_init(&mb_st);
 	for (i = 0; i < slen; i++) {
 	    res = (ienc == CE_UTF8) ? int( utf8toucs(&wc, p)):
-		int( mbrtowc(&wc, p, MB_CUR_MAX, NULL));
+		int( mbrtowc(&wc, p, MB_CUR_MAX, nullptr));
 	    if(res >= 0) {
 		k = wc;
 		if(0x20 <= k && k < 0x7f && iswprint(wc)) {
@@ -462,7 +462,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
        passed on by EncodeElement -- so no way could be end user be
        responsible for freeing it.  However, this is not thread-safe. */
 
-    static R_StringBuffer gBuffer = {NULL, 0, BUFSIZE};
+    static R_StringBuffer gBuffer = {nullptr, 0, BUFSIZE};
     R_StringBuffer *buffer = &gBuffer;
 
     if (s == NA_STRING) {
@@ -562,7 +562,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 #endif
 	for (i = 0; i < cnt; i++) {
 	    res = int((ienc == CE_UTF8) ? utf8toucs(&wc, p):
-		      mbrtowc(&wc, p, MB_CUR_MAX, NULL));
+		      mbrtowc(&wc, p, MB_CUR_MAX, nullptr));
 	    if(res >= 0) { /* res = 0 is a terminator */
 		k = wc;
 		/* To be portable, treat \0 explicitly */
@@ -729,7 +729,7 @@ const char *EncodeElement(SEXP x, int indx, int quote, char dec)
 	res = EncodeRaw(RAW(x)[indx], "");
 	break;
     default:
-	res = NULL; /* -Wall */
+	res = nullptr; /* -Wall */
 	UNIMPLEMENTED_TYPE("EncodeElement", x);
     }
     return res;
@@ -881,7 +881,7 @@ void REvprintf(const char *format, va_list arg)
 {
     if(R_ErrorCon != 2) {
 	Rconnection con = getConnection_no_err(R_ErrorCon);
-	if(con == NULL) {
+	if(con == nullptr) {
 	    /* should never happen, but in case of corruption... */
 	    R_ErrorCon = 2;
 	} else {

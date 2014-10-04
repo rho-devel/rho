@@ -93,7 +93,7 @@ static R_CallMethodDef callMethods [] = {
     CALLDEF(R_stopbcprof, 0),
 #endif
 
-    {NULL, NULL, 0}
+    {nullptr, nullptr, 0}
 };
 
 
@@ -109,7 +109,7 @@ static R_FortranMethodDef fortranMethods[] = {
     FDEF(dqrxb, 7),
     FDEF(dtrco, 6), // .kappa_tri
 
-    {NULL, NULL, 0}
+    {nullptr, nullptr, 0}
 };
 
 #undef FALSE
@@ -117,6 +117,6 @@ static R_FortranMethodDef fortranMethods[] = {
 void attribute_hidden
 R_init_base(DllInfo *dll)
 {
-    R_registerRoutines(dll, NULL, callMethods, fortranMethods, NULL);
+    R_registerRoutines(dll, nullptr, callMethods, fortranMethods, nullptr);
     R_useDynamicSymbols(dll, FALSE);
 }

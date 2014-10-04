@@ -49,8 +49,8 @@
 using namespace std;
 using namespace CXXR;
 
-Frame::monitor Frame::s_read_monitor = 0;
-Frame::monitor Frame::s_write_monitor = 0;
+Frame::monitor Frame::s_read_monitor = nullptr;
+Frame::monitor Frame::s_write_monitor = nullptr;
 
 // ***** Class Frame::Binding *****
 
@@ -80,7 +80,7 @@ Frame::Binding::forcedValue2()
 	if (prom->environment()) {
 	    GCStackRoot<Promise> promrt(prom);
 	    frame()->monitorRead(*this);
-	    val = Evaluator::evaluate(val, 0);
+	    val = Evaluator::evaluate(val, nullptr);
 	    promise_forced = true;
 	}
 	val = prom->value();
@@ -171,7 +171,7 @@ void Frame::Binding::visitReferents(const_visitor* v) const
 
 PairList* Frame::asPairList() const
 {
-    GCStackRoot<PairList> ans(0);
+    GCStackRoot<PairList> ans(nullptr);
     BindingRange bdgs = bindingRange();
     for (BindingRange::const_iterator it = bdgs.begin();
 	 it != bdgs.end(); ++it)
@@ -181,7 +181,7 @@ PairList* Frame::asPairList() const
 
 void Frame::clear()
 {
-    statusChanged(0);
+    statusChanged(nullptr);
     v_clear();
 }
 
@@ -262,7 +262,7 @@ void Frame::visitReferents(const_visitor* v) const
 namespace CXXR {
     void frameReadPairList(Frame* frame, PairList* bindings)
     {
-	for (PairList* pl = bindings; pl != 0; pl = pl->tail()) {
+	for (PairList* pl = bindings; pl != nullptr; pl = pl->tail()) {
 	    const RObject* tag = pl->tag();
 	    const Symbol* symbol = dynamic_cast<const Symbol*>(tag);
 	    if (!symbol) Rf_error(_("list used to set frame bindings"

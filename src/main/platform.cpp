@@ -314,7 +314,7 @@ SEXP attribute_hidden do_date(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_fileshow(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP fn, tl, hd, pg;
-    const char **f, **h, *t, *pager = NULL /* -Wall */;
+    const char **f, **h, *t, *pager = nullptr /* -Wall */;
     Rboolean dl;
     int i, n;
 
@@ -387,8 +387,8 @@ static int R_AppendFile(SEXP file1, SEXP file2)
     char buf[APPENDBUFSIZE];
     size_t nchar;
     int status = 0;
-    if ((fp1 = RC_fopen(file1, "ab", TRUE)) == NULL) return 0;
-    if ((fp2 = RC_fopen(file2, "rb", TRUE)) == NULL) {
+    if ((fp1 = RC_fopen(file1, "ab", TRUE)) == nullptr) return 0;
+    if ((fp2 = RC_fopen(file2, "rb", TRUE)) == nullptr) {
 	fclose(fp1);
 	return 0;
     }
@@ -478,7 +478,7 @@ SEXP attribute_hidden do_filecreate(SEXP call, SEXP op, SEXP args, SEXP rho)
     for (i = 0; i < n; i++) {
 	LOGICAL(ans)[i] = 0;
 	if (STRING_ELT(fn, i) == NA_STRING) continue;
-	if ((fp = RC_fopen(STRING_ELT(fn, i), "w", TRUE)) != NULL) {
+	if ((fp = RC_fopen(STRING_ELT(fn, i), "w", TRUE)) != nullptr) {
 	    LOGICAL(ans)[i] = 1;
 	    fclose(fp);
 	} else if (show) {
@@ -1017,7 +1017,7 @@ list_files(const char *dnp, const char *stem, int *count, SEXP *pans,
     struct stat sb;
 #endif
     R_CheckUserInterrupt(); // includes stack check
-    if ((dir = opendir(dnp)) != NULL) {
+    if ((dir = opendir(dnp)) != nullptr) {
 	while ((de = readdir(dir))) {
 	    if (allfiles || !R_HiddenFile(de->d_name)) {
 		Rboolean not_dot = CXXRCONSTRUCT(Rboolean, strcmp(de->d_name, ".") && strcmp(de->d_name, ".."));
@@ -1122,8 +1122,8 @@ SEXP attribute_hidden do_listfiles(SEXP call, SEXP op, SEXP args, SEXP rho)
     for (int i = 0; i < LENGTH(d) ; i++) {
 	if (STRING_ELT(d, i) == NA_STRING) continue;
 	const char *dnp = R_ExpandFileName(translateChar(STRING_ELT(d, i)));
-	list_files(dnp, fullnames ? dnp : NULL, &count, &ans, CXXRCONSTRUCT(Rboolean, allfiles),
-		   CXXRCONSTRUCT(Rboolean, recursive), pattern ? &reg : NULL, &countmax, idx,
+	list_files(dnp, fullnames ? dnp : nullptr, &count, &ans, CXXRCONSTRUCT(Rboolean, allfiles),
+		   CXXRCONSTRUCT(Rboolean, recursive), pattern ? &reg : nullptr, &countmax, idx,
 		   CXXRCONSTRUCT(Rboolean, idirs), /* allowdots = */ CXXRCONSTRUCT(Rboolean, !nodots));
     }
     REPROTECT(ans = lengthgets(ans, count), idx);
@@ -1150,7 +1150,7 @@ static void list_dirs(const char *dnp, const char *nm,
 #endif
     R_CheckUserInterrupt(); // includes stack check
 
-    if ((dir = opendir(dnp)) != NULL) {
+    if ((dir = opendir(dnp)) != nullptr) {
 	if (recursive) {
 	    if (*count == *countmax - 1) {
 		*countmax *= 2;
@@ -1470,7 +1470,7 @@ static int R_unlink(const char *name, int recursive, int force)
 	int ans = 0;
 
 	if ((sb.st_mode & S_IFDIR) > 0) { /* a directory */
-	    if ((dir = opendir(name)) != NULL) {
+	    if ((dir = opendir(name)) != nullptr) {
 		while ((de = readdir(dir))) {
 		    if (streql(de->d_name, ".") || streql(de->d_name, ".."))
 			continue;
@@ -1586,7 +1586,7 @@ SEXP attribute_hidden do_unlink(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (STRING_ELT(fn, i) != NA_STRING) {
 		names = R_ExpandFileName(translateChar(STRING_ELT(fn, i)));
 #if defined(HAVE_GLOB)
-		res = glob(names, GLOB_NOCHECK, NULL, &globbuf);
+		res = glob(names, GLOB_NOCHECK, nullptr, &globbuf);
 # ifdef GLOB_ABORTED
 		if (res == GLOB_ABORTED)
 		    warning(_("read error on '%s'"), names);
@@ -1675,7 +1675,7 @@ SEXP attribute_hidden do_dirchmod(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_getlocale(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int cat;
-    char *p = NULL;
+    char *p = nullptr;
 
     checkArity(op, args);
     cat = asInteger(CAR(args));
@@ -1699,7 +1699,7 @@ SEXP attribute_hidden do_getlocale(SEXP call, SEXP op, SEXP args, SEXP rho)
 #endif
     default: cat = NA_INTEGER;
     }
-    if (cat != NA_INTEGER) p = setlocale(cat, NULL);
+    if (cat != NA_INTEGER) p = setlocale(cat, nullptr);
     return mkString(p ? p : "");
 }
 
@@ -1732,7 +1732,7 @@ SEXP attribute_hidden do_setlocale(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    setlocale(LC_MONETARY, l);
 	    setlocale(LC_TIME, l);
 	    /* Need to return value of LC_ALL */
-	    p = setlocale(cat, NULL);
+	    p = setlocale(cat, nullptr);
 	}
 	break;
     }
@@ -1783,7 +1783,7 @@ SEXP attribute_hidden do_setlocale(SEXP call, SEXP op, SEXP args, SEXP rho)
 	break;
 #endif
     default:
-	p = NULL; /* -Wall */
+	p = nullptr; /* -Wall */
 	error(_("invalid '%s' argument"), "category");
     }
     PROTECT(ans = allocVector(STRSXP, 1));
@@ -2099,7 +2099,7 @@ SEXP attribute_hidden do_nsl(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     hp = gethostbyname(name);
 
-    if (hp == NULL) {		/* cannot resolve the address */
+    if (hp == nullptr) {		/* cannot resolve the address */
 	warning(_("nsl() was unable to resolve host '%s'"), name);
     } else {
 	if (hp->h_addrtype == AF_INET) {
@@ -2457,7 +2457,7 @@ static int do_copy(const char* from, const char* name, const char* to,
 	    return 1;
 	}
 	strcat(dest, "/");
-	if ((dir = opendir(thispath)) != NULL) {
+	if ((dir = opendir(thispath)) != nullptr) {
 	    depth++;
 	    while ((de = readdir(dir))) {
 		if (streql(de->d_name, ".") || streql(de->d_name, ".."))
@@ -2477,7 +2477,7 @@ static int do_copy(const char* from, const char* name, const char* to,
 	}
 	chmod(dest, mode_t( perms ? (sb.st_mode & mask): mask));
     } else { /* a file */
-	FILE *fp1 = NULL, *fp2 = NULL;
+	FILE *fp1 = nullptr, *fp2 = nullptr;
 	char buf[APPENDBUFSIZE];
 
 	nfail = 0;
@@ -2490,8 +2490,8 @@ static int do_copy(const char* from, const char* name, const char* to,
 	snprintf(dest, PATH_MAX+1, "%s%s", to, name);
 	if (over || !R_FileExists(dest)) {
 	    /* REprintf("copying %s to %s\n", this, dest); */
-	    if ((fp1 = R_fopen(thispath, "rb")) == NULL ||
-		(fp2 = R_fopen(dest, "wb")) == NULL) {
+	    if ((fp1 = R_fopen(thispath, "rb")) == nullptr ||
+		(fp2 = R_fopen(dest, "wb")) == nullptr) {
 		warning(_("problem copying %s to %s: %s"),
 			thispath, dest, strerror(errno));
 		nfail++;

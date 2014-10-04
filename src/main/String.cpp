@@ -61,13 +61,13 @@ namespace CXXR {
 }
 std::hash<std::string> String::Hasher::s_string_hasher;
 
-String::map* String::s_cache = 0;
+String::map* String::s_cache = nullptr;
 std::string* String::s_na_string;
 String* String::s_na;
 String* String::s_blank;
 
 SEXP R_NaString = String::NA();
-SEXP R_BlankString = 0;
+SEXP R_BlankString = nullptr;
 
 // String::s_blank and R_BlankString are defined in Symbol.cpp to
 // enforce initialization order.
@@ -78,7 +78,7 @@ SEXP R_BlankString = 0;
 String::String(map::value_type* key_val_pr)
     : VectorBase(CHARSXP, key_val_pr ? key_val_pr->first.first.size() : 2),
       m_key_val_pr(key_val_pr), m_string(s_na_string), m_encoding(CE_NATIVE),
-      m_symbol(0)
+      m_symbol(nullptr)
 {
     if (key_val_pr) {
 	m_string = &key_val_pr->first.first;
@@ -132,7 +132,7 @@ void String::cleanup()
 {
     // Clearing s_cache avoids valgrind 'possibly lost' reports on exit:
     s_cache->clear();
-    s_cache = 0;
+    s_cache = nullptr;
 }
 
 void String::initialize()
@@ -141,7 +141,7 @@ void String::initialize()
     s_cache = &the_map;
     static std::string na_string("NA");
     s_na_string = &na_string;
-    static GCRoot<String> na(CXXR_NEW(String(0)));
+    static GCRoot<String> na(CXXR_NEW(String(nullptr)));
     s_na = na.get();
     static GCRoot<String> blank(String::obtain(""));
     s_blank = blank.get();
@@ -176,7 +176,7 @@ String* String::obtain(const std::string& str, cetype_t encoding)
     if (ascii)
 	encoding = CE_NATIVE;
     std::pair<map::iterator, bool> pr
-	= s_cache->insert(map::value_type(key(str, encoding), 0));
+	= s_cache->insert(map::value_type(key(str, encoding), nullptr));
     map::iterator it = pr.first;
     if (pr.second) {
 	try {

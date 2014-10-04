@@ -76,8 +76,8 @@ S3Launcher::findMethod(const Symbol* symbol, Environment* call_env,
     if (fun)
 	return make_pair(fun, true);
     if (!table_env)
-	return pair<FunctionBase*, bool>(0, false);
-    Environment* table = 0;
+	return pair<FunctionBase*, bool>(nullptr, false);
+    Environment* table = nullptr;
     // Look for S3 methods table:
     {
 	Frame::Binding* tblbdg
@@ -97,7 +97,7 @@ S3Launcher::findMethod(const Symbol* symbol, Environment* call_env,
 	    return make_pair(static_cast<FunctionBase*>(symbdgval), false);
 	}
     }
-    return pair<FunctionBase*, bool>(0, false);
+    return pair<FunctionBase*, bool>(nullptr, false);
 }
 
 void S3Launcher::visitReferents(const_visitor* v) const

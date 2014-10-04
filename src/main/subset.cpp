@@ -197,7 +197,7 @@ static SEXP ExtractSubset(SEXP x, SEXP result, SEXP indx, SEXP call)
 static SEXP VectorSubset(SEXP x, SEXP sarg, SEXP call)
 {
     if (!x)
-	return 0;
+	return nullptr;
     GCStackRoot<> s(sarg);
 
     if (s == R_MissingArg)
@@ -258,7 +258,7 @@ static SEXP VectorSubset(SEXP x, SEXP sarg, SEXP call)
     for (unsigned int i = 0; int(i) < n; ++i) {
 	int ii = (*indices)[i];
 	if (ii == NA_INTEGER || ii <= 0 || ii > int(nx))
-	    SETCAR(tmp, 0);
+	    SETCAR(tmp, nullptr);
 	else {
 	    SEXP tmp2 = nthcdr(x, ii - 1);
 	    SETCAR(tmp, CAR(tmp2));
@@ -321,7 +321,7 @@ static SEXP ArraySubset(SEXP x, SEXP s, SEXP call, int drop)
     default:
 	errorcall(call, _("array subscripting not handled for this type"));
     }
-    return 0;  // -Wall
+    return nullptr;  // -Wall
 }
 
 
@@ -554,11 +554,11 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (TYPEOF(x) == LANGSXP) {
 	ax = ans;
 	{
-	    ans = 0;
+	    ans = nullptr;
 	    size_t len = LENGTH(ax);
 	    if (len > 0) {
 		GCStackRoot<PairList> tl(PairList::make(len - 1));
-		ans = CXXR_NEW(Expression(0, tl));
+		ans = CXXR_NEW(Expression(nullptr, tl));
 	    }
 	}
 	int i = 0;
@@ -631,7 +631,7 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,
     /* This code was intended for compatibility with S, */
     /* but in fact S does not do this.	Will anyone notice? */
     if (!x)
-	return 0;
+	return nullptr;
 
     /* Get the subscripting and dimensioning information */
     /* and check that any array subscripting is compatible. */
@@ -693,7 +693,7 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,
 			       isExpression(x) ||
 			       isList(x) ||
 			       isLanguage(x)))
-		return 0;
+		return nullptr;
 	    else errorcall(call, R_MSG_subs_o_b);
 	}
     } else { /* matrix indexing */

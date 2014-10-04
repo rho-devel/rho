@@ -52,7 +52,7 @@
 using namespace std;
 using namespace CXXR;
 
-static R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
+static R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 
 static SEXP cbind(SEXP, SEXP, SEXPTYPE, SEXP, int);
 static SEXP rbind(SEXP, SEXP, SEXPTYPE, SEXP, int);
@@ -754,7 +754,7 @@ static void NewExtractNames(SEXP v, SEXP base, SEXP tag, int recurse,
 
 static SEXP ExtractOptionals(SEXP ans, int *recurse, int *usenames, SEXP call)
 {
-    SEXP a, n, last = NULL, next = NULL;
+    SEXP a, n, last = nullptr, next = nullptr;
     int v, n_recurse = 0, n_usenames = 0;
 
     for (a = ans; a != R_NilValue; a = next) {
@@ -766,7 +766,7 @@ static SEXP ExtractOptionals(SEXP ans, int *recurse, int *usenames, SEXP call)
 	    if ((v = asLogical(CAR(a))) != NA_INTEGER) {
 		*recurse = v;
 	    }
-	    if (last == NULL)
+	    if (last == nullptr)
 		ans = next;
 	    else
 		SETCDR(last, next);
@@ -777,7 +777,7 @@ static SEXP ExtractOptionals(SEXP ans, int *recurse, int *usenames, SEXP call)
 	    if ((v = asLogical(CAR(a))) != NA_INTEGER) {
 		*usenames = v;
 	    }
-	    if (last == NULL)
+	    if (last == nullptr)
 		ans = next;
 	    else
 		SETCDR(last, next);

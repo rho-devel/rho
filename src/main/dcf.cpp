@@ -73,7 +73,7 @@ static char *Rconn_getline2(Rconnection con)
      *  newline.
      */
     if(nbuf >= 0 && buf[nbuf]) buf[++nbuf] = '\0';
-    return (nbuf == -1) ? NULL: buf;
+    return (nbuf == -1) ? nullptr: buf;
 }
 
 SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
@@ -85,7 +85,7 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
     regex_t blankline, contline, trailblank, regline, eblankline;
     regmatch_t regmatch[1];
     SEXP file, what, what2, retval, retval2, dims, dimnames;
-    Rconnection con = NULL;
+    Rconnection con = nullptr;
     Rboolean wasopen, is_eblankline;
 
     SEXP fold_excludes;
@@ -133,7 +133,7 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
 	CXXR::RAllocStack::Scope rscope;
 	while((line = Rconn_getline2(con))) {
 	    if(strlen(line) == 0 ||
-	       tre_regexecb(&blankline, line, 0, 0, 0) == 0) {
+	       tre_regexecb(&blankline, line, 0, nullptr, 0) == 0) {
 		/* A blank line.  The first one after a record ends a new
 		 * record, subsequent ones are skipped */
 		if(!blank_skip) {
@@ -163,7 +163,7 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
 		    if(lastm >= 0) {
 			need = int( strlen(CHAR(STRING_ELT(retval,
 							   lastm + nwhat * k)))) + 2;
-			if(tre_regexecb(&eblankline, line, 0, NULL, 0) == 0) {
+			if(tre_regexecb(&eblankline, line, 0, nullptr, 0) == 0) {
 			    is_eblankline = TRUE;
 			} else {
 			    is_eblankline = FALSE;

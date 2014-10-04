@@ -54,7 +54,7 @@ namespace CXXR {
     }
 }
 
-DotInternalTable::map* DotInternalTable::s_table = 0;
+DotInternalTable::map* DotInternalTable::s_table = nullptr;
 
 void DotInternalTable::initialize()
 {

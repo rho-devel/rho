@@ -54,9 +54,9 @@ static DL_FUNC User_unif_fun, User_unif_nseed,
 	User_unif_seedloc;
 typedef void (*UnifInitFun)(Int32);
 
-UnifInitFun User_unif_init = NULL; /* some picky compilers */
+UnifInitFun User_unif_init = nullptr; /* some picky compilers */
 
-DL_FUNC  User_norm_fun = NULL; /* also in ../nmath/snorm.c */
+DL_FUNC  User_norm_fun = nullptr; /* also in ../nmath/snorm.c */
 
 
 static RNGtype RNG_kind = RNG_DEFAULT;
@@ -314,12 +314,12 @@ static void RNG_Init(RNGtype kind, Int32 seed)
 	}
 	break;
     case USER_UNIF:
-	User_unif_fun = R_FindSymbol("user_unif_rand", "", NULL);
+	User_unif_fun = R_FindSymbol("user_unif_rand", "", nullptr);
 	if (!User_unif_fun) error(_("'user_unif_rand' not in load table"));
-	User_unif_init = reinterpret_cast<UnifInitFun>( R_FindSymbol("user_unif_init", "", NULL));
+	User_unif_init = reinterpret_cast<UnifInitFun>( R_FindSymbol("user_unif_init", "", nullptr));
 	if (User_unif_init) (void) User_unif_init(seed);
-	User_unif_nseed = R_FindSymbol("user_unif_nseed", "", NULL);
-	User_unif_seedloc = R_FindSymbol("user_unif_seedloc", "",  NULL);
+	User_unif_nseed = R_FindSymbol("user_unif_nseed", "", nullptr);
+	User_unif_seedloc = R_FindSymbol("user_unif_seedloc", "",  nullptr);
 	if (User_unif_seedloc) {
 	    int ns = 0;
 	    if (!User_unif_nseed) {
@@ -497,7 +497,7 @@ static void Norm_kind(N01type kind)
     if (kind > KINDERMAN_RAMAGE)
 	error(_("invalid Normal type in 'RNGkind'"));
     if (kind == USER_NORM) {
-	User_norm_fun = R_FindSymbol("user_norm_rand", "", NULL);
+	User_norm_fun = R_FindSymbol("user_norm_rand", "", nullptr);
 	if (!User_norm_fun) error(_("'user_norm_rand' not in load table"));
     }
     GetRNGstate(); /* might not be initialized */

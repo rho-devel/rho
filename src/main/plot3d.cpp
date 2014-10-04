@@ -107,7 +107,7 @@ int addContourLines(double *x, int nx, double *y, int ny,
 		    xend = end->x1;
 		    yend = end->y1;
 		}
-		end->next = NULL; /* <<< new for 1.2.3 */
+		end->next = nullptr; /* <<< new for 1.2.3 */
 		ii = i; jj = j;
 		xend = seglist->x0;
 		yend = seglist->y0;

@@ -100,7 +100,7 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 
     SEXP format, _this, a[MAXNARGS], ans /* -Wall */ = R_NilValue;
     int ns, maxlen, lens[MAXNARGS], nthis, nstar, star_arg = 0;
-    static R_StringBuffer outbuff = {NULL, 0, MAXELTSIZE};
+    static R_StringBuffer outbuff = {nullptr, 0, MAXELTSIZE};
     Rboolean has_star, use_UTF8;
 
 #define _my_sprintf(_X_)						\
@@ -168,7 +168,7 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 	for (cur = 0, cnt = 0; cur < n; cur += chunk) {
 	    const char *curFormat = formatString + cur, *ss;
 	    char *starc;
-	    ss = NULL;
+	    ss = nullptr;
 	    if (formatString[cur] == '%') { /* handle special format command */
 
 		if (cur < n - 1 && formatString[cur + 1] == '%') {
@@ -425,7 +425,7 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 					    MAXLINE-1);
 				_my_sprintf(ss)
 				bit[MAXLINE] = '\0';
-				ss = NULL;
+				ss = nullptr;
 			    }
 			    break;
 

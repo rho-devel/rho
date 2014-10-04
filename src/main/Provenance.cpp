@@ -49,7 +49,7 @@ Provenance::Provenance(const Symbol* sym, const CommandChronicle* chron)
       m_xenogenous(false)
 {
     m_num_parents = m_chronicle->bindingsRead().size();
-    gettimeofday(&m_timestamp, 0);
+    gettimeofday(&m_timestamp, nullptr);
     announceBirth();
 }
 

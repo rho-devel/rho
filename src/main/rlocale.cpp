@@ -138,8 +138,8 @@ int Ri18n_wcwidth(wchar_t c)
     static CXXRCONST char *lc_cache = "";
     static int lc = 0;
 
-    if (0 != strcmp(setlocale(LC_CTYPE, NULL), lc_cache)) {
-	strncpy(lc_str, setlocale(LC_CTYPE, NULL), sizeof(lc_str));
+    if (0 != strcmp(setlocale(LC_CTYPE, nullptr), lc_cache)) {
+	strncpy(lc_str, setlocale(LC_CTYPE, nullptr), sizeof(lc_str));
 	for (i = 0, j = int( strlen(lc_str)); i < j && i < sizeof(lc_str); i++)
 	    lc_str[i] = char( toupper(lc_str[i]));
 	for (i = 0; i < (sizeof(cjk_locale_name)/sizeof(cjk_locale_name_t));
@@ -323,7 +323,7 @@ static const Ri18n_wctype_func_l Ri18n_wctype_func[] = {
     {"cntrl",  1<<9,  Ri18n_iswcntrl},
     {"punct",  1<<10, Ri18n_iswpunct},
     {"alnum",  1<<11, Ri18n_iswalnum},
-    {NULL,     0,     NULL}
+    {nullptr,     0,     nullptr}
 };
 
 /* These two used (via macros) in X11 dataentry */
@@ -331,7 +331,7 @@ wctype_t Ri18n_wctype(const char *name)
 {
     int i;
 
-    for (i = 0 ; Ri18n_wctype_func[i].name != NULL &&
+    for (i = 0 ; Ri18n_wctype_func[i].name != nullptr &&
 	     0 != strcmp(Ri18n_wctype_func[i].name, name) ; i++ );
     return Ri18n_wctype_func[i].wctype;
 }

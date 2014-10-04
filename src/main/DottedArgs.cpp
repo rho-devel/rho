@@ -53,7 +53,7 @@ DottedArgs* DottedArgs::clone() const
 RObject* DottedArgs::evaluate(Environment* env)
 {
     Rf_error(_("'...' used in an incorrect context"));
-    return 0;
+    return nullptr;
 }
 
 const char* DottedArgs::typeName() const

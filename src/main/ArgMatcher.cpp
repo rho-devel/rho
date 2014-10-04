@@ -73,7 +73,7 @@ void ArgMatcher::handleDots(Frame* frame, SuppliedList* supplied_list)
     if (!supplied_list->empty()) {
 	SuppliedList::iterator first = supplied_list->begin();
 	DottedArgs* dotted_args
-	    = expose(new DottedArgs((*first).value, 0, (*first).tag));
+	    = expose(new DottedArgs((*first).value, nullptr, (*first).tag));
 	bdg->setValue(dotted_args, Frame::Binding::EXPLICIT);
 	supplied_list->erase(first);
 	GCStackRoot<PairList> tail;
@@ -139,7 +139,7 @@ void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const
 	for (const PairList* s = supplied->list(); s; s = s->tail()) {
 	    ++sindex;
 	    const Symbol* tag = static_cast<const Symbol*>(s->tag());
-	    const String* name = (tag ? tag->name() : 0);
+	    const String* name = (tag ? tag->name() : nullptr);
 	    RObject* value = s->car();
 	    FormalMap::const_iterator fmit 
 		= (name ? m_formal_index.lower_bound(name)
@@ -166,7 +166,7 @@ void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const
 	    ++next;
 	    const SuppliedData& supplied_data = *slit;
 	    const String* supplied_name
-		= (supplied_data.tag ? supplied_data.tag->name() : 0);
+		= (supplied_data.tag ? supplied_data.tag->name() : nullptr);
 	    FormalMap::const_iterator fmit = supplied_data.fm_iter;
 	    // Within m_formal_index, skip formals formals following
 	    // '...' and formals with exact matches:

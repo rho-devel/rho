@@ -44,5 +44,5 @@ using namespace CXXR;
 void GCEdgeBase::detach()
 {
     GCNode::decRefCount(m_target);
-    m_target = 0;
+    m_target = nullptr;
 }

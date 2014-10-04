@@ -63,8 +63,8 @@ namespace CXXR {
     }
 }
 
-BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = 0;
-BuiltInFunction::map* BuiltInFunction::s_cache = 0;
+BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = nullptr;
+BuiltInFunction::map* BuiltInFunction::s_cache = nullptr;
 
 // BuiltInFunction::apply() creates a FunctionContext only if
 // m_transparent is false.  This affects the location at which
@@ -179,7 +179,7 @@ void BuiltInFunction::cleanup()
 {
     // Clearing s_cache avoids valgrind 'possibly lost' reports on exit:
     s_cache->clear();
-    s_cache = 0;
+    s_cache = nullptr;
 }
 
 int BuiltInFunction::indexInTable(const char* name)
@@ -198,7 +198,7 @@ BuiltInFunction* BuiltInFunction::obtain(const std::string& name)
     if (location == s_cache->end()) {
 	Rf_warning(_("%s is not the name of a built-in or special function"),
 		   name.c_str());
-	return 0;
+	return nullptr;
     }
     return location->second;
 }

@@ -95,7 +95,7 @@ const PairList* RObject::attributes() const
 void RObject::clearAttributes()
 {
     if (m_attrib) {
-	m_attrib = 0;
+	m_attrib = nullptr;
 	// Beware promotion to int by ~:
 	m_type &= static_cast<signed char>(~s_class_mask);
     }
@@ -104,7 +104,7 @@ void RObject::clearAttributes()
 void RObject::copyAttributes(const RObject* source, bool copyS4)
 {
     const PairList* srcatts = source->attributes();
-    GCStackRoot<const PairList> attribs(srcatts ? srcatts->clone() : 0);
+    GCStackRoot<const PairList> attribs(srcatts ? srcatts->clone() : nullptr);
     setAttributes(attribs);
     if (copyS4)
 	setS4Object(source->isS4Object());
@@ -122,7 +122,7 @@ RObject* RObject::getAttribute(const Symbol* name) const
     for (PairList* node = m_attrib; node; node = node->tail())
 	if (node->tag() == name)
 	    return node->car();
-    return 0;
+    return nullptr;
 }
 
 unsigned int RObject::packGPBits() const
@@ -141,12 +141,12 @@ void RObject::setAttribute(const Symbol* name, RObject* value)
 	Rf_error(_("attributes must be named"));
     // Update 'has class' bit if necessary:
     if (name == R_ClassSymbol) {
-	if (value == 0)
+	if (value == nullptr)
 	    m_type &= static_cast<signed char>(~s_class_mask);
 	else m_type |= static_cast<signed char>(s_class_mask);
     }
     // Find attribute:
-    PairList* prev = 0;
+    PairList* prev = nullptr;
     PairList* node = m_attrib;
     while (node && node->tag() != name) {
 	prev = node;
@@ -162,7 +162,7 @@ void RObject::setAttribute(const Symbol* name, RObject* value)
 	else m_attrib = node->tail();
     } else if (value) {  
 	// Create new node:
-	PairList* newnode = PairList::cons(value, 0, name);
+	PairList* newnode = PairList::cons(value, nullptr, name);
 	if (prev)
 	    prev->setTail(newnode);
 	else { // No preexisting attributes at all:
@@ -218,7 +218,7 @@ void RObject::visitReferents(const_visitor* v) const
 SEXP ATTRIB(SEXP x)
 {
     GCNode::GCInhibitor inhibitor;
-    return x ? const_cast<PairList*>(x->attributes()) : 0;
+    return x ? const_cast<PairList*>(x->attributes()) : nullptr;
 }
 
 void DUPLICATE_ATTRIB(SEXP to, SEXP from)

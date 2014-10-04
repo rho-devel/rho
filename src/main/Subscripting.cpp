@@ -347,7 +347,7 @@ Subscripting::canonicalizeArraySubscripts(std::vector<Indices>* indicesvec,
 	    Rf_error(_("too few subscripts"));
 	std::size_t dimsize = std::size_t((*dims)[d]);
 	const StringVector* names
-	    = (dimnames ? static_cast<StringVector*>((*dimnames)[d].get()) : 0);
+	    = (dimnames ? static_cast<StringVector*>((*dimnames)[d].get()) : nullptr);
 	Indices& indices = (*indicesvec)[d];
         indices.initialize(pl->car(), dimsize, names);
 	if (indices.maximumIndex() > dimsize)
@@ -396,7 +396,7 @@ bool Subscripting::dropDimensions(VectorBase* v)
     if (ngooddims == ndims)
 	return false;
     GCStackRoot<ListVector> dimnames(const_cast<ListVector*>(v->dimensionNames()));
-    v->setDimensionNames(0);
+    v->setDimensionNames(nullptr);
     if (ngooddims > 1) {
 	// The result will still be an array/matrix.
 	bool havenames = false;
@@ -435,7 +435,7 @@ bool Subscripting::dropDimensions(VectorBase* v)
 	}
     } else if (ngooddims == 1) {
 	// Reduce to a vector.
-	v->setDimensions(0);
+	v->setDimensions(nullptr);
 	if (dimnames) {
 	    std::size_t d = 0;
 	    while ((*dims)[d] == 1)
@@ -443,13 +443,13 @@ bool Subscripting::dropDimensions(VectorBase* v)
 	    v->setNames(static_cast<StringVector*>((*dimnames)[d].get()));
 	}
     } else /* ngooddims == 0 */ {
-	v->setDimensions(0);
-	v->setDimensionNames(0);
+	v->setDimensions(nullptr);
+	v->setDimensionNames(nullptr);
 	// In this special case it is ambiguous which dimnames to use
 	// for the sole remaining element, so we set up a name only if
 	// just one dimension has names.
 	if (dimnames) {
-	    StringVector* newnames = 0;
+	    StringVector* newnames = nullptr;
 	    std::size_t count = 0;
 	    for (std::size_t d = 0; d < ndims; ++d) {
 		RObject* dnd = (*dimnames)[d];

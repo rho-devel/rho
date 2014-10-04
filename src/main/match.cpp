@@ -371,7 +371,7 @@ SEXP attribute_hidden Rf_matchArgs(SEXP formals, SEXP supplied, SEXP call)
 
 	if (i) {
 	    GCStackRoot<PairList> tl(PairList::make(i - 1));
-	    a = CXXR_NEW(DottedArgs(0, tl));
+	    a = CXXR_NEW(DottedArgs(nullptr, tl));
 	    f=a;
 	    for(b=supplied;b!=R_NilValue;b=CDR(b))
 		if(!ARGUSED(b)) {

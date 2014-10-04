@@ -51,7 +51,7 @@ do_mapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     m = length(varyingArgs);
     SEXP vnames = PROTECT(getAttrib(varyingArgs, R_NamesSymbol));
-    Rboolean named = CXXRCONSTRUCT(Rboolean, vnames != R_NilValue);
+    Rboolean named = CXXRCONSTRUCT(Rboolean, vnames != nullptr);
 
     lengths = static_cast<R_xlen_t *>(  CXXR_alloc(m, sizeof(R_xlen_t)));
     for (int i = 0; i < m; i++) {
@@ -59,8 +59,8 @@ do_mapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 	lengths[i] = xlength(tmp1);
 	if (isObject(tmp1)) { // possibly dispatch on length()
 	    /* Cache the .Primitive: unclear caching is worthwhile. */
-	    static SEXP length_op = NULL;
-	    if (length_op == NULL) length_op = R_Primitive("length");
+	    static SEXP length_op = nullptr;
+	    if (length_op == nullptr) length_op = R_Primitive("length");
 	    // DispatchOrEval() needs 'args' to be a pairlist
 	    SEXP ans, tmp2 = PROTECT(list1(tmp1));
 	    if (DispatchOrEval(call, length_op, "length", tmp2, rho, &ans, 0, 1))

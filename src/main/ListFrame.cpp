@@ -65,7 +65,7 @@ Frame::Binding* ListFrame::binding(const Symbol* symbol)
     while (it != end && (*it).symbol() != symbol)
 	++it;
     if (it == end)
-	return 0;
+	return nullptr;
     return &(*it);
 }
 
@@ -76,7 +76,7 @@ const Frame::Binding* ListFrame::binding(const Symbol* symbol) const
     while (it != end && (*it).symbol() != symbol)
 	++it;
     if (it == end)
-	return 0;
+	return nullptr;
     return &(*it);
 }
 

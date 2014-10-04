@@ -52,7 +52,7 @@
 
 using namespace CXXR;
 
-static R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
+static R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 
 #define _S4_rep_keepClass
 /* ==>  rep(<S4>, .) keeps class e.g., for list-like */
@@ -644,7 +644,7 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
        rep(x, times, length.out, each, ...)
     */
     PROTECT(ap = CONS(R_NilValue,
-		      list4(R_NilValue, R_NilValue, R_NilValue, R_NilValue)));
+		      list4(nullptr, nullptr, nullptr, nullptr)));
     SET_TAG(ap, install("x"));
     SET_TAG(CDR(ap), install("times"));
     SET_TAG(CDDR(ap), install("length.out"));
@@ -768,8 +768,8 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
     */
     PROTECT(ap = CONS(R_NilValue,
 		      CONS(R_NilValue,
-			   list4(R_NilValue, R_NilValue, R_NilValue,
-				 R_NilValue))));
+			   list4(nullptr, nullptr, nullptr,
+				 nullptr))));
     tmp = ap;
     SET_TAG(tmp, install("from")); tmp = CDR(tmp);
     SET_TAG(tmp, install("to")); tmp = CDR(tmp);
@@ -966,14 +966,14 @@ SEXP attribute_hidden do_seq_along(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans;
     R_xlen_t len;
-    static SEXP length_op = NULL;
+    static SEXP length_op = nullptr;
 
     /* Store the .Primitive for 'length' for DispatchOrEval to use. */
-    if (length_op == NULL) {
+    if (length_op == nullptr) {
 	SEXP R_lengthSymbol = install("length");
 	length_op = eval(R_lengthSymbol, R_BaseEnv);
 	if (TYPEOF(length_op) != BUILTINSXP) {
-	    length_op = NULL;
+	    length_op = nullptr;
 	    error("'length' is not a BUILTIN");
 	}
 	R_PreserveObject(length_op);

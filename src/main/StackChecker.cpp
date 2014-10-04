@@ -70,7 +70,7 @@ void StackChecker::setDepthLimit(unsigned int depth)
 void StackChecker::handleStackDepthExceeded()
 {
     DisableStackCheckingScope no_stack_checking;
-    Rf_errorcall(0, _("evaluation nested too deeply: "
+    Rf_errorcall(nullptr, _("evaluation nested too deeply: "
 		      "infinite recursion / options(expressions=)?"));
 }	
 

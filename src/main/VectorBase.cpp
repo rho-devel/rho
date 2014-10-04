@@ -65,7 +65,7 @@ const StringVector* VectorBase::dimensionNames(unsigned int d) const
 {
     const ListVector* lv = dimensionNames();
     if (!lv || d > lv->size())
-	return 0;
+	return nullptr;
     return static_cast<const StringVector*>((*lv)[d - 1].get());
 }
 
@@ -82,7 +82,7 @@ const StringVector* VectorBase::names() const
 PairList* VectorBase::resizeAttributes(const PairList* attributes,
 				       std::size_t new_size)
 {
-    GCStackRoot<PairList> ans(PairList::cons(0));  // dummy first link
+    GCStackRoot<PairList> ans(PairList::cons(nullptr));  // dummy first link
     PairList* op = ans;
     for (const PairList* ip = attributes; ip; ip = ip->tail()) {
 	const RObject* tag = ip->tag();
@@ -90,10 +90,10 @@ PairList* VectorBase::resizeAttributes(const PairList* attributes,
 	    const StringVector* names
 		= SEXP_downcast<const StringVector*>(ip->car());
 	    op->setTail(PairList::cons(VectorBase::resize(names, new_size),
-				       0, tag));
+				       nullptr, tag));
 	    op = op->tail();
 	} else if (tag != DimSymbol && tag != DimNamesSymbol) {
-	    op->setTail(PairList::cons(ip->car(), 0, tag));
+	    op->setTail(PairList::cons(ip->car(), nullptr, tag));
 	    op = op->tail();
 	}
     }
@@ -141,12 +141,12 @@ void VectorBase::tooBig(std::size_t bytes)
 {
     double dsize = double(bytes)/1024.0;
     if (dsize > 1024.0*1024.0)
-	Rf_errorcall(0, _("cannot allocate vector of size %0.1f Gb"),
+	Rf_errorcall(nullptr, _("cannot allocate vector of size %0.1f Gb"),
 		     dsize/1024.0/1024.0);
     if (dsize > 1024.0)
-	Rf_errorcall(0, _("cannot allocate vector of size %0.1f Mb"),
+	Rf_errorcall(nullptr, _("cannot allocate vector of size %0.1f Mb"),
 		     dsize/1024.0);
-    Rf_errorcall(0, _("cannot allocate vector of size %0.1f Kb"), dsize);
+    Rf_errorcall(nullptr, _("cannot allocate vector of size %0.1f Kb"), dsize);
 }
 		     
 // Rf_allocVector is still in memory.cpp (for the time being).
@@ -165,7 +165,7 @@ Rboolean Rf_isVector(SEXP s)
     case EXPRSXP:
 	return TRUE;
     case CXXSXP:
-	return Rboolean(dynamic_cast<const VectorBase*>(s) != 0);
+	return Rboolean(dynamic_cast<const VectorBase*>(s) != nullptr);
     default:
 	return FALSE;
     }
