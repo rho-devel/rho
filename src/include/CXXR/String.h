@@ -286,7 +286,7 @@ namespace CXXR {
 	bool m_ascii;
 
 	// A null value of key_val_pr is used to designate the NA string:
-	explicit String(map::value_type* key_val_pr = 0);
+	explicit String(map::value_type* key_val_pr = nullptr);
 
 	// Not implemented.  Declared to prevent
 	// compiler-generated versions:

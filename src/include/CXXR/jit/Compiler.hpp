@@ -132,10 +132,10 @@ private:
 			 const char* error_msg,
 			 llvm::ArrayRef<llvm::Value*> extra_args = {});
     llvm::BasicBlock* createBasicBlock(const char* name,
-				       llvm::BasicBlock* insert_before = 0);
+				       llvm::BasicBlock* insert_before = nullptr);
     llvm::BasicBlock* createBranch(const char* name, const RObject* expression,
 				   llvm::PHINode* merge_point,
-				   llvm::BasicBlock* insert_before = 0);
+				   llvm::BasicBlock* insert_before = nullptr);
     llvm::Value* createBackEdge(llvm::BasicBlock* destination);
 };
 

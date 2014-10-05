@@ -73,7 +73,7 @@ namespace CXXR {
 	{
 	    map::iterator it = s_table->find(sym);
 	    if (it == s_table->end())
-		return 0;
+		return nullptr;
 	    return (*it).second;
 	}
 

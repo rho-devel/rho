@@ -300,7 +300,7 @@ namespace CXXR {
 	// return type:
 	VectorBase* clone() const
 	{
-	    return 0;
+	    return nullptr;
 	}
 
 	// Make private in due course (or get rid altogether):

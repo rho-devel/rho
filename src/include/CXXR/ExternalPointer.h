@@ -80,8 +80,8 @@ namespace CXXR {
 	 * @param prot Pointer to the protege object.  May be null
 	 *          (and often is).
 	 */
-	explicit ExternalPointer(void* ptr = 0, RObject* tag = 0,
-				 RObject* prot = 0)
+	explicit ExternalPointer(void* ptr = nullptr, RObject* tag = nullptr,
+				 RObject* prot = nullptr)
 	    : RObject(EXTPTRSXP), m_ptr(ptr), m_tag(tag), m_protege(prot)
 	    {}
 
@@ -306,7 +306,7 @@ inline SEXP R_ExternalPtrTag(SEXP s)
 #else
     inline void R_ClearExternalPtr(SEXP s)
     {
-	R_SetExternalPtrAddr(s, 0);
+	R_SetExternalPtrAddr(s, nullptr);
     }
 #endif
 

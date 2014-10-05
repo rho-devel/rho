@@ -61,8 +61,8 @@ namespace CXXR {
 	 *
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
-	explicit DottedArgs(RObject* cr = 0, PairList* tl = 0,
-			    const RObject* tg = 0)
+	explicit DottedArgs(RObject* cr = nullptr, PairList* tl = nullptr,
+			    const RObject* tg = nullptr)
 	    : ConsCell(DOTSXP, cr, tl, tg)
 	{}
 

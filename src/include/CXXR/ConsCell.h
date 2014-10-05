@@ -107,7 +107,7 @@ namespace CXXR {
 	     * @param cc Pointer, possibly null, to the ConsCell to be
 	     *           designated by the iterator.
 	     */
-	    explicit iterator(ConsCell* cc = 0)
+	    explicit iterator(ConsCell* cc = nullptr)
 		: m_cc(cc)
 	    {}
 
@@ -149,7 +149,7 @@ namespace CXXR {
 	     * @param cc Pointer, possibly null, to the ConsCell to be
 	     *           designated by the const_iterator.
 	     */
-	    explicit const_iterator(const ConsCell* cc = 0)
+	    explicit const_iterator(const ConsCell* cc = nullptr)
 		: m_cc(cc)
 	    {}
 
@@ -309,8 +309,8 @@ namespace CXXR {
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
 	explicit ConsCell(SEXPTYPE st,
-			  RObject* cr = 0, PairList* tl = 0,
-			  const RObject* tg = 0);
+			  RObject* cr = nullptr, PairList* tl = nullptr,
+			  const RObject* tg = nullptr);
 
 	/** @brief Copy constructor.
 	 *
@@ -408,7 +408,7 @@ namespace CXXR {
      */
     inline RObject* car0(ConsCell* cc)
     {
-	return cc ? cc->car() : 0;
+	return cc ? cc->car() : nullptr;
     }
 
     /** @brief (For debugging.)
@@ -444,7 +444,7 @@ namespace CXXR {
      */
     inline PairList* tail0(ConsCell* cc)
     {
-	return cc ? cc->tail() : 0;
+	return cc ? cc->tail() : nullptr;
     }
 
     /** @brief Singly linked list of pairs.
@@ -467,8 +467,8 @@ namespace CXXR {
 	 *
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
-	explicit PairList(RObject* cr = 0, PairList* tl = 0,
-			  const RObject* tg = 0)
+	explicit PairList(RObject* cr = nullptr, PairList* tl = nullptr,
+			  const RObject* tg = nullptr)
 	    : ConsCell(LISTSXP, cr, tl, tg)
 	{}
 
@@ -494,8 +494,8 @@ namespace CXXR {
 	 *
 	 * @return Pointer to newly created PairList element.
 	 */
-	static PairList* cons(RObject* cr, PairList* tl=0,
-			      const RObject* tag = 0)
+	static PairList* cons(RObject* cr, PairList* tl=nullptr,
+			      const RObject* tag = nullptr)
 	{
 	    // We call MemoryBank::allocate() directly here, rather
 	    // than GCNode::operator new(), to avoid giving rise to
@@ -582,7 +582,7 @@ namespace CXXR {
     {}
     
     inline ConsCell::ConsCell(const ConsCell& pattern, int)
-	: RObject(pattern), m_car(pattern.m_car), m_tail(0),
+	: RObject(pattern), m_car(pattern.m_car), m_tail(nullptr),
 	  m_tag(pattern.tag())
     {}
     
@@ -672,7 +672,7 @@ extern "C" {
     inline SEXP TAG(SEXP e)
     {
 	using namespace CXXR;
-	if (!e) return 0;
+	if (!e) return nullptr;
 	ConsCell& cc = *SEXP_downcast<ConsCell*>(e);
 	return const_cast<RObject*>(cc.tag());
     }

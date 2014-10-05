@@ -92,7 +92,7 @@ namespace CXXR {
 	 */
 	Closure(const Closure& pattern)
 	    : FunctionBase(pattern), m_debug(false),
-              m_num_invokes(0), m_compiled_body(0),
+              m_num_invokes(0), m_compiled_body(nullptr),
 	      m_matcher(pattern.m_matcher), m_body(pattern.m_body),
 	      m_environment(pattern.m_environment)
 	{}
@@ -171,7 +171,7 @@ namespace CXXR {
 	 */
 	RObject* invoke(Environment* env, const ArgList* arglist,
 			const Expression* call,
-			const Frame* method_bindings = 0) const;
+			const Frame* method_bindings = nullptr) const;
 
 	/** @brief Access the ArgMatcher of this Closure.
 	 *
@@ -367,7 +367,7 @@ namespace boost {
 	void load_construct_data(Archive& ar, CXXR::Closure* t,
 				 const unsigned int version)
 	{
-	    new (t) CXXR::Closure(0, 0);
+	    new (t) CXXR::Closure(nullptr, nullptr);
 	}
     }  // namespace serialization
 }  // namespace boost

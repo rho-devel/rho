@@ -140,9 +140,9 @@ namespace CXXR {
 	 * @return Pointer to a newly create ArgMatcher object to
 	 * match the specified formals.
 	 */
-	static ArgMatcher* make(Symbol* fml1, Symbol* fml2 = 0,
-				Symbol* fml3 = 0, Symbol* fml4 = 0,
-				Symbol* fml5 = 0, Symbol* fml6 = 0);
+	static ArgMatcher* make(Symbol* fml1, Symbol* fml2 = nullptr,
+				Symbol* fml3 = nullptr, Symbol* fml4 = nullptr,
+				Symbol* fml5 = nullptr, Symbol* fml6 = nullptr);
 
 	/** @brief Match formal and supplied arguments.
 	 *

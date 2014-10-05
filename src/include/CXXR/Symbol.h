@@ -286,7 +286,7 @@ namespace CXXR {
 	 *          signifies a special Symbol, which is not entered
 	 *          into s_table.
 	 */
-	explicit Symbol(const String* name = 0);
+	explicit Symbol(const String* name = nullptr);
 
 	// Declared private to ensure that Symbol objects are
 	// allocated only using 'new':

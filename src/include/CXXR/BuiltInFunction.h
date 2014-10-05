@@ -340,7 +340,7 @@ namespace CXXR {
 	// arbitrary, but will not be used during the lifetime of this
 	// temporary object.)
 	BuiltInFunction()
-	    : FunctionBase(BUILTINSXP), m_offset(0), m_function(0)
+	    : FunctionBase(BUILTINSXP), m_offset(0), m_function(nullptr)
 	{}
 
 	/** @brief Constructor.

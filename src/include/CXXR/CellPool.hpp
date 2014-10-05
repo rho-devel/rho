@@ -70,8 +70,8 @@ namespace CXXR {
 	 * initialize() before being used.
 	 */
 	CellPool()
-	    : m_free_cells(0),
-	      m_admin(0)
+	    : m_free_cells(nullptr),
+	      m_admin(nullptr)
 	{}
 
 	/** Destructor
@@ -186,7 +186,7 @@ namespace CXXR {
 	struct Cell {
 	    Cell* m_next;
 
-	    Cell(Cell* next = 0) : m_next(next) {}
+	    Cell(Cell* next = nullptr) : m_next(next) {}
 	};
 
 	// We put data fields that are used relatively rarely in a

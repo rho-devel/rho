@@ -54,7 +54,7 @@ namespace CXXR {
 	void detach();
     protected:
 	GCEdgeBase()
-	    : m_target(0)
+	    : m_target(nullptr)
 	{}
 
 	/** @brief Primary constructor.

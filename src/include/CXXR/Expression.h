@@ -69,8 +69,8 @@ namespace CXXR {
 	 *
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
-	explicit Expression(RObject* cr = 0, PairList* tl = 0,
-			    const RObject* tg = 0)
+	explicit Expression(RObject* cr = nullptr, PairList* tl = nullptr,
+			    const RObject* tg = nullptr)
 	    : ConsCell(LANGSXP, cr, tl, tg)
 	{}
 

@@ -681,7 +681,7 @@ namespace CXXR {
 	    }
             env = env->enclosingEnvironment();
 	} while (inherits && env);
-	return NULL;
+	return nullptr;
     }
 }  // namespace CXXR
 
@@ -710,7 +710,7 @@ namespace boost {
 	void load_construct_data(Archive& ar, CXXR::Environment* t,
 				 const unsigned int version)
 	{
-	    new (t) CXXR::Environment(0, 0);
+	    new (t) CXXR::Environment(nullptr, nullptr);
 	}
     }  // namespace serialization
 }  // namespace boost
@@ -727,7 +727,7 @@ void CXXR::Environment::load(Archive& ar, const unsigned int version)
     ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
     S11nType envtype;
     ar >> BOOST_SERIALIZATION_NVP(envtype);
-    Environment* reloc = 0;
+    Environment* reloc = nullptr;
     switch(envtype) {
     case EMPTY:
 	reloc = s_empty;

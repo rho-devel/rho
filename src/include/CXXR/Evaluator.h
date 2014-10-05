@@ -136,7 +136,7 @@ namespace CXXR {
 	class Context;
 
 	Evaluator()
-	    : m_next(s_current), m_innermost_context(0)
+	    : m_next(s_current), m_innermost_context(nullptr)
 	{
 	    s_current = this;
 	}
@@ -290,7 +290,7 @@ extern "C" {
     inline SEXP Rf_eval(SEXP e, SEXP rho)
     {
 	using namespace CXXR;
-	Environment* env = 0;
+	Environment* env = nullptr;
 	if (e)
 	    env = SEXP_downcast<Environment*>(rho);	
 	return evaluate(e, env);

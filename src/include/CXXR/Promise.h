@@ -122,7 +122,7 @@ namespace CXXR {
 	 */
 	RObject* force()
 	{
-	    return evaluate(0);
+	    return evaluate(nullptr);
 	}
 
 	/** @brief Not for general use.

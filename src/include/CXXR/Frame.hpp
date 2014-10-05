@@ -115,7 +115,7 @@ namespace CXXR {
 	     * can be used.
 	     */
 	    Binding()
-		: m_frame(0), m_symbol(0), m_value(Symbol::missingArgument()),
+		: m_frame(nullptr), m_symbol(nullptr), m_value(Symbol::missingArgument()),
 #ifdef PROVENANCE_TRACKING
 		  m_provenance(0),
 #endif
@@ -138,7 +138,7 @@ namespace CXXR {
 	     *
 	     * @return The created PairList element.
 	     */
-	    PairList* asPairList(PairList* tail = 0) const;
+	    PairList* asPairList(PairList* tail = nullptr) const;
 
 	    /** @brief Bind value to Symbol.
 	     *
@@ -769,7 +769,7 @@ namespace CXXR {
 	// only using 'new':
 	~Frame()
 	{
-	    statusChanged(0);
+	    statusChanged(nullptr);
 	}
 
 	/** @brief Report change in the bound/unbound status of Symbol
@@ -902,7 +902,7 @@ namespace CXXR {
     void Frame::Binding::serialize(Archive & ar, const unsigned int version)
     {
 	GCNPTR_SERIALIZE(ar, m_value);
-	const Provenance* prov = 0;
+	const Provenance* prov = nullptr;
 #ifdef PROVENANCE_TRACKING
 	prov = m_provenance;
 #endif

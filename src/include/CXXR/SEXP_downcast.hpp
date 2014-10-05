@@ -81,10 +81,10 @@ namespace CXXR {
     template <typename PtrOut, typename PtrIn>
     PtrOut SEXP_downcast(PtrIn s, bool allow_null = true)
     {
-	PtrOut ans = 0;
+	PtrOut ans = nullptr;
 	if (!s) {
 	    if (allow_null)
-		return 0;
+		return nullptr;
 	    else SEXP_downcast_error("NULL", ans->staticTypeName());
 	}
 	ans = dynamic_cast<PtrOut>(s);

@@ -120,7 +120,7 @@ namespace CXXR {
 	    : std::unary_function<T, void> {
 	    void operator()(RHandle<T>& t) const
 	    {
-		t = 0;
+		t = nullptr;
 	    }
 	};
 
@@ -187,7 +187,7 @@ namespace CXXR {
 template <class T>
 T* CXXR::RHandle<T>::cloneOrSelf(T* pattern)
 {
-    T* t = pattern ? static_cast<T*>(pattern->clone()) : 0;
+    T* t = pattern ? static_cast<T*>(pattern->clone()) : nullptr;
     return (t ? t : pattern);
 }
 

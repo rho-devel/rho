@@ -135,7 +135,7 @@ namespace CXXR {
 	 * using <tt>new WeakRef(...)</tt> rather than
 	 * <tt>CXXR_NEW(WeakRef(...))</tt>.
 	 */
-	WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer = 0,
+	WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer = nullptr,
 		bool finalize_on_exit = false);
 
 	/**
