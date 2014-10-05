@@ -92,9 +92,9 @@ namespace CXXR {
 	}
 
 	// Virtual functions of RObject:
-	Expression* clone() const;
-	RObject* evaluate(Environment* env);
-	const char* typeName() const;
+	Expression* clone() const override;
+	RObject* evaluate(Environment* env) override;
+	const char* typeName() const override;
     private:
 	friend class boost::serialization::access;
 	// Declared private to ensure that Expression objects are

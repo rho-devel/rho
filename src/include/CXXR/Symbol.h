@@ -250,14 +250,14 @@ namespace CXXR {
 	}
 
 	// Virtual functions of RObject:
-	RObject* evaluate(Environment* env);
-	const char* typeName() const;
+	RObject* evaluate(Environment* env) override;
+	const char* typeName() const override;
 
 	// Virtual function of GCNode:
-	void visitReferents(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const override;
     protected:
 	// Virtual function of GCNode:
-	void detachReferents();
+	void detachReferents() override;
     private:
 	friend class boost::serialization::access;
 	friend class SchwarzCounter<Symbol>;

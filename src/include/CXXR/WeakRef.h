@@ -213,11 +213,11 @@ namespace CXXR {
 	RObject* value() const {return m_value;}
 
 	// Virtual functions of RObject:
-	unsigned int packGPBits() const;
-	void unpackGPBits(unsigned int gpbits);
+	unsigned int packGPBits() const override;
+	void unpackGPBits(unsigned int gpbits) override;
     protected:
 	// Virtual function of GCNode:
-	void detachReferents();
+	void detachReferents() override;
     private:
 	typedef std::list<WeakRef*, Allocator<WeakRef*> > WRList;
 	static WRList* s_live;

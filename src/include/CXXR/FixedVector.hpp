@@ -239,14 +239,14 @@ namespace CXXR {
 	static const char* staticTypeName();
 
 	// Virtual functions of VectorBase:
-	void setSize(size_type new_size);
+	void setSize(size_type new_size) override;
 
 	// Virtual functions of RObject:
-	FixedVector<T, ST, Initializer>* clone() const;
-	const char* typeName() const;
+	FixedVector<T, ST, Initializer>* clone() const override;
+	const char* typeName() const override;
 
 	// Virtual function of GCNode:
-	void visitReferents(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const override;
     protected:
 	/**
 	 * Declared protected to ensure that FixedVector objects are
@@ -261,7 +261,7 @@ namespace CXXR {
 	}
 
 	// Virtual function of GCNode:
-	void detachReferents();
+	void detachReferents() override;
     private:
 	friend class boost::serialization::access;
 

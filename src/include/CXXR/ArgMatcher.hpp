@@ -258,10 +258,10 @@ namespace CXXR {
 	}
 
 	// Virtual function of GCNode:
-	void visitReferents(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const override;
     protected:
 	// Virtual function of GCNode:
-	void detachReferents();
+	void detachReferents() override;
     private:
 	static bool s_warn_on_partial_match;
 

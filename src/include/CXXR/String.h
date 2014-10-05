@@ -241,8 +241,8 @@ namespace CXXR {
 	}
 
 	// Virtual functions of RObject:
-	unsigned int packGPBits() const;
-	const char* typeName() const;
+	unsigned int packGPBits() const override;
+	const char* typeName() const override;
     private:
 	friend class boost::serialization::access;
 	friend class SchwarzCounter<String>;

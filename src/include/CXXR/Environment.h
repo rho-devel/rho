@@ -462,15 +462,15 @@ namespace CXXR {
 	}
 
 	// Virtual functions of RObject:
-	unsigned int packGPBits() const;
-	const char* typeName() const;
-	void unpackGPBits(unsigned int gpbits);
+	unsigned int packGPBits() const override;
+	const char* typeName() const override;
+	void unpackGPBits(unsigned int gpbits) override;
 
 	// Virtual functions of GCNode:
-	void visitReferents(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const override;
     protected:
 	// Virtual function of GCNode:
-	void detachReferents();
+	void detachReferents() override;
     private:
 	friend class boost::serialization::access;
 	friend class SchwarzCounter<Environment>;
@@ -486,7 +486,7 @@ namespace CXXR {
 	    {}
 
 	    // Virtual function of const_visitor:
-	    void operator()(const GCNode* node);
+	    void operator()(const GCNode* node) override;
 	};
 
 	// The class maintains a cache of Symbol Bindings found along

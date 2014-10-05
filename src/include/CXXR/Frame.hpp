@@ -763,7 +763,7 @@ namespace CXXR {
         std::vector<const Symbol*> symbols(bool include_dotsymbols) const;
 
 	// Virtual function of GCNode:
-	void visitReferents(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const override;
     protected:
 	// Declared protected to ensure that Frame objects are created
 	// only using 'new':
@@ -786,7 +786,7 @@ namespace CXXR {
 	}
 
 	// Virtual function of GCNode:
-	void detachReferents();
+	void detachReferents() override;
     private:
 	friend class Environment;
 	friend class boost::serialization::access;

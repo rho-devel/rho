@@ -92,8 +92,8 @@ namespace CXXR {
 	}
 
 	// Virtual functions of RObject:
-	S4Object* clone() const;
-	const char* typeName() const;
+	S4Object* clone() const override;
+	const char* typeName() const override;
     private:
 	friend class boost::serialization::access;
 

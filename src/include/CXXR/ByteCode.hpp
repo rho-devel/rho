@@ -141,12 +141,12 @@ namespace CXXR {
 	static void visitRoots(GCNode::const_visitor* v);
 
 	// Virtual functions of RObject:
-	RObject* evaluate(Environment* env);
-	const char* typeName() const;
+	RObject* evaluate(Environment* env) override;
+	const char* typeName() const override;
 
 	// Virtual functions of GCNode:
-	void detachReferents();
-	void visitReferents(const_visitor* v) const;
+	void detachReferents() override;
+	void visitReferents(const_visitor* v) const override;
 
 	// Make this private in due course:
 #ifdef THREADED_CODE

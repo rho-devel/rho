@@ -536,12 +536,12 @@ namespace CXXR {
 	virtual void unpackGPBits(unsigned int gpbits);
 
 	// Virtual functions of GCNode:
-	void detachReferents()
+	void detachReferents() override
 	{
 	    m_attrib.detach();
 	}
 
-	void visitReferents(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const override;
     protected:
 	/**
 	 * @param stype Required type of the RObject.

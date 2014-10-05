@@ -293,7 +293,7 @@ namespace CXXR {
 	PairList* tail();
 
 	// Virtual function of GCNode:
-	void visitReferents(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const override;
     protected:
 	/**
 	 * @param st The required ::SEXPTYPE of the ConsCell.  Must
@@ -344,7 +344,7 @@ namespace CXXR {
 	~ConsCell() {}
 
 	// Virtual function of GCNode:
-	void detachReferents();
+	void detachReferents() override;
     private:
 	friend class boost::serialization::access;
 	friend class PairList;
@@ -530,10 +530,10 @@ namespace CXXR {
 	}
 
 	// Virtual functions of RObject:
-	PairList* clone() const;
-	unsigned int packGPBits() const;
-	const char* typeName() const;
-	void unpackGPBits(unsigned int gpbits);
+	PairList* clone() const override;
+	unsigned int packGPBits() const override;
+	const char* typeName() const override;
+	void unpackGPBits(unsigned int gpbits) override;
     private:
         friend class boost::serialization::access;
 

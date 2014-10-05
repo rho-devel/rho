@@ -1366,8 +1366,8 @@ namespace {
 	}
 
 	// Virtual functions of GCNode:
-	void detachReferents();
-	void visitReferents(const_visitor* v) const;
+	void detachReferents() override;
+	void visitReferents(const_visitor* v) const override;
     };
 
     void HandlerEntry::detachReferents()

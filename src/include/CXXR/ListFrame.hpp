@@ -63,13 +63,13 @@ namespace CXXR {
 	ListFrame(const ListFrame &pattern);
 
 	// Virtual functions of Frame (qv):
-	Binding* binding(const Symbol* symbol) HOT_FUNCTION;
+	Binding* binding(const Symbol* symbol) HOT_FUNCTION override;
 
-	const Binding* binding(const Symbol* symbol) const;
-	BindingRange bindingRange() const;
-	ListFrame* clone() const;
-	void lockBindings();
-	std::size_t size() const;
+	const Binding* binding(const Symbol* symbol) const override;
+	BindingRange bindingRange() const override;
+	ListFrame* clone() const override;
+	void lockBindings() override;
+	std::size_t size() const override;
     private:
 	friend class boost::serialization::access;
 
@@ -121,9 +121,9 @@ namespace CXXR {
 	}
 
 	// Virtual functions of Frame (qv):
-	void v_clear();
-	bool v_erase(const Symbol* symbol);
-	Binding* v_obtainBinding(const Symbol* symbol);
+	void v_clear() override;
+	bool v_erase(const Symbol* symbol) override;
+	Binding* v_obtainBinding(const Symbol* symbol) override;
     };
 }  // namespace CXXR
 

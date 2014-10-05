@@ -84,9 +84,9 @@ namespace CXXR {
 	}
 
 	// Virtual functions of RObject:
-	DottedArgs* clone() const;
-	RObject* evaluate(Environment* env);
-	const char* typeName() const;
+	DottedArgs* clone() const override;
+	RObject* evaluate(Environment* env) override;
+	const char* typeName() const override;
     private:
 	// Declared private to ensure that DottedArgs objects are
 	// allocated only using 'new':

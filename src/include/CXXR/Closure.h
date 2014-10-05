@@ -229,19 +229,19 @@ namespace CXXR {
 
 	// Virtual function of FunctionBase:
 	RObject* apply(ArgList* arglist, Environment* env,
-		       const Expression* call) const;
+		       const Expression* call) const override;
 
 	// Virtual functions of RObject:
-        Closure* clone() const;
-	const char* typeName() const;
+        Closure* clone() const override;
+	const char* typeName() const override;
 
 	// Virtual function of GCNode:
-	void visitReferents(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const override;
 
         void compile() const;
     protected:
 	// Virtual function of GCNode:
-	void detachReferents();
+	void detachReferents() override;
     private:
         friend class boost::serialization::access;
 

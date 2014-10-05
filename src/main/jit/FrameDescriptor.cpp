@@ -59,7 +59,7 @@ struct LocalVariableVisitor : public GCNode::const_visitor {
 	: m_locals(local_vars)
     { }
 
-    void operator()(const GCNode* node)
+    void operator()(const GCNode* node) override
     {
 	visit(node);
     }

@@ -284,11 +284,11 @@ namespace CXXR {
 	}
 
 	// Virtual function of RObject:
-	const char* typeName() const;
+	const char* typeName() const override;
 
 	// Virtual function of FunctionBase:
 	RObject* apply(ArgList* arglist, Environment* env,
-		       const Expression* call) const;
+		       const Expression* call) const override;
     private:
 	friend class boost::serialization::access;
 	friend class SchwarzCounter<BuiltInFunction>;

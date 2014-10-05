@@ -180,17 +180,17 @@ namespace CXXR {
 	}
 
 	// Virtual function of RObject:
-	const char* typeName() const;
+	const char* typeName() const override;
 
 	// Virtual function of GCNode:
-	void visitReferents(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const override;
     protected:
 	// Declared protected to ensure that ExternalPointer objects are
 	// allocated only using 'new':
 	~ExternalPointer() {}
 
 	// Virtual function of GCNode:
-	void detachReferents();
+	void detachReferents() override;
     private:
 	friend class boost::serialization::access;
 
