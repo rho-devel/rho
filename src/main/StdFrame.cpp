@@ -106,8 +106,10 @@ StdFrame* StdFrame::clone() const
 
 void StdFrame::lockBindings()
 {
-    for (map::iterator it = m_map.begin(); it != m_map.end(); ++it)
-	(*it).second.setLocking(true);
+    for (auto & elem : m_map) {
+	Binding& binding = elem.second;
+	binding.setLocking(true);
+    }
 }
 
 size_t StdFrame::size() const

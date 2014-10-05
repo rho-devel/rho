@@ -439,9 +439,8 @@ CXXR::FixedVector<T, ST, Initr>::FixedVector(const FixedVector<T, ST, Initr>& pa
     if (sz > 1)
 	m_data = allocData(sz);
     T* p = m_data;
-    for (const_iterator it = pattern.begin(), end = pattern.end();
-	 it != end; ++it)
-	new (p++) T(*it);
+    for (const T& elem : pattern)
+	new (p++) T(elem);
     Initr::initialize(this);
 }
 

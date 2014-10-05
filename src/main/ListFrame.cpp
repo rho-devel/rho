@@ -92,8 +92,8 @@ ListFrame* ListFrame::clone() const
 
 void ListFrame::lockBindings()
 {
-    for (List::iterator it = m_list.begin(); it != m_list.end(); ++it)
-	(*it).setLocking(true);
+    for (Binding& binding : m_list)
+	binding.setLocking(true);
 }
 
 size_t ListFrame::size() const

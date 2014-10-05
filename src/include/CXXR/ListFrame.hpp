@@ -106,9 +106,7 @@ namespace CXXR {
 	    ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(Frame);
 	    size_t numberOfBindings = size();
 	    ar << BOOST_SERIALIZATION_NVP(numberOfBindings);
-	    for (List::const_iterator it = m_list.begin();
-		 it != m_list.end(); ++it) {
-		const Binding& binding = *it;
+	    for (const Frame::Binding& binding : m_list) {
 		const Symbol* symbol = binding.symbol();
 		GCNPTR_SERIALIZE(ar, symbol);
 		ar << BOOST_SERIALIZATION_NVP(binding);

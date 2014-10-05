@@ -240,9 +240,7 @@ void ArgMatcher::propagateFormalBindings(const Environment* fromenv,
 					 Environment* toenv) const
 {
     const Frame* fromf = fromenv->frame();
-    for (FormalVector::const_iterator it = m_formal_data.begin();
-	 it != m_formal_data.end(); ++it) {
-	const FormalData& fdata = *it;
+    for (const FormalData& fdata : m_formal_data) {
 	const Symbol* symbol = fdata.symbol;
 	const Frame::Binding* frombdg = fromf->binding(symbol);
 	if (!frombdg)

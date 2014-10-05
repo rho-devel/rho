@@ -253,9 +253,7 @@ void WeakRef::markThru()
     {
 	GCNode::Marker marker;
 	s_live->splice(s_live->end(), newlive);
-	for (WRList::iterator lit = s_live->begin();
-	     lit != s_live->end(); ++lit) {
-	    WeakRef* wr = *lit;
+	for (WeakRef* wr : *s_live) {
 	    marker(wr);
 	}
     }

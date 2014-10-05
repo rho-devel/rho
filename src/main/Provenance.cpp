@@ -105,8 +105,7 @@ Provenance::Set* Provenance::descendants(const Set& roots)
     while (!open.empty()) {
 	const Provenance* n = *(open.begin());
 	const Set& c = n->children();
-	for (Set::iterator it = c.begin(); it != c.end(); ++it) {
-	    const Provenance* s = *it;
+	for (const Provenance* s : c) {
 	    // If s isn't in closed set, put it in open
 	    if (closed->find(s) == closed->end())
 		open.insert(s);
