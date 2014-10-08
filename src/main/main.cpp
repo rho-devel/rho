@@ -125,7 +125,7 @@ LibExport SEXP	R_NamespaceRegistry;/* Registry for registered name spaces */
 LibExport char *R_Home;		    /* Root of the R tree */
 LibExport int	R_Is_Running;	    /* for Windows memory manager */
 LibExport Rboolean R_Interactive = TRUE;  /* TRUE during interactive use*/
-LibExport char *R_TempDir = NULL;   /* Name of per-session dir */
+LibExport char *R_TempDir = nullptr;   /* Name of per-session dir */
 LibExport char *R_HistoryFile;	    /* Name of the history file */
 LibExport int	R_HistorySize;	    /* Size of the history file */
 LibExport int	R_RestoreHistory;   /* restore the history file? */
@@ -143,8 +143,8 @@ int	gc_inhibit_torture = 1;
 uintptr_t R_CStackLimit	= uintptr_t(-1);	/* C stack limit */
 uintptr_t R_CStackStart	= uintptr_t(-1);	/* Initial stack address */
 Rboolean  R_Slave	= FALSE;	/* Run as a slave process */
-FILE*	R_Consolefile	= NULL;	/* Console output file */
-FILE*	R_Outputfile	= NULL;	/* Output file */
+FILE*	R_Consolefile	= nullptr;	/* Console output file */
+FILE*	R_Outputfile	= nullptr;	/* Output file */
 int	R_DirtyImage	= 1;	/* Current image dirty */
 const char	*R_GUIType	= "unknown";
 Rboolean R_isForkedChild = FALSE;
@@ -170,7 +170,7 @@ attribute_hidden Rboolean R_WarnEscapes  = TRUE;   /* Warn on unrecognized escap
 attribute_hidden Rboolean R_Quiet	= FALSE;	/* Be as quiet as possible */
 attribute_hidden Rboolean R_Verbose	= FALSE;	/* Be verbose */
 attribute_hidden int	R_ErrorCon	= 2;	/* Error connection */
-attribute_hidden char   *Sys_TempDir	= NULL;	/* Name of per-session dir
+attribute_hidden char   *Sys_TempDir	= nullptr;	/* Name of per-session dir
 						   if set by R itself */
 attribute_hidden char	R_StdinEnc[31]  = "";	/* Encoding assumed for stdin */
 int R_ParseError	= 0; /* Line where parse error occurred */
@@ -442,7 +442,7 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
 static void R_ReplConsole(SEXP rho, int savestack)
 {
     int status;
-    R_ReplState state = { PARSE_NULL, 1, 0, "", NULL};
+    R_ReplState state = { PARSE_NULL, 1, 0, "", nullptr};
 
     R_IoBufferWriteReset(&R_ConsoleIob);
     state.buf[0] = '\0';
@@ -611,7 +611,7 @@ static void sigactionSegv(int signum, siginfo_t *ip, void *context)
     /* First check for stack overflow if we know the stack position.
        We assume anything within 16Mb beyond the stack end is a stack overflow.
      */
-    if(signum == SIGSEGV && (ip != CXXRNOCAST(siginfo_t *)0) &&
+    if(signum == SIGSEGV && (ip != CXXRNOCAST(siginfo_t *)nullptr) &&
        intptr_t( R_CStackStart) != -1) {
 	uintptr_t addr = uintptr_t( ip->si_addr);
 	intptr_t diff = (R_CStackDir > 0) ? R_CStackStart - addr:
@@ -631,7 +631,7 @@ static void sigactionSegv(int signum, siginfo_t *ip, void *context)
     REprintf("\n *** caught %s ***\n",
 	     signum == SIGILL ? "illegal operation" :
 	     signum == SIGBUS ? "bus error" : "segfault");
-    if(ip != CXXRNOCAST(siginfo_t *)0) {
+    if(ip != CXXRNOCAST(siginfo_t *)nullptr) {
 	if(signum == SIGILL) {
 
 	    switch(ip->si_code) {
@@ -759,21 +759,21 @@ static void init_signal_handlers(void)
     /* <FIXME> may need to reinstall this if we do recover. */
     struct sigaction sa;
     signal_stack = malloc(SIGSTKSZ + R_USAGE);
-    if (signal_stack != NULL) {
+    if (signal_stack != nullptr) {
 	sigstk.ss_sp = signal_stack;
 	sigstk.ss_size = SIGSTKSZ + R_USAGE;
 	sigstk.ss_flags = 0;
-	if(sigaltstack(&sigstk, NULL) < 0)
+	if(sigaltstack(&sigstk, nullptr) < 0)
 	    warning("failed to set alternate signal stack");
     } else
 	warning("failed to allocate alternate signal stack");
     sa.sa_sigaction = sigactionSegv;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_ONSTACK | SA_SIGINFO;
-    sigaction(SIGSEGV, &sa, NULL);
-    sigaction(SIGILL, &sa, NULL);
+    sigaction(SIGSEGV, &sa, nullptr);
+    sigaction(SIGILL, &sa, nullptr);
 #ifdef SIGBUS
-    sigaction(SIGBUS, &sa, NULL);
+    sigaction(SIGBUS, &sa, nullptr);
 #endif
 
     signal(SIGINT,  handleInterrupt);
@@ -801,7 +801,7 @@ static void init_signal_handlers(void)
 static void R_LoadProfile(FILE *fparg, SEXP env)
 {
     FILE * volatile fp = fparg; /* is this needed? */
-    if (fp != NULL) {
+    if (fp != nullptr) {
 	Evaluator evalr;
 	try {
 	    R_ReplFile(fp, env);
@@ -949,7 +949,7 @@ void setup_Rmainloop(void)
     */
 
     fp = R_OpenLibraryFile("base");
-    if (fp == NULL)
+    if (fp == nullptr)
 	R_Suicide(_("unable to open the base package\n"));
 
     try {
@@ -1175,11 +1175,11 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     int savestack;
     GCStackRoot<> topExp(R_CurrentExpr);
     SEXP ap;
-    RObject* ans = 0;
+    RObject* ans = nullptr;
 
     /* argument matching */
     GCStackRoot<> argList; 
-    PROTECT(ap = list4(R_NilValue, R_NilValue, R_NilValue, R_NilValue));
+    PROTECT(ap = list4(nullptr, nullptr, nullptr, nullptr));
     SET_TAG(ap,  install("text"));
     SET_TAG(CDR(ap), install("condition"));
     SET_TAG(CDDR(ap), install("expr"));
@@ -1335,7 +1335,7 @@ SEXP attribute_hidden do_quit(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 #include <R_ext/Callbacks.h>
 
-static R_ToplevelCallbackEl *Rf_ToplevelTaskHandlers = NULL;
+static R_ToplevelCallbackEl *Rf_ToplevelTaskHandlers = nullptr;
 
 /**
   This is the C-level entry point for registering a handler
@@ -1357,10 +1357,10 @@ Rf_addTaskCallback(R_ToplevelCallback cb, void *data,
 
     el->data = data;
     el->cb = cb;
-    el->next = NULL;
+    el->next = nullptr;
     el->finalizer = finalizer;
 
-    if(Rf_ToplevelTaskHandlers == NULL) {
+    if(Rf_ToplevelTaskHandlers == nullptr) {
 	Rf_ToplevelTaskHandlers = el;
 	which = 0;
     } else {
@@ -1390,7 +1390,7 @@ Rf_addTaskCallback(R_ToplevelCallback cb, void *data,
 Rboolean
 Rf_removeTaskCallbackByName(const char *name)
 {
-    R_ToplevelCallbackEl *el = Rf_ToplevelTaskHandlers, *prev = NULL;
+    R_ToplevelCallbackEl *el = Rf_ToplevelTaskHandlers, *prev = nullptr;
     Rboolean status = TRUE;
 
     if(!Rf_ToplevelTaskHandlers) {
@@ -1399,7 +1399,7 @@ Rf_removeTaskCallbackByName(const char *name)
 
     while(el) {
 	if(strcmp(el->name, name) == 0) {
-	    if(prev == NULL) {
+	    if(prev == nullptr) {
 		Rf_ToplevelTaskHandlers = el->next;
 	    } else {
 		prev->next = el->next;
@@ -1427,7 +1427,7 @@ Rf_removeTaskCallbackByName(const char *name)
 Rboolean
 Rf_removeTaskCallbackByIndex(int id)
 {
-    R_ToplevelCallbackEl *el = Rf_ToplevelTaskHandlers, *tmp = NULL;
+    R_ToplevelCallbackEl *el = Rf_ToplevelTaskHandlers, *tmp = nullptr;
     Rboolean status = TRUE;
 
     if(id < 0)
@@ -1446,7 +1446,7 @@ Rf_removeTaskCallbackByIndex(int id)
 
 	    if(i == (id -1) && el) {
 		tmp = el->next;
-		el->next = (tmp ? tmp->next : NULL);
+		el->next = (tmp ? tmp->next : nullptr);
 	    }
 	}
     }
@@ -1529,7 +1529,7 @@ void
 Rf_callToplevelHandlers(SEXP expr, SEXP value, Rboolean succeeded,
 			Rboolean visible)
 {
-    R_ToplevelCallbackEl *h, *prev = NULL;
+    R_ToplevelCallbackEl *h, *prev = nullptr;
     Rboolean again;
 
     if(Rf_RunningToplevelHandlers == TRUE)
@@ -1591,7 +1591,7 @@ R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
 	SETCAR(cur, VECTOR_ELT(f, 1));
     }
 
-    val = R_tryEval(e, NULL, &errorOccurred);
+    val = R_tryEval(e, nullptr, &errorOccurred);
     if(!errorOccurred) {
 	PROTECT(val);
 	if(TYPEOF(val) != LGLSXP) {
@@ -1613,7 +1613,7 @@ R_addTaskCallback(SEXP f, SEXP data, SEXP useData, SEXP name)
     SEXP internalData;
     SEXP index;
     R_ToplevelCallbackEl *el;
-    const char *tmpName = NULL;
+    const char *tmpName = nullptr;
 
     internalData = allocVector(VECSXP, 3);
     R_PreserveObject(internalData);

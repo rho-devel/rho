@@ -95,7 +95,7 @@ namespace {
 		return bf.apply<LogicalVector>(l, r);
 	    }
 	}
-	return 0;  // -Wall
+	return nullptr;  // -Wall
     }
 
     struct BitwiseAnd {
@@ -129,7 +129,7 @@ namespace {
 		return bf.apply<RawVector>(l, r);
 	    }
 	}
-	return 0;  // -Wall
+	return nullptr;  // -Wall
     }
 
     RObject* lbinary(RObject* op, RObject* args)
@@ -196,7 +196,7 @@ SEXP attribute_hidden do_logic(SEXP call, SEXP op, SEXP args, SEXP env)
     default:
 	error(_("internal error in do_logic"));
     }
-    return 0;  // -Wall
+    return nullptr;  // -Wall
 }
 
 /* && || */

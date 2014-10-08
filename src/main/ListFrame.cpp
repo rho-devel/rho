@@ -65,7 +65,7 @@ Frame::Binding* ListFrame::binding(const Symbol* symbol)
     while (it != end && (*it).symbol() != symbol)
 	++it;
     if (it == end)
-	return 0;
+	return nullptr;
     return &(*it);
 }
 
@@ -76,7 +76,7 @@ const Frame::Binding* ListFrame::binding(const Symbol* symbol) const
     while (it != end && (*it).symbol() != symbol)
 	++it;
     if (it == end)
-	return 0;
+	return nullptr;
     return &(*it);
 }
 
@@ -92,8 +92,8 @@ ListFrame* ListFrame::clone() const
 
 void ListFrame::lockBindings()
 {
-    for (List::iterator it = m_list.begin(); it != m_list.end(); ++it)
-	(*it).setLocking(true);
+    for (Binding& binding : m_list)
+	binding.setLocking(true);
 }
 
 size_t ListFrame::size() const

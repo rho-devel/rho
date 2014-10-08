@@ -149,7 +149,7 @@ SEXP attribute_hidden do_prmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int quote;
     SEXP a, x, rowlab, collab, naprint;
-    char *rowname = NULL, *colname = NULL;
+    char *rowname = nullptr, *colname = nullptr;
 
     checkArity(op,args);
     PrintDefaults();
@@ -454,7 +454,7 @@ static void PrintGenericVector(SEXP s, SEXP env)
 	ptag = tagbuf + taglen;
 	{
 	    GCStackRoot<PairList> tl(CXXR_NEW(PairList));
-	    PROTECT(newcall = CXXR_NEW(Expression(0, tl)));
+	    PROTECT(newcall = CXXR_NEW(Expression(nullptr, tl)));
 	}
 	SETCAR(newcall, install("print"));
 
@@ -509,7 +509,7 @@ static void PrintGenericVector(SEXP s, SEXP env)
 	else { /* ns = length(s) == 0 */
 	    const void *vmax = vmaxget();
 	    /* Formal classes are represented as empty lists */
-	    const char *className = NULL;
+	    const char *className = nullptr;
 	    SEXP klass;
 	    if(isObject(s) && isMethodsDispatchOn()) {
 		klass = getAttrib(s, R_ClassSymbol);
@@ -614,7 +614,7 @@ static void printList(SEXP s, SEXP env)
 	ptag = tagbuf + taglen;
 	{
 	    GCStackRoot<PairList> tl(CXXR_NEW(PairList));
-	    PROTECT(newcall = CXXR_NEW(Expression(0, tl)));
+	    PROTECT(newcall = CXXR_NEW(Expression(nullptr, tl)));
 	}
 	SETCAR(newcall, install("print"));
 	while (TYPEOF(s) == LISTSXP) {
@@ -791,7 +791,7 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
 		PROTECT(t = getAttrib(s, R_DimNamesSymbol));
 		if (t != R_NilValue && VECTOR_ELT(t, 0) != R_NilValue) {
 		    SEXP nn = getAttrib(t, R_NamesSymbol);
-		    const char *title = NULL;
+		    const char *title = nullptr;
 
 		    if (!isNull(nn))
 			title = translateChar(STRING_ELT(nn, 0));
@@ -820,7 +820,7 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
 	    UNPROTECT(1);
 	    PROTECT(t = getAttrib(s, R_NamesSymbol));
 	    if (t != R_NilValue)
-		printNamedVector(s, t, R_print.quote, NULL);
+		printNamedVector(s, t, R_print.quote, nullptr);
 	    else
 		printVector(s, 1, R_print.quote);
 	}
@@ -944,7 +944,7 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 
 		{
 		    GCStackRoot<PairList> tl(PairList::make(2));
-		    PROTECT(t = s = CXXR_NEW(Expression(0, tl)));
+		    PROTECT(t = s = CXXR_NEW(Expression(nullptr, tl)));
 		}
 		SETCAR(t, install("print")); t = CDR(t);
 		SETCAR(t,  CAR(a)); t = CDR(t);

@@ -54,7 +54,7 @@ void GeneralBinaryAttributeCopier::apply(VectorBase* vout,
     // Handle layout attributes:
     {
 	RObject* dims = vl->getAttribute(DimSymbol);
-	RObject* dimnames = 0;
+	RObject* dimnames = nullptr;
 	if (dims)
 	    dimnames = vl->getAttribute(DimNamesSymbol);
 	else
@@ -75,7 +75,7 @@ void GeneralBinaryAttributeCopier::apply(VectorBase* vout,
     // Handle attributes related to time series:
     {
 	RObject* tsp = vl->getAttribute(TspSymbol);
-	RObject* klass = 0;
+	RObject* klass = nullptr;
 	if (tsp)
 	    klass = vl->getAttribute(ClassSymbol);
 	if (!tsp) {

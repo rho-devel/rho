@@ -319,7 +319,7 @@ static R_varloc_t findVarLocInFrame(SEXP rho, SEXP symbol, Rboolean * /*canCache
 
 R_varloc_t R_findVarLocInFrame(SEXP rho, SEXP symbol)
 {
-    return findVarLocInFrame(rho, symbol, NULL);
+    return findVarLocInFrame(rho, symbol, nullptr);
 }
 
 attribute_hidden
@@ -1087,8 +1087,8 @@ SEXP attribute_hidden do_missing(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     rval = allocVector(LGLSXP,1);
 
-    Frame::Binding* bdg = findVarLocInFrame(rho, sym, NULL);
-    t = (bdg ? bdg->asPairList() : 0);
+    Frame::Binding* bdg = findVarLocInFrame(rho, sym, nullptr);
+    t = (bdg ? bdg->asPairList() : nullptr);
     if (t != R_NilValue) {
 	if (DDVAL(s)) {
 	    if (length(CAR(t)) < ddv  || CAR(t) == R_MissingArg) {
@@ -1198,7 +1198,7 @@ SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (TAG(x) == R_NilValue)
 		error(_("all elements of a list must be named"));
 	GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
-	GCStackRoot<Environment> newenv(CXXR_NEW(Environment(0, frame)));
+	GCStackRoot<Environment> newenv(CXXR_NEW(Environment(nullptr, frame)));
 	GCStackRoot<PairList> dupcar(static_cast<PairList*>(duplicate(CAR(args))));
 	frameReadPairList(newenv->frame(), dupcar);
 	env_to_attach = newenv;
@@ -1643,7 +1643,7 @@ do_as_environment(SEXP call, SEXP op, SEXP args, SEXP rho)
 	/* implement as.environment.list() {isObject(.) is false for a list} */
 	SEXP call, val;
 	PROTECT(call = lang4(install("list2env"), arg,
-			     /* envir = */R_NilValue,
+			     /* envir = */nullptr,
 			     /* parent = */R_EmptyEnv));
 	val = eval(call, rho);
 	UNPROTECT(1);
@@ -1781,7 +1781,7 @@ Rboolean R_BindingIsActive(SEXP sym, SEXP env)
     if (TYPEOF(env) != ENVSXP &&
 	TYPEOF((env = simple_as_environment(env))) != ENVSXP)
 	error(_("not an environment"));
-    Frame::Binding* binding = findVarLocInFrame(env, sym, NULL);
+    Frame::Binding* binding = findVarLocInFrame(env, sym, nullptr);
     if (!binding)
 	error(_("no binding for \"%s\""), CHAR(PRINTNAME(sym)));
     return Rboolean(binding->isActive());
@@ -2088,8 +2088,8 @@ SEXP attribute_hidden do_importIntoEnv(SEXP call, SEXP op, SEXP args, SEXP rho)
 	for (SEXP env = expenv;
 	     env != R_EmptyEnv && binding == R_NilValue;
 	     env = ENCLOS(env)) {
-	    Frame::Binding* bdg = findVarLocInFrame(env, expsym, NULL);
-	    binding = (bdg ? bdg->asPairList() : 0);
+	    Frame::Binding* bdg = findVarLocInFrame(env, expsym, nullptr);
+	    binding = (bdg ? bdg->asPairList() : nullptr);
 	}
 	if (binding == R_NilValue)
 	    binding = expsym;
@@ -2120,5 +2120,5 @@ SEXP attribute_hidden do_envprofile(SEXP call, SEXP op, SEXP args, SEXP rho)
        way to test whether an environment is hashed at the R level.
     */
     // Unimplemented in CXXR:
-    return 0;
+    return nullptr;
 }

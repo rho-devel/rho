@@ -669,13 +669,13 @@ int_arraySubscript(int dim, SEXP s, SEXP dims, SEXP x, SEXP call)
     case NILSXP:
 	return allocVector(INTSXP, 0);
     case LGLSXP:
-	return logicalSubscript(s, ns, nd, &stretch, 0);
+	return logicalSubscript(s, ns, nd, &stretch, nullptr);
     case INTSXP:
-	return integerSubscript(s, ns, nd, &stretch, 0);
+	return integerSubscript(s, ns, nd, &stretch, nullptr);
     case REALSXP:
 	{
 	    GCStackRoot<> tmp(coerceVector(s, INTSXP));
-	    tmp = integerSubscript(tmp, ns, nd, &stretch, 0);
+	    tmp = integerSubscript(tmp, ns, nd, &stretch, nullptr);
 	    return tmp;
 	}
     case STRSXP:

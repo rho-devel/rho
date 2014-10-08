@@ -912,13 +912,13 @@ SEXP match5(SEXP itable, SEXP ix, int nmatch, SEXP incomp, SEXP env)
 
 SEXP matchE(SEXP itable, SEXP ix, int nmatch, SEXP env)
 {
-    return match5(itable, ix, nmatch, NULL, env);
+    return match5(itable, ix, nmatch, nullptr, env);
 }
 
 /* used from other code, not here: */
 SEXP match(SEXP itable, SEXP ix, int nmatch)
 {
-    return match5(itable, ix, nmatch, NULL, R_BaseEnv);
+    return match5(itable, ix, nmatch, nullptr, R_BaseEnv);
 }
 
 
@@ -959,7 +959,7 @@ SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP ans, input, target;
     int mtch, n_target, mtch_count, dups_ok, no_match;
     size_t temp;
-    int *used = NULL, *ians;
+    int *used = nullptr, *ians;
     const char **in, **tar;
     Rboolean no_dups;
     Rboolean useBytes = FALSE, useUTF8 = FALSE;
@@ -1308,13 +1308,13 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	cptr = ClosureContext::innermost();
 	while (cptr && cptr->workingEnvironment() != sysp)
 	    cptr = ClosureContext::innermost(cptr->nextOut());
-	if ( cptr == NULL ) {
+	if ( cptr == nullptr ) {
 	    sysp = R_GlobalEnv;
 	    errorcall(R_NilValue,
 		      "match.call() was called from outside a function");
 	} else
 	    sysp = cptr->callEnvironment();
-	if (cptr != NULL)
+	if (cptr != nullptr)
 	    /* Changed to use the function from which match.call was
 	       called as recorded in the context.  This change is
 	       needed in case the current function is computed in a

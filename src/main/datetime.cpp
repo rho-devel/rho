@@ -618,7 +618,7 @@ extern char *tzname[2];
 
 static int set_tz(const char *tz, char *oldtz)
 {
-    char *p = NULL;
+    char *p = nullptr;
     int settz = 0;
 
     strcpy(oldtz, "");
@@ -703,7 +703,7 @@ SEXP attribute_hidden do_asPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP stz, x, ans, ansnames, klass, tzone;
     int isgmt = 0, valid, settz = 0;
     char oldtz[1001] = "";
-    const char *tz = NULL;
+    const char *tz = nullptr;
 
     checkArity(op, args);
     PROTECT(x = coerceVector(CAR(args), REALSXP));
@@ -740,7 +740,7 @@ SEXP attribute_hidden do_asPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	    /* in theory localtime/gmtime always return a valid
 	       struct tm pointer, but Windows uses NULL for error
 	       conditions (like negative times). */
-	    valid = (ptm != NULL);
+	    valid = (ptm != nullptr);
 	} else valid = 0;
 	makelt(ptm, ans, i, valid, d - floor(d));
     }
@@ -770,7 +770,7 @@ SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
     R_xlen_t n = 0, nlen[9];
     int isgmt = 0, settz = 0;
     char oldtz[20] = "";
-    const char *tz = NULL;
+    const char *tz = nullptr;
     struct tm tm;
     double tmp;
 
@@ -989,7 +989,7 @@ static void glibc_fix(struct tm *tm, int *invalid)
 
        Specifying mon but not mday nor yday is invalid.
     */
-    time_t t = time(NULL);
+    time_t t = time(nullptr);
     struct tm *tm0;
     int tmp;
 #ifndef HAVE_POSIX_LEAPSECONDS
@@ -1026,7 +1026,7 @@ SEXP attribute_hidden do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP x, sformat, ans, ansnames, klass, stz, tzone;
     int invalid, isgmt = 0, settz = 0, offset;
     struct tm tm, tm2, *ptm = &tm;
-    const char *tz = NULL;
+    const char *tz = nullptr;
     char oldtz[20] = "";
     double psecs = 0.0;
     R_xlen_t i, n, m, N;

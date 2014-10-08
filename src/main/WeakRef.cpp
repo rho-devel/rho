@@ -67,7 +67,7 @@ namespace {
 WeakRef::WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer,
 		 bool finalize_on_exit)
     : m_key(key), m_value(value), m_Rfinalizer(R_finalizer),
-      m_self(expose(this)), m_Cfinalizer(0),
+      m_self(expose(this)), m_Cfinalizer(nullptr),
       m_lit(s_live->insert(s_live->end(), this)), m_ready_to_finalize(false),
       m_finalize_on_exit(finalize_on_exit)
 {
@@ -85,7 +85,7 @@ WeakRef::WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer,
 
 WeakRef::WeakRef(RObject* key, RObject* value, R_CFinalizer_t C_finalizer,
 		 bool finalize_on_exit)
-    : m_key(key), m_value(value), m_Rfinalizer(0), m_self(expose(this)),
+    : m_key(key), m_value(value), m_Rfinalizer(nullptr), m_self(expose(this)),
       m_Cfinalizer(C_finalizer), m_lit(s_live->insert(s_live->end(), this)),
       m_ready_to_finalize(false), m_finalize_on_exit(finalize_on_exit)
 {
@@ -162,9 +162,9 @@ bool WeakRef::check()
 
 void WeakRef::cleanup()
 {
-    s_tombstone = 0;
-    s_f10n_pending = 0;
-    s_live = 0;
+    s_tombstone = nullptr;
+    s_f10n_pending = nullptr;
+    s_live = nullptr;
 }
 
 void WeakRef::detachReferents()
@@ -245,7 +245,7 @@ void WeakRef::markThru()
 	    else {
 		wr->tombstone();
 		// Expose to reference-counting collection:
-		wr->m_self = 0;
+		wr->m_self = nullptr;
 	    }
 	}
     }
@@ -253,9 +253,7 @@ void WeakRef::markThru()
     {
 	GCNode::Marker marker;
 	s_live->splice(s_live->end(), newlive);
-	for (WRList::iterator lit = s_live->begin();
-	     lit != s_live->end(); ++lit) {
-	    WeakRef* wr = *lit;
+	for (WeakRef* wr : *s_live) {
 	    marker(wr);
 	}
     }
@@ -303,7 +301,7 @@ bool WeakRef::runFinalizers()
 	    catch (CommandTerminated) {
 	    }
 	    // Expose WeakRef to reference-counting collection:
-	    wr->m_self = 0;
+	    wr->m_self = nullptr;
 	}
 	ProtectStack::restoreSize(savestack);
 	R_CurrentExpr = topExp;
@@ -314,10 +312,10 @@ bool WeakRef::runFinalizers()
 void WeakRef::tombstone()
 {
     WRList* oldl = wrList();
-    m_key = 0;
-    m_value = 0;
-    m_Rfinalizer = 0;
-    m_Cfinalizer = 0;
+    m_key = nullptr;
+    m_value = nullptr;
+    m_Rfinalizer = nullptr;
+    m_Cfinalizer = nullptr;
     m_ready_to_finalize = false;
     transfer(oldl, s_tombstone);
 }
@@ -338,7 +336,7 @@ WeakRef::WRList* WeakRef::wrList() const
 
 SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit)
 {
-    FunctionBase* finf = 0;
+    FunctionBase* finf = nullptr;
     if (fin) {
 	finf = dynamic_cast<FunctionBase*>(fin);
 	if (!finf)
@@ -354,7 +352,7 @@ SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit)
 
 void R_RegisterFinalizerEx(SEXP s, SEXP fun, Rboolean onexit)
 {
-    R_MakeWeakRef(s, 0, fun, onexit);
+    R_MakeWeakRef(s, nullptr, fun, onexit);
 }
 
 void R_RegisterFinalizer(SEXP s, SEXP fun)
@@ -364,7 +362,7 @@ void R_RegisterFinalizer(SEXP s, SEXP fun)
 
 void R_RegisterCFinalizerEx(SEXP s, R_CFinalizer_t fun, Rboolean onexit)
 {
-    R_MakeWeakRefC(s, 0, fun, onexit);
+    R_MakeWeakRefC(s, nullptr, fun, onexit);
 }
 
 void R_RegisterCFinalizer(SEXP s, R_CFinalizer_t fun)

@@ -67,11 +67,11 @@ static void check1arg2(SEXP arg, SEXP call, const char *formal)
 
 /* These are set during the first call to do_dotCode() below. */
 
-static SEXP NaokSymbol = NULL;
-static SEXP DupSymbol = NULL;
-static SEXP PkgSymbol = NULL;
-static SEXP EncSymbol = NULL;
-static SEXP CSingSymbol = NULL;
+static SEXP NaokSymbol = nullptr;
+static SEXP DupSymbol = nullptr;
+static SEXP PkgSymbol = nullptr;
+static SEXP EncSymbol = nullptr;
+static SEXP CSingSymbol = nullptr;
 
 #include <Rdynpriv.h>
 // Odd: 'type' is really this enum
@@ -119,7 +119,7 @@ checkValidSymbolId(SEXP op, SEXP call, DL_FUNC *fun,
     if (isValidString(op)) return;
 
     if(TYPEOF(op) == EXTPTRSXP) {
-	char *p = NULL;
+	char *p = nullptr;
 	if(R_ExternalPtrTag(op) == install("native symbol"))
 	   *fun = R_ExternalPtrAddrFn(op);
 	else if(R_ExternalPtrTag(op) == install("registered native symbol")) {
@@ -156,7 +156,7 @@ checkValidSymbolId(SEXP op, SEXP call, DL_FUNC *fun,
 	   }
 	}
 	/* This is illegal C */
-	if(*fun == NULL)
+	if(*fun == nullptr)
 	    errorcall(call, _("NULL value passed as symbol address"));
 
 	/* copy the symbol name. */
@@ -200,7 +200,7 @@ resolveNativeRoutine(SEXP args, DL_FUNC *fun,
     /* This is used as shorthand for 'all' in R_FindSymbol, but
        should never be supplied */
     strcpy(dll.DLLname, ""); 
-    dll.dll = NULL; dll.obj = NULL; dll.type = NOT_DEFINED;
+    dll.dll = nullptr; dll.obj = nullptr; dll.type = NOT_DEFINED;
     
     op = CAR(args);  // value of .NAME =
     /* NB, this sets fun, symbol and buf and is not just a check! */
@@ -434,7 +434,7 @@ static SEXP pkgtrim(SEXP args, DllReference *dll)
     SEXP s, ss;
     int pkgused = 0;
 
-    if (PkgSymbol == NULL) PkgSymbol = install("PACKAGE");
+    if (PkgSymbol == nullptr) PkgSymbol = install("PACKAGE");
 
     for(s = args ; s != R_NilValue;) {
 	ss = CDR(s);
@@ -488,7 +488,7 @@ SEXP attribute_hidden do_isloaded(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     const char *sym, *type="", *pkg = "";
     int val = 1, nargs = length(args);
-    R_RegisteredNativeSymbol symbol = {R_ANY_SYM, {NULL}, NULL};
+    R_RegisteredNativeSymbol symbol = {R_ANY_SYM, {nullptr}, nullptr};
 
     if (nargs < 1) error(_("no arguments supplied"));
     if (nargs > 3) error(_("too many arguments"));
@@ -522,16 +522,16 @@ typedef SEXP (*R_ExternalRoutine2)(SEXP, SEXP, SEXP, SEXP);
 
 SEXP attribute_hidden do_External(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    DL_FUNC ofun = NULL;
+    DL_FUNC ofun = nullptr;
     SEXP retval;
-    R_RegisteredNativeSymbol symbol = {R_EXTERNAL_SYM, {NULL}, NULL};
+    R_RegisteredNativeSymbol symbol = {R_EXTERNAL_SYM, {nullptr}, nullptr};
     const void *vmax = vmaxget();
     char buf[MaxSymbolBytes];
 
     if (length(args) < 1) errorcall(call, _("'.NAME' is missing"));
     check1arg2(args, call, ".NAME");
-    args = resolveNativeRoutine(args, &ofun, &symbol, buf, NULL, NULL,
-				NULL, call, env);
+    args = resolveNativeRoutine(args, &ofun, &symbol, buf, nullptr, nullptr,
+				nullptr, call, env);
 
     if(symbol.symbol.external && symbol.symbol.external->numArgs > -1) {
 	int nargs = length(args) - 1;
@@ -557,10 +557,10 @@ typedef SEXP (*VarFun)(...);
 /* .Call(name, <args>) */
 SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    DL_FUNC ofun = NULL;
-    VarFun fun = NULL;
+    DL_FUNC ofun = nullptr;
+    VarFun fun = nullptr;
     SEXP retval, cargs[MAX_ARGS], pargs;
-    R_RegisteredNativeSymbol symbol = {R_CALL_SYM, {NULL}, NULL};
+    R_RegisteredNativeSymbol symbol = {R_CALL_SYM, {nullptr}, nullptr};
 
     int nargs;
     const void *vmax = vmaxget();
@@ -568,8 +568,8 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (length(args) < 1) errorcall(call, _("'.NAME' is missing"));
     check1arg2(args, call, ".NAME");
-    args = resolveNativeRoutine(args, &ofun, &symbol, buf, NULL, NULL,
-				NULL, call, env);
+    args = resolveNativeRoutine(args, &ofun, &symbol, buf, nullptr, nullptr,
+				nullptr, call, env);
     args = CDR(args);
 
     for(nargs = 0, pargs = args ; pargs != R_NilValue; pargs = CDR(pargs)) {
@@ -1347,9 +1347,9 @@ R_FindNativeSymbolFromDLL(char *name, DllReference *dll,
 {
     int numProtects = 0;
     DllInfo *info;
-    DL_FUNC fun = NULL;
+    DL_FUNC fun = nullptr;
 
-    if(dll->obj == NULL) {
+    if(dll->obj == nullptr) {
 	/* Rprintf("\nsearching for %s\n", name); */
 	dll->obj = Rf_getCallingDLL();
 	if (env != R_NilValue) {
@@ -1394,27 +1394,27 @@ R_FindNativeSymbolFromDLL(char *name, DllReference *dll,
 
 SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    void **cargs, **cargs0 = NULL /* -Wall */;
+    void **cargs, **cargs0 = nullptr /* -Wall */;
     int dup, naok, na, nargs, Fort;
     Rboolean havenames, copy = R_CBoundsCheck; /* options(CboundsCheck) */
-    DL_FUNC ofun = NULL;
-    VarFun fun = NULL;
+    DL_FUNC ofun = nullptr;
+    VarFun fun = nullptr;
     SEXP ans, pa, s;
-    R_RegisteredNativeSymbol symbol = {R_C_SYM, {NULL}, NULL};
-    R_NativePrimitiveArgType *checkTypes = NULL;
-    R_NativeArgStyle *argStyles = NULL;
+    R_RegisteredNativeSymbol symbol = {R_C_SYM, {nullptr}, nullptr};
+    R_NativePrimitiveArgType *checkTypes = nullptr;
+    R_NativeArgStyle *argStyles = nullptr;
     const void *vmax;
     char symName[MaxSymbolBytes];
 
     if (length(args) < 1) errorcall(call, _("'.NAME' is missing"));
     check1arg2(args, call, ".NAME");
-    if (NaokSymbol == NULL || DupSymbol == NULL || PkgSymbol == NULL) {
+    if (NaokSymbol == nullptr || DupSymbol == nullptr || PkgSymbol == nullptr) {
 	NaokSymbol = install("NAOK");
 	DupSymbol = install("DUP");
 	PkgSymbol = install("PACKAGE");
     }
-    if (EncSymbol == NULL) EncSymbol = install("ENCODING");
-    if (CSingSymbol == NULL) CSingSymbol = install("Csingle");
+    if (EncSymbol == nullptr) EncSymbol = install("ENCODING");
+    if (CSingSymbol == nullptr) CSingSymbol = install("Csingle");
     vmax = vmaxget();
     Fort = PRIMVAL(op);
     if(Fort) symbol.type = R_FORTRAN_SYM;
@@ -2500,7 +2500,7 @@ typeinfo[] = {
     {"complex",	  CPLXSXP},
     {"character", STRSXP },
     {"list",	  VECSXP },
-    {NULL,	  NILSXP }
+    {nullptr,	  NILSXP }
 };
 
 static SEXPTYPE string2type(char *s)
@@ -2576,7 +2576,7 @@ static void *RObjToCPtr2(SEXP s)
     default:
 	return CXXRNOCAST(void*) s;
     }
-    return 0;  // -Wall
+    return nullptr;  // -Wall
 }
 
 
@@ -2595,7 +2595,7 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
     if (nres < 0)
 	error("invalid return value count in call_R");
     GCStackRoot<PairList> tl(PairList::make(nargs));
-    PROTECT(pcall = call = CXXR_NEW(Expression(0, tl)));
+    PROTECT(pcall = call = CXXR_NEW(Expression(nullptr, tl)));
     SETCAR(pcall, reinterpret_cast<SEXP>(func));
     s = R_NilValue;		/* -Wall */
     for (i = 0 ; i < nargs ; i++) {

@@ -35,7 +35,7 @@ void ClosureContext::runOnExit()
     GCStackRoot<> onx(m_onexit.get());
     Rboolean savevis = R_Visible;
     // Prevent recursion:
-    m_onexit = 0;
+    m_onexit = nullptr;
     try {
 	DisableStackCheckingScope scope;
 	Evaluator::evaluate(onx, m_working_env);

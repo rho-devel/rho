@@ -250,7 +250,7 @@ R_compute_identical(SEXP x, SEXP y, int flags)
 	    {
 		SEXP tx = TAG(x);
 		SEXP ty = TAG(y);
-		if ((tx == 0) != (ty == 0))
+		if ((tx == nullptr) != (ty == nullptr))
 		    return FALSE;
 		if(tx && ty
 		   && !R_compute_identical(PRINTNAME(tx), PRINTNAME(ty), flags))
@@ -259,7 +259,7 @@ R_compute_identical(SEXP x, SEXP y, int flags)
 	    x = CDR(x);
 	    y = CDR(y);
 	}
-	return(CXXRCONSTRUCT(Rboolean, y == R_NilValue));
+	return(CXXRCONSTRUCT(Rboolean, y == nullptr));
     }
     case CLOSXP:
 	return Rboolean(R_compute_identical(FORMALS(x), FORMALS(y), flags) &&

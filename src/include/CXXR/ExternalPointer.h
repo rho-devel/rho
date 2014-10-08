@@ -80,8 +80,8 @@ namespace CXXR {
 	 * @param prot Pointer to the protege object.  May be null
 	 *          (and often is).
 	 */
-	explicit ExternalPointer(void* ptr = 0, RObject* tag = 0,
-				 RObject* prot = 0)
+	explicit ExternalPointer(void* ptr = nullptr, RObject* tag = nullptr,
+				 RObject* prot = nullptr)
 	    : RObject(EXTPTRSXP), m_ptr(ptr), m_tag(tag), m_protege(prot)
 	    {}
 
@@ -180,17 +180,17 @@ namespace CXXR {
 	}
 
 	// Virtual function of RObject:
-	const char* typeName() const;
+	const char* typeName() const override;
 
 	// Virtual function of GCNode:
-	void visitReferents(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const override;
     protected:
 	// Declared protected to ensure that ExternalPointer objects are
 	// allocated only using 'new':
 	~ExternalPointer() {}
 
 	// Virtual function of GCNode:
-	void detachReferents();
+	void detachReferents() override;
     private:
 	friend class boost::serialization::access;
 
@@ -306,7 +306,7 @@ inline SEXP R_ExternalPtrTag(SEXP s)
 #else
     inline void R_ClearExternalPtr(SEXP s)
     {
-	R_SetExternalPtrAddr(s, 0);
+	R_SetExternalPtrAddr(s, nullptr);
     }
 #endif
 

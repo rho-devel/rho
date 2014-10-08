@@ -298,9 +298,9 @@ namespace CXXR {
 
 	// Virtual function of RObject, redeclared for covariant
 	// return type:
-	VectorBase* clone() const
+	VectorBase* clone() const override
 	{
-	    return 0;
+	    return nullptr;
 	}
 
 	// Make private in due course (or get rid altogether):

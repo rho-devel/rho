@@ -252,10 +252,10 @@ namespace CXXR {
 	}
 
 	// Virtual function of GCNode:
-	void visitReferents(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const override;
     protected:
 	// Virtual function of GCNode:
-	void detachReferents();
+	void detachReferents() override;
     private:
 	std::string m_generic;
 	std::string m_group;

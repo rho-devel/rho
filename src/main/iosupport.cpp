@@ -64,7 +64,7 @@ static int NextWriteBufferListItem(IoBuffer *iob)
 	BufferListItem *_new;
 	if (!(_new = static_cast<BufferListItem*>(malloc(sizeof(BufferListItem)))))
 	    return 0;
-	_new->next = NULL;
+	_new->next = nullptr;
 	iob->write_buf->next = _new;
 	iob->write_buf = iob->write_buf->next;
     }
@@ -89,7 +89,7 @@ static int NextReadBufferListItem(IoBuffer *iob)
 
 int attribute_hidden R_IoBufferWriteReset(IoBuffer *iob)
 {
-    if (iob == NULL || iob->start_buf == NULL)
+    if (iob == nullptr || iob->start_buf == nullptr)
 	return 0;
     iob->write_buf = iob->start_buf;
     iob->write_ptr = iob->write_buf->buf;
@@ -104,7 +104,7 @@ int attribute_hidden R_IoBufferWriteReset(IoBuffer *iob)
 
 int attribute_hidden R_IoBufferReadReset(IoBuffer *iob)
 {
-    if (iob == NULL || iob->start_buf == NULL)
+    if (iob == nullptr || iob->start_buf == nullptr)
 	return 0;
     iob->read_buf = iob->start_buf;
     iob->read_ptr = iob->read_buf->buf;
@@ -117,10 +117,10 @@ int attribute_hidden R_IoBufferReadReset(IoBuffer *iob)
 
 int attribute_hidden R_IoBufferInit(IoBuffer *iob)
 {
-    if (iob == NULL) return 0;
+    if (iob == nullptr) return 0;
     iob->start_buf = static_cast<BufferListItem*>(malloc(sizeof(BufferListItem)));
-    if (iob->start_buf == NULL) return 0;
-    iob->start_buf->next = NULL;
+    if (iob->start_buf == nullptr) return 0;
+    iob->start_buf->next = nullptr;
     return R_IoBufferWriteReset(iob);
 }
 
@@ -131,7 +131,7 @@ int attribute_hidden R_IoBufferInit(IoBuffer *iob)
 int attribute_hidden R_IoBufferFree(IoBuffer *iob)
 {
     BufferListItem *thisItem, *nextItem;
-    if (iob == NULL || iob->start_buf == NULL)
+    if (iob == nullptr || iob->start_buf == nullptr)
 	return 0;
     thisItem = iob->start_buf;
     while (thisItem) {
@@ -229,8 +229,8 @@ int attribute_hidden R_TextBufferInit(TextBuffer *txtb, SEXP text)
     }
     else {
 	txtb->vmax = vmaxget();
-	txtb->buf = NULL;
-	txtb->bufp = NULL;
+	txtb->buf = nullptr;
+	txtb->bufp = nullptr;
 	txtb->text = R_NilValue;
 	txtb->ntext = 0;
 	txtb->offset = 1;
@@ -250,11 +250,11 @@ int attribute_hidden R_TextBufferFree(TextBuffer *txtb)
 
 int attribute_hidden R_TextBufferGetc(TextBuffer *txtb)
 {
-    if (txtb->buf == NULL)
+    if (txtb->buf == nullptr)
 	return EOF;
     if (*(txtb->bufp) == '\0') {
 	if (txtb->offset == txtb->ntext) {
-	    txtb->buf = NULL;
+	    txtb->buf = nullptr;
 	    return EOF;
 	} else {
 	    const void *vmax = vmaxget();

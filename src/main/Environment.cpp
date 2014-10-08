@@ -102,13 +102,13 @@ void Environment::LeakMonitor::operator()(const GCNode* node)
 void Environment::cleanup()
 {
     delete s_search_path_cache;
-    s_search_path_cache = 0;
+    s_search_path_cache = nullptr;
 }
 
 void Environment::detachFrame()
 {
     setOnSearchPath(false);
-    m_frame = 0;
+    m_frame = nullptr;
 }
 
 void Environment::detachReferents()
@@ -152,7 +152,7 @@ Frame::Binding* Environment::findBinding(const Symbol* symbol)
 	}
 	env = env->enclosingEnvironment();
     }
-    return 0;
+    return nullptr;
 }
 
 // Environment::findNamespace() is in envir.cpp
@@ -181,7 +181,7 @@ void Environment::initialize()
     s_search_path_cache = new Cache(509);
     s_search_path_cache->max_load_factor(0.5);
     GCStackRoot<Frame> empty_frame(CXXR_NEW(ListFrame));
-    static GCRoot<Environment> empty_env(CXXR_NEW(Environment(0, empty_frame)));
+    static GCRoot<Environment> empty_env(CXXR_NEW(Environment(nullptr, empty_frame)));
     s_empty = empty_env.get();
     R_EmptyEnv = s_empty;
     GCStackRoot<Frame> base_frame(CXXR_NEW(StdFrame));
@@ -259,7 +259,7 @@ Environment* Environment::attachToSearchPath(int pos, StringVector* name)
 {
     // Duplicate the environment.
     GCStackRoot<Frame> frame(static_cast<Frame*>(m_frame->clone()));
-    GCStackRoot<Environment> new_env(expose(new Environment(0, frame)));
+    GCStackRoot<Environment> new_env(expose(new Environment(nullptr, frame)));
     new_env->setAttribute(NameSymbol, name);
 
     // Iterate through the search path to the environment just before where we
@@ -295,7 +295,7 @@ Environment* Environment::detachFromSearchPath(int pos) {
 
     // Detach the environment after where.
     where->m_enclosing = env_to_detach->m_enclosing;
-    env_to_detach->m_enclosing = 0;
+    env_to_detach->m_enclosing = nullptr;
     env_to_detach->setOnSearchPath(false);
 
     return env_to_detach;

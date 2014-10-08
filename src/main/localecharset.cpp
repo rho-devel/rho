@@ -568,7 +568,7 @@ static CXXRCONST char* name_value_search(const char *name, const name_value tabl
 	DPRINT(strcmp(name, table[min].name));
 	DPRINT(strcmp(name, table[max].name));
 #endif
-	return (NULL);
+	return (nullptr);
     }
     while (max >= min) {
 #if defined(DEBUG_TEST)
@@ -595,7 +595,7 @@ static CXXRCONST char* name_value_search(const char *name, const name_value tabl
 	    return(table[mid].value);
 	}
     }
-    return (NULL);
+    return (nullptr);
 }
 #endif
 
@@ -611,8 +611,8 @@ const char *locale2charset(const char *locale)
     CXXRCONST char *value;
 #endif
 
-    if ((locale == NULL) || (0 == strcmp(locale, "NULL")))
-	locale = setlocale(LC_CTYPE,NULL);
+    if ((locale == nullptr) || (0 == strcmp(locale, "NULL")))
+	locale = setlocale(LC_CTYPE,nullptr);
 
     /* in some rare circumstances Darwin may return NULL */
     if (!locale || !strcmp(locale, "C") || !strcmp(locale, "POSIX"))
@@ -726,7 +726,7 @@ const char *locale2charset(const char *locale)
     if(0 == strcmp(enc, "utf8")) return "UTF-8";
 
     value = name_value_search(la_loc, guess, guess_count);
-    return value == NULL ? "ASCII" : value;
+    return value == nullptr ? "ASCII" : value;
 #endif
 }
 

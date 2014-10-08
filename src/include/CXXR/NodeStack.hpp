@@ -346,7 +346,7 @@ namespace CXXR {
 	void resize(size_t new_size)
 	{
 	    if (new_size >= m_protected_count)
-		m_vector.resize(new_size, 0);
+		m_vector.resize(new_size, nullptr);
 	    else resize_aux(new_size);
 	}
 

@@ -69,8 +69,8 @@ namespace CXXR {
 	 *
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
-	explicit Expression(RObject* cr = 0, PairList* tl = 0,
-			    const RObject* tg = 0)
+	explicit Expression(RObject* cr = nullptr, PairList* tl = nullptr,
+			    const RObject* tg = nullptr)
 	    : ConsCell(LANGSXP, cr, tl, tg)
 	{}
 
@@ -92,9 +92,9 @@ namespace CXXR {
 	}
 
 	// Virtual functions of RObject:
-	Expression* clone() const;
-	RObject* evaluate(Environment* env);
-	const char* typeName() const;
+	Expression* clone() const override;
+	RObject* evaluate(Environment* env) override;
+	const char* typeName() const override;
     private:
 	friend class boost::serialization::access;
 	// Declared private to ensure that Expression objects are

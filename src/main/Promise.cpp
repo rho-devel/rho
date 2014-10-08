@@ -130,7 +130,7 @@ void Promise::setValue(RObject* val)
 {
     m_value = val;
     if (val != Symbol::unboundValue())
-	m_environment = 0;
+	m_environment = nullptr;
 }
 
 const char* Promise::typeName() const

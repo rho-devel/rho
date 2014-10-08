@@ -454,7 +454,7 @@ namespace CXXR {
 	    }
 
 	    // Virtual function of const_visitor:
-	    void operator()(const GCNode* node);
+	    void operator()(const GCNode* node) override;
 	private:
 	    unsigned int m_marks_applied;
 #ifdef GC_FIND_LOOPS

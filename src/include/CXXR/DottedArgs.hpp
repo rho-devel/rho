@@ -61,8 +61,8 @@ namespace CXXR {
 	 *
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
-	explicit DottedArgs(RObject* cr = 0, PairList* tl = 0,
-			    const RObject* tg = 0)
+	explicit DottedArgs(RObject* cr = nullptr, PairList* tl = nullptr,
+			    const RObject* tg = nullptr)
 	    : ConsCell(DOTSXP, cr, tl, tg)
 	{}
 
@@ -84,9 +84,9 @@ namespace CXXR {
 	}
 
 	// Virtual functions of RObject:
-	DottedArgs* clone() const;
-	RObject* evaluate(Environment* env);
-	const char* typeName() const;
+	DottedArgs* clone() const override;
+	RObject* evaluate(Environment* env) override;
+	const char* typeName() const override;
     private:
 	// Declared private to ensure that DottedArgs objects are
 	// allocated only using 'new':

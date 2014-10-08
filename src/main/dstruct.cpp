@@ -56,7 +56,7 @@ R_len_t Rf_length(SEXP s)
     case DOTSXP:
 	{
 	    int i = 0;
-	    while (s != NULL && s != R_NilValue) {
+	    while (s != nullptr && s != R_NilValue) {
 		i++;
 		s = CDR(s);
 	    }
@@ -89,7 +89,7 @@ R_xlen_t Rf_xlength(SEXP s)
     case LANGSXP:
     case DOTSXP:
 	i = 0;
-	while (s != NULL && s != R_NilValue) {
+	while (s != nullptr && s != R_NilValue) {
 	    i++;
 	    s = CDR(s);
 	}

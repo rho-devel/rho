@@ -84,13 +84,13 @@ namespace CXXR {
 	StdFrame(const StdFrame &source);
 	
 	// Virtual functions of Frame (qv):
-	Binding* binding(const Symbol* symbol) HOT_FUNCTION;
+	Binding* binding(const Symbol* symbol) HOT_FUNCTION override;
 
-	const Binding* binding(const Symbol* symbol) const;
-	BindingRange bindingRange() const;
-	StdFrame* clone() const;
-	void lockBindings();
-	std::size_t size() const;
+	const Binding* binding(const Symbol* symbol) const override;
+	BindingRange bindingRange() const override;
+	StdFrame* clone() const override;
+	void lockBindings() override;
+	std::size_t size() const override;
     private:
 	friend class boost::serialization::access;
 
@@ -116,9 +116,9 @@ namespace CXXR {
 	}
 
 	// Virtual functions of Frame (qv):
-	void v_clear();
-	bool v_erase(const Symbol* symbol);
-	Binding* v_obtainBinding(const Symbol* symbol);
+	void v_clear() override;
+	bool v_erase(const Symbol* symbol) override;
+	Binding* v_obtainBinding(const Symbol* symbol) override;
     };
 
     // ***** Implementation of non-inlined templated members *****
@@ -143,10 +143,9 @@ namespace CXXR {
 	ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(Frame);
 	size_t numberOfBindings = size();
 	ar << BOOST_SERIALIZATION_NVP(numberOfBindings);
-	for (map::const_iterator it = m_map.begin();
-	     it != m_map.end(); ++it) {
-	    const Symbol* symbol = (*it).first;
-	    const Binding& binding = (*it).second;
+	for (const auto& elem : m_map) {
+	    const Symbol* symbol = elem.first;
+	    const Binding& binding = elem.second;
 	    GCNPTR_SERIALIZE(ar, symbol);
 	    ar << BOOST_SERIALIZATION_NVP(binding);
 	}

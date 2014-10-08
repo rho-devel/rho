@@ -135,7 +135,7 @@ namespace CXXR {
 	 * using <tt>new WeakRef(...)</tt> rather than
 	 * <tt>CXXR_NEW(WeakRef(...))</tt>.
 	 */
-	WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer = 0,
+	WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer = nullptr,
 		bool finalize_on_exit = false);
 
 	/**
@@ -213,11 +213,11 @@ namespace CXXR {
 	RObject* value() const {return m_value;}
 
 	// Virtual functions of RObject:
-	unsigned int packGPBits() const;
-	void unpackGPBits(unsigned int gpbits);
+	unsigned int packGPBits() const override;
+	void unpackGPBits(unsigned int gpbits) override;
     protected:
 	// Virtual function of GCNode:
-	void detachReferents();
+	void detachReferents() override;
     private:
 	typedef std::list<WeakRef*, Allocator<WeakRef*> > WRList;
 	static WRList* s_live;

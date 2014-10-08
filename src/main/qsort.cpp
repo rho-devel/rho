@@ -61,8 +61,8 @@ SEXP attribute_hidden do_qsort(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP x, sx;
     int indx_ret;
-    double *vx = NULL;
-    int *ivx = NULL;
+    double *vx = nullptr;
+    int *ivx = nullptr;
     Rboolean x_real, x_int;
 
     checkArity(op, args);

@@ -1454,7 +1454,7 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     PROTECT(args = evalListKeepMissing(args, env));
-    PROTECT(call2 = lang2(CAR(call), R_NilValue));
+    PROTECT(call2 = lang2(CAR(call), nullptr));
     SETCDR(call2, args);
 
     n = length(args);
@@ -1476,7 +1476,7 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
 	} else {
 	    /* If named, do argument matching by name */
 	    if (TAG(args) != R_NilValue || TAG(CDR(args)) != R_NilValue) {
-		PROTECT(ap = CONS(R_NilValue, list1(R_NilValue)));
+		PROTECT(ap = CONS(R_NilValue, list1(nullptr)));
 		SET_TAG(ap,  install("x"));
 		SET_TAG(CDR(ap), install("digits"));
 		PROTECT(args = matchArgs(ap, args, call));
@@ -1532,7 +1532,7 @@ SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
 	PROTECT(args = list2(CAR(args), ScalarReal(e))); nprotect++;
     }
     PROTECT(args = evalListKeepMissing(args, env));
-    PROTECT(call2 = lang2(CAR(call), R_NilValue));
+    PROTECT(call2 = lang2(CAR(call), nullptr));
     SETCDR(call2, args);
     n = length(args);
 
@@ -1548,7 +1548,7 @@ SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
 	case 2:
 	{
 	    /* match argument names if supplied */
-	    PROTECT(ap = list2(R_NilValue, R_NilValue));
+	    PROTECT(ap = list2(nullptr, nullptr));
 	    SET_TAG(ap, install("x"));
 	    SET_TAG(CDR(ap), install("base"));
 	    PROTECT(args = matchArgs(ap, args, call));
@@ -2098,6 +2098,6 @@ CCODE R_get_arith_function(int which)
     case 4: return do_math4;
     case 11: return complex_math1;
     case 12: return complex_math2;
-    default: error("bad arith function index"); return NULL;
+    default: error("bad arith function index"); return nullptr;
     }
 }

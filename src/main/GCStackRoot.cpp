@@ -45,7 +45,7 @@
 using namespace std;
 using namespace CXXR;
 
-GCStackRootBase* GCStackRootBase::s_roots = 0;
+GCStackRootBase* GCStackRootBase::s_roots = nullptr;
 
 void GCStackRootBase::destruct_aux()
 {

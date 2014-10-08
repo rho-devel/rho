@@ -109,7 +109,7 @@ int attribute_hidden R_sysparent(int n, ClosureContext *cptr)
     if(s == R_GlobalEnv)
 	return 0;
     j = 0;
-    while (cptr != NULL ) {
+    while (cptr != nullptr ) {
 	j++;
 	if (cptr->workingEnvironment() == s)
 	    n=j;
@@ -223,7 +223,7 @@ SEXP attribute_hidden do_sysbrowser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
         break;
     }
-    return 0;
+    return nullptr;
 }
 
 /* An implementation of S's frame access functions. They usually count */
@@ -409,7 +409,7 @@ R_tryEval(SEXP e, SEXP env, int *ErrorOccurred)
     ProtectedEvalData data;
 
     data.expression = e;
-    data.val = NULL;
+    data.val = nullptr;
     data.env = env;
 
     ok = R_ToplevelExec(protectedEval, &data);
@@ -417,7 +417,7 @@ R_tryEval(SEXP e, SEXP env, int *ErrorOccurred)
 	*ErrorOccurred = (ok == FALSE);
     }
     if (ok == FALSE)
-	data.val = NULL;
+	data.val = nullptr;
 
     return(data.val);
 }

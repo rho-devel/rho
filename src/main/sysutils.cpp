@@ -155,7 +155,7 @@ static wchar_t * wcfixmode(const wchar_t *mode)
 
 FILE *R_fopen(const char *filename, const char *mode)
 {
-    return(filename ? fopen(filename, fixmode(mode)) : NULL );
+    return(filename ? fopen(filename, fixmode(mode)) : nullptr );
 }
 
 /* The point of this function is to allow file names in foreign
@@ -222,7 +222,7 @@ FILE *RC_fopen(const SEXP fn, const char *mode, const Rboolean expand)
 {
     const void *vmax = vmaxget();
     const char *filename = translateChar(fn), *res;
-    if(fn == NA_STRING || !filename) return NULL;
+    if(fn == NA_STRING || !filename) return nullptr;
     if(expand) res = R_ExpandFileName(filename);
     else res = filename;
     vmaxset(vmax);
@@ -385,9 +385,9 @@ SEXP attribute_hidden do_getenv(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 #else
 	char **e;
-	for (i = 0, e = environ; *e != NULL; i++, e++);
+	for (i = 0, e = environ; *e != nullptr; i++, e++);
 	PROTECT(ans = allocVector(STRSXP, i));
-	for (i = 0, e = environ; *e != NULL; i++, e++)
+	for (i = 0, e = environ; *e != nullptr; i++, e++)
 	    SET_STRING_ELT(ans, i, mkChar(*e));
 #endif
     } else {
@@ -407,7 +407,7 @@ SEXP attribute_hidden do_getenv(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 #else
 	    char *s = getenv(translateChar(STRING_ELT(CAR(args), j)));
-	    if (s == NULL)
+	    if (s == nullptr)
 		SET_STRING_ELT(ans, j, STRING_ELT(CADR(args), 0));
 	    else {
 		SEXP tmp;
@@ -584,7 +584,7 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
     char *outbuf;
     const char *sub;
     size_t inb, outb, res;
-    R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
+    R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
     Rboolean isRawlist = FALSE;
 
     checkArity(op, args);
@@ -596,7 +596,7 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 	cnt = 0;
 	iconvlist(write_one, (void *)ans);
 #else
-	PROTECT(ans = R_NilValue);
+	PROTECT(ans = nullptr);
 #endif
     } else {
 	int mark, toRaw;
@@ -614,7 +614,7 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 	args = CDR(args);
 	if(!isString(CAR(args)) || length(CAR(args)) != 1)
 	    error(_("invalid '%s' argument"), "sub");
-	if(STRING_ELT(CAR(args), 0) == NA_STRING) sub = NULL;
+	if(STRING_ELT(CAR(args), 0) == NA_STRING) sub = nullptr;
 	else sub = translateChar(STRING_ELT(CAR(args), 0));
 	args = CDR(args);
 	mark = asLogical(CAR(args));
@@ -679,7 +679,7 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 	    inb = LENGTH(si);
 	    outbuf = cbuff.data; outb = cbuff.bufsize - 1;
 	    /* First initialize output */
-	    Riconv (obj, NULL, NULL, &outbuf, &outb);
+	    Riconv (obj, nullptr, nullptr, &outbuf, &outb);
 	next_char:
 	    /* Then convert input  */
 	    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
@@ -794,8 +794,8 @@ int Riconv_close (void *cd)
     return iconv_close(iconv_t( cd));
 }
 
-static void *latin1_obj = NULL, *utf8_obj=NULL, *ucsmb_obj=NULL,
-    *ucsutf8_obj=NULL;
+static void *latin1_obj = nullptr, *utf8_obj=nullptr, *ucsmb_obj=nullptr,
+    *ucsutf8_obj=nullptr;
 
 /* This may return a R_alloc-ed result, so the caller has to manage the
    R_alloc stack */
@@ -806,7 +806,7 @@ const char *translateChar(SEXP x)
     char *outbuf;
     size_t inb, outb, res;
     cetype_t ienc = getCharCE(x);
-    R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
+    R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 
     if(TYPEOF(x) != CHARSXP)
 	error(_("'%s' must be called on a CHARSXP"), "translateChar");
@@ -854,7 +854,7 @@ top_of_loop:
     inbuf = ans; inb = strlen(inbuf);
     outbuf = cbuff.data; outb = cbuff.bufsize - 1;
     /* First initialize output */
-    Riconv (obj, NULL, NULL, &outbuf, &outb);
+    Riconv (obj, nullptr, nullptr, &outbuf, &outb);
 next_char:
     /* Then convert input  */
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
@@ -912,7 +912,7 @@ SEXP installTrChar(SEXP x)
     char *outbuf;
     size_t inb, outb, res;
     cetype_t ienc = getCharCE(x);
-    R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
+    R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 
     if(TYPEOF(x) != CHARSXP)
 	error(_("'%s' must be called on a CHARSXP"), "translateChar");
@@ -960,7 +960,7 @@ top_of_loop:
     inbuf = ans; inb = strlen(inbuf);
     outbuf = cbuff.data; outb = cbuff.bufsize - 1;
     /* First initialize output */
-    Riconv (obj, NULL, NULL, &outbuf, &outb);
+    Riconv (obj, nullptr, nullptr, &outbuf, &outb);
 next_char:
     /* Then convert input  */
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
@@ -1027,7 +1027,7 @@ const char *translateCharUTF8(SEXP x)
     const char *inbuf, *ans = CHAR(x);
     char *outbuf, *p;
     size_t inb, outb, res;
-    R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
+    R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 
     if(TYPEOF(x) != CHARSXP)
 	error(_("'%s' must be called on a CHARSXP"), "translateCharUTF8");
@@ -1050,7 +1050,7 @@ top_of_loop:
     inbuf = ans; inb = strlen(inbuf);
     outbuf = cbuff.data; outb = cbuff.bufsize - 1;
     /* First initialize output */
-    Riconv (obj, NULL, NULL, &outbuf, &outb);
+    Riconv (obj, nullptr, nullptr, &outbuf, &outb);
 next_char:
     /* Then convert input  */
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
@@ -1087,7 +1087,7 @@ static const char TO_WCHAR[] = "UCS-4LE";
 # endif
 #endif
 
-static void *latin1_wobj = NULL, *utf8_wobj=NULL;
+static void *latin1_wobj = nullptr, *utf8_wobj=nullptr;
 
 /* Translate from current encoding to wchar_t = UCS-2/4
    NB: that wchar_t is UCS-4 is an assumption, but not easy to avoid.
@@ -1104,7 +1104,7 @@ const wchar_t *wtransChar(SEXP x)
     wchar_t *p;
     size_t inb, outb, res, top;
     Rboolean knownEnc = FALSE;
-    R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
+    R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 
     if(TYPEOF(x) != CHARSXP)
 	error(_("'%s' must be called on a CHARSXP"), "wtransChar");
@@ -1148,7 +1148,7 @@ top_of_loop:
     inbuf = ans; inb = strlen(inbuf);
     outbuf = cbuff.data; top = outb = cbuff.bufsize - 1;
     /* First initialize output */
-    Riconv (obj, NULL, NULL, &outbuf, &outb);
+    Riconv (obj, nullptr, nullptr, &outbuf, &outb);
 next_char:
     /* Then convert input  */
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
@@ -1186,11 +1186,11 @@ const char *reEnc(const char *x, cetype_t ce_in, cetype_t ce_out, int subst)
     const char *inbuf;
     char *outbuf, *p;
     size_t inb, outb, res, top;
-    CXXRCONST char *tocode = NULL, *fromcode = NULL;
+    CXXRCONST char *tocode = nullptr, *fromcode = nullptr;
 #ifdef Win32
     char buf[20];
 #endif
-    R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
+    R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 
     /* We can only encode from Symbol to UTF-8 */
     if(ce_in == ce_out || ce_out == CE_SYMBOL ||
@@ -1252,7 +1252,7 @@ top_of_loop:
     inbuf = x; inb = strlen(inbuf);
     outbuf = cbuff.data; top = outb = cbuff.bufsize - 1;
     /* First initialize output */
-    Riconv (obj, NULL, NULL, &outbuf, &outb);
+    Riconv (obj, nullptr, nullptr, &outbuf, &outb);
 next_char:
     /* Then convert input  */
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
@@ -1409,9 +1409,9 @@ next_char:
 void attribute_hidden
 invalidate_cached_recodings(void)
 {
-    latin1_obj = NULL;
-    utf8_obj = NULL;
-    ucsmb_obj = NULL;
+    latin1_obj = nullptr;
+    utf8_obj = nullptr;
+    ucsmb_obj = nullptr;
 #ifdef Win32
     latin1_wobj = NULL;
     utf8_wobj=NULL;
@@ -1430,7 +1430,7 @@ size_t ucstomb(char *s, const unsigned int wc)
 {
     vector<char> bufv(MB_CUR_MAX+1);
     char* buf = &bufv[0];
-    void    *cd = NULL ;
+    void    *cd = nullptr ;
     unsigned int  wcs[2];
     const char *inbuf = reinterpret_cast<const char *>( wcs);
     size_t   inbytesleft = sizeof(unsigned int); /* better be 4 */
@@ -1444,12 +1444,12 @@ size_t ucstomb(char *s, const unsigned int wc)
     memset(wcs, 0, sizeof(wcs));
     wcs[0] = wc;
 
-    if(ucsmb_obj == NULL) {
+    if(ucsmb_obj == nullptr) {
 	if(reinterpret_cast<void *>((-1)) == (cd = Riconv_open("", UNICODE))) {
 #ifndef  Win32
 	    char tocode[128];
 	    /* locale set fuzzy case */
-	    strncpy(tocode, locale2charset(NULL), sizeof(tocode));
+	    strncpy(tocode, locale2charset(nullptr), sizeof(tocode));
 	    if(reinterpret_cast<void *>((-1)) == (cd = Riconv_open(tocode, UNICODE)))
 		return size_t((-1));
 #else
@@ -1519,7 +1519,7 @@ mbtoucs(unsigned int *wc, const char *s, size_t n)
 size_t ucstoutf8(char *s, const unsigned int wc)
 {
     char     buf[16];
-    void    *cd = NULL ;
+    void    *cd = nullptr ;
     unsigned int  wcs[2];
     const char *inbuf = reinterpret_cast<const char *>( wcs);
     size_t   inbytesleft = sizeof(unsigned int); /* better be 4 */
@@ -1532,7 +1532,7 @@ size_t ucstoutf8(char *s, const unsigned int wc)
     memset(buf, 0, sizeof(buf));
     wcs[0] = wc; wcs[1] = 0;
 
-    if(ucsutf8_obj == NULL) {
+    if(ucsutf8_obj == nullptr) {
 	if(reinterpret_cast<void *>((-1)) == (cd = Riconv_open("UTF-8", UNICODE))) {
 	    error(_("unsupported conversion from '%s' to '%s'"),
 		  UNICODE, "UTF-8");
@@ -1627,7 +1627,7 @@ void attribute_hidden InitTempDir()
 #endif
 
     if(R_TempDir) return; /* someone else set it */
-    tmp = NULL; /* getenv("R_SESSION_TMPDIR");   no longer set in R.sh */
+    tmp = nullptr; /* getenv("R_SESSION_TMPDIR");   no longer set in R.sh */
     if (!tmp) {
 	tm = getenv("TMPDIR");
 	if (!isDir(tm)) {
@@ -1880,7 +1880,7 @@ SEXP attribute_hidden do_glob(SEXP call, SEXP op, SEXP args, SEXP env)
 		   (dirmark ? GLOB_MARK : 0) |
 # endif
 		   GLOB_QUOTE | (initialized ? GLOB_APPEND : 0),
-		   NULL, &globbuf);
+		   nullptr, &globbuf);
 # ifdef GLOB_ABORTED
 	if (res == GLOB_ABORTED)
 	    warning(_("read error on '%s'"), translateChar(el));

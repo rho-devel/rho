@@ -238,8 +238,8 @@ static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
     Rboolean need_ellipses = FALSE;
     LocalParseData localData =
 	    {0, 0, 0, 0, /*startline = */TRUE, 0,
-	     NULL,
-	     /*DeparseBuffer=*/{NULL, 0, BUFSIZE},
+	     nullptr,
+	     /*DeparseBuffer=*/{nullptr, 0, BUFSIZE},
 	     DEFAULT_Cutoff, FALSE, 0, TRUE, FALSE, INT_MAX, TRUE, 0};
     localData.cutoff = cutoff;
     localData.backtick = backtick;
