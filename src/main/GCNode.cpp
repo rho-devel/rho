@@ -281,7 +281,19 @@ void GCNode::sweep()
     while (!s_live->empty()) {
 	GCNode* node = s_live->front();
 	node->detachReferents();
-	zombies.splice_back(node);
+
+	if (node->getRefCount() != 0) {
+	    // There are unreachable nodes that refer to this one, so deletion
+	    // must be delayed until those nodes have been deleted.
+	    zombies.splice_back(node);
+	} else if (node->m_rcmmu & s_moribund_mask) {
+	    // The node will be deleted in the following call to gclite().
+	    // Remove from s_live.
+	    node->freeLink();
+	} else {
+	    // The node can be deleted immediately.
+	    delete node;
+	}
     }
     // Transfer the s_reachable list to the exposed list:
     s_live->splice_back(s_reachable);
