@@ -126,7 +126,7 @@ bool GCNode::check()
 	     it != end; ++it) {
 	    const GCNode* node = *it;
 	    ++numnodes;
-	    if ((node->m_rcmmu & s_refcount_mask) == 0)
+	    if (node->getRefCount() == 0)
 		++virgins;
 	}
     }
@@ -212,11 +212,10 @@ void GCNode::gclite()
 	// Last in, first out, for cache efficiency:
 	const GCNode* node = s_moribund->back();
 	s_moribund->pop_back();
-	unsigned char& rcmmu = node->m_rcmmu;
-	if ((rcmmu & s_refcount_mask) == 0)
+	if (node->getRefCount() == 0)
 	    delete node;
 	// Clear moribund bit.  Beware ~ promotes to unsigned int.
-	else rcmmu &= static_cast<unsigned char>(~s_moribund_mask);
+	else node->m_rcmmu &= static_cast<unsigned char>(~s_moribund_mask);
     }
     s_gclite_threshold = MemoryBank::bytesAllocated() + s_gclite_margin;
 }

@@ -530,6 +530,12 @@ namespace CXXR {
 	// Clean up static data at end of run:
 	static void cleanup();
 
+	// Returns the stored reference count.
+	unsigned char getRefCount() const
+	{
+	    return m_rcmmu & s_refcount_mask;
+	}
+
 	// Decrement the reference count (subject to the stickiness of
 	// its MSB).  If as a result the reference count falls to
 	// zero, mark the node as moribund.
