@@ -120,29 +120,21 @@ bool GCNode::check()
     unsigned int numnodes = 0;
     unsigned int virgins = 0;
     // Check live list:
-    {
-	List::const_iterator end = s_live->end();
-	for (List::const_iterator it = s_live->begin();
-	     it != end; ++it) {
-	    const GCNode* node = *it;
-	    ++numnodes;
-	    if (node->getRefCount() == 0)
-		++virgins;
-	}
+    for (const GCNode* node: *s_live) {
+	++numnodes;
+	if (node->getRefCount() == 0)
+	    ++virgins;
     }
+
     // Check moribund list:
-    {
-	vector<const GCNode*>::const_iterator end = s_moribund->end();
-	for (vector<const GCNode*>::const_iterator it = s_moribund->begin();
-	     it != end; ++it) {
-	    const GCNode* node = *it;
-	    if (!(node->m_rcmmu & s_moribund_mask)) {
-		cerr << "GCNode::check() : "
-		    "Node on moribund list without moribund bit set.\n";
-		abort();
-	    }
+    for (const GCNode* node: *s_moribund) {
+	if (!(node->m_rcmmu & s_moribund_mask)) {
+	    cerr << "GCNode::check() : "
+		"Node on moribund list without moribund bit set.\n";
+	    abort();
 	}
     }
+
     // Check total number of nodes:
     if (numnodes != s_num_nodes) {
 	cerr << "GCNode::check() :"
