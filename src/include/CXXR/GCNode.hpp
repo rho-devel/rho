@@ -59,17 +59,6 @@
 #include <boost/serialization/export.hpp>
 #include <boost/serialization/version.hpp>
 
-/** @def GC_FIND_LOOPS
- *
- * If the preprocessor variable GC_FIND_LOOPS is defined, extra code
- * is inserted which, during a mark-sweep garbage collection, writes
- * to the standard output information about any cycles encountered in
- * the GCNode-GCEdge graph.
- */
-#ifdef DOXYGEN
-#define GC_FIND_LOOPS
-#endif
-
 /** @brief Syntactic sugar for creating CXXR::GCNode objects.
  *
  * The argument of this macro must be a constructor expression for an
@@ -457,9 +446,6 @@ namespace CXXR {
 	    void operator()(const GCNode* node);
 	private:
 	    unsigned int m_marks_applied;
-#ifdef GC_FIND_LOOPS
-	    std::vector<const GCNode*> m_ariadne;
-#endif
 	};
 
 	typedef HeterogeneousList<GCNode> List;

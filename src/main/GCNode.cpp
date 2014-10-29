@@ -52,10 +52,6 @@
 #include "CXXR/ProtectStack.h"
 #include "CXXR/WeakRef.h"
 
-#ifdef GC_FIND_LOOPS
-#include <typeinfo>
-#endif
-
 using namespace std;
 using namespace CXXR;
 
@@ -250,22 +246,6 @@ void GCNode::mark()
 
 void GCNode::sweep()
 {
-#ifdef GC_FIND_LOOPS
-    {
-	// Look for loops among the unreachable nodes.  We need
-	// temporarily to park the s_reachable list in reachable:
-	List* reachable = new List;
-	swap(reachable, s_reachable);
-	GCNode::Marker marker;
-	while (!s_live->empty()) {
-	    GCNode* node = s_live->front();
-	    marker(node);
-	}
-	s_live->splice_back(s_reachable);
-	swap(reachable, s_reachable);
-	delete reachable;
-    }
-#endif
     List zombies;
     // Detach the referents of nodes that haven't been moved to a
     // reachable list (i.e. are unreachable), and relist these nodes
@@ -302,33 +282,12 @@ void GCNode::sweep()
 void GCNode::Marker::operator()(const GCNode* node)
 {
     if (node->isMarked()) {
-#ifdef GC_FIND_LOOPS
-	vector<const GCNode*>::const_iterator it = m_ariadne.begin();
-	while (it != m_ariadne.end() && *it != node)
-	    ++it;
-	if (it != m_ariadne.end()) {
-	    // Loop found:
-	    cout << "GCFL " << (m_ariadne.end() - it);
-	    while (it != m_ariadne.end()) {
-		const GCNode* nd = *it;
-		cout << ' ' << nd << ' ' << typeid(*nd).name();
-		++it;
-	    }
-	    cout << " GCFL" << endl;
-	}
-#endif 
 	return;
     }
-#ifdef GC_FIND_LOOPS
-    m_ariadne.push_back(node);
-#endif
     // Update mark  Beware ~ promotes to unsigned int.
     node->m_rcmmu &= static_cast<unsigned char>(~s_mark_mask);
     node->m_rcmmu |= s_mark;
     ++m_marks_applied;
     s_reachable->splice_back(node);
     node->visitReferents(this);
-#ifdef GC_FIND_LOOPS
-    m_ariadne.pop_back();
-#endif
 }
