@@ -47,25 +47,18 @@ using namespace CXXR;
 
 GCStackRootBase* GCStackRootBase::s_roots = 0;
 
-void GCStackRootBase::destruct_aux()
+void GCStackRootBase::incrementReferenceCounts(GCStackRootBase* start,
+					       GCStackRootBase* end)
 {
-    GCNode::decRefCount(m_target);
+    for (GCStackRootBase* node = start; node != end; node = node->m_next)
+	GCNode::incRefCount(node->m_target);
 }
 
-void GCStackRootBase::protectAll()
+void GCStackRootBase::decrementReferenceCounts(GCStackRootBase* start,
+					       GCStackRootBase* end)
 {
-    GCStackRootBase* sr = s_roots;
-    while (sr && !sr->m_protecting) {
-	GCNode::incRefCount(sr->m_target);
-	sr->m_protecting = true;
-	sr = sr->m_next;
-    }
-}
-
-void GCStackRootBase::retarget_aux(const GCNode* node)
-{
-    GCNode::incRefCount(node);
-    GCNode::decRefCount(m_target);
+    for (GCStackRootBase* node = start; node != end; node = node->m_next)
+	GCNode::decRefCount(node->m_target);
 }
 
 void GCStackRootBase::seq_error()

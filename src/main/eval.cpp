@@ -62,6 +62,7 @@
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/GCStackFrameBoundary.hpp"
 #include "CXXR/ListFrame.hpp"
 #include "CXXR/LoopBailout.hpp"
 #include "CXXR/LoopException.hpp"
@@ -929,6 +930,9 @@ SEXP attribute_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    GCStackRoot<> argsrt(args), rhort(rho);
+    GCStackFrameBoundary frame_boundary;
+
     /* Need to declare volatile variables whose values are relied on
        after for_next or for_break longjmps and might change between
        the setjmp and longjmp calls. Theoretically this does not
@@ -938,7 +942,6 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     Rboolean dbg;
     SEXPTYPE val_type;
     GCStackRoot<> ans, v, val;
-    GCStackRoot<> argsrt(args), rhort(rho);
     SEXP sym, body;
 
     sym = CAR(args);
@@ -1072,6 +1075,8 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    GCStackFrameBoundary frame_boundary;
+
     Rboolean dbg;
     volatile int bgn;
     GCStackRoot<> t;
@@ -1129,6 +1134,8 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    GCStackFrameBoundary frame_boundary;
+
     Rboolean dbg;
     volatile int bgn;
     GCStackRoot<> t;

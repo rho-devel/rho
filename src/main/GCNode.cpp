@@ -48,6 +48,7 @@
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/GCRoot.h"
+#include "CXXR/GCStackFrameBoundary.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ProtectStack.h"
 #include "CXXR/WeakRef.h"
@@ -193,9 +194,12 @@ void GCNode::gclite()
     if (s_inhibitor_count != 0)
 	return;
     GCInhibitor inhibitor;
-    GCStackRootBase::protectAll();
     ProtectStack::protectAll();
     ByteCode::protectAll();
+    // Protect all the nodes on the stack.
+    GCStackFrameBoundary stack_boundary;
+    GCStackFrameBoundary::advanceBarrier();
+
     while (!s_moribund->empty()) {
 	// Last in, first out, for cache efficiency:
 	const GCNode* node = s_moribund->back();

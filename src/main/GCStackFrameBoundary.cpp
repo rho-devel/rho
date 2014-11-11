@@ -16,47 +16,64 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
+ *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
+ *  Copyright (C) 1998-2007   The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2.1 of the License, or
+ *  the Free Software Foundation; either version 2 of the License, or
  *  (at your option) any later version.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU Lesser General Public License for more details.
+ *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
 
-#ifndef CXXR_TESTS_CXXR_TEST_HELPERS_HPP
-#define CXXR_TESTS_CXXR_TEST_HELPERS_HPP
+/** @file GCStackFrameBoundary
+ *
+ * Class GCStackFrameBoundary.
+ */
 
-#include "gtest/gtest.h"
-#include "CXXR/RObject.h"
-#include "Rinternals.h"
-
-#define EXPECT_IDENTICAL(x, y) EXPECT_PRED3(R_compute_identical, (x), (y), 0)
+#include "CXXR/GCStackFrameBoundary.hpp"
+#include "CXXR/GCNode.hpp"
 
 namespace CXXR {
-inline std::ostream& operator<<(std::ostream& os, const RObject* object) {
-    // TODO(kmillar): output to *os instead.
-    Rf_PrintValue(const_cast<CXXR::RObject*>(object));
-    return os;
-}
-  
-// This class exists purely to provide access to private members of the GCNode  
-// class for testing purposes.
-class GCTestHelper {
-public:
-    static unsigned char getRefCount(const GCNode* node) {
-	return node->getRefCount();
+
+GCStackFrameBoundary *GCStackFrameBoundary::s_top = nullptr;
+GCStackFrameBoundary *GCStackFrameBoundary::s_barrier = nullptr;
+
+void GCStackFrameBoundary::advanceBarrier()
+{
+    if (!s_top) {  // There are no nodes to protect, so no barrier is needed.
+	return;
     }
-};
+
+    // Protect nodes
+    GCStackRootBase* current_location = getLocation(s_barrier);
+    GCStackRootBase* new_location = getLocation(s_top);
+    GCStackRootBase::incrementReferenceCounts(new_location, current_location);
+
+    // Move the barrier.
+    s_barrier = s_top;
+}
+
+void GCStackFrameBoundary::applyBarrier()
+{
+    assert(s_barrier == this);
+    GCStackFrameBoundary* new_barrier = m_next;
+
+    // Unprotect nodes.
+    GCStackRootBase* current_location = getLocation(this);
+    GCStackRootBase* new_location = getLocation(new_barrier);
+    GCStackRootBase::decrementReferenceCounts(current_location, new_location);
+
+    // Move the barrier back.
+    s_barrier = new_barrier;
+}
 
 }  // namespace CXXR
-
-#endif  // CXXR_TESTS_CXXR_TEST_HELPERS_HPP

@@ -519,7 +519,7 @@ namespace CXXR {
 	// Returns the stored reference count.
 	unsigned char getRefCount() const
 	{
-	    return m_rcmmu & s_refcount_mask;
+	    return (m_rcmmu & s_refcount_mask) >> 1;
 	}
 
 	// Decrement the reference count (subject to the stickiness of
@@ -590,6 +590,7 @@ namespace CXXR {
 	static void sweep();
 
 	friend class GCEdgeBase;
+	friend class GCTestHelper;
 	friend class SchwarzCounter<GCNode>;
     };
 }  // namespace CXXR

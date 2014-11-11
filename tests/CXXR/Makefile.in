@@ -37,6 +37,7 @@ unit_test_sources = \
 	ControlFlowTests.cpp \
 	EvaluationTests.cpp \
 	FrameTests.cpp \
+	GCStackFrameBoundaryTests.cpp \
 	VisibilityTests.cpp \
 	@BUILD_LLVM_JIT_TRUE@ MCJITMemoryManagerTests.cpp
 

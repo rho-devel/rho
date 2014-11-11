@@ -76,7 +76,7 @@ namespace CXXR {
 	 * @param node Pointer to be encapsulated by the GCStackRootBase.
 	 */
 	GCStackRootBase(const GCNode* node)
-	    : m_next(s_roots), m_target(node), m_protecting(false)
+	    : m_next(s_roots), m_target(node)
 	{
 	    s_roots = this;
 	    GCNode::maybeCheckExposed(node);
@@ -87,7 +87,7 @@ namespace CXXR {
 	 * @param source Pattern for the copy.
 	 */
 	GCStackRootBase(const GCStackRootBase& source)
-	    : m_next(s_roots), m_target(source.m_target), m_protecting(false)
+	    : m_next(s_roots), m_target(source.m_target)
 	{
 	    s_roots = this;
 	}
@@ -98,14 +98,12 @@ namespace CXXR {
 	    if (this != s_roots)
 		seq_error();
 #endif
-	    if (m_protecting)
-		destruct_aux();
 	    s_roots = m_next;
 	}
 
 	GCStackRootBase& operator=(const GCStackRootBase& source)
 	{
-	    retarget(source.m_target);
+	    m_target = source.m_target;
 	    return *this;
 	}
 
@@ -117,8 +115,6 @@ namespace CXXR {
 	void retarget(const GCNode* node)
 	{
 	    GCNode::maybeCheckExposed(node);
-	    if (m_protecting)
-		retarget_aux(node);
 	    m_target = node;
 	}
 
@@ -132,27 +128,27 @@ namespace CXXR {
 	}
     private:
 	friend class GCNode;
+	friend class GCStackFrameBoundary;
 
+	// The implementation here is just a linked-list of raw pointers on the
+	// stack, effectively forming a precise stack map.
+	// The garbage collector and GCStackFrameBoundary use this information
+	// to ensure that all reference counts are correctly updated when doing
+	// a collection.
+	// In the future, this is likely to be replaced with a conservative
+	// stack scan instead.
 	static GCStackRootBase* s_roots;
 
 	GCStackRootBase* m_next;
 	const GCNode* m_target;
-	bool m_protecting;  // If this is set, it signifies that this
-	  // GCStackRootBase object will have incremented the
-	  // reference count of its target (if any).  In the interests
-	  // of efficiency, initially m_protecting is false; it is set
-	  // by call to protectAll().
-	  //
-	  // m_protecting && m_next implies m_next->m_protecting .
 
-	// Helper function for destructor:
-        void destruct_aux() HOT_FUNCTION;
-
-	// Put all GCStackRootBase objects into the protecting state:
-	static void protectAll() HOT_FUNCTION;
-
-	// Helper function for retarget():
-	void retarget_aux(const GCNode* node) HOT_FUNCTION;
+	// These functions increment or decrement the reference counts of all
+	// the stack roots from start to end (exclusive of end).
+	// If end is nullptr, runs from start to the bottom of the stack.
+	static void incrementReferenceCounts(GCStackRootBase* start,
+					     GCStackRootBase* end);
+	static void decrementReferenceCounts(GCStackRootBase* start,
+					     GCStackRootBase* end);
 
 	// Report out-of-sequence destructor call and abort program.
 	// (We can't use an exception here because it's called from a

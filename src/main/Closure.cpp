@@ -46,6 +46,7 @@
 #include "CXXR/BailoutContext.hpp"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/Expression.h"
+#include "CXXR/GCStackFrameBoundary.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ListFrame.hpp"
 #include "CXXR/PlainContext.hpp"
@@ -159,6 +160,8 @@ RObject* Closure::invoke(Environment* env, const ArgList* arglist,
 			 const Expression* call,
 			 const Frame* method_bindings) const
 {
+    GCStackFrameBoundary frame_boundary;
+
 #ifndef NDEBUG
     if (arglist->status() != ArgList::PROMISED)
 	Rf_error("Internal error: unwrapped arguments to Closure::invoke");
