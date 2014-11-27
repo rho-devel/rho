@@ -179,7 +179,8 @@ namespace CXXR {
 	 */
 	static Environment* base()
 	{
-	    return s_base;
+            static GCRoot<Environment> base(createBaseEnvironment());
+	    return base;
 	}
 
 	/** @brief Base namespace.
@@ -188,7 +189,8 @@ namespace CXXR {
 	 */
 	static Environment* baseNamespace()
 	{
-	    return s_base_namespace;
+            static GCRoot<Environment> base_namespace(createBaseNamespace());
+            return base_namespace;
 	}
 
 	/** @brief Is R 'return' currently legal?
@@ -225,7 +227,8 @@ namespace CXXR {
 	 */
 	static Environment* empty()
 	{
-	    return s_empty;
+            static GCRoot<Environment> empty(createEmptyEnvironment());
+            return empty;
 	}
 
 	/** @brief Access the enclosing Environment.
@@ -321,7 +324,8 @@ namespace CXXR {
 	 */
 	static Environment* global()
 	{
-	    return s_global;
+            static GCRoot<Environment> global(createGlobalEnvironment());
+	    return global;
 	}
 
 	/** @brief Is R 'break' or 'next' currently legal?
@@ -499,13 +503,14 @@ namespace CXXR {
                                                           Frame::Binding*> >
                                > Cache;
 
-	static Cache* s_search_path_cache;
+	static Cache* searchPathCache();
+        static Cache* createSearchPathCache();
 
 	// Predefined environments:
-	static Environment* s_base;
-	static Environment* s_base_namespace;
-	static Environment* s_empty;
-	static Environment* s_global;
+	static Environment* createBaseEnvironment();
+	static Environment* createBaseNamespace();
+	static Environment* createEmptyEnvironment();
+	static Environment* createGlobalEnvironment();
 
 	GCEdge<Environment> m_enclosing;
 	GCEdge<Frame> m_frame;
@@ -544,7 +549,7 @@ namespace CXXR {
 
 	bool isSearchPathCachePortal() const
 	{
-	    return (this == s_global);
+          return (this == global());
 	}
 
 	template<class Archive>
@@ -730,16 +735,16 @@ void CXXR::Environment::load(Archive& ar, const unsigned int version)
     Environment* reloc = 0;
     switch(envtype) {
     case EMPTY:
-	reloc = s_empty;
+        reloc = empty();
 	break;
     case BASE:
-	reloc = s_base;
+        reloc = base();
 	break;
     case BASENAMESPACE:
-	reloc = s_base_namespace;
+        reloc = baseNamespace();
 	break;
     case GLOBAL:
-	reloc = s_global;
+        reloc = global();
 	break;
     case PACKAGE_ENV:
 	{
@@ -773,25 +778,25 @@ void CXXR::Environment::save(Archive& ar, const unsigned int version) const
 {
     ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
     // EMPTY:
-    if (this == s_empty) {
+    if (this == empty()) {
 	S11nType envtype = EMPTY;
 	ar << BOOST_SERIALIZATION_NVP(envtype);
 	return;
     }
     // BASE:
-    if  (this == s_base) {
+    if  (this == base()) {
 	S11nType envtype = BASE;
 	ar << BOOST_SERIALIZATION_NVP(envtype);
 	return;
     }
     // BASENAMESPACE:
-    if (this == s_base_namespace) {
+    if (this == baseNamespace()) {
 	S11nType envtype = BASENAMESPACE;
 	ar << BOOST_SERIALIZATION_NVP(envtype);
 	return;
     }
     // GLOBAL:
-    if (this == s_global) {
+    if (this == global()) {
 	S11nType envtype = GLOBAL;
 	ar << BOOST_SERIALIZATION_NVP(envtype);
 	return;

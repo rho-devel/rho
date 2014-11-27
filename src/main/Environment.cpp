@@ -75,12 +75,6 @@ namespace {
     const unsigned int GLOBAL_FRAME_MASK = 1<<15;
 }
 
-Environment::Cache* Environment::s_search_path_cache;
-Environment* Environment::s_base;
-Environment* Environment::s_base_namespace;
-Environment* Environment::s_empty;
-Environment* Environment::s_global;
-
 SEXP R_EmptyEnv;
 SEXP R_BaseEnv;
 SEXP R_GlobalEnv;
@@ -101,8 +95,6 @@ void Environment::LeakMonitor::operator()(const GCNode* node)
 
 void Environment::cleanup()
 {
-    delete s_search_path_cache;
-    s_search_path_cache = 0;
 }
 
 void Environment::detachFrame()
@@ -129,10 +121,11 @@ Frame::Binding* Environment::findBinding(const Symbol* symbol)
 #ifdef CHECK_CACHE
     Frame::Binding cache_binding = 0;
 #endif
+    Cache* search_path_cache = searchPathCache();
     while (env) {
 	if (env->isSearchPathCachePortal()) {
-	    Cache::iterator it = s_search_path_cache->find(symbol);
-	    if (it == s_search_path_cache->end())
+	    Cache::iterator it = search_path_cache->find(symbol);
+	    if (it == search_path_cache->end())
 		cache_miss = true;
 #ifdef CHECK_CACHE
 	    else cache_binding = it->second;
@@ -147,7 +140,7 @@ Frame::Binding* Environment::findBinding(const Symbol* symbol)
 		abort();
 #endif
 	    if (cache_miss)
-		(*s_search_path_cache)[symbol] = bdg;
+		(*search_path_cache)[symbol] = bdg;
 	    return bdg;
 	}
 	env = env->enclosingEnvironment();
@@ -161,45 +154,66 @@ Frame::Binding* Environment::findBinding(const Symbol* symbol)
 
 void Environment::flushFromSearchPathCache(const Symbol* sym)
 {
-    if (!s_search_path_cache)
-	return;
+    Cache* search_path_cache = searchPathCache();
 
     if (sym)
-	s_search_path_cache->erase(sym);
+	search_path_cache->erase(sym);
     else {
 	// Clear the cache, but retain the current number of buckets:
-	size_t buckets = s_search_path_cache->bucket_count();
-	s_search_path_cache->clear();
-	s_search_path_cache->rehash(buckets);
+	size_t buckets = search_path_cache->bucket_count();
+	search_path_cache->clear();
+	search_path_cache->rehash(buckets);
     }
+}
+
+Environment::Cache* Environment::createSearchPathCache()
+{
+    // 509 is largest prime <= 512.  This will have capacity for 254
+    // Symbols at load factor 0.5.
+    Cache* search_path_cache = new Cache(509);
+    search_path_cache->max_load_factor(0.5);
+    return search_path_cache;
+}
+
+Environment* Environment::createEmptyEnvironment()
+{
+    GCStackRoot<Frame> empty_frame(CXXR_NEW(ListFrame));
+    return CXXR_NEW(Environment(0, empty_frame));
+}
+
+Environment* Environment::createBaseEnvironment()
+{
+    GCStackRoot<Frame> base_frame(CXXR_NEW(StdFrame));
+    return CXXR_NEW(Environment(empty(), base_frame));
+}
+
+Environment* Environment::createGlobalEnvironment()
+{
+    GCStackRoot<Frame> global_frame(CXXR_NEW(StdFrame));
+    return CXXR_NEW(Environment(base(), global_frame));
+}
+
+Environment* Environment::createBaseNamespace()
+{
+    return CXXR_NEW(Environment(global(), base()->frame()));
+}
+
+Environment::Cache* Environment::searchPathCache()
+{
+    static Cache* cache = createSearchPathCache();
+    return cache;
 }
 
 void Environment::initialize()
 {
-    // 509 is largest prime <= 512.  This will have capacity for 254
-    // Symbols at load factor 0.5.
-    s_search_path_cache = new Cache(509);
-    s_search_path_cache->max_load_factor(0.5);
-    GCStackRoot<Frame> empty_frame(CXXR_NEW(ListFrame));
-    static GCRoot<Environment> empty_env(CXXR_NEW(Environment(0, empty_frame)));
-    s_empty = empty_env.get();
-    R_EmptyEnv = s_empty;
-    GCStackRoot<Frame> base_frame(CXXR_NEW(StdFrame));
-    static GCRoot<Environment>
-	base_env(CXXR_NEW(Environment(empty_env, base_frame)));
-    s_base = base_env.get();
-    s_base->setOnSearchPath(true);
-    R_BaseEnv = s_base;
-    GCStackRoot<Frame> global_frame(CXXR_NEW(StdFrame));
-    static GCRoot<Environment>
-	global_env(CXXR_NEW(Environment(s_base, global_frame)));
-    s_global = global_env.get();
-    s_global->setOnSearchPath(true);
-    R_GlobalEnv = s_global;
-    static GCRoot<Environment>
-	base_namespace(CXXR_NEW(Environment(s_global, s_base->frame())));
-    s_base_namespace = base_namespace.get();
-    R_BaseNamespace = s_base_namespace;
+
+    R_EmptyEnv = empty();
+    R_BaseEnv = base();
+    base()->setOnSearchPath(true);
+    R_GlobalEnv = global();
+    global()->setOnSearchPath(true);
+
+    R_BaseNamespace = baseNamespace();
 }
 
 void Environment::setOnSearchPath(bool status) {
