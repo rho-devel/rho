@@ -127,7 +127,6 @@ namespace CXXR {
 	    return m_target;
 	}
     private:
-	friend class GCNode;
 	friend class GCStackFrameBoundary;
 
 	// The implementation here is just a linked-list of raw pointers on the

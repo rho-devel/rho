@@ -49,7 +49,6 @@
 #include <stack>
 #include <vector>
 #include "CXXR/config.hpp"
-#include "CXXR/SchwarzCounter.hpp"
 
 namespace CXXR {
     /** @brief Class for implementing R_alloc() and kindred functions.
@@ -151,28 +150,17 @@ namespace CXXR {
 #ifndef NDEBUG
 	static Scope* s_innermost_scope;
 #endif
-
-	// Not implemented.  Declared to stop the compiler generating
-	// a constructor.
-	RAllocStack();
-
-	// Clean up static data members:
-	static void cleanup();
-
 	// Initialize the static data members:
+        friend void initializeMemorySubsystem();
 	static void initialize();
 
 	// Pop entries off the stack to reduce its size to new_size,
 	// which must be no greater than the current size.
 	static void trim(size_t new_size);
 
-	friend class SchwarzCounter<RAllocStack>;
+	RAllocStack() = delete;
     };
 }  // namespace CXXR
-
-namespace {
-    CXXR::SchwarzCounter<CXXR::RAllocStack> rallocstack_schwarz_ctr;
-}
 
 extern "C" {
 #endif /* __cplusplus */

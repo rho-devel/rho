@@ -51,14 +51,15 @@
 #include "CXXR/GCStackFrameBoundary.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ProtectStack.h"
+#include "CXXR/RAllocStack.h"
 #include "CXXR/WeakRef.h"
 
 using namespace std;
 using namespace CXXR;
 
-GCNode::List* GCNode::s_live;
-vector<const GCNode*>* GCNode::s_moribund;
-GCNode::List* GCNode::s_reachable;
+GCNode::List* GCNode::s_live = 0;
+vector<const GCNode*>* GCNode::s_moribund = 0;
+GCNode::List* GCNode::s_reachable = 0;
 unsigned int GCNode::s_num_nodes = 0;
 unsigned int GCNode::s_inhibitor_count = 0;
 const unsigned char GCNode::s_decinc_refcount[]
@@ -67,7 +68,7 @@ const unsigned char GCNode::s_decinc_refcount[]
    0x3e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x1e,
    0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 0,    0};
 const size_t GCNode::s_gclite_margin = 10000;
-size_t GCNode::s_gclite_threshold;
+size_t GCNode::s_gclite_threshold = s_gclite_margin;
 unsigned char GCNode::s_mark = 0;
 
 // Some versions of gcc (e.g. 4.2.1) give a spurious "throws different
@@ -145,15 +146,6 @@ bool GCNode::check()
     return true;
 }
 
-void GCNode::cleanup()
-{
-    ProtectStack::restoreSize(0);
-    sweep();
-    GCManager::cleanup();
-    ProtectStack::cleanup();
-    GCRootBase::cleanup();
-}
-
 void GCNode::destruct_aux()
 {
     // Erase this node from the moribund list:
@@ -214,16 +206,15 @@ void GCNode::gclite()
 
 void GCNode::initialize()
 {
-    static List live, reachable;
-    s_live = &live;
-    s_reachable = &reachable;
-    static vector<const GCNode*> moribund;
-    s_moribund = &moribund;
-    s_gclite_threshold = s_gclite_margin;
+    initializeMemorySubsystem();
+}
 
-    GCRootBase::initialize();  // BREAKPOINT A
-    ProtectStack::initialize();
-    GCManager::initialize();
+void GCNode::initializeImpl()
+{
+    s_live = new List();
+    s_reachable = new List();
+    s_moribund = new vector<const GCNode*>();
+    s_gclite_threshold = s_gclite_margin;
 }
 
 void GCNode::makeMoribund() const
@@ -294,4 +285,19 @@ void GCNode::Marker::operator()(const GCNode* node)
     ++m_marks_applied;
     s_reachable->splice_back(node);
     node->visitReferents(this);
+}
+
+void CXXR::initializeMemorySubsystem()
+{
+    static bool initialized = false;
+    if (!initialized) {
+	MemoryBank::initialize();
+	GCNode::initializeImpl();
+	GCRootBase::initialize();
+	ProtectStack::initialize();
+	GCManager::initialize();
+	RAllocStack::initialize();
+
+	initialized = true;
+    }
 }

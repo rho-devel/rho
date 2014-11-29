@@ -118,18 +118,17 @@ void MemoryBank::initialize()
     // The following leave some space at the end of each 4096-byte
     // page, in case posix_memalign needs to put some housekeeping
     // information for the next page there.
-    static Pool pools[s_num_pools];
-    pools[0].initialize(1, 511);
-    pools[1].initialize(2, 255);
-    pools[2].initialize(3, 170);
-    pools[3].initialize(4, 127);
-    pools[4].initialize(5, 102);
-    pools[5].initialize(6, 85);
-    pools[6].initialize(8, 63);
-    pools[7].initialize(12, 42);
-    pools[8].initialize(16, 31);
-    pools[9].initialize(24, 21);
-    s_pools = pools;
+    s_pools = new Pool[s_num_pools];
+    s_pools[0].initialize(1, 511);
+    s_pools[1].initialize(2, 255);
+    s_pools[2].initialize(3, 170);
+    s_pools[3].initialize(4, 127);
+    s_pools[4].initialize(5, 102);
+    s_pools[5].initialize(6, 85);
+    s_pools[6].initialize(8, 63);
+    s_pools[7].initialize(12, 42);
+    s_pools[8].initialize(16, 31);
+    s_pools[9].initialize(24, 21);
 #endif
 }
 

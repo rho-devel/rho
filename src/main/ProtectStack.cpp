@@ -59,11 +59,6 @@ namespace CXXR {
 
 NodeStack* ProtectStack::s_stack = 0;
 
-void ProtectStack::cleanup()
-{
-    delete s_stack;
-}
-
 void ProtectStack::initialize()
 {
     s_stack = new NodeStack(64);

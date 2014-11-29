@@ -65,8 +65,7 @@ GCRootBase::GCRootBase(const GCNode* node)
 
 void GCRootBase::initialize()
 {
-    static List roots;
-    s_roots = &roots;
+    s_roots = new List();
 }
 
 void GCRootBase::visitRoots(GCNode::const_visitor* v)

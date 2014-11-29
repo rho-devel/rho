@@ -166,8 +166,6 @@ namespace CXXR {
 	 */
 	static size_t triggerLevel() {return s_threshold;}
     private:
-	friend class GCNode;
-
 	static size_t s_threshold;
 	static size_t s_min_threshold;
 
@@ -176,13 +174,6 @@ namespace CXXR {
 
 	static std::ostream* s_os;  // Pointer to output stream for GC
 				    // reporting, or NULL.
-
-	// Not implemented.  Declared to stop the compiler generating
-	// a constructor.
-	GCManager();
-
-	// Clean up static data associated with garbage collection.
-	static void cleanup() {}
 
 	// Callbacks e.g. for timing:
 	static void (*s_pre_gc)();
@@ -193,7 +184,10 @@ namespace CXXR {
 	static void gcController();
 
 	// Initialize static data associated with garbage collection.
+	friend void initializeMemorySubsystem();
 	static void initialize();
+
+	GCManager() = delete;
     };
 }  // namespace CXXR
 

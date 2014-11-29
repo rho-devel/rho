@@ -126,19 +126,13 @@ namespace CXXR {
 	    return *m_it;
 	}
     private:
-	friend class GCNode;
-
 	typedef std::list<const GCNode*, Allocator<const GCNode*> > List;
 	static List* s_roots;
 
 	List::iterator m_it;
 
-	// Clean up static data at end of run (called by
-	// GCNode::SchwarzCtr destructor:
-	static void cleanup() {}
-
-	// Initialize static data (called by GCNode::SchwarzCtr
-	// constructor):
+	// Initialize static data.
+        friend void initializeMemorySubsystem();
 	static void initialize();
     };
 

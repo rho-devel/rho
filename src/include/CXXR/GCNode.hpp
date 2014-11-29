@@ -120,11 +120,6 @@ namespace CXXR {
      * by the garbage collector, and does not contribute to the
      * 'meaning' of an object of a derived class, its data members are
      * mutable.
-     *
-     * @todo The (private) cleanup() method needs to address the
-     * possibility that derived classes may have destructors that
-     * release some external resource (e.g. a lock).  Maybe a garbage
-     * collection without a 'mark' phase would do the trick.
      */
     class GCNode : public HeterogeneousListBase::Link {
     public:
@@ -513,9 +508,6 @@ namespace CXXR {
 	// to expose a node more than once.
 	static void alreadyExposedError();
 
-	// Clean up static data at end of run:
-	static void cleanup();
-
 	// Returns the stored reference count.
 	unsigned char getRefCount() const
 	{
@@ -554,16 +546,17 @@ namespace CXXR {
 	    }
 	}
 
-	/** @brief Initialize static members.
+	/** @brief Initialize the entire memory subsystem.
 	 *
 	 * This method must be called before any GCNodes are created.
 	 * If called more than once in a single program run, the
 	 * second and subsequent calls do nothing.
-	 *
-	 * @param num_old_generations One fewer than the number of
-	 * generations into which GCNode objects are to be ranked.
 	 */
 	static void initialize();
+	static void cleanup() {} 
+
+	friend void initializeMemorySubsystem();
+	static void initializeImpl();
 
 	bool isMarked() const
 	{
@@ -593,6 +586,14 @@ namespace CXXR {
 	friend class GCTestHelper;
 	friend class SchwarzCounter<GCNode>;
     };
+
+    /** @brief Initialize the entire memory subsystem.
+     *
+     * This method must be called before any GCNodes are created.
+     * If called more than once in a single program run, the
+     * second and subsequent calls do nothing.
+     */
+    void initializeMemorySubsystem();
 }  // namespace CXXR
 
 template <class Archive>

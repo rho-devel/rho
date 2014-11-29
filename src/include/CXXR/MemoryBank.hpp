@@ -43,7 +43,6 @@
 #include <cstring>
 #include "config.h"
 #include "CXXR/CellPool.hpp"
-#include "CXXR/SchwarzCounter.hpp"
 
 namespace CXXR {
     /** @brief Class to manage memory allocation and deallocation for CXXR.
@@ -152,22 +151,12 @@ namespace CXXR {
 	static size_t s_monitor_threshold;
 #endif
 
-	// Not implemented.  Declared to stop the compiler generating
-	// a constructor.
-	MemoryBank();
-
-	// Free memory used by the static data members:
-	static void cleanup() {}
-
 	// Initialize the static data members:
+	friend void initializeMemorySubsystem();
 	static void initialize();
 
-	friend class SchwarzCounter<MemoryBank>;
+	MemoryBank() = delete;
     };
-}
-
-namespace {
-    CXXR::SchwarzCounter<CXXR::MemoryBank> memorybank_schwarz_ctr;
 }
 
 #endif /* MEMORYBANK_HPP */

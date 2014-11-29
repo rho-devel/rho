@@ -181,26 +181,20 @@ namespace CXXR {
 	    s_stack->visitRoots(v);
 	}
     private:
-	friend class GCNode;
-
 	static NodeStack* s_stack;
 
-	// Not implemented:
-	ProtectStack();
-
-	// Clean up static data at end of run (called by
-	// GCNode::SchwarzCtr destructor):
-	static void cleanup();
-
-	// Initialize static data (called by GCNode::SchwarzCtr
-	// constructor):
+	// Initialize static data.
+	friend void initializeMemorySubsystem();
 	static void initialize();
 
 	// Put all entries into the protecting state:
+        friend void GCNode::gclite();
 	static void protectAll()
 	{
 	    s_stack->protectAll();
 	}
+
+	ProtectStack() = delete;
     };
 }  // namespace CXXR
 
