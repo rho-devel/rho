@@ -188,7 +188,7 @@ namespace CXXR {
 
 	/** @brief Get a pointer to a BuiltInFunction object.
 	 *
-	 * If \a name is not the name of a built-in function this
+	 * If \a name is not the name of a built-in primitive this
 	 * function will raise a warning and return a null pointer.
 	 * Otherwise the function will return a pointer to the
 	 * (unique) BuiltInFunction object embodying that function.
@@ -199,14 +199,27 @@ namespace CXXR {
 	 * @return a pointer to the BuiltInFunction object
 	 * representing the function with the specified \a name, or a
 	 * null pointer if \a name is not the name of a built-in
-	 * function.
+	 * primitive function.
 	 *
 	 * @note The reason this function raises a warning and not an
 	 * error if passed an inappropriate \a name is so that loading
 	 * an archive will not fail completely simply because it
 	 * refers to an obsolete built-in function.
 	 */
-	static BuiltInFunction* obtain(const std::string& name);
+	static BuiltInFunction* obtainPrimitive(const std::string& name);
+
+	/** @brief Get function accessed via <tt>.Internal()</tt>.
+	 *
+	 * @param sym Pointer to a Symbol.
+	 *
+	 * @return If \a x is associated with a function invoked in R \e
+	 * via <tt>.Internal()</tt>, then a pointer to the appropriate
+	 * CXXR::BuiltInFunction, otherwise a null pointer.
+	 */
+	static BuiltInFunction* obtainInternal(const Symbol* name);
+	static BuiltInFunction* obtainInternal(const std::string& name) {
+          return obtainInternal(Symbol::obtain(name));
+        }
 
 	/** @brief Get table offset.
 	 *
@@ -319,10 +332,12 @@ namespace CXXR {
 	// Actually an array:
 	static TableEntry* s_function_table;
 
+	typedef std::map<const Symbol*, GCRoot<BuiltInFunction>> map;
 	// Mapping from function names to pointers to BuiltInFunction
-	// objects:
-	typedef std::map<std::string, GCRoot<BuiltInFunction>> map;
-	static map* s_cache;
+	// objects for functions called via .Primitive()
+	static map* s_primitive_function_cache;
+        // And for functions called via .Internal()
+        static map* s_internal_function_cache;
 
 	unsigned int m_offset;
 	CCODE m_function;
@@ -428,7 +443,7 @@ void CXXR::BuiltInFunction::load(Archive& ar, const unsigned int version)
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(FunctionBase);
     std::string namestr;
     ar >> boost::serialization::make_nvp("name", namestr);
-    S11nScope::defineRelocation(this, obtain(namestr));
+    S11nScope::defineRelocation(this, obtainPrimitive(namestr));
 }
 
 template<class Archive>

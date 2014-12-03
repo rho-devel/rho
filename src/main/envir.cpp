@@ -1316,13 +1316,17 @@ static void FrameValues(SEXP frame, int all, SEXP values, int *indx)
     }
 }
 
-static bool BuiltinTest(const Symbol* sym, bool all, bool intern)
+static bool BuiltinTest(const Symbol* sym, bool all, bool internal_only)
 {
-    if (intern && DotInternalTable::get(sym))
+    if ((sym->name()->c_str()[0] == '.') && !all) {
+	return false;
+    }
+    if (internal_only) {
+	return BuiltInFunction::obtainInternal(sym);
+    }
+    if (SYMVALUE(const_cast<Symbol*>(sym)) != R_UnboundValue) {
 	return true;
-    if ((all || sym->name()->c_str()[0] != '.')
-	&& SYMVALUE(const_cast<Symbol*>(sym)) != R_UnboundValue)
-	return true;
+    }
     return false;
 }
 

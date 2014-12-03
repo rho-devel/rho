@@ -118,7 +118,7 @@ FunctionBase* CompilerContext::staticallyResolveFunction(const Symbol* symbol)
 	return nullptr;
     }
 
-    FunctionBase* builtin_definition = BuiltInFunction::obtain(
+    FunctionBase* builtin_definition = BuiltInFunction::obtainPrimitive(
 	symbol->name()->stdstring());
     if (binding->rawValue() != builtin_definition) {
 	// The value in base has been changed.

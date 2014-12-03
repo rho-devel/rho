@@ -34,6 +34,7 @@ sources_cxx = ArgMatchertest.cpp Allocatortest.cpp CellPooltest.cpp \
               RObject_sizer.cpp splice_test.cpp
 
 unit_test_sources = \
+	BuiltInFunctionTest.cpp \
 	ControlFlowTests.cpp \
 	EvaluationTests.cpp \
 	FrameTests.cpp \

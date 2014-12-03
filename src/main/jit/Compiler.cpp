@@ -337,25 +337,25 @@ Compiler::getInlineableBuiltins()
 {
     static std::vector<std::pair<FunctionBase*, EmitBuiltinFn>>
 	inlineable_builtins = {
-	// std::make_pair(BuiltInFunction::obtain("<-"),
+	// std::make_pair(BuiltInFunction::obtainPrimitive("<-"),
 	// 	       &Compiler::emitInlinedAssign),
-	std::make_pair(BuiltInFunction::obtain("("),
+	std::make_pair(BuiltInFunction::obtainPrimitive("("),
 		       &Compiler::emitInlinedParen),
-	std::make_pair(BuiltInFunction::obtain("{"),
+	std::make_pair(BuiltInFunction::obtainPrimitive("{"),
 		       &Compiler::emitInlinedBegin),
-	std::make_pair(BuiltInFunction::obtain("return"),
+	std::make_pair(BuiltInFunction::obtainPrimitive("return"),
 		       &Compiler::emitInlinedReturn),
-	std::make_pair(BuiltInFunction::obtain("if"),
+	std::make_pair(BuiltInFunction::obtainPrimitive("if"),
 		       &Compiler::emitInlinedIf),
-	// std::make_pair(BuiltInFunction::obtain("for"),
+	// std::make_pair(BuiltInFunction::obtainPrimitive("for"),
 	// 	       &Compiler::emitInlinedFor),
-	std::make_pair(BuiltInFunction::obtain("while"),
+	std::make_pair(BuiltInFunction::obtainPrimitive("while"),
 		       &Compiler::emitInlinedWhile),
-	std::make_pair(BuiltInFunction::obtain("repeat"),
+	std::make_pair(BuiltInFunction::obtainPrimitive("repeat"),
 		       &Compiler::emitInlinedRepeat),
-	std::make_pair(BuiltInFunction::obtain("break"),
+	std::make_pair(BuiltInFunction::obtainPrimitive("break"),
 		       &Compiler::emitInlinedBreak),
-	std::make_pair(BuiltInFunction::obtain("next"),
+	std::make_pair(BuiltInFunction::obtainPrimitive("next"),
 		       &Compiler::emitInlinedNext)
     };
     return inlineable_builtins;

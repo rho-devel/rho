@@ -103,8 +103,8 @@ using namespace CXXR;
 
 void BuiltInFunction::initialize()
 {
-    static map the_map;
-    s_cache = &the_map;
+    s_primitive_function_cache = new map();
+    s_internal_function_cache = new map();
 
     static TableEntry function_table[] = {
 	// Now begins the function table, deliberately retaining CR's indentation:
@@ -972,23 +972,23 @@ void BuiltInFunction::initialize()
 
     // code of BuiltInFunction::initialize() now continues:
     s_function_table = function_table;
-    DotInternalTable::initialize();
     for (int i = 0; s_function_table[i].name; ++i) {
 	const char* symname = s_function_table[i].name;
 	Symbol* sym = Symbol::obtain(symname);
 	GCStackRoot<BuiltInFunction> bif(CXXR_NEW(BuiltInFunction(i)));
-	(*s_cache)[symname] = bif;
-	if ((s_function_table[i].flags%100)/10)
-	    DotInternalTable::set(sym, bif);
-	else
+	if (bif->viaDotInternal()) {
+	    (*s_internal_function_cache)[sym] = bif;
+	}
+	else {
+	    (*s_primitive_function_cache)[sym] = bif;
 	    Environment::base()->frame()->obtainBinding(sym)->setValue(bif);
+	}
     }
-    
 }
 
 SEXP attribute_hidden R_Primitive(const char *primname)
 {
-    return BuiltInFunction::obtain(primname);
+    return BuiltInFunction::obtainPrimitive(primname);
 }
     
 SEXP attribute_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)

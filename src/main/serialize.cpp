@@ -1771,7 +1771,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 		char* cbuf = &cbufv[0];
 		InString(stream, cbuf, length);
 		cbuf[length] = '\0';
-		PROTECT(s = BuiltInFunction::obtain(cbuf));
+		PROTECT(s = BuiltInFunction::obtainPrimitive(cbuf));
 	    }
 	    break;
 	case LGLSXP:

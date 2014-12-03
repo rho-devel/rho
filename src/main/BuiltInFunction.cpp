@@ -43,7 +43,6 @@
 #include <cstdarg>
 #include "Internal.h"
 #include "CXXR/ArgList.hpp"
-#include "CXXR/DotInternal.h"
 #include "CXXR/FunctionContext.hpp"
 #include "CXXR/PlainContext.hpp"
 #include "CXXR/ProtectStack.h"
@@ -64,7 +63,8 @@ namespace CXXR {
 }
 
 BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = 0;
-BuiltInFunction::map* BuiltInFunction::s_cache = 0;
+BuiltInFunction::map* BuiltInFunction::s_primitive_function_cache = 0;
+BuiltInFunction::map* BuiltInFunction::s_internal_function_cache = 0;
 
 // BuiltInFunction::apply() creates a FunctionContext only if
 // m_transparent is false.  This affects the location at which
@@ -108,11 +108,7 @@ BuiltInFunction::BuiltInFunction(unsigned int offset)
 
 BuiltInFunction::~BuiltInFunction()
 {
-    if (m_offset < 0)
-	return;
-    // During program exit, s_cache may already have been deleted:
-    if (s_cache)
-	s_cache->erase(name());
+    assert(0 && "BuiltInFunction's destructor should never be called");
 }
 
 RObject* BuiltInFunction::apply(ArgList* arglist, Environment* env,
@@ -177,9 +173,6 @@ void BuiltInFunction::checkNumArgs(const PairList* args,
 
 void BuiltInFunction::cleanup()
 {
-    // Clearing s_cache avoids valgrind 'possibly lost' reports on exit:
-    s_cache->clear();
-    s_cache = 0;
 }
 
 int BuiltInFunction::indexInTable(const char* name)
@@ -192,13 +185,23 @@ int BuiltInFunction::indexInTable(const char* name)
 
 // BuiltInFunction::initialize() is in names.cpp
 
-BuiltInFunction* BuiltInFunction::obtain(const std::string& name)
+BuiltInFunction* BuiltInFunction::obtainPrimitive(const std::string& name)
 {
-    auto location = s_cache->find(name);
-    if (location == s_cache->end()) {
+    const Symbol* symbol = Symbol::obtain(name);
+    auto location = s_primitive_function_cache->find(symbol);
+    if (location == s_primitive_function_cache->end()) {
 	Rf_warning(_("%s is not the name of a built-in or special function"),
 		   name.c_str());
 	return 0;
+    }
+    return location->second;
+}
+
+BuiltInFunction* BuiltInFunction::obtainInternal(const Symbol* name)
+{
+    auto location = s_internal_function_cache->find(name);
+    if (location == s_internal_function_cache->end()) {
+	return nullptr;
     }
     return location->second;
 }
