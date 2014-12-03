@@ -62,9 +62,7 @@ namespace CXXR {
     }
 }
 
-BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = 0;
-BuiltInFunction::map* BuiltInFunction::s_primitive_function_cache = 0;
-BuiltInFunction::map* BuiltInFunction::s_internal_function_cache = 0;
+// s_function_table is in names.cpp
 
 // BuiltInFunction::apply() creates a FunctionContext only if
 // m_transparent is false.  This affects the location at which
@@ -171,10 +169,6 @@ void BuiltInFunction::checkNumArgs(const PairList* args,
     }
 }
 
-void BuiltInFunction::cleanup()
-{
-}
-
 int BuiltInFunction::indexInTable(const char* name)
 {
     for (int i = 0; s_function_table[i].name; ++i)
@@ -183,13 +177,31 @@ int BuiltInFunction::indexInTable(const char* name)
     return -1;
 }
 
-// BuiltInFunction::initialize() is in names.cpp
+// BuiltInFunction::createLookupTables() is in names.cpp
+
+std::pair<BuiltInFunction::map*, BuiltInFunction::map*>
+BuiltInFunction::getLookupTables()
+{
+    static std::pair<map*, map*> tables = createLookupTables();
+    return tables;
+}
+
+BuiltInFunction::map* BuiltInFunction::getPrimitiveFunctionLookupTable()
+{
+    return getLookupTables().first;
+}
+
+BuiltInFunction::map* BuiltInFunction::getInternalFunctionLookupTable()
+{
+    return getLookupTables().second;
+}
+
 
 BuiltInFunction* BuiltInFunction::obtainPrimitive(const std::string& name)
 {
     const Symbol* symbol = Symbol::obtain(name);
-    auto location = s_primitive_function_cache->find(symbol);
-    if (location == s_primitive_function_cache->end()) {
+    auto location = getPrimitiveFunctionLookupTable()->find(symbol);
+    if (location == getPrimitiveFunctionLookupTable()->end()) {
 	Rf_warning(_("%s is not the name of a built-in or special function"),
 		   name.c_str());
 	return 0;
@@ -197,10 +209,19 @@ BuiltInFunction* BuiltInFunction::obtainPrimitive(const std::string& name)
     return location->second;
 }
 
+void BuiltInFunction::addPrimitivesToEnvironment(Environment* environment)
+{
+    for(const auto& entry: *getPrimitiveFunctionLookupTable()) {
+	const Symbol* symbol = entry.first;
+	BuiltInFunction* function = entry.second;
+	environment->frame()->bind(symbol, function);
+    }
+}
+
 BuiltInFunction* BuiltInFunction::obtainInternal(const Symbol* name)
 {
-    auto location = s_internal_function_cache->find(name);
-    if (location == s_internal_function_cache->end()) {
+    auto location = getInternalFunctionLookupTable()->find(name);
+    if (location == getInternalFunctionLookupTable()->end()) {
 	return nullptr;
     }
     return location->second;

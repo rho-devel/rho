@@ -208,6 +208,8 @@ namespace CXXR {
 	 */
 	static BuiltInFunction* obtainPrimitive(const std::string& name);
 
+        static void addPrimitivesToEnvironment(Environment* environment);
+
 	/** @brief Get function accessed via <tt>.Internal()</tt>.
 	 *
 	 * @param sym Pointer to a Symbol.
@@ -304,7 +306,6 @@ namespace CXXR {
 		       const Expression* call) const;
     private:
 	friend class boost::serialization::access;
-	friend class SchwarzCounter<BuiltInFunction>;
 
 	// 'Pretty-print' information:
 	struct PPinfo {
@@ -329,15 +330,16 @@ namespace CXXR {
 	// result printing, this should not be overridden.
 	enum ResultPrintingMode {FORCE_ON = 0, FORCE_OFF, SOFT_ON};
 
-	// Actually an array:
-	static TableEntry* s_function_table;
+	static TableEntry s_function_table[];
 
 	typedef std::map<const Symbol*, GCRoot<BuiltInFunction>> map;
+        static std::pair<map*, map*> getLookupTables();
+        static std::pair<map*, map*> createLookupTables();
 	// Mapping from function names to pointers to BuiltInFunction
 	// objects for functions called via .Primitive()
-	static map* s_primitive_function_cache;
+	static map* getPrimitiveFunctionLookupTable();
         // And for functions called via .Internal()
-        static map* s_internal_function_cache;
+        static map* getInternalFunctionLookupTable();
 
 	unsigned int m_offset;
 	CCODE m_function;
@@ -371,8 +373,6 @@ namespace CXXR {
 	// allocated only using 'new'.
 	~BuiltInFunction();
 
-	static void cleanup();
-
 	/** @brief Find a built-in function within the function table.
 	 *
 	 * @param name Name of the sought built-in function.
@@ -382,10 +382,6 @@ namespace CXXR {
 	 * given name.
 	 */
 	static int indexInTable(const char* name);
-
-	// Put primitive functions into the base environment, and
-	// internal functions into the DotInternalTable:
-	static void initialize();
 
 	// Invoke the encapsulated function:
 	RObject* invoke(Environment* env, const ArgList* arglist, 
@@ -425,13 +421,6 @@ namespace CXXR {
 }  // namespace CXXR
 
 BOOST_CLASS_EXPORT_KEY(CXXR::BuiltInFunction)
-
-// Force Environment and Symbol classes to be initialised first:
-#include "CXXR/Environment.h"
-
-namespace {
-    CXXR::SchwarzCounter<CXXR::BuiltInFunction> bif_schwarz_ctr;
-}
 
 // ***** Implementation of non-inlined templated members *****
 

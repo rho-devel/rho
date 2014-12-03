@@ -100,14 +100,7 @@ using namespace CXXR;
  * rightassoc: Right (1) or left (0) associative operator
  *
  */
-
-void BuiltInFunction::initialize()
-{
-    s_primitive_function_cache = new map();
-    s_internal_function_cache = new map();
-
-    static TableEntry function_table[] = {
-	// Now begins the function table, deliberately retaining CR's indentation:
+BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 
 /* printname	c-entry		offset	eval	arity	pp-kind	     precedence	rightassoc
  * ---------	-------		------	----	-----	-------      ----------	----------*/
@@ -970,20 +963,24 @@ void BuiltInFunction::initialize()
 {NULL,		NULL,		0,	0,	0,	{PP_INVALID, PREC_FN,	0}},
 };
 
-    // code of BuiltInFunction::initialize() now continues:
-    s_function_table = function_table;
+std::pair<BuiltInFunction::map*, BuiltInFunction::map*>
+BuiltInFunction::createLookupTables()
+{
+    map* primitive_function_cache = new map();
+    map* internal_function_cache = new map();
+
     for (int i = 0; s_function_table[i].name; ++i) {
 	const char* symname = s_function_table[i].name;
 	Symbol* sym = Symbol::obtain(symname);
 	GCStackRoot<BuiltInFunction> bif(CXXR_NEW(BuiltInFunction(i)));
 	if (bif->viaDotInternal()) {
-	    (*s_internal_function_cache)[sym] = bif;
+	    (*internal_function_cache)[sym] = bif;
 	}
 	else {
-	    (*s_primitive_function_cache)[sym] = bif;
-	    Environment::base()->frame()->obtainBinding(sym)->setValue(bif);
+	    (*primitive_function_cache)[sym] = bif;
 	}
     }
+    return std::make_pair(primitive_function_cache, internal_function_cache);
 }
 
 SEXP attribute_hidden R_Primitive(const char *primname)

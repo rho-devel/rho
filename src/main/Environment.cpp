@@ -46,6 +46,7 @@
 #include <typeinfo>
 #include "R_ext/Error.h"
 #include "localization.h"
+#include "CXXR/BuiltInFunction.h"
 #include "CXXR/FunctionBase.h"
 #include "CXXR/ListFrame.hpp"
 #include "CXXR/StdFrame.hpp"
@@ -184,7 +185,9 @@ Environment* Environment::createEmptyEnvironment()
 Environment* Environment::createBaseEnvironment()
 {
     GCStackRoot<Frame> base_frame(CXXR_NEW(StdFrame));
-    return CXXR_NEW(Environment(empty(), base_frame));
+    GCStackRoot<Environment> base(CXXR_NEW(Environment(empty(), base_frame)));
+    BuiltInFunction::addPrimitivesToEnvironment(base);
+    return base;
 }
 
 Environment* Environment::createGlobalEnvironment()
@@ -206,7 +209,6 @@ Environment::Cache* Environment::searchPathCache()
 
 void Environment::initialize()
 {
-
     R_EmptyEnv = empty();
     R_BaseEnv = base();
     base()->setOnSearchPath(true);
