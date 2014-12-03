@@ -37,7 +37,8 @@
  *
  * Object Formatting
  *
- *  See ./paste.c for do_paste() , do_format() and  do_formatinfo()
+ *  See ./paste.c for do_paste() , do_format() and do_formatinfo() and
+ *       ./util.c for do_formatC()
  *  See ./printutils.c for general remarks on Printing and the Encode.. utils.
  *  See ./print.c  for do_printdefault, do_prmatrix, etc.
  *
@@ -174,7 +175,7 @@ LDOUBLE private_nearbyintl(LDOUBLE x)
 #  define R_nearbyint rint
 # else
 #  define R_nearbyint private_rint
-extern double private_rint(double x);/* in ../nmath/fround.c  */
+#  include "nmath2.h" // for private_rint
 # endif
 #endif
 
@@ -195,23 +196,24 @@ static void format_via_sprintf(double r, int d, int *kpower, int *nsig)
 static const long double tbl[] =
 {
     /* Powers exactly representable with 64 bit mantissa (except the first, which is only used with digits=0) */
-    1e-1, 
+    1e-1,
     1e00, 1e01, 1e02, 1e03, 1e04, 1e05, 1e06, 1e07, 1e08, 1e09,
     1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
     1e20, 1e21, 1e22, 1e23, 1e24, 1e25, 1e26, 1e27
 };
-
+#define KP_MAX 27
 #else
 static const double tbl[] =
 {
-    1e-1, 
+    1e-1,
     1e00, 1e01, 1e02, 1e03, 1e04, 1e05, 1e06, 1e07, 1e08, 1e09,
     1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
     1e20, 1e21, 1e22
 };
+#define KP_MAX 22
 #endif
 
-static void 
+static void
 scientific(double *x, int *sgn, int *kpower, int *nsig, int *roundingwidens)
 {
     /* for a number x , determine
@@ -255,9 +257,9 @@ scientific(double *x, int *sgn, int *kpower, int *nsig, int *roundingwidens)
             r_prec /= powl(10.0, static_cast<long double>( kp));
 #else
         else if (kp <= R_dec_min_exponent)
-            r_prec = (r_prec * 1e+303)/pow(10.0, (double)(kp+303));
+            r_prec = (r_prec * 1e+303)/Rexp10((double)(kp+303));
         else
-            r_prec /= pow(10.0, (double) kp);
+            r_prec /= Rexp10((double) kp);
 #endif
         if (r_prec < tbl[R_print.digits]) {
             r_prec *= 10.0;
@@ -279,15 +281,15 @@ scientific(double *x, int *sgn, int *kpower, int *nsig, int *roundingwidens)
            is in range. Representation of 1e+303 has low error.
          */
         else if (kp <= R_dec_min_exponent)
-            r_prec = (r_prec * 1e+303)/pow(10.0, (double)(kp+303));
+            r_prec = (r_prec * 1e+303)/Rexp10((double)(kp+303));
         else
-            r_prec /= pow(10.0, (double)kp);
-        if (r_prec < tbl[R_print.digits - 1]) {
+            r_prec /= Rexp10((double)kp);
+        if (r_prec < tbl[R_print.digits]) {
             r_prec *= 10.0;
             kp--;
         }
         /* round alpha to integer, 10^(digits-1) <= alpha <= 10^digits */
-        /* accuracy limited by double rounding problem, 
+        /* accuracy limited by double rounding problem,
 	   alpha already rounded to 53 bits */
         alpha = R_nearbyint(r_prec);
 #endif
@@ -305,7 +307,19 @@ scientific(double *x, int *sgn, int *kpower, int *nsig, int *roundingwidens)
             kp += 1;
         }
         *kpower = kp + R_print.digits - 1;
-	*roundingwidens = *kpower > 0 && r < tbl[*kpower + 1];
+
+	/* Scientific format may do more rounding than fixed format, e.g.
+	   9996 with 3 digits is 1e+04 in scientific, but 9996 in fixed.
+	   This happens when the true value r is less than 10^(kpower+1)
+	   and would not round up to it in fixed format.
+	   Here rgt is the decimal place that will be cut off by rounding */
+
+	int rgt = R_print.digits - *kpower;
+	/* bound rgt by 0 and KP_MAX */
+	rgt = rgt < 0 ? 0 : rgt > KP_MAX ? KP_MAX : rgt;
+	double fuzz = 0.5/(double)tbl[1 + rgt];
+	// kpower can be bigger than the table.
+	*roundingwidens = *kpower > 0 && *kpower <= KP_MAX && r < tbl[*kpower + 1] - fuzz;
     }
 }
 
