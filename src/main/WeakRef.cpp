@@ -54,9 +54,6 @@
 using namespace std;
 using namespace CXXR;
 
-WeakRef::WRList* WeakRef::s_live;
-WeakRef::WRList* WeakRef::s_f10n_pending;
-WeakRef::WRList* WeakRef::s_tombstone;
 int WeakRef::s_count = 0;
 
 namespace {
@@ -68,9 +65,12 @@ WeakRef::WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer,
 		 bool finalize_on_exit)
     : m_key(key), m_value(value), m_Rfinalizer(R_finalizer),
       m_self(expose(this)), m_Cfinalizer(0),
-      m_lit(s_live->insert(s_live->end(), this)), m_ready_to_finalize(false),
+      m_ready_to_finalize(false),
       m_finalize_on_exit(finalize_on_exit)
 {
+    getLive()->push_back(this);
+    m_lit = std::prev(getLive()->end());
+
     if (!m_key)
 	tombstone();
     else switch (m_key->sexptype()) {
@@ -86,9 +86,12 @@ WeakRef::WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer,
 WeakRef::WeakRef(RObject* key, RObject* value, R_CFinalizer_t C_finalizer,
 		 bool finalize_on_exit)
     : m_key(key), m_value(value), m_Rfinalizer(0), m_self(expose(this)),
-      m_Cfinalizer(C_finalizer), m_lit(s_live->insert(s_live->end(), this)),
+      m_Cfinalizer(C_finalizer),
       m_ready_to_finalize(false), m_finalize_on_exit(finalize_on_exit)
 {
+    getLive()->push_back(this);
+    m_lit = std::prev(getLive()->end());
+
     if (!m_key)
 	tombstone();
     ++s_count;
@@ -105,66 +108,55 @@ WeakRef::~WeakRef()
 bool WeakRef::check()
 {
     // Check sizes:
-    if (int(s_live->size() + s_f10n_pending->size() + s_tombstone->size())
-	!= s_count) {
+    size_t total_size = getLive()->size() + getFinalizationPending()->size()
+	+ getTombstone()->size();
+    if (total_size != size_t(s_count)) {
 	cerr << "WeakRef::check() : tally error\n"
-	     << "s_live->size(): " << s_live->size()
-	     << "\ns_f10n_pending->size(): " << s_f10n_pending->size()
-	     << "\ns_tombstone->size(): " << s_tombstone->size()
+	     << "live size: " << getLive()->size()
+	     << "\nfinalization pending size: "
+	     << getFinalizationPending()->size()
+	     << "\ntombstone size: " << getTombstone()->size()
 	     << "\ns_count: " << s_count << '\n';
 	abort();
     }
-    // Check s_live:
-    for (WRList::const_iterator lit = s_live->begin();
-	 lit != s_live->end(); ++lit) {
-	const WeakRef* wr = *lit;
+    // Check the live list:
+    for (const WeakRef* wr: *getLive()) {
 	if (wr->m_ready_to_finalize) {
-	    cerr << "Node on s_live set READY_TO_FINALIZE\n";
+	    cerr << "Node on live list set READY_TO_FINALIZE\n";
 	    abort();
 	}
 	if (!wr->m_key) {
-	    cerr << "Node on s_live with null key\n";
+	    cerr << "Node on live list with null key\n";
 	    abort();
 	}
     }
-    // Check s_f10n_pending:
-    for (WRList::const_iterator lit = s_f10n_pending->begin();
-	 lit != s_f10n_pending->end(); ++lit) {
-	const WeakRef* wr = *lit;
+    // Check finalization pending:
+    for (const WeakRef* wr: *getFinalizationPending()) {
 	if (!wr->m_ready_to_finalize) {
-	    cerr << "Node on s_f10n_pending not READY_TO_FINALIZE\n";
+	    cerr << "Node on finalization pending list not READY_TO_FINALIZE\n";
 	    abort();
 	}
 	if (!wr->m_key) {
-	    cerr << "Node on s_f10n_pending with null key\n";
+	    cerr << "Node on finalization pending list with null key\n";
 	    abort();
 	}
 	if (!wr->m_Rfinalizer && !wr->m_Cfinalizer) {
-	    cerr << "Node on s_f10n_pending without finalizer\n";
+	    cerr << "Node on finalization pending list without finalizer\n";
 	    abort();
 	}
     }
-    // Check s_tombstone:
-    for (WRList::const_iterator lit = s_tombstone->begin();
-	 lit != s_tombstone->end(); ++lit) {
-	const WeakRef* wr = *lit;
+    // Check tombstone:
+    for (const WeakRef* wr: *getTombstone()) {
 	if (wr->m_ready_to_finalize) {
-	    cerr << "Node on s_tombstone set READY_TO_FINALIZE\n";
+	    cerr << "Node on tombstone list set READY_TO_FINALIZE\n";
 	    abort();
 	}
 	if (wr->m_key) {
-	    cerr << "Node on s_tombstone with non-null key\n";
+	    cerr << "Node on tombstone list with non-null key\n";
 	    abort();
 	}
     }
     return true;
-}
-
-void WeakRef::cleanup()
-{
-    s_tombstone = 0;
-    s_f10n_pending = 0;
-    s_live = 0;
 }
 
 void WeakRef::detachReferents()
@@ -192,26 +184,40 @@ void WeakRef::finalize()
     }
 }
 
-void WeakRef::initialize()
+WeakRef::WRList* WeakRef::getLive()
 {
-    static WRList live, f10n_pending, tombstone;
-    s_live = &live;
-    s_f10n_pending = &f10n_pending;
-    s_tombstone = &tombstone;
+    static WRList* live = new WRList();
+    return live;
+}
+
+WeakRef::WRList* WeakRef::getFinalizationPending()
+{
+    static WRList* finalization_pending = new WRList();
+    return finalization_pending;
+}
+
+WeakRef::WRList* WeakRef::getTombstone()
+{
+    static WRList* tombstone = new WRList();
+    return tombstone;
 }
 
 void WeakRef::markThru()
 {
     WeakRef::check();
     WRList newlive;
+    
+    WRList* live = getLive();
+    WRList* finalization_pending = getFinalizationPending();
+
     // Step 2-3 of algorithm.  Mark the value and R finalizer if the
     // key is marked.
     {
 	unsigned int marks_applied;
 	do {
 	    GCNode::Marker marker;
-	    WRList::iterator lit = s_live->begin();
-	    while (lit != s_live->end()) {
+	    WRList::iterator lit = live->begin();
+	    while (lit != live->end()) {
 		WeakRef* wr = *lit++;
 		RObject* key = wr->key();
 		if (key->isMarked()) {
@@ -221,7 +227,7 @@ void WeakRef::markThru()
 		    FunctionBase* Rfinalizer = wr->m_Rfinalizer;
 		    if (Rfinalizer)
 			marker(Rfinalizer);
-		    wr->transfer(s_live, &newlive);
+		    wr->transfer(live, &newlive);
 		}
 	    }
 	    marks_applied = marker.marksApplied();
@@ -230,8 +236,8 @@ void WeakRef::markThru()
     // Step 4 of algorithm.  Process references with unmarked keys.
     {
 	GCNode::Marker marker;
-	WRList::iterator lit = s_live->begin();
-	while (lit != s_live->end()) {
+	WRList::iterator lit = live->begin();
+	while (lit != live->end()) {
 	    WeakRef* wr = *lit++;
 	    FunctionBase* Rfinalizer = wr->m_Rfinalizer;
 	    if (Rfinalizer)
@@ -240,7 +246,7 @@ void WeakRef::markThru()
 		marker(wr);
 		marker(wr->m_key);
 		wr->m_ready_to_finalize = true;
-		wr->transfer(s_live, s_f10n_pending);
+		wr->transfer(live, finalization_pending);
 	    }
 	    else {
 		wr->tombstone();
@@ -252,10 +258,8 @@ void WeakRef::markThru()
     // Step 5 of algorithm.  Mark all live references with reachable keys.
     {
 	GCNode::Marker marker;
-	s_live->splice(s_live->end(), newlive);
-	for (WRList::iterator lit = s_live->begin();
-	     lit != s_live->end(); ++lit) {
-	    WeakRef* wr = *lit;
+	live->splice(live->end(), newlive);
+	for (WeakRef* wr: *live) {
 	    marker(wr);
 	}
     }
@@ -272,12 +276,15 @@ unsigned int WeakRef::packGPBits() const
 void WeakRef::runExitFinalizers()
 {
     WeakRef::check();
-    WRList::iterator lit = s_live->begin();
-    while (lit != s_live->end()) {
+    WRList* live = getLive();
+    WRList* finalization_pending = getFinalizationPending();
+
+    WRList::iterator lit = live->begin();
+    while (lit != live->end()) {
 	WeakRef* wr = *lit++;
 	if (wr->m_finalize_on_exit) {
 	    wr->m_ready_to_finalize = true;
-	    wr->transfer(s_live, s_f10n_pending);
+	    wr->transfer(live, finalization_pending);
 	}
     }
     runFinalizers();
@@ -286,9 +293,11 @@ void WeakRef::runExitFinalizers()
 bool WeakRef::runFinalizers()
 {
     WeakRef::check();
-    bool finalizer_run = !s_f10n_pending->empty();
-    WRList::iterator lit = s_f10n_pending->begin();
-    while (lit != s_f10n_pending->end()) {
+    WRList* finalization_pending = getFinalizationPending();
+
+    bool finalizer_run = !finalization_pending->empty();
+    WRList::iterator lit = finalization_pending->begin();
+    while (lit != finalization_pending->end()) {
 	WeakRef* wr = *lit++;
 	GCStackRoot<> topExp(R_CurrentExpr);
 	size_t savestack = ProtectStack::size();
@@ -319,7 +328,7 @@ void WeakRef::tombstone()
     m_Rfinalizer = 0;
     m_Cfinalizer = 0;
     m_ready_to_finalize = false;
-    transfer(oldl, s_tombstone);
+    transfer(oldl, getTombstone());
 }
 
 void WeakRef::unpackGPBits(unsigned int gpbits)
@@ -330,8 +339,8 @@ void WeakRef::unpackGPBits(unsigned int gpbits)
 
 WeakRef::WRList* WeakRef::wrList() const
 {
-    return m_ready_to_finalize ? s_f10n_pending :
-	(m_key ? s_live : s_tombstone);
+    return m_ready_to_finalize ? getFinalizationPending() :
+	(m_key ? getLive() : getTombstone());
 }
 
 // ***** C interface *****
