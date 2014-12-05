@@ -103,12 +103,12 @@ namespace CXXR {
 
 	static const_iterator begin()
 	{
-            return s_table->begin();
+            return getTable()->begin();
 	}
 
 	static const_iterator end()
 	{
-            return s_table->end();
+            return getTable()->end();
 	}
 
 	/** @brief Index of a double-dot symbol.
@@ -148,10 +148,7 @@ namespace CXXR {
 	 *
 	 * @return a pointer to the 'missing argument' pseudo-object.
 	 */
-	static Symbol* missingArgument()
-	{
-	    return s_missing_arg;
-	}
+	static Symbol* missingArgument();
 
 	/** @brief Access name.
 	 *
@@ -221,10 +218,7 @@ namespace CXXR {
 	 *
 	 * @return a pointer to the 'unbound value' pseudo-object.
 	 */
-	static Symbol* unboundValue()
-	{
-	    return s_unbound_value;
-	}
+	static Symbol* unboundValue();
 
 	// Virtual functions of RObject:
 	RObject* evaluate(Environment* env) override;
@@ -240,12 +234,10 @@ namespace CXXR {
 	friend class SchwarzCounter<Symbol>;
 
 	static const size_t s_max_length = 256;
-	static Table* s_table;  // Vector of
+	static Table* getTable();  // Vector of
 	  // pointers to all Symbol objects in existence, other than
 	  // special Symbols and deserialization temporaries, used to
 	  // protect them against garbage collection.
-	static Symbol* s_missing_arg;
-	static Symbol* s_unbound_value;
 
 	GCEdge<const String> m_name;
 
@@ -261,7 +253,7 @@ namespace CXXR {
 	 *          constructed relates to an element of a
 	 *          <tt>...</tt> argument list.  A null pointer
 	 *          signifies a special Symbol, which is not entered
-	 *          into s_table.
+         *          into the table.
 	 */
 	explicit Symbol(const String* name = nullptr);
 
@@ -327,7 +319,7 @@ namespace CXXR {
 
     // Predefined Symbols visible in 'namespace CXXR':
 #define PREDEFINED_SYMBOL(C_NAME, CXXR_NAME, R_NAME) \
-    extern Symbol* const CXXR_NAME;
+    extern Symbol* CXXR_NAME;
 #include "CXXR/PredefinedSymbols.h"
 #undef PREDEFINED_SYMBOL
 
@@ -359,10 +351,10 @@ void CXXR::Symbol::load(Archive& ar, const unsigned int version)
 	}
 	break;
     case MISSINGARG:
-	reloc = s_missing_arg;
+	reloc = missingArgument();
 	break;
     case UNBOUNDVALUE:
-	reloc = s_unbound_value;
+	reloc = unboundValue();
 	break;
     }
     S11nScope::defineRelocation(this, reloc);
@@ -373,9 +365,9 @@ void CXXR::Symbol::save(Archive& ar, const unsigned int version) const
 {
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
     S11nType symtype = NORMAL;
-    if (this == s_missing_arg)
+    if (this == missingArgument())
 	symtype = MISSINGARG;
-    else if (this == s_unbound_value)
+    else if (this == unboundValue())
 	symtype = UNBOUNDVALUE;
     ar << BOOST_SERIALIZATION_NVP(symtype);
     if (symtype == NORMAL) {

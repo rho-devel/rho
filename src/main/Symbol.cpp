@@ -61,20 +61,8 @@ namespace CXXR {
     }
 }
 
-Symbol::Table* Symbol::s_table = nullptr;
-
-Symbol* Symbol::s_missing_arg;
 SEXP R_MissingArg;
-
-Symbol* Symbol::s_unbound_value;
 SEXP R_UnboundValue;
-
-// As of gcc 4.3.2, gcc's std::tr1::regex didn't appear to be working.
-// (Discovered 2009-01-16)  So we use boost:
-
-namespace {
-    boost::basic_regex<char>* dd_regex;  // "\\.\\.(\\d+)"
-}
 
 // ***** Class Symbol itself *****
 
@@ -91,9 +79,13 @@ Symbol::Symbol(const String* the_name)
     // boost::regex_match (libboost_regex1_36_0-1.36.0-9.5) doesn't
     // seem comfortable with empty strings, hence the size check.
     if (m_name && m_name->size() > 2) {
+	// Versions of GCC prior to 4.9 don't support std::regex, so use
+	// boost::regex instead.
+	static const boost::regex *regex = new boost::regex("\\.\\.(\\d+)");
+
 	string name(m_name->c_str());
 	boost::smatch dd_match;
-	if (boost::regex_match(name, dd_match, *dd_regex)) {
+	if (boost::regex_match(name, dd_match, *regex)) {
 	    istringstream iss(dd_match[1]);
 	    iss >> m_dd_index;
 	}
@@ -102,8 +94,6 @@ Symbol::Symbol(const String* the_name)
 
 void Symbol::cleanup()
 {
-    // Clearing s_table avoids valgrind 'possibly lost' reports on exit:
-    s_table->clear();
 }
 
 void Symbol::detachReferents()
@@ -148,22 +138,37 @@ RObject* Symbol::evaluate(Environment* env)
 
 void Symbol::initialize()
 {
-    static Table table;
-    s_table = &table;
-    static GCRoot<Symbol> missing_arg(expose(new Symbol));
-    s_missing_arg = missing_arg.get();
-    R_MissingArg = s_missing_arg;
-    static GCRoot<Symbol> unbound_value(expose(new Symbol));
-    s_unbound_value = unbound_value.get();
-    R_UnboundValue = s_unbound_value;
-    static boost::basic_regex<char> dd_rx("\\.\\.(\\d+)");
-    dd_regex = &dd_rx;
+    R_MissingArg = missingArgument();
+    R_UnboundValue = unboundValue();
+
+#define PREDEFINED_SYMBOL(C_NAME, CXXR_NAME, R_NAME) \
+    C_NAME = CXXR_NAME = Symbol::obtain(R_NAME);
+#include "CXXR/PredefinedSymbols.h"
+#undef PREDEFINED_SYMBOL
+}
+
+Symbol* Symbol::missingArgument()
+{
+    static GCRoot<Symbol> missing(CXXR_NEW(Symbol));
+    return missing.get();
+}
+
+Symbol* Symbol::unboundValue()
+{
+    static GCRoot<Symbol> unbound(CXXR_NEW(Symbol));
+    return unbound.get();
+}
+
+Symbol::Table* Symbol::getTable()
+{
+    static Table* table = new Table();
+    return table;
 }
 
 Symbol* Symbol::make(const String* name)
 {
     Symbol* ans = CXXR_NEW(Symbol(name));
-    s_table->push_back(GCRoot<Symbol>(ans));
+    getTable()->push_back(GCRoot<Symbol>(ans));
     name->m_symbol = ans;
     return ans;
 }
@@ -202,7 +207,7 @@ BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::Symbol)
 // Predefined Symbols:
 namespace CXXR {
 #define PREDEFINED_SYMBOL(C_NAME, CXXR_NAME, R_NAME) \
-    Symbol* const CXXR_NAME = Symbol::obtain(R_NAME);
+    Symbol* CXXR_NAME = nullptr;
 #include "CXXR/PredefinedSymbols.h"
 #undef PREDEFINED_SYMBOL
 }
@@ -210,7 +215,7 @@ namespace CXXR {
 // ***** C interface *****
 
 #define PREDEFINED_SYMBOL(C_NAME, CXXR_NAME, R_NAME) \
-    SEXP C_NAME = CXXR::CXXR_NAME;
+    SEXP C_NAME = nullptr;
 #include "CXXR/PredefinedSymbols.h"
 #undef PREDEFINED_SYMBOL
 
