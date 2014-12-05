@@ -1244,7 +1244,7 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 	/* allocate scratch storage to allow accumulating by columns
 	   to improve cache hits */
-	int *Cnt = NULL;
+	int *Cnt = nullptr;
 	LDOUBLE *rans;
 	if(n <= 10000) {
 	    R_CheckStack2(n * sizeof(LDOUBLE));

@@ -126,7 +126,7 @@ namespace {
 	case GEOP:
 	    return relop_aux<std::greater_equal>(vl, vr);
 	}
-	return 0;  // -Wall
+	return nullptr;  // -Wall
     }
 
     template <class V>
@@ -140,7 +140,7 @@ namespace {
 	default:
 	    Rf_error(_("comparison of these types is not implemented"));
 	}
-	return 0;  // -Wall
+	return nullptr;  // -Wall
     }
 }
 
@@ -246,7 +246,7 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 	    vr(static_cast<RawVector*>(coerceVector(y, RAWSXP)));
 	return relop(vl.get(), vr.get(), opcode);
     } else errorcall(call, _("comparison of these types is not implemented"));
-    return 0;  // -Wall
+    return nullptr;  // -Wall
 }
 
 /* i1 = i % n1; i2 = i % n2;

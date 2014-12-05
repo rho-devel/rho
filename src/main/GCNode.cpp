@@ -111,7 +111,7 @@ void GCNode::alreadyExposedError()
 
 bool GCNode::check()
 {
-    if (s_live == 0) {
+    if (s_live == nullptr) {
 	cerr << "GCNode::check() : class not initialised.\n";
 	abort();
     }

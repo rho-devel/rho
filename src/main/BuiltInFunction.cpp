@@ -204,7 +204,7 @@ BuiltInFunction* BuiltInFunction::obtainPrimitive(const std::string& name)
     if (location == getPrimitiveFunctionLookupTable()->end()) {
 	Rf_warning(_("%s is not the name of a built-in or special function"),
 		   name.c_str());
-	return 0;
+	return nullptr;
     }
     return location->second;
 }

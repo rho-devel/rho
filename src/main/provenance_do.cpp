@@ -88,7 +88,7 @@ SEXP attribute_hidden do_castestfun(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Environment* env=static_cast<Environment*>(rho);
 	// Let's try to get the binding for given symbol...
 	Frame::Binding* binding = env->findBinding(sym);
-	if (binding!=NULL)
+	if (binding!=nullptr)
 		printf("Binding located :-)\n");
 	GCStackRoot<IntVector> inv(GCNode::expose(new IntVector(3)));
 	(*inv)[0]=1;
@@ -135,7 +135,7 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 #ifndef PROVENANCE_TRACKING
     Rf_error(_("provenance tracking not implemented in this build"));
-    return 0;
+    return nullptr;
 #else
     const int nfields=5;
     int n;
@@ -205,7 +205,7 @@ SEXP attribute_hidden do_provCommand (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 #ifndef PROVENANCE_TRACKING
     Rf_error(_("provenance tracking not implemented in this build"));
-    return 0;
+    return nullptr;
 #else
     int n;
     if ((n=length(args))!=1)
@@ -226,7 +226,7 @@ do_provenance_graph(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 #ifndef PROVENANCE_TRACKING
     Rf_error(_("provenance tracking not implemented in this build"));
-    return 0;
+    return nullptr;
 #else
     int nargs = length(args);
     if (nargs != 1)
@@ -368,11 +368,11 @@ SEXP attribute_hidden do_bserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
     boost::archive::xml_oarchive oa(ofs, boost::archive::no_codecvt);
 
     GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
-    GCStackRoot<Environment> env(CXXR_NEW(Environment(0, frame)));
+    GCStackRoot<Environment> env(CXXR_NEW(Environment(nullptr, frame)));
     import(frame, *Environment::global()->frame());
     GCNPTR_SERIALIZE(oa, env);
 
-    return 0;
+    return nullptr;
 }
 
 SEXP attribute_hidden do_bdeserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -393,5 +393,5 @@ SEXP attribute_hidden do_bdeserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
     S11nScope scope;
     GCNPTR_SERIALIZE(ia, env);
     import(Environment::global()->frame(), *env->frame());
-    return 0;
+    return nullptr;
 }

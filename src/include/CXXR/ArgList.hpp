@@ -327,7 +327,7 @@ namespace CXXR {
 
 	PairList* mutable_list() {
 	    // Mustn't modify the list supplied to the constructor:
-	    if (m_list != NULL && m_list == m_orig_list) {
+	    if (m_list != nullptr && m_list == m_orig_list) {
 		m_list = m_list->clone();
 	    }
 	    return m_list;

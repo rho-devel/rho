@@ -153,7 +153,7 @@ SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP code, oldcode, tmp, ap, argList;
     int addit = 0;
 
-    PROTECT(ap = list2(R_NilValue, R_NilValue));
+    PROTECT(ap = list2(nullptr, nullptr));
     SET_TAG(ap,  install("expr"));
     SET_TAG(CDR(ap), install("add"));
     PROTECT(argList =  matchArgs(ap, args, call));
@@ -178,7 +178,7 @@ SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if ( CAR(oldcode) != R_BraceSymbol )
 	    {
 		GCStackRoot<PairList> tl(PairList::make(2));
-		PROTECT(tmp = CXXR_NEW(Expression(0, tl)));
+		PROTECT(tmp = CXXR_NEW(Expression(nullptr, tl)));
 		SETCAR(tmp, R_BraceSymbol);
 		SETCADR(tmp, oldcode);
 		SETCADDR(tmp, code);
@@ -212,7 +212,7 @@ SEXP attribute_hidden do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
     if (TYPEOF(CAR(args)) == CLOSXP) {
-	return mkCLOSXP(FORMALS(CAR(args)), 0, R_GlobalEnv);
+	return mkCLOSXP(FORMALS(CAR(args)), nullptr, R_GlobalEnv);
     }
 
     if (TYPEOF(CAR(args)) == BUILTINSXP || TYPEOF(CAR(args)) == SPECIALSXP) {
@@ -238,7 +238,7 @@ SEXP attribute_hidden do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (TYPEOF(env) == PROMSXP) REPROTECT(env = eval(env, R_BaseEnv), xp);
 	PROTECT(s2 = findVarInFrame3(env, install(nm), TRUE));
 	if(s2 != R_UnboundValue) {
-	    s = mkCLOSXP(FORMALS(s2), 0, R_GlobalEnv);
+	    s = mkCLOSXP(FORMALS(s2), nullptr, R_GlobalEnv);
 	    UNPROTECT(2);
 	    return s;
 	}
@@ -996,7 +996,7 @@ static SEXP setDflt(SEXP arg, SEXP dflt)
 SEXP attribute_hidden do_switch(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int argval, nargs = length(args);
-    SEXP x, y, z, w, ans, dflt = NULL;
+    SEXP x, y, z, w, ans, dflt = nullptr;
 
     if (nargs < 1) errorcall(call, _("'EXPR' is missing"));
     check1arg(args, call, "EXPR");

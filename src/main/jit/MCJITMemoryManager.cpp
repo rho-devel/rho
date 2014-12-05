@@ -96,7 +96,7 @@ GlobalVariable* MCJITMemoryManager::getSymbol(const Symbol* symbol)
 	return result;
     }
     return new GlobalVariable(*m_module, type, true,
-			      GlobalValue::ExternalLinkage, 0,
+			      GlobalValue::ExternalLinkage, nullptr,
 			      name);
 }
 
@@ -113,7 +113,7 @@ GlobalVariable* MCJITMemoryManager::getBuiltIn(const BuiltInFunction* function)
 	return result;
     }
     return new GlobalVariable(*m_module, type, true,
-     			      GlobalValue::ExternalLinkage, 0,
+     			      GlobalValue::ExternalLinkage, nullptr,
 			      name);
 }
 
@@ -150,7 +150,7 @@ GlobalVariable* MCJITMemoryManager::addGlobal(Type* type, void* address,
 	item->first = address;
 	item->second = new GlobalVariable(*m_module, type, is_constant,
 					  GlobalVariable::ExternalLinkage,
-					  0, name);
+					  nullptr, name);
     }
     return item->second;
 }

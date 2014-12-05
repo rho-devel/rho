@@ -805,7 +805,7 @@ static SEXP NewLoadSpecialHook (SEXPTYPE type)
     case -3: return R_UnboundValue;
     case -4: return R_MissingArg;
     }
-    return CXXRNOCAST(SEXP) 0;	/* not strictly legal... */
+    return CXXRNOCAST(SEXP) nullptr;	/* not strictly legal... */
 }
 
 
@@ -1241,11 +1241,11 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
     switch (type) {
     case SYMSXP:
 	pos = m->InInteger(fp, d);
-	PROTECT(s = pos ? VECTOR_ELT(sym_table, pos - 1) : R_NilValue);
+	PROTECT(s = pos ? VECTOR_ELT(sym_table, pos - 1) : nullptr);
 	break;
     case ENVSXP:
 	pos = m->InInteger(fp, d);
-	PROTECT(s = pos ? VECTOR_ELT(env_table, pos - 1) : R_NilValue);
+	PROTECT(s = pos ? VECTOR_ELT(env_table, pos - 1) : nullptr);
 	break;
     case LISTSXP:
 	PROTECT(s = CXXR_NEW(PairList));
@@ -1291,13 +1291,13 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 	break;
     case EXTPTRSXP:
 	PROTECT(s = CXXR_NEW(ExternalPointer));
-	R_SetExternalPtrAddr(s, NULL);
+	R_SetExternalPtrAddr(s, nullptr);
 	R_SetExternalPtrProtected(s, NewReadItem(sym_table, env_table, fp, m, d));
 	R_SetExternalPtrTag(s, NewReadItem(sym_table, env_table, fp, m, d));
 	/*UNPROTECT(1);*/
 	break;
     case WEAKREFSXP:
-	PROTECT(s = R_MakeWeakRef(R_NilValue, R_NilValue, R_NilValue, FALSE));
+	PROTECT(s = R_MakeWeakRef(nullptr, nullptr, nullptr, FALSE));
 	break;
     case SPECIALSXP:
     case BUILTINSXP:
@@ -1350,7 +1350,7 @@ static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
 	/* Allocate the environments */
 	for (count = 0; count < env_count; ++count) {
 	    GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
-	    SET_VECTOR_ELT(env_table, count, new Environment(0, frame));
+	    SET_VECTOR_ELT(env_table, count, new Environment(nullptr, frame));
 	}
 
 	/* Now fill them in  */
@@ -1451,7 +1451,7 @@ static void OutStringAscii(FILE *fp, const char *x, SaveLoadData *unused)
 
 static char *InStringAscii(FILE *fp, SaveLoadData *unused)
 {
-    static char *buf = NULL;
+    static char *buf = nullptr;
     static int buflen = 0;
     int c, d, i, j;
     int nbytes, res;
@@ -1465,7 +1465,7 @@ static char *InStringAscii(FILE *fp, SaveLoadData *unused)
 	/* Protect against broken realloc */
 	if(buf) newbuf = static_cast<char *>( realloc(buf, nbytes + 1));
 	else newbuf = static_cast<char *>( malloc(nbytes + 1));
-	if (newbuf == NULL) /* buf remains allocated */
+	if (newbuf == nullptr) /* buf remains allocated */
 	    error(_("out of memory reading ascii string"));
 	buf = newbuf;
 	buflen = nbytes + 1;
@@ -1597,7 +1597,7 @@ static int InIntegerBinary(FILE * fp, SaveLoadData *unused)
 
 static char *InStringBinary(FILE *fp, SaveLoadData *unused)
 {
-    static char *buf = NULL;
+    static char *buf = nullptr;
     static int buflen = 0;
     int nbytes = InIntegerBinary(fp, unused);
     if (nbytes >= buflen) {
@@ -1605,7 +1605,7 @@ static char *InStringBinary(FILE *fp, SaveLoadData *unused)
 	/* Protect against broken realloc */
 	if(buf) newbuf = static_cast<char *>( realloc(buf, nbytes + 1));
 	else newbuf = static_cast<char *>( malloc(nbytes + 1));
-	if (newbuf == NULL)
+	if (newbuf == nullptr)
 	    error(_("out of memory reading binary string"));
 	buf = newbuf;
 	buflen = nbytes + 1;
@@ -1698,7 +1698,7 @@ static void OutStringXdr(FILE *fp, const char *s, SaveLoadData *d)
 
 static char *InStringXdr(FILE *fp, SaveLoadData *d)
 {
-    static char *buf = NULL;
+    static char *buf = nullptr;
     static int buflen = 0;
     unsigned int nbytes = InIntegerXdr(fp, d);
     if (CXXRCONSTRUCT(int, nbytes) >= buflen) {
@@ -1706,7 +1706,7 @@ static char *InStringXdr(FILE *fp, SaveLoadData *d)
 	/* Protect against broken realloc */
 	if(buf) newbuf = static_cast<char *>( realloc(buf, nbytes + 1));
 	else newbuf = static_cast<char *>( malloc(nbytes + 1));
-	if (newbuf == NULL)
+	if (newbuf == nullptr)
 	    error(_("out of memory reading binary string"));
 	buf = newbuf;
 	buflen = nbytes + 1;
@@ -1861,7 +1861,7 @@ static int R_DefaultSaveFormatVersion = 2;
 
 void attribute_hidden R_SaveToFileV(SEXP obj, FILE *fp, int ascii, int version)
 {
-    SaveLoadData data = {{NULL, 0, MAXELTSIZE}};
+    SaveLoadData data = {{nullptr, 0, MAXELTSIZE}};
 
     if (version == 1) {
 	if (ascii) {
@@ -1885,7 +1885,7 @@ void attribute_hidden R_SaveToFileV(SEXP obj, FILE *fp, int ascii, int version)
 	    type = R_pstream_xdr_format;
 	}
 	R_WriteMagic(fp, magic);
-	R_InitFileOutPStream(&out, fp, type, version, NULL, NULL);
+	R_InitFileOutPStream(&out, fp, type, version, nullptr, nullptr);
 	R_Serialize(obj, &out);
     }
 }
@@ -1902,7 +1902,7 @@ SEXP attribute_hidden R_LoadFromFile(FILE *fp, int startup)
 {
     struct R_inpstream_st in;
     int magic;
-    SaveLoadData data = {{NULL, 0, MAXELTSIZE}};
+    SaveLoadData data = {{nullptr, 0, MAXELTSIZE}};
     SEXP r;
 
     magic = R_ReadMagic(fp);
@@ -1924,13 +1924,13 @@ SEXP attribute_hidden R_LoadFromFile(FILE *fp, int startup)
     case R_MAGIC_XDR_V1:
 	return_and_free(NewXdrLoad(fp, &data));
     case R_MAGIC_ASCII_V2:
-	R_InitFileInPStream(&in, fp, R_pstream_ascii_format, NULL, NULL);
+	R_InitFileInPStream(&in, fp, R_pstream_ascii_format, nullptr, nullptr);
 	return_and_free(R_Unserialize(&in));
     case R_MAGIC_BINARY_V2:
-	R_InitFileInPStream(&in, fp, R_pstream_binary_format, NULL, NULL);
+	R_InitFileInPStream(&in, fp, R_pstream_binary_format, nullptr, nullptr);
 	return_and_free(R_Unserialize(&in));
     case R_MAGIC_XDR_V2:
-	R_InitFileInPStream(&in, fp, R_pstream_xdr_format, NULL, NULL);
+	R_InitFileInPStream(&in, fp, R_pstream_xdr_format, nullptr, nullptr);
 	return_and_free(R_Unserialize(&in));
     default:
 	R_FreeStringBuffer(&data.buffer);
@@ -2189,7 +2189,7 @@ void R_RestoreGlobalEnvFromFile(const char *name, Rboolean quiet)
     SEXP sym = install("sys.load.image");
     if (findVar(sym, R_GlobalEnv) == R_UnboundValue) { /* not a perfect test */
 	FILE *fp = R_fopen(name, "rb"); /* binary file */
-	if(fp != NULL) {
+	if(fp != nullptr) {
 	    R_LoadSavedData(fp, R_GlobalEnv);
 	    if(! quiet)
 		Rprintf("[Previously saved workspace restored]\n\n");
@@ -2297,7 +2297,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 		error(_("error writing to connection"));
 	}
 
-	R_InitConnOutPStream(&out, con, type, version, NULL, NULL);
+	R_InitConnOutPStream(&out, con, type, version, nullptr, nullptr);
 
 	len = length(list);
 	PROTECT(s = allocList(len));
@@ -2340,7 +2340,7 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
     struct R_inpstream_st in;
     Rconnection con;
     SEXP aenv;
-    GCStackRoot<> res(0);
+    GCStackRoot<> res(nullptr);
     unsigned char buf[6];
     size_t count;
     Rboolean wasopen;
@@ -2373,7 +2373,7 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
 	if (strncmp(reinterpret_cast<char*>(buf), "RDA2\n", 5) == 0 ||
 	    strncmp(reinterpret_cast<char*>(buf), "RDB2\n", 5) == 0 ||
 	    strncmp(reinterpret_cast<char*>(buf), "RDX2\n", 5) == 0) {
-	    R_InitConnInPStream(&in, con, R_pstream_any_format, NULL, NULL);
+	    R_InitConnInPStream(&in, con, R_pstream_any_format, nullptr, nullptr);
 	    GCStackRoot<> unser(R_Unserialize(&in));
 	    R_InitReadItemDepth = R_ReadItemDepth = -asInteger(CADDR(args));
 	    res = RestoreToEnv(unser, aenv);

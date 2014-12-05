@@ -1286,7 +1286,7 @@ static SEXP asFunction(SEXP x)
     else PROTECT(x);
 
     if (Rf_isNull(x) || !Rf_isList(x)) {
-	f = Rf_mkCLOSXP(0, x, R_GlobalEnv);
+	f = Rf_mkCLOSXP(nullptr, x, R_GlobalEnv);
     }
     else {
 	n = length(x);
@@ -1385,7 +1385,7 @@ SEXP attribute_hidden do_ascharacter(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     SEXPTYPE type = STRSXP;
     int op0 = PRIMVAL(op);
-    CXXRCONST char *name = NULL /* -Wall */;
+    CXXRCONST char *name = nullptr /* -Wall */;
 
     Rf_check1arg(args, call, "x");
     switch(op0) {
@@ -1575,7 +1575,7 @@ SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
 		Rf_errorcall(call, _("invalid length 0 argument"));
 	    names = Rf_getAttrib(args, R_NamesSymbol);
 	    GCStackRoot<PairList> tl(PairList::make(n - 1));
-	    PROTECT(ap = ans = CXXR_NEW(Expression(0, tl)));
+	    PROTECT(ap = ans = CXXR_NEW(Expression(nullptr, tl)));
 	    for (i = 0; i < n; i++) {
 		SETCAR(ap, VECTOR_ELT(args, i));
 		if (names != R_NilValue && !Rf_StringBlank(STRING_ELT(names, i)))
@@ -1591,7 +1591,7 @@ SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
 		Rf_errorcall(call, _("invalid length 0 argument"));
 	    names = Rf_getAttrib(args, R_NamesSymbol);
 	    GCStackRoot<PairList> tl(PairList::make(n - 1));
-	    PROTECT(ap = ans = CXXR_NEW(Expression(0, tl)));
+	    PROTECT(ap = ans = CXXR_NEW(Expression(nullptr, tl)));
 	    for (i = 0; i < n; i++) {
 		SETCAR(ap, XVECTOR_ELT(args, i));
 		if (names != R_NilValue && !Rf_StringBlank(STRING_ELT(names, i)))
@@ -2366,7 +2366,7 @@ SEXP attribute_hidden do_docall(SEXP call, SEXP op, SEXP args, SEXP rho)
     names = Rf_getAttrib(args, R_NamesSymbol);
 
     GCStackRoot<PairList> tl(PairList::make(n));
-    PROTECT(c = call = CXXR_NEW(Expression(0, tl)));
+    PROTECT(c = call = CXXR_NEW(Expression(nullptr, tl)));
     if( Rf_isString(fun) ) {
 	const char *str = Rf_translateChar(STRING_ELT(fun, 0));
 	if (streql(str, ".Internal")) Rf_error("illegal usage");
@@ -2498,7 +2498,7 @@ SEXP attribute_hidden do_substitute(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP ap, argList, env, s, t;
 
     /* argument matching */
-    PROTECT(ap = Rf_list2(R_NilValue, R_NilValue));
+    PROTECT(ap = Rf_list2(nullptr, nullptr));
     SET_TAG(ap,  Rf_install("expr"));
     SET_TAG(CDR(ap), Rf_install("env"));
     PROTECT(argList = Rf_matchArgs(ap, args, call));
@@ -2557,7 +2557,7 @@ static classType classTable[] = {
     { "weakref",	WEAKREFSXP, FALSE },
     { "name",		SYMSXP,	   FALSE },
 
-    { 0,	        SEXPTYPE(-1), FALSE}
+    { nullptr,	        SEXPTYPE(-1), FALSE}
 };
 
 static int class2type(const char *s)
@@ -2728,7 +2728,7 @@ SEXP attribute_hidden do_storage_mode(SEXP call, SEXP op, SEXP args, SEXP env)
 
 const Symbol* ArgList::coerceTag(const RObject* tag)
 {
-    const char* symname = 0;
+    const char* symname = nullptr;
     if (tag->sexptype() == STRSXP) {
 	const StringVector* strv = static_cast<const StringVector*>(tag);
 	if (strv->size() >= 1) {

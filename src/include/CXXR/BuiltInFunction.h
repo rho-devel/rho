@@ -299,11 +299,11 @@ namespace CXXR {
 	}
 
 	// Virtual function of RObject:
-	const char* typeName() const;
+	const char* typeName() const override;
 
 	// Virtual function of FunctionBase:
 	RObject* apply(ArgList* arglist, Environment* env,
-		       const Expression* call) const;
+		       const Expression* call) const override;
     private:
 	friend class boost::serialization::access;
 
@@ -357,7 +357,7 @@ namespace CXXR {
 	// arbitrary, but will not be used during the lifetime of this
 	// temporary object.)
 	BuiltInFunction()
-	    : FunctionBase(BUILTINSXP), m_offset(0), m_function(0)
+	    : FunctionBase(BUILTINSXP), m_offset(0), m_function(nullptr)
 	{}
 
 	/** @brief Constructor.

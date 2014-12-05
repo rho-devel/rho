@@ -100,13 +100,13 @@ namespace CXXR {
 	}
 
 	// Virtual function of Bailout:
-	void throwException();
+	void throwException() override;
 
 	// Virtual function of GCNode:
-	void visitReferents(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const override;
     protected:
 	// Virtual function of GCNode:
-	void detachReferents();
+	void detachReferents() override;
     private:
 	GCEdge<Environment> m_environment;
 	GCEdge<> m_value;

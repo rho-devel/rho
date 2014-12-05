@@ -101,7 +101,7 @@ void Environment::cleanup()
 void Environment::detachFrame()
 {
     setOnSearchPath(false);
-    m_frame = 0;
+    m_frame = nullptr;
 }
 
 void Environment::detachReferents()
@@ -146,7 +146,7 @@ Frame::Binding* Environment::findBinding(const Symbol* symbol)
 	}
 	env = env->enclosingEnvironment();
     }
-    return 0;
+    return nullptr;
 }
 
 // Environment::findNamespace() is in envir.cpp
@@ -275,7 +275,7 @@ Environment* Environment::attachToSearchPath(int pos, StringVector* name)
 {
     // Duplicate the environment.
     GCStackRoot<Frame> frame(static_cast<Frame*>(m_frame->clone()));
-    GCStackRoot<Environment> new_env(expose(new Environment(0, frame)));
+    GCStackRoot<Environment> new_env(expose(new Environment(nullptr, frame)));
     new_env->setAttribute(NameSymbol, name);
 
     // Iterate through the search path to the environment just before where we
@@ -311,7 +311,7 @@ Environment* Environment::detachFromSearchPath(int pos) {
 
     // Detach the environment after where.
     where->m_enclosing = env_to_detach->m_enclosing;
-    env_to_detach->m_enclosing = 0;
+    env_to_detach->m_enclosing = nullptr;
     env_to_detach->setOnSearchPath(false);
 
     return env_to_detach;

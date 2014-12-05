@@ -55,7 +55,7 @@
 
 using namespace std;
 
-static R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
+static R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 
 /*
   .Internal(paste (args, sep, collapse))
@@ -75,7 +75,7 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
     int sepw, u_sepw;
     R_xlen_t i, j, k, maxlen, nx, pwidth;
     cetype_t ienc;
-    const char *s, *cbuf, *csep=NULL, *u_csep=NULL;
+    const char *s, *cbuf, *csep=nullptr, *u_csep=nullptr;
     char *buf;
     bool allKnown, anyKnown, use_UTF8, use_Bytes,
 	sepASCII = TRUE, sepUTF8 = FALSE, sepBytes = FALSE, sepKnown = FALSE,

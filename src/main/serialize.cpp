@@ -748,7 +748,7 @@ static int InRefIndex(R_inpstream_t stream, int flags)
 
 static SEXP GetPersistentName(R_outpstream_t stream, SEXP s)
 {
-    if (stream->OutPersistHookFunc != NULL) {
+    if (stream->OutPersistHookFunc != nullptr) {
 	switch (TYPEOF(s)) {
 	case WEAKREFSXP:
 	case EXTPTRSXP: break;
@@ -771,7 +771,7 @@ static SEXP GetPersistentName(R_outpstream_t stream, SEXP s)
 
 static SEXP PersistentRestore(R_inpstream_t stream, SEXP s)
 {
-    if (stream->InPersistHookFunc == NULL)
+    if (stream->InPersistHookFunc == nullptr)
 	Rf_error(_("no restore method available"));
     return stream->InPersistHookFunc(s, stream->InPersistHookData);
 }
@@ -1003,7 +1003,7 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	    WriteItem(ENCLOS(s), ref_table, stream);
 	    GCStackRoot<> frame_pairlist(FRAME(s));
 	    WriteItem(frame_pairlist, ref_table, stream);
-	    WriteItem(0, ref_table, stream);  // No hashtab field in CXXR
+	    WriteItem(nullptr, ref_table, stream);  // No hashtab field in CXXR
 	    WriteItem(ATTRIB(s), ref_table, stream);
 	}
     }
@@ -1017,10 +1017,10 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	    hastag = TAG(s) != R_NilValue;
 	    break;
 	case CLOSXP:
-	    hastag = (CLOENV(s) != 0);
+	    hastag = (CLOENV(s) != nullptr);
 	    break;
 	case PROMSXP:
-	    hastag = (PRENV(s) != 0);
+	    hastag = (PRENV(s) != nullptr);
 	    break;
 	default: hastag = FALSE;
 	}
@@ -1601,7 +1601,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    cetype_t enc = String::GPBits2Encoding(levs);
 	    char* cbuf = CallocCharBuf(length);
 	    InString(stream, cbuf, length);
-	    GCStackRoot<> attributes(hasattr ? ReadItem(ref_table, stream) : 0);
+	    GCStackRoot<> attributes(hasattr ? ReadItem(ref_table, stream) : nullptr);
 	    // levs and attributes are ignored for cached strings:
 	    str = Rf_mkCharLenCE(cbuf, length, enc);
 	    Free(cbuf);
@@ -1612,7 +1612,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    int locked = InInteger(stream);
 
 	    GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
-	    GCStackRoot<Environment> env(CXXR_NEW(Environment(0, frame)));
+	    GCStackRoot<Environment> env(CXXR_NEW(Environment(nullptr, frame)));
 
 	    /* MUST register before filling in */
 	    AddReadRef(ref_table, env);
@@ -1706,11 +1706,11 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    GCStackRoot<PairList>
 		attr(hasattr
 		     ? SEXP_downcast<PairList*>(ReadItem(ref_table, stream))
-		     : 0);
+		     : nullptr);
 	    GCStackRoot<Environment>
 		env(hastag
 		    ? SEXP_downcast<Environment*>(ReadItem(ref_table, stream))
-		    : 0);
+		    : nullptr);
 	    if (!env)
 		env = Environment::base();
 	    GCStackRoot<PairList>
@@ -1727,11 +1727,11 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    GCStackRoot<PairList>
 		attr(hasattr
 		     ? SEXP_downcast<PairList*>(ReadItem(ref_table, stream))
-		     : 0);
+		     : nullptr);
 	    GCStackRoot<Environment>
 		env(hastag
 		    ? SEXP_downcast<Environment*>(ReadItem(ref_table, stream))
-		    : 0);
+		    : nullptr);
 	    // For reading promises stored in earlier versions,
 	    // convert null env to base env:
 	    if (!env) env = Environment::base();
@@ -1751,14 +1751,14 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	case EXTPTRSXP:
 	    PROTECT(s = CXXR_NEW(ExternalPointer));
 	    AddReadRef(ref_table, s);
-	    R_SetExternalPtrAddr(s, NULL);
+	    R_SetExternalPtrAddr(s, nullptr);
 	    R_ReadItemDepth++;
 	    R_SetExternalPtrProtected(s, ReadItem(ref_table, stream));
 	    R_SetExternalPtrTag(s, ReadItem(ref_table, stream));
 	    R_ReadItemDepth--;
 	    break;
 	case WEAKREFSXP:
-	    PROTECT(s = R_MakeWeakRef(R_NilValue, R_NilValue, R_NilValue,
+	    PROTECT(s = R_MakeWeakRef(nullptr, nullptr, nullptr,
 				      CXXRCONSTRUCT(Rboolean, FALSE)));
 	    AddReadRef(ref_table, s);
 	    break;
@@ -1843,7 +1843,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	if (type != CHARSXP) SETLEVELS(s, levs);
 	{
 	    ++R_ReadItemDepth;
-	    GCStackRoot<> attributes(hasattr ? ReadItem(ref_table, stream) : 0);
+	    GCStackRoot<> attributes(hasattr ? ReadItem(ref_table, stream) : nullptr);
 	    --R_ReadItemDepth;
 	    SET_ATTRIB(s, attributes);
 	}
@@ -2094,7 +2094,7 @@ static void CheckInConn(Rconnection con)
 {
     if (! con->isopen)
 	Rf_error(_("connection is not open"));
-    if (! con->canread || con->read == NULL)
+    if (! con->canread || con->read == nullptr)
 	Rf_error(_("cannot read from this connection"));
 }
 
@@ -2102,7 +2102,7 @@ static void CheckOutConn(Rconnection con)
 {
     if (! con->isopen)
 	Rf_error(_("connection is not open"));
-    if (! con->canwrite || con->write == NULL)
+    if (! con->canwrite || con->write == nullptr)
 	Rf_error(_("cannot write to this connection"));
 }
 
@@ -2254,7 +2254,7 @@ do_serializeToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 	Rf_error(_("cannot save to connections in version %d format"), version);
 
     fun = CAR(Rf_nthcdr(args,4));
-    hook = fun != R_NilValue ? CallHook : NULL;
+    hook = fun != R_NilValue ? CallHook : nullptr;
 
     /* Now we need to do some sanity checking of the arguments.
        A filename will already have been opened, so anything 
@@ -2306,7 +2306,7 @@ do_unserializeFromConn(SEXP call, SEXP op, SEXP args, SEXP env)
     con = getConnection(Rf_asInteger(CAR(args)));
 
     fun = CADR(args);
-    hook = fun != R_NilValue ? CallHook : NULL;
+    hook = fun != R_NilValue ? CallHook : nullptr;
 
     /* Now we need to do some sanity checking of the arguments.
        A filename will already have been opened, so anything 
@@ -2409,7 +2409,7 @@ R_serializeb(SEXP object, SEXP icon, SEXP xdr, SEXP Sversion, SEXP fun)
     if (version == NA_INTEGER || version <= 0)
 	Rf_error(_("bad version value"));
 
-    hook = fun != R_NilValue ? CallHook : NULL;
+    hook = fun != R_NilValue ? CallHook : nullptr;
 
     InitBConOutPStream(&out, &bbs, con,
 		       Rf_asLogical(xdr) ? R_pstream_xdr_format : R_pstream_binary_format,
@@ -2450,8 +2450,8 @@ static void resize_buffer(membuf_t mb, R_size_t needed)
 	needed = (1+needed/INCR) * INCR;
 #endif
     unsigned char *tmp = CXXRSCAST(unsigned char*, realloc(mb->buf, needed));
-    if (tmp == NULL) {
-	free(mb->buf); mb->buf = NULL;
+    if (tmp == nullptr) {
+	free(mb->buf); mb->buf = nullptr;
 	Rf_error(_("cannot allocate buffer"));
     } else mb->buf = tmp;
     mb->size = needed;
@@ -2513,16 +2513,16 @@ static void InitMemOutPStream(R_outpstream_t stream, membuf_t mb,
 {
     mb->count = 0;
     mb->size = 0;
-    mb->buf = NULL;
+    mb->buf = nullptr;
     R_InitOutPStream(stream, CXXRNOCAST(R_pstream_data_t) mb, type, version,
 		     OutCharMem, OutBytesMem, phook, pdata);
 }
 
 static void free_mem_buffer(membuf_t mb)
 {
-    if (mb->buf != NULL) {
+    if (mb->buf != nullptr) {
 	unsigned char *buf = mb->buf;
-	mb->buf = NULL;
+	mb->buf = nullptr;
 	free(buf);
     }
 }
@@ -2557,7 +2557,7 @@ R_serialize(SEXP object, SEXP icon, SEXP ascii, SEXP Sversion, SEXP fun)
     if (version == NA_INTEGER || version <= 0)
 	Rf_error(_("bad version value"));
 
-    hook = fun != R_NilValue ? CallHook : NULL;
+    hook = fun != R_NilValue ? CallHook : nullptr;
 
     int asc = Rf_asLogical(ascii);
     if (asc == NA_LOGICAL) type = R_pstream_binary_format;
@@ -2596,7 +2596,7 @@ SEXP attribute_hidden R_unserialize(SEXP icon, SEXP fun)
     struct R_inpstream_st in;
     SEXP (*hook)(SEXP, SEXP);
 
-    hook = fun != R_NilValue ? CallHook : NULL;
+    hook = fun != R_NilValue ? CallHook : nullptr;
 
     if (TYPEOF(icon) == STRSXP && LENGTH(icon) > 0) {
 	/* was the format in R < 2.4.0, removed in R 2.8.0 */
@@ -2641,7 +2641,7 @@ static SEXP appendRawToFile(SEXP file, SEXP bytes)
 	Rf_error(_("not a proper raw vector"));
 #ifdef HAVE_WORKING_FTELL
     /* Windows' ftell returns position 0 with "ab" */
-    if ((fp = R_fopen(CHAR(STRING_ELT(file, 0)), "ab")) == NULL) {
+    if ((fp = R_fopen(CHAR(STRING_ELT(file, 0)), "ab")) == nullptr) {
 	Rf_error( _("cannot open file '%s': %s"), CHAR(STRING_ELT(file, 0)),
 	       strerror(errno));
     }
@@ -2731,7 +2731,7 @@ static SEXP readRawFromFile(SEXP file, SEXP key)
     if(icache < 0 && used < NC) icache = used++;
 
     if(icache >= 0) {
-	if ((fp = R_fopen(cfile, "rb")) == NULL)
+	if ((fp = R_fopen(cfile, "rb")) == nullptr)
 	    Rf_error(_("cannot open file '%s': %s"), cfile, strerror(errno));
 	if (fseek(fp, 0, SEEK_END) != 0) {
 	    fclose(fp);
@@ -2776,7 +2776,7 @@ static SEXP readRawFromFile(SEXP file, SEXP key)
 	}
     }
 
-    if ((fp = R_fopen(cfile, "rb")) == NULL)
+    if ((fp = R_fopen(cfile, "rb")) == nullptr)
 	Rf_error(_("cannot open file '%s': %s"), cfile, strerror(errno));
     if (fseek(fp, offset, SEEK_SET) != 0) {
 	fclose(fp);

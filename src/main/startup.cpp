@@ -99,12 +99,12 @@ FILE *R_OpenSiteFile(void)
     char buf[PATH_MAX];
     FILE *fp;
 
-    fp = NULL;
+    fp = nullptr;
     if (LoadSiteFile) {
 	char *p = getenv("R_PROFILE");
 	if (p) {
 	    if (*p) return R_fopen(R_ExpandFileName(p), "r");
-	    else return NULL;
+	    else return nullptr;
 	}
 #ifdef R_ARCH
 	snprintf(buf, PATH_MAX, "%s/etc/%s/Rprofile.site", R_Home, R_ARCH);

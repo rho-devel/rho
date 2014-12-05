@@ -39,7 +39,7 @@ Rboolean R_interrupts_suspended = FALSE;
 
 unsigned int Evaluator::s_countdown = 1000;
 unsigned int Evaluator::s_countdown_start = 1000;
-Evaluator* Evaluator::s_current = 0;
+Evaluator* Evaluator::s_current = nullptr;
 bool Evaluator::s_profiling = false;
 
 void Evaluator::checkForUserInterrupts()

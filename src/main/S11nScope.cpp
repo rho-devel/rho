@@ -28,7 +28,7 @@
 
 using namespace CXXR;
 
-S11nScope* S11nScope::s_innermost = 0;
+S11nScope* S11nScope::s_innermost = nullptr;
 
 S11nScope::S11nScope()
     : m_next(s_innermost)
@@ -58,7 +58,7 @@ GCNode* S11nScope::relocate(GCNode* from)
     std::map<GCNode*, GCNode*> map = s_innermost->m_relocations;
     std::map<GCNode*, GCNode*>::const_iterator it = map.find(from);
     if (it == map.end())
-	return 0;
+	return nullptr;
     return (*it).second;
 }
     

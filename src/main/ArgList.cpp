@@ -49,8 +49,8 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
 	Rf_error("Internal error: first arg of ArgList"
 		 " previously evaluated in different environment");
     GCStackRoot<const PairList> oldargs(list());
-    setList(0);
-    PairList* lastout = 0;
+    setList(nullptr);
+    PairList* lastout = nullptr;
     unsigned int arg_number = 1;
     for (const PairList* inp = oldargs; inp; inp = inp->tail()) {
 	RObject* incar = inp->car();
@@ -66,11 +66,11 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
 		    RObject* outcar = Symbol::missingArgument();
 		    if (m_first_arg_env) {
 			outcar = m_first_arg;
-			m_first_arg = 0;
-			m_first_arg_env = 0;
+			m_first_arg = nullptr;
+			m_first_arg_env = nullptr;
 		    } else if (dotcar != Symbol::missingArgument())
 			outcar = Evaluator::evaluate(dotcar, env);
-		    PairList* cell = PairList::cons(outcar, 0, dotlist->tag());
+		    PairList* cell = PairList::cons(outcar, nullptr, dotlist->tag());
 		    lastout = append(cell, lastout);
 		    dotlist = dotlist->tail();
 		}
@@ -78,27 +78,27 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
 		Rf_error(_("'...' used in an incorrect context"));
 	} else {
 	    const RObject* tag = inp->tag();
-	    PairList* cell = 0;
+	    PairList* cell = nullptr;
 	    if (m_first_arg_env) {
-		cell = PairList::cons(m_first_arg, 0, tag);
-		m_first_arg = 0;
-		m_first_arg_env = 0;
+		cell = PairList::cons(m_first_arg, nullptr, tag);
+		m_first_arg = nullptr;
+		m_first_arg_env = nullptr;
 	    } else if (incar && incar->sexptype() == SYMSXP) {
 		Symbol* sym = static_cast<Symbol*>(incar);
 		if (sym == Symbol::missingArgument()) {
 		    if (allow_missing)
-			cell = PairList::cons(Symbol::missingArgument(), 0, tag);
+			cell = PairList::cons(Symbol::missingArgument(), nullptr, tag);
 		    else Rf_error(_("argument %d is empty"), arg_number);
 		} else if (isMissingArgument(sym, env->frame())) {
 		    if (allow_missing)
-			cell = PairList::cons(Symbol::missingArgument(), 0, tag);
+			cell = PairList::cons(Symbol::missingArgument(), nullptr, tag);
 		    else Rf_error(_("'%s' is missing"),
 				  sym->name()->c_str());
 		}
 	    }
 	    if (!cell) {
 		RObject* outcar = Evaluator::evaluate(incar, env);
-		cell = PairList::cons(outcar, 0, inp->tag());
+		cell = PairList::cons(outcar, nullptr, inp->tag());
 	    }
 	    lastout = append(cell, lastout);
 	}
@@ -117,7 +117,7 @@ void ArgList::merge(const ConsCell* extraargs)
     for (const ConsCell* cc = extraargs; cc; cc = cc->tail())
 	xargs.push_back(make_pair(cc->tag(), cc->car()));
     // Apply overriding arg values supplied in extraargs:
-    PairList* last = 0;
+    PairList* last = nullptr;
     for (PairList* pl = mutable_list(); pl; pl = pl->tail()) {
 	last = pl;
 	const RObject* tag = pl->tag();
@@ -133,7 +133,7 @@ void ArgList::merge(const ConsCell* extraargs)
     }
     // Append remaining extraargs:
     for (Xargs::const_iterator it = xargs.begin(); it != xargs.end(); ++it) {
-	PairList* cell = PairList::cons((*it).second, 0, (*it).first);
+	PairList* cell = PairList::cons((*it).second, nullptr, (*it).first);
 	last = append(cell, last);
     }
 }
@@ -142,13 +142,13 @@ pair<bool, RObject*> ArgList::firstArg(Environment* env)
 {
     const PairList* elt = list();
     if (!elt)
-	return pair<bool, RObject*>(false, 0);
+	return pair<bool, RObject*>(false, nullptr);
     if (m_status == EVALUATED)
 	return make_pair(true, elt->car());
     while (elt) {
 	RObject* arg1 = elt->car();
 	if (!arg1)
-	    return pair<bool, RObject*>(true, 0);
+	    return pair<bool, RObject*>(true, nullptr);
 	if (arg1 != DotsSymbol) {
 	    m_first_arg = Evaluator::evaluate(arg1, env);
 	    m_first_arg_env = env;
@@ -171,13 +171,13 @@ pair<bool, RObject*> ArgList::firstArg(Environment* env)
 	}
 	elt = elt->tail();  // elt was unbound or missing DotsSymbol
     }
-    return pair<bool, RObject*>(false, 0);
+    return pair<bool, RObject*>(false, nullptr);
 }
 
 void ArgList::stripTags()
 {
     for (PairList* p = mutable_list(); p; p = p->tail())
-	p->setTag(0);
+	p->setTag(nullptr);
 }
 	    
 const Symbol* ArgList::tag2Symbol(const RObject* tag)
@@ -193,13 +193,13 @@ void ArgList::wrapInPromises(Environment* env)
 	Rf_error("Internal error:"
 		 " ArgList already wrapped in Promises");
     if (m_status == EVALUATED)
-	env = 0;
+	env = nullptr;
     else if (m_first_arg_env && env != m_first_arg_env)
 	Rf_error("Internal error: first arg of ArgList"
 		 " previously evaluated in different environment");
     GCStackRoot<const PairList> oldargs(list());
-    setList(0);
-    PairList* lastout = 0;
+    setList(nullptr);
+    PairList* lastout = nullptr;
 
     for (const PairList* inp = oldargs; inp; inp = inp->tail()) {
 	RObject* rawvalue = inp->car();
@@ -214,13 +214,13 @@ void ArgList::wrapInPromises(Environment* env)
 			if (!m_first_arg_env)
 			    prom = new Promise(dotlist->car(), env);
 			else {
-			    prom = new Promise(m_first_arg, 0);
-			    m_first_arg = 0;
-			    m_first_arg_env = 0;
+			    prom = new Promise(m_first_arg, nullptr);
+			    m_first_arg = nullptr;
+			    m_first_arg_env = nullptr;
 			}
 			prom->expose();
 			const Symbol* tag = tag2Symbol(dotlist->tag());
-			PairList* cell = PairList::cons(prom, 0, tag);
+			PairList* cell = PairList::cons(prom, nullptr, tag);
 			lastout = append(cell, lastout);
 			dotlist = dotlist->tail();
 		    }
@@ -231,12 +231,12 @@ void ArgList::wrapInPromises(Environment* env)
 	    const Symbol* tag = tag2Symbol(inp->tag());
 	    RObject* value = Symbol::missingArgument();
 	    if (m_first_arg_env) {
-		value = CXXR_NEW(Promise(m_first_arg, 0));
-		m_first_arg = 0;
-		m_first_arg_env = 0;
+		value = CXXR_NEW(Promise(m_first_arg, nullptr));
+		m_first_arg = nullptr;
+		m_first_arg_env = nullptr;
 	    } else if (rawvalue != Symbol::missingArgument())
 		value = CXXR_NEW(Promise(rawvalue, env));
-	    PairList* cell = PairList::cons(value, 0, tag);
+	    PairList* cell = PairList::cons(value, nullptr, tag);
 	    lastout = append(cell, lastout);
 	}
     }

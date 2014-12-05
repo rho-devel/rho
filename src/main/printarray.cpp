@@ -539,7 +539,7 @@ void printArray(SEXP x, SEXP dim, int quote, int right, SEXP dimnames)
 /* == printArray(.) */
     const void *vmax = vmaxget();
     int ndim = LENGTH(dim);
-    const char *rn = NULL, *cn = NULL;
+    const char *rn = nullptr, *cn = nullptr;
 
     if (ndim == 1)
 	printVector(x, 1, quote);

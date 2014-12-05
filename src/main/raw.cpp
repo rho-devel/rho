@@ -364,7 +364,7 @@ SEXP attribute_hidden do_intToUtf8(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* Note that this gives zero length for input '0', so it is omitted */
 	for (i = 0, len = 0; i < nc; i++) {
 	    if (INTEGER(x)[i] == NA_INTEGER) { haveNA = TRUE; break; }
-	    len += inttomb(NULL, INTEGER(x)[i]);
+	    len += inttomb(nullptr, INTEGER(x)[i]);
 	}
 	if (haveNA) {
 	    PROTECT(ans = allocVector(STRSXP, 1));

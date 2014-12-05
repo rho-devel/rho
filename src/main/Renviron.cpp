@@ -84,7 +84,7 @@ static CXXRCONST char *subterm(char *s)
     if(p) {
 	q = p + 1; /* start of value */
 	if(p - s > 1 && *(p-1) == ':') *(p-1) = '\0'; else *p = '\0';
-    } else q = NULL;
+    } else q = nullptr;
     p = getenv(s);
     if(p && strlen(p)) return p; /* variable was set and non-empty */
     return q ? subterm(q) : CXXRNOCAST(char *) "";
@@ -99,7 +99,7 @@ static char *findRbrace(char *s)
     while(nr <= nl) {
 	pl = Rf_strchr(p, '{');
 	pr = Rf_strchr(p, '}');
-	if(!pr) return NULL;
+	if(!pr) return nullptr;
 	if(!pl || pr < pl) {
 	    p = pr+1; nr++;
 	} else {

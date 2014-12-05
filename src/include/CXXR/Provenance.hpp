@@ -270,8 +270,8 @@ namespace CXXR {
 	double timestamp() const;
 
 	// Virtual functions of GCNode:
-	void detachReferents();
-	void visitReferents(const_visitor*) const;
+	void detachReferents() override;
+	void visitReferents(const_visitor*) const override;
     private:
 	friend class boost::serialization::access;
 

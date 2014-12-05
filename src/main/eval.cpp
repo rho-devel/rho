@@ -134,7 +134,7 @@ static Rboolean bc_profiling = FALSE;
 # include <signal.h>
 #endif /* not Win32 */
 
-static FILE *R_ProfileOutfile = NULL;
+static FILE *R_ProfileOutfile = nullptr;
 static int R_Mem_Profiling=0;
 extern void get_current_mem(unsigned long *,unsigned long *,unsigned long *); /* in memory.c */
 extern unsigned long get_duplicate_counter(void);  /* in duplicate.c */
@@ -143,7 +143,7 @@ static int R_GC_Profiling = 0;                     /* indicates GC profiling */
 static int R_Line_Profiling = 0;                   /* indicates line profiling, and also counts the filenames seen (+1) */
 static char **R_Srcfiles;			   /* an array of pointers into the filename buffer */
 static size_t R_Srcfile_bufcount;                  /* how big is the array above? */
-static SEXP R_Srcfiles_buffer = NULL;              /* a big RAWSXP to use as a buffer for filenames and pointers to them */
+static SEXP R_Srcfiles_buffer = nullptr;              /* a big RAWSXP to use as a buffer for filenames and pointers to them */
 static int R_Profiling_Error;		   /* record errors here */
 
 #ifdef Win32
@@ -333,16 +333,16 @@ static void R_EndProfiling(void)
     itv.it_interval.tv_usec = 0;
     itv.it_value.tv_sec = 0;
     itv.it_value.tv_usec = 0;
-    setitimer(ITIMER_PROF, &itv, NULL);
+    setitimer(ITIMER_PROF, &itv, nullptr);
     signal(SIGPROF, doprof_null);
 
 #endif /* not Win32 */
     if(R_ProfileOutfile) fclose(R_ProfileOutfile);
-    R_ProfileOutfile = NULL;
+    R_ProfileOutfile = nullptr;
     Evaluator::enableProfiling(false);
     if (R_Srcfiles_buffer) {
 	R_ReleaseObject(R_Srcfiles_buffer);
-	R_Srcfiles_buffer = NULL;
+	R_Srcfiles_buffer = nullptr;
     }
     if (R_Profiling_Error)
 	Rf_warning(_("source files skipped by Rprof; please increase '%s'"),
@@ -362,9 +362,9 @@ static void R_InitProfiling(SEXP filename, int append, double dinterval,
     int interval;
 
     interval = int( 1e6 * dinterval + 0.5);
-    if(R_ProfileOutfile != NULL) R_EndProfiling();
+    if(R_ProfileOutfile != nullptr) R_EndProfiling();
     R_ProfileOutfile = RC_fopen(filename, append ? "a" : "w", TRUE);
-    if (R_ProfileOutfile == NULL)
+    if (R_ProfileOutfile == nullptr)
 	Rf_error(_("Rprof: cannot open profile file '%s'"),
 	      Rf_translateChar(filename));
     if(mem_profiling)
@@ -414,7 +414,7 @@ static void R_InitProfiling(SEXP filename, int append, double dinterval,
     itv.it_interval.tv_usec = interval;
     itv.it_value.tv_sec = 0;
     itv.it_value.tv_usec = interval;
-    if (setitimer(ITIMER_PROF, &itv, NULL) == -1)
+    if (setitimer(ITIMER_PROF, &itv, nullptr) == -1)
 	R_Suicide("setting profile timer failed");
 #endif /* not Win32 */
     Evaluator::enableProfiling(true);
@@ -513,7 +513,7 @@ void attribute_hidden R_init_jit_enabled(void)
 {
     if (R_jit_enabled <= 0) {
 	char *enable = getenv("R_ENABLE_JIT");
-	if (enable != NULL) {
+	if (enable != nullptr) {
 	    int val = atoi(enable);
 	    if (val > 0)
 		loadCompilerNamespace();
@@ -523,7 +523,7 @@ void attribute_hidden R_init_jit_enabled(void)
 
     if (R_compile_pkgs <= 0) {
 	char *compile = getenv("R_COMPILE_PKGS");
-	if (compile != NULL) {
+	if (compile != nullptr) {
 	    int val = atoi(compile);
 	    if (val > 0)
 		R_compile_pkgs = TRUE;
@@ -534,7 +534,7 @@ void attribute_hidden R_init_jit_enabled(void)
 
     if (R_disable_bytecode <= 0) {
 	char *disable = getenv("R_DISABLE_BYTECODE");
-	if (disable != NULL) {
+	if (disable != nullptr) {
 	    int val = atoi(disable);
 	    if (val > 0)
 		R_disable_bytecode = TRUE;
@@ -663,7 +663,7 @@ void Closure::DebugScope::startDebugging() const
 					       R_BaseEnv));
 	if(blines != NA_INTEGER && blines > 0)
 	    R_BrowseLines = blines;
-	Rf_PrintValueRec(const_cast<Expression*>(call), 0);
+	Rf_PrintValueRec(const_cast<Expression*>(call), nullptr);
 	R_BrowseLines = old_bl;
     }
     Rprintf("debug: ");
@@ -683,7 +683,7 @@ void Closure::DebugScope::endDebugging() const
 					R_BaseEnv));
 	if(blines != NA_INTEGER && blines > 0)
 	    R_BrowseLines = blines;
-	Rf_PrintValueRec(const_cast<Expression*>(ctxt->call()), 0);
+	Rf_PrintValueRec(const_cast<Expression*>(ctxt->call()), nullptr);
 	R_BrowseLines = old_bl;
     }
     // Don't allow exceptions to escape destructor:
@@ -716,7 +716,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
        frame of the generic call to the new frame */
     {
 	static const Symbol* syms[]
-	    = {DotdefinedSymbol, DotMethodSymbol, DottargetSymbol, 0};
+	    = {DotdefinedSymbol, DotMethodSymbol, DottargetSymbol, nullptr};
 	for (const Symbol** symp = syms; *symp; ++symp) {
 	    tof->importBinding(fromf->binding(*symp));
 	}
@@ -726,7 +726,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
        that they are in the second frame, so we could use that. */
     {
 	static const Symbol* syms[]
-	    = {DotGenericSymbol, DotMethodsSymbol, 0};
+	    = {DotGenericSymbol, DotMethodsSymbol, nullptr};
 	for (const Symbol** symp = syms; *symp; ++symp) {
 	    const Frame::Binding* frombdg = callenv->findBinding(*symp);
 	    tof->importBinding(frombdg);
@@ -791,7 +791,7 @@ static SEXP replaceCall(SEXP fun, SEXP val, SEXP args, SEXP rhs)
     PROTECT(rhs);
     PROTECT(val);
     GCStackRoot<PairList> tl(PairList::make(length(args) + 2));
-    ptmp = tmp = CXXR_NEW(Expression(0, tl));
+    ptmp = tmp = CXXR_NEW(Expression(nullptr, tl));
     UNPROTECT(4);
     SETCAR(ptmp, fun); ptmp = CDR(ptmp);
     SETCAR(ptmp, val); ptmp = CDR(ptmp);
@@ -864,7 +864,7 @@ namespace {
 	if (bgn && ENV_DEBUG(rho)) {
 	    Rf_SrcrefPrompt("debug", R_Srcref);
 	    Rf_PrintValue(CAR(args));
-	    do_browser(call, op, 0, rho);
+	    do_browser(call, op, nullptr, rho);
 	}
     }
 
@@ -1224,7 +1224,7 @@ SEXP attribute_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
 		s = Rf_eval(CAR(args), rho);
 	    }
 	    if (s && s->sexptype() == BAILSXP) {
-		R_Srcref = 0;
+		R_Srcref = nullptr;
 		return propagateBailout(s);
 	    }
 	    args = CDR(args);
@@ -1833,7 +1833,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
     while (cptr && cptr->workingEnvironment() != s) {
 	cptr = ClosureContext::innermost(cptr->nextOut());
     }
-    if (cptr == NULL)
+    if (cptr == nullptr)
 	Rf_error(_("'Recall' called from outside a closure"));
 
     /* If the function has been recorded in the context, use it
@@ -1903,7 +1903,7 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 		return 1;
 	    }
 	}
-	char* suffix = 0;
+	char* suffix = nullptr;
 	{
 	    RObject* callcar = callx->car();
 	    if (callcar->sexptype() == SYMSXP) {
@@ -1960,7 +1960,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	return 0;
     std::size_t numargs = listLength(callargs);
     RObject* arg1val = callargs->car();
-    RObject* arg2val = (numargs > 1 ? callargs->tail()->car() : 0);
+    RObject* arg2val = (numargs > 1 ? callargs->tail()->car() : nullptr);
     
     /* pre-test to avoid string computations when there is nothing to
        dispatch on because either there is only one argument and it
@@ -2054,10 +2054,10 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	if (rname == "Ops.difftime"
 	    && (lname == "+.POSIXt" || lname == "-.POSIXt"
 		|| lname == "+.Date" || lname == "-.Date"))
-	    r = 0;
+	    r = nullptr;
 	else if (lname == "Ops.difftime"
 		 && (rname == "+.POSIXt" || rname == "+.Date"))
-	    l = 0;
+	    l = nullptr;
 	else {
 	    Rf_warning(_("Incompatible methods (\"%s\", \"%s\") for \"%s\""),
 		       lname.c_str(), rname.c_str(), generic.c_str());
@@ -2092,7 +2092,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	GCStackRoot<Expression>
 	    newcall(CXXR_NEW(Expression(m->symbol(), callx->tail())));
 	ArgList arglist(callargs, ArgList::EVALUATED);
-	arglist.wrapInPromises(0);
+	arglist.wrapInPromises(nullptr);
 	// Ensure positional matching for operators:
 	if (isOps)
 	    arglist.stripTags();
@@ -2106,30 +2106,30 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 static int R_bcVersion = 7;
 static int R_bcMinVersion = 6;
 
-static SEXP R_AddSym = NULL;
-static SEXP R_SubSym = NULL;
-static SEXP R_MulSym = NULL;
-static SEXP R_DivSym = NULL;
-static SEXP R_ExptSym = NULL;
-static SEXP R_SqrtSym = NULL;
-static SEXP R_ExpSym = NULL;
-static SEXP R_EqSym = NULL;
-static SEXP R_NeSym = NULL;
-static SEXP R_LtSym = NULL;
-static SEXP R_LeSym = NULL;
-static SEXP R_GeSym = NULL;
-static SEXP R_GtSym = NULL;
-static SEXP R_AndSym = NULL;
-static SEXP R_OrSym = NULL;
-static SEXP R_NotSym = NULL;
-static SEXP R_SubsetSym = NULL;
-static SEXP R_SubassignSym = NULL;
-static SEXP R_CSym = NULL;
-static SEXP R_Subset2Sym = NULL;
-static SEXP R_Subassign2Sym = NULL;
-static SEXP R_valueSym = NULL;
-static SEXP R_TrueValue = NULL;
-static SEXP R_FalseValue = NULL;
+static SEXP R_AddSym = nullptr;
+static SEXP R_SubSym = nullptr;
+static SEXP R_MulSym = nullptr;
+static SEXP R_DivSym = nullptr;
+static SEXP R_ExptSym = nullptr;
+static SEXP R_SqrtSym = nullptr;
+static SEXP R_ExpSym = nullptr;
+static SEXP R_EqSym = nullptr;
+static SEXP R_NeSym = nullptr;
+static SEXP R_LtSym = nullptr;
+static SEXP R_LeSym = nullptr;
+static SEXP R_GeSym = nullptr;
+static SEXP R_GtSym = nullptr;
+static SEXP R_AndSym = nullptr;
+static SEXP R_OrSym = nullptr;
+static SEXP R_NotSym = nullptr;
+static SEXP R_SubsetSym = nullptr;
+static SEXP R_SubassignSym = nullptr;
+static SEXP R_CSym = nullptr;
+static SEXP R_Subset2Sym = nullptr;
+static SEXP R_Subassign2Sym = nullptr;
+static SEXP R_valueSym = nullptr;
+static SEXP R_TrueValue = nullptr;
+static SEXP R_FalseValue = nullptr;
 
 attribute_hidden
 void R_initialize_bcode(void)
@@ -2814,7 +2814,7 @@ static R_INLINE SEXP getvar(SEXP symbol, SEXP rho,
     SEXP value;
     if (dd)
 	value = Rf_ddfindVar(symbol, rho);
-    else if (vcache != NULL) {
+    else if (vcache != nullptr) {
 	Frame::Binding* cell = GET_BINDING_CELL_CACHE(symbol, rho, vcache, sidx);
 	value = BINDING_VALUE(cell);
 	if (value == R_UnboundValue)
@@ -2929,7 +2929,7 @@ static int tryDispatch(CXXRCONST char *generic, SEXP call, SEXP x, SEXP rho, SEX
   }
 
   /* See comment at first Rf_usemethod() call in this file. LT */
-  PROTECT(rho1 = Rf_NewEnvironment(R_NilValue, R_NilValue, rho));
+  PROTECT(rho1 = Rf_NewEnvironment(nullptr, nullptr, rho));
   {
       Expression* callx = SEXP_downcast<Expression*>(call);
       Environment* call_env = SEXP_downcast<Environment*>(rho);
@@ -3460,7 +3460,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       }
   }
 
-  R_binding_cache_t vcache = NULL;
+  R_binding_cache_t vcache = nullptr;
   Rboolean smallcache = TRUE;
 #ifdef USE_BINDING_CACHE
   if (useCache) {
@@ -3560,7 +3560,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	// the node stack.  In CXXR we use a separate stack for
 	// bindings, but push a null pointer onto the node stack to
 	// maintain CR's stack alignment.
-	BCNPUSH(0);
+	BCNPUSH(nullptr);
 	s_loopvar_stack->push_back(GET_BINDING_CELL(symbol, rho));
 
 	value = CXXR_NEW(IntVector(2));
@@ -3587,7 +3587,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	    value = Rf_allocVector(TYPEOF(seq), 1);
 	    BCNPUSH(value);
 	    break;
-	default: BCNPUSH(R_NilValue);
+	default: BCNPUSH(nullptr);
 	}
 
 	BC_CHECK_SIGINT();
@@ -3654,11 +3654,11 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       {
 	s_nodestack->pop(3);
 	s_loopvar_stack->pop_back();
-	SETSTACK(-1, R_NilValue);
+	SETSTACK(-1, nullptr);
 	NEXT();
       }
     OP(SETLOOPVAL, 0):
-      BCNPOP_IGNORE_VALUE(); SETSTACK(-1, R_NilValue); NEXT();
+      BCNPOP_IGNORE_VALUE(); SETSTACK(-1, nullptr); NEXT();
     OP(INVISIBLE,0):
 	R_Visible = FALSE;
 	NEXT();
@@ -3675,7 +3675,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	NEXT();
     OP(LDNULL, 0):
 	R_Visible = TRUE;
-	BCNPUSH(R_NilValue);
+	BCNPUSH(nullptr);
 	NEXT();
     OP(LDTRUE, 0):
 	R_Visible = TRUE;
@@ -3877,7 +3877,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       PUSHCALLARG(Rf_duplicate(value));
       NEXT();
     OP(PUSHNULLARG, 0):
-	PUSHCALLARG(R_NilValue);
+	PUSHCALLARG(nullptr);
 	NEXT();
     OP(PUSHTRUEARG, 0):
 	PUSHCALLARG(Rf_mkTrue());
@@ -4051,7 +4051,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	if (dispatched)
 	    SETSTACK(-1, value);
 	else
-	    SETSTACK(-1, R_subset3_dflt(x, PRINTNAME(symbol), R_NilValue));
+	    SETSTACK(-1, R_subset3_dflt(x, PRINTNAME(symbol), nullptr));
 	NEXT();
       }
     OP(DOLLARGETS, 2):
@@ -4165,7 +4165,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       {
 	SEXP symbol = (*constants)[GETOP()];
 	value = GETSTACK(-1);
-	BCNPUSH(getvar(symbol, ENCLOS(rho), FALSE, FALSE, NULL, 0));
+	BCNPUSH(getvar(symbol, ENCLOS(rho), FALSE, FALSE, nullptr, 0));
 	BCNPUSH(value);
 	/* top three stack entries are now RHS value, LHS value, RHS value */
 	FIXUP_RHS_NAMED(value);
@@ -4457,10 +4457,10 @@ static SEXP disassemble(SEXP bc)
   ByteCode* bcode = SEXP_downcast<ByteCode*>(bc);
   SEXP code = bcode->code();
   SEXP consts = bcode->constants();
-  SEXP expr = 0;  // Set to BCODE_EXPR(bc) in CR
+  SEXP expr = nullptr;  // Set to BCODE_EXPR(bc) in CR
   int nc = LENGTH(consts);
 
-  PROTECT(ans = Rf_allocVector(VECSXP, expr != R_NilValue ? 4 : 3));
+  PROTECT(ans = Rf_allocVector(VECSXP, expr != nullptr ? 4 : 3));
   SET_VECTOR_ELT(ans, 0, Rf_install(".Code"));
   SET_VECTOR_ELT(ans, 1, code);
   SET_VECTOR_ELT(ans, 2, Rf_allocVector(VECSXP, nc));

@@ -113,7 +113,7 @@ SEXP attribute_hidden getAttrib0(SEXP vec, SEXP name)
     SEXP s;
     int len, i, any;
 
-    if (!vec) return 0;
+    if (!vec) return nullptr;
     if (name == R_NamesSymbol) {
 	if(isVector(vec) || isList(vec) || isLanguage(vec)) {
 	    s = getAttrib(vec, R_DimSymbol);
@@ -151,7 +151,7 @@ SEXP attribute_hidden getAttrib0(SEXP vec, SEXP name)
     }
     /* This is where the old/new list adjustment happens. */
     RObject* att = vec->getAttribute(SEXP_downcast<Symbol*>(name));
-    if (!att) return 0;
+    if (!att) return nullptr;
     if (name == R_DimNamesSymbol && TYPEOF(att) == LISTSXP) {
 	SEXP _new, old;
 	int i;
@@ -171,7 +171,7 @@ SEXP attribute_hidden getAttrib0(SEXP vec, SEXP name)
 
 SEXP getAttrib(SEXP vec, SEXP name)
 {
-    if (!vec) return 0;
+    if (!vec) return nullptr;
     if(TYPEOF(vec) == CHARSXP)
 	error("cannot have attributes on a CHARSXP");
     /* pre-test to avoid expensive operations if clearly not needed -- LT */
@@ -346,7 +346,7 @@ void copyMostAttribNoTs(SEXP inp, SEXP ans)
 static SEXP removeAttrib(SEXP vec, SEXP name)
 {
     SEXP t;
-    if (!vec) return 0;  // 2007/07/24 arr
+    if (!vec) return nullptr;  // 2007/07/24 arr
     if(TYPEOF(vec) == CHARSXP)
 	error("cannot set attribute on a CHARSXP");
     if (name == R_NamesSymbol && isList(vec)) {
@@ -356,8 +356,8 @@ static SEXP removeAttrib(SEXP vec, SEXP name)
     }
     else {
 	if (name == R_DimSymbol)
-	    vec->setAttribute(static_cast<Symbol*>(R_DimNamesSymbol), 0);
-	vec->setAttribute(SEXP_downcast<Symbol*>(name), 0);
+	    vec->setAttribute(static_cast<Symbol*>(R_DimNamesSymbol), nullptr);
+	vec->setAttribute(SEXP_downcast<Symbol*>(name), nullptr);
     }
     return R_NilValue;
 }
@@ -443,7 +443,7 @@ static SEXP commentgets(SEXP vec, SEXP comment)
 
     if (isNull(comment) || isString(comment)) {
 	vec->setAttribute(static_cast<Symbol*>(R_CommentSymbol),
-			  length(comment) <= 0 ? 0 : comment);
+			  length(comment) <= 0 ? nullptr : comment);
 	return R_NilValue;
     }
     error(_("attempt to set invalid 'comment' attribute"));
@@ -470,7 +470,7 @@ SEXP classgets(SEXP vec, SEXP klass)
 {
     if (isNull(klass) || isString(klass)) {
   	if (length(klass) <= 0)
-	    vec->setAttribute(static_cast<Symbol*>(R_ClassSymbol), 0);
+	    vec->setAttribute(static_cast<Symbol*>(R_ClassSymbol), nullptr);
 	else {
 	    /* When data frames were a special data type */
 	    /* we had more exhaustive checks here.  Now that */
@@ -537,7 +537,7 @@ SEXP attribute_hidden do_class(SEXP call, SEXP op, SEXP args, SEXP env)
 static SEXP lang2str(SEXP obj, SEXPTYPE t)
 {
   SEXP symb = CAR(obj);
-  static SEXP if_sym = 0, while_sym, for_sym, eq_sym, gets_sym,
+  static SEXP if_sym = nullptr, while_sym, for_sym, eq_sym, gets_sym,
     lpar_sym, lbrace_sym, call_sym;
   if(!if_sym) {
     /* initialize:  another place for a hash table */
@@ -607,9 +607,9 @@ SEXP R_data_class(SEXP obj, Rboolean singleString)
     return value;
 }
 
-static SEXP s_dot_S3Class = 0;
+static SEXP s_dot_S3Class = nullptr;
 
-static SEXP R_S4_extends_table = 0;
+static SEXP R_S4_extends_table = nullptr;
 
  
 static SEXP cache_class(const char *class_str, SEXP klass) {
@@ -628,7 +628,7 @@ static SEXP cache_class(const char *class_str, SEXP klass) {
 
 static SEXP S4_extends(SEXP klass)
 {
-    static SEXP s_extends = 0, s_extendsForS3;
+    static SEXP s_extends = nullptr, s_extendsForS3;
     SEXP e, val; const char *class_str;
     const void *vmax = vmaxget();
     if(!s_extends) {
@@ -767,7 +767,7 @@ SEXP attribute_hidden do_namesgets(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     if (CADR(args) != R_NilValue) {
 	GCStackRoot<PairList> tl(CXXR_NEW(PairList));
-        PROTECT(call = CXXR_NEW(Expression(0, tl)));
+        PROTECT(call = CXXR_NEW(Expression(nullptr, tl)));
 	SETCAR(call, install("as.character"));
 	SETCADR(call, CADR(args));
 	SETCADR(args, eval(call, env));
@@ -1248,7 +1248,7 @@ SEXP attribute_hidden do_attr(SEXP call, SEXP op, SEXP args, SEXP env)
 	errorcall(call, "either 2 or 3 arguments are required");
 
     /* argument matching */
-    PROTECT(ap = list3(R_NilValue, R_NilValue, R_NilValue));
+    PROTECT(ap = list3(nullptr, nullptr, nullptr));
     SET_TAG(ap,  install("x"));
     SET_TAG(CDR(ap), install("which"));
     SET_TAG(CDDR(ap), install("exact"));
@@ -1407,7 +1407,7 @@ SEXP attribute_hidden do_attrgets(SEXP call, SEXP op, SEXP args, SEXP env)
 	PROTECT(obj);
 
     /* argument matching */
-    PROTECT(ap = list3(R_NilValue, R_NilValue, R_NilValue));
+    PROTECT(ap = list3(nullptr, nullptr, nullptr));
     SET_TAG(ap,  install("x"));
     SET_TAG(CDR(ap), install("which"));
     SET_TAG(CDDR(ap), install("value"));
@@ -1442,16 +1442,16 @@ void GetMatrixDimnames(SEXP x, SEXP *rl, SEXP *cl,
     if (isNull(dimnames)) {
 	*rl = R_NilValue;
 	*cl = R_NilValue;
-	*rn = NULL;
-	*cn = NULL;
+	*rn = nullptr;
+	*cn = nullptr;
     }
     else {
 	*rl = VECTOR_ELT(dimnames, 0);
 	*cl = VECTOR_ELT(dimnames, 1);
 	nn = getAttrib(dimnames, R_NamesSymbol);
 	if (isNull(nn)) {
-	    *rn = NULL;
-	    *cn = NULL;
+	    *rn = nullptr;
+	    *cn = nullptr;
 	}
 	else {
 	    *rn = translateChar(STRING_ELT(nn, 0));
@@ -1472,7 +1472,7 @@ SEXP GetArrayDimnames(SEXP x)
    an error to get a slot that doesn't exist. */
 
 
-static SEXP pseudo_NULL = 0;
+static SEXP pseudo_NULL = nullptr;
 
 static SEXP s_dot_Data;
 static SEXP s_getDataPart;

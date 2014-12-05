@@ -56,10 +56,10 @@ size_t GCManager::s_threshold;
 size_t GCManager::s_min_threshold;
 size_t GCManager::s_max_bytes = 0;
 size_t GCManager::s_max_nodes = 0;
-std::ostream* GCManager::s_os = 0;
+std::ostream* GCManager::s_os = nullptr;
 
-void (*GCManager::s_pre_gc)() = 0;
-void (*GCManager::s_post_gc)() = 0;
+void (*GCManager::s_pre_gc)() = nullptr;
+void (*GCManager::s_post_gc)() = nullptr;
 
 namespace {
     unsigned int gc_count;

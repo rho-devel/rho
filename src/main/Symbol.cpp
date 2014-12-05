@@ -61,7 +61,7 @@ namespace CXXR {
     }
 }
 
-Symbol::Table* Symbol::s_table = 0;
+Symbol::Table* Symbol::s_table = nullptr;
 
 Symbol* Symbol::s_missing_arg;
 SEXP R_MissingArg;
@@ -128,7 +128,7 @@ RObject* Symbol::evaluate(Environment* env)
 	else val = unboundValue();
     }
     if (!val)
-	return 0;
+	return nullptr;
     if (val == unboundValue())
 	Rf_error(_("object '%s' not found"), name()->c_str());
     if (val == missingArgument() && !isDotDotSymbol()) {

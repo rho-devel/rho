@@ -251,7 +251,7 @@ void WeakRef::markThru()
 	    else {
 		wr->tombstone();
 		// Expose to reference-counting collection:
-		wr->m_self = 0;
+		wr->m_self = nullptr;
 	    }
 	}
     }
@@ -312,7 +312,7 @@ bool WeakRef::runFinalizers()
 	    catch (CommandTerminated) {
 	    }
 	    // Expose WeakRef to reference-counting collection:
-	    wr->m_self = 0;
+	    wr->m_self = nullptr;
 	}
 	ProtectStack::restoreSize(savestack);
 	R_CurrentExpr = topExp;
@@ -323,10 +323,10 @@ bool WeakRef::runFinalizers()
 void WeakRef::tombstone()
 {
     WRList* oldl = wrList();
-    m_key = 0;
-    m_value = 0;
-    m_Rfinalizer = 0;
-    m_Cfinalizer = 0;
+    m_key = nullptr;
+    m_value = nullptr;
+    m_Rfinalizer = nullptr;
+    m_Cfinalizer = nullptr;
     m_ready_to_finalize = false;
     transfer(oldl, getTombstone());
 }
@@ -347,7 +347,7 @@ WeakRef::WRList* WeakRef::wrList() const
 
 SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit)
 {
-    FunctionBase* finf = 0;
+    FunctionBase* finf = nullptr;
     if (fin) {
 	finf = dynamic_cast<FunctionBase*>(fin);
 	if (!finf)
@@ -363,7 +363,7 @@ SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit)
 
 void R_RegisterFinalizerEx(SEXP s, SEXP fun, Rboolean onexit)
 {
-    R_MakeWeakRef(s, 0, fun, onexit);
+    R_MakeWeakRef(s, nullptr, fun, onexit);
 }
 
 void R_RegisterFinalizer(SEXP s, SEXP fun)
@@ -373,7 +373,7 @@ void R_RegisterFinalizer(SEXP s, SEXP fun)
 
 void R_RegisterCFinalizerEx(SEXP s, R_CFinalizer_t fun, Rboolean onexit)
 {
-    R_MakeWeakRefC(s, 0, fun, onexit);
+    R_MakeWeakRefC(s, nullptr, fun, onexit);
 }
 
 void R_RegisterCFinalizer(SEXP s, R_CFinalizer_t fun)

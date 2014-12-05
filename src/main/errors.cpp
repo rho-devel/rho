@@ -183,7 +183,7 @@ RETSIGTYPE attribute_hidden onsigusr1(int dummy)
     R_FlushConsole();
     R_ClearerrConsole();
     R_ParseError = 0;
-    R_ParseErrorFile = NULL;
+    R_ParseErrorFile = nullptr;
     R_ParseErrorMsg[0] = '\0';
 
     /* Bail out if there is a browser/try on the stack--do we really
@@ -211,7 +211,7 @@ RETSIGTYPE attribute_hidden onsigusr2(int dummy)
     R_FlushConsole();
     R_ClearerrConsole();
     R_ParseError = 0;
-    R_ParseErrorFile = NULL;
+    R_ParseErrorFile = nullptr;
     R_ParseErrorMsg[0] = '\0';
     R_CleanUp(SA_SAVE, 0, 0);
 }
@@ -259,7 +259,7 @@ void warning(const char *format, ...)
     if(strlen(buf) > 0 && *p == '\n') *p = '\0';
     if(R_WarnLength < BUFSIZE - 20 && CXXRCONSTRUCT(int, strlen(buf)) == R_WarnLength)
 	strcat(buf, " [... truncated]");
-    warningcall(c ? CXXRCCAST(Expression*, c->call()) : CXXRSCAST(RObject*, R_NilValue), "%s", buf);
+    warningcall(c ? CXXRCCAST(Expression*, c->call()) : CXXRSCAST(RObject*, nullptr), "%s", buf);
 }
 
 /* declarations for internal condition handling */
@@ -272,7 +272,7 @@ static void invokeRestart(SEXP, SEXP);
 
 static int wd(const char * buf)
 {
-    int nc = int( mbstowcs(NULL, buf, 0)), nw;
+    int nc = int( mbstowcs(nullptr, buf, 0)), nw;
     if(nc > 0 && nc < 2000) {
 	wchar_t wc[2000];
 	mbstowcs(wc, buf, nc + 1);
@@ -540,7 +540,7 @@ const char *R_curErrorBuf() {
 }
 
 /* temporary hook to allow experimenting with alternate error mechanisms */
-static void (*R_ErrorHook)(SEXP, char *) = NULL;
+static void (*R_ErrorHook)(SEXP, char *) = nullptr;
 
 static void NORET
 verrorcall_dflt(SEXP call, const char *format, va_list ap)
@@ -686,10 +686,10 @@ void NORET errorcall(SEXP call, const char *format,...)
     vsignalError(call, format, ap);
     va_end(ap);
 
-    if (R_ErrorHook != NULL) {
+    if (R_ErrorHook != nullptr) {
 	char buf[BUFSIZE];
 	void (*hook)(SEXP, char *) = R_ErrorHook;
-	R_ErrorHook = NULL; /* to avoid recursion */
+	R_ErrorHook = nullptr; /* to avoid recursion */
 	va_start(ap, format);
 	Rvsnprintf(buf, min(BUFSIZE, R_WarnLength), format, ap);
 	va_end(ap);
@@ -721,7 +721,7 @@ void error(const char *format, ...)
     va_start(ap, format);
     Rvsnprintf(buf, min(BUFSIZE, R_WarnLength), format, ap);
     va_end(ap);
-    errorcall(c ? CXXRCCAST(Expression*, c->call()) : CXXRSCAST(RObject*, R_NilValue), "%s", buf);
+    errorcall(c ? CXXRCCAST(Expression*, c->call()) : CXXRSCAST(RObject*, nullptr), "%s", buf);
 }
 
 static void try_jump_to_restart(void)
@@ -794,7 +794,7 @@ static void jump_to_top_ex(Rboolean traceback,
 	    R_FlushConsole();
 	    R_ClearerrConsole();
 	    R_ParseError = 0;
-	    R_ParseErrorFile = NULL;
+	    R_ParseErrorFile = nullptr;
 	    R_ParseErrorMsg[0] = '\0';
 	}
 
@@ -883,7 +883,7 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    = ClosureContext::innermost(Evaluator::Context::innermost()->nextOut());
 	SEXP rho = R_BaseEnv;
 	for (;
-	     cptr != NULL;
+	     cptr != nullptr;
 	     cptr = ClosureContext::innermost(cptr->nextOut())) {
 	    /* stop() etc have internal call to .makeMessage */
 	    cfn = CHAR(STRING_ELT(deparse1s(CAR(CXXRCCAST(Expression*, cptr->call()))), 0));
@@ -918,7 +918,7 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	for(i = 0; i < n; i++) {
 	    int ihead = 0, itail = 0;
 	    const char * This = translateChar(STRING_ELT(string, i));
-	    char *tmp, *head = NULL, *tail = NULL, *p, *tr;
+	    char *tmp, *head = nullptr, *tail = nullptr, *p, *tr;
 	    R_CheckStack2(strlen(This) + 1);
 	    tmp = static_cast<char *>( alloca(strlen(This) + 1));
 	    strcpy(tmp, This);
@@ -1037,7 +1037,7 @@ SEXP attribute_hidden do_bindtextdomain(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(!isString(CAR(args)) || LENGTH(CAR(args)) != 1)
 	errorcall(call, _("invalid '%s' value"), "domain");
     if(isNull(CADR(args))) {
-	res = bindtextdomain(translateChar(STRING_ELT(CAR(args),0)), NULL);
+	res = bindtextdomain(translateChar(STRING_ELT(CAR(args),0)), nullptr);
     } else {
 	if(!isString(CADR(args)) || LENGTH(CADR(args)) != 1)
 	    errorcall(call, _("invalid '%s' value"), "dirname");
@@ -1054,7 +1054,7 @@ static SEXP findCall(void)
 {
     ClosureContext *cptr
 	= ClosureContext::innermost(ClosureContext::innermost()->nextOut());
-    return (cptr ? CXXRCCAST(Expression*, cptr->call()) : 0);
+    return (cptr ? CXXRCCAST(Expression*, cptr->call()) : nullptr);
 }
 
 SEXP attribute_hidden do_stop(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -1229,7 +1229,7 @@ SEXP R_GetTraceback(int skip)
     SEXP s, t;
 
     for (c = FunctionContext::innermost(), ns = skip;
-	 c != NULL;
+	 c != nullptr;
 	 c = FunctionContext::innermost(c->nextOut()))
 	if (ns > 0)
 	    ns--;
@@ -1239,7 +1239,7 @@ SEXP R_GetTraceback(int skip)
     PROTECT(s = allocList(nback));
     t = s;
     for (c = FunctionContext::innermost() ;
-	 c != NULL;
+	 c != nullptr;
 	 c = FunctionContext::innermost(c->nextOut()))
 	if (skip > 0)
 	    skip--;
@@ -1295,7 +1295,7 @@ static CXXRCONST char * R_ConciseTraceback(SEXP call, int skip)
 
     buf[0] = '\0';
     for (c = FunctionContext::innermost();
-	 c != NULL;
+	 c != nullptr;
 	 c = FunctionContext::innermost(c->nextOut()))
 	if (skip > 0)
 	    skip--;
@@ -1366,8 +1366,8 @@ namespace {
 	}
 
 	// Virtual functions of GCNode:
-	void detachReferents();
-	void visitReferents(const_visitor* v) const;
+	void detachReferents() override;
+	void visitReferents(const_visitor* v) const override;
     };
 
     void HandlerEntry::detachReferents()
@@ -1617,7 +1617,7 @@ SEXP attribute_hidden do_signalCondition(SEXP call, SEXP op, SEXP args, SEXP rho
 	if (IS_CALLING_ENTRY(entry)) {
 	    SEXP h = ENTRY_HANDLER(entry);
 	    if (!h) {
-		const char *msgstr = NULL;
+		const char *msgstr = nullptr;
 		if (TYPEOF(msg) == STRSXP && LENGTH(msg) > 0)
 		    msgstr = translateChar(STRING_ELT(msg, 0));
 		else error(_("error message not a string"));
@@ -1696,7 +1696,7 @@ R_InsertRestartHandlers(ClosureContext *cptr, Rboolean browser)
     /**** need more here to keep recursive errors in browser? */
     rho = cptr->workingEnvironment();
     PROTECT(klass = mkChar("error"));
-    entry = mkHandlerEntry(klass, rho, 0, rho, R_NilValue, TRUE);
+    entry = mkHandlerEntry(klass, rho, nullptr, rho, R_NilValue, TRUE);
     R_HandlerStack = CONS(entry, R_HandlerStack);
     UNPROTECT(1);
     PROTECT(name = mkString(browser ? "browser" : "tryRestart"));

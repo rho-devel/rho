@@ -52,12 +52,11 @@ using namespace CXXR;
 
 CellPool::~CellPool()
 {
-    for (vector<void*>::iterator it = m_admin->m_superblocks.begin();
-	 it != m_admin->m_superblocks.end(); ++it)
+    for (void* elem : m_admin->m_superblocks)
 #if _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600
-	free(*it);
+	free(elem);
 #else
-	::operator delete(*it);
+	::operator delete(elem);
 #endif
     delete m_admin;
 }
@@ -138,7 +137,7 @@ void CellPool::defragment()
     sort(vf.begin(), vf.end());
     // Restring the pearls:
     {
-	Cell* next = 0;
+	Cell* next = nullptr;
 	vector<Cell*>::reverse_iterator rit = vf.rbegin();
 	for ( ; rit != vf.rend(); ++rit) {
 	    Cell* c = *rit;
@@ -172,7 +171,7 @@ CellPool::Cell* CellPool::seekMemory() throw (std::bad_alloc)
     {
 	ptrdiff_t offset
 	    = ptrdiff_t(m_admin->m_superblocksize - m_admin->m_cellsize);
-	Cell* next = 0;
+	Cell* next = nullptr;
 	while (offset >= 0) {
 	    next = new (superblock + offset) Cell(next);
 	    offset -= ptrdiff_t(m_admin->m_cellsize);

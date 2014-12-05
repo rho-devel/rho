@@ -157,7 +157,7 @@ Rconnection attribute_hidden R_newurl(const char *description,
 	return (*ptr->newurl)(description, mode);
     else {
 	error(_("internet routines cannot be loaded"));
-	return CXXRNOCAST(Rconnection)0;
+	return CXXRNOCAST(Rconnection)nullptr;
     }
 }
 
@@ -170,7 +170,7 @@ R_newsock(const char *host, int port, int server, const char * const mode,
 	return (*ptr->newsock)(host, port, server, mode, timeout);
     else {
 	error(_("internet routines cannot be loaded"));
-	return CXXRNOCAST(Rconnection)0;
+	return CXXRNOCAST(Rconnection)nullptr;
     }
 }
 
@@ -178,10 +178,10 @@ void *R_HTTPOpen(const char *url)
 {
     if(!initialized) internet_Init();
     if(initialized > 0)
-	return (*ptr->HTTPOpen)(url, NULL, 0);
+	return (*ptr->HTTPOpen)(url, nullptr, 0);
     else {
 	error(_("internet routines cannot be loaded"));
-	return NULL;
+	return nullptr;
     }
 }
 
@@ -212,7 +212,7 @@ void *R_FTPOpen(const char *url)
 	return (*ptr->FTPOpen)(url);
     else {
 	error(_("internet routines cannot be loaded"));
-	return NULL;
+	return nullptr;
     }
 }
 

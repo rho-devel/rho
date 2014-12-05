@@ -62,9 +62,7 @@ void CommandChronicle::readBinding(const Provenance* bdgprov)
 
 void CommandChronicle::visitReferents(const_visitor* v) const
 {
-    for (ParentVector::const_iterator it = m_reads.begin();
-	 it != m_reads.end(); ++it) {
-	const GCNode* parent = *it;
+    for (const GCNode* parent : m_reads) {
 	(*v)(parent);
     }
     if (m_command)

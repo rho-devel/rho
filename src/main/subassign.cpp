@@ -581,7 +581,7 @@ static SEXP VectorAssign(SEXP call, SEXP xarg, SEXP sarg, SEXP yarg)
     default:
 	warningcall(call, "sub assignment (*[*] <- *) not done; __bug?__");
     }
-    return 0;  // -Wall
+    return nullptr;  // -Wall
 }
 
 
@@ -672,7 +672,7 @@ static SEXP ArrayAssign(SEXP call, SEXP xarg, PairList* subscripts, SEXP yarg)
 	Rf_error(_("incompatible types (from %s to %s) in array subset assignment"),
 		 type2char(SEXPTYPE(which%100)), type2char(SEXPTYPE(which/100)));
     }
-    return 0;  // -Wall
+    return nullptr;  // -Wall
 }
 
 /* Use for pairlists */
@@ -709,7 +709,7 @@ static SEXP SimpleListAssign(SEXP call, SEXP x, SEXP s, SEXP y, int ind)
 	error(_("invalid number of subscripts to list assign"));
 
     PROTECT(sub = GetOneIndex(sub, ind));
-    PROTECT(indx = makeSubscript(x, sub, &stretch, R_NilValue));
+    PROTECT(indx = makeSubscript(x, sub, &stretch, nullptr));
 
     n = length(indx);
     if (n > 1)
@@ -758,16 +758,16 @@ static SEXP listRemove(SEXP x, SEXP s, int ind)
 	R_xlen_t stretch = 0;
 	GCStackRoot<> sub(GetOneIndex(s, ind));
 	GCStackRoot<IntVector>
-	    iv(SEXP_downcast<IntVector*>(makeSubscript(x, sub, &stretch, 0)));
+	    iv(SEXP_downcast<IntVector*>(makeSubscript(x, sub, &stretch, nullptr)));
 	size_t ns = iv->size();
 	for (size_t i = 0; i < ns; ++i) {
 	    int ii = (*iv)[i];
-	    if (ii != NA_INTEGER) vcc[ii-1] = 0;
+	    if (ii != NA_INTEGER) vcc[ii-1] = nullptr;
 	}
     }
     // Restring the pearls:
     {
-	ConsCell* ans = 0;
+	ConsCell* ans = nullptr;
 	for (size_t i = vcc.size(); i > 0; --i) {
 	    ConsCell* cc = vcc[i - 1];
 	    if (cc) {
@@ -788,7 +788,7 @@ static void SubAssignArgs(PairList* args, SEXP *x, PairList** s, SEXP *y)
 	Rf_error(_("SubAssignArgs: invalid number of arguments"));
     *x = args->car();
     if(numargs == 2) {
-	*s = 0;
+	*s = nullptr;
 	*y = args->tail()->car();
     }
     else {
@@ -800,7 +800,7 @@ static void SubAssignArgs(PairList* args, SEXP *x, PairList** s, SEXP *y)
 	    ptail = p->tail();
 	}
 	*y = ptail->car();
-	p->setTail(0);
+	p->setTail(nullptr);
     }
 }
 

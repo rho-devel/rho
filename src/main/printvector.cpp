@@ -355,7 +355,7 @@ void printNamedVector(SEXP x, SEXP names, int quote, const char *title)
 {
     int n;
 
-    if (title != NULL)
+    if (title != nullptr)
 	 Rprintf("%s\n", title);
 
     StringVector* namesv = SEXP_downcast<StringVector*>(names);

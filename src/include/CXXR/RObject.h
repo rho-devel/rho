@@ -220,7 +220,7 @@ namespace CXXR {
 	 */
 	virtual RObject* clone() const
 	{
-	    return 0;
+	    return nullptr;
 	}
 
 	/** @brief Return a pointer to a copy of an object.
@@ -236,7 +236,7 @@ namespace CXXR {
 	template <class T>
 	static T* clone(const T* pattern)
 	{
-	    return pattern ? static_cast<T*>(pattern->clone()) : 0;
+	    return pattern ? static_cast<T*>(pattern->clone()) : nullptr;
 	}
 
 	/** @brief Copy an attribute from one RObject to another.
@@ -301,7 +301,7 @@ namespace CXXR {
 	 */
 	virtual bool hasAttributes() const
 	{
-	    return RObject::attributes() != 0;
+	    return RObject::attributes() != nullptr;
 	}
 
 	/** @brief Has this object the class attribute?
@@ -536,12 +536,12 @@ namespace CXXR {
 	virtual void unpackGPBits(unsigned int gpbits);
 
 	// Virtual functions of GCNode:
-	void detachReferents()
+	void detachReferents() override
 	{
 	    m_attrib.detach();
 	}
 
-	void visitReferents(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const override;
     protected:
 	/**
 	 * @param stype Required type of the RObject.

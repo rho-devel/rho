@@ -115,7 +115,7 @@ static RObject* applyMethod(const Expression* call, const FunctionBase* func,
 	ans = clos->invoke(env, arglist, call, method_bindings);
     } else {
 	GCStackRoot<Environment>
-	    newenv(CXXR_NEW(Environment(0, method_bindings)));
+	    newenv(CXXR_NEW(Environment(nullptr, method_bindings)));
 	ans = func->apply(arglist, newenv, call);
     }
     return ans;
@@ -190,7 +190,7 @@ static int match_to_obj(SEXP arg, SEXP obj) {
    to an object from an S4 subclass.
 */
 int Rf_isBasicClass(const char *ss) {
-    static SEXP s_S3table = 0;
+    static SEXP s_S3table = nullptr;
     if(!s_S3table) {
       s_S3table = Rf_findVarInFrame3(R_MethodsNamespace, Rf_install(".S3MethodsClasses"), TRUE);
       if(s_S3table == R_UnboundValue)
@@ -240,7 +240,7 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 	    break;
 	default:
 	    Rf_error(_("Invalid generic function in 'usemethod'"));
-	    op = 0;  // avoid compiler warning
+	    op = nullptr;  // avoid compiler warning
 	}
     }
 
@@ -283,7 +283,7 @@ static void matchArgsForUseMethod(SEXP call, SEXP args, Environment* argsenv,
     
     GCStackRoot<Frame> matchframe(CXXR_NEW(ListFrame));
     GCStackRoot<Environment>
-	matchenv(CXXR_NEW(Environment(0, matchframe)));
+	matchenv(CXXR_NEW(Environment(nullptr, matchframe)));
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
     matcher->match(matchenv, &arglist);
 
@@ -343,7 +343,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     if (!cptr || cptr->workingEnvironment() != argsenv)
 	Rf_error(_("'UseMethod' used in an inappropriate fashion"));
 
-    StringVector* generic = 0;
+    StringVector* generic = nullptr;
     GCStackRoot<> obj;
     matchArgsForUseMethod(call, args, argsenv, cptr, &generic, &obj);
 
@@ -375,7 +375,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     // Try invoking method:
     SEXP ans;
-    if (Rf_usemethod(Rf_translateChar((*generic)[0]), obj, call, 0,
+    if (Rf_usemethod(Rf_translateChar((*generic)[0]), obj, call, nullptr,
 		     env, callenv, defenv, &ans) != 1) {
 	// Failed, so prepare error message:
 	std::string cl;
@@ -463,7 +463,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     ClosureContext* cptr = ClosureContext::innermost();
     Environment* nmcallenv = cptr->callEnvironment();
     cptr = ClosureContext::findClosureWithWorkingEnvironment(nmcallenv, cptr);
-    if (cptr == NULL) {
+    if (cptr == nullptr) {
 	Rf_error(_("'NextMethod' called from outside a function"));
     }
 
@@ -481,7 +481,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	nmcallenv, DotGenericDefEnvSymbol, Environment::global());
 
     // Find the generic closure:
-    Closure* genclos = 0;  // -Wall
+    Closure* genclos = nullptr;  // -Wall
     {
 	RObject* callcar = cptr->call()->car();
 	if (callcar->sexptype() == LANGSXP)
@@ -497,7 +497,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 		Rf_error(_("no calling generic was found:"
 			   " was a method called directly?"));
 	    if (func->sexptype() != CLOSXP)
-		Rf_errorcall(0, _("'function' is not a function,"
+		Rf_errorcall(nullptr, _("'function' is not a function,"
 				  " but of type %d"), func->sexptype());
 	    genclos = static_cast<Closure*>(func);
 	}
@@ -530,7 +530,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 	}
 	if (dots) {   /* we need to expand out the dots */
-	    GCStackRoot<PairList> t(PairList::cons(0));  // dummy first element
+	    GCStackRoot<PairList> t(PairList::cons(nullptr));  // dummy first element
 	    for (PairList *s = actuals, *m = t; s; s = s->tail()) {
 		RObject* scar = s->car();
 		if (scar && scar->sexptype() == DOTSXP) {
@@ -538,12 +538,12 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 		    for (ConsCell* a = static_cast<ConsCell*>(scar);
 			 a; a = a->tail()) {
 			Symbol* ddsym = Symbol::obtainDotDotSymbol(i);
-			m->setTail(PairList::cons(a->car(), 0, ddsym));
+			m->setTail(PairList::cons(a->car(), nullptr, ddsym));
 			m = m->tail();
 			++i;
 		    }
 		} else {
-		    m->setTail(PairList::cons(s->car(), 0, s->tag()));
+		    m->setTail(PairList::cons(s->car(), nullptr, s->tag()));
 		    m = m->tail();
 		}
 	    }
@@ -558,10 +558,10 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     {
 	// Duplicate cptr->promiseArgs():
 	{
-	    matchedarg = PairList::cons(0);  // Dummy first element
+	    matchedarg = PairList::cons(nullptr);  // Dummy first element
 	    PairList* t = matchedarg;
 	    for (const PairList* s = cptr->promiseArgs(); s; s = s->tail()) {
-		t->setTail(PairList::cons(s->car(), 0, s->tag()));
+		t->setTail(PairList::cons(s->car(), nullptr, s->tag()));
 		t = t->tail();
 	    }
 	    matchedarg = matchedarg->tail();  // Discard dummy element
@@ -689,7 +689,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    nextidxstart = 0;
     }
 
-    FunctionBase* nextfun = 0;
+    FunctionBase* nextfun = nullptr;
     std::string nextmethodname;
     unsigned int nextidx;  // Index within the klass vector at which
 			   // the next method was found.  Set to
@@ -926,7 +926,7 @@ int R_check_class_and_super(SEXP x, const char **valid, SEXP rho)
 	/* now try the superclasses, i.e.,  try   is(x, "....");  superCl :=
 	   .selectSuperClasses(getClass("....")@contains, dropVirtual=TRUE)  */
 	SEXP classExts, superCl, _call;
-	static SEXP s_contains = NULL, s_selectSuperCl = NULL;
+	static SEXP s_contains = nullptr, s_selectSuperCl = nullptr;
 	int i;
 	if(!s_contains) {
 	    s_contains      = Rf_install("contains");
@@ -969,7 +969,7 @@ int R_check_class_and_super(SEXP x, const char **valid, SEXP rho)
  */
 int R_check_class_etc(SEXP x, const char **valid)
 {
-    static SEXP meth_classEnv = NULL;
+    static SEXP meth_classEnv = nullptr;
     SEXP cl = Rf_getAttrib(x, R_ClassSymbol), rho = R_GlobalEnv, pkg;
     if(!meth_classEnv)
 	meth_classEnv = Rf_install(".classEnv");
@@ -991,7 +991,7 @@ int R_check_class_etc(SEXP x, const char **valid)
    initialized when the methods namespace is loaded,
    via R_initMethodDispatch.
 */
-static R_stdGen_ptr_t R_standardGeneric_ptr = 0;
+static R_stdGen_ptr_t R_standardGeneric_ptr = nullptr;
 static SEXP dispatchNonGeneric(SEXP name, SEXP env, SEXP fdef);
 #define NOT_METHODS_DISPATCH_PTR(ptr) (ptr == 0 || ptr == dispatchNonGeneric)
 
@@ -1024,7 +1024,7 @@ static SEXP R_isMethodsDispatchOn(SEXP onOff)
 	if(onOffValue == NA_INTEGER)
 	    Rf_error(_("'onOff' must be TRUE or FALSE"));
 	else if(onOffValue == FALSE)
-	    R_set_standardGeneric_ptr(NULL, R_GlobalEnv);
+	    R_set_standardGeneric_ptr(nullptr, R_GlobalEnv);
 	// TRUE is not currently used
 	else if(NOT_METHODS_DISPATCH_PTR(old)) {
 	    // so not already on
@@ -1118,7 +1118,7 @@ SEXP attribute_hidden do_standardGeneric(SEXP call, SEXP op, SEXP args, SEXP env
     if(!ptr) {
 	Rf_warningcall(call,
 		    _("'standardGeneric' called without methods dispatch enabled (will be ignored)"));
-	R_set_standardGeneric_ptr(dispatchNonGeneric, NULL);
+	R_set_standardGeneric_ptr(dispatchNonGeneric, nullptr);
 	ptr = R_get_standardGeneric_ptr();
     }
 
@@ -1250,8 +1250,8 @@ SEXP do_set_prim_method(SEXP op, const char *code_string, SEXP fundef,
 	    /* Realloc does not clear the added memory, hence: */
 	    for (i = maxMethodsOffset ; i < n ; i++) {
 		prim_methods[i]	 = NO_METHODS;
-		prim_generics[i] = NULL;
-		prim_mlist[i]	 = NULL;
+		prim_generics[i] = nullptr;
+		prim_mlist[i]	 = nullptr;
 	    }
 	}
 	else {
@@ -1273,8 +1273,8 @@ SEXP do_set_prim_method(SEXP op, const char *code_string, SEXP fundef,
     if(code == SUPPRESSED) {} /* leave the structure alone */
     else if(code == NO_METHODS && prim_generics[offset]) {
 	R_ReleaseObject(prim_generics[offset]);
-	prim_generics[offset] = 0;
-	prim_mlist[offset] = 0;
+	prim_generics[offset] = nullptr;
+	prim_mlist[offset] = nullptr;
     }
     else if(fundef && !Rf_isNull(fundef) && !prim_generics[offset]) {
 	if(TYPEOF(fundef) != CLOSXP)
@@ -1385,7 +1385,7 @@ SEXP R_deferred_default_method()
 }
 
 
-static R_stdGen_ptr_t quick_method_check_ptr = NULL;
+static R_stdGen_ptr_t quick_method_check_ptr = nullptr;
 void R_set_quick_method_check(R_stdGen_ptr_t value)
 {
     quick_method_check_ptr = value;
@@ -1409,11 +1409,11 @@ static RObject *call_closure_from_prim(Closure *func, PairList *args,
 	PairList* pargs = const_cast<PairList*>(al.list());
 	PairList *a, *b;
 	for (a = args, b = pargs;
-	     a != 0 && b != 0;
+	     a != nullptr && b != nullptr;
 	     a = a->tail(), b = b->tail())
 	    SET_PRVALUE(b->car(), a->car());
 	// Check for unequal list lengths:
-	if (a != 0 || b != 0)
+	if (a != nullptr || b != nullptr)
 	    Rf_error(_("dispatch error"));
 	args = pargs;
     }
@@ -1445,7 +1445,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	Rf_error(_("invalid primitive operation given for dispatch"));
     prim_methods_t current = prim_methods[offset];
     if(current == NO_METHODS || current == SUPPRESSED)
-	return std::pair<bool, SEXP>(false, 0);
+	return std::pair<bool, SEXP>(false, nullptr);
     // check that the methods for this function have been set
     if(current == NEEDS_RESET) {
 	// get the methods and store them in the in-core primitive
@@ -1462,7 +1462,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
        && quick_method_check_ptr) {
 	value = (*quick_method_check_ptr)(args, mlist, op);
 	if(Rf_isPrimitive(value))
-	    return std::pair<bool, SEXP>(false, 0);
+	    return std::pair<bool, SEXP>(false, nullptr);
 	if(Rf_isFunction(value)) {
 	    Closure* func = static_cast<Closure*>(value);
 	    // found a method, call it with promised args
@@ -1483,14 +1483,14 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
     value = call_closure_from_prim(func, argspl, callx, callenv, promisedArgs);
     prim_methods[offset] = current;
     if (value == deferred_default_object)
-	return std::pair<bool, SEXP>(false, 0);
+	return std::pair<bool, SEXP>(false, nullptr);
     else
 	return std::make_pair(true, value);
 }
 
 SEXP R_do_MAKE_CLASS(const char *what)
 {
-    static SEXP s_getClass = NULL;
+    static SEXP s_getClass = nullptr;
     SEXP e, call;
     if(!what)
 	Rf_error(_("C level MAKE_CLASS macro called with NULL string pointer"));
@@ -1506,7 +1506,7 @@ SEXP R_do_MAKE_CLASS(const char *what)
 /* this very similar, but gives NULL instead of an error for a non-existing class */
 SEXP R_getClassDef(const char *what)
 {
-    static SEXP s_getClassDef = NULL;
+    static SEXP s_getClassDef = nullptr;
     SEXP e, call;
     if(!what)
 	Rf_error(_("R_getClassDef(.) called with NULL string pointer"));
@@ -1522,7 +1522,7 @@ SEXP R_getClassDef(const char *what)
 /* in Rinternals.h */
 SEXP R_do_new_object(SEXP class_def)
 {
-    static SEXP s_virtual = NULL, s_prototype, s_className;
+    static SEXP s_virtual = nullptr, s_prototype, s_className;
     SEXP e, value;
     const void *vmax = vmaxget();
     if(!s_virtual) {
@@ -1671,6 +1671,6 @@ S3Launcher::create(RObject* object, std::string generic, std::string group,
 	ans->m_function = findMethod(ans->m_symbol, call_env, table_env).first;
     }
     if (!ans->m_function)
-	return 0;
+	return nullptr;
     return ans;
 }

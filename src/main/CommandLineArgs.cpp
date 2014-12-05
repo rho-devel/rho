@@ -64,7 +64,7 @@
    These are populated via the routine R_set_command_line_arguments().
 */
 static int    NumCommandLineArgs = 0;
-static char **CommandLineArgs = NULL;
+static char **CommandLineArgs = nullptr;
 
 
 void
@@ -181,9 +181,9 @@ R_common_command_line(int *pac, char **argv, Rstart Rp)
 	    }
 	    else if (!strncmp(*av, "--encoding", 10)) {
 		if(strlen(*av) < 12) {
-		    if(ac > 1) {ac--; av++; p = *av;} else p = NULL;
+		    if(ac > 1) {ac--; av++; p = *av;} else p = nullptr;
 		} else p = &(*av)[11];
-		if (p == NULL) {
+		if (p == nullptr) {
 		    R_ShowMessage(_("WARNING: no value given for --encoding"));
 		} else {
 		    strncpy(R_StdinEnc, p, 30);
@@ -216,9 +216,9 @@ R_common_command_line(int *pac, char **argv, Rstart Rp)
 	    else if( !strncmp(*av, "--min-nsize", 11) ||
 		     !strncmp(*av, "--min-vsize", 11) ) {
 		if(strlen(*av) < 13) {
-		    if(ac > 1) {ac--; av++; p = *av;} else p = NULL;
+		    if(ac > 1) {ac--; av++; p = *av;} else p = nullptr;
 		} else p = &(*av)[12];
-		if (p == NULL) {
+		if (p == nullptr) {
 		    snprintf(msg, 1024,
 			     _("WARNING: no value given for '%s'"), *av);
 		    R_ShowMessage(msg);
@@ -246,9 +246,9 @@ R_common_command_line(int *pac, char **argv, Rstart Rp)
 	    }
 	    else if(strncmp(*av, "--max-ppsize", 12) == 0) {
 		if(strlen(*av) < 14) {
-		    if(ac > 1) {ac--; av++; p = *av;} else p = NULL;
+		    if(ac > 1) {ac--; av++; p = *av;} else p = nullptr;
 		} else p = &(*av)[13];
-		if (p == NULL) {
+		if (p == nullptr) {
 		    R_ShowMessage(_("WARNING: no value given for '--max-ppsize'"));
 		    break;
 		}

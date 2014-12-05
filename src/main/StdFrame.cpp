@@ -79,7 +79,7 @@ Frame::Binding* StdFrame::binding(const Symbol* symbol)
 {
     map::iterator it = m_map.find(symbol);
     if (it == m_map.end())
-	return 0;
+	return nullptr;
     return &(*it).second;
 }
 
@@ -87,7 +87,7 @@ const Frame::Binding* StdFrame::binding(const Symbol* symbol) const
 {
     map::const_iterator it = m_map.find(symbol);
     if (it == m_map.end())
-	return 0;
+	return nullptr;
     return &(*it).second;
 }
 
@@ -106,8 +106,10 @@ StdFrame* StdFrame::clone() const
 
 void StdFrame::lockBindings()
 {
-    for (map::iterator it = m_map.begin(); it != m_map.end(); ++it)
-	(*it).second.setLocking(true);
+    for (auto & elem : m_map) {
+	Binding& binding = elem.second;
+	binding.setLocking(true);
+    }
 }
 
 size_t StdFrame::size() const

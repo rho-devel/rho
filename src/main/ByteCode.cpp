@@ -45,8 +45,8 @@
 
 using namespace CXXR;
 
-NodeStack* ByteCode::s_nodestack = 0;
-std::vector<Frame::Binding*>* ByteCode::s_loopvar_stack = 0;
+NodeStack* ByteCode::s_nodestack = nullptr;
+std::vector<Frame::Binding*>* ByteCode::s_loopvar_stack = nullptr;
 
 void ByteCode::detachReferents()
 {

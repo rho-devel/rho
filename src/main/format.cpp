@@ -185,7 +185,7 @@ static void format_via_sprintf(double r, int d, int *kpower, int *nsig)
     static char buff[NB];
     int i;
     snprintf(buff, NB, "%#.*e", d - 1, r);
-    *kpower = int( strtol(buff + (d + 2), NULL, 10));
+    *kpower = int( strtol(buff + (d + 2), nullptr, 10));
     for (i = d; i >= 2; i--)
         if (buff[i] != '0') break;
     *nsig = i;
