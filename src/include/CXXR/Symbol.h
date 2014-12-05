@@ -97,41 +97,18 @@ namespace CXXR {
     public:
 	/** @brief const_iterator for iterating over all standard Symbols.
 	 *
-	 * This is currently only a rudimentary implementation of a
-	 * forward iterator.  It is used in BuiltInSize() and
-	 * BuiltInNames().
+	 * This is used in BuiltInSize() and BuiltInNames().
 	 */
-	class const_iterator {
-	public:
-	    const_iterator(Table::const_iterator tblit)
-		: m_tblit(tblit)
-	    {}
-
-	    const Symbol* operator*() {
-		return *m_tblit;
-	    }
-
-	    const_iterator& operator++() {
-		++m_tblit;
-		return *this;
-	    }
-
-	    bool operator!=(const_iterator other) const
-	    {
-		return (m_tblit != other.m_tblit);
-	    }
-	private:
-	    Table::const_iterator m_tblit;
-	};
+        typedef Table::const_iterator const_iterator;
 
 	static const_iterator begin()
 	{
-	    return const_iterator(s_table->begin());
+            return s_table->begin();
 	}
 
 	static const_iterator end()
 	{
-	    return const_iterator(s_table->end());
+            return s_table->end();
 	}
 
 	/** @brief Index of a double-dot symbol.
