@@ -33,7 +33,7 @@ CXXR_HS = \
   Environment.h Evaluator.h Expression.h ExpressionVector.h ExternalPointer.h \
   FunctionBase.h GCRoot.h IntVector.h \
   ListVector.h LogicalVector.h \
-  PairList.h Promise.h ProtectStack.h ProvenanceTracker.h \
+  PairList.h PredefinedSymbols.h Promise.h ProtectStack.h ProvenanceTracker.h \
   RAllocStack.h RObject.h RawVector.h RealVector.h \
   S4Object.h SEXPTYPE.h String.h StringVector.h Symbol.h \
   VectorBase.h WeakRef.h errors.h uncxxr.h

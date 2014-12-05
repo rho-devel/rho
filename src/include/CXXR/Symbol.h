@@ -349,53 +349,11 @@ namespace CXXR {
     }
 
     // Predefined Symbols visible in 'namespace CXXR':
-    extern Symbol* const Bracket2Symbol;   	  // "[["
-    extern Symbol* const BracketSymbol;    	  // "["
-    extern Symbol* const BraceSymbol;      	  // "{"
-    extern Symbol* const ClassSymbol;	   	  // "class"
-    extern Symbol* const ConnIdSymbol;            // "conn_id"
-    extern Symbol* const DimNamesSymbol;   	  // "dimnames"
-    extern Symbol* const DimSymbol;	   	  // "dim"
-    extern Symbol* const DollarSymbol;	   	  // "$"
-    extern Symbol* const DotClassSymbol;   	  // ".Class"
-    extern Symbol* const DotDeviceSymbol;     	  // ".Device"
-    extern Symbol* const DotDevicesSymbol;        // ".Devices"
-    extern Symbol* const DotGenericSymbol; 	  // ".Generic"
-    extern Symbol* const DotGenericCallEnvSymbol; // ".GenericCallEnv"
-    extern Symbol* const DotGenericDefEnvSymbol;  // ".GenericDefEnv"
-    extern Symbol* const DotGroupSymbol;   	  // ".Group"
-    extern Symbol* const DotMethodSymbol;  	  // ".Method"
-    extern Symbol* const DotMethodsSymbol; 	  // ".Methods"
-    extern Symbol* const DotdefinedSymbol; 	  // ".defined"
-    extern Symbol* const DotsSymbol;	   	  // "..."
-    extern Symbol* const DottargetSymbol;  	  // ".target"
-    extern Symbol* const DoubleColonSymbol;       // "::"
-    extern Symbol* const DropSymbol;	   	  // "drop"
-    extern Symbol* const ExactSymbol;      	  // "exact"
-    extern Symbol* const LastvalueSymbol;  	  // ".Last.value"
-    extern Symbol* const LevelsSymbol;	   	  // "levels"
-    extern Symbol* const ModeSymbol;	   	  // "mode"
-    extern Symbol* const NameSymbol;       	  // "name"
-    extern Symbol* const NamesSymbol;	   	  // "names"
-    extern Symbol* const NaRmSymbol;       	  // "na.rm"
-    extern Symbol* const PackageSymbol;    	  // "package"
-    extern Symbol* const PreviousSymbol;   	  // "previous"
-    extern Symbol* const QuoteSymbol;      	  // "quote"
-    extern Symbol* const RowNamesSymbol;   	  // "row.names"
-    extern Symbol* const S3MethodsTableSymbol;    // ".__S3MethodsTable__."
-    extern Symbol* const SeedsSymbol;	   	  // ".Random.seed"
-    extern Symbol* const LastvalueSymbol;  	  // ".Last.value"
-    extern Symbol* const TripleColonSymbol;       // ":::"
-    extern Symbol* const TspSymbol;	   	  // "tsp"
-    extern Symbol* const CommentSymbol;    	  // "comment"
-    extern Symbol* const SourceSymbol;     	  // "source"
-    extern Symbol* const DotEnvSymbol;     	  // ".Environment"
-    extern Symbol* const RecursiveSymbol;  	  // "recursive"
-    extern Symbol* const SrcfileSymbol;    	  // "srcfile"
-    extern Symbol* const SrcrefSymbol;     	  // "srcref"
-    extern Symbol* const WholeSrcrefSymbol;       // "wholeSrcref"
-    extern Symbol* const TmpvalSymbol;     	  // "*tmp*"
-    extern Symbol* const UseNamesSymbol;   	  // "use.names"
+#define PREDEFINED_SYMBOL(C_NAME, CXXR_NAME, R_NAME) \
+    extern Symbol* const CXXR_NAME;
+#include "CXXR/PredefinedSymbols.h"
+#undef PREDEFINED_SYMBOL
+
 }  // namespace CXXR
 
 BOOST_CLASS_EXPORT_KEY(CXXR::Symbol)
@@ -461,37 +419,10 @@ extern "C" {
     extern SEXP R_UnboundValue;
 
     /* Symbol Table Shortcuts */
-    extern SEXP R_Bracket2Symbol;    /* "[[" */
-    extern SEXP R_BracketSymbol;     /* "[" */
-    extern SEXP R_BraceSymbol;       /* "{" */
-    extern SEXP R_ClassSymbol;	     /* "class" */
-    extern SEXP R_ConnIdSymbol;      /* "conn_id" */
-    extern SEXP	R_DeviceSymbol;      /* ".Device" */
-    extern SEXP R_DevicesSymbol;     /* ".Devices" */
-    extern SEXP R_DimNamesSymbol;    /* "dimnames" */
-    extern SEXP R_DimSymbol;	     /* "dim" */
-    extern SEXP R_DollarSymbol;	     /* "$" */
-    extern SEXP R_DotsSymbol;	     /* "..." */
-    extern SEXP R_DoubleColonSymbol; /* "::" */
-    extern SEXP R_DropSymbol;	     /* "drop" */
-    extern SEXP	R_LastvalueSymbol;   /* ".Last.value" */
-    extern SEXP R_LevelsSymbol;	     /* "levels" */
-    extern SEXP R_ModeSymbol;	     /* "mode" */
-    extern SEXP	R_NameSymbol;	     /* "name" */
-    extern SEXP R_NamesSymbol;	     /* "names" */
-    extern SEXP	R_NaRmSymbol;	     /* "na.rm" */
-    extern SEXP R_PackageSymbol;     /* "package" */
-    extern SEXP R_QuoteSymbol;	     /* "quote" */
-    extern SEXP R_RowNamesSymbol;    /* "row.names" */
-    extern SEXP R_SeedsSymbol;	     /* ".Random.seed" */
-    extern SEXP	R_SourceSymbol;      /* "source" */
-    extern SEXP R_TripleColonSymbol; /* ":::" */
-    extern SEXP R_TspSymbol;	     /* "tsp" */
-
-    extern SEXP R_dot_Generic;       /* ".Generic" */
-    extern SEXP R_dot_Method;        /* ".Method" */
-    extern SEXP R_dot_defined;       /* ".defined" */
-    extern SEXP R_dot_target;        /* ".target" */
+#define PREDEFINED_SYMBOL(C_NAME, CXXR_NAME, R_NAME) \
+    extern SEXP C_NAME;
+#include "CXXR/PredefinedSymbols.h"
+#undef PREDEFINED_SYMBOL
 
     /** @brief Does symbol relate to a <tt>...</tt> expression?
      *
