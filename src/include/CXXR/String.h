@@ -126,9 +126,10 @@ namespace CXXR {
 	 * @return <tt>const</tt> pointer to the string "".
 	 */
 	static String* blank()
-	{
-	    return s_blank;
-	}
+        {
+          static GCRoot<String> blank = String::obtain("");
+          return blank;
+        }
 
 	/** @brief Access as a C-style string.
 	 *
@@ -179,7 +180,7 @@ namespace CXXR {
 	 */
 	bool isNA() const
 	{
-	    return this == s_na;
+            return this == NA();
 	}
 
 	/** @brief 'Not available' string.
@@ -195,9 +196,10 @@ namespace CXXR {
 	 *         'not available'.
 	 */
 	static String* NA()
-	{
-	    return s_na;
-	}
+        {
+          static GCRoot<String> na(CXXR_NEW(String(nullptr)));
+          return na.get();
+        }
 
 	/** @brief Get a pointer to a String object.
 	 *
@@ -273,10 +275,7 @@ namespace CXXR {
                                                          String*> >
                                > map;
 
-	static map* s_cache;
-	static std::string* s_na_string;
-	static String* s_na;
-	static String* s_blank;
+	static map* getCache();
 
 	map::value_type* m_key_val_pr;
 	const std::string* m_string;
