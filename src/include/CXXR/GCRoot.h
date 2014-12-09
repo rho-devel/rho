@@ -45,8 +45,6 @@
 
 #ifdef __cplusplus
 
-#include <list>
-#include <unordered_map>
 #include "CXXR/GCNode.hpp"
 
 namespace CXXR {
@@ -81,25 +79,23 @@ namespace CXXR {
 	 * @param source Pattern for the copy.
 	 */
 	GCRootBase(const GCRootBase& source)
-	    : m_it(s_roots->insert(s_roots->end(), *source.m_it))
-	{
-	    GCNode::incRefCount(*m_it);
-	}
+	    : GCRootBase(source.ptr())
+	{ }
 
 	~GCRootBase()
 	{
-	    const GCNode* node = *m_it;
+	    const GCNode* node = ptr();
 	    GCNode::decRefCount(node);
-	    s_roots->erase(m_it);
+	    unlink();
 	}
 
 	GCRootBase& operator=(const GCRootBase& source)
 	{
-	    const GCNode* newnode = *source.m_it;
+	    const GCNode* newnode = source.ptr();
 	    GCNode::incRefCount(newnode);
-	    const GCNode* oldnode = *m_it;
+	    const GCNode* oldnode = ptr();
 	    GCNode::decRefCount(oldnode);
-	    *m_it = newnode;
+	    m_pointer = newnode;
 	    return *this;
 	}
 
@@ -112,9 +108,9 @@ namespace CXXR {
 	{
 	    GCNode::maybeCheckExposed(node);
 	    GCNode::incRefCount(node);
-	    const GCNode* oldnode = *m_it;
+	    const GCNode* oldnode = ptr();
 	    GCNode::decRefCount(oldnode);
-	    *m_it = node;
+	    m_pointer = node;
 	}
 
 	/** @brief Access the encapsulated pointer.
@@ -123,17 +119,29 @@ namespace CXXR {
 	 */
 	const GCNode* ptr() const
 	{
-	    return *m_it;
+	    return m_pointer;
 	}
     private:
-	typedef std::list<const GCNode*, Allocator<const GCNode*> > List;
-	static List* s_roots;
+        const GCNode* m_pointer;
 
-	List::iterator m_it;
+        // GCRoots form an intrusive doubly-linked list.  This structure
+        // requires only constant initialization and doesn't allocate memory at
+        // all.  This allows static creation of global GCRoots when needed.
+        GCRootBase* m_next;
+        GCRootBase* m_prev;
 
-	// Initialize static data.
-        friend void initializeMemorySubsystem();
-	static void initialize();
+        static GCRootBase* s_list_head;
+
+        void unlink() {
+	    if (m_next) {
+		m_next->m_prev = m_prev;
+	    }
+	    if (m_prev) {
+		m_prev->m_next = m_next;
+	    } else {
+		s_list_head = m_next;
+	    }
+	}
     };
 
     /** @brief Smart pointer to protect a GCNode from garbage
@@ -150,12 +158,7 @@ namespace CXXR {
      * the price of this is that there is a slightly greater time overhead
      * to construction and destruction.
      *
-     * It is not recommended to declare a GCRoot (or indeed any object
-     * requiring non-trivial construction) at file or namespace scope
-     * in circumstances where the order of initialisation of data in
-     * different source files may be an issue.  See the way in which
-     * <tt>Environment::s_base</tt> is declared and initialised in
-     * Environment.cpp for a preferable approach.
+     * It is safe to declare a GCRoot at file or namespace scope.
      *
      * @tparam T GCNode or a type publicly derived from GCNode.  This
      *           may be qualified by const, so for example a const
@@ -170,7 +173,7 @@ namespace CXXR {
 	 *          protected from the garbage collector, or a null
 	 *          pointer.
 	 */
-    explicit GCRoot(T* node = 0)
+    GCRoot(T* node = 0)
     : GCRootBase(node) {}
 
 	/** @brief Copy constructor.
@@ -179,14 +182,14 @@ namespace CXXR {
 	 * source.  (There is probably no reason to use this
 	 * constructor.)
 	 */
-	GCRoot(const GCRoot& source) : GCRootBase(source) {}
+    GCRoot(const GCRoot& source) : GCRootBase(source) {}
 
 	/**
 	 * This will cause this GCRoot to protect the same GCNode as
 	 * is protected by source.  (There is probably no reason to
 	 * use this method.)
 	 */
-	GCRoot& operator=(const GCRoot& source)
+    GCRoot& operator=(const GCRoot& source)
 	{
 	    GCRootBase::operator=(source);
 	    return *this;

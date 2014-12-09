@@ -54,34 +54,35 @@ namespace CXXR {
     }
 }
 
-GCRootBase::List* GCRootBase::s_roots;
+GCRootBase* GCRootBase::s_list_head = nullptr;
 
 GCRootBase::GCRootBase(const GCNode* node)
-    : m_it(s_roots->insert(s_roots->end(), node))
 {
-    GCNode::maybeCheckExposed(node);
-    GCNode::incRefCount(node);
-}
+    m_next = s_list_head;
+    m_prev = nullptr;
+    if (m_next) {
+	m_next->m_prev = this;
+    }
+    s_list_head = this;
 
-void GCRootBase::initialize()
-{
-    s_roots = new List();
+    m_pointer = node;
+    GCNode::maybeCheckExposed(node);
+    GCNode::incRefCount(ptr());
 }
 
 void GCRootBase::visitRoots(GCNode::const_visitor* v)
 {
-    List::iterator end = s_roots->end();
-    for (List::iterator it = s_roots->begin(); it != end; ++it) {
-	const GCNode* n = *it;
-	if (n)
-	    (*v)(n);
+    for (GCRootBase* node = s_list_head; node != nullptr; node = node->m_next)
+    {
+	if (node->ptr())
+	    (*v)(node->ptr());
     }
 }
 
 // ***** C interface *****
 
 // This is not a busy list, so we don't bother to use CXXR::Allocator:
-unordered_map<const RObject*, GCRoot<> > precious;
+static unordered_map<const RObject*, GCRoot<> > precious;
 
 void R_PreserveObject(SEXP object)
 {

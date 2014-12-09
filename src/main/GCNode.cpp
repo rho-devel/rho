@@ -293,7 +293,6 @@ void CXXR::initializeMemorySubsystem()
     if (!initialized) {
 	MemoryBank::initialize();
 	GCNode::initializeImpl();
-	GCRootBase::initialize();
 	ProtectStack::initialize();
 	GCManager::initialize();
 	RAllocStack::initialize();

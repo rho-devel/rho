@@ -57,6 +57,10 @@ public:
     }
 };
 
+inline unsigned char getRefCount(const GCNode* node) {
+    return GCTestHelper::getRefCount(node);
+}
+
 }  // namespace CXXR
 
 #endif  // CXXR_TESTS_CXXR_TEST_HELPERS_HPP

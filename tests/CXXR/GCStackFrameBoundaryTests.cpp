@@ -41,10 +41,6 @@
 
 using namespace CXXR;
 
-static unsigned char getRefCount(const GCNode* node) {
-    return GCTestHelper::getRefCount(node);
-}
-
 TEST(GCStackFrameBoundaryTest, RefCountIsZeroWithoutBarrier) {
     // Since we're testing stack roots, these tests may not always have the
     // correct stack roots declared at GC points, so disable GC.
