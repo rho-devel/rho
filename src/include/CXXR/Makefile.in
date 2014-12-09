@@ -46,7 +46,7 @@ CXXR_HPPS = \
   GCStackRoot.hpp \
   HeterogeneousList.hpp MemoryBank.hpp NAAugment.hpp NodeStack.hpp \
   Provenance.hpp RHandle.hpp S11nScope.hpp \
-  SEXP_downcast.hpp SchwarzCounter.hpp StdFrame.hpp Subscripting.hpp \
+  SEXP_downcast.hpp StdFrame.hpp Subscripting.hpp \
   UnaryFunction.hpp config.hpp
 
 CXXR_HEADERS = $(CXXR_HS) $(CXXR_HPPS)

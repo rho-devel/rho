@@ -206,11 +206,6 @@ void GCNode::gclite()
 
 void GCNode::initialize()
 {
-    initializeMemorySubsystem();
-}
-
-void GCNode::initializeImpl()
-{
     s_live = new List();
     s_reachable = new List();
     s_moribund = new vector<const GCNode*>();
@@ -292,7 +287,7 @@ void CXXR::initializeMemorySubsystem()
     static bool initialized = false;
     if (!initialized) {
 	MemoryBank::initialize();
-	GCNode::initializeImpl();
+	GCNode::initialize();
 	ProtectStack::initialize();
 	GCManager::initialize();
 	RAllocStack::initialize();

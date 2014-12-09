@@ -45,6 +45,9 @@
 
 #ifdef __cplusplus
 
+extern "C"
+void Rf_InitGlobalEnv();
+
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
@@ -477,7 +480,6 @@ namespace CXXR {
 	void detachReferents() override;
     private:
 	friend class boost::serialization::access;
-	friend class SchwarzCounter<Environment>;
 	friend class Frame;
 
 	// PACKAGE_ENV because PACKAGE is defined (to "R") as a macro
@@ -537,8 +539,6 @@ namespace CXXR {
 	    setOnSearchPath(false);
 	}
 
-	static void cleanup();
-
 	void detachFrame();
 
 	// Remove any mapping of 'sym' from the search path cache.  If called
@@ -546,6 +546,7 @@ namespace CXXR {
 	static void flushFromSearchPathCache(const Symbol* sym);
 
 	static void initialize();
+        friend void ::Rf_InitGlobalEnv();
 
 	bool isSearchPathCachePortal() const
 	{
@@ -719,10 +720,6 @@ namespace boost {
 	}
     }  // namespace serialization
 }  // namespace boost
-
-namespace {
-    CXXR::SchwarzCounter<CXXR::Environment> env_schwartz_ctr;
-}
 
 // ***** Implementation of non-inlined templated members *****
 

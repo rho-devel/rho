@@ -47,7 +47,6 @@
 #include "CXXR/Allocator.hpp"
 #include "CXXR/HeterogeneousList.hpp"
 #include "CXXR/MemoryBank.hpp"
-#include "CXXR/SchwarzCounter.hpp"
 
 // According to various web postings (and arr's experience) it is
 // necessary for the compiler to have seen the headers for the archive
@@ -553,10 +552,7 @@ namespace CXXR {
 	 * second and subsequent calls do nothing.
 	 */
 	static void initialize();
-	static void cleanup() {} 
-
 	friend void initializeMemorySubsystem();
-	static void initializeImpl();
 
 	bool isMarked() const
 	{
@@ -584,7 +580,6 @@ namespace CXXR {
 
 	friend class GCEdgeBase;
 	friend class GCTestHelper;
-	friend class SchwarzCounter<GCNode>;
     };
 
     /** @brief Initialize the entire memory subsystem.
@@ -611,9 +606,5 @@ void CXXR::GCNode::serialize(Archive & ar, const unsigned int version) {
 #ifndef DEBUG_S11N
 BOOST_CLASS_VERSION(CXXR::GCNode, 1)
 #endif
-
-namespace {
-    CXXR::SchwarzCounter<CXXR::GCNode> gcnode_schwarz_ctr;
-}
 
 #endif /* GCNODE_HPP */

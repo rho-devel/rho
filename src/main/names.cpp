@@ -1003,12 +1003,11 @@ SEXP attribute_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* initialize the symbol table */
-// Well, now just odds and ends in CXXR.
-void attribute_hidden InitNames()
+void attribute_hidden Rf_InitNames()
 {
     /* String constants (CHARSXP values) */
-    /* NA_STRING */
-    // CXXR: NA_STRING is initialised in String.cpp
+    String::initialize();
+    Symbol::initialize();
     R_print.na_string = NA_STRING;
     R_initialize_bcode();
 }

@@ -231,7 +231,6 @@ namespace CXXR {
 	void detachReferents() override;
     private:
 	friend class boost::serialization::access;
-	friend class SchwarzCounter<Symbol>;
 
 	static const size_t s_max_length = 256;
 	static Table* getTable();  // Vector of
@@ -267,10 +266,9 @@ namespace CXXR {
 	Symbol(const Symbol&);
 	Symbol& operator=(const Symbol&);
 
-	static void cleanup();
-
 	// Initialize the static data members:
 	static void initialize();
+        friend void ::Rf_InitNames();
 
 	template<class Archive>
 	void load(Archive & ar, const unsigned int version);
@@ -326,10 +324,6 @@ namespace CXXR {
 }  // namespace CXXR
 
 BOOST_CLASS_EXPORT_KEY(CXXR::Symbol)
-
-namespace {
-    CXXR::SchwarzCounter<CXXR::Symbol> symbol_schwarz_ctr;
-}
 
 // ***** Implementation of non-inlined templated members *****
 

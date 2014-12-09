@@ -61,7 +61,8 @@ typedef enum {
 
 #include "CXXR/Allocator.hpp"
 #include "CXXR/SEXP_downcast.hpp"
-#include "CXXR/SchwarzCounter.hpp"
+
+extern "C" void Rf_InitNames();
 
 namespace CXXR {
     /** @brief RObject representing a character string.
@@ -247,7 +248,6 @@ namespace CXXR {
 	const char* typeName() const override;
     private:
 	friend class boost::serialization::access;
-	friend class SchwarzCounter<String>;
 	friend class Symbol;
 
 	// The first element of the key is the text, the second
@@ -296,10 +296,9 @@ namespace CXXR {
 	// allocated only using 'new'.
 	~String();
 
-	static void cleanup();
-
 	// Initialize the static data members:
 	static void initialize();
+        friend void ::Rf_InitNames();
 
 	template<class Archive>
 	void load(Archive & ar, const unsigned int version);
@@ -327,10 +326,6 @@ namespace CXXR {
 
 BOOST_CLASS_EXPORT_KEY(CXXR::String)
 
-namespace {
-    CXXR::SchwarzCounter<CXXR::String> string_schwarz_ctr;
-}
-    
 // ***** Implementation of non-inlined templated members *****
 
 template<class Archive>

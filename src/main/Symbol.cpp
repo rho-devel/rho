@@ -92,10 +92,6 @@ Symbol::Symbol(const String* the_name)
     }
 }
 
-void Symbol::cleanup()
-{
-}
-
 void Symbol::detachReferents()
 {
     m_name.detach();

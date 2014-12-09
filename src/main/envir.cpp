@@ -233,15 +233,14 @@ SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
   searched.  This is intended to make it possible to implement
   namespaces at some (indeterminate) point in the future.
 
-  We hash the initial environment.  100 is a magic number discovered
-  by Ross.  Change it if you feel inclined.
-
+  We hash the initial environment.
 */
 
 static SEXP R_BaseNamespaceName;
 
-void attribute_hidden InitGlobalEnv()
+void Rf_InitGlobalEnv()
 {
+    Environment::initialize();
     R_MethodsNamespace = R_GlobalEnv; // so it is initialized.
     SET_SYMVALUE(install(".BaseNamespaceEnv"), R_BaseNamespace);
     R_BaseNamespaceName = ScalarString(mkChar("base"));

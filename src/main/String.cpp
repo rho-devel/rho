@@ -124,10 +124,6 @@ cetype_t String::GPBits2Encoding(unsigned int gpbits)
     return CE_NATIVE;
 }
 
-void String::cleanup()
-{
-}
-
 void String::initialize()
 {
     R_NaString = NA();

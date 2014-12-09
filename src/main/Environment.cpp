@@ -94,10 +94,6 @@ void Environment::LeakMonitor::operator()(const GCNode* node)
     node->visitReferents(this);
 }
 
-void Environment::cleanup()
-{
-}
-
 void Environment::detachFrame()
 {
     setOnSearchPath(false);
