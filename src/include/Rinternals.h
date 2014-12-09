@@ -134,8 +134,8 @@ extern "C" {
     R_len_t R_BadLongVector(SEXP, const char *, int);
 //# define IS_LONG_VEC(x) (SHORT_VEC_LENGTH(x) == R_LONG_VEC_TOKEN)
 # define IS_LONG_VEC(x) (XLENGTH(x) > R_SHORT_LEN_MAX)
-# define SHORT_VEC_LENGTH(x) (((VECSEXP) (x))->vecsxp.length)
-# define SHORT_VEC_TRUELENGTH(x) (((VECSEXP) (x))->vecsxp.truelength)
+// # define SHORT_VEC_LENGTH(x) (((VECSEXP) (x))->vecsxp.length)
+// # define SHORT_VEC_TRUELENGTH(x) (((VECSEXP) (x))->vecsxp.truelength)
 # define LONG_VEC_LENGTH(x) ((R_long_vec_hdr_t *) (x))[-1].lv_length
 # define LONG_VEC_TRUELENGTH(x) ((R_long_vec_hdr_t *) (x))[-1].lv_truelength
 //# define XLENGTH(x) (IS_LONG_VEC(x) ? LONG_VEC_LENGTH(x) : SHORT_VEC_LENGTH(x))
@@ -149,17 +149,17 @@ extern "C" {
 # define LENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : (R_len_t)XLENGTH(x))
 # define TRUELENGTH(x) (IS_LONG_VEC(x) ? R_BadLongVector(x, __FILE__, __LINE__) : (R_len_t)XTRUELENGTH(x))
 #endif
-# define SET_SHORT_VEC_LENGTH(x,v) (SHORT_VEC_LENGTH(x) = (v))
-# define SET_SHORT_VEC_TRUELENGTH(x,v) (SHORT_VEC_TRUELENGTH(x) = (v))
+// # define SET_SHORT_VEC_LENGTH(x,v) (SHORT_VEC_LENGTH(x) = (v))
+// # define SET_SHORT_VEC_TRUELENGTH(x,v) (SHORT_VEC_TRUELENGTH(x) = (v))
 # define SET_LONG_VEC_LENGTH(x,v) (LONG_VEC_LENGTH(x) = (v))
 # define SET_LONG_VEC_TRUELENGTH(x,v) (LONG_VEC_TRUELENGTH(x) = (v))
-# define SETLENGTH(x,v) do { \
-      SEXP sl__x__ = (x); \
-      R_xlen_t sl__v__ = (v); \
-      if (IS_LONG_VEC(sl__x__)) \
-	  SET_LONG_VEC_LENGTH(sl__x__,  sl__v__); \
-      else SET_SHORT_VEC_LENGTH(sl__x__, (R_len_t) sl__v__); \
-  } while (0)
+// # define SETLENGTH(x,v) do { \
+//       SEXP sl__x__ = (x); \
+//       R_xlen_t sl__v__ = (v); \
+//       if (IS_LONG_VEC(sl__x__)) \
+// 	  SET_LONG_VEC_LENGTH(sl__x__,  sl__v__); \
+//       else SET_SHORT_VEC_LENGTH(sl__x__, (R_len_t) sl__v__); \
+//   } while (0)
 # define SET_TRUELENGTH(x,v) SET_XTRUELENGTH(x,v)
 #else
 //# define LENGTH(x)	(((VECSEXP) (x))->vecsxp.length)
