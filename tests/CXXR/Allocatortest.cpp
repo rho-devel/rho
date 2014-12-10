@@ -35,6 +35,12 @@
 using namespace std;
 using namespace CXXR;
 
+namespace CXXR {
+    void initializeMemorySubsystem() {
+	MemoryBank::initialize();
+    }
+}
+
 namespace {
     void usage(const char* cmd)
     {
@@ -79,6 +85,7 @@ int main(int argc, char* argv[]) {
 	if (!(is >> num_churns)) usage(argv[0]);
     }
     // Carry out initial allocations:
+    initializeMemorySubsystem();
     {
 	for (unsigned int i = 0; i < num_init_allocs; ++i)
 		alloc();
