@@ -62,7 +62,7 @@ void (*MemoryBank::s_monitor)(size_t) = 0;
 size_t MemoryBank::s_monitor_threshold = numeric_limits<size_t>::max();
 #endif
 
-MemoryBank::Pool* MemoryBank::s_pools;
+MemoryBank::Pool* MemoryBank::s_pools = nullptr;
 
 // Note that the C++ standard requires that an operator new returns a
 // valid pointer even when 0 bytes are requested.  The entry at

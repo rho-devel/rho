@@ -183,10 +183,6 @@ namespace CXXR {
 	// here.
 	static void gcController();
 
-	// Initialize static data associated with garbage collection.
-	friend void initializeMemorySubsystem();
-	static void initialize();
-
 	GCManager() = delete;
     };
 }  // namespace CXXR
