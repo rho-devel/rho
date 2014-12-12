@@ -1,0 +1,103 @@
+#CXXR $Id$
+#CXXR 
+#CXXR This file is part of CXXR, a project to refactor the R interpreter
+#CXXR into C++.  It may consist in whole or in part of program code and
+#CXXR documentation taken from the R project itself, incorporated into
+#CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+#CXXR Licence.
+#CXXR 
+#CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+#CXXR copyrights and copyright restrictions as may be stated below.
+#CXXR 
+#CXXR CXXR is not part of the R project, and bugs and other issues should
+#CXXR not be reported via r-bugs or other R project channels; instead refer
+#CXXR to the CXXR website.
+
+#
+# ${R_HOME}/src/extra/gc/Makefile
+
+VPATH = @srcdir@
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+
+top_builddir = ../../..
+subdir = src/extra/gc
+R_HOME = $(top_builddir)
+
+include $(top_builddir)/Makeconf
+
+GC_CPPFLAGS = -I$(srcdir)/include \
+	-DALL_INTERIOR_POINTERS \
+	-DLARGE_CONFIG \
+	-DUSE_MMAP \
+	-DUSE_MUNMAP \
+	-DGC_DISABLE_INCREMENTAL \
+	-DGC_NO_FINALIZATION
+
+ALL_CPPFLAGS = $(GC_CPPFLAGS) $(R_XTRA_CPPFLAGS) $(CPPFLAGS) $(DEFS)
+ALL_CFLAGS = $(R_XTRA_CFLAGS) $(R_OPENMP_CFLAGS) $(MAIN_CFLAGS) $(CFLAGS) $(CPICFLAGS)
+
+SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
+    dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c \
+    mach_dep.c malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c \
+    obj_map.c os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c \
+    specific.c stubborn.c thread_local_alloc.c typd_mlc.c
+HEADERS = include/gc.h include/gc_version.h
+DEPENDS = $(SOURCES:.c=.d)
+OBJECTS = $(SOURCES:.c=.o)
+@WANT_R_SHLIB_TRUE@ALL_CFLAGS = $(ALL_CFLAGS_LO) @C_VISIBILITY@
+
+
+distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
+DISTFILES = AUTHORS ChangeLog Makefile.in README.md README.QUICK TODO \
+	$(SOURCES) $(HEADERS)
+
+noinst_LIBRARIES = libgc.a
+libgc_a_SOURCES = $(SOURCES)
+libgc_a_OBJECTS = $(OBJECTS)
+SUBDIRS_WITH_NO_BUILD = doc extra include src
+# Omitted directories: build cord m4 tests tools windows-untested
+
+all: Makefile Makedeps R
+
+Makefile: $(srcdir)/Makefile.in \
+  $(top_builddir)/config.status \
+  $(SOURCES)
+	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+
+Makedeps: Makefile $(DEPENDS)
+	@cat $(DEPENDS) >> Makefile
+	@touch $@
+
+R: Makefile
+	@$(MAKE) Makedeps
+	@$(MAKE) $(noinst_LIBRARIES)
+
+libgc.a: $(libgc_a_OBJECTS)
+	rm -f $@
+	$(AR) cr $@ $(libgc_a_OBJECTS)
+	$(RANLIB) $@
+
+
+mostlyclean: clean
+clean:
+	@-rm -f Makedeps *.d *.o */*.o *.lo *.a
+distclean: clean
+	@-rm -f Makefile
+maintainer-clean: distclean
+
+install install-strip uninstall TAGS info dvi check:
+
+distdir: $(DISTFILES)
+	@for f in $(DISTFILES); do \
+	  test -f $(distdir)/$${f} \
+	    || ln $(srcdir)/$${f} $(distdir)/$${f} 2>/dev/null \
+	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
+	done
+	@for d in $(SUBDIRS_WITH_NO_BUILD); do \
+	  ((cd $(srcdir); $(TAR) -c -f - $(DISTDIR_TAR_EXCLUDE) $${d}) \
+	      | (cd $(distdir); $(TAR) -x -f -)) \
+	    || exit 1; \
+	done
+
+## Automagically generated dependencies:
