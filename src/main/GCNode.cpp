@@ -53,6 +53,7 @@
 #include "CXXR/ProtectStack.h"
 #include "CXXR/RAllocStack.h"
 #include "CXXR/WeakRef.h"
+#include "gc.h"
 
 using namespace std;
 using namespace CXXR;
@@ -71,28 +72,34 @@ const size_t GCNode::s_gclite_margin = 10000;
 size_t GCNode::s_gclite_threshold = s_gclite_margin;
 unsigned char GCNode::s_mark = 0;
 
-// Some versions of gcc (e.g. 4.2.1) give a spurious "throws different
-// exceptions" error if the attributes aren't repeated here.
 void* GCNode::operator new(size_t bytes) HOT_FUNCTION
 {
-#ifndef RARE_GC
-    if (
-#ifndef AGGRESSIVE_GC
-	MemoryBank::bytesAllocated() >= s_gclite_threshold
+    if (s_inhibitor_count == 0)
+    {
+#ifdef AGGRESSIVE_GC
+	if (true)
+#elif defined(RARE_GC)
+	if (MemoryBank::bytesAllocated() > GCManager::triggerLevel())
 #else
-	true
+	if (MemoryBank::bytesAllocated() > s_gclite_threshold)
 #endif
-	)
-	gclite();
-#endif
-    if (MemoryBank::bytesAllocated() > GCManager::triggerLevel()
-	&& s_inhibitor_count == 0) {
-#ifdef RARE_GC
-	gclite();
-#endif
-	GCManager::gc();
+	{
+	    gclite();
+	}
+
+	if (MemoryBank::bytesAllocated() > GCManager::triggerLevel())
+	{
+	    GCManager::gc();
+	}
     }
-    return MemoryBank::allocate(bytes);
+    MemoryBank::notifyAllocation(bytes);
+    return GC_malloc(bytes);
+}
+
+void GCNode::operator delete(void* p, size_t bytes)
+{
+    MemoryBank::notifyDeallocation(bytes);
+    GC_free(p);
 }
 
 void GCNode::abortIfNotExposed(const GCNode* node)
@@ -210,6 +217,20 @@ void GCNode::initialize()
     s_reachable = new List();
     s_moribund = new vector<const GCNode*>();
     s_gclite_threshold = s_gclite_margin;
+
+    // Initialize the Boehm GC.
+    GC_set_all_interior_pointers(1);
+    GC_set_dont_precollect(1);
+    GC_set_no_dls(1);
+    GC_set_pages_executable(0);
+
+    GC_INIT();
+
+    // We do our own garbage collection, so disable the Boehm GC's collector.
+    // The collector library is used to do allocations, deallocations, find
+    // stack roots and walk the heap in the mark/sweep cleanup, but no actual
+    // garbage collection.
+    GC_disable();
 }
 
 void GCNode::makeMoribund() const

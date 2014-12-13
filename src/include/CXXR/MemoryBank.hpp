@@ -104,8 +104,7 @@ namespace CXXR {
 	    if (bytes >= s_new_threshold)
 		::operator delete(p);
 	    else s_pools[s_pooltab[(bytes + 7) >> 3]].deallocate(p);
-	    --s_blocks_allocated;
-	    s_bytes_allocated -= bytes;
+	    notifyDeallocation(bytes);
 	}
 
 	/** @brief Reorganise lists of free cells.
@@ -150,6 +149,21 @@ namespace CXXR {
 	static void (*s_monitor)(size_t);
 	static size_t s_monitor_threshold;
 #endif
+
+	friend class GCNode;
+	static void notifyAllocation(size_t bytes)
+	{
+#ifdef R_MEMORY_PROFILING
+	    if (s_monitor && bytes >= s_monitor_threshold) s_monitor(bytes);
+#endif
+	    ++s_blocks_allocated;
+	    s_bytes_allocated += bytes;
+	}
+
+	static void notifyDeallocation(size_t bytes) {
+	    s_bytes_allocated -= bytes;
+	    --s_blocks_allocated;
+	}
 
 	// Initialize the static data members:
 	friend void initializeMemorySubsystem();

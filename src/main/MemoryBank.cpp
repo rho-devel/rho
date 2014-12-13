@@ -81,9 +81,7 @@ const unsigned char MemoryBank::s_pooltab[]
 
 void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
 {
-#ifdef R_MEMORY_PROFILING
-    if (s_monitor && bytes >= s_monitor_threshold) s_monitor(bytes);
-#endif
+    notifyAllocation(bytes);
     void* p;
     if (bytes >= s_new_threshold)
 	p = ::operator new(bytes);
@@ -91,8 +89,6 @@ void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
 	Pool& pool = s_pools[s_pooltab[(bytes + 7) >> 3]];
 	p = pool.allocate();
     }
-    ++s_blocks_allocated;
-    s_bytes_allocated += bytes;
     return p;
 }
 

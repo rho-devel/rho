@@ -44,6 +44,7 @@
 #include <boost/serialization/nvp.hpp>
 
 #include "CXXR/VectorBase.h"
+#include "CXXR/MemoryBank.hpp"
 
 namespace CXXR {
     /** @brief R data vector primarily intended for fixed-size use.

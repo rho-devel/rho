@@ -497,16 +497,14 @@ namespace CXXR {
 	static PairList* cons(RObject* cr, PairList* tl=nullptr,
 			      const RObject* tag = nullptr)
 	{
-	    // We call MemoryBank::allocate() directly here, rather
-	    // than GCNode::operator new(), to avoid giving rise to
-	    // any garbage collection, and thus avoiding (a) the need
+            GCInhibitor no_gc;
+            // We inhibit garbage collection here to avoid (a) the need
 	    // to protect the arguments from GC, and (b) the
 	    // possibility of reentrant calls to this function (from
 	    // object destructors).  However, calling code should not
 	    // rely on the fact that no GC will occur, because the
 	    // implementation may change in the future.
-	    void* pad = MemoryBank::allocate(sizeof(PairList));
-	    return expose(new (pad) PairList(cr, tl, tag));
+            return CXXR_NEW(PairList(cr, tl, tag));
 	}
 
 	/** @brief Create a PairList of a specified length.

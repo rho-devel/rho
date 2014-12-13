@@ -44,9 +44,8 @@
 #include <sstream>
 #include <vector>
 
-#include "CXXR/Allocator.hpp"
+#include "CXXR/config.hpp"
 #include "CXXR/HeterogeneousList.hpp"
-#include "CXXR/MemoryBank.hpp"
 
 // According to various web postings (and arr's experience) it is
 // necessary for the compiler to have seen the headers for the archive
@@ -212,8 +211,7 @@ namespace CXXR {
 	 *
 	 * @note This function will often carry out garbage collection
 	 * of some kind before allocating memory.  However, no
-	 * mark-sweep collection will be performed if another GCNode
-	 * object is currently under construction, or if at least one
+	 * mark-sweep collection will be performed if at least one
 	 * GCInhibitor object is in existence.
 	 */
 	static void* operator new(size_t bytes) HOT_FUNCTION;
@@ -234,10 +232,7 @@ namespace CXXR {
 	 * @param bytes Size in bytes of the memory block, as
 	 * requested when the block was allocated.
 	 */
-	static void operator delete(void* p, size_t bytes)
-	{
-	    MemoryBank::deallocate(p, bytes);
-	}
+	static void operator delete(void* p, size_t bytes);
 
 	/** @brief Integrity check.
 	 *
