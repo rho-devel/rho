@@ -296,6 +296,10 @@ namespace CXXR {
 	GCEdge<> m_body;
 	GCEdge<Environment> m_environment;
 
+	RObject* invokeImpl(Environment* env, const ArgList* arglist,
+                            const Expression* call,
+                            const Frame* method_bindings = nullptr) const;
+
 	// Declared private to ensure that Closure objects are
 	// created only using 'new':
 	~Closure();

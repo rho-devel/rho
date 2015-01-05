@@ -41,6 +41,7 @@
 #define CXXR_GC_STACK_FRAME_BOUNDARY_HPP
 
 #include "CXXR/GCStackRoot.hpp"
+#include <functional>
 
 namespace CXXR {
 
@@ -49,8 +50,8 @@ namespace CXXR {
 // stack roots.
 //
 // The GC maintains a location on the stack known as the GC stack barrier, which
-// has the property that all stack roots below the barrier have incremented their
-// reference count, and none of the ones above the barrier have.
+// has the property that all stack roots below the barrier have incremented
+// their reference count, and none of the ones above the barrier have.
 // At garbage collection time, only the locations on the stack between the
 // barrier and the top of the stack need to be scanned, and the barrier can be
 // advanced to reduce the amount of scanning that needs to occur in later
@@ -65,6 +66,26 @@ namespace CXXR {
 // reference counts of the stack roots.
 class GCStackFrameBoundary {
 public:
+    /** @brief Insert a stack frame boundary between function frames.
+     *
+     * Calls the specified function, with a stack frame boundary inserted
+     * between the calling and called functions.
+     *
+     * @param function The function to call.
+     */
+    static RObject* withStackFrameBoundary(std::function<RObject*()> function);
+
+    /** @brief Advance the GC stack barrier to the topmost boundary.
+     *
+     * The location of the GC stack barrier is moved to the location of the
+     * top boundary on the stack, ensuring that all roots below that boundary
+     * have their reference counts incremented.
+     *
+     * In particular, if their are no important roots after the topmost
+     * boundary, this ensures that all stack roots have been processed.
+     */
+    static void advanceBarrier();
+private:
     GCStackFrameBoundary() : m_location(nullptr)
     {
 	m_next = s_top;
@@ -80,8 +101,6 @@ public:
 	s_top = m_next;
     }
 
-    static void advanceBarrier();
-private:
     static GCStackRootBase* getLocation(GCStackFrameBoundary* boundary) {
 	return boundary ? &boundary->m_location : nullptr;
     }
@@ -91,6 +110,9 @@ private:
     GCStackFrameBoundary* m_next;
     static GCStackFrameBoundary* s_top;
     static GCStackFrameBoundary* s_barrier;
+
+    GCStackFrameBoundary(const GCStackFrameBoundary&) = delete;
+    GCStackFrameBoundary& operator=(const GCStackFrameBoundary&) = delete;
 };
 
 }  // namespace CXXR

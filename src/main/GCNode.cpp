@@ -195,10 +195,11 @@ void GCNode::gclite()
     GCInhibitor inhibitor;
     ProtectStack::protectAll();
     ByteCode::protectAll();
-    // Protect all the nodes on the stack.
-    GCStackFrameBoundary stack_boundary;
-    GCStackFrameBoundary::advanceBarrier();
 
+    GCStackRootBase::withAllStackNodesProtected(gcliteImpl);
+}
+
+void GCNode::gcliteImpl() {
     while (!s_moribund->empty()) {
 	// Last in, first out, for cache efficiency:
 	const GCNode* node = s_moribund->back();

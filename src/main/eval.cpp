@@ -928,10 +928,9 @@ SEXP attribute_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 }
 
-SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_for_impl(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     GCStackRoot<> argsrt(args), rhort(rho);
-    GCStackFrameBoundary frame_boundary;
 
     /* Need to declare volatile variables whose values are relied on
        after for_next or for_break longjmps and might change between
@@ -1072,11 +1071,14 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue;
 }
 
-
-SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    GCStackFrameBoundary frame_boundary;
+    return GCStackFrameBoundary::withStackFrameBoundary(
+	[=]() { return do_for_impl(call, op, args, rho); });
+}
 
+static SEXP do_while_impl(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
     Rboolean dbg;
     volatile int bgn;
     GCStackRoot<> t;
@@ -1131,11 +1133,14 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue;
 }
 
-
-SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    GCStackFrameBoundary frame_boundary;
+    return GCStackFrameBoundary::withStackFrameBoundary(
+	[=]() {  return do_while_impl(call, op, args, rho); });
+}
 
+static SEXP do_repeat_impl(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
     Rboolean dbg;
     volatile int bgn;
     GCStackRoot<> t;
@@ -1190,6 +1195,11 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue;
 }
 
+SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    return GCStackFrameBoundary::withStackFrameBoundary(
+	[=]() { return do_repeat_impl(call, op, args, rho); });
+}
 
 SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
 {

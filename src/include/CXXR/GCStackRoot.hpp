@@ -70,6 +70,16 @@ namespace CXXR {
 	 * @param v Pointer to the const_visitor object.
 	 */
 	static void visitRoots(GCNode::const_visitor* v);
+
+	/** @brief Ensures that the reference counts of all roots on the stack
+	 *   have been updated.
+	 *
+	 * Calls the specified function in a context where all the defered
+	 * updates to the reference counts from stack roots have been done.
+	 *
+	 * @param function The function to call.
+	 */
+	static void withAllStackNodesProtected(std::function<void()> function);
     protected:
 	/** @brief Primary constructor.
 	 *

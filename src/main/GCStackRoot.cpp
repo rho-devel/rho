@@ -38,6 +38,7 @@
  */
 
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/GCStackFrameBoundary.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -76,4 +77,15 @@ void GCStackRootBase::visitRoots(GCNode::const_visitor* v)
 	    (*v)(root->m_target);
 	root = root->m_next;
     }
+}
+
+void GCStackRootBase::withAllStackNodesProtected(std::function<void()> function)
+{
+    // Protect all values on the stack.
+    GCStackFrameBoundary::withStackFrameBoundary([=]() {
+	    GCStackFrameBoundary::advanceBarrier();
+	    // Call the user function.
+	    function();
+	    return nullptr;
+	});
 }

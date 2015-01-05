@@ -338,6 +338,7 @@ namespace CXXR {
 	 * counts have never have risen above zero.
 	 */
 	static void gclite();
+	static void gcliteImpl();
 
 	/** @brief Has this node been exposed to garbage collection?
 	 *
@@ -484,10 +485,8 @@ namespace CXXR {
 	  // bit is then toggled in the mark phase of a mark-sweep
 	  // garbage collection to identify reachable nodes.
 
-	// Not implemented.  Declared to prevent compiler-generated
-	// versions:
-	GCNode(const GCNode&);
-	GCNode& operator=(const GCNode&);
+	GCNode(const GCNode&) = delete;
+	GCNode& operator=(const GCNode&) = delete;
 
 	// Not implemented.  Declared private to prevent clients
 	// allocating arrays of GCNode.

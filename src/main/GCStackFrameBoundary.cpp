@@ -47,6 +47,17 @@ namespace CXXR {
 GCStackFrameBoundary *GCStackFrameBoundary::s_top = nullptr;
 GCStackFrameBoundary *GCStackFrameBoundary::s_barrier = nullptr;
 
+RObject* GCStackFrameBoundary::withStackFrameBoundary(
+    std::function<RObject*()> function)
+{
+    // This function should not be inlined, nor inline the call to function()
+    // in order to ensure that the compiler doesn't reorder objects on the
+    // stack.  Otherwise, the compiler can generate code where the roots occur
+    // on the wrong side of the stack frame boundary.
+    GCStackFrameBoundary boundary;
+    return function();
+}
+
 void GCStackFrameBoundary::advanceBarrier()
 {
     if (!s_top) {  // There are no nodes to protect, so no barrier is needed.

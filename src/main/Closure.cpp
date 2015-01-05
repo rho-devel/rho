@@ -160,8 +160,14 @@ RObject* Closure::invoke(Environment* env, const ArgList* arglist,
 			 const Expression* call,
 			 const Frame* method_bindings) const
 {
-    GCStackFrameBoundary frame_boundary;
+    return GCStackFrameBoundary::withStackFrameBoundary(
+	[=]() { return invokeImpl(env, arglist, call, method_bindings); });
+}
 
+RObject* Closure::invokeImpl(Environment* env, const ArgList* arglist,
+			     const Expression* call,
+			     const Frame* method_bindings) const
+{
 #ifndef NDEBUG
     if (arglist->status() != ArgList::PROMISED)
 	Rf_error("Internal error: unwrapped arguments to Closure::invoke");
