@@ -28,6 +28,7 @@ include $(top_builddir)/Makeconf
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 CXXR_HS = \
+  AddressSanitizer.h \
   BuiltInFunction.h Closure.h ComplexVector.h ConsCell.h \
   DotInternal.h \
   Environment.h Evaluator.h Expression.h ExpressionVector.h ExternalPointer.h \
