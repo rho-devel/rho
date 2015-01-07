@@ -54,6 +54,13 @@
 #include "CXXR/RAllocStack.h"
 #include "CXXR/WeakRef.h"
 #include "gc.h"
+#include "gc_mark.h"
+
+extern "C" {
+    // Declared in src/extra/gc/include/private/gc_priv.h.
+    void GC_with_callee_saves_pushed(void (*fn)(char*, void *),
+				     char* arg);
+}
 
 using namespace std;
 using namespace CXXR;
@@ -93,12 +100,18 @@ void* GCNode::operator new(size_t bytes) HOT_FUNCTION
 	}
     }
     MemoryBank::notifyAllocation(bytes);
-    return GC_malloc(bytes);
+    void* result = GC_malloc(bytes);
+    // We repurpose the BDW collection's mark bit as an allocated flag.  This
+    // works since the mark-sweep functionality of the BDW GC isn't used at all.
+    GC_set_mark_bit(result);
+
+    return result;
 }
 
 void GCNode::operator delete(void* p, size_t bytes)
 {
     MemoryBank::notifyDeallocation(bytes);
+    GC_clear_mark_bit(p);
     GC_free(p);
 }
 
@@ -258,37 +271,20 @@ void GCNode::mark()
 
 void GCNode::sweep()
 {
-    List zombies;
     // Detach the referents of nodes that haven't been moved to a
-    // reachable list (i.e. are unreachable), and relist these nodes
-    // as zombies:
+    // reachable list (i.e. are unreachable).
+    // Once all of these objects have been processed, they will have no
+    // incoming references and will have been placed on the moribund list for
+    // deletion in the following call to gclite().
     while (!s_live->empty()) {
 	GCNode* node = s_live->front();
 	node->detachReferents();
-
-	if (node->getRefCount() != 0) {
-	    // There are unreachable nodes that refer to this one, so deletion
-	    // must be delayed until those nodes have been deleted.
-	    zombies.splice_back(node);
-	} else if (node->m_rcmmu & s_moribund_mask) {
-	    // The node will be deleted in the following call to gclite().
-	    // Remove from s_live.
-	    node->freeLink();
-	} else {
-	    // The node can be deleted immediately.
-	    delete node;
-	}
+	node->freeLink();
     }
     // Transfer the s_reachable list to the exposed list:
     s_live->splice_back(s_reachable);
-    // The preceding will have resulted in some nodes within
-    // unreachable subgraphs getting transferred to the moribund list,
-    // rather than being deleted immediately.  Now we clear up this detritus:
+    // Cleanup all the nodes that got placed on the moribund list.
     gclite();
-    // At this point we can be confident that there will be no further
-    // invocation of defRefCount() on the 'zombie' nodes, so we can
-    // get rid of them.  The destructor of 'zombies' will do this
-    // automatically.
 }
 
 void GCNode::Marker::operator()(const GCNode* node)
@@ -315,4 +311,18 @@ void CXXR::initializeMemorySubsystem()
 
 	initialized = true;
     }
+}
+
+
+GCNode* GCNode::asGCNode(void* candidate_pointer)
+{
+    if (candidate_pointer < GC_least_plausible_heap_addr
+	|| candidate_pointer > GC_greatest_plausible_heap_addr)
+	return nullptr;
+
+    void* base_pointer = GC_base(candidate_pointer);
+    if (base_pointer && GC_is_marked(base_pointer)) {
+	return reinterpret_cast<GCNode*>(base_pointer);
+    }
+    return nullptr;
 }

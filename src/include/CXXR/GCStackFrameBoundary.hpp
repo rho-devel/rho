@@ -42,6 +42,7 @@
 
 #include "CXXR/GCStackRoot.hpp"
 #include <functional>
+#include <stack>
 #include <boost/intrusive/list.hpp>
 
 namespace CXXR {
@@ -84,12 +85,13 @@ public:
      * top boundary on the stack, ensuring that all roots below that boundary
      * have their reference counts incremented.
      *
-     * In particular, if their are no important roots after the topmost
+     * In particular, if there are no important roots after the topmost
      * boundary, this ensures that all stack roots have been processed.
      */
     static void advanceBarrier();
 private:
-    GCStackFrameBoundary() : m_location(nullptr)
+
+    GCStackFrameBoundary() : m_num_protected_pointers(0)
     {
 	s_boundaries.push_back(*this);
     }
@@ -103,12 +105,13 @@ private:
 	s_boundaries.pop_back();
     }
 
-    static GCStackRootBase* getLocation(GCStackFrameBoundary* boundary) {
-	return boundary ? &boundary->m_location : nullptr;
-    }
+    void* getStackPointer();
+    static void advanceBarrierOneFrame(GCStackFrameBoundary* frame_start,
+				       GCStackFrameBoundary* frame_end);
+
     void applyBarrier();
-    
-    GCStackRoot<GCNode> m_location;
+
+    int m_num_protected_pointers;
 
     static GCStackFrameBoundary* s_barrier;
 
@@ -118,6 +121,12 @@ private:
 	GCStackFrameBoundary,
 	boost::intrusive::constant_time_size<false>> BoundaryStack;
     static BoundaryStack s_boundaries;
+ 
+    static GCStackFrameBoundary* s_bottom_of_stack;
+
+    static std::stack<const GCNode*> s_protected_nodes;
+
+    struct ProtectPointerVisitor;
 
     GCStackFrameBoundary(const GCStackFrameBoundary&) = delete;
     GCStackFrameBoundary& operator=(const GCStackFrameBoundary&) = delete;

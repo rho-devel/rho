@@ -45,7 +45,41 @@
 namespace CXXR {
 
 GCStackFrameBoundary::BoundaryStack GCStackFrameBoundary::s_boundaries;
-GCStackFrameBoundary *GCStackFrameBoundary::s_barrier = nullptr;
+
+// To simplify the code, we add a dummy boundary representing the bottom of
+// the stack and initially set the barrier to it.
+GCStackFrameBoundary *GCStackFrameBoundary::s_bottom_of_stack
+    = new GCStackFrameBoundary();
+GCStackFrameBoundary *GCStackFrameBoundary::s_barrier = s_bottom_of_stack;
+
+// While the contents of the stack below the boundary are assumed to not change,
+// the set of pointers found by the conservative stack scanner in that region
+// can.  To ensure that the same nodes are protected and unprotected, we keep
+// a separate stack containing just the protected nodes here.
+std::stack<const GCNode*> GCStackFrameBoundary::s_protected_nodes;
+
+struct GCStackFrameBoundary::ProtectPointerVisitor
+    : public GCNode::const_visitor
+{
+    ProtectPointerVisitor(int* count) {
+	m_count = count;
+    }
+
+    void operator()(const GCNode* node) override
+    {
+	s_protected_nodes.push(node);
+	GCNode::incRefCount(node);
+	++(*m_count);
+    } 
+
+    int* m_count;
+};
+
+void* GCStackFrameBoundary::getStackPointer()
+{
+    return (this == s_bottom_of_stack)
+	? GCStackRootBase::getStackBase() :  reinterpret_cast<void*>(this);
+}
 
 RObject* GCStackFrameBoundary::withStackFrameBoundary(
     std::function<RObject*()> function)
@@ -60,37 +94,43 @@ RObject* GCStackFrameBoundary::withStackFrameBoundary(
 
 void GCStackFrameBoundary::advanceBarrier()
 {
-    if (s_boundaries.empty()) {
-	// Nothing to do.
-	return;
-    }
-
-    // Protect nodes
-    GCStackRootBase* current_location = getLocation(s_barrier);
-    GCStackRootBase* new_location = getLocation(&s_boundaries.back());
-    GCStackRootBase::incrementReferenceCounts(new_location, current_location);
+    BoundaryStack::iterator frame_start = s_boundaries.iterator_to(*s_barrier);
+    BoundaryStack::iterator frame_end = std::next(frame_start);
+    while (frame_end != s_boundaries.end()) {
+	advanceBarrierOneFrame(&*frame_start, &*frame_end);
+        frame_start = frame_end;
+        ++frame_end;
+    }   
 
     // Move the barrier.
     s_barrier = &s_boundaries.back();
 }
 
+void GCStackFrameBoundary::advanceBarrierOneFrame(
+    GCStackFrameBoundary* frame_start, GCStackFrameBoundary* frame_end)
+{
+    ProtectPointerVisitor visitor(&frame_end->m_num_protected_pointers);
+    
+    GCStackRootBase::visitRoots(&visitor,
+				frame_start->getStackPointer(),
+				frame_end->getStackPointer());
+}
+
 void GCStackFrameBoundary::applyBarrier()
 {
     assert(s_barrier == this);
-    BoundaryStack::iterator current_it = BoundaryStack::s_iterator_to(*this);
-    assert(std::next(current_it) == s_boundaries.end());
-    GCStackRootBase* current_location = getLocation(this);
 
-    bool is_at_end = (current_it == s_boundaries.begin());
-    GCStackFrameBoundary* new_barrier
-	= is_at_end ? nullptr : &*std::prev(current_it);
-    GCStackRootBase* new_location = getLocation(new_barrier);
-
-    // Unprotect nodes.
-    GCStackRootBase::decrementReferenceCounts(current_location, new_location);
+    // Pop off the protected nodes.
+    for (int i = 0; i < m_num_protected_pointers; i++) {
+	const GCNode* pointer = s_protected_nodes.top();
+	s_protected_nodes.pop();
+	GCNode::decRefCount(pointer);
+    }
 
     // Move the barrier back.
-    s_barrier = new_barrier;
+    BoundaryStack::iterator current_it = s_boundaries.iterator_to(*this);
+    assert(std::next(current_it) == s_boundaries.end());
+    s_barrier = &*std::prev(current_it);
 }
 
 }  // namespace CXXR

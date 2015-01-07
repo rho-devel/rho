@@ -329,13 +329,10 @@ namespace CXXR {
 
 	/** @brief Lightweight garbage collection.
 	 *
-	 * This function deletes nodes whose reference counts have
-	 * fallen to zero: if the deletion of these nodes in turn
+	 * This function deletes nodes whose reference counts are
+	 * zero: if the deletion of these nodes in turn
 	 * causes the reference counts of other nodes to fall to zero,
 	 * those nodes are also deleted, and so on recursively.
-	 *
-	 * @note This function does not delete nodes whose reference
-	 * counts have never have risen above zero.
 	 */
 	static void gclite();
 	static void gcliteImpl();
@@ -394,6 +391,12 @@ namespace CXXR {
 	 * cache, there is no need to fetch it back in.
 	 */
 	virtual void visitReferents(const_visitor* v) const {}
+
+	// If candidate_pointer is a (possibly internal) pointer to a GCNode,
+	// returns the pointer to that node.
+	// Otherwise returns nullptr.
+	static GCNode* asGCNode(void* candidate_pointer);
+
     protected:
 	/**
 	 * @note The destructor is protected to ensure that GCNode
@@ -411,6 +414,7 @@ namespace CXXR {
     private:
 	friend class boost::serialization::access;
 	friend class GCRootBase;
+	friend class GCStackFrameBoundary;
 	friend class GCStackRootBase;
 	friend class NodeStack;
 	friend class WeakRef;

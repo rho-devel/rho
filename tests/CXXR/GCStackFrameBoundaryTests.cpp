@@ -49,9 +49,6 @@ TEST(GCStackFrameBoundaryTest, RefCountIsZeroWithoutBarrier) {
     RObject* object1 = CXXR_NEW(RealVector(1));
     EXPECT_EQ(0, getRefCount(object1));
 
-    GCStackRoot<> root1(object1);
-    EXPECT_EQ(0, getRefCount(object1));
-
     RObject* object2 = CXXR_NEW(RealVector(2));
     EXPECT_EQ(0, getRefCount(object1));
     EXPECT_EQ(0, getRefCount(object2));
@@ -61,115 +58,66 @@ TEST(GCStackFrameBoundaryTest, BarrierIncrementsAndDecrementsCount) {
     GCNode::GCInhibitor no_gc;
 
     RObject* object1 = CXXR_NEW(RealVector(1));
-    RObject* object2 = CXXR_NEW(RealVector(2));
 
-    GCStackRoot<> root1(object1);
-    GCStackFrameBoundary::withStackFrameBoundary(
+    RObject* object2_ = GCStackFrameBoundary::withStackFrameBoundary(
 	[=]()
 	{
+	    RObject* object2 = CXXR_NEW(RealVector(2));
+
 	    EXPECT_EQ(0, getRefCount(object1));
 	    EXPECT_EQ(0, getRefCount(object2));
 
-	    GCStackRoot<> root2(object2);  // After the boundary, so not incremented.
 	    GCStackFrameBoundary::advanceBarrier();
-	    EXPECT_EQ(1, getRefCount(object1));
-	    EXPECT_EQ(0, getRefCount(object2));
-	    return (RObject*)nullptr;
+	    EXPECT_GE(getRefCount(object1), 1);
+	    EXPECT_EQ(getRefCount(object2), 0);
+	    return object2;
 	});
-
     EXPECT_EQ(0, getRefCount(object1));
-    EXPECT_EQ(0, getRefCount(object2));
+    EXPECT_EQ(0, getRefCount(object2_));
 }
 
-TEST(GCStackFrameBoundaryTest, NestedBoundarysUpdateRefCountsOnce) {
+TEST(GCStackFrameBoundaryTest, NestedBoundarys) {
     GCNode::GCInhibitor no_gc;
 
     RObject* object1 = CXXR_NEW(RealVector(1));
-    RObject* object2 = CXXR_NEW(RealVector(2));
-    RObject* object3 = CXXR_NEW(RealVector(3));
 
-    GCStackRoot<> root1(object1);
     GCStackFrameBoundary::withStackFrameBoundary(
 	[=]()
 	{
-	    GCStackRoot<> root2(object2);
+	    GCStackFrameBoundary::withStackFrameBoundary(
+		[=]()
+		{
+		    GCStackFrameBoundary::advanceBarrier();
+
+		    EXPECT_GE(getRefCount(object1), 1);
+		    return (RObject*)nullptr;
+		});
+	    EXPECT_GE(getRefCount(object1), 1);
+	    return (RObject*)nullptr;
+	});
+    EXPECT_EQ(0, getRefCount(object1));
+}
+
+TEST(GCStackFrameBoundaryTest, NestedAdvances) {
+    GCNode::GCInhibitor no_gc;
+
+    RObject* object1 = CXXR_NEW(RealVector(1));
+
+    GCStackFrameBoundary::withStackFrameBoundary(
+	[=]()
+	{
+	    GCStackFrameBoundary::advanceBarrier();
+	    EXPECT_GE(getRefCount(object1), 1);
 
 	    GCStackFrameBoundary::withStackFrameBoundary(
 		[=]()
 		{
-		    GCStackRoot<> root3(object3);
 		    GCStackFrameBoundary::advanceBarrier();
 
-		    EXPECT_EQ(1, getRefCount(object1));
-		    EXPECT_EQ(1, getRefCount(object2));
-		    EXPECT_EQ(0, getRefCount(object3));
+		    EXPECT_GE(getRefCount(object1), 1);
 		    return (RObject*)nullptr;
 		});
-	    EXPECT_EQ(1, getRefCount(object1));
-	    EXPECT_EQ(0, getRefCount(object2));
-	    EXPECT_EQ(0, getRefCount(object3));
-	    return (RObject*)nullptr;
-	});
-    EXPECT_EQ(0, getRefCount(object1));
-    EXPECT_EQ(0, getRefCount(object2));
-    EXPECT_EQ(0, getRefCount(object3));
-}
-
-TEST(GCStackFrameBoundaryTest, AdvancingNestedBoundarysUpdateRefCountsOnce) {
-    GCNode::GCInhibitor no_gc;
-
-    RObject* object1 = CXXR_NEW(RealVector(1));
-    RObject* object2 = CXXR_NEW(RealVector(2));
-    RObject* object3 = CXXR_NEW(RealVector(3));
-
-    GCStackRoot<> root1(object1);
-    GCStackFrameBoundary::withStackFrameBoundary(
-	[=]()
-	{
-	    GCStackFrameBoundary::advanceBarrier();
-
-	    GCStackRoot<> root2(object2);
-	    
-	    EXPECT_EQ(1, getRefCount(object1));
-	    EXPECT_EQ(0, getRefCount(object2));
-	    EXPECT_EQ(0, getRefCount(object3));
-	    
-	    GCStackFrameBoundary::withStackFrameBoundary(
-		[=]()
-		{
-		    GCStackRoot<> root3(object3);
-		    GCStackFrameBoundary::advanceBarrier();
-
-		    EXPECT_EQ(1, getRefCount(object1));
-		    EXPECT_EQ(1, getRefCount(object2));
-		    EXPECT_EQ(0, getRefCount(object3));
-		    return (RObject*)nullptr;
-		});
-
-	    EXPECT_EQ(1, getRefCount(object1));
-	    EXPECT_EQ(0, getRefCount(object2));
-	    EXPECT_EQ(0, getRefCount(object3));
-	    return (RObject*)nullptr;
-	});
-    EXPECT_EQ(0, getRefCount(object1));
-    EXPECT_EQ(0, getRefCount(object2));
-    EXPECT_EQ(0, getRefCount(object3));
-}
-
-TEST(GCStackFrameBoundaryTest, MultipleRoots) {
-    GCNode::GCInhibitor no_gc;
-
-    RObject* object1 = CXXR_NEW(RealVector(1));
-    GCStackRoot<> root1(object1);
-    GCStackRoot<> root2(object1);
-    EXPECT_EQ(0, getRefCount(object1));
-
-    GCStackFrameBoundary::withStackFrameBoundary(
-	[=]()
-	{
-	    GCStackFrameBoundary::advanceBarrier();
-
-	    EXPECT_EQ(2, getRefCount(object1));
+	    EXPECT_GE(getRefCount(object1), 1);
 	    return (RObject*)nullptr;
 	});
     EXPECT_EQ(0, getRefCount(object1));
