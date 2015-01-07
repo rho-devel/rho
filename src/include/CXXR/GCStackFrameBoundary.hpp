@@ -42,6 +42,7 @@
 
 #include "CXXR/GCStackRoot.hpp"
 #include <functional>
+#include <boost/intrusive/list.hpp>
 
 namespace CXXR {
 
@@ -64,7 +65,9 @@ namespace CXXR {
 // The GCStackFrameBoundary's destructor automatically tests if the stack is
 // being popped past the barrier, and if so, moves the barrier and updates the
 // reference counts of the stack roots.
-class GCStackFrameBoundary {
+class GCStackFrameBoundary :
+	public boost::intrusive::list_base_hook<>
+{
 public:
     /** @brief Insert a stack frame boundary between function frames.
      *
@@ -88,17 +91,16 @@ public:
 private:
     GCStackFrameBoundary() : m_location(nullptr)
     {
-	m_next = s_top;
-	s_top = this;
+	s_boundaries.push_back(*this);
     }
     
     ~GCStackFrameBoundary()
     {
-	assert(this == s_top);
+	assert(this == &s_boundaries.back());
 	if (this == s_barrier) {
 	    applyBarrier();
 	}
-	s_top = m_next;
+	s_boundaries.pop_back();
     }
 
     static GCStackRootBase* getLocation(GCStackFrameBoundary* boundary) {
@@ -107,9 +109,15 @@ private:
     void applyBarrier();
     
     GCStackRoot<GCNode> m_location;
-    GCStackFrameBoundary* m_next;
-    static GCStackFrameBoundary* s_top;
+
     static GCStackFrameBoundary* s_barrier;
+
+    // We can't use the std::stack wrapper here as it gives compilation errors
+    // when using the intrusive list as the underlying container.
+    typedef boost::intrusive::list<
+	GCStackFrameBoundary,
+	boost::intrusive::constant_time_size<false>> BoundaryStack;
+    static BoundaryStack s_boundaries;
 
     GCStackFrameBoundary(const GCStackFrameBoundary&) = delete;
     GCStackFrameBoundary& operator=(const GCStackFrameBoundary&) = delete;
