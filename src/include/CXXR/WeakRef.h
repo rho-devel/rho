@@ -128,12 +128,6 @@ namespace CXXR {
 	 *
 	 * @param finalize_on_exit True iff the finalizer should be
 	 *          run when CXXR exits.
-	 *
-	 * @note The constructors of WeakRef are unusual in that they
-	 * themselves expose the constructed object to garbage
-	 * collection.  WeakRef objects must therefore be created
-	 * using <tt>new WeakRef(...)</tt> rather than
-	 * <tt>CXXR_NEW(WeakRef(...))</tt>.
 	 */
 	WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer = nullptr,
 		bool finalize_on_exit = false);
@@ -158,12 +152,6 @@ namespace CXXR {
 	 *
 	 * @param finalize_on_exit True iff the finalizer should be
 	 *          run when CXXR exits.
-	 *
-	 * @note The constructors of WeakRef are unusual in that they
-	 * themselves expose the constructed object to garbage
-	 * collection.  WeakRef objects must therefore be created
-	 * using <tt>new WeakRef(...)</tt> rather than
-	 * <tt>CXXR_NEW(WeakRef(...))</tt>.
 	 */
 	WeakRef(RObject* key, RObject* value, R_CFinalizer_t C_finalizer,
 		bool finalize_on_exit = false);

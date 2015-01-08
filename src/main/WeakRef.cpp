@@ -64,7 +64,7 @@ namespace {
 WeakRef::WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer,
 		 bool finalize_on_exit)
     : m_key(key), m_value(value), m_Rfinalizer(R_finalizer),
-      m_self(expose(this)), m_Cfinalizer(0),
+      m_self(this), m_Cfinalizer(0),
       m_ready_to_finalize(false),
       m_finalize_on_exit(finalize_on_exit)
 {
@@ -85,7 +85,7 @@ WeakRef::WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer,
 
 WeakRef::WeakRef(RObject* key, RObject* value, R_CFinalizer_t C_finalizer,
 		 bool finalize_on_exit)
-    : m_key(key), m_value(value), m_Rfinalizer(0), m_self(expose(this)),
+    : m_key(key), m_value(value), m_Rfinalizer(0), m_self(this),
       m_Cfinalizer(C_finalizer),
       m_ready_to_finalize(false), m_finalize_on_exit(finalize_on_exit)
 {
@@ -178,8 +178,8 @@ void WeakRef::finalize()
     tombstone();
     if (Cfin) Cfin(key);
     else if (Rfin) {
-	GCStackRoot<PairList> tail(expose(new PairList(key)));
-	GCStackRoot<Expression> e(expose(new Expression(Rfin, tail)));
+	GCStackRoot<PairList> tail(new PairList(key));
+	GCStackRoot<Expression> e(new Expression(Rfin, tail));
 	Evaluator::evaluate(e, Environment::global());
     }
 }

@@ -78,7 +78,7 @@ PairList::PairList(const PairList& pattern)
     PairList* c = this;
     const PairList* pl = pattern.m_tail;
     while (pl) {
-	c->m_tail = expose(new PairList(*pl, 0));
+	c->m_tail = new PairList(*pl, 0);
 	c = c->m_tail;
 	pl = pl->m_tail;
     }
@@ -90,7 +90,7 @@ PairList::~PairList()
 
 PairList* PairList::clone() const
 {
-    return expose(new PairList(*this));
+    return new PairList(*this);
 }
 
 PairList* PairList::make(size_t sz) throw (std::bad_alloc)

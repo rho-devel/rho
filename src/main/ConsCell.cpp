@@ -183,5 +183,5 @@ SEXP Rf_allocSExp(SEXPTYPE t)
     default:
 	throw std::invalid_argument("Inappropriate SEXPTYPE for ConsCell.");
     }
-    return GCNode::expose(ans);
+    return ans;
 }

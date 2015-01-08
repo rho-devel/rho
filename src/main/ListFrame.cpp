@@ -87,7 +87,7 @@ Frame::BindingRange ListFrame::bindingRange() const
 
 ListFrame* ListFrame::clone() const
 {
-    return expose(new ListFrame(*this));
+    return new ListFrame(*this);
 }
 
 void ListFrame::lockBindings()

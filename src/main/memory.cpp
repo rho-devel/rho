@@ -386,7 +386,7 @@ SEXP allocVector(SEXPTYPE type, R_xlen_t length)
 	      type2char(type), length);
 	return nullptr;  // -Wall
     }
-    return GCNode::expose(s);
+    return s;
 }
 
 
