@@ -1,4 +1,4 @@
-/*CXXR $Id$
+`/*CXXR $Id$
  *CXXR
  *CXXR This file is part of CXXR, a project to refactor the R interpreter
  *CXXR into C++.  It may consist in whole or in part of program code and
@@ -69,7 +69,6 @@
 #ifdef DOXYGEN
 #define AGGRESSIVE_GC
 #endif
-#define AGGRESSIVE_GC
 
 /** @def CHECK_EXPOSURE
  *
