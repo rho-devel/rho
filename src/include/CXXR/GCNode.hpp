@@ -44,10 +44,8 @@
 #include <sstream>
 #include <vector>
 
-#include "CXXR/Allocator.hpp"
+#include "CXXR/config.hpp"
 #include "CXXR/HeterogeneousList.hpp"
-#include "CXXR/MemoryBank.hpp"
-#include "CXXR/SchwarzCounter.hpp"
 
 // According to various web postings (and arr's experience) it is
 // necessary for the compiler to have seen the headers for the archive
@@ -58,17 +56,6 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/export.hpp>
 #include <boost/serialization/version.hpp>
-
-/** @def GC_FIND_LOOPS
- *
- * If the preprocessor variable GC_FIND_LOOPS is defined, extra code
- * is inserted which, during a mark-sweep garbage collection, writes
- * to the standard output information about any cycles encountered in
- * the GCNode-GCEdge graph.
- */
-#ifdef DOXYGEN
-#define GC_FIND_LOOPS
-#endif
 
 /** @brief Syntactic sugar for creating CXXR::GCNode objects.
  *
@@ -131,11 +118,6 @@ namespace CXXR {
      * by the garbage collector, and does not contribute to the
      * 'meaning' of an object of a derived class, its data members are
      * mutable.
-     *
-     * @todo The (private) cleanup() method needs to address the
-     * possibility that derived classes may have destructors that
-     * release some external resource (e.g. a lock).  Maybe a garbage
-     * collection without a 'mark' phase would do the trick.
      */
     class GCNode : public HeterogeneousListBase::Link {
     public:
@@ -229,8 +211,7 @@ namespace CXXR {
 	 *
 	 * @note This function will often carry out garbage collection
 	 * of some kind before allocating memory.  However, no
-	 * mark-sweep collection will be performed if another GCNode
-	 * object is currently under construction, or if at least one
+	 * mark-sweep collection will be performed if at least one
 	 * GCInhibitor object is in existence.
 	 */
 	static void* operator new(size_t bytes) HOT_FUNCTION;
@@ -251,10 +232,7 @@ namespace CXXR {
 	 * @param bytes Size in bytes of the memory block, as
 	 * requested when the block was allocated.
 	 */
-	static void operator delete(void* p, size_t bytes)
-	{
-	    MemoryBank::deallocate(p, bytes);
-	}
+	static void operator delete(void* p, size_t bytes);
 
 	/** @brief Integrity check.
 	 *
@@ -351,15 +329,13 @@ namespace CXXR {
 
 	/** @brief Lightweight garbage collection.
 	 *
-	 * This function deletes nodes whose reference counts have
-	 * fallen to zero: if the deletion of these nodes in turn
+	 * This function deletes nodes whose reference counts are
+	 * zero: if the deletion of these nodes in turn
 	 * causes the reference counts of other nodes to fall to zero,
 	 * those nodes are also deleted, and so on recursively.
-	 *
-	 * @note This function does not delete nodes whose reference
-	 * counts have never have risen above zero.
 	 */
 	static void gclite();
+	static void gcliteImpl();
 
 	/** @brief Has this node been exposed to garbage collection?
 	 *
@@ -415,6 +391,12 @@ namespace CXXR {
 	 * cache, there is no need to fetch it back in.
 	 */
 	virtual void visitReferents(const_visitor* v) const {}
+
+	// If candidate_pointer is a (possibly internal) pointer to a GCNode,
+	// returns the pointer to that node.
+	// Otherwise returns nullptr.
+	static GCNode* asGCNode(void* candidate_pointer);
+
     protected:
 	/**
 	 * @note The destructor is protected to ensure that GCNode
@@ -432,6 +414,7 @@ namespace CXXR {
     private:
 	friend class boost::serialization::access;
 	friend class GCRootBase;
+	friend class GCStackFrameBoundary;
 	friend class GCStackRootBase;
 	friend class NodeStack;
 	friend class WeakRef;
@@ -457,9 +440,6 @@ namespace CXXR {
 	    void operator()(const GCNode* node) override;
 	private:
 	    unsigned int m_marks_applied;
-#ifdef GC_FIND_LOOPS
-	    std::vector<const GCNode*> m_ariadne;
-#endif
 	};
 
 	typedef HeterogeneousList<GCNode> List;
@@ -509,10 +489,8 @@ namespace CXXR {
 	  // bit is then toggled in the mark phase of a mark-sweep
 	  // garbage collection to identify reachable nodes.
 
-	// Not implemented.  Declared to prevent compiler-generated
-	// versions:
-	GCNode(const GCNode&);
-	GCNode& operator=(const GCNode&);
+	GCNode(const GCNode&) = delete;
+	GCNode& operator=(const GCNode&) = delete;
 
 	// Not implemented.  Declared private to prevent clients
 	// allocating arrays of GCNode.
@@ -527,8 +505,11 @@ namespace CXXR {
 	// to expose a node more than once.
 	static void alreadyExposedError();
 
-	// Clean up static data at end of run:
-	static void cleanup();
+	// Returns the stored reference count.
+	unsigned char getRefCount() const
+	{
+	    return (m_rcmmu & s_refcount_mask) >> 1;
+	}
 
 	// Decrement the reference count (subject to the stickiness of
 	// its MSB).  If as a result the reference count falls to
@@ -562,16 +543,14 @@ namespace CXXR {
 	    }
 	}
 
-	/** @brief Initialize static members.
+	/** @brief Initialize the entire memory subsystem.
 	 *
 	 * This method must be called before any GCNodes are created.
 	 * If called more than once in a single program run, the
 	 * second and subsequent calls do nothing.
-	 *
-	 * @param num_old_generations One fewer than the number of
-	 * generations into which GCNode objects are to be ranked.
 	 */
 	static void initialize();
+	friend void initializeMemorySubsystem();
 
 	bool isMarked() const
 	{
@@ -598,8 +577,16 @@ namespace CXXR {
 	static void sweep();
 
 	friend class GCEdgeBase;
-	friend class SchwarzCounter<GCNode>;
+	friend class GCTestHelper;
     };
+
+    /** @brief Initialize the entire memory subsystem.
+     *
+     * This method must be called before any GCNodes are created.
+     * If called more than once in a single program run, the
+     * second and subsequent calls do nothing.
+     */
+    void initializeMemorySubsystem();
 }  // namespace CXXR
 
 template <class Archive>
@@ -617,9 +604,5 @@ void CXXR::GCNode::serialize(Archive & ar, const unsigned int version) {
 #ifndef DEBUG_S11N
 BOOST_CLASS_VERSION(CXXR::GCNode, 1)
 #endif
-
-namespace {
-    CXXR::SchwarzCounter<CXXR::GCNode> gcnode_schwarz_ctr;
-}
 
 #endif /* GCNODE_HPP */

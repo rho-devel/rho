@@ -52,7 +52,8 @@ static inline bool startsWith(const std::string& text,
 }
 
 static const std::string symbol_prefix = "cxxr.symbol.";
-static const std::string builtin_prefix = "cxxr.builtin.";
+static const std::string primitive_prefix = "cxxr.primitive.";
+static const std::string internal_prefix = "cxxr.internal.";
 
 MCJITMemoryManager::MCJITMemoryManager(Module* module)
     : m_module(module) { }
@@ -64,10 +65,17 @@ uint64_t MCJITMemoryManager::getSymbolAddress(const std::string& name)
 	return reinterpret_cast<uint64_t>(Symbol::obtain(symbol_name));
     }
 
-    if (startsWith(name, builtin_prefix)) {
-	// This returns the location of the BuiltinFunction.
-	std::string builtin_name = name.substr(builtin_prefix.length());
-	return reinterpret_cast<uint64_t>(BuiltInFunction::obtain(builtin_name));
+    if (startsWith(name, primitive_prefix)) {
+	// This returns the location of the BuiltInFunction.
+	std::string builtin_name = name.substr(primitive_prefix.length());
+	return reinterpret_cast<uint64_t>(
+	    BuiltInFunction::obtainPrimitive(builtin_name));
+    }
+    if (startsWith(name, internal_prefix)) {
+	// This returns the location of the BuiltInFunction.
+	std::string builtin_name = name.substr(internal_prefix.length());
+	return reinterpret_cast<uint64_t>(
+	    BuiltInFunction::obtainInternal(builtin_name));
     }
 
     auto mapping = m_mappings.find(name);
@@ -96,7 +104,9 @@ GlobalVariable* MCJITMemoryManager::getBuiltIn(const BuiltInFunction* function)
 {
     Type* type = TypeBuilder<BuiltInFunction, false>::get(
 	m_module->getContext());
-    std::string name = builtin_prefix + function->name();
+    std::string name = 
+	(function->viaDotInternal() ? internal_prefix : primitive_prefix)
+	+ function->name();
 
     GlobalVariable* result = m_module->getNamedGlobal(name);
     if (result) {

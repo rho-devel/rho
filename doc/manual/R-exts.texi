@@ -12437,10 +12437,8 @@ Note that @code{uintptr_t} is a C99 type for which a substitute is
 defined in @R{}, so your code needs to define @code{HAVE_UINTPTR_T}
 appropriately.
 
-These will be set@footnote{at least on platforms where the values are
-available, that is having @code{getrlimit} and on Linux or having
-@code{sysctl} supporting @code{KERN_USRSTACK}, including FreeBSD and OS
-X.} when @code{Rf_initialize_R} is called, to values appropriate to the
+These will be set
+when @code{Rf_initialize_R} is called, to values appropriate to the
 main thread.  Stack-checking can be disabled by setting
 @code{R_CStackLimit = (uintptr_t)-1}, but it is better to if possible
 set appropriate values.  (What these are and how to determine them are

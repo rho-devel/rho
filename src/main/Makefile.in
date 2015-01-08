@@ -40,7 +40,7 @@ SOURCES_CXX = \
 	ExpressionVector.cpp ExternalPointer.cpp \
         Frame.cpp FunctionBase.cpp FunctionContext.cpp \
         GCEdge.cpp GCManager.cpp GCNode.cpp GCNode_PtrS11n.cpp GCRoot.cpp \
-	GCStackRoot.cpp \
+	GCStackFrameBoundary.cpp GCStackRoot.cpp \
 	HeterogeneousList.cpp \
         IntVector.cpp inspect.cpp \
 	ListFrame.cpp ListVector.cpp LogicalVector.cpp LoopBailout.cpp \
@@ -128,10 +128,9 @@ XDR_CPPFLAGS = @BUILD_XDR_TRUE@ -I$(top_srcdir)/src/extra/xdr
 @BUILD_XDR_FALSE@XDR_CPPFLAGS = @TIRPC_CPPFLAGS@
 XZ_CPPFLAGS = @BUILD_XZ_TRUE@  -I$(top_srcdir)/src/extra/xz/api
 LLVM_CPPFLAGS = @LLVM_CPPFLAGS@
-
 ALL_CPPFLAGS = $(ZLIB_CPPFLAGS) $(BZLIB_CPPFLAGS) $(PCRE_CPPFLAGS) \
   $(TRE_CPPFLAGS) $(XDR_CPPFLAGS) $(XZ_CPPFLAGS) $(LLVM_CPPFLAGS) \
-  $(R_XTRA_CPPFLAGS) $(CPPFLAGS) $(DEFS)
+  $(GC_CPPFLAGS) $(R_XTRA_CPPFLAGS) $(CPPFLAGS) $(DEFS)
 @WANT_R_SHLIB_TRUE@ALL_CFLAGS = $(ALL_CFLAGS_LO)
 @WANT_R_SHLIB_TRUE@ALL_FFLAGS = $(ALL_FFLAGS_LO)
 
@@ -144,11 +143,13 @@ R_TRE = ../extra/tre/libtre.a
 R_XDR = @BUILD_XDR_TRUE@ ../extra/xdr/libxdr.a
 R_XZ = @BUILD_XZ_TRUE@  ../extra/xz/liblzma.a
 R_LIBINTL = @BUILD_LIBINTL_TRUE@ ../extra/intl/libintl.a
+R_LIBGC = ../extra/gc/libgc.a
 
 MAIN_LIBS = ../unix/libunix.a ../appl/libappl.a ../nmath/libnmath.a
 MAIN_OBJS = `ls ../unix/*.o ../appl/*.o ../nmath/*.o`
 EXTRA_STATIC_LIBS = \
-  $(R_ZLIBS) $(R_BZLIBS) $(R_PCRE) $(R_TRE) $(R_XDR) $(R_XZ) $(R_LIBINTL)
+  $(R_ZLIBS) $(R_BZLIBS) $(R_PCRE) $(R_TRE) $(R_XDR) $(R_XZ) $(R_LIBINTL) \
+	$(R_LIBGC)
 STATIC_LIBS = $(MAIN_LIBS) $(EXTRA_STATIC_LIBS)
 
 EXTRA_LIBS = $(BOOST_LIBS) $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS) @LIBINTL@ $(READLINE_LIBS) $(LIBS)
@@ -229,7 +230,7 @@ $(MAIN_LIBS):
 
 ../extra/bzip2/libbz2.a ../extra/pcre/libpcre.a ../extra/pcre/libtre.a\
   ../extra/xdr/libxdr.a ../extra/zlib/libz.a ../extra/xv/liblzma.a \
-  ../extra/intl/libintl.a:
+  ../extra/intl/libintl.a ../extra/gc/libgc.a :
 	(cd $(@D); $(MAKE))
 
 

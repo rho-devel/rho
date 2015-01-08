@@ -48,20 +48,26 @@
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/GCRoot.h"
+#include "CXXR/GCStackFrameBoundary.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ProtectStack.h"
+#include "CXXR/RAllocStack.h"
 #include "CXXR/WeakRef.h"
+#include "gc.h"
+#include "gc_mark.h"
 
-#ifdef GC_FIND_LOOPS
-#include <typeinfo>
-#endif
+extern "C" {
+    // Declared in src/extra/gc/include/private/gc_priv.h.
+    void GC_with_callee_saves_pushed(void (*fn)(char*, void *),
+				     char* arg);
+}
 
 using namespace std;
 using namespace CXXR;
 
-GCNode::List* GCNode::s_live;
-vector<const GCNode*>* GCNode::s_moribund;
-GCNode::List* GCNode::s_reachable;
+GCNode::List* GCNode::s_live = 0;
+vector<const GCNode*>* GCNode::s_moribund = 0;
+GCNode::List* GCNode::s_reachable = 0;
 unsigned int GCNode::s_num_nodes = 0;
 unsigned int GCNode::s_inhibitor_count = 0;
 const unsigned char GCNode::s_decinc_refcount[]
@@ -70,31 +76,43 @@ const unsigned char GCNode::s_decinc_refcount[]
    0x3e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x1e,
    0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 0,    0};
 const size_t GCNode::s_gclite_margin = 10000;
-size_t GCNode::s_gclite_threshold;
+size_t GCNode::s_gclite_threshold = s_gclite_margin;
 unsigned char GCNode::s_mark = 0;
 
-// Some versions of gcc (e.g. 4.2.1) give a spurious "throws different
-// exceptions" error if the attributes aren't repeated here.
 void* GCNode::operator new(size_t bytes) HOT_FUNCTION
 {
-#ifndef RARE_GC
-    if (
-#ifndef AGGRESSIVE_GC
-	MemoryBank::bytesAllocated() >= s_gclite_threshold
+    if (s_inhibitor_count == 0)
+    {
+#ifdef AGGRESSIVE_GC
+	if (true)
+#elif defined(RARE_GC)
+	if (MemoryBank::bytesAllocated() > GCManager::triggerLevel())
 #else
-	true
+	if (MemoryBank::bytesAllocated() > s_gclite_threshold)
 #endif
-	)
-	gclite();
-#endif
-    if (MemoryBank::bytesAllocated() > GCManager::triggerLevel()
-	&& s_inhibitor_count == 0) {
-#ifdef RARE_GC
-	gclite();
-#endif
-	GCManager::gc();
+	{
+	    gclite();
+	}
+
+	if (MemoryBank::bytesAllocated() > GCManager::triggerLevel())
+	{
+	    GCManager::gc();
+	}
     }
-    return MemoryBank::allocate(bytes);
+    MemoryBank::notifyAllocation(bytes);
+    void* result = GC_malloc(bytes);
+    // We repurpose the BDW collection's mark bit as an allocated flag.  This
+    // works since the mark-sweep functionality of the BDW GC isn't used at all.
+    GC_set_mark_bit(result);
+
+    return result;
+}
+
+void GCNode::operator delete(void* p, size_t bytes)
+{
+    MemoryBank::notifyDeallocation(bytes);
+    GC_clear_mark_bit(p);
+    GC_free(p);
 }
 
 void GCNode::abortIfNotExposed(const GCNode* node)
@@ -120,29 +138,21 @@ bool GCNode::check()
     unsigned int numnodes = 0;
     unsigned int virgins = 0;
     // Check live list:
-    {
-	List::const_iterator end = s_live->end();
-	for (List::const_iterator it = s_live->begin();
-	     it != end; ++it) {
-	    const GCNode* node = *it;
-	    ++numnodes;
-	    if ((node->m_rcmmu & s_refcount_mask) == 0)
-		++virgins;
-	}
+    for (const GCNode* node: *s_live) {
+	++numnodes;
+	if (node->getRefCount() == 0)
+	    ++virgins;
     }
+
     // Check moribund list:
-    {
-	vector<const GCNode*>::const_iterator end = s_moribund->end();
-	for (vector<const GCNode*>::const_iterator it = s_moribund->begin();
-	     it != end; ++it) {
-	    const GCNode* node = *it;
-	    if (!(node->m_rcmmu & s_moribund_mask)) {
-		cerr << "GCNode::check() : "
-		    "Node on moribund list without moribund bit set.\n";
-		abort();
-	    }
+    for (const GCNode* node: *s_moribund) {
+	if (!(node->m_rcmmu & s_moribund_mask)) {
+	    cerr << "GCNode::check() : "
+		"Node on moribund list without moribund bit set.\n";
+	    abort();
 	}
     }
+
     // Check total number of nodes:
     if (numnodes != s_num_nodes) {
 	cerr << "GCNode::check() :"
@@ -154,15 +164,6 @@ bool GCNode::check()
 	cerr << "GCNode::check() : " << virgins
 	     << " nodes whose refcount has always been zero.\n";
     return true;
-}
-
-void GCNode::cleanup()
-{
-    ProtectStack::restoreSize(0);
-    sweep();
-    GCManager::cleanup();
-    ProtectStack::cleanup();
-    GCRootBase::cleanup();
 }
 
 void GCNode::destruct_aux()
@@ -205,34 +206,45 @@ void GCNode::gclite()
     if (s_inhibitor_count != 0)
 	return;
     GCInhibitor inhibitor;
-    GCStackRootBase::protectAll();
     ProtectStack::protectAll();
     ByteCode::protectAll();
+
+    GCStackRootBase::withAllStackNodesProtected(gcliteImpl);
+}
+
+void GCNode::gcliteImpl() {
     while (!s_moribund->empty()) {
 	// Last in, first out, for cache efficiency:
 	const GCNode* node = s_moribund->back();
 	s_moribund->pop_back();
-	unsigned char& rcmmu = node->m_rcmmu;
-	if ((rcmmu & s_refcount_mask) == 0)
+	if (node->getRefCount() == 0)
 	    delete node;
 	// Clear moribund bit.  Beware ~ promotes to unsigned int.
-	else rcmmu &= static_cast<unsigned char>(~s_moribund_mask);
+	else node->m_rcmmu &= static_cast<unsigned char>(~s_moribund_mask);
     }
     s_gclite_threshold = MemoryBank::bytesAllocated() + s_gclite_margin;
 }
 
 void GCNode::initialize()
 {
-    static List live, reachable;
-    s_live = &live;
-    s_reachable = &reachable;
-    static vector<const GCNode*> moribund;
-    s_moribund = &moribund;
+    s_live = new List();
+    s_reachable = new List();
+    s_moribund = new vector<const GCNode*>();
     s_gclite_threshold = s_gclite_margin;
 
-    GCRootBase::initialize();  // BREAKPOINT A
-    ProtectStack::initialize();
-    GCManager::initialize();
+    // Initialize the Boehm GC.
+    GC_set_all_interior_pointers(1);
+    GC_set_dont_precollect(1);
+    GC_set_no_dls(1);
+    GC_set_pages_executable(0);
+
+    GC_INIT();
+
+    // We do our own garbage collection, so disable the Boehm GC's collector.
+    // The collector library is used to do allocations, deallocations, find
+    // stack roots and walk the heap in the mark/sweep cleanup, but no actual
+    // garbage collection.
+    GC_disable();
 }
 
 void GCNode::makeMoribund() const
@@ -259,73 +271,58 @@ void GCNode::mark()
 
 void GCNode::sweep()
 {
-#ifdef GC_FIND_LOOPS
-    {
-	// Look for loops among the unreachable nodes.  We need
-	// temporarily to park the s_reachable list in reachable:
-	List* reachable = new List;
-	swap(reachable, s_reachable);
-	GCNode::Marker marker;
-	while (!s_live->empty()) {
-	    GCNode* node = s_live->front();
-	    marker(node);
-	}
-	s_live->splice_back(s_reachable);
-	swap(reachable, s_reachable);
-	delete reachable;
-    }
-#endif
-    List zombies;
     // Detach the referents of nodes that haven't been moved to a
-    // reachable list (i.e. are unreachable), and relist these nodes
-    // as zombies:
+    // reachable list (i.e. are unreachable).
+    // Once all of these objects have been processed, they will have no
+    // incoming references and will have been placed on the moribund list for
+    // deletion in the following call to gclite().
     while (!s_live->empty()) {
 	GCNode* node = s_live->front();
 	node->detachReferents();
-	zombies.splice_back(node);
+	node->freeLink();
     }
     // Transfer the s_reachable list to the exposed list:
     s_live->splice_back(s_reachable);
-    // The preceding will have resulted in some nodes within
-    // unreachable subgraphs getting transferred to the moribund list,
-    // rather than being deleted immediately.  Now we clear up this detritus:
+    // Cleanup all the nodes that got placed on the moribund list.
     gclite();
-    // At this point we can be confident that there will be no further
-    // invocation of defRefCount() on the 'zombie' nodes, so we can
-    // get rid of them.  The destructor of 'zombies' will do this
-    // automatically.
 }
 
 void GCNode::Marker::operator()(const GCNode* node)
 {
     if (node->isMarked()) {
-#ifdef GC_FIND_LOOPS
-	vector<const GCNode*>::const_iterator it = m_ariadne.begin();
-	while (it != m_ariadne.end() && *it != node)
-	    ++it;
-	if (it != m_ariadne.end()) {
-	    // Loop found:
-	    cout << "GCFL " << (m_ariadne.end() - it);
-	    while (it != m_ariadne.end()) {
-		const GCNode* nd = *it;
-		cout << ' ' << nd << ' ' << typeid(*nd).name();
-		++it;
-	    }
-	    cout << " GCFL" << endl;
-	}
-#endif 
 	return;
     }
-#ifdef GC_FIND_LOOPS
-    m_ariadne.push_back(node);
-#endif
     // Update mark  Beware ~ promotes to unsigned int.
     node->m_rcmmu &= static_cast<unsigned char>(~s_mark_mask);
     node->m_rcmmu |= s_mark;
     ++m_marks_applied;
     s_reachable->splice_back(node);
     node->visitReferents(this);
-#ifdef GC_FIND_LOOPS
-    m_ariadne.pop_back();
-#endif
+}
+
+void CXXR::initializeMemorySubsystem()
+{
+    static bool initialized = false;
+    if (!initialized) {
+	MemoryBank::initialize();
+	GCNode::initialize();
+	ProtectStack::initialize();
+	RAllocStack::initialize();
+
+	initialized = true;
+    }
+}
+
+
+GCNode* GCNode::asGCNode(void* candidate_pointer)
+{
+    if (candidate_pointer < GC_least_plausible_heap_addr
+	|| candidate_pointer > GC_greatest_plausible_heap_addr)
+	return nullptr;
+
+    void* base_pointer = GC_base(candidate_pointer);
+    if (base_pointer && GC_is_marked(base_pointer)) {
+	return reinterpret_cast<GCNode*>(base_pointer);
+    }
+    return nullptr;
 }

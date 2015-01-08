@@ -47,6 +47,20 @@ inline std::ostream& operator<<(std::ostream& os, const RObject* object) {
     Rf_PrintValue(const_cast<CXXR::RObject*>(object));
     return os;
 }
+  
+// This class exists purely to provide access to private members of the GCNode  
+// class for testing purposes.
+class GCTestHelper {
+public:
+    static unsigned char getRefCount(const GCNode* node) {
+	return node->getRefCount();
+    }
+};
+
+inline unsigned char getRefCount(const GCNode* node) {
+    return GCTestHelper::getRefCount(node);
+}
+
 }  // namespace CXXR
 
 #endif  // CXXR_TESTS_CXXR_TEST_HELPERS_HPP

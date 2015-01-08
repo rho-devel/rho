@@ -34,11 +34,8 @@
 
 /** @file GCStackRoot.hpp
  *
- * @brief Templated class CXXR::GCStackRoot and its untemplated base class
+ * @brief Templated class CXXR::GCStackRoot and its untemplated utility class
  * CXXR::GCStackRootBase.
- *
- * See the paragraph 'Caller Protects' in the description of class
- * CXXR::GCStackRoot for recommended coding policy.
  */
 
 #ifndef GCSTACKROOT_HPP
@@ -49,118 +46,66 @@
 namespace CXXR {
     class RObject;
 
-    /** @brief Untemplated base class for GCStackRoot.
+    /** @brief Untemplated utility class for GCStackRoot.
      *
-     * The preferred method for C++ code to protect a GCNode
-     * from the garbage collector is to use the templated class
-     * GCStackRoot, of which this is the untemplated base class, or
-     * class GCRoot.
-     *
-     * However, GCStackRoot is not usable by C code, which should
-     * continue to use ::PROTECT(), ::UNPROTECT() etc. as in CR, which
-     * are implemented in CXXR via class ProtectStack.
+     * This class provides static functions useful for working with the set
+     * of active stack roots.
      */
     class GCStackRootBase {
     public:
 	/** @brief Conduct a const visitor to protected objects.
 	 *
 	 * Conduct a GCNode::const_visitor object to each node pointed
-	 * to by a GCStackRootBase.
+	 * to by a pointer on the stack.  Note that because CXXR does
+	 * conservative stack scanning, it is possible that this may also visit
+	 * some unreferenced objects.
 	 *
 	 * @param v Pointer to the const_visitor object.
 	 */
 	static void visitRoots(GCNode::const_visitor* v);
-    protected:
-	/** @brief Primary constructor.
+
+	/** @brief Conduct a const visitor to protected objects in a specified
+	 *    range.
 	 *
-	 * @param node Pointer to be encapsulated by the GCStackRootBase.
-	 */
-	GCStackRootBase(const GCNode* node)
-	    : m_next(s_roots), m_target(node), m_protecting(false)
-	{
-	    s_roots = this;
-	    GCNode::maybeCheckExposed(node);
-	}
-
-	/** @brief Copy constructor.
+	 * Conduct a GCNode::const_visitor object to each node pointed
+	 * to by a pointer in the given range on the stack.
+	 * Note that because CXXR does conservative stack scanning, it is
+	 * possible that this may also visit some unreferenced objects.
 	 *
-	 * @param source Pattern for the copy.
-	 */
-	GCStackRootBase(const GCStackRootBase& source)
-	    : m_next(s_roots), m_target(source.m_target), m_protecting(false)
-	{
-	    s_roots = this;
-	}
-
-	~GCStackRootBase()
-	{
-#ifndef NDEBUG
-	    if (this != s_roots)
-		seq_error();
-#endif
-	    if (m_protecting)
-		destruct_aux();
-	    s_roots = m_next;
-	}
-
-	GCStackRootBase& operator=(const GCStackRootBase& source)
-	{
-	    retarget(source.m_target);
-	    return *this;
-	}
-
-	/** @brief Change the node protected by this GCStackRootBase.
+	 * @param v Pointer to the const_visitor object.
+	 * @param start Pointer to the location on the stack to start at.  If
+	 *    set nullptr, then starts at the base of the stack.
+	 * @param end Pointer to the location on the stack to end at.
 	 *
-	 * @param node Pointer to the node now to be protected, or a
-	 * null pointer.
+	 * Note that as usual in C++, start and end form a semi-closed interval
+	 * [start, end).  In particular, if there is a pointer at end, it
+	 * will not be visited.
 	 */
-	void retarget(const GCNode* node)
-	{
-	    GCNode::maybeCheckExposed(node);
-	    if (m_protecting)
-		retarget_aux(node);
-	    m_target = node;
-	}
+	static void visitRoots(GCNode::const_visitor* v,
+			       const void* start,
+			       const void* end);
 
-	/** @brief Access the encapsulated pointer.
+	/** @brief Ensures that the reference counts of all roots on the stack
+	 *   have been updated.
 	 *
-	 * @return the GCNode pointer encapsulated by this object.
+	 * Calls the specified function in a context where all the defered
+	 * updates to the reference counts from stack roots have been done.
+	 *
+	 * @param function The function to call.
 	 */
-	const GCNode* ptr() const
-	{
-	    return m_target;
-	}
+	static void withAllStackNodesProtected(std::function<void()> function);
+
+	/** @brief Informs the memory manager that the object at this address
+	 *    must not be deleted prior to this call.
+	 */
+	static void ensureReachable(void* p);
+
     private:
-	friend class GCNode;
+	friend class GCStackFrameBoundary;
 
-	static GCStackRootBase* s_roots;
-
-	GCStackRootBase* m_next;
-	const GCNode* m_target;
-	bool m_protecting;  // If this is set, it signifies that this
-	  // GCStackRootBase object will have incremented the
-	  // reference count of its target (if any).  In the interests
-	  // of efficiency, initially m_protecting is false; it is set
-	  // by call to protectAll().
-	  //
-	  // m_protecting && m_next implies m_next->m_protecting .
-
-	// Helper function for destructor:
-        void destruct_aux() HOT_FUNCTION;
-
-	// Put all GCStackRootBase objects into the protecting state:
-	static void protectAll() HOT_FUNCTION;
-
-	// Helper function for retarget():
-	void retarget_aux(const GCNode* node) HOT_FUNCTION;
-
-	// Report out-of-sequence destructor call and abort program.
-	// (We can't use an exception here because it's called from a
-	// destructor.)
-#ifdef __GNUC__
-	__attribute__((cold))
-#endif
-	static void seq_error();
+	static void visitRootsImpl(char*, void*);
+	static void withAllStackNodesProtectedImpl(char*, void*);
+	static void* getStackBase();
     };
 
     /** @brief Smart pointer to protect a GCNode from garbage
@@ -171,35 +116,26 @@ namespace CXXR {
      * exists, the GCNode that it points to will not be garbage
      * collected.
      *
-     * GCStackRoot objects are intended to be allocated on the
-     * processor stack: specifically, the class implementation
-     * requires that GCStackRoot objects are destroyed in the reverse
-     * order of creation, and the destructor checks this.
+     * GCStackRoot objects are required to be allocated on the
+     * processor stack.
+     *
+     * Note that because CXXR does conservative stack scanning, use of
+     * stack roots is not necessary in many places.  The exception to this
+     * is objects that manage memory.  In that case, the GCStackRoot is
+     * required to prevent deletion in situations where the object is no longer
+     * referenced but there are still pointers to the managed memory.
+     *
+     * Note also that GCStackRoot is not usable by C code, which should
+     * continue to use ::PROTECT(), ::UNPROTECT() etc. as in CR, which
+     * are implemented in CXXR via class ProtectStack.
      *
      * @tparam T GCNode or a type publicly derived from GCNode.  This
      *           may be qualified by const, so for example a const
      *           String* may be encapsulated in a GCStackRoot using the
      *           type GCStackRoot<const String>.
-     *
-     * \par Caller protects:
-     * Suppose some code calls a function (or class method) that takes
-     * a pointer or reference to a class derived from GCNode as an
-     * argument, and/or returns a pointer to a class derived from
-     * GCNode as its return value.  In CXXR, the preferred coding
-     * approach is that the \e calling \e code should take
-     * responsibility for protecting the arguments from the garbage
-     * collector before calling the function, and likewise take
-     * responsibility for protecting the returned value.  This is
-     * because the calling code is in a better position to decide
-     * whether any additional steps are necessary to achieve this, and
-     * what they should be.  (The calling code may also need to protect
-     * other objects: objects that are neither arguments to or values
-     * returned from the called function, but which would otherwise be
-     * vulnerable if the called function gave rise to a garbage
-     * collection.)
      */
     template <class T = RObject>
-    class GCStackRoot : public GCStackRootBase {
+    class GCStackRoot {
     public:
 	typedef T type;
 
@@ -209,28 +145,18 @@ namespace CXXR {
 	 *          pointer.
 	 */
 	explicit GCStackRoot(T* node = 0)
-	    : GCStackRootBase(node) {}
+	    : m_target(node) {}
 
-	/** @brief Copy constructor.
-	 *
-	 * The copy constructor has been explicitly deleted to prevent stack
-	 * roots from being returned from functions.  This is required as the
-	 * compiler is allowed to extend the lifetime of the returned values
-	 * via copy elision, which in turn violates the requirement that stack
-	 * roots be destroyed in the reverse order of creation.
-	 * (There is probably no reason to use this constructor anyway.)
-	 */
-        GCStackRoot(const GCStackRoot& source) = delete;
+	~GCStackRoot()
+	{
+	    GCStackRootBase::ensureReachable((void*)m_target);
+	}
 
 	/**
 	 * This will cause this GCStackRoot to protect the same GCNode as
 	 * is protected by source.
 	 */
-        GCStackRoot& operator=(const GCStackRoot& source)
-	{
-	    GCStackRootBase::operator=(source);
-	    return *this;
-	}
+        GCStackRoot& operator=(const GCStackRoot& source) = default;
 
 	/**
 	 * This will cause this GCStackRoot to point to and protect node,
@@ -242,7 +168,7 @@ namespace CXXR {
 	 */
 	GCStackRoot& operator=(T* node)
 	{
-	    GCStackRootBase::retarget(node);
+	    m_target = node;
 	    return *this;
 	}
 
@@ -284,9 +210,23 @@ namespace CXXR {
 	 */
 	T* get() const
 	{
-	    return static_cast<T*>(const_cast<GCNode*>(ptr()));
+	    return m_target;
 	}
+
+    private:
+	T* m_target;
     };
 }  // namespace CXXR
+
+#ifdef HAVE_GC_HEADER
+#include "gc.h"
+
+inline void CXXR::GCStackRootBase::ensureReachable(void* p)
+{
+    // Force the compiler to keep m_target live as long as this object
+    // exists.
+    GC_reachable_here(p);
+}
+#endif
 
 #endif  // GCSTACKROOT_HPP

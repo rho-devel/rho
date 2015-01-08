@@ -61,23 +61,21 @@ namespace CXXR {
 }
 std::hash<std::string> String::Hasher::s_string_hasher;
 
-String::map* String::s_cache = nullptr;
-std::string* String::s_na_string;
-String* String::s_na;
-String* String::s_blank;
+static std::string* getNaString()
+{
+    static std::string* na_string = new std::string("NA");
+    return na_string;
+}
 
-SEXP R_NaString = String::NA();
+SEXP R_NaString = nullptr;
 SEXP R_BlankString = nullptr;
-
-// String::s_blank and R_BlankString are defined in Symbol.cpp to
-// enforce initialization order.
 
 // String::Comparator::operator()(const String*, const String*) is in
 // sort.cpp
 
 String::String(map::value_type* key_val_pr)
     : VectorBase(CHARSXP, key_val_pr ? key_val_pr->first.first.size() : 2),
-      m_key_val_pr(key_val_pr), m_string(s_na_string), m_encoding(CE_NATIVE),
+      m_key_val_pr(key_val_pr), m_string(getNaString()), m_encoding(CE_NATIVE),
       m_symbol(nullptr)
 {
     if (key_val_pr) {
@@ -97,16 +95,14 @@ String::String(map::value_type* key_val_pr)
 
 String::~String()
 {
-    // During program exit, s_cache may already have been deleted.
-    // Also need to allow for serialization proxies, for which
-    // m_key_val_pr will be null.
-    if (s_cache && m_key_val_pr) {
+    // m_key_val_pr is null for serialization proxies.
+    if (m_key_val_pr) {
 	// Must copy the key, because some implementations may,
 	// having deleted the cache entry pointed to by
 	// m_key_val_pr, continue looking for other entries with
 	// the given key.
 	key k = m_key_val_pr->first;
-	s_cache->erase(k);
+	getCache()->erase(k);
     }
 }
 
@@ -128,26 +124,18 @@ cetype_t String::GPBits2Encoding(unsigned int gpbits)
     return CE_NATIVE;
 }
 
-void String::cleanup()
-{
-    // Clearing s_cache avoids valgrind 'possibly lost' reports on exit:
-    s_cache->clear();
-    s_cache = nullptr;
-}
-
 void String::initialize()
 {
-    static map the_map;
-    s_cache = &the_map;
-    static std::string na_string("NA");
-    s_na_string = &na_string;
-    static GCRoot<String> na(CXXR_NEW(String(nullptr)));
-    s_na = na.get();
-    static GCRoot<String> blank(String::obtain(""));
-    s_blank = blank.get();
-    R_BlankString = s_blank;
+    R_NaString = NA();
+    R_BlankString = blank();
 }
-    
+
+String::map* String::getCache()
+{
+    static map* cache = new map();
+    return cache;
+}
+
 bool CXXR::isASCII(const std::string& str)
 {
     using namespace boost::lambda;
@@ -176,7 +164,7 @@ String* String::obtain(const std::string& str, cetype_t encoding)
     if (ascii)
 	encoding = CE_NATIVE;
     std::pair<map::iterator, bool> pr
-	= s_cache->insert(map::value_type(key(str, encoding), nullptr));
+	= getCache()->insert(map::value_type(key(str, encoding), nullptr));
     map::iterator it = pr.first;
     if (pr.second) {
 	try {
@@ -184,7 +172,7 @@ String* String::obtain(const std::string& str, cetype_t encoding)
 	    val.second = expose(new String(&val));
 	    val.second->m_ascii = ascii;
 	} catch (...) {
-	    s_cache->erase(it);
+	    getCache()->erase(it);
 	    throw;
 	}
     }

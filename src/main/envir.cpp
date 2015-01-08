@@ -233,15 +233,14 @@ SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
   searched.  This is intended to make it possible to implement
   namespaces at some (indeterminate) point in the future.
 
-  We hash the initial environment.  100 is a magic number discovered
-  by Ross.  Change it if you feel inclined.
-
+  We hash the initial environment.
 */
 
 static SEXP R_BaseNamespaceName;
 
-void attribute_hidden InitGlobalEnv()
+void Rf_InitGlobalEnv()
 {
+    Environment::initialize();
     R_MethodsNamespace = R_GlobalEnv; // so it is initialized.
     SET_SYMVALUE(install(".BaseNamespaceEnv"), R_BaseNamespace);
     R_BaseNamespaceName = ScalarString(mkChar("base"));
@@ -1316,21 +1315,25 @@ static void FrameValues(SEXP frame, int all, SEXP values, int *indx)
     }
 }
 
-static bool BuiltinTest(const Symbol* sym, bool all, bool intern)
+static bool BuiltinTest(const Symbol* sym, bool all, bool internal_only)
 {
-    if (intern && DotInternalTable::get(sym))
+    if ((sym->name()->c_str()[0] == '.') && !all) {
+	return false;
+    }
+    if (internal_only) {
+	return BuiltInFunction::obtainInternal(sym);
+    }
+    if (SYMVALUE(const_cast<Symbol*>(sym)) != R_UnboundValue) {
 	return true;
-    if ((all || sym->name()->c_str()[0] != '.')
-	&& SYMVALUE(const_cast<Symbol*>(sym)) != R_UnboundValue)
-	return true;
+    }
     return false;
 }
 
 static int BuiltinSize(int all, int intern)
 {
     int count = 0;
-    for (Symbol::const_iterator it = Symbol::begin();
-	 it != Symbol::end(); ++it) {
+    Symbol::const_iterator end = Symbol::end();
+    for (Symbol::const_iterator it = Symbol::begin(); it != end; ++it) {
 	const Symbol* sym = *it;
 	if (BuiltinTest(sym, all, intern))
 	    ++count;
@@ -1342,8 +1345,8 @@ static void
 BuiltinNames(int all, int intern, SEXP names, int *indx)
 {
     StringVector* sv = SEXP_downcast<StringVector*>(names);
-    for (Symbol::const_iterator it = Symbol::begin();
-	 it != Symbol::end(); ++it) {
+    Symbol::const_iterator end = Symbol::end();
+    for (Symbol::const_iterator it = Symbol::begin(); it != end; ++it) {
 	const Symbol* sym = *it;
 	if (BuiltinTest(sym, all, intern))
 	    (*sv)[(*indx)++] = const_cast<String*>(sym->name());

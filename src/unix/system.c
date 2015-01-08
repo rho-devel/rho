@@ -44,6 +44,11 @@
 # include <config.h>
 #endif
 
+#include "gc.h"
+#include "private/gc_priv.h"  /* for STACK_GROWS_UP */
+#undef SETJMP
+#undef LONGJMP
+
 #define R_USE_SIGNALS 1
 #include <Defn.h>
 
@@ -148,14 +153,6 @@ void R_setupHistory()
 #  include <sys/time.h>
 # endif
 # include <sys/resource.h>
-# ifdef HAVE_LIBC_STACK_END
-extern void * __libc_stack_end;
-# endif
-# ifdef HAVE_KERN_USRSTACK
-#  include <unistd.h>
-#  include <sys/types.h>
-#  include <sys/sysctl.h>
-# endif
 #endif
 
 int R_running_as_main_program = 0;
@@ -167,6 +164,52 @@ extern uintptr_t dummy_ii(void);
 
 /* Protection against embedded misuse, PR#15420 */
 static int num_initialized = 0;
+
+static uintptr_t align(uintptr_t pointer) {
+  int alignment = sizeof(void*);
+  return (pointer + alignment - 1) & ~(alignment - 1);
+}
+
+attribute_hidden
+void R_GetStackLimits()
+{
+  int i;
+
+#ifdef STACK_GROWS_UP
+    /* 1 is downwards */
+    R_CStackDir = -1;
+#else
+    R_CStackDir = 1;
+#endif
+
+#if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT)
+{
+    struct rlimit rlim;
+
+    if(getrlimit(RLIMIT_STACK, &rlim) == 0) {
+	unsigned long lim1, lim2;
+	lim1 = (unsigned long) rlim.rlim_cur;
+	lim2 = (unsigned long) rlim.rlim_max; /* Usually unlimited */
+	R_CStackLimit = lim1 < lim2 ? lim1 : lim2;
+    }
+}
+#endif
+
+    // Set R_CStackStart
+    struct GC_stack_base base;
+    if (GC_get_stack_base(&base) == GC_SUCCESS)
+    {
+        R_CStackStart = (uintptr_t)base.mem_base;
+#ifndef STACK_GROWS_UP
+	// GC_get_stack_base() returns one past the end of the stack.
+	R_CStackStart = R_CStackStart - sizeof(void*);
+#endif
+    } else {
+      /* Unless embedded, the current stack location should be
+         near the top, 5540 bytes away when checked. */
+      R_CStackStart = align((uintptr_t) &i + (6000 * R_CStackDir));
+    }
+}
 
 int Rf_initialize_R(int ac, char **av)
 {
@@ -182,48 +225,7 @@ int Rf_initialize_R(int ac, char **av)
 	exit(1);
     }
 
-
-#if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT)
-{
-    struct rlimit rlim;
-
-    {
-	uintptr_t ii = dummy_ii();
-	/* 1 is downwards */
-	
-	R_CStackDir = ((uintptr_t)&i > ii) ? 1 : -1;
-    }
-
-    if(getrlimit(RLIMIT_STACK, &rlim) == 0) {
-	unsigned long lim1, lim2;
-	lim1 = (unsigned long) rlim.rlim_cur;
-	lim2 = (unsigned long) rlim.rlim_max; /* Usually unlimited */
-	R_CStackLimit = lim1 < lim2 ? lim1 : lim2;
-    }
-#if defined(HAVE_LIBC_STACK_END)
-    R_CStackStart = (uintptr_t) __libc_stack_end;
-#elif defined(HAVE_KERN_USRSTACK)
-    {
-	/* Borrowed from mzscheme/gc/os_dep.c */
-	int nm[2] = {CTL_KERN, KERN_USRSTACK};
-	void * base;
-	size_t len = sizeof(void *);
-	(void) sysctl(nm, 2, &base, &len, NULL, 0);
-	R_CStackStart = (uintptr_t) base;
-    }
-#else
-    if(R_running_as_main_program) {
-	/* This is not the main program, but unless embedded it is
-	   near the top, 5540 bytes away when checked. */
-	R_CStackStart = (uintptr_t) &i + (6000 * R_CStackDir);
-    }
-#endif
-    if(R_CStackStart == -1) R_CStackLimit = -1; /* never set */
-
-    /* printf("stack limit %ld, start %lx dir %d \n", R_CStackLimit,
-	      R_CStackStart, R_CStackDir); */
-}
-#endif
+    R_GetStackLimits();
 
     ptr_R_Suicide = Rstd_Suicide;
     ptr_R_ShowMessage = Rstd_ShowMessage;

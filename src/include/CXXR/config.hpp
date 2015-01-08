@@ -69,7 +69,6 @@
 #ifdef DOXYGEN
 #define AGGRESSIVE_GC
 #endif
-#define AGGRESSIVE_GC
 
 /** @def CHECK_EXPOSURE
  *

@@ -38,49 +38,104 @@
  */
 
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/AddressSanitizer.h"
+#include "CXXR/GCStackFrameBoundary.hpp"
+#include "Defn.h"
+#include "gc.h"
 
 #include <cstdlib>
-#include <iostream>
+
+extern "C" {
+    // Declared in src/extra/gc/include/private/gc_priv.h.
+    void GC_with_callee_saves_pushed(void (*fn)(char*, void *),
+				     char* arg);
+}
 
 using namespace std;
 using namespace CXXR;
 
-GCStackRootBase* GCStackRootBase::s_roots = nullptr;
-
-void GCStackRootBase::destruct_aux()
-{
-    GCNode::decRefCount(m_target);
-}
-
-void GCStackRootBase::protectAll()
-{
-    GCStackRootBase* sr = s_roots;
-    while (sr && !sr->m_protecting) {
-	GCNode::incRefCount(sr->m_target);
-	sr->m_protecting = true;
-	sr = sr->m_next;
+namespace CXXR {
+    namespace ForceNonInline {
+	auto ensureReachableP = GCStackRootBase::ensureReachable;
     }
 }
 
-void GCStackRootBase::retarget_aux(const GCNode* node)
+// TODO: should only be defined if we have asan.
+extern "C"
+const char* __asan_default_options()
 {
-    GCNode::incRefCount(node);
-    GCNode::decRefCount(m_target);
+    // R installs it's own signal handlers.
+    return "--allow_user_segv_handler=1";
 }
 
-void GCStackRootBase::seq_error()
+extern "C"
+void R_GetStackLimits();
+
+void* GCStackRootBase::getStackBase()
 {
-    cerr << "Fatal error:"
-	    " GCStackRoots must be destroyed in reverse order of creation\n";
-    abort();
+    if (R_CStackStart == -1) {
+	R_GetStackLimits();
+    }
+    return reinterpret_cast<void*>(R_CStackStart);
+}
+
+NO_SANITIZE_ADDRESS 
+void GCStackRootBase::visitRoots(GCNode::const_visitor* visitor,
+				 const void* start_ptr,
+				 const void* end_ptr)
+{
+    uintptr_t start = start_ptr ? reinterpret_cast<uintptr_t>(start_ptr)
+	: reinterpret_cast<uintptr_t>(getStackBase());
+    uintptr_t end = reinterpret_cast<uintptr_t>(end_ptr);
+
+
+#ifdef STACK_GROWS_UP
+    for (uintptr_t stack_pointer = start; stack_pointer < end;
+	 stack_pointer += alignof(void*))
+#else
+    for (uintptr_t stack_pointer = start; stack_pointer > end;
+	 stack_pointer -= alignof(void*))
+#endif
+    {
+        void* candidate_pointer = *reinterpret_cast<void**>(stack_pointer);
+	GCNode* node = GCNode::asGCNode(candidate_pointer);
+	if (node) {
+	    (*visitor)(node);
+	}
+    }
 }
 
 void GCStackRootBase::visitRoots(GCNode::const_visitor* v)
 {
-    GCStackRootBase* root = s_roots;
-    while (root) {
-	if (root->m_target)
-	    (*v)(root->m_target);
-	root = root->m_next;
-    }
+    GC_with_callee_saves_pushed(visitRootsImpl,
+				reinterpret_cast<char*>(v));
+}
+
+void GCStackRootBase::visitRootsImpl(char* p, void*)
+{
+    GCStackRoot<GCNode> top;
+    GCNode::const_visitor* v = reinterpret_cast<GCNode::const_visitor*>(p);
+    visitRoots(v, nullptr, &top);
+}
+
+void GCStackRootBase::withAllStackNodesProtected(std::function<void()> function)
+{
+    // Push all callee-save registers onto the stack.
+    GC_with_callee_saves_pushed(withAllStackNodesProtectedImpl,
+				reinterpret_cast<char*>(&function));
+}
+
+void GCStackRootBase::withAllStackNodesProtectedImpl(char* pointer, void*)
+{
+    std::function<void()>* function
+	= reinterpret_cast<std::function<void()>*>(pointer);
+
+    // Protect all values on the stack above the barrier.  Those below the
+    // barrier have already been protected.
+    GCStackFrameBoundary::withStackFrameBoundary([=]() {
+	    GCStackFrameBoundary::advanceBarrier();
+	    // Call the user function.
+	    (*function)();
+	    return nullptr;
+	});
 }

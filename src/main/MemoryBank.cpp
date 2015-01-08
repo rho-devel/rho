@@ -62,7 +62,7 @@ void (*MemoryBank::s_monitor)(size_t) = 0;
 size_t MemoryBank::s_monitor_threshold = numeric_limits<size_t>::max();
 #endif
 
-MemoryBank::Pool* MemoryBank::s_pools;
+MemoryBank::Pool* MemoryBank::s_pools = nullptr;
 
 // Note that the C++ standard requires that an operator new returns a
 // valid pointer even when 0 bytes are requested.  The entry at
@@ -81,9 +81,7 @@ const unsigned char MemoryBank::s_pooltab[]
 
 void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
 {
-#ifdef R_MEMORY_PROFILING
-    if (s_monitor && bytes >= s_monitor_threshold) s_monitor(bytes);
-#endif
+    notifyAllocation(bytes);
     void* p;
     if (bytes >= s_new_threshold)
 	p = ::operator new(bytes);
@@ -91,8 +89,6 @@ void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
 	Pool& pool = s_pools[s_pooltab[(bytes + 7) >> 3]];
 	p = pool.allocate();
     }
-    ++s_blocks_allocated;
-    s_bytes_allocated += bytes;
     return p;
 }
 
@@ -118,18 +114,17 @@ void MemoryBank::initialize()
     // The following leave some space at the end of each 4096-byte
     // page, in case posix_memalign needs to put some housekeeping
     // information for the next page there.
-    static Pool pools[s_num_pools];
-    pools[0].initialize(1, 511);
-    pools[1].initialize(2, 255);
-    pools[2].initialize(3, 170);
-    pools[3].initialize(4, 127);
-    pools[4].initialize(5, 102);
-    pools[5].initialize(6, 85);
-    pools[6].initialize(8, 63);
-    pools[7].initialize(12, 42);
-    pools[8].initialize(16, 31);
-    pools[9].initialize(24, 21);
-    s_pools = pools;
+    s_pools = new Pool[s_num_pools];
+    s_pools[0].initialize(1, 511);
+    s_pools[1].initialize(2, 255);
+    s_pools[2].initialize(3, 170);
+    s_pools[3].initialize(4, 127);
+    s_pools[4].initialize(5, 102);
+    s_pools[5].initialize(6, 85);
+    s_pools[6].initialize(8, 63);
+    s_pools[7].initialize(12, 42);
+    s_pools[8].initialize(16, 31);
+    s_pools[9].initialize(24, 21);
 #endif
 }
 

@@ -34,9 +34,12 @@ sources_cxx = ArgMatchertest.cpp Allocatortest.cpp CellPooltest.cpp \
               RObject_sizer.cpp splice_test.cpp
 
 unit_test_sources = \
+	BuiltInFunctionTest.cpp \
 	ControlFlowTests.cpp \
 	EvaluationTests.cpp \
 	FrameTests.cpp \
+	GCRootTest.cpp \
+	GCStackFrameBoundaryTests.cpp \
 	VisibilityTests.cpp \
 	@BUILD_LLVM_JIT_TRUE@ MCJITMemoryManagerTests.cpp
 
@@ -73,7 +76,7 @@ ArgMatchertest : ArgMatchertest.o ../../lib/libR.dylib
 	$(LINK.cc) -o $@ $< -L../../lib -lR \
 	           $(MAIN_LDFLAGS) $(EXTRA_LIBS)
 else
-ArgMatchertest : ArgMatchertest.o #../../src/main/libR.a
+ArgMatchertest : ArgMatchertest.o FORCE # ../../src/main/libR.a
 	$(LINK.cc) -o $@ $< -L../../lib -L../../src/main -Wl,-rpath,../../lib \
                    -lR -ldl $(MAIN_LDFLAGS) $(EXTRA_LIBS)
 endif
@@ -244,7 +247,7 @@ SETLENGTHtest : SETLENGTHtest.o ../../lib/libR.dylib
 	$(LINK.cc) -o $@ $< -L../../lib -lR \
 	           $(MAIN_LDFLAGS) $(EXTRA_LIBS)
 else
-SETLENGTHtest : SETLENGTHtest.o #../../src/main/libR.a
+SETLENGTHtest : SETLENGTHtest.o  FORCE # ../../src/main/libR.a
 	$(LINK.cc) -o $@ $< -L../../lib -L../../src/main -Wl,-rpath,../../lib \
 		   -Wl,-rpath,$(BOOST_LD_LIBRARY_PATH) \
                    -lR -ldl $(MAIN_LDFLAGS) $(EXTRA_LIBS)
@@ -256,7 +259,7 @@ SETLENGTHtest.ts : SETLENGTHtest SETLENGTHtest.save
 	rm SETLENGTHtest.out
 	touch $@
 
-RObject_sizer : RObject_sizer.o #../../src/main/libR.a
+RObject_sizer : RObject_sizer.o FORCE #../../src/main/libR.a
 	$(LINK.cc) -o $@ $< -L../../lib -L../../src/main -Wl,-rpath,../../lib \
                    -lR -ldl $(MAIN_LDFLAGS) $(EXTRA_LIBS)
 

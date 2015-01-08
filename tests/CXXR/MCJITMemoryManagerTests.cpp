@@ -83,8 +83,19 @@ TEST_F(MCJITMemoryManagerTest, DuplicateSymbol) {
     EXPECT_EQ(test_symbol, reinterpret_cast<Symbol*>(address));
 }
 
-TEST_F(MCJITMemoryManagerTest, FindBuiltin) {
-    BuiltInFunction* function = BuiltInFunction::obtain("all.names");
+TEST_F(MCJITMemoryManagerTest, FindBuiltInInternal) {
+    BuiltInFunction* function = BuiltInFunction::obtainInternal("all.names");
+    ASSERT_TRUE(function != nullptr);
+    
+    GlobalVariable* global = m_manager->getBuiltIn(function);
+    ASSERT_TRUE(global != nullptr);
+
+    uint64_t address = m_manager->getSymbolAddress(global->getName());
+    EXPECT_EQ(function, reinterpret_cast<BuiltInFunction*>(address));
+}
+
+TEST_F(MCJITMemoryManagerTest, FindBuiltInPrimitive) {
+    BuiltInFunction* function = BuiltInFunction::obtainPrimitive("if");
     ASSERT_TRUE(function != nullptr);
     
     GlobalVariable* global = m_manager->getBuiltIn(function);

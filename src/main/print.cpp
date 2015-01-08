@@ -98,7 +98,10 @@ static void PrintLanguageEtc(SEXP, Rboolean, Rboolean);
 #define TAGBUFLEN 256
 static char tagbuf[TAGBUFLEN + 5];
 
-static GCRoot<> na_string_noquote(mkChar("<NA>"));
+RObject* getNaStringNoQuote() {
+    static GCRoot<> na_string_noquote(mkChar("<NA>"));
+    return na_string_noquote;
+}
 
 /* Used in X11 module for dataentry */
 /* NB this is called by R.app even though it is in no public header, so 
@@ -106,7 +109,7 @@ static GCRoot<> na_string_noquote(mkChar("<NA>"));
 void PrintDefaults(void)
 {
     R_print.na_string = NA_STRING;
-    R_print.na_string_noquote = na_string_noquote;
+    R_print.na_string_noquote = getNaStringNoQuote();
     R_print.na_width = int( strlen(CHAR(R_print.na_string)));
     R_print.na_width_noquote = int( strlen(CHAR(R_print.na_string_noquote)));
     R_print.quote = 1;

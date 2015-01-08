@@ -688,8 +688,8 @@ static char UserRHome[MAX_PATH + 7];
 extern char *getRHOME(int), *getRUser(void); /* in rhome.c */
 void R_setStartTime(void);
 
-
-void R_SetWin32(Rstart Rp)
+attribute_hidden
+void R_GetStackLimits()
 {
     int dummy;
 
@@ -711,6 +711,12 @@ void R_SetWin32(Rstart Rp)
     }
 
     R_CStackDir = 1;
+}
+
+void R_SetWin32(Rstart Rp)
+{
+    R_GetStackLimits();
+
     R_Home = Rp->rhome;
     if(strlen(R_Home) >= MAX_PATH) R_Suicide("Invalid R_HOME");
     snprintf(RHome, MAX_PATH+7, "R_HOME=%s", R_Home);

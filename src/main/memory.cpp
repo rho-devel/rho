@@ -277,6 +277,8 @@ void InitMemory()
     GCManager::setReporting(R_Verbose ? &std::cerr : nullptr);
     GCManager::setGCThreshold(R_VSize);
 
+    ::CXXR::initializeMemorySubsystem();
+
 #ifdef BYTECODE
     ByteCode::initialize();
 #endif

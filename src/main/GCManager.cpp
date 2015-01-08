@@ -52,8 +52,8 @@
 
 using namespace CXXR;
 
-size_t GCManager::s_threshold;
-size_t GCManager::s_min_threshold;
+size_t GCManager::s_threshold = std::numeric_limits<size_t>::max();
+size_t GCManager::s_min_threshold = s_threshold;
 size_t GCManager::s_max_bytes = 0;
 size_t GCManager::s_max_nodes = 0;
 std::ostream* GCManager::s_os = nullptr;
@@ -62,7 +62,7 @@ void (*GCManager::s_pre_gc)() = nullptr;
 void (*GCManager::s_post_gc)() = nullptr;
 
 namespace {
-    unsigned int gc_count;
+    unsigned int gc_count = 0;
 
 
 #ifdef DEBUG_GC
@@ -106,12 +106,6 @@ void GCManager::gcController()
 			   std::max(s_min_threshold,
 				    2*MemoryBank::bytesAllocated()));
     if (s_post_gc) (*s_post_gc)();
-}
-
-void GCManager::initialize()
-{
-    setGCThreshold(std::numeric_limits<size_t>::max());
-    gc_count = 0;
 }
 
 void GCManager::resetMaxTallies()

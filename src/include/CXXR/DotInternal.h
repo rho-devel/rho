@@ -47,62 +47,7 @@
 #ifdef __cplusplus
 
 #include "CXXR/BuiltInFunction.h"
-#include "CXXR/GCRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
-
-namespace CXXR {
-    class Symbol;
-
-    /** @brief Table of functions invoked \e via <tt>.Internal()</tt>.
-     *
-     * This class, all of whose members are static, defines a mapping
-     * from Symbols to BuiltInFunction objects that are invoked \e via
-     * R's <tt>.Internal()</tt> framework.
-     */
-    class DotInternalTable {
-    public:
-	/** @brief Get function accessed via <tt>.Internal()</tt>.
-	 *
-	 * @param sym Pointer to a Symbol.
-	 *
-	 * @return If \a x is associated with a function invoked in R \e
-	 * via <tt>.Internal()</tt>, then a pointer to the appropriate
-	 * CXXR::BuiltInFunction, otherwise a null pointer.
-	 */
-	static BuiltInFunction* get(const Symbol* sym)
-	{
-	    map::iterator it = s_table->find(sym);
-	    if (it == s_table->end())
-		return nullptr;
-	    return (*it).second;
-	}
-
-	/** @brief Associate a Symbol with a <tt>.Internal()</tt> function.
-	 *
-	 * @param sym Pointer to a Symbol to be associated with a function.
-	 *
-	 * @param fun Pointer to the BuiltInFunction to be associated by
-	 *          this symbol.  A null pointer is permissible, and
-	 *          signifies that any previous association of \a sym with
-	 *          a function is to be removed from the table.
-	 */
-	static void set(const Symbol* sym, BuiltInFunction* fun);
-    private:
- 	typedef
-            std::unordered_map<const Symbol*,
-                               GCRoot<BuiltInFunction>,
-                               std::hash<const Symbol*>,
-                               std::equal_to<const Symbol*>,
-                               CXXR::Allocator<std::pair<const Symbol* const,
-                                                         GCRoot<BuiltInFunction> > >
-                               > map;
-	static map* s_table;
-	// Called from BuiltInFunction::initialize():
-	static void initialize();
-
-	friend class BuiltInFunction;
-    };
-}  // namespace CXXR
 
 extern "C" {
 #endif
@@ -122,7 +67,7 @@ extern "C" {
     {
 	using namespace CXXR;
 	const Symbol* sym = SEXP_downcast<Symbol*>(x);
-	return DotInternalTable::get(sym);
+	return BuiltInFunction::obtainInternal(sym);
     }
 #endif
 

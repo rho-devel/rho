@@ -54,31 +54,14 @@ namespace CXXR {
     }
 }
 
-DotInternalTable::map* DotInternalTable::s_table = nullptr;
-
-void DotInternalTable::initialize()
-{
-    static map the_map;
-    s_table = &the_map;
-}
-
-void DotInternalTable::set(const Symbol* sym, BuiltInFunction* fun)
-{
-    if (!fun)
-	s_table->erase(sym);
-    else
-	(*s_table)[sym] = fun;
-}
-
-
 // ***** C interface *****
 
-void SET_INTERNAL(SEXP x, SEXP v)
-{
-    const Symbol* sym = SEXP_downcast<Symbol*>(x);
-    BuiltInFunction* fun = SEXP_downcast<BuiltInFunction*>(v);
-    DotInternalTable::set(sym, fun);
-}
+// void SET_INTERNAL(SEXP x, SEXP v)
+// {
+//     const Symbol* sym = SEXP_downcast<Symbol*>(x);
+//     BuiltInFunction* fun = SEXP_downcast<BuiltInFunction*>(v);
+//     DotInternalTable::set(sym, fun);
+// }
 
 SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
 {
@@ -93,7 +76,7 @@ SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
     Symbol* funsym = dynamic_cast<Symbol*>(innercall->car());
     if (!funsym)
 	Rf_errorcall(call, _("invalid .Internal() argument"));
-    BuiltInFunction* func = DotInternalTable::get(funsym);
+    BuiltInFunction* func = BuiltInFunction::obtainInternal(funsym);
     if (!func)
 	Rf_errorcall(call, _("there is no .Internal function \"%s\""),
 		     funsym->name()->c_str());

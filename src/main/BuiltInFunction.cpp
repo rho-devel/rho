@@ -43,7 +43,6 @@
 #include <cstdarg>
 #include "Internal.h"
 #include "CXXR/ArgList.hpp"
-#include "CXXR/DotInternal.h"
 #include "CXXR/FunctionContext.hpp"
 #include "CXXR/PlainContext.hpp"
 #include "CXXR/ProtectStack.h"
@@ -63,8 +62,7 @@ namespace CXXR {
     }
 }
 
-BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = nullptr;
-BuiltInFunction::map* BuiltInFunction::s_cache = nullptr;
+// s_function_table is in names.cpp
 
 // BuiltInFunction::apply() creates a FunctionContext only if
 // m_transparent is false.  This affects the location at which
@@ -108,11 +106,7 @@ BuiltInFunction::BuiltInFunction(unsigned int offset)
 
 BuiltInFunction::~BuiltInFunction()
 {
-    if (m_offset < 0)
-	return;
-    // During program exit, s_cache may already have been deleted:
-    if (s_cache)
-	s_cache->erase(name());
+    assert(0 && "BuiltInFunction's destructor should never be called");
 }
 
 RObject* BuiltInFunction::apply(ArgList* arglist, Environment* env,
@@ -175,13 +169,6 @@ void BuiltInFunction::checkNumArgs(const PairList* args,
     }
 }
 
-void BuiltInFunction::cleanup()
-{
-    // Clearing s_cache avoids valgrind 'possibly lost' reports on exit:
-    s_cache->clear();
-    s_cache = nullptr;
-}
-
 int BuiltInFunction::indexInTable(const char* name)
 {
     for (int i = 0; s_function_table[i].name; ++i)
@@ -190,14 +177,51 @@ int BuiltInFunction::indexInTable(const char* name)
     return -1;
 }
 
-// BuiltInFunction::initialize() is in names.cpp
+// BuiltInFunction::createLookupTables() is in names.cpp
 
-BuiltInFunction* BuiltInFunction::obtain(const std::string& name)
+std::pair<BuiltInFunction::map*, BuiltInFunction::map*>
+BuiltInFunction::getLookupTables()
 {
-    auto location = s_cache->find(name);
-    if (location == s_cache->end()) {
+    static std::pair<map*, map*> tables = createLookupTables();
+    return tables;
+}
+
+BuiltInFunction::map* BuiltInFunction::getPrimitiveFunctionLookupTable()
+{
+    return getLookupTables().first;
+}
+
+BuiltInFunction::map* BuiltInFunction::getInternalFunctionLookupTable()
+{
+    return getLookupTables().second;
+}
+
+
+BuiltInFunction* BuiltInFunction::obtainPrimitive(const std::string& name)
+{
+    const Symbol* symbol = Symbol::obtain(name);
+    auto location = getPrimitiveFunctionLookupTable()->find(symbol);
+    if (location == getPrimitiveFunctionLookupTable()->end()) {
 	Rf_warning(_("%s is not the name of a built-in or special function"),
 		   name.c_str());
+	return nullptr;
+    }
+    return location->second;
+}
+
+void BuiltInFunction::addPrimitivesToEnvironment(Environment* environment)
+{
+    for(const auto& entry: *getPrimitiveFunctionLookupTable()) {
+	const Symbol* symbol = entry.first;
+	BuiltInFunction* function = entry.second;
+	environment->frame()->bind(symbol, function);
+    }
+}
+
+BuiltInFunction* BuiltInFunction::obtainInternal(const Symbol* name)
+{
+    auto location = getInternalFunctionLookupTable()->find(name);
+    if (location == getInternalFunctionLookupTable()->end()) {
 	return nullptr;
     }
     return location->second;

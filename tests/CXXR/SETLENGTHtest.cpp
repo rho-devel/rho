@@ -23,6 +23,7 @@
 
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/StringVector.h"
+#include "Defn.h"
 
 using namespace std;
 using namespace CXXR;
@@ -46,6 +47,9 @@ namespace {
 
 int main()
 {
+    Rf_InitMemory();
+    Rf_InitNames();
+
     GCStackRoot<StringVector> sv(CXXR_NEW(StringVector(4)));
     (*sv)[0] = String::obtain("fee");
     (*sv)[1] = String::obtain("fie");

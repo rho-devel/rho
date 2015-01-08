@@ -46,6 +46,7 @@
 #include "CXXR/BailoutContext.hpp"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/Expression.h"
+#include "CXXR/GCStackFrameBoundary.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ListFrame.hpp"
 #include "CXXR/PlainContext.hpp"
@@ -158,6 +159,14 @@ RObject* Closure::execute(Environment* env) const
 RObject* Closure::invoke(Environment* env, const ArgList* arglist,
 			 const Expression* call,
 			 const Frame* method_bindings) const
+{
+    return GCStackFrameBoundary::withStackFrameBoundary(
+	[=]() { return invokeImpl(env, arglist, call, method_bindings); });
+}
+
+RObject* Closure::invokeImpl(Environment* env, const ArgList* arglist,
+			     const Expression* call,
+			     const Frame* method_bindings) const
 {
 #ifndef NDEBUG
     if (arglist->status() != ArgList::PROMISED)

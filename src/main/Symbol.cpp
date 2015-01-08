@@ -61,20 +61,8 @@ namespace CXXR {
     }
 }
 
-Symbol::Table* Symbol::s_table = nullptr;
-
-Symbol* Symbol::s_missing_arg;
 SEXP R_MissingArg;
-
-Symbol* Symbol::s_unbound_value;
 SEXP R_UnboundValue;
-
-// As of gcc 4.3.2, gcc's std::tr1::regex didn't appear to be working.
-// (Discovered 2009-01-16)  So we use boost:
-
-namespace {
-    boost::basic_regex<char>* dd_regex;  // "\\.\\.(\\d+)"
-}
 
 // ***** Class Symbol itself *****
 
@@ -91,19 +79,17 @@ Symbol::Symbol(const String* the_name)
     // boost::regex_match (libboost_regex1_36_0-1.36.0-9.5) doesn't
     // seem comfortable with empty strings, hence the size check.
     if (m_name && m_name->size() > 2) {
+	// Versions of GCC prior to 4.9 don't support std::regex, so use
+	// boost::regex instead.
+	static const boost::regex *regex = new boost::regex("\\.\\.(\\d+)");
+
 	string name(m_name->c_str());
 	boost::smatch dd_match;
-	if (boost::regex_match(name, dd_match, *dd_regex)) {
+	if (boost::regex_match(name, dd_match, *regex)) {
 	    istringstream iss(dd_match[1]);
 	    iss >> m_dd_index;
 	}
     }
-}
-
-void Symbol::cleanup()
-{
-    // Clearing s_table avoids valgrind 'possibly lost' reports on exit:
-    s_table->clear();
 }
 
 void Symbol::detachReferents()
@@ -148,22 +134,37 @@ RObject* Symbol::evaluate(Environment* env)
 
 void Symbol::initialize()
 {
-    static Table table;
-    s_table = &table;
-    static GCRoot<Symbol> missing_arg(expose(new Symbol));
-    s_missing_arg = missing_arg.get();
-    R_MissingArg = s_missing_arg;
-    static GCRoot<Symbol> unbound_value(expose(new Symbol));
-    s_unbound_value = unbound_value.get();
-    R_UnboundValue = s_unbound_value;
-    static boost::basic_regex<char> dd_rx("\\.\\.(\\d+)");
-    dd_regex = &dd_rx;
+    R_MissingArg = missingArgument();
+    R_UnboundValue = unboundValue();
+
+#define PREDEFINED_SYMBOL(C_NAME, CXXR_NAME, R_NAME) \
+    C_NAME = CXXR_NAME = Symbol::obtain(R_NAME);
+#include "CXXR/PredefinedSymbols.h"
+#undef PREDEFINED_SYMBOL
+}
+
+Symbol* Symbol::missingArgument()
+{
+    static GCRoot<Symbol> missing(CXXR_NEW(Symbol));
+    return missing.get();
+}
+
+Symbol* Symbol::unboundValue()
+{
+    static GCRoot<Symbol> unbound(CXXR_NEW(Symbol));
+    return unbound.get();
+}
+
+Symbol::Table* Symbol::getTable()
+{
+    static Table* table = new Table();
+    return table;
 }
 
 Symbol* Symbol::make(const String* name)
 {
     Symbol* ans = CXXR_NEW(Symbol(name));
-    s_table->push_back(GCRoot<Symbol>(ans));
+    getTable()->push_back(GCRoot<Symbol>(ans));
     name->m_symbol = ans;
     return ans;
 }
@@ -201,97 +202,18 @@ BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::Symbol)
 
 // Predefined Symbols:
 namespace CXXR {
-    Symbol* const Bracket2Symbol = Symbol::obtain("[[");
-    Symbol* const BracketSymbol = Symbol::obtain("[");
-    Symbol* const BraceSymbol = Symbol::obtain("{");
-    Symbol* const TmpvalSymbol = Symbol::obtain("*tmp*");
-    Symbol* const ClassSymbol = Symbol::obtain("class");
-    Symbol* const ConnIdSymbol = Symbol::obtain("conn_id");
-    Symbol* const DimNamesSymbol = Symbol::obtain("dimnames");
-    Symbol* const DimSymbol = Symbol::obtain("dim");
-    Symbol* const DollarSymbol = Symbol::obtain("$");
-    Symbol* const DotClassSymbol = Symbol::obtain(".Class");
-    Symbol* const DotDeviceSymbol = Symbol::obtain(".Device");
-    Symbol* const DotDevicesSymbol = Symbol::obtain(".Devices");
-    Symbol* const DotGenericSymbol = Symbol::obtain(".Generic");
-    Symbol* const DotGenericCallEnvSymbol = Symbol::obtain(".GenericCallEnv");
-    Symbol* const DotGenericDefEnvSymbol = Symbol::obtain(".GenericDefEnv");
-    Symbol* const DotGroupSymbol = Symbol::obtain(".Group");
-    Symbol* const DotMethodSymbol = Symbol::obtain(".Method");
-    Symbol* const DotMethodsSymbol = Symbol::obtain(".Methods");
-    Symbol* const DotdefinedSymbol = Symbol::obtain(".defined");
-    Symbol* const DotsSymbol = Symbol::obtain("...");
-    Symbol* const DottargetSymbol = Symbol::obtain(".target");
-    Symbol* const DoubleColonSymbol = Symbol::obtain("::");
-    Symbol* const DropSymbol = Symbol::obtain("drop");
-    Symbol* const ExactSymbol = Symbol::obtain("exact");
-    Symbol* const LastvalueSymbol = Symbol::obtain(".Last.value");
-    Symbol* const LevelsSymbol = Symbol::obtain("levels");
-    Symbol* const ModeSymbol = Symbol::obtain("mode");
-    Symbol* const NameSymbol = Symbol::obtain("name");
-    Symbol* const NamesSymbol = Symbol::obtain("names");
-    Symbol* const NaRmSymbol = Symbol::obtain("na.rm");
-    Symbol* const PackageSymbol = Symbol::obtain("package");
-    Symbol* const PreviousSymbol = Symbol::obtain("previous");
-    Symbol* const QuoteSymbol = Symbol::obtain("quote");
-    Symbol* const RowNamesSymbol = Symbol::obtain("row.names");
-    Symbol* const S3MethodsTableSymbol = Symbol::obtain(".__S3MethodsTable__.");
-    Symbol* const SeedsSymbol = Symbol::obtain(".Random.seed");
-    Symbol* const SourceSymbol = Symbol::obtain("source");
-    Symbol* const TripleColonSymbol = Symbol::obtain(":::");
-    Symbol* const TspSymbol = Symbol::obtain("tsp");
-    Symbol* const CommentSymbol = Symbol::obtain("comment");
-    Symbol* const DotEnvSymbol = Symbol::obtain(".Environment");
-    Symbol* const RecursiveSymbol = Symbol::obtain("recursive");
-    Symbol* const UseNamesSymbol = Symbol::obtain("use.names");
-    Symbol* const SrcfileSymbol = Symbol::obtain("srcfile");
-    Symbol* const SrcrefSymbol = Symbol::obtain("srcref");
-    Symbol* const WholeSrcrefSymbol = Symbol::obtain("wholeSrcref");
+#define PREDEFINED_SYMBOL(C_NAME, CXXR_NAME, R_NAME) \
+    Symbol* CXXR_NAME = nullptr;
+#include "CXXR/PredefinedSymbols.h"
+#undef PREDEFINED_SYMBOL
 }
 
 // ***** C interface *****
 
-SEXP R_Bracket2Symbol = CXXR::Bracket2Symbol;
-SEXP R_BracketSymbol = CXXR::BracketSymbol;
-SEXP R_BraceSymbol = CXXR::BraceSymbol;
-SEXP R_ClassSymbol = CXXR::ClassSymbol;
-SEXP R_ConnIdSymbol = CXXR::ConnIdSymbol;
-SEXP R_DeviceSymbol = CXXR::DotDeviceSymbol;
-SEXP R_DevicesSymbol = CXXR::DotDevicesSymbol;
-SEXP R_DimNamesSymbol = CXXR::DimNamesSymbol;
-SEXP R_DimSymbol = CXXR::DimSymbol;
-SEXP R_DollarSymbol = CXXR::DollarSymbol;
-SEXP R_DotsSymbol = CXXR::DotsSymbol;
-SEXP R_DoubleColonSymbol = CXXR::DoubleColonSymbol;
-SEXP R_DropSymbol = CXXR::DropSymbol;
-SEXP R_LastvalueSymbol = CXXR::LastvalueSymbol;
-SEXP R_LevelsSymbol = CXXR::LevelsSymbol;
-SEXP R_ModeSymbol = CXXR::ModeSymbol;
-SEXP R_NameSymbol = CXXR::NameSymbol;
-SEXP R_NamesSymbol = CXXR::NamesSymbol;
-SEXP R_NaRmSymbol = CXXR::NaRmSymbol;
-SEXP R_PackageSymbol = CXXR::PackageSymbol;
-SEXP R_QuoteSymbol = CXXR::QuoteSymbol;
-SEXP R_RowNamesSymbol = CXXR::RowNamesSymbol;
-SEXP R_SeedsSymbol = CXXR::SeedsSymbol;
-SEXP R_SourceSymbol = CXXR::SourceSymbol;
-SEXP R_TripleColonSymbol = CXXR::TripleColonSymbol;
-SEXP R_TspSymbol = CXXR::TspSymbol;
-
-SEXP R_CommentSymbol = CXXR::CommentSymbol;
-SEXP R_DotEnvSymbol = CXXR::DotEnvSymbol;
-SEXP R_ExactSymbol = CXXR::ExactSymbol;
-SEXP R_RecursiveSymbol = CXXR::RecursiveSymbol;
-SEXP R_SrcfileSymbol = CXXR::SrcfileSymbol;
-SEXP R_SrcrefSymbol = CXXR::SrcrefSymbol;
-SEXP R_WholeSrcrefSymbol = CXXR::WholeSrcrefSymbol;
-SEXP R_TmpvalSymbol = CXXR::TmpvalSymbol;
-SEXP R_UseNamesSymbol = CXXR::UseNamesSymbol;
-
-SEXP R_dot_Generic = CXXR::DotGenericSymbol;
-SEXP R_dot_Method = CXXR::DotMethodSymbol;
-SEXP R_dot_defined = CXXR::DotdefinedSymbol;
-SEXP R_dot_target = CXXR::DottargetSymbol;
+#define PREDEFINED_SYMBOL(C_NAME, CXXR_NAME, R_NAME) \
+    SEXP C_NAME = nullptr;
+#include "CXXR/PredefinedSymbols.h"
+#undef PREDEFINED_SYMBOL
 
 // Rf_install() is currently defined in main.cpp
 

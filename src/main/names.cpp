@@ -100,14 +100,7 @@ using namespace CXXR;
  * rightassoc: Right (1) or left (0) associative operator
  *
  */
-
-void BuiltInFunction::initialize()
-{
-    static map the_map;
-    s_cache = &the_map;
-
-    static TableEntry function_table[] = {
-	// Now begins the function table, deliberately retaining CR's indentation:
+BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 
 /* printname	c-entry		offset	eval	arity	pp-kind	     precedence	rightassoc
  * ---------	-------		------	----	-----	-------      ----------	----------*/
@@ -970,25 +963,29 @@ void BuiltInFunction::initialize()
 {nullptr,		nullptr,		0,	0,	0,	{PP_INVALID, PREC_FN,	0}},
 };
 
-    // code of BuiltInFunction::initialize() now continues:
-    s_function_table = function_table;
-    DotInternalTable::initialize();
+std::pair<BuiltInFunction::map*, BuiltInFunction::map*>
+BuiltInFunction::createLookupTables()
+{
+    map* primitive_function_cache = new map();
+    map* internal_function_cache = new map();
+
     for (int i = 0; s_function_table[i].name; ++i) {
 	const char* symname = s_function_table[i].name;
 	Symbol* sym = Symbol::obtain(symname);
 	GCStackRoot<BuiltInFunction> bif(CXXR_NEW(BuiltInFunction(i)));
-	(*s_cache)[symname] = bif;
-	if ((s_function_table[i].flags%100)/10)
-	    DotInternalTable::set(sym, bif);
-	else
-	    Environment::base()->frame()->obtainBinding(sym)->setValue(bif);
+	if (bif->viaDotInternal()) {
+	    (*internal_function_cache)[sym] = bif;
+	}
+	else {
+	    (*primitive_function_cache)[sym] = bif;
+	}
     }
-    
+    return std::make_pair(primitive_function_cache, internal_function_cache);
 }
 
 SEXP attribute_hidden R_Primitive(const char *primname)
 {
-    return BuiltInFunction::obtain(primname);
+    return BuiltInFunction::obtainPrimitive(primname);
 }
     
 SEXP attribute_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
@@ -1006,12 +1003,11 @@ SEXP attribute_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* initialize the symbol table */
-// Well, now just odds and ends in CXXR.
-void attribute_hidden InitNames()
+void attribute_hidden Rf_InitNames()
 {
     /* String constants (CHARSXP values) */
-    /* NA_STRING */
-    // CXXR: NA_STRING is initialised in String.cpp
+    String::initialize();
+    Symbol::initialize();
     R_print.na_string = NA_STRING;
     R_initialize_bcode();
 }

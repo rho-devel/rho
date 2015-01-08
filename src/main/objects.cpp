@@ -729,7 +729,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 		Rf_error(_("no method to invoke"));
 	    nextfun = dynamic_cast<FunctionBase*>(nfval);
 	    if (nextfun && nextfun->sexptype() == CLOSXP)
-		nextfun = DotInternalTable::get(genericsym);
+		nextfun = BuiltInFunction::obtainInternal(genericsym);
 	    if (!nextfun)
 		Rf_error(_("no method to invoke"));
 	}

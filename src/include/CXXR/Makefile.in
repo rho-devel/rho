@@ -28,12 +28,13 @@ include $(top_builddir)/Makeconf
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 CXXR_HS = \
+  AddressSanitizer.h \
   BuiltInFunction.h Closure.h ComplexVector.h ConsCell.h \
   DotInternal.h \
   Environment.h Evaluator.h Expression.h ExpressionVector.h ExternalPointer.h \
   FunctionBase.h GCRoot.h IntVector.h \
   ListVector.h LogicalVector.h \
-  PairList.h Promise.h ProtectStack.h ProvenanceTracker.h \
+  PairList.h PredefinedSymbols.h Promise.h ProtectStack.h ProvenanceTracker.h \
   RAllocStack.h RObject.h RawVector.h RealVector.h \
   S4Object.h SEXPTYPE.h String.h StringVector.h Symbol.h \
   VectorBase.h WeakRef.h errors.h uncxxr.h
@@ -46,7 +47,7 @@ CXXR_HPPS = \
   GCStackRoot.hpp \
   HeterogeneousList.hpp MemoryBank.hpp NAAugment.hpp NodeStack.hpp \
   Provenance.hpp RHandle.hpp S11nScope.hpp \
-  SEXP_downcast.hpp SchwarzCounter.hpp StdFrame.hpp Subscripting.hpp \
+  SEXP_downcast.hpp StdFrame.hpp Subscripting.hpp \
   UnaryFunction.hpp config.hpp
 
 CXXR_HEADERS = $(CXXR_HS) $(CXXR_HPPS)

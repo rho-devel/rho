@@ -2301,30 +2301,6 @@ fi
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
 
-## KERN_USRSTACK support (BSD, Darwin, ...)
-R_KERN_USRSTACK
-
-## check for visible __libc_stack_end on Linux
-case "${host_os}" in
-  linux*)
-    AC_CACHE_CHECK([for visible __lib_stack_end], 
-    [r_cv_libc_stack_end],
-    [AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include "confdefs.h"
-#include <stdlib.h>
-extern void * __libc_stack_end;
-
-int main () {
-    exit(0);
-}
-  ]])], [r_cv_libc_stack_end=yes], [r_cv_libc_stack_end=no], 
-    [r_cv_libc_stack_end=no])])
-
-  if test "${r_cv_libc_stack_end}" = yes; then
-    AC_DEFINE(HAVE_LIBC_STACK_END, 1, [Define if __libc_stack_end is visible.])
-  fi
-esac
-
 ### * Miscellaneous.
 
 ## Printing.
@@ -2644,6 +2620,7 @@ AC_CONFIG_FILES(
   src/extra/Makefile
   src/extra/blas/Makefile
   src/extra/bzip2/Makefile
+  src/extra/gc/Makefile
   src/extra/gtest/Makefile
   src/extra/intl/Makefile
   src/extra/pcre/Makefile

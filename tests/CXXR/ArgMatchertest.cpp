@@ -231,14 +231,20 @@ namespace {
 }
 
 int main(int argc, char* argv[]) {
-    Evaluator evalr;
     if (argc < 3 || argc > 4)
 	usage(argv[0]);
     // Set up error reporting:
     ptr_R_WriteConsoleEx = WriteConsoleEx;
     ptr_R_ResetConsole = ptr_R_FlushConsole = 
         ptr_R_ClearerrConsole = DoNothing;
+
+    Rf_InitMemory();
+    Rf_InitNames();
+    Rf_InitGlobalEnv();
     Rf_InitOptions();
+
+    Evaluator evalr;
+
     // Set up Environments:
     GCStackRoot<Frame> ff(CXXR_NEW(ListFrame));
     GCStackRoot<Environment> fenvrt(CXXR_NEW(Environment(0, ff)));

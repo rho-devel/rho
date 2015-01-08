@@ -545,7 +545,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	/* skip over length and name fields */
 	/* length = */ m->InInteger(fp, d);
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	s = BuiltInFunction::obtain(m->InString(fp, d));
+	s = BuiltInFunction::obtainPrimitive(m->InString(fp, d));
 	break;
     case CHARSXP:
 	len = m->InInteger(fp, d);
@@ -1302,7 +1302,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
     case SPECIALSXP:
     case BUILTINSXP:
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	PROTECT(s = BuiltInFunction::obtain(m->InString(fp, d)));
+	PROTECT(s = BuiltInFunction::obtainPrimitive(m->InString(fp, d)));
 	break;
     case CHARSXP:
     case LGLSXP:
