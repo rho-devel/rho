@@ -223,7 +223,7 @@ namespace CXXR {
 		return ccc;
 	    T* ans = new T(cc->car(), cc->tail(), cc->tag());
 	    ans->setAttributes(cc->attributes());
-	    return ans;
+	    return expose(ans);
 	}
 
 	iterator end()

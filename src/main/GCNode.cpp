@@ -115,6 +115,20 @@ void GCNode::operator delete(void* p, size_t bytes)
     GC_free(p);
 }
 
+void GCNode::abortIfNotExposed(const GCNode* node)
+{
+    if (node && (node->m_rcmmu & 1)) {
+	cerr << "Internal error: GCNode not exposed to GC.\n";
+	abort();
+    }
+}
+
+void GCNode::alreadyExposedError()
+{
+    cerr << "Internal error: attempt to expose a node twice.\n";
+    abort();
+}
+
 bool GCNode::check()
 {
     if (s_live == nullptr) {
@@ -160,6 +174,7 @@ void GCNode::destruct_aux()
     if (it == s_moribund->end())
 	abort();  // Should never happen!
     s_moribund->erase(it);
+    --s_inhibitor_count;
 }
     
 void GCNode::gc()
@@ -202,11 +217,10 @@ void GCNode::gcliteImpl() {
 	// Last in, first out, for cache efficiency:
 	const GCNode* node = s_moribund->back();
 	s_moribund->pop_back();
-	// Clear moribund bit.  Beware ~ promotes to unsigned int.
-	node->m_rcmmu &= static_cast<unsigned char>(~s_moribund_mask);
-
 	if (node->getRefCount() == 0)
 	    delete node;
+	// Clear moribund bit.  Beware ~ promotes to unsigned int.
+	else node->m_rcmmu &= static_cast<unsigned char>(~s_moribund_mask);
     }
     s_gclite_threshold = MemoryBank::bytesAllocated() + s_gclite_margin;
 }
@@ -267,7 +281,7 @@ void GCNode::sweep()
 	node->detachReferents();
 	node->freeLink();
     }
-    // Transfer the s_reachable list to the live list:
+    // Transfer the s_reachable list to the exposed list:
     s_live->splice_back(s_reachable);
     // Cleanup all the nodes that got placed on the moribund list.
     gclite();

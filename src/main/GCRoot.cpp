@@ -66,6 +66,7 @@ GCRootBase::GCRootBase(const GCNode* node)
     s_list_head = this;
 
     m_pointer = node;
+    GCNode::maybeCheckExposed(node);
     GCNode::incRefCount(ptr());
 }
 

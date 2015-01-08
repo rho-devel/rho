@@ -101,7 +101,7 @@ Frame::BindingRange StdFrame::bindingRange() const
 
 StdFrame* StdFrame::clone() const
 {
-    return new StdFrame(*this);
+    return expose(new StdFrame(*this));
 }
 
 void StdFrame::lockBindings()

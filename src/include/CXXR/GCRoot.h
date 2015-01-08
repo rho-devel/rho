@@ -106,6 +106,7 @@ namespace CXXR {
 	 */
 	void redirect(const GCNode* node)
 	{
+	    GCNode::maybeCheckExposed(node);
 	    GCNode::incRefCount(node);
 	    const GCNode* oldnode = ptr();
 	    GCNode::decRefCount(oldnode);

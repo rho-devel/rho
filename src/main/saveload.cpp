@@ -1367,6 +1367,8 @@ static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
 	    frameReadPairList(env->frame(), bindings);
 	    // Throw away the hash table:
 	    NewReadItem(sym_table, env_table, fp, m, d);
+	
+	    env->expose();
 	}
 
 	/* Read the actual object back */

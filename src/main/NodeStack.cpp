@@ -114,6 +114,7 @@ void NodeStack::protectAll()
 #ifndef NDEBUG
 void NodeStack::retarget(RObject* node, size_t index)
 {
+    GCNode::maybeCheckExposed(node);
     if (index >= m_vector.size())
 	throw std::out_of_range("NodeStack::retarget():"
 				" index out of range.");

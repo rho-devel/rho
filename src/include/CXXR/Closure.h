@@ -331,7 +331,7 @@ void CXXR::Closure::load(Archive& ar, const unsigned int version)
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
     GCStackRoot<const PairList> formal_args;
     GCNPTR_SERIALIZE(ar, formal_args);
-    m_matcher = new ArgMatcher(formal_args);
+    m_matcher=expose(new ArgMatcher(formal_args));
     GCNPTR_SERIALIZE(ar, m_body);
     GCNPTR_SERIALIZE(ar, m_environment);
 }

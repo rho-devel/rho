@@ -60,7 +60,7 @@ PairList* Frame::Binding::asPairList(PairList* tail) const
     SET_MISSING(ans, origin());
     if (isActive()) SET_ACTIVE_BINDING_BIT(ans);
     if (isLocked()) LOCK_BINDING(ans);
-    return ans;
+    return expose(ans);
 }
 
 // Frame::Binding::assign() is defined in envir.cpp (for the time being).

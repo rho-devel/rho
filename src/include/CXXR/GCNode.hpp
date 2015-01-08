@@ -64,7 +64,7 @@
  * returns a pointer to a new object created by that constructor
  * expression.
  */
-#define CXXR_NEW(T) (new T)
+#define CXXR_NEW(T) CXXR::GCNode::expose(new T)
 
 namespace CXXR {
     /** @brief Base class for objects managed by the garbage collector.
@@ -90,7 +90,30 @@ namespace CXXR {
      * where other logic ensures that the pointer does not outlive the
      * thing pointed to.)</li>
      * </ol>
-
+     *
+     * \par Infant immunity:
+     * Mark-sweep garbage collection is disabled while any GCNode or
+     * object of a class derived from GCNode is under construction.
+     * This greatly simplifies the coding of the constructors.  Such
+     * an object is considered to be under construction from the
+     * moment the constructor is invoked until the node is exposed by
+     * calling the member function expose() (in one of its two forms),
+     * or until the node is deleted, whichever is sooner.  It is the
+     * responsibility of any code that creates an object of a class
+     * derived from GCNode to ensure that the object is exposed as
+     * soon as possible, e.g. before a pointer to the node is returned
+     * as the value of a function.  In particular, a node must be
+     * exposed before it is designated as the target of a GCEdge, a
+     * GCStackRoot or a GCRoot, or protected with PROTECT() or
+     * REPROTECT(): if the preprocessor variable CHECK_EXPOSURE is
+     * defined, runtime checks for this are inserted into the code.
+     *
+     * The simplest way of ensuring timely exposure is always to wrap
+     * the \c new call in a call to expose():
+     * e.g. <tt>GCNode::expose(new FooNode(<i>args</i>)</tt>.  This
+     * can be further simplified using the CXXR_NEW macro to
+     * CXXR_NEW(FooNode).
+     *
      * @note Because this base class is used purely for housekeeping
      * by the garbage collector, and does not contribute to the
      * 'meaning' of an object of a derived class, its data members are
@@ -170,9 +193,10 @@ namespace CXXR {
 
 	GCNode()
             : HeterogeneousListBase::Link(s_live),
-	      m_rcmmu(s_mark | s_moribund_mask)
+	      m_rcmmu(s_mark | s_moribund_mask | 1)
 	{
 	    ++s_num_nodes;
+	    ++s_inhibitor_count;
 	    s_moribund->push_back(this);
 	}
 
@@ -241,6 +265,64 @@ namespace CXXR {
 	 */
 	virtual void detachReferents()  {}
 
+	/** @brief Record that construction of a node is complete.
+	 *
+	 * See the description of the templated form of expose.
+	 */
+	void expose() const
+	{
+#ifndef NDEBUG
+	    if (isExposed())
+		alreadyExposedError();
+#endif
+	    m_rcmmu &= static_cast<unsigned char>(~1);
+	    --s_inhibitor_count;
+	}
+
+	/** @brief Record that construction of a node is complete.
+	 *
+	 * In normal operation (i.e. unless the object's constructor
+	 * throws an exception), this function - or its non-templated
+	 * form - should be called for each object derived from
+	 * GCNode, and this should be done as soon as possible after
+	 * construction of the object is complete.  In particular, a
+	 * node must be exposed before it is designated as the target
+	 * of a GCEdge, a GCStackRoot or a GCRoot, or protected with
+	 * PROTECT() or REPROTECT(): if the preprocessor variable
+	 * CHECK_EXPOSURE is defined, runtime checks for this are
+	 * inserted into the code.
+	 *
+	 * The simplest way of ensuring timely exposure is always to
+	 * wrap the \c new call in a call to expose():
+	 * e.g. <tt>GCNode::expose(new FooNode(<i>args</i>)</tt>.
+	 * This can be further simplified using the CXXR_NEW macro to
+	 * CXXR_NEW(FooNode).
+	 *
+	 * It is not permissible for a node to be exposed more than
+	 * once, and this is checked unless \c NDEBUG is defined.
+	 *
+	 * @tparam T GCNode or any class derived from it, possibly
+	 *           qualified by const.
+	 *
+	 * @param node Pointer to the node whose construction has been
+	 *          completed.
+	 *
+	 * @return the pointer \a node itself.
+	 *
+	 * @note The name of this function reflects an earlier design
+	 * in which GCNode objects were individually exposed to
+	 * mark-sweep garbage collection once their construction was
+	 * complete.  In the current design, mark-sweep garbage
+	 * collection is inhibited entirely whilst any GCNode object
+	 * is under construction.
+	 */
+	template <class T>
+	static T* expose(T* node)
+	{
+	    node->expose();
+	    return node;
+	}
+
 	/** @brief Initiate a garbage collection.
 	 */
 	static void gc();
@@ -253,6 +335,35 @@ namespace CXXR {
 	 * those nodes are also deleted, and so on recursively.
 	 */
 	static void gclite();
+	static void gcliteImpl();
+
+	/** @brief Has this node been exposed to garbage collection?
+	 *
+	 * @return true iff this node has been exposed to garbage
+	 * collection.
+	 */
+	bool isExposed() const
+	{
+	    return (m_rcmmu & 1) == 0;
+	}
+
+	/** @brief Subject to configuration, check that a GCNode is exposed.
+	 *
+	 * Normally, this function is an inlined no-op.  However, if
+	 * the preprocessor variable CHECK_EXPOSURE is defined, it
+	 * checks that a GCNode is exposed to garbage collection, and
+	 * aborts the program if not.  This can be a useful diagnostic
+	 * aid.
+	 *
+	 * @param node Pointer to the node to be checked, or a null
+	 *          pointer in which case the check passes.
+	 */
+	static void maybeCheckExposed(const GCNode* node)
+	{
+#ifdef CHECK_EXPOSURE
+	    abortIfNotExposed(node);
+#endif
+	}
 
 	/** @brief Number of GCNode objects in existence.
 	 *
@@ -295,7 +406,8 @@ namespace CXXR {
 	 */
 	virtual ~GCNode()
 	{
-	    if (m_rcmmu & s_moribund_mask)
+	    // Is the node still under construction?
+	    if (m_rcmmu & 1)
 		destruct_aux();
 	    --s_num_nodes;
 	}
@@ -352,7 +464,8 @@ namespace CXXR {
 	  // level.
 	static unsigned int s_num_nodes;  // Number of nodes in existence
 	static unsigned int s_inhibitor_count;  // Number of GCInhibitor
-	  // objects in existence.
+	  // objects in existence, plus the number of nodes currently
+	  // under construction (i.e. not yet exposed).
 
 	// Bit patterns XORd into m_rcmmu to decrement or increment the
 	// reference count.  Patterns 0, 2, 4, ... are used to
@@ -367,16 +480,14 @@ namespace CXXR {
 	static const unsigned char s_moribund_mask = 0x40;
 	static const unsigned char s_refcount_mask = 0x3e;
 	mutable unsigned char m_rcmmu;
-	  // Refcount/moribund/marked/unused.  The least
-	  // significant bit is currently unused.
-	  // The reference count is held in the next 5
+	  // Refcount/moribund/marked/under-construction.  The least
+	  // significant bit is set to signify that the node is under
+	  // construction.  The reference count is held in the next 5
 	  // bits, and saturates at 31.  The 0x40 bit is set to
 	  // signify that the node is on the moribund list.  The most
 	  // significant bit is set to s_mark on construction; this
 	  // bit is then toggled in the mark phase of a mark-sweep
 	  // garbage collection to identify reachable nodes.
-
-	static void gcliteImpl();
 
 	GCNode(const GCNode&) = delete;
 	GCNode& operator=(const GCNode&) = delete;
@@ -386,6 +497,13 @@ namespace CXXR {
 	//
 	// But boost::serialization doesn't like this.
 	// static void* operator new[](size_t);
+
+	// Abort program if 'node' is not exposed to GC.
+	static void abortIfNotExposed(const GCNode* node);
+
+	// Abort program with an error message if an attempt is made
+	// to expose a node more than once.
+	static void alreadyExposedError();
 
 	// Returns the stored reference count.
 	unsigned char getRefCount() const

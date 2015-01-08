@@ -72,13 +72,13 @@ SEXP attribute_hidden do_castestfun(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 	if (TYPEOF(CAR(args))!=SYMSXP)
 		errorcall(call,_("castestfun expects Symbol argument"));
-    /*GCStackRoot<IntVector> v(new IntVector(3));
+    /*GCStackRoot<IntVector> v(GCNode::expose(new IntVector(3)));
     (*v)[0]=1;
     (*v)[1]=2;
     (*v)[2]=3;
     return v;*/
 	/*GCStackRoot<LogicalVector> a(SEXP_downcast<LogicalVector*>(CAR(args)));
-	GCStackRoot<LogicalVector> v(new LogicalVector(1));
+	GCStackRoot<LogicalVector> v(GCNode::expose(new LogicalVector(1)));
 	if ((*a)[0]==true)
 		(*v)[0]=true;
 	else
@@ -90,19 +90,19 @@ SEXP attribute_hidden do_castestfun(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Frame::Binding* binding = env->findBinding(sym);
 	if (binding!=nullptr)
 		printf("Binding located :-)\n");
-	GCStackRoot<IntVector> inv(new IntVector(3));
+	GCStackRoot<IntVector> inv(GCNode::expose(new IntVector(3)));
 	(*inv)[0]=1;
 	(*inv)[1]=2;
 	(*inv)[2]=3;
-	GCStackRoot<IntVector> inv2(new IntVector(2));
+	GCStackRoot<IntVector> inv2(GCNode::expose(new IntVector(2)));
 	(*inv2)[0]=4;
 	(*inv2)[1]=5;
 
-	GCStackRoot<StringVector> str(new StringVector(2));
+	GCStackRoot<StringVector> str(GCNode::expose(new StringVector(2)));
 	(*str)[0]=const_cast<String*>(String::obtain("ivOne"));
 	(*str)[1]=const_cast<String*>(String::obtain("ivTwo"));
 
-	GCStackRoot<ListVector> rc(new ListVector(2));
+	GCStackRoot<ListVector> rc(GCNode::expose(new ListVector(2)));
 	(*rc)[0]=inv;
 	(*rc)[1]=inv2;
 
@@ -119,7 +119,7 @@ SEXP attribute_hidden do_hasProvenance (SEXP call, SEXP op, SEXP args, SEXP rho)
     if (TYPEOF(CAR(args))!=SYMSXP)
 	errorcall(call,_("hasProvenance expects Symbol argument"));
 
-    GCStackRoot<LogicalVector> v(new LogicalVector(1));
+    GCStackRoot<LogicalVector> v(GCNode::expose(new LogicalVector(1)));
 #ifdef PROVENANCE_TRACKING
     Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
     Environment* env=static_cast<Environment*>(rho);
@@ -154,9 +154,9 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call,_("object does not have any provenance"));
     const Provenance::Set& children=provenance->children();
 
-    GCStackRoot<ListVector> list(new ListVector(nfields));
-    GCStackRoot<StringVector> timestamp(new StringVector(1));
-    GCStackRoot<StringVector> names(new StringVector(nfields));
+    GCStackRoot<ListVector> list(GCNode::expose(new ListVector(nfields)));
+    GCStackRoot<StringVector> timestamp(GCNode::expose(new StringVector(1)));
+    GCStackRoot<StringVector> names(GCNode::expose(new StringVector(nfields)));
 
     (*timestamp)[0]=const_cast<String*>(provenance->getTime());
 

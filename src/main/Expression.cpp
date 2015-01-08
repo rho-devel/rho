@@ -65,7 +65,7 @@ GCRoot<> R_CurrentExpr;
 
 Expression* Expression::clone() const
 {
-    return new Expression(*this);
+    return expose(new Expression(*this));
 }
 
 RObject* Expression::evaluate(Environment* env)

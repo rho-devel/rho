@@ -65,6 +65,7 @@ namespace CXXR {
 	GCEdgeBase(const GCNode* target)
 	    : m_target(target)
 	{
+	    GCNode::maybeCheckExposed(m_target);
 	    GCNode::incRefCount(m_target);
 	}
 
@@ -104,6 +105,8 @@ namespace CXXR {
 	}
     private:
 	const GCNode* m_target;
+
+	static void abortIfNotExposed(const GCNode* target);
     };
 
     /** @brief Directed edge in the graph whose nodes are GCNode objects.

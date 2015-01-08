@@ -300,6 +300,7 @@ namespace CXXR {
 	 */
 	size_t push(RObject* node)
 	{
+	    GCNode::maybeCheckExposed(node);
 	    size_t index = m_vector.size();
 	    m_vector.push_back(node);
 	    return index;
@@ -327,6 +328,7 @@ namespace CXXR {
 #else
 	void retarget(RObject* node, size_t index)
 	{
+	    GCNode::maybeCheckExposed(node);
 	    if (index < m_protected_count)
 		retarget_aux(m_vector[index], node);
 	    m_vector[index] = node;

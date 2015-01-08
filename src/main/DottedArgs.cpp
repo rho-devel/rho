@@ -47,7 +47,7 @@ using namespace CXXR;
 
 DottedArgs* DottedArgs::clone() const
 {
-    return new DottedArgs(*this);
+    return expose(new DottedArgs(*this));
 }
 
 RObject* DottedArgs::evaluate(Environment* env)

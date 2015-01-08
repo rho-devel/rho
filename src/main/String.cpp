@@ -169,7 +169,7 @@ String* String::obtain(const std::string& str, cetype_t encoding)
     if (pr.second) {
 	try {
 	    map::value_type& val = *it;
-	    val.second = new String(&val);
+	    val.second = expose(new String(&val));
 	    val.second->m_ascii = ascii;
 	} catch (...) {
 	    getCache()->erase(it);

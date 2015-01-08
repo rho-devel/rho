@@ -477,7 +477,8 @@ T* CXXR::FixedVector<T, ST, Initr>::allocData(size_type sz)
 template <typename T, SEXPTYPE ST, typename Initr>
 CXXR::FixedVector<T, ST, Initr>* CXXR::FixedVector<T, ST, Initr>::clone() const
 {
-    return new FixedVector<T, ST, Initr>(*this);
+    // Can't use CXXR_NEW because the comma confuses GNU cpp:
+    return expose(new FixedVector<T, ST, Initr>(*this));
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>

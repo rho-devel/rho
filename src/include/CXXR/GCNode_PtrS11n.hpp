@@ -104,7 +104,8 @@ namespace CXXR {
      * deserialization logic should create an appropriate entry in the
      * look-up table used by S11nScope::relocate() by calling
      * S11nScope::defineRelocation().  Once that is done, there is no
-     * need to retain the proxy object.
+     * need to retain the proxy object, and S11nScope::defineRelocation() will
+     * automatically expose it to garbage collection.
      *
      * Note that proxy objects may be malformed, i.e. violate the
      * invariants of their class: no use should be made of them.
@@ -134,6 +135,11 @@ namespace CXXR {
 		    GCNode* reloc = S11nScope::relocate(target);
 		    if (reloc)
 			target = reloc;
+		    // Note that the target may already have been
+		    // exposed, e.g. as a result of deserialising
+		    // another pointer pointing to it.
+		    else if (!target->isExposed())
+			target->expose();
 		}
 		ptr = static_cast<typename Payload<Ptr>::type*>(target);
 	    }
