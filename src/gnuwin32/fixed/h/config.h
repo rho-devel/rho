@@ -394,9 +394,6 @@
 /* Define if you have the JPEG headers and libraries. */
 #define HAVE_JPEG 1
 
-/* Define if KERN_USRSTACK sysctl is supported. */
-/* #undef HAVE_KERN_USRSTACK */
-
 /* Define if you have KeySym defined in X11. */
 /* #undef HAVE_KEYSYM */
 
@@ -411,9 +408,6 @@
 
 /* Define to 1 if you have the `cc_dynamic' library (-lcc_dynamic). */
 /* #undef HAVE_LIBCC_DYNAMIC */
-
-/* Define if __libc_stack_end is visible. */
-/* #undef HAVE_LIBC_STACK_END */
 
 /* Define to 1 if you have the `dl' library (-ldl). */
 /* #undef HAVE_LIBDL */

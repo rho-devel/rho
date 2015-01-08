@@ -36362,98 +36362,6 @@ $as_echo "#define HAVE_FSEEKO 1" >>confdefs.h
 fi
 
 
-## KERN_USRSTACK support (BSD, Darwin, ...)
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether KERN_USRSTACK sysctl is supported" >&5
-$as_echo_n "checking whether KERN_USRSTACK sysctl is supported... " >&6; }
-if ${r_cv_kern_usrstack+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test "$cross_compiling" = yes; then :
-  r_cv_kern_usrstack=no
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include "confdefs.h"
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/sysctl.h>
-
-int main () {
-  int nm[2] = {CTL_KERN, KERN_USRSTACK};
-  void * base;
-  size_t len = sizeof(void *);
-  int r = sysctl(nm, 2, &base, &len, NULL, 0);
-
-  exit((r==0)?0:1);
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  r_cv_kern_usrstack=yes
-else
-  r_cv_kern_usrstack=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $r_cv_kern_usrstack" >&5
-$as_echo "$r_cv_kern_usrstack" >&6; }
-
-  if test $r_cv_kern_usrstack = yes; then
-
-$as_echo "#define HAVE_KERN_USRSTACK 1" >>confdefs.h
-
-  fi
-
-
-## check for visible __libc_stack_end on Linux
-case "${host_os}" in
-  linux*)
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for visible __lib_stack_end" >&5
-$as_echo_n "checking for visible __lib_stack_end... " >&6; }
-if ${r_cv_libc_stack_end+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test "$cross_compiling" = yes; then :
-  r_cv_libc_stack_end=no
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include "confdefs.h"
-#include <stdlib.h>
-extern void * __libc_stack_end;
-
-int main () {
-    exit(0);
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  r_cv_libc_stack_end=yes
-else
-  r_cv_libc_stack_end=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $r_cv_libc_stack_end" >&5
-$as_echo "$r_cv_libc_stack_end" >&6; }
-
-  if test "${r_cv_libc_stack_end}" = yes; then
-
-$as_echo "#define HAVE_LIBC_STACK_END 1" >>confdefs.h
-
-  fi
-esac
-
 ### * Miscellaneous.
 
 ## Printing.
@@ -37587,11 +37495,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:37590: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:37498: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:37594: \$? = $ac_status" >&5
+   echo "$as_me:37502: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -37686,11 +37594,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:37689: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:37597: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:37693: \$? = $ac_status" >&5
+   echo "$as_me:37601: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -37738,11 +37646,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:37741: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:37649: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:37745: \$? = $ac_status" >&5
+   echo "$as_me:37653: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized

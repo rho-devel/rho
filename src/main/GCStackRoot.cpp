@@ -42,7 +42,6 @@
 #include "CXXR/GCStackFrameBoundary.hpp"
 #include "Defn.h"
 #include "gc.h"
-#include "private/gcconfig.h"  // For STACK_GROWS_UP
 
 #include <cstdlib>
 
@@ -61,16 +60,6 @@ namespace CXXR {
     }
 }
 
-// As of 2014, std::align isn't available widely enough, so we use our own
-// alignment function here.
-static void* align(void* pointer)
-{
-    const size_t alignment = alignof(void*);
-    uintptr_t value = reinterpret_cast<uintptr_t>(pointer);
-    value = (value + alignment - 1) & ~(alignment - 1);
-    return reinterpret_cast<void*>(value);
-}
-
 // TODO: should only be defined if we have asan.
 extern "C"
 const char* __asan_default_options()
@@ -79,19 +68,15 @@ const char* __asan_default_options()
     return "--allow_user_segv_handler=1";
 }
 
+extern "C"
+void R_GetStackLimits();
+
 void* GCStackRootBase::getStackBase()
 {
-    struct GC_stack_base base;
-    if (GC_get_stack_base(&base) == GC_SUCCESS) {
-#ifdef STACK_GROWS_UP
-	return base.mem_base;
-#else
-	// GC_get_stack_base() returns one past the end of the stack.
-	return reinterpret_cast<void*>(
-	    reinterpret_cast<char*>(base.mem_base) - sizeof(void*));
-#endif
+    if (R_CStackStart == -1) {
+	R_GetStackLimits();
     }
-    return align(reinterpret_cast<void*>(R_CStackStart));
+    return reinterpret_cast<void*>(R_CStackStart);
 }
 
 NO_SANITIZE_ADDRESS 
