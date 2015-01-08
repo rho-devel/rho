@@ -785,6 +785,8 @@ namespace CXXR {
 		flush(sym);
 	}
 
+	void initializeBinding(Binding* binding, const Symbol* symbol);
+
 	// Virtual function of GCNode:
 	void detachReferents() override;
     private:

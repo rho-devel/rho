@@ -64,6 +64,30 @@ TEST_P(ControlFlowTest, Parens)
      });
 }
 
+TEST_P(ControlFlowTest, Assignment)
+{
+    runEvaluatorTests({
+	{ "{ x <- 1; x }", "1" },
+	{ "{ x <- 1; get('x') }", "1" },
+	{ "{ x <- 1; y <- 2; x }", "1"},
+	{ "{ x <- 1; y <- 1 + 1; y }", "2"},
+	{ "{ x <- 1; x <- 2; x }", "2"},
+
+	{ "{ x = 1; x }", "1" },
+	{ "{ x = 1; get('x') }", "1" },
+	{ "{ x = 1; y = 2; x }", "1"},
+	{ "{ x = 1; y = 1 + 1; y }", "2"},
+	{ "{ x = 1; x = 2; x }", "2"},
+
+	{ "{x = 1; y <- 2; x}", "1"},
+	{ "{x = 1; y <- 2; y}", "2"},
+	{ "{x = 1; x <- 2; x}", "2"},
+	{ "{x <- 1; y = 2; x}", "1"},
+	{ "{x <- 1; y = 2; y}", "2"},
+	{ "{x <- 1; x = 2; x}", "2"},
+	});
+}
+
 TEST_P(ControlFlowTest, If)
 {
     runEvaluatorTests({
