@@ -79,14 +79,14 @@ RObject* cxxr_runtime_lookupSymbol(const Symbol* value,
  * ..., ..n, or missingArg().  cxxr_runtime_lookupSymbol should be used in
  * those cases.
  */
-RObject* cxxr_runtime_lookupSymbolInCompiledFrame(const Symbol* value,
+RObject* cxxr_runtime_lookupSymbolInCompiledFrame(const Symbol* symbol,
 						  Environment* environment,
 						  int position)
 {
     assert(environment->frame() != nullptr);
-    assert(value != DotsSymbol);
-    assert(!value->isDotDotSymbol());
-    assert(value != R_MissingArg);
+    assert(symbol != DotsSymbol);
+    assert(!symbol->isDotDotSymbol());
+    assert(symbol != R_MissingArg);
     assert(position >= 0);
 
     JIT::CompiledFrame* frame
@@ -115,7 +115,28 @@ RObject* cxxr_runtime_lookupSymbolInCompiledFrame(const Symbol* value,
 	}
     }
     // Fallback to the interpreter.
-    return cxxr_runtime_lookupSymbol(value, environment);
+    return cxxr_runtime_lookupSymbol(symbol, environment);
+}
+
+/*
+ * Assign to a symbol in a CompiledFrame.
+ */
+void cxxr_runtime_assignSymbolInCompiledFrame(const Symbol* symbol,
+					      Environment* environment,
+					      int position,
+					      RObject* value)
+{
+    assert(environment->frame() != nullptr);
+    assert(value != R_MissingArg);
+    assert(position >= 0);
+
+    JIT::CompiledFrame* frame
+	// TODO(kmillar): when optimizing make this a static cast.
+	= dynamic_cast<JIT::CompiledFrame*>(environment->frame());
+    assert(frame != nullptr);
+
+    Frame::Binding* binding = frame->obtainBinding(symbol, position);
+    binding->assign(value);
 }
 
 FunctionBase* cxxr_runtime_lookupFunction(const Symbol* symbol,
@@ -165,6 +186,13 @@ bool cxxr_runtime_is_function(RObject* object) {
 
 void cxxr_runtime_setVisibility(bool visible) {
     Evaluator::enableResultPrinting(visible);
+}
+
+void cxxr_runtime_incrementNamed(RObject* object) {
+    switch (NAMED(object)) {
+    case 0: SET_NAMED(object, 1); break;
+    case 1: SET_NAMED(object, 2); break;
+    }
 }
 
 void cxxr_runtime_maybeCheckForUserInterrupts() {

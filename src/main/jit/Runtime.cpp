@@ -132,6 +132,17 @@ Value* emitLookupSymbolInCompiledFrame(Value* value, Value* environment,
 	{ value, environment, compiler->getInt32(position) });
 }
 
+Value* emitAssignSymbolInCompiledFrame(Value* symbol, Value* environment,
+				       int position, Value* value,
+				       Compiler* compiler)
+{
+    Function* assign_symbol_in_compiled_frame
+	= getDeclaration(ASSIGN_SYMBOL_IN_COMPILED_FRAME, compiler);
+    return compiler->emitCallOrInvoke(
+	assign_symbol_in_compiled_frame,
+	{ symbol, environment, compiler->getInt32(position), value });
+}
+
 Value* emitLookupFunction(Value* value, Value* environment,
 			  Compiler* compiler)
 {
@@ -174,6 +185,12 @@ void emitSetVisibility(llvm::Value* visible, Compiler* compiler)
 {
     Function* setVisibility = getDeclaration(SET_VISIBILITY, compiler);
     compiler->CreateCall(setVisibility, visible);
+}
+
+void emitIncrementNamed(llvm::Value* value, Compiler* compiler)
+{
+    Function* incrementNamed = getDeclaration(INCREMENT_NAMED, compiler);
+    compiler->CreateCall(incrementNamed, value);
 }
 
 void emitMaybeCheckForUserInterrupt(Compiler* compiler)
@@ -328,6 +345,8 @@ std::string getName(FunctionId function)
 	return "cxxr_runtime_lookupSymbol";
     case LOOKUP_SYMBOL_IN_COMPILED_FRAME:
 	return "cxxr_runtime_lookupSymbolInCompiledFrame";
+    case ASSIGN_SYMBOL_IN_COMPILED_FRAME:
+	return "cxxr_runtime_assignSymbolInCompiledFrame";
     case LOOKUP_FUNCTION:
 	return "cxxr_runtime_lookupFunction";
     case CALL_FUNCTION:
@@ -340,13 +359,16 @@ std::string getName(FunctionId function)
 	return "cxxr_runtime_coerceToTrueOrFalse";
     case SET_VISIBILITY:
 	return "cxxr_runtime_setVisibility";
+    case INCREMENT_NAMED:
+	return "cxxr_runtime_incrementNamed";
     };
 }
 
 static const FunctionId allFunctionIds[]
     = { EVALUATE, LOOKUP_SYMBOL, LOOKUP_SYMBOL_IN_COMPILED_FRAME,
+	ASSIGN_SYMBOL_IN_COMPILED_FRAME,
 	LOOKUP_FUNCTION, CALL_FUNCTION, DO_BREAK, DO_NEXT,
-	COERCE_TO_TRUE_OR_FALSE, SET_VISIBILITY };
+	COERCE_TO_TRUE_OR_FALSE, SET_VISIBILITY, INCREMENT_NAMED };
 
 FunctionId getFunctionId(llvm::Function* function)
 {

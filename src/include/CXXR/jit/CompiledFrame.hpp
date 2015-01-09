@@ -84,6 +84,17 @@ public:
 
     BindingRange bindingRange() const override;
 
+    Binding* obtainBinding(const Symbol* symbol, int location)
+    {
+    	assert(location >= 0);
+    	assert(location < m_descriptor->getNumberOfSymbols());
+    	Binding* binding = m_bindings + location;
+    	if (!isSet(*binding)) {
+	    initializeBinding(binding, symbol);
+	}
+	return binding;
+    }
+
     CompiledFrame* clone() const override;
 
     void lockBindings() override;

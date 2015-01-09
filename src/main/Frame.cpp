@@ -219,16 +219,22 @@ void Frame::flush(const Symbol* sym)
     Environment::flushFromSearchPathCache(sym);
 }
 
+void Frame::initializeBinding(Frame::Binding* binding,
+			      const Symbol* symbol)
+{
+    if (isLocked()) {
+	v_erase(symbol);
+	Rf_error(_("cannot add bindings to a locked frame"));
+    }
+    binding->initialize(this, symbol);
+    statusChanged(symbol);
+}
+
 Frame::Binding* Frame::obtainBinding(const Symbol* symbol)
 {
     Binding* ans = v_obtainBinding(symbol);
     if (!ans->frame()) {
-	if (isLocked()) {
-	    v_erase(symbol);
-	    Rf_error(_("cannot add bindings to a locked frame"));
-	}
-	ans->initialize(this, symbol);
-	statusChanged(symbol);
+	initializeBinding(ans, symbol);
     }
     return ans;
 }

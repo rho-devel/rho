@@ -69,12 +69,14 @@ enum FunctionId {
     EVALUATE,
     LOOKUP_SYMBOL,
     LOOKUP_SYMBOL_IN_COMPILED_FRAME,
+    ASSIGN_SYMBOL_IN_COMPILED_FRAME,
     LOOKUP_FUNCTION,
     CALL_FUNCTION,
     DO_BREAK,
     DO_NEXT,
     COERCE_TO_TRUE_OR_FALSE,
     SET_VISIBILITY,
+    INCREMENT_NAMED,
     // When adding to this list, make sure to add to allFunctionIds[] in
     // Runtime.cpp.
 };
@@ -111,6 +113,12 @@ llvm::Value* emitLookupSymbolInCompiledFrame(llvm::Value* symbol,
 					     int position,
 					     Compiler* compiler);
 
+llvm::Value* emitAssignSymbolInCompiledFrame(llvm::Value* symbol,
+					     llvm::Value* environment,
+					     int position,
+					     llvm::Value* value,
+					     Compiler* compiler);
+
 llvm::Value* emitLookupFunction(llvm::Value* symbol, llvm::Value* environment,
 				Compiler* compiler);
 
@@ -131,6 +139,8 @@ llvm::Value* emitCoerceToTrueOrFalse(llvm::Value* value,
 void emitSetVisibility(llvm::Value* visible, Compiler* compiler);
 
 void emitMaybeCheckForUserInterrupt(Compiler* compiler);
+
+void emitIncrementNamed(llvm::Value* value, Compiler* compiler);
 
 // Exception handling code.
 // These functions currently don't have FunctionIds assigned.

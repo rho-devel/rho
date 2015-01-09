@@ -93,6 +93,7 @@ private:
 					   FunctionBase* likely_function);
 
     // Specific functions to inline.
+    llvm::Value* emitInlinedAssign(const Expression* expression);
     llvm::Value* emitInlinedParen(const Expression* expression);
     llvm::Value* emitInlinedBegin(const Expression* expression);
     llvm::Value* emitInlinedReturn(const Expression* expression);

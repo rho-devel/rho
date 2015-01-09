@@ -337,8 +337,8 @@ Compiler::getInlineableBuiltins()
 {
     static std::vector<std::pair<FunctionBase*, EmitBuiltinFn>>
 	inlineable_builtins = {
-	// std::make_pair(BuiltInFunction::obtainPrimitive("<-"),
-	// 	       &Compiler::emitInlinedAssign),
+	std::make_pair(BuiltInFunction::obtainPrimitive("<-"),
+		       &Compiler::emitInlinedAssign),
 	std::make_pair(BuiltInFunction::obtainPrimitive("("),
 		       &Compiler::emitInlinedParen),
 	std::make_pair(BuiltInFunction::obtainPrimitive("{"),
@@ -458,6 +458,51 @@ Value* Compiler::emitInlineableBuiltinCall(const Expression* expression,
     return result;
 }
 
+Value* Compiler::emitInlinedAssign(const Expression* expression)
+{
+    // This corresponds to do_set() for '<-' or '='.  Not '<<-'.
+    if (listLength(expression) != 3) {
+	// This is probably a syntax error.  Let the interpreter handle it.
+	return nullptr;
+    }
+
+    // Get the symbol to assign to.
+    const RObject* symbol_expr = expression->tail()->car();
+    const Symbol* symbol = dynamic_cast<const Symbol*>(symbol_expr);
+    if (!symbol) {
+	// If passed a string vector, convert that to a name.
+	const StringVector* symbol_name
+	    = dynamic_cast<const StringVector*>(symbol_expr);
+	if (symbol_name && symbol_name->size() == 1) {
+	    symbol = Symbol::obtain((*symbol_name)[0]);
+	}
+    }
+    if (!symbol) {
+	// Probably a complex assignment.  Send it to the interpreter.
+	return nullptr;
+    }
+    int location = m_context->m_frame_descriptor->getLocation(symbol);
+    if (location == -1) {
+	// For some reason, the symbol isn't in the frame descriptor.  Fallback
+	// to the interpreter.
+	return nullptr;
+    }
+
+    // Get the value.
+    const RObject* value = expression->tail()->tail()->car();
+    Value* evaluated_value = emitEval(value);
+
+    // Make runtime calls to actually do the assignment.
+    Runtime::emitIncrementNamed(evaluated_value, this);
+    Runtime::emitAssignSymbolInCompiledFrame(emitSymbol(symbol),
+					     m_context->getEnvironment(),
+					     location,
+					     evaluated_value,
+					     this);
+    emitSetVisibility(false);
+    return evaluated_value;
+}
+    
 Value* Compiler::emitInlinedParen(const Expression* expression)
 {
     // '(' has a single argument -- the expression to evaluate.
@@ -467,7 +512,7 @@ Value* Compiler::emitInlinedParen(const Expression* expression)
 	emitSetVisibility(true);
 	return result;
     } else {
-	// This is probably a syntax error.  Let the interpreter handle it.
+        // This is probably a syntax error.  Let the interpreter handle it.
 	return nullptr;
     }
 }
