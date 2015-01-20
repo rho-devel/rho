@@ -61,36 +61,53 @@ namespace CXXR {
 }
 std::hash<std::string> String::Hasher::s_string_hasher;
 
-static std::string* getNaString()
-{
-    static std::string* na_string = new std::string("NA");
-    return na_string;
-}
-
 SEXP R_NaString = nullptr;
 SEXP R_BlankString = nullptr;
 
 // String::Comparator::operator()(const String*, const String*) is in
 // sort.cpp
 
-String::String(map::value_type* key_val_pr)
-    : VectorBase(CHARSXP, key_val_pr ? key_val_pr->first.first.size() : 2),
-      m_key_val_pr(key_val_pr), m_string(getNaString()), m_encoding(CE_NATIVE),
-      m_symbol(nullptr)
+String::String(char* character_storage,
+	       const std::string& text, cetype_t encoding, bool isAscii)
+    : VectorBase(CHARSXP, text.size()),
+      m_key_val_pr(nullptr),
+      m_encoding(encoding),
+      m_symbol(nullptr),
+      m_ascii(isAscii)
 {
-    if (key_val_pr) {
-	m_string = &key_val_pr->first.first;
-	m_encoding = key_val_pr->first.second;
-	switch(m_encoding) {
-	case CE_NATIVE:
-	case CE_UTF8:
-	case CE_LATIN1:
-	case CE_BYTES:
-	    break;
-	default:
-	    Rf_error("character encoding %d not permitted here", m_encoding);
-	}
+    if (character_storage) {
+	memcpy(character_storage, text.data(), text.size());
+	character_storage[text.size()] = '\0';  // Null terminated.
     }
+    m_data = character_storage;
+
+    switch(m_encoding) {
+    case CE_NATIVE:
+    case CE_UTF8:
+    case CE_LATIN1:
+    case CE_BYTES:
+	break;
+    default:
+	Rf_error("character encoding %d not permitted here", m_encoding);
+    }
+}
+
+String::String() : String(nullptr, "", CE_NATIVE, true)
+{ }
+
+String* String::create(const std::string& text, cetype_t encoding, bool isAscii)
+{
+    size_t size = sizeof(String) + text.size() + 1;
+    void* storage = GCNode::operator new(size);
+    char* character_storage = (char*)storage + sizeof(String);
+    String* result = new(storage) String(character_storage, text, encoding,
+					 isAscii);
+    return expose(result);
+}
+
+String* String::createNA()
+{
+    return String::create("NA", CE_NATIVE, true);
 }
 
 String::~String()
@@ -104,6 +121,10 @@ String::~String()
 	key k = m_key_val_pr->first;
 	getCache()->erase(k);
     }
+    // GCNode::~GCNode doesn't know about the string storage space in this
+    // object, so account for it here.
+    size_t bytes = size() + 1;
+    MemoryBank::adjustBytesAllocated(-bytes);
 }
 
 namespace {
@@ -169,8 +190,8 @@ String* String::obtain(const std::string& str, cetype_t encoding)
     if (pr.second) {
 	try {
 	    map::value_type& val = *it;
-	    val.second = expose(new String(&val));
-	    val.second->m_ascii = ascii;
+	    val.second = String::create(str, encoding, ascii);
+	    val.second->m_key_val_pr = &*it;
 	} catch (...) {
 	    getCache()->erase(it);
 	    throw;

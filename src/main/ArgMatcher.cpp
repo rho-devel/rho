@@ -87,9 +87,8 @@ void ArgMatcher::handleDots(Frame* frame, SuppliedList* supplied_list)
 	     
 bool ArgMatcher::isPrefix(const String* shorter, const String* longer)
 {
-    const string& shortstr = shorter->stdstring();
-    const string& longstr = longer->stdstring();
-    return longstr.compare(0, shortstr.size(), shortstr) == 0;
+    size_t length = shorter->size();
+    return strncmp(shorter->c_str(), longer->c_str(), length) == 0;
 }
 
 ArgMatcher* ArgMatcher::make(Symbol* fml1, Symbol* fml2, Symbol* fml3,

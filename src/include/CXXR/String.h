@@ -119,7 +119,7 @@ namespace CXXR {
 	 */
 	char operator[](unsigned int index) const
 	{
-	    return m_string->c_str()[index];
+	    return m_data[index];
 	}
 
 	/** @brief Blank string.
@@ -139,7 +139,7 @@ namespace CXXR {
 	 */
 	const char* c_str() const
 	{
-	    return m_string->c_str();
+            return m_data;
 	}
 
 	/** @brief Character encoding.
@@ -198,7 +198,7 @@ namespace CXXR {
 	 */
 	static String* NA()
         {
-          static GCRoot<String> na(CXXR_NEW(String(nullptr)));
+          static GCRoot<String> na(createNA());
           return na.get();
         }
 
@@ -236,12 +236,25 @@ namespace CXXR {
 
 	/** @brief Access encapsulated std::string.
 	 *
-	 * @return Reference to the encapsulated std::string.
+	 * @return The string's value as a std::string.
 	 */
-	const std::string& stdstring() const
+	std::string stdstring() const
 	{
-	    return *m_string;
+            return std::string(m_data, size());
 	}
+
+	/** @brief Test for equality with a null-terminated string.
+	 *
+	 * @return true iff the strings are the same.
+         *
+         * @note Always returns false for the NA string.
+	 */
+        bool operator==(const char* text) const {
+          if (this == NA()) {
+            return false;
+          }
+          return strcmp(m_data, text) == 0;
+        }
 
 	// Virtual functions of RObject:
 	unsigned int packGPBits() const override;
@@ -277,20 +290,25 @@ namespace CXXR {
 
 	static map* getCache();
 
-	map::value_type* m_key_val_pr;
-	const std::string* m_string;
+        map::value_type* m_key_val_pr;
+	const char* m_data;
 	cetype_t m_encoding;
 	mutable Symbol* m_symbol;  // Pointer to the Symbol object identified
 	  // by this String, or a null pointer if none.
 	bool m_ascii;
 
-	// A null value of key_val_pr is used to designate the NA string:
-	explicit String(map::value_type* key_val_pr = nullptr);
+        // Should only be called by String::create().
+        String(char* character_storage,
+               const std::string& text, cetype_t encoding, bool isAscii);
+        static String* create(const std::string& text, cetype_t encoding,
+                              bool isAscii);
+        static String* createNA();
 
-	// Not implemented.  Declared to prevent
-	// compiler-generated versions:
-	String(const String&);
-	String& operator=(const String&);
+        // Used by load(Archive& ar, const unsigned int version)
+        String();
+
+	String(const String&) = delete;
+	String& operator=(const String&) = delete;
 
 	// Declared private to ensure that String objects are
 	// allocated only using 'new'.
@@ -465,7 +483,7 @@ extern "C" {
     inline const char *R_CHAR(SEXP x)
     {
 	using namespace CXXR;
-	return SEXP_downcast<String*>(x, false)->stdstring().c_str();
+	return SEXP_downcast<String*>(x, false)->c_str();
     }
 #endif
 

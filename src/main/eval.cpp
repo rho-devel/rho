@@ -2059,8 +2059,8 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     if (l && r && l->function() != r->function()) {
 	/* special-case some methods involving difftime */
-	string lname = l->symbol()->name()->stdstring();
-	string rname = r->symbol()->name()->stdstring();
+	const String &lname = *l->symbol()->name();
+	const String &rname = *r->symbol()->name();
 	if (rname == "Ops.difftime"
 	    && (lname == "+.POSIXt" || lname == "-.POSIXt"
 		|| lname == "+.Date" || lname == "-.Date"))

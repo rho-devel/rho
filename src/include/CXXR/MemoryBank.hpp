@@ -165,6 +165,11 @@ namespace CXXR {
 	    --s_blocks_allocated;
 	}
 
+	friend class String;
+	static void adjustBytesAllocated(size_t bytes) {
+	    s_bytes_allocated += bytes;
+	}
+
 	// Initialize the static data members:
 	friend void initializeMemorySubsystem();
 	static void initialize();
