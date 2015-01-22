@@ -1814,8 +1814,8 @@ SEXP attribute_hidden do_withVisible(SEXP call, SEXP op, SEXP args, SEXP rho)
     x = CAR(args);
     x = Rf_eval(x, rho);
     PROTECT(x);
-    PROTECT(ret = new ListVector(2));
-    PROTECT(nm = new StringVector(2));
+    PROTECT(ret = ListVector::create(2));
+    PROTECT(nm = StringVector::create(2));
     SET_STRING_ELT(nm, 0, Rf_mkChar("value"));
     SET_STRING_ELT(nm, 1, Rf_mkChar("visible"));
     SET_VECTOR_ELT(ret, 0, x);
@@ -2085,7 +2085,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     if (isOps) {
 	// Rebind .Method:
-	GCStackRoot<StringVector> dotmethod(new StringVector(2));
+	GCStackRoot<StringVector> dotmethod(StringVector::create(2));
 	(*dotmethod)[0] = (l 
 			   ? const_cast<String*>(l->symbol()->name())
 			   : String::blank());
@@ -3573,7 +3573,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	BCNPUSH(nullptr);
 	s_loopvar_stack->push_back(GET_BINDING_CELL(symbol, rho));
 
-	value = new IntVector(2);
+	value = IntVector::create(2);
 	INTEGER(value)[0] = -1;
 	if (Rf_isVector(seq))
 	  INTEGER(value)[1] = LENGTH(seq);

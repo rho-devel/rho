@@ -859,7 +859,7 @@ namespace CXXR {
 	// HandleVectors.)
 	const VectorBase* ansvb = static_cast<VectorBase*>(ans.get());
 	if (ansvb == rhs)
-	    ans = new VL(*ans.get());
+	    ans = ans->clone();
 	// Dispose of 'no indices' case:
 	if (ni == 0)
 	    return ans;
@@ -919,7 +919,7 @@ namespace CXXR {
 	DimIndexerVector dimindexer(ndims);
 	std::size_t resultsize = createDimIndexers(&dimindexer, vdims,
 						   indicesvec);
-	GCStackRoot<V> result(new V(resultsize));
+	GCStackRoot<V> result(V::create(resultsize));
 	// Copy elements across:
 	{
 	    // ***** FIXME *****  Currently needed because Handle's
@@ -1011,7 +1011,7 @@ namespace CXXR {
 	// HandleVectors.)
 	const VectorBase* ansvb = static_cast<VectorBase*>(ans.get());
 	if (ansvb == rhs)
-	    ans = new VL(*ans.get());
+	    ans = ans->clone();
 	// Dispose of 'no indices' case:
 	if (ni == 0)
 	    return ans;
@@ -1040,7 +1040,7 @@ namespace CXXR {
     V* Subscripting::vectorSubset(const V* v, const Indices& indices)
     {
 	std::size_t ni = indices.size();
-	GCStackRoot<V> ans(new V(ni));
+	GCStackRoot<V> ans(V::create(ni));
 	std::size_t vsize = v->size();
 	// ***** FIXME *****  Currently needed because Handle's
 	// assignment operator takes a non-const RHS:

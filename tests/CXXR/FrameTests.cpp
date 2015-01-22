@@ -23,8 +23,8 @@ public:
 	symbol2 = Symbol::obtain("test_symbol_2");
 	symbol3 = Symbol::obtain("test_symbol_3");
 
-	value1 = new RealVector({ 1.1 });
-	value2 = new RealVector({ 2.1 });
+	value1 = RealVector::createScalar(1.1);
+	value2 = RealVector::createScalar(2.1);
     }
 
     Frame* new_frame()

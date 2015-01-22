@@ -72,13 +72,13 @@ SEXP attribute_hidden do_castestfun(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 	if (TYPEOF(CAR(args))!=SYMSXP)
 		errorcall(call,_("castestfun expects Symbol argument"));
-    /*GCStackRoot<IntVector> v(new IntVector(3));
+    /*GCStackRoot<IntVector> v(IntVector::create(3));
     (*v)[0]=1;
     (*v)[1]=2;
     (*v)[2]=3;
     return v;*/
 	/*GCStackRoot<LogicalVector> a(SEXP_downcast<LogicalVector*>(CAR(args)));
-	GCStackRoot<LogicalVector> v(new LogicalVector(1));
+	GCStackRoot<LogicalVector> v(LogicalVector::create(1));
 	if ((*a)[0]==true)
 		(*v)[0]=true;
 	else
@@ -90,19 +90,19 @@ SEXP attribute_hidden do_castestfun(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Frame::Binding* binding = env->findBinding(sym);
 	if (binding!=nullptr)
 		printf("Binding located :-)\n");
-	GCStackRoot<IntVector> inv(new IntVector(3));
+	GCStackRoot<IntVector> inv(IntVector::create(3));
 	(*inv)[0]=1;
 	(*inv)[1]=2;
 	(*inv)[2]=3;
-	GCStackRoot<IntVector> inv2(new IntVector(2));
+	GCStackRoot<IntVector> inv2(IntVector::create(2));
 	(*inv2)[0]=4;
 	(*inv2)[1]=5;
 
-	GCStackRoot<StringVector> str(new StringVector(2));
+	GCStackRoot<StringVector> str(StringVector::create(2));
 	(*str)[0]=const_cast<String*>(String::obtain("ivOne"));
 	(*str)[1]=const_cast<String*>(String::obtain("ivTwo"));
 
-	GCStackRoot<ListVector> rc(new ListVector(2));
+	GCStackRoot<ListVector> rc(ListVector::create(2));
 	(*rc)[0]=inv;
 	(*rc)[1]=inv2;
 
@@ -119,7 +119,7 @@ SEXP attribute_hidden do_hasProvenance (SEXP call, SEXP op, SEXP args, SEXP rho)
     if (TYPEOF(CAR(args))!=SYMSXP)
 	errorcall(call,_("hasProvenance expects Symbol argument"));
 
-    GCStackRoot<LogicalVector> v(new LogicalVector(1));
+    GCStackRoot<LogicalVector> v(LogicalVector::create(1));
 #ifdef PROVENANCE_TRACKING
     Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
     Environment* env=static_cast<Environment*>(rho);
@@ -154,9 +154,9 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call,_("object does not have any provenance"));
     const Provenance::Set& children=provenance->children();
 
-    GCStackRoot<ListVector> list(new ListVector(nfields));
-    GCStackRoot<StringVector> timestamp(new StringVector(1));
-    GCStackRoot<StringVector> names(new StringVector(nfields));
+    GCStackRoot<ListVector> list(ListVector::create(nfields));
+    GCStackRoot<StringVector> timestamp(StringVector::create(1));
+    GCStackRoot<StringVector> names(StringVector::create(nfields));
 
     (*timestamp)[0]=const_cast<String*>(provenance->getTime());
 
@@ -175,7 +175,7 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 		  CommandChronicle::ParentVector::const_iterator>
 	    pr = provenance->parents();
 	size_t sz = pr.second - pr.first;
-	StringVector* sv = new StringVector(sz);
+	StringVector* sv = StringVector::create(sz);
 	(*list)[3] = sv;
 	unsigned int i = 0;
 	for (CommandChronicle::ParentVector::const_iterator it = pr.first;
@@ -185,7 +185,7 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
     }
     if (!children.empty()) {
-	StringVector* sv = new StringVector(children.size());
+	StringVector* sv = StringVector::create(children.size());
 	(*list)[4] = sv;
 	unsigned int i = 0;
 	for (Provenance::Set::const_iterator it = children.begin();
@@ -256,16 +256,16 @@ do_provenance_graph(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     Provenance::Set* ancestors = Provenance::ancestors(provs);
 
-    GCStackRoot<ListVector> ans(new ListVector(7));
+    GCStackRoot<ListVector> ans(ListVector::create(7));
     std::map<const Provenance*, unsigned int> ancestor_index;
     std::vector<std::pair<unsigned int, const RObject*> > xenogenous_bdgs;
 
     // Assemble information on graph nodes:
     {
 	size_t n = ancestors->size();
-	GCStackRoot<ListVector> symbols(new ListVector(n));
-	GCStackRoot<ListVector> commands(new ListVector(n));
-	GCStackRoot<RealVector> timestamps(new RealVector(n));
+	GCStackRoot<ListVector> symbols(ListVector::create(n));
+	GCStackRoot<ListVector> commands(ListVector::create(n));
+	GCStackRoot<RealVector> timestamps(RealVector::create(n));
 	size_t i = 0;
 	for (Provenance::Set::iterator it = ancestors->begin();
 	     it != ancestors->end(); ++it) {
@@ -287,8 +287,8 @@ do_provenance_graph(SEXP call, SEXP op, SEXP args, SEXP rho)
     // Record information on xenogenous bindings:
     {
 	size_t xn = xenogenous_bdgs.size();
-	GCStackRoot<IntVector> xenogenous(new IntVector(xn));
-	GCStackRoot<ListVector> values(new ListVector(xn));
+	GCStackRoot<IntVector> xenogenous(IntVector::create(xn));
+	GCStackRoot<ListVector> values(ListVector::create(xn));
 	for (unsigned int i = 0; i < xn; ++i) {
 	    std::pair<unsigned int, const RObject*>& pr = xenogenous_bdgs[i];
 	    (*xenogenous)[i] = pr.first;
@@ -318,8 +318,8 @@ do_provenance_graph(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
 
 	size_t en = edges.size();
-	GCStackRoot<IntVector> parents(new IntVector(en));
-	GCStackRoot<IntVector> children(new IntVector(en));
+	GCStackRoot<IntVector> parents(IntVector::create(en));
+	GCStackRoot<IntVector> children(IntVector::create(en));
 	unsigned int i = 0;
 	for (EdgeSet::const_iterator it = edges.begin(); it != edges.end(); ++it) {
 	    const std::pair<unsigned int, unsigned int>& edge = *it;

@@ -1033,14 +1033,14 @@ static SEXP Rf_coerceVectorList(SEXP v, SEXPTYPE type)
 	if (v->sexptype() == EXPRSXP) {
 	    ExpressionVector* ev = static_cast<ExpressionVector*>(v);
 	    GCStackRoot<ListVector>
-		lv(new ListVector(ev->begin(), ev->end()));
+		lv(ListVector::create(ev->begin(), ev->end()));
 	    lv->copyAttribute(NamesSymbol, ev);
 	    return lv;
 	}
     if (type == EXPRSXP && TYPEOF(v) == VECSXP) {
 	ListVector* lv = static_cast<ListVector*>(v);
 	GCStackRoot<ExpressionVector>
-	    ev(new ExpressionVector(lv->begin(), lv->end()));
+	    ev(ExpressionVector::create(lv->begin(), lv->end()));
 	ev->copyAttribute(NamesSymbol, lv);
 	return ev;
     }

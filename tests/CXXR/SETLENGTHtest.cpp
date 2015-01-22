@@ -50,28 +50,24 @@ int main()
     Rf_InitMemory();
     Rf_InitNames();
 
-    GCStackRoot<StringVector> sv(new StringVector(4));
+    GCStackRoot<StringVector> sv(StringVector::create(4));
     (*sv)[0] = String::obtain("fee");
     (*sv)[1] = String::obtain("fie");
     (*sv)[2] = String::obtain("fo");
     (*sv)[3] = String::obtain("fum");
     const char* names[] = {"I", "II", "III", "IV"};
-    GCStackRoot<StringVector> namesv(new StringVector(4));
+    GCStackRoot<StringVector> namesv(StringVector::create(4));
     for (size_t i = 0; i < 4; ++i)
 	(*namesv)[i] = String::obtain(names[i]);
     sv->setNames(namesv);
     show(sv);
-    SETLENGTH(sv, 6);
+    SETLENGTH(sv, 3);
     show(sv);
     SETLENGTH(sv, 2);
     show(sv);
     SETLENGTH(sv, 1);
     show(sv);
     SETLENGTH(sv, 0);
-    show(sv);
-    SETLENGTH(sv, 3);
-    show(sv);
-    (*sv)[1] = String::obtain("foo");
     show(sv);
     return 0;
 }

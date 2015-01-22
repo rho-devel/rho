@@ -1377,7 +1377,7 @@ SEXP R_lsInternal(SEXP env, Rboolean all)
     const Environment* envir = static_cast<Environment*>(env);
     std::vector<const Symbol*> syms = envir->frame()->symbols(all);
     std::size_t sz = syms.size();
-    GCStackRoot<StringVector> ans(new StringVector(sz));
+    GCStackRoot<StringVector> ans(StringVector::create(sz));
     for (unsigned int i = 0; i < sz; ++i)
 	(*ans)[i] = const_cast<String*>(syms[i]->name());
     sortVector(ans, FALSE);

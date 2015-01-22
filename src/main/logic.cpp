@@ -165,7 +165,7 @@ namespace {
 		.apply<RawVector>(rv);
 	} else if (!isLogical(arg) && !isNumber(arg)) {
 	    if (Rf_length(arg) == 0U)  // For back-compatibility
-		return new LogicalVector(0);
+		return LogicalVector::create(0);
 	    Rf_error(_("invalid argument type"));
 	}
 	// Logical negation:

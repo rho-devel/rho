@@ -114,7 +114,7 @@ namespace CXXR {
 					cetype_t encoding = CE_NATIVE)
     {
 	GCStackRoot<String> cs(String::obtain(str, encoding));
-	return new StringVector(1, cs);
+	return StringVector::createScalar(cs);
     }
 
     /** @brief (For debugging.)

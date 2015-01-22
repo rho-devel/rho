@@ -53,9 +53,8 @@ namespace CXXR {
      * vector, and is intended particularly for the case where the
      * size of the vector is fixed when it is constructed.
      *
-     * Having said that, the template \e does implement setSize(),
-     * primarily to service CR code's occasional use of SETLENGTH();
-     * however, the implementation of this is rather inefficient.
+     * Having said that, the template \e does implement decreaseSizeInPlace(),
+     * primarily to service CR code's occasional use of SETLENGTH().
      *
      * CXXR implements all of CR's built-in vector types using this
      * template.
@@ -88,61 +87,11 @@ namespace CXXR {
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
 	 */
-	explicit FixedVector(size_type sz)
-	    : VectorBase(ST, sz), m_data(singleton())
-	{
-	    if (sz > 1)
-		m_data = allocData(sz);
-	    constructElementsIfNeeded();
-	    Initializer::initialize(this);
+	static FixedVector* create(size_type sz) {
+	    return new FixedVector(sz);
 	}
 
-	/** @brief Create a vector, and fill with a specified initial
-	 *         value.
-	 *
-	 * @tparam U type assignable to \a T .
-	 *
-	 * @param sz Number of elements required.  Zero is
-	 *          permissible.
-	 *
-	 * @param fill_value Initial value to be assigned to every
-	 *          element.
-	 */
-	template <typename U>
-	FixedVector(size_type sz, const U& fill_value);
-
-	/** @brief Pick a single element from a vector.
-	 *
-	 * This function creates a singleton vector, with its sole
-	 * element initialized to be a copy of a specified element of
-	 * another vector-like object.
-	 *
-	 * @tparam V Object amenable to indexing using [], whose
-	 *           elements are of a type from which \a T objects can
-	 *           be constructed.
-	 *
-	 * @param source \a V object from which an element is to be
-	 *          selected.
-	 *
-	 * @param index The constructed object will be initialised
-	 *          from <tt>source[index]</tt>.
-	 */
-	template <typename V>
-	FixedVector(const V& source, size_t index)
-	    : VectorBase(ST, 1), m_data(singleton())
-	{
-	    constructElementsIfNeeded();
-	    m_data[0] = source[index];
-	    Initializer::initialize(this);
-	}
-
-	/** @brief Copy constructor.
-	 *
-	 * @param pattern FixedVector to be copied.
-	 */
-	FixedVector(const FixedVector<T, ST, Initializer>& pattern);
-
-	/** @brief Constructor from range.
+	/** @brief Create a vector from a range.
 	 * 
 	 * @tparam An iterator type, at least a forward iterator.
 	 *
@@ -153,16 +102,30 @@ namespace CXXR {
 	 *          range from which the FixedVector is to be
 	 *          constructed.
 	 */
-	template <typename FwdIter>
-	FixedVector(FwdIter from, FwdIter to);
+	template<typename FwdIter>
+	static FixedVector* create(FwdIter from, FwdIter to) {
+	    return new FixedVector(from, to);
+	}
 
-	/** @brief Constructor from initializer list.
+	/** @brief Create a vector from an initializer list.
 	 *
 	 * @param An initializer list containing the values to store in the
 	 *          FixedVector.
 	 */
-	explicit FixedVector(std::initializer_list<T> items)
-	    : FixedVector(items.begin(), items.end()) { }
+	static FixedVector* create(std::initializer_list<T> items) {
+	    return FixedVector::create(items.begin(), items.end());
+	}
+
+	/** @brief Create a vector containing a single value.
+	 *
+	 * @param value The value to store in the vector.
+	 */
+	template<class U>
+	static FixedVector* createScalar(const U& value) {
+	    FixedVector* result = new FixedVector(1);
+	    (*result)[0] = value;
+	    return result;
+	}
 
 	/** @brief Element access.
 	 *
@@ -240,7 +203,7 @@ namespace CXXR {
 	static const char* staticTypeName();
 
 	// Virtual functions of VectorBase:
-	void setSize(size_type new_size) override;
+	void decreaseSizeInPlace(size_type new_size) override;
 
 	// Virtual functions of RObject:
 	FixedVector<T, ST, Initializer>* clone() const override;
@@ -276,9 +239,46 @@ namespace CXXR {
 	boost::aligned_storage<sizeof(T), boost::alignment_of<T>::value>
 	m_singleton_buf;
 
-	// Not implemented yet.  Declared to prevent
-	// compiler-generated versions:
-	FixedVector& operator=(const FixedVector&);
+	// Trivial constructor.  Only used for boost serialization.
+	FixedVector() : FixedVector(0) { }
+
+	/** @brief Create a vector, leaving its contents
+	 *         uninitialized (for POD types) or default
+	 *         constructed.
+	 *
+	 * @param sz Number of elements required.  Zero is
+	 *          permissible.
+	 */
+	explicit FixedVector(size_type sz)
+	    : VectorBase(ST, sz), m_data(singleton())
+	{
+	    if (sz > 1)
+		m_data = allocData(sz);
+	    constructElementsIfNeeded();
+	    Initializer::initialize(this);
+	}
+
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern FixedVector to be copied.
+	 */
+	FixedVector(const FixedVector<T, ST, Initializer>& pattern);
+
+	/** @brief Constructor from range.
+	 * 
+	 * @tparam An iterator type, at least a forward iterator.
+	 *
+	 * @param from Iterator designating the start of the range
+	 *          from which the FixedVector is to be constructed.
+	 *
+	 * @param to Iterator designating 'one past the end' of the
+	 *          range from which the FixedVector is to be
+	 *          constructed.
+	 */
+	template <typename FwdIter>
+	FixedVector(FwdIter from, FwdIter to);
+
+	FixedVector& operator=(const FixedVector&) = delete;
 
 	// If there is more than one element, this function is used to
 	// allocate the required memory block from CXXR::MemoryBank :
@@ -311,6 +311,8 @@ namespace CXXR {
 
 	template<class Archive>
 	void load(Archive & ar, const unsigned int version); 
+	template<class Archive>
+	void loadValues(Archive & ar, const unsigned int version); 
 
 	template<class Archive>
 	void save(Archive & ar, const unsigned int version) const;
@@ -332,125 +334,11 @@ namespace CXXR {
     };
 }  // namespace CXXR
 
-// ***** boost serialization object construction *****
-
-namespace boost {
-    namespace serialization {
-	/** @brief Template specialisation.
-	 *
-	 * This specialisation is required because
-	 * CXXR::FixedVector does not have a default constructor.
-	 * See the boost::serialization documentation for further
-	 * details.
-	 *
-	 * @tparam Archive archive class from which deserialisation is
-	 *           taking place.
-	 *
-	 * @tparam T The type of the elements of the vector to be
-	 *           constructed.
-	 *
-	 * @tparam ST The required ::SEXPTYPE of the vector to be
-	 *           constructed.
-	 *
-	 * @tparam Initr The initialiser class of the vector to be
-	 *           constructed.
-	 *
-	 * @param ar Archive from which deserialisation is taking
-	 *           place.
-         *
-	 * @param t Pointer to the location at which a
-	 *          CXXR::FixedVector object is to be constructed.
-	 *
-	 * @param version Ignored.
-	 */
-	template<class Archive, class T, SEXPTYPE ST, typename Initr>
-	void load_construct_data(Archive& ar,
-				 CXXR::FixedVector<T, ST, Initr>* t,
-				 const unsigned int version)
-	{
-	    size_t size;
-	    size_t size_hi;
-	    ar >> BOOST_SERIALIZATION_NVP(size_hi);
-	    size_t size_lo;
-	    ar >> BOOST_SERIALIZATION_NVP(size_lo);
-#if SIZEOF_SIZE_T < 8
-	    if (size_hi != 0)
-		Rf_error("vector length too large for this platform");
-	    size = size_lo;
-#else
-	    size = (size_hi << 32 | size_lo);
-#endif
-	    new (t) CXXR::FixedVector<T, ST, Initr>(size);
-	}
-
-	/** @brief Template specialisation.
-	 *
-	 * This specialisation is required to ensure that the size of
-	 * a CXXR::FixedVector is serialised within an archive before
-	 * the FixedVector itself is serialised, so that on
-	 * deserialisation this size can be made available to
-	 * load_construct_data().  See the boost::serialization
-	 * documentation for further details.
-	 *
-	 * @tparam Archive archive class to which serialisation is
-	 *           taking place.
-	 *
-	 * @tparam T The type of the elements of the vector about to
-	 *           be serialised.
-	 *
-	 * @tparam ST The ::SEXPTYPE of the vector about to be
-	 *           serialised.
-	 *
-	 * @tparam Initr The initialiser class of the vector about to
-	 *           be serialised.
-	 *
-	 * @param ar Archive to which serialisation is taking
-	 *           place.
-         *
-	 * @param t Non-null pointer to the CXXR::FixedVector object
-	 *          about to be serialised.
-	 *
-	 * @param version Ignored.
-	 */
-	template<class Archive, class T, SEXPTYPE ST, typename Initr>
-	void save_construct_data(Archive& ar,
-				 const CXXR::FixedVector<T, ST, Initr>* t,
-				 const unsigned int version)
-	{
-	    size_t size = t->size();
-#if SIZEOF_SIZE_T > 4
-	    int32_t size_hi = int32_t(size << 32);
-#else
-	    int32_t size_hi = 0;
-#endif
-	    ar << BOOST_SERIALIZATION_NVP(size_hi);
-	    int32_t size_lo = int32_t(size & 0xffffffff);
-	    ar << BOOST_SERIALIZATION_NVP(size_lo);
-	}
-    }  // namespace serialization
-}  // namespace boost
-
 // ***** Implementation of non-inlined members *****
 
 #include <algorithm>
 #include "localization.h"
 #include "R_ext/Error.h"
-
-template <typename T, SEXPTYPE ST, typename Initr>
-template <typename U>
-CXXR::FixedVector<T, ST, Initr>::FixedVector(size_type sz,
-					     const U& fill_value)
-    : VectorBase(ST, sz), m_data(singleton())
-{
-    if (sz > 1)
-	m_data = allocData(sz);
-
-    constructElementsIfNeeded();
-    for (T *p = m_data, *pend = m_data + sz; p != pend; ++p)
-	*p = fill_value;
-
-    Initr::initialize(this);
-}
 
 template <typename T, SEXPTYPE ST, typename Initr>
 CXXR::FixedVector<T, ST, Initr>::FixedVector(const FixedVector<T, ST, Initr>& pattern)
@@ -539,6 +427,19 @@ template<class Archive>
 void CXXR::FixedVector<T, ST, Initr>::load(Archive & ar,
 					   const unsigned int version)
 {
+    size_t length;
+    ar >> BOOST_SERIALIZATION_NVP(length);
+
+    FixedVector* result = FixedVector::create(length);
+    result->loadValues(ar, version);
+    S11nScope::defineRelocation(this, result);
+}
+
+template <typename T, SEXPTYPE ST, typename Initr>
+template<class Archive>
+void CXXR::FixedVector<T, ST, Initr>::loadValues(Archive & ar,
+						 const unsigned int version)
+{
     ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(VectorBase);
 
     size_type numnas;
@@ -581,6 +482,9 @@ template<class Archive>
 void CXXR::FixedVector<T, ST, Initr>::save(Archive & ar,
 					   const unsigned int version) const
 {
+    size_t length = size();
+    ar << BOOST_SERIALIZATION_NVP(length);
+
     ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(VectorBase);
 
     std::vector<size_type> na_indices;
@@ -611,21 +515,12 @@ void CXXR::FixedVector<T, ST, Initr>::save(Archive & ar,
 };
 
 template <typename T, SEXPTYPE ST, typename Initr>
-void CXXR::FixedVector<T, ST, Initr>::setSize(size_type new_size)
+void CXXR::FixedVector<T, ST, Initr>::decreaseSizeInPlace(size_type new_size)
 {
-    size_type copysz = std::min(size(), new_size);
-    T* newblock = singleton();  // Setting used only if new_size == 0
-    if (new_size > 0)
-	newblock = allocData(new_size);
-    constructElementsIfNeeded(newblock, newblock + new_size);
-    T* p = std::copy(begin(), begin() + copysz, newblock);
-    T* newblockend = newblock + new_size;
-    for (; p != newblockend; ++p)
-	*p = NA<T>();
-    destructElementsIfNeeded();
-    if (m_data != singleton())
-	MemoryBank::deallocate(m_data, size()*sizeof(T));
-    m_data = newblock;
+    if (new_size > size()) {
+	Rf_error("Increasing vector length in place not allowed.");
+    }
+    destructElementsIfNeeded(begin() + new_size, end());
     adjustSize(new_size);
 }
 

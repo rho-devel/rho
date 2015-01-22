@@ -766,7 +766,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	if (klass) {
 	    size_t sz = klass->size() - nextidx;
 	    GCStackRoot<StringVector>
-		newdotclass(new StringVector(sz));
+		newdotclass(StringVector::create(sz));
 	    klass = klass->clone();
 	    for (unsigned int j = 0; j < sz; ++j)
 		(*newdotclass)[j] = (*klass)[nextidx++];

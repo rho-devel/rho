@@ -370,7 +370,7 @@ namespace {
     VectorBase* FIXUP_NULL_AND_CHECK_TYPES(SEXP v)
     {
 	if (!v)
-	    return new RealVector(0);
+	    return RealVector::create(0);
 	switch (v->sexptype()) {
 	case CPLXSXP:
 	case REALSXP:
