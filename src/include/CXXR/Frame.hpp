@@ -115,13 +115,15 @@ namespace CXXR {
 	     * can be used.
 	     */
 	    Binding()
-		: m_frame(nullptr), m_symbol(nullptr), m_value(Symbol::missingArgument()),
-#ifdef PROVENANCE_TRACKING
-		  m_provenance(0),
-#endif
+		: m_frame(nullptr), m_symbol(nullptr),
 		  m_origin(MISSING), m_active(false),
 		  m_locked(false)
-	    {}
+	    {
+		m_value = Symbol::missingArgument();
+#ifdef PROVENANCE_TRACKING
+		m_provenance = nullptr;
+#endif
+	    }
 
 	    /** @brief Represent this Binding as a PairList element.
 	     *

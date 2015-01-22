@@ -63,11 +63,15 @@ namespace {
 
 WeakRef::WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer,
 		 bool finalize_on_exit)
-    : m_key(key), m_value(value), m_Rfinalizer(R_finalizer),
-      m_self(expose(this)), m_Cfinalizer(0),
+    : m_Cfinalizer(0),
       m_ready_to_finalize(false),
       m_finalize_on_exit(finalize_on_exit)
 {
+    m_key = key;
+    m_value = value;
+    m_Rfinalizer = R_finalizer;
+    m_self = expose(this);
+
     getLive()->push_back(this);
     m_lit = std::prev(getLive()->end());
 
@@ -85,10 +89,14 @@ WeakRef::WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer,
 
 WeakRef::WeakRef(RObject* key, RObject* value, R_CFinalizer_t C_finalizer,
 		 bool finalize_on_exit)
-    : m_key(key), m_value(value), m_Rfinalizer(0), m_self(expose(this)),
-      m_Cfinalizer(C_finalizer),
+    : m_Cfinalizer(C_finalizer),
       m_ready_to_finalize(false), m_finalize_on_exit(finalize_on_exit)
 {
+    m_key = key;
+    m_value = value;
+    m_Rfinalizer = 0;
+    m_self = expose(this);
+
     getLive()->push_back(this);
     m_lit = std::prev(getLive()->end());
 

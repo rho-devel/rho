@@ -50,6 +50,13 @@ namespace CXXR {
 	Rboolean (*isStringp)(SEXP s) = Rf_isString;
 	SEXP (*STRING_ELTp)(const SEXP x, R_xlen_t i) = STRING_ELT;
     }
+
+    RHandle<String> ElementTraits::NAFunc<RHandle<String>>::makeNA()
+    {
+	RHandle<String> na;
+	na = String::NA();
+	return na;
+    }
 }
 
 namespace {

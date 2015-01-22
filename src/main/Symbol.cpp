@@ -67,8 +67,9 @@ SEXP R_UnboundValue;
 // ***** Class Symbol itself *****
 
 Symbol::Symbol(const String* the_name)
-    : RObject(SYMSXP), m_name(the_name), m_dd_index(0)
+    : RObject(SYMSXP), m_dd_index(0)
 {
+    m_name = the_name;
     if (m_name) {
 	if (m_name->size() == 0)
 	    Rf_error(_("attempt to use zero-length variable name"));

@@ -58,9 +58,11 @@ namespace CXXR {
     namespace ElementTraits {
 	template <>
 	struct NAFunc<RHandle<String> > {
+	    static RHandle<String> makeNA();
+
 	    const RHandle<String>& operator()() const
 	    {
-		static RHandle<String> na(String::NA());
+		static RHandle<String> na = makeNA();
 		return na;
 	    }
 	};
@@ -78,8 +80,9 @@ namespace CXXR {
     // Make the default handle for a String point to a blank string:
     template <>
     inline RHandle<String>::RHandle()
-	: GCEdge<String>(String::blank())
-    {}
+    {
+	operator=(String::blank());
+    }
 
     template <>
     inline const char* FixedVector<RHandle<String>, STRSXP>::staticTypeName()

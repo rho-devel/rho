@@ -275,9 +275,11 @@ namespace CXXR {
 
 	S3Launcher(const std::string& generic, const std::string& group,
 		   Environment* call_env, Environment* table_env)
-	    : m_generic(generic), m_group(group), m_call_env(call_env),
-	      m_table_env(table_env), m_using_group(false)
-	{}
+	    : m_generic(generic), m_group(group), m_using_group(false)
+	{
+	    m_call_env = call_env;
+	    m_table_env = table_env;
+	}
     };
 }
 

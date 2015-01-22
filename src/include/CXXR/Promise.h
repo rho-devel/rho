@@ -91,10 +91,13 @@ namespace CXXR {
 	 *          valgen itself.
 	 */
 	Promise(RObject* valgen, Environment* env)
-	    : RObject(PROMSXP), m_value(env ? Symbol::unboundValue() : valgen),
-	      m_valgen(valgen), m_environment(env), m_under_evaluation(false),
-	      m_interrupted(false)
-	{}
+	    : RObject(PROMSXP), 
+	      m_under_evaluation(false), m_interrupted(false)
+	{
+	    m_value = env ? Symbol::unboundValue() : valgen;
+	    m_valgen = valgen;
+	    m_environment = env;
+	}
 
 	/** @brief Access the environment of the Promise.
 	 *

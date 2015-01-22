@@ -36,8 +36,10 @@ using namespace CXXR;
 bool ArgMatcher::s_warn_on_partial_match = false;
 
 ArgMatcher::ArgMatcher(const PairList* formals)
-    : m_formals(formals), m_has_dots(false)
+    : m_has_dots(false)
 {
+    m_formals = formals;
+
     for (const PairList* f = formals; f; f = f->tail()) {
 	const Symbol* sym = dynamic_cast<const Symbol*>(f->tag());
 	if (!sym)

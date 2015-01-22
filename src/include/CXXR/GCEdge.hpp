@@ -57,18 +57,6 @@ namespace CXXR {
 	    : m_target(nullptr)
 	{}
 
-	/** @brief Primary constructor.
-	 *
-	 * @param target Pointer to the object (if any) to which this 
-	 *          GCEdgeBase is initially to refer.
-	 */
-	GCEdgeBase(const GCNode* target)
-	    : m_target(target)
-	{
-	    GCNode::maybeCheckExposed(m_target);
-	    GCNode::incRefCount(m_target);
-	}
-
 	/** @brief Copy constructor.
 	 *
 	 * @param source Pattern for the copy.
@@ -100,8 +88,9 @@ namespace CXXR {
          */
 	void retarget(const GCNode* newtarget)
 	{
-	    GCEdgeBase tmp(newtarget);
-	    std::swap(m_target, tmp.m_target);
+	    GCNode::incRefCount(newtarget);
+	    GCNode::decRefCount(m_target);
+	    m_target = newtarget;
 	}
     private:
 	const GCNode* m_target;
@@ -135,14 +124,17 @@ namespace CXXR {
 	GCEdge()
 	{}
 
-	/** @brief Primary constructor.
-	 *
-	 * @param target Pointer to the object to which this GCEdge is
-	 *          to refer.  A null pointer is permissible.
-	 */
-	explicit GCEdge(T* target)
-	    : GCEdgeBase(target)
-	{}
+	// explicit GCEdge(T* target) is intentionally not defined here.
+	//
+	// This prevents object initializers of the form
+	//     Foo::Foo() : m_edge(expression_that_might_gc()) { ... }
+	// In that case, the expression is executed while the edge is
+	// uninitialized.  If it causes a garbage collection, the GC's mark
+	// routine will attempt to follow the uninitialized edge, causing
+	// errors.
+	// Object initializers should be written as:
+	//     Foo::Foo() { m_edge = expression_that_might_gc(); ... }
+	// which properly initialized the edge prior to doing the allocation.
 
 	/** @brief Copy constructor.
 	 *

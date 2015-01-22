@@ -569,20 +569,29 @@ namespace CXXR {
 
     inline ConsCell::ConsCell(SEXPTYPE st, RObject* cr,
 			      PairList* tl, const RObject* tg)
-	: RObject(st), m_car(cr), m_tail(tl), m_tag(tg)
+	: RObject(st)
     {
+        m_car = cr;
+        m_tail = tl;
+        m_tag = tg;
 	// checkST(st);
     }
 
     inline ConsCell::ConsCell(const ConsCell& pattern)
-	: RObject(pattern), m_car(pattern.m_car),
-	  m_tail(clone(pattern.tail())), m_tag(pattern.tag())
-    {}
+      : RObject(pattern)
+    {
+        m_car = pattern.m_car;
+        m_tail = clone(pattern.tail());
+        m_tag = pattern.tag();
+    }
     
     inline ConsCell::ConsCell(const ConsCell& pattern, int)
-	: RObject(pattern), m_car(pattern.m_car), m_tail(nullptr),
-	  m_tag(pattern.tag())
-    {}
+	: RObject(pattern)
+    {
+        m_car = pattern.m_car;
+        m_tail = nullptr;
+        m_tag = pattern.tag();
+    }
     
     inline void ConsCell::setTail(PairList* tl)
     {

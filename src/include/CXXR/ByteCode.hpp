@@ -76,8 +76,10 @@ namespace CXXR {
 	 *          constants (FIXME: improve this documentation.)
 	 */
 	explicit ByteCode(IntVector* code, ListVector* constants)
-	    : RObject(BCODESXP), m_code(code), m_constants(constants)
+	    : RObject(BCODESXP)
 	{
+	    m_code = code;
+	    m_constants = constants;
 #ifdef THREADED_CODE
 #ifndef TOKEN_THREADING
 	    thread();

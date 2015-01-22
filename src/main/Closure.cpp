@@ -75,10 +75,11 @@ namespace CXXR {
 
 Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
     : FunctionBase(CLOSXP), m_debug(false),
-      m_num_invokes(0), m_compiled_body(nullptr),
-      m_matcher(expose(new ArgMatcher(formal_args))),
-      m_body(body), m_environment(env)
+      m_num_invokes(0), m_compiled_body(nullptr)
 {
+    m_matcher = expose(new ArgMatcher(formal_args));
+    m_body = body;
+    m_environment = env;
 }
 
 Closure::~Closure() {

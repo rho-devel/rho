@@ -55,7 +55,8 @@ void CommandChronicle::readBinding(const Provenance* bdgprov)
     std::pair<std::set<unsigned int>::iterator, bool> pr
 	= m_seen.insert(bdgprov->serialNumber());
     if (pr.second) {
-	GCEdge<const Provenance> parent(bdgprov);
+	GCEdge<const Provenance> parent;
+	parent = bdgprov;
 	m_reads.push_back(parent);
     }
 }

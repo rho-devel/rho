@@ -93,8 +93,7 @@ namespace CXXR {
 	{
 	    if (sz > 1)
 		m_data = allocData(sz);
-	    if (ElementTraits::MustConstruct<T>::value)  // known at compile-time
-		constructElements(begin(), end());
+	    constructElementsIfNeeded();
 	    Initializer::initialize(this);
 	}
 
@@ -132,7 +131,8 @@ namespace CXXR {
 	FixedVector(const V& source, size_t index)
 	    : VectorBase(ST, 1), m_data(singleton())
 	{
-	    new (m_data) T(source[index]);
+	    constructElementsIfNeeded();
+	    m_data[0] = source[index];
 	    Initializer::initialize(this);
 	}
 
@@ -255,8 +255,7 @@ namespace CXXR {
 	 */
 	~FixedVector()
 	{
-	    if (ElementTraits::MustDestruct<T>::value)  // known at compile-time
-		destructElements();
+	    destructElementsIfNeeded();
 	    if (m_data != singleton())
 		MemoryBank::deallocate(m_data, size()*sizeof(T));
 	}
@@ -286,8 +285,26 @@ namespace CXXR {
 	static T* allocData(size_type sz);
 
 	static void constructElements(iterator from, iterator to);
+	static void constructElementsIfNeeded(iterator from, iterator to)
+	{
+	    // This is essential for e.g. RHandles, otherwise they
+	    // may contain junk pointers.
+	    if (ElementTraits::MustConstruct<T>::value) // compile-time constant
+		constructElements(from, to);
+	}
+	void constructElementsIfNeeded() {
+	    constructElementsIfNeeded(begin(), end());
+	}
 
-	void destructElements();
+	void destructElementsIfNeeded(iterator from, iterator to)
+	{
+	    if (ElementTraits::MustDestruct<T>::value)  // compile-time constant
+		destructElements(from, to);
+	}
+	void destructElementsIfNeeded() {
+	    destructElementsIfNeeded(begin(), end());
+	}
+	void destructElements(iterator from, iterator to);
 
 	// Helper function for detachReferents():
 	void detachElements();
@@ -427,8 +444,11 @@ CXXR::FixedVector<T, ST, Initr>::FixedVector(size_type sz,
 {
     if (sz > 1)
 	m_data = allocData(sz);
+
+    constructElementsIfNeeded();
     for (T *p = m_data, *pend = m_data + sz; p != pend; ++p)
-	new (p) T(fill_value);
+	*p = fill_value;
+
     Initr::initialize(this);
 }
 
@@ -439,9 +459,11 @@ CXXR::FixedVector<T, ST, Initr>::FixedVector(const FixedVector<T, ST, Initr>& pa
     size_type sz = size();
     if (sz > 1)
 	m_data = allocData(sz);
+    constructElementsIfNeeded();
+
     T* p = m_data;
     for (const T& elem : pattern)
-	new (p++) T(elem);
+	*(p++) = elem;
     Initr::initialize(this);
 }
 
@@ -452,9 +474,11 @@ CXXR::FixedVector<T, ST, Initr>::FixedVector(FwdIter from, FwdIter to)
 {
     if (size() > 1)
 	m_data = allocData(size());
+    constructElementsIfNeeded();
+
     T* p = m_data;
     for (const_iterator it = from; it != to; ++it)
-	new (p++) T(*it);
+	*(p++) = *it;
     Initr::initialize(this);
 }
 
@@ -490,10 +514,10 @@ void CXXR::FixedVector<T, ST, Initr>::constructElements(iterator from,
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
-void CXXR::FixedVector<T, ST, Initr>::destructElements()
+void CXXR::FixedVector<T, ST, Initr>::destructElements(iterator from,
+						       iterator to)
 {
-    // Destroy in reverse order, following C++ convention:
-    for (T* p = m_data + size() - 1; p >= m_data; --p)
+    for (iterator p = from; p != to; ++p)
 	p->~T();
 }
 
@@ -594,16 +618,12 @@ void CXXR::FixedVector<T, ST, Initr>::setSize(size_type new_size)
     T* newblock = singleton();  // Setting used only if new_size == 0
     if (new_size > 0)
 	newblock = allocData(new_size);
-    // The following is essential for e.g. RHandles, otherwise they
-    // may contain junk pointers.
-    if (ElementTraits::MustConstruct<T>::value)  // known at compile time
-	constructElements(newblock, newblock + copysz);
+    constructElementsIfNeeded(newblock, newblock + new_size);
     T* p = std::copy(begin(), begin() + copysz, newblock);
     T* newblockend = newblock + new_size;
     for (; p != newblockend; ++p)
-	new (p) T(NA<T>());
-    if (ElementTraits::MustDestruct<T>::value)  // known at compile-time
-	destructElements();
+	*p = NA<T>();
+    destructElementsIfNeeded();
     if (m_data != singleton())
 	MemoryBank::deallocate(m_data, size()*sizeof(T));
     m_data = newblock;

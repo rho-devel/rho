@@ -45,8 +45,8 @@ namespace CXXR {
 namespace JIT {
 
 CompiledFrame::CompiledFrame(const FrameDescriptor* descriptor)
-    : m_descriptor(descriptor)
 {
+    m_descriptor = descriptor;
     m_bindings = new Binding[descriptor->getNumberOfSymbols()];
     m_extension = nullptr;
 }
