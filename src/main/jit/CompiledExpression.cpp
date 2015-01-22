@@ -145,7 +145,7 @@ CompiledExpression::~CompiledExpression()
 }
 
 Frame* CompiledExpression::createFrame() const {
-  return CXXR_NEW(CompiledFrame(m_frame_descriptor));
+  return new CompiledFrame(m_frame_descriptor);
 }
 
 bool CompiledExpression::hasMatchingFrameLayout(const Environment* env) const

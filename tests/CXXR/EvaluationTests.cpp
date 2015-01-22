@@ -124,8 +124,8 @@ Environment* Executor::newTestEnv()
     // Every evaluation is done in a freshly created environment, so that
     // side effects don't propogate.
     // Only the base environment is visible from this environment.
-    GCStackRoot<Frame> frame(CXXR_NEW(StdFrame()));
-    return CXXR_NEW(Environment(Environment::base(), frame));
+    GCStackRoot<Frame> frame(new StdFrame());
+    return new Environment(Environment::base(), frame);
 }
 
 RObject* Executor::parse(std::string expression)
@@ -193,7 +193,7 @@ public:
 
 	// And call it.
 	ArgList args(nullptr, ArgList::Status::PROMISED);
-	GCStackRoot<Expression> call(CXXR_NEW(Expression(closure)));
+	GCStackRoot<Expression> call(new Expression(closure));
 	return closure->invoke(env, &args, call);
     }
 };

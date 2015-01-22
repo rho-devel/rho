@@ -972,7 +972,7 @@ BuiltInFunction::createLookupTables()
     for (int i = 0; s_function_table[i].name; ++i) {
 	const char* symname = s_function_table[i].name;
 	Symbol* sym = Symbol::obtain(symname);
-	GCStackRoot<BuiltInFunction> bif(CXXR_NEW(BuiltInFunction(i)));
+	GCStackRoot<BuiltInFunction> bif(new BuiltInFunction(i));
 	if (bif->viaDotInternal()) {
 	    (*internal_function_cache)[sym] = bif;
 	}

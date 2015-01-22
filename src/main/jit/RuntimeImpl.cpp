@@ -158,13 +158,13 @@ RObject* cxxr_runtime_callFunction(const FunctionBase* function,
 void cxxr_runtime_do_break(Environment* environment) {
     if (!environment->loopActive())
 	Rf_error(_("no loop to break from"));
-    CXXR_NEW(LoopBailout(environment, false))->throwException();
+    (new LoopBailout(environment, false))->throwException();
 }
 
 void cxxr_runtime_do_next(Environment* environment) {
     if (!environment->loopActive())
 	Rf_error(_("no loop to break from"));
-    CXXR_NEW(LoopBailout(environment, true))->throwException();
+    (new LoopBailout(environment, true))->throwException();
 }
 
 bool cxxr_runtime_loopExceptionIsNext(void* exception) {

@@ -55,7 +55,7 @@ const char* S4Object::typeName() const
 
 SEXP Rf_allocS4Object()
 {
-    return CXXR_NEW(S4Object());
+    return new S4Object();
 }
 
 // Needed for the instantiation in BOOST_CLASS_EXPORT_IMPLEMENT:

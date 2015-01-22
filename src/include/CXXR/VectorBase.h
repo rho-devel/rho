@@ -346,7 +346,7 @@ namespace CXXR {
     template <class V>
     V* VectorBase::resize(const V* pattern, size_type new_size)
     {
-	GCStackRoot<V> ans(CXXR_NEW(V(new_size)));
+	GCStackRoot<V> ans(new V(new_size));
 	size_type copysz = std::min(pattern->size(), new_size);
 	typename V::const_iterator patb = pattern->begin();
 	typename V::iterator ansit

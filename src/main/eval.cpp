@@ -702,9 +702,9 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 
     // create a new environment frame enclosed by the lexical
     // environment of the method
-    GCStackRoot<Frame> newframe(CXXR_NEW(ListFrame));
+    GCStackRoot<Frame> newframe(new ListFrame);
     GCStackRoot<Environment>
-	newrho(CXXR_NEW(Environment(func->environment(), newframe)));
+	newrho(new Environment(func->environment(), newframe));
     Frame* tof = newrho->frame();
 
     // Propagate bindings of the formal arguments of the generic to
@@ -791,7 +791,7 @@ static SEXP replaceCall(SEXP fun, SEXP val, SEXP args, SEXP rhs)
     PROTECT(rhs);
     PROTECT(val);
     GCStackRoot<PairList> tl(PairList::make(length(args) + 2));
-    ptmp = tmp = CXXR_NEW(Expression(nullptr, tl));
+    ptmp = tmp = new Expression(nullptr, tl);
     UNPROTECT(4);
     SETCAR(ptmp, fun); ptmp = CDR(ptmp);
     SETCAR(ptmp, val); ptmp = CDR(ptmp);
@@ -1206,7 +1206,7 @@ SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
     Environment* env = SEXP_downcast<Environment*>(rho);
     if (!env->loopActive())
 	Rf_error(_("no loop to break from"));
-    LoopBailout* lbo = CXXR_NEW(LoopBailout(env, PRIMVAL(op) == 1));
+    LoopBailout* lbo = new LoopBailout(env, PRIMVAL(op) == 1);
     return propagateBailout(lbo);
 }
 
@@ -1261,7 +1261,7 @@ SEXP attribute_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
     Environment* envir = SEXP_downcast<Environment*>(rho);
     if (!envir->canReturn())
 	Rf_error(_("no function to return from, jumping to top level"));
-    ReturnBailout* rbo = CXXR_NEW(ReturnBailout(envir, v));
+    ReturnBailout* rbo = new ReturnBailout(envir, v);
     return propagateBailout(rbo);
 }
 
@@ -1328,7 +1328,7 @@ static PairList* evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc
 	R_SetVarLocValue(tmploc, val->car());
 	GCStackRoot<PairList> nexprargs(PairList::cons(R_GetVarLocSymbol(tmploc),
 						       exprn->tail()->tail()));
-	GCStackRoot<Expression> nexpr(CXXR_NEW(Expression(exprn->car(), nexprargs)));
+	GCStackRoot<Expression> nexpr(new Expression(exprn->car(), nexprargs));
 	GCStackRoot<> nval(Rf_eval(nexpr, rho));
 	return PairList::cons(nval, val);
     }
@@ -1814,8 +1814,8 @@ SEXP attribute_hidden do_withVisible(SEXP call, SEXP op, SEXP args, SEXP rho)
     x = CAR(args);
     x = Rf_eval(x, rho);
     PROTECT(x);
-    PROTECT(ret = CXXR_NEW(ListVector(2)));
-    PROTECT(nm = CXXR_NEW(StringVector(2)));
+    PROTECT(ret = new ListVector(2));
+    PROTECT(nm = new StringVector(2));
     SET_STRING_ELT(nm, 0, Rf_mkChar("value"));
     SET_STRING_ELT(nm, 1, Rf_mkChar("visible"));
     SET_VECTOR_ELT(ret, 0, x);
@@ -1939,8 +1939,8 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	       triggered (by something very obscure, but still).
 	       Hence here and in the other Rf_usemethod() uses below a
 	       new environment rho1 is created and used.  LT */
-	    GCStackRoot<Frame> frame(CXXR_NEW(ListFrame));
-	    Environment* working_env = CXXR_NEW(Environment(callenv, frame));
+	    GCStackRoot<Frame> frame(new ListFrame);
+	    Environment* working_env = new Environment(callenv, frame);
 	    ClosureContext cntxt(callx, callenv, func,
 				 working_env, arglist.list());
 	    int um = Rf_usemethod(generic, x, call,
@@ -2079,13 +2079,13 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     /* we either have a group method or a class method */
 
-    GCStackRoot<Frame> supp_frame(CXXR_NEW(ListFrame));
+    GCStackRoot<Frame> supp_frame(new ListFrame);
     // Set up special method bindings:
     m->addMethodBindings(supp_frame);
 
     if (isOps) {
 	// Rebind .Method:
-	GCStackRoot<StringVector> dotmethod(CXXR_NEW(StringVector(2)));
+	GCStackRoot<StringVector> dotmethod(new StringVector(2));
 	(*dotmethod)[0] = (l 
 			   ? const_cast<String*>(l->symbol()->name())
 			   : String::blank());
@@ -2100,7 +2100,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     /* they get duplicated and things like missing/substitute work. */
     {
 	GCStackRoot<Expression>
-	    newcall(CXXR_NEW(Expression(m->symbol(), callx->tail())));
+	    newcall(new Expression(m->symbol(), callx->tail()));
 	ArgList arglist(callargs, ArgList::EVALUATED);
 	arglist.wrapInPromises(nullptr);
 	// Ensure positional matching for operators:
@@ -3573,7 +3573,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	BCNPUSH(nullptr);
 	s_loopvar_stack->push_back(GET_BINDING_CELL(symbol, rho));
 
-	value = CXXR_NEW(IntVector(2));
+	value = new IntVector(2);
 	INTEGER(value)[0] = -1;
 	if (Rf_isVector(seq))
 	  INTEGER(value)[1] = LENGTH(seq);
@@ -4419,7 +4419,7 @@ SEXP attribute_hidden do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
     consts = CADR(args);
     GCStackRoot<IntVector> enc(SEXP_downcast<IntVector*>(bytes));
     GCStackRoot<ListVector> pl(SEXP_downcast<ListVector*>(consts));
-    return CXXR_NEW(ByteCode(enc, pl));
+    return new ByteCode(enc, pl);
 }
 
 SEXP attribute_hidden do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)

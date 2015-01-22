@@ -178,7 +178,7 @@ SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if ( CAR(oldcode) != R_BraceSymbol )
 	    {
 		GCStackRoot<PairList> tl(PairList::make(2));
-		PROTECT(tmp = CXXR_NEW(Expression(nullptr, tl)));
+		PROTECT(tmp = new Expression(nullptr, tl));
 		SETCAR(tmp, R_BraceSymbol);
 		SETCADR(tmp, oldcode);
 		SETCADDR(tmp, code);
@@ -308,9 +308,9 @@ SEXP attribute_hidden do_envirgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (TYPEOF(BODY(s)) == BCODESXP) {
 	    /* switch to interpreted version if compiled */
 	    Closure* clos = static_cast<Closure*>(s.get());
-	    s = CXXR_NEW(Closure(clos->matcher()->formalArgs(),
-				 R_ClosureExpr(clos),
-				 clos->environment()));
+	    s = new Closure(clos->matcher()->formalArgs(),
+			    R_ClosureExpr(clos),
+			    clos->environment());
 	}
 	SET_CLOENV(s, env);
     }

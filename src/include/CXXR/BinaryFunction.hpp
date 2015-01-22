@@ -499,15 +499,15 @@ Vout* CXXR::VectorOps::BinaryFunction<Functor,
     std::size_t rsize = vr->size();
     GCStackRoot<Vout> ans;
     if (lsize == 0 || rsize == 0) {
-	ans = CXXR_NEW(Vout(0));
+	ans = new Vout(0);
     } else if (lsize == rsize) {
-	ans = CXXR_NEW(Vout(lsize));
+	ans = new Vout(lsize);
 	mapElements<0>(ans.get(), vl, vr);
     } else if (lsize > rsize) {
-	ans = CXXR_NEW(Vout(lsize));
+	ans = new Vout(lsize);
 	mapElements<1>(ans.get(), vl, vr);
     } else {
-	ans = CXXR_NEW(Vout(rsize));
+	ans = new Vout(rsize);
 	mapElements<-1>(ans.get(), vl, vr);
     }
     AttributeCopier::copyAttributes(ans, vl, vr);

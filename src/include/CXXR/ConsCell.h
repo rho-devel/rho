@@ -504,7 +504,7 @@ namespace CXXR {
 	    // object destructors).  However, calling code should not
 	    // rely on the fact that no GC will occur, because the
 	    // implementation may change in the future.
-            return CXXR_NEW(PairList(cr, tl, tag));
+            return new PairList(cr, tl, tag);
 	}
 
 	/** @brief Create a PairList of a specified length.

@@ -57,15 +57,6 @@
 #include <boost/serialization/export.hpp>
 #include <boost/serialization/version.hpp>
 
-/** @brief Syntactic sugar for creating CXXR::GCNode objects.
- *
- * The argument of this macro must be a constructor expression for an
- * object of a class derived from CXXR::GCNode.  The macro expansion
- * returns a pointer to a new object created by that constructor
- * expression.
- */
-#define CXXR_NEW(T) (new T)
-
 namespace CXXR {
     /** @brief Base class for objects managed by the garbage collector.
      *

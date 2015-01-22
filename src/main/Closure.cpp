@@ -177,9 +177,9 @@ RObject* Closure::invokeImpl(Environment* env, const ArgList* arglist,
 #ifdef ENABLE_LLVM_JIT
 	m_compiled_body ? m_compiled_body->createFrame() :
 #endif
-	CXXR_NEW(ListFrame));
+	new ListFrame);
     GCStackRoot<Environment>
-	newenv(CXXR_NEW(Environment(environment(), newframe)));
+	newenv(new Environment(environment(), newframe));
     // Perform argument matching:
     {
         ClosureContext cntxt(const_cast<Expression*>(call), env, this,

@@ -160,7 +160,7 @@ SEXP Rf_mkPROMISE(SEXP expr, SEXP rho)
 {
     GCStackRoot<> exprt(expr);
     GCStackRoot<Environment> rhort(SEXP_downcast<Environment*>(rho));
-    return CXXR_NEW(Promise(exprt, rhort));
+    return new Promise(exprt, rhort);
 }
 
 void SET_PRVALUE(SEXP x, SEXP v)

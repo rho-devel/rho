@@ -114,7 +114,7 @@ void VectorBase::setDimensionNames(unsigned int d, StringVector* names)
     ListVector* lv
 	= static_cast<ListVector*>(getAttribute(DimNamesSymbol));
     if (!lv) {
-	lv = CXXR_NEW(ListVector(ndims));
+	lv = new ListVector(ndims);
 	setAttribute(DimNamesSymbol, lv);
     }
     (*lv)[d - 1] = names;

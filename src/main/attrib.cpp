@@ -766,8 +766,8 @@ SEXP attribute_hidden do_namesgets(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* else, go ahead, but can't check validity of replacement*/
     }
     if (CADR(args) != R_NilValue) {
-	GCStackRoot<PairList> tl(CXXR_NEW(PairList));
-        PROTECT(call = CXXR_NEW(Expression(nullptr, tl)));
+	GCStackRoot<PairList> tl(new PairList);
+        PROTECT(call = new Expression(nullptr, tl));
 	SETCAR(call, install("as.character"));
 	SETCADR(call, CADR(args));
 	SETCADR(args, eval(call, env));

@@ -1611,8 +1611,8 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	{
 	    int locked = InInteger(stream);
 
-	    GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
-	    GCStackRoot<Environment> env(CXXR_NEW(Environment(nullptr, frame)));
+	    GCStackRoot<Frame> frame(new StdFrame);
+	    GCStackRoot<Environment> env(new Environment(nullptr, frame));
 
 	    /* MUST register before filling in */
 	    AddReadRef(ref_table, env);
@@ -1655,7 +1655,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	   is worth to write the code to handle this now, but if it
 	   becomes necessary we can do it without needing to change
 	   the save format. */
-	PROTECT(s = CXXR_NEW(PairList));
+	PROTECT(s = new PairList);
 	SETLEVELS(s, levs);
 	R_ReadItemDepth++;
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
@@ -1674,7 +1674,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	UNPROTECT(1); /* s */
 	return s;
     case LANGSXP:
-	PROTECT(s = CXXR_NEW(Expression));
+	PROTECT(s = new Expression);
 	SETLEVELS(s, levs);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
 	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
@@ -1688,7 +1688,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	UNPROTECT(1); /* s */
 	return s;
     case DOTSXP:
-	PROTECT(s = CXXR_NEW(DottedArgs));
+	PROTECT(s = new DottedArgs);
 	SETLEVELS(s, levs);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
 	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
@@ -1717,7 +1717,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 		formals(SEXP_downcast<PairList*>(ReadItem(ref_table, stream)));
 	    GCStackRoot<> body(ReadItem(ref_table, stream));
 	    GCStackRoot<Closure>
-		clos(CXXR_NEW(Closure(formals, body, env)));
+		clos(new Closure(formals, body, env));
 	    SETLEVELS(clos, levs);
 	    SET_ATTRIB(clos, attr);
 	    return clos;
@@ -1737,7 +1737,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    if (!env) env = Environment::base();
 	    GCStackRoot<> val(ReadItem(ref_table, stream));
 	    GCStackRoot<> valgen(ReadItem(ref_table, stream));
-	    GCStackRoot<Promise> prom(CXXR_NEW(Promise(valgen, env)));
+	    GCStackRoot<Promise> prom(new Promise(valgen, env));
 	    prom->setValue(val);
 	    SETLEVELS(prom, levs);
 	    SET_ATTRIB(prom, attr);
@@ -1749,7 +1749,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	   newly allocated value PROTECTed */
 	switch (type) {
 	case EXTPTRSXP:
-	    PROTECT(s = CXXR_NEW(ExternalPointer));
+	    PROTECT(s = new ExternalPointer);
 	    AddReadRef(ref_table, s);
 	    R_SetExternalPtrAddr(s, nullptr);
 	    R_ReadItemDepth++;
@@ -1940,8 +1940,8 @@ static SEXP ReadBC1(SEXP ref_table, SEXP reps, R_inpstream_t stream)
     GCStackRoot<> code(ReadItem(ref_table, stream));
     R_ReadItemDepth--;
     GCStackRoot<> constants(ReadBCConsts(ref_table, reps, stream));
-    return CXXR_NEW(ByteCode(SEXP_downcast<IntVector*>(code.get()),
-			     SEXP_downcast<ListVector*>(constants.get())));
+    return new ByteCode(SEXP_downcast<IntVector*>(code.get()),
+			SEXP_downcast<ListVector*>(constants.get()));
 }
 
 static SEXP ReadBC(SEXP ref_table, R_inpstream_t stream)

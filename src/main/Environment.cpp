@@ -174,27 +174,27 @@ Environment::Cache* Environment::createSearchPathCache()
 
 Environment* Environment::createEmptyEnvironment()
 {
-    GCStackRoot<Frame> empty_frame(CXXR_NEW(ListFrame));
-    return CXXR_NEW(Environment(0, empty_frame));
+    GCStackRoot<Frame> empty_frame(new ListFrame);
+    return new Environment(0, empty_frame);
 }
 
 Environment* Environment::createBaseEnvironment()
 {
-    GCStackRoot<Frame> base_frame(CXXR_NEW(StdFrame));
-    GCStackRoot<Environment> base(CXXR_NEW(Environment(empty(), base_frame)));
+    GCStackRoot<Frame> base_frame(new StdFrame);
+    GCStackRoot<Environment> base(new Environment(empty(), base_frame));
     BuiltInFunction::addPrimitivesToEnvironment(base);
     return base;
 }
 
 Environment* Environment::createGlobalEnvironment()
 {
-    GCStackRoot<Frame> global_frame(CXXR_NEW(StdFrame));
-    return CXXR_NEW(Environment(base(), global_frame));
+    GCStackRoot<Frame> global_frame(new StdFrame);
+    return new Environment(base(), global_frame);
 }
 
 Environment* Environment::createBaseNamespace()
 {
-    return CXXR_NEW(Environment(global(), base()->frame()));
+    return new Environment(global(), base()->frame());
 }
 
 Environment::Cache* Environment::searchPathCache()

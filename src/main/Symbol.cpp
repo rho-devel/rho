@@ -146,13 +146,13 @@ void Symbol::initialize()
 
 Symbol* Symbol::missingArgument()
 {
-    static GCRoot<Symbol> missing(CXXR_NEW(Symbol));
+    static GCRoot<Symbol> missing(new Symbol);
     return missing.get();
 }
 
 Symbol* Symbol::unboundValue()
 {
-    static GCRoot<Symbol> unbound(CXXR_NEW(Symbol));
+    static GCRoot<Symbol> unbound(new Symbol);
     return unbound.get();
 }
 
@@ -164,7 +164,7 @@ Symbol::Table* Symbol::getTable()
 
 Symbol* Symbol::make(const String* name)
 {
-    Symbol* ans = CXXR_NEW(Symbol(name));
+    Symbol* ans = new Symbol(name);
     getTable()->push_back(GCRoot<Symbol>(ans));
     name->m_symbol = ans;
     return ans;

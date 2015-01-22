@@ -175,7 +175,7 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 		  CommandChronicle::ParentVector::const_iterator>
 	    pr = provenance->parents();
 	size_t sz = pr.second - pr.first;
-	StringVector* sv = CXXR_NEW(StringVector(sz));
+	StringVector* sv = new StringVector(sz);
 	(*list)[3] = sv;
 	unsigned int i = 0;
 	for (CommandChronicle::ParentVector::const_iterator it = pr.first;
@@ -185,7 +185,7 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
     }
     if (!children.empty()) {
-	StringVector* sv = CXXR_NEW(StringVector(children.size()));
+	StringVector* sv = new StringVector(children.size());
 	(*list)[4] = sv;
 	unsigned int i = 0;
 	for (Provenance::Set::const_iterator it = children.begin();
@@ -256,16 +256,16 @@ do_provenance_graph(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     Provenance::Set* ancestors = Provenance::ancestors(provs);
 
-    GCStackRoot<ListVector> ans(CXXR_NEW(ListVector(7)));
+    GCStackRoot<ListVector> ans(new ListVector(7));
     std::map<const Provenance*, unsigned int> ancestor_index;
     std::vector<std::pair<unsigned int, const RObject*> > xenogenous_bdgs;
 
     // Assemble information on graph nodes:
     {
 	size_t n = ancestors->size();
-	GCStackRoot<ListVector> symbols(CXXR_NEW(ListVector(n)));
-	GCStackRoot<ListVector> commands(CXXR_NEW(ListVector(n)));
-	GCStackRoot<RealVector> timestamps(CXXR_NEW(RealVector(n)));
+	GCStackRoot<ListVector> symbols(new ListVector(n));
+	GCStackRoot<ListVector> commands(new ListVector(n));
+	GCStackRoot<RealVector> timestamps(new RealVector(n));
 	size_t i = 0;
 	for (Provenance::Set::iterator it = ancestors->begin();
 	     it != ancestors->end(); ++it) {
@@ -287,8 +287,8 @@ do_provenance_graph(SEXP call, SEXP op, SEXP args, SEXP rho)
     // Record information on xenogenous bindings:
     {
 	size_t xn = xenogenous_bdgs.size();
-	GCStackRoot<IntVector> xenogenous(CXXR_NEW(IntVector(xn)));
-	GCStackRoot<ListVector> values(CXXR_NEW(ListVector(xn)));
+	GCStackRoot<IntVector> xenogenous(new IntVector(xn));
+	GCStackRoot<ListVector> values(new ListVector(xn));
 	for (unsigned int i = 0; i < xn; ++i) {
 	    std::pair<unsigned int, const RObject*>& pr = xenogenous_bdgs[i];
 	    (*xenogenous)[i] = pr.first;
@@ -318,8 +318,8 @@ do_provenance_graph(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
 
 	size_t en = edges.size();
-	GCStackRoot<IntVector> parents(CXXR_NEW(IntVector(en)));
-	GCStackRoot<IntVector> children(CXXR_NEW(IntVector(en)));
+	GCStackRoot<IntVector> parents(new IntVector(en));
+	GCStackRoot<IntVector> children(new IntVector(en));
 	unsigned int i = 0;
 	for (EdgeSet::const_iterator it = edges.begin(); it != edges.end(); ++it) {
 	    const std::pair<unsigned int, unsigned int>& edge = *it;
@@ -367,8 +367,8 @@ SEXP attribute_hidden do_bserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
     ofs.imbue(nfnum_locale);
     boost::archive::xml_oarchive oa(ofs, boost::archive::no_codecvt);
 
-    GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
-    GCStackRoot<Environment> env(CXXR_NEW(Environment(nullptr, frame)));
+    GCStackRoot<Frame> frame(new StdFrame);
+    GCStackRoot<Environment> env(new Environment(nullptr, frame));
     import(frame, *Environment::global()->frame());
     GCNPTR_SERIALIZE(oa, env);
 

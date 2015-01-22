@@ -524,17 +524,17 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
     /* ATTRIB(s) = */ m->InInteger(fp, d);
     switch (type) {
     case LISTSXP:
-	s = CXXR_NEW(PairList);
+	s = new PairList;
 	break;
     case LANGSXP:
-	s = CXXR_NEW(Expression);
+	s = new Expression;
 	break;
     case CLOSXP:
     case PROMSXP:
     case ENVSXP:
 	Rf_error("Loading pre-version-1 serialization not (yet) supported in CXXR");
 	// All this code needs fixing in CXXR!
-	// s = CXXR_NEW(RObject(type));
+	// s = new RObject(type);
 	/* skip over CAR, CDR, and TAG */
 	/* CAR(s) = */ m->InInteger(fp, d);
 	/* CDR(s) = */ m->InInteger(fp, d);
@@ -1248,14 +1248,14 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 	PROTECT(s = pos ? VECTOR_ELT(env_table, pos - 1) : nullptr);
 	break;
     case LISTSXP:
-	PROTECT(s = CXXR_NEW(PairList));
+	PROTECT(s = new PairList);
 	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	/*UNPROTECT(1);*/
 	break;
     case LANGSXP:
-	PROTECT(s = CXXR_NEW(Expression));
+	PROTECT(s = new Expression);
 	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));
@@ -1277,20 +1277,20 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 							    fp, m, d)));
 	    GCStackRoot<> val(NewReadItem(sym_table, env_table, fp, m, d));
 	    GCStackRoot<> valgen(NewReadItem(sym_table, env_table, fp, m, d));
-	    GCStackRoot<Promise> prom(CXXR_NEW(Promise(valgen, env)));
+	    GCStackRoot<Promise> prom(new Promise(valgen, env));
 	    prom->setValue(val);
 	    PROTECT(s = prom);
 	}
 	break;
     case DOTSXP:
-	PROTECT(s = CXXR_NEW(DottedArgs));
+	PROTECT(s = new DottedArgs);
 	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	/*UNPROTECT(1);*/
 	break;
     case EXTPTRSXP:
-	PROTECT(s = CXXR_NEW(ExternalPointer));
+	PROTECT(s = new ExternalPointer);
 	R_SetExternalPtrAddr(s, nullptr);
 	R_SetExternalPtrProtected(s, NewReadItem(sym_table, env_table, fp, m, d));
 	R_SetExternalPtrTag(s, NewReadItem(sym_table, env_table, fp, m, d));
@@ -1349,7 +1349,7 @@ static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
 	}
 	/* Allocate the environments */
 	for (count = 0; count < env_count; ++count) {
-	    GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
+	    GCStackRoot<Frame> frame(new StdFrame);
 	    SET_VECTOR_ELT(env_table, count, new Environment(nullptr, frame));
 	}
 
