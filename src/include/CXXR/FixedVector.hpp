@@ -40,7 +40,6 @@
 #ifndef FIXEDVECTOR_HPP
 #define FIXEDVECTOR_HPP 1
 
-#include <boost/aligned_storage.hpp>
 #include <boost/serialization/nvp.hpp>
 
 #include "CXXR/VectorBase.h"
@@ -87,9 +86,7 @@ namespace CXXR {
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
 	 */
-	static FixedVector* create(size_type sz) {
-	    return new FixedVector(sz);
-	}
+	static FixedVector* create(size_type sz);
 
 	/** @brief Create a vector from a range.
 	 * 
@@ -104,7 +101,9 @@ namespace CXXR {
 	 */
 	template<typename FwdIter>
 	static FixedVector* create(FwdIter from, FwdIter to) {
-	    return new FixedVector(from, to);
+	    FixedVector* result = create(std::distance(from, to));
+	    std::copy(from, to, result->begin());
+	    return result;
 	}
 
 	/** @brief Create a vector from an initializer list.
@@ -113,7 +112,7 @@ namespace CXXR {
 	 *          FixedVector.
 	 */
 	static FixedVector* create(std::initializer_list<T> items) {
-	    return FixedVector::create(items.begin(), items.end());
+	    return create(items.begin(), items.end());
 	}
 
 	/** @brief Create a vector containing a single value.
@@ -122,7 +121,7 @@ namespace CXXR {
 	 */
 	template<class U>
 	static FixedVector* createScalar(const U& value) {
-	    FixedVector* result = new FixedVector(1);
+	    FixedVector* result = create(1);
 	    (*result)[0] = value;
 	    return result;
 	}
@@ -219,8 +218,11 @@ namespace CXXR {
 	~FixedVector()
 	{
 	    destructElementsIfNeeded();
-	    if (m_data != singleton())
-		MemoryBank::deallocate(m_data, size()*sizeof(T));
+
+	    // GCNode::~GCNode doesn't know about the string storage space in
+	    // this object, so account for it here.
+	    size_t bytes = (size() - 1) * sizeof(T);
+	    MemoryBank::adjustBytesAllocated(-bytes);
 	}
 
 	// Virtual function of GCNode:
@@ -230,14 +232,7 @@ namespace CXXR {
 
 	T* m_data;  // pointer to the vector's data block.
 
-	// If there is only one element, it is stored here, internally
-	// to the FixedVector object, rather than via a separate
-	// allocation from CXXR::MemoryBank.  We put this last, so
-	// that it will be adjacent to any trailing redzone.  Note
-	// that if a FixedVector is *resized* to 1, its data is held
-	// in a separate memory block, not here.
-	boost::aligned_storage<sizeof(T), boost::alignment_of<T>::value>
-	m_singleton_buf;
+	alignas(T) char m_first_element_storage[sizeof(T)];
 
 	// Trivial constructor.  Only used for boost serialization.
 	FixedVector() : FixedVector(0) { }
@@ -249,11 +244,10 @@ namespace CXXR {
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
 	 */
-	explicit FixedVector(size_type sz)
-	    : VectorBase(ST, sz), m_data(singleton())
+	FixedVector(size_type sz)
+	    : VectorBase(ST, sz),
+	      m_data(reinterpret_cast<T*>(m_first_element_storage))
 	{
-	    if (sz > 1)
-		m_data = allocData(sz);
 	    constructElementsIfNeeded();
 	    Initializer::initialize(this);
 	}
@@ -264,25 +258,9 @@ namespace CXXR {
 	 */
 	FixedVector(const FixedVector<T, ST, Initializer>& pattern);
 
-	/** @brief Constructor from range.
-	 * 
-	 * @tparam An iterator type, at least a forward iterator.
-	 *
-	 * @param from Iterator designating the start of the range
-	 *          from which the FixedVector is to be constructed.
-	 *
-	 * @param to Iterator designating 'one past the end' of the
-	 *          range from which the FixedVector is to be
-	 *          constructed.
-	 */
-	template <typename FwdIter>
-	FixedVector(FwdIter from, FwdIter to);
-
 	FixedVector& operator=(const FixedVector&) = delete;
 
-	// If there is more than one element, this function is used to
-	// allocate the required memory block from CXXR::MemoryBank :
-	static T* allocData(size_type sz);
+	static void* allocate(size_type size);
 
 	static void constructElements(iterator from, iterator to);
 	static void constructElementsIfNeeded(iterator from, iterator to)
@@ -323,12 +301,6 @@ namespace CXXR {
 	    boost::serialization::split_member(ar, *this, version);
 	}
 
-
-	T* singleton()
-	{
-	    return static_cast<T*>(static_cast<void*>(&m_singleton_buf));
-	}
-
 	// Helper function for visitReferents():
 	void visitElements(const_visitor* v) const;
     };
@@ -341,55 +313,47 @@ namespace CXXR {
 #include "R_ext/Error.h"
 
 template <typename T, SEXPTYPE ST, typename Initr>
-CXXR::FixedVector<T, ST, Initr>::FixedVector(const FixedVector<T, ST, Initr>& pattern)
-    : VectorBase(pattern), m_data(singleton())
+CXXR::FixedVector<T, ST, Initr>::FixedVector(
+    const FixedVector<T, ST, Initr>& pattern)
+    : VectorBase(pattern),
+      m_data(reinterpret_cast<T*>(m_first_element_storage))
 {
-    size_type sz = size();
-    if (sz > 1)
-	m_data = allocData(sz);
     constructElementsIfNeeded();
-
-    T* p = m_data;
-    for (const T& elem : pattern)
-	*(p++) = elem;
+    std::copy(pattern.begin(), pattern.end(), begin());
     Initr::initialize(this);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
-template <typename FwdIter>
-CXXR::FixedVector<T, ST, Initr>::FixedVector(FwdIter from, FwdIter to)
-    : VectorBase(ST, std::distance(from, to)), m_data(singleton())
-{
-    if (size() > 1)
-	m_data = allocData(size());
-    constructElementsIfNeeded();
-
-    T* p = m_data;
-    for (const_iterator it = from; it != to; ++it)
-	*(p++) = *it;
-    Initr::initialize(this);
-}
-
-template <typename T, SEXPTYPE ST, typename Initr>
-T* CXXR::FixedVector<T, ST, Initr>::allocData(size_type sz)
+void* CXXR::FixedVector<T, ST, Initr>::allocate(size_type sz)
 {
     size_type blocksize = sz*sizeof(T);
     // Check for integer overflow:
     if (blocksize/sizeof(T) != sz)
 	Rf_error(_("request to create impossibly large vector."));
-    void* block;
+
+    size_type headersize = sizeof(FixedVector);
+
     try {
-	block = MemoryBank::allocate(blocksize);
+	return GCNode::operator new(blocksize + headersize - sizeof(T));
     } catch (std::bad_alloc) {
 	tooBig(blocksize);
+	return nullptr;
     }
-    return static_cast<T*>(block);
+}
+
+template <typename T, SEXPTYPE ST, typename Initr>
+CXXR::FixedVector<T, ST, Initr>*
+CXXR::FixedVector<T, ST, Initr>::create(size_type sz)
+{
+    void* storage = allocate(sz);
+    return new(storage) FixedVector(sz);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
 CXXR::FixedVector<T, ST, Initr>* CXXR::FixedVector<T, ST, Initr>::clone() const
 {
-    return new FixedVector<T, ST, Initr>(*this);
+    void* storage = allocate(size());
+    return new(storage) FixedVector(*this);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
@@ -520,6 +484,9 @@ void CXXR::FixedVector<T, ST, Initr>::decreaseSizeInPlace(size_type new_size)
     if (new_size > size()) {
 	Rf_error("Increasing vector length in place not allowed.");
     }
+    size_t bytes = (size() - new_size) * sizeof(T);
+    MemoryBank::adjustBytesAllocated(-bytes);
+
     destructElementsIfNeeded(begin() + new_size, end());
     adjustSize(new_size);
 }
