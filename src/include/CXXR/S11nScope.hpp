@@ -24,10 +24,9 @@
 
 #include <map>
 #include <boost/utility.hpp>
+#include "CXXR/GCNode.hpp"
 
 namespace CXXR {
-    class GCNode;
-
     /** @brief Class providing supplementary information for serialization.
      *
      * This class is used to provide supplementary information to
@@ -45,7 +44,7 @@ namespace CXXR {
      * S11nScope objects are destroyed in the reverse order of
      * creation, and the destructor checks this.
      */
-    class S11nScope : public boost::noncopyable {
+    class S11nScope : public GCNode::GCInhibitor {
     public:
 	/** @brief Primary constructor.
 	 */

@@ -70,23 +70,6 @@
 #define AGGRESSIVE_GC
 #endif
 
-/** @def CHECK_EXPOSURE
- *
- * @brief Check that CXXR::GCNode objects are exposed to garbage
- * collection.
- *
- * Code is inserted to verify that any object of a class derived from
- * CXXR::GCNode has been exposed to garbage-collection before it is
- * made the target of any CXXR::GCEdge, CXXR::GCRoot or
- * CXXR::GCStackRoot smart pointer, or is protected using
- * PROTECT(). The use of this flag is strongly recommended during
- * development.
- */
-#ifdef DOXYGEN
-#define CHECK_EXPOSURE
-#endif
-#define CHECK_EXPOSURE
-
 /** @def NDEBUG
  *
  * @brief Suppress some runtime checks.

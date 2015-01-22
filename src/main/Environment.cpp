@@ -271,7 +271,7 @@ Environment* Environment::attachToSearchPath(int pos, StringVector* name)
 {
     // Duplicate the environment.
     GCStackRoot<Frame> frame(static_cast<Frame*>(m_frame->clone()));
-    GCStackRoot<Environment> new_env(expose(new Environment(nullptr, frame)));
+    GCStackRoot<Environment> new_env(new Environment(nullptr, frame));
     new_env->setAttribute(NameSymbol, name);
 
     // Iterate through the search path to the environment just before where we

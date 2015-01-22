@@ -43,7 +43,7 @@ using namespace CXXR;
 
 S4Object* S4Object::clone() const
 {
-    return expose(new S4Object(*this));
+    return new S4Object(*this);
 }
 
 const char* S4Object::typeName() const

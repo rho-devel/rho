@@ -103,7 +103,7 @@ Frame::BindingRange CompiledFrame::bindingRange() const
 
 CompiledFrame* CompiledFrame::clone() const
 {
-    return expose(new CompiledFrame(*this));
+    return new CompiledFrame(*this);
 }
 
 std::size_t CompiledFrame::size() const

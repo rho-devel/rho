@@ -218,7 +218,6 @@ void ArgList::wrapInPromises(Environment* env)
 			    m_first_arg = nullptr;
 			    m_first_arg_env = nullptr;
 			}
-			prom->expose();
 			const Symbol* tag = tag2Symbol(dotlist->tag());
 			PairList* cell = PairList::cons(prom, nullptr, tag);
 			lastout = append(cell, lastout);

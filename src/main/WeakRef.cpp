@@ -70,7 +70,7 @@ WeakRef::WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer,
     m_key = key;
     m_value = value;
     m_Rfinalizer = R_finalizer;
-    m_self = expose(this);
+    m_self = this;
 
     getLive()->push_back(this);
     m_lit = std::prev(getLive()->end());
@@ -95,7 +95,7 @@ WeakRef::WeakRef(RObject* key, RObject* value, R_CFinalizer_t C_finalizer,
     m_key = key;
     m_value = value;
     m_Rfinalizer = 0;
-    m_self = expose(this);
+    m_self = this;
 
     getLive()->push_back(this);
     m_lit = std::prev(getLive()->end());
@@ -186,8 +186,8 @@ void WeakRef::finalize()
     tombstone();
     if (Cfin) Cfin(key);
     else if (Rfin) {
-	GCStackRoot<PairList> tail(expose(new PairList(key)));
-	GCStackRoot<Expression> e(expose(new Expression(Rfin, tail)));
+	GCStackRoot<PairList> tail(new PairList(key));
+	GCStackRoot<Expression> e(new Expression(Rfin, tail));
 	Evaluator::evaluate(e, Environment::global());
     }
 }

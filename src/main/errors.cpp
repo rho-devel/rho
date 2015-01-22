@@ -1414,7 +1414,7 @@ static SEXP mkHandlerEntry(SEXP klass, SEXP parentenv, SEXP handler, SEXP rho,
 			   SEXP_downcast<Environment*>(rho),
 			   SEXP_downcast<ListVector*>(result),
 			   (calling != 0));
-    return GCNode::expose(entry);
+    return entry;
 }
 
 namespace {

@@ -254,7 +254,7 @@ int main(int argc, char* argv[]) {
     GCStackRoot<PairList> formals(getArgs(argv[1]));
     GCStackRoot<ArgMatcher> matcher;
     try {
-    	matcher = GCNode::expose(new ArgMatcher(formals));
+    	matcher = new ArgMatcher(formals);
     } catch (CommandTerminated) {
 	cerr << "ArgMatchertest: Error encountered while processing formals" << endl;
 	return 0;

@@ -102,7 +102,7 @@ String* String::create(const std::string& text, cetype_t encoding, bool isAscii)
     char* character_storage = (char*)storage + sizeof(String);
     String* result = new(storage) String(character_storage, text, encoding,
 					 isAscii);
-    return expose(result);
+    return result;
 }
 
 String* String::createNA()

@@ -24,7 +24,7 @@ To build a development build with the LLVM JIT enabled:
    ```
 It is useful to additionally define `-Wall -DNO_CELLPOOLS -fsanitize=address -O1` in order to find bugs more easily. 
 
-For release builds, the flags `-Wall -O2 -DNDEBUG -DUNCHECKED_SEXP_DOWNCAST` should be defined, and `src/include/CXXR/config.hpp` should be modified to undefine `CHECK_EXPOSURE` and `AGGRESSIVE_GC`.
+For release builds, the flags `-Wall -O2 -DNDEBUG -DUNCHECKED_SEXP_DOWNCAST` should be defined, and `src/include/CXXR/config.hpp` should be modified to undefine `AGGRESSIVE_GC`.
 
 Currently `make install` is disabled for CXXR.  It can be run directly from the build directory as `bin/R` however.  This will be re-enabled in the near future.
 

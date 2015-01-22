@@ -77,7 +77,7 @@ Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
     : FunctionBase(CLOSXP), m_debug(false),
       m_num_invokes(0), m_compiled_body(nullptr)
 {
-    m_matcher = expose(new ArgMatcher(formal_args));
+    m_matcher = new ArgMatcher(formal_args);
     m_body = body;
     m_environment = env;
 }
@@ -99,7 +99,7 @@ RObject* Closure::apply(ArgList* arglist, Environment* env,
 
 Closure* Closure::clone() const
 {
-    return expose(new Closure(*this));
+    return new Closure(*this);
 }
 
 // Implementation of class Closure::DebugScope is in eval.cpp (for the
