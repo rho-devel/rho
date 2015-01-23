@@ -75,7 +75,7 @@ namespace CXXR {
 
 Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
     : FunctionBase(CLOSXP), m_debug(false),
-      m_num_invokes(0), m_compiled_body(nullptr)
+      m_num_invokes(0)
 {
     m_matcher = new ArgMatcher(formal_args);
     m_body = body;
@@ -83,11 +83,6 @@ Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
 }
 
 Closure::~Closure() {
-#ifdef ENABLE_LLVM_JIT
-    if (m_compiled_body) {
-	delete m_compiled_body;
-    }
-#endif
 }
 
 RObject* Closure::apply(ArgList* arglist, Environment* env,
@@ -110,6 +105,7 @@ void Closure::detachReferents()
     m_matcher.detach();
     m_body.detach();
     m_environment.detach();
+    m_compiled_body.detach();
     RObject::detachReferents();
 }
 
@@ -237,6 +233,8 @@ void Closure::visitReferents(const_visitor* v) const
     const ArgMatcher* matcher = m_matcher;
     const GCNode* body = m_body;
     const GCNode* environment = m_environment;
+    const GCNode* compiled_body = m_compiled_body;
+
     RObject::visitReferents(v);
     if (matcher)
 	(*v)(matcher);
@@ -244,6 +242,8 @@ void Closure::visitReferents(const_visitor* v) const
 	(*v)(body);
     if (environment)
 	(*v)(environment);
+    if (compiled_body)
+	(*v)(compiled_body);
 }
 
 BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::Closure)
