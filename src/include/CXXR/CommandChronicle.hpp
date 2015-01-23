@@ -84,8 +84,9 @@ namespace CXXR {
 	 *          but not necessarily, be an Expression.
 	 */
 	CommandChronicle(const RObject* command_arg)
-	    : m_command(command_arg)
-	{}
+	{
+	    m_command = command_arg;
+	}
 
 	/** @brief Vector of bindings read.
 	 *

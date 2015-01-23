@@ -223,7 +223,7 @@ namespace CXXR {
 		return ccc;
 	    T* ans = new T(cc->car(), cc->tail(), cc->tag());
 	    ans->setAttributes(cc->attributes());
-	    return expose(ans);
+	    return ans;
 	}
 
 	iterator end()
@@ -504,7 +504,7 @@ namespace CXXR {
 	    // object destructors).  However, calling code should not
 	    // rely on the fact that no GC will occur, because the
 	    // implementation may change in the future.
-            return CXXR_NEW(PairList(cr, tl, tag));
+            return new PairList(cr, tl, tag);
 	}
 
 	/** @brief Create a PairList of a specified length.
@@ -569,20 +569,29 @@ namespace CXXR {
 
     inline ConsCell::ConsCell(SEXPTYPE st, RObject* cr,
 			      PairList* tl, const RObject* tg)
-	: RObject(st), m_car(cr), m_tail(tl), m_tag(tg)
+	: RObject(st)
     {
+        m_car = cr;
+        m_tail = tl;
+        m_tag = tg;
 	// checkST(st);
     }
 
     inline ConsCell::ConsCell(const ConsCell& pattern)
-	: RObject(pattern), m_car(pattern.m_car),
-	  m_tail(clone(pattern.tail())), m_tag(pattern.tag())
-    {}
+      : RObject(pattern)
+    {
+        m_car = pattern.m_car;
+        m_tail = clone(pattern.tail());
+        m_tag = pattern.tag();
+    }
     
     inline ConsCell::ConsCell(const ConsCell& pattern, int)
-	: RObject(pattern), m_car(pattern.m_car), m_tail(nullptr),
-	  m_tag(pattern.tag())
-    {}
+	: RObject(pattern)
+    {
+        m_car = pattern.m_car;
+        m_tail = nullptr;
+        m_tag = pattern.tag();
+    }
     
     inline void ConsCell::setTail(PairList* tl)
     {

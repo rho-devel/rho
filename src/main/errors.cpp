@@ -1355,10 +1355,14 @@ namespace {
 	HandlerEntry(String* the_class, Environment* parent_env,
 		     RObject* handler, Environment* environment,
 		     ListVector* result, bool calling)
-	    : m_class(the_class), m_parent_environment(parent_env),
-	      m_handler(handler), m_environment(environment),
-	      m_result(result), m_calling(calling)
-	{}
+	    : m_calling(calling)
+	{
+	    m_class = the_class;
+	    m_parent_environment = parent_env;
+	    m_handler = handler;
+	    m_environment = environment;
+	    m_result = result;
+	}
 
 	static const char* staticTypeName()
 	{
@@ -1410,7 +1414,7 @@ static SEXP mkHandlerEntry(SEXP klass, SEXP parentenv, SEXP handler, SEXP rho,
 			   SEXP_downcast<Environment*>(rho),
 			   SEXP_downcast<ListVector*>(result),
 			   (calling != 0));
-    return GCNode::expose(entry);
+    return entry;
 }
 
 namespace {

@@ -53,7 +53,7 @@ ProvenanceTracker::CommandScope::CommandScope(const RObject* command)
     : m_xenogenetic(false)
 {
     if (!ProvenanceTracker::s_scope) {
-	m_chronicle = CXXR_NEW(CommandChronicle(command));
+	m_chronicle = new CommandChronicle(command);
 	ProvenanceTracker::s_scope = this;
     }
 }
@@ -76,7 +76,7 @@ void ProvenanceTracker::CommandScope::monitorRead(const Frame::Binding& bdg)
 void ProvenanceTracker::CommandScope::monitorWrite(const Frame::Binding &bdg)
 {
     const Symbol* sym = bdg.symbol();
-    GCStackRoot<Provenance> prov(CXXR_NEW(Provenance(sym, m_chronicle)));
+    GCStackRoot<Provenance> prov(new Provenance(sym, m_chronicle));
     if (m_xenogenetic)
 	prov->setXenogenous(bdg.rawValue());  // Maybe ought to clone value
     CXXR::Frame::Binding& ncbdg = const_cast<CXXR::Frame::Binding&>(bdg);

@@ -46,7 +46,7 @@ TEST(GCRootTest, UpdatesReferenceCounts) {
     // roots declared at GC points, so disable GC.
     GCNode::GCInhibitor no_gc;
     
-    RObject* object1 = CXXR_NEW(RealVector(1));
+    RObject* object1 = RealVector::createScalar(1);
     EXPECT_EQ(0, getRefCount(object1));
 
     {
@@ -65,8 +65,8 @@ TEST(GCRootTest, UpdatesReferenceCounts) {
 TEST(GCRootTest, TestAssignment) {
     GCNode::GCInhibitor no_gc;
     
-    RObject* object1 = CXXR_NEW(RealVector(1));
-    RObject* object2 = CXXR_NEW(RealVector(2));
+    RObject* object1 = RealVector::createScalar(1);
+    RObject* object2 = RealVector::createScalar(2);
 
     EXPECT_EQ(0, getRefCount(object1));
     EXPECT_EQ(0, getRefCount(object2));
@@ -92,9 +92,9 @@ TEST(GCRootTest, TestAssignment) {
 TEST(GCRootTest, OutOfOrderDestruction) {
     GCNode::GCInhibitor no_gc;
 
-    RObject* object1 = CXXR_NEW(RealVector(1));
-    RObject* object2 = CXXR_NEW(RealVector(2));
-    RObject* object3 = CXXR_NEW(RealVector(3));
+    RObject* object1 = RealVector::createScalar(1);
+    RObject* object2 = RealVector::createScalar(2);
+    RObject* object3 = RealVector::createScalar(3);
 
     GCRoot<>* root1 = new GCRoot<>(object1);
     GCRoot<>* root2 = new GCRoot<>(object2);

@@ -217,7 +217,6 @@ void RObject::visitReferents(const_visitor* v) const
 
 SEXP ATTRIB(SEXP x)
 {
-    GCNode::GCInhibitor inhibitor;
     return x ? const_cast<PairList*>(x->attributes()) : nullptr;
 }
 
@@ -234,7 +233,6 @@ void DUPLICATE_ATTRIB(SEXP to, SEXP from)
 void SET_ATTRIB(SEXP x, SEXP v)
 {
     GCStackRoot<PairList> pl(SEXP_downcast<PairList*>(v));
-    GCNode::GCInhibitor inhibitor;
     x->setAttributes(pl);
 }
 

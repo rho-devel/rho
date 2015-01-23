@@ -218,7 +218,6 @@ void ArgList::wrapInPromises(Environment* env)
 			    m_first_arg = nullptr;
 			    m_first_arg_env = nullptr;
 			}
-			prom->expose();
 			const Symbol* tag = tag2Symbol(dotlist->tag());
 			PairList* cell = PairList::cons(prom, nullptr, tag);
 			lastout = append(cell, lastout);
@@ -231,11 +230,11 @@ void ArgList::wrapInPromises(Environment* env)
 	    const Symbol* tag = tag2Symbol(inp->tag());
 	    RObject* value = Symbol::missingArgument();
 	    if (m_first_arg_env) {
-		value = CXXR_NEW(Promise(m_first_arg, nullptr));
+		value = new Promise(m_first_arg, nullptr);
 		m_first_arg = nullptr;
 		m_first_arg_env = nullptr;
 	    } else if (rawvalue != Symbol::missingArgument())
-		value = CXXR_NEW(Promise(rawvalue, env));
+		value = new Promise(rawvalue, env);
 	    PairList* cell = PairList::cons(value, nullptr, tag);
 	    lastout = append(cell, lastout);
 	}

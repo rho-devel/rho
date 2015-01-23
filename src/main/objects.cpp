@@ -115,7 +115,7 @@ static RObject* applyMethod(const Expression* call, const FunctionBase* func,
 	ans = clos->invoke(env, arglist, call, method_bindings);
     } else {
 	GCStackRoot<Environment>
-	    newenv(CXXR_NEW(Environment(nullptr, method_bindings)));
+	    newenv(new Environment(nullptr, method_bindings));
 	ans = func->apply(arglist, newenv, call);
     }
     return ans;
@@ -246,7 +246,7 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 
     // Create a new frame without any of the formals to the
     // generic in it:
-    GCStackRoot<Frame> newframe(CXXR_NEW(ListFrame));
+    GCStackRoot<Frame> newframe(new ListFrame);
     if (op->sexptype() == CLOSXP) {
 	Closure* clos = static_cast<Closure*>(op);
 	const Environment* generic_wk_env = cptr->workingEnvironment();
@@ -281,9 +281,9 @@ static void matchArgsForUseMethod(SEXP call, SEXP args, Environment* argsenv,
     static GCRoot<ArgMatcher>
 	matcher(ArgMatcher::make(genericsym, objectsym));
     
-    GCStackRoot<Frame> matchframe(CXXR_NEW(ListFrame));
+    GCStackRoot<Frame> matchframe(new ListFrame);
     GCStackRoot<Environment>
-	matchenv(CXXR_NEW(Environment(nullptr, matchframe)));
+	matchenv(new Environment(nullptr, matchframe));
     ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
     matcher->match(matchenv, &arglist);
 
@@ -399,7 +399,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     // Prepare return value:
     {
 	GCStackRoot<> ansrt(ans);
-	ReturnBailout* rbo = CXXR_NEW(ReturnBailout(argsenv, ans));
+	ReturnBailout* rbo = new ReturnBailout(argsenv, ans);
 	Evaluator::Context* callctxt
 	    = Evaluator::Context::innermost()->nextOut();
 	if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
@@ -577,8 +577,8 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 			if (bdg && bdg->origin() == Frame::Binding::MISSING)
 			    break;
 		    }
-		    t->setCar(CXXR_NEW(Promise(const_cast<Symbol*>(sym),
-					       cptr->workingEnvironment())));
+		    t->setCar(new Promise(const_cast<Symbol*>(sym),
+					  cptr->workingEnvironment()));
 		    break;
 		}
 	    }
@@ -761,12 +761,12 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     // Set up special method bindings:
-    GCStackRoot<Frame> method_bindings(CXXR_NEW(ListFrame));
+    GCStackRoot<Frame> method_bindings(new ListFrame);
     {
 	if (klass) {
 	    size_t sz = klass->size() - nextidx;
 	    GCStackRoot<StringVector>
-		newdotclass(CXXR_NEW(StringVector(sz)));
+		newdotclass(StringVector::create(sz));
 	    klass = klass->clone();
 	    for (unsigned int j = 0; j < sz; ++j)
 		(*newdotclass)[j] = (*klass)[nextidx++];
@@ -1628,7 +1628,7 @@ S3Launcher::create(RObject* object, std::string generic, std::string group,
 		   bool allow_default)
 {
     GCStackRoot<S3Launcher>
-	ans(CXXR_NEW(S3Launcher(generic, group, call_env, table_env)));
+	ans(new S3Launcher(generic, group, call_env, table_env));
     ans->m_classes = static_cast<StringVector*>(R_data_class2(object));
 
     // Look for pukka method.  Need to interleave looking for generic

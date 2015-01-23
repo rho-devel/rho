@@ -456,8 +456,8 @@ static void PrintGenericVector(SEXP s, SEXP env)
 	taglen = int( strlen(tagbuf));
 	ptag = tagbuf + taglen;
 	{
-	    GCStackRoot<PairList> tl(CXXR_NEW(PairList));
-	    PROTECT(newcall = CXXR_NEW(Expression(nullptr, tl)));
+	    GCStackRoot<PairList> tl(new PairList);
+	    PROTECT(newcall = new Expression(nullptr, tl));
 	}
 	SETCAR(newcall, install("print"));
 
@@ -616,8 +616,8 @@ static void printList(SEXP s, SEXP env)
 	taglen = int( strlen(tagbuf));
 	ptag = tagbuf + taglen;
 	{
-	    GCStackRoot<PairList> tl(CXXR_NEW(PairList));
-	    PROTECT(newcall = CXXR_NEW(Expression(nullptr, tl)));
+	    GCStackRoot<PairList> tl(new PairList);
+	    PROTECT(newcall = new Expression(nullptr, tl));
 	}
 	SETCAR(newcall, install("print"));
 	while (TYPEOF(s) == LISTSXP) {
@@ -947,7 +947,7 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 
 		{
 		    GCStackRoot<PairList> tl(PairList::make(2));
-		    PROTECT(t = s = CXXR_NEW(Expression(nullptr, tl)));
+		    PROTECT(t = s = new Expression(nullptr, tl));
 		}
 		SETCAR(t, install("print")); t = CDR(t);
 		SETCAR(t,  CAR(a)); t = CDR(t);

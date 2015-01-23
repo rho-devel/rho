@@ -36,8 +36,10 @@ using namespace CXXR;
 bool ArgMatcher::s_warn_on_partial_match = false;
 
 ArgMatcher::ArgMatcher(const PairList* formals)
-    : m_formals(formals), m_has_dots(false)
+    : m_has_dots(false)
 {
+    m_formals = formals;
+
     for (const PairList* f = formals; f; f = f->tail()) {
 	const Symbol* sym = dynamic_cast<const Symbol*>(f->tag());
 	if (!sym)
@@ -73,7 +75,7 @@ void ArgMatcher::handleDots(Frame* frame, SuppliedList* supplied_list)
     if (!supplied_list->empty()) {
 	SuppliedList::iterator first = supplied_list->begin();
 	DottedArgs* dotted_args
-	    = expose(new DottedArgs((*first).value, nullptr, (*first).tag));
+	    = new DottedArgs((*first).value, nullptr, (*first).tag);
 	bdg->setValue(dotted_args, Frame::Binding::EXPLICIT);
 	supplied_list->erase(first);
 	GCStackRoot<PairList> tail;
@@ -87,9 +89,8 @@ void ArgMatcher::handleDots(Frame* frame, SuppliedList* supplied_list)
 	     
 bool ArgMatcher::isPrefix(const String* shorter, const String* longer)
 {
-    const string& shortstr = shorter->stdstring();
-    const string& longstr = longer->stdstring();
-    return longstr.compare(0, shortstr.size(), shortstr) == 0;
+    size_t length = shorter->size();
+    return strncmp(shorter->c_str(), longer->c_str(), length) == 0;
 }
 
 ArgMatcher* ArgMatcher::make(Symbol* fml1, Symbol* fml2, Symbol* fml3,
@@ -108,7 +109,7 @@ ArgMatcher* ArgMatcher::make(Symbol* fml1, Symbol* fml2, Symbol* fml3,
 	formals = PairList::cons(Symbol::missingArgument(), formals, fml2);
     if (fml1)
 	formals = PairList::cons(Symbol::missingArgument(), formals, fml1);
-    return expose(new ArgMatcher(formals));
+    return new ArgMatcher(formals);
 }
 
 void ArgMatcher::makeBinding(Environment* target_env, const FormalData& fdata,
@@ -119,7 +120,7 @@ void ArgMatcher::makeBinding(Environment* target_env, const FormalData& fdata,
     if (value == Symbol::missingArgument()
 	&& fdata.value != Symbol::missingArgument()) {
 	origin = Frame::Binding::DEFAULTED;
-	value = expose(new Promise(fdata.value, target_env));
+	value = new Promise(fdata.value, target_env);
     }
     Frame::Binding* bdg = target_env->frame()->obtainBinding(fdata.symbol);
     // Don't trump a previous binding with Symbol::missingArgument() :

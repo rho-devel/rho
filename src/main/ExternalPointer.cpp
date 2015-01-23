@@ -83,7 +83,7 @@ void ExternalPointer::visitReferents(const_visitor* v) const
 
 SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)
 {
-    return CXXR_NEW(ExternalPointer(p, tag, prot));
+    return new ExternalPointer(p, tag, prot);
 }
 
 void R_SetExternalPtrAddr(SEXP s, void *p)

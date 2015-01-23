@@ -82,8 +82,11 @@ namespace CXXR {
 	 */
 	explicit ExternalPointer(void* ptr = nullptr, RObject* tag = nullptr,
 				 RObject* prot = nullptr)
-	    : RObject(EXTPTRSXP), m_ptr(ptr), m_tag(tag), m_protege(prot)
-	    {}
+	    : RObject(EXTPTRSXP), m_ptr(ptr)
+	{
+	    m_tag = tag;
+	    m_protege = prot;
+	}
 
 	/** @brief Get const pointer to protege object.
 	 *

@@ -23,8 +23,8 @@ public:
 	symbol2 = Symbol::obtain("test_symbol_2");
 	symbol3 = Symbol::obtain("test_symbol_3");
 
-	value1 = CXXR_NEW(RealVector({ 1.1 }));
-	value2 = CXXR_NEW(RealVector({ 2.1 }));
+	value1 = RealVector::createScalar(1.1);
+	value2 = RealVector::createScalar(2.1);
     }
 
     Frame* new_frame()
@@ -112,14 +112,14 @@ TEST_P(FrameTest, EraseItem) {
 // TODO(kmillar): add more tests.
 
 static Frame* MakeStdFrame() {
-    return CXXR_NEW(StdFrame());
+    return new StdFrame();
 }
 INSTANTIATE_TEST_CASE_P(StdFrameTest,
 			FrameTest,
 			::testing::Values(MakeStdFrame));
 
 static Frame* MakeListFrame() {
-    return CXXR_NEW(StdFrame());
+    return new StdFrame();
 }
 INSTANTIATE_TEST_CASE_P(ListFrameTest,
 			FrameTest,
@@ -128,9 +128,9 @@ INSTANTIATE_TEST_CASE_P(ListFrameTest,
 #ifdef ENABLE_LLVM_JIT
 static Frame* MakeEmptyCompiledFrame() {
   GCStackRoot<FrameDescriptor> descriptor(
-      CXXR_NEW(FrameDescriptor(std::initializer_list<const Symbol*>{},
-                               std::initializer_list<const Symbol*>{})));
-    return CXXR_NEW(CompiledFrame(descriptor));
+      new FrameDescriptor(std::initializer_list<const Symbol*>{},
+			  std::initializer_list<const Symbol*>{}));
+    return new CompiledFrame(descriptor);
 }
 INSTANTIATE_TEST_CASE_P(EmptyCompiledFrameTest,
 			FrameTest,
@@ -141,10 +141,10 @@ INSTANTIATE_TEST_CASE_P(EmptyCompiledFrameTest,
 // symbol3 are in the frame descriptor, so do all three.
 static Frame* MakeOneItemCompiledFrame1() {
   GCStackRoot<FrameDescriptor> descriptor(
-      CXXR_NEW(FrameDescriptor(
+      new FrameDescriptor(
           std::initializer_list<const Symbol*>{ Symbol::obtain("test_symbol_1") },
-          std::initializer_list<const Symbol*>{})));
-    return CXXR_NEW(CompiledFrame(descriptor));
+          std::initializer_list<const Symbol*>{}));
+    return new CompiledFrame(descriptor);
 }
 INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest1,
 			FrameTest,
@@ -153,10 +153,10 @@ INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest1,
 
 static Frame* MakeOneItemCompiledFrame2() {
   GCStackRoot<FrameDescriptor> descriptor(
-      CXXR_NEW(FrameDescriptor(
+      new FrameDescriptor(
           std::initializer_list<const Symbol*>{ Symbol::obtain("test_symbol_2") },
-          std::initializer_list<const Symbol*>{})));
-    return CXXR_NEW(CompiledFrame(descriptor));
+          std::initializer_list<const Symbol*>{}));
+    return new CompiledFrame(descriptor);
 }
 INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest2,
 			FrameTest,
@@ -165,10 +165,10 @@ INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest2,
 
 static Frame* MakeOneItemCompiledFrame3() {
   GCStackRoot<FrameDescriptor> descriptor(
-      CXXR_NEW(FrameDescriptor(
+      new FrameDescriptor(
           std::initializer_list<const Symbol*>{ Symbol::obtain("test_symbol_3") },
-          std::initializer_list<const Symbol*>{})));
-    return CXXR_NEW(CompiledFrame(descriptor));
+          std::initializer_list<const Symbol*>{}));
+    return new CompiledFrame(descriptor);
 }
 INSTANTIATE_TEST_CASE_P(OneItemCompiledFrameTest3,
 			FrameTest,

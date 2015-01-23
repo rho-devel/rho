@@ -690,7 +690,7 @@ SEXP typeconvert(SEXP call, SEXP op, SEXP args, SEXP env)
 		    SET_STRING_ELT(levs, j++, STRING_ELT(cvec, i));
 	    }
 
-	    rval = CXXR_NEW(CXXR::IntVector(len));
+	    rval = CXXR::IntVector::create(len);
 
 	    /* put the levels in lexicographic order */
 

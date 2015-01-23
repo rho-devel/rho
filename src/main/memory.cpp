@@ -312,9 +312,9 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
     GCStackRoot<PairList> namevalr(SEXP_downcast<PairList*>(valuelist));
     GCStackRoot<Environment> rhor(SEXP_downcast<Environment*>(rho));
     // +5 to leave some room for local variables:
-    GCStackRoot<Frame> frame(CXXR_NEW(StdFrame(Rf_length(namevalr) + 5)));
+    GCStackRoot<Frame> frame(new StdFrame(Rf_length(namevalr) + 5));
     frameReadPairList(frame, namevalr);
-    return CXXR_NEW(Environment(rhor, frame));
+    return new Environment(rhor, frame);
 }
 
 /* Allocate a vector object (and also list-like objects).
@@ -339,31 +339,31 @@ SEXP allocVector(SEXPTYPE type, R_xlen_t length)
     case NILSXP:
 	return nullptr;
     case RAWSXP:
-	s = new RawVector(length);
+	s = RawVector::create(length);
 	break;
     case CHARSXP:
 	error("use of allocVector(CHARSXP ...) is defunct\n");
 	break;
     case LGLSXP:
-	s = new LogicalVector(length);
+	s = LogicalVector::create(length);
 	break;
     case INTSXP:
-	s = new IntVector(length);
+	s = IntVector::create(length);
 	break;
     case REALSXP:
-	s = new RealVector(length);
+	s = RealVector::create(length);
 	break;
     case CPLXSXP:
-	s = new ComplexVector(length);
+	s = ComplexVector::create(length);
 	break;
     case STRSXP:
-	s = new StringVector(length);
+	s = StringVector::create(length);
 	break;
     case EXPRSXP:
-	s = new ExpressionVector(length);
+	s = ExpressionVector::create(length);
 	break;
     case VECSXP:
-	s = new ListVector(length);
+	s = ListVector::create(length);
 	break;
     case LANGSXP:
 	{
@@ -386,7 +386,7 @@ SEXP allocVector(SEXPTYPE type, R_xlen_t length)
 	      type2char(type), length);
 	return nullptr;  // -Wall
     }
-    return GCNode::expose(s);
+    return s;
 }
 
 

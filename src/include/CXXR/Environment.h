@@ -171,10 +171,13 @@ namespace CXXR {
 	 *          constructed Environment.
 	 */
 	Environment(Environment* enclosing, Frame* frame)
-	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(frame),
+	    : RObject(ENVSXP),
 	      m_single_stepping(false), m_locked(false), m_on_search_path(false),
 	      m_leaked(false), m_in_loop(false), m_can_return(false)
-	{}
+	{
+            m_enclosing = enclosing;
+            m_frame = frame;
+        }
 
 	/** @brief Base environment.
 	 *

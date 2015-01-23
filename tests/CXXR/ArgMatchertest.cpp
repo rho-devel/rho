@@ -246,15 +246,15 @@ int main(int argc, char* argv[]) {
     Evaluator evalr;
 
     // Set up Environments:
-    GCStackRoot<Frame> ff(CXXR_NEW(ListFrame));
-    GCStackRoot<Environment> fenvrt(CXXR_NEW(Environment(0, ff)));
+    GCStackRoot<Frame> ff(new ListFrame);
+    GCStackRoot<Environment> fenvrt(new Environment(0, ff));
     fenv = fenvrt;
     // Process formals:
     cout << "Formal arguments:\n\n";
     GCStackRoot<PairList> formals(getArgs(argv[1]));
     GCStackRoot<ArgMatcher> matcher;
     try {
-    	matcher = GCNode::expose(new ArgMatcher(formals));
+    	matcher = new ArgMatcher(formals);
     } catch (CommandTerminated) {
 	cerr << "ArgMatchertest: Error encountered while processing formals" << endl;
 	return 0;

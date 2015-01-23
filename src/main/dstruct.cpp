@@ -125,5 +125,5 @@ SEXP Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
     default:
 	break;
     }
-    return CXXR_NEW(Closure(formrt, bodyrt, envrt));
+    return new Closure(formrt, bodyrt, envrt);
 }

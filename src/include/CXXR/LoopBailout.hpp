@@ -63,8 +63,10 @@ namespace CXXR {
 	 * @param next_iteration true for 'next'; false for 'break'.
 	 */
 	LoopBailout(Environment* the_environment, bool next_iteration)
-	    : m_environment(the_environment), m_next(next_iteration)
-	{}
+	    : m_next(next_iteration)
+	{
+	    m_environment = the_environment;
+	}
 
 	/** @brief Target Environment of this LoopBailout.
 	 *

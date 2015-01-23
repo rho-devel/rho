@@ -43,6 +43,7 @@
 #include <cstring>
 #include "config.h"
 #include "CXXR/CellPool.hpp"
+#include "CXXR/SEXPTYPE.h"
 
 namespace CXXR {
     /** @brief Class to manage memory allocation and deallocation for CXXR.
@@ -163,6 +164,13 @@ namespace CXXR {
 	static void notifyDeallocation(size_t bytes) {
 	    s_bytes_allocated -= bytes;
 	    --s_blocks_allocated;
+	}
+
+	friend class String;
+	template<typename, SEXPTYPE, typename>
+	friend class FixedVector;
+	static void adjustBytesAllocated(size_t bytes) {
+	    s_bytes_allocated += bytes;
 	}
 
 	// Initialize the static data members:

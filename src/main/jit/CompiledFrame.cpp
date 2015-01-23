@@ -45,8 +45,8 @@ namespace CXXR {
 namespace JIT {
 
 CompiledFrame::CompiledFrame(const FrameDescriptor* descriptor)
-    : m_descriptor(descriptor)
 {
+    m_descriptor = descriptor;
     m_bindings = new Binding[descriptor->getNumberOfSymbols()];
     m_extension = nullptr;
 }
@@ -103,7 +103,7 @@ Frame::BindingRange CompiledFrame::bindingRange() const
 
 CompiledFrame* CompiledFrame::clone() const
 {
-    return expose(new CompiledFrame(*this));
+    return new CompiledFrame(*this);
 }
 
 std::size_t CompiledFrame::size() const

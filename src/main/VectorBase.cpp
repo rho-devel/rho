@@ -114,7 +114,7 @@ void VectorBase::setDimensionNames(unsigned int d, StringVector* names)
     ListVector* lv
 	= static_cast<ListVector*>(getAttribute(DimNamesSymbol));
     if (!lv) {
-	lv = CXXR_NEW(ListVector(ndims));
+	lv = ListVector::create(ndims);
 	setAttribute(DimNamesSymbol, lv);
     }
     (*lv)[d - 1] = names;
@@ -130,7 +130,7 @@ void VectorBase::setNames(StringVector* names)
     setAttribute(NamesSymbol, names);
 }
 
-void VectorBase::setSize(size_type)
+void VectorBase::decreaseSizeInPlace(size_type)
 {
     Rf_error(_("this object cannot be resized"));
 }
@@ -176,5 +176,5 @@ void SETLENGTH(SEXP x, int v)
     CXXR::VectorBase* vb = dynamic_cast<CXXR::VectorBase*>(x);
     if (!vb)
 	Rf_error("SETLENGTH invoked for a non-vector.");
-    vb->setSize(VectorBase::size_type(v));
+    vb->decreaseSizeInPlace(VectorBase::size_type(v));
 }

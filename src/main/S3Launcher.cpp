@@ -34,7 +34,7 @@ void S3Launcher::addMethodBindings(Frame* frame) const
 	frame->bind(DotClassSymbol, m_classes);
     else {
 	GCStackRoot<StringVector>
-	    dotclass(CXXR_NEW(StringVector(m_classes->size() - m_index)));
+	    dotclass(StringVector::create(m_classes->size() - m_index));
 	for (unsigned int j = 0; j < dotclass->size(); ++j)
 	    (*dotclass)[j] = (*m_classes)[j + m_index];
 	dotclass->setAttribute(PreviousSymbol, m_classes);
@@ -45,7 +45,7 @@ void S3Launcher::addMethodBindings(Frame* frame) const
     {
 	String* method_name
 	    = const_cast<String*>(m_symbol->name());
-	frame->bind(DotMethodSymbol, CXXR_NEW(StringVector(1, method_name)));
+	frame->bind(DotMethodSymbol, StringVector::createScalar(method_name));
     }
 
     // .Group:

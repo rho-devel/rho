@@ -65,9 +65,11 @@ namespace CXXR {
 	 *          be conveyed back to the return destination.
 	 */
 	ReturnBailout(Environment* the_environment, RObject* the_value)
-	    : m_environment(the_environment), m_value(the_value),
-	      m_print_result(R_Visible)
-	{}
+	    : m_print_result(R_Visible)
+	{
+	    m_environment = the_environment;
+	    m_value = the_value;
+	}
 
 	/** @brief Target Environment of this ReturnBailout.
 	 *

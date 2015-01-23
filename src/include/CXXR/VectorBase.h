@@ -276,7 +276,7 @@ namespace CXXR {
 	 *          be initialized with <tt>NA<T>()</tt>, where \a T
 	 *          is the element type.
 	 */
-	virtual void setSize(size_type new_size);
+	virtual void decreaseSizeInPlace(size_type new_size);
 
 	/** @brief Number of elements in the vector.
 	 *
@@ -346,7 +346,7 @@ namespace CXXR {
     template <class V>
     V* VectorBase::resize(const V* pattern, size_type new_size)
     {
-	GCStackRoot<V> ans(CXXR_NEW(V(new_size)));
+	GCStackRoot<V> ans(V::create(new_size));
 	size_type copysz = std::min(pattern->size(), new_size);
 	typename V::const_iterator patb = pattern->begin();
 	typename V::iterator ansit

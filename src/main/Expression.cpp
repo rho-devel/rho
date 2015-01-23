@@ -65,7 +65,7 @@ GCRoot<> R_CurrentExpr;
 
 Expression* Expression::clone() const
 {
-    return expose(new Expression(*this));
+    return new Expression(*this);
 }
 
 RObject* Expression::evaluate(Environment* env)
@@ -109,7 +109,7 @@ SEXP Rf_lcons(SEXP cr, SEXP tl)
 {
     GCStackRoot<> crr(cr);
     GCStackRoot<PairList> tlr(SEXP_downcast<PairList*>(tl));
-    return CXXR_NEW(Expression(crr, tlr));
+    return new Expression(crr, tlr);
 }
 
 void Rf_setCurrentExpression(SEXP e)

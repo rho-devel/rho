@@ -115,7 +115,7 @@ static SEXP FindTaggedItem(SEXP lst, SEXP tag)
 static SEXP makeErrorCall(SEXP fun)
 {
     SEXP call;
-    PROTECT(call = CXXR_NEW(Expression));
+    PROTECT(call = new Expression);
     SETCAR(call, fun);
     UNPROTECT(1);
     return call;

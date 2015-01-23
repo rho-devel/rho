@@ -67,14 +67,17 @@ namespace CXXR {
 	RHandle()
 	{}
 
-	/** @brief Primary constructor.
-	 *
-	 * @param target Pointer to the object to which this
-	 *          RHandle is to refer.
-	 */
-	explicit RHandle(T* target)
-	    : GCEdge<T>(target)
-	{}
+	// explicit RHandle(T* target) is intentionally not defined here.
+	//
+	// This prevents object initializers of the form
+	//     Foo::Foo() : m_handle(expression_that_might_gc()) { ... }
+	// In that case, the expression is executed while the handle is
+	// uninitialized.  If it causes a garbage collection, the GC's mark
+	// routine will attempt to follow the uninitialized handle, causing
+	// errors.
+	// Object initializers should be written as:
+	//     Foo::Foo() { m_handle = expression_that_might_gc(); ... }
+	// which properly initialized the handle prior to doing the allocation.
 
 	/** @brief Copy constructor.
 	 *
@@ -88,8 +91,9 @@ namespace CXXR {
 	 *          the created object.
 	 */
 	RHandle(const RHandle<T>& pattern)
-	    : GCEdge<T>(cloneOrSelf(pattern))
-	{}
+	{
+	    operator=(cloneOrSelf(pattern));
+	}
 
 	/** @brief Assignment operator.
 	 */

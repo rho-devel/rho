@@ -46,10 +46,10 @@ TEST(GCStackFrameBoundaryTest, RefCountIsZeroWithoutBarrier) {
     // correct stack roots declared at GC points, so disable GC.
     GCNode::GCInhibitor no_gc;
 
-    RObject* object1 = CXXR_NEW(RealVector(1));
+    RObject* object1 = RealVector::createScalar(1);
     EXPECT_EQ(0, getRefCount(object1));
 
-    RObject* object2 = CXXR_NEW(RealVector(2));
+    RObject* object2 = RealVector::createScalar(2);
     EXPECT_EQ(0, getRefCount(object1));
     EXPECT_EQ(0, getRefCount(object2));
 }
@@ -57,12 +57,12 @@ TEST(GCStackFrameBoundaryTest, RefCountIsZeroWithoutBarrier) {
 TEST(GCStackFrameBoundaryTest, BarrierIncrementsAndDecrementsCount) {
     GCNode::GCInhibitor no_gc;
 
-    RObject* object1 = CXXR_NEW(RealVector(1));
+    RObject* object1 = RealVector::createScalar(1);
 
     RObject* object2_ = GCStackFrameBoundary::withStackFrameBoundary(
 	[=]()
 	{
-	    RObject* object2 = CXXR_NEW(RealVector(2));
+	    RObject* object2 = RealVector::createScalar(2);
 
 	    EXPECT_EQ(0, getRefCount(object1));
 	    EXPECT_EQ(0, getRefCount(object2));
@@ -79,7 +79,7 @@ TEST(GCStackFrameBoundaryTest, BarrierIncrementsAndDecrementsCount) {
 TEST(GCStackFrameBoundaryTest, NestedBoundarys) {
     GCNode::GCInhibitor no_gc;
 
-    RObject* object1 = CXXR_NEW(RealVector(1));
+    RObject* object1 = RealVector::createScalar(1);
 
     GCStackFrameBoundary::withStackFrameBoundary(
 	[=]()
@@ -101,7 +101,7 @@ TEST(GCStackFrameBoundaryTest, NestedBoundarys) {
 TEST(GCStackFrameBoundaryTest, NestedAdvances) {
     GCNode::GCInhibitor no_gc;
 
-    RObject* object1 = CXXR_NEW(RealVector(1));
+    RObject* object1 = RealVector::createScalar(1);
 
     GCStackFrameBoundary::withStackFrameBoundary(
 	[=]()

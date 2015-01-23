@@ -1033,14 +1033,14 @@ static SEXP Rf_coerceVectorList(SEXP v, SEXPTYPE type)
 	if (v->sexptype() == EXPRSXP) {
 	    ExpressionVector* ev = static_cast<ExpressionVector*>(v);
 	    GCStackRoot<ListVector>
-		lv(CXXR_NEW(ListVector(ev->begin(), ev->end())));
+		lv(ListVector::create(ev->begin(), ev->end()));
 	    lv->copyAttribute(NamesSymbol, ev);
 	    return lv;
 	}
     if (type == EXPRSXP && TYPEOF(v) == VECSXP) {
 	ListVector* lv = static_cast<ListVector*>(v);
 	GCStackRoot<ExpressionVector>
-	    ev(CXXR_NEW(ExpressionVector(lv->begin(), lv->end())));
+	    ev(ExpressionVector::create(lv->begin(), lv->end()));
 	ev->copyAttribute(NamesSymbol, lv);
 	return ev;
     }
@@ -1575,7 +1575,7 @@ SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
 		Rf_errorcall(call, _("invalid length 0 argument"));
 	    names = Rf_getAttrib(args, R_NamesSymbol);
 	    GCStackRoot<PairList> tl(PairList::make(n - 1));
-	    PROTECT(ap = ans = CXXR_NEW(Expression(nullptr, tl)));
+	    PROTECT(ap = ans = new Expression(nullptr, tl));
 	    for (i = 0; i < n; i++) {
 		SETCAR(ap, VECTOR_ELT(args, i));
 		if (names != R_NilValue && !Rf_StringBlank(STRING_ELT(names, i)))
@@ -1591,7 +1591,7 @@ SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
 		Rf_errorcall(call, _("invalid length 0 argument"));
 	    names = Rf_getAttrib(args, R_NamesSymbol);
 	    GCStackRoot<PairList> tl(PairList::make(n - 1));
-	    PROTECT(ap = ans = CXXR_NEW(Expression(nullptr, tl)));
+	    PROTECT(ap = ans = new Expression(nullptr, tl));
 	    for (i = 0; i < n; i++) {
 		SETCAR(ap, XVECTOR_ELT(args, i));
 		if (names != R_NilValue && !Rf_StringBlank(STRING_ELT(names, i)))
@@ -2366,7 +2366,7 @@ SEXP attribute_hidden do_docall(SEXP call, SEXP op, SEXP args, SEXP rho)
     names = Rf_getAttrib(args, R_NamesSymbol);
 
     GCStackRoot<PairList> tl(PairList::make(n));
-    PROTECT(c = call = CXXR_NEW(Expression(nullptr, tl)));
+    PROTECT(c = call = new Expression(nullptr, tl));
     if( Rf_isString(fun) ) {
 	const char *str = Rf_translateChar(STRING_ELT(fun, 0));
 	if (streql(str, ".Internal")) Rf_error("illegal usage");

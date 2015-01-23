@@ -67,8 +67,9 @@ SEXP R_UnboundValue;
 // ***** Class Symbol itself *****
 
 Symbol::Symbol(const String* the_name)
-    : RObject(SYMSXP), m_name(the_name), m_dd_index(0)
+    : RObject(SYMSXP), m_dd_index(0)
 {
+    m_name = the_name;
     if (m_name) {
 	if (m_name->size() == 0)
 	    Rf_error(_("attempt to use zero-length variable name"));
@@ -145,13 +146,13 @@ void Symbol::initialize()
 
 Symbol* Symbol::missingArgument()
 {
-    static GCRoot<Symbol> missing(CXXR_NEW(Symbol));
+    static GCRoot<Symbol> missing(new Symbol);
     return missing.get();
 }
 
 Symbol* Symbol::unboundValue()
 {
-    static GCRoot<Symbol> unbound(CXXR_NEW(Symbol));
+    static GCRoot<Symbol> unbound(new Symbol);
     return unbound.get();
 }
 
@@ -163,7 +164,7 @@ Symbol::Table* Symbol::getTable()
 
 Symbol* Symbol::make(const String* name)
 {
-    Symbol* ans = CXXR_NEW(Symbol(name));
+    Symbol* ans = new Symbol(name);
     getTable()->push_back(GCRoot<Symbol>(ans));
     name->m_symbol = ans;
     return ans;
