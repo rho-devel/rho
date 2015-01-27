@@ -85,6 +85,11 @@
    is 64-bit on Windows.
 */
 
+/* The code in this file stores pointers to R objects in malloc-managed memory.
+   As a result, it requires the use of PROTECT() calls to ensure GC safety.
+*/
+#undef DISABLE_PROTECT_MACROS
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -149,7 +154,7 @@ typedef long long int _lli_t;
 #define NSINKS 21
 
 static Rconnection Connections[NCONNECTIONS];
-static SEXP OutTextData;
+static GCRoot<> OutTextData;
 
 static int R_SinkNumber;
 static int SinkCons[NSINKS], SinkConsClose[NSINKS], R_SinkSplit[NSINKS];

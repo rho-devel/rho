@@ -300,16 +300,39 @@ int  (HASHVALUE)(SEXP x);
 #define isByteCode(x)	(TYPEOF(x)==BCODESXP)
 
 /* Pointer Protection and Unprotection */
-#define PROTECT(s)	Rf_protect(s)
-#define UNPROTECT(n)	Rf_unprotect(n)
-#define UNPROTECT_PTR(s)	Rf_unprotect_ptr(s)
+#ifdef DISABLE_PROTECT_MACROS
+  /* Danger!  You almost certainly don't need to use DISABLE_PROTECT_MACROS for
+   * your code.
+   *
+   * In most cases, CXXR doesn't require nodes to be explicitly PROTECTed, as it
+   * automatically protects local variables.  In that case, any function that
+   * only stores SEXPs as local variables, inside other R SEXPs or protected
+   * by calls to R_Protect/R_PreserveObject() doesn't need to use PROTECT() and
+   * can be compiled with DISABLE_PROTECT_MACROS defined for a modest
+   * performance gain on code that handles a lot of small objects.
+   *
+   * Code that holds SEXPs in static variables, global variables, thread-local
+   * storage or heap memory allocated with malloc or new cannot safely use
+   * this macro, as the garbage collector doesn't scan those locations.
+   */
+  inline SEXP cxxr_function_to_prevent_compiler_warnings(SEXP s) { return s; }
+#  define PROTECT(s) (cxxr_function_to_prevent_compiler_warnings(s))
+#  define UNPROTECT(n) (void)(n)
+#  define UNPROTECT_PTR(s) (void)(s)
+#  define PROTECT_WITH_INDEX(x, i) ((void)(x), (void)(i))
+#  define REPROTECT(x, i) ((void)(x), (void)(i))
+#else
+#  define PROTECT(s)	Rf_protect(s)
+#  define UNPROTECT(n)	Rf_unprotect(n)
+#  define UNPROTECT_PTR(s)	Rf_unprotect_ptr(s)
 
 /* We sometimes need to coerce a protected value and place the new
    coerced value under protection.  For these cases PROTECT_WITH_INDEX
    saves an index of the protection location that can be used to
    replace the protected value using REPROTECT. */
-#define PROTECT_WITH_INDEX(x,i) R_ProtectWithIndex(x,i)
-#define REPROTECT(x,i) R_Reprotect(x,i)
+#  define PROTECT_WITH_INDEX(x,i) R_ProtectWithIndex(x,i)
+#  define REPROTECT(x,i) R_Reprotect(x,i)
+#endif
 
 /* Evaluation Environment */
 LibExtern SEXP	R_GlobalEnv;	    /* The "global" environment */
