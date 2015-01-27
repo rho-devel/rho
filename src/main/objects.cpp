@@ -127,7 +127,7 @@ static RObject* applyMethod(const Expression* call, const FunctionBase* func,
    loaded, and back to R_GlobalEnv when it is unloaded. */
 
 #ifdef S3_for_S4_warn /* not currently used */
-static SEXP s_check_S3_for_S4 = 0;
+static GCRoot<> s_check_S3_for_S4 = 0;
 void R_warn_S3_for_S4(SEXP method) {
   SEXP call;
   if(!s_check_S3_for_S4)
@@ -190,7 +190,7 @@ static int match_to_obj(SEXP arg, SEXP obj) {
    to an object from an S4 subclass.
 */
 int Rf_isBasicClass(const char *ss) {
-    static SEXP s_S3table = nullptr;
+    static GCRoot<> s_S3table = nullptr;
     if(!s_S3table) {
       s_S3table = Rf_findVarInFrame3(R_MethodsNamespace, Rf_install(".S3MethodsClasses"), TRUE);
       if(s_S3table == R_UnboundValue)
@@ -926,7 +926,7 @@ int R_check_class_and_super(SEXP x, const char **valid, SEXP rho)
 	/* now try the superclasses, i.e.,  try   is(x, "....");  superCl :=
 	   .selectSuperClasses(getClass("....")@contains, dropVirtual=TRUE)  */
 	SEXP classExts, superCl, _call;
-	static SEXP s_contains = nullptr, s_selectSuperCl = nullptr;
+	static GCRoot<> s_contains = nullptr, s_selectSuperCl = nullptr;
 	int i;
 	if(!s_contains) {
 	    s_contains      = Rf_install("contains");
@@ -969,7 +969,7 @@ int R_check_class_and_super(SEXP x, const char **valid, SEXP rho)
  */
 int R_check_class_etc(SEXP x, const char **valid)
 {
-    static SEXP meth_classEnv = nullptr;
+    static GCRoot<> meth_classEnv = nullptr;
     SEXP cl = Rf_getAttrib(x, R_ClassSymbol), rho = R_GlobalEnv, pkg;
     if(!meth_classEnv)
 	meth_classEnv = Rf_install(".classEnv");
@@ -1321,7 +1321,7 @@ argument to standardGeneric.
 static SEXP get_this_generic(SEXP args)
 {
     const void *vmax = vmaxget();
-    SEXP value = R_NilValue; static SEXP gen_name;
+    SEXP value = R_NilValue; static GCRoot<> gen_name;
     int i, n;
     ClosureContext *cptr;
     const char *fname;
@@ -1375,7 +1375,7 @@ Rboolean R_has_methods(SEXP op)
     return(TRUE);
 }
 
-static SEXP deferred_default_object;
+static GCRoot<> deferred_default_object;
 
 SEXP R_deferred_default_method()
 {
@@ -1490,7 +1490,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 
 SEXP R_do_MAKE_CLASS(const char *what)
 {
-    static SEXP s_getClass = nullptr;
+    static GCRoot<> s_getClass = nullptr;
     SEXP e, call;
     if(!what)
 	Rf_error(_("C level MAKE_CLASS macro called with NULL string pointer"));
@@ -1506,7 +1506,7 @@ SEXP R_do_MAKE_CLASS(const char *what)
 /* this very similar, but gives NULL instead of an error for a non-existing class */
 SEXP R_getClassDef(const char *what)
 {
-    static SEXP s_getClassDef = nullptr;
+    static GCRoot<> s_getClassDef = nullptr;
     SEXP e, call;
     if(!what)
 	Rf_error(_("R_getClassDef(.) called with NULL string pointer"));
@@ -1522,7 +1522,7 @@ SEXP R_getClassDef(const char *what)
 /* in Rinternals.h */
 SEXP R_do_new_object(SEXP class_def)
 {
-    static SEXP s_virtual = nullptr, s_prototype, s_className;
+    static GCRoot<> s_virtual = nullptr, s_prototype, s_className;
     SEXP e, value;
     const void *vmax = vmaxget();
     if(!s_virtual) {
@@ -1643,7 +1643,8 @@ S3Launcher::create(RObject* object, std::string generic, std::string group,
 		= findMethod(ans->m_symbol, call_env, table_env).first;
 	    if (ans->m_function) {
 		// Kludge because sort.list is not a method:
-		static const Symbol* sort_list = Symbol::obtain("sort.list");
+		static GCRoot<const Symbol> sort_list
+		    = Symbol::obtain("sort.list");
 		if (ans->m_function->sexptype() == CLOSXP
 		    && ans->m_symbol == sort_list) {
 		    const Closure* closure

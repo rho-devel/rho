@@ -966,7 +966,7 @@ SEXP attribute_hidden do_seq_along(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans;
     R_xlen_t len;
-    static SEXP length_op = nullptr;
+    static GCRoot<> length_op = nullptr;
 
     /* Store the .Primitive for 'length' for DispatchOrEval to use. */
     if (length_op == nullptr) {

@@ -537,7 +537,7 @@ SEXP attribute_hidden do_class(SEXP call, SEXP op, SEXP args, SEXP env)
 static SEXP lang2str(SEXP obj, SEXPTYPE t)
 {
   SEXP symb = CAR(obj);
-  static SEXP if_sym = nullptr, while_sym, for_sym, eq_sym, gets_sym,
+  static CXXR::GCRoot<> if_sym = nullptr, while_sym, for_sym, eq_sym, gets_sym,
     lpar_sym, lbrace_sym, call_sym;
   if(!if_sym) {
     /* initialize:  another place for a hash table */
@@ -607,9 +607,9 @@ SEXP R_data_class(SEXP obj, Rboolean singleString)
     return value;
 }
 
-static SEXP s_dot_S3Class = nullptr;
+static GCRoot<> s_dot_S3Class = nullptr;
 
-static SEXP R_S4_extends_table = nullptr;
+static GCRoot<> R_S4_extends_table = nullptr;
 
  
 static SEXP cache_class(const char *class_str, SEXP klass) {
@@ -628,7 +628,7 @@ static SEXP cache_class(const char *class_str, SEXP klass) {
 
 static SEXP S4_extends(SEXP klass)
 {
-    static SEXP s_extends = nullptr, s_extendsForS3;
+    static CXXR::GCRoot<> s_extends = nullptr, s_extendsForS3;
     SEXP e, val; const char *class_str;
     const void *vmax = vmaxget();
     if(!s_extends) {
@@ -1472,11 +1472,11 @@ SEXP GetArrayDimnames(SEXP x)
    an error to get a slot that doesn't exist. */
 
 
-static SEXP pseudo_NULL = nullptr;
+static GCRoot<> pseudo_NULL = nullptr;
 
-static SEXP s_dot_Data;
-static SEXP s_getDataPart;
-static SEXP s_setDataPart;
+static GCRoot<> s_dot_Data;
+static GCRoot<> s_getDataPart;
+static GCRoot<> s_setDataPart;
 
 static void init_slot_handling(void) {
     s_dot_Data = install(".Data");
@@ -1687,7 +1687,7 @@ SEXP attribute_hidden do_AT(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden
 R_getS4DataSlot(SEXP obj, SEXPTYPE type)
 {
-  static SEXP s_xData, s_dotData; SEXP value = R_NilValue;
+  static GCRoot<> s_xData, s_dotData; SEXP value = R_NilValue;
   if(!s_xData) {
     s_xData = install(".xData");
     s_dotData = install(".Data");

@@ -143,7 +143,7 @@ static int R_GC_Profiling = 0;                     /* indicates GC profiling */
 static int R_Line_Profiling = 0;                   /* indicates line profiling, and also counts the filenames seen (+1) */
 static char **R_Srcfiles;			   /* an array of pointers into the filename buffer */
 static size_t R_Srcfile_bufcount;                  /* how big is the array above? */
-static SEXP R_Srcfiles_buffer = nullptr;              /* a big RAWSXP to use as a buffer for filenames and pointers to them */
+static GCRoot<> R_Srcfiles_buffer = nullptr;              /* a big RAWSXP to use as a buffer for filenames and pointers to them */
 static int R_Profiling_Error;		   /* record errors here */
 
 #ifdef Win32
@@ -2116,30 +2116,30 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 static int R_bcVersion = 7;
 static int R_bcMinVersion = 6;
 
-static SEXP R_AddSym = nullptr;
-static SEXP R_SubSym = nullptr;
-static SEXP R_MulSym = nullptr;
-static SEXP R_DivSym = nullptr;
-static SEXP R_ExptSym = nullptr;
-static SEXP R_SqrtSym = nullptr;
-static SEXP R_ExpSym = nullptr;
-static SEXP R_EqSym = nullptr;
-static SEXP R_NeSym = nullptr;
-static SEXP R_LtSym = nullptr;
-static SEXP R_LeSym = nullptr;
-static SEXP R_GeSym = nullptr;
-static SEXP R_GtSym = nullptr;
-static SEXP R_AndSym = nullptr;
-static SEXP R_OrSym = nullptr;
-static SEXP R_NotSym = nullptr;
-static SEXP R_SubsetSym = nullptr;
-static SEXP R_SubassignSym = nullptr;
-static SEXP R_CSym = nullptr;
-static SEXP R_Subset2Sym = nullptr;
-static SEXP R_Subassign2Sym = nullptr;
-static SEXP R_valueSym = nullptr;
-static SEXP R_TrueValue = nullptr;
-static SEXP R_FalseValue = nullptr;
+static GCRoot<> R_AddSym = nullptr;
+static GCRoot<> R_SubSym = nullptr;
+static GCRoot<> R_MulSym = nullptr;
+static GCRoot<> R_DivSym = nullptr;
+static GCRoot<> R_ExptSym = nullptr;
+static GCRoot<> R_SqrtSym = nullptr;
+static GCRoot<> R_ExpSym = nullptr;
+static GCRoot<> R_EqSym = nullptr;
+static GCRoot<> R_NeSym = nullptr;
+static GCRoot<> R_LtSym = nullptr;
+static GCRoot<> R_LeSym = nullptr;
+static GCRoot<> R_GeSym = nullptr;
+static GCRoot<> R_GtSym = nullptr;
+static GCRoot<> R_AndSym = nullptr;
+static GCRoot<> R_OrSym = nullptr;
+static GCRoot<> R_NotSym = nullptr;
+static GCRoot<> R_SubsetSym = nullptr;
+static GCRoot<> R_SubassignSym = nullptr;
+static GCRoot<> R_CSym = nullptr;
+static GCRoot<> R_Subset2Sym = nullptr;
+static GCRoot<> R_Subassign2Sym = nullptr;
+static GCRoot<> R_valueSym = nullptr;
+static GCRoot<> R_TrueValue = nullptr;
+static GCRoot<> R_FalseValue = nullptr;
 
 attribute_hidden
 void R_initialize_bcode(void)

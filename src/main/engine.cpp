@@ -3052,7 +3052,7 @@ void GEonExit()
 int GEstring_to_pch(SEXP pch)
 {
     int ipch = NA_INTEGER;
-    static SEXP last_pch = nullptr;
+    static CXXR::GCRoot<> last_pch = nullptr;
     static int last_ipch = 0;
 
     if (pch == NA_STRING) return NA_INTEGER;
