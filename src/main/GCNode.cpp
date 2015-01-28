@@ -79,6 +79,21 @@ const size_t GCNode::s_gclite_margin = 10000;
 size_t GCNode::s_gclite_threshold = s_gclite_margin;
 unsigned char GCNode::s_mark = 0;
 
+// We repurpose the BDW collector's mark bit as an allocated flag.  This
+// works since the mark-sweep functionality of the BDW GC isn't used at all.
+static void set_allocated_bit(void* p) {
+    GC_set_mark_bit(p);
+}
+
+static void clear_allocated_bit(void* p) {
+    GC_clear_mark_bit(p);
+}
+
+static bool test_allocated_bit(void* p) {
+    return GC_is_marked(p);
+}
+
+
 void* GCNode::operator new(size_t bytes) HOT_FUNCTION
 {
     if (s_inhibitor_count == 0)
@@ -101,9 +116,7 @@ void* GCNode::operator new(size_t bytes) HOT_FUNCTION
     }
     MemoryBank::notifyAllocation(bytes);
     void* result = GC_malloc(bytes);
-    // We repurpose the BDW collection's mark bit as an allocated flag.  This
-    // works since the mark-sweep functionality of the BDW GC isn't used at all.
-    GC_set_mark_bit(result);
+    set_allocated_bit(result);
 
     return result;
 }
@@ -111,7 +124,7 @@ void* GCNode::operator new(size_t bytes) HOT_FUNCTION
 void GCNode::operator delete(void* p, size_t bytes)
 {
     MemoryBank::notifyDeallocation(bytes);
-    GC_clear_mark_bit(p);
+    clear_allocated_bit(p);
     GC_free(p);
 }
 
@@ -306,7 +319,7 @@ GCNode* GCNode::asGCNode(void* candidate_pointer)
 	return nullptr;
 
     void* base_pointer = GC_base(candidate_pointer);
-    if (base_pointer && GC_is_marked(base_pointer)) {
+    if (base_pointer && test_allocated_bit(base_pointer)) {
 	return reinterpret_cast<GCNode*>(base_pointer);
     }
     return nullptr;
