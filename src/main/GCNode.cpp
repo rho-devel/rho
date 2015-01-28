@@ -45,6 +45,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include "CXXR/AddressSanitizer.h"
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/GCRoot.h"
@@ -93,8 +94,13 @@ static bool test_allocated_bit(void* p) {
     return GC_is_marked(p);
 }
 
+#ifdef HAVE_ADDRESS_SANITIZER
+static void* asan_allocate(size_t bytes);
+static void asan_free(void* object);
+static void* asan_get_object_pointer_from_allocation(void* allocation);
+#endif  // HAVE_ADDRESS_SANITIZER
 
-void* GCNode::operator new(size_t bytes) HOT_FUNCTION
+HOT_FUNCTION void* GCNode::operator new(size_t bytes)
 {
     if (s_inhibitor_count == 0)
     {
@@ -115,17 +121,25 @@ void* GCNode::operator new(size_t bytes) HOT_FUNCTION
 	}
     }
     MemoryBank::notifyAllocation(bytes);
-    void* result = GC_malloc(bytes);
-    set_allocated_bit(result);
 
+#ifdef HAVE_ADDRESS_SANITIZER
+    return asan_allocate(bytes);
+#else
+    void* result = GC_malloc_atomic(bytes);
+    set_allocated_bit(result);
     return result;
+#endif
 }
 
 void GCNode::operator delete(void* p, size_t bytes)
 {
     MemoryBank::notifyDeallocation(bytes);
+#ifdef HAVE_ADDRESS_SANITIZER
+    asan_free(p);
+#else
     clear_allocated_bit(p);
     GC_free(p);
+#endif
 }
 
 bool GCNode::check()
@@ -320,7 +334,104 @@ GCNode* GCNode::asGCNode(void* candidate_pointer)
 
     void* base_pointer = GC_base(candidate_pointer);
     if (base_pointer && test_allocated_bit(base_pointer)) {
-	return reinterpret_cast<GCNode*>(base_pointer);
+	return reinterpret_cast<GCNode*>(
+#ifdef HAVE_ADDRESS_SANITIZER
+	    asan_get_object_pointer_from_allocation(base_pointer)
+#else
+	    base_pointer
+#endif
+	    );
     }
     return nullptr;
 }
+
+
+#ifdef HAVE_ADDRESS_SANITIZER
+
+static const int kAsanRedzoneSize = 16;
+
+/*
+ * When compiling with the address sanitizer, we modify the allocation routines
+ * to detect errors more reliably.  In particular:
+ * - A redzone is added on both sides of the object to detect underflows and
+ *   overflows.
+ * - Memory is poisoned when it is freed to detect use-after-free errors.
+ * - Freed objects are held in a quarantine to prevent the memory from being
+ *   reallocated quickly.  This helps detect use-after-free errors.
+ *
+ * Note that in the context of GC, 'use after free' is really premature garbage
+ * collection.
+ */
+static void* offset(void* p, size_t bytes) {
+    return static_cast<char*>(p) + bytes;
+}
+
+static void* asan_allocate(size_t bytes)
+{
+    size_t allocation_size = bytes + 2 * kAsanRedzoneSize;
+    void* storage_with_redzones = GC_malloc_atomic(allocation_size);
+    set_allocated_bit(storage_with_redzones);
+
+    void *start_redzone = storage_with_redzones;
+    void* storage = offset(storage_with_redzones, kAsanRedzoneSize);
+    void* end_redzone = offset(storage, bytes);
+
+    ASAN_UNPOISON_MEMORY_REGION(storage_with_redzones, allocation_size);
+
+    // Store the allocation size for later use.
+    *static_cast<size_t*>(storage_with_redzones) = allocation_size;
+
+    // Poison the redzones
+    ASAN_POISON_MEMORY_REGION(start_redzone, kAsanRedzoneSize);
+    ASAN_POISON_MEMORY_REGION(end_redzone, kAsanRedzoneSize);
+    
+    return storage;
+}
+
+static void defered_free(void* storage, size_t allocation_size)
+{
+    // Rather than immediately freeing the pointer, hold it in a queue for a
+    // while.  This allows use-after-free errors to be detected.
+    static const int kMaxQuarantineSize = 10 * 1024 * 1024; // 10MB
+
+    static std::deque<void*> quarantine;
+    static size_t quarantine_size = 0;
+
+    quarantine.push_back(storage);
+    quarantine_size += allocation_size;
+
+    while (quarantine_size > kMaxQuarantineSize) {
+	storage = quarantine.front();
+	quarantine.pop_front();
+
+	// We need to unpoison the memory now, as the allocator may choose to reuse it in
+	// whatever way it deems fit. Any following use-after-free errors will not be caught.
+	ASAN_UNPOISON_MEMORY_REGION(storage, sizeof(void*));
+	size_t allocation_size = *static_cast<size_t*>(storage);
+	ASAN_UNPOISON_MEMORY_REGION(storage, allocation_size);
+
+	quarantine_size -= allocation_size;
+	GC_free(storage);
+    }
+}
+
+static void asan_free(void* storage) {
+    void* storage_with_redzones = offset(storage, - kAsanRedzoneSize);
+    clear_allocated_bit(storage_with_redzones);
+
+    void* start_redzone = storage_with_redzones;
+    ASAN_UNPOISON_MEMORY_REGION(start_redzone, kAsanRedzoneSize);
+    size_t allocation_size = *static_cast<size_t*>(storage_with_redzones);
+
+    // Poison the entire region.
+    ASAN_POISON_MEMORY_REGION(start_redzone, allocation_size);
+
+    defered_free(storage_with_redzones, allocation_size);
+}
+
+static void* asan_get_object_pointer_from_allocation(void* allocation)
+{
+    return offset(allocation, kAsanRedzoneSize);
+}
+
+#endif  // HAVE_ADDRESS_SANITIZER

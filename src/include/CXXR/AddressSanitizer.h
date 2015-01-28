@@ -51,6 +51,7 @@ void __asan_poison_memory_region(void const volatile *addr, size_t size);
 
 void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
 
+#  define HAVE_ADDRESS_SANITIZER
 #  define ASAN_POISON_MEMORY_REGION(addr, size) \
   __asan_poison_memory_region((addr), (size))
 #  define ASAN_UNPOISON_MEMORY_REGION(addr, size) \
