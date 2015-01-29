@@ -80,25 +80,39 @@ const size_t GCNode::s_gclite_margin = 10000;
 size_t GCNode::s_gclite_threshold = s_gclite_margin;
 unsigned char GCNode::s_mark = 0;
 
-// We repurpose the BDW collector's mark bit as an allocated flag.  This
-// works since the mark-sweep functionality of the BDW GC isn't used at all.
-static void set_allocated_bit(void* p) {
-    GC_set_mark_bit(p);
-}
-
-static void clear_allocated_bit(void* p) {
-    GC_clear_mark_bit(p);
-}
-
-static bool test_allocated_bit(void* p) {
-    return GC_is_marked(p);
-}
-
 #ifdef HAVE_ADDRESS_SANITIZER
 static void* asan_allocate(size_t bytes);
 static void asan_free(void* object);
-static void* asan_get_object_pointer_from_allocation(void* allocation);
+static const int kRedzoneSize = 16;
+#else
+static const int kRedzoneSize = 0;
 #endif  // HAVE_ADDRESS_SANITIZER
+
+static void* offset(void* p, size_t bytes) {
+    return static_cast<char*>(p) + bytes;
+}
+
+static void* get_object_pointer_from_allocation(void* allocation) {
+    return offset(allocation, kRedzoneSize);
+}
+
+static void* get_allocation_from_object_pointer(void* object) {
+    return offset(object, -kRedzoneSize);
+}
+
+// We repurpose the BDW collector's mark bit as an allocated flag.  This
+// works since the mark-sweep functionality of the BDW GC isn't used at all.
+static void set_allocated_bit(void* allocation) {
+    GC_set_mark_bit(allocation);
+}
+
+static void clear_allocated_bit(void* allocation) {
+    GC_clear_mark_bit(allocation);
+}
+
+static bool test_allocated_bit(void* allocation) {
+    return GC_is_marked(allocation);
+}
 
 HOT_FUNCTION void* GCNode::operator new(size_t bytes)
 {
@@ -281,6 +295,12 @@ void GCNode::mark()
     WeakRef::markThru();
 }
 
+static GCNode* getNodePointerFromAllocation(void* allocation)
+{
+    return reinterpret_cast<GCNode*>(
+	get_object_pointer_from_allocation(allocation));
+}
+
 void GCNode::sweep()
 {
     // Detach the referents of nodes that haven't been moved to a
@@ -334,21 +354,13 @@ GCNode* GCNode::asGCNode(void* candidate_pointer)
 
     void* base_pointer = GC_base(candidate_pointer);
     if (base_pointer && test_allocated_bit(base_pointer)) {
-	return reinterpret_cast<GCNode*>(
-#ifdef HAVE_ADDRESS_SANITIZER
-	    asan_get_object_pointer_from_allocation(base_pointer)
-#else
-	    base_pointer
-#endif
-	    );
+	return getNodePointerFromAllocation(base_pointer);
     }
     return nullptr;
 }
 
 
 #ifdef HAVE_ADDRESS_SANITIZER
-
-static const int kAsanRedzoneSize = 16;
 
 /*
  * When compiling with the address sanitizer, we modify the allocation routines
@@ -362,33 +374,30 @@ static const int kAsanRedzoneSize = 16;
  * Note that in the context of GC, 'use after free' is really premature garbage
  * collection.
  */
-static void* offset(void* p, size_t bytes) {
-    return static_cast<char*>(p) + bytes;
-}
 
 static void* asan_allocate(size_t bytes)
 {
-    size_t allocation_size = bytes + 2 * kAsanRedzoneSize;
-    void* storage_with_redzones = GC_malloc_atomic(allocation_size);
-    set_allocated_bit(storage_with_redzones);
+    size_t allocation_size = bytes + 2 * kRedzoneSize;
+    void* allocation = GC_malloc_atomic(allocation_size);
+    set_allocated_bit(allocation);
 
-    void *start_redzone = storage_with_redzones;
-    void* storage = offset(storage_with_redzones, kAsanRedzoneSize);
+    void *start_redzone = allocation;
+    void* storage = offset(allocation, kRedzoneSize);
     void* end_redzone = offset(storage, bytes);
 
-    ASAN_UNPOISON_MEMORY_REGION(storage_with_redzones, allocation_size);
+    ASAN_UNPOISON_MEMORY_REGION(allocation, allocation_size);
 
     // Store the allocation size for later use.
-    *static_cast<size_t*>(storage_with_redzones) = allocation_size;
+    *static_cast<size_t*>(allocation) = allocation_size;
 
     // Poison the redzones
-    ASAN_POISON_MEMORY_REGION(start_redzone, kAsanRedzoneSize);
-    ASAN_POISON_MEMORY_REGION(end_redzone, kAsanRedzoneSize);
+    ASAN_POISON_MEMORY_REGION(start_redzone, kRedzoneSize);
+    ASAN_POISON_MEMORY_REGION(end_redzone, kRedzoneSize);
     
     return storage;
 }
 
-static void defered_free(void* storage, size_t allocation_size)
+static void defered_free(void* allocation, size_t allocation_size)
 {
     // Rather than immediately freeing the pointer, hold it in a queue for a
     // while.  This allows use-after-free errors to be detected.
@@ -397,41 +406,36 @@ static void defered_free(void* storage, size_t allocation_size)
     static std::deque<void*> quarantine;
     static size_t quarantine_size = 0;
 
-    quarantine.push_back(storage);
+    quarantine.push_back(allocation);
     quarantine_size += allocation_size;
 
     while (quarantine_size > kMaxQuarantineSize) {
-	storage = quarantine.front();
+	allocation = quarantine.front();
 	quarantine.pop_front();
 
 	// We need to unpoison the memory now, as the allocator may choose to reuse it in
 	// whatever way it deems fit. Any following use-after-free errors will not be caught.
-	ASAN_UNPOISON_MEMORY_REGION(storage, sizeof(void*));
-	size_t allocation_size = *static_cast<size_t*>(storage);
-	ASAN_UNPOISON_MEMORY_REGION(storage, allocation_size);
+	ASAN_UNPOISON_MEMORY_REGION(allocation, sizeof(size_t));
+	allocation_size = *static_cast<size_t*>(allocation);
+	ASAN_UNPOISON_MEMORY_REGION(allocation, allocation_size);
 
 	quarantine_size -= allocation_size;
-	GC_free(storage);
+	GC_free(allocation);
     }
 }
 
-static void asan_free(void* storage) {
-    void* storage_with_redzones = offset(storage, - kAsanRedzoneSize);
-    clear_allocated_bit(storage_with_redzones);
+static void asan_free(void* object) {
+    void* allocation = get_allocation_from_object_pointer(object);
+    clear_allocated_bit(allocation);
 
-    void* start_redzone = storage_with_redzones;
-    ASAN_UNPOISON_MEMORY_REGION(start_redzone, kAsanRedzoneSize);
-    size_t allocation_size = *static_cast<size_t*>(storage_with_redzones);
+    void* start_redzone = allocation;
+    ASAN_UNPOISON_MEMORY_REGION(start_redzone, kRedzoneSize);
+    size_t allocation_size = *static_cast<size_t*>(allocation);
 
     // Poison the entire region.
-    ASAN_POISON_MEMORY_REGION(start_redzone, allocation_size);
+    ASAN_POISON_MEMORY_REGION(allocation, allocation_size);
 
-    defered_free(storage_with_redzones, allocation_size);
-}
-
-static void* asan_get_object_pointer_from_allocation(void* allocation)
-{
-    return offset(allocation, kAsanRedzoneSize);
+    defered_free(allocation, allocation_size);
 }
 
 #endif  // HAVE_ADDRESS_SANITIZER
