@@ -55,20 +55,14 @@
 #include "CXXR/RAllocStack.h"
 #include "CXXR/WeakRef.h"
 #include "gc.h"
-#include "gc_mark.h"
-
 extern "C" {
-    // Declared in src/extra/gc/include/private/gc_priv.h.
-    void GC_with_callee_saves_pushed(void (*fn)(char*, void *),
-				     char* arg);
+#  include "private/gc_priv.h"
 }
 
 using namespace std;
 using namespace CXXR;
 
-GCNode::List* GCNode::s_live = 0;
 vector<const GCNode*>* GCNode::s_moribund = 0;
-GCNode::List* GCNode::s_reachable = 0;
 unsigned int GCNode::s_num_nodes = 0;
 unsigned int GCNode::s_inhibitor_count = 0;
 const unsigned char GCNode::s_decinc_refcount[]
@@ -158,19 +152,6 @@ void GCNode::operator delete(void* p, size_t bytes)
 
 bool GCNode::check()
 {
-    if (s_live == nullptr) {
-	cerr << "GCNode::check() : class not initialised.\n";
-	abort();
-    }
-    unsigned int numnodes = 0;
-    unsigned int virgins = 0;
-    // Check live list:
-    for (const GCNode* node: *s_live) {
-	++numnodes;
-	if (node->getRefCount() == 0)
-	    ++virgins;
-    }
-
     // Check moribund list:
     for (const GCNode* node: *s_moribund) {
 	if (!(node->m_rcmmu & s_moribund_mask)) {
@@ -180,16 +161,6 @@ bool GCNode::check()
 	}
     }
 
-    // Check total number of nodes:
-    if (numnodes != s_num_nodes) {
-	cerr << "GCNode::check() :"
-	    "recorded number of nodes inconsistent with nodes found.\n";
-	abort();
-    }
-    // Report number of 'virgins', if any:
-    if (virgins > 0)
-	cerr << "GCNode::check() : " << virgins
-	     << " nodes whose refcount has always been zero.\n";
     return true;
 }
 
@@ -253,8 +224,6 @@ void GCNode::gcliteImpl() {
 
 void GCNode::initialize()
 {
-    s_live = new List();
-    s_reachable = new List();
     s_moribund = new vector<const GCNode*>();
     s_gclite_threshold = s_gclite_margin;
 
@@ -273,6 +242,8 @@ void GCNode::initialize()
     GC_disable();
 }
 
+// TODO(kmillar): if a GC is running (which is the likely case), then the node can be deleted
+//    immediately.
 void GCNode::makeMoribund() const
 {
     m_rcmmu |= s_moribund_mask;
@@ -301,23 +272,46 @@ static GCNode* getNodePointerFromAllocation(void* allocation)
 	get_object_pointer_from_allocation(allocation));
 }
 
+void GCNode::detachReferentsOfObjectIfUnmarked(GCNode* object)
+{
+    if (!object->isMarked()) {
+	object->detachReferents();
+    }
+}
+
 void GCNode::sweep()
 {
-    // Detach the referents of nodes that haven't been moved to a
-    // reachable list (i.e. are unreachable).
+    // Detach the referents of nodes that haven't been marked.
     // Once all of these objects have been processed, they will have no
     // incoming references and will have been placed on the moribund list for
     // deletion in the following call to gclite().
-    while (!s_live->empty()) {
-	GCNode* node = s_live->front();
-	node->detachReferents();
-	node->freeLink();
-    }
-    // Transfer the s_reachable list to the live list:
-    s_live->splice_back(s_reachable);
+    applyToAllAllocatedNodes(detachReferentsOfObjectIfUnmarked);
     // Cleanup all the nodes that got placed on the moribund list.
     gclite();
 }
+
+static void applyToAllAllocatedNodesInBlock(struct hblk* block, GC_word fn)
+{
+    auto function = reinterpret_cast<void (*)(GCNode*)>(fn);
+    hdr* block_header = HDR(block);
+    size_t object_size = block_header->hb_sz;
+    char *start = block->hb_body;
+    char* end = start + HBLKSIZE - object_size + 1;
+    
+    for (char* allocation = start; allocation < end; allocation += object_size)
+    {
+	if (test_allocated_bit(allocation)) {
+	    (*function)(getNodePointerFromAllocation(allocation));
+	}
+    }
+}
+
+void GCNode::applyToAllAllocatedNodes(void (*f)(GCNode*))
+{
+    GC_apply_to_all_blocks(
+	applyToAllAllocatedNodesInBlock, reinterpret_cast<GC_word>(f));
+}
+
 
 void GCNode::Marker::operator()(const GCNode* node)
 {
@@ -328,7 +322,6 @@ void GCNode::Marker::operator()(const GCNode* node)
     node->m_rcmmu &= static_cast<unsigned char>(~s_mark_mask);
     node->m_rcmmu |= s_mark;
     ++m_marks_applied;
-    s_reachable->splice_back(node);
     node->visitReferents(this);
 }
 

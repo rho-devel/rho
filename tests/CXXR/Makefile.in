@@ -30,7 +30,7 @@ valgrind_flags = -DVALGRIND_LEVEL=2
 endif
 
 sources_cxx = ArgMatchertest.cpp Allocatortest.cpp CellPooltest.cpp \
-              GCManagertest.cpp HeterogeneousListtest.cpp MemoryBanktest.cpp \
+              GCManagertest.cpp MemoryBanktest.cpp \
               RObject_sizer.cpp splice_test.cpp
 
 unit_test_sources = \
@@ -48,7 +48,7 @@ UNIT_TEST_OBJECTS = $(unit_test_sources:.cpp=.o)
 depends = $(sources_cxx:.cpp=.d) $(unit_test_sources:.cpp=.d)
 
 tests = CellPooltest MemoryBanktest Allocatortest \
-        HeterogeneousListtest splice_test SETLENGTHtest ArgMatchertest0 \
+        splice_test SETLENGTHtest ArgMatchertest0 \
         ArgMatchertest1 ArgMatchertest2 ArgMatchertest3 ArgMatchertest4 \
         ArgMatchertest5 ArgMatchertest6 ArgMatchertest7 ArgMatchertest8 \
 	UnitTests
@@ -206,23 +206,6 @@ GCNode.o : $(maindir)/GCNode.cpp
 
 GCRoot.o : $(maindir)/GCRoot.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DDEBUG_ADJUST_HEAP -c -o $@ $<
-
-HeterogeneousListtest.o : HeterogeneousListtest.cpp
-	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -c -o $@ $<
-
-HeterogeneousList.o : $(maindir)/HeterogeneousList.cpp
-	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c -o $@ $<
-
-HeterogeneousListtest_objs =  HeterogeneousListtest.o HeterogeneousList.o
-
-HeterogeneousListtest : $(HeterogeneousListtest_objs)
-	$(LINK.cc) -o $@ $(HeterogeneousListtest_objs)
-
-HeterogeneousListtest.ts : HeterogeneousListtest HeterogeneousListtest.save
-	./$< > HeterogeneousListtest.out
-	diff $(srcdir)/HeterogeneousListtest.save HeterogeneousListtest.out
-	rm HeterogeneousListtest.out
-	touch $@
 
 MemoryBank.o : $(maindir)/MemoryBank.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -DR_MEMORY_PROFILING -c -o $@ $<

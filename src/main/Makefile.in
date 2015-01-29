@@ -41,7 +41,6 @@ SOURCES_CXX = \
         Frame.cpp FunctionBase.cpp FunctionContext.cpp \
         GCEdge.cpp GCManager.cpp GCNode.cpp GCNode_PtrS11n.cpp GCRoot.cpp \
 	GCStackFrameBoundary.cpp GCStackRoot.cpp \
-	HeterogeneousList.cpp \
         IntVector.cpp inspect.cpp \
 	ListFrame.cpp ListVector.cpp LogicalVector.cpp LoopBailout.cpp \
 	MemoryBank.cpp \

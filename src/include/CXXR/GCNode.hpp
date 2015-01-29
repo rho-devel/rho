@@ -45,7 +45,6 @@
 #include <vector>
 
 #include "CXXR/config.hpp"
-#include "CXXR/HeterogeneousList.hpp"
 
 // According to various web postings (and arr's experience) it is
 // necessary for the compiler to have seen the headers for the archive
@@ -87,7 +86,7 @@ namespace CXXR {
      * 'meaning' of an object of a derived class, its data members are
      * mutable.
      */
-    class GCNode : public HeterogeneousListBase::Link {
+    class GCNode {
     public:
 	/** @brief Abstract base class for the Visitor design pattern.
 	 *
@@ -160,8 +159,7 @@ namespace CXXR {
 	class PtrS11n;
 
 	GCNode()
-            : HeterogeneousListBase::Link(s_live),
-	      m_rcmmu(s_mark | s_moribund_mask)
+            : m_rcmmu(s_mark | s_moribund_mask)
 	{
 	    ++s_num_nodes;
 	    s_moribund->push_back(this);
@@ -321,18 +319,9 @@ namespace CXXR {
 	    unsigned int m_marks_applied;
 	};
 
-	typedef HeterogeneousList<GCNode> List;
-
-	static List* s_live;  // Except during mark-sweep garbage
-	  // collection, all existing nodes are threaded on this
-	  // list.
 	static std::vector<const GCNode*>* s_moribund;  // Vector of
 	  // pointers to nodes whose reference count has fallen to
 	  // zero (but may subsequently have increased again).
-	static List* s_reachable;  // During the mark phase of garbage
-	  // collection, if a node is found to be reachable from the
-	  // roots, it is moved to this list. Between garbage
-	  // collections, this list should be empty.
 	static const size_t s_gclite_margin;  // operator new will
 	  // invoke gclite() when MemoryBank::bytesAllocated() exceeds
 	  // by at least s_gclite_margin the number of bytes that were
@@ -448,6 +437,9 @@ namespace CXXR {
 	/** @brief Carry out the sweep phase of garbage collection.
 	 */
 	static void sweep();
+	static void detachReferentsOfObjectIfUnmarked(GCNode*);
+
+	static void applyToAllAllocatedNodes(void (*function)(GCNode*));
 
 	friend class GCEdgeBase;
 	friend class GCTestHelper;
