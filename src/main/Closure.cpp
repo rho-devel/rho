@@ -106,7 +106,7 @@ void Closure::detachReferents()
     m_body.detach();
     m_environment.detach();
     m_compiled_body.detach();
-    RObject::detachReferents();
+    FunctionBase::detachReferents();
 }
 
 RObject* Closure::execute(Environment* env) const
@@ -235,7 +235,7 @@ void Closure::visitReferents(const_visitor* v) const
     const GCNode* environment = m_environment;
     const GCNode* compiled_body = m_compiled_body;
 
-    RObject::visitReferents(v);
+    FunctionBase::visitReferents(v);
     if (matcher)
 	(*v)(matcher);
     if (body)
