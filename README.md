@@ -2,7 +2,7 @@
 
 # CXXR
 
-The aim of the CXXR project is to refactor the interpreter of the R language, currently written for the most part in C, into C++ using modern software engineering techniques, whilst retaining full functionality and compatability. CXXR is being carried out independently of the main R development and maintenance effort.
+The goal of the CXXR project is to refactor the interpreter of the R language into a fully-compatible, efficient, VM for R using modern software engineering techniques.  CXXR is being carried out independently of the main R development and maintenance effort.
 
 Currently the CXXR codebase is based off R 3.0.2.
 
@@ -22,9 +22,9 @@ To build a development build with the LLVM JIT enabled:
    make
    make check
    ```
-It is useful to additionally define `-Wall -DNO_CELLPOOLS -fsanitize=address -O1` in order to find bugs more easily. 
+It is useful to additionally define `-Wall -DNO_CELLPOOLS -DAGGRESSIVE_GC -fsanitize=address -O1` in order to find bugs more easily. 
 
-For release builds, the flags `-Wall -O2 -DNDEBUG -DUNCHECKED_SEXP_DOWNCAST` should be defined, and `src/include/CXXR/config.hpp` should be modified to undefine `AGGRESSIVE_GC`.
+For release builds, the flags `-Wall -O2 -DNDEBUG -DUNCHECKED_SEXP_DOWNCAST` should be defined.
 
 Currently `make install` is disabled for CXXR.  It can be run directly from the build directory as `bin/R` however.  This will be re-enabled in the near future.
 
