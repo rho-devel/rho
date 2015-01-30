@@ -336,7 +336,7 @@ static SEXP integer_binary(ARITHOP_TYPE, SEXP, SEXP, SEXP);
 
 #if 0
 static int naflag;
-static SEXP lcall;
+static GCRoot<> lcall;
 #endif
 
 

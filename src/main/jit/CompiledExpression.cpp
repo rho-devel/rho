@@ -144,6 +144,16 @@ CompiledExpression::~CompiledExpression()
     // m_engine->freeMachineCodeForFunction(m_function);
 }
 
+void CompiledExpression::detachReferents() {
+    m_frame_descriptor = nullptr;
+    GCNode::detachReferents();
+}
+
+void CompiledExpression::visitReferents(const_visitor* v) const {
+    (*v)(m_frame_descriptor);
+    GCNode::visitReferents(v);
+}
+
 Frame* CompiledExpression::createFrame() const {
   return new CompiledFrame(m_frame_descriptor);
 }

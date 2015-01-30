@@ -113,6 +113,12 @@
  *  http://www.r-project.org/Licenses/
  */
 
+/* This code stores a lot of pointers as static data.
+   Since we only scan the stack, not the data or bss sections, they need
+   explicit PROTECT() calls to ensure GC safety.
+*/
+#undef DISABLE_PROTECT_MACROS
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif

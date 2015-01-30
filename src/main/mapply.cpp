@@ -59,7 +59,7 @@ do_mapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 	lengths[i] = xlength(tmp1);
 	if (isObject(tmp1)) { // possibly dispatch on length()
 	    /* Cache the .Primitive: unclear caching is worthwhile. */
-	    static SEXP length_op = nullptr;
+	    static CXXR::GCRoot<> length_op = nullptr;
 	    if (length_op == nullptr) length_op = R_Primitive("length");
 	    // DispatchOrEval() needs 'args' to be a pairlist
 	    SEXP ans, tmp2 = PROTECT(list1(tmp1));

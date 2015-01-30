@@ -1427,7 +1427,7 @@ do_getRegisteredRoutines(SEXP call, SEXP op, SEXP args, SEXP env)
    registrations.  The naming of these routines may be less than
    ideal. */
 
-static SEXP CEntryTable = nullptr;
+static GCRoot<> CEntryTable = nullptr;
 
 static SEXP get_package_CEntry_table(const char *package)
 {

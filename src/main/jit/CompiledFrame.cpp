@@ -142,7 +142,7 @@ void CompiledFrame::detachReferents()
 void CompiledFrame::visitReferents(const_visitor* v) const
 {
     Frame::visitReferents(v);
-    m_descriptor->visitReferents(v);
+    (*v)(m_descriptor);
 }
 
 void CompiledFrame::v_clear()

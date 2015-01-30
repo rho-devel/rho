@@ -67,11 +67,11 @@ static void check1arg2(SEXP arg, SEXP call, const char *formal)
 
 /* These are set during the first call to do_dotCode() below. */
 
-static SEXP NaokSymbol = nullptr;
-static SEXP DupSymbol = nullptr;
-static SEXP PkgSymbol = nullptr;
-static SEXP EncSymbol = nullptr;
-static SEXP CSingSymbol = nullptr;
+static GCRoot<> NaokSymbol = nullptr;
+static GCRoot<> DupSymbol = nullptr;
+static GCRoot<> PkgSymbol = nullptr;
+static GCRoot<> EncSymbol = nullptr;
+static GCRoot<> CSingSymbol = nullptr;
 
 #include <Rdynpriv.h>
 // Odd: 'type' is really this enum

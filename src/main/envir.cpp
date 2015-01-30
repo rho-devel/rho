@@ -236,7 +236,7 @@ SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
   We hash the initial environment.
 */
 
-static SEXP R_BaseNamespaceName;
+static GCRoot<> R_BaseNamespaceName;
 
 void Rf_InitGlobalEnv()
 {

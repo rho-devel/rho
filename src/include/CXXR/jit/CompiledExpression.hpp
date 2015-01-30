@@ -36,7 +36,9 @@
 
 #include <memory>
 
-#include "CXXR/GCRoot.h"
+#include "CXXR/GCEdge.hpp"
+#include "CXXR/GCNode.hpp"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/jit/FrameDescriptor.hpp"
 
 namespace llvm {
@@ -56,12 +58,13 @@ namespace JIT {
 
 class FrameDescriptor;
 
-class CompiledExpression {
+class CompiledExpression : public GCNode {
 public:
     ~CompiledExpression();
 
     RObject* evalInEnvironment(Environment* env) const
     {
+	GCStackRoot<const GCNode> protect(this);
 	return m_function(env);
     }
 
@@ -70,6 +73,9 @@ public:
     bool hasMatchingFrameLayout(const Environment* env) const;
 
     static CompiledExpression* compileFunctionBody(const Closure* function);
+
+    void detachReferents() override;
+    void visitReferents(const_visitor* v) const override;
 
 private:
     CompiledExpression(const Closure* closure);
@@ -80,7 +86,7 @@ private:
 
     // The interpreter requires the frame descriptor to work with the frames
     // that the compiled code generates.
-    GCRoot<FrameDescriptor> m_frame_descriptor;
+    GCEdge<FrameDescriptor> m_frame_descriptor;
 
     // TODO(kmillar): we ought to have a single engine that is shared by many
     //   functions.
