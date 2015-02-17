@@ -190,4 +190,28 @@ TEST(NodeStackTest, checkVisitRoots) {
   DummyIntSxpChecker dummy_int_checker(std::vector<int>{1, 2, 3});
   stack.visitRoots(&dummy_int_checker);
 }
+
+// Test Scope.
+TEST(NodeStackTest, checkScope) {
+  NodeStack stack(16);
+  stack.push(new DummyIntSxp(1));
+  EXPECT_EQ(stack.size(), 1);
+  {
+    // When a Scope object goes out of scope it should cause those elements to
+    // get popped that were pushed after its creation.
+    NodeStack::Scope scope(&stack);
+    stack.push(new DummyIntSxp(2));
+    stack.push(new DummyIntSxp(3));
+    stack.push(new DummyIntSxp(4));
+    EXPECT_EQ(stack.size(), 4);
+  }
+  // As "scope" goes out of scope, elements 2, 3, and 4 should get popped.
+  EXPECT_EQ(stack.size(), 1);
+  {
+    // Scope should have no effect if nothing is pushed after its creation.
+    NodeStack::Scope scope(&stack);
+    EXPECT_EQ(stack.size(), 1);
+  }
+  EXPECT_EQ(stack.size(), 1);
+}
 }  // namespace CXXR
