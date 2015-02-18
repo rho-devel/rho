@@ -35,6 +35,7 @@
 #include "gtest/gtest.h"
 #include "CXXR/NodeStack.hpp"
 #include "CXXR/RObject.h"
+#include "TestHelpers.hpp"
 
 namespace CXXR {
 namespace {
@@ -66,16 +67,23 @@ class DummyIntSxpChecker : public GCNode::const_visitor {
 };
 }  // namespace
 
-// Make sure we can create a NodeStack object, i.e., check the constructor.
-TEST(NodeStackTest, checkCreation) {
+class NodeStackTest : public ::testing::Test {
+ public:
+  NodeStackTest() {}
+ private:
+  GCNode::GCInhibitor gc_inhibitor_;  // This disables garbage collection.
+};
+
+// Makes sure we can create a NodeStack object, i.e., check the constructor.
+TEST_F(NodeStackTest, checkCreation) {
   NodeStack zero_initial_size(0);
   EXPECT_EQ(zero_initial_size.size(), 0);
   NodeStack nonzero_initial_size(512);
   EXPECT_EQ(nonzero_initial_size.size(), 0);
 }
 
-// Try to push some objects onto the stack.
-TEST(NodeStackTest, checkPush) {
+// Tries to push some objects onto the stack.
+TEST_F(NodeStackTest, checkPush) {
   NodeStack stack(16);
   auto dummy_int_sxp = new DummyIntSxp();
   EXPECT_EQ(0, stack.size());
@@ -85,8 +93,8 @@ TEST(NodeStackTest, checkPush) {
   EXPECT_EQ(2, stack.size());
 }
 
-// Try a combination of pushes and pops.
-TEST(NodeStackTest, checkPushAndPop) {
+// Tries a combination of pushes and pops.
+TEST_F(NodeStackTest, checkPushAndPop) {
   NodeStack stack(16);
   auto dummy_int_sxp1 = new DummyIntSxp(1);
   auto dummy_int_sxp2 = new DummyIntSxp(2);
@@ -114,8 +122,8 @@ TEST(NodeStackTest, checkPushAndPop) {
   }
 }
 
-// Try several pushes, exceeding the initially specified stack size
-TEST(NodeStackTest, checkSeveralPushesToGrowStack) {
+// Tries several pushes, exceeding the initially specified stack size.
+TEST_F(NodeStackTest, checkSeveralPushesToGrowStack) {
   NodeStack stack(16);
   auto dummy_int_sxp = new DummyIntSxp();
   // Push a several pointers.
@@ -128,8 +136,8 @@ TEST(NodeStackTest, checkSeveralPushesToGrowStack) {
   EXPECT_EQ(stack.size(), 0);
 }
 
-// Read values on the stack as RObject pointers.
-TEST(NodeStackTest, checkElementReadAccessAsRObject) {
+// Reads values on the stack as RObject pointers.
+TEST_F(NodeStackTest, checkElementReadAccessAsRObject) {
   NodeStack stack(16);
   auto dummy_int_sxp1 = new DummyIntSxp(1);
   auto dummy_int_sxp2 = new DummyIntSxp(2);
@@ -145,8 +153,8 @@ TEST(NodeStackTest, checkElementReadAccessAsRObject) {
   EXPECT_EQ(static_cast<const DummyIntSxp *>(elt3)->GetId(), 3);
 }
 
-// Read values on the stack as ElementProxy objects.
-TEST(NodeStackTest, checkElementReadAccessWithElementProxy) {
+// Reads values on the stack as ElementProxy objects.
+TEST_F(NodeStackTest, checkElementReadAccessWithElementProxy) {
   NodeStack stack(16);
   auto dummy_int_sxp1 = new DummyIntSxp(1);
   auto dummy_int_sxp2 = new DummyIntSxp(2);
@@ -162,8 +170,8 @@ TEST(NodeStackTest, checkElementReadAccessWithElementProxy) {
   EXPECT_EQ(static_cast<const DummyIntSxp *>((RObject*)(elt3))->GetId(), 3);
 }
 
-// Change values on the stack using ElementProxy objects.
-TEST(NodeStackTest, checkElementWriteAccessWithElementProxy) {
+// Changes values on the stack using ElementProxy objects.
+TEST_F(NodeStackTest, checkElementWriteAccessWithElementProxy) {
   NodeStack stack(16);
   auto dummy_int_sxp1 = new DummyIntSxp(1);
   auto dummy_int_sxp2 = new DummyIntSxp(2);
@@ -182,7 +190,7 @@ TEST(NodeStackTest, checkElementWriteAccessWithElementProxy) {
 }
 
 // Test the visitRoots method.
-TEST(NodeStackTest, checkVisitRoots) {
+TEST_F(NodeStackTest, checkVisitRoots) {
   NodeStack stack(16);
   stack.push(new DummyIntSxp(1));
   stack.push(new DummyIntSxp(2));
@@ -191,8 +199,8 @@ TEST(NodeStackTest, checkVisitRoots) {
   stack.visitRoots(&dummy_int_checker);
 }
 
-// Test Scope.
-TEST(NodeStackTest, checkScope) {
+// Tests Scope.
+TEST_F(NodeStackTest, checkScope) {
   NodeStack stack(16);
   stack.push(new DummyIntSxp(1));
   EXPECT_EQ(stack.size(), 1);
@@ -213,5 +221,33 @@ TEST(NodeStackTest, checkScope) {
     EXPECT_EQ(stack.size(), 1);
   }
   EXPECT_EQ(stack.size(), 1);
+}
+
+// Tests that the call to protectAll increases the ref-count of the objects on
+// the stack so that they do not get garbage collected.
+TEST_F(NodeStackTest, checkProtectAll) {
+  NodeStack stack(16);
+  auto d1 = new DummyIntSxp(1);
+  auto d2 = new DummyIntSxp(2);
+  auto d3 = new DummyIntSxp(3);
+  stack.push(d1);
+  stack.push(d2);
+  stack.push(d3);
+  EXPECT_EQ(stack.size(), 3);
+  EXPECT_EQ(GCTestHelper::getRefCount(d1), 0);
+  EXPECT_EQ(GCTestHelper::getRefCount(d2), 0);
+  EXPECT_EQ(GCTestHelper::getRefCount(d3), 0);
+  stack.protectAll();
+  EXPECT_EQ(GCTestHelper::getRefCount(d1), 1);
+  EXPECT_EQ(GCTestHelper::getRefCount(d2), 1);
+  EXPECT_EQ(GCTestHelper::getRefCount(d3), 1);
+
+  // Popping should "unprotect" the popped object(s).
+  auto popped = stack.topnpop();
+  EXPECT_EQ(popped, d3);
+  EXPECT_EQ(GCTestHelper::getRefCount(popped), 0);
+  stack.pop(2);
+  EXPECT_EQ(GCTestHelper::getRefCount(d2), 0);
+  EXPECT_EQ(GCTestHelper::getRefCount(d1), 0);
 }
 }  // namespace CXXR
