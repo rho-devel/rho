@@ -76,24 +76,24 @@ TEST_F(NodeStackTest, checkCreation) {
 // Tries to push some objects onto the stack.
 TEST_F(NodeStackTest, checkPush) {
   NodeStack stack(16);
-  auto dummy_int_sxp = IntVector::createScalar(0);
+  auto int_vec = IntVector::createScalar(0);
   EXPECT_EQ(0, stack.size());
-  stack.push(dummy_int_sxp);
+  stack.push(int_vec);
   EXPECT_EQ(1, stack.size());
-  stack.push(dummy_int_sxp);
+  stack.push(int_vec);
   EXPECT_EQ(2, stack.size());
 }
 
 // Tries a combination of pushes and pops.
 TEST_F(NodeStackTest, checkPushAndPop) {
   NodeStack stack(16);
-  auto dummy_int_sxp1 = IntVector::createScalar(1);
-  auto dummy_int_sxp2 = IntVector::createScalar(2);
+  auto int_vec1 = IntVector::createScalar(1);
+  auto int_vec2 = IntVector::createScalar(2);
   {
     // Push a couple of values and pop with topnpop().
     EXPECT_EQ(0, stack.size());
-    stack.push(dummy_int_sxp1);
-    stack.push(dummy_int_sxp2);
+    stack.push(int_vec1);
+    stack.push(int_vec2);
     EXPECT_EQ(2, stack.size());
     auto top1 = stack.topnpop();
     EXPECT_EQ(1, stack.size());
@@ -105,8 +105,8 @@ TEST_F(NodeStackTest, checkPushAndPop) {
   {
     // Push a couple of values and pop with pop().
     EXPECT_EQ(0, stack.size());
-    stack.push(dummy_int_sxp1);
-    stack.push(dummy_int_sxp2);
+    stack.push(int_vec1);
+    stack.push(int_vec2);
     EXPECT_EQ(2, stack.size());
     stack.pop(2);
     EXPECT_EQ(stack.size(), 0);
@@ -116,10 +116,10 @@ TEST_F(NodeStackTest, checkPushAndPop) {
 // Tries several pushes, exceeding the initially specified stack size.
 TEST_F(NodeStackTest, checkSeveralPushesToGrowStack) {
   NodeStack stack(16);
-  auto dummy_int_sxp = IntVector::createScalar(0);
+  auto int_vec = IntVector::createScalar(0);
   // Push a several pointers.
   for (int i = 0; i < 64; i++) {
-    stack.push(dummy_int_sxp);
+    stack.push(int_vec);
     EXPECT_EQ(stack.size(), i+1);
   }
   // Now, pop all of them.
@@ -130,12 +130,12 @@ TEST_F(NodeStackTest, checkSeveralPushesToGrowStack) {
 // Reads values on the stack as RObject pointers.
 TEST_F(NodeStackTest, checkElementReadAccessAsRObject) {
   NodeStack stack(16);
-  auto dummy_int_sxp1 = IntVector::createScalar(1);
-  auto dummy_int_sxp2 = IntVector::createScalar(2);
-  auto dummy_int_sxp3 = IntVector::createScalar(3);
-  stack.push(dummy_int_sxp1);
-  stack.push(dummy_int_sxp2);
-  stack.push(dummy_int_sxp3);
+  auto int_vec1 = IntVector::createScalar(1);
+  auto int_vec2 = IntVector::createScalar(2);
+  auto int_vec3 = IntVector::createScalar(3);
+  stack.push(int_vec1);
+  stack.push(int_vec2);
+  stack.push(int_vec3);
   const RObject* elt1 = stack[0];
   const RObject* elt2 = stack[1];
   const RObject* elt3 = stack[2];
@@ -147,12 +147,12 @@ TEST_F(NodeStackTest, checkElementReadAccessAsRObject) {
 // Reads values on the stack as ElementProxy objects.
 TEST_F(NodeStackTest, checkElementReadAccessWithElementProxy) {
   NodeStack stack(16);
-  auto dummy_int_sxp1 = IntVector::createScalar(1);
-  auto dummy_int_sxp2 = IntVector::createScalar(2);
-  auto dummy_int_sxp3 = IntVector::createScalar(3);
-  stack.push(dummy_int_sxp1);
-  stack.push(dummy_int_sxp2);
-  stack.push(dummy_int_sxp3);
+  auto int_vec1 = IntVector::createScalar(1);
+  auto int_vec2 = IntVector::createScalar(2);
+  auto int_vec3 = IntVector::createScalar(3);
+  stack.push(int_vec1);
+  stack.push(int_vec2);
+  stack.push(int_vec3);
   NodeStack::ElementProxy elt1 = stack[0];
   NodeStack::ElementProxy elt2 = stack[1];
   NodeStack::ElementProxy elt3 = stack[2];
@@ -164,17 +164,17 @@ TEST_F(NodeStackTest, checkElementReadAccessWithElementProxy) {
 // Changes values on the stack using ElementProxy objects.
 TEST_F(NodeStackTest, checkElementWriteAccessWithElementProxy) {
   NodeStack stack(16);
-  auto dummy_int_sxp1 = IntVector::createScalar(1);
-  auto dummy_int_sxp2 = IntVector::createScalar(2);
-  auto dummy_int_sxp3 = IntVector::createScalar(3);
-  stack.push(dummy_int_sxp1);
-  stack.push(dummy_int_sxp2);
-  stack.push(dummy_int_sxp3);
+  auto int_vec1 = IntVector::createScalar(1);
+  auto int_vec2 = IntVector::createScalar(2);
+  auto int_vec3 = IntVector::createScalar(3);
+  stack.push(int_vec1);
+  stack.push(int_vec2);
+  stack.push(int_vec3);
   NodeStack::ElementProxy elt1 = stack[0];
   NodeStack::ElementProxy elt2 = stack[1];
   NodeStack::ElementProxy elt3 = stack[2];
-  elt1 = dummy_int_sxp3;
-  elt2 = dummy_int_sxp3;
+  elt1 = int_vec3;
+  elt2 = int_vec3;
   EXPECT_EQ((*static_cast<const IntVector *>((RObject*)(elt1)))[0], 3);
   EXPECT_EQ((*static_cast<const IntVector *>((RObject*)(elt2)))[0], 3);
   EXPECT_EQ((*static_cast<const IntVector *>((RObject*)(elt3)))[0], 3);
