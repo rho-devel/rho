@@ -1,4 +1,16 @@
-Authors of R.
+Authors of CXXR.
+
+Arun Chauhan
+Karl Millar
+Andrew R. Runnalls
+Chris Silles
+Google Inc.
+
+Prior to 2014, the vast bulk of CXXR development was written by
+Andrew R. Runnalls.
+
+
+Authors of R (on which CXXR is based).
 
 R was initially written by Robert Gentleman and Ross Ihaka of the
 Statistics Department of the University of Auckland.
