@@ -318,9 +318,6 @@ static double logbase(double x, double base)
     return R_log(x) / R_log(base);
 }
 
-static SEXP logical_unary(ARITHOP_TYPE, SEXP, SEXP);
-static SEXP integer_unary(ARITHOP_TYPE, SEXP, SEXP);
-static SEXP real_unary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP real_binary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP integer_binary(ARITHOP_TYPE, SEXP, SEXP, SEXP);
 
@@ -524,6 +521,26 @@ int Negate::operator()(int value) {
     return value == NA_INTEGER ? NA_INTEGER : -value;
 }
 
+template<typename InputType, typename OutputType>
+static SEXP typed_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
+{
+    switch (code) {
+    case PLUSOP:
+	return s1;
+    case MINUSOP:
+	{
+	    using namespace VectorOps;
+	    return applyUnaryOperatorWithOutputType<OutputType>(
+		Negate(),
+		CopyAllAttributes(),
+		SEXP_downcast<InputType*>(s1));
+	}
+    default:
+	errorcall(call, _("invalid unary operator"));
+    }
+    return s1;			/* never used; to keep -Wall happy */
+}
+
 }  // anonymous namespace
 
 SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
@@ -531,11 +548,11 @@ SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
     ARITHOP_TYPE operation = ARITHOP_TYPE( PRIMVAL(op));
     switch (TYPEOF(s1)) {
     case LGLSXP:
-	return logical_unary(operation, s1, call);
+	return typed_unary<LogicalVector, IntVector>(operation, s1, call);
     case INTSXP:
-	return integer_unary(operation, s1, call);
+	return typed_unary<IntVector, IntVector>(operation, s1, call);
     case REALSXP:
-	return real_unary(operation, s1, call);
+	return typed_unary<RealVector, RealVector>(operation, s1, call);
     case CPLXSXP:
 	return complex_unary(operation, s1, call);
     default:
@@ -544,61 +561,6 @@ SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
     return s1;			/* never used; to keep -Wall happy */
 }
 
-static SEXP logical_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
-{
-    switch (code) {
-    case PLUSOP:
-	return s1;
-    case MINUSOP:
-	{
-	    using namespace VectorOps;
-	    return applyUnaryOperatorWithOutputType<IntVector>(
-		Negate(),
-		CopyAllAttributes(),
-		SEXP_downcast<LogicalVector*>(s1));
-	}
-    default:
-	errorcall(call, _("invalid unary operator"));
-    }
-    return s1;			/* never used; to keep -Wall happy */
-}
-
-static SEXP integer_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
-{
-    switch (code) {
-    case PLUSOP:
-	return s1;
-    case MINUSOP:
-	{
-	    using namespace VectorOps;
-	    return applyUnaryOperator(
-		Negate(),
-		CopyAllAttributes(),
-		SEXP_downcast<IntVector*>(s1));
-	}
-    default:
-	errorcall(call, _("invalid unary operator"));
-    }
-    return s1;			/* never used; to keep -Wall happy */
-}
-
-static SEXP real_unary(ARITHOP_TYPE code, SEXP s1, SEXP lcall)
-{
-    switch (code) {
-    case PLUSOP: return s1;
-    case MINUSOP:
-	{
-	    using namespace VectorOps;
-	    return applyUnaryOperator(
-		Negate(),
-		CopyAllAttributes(),
-		SEXP_downcast<RealVector*>(s1));
-	}
-    default:
-	errorcall(lcall, _("invalid unary operator"));
-    }
-    return s1;			/* never used; to keep -Wall happy */
-}
 
 /* i1 = i % n1; i2 = i % n2;
  * this macro is quite a bit faster than having real modulo calls
