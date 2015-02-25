@@ -512,6 +512,20 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
     return val;
 }
 
+namespace {
+
+struct Negate {
+    template<class T>
+    T operator()(T value) { return -value; }
+};
+
+template<>
+int Negate::operator()(int value) {
+    return value == NA_INTEGER ? NA_INTEGER : -value;
+}
+
+}  // anonymous namespace
+
 SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
 {
     ARITHOP_TYPE operation = ARITHOP_TYPE( PRIMVAL(op));
@@ -538,10 +552,10 @@ static SEXP logical_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
     case MINUSOP:
 	{
 	    using namespace VectorOps;
-	    LogicalVector* lv = SEXP_downcast<LogicalVector*>(s1);
-	    return
-		makeUnaryFunction<CopyAllAttributes>(std::negate<int>())
-		.apply<IntVector>(lv);
+	    return applyUnaryOperatorWithOutputType<IntVector>(
+		Negate(),
+		CopyAllAttributes(),
+		SEXP_downcast<LogicalVector*>(s1));
 	}
     default:
 	errorcall(call, _("invalid unary operator"));
@@ -557,10 +571,10 @@ static SEXP integer_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
     case MINUSOP:
 	{
 	    using namespace VectorOps;
-	    IntVector* iv = SEXP_downcast<IntVector*>(s1);
-	    return
-		UnaryFunction<std::negate<int>, CopyAllAttributes>()
-		.apply<IntVector>(iv);
+	    return applyUnaryOperator(
+		Negate(),
+		CopyAllAttributes(),
+		SEXP_downcast<IntVector*>(s1));
 	}
     default:
 	errorcall(call, _("invalid unary operator"));
@@ -575,10 +589,10 @@ static SEXP real_unary(ARITHOP_TYPE code, SEXP s1, SEXP lcall)
     case MINUSOP:
 	{
 	    using namespace VectorOps;
-	    RealVector* rv = SEXP_downcast<RealVector*>(s1);
-	    return
-		makeUnaryFunction<CopyAllAttributes>(std::negate<double>())
-		.apply<RealVector>(rv);
+	    return applyUnaryOperator(
+		Negate(),
+		CopyAllAttributes(),
+		SEXP_downcast<RealVector*>(s1));
 	}
     default:
 	errorcall(lcall, _("invalid unary operator"));
@@ -1050,10 +1064,7 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 
 // FunctorWrapper for VectorOps::UnaryFunction.  Warns if function
 // application gives rise to any new NaNs.
-template <typename, typename, typename> class NaNWarner;
-
-template <>
-class NaNWarner<double, double, double (*)(double)> {
+class NaNWarner {
 public:
     NaNWarner(double (*f)(double))
 	: m_f(f), m_any_NaN(false)
@@ -1087,8 +1098,12 @@ static SEXP math1(SEXP sa, double (*f)(double), SEXP lcall)
     /* coercion can lose the object bit */
     GCStackRoot<RealVector>
 	rv(static_cast<RealVector*>(coerceVector(sa, REALSXP)));
-    UnaryFunction<double (*)(double), CopyAllAttributes, NaNWarner> uf(f);
-    return uf.apply<RealVector>(rv.get());
+    NaNWarner op(f);
+    RealVector* result = applyUnaryOperator(std::ref(op),
+					    CopyAllAttributes(),
+					    rv.get());
+    op.warnings();
+    return result;
 }
 
 SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)

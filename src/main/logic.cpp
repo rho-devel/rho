@@ -149,10 +149,9 @@ namespace {
 	using namespace boost::lambda;
 	if (arg && arg->sexptype() == RAWSXP) {
 	    // Bit inversion:
-	    RawVector* rv = static_cast<RawVector*>(arg);
-	    return
-		makeUnaryFunction<CopyLayoutAttributes>(_1^0xff)
-		.apply<RawVector>(rv);
+	    return applyUnaryOperator([](Rbyte x) { return ~x; },
+				      CopyLayoutAttributes(),
+				      SEXP_downcast<RawVector*>(arg));
 	} else if (!isLogical(arg) && !isNumber(arg)) {
 	    if (Rf_length(arg) == 0U)  // For back-compatibility
 		return LogicalVector::create(0);
@@ -161,9 +160,12 @@ namespace {
 	// Logical negation:
 	GCStackRoot<LogicalVector>
 	    lv(static_cast<LogicalVector*>(coerceVector(arg, LGLSXP)));
-	return
-	    makeUnaryFunction<CopyLayoutAttributes>(!_1)
-	    .apply<LogicalVector>(lv.get());
+	return applyUnaryOperator(
+	    [](int x) {
+		return x == NA_LOGICAL ? NA_LOGICAL : !x;
+	    },
+	    CopyLayoutAttributes(),
+	    lv.get());
     }
 }
 
