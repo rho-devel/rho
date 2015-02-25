@@ -1,5 +1,11 @@
+COPYRIGHT STATUS of CXXR
+ 
+Unless otherwise stated, CXXR code is copyright by the authors of the
+code or their respective institutions and is licensed under the
+GPL version 2.
 
-COPYRIGHT STATUS
+
+COPYRIGHT STATUS of R (on which CXXR is based)
 
 The bulk of this code is copyright by members of or all of the R Core
 Team.  ('The R Core Team' in copyright statements in individual files
