@@ -31,9 +31,7 @@
 #define UNARYFUNCTION_HPP 1
 
 #include <algorithm>
-#include <boost/lambda/bind.hpp>
-#include <boost/lambda/lambda.hpp>
-#include "CXXR/VectorBase.h"
+#include "CXXR/FixedVector.hpp"
 #include "CXXR/errors.h"
 
 namespace CXXR {
@@ -108,9 +106,21 @@ namespace CXXR {
 	    {}
 	};
 
+	// The type that Op returns when called with elements from the InputType
+	// vectors.
+	template<typename Op, typename... InputType>
+	using OpReturnType = 
+	   typename std::result_of<Op(typename InputType::value_type...)>::type;
+
+	// The type of vector that can hold the elements that Op returns when
+	// called with elements from the InputType vectors.
+	template<typename Op, typename... InputType>
+	using VectorOpReturnType =
+	    typename VectorTypeFor<OpReturnType<Op, InputType...>>::type;
 
 	template<typename Op, typename AttributeCopier,
-		 typename InputType, typename OutputType = InputType>
+		 typename InputType,
+		 typename OutputType = VectorOpReturnType<Op, InputType>>
 	OutputType* applyUnaryOperator(const Op& op,
 				       AttributeCopier attribute_copier,
 				       const InputType* input)
@@ -120,18 +130,6 @@ namespace CXXR {
 			   op);
 	    attribute_copier.copyAttributes(result, input);
 	    return result;
-	}
-
-	template<typename OutputType, typename Op, typename AttributeCopier,
-		 typename InputType>
-	OutputType* applyUnaryOperatorWithOutputType(
-	    const Op& op,
-	    AttributeCopier attribute_copier,
-	    const InputType* input)
-	{
-	    return
-		applyUnaryOperator<Op, AttributeCopier, InputType, OutputType>(
-		    op, attribute_copier, input);
 	}
     }  // namespace VectorOps
 }  // namespace CXXR

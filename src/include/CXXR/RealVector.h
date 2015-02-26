@@ -69,6 +69,12 @@ namespace CXXR {
     /** @brief Vector of real numbers.
      */
     typedef CXXR::FixedVector<double, REALSXP> RealVector;
+
+    template<>
+    struct VectorTypeFor<double> {
+      typedef RealVector type;
+    };
+
 }  // namespace CXXR
 
 BOOST_CLASS_EXPORT_KEY(CXXR::RealVector)

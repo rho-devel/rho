@@ -65,6 +65,12 @@ namespace CXXR {
     /** @brief Vector of integer values.
      */
     typedef FixedVector<int, INTSXP> IntVector;
+
+    template<>
+    struct VectorTypeFor<int> {
+      typedef IntVector type;
+    };
+
 }  // namespace CXXR
 
 BOOST_CLASS_EXPORT_KEY(CXXR::IntVector)

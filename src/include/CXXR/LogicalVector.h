@@ -52,6 +52,10 @@ namespace CXXR {
      */
     typedef CXXR::FixedVector<Logical, LGLSXP> LogicalVector;
 
+    template<>
+    struct VectorTypeFor<Logical> {
+      typedef LogicalVector type;
+    };
 }  // namespace CXXR
 
 BOOST_CLASS_EXPORT_KEY(CXXR::LogicalVector)

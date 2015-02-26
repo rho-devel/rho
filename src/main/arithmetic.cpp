@@ -512,8 +512,8 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 namespace {
 
 struct Negate {
-    template<class T>
-    T operator()(T value) { return -value; }
+    template<class InType, class OutType = InType>
+    OutType operator()(InType value) { return -value; }
 };
 
 template<>
@@ -521,7 +521,12 @@ int Negate::operator()(int value) {
     return value == NA_INTEGER ? NA_INTEGER : -value;
 }
 
-template<typename InputType, typename OutputType>
+template<>
+int Negate::operator()(Logical value) {
+    return Negate()(static_cast<int>(value));
+}
+
+template<typename InputType>
 static SEXP typed_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
 {
     switch (code) {
@@ -530,10 +535,9 @@ static SEXP typed_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
     case MINUSOP:
 	{
 	    using namespace VectorOps;
-	    return applyUnaryOperatorWithOutputType<OutputType>(
-		Negate(),
-		CopyAllAttributes(),
-		SEXP_downcast<InputType*>(s1));
+	    return applyUnaryOperator(Negate(),
+				      CopyAllAttributes(),
+				      SEXP_downcast<InputType*>(s1));
 	}
     default:
 	errorcall(call, _("invalid unary operator"));
@@ -553,9 +557,9 @@ SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
 	s1 = coerceVector(s1, INTSXP);
 	// fallthrough
     case INTSXP:
-	return typed_unary<IntVector, IntVector>(operation, s1, call);
+	return typed_unary<IntVector>(operation, s1, call);
     case REALSXP:
-	return typed_unary<RealVector, RealVector>(operation, s1, call);
+	return typed_unary<RealVector>(operation, s1, call);
     case CPLXSXP:
 	return complex_unary(operation, s1, call);
     default:
