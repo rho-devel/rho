@@ -879,7 +879,7 @@ namespace CXXR {
 		if (isNA(rval))
 		    lval = NA<Lval>();
 		else
-		    lval = rval;
+		    lval = static_cast<Lval>(rval);
 	    }
 	    // Advance the index selection:
 	    {
@@ -1019,7 +1019,7 @@ namespace CXXR {
 		if (isNA(rval))
 		    lval = NA<Lval>();
 		else
-		    lval = rval;
+		    lval = static_cast<Lval>(rval);
 	    }
 	}
 	indices.applyNewNames(ans);

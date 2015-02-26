@@ -226,17 +226,20 @@ void Subscripting::Indices::initialize(const LogicalVector* raw_indices,
     // Determine size of answer:
     std::size_t anssize = 0;
     for (std::size_t i = 0; i < m_min_lhssize; ++i)
-	if ((*raw_indices)[i%rawsize] != 0)
+    {
+	Logical included = (*raw_indices)[i%rawsize];
+	if (included.isTrue() || included.isNA())
 	    ++anssize;
+    }
     // Create Indices vector:
     resize(anssize);
     m_max_index = 0;
     std::size_t iout = 0;
     for (std::size_t iin = 0; iin < m_min_lhssize; ++iin) {
-	int logical = (*raw_indices)[iin % rawsize];
-	if (isNA(logical))
+	Logical logical = (*raw_indices)[iin % rawsize];
+	if (logical.isNA())
 	    (*this)[iout++] = 0;
-	else if (logical != 0) {
+	else if (logical.isTrue()) {
 	    m_max_index = iin + 1;
 	    (*this)[iout++] = m_max_index;
 	}

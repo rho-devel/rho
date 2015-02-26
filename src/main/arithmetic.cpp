@@ -548,7 +548,10 @@ SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
     ARITHOP_TYPE operation = ARITHOP_TYPE( PRIMVAL(op));
     switch (TYPEOF(s1)) {
     case LGLSXP:
-	return typed_unary<LogicalVector, IntVector>(operation, s1, call);
+	// arithmetic on logicals makes no sense but R defines it anyway.
+	// Promote to integer first.
+	s1 = coerceVector(s1, INTSXP);
+	// fallthrough
     case INTSXP:
 	return typed_unary<IntVector, IntVector>(operation, s1, call);
     case REALSXP:

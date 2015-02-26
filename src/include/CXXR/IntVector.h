@@ -90,7 +90,7 @@ inline int* INTEGER(SEXP x)
     // Quicker than dynamic_cast:
     if (x && x->sexptype() == LGLSXP) {
 	LogicalVector* lvec = static_cast<LogicalVector*>(x);
-	return &(*lvec)[0];
+	return reinterpret_cast<int*>(&(*lvec)[0]);
     }
 #endif
     return &(*SEXP_downcast<IntVector*>(x, false))[0];

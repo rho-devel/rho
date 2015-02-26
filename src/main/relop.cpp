@@ -59,7 +59,7 @@ namespace {
     template <typename T, template <typename> class Relop>
     struct NaN2NA : std::binary_function<T, T, int>
     {
-	int operator()(const T& l, const T& r) const
+	Logical operator()(const T& l, const T& r) const
 	{
 	    return Relop<T>()(l, r);
 	}
@@ -68,11 +68,11 @@ namespace {
     template <template <typename> class Relop>
     struct NaN2NA<double, Relop> : std::binary_function<double, double, int>
     {
-	int operator()(double l, double r) const
+	Logical operator()(double l, double r) const
 	{
 	    using std::isnan;
 	    if (isnan(l) || isnan(r))
-		return ElementTraits::NAFunc<int>()();
+		return ElementTraits::NAFunc<Logical>()();
 	    return Relop<double>()(l, r);
 	}
     };
@@ -81,7 +81,7 @@ namespace {
     struct NaN2NA<Rcomplex, Relop>
 	: std::binary_function<Rcomplex, Rcomplex, int>
     {
-	int operator()(const Rcomplex& l, const Rcomplex& r) const
+	Logical operator()(const Rcomplex& l, const Rcomplex& r) const
 	{
 	    using std::isnan;
 	    if (isnan(l.r) || isnan(l.i) || isnan(r.r) || isnan(r.i))
@@ -223,10 +223,11 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 	return relop(vl.get(), vr.get(), opcode);
     }
     else if (isLogical(x) || isLogical(y)) {
-	GCStackRoot<LogicalVector>
-	    vl(static_cast<LogicalVector*>(coerceVector(x, LGLSXP)));
-	GCStackRoot<LogicalVector>
-	    vr(static_cast<LogicalVector*>(coerceVector(y, LGLSXP)));
+	// TODO(kmillar): do this without promoting to integer.
+	GCStackRoot<IntVector>
+	    vl(static_cast<IntVector*>(coerceVector(x, INTSXP)));
+	GCStackRoot<IntVector>
+	    vr(static_cast<IntVector*>(coerceVector(y, INTSXP)));
 	return relop(vl.get(), vr.get(), opcode);
     }
     else if (TYPEOF(x) == RAWSXP || TYPEOF(y) == RAWSXP) {

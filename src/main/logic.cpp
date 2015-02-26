@@ -31,7 +31,6 @@
 #include <Defn.h>
 #include <Internal.h>
 
-#include "boost/lambda/lambda.hpp"
 #include "CXXR/BinaryFunction.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/RawVector.h"
@@ -42,29 +41,17 @@ using namespace VectorOps;
 
 // Functionality to support do_logic() :
 namespace {
-    // Special handling is needed for '&' to ensure
-    // that FALSE & NA -> FALSE
     struct AndOp {
-	int operator()(int l, int r) const
+	Logical operator()(Logical l, Logical r) const
 	{
-	    if (l == 0 || r == 0)
-		return 0;
-	    if (isNA(l) || isNA(r))
-		return NA<int>();
-	    return 1;
+	    return l && r;
 	}
     };
 
-    // Special handling is needed for '|' to ensure
-    // that TRUE | NA -> TRUE
     struct OrOp {
-	int operator()(int l, int r) const
+	Logical operator()(Logical l, Logical r) const
 	{
-	    if ((!isNA(l) && l != 0) || (!isNA(r) && r != 0))
-		return 1;
-	    if (isNA(l) || isNA(r))
-		return NA<int>();
-	    return 0;
+	    return l || r;
 	}
     };
 
@@ -104,7 +91,6 @@ namespace {
 
     RawVector* bitwiseBinary(int opcode, const RawVector* l, const RawVector* r)
     {
-	using namespace boost::lambda;
 	switch (opcode) {
 	case 1:
 	    {
@@ -146,7 +132,6 @@ namespace {
 
     RObject* lnot(RObject* arg)
     {
-	using namespace boost::lambda;
 	if (arg && arg->sexptype() == RAWSXP) {
 	    // Bit inversion:
 	    return applyUnaryOperator([](Rbyte x) { return ~x; },
@@ -161,9 +146,7 @@ namespace {
 	GCStackRoot<LogicalVector>
 	    lv(static_cast<LogicalVector*>(coerceVector(arg, LGLSXP)));
 	return applyUnaryOperator(
-	    [](int x) {
-		return x == NA_LOGICAL ? NA_LOGICAL : !x;
-	    },
+	    [](Logical x) { return !x; },
 	    CopyLayoutAttributes(),
 	    lv.get());
     }
