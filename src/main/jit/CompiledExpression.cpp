@@ -20,9 +20,16 @@
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
-
-#include "llvm/Analysis/Verifier.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
+
+#if defined(LLVM_VERSION_MAJOR) && LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 5
+#define llvm35
+#endif
+#ifdef llvm35
+#include "llvm/IR/Verifier.h"
+#else
+#include "llvm/Analysis/Verifier.h"
+#endif
 #include "llvm/ExecutionEngine/MCJIT.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/GlobalValue.h"

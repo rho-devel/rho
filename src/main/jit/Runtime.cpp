@@ -29,11 +29,24 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/TypeBuilder.h"
 #include "llvm/IRReader/IRReader.h"
+
+#if defined(LLVM_VERSION_MAJOR) && LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >=5
+#define llvm35
+#endif
+#ifdef llvm35
+#include "llvm/Linker/Linker.h"
+#else
 #include "llvm/Linker.h"
+#endif
+
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/DynamicLibrary.h"
 #include "llvm/Support/SourceMgr.h"
+#ifdef llvm35
+//#include "llvm/system_error.h"
+#else
 #include "llvm/Support/system_error.h"
+#endif
 #include "llvm/Transforms/Utils/Cloning.h"
 
 #define R_NO_REMAP
