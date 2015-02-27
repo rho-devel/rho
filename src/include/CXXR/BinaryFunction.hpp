@@ -30,6 +30,7 @@
 #ifndef BINARYFUNCTION_HPP
 #define BINARYFUNCTION_HPP 1
 
+#include "CXXR/UnaryFunction.hpp"
 #include "CXXR/VectorBase.h"
 #include "CXXR/errors.h"
 
@@ -469,6 +470,58 @@ namespace CXXR {
 	{
 	    return BinaryFunction<Functor, AttributeCopier>(f);
 	}
+
+	template<typename Op, typename AttributeCopier,
+		 typename LhsType, typename RhsType,
+		 typename OutputType = VectorOpReturnType<Op, LhsType, RhsType>>
+	OutputType* applyBinaryOperator(const Op& op,
+					AttributeCopier attribute_copier,
+					const LhsType* lhs,
+					const RhsType* rhs)
+	{
+	    size_t lhs_size = lhs->size();
+	    size_t rhs_size = rhs->size();
+	    size_t size = std::max(lhs->size(), rhs->size());
+	    if (lhs_size == 0 || rhs_size == 0) {
+		/* S4-compatibility change: if lhs or rhs are zero length, then
+		   the result is zero length. */
+		size = 0;
+	    }
+	    OutputType* result = OutputType::create(size);
+	    if (size == 1) {
+		(*result)[0] = op((*lhs)[0], (*rhs)[0]);
+	    } else if (lhs_size == 1) {
+		// TODO: move these into a separate function so that the scalar
+		//  case can be inlined.
+		typename LhsType::value_type lhs_value = (*lhs)[0];
+		for (size_t i = 0; i < size; i++) {
+		    (*result)[i] = op(lhs_value, (*rhs)[i]);
+		}
+	    } else if (rhs_size == 1) {
+		typename RhsType::value_type rhs_value = (*rhs)[0];
+		for (size_t i = 0; i < size; i++) {
+		    (*result)[i] = op((*lhs)[i], rhs_value);
+		}
+	    } else if (lhs_size == rhs_size) {
+		for (size_t i = 0; i < size; i++) {
+		    (*result)[i] = op((*lhs)[i], (*rhs)[i]);
+		}
+	    } else {
+		// Full recycling rule.
+		size_t lhs_i = 0, rhs_i = 0;
+		for (size_t i = 0; i < size; i++)
+		{
+		    (*result)[i] = op((*lhs)[lhs_i], (*rhs)[rhs_i]);
+
+		    lhs_i = lhs_i + 1 == lhs_size ? 0 : lhs_i + 1;
+		    rhs_i = rhs_i + 1 == rhs_size ? 0 : rhs_i + 1;
+		}
+	    }
+
+	    attribute_copier.copyAttributes(result, lhs, rhs);
+	    return result;
+	}
+
     }  // namespace VectorOps
 }  // namespace CXXR
 

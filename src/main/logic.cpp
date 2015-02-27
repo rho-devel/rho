@@ -41,19 +41,6 @@ using namespace VectorOps;
 
 // Functionality to support do_logic() :
 namespace {
-    struct AndOp {
-	Logical operator()(Logical l, Logical r) const
-	{
-	    return l && r;
-	}
-    };
-
-    struct OrOp {
-	Logical operator()(Logical l, Logical r) const
-	{
-	    return l || r;
-	}
-    };
 
     LogicalVector* binaryLogic(int opcode, const LogicalVector* l,
 			       const LogicalVector* r)
@@ -61,48 +48,38 @@ namespace {
 	switch (opcode) {
 	case 1:
 	    {
-		BinaryFunction<AndOp, GeneralBinaryAttributeCopier,
-		               NullBinaryFunctorWrapper> bf;
-		return bf.apply<LogicalVector>(l, r);
+		return applyBinaryOperator(
+		    [](Logical l, Logical r) { return l && r; },
+		    GeneralBinaryAttributeCopier(),
+		    l, r);
 	    }
 	case 2:
 	    {
-		BinaryFunction<OrOp, GeneralBinaryAttributeCopier,
-		               NullBinaryFunctorWrapper> bf;
-		return bf.apply<LogicalVector>(l, r);
+		return applyBinaryOperator(
+		    [](Logical l, Logical r) { return l || r; },
+		    GeneralBinaryAttributeCopier(),
+		    l, r);
 	    }
 	}
 	return nullptr;  // -Wall
     }
-
-    struct BitwiseAnd {
-	unsigned char operator()(unsigned char l, unsigned char r) const
-	{
-	    return l & r;
-	}
-    };
-
-    struct BitwiseOr {
-	unsigned char operator()(unsigned char l, unsigned char r) const
-	{
-	    return l | r;
-	}
-    };
 
     RawVector* bitwiseBinary(int opcode, const RawVector* l, const RawVector* r)
     {
 	switch (opcode) {
 	case 1:
 	    {
-		BinaryFunction<BitwiseAnd, GeneralBinaryAttributeCopier,
-			       NullBinaryFunctorWrapper> bf;
-		return bf.apply<RawVector>(l, r);
+		return applyBinaryOperator(
+		    [](Rbyte l, Rbyte r) -> Rbyte { return l & r; },
+		    GeneralBinaryAttributeCopier(),
+		    l, r);
 	    }
 	case 2:
 	    {
-		BinaryFunction<BitwiseOr, GeneralBinaryAttributeCopier,
-			       NullBinaryFunctorWrapper> bf;
-		return bf.apply<RawVector>(l, r);
+		return applyBinaryOperator(
+		    [](Rbyte l, Rbyte r) -> Rbyte { return l | r; },
+		    GeneralBinaryAttributeCopier(),
+		    l, r);
 	    }
 	}
 	return nullptr;  // -Wall

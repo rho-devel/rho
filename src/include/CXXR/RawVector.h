@@ -72,6 +72,11 @@ namespace CXXR {
     /** @brief Vector of 'raw bytes'.
      */
     typedef CXXR::FixedVector<Rbyte, RAWSXP> RawVector;
+
+    template<>
+    struct VectorTypeFor<Rbyte> {
+      typedef RawVector type;
+    };
 }  // namespace CXXR
 
 BOOST_CLASS_EXPORT_KEY(CXXR::RawVector)
