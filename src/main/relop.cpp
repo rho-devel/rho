@@ -57,7 +57,7 @@ namespace {
     // for 'double' and 'Rcomplex' explicitly, but instead worked
     // entirely in terms of appropriate ElementTraits.
     template <typename T, template <typename> class Relop>
-    struct NaN2NA : std::binary_function<T, T, int>
+    struct NaN2NA : std::binary_function<T, T, Logical>
     {
 	Logical operator()(const T& l, const T& r) const
 	{
@@ -66,7 +66,7 @@ namespace {
     };
 
     template <template <typename> class Relop>
-    struct NaN2NA<double, Relop> : std::binary_function<double, double, int>
+    struct NaN2NA<double, Relop> : std::binary_function<double, double, Logical>
     {
 	Logical operator()(double l, double r) const
 	{
@@ -79,7 +79,7 @@ namespace {
 
     template <template <typename> class Relop>
     struct NaN2NA<Rcomplex, Relop>
-	: std::binary_function<Rcomplex, Rcomplex, int>
+	: std::binary_function<Rcomplex, Rcomplex, Logical>
     {
 	Logical operator()(const Rcomplex& l, const Rcomplex& r) const
 	{
