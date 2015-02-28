@@ -23,7 +23,7 @@
 
 #include <typeinfo>
 
-#include "llvm/IR/Function.h"
+#include "CXXR/jit/llvm.hpp"
 
 #define R_NO_REMAP
 #include "CXXR/jit/CompilerContext.hpp"

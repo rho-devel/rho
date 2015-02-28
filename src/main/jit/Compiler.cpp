@@ -20,10 +20,7 @@
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
-
-#include "llvm/IR/Function.h"
-#include "llvm/IR/Intrinsics.h"
-#include "llvm/IR/Module.h"
+#include "CXXR/jit/llvm.hpp"
 
 #define R_NO_REMAP
 #include "CXXR/jit/Compiler.hpp"

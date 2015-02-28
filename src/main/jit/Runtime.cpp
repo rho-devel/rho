@@ -20,34 +20,7 @@
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
-
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/TypeBuilder.h"
-#include "llvm/IRReader/IRReader.h"
-
-#if defined(LLVM_VERSION_MAJOR) && LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >=5
-#define llvm35
-#endif
-#ifdef llvm35
-#include "llvm/Linker/Linker.h"
-#else
-#include "llvm/Linker.h"
-#endif
-
-#include "llvm/Support/Casting.h"
-#include "llvm/Support/DynamicLibrary.h"
-#include "llvm/Support/SourceMgr.h"
-#ifdef llvm35
-//#include "llvm/system_error.h"
-#else
-#include "llvm/Support/system_error.h"
-#endif
-#include "llvm/Transforms/Utils/Cloning.h"
+#include "CXXR/jit/llvm.hpp"
 
 #define R_NO_REMAP
 #include "CXXR/jit/Runtime.hpp"

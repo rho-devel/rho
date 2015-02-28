@@ -20,27 +20,7 @@
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-
-#if defined(LLVM_VERSION_MAJOR) && LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 5
-#define llvm35
-#endif
-#ifdef llvm35
-#include "llvm/IR/Verifier.h"
-#else
-#include "llvm/Analysis/Verifier.h"
-#endif
-#include "llvm/ExecutionEngine/MCJIT.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/GlobalValue.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/TypeBuilder.h"
-#include "llvm/LinkAllIR.h"
-#include "llvm/LinkAllPasses.h"
-#include "llvm/Support/Host.h"
-#include "llvm/Support/TargetSelect.h"
-#include "llvm/Target/TargetOptions.h"
+#include "CXXR/jit/llvm.hpp"
 
 #define R_NO_REMAP
 #include "CXXR/jit/CompiledExpression.hpp"
