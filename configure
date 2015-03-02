@@ -35900,8 +35900,8 @@ fi
 	if test "x$want_llvm" = "xyes"; then
 		if test -e "$ac_llvm_config_path"; then
 			LLVM_CPPFLAGS=`$ac_llvm_config_path --cppflags`
-			LLVM_LDFLAGS="$($ac_llvm_config_path --ldflags)"
-                        LLVM_LIBS="$($ac_llvm_config_path --libs core mcjit native linker instrumentation ipo vectorize irreader)"
+			LLVM_LDFLAGS="$($ac_llvm_config_path --ldflags )"
+                        LLVM_LIBS="$($ac_llvm_config_path --libs) $($ac_llvm_config_path --system-libs)"
 
 
 			CPPFLAGS_SAVED="$CPPFLAGS"

@@ -20,21 +20,7 @@
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
-
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/TypeBuilder.h"
-#include "llvm/IRReader/IRReader.h"
-#include "llvm/Linker.h"
-#include "llvm/Support/Casting.h"
-#include "llvm/Support/DynamicLibrary.h"
-#include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/system_error.h"
-#include "llvm/Transforms/Utils/Cloning.h"
+#include "CXXR/jit/llvm.hpp"
 
 #define R_NO_REMAP
 #include "CXXR/jit/Runtime.hpp"

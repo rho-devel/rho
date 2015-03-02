@@ -24,7 +24,7 @@
 #ifndef CXXR_JIT_TYPE_BUILDER_HPP
 #define CXXR_JIT_TYPE_BUILDER_HPP
 
-#include "llvm/IR/TypeBuilder.h"
+#include "CXXR/jit/llvm.hpp"
 
 namespace CXXR {
 class Bailout;

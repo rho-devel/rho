@@ -25,7 +25,7 @@
 #define CXXR_JIT_RUNTIME_HPP
 
 #include <string>
-#include "llvm/ADT/ArrayRef.h"
+#include "CXXR/jit/llvm.hpp"
 
 namespace llvm {
 class Function;

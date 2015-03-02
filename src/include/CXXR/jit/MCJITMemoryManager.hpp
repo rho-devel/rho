@@ -24,11 +24,7 @@
 #ifndef CXXR_JIT_MCJIT_MEMORY_MANAGER_HPP
 #define CXXR_JIT_MCJIT_MEMORY_MANAGER_HPP
 
-#include "llvm/ExecutionEngine/SectionMemoryManager.h"
-#include "llvm/IR/GlobalVariable.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/TypeBuilder.h"
-
+#include "CXXR/jit/llvm.hpp"
 #include <string>
 #include <unordered_map>
 

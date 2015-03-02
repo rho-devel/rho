@@ -52,7 +52,7 @@ AC_ARG_WITH([llvm],
 		if test -e "$ac_llvm_config_path"; then
 			LLVM_CPPFLAGS=`$ac_llvm_config_path --cppflags`
 			LLVM_LDFLAGS="$($ac_llvm_config_path --ldflags)"
-                        LLVM_LIBS="$($ac_llvm_config_path --libs $1)"
+                        LLVM_LIBS="$($ac_llvm_config_path --libs ) $($ac_llvm_config_path --system-libs) "
 
 			AC_REQUIRE([AC_PROG_CXX])
 			CPPFLAGS_SAVED="$CPPFLAGS"
