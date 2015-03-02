@@ -29,7 +29,7 @@
 #define CXXR_LOGICAL_H
 
 #include "R_ext/Arith.h"
-#include "CXXR/ComplexVector.h"
+#include "CXXR/Complex.hpp"
 #include "CXXR/ElementTraits.hpp"
 
 namespace CXXR {

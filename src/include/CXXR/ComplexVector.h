@@ -37,70 +37,11 @@
 #ifdef __cplusplus
 
 #include "R_ext/Arith.h"
+#include "CXXR/Complex.hpp"
 #include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-    /** @brief CXXR's extension of CR's Rcomplex.
-     *
-     * This class is a wrapper around the C struct Rcomplex defined by
-     * CR.
-     *
-     * @note Backwards compatibility requires that <tt>sizeof(Complex)
-     * == sizeof(Rcomplex)</tt>.
-     */
-    struct Complex : public Rcomplex {
-	/** @brief Default constructor.
-	 *
-	 * Leaves data fields uninitialised.
-	 */
-	Complex()
-	{}
-
-	/** @brief Primary constructor.
-	 *
-	 * @param rl Real part.
-	 *
-	 * @param im Imaginary part.
-	 */
-	Complex(double rl, double im = 0.0)
-	{
-	    r = rl;
-	    i = im;
-	}
-
-	/** @brief Assignment from double.
-	 *
-	 * @param rhs Value to be assigned.
-	 *
-	 * @return Reference to this object.
-	 */
-	Complex& operator=(double rhs)
-	{
-	    r = rhs;
-	    i = 0;
-	    return *this;
-	}
-
-	template <class Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
-	    ar & BOOST_SERIALIZATION_NVP(r);
-	    ar & BOOST_SERIALIZATION_NVP(i);
-	}
-    };
-
-    // Template specializations:
-    namespace ElementTraits {
-	template <>
-	struct NAFunc<Complex> {
-	    const Complex& operator()() const
-	    {
-		static Complex na(NA_REAL, NA_REAL);
-		return na;
-	    }
-	};
-    }
 
     template <>
     inline const char* FixedVector<Complex, CPLXSXP>::staticTypeName()

@@ -41,7 +41,7 @@ CXXR_HS = \
 
 CXXR_HPPS = \
   Allocator.hpp ArgList.hpp ArgMatcher.hpp BinaryFunction.hpp \
-  CellPool.hpp CommandChronicle.hpp \
+  CellPool.hpp CommandChronicle.hpp Complex.hpp \
   ElementTraits.hpp Evaluator_Context.hpp \
   FixedVector.hpp Frame.hpp GCEdge.hpp GCNode.hpp GCNode_PtrS11n.hpp \
   GCStackRoot.hpp \
