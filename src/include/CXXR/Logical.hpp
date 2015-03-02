@@ -29,7 +29,6 @@
 #define CXXR_LOGICAL_H
 
 #include "R_ext/Arith.h"
-#include "CXXR/Complex.hpp"
 #include "CXXR/ElementTraits.hpp"
 
 namespace CXXR {
@@ -51,7 +50,6 @@ namespace CXXR {
 	
 	explicit operator int() const { return m_value; }
 	explicit operator double() const { return isNA() ? NA_REAL : m_value; }
-	explicit operator CXXR::Complex() const { return double(); }
 
 	bool isTrue() const  { return m_value == TRUE; }
 	bool isFalse() const { return m_value == FALSE; }

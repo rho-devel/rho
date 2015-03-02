@@ -32,6 +32,7 @@
 #define CXXR_COMPLEX_VECTOR_HPP
 
 #include "CXXR/ElementTraits.hpp"
+#include "CXXR/Logical.hpp"
 #include "R_ext/Complex.h"
 
 namespace CXXR
@@ -63,6 +64,8 @@ namespace CXXR
 	    r = rl;
 	    i = im;
 	}
+
+	explicit Complex(Logical l) : Complex(static_cast<double>(l)) {}
 
 	/** @brief Assignment from double.
 	 *
