@@ -111,7 +111,7 @@ namespace {
     {
 	if (arg && arg->sexptype() == RAWSXP) {
 	    // Bit inversion:
-	    return applyUnaryOperator([](Rbyte x) { return ~x; },
+	    return applyUnaryOperator([](Rbyte x) { return Rbyte(~x); },
 				      CopyLayoutAttributes(),
 				      SEXP_downcast<RawVector*>(arg));
 	} else if (!isLogical(arg) && !isNumber(arg)) {
