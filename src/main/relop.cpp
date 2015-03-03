@@ -226,15 +226,6 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
     return nullptr;  // -Wall
 }
 
-/* i1 = i % n1; i2 = i % n2;
- * this macro is quite a bit faster than having real modulo calls
- * in the loop (tested on Intel and Sparc)
- */
-#define mod_iterate(n1,n2,i1,i2) for (i=i1=i2=0; i<n; \
-	i1 = (++i1 == n1) ? 0 : i1,\
-	i2 = (++i2 == n2) ? 0 : i2,\
-	++i)
-
 /* POSIX allows EINVAL when one of the strings contains characters
    outside the collation domain. */
 static SEXP string_relop(RELOP_TYPE code, SEXP s1, SEXP s2)
