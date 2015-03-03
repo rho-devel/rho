@@ -133,6 +133,29 @@ namespace CXXR {
 			      const VectorBase* vr);
 	};
 
+
+	class BinaryArithmeticAttributeCopier {
+	public:
+	    static void copyAttributes(VectorBase* vout,
+				       const VectorBase* vl,
+				       const VectorBase* vr)
+	    {
+		if (!vl->attributes() && !vr->attributes())
+		    return;
+
+		/* Copy attributes from longer argument. */
+		if (vl->size() > vr->size())
+		    Rf_copyMostAttrib(const_cast<VectorBase*>(vl), vout);
+		else if (vl->size() < vr->size())
+		    Rf_copyMostAttrib(const_cast<VectorBase*>(vr), vout);
+		else {
+		    Rf_copyMostAttrib(const_cast<VectorBase*>(vr), vout);
+		    Rf_copyMostAttrib(const_cast<VectorBase*>(vl), vout);
+		}
+	    }
+	};
+
+
 	/** @brief Apply a binary function to a pair of vectors.
 	 *
 	 * If either operand has size zero then the result will have

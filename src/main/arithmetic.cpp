@@ -423,13 +423,13 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 	else mismatch = (ny % nx != 0);
     }
 
-    if (mismatch)
-	warningcall(lcall,
-		    _("longer object length is not a multiple of shorter object length"));
-
     GCStackRoot<> val;
     /* need to preserve object here, as *_binary copies class attributes */
     if (TYPEOF(x) == CPLXSXP || TYPEOF(y) == CPLXSXP) {
+	if (mismatch)
+	    warningcall(lcall,
+			_("longer object length is not a multiple of shorter object length"));
+
 	x = COERCE_IF_NEEDED(x, CPLXSXP);
 	y = COERCE_IF_NEEDED(y, CPLXSXP);
 	val = complex_binary(oper, x, y);
@@ -443,7 +443,12 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 	}
 	val = real_binary(oper, x, y);
     }
-    else val = integer_binary(oper, x, y, lcall);
+    else {
+	if (mismatch)
+	    warningcall(lcall,
+			_("longer object length is not a multiple of shorter object length"));
+	val = integer_binary(oper, x, y, lcall);
+    }
 
     /* quick return if there are no attributes */
     if (! xattr && ! yattr)
@@ -764,268 +769,83 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	}
 	break;
     }
+
+    BinaryArithmeticAttributeCopier::copyAttributes(
+	SEXP_downcast<VectorBase*>(ans),
+	SEXP_downcast<const VectorBase*>(s1),
+	SEXP_downcast<const VectorBase*>(s2));
     UNPROTECT(1);
-
-    /* quick return if there are no attributes */
-    if (ATTRIB(s1) == R_NilValue && ATTRIB(s2) == R_NilValue)
-	return ans;
-
-    /* Copy attributes from longer argument. */
-
-    if (n1 > n2)
-	copyMostAttrib(s1, ans);
-    else if (n1 == n2) {
-	copyMostAttrib(s2, ans);
-	copyMostAttrib(s1, ans);
-    }
-    else
-	copyMostAttrib(s2, ans);
-
     return ans;
 }
 
 namespace {
-    inline double R_INTEGER(SEXP robj, R_xlen_t i)
-    {
-	return double(INTEGER(robj)[i]
-		      == NA_INTEGER ? NA_REAL : INTEGER(robj)[i]);
+    inline double intToReal(int value) {
+	return isNA(value) ? NA_REAL : value;
+    }
+}
+
+template<class Op>
+static RealVector* apply_real_binary(Op op, SEXP lhs, SEXP rhs)
+{
+    using namespace VectorOps;
+
+    SEXPTYPE lhs_type = TYPEOF(lhs);
+    SEXPTYPE rhs_type = TYPEOF(rhs);
+
+    if(lhs_type == REALSXP && rhs_type == REALSXP) {
+	return applyBinaryOperator(
+	    op,
+	    BinaryArithmeticAttributeCopier(),
+	    SEXP_downcast<RealVector*>(lhs),
+	    SEXP_downcast<RealVector*>(rhs));
+    } else if(lhs_type == INTSXP) {
+	return applyBinaryOperator(
+	    [=](int lhs, double rhs) { return op(intToReal(lhs), rhs); },
+	    BinaryArithmeticAttributeCopier(),
+	    SEXP_downcast<IntVector*>(lhs),
+	    SEXP_downcast<RealVector*>(rhs));
+    } else {
+	assert(rhs_type == INTSXP);
+	return applyBinaryOperator(
+	    [=](double lhs, int rhs) { return op(lhs, intToReal(rhs)); },
+	    BinaryArithmeticAttributeCopier(),
+	    SEXP_downcast<RealVector*>(lhs),
+	    SEXP_downcast<IntVector*>(rhs));
     }
 }
 
 static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 {
-    R_xlen_t i, i1, i2, n, n1, n2;
-    SEXP ans;
-
-    /* Note: "s1" and "s2" are protected above. */
-    n1 = XLENGTH(s1);
-    n2 = XLENGTH(s2);
-
-    /* S4-compatibility change: if n1 or n2 is 0, result is of length 0 */
-    if (n1 == 0 || n2 == 0) return(allocVector(REALSXP, 0));
-
-    n = (n1 > n2) ? n1 : n2;
-    PROTECT(ans = allocVector(REALSXP, n));
-
     switch (code) {
     case PLUSOP:
-	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-            if (n2 == 1) {
-                double tmp = REAL(s2)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] + tmp;
-            }
-            else if (n1 == 1) {
-                double tmp = REAL(s1)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = tmp + REAL(s2)[i];
-            }
-            else if (n1 == n2)
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] + REAL(s2)[i];
-            else
-                mod_iterate(n1, n2, i1, i2) {
-//		    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-		    REAL(ans)[i] = REAL(s1)[i1] + REAL(s2)[i2];
-		}
-	} else	if(TYPEOF(s1) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = R_INTEGER(s1, i1) + REAL(s2)[i2];
-	     }
-	} else	if(TYPEOF(s2) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = REAL(s1)[i1] + R_INTEGER(s2, i2);
-	     }
-	}
-	break;
+	return apply_real_binary(
+	    [](double lhs, double rhs) { return lhs + rhs; },
+	    s1, s2);
     case MINUSOP:
-	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-            if (n2 == 1) {
-                double tmp = REAL(s2)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] - tmp;
-            }
-            else if (n1 == 1) {
-                double tmp = REAL(s1)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = tmp - REAL(s2)[i];
-            }
-            else if (n1 == n2)
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] - REAL(s2)[i];
-            else
-                mod_iterate(n1, n2, i1, i2) {
-//		    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-		    REAL(ans)[i] = REAL(s1)[i1] - REAL(s2)[i2];
-		}
-	} else	if(TYPEOF(s1) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = R_INTEGER(s1, i1) - REAL(s2)[i2];
-	   }
-	} else	if(TYPEOF(s2) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = REAL(s1)[i1] - R_INTEGER(s2, i2);
-	   }
-	}
-	break;
+	return apply_real_binary(
+	    [](double lhs, double rhs) { return lhs - rhs; },
+	    s1, s2);
     case TIMESOP:
-	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-            if (n2 == 1) {
-                double tmp = REAL(s2)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] * tmp;
-            }
-            else if (n1 == 1) {
-                double tmp = REAL(s1)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = tmp * REAL(s2)[i];
-            }
-            else if (n1 == n2)
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] * REAL(s2)[i];
-            else
-                mod_iterate(n1, n2, i1, i2) {
-//		    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-		    REAL(ans)[i] = REAL(s1)[i1] * REAL(s2)[i2];
-		}
-	} else if(TYPEOF(s1) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = R_INTEGER(s1, i1) * REAL(s2)[i2];
-	   }
-	} else	if(TYPEOF(s2) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = REAL(s1)[i1] * R_INTEGER(s2, i2);
-	   }
-	}
-	break;
+	return apply_real_binary(
+	    [](double lhs, double rhs) { return lhs * rhs; },
+	    s1, s2);
     case DIVOP:
-	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-            if (n2 == 1) {
-                double tmp = REAL(s2)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] / tmp;
-            }
-            else if (n1 == 1) {
-                double tmp = REAL(s1)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = tmp / REAL(s2)[i];
-            }
-            else if (n1 == n2)
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] / REAL(s2)[i];
-            else
-                mod_iterate(n1, n2, i1, i2) {
-//		    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-		    REAL(ans)[i] = REAL(s1)[i1] / REAL(s2)[i2];
-		}
-	} else if(TYPEOF(s1) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = R_INTEGER(s1, i1) / REAL(s2)[i2];
-	   }
-	} else	if(TYPEOF(s2) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = REAL(s1)[i1] / R_INTEGER(s2, i2);
-	   }
-	}
-	break;
+	return apply_real_binary(
+	    [](double lhs, double rhs) { return lhs / rhs; },
+	    s1, s2);
     case POWOP:
-	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-            if (n2 == 1) {
-                double tmp = REAL(s2)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = R_POW(REAL(s1)[i], tmp);
-            }
-            else if (n1 == 1) {
-                double tmp = REAL(s1)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = R_POW(tmp, REAL(s2)[i]);
-            }
-            else if (n1 == n2)
-                for (i = 0; i < n; i++)
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-		    REAL(ans)[i] = R_POW(REAL(s1)[i], REAL(s2)[i]);
-            else
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = R_POW(REAL(s1)[i1], REAL(s2)[i2]);
-	    }
-	} else if(TYPEOF(s1) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = R_POW( R_INTEGER(s1, i1), REAL(s2)[i2]);
-	   }
-	} else	if(TYPEOF(s2) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = R_POW(REAL(s1)[i1], R_INTEGER(s2, i2));
-	   }
-	}
-	break;
+	return apply_real_binary(
+	    [](double lhs, double rhs) { return R_POW(lhs, rhs); },
+	    s1, s2);
     case MODOP:
-	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = myfmod(REAL(s1)[i1], REAL(s2)[i2]);
-	    }
-	} else if(TYPEOF(s1) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = myfmod( R_INTEGER(s1, i1), REAL(s2)[i2]);
-	   }
-	} else	if(TYPEOF(s2) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = myfmod(REAL(s1)[i1], R_INTEGER(s2, i2));
-	   }
-	}
-	break;
+	return apply_real_binary(
+	    [](double lhs, double rhs) { return myfmod(lhs, rhs); },
+	    s1, s2);
     case IDIVOP:
-	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = myfloor(REAL(s1)[i1], REAL(s2)[i2]);
-	    }
-	} else if(TYPEOF(s1) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = myfloor(R_INTEGER(s1, i1), REAL(s2)[i2]);
-	   }
-	} else	if(TYPEOF(s2) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = myfloor(REAL(s1)[i1], R_INTEGER(s2,i2));
-	   }
-	}
-	break;
+	return apply_real_binary(
+	    [](double lhs, double rhs) { return myfloor(lhs, rhs); },
+	    s1, s2);
     }
-
-    /* quick return if there are no attributes */
-    if (ATTRIB(s1) == R_NilValue && ATTRIB(s2) == R_NilValue) {
-	UNPROTECT(1);
-	return ans;
-    }
-
-    /* Copy attributes from longer argument. */
-
-    if (n1 > n2)
-	copyMostAttrib(s1, ans);
-    else if (n1 == n2) {
-	copyMostAttrib(s2, ans);
-	copyMostAttrib(s1, ans);
-    }
-    else
-	copyMostAttrib(s2, ans);
-
-    UNPROTECT(1);
-    return ans;
 }
 
 
