@@ -108,11 +108,6 @@ int matherr(struct exception *exc)
 #endif
 #endif
 
-#ifndef _AIX
-static const double R_Zero_Hack = 0.0;	/* Silence the Sun compiler */
-#else
-static double R_Zero_Hack = 0.0;
-#endif
 typedef union
 {
     double value;
@@ -184,9 +179,9 @@ namespace CXXR {
 void attribute_hidden InitArithmetic()
 {
     R_NaInt = INT_MIN;
-    R_NaN = std::numeric_limits<double>::quiet_NaN(); // was 0.0/R_Zero_Hack;
+    R_NaN = std::numeric_limits<double>::quiet_NaN();
     R_NaReal = R_ValueOfNA();
-    R_PosInf = std::numeric_limits<double>::infinity();  // was 1.0/R_Zero_Hack;
+    R_PosInf = std::numeric_limits<double>::infinity();
     R_NegInf = -R_PosInf;  // is this portable?
 }
 
