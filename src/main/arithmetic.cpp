@@ -583,198 +583,139 @@ SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
 	i2 = (++i2 == n2) ? 0 : i2,\
 	++i)
 
-
-
-/* The tests using integer comparisons are a bit faster than the tests
-   using doubles, but they depend on a two's complement representation
-   (but that is almost universal).  The tests that compare results to
-   double's depend on being able to accurately represent all int's as
-   double's.  Since int's are almost universally 32 bit that should be
-   OK. */
-
-#ifndef INT_32_BITS
-/* configure checks whether int is 32 bits.  If not this code will
-   need to be rewritten.  Since 32 bit ints are pretty much universal,
-   we can worry about writing alternate code when the need arises.
-   To be safe, we signal a compiler error if int is not 32 bits. */
-# error code requires that int have 32 bits
-#else
-/* Just to be on the safe side, configure ought to check that the
-   mashine uses two's complement. A define like
-#define USES_TWOS_COMPLEMENT (~0 == (unsigned) -1)
-   might work, but at least one compiler (CodeWarrior 6) chokes on it.
-   So for now just assume it is true.
-*/
-#define USES_TWOS_COMPLEMENT 1
-
-// Checks for integer overflow:
-
-#if USES_TWOS_COMPLEMENT
 namespace {
-    inline bool GOODISUM(int x, int y, int z)
-    {
-	return ((x > 0) ? (y < z) : ! (y < z));
+    int integer_plus(int lhs, int rhs, Rboolean* naflag) {
+	if (lhs == NA_INTEGER || rhs == NA_INTEGER) {
+	    return NA_INTEGER;
+	}
+	if ((lhs > 0 && INT_MAX - lhs < rhs)
+	    || (lhs < 0 && INT_MAX + lhs < -rhs)) {
+	    // Integer overflow.
+	    *naflag = TRUE;
+	    return NA_INTEGER;
+	}
+	return lhs + rhs;
     }
 
-    inline bool OPPOSITE_SIGNS(int x, int y) {return (x < 0)^(y < 0);}
-
-    inline bool GOODIDIFF(int x, int y, int z)
-    {
-	return !(OPPOSITE_SIGNS(x, y) && OPPOSITE_SIGNS(x, z));
+    int integer_minus(int lhs, int rhs, Rboolean* naflag) {
+	if (rhs == NA_INTEGER)
+	    return NA_INTEGER;
+	return integer_plus(lhs, -rhs, naflag);
     }
-}
-#else
-# define GOODISUM(x, y, z) (double(x) + double(y) == (z))
-# define GOODIDIFF(x, y, z) (double(x) - double(y) == (z))
-#endif
 
-namespace {
-    inline bool GOODIPROD(int x, int y, int z)
-    {
-	return double(x) * double(y) == z;
+    int integer_times(int lhs, int rhs, Rboolean* naflag) {
+	if (lhs == NA_INTEGER || rhs == NA_INTEGER) {
+	    return NA_INTEGER;
+	}
+	// This relies on the assumption that a double can represent all the
+	// possible values of an integer.  This isn't true for 64-bit integers.
+	static_assert(sizeof(int) <= 4,
+		      "integer_times assumes 32 bit integers which isn't true on this platform");
+	double result = static_cast<double>(lhs) * static_cast<double>(rhs);
+	if (std::abs(result) > INT_MAX) {
+	    // Integer overflow.
+	    *naflag = TRUE;
+	    return NA_INTEGER;
+	}
+	return static_cast<int>(result);
     }
-}
+
+    double integer_divide(int lhs, int rhs) {
+	if (lhs == NA_INTEGER || rhs == NA_INTEGER) {
+	    return NA_REAL;
+	}
+	return static_cast<double>(lhs) / static_cast<double>(rhs);
+    }
+
+    double integer_pow(int lhs, int rhs) {
+	if(lhs == 1 || rhs == 0)
+	    return 1;
+	if (lhs == NA_INTEGER || rhs == NA_INTEGER) {
+	    return NA_REAL;
+	}
+	return R_POW(static_cast<double>(lhs), static_cast<double>(rhs));
+    }
+
+    int integer_mod(int lhs, int rhs) {
+	if (lhs == NA_INTEGER || rhs == NA_INTEGER || rhs == 0)
+	    return NA_INTEGER;
+	return (lhs >= 0 && rhs > 0) ? lhs % rhs :
+	    static_cast<int>(myfmod(lhs, rhs));
+    }
+
+    int integer_idiv(int lhs, int rhs) {
+	/* This had x %/% 0 == 0 prior to 2.14.1, but
+	   it seems conventionally to be undefined */
+	if (lhs == NA_INTEGER || rhs == NA_INTEGER || rhs == 0)
+	    return NA_INTEGER;
+	return static_cast<int>(floor(double(lhs) / static_cast<double>(rhs)));
+    }
+
+    template<class Op>
+    VectorBase* apply_integer_binary(Op op, SEXP lhs, SEXP rhs) {
+	if (TYPEOF(lhs) != INTSXP) {
+	    // Probably a logical.
+	    // TODO(kmillar): eliminate the need to coerce here.
+	    lhs = coerceVector(lhs, INTSXP);
+	}
+	if (TYPEOF(rhs) != INTSXP) {
+	    rhs = coerceVector(rhs, INTSXP);
+	}
+
+	return applyBinaryOperator(op,
+				   BinaryArithmeticAttributeCopier(),
+				   SEXP_downcast<IntVector*>(lhs),
+				   SEXP_downcast<IntVector*>(rhs));
+    }
+}  // anonymous namespace
 
 #define INTEGER_OVERFLOW_WARNING _("NAs produced by integer overflow")
-#endif
 
 static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 {
-    R_xlen_t i, i1, i2, n, n1, n2;
-    int x1, x2;
-    SEXP ans;
     Rboolean naflag = FALSE;
-
-    n1 = XLENGTH(s1);
-    n2 = XLENGTH(s2);
-    /* S4-compatibility change: if n1 or n2 is 0, result is of length 0 */
-    if (n1 == 0 || n2 == 0) n = 0; else n = (n1 > n2) ? n1 : n2;
-
-    if (code == DIVOP || code == POWOP)
-	ans = allocVector(REALSXP, n);
-    else
-	ans = allocVector(INTSXP, n);
-    if (n1 == 0 || n2 == 0) return(ans);
-    PROTECT(ans);
+    VectorBase* ans = nullptr;
 
     switch (code) {
     case PLUSOP:
-	mod_iterate(n1, n2, i1, i2) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	    x1 = INTEGER(s1)[i1];
-	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
-		INTEGER(ans)[i] = NA_INTEGER;
-	    else {
-		int val = x1 + x2;
-		if (val != NA_INTEGER && GOODISUM(x1, x2, val))
-		    INTEGER(ans)[i] = val;
-		else {
-		    INTEGER(ans)[i] = NA_INTEGER;
-		    naflag = TRUE;
-		}
-	    }
-	}
-	if (naflag)
-	    warningcall(lcall, INTEGER_OVERFLOW_WARNING);
+	ans = apply_integer_binary(
+	    [&](int lhs, int rhs) { return integer_plus(lhs, rhs, &naflag); },
+	    s1, s2);
 	break;
     case MINUSOP:
-	mod_iterate(n1, n2, i1, i2) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	    x1 = INTEGER(s1)[i1];
-	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
-		INTEGER(ans)[i] = NA_INTEGER;
-	    else {
-		int val = x1 - x2;
-		if (val != NA_INTEGER && GOODIDIFF(x1, x2, val))
-		    INTEGER(ans)[i] = val;
-		else {
-		    naflag = TRUE;
-		    INTEGER(ans)[i] = NA_INTEGER;
-		}
-	    }
-	}
-	if (naflag)
-	    warningcall(lcall, INTEGER_OVERFLOW_WARNING);
+	ans = apply_integer_binary(
+	    [&](int lhs, int rhs) { return integer_minus(lhs, rhs, &naflag); },
+	    s1, s2);
 	break;
     case TIMESOP:
-	mod_iterate(n1, n2, i1, i2) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	    x1 = INTEGER(s1)[i1];
-	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
-		INTEGER(ans)[i] = NA_INTEGER;
-	    else {
-		int val = x1 * x2;
-		if (val != NA_INTEGER && GOODIPROD(x1, x2, val))
-		    INTEGER(ans)[i] = val;
-		else {
-		    naflag = TRUE;
-		    INTEGER(ans)[i] = NA_INTEGER;
-		}
-	    }
-	}
-	if (naflag)
-	    warningcall(lcall, INTEGER_OVERFLOW_WARNING);
+	ans = apply_integer_binary(
+	    [&](int lhs, int rhs) { return integer_times(lhs, rhs, &naflag); },
+	    s1, s2);
 	break;
     case DIVOP:
-	mod_iterate(n1, n2, i1, i2) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	    x1 = INTEGER(s1)[i1];
-	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
-		    REAL(ans)[i] = NA_REAL;
-		else
-		    REAL(ans)[i] = double( x1) / double( x2);
-	}
+	ans = apply_integer_binary(
+	    [](int lhs, int rhs) { return integer_divide(lhs, rhs); },
+	    s1, s2);
 	break;
     case POWOP:
-	mod_iterate(n1, n2, i1, i2) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	    if((x1 = INTEGER(s1)[i1]) == 1 || (x2 = INTEGER(s2)[i2]) == 0)
-		REAL(ans)[i] = 1.;
-	    else if (x1 == NA_INTEGER || x2 == NA_INTEGER)
-		REAL(ans)[i] = NA_REAL;
-	    else {
-		REAL(ans)[i] = R_POW(double( x1), double( x2));
-	    }
-	}
+	ans = apply_integer_binary(
+	    [](int lhs, int rhs) { return integer_pow(lhs, rhs); },
+	    s1, s2);
 	break;
     case MODOP:
-	mod_iterate(n1, n2, i1, i2) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	    x1 = INTEGER(s1)[i1];
-	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER || x2 == 0)
-		INTEGER(ans)[i] = NA_INTEGER;
-	    else {
-		INTEGER(ans)[i] = /* till 0.63.2:	x1 % x2 */
-		    (x1 >= 0 && x2 > 0) ? x1 % x2 :
-		    int(myfmod(double(x1), double(x2)));
-	    }
-	}
+	ans = apply_integer_binary(
+	    [](int lhs, int rhs) { return integer_mod(lhs, rhs); },
+	    s1, s2);
 	break;
     case IDIVOP:
-	mod_iterate(n1, n2, i1, i2) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	    x1 = INTEGER(s1)[i1];
-	    x2 = INTEGER(s2)[i2];
-	    /* This had x %/% 0 == 0 prior to 2.14.1, but
-	       it seems conventionally to be undefined */
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER || x2 == 0)
-		INTEGER(ans)[i] = NA_INTEGER;
-	    else
-		INTEGER(ans)[i] = int( floor(double(x1) / double(x2)));
-	}
+	ans = apply_integer_binary(
+	    [](int lhs, int rhs) { return integer_idiv(lhs, rhs); },
+	    s1, s2);
 	break;
     }
+    if (naflag)
+	warningcall(lcall, INTEGER_OVERFLOW_WARNING);
 
-    BinaryArithmeticAttributeCopier::copyAttributes(
-	SEXP_downcast<VectorBase*>(ans),
-	SEXP_downcast<const VectorBase*>(s1),
-	SEXP_downcast<const VectorBase*>(s2));
-    UNPROTECT(1);
     return ans;
 }
 
