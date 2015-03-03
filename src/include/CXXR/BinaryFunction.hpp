@@ -143,7 +143,7 @@ namespace CXXR {
 		if (!vl->attributes() && !vr->attributes())
 		    return;
 
-		/* Copy attributes from longer argument. */
+		/* Copy most attributes from longer argument. */
 		if (vl->size() > vr->size())
 		    Rf_copyMostAttrib(const_cast<VectorBase*>(vl), vout);
 		else if (vl->size() < vr->size())
@@ -151,6 +151,12 @@ namespace CXXR {
 		else {
 		    Rf_copyMostAttrib(const_cast<VectorBase*>(vr), vout);
 		    Rf_copyMostAttrib(const_cast<VectorBase*>(vl), vout);
+		}
+		
+		/* Handle remaining attributes. */
+		GeneralBinaryAttributeCopier::copyAttributes(vout, vl, vr);
+		if (vl->isS4Object() || vr->isS4Object()) {
+		    vout->setS4Object(true);
 		}
 	    }
 	};
