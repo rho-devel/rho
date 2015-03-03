@@ -91,29 +91,23 @@ namespace CXXR
     // Template specializations:
     namespace ElementTraits {
 	template <>
-	struct NAFunc<Complex> {
-	    const Complex& operator()() const
-	    {
-		static Complex na(NA_REAL, NA_REAL);
-		return na;
-	    }
-	};
+	inline const Complex& NAFunc<Complex>::operator()() const
+	{
+	    static Complex na(NA_REAL, NA_REAL);
+	    return na;
+	}
 
 	template <>
-	struct IsNA<Complex> {
-	    bool operator()(Complex c) const
-	    {
-		return isNA(c.r) || isNA(c.i);
-	    }
-	};
+	inline bool IsNA<Complex>::operator()(const Complex& c) const
+	{
+	    return isNA(c.r) || isNA(c.i);
+	}
 
 	template <>
-	struct IsNaOrNaN<Complex> {
-	    bool operator()(Complex c) const
-	    {
-		return isNaOrNaN(c.r) || isNaOrNaN(c.i);
-	    }
-	};
+	inline bool IsNaOrNaN<Complex>::operator()(const Complex& c) const
+	{
+	    return isNaOrNaN(c.r) || isNaOrNaN(c.i);
+	}
     }
 }  // namespace CXXR
 

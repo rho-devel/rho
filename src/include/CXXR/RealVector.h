@@ -43,29 +43,23 @@ namespace CXXR {
     // Template specializations:
     namespace ElementTraits {
 	template <>
-	struct NAFunc<double> {
-	    const double& operator()() const
-	    {
-		static double na = NA_REAL;
-		return na;
-	    }
-	};
+        inline const double& NAFunc<double>::operator()() const
+        {
+	    static double na = NA_REAL;
+	    return na;
+	}
 
 	template <>
-	struct IsNA<double> {
-	    bool operator()(const double& t)
-	    {
-		return R_IsNA(t);
-	    }
-	};
+        inline bool IsNA<double>::operator()(const double& t) const
+        {
+            return R_IsNA(t);
+        }
 
 	template <>
-	struct IsNaOrNaN<double> {
-	    bool operator()(const double& t)
-	    {
-              return std::isnan(t);
-	    }
-	};
+	inline bool IsNaOrNaN<double>::operator()(const double& t) const
+	{
+	    return std::isnan(t);
+	}
     }
 
     template <>

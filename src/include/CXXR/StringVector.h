@@ -49,7 +49,7 @@ namespace CXXR {
 	struct NAFunc<RHandle<String> > {
 	    static RHandle<String> makeNA();
 
-	    const RHandle<String>& operator()() const
+	    inline const RHandle<String>& operator()() const
 	    {
 		static RHandle<String> na = makeNA();
 		return na;
@@ -57,13 +57,12 @@ namespace CXXR {
 	};
 
 	template <>
-	struct IsNA<RHandle<String> > {
-	    bool operator()(const RHandle<String>& t) const
-	    {
-		typedef RHandle<String> T;
-		return t == NA<T>();
-	    }
-	};
+        inline bool IsNA<RHandle<String>>::operator()(const RHandle<String>& t)
+	    const
+	{
+	    typedef RHandle<String> T;
+	    return t == NA<T>();
+	}
     }
 
     // Make the default handle for a String point to a blank string:

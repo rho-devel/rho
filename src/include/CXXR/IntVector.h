@@ -47,13 +47,11 @@ namespace CXXR {
     // Template specializations:
     namespace ElementTraits {
 	template <>
-	struct NAFunc<int> {
-	    const int& operator()() const
-	    {
-		static int na = NA_INTEGER;
-		return na;
-	    }
-	};
+	inline const int& NAFunc<int>::operator()() const
+	{
+            static int na = NA_INTEGER;
+            return na;
+        }
     }
 
     template <>
