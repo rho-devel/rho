@@ -33,6 +33,7 @@
 
 #include "CXXR/ElementTraits.hpp"
 #include "CXXR/Logical.hpp"
+#include "CXXR/RealVector.h"  // for isNA(double)
 #include "R_ext/Complex.h"
 
 namespace CXXR
