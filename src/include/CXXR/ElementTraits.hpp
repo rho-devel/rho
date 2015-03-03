@@ -288,6 +288,27 @@ namespace CXXR {
 	    }
 	};
 
+	/** @brief Function object for testing 'not available' and 'not a
+	 *    number status.
+	 *
+	 * @tparam T A type capable of being used as the element type
+	 *           of an R data vector. 
+	 */
+	template <typename T> struct IsNaOrNaN {
+	    /** @brief Does a value represent a distinct NA or NaN status?
+	     *
+	     * @param t A value of type \a T .
+	     *
+	     * @return true iff \a t has a distinct value (or
+	     * possibly, one of a set of distinct values) signifying
+	     * that the actual value of this quantity is NA or NaN.
+	     */
+	    bool operator()(const T& t) const
+	    {
+		return IsNA<T>()(t);
+	    }
+	};
+
 	/** @brief Does a type have a distinct 'not available' value?
 	 *
 	 * @return true iff the range of type \a T includes a distinct
@@ -318,6 +339,27 @@ namespace CXXR {
      * value of this quantity is not available.
      */
     template <typename T> bool isNA(const T& t)
+    {
+	return ElementTraits::IsNA<T>()(t);
+    }
+
+    /** @brief Does a value represent a 'not available' or 'not a number'
+     *  status?
+     *
+     * This templated function is syntactic sugar for the
+     * ElementTraits::IsNaOrNaN() function objects.  It should not be
+     * specialized; instead specialize ElementTraits::IsNaOrNaN itself.
+     *
+     * @tparam T A type capable of being used as the element type
+     *           of an R data vector. 
+     *
+     * @param t A value of type \a T .
+     *
+     * @return true iff \a t has a distinct value (or possibly,
+     * one of a set of distinct values) signifying that the actual
+     * value of this quantity is not available or NaN.
+     */
+    template <typename T> bool isNaOrNaN(const T& t)
     {
 	return ElementTraits::IsNA<T>()(t);
     }

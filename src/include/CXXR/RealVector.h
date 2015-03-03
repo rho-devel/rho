@@ -58,6 +58,14 @@ namespace CXXR {
 		return R_IsNA(t);
 	    }
 	};
+
+	template <>
+	struct IsNaOrNaN<double> {
+	    bool operator()(const double& t)
+	    {
+              return std::isnan(t);
+	    }
+	};
     }
 
     template <>

@@ -98,6 +98,22 @@ namespace CXXR
 		return na;
 	    }
 	};
+
+	template <>
+	struct IsNA<Complex> {
+	    bool operator()(Complex c) const
+	    {
+		return isNA(c.r) || isNA(c.i);
+	    }
+	};
+
+	template <>
+	struct IsNaOrNaN<Complex> {
+	    bool operator()(Complex c) const
+	    {
+		return isNaOrNaN(c.r) || isNaOrNaN(c.i);
+	    }
+	};
     }
 }  // namespace CXXR
 
