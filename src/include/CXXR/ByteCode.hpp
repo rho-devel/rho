@@ -65,17 +65,7 @@ namespace CXXR {
 	 * @param constants Non-null pointer to the associated
 	 *          constants (FIXME: improve this documentation.)
 	 */
-	explicit ByteCode(IntVector* code, ListVector* constants)
-	    : RObject(BCODESXP)
-	{
-	    m_code = code;
-	    m_constants = constants;
-#ifdef THREADED_CODE
-#ifndef TOKEN_THREADING
-	    thread();
-#endif
-#endif
-	}
+	explicit ByteCode(IntVector* code, ListVector* constants);
 
 	/** @brief Return the uncompiled form of the code.
 	 */
@@ -84,11 +74,28 @@ namespace CXXR {
 	    return (*m_constants)[0];
 	}
 
+	// Make this private in due course:
+#ifdef THREADED_CODE
+#ifndef TOKEN_THREADING
+#define ENCODED_BCODE
+#endif
+#endif
+
+#ifdef ENCODED_BCODE
+	typedef union { void *v; int i; } BCODE;
+#else
+	typedef int BCODE;
+#endif
+
 	// Interim accessor functions.  Try to get rid of these:
 
 	/** @brief Not for general use.
+	 *
+	 * Note that because this function returns memory that is managed
+	 * by this object, the caller must hold a GCStackRoot to this object,
+	 * or otherwise ensure that it is live until it is done with the result.
 	 */
-	IntVector* code()
+	const std::vector<BCODE>& code() const
 	{
 	    return m_code;
 	}
@@ -99,6 +106,13 @@ namespace CXXR {
 	{
 	    return m_constants;
 	}
+
+	/**
+	 * @brief Returns the bytecode in a form suitable for serialization.
+	 *
+	 * The naming here is unfortunate, but consistent with CR.
+	 */
+	IntVector* decode() const;
 
 	/** @brief Initialize the class.
 	 *
@@ -140,18 +154,6 @@ namespace CXXR {
 	void detachReferents() override;
 	void visitReferents(const_visitor* v) const override;
 
-	// Make this private in due course:
-#ifdef THREADED_CODE
-#ifndef TOKEN_THREADING
-#define ENCODED_BCODE
-#endif
-#endif
-
-#ifdef ENCODED_BCODE
-	typedef union { void *v; int i; } BCODE;
-#else
-	typedef int BCODE;
-#endif
     private:
 	// Object whose constructor saves, and destructor restores,
 	// the states of s_nodestack and s_loopvar_stack:
@@ -184,11 +186,8 @@ namespace CXXR {
 #endif
 #endif
 
-	GCEdge<IntVector> m_code;
+	std::vector<BCODE> m_code;
 	GCEdge<ListVector> m_constants;
-#ifdef THREADED_CODE
-	std::vector<BCODE> m_threaded_code;
-#endif
 
 	// Declared private to ensure that ByteCode objects are
 	// allocated only using 'new':
@@ -205,11 +204,9 @@ namespace CXXR {
 	// table(s).
 	static RObject* interpret(ByteCode* bcode, Environment* env);
 
-#ifdef ENCODED_BCODE
-	// Initialize the m_threaded_code field by creating a threaded
-	// form of the code.
-	void thread();
-#endif
+	// Convert serializable bytecode into a threaded form better suited
+	// for execution.
+	static std::vector<BCODE> encode(IntVector* bytes);
 
 	// Helper functions from CR which need to be inside the
 	// ByteCode class in CXXR:

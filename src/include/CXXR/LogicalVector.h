@@ -37,19 +37,25 @@
 
 #include "R_ext/Arith.h"
 #include "CXXR/FixedVector.hpp"
+#include "CXXR/Logical.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
     // Template specialization:
     template <>
-    inline const char* FixedVector<int, LGLSXP>::staticTypeName()
+    inline const char* FixedVector<Logical, LGLSXP>::staticTypeName()
     {
 	return "logical";
     }
 
     /** @brief Vector of truth values.
      */
-    typedef CXXR::FixedVector<int, LGLSXP> LogicalVector;
+    typedef CXXR::FixedVector<Logical, LGLSXP> LogicalVector;
+
+    template<>
+    struct VectorTypeFor<Logical> {
+      typedef LogicalVector type;
+    };
 }  // namespace CXXR
 
 BOOST_CLASS_EXPORT_KEY(CXXR::LogicalVector)
@@ -82,7 +88,8 @@ int* LOGICAL(SEXP x);
 inline int* LOGICAL(SEXP x)
 {
     using namespace CXXR;
-    return &(*SEXP_downcast<LogicalVector*>(x, false))[0];
+    return reinterpret_cast<int*>
+      (&(*SEXP_downcast<LogicalVector*>(x, false))[0]);
 }
 #endif
 

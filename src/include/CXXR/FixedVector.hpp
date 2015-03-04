@@ -294,6 +294,13 @@ namespace CXXR {
 	// Helper function for visitReferents():
 	void visitElements(const_visitor* v) const;
     };
+
+    // VectorTypeFor<T>::type is the type of vector that can hold elements of
+    // type T.
+    template<class T>
+    struct VectorTypeFor {
+    };
+
 }  // namespace CXXR
 
 // ***** Implementation of non-inlined members *****

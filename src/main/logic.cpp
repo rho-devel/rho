@@ -31,7 +31,6 @@
 #include <Defn.h>
 #include <Internal.h>
 
-#include "boost/lambda/lambda.hpp"
 #include "CXXR/BinaryFunction.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/RawVector.h"
@@ -42,31 +41,6 @@ using namespace VectorOps;
 
 // Functionality to support do_logic() :
 namespace {
-    // Special handling is needed for '&' to ensure
-    // that FALSE & NA -> FALSE
-    struct AndOp {
-	int operator()(int l, int r) const
-	{
-	    if (l == 0 || r == 0)
-		return 0;
-	    if (isNA(l) || isNA(r))
-		return NA<int>();
-	    return 1;
-	}
-    };
-
-    // Special handling is needed for '|' to ensure
-    // that TRUE | NA -> TRUE
-    struct OrOp {
-	int operator()(int l, int r) const
-	{
-	    if ((!isNA(l) && l != 0) || (!isNA(r) && r != 0))
-		return 1;
-	    if (isNA(l) || isNA(r))
-		return NA<int>();
-	    return 0;
-	}
-    };
 
     LogicalVector* binaryLogic(int opcode, const LogicalVector* l,
 			       const LogicalVector* r)
@@ -74,49 +48,38 @@ namespace {
 	switch (opcode) {
 	case 1:
 	    {
-		BinaryFunction<AndOp, GeneralBinaryAttributeCopier,
-		               NullBinaryFunctorWrapper> bf;
-		return bf.apply<LogicalVector>(l, r);
+		return applyBinaryOperator(
+		    [](Logical l, Logical r) { return l && r; },
+		    GeneralBinaryAttributeCopier(),
+		    l, r);
 	    }
 	case 2:
 	    {
-		BinaryFunction<OrOp, GeneralBinaryAttributeCopier,
-		               NullBinaryFunctorWrapper> bf;
-		return bf.apply<LogicalVector>(l, r);
+		return applyBinaryOperator(
+		    [](Logical l, Logical r) { return l || r; },
+		    GeneralBinaryAttributeCopier(),
+		    l, r);
 	    }
 	}
 	return nullptr;  // -Wall
     }
 
-    struct BitwiseAnd {
-	unsigned char operator()(unsigned char l, unsigned char r) const
-	{
-	    return l & r;
-	}
-    };
-
-    struct BitwiseOr {
-	unsigned char operator()(unsigned char l, unsigned char r) const
-	{
-	    return l | r;
-	}
-    };
-
     RawVector* bitwiseBinary(int opcode, const RawVector* l, const RawVector* r)
     {
-	using namespace boost::lambda;
 	switch (opcode) {
 	case 1:
 	    {
-		BinaryFunction<BitwiseAnd, GeneralBinaryAttributeCopier,
-			       NullBinaryFunctorWrapper> bf;
-		return bf.apply<RawVector>(l, r);
+		return applyBinaryOperator(
+		    [](Rbyte l, Rbyte r) -> Rbyte { return l & r; },
+		    GeneralBinaryAttributeCopier(),
+		    l, r);
 	    }
 	case 2:
 	    {
-		BinaryFunction<BitwiseOr, GeneralBinaryAttributeCopier,
-			       NullBinaryFunctorWrapper> bf;
-		return bf.apply<RawVector>(l, r);
+		return applyBinaryOperator(
+		    [](Rbyte l, Rbyte r) -> Rbyte { return l | r; },
+		    GeneralBinaryAttributeCopier(),
+		    l, r);
 	    }
 	}
 	return nullptr;  // -Wall
@@ -146,13 +109,11 @@ namespace {
 
     RObject* lnot(RObject* arg)
     {
-	using namespace boost::lambda;
 	if (arg && arg->sexptype() == RAWSXP) {
 	    // Bit inversion:
-	    RawVector* rv = static_cast<RawVector*>(arg);
-	    return
-		makeUnaryFunction<CopyLayoutAttributes>(_1^0xff)
-		.apply<RawVector>(rv);
+	    return applyUnaryOperator([](Rbyte x) { return Rbyte(~x); },
+				      CopyLayoutAttributes(),
+				      SEXP_downcast<RawVector*>(arg));
 	} else if (!isLogical(arg) && !isNumber(arg)) {
 	    if (Rf_length(arg) == 0U)  // For back-compatibility
 		return LogicalVector::create(0);
@@ -161,9 +122,10 @@ namespace {
 	// Logical negation:
 	GCStackRoot<LogicalVector>
 	    lv(static_cast<LogicalVector*>(coerceVector(arg, LGLSXP)));
-	return
-	    makeUnaryFunction<CopyLayoutAttributes>(!_1)
-	    .apply<LogicalVector>(lv.get());
+	return applyUnaryOperator(
+	    [](Logical x) { return !x; },
+	    CopyLayoutAttributes(),
+	    lv.get());
     }
 }
 

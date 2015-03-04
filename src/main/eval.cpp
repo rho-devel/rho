@@ -3414,10 +3414,11 @@ static R_INLINE void checkForMissings(SEXP args, SEXP call)
 RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 {
   ByteCode::Scope scope;
+  GCStackRoot<> bcode_reachable(bcode);
   SEXP body = bcode;
   SEXP value;
   ListVector* constants;
-  BCODE *pc, *codebase;
+  const BCODE *pc, *codebase;
   int ftype = 0;
   static int evalcount = 0;
 #ifdef BC_PROFILING
@@ -3430,11 +3431,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
   BC_CHECK_SIGINT();
 
   INITIALIZE_MACHINE();
-#ifdef ENCODED_BCODE
-  codebase = &bcode->m_threaded_code[0];
-#else
-  codebase = &(*bcode->m_code)[0];
-#endif
+  codebase = &*(bcode->code().begin());
   pc = codebase;
   constants = bcode->m_constants;
 
@@ -4365,30 +4362,32 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
   return value;
 }
 
-#ifdef THREADED_CODE
-#ifndef TOKEN_THREADING
-void ByteCode::thread()
+#ifdef ENCODED_BCODE
+vector<BCODE> ByteCode::encode(IntVector* bytes)
 {
-    size_t n = m_code->size();
-    int version = (*m_code)[0];
+    vector<BCODE> encoded;
+
+    IntVector& ipc = *bytes;
+    size_t n = encoded->size();
+    int version = ipc[0];
     // Check version:
     if (version < R_bcMinVersion || version > R_bcVersion) {
-	m_threaded_code.resize(2);
-	m_threaded_code[0].i = version;
-	m_threaded_code[1].v = s_op_address[BCMISMATCH_OP];
-	return;
+	encoded.resize(2);
+	encoded[0].i = version;
+	encoded[1].v = s_op_address[BCMISMATCH_OP];
+	return encoded;
     }
-    m_threaded_code.resize(n);
+    encoded.resize(n);
     // Insert the current version number:
-    m_threaded_code[0].i = R_bcVersion;
+    encoded[0].i = R_bcVersion;
     // First do a straight copy:
     for (size_t i = 1; i < n; ++i)
-	m_threaded_code[i].i = (*m_code)[i];
+	encoded[i].i = ipc[i];
     // Now replace the opcodes with the appropriate code addresses:
     {
 	size_t i = 1;
 	while (i < n) {
-	    BCODE& cell = m_threaded_code[i];
+	    BCODE& cell = encoded[i];
 	    int op = cell.i;
 	    if (op < 0 || op >= OPCOUNT)
 		error("unknown instruction code");
@@ -4396,8 +4395,53 @@ void ByteCode::thread()
 	    i += s_op_arity[op] + 1;
 	}
     }
+    return encoded;
 }
-#endif 
+
+static int findOp(void *addr)
+{
+    int i;
+
+    for (i = 0; i < OPCOUNT; i++)
+	if (opinfo[i].addr == addr)
+	    return i;
+    error(_("cannot find index for threaded code address"));
+    return 0; /* not reached */
+}
+
+IntVector* ByteCode::decode()
+{
+    GCStackRoot<> ensure_this_is_reachable(this);
+
+    int  i, j;
+    int n = m_code.size();
+    const vector<BCODE>& pc = m_code;
+
+    IntVector* bytes = IntVector::create(n);
+    IntVector& ipc = *bytes;
+
+    /* copy the version number */
+    ipc[0] = pc[0].i;
+
+    for (i = 1; i < n;) {
+	int op = findOp(pc[i].v);
+	int argc = opinfo[op].argc;
+	ipc[i] = op;
+	i++;
+	for (j = 0; j < argc; j++, i++)
+	    ipc[i] = pc[i].i;
+    }
+
+    return bytes;
+}
+#else
+IntVector* ByteCode::decode() const {
+    return IntVector::create(m_code.begin(), m_code.end());
+}
+
+vector<BCODE> ByteCode::encode(IntVector* bytes) {
+    return vector<BCODE>(bytes->begin(), bytes->end());
+}
 #endif
 
 SEXP attribute_hidden do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -4455,7 +4499,7 @@ static SEXP disassemble(SEXP bc)
   SEXP ans, dconsts;
   int i;
   ByteCode* bcode = SEXP_downcast<ByteCode*>(bc);
-  SEXP code = bcode->code();
+  SEXP code = bcode->decode();
   SEXP consts = bcode->constants();
   SEXP expr = nullptr;  // Set to BCODE_EXPR(bc) in CR
   int nc = LENGTH(consts);

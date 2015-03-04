@@ -50,71 +50,53 @@ using namespace VectorOps;
 static SEXP string_relop(RELOP_TYPE code, SEXP s1, SEXP s2);
 
 namespace {
-    // This class template, and more particularly its specialisations,
-    // are used to ensure that comparisons involving NaN yield NA.
-    //
-    // CXXR FIXME: it would be better if this code did not specialise
-    // for 'double' and 'Rcomplex' explicitly, but instead worked
-    // entirely in terms of appropriate ElementTraits.
-    template <typename T, template <typename> class Relop>
-    struct NaN2NA : std::binary_function<T, T, int>
-    {
-	int operator()(const T& l, const T& r) const
-	{
-	    return Relop<T>()(l, r);
-	}
-    };
+    bool isNaOrNaN(Logical value) { return isNA(value); }
+    bool isNaOrNaN(int value)     { return isNA(value); }
+    bool isNaOrNaN(double value)  { return std::isnan(value); }
+    bool isNaOrNaN(Complex value) { return (isNaOrNaN(value.r)
+					    || isNaOrNaN(value.i)); }
 
-    template <template <typename> class Relop>
-    struct NaN2NA<double, Relop> : std::binary_function<double, double, int>
-    {
-	int operator()(double l, double r) const
-	{
-	    using std::isnan;
-	    if (isnan(l) || isnan(r))
-		return ElementTraits::NAFunc<int>()();
-	    return Relop<double>()(l, r);
-	}
-    };
+    template<typename T, typename Op>
+    Logical withNaHandling(T lhs, T rhs, Op op) {
+	bool eitherIsNaOrNan = isNaOrNaN(lhs) || isNaOrNaN(rhs);
+	return eitherIsNaOrNan ? Logical::NA() : op(lhs, rhs);
+    }
 
-    template <template <typename> class Relop>
-    struct NaN2NA<Rcomplex, Relop>
-	: std::binary_function<Rcomplex, Rcomplex, int>
-    {
-	int operator()(const Rcomplex& l, const Rcomplex& r) const
-	{
-	    using std::isnan;
-	    if (isnan(l.r) || isnan(l.i) || isnan(r.r) || isnan(r.i))
-		return ElementTraits::NAFunc<int>()();
-	    return Relop<Rcomplex>()(l, r);
-	}
-    };
-
-    template <template <typename> class Relop, class V>
-    inline LogicalVector* relop_aux(const V* vl, const V* vr)
-    {
-	typedef typename V::value_type value_type;
-	return
-	    BinaryFunction<NaN2NA<value_type, Relop> >()
-	    .template apply<LogicalVector>(vl, vr);
+    template<typename T, typename Op>
+    LogicalVector* relop_aux(const T* lhs, const T* rhs, Op op) {
+	typedef typename T::value_type Value;
+	return applyBinaryOperator(
+	    [=](Value l, Value r) {
+		return withNaHandling(l, r, op);
+	    },
+	    GeneralBinaryAttributeCopier(),
+	    lhs, rhs);
     }
 
     template <class V>
     LogicalVector* relop(const V* vl, const V* vr, RELOP_TYPE code)
     {
+	typedef typename V::value_type Value;
+
 	switch (code) {
 	case EQOP:
-	    return relop_aux<std::equal_to>(vl, vr);
+	    return relop_aux(vl, vr,
+			     [](Value lhs, Value rhs) { return lhs == rhs; });
 	case NEOP:
-	    return relop_aux<std::not_equal_to>(vl, vr);
+	    return relop_aux(vl, vr,
+			     [](Value lhs, Value rhs) { return lhs != rhs; });
 	case LTOP:
-	    return relop_aux<std::less>(vl, vr);
+	    return relop_aux(vl, vr,
+			     [](Value lhs, Value rhs) { return lhs < rhs; });
 	case GTOP:
-	    return relop_aux<std::greater>(vl, vr);
+	    return relop_aux(vl, vr,
+			     [](Value lhs, Value rhs) { return lhs > rhs; });
 	case LEOP:
-	    return relop_aux<std::less_equal>(vl, vr);
+	    return relop_aux(vl, vr,
+			     [](Value lhs, Value rhs) { return lhs <= rhs; });
 	case GEOP:
-	    return relop_aux<std::greater_equal>(vl, vr);
+	    return relop_aux(vl, vr,
+			     [](Value lhs, Value rhs) { return lhs >= rhs; });
 	}
 	return nullptr;  // -Wall
     }
@@ -122,17 +104,21 @@ namespace {
     template <class V>
     LogicalVector* relop_no_order(const V* vl, const V* vr, RELOP_TYPE code)
     {
+	typedef typename V::value_type Value;
+
 	switch (code) {
 	case EQOP:
-	    return relop_aux<std::equal_to>(vl, vr);
+	    return relop_aux(vl, vr,
+			     [](Value lhs, Value rhs) { return lhs == rhs; });
 	case NEOP:
-	    return relop_aux<std::not_equal_to>(vl, vr);
+	    return relop_aux(vl, vr,
+			     [](Value lhs, Value rhs) { return lhs != rhs; });
 	default:
 	    Rf_error(_("comparison of these types is not implemented"));
 	}
 	return nullptr;  // -Wall
     }
-}
+}  // anonymous namespace
 
 SEXP attribute_hidden do_relop(SEXP call, SEXP op, SEXP args, SEXP env)
 {
@@ -223,10 +209,11 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 	return relop(vl.get(), vr.get(), opcode);
     }
     else if (isLogical(x) || isLogical(y)) {
-	GCStackRoot<LogicalVector>
-	    vl(static_cast<LogicalVector*>(coerceVector(x, LGLSXP)));
-	GCStackRoot<LogicalVector>
-	    vr(static_cast<LogicalVector*>(coerceVector(y, LGLSXP)));
+	// TODO(kmillar): do this without promoting to integer.
+	GCStackRoot<IntVector>
+	    vl(static_cast<IntVector*>(coerceVector(x, INTSXP)));
+	GCStackRoot<IntVector>
+	    vr(static_cast<IntVector*>(coerceVector(y, INTSXP)));
 	return relop(vl.get(), vr.get(), opcode);
     }
     else if (TYPEOF(x) == RAWSXP || TYPEOF(y) == RAWSXP) {
@@ -238,15 +225,6 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
     } else errorcall(call, _("comparison of these types is not implemented"));
     return nullptr;  // -Wall
 }
-
-/* i1 = i % n1; i2 = i % n2;
- * this macro is quite a bit faster than having real modulo calls
- * in the loop (tested on Intel and Sparc)
- */
-#define mod_iterate(n1,n2,i1,i2) for (i=i1=i2=0; i<n; \
-	i1 = (++i1 == n1) ? 0 : i1,\
-	i2 = (++i2 == n2) ? 0 : i2,\
-	++i)
 
 /* POSIX allows EINVAL when one of the strings contains characters
    outside the collation domain. */

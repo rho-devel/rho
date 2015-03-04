@@ -38,9 +38,15 @@ using namespace CXXR;
 NodeStack* ByteCode::s_nodestack = nullptr;
 std::vector<Frame::Binding*>* ByteCode::s_loopvar_stack = nullptr;
 
+ByteCode::ByteCode(IntVector* code, ListVector* constants)
+    : RObject(BCODESXP)
+{
+    m_constants = constants;
+    m_code = encode(code);
+}
+
 void ByteCode::detachReferents()
 {
-    m_code.detach();
     m_constants.detach();
     RObject::detachReferents();
 }
@@ -75,7 +81,8 @@ void ByteCode::protectAll()
 	s_nodestack->protectAll();
 }
 
-// ByteCode::thread() is in eval.cpp
+// ByteCode::encode() is in eval.cpp
+// ByteCode::decode() is in eval.cpp
 
 const char* ByteCode::typeName() const
 {
@@ -84,11 +91,8 @@ const char* ByteCode::typeName() const
 
 void ByteCode::visitReferents(const_visitor* v) const
 {
-    const GCNode* code = m_code;
     const GCNode* constants = m_constants;
     RObject::visitReferents(v);
-    if (code)
-	(*v)(code);
     if (constants)
 	(*v)(constants);
 }

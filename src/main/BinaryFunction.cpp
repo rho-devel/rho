@@ -56,10 +56,17 @@ void GeneralBinaryAttributeCopier::apply(VectorBase* vout,
 	    if (dimnames)
 		vout->setAttribute(DimNamesSymbol, dimnames);
 	} else {
-	    // Neither operand is an array:
-	    if (vout->size() == vl->size())
-		vout->setAttribute(NamesSymbol, vl->getAttribute(NamesSymbol));
-	    else vout->setAttribute(NamesSymbol, vr->getAttribute(NamesSymbol));
+	    // Neither operand is an array.  Get the names from the longer
+	    // attribute (if present), prefering the first if the lengths are
+	    // the same.
+	    RObject* vl_names = vl->getAttribute(NamesSymbol);
+	    if (vout->size() == vl->size() && vl_names) {
+		vout->setAttribute(NamesSymbol, vl_names);
+	    } else {
+		RObject* vr_names = vr->getAttribute(NamesSymbol);
+		if (vout->size() == vr->size() && vr_names)
+		    vout->setAttribute(NamesSymbol, vr_names);
+	    }
 	}
     }
     // Handle attributes related to time series:

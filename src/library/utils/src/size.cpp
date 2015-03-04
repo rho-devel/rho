@@ -69,7 +69,7 @@ static R_size_t objectsize(SEXP s)
     case BCODESXP:
 	{
 	    ByteCode* bc = SEXP_downcast<ByteCode*>(s);
-	    cnt += objectsize(bc->code());
+	    cnt += bc->code().size() * sizeof(ByteCode::BCODE);
 	    cnt += objectsize(bc->constants());
 	    break;
 	}

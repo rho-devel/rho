@@ -47,13 +47,11 @@ namespace CXXR {
     // Template specializations:
     namespace ElementTraits {
 	template <>
-	struct NAFunc<int> {
-	    const int& operator()() const
-	    {
-		static int na = NA_INTEGER;
-		return na;
-	    }
-	};
+	inline const int& NAFunc<int>::operator()() const
+	{
+            static int na = NA_INTEGER;
+            return na;
+        }
     }
 
     template <>
@@ -65,6 +63,12 @@ namespace CXXR {
     /** @brief Vector of integer values.
      */
     typedef FixedVector<int, INTSXP> IntVector;
+
+    template<>
+    struct VectorTypeFor<int> {
+      typedef IntVector type;
+    };
+
 }  // namespace CXXR
 
 BOOST_CLASS_EXPORT_KEY(CXXR::IntVector)
@@ -90,7 +94,7 @@ inline int* INTEGER(SEXP x)
     // Quicker than dynamic_cast:
     if (x && x->sexptype() == LGLSXP) {
 	LogicalVector* lvec = static_cast<LogicalVector*>(x);
-	return &(*lvec)[0];
+	return reinterpret_cast<int*>(&(*lvec)[0]);
     }
 #endif
     return &(*SEXP_downcast<IntVector*>(x, false))[0];

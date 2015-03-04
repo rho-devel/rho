@@ -39,8 +39,6 @@ namespace CXXR {
     }
 }
 
-Rbyte ElementTraits::NAFunc<Rbyte>::s_na = 0;
-
 // Needed for the instantiation in BOOST_CLASS_EXPORT_IMPLEMENT:
 #include "CXXR/PairList.h"
 

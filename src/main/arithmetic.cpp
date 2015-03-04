@@ -108,11 +108,6 @@ int matherr(struct exception *exc)
 #endif
 #endif
 
-#ifndef _AIX
-static const double R_Zero_Hack = 0.0;	/* Silence the Sun compiler */
-#else
-static double R_Zero_Hack = 0.0;
-#endif
 typedef union
 {
     double value;
@@ -184,9 +179,9 @@ namespace CXXR {
 void attribute_hidden InitArithmetic()
 {
     R_NaInt = INT_MIN;
-    R_NaN = std::numeric_limits<double>::quiet_NaN(); // was 0.0/R_Zero_Hack;
+    R_NaN = std::numeric_limits<double>::quiet_NaN();
     R_NaReal = R_ValueOfNA();
-    R_PosInf = std::numeric_limits<double>::infinity();  // was 1.0/R_Zero_Hack;
+    R_PosInf = std::numeric_limits<double>::infinity();
     R_NegInf = -R_PosInf;  // is this portable?
 }
 
@@ -318,16 +313,8 @@ static double logbase(double x, double base)
     return R_log(x) / R_log(base);
 }
 
-static SEXP logical_unary(ARITHOP_TYPE, SEXP, SEXP);
-static SEXP integer_unary(ARITHOP_TYPE, SEXP, SEXP);
-static SEXP real_unary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP real_binary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP integer_binary(ARITHOP_TYPE, SEXP, SEXP, SEXP);
-
-#if 0
-static int naflag;
-static GCRoot<> lcall;
-#endif
 
 
 /* Unary and Binary Operators */
@@ -384,58 +371,27 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
     checkOperandsConformable(x, y);
 
     R_xlen_t nx = XLENGTH(x);
-    bool xattr = false;
-    bool xarray = false;
-    if (ATTRIB(x) != R_NilValue) {
-	xattr = TRUE;
-	xarray = isArray(x);
-    }
-
     R_xlen_t ny = XLENGTH(y);
-    bool yattr = false;
-    bool yarray = false;
-    if (ATTRIB(y) != R_NilValue) {
-	yattr = TRUE;
-	yarray = isArray(y);
-    }
-
-    /* If either x or y is a matrix with length 1 and the other is a
-       vector, we want to coerce the matrix to be a vector.
-       Do we want to?  We don't do it!  BDR 2004-03-06
-    */
-
-    /* FIXME: Danger Will Robinson.
-     * -----  We might be trashing arguments here.
-     * If we have NAMED(x) or NAMED(y) we should duplicate!
-     */
-    if (xarray != yarray) {
-	if (xarray && nx==1 && ny!=1) {
-	    x = x->clone();
-	    setAttrib(x, R_DimSymbol, R_NilValue);
-	}
-	if (yarray && ny==1 && nx!=1) {
-	    y = y->clone();
-	    setAttrib(y, R_DimSymbol, R_NilValue);
-	}
-    }
-
-    bool mismatch = false;  // -Wall
-    if (nx == ny || nx == 1 || ny == 1) mismatch = false;
-    else if (nx > 0 && ny > 0) {
-	if (nx > ny) mismatch = (nx % ny != 0);
-	else mismatch = (ny % nx != 0);
-    }
-
-    if (mismatch)
-	warningcall(lcall,
-		    _("longer object length is not a multiple of shorter object length"));
 
     GCStackRoot<> val;
     /* need to preserve object here, as *_binary copies class attributes */
     if (TYPEOF(x) == CPLXSXP || TYPEOF(y) == CPLXSXP) {
+	bool mismatch = false;  // -Wall
+	if (nx == ny || nx == 1 || ny == 1) mismatch = false;
+	else if (nx > 0 && ny > 0) {
+	    if (nx > ny) mismatch = (nx % ny != 0);
+	    else mismatch = (ny % nx != 0);
+	}
+
+	if (mismatch)
+	    warningcall(lcall,
+			_("longer object length is not a multiple of shorter object length"));
+
 	x = COERCE_IF_NEEDED(x, CPLXSXP);
 	y = COERCE_IF_NEEDED(y, CPLXSXP);
 	val = complex_binary(oper, x, y);
+	BinaryArithmeticAttributeCopier::copyAttributes(
+	    SEXP_downcast<VectorBase*>(val.get()), x, y);
     }
     else if (TYPEOF(x) == REALSXP || TYPEOF(y) == REALSXP) {
 	if(!(TYPEOF(x) == INTSXP || TYPEOF(y) == INTSXP
@@ -446,82 +402,64 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 	}
 	val = real_binary(oper, x, y);
     }
-    else val = integer_binary(oper, x, y, lcall);
-
-    /* quick return if there are no attributes */
-    if (! xattr && ! yattr)
-	return val;
-
-    GCStackRoot<> dims, xnames, ynames;
-
-    if (xarray) {
-	dims = getAttrib(x, R_DimSymbol);
-	xnames = getAttrib(x, R_DimNamesSymbol);
-    }
-    if (yarray) {
-	dims = getAttrib(y, R_DimSymbol);
-	ynames = getAttrib(y, R_DimNamesSymbol);
-    } else if (!xarray) {
-	// Neither operand is an array:
-	xnames = getAttrib(x, R_NamesSymbol);
-	ynames = getAttrib(y, R_NamesSymbol);
-    }
-
-    /* Don't set the dims if one argument is an array of size 0 and the
-       other isn't of size zero, cos they're wrong */
-    /* Not if the other argument is a scalar (PR#1979) */
-    if (dims != R_NilValue) {
-	if (!((xarray && (nx == 0) && (ny > 1)) ||
-	      (yarray && (ny == 0) && (nx > 1)))){
-	    setAttrib(val, R_DimSymbol, dims);
-	    if (xnames != R_NilValue)
-		setAttrib(val, R_DimNamesSymbol, xnames);
-	    else if (ynames != R_NilValue)
-		setAttrib(val, R_DimNamesSymbol, ynames);
-	}
-    }
     else {
-	if (xlength(val) == xlength(xnames))
-	    setAttrib(val, R_NamesSymbol, xnames);
-	else if (xlength(val) == xlength(ynames))
-	    setAttrib(val, R_NamesSymbol, ynames);
+	val = integer_binary(oper, x, y, lcall);
     }
 
-    GCStackRoot<> klass, tsp;
-
-    bool yts = isTs(y);
-    if (yts) {
-	tsp = getAttrib(y, R_TspSymbol);
-	klass = getAttrib(y, R_ClassSymbol);
-    }
-
-    bool xts = isTs(x);
-    if (xts) {
-	tsp = getAttrib(x, R_TspSymbol);
-	klass = getAttrib(x, R_ClassSymbol);
-    }
-
-    if (xts || yts) {		/* must set *after* dims! */
-	setAttrib(val, R_TspSymbol, tsp);
-	setAttrib(val, R_ClassSymbol, klass);
-    }
-
-    if(isS4(x) || isS4(y)) {   /* Only set the bit:  no method defined! */
-        val = asS4(val, TRUE, TRUE);
-    }
     return val;
 }
+
+namespace {
+
+struct Negate {
+    template<class InType, class OutType = InType>
+    OutType operator()(InType value) { return -value; }
+};
+
+template<>
+int Negate::operator()(int value) {
+    return value == NA_INTEGER ? NA_INTEGER : -value;
+}
+
+template<>
+int Negate::operator()(Logical value) {
+    return Negate()(static_cast<int>(value));
+}
+
+template<typename InputType>
+static SEXP typed_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
+{
+    switch (code) {
+    case PLUSOP:
+	return s1;
+    case MINUSOP:
+	{
+	    using namespace VectorOps;
+	    return applyUnaryOperator(Negate(),
+				      CopyAllAttributes(),
+				      SEXP_downcast<InputType*>(s1));
+	}
+    default:
+	errorcall(call, _("invalid unary operator"));
+    }
+    return s1;			/* never used; to keep -Wall happy */
+}
+
+}  // anonymous namespace
 
 SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
 {
     ARITHOP_TYPE operation = ARITHOP_TYPE( PRIMVAL(op));
     switch (TYPEOF(s1)) {
     case LGLSXP:
-	return logical_unary(operation, s1, call);
+	// arithmetic on logicals makes no sense but R defines it anyway.
+	// Promote to integer first.
+	s1 = coerceVector(s1, INTSXP);
+	// fallthrough
     case INTSXP:
-	return integer_unary(operation, s1, call);
+	return typed_unary<IntVector>(operation, s1, call);
     case REALSXP:
-	return real_unary(operation, s1, call);
+	return typed_unary<RealVector>(operation, s1, call);
     case CPLXSXP:
 	return complex_unary(operation, s1, call);
     default:
@@ -530,61 +468,6 @@ SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
     return s1;			/* never used; to keep -Wall happy */
 }
 
-static SEXP logical_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
-{
-    switch (code) {
-    case PLUSOP:
-	return s1;
-    case MINUSOP:
-	{
-	    using namespace VectorOps;
-	    LogicalVector* lv = SEXP_downcast<LogicalVector*>(s1);
-	    return
-		makeUnaryFunction<CopyAllAttributes>(std::negate<int>())
-		.apply<IntVector>(lv);
-	}
-    default:
-	errorcall(call, _("invalid unary operator"));
-    }
-    return s1;			/* never used; to keep -Wall happy */
-}
-
-static SEXP integer_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
-{
-    switch (code) {
-    case PLUSOP:
-	return s1;
-    case MINUSOP:
-	{
-	    using namespace VectorOps;
-	    IntVector* iv = SEXP_downcast<IntVector*>(s1);
-	    return
-		UnaryFunction<std::negate<int>, CopyAllAttributes>()
-		.apply<IntVector>(iv);
-	}
-    default:
-	errorcall(call, _("invalid unary operator"));
-    }
-    return s1;			/* never used; to keep -Wall happy */
-}
-
-static SEXP real_unary(ARITHOP_TYPE code, SEXP s1, SEXP lcall)
-{
-    switch (code) {
-    case PLUSOP: return s1;
-    case MINUSOP:
-	{
-	    using namespace VectorOps;
-	    RealVector* rv = SEXP_downcast<RealVector*>(s1);
-	    return
-		makeUnaryFunction<CopyAllAttributes>(std::negate<double>())
-		.apply<RealVector>(rv);
-	}
-    default:
-	errorcall(lcall, _("invalid unary operator"));
-    }
-    return s1;			/* never used; to keep -Wall happy */
-}
 
 /* i1 = i % n1; i2 = i % n2;
  * this macro is quite a bit faster than having real modulo calls
@@ -595,454 +478,210 @@ static SEXP real_unary(ARITHOP_TYPE code, SEXP s1, SEXP lcall)
 	i2 = (++i2 == n2) ? 0 : i2,\
 	++i)
 
-
-
-/* The tests using integer comparisons are a bit faster than the tests
-   using doubles, but they depend on a two's complement representation
-   (but that is almost universal).  The tests that compare results to
-   double's depend on being able to accurately represent all int's as
-   double's.  Since int's are almost universally 32 bit that should be
-   OK. */
-
-#ifndef INT_32_BITS
-/* configure checks whether int is 32 bits.  If not this code will
-   need to be rewritten.  Since 32 bit ints are pretty much universal,
-   we can worry about writing alternate code when the need arises.
-   To be safe, we signal a compiler error if int is not 32 bits. */
-# error code requires that int have 32 bits
-#else
-/* Just to be on the safe side, configure ought to check that the
-   mashine uses two's complement. A define like
-#define USES_TWOS_COMPLEMENT (~0 == (unsigned) -1)
-   might work, but at least one compiler (CodeWarrior 6) chokes on it.
-   So for now just assume it is true.
-*/
-#define USES_TWOS_COMPLEMENT 1
-
-// Checks for integer overflow:
-
-#if USES_TWOS_COMPLEMENT
 namespace {
-    inline bool GOODISUM(int x, int y, int z)
-    {
-	return ((x > 0) ? (y < z) : ! (y < z));
+    int integer_plus(int lhs, int rhs, Rboolean* naflag) {
+	if (lhs == NA_INTEGER || rhs == NA_INTEGER) {
+	    return NA_INTEGER;
+	}
+	if ((lhs > 0 && INT_MAX - lhs < rhs)
+	    || (lhs < 0 && INT_MAX + lhs < -rhs)) {
+	    // Integer overflow.
+	    *naflag = TRUE;
+	    return NA_INTEGER;
+	}
+	return lhs + rhs;
     }
 
-    inline bool OPPOSITE_SIGNS(int x, int y) {return (x < 0)^(y < 0);}
-
-    inline bool GOODIDIFF(int x, int y, int z)
-    {
-	return !(OPPOSITE_SIGNS(x, y) && OPPOSITE_SIGNS(x, z));
+    int integer_minus(int lhs, int rhs, Rboolean* naflag) {
+	if (rhs == NA_INTEGER)
+	    return NA_INTEGER;
+	return integer_plus(lhs, -rhs, naflag);
     }
-}
-#else
-# define GOODISUM(x, y, z) (double(x) + double(y) == (z))
-# define GOODIDIFF(x, y, z) (double(x) - double(y) == (z))
-#endif
 
-namespace {
-    inline bool GOODIPROD(int x, int y, int z)
-    {
-	return double(x) * double(y) == z;
+    int integer_times(int lhs, int rhs, Rboolean* naflag) {
+	if (lhs == NA_INTEGER || rhs == NA_INTEGER) {
+	    return NA_INTEGER;
+	}
+	// This relies on the assumption that a double can represent all the
+	// possible values of an integer.  This isn't true for 64-bit integers.
+	static_assert(sizeof(int) <= 4,
+		      "integer_times assumes 32 bit integers which isn't true on this platform");
+	double result = static_cast<double>(lhs) * static_cast<double>(rhs);
+	if (std::abs(result) > INT_MAX) {
+	    // Integer overflow.
+	    *naflag = TRUE;
+	    return NA_INTEGER;
+	}
+	return static_cast<int>(result);
     }
-}
+
+    double integer_divide(int lhs, int rhs) {
+	if (lhs == NA_INTEGER || rhs == NA_INTEGER) {
+	    return NA_REAL;
+	}
+	return static_cast<double>(lhs) / static_cast<double>(rhs);
+    }
+
+    double integer_pow(int lhs, int rhs) {
+	if(lhs == 1 || rhs == 0)
+	    return 1;
+	if (lhs == NA_INTEGER || rhs == NA_INTEGER) {
+	    return NA_REAL;
+	}
+	return R_POW(static_cast<double>(lhs), static_cast<double>(rhs));
+    }
+
+    int integer_mod(int lhs, int rhs) {
+	if (lhs == NA_INTEGER || rhs == NA_INTEGER || rhs == 0)
+	    return NA_INTEGER;
+	return (lhs >= 0 && rhs > 0) ? lhs % rhs :
+	    static_cast<int>(myfmod(lhs, rhs));
+    }
+
+    int integer_idiv(int lhs, int rhs) {
+	/* This had x %/% 0 == 0 prior to 2.14.1, but
+	   it seems conventionally to be undefined */
+	if (lhs == NA_INTEGER || rhs == NA_INTEGER || rhs == 0)
+	    return NA_INTEGER;
+	return static_cast<int>(floor(double(lhs) / static_cast<double>(rhs)));
+    }
+
+    template<class Op>
+    VectorBase* apply_integer_binary(Op op, SEXP lhs, SEXP rhs) {
+	if (TYPEOF(lhs) != INTSXP) {
+	    // Probably a logical.
+	    // TODO(kmillar): eliminate the need to coerce here.
+	    lhs = coerceVector(lhs, INTSXP);
+	}
+	if (TYPEOF(rhs) != INTSXP) {
+	    rhs = coerceVector(rhs, INTSXP);
+	}
+
+	return applyBinaryOperator(op,
+				   BinaryArithmeticAttributeCopier(),
+				   SEXP_downcast<IntVector*>(lhs),
+				   SEXP_downcast<IntVector*>(rhs));
+    }
+}  // anonymous namespace
 
 #define INTEGER_OVERFLOW_WARNING _("NAs produced by integer overflow")
-#endif
 
 static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 {
-    R_xlen_t i, i1, i2, n, n1, n2;
-    int x1, x2;
-    SEXP ans;
     Rboolean naflag = FALSE;
-
-    n1 = XLENGTH(s1);
-    n2 = XLENGTH(s2);
-    /* S4-compatibility change: if n1 or n2 is 0, result is of length 0 */
-    if (n1 == 0 || n2 == 0) n = 0; else n = (n1 > n2) ? n1 : n2;
-
-    if (code == DIVOP || code == POWOP)
-	ans = allocVector(REALSXP, n);
-    else
-	ans = allocVector(INTSXP, n);
-    if (n1 == 0 || n2 == 0) return(ans);
-    PROTECT(ans);
+    VectorBase* ans = nullptr;
 
     switch (code) {
     case PLUSOP:
-	mod_iterate(n1, n2, i1, i2) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	    x1 = INTEGER(s1)[i1];
-	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
-		INTEGER(ans)[i] = NA_INTEGER;
-	    else {
-		int val = x1 + x2;
-		if (val != NA_INTEGER && GOODISUM(x1, x2, val))
-		    INTEGER(ans)[i] = val;
-		else {
-		    INTEGER(ans)[i] = NA_INTEGER;
-		    naflag = TRUE;
-		}
-	    }
-	}
-	if (naflag)
-	    warningcall(lcall, INTEGER_OVERFLOW_WARNING);
+	ans = apply_integer_binary(
+	    [&](int lhs, int rhs) { return integer_plus(lhs, rhs, &naflag); },
+	    s1, s2);
 	break;
     case MINUSOP:
-	mod_iterate(n1, n2, i1, i2) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	    x1 = INTEGER(s1)[i1];
-	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
-		INTEGER(ans)[i] = NA_INTEGER;
-	    else {
-		int val = x1 - x2;
-		if (val != NA_INTEGER && GOODIDIFF(x1, x2, val))
-		    INTEGER(ans)[i] = val;
-		else {
-		    naflag = TRUE;
-		    INTEGER(ans)[i] = NA_INTEGER;
-		}
-	    }
-	}
-	if (naflag)
-	    warningcall(lcall, INTEGER_OVERFLOW_WARNING);
+	ans = apply_integer_binary(
+	    [&](int lhs, int rhs) { return integer_minus(lhs, rhs, &naflag); },
+	    s1, s2);
 	break;
     case TIMESOP:
-	mod_iterate(n1, n2, i1, i2) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	    x1 = INTEGER(s1)[i1];
-	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
-		INTEGER(ans)[i] = NA_INTEGER;
-	    else {
-		int val = x1 * x2;
-		if (val != NA_INTEGER && GOODIPROD(x1, x2, val))
-		    INTEGER(ans)[i] = val;
-		else {
-		    naflag = TRUE;
-		    INTEGER(ans)[i] = NA_INTEGER;
-		}
-	    }
-	}
-	if (naflag)
-	    warningcall(lcall, INTEGER_OVERFLOW_WARNING);
+	ans = apply_integer_binary(
+	    [&](int lhs, int rhs) { return integer_times(lhs, rhs, &naflag); },
+	    s1, s2);
 	break;
     case DIVOP:
-	mod_iterate(n1, n2, i1, i2) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	    x1 = INTEGER(s1)[i1];
-	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
-		    REAL(ans)[i] = NA_REAL;
-		else
-		    REAL(ans)[i] = double( x1) / double( x2);
-	}
+	ans = apply_integer_binary(
+	    [](int lhs, int rhs) { return integer_divide(lhs, rhs); },
+	    s1, s2);
 	break;
     case POWOP:
-	mod_iterate(n1, n2, i1, i2) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	    if((x1 = INTEGER(s1)[i1]) == 1 || (x2 = INTEGER(s2)[i2]) == 0)
-		REAL(ans)[i] = 1.;
-	    else if (x1 == NA_INTEGER || x2 == NA_INTEGER)
-		REAL(ans)[i] = NA_REAL;
-	    else {
-		REAL(ans)[i] = R_POW(double( x1), double( x2));
-	    }
-	}
+	ans = apply_integer_binary(
+	    [](int lhs, int rhs) { return integer_pow(lhs, rhs); },
+	    s1, s2);
 	break;
     case MODOP:
-	mod_iterate(n1, n2, i1, i2) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	    x1 = INTEGER(s1)[i1];
-	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER || x2 == 0)
-		INTEGER(ans)[i] = NA_INTEGER;
-	    else {
-		INTEGER(ans)[i] = /* till 0.63.2:	x1 % x2 */
-		    (x1 >= 0 && x2 > 0) ? x1 % x2 :
-		    int(myfmod(double(x1), double(x2)));
-	    }
-	}
+	ans = apply_integer_binary(
+	    [](int lhs, int rhs) { return integer_mod(lhs, rhs); },
+	    s1, s2);
 	break;
     case IDIVOP:
-	mod_iterate(n1, n2, i1, i2) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	    x1 = INTEGER(s1)[i1];
-	    x2 = INTEGER(s2)[i2];
-	    /* This had x %/% 0 == 0 prior to 2.14.1, but
-	       it seems conventionally to be undefined */
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER || x2 == 0)
-		INTEGER(ans)[i] = NA_INTEGER;
-	    else
-		INTEGER(ans)[i] = int( floor(double(x1) / double(x2)));
-	}
+	ans = apply_integer_binary(
+	    [](int lhs, int rhs) { return integer_idiv(lhs, rhs); },
+	    s1, s2);
 	break;
     }
-    UNPROTECT(1);
-
-    /* quick return if there are no attributes */
-    if (ATTRIB(s1) == R_NilValue && ATTRIB(s2) == R_NilValue)
-	return ans;
-
-    /* Copy attributes from longer argument. */
-
-    if (n1 > n2)
-	copyMostAttrib(s1, ans);
-    else if (n1 == n2) {
-	copyMostAttrib(s2, ans);
-	copyMostAttrib(s1, ans);
-    }
-    else
-	copyMostAttrib(s2, ans);
+    if (naflag)
+	warningcall(lcall, INTEGER_OVERFLOW_WARNING);
 
     return ans;
 }
 
 namespace {
-    inline double R_INTEGER(SEXP robj, R_xlen_t i)
-    {
-	return double(INTEGER(robj)[i]
-		      == NA_INTEGER ? NA_REAL : INTEGER(robj)[i]);
+    inline double intToReal(int value) {
+	return isNA(value) ? NA_REAL : value;
+    }
+}
+
+template<class Op>
+static RealVector* apply_real_binary(Op op, SEXP lhs, SEXP rhs)
+{
+    using namespace VectorOps;
+
+    SEXPTYPE lhs_type = TYPEOF(lhs);
+    SEXPTYPE rhs_type = TYPEOF(rhs);
+
+    if(lhs_type == REALSXP && rhs_type == REALSXP) {
+	return applyBinaryOperator(
+	    op,
+	    BinaryArithmeticAttributeCopier(),
+	    SEXP_downcast<RealVector*>(lhs),
+	    SEXP_downcast<RealVector*>(rhs));
+    } else if(lhs_type == INTSXP) {
+	return applyBinaryOperator(
+	    [=](int lhs, double rhs) { return op(intToReal(lhs), rhs); },
+	    BinaryArithmeticAttributeCopier(),
+	    SEXP_downcast<IntVector*>(lhs),
+	    SEXP_downcast<RealVector*>(rhs));
+    } else {
+	assert(rhs_type == INTSXP);
+	return applyBinaryOperator(
+	    [=](double lhs, int rhs) { return op(lhs, intToReal(rhs)); },
+	    BinaryArithmeticAttributeCopier(),
+	    SEXP_downcast<RealVector*>(lhs),
+	    SEXP_downcast<IntVector*>(rhs));
     }
 }
 
 static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 {
-    R_xlen_t i, i1, i2, n, n1, n2;
-    SEXP ans;
-
-    /* Note: "s1" and "s2" are protected above. */
-    n1 = XLENGTH(s1);
-    n2 = XLENGTH(s2);
-
-    /* S4-compatibility change: if n1 or n2 is 0, result is of length 0 */
-    if (n1 == 0 || n2 == 0) return(allocVector(REALSXP, 0));
-
-    n = (n1 > n2) ? n1 : n2;
-    PROTECT(ans = allocVector(REALSXP, n));
-
     switch (code) {
     case PLUSOP:
-	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-            if (n2 == 1) {
-                double tmp = REAL(s2)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] + tmp;
-            }
-            else if (n1 == 1) {
-                double tmp = REAL(s1)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = tmp + REAL(s2)[i];
-            }
-            else if (n1 == n2)
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] + REAL(s2)[i];
-            else
-                mod_iterate(n1, n2, i1, i2) {
-//		    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-		    REAL(ans)[i] = REAL(s1)[i1] + REAL(s2)[i2];
-		}
-	} else	if(TYPEOF(s1) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = R_INTEGER(s1, i1) + REAL(s2)[i2];
-	     }
-	} else	if(TYPEOF(s2) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = REAL(s1)[i1] + R_INTEGER(s2, i2);
-	     }
-	}
-	break;
+	return apply_real_binary(
+	    [](double lhs, double rhs) { return lhs + rhs; },
+	    s1, s2);
     case MINUSOP:
-	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-            if (n2 == 1) {
-                double tmp = REAL(s2)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] - tmp;
-            }
-            else if (n1 == 1) {
-                double tmp = REAL(s1)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = tmp - REAL(s2)[i];
-            }
-            else if (n1 == n2)
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] - REAL(s2)[i];
-            else
-                mod_iterate(n1, n2, i1, i2) {
-//		    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-		    REAL(ans)[i] = REAL(s1)[i1] - REAL(s2)[i2];
-		}
-	} else	if(TYPEOF(s1) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = R_INTEGER(s1, i1) - REAL(s2)[i2];
-	   }
-	} else	if(TYPEOF(s2) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = REAL(s1)[i1] - R_INTEGER(s2, i2);
-	   }
-	}
-	break;
+	return apply_real_binary(
+	    [](double lhs, double rhs) { return lhs - rhs; },
+	    s1, s2);
     case TIMESOP:
-	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-            if (n2 == 1) {
-                double tmp = REAL(s2)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] * tmp;
-            }
-            else if (n1 == 1) {
-                double tmp = REAL(s1)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = tmp * REAL(s2)[i];
-            }
-            else if (n1 == n2)
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] * REAL(s2)[i];
-            else
-                mod_iterate(n1, n2, i1, i2) {
-//		    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-		    REAL(ans)[i] = REAL(s1)[i1] * REAL(s2)[i2];
-		}
-	} else if(TYPEOF(s1) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = R_INTEGER(s1, i1) * REAL(s2)[i2];
-	   }
-	} else	if(TYPEOF(s2) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = REAL(s1)[i1] * R_INTEGER(s2, i2);
-	   }
-	}
-	break;
+	return apply_real_binary(
+	    [](double lhs, double rhs) { return lhs * rhs; },
+	    s1, s2);
     case DIVOP:
-	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-            if (n2 == 1) {
-                double tmp = REAL(s2)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] / tmp;
-            }
-            else if (n1 == 1) {
-                double tmp = REAL(s1)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = tmp / REAL(s2)[i];
-            }
-            else if (n1 == n2)
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = REAL(s1)[i] / REAL(s2)[i];
-            else
-                mod_iterate(n1, n2, i1, i2) {
-//		    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-		    REAL(ans)[i] = REAL(s1)[i1] / REAL(s2)[i2];
-		}
-	} else if(TYPEOF(s1) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = R_INTEGER(s1, i1) / REAL(s2)[i2];
-	   }
-	} else	if(TYPEOF(s2) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = REAL(s1)[i1] / R_INTEGER(s2, i2);
-	   }
-	}
-	break;
+	return apply_real_binary(
+	    [](double lhs, double rhs) { return lhs / rhs; },
+	    s1, s2);
     case POWOP:
-	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-            if (n2 == 1) {
-                double tmp = REAL(s2)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = R_POW(REAL(s1)[i], tmp);
-            }
-            else if (n1 == 1) {
-                double tmp = REAL(s1)[0];
-                for (i = 0; i < n; i++)
-		    REAL(ans)[i] = R_POW(tmp, REAL(s2)[i]);
-            }
-            else if (n1 == n2)
-                for (i = 0; i < n; i++)
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-		    REAL(ans)[i] = R_POW(REAL(s1)[i], REAL(s2)[i]);
-            else
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = R_POW(REAL(s1)[i1], REAL(s2)[i2]);
-	    }
-	} else if(TYPEOF(s1) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = R_POW( R_INTEGER(s1, i1), REAL(s2)[i2]);
-	   }
-	} else	if(TYPEOF(s2) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = R_POW(REAL(s1)[i1], R_INTEGER(s2, i2));
-	   }
-	}
-	break;
+	return apply_real_binary(
+	    [](double lhs, double rhs) { return R_POW(lhs, rhs); },
+	    s1, s2);
     case MODOP:
-	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = myfmod(REAL(s1)[i1], REAL(s2)[i2]);
-	    }
-	} else if(TYPEOF(s1) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = myfmod( R_INTEGER(s1, i1), REAL(s2)[i2]);
-	   }
-	} else	if(TYPEOF(s2) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = myfmod(REAL(s1)[i1], R_INTEGER(s2, i2));
-	   }
-	}
-	break;
+	return apply_real_binary(
+	    [](double lhs, double rhs) { return myfmod(lhs, rhs); },
+	    s1, s2);
     case IDIVOP:
-	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = myfloor(REAL(s1)[i1], REAL(s2)[i2]);
-	    }
-	} else if(TYPEOF(s1) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = myfloor(R_INTEGER(s1, i1), REAL(s2)[i2]);
-	   }
-	} else	if(TYPEOF(s2) == INTSXP ) {
-	   mod_iterate(n1, n2, i1, i2) {
-//	       if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
-	       REAL(ans)[i] = myfloor(REAL(s1)[i1], R_INTEGER(s2,i2));
-	   }
-	}
-	break;
+	return apply_real_binary(
+	    [](double lhs, double rhs) { return myfloor(lhs, rhs); },
+	    s1, s2);
     }
-
-    /* quick return if there are no attributes */
-    if (ATTRIB(s1) == R_NilValue && ATTRIB(s2) == R_NilValue) {
-	UNPROTECT(1);
-	return ans;
-    }
-
-    /* Copy attributes from longer argument. */
-
-    if (n1 > n2)
-	copyMostAttrib(s1, ans);
-    else if (n1 == n2) {
-	copyMostAttrib(s2, ans);
-	copyMostAttrib(s1, ans);
-    }
-    else
-	copyMostAttrib(s2, ans);
-
-    UNPROTECT(1);
-    return ans;
 }
 
 
@@ -1050,10 +689,7 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 
 // FunctorWrapper for VectorOps::UnaryFunction.  Warns if function
 // application gives rise to any new NaNs.
-template <typename, typename, typename> class NaNWarner;
-
-template <>
-class NaNWarner<double, double, double (*)(double)> {
+class NaNWarner {
 public:
     NaNWarner(double (*f)(double))
 	: m_f(f), m_any_NaN(false)
@@ -1087,8 +723,12 @@ static SEXP math1(SEXP sa, double (*f)(double), SEXP lcall)
     /* coercion can lose the object bit */
     GCStackRoot<RealVector>
 	rv(static_cast<RealVector*>(coerceVector(sa, REALSXP)));
-    UnaryFunction<double (*)(double), CopyAllAttributes, NaNWarner> uf(f);
-    return uf.apply<RealVector>(rv.get());
+    NaNWarner op(f);
+    RealVector* result = applyUnaryOperator(std::ref(op),
+					    CopyAllAttributes(),
+					    rv.get());
+    op.warnings();
+    return result;
 }
 
 SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
