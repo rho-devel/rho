@@ -31,6 +31,7 @@
 #define GCEDGE_HPP 1
 
 #include "CXXR/GCNode.hpp"
+#include "CXXR/ElementTraits.hpp"
 
 namespace CXXR {
     class RObject;
@@ -168,6 +169,73 @@ namespace CXXR {
 	    return static_cast<T*>(const_cast<GCNode*>(target()));
 	}
     };
+
+    // Partial specializations of ElementTraits:
+    namespace ElementTraits {
+	template <class T>
+	struct DetachReferents<GCEdge<T> >
+	    : std::unary_function<T, void> {
+	    void operator()(GCEdge<T>& t) const
+	    {
+		t = nullptr;
+	    }
+	};
+
+	template <class T>
+	struct HasReferents<GCEdge<T> > : boost::mpl::true_
+	{};
+
+	template <class T>
+	struct MustConstruct<GCEdge<T> > : boost::mpl::true_
+	{};
+
+	template <class T>
+	struct MustDestruct<GCEdge<T> >  : boost::mpl::true_
+	{};
+
+	template <class T>
+	struct Serialize<GCEdge<T> > {
+	    template <class Archive>
+	    void operator()(Archive& ar, GCEdge<T>& item)
+	    {
+		GCNPTR_SERIALIZE(ar, item);
+	    }
+	};
+
+	template <class T>
+	class VisitReferents<GCEdge<T> >
+	    : public std::unary_function<T, void> {
+	public:
+	    VisitReferents(GCNode::const_visitor* v)
+		: m_v(v)
+	    {}
+
+	    void operator()(const GCEdge<T>& t) const
+	    {
+		if (t.get())
+		    (*m_v)(t);
+	    }
+	private:
+	    GCNode::const_visitor* m_v;
+	};
+
+	template <class T>
+	struct NAFunc<GCEdge<T> > {
+	    const GCEdge<T>& operator()() const
+	    {
+		static GCEdge<T> na;
+		return na;
+	    }
+	};
+
+	template <class T>
+	struct IsNA<GCEdge<T> > {
+	    bool operator()(const GCEdge<T>& t) const
+	    {
+		return false;
+	    }
+	};
+	}  // namespace ElementTraits
 } // namespace CXXR
 
 #endif  // GCEDGE_HPP
