@@ -42,6 +42,7 @@
 #include <boost/serialization/nvp.hpp>
 
 #include "CXXR/GCNode_PtrS11n.hpp"
+#include "CXXR/GCEdge.hpp"
 #include "CXXR/RHandle.hpp"
 #include "CXXR/uncxxr.h"
 
@@ -227,6 +228,27 @@ namespace CXXR {
 	static T* clone(const T* pattern)
 	{
 	    return pattern ? static_cast<T*>(pattern->clone()) : nullptr;
+	}
+
+	/** @brief Return a pointer to a copy of an object or the object itself
+     *     if it isn't clonabel.
+	 *
+	 * @tparam T RObject or a type derived from RObject.
+	 *
+	 * @param pattern Either a null pointer or a pointer to the
+	 *          object to be cloned.
+	 *
+	 * @return Pointer to a clone of \a pattern, or \a pattern
+	 * if \a pattern cannot be cloned or is itself a null pointer.
+	 */
+	template <class T>
+	static T* cloneOrSelf(const T* pattern)
+	{
+        if (!pattern) {
+            return nullptr;
+        }
+        T* result = static_cast<T*>(pattern->clone());  // TODO(kmillar): remove the need for this cast.
+        return result ? result : const_cast<T*>(pattern);
 	}
 
 	/** @brief Copy an attribute from one RObject to another.
@@ -606,7 +628,7 @@ namespace CXXR {
 	bool m_active_binding : 1;
 	bool m_binding_locked : 1;
     private:
-	RHandle<PairList> m_attrib;
+	GCEdge<PairList> m_attrib;
 
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version);

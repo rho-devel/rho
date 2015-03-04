@@ -339,7 +339,7 @@ namespace CXXR {
 	friend class boost::serialization::access;
 	friend class PairList;
 
-	RHandle<> m_car;
+	GCEdge<> m_car;
 	GCEdge<PairList> m_tail;
 	GCEdge<const RObject> m_tag;
 
@@ -570,15 +570,15 @@ namespace CXXR {
     inline ConsCell::ConsCell(const ConsCell& pattern)
       : RObject(pattern)
     {
-        m_car = pattern.m_car;
-        m_tail = clone(pattern.tail());
+        m_car = cloneOrSelf(pattern.m_car.get());
+        m_tail = cloneOrSelf(pattern.tail());
         m_tag = pattern.tag();
     }
     
     inline ConsCell::ConsCell(const ConsCell& pattern, int)
 	: RObject(pattern)
     {
-        m_car = pattern.m_car;
+        m_car = cloneOrSelf(pattern.m_car.get());
         m_tail = nullptr;
         m_tag = pattern.tag();
     }

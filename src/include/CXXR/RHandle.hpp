@@ -82,14 +82,14 @@ namespace CXXR {
 	 */
 	RHandle(const RHandle<T>& pattern)
 	{
-	    operator=(cloneOrSelf(pattern));
+	    operator=(T::cloneOrSelf(pattern.get()));
 	}
 
 	/** @brief Assignment operator.
 	 */
 	RHandle<T>& operator=(const RHandle<T>& source)
 	{
-	    GCEdge<T>::operator=(cloneOrSelf(source));
+	    GCEdge<T>::operator=(T::cloneOrSelf(source.get()));
 	    return *this;
 	}
 
@@ -103,8 +103,6 @@ namespace CXXR {
 	    GCEdge<T>::operator=(newtarget);
 	    return *this;
 	}
-    private:
-	static T* cloneOrSelf(T*);
     };  // class template RHandle
 
     // Partial specializations of ElementTraits:
@@ -174,15 +172,5 @@ namespace CXXR {
 	};
     }  // namespace ElementTraits
 }  // namespace CXXR
-
-
-// ***** Implementations of non-inlined templated functions. *****
-
-template <class T>
-T* CXXR::RHandle<T>::cloneOrSelf(T* pattern)
-{
-    T* t = pattern ? static_cast<T*>(pattern->clone()) : nullptr;
-    return (t ? t : pattern);
-}
 
 #endif // RHANDLE_HPP

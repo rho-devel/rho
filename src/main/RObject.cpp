@@ -72,8 +72,9 @@ RObject::RObject(const RObject& pattern)
     : m_type(pattern.m_type), m_named(0),
       m_memory_traced(pattern.m_memory_traced), m_missing(pattern.m_missing),
       m_argused(pattern.m_argused), m_active_binding(pattern.m_active_binding),
-      m_binding_locked(pattern.m_binding_locked), m_attrib(pattern.m_attrib)
+      m_binding_locked(pattern.m_binding_locked)
 {
+    m_attrib = cloneOrSelf(pattern.m_attrib.get());
     maybeTraceMemory(&pattern);
 }
 
