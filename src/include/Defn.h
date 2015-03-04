@@ -50,12 +50,6 @@
 #include "CXXR/Evaluator.h"
 #include "CXXR/errors.h"
 
-/* seems unused */
-#define COUNTING
-
-/* probably no longer needed */
-#define NEW_CONDITION_HANDLING
-
 #ifdef HAVE_VISIBILITY_ATTRIBUTE
 # define attribute_visible __attribute__ ((visibility ("default")))
 # define attribute_hidden __attribute__ ((visibility ("hidden")))
@@ -122,17 +116,9 @@ extern0 SEXP    R_dot_GenericCallEnv;  /* ".GenericCallEnv" */
 extern0 SEXP    R_dot_GenericDefEnv;  /* ".GenericDefEnv" */
 
 
-#define BYTES_MASK (1<<1)
-#define HASHASH_MASK 1
-/**** HASHASH uses the first bit -- see HASHASH_MASK defined below */
-
 int IS_BYTES(SEXP x);
 void SET_BYTES(SEXP x);
 int IS_ASCII(SEXP x);
-/* macros and declarations for managing CHARSXP cache */
-# define CXHEAD(x) (x)
-# define CXTAIL(x) ATTRIB(x)
-SEXP (SET_CXTAIL)(SEXP x, SEXP y);
 
 #include "Errormsg.h"
 
@@ -203,18 +189,9 @@ extern void R_ProcessEvents(void);
 #define Mega 1048576. /* 1 Mega Byte := 2^20 (= 1048576) Bytes */
 #define Giga 1073741824. /* 1 Giga Byte := 2^30 Bytes */
 
-/*	R_PPSSIZE  The pointer protection stack size  */
-/*	R_NSIZE	   The number of cons cells	 */
-/*	R_VSIZE	   The vector heap size in bytes */
-/*  These values are defaults and can be overridden in config.h
+/*  R_VSIZE	   The initial heap size in bytes */
+/*  This is a default value and can be overridden in config.h
     The maxima and minima are in startup.c */
-
-#ifndef R_PPSSIZE
-#define	R_PPSSIZE	50000L
-#endif
-#ifndef R_NSIZE
-#define	R_NSIZE		350000L
-#endif
 #ifndef R_VSIZE
 #define	R_VSIZE		16000000L
 #endif
@@ -329,12 +306,6 @@ inline size_t PTR2VEC(int n)
     return (n > 0) ? (std::size_t(n)*sizeof(SEXP) - 1)/sizeof(VECREC) + 1 : 0;
 }
 
-/* Bindings */
-/* use the same bits (15 and 14) in symbols and bindings */
-#define ACTIVE_BINDING_MASK (1<<15)
-#define BINDING_LOCK_MASK (1<<14)
-#define SPECIAL_BINDING_MASK (ACTIVE_BINDING_MASK | BINDING_LOCK_MASK)
-
 #else /* if not __cplusplus */
 
 typedef SEXP R_bcstack_t;
@@ -393,9 +364,7 @@ LibExtern int R_interrupts_pending INI_as(0);
 LibExtern char *R_Home;		    /* Root of the R tree */
 
 /* Memory Management */
-extern0 R_size_t R_VSize  INI_as(R_VSIZE);/* Size of the vector heap */
-extern0 SEXP	R_NHeap;	    /* Start of the cons cell heap */
-extern0 SEXP	R_FreeSEXP;	    /* Cons cell free list */
+extern0 R_size_t R_VSize  INI_as(R_VSIZE);/* Initial size of the heap */
 extern0 int	R_Is_Running;	    /* for Windows memory manager */
 
 /* Evaluation Environment */

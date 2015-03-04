@@ -147,9 +147,8 @@ double elapsedLimitValue = -1.0;
 
 // Data declared extern0 in Defn.h :
 
-attribute_hidden R_size_t R_VSize  = R_VSIZE;/* Size of the vector heap */
-attribute_hidden SEXP	R_NHeap;	    /* Start of the cons cell heap */
-attribute_hidden SEXP	R_FreeSEXP;	    /* Cons cell free list */
+attribute_hidden R_size_t R_VSize  = R_VSIZE;/* Initial size of the heap */
+
 attribute_hidden int	R_BrowseLines	= 0;	/* lines/per call in browser */
 attribute_hidden Rboolean R_KeepSource	= FALSE;	/* options(keep.source) */
 attribute_hidden Rboolean R_CBoundsCheck = FALSE;	/* options(CBoundsCheck) */

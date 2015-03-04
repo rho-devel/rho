@@ -96,7 +96,6 @@ void
 R_common_command_line(int *pac, char **argv, Rstart Rp)
 {
     int ac = *pac, newac = 1;	/* argv[0] is process name */
-    long lval; /* this is only used for ppval, so 32-bit long is fine */
     char *p, **av = argv, msg[1024];
     Rboolean processing = TRUE;
 
@@ -202,9 +201,7 @@ R_common_command_line(int *pac, char **argv, Rstart Rp)
 			 _("WARNING: option '%s' no longer supported"), *av);
 		R_ShowMessage(msg);
 	    }
-	    /* mop up --min-[nv]size */
-	    else if( !strncmp(*av, "--min-nsize", 11) ||
-		     !strncmp(*av, "--min-vsize", 11) ) {
+	    else if (!strncmp(*av, "--min-vsize", 11)) {
 		if(strlen(*av) < 13) {
 		    if(ac > 1) {ac--; av++; p = *av;} else p = nullptr;
 		} else p = &(*av)[12];
@@ -229,28 +226,13 @@ R_common_command_line(int *pac, char **argv, Rstart Rp)
 		    R_ShowMessage(msg);
 
 		} else {
-		    // --min-nsize is ignored in CXXR:
-		    // if(!strncmp(*av, "--min-nsize", 11)) Rp->nsize = value;
-		    if(!strncmp(*av, "--min-vsize", 11)) Rp->vsize = value;
+		    Rp->vsize = value;
 		}
 	    }
-	    else if(strncmp(*av, "--max-ppsize", 12) == 0) {
-		if(strlen(*av) < 14) {
-		    if(ac > 1) {ac--; av++; p = *av;} else p = nullptr;
-		} else p = &(*av)[13];
-		if (p == nullptr) {
-		    R_ShowMessage(_("WARNING: no value given for '--max-ppsize'"));
-		    break;
-		}
-		lval = strtol(p, &p, 10);
-		if (lval < 0)
-		    R_ShowMessage(_("WARNING: '--max-ppsize' value is negative: ignored"));
-		else if (lval < 10000)
-		    R_ShowMessage(_("WARNING: '--max-ppsize' value is too small: ignored"));
-
-		else if (lval > 500000)
-		    R_ShowMessage(_("WARNING: '--max-ppsize' value is too large: ignored"));
-		else Rp->ppsize = size_t( lval);
+	    else if( !strncmp(*av, "--min-nsize", 11) ||
+		     !strncmp(*av, "--max-ppsize", 12)) {
+		// CXXR silently ignores these parameters for compatibility
+		// with CR.
 	    }
 	    else { /* unknown -option */
 		argv[newac++] = *av;

@@ -155,7 +155,7 @@ void R_DefParams(Rstart Rp)
     Rp->DebugInitFile = FALSE;
     Rp->vsize = R_VSIZE;
     Rp->max_vsize = R_SIZE_T_MAX;
-    Rp->ppsize = R_PPSSIZE;
+    Rp->ppsize = -1;  // unused
     Rp->NoRenviron = FALSE;
     R_SizeFromEnv(Rp);
 }

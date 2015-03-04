@@ -75,7 +75,7 @@ typedef struct
     SA_TYPE SaveAction;
     size_t vsize;
     size_t max_vsize;
-    size_t ppsize;
+    size_t ppsize;    /* unused */
     int NoRenviron;
 
 #ifdef Win32

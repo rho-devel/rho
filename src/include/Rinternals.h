@@ -106,12 +106,8 @@ using std::FILE;
 # define R_XLEN_T_MAX R_LEN_T_MAX
 #endif
 
-
 /* 11 and 12 were factors and ordered factors in the 1990s */
 /* used for detecting PROTECT issues in memory.c */
-#define NEWSXP      30    /* fresh node creaed in new page */
-#define FREESXP     31    /* node released by GC */
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -440,7 +436,6 @@ int Rf_GetOptionWidth(void);
 SEXP Rf_GetRowNames(SEXP);
 void Rf_gsetVar(SEXP, SEXP, SEXP);
 SEXP Rf_install(const char *);
-Rboolean Rf_isFree(SEXP);
 Rboolean Rf_isOrdered(SEXP);
 Rboolean Rf_isUnordered(SEXP);
 Rboolean Rf_isUnsorted(SEXP, Rboolean);
