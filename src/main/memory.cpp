@@ -69,15 +69,9 @@ extern void *Rm_realloc(void * p, size_t n);
    length on a 64-bit system.
 */
 
-#define GC_TORTURE
-
-#ifdef GC_TORTURE
 // The following are 'loose wheels' in CXXR: they have no effect.
 static int gc_force_wait = 0;
 static int gc_force_gap = 0;
-#endif
-
-/* Miscellaneous Globals. */
 
 /* Debugging Routines. */
 

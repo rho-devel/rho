@@ -42,16 +42,16 @@
 namespace CXXR {
     /** @brief Class used to represent R symbols.
      *
-     * A Symbol is an R identifier.  Each Symbol (except for special
-     * symbols, see below) has a name, namely a String giving the
+     * A Symbol is an R identifier.  Each Symbol (except for
+     * pseudo-symbols, see below) has a name, namely a String giving the
      * textual representation of the identifier.  Generally speaking,
      * however, a Symbol object is identified by its address rather
      * than by its name.  Consequently, the class enforces the
      * invariant that there is a most one Symbol object with a given
-     * name (but this does not apply to special symbols).
+     * name (but this does not apply to pseudo-symbols).
      *
-     * Symbols come in two varieties, standard symbols and special
-     * symbols, both implemented by this class.  Dot-dot symbols are a
+     * Symbols come in two varieties, standard symbols and pseudo-symbols,
+     * both implemented by this class.  Dot-dot symbols are a
      * subvariety of standard symbols.
      *
      * Standard symbols are generated using the static member function
@@ -69,9 +69,9 @@ namespace CXXR {
      * consistently enforce the 'at most one Symbol per name' rule for
      * dot-dot symbols; CXXR does.)
      *
-     * Special symbols are used to implement certain pseudo-objects
+     * Pseudo-symbols are used to implement certain pseudo-objects
      * (::R_MissingArg and ::R_UnboundValue) that CR expects to have
-     * ::SEXPTYPE SYMSXP.  Each special symbol has a blank string as
+     * ::SEXPTYPE SYMSXP.  Each psuedo-symbol has a blank string as
      * its name, but despite this each of them is a distinct symbol.
      *
      * @note Following the practice with CR's symbol table, Symbol
@@ -124,6 +124,26 @@ namespace CXXR {
 	{
 	    return m_dd_index != 0;
 	}
+
+	/** @brief Is this a special symbol?
+	 *
+         * Special symbols are symbols that get special lookup optimizations.
+         * Environments on the function call stack that
+         * have never contained such a symbol are marked as such, so they can
+         * be quickly skipped when searching for a function named by such a
+         * special symbol.
+         *
+         * In principle, any symbol could be marked as special, but ones that
+         * contain special characters, or are reserved words, are the ones
+         * unlikely to be defined in any environment other than base, and hence
+         * the ones where this is most likely to help.
+         *
+	 * @return true iff this symbol is marked as a special symbol.
+	 */
+        bool isSpecialSymbol() const
+        {
+          return m_is_special_symbol;
+        }
 
 	/** @brief Maximum length of symbol names.
 	 *
@@ -225,13 +245,13 @@ namespace CXXR {
 	static const size_t s_max_length = 256;
 	static Table* getTable();  // Vector of
 	  // pointers to all Symbol objects in existence, other than
-	  // special Symbols and deserialization temporaries, used to
+	  // psuedo-symbols and deserialization temporaries, used to
 	  // protect them against garbage collection.
 
 	GCEdge<const String> m_name;
 
-	unsigned int m_dd_index;
-
+	unsigned int m_dd_index : 31;
+        bool m_is_special_symbol : 1;
 	enum S11nType {NORMAL = 0, MISSINGARG, UNBOUNDVALUE};
 
 	/**
@@ -241,7 +261,7 @@ namespace CXXR {
 	 *          decimal integer signify that the Symbol to be
 	 *          constructed relates to an element of a
 	 *          <tt>...</tt> argument list.  A null pointer
-	 *          signifies a special Symbol, which is not entered
+	 *          signifies a psuedo-symbol, which is not entered
          *          into the table.
 	 */
 	explicit Symbol(const String* name = nullptr);
@@ -259,6 +279,8 @@ namespace CXXR {
 	// Initialize the static data members:
 	static void initialize();
         friend void ::Rf_InitNames();
+
+        static const char* s_special_symbol_names[];
 
 	template<class Archive>
 	void load(Archive & ar, const unsigned int version);

@@ -501,17 +501,6 @@ void setSVector(SEXP * vec, int len, SEXP val)
     for (int i = 0; i < len; i++) vec[i] = val;
 }
 
-
-Rboolean isFree(SEXP val)
-{
-    SEXP t;
-    for (t = R_FreeSEXP; t != R_NilValue; t = CAR(t))
-	if (val == t)
-	    return TRUE;
-    return FALSE;
-}
-
-
 /* Debugging functions (hence the d-prefix). */
 /* These are intended to be called interactively from */
 /* a debugger such as gdb, so you don't have to remember */

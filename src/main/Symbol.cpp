@@ -56,8 +56,10 @@ SEXP R_UnboundValue;
 
 // ***** Class Symbol itself *****
 
+// Symbol::s_special_symbol_names is in names.cpp
+
 Symbol::Symbol(const String* the_name)
-    : RObject(SYMSXP), m_dd_index(0)
+    : RObject(SYMSXP), m_dd_index(0), m_is_special_symbol(false)
 {
     m_name = the_name;
     if (m_name) {
@@ -78,7 +80,9 @@ Symbol::Symbol(const String* the_name)
 	boost::smatch dd_match;
 	if (boost::regex_match(name, dd_match, *regex)) {
 	    istringstream iss(dd_match[1]);
-	    iss >> m_dd_index;
+	    int n;
+	    iss >> n;
+	    m_dd_index = n;
 	}
     }
 }
@@ -127,6 +131,11 @@ void Symbol::initialize()
 {
     R_MissingArg = missingArgument();
     R_UnboundValue = unboundValue();
+
+    for (int i = 0; s_special_symbol_names[i] != nullptr; i++) {
+	Symbol* symbol = Symbol::obtain(s_special_symbol_names[i]);
+	symbol->m_is_special_symbol = true;
+    }
 
 #define PREDEFINED_SYMBOL(C_NAME, CXXR_NAME, R_NAME) \
     C_NAME = CXXR_NAME = Symbol::obtain(R_NAME);

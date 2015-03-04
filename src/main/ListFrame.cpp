@@ -48,7 +48,7 @@ ListFrame::ListFrame(const ListFrame &pattern)
 
 }
 
-Frame::Binding* ListFrame::binding(const Symbol* symbol)
+Frame::Binding* ListFrame::v_binding(const Symbol* symbol)
 {
     List::iterator end = m_list.end();
     List::iterator it = m_list.begin();
@@ -59,7 +59,7 @@ Frame::Binding* ListFrame::binding(const Symbol* symbol)
     return &(*it);
 }
 
-const Frame::Binding* ListFrame::binding(const Symbol* symbol) const
+const Frame::Binding* ListFrame::v_binding(const Symbol* symbol) const
 {
     List::const_iterator end = m_list.end();
     List::const_iterator it = m_list.begin();

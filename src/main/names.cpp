@@ -953,6 +953,29 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {nullptr,		nullptr,		0,	0,	0,	{PP_INVALID, PREC_FN,	0}},
 };
 
+/* Table of special names.  These are marked as special with
+   SET_SPECIAL_SYMBOL.  Environments on the function call stack that
+   have never contained such a symbol are marked as such, so they can
+   be quickly skipped when searching for a function named by such a
+   special symbol.
+
+   Any symbols can be put here, but ones that contain special
+   characters, or are reserved words, are the ones unlikely to be
+   defined in any environment other than base, and hence the ones
+   where this is most likely to help. */
+
+const char *Symbol::s_special_symbol_names[] = {
+    "if", "while", "repeat", "for", "break", "next", "return", "function",
+    "(", "{",
+    "+", "-", "*", "/", "^", "%%", "%/%", "%*%", ":",
+    "==", "!=", "<", ">", "<=", ">=",
+    "&", "|", "&&", "||", "!",
+    "<-", "<<-", "=",
+    "$", "[", "[[",
+    "$<-", "[<-", "[[<-",
+    0
+};
+
 std::pair<BuiltInFunction::map*, BuiltInFunction::map*>
 BuiltInFunction::createLookupTables()
 {
