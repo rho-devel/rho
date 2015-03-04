@@ -53,9 +53,6 @@ namespace CXXR {
 	ListFrame(const ListFrame &pattern);
 
 	// Virtual functions of Frame (qv):
-	Binding* binding(const Symbol* symbol) HOT_FUNCTION override;
-
-	const Binding* binding(const Symbol* symbol) const override;
 	BindingRange bindingRange() const override;
 	ListFrame* clone() const override;
 	void lockBindings() override;
@@ -112,6 +109,8 @@ namespace CXXR {
 	void v_clear() override;
 	bool v_erase(const Symbol* symbol) override;
 	Binding* v_obtainBinding(const Symbol* symbol) override;
+	Binding* v_binding(const Symbol* symbol) override;
+	const Binding* v_binding(const Symbol* symbol) const override;
     };
 }  // namespace CXXR
 

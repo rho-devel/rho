@@ -173,6 +173,7 @@ void Frame::clear()
 {
     statusChanged(nullptr);
     v_clear();
+    m_no_special_symbols = true;
 }
 
 void Frame::detachReferents()
@@ -218,6 +219,9 @@ void Frame::initializeBinding(Frame::Binding* binding,
     }
     binding->initialize(this, symbol);
     statusChanged(symbol);
+    if (symbol->isSpecialSymbol()) {
+	m_no_special_symbols = false;
+    }
 }
 
 Frame::Binding* Frame::obtainBinding(const Symbol* symbol)

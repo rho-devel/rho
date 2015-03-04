@@ -47,13 +47,6 @@ public:
     CompiledFrame(const CompiledFrame& pattern);
     ~CompiledFrame() override;
 
-    Binding* binding(const Symbol* symbol) HOT_FUNCTION override;
-
-    const Binding* binding(const Symbol* symbol) const override
-    {
-	return const_cast<CompiledFrame*>(this)->binding(symbol);
-    }
-
     // Binding must exist, or returns null.
     Binding* binding(int location)
     {
@@ -103,6 +96,11 @@ protected:
     void v_clear() override;
     bool v_erase(const Symbol* symbol) override;
     Binding* v_obtainBinding(const Symbol* symbol) override;
+    Binding* v_binding(const Symbol* symbol) override;
+    const Binding* v_binding(const Symbol* symbol) const override
+    {
+	return const_cast<CompiledFrame*>(this)->v_binding(symbol);
+    }
 
 private:
     Binding* m_bindings;

@@ -430,7 +430,7 @@ namespace CXXR {
 	typedef void (*monitor)(const Binding&);
 
 	Frame()
-	    : m_cache_count(0), m_locked(false),
+	    : m_cache_count(0), m_locked(false), m_no_special_symbols(true),
 	      m_read_monitored(false), m_write_monitored(false)
 	{}
 
@@ -445,6 +445,7 @@ namespace CXXR {
 	 */
 	Frame(const Frame& source)
 	    : m_cache_count(0), m_locked(source.m_locked),
+	      m_no_special_symbols(source.m_no_special_symbols),
 	      m_read_monitored(false), m_write_monitored(false)
 	{}
 
@@ -498,7 +499,11 @@ namespace CXXR {
 	 * @return A pointer to the required binding, or a null
 	 * pointer if it was not found.
 	 */
-	virtual Binding* binding(const Symbol* symbol) HOT_FUNCTION = 0;
+	Binding* binding(const Symbol* symbol) {
+	    if (symbol->isSpecialSymbol() && m_no_special_symbols)
+		return nullptr;
+	    return v_binding(symbol);
+	}
 
 	/** @brief Access const binding of an already-defined Symbol.
 	 *
@@ -512,7 +517,11 @@ namespace CXXR {
 	 * @return A pointer to the required binding, or a null
 	 * pointer if it was not found..
 	 */
-	virtual const Binding* binding(const Symbol* symbol) const = 0;
+	const Binding* binding(const Symbol* symbol) const {
+	    if (symbol->isSpecialSymbol() && m_no_special_symbols)
+		return nullptr;
+	    return v_binding(symbol);
+	}
 
 	/** @brief Obtain a BindingRange for this Frame.
 	 *
@@ -791,6 +800,7 @@ namespace CXXR {
 			// of which this is the Frame.  Normally
 			// either 0 or 1.
 	bool m_locked                  : 1;
+	bool m_no_special_symbols      : 1;
 	mutable bool m_read_monitored  : 1;
 	mutable bool m_write_monitored : 1;
 
@@ -833,6 +843,8 @@ namespace CXXR {
 	virtual void v_clear() = 0;
 	virtual bool v_erase(const Symbol* symbol) = 0;
 	virtual Binding* v_obtainBinding(const Symbol* symbol) = 0;
+	virtual Binding* v_binding(const Symbol* symbol) = 0;
+	virtual const Binding* v_binding(const Symbol* symbol) const = 0;
     };
 
     /** @brief Incorporate bindings defined by a PairList into a Frame.

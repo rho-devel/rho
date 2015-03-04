@@ -65,7 +65,7 @@ StdFrame::StdFrame(const StdFrame &pattern)
 	lock(false);
 }
 
-Frame::Binding* StdFrame::binding(const Symbol* symbol)
+Frame::Binding* StdFrame::v_binding(const Symbol* symbol)
 {
     map::iterator it = m_map.find(symbol);
     if (it == m_map.end())
@@ -73,7 +73,7 @@ Frame::Binding* StdFrame::binding(const Symbol* symbol)
     return &(*it).second;
 }
 
-const Frame::Binding* StdFrame::binding(const Symbol* symbol) const
+const Frame::Binding* StdFrame::v_binding(const Symbol* symbol) const
 {
     map::const_iterator it = m_map.find(symbol);
     if (it == m_map.end())

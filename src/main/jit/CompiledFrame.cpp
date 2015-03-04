@@ -61,7 +61,7 @@ CompiledFrame::~CompiledFrame()
     }
 }
 
-Frame::Binding* CompiledFrame::binding(const Symbol* symbol)
+Frame::Binding* CompiledFrame::v_binding(const Symbol* symbol)
 {
     int location = m_descriptor->getLocation(symbol);
     if (location != -1) {
