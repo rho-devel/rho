@@ -34,6 +34,7 @@
 
 #include "CXXR/ElementTraits.hpp"
 #include "CXXR/GCEdge.hpp"
+#include "CXXR/RObject.h"
 
 namespace CXXR {
     class RObject;
@@ -82,14 +83,14 @@ namespace CXXR {
 	 */
 	RHandle(const RHandle<T>& pattern)
 	{
-	    operator=(T::cloneOrSelf(pattern.get()));
+	    operator=(RObject::clone(pattern.get()));
 	}
 
 	/** @brief Assignment operator.
 	 */
 	RHandle<T>& operator=(const RHandle<T>& source)
 	{
-	    GCEdge<T>::operator=(T::cloneOrSelf(source.get()));
+	    GCEdge<T>::operator=(RObject::clone(source.get()));
 	    return *this;
 	}
 

@@ -47,6 +47,7 @@ typedef ptrdiff_t R_xlen_t;
 
 #include "CXXR/ElementTraits.hpp"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/RHandle.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
@@ -287,10 +288,7 @@ namespace CXXR {
 
 	// Virtual function of RObject, redeclared for covariant
 	// return type:
-	VectorBase* clone() const override
-	{
-	    return nullptr;
-	}
+	VectorBase* clone() const override = 0;
 
 	// Make private in due course (or get rid altogether):
 	R_xlen_t m_xtruelength;

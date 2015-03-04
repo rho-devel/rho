@@ -43,7 +43,6 @@
 
 #include "CXXR/GCNode_PtrS11n.hpp"
 #include "CXXR/GCEdge.hpp"
-#include "CXXR/RHandle.hpp"
 #include "CXXR/uncxxr.h"
 
 /** @brief Namespace for the CXXR project.
@@ -202,36 +201,19 @@ namespace CXXR {
 	 * that extent the copy is 'shallow'.  This is managed using
 	 * the smart pointers defined by nested class RObject::Handle.
 	 *
-	 * @return a pointer to a clone of this object, or a null
-	 * pointer if this object cannot be cloned.
+	 * @return a pointer to a clone of this object.  Returns the original
+	*     object if it cannot be cloned.
 	 *
 	 * @note Derived classes should exploit the covariant return
 	 * type facility to return a pointer to the type of object
 	 * being cloned.
 	 */
-	virtual RObject* clone() const
-	{
-	    return nullptr;
-	}
-
-	/** @brief Return a pointer to a copy of an object.
-	 *
-	 * @tparam T RObject or a type derived from RObject.
-	 *
-	 * @param pattern Either a null pointer or a pointer to the
-	 *          object to be cloned.
-	 *
-	 * @return Pointer to a clone of \a pattern, or a null pointer
-	 * if \a pattern cannot be cloned or is itself a null pointer.
-	 */
-	template <class T>
-	static T* clone(const T* pattern)
-	{
-	    return pattern ? static_cast<T*>(pattern->clone()) : nullptr;
+	virtual RObject* clone() const {
+	    return const_cast<RObject*>(this);
 	}
 
 	/** @brief Return a pointer to a copy of an object or the object itself
-     *     if it isn't clonabel.
+	 *    if it isn't cloneable.
 	 *
 	 * @tparam T RObject or a type derived from RObject.
 	 *
@@ -242,13 +224,9 @@ namespace CXXR {
 	 * if \a pattern cannot be cloned or is itself a null pointer.
 	 */
 	template <class T>
-	static T* cloneOrSelf(const T* pattern)
+	static T* clone(const T* pattern)
 	{
-        if (!pattern) {
-            return nullptr;
-        }
-        T* result = static_cast<T*>(pattern->clone());  // TODO(kmillar): remove the need for this cast.
-        return result ? result : const_cast<T*>(pattern);
+	    return pattern ? pattern->clone() : nullptr;
 	}
 
 	/** @brief Copy an attribute from one RObject to another.

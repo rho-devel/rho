@@ -570,15 +570,15 @@ namespace CXXR {
     inline ConsCell::ConsCell(const ConsCell& pattern)
       : RObject(pattern)
     {
-        m_car = cloneOrSelf(pattern.m_car.get());
-        m_tail = cloneOrSelf(pattern.tail());
+        m_car = clone(pattern.m_car.get());
+        m_tail = clone(pattern.tail());
         m_tag = pattern.tag();
     }
     
     inline ConsCell::ConsCell(const ConsCell& pattern, int)
 	: RObject(pattern)
     {
-        m_car = cloneOrSelf(pattern.m_car.get());
+        m_car = clone(pattern.m_car.get());
         m_tail = nullptr;
         m_tag = pattern.tag();
     }

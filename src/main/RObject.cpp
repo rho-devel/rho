@@ -74,7 +74,7 @@ RObject::RObject(const RObject& pattern)
       m_argused(pattern.m_argused), m_active_binding(pattern.m_active_binding),
       m_binding_locked(pattern.m_binding_locked)
 {
-    m_attrib = cloneOrSelf(pattern.m_attrib.get());
+    m_attrib = clone(pattern.m_attrib.get());
     maybeTraceMemory(&pattern);
 }
 
