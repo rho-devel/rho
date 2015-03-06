@@ -42,45 +42,6 @@ namespace CXXR {
      * vectors.
      */
     namespace ElementTraits {
-	/** @brief Function object for detaching referents.
-	 *
-	 * For element types for which \c HasReferents is true, this
-	 * struct will be specialized into a function object which
-	 * will detach the referents of a particular element \a t .
-	 *
-	 * @tparam T A type capable of being used as the element type
-	 *           of an R data vector. 
-	 */
-	template <typename T>
-	struct DetachReferents : std::unary_function<T, void> {
-	    /** @brief Detach the referents of a \a T.
-	     *
-	     * @param t Reference to the \a T object whose referents
-	     *          are to be detached.
-	     */
-	    void operator()(T& t) const
-	    {}
-	};
-
-	/** @brief Do elements of this type refer to GCNode objects?
-	 *
-	 * Specializations will define \c HasReferents to
-	 * be true if objects of element type \a T may incorporate
-	 * references or (more likely) pointers to GCNode objects.
-	 * Such types will also specialize the VisitReferents and
-	 * DetachReferents function object types.
-	 *
-	 * In the default case, covered here, \c HasReferents is
-	 * defined to false, signifying that no special handling
-	 * regarding garbage collection is required.
-	 *
-	 * @tparam T A type capable of being used as the element type
-	 *           of an R data vector. 
-	 */
-	template <typename T>
-	struct HasReferents : boost::mpl::false_
-	{};
-
 	/** @brief Do elements of this type require construction?
 	 *
 	 * Specializations will define \c MustConstruct to
@@ -146,34 +107,6 @@ namespace CXXR {
 	    {
 		ar & boost::serialization::make_nvp("item", item);
 	    }
-	};
-	    
-	/** @brief Function object for visiting referents.
-	 *
-	 * For element types for which \c HasReferents::TruthType is
-	 * True, this struct will be specialized into a function
-	 * object which will conduct a visitor \a v to the referents
-	 * of a particular element \a t .
-	 *
-	 * @tparam T A type capable of being used as the element type
-	 *           of an R data vector. 
-	 */
-	template <typename T>
-	struct VisitReferents : std::unary_function<T, void> {
-	    /** @brief Constructor
-	     *
-	     * @param v Non-null pointer to the visitor object to be
-	     *          applied by the function object constructed.
-	     */
-	    VisitReferents(GCNode::const_visitor* v)
-	    {}
-
-	    /** @brief Apply the function.
-	     *
-	     * @param t Object to which the function is to be applied.
-	     */
-	    void operator()(const T& t) const
-	    {}
 	};
 
 	/** @brief Function object to generate 'not available' value.

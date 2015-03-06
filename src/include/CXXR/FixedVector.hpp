@@ -36,6 +36,20 @@
 #include "CXXR/MemoryBank.hpp"
 
 namespace CXXR {
+
+namespace {
+    template<class iterator>
+    void visitElements(iterator start, iterator end, ...) {};
+
+    template<class iterator>
+    typename std::enable_if<
+	std::is_base_of<GCEdgeBase, typename iterator::value_type>::value>::type
+    visitElements(iterator start, iterator end, GCNode::const_visitor* v)
+    {
+	std::for_each(start, end, [=](GCNode* n) { (*v)(n); });
+    }
+}
+
     /** @brief R data vector primarily intended for fixed-size use.
      *
      * This is a general-purpose class template to represent an R data
@@ -290,9 +304,6 @@ namespace CXXR {
 	{
 	    boost::serialization::split_member(ar, *this, version);
 	}
-
-	// Helper function for visitReferents():
-	void visitElements(const_visitor* v) const;
     };
 
     // VectorTypeFor<T>::type is the type of vector that can hold elements of
@@ -372,13 +383,13 @@ void CXXR::FixedVector<T, ST, Initr>::destructElements(iterator from,
 template <typename T, SEXPTYPE ST, typename Initr>
 void CXXR::FixedVector<T, ST, Initr>::detachElements()
 {
-    std::for_each(begin(), end(), ElementTraits::DetachReferents<T>());
+    std::fill(begin(), end(), T());
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
 void CXXR::FixedVector<T, ST, Initr>::detachReferents()
 {
-    if (ElementTraits::HasReferents<T>::value)  // known at compile-time
+    if (std::is_base_of<GCEdgeBase, T>::value) // known at compile time.
 	detachElements();
     VectorBase::detachReferents();
 }
@@ -495,16 +506,9 @@ const char* CXXR::FixedVector<T, ST, Initr>::typeName() const
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
-void CXXR::FixedVector<T, ST, Initr>::visitElements(const_visitor* v) const
-{
-    std::for_each(begin(), end(), ElementTraits::VisitReferents<T>(v));
-}
-
-template <typename T, SEXPTYPE ST, typename Initr>
 void CXXR::FixedVector<T, ST, Initr>::visitReferents(const_visitor* v) const
 {
-    if (ElementTraits::HasReferents<T>::value)  // known at compile-time
-	visitElements(v);
+    visitElements(begin(), end(), v);
     VectorBase::visitReferents(v);
 }
 

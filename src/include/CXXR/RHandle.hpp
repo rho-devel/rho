@@ -109,19 +109,6 @@ namespace CXXR {
     // Partial specializations of ElementTraits:
     namespace ElementTraits {
 	template <class T>
-	struct DetachReferents<RHandle<T> >
-	    : std::unary_function<T, void> {
-	    void operator()(RHandle<T>& t) const
-	    {
-		t = nullptr;
-	    }
-	};
-
-	template <class T>
-	struct HasReferents<RHandle<T> > : boost::mpl::true_
-	{};
-
-	template <class T>
 	struct MustConstruct<RHandle<T> > : boost::mpl::true_
 	{};
 
@@ -136,23 +123,6 @@ namespace CXXR {
 	    {
 		GCNPTR_SERIALIZE(ar, item);
 	    }
-	};
-
-	template <class T>
-	class VisitReferents<RHandle<T> >
-	    : public std::unary_function<T, void> {
-	public:
-	    VisitReferents(GCNode::const_visitor* v)
-		: m_v(v)
-	    {}
-
-	    void operator()(const RHandle<T>& t) const
-	    {
-		if (t.get())
-		    (*m_v)(t);
-	    }
-	private:
-	    GCNode::const_visitor* m_v;
 	};
 
 	template <class T>
