@@ -42,6 +42,12 @@
 namespace CXXR {
     // Template specializations:
     namespace ElementTraits {
+	template<>
+	struct MustConstruct<double> : boost::mpl::false_ {};
+
+	template<>
+	struct MustDestruct<double> : boost::mpl::false_ {};
+
 	template <>
         inline const double& NAFunc<double>::operator()() const
         {

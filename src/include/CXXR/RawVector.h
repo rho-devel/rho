@@ -43,6 +43,12 @@ typedef unsigned char Rbyte;
 namespace CXXR {
     // Template specializations:
     namespace ElementTraits {
+	template<>
+	struct MustConstruct<Rbyte> : boost::mpl::false_ {};
+
+	template<>
+	struct MustDestruct<Rbyte> : boost::mpl::false_ {};
+
 	template <>
 	inline const Rbyte& NAFunc<Rbyte>::operator()() const
 	{

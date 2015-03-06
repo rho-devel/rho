@@ -91,6 +91,12 @@ namespace CXXR
 
     // Template specializations:
     namespace ElementTraits {
+	template<>
+	struct MustConstruct<Complex> : boost::mpl::false_ {};
+
+	template<>
+	struct MustDestruct<Complex> : boost::mpl::false_ {};
+
 	template <>
 	inline const Complex& NAFunc<Complex>::operator()() const
 	{

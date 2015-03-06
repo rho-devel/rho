@@ -45,7 +45,6 @@ typedef ptrdiff_t R_xlen_t;
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
 
-#include "CXXR/ElementTraits.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/RHandle.hpp"
 #include "CXXR/SEXP_downcast.hpp"

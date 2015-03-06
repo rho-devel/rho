@@ -45,11 +45,11 @@ namespace CXXR {
 	/** @brief Do elements of this type require construction?
 	 *
 	 * Specializations will define \c MustConstruct to
-	 * be true if element type \a T has a nontrivial default
-	 * constructor.
+	 * be false if element type \a T is known to have a trivial
+	 * default constructor.
 	 *
 	 * In the default case, covered here, \c MustConstruct is
-	 * defined to false, signifying that no construction is
+	 * defined to false, signifying that construction is
 	 * required.
 	 *
 	 * @tparam T A type capable of being used as the element type
@@ -60,7 +60,7 @@ namespace CXXR {
 	 * platform-dependent.
 	 */
 	template <typename T>
-	struct MustConstruct : boost::mpl::false_
+	struct MustConstruct : boost::mpl::true_
 	{};
 
 	/** @brief Does this type have a destructor?
@@ -80,7 +80,7 @@ namespace CXXR {
 	 * platform-dependent.
 	 */
 	template <typename T>
-	struct MustDestruct : boost::mpl::false_
+	struct MustDestruct : boost::mpl::true_
 	{};
 
 	/** @brief Function object for serialization/deserialization.
