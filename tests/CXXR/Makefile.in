@@ -37,6 +37,7 @@ unit_test_sources = \
 	BuiltInFunctionTest.cpp \
 	ControlFlowTests.cpp \
 	EvaluationTests.cpp \
+	FixedVectorTest.cpp \
 	FrameTests.cpp \
 	GCRootTest.cpp \
 	GCStackFrameBoundaryTests.cpp \

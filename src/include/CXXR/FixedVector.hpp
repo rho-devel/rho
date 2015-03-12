@@ -43,10 +43,10 @@ namespace {
 
     template<class iterator>
     typename std::enable_if<
-	std::is_base_of<GCEdgeBase, typename iterator::value_type>::value>::type
+	std::is_base_of<GCEdgeBase, typename std::iterator_traits<iterator>::value_type>::value>::type
     visitElements(iterator start, iterator end, GCNode::const_visitor* v)
     {
-	std::for_each(start, end, [=](GCNode* n) { (*v)(n); });
+	std::for_each(start, end, [=](GCNode* n) { if(n) (*v)(n); });
     }
 }
 
