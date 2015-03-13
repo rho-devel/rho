@@ -873,14 +873,11 @@ namespace CXXR {
 		iout += (index - 1)*di.stride;
 	    }
 	    if (!naindex) {
-		// Be careful not to create a temporary RHandle.
-		Lval& lval = (*ans)[iout];
 		const Rval& rval = (*rhs)[irhs % rhs_size];
-		if (isNA(rval))
-		    lval = NA<Lval>();
-		else
-		    lval = static_cast<Lval>(rval);
+		(*ans)[iout] = ElementTraits::duplicate_element(
+		    isNA(rval) ? NA<Lval>() : static_cast<const Lval&>(rval));
 	    }
+
 	    // Advance the index selection:
 	    {
 		std::size_t d = 0;
@@ -928,9 +925,9 @@ namespace CXXR {
 		    }
 		    iin += (index - 1)*di.stride;
 		}
-		(*result)[iout]
-		    = (naindex ? NA<typename V::value_type>()
-		       : (*vnc)[iin]);
+		(*result)[iout] = ElementTraits::duplicate_element(
+		    naindex ? NA<typename V::value_type>()
+		    : (*vnc)[iin]);
 		// Advance the index selection:
 		{
 		    std::size_t d = 0;
@@ -1013,13 +1010,9 @@ namespace CXXR {
 	for (std::size_t i = 0; i < ni; ++i) {
 	    std::size_t index = indices[i];
 	    if (index != 0) {
-		// Be careful not to create a temporary RHandle.
-		Lval& lval = (*ans)[index - 1];
 		const Rval& rval = (*rhs)[i % rhs_size];
-		if (isNA(rval))
-		    lval = NA<Lval>();
-		else
-		    lval = static_cast<Lval>(rval);
+		(*ans)[index - 1] = ElementTraits::duplicate_element(
+		    isNA(rval) ? NA<Lval>() : static_cast<const Lval&>(rval));
 	    }
 	}
 	indices.applyNewNames(ans);
@@ -1038,9 +1031,13 @@ namespace CXXR {
 	for (std::size_t i = 0; i < ni; ++i) {
 	    std::size_t index = indices[i];
 	    // Note that zero and negative indices ought not to occur.
-	    if (index == 0 || index > vsize)
-		(*ans)[i] = NA<typename V::value_type>();
-	    else (*ans)[i] = (*vnc)[index - 1];
+	    if (index == 0 || index > vsize) {
+		(*ans)[i] = ElementTraits::duplicate_element(
+		    NA<typename V::value_type>());
+	    } else {
+		(*ans)[i] = ElementTraits::duplicate_element(
+		    (*vnc)[index - 1]);
+	    }
 	}
 	setVectorAttributes(ans, v, indices);
 	return ans;

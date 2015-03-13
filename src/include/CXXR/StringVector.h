@@ -43,6 +43,14 @@
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
+    // Since Strings are uniqued, coping them is almost zero-cost.
+    // So allow implicit copies for RHandle<String>.
+    template<>
+    inline RHandle<String>::RHandle(const RHandle<String>&) = default;
+    template<>
+    inline RHandle<String>& RHandle<String>::operator=(const RHandle<String>&)
+      = default;
+
     // Template specializations:
     namespace ElementTraits {
 	template <>

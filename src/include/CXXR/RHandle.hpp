@@ -70,29 +70,18 @@ namespace CXXR {
 	//     Foo::Foo() { m_handle = expression_that_might_gc(); ... }
 	// which properly initialized the handle prior to doing the allocation.
 
-	/** @brief Copy constructor.
-	 *
-	 * @param pattern RHandle to be copied.  Suppose \a pattern
-	 *          points to an object \a x .  If \a x is clonable
-	 *          object, i.e. an object of a class that
-	 *          non-trivially implements RObject::clone(), then
-	 *          the newly created RHandle will point to a clone of
-	 *          \a x ; otherwise it will point to \a x itself.  If
-	 *          \a pattern encapsulates a null pointer, so will
-	 *          the created object.
-	 */
-	RHandle(const RHandle<T>& pattern)
-	{
-	    operator=(RObject::clone(pattern.get()));
-	}
 
-	/** @brief Assignment operator.
-	 */
-	RHandle<T>& operator=(const RHandle<T>& source)
-	{
-	    GCEdge<T>::operator=(RObject::clone(source.get()));
-	    return *this;
-	}
+	// Most RHandles cannot be copied directly.  To duplicate a RHandle,
+	// use:
+	//     ElementTraits::duplicate_element(value);
+	// This is done to ensure that all points where objects are duplicated
+	// get explicitly noted and that no unexpected duplications occur.
+	//
+	// Note:
+	//  The RHandle copy constructor and assignment operator are declared,
+	//  but not implemented, except for RHandle<String>.
+	RHandle(const RHandle<T>& pattern);
+	RHandle<T>& operator=(const RHandle<T>& source);
 
 	/** @brief Assignment from pointer.
 	 *
@@ -115,6 +104,13 @@ namespace CXXR {
 	template <class T>
 	struct MustDestruct<RHandle<T> >  : boost::mpl::true_
 	{};
+
+	template<typename T>
+	struct Duplicate<RHandle<T>> {
+		T* operator()(const RHandle<T>& value) const {
+			return RObject::clone(value.get());
+	    }
+	};
 
 	template <class T>
 	struct Serialize<RHandle<T> > {

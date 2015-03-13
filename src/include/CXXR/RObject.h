@@ -618,6 +618,15 @@ namespace CXXR {
 			 const RObject* src3);
 #endif	
     };
+
+    namespace ElementTraits {
+	template<typename T>
+	struct Duplicate<T*> {
+	    T* operator()(T* value) const {
+		return RObject::clone(value);
+	    }
+	};
+    }  // namespace ElementTraits
 }  // namespace CXXR
 
 // ***** Implementation of non-inlined templated members *****

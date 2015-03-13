@@ -83,6 +83,19 @@ namespace CXXR {
 	struct MustDestruct : boost::mpl::true_
 	{};
 
+	template<typename T>
+	struct Duplicate {
+	    T operator()(const T& value) const {
+		return value;
+	    }
+	};
+
+	template<class T> auto duplicate_element(const T& value)
+	    -> decltype(Duplicate<T>()(value))
+	{
+	    return Duplicate<T>()(value);
+	}
+
 	/** @brief Function object for serialization/deserialization.
 	 *
 	 * @tparam T A type capable of being used as the element type

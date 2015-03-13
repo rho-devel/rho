@@ -22,8 +22,8 @@ EXTRA_LIBS = $(BOOST_LIBS) $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS)  $(READLINE_LIBS
 # Thanks to Jochen Laubrock for suggestions about the handling of
 # valgrind on non-Linux platforms.
 
-valgrind = $(shell type -t valgrind > /dev/null \
-             && echo "valgrind -q --leak-check=yes")
+#valgrind = $(shell type -t valgrind > /dev/null \
+#             && echo "valgrind -q --leak-check=yes")
 
 ifdef valgrind
 valgrind_flags = -DVALGRIND_LEVEL=2
