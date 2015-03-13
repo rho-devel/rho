@@ -104,46 +104,6 @@ namespace CXXR {
 	    virtual void operator()(const GCNode* node) = 0;
 	};
 
-	/** @brief Not for general use.
-	 *
-	 * All garbage collection will be inhibited while any object
-	 * of this type exists.
-	 *
-	 * @deprecated This class is provided for use in implementing
-	 * functions (such as SET_ATTRIB()) in the Rinternals.h
-	 * interface which would not give rise to any memory
-	 * allocations as implemented in CR but may do so as
-	 * implemented in CXXR.  It is also used within the GCNode
-	 * class to handle reentrant calls to gclite() and gc().  Its
-	 * use for other purposes is deprecated: use instead more
-	 * selective protection against garbage collection such as
-	 * that provided by class GCStackRoot<T>.
-	 *
-	 * @note GC inhibition is implemented as an object type to
-	 * facilitate reinstatement of garbage collection when an
-	 * exception is thrown.
-	 */
-	struct GCInhibitor {
-	    GCInhibitor()
-	    {
-		++GCNode::s_inhibitor_count;
-	    }
-
-	    ~GCInhibitor()
-	    {
-		--GCNode::s_inhibitor_count;
-	    }
-
-	    /** @brief Is inhibition currently in effect?
-	     *
-	     * @return true iff garbage collection is currently inhibited.
-	     */
-	    static bool active()
-	    {
-		return s_inhibitor_count != 0;
-	    }
-	};
-
 	// Serialization of pointers to GCNodes.  Defined in
 	// GCNode_PtrS11n.hpp .
 	class PtrS11n;
@@ -166,7 +126,7 @@ namespace CXXR {
 	 *
 	 * @note This function will often carry out garbage collection
 	 * of some kind before allocating memory.  However, no
-	 * mark-sweep collection will be performed if at least one
+	 * garbage collection will be performed if at least one
 	 * GCInhibitor object is in existence.
 	 */
 	static void* operator new(size_t bytes) HOT_FUNCTION;
@@ -220,9 +180,9 @@ namespace CXXR {
 	 */
 	virtual void detachReferents()  {}
 
-	/** @brief Initiate a garbage collection.
+	/** @brief Initiate a full mark-sweep garbage collection.
 	 */
-	static void gc();
+	static void markSweepGC();
 
 	/** @brief Lightweight garbage collection.
 	 *
@@ -312,17 +272,7 @@ namespace CXXR {
 	static std::vector<const GCNode*>* s_moribund;  // Vector of
 	  // pointers to nodes whose reference count has fallen to
 	  // zero (but may subsequently have increased again).
-	static const size_t s_gclite_margin;  // operator new will
-	  // invoke gclite() when MemoryBank::bytesAllocated() exceeds
-	  // by at least s_gclite_margin the number of bytes that were
-	  // allocated following the previous gclite().  This is a
-	  // tuning parameter.
-	static size_t s_gclite_threshold;  // operator new calls
-	  // gclite() when the number of bytes allocated reaches this
-	  // level.
 	static unsigned int s_num_nodes;  // Number of nodes in existence
-	static unsigned int s_inhibitor_count;  // Number of GCInhibitor
-	  // objects in existence.
 
 	// Bit patterns XORd into m_rcmmu to decrement or increment the
 	// reference count.  Patterns 0, 2, 4, ... are used to

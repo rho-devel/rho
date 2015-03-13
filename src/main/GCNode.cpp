@@ -54,14 +54,11 @@ using namespace CXXR;
 
 vector<const GCNode*>* GCNode::s_moribund = 0;
 unsigned int GCNode::s_num_nodes = 0;
-unsigned int GCNode::s_inhibitor_count = 0;
 const unsigned char GCNode::s_decinc_refcount[]
 = {0,    2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x1e,
    0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x3e,
    0x3e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x1e,
    0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 0,    0};
-const size_t GCNode::s_gclite_margin = 10000;
-size_t GCNode::s_gclite_threshold = s_gclite_margin;
 unsigned char GCNode::s_mark = 0;
 
 #ifdef HAVE_ADDRESS_SANITIZER
@@ -100,24 +97,7 @@ static bool test_allocated_bit(void* allocation) {
 
 HOT_FUNCTION void* GCNode::operator new(size_t bytes)
 {
-    if (s_inhibitor_count == 0)
-    {
-#ifdef AGGRESSIVE_GC
-	if (true)
-#elif defined(RARE_GC)
-	if (MemoryBank::bytesAllocated() > GCManager::triggerLevel())
-#else
-	if (MemoryBank::bytesAllocated() > s_gclite_threshold)
-#endif
-	{
-	    gclite();
-	}
-
-	if (MemoryBank::bytesAllocated() > GCManager::triggerLevel())
-	{
-	    GCManager::gc();
-	}
-    }
+    GCManager::maybeGC();
     MemoryBank::notifyAllocation(bytes);
 
 #ifdef HAVE_ADDRESS_SANITIZER
@@ -164,7 +144,7 @@ void GCNode::destruct_aux()
     s_moribund->erase(it);
 }
     
-void GCNode::gc()
+void GCNode::markSweepGC()
 {
     // Note that recursion prevention is applied in GCManager::gc(),
     // not here.
@@ -173,7 +153,7 @@ void GCNode::gc()
     // GCNode::check();
     // cout << "Precheck completed OK: " << s_num_nodes << " nodes\n";
 
-    if (s_inhibitor_count != 0) {
+    if (GCManager::GCInhibitor::active()) {
 	cerr << "GCNode::gc() : mark-sweep GC must not be used"
 	    " while garbage collection is inhibited.\n";
 	abort();
@@ -189,9 +169,9 @@ void GCNode::gc()
 
 void GCNode::gclite()
 {
-    if (s_inhibitor_count != 0)
+    if (GCManager::GCInhibitor::active())
 	return;
-    GCInhibitor inhibitor;
+    GCManager::GCInhibitor inhibitor;
     ProtectStack::protectAll();
     ByteCode::protectAll();
 
@@ -209,13 +189,11 @@ void GCNode::gcliteImpl() {
 	if (node->getRefCount() == 0)
 	    delete node;
     }
-    s_gclite_threshold = MemoryBank::bytesAllocated() + s_gclite_margin;
 }
 
 void GCNode::initialize()
 {
     s_moribund = new vector<const GCNode*>();
-    s_gclite_threshold = s_gclite_margin;
 
     // Initialize the Boehm GC.
     GC_set_all_interior_pointers(1);

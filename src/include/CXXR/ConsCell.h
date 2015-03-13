@@ -48,6 +48,7 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
 
+#include "CXXR/GCManager.hpp"
 #include "CXXR/GCRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
 
@@ -487,7 +488,7 @@ namespace CXXR {
 	static PairList* cons(RObject* cr, PairList* tl=nullptr,
 			      const RObject* tag = nullptr)
 	{
-            GCInhibitor no_gc;
+	    GCManager::GCInhibitor no_gc;
             // We inhibit garbage collection here to avoid (a) the need
 	    // to protect the arguments from GC, and (b) the
 	    // possibility of reentrant calls to this function (from
