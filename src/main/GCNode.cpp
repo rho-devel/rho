@@ -246,9 +246,9 @@ void GCNode::detachReferentsOfObjectIfUnmarked(GCNode* object,
 					       vector<GCNode*> *unmarked_and_saturated)
 {
     if (!object->isMarked()) {
-	int ref_count = getRefCount();
+	int ref_count = object->getRefCount();
 	incRefCount(object);
-	if (getRefCount() == ref_count) {
+	if (object->getRefCount() == ref_count) {
 	    // The reference count has saturated.
 	    object->detachReferents();
 	    unmarked_and_saturated->push_back(object);
