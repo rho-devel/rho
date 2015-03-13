@@ -393,9 +393,10 @@ namespace CXXR {
 	/** @brief Carry out the sweep phase of garbage collection.
 	 */
 	static void sweep();
-	static void detachReferentsOfObjectIfUnmarked(GCNode*);
+	static void detachReferentsOfObjectIfUnmarked(GCNode*,
+						      std::vector<GCNode*>*);
 
-	static void applyToAllAllocatedNodes(void (*function)(GCNode*));
+	static void applyToAllAllocatedNodes(std::function<void(GCNode*)>);
 
 	friend class GCEdgeBase;
 	friend class GCTestHelper;

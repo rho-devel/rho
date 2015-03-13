@@ -242,30 +242,43 @@ static GCNode* getNodePointerFromAllocation(void* allocation)
 	get_object_pointer_from_allocation(allocation));
 }
 
-void GCNode::detachReferentsOfObjectIfUnmarked(GCNode* object)
+void GCNode::detachReferentsOfObjectIfUnmarked(GCNode* object,
+					       vector<GCNode*> *unmarked_and_saturated)
 {
     if (!object->isMarked()) {
+	int ref_count = getRefCount();
 	incRefCount(object);
-	object->detachReferents();
-	decRefCount(object);
+	if (getRefCount() == ref_count) {
+	    // The reference count has saturated.
+	    object->detachReferents();
+	    unmarked_and_saturated->push_back(object);
+	} else {
+	    object->detachReferents();
+	    decRefCount(object);
+	}
     }
 }
 
 void GCNode::sweep()
 {
     // Detach the referents of nodes that haven't been marked.
-    // Once all of these objects have been processed, they will have no
-    // incoming references and will have been placed on the moribund list for
-    // deletion in the following call to gclite().
-    applyToAllAllocatedNodes(detachReferentsOfObjectIfUnmarked);
+    // Once this is done, all of the nodes in the cycle will be unreferenced
+    // and they will have been deleted unless their reference count is
+    // saturated.
+    vector<GCNode*> unmarked_and_saturated;
+    applyToAllAllocatedNodes([&](GCNode* node) {
+	    detachReferentsOfObjectIfUnmarked(node, &unmarked_and_saturated);
+	});
     // At this point, the only unmarked objects are GCNodes with saturated
-    // reference counts and their referents have been detached.
-    // TODO(kmillar): delete those objects too.
+    // reference counts.  Delete them.
+    for (GCNode* node : unmarked_and_saturated) {
+	delete node;
+    }
 }
 
 static void applyToAllAllocatedNodesInBlock(struct hblk* block, GC_word fn)
 {
-    auto function = reinterpret_cast<void (*)(GCNode*)>(fn);
+    auto function = reinterpret_cast<std::function<void(GCNode*)>*>(fn);
     hdr* block_header = HDR(block);
     size_t object_size = block_header->hb_sz;
     char *start = block->hb_body;
@@ -279,10 +292,10 @@ static void applyToAllAllocatedNodesInBlock(struct hblk* block, GC_word fn)
     }
 }
 
-void GCNode::applyToAllAllocatedNodes(void (*f)(GCNode*))
+void GCNode::applyToAllAllocatedNodes(std::function<void(GCNode*)> f)
 {
     GC_apply_to_all_blocks(
-	applyToAllAllocatedNodesInBlock, reinterpret_cast<GC_word>(f));
+	applyToAllAllocatedNodesInBlock, reinterpret_cast<GC_word>(&f));
 }
 
 
