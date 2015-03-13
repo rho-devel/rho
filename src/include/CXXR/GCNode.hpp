@@ -180,18 +180,15 @@ namespace CXXR {
 	 */
 	virtual void detachReferents()  {}
 
-	/** @brief Initiate a full mark-sweep garbage collection.
-	 */
-	static void markSweepGC();
-
-	/** @brief Lightweight garbage collection.
+	/** @brief Initiate a garbage collection.
 	 *
-	 * This function deletes nodes whose reference counts are
-	 * zero: if the deletion of these nodes in turn
-	 * causes the reference counts of other nodes to fall to zero,
-	 * those nodes are also deleted, and so on recursively.
+	 * @param markSweep If true, runs a full mark-sweep garbage collection,
+	 *    which is relatively slow, but capable of collecting reference
+	 *    cycles and nodes with saturated reference counts.
+	 *    Otherwise does a fast collection, deleting only the objects
+	 *    whose reference counts have fallen to zero.
 	 */
-	static void gclite();
+	static void gc(bool markSweep);
 
 	/** @brief Number of GCNode objects in existence.
 	 *
@@ -274,6 +271,12 @@ namespace CXXR {
 	  // zero (but may subsequently have increased again).
 	static unsigned int s_num_nodes;  // Number of nodes in existence
 
+	// Flag that is set if the reference counts are known to be
+	// up to date and there are no defered updates outstanding.
+	// If this true, then objects can be deleted immediately when
+	// their reference count drops to zero.
+	static bool s_reference_counts_up_to_date;
+
 	// Bit patterns XORd into m_rcmmu to decrement or increment the
 	// reference count.  Patterns 0, 2, 4, ... are used to
 	// decrement; 1, 3, 5, .. to increment.
@@ -306,6 +309,19 @@ namespace CXXR {
 	//
 	// But boost::serialization doesn't like this.
 	// static void* operator new[](size_t);
+
+	/** @brief Initiate a full mark-sweep garbage collection.
+	 */
+	static void markSweepGC();
+
+	/** @brief Lightweight garbage collection.
+	 *
+	 * This function deletes nodes whose reference counts are
+	 * zero: if the deletion of these nodes in turn
+	 * causes the reference counts of other nodes to fall to zero,
+	 * those nodes are also deleted, and so on recursively.
+	 */
+	static void gclite();
 
 	// Returns the stored reference count.
 	unsigned char getRefCount() const

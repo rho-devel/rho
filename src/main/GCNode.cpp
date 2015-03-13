@@ -54,6 +54,7 @@ using namespace CXXR;
 
 vector<const GCNode*>* GCNode::s_moribund = 0;
 unsigned int GCNode::s_num_nodes = 0;
+bool GCNode::s_reference_counts_up_to_date = false;
 const unsigned char GCNode::s_decinc_refcount[]
 = {0,    2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x1e,
    0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x3e,
@@ -144,41 +145,38 @@ void GCNode::destruct_aux()
     s_moribund->erase(it);
 }
     
-void GCNode::markSweepGC()
-{
-    // Note that recursion prevention is applied in GCManager::gc(),
-    // not here.
-
-    // cout << "GCNode::gc()\n";
-    // GCNode::check();
-    // cout << "Precheck completed OK: " << s_num_nodes << " nodes\n";
-
-    if (GCManager::GCInhibitor::active()) {
-	cerr << "GCNode::gc() : mark-sweep GC must not be used"
-	    " while garbage collection is inhibited.\n";
-	abort();
-    }
-    mark();
-    sweep();
-    // MemoryBank::defragment();
-
-    // cout << "Finishing garbage collection\n";
-    // GCNode::check();
-    // cout << "Postcheck completed OK: " << s_num_nodes << " nodes\n";
-}
-
-void GCNode::gclite()
+void GCNode::gc(bool markSweep)
 {
     if (GCManager::GCInhibitor::active())
 	return;
     GCManager::GCInhibitor inhibitor;
+
     ProtectStack::protectAll();
     ByteCode::protectAll();
-
-    GCStackRootBase::withAllStackNodesProtected(gcliteImpl);
+    if (markSweep) {
+	GCStackRootBase::withAllStackNodesProtected(markSweepGC);
+    } else {
+	GCStackRootBase::withAllStackNodesProtected(gclite);
+    }
 }
 
-void GCNode::gcliteImpl() {
+void GCNode::markSweepGC()
+{
+    // NB: setting this flag implies that the garbage collection will ignore
+    // any new stack nodes.  To ensure correctness, this function must not call
+    // any code that depends on normal operation of the garbage collector.
+    s_reference_counts_up_to_date = true;
+
+    mark();
+    sweep();
+
+    s_reference_counts_up_to_date = false;
+}
+
+void GCNode::gclite()
+{
+    s_reference_counts_up_to_date = true;
+
     while (!s_moribund->empty()) {
 	// Last in, first out, for cache efficiency:
 	const GCNode* node = s_moribund->back();
@@ -189,6 +187,7 @@ void GCNode::gcliteImpl() {
 	if (node->getRefCount() == 0)
 	    delete node;
     }
+    s_reference_counts_up_to_date = false;
 }
 
 void GCNode::initialize()
@@ -210,14 +209,17 @@ void GCNode::initialize()
     GC_disable();
 }
 
-// TODO(kmillar): if a GC is running (which is the likely case), then the node can be deleted
-//    immediately.
 void GCNode::makeMoribund() const
 {
-    m_rcmmu |= s_moribund_mask;
-    s_moribund->push_back(this);
+    if (s_reference_counts_up_to_date) {
+	// In this case, the node can be deleted immediately.
+	delete this;
+    } else {
+	m_rcmmu |= s_moribund_mask;
+	s_moribund->push_back(this);
+    }
 }
-    
+
 void GCNode::mark()
 {
     // In the first mark-sweep collection, the marking of a node is
@@ -243,7 +245,9 @@ static GCNode* getNodePointerFromAllocation(void* allocation)
 void GCNode::detachReferentsOfObjectIfUnmarked(GCNode* object)
 {
     if (!object->isMarked()) {
+	incRefCount(object);
 	object->detachReferents();
+	decRefCount(object);
     }
 }
 
@@ -254,8 +258,9 @@ void GCNode::sweep()
     // incoming references and will have been placed on the moribund list for
     // deletion in the following call to gclite().
     applyToAllAllocatedNodes(detachReferentsOfObjectIfUnmarked);
-    // Cleanup all the nodes that got placed on the moribund list.
-    gclite();
+    // At this point, the only unmarked objects are GCNodes with saturated
+    // reference counts and their referents have been detached.
+    // TODO(kmillar): delete those objects too.
 }
 
 static void applyToAllAllocatedNodesInBlock(struct hblk* block, GC_word fn)

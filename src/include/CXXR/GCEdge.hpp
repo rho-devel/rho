@@ -80,8 +80,9 @@ namespace CXXR {
 	void retarget(const GCNode* newtarget)
 	{
 	    GCNode::incRefCount(newtarget);
-	    GCNode::decRefCount(m_target);
+	    const GCNode* oldtarget = m_target;
 	    m_target = newtarget;
+	    GCNode::decRefCount(oldtarget);
 	}
     private:
 	const GCNode* m_target;

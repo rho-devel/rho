@@ -109,6 +109,10 @@ namespace CXXR {
 		gc(false);
 	};
 
+	static bool gcIsRunning() {
+	    return s_gc_is_running;
+	}
+
 	/** @brief Maximum number of bytes used.
 	 *
 	 * @return the maximum number of bytes used (up to the time of
@@ -218,6 +222,8 @@ namespace CXXR {
 	static size_t s_gclite_threshold;  // maybeGC() calls
 	  // gclite() when the number of bytes allocated reaches this
 	  // level.
+
+	static bool s_gc_is_running;
 
 	static size_t s_max_bytes;
 	static size_t s_max_nodes;

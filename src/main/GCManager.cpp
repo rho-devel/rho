@@ -48,6 +48,7 @@ size_t GCManager::s_threshold = std::numeric_limits<size_t>::max();
 size_t GCManager::s_min_threshold = s_threshold;
 const size_t GCManager::s_gclite_margin = 10000;
 size_t GCManager::s_gclite_threshold = s_gclite_margin;
+bool GCManager::s_gc_is_running = false;
 size_t GCManager::s_max_bytes = 0;
 size_t GCManager::s_max_nodes = 0;
 
@@ -79,10 +80,9 @@ namespace {
 void GCManager::gc(bool force_full_collection)
 {
     // Prevent recursion:
-    static bool in_progress = false;
-    if (in_progress)
+    if (s_gc_is_running)
 	return;
-    in_progress = true;
+    s_gc_is_running = true;
     ++gc_count;
 
     s_max_bytes = std::max(s_max_bytes, MemoryBank::bytesAllocated());
@@ -90,10 +90,10 @@ void GCManager::gc(bool force_full_collection)
 
     if (s_pre_gc) (*s_pre_gc)();
 
-    GCNode::gclite();
+    GCNode::gc(false);
 
     if (force_full_collection || MemoryBank::bytesAllocated() > s_threshold) {
-	GCNode::markSweepGC();
+	GCNode::gc(true);
 	s_threshold = std::max(size_t(0.9*double(s_threshold)),
 			       std::max(s_min_threshold,
 					2*MemoryBank::bytesAllocated()));
@@ -104,7 +104,7 @@ void GCManager::gc(bool force_full_collection)
     if (s_post_gc) (*s_post_gc)();
 
     WeakRef::runFinalizers();
-    in_progress = false;
+    s_gc_is_running = false;
 }
 
 void GCManager::resetMaxTallies()
