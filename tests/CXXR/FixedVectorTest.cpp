@@ -24,6 +24,7 @@
 #include "gtest/gtest.h"
 #include "CXXR/FixedVector.hpp"
 #include "CXXR/IntVector.h"
+#include "CXXR/ListVector.h"
 #include "CXXR/RealVector.h"
 
 using namespace CXXR;
