@@ -94,7 +94,7 @@ namespace CXXR {
 	static FixedVector* create(FwdIter from, FwdIter to) {
 	    FixedVector* result = create(std::distance(from, to));
 	    iterator out = result->begin();
-	    for (FwdIter in = from; in != to; ++in) {
+	    for (FwdIter in = from; in != to; ++in, ++out) {
 		*out = ElementTraits::duplicate_element(*in);
 	    }
 	    return result;

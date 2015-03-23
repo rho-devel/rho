@@ -23,6 +23,7 @@
 
 #include "gtest/gtest.h"
 #include "CXXR/FixedVector.hpp"
+#include "CXXR/IntVector.h"
 #include "CXXR/RealVector.h"
 
 using namespace CXXR;
@@ -56,4 +57,28 @@ TEST(ListVectorTest, VisitReferentsWorks)
                 (*vector)[0].get(), (*vector)[2].get() }));
     vector->visitReferents(&checker);
     EXPECT_TRUE(checker.ok());
+}
+
+TEST(IntegerVectorTest, ScalarConstructor) {
+    IntVector* scalar = IntVector::createScalar(17);
+    ASSERT_EQ(1, scalar->size());
+    EXPECT_EQ(17, (*scalar)[0]);
+}
+
+TEST(IntegerVectorTest, InitializerListConstructor) {
+    IntVector* object = IntVector::create({ 7, 14, 8, 1 });
+    ASSERT_EQ(4, object->size());
+    EXPECT_EQ( 7, (*object)[0]);
+    EXPECT_EQ(14, (*object)[1]);
+    EXPECT_EQ( 8, (*object)[2]);
+    EXPECT_EQ( 1, (*object)[3]);
+}
+
+TEST(IntegerVectorTest, ShortInitializerListConstructor) {
+    IntVector* object = IntVector::create({ 7 });
+    ASSERT_EQ(1, object->size());
+    EXPECT_EQ( 7, (*object)[0]);
+
+    object = IntVector::create({ });
+    EXPECT_EQ(0, object->size());
 }
