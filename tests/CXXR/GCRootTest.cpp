@@ -33,7 +33,7 @@ using namespace CXXR;
 TEST(GCRootTest, UpdatesReferenceCounts) {
     // Since we're testing gc roots, these tests may not always have the
     // roots declared at GC points, so disable GC.
-    GCNode::GCInhibitor no_gc;
+    GCManager::GCInhibitor no_gc;
     
     RObject* object1 = RealVector::createScalar(1);
     EXPECT_EQ(0, getRefCount(object1));
@@ -52,7 +52,7 @@ TEST(GCRootTest, UpdatesReferenceCounts) {
 
 
 TEST(GCRootTest, TestAssignment) {
-    GCNode::GCInhibitor no_gc;
+    GCManager::GCInhibitor no_gc;
     
     RObject* object1 = RealVector::createScalar(1);
     RObject* object2 = RealVector::createScalar(2);
@@ -79,7 +79,7 @@ TEST(GCRootTest, TestAssignment) {
 }
 
 TEST(GCRootTest, OutOfOrderDestruction) {
-    GCNode::GCInhibitor no_gc;
+    GCManager::GCInhibitor no_gc;
 
     RObject* object1 = RealVector::createScalar(1);
     RObject* object2 = RealVector::createScalar(2);

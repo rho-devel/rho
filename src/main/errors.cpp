@@ -1261,7 +1261,7 @@ SEXP attribute_hidden do_traceback(SEXP call, SEXP op, SEXP args, SEXP rho)
 namespace CXXR {
     void TRACEBACK()
     {
-	GCNode::GCInhibitor gci;
+	GCManager::GCInhibitor gci;
 	GCStackRoot<PairList> tb(static_cast<PairList*>(R_GetTraceback(0)));
 	while (tb) {
 	    StringVector* sv = static_cast<StringVector*>(tb->car());
@@ -1889,4 +1889,3 @@ R_GetSrcFilename(SEXP srcref)
         return ScalarString(mkChar(""));
     return srcfile;
 }
-

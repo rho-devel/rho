@@ -34,6 +34,7 @@
 
 #include "CXXR/ElementTraits.hpp"
 #include "CXXR/GCEdge.hpp"
+#include "CXXR/RObject.h"
 
 namespace CXXR {
     class RObject;
@@ -69,29 +70,18 @@ namespace CXXR {
 	//     Foo::Foo() { m_handle = expression_that_might_gc(); ... }
 	// which properly initialized the handle prior to doing the allocation.
 
-	/** @brief Copy constructor.
-	 *
-	 * @param pattern RHandle to be copied.  Suppose \a pattern
-	 *          points to an object \a x .  If \a x is clonable
-	 *          object, i.e. an object of a class that
-	 *          non-trivially implements RObject::clone(), then
-	 *          the newly created RHandle will point to a clone of
-	 *          \a x ; otherwise it will point to \a x itself.  If
-	 *          \a pattern encapsulates a null pointer, so will
-	 *          the created object.
-	 */
-	RHandle(const RHandle<T>& pattern)
-	{
-	    operator=(cloneOrSelf(pattern));
-	}
 
-	/** @brief Assignment operator.
-	 */
-	RHandle<T>& operator=(const RHandle<T>& source)
-	{
-	    GCEdge<T>::operator=(cloneOrSelf(source));
-	    return *this;
-	}
+	// Most RHandles cannot be copied directly.  To duplicate a RHandle,
+	// use:
+	//     ElementTraits::duplicate_element(value);
+	// This is done to ensure that all points where objects are duplicated
+	// get explicitly noted and that no unexpected duplications occur.
+	//
+	// Note:
+	//  The RHandle copy constructor and assignment operator are declared,
+	//  but not implemented, except for RHandle<String>.
+	RHandle(const RHandle<T>& pattern);
+	RHandle<T>& operator=(const RHandle<T>& source);
 
 	/** @brief Assignment from pointer.
 	 *
@@ -103,25 +93,10 @@ namespace CXXR {
 	    GCEdge<T>::operator=(newtarget);
 	    return *this;
 	}
-    private:
-	static T* cloneOrSelf(T*);
     };  // class template RHandle
 
     // Partial specializations of ElementTraits:
     namespace ElementTraits {
-	template <class T>
-	struct DetachReferents<RHandle<T> >
-	    : std::unary_function<T, void> {
-	    void operator()(RHandle<T>& t) const
-	    {
-		t = nullptr;
-	    }
-	};
-
-	template <class T>
-	struct HasReferents<RHandle<T> > : boost::mpl::true_
-	{};
-
 	template <class T>
 	struct MustConstruct<RHandle<T> > : boost::mpl::true_
 	{};
@@ -130,6 +105,13 @@ namespace CXXR {
 	struct MustDestruct<RHandle<T> >  : boost::mpl::true_
 	{};
 
+	template<typename T>
+	struct Duplicate<RHandle<T>> {
+		T* operator()(const RHandle<T>& value) const {
+			return RObject::clone(value.get());
+	    }
+	};
+
 	template <class T>
 	struct Serialize<RHandle<T> > {
 	    template <class Archive>
@@ -137,23 +119,6 @@ namespace CXXR {
 	    {
 		GCNPTR_SERIALIZE(ar, item);
 	    }
-	};
-
-	template <class T>
-	class VisitReferents<RHandle<T> >
-	    : public std::unary_function<T, void> {
-	public:
-	    VisitReferents(GCNode::const_visitor* v)
-		: m_v(v)
-	    {}
-
-	    void operator()(const RHandle<T>& t) const
-	    {
-		if (t.get())
-		    (*m_v)(t);
-	    }
-	private:
-	    GCNode::const_visitor* m_v;
 	};
 
 	template <class T>
@@ -174,15 +139,5 @@ namespace CXXR {
 	};
     }  // namespace ElementTraits
 }  // namespace CXXR
-
-
-// ***** Implementations of non-inlined templated functions. *****
-
-template <class T>
-T* CXXR::RHandle<T>::cloneOrSelf(T* pattern)
-{
-    T* t = pattern ? static_cast<T*>(pattern->clone()) : nullptr;
-    return (t ? t : pattern);
-}
 
 #endif // RHANDLE_HPP

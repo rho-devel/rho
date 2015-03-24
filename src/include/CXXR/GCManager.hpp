@@ -36,27 +36,82 @@
 
 #include <cstddef>
 #include <iosfwd>
+#include "CXXR/MemoryBank.hpp"
 
 namespace CXXR {
     /** @brief Class for managing garbage collection.
-     * 
-     * This class only has static members.  A mark-sweep garbage
+     *
+     * This class only has static members.  A garbage
      * collection can be initiated explicitly by calling
-     * GCManager::gc().  Also, GCNode::operator new() will
-     * automatically initiate a mark-sweep GC if the number of bytes
-     * allocated via CXXR::MemoryBank exceeds a threshold level
-     * supplied by GCManager::triggerLevel() This threshold value
-     * varies during the run, subject to a minimum value specified in
-     * the enableGC() method.
+     * GCManager::gc().  Also, GCNode::operator new() may
+     * automatically initiate garbage collection.
      */
     class GCManager {
     public:
-	/** @brief Initiate a mark-sweep garbage collection.
+	/** @brief Not for general use.
 	 *
-	 * It is currently an error to initiate a mark-sweep garbage
-	 * collection while a GCNode object is under construction.
+	 * All garbage collection will be inhibited while any object
+	 * of this type exists.
+	 *
+	 * @deprecated This class is provided for use in implementing
+	 * functions (such as SET_ATTRIB()) in the Rinternals.h
+	 * interface which would not give rise to any memory
+	 * allocations as implemented in CR but may do so as
+	 * implemented in CXXR.  It is also used within the GCNode
+	 * class to handle reentrant calls to gclite() and gc().  Its
+	 * use for other purposes is deprecated: use instead more
+	 * selective protection against garbage collection such as
+	 * that provided by class GCStackRoot<T>.
+	 *
+	 * @note GC inhibition is implemented as an object type to
+	 * facilitate reinstatement of garbage collection when an
+	 * exception is thrown.
 	 */
-	static void gc();
+	struct GCInhibitor {
+	    GCInhibitor()
+	    {
+		++s_inhibitor_count;
+	    }
+
+	    ~GCInhibitor()
+	    {
+		--s_inhibitor_count;
+	    }
+
+	    /** @brief Is inhibition currently in effect?
+	     *
+	     * @return true iff garbage collection is currently inhibited.
+	     */
+	    static bool active()
+	    {
+		return s_inhibitor_count != 0;
+	    }
+	};
+
+	/** @brief Initiate a garbage collection.
+	 *
+	 * It is currently an error to initiate a garbage collection when
+	 * a GCEdge is under construction.
+	 */
+	static void gc(bool force_full_collection = true);
+
+	static void maybeGC() {
+	    if (s_inhibitor_count == 0
+		&& (MemoryBank::bytesAllocated() >
+#ifdef AGGRESSIVE_GC
+		    0
+#elif defined(RARE_GC)
+		    s_threshold
+#else
+		    s_gclite_threshold
+#endif
+		    ))
+		gc(false);
+	};
+
+	static bool gcIsRunning() {
+	    return s_gc_is_running;
+	}
 
 	/** @brief Maximum number of bytes used.
 	 *
@@ -159,8 +214,22 @@ namespace CXXR {
 	static size_t s_threshold;
 	static size_t s_min_threshold;
 
+	static const size_t s_gclite_margin;  // maybeGC() will
+	  // invoke gclite() when MemoryBank::bytesAllocated() exceeds
+	  // by at least s_gclite_margin the number of bytes that were
+	  // allocated following the previous gclite().  This is a
+	  // tuning parameter.
+	static size_t s_gclite_threshold;  // maybeGC() calls
+	  // gclite() when the number of bytes allocated reaches this
+	  // level.
+
+	static bool s_gc_is_running;
+
 	static size_t s_max_bytes;
 	static size_t s_max_nodes;
+
+	static unsigned int s_inhibitor_count;  // Number of GCInhibitor
+	  // objects in existence.
 
 	static std::ostream* s_os;  // Pointer to output stream for GC
 				    // reporting, or NULL.
@@ -168,10 +237,6 @@ namespace CXXR {
 	// Callbacks e.g. for timing:
 	static void (*s_pre_gc)();
 	static void (*s_post_gc)();
-
-	// Detailed control of the garbage collection is carried out
-	// here.
-	static void gcController();
 
 	GCManager() = delete;
     };

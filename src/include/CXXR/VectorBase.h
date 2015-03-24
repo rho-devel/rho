@@ -45,8 +45,8 @@ typedef ptrdiff_t R_xlen_t;
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
 
-#include "CXXR/ElementTraits.hpp"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/RHandle.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
@@ -287,10 +287,7 @@ namespace CXXR {
 
 	// Virtual function of RObject, redeclared for covariant
 	// return type:
-	VectorBase* clone() const override
-	{
-	    return nullptr;
-	}
+	VectorBase* clone() const override = 0;
 
 	// Make private in due course (or get rid altogether):
 	R_xlen_t m_xtruelength;
@@ -337,10 +334,13 @@ namespace CXXR {
     {
 	GCStackRoot<V> ans(V::create(new_size));
 	size_type copysz = std::min(pattern->size(), new_size);
-	typename V::const_iterator patb = pattern->begin();
-	typename V::iterator ansit
-	    = std::copy(patb, patb + copysz, ans->begin());
-	std::fill(ansit, ans->end(), NA<typename V::value_type>());
+	for (size_type i = 0; i < copysz; i++) {
+	    (*ans)[i] = ElementTraits::duplicate_element((*pattern)[i]);
+	}
+	for (size_type i = copysz; i < new_size; i++) {
+	    (*ans)[i] = ElementTraits::duplicate_element(
+		NA<typename V::value_type>());
+	}
 	ans->setAttributes(resizeAttributes(pattern->attributes(), new_size));
 	ans->setS4Object(pattern->isS4Object());
 	return ans;

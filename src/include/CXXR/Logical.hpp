@@ -91,6 +91,12 @@ namespace CXXR {
     namespace ElementTraits
     {
 	template<>
+	struct MustConstruct<Logical> : boost::mpl::false_ {};
+
+	template<>
+	struct MustDestruct<Logical> : boost::mpl::false_ {};
+
+	template<>
 	inline bool IsNA<Logical>::operator()(const Logical& value) const {
 	    return value.isNA();
 	}

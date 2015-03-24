@@ -51,7 +51,7 @@ class NodeStackTest : public ::testing::Test {
  public:
   NodeStackTest() {}
  private:
-  GCNode::GCInhibitor gc_inhibitor_;  // This disables garbage collection.
+  GCManager::GCInhibitor gc_inhibitor_;  // This disables garbage collection.
 };
 
 // Makes sure we can create a NodeStack object, i.e., checks the constructor.

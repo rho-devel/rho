@@ -31,6 +31,7 @@
 #define GCEDGE_HPP 1
 
 #include "CXXR/GCNode.hpp"
+#include "CXXR/ElementTraits.hpp"
 
 namespace CXXR {
     class RObject;
@@ -79,8 +80,9 @@ namespace CXXR {
 	void retarget(const GCNode* newtarget)
 	{
 	    GCNode::incRefCount(newtarget);
-	    GCNode::decRefCount(m_target);
+	    const GCNode* oldtarget = m_target;
 	    m_target = newtarget;
+	    GCNode::decRefCount(oldtarget);
 	}
     private:
 	const GCNode* m_target;
@@ -168,6 +170,43 @@ namespace CXXR {
 	    return static_cast<T*>(const_cast<GCNode*>(target()));
 	}
     };
+
+    // Partial specializations of ElementTraits:
+    namespace ElementTraits {
+	template <class T>
+	struct MustConstruct<GCEdge<T> > : boost::mpl::true_
+	{};
+
+	template <class T>
+	struct MustDestruct<GCEdge<T> >  : boost::mpl::true_
+	{};
+
+	template <class T>
+	struct Serialize<GCEdge<T> > {
+	    template <class Archive>
+	    void operator()(Archive& ar, GCEdge<T>& item)
+	    {
+		GCNPTR_SERIALIZE(ar, item);
+	    }
+	};
+
+	template <class T>
+	struct NAFunc<GCEdge<T> > {
+	    const GCEdge<T>& operator()() const
+	    {
+		static GCEdge<T> na;
+		return na;
+	    }
+	};
+
+	template <class T>
+	struct IsNA<GCEdge<T> > {
+	    bool operator()(const GCEdge<T>& t) const
+	    {
+		return false;
+	    }
+	};
+	}  // namespace ElementTraits
 } // namespace CXXR
 
 #endif  // GCEDGE_HPP

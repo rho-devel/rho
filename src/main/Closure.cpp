@@ -138,8 +138,6 @@ RObject* Closure::execute(Environment* env) const
 	    throw;
 	ans = rx.value();
     }
-    Environment::monitorLeaks(ans);
-    env->maybeDetachFrame();
     return ans;
 }
 
@@ -200,6 +198,9 @@ RObject* Closure::invokeImpl(Environment* env, const ArgList* arglist,
 			     syspar, this, newenv, arglist->list());
 	ans = execute(newenv);
     }
+    Environment::monitorLeaks(ans);
+    newenv->maybeDetachFrame();
+
     return ans;
 }
 

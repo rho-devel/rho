@@ -36,6 +36,7 @@
 #include "CXXR/MemoryBank.hpp"
 
 namespace CXXR {
+
     /** @brief R data vector primarily intended for fixed-size use.
      *
      * This is a general-purpose class template to represent an R data
@@ -92,7 +93,10 @@ namespace CXXR {
 	template<typename FwdIter>
 	static FixedVector* create(FwdIter from, FwdIter to) {
 	    FixedVector* result = create(std::distance(from, to));
-	    std::copy(from, to, result->begin());
+	    iterator out = result->begin();
+	    for (FwdIter in = from; in != to; ++in, ++out) {
+		*out = ElementTraits::duplicate_element(*in);
+	    }
 	    return result;
 	}
 
@@ -274,8 +278,13 @@ namespace CXXR {
 	}
 	void destructElements(iterator from, iterator to);
 
-	// Helper function for detachReferents():
-	void detachElements();
+	// Helper functions for detachReferents():
+	void detachElements(std::true_type);
+	void detachElements(std::false_type) {}
+
+	// Helper functions for visitReferents():
+	void visitElements(const_visitor*v, std::true_type) const;
+	void visitElements(const_visitor*v, std::false_type) const {}
 
 	template<class Archive>
 	void load(Archive & ar, const unsigned int version); 
@@ -290,9 +299,6 @@ namespace CXXR {
 	{
 	    boost::serialization::split_member(ar, *this, version);
 	}
-
-	// Helper function for visitReferents():
-	void visitElements(const_visitor* v) const;
     };
 
     // VectorTypeFor<T>::type is the type of vector that can hold elements of
@@ -316,7 +322,14 @@ CXXR::FixedVector<T, ST, Initr>::FixedVector(
       m_data(reinterpret_cast<T*>(m_first_element_storage))
 {
     constructElementsIfNeeded();
-    std::copy(pattern.begin(), pattern.end(), begin());
+
+    const_iterator to = pattern.end();
+    iterator out = begin();
+    for (const_iterator in = pattern.begin(); in != to; ++in) {
+	*out = ElementTraits::duplicate_element(*in);
+	++out;
+    }
+
     Initr::initialize(this);
 }
 
@@ -370,16 +383,15 @@ void CXXR::FixedVector<T, ST, Initr>::destructElements(iterator from,
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
-void CXXR::FixedVector<T, ST, Initr>::detachElements()
+void CXXR::FixedVector<T, ST, Initr>::detachElements(std::true_type)
 {
-    std::for_each(begin(), end(), ElementTraits::DetachReferents<T>());
+    std::fill(begin(), end(), nullptr);
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
 void CXXR::FixedVector<T, ST, Initr>::detachReferents()
 {
-    if (ElementTraits::HasReferents<T>::value)  // known at compile-time
-	detachElements();
+    detachElements(typename std::is_base_of<GCEdgeBase, T>::type());
     VectorBase::detachReferents();
 }
 
@@ -413,7 +425,7 @@ void CXXR::FixedVector<T, ST, Initr>::loadValues(Archive & ar,
 	    unsigned int ii;
 	    ar >> BOOST_SERIALIZATION_NVP(ii);
 	    idx += ii;
-	    m_data[idx] = NA<T>();
+	    m_data[idx] = ElementTraits::duplicate_element(NA<T>());
 	    na_indices.push_back(idx);
 	}
 	na_indices.push_back(size());
@@ -495,16 +507,16 @@ const char* CXXR::FixedVector<T, ST, Initr>::typeName() const
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
-void CXXR::FixedVector<T, ST, Initr>::visitElements(const_visitor* v) const
+void CXXR::FixedVector<T, ST, Initr>::visitElements(const_visitor* v,
+						    std::true_type) const
 {
-    std::for_each(begin(), end(), ElementTraits::VisitReferents<T>(v));
+    std::for_each(begin(), end(), [=](GCNode* n) { if(n) (*v)(n); });
 }
 
 template <typename T, SEXPTYPE ST, typename Initr>
 void CXXR::FixedVector<T, ST, Initr>::visitReferents(const_visitor* v) const
 {
-    if (ElementTraits::HasReferents<T>::value)  // known at compile-time
-	visitElements(v);
+    visitElements(v, typename std::is_base_of<GCEdgeBase, T>::type());
     VectorBase::visitReferents(v);
 }
 

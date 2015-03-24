@@ -42,116 +42,14 @@ namespace CXXR {
      * vectors.
      */
     namespace ElementTraits {
-	/** @brief Information about the data payload.
-	 *
-	 * In some element types, including all the standard R atomic
-	 * data types, the 'value' of a vector element is held
-	 * directly in a data item of the element type \a T , and in
-	 * that case a special value within the range of type \a T may
-	 * be used to signify that an item of data is 'not available'.
-	 *
-	 * However, CXXR also allows the possibility that a vector
-	 * element type \a T can be a class type whose objects contain
-	 * a value of some underlying type, representing the data
-	 * 'payload', along with a separate flag (typically a bool)
-	 * indicating whether or not the data is 'not available'.
-	 *
-	 * This class provides facilities to allow generic programs to
-	 * handle both these cases straightforwardly.  As defined
-	 * here, the class deals with the first case described above;
-	 * specializations of the Data template can be used to address
-	 * the second case.
-	 *
-	 * @tparam T A type capable of being used as the element type
-	 *           of an R data vector. 
-	 */
-	template <typename T>
-	struct Data {
-	    /** @brief Type of the data payload held in this element
-	     * type.
-	     */
-	    typedef T type;
-
-	    /** @brief Access the data payload.
-	     *
-	     * @param t Reference to an object of the element type.
-	     *
-	     * @return reference to the data payload contained within
-	     * \a t .
-	     */
-	    static const type& get(const T& t)
-	    {
-		return t;
-	    }
-	};  // struct Data
-
-	/** @brief Access the data payload of an R vector element.
-	 *
-	 * This templated function is syntactic sugar for the
-	 * Data::get() function.  It should not be specialized:
-	 * instead specialize ElementTraits::Data itself.
-	 *
-	 * @tparam T type used as an element in the CXXR
-	 *           implementation of an R vector type.
-	 *
-	 * @param t Reference to an object of type \a T .
-	 *
-	 * @return reference to the data payload contained within \a t .
-	 */
-	template <typename T>
-	inline const typename ElementTraits::Data<T>::type&
-	data(const T& t)
-	{
-	    return Data<T>::get(t);
-	}
-
-	/** @brief Function object for detaching referents.
-	 *
-	 * For element types for which \c HasReferents is true, this
-	 * struct will be specialized into a function object which
-	 * will detach the referents of a particular element \a t .
-	 *
-	 * @tparam T A type capable of being used as the element type
-	 *           of an R data vector. 
-	 */
-	template <typename T>
-	struct DetachReferents : std::unary_function<T, void> {
-	    /** @brief Detach the referents of a \a T.
-	     *
-	     * @param t Reference to the \a T object whose referents
-	     *          are to be detached.
-	     */
-	    void operator()(T& t) const
-	    {}
-	};
-
-	/** @brief Do elements of this type refer to GCNode objects?
-	 *
-	 * Specializations will define \c HasReferents to
-	 * be true if objects of element type \a T may incorporate
-	 * references or (more likely) pointers to GCNode objects.
-	 * Such types will also specialize the VisitReferents and
-	 * DetachReferents function object types.
-	 *
-	 * In the default case, covered here, \c HasReferents is
-	 * defined to false, signifying that no special handling
-	 * regarding garbage collection is required.
-	 *
-	 * @tparam T A type capable of being used as the element type
-	 *           of an R data vector. 
-	 */
-	template <typename T>
-	struct HasReferents : boost::mpl::false_
-	{};
-
 	/** @brief Do elements of this type require construction?
 	 *
 	 * Specializations will define \c MustConstruct to
-	 * be true if element type \a T has a nontrivial default
-	 * constructor.
+	 * be false if element type \a T is known to have a trivial
+	 * default constructor.
 	 *
 	 * In the default case, covered here, \c MustConstruct is
-	 * defined to false, signifying that no construction is
+	 * defined to false, signifying that construction is
 	 * required.
 	 *
 	 * @tparam T A type capable of being used as the element type
@@ -162,7 +60,7 @@ namespace CXXR {
 	 * platform-dependent.
 	 */
 	template <typename T>
-	struct MustConstruct : boost::mpl::false_
+	struct MustConstruct : boost::mpl::true_
 	{};
 
 	/** @brief Does this type have a destructor?
@@ -182,8 +80,21 @@ namespace CXXR {
 	 * platform-dependent.
 	 */
 	template <typename T>
-	struct MustDestruct : boost::mpl::false_
+	struct MustDestruct : boost::mpl::true_
 	{};
+
+	template<typename T>
+	struct Duplicate {
+	    T operator()(const T& value) const {
+		return value;
+	    }
+	};
+
+	template<class T> auto duplicate_element(const T& value)
+	    -> decltype(Duplicate<T>()(value))
+	{
+	    return Duplicate<T>()(value);
+	}
 
 	/** @brief Function object for serialization/deserialization.
 	 *
@@ -207,39 +118,8 @@ namespace CXXR {
 	    template <class Archive>
 	    void operator()(Archive& ar, T& item)
 	    {
-		typename ElementTraits::Data<T>::type payload
-		    = ElementTraits::data(item); 
-		ar & boost::serialization::make_nvp("item", payload);
-		item = payload;
+		ar & boost::serialization::make_nvp("item", item);
 	    }
-	};
-	    
-	/** @brief Function object for visiting referents.
-	 *
-	 * For element types for which \c HasReferents::TruthType is
-	 * True, this struct will be specialized into a function
-	 * object which will conduct a visitor \a v to the referents
-	 * of a particular element \a t .
-	 *
-	 * @tparam T A type capable of being used as the element type
-	 *           of an R data vector. 
-	 */
-	template <typename T>
-	struct VisitReferents : std::unary_function<T, void> {
-	    /** @brief Constructor
-	     *
-	     * @param v Non-null pointer to the visitor object to be
-	     *          applied by the function object constructed.
-	     */
-	    VisitReferents(GCNode::const_visitor* v)
-	    {}
-
-	    /** @brief Apply the function.
-	     *
-	     * @param t Object to which the function is to be applied.
-	     */
-	    void operator()(const T& t) const
-	    {}
 	};
 
 	/** @brief Function object to generate 'not available' value.

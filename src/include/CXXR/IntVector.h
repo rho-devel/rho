@@ -52,6 +52,12 @@ namespace CXXR {
             static int na = NA_INTEGER;
             return na;
         }
+
+	template<>
+	struct MustConstruct<int> : boost::mpl::false_ {};
+
+	template<>
+	struct MustDestruct<int> : boost::mpl::false_ {};
     }
 
     template <>

@@ -54,14 +54,12 @@ using namespace CXXR;
 
 vector<const GCNode*>* GCNode::s_moribund = 0;
 unsigned int GCNode::s_num_nodes = 0;
-unsigned int GCNode::s_inhibitor_count = 0;
+bool GCNode::s_reference_counts_up_to_date = false;
 const unsigned char GCNode::s_decinc_refcount[]
 = {0,    2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x1e,
    0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x3e,
    0x3e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x1e,
    0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 0,    0};
-const size_t GCNode::s_gclite_margin = 10000;
-size_t GCNode::s_gclite_threshold = s_gclite_margin;
 unsigned char GCNode::s_mark = 0;
 
 #ifdef HAVE_ADDRESS_SANITIZER
@@ -100,24 +98,7 @@ static bool test_allocated_bit(void* allocation) {
 
 HOT_FUNCTION void* GCNode::operator new(size_t bytes)
 {
-    if (s_inhibitor_count == 0)
-    {
-#ifdef AGGRESSIVE_GC
-	if (true)
-#elif defined(RARE_GC)
-	if (MemoryBank::bytesAllocated() > GCManager::triggerLevel())
-#else
-	if (MemoryBank::bytesAllocated() > s_gclite_threshold)
-#endif
-	{
-	    gclite();
-	}
-
-	if (MemoryBank::bytesAllocated() > GCManager::triggerLevel())
-	{
-	    GCManager::gc();
-	}
-    }
+    GCManager::maybeGC();
     MemoryBank::notifyAllocation(bytes);
 
 #ifdef HAVE_ADDRESS_SANITIZER
@@ -164,41 +145,38 @@ void GCNode::destruct_aux()
     s_moribund->erase(it);
 }
     
-void GCNode::gc()
+void GCNode::gc(bool markSweep)
 {
-    // Note that recursion prevention is applied in GCManager::gc(),
-    // not here.
+    if (GCManager::GCInhibitor::active())
+	return;
+    GCManager::GCInhibitor inhibitor;
 
-    // cout << "GCNode::gc()\n";
-    // GCNode::check();
-    // cout << "Precheck completed OK: " << s_num_nodes << " nodes\n";
-
-    if (s_inhibitor_count != 0) {
-	cerr << "GCNode::gc() : mark-sweep GC must not be used"
-	    " while garbage collection is inhibited.\n";
-	abort();
+    ProtectStack::protectAll();
+    ByteCode::protectAll();
+    if (markSweep) {
+	GCStackRootBase::withAllStackNodesProtected(markSweepGC);
+    } else {
+	GCStackRootBase::withAllStackNodesProtected(gclite);
     }
+}
+
+void GCNode::markSweepGC()
+{
+    // NB: setting this flag implies that the garbage collection will ignore
+    // any new stack nodes.  To ensure correctness, this function must not call
+    // any code that depends on normal operation of the garbage collector.
+    s_reference_counts_up_to_date = true;
+
     mark();
     sweep();
-    // MemoryBank::defragment();
 
-    // cout << "Finishing garbage collection\n";
-    // GCNode::check();
-    // cout << "Postcheck completed OK: " << s_num_nodes << " nodes\n";
+    s_reference_counts_up_to_date = false;
 }
 
 void GCNode::gclite()
 {
-    if (s_inhibitor_count != 0)
-	return;
-    GCInhibitor inhibitor;
-    ProtectStack::protectAll();
-    ByteCode::protectAll();
+    s_reference_counts_up_to_date = true;
 
-    GCStackRootBase::withAllStackNodesProtected(gcliteImpl);
-}
-
-void GCNode::gcliteImpl() {
     while (!s_moribund->empty()) {
 	// Last in, first out, for cache efficiency:
 	const GCNode* node = s_moribund->back();
@@ -209,13 +187,12 @@ void GCNode::gcliteImpl() {
 	if (node->getRefCount() == 0)
 	    delete node;
     }
-    s_gclite_threshold = MemoryBank::bytesAllocated() + s_gclite_margin;
+    s_reference_counts_up_to_date = false;
 }
 
 void GCNode::initialize()
 {
     s_moribund = new vector<const GCNode*>();
-    s_gclite_threshold = s_gclite_margin;
 
     // Initialize the Boehm GC.
     GC_set_all_interior_pointers(1);
@@ -232,14 +209,17 @@ void GCNode::initialize()
     GC_disable();
 }
 
-// TODO(kmillar): if a GC is running (which is the likely case), then the node can be deleted
-//    immediately.
 void GCNode::makeMoribund() const
 {
-    m_rcmmu |= s_moribund_mask;
-    s_moribund->push_back(this);
+    if (s_reference_counts_up_to_date) {
+	// In this case, the node can be deleted immediately.
+	delete this;
+    } else {
+	m_rcmmu |= s_moribund_mask;
+	s_moribund->push_back(this);
+    }
 }
-    
+
 void GCNode::mark()
 {
     // In the first mark-sweep collection, the marking of a node is
@@ -262,27 +242,43 @@ static GCNode* getNodePointerFromAllocation(void* allocation)
 	get_object_pointer_from_allocation(allocation));
 }
 
-void GCNode::detachReferentsOfObjectIfUnmarked(GCNode* object)
+void GCNode::detachReferentsOfObjectIfUnmarked(GCNode* object,
+					       vector<GCNode*> *unmarked_and_saturated)
 {
     if (!object->isMarked()) {
-	object->detachReferents();
+	int ref_count = object->getRefCount();
+	incRefCount(object);
+	if (object->getRefCount() == ref_count) {
+	    // The reference count has saturated.
+	    object->detachReferents();
+	    unmarked_and_saturated->push_back(object);
+	} else {
+	    object->detachReferents();
+	    decRefCount(object);
+	}
     }
 }
 
 void GCNode::sweep()
 {
     // Detach the referents of nodes that haven't been marked.
-    // Once all of these objects have been processed, they will have no
-    // incoming references and will have been placed on the moribund list for
-    // deletion in the following call to gclite().
-    applyToAllAllocatedNodes(detachReferentsOfObjectIfUnmarked);
-    // Cleanup all the nodes that got placed on the moribund list.
-    gclite();
+    // Once this is done, all of the nodes in the cycle will be unreferenced
+    // and they will have been deleted unless their reference count is
+    // saturated.
+    vector<GCNode*> unmarked_and_saturated;
+    applyToAllAllocatedNodes([&](GCNode* node) {
+	    detachReferentsOfObjectIfUnmarked(node, &unmarked_and_saturated);
+	});
+    // At this point, the only unmarked objects are GCNodes with saturated
+    // reference counts.  Delete them.
+    for (GCNode* node : unmarked_and_saturated) {
+	delete node;
+    }
 }
 
 static void applyToAllAllocatedNodesInBlock(struct hblk* block, GC_word fn)
 {
-    auto function = reinterpret_cast<void (*)(GCNode*)>(fn);
+    auto function = reinterpret_cast<std::function<void(GCNode*)>*>(fn);
     hdr* block_header = HDR(block);
     size_t object_size = block_header->hb_sz;
     char *start = block->hb_body;
@@ -296,10 +292,10 @@ static void applyToAllAllocatedNodesInBlock(struct hblk* block, GC_word fn)
     }
 }
 
-void GCNode::applyToAllAllocatedNodes(void (*f)(GCNode*))
+void GCNode::applyToAllAllocatedNodes(std::function<void(GCNode*)> f)
 {
     GC_apply_to_all_blocks(
-	applyToAllAllocatedNodesInBlock, reinterpret_cast<GC_word>(f));
+	applyToAllAllocatedNodesInBlock, reinterpret_cast<GC_word>(&f));
 }
 
 

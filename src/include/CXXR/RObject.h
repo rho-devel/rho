@@ -42,7 +42,7 @@
 #include <boost/serialization/nvp.hpp>
 
 #include "CXXR/GCNode_PtrS11n.hpp"
-#include "CXXR/RHandle.hpp"
+#include "CXXR/GCEdge.hpp"
 #include "CXXR/uncxxr.h"
 
 /** @brief Namespace for the CXXR project.
@@ -201,32 +201,32 @@ namespace CXXR {
 	 * that extent the copy is 'shallow'.  This is managed using
 	 * the smart pointers defined by nested class RObject::Handle.
 	 *
-	 * @return a pointer to a clone of this object, or a null
-	 * pointer if this object cannot be cloned.
+	 * @return a pointer to a clone of this object.  Returns the original
+	*     object if it cannot be cloned.
 	 *
 	 * @note Derived classes should exploit the covariant return
 	 * type facility to return a pointer to the type of object
 	 * being cloned.
 	 */
-	virtual RObject* clone() const
-	{
-	    return nullptr;
+	virtual RObject* clone() const {
+	    return const_cast<RObject*>(this);
 	}
 
-	/** @brief Return a pointer to a copy of an object.
+	/** @brief Return a pointer to a copy of an object or the object itself
+	 *    if it isn't cloneable.
 	 *
 	 * @tparam T RObject or a type derived from RObject.
 	 *
 	 * @param pattern Either a null pointer or a pointer to the
 	 *          object to be cloned.
 	 *
-	 * @return Pointer to a clone of \a pattern, or a null pointer
+	 * @return Pointer to a clone of \a pattern, or \a pattern
 	 * if \a pattern cannot be cloned or is itself a null pointer.
 	 */
 	template <class T>
 	static T* clone(const T* pattern)
 	{
-	    return pattern ? static_cast<T*>(pattern->clone()) : nullptr;
+	    return pattern ? pattern->clone() : nullptr;
 	}
 
 	/** @brief Copy an attribute from one RObject to another.
@@ -606,7 +606,7 @@ namespace CXXR {
 	bool m_active_binding : 1;
 	bool m_binding_locked : 1;
     private:
-	RHandle<PairList> m_attrib;
+	GCEdge<PairList> m_attrib;
 
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version);
@@ -618,6 +618,15 @@ namespace CXXR {
 			 const RObject* src3);
 #endif	
     };
+
+    namespace ElementTraits {
+	template<typename T>
+	struct Duplicate<T*> {
+	    T* operator()(T* value) const {
+		return RObject::clone(value);
+	    }
+	};
+    }  // namespace ElementTraits
 }  // namespace CXXR
 
 // ***** Implementation of non-inlined templated members *****

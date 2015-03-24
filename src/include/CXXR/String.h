@@ -98,6 +98,10 @@ namespace CXXR {
 	    bool m_na_last;
 	};
 
+	String* clone() const override {
+	    return const_cast<String*>(this);
+	}
+
 	/** @brief Read-only character access.
 	 *
 	 * @param index Index of required character (counting from

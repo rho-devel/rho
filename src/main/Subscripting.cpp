@@ -435,7 +435,8 @@ bool Subscripting::dropDimensions(VectorBase* v)
 	    std::size_t dout = 0;
 	    for (std::size_t din = 0; din < ndims; ++din)
 		if ((*dims)[din] != 1) {
-		    (*newdimnames)[dout] = (*dimnames)[din];
+		    (*newdimnames)[dout] = ElementTraits::duplicate_element(
+			(*dimnames)[din].get());
 		    if (dimnamesnames)
 			(*newdimnamesnames)[dout] = (*dimnamesnames)[din];
 		    ++dout;

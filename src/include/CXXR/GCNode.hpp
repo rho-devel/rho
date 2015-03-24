@@ -104,46 +104,6 @@ namespace CXXR {
 	    virtual void operator()(const GCNode* node) = 0;
 	};
 
-	/** @brief Not for general use.
-	 *
-	 * All garbage collection will be inhibited while any object
-	 * of this type exists.
-	 *
-	 * @deprecated This class is provided for use in implementing
-	 * functions (such as SET_ATTRIB()) in the Rinternals.h
-	 * interface which would not give rise to any memory
-	 * allocations as implemented in CR but may do so as
-	 * implemented in CXXR.  It is also used within the GCNode
-	 * class to handle reentrant calls to gclite() and gc().  Its
-	 * use for other purposes is deprecated: use instead more
-	 * selective protection against garbage collection such as
-	 * that provided by class GCStackRoot<T>.
-	 *
-	 * @note GC inhibition is implemented as an object type to
-	 * facilitate reinstatement of garbage collection when an
-	 * exception is thrown.
-	 */
-	struct GCInhibitor {
-	    GCInhibitor()
-	    {
-		++GCNode::s_inhibitor_count;
-	    }
-
-	    ~GCInhibitor()
-	    {
-		--GCNode::s_inhibitor_count;
-	    }
-
-	    /** @brief Is inhibition currently in effect?
-	     *
-	     * @return true iff garbage collection is currently inhibited.
-	     */
-	    static bool active()
-	    {
-		return s_inhibitor_count != 0;
-	    }
-	};
-
 	// Serialization of pointers to GCNodes.  Defined in
 	// GCNode_PtrS11n.hpp .
 	class PtrS11n;
@@ -166,7 +126,7 @@ namespace CXXR {
 	 *
 	 * @note This function will often carry out garbage collection
 	 * of some kind before allocating memory.  However, no
-	 * mark-sweep collection will be performed if at least one
+	 * garbage collection will be performed if at least one
 	 * GCInhibitor object is in existence.
 	 */
 	static void* operator new(size_t bytes) HOT_FUNCTION;
@@ -221,17 +181,14 @@ namespace CXXR {
 	virtual void detachReferents()  {}
 
 	/** @brief Initiate a garbage collection.
-	 */
-	static void gc();
-
-	/** @brief Lightweight garbage collection.
 	 *
-	 * This function deletes nodes whose reference counts are
-	 * zero: if the deletion of these nodes in turn
-	 * causes the reference counts of other nodes to fall to zero,
-	 * those nodes are also deleted, and so on recursively.
+	 * @param markSweep If true, runs a full mark-sweep garbage collection,
+	 *    which is relatively slow, but capable of collecting reference
+	 *    cycles and nodes with saturated reference counts.
+	 *    Otherwise does a fast collection, deleting only the objects
+	 *    whose reference counts have fallen to zero.
 	 */
-	static void gclite();
+	static void gc(bool markSweep);
 
 	/** @brief Number of GCNode objects in existence.
 	 *
@@ -312,17 +269,13 @@ namespace CXXR {
 	static std::vector<const GCNode*>* s_moribund;  // Vector of
 	  // pointers to nodes whose reference count has fallen to
 	  // zero (but may subsequently have increased again).
-	static const size_t s_gclite_margin;  // operator new will
-	  // invoke gclite() when MemoryBank::bytesAllocated() exceeds
-	  // by at least s_gclite_margin the number of bytes that were
-	  // allocated following the previous gclite().  This is a
-	  // tuning parameter.
-	static size_t s_gclite_threshold;  // operator new calls
-	  // gclite() when the number of bytes allocated reaches this
-	  // level.
 	static unsigned int s_num_nodes;  // Number of nodes in existence
-	static unsigned int s_inhibitor_count;  // Number of GCInhibitor
-	  // objects in existence.
+
+	// Flag that is set if the reference counts are known to be
+	// up to date and there are no defered updates outstanding.
+	// If this true, then objects can be deleted immediately when
+	// their reference count drops to zero.
+	static bool s_reference_counts_up_to_date;
 
 	// Bit patterns XORd into m_rcmmu to decrement or increment the
 	// reference count.  Patterns 0, 2, 4, ... are used to
@@ -356,6 +309,19 @@ namespace CXXR {
 	//
 	// But boost::serialization doesn't like this.
 	// static void* operator new[](size_t);
+
+	/** @brief Initiate a full mark-sweep garbage collection.
+	 */
+	static void markSweepGC();
+
+	/** @brief Lightweight garbage collection.
+	 *
+	 * This function deletes nodes whose reference counts are
+	 * zero: if the deletion of these nodes in turn
+	 * causes the reference counts of other nodes to fall to zero,
+	 * those nodes are also deleted, and so on recursively.
+	 */
+	static void gclite();
 
 	// Returns the stored reference count.
 	unsigned char getRefCount() const
@@ -427,9 +393,10 @@ namespace CXXR {
 	/** @brief Carry out the sweep phase of garbage collection.
 	 */
 	static void sweep();
-	static void detachReferentsOfObjectIfUnmarked(GCNode*);
+	static void detachReferentsOfObjectIfUnmarked(GCNode*,
+						      std::vector<GCNode*>*);
 
-	static void applyToAllAllocatedNodes(void (*function)(GCNode*));
+	static void applyToAllAllocatedNodes(std::function<void(GCNode*)>);
 
 	friend class GCEdgeBase;
 	friend class GCTestHelper;

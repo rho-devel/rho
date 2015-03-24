@@ -43,10 +43,11 @@ CXXR_HPPS = \
   Allocator.hpp ArgList.hpp ArgMatcher.hpp BinaryFunction.hpp \
   CellPool.hpp CommandChronicle.hpp Complex.hpp \
   ElementTraits.hpp Evaluator_Context.hpp \
-  FixedVector.hpp Frame.hpp GCEdge.hpp GCNode.hpp GCNode_PtrS11n.hpp \
+  FixedVector.hpp Frame.hpp GCEdge.hpp GCManager.hpp \
+  GCNode.hpp GCNode_PtrS11n.hpp \
   GCStackRoot.hpp \
   Logical.hpp \
-  MemoryBank.hpp NAAugment.hpp NodeStack.hpp \
+  MemoryBank.hpp NodeStack.hpp \
   Provenance.hpp RHandle.hpp S11nScope.hpp \
   SEXP_downcast.hpp StdFrame.hpp Subscripting.hpp \
   UnaryFunction.hpp config.hpp

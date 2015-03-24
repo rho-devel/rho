@@ -48,6 +48,7 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
 
+#include "CXXR/GCManager.hpp"
 #include "CXXR/GCRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
 
@@ -339,7 +340,7 @@ namespace CXXR {
 	friend class boost::serialization::access;
 	friend class PairList;
 
-	RHandle<> m_car;
+	GCEdge<> m_car;
 	GCEdge<PairList> m_tail;
 	GCEdge<const RObject> m_tag;
 
@@ -487,7 +488,7 @@ namespace CXXR {
 	static PairList* cons(RObject* cr, PairList* tl=nullptr,
 			      const RObject* tag = nullptr)
 	{
-            GCInhibitor no_gc;
+	    GCManager::GCInhibitor no_gc;
             // We inhibit garbage collection here to avoid (a) the need
 	    // to protect the arguments from GC, and (b) the
 	    // possibility of reentrant calls to this function (from
@@ -570,7 +571,7 @@ namespace CXXR {
     inline ConsCell::ConsCell(const ConsCell& pattern)
       : RObject(pattern)
     {
-        m_car = pattern.m_car;
+        m_car = clone(pattern.m_car.get());
         m_tail = clone(pattern.tail());
         m_tag = pattern.tag();
     }
@@ -578,7 +579,7 @@ namespace CXXR {
     inline ConsCell::ConsCell(const ConsCell& pattern, int)
 	: RObject(pattern)
     {
-        m_car = pattern.m_car;
+        m_car = clone(pattern.m_car.get());
         m_tail = nullptr;
         m_tag = pattern.tag();
     }

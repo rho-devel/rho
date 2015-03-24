@@ -32,6 +32,7 @@
 
 #include <map>
 #include <boost/utility.hpp>
+#include "CXXR/GCManager.hpp"
 #include "CXXR/GCNode.hpp"
 
 namespace CXXR {
@@ -52,7 +53,7 @@ namespace CXXR {
      * S11nScope objects are destroyed in the reverse order of
      * creation, and the destructor checks this.
      */
-    class S11nScope : public GCNode::GCInhibitor {
+    class S11nScope : public GCManager::GCInhibitor {
     public:
 	/** @brief Primary constructor.
 	 */

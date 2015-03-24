@@ -178,7 +178,7 @@ namespace CXXR {
 	static void initialize();
 
 	// Put all entries into the protecting state:
-        friend void GCNode::gclite();
+        friend void GCNode::gc(bool);
 	static void protectAll()
 	{
 	    s_stack->protectAll();
