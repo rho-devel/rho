@@ -330,12 +330,7 @@ namespace {
     // Import Bindings (and their provenance) from one Frame into another.
     void import(Frame* to, const Frame& from)
     {
-	Frame::BindingRange range = from.bindingRange();
-	for (Frame::BindingRange::const_iterator it = range.begin();
-	     it != range.end(); ++it) {
-	    const Frame::Binding& frombdg = *it;
-	    to->importBinding(&frombdg, TRUE);
-	}
+	to->importBindings(&from, TRUE);
     }
 }
 

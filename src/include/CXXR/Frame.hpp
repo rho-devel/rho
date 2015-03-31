@@ -31,10 +31,6 @@
 #ifndef RFRAME_HPP
 #define RFRAME_HPP
 
-// As at boost 1.49.0, any_range.hpp needs concepts.hpp but does not
-// itself #include it:
-#include <boost/range/concepts.hpp>
-#include <boost/range/any_range.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/nvp.hpp>
@@ -412,17 +408,6 @@ namespace CXXR {
 	};  // Frame::Binding
 
 
-	/** @brief Allow iteration over a Frame object's Bindings.
-	 *
-	 * This is a boost::any_range type which allows for (read-only)
-	 * iteration over the Binding objects within a Frame,
-	 * irrespective of the underlying implementation of the Frame.
-	 */
-	typedef boost::any_range<const Binding,
-				 boost::forward_traversal_tag,
-				 const Binding&,
-				 std::ptrdiff_t> BindingRange;
-
 	/** @brief Function type for read and write monitors.
 	 *
 	 * See the documentation for setReadMonitor() and setWriteMonitor().
@@ -523,12 +508,10 @@ namespace CXXR {
 	    return v_binding(symbol);
 	}
 
-	/** @brief Obtain a BindingRange for this Frame.
-	 *
-	 * @return a BindingRange allowing read-only iteration over
-	 * the Binding objects within this Frame.
+	/** @brief Call a function for all of a Frame object's Bindings.
 	 */
-	virtual BindingRange bindingRange() const = 0;
+	virtual void visitBindings(std::function<void(const Binding*)> f) const
+	    = 0;
 
 	/** @brief Remove all symbols from the Frame.
 	 *
