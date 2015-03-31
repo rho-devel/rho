@@ -36,7 +36,13 @@
 extern "C" {
 #endif
 
-#if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+#ifdef __has_feature
+#define HAVE_ASAN __has_feature(address_sanitizer)
+#else
+#define HAVE_ASAN defined(__SANITIZE_ADDRESS__)
+#endif
+
+#if HAVE_ASAN
 void __asan_poison_memory_region(void const volatile *addr, size_t size);
 
 void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
@@ -49,7 +55,7 @@ void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
 
 #  define NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
 
-#else  // ! (__has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__))
+#else  // ! HAVE_ASAN
 
 #  define ASAN_POISON_MEMORY_REGION(addr, size) \
   ((void)(addr), (void)(size))
@@ -58,7 +64,7 @@ void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
 
 #  define NO_SANITIZE_ADDRESS
 
-#endif 
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"
