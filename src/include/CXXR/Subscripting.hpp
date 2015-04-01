@@ -817,6 +817,18 @@ namespace CXXR {
 	 */
 	template <class V>
 	static V* vectorSubset(const V* v, const Indices& indices);
+
+	// Helper function for arraySubassign and vectorSubassign.
+	template<class InType, class OutType>
+	static void assignDuplicateElement(OutType& out, const InType& in) {
+	    out = ElementTraits::duplicate_element(static_cast<OutType>(in));
+	}
+
+	template<class InType>
+	static void assignDuplicateElement(InType& out, const InType& in) {
+	    out = ElementTraits::duplicate_element(in);
+	}
+
     };  // class Subscripting
 
     template <class VL, class VR>
@@ -874,8 +886,11 @@ namespace CXXR {
 	    }
 	    if (!naindex) {
 		const Rval& rval = (*rhs)[irhs % rhs_size];
-		(*ans)[iout] = ElementTraits::duplicate_element(
-		    isNA(rval) ? NA<Lval>() : static_cast<const Lval&>(rval));
+		if (isNA(rval)) {
+		    assignDuplicateElement((*ans)[iout], NA<Lval>());
+		} else {
+		    assignDuplicateElement((*ans)[iout], rval);
+		}
 	    }
 
 	    // Advance the index selection:
@@ -1011,8 +1026,11 @@ namespace CXXR {
 	    std::size_t index = indices[i];
 	    if (index != 0) {
 		const Rval& rval = (*rhs)[i % rhs_size];
-		(*ans)[index - 1] = ElementTraits::duplicate_element(
-		    isNA(rval) ? NA<Lval>() : static_cast<const Lval&>(rval));
+		if (isNA(rval)) {
+		    assignDuplicateElement((*ans)[index - 1], NA<Lval>());
+		} else {
+		    assignDuplicateElement((*ans)[index - 1], rval);
+		}
 	    }
 	}
 	indices.applyNewNames(ans);
