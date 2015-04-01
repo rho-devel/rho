@@ -241,7 +241,7 @@ void Frame::importBinding(const Binding* binding_to_import, bool quiet) {
 
 void Frame::importBindings(const Frame* frame, bool quiet) {
     Frame* to_frame = this;
-    visitBindings([=](const Binding* binding) {
+    frame->visitBindings([=](const Binding* binding) {
 	    to_frame->importBinding(binding, quiet);
 	});
 }

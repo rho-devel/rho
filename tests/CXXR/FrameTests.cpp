@@ -48,6 +48,7 @@ public:
 
 	value1 = RealVector::createScalar(1.1);
 	value2 = RealVector::createScalar(2.1);
+	value3 = RealVector::createScalar(3.1);
     }
 
     Frame* new_frame()
@@ -62,6 +63,7 @@ protected:
     Symbol* symbol3;
     GCRoot<RObject> value1;
     GCRoot<RObject> value2;
+    GCRoot<RObject> value3;
 };
 
 TEST_P(FrameTest, IsInitiallyEmpty) {
@@ -130,6 +132,49 @@ TEST_P(FrameTest, EraseItem) {
     EXPECT_EQ(nullptr, frame->binding(symbol1));
     EXPECT_EQ(binding2, frame->binding(symbol2));
     EXPECT_EQ(nullptr, frame->binding(symbol3));
+}
+
+TEST_P(FrameTest, ImportBindings) {
+    Frame* from_frame = new_frame();
+    from_frame->bind(symbol1, value1);
+    from_frame->bind(symbol2, value2);
+
+    Frame* to_frame = new_frame();
+    to_frame->bind(symbol3, value3);
+    EXPECT_EQ(1, to_frame->size());
+    to_frame->importBindings(from_frame, true);
+
+    // Check that from_frame hasn't changed.
+    EXPECT_EQ(2, from_frame->size());
+    EXPECT_EQ(value1, from_frame->binding(symbol1)->rawValue());
+    EXPECT_EQ(value2, from_frame->binding(symbol2)->rawValue());
+
+    // Check that to_frame has the expected contents.
+    EXPECT_EQ(3, to_frame->size());
+    EXPECT_EQ(value1, to_frame->binding(symbol1)->rawValue());
+    EXPECT_EQ(value2, to_frame->binding(symbol2)->rawValue());
+    EXPECT_EQ(value3, to_frame->binding(symbol3)->rawValue());
+}
+
+TEST_P(FrameTest, DotSymbols) {
+    Frame* frame = new_frame();
+    frame->bind(symbol1, value1);
+    frame->bind(Symbol::obtain(".a"), value2);
+    frame->bind(Symbol::obtainDotDotSymbol(100), value3);
+
+    EXPECT_EQ(3, frame->size());
+    std::vector<const Symbol*> visible_symbols = frame->symbols(false);
+    EXPECT_EQ(1, visible_symbols.size());
+    EXPECT_EQ(symbol1, visible_symbols[0]);
+
+    std::vector<const Symbol*> all_symbols = frame->symbols(true);
+    EXPECT_EQ(3, all_symbols.size());
+    EXPECT_TRUE(find(all_symbols.begin(), all_symbols.end(), symbol1)
+		!= all_symbols.end());
+    EXPECT_TRUE(find(all_symbols.begin(), all_symbols.end(),
+		     Symbol::obtain(".a")) != all_symbols.end());
+    EXPECT_TRUE(find(all_symbols.begin(), all_symbols.end(),
+		     Symbol::obtainDotDotSymbol(100)) != all_symbols.end());
 }
 
 // TODO(kmillar): add more tests.
