@@ -27,10 +27,6 @@
 #include "CXXR/jit/FrameDescriptor.hpp"
 #include "CXXR/StdFrame.hpp"
 
-#include "boost/iterator/filter_iterator.hpp"
-#include "boost/range/adaptor/map.hpp"
-#include "boost/range/join.hpp"
-
 namespace CXXR {
 namespace JIT {
 
@@ -76,19 +72,23 @@ Frame::Binding* CompiledFrame::v_binding(const Symbol* symbol)
     return nullptr;
 }
 
-Frame::BindingRange CompiledFrame::bindingRange() const
+void CompiledFrame::visitBindings(std::function<void(const Binding*)> f) const
 {
-    auto firstBinding = m_bindings;
-    auto lastBinding = m_bindings + m_descriptor->getNumberOfSymbols();
-    BindingRange range = BindingRange(
-	boost::make_filter_iterator(isSet, firstBinding, lastBinding),
-	boost::make_filter_iterator(isSet, lastBinding, lastBinding));
+    const Binding* lastBinding
+	= m_bindings + m_descriptor->getNumberOfSymbols();
+    for (const Binding* binding = m_bindings; binding != lastBinding; ++binding)
+    {
+	if (isSet(*binding)) {
+	    f(binding);
+	}
+    }
 
     if (m_extension) {
-	BindingRange extension = (*m_extension) | boost::adaptors::map_values;
-	range = boost::join(range, extension);
+	for (const auto& item : *m_extension) {
+	    const Binding* binding = &item.second;
+	    f(binding);
+	}
     }
-    return range;
 }
 
 CompiledFrame* CompiledFrame::clone() const
