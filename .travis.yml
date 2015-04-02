@@ -1,0 +1,13 @@
+language: r
+warnings_are_errors: false
+env: _R_CHECK_CRAN_INCOMING_=FALSE
+
+r_binary_packages:
+  - testthat
+
+r_github_packages:
+  - jimhester/covr
+  - allr/testr
+
+after_success:
+  - Rscript -e 'library(covr);coveralls()'

@@ -1,0 +1,6 @@
+expected <- eval(parse(text="structure(list(x.limits = c(-2.46408176011189, 2.92512533057276), y.limits = structure(c(1386479490.57927, 1387608090.57927), class = c(\"POSIXct\", \"POSIXt\")), x.used.at = NULL, y.used.at = NULL, x.num.limit = NULL, y.num.limit = NULL, aspect.ratio = 1, prepanel.default = \"prepanel.default.xyplot\", prepanel = NULL, index.cond = list(1:3), perm.cond = 1L), .Names = c(\"x.limits\", \"y.limits\", \"x.used.at\", \"y.used.at\", \"x.num.limit\", \"y.num.limit\", \"aspect.ratio\", \"prepanel.default\", \"prepanel\", \"index.cond\", \"perm.cond\"))"));                  
+test(id=0, code={                  
+argv <- eval(parse(text="list(structure(list(x.limits = c(-2.46408176011189, 2.92512533057276), y.limits = structure(c(1386479490.57927, 1387608090.57927), class = c(\"POSIXct\", \"POSIXt\")), x.used.at = NULL, y.used.at = NULL, x.num.limit = NULL, y.num.limit = NULL, aspect.ratio = 1, prepanel.default = \"prepanel.default.xyplot\", prepanel = NULL), .Names = c(\"x.limits\", \"y.limits\", \"x.used.at\", \"y.used.at\", \"x.num.limit\", \"y.num.limit\", \"aspect.ratio\", \"prepanel.default\", \"prepanel\")), structure(list(index.cond = list(1:3),     perm.cond = 1L), .Names = c(\"index.cond\", \"perm.cond\")))"));                  
+do.call(`c`, argv);                  
+}, o=expected);                  
+

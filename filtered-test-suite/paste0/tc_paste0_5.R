@@ -1,0 +1,6 @@
+expected <- eval(parse(text="c(\"coef.aov*\", \"extractAIC.aov*\", \"model.tables.aov*\", \"print.aov*\", \"proj.aov*\", \"se.contrast.aov*\", \"summary.aov\", \"TukeyHSD.aov\")"));                
+test(id=0, code={                
+argv <- eval(parse(text="list(list(structure(c(\"coef.aov\", \"extractAIC.aov\", \"model.tables.aov\", \"print.aov\", \"proj.aov\", \"se.contrast.aov\", \"summary.aov\", \"TukeyHSD.aov\"), class = \"MethodsFunction\", info = structure(list(visible = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE), from = structure(c(9L, 9L, 9L, 9L, 9L, 9L, 7L, 7L), .Label = c(\"CheckExEnv\", \"package:base\", \"package:datasets\", \"package:graphics\", \"package:grDevices\", \"package:methods\", \"package:stats\", \"package:utils\", \"registered S3method\"), class = \"factor\")), .Names = c(\"visible\", \"from\"), row.names = c(\"coef.aov\", \"extractAIC.aov\", \"model.tables.aov\", \"print.aov\", \"proj.aov\", \"se.contrast.aov\", \"summary.aov\", \"TukeyHSD.aov\"), class = \"data.frame\")), c(\"*\", \"*\", \"*\", \"*\", \"*\", \"*\", \"\", \"\")), NULL)"));                
+.Internal(paste0(argv[[1]], argv[[2]]));                
+}, o=expected);                
+

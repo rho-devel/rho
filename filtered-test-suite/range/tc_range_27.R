@@ -1,0 +1,6 @@
+expected <- eval(parse(text="c(-35.7665182531098, 76.2209544348296)"));    
+test(id=0, code={    
+argv <- eval(parse(text="list(structure(c(-11.3814849918875, -11.9361690778798, 0.562602893455921, 11.5126028934559, 76.2209544348296, -8.66448499188751, -6.94502893455923, -5.28148499188751, -35.7665182531098, 6.35497106544077, -9.20908119253651, -0.898484991887508, -5.59380090589508, -6.12730922120065, -13.3061334505138, 58.6278831800973, -15.1098009058951, -8.29625696322337, -4.07211681990265, 3.7096551514332, 2.60151500811249, 6.24733923742563, -1.33911681990266, -2.14157287723094, -10.5984849918875, -8.12802893455923, 1.30028697944835, -15.7450289345592, 7.20569077879935, -12.6484849918875, 25.1810423201731, -4.42680090589508, -1.90886979448351), .Names = c(\"Craig Dunain\", \"Ben Rha\", \"Ben Lomond\", \"Goatfell\", \"Bens of Jura\", \"Cairnpapple\", \"Scolty\", \"Traprain\", \"Lairig Ghru\", \"Dollar\", \"Lomonds\", \"Cairn Table\", \"Eildon Two\", \"Cairngorm\", \"Seven Hills\", \"Knock Hill\", \"Black Hill\", \"Creag Beag\", \"Kildcon Hill\", \"Meall Ant-Suidhe\", \"Half Ben Nevis\", \"Cow Hill\", \"N Berwick Law\", \"Creag Dubh\", \"Burnswark\", \"Largo Law\", \"Criffel\", \"Acmony\", \"Ben Nevis\", \"Knockfarrel\", \"Two Breweries\", \"Cockleroi\", \"Moffat Chase\")), na.rm = TRUE)"));    
+do.call(`range`, argv);    
+}, o=expected);    
+

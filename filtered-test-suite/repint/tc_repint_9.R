@@ -1,0 +1,6 @@
+expected <- eval(parse(text="c(-4L, -4L, -4L, -4L, -4L, -4L, -4L, -4L, -4L, -4L, 11L, 11L, 11L, 11L, 11L, 11L, 11L, 11L, 11L, 23L, 23L, 23L, 23L, 23L, 23L, 23L, 23L, 23L, 23L, 23L, -3L, -3L, -3L, -3L, -3L, -3L, -3L, -3L, -3L, -3L, -3L, -3L, -3L, -3L, -3L, -3L, -3L, -2L, -2L, -2L, -2L, -2L, -2L, -2L, -2L, -2L, -1L, -1L, -1L, -1L, -1L, -1L, -1L, -1L, -1L, -1L, -1L, -1L, -1L, -1L, -1L, -1L, -1L, -1L, -6L, -6L, -6L, -6L, -6L, -6L, -6L, -6L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 8L, 8L, 8L, 8L, 8L, 8L, 8L, 8L, -13L, -13L, -13L, -13L, -13L, -13L, -13L, -13L, -13L, -13L, -13L, -13L, -13L, -13L, -13L, 6L, 6L, 6L, 6L, -32L, -32L, -32L, -32L, -32L, -32L, -32L, -32L, -32L, -32L, -32L, -32L, -8L, -8L, -8L, -8L, -8L, -8L, -8L, -8L, -8L, -8L, -8L, -8L, NA, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L)"));            
+test(id=0, code={            
+argv <- eval(parse(text="list(c(-4L, 11L, 23L, -3L, -2L, -1L, -6L, 0L, 8L, -13L, 6L, -32L, -8L, NA, 0L), c(10L, 9L, 11L, 17L, 9L, 18L, 8L, 11L, 8L, 15L, 4L, 12L, 12L, 1L, 34L))"));            
+.Internal(rep.int(argv[[1]], argv[[2]]));            
+}, o=expected);            
+

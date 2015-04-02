@@ -1,0 +1,6 @@
+expected <- eval(parse(text="TRUE"));         
+test(id=0, code={         
+argv <- eval(parse(text="list(structure(list(coefficients = numeric(0), residuals = structure(c(-0.667819876370237, 0.170711734013213, 0.552921941721332, -0.253162069270378, -0.00786394222146348, 0.0246733498130512, 0.0730305465518564, -1.36919169254062, 0.0881443844426084, -0.0834190388782434), .Names = c(\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\", \"9\", \"10\")), fitted.values = structure(c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0), .Names = c(\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\", \"9\", \"10\")), weights = NULL, rank = 0L, df.residual = 10L,     call = quote(lm(formula = y ~ 0)), terms = quote(y ~ 0), model = structure(list(y = c(-0.667819876370237, 0.170711734013213, 0.552921941721332, -0.253162069270378, -0.00786394222146348, 0.0246733498130512, 0.0730305465518564, -1.36919169254062, 0.0881443844426084, -0.0834190388782434)), .Names = \"y\", terms = quote(y ~ 0), row.names = c(NA, 10L), class = \"data.frame\")), .Names = c(\"coefficients\", \"residuals\", \"fitted.values\", \"weights\", \"rank\", \"df.residual\", \"call\", \"terms\", \"model\"), class = \"lm\"), \"lm\", FALSE)"));         
+.Internal(`inherits`(argv[[1]], argv[[2]], argv[[3]]));         
+}, o=expected);         
+

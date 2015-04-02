@@ -1,0 +1,6 @@
+expected <- eval(parse(text="c(\"Th.\", \"li.enses\", \"for\", \"most\", \"softwar.\", \"ar.\", \".esigned\", \"to\", \"tak.\", \"away\", \"your\", \"fr.edom\", \"to\", \"shar.\", \"an.\", \".hange\", \"it.\", \"\", \"By\", \".ontrast,\", \"th.\", \"GNU\", \"G.neral\", \"Pu.lic\", \"Li.ense\", \"is\", \"int.nded\", \"to\", \"guarant.e\", \"your\", \"fr.edom\", \"to\", \"shar.\", \"an.\", \".hange\", \"fr.e\", \"softwar.\", \"--\", \"to\", \"mak.\", \"sur.\", \"th.\", \"softwar.\", \"is\", \"fr.e\", \"for\", \"all\", \"its\", \"us.rs\")"));               
+test(id=0, code={               
+argv <- eval(parse(text="list(\"[b-e]\", \".\", c(\"The\", \"licenses\", \"for\", \"most\", \"software\", \"are\", \"designed\", \"to\", \"take\", \"away\", \"your\", \"freedom\", \"to\", \"share\", \"and\", \"change\", \"it.\", \"\", \"By\", \"contrast,\", \"the\", \"GNU\", \"General\", \"Public\", \"License\", \"is\", \"intended\", \"to\", \"guarantee\", \"your\", \"freedom\", \"to\", \"share\", \"and\", \"change\", \"free\", \"software\", \"--\", \"to\", \"make\", \"sure\", \"the\", \"software\", \"is\", \"free\", \"for\", \"all\", \"its\", \"users\"), FALSE, TRUE, FALSE, FALSE)"));               
+.Internal(sub(argv[[1]], argv[[2]], argv[[3]], argv[[4]], argv[[5]], argv[[6]], argv[[7]]));               
+}, o=expected);               
+

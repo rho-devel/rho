@@ -1,0 +1,6 @@
+expected <- eval(parse(text="c(FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE)"));           
+test(id=0, code={           
+argv <- eval(parse(text="list(c(1, 0.778249191273129, 0.65570344192776, 0.65570344192776, 0.105668080308148, 0.0451091129154675, 0.0451091129154675, 1.49604383156071e-06, 8.3976239365668e-11, 2.13195391672632e-15, 1.4298180954663e-20, 1.47541167362595e-26, 1.09353648287987e-33, 1.6858825926109e-42, 1.6858825926109e-42, 1.6858825926109e-42), FALSE, FALSE, NA)"));           
+.Internal(duplicated(argv[[1]], argv[[2]], argv[[3]], argv[[4]]));           
+}, o=expected);           
+

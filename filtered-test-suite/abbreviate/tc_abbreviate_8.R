@@ -1,0 +1,6 @@
+expected <- eval(parse(text="c(\"A\", \"A\", \"A\", \"A\", \"C\", \"C\", \"C\", \"D\", \"F\", \"G\", \"H\", \"I\", \"I\", \"I\", \"I\", \"K\", \"K\", \"L\", \"M\", \"M\", \"M\", \"M\", \"M\", \"M\", \"M\", \"M\", \"N\", \"N\", \"NH\", \"NJ\", \"NM\", \"NY\", \"NC\", \"ND\", \"O\", \"O\", \"O\", \"P\", \"RI\", \"SC\", \"SD\", \"T\", \"T\", \"U\", \"V\", \"V\", \"W\", \"WV\", \"W\", \"W\")"));  
+test(id=0, code={  
+argv <- eval(parse(text="list(c(\"Alabama\", \"Alaska\", \"Arizona\", \"Arkansas\", \"California\", \"Colorado\", \"Connecticut\", \"Delaware\", \"Florida\", \"Georgia\", \"Hawaii\", \"Idaho\", \"Illinois\", \"Indiana\", \"Iowa\", \"Kansas\", \"Kentucky\", \"Louisiana\", \"Maine\", \"Maryland\", \"Massachusetts\", \"Michigan\", \"Minnesota\", \"Mississippi\", \"Missouri\", \"Montana\", \"Nebraska\", \"Nevada\", \"New Hampshire\", \"New Jersey\", \"New Mexico\", \"New York\", \"North Carolina\", \"North Dakota\", \"Ohio\", \"Oklahoma\", \"Oregon\", \"Pennsylvania\", \"Rhode Island\", \"South Carolina\", \"South Dakota\", \"Tennessee\", \"Texas\", \"Utah\", \"Vermont\", \"Virginia\", \"Washington\", \"West Virginia\", \"Wisconsin\", \"Wyoming\"), 1L, TRUE)"));  
+.Internal(`abbreviate`(argv[[1]], argv[[2]], argv[[3]]));  
+}, o=expected);  
+

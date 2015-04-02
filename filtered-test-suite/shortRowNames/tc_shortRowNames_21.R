@@ -1,0 +1,6 @@
+expected <- eval(parse(text="-32L"));       
+test(id=0, code={       
+argv <- eval(parse(text="list(structure(list(Hair = structure(c(1L, 2L, 3L, 4L, 1L, 2L, 3L, 4L, 1L, 2L, 3L, 4L, 1L, 2L, 3L, 4L, 1L, 2L, 3L, 4L, 1L, 2L, 3L, 4L, 1L, 2L, 3L, 4L, 1L, 2L, 3L, 4L), .Label = c(\"Black\", \"Brown\", \"Red\", \"Blond\"), class = \"factor\"), Eye = structure(c(1L, 1L, 1L, 1L, 2L, 2L, 2L, 2L, 3L, 3L, 3L, 3L, 4L, 4L, 4L, 4L, 1L, 1L, 1L, 1L, 2L, 2L, 2L, 2L, 3L, 3L, 3L, 3L, 4L, 4L, 4L, 4L), .Label = c(\"Brown\", \"Blue\", \"Hazel\", \"Green\"), class = \"factor\"), Sex = structure(c(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L), .Label = c(\"Male\", \"Female\"), class = \"factor\")), .Names = c(\"Hair\", \"Eye\", \"Sex\"), out.attrs = structure(list(dim = structure(c(4L, 4L, 2L), .Names = c(\"Hair\", \"Eye\", \"Sex\")), dimnames = structure(list(Hair = c(\"Hair=Black\", \"Hair=Brown\", \"Hair=Red\", \"Hair=Blond\"), Eye = c(\"Eye=Brown\", \"Eye=Blue\", \"Eye=Hazel\", \"Eye=Green\"), Sex = c(\"Sex=Male\", \"Sex=Female\")), .Names = c(\"Hair\", \"Eye\", \"Sex\"))), .Names = c(\"dim\", \"dimnames\")), class = \"data.frame\", row.names = c(NA, -32L)), 1L)"));       
+.Internal(`shortRowNames`(argv[[1]], argv[[2]]));       
+}, o=expected);       
+

@@ -1,0 +1,6 @@
+func: agrep
+argv: structure(list(pattern = 1), .Names = "pattern")
+
+func: as.numeric
+argv: list("a")
+

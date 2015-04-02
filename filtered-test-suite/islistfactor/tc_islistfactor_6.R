@@ -1,0 +1,6 @@
+expected <- eval(parse(text="FALSE"));       
+test(id=0, code={       
+argv <- eval(parse(text="list(list(structure(list(surname = structure(c(4L, 5L, 3L, 2L, 2L, 1L, 6L), .Label = c(\"McNeil\", \"Ripley\", \"Tierney\", \"Tukey\", \"Venables\", \"R Core\"), class = \"factor\"), nationality = structure(c(3L, 1L, 3L, 2L, 2L, 1L, NA), .Label = c(\"Australia\", \"UK\", \"US\"), class = \"factor\"), deceased = structure(c(2L, 1L, 1L, 1L, 1L, 1L, NA), .Label = c(\"no\", \"yes\"), class = \"factor\")), .Names = c(\"surname\", \"nationality\", \"deceased\"), row.names = c(\"1\", \"2\", \"3\", \"4\", \"4.1\", \"5\", \"7\"), class = \"data.frame\"),     structure(list(title = structure(c(2L, 5L, 4L, 6L, 7L, 3L, 1L), .Label = c(\"An Introduction to R\", \"Exploratory Data Analysis\", \"Interactive Data Analysis\", \"LISP-STAT\", \"Modern Applied Statistics ...\", \"Spatial Statistics\", \"Stochastic Simulation\"), class = \"factor\"), other.author = structure(c(NA, 1L, NA, NA, NA, NA, 2L), .Label = c(\"Ripley\", \"Venables & Smith\"), class = \"factor\")), .Names = c(\"title\", \"other.author\"), row.names = c(NA, 7L), class = \"data.frame\")), FALSE)"));       
+.Internal(`islistfactor`(argv[[1]], argv[[2]]));       
+}, o=expected);       
+
