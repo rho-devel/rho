@@ -2697,6 +2697,7 @@ AC_CONFIG_FILES(
   tests/Makefile
   tests/CXXR/Makefile
   tests/CXXR2/Makefile
+  tests/testr/Makefile
   tests/Embedding/Makefile
   tests/Examples/Makefile
   tools/Makefile

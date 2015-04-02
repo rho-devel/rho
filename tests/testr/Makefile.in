@@ -1,0 +1,26 @@
+
+uname = $(shell uname)
+
+VPATH = @srcdir@
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+
+top_builddir = ../..
+subdir = tests/testr
+testr_dir = $(top_srcdir)/src/extra/testr
+testcase_dir = $(testr_dir)/filtered-test-suite
+
+R = $(top_builddir)/bin/R --vanilla --quiet
+
+include $(top_builddir)/Makeconf
+
+check:
+	$(R) -e "source('$(testr_dir)/R/options.R'); .onLoad();source('$(testr_dir)/R/target.r'); pass <- RunTests('$(testcase_dir)'); quit(status = !pass)" 
+
+Makefile : $(srcdir)/Makefile.in $(top_builddir)/config.status
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+
+clean:
+
+distclean: clean
+	rm -f Makefile
