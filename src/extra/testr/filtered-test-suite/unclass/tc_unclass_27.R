@@ -1,0 +1,6 @@
+expected <- eval(parse(text="list(structure(list(label = \"FALSE\", x = structure(0, unit = \"npc\", valid.unit = 0L, class = \"unit\"), y = structure(0.5, unit = \"npc\", valid.unit = 0L, class = \"unit\"), just = c(\"left\", \"centre\"), hjust = NULL, vjust = NULL, rot = 0, check.overlap = FALSE, name = \"GRID.text.106\", gp = structure(list(), class = \"gpar\"), vp = NULL), .Names = c(\"label\", \"x\", \"y\", \"just\", \"hjust\", \"vjust\", \"rot\", \"check.overlap\", \"name\", \"gp\", \"vp\"), class = c(\"text\", \"grob\", \"gDesc\")))"));                 
+test(id=0, code={                 
+argv <- eval(parse(text="list(list(structure(list(label = \"FALSE\", x = structure(0, unit = \"npc\", valid.unit = 0L, class = \"unit\"), y = structure(0.5, unit = \"npc\", valid.unit = 0L, class = \"unit\"), just = c(\"left\", \"centre\"), hjust = NULL, vjust = NULL, rot = 0, check.overlap = FALSE, name = \"GRID.text.106\", gp = structure(list(), class = \"gpar\"), vp = NULL), .Names = c(\"label\", \"x\", \"y\", \"just\", \"hjust\", \"vjust\", \"rot\", \"check.overlap\", \"name\", \"gp\", \"vp\"), class = c(\"text\", \"grob\", \"gDesc\"))))"));                 
+do.call(`unclass`, argv);                 
+}, o=expected);                 
+

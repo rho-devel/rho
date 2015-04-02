@@ -1,0 +1,6 @@
+expected <- eval(parse(text="structure(list(A = 0:10, `NA` = 20:30), .Names = c(\"A\", NA), class = \"data.frame\", row.names = c(NA, -11L))"));      
+test(id=0, code={      
+argv <- eval(parse(text="list(structure(list(A = 0:10, `NA` = 20:30), .Names = c(\"A\", NA), class = \"data.frame\", row.names = c(NA, -11L)))"));      
+do.call(`invisible`, argv);      
+}, o=expected);      
+

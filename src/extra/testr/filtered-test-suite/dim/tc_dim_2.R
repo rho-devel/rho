@@ -1,0 +1,6 @@
+expected <- eval(parse(text="c(5L, 5L)"));       
+test(id=0, code={       
+argv <- eval(parse(text="list(structure(list(surname = structure(1:5, .Label = c(\"McNeil\", \"Ripley\", \"Tierney\", \"Tukey\", \"Venables\"), class = \"factor\"), nationality = structure(c(1L, 2L, 3L, 3L, 1L), .Label = c(\"Australia\", \"UK\", \"US\"), class = \"factor\"), deceased = structure(c(1L, 1L, 1L, 2L, 1L), .Label = c(\"no\", \"yes\"), class = \"factor\"), title = structure(c(NA_integer_, NA_integer_, NA_integer_, NA_integer_, NA_integer_), .Label = c(\"An Introduction to R\", \"Exploratory Data Analysis\", \"Interactive Data Analysis\", \"LISP-STAT\", \"Modern Applied Statistics ...\", \"Spatial Statistics\", \"Stochastic Simulation\"), class = \"factor\"), other.author = structure(c(NA_integer_, NA_integer_, NA_integer_, NA_integer_, NA_integer_), .Label = c(\"Ripley\", \"Venables & Smith\"), class = \"factor\")), .Names = c(\"surname\", \"nationality\", \"deceased\", \"title\", \"other.author\"), row.names = c(5L, 4L, 3L, 1L, 2L), class = \"data.frame\"))"));       
+do.call(`dim`, argv);       
+}, o=expected);       
+

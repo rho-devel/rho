@@ -1,0 +1,6 @@
+expected <- eval(parse(text="c(\"structure(list(distance = c(26, 25, 29, 31, 21.5, 22.5), age = c(8, \", \"10, 12, 14, 8, 10), Subject = structure(c(2L, 2L, 2L, 2L, 1L, \", \"1L), .Label = c(\\\"M02\\\", \\\"M01\\\"), class = c(\\\"ordered\\\", \\\"factor\\\")), \", \"    Sex = structure(c(1L, 1L, 1L, 1L, 1L, 1L), .Label = c(\\\"Male\\\", \", \"    \\\"Female\\\"), class = \\\"factor\\\")), .Names = c(\\\"distance\\\", \\\"age\\\", \", \"\\\"Subject\\\", \\\"Sex\\\"), row.names = c(\\\"1\\\", \\\"2\\\", \\\"3\\\", \\\"4\\\", \\\"5\\\", \\\"6\\\"\", \"), class = \\\"data.frame\\\")\")"));          
+test(id=0, code={          
+argv <- eval(parse(text="list(structure(list(distance = c(26, 25, 29, 31, 21.5, 22.5), age = c(8, 10, 12, 14, 8, 10), Subject = structure(c(2L, 2L, 2L, 2L, 1L, 1L), .Label = c(\"M02\", \"M01\"), class = c(\"ordered\", \"factor\")), Sex = structure(c(1L, 1L, 1L, 1L, 1L, 1L), .Label = c(\"Male\", \"Female\"), class = \"factor\")), .Names = c(\"distance\", \"age\", \"Subject\", \"Sex\"), row.names = c(\"1\", \"2\", \"3\", \"4\", \"5\", \"6\"), class = \"data.frame\"), 60L, FALSE, 69, -1L)"));          
+.Internal(deparse(argv[[1]], argv[[2]], argv[[3]], argv[[4]], argv[[5]]));          
+}, o=expected);          
+

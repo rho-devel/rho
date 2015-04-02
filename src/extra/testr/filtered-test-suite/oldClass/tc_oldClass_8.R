@@ -1,0 +1,6 @@
+expected <- eval(parse(text="\"data.frame\""));                
+test(id=0, code={                
+argv <- eval(parse(text="list(structure(list(visible = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE), from = structure(c(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L), .Label = \"registered S3method for predict\", class = \"factor\")), .Names = c(\"visible\", \"from\"), row.names = c(\"predict.Arima\", \"predict.HoltWinters\", \"predict.StructTS\", \"predict.ar\", \"predict.arima0\", \"predict.bSpline\", \"predict.bs\", \"predict.glm\", \"predict.glmmPQL\", \"predict.lda\", \"predict.lm\", \"predict.loess\", \"predict.lqs\", \"predict.mca\", \"predict.mlm\", \"predict.nbSpline\", \"predict.nls\", \"predict.npolySpline\", \"predict.ns\", \"predict.pbSpline\", \"predict.polr\", \"predict.poly\", \"predict.polySpline\", \"predict.ppolySpline\", \"predict.ppr\", \"predict.prcomp\", \"predict.princomp\", \"predict.qda\", \"predict.rlm\", \"predict.smooth.spline\", \"predict.smooth.spline.fit\"), class = \"data.frame\"))"));                
+do.call(`oldClass`, argv);                
+}, o=expected);                
+

@@ -1,0 +1,23 @@
+# Files used for testing
+vm
+vms
+tc/
+trace/
+process_change.r
+process (copy).r
+tcFilter.R
+execute-tests.R
+UsefulCommands
+.DS_Store
+# Java compiled classes
+*.class
+.classpath
+.idea/
+.project
+testr.iml
+.Rproj.user/
+.Rproj.user
+.Rhistory
+# C/C++
+*.*o
+

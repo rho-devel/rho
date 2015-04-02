@@ -1,0 +1,6 @@
+expected <- eval(parse(text="c(\"Alb\", \"Als\", \"Arz\", \"Ark\", \"Clf\", \"Clr\", \"Cnn\", \"Dlw\", \"Flr\", \"Grg\", \"Haw\", \"Idh\", \"Ill\", \"Ind\", \"Iow\", \"Kns\", \"Knt\", \"Lsn\", \"Man\", \"Mry\", \"Mss\", \"Mch\", \"Mnn\", \"Mss\", \"Mss\", \"Mnt\", \"Nbr\", \"Nvd\", \"NwH\", \"NwJ\", \"NwM\", \"NwY\", \"NrC\", \"NrD\", \"Ohi\", \"Okl\", \"Org\", \"Pnn\", \"RhI\", \"StC\", \"StD\", \"Tnn\", \"Txs\", \"Uth\", \"Vrm\", \"Vrg\", \"Wsh\", \"WsV\", \"Wsc\", \"Wym\")"));     
+test(id=0, code={     
+argv <- eval(parse(text="list(c(\"Alabama\", \"Alaska\", \"Arizona\", \"Arkansas\", \"California\", \"Colorado\", \"Connecticut\", \"Delaware\", \"Florida\", \"Georgia\", \"Hawaii\", \"Idaho\", \"Illinois\", \"Indiana\", \"Iowa\", \"Kansas\", \"Kentucky\", \"Louisiana\", \"Maine\", \"Maryland\", \"Massachusetts\", \"Michigan\", \"Minnesota\", \"Mississippi\", \"Missouri\", \"Montana\", \"Nebraska\", \"Nevada\", \"New Hampshire\", \"New Jersey\", \"New Mexico\", \"New York\", \"North Carolina\", \"North Dakota\", \"Ohio\", \"Oklahoma\", \"Oregon\", \"Pennsylvania\", \"Rhode Island\", \"South Carolina\", \"South Dakota\", \"Tennessee\", \"Texas\", \"Utah\", \"Vermont\", \"Virginia\", \"Washington\", \"West Virginia\", \"Wisconsin\", \"Wyoming\"), 3, TRUE)"));     
+.Internal(abbreviate(argv[[1]], argv[[2]], argv[[3]]));     
+}, o=expected);     
+
