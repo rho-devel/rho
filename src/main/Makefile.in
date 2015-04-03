@@ -222,9 +222,13 @@ $(MAIN_LIBS):
 
 ../extra/bzip2/libbz2.a ../extra/pcre/libpcre.a ../extra/pcre/libtre.a\
   ../extra/xdr/libxdr.a ../extra/zlib/libz.a ../extra/xv/liblzma.a \
-  ../extra/intl/libintl.a ../extra/gc/libgc.a :
+  ../extra/intl/libintl.a ../extra/gc/libgc.a:
 	(cd $(@D); $(MAKE))
 
+jit/libjit.a: FORCE
+	$(MAKE) -C jit libjit.a
+
+FORCE:
 
 libR: $(libR_la)
 
