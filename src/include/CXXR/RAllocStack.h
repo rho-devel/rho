@@ -59,25 +59,17 @@ namespace CXXR {
 	class Scope {
 	public:
 	    Scope()
-#ifndef NDEBUG
 		: m_next_scope(RAllocStack::s_innermost_scope),
 		  m_saved_size(RAllocStack::size())
-#else
-		: m_saved_size(RAllocStack::size())
-#endif
 	    {
-#ifndef NDEBUG
 		RAllocStack::s_innermost_scope = this;
-#endif
 	    }
 
 	    ~Scope()
 	    {
 		if (RAllocStack::size() != m_saved_size)
 		    RAllocStack::trim(m_saved_size);
-#ifndef NDEBUG
 		RAllocStack::s_innermost_scope = m_next_scope;
-#endif
 	    }
 
 	    /** @brief RAllocStack size at construction.
@@ -91,9 +83,7 @@ namespace CXXR {
 		return m_saved_size;
 	    }
 	private:
-#ifndef NDEBUG
 	    Scope* m_next_scope;
-#endif
 	    size_t m_saved_size;
 	};
 
@@ -137,9 +127,8 @@ namespace CXXR {
 	typedef std::pair<size_t, void*> Pair;
 	typedef std::stack<Pair, std::vector<Pair> > Stack;
 	static Stack* s_stack;
-#ifndef NDEBUG
 	static Scope* s_innermost_scope;
-#endif
+
 	// Initialize the static data members:
         friend void initializeMemorySubsystem();
 	static void initialize();

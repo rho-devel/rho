@@ -44,11 +44,7 @@ void NodeStack::Scope::nestingError()
 }
 
 NodeStack::NodeStack(size_t initial_capacity)
-#ifndef NDEBUG
     : m_protected_count(0), m_innermost_scope(0)
-#else
-    : m_protected_count(0)
-#endif
 {
     m_vector.reserve(initial_capacity);
 }
