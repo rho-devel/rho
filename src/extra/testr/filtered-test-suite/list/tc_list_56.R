@@ -1,0 +1,6 @@
+expected <- eval(parse(text="list(structure(list(srcfile = c(\"/home/lzhao/tmp/Rtmpe5iuYI/R.INSTALL2aa854a74188/foreign/R/spss.R\", \"/home/lzhao/tmp/Rtmpe5iuYI/R.INSTALL2aa854a74188/foreign/R/spss.R\"), frow = 164:165, lrow = c(164L, 169L)), .Names = c(\"srcfile\", \"frow\", \"lrow\"), row.names = 1:2, class = \"data.frame\"), structure(list(srcfile = \"/home/lzhao/tmp/Rtmpe5iuYI/R.INSTALL2aa854a74188/foreign/R/spss.R\", frow = 170L, lrow = 177L), .Names = c(\"srcfile\", \"frow\", \"lrow\"), row.names = c(NA, -1L), class = \"data.frame\"))"));                  
+test(id=0, code={                  
+argv <- eval(parse(text="list(structure(list(srcfile = c(\"/home/lzhao/tmp/Rtmpe5iuYI/R.INSTALL2aa854a74188/foreign/R/spss.R\", \"/home/lzhao/tmp/Rtmpe5iuYI/R.INSTALL2aa854a74188/foreign/R/spss.R\"), frow = 164:165, lrow = c(164L, 169L)), .Names = c(\"srcfile\", \"frow\", \"lrow\"), row.names = 1:2, class = \"data.frame\"), structure(list(srcfile = \"/home/lzhao/tmp/Rtmpe5iuYI/R.INSTALL2aa854a74188/foreign/R/spss.R\", frow = 170L, lrow = 177L), .Names = c(\"srcfile\", \"frow\", \"lrow\"), row.names = c(NA, -1L), class = \"data.frame\"))"));                  
+do.call(`list`, argv);                  
+}, o=expected);                  
+

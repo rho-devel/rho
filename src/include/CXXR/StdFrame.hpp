@@ -74,7 +74,8 @@ namespace CXXR {
 	StdFrame(const StdFrame &source);
 	
 	// Virtual functions of Frame (qv):
-	BindingRange bindingRange() const override;
+	void visitBindings(std::function<void(const Binding*)> f)
+	    const override;
 	StdFrame* clone() const override;
 	void lockBindings() override;
 	std::size_t size() const override;

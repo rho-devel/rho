@@ -30,7 +30,7 @@ DISTFILES = Makefile.in Makefile.win Makefile.install Makefile.common \
 	R-intro.Rout.save \
 	test-system.R test-system.Rout.save test-system2.c
 
-SUBDIRS = CXXR CXXR2 Embedding Examples
+SUBDIRS = CXXR CXXR2 testr Embedding Examples
 SUBDIRS_WITH_NO_BUILD = Pkgs
 
 ## SRCDIR is used by reg-tests-1a.R, reg-IO2.R and reg-packages.R
@@ -43,6 +43,7 @@ RDCONV = LC_CTYPE=C $(top_builddir)/bin/R CMD Rdconv
 MK = $(MAKE)
 
 
+# TODO(kmillar): add testr to all-basic-tests once it passes.
 all-basic-tests = CXXR CXXR2 Examples Specific Reg Internet
 ## remove 'Rd' for now
 all-devel-tests = Docs IsAs Random Demo Primitive Regexp Segfault \
@@ -72,6 +73,9 @@ test-CXXR:
 
 test-CXXR2:
 	cd CXXR2 && $(MAKE) check
+
+test-testr:
+	cd testr && $(MAKE) check
 
 ## <NOTE>
 ## These depend on an internet connection, and the sites being up.

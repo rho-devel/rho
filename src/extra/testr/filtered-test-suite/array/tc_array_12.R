@@ -1,0 +1,6 @@
+expected <- eval(parse(text="structure(c(-Inf, -Inf, 0, 2, 4, 5, Inf, Inf, Inf, -Inf, -Inf, 0, 2, 4, 5, Inf, Inf, Inf, -Inf, -Inf, 0, 1, 3, 5, Inf, Inf, Inf, -Inf, -Inf, -Inf, 1.5, 3.2, 4.9, Inf, Inf, Inf, -Inf, -Inf, 0.300000000000001, 2, 3.7, Inf, Inf, Inf, Inf, -Inf, -Inf, 0.2, 2, 3.8, Inf, Inf, Inf, Inf, -Inf, -Inf, 0.4, 2, 3.6, Inf, Inf, Inf, Inf, -Inf, -Inf, 0.266666666666667, 2, 3.73333333333333, Inf, Inf, Inf, Inf, -Inf, -Inf, 0.275, 2, 3.725, Inf, Inf, Inf, Inf), .Dim = c(9L, 9L), .Dimnames = list(c(\"20%\", \"30%\", \"40%\", \"50%\", \"60%\", \"70%\", \"80%\", \"90%\", \"100%\"), NULL))"));     
+test(id=0, code={     
+argv <- eval(parse(text="list(c(-Inf, -Inf, 0, 2, 4, 5, Inf, Inf, Inf, -Inf, -Inf, 0, 2, 4, 5, Inf, Inf, Inf, -Inf, -Inf, 0, 1, 3, 5, Inf, Inf, Inf, -Inf, -Inf, -Inf, 1.5, 3.2, 4.9, Inf, Inf, Inf, -Inf, -Inf, 0.300000000000001, 2, 3.7, Inf, Inf, Inf, Inf, -Inf, -Inf, 0.2, 2, 3.8, Inf, Inf, Inf, Inf, -Inf, -Inf, 0.4, 2, 3.6, Inf, Inf, Inf, Inf, -Inf, -Inf, 0.266666666666667, 2, 3.73333333333333, Inf, Inf, Inf, Inf, -Inf, -Inf, 0.275, 2, 3.725, Inf, Inf, Inf, Inf), c(9L, 9L), list(c(\"20%\", \"30%\", \"40%\", \"50%\", \"60%\", \"70%\", \"80%\", \"90%\", \"100%\"), NULL))"));     
+.Internal(`array`(argv[[1]], argv[[2]], argv[[3]]));     
+}, o=expected);     
+

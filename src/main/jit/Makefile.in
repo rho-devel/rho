@@ -1,0 +1,118 @@
+#CXXR $Id$
+#CXXR 
+#CXXR This file is part of CXXR, a project to refactor the R interpreter
+#CXXR into C++.  It may consist in whole or in part of program code and
+#CXXR documentation taken from the R project itself, incorporated into
+#CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+#CXXR Licence.
+#CXXR 
+#CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
+#CXXR copyrights and copyright restrictions as may be stated below.
+#CXXR 
+#CXXR CXXR is not part of the R project, and bugs and other issues should
+#CXXR not be reported via r-bugs or other R project channels; instead refer
+#CXXR to the CXXR website.
+
+#
+# ${R_HOME}/src/main/jit/Makefile
+
+VPATH = @srcdir@
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+
+top_builddir = ../../..
+subdir = src/main/jit
+R_HOME=$(top_builddir)
+
+include $(top_builddir)/Makeconf
+
+LLVM_CPPFLAGS = @LLVM_CPPFLAGS@
+ALL_CPPFLAGS = $(LLVM_CPPFLAGS) $(GC_CPPFLAGS) $(R_XTRA_CPPFLAGS) \
+	$(CPPFLAGS) $(DEFS) -DDISABLE_PROTECT_MACROS
+
+SOURCES_CXX = \
+	CompiledExpression.cpp CompiledFrame.cpp \
+	Compiler.cpp CompilerContext.cpp \
+	FrameDescriptor.cpp \
+	Globals.cpp MCJITMemoryManager.cpp Runtime.cpp \
+	TypeBuilder.cpp
+
+EXTRA_SOURCES_CXX = RuntimeImpl.cpp
+
+DEPENDS = $(SOURCES_CXX:.cpp=.d) $(EXTRA_SOURCES_CXX:.cpp=.d)
+SOURCES = $(SOURCES_CXX)
+OBJECTS = $(SOURCES_CXX:.cpp=.o)
+
+distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
+DISTFILES = Makefile.in \
+	$(SOURCES_CXX) \
+	$(EXTRA_SOURCES_CXX)
+
+noinst_LIBRARIES = libjit.a
+libjit_a_SOURCES = $(SOURCES)
+libjit_a_OBJECTS = $(OBJECTS)
+
+all: Makefile Makedeps R
+
+Makefile: $(srcdir)/Makefile.in \
+  $(top_builddir)/config.status \
+  $(SOURCES)
+	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+
+Makedeps: Makefile $(DEPENDS)
+	@cat $(DEPENDS) >> Makefile
+	@touch $@
+
+R: Makefile
+	@$(MAKE) Makedeps
+	@$(MAKE) $(noinst_LIBRARIES)
+
+libjit.a: $(libjit_a_OBJECTS)
+	rm -f $@
+	$(AR) cr $@ $(libjit_a_OBJECTS)
+	$(RANLIB) $@
+
+# Build the bytecode for the runtime module.  This is only enabled in
+# maintainer mode and requires CXX to be clang.
+#
+# This target doesn't really depend on RuntimeImpl.o, only the source files,
+# but since we generate dependency information for the object file, we use that
+# as a proxy for the source files.
+#
+# TODO(kmillar): -fno-use-cxa-atexit is needed due to LLVM bug #18062
+# TODO(kmillar): gracefully handle non-clang compilers.
+RuntimeImpl.bc: @MAINTAINER_MODE_TRUE@ RuntimeImpl.o
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -fno-use-cxa-atexit \
+	  -emit-llvm -c $(top_srcdir)/src/main/jit/RuntimeImpl.cpp -o $@ 
+
+# This exists to create a human-readable version of the runtime IR code.
+RuntimeImpl.ll: @MAINTAINER_MODE_TRUE@ RuntimeImpl.o
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -fno-use-cxa-atexit \
+	  -emit-llvm -S $(top_srcdir)/src/main/jit/RuntimeImpl.cpp -o $@ 
+
+mostlyclean: clean
+clean:
+	@-rm -f Makedeps *.d *.o */*.o *.lo *.a *.bc *.ll
+distclean: clean
+	@-rm -f Makefile
+maintainer-clean: distclean
+
+installdirs:
+	@$(MKINSTALLDIRS) "$(DESTDIR)$(rhome)/jit"
+
+install install-strip: installdirs RuntimeImpl.bc
+	@$(SHELL) $(top_srcdir)/tools/copy-if-change RuntimeImpl.bc "$(DESTDIR)$(rhome)/jit/RuntimeImpl.bc"
+
+uninstall:
+	@rm -f "$(DESTDIR)$(rhome)/jit/RuntimeImpl.bc"
+
+TAGS info dvi check:
+
+distdir: $(DISTFILES)
+	@for f in $(DISTFILES); do \
+	  test -f $(distdir)/$${f} \
+	    || ln $(srcdir)/$${f} $(distdir)/$${f} 2>/dev/null \
+	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
+	done
+
+## Automagically generated dependencies:

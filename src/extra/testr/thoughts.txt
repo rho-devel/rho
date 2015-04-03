@@ -1,0 +1,87 @@
+testR test specification
+========================
+
+Each test consists of an optional name, commands and code. The commands are either generators (commands to make the same code for different values), conditions (commands that are executed before executing the test on a target that may select the test not to be executed) and checks (commands executed after the test has been ran on the target that may analyze its output). There are predefined commands, and custom commands which can be extended by a supplied R code for better flexibility. 
+
+Generators
+--------
+
+A generator is either independent, or dependent. Dependent generator is changed when its master generator (specified by dependsOn argument) is changed. The tests produced are all permutations of values of the independent generators. The order of definition of the generators matters as the generator defined last flips most often. The values of the generators should be independent of any other other generators. For general examples, this is assumed and no substitution is performed (or even evaluation). However, if the user decides to override the generator instantiation process, this can be changed so that any independent generator can see values of previously defined independent generators and any dependent generator can see all independent generators and dependent generators defined above. 
+
+Substitution
+------------
+
+In code and in any checks and conditions, the values of the generators are substituted for their actual values. Both the original value and the generator value can be in different formats (R code or a string). Depending on the types of those, a different substitution method is used:
+
+Original | Generator | Substitution used
+--------------------------------------
+code     | code    | AST of the generator is replaced with the AST of the generator value
+code     | string  | AST of the generator is replaced with the character literal corresponding to the value of the generator
+string   | code    | occurence of the generator is replaced with deparse of the generator AST
+string   | string  | occurence of the generator is replaced with the generator value W/o the quotes
+
+Based on the source format, different means are used to identify the generators' placeholders. In code, either a variable corresponding to the generator name is replaced with the value itself, or a %generatorName% can be used if the generator holds operators. In this case, whatever the value of the generator is, as.name() conversion is applied to it so that the AST will hold. 
+
+If replacing in a string, a generator name prefixed with single % will be replaced with the generator value. %% can be used to escape a % character. Also, if % is followed by a non-generator name the % will stay. 
+
+General & Custom generators
+-------------------------
+
+General generator is such a generator, that is defined by N R expressions, or string literals, where N is the length of the generator. The generator values are the R expressions themselves. Such a generator is instantiated by the generator command, or its shorthand g:
+
+g(name, dependsOn = NULL, ...) # where ... are the values and dependsOn if present indicates a dependent generator. 
+
+Custom generator is a generator that is defined by its length and a function taking as an argument the index to be produced, the environment so far, and the generator object itself. When a value of this generator is to be obtained the supplied function is called with proper arguments. To define this type of generator, the customGenerator, or its shorthand cg command is used. Any other named arguments supplied will be added to the generator object as fields:
+
+cg(name, dependsOn = NULL, length, f, ...)
+
+An example will be the following generator, that assumes that there are already two generators "a" and "b" defined in the environment (it depends on "b" generator to be sure it is reevaluated on any change) and the custom generator "c" is simply their addition. 
+
+g(a, 1, 2, 3, 4, 5)
+g(b, 10, 20, 30)
+cg(c, dependsOn = a, length = 15, f = function(i, env, g) { env$a + env$b })
+
+A shorthand, only for dependent generators is to elliminate the length argument as it might well be irrelevant, in which case the length will be assumed to be 1, but on each change of the master generator, the evaluating function will be called again yielding possibly different values. The above example can thus be siplified:
+
+g(a, 1, 2, 3, 4, 5)
+g(b, 10, 20, 30)
+cg(c, dependsOn = a, f = function(i, env, g) { env$a + env$b })
+
+Checks & Conditions
+-------------------
+
+Each check or condition (a command for short) contains the arguments and the evaluating function. This is a generator command form, but shorthands exist for common variations. A new check or condition is created by function check or condition, which takes as an argument a function and arbitrary list of fields. In the fields, before calling the function, the generators are substitued by their values as defined above based on their types.
+
+For checks the function takes as an argument the following: target, module, test (current test with pure R code after generator replacements) and a list of its arguments. It must return either NULL to allow the execution, or a list indicating the failure mode and the reason. There will be shorthand functions to do this. A simple example will be a disable target check:
+
+check(function(target, module, test, o) { if (target$name == env$target) skip(paste("Disabled for target ",env$target)) }, target = "gnu-r")
+
+Since this is a common check, there is a shorthand for this, named disableTarget, or dt:
+
+disableTarget("gnu-r")
+
+Condition is very similar, but the arguments to the method are the test itself and the execution record, this record will be specified later, but will contain the processed output of the target, etc. 
+
+Targets
+=======
+
+To execute a test, the test itself must be passed to a target. Target does not run any checks, or conditions, it just takes the code stored in the test$code and executes it on the target, returning the updated result. The returned object of class targetResult is very simple and contains the following:
+
+    commandOutput == full output of the command 
+    commandStatus == status of the command
+    elapsed == elapsed time
+    user.self == user time
+    sys.self == sys time
+    output == only the actual output lines of the command, this is target specific
+
+Inside the target itself must know:
+
+    name == target name
+    adapters == list of known adapters, each adapter is a function transforming output to something else, all adapters are named
+    version == version of the target (obtained when the target is initialized)
+    any other arguments (like platform, architecture, target path, if relevant, etc.)
+   
+The adapters will be used on lazy basis and added to the targetResult objects of the particular tests. 
+
+?? Do I want the targetresult to remeber the target, or even the test, or will I always pass them together if required. At the moment I am more inclined to pass them together. 
+    

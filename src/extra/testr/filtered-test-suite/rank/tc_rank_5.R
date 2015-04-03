@@ -1,0 +1,6 @@
+expected <- eval(parse(text="c(19, 31, 35, 27, 11, 32, 34, 37, 38, 33, 40, 17, 2, 8, 4, 26, 6, 21, 1, 5, 12.5, 9, 23, 7, 12.5, 3, 16, 25, 15, 45, 44, 46, 41, 39, 42, 43, 36, 14, 22, 20, 24, 10, 18, 28, 29, 30)"));        
+test(id=0, code={        
+argv <- eval(parse(text="list(structure(c(9.96, 84.84, 93.4, 33.77, 5.16, 90.57, 92.85, 97.16, 97.67, 91.38, 98.61, 8.52, 2.27, 4.43, 2.82, 24.2, 3.3, 12.11, 2.15, 2.84, 5.23, 4.52, 15.14, 4.2, 5.23, 2.56, 7.72, 18.46, 6.1, 99.71, 99.68, 100, 98.96, 98.22, 99.06, 99.46, 96.83, 5.62, 13.79, 11.22, 16.92, 4.97, 8.65, 42.34, 50.43, 58.33), .Names = c(\"Courtelary\", \"Delemont\", \"Franches-Mnt\", \"Moutier\", \"Neuveville\", \"Porrentruy\", \"Broye\", \"Glane\", \"Gruyere\", \"Sarine\", \"Veveyse\", \"Aigle\", \"Aubonne\", \"Avenches\", \"Cossonay\", \"Echallens\", \"Grandson\", \"Lausanne\", \"La Vallee\", \"Lavaux\", \"Morges\", \"Moudon\", \"Nyone\", \"Orbe\", \"Payerne\", \"Paysd'enhaut\", \"Rolle\", \"Vevey\", \"Yverdon\", \"Conthey\", \"Entremont\", \"Herens\", \"Martigwy\", \"Monthey\", \"St Maurice\", \"Sierre\", \"Sion\", \"Boudry\", \"La Chauxdfnd\", \"Le Locle\", \"Neuchatel\", \"Val de Ruz\", \"ValdeTravers\", \"V. De Geneve\", \"Rive Droite\", \"Rive Gauche\")), 46L, \"average\")"));        
+.Internal(rank(argv[[1]], argv[[2]], argv[[3]]));        
+}, o=expected);        
+

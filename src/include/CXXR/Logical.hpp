@@ -79,13 +79,14 @@ namespace CXXR {
 	Logical operator!() const;
 	Logical operator||(Logical other) const;
 	Logical operator&&(Logical other) const;
+
+	template<class Archive>
+	void Serialize(Archive& ar) {
+	    ElementTraits::Serialize<int>()(ar, m_value);
+	}
     private:
 	// The value.  Allowed values are TRUE, FALSE and NA_LOGICAL.
 	int m_value;
-
-	template<> template<class Archive>
-	friend void ElementTraits::Serialize<Logical>::operator()(
-	    Archive& ar, Logical& item);
     };
 
     namespace ElementTraits
@@ -110,7 +111,7 @@ namespace CXXR {
 	
 	template<> template<class Archive>
 	inline void Serialize<Logical>::operator()(Archive& ar, Logical& item) {
-	    Serialize<int>()(ar, item.m_value);
+	    item.Serialize(ar);
 	}
     }  // namespace ElementTraits
 

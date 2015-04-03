@@ -1,5 +1,10 @@
 language: cpp
-compiler: clang
+compiler:
+        - clang
+        - gcc
+matrix:
+  allow_failures:
+    - compiler: gcc
 before_install: sudo apt-get update -qq
 install:
         - sudo apt-get install -y

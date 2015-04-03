@@ -70,9 +70,11 @@ const Frame::Binding* ListFrame::v_binding(const Symbol* symbol) const
     return &(*it);
 }
 
-Frame::BindingRange ListFrame::bindingRange() const
+void ListFrame::visitBindings(std::function<void(const Binding*)> f) const
 {
-    return BindingRange(m_list.begin(), m_list.end());
+    for (const Binding& binding : m_list) {
+	f(&binding);
+    }
 }
 
 ListFrame* ListFrame::clone() const

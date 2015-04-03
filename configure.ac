@@ -2678,6 +2678,7 @@ AC_CONFIG_FILES(
   src/library/utils/Makefile
   src/library/utils/src/Makefile
   src/main/Makefile
+  src/main/jit/Makefile
   src/modules/Makefile
   src/modules/X11/Makefile
   src/modules/internet/Makefile
@@ -2697,6 +2698,7 @@ AC_CONFIG_FILES(
   tests/Makefile
   tests/CXXR/Makefile
   tests/CXXR2/Makefile
+  tests/testr/Makefile
   tests/Embedding/Makefile
   tests/Examples/Makefile
   tools/Makefile

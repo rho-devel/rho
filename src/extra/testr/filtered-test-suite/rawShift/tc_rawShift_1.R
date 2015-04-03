@@ -1,0 +1,7 @@
+expected <- as.raw(c(0x6d, 0x79, 0x20, 0x74, 0x65, 0x78, 0x74))    
+test(id=2, code={    
+argv <- structure(list(x = as.raw(c(0x6d, 0x79, 0x20, 0x74, 0x65, 0x78,     
+0x74)), n = 0L), .Names = c("x", "n"))    
+do.call('rawShift', argv);    
+},  o = expected);    
+    

@@ -81,12 +81,12 @@ const Frame::Binding* StdFrame::v_binding(const Symbol* symbol) const
     return &(*it).second;
 }
 
-Frame::BindingRange StdFrame::bindingRange() const
+void StdFrame::visitBindings(std::function<void(const Binding*)> f) const
 {
-    boost::function<const Binding& (const map::value_type&)> f
-	= boost::bind(&map::value_type::second, _1);
-    return BindingRange(boost::make_transform_iterator(m_map.begin(), f),
-			boost::make_transform_iterator(m_map.end(), f));
+    for (const auto& item : m_map) {
+	const Binding* binding = &item.second;
+	f(binding);
+    }
 }
 
 StdFrame* StdFrame::clone() const

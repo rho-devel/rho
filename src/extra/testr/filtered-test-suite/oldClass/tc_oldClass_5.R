@@ -1,0 +1,6 @@
+expected <- eval(parse(text="c(\"nfnGroupedData\", \"nfGroupedData\", \"groupedData\", \"data.frame\")"));                
+test(id=0, code={                
+argv <- eval(parse(text="list(structure(list(Subject = structure(c(1L, 3L, 6L, 2L, 4L, 5L), .Label = c(\"1\", \"4\", \"2\", \"5\", \"6\", \"3\"), class = c(\"ordered\", \"factor\")), conc.0.25 = c(1.5, 2.03, 2.72, 1.85, 2.05, 2.31), conc.0.5 = c(0.94, 1.63, 1.49, 1.39, 1.04, 1.44), conc.0.75 = c(0.78, 0.71, 1.16, 1.02, 0.81, 1.03), conc.1 = c(0.48, 0.7, 0.8, 0.89, 0.39, 0.84), conc.1.25 = c(0.37, 0.64, 0.8, 0.59, 0.3, 0.64), conc.2 = c(0.19, 0.36, 0.39, 0.4, 0.23, 0.42)), row.names = c(1L, 12L, 23L, 34L, 45L, 56L), .Names = c(\"Subject\", \"conc.0.25\", \"conc.0.5\", \"conc.0.75\", \"conc.1\", \"conc.1.25\", \"conc.2\"), class = c(\"nfnGroupedData\", \"nfGroupedData\", \"groupedData\", \"data.frame\")))"));                
+do.call(`oldClass`, argv);                
+}, o=expected);                
+

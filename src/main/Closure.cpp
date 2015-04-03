@@ -180,15 +180,12 @@ RObject* Closure::invokeImpl(Environment* env, const ArgList* arglist,
 	// If this is a method call, change syspar and merge in
 	// supplementary bindings:
 	if (method_bindings) {
-	    Frame::BindingRange mbrange = method_bindings->bindingRange();
-	    for (Frame::BindingRange::const_iterator it = mbrange.begin();
-		 it != mbrange.end(); ++it) {
-		const Frame::Binding& mbbdg = *it;
-		const Symbol* sym = mbbdg.symbol();
-		if (!newframe->binding(sym)) {
-		    newframe->importBinding(&mbbdg);
-		}
-	    }
+	    method_bindings->visitBindings([&](const Frame::Binding* binding) {
+		    const Symbol* sym = binding->symbol();
+		    if (!newframe->binding(sym)) {
+			newframe->importBinding(binding);
+		    }
+		});
 	    FunctionContext* fctxt = FunctionContext::innermost();
 	    while (fctxt && fctxt->function()->sexptype() == SPECIALSXP)
 		fctxt = FunctionContext::innermost(fctxt->nextOut());

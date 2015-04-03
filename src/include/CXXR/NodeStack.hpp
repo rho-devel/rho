@@ -127,14 +127,10 @@ namespace CXXR {
 	     */
 	    Scope(NodeStack* stack)
 		: m_nodestack(stack),
-#ifndef NDEBUG
 		  m_next_scope(stack->m_innermost_scope),
-#endif
 		  m_saved_size(m_nodestack->size())
 	    {
-#ifndef NDEBUG
 		stack->m_innermost_scope = this;
-#endif
 	    }
 
 	    ~Scope()
@@ -144,17 +140,13 @@ namespace CXXR {
 		    nestingError();
 #endif
 		m_nodestack->resize(m_saved_size);
-#ifndef NDEBUG
 		m_nodestack->m_innermost_scope = m_next_scope;
-#endif
 	    }
 	private:
 	    friend class NodeStack;
 
 	    NodeStack* m_nodestack;
-#ifndef NDEBUG
 	    Scope* m_next_scope;
-#endif
 	    size_t m_saved_size;
 
 	    /** @brief NodeStack size at construction.
@@ -376,9 +368,7 @@ namespace CXXR {
 	  // class.  Stack entries beyond this (if any) will not yet
 	  // have had this protection applied.
  
-#ifndef NDEBUG
 	Scope* m_innermost_scope;
-#endif
 
 	// Helper function for retarget(), handling the case where
 	// 'index' is within the protected range:

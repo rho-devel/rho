@@ -48,9 +48,7 @@ namespace CXXR {
 }
 
 RAllocStack::Stack* RAllocStack::s_stack = nullptr;
-#ifndef NDEBUG
 RAllocStack::Scope* RAllocStack::s_innermost_scope = 0;
-#endif
 
 void* RAllocStack::allocate(size_t sz)
 {

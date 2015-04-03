@@ -134,14 +134,11 @@ void Frame::Binding::setValue(RObject* new_value, Origin origin, bool quiet)
 vector<const Symbol*> Frame::symbols(bool include_dotsymbols) const
 {
     vector<const Symbol*> ans;
-    BindingRange bdgs = bindingRange();
-    for (BindingRange::const_iterator it = bdgs.begin();
-	 it != bdgs.end(); ++it) {
-	const Binding& bdg = *it;
-	const Symbol* symbol = bdg.symbol();
-	if (include_dotsymbols || !isDotSymbol(symbol))
-	    ans.push_back(symbol);
-    }
+    visitBindings([&](const Binding* binding) {
+	    const Symbol* symbol = binding->symbol();
+	    if (include_dotsymbols || !isDotSymbol(symbol))
+		ans.push_back(symbol);
+	});
     return ans;
 }
 
@@ -162,10 +159,9 @@ void Frame::Binding::visitReferents(const_visitor* v) const
 PairList* Frame::asPairList() const
 {
     GCStackRoot<PairList> ans(nullptr);
-    BindingRange bdgs = bindingRange();
-    for (BindingRange::const_iterator it = bdgs.begin();
-	 it != bdgs.end(); ++it)
-	ans = (*it).asPairList(ans);
+    visitBindings([&](const Binding* binding) {
+	    ans = binding->asPairList(ans);
+	});
     return ans;
 }
 
@@ -244,19 +240,17 @@ void Frame::importBinding(const Binding* binding_to_import, bool quiet) {
 }
 
 void Frame::importBindings(const Frame* frame, bool quiet) {
-    BindingRange bindings = frame->bindingRange();
-    for (BindingRange::const_iterator i = bindings.begin();
-	 i != bindings.end(); ++i) {
-	importBinding(&(*i), quiet);
-    }
+    Frame* to_frame = this;
+    frame->visitBindings([=](const Binding* binding) {
+	    to_frame->importBinding(binding, quiet);
+	});
 }
-	
+
 void Frame::visitReferents(const_visitor* v) const
 {
-    BindingRange bdgs = bindingRange();
-    for (BindingRange::const_iterator it = bdgs.begin();
-	 it != bdgs.end(); ++it)
-	(*it).visitReferents(v);
+    visitBindings([=](const Binding* binding) {
+	    binding->visitReferents(v);
+	});
 }
 
 namespace CXXR {

@@ -65,8 +65,6 @@ public:
     	return const_cast<CompiledFrame*>(this)->binding(location);
     }
 
-    BindingRange bindingRange() const override;
-
     Binding* obtainBinding(const Symbol* symbol, int location)
     {
     	assert(location >= 0);
@@ -78,6 +76,8 @@ public:
 	return binding;
     }
 
+    void visitBindings(std::function<void(const Binding*)> f)
+	const override;
     CompiledFrame* clone() const override;
 
     void lockBindings() override;

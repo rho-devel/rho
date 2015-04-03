@@ -1,0 +1,10 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+filtered-test-suite-prim/*
+java-helpers/*
+paper/*
+R/extcov.R
+capture_examples/
+genTests/
+reload.R
+^\.travis\.yml$

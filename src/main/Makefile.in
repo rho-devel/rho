@@ -78,20 +78,14 @@ SOURCES_CXX = \
         source.cpp split.cpp sprintf.cpp startup.cpp subassign.cpp \
         subscript.cpp subset.cpp summary.cpp sysutils.cpp \
 	unique.cpp util.cpp \
-	version.cpp vfonts.cpp \
-	@BUILD_LLVM_JIT_TRUE@ jit/CompiledExpression.cpp jit/CompiledFrame.cpp \
-	jit/Compiler.cpp jit/CompilerContext.cpp \
-	jit/FrameDescriptor.cpp \
-	jit/Globals.cpp jit/MCJITMemoryManager.cpp jit/Runtime.cpp \
-	jit/TypeBuilder.cpp
+	version.cpp vfonts.cpp
 
 SOURCES_F =  xxxpr.f
 
 ## If the substitutes are needed, the corresponding objects are put by
 ## configure in @LIBOBJS@ @ALLOCA@
 EXTRA_SOURCES_CXX = \
-	Rmain.cpp alloca.cpp mkdtemp.cpp strdup.cpp strncasecmp.cpp \
-	@BUILD_LLVM_JIT_TRUE@ jit/RuntimeImpl.cpp
+	Rmain.cpp alloca.cpp mkdtemp.cpp strdup.cpp strncasecmp.cpp
 
 DEPENDS = $(SOURCES_C:.c=.d) $(SOURCES_CXX:.cpp=.d) \
           $(EXTRA_SOURCES_CXX:.cpp=.d)
@@ -126,9 +120,8 @@ TRE_CPPFLAGS = -I$(top_srcdir)/src/extra
 XDR_CPPFLAGS = @BUILD_XDR_TRUE@ -I$(top_srcdir)/src/extra/xdr
 @BUILD_XDR_FALSE@XDR_CPPFLAGS = @TIRPC_CPPFLAGS@
 XZ_CPPFLAGS = @BUILD_XZ_TRUE@  -I$(top_srcdir)/src/extra/xz/api
-LLVM_CPPFLAGS = @LLVM_CPPFLAGS@
 ALL_CPPFLAGS = $(ZLIB_CPPFLAGS) $(BZLIB_CPPFLAGS) $(PCRE_CPPFLAGS) \
-  $(TRE_CPPFLAGS) $(XDR_CPPFLAGS) $(XZ_CPPFLAGS) $(LLVM_CPPFLAGS) \
+  $(TRE_CPPFLAGS) $(XDR_CPPFLAGS) $(XZ_CPPFLAGS) \
   $(GC_CPPFLAGS) $(R_XTRA_CPPFLAGS) $(CPPFLAGS) $(DEFS) -DDISABLE_PROTECT_MACROS
 @WANT_R_SHLIB_TRUE@ALL_CFLAGS = $(ALL_CFLAGS_LO)
 @WANT_R_SHLIB_TRUE@ALL_FFLAGS = $(ALL_FFLAGS_LO)
@@ -148,7 +141,7 @@ MAIN_LIBS = ../unix/libunix.a ../appl/libappl.a ../nmath/libnmath.a
 MAIN_OBJS = `ls ../unix/*.o ../appl/*.o ../nmath/*.o`
 EXTRA_STATIC_LIBS = \
   $(R_ZLIBS) $(R_BZLIBS) $(R_PCRE) $(R_TRE) $(R_XDR) $(R_XZ) $(R_LIBINTL) \
-	$(R_LIBGC)
+	$(R_LIBGC) @BUILD_LLVM_JIT_TRUE@ jit/libjit.a
 STATIC_LIBS = $(MAIN_LIBS) $(EXTRA_STATIC_LIBS)
 
 EXTRA_LIBS = $(BOOST_LIBS) $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS) @LIBINTL@ $(READLINE_LIBS) $(LIBS)
@@ -217,8 +210,8 @@ install-bin-local: $(R_binary)
 install-static-local: libR.a
 	@$(MAKE) rhome="$(abs_top_builddir)" install-static
 
-install-jit-local: jit/RuntimeImpl.bc
-	@$(MAKE) rhome="$(abs_top_builddir)" install-jit
+install-jit-local:
+	@$(MAKE) -C jit rhome="$(abs_top_builddir)" install
 
 $(top_builddir)/etc/R.exp: $(OBJECTS) $(MAIN_LIBS)
 	@$(SHELL) $(top_srcdir)/tools/ldAIX4 -o $@ $(OBJECTS) $(MAIN_LIBS)
@@ -229,9 +222,13 @@ $(MAIN_LIBS):
 
 ../extra/bzip2/libbz2.a ../extra/pcre/libpcre.a ../extra/pcre/libtre.a\
   ../extra/xdr/libxdr.a ../extra/zlib/libz.a ../extra/xv/liblzma.a \
-  ../extra/intl/libintl.a ../extra/gc/libgc.a :
+  ../extra/intl/libintl.a ../extra/gc/libgc.a:
 	(cd $(@D); $(MAKE))
 
+jit/libjit.a: FORCE
+	$(MAKE) -C jit libjit.a
+
+FORCE:
 
 libR: $(libR_la)
 
@@ -250,34 +247,15 @@ $(srcdir)/gram.cpp: @MAINTAINER_MODE_TRUE@ $(srcdir)/gram.y
 	$(YACC) $(YFLAGS) -p gram_ $(srcdir)/gram.y
 	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gram.cpp
 
-# Build the bytecode for the runtime module.  This is only enabled in
-# maintainer mode and requires CXX to be clang.
-#
-# This target doesn't really depend on jit/RuntimeImpl.o, only the source files,
-# but since we generate dependency information for the object file, we use that
-# as a proxy for the source files.
-#
-# TODO(kmillar): -fno-use-cxa-atexit is needed due to LLVM bug #18062
-# TODO(kmillar): gracefully handle non-clang compilers.
-jit/RuntimeImpl.bc: @MAINTAINER_MODE_TRUE@ jit/RuntimeImpl.o
-	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -fno-use-cxa-atexit \
-	  -emit-llvm -c $(top_srcdir)/src/main/jit/RuntimeImpl.cpp -o $@ 
-
-# This exists to create a human-readable version of the runtime IR code.
-jit/RuntimeImpl.ll: @MAINTAINER_MODE_TRUE@ jit/RuntimeImpl.o
-	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -fno-use-cxa-atexit \
-	  -emit-llvm -S $(top_srcdir)/src/main/jit/RuntimeImpl.cpp -o $@ 
-
 install: installdirs
 	@$(MAKE) install-bin
 	@if test -f $(libR_la); then $(MAKE) install-lib; fi
 @WANT_R_STATIC_TRUE@	@$(MAKE) install-static
-	@$(MAKE) install-jit
+	@BUILD_LLVM_JIT_TRUE@ @$(MAKE) -C jit install
 
 ## may not need $(rhome)/lib if not static/shared libR, external blas and lapack.
 installdirs:
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(Rexecbindir2)"
-	@$(MKINSTALLDIRS) "$(DESTDIR)$(rhome)/jit"
 install-bin: installdirs
 	@$(SHELL) $(top_srcdir)/tools/copy-if-change $(R_binary) "$(DESTDIR)$(Rexecbindir2)/R"
 install-lib: installdirs
@@ -298,14 +276,11 @@ install-strip-static: installdirs
 	@if test -n "$(STRIP_STATIC_LIBS)"; then \
 	  if test -f libR.a; then $(STRIP_STATIC_LIBS) "$(DESTDIR)$(Rexeclibdir)/libR.a"; fi; \
 	fi
-install-jit: installdirs jit/RuntimeImpl.bc
-	@$(SHELL) $(top_srcdir)/tools/copy-if-change jit/RuntimeImpl.bc "$(DESTDIR)$(rhome)/jit/RuntimeImpl.bc"
 
 uninstall:
 	@rm -f "$(DESTDIR)$(Rexecbindir)/exec/$(R_ARCH)/R" "$(DESTDIR)$(Rexecbindir)/R.bin"
 	@rm -f "$(DESTDIR)$(Rexeclibdir)/libR$(DYLIB_EXT)"
 	@rm -f "$(DESTDIR)$(Rexeclibdir)/libR.a"
-	@rm -f "$(DESTDIR)$(rhome)/jit/RuntimeImpl.bc"
 
 mostlyclean: clean
 clean:

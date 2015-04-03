@@ -1,0 +1,53 @@
+func: abbreviate
+argv: structure(list(minlength = 6, names.arg = "abbreviate"), .Names = c("minlength", 
+argv: "names.arg"))
+
+func: abbreviate
+argv: structure(list(minlength = 2, names.arg = c("abcd", "efgh", "abce"
+argv: )), .Names = c("minlength", "names.arg"))
+
+func: abbreviate
+argv: structure(list(minlength = 2, names.arg = c("abcd", "efgh", "abce"
+argv: ), strict = TRUE), .Names = c("minlength", "names.arg", "strict"
+argv: ))
+
+func: abbreviate
+argv: structure(list(minlength = 2, names.arg = c("Alabama", "Alaska", 
+argv: "Arizona", "Arkansas", "California", "Colorado", "Connecticut", 
+argv: "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", 
+argv: "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", 
+argv: "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", 
+argv: "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", 
+argv: "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", 
+argv: "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", 
+argv: "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", 
+argv: "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", 
+argv: "Wyoming")), .Names = c("minlength", "names.arg"))
+
+func: abbreviate
+argv: structure(list(minlength = 3, names.arg = c("Alabama", "Alaska", 
+argv: "Arizona", "Arkansas", "California", "Colorado", "Connecticut", 
+argv: "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", 
+argv: "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", 
+argv: "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", 
+argv: "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", 
+argv: "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", 
+argv: "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", 
+argv: "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", 
+argv: "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", 
+argv: "Wyoming"), strict = TRUE), .Names = c("minlength", "names.arg", 
+argv: "strict"))
+
+func: abbreviate
+argv: structure(list(method = "both", minlength = 2, names.arg = c("Alabama", 
+argv: "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", 
+argv: "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", 
+argv: "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", 
+argv: "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", 
+argv: "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", 
+argv: "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", 
+argv: "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", 
+argv: "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", 
+argv: "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", 
+argv: "Wyoming")), .Names = c("method", "minlength", "names.arg"))
+
