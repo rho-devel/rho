@@ -177,6 +177,10 @@ INSTANTIATE_TEST_CASE_P(InterpreterControlFlowTest,
                         ControlFlowTest,
 			testing::Values(Executor::InterpreterExecutor()));
 
+INSTANTIATE_TEST_CASE_P(BytecodeControlFlowTest,
+                        ControlFlowTest,
+			testing::Values(Executor::BytecodeExecutor()));
+
 INSTANTIATE_TEST_CASE_P(JITControlFlowTest,
                         ControlFlowTest,
 			testing::Values(Executor::JITExecutor()));

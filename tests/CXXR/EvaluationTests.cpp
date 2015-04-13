@@ -160,9 +160,10 @@ Executor* Executor::InterpreterExecutor() {
     return new class InterpreterExecutor();
 }
 
-#ifdef ENABLE_LLVM_JIT
-class JITExecutor : public Executor {
+class CompilingExecutor : public Executor {
 public:
+    virtual Closure* compile(Closure* closure) const = 0;
+
     virtual RObject* parseAndEval(
 	const std::string& expression, Environment* env)
     {
@@ -178,12 +179,31 @@ public:
 	EXPECT_TRUE(closure.get() != nullptr);
 	
 	// Compile the function.
-	closure->compile();
+	closure = compile(closure);
 
 	// And call it.
 	ArgList args(nullptr, ArgList::Status::PROMISED);
 	GCStackRoot<Expression> call(new Expression(closure));
 	return closure->invoke(env, &args, call);
+    }
+};
+
+class BytecodeExecutor : public CompilingExecutor {
+public:
+    Closure* compile(Closure* closure) const override {
+	return dynamic_cast<Closure*>(R_cmpfun(closure));
+    }
+};
+
+Executor* Executor::BytecodeExecutor() {
+    return new class BytecodeExecutor();
+}
+
+#ifdef ENABLE_LLVM_JIT
+class JITExecutor : public CompilingExecutor {
+public:
+    void compile(Closure* closure) const override {
+	closure->compile();
     }
 };
 
