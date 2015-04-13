@@ -36,11 +36,11 @@ TEST(GCStackFrameBoundaryTest, RefCountIsZeroWithoutBarrier) {
     GCManager::GCInhibitor no_gc;
 
     RObject* object1 = RealVector::createScalar(1);
-    EXPECT_EQ(0, getRefCount(object1));
+    EXPECT_FALSE(isOnStackBitSet(object1));
 
     RObject* object2 = RealVector::createScalar(2);
-    EXPECT_EQ(0, getRefCount(object1));
-    EXPECT_EQ(0, getRefCount(object2));
+    EXPECT_FALSE(isOnStackBitSet(object1));
+    EXPECT_FALSE(isOnStackBitSet(object2));
 }
 
 TEST(GCStackFrameBoundaryTest, BarrierIncrementsAndDecrementsCount) {
@@ -53,16 +53,16 @@ TEST(GCStackFrameBoundaryTest, BarrierIncrementsAndDecrementsCount) {
 	{
 	    RObject* object2 = RealVector::createScalar(2);
 
-	    EXPECT_EQ(0, getRefCount(object1));
-	    EXPECT_EQ(0, getRefCount(object2));
+	    EXPECT_FALSE(isOnStackBitSet(object1));
+	    EXPECT_FALSE(isOnStackBitSet(object2));
 
 	    GCStackFrameBoundary::advanceBarrier();
-	    EXPECT_GE(getRefCount(object1), 1);
-	    EXPECT_EQ(getRefCount(object2), 0);
+	    EXPECT_TRUE(isOnStackBitSet(object1));
+	    EXPECT_FALSE(isOnStackBitSet(object2));
 	    return object2;
 	});
-    EXPECT_EQ(0, getRefCount(object1));
-    EXPECT_EQ(0, getRefCount(object2_));
+    EXPECT_FALSE(isOnStackBitSet(object1));
+    EXPECT_FALSE(isOnStackBitSet(object2_));
 }
 
 TEST(GCStackFrameBoundaryTest, NestedBoundarys) {
@@ -78,13 +78,13 @@ TEST(GCStackFrameBoundaryTest, NestedBoundarys) {
 		{
 		    GCStackFrameBoundary::advanceBarrier();
 
-		    EXPECT_GE(getRefCount(object1), 1);
+		    EXPECT_TRUE(isOnStackBitSet(object1));
 		    return (RObject*)nullptr;
 		});
-	    EXPECT_GE(getRefCount(object1), 1);
+	    EXPECT_TRUE(isOnStackBitSet(object1));
 	    return (RObject*)nullptr;
 	});
-    EXPECT_EQ(0, getRefCount(object1));
+    EXPECT_FALSE(isOnStackBitSet(object1));
 }
 
 TEST(GCStackFrameBoundaryTest, NestedAdvances) {
@@ -96,18 +96,18 @@ TEST(GCStackFrameBoundaryTest, NestedAdvances) {
 	[=]()
 	{
 	    GCStackFrameBoundary::advanceBarrier();
-	    EXPECT_GE(getRefCount(object1), 1);
+	    EXPECT_TRUE(isOnStackBitSet(object1));
 
 	    GCStackFrameBoundary::withStackFrameBoundary(
 		[=]()
 		{
 		    GCStackFrameBoundary::advanceBarrier();
 
-		    EXPECT_GE(getRefCount(object1), 1);
+		    EXPECT_TRUE(isOnStackBitSet(object1));
 		    return (RObject*)nullptr;
 		});
-	    EXPECT_GE(getRefCount(object1), 1);
+	    EXPECT_TRUE(isOnStackBitSet(object1));
 	    return (RObject*)nullptr;
 	});
-    EXPECT_EQ(0, getRefCount(object1));
+    EXPECT_FALSE(isOnStackBitSet(object1));
 }
