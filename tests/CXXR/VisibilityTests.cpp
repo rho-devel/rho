@@ -152,6 +152,10 @@ INSTANTIATE_TEST_CASE_P(InterpreterVisibiltyTest,
 			VisibilityTest,
 			testing::Values(Executor::InterpreterExecutor()));
 
+INSTANTIATE_TEST_CASE_P(BytecodeVisibiltyTest,
+			VisibilityTest,
+			testing::Values(Executor::BytecodeExecutor()));
+
 INSTANTIATE_TEST_CASE_P(JITVisibilityTest,
 			VisibilityTest,
 			testing::Values(Executor::JITExecutor()));

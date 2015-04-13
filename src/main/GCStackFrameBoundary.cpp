@@ -46,6 +46,7 @@ GCStackFrameBoundary *GCStackFrameBoundary::s_barrier = s_bottom_of_stack;
 // the set of pointers found by the conservative stack scanner in that region
 // can.  To ensure that the same nodes are protected and unprotected, we keep
 // a separate stack containing just the protected nodes here.
+// Also note that this only stores the first instance of each node.
 std::stack<const GCNode*> GCStackFrameBoundary::s_protected_nodes;
 
 struct GCStackFrameBoundary::ProtectPointerVisitor
@@ -57,9 +58,11 @@ struct GCStackFrameBoundary::ProtectPointerVisitor
 
     void operator()(const GCNode* node) override
     {
-	s_protected_nodes.push(node);
-	GCNode::incRefCount(node);
-	++(*m_count);
+	if (!node->isOnStackBitSet()) {
+	    s_protected_nodes.push(node);
+	    node->setOnStackBit();
+	    ++(*m_count);
+	}
     } 
 
     int* m_count;
@@ -114,7 +117,7 @@ void GCStackFrameBoundary::applyBarrier()
     for (int i = 0; i < m_num_protected_pointers; i++) {
 	const GCNode* pointer = s_protected_nodes.top();
 	s_protected_nodes.pop();
-	GCNode::decRefCount(pointer);
+	pointer->clearOnStackBit();
     }
 
     // Move the barrier back.

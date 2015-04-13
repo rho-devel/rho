@@ -45,10 +45,18 @@ public:
     static unsigned char getRefCount(const GCNode* node) {
 	return node->getRefCount();
     }
+
+    static bool isOnStackBitSet(const GCNode* node) {
+	return node->isOnStackBitSet();
+    }
 };
 
 inline unsigned char getRefCount(const GCNode* node) {
     return GCTestHelper::getRefCount(node);
+}
+
+inline bool isOnStackBitSet(const GCNode* node) {
+    return GCTestHelper::isOnStackBitSet(node);
 }
 
 }  // namespace CXXR

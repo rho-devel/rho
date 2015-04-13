@@ -54,7 +54,7 @@ using namespace CXXR;
 
 vector<const GCNode*>* GCNode::s_moribund = 0;
 unsigned int GCNode::s_num_nodes = 0;
-bool GCNode::s_reference_counts_up_to_date = false;
+bool GCNode::s_on_stack_bits_correct = false;
 const unsigned char GCNode::s_decinc_refcount[]
 = {0,    2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x1e,
    0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x3e,
@@ -125,7 +125,7 @@ bool GCNode::check()
 {
     // Check moribund list:
     for (const GCNode* node: *s_moribund) {
-	if (!(node->m_rcmmu & s_moribund_mask)) {
+	if (!(node->m_rcmms & s_moribund_mask)) {
 	    cerr << "GCNode::check() : "
 		"Node on moribund list without moribund bit set.\n";
 	    abort();
@@ -165,29 +165,29 @@ void GCNode::markSweepGC()
     // NB: setting this flag implies that the garbage collection will ignore
     // any new stack nodes.  To ensure correctness, this function must not call
     // any code that depends on normal operation of the garbage collector.
-    s_reference_counts_up_to_date = true;
+    s_on_stack_bits_correct = true;
 
     mark();
     sweep();
 
-    s_reference_counts_up_to_date = false;
+    s_on_stack_bits_correct = false;
 }
 
 void GCNode::gclite()
 {
-    s_reference_counts_up_to_date = true;
+    s_on_stack_bits_correct = true;
 
     while (!s_moribund->empty()) {
 	// Last in, first out, for cache efficiency:
 	const GCNode* node = s_moribund->back();
 	s_moribund->pop_back();
 	// Clear moribund bit.  Beware ~ promotes to unsigned int.
-	node->m_rcmmu &= static_cast<unsigned char>(~s_moribund_mask);
+	node->m_rcmms &= static_cast<unsigned char>(~s_moribund_mask);
 
-	if (node->getRefCount() == 0)
+	if (node->maybeGarbage())
 	    delete node;
     }
-    s_reference_counts_up_to_date = false;
+    s_on_stack_bits_correct = false;
 }
 
 void GCNode::initialize()
@@ -211,11 +211,11 @@ void GCNode::initialize()
 
 void GCNode::makeMoribund() const
 {
-    if (s_reference_counts_up_to_date) {
+    if (s_on_stack_bits_correct) {
 	// In this case, the node can be deleted immediately.
 	delete this;
     } else {
-	m_rcmmu |= s_moribund_mask;
+	m_rcmms |= s_moribund_mask;
 	s_moribund->push_back(this);
     }
 }
@@ -305,8 +305,8 @@ void GCNode::Marker::operator()(const GCNode* node)
 	return;
     }
     // Update mark  Beware ~ promotes to unsigned int.
-    node->m_rcmmu &= static_cast<unsigned char>(~s_mark_mask);
-    node->m_rcmmu |= s_mark;
+    node->m_rcmms &= static_cast<unsigned char>(~s_mark_mask);
+    node->m_rcmms |= s_mark;
     ++m_marks_applied;
     node->visitReferents(this);
 }

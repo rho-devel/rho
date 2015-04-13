@@ -71,6 +71,7 @@ struct SingleTest {
 class Executor {
 public:
     static Executor* InterpreterExecutor();
+    static Executor* BytecodeExecutor();
     static Executor* JITExecutor();
 
     virtual CXXR::RObject* parseAndEval(

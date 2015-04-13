@@ -36,6 +36,34 @@
 
 #include "CXXR/config.hpp"
 
+/*
+ * Memory management overview.
+ *
+ * CXXR primarily uses a reference counting memory manager.  The reference
+ * count is increased whenever an object is stored in a GCEdge or GCRoot,
+ * placed on the byte-interpreter's stack or protected via the PROTECT macro
+ * (note though that in most of the interpreter the PROTECT macro is a no-op).
+ * TODO(kmillar): remove the byte interpreter stack from the count.
+ *
+ * For references on the CPU stack, CXXR uses a variation on deferred reference
+ * counting.  Whenever garbage collection occurs, the memory system does a
+ * conservative scan of the CPU stack and sets a bit if the object was found on
+ * the stack.  (StackFrameBoundaries and barriers are used to prevent rescanning
+ * stack frames that don't change.)
+ *
+ * Since the stack bit information may be out of  date, objects cannot
+ * be safely deleted when the reference count and stack bit reach zero.
+ * Instead they are added to the moribund list for potential deletion at the
+ * next garbage collection cycle, when the stack bit will be available (if
+ * garbage collection is running at the time, the object may be deleted
+ * immediately).
+ *
+ * A backup mark-sweep garbage collection is used to handle reference cycles
+ * and objects whose reference counts have saturated. 
+ * TODO(kmillar): implement cycle breaking for unevaluated default promises.
+ * TODO(kmillar): implement cycle breaking for closures.
+ */
+
 // According to various web postings (and arr's experience) it is
 // necessary for the compiler to have seen the headers for the archive
 // types in use before it encounters any of the BOOST_CLASS_EXPORT_*
@@ -109,7 +137,7 @@ namespace CXXR {
 	class PtrS11n;
 
 	GCNode()
-            : m_rcmmu(s_mark | s_moribund_mask)
+            : m_rcmms(s_mark | s_moribund_mask)
 	{
 	    ++s_num_nodes;
 	    s_moribund->push_back(this);
@@ -231,7 +259,7 @@ namespace CXXR {
 	 */
 	virtual ~GCNode()
 	{
-	    if (m_rcmmu & s_moribund_mask)
+	    if (m_rcmms & s_moribund_mask)
 		destruct_aux();
 	    --s_num_nodes;
 	}
@@ -271,13 +299,12 @@ namespace CXXR {
 	  // zero (but may subsequently have increased again).
 	static unsigned int s_num_nodes;  // Number of nodes in existence
 
-	// Flag that is set if the reference counts are known to be
-	// up to date and there are no defered updates outstanding.
+	// Flag that is set if the on_stack bits are known to be up to date.
 	// If this true, then objects can be deleted immediately when
-	// their reference count drops to zero.
-	static bool s_reference_counts_up_to_date;
+	// their reference count drops to zero if their stack bit is unset.
+	static bool s_on_stack_bits_correct;
 
-	// Bit patterns XORd into m_rcmmu to decrement or increment the
+	// Bit patterns XORd into m_rcmms to decrement or increment the
 	// reference count.  Patterns 0, 2, 4, ... are used to
 	// decrement; 1, 3, 5, .. to increment.
 	static const unsigned char s_decinc_refcount[];
@@ -289,9 +316,12 @@ namespace CXXR {
 	static const unsigned char s_mark_mask = 0x80;
 	static const unsigned char s_moribund_mask = 0x40;
 	static const unsigned char s_refcount_mask = 0x3e;
-	mutable unsigned char m_rcmmu;
-	  // Refcount/moribund/marked/unused.  The least
-	  // significant bit is currently unused.
+	static const unsigned char s_on_stack_mask = 0x1;
+
+	mutable unsigned char m_rcmms;
+	  // Refcount/moribund/marked/on_stack.  The least
+	  // significant bit is set if a pointer to this object is
+	  // known to be on the stack.
 	  // The reference count is held in the next 5
 	  // bits, and saturates at 31.  The 0x40 bit is set to
 	  // signify that the node is on the moribund list.  The most
@@ -323,10 +353,20 @@ namespace CXXR {
 	 */
 	static void gclite();
 
+	/** @brief Might this object be unreferenced garbage?
+	 *
+	 * Returns true if the reference count is zero and the stack bit is
+	 * unset.   If the stack bits are up to date then this only returns
+	 * true for unreferenced nodes that can be deleted.
+	 */
+	bool maybeGarbage() const
+	{
+	    return (m_rcmms & (s_refcount_mask | s_on_stack_mask)) == 0;
+	}
 	// Returns the stored reference count.
 	unsigned char getRefCount() const
 	{
-	    return (m_rcmmu & s_refcount_mask) >> 1;
+	    return (m_rcmms & s_refcount_mask) >> 1;
 	}
 
 	// Decrement the reference count (subject to the stickiness of
@@ -335,12 +375,29 @@ namespace CXXR {
 	static void decRefCount(const GCNode* node)
 	{
 	    if (node) {
-		unsigned char& rcmmu = node->m_rcmmu;
-		rcmmu ^= s_decinc_refcount[rcmmu & s_refcount_mask];
-		if ((rcmmu & (s_refcount_mask | s_moribund_mask)) == 0)
+		unsigned char& rcmms = node->m_rcmms;
+		rcmms ^= s_decinc_refcount[rcmms & s_refcount_mask];
+		if ((rcmms &
+		     (s_refcount_mask | s_on_stack_mask| s_moribund_mask)) == 0)
 		    node->makeMoribund();
 	    }
 	}
+
+	void setOnStackBit() const {
+	    m_rcmms |= s_on_stack_mask;
+	}
+
+	void clearOnStackBit() const {
+	    m_rcmms = m_rcmms & static_cast<unsigned char>(~s_on_stack_mask);
+	    if ((m_rcmms &
+		 (s_refcount_mask | s_on_stack_mask| s_moribund_mask)) == 0)
+		makeMoribund();
+	}
+
+	bool isOnStackBitSet() const {
+	    return m_rcmms & s_on_stack_mask;
+	}
+
 
 	// Helper function for the destructor, handling the case where
 	// the node is still under construction.  This should happen
@@ -356,8 +413,8 @@ namespace CXXR {
 	static void incRefCount(const GCNode* node)
 	{
 	    if (node) {
-		unsigned char& rcmmu = node->m_rcmmu;
-		rcmmu ^= s_decinc_refcount[(rcmmu & s_refcount_mask) + 1];
+		unsigned char& rcmms = node->m_rcmms;
+		rcmms ^= s_decinc_refcount[(rcmms & s_refcount_mask) + 1];
 	    }
 	}
 
@@ -372,7 +429,7 @@ namespace CXXR {
 
 	bool isMarked() const
 	{
-	    return (m_rcmmu & s_mark_mask) == s_mark;
+	    return (m_rcmms & s_mark_mask) == s_mark;
 	}
 
 	// Mark this node as moribund:
