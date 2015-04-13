@@ -202,8 +202,9 @@ Executor* Executor::BytecodeExecutor() {
 #ifdef ENABLE_LLVM_JIT
 class JITExecutor : public CompilingExecutor {
 public:
-    void compile(Closure* closure) const override {
+    Closure* compile(Closure* closure) const override {
 	closure->compile();
+	return closure;
     }
 };
 
