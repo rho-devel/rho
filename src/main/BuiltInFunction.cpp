@@ -102,9 +102,7 @@ BuiltInFunction::~BuiltInFunction()
 RObject* BuiltInFunction::apply(ArgList* arglist, Environment* env,
 				const Expression* call) const
 {
-    Evaluator::maybeCheckForUserInterrupts();
     RAllocStack::Scope ras_scope;
-    ProtectStack::Scope ps_scope;
 #ifndef NDEBUG
     size_t pps_size = ProtectStack::size();
 #endif
