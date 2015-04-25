@@ -105,6 +105,7 @@ WeakRef::~WeakRef()
 
 bool WeakRef::check()
 {
+#ifndef NDEBUG
     // Check sizes:
     size_t total_size = getLive()->size() + getFinalizationPending()->size()
 	+ getTombstone()->size();
@@ -154,6 +155,7 @@ bool WeakRef::check()
 	    abort();
 	}
     }
+#endif
     return true;
 }
 
