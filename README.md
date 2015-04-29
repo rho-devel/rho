@@ -10,7 +10,7 @@ Currently the CXXR codebase is based off R 3.0.2.
 
 Compiling CXXR requires a GCC or Clang compiler with C++ 11 support and fortran support.  In addition, boost 1.48.0 or later must be installed.
 
-Compilation of the LLVM JIT requires a Clang compiler and LLVM version 3.4 as well.  (GCC should also be supported in the future.)
+Compilation of the LLVM JIT requires a Clang compiler and LLVM version 3.4 as well. On debian libedit has to be installed additionally.  (GCC should also be supported in the future.)
 
 CXXR has been tested to compile on both Linux and Mac OSX systems.
 
