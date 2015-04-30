@@ -60,7 +60,7 @@ check : $(tests:=.ts)
 # Using FORCE in place of a proper dependency on libR.
 UnitTests: $(UNIT_TEST_OBJECTS) GTestWithR_main.o FORCE # ../../src/main/libR.a
 	$(MAKE) -C $(top_builddir)/src/extra/gtest all
-	$(LINK.cc) -o $@ GTestWithR_main.o $(UNIT_TEST_OBJECTS) $(GTEST_LDFLAGS) -lgtest \
+	$(LINK.cc) -o $@ GTestWithR_main.o $(UNIT_TEST_OBJECTS) $(GTEST_LDFLAGS) \
 		 -L../../src/main -lR $(MAIN_LDFLAGS) $(EXTRA_LIBS)
 
 FORCE:
