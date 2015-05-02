@@ -62,6 +62,7 @@
 #include "CXXR/CommandTerminated.hpp"
 #include "CXXR/ProvenanceTracker.h"
 #include "CXXR/ReturnException.hpp"
+#include "CXXR/GCStackFrameBoundary.hpp"
 
 using namespace CXXR;
 
@@ -212,7 +213,7 @@ extern void InitDynload(void);
 
 	/* Read-Eval-Print Loop [ =: REPL = repl ] with input from a file */
 
-static void R_ReplFile(FILE *fp, SEXP rho)
+static RObject* R_ReplFile_impl(FILE *fp, SEXP rho)
 {
     ParseStatus status;
     int count=0;
@@ -246,13 +247,19 @@ static void R_ReplFile(FILE *fp, SEXP rho)
 	    break;
 	case PARSE_EOF:
 	    R_FinalizeSrcRefState();
-	    return;
+	    return nullptr;
 	    break;
 	case PARSE_INCOMPLETE:
 	    /* can't happen: just here to quieten -Wall */
 	    break;
 	}
     }
+    return nullptr;
+}
+
+static void R_ReplFile(FILE *fp, SEXP rho) {
+    GCStackFrameBoundary::withStackFrameBoundary(
+	std::bind(R_ReplFile_impl, fp, rho));
 }
 
 /* Read-Eval-Print loop with interactive input */
@@ -428,7 +435,7 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
     return(0);
 }
 
-static void R_ReplConsole(SEXP rho, int savestack)
+static RObject* R_ReplConsole_impl(SEXP rho, int savestack)
 {
     int status;
     R_ReplState state = { PARSE_NULL, 1, 0, "", nullptr};
@@ -443,10 +450,15 @@ static void R_ReplConsole(SEXP rho, int savestack)
     for(;;) {
 	status = Rf_ReplIteration(rho, savestack, &state);
 	if(status < 0)
-	  return;
+	  return nullptr;
     }
 }
 
+static void R_ReplConsole(SEXP rho, int savestack)
+{
+    GCStackFrameBoundary::withStackFrameBoundary(
+	std::bind(R_ReplConsole_impl, rho, savestack));
+}
 
 static unsigned char DLLbuf[CONSOLE_BUFFER_SIZE+1], *DLLbufp;
 

@@ -3405,12 +3405,6 @@ static R_INLINE void checkForMissings(SEXP args, SEXP call)
     }							\
 } while (0)
 
-/* The CALLBUILTIN instruction handles calls to both true BUILTINs and
-   to .Internals of type BUILTIN. To handle profiling in a way that is
-   consistent with this instruction needs to be able to distinguish a
-   true BUILTIN from a .Internal. LT */
-#define IS_TRUE_BUILTIN(x) ((R_FunTab[PRIMOFFSET(x)].eval % 100 )/10 == 0)
-
 RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 {
   ByteCode::Scope scope;
