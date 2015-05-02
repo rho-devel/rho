@@ -78,7 +78,8 @@ namespace CXXR {
 BuiltInFunction::BuiltInFunction(unsigned int offset)
     : FunctionBase(s_function_table[offset].flags%10
 		   ? BUILTINSXP : SPECIALSXP),
-      m_offset(offset), m_function(s_function_table[offset].cfun)
+      m_offset(offset), m_function(s_function_table[offset].cfun),
+      m_quick_function(s_function_table[offset].quick_function)
 {
     unsigned int pmdigit = (s_function_table[offset].flags/100)%10;
     m_result_printing_mode = ResultPrintingMode(pmdigit);
@@ -119,16 +120,10 @@ RObject* BuiltInFunction::apply(ArgList* arglist, Environment* env,
     GCStackRoot<> ans;
     if (m_transparent) {
 	PlainContext cntxt;
-	if (arglist->status() != ArgList::EVALUATED && sexptype() == BUILTINSXP)
-	    arglist->evaluate(env);
-	Evaluator::enableResultPrinting(true);
-	ans = invoke(env, arglist, call);
+	ans = evaluateAndInvoke(env, arglist, call);
     } else {
 	FunctionContext cntxt(const_cast<Expression*>(call), env, this);
-	if (arglist->status() != ArgList::EVALUATED && sexptype() == BUILTINSXP)
-	    arglist->evaluate(env);
-	Evaluator::enableResultPrinting(true);
-	ans = invoke(env, arglist, call);
+	ans = evaluateAndInvoke(env, arglist, call);
     }
     if (m_result_printing_mode != SOFT_ON)
 	Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
@@ -138,6 +133,63 @@ RObject* BuiltInFunction::apply(ArgList* arglist, Environment* env,
 		 name(), pps_size, ProtectStack::size());
 #endif
     return ans;
+}
+
+static bool hasDotArgs(const ArgList* arglist) {
+    const PairList* list = arglist->list();
+    if (!list)
+	return false;
+    for (const ConsCell& cell : *list) {
+	if (cell.car() == R_DotsSymbol)
+	    return true;
+    }
+    return false;
+}
+
+RObject* BuiltInFunction::evaluateAndInvoke(Environment* env, ArgList* arglist,
+					    const Expression* call) const
+{
+    if (arglist->status() != ArgList::EVALUATED && sexptype() == BUILTINSXP)
+    {
+	// The arguments need evaluating.
+	if (m_quick_function && !hasDotArgs(arglist)) {
+	    return quickEvaluateAndInvoke(env, arglist, call);
+	} else {
+	    arglist->evaluate(env);
+	}
+    }
+    if (m_function) {
+	Evaluator::enableResultPrinting(true);
+	return invoke(env, arglist, call);
+    } else {
+	return quickEvaluateAndInvoke(env, arglist, call);
+    }
+}
+
+RObject* BuiltInFunction::quickEvaluateAndInvoke(
+    Environment* env, ArgList* arglist, const Expression* call) const
+{
+    const PairList* args = arglist->list();
+    if (!args) {
+	Evaluator::enableResultPrinting(true);
+	return m_quick_function(call, this, env, 0, nullptr, nullptr);
+    }
+
+    int num_args = listLength(args);
+    
+    // Rather than creating a linked list of evaluated arguments, this
+    // simply stores them in an on-stack array.
+    RObject** evaluated_args = static_cast<RObject**>(
+	alloca(num_args * sizeof(RObject*)));
+    arglist->evaluateToArray(env, num_args, evaluated_args);
+
+    // Since builtins don't do argument matching and there weren't any
+    // '...'s to expand, the tags didn't change in evaluation.
+    const PairList* tags = args;
+    
+    Evaluator::enableResultPrinting(true);
+    return m_quick_function(call, this, env,
+			    num_args, evaluated_args, tags);
 }
 
 void BuiltInFunction::checkNumArgs(const PairList* args,

@@ -296,6 +296,16 @@ namespace CXXR {
     private:
 	friend class boost::serialization::access;
 
+	// Alternative C function.  This differs from CCODE primarily in
+	// that the arguments are passed in an array instead of a linked
+	// list.
+        typedef RObject*(*QuickInvokeFunction)(const Expression* call,
+					       const BuiltInFunction* op,
+					       Environment* env,
+					       int num_args,
+					       RObject** args,
+					       const PairList* tags);
+
 	// 'Pretty-print' information:
 	struct PPinfo {
 	    Kind kind;
@@ -306,6 +316,7 @@ namespace CXXR {
 	struct TableEntry {
 	    const char* name;  // name of function
 	    CCODE cfun;        // pointer to relevant do_xxx function
+            QuickInvokeFunction quick_function;
 	    unsigned int variant;  // used to select alternative
 				   // behaviours within the do_xxx
 				   // function
@@ -332,6 +343,8 @@ namespace CXXR {
 
 	unsigned int m_offset;
 	CCODE m_function;
+        QuickInvokeFunction m_quick_function;
+
 	ResultPrintingMode m_result_printing_mode;
 	bool m_transparent;  // if true, do not create a
 			     // FunctionContext when this function is
@@ -380,6 +393,14 @@ namespace CXXR {
 			      const_cast<BuiltInFunction*>(this),
 			      const_cast<PairList*>(arglist->list()), env);
 	}
+
+        RObject* evaluateAndInvoke(Environment* env,
+                                   ArgList* arglist,
+                                   const Expression* call) const;
+
+        RObject* quickEvaluateAndInvoke(Environment* env,
+					ArgList* arglist,
+					const Expression* call) const;
 
 	template<class Archive>
 	void load(Archive & ar, const unsigned int version);

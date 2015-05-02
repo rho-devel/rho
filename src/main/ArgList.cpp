@@ -49,6 +49,36 @@ PairList* ArgList::append(PairList* object, PairList* last_element) {
     return object;
 }
 
+void ArgList::evaluateToArray(Environment* env,
+			      int num_args, RObject** evaluated_args,
+			      bool allow_missing)
+{
+    if (m_first_arg_env && env != m_first_arg_env)
+	Rf_error("Internal error: first arg of ArgList"
+		 " previously evaluated in different environment");
+
+    const PairList* args = list();
+    if (!args)
+	return;
+
+    unsigned int arg_number = 0;
+    for (const ConsCell& cell: *args) {
+	RObject* arg = cell.car();
+	RObject* value;
+	if (m_status == EVALUATED) {
+	    value = arg;
+	} else {
+	    assert(arg != R_DotsSymbol);
+	    value = evaluateSingleArgument(arg, env, allow_missing,
+					   arg_number + 1);
+	}
+	evaluated_args[arg_number] = value;
+	++arg_number;
+    }
+    assert(arg_number == num_args);
+}
+
+
 void ArgList::evaluate(Environment* env, bool allow_missing)
 {
     if (m_status == EVALUATED)
@@ -85,34 +115,39 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
 	    } else if (h != Symbol::missingArgument())
 		Rf_error(_("'...' used in an incorrect context"));
 	} else {
-	    const RObject* tag = inp->tag();
-	    PairList* cell = nullptr;
-	    if (m_first_arg_env) {
-		cell = PairList::cons(m_first_arg, nullptr, tag);
-		m_first_arg = nullptr;
-		m_first_arg_env = nullptr;
-	    } else if (incar && incar->sexptype() == SYMSXP) {
-		Symbol* sym = static_cast<Symbol*>(incar);
-		if (sym == Symbol::missingArgument()) {
-		    if (allow_missing)
-			cell = PairList::cons(Symbol::missingArgument(), nullptr, tag);
-		    else Rf_error(_("argument %d is empty"), arg_number);
-		} else if (isMissingArgument(sym, env->frame())) {
-		    if (allow_missing)
-			cell = PairList::cons(Symbol::missingArgument(), nullptr, tag);
-		    else Rf_error(_("'%s' is missing"),
-				  sym->name()->c_str());
-		}
-	    }
-	    if (!cell) {
-		RObject* outcar = Evaluator::evaluate(incar, env);
-		cell = PairList::cons(outcar, nullptr, inp->tag());
-	    }
+	    RObject* value = evaluateSingleArgument(incar, env,
+						    allow_missing, arg_number);
+	    PairList* cell = PairList::cons(value, nullptr, inp->tag());
 	    lastout = append(cell, lastout);
 	}
 	++arg_number;
     }
     m_status = EVALUATED;
+}
+
+RObject* ArgList::evaluateSingleArgument(const RObject* arg,
+					 Environment* env,
+					 bool allow_missing,
+					 int arg_number) {
+    if (m_first_arg_env) {
+	RObject* value = m_first_arg;
+	m_first_arg = nullptr;
+	m_first_arg_env = nullptr;
+	return value;
+    } else if (arg && arg->sexptype() == SYMSXP) {
+	const Symbol* sym = static_cast<const Symbol*>(arg);
+	if (sym == Symbol::missingArgument()) {
+	    if (allow_missing)
+		return Symbol::missingArgument();
+	    else Rf_error(_("argument %d is empty"), arg_number);
+	} else if (isMissingArgument(sym, env->frame())) {
+	    if (allow_missing)
+		return Symbol::missingArgument();
+	    else Rf_error(_("'%s' is missing"),
+			  sym->name()->c_str());
+	}
+    }
+    return Evaluator::evaluate(const_cast<RObject*>(arg), env);
 }
 
 void ArgList::merge(const ConsCell* extraargs)

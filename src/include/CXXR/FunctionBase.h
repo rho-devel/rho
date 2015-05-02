@@ -61,6 +61,9 @@ namespace CXXR {
 	 * @param call Pointer to the Expression calling the function.
 	 *
 	 * @return The result of applying the function.
+         *
+         * @note Using \a arglist after calls to this function may
+         *    result in arguments being evaluated multiple time.
 	 */
 	virtual RObject* apply(ArgList* arglist, Environment* env,
 			       const Expression* call) const = 0;
