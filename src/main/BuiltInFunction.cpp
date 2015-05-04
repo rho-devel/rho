@@ -41,6 +41,7 @@
 #include "CXXR/Symbol.h"
 #include "CXXR/errors.h"
 #include "R_ext/Print.h"
+#include "Defn.h"
 
 using namespace CXXR;
 
@@ -158,12 +159,9 @@ RObject* BuiltInFunction::evaluateAndInvoke(Environment* env, ArgList* arglist,
 	    arglist->evaluate(env);
 	}
     }
-    if (m_function) {
-	Evaluator::enableResultPrinting(true);
-	return invoke(env, arglist, call);
-    } else {
-	return quickEvaluateAndInvoke(env, arglist, call);
-    }
+
+    Evaluator::enableResultPrinting(true);
+    return invoke(env, arglist, call);
 }
 
 RObject* BuiltInFunction::quickEvaluateAndInvoke(
@@ -271,5 +269,34 @@ const char* BuiltInFunction::typeName() const
 {
     return sexptype() == SPECIALSXP ? "special" : "builtin";
 }
+
+std::pair<bool, RObject*>
+BuiltInFunction::InternalGroupDispatch(const char* group, const Expression* call,
+				       Environment* env,
+				       int num_args, RObject** args,
+				       const PairList* tags) const
+{
+    bool has_class = false;
+    for (int i = 0; i < num_args; i++) {
+	if (args[i]->hasClass()) {
+	    has_class = true;
+	    break;
+	}
+    }
+    if (has_class) {
+	ArgList arglist(PairList::make(num_args, args, tags), ArgList::EVALUATED);
+	RObject* result = nullptr;
+	bool dispatched = Rf_DispatchGroup(group,
+					   const_cast<Expression*>(call),
+					   const_cast<BuiltInFunction*>(this),
+					   const_cast<PairList*>(arglist.list()),
+					   env, &result);
+	return std::make_pair(dispatched, result);
+    } else {
+	return std::make_pair(false, nullptr);
+    }
+}
+
+
 
 BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::BuiltInFunction)

@@ -176,13 +176,13 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 
 /* Binary Operators, all primitives */
 /* these are group generic and so need to eval args */
-{"+",		do_arith,	nullptr, PLUSOP,	1,	2,	{PP_BINARY,  PREC_SUM,	  0}},
-{"-",		do_arith,	nullptr, MINUSOP,1,	2,	{PP_BINARY,  PREC_SUM,	  0}},
-{"*",		do_arith,	nullptr, TIMESOP,1,	2,	{PP_BINARY,  PREC_PROD,	  0}},
-{"/",		do_arith,	nullptr, DIVOP,	1,	2,	{PP_BINARY2, PREC_PROD,	  0}},
-{"^",		do_arith,	nullptr, POWOP,	1,	2,	{PP_BINARY2, PREC_POWER,  1}},
-{"%%",		do_arith,	nullptr, MODOP,	1,	2,	{PP_BINARY2, PREC_PERCENT,0}},
-{"%/%",		do_arith,	nullptr, IDIVOP,	1,	2,	{PP_BINARY2, PREC_PERCENT,0}},
+{"+",		do_arith,	do_arith_quick, PLUSOP,	1,	2,	{PP_BINARY,  PREC_SUM,	  0}},
+{"-",		do_arith,	do_arith_quick, MINUSOP,1,	2,	{PP_BINARY,  PREC_SUM,	  0}},
+{"*",		do_arith,	do_arith_quick, TIMESOP,1,	2,	{PP_BINARY,  PREC_PROD,	  0}},
+{"/",		do_arith,	do_arith_quick, DIVOP,	1,	2,	{PP_BINARY2, PREC_PROD,	  0}},
+{"^",		do_arith,	do_arith_quick, POWOP,	1,	2,	{PP_BINARY2, PREC_POWER,  1}},
+{"%%",		do_arith,	do_arith_quick, MODOP,	1,	2,	{PP_BINARY2, PREC_PERCENT,0}},
+{"%/%",		do_arith,	do_arith_quick, IDIVOP,	1,	2,	{PP_BINARY2, PREC_PERCENT,0}},
 {"%*%",		do_matprod,	nullptr,	0,	1,	2,	{PP_BINARY,  PREC_PERCENT,0}},
 
 {"==",		do_relop,	nullptr, EQOP,	1,	2,	{PP_BINARY,  PREC_COMPARE,0}},

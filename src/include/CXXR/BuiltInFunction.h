@@ -293,6 +293,13 @@ namespace CXXR {
 	// Virtual function of FunctionBase:
 	RObject* apply(ArgList* arglist, Environment* env,
 		       const Expression* call) const override;
+
+        std::pair<bool, RObject*>
+        InternalGroupDispatch(const char* group, const Expression* call,
+                              Environment* env,
+                              int num_args, RObject** args, const PairList* tags)
+          const;
+
     private:
 	friend class boost::serialization::access;
 

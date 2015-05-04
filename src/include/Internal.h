@@ -34,6 +34,23 @@
 #define R_INTERNAL_H
 
 #ifdef __cplusplus
+
+namespace CXXR {
+  class RObject;
+  class Expression;
+  class Environment;
+  class PairList;
+
+  typedef RObject*(quick_builtin)(const Expression*,
+                                  const BuiltInFunction*,
+                                  Environment* env,
+                                  int num_args,
+                                  RObject** args,
+                                  const PairList* tags);
+
+  quick_builtin do_arith_quick;
+}
+
 extern "C" {
 #endif
 
