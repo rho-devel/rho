@@ -1206,6 +1206,17 @@ SEXP attribute_hidden do_paren(SEXP call, SEXP op, SEXP args, SEXP rho)
     return CAR(args);
 }
 
+RObject* attribute_hidden CXXR::do_paren_quick(const Expression* call,
+					       const BuiltInFunction* op,
+					       Environment* env,
+					       int num_args,
+					       RObject** args,
+					       const PairList* tags)
+{
+    op->checkNumArgs(num_args, call);
+    return args[0];
+}
+
 SEXP attribute_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP s = R_NilValue;

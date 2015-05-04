@@ -119,7 +119,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"=",		do_set,		nullptr,	3,	100,	-1,	{PP_ASSIGN,  PREC_EQ,	  1}},
 {"<<-",		do_set,		nullptr,	2,	100,	-1,	{PP_ASSIGN2, PREC_LEFT,	  1}},
 {"{",		do_begin,	nullptr,	0,	200,	-1,	{PP_CURLY,   PREC_FN,	  0}},
-{"(",		do_paren,	nullptr,	0,	1,	1,	{PP_PAREN,   PREC_FN,	  0}},
+{"(",		do_paren,	do_paren_quick,	0,	1,	1,	{PP_PAREN,   PREC_FN,	  0}},
 {".subset",	do_subset_dflt,	nullptr,	1,	1,	-1,	{PP_FUNCALL, PREC_FN,	  0}},
 {".subset2",	do_subset2_dflt,nullptr,	2,	1,	-1,	{PP_FUNCALL, PREC_FN,	  0}},
 {"[",		do_subset,	nullptr,	1,	0,	-1,	{PP_SUBSET,  PREC_SUBSET, 0}},
@@ -365,6 +365,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 
 
 /* Mathematical Functions of a Complex Argument */
+
 /* these are group generic and so need to eval args */
 
 {"Re",		do_cmathfuns,	nullptr,	1,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},

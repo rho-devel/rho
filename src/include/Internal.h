@@ -49,6 +49,7 @@ namespace CXXR {
                                   const PairList* tags);
 
   quick_builtin do_arith_quick;
+  quick_builtin do_paren_quick;
   quick_builtin do_relop_quick;
 }
 
