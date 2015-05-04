@@ -61,6 +61,23 @@ namespace {
     const unsigned int ACTIVE_BINDING_MASK = 1<<15;
 }
 
+PairList* PairList::make(int num_args, RObject** args, const PairList* tags)
+{
+    if (num_args == 0)
+	return nullptr;
+    // TODO(kmillar): this uses a recursive implementation and may take up a lot
+    //   of stack space.  Either reimplement or retire this function.
+    if (tags) {
+	return new PairList(args[0],
+			    make(num_args - 1, args + 1, tags->tail()),
+			    tags->car());
+    } else {
+	return new PairList(args[0],
+			    make(num_args - 1, args + 1, nullptr),
+			    nullptr);
+    }
+}
+
 PairList::PairList(const PairList& pattern)
     : ConsCell(pattern, 0)
 {
