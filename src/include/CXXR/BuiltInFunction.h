@@ -145,6 +145,22 @@ namespace CXXR {
 	 */
 	void checkNumArgs(const PairList* args, const Expression* call) const;
 
+	/** @brief Report error if argument list is wrong length.
+	 *
+	 * This function raises an error if \a num_args is not a
+	 * permissible length for all call to this BuiltInFunction.
+	 *
+	 * @param num_args The number of arguments that were passed.
+	 *
+	 * @param call The call being processed (for error reporting).
+	 */
+	void checkNumArgs(int num_args, const Expression* call) const {
+          if (num_args == arity() || arity() < 0) {
+            return;
+          }
+          badArgumentCountError(num_args, call);
+        }
+
 	/** @brief C/C++ function implementing this R function.
 	 *
 	 * @return Pointer to the C/C++ function implementing this R
@@ -425,6 +441,14 @@ namespace CXXR {
 	static void missingArgumentError(const BuiltInFunction* func,
 					 const PairList* args,
 					 unsigned int index);
+
+	/** @brief Raise error because a bad number of arguments.
+	 *
+	 * @param num_args The number of args passed.
+	 *
+	 * @param call The call.
+	 */
+        void badArgumentCountError(int num_args, const Expression* call) const;
 
 	template<class Archive>
 	void save(Archive & ar, const unsigned int version) const;

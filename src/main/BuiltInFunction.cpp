@@ -194,17 +194,20 @@ void BuiltInFunction::checkNumArgs(const PairList* args,
 				   const Expression* call) const
 {
     if (arity() >= 0) {
-	size_t nargs = listLength(args);
-	if (int(nargs) != arity()) {
-	    if (viaDotInternal())
-		Rf_error(_("%d arguments passed to .Internal(%s)"
-			   " which requires %d"), nargs, name(), arity());
-	    else
-		Rf_errorcall(const_cast<Expression*>(call),
-			     _("%d arguments passed to '%s' which requires %d"),
-			     nargs, name(), arity());
-	}
+	checkNumArgs(listLength(args), call);
     }
+}
+
+void BuiltInFunction::badArgumentCountError(int nargs, const Expression* call)
+    const
+{
+    if (viaDotInternal())
+	Rf_error(_("%d arguments passed to .Internal(%s)"
+		   " which requires %d"), nargs, name(), arity());
+    else
+	Rf_errorcall(const_cast<Expression*>(call),
+		     _("%d arguments passed to '%s' which requires %d"),
+		     nargs, name(), arity());
 }
 
 int BuiltInFunction::indexInTable(const char* name)
@@ -278,7 +281,7 @@ BuiltInFunction::InternalGroupDispatch(const char* group, const Expression* call
 {
     bool has_class = false;
     for (int i = 0; i < num_args; i++) {
-	if (args[i]->hasClass()) {
+	if (args[i] && args[i]->hasClass()) {
 	    has_class = true;
 	    break;
 	}
