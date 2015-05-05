@@ -34,6 +34,7 @@
 #endif
 
 #include "CXXR/RObject.h"
+#include "CXXR/BuiltInFunction.h"
 #include <Internal.h>
 
 #include <fstream>

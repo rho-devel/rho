@@ -319,6 +319,33 @@ static SEXP integer_binary(ARITHOP_TYPE, SEXP, SEXP, SEXP);
 
 /* Unary and Binary Operators */
 
+RObject* attribute_hidden CXXR::do_arith_quick(const Expression* call_,
+					       const BuiltInFunction* op_,
+					       Environment* env,
+					       int num_args,
+					       RObject** args,
+					       const PairList* tags)
+{
+    Expression* call = const_cast<Expression*>(call_);
+    BuiltInFunction* op = const_cast<BuiltInFunction*>(op_);
+
+    // If any of the args has a class, then we might need to dispatch.
+    auto result = op_->InternalGroupDispatch("Ops", call, env, num_args, args,
+					     tags);
+    if (result.first)
+	return result.second;
+
+    switch(num_args) {
+    case 1:
+	return R_unary(call, op, args[0]);
+    case 2:
+	return R_binary(call, op, args[0], args[1]);
+    default:
+	errorcall(call, _("operator needs one or two arguments"));
+    }
+    return nullptr;			/* never used; to keep -Wall happy */
+}
+
 SEXP attribute_hidden do_arith(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans;

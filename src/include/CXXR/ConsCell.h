@@ -509,6 +509,15 @@ namespace CXXR {
 	 */
 	static PairList* make(size_t sz) throw (std::bad_alloc);
 
+	/** @brief Create a PairList from values in an array.
+	 *
+	 * This constructor creates a chain of PairList nodes.  The nodes
+	 * contain the vars args[0]...args[size - 1], and if tags is set,
+	 * they have tags in the same order.
+	 */
+	static PairList* make(int size, RObject** args,
+			      const PairList* tags = nullptr);
+
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return the name by which this type is known in R.

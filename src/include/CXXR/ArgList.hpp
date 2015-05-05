@@ -135,6 +135,43 @@ namespace CXXR {
 	 */
 	void evaluate(Environment* env, bool allow_missing = false);
 
+	/** @brief Evaluate the arguments in the ArgList.
+	 *
+	 * This is a simpler, faster version of evaluate(), which differs
+	 * in the following ways:
+	 *  - R_DotsSymbol is not supported at all.  As a result, the list
+	 *    of evaluated args is the same length as the unevaluated args.
+	 *  - The evaluated arguments are placed into the \a evaluated_args
+	 *    buffer provided by the caller.
+	 *  - The arglist is not updated at all.  As a result, calling a
+	 *    subsequent evaluation of the arglist will result in multiple
+	 *    evaluations being performed.
+	 *  - It is not an error to call this if the arguments have already
+	 *    been evaluated.  In that case, it simply copies the values
+	 *    into the array.
+	 *
+	 * @param env The Environment in which evaluations are to take
+	 *          place.  If firstArg() has previously been called
+	 *          for this ArgList, then \a env must be identical to
+	 *          the \a env argument of that firstArg() call.
+	 *
+	 * @param num_args The length of the \a evaluated_args buffer.
+	 *         Must also match the length of the arglist.
+	 *
+	 * @param evaluated_args An array to write the evaluated args into.
+	 *
+	 * @param allow_missing This affects the handling of any
+	 *          elements of the current list whose value is either
+	 *          Symbol::missingArgument() or a Symbol which is
+	 *          missing within \a env.  If \a allow_missing is
+	 *          true, such elements are carried through unchanged
+	 *          into the resulting list; otherwise, such elements
+	 *          cause an error to be raised.
+	 */
+	void evaluateToArray(Environment* env,
+			     int num_args, RObject** evaluated_args,
+			     bool allow_missing = false);
+
 	/** @brief Get the first argument.
 	 *
 	 * This function accesses the value of the first argument in
@@ -310,6 +347,11 @@ namespace CXXR {
 	  // wrapInPromises(). 
 	GCStackRoot<Environment> m_first_arg_env;
 	Status m_status;
+
+	RObject* evaluateSingleArgument(const RObject* arg,
+					Environment* env,
+					bool allow_missing,
+					int arg_number);
 
 	void setList(PairList* list) {
 	    m_list = list;

@@ -100,14 +100,28 @@ HOT_FUNCTION void* GCNode::operator new(size_t bytes)
 {
     GCManager::maybeGC();
     MemoryBank::notifyAllocation(bytes);
+    void *result;
 
 #ifdef HAVE_ADDRESS_SANITIZER
-    return asan_allocate(bytes);
+    result = asan_allocate(bytes);
 #else
-    void* result = GC_malloc_atomic(bytes);
+    result = GC_malloc_atomic(bytes);
     set_allocated_bit(result);
-    return result;
 #endif
+
+    // Because garbage collection may occur between this point and the GCNode's
+    // constructor running, we need to ensure that this space is at least
+    // minimally initialized.
+    // We construct a GCNode with a ficticious reference count of 1, to prevent
+    // it from getting marked as moribund or garbage collected (the mark-sweep
+    // GC uses the reference counts, so this is always effective).
+    // It will be overwritten by the real constructor.
+    new (result)GCNode(static_cast<CreateAMinimallyInitializedGCNode*>(nullptr));
+    return result;
+}
+
+GCNode::GCNode(CreateAMinimallyInitializedGCNode*) : m_rcmms(0) {
+    incRefCount(this);
 }
 
 void GCNode::operator delete(void* p, size_t bytes)

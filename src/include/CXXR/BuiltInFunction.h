@@ -145,6 +145,22 @@ namespace CXXR {
 	 */
 	void checkNumArgs(const PairList* args, const Expression* call) const;
 
+	/** @brief Report error if argument list is wrong length.
+	 *
+	 * This function raises an error if \a num_args is not a
+	 * permissible length for all call to this BuiltInFunction.
+	 *
+	 * @param num_args The number of arguments that were passed.
+	 *
+	 * @param call The call being processed (for error reporting).
+	 */
+	void checkNumArgs(int num_args, const Expression* call) const {
+          if (num_args == arity() || arity() < 0) {
+            return;
+          }
+          badArgumentCountError(num_args, call);
+        }
+
 	/** @brief C/C++ function implementing this R function.
 	 *
 	 * @return Pointer to the C/C++ function implementing this R
@@ -293,8 +309,25 @@ namespace CXXR {
 	// Virtual function of FunctionBase:
 	RObject* apply(ArgList* arglist, Environment* env,
 		       const Expression* call) const override;
+
+        std::pair<bool, RObject*>
+        InternalGroupDispatch(const char* group, const Expression* call,
+                              Environment* env,
+                              int num_args, RObject** args, const PairList* tags)
+          const;
+
     private:
 	friend class boost::serialization::access;
+
+	// Alternative C function.  This differs from CCODE primarily in
+	// that the arguments are passed in an array instead of a linked
+	// list.
+        typedef RObject*(*QuickInvokeFunction)(const Expression* call,
+					       const BuiltInFunction* op,
+					       Environment* env,
+					       int num_args,
+					       RObject** args,
+					       const PairList* tags);
 
 	// 'Pretty-print' information:
 	struct PPinfo {
@@ -306,6 +339,7 @@ namespace CXXR {
 	struct TableEntry {
 	    const char* name;  // name of function
 	    CCODE cfun;        // pointer to relevant do_xxx function
+            QuickInvokeFunction quick_function;
 	    unsigned int variant;  // used to select alternative
 				   // behaviours within the do_xxx
 				   // function
@@ -332,6 +366,8 @@ namespace CXXR {
 
 	unsigned int m_offset;
 	CCODE m_function;
+        QuickInvokeFunction m_quick_function;
+
 	ResultPrintingMode m_result_printing_mode;
 	bool m_transparent;  // if true, do not create a
 			     // FunctionContext when this function is
@@ -381,6 +417,14 @@ namespace CXXR {
 			      const_cast<PairList*>(arglist->list()), env);
 	}
 
+        RObject* evaluateAndInvoke(Environment* env,
+                                   ArgList* arglist,
+                                   const Expression* call) const;
+
+        RObject* quickEvaluateAndInvoke(Environment* env,
+					ArgList* arglist,
+					const Expression* call) const;
+
 	template<class Archive>
 	void load(Archive & ar, const unsigned int version);
 
@@ -397,6 +441,14 @@ namespace CXXR {
 	static void missingArgumentError(const BuiltInFunction* func,
 					 const PairList* args,
 					 unsigned int index);
+
+	/** @brief Raise error because a bad number of arguments.
+	 *
+	 * @param num_args The number of args passed.
+	 *
+	 * @param call The call.
+	 */
+        void badArgumentCountError(int num_args, const Expression* call) const;
 
 	template<class Archive>
 	void save(Archive & ar, const unsigned int version) const;

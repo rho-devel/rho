@@ -331,6 +331,8 @@ namespace CXXR {
 
 	static void gcliteImpl();
 
+	struct CreateAMinimallyInitializedGCNode;
+	GCNode(CreateAMinimallyInitializedGCNode*);
 	GCNode(const GCNode&) = delete;
 	GCNode& operator=(const GCNode&) = delete;
 
