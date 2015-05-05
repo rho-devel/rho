@@ -490,14 +490,7 @@ namespace CXXR {
 
 	// The class maintains a cache of Symbol Bindings found along
 	// the search path:
-        typedef 
-            std::unordered_map<const Symbol*, Frame::Binding*,
-                               std::hash<const Symbol*>,
-                               std::equal_to<const Symbol*>,
-                               CXXR::Allocator<std::pair<const Symbol* const,
-                                                          Frame::Binding*> >
-                               > Cache;
-
+        class Cache;
 	static Cache* searchPathCache();
         static Cache* createSearchPathCache();
 

@@ -42,6 +42,7 @@
 #include "CXXR/StdFrame.hpp"
 #include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
+#include "sparsehash/dense_hash_map"
 
 using namespace std;
 using namespace CXXR;
@@ -64,12 +65,31 @@ namespace {
     // Used in {,un}packGPBits():
     const unsigned int FRAME_LOCK_MASK = 1<<14;
     const unsigned int GLOBAL_FRAME_MASK = 1<<15;
+
+    // Used by the cache.
+    struct PointerHash {
+	size_t operator()(const Symbol* value) const {
+	    // Symbols are globally unique, so pointer equality is fine.
+	    // The '>> 4' is because the low-order bits are generally
+	    // zero due to alignment concerns.
+	    return reinterpret_cast<intptr_t>(value) >> 4;
+	}
+    };
 }
 
 SEXP R_EmptyEnv;
 SEXP R_BaseEnv;
 SEXP R_GlobalEnv;
 SEXP R_BaseNamespace;
+
+class Environment::Cache : public google::dense_hash_map<
+    const Symbol*, Frame::Binding*,
+    PointerHash,
+    std::equal_to<const Symbol*>,
+    CXXR::Allocator<std::pair<const Symbol* const,
+			      Frame::Binding*> >
+    >
+{ };
 
 // The implementation assumes that any loops in the node graph will
 // include at least one Environment.
@@ -155,10 +175,13 @@ void Environment::flushFromSearchPathCache(const Symbol* sym)
 
 Environment::Cache* Environment::createSearchPathCache()
 {
-    // 509 is largest prime <= 512.  This will have capacity for 254
-    // Symbols at load factor 0.5.
-    Cache* search_path_cache = new Cache(509);
-    search_path_cache->max_load_factor(0.5);
+    Cache* search_path_cache = new Cache();
+    // Need a couple of pointers that won't be used elsewhere.
+    static GCRoot<Symbol> empty_key = Symbol::createUnnamedSymbol();
+    static GCRoot<Symbol> deleted_key = Symbol::createUnnamedSymbol();
+
+    search_path_cache->set_empty_key(empty_key.get());
+    search_path_cache->set_deleted_key(deleted_key.get());
     return search_path_cache;
 }
 

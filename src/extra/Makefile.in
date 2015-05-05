@@ -13,7 +13,8 @@ include $(top_builddir)/Makeconf
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 DISTFILES = Makefile.in
 
-SUBDIRS = blas bzip2 pcre tre xdr xz zlib @USE_NLS_TRUE@ intl gtest gc
+SUBDIRS = blas bzip2 pcre tre xdr xz zlib gtest gc sparsehash \
+	 @USE_NLS_TRUE@ intl
 SUBDIRS_WITH_NO_BUILD = graphapp trio tzone win_iconv @USE_NLS_FALSE@ intl
 
 RBLAS =@BLAS_SHLIB_TRUE@ make.blas
@@ -25,7 +26,8 @@ LIBINTL =@BUILD_LIBINTL_TRUE@ make.intl
 LIBTRE = make.tre
 LIBXZ =@BUILD_XZ_TRUE@ make.xz
 LIBGC = make.gc
-EXTRAS = $(RBLAS) $(LIBBZ2) $(LIBPCRE) $(LIBZ) $(LIBXDR) $(LIBINTL) $(LIBTRE) $(LIBXZ) $(LIBGC)
+LIBSPARSEHASH = make.sparsehash
+EXTRAS = $(RBLAS) $(LIBBZ2) $(LIBPCRE) $(LIBZ) $(LIBXDR) $(LIBINTL) $(LIBTRE) $(LIBXZ) $(LIBGC) $(LIBSPARSEHASH)
 
 all: Makefile R
 
@@ -61,6 +63,10 @@ make.intl: Makefile
 
 make.gc: Makefile
 	@(cd gc; $(MAKE))
+
+make.sparsehash: Makefile
+	@(cd sparsehash; $(MAKE) src/sparsehash/internal/sparseconfig.h)
+	@rm sparsehash/src/config.h
 
 mostlyclean: clean
 clean:

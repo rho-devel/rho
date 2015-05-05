@@ -42,6 +42,8 @@ FLIBS_IN_SO = @FLIBS_IN_SO@
 FPICFLAGS = @FPICFLAGS@
 F77 = @F77@
 GC_CPPFLAGS = -I$(top_srcdir)/src/extra/gc/include -DHAVE_GC_HEADER
+SPARSEHASH_CPPFLAGS = -I$(top_builddir)/src/extra/sparsehash/src \
+                      -I$(top_srcdir)/src/extra/sparsehash/src
 GETWD = @GETWD@
 GTEST_CPPFLAGS = -isystem $(top_srcdir)/src/extra/gtest/fused-src
 GTEST_LDFLAGS = -L$(top_builddir)/src/extra/gtest -lgtest -lpthread

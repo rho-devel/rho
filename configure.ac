@@ -457,6 +457,8 @@ AC_ARG_WITH([system-xz],
 [R_ARG_USE_SYSTEM(xz)],
 [use_system_xz=yes])
 
+AC_CONFIG_SUBDIRS([src/extra/sparsehash])
+
 ## Valgrind instrumentation
 AC_ARG_WITH([valgrind-instrumentation],
 [AS_HELP_STRING([--with-valgrind-instrumentation],[Level of additional instrumentation for Valgrind (0/1/2) @<:@0@:>@])],
