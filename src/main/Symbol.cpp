@@ -145,13 +145,13 @@ void Symbol::initialize()
 
 Symbol* Symbol::missingArgument()
 {
-    static GCRoot<Symbol> missing(new Symbol);
+    static GCRoot<Symbol> missing(createUnnamedSymbol());
     return missing.get();
 }
 
 Symbol* Symbol::unboundValue()
 {
-    static GCRoot<Symbol> unbound(new Symbol);
+    static GCRoot<Symbol> unbound(createUnnamedSymbol());
     return unbound.get();
 }
 

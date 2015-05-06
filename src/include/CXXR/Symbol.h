@@ -236,6 +236,18 @@ namespace CXXR {
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const override;
+
+        /** @brief Return a symbol object that has no name.
+         *
+         *  An unnamed is useful in places where an illegal symbol is
+         *  useful.  Examples are missing arguments and unbound values.
+         *
+         *  Note that unlike other symbols, unnamed symbols are not
+         *  automatically protected from garbage collection.
+         */
+        static Symbol* createUnnamedSymbol() {
+          return new Symbol();
+        }
     protected:
 	// Virtual function of GCNode:
 	void detachReferents() override;
