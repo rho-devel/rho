@@ -161,16 +161,6 @@ namespace CXXR {
           badArgumentCountError(num_args, call);
         }
 
-	/** @brief C/C++ function implementing this R function.
-	 *
-	 * @return Pointer to the C/C++ function implementing this R
-	 * function.
-	 */
-	CCODE function() const
-	{
-	    return m_function;
-	}
-
 	/** @brief Kind of built-in function.
 	 *
 	 * (Used mainly in deparsing.)
@@ -492,14 +482,7 @@ inline int PRIMARITY(SEXP x)
     BuiltInFunction& bif = *SEXP_downcast<BuiltInFunction*>(x);
     return bif.arity();
 }
-    
-inline CCODE PRIMFUN(SEXP x)
-{
-    using namespace CXXR;
-    BuiltInFunction& bif = *SEXP_downcast<BuiltInFunction*>(x);
-    return bif.function();
-}
-    
+
 inline int PRIMINTERNAL(SEXP x)
 {
     using namespace CXXR;

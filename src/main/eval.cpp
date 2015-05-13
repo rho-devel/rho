@@ -3889,7 +3889,6 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	NEXT();
     OP(CALL, 1):
       {
-	  // Convert to RObject*, then to FunctionBase*
 	FunctionBase* fun = SEXP_downcast<FunctionBase*>(
 	    static_cast<RObject*>(GETSTACK(-3)));
 	Expression* call = SEXP_downcast<Expression*>(
@@ -3900,6 +3899,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	switch (ftype) {
 	case BUILTINSXP:
 	{
+	    checkForMissings(args, call);
 	    ArgList arglist(args, ArgList::EVALUATED);
 	    value = fun->apply(&arglist, rho, call);
 	    break;
@@ -4194,8 +4194,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       {
 	SEXP lhs = GETSTACK(-5);
 	SEXP rhs = GETSTACK(-4);
-	SEXP fun = GETSTACK(-3);
-	SEXP call = (*constants)[GETOP()];
+	FunctionBase* fun = SEXP_downcast<FunctionBase*>(
+	    static_cast<RObject*>(GETSTACK(-3)));
+	Expression* call = SEXP_downcast<Expression*>(
+	    static_cast<RObject*>((*constants)[GETOP()]));
 	SEXP vexpr = (*constants)[GETOP()];
 	SEXP args, prom, last;
 	if (NAMED(lhs) == 2) {
@@ -4213,7 +4215,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  SETCAR(args, lhs);
 	  /* make the call */
 	  checkForMissings(args, call);
-	  value = PRIMFUN(fun) (call, fun, args, rho);
+	  {
+	      ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+	      value = fun->apply(&arglist, rho, call);
+	  }
 	  break;
 	case SPECIALSXP:
 	  /* duplicate arguments and put into stack for GC protection */
@@ -4231,7 +4236,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  SET_PRVALUE(prom, rhs);
 	  SETCAR(last, prom);
 	  /* make the call */
-	  value = PRIMFUN(fun) (call, fun, args, rho);
+	  {
+	      ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+	      value = fun->apply(&arglist, rho, call);
+	  }
 	  break;
 	case CLOSXP:
 	  /* push evaluated promise for RHS onto arguments with 'value' tag */
@@ -4246,10 +4254,8 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  SETCAR(args, prom);
 	  /* make the call */
 	  {
-	      Closure* closure = SEXP_downcast<Closure*>(fun);
-	      Expression* callx = SEXP_downcast<Expression*>(call);
 	      ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::PROMISED);
-	      value = closure->invoke(rho, &arglist, callx);
+	      value = fun->apply(&arglist, rho, call);
 	  }    
 	  break;
 	default: Rf_error(_("bad function"));
@@ -4262,8 +4268,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(GETTER_CALL, 1):
       {
 	SEXP lhs = GETSTACK(-5);
-	SEXP fun = GETSTACK(-3);
-	SEXP call = (*constants)[GETOP()];
+	FunctionBase* fun = SEXP_downcast<FunctionBase*>(
+	    static_cast<RObject*>(GETSTACK(-3)));
+	Expression* call = SEXP_downcast<Expression*>(
+	    static_cast<RObject*>((*constants)[GETOP()]));
 	SEXP args, prom;
 	switch (ftype) {
 	case BUILTINSXP:
@@ -4272,7 +4280,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  SETCAR(args, lhs);
 	  /* make the call */
 	  checkForMissings(args, call);
-	  value = PRIMFUN(fun) (call, fun, args, rho);
+	  {
+	      ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+	      value = fun->apply(&arglist, rho, call);
+	  }
 	  break;
 	case SPECIALSXP:
 	  /* duplicate arguments and put into stack for GC protection */
@@ -4283,7 +4294,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  SET_PRVALUE(prom, lhs);
 	  SETCAR(args, prom);
 	  /* make the call */
-	  value = PRIMFUN(fun) (call, fun, args, rho);
+	  {
+	      ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+	      value = fun->apply(&arglist, rho, call);
+	  }
 	  break;
 	case CLOSXP:
 	  /* replace first argument with evaluated promise for LHS */
@@ -4293,10 +4307,8 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  SETCAR(args, prom);
 	  /* make the call */
 	  {
-	      Closure* closure = SEXP_downcast<Closure*>(fun);
-	      Expression* callx = SEXP_downcast<Expression*>(call);
 	      ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::PROMISED);
-	      value = closure->invoke(rho, &arglist, callx);
+	      value = fun->apply(&arglist, rho, call);
 	  }
 	  break;
 	default: Rf_error(_("bad function"));
