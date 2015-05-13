@@ -148,26 +148,46 @@ static bool hasDotArgs(const ArgList* arglist) {
     return false;
 }
 
+bool BuiltInFunction::argsNeedEvaluating(const ArgList* arglist) const {
+    return sexptype() == BUILTINSXP && arglist->status() != ArgList::EVALUATED;
+}
+
 RObject* BuiltInFunction::evaluateAndInvoke(Environment* env, ArgList* arglist,
 					    const Expression* call) const
 {
-    if (arglist->status() != ArgList::EVALUATED && sexptype() == BUILTINSXP)
-    {
-	// The arguments need evaluating.
-	if (m_quick_function && !hasDotArgs(arglist)) {
-	    return quickEvaluateAndInvoke(env, arglist, call);
-	} else {
-	    arglist->evaluate(env);
-	}
+    if (m_quick_function) {
+	return quickEvaluateAndInvoke(env, arglist, call);
+    }
+
+    if (argsNeedEvaluating(arglist)) {
+	arglist->evaluate(env);
     }
 
     Evaluator::enableResultPrinting(true);
-    return invoke(env, arglist, call);
+    return m_function(const_cast<Expression*>(call),
+		      const_cast<BuiltInFunction*>(this),
+		      const_cast<PairList*>(arglist->list()),
+		      env);
+}
+
+static void copyArgsToArray(const PairList* args, RObject** array) {
+    int i = 0;
+    for (const ConsCell& cell : *args) {
+	array[i] = cell.car();
+	i++;
+    }
 }
 
 RObject* BuiltInFunction::quickEvaluateAndInvoke(
     Environment* env, ArgList* arglist, const Expression* call) const
 {
+    bool args_need_evaluating = argsNeedEvaluating(arglist);
+    if (args_need_evaluating && hasDotArgs(arglist)) {
+	// This is slow, but handles '...' correctly.
+	arglist->evaluate(env);
+	args_need_evaluating = false;
+    }
+
     const PairList* args = arglist->list();
     if (!args) {
 	Evaluator::enableResultPrinting(true);
@@ -180,10 +200,14 @@ RObject* BuiltInFunction::quickEvaluateAndInvoke(
     // simply stores them in an on-stack array.
     RObject** evaluated_args = static_cast<RObject**>(
 	alloca(num_args * sizeof(RObject*)));
-    arglist->evaluateToArray(env, num_args, evaluated_args);
+    if (args_need_evaluating) {
+	arglist->evaluateToArray(env, num_args, evaluated_args);
+    } else {
+	copyArgsToArray(args, evaluated_args);
+    }
 
-    // Since builtins don't do argument matching and there weren't any
-    // '...'s to expand, the tags didn't change in evaluation.
+    // Since builtins don't do argument matching 'args' has the correct
+    // tags.
     const PairList* tags = args;
     
     Evaluator::enableResultPrinting(true);

@@ -372,7 +372,8 @@ namespace CXXR {
 	// arbitrary, but will not be used during the lifetime of this
 	// temporary object.)
 	BuiltInFunction()
-	    : FunctionBase(BUILTINSXP), m_offset(0), m_function(nullptr)
+          : FunctionBase(BUILTINSXP), m_offset(0), m_function(nullptr),
+            m_quick_function(nullptr)
 	{}
 
 	/** @brief Constructor.
@@ -398,15 +399,6 @@ namespace CXXR {
 	 */
 	static int indexInTable(const char* name);
 
-	// Invoke the encapsulated function:
-	RObject* invoke(Environment* env, const ArgList* arglist, 
-			const Expression* call) const
-	{
-	    return m_function(const_cast<Expression*>(call),
-			      const_cast<BuiltInFunction*>(this),
-			      const_cast<PairList*>(arglist->list()), env);
-	}
-
         RObject* evaluateAndInvoke(Environment* env,
                                    ArgList* arglist,
                                    const Expression* call) const;
@@ -414,6 +406,8 @@ namespace CXXR {
         RObject* quickEvaluateAndInvoke(Environment* env,
 					ArgList* arglist,
 					const Expression* call) const;
+
+        bool argsNeedEvaluating(const ArgList* arglist) const;
 
 	template<class Archive>
 	void load(Archive & ar, const unsigned int version);
