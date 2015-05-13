@@ -3889,29 +3889,31 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	NEXT();
     OP(CALL, 1):
       {
-	SEXP fun = GETSTACK(-3);
-	SEXP call = (*constants)[GETOP()];
-	SEXP args = GETSTACK(-2);
-	int flag;
+	  // Convert to RObject*, then to FunctionBase*
+	FunctionBase* fun = SEXP_downcast<FunctionBase*>(
+	    static_cast<RObject*>(GETSTACK(-3)));
+	Expression* call = SEXP_downcast<Expression*>(
+	    static_cast<RObject*>((*constants)[GETOP()]));
+	PairList* args = SEXP_downcast<PairList*>(
+	    static_cast<RObject*>(GETSTACK(-2)));
+
 	switch (ftype) {
 	case BUILTINSXP:
-	  checkForMissings(args, call);
-	  flag = PRIMPRINT(fun);
-	  R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
-	  value = PRIMFUN(fun) (call, fun, args, rho);
-	  if (flag < 2) R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
-	  break;
+	{
+	    ArgList arglist(args, ArgList::EVALUATED);
+	    value = fun->apply(&arglist, rho, call);
+	    break;
+	}
 	case SPECIALSXP:
-	  flag = PRIMPRINT(fun);
-	  R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
-	  value = PRIMFUN(fun) (call, fun, CDR(call), rho);
-	  if (flag < 2) R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
-	  break;
-	case CLOSXP: {
-	    Closure* closure = SEXP_downcast<Closure*>(fun);
-	    Expression* callx = SEXP_downcast<Expression*>(call);
-	    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::PROMISED);
-	    value = closure->invoke(rho, &arglist, callx);
+	{
+	    ArgList arglist(call->tail(), ArgList::RAW);
+	    value = fun->apply(&arglist, rho, call);
+	    break;
+	}
+	case CLOSXP:
+	{
+	    ArgList arglist(args, ArgList::PROMISED);
+	    value = fun->apply(&arglist, rho, call);
 	    break;
 	}
 	default: Rf_error(_("bad function"));
