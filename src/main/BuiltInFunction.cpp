@@ -90,7 +90,7 @@ BuiltInFunction::BuiltInFunction(unsigned int offset)
 		     || m_function == do_for
 		     || m_function == do_if
 		     || m_function == do_internal
-		     || m_function == do_paren
+		     || m_quick_function == do_paren
 		     || m_function == do_repeat
 		     || m_function == do_return
 		     || m_function == do_while);

@@ -48,9 +48,9 @@ namespace CXXR {
                                   RObject** args,
                                   const PairList* tags);
 
-  quick_builtin do_arith_quick;
-  quick_builtin do_paren_quick;
-  quick_builtin do_relop_quick;
+  quick_builtin do_arith;
+  quick_builtin do_paren;
+  quick_builtin do_relop;
 }
 
 extern "C" {
@@ -78,7 +78,6 @@ SEXP do_allnames(SEXP, SEXP, SEXP, SEXP);
 SEXP do_aperm(SEXP, SEXP, SEXP, SEXP);
 SEXP do_aregexec(SEXP, SEXP, SEXP, SEXP);
 SEXP do_args(SEXP, SEXP, SEXP, SEXP);
-SEXP do_arith(SEXP, SEXP, SEXP, SEXP);
 SEXP do_array(SEXP, SEXP, SEXP, SEXP);
 SEXP do_asPOSIXct(SEXP, SEXP, SEXP, SEXP);
 SEXP do_asPOSIXlt(SEXP, SEXP, SEXP, SEXP);
@@ -300,7 +299,6 @@ SEXP do_options(SEXP, SEXP, SEXP, SEXP);
 SEXP do_order(SEXP, SEXP, SEXP, SEXP);
 SEXP do_pack(SEXP, SEXP, SEXP, SEXP);
 SEXP do_packBits(SEXP, SEXP, SEXP, SEXP);
-SEXP do_paren(SEXP, SEXP, SEXP, SEXP);
 SEXP do_parentenv(SEXP, SEXP, SEXP, SEXP);
 SEXP do_parentenvgets(SEXP, SEXP, SEXP, SEXP);
 SEXP do_parentframe(SEXP, SEXP, SEXP, SEXP);
@@ -343,7 +341,6 @@ SEXP do_recordGraphics(SEXP, SEXP, SEXP, SEXP);
 SEXP do_regexec(SEXP, SEXP, SEXP, SEXP);
 SEXP do_regexpr(SEXP, SEXP, SEXP, SEXP);
 SEXP do_regFinaliz(SEXP, SEXP, SEXP, SEXP);
-SEXP do_relop(SEXP, SEXP, SEXP, SEXP);
 SEXP do_relop_dflt(SEXP, SEXP, SEXP, SEXP);
 SEXP do_remove(SEXP, SEXP, SEXP, SEXP);
 SEXP do_rep(SEXP, SEXP, SEXP, SEXP);

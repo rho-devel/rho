@@ -1200,18 +1200,12 @@ SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
     return propagateBailout(lbo);
 }
 
-SEXP attribute_hidden do_paren(SEXP call, SEXP op, SEXP args, SEXP rho)
-{
-    checkArity(op, args);
-    return CAR(args);
-}
-
-RObject* attribute_hidden CXXR::do_paren_quick(const Expression* call,
-					       const BuiltInFunction* op,
-					       Environment* env,
-					       int num_args,
-					       RObject** args,
-					       const PairList* tags)
+RObject* attribute_hidden CXXR::do_paren(const Expression* call,
+					 const BuiltInFunction* op,
+					 Environment* env,
+					 int num_args,
+					 RObject** args,
+					 const PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     return args[0];

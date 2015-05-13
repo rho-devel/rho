@@ -120,23 +120,12 @@ namespace {
     }
 }  // anonymous namespace
 
-SEXP attribute_hidden do_relop(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    SEXP ans;
-
-    if (DispatchGroup("Ops", call, op, args, env, &ans))
-	return ans;
-    checkArity(op, args);
-    return do_relop_dflt(call, op, CAR(args), CADR(args));
-}
-
-
-RObject* attribute_hidden CXXR::do_relop_quick(const Expression* call,
-					       const BuiltInFunction* op,
-					       Environment* env,
-					       int num_args,
-					       RObject** args,
-					       const PairList* tags)
+RObject* attribute_hidden CXXR::do_relop(const Expression* call,
+					 const BuiltInFunction* op,
+					 Environment* env,
+					 int num_args,
+					 RObject** args,
+					 const PairList* tags)
 {
     // If any of the args has a class, then we might need to dispatch.
     auto result = op->InternalGroupDispatch("Ops", call, env, num_args, args,
