@@ -165,15 +165,15 @@ Rboolean isUnsorted(SEXP x, Rboolean strictly)
     return FALSE;/* sorted */
 }
 
-SEXP attribute_hidden do_isunsorted(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_isunsorted(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     int strictly;
     SEXP x, ans;
     int res = TRUE;
 
-    checkArity(op, args);
-    x = CAR(args);
-    strictly = asLogical(CADR(args));
+    op->checkNumArgs(num_args, call);
+    x = args[0];
+    strictly = asLogical(args[1]);
     if(strictly == NA_LOGICAL)
 	errorcall(call, _("invalid '%s' argument"), "strictly");
     R_xlen_t n = xlength(x);
@@ -183,7 +183,7 @@ SEXP attribute_hidden do_isunsorted(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(isObject(x)) {
 	/* try dispatch */
 	SEXP call;
-	PROTECT(call = lang3(install(".gtn"), x, CADR(args)));
+	PROTECT(call = lang3(install(".gtn"), x, args[1]));
 	ans = eval(call, rho);
 	UNPROTECT(1);
 	return ans;
@@ -315,24 +315,24 @@ void revsort(double *a, int *ib, int n)
 }
 
 
-SEXP attribute_hidden do_sort(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_sort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
     Rboolean decreasing;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    decreasing = CXXRCONSTRUCT(Rboolean, asLogical(CADR(args)));
+    decreasing = CXXRCONSTRUCT(Rboolean, asLogical(args[1]));
     if(decreasing == NA_LOGICAL)
 	error(_("'decreasing' must be TRUE or FALSE"));
-    if(CAR(args) == R_NilValue) return R_NilValue;
-    if(!isVectorAtomic(CAR(args)))
+    if(args[0] == R_NilValue) return R_NilValue;
+    if(!isVectorAtomic(args[0]))
 	error(_("only atomic vectors can be sorted"));
-    if(TYPEOF(CAR(args)) == RAWSXP)
+    if(TYPEOF(args[0]) == RAWSXP)
 	error(_("raw vectors cannot be sorted"));
     /* we need consistent behaviour here, including dropping attibutes,
        so as from 2.3.0 we always duplicate. */
-    PROTECT(ans = duplicate(CAR(args)));
+    PROTECT(ans = duplicate(args[0]));
     ans->clearAttributes();  /* this is never called with names */
     sortVector(ans, decreasing);
     UNPROTECT(1);
@@ -1294,7 +1294,7 @@ SEXP attribute_hidden do_order(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 /* FUNCTION: rank(x, length, ties.method) */
-SEXP attribute_hidden do_rank(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_rank(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP rank, x;
     int *ik = nullptr /* -Wall */;
@@ -1302,12 +1302,12 @@ SEXP attribute_hidden do_rank(SEXP call, SEXP op, SEXP args, SEXP rho)
     enum {AVERAGE, MAX, MIN} ties_kind = AVERAGE;
     Rboolean isLong = FALSE;
 
-    checkArity(op, args);
-    x = CAR(args);
+    op->checkNumArgs(num_args, call);
+    x = args[0];
     if(TYPEOF(x) == RAWSXP)
 	error(_("raw vectors cannot be sorted"));
 #ifdef LONG_VECTOR_SUPPORT
-    SEXP sn = CADR(args);
+    SEXP sn = args[1];
     R_xlen_t n;
     if (TYPEOF(sn) == REALSXP)  {
 	double d = REAL(x)[0];
@@ -1328,7 +1328,7 @@ SEXP attribute_hidden do_rank(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (n == NA_INTEGER || n < 0)
 	error(_("invalid '%s' value"), "length(xx)");
 #endif
-    const char *ties_str = CHAR(asChar(CADDR(args)));
+    const char *ties_str = CHAR(asChar(args[2]));
     if(!strcmp(ties_str, "average"))	ties_kind = AVERAGE;
     else if(!strcmp(ties_str, "max"))	ties_kind = MAX;
     else if(!strcmp(ties_str, "min"))	ties_kind = MIN;
@@ -1389,20 +1389,20 @@ SEXP attribute_hidden do_rank(SEXP call, SEXP op, SEXP args, SEXP rho)
 #include <R_ext/RS.h>
 
 /* also returns integers/doubles (a method for sort.list) */
-SEXP attribute_hidden do_radixsort(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_radixsort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans;
     Rboolean nalast, decreasing;
     R_xlen_t i, n;
     int tmp, xmax = NA_INTEGER, xmin = NA_INTEGER, off, napos;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    x = CAR(args);
-    nalast = CXXRCONSTRUCT(Rboolean, asLogical(CADR(args)));
+    x = args[0];
+    nalast = CXXRCONSTRUCT(Rboolean, asLogical(args[1]));
     if(nalast == NA_LOGICAL)
 	error(_("invalid '%s' value"), "na.last");
-    decreasing = CXXRCONSTRUCT(Rboolean, asLogical(CADDR(args)));
+    decreasing = CXXRCONSTRUCT(Rboolean, asLogical(args[2]));
     if(decreasing == NA_LOGICAL)
 	error(_("'decreasing' must be TRUE or FALSE"));
     off = nalast^decreasing ? 0 : 1;

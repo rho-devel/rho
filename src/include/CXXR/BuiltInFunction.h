@@ -312,11 +312,11 @@ namespace CXXR {
 	// Alternative C function.  This differs from CCODE primarily in
 	// that the arguments are passed in an array instead of a linked
 	// list.
-        typedef RObject*(*QuickInvokeFunction)(const Expression* call,
+        typedef RObject*(*QuickInvokeFunction)(/*const*/ Expression* call,
 					       const BuiltInFunction* op,
 					       Environment* env,
+					       /*const*/ RObject** args,
 					       int num_args,
-					       RObject** args,
 					       const PairList* tags);
 
 	// 'Pretty-print' information:
@@ -336,6 +336,19 @@ namespace CXXR {
 	    unsigned int flags;  // misc flags: see names.cpp
 	    int	arity;  // function arity; -1 means 'any'
 	    PPinfo gram;  // 'pretty-print' information
+
+          TableEntry(const char*,
+                     CCODE,
+                     unsigned int,
+                     unsigned int,
+                     int, 
+                     PPinfo);
+          TableEntry(const char*,
+                     QuickInvokeFunction,
+                     unsigned int,
+                     unsigned int,
+                     int, 
+                     PPinfo);
 	};
 
 	// SOFT_ON signifies that result printing should be enabled

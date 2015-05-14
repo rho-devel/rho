@@ -172,15 +172,15 @@ SEXP attribute_hidden R_sysfunction(int n, ClosureContext* cptr)
 /* functions to support looking up information about the browser */
 /* contexts that are in the evaluation stack */
 
-SEXP attribute_hidden do_sysbrowser(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_sysbrowser(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     int n;
 
-    checkArity(op, args);
-    n = asInteger(CAR(args));
+    op->checkNumArgs(num_args, call);
+    n = asInteger(args[0]);
     if(n < 1 ) error(_("number of contexts must be positive"));
 
-    switch (PRIMVAL(op)) {
+    switch (op->variant()) {
     case 1: /* text */
     case 2: /* condition */
 	{
@@ -191,7 +191,7 @@ SEXP attribute_hidden do_sysbrowser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    Browser* browser
 		= Browser::fromOutermost(Browser::numberActive() - n);
-	    return PRIMVAL(op) == 1 ? browser->text() : browser->condition();
+	    return op->variant() == 1 ? browser->text() : browser->condition();
 	}
 	break;
     case 3: /* turn on debugging n levels up */
@@ -299,14 +299,14 @@ SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 }
 
-SEXP attribute_hidden do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_parentframe(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     int n;
     SEXP t;
     ClosureContext *cptr;
 
-    checkArity(op, args);
-    t = CAR(args);
+    op->checkNumArgs(num_args, call);
+    t = args[0];
     n = asInteger(t);
 
     if(n == NA_INTEGER || n < 1 )

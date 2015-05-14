@@ -95,29 +95,29 @@ static void namewalk(SEXP s, NameWalkData *d)
 
 /* Also does all.vars with functions=FALSE
    .Internal(all.names(expr, functions, max.names, unique)) */
-SEXP attribute_hidden do_allnames(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_allnames(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP expr;
     int i, savecount;
     NameWalkData data = {nullptr, 0, 0, 0, 0, 0};
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    expr = CAR(args);
-    args = CDR(args);
+    expr = args[0];
+    args = (args + 1);
 
-    data.IncludeFunctions = asLogical(CAR(args));
+    data.IncludeFunctions = asLogical(args[0]);
     if(data.IncludeFunctions == NA_LOGICAL)
 	data.IncludeFunctions = 0;
-    args = CDR(args);
+    args = (args + 1);
 
-    data.MaxCount = asInteger(CAR(args));
+    data.MaxCount = asInteger(args[0]);
     if(data.MaxCount == -1) data.MaxCount = INT_MAX;
     if(data.MaxCount < 0 || data.MaxCount == NA_INTEGER)
 	data.MaxCount = 0;
-    args = CDR(args);
+    args = (args + 1);
 
-    data.UniqueNames = asLogical(CAR(args));
+    data.UniqueNames = asLogical(args[0]);
     if(data.UniqueNames == NA_LOGICAL)
 	data.UniqueNames = 1;
 

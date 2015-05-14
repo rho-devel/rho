@@ -392,7 +392,7 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
     return (CAR(args));
 }
 
-SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP file, names, o, objs, tval, source, outnames;
     int i, j, nobjs, nout, res;
@@ -401,23 +401,23 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
     int opts;
     const char *obj_name;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    names = CAR(args);
-    file = CADR(args);
+    names = args[0];
+    file = args[1];
     if(!isString(names))
 	error( _("character arguments expected"));
     nobjs = length(names);
     if(nobjs < 1 || length(file) < 1)
 	error(_("zero-length argument"));
-    source = CADDR(args);
+    source = args[2];
     if (source != R_NilValue && TYPEOF(source) != ENVSXP)
 	error(_("invalid '%s' argument"), "envir");
-    opts = asInteger(CADDDR(args));
+    opts = asInteger(args[3]);
     /* <NOTE>: change this if extra options are added */
     if(opts == NA_INTEGER || opts < 0 || opts > 256)
 	errorcall(call, _("'opts' should be small non-negative integer"));
-    evaluate = CXXRCONSTRUCT(Rboolean, asLogical(CAD4R(args)));
+    evaluate = CXXRCONSTRUCT(Rboolean, asLogical(args[4]));
     if (!evaluate) opts |= DELAYPROMISES;
 
     PROTECT(o = objs = allocList(nobjs));

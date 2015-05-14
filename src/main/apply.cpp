@@ -292,20 +292,20 @@ static SEXP do_one(SEXP X, SEXP FUN, SEXP classes, SEXP deflt,
     else return duplicate(deflt);
 }
 
-SEXP attribute_hidden do_rapply(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_rapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP X, FUN, classes, deflt, how, ans, names;
     int i, n;
     Rboolean replace;
 
-    checkArity(op, args);
-    X = CAR(args); args = CDR(args);
-    FUN = CAR(args); args = CDR(args);
+    op->checkNumArgs(num_args, call);
+    X = args[0]; args = (args + 1);
+    FUN = args[0]; args = (args + 1);
     if(!isFunction(FUN)) error(_("invalid '%s' argument"), "f");
-    classes = CAR(args); args = CDR(args);
+    classes = args[0]; args = (args + 1);
     if(!isString(classes)) error(_("invalid '%s' argument"), "classes");
-    deflt = CAR(args); args = CDR(args);
-    how = CAR(args);
+    deflt = args[0]; args = (args + 1);
+    how = args[0];
     if(!isString(how)) error(_("invalid '%s' argument"), "how");
     replace = CXXRCONSTRUCT(Rboolean, strcmp(CHAR(STRING_ELT(how, 0)), "replace") == 0); /* ASCII */
     n = length(X);
@@ -345,15 +345,15 @@ static Rboolean islistfactor(SEXP X)
 
 /* is this a tree with only factor leaves? */
 
-SEXP attribute_hidden do_islistfactor(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_islistfactor(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP X;
     Rboolean lans = TRUE, recursive;
     int i, n;
 
-    checkArity(op, args);
-    X = CAR(args);
-    recursive = CXXRCONSTRUCT(Rboolean, asLogical(CADR(args)));
+    op->checkNumArgs(num_args, call);
+    X = args[0];
+    recursive = CXXRCONSTRUCT(Rboolean, asLogical(args[1]));
     n = length(X);
     if(n == 0 || !isVectorList(X)) {
 	lans = FALSE;

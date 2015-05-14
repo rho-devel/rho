@@ -71,16 +71,16 @@ random1(double (*f) (double), double *a, R_xlen_t na, double *x, R_xlen_t n)
 /* "do_random1" - random sampling from 1 parameter families. */
 /* See switch below for distributions. */
 
-SEXP attribute_hidden do_random1(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_random1(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, a;
     R_xlen_t i, n, na;
-    checkArity(op, args);
-    if (!isVector(CAR(args)) || !isNumeric(CADR(args)))
+    op->checkNumArgs(num_args, call);
+    if (!isVector(args[0]) || !isNumeric(args[1]))
 	invalid(call);
-    if (XLENGTH(CAR(args)) == 1) {
+    if (XLENGTH(args[0]) == 1) {
 #ifdef LONG_VECTOR_SUPPORT
-	double dn = asReal(CAR(args));
+	double dn = asReal(args[0]);
 	if (ISNAN(dn) || dn < 0 || dn > R_XLEN_T_MAX)
 	    invalid(call);
 	n = R_xlen_t( dn);
@@ -90,13 +90,13 @@ SEXP attribute_hidden do_random1(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    invalid(call);
 #endif
     }
-    else n = XLENGTH(CAR(args));
+    else n = XLENGTH(args[0]);
     PROTECT(x = allocVector(REALSXP, n));
     if (n == 0) {
 	UNPROTECT(1);
 	return(x);
     }
-    na = XLENGTH(CADR(args));
+    na = XLENGTH(args[1]);
     if (na < 1) {
 	for (i = 0; i < n; i++)
 	    REAL(x)[i] = NA_REAL;
@@ -104,9 +104,9 @@ SEXP attribute_hidden do_random1(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     else {
 	Rboolean naflag = FALSE;
-	PROTECT(a = coerceVector(CADR(args), REALSXP));
+	PROTECT(a = coerceVector(args[1], REALSXP));
 	GetRNGstate();
-	switch (PRIMVAL(op)) {
+	switch (op->variant()) {
 	    RAND1(0, rchisq);
 	    RAND1(1, rexp);
 	    RAND1(2, rgeom);
@@ -150,18 +150,18 @@ static Rboolean random2(double (*f) (double, double),
 /* "do_random2" - random sampling from 2 parameter families. */
 /* See switch below for distributions. */
 
-SEXP attribute_hidden do_random2(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_random2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, a, b;
     R_xlen_t i, n, na, nb;
-    checkArity(op, args);
-    if (!isVector(CAR(args)) ||
-	!isNumeric(CADR(args)) ||
-	!isNumeric(CADDR(args)))
+    op->checkNumArgs(num_args, call);
+    if (!isVector(args[0]) ||
+	!isNumeric(args[1]) ||
+	!isNumeric(args[2]))
 	invalid(call);
-    if (XLENGTH(CAR(args)) == 1) {
+    if (XLENGTH(args[0]) == 1) {
 #ifdef LONG_VECTOR_SUPPORT
-	double dn = asReal(CAR(args));
+	double dn = asReal(args[0]);
 	if (ISNAN(dn) || dn < 0 || dn > R_XLEN_T_MAX)
 	    invalid(call);
 	n = R_xlen_t( dn);
@@ -171,14 +171,14 @@ SEXP attribute_hidden do_random2(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    invalid(call);
 #endif
     }
-    else n = XLENGTH(CAR(args));
+    else n = XLENGTH(args[0]);
     PROTECT(x = allocVector(REALSXP, n));
     if (n == 0) {
 	UNPROTECT(1);
 	return(x);
     }
-    na = XLENGTH(CADR(args));
-    nb = XLENGTH(CADDR(args));
+    na = XLENGTH(args[1]);
+    nb = XLENGTH(args[2]);
     if (na < 1 || nb < 1) {
 	for (i = 0; i < n; i++)
 	    REAL(x)[i] = NA_REAL;
@@ -186,10 +186,10 @@ SEXP attribute_hidden do_random2(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     else {
 	Rboolean naflag = FALSE;
-	PROTECT(a = coerceVector(CADR(args), REALSXP));
-	PROTECT(b = coerceVector(CADDR(args), REALSXP));
+	PROTECT(a = coerceVector(args[1], REALSXP));
+	PROTECT(b = coerceVector(args[2], REALSXP));
 	GetRNGstate();
-	switch (PRIMVAL(op)) {
+	switch (op->variant()) {
 	    RAND2(0, rbeta);
 	    RAND2(1, rbinom);
 	    RAND2(2, rcauchy);
@@ -245,15 +245,15 @@ random3(double (*f) (double, double, double), double *a,
 /* "do_random3" - random sampling from 3 parameter families. */
 /* See switch below for distributions. */
 
-SEXP attribute_hidden do_random3(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_random3(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, a, b, c;
     R_xlen_t i, n, na, nb, nc;
-    checkArity(op, args);
-    if (!isVector(CAR(args))) invalid(call);
-    if (LENGTH(CAR(args)) == 1) {
+    op->checkNumArgs(num_args, call);
+    if (!isVector(args[0])) invalid(call);
+    if (LENGTH(args[0]) == 1) {
 #ifdef LONG_VECTOR_SUPPORT
-	double dn = asReal(CAR(args));
+	double dn = asReal(args[0]);
 	if (ISNAN(dn) || dn < 0 || dn > R_XLEN_T_MAX)
 	    invalid(call);
 	n = R_xlen_t( dn);
@@ -263,16 +263,16 @@ SEXP attribute_hidden do_random3(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    invalid(call);
 #endif
     }
-    else n = XLENGTH(CAR(args));
+    else n = XLENGTH(args[0]);
     PROTECT(x = allocVector(REALSXP, n));
     if (n == 0) {
 	UNPROTECT(1);
 	return(x);
     }
 
-    args = CDR(args); a = CAR(args);
-    args = CDR(args); b = CAR(args);
-    args = CDR(args); c = CAR(args);
+    args = (args + 1); a = args[0];
+    args = (args + 1); b = args[0];
+    args = (args + 1); c = args[0];
     if (!isNumeric(a) || !isNumeric(b) || !isNumeric(c))
 	invalid(call);
     na = XLENGTH(a);
@@ -289,7 +289,7 @@ SEXP attribute_hidden do_random3(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(b = coerceVector(b, REALSXP));
 	PROTECT(c = coerceVector(c, REALSXP));
 	GetRNGstate();
-	switch (PRIMVAL(op)) {
+	switch (op->variant()) {
 	    RAND3(0, rhyper);
 	default:
 	    error("internal error in do_random3");
@@ -476,18 +476,18 @@ static R_INLINE double ru()
 /* do_sample - probability sampling with/without replacement.
    .Internal(sample(n, size, replace, prob))
 */
-SEXP attribute_hidden do_sample(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_sample(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, y, sn, sk, prob, sreplace;
 
-    checkArity(op, args);
-    sn = CAR(args); args = CDR(args);
-    sk = CAR(args); args = CDR(args); /* size */
-    sreplace = CAR(args); args = CDR(args);
+    op->checkNumArgs(num_args, call);
+    sn = args[0]; args = (args + 1);
+    sk = args[0]; args = (args + 1); /* size */
+    sreplace = args[0]; args = (args + 1);
     if(length(sreplace) != 1)
 	 error(_("invalid '%s' argument"), "replace");
     int replace = asLogical(sreplace);
-    prob = CAR(args);
+    prob = args[0];
     if (replace == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "replace");
     GetRNGstate();

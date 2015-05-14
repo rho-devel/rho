@@ -708,7 +708,6 @@ SEXP Rf_EnsureString(SEXP);
 SEXP Rf_allocCharsxp(R_len_t);
 SEXP Rf_append(SEXP, SEXP); /* apparently unused now */
 R_xlen_t asVecSize(SEXP x);
-void Rf_check1arg(SEXP, SEXP, const char *);
 void Rf_checkArityCall(SEXP, SEXP, SEXP);
 void R_check_locale(void);
 void Rf_CleanEd(void);
@@ -749,6 +748,8 @@ void R_InitialData(void);
 #ifdef __cplusplus
 }  // extern "C"
 std::pair<bool, SEXP> R_possible_dispatch(SEXP, SEXP, SEXP, SEXP, Rboolean);
+// TODO: need a C version for complex.c
+void Rf_check1arg(const CXXR::RObject* args, const CXXR::RObject* call, const char*);
 extern "C" {
 #endif
 

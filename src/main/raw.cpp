@@ -33,12 +33,12 @@
 #define isRaw(x) (TYPEOF(x) == RAWSXP)
 
 /* charToRaw works at byte level, ignores encoding */
-SEXP attribute_hidden do_charToRaw(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_charToRaw(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP ans, x = CAR(args);
+    SEXP ans, x = args[0];
     int nc;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     if (!isString(x) || LENGTH(x) == 0)
 	error(_("argument must be a character vector of length 1"));
     if (LENGTH(x) > 1)
@@ -50,14 +50,14 @@ SEXP attribute_hidden do_charToRaw(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* <UTF8>  rawToChar should work at byte level */
-SEXP attribute_hidden do_rawToChar(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_rawToChar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP ans, x = CAR(args);
+    SEXP ans, x = args[0];
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     if (!isRaw(x))
 	error(_("argument 'x' must be a raw vector"));
-    int multiple = asLogical(CADR(args));
+    int multiple = asLogical(args[1]);
     if (multiple == NA_LOGICAL)
 	error(_("argument 'multiple' must be TRUE or FALSE"));
     if (multiple) {
@@ -85,10 +85,10 @@ SEXP attribute_hidden do_rawToChar(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 
-SEXP attribute_hidden do_rawShift(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_rawShift(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP ans, x = CAR(args);
-    int shift = asInteger(CADR(args));
+    SEXP ans, x = args[0];
+    int shift = asInteger(args[1]);
 
 
     if (!isRaw(x))
@@ -106,9 +106,9 @@ SEXP attribute_hidden do_rawShift(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP attribute_hidden do_rawToBits(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_rawToBits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP ans, x = CAR(args);
+    SEXP ans, x = args[0];
     R_xlen_t i, j = 0;
     unsigned int tmp;
 
@@ -124,13 +124,13 @@ SEXP attribute_hidden do_rawToBits(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP attribute_hidden do_intToBits(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_intToBits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x;
     R_xlen_t i, j = 0;
     unsigned int tmp;
     
-    PROTECT(x = coerceVector(CAR(args), INTSXP));
+    PROTECT(x = coerceVector(args[0], INTSXP));
     if (!isInteger(x))
 	error(_("argument 'x' must be an integer vector"));
     PROTECT(ans = allocVector(RAWSXP, 32*XLENGTH(x)));
@@ -143,9 +143,9 @@ SEXP attribute_hidden do_intToBits(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP attribute_hidden do_packBits(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_packBits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP ans, x = CAR(args), stype = CADR(args);
+    SEXP ans, x = args[0], stype = args[1];
     Rboolean useRaw;
     R_xlen_t i, len = XLENGTH(x), slen;
     int fac;
@@ -267,14 +267,14 @@ static int mbrtoint(int *w, const char *s)
     /* return -2; not reached */
 }
 
-SEXP attribute_hidden do_utf8ToInt(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_utf8ToInt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP ans, x = CAR(args);
+    SEXP ans, x = args[0];
     int tmp, used = 0; /* -Wall */
     const char *s;
     R_xlen_t i, j, nc;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     if (!isString(x) || LENGTH(x) == 0)
 	error(_("argument must be a character vector of length 1"));
     if (LENGTH(x) > 1)
@@ -321,18 +321,18 @@ static size_t inttomb(char *s, const int wc)
 
 #include <R_ext/RS.h>  /* for Calloc/Free */
 
-SEXP attribute_hidden do_intToUtf8(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_intToUtf8(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x;
     int multiple;
     size_t used, len;
     char buf[10], *tmp;
 
-    checkArity(op, args);
-    PROTECT(x = coerceVector(CAR(args), INTSXP));
+    op->checkNumArgs(num_args, call);
+    PROTECT(x = coerceVector(args[0], INTSXP));
     if (!isInteger(x))
 	error(_("argument 'x' must be an integer vector"));
-    multiple = asLogical(CADR(args));
+    multiple = asLogical(args[1]);
     if (multiple == NA_LOGICAL)
 	error(_("argument 'multiple' must be TRUE or FALSE"));
     if (multiple) {

@@ -155,15 +155,18 @@ static SEXP icummin(SEXP x, SEXP s)
     return s;
 }
 
-SEXP attribute_hidden do_cum(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_cum(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP s, t, ans;
     R_xlen_t i, n;
-    checkArity(op, args);
-    if (DispatchGroup("Math", call, op, args, env, &ans))
-	return ans;
-    if (isComplex(CAR(args))) {
-	t = CAR(args);
+    op->checkNumArgs(num_args, call);
+    // If any of the args has a class, then we might need to dispatch.
+    auto result = op->InternalGroupDispatch("Math", call, env, num_args, args,
+					    tags);
+    if (result.first)
+	return result.second;
+    if (isComplex(args[0])) {
+	t = args[0];
 	n = XLENGTH(t);
 	PROTECT(s = allocVector(CPLXSXP, n));
 	setAttrib(s, R_NamesSymbol, getAttrib(t, R_NamesSymbol));
@@ -173,7 +176,7 @@ SEXP attribute_hidden do_cum(SEXP call, SEXP op, SEXP args, SEXP env)
 	    COMPLEX(s)[i].r = NA_REAL;
 	    COMPLEX(s)[i].i = NA_REAL;
 	}
-	switch (PRIMVAL(op) ) {
+	switch (op->variant() ) {
 	case 1:	/* cumsum */
 	    return ccumsum(t, s);
 	    break;
@@ -189,16 +192,16 @@ SEXP attribute_hidden do_cum(SEXP call, SEXP op, SEXP args, SEXP env)
 	default:
 	    errorcall(call, "unknown cumxxx function");
 	}
-    } else if( ( isInteger(CAR(args)) || isLogical(CAR(args)) ) &&
-	       PRIMVAL(op) != 2) {
-	PROTECT(t = coerceVector(CAR(args), INTSXP));
+    } else if( ( isInteger(args[0]) || isLogical(args[0]) ) &&
+	       op->variant() != 2) {
+	PROTECT(t = coerceVector(args[0], INTSXP));
 	n = XLENGTH(t);
 	PROTECT(s = allocVector(INTSXP, n));
 	setAttrib(s, R_NamesSymbol, getAttrib(t, R_NamesSymbol));
 	UNPROTECT(2);
 	if(n == 0) return s;
 	for(i = 0 ; i < n ; i++) INTEGER(s)[i] = NA_INTEGER;
-	switch (PRIMVAL(op) ) {
+	switch (op->variant() ) {
 	case 1:	/* cumsum */
 	    return icumsum(t,s);
 	    break;
@@ -212,14 +215,14 @@ SEXP attribute_hidden do_cum(SEXP call, SEXP op, SEXP args, SEXP env)
 	    errorcall(call, _("unknown cumxxx function"));
 	}
     } else {
-	PROTECT(t = coerceVector(CAR(args), REALSXP));
+	PROTECT(t = coerceVector(args[0], REALSXP));
 	n = XLENGTH(t);
 	PROTECT(s = allocVector(REALSXP, n));
 	setAttrib(s, R_NamesSymbol, getAttrib(t, R_NamesSymbol));
 	UNPROTECT(2);
 	if(n == 0) return s;
 	for(i = 0 ; i < n ; i++) REAL(s)[i] = NA_REAL;
-	switch (PRIMVAL(op) ) {
+	switch (op->variant() ) {
 	case 1:	/* cumsum */
 	    return cumsum(t,s);
 	    break;

@@ -662,18 +662,18 @@ int any_duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
   .Internal(unique(x))	          [op=1]
    .Internal(anyDuplicated(x))    [op=2]
 */
-SEXP attribute_hidden do_duplicated(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_duplicated(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, incomp, dup, ans;
     int fromLast, nmax = NA_INTEGER;
     R_xlen_t i, k, n;
 
-    checkArity(op, args);
-    x = CAR(args);
-    incomp = CADR(args);
-    if (length(CADDR(args)) < 1)
+    op->checkNumArgs(num_args, call);
+    x = args[0];
+    incomp = args[1];
+    if (length(args[2]) < 1)
 	error(_("'fromLast' must be length 1"));
-    fromLast = asLogical(CADDR(args));
+    fromLast = asLogical(args[2]);
     if (fromLast == NA_LOGICAL)
 	error(_("'fromLast' must be TRUE or FALSE"));
 
@@ -681,35 +681,35 @@ SEXP attribute_hidden do_duplicated(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* handle zero length vectors, and NULL */
     if ((n = xlength(x)) == 0)
-	return(PRIMVAL(op) <= 1
-	       ? allocVector(PRIMVAL(op) != 1 ? LGLSXP : TYPEOF(x), 0)
+	return(op->variant() <= 1
+	       ? allocVector(op->variant() != 1 ? LGLSXP : TYPEOF(x), 0)
 	       : ScalarInteger(0));
 
     if (!isVector(x)) {
 	error(_("%s() applies only to vectors"),
-	      (PRIMVAL(op) == 0 ? "duplicated" :
-	       (PRIMVAL(op) == 1 ? "unique" : /* 2 */ "anyDuplicated")));
+	      (op->variant() == 0 ? "duplicated" :
+	       (op->variant() == 1 ? "unique" : /* 2 */ "anyDuplicated")));
     }
-    if (PRIMVAL(op) <= 1) {
-	nmax = asInteger(CADDDR(args));
+    if (op->variant() <= 1) {
+	nmax = asInteger(args[3]);
 	if (nmax != NA_INTEGER && nmax <= 0)
 	    error(_("'nmax' must be positive"));
     }
 
     if(length(incomp) && /* S has FALSE to mean empty */
        !(isLogical(incomp) && length(incomp) == 1 && LOGICAL(incomp)[0] == 0)) {
-	if(PRIMVAL(op) == 2) /* return R's 1-based index :*/
+	if(op->variant() == 2) /* return R's 1-based index :*/
 	    return ScalarInteger(any_duplicated3(x, incomp, fL));
 	else
 	    dup = duplicated3(x, incomp, fL, nmax);
     }
     else {
-	if(PRIMVAL(op) == 2)
+	if(op->variant() == 2)
 	    return ScalarInteger(any_duplicated(x, fL));
 	else
 	    dup = Duplicated(x, fL, nmax);
     }
-    if (PRIMVAL(op) == 0) /* "duplicated()" */
+    if (op->variant() == 0) /* "duplicated()" */
 	return dup;
     /*	ELSE
 	use the results of "duplicated" to get "unique" */
@@ -912,22 +912,22 @@ SEXP match(SEXP itable, SEXP ix, int nmatch)
 }
 
 
-SEXP attribute_hidden do_match(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_match(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    if ((!isVector(CAR(args)) && !isNull(CAR(args)))
-	|| (!isVector(CADR(args)) && !isNull(CADR(args))))
+    if ((!isVector(args[0]) && !isNull(args[0]))
+	|| (!isVector(args[1]) && !isNull(args[1])))
 	error(_("'match' requires vector arguments"));
 
-    int nomatch = asInteger(CADDR(args));
-    SEXP incomp = CADDDR(args);
+    int nomatch = asInteger(args[2]);
+    SEXP incomp = args[3];
 
     if(length(incomp) && /* S has FALSE to mean empty */
        !(isLogical(incomp) && length(incomp) == 1 && LOGICAL(incomp)[0] == 0))
-	return match5(CADR(args), CAR(args), nomatch, incomp, env);
+	return match5(args[1], args[0], nomatch, incomp, env);
     else
-	return matchE(CADR(args), CAR(args), nomatch, env);
+	return matchE(args[1], args[0], nomatch, env);
 }
 
 /* pmatch and charmatch return integer positions, so cannot be used
@@ -944,7 +944,7 @@ SEXP attribute_hidden do_match(SEXP call, SEXP op, SEXP args, SEXP env)
  * Empty strings are unmatched                        BDR 2000/2/16
  */
 
-SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_pmatch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, input, target;
     int mtch, n_target, mtch_count, dups_ok, no_match;
@@ -954,13 +954,13 @@ SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
     Rboolean no_dups;
     Rboolean useBytes = FALSE, useUTF8 = FALSE;
 
-    checkArity(op, args);
-    input = CAR(args);
+    op->checkNumArgs(num_args, call);
+    input = args[0];
     R_xlen_t n_input = XLENGTH(input);
-    target = CADR(args);
+    target = args[1];
     n_target = LENGTH(target); // not allowed to be long
-    no_match = asInteger(CADDR(args));
-    dups_ok = asLogical(CADDDR(args));
+    no_match = asInteger(args[2]);
+    dups_ok = asLogical(args[3]);
     if (dups_ok == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "duplicates.ok");
     no_dups = CXXRCONSTRUCT(Rboolean, !dups_ok);
@@ -1107,22 +1107,22 @@ SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
 /* Partial Matching of Strings */
 /* Based on Therneau's charmatch. */
 
-SEXP attribute_hidden do_charmatch(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_charmatch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, input, target;
     const char *ss, *st;
     Rboolean useBytes = FALSE, useUTF8 = FALSE;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    input = CAR(args);
+    input = args[0];
     R_xlen_t n_input = LENGTH(input);
-    target = CADR(args);
+    target = args[1];
     int n_target = LENGTH(target);
 
     if (!isString(input) || !isString(target))
 	error(_("argument is not of mode character"));
-    int no_match = asInteger(CADDR(args));
+    int no_match = asInteger(args[2]);
 
     for(R_xlen_t i = 0; i < n_input; i++) {
 	if(IS_BYTES(STRING_ELT(input, i))) {
@@ -1575,15 +1575,15 @@ rowsum_df(SEXP x, SEXP g, SEXP uniqueg, SEXP snarm, SEXP rn)
     return ans;
 }
 
-SEXP attribute_hidden do_rowsum(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_rowsum(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
-    if(PRIMVAL(op) == 1)
-	return rowsum_df(CAR(args), CADR(args), CADDR(args), CADDDR(args),
-			 CAD4R(args));
+    op->checkNumArgs(num_args, call);
+    if(op->variant() == 1)
+	return rowsum_df(args[0], args[1], args[2], args[3],
+			 args[4]);
     else
-	return rowsum(CAR(args), CADR(args), CADDR(args), CADDDR(args), 
-		      CAD4R(args));
+	return rowsum(args[0], args[1], args[2], args[3], 
+		      args[4]);
 }
 
 
@@ -1622,7 +1622,7 @@ static SEXP duplicated2(SEXP x, HashData *d)
     return ans;
 }
 
-SEXP attribute_hidden do_makeunique(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_makeunique(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP names, sep, ans, dup, newx;
     int i, cnt, *cnts, dp;
@@ -1631,12 +1631,12 @@ SEXP attribute_hidden do_makeunique(SEXP call, SEXP op, SEXP args, SEXP env)
     const char *csep, *ss;
     const void *vmax;
 
-    checkArity(op, args);
-    names = CAR(args);
+    op->checkNumArgs(num_args, call);
+    names = args[0];
     if(!isString(names))
 	error(_("'names' must be a character vector"));
     n = LENGTH(names);
-    sep = CADR(args);
+    sep = args[1];
     if(!isString(sep) || LENGTH(sep) != 1)
 	error(_("'sep' must be a character string"));
     csep = translateChar(STRING_ELT(sep, 0));
@@ -1737,12 +1737,12 @@ static R_INLINE double ru()
     return (floor(U*unif_rand()) + unif_rand())/U;
 }
 
-SEXP attribute_hidden do_sample2(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_sample2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     SEXP ans;
-    double dn = asReal(CAR(args));
-    int k = asInteger(CADR(args));
+    double dn = asReal(args[0]);
+    int k = asInteger(args[1]);
     if (!R_FINITE(dn) || dn < 0 || dn > 4.5e15 || (k > 0 && dn == 0)) 
 	error(_("invalid first argument"));
     if (k < 0) error(_("invalid '%s' argument"), "size");

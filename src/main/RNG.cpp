@@ -500,17 +500,17 @@ static void Norm_kind(N01type kind)
 
 /*------ .Internal interface ------------------------*/
 
-SEXP attribute_hidden do_RNGkind (SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_RNGkind (/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, rng, norm;
 
-    checkArity(op,args);
+    op->checkNumArgs(num_args, call);
     GetRNGstate(); /* might not be initialized */
     PROTECT(ans = allocVector(INTSXP, 2));
     INTEGER(ans)[0] = RNG_kind;
     INTEGER(ans)[1] = N01_kind;
-    rng = CAR(args);
-    norm = CADR(args);
+    rng = args[0];
+    norm = args[1];
     GetRNGkind(R_NilValue); /* pull from .Random.seed if present */
     if(!isNull(rng)) { /* set a new RNG kind */
 	RNGkind(RNGtype( asInteger(rng)));
@@ -523,19 +523,19 @@ SEXP attribute_hidden do_RNGkind (SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 
-SEXP attribute_hidden do_setseed (SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_setseed (/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP skind, nkind;
     int seed;
 
-    checkArity(op, args);
-    if(!isNull(CAR(args))) {
-	seed = asInteger(CAR(args));
+    op->checkNumArgs(num_args, call);
+    if(!isNull(args[0])) {
+	seed = asInteger(args[0]);
 	if (seed == NA_INTEGER)
 	    error(_("supplied seed is not a valid integer"));
     } else seed = CXXRCONSTRUCT(int, TimeToSeed());
-    skind = CADR(args);
-    nkind = CADDR(args);
+    skind = args[1];
+    nkind = args[2];
     GetRNGkind(R_NilValue); /* pull RNG_kind, N01_kind from 
 			       .Random.seed if present */
     if (!isNull(skind)) RNGkind(RNGtype( asInteger(skind)));

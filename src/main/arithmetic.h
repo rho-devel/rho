@@ -27,12 +27,15 @@
 #define ARITHMETIC_H 1
 
 #ifdef __cplusplus
+
+#include <Internal.h>
+CXXR::quick_builtin do_math3;
+
 extern "C" {
 #endif
 
 SEXP do_math1(SEXP, SEXP, SEXP, SEXP);
 SEXP do_math2(SEXP, SEXP, SEXP, SEXP);
-SEXP do_math3(SEXP, SEXP, SEXP, SEXP);
 SEXP do_math4(SEXP, SEXP, SEXP, SEXP);
 #ifdef WHEN_MATH5_IS_THERE
  SEXP do_math5(SEXP, SEXP, SEXP, SEXP);

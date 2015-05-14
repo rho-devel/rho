@@ -99,10 +99,10 @@ SEXP attribute_hidden do_trace(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* maintain global trace state */
 
-SEXP attribute_hidden do_traceOnOff(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_traceOnOff(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
-    SEXP onOff = CAR(args);
+    op->checkNumArgs(num_args, call);
+    SEXP onOff = args[0];
     Rboolean prev = Rboolean(FunctionBase::tracingEnabled());
     if(length(onOff) > 0) {
 	Rboolean _new = CXXRCONSTRUCT(Rboolean, asLogical(onOff));
@@ -121,7 +121,7 @@ R_current_trace_state() { return Rboolean(FunctionBase::tracingEnabled()); }
 /* memory tracing */
 /* report when a traced object is duplicated */
 
-SEXP attribute_hidden do_tracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_tracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
 #ifdef R_MEMORY_PROFILING
     SEXP object;
@@ -151,7 +151,7 @@ SEXP attribute_hidden do_tracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP attribute_hidden do_untracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_untracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
 #ifdef R_MEMORY_PROFILING
     SEXP object;
@@ -215,7 +215,7 @@ void RObject::traceMemory(const RObject* src1, const RObject* src2,
 
 #endif /* R_MEMORY_PROFILING */
 
-SEXP attribute_hidden do_retracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_retracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
 #ifdef R_MEMORY_PROFILING
     SEXP object, previous, ans, ap, argList;

@@ -157,17 +157,17 @@ static SEXP seq_colon(double n1, double n2, SEXP call)
     return ans;
 }
 
-SEXP attribute_hidden do_colon(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_colon(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP s1, s2;
     double n1, n2;
 
-    checkArity(op, args);
-    if (inherits(CAR(args), "factor") && inherits(CADR(args), "factor"))
-	return(cross_colon(call, CAR(args), CADR(args)));
+    op->checkNumArgs(num_args, call);
+    if (inherits(args[0], "factor") && inherits(args[1], "factor"))
+	return(cross_colon(call, args[0], args[1]));
 
-    s1 = CAR(args);
-    s2 = CADR(args);
+    s1 = args[0];
+    s2 = args[1];
     n1 = length(s1);
     n2 = length(s2);
     if (n1 == 0 || n2 == 0)
@@ -341,10 +341,10 @@ static SEXP rep3(SEXP s, R_xlen_t ns, R_xlen_t na)
     return a;
 }
 
-SEXP attribute_hidden do_rep_int(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_rep_int(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
-    SEXP s = CAR(args), ncopy = CADR(args);
+    op->checkNumArgs(num_args, call);
+    SEXP s = args[0], ncopy = args[1];
     R_xlen_t nc;
     SEXP a;
 
@@ -396,18 +396,18 @@ SEXP attribute_hidden do_rep_int(SEXP call, SEXP op, SEXP args, SEXP rho)
     return a;
 }
 
-SEXP attribute_hidden do_rep_len(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_rep_len(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     R_xlen_t ns, na;
     SEXP a, s, len;
 
-    checkArity(op, args);
-    s = CAR(args);
+    op->checkNumArgs(num_args, call);
+    s = args[0];
 
     if (!isVector(s) && s != R_NilValue)
 	error(_("attempt to replicate non-vector"));
 
-    len = CADR(args);
+    len = args[1];
     if(length(len) != 1)
 	error(_("invalid '%s' value"), "length.out");
 #ifdef LONG_VECTOR_SUPPORT
@@ -1003,19 +1003,19 @@ SEXP attribute_hidden do_seq_along(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
-SEXP attribute_hidden do_seq_len(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_seq_len(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
     R_xlen_t len;
 
-    checkArity(op, args);
-    check1arg(args, call, "length.out");
-    if(length(CAR(args)) != 1)
+    op->checkNumArgs(num_args, call);
+    check1arg(tags, call, "length.out");
+    if(length(args[0]) != 1)
 	warningcall(call, _("first element used of '%s' argument"),
 		    "length.out");
 
  #ifdef LONG_VECTOR_SUPPORT
-    double dlen = asReal(CAR(args));
+    double dlen = asReal(args[0]);
     if(!R_FINITE(dlen) || dlen < 0)
 	errorcall(call, _("argument must be coercible to non-negative integer"));
     len = R_xlen_t( dlen);

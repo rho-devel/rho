@@ -2057,21 +2057,21 @@ static SEXP R_LoadSavedData(FILE *fp, SEXP aenv)
 }
 
 /* This is only used for version 1 or earlier formats */
-SEXP attribute_hidden do_load(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_load(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP fname, aenv;
     GCStackRoot<> val;
     FILE *fp;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    if (!isValidString(fname = CAR(args)))
+    if (!isValidString(fname = args[0]))
 	error(_("first argument must be a file name"));
 
     /* GRW 1/26/99 GRW : added environment parameter so that */
     /* the loaded objects can be placed where desired  */
 
-    aenv = CADR(args);
+    aenv = args[1];
     if (TYPEOF(aenv) == NILSXP)
 	error(_("use of NULL environment is defunct"));
     else if (TYPEOF(aenv) != ENVSXP)
@@ -2321,7 +2321,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 extern int R_ReadItemDepth;
 extern int R_InitReadItemDepth;
 
-SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_loadFromConn2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     /* loadFromConn2(conn, environment, verbose) */
 
@@ -2333,9 +2333,9 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
     size_t count;
     Rboolean wasopen;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    con = getConnection(asInteger(CAR(args)));
+    con = getConnection(asInteger(args[0]));
     wasopen = con->isopen;
     if(!wasopen) {
 	char mode[5];	
@@ -2348,7 +2348,7 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(!con->canread) error(_("connection not open for reading"));
 	if(con->text) error(_("can only load() from a binary connection"));
 
-	aenv = CADR(args);
+	aenv = args[1];
 	if (TYPEOF(aenv) == NILSXP)
 	    error(_("use of NULL environment is defunct"));
 	else if (TYPEOF(aenv) != ENVSXP)
@@ -2363,7 +2363,7 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
 	    strncmp(reinterpret_cast<char*>(buf), "RDX2\n", 5) == 0) {
 	    R_InitConnInPStream(&in, con, R_pstream_any_format, nullptr, nullptr);
 	    GCStackRoot<> unser(R_Unserialize(&in));
-	    R_InitReadItemDepth = R_ReadItemDepth = -asInteger(CADDR(args));
+	    R_InitReadItemDepth = R_ReadItemDepth = -asInteger(args[2]);
 	    res = RestoreToEnv(unser, aenv);
 	    R_ReadItemDepth = 0;
 	    if(!wasopen)

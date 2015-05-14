@@ -319,12 +319,12 @@ static SEXP integer_binary(ARITHOP_TYPE, SEXP, SEXP, SEXP);
 
 /* Unary and Binary Operators */
 
-RObject* attribute_hidden CXXR::do_arith(const Expression* call_,
-					 const BuiltInFunction* op_,
-					 Environment* env,
-					 int num_args,
-					 RObject** args,
-					 const PairList* tags)
+RObject* attribute_hidden do_arith(/*const*/ Expression* call_,
+				   const BuiltInFunction* op_,
+				   Environment* env,
+				   RObject** args,
+				   int num_args,
+				   const PairList* tags)
 {
     Expression* call = const_cast<Expression*>(call_);
     BuiltInFunction* op = const_cast<BuiltInFunction*>(op_);
@@ -797,16 +797,19 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* methods are allowed to have more than one arg */
-SEXP attribute_hidden do_trunc(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_trunc(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP s;
-    if (DispatchGroup("Math", call, op, args, env, &s))
-	return s;
-    checkArity(op, args); /* but is -1 in names.c */
-    check1arg(args, call, "x");
-    if (isComplex(CAR(args)))
+    // If any of the args has a class, then we might need to dispatch.
+    auto result = op->InternalGroupDispatch("Math", call, env, num_args, args,
+					    tags);
+    if (result.first)
+	return result.second;
+    op->checkNumArgs(num_args, call); /* but is -1 in names.c */
+    check1arg(tags, call, "x");
+    if (isComplex(args[0]))
 	errorcall(call, _("unimplemented complex function"));
-    return math1(CAR(args), trunc, call);
+    return math1(args[0], trunc, call);
 }
 
 /*
@@ -1356,15 +1359,15 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
     return sy;
 } /* math3B */
 
-#define Math3_1(A, FUN)	math3_1(CAR(A), CADR(A), CADDR(A), CADDDR(A), FUN, call);
-#define Math3_2(A, FUN) math3_2(CAR(A), CADR(A), CADDR(A), CADDDR(A), CAD4R(A), FUN, call)
-#define Math3B(A, FUN)  math3B (CAR(A), CADR(A), CADDR(A), FUN, call);
+#define Math3_1(A, FUN)	math3_1(args[0], args[1], args[2], args[3], FUN, call);
+#define Math3_2(A, FUN) math3_2(args[0], args[1], args[2], args[3], args[4], FUN, call)
+#define Math3B(A, FUN)  math3B (args[0], args[1], args[2], FUN, call);
 
-SEXP attribute_hidden do_math3(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_math3(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    switch (PRIMVAL(op)) {
+    switch (op->variant()) {
 
     case  1:  return Math3_1(args, dbeta);
     case  2:  return Math3_2(args, pbeta);
@@ -1433,7 +1436,7 @@ SEXP attribute_hidden do_math3(SEXP call, SEXP op, SEXP args, SEXP env)
 	errorcall(call,
 		  _("unimplemented real function of %d numeric arguments"), 3);
     }
-    return op;			/* never used; to keep -Wall happy */
+    return nullptr;			/* never used; to keep -Wall happy */
 } /* do_math3() */
 
 /* Mathematical Functions of Four (Real) Arguments */
@@ -1727,6 +1730,7 @@ SEXP attribute_hidden do_math5(SEXP call, SEXP op, SEXP args, SEXP env)
 
 #endif /* Math5 is there */
 
+#if 0
 /* This is used for experimenting with parallelized nmath functions -- LT */
 CCODE R_get_arith_function(int which)
 {
@@ -1740,3 +1744,4 @@ CCODE R_get_arith_function(int which)
     default: error("bad arith function index"); return nullptr;
     }
 }
+#endif

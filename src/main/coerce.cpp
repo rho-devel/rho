@@ -1746,10 +1746,10 @@ Rcomplex Rf_asComplex(SEXP x)
 
 
 /* return the type (= "detailed mode") of the SEXP */
-SEXP attribute_hidden do_typeof(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
-    return Rf_ScalarString(Rf_type2str(TYPEOF(CAR(args))));
+    op->checkNumArgs(num_args, call);
+    return Rf_ScalarString(Rf_type2str(TYPEOF(args[0])));
 }
 
 /* Define many of the <primitive> "is.xxx" functions :
@@ -1922,17 +1922,17 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
  * It seems to make more sense to check for a dim attribute.
  */
 
-SEXP attribute_hidden do_isvector(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_isvector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, a, x;
     const char *stype;
 
-    checkArity(op, args);
-    x = CAR(args);
-    if (!Rf_isString(CADR(args)) || LENGTH(CADR(args)) != 1)
+    op->checkNumArgs(num_args, call);
+    x = args[0];
+    if (!Rf_isString(args[1]) || LENGTH(args[1]) != 1)
 	errorcall_return(call, R_MSG_mode);
 
-    stype = CHAR(STRING_ELT(CADR(args), 0)); /* ASCII */
+    stype = CHAR(STRING_ELT(args[1], 0)); /* ASCII */
 
     /* "name" and "symbol" are synonymous */
     if (streql(stype, "name"))
@@ -1955,8 +1955,8 @@ SEXP attribute_hidden do_isvector(SEXP call, SEXP op, SEXP args, SEXP rho)
 	LOGICAL(ans)[0] = 0;
 
     /* We allow a "names" attribute on any vector. */
-    if (LOGICAL(ans)[0] && ATTRIB(CAR(args)) != R_NilValue) {
-	a = ATTRIB(CAR(args));
+    if (LOGICAL(ans)[0] && ATTRIB(args[0]) != R_NilValue) {
+	a = ATTRIB(args[0]);
 	while(a != R_NilValue) {
 	    if (TAG(a) != R_NamesSymbol) {
 		LOGICAL(ans)[0] = 0;
@@ -2672,27 +2672,27 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
     return obj;
 }
 
-SEXP attribute_hidden R_do_set_class(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden R_do_set_class(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
-    Rf_check1arg(args, call, "x");
+    op->checkNumArgs(num_args, call);
+    Rf_check1arg(tags, call, "x");
 
-    return R_set_class(CAR(args), CADR(args), call);
+    return R_set_class(args[0], args[1], call);
 }
 
 /* primitive */
-SEXP attribute_hidden do_storage_mode(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_storage_mode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
 /* storage.mode(obj) <- value */
     SEXP obj, value, ans;
     SEXPTYPE type;
 
-    checkArity(op, args);
-    Rf_check1arg(args, call, "x");
+    op->checkNumArgs(num_args, call);
+    Rf_check1arg(tags, call, "x");
 
-    obj = CAR(args);
+    obj = args[0];
 
-    value = CADR(args);
+    value = args[1];
     if (!Rf_isValidString(value) || STRING_ELT(value, 0) == NA_STRING)
 	Rf_error(_("'value' must be non-null character string"));
     type = Rf_str2type(CHAR(STRING_ELT(value, 0)));

@@ -191,7 +191,8 @@ RObject* BuiltInFunction::quickEvaluateAndInvoke(
     const PairList* args = arglist->list();
     if (!args) {
 	Evaluator::enableResultPrinting(true);
-	return m_quick_function(call, this, env, 0, nullptr, nullptr);
+	return m_quick_function(const_cast<Expression*>(call),
+				this, env, nullptr, 0, nullptr);
     }
 
     int num_args = listLength(args);
@@ -211,8 +212,8 @@ RObject* BuiltInFunction::quickEvaluateAndInvoke(
     const PairList* tags = args;
     
     Evaluator::enableResultPrinting(true);
-    return m_quick_function(call, this, env,
-			    num_args, evaluated_args, tags);
+    return m_quick_function(const_cast<Expression*>(call),
+			    this, env, evaluated_args, num_args, tags);
 }
 
 void BuiltInFunction::checkNumArgs(const PairList* args,
@@ -325,6 +326,25 @@ BuiltInFunction::InternalGroupDispatch(const char* group, const Expression* call
     }
 }
 
+BuiltInFunction::TableEntry::TableEntry(const char* name_,
+					CCODE cfun_,
+					unsigned int variant_,
+					unsigned int flags_,
+					int arity_,
+					PPinfo gram_)
+    : name(name_), cfun(cfun_), quick_function(nullptr),
+      variant(variant_), flags(flags_), arity(arity_), gram(gram_)
+{}
+
+BuiltInFunction::TableEntry::TableEntry(const char* name_,
+					QuickInvokeFunction qfun_,
+					unsigned int variant_,
+					unsigned int flags_,
+					int arity_,
+					PPinfo gram_)
+    : name(name_), cfun(nullptr), quick_function(qfun_),
+      variant(variant_), flags(flags_), arity(arity_), gram(gram_)
+{}
 
 
 BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::BuiltInFunction)

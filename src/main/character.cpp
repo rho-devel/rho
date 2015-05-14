@@ -106,17 +106,17 @@ static R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 /* Most are vectorized */
 
 /* primitive */
-SEXP attribute_hidden do_nzchar(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_nzchar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans;
     R_xlen_t i, len;
 
-    checkArity(op, args);
-    check1arg(args, call, "x");
+    op->checkNumArgs(num_args, call);
+    check1arg(tags, call, "x");
 
-    if (isFactor(CAR(args)))
+    if (isFactor(args[0]))
 	error(_("'%s' requires a character vector"), "nzchar()");
-    PROTECT(x = coerceVector(CAR(args), STRSXP));
+    PROTECT(x = coerceVector(args[0], STRSXP));
     if (!isString(x))
 	error(_("'%s' requires a character vector"), "nzchar()");
     len = XLENGTH(x);
@@ -128,7 +128,7 @@ SEXP attribute_hidden do_nzchar(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 
-SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_nchar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP d, s, x, stype;
     R_xlen_t i, len;
@@ -140,20 +140,20 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
     wchar_t *wc;
     const void *vmax;
 
-    checkArity(op, args);
-    if (isFactor(CAR(args)))
+    op->checkNumArgs(num_args, call);
+    if (isFactor(args[0]))
 	error(_("'%s' requires a character vector"), "nchar()");
-    PROTECT(x = coerceVector(CAR(args), STRSXP));
+    PROTECT(x = coerceVector(args[0], STRSXP));
     if (!isString(x))
 	error(_("'%s' requires a character vector"), "nchar()");
     len = XLENGTH(x);
-    stype = CADR(args);
+    stype = args[1];
     if (!isString(stype) || LENGTH(stype) != 1)
 	error(_("invalid '%s' argument"), "type");
     type = CHAR(STRING_ELT(stype, 0)); /* always ASCII */
     ntype = strlen(type);
     if (ntype == 0) error(_("invalid '%s' argument"), "type");
-    allowNA = asLogical(CADDR(args));
+    allowNA = asLogical(args[2]);
     if (allowNA == NA_LOGICAL) allowNA = 0;
 
     PROTECT(s = allocVector(INTSXP, len));
@@ -255,7 +255,7 @@ static void substr(char *buf, const char *str, int ienc, int sa, int so)
     *buf = '\0';
 }
 
-SEXP attribute_hidden do_substr(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_substr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP s, x, sa, so, el;
     R_xlen_t i, len;
@@ -265,10 +265,10 @@ SEXP attribute_hidden do_substr(SEXP call, SEXP op, SEXP args, SEXP env)
     const char *ss;
     char *buf;
 
-    checkArity(op, args);
-    x = CAR(args);
-    sa = CADR(args);
-    so = CADDR(args);
+    op->checkNumArgs(num_args, call);
+    x = args[0];
+    sa = args[1];
+    so = args[2];
     k = LENGTH(sa);
     l = LENGTH(so);
 
@@ -348,7 +348,7 @@ substrset(char *buf, const char *const str, cetype_t ienc, int sa, int so)
     }
 }
 
-SEXP attribute_hidden do_substrgets(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_substrgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP s, x, sa, so, value, el, v_el;
     R_xlen_t i, len;
@@ -359,11 +359,11 @@ SEXP attribute_hidden do_substrgets(SEXP call, SEXP op, SEXP args, SEXP env)
     char *buf;
     const void *vmax;
 
-    checkArity(op, args);
-    x = CAR(args);
-    sa = CADR(args);
-    so = CADDR(args);
-    value = CADDDR(args);
+    op->checkNumArgs(num_args, call);
+    x = args[0];
+    sa = args[1];
+    so = args[2];
+    value = args[3];
     k = LENGTH(sa);
     l = LENGTH(so);
 
@@ -560,7 +560,7 @@ donesc:
 }
 
 
-SEXP attribute_hidden do_abbrev(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_abbrev(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans;
     R_xlen_t i, len;
@@ -569,15 +569,15 @@ SEXP attribute_hidden do_abbrev(SEXP call, SEXP op, SEXP args, SEXP env)
     const char *s;
     const void *vmax;
 
-    checkArity(op,args);
-    x = CAR(args);
+    op->checkNumArgs(num_args, call);
+    x = args[0];
 
     if (!isString(x))
 	error(_("the first argument must be a character vector"));
     len = XLENGTH(x);
 
     PROTECT(ans = allocVector(STRSXP, len));
-    minlen = asInteger(CADR(args));
+    minlen = asInteger(args[1]);
     vmax = vmaxget();
     for (i = 0 ; i < len ; i++) {
 	if (STRING_ELT(x, i) == NA_STRING)
@@ -600,7 +600,7 @@ SEXP attribute_hidden do_abbrev(SEXP call, SEXP op, SEXP args, SEXP env)
     return(ans);
 }
 
-SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_makenames(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP arg, ans;
     R_xlen_t i, n;
@@ -610,12 +610,12 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
     Rboolean need_prefix;
     const void *vmax;
 
-    checkArity(op ,args);
-    arg = CAR(args);
+    op->checkNumArgs(num_args, call);
+    arg = args[0];
     if (!isString(arg))
 	error(_("non-character names"));
     n = XLENGTH(arg);
-    allow_ = asLogical(CADR(args));
+    allow_ = asLogical(args[1]);
     if (allow_ == NA_LOGICAL)
 	error(_("invalid '%s' value"), "allow_");
     PROTECT(ans = allocVector(STRSXP, n));
@@ -702,7 +702,7 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 
-SEXP attribute_hidden do_tolower(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_tolower(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, y;
     R_xlen_t i, n;
@@ -713,10 +713,10 @@ SEXP attribute_hidden do_tolower(SEXP call, SEXP op, SEXP args, SEXP env)
     Rboolean use_UTF8 = FALSE;
     const void *vmax;
 
-    checkArity(op, args);
-    ul = PRIMVAL(op); /* 0 = tolower, 1 = toupper */
+    op->checkNumArgs(num_args, call);
+    ul = op->variant(); /* 0 = tolower, 1 = toupper */
 
-    x = CAR(args);
+    x = args[0];
     /* coercion is done in wrapper */
     if (!isString(x)) error(_("non-character argument"));
     n = XLENGTH(x);
@@ -1043,7 +1043,7 @@ static R_INLINE int xtable_key_comp(const void *a, const void *b)
     }                                                          \
 }
 
-SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_chartr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP old, _new, x, y;
     R_xlen_t i, n;
@@ -1053,10 +1053,10 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
     Rboolean use_UTF8 = FALSE;
     const void *vmax;
 
-    checkArity(op, args);
-    old = CAR(args); args = CDR(args);
-    _new = CAR(args); args = CDR(args);
-    x = CAR(args);
+    op->checkNumArgs(num_args, call);
+    old = args[0]; args = (args + 1);
+    _new = args[0]; args = (args + 1);
+    x = args[0];
     n = XLENGTH(x);
     if (!isString(old) || length(old) < 1 || STRING_ELT(old, 0) == NA_STRING)
 	error(_("invalid '%s' argument"), "old");
@@ -1277,7 +1277,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
     return(y);
 }
 
-SEXP attribute_hidden do_strtrim(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_strtrim(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP s, x, width;
     R_xlen_t i, len;
@@ -1290,12 +1290,12 @@ SEXP attribute_hidden do_strtrim(SEXP call, SEXP op, SEXP args, SEXP env)
     mbstate_t mb_st;
     const void *vmax;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     /* as.character happens at R level now */
-    if (!isString(x = CAR(args)))
+    if (!isString(x = args[0]))
 	error(_("strtrim() requires a character vector"));
     len = XLENGTH(x);
-    PROTECT(width = coerceVector(CADR(args), INTSXP));
+    PROTECT(width = coerceVector(args[1], INTSXP));
     nw = LENGTH(width);
     if (!nw || (nw < len && len % nw))
 	error(_("invalid '%s' argument"), "width");
@@ -1351,16 +1351,16 @@ static int strtoi(SEXP s, int base)
     return int( res);
 }
 
-SEXP attribute_hidden do_strtoi(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_strtoi(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x, b;
     R_xlen_t i, n;
     int base;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    x = CAR(args); args = CDR(args);
-    b = CAR(args);
+    x = args[0]; args = (args + 1);
+    b = args[0];
     
     if(!isInteger(b) || (length(b) < 1))
 	error(_("invalid '%s' argument"), "base");
