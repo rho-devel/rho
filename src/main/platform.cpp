@@ -1266,12 +1266,12 @@ SEXP attribute_hidden do_fileexists(/*const*/ CXXR::Expression* call, const CXXR
 #define CHOOSEBUFSIZE 1024
 
 #ifndef Win32
-SEXP attribute_hidden do_filechoose(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_filechoose(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int _new, len;
     char buf[CHOOSEBUFSIZE];
-    op->checkNumArgs(num_args, call);
-    _new = asLogical(args[0]);
+    checkArity(op, args);
+    _new = asLogical(CAR(args));
     if ((len = R_ChooseFile(_new, buf, CHOOSEBUFSIZE)) == 0)
 	error(_("file choice cancelled"));
     if (len >= CHOOSEBUFSIZE - 1)

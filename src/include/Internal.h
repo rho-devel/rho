@@ -52,15 +52,6 @@ namespace CXXR {
 
 /* Function Names */
 
-#if Win32
-SEXP do_mkjunction(SEXP, SEXP, SEXP, SEXP);
-SEXP do_shellexec(SEXP, SEXP, SEXP, SEXP);
-SEXP do_setInternet2(SEXP, SEXP, SEXP, SEXP);
-SEXP do_syswhich(SEXP, SEXP, SEXP, SEXP);
-#else
-extern "C" SEXP do_X11(SEXP, SEXP, SEXP, SEXP);
-#endif
-
 CXXR::quick_builtin do_abbrev;
 SEXP do_abs(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_addCondHands;
@@ -116,7 +107,6 @@ CXXR::quick_builtin do_colsum;
 CXXR::quick_builtin do_commandArgs;
 CXXR::quick_builtin do_comment;
 SEXP do_commentgets(SEXP, SEXP, SEXP, SEXP);
-extern "C" SEXP do_contourLines(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_copyDFattr;
 CXXR::quick_builtin do_crc64;
 CXXR::quick_builtin do_Cstack_info;
@@ -147,7 +137,6 @@ CXXR::quick_builtin do_duplicated;
 CXXR::quick_builtin do_dynload;
 CXXR::quick_builtin do_dynunload;
 SEXP do_eapply(SEXP, SEXP, SEXP, SEXP);
-extern "C" SEXP do_edit(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_emptyenv;
 CXXR::quick_builtin do_encoding;
 CXXR::quick_builtin do_encodeString;
@@ -162,7 +151,6 @@ SEXP do_eval(SEXP, SEXP, SEXP, SEXP);
 SEXP do_expression(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_fileaccess;
 CXXR::quick_builtin do_fileappend;
-CXXR::quick_builtin do_filechoose;
 CXXR::quick_builtin do_filecopy;
 CXXR::quick_builtin do_filecreate;
 CXXR::quick_builtin do_fileexists;
@@ -193,8 +181,6 @@ CXXR::quick_builtin do_getDllTable;
 CXXR::quick_builtin do_getVarsFromFrame;
 CXXR::quick_builtin do_getenv;
 CXXR::quick_builtin do_geterrmessage;
-extern "C" SEXP do_getGraphicsEvent(SEXP, SEXP, SEXP, SEXP);
-extern "C" SEXP do_getGraphicsEventEnv(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_getlocale;
 CXXR::quick_builtin do_getRegisteredRoutines;
 CXXR::quick_builtin do_getSymbolInfo;
@@ -250,7 +236,6 @@ SEXP do_logic2(SEXP, SEXP, SEXP, SEXP);
 SEXP do_logic3(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_ls;
 CXXR::quick_builtin do_l10n_info;
-extern "C" SEXP do_machine(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_makelazy;
 SEXP do_makelist(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_makenames;
@@ -275,7 +260,6 @@ CXXR::quick_builtin do_nchar;
 CXXR::quick_builtin do_newenv;
 SEXP do_nextmethod(SEXP,SEXP,SEXP,SEXP);
 CXXR::quick_builtin do_ngettext;
-CXXR::quick_builtin do_normalizepath;
 CXXR::quick_builtin do_nzchar;
 SEXP do_onexit(SEXP, SEXP, SEXP, SEXP);
 SEXP do_options(SEXP, SEXP, SEXP, SEXP);
@@ -290,7 +274,6 @@ CXXR::quick_builtin do_paste;
 CXXR::quick_builtin do_pathexpand;
 CXXR::quick_builtin do_pmatch;
 SEXP do_pmin(SEXP, SEXP, SEXP, SEXP);
-extern "C" SEXP do_polyroot(SEXP, SEXP, SEXP, SEXP);
 SEXP do_pos2env(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_POSIXlt2D;
 CXXR::quick_builtin do_pretty;
@@ -341,7 +324,6 @@ CXXR::quick_builtin do_sample;
 CXXR::quick_builtin do_sample2;
 SEXP do_save(SEXP, SEXP, SEXP, SEXP);
 SEXP do_saveToConn(SEXP, SEXP, SEXP, SEXP);
-extern "C" SEXP do_saveplot(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_scan;
 CXXR::quick_builtin do_search;
 SEXP do_seq(SEXP, SEXP, SEXP, SEXP);
@@ -357,7 +339,6 @@ CXXR::quick_builtin do_setenv;
 CXXR::quick_builtin do_seterrmessage;
 CXXR::quick_builtin do_setmaxnumthreads;
 CXXR::quick_builtin do_setnumthreads;
-extern "C" SEXP do_setGraphicsEventEnv(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_setlocale;
 CXXR::quick_builtin do_setseed;
 CXXR::quick_builtin do_setSessionTimeLimit;
@@ -378,8 +359,6 @@ CXXR::quick_builtin do_strptime;
 CXXR::quick_builtin do_strtrim;
 CXXR::quick_builtin do_strtoi;
 CXXR::quick_builtin do_syschmod;
-extern "C" SEXP do_sysinfo(SEXP,SEXP,SEXP,SEXP);
-extern "C" SEXP do_syssleep(SEXP,SEXP,SEXP,SEXP);
 CXXR::quick_builtin do_sysumask;
 SEXP do_subassign(SEXP, SEXP, SEXP, SEXP);
 SEXP do_subassign_dflt(SEXP, SEXP, SEXP, SEXP);
@@ -399,7 +378,6 @@ SEXP do_switch(SEXP, SEXP, SEXP, SEXP);
 SEXP do_sys(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_sysbrowser;
 CXXR::quick_builtin do_sysgetpid;
-extern "C" SEXP do_system(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_systime;
 CXXR::quick_builtin do_tabulate;
 CXXR::quick_builtin do_tempdir;
@@ -426,9 +404,6 @@ SEXP do_while(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_which;
 SEXP do_withVisible(SEXP, SEXP, SEXP, SEXP);
 SEXP do_xtfrm(SEXP, SEXP, SEXP, SEXP);
-
-extern "C" SEXP do_getSnapshot(SEXP, SEXP, SEXP, SEXP);
-extern "C" SEXP do_playSnapshot(SEXP, SEXP, SEXP, SEXP);
 
 CXXR::quick_builtin R_do_data_class;
 CXXR::quick_builtin R_do_set_class;
@@ -515,12 +490,36 @@ CXXR::quick_builtin do_untracemem;
 extern "C" {
 #endif  // __cplusplus
 
+// Functions that are defined in or called from C.
+
+#if Win32
+SEXP do_mkjun3ction(SEXP, SEXP, SEXP, SEXP);
+SEXP do_shellexec(SEXP, SEXP, SEXP, SEXP);
+SEXP do_setInternet2(SEXP, SEXP, SEXP, SEXP);
+SEXP do_syswhich(SEXP, SEXP, SEXP, SEXP);
+#else
+SEXP do_X11(SEXP, SEXP, SEXP, SEXP);
+#endif
+
 SEXP do_complex(SEXP, SEXP, SEXP, SEXP);
+SEXP do_contourLines(SEXP, SEXP, SEXP, SEXP);
+SEXP do_edit(SEXP, SEXP, SEXP, SEXP);
+SEXP do_filechoose(SEXP, SEXP, SEXP, SEXP);
+SEXP do_getGraphicsEvent(SEXP, SEXP, SEXP, SEXP);
+SEXP do_getGraphicsEventEnv(SEXP, SEXP, SEXP, SEXP);
+SEXP do_machine(SEXP, SEXP, SEXP, SEXP);
+SEXP do_normalizepath(SEXP, SEXP, SEXP, SEXP);
+SEXP do_polyroot(SEXP, SEXP, SEXP, SEXP);
+SEXP do_saveplot(SEXP, SEXP, SEXP, SEXP);
+SEXP do_setGraphicsEventEnv(SEXP, SEXP, SEXP, SEXP);
+SEXP do_sysinfo(SEXP,SEXP,SEXP,SEXP);
+SEXP do_syssleep(SEXP,SEXP,SEXP,SEXP);
+SEXP do_system(SEXP, SEXP, SEXP, SEXP);
+SEXP do_getSnapshot(SEXP, SEXP, SEXP, SEXP);
+SEXP do_playSnapshot(SEXP, SEXP, SEXP, SEXP);
 
 #ifdef __cplusplus
-
-}
-
+}  // extern "C"
 #endif  // __cplusplus
 
 #endif /* not R_INTERNAL_H */
