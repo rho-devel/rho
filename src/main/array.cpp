@@ -315,15 +315,17 @@ SEXP attribute_hidden do_drop(/*const*/ CXXR::Expression* call, const CXXR::Buil
 
 /* Length of Primitive Objects */
 
-SEXP attribute_hidden do_length(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
-    check1arg(args, call, "x");
+    op->checkNumArgs(num_args, call);
+    check1arg(tags, call, "x");
 
-    SEXP x = CAR(args), ans;
+    SEXP x = args[0];
 
-    if (isObject(x) &&
-       DispatchOrEval(call, op, "length", args, rho, &ans, 0, 1)) {
+    auto dispatched = op->InternalDispatch(call, "length",
+					   1, args, tags, rho);
+    if (dispatched.first) {
+	RObject* ans = dispatched.second;
 	if (length(ans) == 1 && TYPEOF(ans) == REALSXP) {
 	    GCStackRoot<> ansrt(ans);
 	    double d = REAL(ans)[0];

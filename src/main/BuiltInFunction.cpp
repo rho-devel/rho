@@ -299,33 +299,55 @@ const char* BuiltInFunction::typeName() const
     return sexptype() == SPECIALSXP ? "special" : "builtin";
 }
 
-std::pair<bool, RObject*>
-BuiltInFunction::InternalGroupDispatch(const char* group, const Expression* call,
-				       Environment* env,
-				       int num_args, RObject** args,
-				       const PairList* tags) const
-{
-    bool has_class = false;
+static bool anyArgHasClass(int num_args, RObject **args) {
     for (int i = 0; i < num_args; i++) {
-	if (args[i] && args[i]->hasClass()) {
-	    has_class = true;
-	    break;
-	}
+	if (Rf_isObject(args[i]))
+	    return true;
     }
-    if (has_class) {
-	PairList* pargs = PairList::make(num_args, args);
-	pargs->copyTagsFrom(tags);
-	ArgList arglist(pargs, ArgList::EVALUATED);
-	RObject* result = nullptr;
-	bool dispatched = Rf_DispatchGroup(group,
-					   const_cast<Expression*>(call),
-					   const_cast<BuiltInFunction*>(this),
-					   const_cast<PairList*>(arglist.list()),
-					   env, &result);
-	return std::make_pair(dispatched, result);
-    } else {
+    return false;
+}
+
+std::pair<bool, RObject*>
+BuiltInFunction::RealInternalGroupDispatch(
+    const char* group, const Expression* call, Environment* env,
+    int num_args, RObject** evaluated_args, const PairList* tags) const
+{
+    if (!anyArgHasClass(num_args, evaluated_args)) {
 	return std::make_pair(false, nullptr);
     }
+
+    PairList* pargs = PairList::make(num_args, evaluated_args);
+    pargs->copyTagsFrom(tags);
+    ArgList arglist(pargs, ArgList::EVALUATED);
+    RObject* result = nullptr;
+    bool dispatched = Rf_DispatchGroup(group,
+				       const_cast<Expression*>(call),
+				       const_cast<BuiltInFunction*>(this),
+				       const_cast<PairList*>(arglist.list()),
+				       env, &result);
+    return std::make_pair(dispatched, result);
+}
+
+std::pair<bool, RObject*>
+BuiltInFunction::RealInternalDispatch(const Expression* call, const char* generic,
+				      int num_args, RObject** evaluated_args,
+				      const PairList* tags,
+				      Environment* env) const
+{
+    if (!anyArgHasClass(num_args, evaluated_args)) {
+	return std::make_pair(false, nullptr);
+    }
+
+    PairList* pargs = PairList::make(num_args, evaluated_args);
+    pargs->copyTagsFrom(tags);
+    ArgList arglist(pargs, ArgList::EVALUATED);
+    RObject* result = nullptr;
+    bool dispatched = Rf_DispatchOrEval(const_cast<Expression*>(call),
+					const_cast<BuiltInFunction*>(this),
+					generic,
+					const_cast<PairList*>(arglist.list()),
+					env, &result, 1, 1);
+    return std::make_pair(dispatched, result);
 }
 
 BuiltInFunction::TableEntry::TableEntry(const char* name_,

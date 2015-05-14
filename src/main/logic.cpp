@@ -85,11 +85,9 @@ namespace {
 	return nullptr;  // -Wall
     }
 
-    RObject* lbinary(RObject* op, RObject* args)
+    RObject* lbinary(RObject* op, RObject* x, RObject* y)
     {
 	/* logical binary : "&" or "|" */
-	SEXP x = CAR(args);
-	SEXP y = CADR(args);
 	if (x && x->sexptype() == RAWSXP
 	    && y && y->sexptype() == RAWSXP) {
 	    // Bitwise operations:
@@ -127,7 +125,7 @@ namespace {
 	    CopyLayoutAttributes(),
 	    lv.get());
     }
-}
+}  // anonymous namespace
 
 /* & | ! */
 SEXP attribute_hidden do_logic(SEXP call, SEXP op, SEXP args, SEXP env)
@@ -142,7 +140,7 @@ SEXP attribute_hidden do_logic(SEXP call, SEXP op, SEXP args, SEXP env)
     switch (PRIMVAL(op)) {
     case 1:
     case 2:
-	return lbinary(op, args);
+	return lbinary(op, CAR(args), CADR(ags));
     case 3:
 	return lnot(CAR(args));
     default:

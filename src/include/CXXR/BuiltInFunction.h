@@ -302,9 +302,32 @@ namespace CXXR {
 
         std::pair<bool, RObject*>
         InternalGroupDispatch(const char* group, const Expression* call,
-                              Environment* env,
-                              int num_args, RObject** args, const PairList* tags)
-          const;
+                              Environment* env, int num_args,
+                              RObject** evaluated_args, const PairList* tags)
+	    const
+        {
+            // Try to fail fast if we don't have an object.
+	    if (noObjectsToDispatchOn(num_args, evaluated_args))
+		return std::make_pair(false, (RObject*)nullptr);
+	    return RealInternalGroupDispatch(group, call, env, num_args,
+					     evaluated_args, tags);
+	}
+
+        // This works like DispatchOrEval in the case where the arguments
+        // have already been evaluated.
+        std::pair<bool, RObject*>
+        InternalDispatch(const Expression* call, const char* generic, 
+                         int num_args, RObject** evaluated_args,
+                         const PairList* tags,
+                         Environment* env) const
+          {
+            // Try to fail fast if we don't have an object.
+	    if (noObjectsToDispatchOn(num_args, evaluated_args))
+		return std::make_pair(false, (RObject*)nullptr);
+
+            return RealInternalDispatch(call, generic, num_args, evaluated_args,
+                                        tags, env);
+          }
 
     private:
 	friend class boost::serialization::access;
@@ -421,6 +444,35 @@ namespace CXXR {
 					const Expression* call) const;
 
         bool argsNeedEvaluating(const ArgList* arglist) const;
+
+        bool noObjectsToDispatchOn(int num_args, RObject** evaluated_args) const {
+	    // Internal dispatch is used a lot, but there most of the time
+	    // no dispatch is needed because no objects are involved.
+	    // This quickly detects most of cases.
+	    assert(arity() == -1 || num_args == arity());
+	    assert(sexptype() == BUILTINSXP);
+	    
+	    if (num_args == 0)
+		return true;
+	    if (Rf_isObject(evaluated_args[0]))
+		return false;
+	    if (num_args == 2 && !Rf_isObject(evaluated_args[0]))
+		return true;
+	    // There are more arguments that we haven't tested, so return false
+	    // just in case.
+	    return false;
+        }
+
+        std::pair<bool, RObject*>
+        RealInternalGroupDispatch(const char* group, const Expression* call,
+				  Environment* env, int num_args,
+				  RObject** args, const PairList* tags) const;
+
+        std::pair<bool, RObject*>
+        RealInternalDispatch(const Expression* call, const char* generic,
+                             int num_args, RObject** evaluated_args,
+                             const PairList* tags,
+                             Environment* env) const;
 
 	template<class Archive>
 	void load(Archive & ar, const unsigned int version);

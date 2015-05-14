@@ -952,35 +952,19 @@ done:
     return ans;
 }
 
-SEXP attribute_hidden do_seq_along(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_seq_along(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
-    R_xlen_t len;
-    static GCRoot<> length_op = nullptr;
 
-    /* Store the .Primitive for 'length' for DispatchOrEval to use. */
-    if (length_op == nullptr) {
-	SEXP R_lengthSymbol = install("length");
-	length_op = eval(R_lengthSymbol, R_BaseEnv);
-	if (TYPEOF(length_op) != BUILTINSXP) {
-	    length_op = nullptr;
-	    error("'length' is not a BUILTIN");
-	}
-	R_PreserveObject(length_op);
-    }
+    op->checkNumArgs(num_args, call);
+    check1arg(tags, call, "along.with");
 
-    checkArity(op, args);
-    check1arg(args, call, "along.with");
-
-    /* Try to dispatch to S3 or S4 methods for 'length'.  For cases
-       where no methods are defined this is more efficient than an
-       unconditional callback to R */
-    if (isObject(CAR(args)) &&
-	DispatchOrEval(call, length_op, "length", args, rho, &ans, 0, 1)) {
-	len = asInteger(ans);
-    }
-    else
-	len = xlength(CAR(args));
+    static BuiltInFunction* length_op = BuiltInFunction::obtainPrimitive(
+	"length");
+    // The arguments have already been evaluated, so call do_length directly.
+    RObject* length = do_length(call, length_op, rho, args, num_args, tags);
+    R_xlen_t len = length->sexptype() == INTSXP ?
+	INTEGER(length)[0] : REAL(length)[0];
 
 #ifdef LONG_VECTOR_SUPPORT
     if (len > INT_MAX) {

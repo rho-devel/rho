@@ -875,34 +875,39 @@ SEXP lengthgets(SEXP x, R_len_t len)
 }
 
 
-SEXP attribute_hidden do_lengthgets(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_lengthgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans;
 
-    checkArity(op, args);
-    check1arg(args, call, "x");
+    op->checkNumArgs(num_args, call);
+    check1arg(tags, call, "x");
 
-    x = CAR(args);
+    x = args[0];
 
-    if (PRIMVAL(op)) { /* xlength<- */
-	if(isObject(x) && DispatchOrEval(call, op, "length<-", args,
-					 rho, &ans, 0, 1))
-	    return(ans);
+    if (op->variant()) { /* xlength<- */
+	/* Attempt method dispatch. */
+	auto dispatched = op->InternalDispatch(call, "length<-",
+					       2, args, tags, rho);
+	if (dispatched.first)
+	    return dispatched.second;
 	if (!isVector(x) && !isVectorizable(x))
 	    error(_("invalid argument"));
-	if (length(CADR(args)) != 1)
+	if (length(args[1]) != 1)
 	    error(_("invalid value"));
-	R_xlen_t len = asVecSize(CADR(args));
+	R_xlen_t len = asVecSize(args[1]);
 	return xlengthgets(x, len);
     }
-    if(isObject(x) && DispatchOrEval(call, op, "length<-", args,
-				     rho, &ans, 0, 1))
-	return(ans);
+    /* Attempt method dispatch. */
+    auto dispatched = op->InternalDispatch(call, "length<-",
+					   2, args, tags, rho);
+    if (dispatched.first)
+	return dispatched.second;
+
     if (!isVector(x) && !isVectorizable(x))
 	error(_("invalid argument"));
-    if (length(CADR(args)) != 1)
+    if (length(args[1]) != 1)
 	error(_("invalid value"));
-    R_xlen_t len = asVecSize(CADR(args));
+    R_xlen_t len = asVecSize(args[1]);
     if (len < 0) error(_("invalid value"));
     if (len > R_LEN_T_MAX) {
 #ifdef LONG_VECTOR_SUPPORT

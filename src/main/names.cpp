@@ -174,8 +174,8 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 
 /* Binary Operators, all primitives */
 /* these are group generic and so need to eval args */
-{"+",		do_arith, PLUSOP,	1,	2,	{PP_BINARY,  PREC_SUM,	  0}},
-{"-",		do_arith, MINUSOP,1,	2,	{PP_BINARY,  PREC_SUM,	  0}},
+{"+",		do_arith, PLUSOP,	1,	-1,	{PP_BINARY,  PREC_SUM,	  0}},
+{"-",		do_arith, MINUSOP,1,	-1,	{PP_BINARY,  PREC_SUM,	  0}},
 {"*",		do_arith, TIMESOP,1,	2,	{PP_BINARY,  PREC_PROD,	  0}},
 {"/",		do_arith, DIVOP,	1,	2,	{PP_BINARY2, PREC_PROD,	  0}},
 {"^",		do_arith, POWOP,	1,	2,	{PP_BINARY2, PREC_POWER,  1}},

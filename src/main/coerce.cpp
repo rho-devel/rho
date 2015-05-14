@@ -1369,15 +1369,15 @@ SEXP Rf_asCharacterFactor(SEXP x)
 
 /* the "ascharacter" name is a historical anomaly: as.character used to be the
  * only primitive;  now, all these ops are : */
-SEXP attribute_hidden do_ascharacter(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_ascharacter(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x;
 
     SEXPTYPE type = STRSXP;
-    int op0 = PRIMVAL(op);
+    int op0 = op->variant();
     CXXRCONST char *name = nullptr /* -Wall */;
 
-    Rf_check1arg(args, call, "x");
+    Rf_check1arg(tags, call, "x");
     switch(op0) {
     case 0:
 	name = "as.character"; break;
@@ -1392,47 +1392,50 @@ SEXP attribute_hidden do_ascharacter(SEXP call, SEXP op, SEXP args, SEXP rho)
     case 5:
 	name = "as.raw"; type = RAWSXP; break;
     }
-    if (Rf_DispatchOrEval(call, op, name, args, rho, &ans, 0, 1))
-	return(ans);
+    auto dispatched = op->InternalDispatch(call, name, num_args, args, tags, rho);
+    if (dispatched.first)
+	return dispatched.second;
 
     /* Method dispatch has failed, we now just */
     /* run the generic internal code */
 
-    checkArity(op, args);
-    x = CAR(args);
+    op->checkNumArgs(num_args, call);
+    x = args[0];
     if(TYPEOF(x) == type) {
 	if(ATTRIB(x) == R_NilValue) return x;
 	ans = NAMED(x) ? Rf_duplicate(x) : x;
 	CLEAR_ATTRIB(ans);
 	return ans;
     }
-    ans = ascommon(call, CAR(args), type);
+    ans = ascommon(call, args[0], type);
     CLEAR_ATTRIB(ans);
     return ans;
 }
 
 /* NB: as.vector is used for several other as.xxxx, including
    as.expression, as.list, as.pairlist, as.symbol, (as.single) */
-SEXP attribute_hidden do_asvector(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_asvector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans;
     SEXPTYPE type;
 
-    if (Rf_DispatchOrEval(call, op, "as.vector", args, rho, &ans, 0, 1))
-	return(ans);
+    auto dispatched = op->InternalDispatch(call, "as.vector",
+					   num_args, args, tags, rho);
+    if (dispatched.first)
+	return dispatched.second;
 
     /* Method dispatch has failed, we now just */
     /* run the generic internal code */
 
-    checkArity(op, args);
-    x = CAR(args);
+    op->checkNumArgs(num_args, call);
+    x = args[0];
 
-    if (!Rf_isString(CADR(args)) || LENGTH(CADR(args)) != 1)
+    if (!Rf_isString(args[1]) || LENGTH(args[1]) != 1)
 	errorcall_return(call, R_MSG_mode);
-    if (!strcmp("function", (CHAR(STRING_ELT(CADR(args), 0))))) /* ASCII */
+    if (!strcmp("function", (CHAR(STRING_ELT(args[1], 0))))) /* ASCII */
 	type = CLOSXP;
     else
-	type = Rf_str2type(CHAR(STRING_ELT(CADR(args), 0))); /* ASCII */
+	type = Rf_str2type(CHAR(STRING_ELT(args[1], 0))); /* ASCII */
 
     /* "any" case added in 2.13.0 */
     if(type == ANYSXP || TYPEOF(x) == type) {
@@ -1755,87 +1758,89 @@ SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::Bu
 /* Define many of the <primitive> "is.xxx" functions :
    Note that  Rf_isNull, Rf_isNumeric, etc are defined in util.c or Rinlinedfuns.h
 */
-SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
-    checkArity(op, args);
-    Rf_check1arg(args, call, "x");
+    op->checkNumArgs(num_args, call);
+    Rf_check1arg(tags, call, "x");
 
     /* These are all builtins, so we do not need to worry about
        evaluating arguments in Rf_DispatchOrEval */
-    if(PRIMVAL(op) >= 100 && PRIMVAL(op) < 200 &&
-       Rf_isObject(CAR(args))) {
+    if(op->variant() >= 100 && op->variant() < 200 &&
+       Rf_isObject(args[0])) {
 	/* This used CHAR(PRINTNAME(CAR(call))), but that is not
 	   necessarily correct, e.g. when called from lapply() */
 	const char *nm;
-	switch(PRIMVAL(op)) {
+	switch(op->variant()) {
 	case 100: nm = "is.numeric"; break;
 	case 101: nm = "is.matrix"; break;
 	case 102: nm = "is.array"; break;
 	default: nm = ""; /* -Wall */
 	}
-	if(Rf_DispatchOrEval(call, op, nm, args, rho, &ans, 0, 1))
-	    return(ans);
+	auto dispatched = op->InternalDispatch(call, nm,
+					       num_args, args, tags, rho);
+	if (dispatched.first)
+	    return dispatched.second;
     }
 
     PROTECT(ans = Rf_allocVector(LGLSXP, 1));
 
-    switch (PRIMVAL(op)) {
+    switch (op->variant()) {
     case NILSXP:	/* is.null */
-	LOGICAL(ans)[0] = Rf_isNull(CAR(args));
+	LOGICAL(ans)[0] = Rf_isNull(args[0]);
 	break;
     case LGLSXP:	/* is.logical */
-	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == LGLSXP);
+	LOGICAL(ans)[0] = (TYPEOF(args[0]) == LGLSXP);
 	break;
     case INTSXP:	/* is.integer */
-	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == INTSXP)
-	    && !Rf_inherits(CAR(args), "factor");
+	LOGICAL(ans)[0] = (TYPEOF(args[0]) == INTSXP)
+	    && !Rf_inherits(args[0], "factor");
 	break;
     case REALSXP:	/* is.double */
-	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == REALSXP);
+	LOGICAL(ans)[0] = (TYPEOF(args[0]) == REALSXP);
 	break;
     case CPLXSXP:	/* is.complex */
-	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == CPLXSXP);
+	LOGICAL(ans)[0] = (TYPEOF(args[0]) == CPLXSXP);
 	break;
     case STRSXP:	/* is.character */
-	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == STRSXP);
+	LOGICAL(ans)[0] = (TYPEOF(args[0]) == STRSXP);
 	break;
     case SYMSXP:	/* is.symbol === is.name */
-	if(IS_S4_OBJECT(CAR(args)) && (TYPEOF(CAR(args)) == S4SXP)) {
-	    SEXP dot_xData = R_getS4DataSlot(CAR(args), SYMSXP);
+	if(IS_S4_OBJECT(args[0]) && (TYPEOF(args[0]) == S4SXP)) {
+	    SEXP dot_xData = R_getS4DataSlot(args[0], SYMSXP);
 	    LOGICAL(ans)[0] = (TYPEOF(dot_xData) == SYMSXP);
 	}
 	else
-	    LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == SYMSXP);
+	    LOGICAL(ans)[0] = (TYPEOF(args[0]) == SYMSXP);
 	break;
     case ENVSXP:	/* is.environment */
-	if(IS_S4_OBJECT(CAR(args)) && (TYPEOF(CAR(args)) == S4SXP)) {
-	    SEXP dot_xData = R_getS4DataSlot(CAR(args), ENVSXP);
+	if(IS_S4_OBJECT(args[0]) && (TYPEOF(args[0]) == S4SXP)) {
+	    SEXP dot_xData = R_getS4DataSlot(args[0], ENVSXP);
 	    LOGICAL(ans)[0] = (TYPEOF(dot_xData) == ENVSXP);
 	}
 	else
-	    LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == ENVSXP);
+	    LOGICAL(ans)[0] = (TYPEOF(args[0]) == ENVSXP);
 	break;
     case VECSXP:	/* is.list */
-	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == VECSXP ||
-			   TYPEOF(CAR(args)) == LISTSXP);
+	LOGICAL(ans)[0] = (TYPEOF(args[0]) == VECSXP ||
+			   TYPEOF(args[0]) == LISTSXP);
 	break;
     case LISTSXP:	/* is.pairlist */
-	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == LISTSXP ||
-			   TYPEOF(CAR(args)) == NILSXP);/* pairlist() -> NULL */
+	LOGICAL(ans)[0] = (TYPEOF(args[0]) == LISTSXP ||
+			   TYPEOF(args[0]) == NILSXP);/* pairlist() -> NULL */
 	break;
     case EXPRSXP:	/* is.expression */
-	LOGICAL(ans)[0] = TYPEOF(CAR(args)) == EXPRSXP;
+	LOGICAL(ans)[0] = TYPEOF(args[0]) == EXPRSXP;
 	break;
     case RAWSXP:	/* is.raw */
-	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == RAWSXP);
+	LOGICAL(ans)[0] = (TYPEOF(args[0]) == RAWSXP);
 	break;
 
     case 50:		/* is.object */
-	LOGICAL(ans)[0] = OBJECT(CAR(args));
+	LOGICAL(ans)[0] = OBJECT(args[0]);
 	break;
     case 51:		/* isS4 */
-	LOGICAL(ans)[0] = IS_S4_OBJECT(CAR(args)) != 0;
+	LOGICAL(ans)[0] = IS_S4_OBJECT(args[0]) != 0;
 	break;
 /* no longer used: is.data.frame is R code
     case 80:
@@ -1844,18 +1849,18 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 */
 
     case 100:		/* is.numeric */
-	LOGICAL(ans)[0] = Rf_isNumeric(CAR(args)) &&
-	    !Rf_isLogical(CAR(args));  /* Rf_isNumeric excludes factors */
+	LOGICAL(ans)[0] = Rf_isNumeric(args[0]) &&
+	    !Rf_isLogical(args[0]);  /* Rf_isNumeric excludes factors */
 	break;
     case 101:		/* is.matrix */
-	LOGICAL(ans)[0] = Rf_isMatrix(CAR(args));
+	LOGICAL(ans)[0] = Rf_isMatrix(args[0]);
 	break;
     case 102:		/* is.array */
-	LOGICAL(ans)[0] = Rf_isArray(CAR(args));
+	LOGICAL(ans)[0] = Rf_isArray(args[0]);
 	break;
 
     case 200:		/* is.atomic */
-	switch(TYPEOF(CAR(args))) {
+	switch(TYPEOF(args[0])) {
 	case NILSXP:
 	    /* NULL is atomic (S compatibly), but not in Rf_isVectorAtomic(.) */
 	case CHARSXP:
@@ -1873,7 +1878,7 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
 	break;
     case 201:		/* is.recursive */
-	switch(TYPEOF(CAR(args))) {
+	switch(TYPEOF(args[0])) {
 	case VECSXP:
 	case LISTSXP:
 	case CLOSXP:
@@ -1897,15 +1902,15 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 	break;
 
     case 300:		/* is.call */
-	LOGICAL(ans)[0] = TYPEOF(CAR(args)) == LANGSXP;
+	LOGICAL(ans)[0] = TYPEOF(args[0]) == LANGSXP;
 	break;
     case 301:		/* is.language */
-	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == SYMSXP ||
-			   TYPEOF(CAR(args)) == LANGSXP ||
-			   TYPEOF(CAR(args)) == EXPRSXP);
+	LOGICAL(ans)[0] = (TYPEOF(args[0]) == SYMSXP ||
+			   TYPEOF(args[0]) == LANGSXP ||
+			   TYPEOF(args[0]) == EXPRSXP);
 	break;
     case 302:		/* is.function */
-	LOGICAL(ans)[0] = Rf_isFunction(CAR(args));
+	LOGICAL(ans)[0] = Rf_isFunction(args[0]);
 	break;
 
     case 999:		/* is.single */
@@ -2173,21 +2178,23 @@ SEXP attribute_hidden do_isnan(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
-SEXP attribute_hidden do_isfinite(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_isfinite(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x, names, dims;
     R_xlen_t i, n;
 
-    checkArity(op, args);
-    Rf_check1arg(args, call, "x");
+    op->checkNumArgs(num_args, call);
+    Rf_check1arg(tags, call, "x");
 
-    if (Rf_DispatchOrEval(call, op, "is.finite", args, rho, &ans, 0, 1))
-	return(ans);
+    auto dispatched = op->InternalDispatch(call, "is.finite",
+					   num_args, args, tags, rho);
+    if (dispatched.first)
+	return dispatched.second;
 #ifdef stringent_is
     if (!Rf_isList(CAR(args)) && !Rf_isVector(CAR(args)))
 	errorcall_return(call, "is.finite " R_MSG_list_vec);
 #endif
-    x = CAR(args);
+    x = args[0];
     n = Rf_xlength(x);
     ans = Rf_allocVector(LGLSXP, n);
     if (Rf_isVector(x)) {
@@ -2232,22 +2239,24 @@ SEXP attribute_hidden do_isfinite(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
-SEXP attribute_hidden do_isinfinite(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_isinfinite(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x, names, dims;
     double xr, xi;
     R_xlen_t i, n;
 
-    checkArity(op, args);
-    Rf_check1arg(args, call, "x");
+    op->checkNumArgs(num_args, call);
+    Rf_check1arg(tags, call, "x");
 
-    if (Rf_DispatchOrEval(call, op, "is.infinite", args, rho, &ans, 0, 1))
-	return(ans);
+    auto dispatched = op->InternalDispatch(call, "is.infinite",
+					   num_args, args, tags, rho);
+    if (dispatched.first)
+	return dispatched.second;
 #ifdef stringent_is
     if (!Rf_isList(CAR(args)) && !Rf_isVector(CAR(args)))
 	errorcall_return(call, "is.infinite " R_MSG_list_vec);
 #endif
-    x = CAR(args);
+    x = args[0];
     n = Rf_xlength(x);
     ans = Rf_allocVector(LGLSXP, n);
     if (Rf_isVector(x)) {
