@@ -313,7 +313,9 @@ BuiltInFunction::InternalGroupDispatch(const char* group, const Expression* call
 	}
     }
     if (has_class) {
-	ArgList arglist(PairList::make(num_args, args, tags), ArgList::EVALUATED);
+	PairList* pargs = PairList::make(num_args, args);
+	pargs->copyTagsFrom(tags);
+	ArgList arglist(pargs, ArgList::EVALUATED);
 	RObject* result = nullptr;
 	bool dispatched = Rf_DispatchGroup(group,
 					   const_cast<Expression*>(call),

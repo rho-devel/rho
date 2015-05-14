@@ -512,11 +512,13 @@ namespace CXXR {
 	/** @brief Create a PairList from values in an array.
 	 *
 	 * This constructor creates a chain of PairList nodes.  The nodes
-	 * contain the vars args[0]...args[size - 1], and if tags is set,
-	 * they have tags in the same order.
+	 * contain the vars args[0]...args[size - 1].
 	 */
-	static PairList* make(int size, RObject** args,
-			      const PairList* tags = nullptr);
+	static PairList* make(int size, RObject** args);
+        
+	/** @brief Copy the tags from one PairList to another.
+	 */
+        void copyTagsFrom(const PairList* listWithTags);
 
 	/** @brief The name by which this type is known in R.
 	 *
