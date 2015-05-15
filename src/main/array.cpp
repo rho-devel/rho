@@ -68,7 +68,7 @@ SEXP GetColNames(SEXP dimnames)
 	return R_NilValue;
 }
 
-SEXP attribute_hidden do_matrix(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_matrix(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP vals, ans, snr, snc, dimnames;
     int nr = 1, nc = 1, byrow, miss_nr, miss_nc;
@@ -292,7 +292,7 @@ SEXP DropDims(SEXP x)
     return vb;
 }
 
-SEXP attribute_hidden do_drop(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_drop(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     GCStackRoot<> x;
     SEXP xdims;
@@ -315,7 +315,7 @@ SEXP attribute_hidden do_drop(/*const*/ CXXR::Expression* call, const CXXR::Buil
 
 /* Length of Primitive Objects */
 
-SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     check1arg(tags, call, "x");
@@ -323,7 +323,7 @@ SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::Bu
     SEXP x = args[0];
 
     auto dispatched = op->InternalDispatch(call, "length",
-					   1, args, tags, rho);
+					   num_args, args, tags, rho);
     if (dispatched.first) {
 	RObject* ans = dispatched.second;
 	if (length(ans) == 1 && TYPEOF(ans) == REALSXP) {
@@ -344,7 +344,7 @@ SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::Bu
 }
 
 
-SEXP attribute_hidden do_rowscols(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_rowscols(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans;
     int i, j, nr, nc;
@@ -845,7 +845,7 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 #undef YDIMS_ET_CETERA
 
-SEXP attribute_hidden do_transpose(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_transpose(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP a, r, dims, dimnames, dimnamesnames = R_NilValue,
 	ndimnamesnames, rnames, cnames;
@@ -988,7 +988,7 @@ SEXP attribute_hidden do_transpose(/*const*/ CXXR::Expression* call, const CXXR:
 	lj += iip[itmp] * stride[itmp];
 
 /* aperm (a, perm, resize = TRUE) */
-SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP a, perm, r, dimsa, dimsr, dna;
     int i, j, n, itmp;
@@ -1155,7 +1155,7 @@ SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::Bui
 }
 
 /* colSums(x, n, p, na.rm) and friends */
-SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans = R_NilValue;
     int type;
@@ -1326,7 +1326,7 @@ SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::Bu
 */
 
 /* array(data, dim, dimnames) */
-SEXP attribute_hidden do_array(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_array(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP vals, ans, dims, dimnames;
     R_xlen_t lendat, i, nans;
@@ -1428,7 +1428,7 @@ SEXP attribute_hidden do_array(/*const*/ CXXR::Expression* call, const CXXR::Bui
     return ans;
 }
 
-SEXP attribute_hidden do_diag(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_diag(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x, snr, snc;
     int nr = 1, nc = 1, nprotect = 1;
@@ -1482,7 +1482,7 @@ SEXP attribute_hidden do_diag(/*const*/ CXXR::Expression* call, const CXXR::Buil
 
 
 /* backsolve(r, b, k, upper.tri, transpose) */
-SEXP attribute_hidden do_backsolve(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_backsolve(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int nprot = 1;
     op->checkNumArgs(num_args, call);
@@ -1527,7 +1527,7 @@ SEXP attribute_hidden do_backsolve(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 /* max.col(m, ties.method) */
-SEXP attribute_hidden do_maxcol(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_maxcol(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     SEXP m = args[0];

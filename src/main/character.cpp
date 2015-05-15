@@ -106,7 +106,7 @@ static R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 /* Most are vectorized */
 
 /* primitive */
-SEXP attribute_hidden do_nzchar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_nzchar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans;
     R_xlen_t i, len;
@@ -128,7 +128,7 @@ SEXP attribute_hidden do_nzchar(/*const*/ CXXR::Expression* call, const CXXR::Bu
 }
 
 
-SEXP attribute_hidden do_nchar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_nchar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP d, s, x, stype;
     R_xlen_t i, len;
@@ -255,7 +255,7 @@ static void substr(char *buf, const char *str, int ienc, int sa, int so)
     *buf = '\0';
 }
 
-SEXP attribute_hidden do_substr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_substr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP s, x, sa, so, el;
     R_xlen_t i, len;
@@ -348,7 +348,7 @@ substrset(char *buf, const char *const str, cetype_t ienc, int sa, int so)
     }
 }
 
-SEXP attribute_hidden do_substrgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_substrgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP s, x, sa, so, value, el, v_el;
     R_xlen_t i, len;
@@ -560,7 +560,7 @@ donesc:
 }
 
 
-SEXP attribute_hidden do_abbrev(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_abbrev(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans;
     R_xlen_t i, len;
@@ -600,7 +600,7 @@ SEXP attribute_hidden do_abbrev(/*const*/ CXXR::Expression* call, const CXXR::Bu
     return(ans);
 }
 
-SEXP attribute_hidden do_makenames(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_makenames(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP arg, ans;
     R_xlen_t i, n;
@@ -702,7 +702,7 @@ SEXP attribute_hidden do_makenames(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 
-SEXP attribute_hidden do_tolower(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_tolower(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, y;
     R_xlen_t i, n;
@@ -1043,7 +1043,7 @@ static R_INLINE int xtable_key_comp(const void *a, const void *b)
     }                                                          \
 }
 
-SEXP attribute_hidden do_chartr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_chartr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP old, _new, x, y;
     R_xlen_t i, n;
@@ -1277,7 +1277,7 @@ SEXP attribute_hidden do_chartr(/*const*/ CXXR::Expression* call, const CXXR::Bu
     return(y);
 }
 
-SEXP attribute_hidden do_strtrim(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_strtrim(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP s, x, width;
     R_xlen_t i, len;
@@ -1351,7 +1351,7 @@ static int strtoi(SEXP s, int base)
     return int( res);
 }
 
-SEXP attribute_hidden do_strtoi(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_strtoi(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x, b;
     R_xlen_t i, n;

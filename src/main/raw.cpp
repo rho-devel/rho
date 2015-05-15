@@ -33,7 +33,7 @@
 #define isRaw(x) (TYPEOF(x) == RAWSXP)
 
 /* charToRaw works at byte level, ignores encoding */
-SEXP attribute_hidden do_charToRaw(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_charToRaw(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x = args[0];
     int nc;
@@ -50,7 +50,7 @@ SEXP attribute_hidden do_charToRaw(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 /* <UTF8>  rawToChar should work at byte level */
-SEXP attribute_hidden do_rawToChar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_rawToChar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x = args[0];
 
@@ -85,7 +85,7 @@ SEXP attribute_hidden do_rawToChar(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 
-SEXP attribute_hidden do_rawShift(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_rawShift(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x = args[0];
     int shift = asInteger(args[1]);
@@ -106,7 +106,7 @@ SEXP attribute_hidden do_rawShift(/*const*/ CXXR::Expression* call, const CXXR::
     return ans;
 }
 
-SEXP attribute_hidden do_rawToBits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_rawToBits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x = args[0];
     R_xlen_t i, j = 0;
@@ -124,7 +124,7 @@ SEXP attribute_hidden do_rawToBits(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_intToBits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_intToBits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x;
     R_xlen_t i, j = 0;
@@ -143,7 +143,7 @@ SEXP attribute_hidden do_intToBits(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_packBits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_packBits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x = args[0], stype = args[1];
     Rboolean useRaw;
@@ -267,7 +267,7 @@ static int mbrtoint(int *w, const char *s)
     /* return -2; not reached */
 }
 
-SEXP attribute_hidden do_utf8ToInt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_utf8ToInt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x = args[0];
     int tmp, used = 0; /* -Wall */
@@ -321,7 +321,7 @@ static size_t inttomb(char *s, const int wc)
 
 #include <R_ext/RS.h>  /* for Calloc/Free */
 
-SEXP attribute_hidden do_intToUtf8(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_intToUtf8(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x;
     int multiple;

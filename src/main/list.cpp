@@ -95,7 +95,7 @@ static void namewalk(SEXP s, NameWalkData *d)
 
 /* Also does all.vars with functions=FALSE
    .Internal(all.names(expr, functions, max.names, unique)) */
-SEXP attribute_hidden do_allnames(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_allnames(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP expr;
     int i, savecount;

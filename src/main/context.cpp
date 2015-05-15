@@ -172,7 +172,7 @@ SEXP attribute_hidden R_sysfunction(int n, ClosureContext* cptr)
 /* functions to support looking up information about the browser */
 /* contexts that are in the evaluation stack */
 
-SEXP attribute_hidden do_sysbrowser(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sysbrowser(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int n;
 
@@ -222,22 +222,22 @@ SEXP attribute_hidden do_sysbrowser(/*const*/ CXXR::Expression* call, const CXXR
 /* We don't want to count the closure that do_sys is contained in, so the */
 /* indexing is adjusted to handle this. */
 
-SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_sys(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int i, n  = -1, nframe;
     SEXP rval, t;
     ClosureContext *cptr;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     /* first find the context that sys.xxx needs to be evaluated in */
     cptr = ClosureContext::innermost();
     t = cptr->callEnvironment();
     while (cptr && cptr->workingEnvironment() != t)
 	cptr = ClosureContext::innermost(cptr->nextOut());
 
-    if (length(args) == 1) n = asInteger(CAR(args));
+    if (num_args == 1) n = asInteger(args[0]);
 
-    switch (PRIMVAL(op)) {
+    switch (op->variant()) {
     case 1: /* parent */
 	if(n == NA_INTEGER)
 	    error(_("invalid '%s' argument"), "n");
@@ -299,7 +299,7 @@ SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 }
 
-SEXP attribute_hidden do_parentframe(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_parentframe(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int n;
     SEXP t;

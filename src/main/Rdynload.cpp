@@ -887,7 +887,7 @@ static void GetFullDLLPath(SEXP call, char *buf, const char *const path)
   call routines from "incomplete" DLLs.
  */
 
-SEXP attribute_hidden do_dynload(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_dynload(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     char buf[2 * PATH_MAX];
     DllInfo *info;
@@ -904,7 +904,7 @@ SEXP attribute_hidden do_dynload(/*const*/ CXXR::Expression* call, const CXXR::B
     return(Rf_MakeDLLInfo(info));
 }
 
-SEXP attribute_hidden do_dynunload(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_dynunload(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     char buf[2 * PATH_MAX];
 
@@ -1316,7 +1316,7 @@ R_getRegisteredRoutines(SEXP dll)
 }
 
 SEXP attribute_hidden
-do_getSymbolInfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+do_getSymbolInfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     const char *package = "", *name;
     R_RegisteredNativeSymbol symbol = {R_ANY_SYM, {nullptr}, nullptr};
@@ -1348,7 +1348,7 @@ do_getSymbolInfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* 
 
 /* .Internal(getLoadedDLLs()) */
 SEXP attribute_hidden
-do_getDllTable(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+do_getDllTable(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, nm;
 
@@ -1379,7 +1379,7 @@ do_getDllTable(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op
 }
 
 SEXP attribute_hidden
-do_getRegisteredRoutines(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+do_getRegisteredRoutines(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     const char * const names[] = {".C", ".Call", ".Fortran", ".External"};
 

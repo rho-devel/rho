@@ -136,9 +136,9 @@ static SEXP mkCharW(const wchar_t *wc)
  * list is the collection of splits for the corresponding element of x.
 */
 
-SEXP attribute_hidden do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_strsplit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP args0 = args, ans, tok, x;
+    SEXP ans, tok, x;
     R_xlen_t i, itok, len, tlen;
     size_t j, ntok;
     int fixed_opt, perl_opt, useBytes;
@@ -148,12 +148,12 @@ SEXP attribute_hidden do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
     Rboolean use_UTF8 = FALSE, haveBytes = FALSE;
     const void *vmax, *vmax2;
 
-    checkArity(op, args);
-    x = CAR(args); args = CDR(args);
-    tok = CAR(args); args = CDR(args);
-    fixed_opt = asLogical(CAR(args)); args = CDR(args);
-    perl_opt = asLogical(CAR(args)); args = CDR(args);
-    useBytes = asLogical(CAR(args));
+    op->checkNumArgs(num_args, call);
+    x = args[0]; args = (args + 1);
+    tok = args[0]; args = (args + 1);
+    fixed_opt = asLogical(args[0]); args = (args + 1);
+    perl_opt = asLogical(args[0]); args = (args + 1);
+    useBytes = asLogical(args[0]);
     if (fixed_opt == NA_INTEGER) fixed_opt = 0;
     if (perl_opt == NA_INTEGER) perl_opt = 0;
     if (useBytes == NA_INTEGER) useBytes = 0;
@@ -169,7 +169,7 @@ SEXP attribute_hidden do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
     tlen = XLENGTH(tok);
 
     /* treat split = NULL as split = "" */
-    if (!tlen) { tlen = 1; SETCADR(args0, tok = mkString("")); }
+    if (!tlen) { tlen = 1; tok = mkString(""); }
 
     if (!useBytes) {
 	for (i = 0; i < tlen; i++)
@@ -733,7 +733,7 @@ static int fgrep_one_bytes(const char *pat, const char *target, int len,
     return -1;
 }
 
-SEXP attribute_hidden do_grep(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_grep(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP pat, text, ind, ans;
     regex_t reg;
@@ -1023,7 +1023,7 @@ static R_size_t fgrepraw1(SEXP pat, SEXP text, R_size_t offset) {
 
 /* grepRaw(pattern, text, offset, ignore.case, fixed, value, all, invert) */
 // FIXME:  allow long vectors.
-SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_grepraw(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP pat, text, ans, res_head, res_tail;
     regex_t reg;
@@ -1472,7 +1472,7 @@ static int wcount_subs(const wchar_t *repl)
  * either once or globally.
  * The functions are loosely patterned on the "sub" and "gsub" in "nawk". */
 
-SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP pat, rep, text, ans;
     regex_t reg;
@@ -2287,7 +2287,7 @@ static SEXP gregexpr_BadStringAns(void)
     return ans;
 }
 
-SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP pat, text, ans;
     regex_t reg;
@@ -2595,7 +2595,7 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
     return ans;
 }
 
-SEXP attribute_hidden do_regexec(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_regexec(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP pat, vec, ans, matchpos, matchlen;
     int opt_icase, opt_fixed, useBytes;

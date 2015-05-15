@@ -2211,7 +2211,7 @@ static SEXP CallHook(SEXP x, SEXP fun)
    This became public in R 2.13.0, and that version added support for
    connections internally */
 SEXP attribute_hidden
-do_serializeToConn(SEXP call, SEXP op, SEXP args, SEXP env)
+do_serializeToConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     /* serializeToConn(object, conn, ascii, version, hook) */
 
@@ -2223,27 +2223,27 @@ do_serializeToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     R_pstream_format_t type;
     SEXP (*hook)(SEXP, SEXP);
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    object = CAR(args);
-    con = getConnection(Rf_asInteger(CADR(args)));
+    object = args[0];
+    con = getConnection(Rf_asInteger(args[1]));
 
-    if (TYPEOF(CADDR(args)) != LGLSXP)
+    if (TYPEOF(args[2]) != LGLSXP)
 	Rf_error(_("'ascii' must be logical"));
-    ascii = CXXRCONSTRUCT(Rboolean, INTEGER(CADDR(args))[0]);
+    ascii = CXXRCONSTRUCT(Rboolean, INTEGER(args[2])[0]);
     if (ascii) type = R_pstream_ascii_format;
     else type = R_pstream_xdr_format;
 
-    if (CADDDR(args) == R_NilValue)
+    if (args[3] == R_NilValue)
 	version = R_DefaultSerializeVersion;
     else
-	version = Rf_asInteger(CADDDR(args));
+	version = Rf_asInteger(args[3]);
     if (version == NA_INTEGER || version <= 0)
 	Rf_error(_("bad version value"));
     if (version < 2)
 	Rf_error(_("cannot save to connections in version %d format"), version);
 
-    fun = CAR(Rf_nthcdr(args,4));
+    fun = args[4];
     hook = fun != R_NilValue ? CallHook : nullptr;
 
     /* Now we need to do some sanity checking of the arguments.
@@ -2281,7 +2281,7 @@ do_serializeToConn(SEXP call, SEXP op, SEXP args, SEXP env)
    This became public in R 2.13.0, and that version added support for
    connections internally */
 SEXP attribute_hidden 
-do_unserializeFromConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+do_unserializeFromConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     /* unserializeFromConn(conn, hook) */
 
@@ -2665,7 +2665,7 @@ static char names[NC][PATH_MAX];
 static char *ptr[NC];
 
 SEXP attribute_hidden 
-do_lazyLoadDBflush(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+do_lazyLoadDBflush(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
 
@@ -2863,7 +2863,7 @@ R_lazyLoadDBinsertValue(SEXP value, SEXP file, SEXP ascii,
    If the result is a promise, then the promise is forced. */
 
 SEXP attribute_hidden
-do_lazyLoadDBfetch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+do_lazyLoadDBfetch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP key, file, compsxp, hook;
     PROTECT_INDEX vpi;
@@ -2897,7 +2897,7 @@ do_lazyLoadDBfetch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction
 }
 
 SEXP attribute_hidden
-do_getVarsFromFrame(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+do_getVarsFromFrame(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     return R_getVarsFromFrame(args[0], args[1], args[2]);
@@ -2905,7 +2905,7 @@ do_getVarsFromFrame(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunctio
 
 
 SEXP attribute_hidden
-do_lazyLoadDBinsertValue(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+do_lazyLoadDBinsertValue(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     SEXP value, file, ascii, compsxp, hook;
@@ -2918,7 +2918,7 @@ do_lazyLoadDBinsertValue(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFu
 }
 
 SEXP attribute_hidden
-do_serialize(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+do_serialize(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     if (op->variant() == 2) return R_unserialize(args[0], args[1]);

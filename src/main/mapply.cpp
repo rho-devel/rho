@@ -31,7 +31,7 @@
 #include <Internal.h>
 
 SEXP attribute_hidden
-do_mapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+do_mapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
 

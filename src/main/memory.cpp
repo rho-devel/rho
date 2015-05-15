@@ -91,7 +91,7 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 
 /* Finalization and Weak References */
 
-SEXP attribute_hidden do_regFinaliz(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_regFinaliz(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int onexit;
 
@@ -126,7 +126,7 @@ void R_gc_torture(int gap, int wait, Rboolean inhibit)
     }
 }
 
-SEXP attribute_hidden do_gctorture(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_gctorture(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int gap;
     SEXP old = ScalarLogical(gc_force_wait > 0);
@@ -146,7 +146,7 @@ SEXP attribute_hidden do_gctorture(/*const*/ CXXR::Expression* call, const CXXR:
     return old;
 }
 
-SEXP attribute_hidden do_gctorture2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_gctorture2(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int gap, wait;
     Rboolean inhibit;
@@ -161,7 +161,7 @@ SEXP attribute_hidden do_gctorture2(/*const*/ CXXR::Expression* call, const CXXR
     return old;
 }
 
-SEXP attribute_hidden do_gcinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_gcinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     std::ostream* report_os = GCManager::setReporting(nullptr);
@@ -186,7 +186,7 @@ void attribute_hidden get_current_mem(unsigned long *smallvsize,
     return;
 }
 
-SEXP attribute_hidden do_gc(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_gc(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     std::ostream* report_os
@@ -211,13 +211,13 @@ SEXP attribute_hidden do_gc(/*const*/ CXXR::Expression* call, const CXXR::BuiltI
 static double gctimes[5], gcstarttimes[5];
 static Rboolean gctime_enabled = FALSE;
 
-SEXP do_gctime(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_gctime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
-    if (args == R_NilValue)
+    if (num_args == 0)
 	gctime_enabled = TRUE;
     else
-	gctime_enabled = Rboolean(asLogical(CAR(args)));
+	gctime_enabled = Rboolean(asLogical(args[0]));
     ans = allocVector(REALSXP, 5);
     REAL(ans)[0] = gctimes[0];
     REAL(ans)[1] = gctimes[1];
@@ -384,7 +384,7 @@ void R_gc(void)
 
 #define R_MAX(a,b) (a) < (b) ? (b) : (a)
 
-SEXP attribute_hidden do_memlimits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_memlimits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
     op->checkNumArgs(num_args, call);
@@ -395,7 +395,7 @@ SEXP attribute_hidden do_memlimits(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_memoryprofile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_memoryprofile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, nms;
     PROTECT(ans = allocVector(INTSXP, 24));

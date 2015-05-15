@@ -584,7 +584,7 @@ static SEXP R_compileAndExecute(SEXP call, SEXP rho)
 }
 */
 
-SEXP attribute_hidden do_enablejit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_enablejit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int old = R_jit_enabled, newi;
     op->checkNumArgs(num_args, call);
@@ -595,7 +595,7 @@ SEXP attribute_hidden do_enablejit(/*const*/ CXXR::Expression* call, const CXXR:
     return Rf_ScalarInteger(old);
 }
 
-SEXP attribute_hidden do_compilepkgs(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_compilepkgs(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int old = R_compile_pkgs, newi;
     op->checkNumArgs(num_args, call);
@@ -1203,7 +1203,7 @@ SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
 RObject* attribute_hidden do_paren(/*const*/ Expression* call,
 				   const BuiltInFunction* op,
 				   Environment* env,
-				   RObject** args,
+				   RObject* const* args,
 				   int num_args,
 				   const PairList* tags)
 {
@@ -3979,9 +3979,9 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(LE, 1): FastRelop2(<=, LEOP, R_LeSym);
     OP(GE, 1): FastRelop2(>=, GEOP, R_GeSym);
     OP(GT, 1): FastRelop2(>, GTOP, R_GtSym);
-    OP(AND, 1): Builtin2(do_logic, R_AndSym, rho);
-    OP(OR, 1): Builtin2(do_logic, R_OrSym, rho);
-    OP(NOT, 1): Builtin1(do_logic, R_NotSym, rho);
+    OP(AND, 1): Builtin2(do_logic_slow, R_AndSym, rho);
+    OP(OR, 1): Builtin2(do_logic_slow, R_OrSym, rho);
+    OP(NOT, 1): Builtin1(do_logic_slow, R_NotSym, rho);
     OP(DOTSERR, 0): Rf_error(_("'...' used in an incorrect context"));
     OP(STARTASSIGN, 1):
       {
@@ -4453,7 +4453,7 @@ vector<BCODE> ByteCode::encode(IntVector* bytes) {
 }
 #endif
 
-SEXP attribute_hidden do_mkcode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_mkcode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP bytes, consts;
 
@@ -4465,7 +4465,7 @@ SEXP attribute_hidden do_mkcode(/*const*/ CXXR::Expression* call, const CXXR::Bu
     return new ByteCode(enc, pl);
 }
 
-SEXP attribute_hidden do_bcclose(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_bcclose(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP forms, body, env;
 
@@ -4487,7 +4487,7 @@ SEXP attribute_hidden do_bcclose(/*const*/ CXXR::Expression* call, const CXXR::B
     return Rf_mkCLOSXP(forms, body, env);
 }
 
-SEXP attribute_hidden do_is_builtin_internal(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_is_builtin_internal(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP symbol, i;
 
@@ -4533,7 +4533,7 @@ static SEXP disassemble(SEXP bc)
   return ans;
 }
 
-SEXP attribute_hidden do_disassemble(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_disassemble(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
   SEXP code;
 
@@ -4544,14 +4544,14 @@ SEXP attribute_hidden do_disassemble(/*const*/ CXXR::Expression* call, const CXX
   return disassemble(code);
 }
 
-SEXP attribute_hidden do_bcversion(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_bcversion(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
   SEXP ans = Rf_allocVector(INTSXP, 1);
   INTEGER(ans)[0] = R_bcVersion;
   return ans;
 }
 
-SEXP attribute_hidden do_loadfile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_loadfile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP file, s;
     FILE *fp;
@@ -4573,7 +4573,7 @@ SEXP attribute_hidden do_loadfile(/*const*/ CXXR::Expression* call, const CXXR::
     return s;
 }
 
-SEXP attribute_hidden do_savefile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_savefile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     FILE *fp;
 
@@ -4645,7 +4645,7 @@ FILE *R_OpenCompiledFile(char *fname, char *buf, std::size_t bsize)
 }
 #endif
 
-SEXP attribute_hidden do_growconst(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_growconst(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP constBuf, ans;
     int i, n;
@@ -4663,7 +4663,7 @@ SEXP attribute_hidden do_growconst(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_putconst(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_putconst(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP constBuf, x;
     int i, constCount;
@@ -4692,7 +4692,7 @@ SEXP attribute_hidden do_putconst(/*const*/ CXXR::Expression* call, const CXXR::
     return Rf_ScalarInteger(constCount);
 }
 
-SEXP attribute_hidden do_getconst(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_getconst(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP constBuf, ans;
     int i, n;
@@ -4794,7 +4794,7 @@ SEXP R_stopbcprof()
 
 /* end of byte code section */
 
-SEXP attribute_hidden do_setnumthreads(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_setnumthreads(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int old = R_num_math_threads, newi;
     op->checkNumArgs(num_args, call);
@@ -4804,7 +4804,7 @@ SEXP attribute_hidden do_setnumthreads(/*const*/ CXXR::Expression* call, const C
     return Rf_ScalarInteger(old);
 }
 
-SEXP attribute_hidden do_setmaxnumthreads(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_setmaxnumthreads(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int old = R_max_num_math_threads, newi;
     op->checkNumArgs(num_args, call);

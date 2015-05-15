@@ -514,7 +514,7 @@ namespace CXXR {
 	 * This constructor creates a chain of PairList nodes.  The nodes
 	 * contain the vars args[0]...args[size - 1].
 	 */
-	static PairList* make(int size, RObject** args);
+	static PairList* make(int size, RObject* const* args);
         
 	/** @brief Copy the tags from one PairList to another.
 	 */

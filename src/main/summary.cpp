@@ -791,7 +791,7 @@ SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* which.min(x) : The index (starting at 1), of the first min(x) in x */
-SEXP attribute_hidden do_first_min(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_first_min(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP sx, ans;
     double s, *r;
@@ -836,7 +836,7 @@ SEXP attribute_hidden do_first_min(/*const*/ CXXR::Expression* call, const CXXR:
 }
 
 /* which(x) : indices of non-NA TRUE values in x */
-SEXP attribute_hidden do_which(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_which(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP v, v_nms, ans, ans_nms = R_NilValue;
     int i, j = 0, len, *buf;
@@ -875,37 +875,26 @@ SEXP attribute_hidden do_which(/*const*/ CXXR::Expression* call, const CXXR::Bui
 /* op = 0 is pmin, op = 1 is pmax
    NULL and logicals are handled as if they had been coerced to integer.
  */
-SEXP attribute_hidden do_pmin(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_pmin(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP a, x, ans;
     int narm;
     R_xlen_t i, n, len;
     SEXPTYPE type, anstype;
 
-    narm = asLogical(CAR(args));
+    // Remove narm from the args.
+    narm = asLogical(args[0]);
     if(narm == NA_LOGICAL)
 	error(_("invalid '%s' value"), "na.rm");
-    args = CDR(args);
-    x = CAR(args);
-    if(args == R_NilValue) error(_("no arguments"));
+    if(num_args < 2) error(_("no arguments"));
+    args = (args + 1);
+    num_args = num_args - 1;
 
-    anstype = TYPEOF(x);
-    switch(anstype) {
-    case NILSXP:
-    case LGLSXP:
-    case INTSXP:
-    case REALSXP:
-    case STRSXP:
-	break;
-    default:
-	error(_("invalid input type"));
-    }
-    a = CDR(args);
-    if(a == R_NilValue) return x; /* one input */
-
-    len = xlength(x); /* not LENGTH, as NULL is allowed */
-    for(; a != R_NilValue; a = CDR(a)) {
-	x = CAR(a);
+    // Check that the types are valid and get the max length.
+    len = xlength(args[0]);
+    anstype = TYPEOF(args[0]);
+    for (int arg = 0; arg < num_args; arg++) {
+	x = args[arg];
 	type = TYPEOF(x);
 	switch(type) {
 	case NILSXP:
@@ -926,11 +915,15 @@ SEXP attribute_hidden do_pmin(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
 	len = imax2(len, n);
     }
+
+    if (num_args == 1)
+	return args[0]; /* one input */
+
     if(anstype < INTSXP) anstype = INTSXP;
     if(len == 0) return allocVector(anstype, 0);
     /* Check for fractional recycling (added in 2.14.0) */
-    for(a = args; a != R_NilValue; a = CDR(a)) {
-	n = length(CAR(a));
+    for (int arg = 0; arg < num_args; arg++) {
+	n = length(args[arg]);
 	if (len % n) {
 	    warning(_("an argument will be fractionally recycled"));
 	    break;
@@ -942,19 +935,19 @@ SEXP attribute_hidden do_pmin(SEXP call, SEXP op, SEXP args, SEXP rho)
     case INTSXP:
     {
 	int *r,  *ra = INTEGER(ans), tmp;
-	PROTECT(x = coerceVector(CAR(args), anstype));
+	PROTECT(x = coerceVector(args[0], anstype));
 	r = INTEGER(x);
 	n = XLENGTH(x);
 	for(i = 0; i < len; i++) ra[i] = r[i % n];
 	UNPROTECT(1);
-	for(a = CDR(args); a != R_NilValue; a = CDR(a)) {
-	    x = CAR(a);
-	    PROTECT(x = coerceVector(CAR(a), anstype));
+	for (int arg = 1; arg < num_args; arg++) {
+	    x = args[arg];
+	    PROTECT(x = coerceVector(x, anstype));
 	    n = XLENGTH(x);
 	    r = INTEGER(x);
 	    for(i = 0; i < len; i++) {
 		tmp = r[i % n];
-		if(PRIMVAL(op) == 1) {
+		if(op->variant() == 1) {
 		    if( (narm && ra[i] == NA_INTEGER) ||
 			(ra[i] != NA_INTEGER && tmp != NA_INTEGER
 			 && tmp > ra[i]) ||
@@ -975,18 +968,19 @@ SEXP attribute_hidden do_pmin(SEXP call, SEXP op, SEXP args, SEXP rho)
     case REALSXP:
     {
 	double *r, *ra = REAL(ans), tmp;
-	PROTECT(x = coerceVector(CAR(args), anstype));
+	PROTECT(x = coerceVector(args[0], anstype));
 	r = REAL(x);
 	n = XLENGTH(x);
 	for(i = 0; i < len; i++) ra[i] = r[i % n];
 	UNPROTECT(1);
-	for(a = CDR(args); a != R_NilValue; a = CDR(a)) {
-	    PROTECT(x = coerceVector(CAR(a), anstype));
+	for (int arg = 1; arg < num_args; arg++) {
+	    x = args[arg];
+	    PROTECT(x = coerceVector(x, anstype));
 	    n = XLENGTH(x);
 	    r = REAL(x);
 	    for(i = 0; i < len; i++) {
 		tmp = r[i % n];
-		if(PRIMVAL(op) == 1) {
+		if(op->variant() == 1) {
 		    if( (narm && ISNAN(ra[i])) ||
 			(!ISNAN(ra[i]) && !ISNAN(tmp) && tmp > ra[i]) ||
 			(!narm && ISNAN(tmp)) )
@@ -1004,18 +998,19 @@ SEXP attribute_hidden do_pmin(SEXP call, SEXP op, SEXP args, SEXP rho)
 	break;
     case STRSXP:
     {
-	PROTECT(x = coerceVector(CAR(args), anstype));
+	PROTECT(x = coerceVector(args[0], anstype));
 	n = XLENGTH(x);
 	for(i = 0; i < len; i++) SET_STRING_ELT(ans, i, STRING_ELT(x, i % n));
 	UNPROTECT(1);
-	for(a = CDR(args); a != R_NilValue; a = CDR(a)) {
+	for (int arg = 1; arg < num_args; arg++) {
+	    x = args[arg];
 	    SEXP tmp, t2;
-	    PROTECT(x = coerceVector(CAR(a), anstype));
+	    PROTECT(x = coerceVector(x, anstype));
 	    n = XLENGTH(x);
 	    for(i = 0; i < len; i++) {
 		tmp = STRING_ELT(x, i % n);
 		t2 = STRING_ELT(ans, i);
-		if(PRIMVAL(op) == 1) {
+		if(op->variant() == 1) {
 		    if( (narm && t2 == NA_STRING) ||
 			(t2 != NA_STRING && tmp != NA_STRING && tmp != t2 && Scollate(tmp, t2) > 0) ||
 			(!narm && tmp == NA_STRING) )

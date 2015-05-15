@@ -44,7 +44,7 @@ namespace CXXR {
   typedef RObject*(quick_builtin)(/*const*/ Expression*,
                                   const BuiltInFunction*,
                                   Environment* env,
-                                  /*const*/ RObject** args,
+                                  RObject* const* args,
                                   int num_args,
                                   const PairList* tags);
 
@@ -53,28 +53,28 @@ namespace CXXR {
 /* Function Names */
 
 CXXR::quick_builtin do_abbrev;
-SEXP do_abs(SEXP, SEXP, SEXP, SEXP);
+SEXP do_abs(SEXP, SEXP, SEXP, SEXP); // calls do_cmathfuns
 CXXR::quick_builtin do_addCondHands;
-SEXP do_addRestart(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_addRestart;
 CXXR::quick_builtin do_adist;
 CXXR::quick_builtin do_agrep;
 CXXR::quick_builtin do_allnames;
 CXXR::quick_builtin do_aperm;
 CXXR::quick_builtin do_arith;
 CXXR::quick_builtin do_aregexec;
-SEXP do_args(SEXP, SEXP, SEXP, SEXP);
+SEXP do_args(SEXP, SEXP, SEXP, SEXP); // non-trivial
 CXXR::quick_builtin do_array;
 CXXR::quick_builtin do_asPOSIXct;
 CXXR::quick_builtin do_asPOSIXlt;
-SEXP do_ascall(SEXP, SEXP, SEXP, SEXP);
-SEXP do_as_environment(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_ascall;
+CXXR::quick_builtin do_as_environment;
 CXXR::quick_builtin do_ascharacter;
-SEXP do_asfunction(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_asfunction;
 CXXR::quick_builtin do_assign;
 CXXR::quick_builtin do_asvector;
 SEXP do_AT(SEXP call, SEXP op, SEXP args, SEXP env);  // Special
-SEXP do_attach(SEXP,SEXP,SEXP,SEXP);
-SEXP do_attr(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_attach;
+SEXP do_attr(SEXP, SEXP, SEXP, SEXP);  // Calls matchArgs
 SEXP do_attrgets(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_attributes;
 CXXR::quick_builtin do_attributesgets;
@@ -89,10 +89,10 @@ CXXR::quick_builtin do_bitwise;
 CXXR::quick_builtin do_body;
 CXXR::quick_builtin do_bodyCode;
 SEXP do_break(SEXP, SEXP, SEXP, SEXP);  // Special
-SEXP do_browser(SEXP, SEXP, SEXP, SEXP);
+SEXP do_browser(SEXP, SEXP, SEXP, SEXP);  // Calls matchArgs
 CXXR::quick_builtin do_builtins;
-SEXP do_c(SEXP, SEXP, SEXP, SEXP);
-SEXP do_c_dflt(SEXP, SEXP, SEXP, SEXP);
+SEXP do_c(SEXP, SEXP, SEXP, SEXP);  // Calls do_c_dflt
+SEXP do_c_dflt(SEXP, SEXP, SEXP, SEXP); // Tricky
 SEXP do_call(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_capabilities;
 CXXR::quick_builtin do_capabilitiesX11;
@@ -113,9 +113,9 @@ CXXR::quick_builtin do_Cstack_info;
 CXXR::quick_builtin do_cum;
 CXXR::quick_builtin do_D2POSIXlt;
 CXXR::quick_builtin do_date;
-SEXP do_debug(SEXP, SEXP, SEXP, SEXP);
+SEXP do_debug(SEXP, SEXP, SEXP, SEXP);  // Tricky.
 CXXR::quick_builtin do_delayed;
-SEXP do_deparse(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_deparse;
 CXXR::quick_builtin do_detach;
 CXXR::quick_builtin do_dfltStop;
 CXXR::quick_builtin do_dfltWarn;
@@ -126,11 +126,11 @@ SEXP do_dimnames(SEXP, SEXP, SEXP, SEXP);
 SEXP do_dimnamesgets(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_dircreate;
 CXXR::quick_builtin do_dirname;
-SEXP do_docall(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_docall;
 SEXP do_dotcall(SEXP, SEXP, SEXP, SEXP);
 SEXP do_dotcallgr(SEXP, SEXP, SEXP, SEXP);
 SEXP do_dotCode(SEXP, SEXP, SEXP, SEXP);
-SEXP do_dput(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_dput;
 CXXR::quick_builtin do_drop;
 CXXR::quick_builtin do_dump;
 CXXR::quick_builtin do_duplicated;
@@ -173,10 +173,10 @@ CXXR::quick_builtin do_formals;
 SEXP do_function(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_gc;
 CXXR::quick_builtin do_gcinfo;
-SEXP do_gctime(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_gctime;
 CXXR::quick_builtin do_gctorture;
 CXXR::quick_builtin do_gctorture2;
-SEXP do_get(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_get;
 CXXR::quick_builtin do_getDllTable;
 CXXR::quick_builtin do_getVarsFromFrame;
 CXXR::quick_builtin do_getenv;
@@ -194,16 +194,16 @@ CXXR::quick_builtin do_grepraw;
 CXXR::quick_builtin do_gsub;
 CXXR::quick_builtin do_iconv;
 SEXP do_ICUset(SEXP, SEXP, SEXP, SEXP);
-SEXP do_identical(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_identical;
 SEXP do_if(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_inherits;
-SEXP do_inspect(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_inspect;
 CXXR::quick_builtin do_intToUtf8;
 CXXR::quick_builtin do_interactive;
 SEXP do_internal(SEXP, SEXP, SEXP, SEXP);  // Special
-SEXP do_interruptsSuspended(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_interruptsSuspended;
 CXXR::quick_builtin do_intToBits;
-SEXP do_invisible(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_invisible;
 CXXR::quick_builtin do_invokeRestart;
 CXXR::quick_builtin do_is;
 CXXR::quick_builtin do_isatty;
@@ -211,8 +211,8 @@ CXXR::quick_builtin do_isfinite;
 CXXR::quick_builtin do_isinfinite;
 CXXR::quick_builtin do_islistfactor;
 SEXP do_isloaded(SEXP, SEXP, SEXP, SEXP);
-SEXP do_isna(SEXP, SEXP, SEXP, SEXP);
-SEXP do_isnan(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_isna;
+CXXR::quick_builtin do_isnan;
 CXXR::quick_builtin do_isunsorted;
 CXXR::quick_builtin do_isvector;
 SEXP do_lapack(SEXP, SEXP, SEXP, SEXP);
@@ -230,8 +230,9 @@ CXXR::quick_builtin do_load;
 CXXR::quick_builtin do_loadFromConn2;
 CXXR::quick_builtin do_localeconv;
 SEXP do_log(SEXP, SEXP, SEXP, SEXP);  // Special
-SEXP do_log1arg(SEXP, SEXP, SEXP, SEXP);
-SEXP do_logic(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_log1arg;
+CXXR::quick_builtin do_logic;
+SEXP do_logic_slow(SEXP, SEXP, SEXP, SEXP); // slow version of the above, used by the bytecode interpreter.
 SEXP do_logic2(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_logic3(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_ls;
@@ -251,7 +252,7 @@ CXXR::quick_builtin do_maxcol;
 CXXR::quick_builtin do_memlimits;
 CXXR::quick_builtin do_memoryprofile;
 CXXR::quick_builtin do_merge;
-SEXP do_mget(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_mget;
 SEXP do_missing(SEXP, SEXP, SEXP, SEXP);  // Special
 SEXP do_names(SEXP, SEXP, SEXP, SEXP);
 SEXP do_namesgets(SEXP, SEXP, SEXP, SEXP);
@@ -266,24 +267,24 @@ SEXP do_options(SEXP, SEXP, SEXP, SEXP);
 SEXP do_order(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_packBits;
 CXXR::quick_builtin do_parentenv;
-SEXP do_parentenvgets(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_parentenvgets;
 CXXR::quick_builtin do_paren;
 CXXR::quick_builtin do_parentframe;
 CXXR::quick_builtin do_parse;
 CXXR::quick_builtin do_paste;
 CXXR::quick_builtin do_pathexpand;
 CXXR::quick_builtin do_pmatch;
-SEXP do_pmin(SEXP, SEXP, SEXP, SEXP);
-SEXP do_pos2env(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_pmin;
+CXXR::quick_builtin do_pos2env;
 CXXR::quick_builtin do_POSIXlt2D;
 CXXR::quick_builtin do_pretty;
 CXXR::quick_builtin do_primitive;
 CXXR::quick_builtin do_printdefault;
 CXXR::quick_builtin do_printDeferredWarnings;
 CXXR::quick_builtin do_printfunction;
-SEXP do_prmatrix(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_prmatrix;
 CXXR::quick_builtin do_proctime;
-SEXP do_psort(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_psort;
 CXXR::quick_builtin do_qsort;
 CXXR::quick_builtin do_quit;
 SEXP do_quote(SEXP, SEXP, SEXP, SEXP);  // Special
@@ -319,18 +320,18 @@ CXXR::quick_builtin do_Rhome;
 CXXR::quick_builtin do_RNGkind;
 CXXR::quick_builtin do_rowsum;
 CXXR::quick_builtin do_rowscols;
-SEXP do_S4on(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_S4on;
 CXXR::quick_builtin do_sample;
 CXXR::quick_builtin do_sample2;
-SEXP do_save(SEXP, SEXP, SEXP, SEXP);
-SEXP do_saveToConn(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_save;
+CXXR::quick_builtin do_saveToConn;
 CXXR::quick_builtin do_scan;
 CXXR::quick_builtin do_search;
 SEXP do_seq(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_seq_along;
 CXXR::quick_builtin do_seq_len;
 CXXR::quick_builtin do_serialize;
-SEXP do_serializeToConn(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_serializeToConn;
 SEXP do_set(SEXP, SEXP, SEXP, SEXP);  // Special
 CXXR::quick_builtin do_setS4Object;
 CXXR::quick_builtin do_setFileTime;
@@ -343,18 +344,18 @@ CXXR::quick_builtin do_setlocale;
 CXXR::quick_builtin do_setseed;
 CXXR::quick_builtin do_setSessionTimeLimit;
 CXXR::quick_builtin do_setTimeLimit;
-SEXP do_setwd(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_setwd;
 CXXR::quick_builtin do_shortRowNames;
 CXXR::quick_builtin do_signalCondition;
 CXXR::quick_builtin do_sink;
 CXXR::quick_builtin do_sinknumber;
 CXXR::quick_builtin do_sort;
 CXXR::quick_builtin do_split;
-SEXP do_sprintf(SEXP, SEXP, SEXP, SEXP);
-SEXP do_standardGeneric(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_sprintf;
+CXXR::quick_builtin do_standardGeneric;
 SEXP do_stop(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_storage_mode;
-SEXP do_strsplit(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_strsplit;
 CXXR::quick_builtin do_strptime;
 CXXR::quick_builtin do_strtrim;
 CXXR::quick_builtin do_strtoi;
@@ -375,7 +376,7 @@ CXXR::quick_builtin do_substr;
 CXXR::quick_builtin do_substrgets;
 SEXP do_summary(SEXP, SEXP, SEXP, SEXP);
 SEXP do_switch(SEXP, SEXP, SEXP, SEXP);  // Special
-SEXP do_sys(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_sys;
 CXXR::quick_builtin do_sysbrowser;
 CXXR::quick_builtin do_sysgetpid;
 CXXR::quick_builtin do_systime;
@@ -390,9 +391,9 @@ CXXR::quick_builtin do_traceback;
 CXXR::quick_builtin do_transpose;
 CXXR::quick_builtin do_trunc;
 CXXR::quick_builtin do_typeof;
-SEXP do_unclass(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_unclass;
 CXXR::quick_builtin do_unlink;
-SEXP do_unlist(SEXP, SEXP, SEXP, SEXP);
+CXXR::quick_builtin do_unlist;
 CXXR::quick_builtin do_unserializeFromConn;
 CXXR::quick_builtin do_unsetenv;
 SEXP do_usemethod(SEXP, SEXP, SEXP, SEXP);  // Special

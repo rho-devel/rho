@@ -165,7 +165,7 @@ Rboolean isUnsorted(SEXP x, Rboolean strictly)
     return FALSE;/* sorted */
 }
 
-SEXP attribute_hidden do_isunsorted(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_isunsorted(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int strictly;
     SEXP x, ans;
@@ -315,7 +315,7 @@ void revsort(double *a, int *ib, int n)
 }
 
 
-SEXP attribute_hidden do_sort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
     Rboolean decreasing;
@@ -597,10 +597,10 @@ Psort0(SEXP x, R_xlen_t lo, R_xlen_t hi, R_xlen_t *ind, int nind)
 
 
 /* FUNCTION psort(x, indices) */
-SEXP attribute_hidden do_psort(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_psort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
-    SEXP x = CAR(args), p = CADR(args);
+    op->checkNumArgs(num_args, call);
+    SEXP x = args[0], p = args[1];
 
     if (!isVectorAtomic(x))
 	error(_("only atomic vectors can be sorted"));
@@ -609,8 +609,7 @@ SEXP attribute_hidden do_psort(SEXP call, SEXP op, SEXP args, SEXP rho)
     R_xlen_t n = XLENGTH(x);
 #ifdef LONG_VECTOR_SUPPORT
     if(!IS_LONG_VEC(x) || TYPEOF(p) != REALSXP)
-	SETCADR(args, coerceVector(p, INTSXP));
-    p = CADR(args);
+	p = coerceVector(p, INTSXP);
     int nind = LENGTH(p);
     R_xlen_t *l = static_cast<R_xlen_t *>( CXXR_alloc(nind, sizeof(R_xlen_t)));
     if (TYPEOF(p) == REALSXP) {
@@ -631,8 +630,7 @@ SEXP attribute_hidden do_psort(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
     }
 #else
-    SETCADR(args, coerceVector(p, INTSXP));
-    p = CADR(args);
+    p = coerceVector(p, INTSXP);
     int nind = LENGTH(p);
     int *l = INTEGER(p);
     for (int i = 0; i < nind; i++) {
@@ -642,11 +640,11 @@ SEXP attribute_hidden do_psort(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("index %d outside bounds"), l[i]);
     }
 #endif
-    SETCAR(args, duplicate(x));
-    CAR(args)->clearAttributes();  /* remove all attributes */
-                                   /* and the object bit    */
-    Psort0(CAR(args), 0, n - 1, l, nind);
-    return CAR(args);
+    x = duplicate(x);
+    x->clearAttributes();  /* remove all attributes */
+                           /* and the object bit    */
+    Psort0(x, 0, n - 1, l, nind);
+    return x;
 }
 
 
@@ -1294,7 +1292,7 @@ SEXP attribute_hidden do_order(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 /* FUNCTION: rank(x, length, ties.method) */
-SEXP attribute_hidden do_rank(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_rank(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP rank, x;
     int *ik = nullptr /* -Wall */;
@@ -1389,7 +1387,7 @@ SEXP attribute_hidden do_rank(/*const*/ CXXR::Expression* call, const CXXR::Buil
 #include <R_ext/RS.h>
 
 /* also returns integers/doubles (a method for sort.list) */
-SEXP attribute_hidden do_radixsort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_radixsort(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans;
     Rboolean nalast, decreasing;

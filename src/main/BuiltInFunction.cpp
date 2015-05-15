@@ -310,12 +310,8 @@ static bool anyArgHasClass(int num_args, RObject **args) {
 std::pair<bool, RObject*>
 BuiltInFunction::RealInternalGroupDispatch(
     const char* group, const Expression* call, Environment* env,
-    int num_args, RObject** evaluated_args, const PairList* tags) const
+    int num_args, RObject* const* evaluated_args, const PairList* tags) const
 {
-    if (!anyArgHasClass(num_args, evaluated_args)) {
-	return std::make_pair(false, nullptr);
-    }
-
     PairList* pargs = PairList::make(num_args, evaluated_args);
     pargs->copyTagsFrom(tags);
     ArgList arglist(pargs, ArgList::EVALUATED);
@@ -330,14 +326,11 @@ BuiltInFunction::RealInternalGroupDispatch(
 
 std::pair<bool, RObject*>
 BuiltInFunction::RealInternalDispatch(const Expression* call, const char* generic,
-				      int num_args, RObject** evaluated_args,
+				      int num_args,
+				      RObject* const* evaluated_args,
 				      const PairList* tags,
 				      Environment* env) const
 {
-    if (!anyArgHasClass(num_args, evaluated_args)) {
-	return std::make_pair(false, nullptr);
-    }
-
     PairList* pargs = PairList::make(num_args, evaluated_args);
     pargs->copyTagsFrom(tags);
     ArgList arglist(pargs, ArgList::EVALUATED);

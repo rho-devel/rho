@@ -152,34 +152,32 @@ static void vec2buff(SEXP, LocalParseData *);
 static void linebreak(Rboolean *lbreak, LocalParseData *);
 static void deparse2(SEXP, SEXP, LocalParseData *);
 
-SEXP attribute_hidden do_deparse(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_deparse(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ca1;
     int  cut0, backtick, opts, nlines;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    if(length(args) < 1) error(_("too few arguments"));
-
-    ca1 = CAR(args); args = CDR(args);
+    ca1 = args[0]; args = (args + 1);
     cut0 = DEFAULT_Cutoff;
-    if(!isNull(CAR(args))) {
-	cut0 = asInteger(CAR(args));
+    if(!isNull(args[0])) {
+	cut0 = asInteger(args[0]);
 	if(cut0 == NA_INTEGER|| cut0 < MIN_Cutoff || cut0 > MAX_Cutoff) {
 	    warning(_("invalid 'cutoff' value for 'deparse', using default"));
 	    cut0 = DEFAULT_Cutoff;
 	}
     }
-    args = CDR(args);
+    args = (args + 1);
     backtick = 0;
-    if(!isNull(CAR(args)))
-	backtick = asLogical(CAR(args));
-    args = CDR(args);
+    if(!isNull(args[0]))
+	backtick = asLogical(args[0]);
+    args = (args + 1);
     opts = SHOWATTRIBUTES;
-    if(!isNull(CAR(args)))
-	opts = asInteger(CAR(args));
-    args = CDR(args);
-    nlines = asInteger(CAR(args));
+    if(!isNull(args[0]))
+	opts = asInteger(args[0]);
+    args = (args + 1);
+    nlines = asInteger(args[0]);
     if (nlines == NA_INTEGER) nlines = -1;
     ca1 = deparse1WithCutoff(ca1, CXXRFALSE, cut0, CXXRCONSTRUCT(Rboolean, backtick), opts, nlines);
     return ca1;
@@ -331,7 +329,7 @@ SEXP attribute_hidden deparse1s(SEXP call)
 
 #include "Rconnections.h"
 
-SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_dput(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP saveenv, tval;
     int i, ifile, res;
@@ -339,25 +337,25 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
     int opts;
     Rconnection con = Rconnection( 1); /* stdout */
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    tval = CAR(args);
+    tval = args[0];
     saveenv = R_NilValue;	/* -Wall */
     if (TYPEOF(tval) == CLOSXP) {
 	PROTECT(saveenv = CLOENV(tval));
 	SET_CLOENV(tval, R_GlobalEnv);
     }
     opts = SHOWATTRIBUTES;
-    if(!isNull(CADDR(args)))
-	opts = asInteger(CADDR(args));
+    if(!isNull(args[2]))
+	opts = asInteger(args[2]);
 
     tval = deparse1(tval, CXXRFALSE, opts);
-    if (TYPEOF(CAR(args)) == CLOSXP) {
-	SET_CLOENV(CAR(args), saveenv);
+    if (TYPEOF(args[0]) == CLOSXP) {
+	SET_CLOENV(args[0], saveenv);
 	UNPROTECT(1);
     }
     PROTECT(tval); /* against Rconn_printf */
-    ifile = asInteger(CADR(args));
+    ifile = asInteger(args[1]);
 
     wasopen = CXXRTRUE;
     try {
@@ -389,10 +387,10 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    con->close(con);
 	throw;
     }
-    return (CAR(args));
+    return (args[0]);
 }
 
-SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_dump(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP file, names, o, objs, tval, source, outnames;
     int i, j, nobjs, nout, res;

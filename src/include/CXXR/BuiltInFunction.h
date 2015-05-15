@@ -300,33 +300,55 @@ namespace CXXR {
 	RObject* apply(ArgList* arglist, Environment* env,
 		       const Expression* call) const override;
 
+	// Internal group dispatch ("Math", "Ops", "Complex", "Summary")
+	// dispatch on the first argument (first two for 'Ops').
+	// The number of arguments is not checked.
         std::pair<bool, RObject*>
         InternalGroupDispatch(const char* group, const Expression* call,
-                              Environment* env, int num_args,
-                              RObject** evaluated_args, const PairList* tags)
-	    const
+			      Environment* env, int num_args,
+			      RObject* const* evaluated_args,
+                              const PairList* tags) const
         {
-            // Try to fail fast if we don't have an object.
-	    if (noObjectsToDispatchOn(num_args, evaluated_args))
-		return std::make_pair(false, (RObject*)nullptr);
+	    assert(strcmp(group, "Ops") != 0);
+	    if (!needsDispatch(num_args, evaluated_args, 1)) {
+		return std::make_pair(false, nullptr);
+	    }
+	    return RealInternalGroupDispatch(group, call, env, num_args,
+					     evaluated_args, tags);
+	}
+
+	// The 'Ops' group is special becaues it dispatches on the first two
+	// arguments.
+        std::pair<bool, RObject*>
+        InternalOpsGroupDispatch(const char* group, const Expression* call,
+				 Environment* env, int num_args,
+				 RObject* const* evaluated_args,
+                                 const PairList* tags) const
+        {
+	    assert(strcmp(group, "Ops") == 0);
+	    if (!needsDispatch(num_args, evaluated_args, 2)) {
+		return std::make_pair(false, nullptr);
+	    }
 	    return RealInternalGroupDispatch(group, call, env, num_args,
 					     evaluated_args, tags);
 	}
 
         // This works like DispatchOrEval in the case where the arguments
         // have already been evaluated.
+	// Note that only the first argument is used for dispatching.
         std::pair<bool, RObject*>
         InternalDispatch(const Expression* call, const char* generic, 
-                         int num_args, RObject** evaluated_args,
+                         int num_args, RObject* const* evaluated_args,
                          const PairList* tags,
                          Environment* env) const
           {
-            // Try to fail fast if we don't have an object.
-	    if (noObjectsToDispatchOn(num_args, evaluated_args))
-		return std::make_pair(false, (RObject*)nullptr);
+	      assert(sexptype() == BUILTINSXP);
 
-            return RealInternalDispatch(call, generic, num_args, evaluated_args,
-                                        tags, env);
+	      if (!needsDispatch(num_args, evaluated_args, 1)) {
+		      return std::make_pair(false, nullptr);
+	      }
+	      return RealInternalDispatch(call, generic, num_args,
+					  evaluated_args, tags, env);
           }
 
     private:
@@ -338,7 +360,7 @@ namespace CXXR {
         typedef RObject*(*QuickInvokeFunction)(/*const*/ Expression* call,
 					       const BuiltInFunction* op,
 					       Environment* env,
-					       /*const*/ RObject** args,
+					       RObject* const* args,
 					       int num_args,
 					       const PairList* tags);
 
@@ -445,32 +467,37 @@ namespace CXXR {
 
         bool argsNeedEvaluating(const ArgList* arglist) const;
 
-        bool noObjectsToDispatchOn(int num_args, RObject** evaluated_args) const {
-	    // Internal dispatch is used a lot, but there most of the time
-	    // no dispatch is needed because no objects are involved.
-	    // This quickly detects most of cases.
-	    assert(arity() == -1 || num_args == arity());
+	// Internal dispatch is used a lot, but there most of the time
+	// no dispatch is needed because no objects are involved.
+	// This quickly detects most of cases.
+	bool needsDispatch(int num_args, RObject* const* evaluated_args,
+			   int args_to_check) const {
+	    // args_to_check is always 1 or 2.
 	    assert(sexptype() == BUILTINSXP);
-	    
-	    if (num_args == 0)
-		return true;
-	    if (Rf_isObject(evaluated_args[0]))
-		return false;
-	    if (num_args == 2 && !Rf_isObject(evaluated_args[0]))
-		return true;
-	    // There are more arguments that we haven't tested, so return false
-	    // just in case.
-	    return false;
-        }
+	    assert(args_to_check == 1 || args_to_check == 2);
 
+	    if (num_args > 0) {
+		if (Rf_isObject(evaluated_args[0])) {
+		    return true;
+		} else if (args_to_check == 2 && num_args > 1) {
+		    return Rf_isObject(evaluated_args[1]);
+		}
+	    }
+	    return false;
+	}
+
+	// Most cases dispatch on the first argument, except "Ops" which uses
+	// the first two.
         std::pair<bool, RObject*>
         RealInternalGroupDispatch(const char* group, const Expression* call,
 				  Environment* env, int num_args,
-				  RObject** args, const PairList* tags) const;
+                                  RObject* const* args, const PairList* tags)
+          const;
 
+	// This dispatches on just the first argument.
         std::pair<bool, RObject*>
         RealInternalDispatch(const Expression* call, const char* generic,
-                             int num_args, RObject** evaluated_args,
+                             int num_args, RObject* const* evaluated_args,
                              const PairList* tags,
                              Environment* env) const;
 

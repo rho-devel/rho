@@ -691,7 +691,7 @@ void NORET errorcall(SEXP call, const char *format,...)
     va_end(ap);
 }
 
-SEXP attribute_hidden do_geterrmessage(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_geterrmessage(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP res;
 
@@ -855,7 +855,7 @@ void jump_to_toplevel()
 /* #define DEBUG_GETTEXT 1 */
 
 /* gettext(domain, string) */
-SEXP attribute_hidden do_gettext(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_gettext(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
 #ifdef ENABLE_NLS
     const char *domain = "", *cfn;
@@ -958,7 +958,7 @@ SEXP attribute_hidden do_gettext(/*const*/ CXXR::Expression* call, const CXXR::B
 }
 
 /* ngettext(n, msg1, msg2, domain) */
-SEXP attribute_hidden do_ngettext(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_ngettext(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
 #ifdef ENABLE_NLS
     const char *domain = "";
@@ -1018,7 +1018,7 @@ SEXP attribute_hidden do_ngettext(/*const*/ CXXR::Expression* call, const CXXR::
 
 
 /* bindtextdomain(domain, dirname) */
-SEXP attribute_hidden do_bindtextdomain(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_bindtextdomain(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
 #ifdef ENABLE_NLS
     char *res;
@@ -1243,7 +1243,7 @@ SEXP R_GetTraceback(int skip)
     return s;
 }
 
-SEXP attribute_hidden do_traceback(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_traceback(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int skip;
     
@@ -1442,7 +1442,7 @@ namespace {
 
 #define RESULT_SIZE 3
 
-SEXP attribute_hidden do_addCondHands(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_addCondHands(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP classes, handlers, parentenv, target, oldstack, newstack, result;
     int calling, i, n;
@@ -1483,7 +1483,7 @@ SEXP attribute_hidden do_addCondHands(/*const*/ CXXR::Expression* call, const CX
     return oldstack;
 }
 
-SEXP attribute_hidden do_resetCondHands(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_resetCondHands(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     R_HandlerStack = args[0];
@@ -1594,7 +1594,7 @@ static SEXP findConditionHandler(SEXP cond)
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_signalCondition(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_signalCondition(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP list, cond, msg, ecall, oldstack;
 
@@ -1702,7 +1702,7 @@ R_InsertRestartHandlers(ClosureContext *cptr, Rboolean browser)
     UNPROTECT(3);
 }
 
-SEXP attribute_hidden do_dfltWarn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_dfltWarn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     const char *msg;
     SEXP ecall;
@@ -1718,7 +1718,7 @@ SEXP attribute_hidden do_dfltWarn(/*const*/ CXXR::Expression* call, const CXXR::
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_dfltStop(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_dfltStop(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     const char *msg;
     SEXP ecall;
@@ -1739,7 +1739,7 @@ SEXP attribute_hidden do_dfltStop(/*const*/ CXXR::Expression* call, const CXXR::
  * Restart Handling
  */
 
-SEXP attribute_hidden do_getRestart(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_getRestart(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int i;
     SEXP list;
@@ -1771,11 +1771,11 @@ namespace {
     }
 }
 
-SEXP attribute_hidden do_addRestart(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_addRestart(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
-    CHECK_RESTART(CAR(args));
-    R_RestartStack = CONS(CAR(args), R_RestartStack);
+    op->checkNumArgs(num_args, call);
+    CHECK_RESTART(args[0]);
+    R_RestartStack = CONS(args[0], R_RestartStack);
     return R_NilValue;
 }
 
@@ -1808,7 +1808,7 @@ static void invokeRestart(SEXP r, SEXP arglist)
     }
 }
 
-SEXP attribute_hidden do_invokeRestart(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_invokeRestart(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     CHECK_RESTART(args[0]);
@@ -1816,7 +1816,7 @@ SEXP attribute_hidden do_invokeRestart(/*const*/ CXXR::Expression* call, const C
     return R_NilValue; /* not reached */
 }
 
-SEXP attribute_hidden do_seterrmessage(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_seterrmessage(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP msg;
 
@@ -1829,19 +1829,18 @@ SEXP attribute_hidden do_seterrmessage(/*const*/ CXXR::Expression* call, const C
 }
 
 SEXP attribute_hidden
-do_printDeferredWarnings(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+do_printDeferredWarnings(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     R_PrintDeferredWarnings();
     return R_NilValue;
 }
 
-SEXP attribute_hidden
-do_interruptsSuspended(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_interruptsSuspended(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int orig_value = R_interrupts_suspended;
-    if (args != R_NilValue) 
-	R_interrupts_suspended = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));
+    if (num_args != 0)
+	R_interrupts_suspended = CXXRCONSTRUCT(Rboolean, asLogical(args[0]));
     return ScalarLogical(orig_value);
 }
 	

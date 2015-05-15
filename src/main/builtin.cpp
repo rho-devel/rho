@@ -74,7 +74,7 @@ R_xlen_t asVecSize(SEXP x)
     return -999;  /* which gives error in the caller */
 }
 
-SEXP attribute_hidden do_delayed(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_delayed(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP name = R_NilValue /* -Wall */, expr, eenv, aenv;
     op->checkNumArgs(num_args, call);
@@ -109,7 +109,7 @@ SEXP attribute_hidden do_delayed(/*const*/ CXXR::Expression* call, const CXXR::B
 }
 
 /* makeLazy(names, values, expr, eenv, aenv) */
-SEXP attribute_hidden do_makelazy(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_makelazy(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP names, values, val, expr, eenv, aenv, expr0;
     R_xlen_t i;
@@ -237,7 +237,7 @@ SEXP attribute_hidden do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_formals(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_formals(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     if (TYPEOF(args[0]) == CLOSXP)
@@ -246,7 +246,7 @@ SEXP attribute_hidden do_formals(/*const*/ CXXR::Expression* call, const CXXR::B
 	return R_NilValue;
 }
 
-SEXP attribute_hidden do_body(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_body(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     if (TYPEOF(args[0]) == CLOSXP)
@@ -254,7 +254,7 @@ SEXP attribute_hidden do_body(/*const*/ CXXR::Expression* call, const CXXR::Buil
     else return R_NilValue;
 }
 
-SEXP attribute_hidden do_bodyCode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_bodyCode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     if (TYPEOF(args[0]) == CLOSXP)
@@ -266,7 +266,7 @@ SEXP attribute_hidden do_bodyCode(/*const*/ CXXR::Expression* call, const CXXR::
 #define simple_as_environment(arg) (IS_S4_OBJECT(arg) && (TYPEOF(arg) == S4SXP) ? R_getS4DataSlot(arg, ENVSXP) : arg)
 
 
-SEXP attribute_hidden do_envir(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_envir(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     if (TYPEOF(args[0]) == CLOSXP)
@@ -276,7 +276,7 @@ SEXP attribute_hidden do_envir(/*const*/ CXXR::Expression* call, const CXXR::Bui
     else return getAttrib(args[0], R_DotEnvSymbol);
 }
 
-SEXP attribute_hidden do_envirgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_envirgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP env;
     GCStackRoot<> s(args[0]);
@@ -317,7 +317,7 @@ SEXP attribute_hidden do_envirgets(/*const*/ CXXR::Expression* call, const CXXR:
  *
  * @return a newly created environment()
  */
-SEXP attribute_hidden do_newenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_newenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP enclos, size, ans;
     int hash;
@@ -347,7 +347,7 @@ SEXP attribute_hidden do_newenv(/*const*/ CXXR::Expression* call, const CXXR::Bu
     return ans;
 }
 
-SEXP attribute_hidden do_parentenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_parentenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     SEXP arg = args[0];
@@ -360,12 +360,12 @@ SEXP attribute_hidden do_parentenv(/*const*/ CXXR::Expression* call, const CXXR:
     return( ENCLOS(arg) );
 }
 
-SEXP attribute_hidden do_parentenvgets(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_parentenvgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP env, parent;
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    env = CAR(args);
+    env = args[0];
     if (isNull(env)) {
 	error(_("use of NULL environment is defunct"));
 	env = R_BaseEnv;
@@ -375,7 +375,7 @@ SEXP attribute_hidden do_parentenvgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("argument is not an environment"));
     if( env == R_EmptyEnv )
 	error(_("can not set parent of the empty environment"));
-    parent = CADR(args);
+    parent = args[1];
     if (isNull(parent)) {
 	error(_("use of NULL environment is defunct"));
 	parent = R_BaseEnv;
@@ -387,10 +387,10 @@ SEXP attribute_hidden do_parentenvgets(SEXP call, SEXP op, SEXP args, SEXP rho)
     Environment* parenv = static_cast<Environment*>(parent);
     static_cast<Environment*>(env)->setEnclosingEnvironment(parenv);
 
-    return( CAR(args) );
+    return(env);
 }
 
-SEXP attribute_hidden do_envirName(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_envirName(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP env = args[0], ans=mkString(""), res;
 
@@ -499,7 +499,7 @@ static void cat_cleanup(cat_info* pci)
 #endif
 }
 
-SEXP attribute_hidden do_cat(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_cat(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     cat_info ci;
     SEXP objs, file, fill, sepr, labs, s;
@@ -725,7 +725,7 @@ SEXP attribute_hidden do_expression(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 /* vector(mode="logical", length=0) */
-SEXP attribute_hidden do_makevector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_makevector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     R_xlen_t len;
     SEXP s;
@@ -875,7 +875,7 @@ SEXP lengthgets(SEXP x, R_len_t len)
 }
 
 
-SEXP attribute_hidden do_lengthgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_lengthgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans;
 
@@ -887,7 +887,7 @@ SEXP attribute_hidden do_lengthgets(/*const*/ CXXR::Expression* call, const CXXR
     if (op->variant()) { /* xlength<- */
 	/* Attempt method dispatch. */
 	auto dispatched = op->InternalDispatch(call, "length<-",
-					       2, args, tags, rho);
+					       num_args, args, tags, rho);
 	if (dispatched.first)
 	    return dispatched.second;
 	if (!isVector(x) && !isVectorizable(x))
@@ -899,7 +899,7 @@ SEXP attribute_hidden do_lengthgets(/*const*/ CXXR::Expression* call, const CXXR
     }
     /* Attempt method dispatch. */
     auto dispatched = op->InternalDispatch(call, "length<-",
-					   2, args, tags, rho);
+					   num_args, args, tags, rho);
     if (dispatched.first)
 	return dispatched.second;
 

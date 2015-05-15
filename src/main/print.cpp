@@ -116,16 +116,16 @@ void PrintDefaults(void)
     R_print.cutoff = GetOptionCutoff();
 }
 
-SEXP attribute_hidden do_invisible(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_invisible(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    switch (length(args)) {
+    switch (num_args) {
     case 0:
 	return R_NilValue;
     case 1:
-	check1arg(args, call, "x");
-	return CAR(args);
+	check1arg(tags, call, "x");
+	return args[0];
     default:
-	checkArity(op, args); /* must fail */
+	op->checkNumArgs(num_args, call); /* must fail */
 	return call;/* never used, just for -Wall */
     }
 }
@@ -138,22 +138,21 @@ SEXP attribute_hidden do_visibleflag(SEXP call, SEXP op, SEXP args, SEXP rho)
 #endif
 
 /* This is *only* called via outdated R_level prmatrix() : */
-SEXP attribute_hidden do_prmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_prmatrix(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int quote;
     SEXP a, x, rowlab, collab, naprint;
     char *rowname = nullptr, *colname = nullptr;
 
-    checkArity(op,args);
+    op->checkNumArgs(num_args, call);
     PrintDefaults();
-    a = args;
-    x = CAR(a); a = CDR(a);
-    rowlab = CAR(a); a = CDR(a);
-    collab = CAR(a); a = CDR(a);
+    x = args[0]; args = (args + 1);
+    rowlab = args[0]; args = (args + 1);
+    collab = args[0]; args = (args + 1);
 
-    quote = asInteger(CAR(a)); a = CDR(a);
-    R_print.right = Rprt_adj( asInteger(CAR(a))); a = CDR(a);
-    naprint = CAR(a);
+    quote = asInteger(args[0]); args = (args + 1);
+    R_print.right = Rprt_adj( asInteger(args[0])); args = (args + 1);
+    naprint = args[0];
     if(!isNull(naprint))  {
 	if(!isString(naprint) || LENGTH(naprint) < 1)
 	    error(_("invalid 'na.print' specification"));
@@ -176,7 +175,7 @@ SEXP attribute_hidden do_prmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 }/* do_prmatrix */
 
 /* .Internal( print.function(f, useSource, ...)) */
-SEXP attribute_hidden do_printfunction(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_printfunction(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP s = args[0];
     switch (TYPEOF(s)) {
@@ -234,7 +233,7 @@ void PrintLanguage(SEXP s, Rboolean useSource)
 
 /* .Internal(print.default(x, digits, quote, na.print, print.gap,
 			   right, max, useS4)) */
-SEXP attribute_hidden do_printdefault(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_printdefault(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, naprint;
     int tryS4;

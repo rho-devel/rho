@@ -221,13 +221,13 @@ static SEXP do_relop_dflt(/*const*/ Expression* call,
 RObject* attribute_hidden do_relop(/*const*/ Expression* call,
 				   const BuiltInFunction* op,
 				   Environment* env,
-				   RObject** args,
+				   RObject* const* args,
 				   int num_args,
 				   const PairList* tags)
 {
     // If any of the args has a class, then we might need to dispatch.
-    auto result = op->InternalGroupDispatch("Ops", call, env, num_args, args,
-					    tags);
+    auto result = op->InternalOpsGroupDispatch("Ops", call, env, num_args, args,
+					       tags);
     if (result.first)
 	return result.second;
 
@@ -461,7 +461,7 @@ static SEXP bitwiseShiftR(SEXP a, SEXP b)
     return ans;
 }
 
-SEXP attribute_hidden do_bitwise(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_bitwise(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     SEXP ans = R_NilValue; /* -Wall */

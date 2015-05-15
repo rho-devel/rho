@@ -100,7 +100,7 @@ amatch_regaparams(regaparams_t *params, int patlen,
     }
 }
 
-SEXP attribute_hidden do_agrep(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_agrep(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP pat, vec, ind, ans;
     SEXP opt_costs, opt_bounds;
@@ -485,7 +485,7 @@ adist_full(SEXP x, SEXP y, double *costs, Rboolean opt_counts)
 
 #define OFFSETS(I, J, K)	INTEGER(offsets)[I + J * nx + K * nxy]
 
-SEXP attribute_hidden do_adist(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_adist(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, y;
     SEXP ans, counts, offsets, dimnames, names, elt;
@@ -732,7 +732,7 @@ SEXP attribute_hidden do_adist(/*const*/ CXXR::Expression* call, const CXXR::Bui
     return ans;
 }
 
-SEXP attribute_hidden do_aregexec(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_aregexec(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP pat, vec, ans, matchpos, matchlen;
     SEXP opt_bounds, opt_costs;

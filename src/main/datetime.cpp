@@ -560,7 +560,7 @@ double currentTime(void)
     return ans;
 }
 
-SEXP attribute_hidden do_systime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_systime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     return ScalarReal(currentTime());
 }
@@ -688,7 +688,7 @@ makelt(struct tm *tm, SEXP ans, R_xlen_t i, int valid, double frac_secs)
 }
 
 
-SEXP attribute_hidden do_asPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_asPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP stz, x, ans, ansnames, klass, tzone;
     int isgmt = 0, valid, settz = 0;
@@ -754,7 +754,7 @@ SEXP attribute_hidden do_asPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_asPOSIXct(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_asPOSIXct(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP stz, x, ans;
     R_xlen_t n = 0, nlen[9];
@@ -839,7 +839,7 @@ SEXP attribute_hidden do_asPOSIXct(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_formatPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_formatPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, sformat, ans, tz;
     R_xlen_t i, n = 0, m, N, nlen[9];
@@ -1011,7 +1011,7 @@ static void glibc_fix(struct tm *tm, int *invalid)
 }
 
 
-SEXP attribute_hidden do_strptime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_strptime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, sformat, ans, ansnames, klass, stz, tzone;
     int invalid, isgmt = 0, settz = 0, offset;
@@ -1120,7 +1120,7 @@ SEXP attribute_hidden do_strptime(/*const*/ CXXR::Expression* call, const CXXR::
     return ans;
 }
 
-SEXP attribute_hidden do_D2POSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_D2POSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans, ansnames, klass;
     R_xlen_t n, i;
@@ -1179,7 +1179,7 @@ SEXP attribute_hidden do_D2POSIXlt(/*const*/ CXXR::Expression* call, const CXXR:
     return ans;
 }
 
-SEXP attribute_hidden do_POSIXlt2D(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_POSIXlt2D(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans, klass;
     R_xlen_t i, n = 0, nlen[9];

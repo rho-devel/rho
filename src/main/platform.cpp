@@ -287,7 +287,7 @@ static char *R_Date(void)
     return s;
 }
 
-SEXP attribute_hidden do_date(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_date(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     return mkString(R_Date());
@@ -301,7 +301,7 @@ SEXP attribute_hidden do_date(/*const*/ CXXR::Expression* call, const CXXR::Buil
  */
 
 // .Internal so manages R_alloc stack used by acopy_string
-SEXP attribute_hidden do_fileshow(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_fileshow(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP fn, tl, hd, pg;
     const char **f, **h, *t, *pager = nullptr /* -Wall */;
@@ -393,7 +393,7 @@ static int R_AppendFile(SEXP file1, SEXP file2)
     return status;
 }
 
-SEXP attribute_hidden do_fileappend(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_fileappend(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP f1, f2, ans;
     int n, n1, n2;
@@ -451,7 +451,7 @@ done:
     return ans;
 }
 
-SEXP attribute_hidden do_filecreate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_filecreate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP fn, ans;
     FILE *fp;
@@ -480,7 +480,7 @@ SEXP attribute_hidden do_filecreate(/*const*/ CXXR::Expression* call, const CXXR
     return ans;
 }
 
-SEXP attribute_hidden do_fileremove(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_fileremove(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP f, ans;
     int i, n;
@@ -545,7 +545,7 @@ const char *formatError(DWORD res);  /* extra.c */
    have, and which many people report granting in the Policy Editor
    fails to work.
 */
-SEXP attribute_hidden do_filesymlink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_filesymlink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP f1, f2;
     int n, n1, n2;
@@ -625,7 +625,7 @@ SEXP attribute_hidden do_filesymlink(/*const*/ CXXR::Expression* call, const CXX
 }
 
 
-SEXP attribute_hidden do_filelink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_filelink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP f1, f2;
     int n, n1, n2;
@@ -698,7 +698,7 @@ int Rwin_rename(char *from, char *to);  /* in src/gnuwin32/extra.c */
 int Rwin_wrename(const wchar_t *from, const wchar_t *to);
 #endif
 
-SEXP attribute_hidden do_filerename(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_filerename(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP f1, f2, ans;
     int i, n1, n2;
@@ -785,7 +785,7 @@ SEXP attribute_hidden do_filerename(/*const*/ CXXR::Expression* call, const CXXR
 # define STAT_TIMESPEC_NS(st, st_xtim) ((st).st_xtim.st__tim.tv_nsec)
 #endif
 
-SEXP attribute_hidden do_fileinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_fileinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP fn, ans, ansnames, fsize, mtime, ctime, atime, isdir,
 	mode, xxclass;
@@ -1068,7 +1068,7 @@ list_files(const char *dnp, const char *stem, int *count, SEXP *pans,
 }
 #undef IF_MATCH_ADD_TO_ANS
 
-SEXP attribute_hidden do_listfiles(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_listfiles(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int countmax = 128;
 
@@ -1186,7 +1186,7 @@ static void list_dirs(const char *dnp, const char *nm,
     }
 }
 
-SEXP attribute_hidden do_listdirs(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_listdirs(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     PROTECT_INDEX idx;
     SEXP d, ans;
@@ -1218,7 +1218,7 @@ SEXP attribute_hidden do_listdirs(/*const*/ CXXR::Expression* call, const CXXR::
     return ans;
 }
 
-SEXP attribute_hidden do_Rhome(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_Rhome(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     char *path;
     op->checkNumArgs(num_args, call);
@@ -1235,7 +1235,7 @@ static Rboolean attribute_hidden R_WFileExists(const wchar_t *path)
 }
 #endif
 
-SEXP attribute_hidden do_fileexists(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_fileexists(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP file, ans;
     int i, nfile;
@@ -1290,7 +1290,7 @@ extern int winAccessW(const wchar_t *path, int mode);
 #endif
 
 /* we require 'access' as from 2.12.0 */
-SEXP attribute_hidden do_fileaccess(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_fileaccess(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP fn, ans;
     int i, n, mode, modemask;
@@ -1549,7 +1549,7 @@ SEXP attribute_hidden do_unlink(SEXP call, SEXP op, SEXP args, SEXP env)
 #  include <glob.h>
 # endif
 
-SEXP attribute_hidden do_unlink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_unlink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP  fn;
     int i, nfiles, failures = 0, recursive, force;
@@ -1662,7 +1662,7 @@ SEXP attribute_hidden do_dirchmod(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 
 
-SEXP attribute_hidden do_getlocale(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_getlocale(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int cat;
     char *p = nullptr;
@@ -1698,7 +1698,7 @@ extern void invalidate_cached_recodings(void);  /* from sysutils.c */
 extern void resetICUcollator(void); /* from util.c */
 
 /* Locale specs are always ASCII */
-SEXP attribute_hidden do_setlocale(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_setlocale(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP locale = args[1], ans;
     int cat;
@@ -1791,7 +1791,7 @@ SEXP attribute_hidden do_setlocale(/*const*/ CXXR::Expression* call, const CXXR:
 
 
 
-SEXP attribute_hidden do_localeconv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_localeconv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, ansnames;
     struct lconv *lc = localeconv();
@@ -1850,7 +1850,7 @@ SEXP attribute_hidden do_localeconv(/*const*/ CXXR::Expression* call, const CXXR
 }
 
 /* .Internal function for path.expand */
-SEXP attribute_hidden do_pathexpand(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_pathexpand(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP fn, ans;
     int i, n;
@@ -1899,7 +1899,7 @@ static Rboolean R_can_use_X11(void)
 #endif
 
 /* only actually used on Unix */
-SEXP attribute_hidden do_capabilitiesX11(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_capabilitiesX11(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
 #ifdef Unix
     return ScalarLogical(R_can_use_X11());
@@ -1908,7 +1908,7 @@ SEXP attribute_hidden do_capabilitiesX11(/*const*/ CXXR::Expression* call, const
 #endif
 }
 
-SEXP attribute_hidden do_capabilities(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_capabilities(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, ansnames;
     int i = 0;
@@ -2076,7 +2076,7 @@ SEXP attribute_hidden do_capabilities(/*const*/ CXXR::Expression* call, const CX
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-SEXP attribute_hidden do_nsl(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_nsl(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans = R_NilValue;
     const char *name; char ip[] = "xxx.xxx.xxx.xxx";
@@ -2111,7 +2111,7 @@ SEXP attribute_hidden do_nsl(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 #endif
 
-SEXP attribute_hidden do_sysgetpid(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sysgetpid(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     return ScalarInteger(getpid());
@@ -2126,7 +2126,7 @@ SEXP attribute_hidden do_sysgetpid(/*const*/ CXXR::Expression* call, const CXXR:
 */
 #ifndef Win32
 /* mkdir is defined in <sys/stat.h> */
-SEXP attribute_hidden do_dircreate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_dircreate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP path;
     int res, show, recursive, mode, serrno = 0;
@@ -2506,7 +2506,7 @@ copy_error:
 }
 
 /* file.copy(files, dir, recursive), only */
-SEXP attribute_hidden do_filecopy(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_filecopy(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP fn, to, ans;
     char *p, dir[PATH_MAX], from[PATH_MAX], name[PATH_MAX];
@@ -2565,7 +2565,7 @@ SEXP attribute_hidden do_filecopy(/*const*/ CXXR::Expression* call, const CXXR::
 }
 #endif
 
-SEXP attribute_hidden do_l10n_info(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_l10n_info(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
 #ifdef Win32
     int len = 4;
@@ -2593,7 +2593,7 @@ SEXP attribute_hidden do_l10n_info(/*const*/ CXXR::Expression* call, const CXXR:
 
 /* do_normalizepath moved to util.c in R 2.13.0 */
 
-SEXP attribute_hidden do_syschmod(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_syschmod(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
 #ifdef HAVE_CHMOD
     SEXP paths, smode, ans;
@@ -2657,7 +2657,7 @@ SEXP attribute_hidden do_syschmod(/*const*/ CXXR::Expression* call, const CXXR::
 #endif
 }
 
-SEXP attribute_hidden do_sysumask(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_sysumask(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
     int mode;
@@ -2684,7 +2684,7 @@ SEXP attribute_hidden do_sysumask(/*const*/ CXXR::Expression* call, const CXXR::
     return ans;
 }
 
-SEXP attribute_hidden do_readlink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_readlink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP paths, ans;
     int n;
@@ -2715,7 +2715,7 @@ SEXP attribute_hidden do_readlink(/*const*/ CXXR::Expression* call, const CXXR::
 }
 
 
-SEXP attribute_hidden do_Cstack_info(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_Cstack_info(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, nms;
 
@@ -2775,7 +2775,7 @@ static int winSetFileTime(const char *fn, time_t ftime)
 #endif
 
 SEXP attribute_hidden
-do_setFileTime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+do_setFileTime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     const char *fn = translateChar(STRING_ELT(args[0], 0));

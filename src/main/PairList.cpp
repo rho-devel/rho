@@ -61,7 +61,7 @@ namespace {
     const unsigned int ACTIVE_BINDING_MASK = 1<<15;
 }
 
-PairList* PairList::make(int num_args, RObject** args)
+PairList* PairList::make(int num_args, RObject* const* args)
 {
     if (num_args == 0)
 	return nullptr;

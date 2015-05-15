@@ -59,7 +59,7 @@ static R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
 /* Note that NA_STRING is not handled separately here.  This is
    deliberate -- see ?paste -- and implicitly coerces it to "NA"
 */
-SEXP attribute_hidden do_paste(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_paste(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, collapse, sep, x;
     int sepw, u_sepw;
@@ -288,7 +288,7 @@ SEXP attribute_hidden do_paste(/*const*/ CXXR::Expression* call, const CXXR::Bui
     return ans;
 }
 
-SEXP attribute_hidden do_filepath(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_filepath(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, sep, x;
     int i, j, k, ln, maxlen, nx, nzero, pwidth, sepw;
@@ -367,7 +367,7 @@ SEXP attribute_hidden do_filepath(/*const*/ CXXR::Expression* call, const CXXR::
 
 /* format.default(x, trim, digits, nsmall, width, justify, na.encode,
 		  scientific) */
-SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP l, x, y, swd;
     int il, digits, trim = 0, nsmall = 0, wd = 0, adj = -1, na, sci = 0;
@@ -584,7 +584,7 @@ SEXP attribute_hidden do_format(/*const*/ CXXR::Expression* call, const CXXR::Bu
  * for complex : 2 x 3 integers for (Re, Im)
  */
 
-SEXP attribute_hidden do_formatinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_formatinfo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x;
     int digits, nsmall, no = 1, w, d, e, wi, di, ei;

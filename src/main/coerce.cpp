@@ -1369,7 +1369,7 @@ SEXP Rf_asCharacterFactor(SEXP x)
 
 /* the "ascharacter" name is a historical anomaly: as.character used to be the
  * only primitive;  now, all these ops are : */
-SEXP attribute_hidden do_ascharacter(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_ascharacter(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x;
 
@@ -1414,7 +1414,7 @@ SEXP attribute_hidden do_ascharacter(/*const*/ CXXR::Expression* call, const CXX
 
 /* NB: as.vector is used for several other as.xxxx, including
    as.expression, as.list, as.pairlist, as.symbol, (as.single) */
-SEXP attribute_hidden do_asvector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_asvector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans;
     SEXPTYPE type;
@@ -1498,20 +1498,20 @@ SEXP attribute_hidden do_asvector(/*const*/ CXXR::Expression* call, const CXXR::
 }
 
 
-SEXP attribute_hidden do_asfunction(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_asfunction(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args_, int num_args, const CXXR::PairList* tags)
 {
-    SEXP arglist, envir, names, pargs, body;
+    SEXP arglist, envir, names, args, pargs, body;
     int i, n;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
     /* Check the arguments; we need a list and environment. */
 
-    arglist = CAR(args);
+    arglist = args_[0];
     if (!Rf_isNewList(arglist))
 	Rf_errorcall(call, _("list argument expected"));
 
-    envir = CADR(args);
+    envir = args_[1];
     if (Rf_isNull(envir)) {
 	Rf_error(_("use of NULL environment is defunct"));
 	envir = R_BaseEnv;
@@ -1549,15 +1549,15 @@ SEXP attribute_hidden do_asfunction(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 
 /* primitive */
-SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_ascall(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args_, int num_args, const CXXR::PairList* tags)
 {
     SEXP ap, ans, names;
     int i, n;
 
-    checkArity(op, args);
-    Rf_check1arg(args, call, "x");
+    op->checkNumArgs(num_args, call);
+    Rf_check1arg(tags, call, "x");
 
-    args = CAR(args);
+    RObject* args = args_[0];
     switch (TYPEOF(args)) {
     case LANGSXP:
 	ans = args;
@@ -1749,7 +1749,7 @@ Rcomplex Rf_asComplex(SEXP x)
 
 
 /* return the type (= "detailed mode") of the SEXP */
-SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     return Rf_ScalarString(Rf_type2str(TYPEOF(args[0])));
@@ -1758,7 +1758,7 @@ SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::Bu
 /* Define many of the <primitive> "is.xxx" functions :
    Note that  Rf_isNull, Rf_isNumeric, etc are defined in util.c or Rinlinedfuns.h
 */
-SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans;
     op->checkNumArgs(num_args, call);
@@ -1927,7 +1927,7 @@ SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltI
  * It seems to make more sense to check for a dim attribute.
  */
 
-SEXP attribute_hidden do_isvector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_isvector(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, a, x;
     const char *stype;
@@ -2002,23 +2002,24 @@ namespace {
     }
 }
     
-SEXP attribute_hidden do_isna(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_isna(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
 
-    checkArity(op, args);
-    Rf_check1arg(args, call, "x");
+    op->checkNumArgs(num_args, call);
+    Rf_check1arg(tags, call, "x");
 
-    if (Rf_DispatchOrEval(call, op, "is.na", args, rho, &ans, 1, 1))
-	return(ans);
-    PROTECT(args = ans);
+    auto dispatched = op->InternalDispatch(call, "is.na", num_args, args, tags,
+					   rho);
+    if (dispatched.first)
+	return dispatched.second;
 #ifdef stringent_is
-    if (!Rf_isList(CAR(args)) && !Rf_isVector(CAR(args)))
+    if (!Rf_isList(args[0]) && !Rf_isVector(args[0])))
 	errorcall_return(call, "is.na " R_MSG_list_vec);
 
 #endif
-    x = CAR(args);
+    x = args[0];
     n = Rf_xlength(x);
     PROTECT(ans = Rf_allocVector(LGLSXP, n));
     if (Rf_isVector(x)) {
@@ -2115,23 +2116,23 @@ namespace {
     }
 }
 
-SEXP attribute_hidden do_isnan(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_isnan(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, dims, names, x;
     R_xlen_t i, n;
 
-    checkArity(op, args);
-    Rf_check1arg(args, call, "x");
+    op->checkNumArgs(num_args, call);
+    Rf_check1arg(tags, call, "x");
 
-    if (Rf_DispatchOrEval(call, op, "is.nan", args, rho, &ans, 1, 1))
-	return(ans);
-
-    PROTECT(args = ans);
+    auto dispatched = op->InternalDispatch(call, "is.nan", num_args, args, tags,
+					   rho);
+    if (dispatched.first)
+	return dispatched.second;
 #ifdef stringent_is
-    if (!Rf_isList(CAR(args)) && !Rf_isVector(CAR(args)))
+    if (!Rf_isList(args[0]) && !Rf_isVector(args[0]))
 	errorcall_return(call, "is.nan " R_MSG_list_vec);
 #endif
-    x = CAR(args);
+    x = args[0];
     n = Rf_xlength(x);
     PROTECT(ans = Rf_allocVector(LGLSXP, n));
     if (Rf_isVector(x)) {
@@ -2178,7 +2179,7 @@ SEXP attribute_hidden do_isnan(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
-SEXP attribute_hidden do_isfinite(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_isfinite(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x, names, dims;
     R_xlen_t i, n;
@@ -2239,7 +2240,7 @@ SEXP attribute_hidden do_isfinite(/*const*/ CXXR::Expression* call, const CXXR::
     return ans;
 }
 
-SEXP attribute_hidden do_isinfinite(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_isinfinite(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x, names, dims;
     double xr, xi;
@@ -2337,16 +2338,16 @@ SEXP attribute_hidden do_call(SEXP call, SEXP op, SEXP args, SEXP rho)
     return (rfun);
 }
 
-SEXP attribute_hidden do_docall(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_docall(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args_, int num_args, const CXXR::PairList* tags)
 {
     SEXP c, fun, names, envir;
     int i, n;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    fun = CAR(args);
-    envir = CADDR(args);
-    args = CADR(args);
+    fun = args_[0];
+    envir = args_[2];
+    SEXP args = args_[1];
 
     /* must be a string or a function:
        zero-length string check used to be here but Rf_install gives
@@ -2387,10 +2388,8 @@ SEXP attribute_hidden do_docall(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    SET_TAG(c, Rf_installTrChar(Rf_ItemName(names, i)));
 	c = CDR(c);
     }
-    call = Rf_eval(call, envir);
-
     UNPROTECT(1);
-    return call;
+    return Rf_eval(call, envir);
 }
 
 
@@ -2681,7 +2680,7 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
     return obj;
 }
 
-SEXP attribute_hidden R_do_set_class(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden R_do_set_class(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     Rf_check1arg(tags, call, "x");
@@ -2690,7 +2689,7 @@ SEXP attribute_hidden R_do_set_class(/*const*/ CXXR::Expression* call, const CXX
 }
 
 /* primitive */
-SEXP attribute_hidden do_storage_mode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, /*const*/ CXXR::RObject** args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_storage_mode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
 /* storage.mode(obj) <- value */
     SEXP obj, value, ans;
