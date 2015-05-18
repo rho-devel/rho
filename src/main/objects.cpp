@@ -1115,10 +1115,10 @@ SEXP attribute_hidden do_standardGeneric(/*const*/ CXXR::Expression* call, const
     }
 
     op->checkNumArgs(num_args, call); /* set to -1 */
-    arg = args[0];
-    if(!Rf_isValidStringF(arg))
+    if (num_args == 0 || !Rf_isValidStringF(args[0]))
 	Rf_errorcall(call,
 		  _("argument to 'standardGeneric' must be a non-empty character string"));
+    arg = args[0];
 
     PROTECT(fdef = get_this_generic(args, num_args));
 
