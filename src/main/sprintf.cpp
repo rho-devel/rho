@@ -103,7 +103,7 @@ SEXP attribute_hidden do_sprintf(/*const*/ CXXR::Expression* call, const CXXR::B
 
     nargs = num_args;
     /* grab the format string */
-    format = args[0];
+    format = num_args ? args[0] : nullptr;
     if (!isString(format))
 	error(_("'fmt' is not a character vector"));
     nfmt = length(format);

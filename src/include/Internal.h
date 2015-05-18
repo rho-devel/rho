@@ -485,7 +485,7 @@ CXXR::quick_builtin do_importIntoEnv;
 CXXR::quick_builtin do_envprofile;
 
 CXXR::quick_builtin do_tracemem;
-CXXR::quick_builtin do_retracemem;
+SEXP do_retracemem(SEXP, SEXP, SEXP, SEXP);
 CXXR::quick_builtin do_untracemem;
 
 extern "C" {

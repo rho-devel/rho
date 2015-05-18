@@ -306,7 +306,7 @@ SEXP attribute_hidden do_parentframe(/*const*/ CXXR::Expression* call, const CXX
     ClosureContext *cptr;
 
     op->checkNumArgs(num_args, call);
-    t = args[0];
+    t = num_args ? args[0] : nullptr;
     n = asInteger(t);
 
     if(n == NA_INTEGER || n < 1 )

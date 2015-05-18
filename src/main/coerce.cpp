@@ -1400,14 +1400,14 @@ SEXP attribute_hidden do_ascharacter(/*const*/ CXXR::Expression* call, const CXX
     /* run the generic internal code */
 
     op->checkNumArgs(num_args, call);
-    x = args[0];
+    x = num_args ? args[0] : nullptr;
     if(TYPEOF(x) == type) {
 	if(ATTRIB(x) == R_NilValue) return x;
 	ans = NAMED(x) ? Rf_duplicate(x) : x;
 	CLEAR_ATTRIB(ans);
 	return ans;
     }
-    ans = ascommon(call, args[0], type);
+    ans = ascommon(call, x, type);
     CLEAR_ATTRIB(ans);
     return ans;
 }

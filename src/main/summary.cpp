@@ -883,6 +883,7 @@ SEXP attribute_hidden do_pmin(/*const*/ CXXR::Expression* call, const CXXR::Buil
     SEXPTYPE type, anstype;
 
     // Remove narm from the args.
+    assert(num_args >= 1);
     narm = asLogical(args[0]);
     if(narm == NA_LOGICAL)
 	error(_("invalid '%s' value"), "na.rm");

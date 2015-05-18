@@ -127,10 +127,10 @@ SEXP attribute_hidden do_tracemem(/*const*/ CXXR::Expression* call, const CXXR::
     SEXP object;
     char buffer[21];
 
-    checkArity(op, args);
-    check1arg(args, call, "x");
+    op->checkNumArgs(num_args, call);
+    check1arg(tags, call, "x");
 
-    object = CAR(args);
+    object = args[0];
     if(object == R_NilValue)
 	errorcall(call, _("cannot trace NULL"));
 
@@ -156,10 +156,10 @@ SEXP attribute_hidden do_untracemem(/*const*/ CXXR::Expression* call, const CXXR
 #ifdef R_MEMORY_PROFILING
     SEXP object;
 
-    checkArity(op, args);
-    check1arg(args, call, "x");
+    op->checkNumArgs(num_args, call);
+    check1arg(tags, call, "x");
 
-    object=CAR(args);
+    object=args[0];
     object->setMemoryTracing(false);
 #else
     errorcall(call, _("R was not compiled with support for memory profiling"));
@@ -215,7 +215,7 @@ void RObject::traceMemory(const RObject* src1, const RObject* src2,
 
 #endif /* R_MEMORY_PROFILING */
 
-SEXP attribute_hidden do_retracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP do_retracemem(SEXP call, SEXP op, SEXP arg, SEXP rho)
 {
 #ifdef R_MEMORY_PROFILING
     SEXP object, previous, ans, ap, argList;
