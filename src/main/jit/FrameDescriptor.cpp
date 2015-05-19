@@ -31,6 +31,7 @@
 #include "CXXR/PairList.h"
 #include "CXXR/RObject.h"
 #include "CXXR/Symbol.h"
+#include <algorithm>
 
 namespace CXXR {
 namespace JIT {
