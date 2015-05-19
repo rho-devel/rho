@@ -85,17 +85,15 @@ namespace {
 	return nullptr;  // -Wall
     }
 
-    RObject* lbinary(RObject* op, RObject* args)
+    RObject* lbinary(const BuiltInFunction* op, RObject* x, RObject* y)
     {
 	/* logical binary : "&" or "|" */
-	SEXP x = CAR(args);
-	SEXP y = CADR(args);
 	if (x && x->sexptype() == RAWSXP
 	    && y && y->sexptype() == RAWSXP) {
 	    // Bitwise operations:
 	    RawVector* vl = static_cast<RawVector*>(x);
 	    RawVector* vr = static_cast<RawVector*>(y);
-	    return bitwiseBinary(PRIMVAL(op), vl, vr);
+	    return bitwiseBinary(op->variant(), vl, vr);
 	}
 	if (!isNumber(x) || !isNumber(y))
 	    Rf_error(_("operations are possible only for"
@@ -104,7 +102,7 @@ namespace {
 	    vl(static_cast<LogicalVector*>(coerceVector(x, LGLSXP)));
 	GCStackRoot<LogicalVector>
 	    vr(static_cast<LogicalVector*>(coerceVector(y, LGLSXP)));
-	return binaryLogic(PRIMVAL(op), vl, vr);
+	return binaryLogic(op->variant(), vl, vr);
     }
 
     RObject* lnot(RObject* arg)
@@ -127,10 +125,33 @@ namespace {
 	    CopyLayoutAttributes(),
 	    lv.get());
     }
-}
+}  // anonymous namespace
 
 /* & | ! */
-SEXP attribute_hidden do_logic(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_logic(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+{
+    SEXP ans;
+
+    // It would be logical to test the arity before calling
+    // DispatchGroup, but tests/primitives.R assumes otherwise.
+    auto dispatched = op->InternalOpsGroupDispatch("Ops", call, env, num_args,
+						   args, tags);
+    if (dispatched.first)
+	return dispatched.second;
+    op->checkNumArgs(num_args, call);
+    switch (op->variant()) {
+    case 1:
+    case 2:
+	return lbinary(op, args[0], args[1]);
+    case 3:
+	return lnot(args[0]);
+    default:
+	error(_("internal error in do_logic"));
+    }
+    return nullptr;  // -Wall
+}
+
+SEXP attribute_hidden do_logic_slow(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans;
 
@@ -140,9 +161,12 @@ SEXP attribute_hidden do_logic(SEXP call, SEXP op, SEXP args, SEXP env)
 	return ans;
     checkArity(op, args);
     switch (PRIMVAL(op)) {
+
+
     case 1:
     case 2:
-	return lbinary(op, args);
+	return lbinary(SEXP_downcast<BuiltInFunction*>(op),
+		       CAR(args), CADR(args));
     case 3:
 	return lnot(CAR(args));
     default:

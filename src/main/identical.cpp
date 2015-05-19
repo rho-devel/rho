@@ -47,10 +47,10 @@ static Rboolean neWithNaN(double x, double y, ne_strictness_type str);
 
 
 /* .Internal(identical(..)) */
-SEXP attribute_hidden do_identical(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_identical(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int num_eq = 1, single_NA = 1, attr_as_set = 1, ignore_bytecode = 1, 
-	ignore_env = 0, nargs = length(args), flags;
+	ignore_env = 0, nargs = num_args, flags;
     /* avoid problems with earlier (and future) versions captured in S4
        methods: but this should be fixed where it is caused, in
        'methods'!
@@ -58,17 +58,17 @@ SEXP attribute_hidden do_identical(SEXP call, SEXP op, SEXP args, SEXP env)
        checkArity(op, args); */
    if (nargs < 5)
 	error("%d arguments passed to .Internal(%s) which requires %d",
-	      length(args), PRIMNAME(op), PRIMARITY(op));
+	      num_args, op->name(), op->arity());
 
-    SEXP x = CAR(args); args = CDR(args);
-    SEXP y = CAR(args); args = CDR(args);
-    num_eq = asLogical(CAR(args)); args = CDR(args);
-    single_NA = asLogical(CAR(args)); args = CDR(args);
-    attr_as_set = asLogical(CAR(args)); args = CDR(args);
+    SEXP x = args[0]; args = (args + 1);
+    SEXP y = args[0]; args = (args + 1);
+    num_eq = asLogical(args[0]); args = (args + 1);
+    single_NA = asLogical(args[0]); args = (args + 1);
+    attr_as_set = asLogical(args[0]); args = (args + 1);
     if (nargs >= 6) 
-	ignore_bytecode = asLogical(CAR(args));
+	ignore_bytecode = asLogical(args[0]);
     if (nargs >= 7) 
-	ignore_env = asLogical(CADR(args));
+	ignore_env = asLogical(args[1]);
 
     if(num_eq == NA_LOGICAL) error(_("invalid '%s' value"), "num.eq");
     if(single_NA == NA_LOGICAL) error(_("invalid '%s' value"), "single.NA");

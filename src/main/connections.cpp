@@ -1021,7 +1021,7 @@ static Rconnection newfifo(const char *description, const char *mode)
 }
 #endif
 
-SEXP attribute_hidden do_fifo(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_fifo(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
 #if defined(HAVE_MKFIFO) && defined(HAVE_FCNTL_H)
     SEXP sfile, sopen, ans, connclass, enc;
@@ -1029,20 +1029,20 @@ SEXP attribute_hidden do_fifo(SEXP call, SEXP op, SEXP args, SEXP env)
     int ncon, block;
     Rconnection con = nullptr;
 
-    checkArity(op, args);
-    sfile = CAR(args);
+    op->checkNumArgs(num_args, call);
+    sfile = args[0];
     if(!isString(sfile) || length(sfile) != 1)
 	error(_("invalid '%s' argument"), "description");
     if(length(sfile) > 1)
 	warning(_("only first element of 'description' argument used"));
     file = translateChar(STRING_ELT(sfile, 0)); /* for now, like fopen */
-    sopen = CADR(args);
+    sopen = args[1];
     if(!isString(sopen) || length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
-    block = asLogical(CADDR(args));
+    block = asLogical(args[2]);
     if(block == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "block");
-    enc = CADDDR(args);
+    enc = args[3];
     if(!isString(enc) || length(enc) != 1 ||
        strlen(CHAR(STRING_ELT(enc, 0))) > 100) /* ASCII */
 	error(_("invalid '%s' argument"), "encoding");
@@ -1176,7 +1176,7 @@ extern Rconnection
 newWpipe(const char *description, int enc, const char *mode);
 #endif
 
-SEXP attribute_hidden do_pipe(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_pipe(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP scmd, sopen, ans, connclass, enc;
     const char *file, *open;
@@ -1184,8 +1184,8 @@ SEXP attribute_hidden do_pipe(SEXP call, SEXP op, SEXP args, SEXP env)
     cetype_t ienc = CE_NATIVE;
     Rconnection con = nullptr;
 
-    checkArity(op, args);
-    scmd = CAR(args);
+    op->checkNumArgs(num_args, call);
+    scmd = args[0];
     if(!isString(scmd) || length(scmd) != 1)
 	error(_("invalid '%s' argument"), "description");
     if(length(scmd) > 1)
@@ -1201,11 +1201,11 @@ SEXP attribute_hidden do_pipe(SEXP call, SEXP op, SEXP args, SEXP env)
 #else
     file = translateChar(STRING_ELT(scmd, 0));
 #endif
-    sopen = CADR(args);
+    sopen = args[1];
     if(!isString(sopen) || length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
-    enc = CADDR(args);
+    enc = args[2];
     if(!isString(enc) || length(enc) != 1 ||
        strlen(CHAR(STRING_ELT(enc, 0))) > 100) /* ASCII */
 	error(_("invalid '%s' argument"), "encoding");
@@ -1796,36 +1796,36 @@ newxzfile(const char *description, const char *mode, int type, int compress)
 }
 
 /* op 0 is gzfile, 1 is bzfile, 2 is xv/lzma */
-SEXP attribute_hidden do_gzfile(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_gzfile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP sfile, sopen, ans, connclass, enc;
     const char *file, *open;
     int ncon, compress = 9;
     Rconnection con = nullptr;
-    int type = PRIMVAL(op);
+    int type = op->variant();
     int subtype = 0;
 
-    checkArity(op, args);
-    sfile = CAR(args);
+    op->checkNumArgs(num_args, call);
+    sfile = args[0];
     if(!isString(sfile) || length(sfile) != 1)
 	error(_("invalid '%s' argument"), "description");
     if(length(sfile) > 1)
 	warning(_("only first element of 'description' argument used"));
     file = translateChar(STRING_ELT(sfile, 0));
-    sopen = CADR(args);
+    sopen = args[1];
     if(!isString(sopen) || length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
-    enc = CADDR(args);
+    enc = args[2];
     if(!isString(enc) || length(enc) != 1 ||
        strlen(CHAR(STRING_ELT(enc, 0))) > 100) /* ASCII */
 	error(_("invalid '%s' argument"), "encoding");
     if(type < 2) {
-	compress = asInteger(CADDDR(args));
+	compress = asInteger(args[3]);
 	if(compress == NA_LOGICAL || compress < 0 || compress > 9)
 	    error(_("invalid '%s' argument"), "compress");
     }
     if(type == 2) {
-	compress = asInteger(CADDDR(args));
+	compress = asInteger(args[3]);
 	if(compress == NA_LOGICAL || abs(compress) > 9)
 	    error(_("invalid '%s' argument"), "compress");
     }
@@ -2243,12 +2243,12 @@ static Rconnection newterminal(const char *description, const char *mode)
 }
 
 
-SEXP attribute_hidden do_stdin(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_stdin(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, connclass;
     Rconnection con = getConnection(0);
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     PROTECT(ans = ScalarInteger(0));
     PROTECT(connclass = allocVector(STRSXP, 2));
     SET_STRING_ELT(connclass, 0, mkChar(con->connclass));
@@ -2258,12 +2258,12 @@ SEXP attribute_hidden do_stdin(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP attribute_hidden do_stdout(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_stdout(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, connclass;
     Rconnection con = getConnection(R_OutputCon);
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     PROTECT(ans = ScalarInteger(R_OutputCon));
     PROTECT(connclass = allocVector(STRSXP, 2));
     SET_STRING_ELT(connclass, 0, mkChar(con->connclass));
@@ -2274,12 +2274,12 @@ SEXP attribute_hidden do_stdout(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 
-SEXP attribute_hidden do_stderr(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_stderr(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, connclass;
     Rconnection con = getConnection(2);
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     PROTECT(ans = ScalarInteger(2));
     PROTECT(connclass = allocVector(STRSXP, 2));
     SET_STRING_ELT(connclass, 0, mkChar(con->connclass));
@@ -2293,12 +2293,12 @@ SEXP attribute_hidden do_stderr(SEXP call, SEXP op, SEXP args, SEXP env)
 #ifdef Win32
 # include <io.h>
 #endif
-SEXP attribute_hidden do_isatty(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_isatty(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int con;
     /* FIXME: is this correct for consoles? */
-    checkArity(op, args);
-    con = asInteger(CAR(args));
+    op->checkNumArgs(num_args, call);
+    con = asInteger(args[0]);
     return ScalarLogical(con == NA_LOGICAL ? FALSE : isatty(con) );
 }
 
@@ -2470,20 +2470,20 @@ static Rconnection newraw(const char *description, SEXP raw, const char *mode)
     return newconn;
 }
 
-SEXP attribute_hidden do_rawconnection(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_rawconnection(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP sfile, sraw, sopen, ans, connclass;
     const char *desc, *open;
     int ncon;
     Rconnection con = nullptr;
 
-    checkArity(op, args);
-    sfile = CAR(args);
+    op->checkNumArgs(num_args, call);
+    sfile = args[0];
     if(!isString(sfile) || length(sfile) != 1)
 	error(_("invalid '%s' argument"), "description");
     desc = translateChar(STRING_ELT(sfile, 0));
-    sraw = CADR(args);
-    sopen = CADDR(args);
+    sraw = args[1];
+    sopen = args[2];
     if(!isString(sopen) || length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
@@ -2508,16 +2508,16 @@ SEXP attribute_hidden do_rawconnection(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP attribute_hidden do_rawconvalue(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_rawconvalue(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     Rconnection con=nullptr;
     Rrawconn thisconn;
     SEXP ans;
 
-    checkArity(op, args);
-    if(!inherits(CAR(args), "rawConnection"))
+    op->checkNumArgs(num_args, call);
+    if(!inherits(args[0], "rawConnection"))
 	error(_("'con' is not a rawConnection"));
-    con = getConnection(asInteger(CAR(args)));
+    con = getConnection(asInteger(args[0]));
     if(!con->canwrite)
 	error(_("'con' is not an output rawConnection"));
     thisconn = CXXRSCAST(Rrawconn, con->connprivate);
@@ -2877,29 +2877,29 @@ static Rconnection newouttext(const char *description, SEXP stext,
     return newconn;
 }
 
-SEXP attribute_hidden do_textconnection(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_textconnection(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP sfile, stext, sopen, ans, connclass, venv;
     const char *desc, *open;
     int ncon, type;
     Rconnection con = nullptr;
 
-    checkArity(op, args);
-    sfile = CAR(args);
+    op->checkNumArgs(num_args, call);
+    sfile = args[0];
     if(!isString(sfile) || length(sfile) != 1)
 	error(_("invalid '%s' argument"), "description");
     desc = translateChar(STRING_ELT(sfile, 0));
-    stext = CADR(args);
-    sopen = CADDR(args);
+    stext = args[1];
+    sopen = args[2];
     if(!isString(sopen) || length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
-    venv = CADDDR(args);
+    venv = args[3];
     if (isNull(venv))
 	error(_("use of NULL environment is defunct"));
     if (!isEnvironment(venv))
 	error(_("invalid '%s' argument"), "environment");
-    type = asInteger(CAD4R(args));
+    type = asInteger(args[4]);
     if (type == NA_INTEGER)
 	error(_("invalid '%s' argument"), "encoding");
     ncon = NextConnection();
@@ -2938,15 +2938,15 @@ SEXP attribute_hidden do_textconnection(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP attribute_hidden do_textconvalue(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_textconvalue(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     Rconnection con=nullptr;
     Routtextconn thisconn;
 
-    checkArity(op, args);
-    if(!inherits(CAR(args), "textConnection"))
+    op->checkNumArgs(num_args, call);
+    if(!inherits(args[0], "textConnection"))
 	error(_("'con' is not a textConnection"));
-    con = getConnection(asInteger(CAR(args)));
+    con = getConnection(asInteger(args[0]));
     if(!con->canwrite)
 	error(_("'con' is not an output textConnection"));
     thisconn = CXXRSCAST(Routtextconn, con->connprivate);
@@ -2959,43 +2959,43 @@ SEXP attribute_hidden do_textconvalue(SEXP call, SEXP op, SEXP args, SEXP env)
 
 
 /* socketConnection(host, port, server, blocking, open, encoding) */
-SEXP attribute_hidden do_sockconn(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_sockconn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP scmd, sopen, ans, connclass, enc;
     const char *host, *open;
     int ncon, port, server, blocking, timeout;
     Rconnection con = nullptr;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 #ifdef HAVE_SOCKETS
-    scmd = CAR(args);
+    scmd = args[0];
     if(!isString(scmd) || length(scmd) != 1)
 	error(_("invalid '%s' argument"), "host");
     host = translateChar(STRING_ELT(scmd, 0));
-    args = CDR(args);
-    port = asInteger(CAR(args));
+    args = (args + 1);
+    port = asInteger(args[0]);
     if(port == NA_INTEGER || port < 0)
 	error(_("invalid '%s' argument"), "port");
-    args = CDR(args);
-    server = asLogical(CAR(args));
+    args = (args + 1);
+    server = asLogical(args[0]);
     if(server == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "server");
-    args = CDR(args);
-    blocking = asLogical(CAR(args));
+    args = (args + 1);
+    blocking = asLogical(args[0]);
     if(blocking == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "blocking");
-    args = CDR(args);
-    sopen = CAR(args);
+    args = (args + 1);
+    sopen = args[0];
     if(!isString(sopen) || length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
-    args = CDR(args);
-    enc = CAR(args);
+    args = (args + 1);
+    enc = args[0];
     if(!isString(enc) || length(enc) != 1 ||
        strlen(CHAR(STRING_ELT(enc, 0))) > 100) /* ASCII */
 	error(_("invalid '%s' argument"), "encoding");
-    args = CDR(args);
-    timeout = asInteger(CAR(args));
+    args = (args + 1);
+    timeout = asInteger(args[0]);
 
     ncon = NextConnection();
     con = R_newsock(host, port, server, open, timeout);
@@ -3030,24 +3030,24 @@ SEXP attribute_hidden do_sockconn(SEXP call, SEXP op, SEXP args, SEXP env)
 /* ------------------- unz connections  --------------------- */
 
 /* see dounzip.c for the details */
-SEXP attribute_hidden do_unz(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_unz(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP sfile, sopen, ans, connclass, enc;
     const char *file, *open;
     int ncon;
     Rconnection con = nullptr;
 
-    checkArity(op, args);
-    sfile = CAR(args);
+    op->checkNumArgs(num_args, call);
+    sfile = args[0];
     if(!isString(sfile) || length(sfile) != 1)
 	error(_("invalid '%s' argument"), "description");
     if(length(sfile) > 1)
 	warning(_("only first element of 'description' argument used"));
     file = translateChar(STRING_ELT(sfile, 0));
-    sopen = CADR(args);
+    sopen = args[1];
     if(!isString(sopen) || length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
-    enc = CADDR(args);
+    enc = args[2];
     if(!isString(enc) || length(enc) != 1 ||
        strlen(CHAR(STRING_ELT(enc, 0))) > 100) /* ASCII */
 	error(_("invalid '%s' argument"), "encoding");
@@ -3080,7 +3080,7 @@ SEXP attribute_hidden do_unz(SEXP call, SEXP op, SEXP args, SEXP env)
 
 /* -------------- open, close, seek, truncate, flush ------------------ */
 
-SEXP attribute_hidden do_open(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_open(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int i, block;
     Rconnection con=nullptr;
@@ -3088,20 +3088,20 @@ SEXP attribute_hidden do_open(SEXP call, SEXP op, SEXP args, SEXP env)
     const char *open;
     Rboolean success;
 
-    checkArity(op, args);
-    if(!inherits(CAR(args), "connection"))
+    op->checkNumArgs(num_args, call);
+    if(!inherits(args[0], "connection"))
 	error(_("'con' is not a connection"));
-    i = asInteger(CAR(args));
+    i = asInteger(args[0]);
     con = getConnection(i);
     if(i < 3) error(_("cannot open standard connections"));
     if(con->isopen) {
 	warning(_("connection is already open"));
 	return R_NilValue;
     }
-    sopen = CADR(args);
+    sopen = args[1];
     if(!isString(sopen) || length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
-    block = asLogical(CADDR(args));
+    block = asLogical(args[2]);
     if(block == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "blocking");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
@@ -3115,14 +3115,14 @@ SEXP attribute_hidden do_open(SEXP call, SEXP op, SEXP args, SEXP env)
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_isopen(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_isopen(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     Rconnection con;
     int rw, res;
 
-    checkArity(op, args);
-    con = getConnection(asInteger(CAR(args)));
-    rw = asInteger(CADR(args));
+    op->checkNumArgs(num_args, call);
+    con = getConnection(asInteger(args[0]));
+    rw = asInteger(args[1]);
     res = con->isopen != FALSE;
     switch(rw) {
     case 0: break;
@@ -3133,25 +3133,25 @@ SEXP attribute_hidden do_isopen(SEXP call, SEXP op, SEXP args, SEXP env)
     return ScalarLogical(res);
 }
 
-SEXP attribute_hidden do_isincomplete(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_isincomplete(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     Rconnection con;
 
-    checkArity(op, args);
-    if(!inherits(CAR(args), "connection"))
+    op->checkNumArgs(num_args, call);
+    if(!inherits(args[0], "connection"))
 	error(_("'con' is not a connection"));
-    con = getConnection(asInteger(CAR(args)));
+    con = getConnection(asInteger(args[0]));
     return ScalarLogical(con->incomplete != FALSE);
 }
 
-SEXP attribute_hidden do_isseekable(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_isseekable(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     Rconnection con;
 
-    checkArity(op, args);
-    if(!inherits(CAR(args), "connection"))
+    op->checkNumArgs(num_args, call);
+    if(!inherits(args[0], "connection"))
 	error(_("'con' is not a connection"));
-    con = getConnection(asInteger(CAR(args)));
+    con = getConnection(asInteger(args[0]));
     return ScalarLogical(con->canseek != FALSE);
 }
 
@@ -3191,14 +3191,14 @@ static void con_destroy(int i)
 }
 
 
-SEXP attribute_hidden do_close(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_close(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int i, j;
 
-    checkArity(op, args);
-    if(!inherits(CAR(args), "connection"))
+    op->checkNumArgs(num_args, call);
+    if(!inherits(args[0], "connection"))
 	error(_("'con' is not a connection"));
-    i = asInteger(CAR(args));
+    i = asInteger(args[0]);
     if(i < 3) error(_("cannot close standard connections"));
     for(j = 0; j < R_SinkNumber; j++)
 	if(i == SinkCons[j])
@@ -3214,20 +3214,20 @@ SEXP attribute_hidden do_close(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* seek(con, where = numeric(), origin = "start", rw = "") */
-SEXP attribute_hidden do_seek(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_seek(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int origin, rw;
     Rconnection con = nullptr;
     double where;
 
-    checkArity(op, args);
-    if(!inherits(CAR(args), "connection"))
+    op->checkNumArgs(num_args, call);
+    if(!inherits(args[0], "connection"))
 	error(_("'con' is not a connection"));
-    con = getConnection(asInteger(CAR(args)));
+    con = getConnection(asInteger(args[0]));
     if(!con->isopen) error(_("connection is not open"));
-    where = asReal(CADR(args));
-    origin = asInteger(CADDR(args));
-    rw = asInteger(CADDDR(args));
+    where = asReal(args[1]);
+    origin = asInteger(args[2]);
+    rw = asInteger(args[3]);
     if(!ISNAN(where) && con->nPushBack > 0) {
 	/* clear pushback */
 	int j;
@@ -3239,26 +3239,26 @@ SEXP attribute_hidden do_seek(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* truncate(con) */
-SEXP attribute_hidden do_truncate(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_truncate(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     Rconnection con = nullptr;
 
-    checkArity(op, args);
-    if(!inherits(CAR(args), "connection"))
+    op->checkNumArgs(num_args, call);
+    if(!inherits(args[0], "connection"))
 	error(_("'con' is not a connection"));
-    con = getConnection(asInteger(CAR(args)));
+    con = getConnection(asInteger(args[0]));
     con->truncate(con);
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_flush(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_flush(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     Rconnection con = nullptr;
 
-    checkArity(op, args);
-    if(!inherits(CAR(args), "connection"))
+    op->checkNumArgs(num_args, call);
+    if(!inherits(args[0], "connection"))
 	error(_("'con' is not a connection"));
-    con = getConnection(asInteger(CAR(args)));
+    con = getConnection(asInteger(args[0]));
     if(con->canwrite) con->fflush(con);
     return R_NilValue;
 }
@@ -3353,7 +3353,7 @@ int Rconn_printf(Rconnection con, const char *format, ...)
 
 /* readLines(con = stdin(), n = 1, ok = TRUE, warn = TRUE) */
 #define BUF_SIZE 1000
-SEXP attribute_hidden do_readLines(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_readLines(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans = R_NilValue, ans2;
     int ok, warn, c, nbuf, buf_size = BUF_SIZE;
@@ -3364,22 +3364,22 @@ SEXP attribute_hidden do_readLines(SEXP call, SEXP op, SEXP args, SEXP env)
     const char *encoding;
     R_xlen_t i, n, nn, nnn, nread;
 
-    checkArity(op, args);
-    if(!inherits(CAR(args), "connection"))
+    op->checkNumArgs(num_args, call);
+    if(!inherits(args[0], "connection"))
 	error(_("'con' is not a connection"));
-    con = getConnection(asInteger(CAR(args)));
-    n = asVecSize(CADR(args));
+    con = getConnection(asInteger(args[0]));
+    n = asVecSize(args[1]);
     if(n == -999)
 	error(_("invalid '%s' argument"), "n");
-    ok = asLogical(CADDR(args));
+    ok = asLogical(args[2]);
     if(ok == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "ok");
-    warn = asLogical(CADDDR(args));
+    warn = asLogical(args[3]);
     if(warn == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "warn");
-    if(!isString(CAD4R(args)) || LENGTH(CAD4R(args)) != 1)
+    if(!isString(args[4]) || LENGTH(args[4]) != 1)
 	error(_("invalid '%s' value"), "encoding");
-    encoding = CHAR(STRING_ELT(CAD4R(args), 0)); /* ASCII */
+    encoding = CHAR(STRING_ELT(args[4], 0)); /* ASCII */
     wasopen = con->isopen;
     try {
 	if(!wasopen) {
@@ -3477,7 +3477,7 @@ SEXP attribute_hidden do_readLines(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* writeLines(text, con = stdout(), sep = "\n", useBytes) */
-SEXP attribute_hidden do_writelines(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_writelines(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int con_num, useBytes;
     Rboolean wasopen;
@@ -3485,16 +3485,16 @@ SEXP attribute_hidden do_writelines(SEXP call, SEXP op, SEXP args, SEXP env)
     const char *ssep;
     SEXP text, sep;
 
-    checkArity(op, args);
-    text = CAR(args);
+    op->checkNumArgs(num_args, call);
+    text = args[0];
     if(!isString(text)) error(_("invalid '%s' argument"), "text");
-    if(!inherits(CADR(args), "connection"))
+    if(!inherits(args[1], "connection"))
 	error(_("'con' is not a connection"));
-    con_num = asInteger(CADR(args));
+    con_num = asInteger(args[1]);
     con = getConnection(con_num);
-    sep = CADDR(args);
+    sep = args[2];
     if(!isString(sep)) error(_("invalid '%s' argument"), "sep");
-    useBytes = asLogical(CADDDR(args));
+    useBytes = asLogical(args[3]);
     if(useBytes == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "useBytes");
 
@@ -3624,7 +3624,7 @@ static SEXP rawOneString(Rbyte *bytes, R_xlen_t nbytes, R_xlen_t *np)
 
 /* readBin(con, what, n, swap) */
 #define BLOCK 8096
-SEXP attribute_hidden do_readbin(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_readbin(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans = R_NilValue, swhat;
     int size, signd, swap, sizedef= 4, mode = 1;
@@ -3635,29 +3635,29 @@ SEXP attribute_hidden do_readbin(SEXP call, SEXP op, SEXP args, SEXP env)
     Rbyte *bytes = nullptr;
     R_xlen_t i, n,  m = 0, nbytes = 0, np = 0;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    if(TYPEOF(CAR(args)) == RAWSXP) {
+    if(TYPEOF(args[0]) == RAWSXP) {
 	isRaw = TRUE;
-	bytes = RAW(CAR(args));
-	nbytes = XLENGTH(CAR(args));
+	bytes = RAW(args[0]);
+	nbytes = XLENGTH(args[0]);
     } else {
-	con = getConnection(asInteger(CAR(args)));
+	con = getConnection(asInteger(args[0]));
 	if(con->text) error(_("can only read from a binary connection"));
     }
 
-    args = CDR(args);
-    swhat = CAR(args); args = CDR(args);
+    args = (args + 1);
+    swhat = args[0]; args = (args + 1);
     if(!isString(swhat) || length(swhat) != 1)
 	error(_("invalid '%s' argument"), "what");
     what = CHAR(STRING_ELT(swhat, 0)); /* ASCII */
-    n = asVecSize(CAR(args)); args = CDR(args);
+    n = asVecSize(args[0]); args = (args + 1);
     if(n < 0) error(_("invalid '%s' argument"), "n");
-    size = asInteger(CAR(args)); args = CDR(args);
-    signd = asLogical(CAR(args)); args = CDR(args);
+    size = asInteger(args[0]); args = (args + 1);
+    signd = asLogical(args[0]); args = (args + 1);
     if(signd == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "signed");
-    swap = asLogical(CAR(args));
+    swap = asLogical(args[0]);
     if(swap == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "swap");
     if(!isRaw) {
@@ -3874,7 +3874,7 @@ SEXP attribute_hidden do_readbin(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* writeBin(object, con, size, swap, useBytes) */
-SEXP attribute_hidden do_writebin(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_writebin(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP object, ans = R_NilValue;
     int i, j, size, swap, len, useBytes;
@@ -3883,25 +3883,25 @@ SEXP attribute_hidden do_writebin(SEXP call, SEXP op, SEXP args, SEXP env)
     Rboolean wasopen = TRUE, isRaw = FALSE;
     Rconnection con = nullptr;
 
-    checkArity(op, args);
-    object = CAR(args);
+    op->checkNumArgs(num_args, call);
+    object = args[0];
     if(!isVectorAtomic(object))
 	error(_("'x' is not an atomic vector type"));
 
-    if(TYPEOF(CADR(args)) == RAWSXP) {
+    if(TYPEOF(args[1]) == RAWSXP) {
 	isRaw = TRUE;
     } else {
-	con = getConnection(asInteger(CADR(args)));
+	con = getConnection(asInteger(args[1]));
 	if(con->text) error(_("can only write to a binary connection"));
 	wasopen = con->isopen;
 	if(!con->canwrite) error(_("cannot write to this connection"));
     }
 
-    size = asInteger(CADDR(args));
-    swap = asLogical(CADDDR(args));
+    size = asInteger(args[2]);
+    swap = asLogical(args[3]);
     if(swap == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "swap");
-    useBytes = asLogical(CAD4R(args));
+    useBytes = asLogical(args[4]);
     if(useBytes == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "useBytes");
     len = LENGTH(object);
@@ -4219,7 +4219,7 @@ rawFixedString(Rbyte *bytes, int len, int nbytes, int *np, int useBytes)
 
 
 /* readChar(con, nchars) */
-SEXP attribute_hidden do_readchar(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_readchar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans = R_NilValue, onechar, nchars;
     R_xlen_t i, n, m = 0;
@@ -4227,22 +4227,22 @@ SEXP attribute_hidden do_readchar(SEXP call, SEXP op, SEXP args, SEXP env)
     Rboolean wasopen = TRUE, isRaw = FALSE;
     Rconnection con = nullptr;
     Rbyte *bytes = nullptr;
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    if(TYPEOF(CAR(args)) == RAWSXP) {
+    if(TYPEOF(args[0]) == RAWSXP) {
 	isRaw = TRUE;
-	bytes = RAW(CAR(args));
-	nbytes = LENGTH(CAR(args));
+	bytes = RAW(args[0]);
+	nbytes = LENGTH(args[0]);
     } else {
-	con = getConnection(asInteger(CAR(args)));
+	con = getConnection(asInteger(args[0]));
 	if(!con->canread)
 	    error(_("cannot read from this connection"));
     }
     /* We did as.integer in the wrapper */
-    nchars = CADR(args);
+    nchars = args[1];
     n = XLENGTH(nchars);
     if(n == 0) return allocVector(STRSXP, 0);
-    useBytes = asLogical(CADDR(args));
+    useBytes = asLogical(args[2]);
     if(useBytes == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "useBytes");
 
@@ -4291,7 +4291,7 @@ SEXP attribute_hidden do_readchar(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* writeChar(object, con, nchars, sep, useBytes) */
-SEXP attribute_hidden do_writechar(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_writechar(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP object, nchars, sep, ans = R_NilValue, si;
     R_xlen_t i, n, len;
@@ -4303,23 +4303,23 @@ SEXP attribute_hidden do_writechar(SEXP call, SEXP op, SEXP args, SEXP env)
     Rconnection con = nullptr;
     mbstate_t mb_st;
 
-    checkArity(op, args);
-    object = CAR(args);
+    op->checkNumArgs(num_args, call);
+    object = args[0];
     if(TYPEOF(object) != STRSXP)
 	error(_("invalid '%s' argument"), "object");
-    if(TYPEOF(CADR(args)) == RAWSXP) {
+    if(TYPEOF(args[1]) == RAWSXP) {
 	isRaw = TRUE;
     } else {
-	con = getConnection(asInteger(CADR(args)));
+	con = getConnection(asInteger(args[1]));
 	if(!con->canwrite)
 	    error(_("cannot write to this connection"));
 	wasopen = con->isopen;
     }
 
     /* We did as.integer in the wrapper */
-    nchars = CADDR(args);
-    sep = CADDDR(args);
-    useBytes = asLogical(CAD4R(args));
+    nchars = args[2];
+    sep = args[3];
+    useBytes = asLogical(args[4]);
     if(useBytes == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "useBytes");
 
@@ -4493,7 +4493,7 @@ void con_pushback(Rconnection con, Rboolean newLine, char *line)
 }
 
 
-SEXP attribute_hidden do_pushback(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_pushback(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int i, n, nexists, newLine;
     Rconnection con = nullptr;
@@ -4501,13 +4501,13 @@ SEXP attribute_hidden do_pushback(SEXP call, SEXP op, SEXP args, SEXP env)
     const char *p;
     char **q;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    stext = CAR(args);
+    stext = args[0];
     if(!isString(stext))
 	error(_("invalid '%s' argument"), "data");
-    con = getConnection(asInteger(CADR(args)));
-    newLine = asLogical(CADDR(args));
+    con = getConnection(asInteger(args[1]));
+    newLine = asLogical(args[2]);
     if(newLine == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "newLine");
     if(!con->canread && !con->isopen)
@@ -4537,20 +4537,20 @@ SEXP attribute_hidden do_pushback(SEXP call, SEXP op, SEXP args, SEXP env)
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_pushbacklength(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_pushbacklength(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     Rconnection con = nullptr;
 
-    con = getConnection(asInteger(CAR(args)));
+    con = getConnection(asInteger(args[0]));
     return ScalarInteger(con->nPushBack);
 }
 
-SEXP attribute_hidden do_clearpushback(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_clearpushback(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int j;
     Rconnection con = nullptr;
 
-    con = getConnection(asInteger(CAR(args)));
+    con = getConnection(asInteger(args[0]));
 
     if(con->nPushBack > 0) {
 	for(j = 0; j < con->nPushBack; j++) free(con->PushBack[j]);
@@ -4626,18 +4626,18 @@ Rboolean attribute_hidden switch_stdout(int icon, int closeOnExit)
   return switch_or_tee_stdout(icon, closeOnExit, 0);
 }
 
-SEXP attribute_hidden do_sink(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_sink(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
   int icon, closeOnExit, errcon, tee;
 
-    checkArity(op, args);
-    icon = asInteger(CAR(args));
-    closeOnExit = asLogical(CADR(args));
+    op->checkNumArgs(num_args, call);
+    icon = asInteger(args[0]);
+    closeOnExit = asLogical(args[1]);
     if(closeOnExit == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "closeOnExit");
-    errcon = asLogical(CADDR(args));
+    errcon = asLogical(args[2]);
     if(errcon == NA_LOGICAL) error(_("invalid '%s' argument"), "type");
-    tee = asLogical(CADDDR(args));
+    tee = asLogical(args[3]);
     if(tee == NA_LOGICAL) error(_("invalid '%s' argument"), "split");
 
     if(!errcon) {
@@ -4659,12 +4659,12 @@ SEXP attribute_hidden do_sink(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_sinknumber(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_sinknumber(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int errcon;
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    errcon = asLogical(CAR(args));
+    errcon = asLogical(args[0]);
     if(errcon == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "type");
     return ScalarInteger(errcon ? R_SinkNumber : R_ErrorCon);
@@ -4700,11 +4700,11 @@ void attribute_hidden InitConnections()
 }
 
 SEXP attribute_hidden
-do_getallconnections(SEXP call, SEXP op, SEXP args, SEXP env)
+do_getallconnections(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int i, j=0, n=0;
     SEXP ans;
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     for(i = 0; i < NCONNECTIONS; i++)
 	if(Connections[i]) n++;
     PROTECT(ans = allocVector(INTSXP, n));
@@ -4716,14 +4716,14 @@ do_getallconnections(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 SEXP attribute_hidden
-do_getconnection(SEXP call, SEXP op, SEXP args, SEXP env)
+do_getconnection(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, connclass;
     int what;
     Rconnection con;
 
-    checkArity(op, args);
-    what = asInteger(CAR(args));
+    op->checkNumArgs(num_args, call);
+    what = asInteger(args[0]);
     if (what == NA_INTEGER)
 	error(_("there is no connection NA"));
     if (what < 0 || what >= NCONNECTIONS || !Connections[what]) 
@@ -4741,13 +4741,13 @@ do_getconnection(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP attribute_hidden do_sumconnection(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_sumconnection(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, names, tmp;
     Rconnection Rcon;
 
-    checkArity(op, args);
-    Rcon = getConnection(asInteger(CAR(args)));
+    op->checkNumArgs(num_args, call);
+    Rcon = getConnection(asInteger(args[0]));
     PROTECT(ans = allocVector(VECSXP, 7));
     PROTECT(names = allocVector(STRSXP, 7));
     SET_STRING_ELT(names, 0, mkChar("description"));
@@ -4783,7 +4783,7 @@ SEXP attribute_hidden do_sumconnection(SEXP call, SEXP op, SEXP args, SEXP env)
 /* op = 0: url(description, open, blocking, encoding)
    op = 1: file(description, open, blocking, encoding)
 */
-SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_url(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP scmd, sopen, ans, connclass, enc;
     CXXRCONST char *class2 = "url";
@@ -4795,8 +4795,8 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
     UrlScheme type = HTTPsh;	/* -Wall */
 #endif
 
-    checkArity(op, args);
-    scmd = CAR(args);
+    op->checkNumArgs(num_args, call);
+    scmd = args[0];
     if(!isString(scmd) || length(scmd) != 1)
 	error(_("invalid '%s' argument"), "description");
     if(length(scmd) > 1)
@@ -4822,19 +4822,19 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
     else if (strncmp(url, "https://", 8) == 0) type = HTTPSsh;
 #endif
 
-    sopen = CADR(args);
+    sopen = args[1];
     if(!isString(sopen) || length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
-    block = asLogical(CADDR(args));
+    block = asLogical(args[2]);
     if(block == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "block");
-    enc = CADDDR(args);
+    enc = args[3];
     if(!isString(enc) || length(enc) != 1 ||
        strlen(CHAR(STRING_ELT(enc, 0))) > 100) /* ASCII */
 	error(_("invalid '%s' argument"), "encoding");
-    if(PRIMVAL(op)) {
-	raw = asLogical(CAD4R(args));
+    if(op->variant()) {
+	raw = asLogical(args[4]);
 	if(raw == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "raw");
     }
@@ -4857,7 +4857,7 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
        (static_cast<Rurlconn>(con->connprivate))->type = type;
 #endif
     } else {
-	if(PRIMVAL(op)) { /* call to file() */
+	if(op->variant()) { /* call to file() */
 	    if(strlen(url) == 0) {
 		if(!strlen(open)) open ="w+";
 		if(strcmp(open, "w+") != 0 && strcmp(open, "w+b") != 0) {
@@ -5232,7 +5232,7 @@ static int gzcon_fgetc(Rconnection con)
 
 
 /* gzcon(con, level, allowNonCompressed) */
-SEXP attribute_hidden do_gzcon(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_gzcon(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, connclass;
     int icon, level, allow;
@@ -5240,20 +5240,20 @@ SEXP attribute_hidden do_gzcon(SEXP call, SEXP op, SEXP args, SEXP rho)
     char *m, description[1000];
     CXXRCONST char* mode = nullptr;
 
-    checkArity(op, args);
-    if(!inherits(CAR(args), "connection"))
+    op->checkNumArgs(num_args, call);
+    if(!inherits(args[0], "connection"))
 	error(_("'con' is not a connection"));
-    incon = getConnection(icon = asInteger(CAR(args)));
-    level = asInteger(CADR(args));
+    incon = getConnection(icon = asInteger(args[0]));
+    level = asInteger(args[1]);
     if(level == NA_INTEGER || level < 0 || level > 9)
 	error(_("'level' must be one of 0 ... 9"));
-    allow = asLogical(CADDR(args));
+    allow = asLogical(args[2]);
     if(allow == NA_INTEGER)
 	error(_("'allowNonCompression' must be TRUE or FALSE"));
 
     if(incon->isGzcon) {
 	warning(_("this is already a 'gzcon' connection"));
-	return CAR(args);
+	return args[0];
     }
     m = incon->mode;
     if(strcmp(m, "r") == 0 || strncmp(m, "rb", 2) == 0) mode = "rb";
@@ -5470,25 +5470,25 @@ SEXP R_decompress2(SEXP in, Rboolean *err)
 }
 
 
-SEXP attribute_hidden do_sockselect(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_sockselect(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     Rboolean immediate = FALSE;
     int nsock, i;
     SEXP insock, write, val, insockfd;
     double timeout;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    insock = CAR(args);
+    insock = args[0];
     if (TYPEOF(insock) != VECSXP || LENGTH(insock) == 0)
 	error(_("not a list of sockets"));
     nsock = LENGTH(insock);
 
-    write = CADR(args);
+    write = args[1];
     if (TYPEOF(write) != LGLSXP || LENGTH(write) != nsock)
 	error(_("bad write indicators"));
 
-    timeout = asReal(CADDR(args));
+    timeout = asReal(args[2]);
 
     PROTECT(insockfd = allocVector(INTSXP, nsock));
     PROTECT(val = allocVector(LGLSXP, nsock));
@@ -5643,15 +5643,15 @@ SEXP R_decompress3(SEXP in, Rboolean *err)
 }
 
 SEXP attribute_hidden
-do_memCompress(SEXP call, SEXP op, SEXP args, SEXP env)
+do_memCompress(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, from;
     int type, res;
 
-    checkArity(op, args);
-    ans = from = CAR(args);
+    op->checkNumArgs(num_args, call);
+    ans = from = args[0];
     if(TYPEOF(from) != RAWSXP) error("'from' must be raw or character");
-    type = asInteger(CADR(args));
+    type = asInteger(args[1]);
     switch(type) {
     case 1: break; /* none */
     case 2: /*gzip */
@@ -5723,15 +5723,15 @@ do_memCompress(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 SEXP attribute_hidden
-do_memDecompress(SEXP call, SEXP op, SEXP args, SEXP env)
+do_memDecompress(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, from;
     int type, subtype = 0;
 
-    checkArity(op, args);
-    ans = from = CAR(args);
+    op->checkNumArgs(num_args, call);
+    ans = from = args[0];
     if(TYPEOF(from) != RAWSXP) error("'from' must be raw or character");
-    type = asInteger(CADR(args));
+    type = asInteger(args[1]);
     if (type == 5) {/* type = 5 is "unknown" */
 	char *p = reinterpret_cast<char *>( RAW(from));
 	if (strncmp(p, "BZh", 3) == 0) type = 3; /* bzip2 always uses a header */

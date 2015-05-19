@@ -116,16 +116,16 @@ void PrintDefaults(void)
     R_print.cutoff = GetOptionCutoff();
 }
 
-SEXP attribute_hidden do_invisible(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_invisible(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    switch (length(args)) {
+    switch (num_args) {
     case 0:
 	return R_NilValue;
     case 1:
-	check1arg(args, call, "x");
-	return CAR(args);
+	check1arg(tags, call, "x");
+	return args[0];
     default:
-	checkArity(op, args); /* must fail */
+	op->checkNumArgs(num_args, call); /* must fail */
 	return call;/* never used, just for -Wall */
     }
 }
@@ -138,22 +138,21 @@ SEXP attribute_hidden do_visibleflag(SEXP call, SEXP op, SEXP args, SEXP rho)
 #endif
 
 /* This is *only* called via outdated R_level prmatrix() : */
-SEXP attribute_hidden do_prmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_prmatrix(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int quote;
     SEXP a, x, rowlab, collab, naprint;
     char *rowname = nullptr, *colname = nullptr;
 
-    checkArity(op,args);
+    op->checkNumArgs(num_args, call);
     PrintDefaults();
-    a = args;
-    x = CAR(a); a = CDR(a);
-    rowlab = CAR(a); a = CDR(a);
-    collab = CAR(a); a = CDR(a);
+    x = args[0]; args = (args + 1);
+    rowlab = args[0]; args = (args + 1);
+    collab = args[0]; args = (args + 1);
 
-    quote = asInteger(CAR(a)); a = CDR(a);
-    R_print.right = Rprt_adj( asInteger(CAR(a))); a = CDR(a);
-    naprint = CAR(a);
+    quote = asInteger(args[0]); args = (args + 1);
+    R_print.right = Rprt_adj( asInteger(args[0])); args = (args + 1);
+    naprint = args[0];
     if(!isNull(naprint))  {
 	if(!isString(naprint) || LENGTH(naprint) < 1)
 	    error(_("invalid 'na.print' specification"));
@@ -176,12 +175,12 @@ SEXP attribute_hidden do_prmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 }/* do_prmatrix */
 
 /* .Internal( print.function(f, useSource, ...)) */
-SEXP attribute_hidden do_printfunction(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_printfunction(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP s = CAR(args);
+    SEXP s = args[0];
     switch (TYPEOF(s)) {
     case CLOSXP:
-	PrintLanguageEtc(s, CXXRCONSTRUCT(Rboolean, asLogical(CADR(args))), /*is closure = */ TRUE);
+	PrintLanguageEtc(s, CXXRCONSTRUCT(Rboolean, asLogical(args[1])), /*is closure = */ TRUE);
 	printAttributes(s, rho, FALSE);
 	break;
     case BUILTINSXP:
@@ -234,32 +233,32 @@ void PrintLanguage(SEXP s, Rboolean useSource)
 
 /* .Internal(print.default(x, digits, quote, na.print, print.gap,
 			   right, max, useS4)) */
-SEXP attribute_hidden do_printdefault(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_printdefault(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, naprint;
     int tryS4;
     Rboolean callShow = FALSE;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     PrintDefaults();
 
-    x = CAR(args); args = CDR(args);
+    x = args[0]; args = (args + 1);
 
-    if(!isNull(CAR(args))) {
-	R_print.digits = asInteger(CAR(args));
+    if(!isNull(args[0])) {
+	R_print.digits = asInteger(args[0]);
 	if (R_print.digits == NA_INTEGER ||
 	    R_print.digits < R_MIN_DIGITS_OPT ||
 	    R_print.digits > R_MAX_DIGITS_OPT)
 	    error(_("invalid '%s' argument"), "digits");
     }
-    args = CDR(args);
+    args = (args + 1);
 
-    R_print.quote = asLogical(CAR(args));
+    R_print.quote = asLogical(args[0]);
     if(R_print.quote == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "quote");
-    args = CDR(args);
+    args = (args + 1);
 
-    naprint = CAR(args);
+    naprint = args[0];
     if(!isNull(naprint))  {
 	if(!isString(naprint) || LENGTH(naprint) < 1)
 	    error(_("invalid 'na.print' specification"));
@@ -267,35 +266,35 @@ SEXP attribute_hidden do_printdefault(SEXP call, SEXP op, SEXP args, SEXP rho)
 	R_print.na_width = R_print.na_width_noquote =
 	    int( strlen(CHAR(R_print.na_string)));
     }
-    args = CDR(args);
+    args = (args + 1);
 
-    if(!isNull(CAR(args))) {
-	R_print.gap = asInteger(CAR(args));
+    if(!isNull(args[0])) {
+	R_print.gap = asInteger(args[0]);
 	if (R_print.gap == NA_INTEGER || R_print.gap < 0)
 	    error(_("'gap' must be non-negative integer"));
     }
-    args = CDR(args);
+    args = (args + 1);
 
-    R_print.right = Rprt_adj( asLogical(CAR(args))); /* Should this be asInteger()? */
+    R_print.right = Rprt_adj( asLogical(args[0])); /* Should this be asInteger()? */
     if(R_print.right == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "right");
-    args = CDR(args);
+    args = (args + 1);
 
-    if(!isNull(CAR(args))) {
-	R_print.max = asInteger(CAR(args));
+    if(!isNull(args[0])) {
+	R_print.max = asInteger(args[0]);
 	if(R_print.max == NA_INTEGER || R_print.max < 0)
 	    error(_("invalid '%s' argument"), "max");
 	else if(R_print.max == INT_MAX) R_print.max--; // so we can add
     }
-    args = CDR(args);
+    args = (args + 1);
 
-    R_print.useSource = asLogical(CAR(args));
+    R_print.useSource = asLogical(args[0]);
     if(R_print.useSource == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "useSource");
     if(R_print.useSource) R_print.useSource = USESOURCE;
-    args = CDR(args);
+    args = (args + 1);
 
-    tryS4 = asLogical(CAR(args));
+    tryS4 = asLogical(args[0]);
     if(tryS4 == NA_LOGICAL)
 	error(_("invalid 'tryS4' internal argument"));
 

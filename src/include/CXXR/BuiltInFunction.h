@@ -161,16 +161,6 @@ namespace CXXR {
           badArgumentCountError(num_args, call);
         }
 
-	/** @brief C/C++ function implementing this R function.
-	 *
-	 * @return Pointer to the C/C++ function implementing this R
-	 * function.
-	 */
-	CCODE function() const
-	{
-	    return m_function;
-	}
-
 	/** @brief Kind of built-in function.
 	 *
 	 * (Used mainly in deparsing.)
@@ -310,11 +300,56 @@ namespace CXXR {
 	RObject* apply(ArgList* arglist, Environment* env,
 		       const Expression* call) const override;
 
+	// Internal group dispatch ("Math", "Ops", "Complex", "Summary")
+	// dispatch on the first argument (first two for 'Ops').
+	// The number of arguments is not checked.
         std::pair<bool, RObject*>
         InternalGroupDispatch(const char* group, const Expression* call,
-                              Environment* env,
-                              int num_args, RObject** args, const PairList* tags)
-          const;
+			      Environment* env, int num_args,
+			      RObject* const* evaluated_args,
+                              const PairList* tags) const
+        {
+	    assert(strcmp(group, "Ops") != 0);
+	    if (!needsDispatch(num_args, evaluated_args, 1)) {
+		return std::make_pair(false, nullptr);
+	    }
+	    return RealInternalGroupDispatch(group, call, env, num_args,
+					     evaluated_args, tags);
+	}
+
+	// The 'Ops' group is special becaues it dispatches on the first two
+	// arguments.
+        std::pair<bool, RObject*>
+        InternalOpsGroupDispatch(const char* group, const Expression* call,
+				 Environment* env, int num_args,
+				 RObject* const* evaluated_args,
+                                 const PairList* tags) const
+        {
+	    assert(strcmp(group, "Ops") == 0);
+	    if (!needsDispatch(num_args, evaluated_args, 2)) {
+		return std::make_pair(false, nullptr);
+	    }
+	    return RealInternalGroupDispatch(group, call, env, num_args,
+					     evaluated_args, tags);
+	}
+
+        // This works like DispatchOrEval in the case where the arguments
+        // have already been evaluated.
+	// Note that only the first argument is used for dispatching.
+        std::pair<bool, RObject*>
+        InternalDispatch(const Expression* call, const char* generic, 
+                         int num_args, RObject* const* evaluated_args,
+                         const PairList* tags,
+                         Environment* env) const
+          {
+	      assert(sexptype() == BUILTINSXP);
+
+	      if (!needsDispatch(num_args, evaluated_args, 1)) {
+		      return std::make_pair(false, nullptr);
+	      }
+	      return RealInternalDispatch(call, generic, num_args,
+					  evaluated_args, tags, env);
+          }
 
     private:
 	friend class boost::serialization::access;
@@ -322,11 +357,11 @@ namespace CXXR {
 	// Alternative C function.  This differs from CCODE primarily in
 	// that the arguments are passed in an array instead of a linked
 	// list.
-        typedef RObject*(*QuickInvokeFunction)(const Expression* call,
+        typedef RObject*(*QuickInvokeFunction)(/*const*/ Expression* call,
 					       const BuiltInFunction* op,
 					       Environment* env,
+					       RObject* const* args,
 					       int num_args,
-					       RObject** args,
 					       const PairList* tags);
 
 	// 'Pretty-print' information:
@@ -346,6 +381,19 @@ namespace CXXR {
 	    unsigned int flags;  // misc flags: see names.cpp
 	    int	arity;  // function arity; -1 means 'any'
 	    PPinfo gram;  // 'pretty-print' information
+
+          TableEntry(const char*,
+                     CCODE,
+                     unsigned int,
+                     unsigned int,
+                     int, 
+                     PPinfo);
+          TableEntry(const char*,
+                     QuickInvokeFunction,
+                     unsigned int,
+                     unsigned int,
+                     int, 
+                     PPinfo);
 	};
 
 	// SOFT_ON signifies that result printing should be enabled
@@ -382,7 +430,8 @@ namespace CXXR {
 	// arbitrary, but will not be used during the lifetime of this
 	// temporary object.)
 	BuiltInFunction()
-	    : FunctionBase(BUILTINSXP), m_offset(0), m_function(nullptr)
+          : FunctionBase(BUILTINSXP), m_offset(0), m_function(nullptr),
+            m_quick_function(nullptr)
 	{}
 
 	/** @brief Constructor.
@@ -408,15 +457,6 @@ namespace CXXR {
 	 */
 	static int indexInTable(const char* name);
 
-	// Invoke the encapsulated function:
-	RObject* invoke(Environment* env, const ArgList* arglist, 
-			const Expression* call) const
-	{
-	    return m_function(const_cast<Expression*>(call),
-			      const_cast<BuiltInFunction*>(this),
-			      const_cast<PairList*>(arglist->list()), env);
-	}
-
         RObject* evaluateAndInvoke(Environment* env,
                                    ArgList* arglist,
                                    const Expression* call) const;
@@ -424,6 +464,42 @@ namespace CXXR {
         RObject* quickEvaluateAndInvoke(Environment* env,
 					ArgList* arglist,
 					const Expression* call) const;
+
+        bool argsNeedEvaluating(const ArgList* arglist) const;
+
+	// Internal dispatch is used a lot, but there most of the time
+	// no dispatch is needed because no objects are involved.
+	// This quickly detects most of cases.
+	bool needsDispatch(int num_args, RObject* const* evaluated_args,
+			   int args_to_check) const {
+	    // args_to_check is always 1 or 2.
+	    assert(sexptype() == BUILTINSXP);
+	    assert(args_to_check == 1 || args_to_check == 2);
+
+	    if (num_args > 0) {
+		if (Rf_isObject(evaluated_args[0])) {
+		    return true;
+		} else if (args_to_check == 2 && num_args > 1) {
+		    return Rf_isObject(evaluated_args[1]);
+		}
+	    }
+	    return false;
+	}
+
+	// Most cases dispatch on the first argument, except "Ops" which uses
+	// the first two.
+        std::pair<bool, RObject*>
+        RealInternalGroupDispatch(const char* group, const Expression* call,
+				  Environment* env, int num_args,
+                                  RObject* const* args, const PairList* tags)
+          const;
+
+	// This dispatches on just the first argument.
+        std::pair<bool, RObject*>
+        RealInternalDispatch(const Expression* call, const char* generic,
+                             int num_args, RObject* const* evaluated_args,
+                             const PairList* tags,
+                             Environment* env) const;
 
 	template<class Archive>
 	void load(Archive & ar, const unsigned int version);
@@ -492,14 +568,7 @@ inline int PRIMARITY(SEXP x)
     BuiltInFunction& bif = *SEXP_downcast<BuiltInFunction*>(x);
     return bif.arity();
 }
-    
-inline CCODE PRIMFUN(SEXP x)
-{
-    using namespace CXXR;
-    BuiltInFunction& bif = *SEXP_downcast<BuiltInFunction*>(x);
-    return bif.function();
-}
-    
+
 inline int PRIMINTERNAL(SEXP x)
 {
     using namespace CXXR;

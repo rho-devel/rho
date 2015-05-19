@@ -120,37 +120,9 @@ namespace {
     }
 }  // anonymous namespace
 
-SEXP attribute_hidden do_relop(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    SEXP ans;
-
-    if (DispatchGroup("Ops", call, op, args, env, &ans))
-	return ans;
-    checkArity(op, args);
-    return do_relop_dflt(call, op, CAR(args), CADR(args));
-}
-
-
-RObject* attribute_hidden CXXR::do_relop_quick(const Expression* call,
-					       const BuiltInFunction* op,
-					       Environment* env,
-					       int num_args,
-					       RObject** args,
-					       const PairList* tags)
-{
-    // If any of the args has a class, then we might need to dispatch.
-    auto result = op->InternalGroupDispatch("Ops", call, env, num_args, args,
-					    tags);
-    if (result.first)
-	return result.second;
-
-    op->checkNumArgs(num_args, call);
-    return do_relop_dflt(const_cast<Expression*>(call),
-			 const_cast<BuiltInFunction*>(op),
-			 args[0], args[1]);
-}
-
-SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
+static SEXP do_relop_dflt(/*const*/ Expression* call,
+			  const BuiltInFunction* op,
+			  RObject* xarg, RObject* yarg)
 {
     GCStackRoot<> x(xarg), y(yarg);
 
@@ -175,7 +147,7 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 	    return allocVector(LGLSXP,0);
 	errorcall(call,
 		  _("comparison (%d) is possible only for atomic and list types"),
-		  PRIMVAL(op));
+		  op->variant());
     }
 
     if (TYPEOF(x) == EXPRSXP || TYPEOF(y) == EXPRSXP)
@@ -187,7 +159,7 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 	return allocVector(LGLSXP, 0);
     }
 
-    RELOP_TYPE opcode = RELOP_TYPE(PRIMVAL(op));
+    RELOP_TYPE opcode = RELOP_TYPE(op->variant());
     if (isString(x) || isString(y)) {
 	// This case has not yet been brought into line with the
 	// general CXXR pattern.
@@ -244,6 +216,25 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 	return relop(vl.get(), vr.get(), opcode);
     } else errorcall(call, _("comparison of these types is not implemented"));
     return nullptr;  // -Wall
+}
+
+RObject* attribute_hidden do_relop(/*const*/ Expression* call,
+				   const BuiltInFunction* op,
+				   Environment* env,
+				   RObject* const* args,
+				   int num_args,
+				   const PairList* tags)
+{
+    // If any of the args has a class, then we might need to dispatch.
+    auto result = op->InternalOpsGroupDispatch("Ops", call, env, num_args, args,
+					       tags);
+    if (result.first)
+	return result.second;
+
+    op->checkNumArgs(num_args, call);
+    return do_relop_dflt(const_cast<Expression*>(call),
+			 const_cast<BuiltInFunction*>(op),
+			 args[0], args[1]);
 }
 
 /* POSIX allows EINVAL when one of the strings contains characters
@@ -470,17 +461,17 @@ static SEXP bitwiseShiftR(SEXP a, SEXP b)
     return ans;
 }
 
-SEXP attribute_hidden do_bitwise(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_bitwise(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     SEXP ans = R_NilValue; /* -Wall */
-    switch(PRIMVAL(op)) {
-    case 1: ans = bitwiseAnd(CAR(args), CADR(args)); break;
-    case 2: ans = bitwiseNot(CAR(args)); break;
-    case 3: ans = bitwiseOr(CAR(args), CADR(args)); break;
-    case 4: ans = bitwiseXor(CAR(args), CADR(args)); break;
-    case 5: ans = bitwiseShiftL(CAR(args), CADR(args)); break;
-    case 6: ans = bitwiseShiftR(CAR(args), CADR(args)); break;
+    switch(op->variant()) {
+    case 1: ans = bitwiseAnd(args[0], args[1]); break;
+    case 2: ans = bitwiseNot(args[0]); break;
+    case 3: ans = bitwiseOr(args[0], args[1]); break;
+    case 4: ans = bitwiseXor(args[0], args[1]); break;
+    case 5: ans = bitwiseShiftL(args[0], args[1]); break;
+    case 6: ans = bitwiseShiftR(args[0], args[1]); break;
     }
     return ans;
 }

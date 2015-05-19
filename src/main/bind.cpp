@@ -907,7 +907,7 @@ SEXP attribute_hidden do_c_dflt(SEXP call, SEXP op, SEXP args, SEXP env)
 } /* do_c */
 
 
-SEXP attribute_hidden do_unlist(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_unlist(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args_, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, t;
     SEXPTYPE mode;
@@ -916,20 +916,22 @@ SEXP attribute_hidden do_unlist(SEXP call, SEXP op, SEXP args, SEXP env)
     struct NameData nameData;
 
 /*    data.deparse_level = 1; */
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
     /* Attempt method dispatch. */
 
-    if (DispatchOrEval(call, op, "unlist", args, env, &ans, 0, 1))
-	return(ans);
+    auto dispatched = op->InternalDispatch(call, "unlist", num_args, args_, tags,
+					   env);
+    if (dispatched.first)
+	return dispatched.second;
 
     /* Method dispatch has failed; run the default code. */
     /* By default we recurse, but this can be over-ridden */
     /* by an optional "recursive" argument. */
 
-    PROTECT(args = CAR(ans));
-    int recurse = asLogical(CADR(ans));
-    int usenames = asLogical(CADDR(ans));
+    SEXP args = PROTECT(args_[0]);
+    int recurse = asLogical(args_[1]);
+    int usenames = asLogical(args_[2]);
     int lenient = TRUE; // was (implicitly!) FALSE  up to R 3.0.1
 
     /* Determine the type of the returned value. */

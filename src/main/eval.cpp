@@ -584,22 +584,22 @@ static SEXP R_compileAndExecute(SEXP call, SEXP rho)
 }
 */
 
-SEXP attribute_hidden do_enablejit(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_enablejit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int old = R_jit_enabled, newi;
-    checkArity(op, args);
-    newi = Rf_asInteger(CAR(args));
+    op->checkNumArgs(num_args, call);
+    newi = Rf_asInteger(args[0]);
     if (newi > 0)
 	loadCompilerNamespace();
     R_jit_enabled = newi;
     return Rf_ScalarInteger(old);
 }
 
-SEXP attribute_hidden do_compilepkgs(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_compilepkgs(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int old = R_compile_pkgs, newi;
-    checkArity(op, args);
-    newi = Rf_asLogical(CAR(args));
+    op->checkNumArgs(num_args, call);
+    newi = Rf_asLogical(args[0]);
     if (newi != NA_LOGICAL && newi)
 	loadCompilerNamespace();
     R_compile_pkgs = newi;
@@ -1200,18 +1200,12 @@ SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
     return propagateBailout(lbo);
 }
 
-SEXP attribute_hidden do_paren(SEXP call, SEXP op, SEXP args, SEXP rho)
-{
-    checkArity(op, args);
-    return CAR(args);
-}
-
-RObject* attribute_hidden CXXR::do_paren_quick(const Expression* call,
-					       const BuiltInFunction* op,
-					       Environment* env,
-					       int num_args,
-					       RObject** args,
-					       const PairList* tags)
+RObject* attribute_hidden do_paren(/*const*/ Expression* call,
+				   const BuiltInFunction* op,
+				   Environment* env,
+				   RObject* const* args,
+				   int num_args,
+				   const PairList* tags)
 {
     op->checkNumArgs(num_args, call);
     return args[0];
@@ -2414,18 +2408,14 @@ static R_INLINE SEXP getPrimitive(SEXP symbol, SEXPTYPE type)
 static SEXP cmp_relop(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y,
 		      SEXP rho)
 {
-    SEXP op = getPrimitive(opsym, BUILTINSXP);
-    if (Rf_isObject(x) || Rf_isObject(y)) {
-	SEXP args, ans;
-	args = PairList::cons(x, PairList::cons(y));
-	PROTECT(args);
-	if (Rf_DispatchGroup("Ops", call, op, args, rho, &ans)) {
-	    UNPROTECT(1);
-	    return ans;
-	}
-	UNPROTECT(1);
-    }
-    return do_relop_dflt(call, op, x, y);
+    const BuiltInFunction* op = SEXP_downcast<const BuiltInFunction*>(
+	getPrimitive(opsym, BUILTINSXP));
+    RObject* args[] = { x, y };
+    return do_relop(SEXP_downcast<Expression*>(call),
+		    op,
+		    SEXP_downcast<Environment*>(rho),
+		    args, 2,
+		    SEXP_downcast<PairList*>(CDR(call)));
 }
 
 static SEXP cmp_arith1(SEXP call, SEXP opsym, SEXP x, SEXP rho)
@@ -3889,29 +3879,31 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	NEXT();
     OP(CALL, 1):
       {
-	SEXP fun = GETSTACK(-3);
-	SEXP call = (*constants)[GETOP()];
-	SEXP args = GETSTACK(-2);
-	int flag;
+	FunctionBase* fun = SEXP_downcast<FunctionBase*>(
+	    static_cast<RObject*>(GETSTACK(-3)));
+	Expression* call = SEXP_downcast<Expression*>(
+	    static_cast<RObject*>((*constants)[GETOP()]));
+	PairList* args = SEXP_downcast<PairList*>(
+	    static_cast<RObject*>(GETSTACK(-2)));
+
 	switch (ftype) {
 	case BUILTINSXP:
-	  checkForMissings(args, call);
-	  flag = PRIMPRINT(fun);
-	  R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
-	  value = PRIMFUN(fun) (call, fun, args, rho);
-	  if (flag < 2) R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
-	  break;
+	{
+	    checkForMissings(args, call);
+	    ArgList arglist(args, ArgList::EVALUATED);
+	    value = fun->apply(&arglist, rho, call);
+	    break;
+	}
 	case SPECIALSXP:
-	  flag = PRIMPRINT(fun);
-	  R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
-	  value = PRIMFUN(fun) (call, fun, CDR(call), rho);
-	  if (flag < 2) R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
-	  break;
-	case CLOSXP: {
-	    Closure* closure = SEXP_downcast<Closure*>(fun);
-	    Expression* callx = SEXP_downcast<Expression*>(call);
-	    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::PROMISED);
-	    value = closure->invoke(rho, &arglist, callx);
+	{
+	    ArgList arglist(call->tail(), ArgList::RAW);
+	    value = fun->apply(&arglist, rho, call);
+	    break;
+	}
+	case CLOSXP:
+	{
+	    ArgList arglist(args, ArgList::PROMISED);
+	    value = fun->apply(&arglist, rho, call);
 	    break;
 	}
 	default: Rf_error(_("bad function"));
@@ -3987,9 +3979,9 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(LE, 1): FastRelop2(<=, LEOP, R_LeSym);
     OP(GE, 1): FastRelop2(>=, GEOP, R_GeSym);
     OP(GT, 1): FastRelop2(>, GTOP, R_GtSym);
-    OP(AND, 1): Builtin2(do_logic, R_AndSym, rho);
-    OP(OR, 1): Builtin2(do_logic, R_OrSym, rho);
-    OP(NOT, 1): Builtin1(do_logic, R_NotSym, rho);
+    OP(AND, 1): Builtin2(do_logic_slow, R_AndSym, rho);
+    OP(OR, 1): Builtin2(do_logic_slow, R_OrSym, rho);
+    OP(NOT, 1): Builtin1(do_logic_slow, R_NotSym, rho);
     OP(DOTSERR, 0): Rf_error(_("'...' used in an incorrect context"));
     OP(STARTASSIGN, 1):
       {
@@ -4192,8 +4184,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       {
 	SEXP lhs = GETSTACK(-5);
 	SEXP rhs = GETSTACK(-4);
-	SEXP fun = GETSTACK(-3);
-	SEXP call = (*constants)[GETOP()];
+	FunctionBase* fun = SEXP_downcast<FunctionBase*>(
+	    static_cast<RObject*>(GETSTACK(-3)));
+	Expression* call = SEXP_downcast<Expression*>(
+	    static_cast<RObject*>((*constants)[GETOP()]));
 	SEXP vexpr = (*constants)[GETOP()];
 	SEXP args, prom, last;
 	if (NAMED(lhs) == 2) {
@@ -4211,7 +4205,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  SETCAR(args, lhs);
 	  /* make the call */
 	  checkForMissings(args, call);
-	  value = PRIMFUN(fun) (call, fun, args, rho);
+	  {
+	      ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+	      value = fun->apply(&arglist, rho, call);
+	  }
 	  break;
 	case SPECIALSXP:
 	  /* duplicate arguments and put into stack for GC protection */
@@ -4229,7 +4226,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  SET_PRVALUE(prom, rhs);
 	  SETCAR(last, prom);
 	  /* make the call */
-	  value = PRIMFUN(fun) (call, fun, args, rho);
+	  {
+	      ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+	      value = fun->apply(&arglist, rho, call);
+	  }
 	  break;
 	case CLOSXP:
 	  /* push evaluated promise for RHS onto arguments with 'value' tag */
@@ -4244,10 +4244,8 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  SETCAR(args, prom);
 	  /* make the call */
 	  {
-	      Closure* closure = SEXP_downcast<Closure*>(fun);
-	      Expression* callx = SEXP_downcast<Expression*>(call);
 	      ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::PROMISED);
-	      value = closure->invoke(rho, &arglist, callx);
+	      value = fun->apply(&arglist, rho, call);
 	  }    
 	  break;
 	default: Rf_error(_("bad function"));
@@ -4260,8 +4258,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(GETTER_CALL, 1):
       {
 	SEXP lhs = GETSTACK(-5);
-	SEXP fun = GETSTACK(-3);
-	SEXP call = (*constants)[GETOP()];
+	FunctionBase* fun = SEXP_downcast<FunctionBase*>(
+	    static_cast<RObject*>(GETSTACK(-3)));
+	Expression* call = SEXP_downcast<Expression*>(
+	    static_cast<RObject*>((*constants)[GETOP()]));
 	SEXP args, prom;
 	switch (ftype) {
 	case BUILTINSXP:
@@ -4270,7 +4270,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  SETCAR(args, lhs);
 	  /* make the call */
 	  checkForMissings(args, call);
-	  value = PRIMFUN(fun) (call, fun, args, rho);
+	  {
+	      ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
+	      value = fun->apply(&arglist, rho, call);
+	  }
 	  break;
 	case SPECIALSXP:
 	  /* duplicate arguments and put into stack for GC protection */
@@ -4281,7 +4284,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  SET_PRVALUE(prom, lhs);
 	  SETCAR(args, prom);
 	  /* make the call */
-	  value = PRIMFUN(fun) (call, fun, args, rho);
+	  {
+	      ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+	      value = fun->apply(&arglist, rho, call);
+	  }
 	  break;
 	case CLOSXP:
 	  /* replace first argument with evaluated promise for LHS */
@@ -4291,10 +4297,8 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  SETCAR(args, prom);
 	  /* make the call */
 	  {
-	      Closure* closure = SEXP_downcast<Closure*>(fun);
-	      Expression* callx = SEXP_downcast<Expression*>(call);
 	      ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::PROMISED);
-	      value = closure->invoke(rho, &arglist, callx);
+	      value = fun->apply(&arglist, rho, call);
 	  }
 	  break;
 	default: Rf_error(_("bad function"));
@@ -4449,26 +4453,26 @@ vector<BCODE> ByteCode::encode(IntVector* bytes) {
 }
 #endif
 
-SEXP attribute_hidden do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_mkcode(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP bytes, consts;
 
-    checkArity(op, args);
-    bytes = CAR(args);
-    consts = CADR(args);
+    op->checkNumArgs(num_args, call);
+    bytes = args[0];
+    consts = args[1];
     GCStackRoot<IntVector> enc(SEXP_downcast<IntVector*>(bytes));
     GCStackRoot<ListVector> pl(SEXP_downcast<ListVector*>(consts));
     return new ByteCode(enc, pl);
 }
 
-SEXP attribute_hidden do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_bcclose(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP forms, body, env;
 
-    checkArity(op, args);
-    forms = CAR(args);
-    body = CADR(args);
-    env = CADDR(args);
+    op->checkNumArgs(num_args, call);
+    forms = args[0];
+    body = args[1];
+    env = args[2];
 
     if (! isByteCode(body))
 	Rf_errorcall(call, _("invalid body"));
@@ -4483,12 +4487,12 @@ SEXP attribute_hidden do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)
     return Rf_mkCLOSXP(forms, body, env);
 }
 
-SEXP attribute_hidden do_is_builtin_internal(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_is_builtin_internal(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP symbol, i;
 
-    checkArity(op, args);
-    symbol = CAR(args);
+    op->checkNumArgs(num_args, call);
+    symbol = args[0];
 
     if (!Rf_isSymbol(symbol))
 	Rf_errorcall(call, _("invalid symbol"));
@@ -4529,32 +4533,32 @@ static SEXP disassemble(SEXP bc)
   return ans;
 }
 
-SEXP attribute_hidden do_disassemble(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_disassemble(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
   SEXP code;
 
-  checkArity(op, args);
-  code = CAR(args);
+  op->checkNumArgs(num_args, call);
+  code = args[0];
   if (! isByteCode(code))
     Rf_errorcall(call, _("argument is not a byte code object"));
   return disassemble(code);
 }
 
-SEXP attribute_hidden do_bcversion(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_bcversion(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
   SEXP ans = Rf_allocVector(INTSXP, 1);
   INTEGER(ans)[0] = R_bcVersion;
   return ans;
 }
 
-SEXP attribute_hidden do_loadfile(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_loadfile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP file, s;
     FILE *fp;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    PROTECT(file = Rf_coerceVector(CAR(args), STRSXP));
+    PROTECT(file = Rf_coerceVector(args[0], STRSXP));
 
     if (! Rf_isValidStringF(file))
 	Rf_errorcall(call, _("bad file name"));
@@ -4569,22 +4573,22 @@ SEXP attribute_hidden do_loadfile(SEXP call, SEXP op, SEXP args, SEXP env)
     return s;
 }
 
-SEXP attribute_hidden do_savefile(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_savefile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     FILE *fp;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    if (!Rf_isValidStringF(CADR(args)))
+    if (!Rf_isValidStringF(args[1]))
 	Rf_errorcall(call, _("'file' must be non-empty string"));
-    if (TYPEOF(CADDR(args)) != LGLSXP)
+    if (TYPEOF(args[2]) != LGLSXP)
 	Rf_errorcall(call, _("'ascii' must be logical"));
 
-    fp = RC_fopen(STRING_ELT(CADR(args), 0), "wb", TRUE);
+    fp = RC_fopen(STRING_ELT(args[1], 0), "wb", TRUE);
     if (!fp)
 	Rf_errorcall(call, _("unable to open 'file'"));
 
-    R_SaveToFileV(CAR(args), fp, INTEGER(CADDR(args))[0], 0);
+    R_SaveToFileV(args[0], fp, INTEGER(args[2])[0], 0);
 
     fclose(fp);
     return R_NilValue;
@@ -4641,13 +4645,13 @@ FILE *R_OpenCompiledFile(char *fname, char *buf, std::size_t bsize)
 }
 #endif
 
-SEXP attribute_hidden do_growconst(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_growconst(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP constBuf, ans;
     int i, n;
 
-    checkArity(op, args);
-    constBuf = CAR(args);
+    op->checkNumArgs(num_args, call);
+    constBuf = args[0];
     if (TYPEOF(constBuf) != VECSXP)
 	Rf_error(_("constant buffer must be a generic vector"));
 
@@ -4659,22 +4663,22 @@ SEXP attribute_hidden do_growconst(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP attribute_hidden do_putconst(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_putconst(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP constBuf, x;
     int i, constCount;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    constBuf = CAR(args);
+    constBuf = args[0];
     if (TYPEOF(constBuf) != VECSXP)
 	Rf_error(_("constant_buffer must be a generic vector"));
 
-    constCount = Rf_asInteger(CADR(args));
+    constCount = Rf_asInteger(args[1]);
     if (constCount < 0 || constCount >= LENGTH(constBuf))
 	Rf_error("bad constCount value");
 
-    x = CADDR(args);
+    x = args[2];
 
     /* check for a match and return index if one is found */
     for (i = 0; i < constCount; i++) {
@@ -4688,14 +4692,14 @@ SEXP attribute_hidden do_putconst(SEXP call, SEXP op, SEXP args, SEXP env)
     return Rf_ScalarInteger(constCount);
 }
 
-SEXP attribute_hidden do_getconst(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_getconst(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP constBuf, ans;
     int i, n;
 
-    checkArity(op, args);
-    constBuf = CAR(args);
-    n = Rf_asInteger(CADR(args));
+    op->checkNumArgs(num_args, call);
+    constBuf = args[0];
+    n = Rf_asInteger(args[1]);
 
     if (TYPEOF(constBuf) != VECSXP)
 	Rf_error(_("constant buffer must be a generic vector"));
@@ -4790,21 +4794,21 @@ SEXP R_stopbcprof()
 
 /* end of byte code section */
 
-SEXP attribute_hidden do_setnumthreads(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_setnumthreads(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int old = R_num_math_threads, newi;
-    checkArity(op, args);
-    newi = Rf_asInteger(CAR(args));
+    op->checkNumArgs(num_args, call);
+    newi = Rf_asInteger(args[0]);
     if (newi >= 0 && newi <= R_max_num_math_threads)
 	R_num_math_threads = newi;
     return Rf_ScalarInteger(old);
 }
 
-SEXP attribute_hidden do_setmaxnumthreads(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_setmaxnumthreads(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int old = R_max_num_math_threads, newi;
-    checkArity(op, args);
-    newi = Rf_asInteger(CAR(args));
+    op->checkNumArgs(num_args, call);
+    newi = Rf_asInteger(args[0]);
     if (newi >= 0) {
 	R_max_num_math_threads = newi;
 	if (R_num_math_threads > R_max_num_math_threads)

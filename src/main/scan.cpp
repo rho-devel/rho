@@ -818,7 +818,7 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
     return ans;
 }
 
-SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_scan(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, file, sep, what, stripwhite, dec, quotes, comstr;
     int i, c, nlines, nmax, nskip, flush, fill, blskip, multiline, escapes;
@@ -827,28 +827,28 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
 		      FALSE, 0, FALSE, FALSE};
     data.NAstrings = R_NilValue;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    file = CAR(args);		   args = CDR(args);
-    what = CAR(args);		   args = CDR(args);
-    nmax = asInteger(CAR(args));   args = CDR(args);
-    sep = CAR(args);		   args = CDR(args);
-    dec = CAR(args);		   args = CDR(args);
-    quotes = CAR(args);		   args = CDR(args);
-    nskip = asInteger(CAR(args));  args = CDR(args);
-    nlines = asInteger(CAR(args)); args = CDR(args);
-    data.NAstrings = CAR(args);	   args = CDR(args);
-    flush = asLogical(CAR(args));  args = CDR(args);
-    fill  = asLogical(CAR(args));  args = CDR(args);
-    stripwhite = CAR(args);	   args = CDR(args);
-    data.quiet = asLogical(CAR(args));  args = CDR(args);
-    blskip = asLogical(CAR(args)); args = CDR(args);
-    multiline = asLogical(CAR(args)); args = CDR(args);
-    comstr = CAR(args);            args = CDR(args);
-    escapes = asLogical(CAR(args));args = CDR(args);
-    if(!isString(CAR(args)) || LENGTH(CAR(args)) != 1)
+    file = args[0];		   args = (args + 1);
+    what = args[0];		   args = (args + 1);
+    nmax = asInteger(args[0]);   args = (args + 1);
+    sep = args[0];		   args = (args + 1);
+    dec = args[0];		   args = (args + 1);
+    quotes = args[0];		   args = (args + 1);
+    nskip = asInteger(args[0]);  args = (args + 1);
+    nlines = asInteger(args[0]); args = (args + 1);
+    data.NAstrings = args[0];	   args = (args + 1);
+    flush = asLogical(args[0]);  args = (args + 1);
+    fill  = asLogical(args[0]);  args = (args + 1);
+    stripwhite = args[0];	   args = (args + 1);
+    data.quiet = asLogical(args[0]);  args = (args + 1);
+    blskip = asLogical(args[0]); args = (args + 1);
+    multiline = asLogical(args[0]); args = (args + 1);
+    comstr = args[0];            args = (args + 1);
+    escapes = asLogical(args[0]);args = (args + 1);
+    if(!isString(args[0]) || LENGTH(args[0]) != 1)
 	error(_("invalid '%s' argument"), "encoding");
-    encoding = CHAR(STRING_ELT(CAR(args), 0)); /* ASCII */
+    encoding = CHAR(STRING_ELT(args[0], 0)); /* ASCII */
     if(streql(encoding, "latin1")) data.isLatin1 = TRUE;
     if(streql(encoding, "UTF-8"))  data.isUTF8 = TRUE;
 
@@ -981,15 +981,15 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
-SEXP attribute_hidden do_readln(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_readln(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int c;
     char buffer[MAXELTSIZE], *bufp = buffer;
     SEXP ans, prompt;
 
-    checkArity(op,args);
+    op->checkNumArgs(num_args, call);
 
-    prompt = CAR(args);
+    prompt = args[0];
     if (prompt == R_NilValue) {
 	ConsolePrompt[0] = '\0'; /* precaution */
 	PROTECT(prompt);

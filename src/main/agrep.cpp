@@ -100,7 +100,7 @@ amatch_regaparams(regaparams_t *params, int patlen,
     }
 }
 
-SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_agrep(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP pat, vec, ind, ans;
     SEXP opt_costs, opt_bounds;
@@ -115,16 +115,16 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
     regamatch_t match;
     int rc, cflags = REG_NOSUB;
 
-    checkArity(op, args);
-    pat = CAR(args); args = CDR(args);
-    vec = CAR(args); args = CDR(args);
-    opt_icase = asLogical(CAR(args)); args = CDR(args);
-    opt_value = asLogical(CAR(args)); args = CDR(args);
-    opt_costs = CAR(args); args = CDR(args);
-    opt_bounds = CAR(args); args = CDR(args);
-    useBytes = asLogical(CAR(args));
-    args = CDR(args);
-    opt_fixed = asLogical(CAR(args));
+    op->checkNumArgs(num_args, call);
+    pat = args[0]; args = (args + 1);
+    vec = args[0]; args = (args + 1);
+    opt_icase = asLogical(args[0]); args = (args + 1);
+    opt_value = asLogical(args[0]); args = (args + 1);
+    opt_costs = args[0]; args = (args + 1);
+    opt_bounds = args[0]; args = (args + 1);
+    useBytes = asLogical(args[0]);
+    args = (args + 1);
+    opt_fixed = asLogical(args[0]);
 
     if(opt_icase == NA_INTEGER) opt_icase = 0;
     if(opt_value == NA_INTEGER) opt_value = 0;
@@ -184,11 +184,13 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     if(useBytes)
-	PROTECT(call = lang3(install("nchar"), pat,
-			     ScalarString(mkChar("bytes"))));
+	PROTECT(call = CXXR::SEXP_downcast<CXXR::Expression*>(
+		    lang3(install("nchar"), pat,
+			  ScalarString(mkChar("bytes")))));
     else
-	PROTECT(call = lang3(install("nchar"), pat,
-			     ScalarString(mkChar("chars"))));
+	PROTECT(call = CXXR::SEXP_downcast<CXXR::Expression*>(
+		    lang3(install("nchar"), pat,
+			  ScalarString(mkChar("chars")))));
     patlen = asInteger(eval(call, env));
     UNPROTECT(1);
     if(!patlen)
@@ -483,7 +485,7 @@ adist_full(SEXP x, SEXP y, double *costs, Rboolean opt_counts)
 
 #define OFFSETS(I, J, K)	INTEGER(offsets)[I + J * nx + K * nxy]
 
-SEXP attribute_hidden do_adist(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_adist(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, y;
     SEXP ans, counts, offsets, dimnames, names, elt;
@@ -503,15 +505,15 @@ SEXP attribute_hidden do_adist(SEXP call, SEXP op, SEXP args, SEXP env)
 
     int rc, cflags = REG_EXTENDED;
 
-    checkArity(op, args);
-    x = CAR(args); args = CDR(args);
-    y = CAR(args); args = CDR(args);
-    opt_costs = CAR(args); args = CDR(args);
-    opt_counts = asLogical(CAR(args)); args = CDR(args);
-    opt_fixed = asInteger(CAR(args)); args = CDR(args);    
-    opt_partial = asInteger(CAR(args)); args = CDR(args);
-    opt_icase = asLogical(CAR(args)); args = CDR(args);
-    useBytes = asLogical(CAR(args));
+    op->checkNumArgs(num_args, call);
+    x = args[0]; args = (args + 1);
+    y = args[0]; args = (args + 1);
+    opt_costs = args[0]; args = (args + 1);
+    opt_counts = asLogical(args[0]); args = (args + 1);
+    opt_fixed = asInteger(args[0]); args = (args + 1);    
+    opt_partial = asInteger(args[0]); args = (args + 1);
+    opt_icase = asLogical(args[0]); args = (args + 1);
+    useBytes = asLogical(args[0]);
 
     if(opt_counts == NA_INTEGER) opt_counts = 0;
     if(opt_fixed == NA_INTEGER) opt_fixed = 1;
@@ -730,7 +732,7 @@ SEXP attribute_hidden do_adist(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP attribute_hidden do_aregexec(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_aregexec(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP pat, vec, ans, matchpos, matchlen;
     SEXP opt_bounds, opt_costs;
@@ -749,15 +751,15 @@ SEXP attribute_hidden do_aregexec(SEXP call, SEXP op, SEXP args, SEXP env)
     R_xlen_t i, n;
     int rc, cflags = REG_EXTENDED;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    pat = CAR(args); args = CDR(args);
-    vec = CAR(args); args = CDR(args);
-    opt_bounds = CAR(args); args = CDR(args);
-    opt_costs = CAR(args); args = CDR(args);
-    opt_icase = asLogical(CAR(args)); args = CDR(args);
-    opt_fixed = asLogical(CAR(args)); args = CDR(args);
-    useBytes = asLogical(CAR(args));
+    pat = args[0]; args = (args + 1);
+    vec = args[0]; args = (args + 1);
+    opt_bounds = args[0]; args = (args + 1);
+    opt_costs = args[0]; args = (args + 1);
+    opt_icase = asLogical(args[0]); args = (args + 1);
+    opt_fixed = asLogical(args[0]); args = (args + 1);
+    useBytes = asLogical(args[0]);
     
     if(opt_icase == NA_INTEGER) opt_icase = 0;
     if(opt_fixed == NA_INTEGER) opt_fixed = 0;
@@ -808,11 +810,13 @@ SEXP attribute_hidden do_aregexec(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     
     if(useBytes)
-	PROTECT(call = lang3(install("nchar"), pat,
-			     ScalarString(mkChar("bytes"))));
+	PROTECT(call = CXXR::SEXP_downcast<CXXR::Expression*>(
+		    lang3(install("nchar"), pat,
+			  ScalarString(mkChar("bytes")))));
     else
-	PROTECT(call = lang3(install("nchar"), pat,
-			     ScalarString(mkChar("chars"))));
+	PROTECT(call = CXXR::SEXP_downcast<CXXR::Expression*>(
+		    lang3(install("nchar"), pat,
+			  ScalarString(mkChar("chars")))));
     patlen = asInteger(eval(call, env));
     UNPROTECT(1);
     if(!patlen)

@@ -31,11 +31,11 @@
 #include <Internal.h>
 
 SEXP attribute_hidden
-do_mapply(SEXP call, SEXP op, SEXP args, SEXP rho)
+do_mapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    SEXP f = CAR(args), varyingArgs = CADR(args), constantArgs = CADDR(args);
+    SEXP f = args[0], varyingArgs = args[1], constantArgs = args[2];
     int m, zero = 0;
     R_xlen_t *lengths, *counters, longest = 0;
 

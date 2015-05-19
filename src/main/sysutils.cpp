@@ -232,30 +232,30 @@ char *R_HomeDir(void)
 }
 
 /* This is a primitive (with no arguments) */
-SEXP attribute_hidden do_interactive(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_interactive(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     return ScalarLogical( (R_Interactive) ? 1 : 0 );
 }
 
-SEXP attribute_hidden do_tempdir(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_tempdir(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     return mkString(R_TempDir);
 }
 
 
-SEXP attribute_hidden do_tempfile(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_tempfile(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP  ans, pattern, fileext, tempdir;
     const char *tn, *td, *te;
     char *tm;
     int i, n1, n2, n3, slen;
 
-    checkArity(op, args);
-    pattern = CAR(args); n1 = length(pattern); args = CDR(args);
-    tempdir = CAR(args); n2 = length(tempdir); args = CDR(args);
-    fileext = CAR(args); n3 = length(fileext);
+    op->checkNumArgs(num_args, call);
+    pattern = args[0]; n1 = length(pattern); args = (args + 1);
+    tempdir = args[0]; n2 = length(tempdir); args = (args + 1);
+    fileext = args[0]; n3 = length(fileext);
     if (!isString(pattern))
 	error(_("invalid filename pattern"));
     if (!isString(tempdir))
@@ -345,20 +345,20 @@ extern char ** environ;
 # include <windows.h> /* _wgetenv etc */
 #endif
 
-SEXP attribute_hidden do_getenv(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_getenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int i, j;
     SEXP ans;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    if (!isString(CAR(args)))
+    if (!isString(args[0]))
 	error(_("wrong type for argument"));
 
-    if (!isString(CADR(args)) || LENGTH(CADR(args)) != 1)
+    if (!isString(args[1]) || LENGTH(args[1]) != 1)
 	error(_("wrong type for argument"));
 
-    i = LENGTH(CAR(args));
+    i = LENGTH(args[0]);
     if (i == 0) {
 #ifdef Win32
 	int n = 0, N;
@@ -396,9 +396,9 @@ SEXP attribute_hidden do_getenv(SEXP call, SEXP op, SEXP args, SEXP env)
 		SET_STRING_ELT(ans, j, mkCharCE(buf, CE_UTF8));
 	    }
 #else
-	    char *s = getenv(translateChar(STRING_ELT(CAR(args), j)));
+	    char *s = getenv(translateChar(STRING_ELT(args[0], j)));
 	    if (s == nullptr)
-		SET_STRING_ELT(ans, j, STRING_ELT(CADR(args), 0));
+		SET_STRING_ELT(ans, j, STRING_ELT(args[1], 0));
 	    else {
 		SEXP tmp;
 		if(known_to_be_latin1) tmp = mkCharCE(s, CE_LATIN1);
@@ -439,17 +439,17 @@ static int Rputenv(const char *nm, const char *val)
 #endif
 
 
-SEXP attribute_hidden do_setenv(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_setenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
 #if defined(HAVE_PUTENV) || defined(HAVE_SETENV)
     int i, n;
     SEXP ans, nm, vars;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    if (!isString(nm = CAR(args)))
+    if (!isString(nm = args[0]))
 	error(_("wrong type for argument"));
-    if (!isString(vars = CADR(args)))
+    if (!isString(vars = args[1]))
 	error(_("wrong type for argument"));
     if(LENGTH(nm) != LENGTH(vars))
 	error(_("wrong length for argument"));
@@ -478,14 +478,14 @@ SEXP attribute_hidden do_setenv(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 }
 
-SEXP attribute_hidden do_unsetenv(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_unsetenv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int i, n;
     SEXP ans, vars;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    if (!isString(vars = CAR(args)))
+    if (!isString(vars = args[0]))
 	error(_("wrong type for argument"));
     n = LENGTH(vars);
 
@@ -566,9 +566,9 @@ write_one (unsigned int namescount, const char * const *names, void *data)
 #include "RBufferUtils.h"
 
 /* iconv(x, from, to, sub, mark) */
-SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_iconv(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP ans, x = CAR(args), si;
+    SEXP ans, x = args[0], si;
     void * obj;
     const char *inbuf;
     char *outbuf;
@@ -577,7 +577,7 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
     R_StringBuffer cbuff = {nullptr, 0, MAXELTSIZE};
     Rboolean isRawlist = FALSE;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     if(isNull(x)) {  /* list locales */
 #ifdef HAVE_ICONVLIST
 	cnt = 0;
@@ -593,25 +593,25 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 	const char *from, *to;
 	Rboolean isLatin1 = FALSE, isUTF8 = FALSE;
 
-	args = CDR(args);
-	if(!isString(CAR(args)) || length(CAR(args)) != 1)
+	args = (args + 1);
+	if(!isString(args[0]) || length(args[0]) != 1)
 	    error(_("invalid '%s' argument"), "from");
-	from = CHAR(STRING_ELT(CAR(args), 0)); /* ASCII */
-	args = CDR(args);
-	if(!isString(CAR(args)) || length(CAR(args)) != 1)
+	from = CHAR(STRING_ELT(args[0], 0)); /* ASCII */
+	args = (args + 1);
+	if(!isString(args[0]) || length(args[0]) != 1)
 	    error(_("invalid '%s' argument"), "to");
-	to = CHAR(STRING_ELT(CAR(args), 0));
-	args = CDR(args);
-	if(!isString(CAR(args)) || length(CAR(args)) != 1)
+	to = CHAR(STRING_ELT(args[0], 0));
+	args = (args + 1);
+	if(!isString(args[0]) || length(args[0]) != 1)
 	    error(_("invalid '%s' argument"), "sub");
-	if(STRING_ELT(CAR(args), 0) == NA_STRING) sub = nullptr;
-	else sub = translateChar(STRING_ELT(CAR(args), 0));
-	args = CDR(args);
-	mark = asLogical(CAR(args));
+	if(STRING_ELT(args[0], 0) == NA_STRING) sub = nullptr;
+	else sub = translateChar(STRING_ELT(args[0], 0));
+	args = (args + 1);
+	mark = asLogical(args[0]);
 	if(mark == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "mark");	
-	args = CDR(args);
-	toRaw = asLogical(CAR(args));
+	args = (args + 1);
+	toRaw = asLogical(args[0]);
 	if(toRaw == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "toRaw");	
 	/* some iconv's allow "UTF8", but libiconv does not */
@@ -1729,11 +1729,11 @@ char * R_tmpnam2(const char *prefix, const char *tempdir, const char *fileext)
     return res;
 }
 
-SEXP attribute_hidden do_proctime(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_proctime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, nm;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     PROTECT(ans = allocVector(REALSXP, 5));
     PROTECT(nm = allocVector(STRSXP, 5));
     R_getProcTime(REAL(ans));
@@ -1768,16 +1768,16 @@ void attribute_hidden resetTimeLimits()
 }
 
 SEXP attribute_hidden
-do_setTimeLimit(SEXP call, SEXP op, SEXP args, SEXP rho)
+do_setTimeLimit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     double cpu, elapsed, old_cpu = cpuLimitValue,
 	old_elapsed = elapsedLimitValue;
     int transient;
 
-    checkArity(op, args);
-    cpu = asReal(CAR(args));
-    elapsed = asReal(CADR(args));
-    transient = asLogical(CADDR(args));
+    op->checkNumArgs(num_args, call);
+    cpu = asReal(args[0]);
+    elapsed = asReal(args[1]);
+    transient = asLogical(args[2]);
 
     if (R_FINITE(cpu) && cpu > 0) cpuLimitValue = cpu; else cpuLimitValue = -1;
 
@@ -1795,13 +1795,13 @@ do_setTimeLimit(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 SEXP attribute_hidden
-do_setSessionTimeLimit(SEXP call, SEXP op, SEXP args, SEXP rho)
+do_setSessionTimeLimit(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     double cpu, elapsed, data[5];
 
-    checkArity(op, args);
-    cpu = asReal(CAR(args));
-    elapsed = asReal(CADR(args));
+    op->checkNumArgs(num_args, call);
+    cpu = asReal(args[0]);
+    elapsed = asReal(args[1]);
     R_getProcTime(data);
 
     if (R_FINITE(cpu) && cpu > 0)
@@ -1832,7 +1832,7 @@ do_setSessionTimeLimit(SEXP call, SEXP op, SEXP args, SEXP rho)
 #  define GLOB_QUOTE 0
 # endif
 #endif
-SEXP attribute_hidden do_glob(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_glob(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans;
     R_xlen_t i, n; 
@@ -1842,11 +1842,11 @@ SEXP attribute_hidden do_glob(SEXP call, SEXP op, SEXP args, SEXP env)
     R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
 #endif
 
-    checkArity(op, args);
-    if (!isString(x = CAR(args)))
+    op->checkNumArgs(num_args, call);
+    if (!isString(x = args[0]))
 	error(_("invalid '%s' argument"), "paths");
     if (!XLENGTH(x)) return allocVector(STRSXP, 0);
-    dirmark = asLogical(CADR(args));
+    dirmark = asLogical(args[1]);
     if (dirmark == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "dirmark");
 #ifndef GLOB_MARK

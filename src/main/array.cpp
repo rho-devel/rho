@@ -68,14 +68,14 @@ SEXP GetColNames(SEXP dimnames)
 	return R_NilValue;
 }
 
-SEXP attribute_hidden do_matrix(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_matrix(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP vals, ans, snr, snc, dimnames;
     int nr = 1, nc = 1, byrow, miss_nr, miss_nc;
     R_xlen_t lendat;
 
-    checkArity(op, args);
-    vals = CAR(args); args = CDR(args);
+    op->checkNumArgs(num_args, call);
+    vals = args[0]; args = (args + 1);
     switch(TYPEOF(vals)) {
 	case LGLSXP:
 	case INTSXP:
@@ -91,15 +91,15 @@ SEXP attribute_hidden do_matrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 		type2char(TYPEOF(vals)));
     }
     lendat = XLENGTH(vals);
-    snr = CAR(args); args = CDR(args);
-    snc = CAR(args); args = CDR(args);
-    byrow = asLogical(CAR(args)); args = CDR(args);
+    snr = args[0]; args = (args + 1);
+    snc = args[0]; args = (args + 1);
+    byrow = asLogical(args[0]); args = (args + 1);
     if (byrow == NA_INTEGER)
 	error(_("invalid '%s' argument"), "byrow");
-    dimnames = CAR(args);
-    args = CDR(args);
-    miss_nr = asLogical(CAR(args)); args = CDR(args);
-    miss_nc = asLogical(CAR(args));
+    dimnames = args[0];
+    args = (args + 1);
+    miss_nr = asLogical(args[0]); args = (args + 1);
+    miss_nc = asLogical(args[0]);
 
     if (!miss_nr) {
 	if (!isNumeric(snr)) error(_("non-numeric matrix extent"));
@@ -292,14 +292,14 @@ SEXP DropDims(SEXP x)
     return vb;
 }
 
-SEXP attribute_hidden do_drop(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_drop(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     GCStackRoot<> x;
     SEXP xdims;
     int i, n, shorten;
 
-    checkArity(op, args);
-    x = CAR(args);
+    op->checkNumArgs(num_args, call);
+    x = args[0];
     if ((xdims = getAttrib(x, R_DimSymbol)) != R_NilValue) {
 	n = LENGTH(xdims);
 	shorten = 0;
@@ -315,15 +315,17 @@ SEXP attribute_hidden do_drop(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* Length of Primitive Objects */
 
-SEXP attribute_hidden do_length(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
-    check1arg(args, call, "x");
+    op->checkNumArgs(num_args, call);
+    check1arg(tags, call, "x");
 
-    SEXP x = CAR(args), ans;
+    SEXP x = args[0];
 
-    if (isObject(x) &&
-       DispatchOrEval(call, op, "length", args, rho, &ans, 0, 1)) {
+    auto dispatched = op->InternalDispatch(call, "length",
+					   num_args, args, tags, rho);
+    if (dispatched.first) {
+	RObject* ans = dispatched.second;
 	if (length(ans) == 1 && TYPEOF(ans) == REALSXP) {
 	    GCStackRoot<> ansrt(ans);
 	    double d = REAL(ans)[0];
@@ -342,17 +344,17 @@ SEXP attribute_hidden do_length(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP attribute_hidden do_rowscols(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_rowscols(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans;
     int i, j, nr, nc;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     /* This is the dimensions vector */
-    x = CAR(args);
+    x = args[0];
     if (!isInteger(x) || LENGTH(x) != 2)
 	error(_("a matrix-like object is required as argument to '%s'"),
-	      (PRIMVAL(op) == 2) ? "col" : "row");
+	      (op->variant() == 2) ? "col" : "row");
 
     nr = INTEGER(x)[0];
     nc = INTEGER(x)[1];
@@ -360,7 +362,7 @@ SEXP attribute_hidden do_rowscols(SEXP call, SEXP op, SEXP args, SEXP rho)
     ans = allocMatrix(INTSXP, nr, nc);
 
     R_xlen_t NR = nr;
-    switch (PRIMVAL(op)) {
+    switch (op->variant()) {
     case 1:
 	for (i = 0; i < nr; i++)
 	    for (j = 0; j < nc; j++)
@@ -843,15 +845,15 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 #undef YDIMS_ET_CETERA
 
-SEXP attribute_hidden do_transpose(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_transpose(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP a, r, dims, dimnames, dimnamesnames = R_NilValue,
 	ndimnamesnames, rnames, cnames;
     int ldim, ncol = 0, nrow = 0;
     R_xlen_t len = 0;
 
-    checkArity(op, args);
-    a = CAR(args);
+    op->checkNumArgs(num_args, call);
+    a = args[0];
 
     if (isVector(a)) {
 	dims = getAttrib(a, R_DimSymbol);
@@ -986,14 +988,14 @@ SEXP attribute_hidden do_transpose(SEXP call, SEXP op, SEXP args, SEXP rho)
 	lj += iip[itmp] * stride[itmp];
 
 /* aperm (a, perm, resize = TRUE) */
-SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_aperm(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP a, perm, r, dimsa, dimsr, dna;
     int i, j, n, itmp;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    a = CAR(args);
+    a = args[0];
     if (!isArray(a))
 	error(_("invalid first argument, must be an array"));
 
@@ -1004,7 +1006,7 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* check the permutation */
 
     int *pp = static_cast<int *>( CXXR_alloc(size_t( n), sizeof(int)));
-    perm = CADR(args);
+    perm = args[1];
     if (length(perm) == 0) {
 	for (i = 0; i < n; i++) pp[i] = n-1-i;
     } else {
@@ -1118,7 +1120,7 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
     /* handle the resize */
-    int resize = asLogical(CADDR(args));
+    int resize = asLogical(args[2]);
     if (resize == NA_LOGICAL) error(_("'resize' must be TRUE or FALSE"));
     setAttrib(r, R_DimSymbol, resize ? dimsr : dimsa);
 
@@ -1153,17 +1155,17 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 /* colSums(x, n, p, na.rm) and friends */
-SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans = R_NilValue;
     int type;
     Rboolean NaRm, keepNA;
 
-    checkArity(op, args);
-    x = CAR(args); args = CDR(args);
-    int n = asInteger(CAR(args)); args = CDR(args);
-    int p = asInteger(CAR(args)); args = CDR(args);
-    NaRm = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));
+    op->checkNumArgs(num_args, call);
+    x = args[0]; args = (args + 1);
+    int n = asInteger(args[0]); args = (args + 1);
+    int p = asInteger(args[0]); args = (args + 1);
+    NaRm = CXXRCONSTRUCT(Rboolean, asLogical(args[0]));
     if (n == NA_INTEGER || n < 0)
 	error(_("invalid '%s' argument"), "n");
     if (p == NA_INTEGER || p < 0)
@@ -1171,7 +1173,7 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (NaRm == NA_LOGICAL) error(_("invalid '%s' argument"), "na.rm");
     keepNA = CXXRCONSTRUCT(Rboolean, !NaRm);
 
-    int OP = PRIMVAL(op);
+    int OP = op->variant();
     switch (type = TYPEOF(x)) {
     case LGLSXP: break;
     case INTSXP: break;
@@ -1324,13 +1326,13 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
 */
 
 /* array(data, dim, dimnames) */
-SEXP attribute_hidden do_array(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_array(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP vals, ans, dims, dimnames;
     R_xlen_t lendat, i, nans;
 
-    checkArity(op, args);
-    vals = CAR(args);
+    op->checkNumArgs(num_args, call);
+    vals = args[0];
     /* at least NULL can get here */
     switch(TYPEOF(vals)) {
 	case LGLSXP:
@@ -1347,8 +1349,8 @@ SEXP attribute_hidden do_array(SEXP call, SEXP op, SEXP args, SEXP rho)
 		type2char(TYPEOF(vals)));
     }
     lendat = XLENGTH(vals);
-    dims = CADR(args);
-    dimnames = CADDR(args);
+    dims = args[1];
+    dimnames = args[2];
     PROTECT(dims = coerceVector(dims, INTSXP));
     int nd = LENGTH(dims);
     if (nd == 0) error(_("'dims' cannot be of length 0"));
@@ -1426,15 +1428,15 @@ SEXP attribute_hidden do_array(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
-SEXP attribute_hidden do_diag(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_diag(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x, snr, snc;
     int nr = 1, nc = 1, nprotect = 1;
 
-    checkArity(op, args);
-    x = CAR(args);
-    snr = CADR(args);
-    snc = CADDR(args);
+    op->checkNumArgs(num_args, call);
+    x = args[0];
+    snr = args[1];
+    snc = args[2];
     nr = asInteger(snr);
     if (nr == NA_INTEGER)
 	error(_("invalid 'nrow' value (too large or NA)"));
@@ -1480,24 +1482,24 @@ SEXP attribute_hidden do_diag(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 
 /* backsolve(r, b, k, upper.tri, transpose) */
-SEXP attribute_hidden do_backsolve(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_backsolve(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int nprot = 1;
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    SEXP r = CAR(args); args = CDR(args);
-    SEXP b = CAR(args); args = CDR(args);
+    SEXP r = args[0]; args = (args + 1);
+    SEXP b = args[0]; args = (args + 1);
     int nrr = nrows(r), nrb = nrows(b), ncb = ncols(b);
-    int k = asInteger(CAR(args)); args = CDR(args);
+    int k = asInteger(args[0]); args = (args + 1);
     /* k is the number of rows to be used: there must be at least that
        many rows and cols in the rhs and at least that many rows on
        the rhs.
     */
     if (k == NA_INTEGER || k <= 0 || k > nrr || k > ncols(r) || k > nrb)
 	error(_("invalid '%s' argument"), "k");
-    int upper = asLogical(CAR(args)); args = CDR(args);
+    int upper = asLogical(args[0]); args = (args + 1);
     if (upper == NA_INTEGER) error(_("invalid '%s' argument"), "upper.tri");
-    int trans = asLogical(CAR(args));
+    int trans = asLogical(args[0]);
     if (trans == NA_INTEGER) error(_("invalid '%s' argument"), "transpose");
     if (TYPEOF(r) != REALSXP) {PROTECT(r = coerceVector(r, REALSXP)); nprot++;}
     if (TYPEOF(b) != REALSXP) {PROTECT(b = coerceVector(b, REALSXP)); nprot++;}
@@ -1525,11 +1527,11 @@ SEXP attribute_hidden do_backsolve(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 /* max.col(m, ties.method) */
-SEXP attribute_hidden do_maxcol(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_maxcol(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
-    SEXP m = CAR(args);
-    int method = asInteger(CADR(args));
+    op->checkNumArgs(num_args, call);
+    SEXP m = args[0];
+    int method = asInteger(args[1]);
     int nr = nrows(m), nc = ncols(m), nprot = 1;
     if (TYPEOF(m) != REALSXP) {PROTECT(m = coerceVector(m, REALSXP)); nprot++;}
     SEXP ans = PROTECT(allocVector(INTSXP, nr));

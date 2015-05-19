@@ -25,6 +25,7 @@
 #include "CXXR/PairList.h"
 #include "CXXR/IntVector.h"
 #include "CXXR/RealVector.h"
+#include "CXXR/Symbol.h"
 
 using namespace CXXR;
 
@@ -71,6 +72,107 @@ TEST(PairListTest, MakePair) {
     EXPECT_EQ(NULL, result->tag());
     next = result->tail();
     EXPECT_EQ(args[1], next->car());
+    EXPECT_EQ(NULL, next->tag());
+    EXPECT_EQ(NULL, next->tail());
+}
+
+TEST(PairListTest, CopyTags) {
+    RObject* dest_args[] = { IntVector::createScalar(2),
+			RealVector::createScalar(3.0) };
+    PairList* dest = PairList::make(2, dest_args);
+
+    RObject* src_args[] = { IntVector::createScalar(-2),
+			     RealVector::createScalar(-3.0) };
+    PairList* src = PairList::make(2, src_args);
+    src->setTag(Symbol::obtain("tag1"));
+    src->tail()->setTag(Symbol::obtain("tag2"));
+
+    dest->copyTagsFrom(src);
+
+    ASSERT_EQ(2, listLength(dest));
+    EXPECT_EQ(dest_args[0], dest->car());
+    EXPECT_EQ(Symbol::obtain("tag1"), dest->tag());
+    PairList* next = dest->tail();
+    EXPECT_EQ(dest_args[1], next->car());
+    EXPECT_EQ(Symbol::obtain("tag2"), next->tag());
+    EXPECT_EQ(NULL, next->tail());
+}
+
+TEST(PairListTest, CopyNullTag) {
+    RObject* dest_args[] = { IntVector::createScalar(2),
+			RealVector::createScalar(3.0) };
+    PairList* dest = PairList::make(2, dest_args);
+
+    RObject* src_args[] = { IntVector::createScalar(-2),
+			     RealVector::createScalar(-3.0) };
+    PairList* src = PairList::make(2, src_args);
+    src->tail()->setTag(Symbol::obtain("tag2"));
+
+    dest->copyTagsFrom(src);
+
+    ASSERT_EQ(2, listLength(dest));
+    EXPECT_EQ(dest_args[0], dest->car());
+    EXPECT_EQ(NULL, dest->tag());
+    PairList* next = dest->tail();
+    EXPECT_EQ(dest_args[1], next->car());
+    EXPECT_EQ(Symbol::obtain("tag2"), next->tag());
+    EXPECT_EQ(NULL, next->tail());
+}
+
+TEST(PairListTest, CopyTagsFromShortList) {
+    RObject* dest_args[] = { IntVector::createScalar(2),
+			RealVector::createScalar(3.0) };
+    PairList* dest = PairList::make(2, dest_args);
+
+    RObject* src_args[] = { IntVector::createScalar(-2) };
+    PairList* src = PairList::make(1, src_args);
+    src->setTag(Symbol::obtain("tag1"));
+
+    dest->copyTagsFrom(src);
+
+    ASSERT_EQ(2, listLength(dest));
+    EXPECT_EQ(dest_args[0], dest->car());
+    EXPECT_EQ(Symbol::obtain("tag1"), dest->tag());
+    PairList* next = dest->tail();
+    EXPECT_EQ(dest_args[1], next->car());
+    EXPECT_EQ(NULL, next->tag());
+    EXPECT_EQ(NULL, next->tail());
+}
+
+TEST(PairListTest, CopyTagsFromLongList) {
+    RObject* dest_args[] = { IntVector::createScalar(2),
+			RealVector::createScalar(3.0) };
+    PairList* dest = PairList::make(2, dest_args);
+
+    RObject* src_args[] = { IntVector::createScalar(-2),
+			    RealVector::createScalar(-3.0),
+			    IntVector::createScalar(-1) };
+    PairList* src = PairList::make(3, src_args);
+    src->setTag(Symbol::obtain("tag1"));
+    src->tail()->setTag(Symbol::obtain("tag2"));
+    src->tail()->tail()->setTag(Symbol::obtain("tag3"));
+
+    dest->copyTagsFrom(src);
+
+    ASSERT_EQ(2, listLength(dest));
+    EXPECT_EQ(dest_args[0], dest->car());
+    EXPECT_EQ(Symbol::obtain("tag1"), dest->tag());
+    PairList* next = dest->tail();
+    EXPECT_EQ(dest_args[1], next->car());
+    EXPECT_EQ(Symbol::obtain("tag2"), next->tag());
+    EXPECT_EQ(NULL, next->tail());
+}
+
+TEST(PairListTest, CopyTagsFromNothing) {
+    RObject* dest_args[] = { IntVector::createScalar(2),
+			RealVector::createScalar(3.0) };
+    PairList* dest = PairList::make(2, dest_args);
+    dest->copyTagsFrom(nullptr);
+    ASSERT_EQ(2, listLength(dest));
+    EXPECT_EQ(dest_args[0], dest->car());
+    EXPECT_EQ(NULL, dest->tag());
+    PairList* next = dest->tail();
+    EXPECT_EQ(dest_args[1], next->car());
     EXPECT_EQ(NULL, next->tag());
     EXPECT_EQ(NULL, next->tail());
 }

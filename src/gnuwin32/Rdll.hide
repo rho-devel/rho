@@ -539,7 +539,6 @@
  do_abs
  do_addCondHands
  do_addRestart
- do_addTryHandlers
  do_addhistory
  do_adist
  do_agrep
@@ -612,7 +611,6 @@
  do_delayed
  do_deparse
  do_detach
- do_devAskNewPage
  do_devsize
  do_dfltStop
  do_dfltWarn
@@ -876,7 +874,6 @@
  do_rep_len
  do_repeat
  do_resetCondHands
- do_restart
  do_retracemem
  do_return
  do_rowscols
@@ -986,7 +983,6 @@
  do_unsetenv
  do_untracemem
  do_unz
- do_unzip
  do_updateform
  do_url
  do_usemethod

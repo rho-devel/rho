@@ -41,22 +41,22 @@
 #include "Defn.h"
 #include <Internal.h>
 
-SEXP attribute_hidden do_split(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_split(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, f, counts, vec, nm, nmj;
     Rboolean have_names;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    x = CAR(args);
-    f = CADR(args);
+    x = args[0];
+    f = args[1];
     if (!isVector(x))
 	error(_("first argument must be a vector"));
     if (!isFactor(f))
 	error(_("second argument must be a factor"));
     int nlevs = nlevels(f);
-    R_xlen_t nfac = XLENGTH(CADR(args));
-    R_xlen_t nobs = XLENGTH(CAR(args));
+    R_xlen_t nfac = XLENGTH(args[1]);
+    R_xlen_t nobs = XLENGTH(args[0]);
     if (nfac <= 0 && nobs > 0)
 	error(_("group length is 0 but data length > 0"));
     if (nfac > 0 && (nobs % nfac) != 0)

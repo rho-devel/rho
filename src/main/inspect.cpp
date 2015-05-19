@@ -47,17 +47,17 @@ static void inspect_tree(int pre, SEXP v, int deep, int pvec) {
 /* internal API - takes one mandatory argument (object to inspect) and
    two optional arguments (deep and pvec - see above), positional argument
    matching only */
-SEXP attribute_hidden do_inspect(SEXP call, SEXP op, SEXP args, SEXP env) {
-    SEXP obj = CAR(args);
+SEXP attribute_hidden do_inspect(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags) {
+    SEXP obj = args[0];
     int deep = -1;
     int pvec = 5;
-    if (CDR(args) != R_NilValue) {
-	deep = asInteger(CADR(args));
-	if (CDDR(args) != R_NilValue)
-	    pvec = asInteger(CADDR(args));
+    if (num_args > 1) {
+	deep = asInteger(args[1]);
+	if (num_args > 2) {
+	    pvec = asInteger(args[2]);
+	}
     }
-	
-    inspect_tree(0, CAR(args), deep, pvec);
+    inspect_tree(0, args[0], deep, pvec);
     return obj;
 }
 

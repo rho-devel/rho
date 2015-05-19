@@ -59,12 +59,12 @@ Type 'q()' to quit R.\n\n"));
 	      "instead refer to the CXXR website.\n"));
 }
 
-SEXP attribute_hidden do_version(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_version(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP value, names;
     char buf[128];
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     PROTECT(value = allocVector(VECSXP,14));
     PROTECT(names = allocVector(STRSXP,14));
 

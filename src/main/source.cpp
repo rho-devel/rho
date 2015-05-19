@@ -187,7 +187,7 @@ void parseError(SEXP call, int linenum)
  .Internal( parse(file, n, text, prompt, srcfile, encoding) )
  If there is text then that is read and the other arguments are ignored.
 */
-SEXP attribute_hidden do_parse(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_parse(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP text, prompt, s, source;
     Rconnection con;
@@ -197,27 +197,27 @@ SEXP attribute_hidden do_parse(SEXP call, SEXP op, SEXP args, SEXP env)
     const char *encoding;
     ParseStatus status;
 
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
     R_ParseError = 0;
     R_ParseErrorMsg[0] = '\0';
 
-    ifile = asInteger(CAR(args));                       args = CDR(args);
+    ifile = asInteger(args[0]);                       args = (args + 1);
 
     con = getConnection(ifile);
     wasopen = con->isopen;
-    num = asInteger(CAR(args));				args = CDR(args);
+    num = asInteger(args[0]);				args = (args + 1);
     if (num == 0)
 	return(allocVector(EXPRSXP, 0));
 
-    PROTECT(text = coerceVector(CAR(args), STRSXP));
-    if(length(CAR(args)) && !length(text))
+    PROTECT(text = coerceVector(args[0], STRSXP));
+    if(length(args[0]) && !length(text))
 	errorcall(call, _("coercion of 'text' to character was unsuccessful"));
-    args = CDR(args);
-    prompt = CAR(args);					args = CDR(args);
-    source = CAR(args);					args = CDR(args);
-    if(!isString(CAR(args)) || LENGTH(CAR(args)) != 1)
+    args = (args + 1);
+    prompt = args[0];					args = (args + 1);
+    source = args[0];					args = (args + 1);
+    if(!isString(args[0]) || LENGTH(args[0]) != 1)
 	error(_("invalid '%s' value"), "encoding");
-    encoding = CHAR(STRING_ELT(CAR(args), 0)); /* ASCII */
+    encoding = CHAR(STRING_ELT(args[0], 0)); /* ASCII */
     known_to_be_latin1 = known_to_be_utf8 = FALSE;
     /* allow 'encoding' to override declaration on 'text'. */
     if(streql(encoding, "latin1")) {

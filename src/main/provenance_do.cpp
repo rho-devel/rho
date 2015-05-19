@@ -192,7 +192,7 @@ SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 #endif  // PROVENANCE_TRACKING
 }
 
-SEXP attribute_hidden do_provCommand (SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_provCommand (/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
 #ifndef PROVENANCE_TRACKING
     Rf_error(_("provenance tracking not implemented in this build"));
@@ -213,7 +213,7 @@ SEXP attribute_hidden do_provCommand (SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 SEXP attribute_hidden
-do_provenance_graph(SEXP call, SEXP op, SEXP args, SEXP rho)
+do_provenance_graph(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
 #ifndef PROVENANCE_TRACKING
     Rf_error(_("provenance tracking not implemented in this build"));

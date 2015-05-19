@@ -2773,7 +2773,12 @@ void GEplayDisplayList(pGEDevDesc dd)
 	    SEXP op = CAR(theOperation);
 	    SEXP args = CADR(theOperation);
 	    if (TYPEOF(op) == BUILTINSXP || TYPEOF(op) == SPECIALSXP) {
-	    	PRIMFUN(op) (R_NilValue, op, args, R_NilValue);
+		using namespace CXXR;
+
+		BuiltInFunction* builtin = SEXP_downcast<BuiltInFunction*>(op);
+		ArgList arglist(SEXP_downcast<const PairList*>(args),
+				ArgList::EVALUATED);
+		builtin->apply(&arglist, nullptr, nullptr);
 		/* Check with each graphics system that the plotting went ok
 		 */
 		if (!GEcheckState(dd)) {

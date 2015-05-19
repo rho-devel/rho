@@ -560,7 +560,7 @@ double currentTime(void)
     return ans;
 }
 
-SEXP attribute_hidden do_systime(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_systime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     return ScalarReal(currentTime());
 }
@@ -688,16 +688,16 @@ makelt(struct tm *tm, SEXP ans, R_xlen_t i, int valid, double frac_secs)
 }
 
 
-SEXP attribute_hidden do_asPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_asPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP stz, x, ans, ansnames, klass, tzone;
     int isgmt = 0, valid, settz = 0;
     char oldtz[1001] = "";
     const char *tz = nullptr;
 
-    checkArity(op, args);
-    PROTECT(x = coerceVector(CAR(args), REALSXP));
-    if(!isString((stz = CADR(args))) || LENGTH(stz) != 1)
+    op->checkNumArgs(num_args, call);
+    PROTECT(x = coerceVector(args[0], REALSXP));
+    if(!isString((stz = args[1])) || LENGTH(stz) != 1)
 	error(_("invalid '%s' value"), "tz");
     tz = CHAR(STRING_ELT(stz, 0));
     if(strlen(tz) == 0) {
@@ -754,7 +754,7 @@ SEXP attribute_hidden do_asPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_asPOSIXct(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP stz, x, ans;
     R_xlen_t n = 0, nlen[9];
@@ -764,11 +764,11 @@ SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
     struct tm tm;
     double tmp;
 
-    checkArity(op, args);
-    PROTECT(x = duplicate(CAR(args))); /* coerced below */
+    op->checkNumArgs(num_args, call);
+    PROTECT(x = duplicate(args[0])); /* coerced below */
     if(!isVectorList(x) || LENGTH(x) != 9)
 	error(_("invalid '%s' argument"), "x");
-    if(!isString((stz = CADR(args))) || LENGTH(stz) != 1)
+    if(!isString((stz = args[1])) || LENGTH(stz) != 1)
 	error(_("invalid '%s' value"), "tz");
 
     tz = CHAR(STRING_ELT(stz, 0));
@@ -839,7 +839,7 @@ SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_formatPOSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, sformat, ans, tz;
     R_xlen_t i, n = 0, m, N, nlen[9];
@@ -849,14 +849,14 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     const char *p, *tz1;
     struct tm tm;
 
-    checkArity(op, args);
-    PROTECT(x = duplicate(CAR(args))); /* coerced below */
+    op->checkNumArgs(num_args, call);
+    PROTECT(x = duplicate(args[0])); /* coerced below */
     if(!isVectorList(x) || LENGTH(x) != 9)
 	error(_("invalid '%s' argument"), "x");
-    if(!isString((sformat = CADR(args))) || XLENGTH(sformat) == 0)
+    if(!isString((sformat = args[1])) || XLENGTH(sformat) == 0)
 	error(_("invalid '%s' argument"), "format");
     m = XLENGTH(sformat);
-    UseTZ = asLogical(CADDR(args));
+    UseTZ = asLogical(args[2]);
     if(UseTZ == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "usetz");
     tz = getAttrib(x, install("tzone"));
@@ -1011,7 +1011,7 @@ static void glibc_fix(struct tm *tm, int *invalid)
 }
 
 
-SEXP attribute_hidden do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_strptime(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, sformat, ans, ansnames, klass, stz, tzone;
     int invalid, isgmt = 0, settz = 0, offset;
@@ -1021,12 +1021,12 @@ SEXP attribute_hidden do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
     double psecs = 0.0;
     R_xlen_t i, n, m, N;
 
-    checkArity(op, args);
-    if(!isString((x= CAR(args))))
+    op->checkNumArgs(num_args, call);
+    if(!isString((x= args[0])))
 	error(_("invalid '%s' argument"), "x");
-    if(!isString((sformat = CADR(args))) || XLENGTH(sformat) == 0)
+    if(!isString((sformat = args[1])) || XLENGTH(sformat) == 0)
 	error(_("invalid '%s' argument"), "x");
-    if(!isString((stz = CADDR(args))) || LENGTH(stz) != 1)
+    if(!isString((stz = args[2])) || LENGTH(stz) != 1)
 	error(_("invalid '%s' value"), "tz");
     tz = CHAR(STRING_ELT(stz, 0));
     if(strlen(tz) == 0) {
@@ -1120,15 +1120,15 @@ SEXP attribute_hidden do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP attribute_hidden do_D2POSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_D2POSIXlt(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans, ansnames, klass;
     R_xlen_t n, i;
     int valid, day, y, tmp, mon;
     struct tm tm;
 
-    checkArity(op, args);
-    PROTECT(x = coerceVector(CAR(args), REALSXP));
+    op->checkNumArgs(num_args, call);
+    PROTECT(x = coerceVector(args[0], REALSXP));
     n = XLENGTH(x);
     PROTECT(ans = allocVector(VECSXP, 9));
     for(i = 0; i < 9; i++)
@@ -1179,14 +1179,14 @@ SEXP attribute_hidden do_D2POSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP attribute_hidden do_POSIXlt2D(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_POSIXlt2D(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP x, ans, klass;
     R_xlen_t i, n = 0, nlen[9];
     struct tm tm;
 
-    checkArity(op, args);
-    PROTECT(x = duplicate(CAR(args)));
+    op->checkNumArgs(num_args, call);
+    PROTECT(x = duplicate(args[0]));
     if(!isVectorList(x) || LENGTH(x) != 9)
 	error(_("invalid '%s' argument"), "x");
 

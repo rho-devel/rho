@@ -82,7 +82,7 @@ void ArgList::evaluateToArray(Environment* env,
 void ArgList::evaluate(Environment* env, bool allow_missing)
 {
     if (m_status == EVALUATED)
-	Rf_error("Internal error: ArgList already evaluated");
+	return;
     if (m_first_arg_env && env != m_first_arg_env)
 	Rf_error("Internal error: first arg of ArgList"
 		 " previously evaluated in different environment");
@@ -233,8 +233,7 @@ const Symbol* ArgList::tag2Symbol(const RObject* tag)
 void ArgList::wrapInPromises(Environment* env)
 {
     if (m_status == PROMISED)
-	Rf_error("Internal error:"
-		 " ArgList already wrapped in Promises");
+	return;
     if (m_status == EVALUATED)
 	env = nullptr;
     else if (m_first_arg_env && env != m_first_arg_env)

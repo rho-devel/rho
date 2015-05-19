@@ -90,7 +90,7 @@ BuiltInFunction::BuiltInFunction(unsigned int offset)
 		     || m_function == do_for
 		     || m_function == do_if
 		     || m_function == do_internal
-		     || m_function == do_paren
+		     || m_quick_function == do_paren
 		     || m_function == do_repeat
 		     || m_function == do_return
 		     || m_function == do_while);
@@ -148,30 +148,51 @@ static bool hasDotArgs(const ArgList* arglist) {
     return false;
 }
 
+bool BuiltInFunction::argsNeedEvaluating(const ArgList* arglist) const {
+    return sexptype() == BUILTINSXP && arglist->status() != ArgList::EVALUATED;
+}
+
 RObject* BuiltInFunction::evaluateAndInvoke(Environment* env, ArgList* arglist,
 					    const Expression* call) const
 {
-    if (arglist->status() != ArgList::EVALUATED && sexptype() == BUILTINSXP)
-    {
-	// The arguments need evaluating.
-	if (m_quick_function && !hasDotArgs(arglist)) {
-	    return quickEvaluateAndInvoke(env, arglist, call);
-	} else {
-	    arglist->evaluate(env);
-	}
+    if (m_quick_function) {
+	return quickEvaluateAndInvoke(env, arglist, call);
+    }
+
+    if (argsNeedEvaluating(arglist)) {
+	arglist->evaluate(env);
     }
 
     Evaluator::enableResultPrinting(true);
-    return invoke(env, arglist, call);
+    return m_function(const_cast<Expression*>(call),
+		      const_cast<BuiltInFunction*>(this),
+		      const_cast<PairList*>(arglist->list()),
+		      env);
+}
+
+static void copyArgsToArray(const PairList* args, RObject** array) {
+    int i = 0;
+    for (const ConsCell& cell : *args) {
+	array[i] = cell.car();
+	i++;
+    }
 }
 
 RObject* BuiltInFunction::quickEvaluateAndInvoke(
     Environment* env, ArgList* arglist, const Expression* call) const
 {
+    bool args_need_evaluating = argsNeedEvaluating(arglist);
+    if (args_need_evaluating && hasDotArgs(arglist)) {
+	// This is slow, but handles '...' correctly.
+	arglist->evaluate(env);
+	args_need_evaluating = false;
+    }
+
     const PairList* args = arglist->list();
     if (!args) {
 	Evaluator::enableResultPrinting(true);
-	return m_quick_function(call, this, env, 0, nullptr, nullptr);
+	return m_quick_function(const_cast<Expression*>(call),
+				this, env, nullptr, 0, nullptr);
     }
 
     int num_args = listLength(args);
@@ -180,15 +201,19 @@ RObject* BuiltInFunction::quickEvaluateAndInvoke(
     // simply stores them in an on-stack array.
     RObject** evaluated_args = static_cast<RObject**>(
 	alloca(num_args * sizeof(RObject*)));
-    arglist->evaluateToArray(env, num_args, evaluated_args);
+    if (args_need_evaluating) {
+	arglist->evaluateToArray(env, num_args, evaluated_args);
+    } else {
+	copyArgsToArray(args, evaluated_args);
+    }
 
-    // Since builtins don't do argument matching and there weren't any
-    // '...'s to expand, the tags didn't change in evaluation.
+    // Since builtins don't do argument matching 'args' has the correct
+    // tags.
     const PairList* tags = args;
     
     Evaluator::enableResultPrinting(true);
-    return m_quick_function(call, this, env,
-			    num_args, evaluated_args, tags);
+    return m_quick_function(const_cast<Expression*>(call),
+			    this, env, evaluated_args, num_args, tags);
 }
 
 void BuiltInFunction::checkNumArgs(const PairList* args,
@@ -274,33 +299,69 @@ const char* BuiltInFunction::typeName() const
     return sexptype() == SPECIALSXP ? "special" : "builtin";
 }
 
-std::pair<bool, RObject*>
-BuiltInFunction::InternalGroupDispatch(const char* group, const Expression* call,
-				       Environment* env,
-				       int num_args, RObject** args,
-				       const PairList* tags) const
-{
-    bool has_class = false;
+static bool anyArgHasClass(int num_args, RObject **args) {
     for (int i = 0; i < num_args; i++) {
-	if (args[i] && args[i]->hasClass()) {
-	    has_class = true;
-	    break;
-	}
+	if (Rf_isObject(args[i]))
+	    return true;
     }
-    if (has_class) {
-	ArgList arglist(PairList::make(num_args, args, tags), ArgList::EVALUATED);
-	RObject* result = nullptr;
-	bool dispatched = Rf_DispatchGroup(group,
-					   const_cast<Expression*>(call),
-					   const_cast<BuiltInFunction*>(this),
-					   const_cast<PairList*>(arglist.list()),
-					   env, &result);
-	return std::make_pair(dispatched, result);
-    } else {
-	return std::make_pair(false, nullptr);
-    }
+    return false;
 }
 
+std::pair<bool, RObject*>
+BuiltInFunction::RealInternalGroupDispatch(
+    const char* group, const Expression* call, Environment* env,
+    int num_args, RObject* const* evaluated_args, const PairList* tags) const
+{
+    PairList* pargs = PairList::make(num_args, evaluated_args);
+    pargs->copyTagsFrom(tags);
+    ArgList arglist(pargs, ArgList::EVALUATED);
+    RObject* result = nullptr;
+    bool dispatched = Rf_DispatchGroup(group,
+				       const_cast<Expression*>(call),
+				       const_cast<BuiltInFunction*>(this),
+				       const_cast<PairList*>(arglist.list()),
+				       env, &result);
+    return std::make_pair(dispatched, result);
+}
+
+std::pair<bool, RObject*>
+BuiltInFunction::RealInternalDispatch(const Expression* call, const char* generic,
+				      int num_args,
+				      RObject* const* evaluated_args,
+				      const PairList* tags,
+				      Environment* env) const
+{
+    PairList* pargs = PairList::make(num_args, evaluated_args);
+    pargs->copyTagsFrom(tags);
+    ArgList arglist(pargs, ArgList::EVALUATED);
+    RObject* result = nullptr;
+    bool dispatched = Rf_DispatchOrEval(const_cast<Expression*>(call),
+					const_cast<BuiltInFunction*>(this),
+					generic,
+					const_cast<PairList*>(arglist.list()),
+					env, &result, 1, 1);
+    return std::make_pair(dispatched, result);
+}
+
+BuiltInFunction::TableEntry::TableEntry(const char* name_,
+					CCODE cfun_,
+					unsigned int variant_,
+					unsigned int flags_,
+					int arity_,
+					PPinfo gram_)
+    : name(name_), cfun(cfun_), quick_function(nullptr),
+      variant(variant_), flags(flags_), arity(arity_), gram(gram_)
+{}
+
+BuiltInFunction::TableEntry::TableEntry(const char* name_,
+					QuickInvokeFunction qfun_,
+					unsigned int variant_,
+					unsigned int flags_,
+					int arity_,
+					PPinfo gram_)
+    : name(name_), cfun(nullptr), quick_function(qfun_),
+      variant(variant_), flags(flags_), arity(arity_), gram(gram_)
+{}
 
 
 BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::BuiltInFunction)

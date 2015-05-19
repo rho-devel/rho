@@ -787,12 +787,13 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 /* primitive */
-SEXP attribute_hidden do_unclass(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_unclass(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
-    Rf_check1arg(args, call, "x");
+    op->checkNumArgs(num_args, call);
+    Rf_check1arg(tags, call, "x");
 
-    switch(TYPEOF(CAR(args))) {
+    RObject* object = args[0];
+    switch(TYPEOF(object)) {
     case ENVSXP:
 	Rf_errorcall(call, _("cannot unclass an environment"));
 	break;
@@ -802,11 +803,11 @@ SEXP attribute_hidden do_unclass(SEXP call, SEXP op, SEXP args, SEXP env)
     default:
 	break;
     }
-    if (Rf_isObject(CAR(args))) {
-	SETCAR(args, Rf_duplicate(CAR(args)));
-	Rf_setAttrib(CAR(args), R_ClassSymbol, R_NilValue);
+    if (Rf_isObject(object)) {
+	object = Rf_duplicate(object);
+	Rf_setAttrib(object, R_ClassSymbol, R_NilValue);
     }
-    return CAR(args);
+    return object;
 }
 
 
@@ -873,13 +874,13 @@ static SEXP inherits3(SEXP x, SEXP what, SEXP which)
     return rval;
 }
 
-SEXP attribute_hidden do_inherits(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_inherits(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
+    op->checkNumArgs(num_args, call);
 
-    return inherits3(/* x = */ CAR(args),
-		     /* what = */ CADR(args),
-		     /* which = */ CADDR(args));
+    return inherits3(/* x = */ args[0],
+		     /* what = */ args[1],
+		     /* which = */ args[2]);
 }
 
 
@@ -1045,11 +1046,10 @@ Rboolean isMethodsDispatchOn(void)
    It seems it is not currently called with onOff = TRUE (and would
    not have worked prior to 3.0.2).
 */ 
-attribute_hidden
-SEXP do_S4on(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_S4on(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    if(length(args) == 0) return Rf_ScalarLogical(isMethodsDispatchOn());
-    return R_isMethodsDispatchOn(CAR(args));
+    if(num_args == 0) return Rf_ScalarLogical(isMethodsDispatchOn());
+    return R_isMethodsDispatchOn(args[0]);
 }
 
 
@@ -1096,14 +1096,16 @@ static SEXP dispatchNonGeneric(SEXP name, SEXP env, SEXP fdef)
 }
 
 
-static SEXP get_this_generic(SEXP args);
+static SEXP get_this_generic(RObject* const* args, int num_args);
 
-SEXP attribute_hidden do_standardGeneric(SEXP call, SEXP op, SEXP args, SEXP env)
+
+
+SEXP attribute_hidden do_standardGeneric(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP arg, value, fdef; R_stdGen_ptr_t ptr = R_get_standardGeneric_ptr();
 
-    checkArity(op, args);
-    Rf_check1arg(args, call, "f");
+    op->checkNumArgs(num_args, call);
+    Rf_check1arg(tags, call, "f");
 
     if(!ptr) {
 	Rf_warningcall(call,
@@ -1112,13 +1114,13 @@ SEXP attribute_hidden do_standardGeneric(SEXP call, SEXP op, SEXP args, SEXP env
 	ptr = R_get_standardGeneric_ptr();
     }
 
-    checkArity(op, args); /* set to -1 */
-    arg = CAR(args);
-    if(!Rf_isValidStringF(arg))
+    op->checkNumArgs(num_args, call); /* set to -1 */
+    if (num_args == 0 || !Rf_isValidStringF(args[0]))
 	Rf_errorcall(call,
 		  _("argument to 'standardGeneric' must be a non-empty character string"));
+    arg = args[0];
 
-    PROTECT(fdef = get_this_generic(args));
+    PROTECT(fdef = get_this_generic(args, num_args));
 
     if(Rf_isNull(fdef))
 	Rf_error(_("call to standardGeneric(\"%s\") apparently not from the body of that generic function"), Rf_translateChar(STRING_ELT(arg, 0)));
@@ -1308,7 +1310,7 @@ static SEXP get_primitive_methods(SEXP op, SEXP rho)
 the call to standardGeneric(), or for primitives, passed as the second
 argument to standardGeneric.
 */
-static SEXP get_this_generic(SEXP args)
+static SEXP get_this_generic(RObject* const* args, int num_args)
 {
     const void *vmax = vmaxget();
     SEXP value = R_NilValue; static GCRoot<> gen_name;
@@ -1317,15 +1319,15 @@ static SEXP get_this_generic(SEXP args)
     const char *fname;
 
     /* a second argument to the call, if any, is taken as the function */
-    if(CDR(args) != R_NilValue)
-	return CAR(CDR(args));
+    if (num_args > 1) {
+	return args[1];
+    }
     /* else use sys.function (this is fairly expensive-- would be good
      * to force a second argument if possible) */
-    PROTECT(args);
     if(!gen_name)
 	gen_name = Rf_install("generic");
     cptr = ClosureContext::innermost();
-    fname = Rf_translateChar(Rf_asChar(CAR(args)));
+    fname = Rf_translateChar(Rf_asChar(args[0]));
     n = Rf_framedepth(cptr);
     /* check for a matching "generic" slot */
     for(i=0;  i<n; i++) {
@@ -1339,7 +1341,6 @@ static SEXP get_this_generic(SEXP args)
 	    }
 	}
     }
-    UNPROTECT(1);
     vmaxset(vmax);
 
     return value;
@@ -1551,12 +1552,12 @@ Rboolean attribute_hidden R_seemsOldStyleS4Object(SEXP object)
 	    Rf_getAttrib(klass, R_PackageSymbol) != R_NilValue) ? TRUE: FALSE;
 }
 
-SEXP attribute_hidden do_setS4Object(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_setS4Object(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    checkArity(op, args);
-    SEXP object = CAR(args);
-    int flag = Rf_asLogical(CADR(args)), complete = Rf_asInteger(CADDR(args));
-    if(length(CADR(args)) != 1 || flag == NA_INTEGER)
+    op->checkNumArgs(num_args, call);
+    SEXP object = args[0];
+    int flag = Rf_asLogical(args[1]), complete = Rf_asInteger(args[2]);
+    if(length(args[1]) != 1 || flag == NA_INTEGER)
 	Rf_error("invalid '%s' argument", "flag");
     if(complete == NA_INTEGER)
 	Rf_error("invalid '%s' argument", "complete");

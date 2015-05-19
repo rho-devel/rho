@@ -75,7 +75,7 @@ R_set_command_line_arguments(int argc, char **argv)
   in global variables.
  */
 SEXP attribute_hidden
-do_commandArgs(SEXP call, SEXP op, SEXP args, SEXP env)
+do_commandArgs(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     int i;
     SEXP vals;
