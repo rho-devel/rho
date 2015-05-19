@@ -64,5 +64,3 @@ void CommandChronicle::writeBinding(const Provenance* bdgprov)
 {
     m_seen.insert(bdgprov->serialNumber());
 }
-
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::CommandChronicle)

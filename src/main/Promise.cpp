@@ -142,8 +142,6 @@ void Promise::visitReferents(const_visitor* v) const
 	(*v)(env);
 }
 
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::Promise)
-
 // ***** C interface *****
 
 SEXP Rf_mkPROMISE(SEXP expr, SEXP rho)

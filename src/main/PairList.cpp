@@ -135,8 +135,6 @@ void PairList::unpackGPBits(unsigned int gpbits)
     m_active_binding = ((gpbits & ACTIVE_BINDING_MASK) != 0);
 }
 
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::PairList)
-
 // ***** C interface *****
 
 SEXP Rf_allocList(unsigned int n)

@@ -121,8 +121,6 @@ namespace CXXR {
 		 std::size_t margin = 0);
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT_KEY(CXXR::StringVector)
-
 extern "C" {
 #endif /* __cplusplus */
 

@@ -96,8 +96,3 @@ void R_SetExternalPtrProtected(SEXP s, SEXP p)
 	= *CXXR::SEXP_downcast<CXXR::ExternalPointer*>(s);
     ep.setProtege(p);
 }
-
-// Needed for the instantiation in BOOST_CLASS_EXPORT_IMPLEMENT:
-#include "CXXR/PairList.h"
-
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::ExternalPointer)

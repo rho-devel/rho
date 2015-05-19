@@ -82,9 +82,6 @@ String::String(char* character_storage,
     }
 }
 
-String::String() : String(nullptr, "", CE_NATIVE, true)
-{ }
-
 String* String::create(const std::string& text, cetype_t encoding, bool isAscii)
 {
     size_t size = sizeof(String) + text.size() + 1;
@@ -232,8 +229,3 @@ SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding)
     std::string str(text, length);
     return String::obtain(str, encoding);
 }
-
-// Needed for the instantiation in BOOST_CLASS_EXPORT_IMPLEMENT:
-#include "CXXR/PairList.h"
-
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::String)

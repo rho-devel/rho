@@ -30,8 +30,6 @@
 #ifndef FIXEDVECTOR_HPP
 #define FIXEDVECTOR_HPP 1
 
-#include <boost/serialization/nvp.hpp>
-
 #include "CXXR/VectorBase.h"
 #include "CXXR/MemoryBank.hpp"
 
@@ -222,14 +220,9 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents() override;
     private:
-	friend class boost::serialization::access;
-
 	T* m_data;  // pointer to the vector's data block.
 
 	alignas(T) char m_first_element_storage[sizeof(T)];
-
-	// Trivial constructor.  Only used for boost serialization.
-	FixedVector() : FixedVector(0) { }
 
 	/** @brief Create a vector, leaving its contents
 	 *         uninitialized (for POD types) or default
@@ -285,20 +278,6 @@ namespace CXXR {
 	// Helper functions for visitReferents():
 	void visitElements(const_visitor*v, std::true_type) const;
 	void visitElements(const_visitor*v, std::false_type) const {}
-
-	template<class Archive>
-	void load(Archive & ar, const unsigned int version); 
-	template<class Archive>
-	void loadValues(Archive & ar, const unsigned int version); 
-
-	template<class Archive>
-	void save(Archive & ar, const unsigned int version) const;
-
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version)
-	{
-	    boost::serialization::split_member(ar, *this, version);
-	}
     };
 
     // VectorTypeFor<T>::type is the type of vector that can hold elements of
@@ -394,98 +373,6 @@ void CXXR::FixedVector<T, ST, Initr>::detachReferents()
     detachElements(typename std::is_base_of<GCEdgeBase, T>::type());
     VectorBase::detachReferents();
 }
-
-template <typename T, SEXPTYPE ST, typename Initr>
-template<class Archive>
-void CXXR::FixedVector<T, ST, Initr>::load(Archive & ar,
-					   const unsigned int version)
-{
-    size_t length;
-    ar >> BOOST_SERIALIZATION_NVP(length);
-
-    FixedVector* result = FixedVector::create(length);
-    result->loadValues(ar, version);
-    S11nScope::defineRelocation(this, result);
-}
-
-template <typename T, SEXPTYPE ST, typename Initr>
-template<class Archive>
-void CXXR::FixedVector<T, ST, Initr>::loadValues(Archive & ar,
-						 const unsigned int version)
-{
-    ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(VectorBase);
-
-    size_type numnas;
-    ar >> BOOST_SERIALIZATION_NVP(numnas);
-    std::vector<size_type> na_indices;
-    // Fill in NAs:
-    {
-	unsigned int idx = 0;
-	for (size_type i = 0; i < numnas; ++i) {
-	    unsigned int ii;
-	    ar >> BOOST_SERIALIZATION_NVP(ii);
-	    idx += ii;
-	    m_data[idx] = ElementTraits::duplicate_element(NA<T>());
-	    na_indices.push_back(idx);
-	}
-	na_indices.push_back(size());
-    }
-
-    // Fill in non-NA values:
-    {
-	size_type i = 0;
-	for (std::vector<size_type>::const_iterator it = na_indices.begin();
-	     it != na_indices.end(); ++it) {
-	    size_type stop = *it;
-	    while (i != stop) {
-		ElementTraits::Serialize<T>()(ar, m_data[i]);
-		++i;
-	    }
-	    ++i;  // Skip NA slot
-	}
-    }
-}
-
-// A FixedVector is serialized by first recording the number of NAs
-// (if any) and the indices of the NAs (with all but the first
-// expressed as an increment from the previous one), followed by the
-// payloads of the non-NA values.
-template <typename T, SEXPTYPE ST, typename Initr>
-template<class Archive>
-void CXXR::FixedVector<T, ST, Initr>::save(Archive & ar,
-					   const unsigned int version) const
-{
-    size_t length = size();
-    ar << BOOST_SERIALIZATION_NVP(length);
-
-    ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(VectorBase);
-
-    std::vector<size_type> na_indices;
-
-    // Collect indices of NAs (if any):
-    for (size_type i = 0; i < size(); ++i)
-	if (isNA(m_data[i]))
-	    na_indices.push_back(i);
-
-    // Record first differences of NA indices:
-    {
-	size_type numnas = na_indices.size();
-	ar << BOOST_SERIALIZATION_NVP(numnas);
-	size_type last_idx = 0;
-	for (std::vector<size_type>::const_iterator it = na_indices.begin();
-	     it != na_indices.end(); ++it) {
-	    size_type idx = *it;
-	    size_type ii = idx - last_idx;  // ii = "index increment"
-	    ar << BOOST_SERIALIZATION_NVP(ii);
-	    last_idx = idx;
-	}
-    }
-
-    // Record payloads of non-NAs:
-    for (unsigned int i = 0; i < size(); ++i)
-	if (!isNA(m_data[i]))
-	    ElementTraits::Serialize<T>()(ar, m_data[i]);
-};
 
 template <typename T, SEXPTYPE ST, typename Initr>
 void CXXR::FixedVector<T, ST, Initr>::decreaseSizeInPlace(size_type new_size)

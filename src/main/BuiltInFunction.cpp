@@ -362,6 +362,3 @@ BuiltInFunction::TableEntry::TableEntry(const char* name_,
     : name(name_), cfun(nullptr), quick_function(qfun_),
       variant(variant_), flags(flags_), arity(arity_), gram(gram_)
 {}
-
-
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::BuiltInFunction)

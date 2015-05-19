@@ -351,14 +351,13 @@ AC_SUBST(LTOALL)
 AM_CONDITIONAL(BUILD_LTO, [test "x${want_lto}" != xno])
 
 ### CXXR Requires Boost of at least a given version,
-### including the boost::regex and boost::serialization libraries
+### including the boost::regex library.
 
 AX_BOOST_BASE([1.48.0],
 	      [],
               [AC_MSG_ERROR([CXXR requires boost, which was not found.])]
              )
 AX_BOOST_REGEX
-AX_BOOST_SERIALIZATION
 if test -n "$BOOST_LDFLAGS"; then
     BOOST_LD_LIBRARY_PATH=`echo $BOOST_LDFLAGS | sed -e 's/^-L//'`
 fi
@@ -2634,7 +2633,6 @@ AC_CONFIG_FILES(
   src/include/Rmath.h0
   src/include/R_ext/Makefile
   src/include/CXXR/Makefile
-  src/include/boost/serialization/Makefile
   src/library/Recommended/Makefile
   src/library/Makefile
   src/library/base/DESCRIPTION

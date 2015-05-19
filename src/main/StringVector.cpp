@@ -75,8 +75,3 @@ void SET_STRING_ELT(SEXP x, R_xlen_t i, SEXP v)
     String* s = SEXP_downcast<String*>(v, false);
     (*sv)[i] = s;
 }
-
-// Needed for the instantiation in BOOST_CLASS_EXPORT_IMPLEMENT:
-#include "CXXR/PairList.h"
-
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::StringVector)

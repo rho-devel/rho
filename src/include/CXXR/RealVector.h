@@ -85,8 +85,6 @@ namespace CXXR {
 
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT_KEY(CXXR::RealVector)
-
 extern "C" {
 #endif /* __cplusplus */
 

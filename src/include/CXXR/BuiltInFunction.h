@@ -36,7 +36,6 @@
 #ifdef __cplusplus
 
 #include <map>
-#include <boost/serialization/nvp.hpp>
 
 #include "CXXR/ArgList.hpp"
 #include "CXXR/Environment.h"
@@ -352,8 +351,6 @@ namespace CXXR {
           }
 
     private:
-	friend class boost::serialization::access;
-
 	// Alternative C function.  This differs from CCODE primarily in
 	// that the arguments are passed in an array instead of a linked
 	// list.
@@ -420,19 +417,6 @@ namespace CXXR {
 	bool m_transparent;  // if true, do not create a
 			     // FunctionContext when this function is
 			     // applied.
-
-	// This default constructor is used only during (boost)
-	// deserialisation, and constructs a bodged-up temporary
-	// object, with m_function set null to signify that this is
-	// a deserialisation proxy.
-
-	// (The argument to the FunctionBase base-class constructor is
-	// arbitrary, but will not be used during the lifetime of this
-	// temporary object.)
-	BuiltInFunction()
-          : FunctionBase(BUILTINSXP), m_offset(0), m_function(nullptr),
-            m_quick_function(nullptr)
-	{}
 
 	/** @brief Constructor.
 	 *
@@ -501,9 +485,6 @@ namespace CXXR {
                              const PairList* tags,
                              Environment* env) const;
 
-	template<class Archive>
-	void load(Archive & ar, const unsigned int version);
-
 	/** @brief Raise error because of missing argument.
 	 *
 	 * @param func Pointer, possibly null, to the BuiltInFunction
@@ -525,40 +506,8 @@ namespace CXXR {
 	 * @param call The call.
 	 */
         void badArgumentCountError(int num_args, const Expression* call) const;
-
-	template<class Archive>
-	void save(Archive & ar, const unsigned int version) const;
-
-	// Fields not serialised here are set up by the constructor:
-	template <class Archive>
-	void serialize(Archive& ar, const unsigned int version) {
-	    boost::serialization::split_member(ar, *this, version);
-	}
     };
 }  // namespace CXXR
-
-BOOST_CLASS_EXPORT_KEY(CXXR::BuiltInFunction)
-
-// ***** Implementation of non-inlined templated members *****
-
-template<class Archive>
-void CXXR::BuiltInFunction::load(Archive& ar, const unsigned int version)
-{
-    // This will only ever be applied to a 'temporary' BuiltInFunction
-    // created by the default constructor.
-    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(FunctionBase);
-    std::string namestr;
-    ar >> boost::serialization::make_nvp("name", namestr);
-    S11nScope::defineRelocation(this, obtainPrimitive(namestr));
-}
-
-template<class Archive>
-void CXXR::BuiltInFunction::save(Archive& ar, const unsigned int version) const
-{
-    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(FunctionBase);
-    std::string namestr(name());
-    ar << boost::serialization::make_nvp("name", namestr);
-}
 
 // Old-style accessor functions.  Get rid of these in due course.
 

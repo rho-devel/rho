@@ -252,8 +252,6 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents() override;
     private:
-	friend class boost::serialization::access;
-
 	static const size_t s_max_length = 256;
 	static Table* getTable();  // Vector of
 	  // pointers to all Symbol objects in existence, other than
@@ -294,25 +292,12 @@ namespace CXXR {
 
         static const char* s_special_symbol_names[];
 
-	template<class Archive>
-	void load(Archive & ar, const unsigned int version);
-
 	// Precondition: there is not already a Symbol identified by
 	// 'name'.
 	//
 	// Creates a new Symbol identified by 'name', enters it into
 	// the table of standard Symbols, and returns a pointer to it.
 	static Symbol* make(const String* name);
-
-	template<class Archive>
-	void save(Archive & ar, const unsigned int version) const;
-
-	// Fields not serialised here are set up by the constructor:
-	template <class Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
-	    boost::serialization::split_member(ar, *this, version);
-	}
     };
 
     /** @brief Does Symbol's name start with '.'?
@@ -347,56 +332,6 @@ namespace CXXR {
 
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT_KEY(CXXR::Symbol)
-
-// ***** Implementation of non-inlined templated members *****
-
-template<class Archive>
-void CXXR::Symbol::load(Archive& ar, const unsigned int version)
-{
-    // This will only ever be applied to a 'temporary' Symbol created
-    // by the default constructor.
-    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-    S11nType symtype;
-    ar >> BOOST_SERIALIZATION_NVP(symtype);
-    Symbol* reloc;
-    switch(symtype) {
-    case NORMAL:
-	{
-	    std::string name;
-	    ar >> BOOST_SERIALIZATION_NVP(name);
-	    reloc = obtain(name);
-	}
-	break;
-    case MISSINGARG:
-	reloc = missingArgument();
-	break;
-    case UNBOUNDVALUE:
-	reloc = unboundValue();
-	break;
-    }
-    S11nScope::defineRelocation(this, reloc);
-}
-
-template<class Archive>
-void CXXR::Symbol::save(Archive& ar, const unsigned int version) const
-{
-    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-    S11nType symtype = NORMAL;
-    if (this == missingArgument())
-	symtype = MISSINGARG;
-    else if (this == unboundValue())
-	symtype = UNBOUNDVALUE;
-    ar << BOOST_SERIALIZATION_NVP(symtype);
-    if (symtype == NORMAL) {
-	// We deliberately don't serialise the CachedString pointed to
-	// by m_name, because this would make us hostage to the
-	// current implementation.  Instead we serialise the
-	// std::string represented by that CachedString.
-	std::string name = m_name->stdstring();
-	ar << BOOST_SERIALIZATION_NVP(name);
-    }
-}
 
 extern "C" {
 #endif /* __cplusplus */

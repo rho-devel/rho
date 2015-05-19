@@ -54,8 +54,6 @@ namespace CXXR {
     typedef CXXR::FixedVector<Complex, CPLXSXP> ComplexVector;
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT_KEY(CXXR::ComplexVector)
-
 extern "C" {
 #endif /* __cplusplus */
 

@@ -121,5 +121,3 @@ Frame::Binding* StdFrame::v_obtainBinding(const Symbol* symbol)
 {
     return &m_map[symbol];
 }
-
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::StdFrame)

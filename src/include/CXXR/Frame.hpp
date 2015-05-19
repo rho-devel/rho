@@ -31,10 +31,6 @@
 #ifndef RFRAME_HPP
 #define RFRAME_HPP
 
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/nvp.hpp>
-
 #include "CXXR/GCNode.hpp"
 #include "CXXR/Provenance.hpp"
 #include "CXXR/Symbol.h"
@@ -386,7 +382,6 @@ namespace CXXR {
 	     */
 	    void visitReferents(const_visitor* v) const;
 	private:
-	    friend class boost::serialization::access;
 	    friend class Frame;
 
 	    Frame* m_frame;
@@ -398,13 +393,6 @@ namespace CXXR {
 	    unsigned char m_origin;
 	    bool m_active;
 	    bool m_locked;
-
-	    // Note that serialisation does not save the m_frame or
-	    // m_symbol fields, because deserialisation assumes that a
-	    // Binding object will already have been initialised (by
-	    // calling initialize()).
-	    template<class Archive>
-	    void serialize(Archive & ar, const unsigned int version);
 	};  // Frame::Binding
 
 
@@ -775,7 +763,6 @@ namespace CXXR {
 	void detachReferents() override;
     private:
 	friend class Environment;
-	friend class boost::serialization::access;
 
 	static monitor s_read_monitor, s_write_monitor;
 
@@ -818,9 +805,6 @@ namespace CXXR {
 	    if (m_write_monitored)
 		s_write_monitor(bdg);
 	}
-
-	template<class Archive>
-	void serialize (Archive & ar, const unsigned int version);
 
 	// Implementation dependent auxiliary functions:
 	virtual void v_clear() = 0;
@@ -885,32 +869,6 @@ namespace CXXR {
      */
     bool isMissingArgument(const Symbol* sym, Frame* frame);
 
-    // ***** Implementation of non-inlined templated members *****
-
-    template<class Archive>
-    void Frame::Binding::serialize(Archive & ar, const unsigned int version)
-    {
-	GCNPTR_SERIALIZE(ar, m_value);
-	const Provenance* prov = nullptr;
-#ifdef PROVENANCE_TRACKING
-	prov = m_provenance;
-#endif
-	GCNode::PtrS11n::invoke(ar, prov, "m_provenance");
-#ifdef PROVENANCE_TRACKING
-	m_provenance = prov;
-#endif
-	ar & BOOST_SERIALIZATION_NVP(m_origin);
-	ar & BOOST_SERIALIZATION_NVP(m_active);
-	ar & BOOST_SERIALIZATION_NVP(m_locked);
-    }
-
-    template<class Archive>
-    void Frame::serialize (Archive & ar, const unsigned int version) {
-	ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
-	bool locked = m_locked;
-	ar & BOOST_SERIALIZATION_NVP(locked);
-	m_locked = locked;
-    }
 }  // namespace CXXR
 
 // This definition is visible only in C++; C code sees instead a

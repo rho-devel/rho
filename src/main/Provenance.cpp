@@ -153,5 +153,3 @@ void Provenance::visitReferents(const_visitor* v) const
     if (m_value)
 	(*v)(m_value);
 }
-
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::Provenance)

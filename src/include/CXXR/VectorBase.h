@@ -41,10 +41,6 @@ typedef ptrdiff_t R_xlen_t;
 
 #ifdef __cplusplus
 
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/nvp.hpp>
-
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/RHandle.hpp"
 #include "CXXR/SEXP_downcast.hpp"
@@ -313,20 +309,7 @@ namespace CXXR {
 	 */
 	static void tooBig(std::size_t bytes);
     private:
-	friend class boost::serialization::access;
-
 	size_type m_size;
-
-	// m_size will always be passed in by the constructor, and so
-	// is not serialised.
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version)
-	{
-	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-	    // Maybe FIXME: sort out portability of m_xtruelength from 64-bit
-	    // to 32-bit architectures.
-	    ar & BOOST_SERIALIZATION_NVP(m_xtruelength);
-	}
     };
 
     template <class V>

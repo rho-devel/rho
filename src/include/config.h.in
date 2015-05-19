@@ -70,9 +70,6 @@
 /* define if the Boost::Regex library is available */
 #undef HAVE_BOOST_REGEX
 
-/* define if the Boost::Serialization library is available */
-#undef HAVE_BOOST_SERIALIZATION
-
 /* Define if you have BSD networking headers and libraries. */
 #undef HAVE_BSD_NETWORKING
 

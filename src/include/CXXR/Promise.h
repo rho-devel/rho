@@ -37,10 +37,6 @@
 
 #ifdef __cplusplus
 
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/nvp.hpp>
-
 #include "CXXR/Environment.h"
 #include "CXXR/Symbol.h"
 
@@ -179,8 +175,6 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents() override;
     private:
-	friend class boost::serialization::access;
-
 	GCEdge<> m_value;
 	GCEdge<RObject> m_valgen;
 	GCEdge<Environment> m_environment;
@@ -195,14 +189,6 @@ namespace CXXR {
 	// compiler-generated versions:
 	Promise(const Promise&);
 	Promise& operator=(const Promise&);
-
-	// Fields not serialised here are set up by the constructor:
-	template <class Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
-	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-	    GCNPTR_SERIALIZE(ar, m_value);
-	}
     };
 
     /** @brief Use forced value if RObject is a Promise.
@@ -220,72 +206,6 @@ namespace CXXR {
 	return object;
     }
 }  // namespace CXXR
-
-BOOST_CLASS_EXPORT_KEY(CXXR::Promise)
-
-namespace boost {
-    namespace serialization {
-	/** @brief Template specialisation.
-	 *
-	 * This specialisation is required because CXXR::Promise does
-	 * not have a default constructor.  See the
-	 * boost::serialization documentation for further details.
-	 *
-	 * @tparam Archive archive class from which deserialisation is
-	 *           taking place.
-	 *
-	 * @param ar Archive from which deserialisation is taking
-	 *           place.
-         *
-	 * @param t Pointer to the location at which a CXXR::Promise
-	 *          object is to be constructed.
-	 *
-	 * @param version Ignored.
-	 */
-	template<class Archive>
-	void load_construct_data(Archive& ar, CXXR::Promise* t,
-				 const unsigned int version)
-	{
-	    using namespace CXXR;
-	    GCStackRoot<> valgen;
-	    GCNPTR_SERIALIZE(ar, valgen);
-	    GCStackRoot<Environment> env;
-	    GCNPTR_SERIALIZE(ar, env);
-	    new (t) Promise(valgen, env);
-	}
-
-	/** @brief Template specialisation.
-	 *
-	 * This specialisation is required to ensure that the value
-	 * generator and environment of a CXXR::Promise are serialised
-	 * within an archive before the Promise itself is serialised,
-	 * so that on deserialisation the value generator and
-	 * environment can be made available to load_construct_data().
-	 * See the boost::serialization documentation for further
-	 * details.
-	 *
-	 * @tparam Archive archive class to which serialisation is
-	 *           taking place.
-	 *
-	 * @param ar Archive to which serialisation is taking place.
-         *
-	 * @param chron Non-null pointer to the CXXR::Promise object
-	 *          about to be serialised. 
-	 *
-	 * @param version Ignored.
-	 */
-	template<class Archive>
-	void save_construct_data(Archive& ar, const CXXR::Promise* t,
-				 const unsigned int version)
-	{
-	    using namespace CXXR;
-	    const RObject* valgen = t->valueGenerator();
-	    GCNPTR_SERIALIZE(ar, valgen);
-	    const Environment* env = t->environment();
-	    GCNPTR_SERIALIZE(ar, env);
-	}
-    }  // namespace serialization
-}  // namespace boost
 
 extern "C" {
 #endif

@@ -113,15 +113,6 @@ namespace CXXR {
 	};
 
 	template <class T>
-	struct Serialize<RHandle<T> > {
-	    template <class Archive>
-	    void operator()(Archive& ar, RHandle<T>& item)
-	    {
-		GCNPTR_SERIALIZE(ar, item);
-	    }
-	};
-
-	template <class T>
 	struct NAFunc<RHandle<T> > {
 	    const RHandle<T>& operator()() const
 	    {
