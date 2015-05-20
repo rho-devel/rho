@@ -98,7 +98,25 @@ namespace CXXR {
 	 */
 	bool debugging() const
 	{
-	    return m_debug;
+	    return m_debug && s_debugging_enabled;
+	}
+
+	/** @brief Enable/disable function debugging.
+	 *
+	 * @param on True iff function debugging is to be enabled.
+	 */
+	static void enableDebugging(bool on)
+	{
+	    s_debugging_enabled = on;
+	}
+
+	/** @brief If function debugging currently enabled?
+	 *
+	 * @return true iff function debugging is currently enabled.
+	 */
+	static bool debuggingEnabled()
+	{
+	    return s_debugging_enabled;
 	}
 
 	/** @brief Access the environment of the Closure.
@@ -278,6 +296,7 @@ namespace CXXR {
 	GCEdge<const ArgMatcher> m_matcher;
 	GCEdge<> m_body;
 	GCEdge<Environment> m_environment;
+        static bool s_debugging_enabled;
 
 	RObject* invokeImpl(Environment* env, const ArgList* arglist,
                             const Expression* call,

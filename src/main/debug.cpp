@@ -103,19 +103,29 @@ SEXP attribute_hidden do_traceOnOff(/*const*/ CXXR::Expression* call, const CXXR
 {
     op->checkNumArgs(num_args, call);
     SEXP onOff = args[0];
-    Rboolean prev = Rboolean(FunctionBase::tracingEnabled());
+    bool trace = op->variant() == 0;  // Otherwise it's debug.
+    Rboolean prev = Rboolean(trace ? FunctionBase::tracingEnabled()
+			     : Closure::debuggingEnabled());
     if(length(onOff) > 0) {
 	Rboolean _new = CXXRCONSTRUCT(Rboolean, asLogical(onOff));
-	if(_new == TRUE || _new == FALSE)
-	    FunctionBase::enableTracing(_new);
+	if(_new == TRUE || _new == FALSE) {
+	    if (trace)
+		FunctionBase::enableTracing(_new);
+	    else
+		Closure::enableDebugging(_new);
+	}
 	else
-	    error("Value for tracingState must be TRUE or FALSE");
+	    error(_("Value for '%s' must be TRUE or FALSE"),
+		  trace ? "tracingState" : "debuggingState");
     }
     return ScalarLogical(prev);
 }
 
 Rboolean attribute_hidden
 R_current_trace_state() { return Rboolean(FunctionBase::tracingEnabled()); }
+
+Rboolean attribute_hidden
+R_current_debugging_state() { return Rboolean(Closure::debuggingEnabled()); }
 
 
 /* memory tracing */
