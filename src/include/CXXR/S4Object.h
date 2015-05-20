@@ -38,10 +38,6 @@
 
 #ifdef __cplusplus
 
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/nvp.hpp>
-
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
@@ -85,23 +81,14 @@ namespace CXXR {
 	S4Object* clone() const override;
 	const char* typeName() const override;
     private:
-	friend class boost::serialization::access;
-
 	// Declared private to ensure that S4Objects are allocated
 	// only using 'new':
 	~S4Object() {}
 
 	// Not implemented.  Declared to prevent compiler-generated version:
         S4Object& operator=(const S4Object&);
-
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-	}
     };
 } // namespace CXXR
-
-BOOST_CLASS_EXPORT_KEY(CXXR::S4Object)
 
 extern "C" {
 #endif  /* __cplusplus */

@@ -182,15 +182,6 @@ namespace CXXR {
 	{};
 
 	template <class T>
-	struct Serialize<GCEdge<T> > {
-	    template <class Archive>
-	    void operator()(Archive& ar, GCEdge<T>& item)
-	    {
-		GCNPTR_SERIALIZE(ar, item);
-	    }
-	};
-
-	template <class T>
 	struct NAFunc<GCEdge<T> > {
 	    const GCEdge<T>& operator()() const
 	    {

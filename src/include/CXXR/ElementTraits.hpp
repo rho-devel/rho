@@ -96,32 +96,6 @@ namespace CXXR {
 	    return Duplicate<T>()(value);
 	}
 
-	/** @brief Function object for serialization/deserialization.
-	 *
-	 * @tparam T A type capable of being used as the element type
-	 *           of an R data vector. 
-	 */	 
-	template <typename T>
-	struct Serialize {
-	    /** @brief Serialize/deserialize an element's payload.
-	     *
-	     * @tparam Archive boost::serialization archive type.
-	     *           Serialization or deserialization will take
-	     *           place according to whether this is an output
-	     *           or an input archive type.
-	     *
-	     * @param ar Archive to be used.
-	     *
-	     * @param item Object whose data payload is to be
-	     *          serialized/deserialized.
-	     */
-	    template <class Archive>
-	    void operator()(Archive& ar, T& item)
-	    {
-		ar & boost::serialization::make_nvp("item", item);
-	    }
-	};
-
 	/** @brief Function object to generate 'not available' value.
 	 *
 	 * Normally this will be accessed via the NA() function

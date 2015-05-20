@@ -64,8 +64,6 @@ namespace CXXR {
     typedef FixedVector<RHandle<>, EXPRSXP> ExpressionVector;
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT_KEY(CXXR::ExpressionVector)
-
 extern "C" {
 #endif /* __cplusplus */
 

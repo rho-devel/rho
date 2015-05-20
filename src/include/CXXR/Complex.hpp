@@ -80,13 +80,6 @@ namespace CXXR
 	    i = 0;
 	    return *this;
 	}
-
-	template <class Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
-	    ar & BOOST_SERIALIZATION_NVP(r);
-	    ar & BOOST_SERIALIZATION_NVP(i);
-	}
     };
 
     // Template specializations:

@@ -79,8 +79,6 @@ namespace CXXR {
     };
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT_KEY(CXXR::RawVector)
-
 extern "C" {
 #endif /* __cplusplus */
 

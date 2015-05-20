@@ -80,10 +80,6 @@ namespace CXXR {
 	Logical operator||(Logical other) const;
 	Logical operator&&(Logical other) const;
 
-	template<class Archive>
-	void Serialize(Archive& ar) {
-	    ElementTraits::Serialize<int>()(ar, m_value);
-	}
     private:
 	// The value.  Allowed values are TRUE, FALSE and NA_LOGICAL.
 	int m_value;
@@ -107,11 +103,6 @@ namespace CXXR {
 	    // TODO(kmillar): change NAFunc to return by value instead.
 	    static Logical NA = Logical::NA();
 	    return NA;
-	}
-	
-	template<> template<class Archive>
-	inline void Serialize<Logical>::operator()(Archive& ar, Logical& item) {
-	    item.Serialize(ar);
 	}
     }  // namespace ElementTraits
 

@@ -45,7 +45,6 @@ typedef enum {
 
 #ifdef __cplusplus
 
-#include <boost/serialization/nvp.hpp>
 #include <unordered_map>
 #include <string>
 
@@ -254,7 +253,6 @@ namespace CXXR {
 	unsigned int packGPBits() const override;
 	const char* typeName() const override;
     private:
-	friend class boost::serialization::access;
 	friend class Symbol;
 
 	// The first element of the key is the text, the second
@@ -298,9 +296,6 @@ namespace CXXR {
                               bool isAscii);
         static String* createNA();
 
-        // Used by load(Archive& ar, const unsigned int version)
-        String();
-
 	String(const String&) = delete;
 	String& operator=(const String&) = delete;
 
@@ -311,18 +306,6 @@ namespace CXXR {
 	// Initialize the static data members:
 	static void initialize();
         friend void ::Rf_InitNames();
-
-	template<class Archive>
-	void load(Archive & ar, const unsigned int version);
-
-	template<class Archive>
-	void save(Archive & ar, const unsigned int version) const;
-
-	// Fields not serialised here are set up by the constructor:
-	template <class Archive>
-	void serialize(Archive& ar, const unsigned int version) {
-	    boost::serialization::split_member(ar, *this, version);
-	}
     };
 
     /** @brief Is a std::string entirely ASCII?
@@ -335,41 +318,6 @@ namespace CXXR {
      */
     bool isASCII(const std::string& str);
 }  // namespace CXXR
-
-BOOST_CLASS_EXPORT_KEY(CXXR::String)
-
-// ***** Implementation of non-inlined templated members *****
-
-template<class Archive>
-void CXXR::String::load(Archive& ar, const unsigned int version)
-{
-    // This will only ever be applied to a 'temporary' String
-    // created by the default constructor.
-    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-    bool isna;
-    ar >> BOOST_SERIALIZATION_NVP(isna);
-    if (isna)
-	S11nScope::defineRelocation(this, NA());
-    else {
-	std::string str;
-	ar >> boost::serialization::make_nvp("string", str);
-	ar >> BOOST_SERIALIZATION_NVP(m_encoding);
-	S11nScope::defineRelocation(this, obtain(str, m_encoding));
-    }
-}
-
-template<class Archive>
-void CXXR::String::save(Archive& ar, const unsigned int version) const
-{
-    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-    bool isna = (this == NA());
-    ar << BOOST_SERIALIZATION_NVP(isna);
-    if (!isna) {
-	std::string str = stdstring();
-	ar << boost::serialization::make_nvp("string", str);
-	ar << BOOST_SERIALIZATION_NVP(m_encoding);
-    }
-}
 
 extern "C" {
 

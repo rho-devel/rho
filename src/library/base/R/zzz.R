@@ -81,8 +81,6 @@ assign("baseenv", function() NULL, envir = .ArgsEnv)
 assign("browser",
        function(text="", condition=NULL, expr = TRUE, skipCalls = 0L) NULL,
        envir = .ArgsEnv)
-assign("bdeserialize", function() NULL, envir = .ArgsEnv)
-assign("bserialize", function() NULL, envir = .ArgsEnv)
 assign("call", function(name, ...) NULL, envir = .ArgsEnv)
 assign("class", function(x) NULL, envir = .ArgsEnv)
 assign("class<-", function(x, value) NULL, envir = .ArgsEnv)

@@ -86,8 +86,6 @@ const char* Expression::typeName() const
     return staticTypeName();
 }
 
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::Expression)
-
 // ***** C interface *****
 
 SEXP Rf_currentExpression()

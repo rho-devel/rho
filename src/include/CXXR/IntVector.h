@@ -77,8 +77,6 @@ namespace CXXR {
 
 }  // namespace CXXR
 
-BOOST_CLASS_EXPORT_KEY(CXXR::IntVector)
-
 extern "C" {
 #endif /* __cplusplus */
 

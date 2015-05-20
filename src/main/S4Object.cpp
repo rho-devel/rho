@@ -47,8 +47,3 @@ SEXP Rf_allocS4Object()
 {
     return new S4Object();
 }
-
-// Needed for the instantiation in BOOST_CLASS_EXPORT_IMPLEMENT:
-#include "CXXR/PairList.h"
-
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::S4Object)

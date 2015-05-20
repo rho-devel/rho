@@ -34,10 +34,6 @@
 #include <sys/time.h>
 #include <ctime>
 #include <set>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/split_member.hpp>
 
 #include "CXXR/CommandChronicle.hpp"
 #include "CXXR/GCEdge.hpp"
@@ -263,8 +259,6 @@ namespace CXXR {
 	void detachReferents() override;
 	void visitReferents(const_visitor*) const override;
     private:
-	friend class boost::serialization::access;
-
 	static unsigned int s_next_serial;
 
 	mutable Set m_children;
@@ -296,110 +290,7 @@ namespace CXXR {
 	{
 	    m_children.insert(child);
 	}
-
-	template <class Archive>
-	void load(Archive& ar, const unsigned int version);
-		
-	template <class Archive>
-	void save(Archive& ar, const unsigned int version) const;
-
-	template <class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-	    boost::serialization::split_member(ar, *this, version);
-	}
     };
 } // namespace CXXR
-
-BOOST_CLASS_EXPORT_KEY(CXXR::Provenance)
-
-namespace boost {
-    namespace serialization {
-	/** @brief Template specialisation.
-	 *
-	 * This specialisation is required because CXXR::Provenance
-	 * does not have a default constructor.  See the
-	 * boost::serialization documentation for further details.
-	 *
-	 * @tparam Archive archive class from which deserialisation is
-	 *           taking place.
-	 *
-	 * @param ar Archive from which deserialisation is taking
-	 *           place.
-         *
-	 * @param chron Pointer to the location at which a
-	 *          CXXR::CommandChronicle object is to be constructed.
-	 *
-	 * @param version Ignored.
-	 */
-	template<class Archive>
-	void load_construct_data(Archive& ar, CXXR::Provenance* prov,
-				 const unsigned int version)
-	{
-	    using namespace CXXR;
-	    GCStackRoot<const Symbol> symbol;
-	    GCNPTR_SERIALIZE(ar, symbol);
-	    GCStackRoot<const CommandChronicle> chronicle;
-	    GCNPTR_SERIALIZE(ar, chronicle);
-	    new (prov) Provenance(symbol, chronicle);
-	}
-
-	/** @brief Template specialisation.
-	 *
-	 * This specialisation is required to ensure that the symbol
-	 * and chronicle of a CXXR::Provenance object are serialised
-	 * within an archive before the Provenance object itself is
-	 * serialised, so that on deserialisation the symbol and
-	 * chronicle can be made available to load_construct_data().
-	 * See the boost::serialization documentation for further
-	 * details.
-	 *
-	 * @tparam Archive archive class to which serialisation is
-	 *           taking place.
-	 *
-	 * @param ar Archive to which serialisation is taking place.
-         *
-	 * @param chron Non-null pointer to the CXXR::Provenance
-	 *          object about to be serialised.
-	 *
-	 * @param version Ignored.
-	 */
-	template<class Archive>
-	void save_construct_data(Archive& ar, const CXXR::Provenance* prov,
-				 const unsigned int version)
-	{
-	    using namespace CXXR;
-	    const Symbol* symbol = prov->symbol();
-	    GCNPTR_SERIALIZE(ar, symbol);
-	    const CommandChronicle* chronicle = prov->chronicle();
-	    GCNPTR_SERIALIZE(ar, chronicle);
-	}
-    }  // namespace serialization
-}  // namespace boost
-
-// ***** Implementation of non-inlined templated members *****
-
-template <class Archive>
-void CXXR::Provenance::load(Archive& ar, const unsigned int version)
-{
-    ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
-    ar >> boost::serialization::make_nvp("sec", m_timestamp.tv_sec);
-    ar >> boost::serialization::make_nvp("usec", m_timestamp.tv_usec);
-    ar >> BOOST_SERIALIZATION_NVP(m_num_parents);
-    GCNPTR_SERIALIZE(ar, m_value);
-    ar >> BOOST_SERIALIZATION_NVP(m_xenogenous);
-
-    announceBirth();
-}
-		
-template <class Archive>
-void CXXR::Provenance::save(Archive& ar, const unsigned int version) const
-{
-    ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
-    ar << boost::serialization::make_nvp("sec", m_timestamp.tv_sec);
-    ar << boost::serialization::make_nvp("usec", m_timestamp.tv_usec);
-    ar << BOOST_SERIALIZATION_NVP(m_num_parents);
-    GCNPTR_SERIALIZE(ar, m_value);
-    ar << BOOST_SERIALIZATION_NVP(m_xenogenous);
-}
 
 #endif

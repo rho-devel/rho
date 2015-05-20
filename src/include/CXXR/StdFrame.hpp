@@ -33,11 +33,6 @@
 #define STDFRAME_HPP
 
 #include <unordered_map>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/split_member.hpp>
-#include <boost/serialization/unordered_map.hpp>
 
 #include "CXXR/Allocator.hpp"
 #include "CXXR/Frame.hpp"
@@ -80,8 +75,6 @@ namespace CXXR {
 	void lockBindings() override;
 	std::size_t size() const override;
     private:
-	friend class boost::serialization::access;
-
 	map m_map;
 
 	// Declared private to ensure that StdFrame objects are
@@ -92,17 +85,6 @@ namespace CXXR {
 	// compiler-generated versions:
 	StdFrame& operator=(const StdFrame&);
 
-	template<class Archive>
-	void load(Archive& ar, const unsigned int version);
-	
-	template<class Archive>
-	void save(Archive& ar, const unsigned int version) const;
-
-	template<class Archive>
-	void serialize(Archive& ar, const unsigned int version) {
-	    boost::serialization::split_member(ar, *this, version);
-	}
-
 	// Virtual functions of Frame (qv):
 	void v_clear() override;
 	bool v_erase(const Symbol* symbol) override;
@@ -111,37 +93,6 @@ namespace CXXR {
 	const Binding* v_binding(const Symbol* symbol) const override;
     };
 
-    // ***** Implementation of non-inlined templated members *****
-
-    template<class Archive>
-    void StdFrame::load(Archive& ar, const unsigned int version)
-    {
-	ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(Frame);
-	size_t numberOfBindings;
-	ar >> BOOST_SERIALIZATION_NVP(numberOfBindings);
-	for (size_t i = 0; i < numberOfBindings; ++i) {
-	    GCStackRoot<Symbol> symbol;
-	    GCNPTR_SERIALIZE(ar, symbol);
-	    Binding* binding = obtainBinding(symbol);
-	    ar >> boost::serialization::make_nvp("binding", *binding);
-	}
-    }
-	
-    template<class Archive>
-    void StdFrame::save(Archive& ar, const unsigned int version) const
-    {
-	ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(Frame);
-	size_t numberOfBindings = size();
-	ar << BOOST_SERIALIZATION_NVP(numberOfBindings);
-	for (const auto& elem : m_map) {
-	    const Symbol* symbol = elem.first;
-	    const Binding& binding = elem.second;
-	    GCNPTR_SERIALIZE(ar, symbol);
-	    ar << BOOST_SERIALIZATION_NVP(binding);
-	}
-    }
 }  // namespace CXXR
-
-BOOST_CLASS_EXPORT_KEY(CXXR::StdFrame)
 
 #endif // STDFRAME_HPP

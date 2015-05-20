@@ -198,8 +198,6 @@ void Symbol::visitReferents(const_visitor* v) const
 	(*v)(name);
 }
 
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::Symbol)
-
 // Predefined Symbols:
 namespace CXXR {
 #define PREDEFINED_SYMBOL(C_NAME, CXXR_NAME, R_NAME) \

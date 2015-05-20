@@ -120,5 +120,3 @@ Frame::Binding* ListFrame::v_obtainBinding(const Symbol* symbol)
     m_list.push_back(Binding());
     return &m_list.back();
 }
-
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::ListFrame)

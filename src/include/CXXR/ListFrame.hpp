@@ -59,8 +59,6 @@ namespace CXXR {
 	void lockBindings() override;
 	std::size_t size() const override;
     private:
-	friend class boost::serialization::access;
-
 	List m_list;
 
 	// Declared private to ensure that ListFrame objects are
@@ -71,50 +69,13 @@ namespace CXXR {
 	// compiler-generated versions:
 	ListFrame& operator=(const ListFrame&);
 
-	template<class Archive>
-	void load(Archive& ar, const unsigned int version)
-	{
-	    ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(Frame);
-	    size_t numberOfBindings;
-	    ar >> BOOST_SERIALIZATION_NVP(numberOfBindings);
-	    for (size_t i = 0; i < numberOfBindings; ++i) {
-		GCStackRoot<Symbol> symbol;
-		GCNPTR_SERIALIZE(ar, symbol);
-		m_list.push_back(Binding());
-		Binding& binding = m_list.back();
-		binding.initialize(this, symbol);
-		statusChanged(symbol);
-		ar >> BOOST_SERIALIZATION_NVP(binding);
-	    }
-	}
-
-	template<class Archive>
-	void save(Archive& ar, const unsigned int version) const
-	{
-	    ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(Frame);
-	    size_t numberOfBindings = size();
-	    ar << BOOST_SERIALIZATION_NVP(numberOfBindings);
-	    for (const Frame::Binding& binding : m_list) {
-		const Symbol* symbol = binding.symbol();
-		GCNPTR_SERIALIZE(ar, symbol);
-		ar << BOOST_SERIALIZATION_NVP(binding);
-	    }
-	}
-
-	template<class Archive>
-	void serialize(Archive& ar, const unsigned int version) {
-	    boost::serialization::split_member(ar, *this, version);
-	}
-
 	// Virtual functions of Frame (qv):
 	void v_clear() override;
 	bool v_erase(const Symbol* symbol) override;
 	Binding* v_obtainBinding(const Symbol* symbol) override;
 	Binding* v_binding(const Symbol* symbol) override;
 	const Binding* v_binding(const Symbol* symbol) const override;
-    };
+     };
+
 }  // namespace CXXR
-
-BOOST_CLASS_EXPORT_KEY(CXXR::ListFrame)
-
 #endif // LISTFRAME_HPP

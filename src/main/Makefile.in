@@ -39,7 +39,7 @@ SOURCES_CXX = \
 	Environment.cpp Evaluator.cpp Evaluator_Context.cpp Expression.cpp \
 	ExpressionVector.cpp ExternalPointer.cpp \
         Frame.cpp FunctionBase.cpp FunctionContext.cpp \
-        GCEdge.cpp GCManager.cpp GCNode.cpp GCNode_PtrS11n.cpp GCRoot.cpp \
+        GCEdge.cpp GCManager.cpp GCNode.cpp GCRoot.cpp \
 	GCStackFrameBoundary.cpp GCStackRoot.cpp \
         IntVector.cpp inspect.cpp \
 	ListFrame.cpp ListVector.cpp LogicalVector.cpp LoopBailout.cpp \
@@ -49,7 +49,7 @@ SOURCES_CXX = \
 	ProvenanceTracker.cpp \
         RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
         RealVector.cpp Renviron.cpp ReturnBailout.cpp \
-        S11nScope.cpp S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp \
+        S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp \
 	StackChecker.cpp \
         StdFrame.cpp String.cpp StringVector.cpp Subscripting.cpp Symbol.cpp \
 	UnaryFunction.cpp \

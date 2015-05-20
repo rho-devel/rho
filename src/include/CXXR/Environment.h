@@ -38,10 +38,6 @@
 extern "C"
 void Rf_InitGlobalEnv();
 
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/nvp.hpp>
-
 #include "CXXR/Frame.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/PairList.h"
@@ -472,7 +468,6 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents() override;
     private:
-	friend class boost::serialization::access;
 	friend class Frame;
 
 	// PACKAGE_ENV because PACKAGE is defined (to "R") as a macro
@@ -539,9 +534,6 @@ namespace CXXR {
           return (this == global());
 	}
 
-	template<class Archive>
-	void load(Archive& ar, const unsigned int version);
-
 	// Set whether or not this Environment is a participant in the search
 	// list cache:
         void setOnSearchPath(bool status);
@@ -549,14 +541,6 @@ namespace CXXR {
 	// Warn about package possibly not being available when
 	// loading, and extract package name.
 	static const char* package_s11n_aux(const StringVector* pkg_name);
-
-	template<class Archive>
-	void save(Archive& ar, const unsigned int version) const;
-
-	template<class Archive>
-	void serialize (Archive & ar, const unsigned int version) {
-	    boost::serialization::split_member(ar, *this, version);
-	}
     };
 
     /** @brief Search for a Binding of a Symbol to a FunctionBase.
@@ -676,141 +660,6 @@ namespace CXXR {
 	return nullptr;
     }
 }  // namespace CXXR
-
-BOOST_CLASS_EXPORT_KEY(CXXR::Environment)
-
-namespace boost {
-    namespace serialization {
-	/** @brief Template specialisation.
-	 *
-	 * This specialisation is required because CXXR::Environment
-	 * does not have a default constructor.  See the
-	 * boost::serialization documentation for further details.
-	 *
-	 * @tparam Archive archive class from which deserialisation is
-	 *           taking place.
-	 *
-	 * @param ar Archive from which deserialisation is taking
-	 *           place.
-         *
-	 * @param t Pointer to the location at which a CXXR::Environment
-	 *          object is to be constructed.
-	 *
-	 * @param version Ignored.
-	 */
-	template<class Archive>
-	void load_construct_data(Archive& ar, CXXR::Environment* t,
-				 const unsigned int version)
-	{
-	    new (t) CXXR::Environment(nullptr, nullptr);
-	}
-    }  // namespace serialization
-}  // namespace boost
-
-// ***** Implementation of non-inlined templated members *****
-
-template<class Archive>
-void CXXR::Environment::load(Archive& ar, const unsigned int version)
-{
-    ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-    S11nType envtype;
-    ar >> BOOST_SERIALIZATION_NVP(envtype);
-    Environment* reloc = nullptr;
-    switch(envtype) {
-    case EMPTY:
-        reloc = empty();
-	break;
-    case BASE:
-        reloc = base();
-	break;
-    case BASENAMESPACE:
-        reloc = baseNamespace();
-	break;
-    case GLOBAL:
-        reloc = global();
-	break;
-    case PACKAGE_ENV:
-	{
-	    std::string pkgname;
-	    ar >> BOOST_SERIALIZATION_NVP(pkgname);
-	    reloc = findPackage(pkgname);
-	}
-	break;
-    case NAMESPACE:
-	{
-	    GCStackRoot<const StringVector> nsspec;
-	    GCNPTR_SERIALIZE(ar, nsspec);
-	    reloc = findNamespace(nsspec);
-	}
-	break;
-    case OTHER:
-	{
-	    GCNPTR_SERIALIZE(ar, m_enclosing);
-	    GCNPTR_SERIALIZE(ar, m_frame);
-	    ar >> BOOST_SERIALIZATION_NVP(m_single_stepping);
-	    ar >> BOOST_SERIALIZATION_NVP(m_locked);
-	}
-	break;
-    }
-    if (reloc)
-	S11nScope::defineRelocation(this, reloc);
-}
-
-template<class Archive>
-void CXXR::Environment::save(Archive& ar, const unsigned int version) const
-{
-    ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-    // EMPTY:
-    if (this == empty()) {
-	S11nType envtype = EMPTY;
-	ar << BOOST_SERIALIZATION_NVP(envtype);
-	return;
-    }
-    // BASE:
-    if  (this == base()) {
-	S11nType envtype = BASE;
-	ar << BOOST_SERIALIZATION_NVP(envtype);
-	return;
-    }
-    // BASENAMESPACE:
-    if (this == baseNamespace()) {
-	S11nType envtype = BASENAMESPACE;
-	ar << BOOST_SERIALIZATION_NVP(envtype);
-	return;
-    }
-    // GLOBAL:
-    if (this == global()) {
-	S11nType envtype = GLOBAL;
-	ar << BOOST_SERIALIZATION_NVP(envtype);
-	return;
-    }
-    // PACKAGE_ENV:
-    const StringVector* pkgsv = packageName();
-    if (pkgsv) {
-	S11nType envtype = PACKAGE_ENV;
-	ar << BOOST_SERIALIZATION_NVP(envtype);
-	std::string pkgname(package_s11n_aux(pkgsv));
-	ar << BOOST_SERIALIZATION_NVP(pkgname);
-	return;
-    }
-    // NAMESPACE:
-    const StringVector* nsspec = namespaceSpec();
-    if (nsspec) {
-	S11nType envtype = NAMESPACE;
-	ar << BOOST_SERIALIZATION_NVP(envtype);
-	GCNPTR_SERIALIZE(ar, nsspec);
-	return;
-    }
-    // OTHER:
-    {
-	S11nType envtype = OTHER;
-	ar << BOOST_SERIALIZATION_NVP(envtype);
-	GCNPTR_SERIALIZE(ar, m_enclosing);
-	GCNPTR_SERIALIZE(ar, m_frame);
-	ar << BOOST_SERIALIZATION_NVP(m_single_stepping);
-	ar << BOOST_SERIALIZATION_NVP(m_locked);
-    }
-}
 
 extern "C" {
 #else /* if not __cplusplus */

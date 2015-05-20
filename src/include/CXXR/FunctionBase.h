@@ -36,8 +36,6 @@
 
 #ifdef __cplusplus
 
-#include <boost/serialization/nvp.hpp>
-
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
@@ -162,19 +160,10 @@ namespace CXXR {
 
 	virtual ~FunctionBase() {}
     private:
-	friend class boost::serialization::access;
-
 	static bool s_tracing_enabled;
 	bool m_traced;
 
 	static void reportCall(const Expression* call);
-
-	// Fields not serialised here are set up by the constructor.
-	template <class Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
-	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(RObject);
-	}
     };
 }  // namespace CXXR
 

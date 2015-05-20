@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <functional>
 
 #include "CXXR/GCStackRoot.hpp"

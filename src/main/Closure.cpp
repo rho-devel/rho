@@ -233,5 +233,3 @@ void Closure::visitReferents(const_visitor* v) const
     if (compiled_body)
 	(*v)(compiled_body);
 }
-
-BOOST_CLASS_EXPORT_IMPLEMENT(CXXR::Closure)

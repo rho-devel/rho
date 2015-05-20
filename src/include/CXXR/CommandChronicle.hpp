@@ -33,8 +33,6 @@
 
 #include <set>
 #include <vector>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/nvp.hpp>
 
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCStackRoot.hpp"
@@ -142,7 +140,6 @@ namespace CXXR {
 	void detachReferents() override;
 	void visitReferents(const_visitor* v) const override;
     private:
-	friend class boost::serialization::access;
 	friend class Provenance;
 
 	ParentVector m_reads;
@@ -153,88 +150,7 @@ namespace CXXR {
 	  // command.
 
 	GCEdge<const RObject> m_command;
-
-	// Although it is possible that a CommandChronicle object may
-	// not have been closed by the time it is serialised, it is
-	// assumed that it *will* have been closed before any
-	// subsequent deserialisation of it takes place.  Consequently
-	// the m_seen set is not itself serialised.
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-	    using namespace boost::serialization;
-	    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GCNode);
-	    size_t sz = m_reads.size();
-	    ar & boost::serialization::make_nvp("size", sz);
-	    m_reads.resize(sz);
-	    for (size_t i = 0; i < sz; ++i) {
-		GCEdge<const Provenance>& parent = m_reads[i];
-		GCNPTR_SERIALIZE(ar, parent);
-	    }
-	}
     };
 }  // namespace CXXR
-
-BOOST_CLASS_EXPORT_KEY(CXXR::CommandChronicle)
-
-namespace boost {
-    namespace serialization {
-	/** @brief Template specialisation.
-	 *
-	 * This specialisation is required because
-	 * CXXR::CommandChronicle does not have a default constructor.
-	 * See the boost::serialization documentation for further
-	 * details.
-	 *
-	 * @tparam Archive archive class from which deserialisation is
-	 *           taking place.
-	 *
-	 * @param ar Archive from which deserialisation is taking
-	 *           place.
-         *
-	 * @param chron Pointer to the location at which a
-	 *          CXXR::CommandChronicle object is to be constructed.
-	 *
-	 * @param version Ignored.
-	 */
-	template<class Archive>
-	void load_construct_data(Archive& ar, CXXR::CommandChronicle* chron,
-				 const unsigned int version)
-	{
-	    using namespace CXXR;
-	    GCStackRoot<> command;
-	    GCNPTR_SERIALIZE(ar, command);
-	    new (chron) CommandChronicle(command);
-	}
-
-	/** @brief Template specialisation.
-	 *
-	 * This specialisation is required to ensure that the command
-	 * of a CXXR::CommandChronicle is serialised within an archive
-	 * before the CommandChronicle itself is serialised, so that
-	 * on deserialisation this command can be made available to
-	 * load_construct_data().  See the boost::serialization
-	 * documentation for further details.
-	 *
-	 * @tparam Archive archive class to which serialisation is
-	 *           taking place.
-	 *
-	 * @param ar Archive to which serialisation is taking place.
-         *
-	 * @param chron Non-null pointer to the CXXR::CommandChronicle
-	 *          object about to be serialised.
-	 *
-	 * @param version Ignored.
-	 */
-	template<class Archive>
-	void save_construct_data(Archive& ar,
-				 const CXXR::CommandChronicle* chron,
-				 const unsigned int version)
-	{
-	    using namespace CXXR;
-	    const RObject* command = chron->command();
-	    GCNPTR_SERIALIZE(ar, command);
-	}
-    }  // namespace serialization
-}  // namespace boost
 
 #endif // COMMANDCHRONICLE_HPP

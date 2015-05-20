@@ -31,6 +31,8 @@
 #ifndef GCNODE_HPP
 #define GCNODE_HPP
 
+#include <assert.h>
+#include <functional>
 #include <sstream>
 #include <vector>
 
@@ -63,16 +65,6 @@
  * TODO(kmillar): implement cycle breaking for unevaluated default promises.
  * TODO(kmillar): implement cycle breaking for closures.
  */
-
-// According to various web postings (and arr's experience) it is
-// necessary for the compiler to have seen the headers for the archive
-// types in use before it encounters any of the BOOST_CLASS_EXPORT_*
-// macros.  So we include them here, along with export.hpp itself.
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/archive/xml_iarchive.hpp>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/export.hpp>
-#include <boost/serialization/version.hpp>
 
 namespace CXXR {
     /** @brief Base class for objects managed by the garbage collector.
@@ -131,10 +123,6 @@ namespace CXXR {
 	     */
 	    virtual void operator()(const GCNode* node) = 0;
 	};
-
-	// Serialization of pointers to GCNodes.  Defined in
-	// GCNode_PtrS11n.hpp .
-	class PtrS11n;
 
 	GCNode()
             : m_rcmms(s_mark | s_moribund_mask)
@@ -264,7 +252,6 @@ namespace CXXR {
 	    --s_num_nodes;
 	}
     private:
-	friend class boost::serialization::access;
 	friend class GCRootBase;
 	friend class GCStackFrameBoundary;
 	friend class GCStackRootBase;
@@ -336,14 +323,6 @@ namespace CXXR {
 	GCNode(const GCNode&) = delete;
 	GCNode& operator=(const GCNode&) = delete;
 
-	// Not implemented.  Declared private to prevent clients
-	// allocating arrays of GCNode.
-	//
-	// But boost::serialization doesn't like this.
-	// static void* operator new[](size_t);
-
-	/** @brief Initiate a full mark-sweep garbage collection.
-	 */
 	static void markSweepGC();
 
 	/** @brief Lightweight garbage collection.
@@ -441,14 +420,6 @@ namespace CXXR {
 	 */
 	static void mark();
 
-	// boost::serialization.  Version 0 is for debugging, and will
-	// be used for output if the preprocessor variable DEBUG_S11N
-	// is defined.  It writes the GCNode's address and id to the
-	// archive; these fields are parsed but ignored on input.
-	// Version 1 is the default version.
-	template <class Archive>
-	void serialize(Archive & ar, const unsigned int version);
-
 	/** @brief Carry out the sweep phase of garbage collection.
 	 */
 	static void sweep();
@@ -469,21 +440,5 @@ namespace CXXR {
      */
     void initializeMemorySubsystem();
 }  // namespace CXXR
-
-template <class Archive>
-void CXXR::GCNode::serialize(Archive & ar, const unsigned int version) {
-    if (version == 0) {
-	std::ostringstream oss;
-	oss << this;
-	std::string addr = oss.str();
-	ar & BOOST_SERIALIZATION_NVP(addr);
-	unsigned int id = 0;
-	ar & BOOST_SERIALIZATION_NVP(id);
-    }
-}
-
-#ifndef DEBUG_S11N
-BOOST_CLASS_VERSION(CXXR::GCNode, 1)
-#endif
 
 #endif /* GCNODE_HPP */
