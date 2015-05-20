@@ -151,6 +151,12 @@ SEXP Rf_mkPROMISE(SEXP expr, SEXP rho)
     return new Promise(exprt, rhort);
 }
 
+SEXP R_mkEVPROMISE(SEXP expr, SEXP value)
+{
+    return Promise::createEvaluatedPromise(
+	SEXP_downcast<Expression*>(expr), value);
+}
+
 void SET_PRVALUE(SEXP x, SEXP v)
 {
     Promise* prom = SEXP_downcast<Promise*>(x);
