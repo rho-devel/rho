@@ -40,40 +40,60 @@
 using namespace std;
 using namespace CXXR;
 
+ListFrame::ListFrame(size_t size)
+{
+    m_bindings = new Binding[size];
+    m_bindings_size = size;
+    m_used_bindings_size = 0;
+    m_overflow = nullptr;
+}
+
 ListFrame::ListFrame(const ListFrame &pattern)
+    : ListFrame(pattern.size())
 {
     importBindings(&pattern);
     if (pattern.isLocked())
 	lock(false);
+}
 
+ListFrame::~ListFrame()
+{
+    delete[] m_bindings;
+    if (m_overflow) {
+	delete m_overflow;
+    }
 }
 
 Frame::Binding* ListFrame::v_binding(const Symbol* symbol)
 {
-    List::iterator end = m_list.end();
-    List::iterator it = m_list.begin();
-    while (it != end && (*it).symbol() != symbol)
-	++it;
-    if (it == end)
-	return nullptr;
-    return &(*it);
+    for (size_t i = 0; i < m_used_bindings_size; i++) {
+	if (m_bindings[i].symbol() == symbol && isSet(m_bindings[i]))
+	    return &m_bindings[i];
+    }
+    if (m_overflow) {
+	auto location = m_overflow->find(symbol);
+	if (location != m_overflow->end()) {
+	    return &location->second;
+	}
+    }
+    return nullptr;
 }
 
 const Frame::Binding* ListFrame::v_binding(const Symbol* symbol) const
 {
-    List::const_iterator end = m_list.end();
-    List::const_iterator it = m_list.begin();
-    while (it != end && (*it).symbol() != symbol)
-	++it;
-    if (it == end)
-	return nullptr;
-    return &(*it);
+    return const_cast<ListFrame*>(this)->v_binding(symbol);
 }
 
 void ListFrame::visitBindings(std::function<void(const Binding*)> f) const
 {
-    for (const Binding& binding : m_list) {
-	f(&binding);
+    for (size_t i = 0; i < m_used_bindings_size; i++) {
+	if (isSet(m_bindings[i]))
+	    f(&m_bindings[i]);
+    }
+    if (m_overflow) {
+	for (const auto& entry : *m_overflow) {
+	    f(&entry.second);
+	}
     }
 }
 
@@ -84,39 +104,87 @@ ListFrame* ListFrame::clone() const
 
 void ListFrame::lockBindings()
 {
-    for (Binding& binding : m_list)
-	binding.setLocking(true);
+    for (size_t i = 0; i < m_used_bindings_size; i++) {
+	m_bindings[i].setLocking(true);
+    }
+    if (m_overflow) {
+	for (auto& item : *m_overflow) {
+	    item.second.setLocking(true);
+	}
+    }
 }
 
-size_t ListFrame::size() const
+std::size_t ListFrame::size() const
 {
-    return m_list.size();
+  std::size_t result = 0;
+  for (int i = 0; i < m_used_bindings_size; ++i) {
+    if (isSet(m_bindings[i])) {
+      result++;
+    }
+  }
+  if (m_overflow) {
+    result += m_overflow->size();
+  }
+  return result;
 }
 
 void ListFrame::v_clear()
 {
-    m_list.clear();
+    for (size_t i = 0; i < m_used_bindings_size; i++) {
+	unsetBinding(m_bindings + i);
+    }
+    if (m_overflow) {
+	delete m_overflow;
+	m_overflow = nullptr;
+    }
 }
 
 bool ListFrame::v_erase(const Symbol* symbol)
 {
-    List::iterator it = m_list.begin();
-    while (it != m_list.end() && (*it).symbol() != symbol)
-	++it;
-    if (it == m_list.end())
-	return false;
-    m_list.erase(it);
-    return true;
+    for (size_t i = 0; i < m_used_bindings_size; i++) {
+	if (m_bindings[i].symbol() == symbol && isSet(m_bindings[i]))
+	{
+	    unsetBinding(&m_bindings[i]);
+	    return true;
+	}
+    }
+
+    if (m_overflow) {
+	return m_overflow->erase(symbol);
+    }
+    return false;
 }
 
 Frame::Binding* ListFrame::v_obtainBinding(const Symbol* symbol)
 {
-    List::iterator end = m_list.end();
-    List::iterator it = m_list.begin();
-    while (it != end && (*it).symbol() != symbol)
-	++it;
-    if (it != end)
-	return &(*it);
-    m_list.push_back(Binding());
-    return &m_list.back();
+    // If the binding exists, return that.
+    Frame::Binding* binding = v_binding(symbol);
+    if (binding) {
+	return binding;
+    }
+
+    // Otherwise return the first unused space in the array if any.
+    for (size_t i = 0; i < m_bindings_size; ++i) {
+	if (!isSet(m_bindings[i])) {
+	    // Found an unused spot.
+	    m_used_bindings_size = std::max(m_used_bindings_size, i + 1);
+	    return &m_bindings[i];
+	}
+    }
+
+    // Otherwise go to the overflow.
+    if (!m_overflow) {
+	m_overflow = new std::map<const Symbol*, Binding>();
+    }
+    return &((*m_overflow)[symbol]);
+}
+
+void ListFrame::unsetBinding(Binding* binding)
+{
+    if (!isSet(*binding)) {
+	return;
+    }
+    // Destroy the binding and create a new uninitialized one in its place.
+    binding->~Binding();
+    new (binding) Binding();
 }

@@ -24,7 +24,7 @@
 #ifndef CXXR_JIT_COMPILED_FRAME_HPP
 #define CXXR_JIT_COMPILED_FRAME_HPP
 
-#include "CXXR/Frame.hpp"
+#include "CXXR/ListFrame.hpp"
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/jit/FrameDescriptor.hpp"
 #include <map>
@@ -41,11 +41,10 @@ class FrameDescriptor;
  * Symbols that are not in the FrameDescriptor get overflowed to a table on the
  * side.
  */
-class CompiledFrame : public Frame {
+class CompiledFrame : public ListFrame {
 public:
     explicit CompiledFrame(const FrameDescriptor* descriptor);
     CompiledFrame(const CompiledFrame& pattern);
-    ~CompiledFrame() override;
 
     // Binding must exist, or returns null.
     Binding* binding(int location)
@@ -76,47 +75,22 @@ public:
 	return binding;
     }
 
-    void visitBindings(std::function<void(const Binding*)> f)
-	const override;
     CompiledFrame* clone() const override;
-
-    void lockBindings() override;
-
-    std::size_t size() const override;
 
     const FrameDescriptor* getDescriptor() const
     {
 	return m_descriptor;
     }
 
+protected:
+    Binding* v_obtainBinding(const Symbol* symbol) override;
+
     void detachReferents() override;
     void visitReferents(const_visitor* v) const override;
-
-protected:
-    void v_clear() override;
-    bool v_erase(const Symbol* symbol) override;
-    Binding* v_obtainBinding(const Symbol* symbol) override;
-    Binding* v_binding(const Symbol* symbol) override;
-    const Binding* v_binding(const Symbol* symbol) const override
-    {
-	return const_cast<CompiledFrame*>(this)->v_binding(symbol);
-    }
-
 private:
-    Binding* m_bindings;
+    ~CompiledFrame() override;
 
     GCEdge<const FrameDescriptor> m_descriptor;
-
-    // Used to store any bindings not described in the descriptor.
-    // Usually this is nullptr.
-    std::map<const Symbol*, Binding>* m_extension;
-
-    static bool isSet(const Binding& binding)
-    {
-	return binding.frame() != nullptr;
-    }
-
-    static void unsetBinding(Binding* binding);
 
     CompiledFrame& operator=(const CompiledFrame&) = delete;
 };
