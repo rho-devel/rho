@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2013   The R Core Team.
+ *  Copyright (C) 1999-2015   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -23,6 +23,11 @@
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
+
+/* This file is installed and available to packages, but only a small
+   part of the contents is within the API.  See chapter 6 of 'Writing
+   R Extensions'.
+*/
 
 /** @file Rinternals.h
  * @brief (As described in 'Writing R Extensions'.)
@@ -173,6 +178,19 @@ Rboolean (Rf_isExpression)(SEXP s);
 Rboolean (Rf_isEnvironment)(SEXP s);
 Rboolean (Rf_isString)(SEXP s);
 Rboolean (Rf_isObject)(SEXP s);
+
+#define NAMEDMAX 2
+#define SET_REFCNT(x,v) do {} while(0)
+#define SET_TRACKREFS(x,v) do {} while(0)
+#define DECREMENT_REFCNT(x) do {} while(0)
+#define INCREMENT_REFCNT(x) do {} while(0)
+#define ENABLE_REFCNT(x) SET_TRACKREFS(x, TRUE)
+#define DISABLE_REFCNT(x) SET_TRACKREFS(x, FALSE)
+#define MAYBE_SHARED(x) (NAMED(x) > 1)
+#define NO_REFERENCES(x) (NAMED(x) == 0)
+#define MARK_NOT_MUTABLE(x) SET_NAMED(x, NAMEDMAX)
+#define MAYBE_REFERENCED(x) (! NO_REFERENCES(x))
+#define NOT_SHARED(x) (! MAYBE_SHARED(x))
 
 /* Accessor functions.  Many are declared using () to avoid the macro
    definitions in the USE_RINTERNALS section (phased out in CXXR).
