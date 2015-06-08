@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2012  The R Core Team
+ *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -62,6 +62,9 @@ strsplit grep [g]sub [g]regexpr
 /* interval at which to check interrupts */
 #define NINTERRUPT 1000000
 
+/* How many encoding warnings to give */
+#define NWARN 5
+
 #include <Defn.h>
 #include <Internal.h>
 #include <R_ext/RS.h>  /* for Calloc/Free */
@@ -91,7 +94,7 @@ strsplit grep [g]sub [g]regexpr
 
 /* we allow pat == NULL if the regex cannot be safely expressed
    as a string (e.g., when using grepRaw) */
-static void reg_report(int rc,  regex_t *reg, const char *pat)
+static void NORET reg_report(int rc,  regex_t *reg, const char *pat)
 {
     char errbuf[1001];
     tre_regerror(rc, reg, errbuf, 1001);
@@ -147,6 +150,7 @@ SEXP attribute_hidden do_strsplit(/*const*/ CXXR::Expression* call, const CXXR::
     const unsigned char *tables = nullptr;
     Rboolean use_UTF8 = FALSE, haveBytes = FALSE;
     const void *vmax, *vmax2;
+    int nwarn = 0;
 
     op->checkNumArgs(num_args, call);
     x = args[0]; args = (args + 1);
@@ -223,14 +227,16 @@ SEXP attribute_hidden do_strsplit(/*const*/ CXXR::Expression* call, const CXXR::
 		else if (use_UTF8) {
 		    buf = translateCharUTF8(STRING_ELT(x, i));
 		    if (!utf8Valid(buf)) {
-			warning(_("input string %d is invalid UTF-8"), i+1);
+			if(nwarn++ < NWARN)
+			    warning(_("input string %d is invalid UTF-8"), i+1);
 			SET_VECTOR_ELT(ans, i, ScalarString(NA_STRING));
 			continue;
 		    }
 		} else {
 		    buf = translateChar(STRING_ELT(x, i));
 		    if (mbcslocale && !mbcsValid(buf)) {
-			warning(_("input string %d is invalid in this locale"), i+1);
+			if(nwarn++ < NWARN)
+			    warning(_("input string %d is invalid in this locale"), i+1);
 			SET_VECTOR_ELT(ans, i, ScalarString(NA_STRING));
 			continue;
 		    }
@@ -311,14 +317,16 @@ SEXP attribute_hidden do_strsplit(/*const*/ CXXR::Expression* call, const CXXR::
 		else if (use_UTF8) {
 		    buf = translateCharUTF8(STRING_ELT(x, i));
 		    if (!utf8Valid(buf)) {
-			warning(_("input string %d is invalid UTF-8"), i+1);
+			if(nwarn++ < NWARN)
+			    warning(_("input string %d is invalid UTF-8"), i+1);
 			SET_VECTOR_ELT(ans, i, ScalarString(NA_STRING));
 			continue;
 		    }
 		} else {
 		    buf = translateChar(STRING_ELT(x, i));
 		    if (mbcslocale && !mbcsValid(buf)) {
-			warning(_("input string %d is invalid in this locale"), i+1);
+			if(nwarn++ < NWARN)
+			    warning(_("input string %d is invalid in this locale"), i+1);
 			SET_VECTOR_ELT(ans, i, ScalarString(NA_STRING));
 			continue;
 		    }
@@ -393,6 +401,7 @@ SEXP attribute_hidden do_strsplit(/*const*/ CXXR::Expression* call, const CXXR::
 		    error(_("'split' string %d is invalid in this locale"), itok+1);
 	    }
 
+	    // PCRE docs say this is not needed, but it is on Windows
 	    if (!tables) tables = pcre_maketables();
 	    re_pcre = pcre_compile(split, options,
 				   &errorptr, &erroffset, tables);
@@ -419,14 +428,16 @@ SEXP attribute_hidden do_strsplit(/*const*/ CXXR::Expression* call, const CXXR::
 		else if (use_UTF8) {
 		    buf = translateCharUTF8(STRING_ELT(x, i));
 		    if (!utf8Valid(buf)) {
-			warning(_("input string %d is invalid UTF-8"), i+1);
+			if(nwarn++ < NWARN)
+			    warning(_("input string %d is invalid UTF-8"), i+1);
 			SET_VECTOR_ELT(ans, i, ScalarString(NA_STRING));
 			continue;
 		    }
 		} else {
 		    buf = translateChar(STRING_ELT(x, i));
 		    if (mbcslocale && !mbcsValid(buf)) {
-			warning(_("input string %d is invalid in this locale"), i+1);
+			if(nwarn++ < NWARN)
+			    warning(_("input string %d is invalid in this locale"), i+1);
 			SET_VECTOR_ELT(ans, i, ScalarString(NA_STRING));
 			continue;
 		    }
@@ -581,7 +592,8 @@ SEXP attribute_hidden do_strsplit(/*const*/ CXXR::Expression* call, const CXXR::
 		else {
 		    buf = translateChar(STRING_ELT(x, i));
 		    if (mbcslocale && !mbcsValid(buf)) {
-			warning(_("input string %d is invalid in this locale"), i+1);
+			if(nwarn++ < NWARN)
+			    warning(_("input string %d is invalid in this locale"), i+1);
 			SET_VECTOR_ELT(ans, i, ScalarString(NA_STRING));
 			continue;
 		    }
@@ -746,6 +758,7 @@ SEXP attribute_hidden do_grep(/*const*/ CXXR::Expression* call, const CXXR::Buil
     const unsigned char *tables = nullptr /* -Wall */;
     Rboolean use_UTF8 = FALSE, use_WC =  FALSE;
     const void *vmax;
+    int nwarn = 0;
 
     op->checkNumArgs(num_args, call);
     pat = args[0]; args = (args + 1);
@@ -796,11 +809,13 @@ SEXP attribute_hidden do_grep(/*const*/ CXXR::Expression* call, const CXXR::Buil
     if (!useBytes) {
 	Rboolean onlyASCII = CXXRCONSTRUCT(Rboolean, IS_ASCII(STRING_ELT(pat, 0)));
 	if (onlyASCII)
-	    for (i = 0; i < n; i++)
+	    for (i = 0; i < n; i++) {
+	        if(STRING_ELT(text, i) == NA_STRING) continue;
 		if (!IS_ASCII(STRING_ELT(text, i))) {
 		    onlyASCII = FALSE;
 		    break;
 		}
+	    }
 	useBytes = onlyASCII;
     }
     if (!useBytes) {
@@ -850,6 +865,7 @@ SEXP attribute_hidden do_grep(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	const char *errorptr;
 	if (igcase_opt) cflags |= PCRE_CASELESS;
 	if (!useBytes && use_UTF8) cflags |= PCRE_UTF8;
+	// PCRE docs say this is not needed, but it is on Windows
 	tables = pcre_maketables();
 	re_pcre = pcre_compile(spat, cflags, &errorptr, &erroffset, tables);
 	if (!re_pcre) {
@@ -886,13 +902,15 @@ SEXP attribute_hidden do_grep(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	    else if (use_UTF8) {
 		s = translateCharUTF8(STRING_ELT(text, i));
 		if (!utf8Valid(s)) {
-		    warning(_("input string %d is invalid UTF-8"), i+1);
+		    if(nwarn++ < NWARN)
+			warning(_("input string %d is invalid UTF-8"), i+1);
 		    continue;
 		}
 	    } else {
 		s = translateChar(STRING_ELT(text, i));
 		if (mbcslocale && !mbcsValid(s)) {
-		    warning(_("input string %d is invalid in this locale"), i+1);
+		    if(nwarn++ < NWARN)
+			warning(_("input string %d is invalid in this locale"), i+1);
 		    continue;
 		}
 	    }
@@ -1536,11 +1554,13 @@ SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::Buil
     if (!useBytes) {
 	Rboolean onlyASCII = CXXRCONSTRUCT(Rboolean, IS_ASCII(STRING_ELT(pat, 0)));
 	if (onlyASCII)
-	    for (i = 0; i < n; i++)
+	    for (i = 0; i < n; i++) {
+	    	if(STRING_ELT(text, i) == NA_STRING) continue;
 		if (!IS_ASCII(STRING_ELT(text, i))) {
 		    onlyASCII = FALSE;
 		    break;
 		}
+	    }
 	useBytes = onlyASCII;
     }
     if (!useBytes) {
@@ -1599,6 +1619,7 @@ SEXP attribute_hidden do_gsub(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	const char *errorptr;
 	if (use_UTF8) cflags |= PCRE_UTF8;
 	if (igcase_opt) cflags |= PCRE_CASELESS;
+	// PCRE docs say this is not needed, but it is on Windows
 	tables = pcre_maketables();
 	re_pcre = pcre_compile(spat, cflags, &errorptr, &erroffset, tables);
 	if (!re_pcre) {
@@ -1997,7 +2018,7 @@ gregexpr_Regexc(const regex_t *reg, SEXP sstr, int useBytes, int use_WC)
     }
     setAttrib(ans, install("match.length"), matchlen);
     if(useBytes) {
-	setAttrib(ans, install("useBytes"), ScalarLogical(TRUE));
+	setAttrib(ans, install("useBytes"), R_TrueValue);
     }
     UNPROTECT(4);
     return ans;
@@ -2078,7 +2099,7 @@ gregexpr_fixed(const char *pattern, const char *string,
     }
     setAttrib(ans, install("match.length"), matchlen);
     if(useBytes) {
-	setAttrib(ans, install("useBytes"), ScalarLogical(TRUE));
+	setAttrib(ans, install("useBytes"), R_TrueValue);
     }
     UNPROTECT(4);
     return ans;
@@ -2224,7 +2245,7 @@ gregexpr_perl(const char *pattern, const char *string,
     PROTECT(matchlen = allocVector(INTSXP, matchIndex + 1));
     setAttrib(ans, install("match.length"), matchlen);
     if(useBytes) {
-	setAttrib(ans, install("useBytes"), ScalarLogical(TRUE));
+	setAttrib(ans, install("useBytes"), R_TrueValue);
     }
     UNPROTECT(1);
     if (foundAny) {
@@ -2305,6 +2326,7 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
 	name_count, name_entry_size, info_code;
     char *name_table;
     SEXP capture_names = R_NilValue;
+    int nwarn = 0;
 
     op->checkNumArgs(num_args, call);
     pat = args[0]; args = (args + 1);
@@ -2337,11 +2359,13 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
     if (!useBytes) {
 	Rboolean onlyASCII = CXXRCONSTRUCT(Rboolean, IS_ASCII(STRING_ELT(pat, 0)));
 	if (onlyASCII)
-	    for (i = 0; i < n; i++)
+	    for (i = 0; i < n; i++) {
+	        if(STRING_ELT(text, i) == NA_STRING) continue;
 		if (!IS_ASCII(STRING_ELT(text, i))) {
 		    onlyASCII = FALSE;
 		    break;
 		}
+	    }
 	useBytes = onlyASCII;
     }
     if (!useBytes) {
@@ -2393,6 +2417,7 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
 	const char *errorptr;
 	if (igcase_opt) cflags |= PCRE_CASELESS;
 	if (!useBytes && use_UTF8) cflags |= PCRE_UTF8;
+	// PCRE docs say this is not needed, but it is on Windows
 	tables = pcre_maketables();
 	re_pcre = pcre_compile(spat, cflags, &errorptr, &erroffset, tables);
 	if (!re_pcre) {
@@ -2444,7 +2469,7 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
 	PROTECT(matchlen = allocVector(INTSXP, n));
 	setAttrib(ans, install("match.length"), matchlen);
 	if(useBytes) {
-	    setAttrib(ans, install("useBytes"), ScalarLogical(TRUE));
+	    setAttrib(ans, install("useBytes"), R_TrueValue);
 	}
 	UNPROTECT(1);
 	if (perl_opt && capture_count) {
@@ -2476,14 +2501,16 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
 		else if (use_UTF8) {
 		    s = translateCharUTF8(STRING_ELT(text, i));
 		    if (!utf8Valid(s)) {
-			warning(_("input string %d is invalid UTF-8"), i+1);
+			if(nwarn++ < NWARN)
+			    warning(_("input string %d is invalid UTF-8"), i+1);
 			INTEGER(ans)[i] = INTEGER(matchlen)[i] = -1;
 			continue;
 		    }
 		} else {
 		    s = translateChar(STRING_ELT(text, i));
 		    if (mbcslocale && !mbcsValid(s)) {
-			warning(_("input string %d is invalid in this locale"), i+1);
+			if(nwarn++ < NWARN)
+			    warning(_("input string %d is invalid in this locale"), i+1);
 			INTEGER(ans)[i] = INTEGER(matchlen)[i] = -1;
 			continue;
 		    }
@@ -2560,8 +2587,9 @@ SEXP attribute_hidden do_regexpr(/*const*/ CXXR::Expression* call, const CXXR::B
 		    } else
 			s = translateChar(STRING_ELT(text, i));
 		    if (!useBytes && !use_UTF8 && mbcslocale && !mbcsValid(s)) {
-			warning(_("input string %d is invalid in this locale"),
-				i+1);
+			if (nwarn++ < NWARN)
+			    warning(_("input string %d is invalid in this locale"),
+				    i+1);
 			elt = gregexpr_BadStringAns();
 		    } else {
 			if (fixed_opt)
@@ -2693,7 +2721,8 @@ SEXP attribute_hidden do_regexec(/*const*/ CXXR::Expression* call, const CXXR::B
 //	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	if(STRING_ELT(vec, i) == NA_STRING) {
 	    PROTECT(matchpos = ScalarInteger(NA_INTEGER));
-	    setAttrib(matchpos, install("match.length"),
+	    SEXP s_match_length = install("match.length");
+	    setAttrib(matchpos, s_match_length ,
 		      ScalarInteger(NA_INTEGER));
 	    SET_VECTOR_ELT(ans, i, matchpos);
 	    UNPROTECT(1);
@@ -2727,7 +2756,7 @@ SEXP attribute_hidden do_regexec(/*const*/ CXXR::Expression* call, const CXXR::B
 		setAttrib(matchpos, install("match.length"), matchlen);
 		if(useBytes)
 		    setAttrib(matchpos, install("useBytes"),
-			      ScalarLogical(TRUE));
+			      R_TrueValue);
 		SET_VECTOR_ELT(ans, i, matchpos);
 		UNPROTECT(2);
 	    } else {
@@ -2749,5 +2778,32 @@ SEXP attribute_hidden do_regexec(/*const*/ CXXR::Expression* call, const CXXR::B
 
     UNPROTECT(1);
 
+    return ans;
+}
+
+SEXP attribute_hidden do_pcre_config(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    int res;
+
+    checkArity(op, args);
+    SEXP ans = PROTECT(allocVector(LGLSXP, 3));
+    int *lans = LOGICAL(ans);
+    SEXP nm = allocVector(STRSXP, 3);
+    setAttrib(ans, R_NamesSymbol, nm);
+    SET_STRING_ELT(nm, 0, mkChar("UTF-8"));
+    pcre_config(PCRE_CONFIG_UTF8, &res); lans[0] = res;
+    SET_STRING_ELT(nm, 1, mkChar("Unicode properties"));
+    pcre_config(PCRE_CONFIG_UNICODE_PROPERTIES, &res); lans[1] = res;
+    SET_STRING_ELT(nm, 2, mkChar("JIT"));
+#ifdef PCRE_CONFIG_JIT
+    // Paul Murrell reports 8.12 does not have this
+    // man pcrejit says it was added in 8.20.
+    // 8.10 is the earliest acceptable version and does have the others.
+    pcre_config(PCRE_CONFIG_JIT, &res);
+#else
+    res = NA_LOGICAL;
+#endif
+    lans[2] = res;
+    UNPROTECT(1);
     return ans;
 }

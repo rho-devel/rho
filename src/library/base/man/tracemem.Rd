@@ -1,6 +1,6 @@
 % File src/library/base/man/tracemem.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{tracemem}
@@ -40,7 +40,7 @@ retracemem(x, previous = NULL)
   strings for the object being copied and the new object being created,
   and a stack trace showing where the duplication occurred.
   \code{retracemem()} is used to indicate that a variable should be
-  considered a copy of a previous variable (e.g. after subscripting).
+  considered a copy of a previous variable (e.g., after subscripting).
 
   The messages can be turned off with \code{\link{tracingState}}.
 

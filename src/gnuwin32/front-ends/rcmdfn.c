@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-11  R Core Team
+ *  Copyright (C) 2000-2013  R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -82,8 +82,8 @@ void rcmdusage (char *RCMD)
 	    "  Rdiff    difference R output files\n",
 	    "  Rd2pdf   Convert Rd format to PDF\n",
 	    "  Rd2txt   Convert Rd format to pretty text\n",
-	    "  Stangle  Extract S/R code from Sweave documentation\n",
-	    "  Sweave   Process Sweave documentation\n",
+	    "  Stangle   Extract S/R code from vignette\n",
+	    "  Sweave    Process vignette documentation\n",
 	    "  config   Obtain configuration information about R\n"
 	    "  open     Open a file via Windows file associations\n"
 	    "  texify   Process a latex file\n"

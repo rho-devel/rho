@@ -1,6 +1,6 @@
 % File src/library/base/man/as.Date.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{as.Date}
@@ -23,7 +23,7 @@
 }
 \usage{
 as.Date(x, \dots)
-\method{as.Date}{character}(x, format = "", \dots)
+\method{as.Date}{character}(x, format, \dots)
 \method{as.Date}{numeric}(x, origin, \dots)
 \method{as.Date}{POSIXct}(x, tz = "UTC", \dots)
 
@@ -35,10 +35,11 @@ as.Date(x, \dots)
   \item{x}{An object to be converted.}
   \item{format}{A character string.  If not specified, it will try
     \code{"\%Y-\%m-\%d"} then \code{"\%Y/\%m/\%d"} on the first
-    non-\code{NA} element, and give an error if neither works.}
+    non-\code{NA} element, and give an error if neither works.
+    Otherwise, the processing is via \code{\link{strptime}}}
   \item{origin}{a Date object, or something which can be coerced by
     \code{as.Date(origin, \dots)} to such an object.}
-  \item{tz}{a timezone name.}
+  \item{tz}{a time zone name.}
   \item{\dots}{Further arguments to be passed from or to other methods,
     including \code{format} for \code{as.character} and \code{as.Date}
     methods.}
@@ -56,7 +57,7 @@ as.Date(x, \dots)
   \code{NA} and objects of classes \code{"\link{POSIXlt}"} and
   \code{"\link{POSIXct}"}.  (The last is converted to days by ignoring
   the time after midnight in the representation of the time in specified
-  timezone, default UTC.)  Also objects of class \code{"date"} (from
+  time zone, default UTC.)  Also objects of class \code{"date"} (from
   package \pkg{\link[date:as.date]{date}}) and \code{"dates"} (from
   package \pkg{\link[chron]{chron}}).  Character strings are processed
   as far as necessary for the format specified: any trailing characters
@@ -114,9 +115,7 @@ as.Date(x, \dots)
   \emph{ISO 8601. Data elements and interchange formats --
     Information interchange -- Representation of dates and times.}
   For links to versions available on-line see (at the time of writing)
-  \url{http://www.qsl.net/g1smd/isopdf.htm}; for information on the
-  current official version, see
-  \url{http://www.iso.org/iso/en/prods-services/popstds/datesandtime.html}.
+  \url{http://www.qsl.net/g1smd/isopdf.htm}.
 }
 \seealso{
   \link{Date} for details of the date class;
@@ -150,7 +149,7 @@ as.Date(dates, "\%m/\%d/\%y")
 as.Date(32768, origin = "1900-01-01")
 ## Excel is said to use 1900-01-01 as day 1 (Windows default) or
 ## 1904-01-01 as day 0 (Mac default), but this is complicated by Excel
-## treating 1900 as a leap year.
+## incorrectly treating 1900 as a leap year.
 ## So for dates (post-1901) from Windows Excel
 as.Date(35981, origin = "1899-12-30") # 1998-07-05
 ## and Mac Excel
@@ -158,14 +157,16 @@ as.Date(34519, origin = "1904-01-01") # 1998-07-05
 ## (these values come from http://support.microsoft.com/kb/214330)
 
 ## Experiment shows that Matlab's origin is 719529 days before ours,
+## (it takes the non-existent 0000-01-01 as day 1)
 ## so Matlab day 734373 can be imported as
-as.Date(734373, origin = "1970-01-01") - 719529
-## (value from http://www.mathworks.com/help/techdoc/matlab_prog/bspgcx2-1.html)
+as.Date(734373, origin = "1970-01-01") - 719529 # 2010-08-23
+## (value from 
+## http://www.mathworks.de/de/help/matlab/matlab_prog/represent-date-and-times-in-MATLAB.html)
 
-## Timezone effect
+## Time zone effect
 z <- ISOdate(2010, 04, 13, c(0,12)) # midnight and midday UTC
 as.Date(z) # in UTC
-\donttest{## these timezone names are common
+\donttest{## these time zone names are common
 as.Date(z, tz = "NZ")
 as.Date(z, tz = "HST") # Hawaii}
 }

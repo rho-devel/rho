@@ -1,6 +1,6 @@
 % File src/library/base/man/proc.time.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{proc.time}
@@ -60,7 +60,7 @@ proc.time()
   \code{\link{gc.time}} for how much of the time was spent in garbage
   collection.
 }
-\examples{\dontrun{
+\examples{\donttest{
 ## a way to time an R expression: system.time is preferred
 ptm <- proc.time()
 for (i in 1:50) mad(stats::runif(500))

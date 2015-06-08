@@ -7,7 +7,8 @@ options(stringsAsFactors = TRUE)
 ## .Machine
 (Meps <- .Machine$double.eps)# and use it in this file
 
-assertCondition <- tools::assertCondition
+assertWarning <- tools::assertWarning
+assertError <- tools::assertError
 
 ## str() for list-alikes :
 "[[.foo" <- function(x,i) x
@@ -236,8 +237,7 @@ R <- list(try(rnorm(2, numeric())),
           try(rnorm(2, c(1,NA))),
           try(rnorm(1, sd = Inf)) )
 options(op)
-# CXXR may have newlines in the error messages:
-stopifnot(sapply(R, function(ch) sub(".* :\\s*", '', ch) ==
+stopifnot(sapply(R, function(ch) sub(".* : ", '', ch) ==
                  "(converted from warning) NAs produced\n"))
 ## was inconsistent in R < 2.7.0
 
@@ -438,8 +438,8 @@ stopifnot(identical(row.names(data.frame(x=c(a=1,b=2), row.names=NULL)),
 stopifnot(identical(row.names(data.frame(x=c(a=1,b=2))), c("a", "b")))
 ## same as default in 2.5.0 <= R < 2.7.2
 
-stopifnot(all.equal(chol2inv(2), matrix(0.25, 1), tol = 4*Meps),
-	  all.equal(solve(chol2inv(chol(4))), matrix(4, 1), tol = 10*Meps))
+stopifnot(all.equal(chol2inv(2), matrix(0.25, 1), tolerance = 4*Meps),
+	  all.equal(solve(chol2inv(chol(4))), matrix(4, 1), tolerance = 10*Meps))
 ## chol2inv() did not accept non-matrices up to 2.7.*
 
 
@@ -719,9 +719,9 @@ stopifnot(length(lf <- levels(fi)) == 3, lf[1] == "a.b.c",
 levs <- c("A","A")
 ## warnings for now {errors in the future}
 local({
-    assertCondition(gl(2,3, labels = levs),    "warning")
-    assertCondition(factor(levs, levels=levs), "warning")
-    assertCondition(factor(1:2,	 labels=levs), "warning")
+    assertWarning(gl(2,3, labels = levs))
+    assertWarning(factor(levs, levels=levs))
+    assertWarning(factor(1:2,	 labels=levs))
     })
 ## failed in R < 2.10.0
 L <- c("no", "yes")
@@ -742,8 +742,8 @@ stopifnot(identical(factor(c(2, 1:2), labels = L),
 
 
 ## "misuses" of sprintf()
-assertCondition(sprintf("%S%"), "error")
-assertCondition(sprintf("%n %g", 1), "error")
+assertError(sprintf("%S%"))
+assertError(sprintf("%n %g", 1))
 ## seg.faulted in R <= 2.9.0
 
 
@@ -766,7 +766,7 @@ stopifnot(inherits(e, "error"), inherits(e2, "error"),inherits(e3, "error"),
 
 ## bw.SJ on extreme example
 ep <- 1e-3
-stopifnot(all.equal(bw.SJ(c(1:99, 1e6), tol=ep), 0.725, tol=ep))
+stopifnot(all.equal(bw.SJ(c(1:99, 1e6), tol = ep), 0.725, tolerance = ep))
 ## bw.SJ(x) failed for R <= 2.9.0 (in two ways!), when x had extreme outlier
 
 
@@ -1142,7 +1142,7 @@ lapply("forward", switch, forward = "posS", reverse = "negS")
 
 
 ## evaluation of arguments of log2
-assertCondition(tryCatch(log2(quote(1:10))), "error")
+assertError(tryCatch(log2(quote(1:10))))
 ## 'worked' in 2.10.x by evaluting the arg twice.
 
 
@@ -1157,7 +1157,7 @@ stopifnot(is.na(mean(c(1,10,100,NA), trim=0.1)),
 a <- structure(1:17, xtras = c(pi, exp(1)))
 b <- a * (II <- (1 + 1e-7))
 attr(b,"xtras") <- attr(a,"xtras") * II
-stopifnot(all.equal(a,b, tol=2e-7))
+stopifnot(all.equal(a,b, tolerance = 2e-7))
 ## gave  "Attributes: .... relative difference: 1e-07"  in R <= 2.10.x
 
 
@@ -1595,6 +1595,7 @@ if(FALSE) { ## if you want to see how it *did* go wrong:
     ff1 <- function(x) {r <- log(g(x)); print(c(x,r)); r}
     str(ur <- uniroot(ff1, c(-90,100)))
 }
+assertWarning(uniroot(function(x) log(g(x)), c(-90,100)))
 str(ur <- uniroot(function(x) log(g(x)), c(-90,100)))# -> 2 warnings .. -Inf replaced ..
 stopifnot(abs(ur$root) < 0.001)
 ## failed badly in R < 2.13.0, as -Inf was replaced by +1e308
@@ -1738,9 +1739,9 @@ try(format(d0))
 
 
 ## options("max.print") :
-assertCondition(options(max.print = Inf), "warning")
-assertCondition(options(max.print = -2), "error")
-assertCondition(options(max.print = 1e100), "warning")
+tools::assertCondition(options(max.print = Inf), "warning") # and then error
+assertError(options(max.print = -2))
+tools::assertCondition(options(max.print = 1e100), "warning")
 ## gave only warnings (every print() time, ...)  in R <= 2.14.2
 
 
@@ -1811,7 +1812,7 @@ d[] <- d[] * sample(1 + (-4:4)/100, length(d), replace=TRUE)
 hc <- hclust(d, method = "median")
 stopifnot(all.equal(hc$height[5:11],
                     c(1.69805, 1.75134375, 1.34036875, 1.47646406,
-                      3.21380039, 2.9653438476, 6.1418258), tol = 1e-9))
+                      3.21380039, 2.9653438476, 6.1418258), tolerance = 1e-9))
 ## Also ensure that hclust() remains fast:
 set.seed(1); nn <- 2000
 tm0 <- system.time(dst <- as.dist(matrix(runif(n = nn^2, min = 0, max = 1), nn, nn)))
@@ -2068,7 +2069,7 @@ stopifnot(!is.na(z$tension))
 
 
 ## recursive listing of directories
-p <- file.path(R.home(), "share","texmf") # always exists, readable
+p <- file.path(R.home("share"),"texmf") # always exists, readable
 lfri <- list.files(p, recursive=TRUE, include.dirs=TRUE)
 subdirs <- c("bibtex", "tex")
 lfnd <- setdiff(list.files(p, all.files=TRUE, no..=TRUE), ".svn")
@@ -2085,13 +2086,32 @@ stopifnot(identical(sQuote(x), x), identical(dQuote(x), x))
 a <- matrix(1:6, 2, dimnames=list(A=NULL, B=NULL))
 stopifnot(identical(unname(aperm(a, c("B","A"))),
 		    matrix(1:6, 3, byrow=TRUE)))# worked
-assertCondition(aperm(a, c("C","A")), "error")# fine, but
+assertError(aperm(a, c("C","A")))# fine, but
 ## forgetting one had been detrimental:
-assertCondition( aperm(a, "A"), "error")
+assertError( aperm(a, "A"))
 ## seg.faulted in 2.15.2 and earlier
 
 ## enc2utf8 failed on NA in non-UTF-8 locales PR#15201
 stopifnot(identical(NA_character_, enc2utf8(NA_character_)))
 ## gave "NA" instead of NA_character_
+
+
+## checking all.equal() with externalptr
+library(methods) # getClass()'s versionKey is an e.ptr
+cA <- getClass("ANY")
+stopifnot(all.equal(cA, cA),
+          is.character(all.equal(cA, getClass("S4"))))
+# both all.equal() failed in R <= 3.1.1
+
+
+## as.hexmode(x), as.octmode(x)  when x is double
+x <- c(NA, 1)
+stopifnot(identical(x == x,
+		    as.hexmode(x) == as.octmode(x)))
+p <- c(1, pi)
+assertError(as.hexmode(p))
+assertError(as.octmode(p))
+## where all "wrong" in R <= 3.1.1
+
 
 proc.time()

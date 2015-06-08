@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2012   The R Core Team.
+ *  Copyright (C) 1998-2014   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -54,11 +54,6 @@
 
 using namespace CXXR;
 
-static R_INLINE int imin2(int x, int y)
-{
-    return (x < y) ? x : y;
-}
-
 #include <rlocale.h> /* for btowc */
 
 /* The size of vector initially allocated by scan */
@@ -93,6 +88,8 @@ typedef struct {
     Rboolean isLatin1; /* = FALSE */
     Rboolean isUTF8; /* = FALSE */
     Rboolean atStart;
+    Rboolean embedWarn;
+    Rboolean skipNul;
     char convbuf[100];
 } LocalData;
 
@@ -227,8 +224,17 @@ strtoraw (const char *nptr, char **endptr)
 
 static R_INLINE int scanchar_raw(LocalData *d)
 {
-    return (d->ttyflag) ? ConsoleGetcharWithPushBack(d->con) :
+    int c = (d->ttyflag) ? ConsoleGetcharWithPushBack(d->con) :
 	Rconn_fgetc(d->con);
+    if(c == 0) {
+	if(d->skipNul) {
+	    do {
+		c = (d->ttyflag) ? ConsoleGetcharWithPushBack(d->con) :
+		    Rconn_fgetc(d->con);
+	    } while(c == 0);
+	} else d->embedWarn = TRUE;
+    }
+    return c;
 }
 
 static R_INLINE void unscanchar(int c, LocalData *d)
@@ -473,7 +479,7 @@ static R_INLINE int isNAstring(const char *buf, int mode, LocalData *d)
     return 0;
 }
 
-static R_INLINE void expected(CXXRCONST char *what, char *got, LocalData *d)
+static R_INLINE void NORET expected(const char *what, char *got, LocalData *d)
 {
     int c;
     if (d->ttyflag) { /* This is safe in a MBCS */
@@ -821,10 +827,11 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
 SEXP attribute_hidden do_scan(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, file, sep, what, stripwhite, dec, quotes, comstr;
-    int i, c, nlines, nmax, nskip, flush, fill, blskip, multiline, escapes;
+    int i, c, nlines, nmax, nskip, flush, fill, blskip, multiline, 
+	escapes, skipNul;
     const char *p, *encoding;
     LocalData data = {nullptr, 0, 0, '.', nullptr, NO_COMCHAR, 0, nullptr, FALSE,
-		      FALSE, 0, FALSE, FALSE};
+		      FALSE, 0, FALSE, FALSE, FALSE, FALSE};
     data.NAstrings = R_NilValue;
 
     op->checkNumArgs(num_args, call);
@@ -848,9 +855,10 @@ SEXP attribute_hidden do_scan(/*const*/ CXXR::Expression* call, const CXXR::Buil
     escapes = asLogical(args[0]);args = (args + 1);
     if(!isString(args[0]) || LENGTH(args[0]) != 1)
 	error(_("invalid '%s' argument"), "encoding");
-    encoding = CHAR(STRING_ELT(args[0], 0)); /* ASCII */
+    encoding = CHAR(STRING_ELT(args[0], 0)); args = args + 1; /* ASCII */
     if(streql(encoding, "latin1")) data.isLatin1 = TRUE;
     if(streql(encoding, "UTF-8"))  data.isUTF8 = TRUE;
+    skipNul = asLogical(args[0]);
 
     if (data.quiet == NA_LOGICAL)		data.quiet = 0;
     if (blskip == NA_LOGICAL)			blskip = 1;
@@ -909,6 +917,9 @@ SEXP attribute_hidden do_scan(/*const*/ CXXR::Expression* call, const CXXR::Buil
     if(escapes == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "allowEscapes");
     data.escapes = CXXRCONSTRUCT(Rboolean, escapes != 0);
+    if(skipNul == NA_LOGICAL)
+	error(_("invalid '%s' argument"), "skipNul");
+    data.skipNul = Rboolean(skipNul != 0);
 
     i = asInteger(file);
     data.con = getConnection(i);
@@ -977,6 +988,8 @@ SEXP attribute_hidden do_scan(/*const*/ CXXR::Expression* call, const CXXR::Buil
     if (!data.ttyflag && !data.wasopen)
 	data.con->close(data.con);
     if (data.quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, data.quoteset));
+    if (!skipNul && data.embedWarn) 
+	warning(_("embedded nul(s) found in input"));
     ProvenanceTracker::flagXenogenesis();
     return ans;
 }
@@ -995,9 +1008,11 @@ SEXP attribute_hidden do_readln(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	PROTECT(prompt);
     } else {
 	PROTECT(prompt = coerceVector(prompt, STRSXP));
-	if(length(prompt) > 0)
+	if(length(prompt) > 0) {
 	    strncpy(ConsolePrompt, translateChar(STRING_ELT(prompt, 0)),
 		    CONSOLE_PROMPT_SIZE - 1);
+            ConsolePrompt[CONSOLE_PROMPT_SIZE - 1] = '\0';
+        }
     }
 
     if(R_Interactive) {

@@ -1,7 +1,7 @@
 #  File src/library/grDevices/R/cairo.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@ svg <- function(filename = if(onefile) "Rplots.svg" else "Rplot%03d.svg",
                 antialias = c("default", "none", "gray", "subpixel"))
 {
     if(!checkIntFormat(filename)) stop("invalid 'filename'")
-    new <- list()
     antialiases <- eval(formals()$antialias)
     antialias <- match(match.arg(antialias, antialiases), antialiases)
     invisible(.External(C_devCairo, filename, 4L, 72*width, 72*height, pointsize,
@@ -55,3 +54,5 @@ cairo_ps <- function(filename = if(onefile) "Rplots.ps" else "Rplot%03d.ps",
                         pointsize, bg, NA_integer_, antialias, onefile,
                         family))
 }
+
+cairoVersion <- function() .Call(C_cairoVersion)

@@ -1,6 +1,6 @@
 % File src/library/utils/man/aspell.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{aspell}
@@ -68,7 +68,7 @@ aspell(files, filter, control = list(), encoding = "unknown",
   character vector with the respective field names).  By default,
   \samp{Title} and \samp{Description} fields are kept.
 
-  The print method has for the objects returned by \code{aspell} has an
+  The print method for the objects returned by \code{aspell} has an
   \code{indent} argument controlling the indentation of the positions of
   possibly mis-spelled words.  The default is 2; Emacs users may find it
   useful to use an indentation of 0 and visit output in grep-mode.  It
@@ -87,6 +87,12 @@ aspell(files, filter, control = list(), encoding = "unknown",
   A data frame inheriting from \code{aspell} (which has a useful print
   method) with the information about possibly mis-spelled words.
 }
+\references{
+  Kurt Hornik and Duncan Murdoch (2011),
+  Watch your spelling!
+  \emph{The R Journal} \bold{3}(2), 22--28.
+  \url{http://journal.r-project.org/archive/2011-2/RJournal_2011-2_Hornik+Murdoch.pdf}.
+}
 \seealso{
   \link{aspell-utils} for utilities for spell checking packages.
 
@@ -99,7 +105,7 @@ aspell(files, filter, control = list(), encoding = "unknown",
 ## To check all Rd files in a directory, (additonally) skipping the
 ## \references sections.
 files <- Sys.glob("*.Rd")
-aspell(files, filter = list("Rd", drop = "\\references"))
+aspell(files, filter = list("Rd", drop = "\\\\references"))
 
 ## To check all Sweave files
 files <- Sys.glob(c("*.Rnw", "*.Snw", "*.rnw", "*.snw"))

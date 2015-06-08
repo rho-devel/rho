@@ -2,7 +2,7 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 2003-2004  The R Foundation
- *  Copyright (C) 1998--2013  The R Core Team
+ *  Copyright (C) 1998--2014  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,12 +23,22 @@
 #include <config.h>
 #endif
 
+#define NO_NLS
 #include <Defn.h>
 #include <float.h>		/* for DBL_MAX */
 #include <R_ext/Applic.h>	/* for optif9, fdhess */
 #include <R_ext/RS.h>	       	/* for Memcpy */
 
 #include "statsR.h"
+#include "stats.h" // R_zeroin2
+
+#undef _
+#ifdef ENABLE_NLS
+#include <libintl.h>
+#define _(String) dgettext ("stats", String)
+#else
+#define _(String) (String)
+#endif
 
 
 /* Formerly in src/appl/fmim.c */
@@ -282,12 +292,6 @@ SEXP do_fmin(SEXP call, SEXP op, SEXP args, SEXP rho)
 // Brent's "zeroin"
 // ---------------
 
-extern double 
-R_zeroin2(double ax, double bx, double fa, double fb, 
-	  double (*f)(double x, void *info), void *info, 
-	  double *Tol, int *Maxit);
-
-
 static double fcn2(double x, struct callinfo *info)
 {
     SEXP s, sx;
@@ -510,7 +514,8 @@ static void fcn(int n, const double x[], double *f, function_info
 	return;
     }
 				/* calculate for a new value of x */
-    s = CADR(R_fcall);
+    s = allocVector(REALSXP, n);
+    SETCADR(R_fcall, s);
     for (i = 0; i < n; i++) {
 	if (!R_FINITE(x[i])) error(_("non-finite value supplied by 'nlm'"));
 	REAL(s)[i] = x[i];
@@ -625,7 +630,7 @@ static double *fixparam(SEXP p, int *n)
 
 	/* Fatal errors - we don't deliver an answer */
 
-static void opterror(int nerr)
+static void NORET opterror(int nerr)
 {
     switch(nerr) {
     case -1:
@@ -775,11 +780,9 @@ SEXP nlm(SEXP call, SEXP op, SEXP args, SEXP rho)
     R_gradientSymbol = install("gradient");
     R_hessianSymbol = install("hessian");
 
-    /* This vector is shared with all subsequent calls */
     v = allocVector(REALSXP, n);
     for (i = 0; i < n; i++) REAL(v)[i] = x[i];
     SETCADR(state->R_fcall, v);
-    SET_NAMED(v, 2); // in case the functions try to alter it
     value = eval(state->R_fcall, state->R_env);
 
     v = getAttrib(value, R_gradientSymbol);

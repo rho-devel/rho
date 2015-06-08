@@ -1,9 +1,7 @@
 % File src/library/stats/man/model.frame.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{model.frame}
 \alias{model.frame}
@@ -125,7 +123,7 @@ get_all_vars(formula, data, \dots)
   \code{"\link[=terms.object]{terms}"} derived from \code{formula},
   and possibly \code{"na.action"} giving information on the handling of
   \code{NA}s (which will not be present if no special handling was done,
-  e.g. by \code{\link{na.pass}}).
+  e.g.\sspace{}by \code{\link{na.pass}}).
 }
 \seealso{\code{\link{model.matrix}} for the \sQuote{design matrix},
   \code{\link{formula}} for formulas  and

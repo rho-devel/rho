@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2011  The R Core Team
+ *  Copyright (C) 1998--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -58,6 +58,10 @@ extern int errno;
 #endif
 
 #include "zlib.h"
+
+#ifndef max
+#define max(a,b) ((a > b) ? a : b)
+#endif
 
 /* from connections.o */
 extern gzFile R_gzopen (const char *path, const char *mode);
@@ -706,7 +710,7 @@ pserror:
 }
 
 
-extern int Ri18n_wcwidth(wchar_t c);
+#include <rlocale.h> /* for Ri18n_wcwidth */
 
 
 static double
@@ -2235,8 +2239,6 @@ PostScriptDesc;
 
 /*  Part 3.  Graphics Support Code.  */
 
-static const char * const TypeFaceDef[] = { "R", "B", "I", "BI", "S" };
-
 static void specialCaseCM(FILE *fp, type1fontfamily family, int familynum)
 {
 	fprintf(fp, "%% begin encoding\n");
@@ -2557,6 +2559,7 @@ static void PSFileHeader(FILE *fp,
     if(prolog == R_UnboundValue) {
 	/* if no object is visible, look in the graphics namespace */
 	SEXP graphicsNS = R_FindNamespace(ScalarString(mkChar("grDevices")));
+	PROTECT(graphicsNS);
 	prolog = findVar(install(".ps.prolog"), graphicsNS);
 	/* under lazy loading this will be a promise on first use */
 	if(TYPEOF(prolog) == PROMSXP) {
@@ -2564,6 +2567,7 @@ static void PSFileHeader(FILE *fp,
 	    prolog = eval(prolog, graphicsNS);
 	    UNPROTECT(1);
 	}
+	UNPROTECT(1);
     }
     if(!isString(prolog))
 	error(_("object '.ps.prolog' is not a character vector"));
@@ -2573,6 +2577,7 @@ static void PSFileHeader(FILE *fp,
     fprintf(fp, "%% end   .ps.prolog\n");
     if (streql(pd->colormodel, "srgb+gray") || streql(pd->colormodel, "srgb")) {
 	SEXP graphicsNS = R_FindNamespace(ScalarString(mkChar("grDevices")));
+	PROTECT(graphicsNS);
 	prolog = findVar(install(".ps.prolog.srgb"), graphicsNS);
 	/* under lazy loading this will be a promise on first use */
 	if(TYPEOF(prolog) == PROMSXP) {
@@ -2580,6 +2585,7 @@ static void PSFileHeader(FILE *fp,
 	    prolog = eval(prolog, graphicsNS);
 	    UNPROTECT(1);
 	}
+	UNPROTECT(1);
 	for (i = 0; i < length(prolog); i++)
 	    fprintf(fp, "%s\n", CHAR(STRING_ELT(prolog, i)));
     }
@@ -3395,7 +3401,9 @@ PSDeviceDriver(pDevDesc dd, const char *file, const char *paper,
     dd->left = 72 * xoff;			/* left */
     dd->right = 72 * (xoff + pd->width);	/* right */
     dd->bottom = 72 * yoff;			/* bottom */
-    dd->top = 72 * (yoff + pd->height);	/* top */
+    dd->top = 72 * (yoff + pd->height);	        /* top */
+    dd->clipLeft = dd->left; dd->clipRight = dd->right;
+    dd->clipBottom = dd->bottom; dd->clipTop = dd->top;
 
     dd->cra[0] = 0.9 * pointsize;
     dd->cra[1] = 1.2 * pointsize;
@@ -4888,6 +4896,8 @@ XFigDeviceDriver(pDevDesc dd, const char *file, const char *paper,
     dd->right = 72 * (xoff + pd->width);	/* right */
     dd->bottom = 72 * yoff;		/* bottom */
     dd->top = 72 * (yoff + pd->height);	/* top */
+    dd->clipLeft = dd->left; dd->clipRight = dd->right;
+    dd->clipBottom = dd->bottom; dd->clipTop = dd->top;
 
     dd->cra[0] = 0.9 * pointsize;
     dd->cra[1] = 1.2 * pointsize;
@@ -6169,6 +6179,8 @@ PDFDeviceDriver(pDevDesc dd, const char *file, const char *paper,
     dd->right = 72 * (xoff + pd->width);	/* right */
     dd->bottom = 72 * yoff;			/* bottom */
     dd->top = 72 * (yoff + pd->height);	/* top */
+    dd->clipLeft = dd->left; dd->clipRight = dd->right;
+    dd->clipBottom = dd->bottom; dd->clipTop = dd->top;
 
     dd->cra[0] = 0.9 * pointsize;
     dd->cra[1] = 1.2 * pointsize;
@@ -6581,7 +6593,7 @@ static void PDFwritesRGBcolorspace(PDFDesc *pd)
     fclose(fp);
 }
 
-#include <time.h>
+#include <time.h>  // for time_t, time, localtime
 #include <Rversion.h>
 
 static void PDF_startfile(PDFDesc *pd)
@@ -7444,6 +7456,7 @@ static void PDF_Circle(double x, double y, double r,
 	       centre = (0.396, 0.347) * size
 	    */
 	    a = 2./0.722 * r;
+	    if (a < 0.01) return; // avoid 0 dims below.
 	    xx = x - 0.396*a;
 	    yy = y - 0.347*a;
 	    tr = (R_OPAQUE(gc->fill)) +
@@ -7752,7 +7765,7 @@ static void PDFSimpleText(double x, double y, const char *str,
     int face = gc->fontface;
     double a, b, bm, rot1;
 
-    if(!R_VIS(gc->col)) return;
+    if(!R_VIS(gc->col) || size <= 0) return;
 
     if(face < 1 || face > 5) {
 	warning(_("attempt to use invalid font %d replaced by font 1"), face);
@@ -7797,7 +7810,7 @@ static void PDF_Text0(double x, double y, const char *str, int enc,
 
     PDF_checkOffline();
 
-    if(!R_VIS(gc->col)) return;
+    if(!R_VIS(gc->col) || size <= 0) return;
 
     if(face < 1 || face > 5) {
 	warning(_("attempt to use invalid font %d replaced by font 1"), face);
@@ -8252,7 +8265,7 @@ SEXP PostScript(SEXP args)
 	    error(_("unable to start %s() device"), "postscript");
 	}
 	gdd = GEcreateDevDesc(dev);
-	GEaddDevice2(gdd, "postscript");
+	GEaddDevice2f(gdd, "postscript", file);
     } END_SUSPEND_INTERRUPTS;
     vmaxset(vmax);
     return R_NilValue;
@@ -8319,7 +8332,7 @@ SEXP XFig(SEXP args)
 	    error(_("unable to start %s() device"), "xfig");
 	}
 	gdd = GEcreateDevDesc(dev);
-	GEaddDevice2(gdd, "xfig");
+	GEaddDevice2f(gdd, "xfig", file);
     } END_SUSPEND_INTERRUPTS;
     vmaxset(vmax);
     return R_NilValue;
@@ -8418,7 +8431,7 @@ SEXP PDF(SEXP args)
 	    error(_("unable to start %s() device"), "pdf");
 	}
 	gdd = GEcreateDevDesc(dev);
-	GEaddDevice2(gdd, "pdf");
+	GEaddDevice2f(gdd, "pdf", file);
     } END_SUSPEND_INTERRUPTS;
     vmaxset(vmax);
     return R_NilValue;

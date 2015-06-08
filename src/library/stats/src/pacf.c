@@ -1,12 +1,6 @@
 /*  R : A Computer Language for Statistical Data Analysis
  *
  *  Copyright (C) 1999-2012	The R Core Team
- *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
- *
- *  CXXR is not part of the R project, and bugs and other issues should
- *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,10 +19,6 @@
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
-#endif
-
-#if !defined(atanh) && defined(HAVE_DECL_ATANH) && !HAVE_DECL_ATANH
-extern double atanh(double x);
 #endif
 
 /* do this first to get the right options for math.h */
@@ -365,10 +355,9 @@ static void dotrans(Starma G, double *raw, double *new, int trans)
     }
 }
 
-#ifdef WIN32
-extern double atanh(double);
+#if !defined(atanh) && defined(HAVE_DECL_ATANH) && !HAVE_DECL_ATANH
+extern double atanh(double x);
 #endif
-
 static void invpartrans(int p, double *phi, double *new)
 {
     int j, k;

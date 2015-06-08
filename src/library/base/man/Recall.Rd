@@ -1,6 +1,6 @@
 % File src/library/base/man/Recall.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Recall}
@@ -19,7 +19,7 @@ Recall(\dots)
 }
 \note{
   \code{Recall} will not work correctly when passed as a function
-  argument, e.g. to the \code{apply} family of functions.
+  argument, e.g.\sspace{}to the \code{apply} family of functions.
 }
 \seealso{
   \code{\link{do.call}} and \code{\link{call}}.

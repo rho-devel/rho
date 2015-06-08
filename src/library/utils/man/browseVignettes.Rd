@@ -1,6 +1,6 @@
 % File src/library/utils/man/browseVignettes.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2007 R Core Team
+% Copyright 2007-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{browseVignettes}
@@ -37,7 +37,7 @@ browseVignettes(package = NULL, lib.loc = NULL, all = TRUE)
 \seealso{
   \code{\link{browseURL}}, \code{\link{vignette}}
 }
-\examples{\dontrun{
+\examples{\donttest{
 ## List vignettes from all *attached* packages
 browseVignettes(all = FALSE)
 

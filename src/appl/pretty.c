@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1995-2013  The R Core Team
+ *  Copyright (C) 1995-2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -120,7 +120,9 @@ double R_pretty(double *lo, double *up, int *ndiv, int min_n,
       warning(_("Internal(pretty()): very large range.. corrected"));
       cell = .1*DBL_MAX;
     }
-    base = pow(10., floor(log10(cell))); /* base <= cell < 10*base */
+    /* NB: the power can be negative and this relies on exact
+       calculation, which glibc's exp10 does not achieve */
+    base = pow(10.0, floor(log10(cell))); /* base <= cell < 10*base */
 
     /* unit : from { 1,2,5,10 } * base
      *	 such that |u - cell| is small,

@@ -1,37 +1,51 @@
 % File src/library/grid/man/current.viewport.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Querying the Viewport Tree}
 \alias{current.viewport}
+\alias{current.parent}
 \alias{current.vpTree}
 \alias{current.vpPath}
 \alias{current.transform}
+\alias{current.rotation}
 \title{Get the Current Grid Viewport (Tree)}
 \description{
   \code{current.viewport()}
   returns the viewport that Grid is going to draw into.
 
+  \code{current.parent} returns the parent of the current viewport.
+  
   \code{current.vpTree} returns the entire Grid viewport tree.
 
   \code{current.vpPath} returns the viewport path to the current viewport.
 
   \code{current.transform} returns the transformation
   matrix for the current viewport.
+
+  \code{current.rotation} returns the (total) rotation
+  for the current viewport.
 }
 \usage{
-current.viewport(vp=NULL)
+current.viewport()
+current.parent(n=1)
 current.vpTree(all=TRUE)
 current.vpPath()
 current.transform()
 }
 \arguments{
-  \item{vp}{A Grid viewport object.  Use of this argument has been deprecated.}
+  \item{n}{ The number of generations to go up.}
   \item{all}{A logical value indicating whether the entire viewport
     tree should be returned.}
 }
 \details{
+  It is possible to get the grandparent of the current viewport
+  (or higher) using the \code{n} argument to \code{current.parent()}.
+  
+  The parent of the ROOT viewport is \code{NULL}.
+  It is an error to request the grandparent of the ROOT viewport.
+  
   If \code{all} is \code{FALSE} then
   \code{current.vpTree} only returns the subtree below
   the current viewport.

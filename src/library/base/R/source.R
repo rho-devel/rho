@@ -1,7 +1,7 @@
 #  File src/library/base/R/source.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ function(file, local = FALSE, echo = verbose, print.eval = echo,
         } else enc <- encoding
         if(length(enc) > 1L) {
             encoding <- NA
-            owarn <- options("warn"); options(warn = 2)
+	    owarn <- options(warn = 2)
             for(e in enc) {
                 if(is.na(e)) next
                 zz <- file(file, encoding = e)
@@ -80,7 +80,7 @@ function(file, local = FALSE, echo = verbose, print.eval = echo,
 	    	lines <- readLines(file, warn = FALSE)
 	    	on.exit()
 	    	close(file)
-            	srcfile <- srcfilecopy(filename, lines, file.info(filename)[1,"mtime"],
+            	srcfile <- srcfilecopy(filename, lines, file.mtime(filename)[1],
             			       isFile = TRUE)
 	    } else {
             	from_file <- TRUE
@@ -146,9 +146,9 @@ function(file, local = FALSE, echo = verbose, print.eval = echo,
         ## A helper function for echoing source.  This is simpler than the
         ## same-named one in Sweave
 	trySrcLines <- function(srcfile, showfrom, showto) {
-	    lines <- try(suppressWarnings(getSrcLines(srcfile, showfrom, showto)), silent=TRUE)
-	    if (inherits(lines, "try-error")) lines <- character()
-    	    lines
+	    lines <- tryCatch(suppressWarnings(getSrcLines(srcfile, showfrom, showto)),
+			      error = function(e)e)
+	    if (inherits(lines, "error")) character() else lines
 	}
     }
     yy <- NULL
@@ -246,7 +246,7 @@ function(file, envir = baseenv(), chdir = FALSE,
     on.exit(options(oop))
     if (keep.source) {
     	lines <- readLines(file, warn = FALSE)
-    	srcfile <- srcfilecopy(file, lines, file.info(file)[1,"mtime"], isFile = TRUE)
+    	srcfile <- srcfilecopy(file, lines, file.mtime(file), isFile = TRUE)
     	exprs <- parse(text = lines, srcfile = srcfile, keep.source = TRUE)
     } else
     	exprs <- parse(n = -1, file = file, srcfile = NULL, keep.source = FALSE)
@@ -259,6 +259,6 @@ function(file, envir = baseenv(), chdir = FALSE,
 	on.exit(setwd(owd), add = TRUE)
 	setwd(path)
     }
-    for (i in exprs) eval(i, envir)
+    for (i in seq_along(exprs)) eval(exprs[i], envir)
     invisible()
 }

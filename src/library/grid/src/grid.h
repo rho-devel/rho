@@ -1,23 +1,7 @@
-/*CXXR $Id$
- *CXXR
- *CXXR This file is part of CXXR, a project to refactor the R interpreter
- *CXXR into C++.  It may consist in whole or in part of program code and
- *CXXR documentation taken from the R project itself, incorporated into
- *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
- *CXXR Licence.
- *CXXR 
- *CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
- *CXXR copyrights and copyright restrictions as may be stated below.
- *CXXR 
- *CXXR CXXR is not part of the R project, and bugs and other issues should
- *CXXR not be reported via r-bugs or other R project channels; instead refer
- *CXXR to the CXXR website.
- *CXXR */
-
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-3 Paul Murrell
- *                2003-8 The R Core Team
+ *                2003-2014 The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,17 +28,9 @@
 #include <Rinternals.h>
 #ifdef ENABLE_NLS
 #include <libintl.h>
-#ifndef __cplusplus
 #define _(String) dgettext ("grid", String)
-#endif
 #else
-#ifndef __cplusplus
 #define _(String) (String)
-#endif
-#endif
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 /* All grid type names are prefixed with an "L" 
@@ -106,19 +82,19 @@ extern "C" {
 /* 
  * Additional structure of a pushedvp
  */
-#define PVP_GPAR 17
-#define PVP_TRANS 18
-#define PVP_WIDTHS 19
-#define PVP_HEIGHTS 20
-#define PVP_WIDTHCM 21
-#define PVP_HEIGHTCM 22
-#define PVP_ROTATION 23
-#define PVP_CLIPRECT 24
-#define PVP_PARENT 25
-#define PVP_CHILDREN 26
-#define PVP_DEVWIDTHCM 27
-#define PVP_DEVHEIGHTCM 28
-#define PVP_PARENTGPAR 29
+#define PVP_PARENTGPAR 17
+#define PVP_GPAR 18
+#define PVP_TRANS 19
+#define PVP_WIDTHS 20
+#define PVP_HEIGHTS 21
+#define PVP_WIDTHCM 22
+#define PVP_HEIGHTCM 23
+#define PVP_ROTATION 24
+#define PVP_CLIPRECT 25
+#define PVP_PARENT 26
+#define PVP_CHILDREN 27
+#define PVP_DEVWIDTHCM 28
+#define PVP_DEVHEIGHTCM 29
 
 /*
  * Structure of a layout
@@ -356,6 +332,10 @@ void location(double x, double y, LLocation v);
 void trans(LLocation vin, LTransform m, LLocation vout);
 
 /* From unit.c */
+int isUnitArithmetic(SEXP ua);
+
+int isUnitList(SEXP ul);
+
 SEXP unit(double value, int unit);
 
 double unitValue(SEXP unit, int index);
@@ -441,6 +421,14 @@ double transformWidthHeightFromINCHES(double value, int unit,
 				      const pGEcontext gc,
 				      double thisCM, double otherCM,
 				      pGEDevDesc dd);
+
+double transformXYtoNPC(double x, int from, double min, double max);
+
+double transformWHtoNPC(double x, int from, double min, double max);
+
+double transformXYfromNPC(double x, int to, double min, double max);
+
+double transformWHfromNPC(double x, int to, double min, double max);
 
 /* From just.c */
 double justifyX(double x, double width, double hjust);
@@ -609,6 +597,9 @@ void setGridStateElement(pGEDevDesc dd, int elementIndex, SEXP value);
 
 SEXP gridCallback(GEevent task, pGEDevDesc dd, SEXP data);
 
+int gridRegisterIndex;
+
+
 /* From grid.c */
 SEXP doSetViewport(SEXP vp, 
 		   Rboolean topLevelVP,
@@ -643,6 +634,3 @@ SEXP validUnits(SEXP units);
 SEXP L_getGPar(void);
 SEXP L_setGPar(SEXP gpars);
     
-#ifdef __cplusplus
-}  // extern "C"
-#endif

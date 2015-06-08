@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1995--2013  The R Core Team
+ *  Copyright (C) 1995--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -48,6 +48,9 @@
 #include "CXXR/StdFrame.hpp"
 #include "CXXR/WeakRef.h"
 
+#ifdef Win32
+#include <trioremap.h>
+#endif
 
 /* This include is to bring in declarations of R_compress1 and
    R_decompress1 */
@@ -212,7 +215,7 @@ static int Rsnprintf(char *buf, int size, const char *format, ...)
     int val;
     va_list(ap);
     va_start(ap, format);
-    /* On Windows this uses the non-C99 MSVCRT.dll version, which is OK */
+    /* On Windows this no longer uses the non-C99 MSVCRT.dll version */
     val = vsnprintf(buf, size, format, ap);
     buf[size-1] = '\0';
     va_end(ap);
@@ -229,6 +232,7 @@ static void OutInteger(R_outpstream_t stream, int i)
     char buf[128];
     switch (stream->type) {
     case R_pstream_ascii_format:
+    case R_pstream_asciihex_format:
 	if (i == NA_INTEGER)
 	    Rsnprintf(buf, sizeof(buf), "NA\n");
 	else
@@ -253,8 +257,10 @@ static void OutReal(R_outpstream_t stream, double d)
     switch (stream->type) {
     case R_pstream_ascii_format:
 	if (! R_FINITE(d)) {
-	    if (ISNAN(d))
+	    if (ISNA(d))
 		Rsnprintf(buf, sizeof(buf), "NA\n");
+	    else if (ISNAN(d))
+		Rsnprintf(buf, sizeof(buf), "NaN\n");
 	    else if (d < 0)
 		Rsnprintf(buf, sizeof(buf), "-Inf\n");
 	    else
@@ -264,6 +270,21 @@ static void OutReal(R_outpstream_t stream, double d)
 	    /* 16: full precision; 17 gives 999, 000 &c */
 	    Rsnprintf(buf, sizeof(buf), "%.16g\n", d);
 	stream->OutBytes(stream, buf, int(strlen(buf)));
+	break;
+    case R_pstream_asciihex_format:
+	if (! R_FINITE(d)) {
+	    if (ISNA(d))
+		Rsnprintf(buf, sizeof(buf), "NA\n");
+	    else if (ISNAN(d))
+		Rsnprintf(buf, sizeof(buf), "NaN\n");
+	    else if (d < 0)
+		Rsnprintf(buf, sizeof(buf), "-Inf\n");
+	    else
+		Rsnprintf(buf, sizeof(buf), "Inf\n");
+	}
+	else
+	    Rsnprintf(buf, sizeof(buf), "%a\n", d);
+	stream->OutBytes(stream, buf, (int)strlen(buf));
 	break;
     case R_pstream_binary_format:
 	stream->OutBytes(stream, &d, sizeof(double));
@@ -288,6 +309,7 @@ static void OutByte(R_outpstream_t stream, Rbyte i)
     char buf[128];
     switch (stream->type) {
     case R_pstream_ascii_format:
+    case R_pstream_asciihex_format:
 	Rsnprintf(buf, sizeof(buf), "%02x\n", i);
 	stream->OutBytes(stream, buf, int(strlen(buf)));
 	break;
@@ -303,7 +325,8 @@ static void OutByte(R_outpstream_t stream, Rbyte i)
 /* This assumes CHARSXPs remain limited to 2^31-1 bytes */
 static void OutString(R_outpstream_t stream, const char *s, int length)
 {
-    if (stream->type == R_pstream_ascii_format) {
+    if (stream->type == R_pstream_ascii_format ||
+	stream->type == R_pstream_asciihex_format) {
 	int i;
 	char buf[128];
 	for (i = 0; i < length; i++) {
@@ -370,11 +393,11 @@ static int InInteger(R_inpstream_t stream)
     switch (stream->type) {
     case R_pstream_ascii_format:
 	InWord(stream, word, sizeof(word));
-	sscanf(word, "%s", buf);
+	if(sscanf(word, "%s", buf) != 1) Rf_error(_("read error"));
 	if (strcmp(buf, "NA") == 0)
 	    return NA_INTEGER;
 	else
-	    sscanf(buf, "%d", &i);
+	    if(sscanf(buf, "%d", &i) != 1) Rf_error(_("read error"));
 	return i;
     case R_pstream_binary_format:
 	stream->InBytes(stream, &i, sizeof(int));
@@ -387,6 +410,11 @@ static int InInteger(R_inpstream_t stream)
     }
 }
 
+#ifdef Win32
+extern int trio_sscanf(const char *buffer, const char *format, ...);
+
+#endif
+
 static double InReal(R_inpstream_t stream)
 {
     char word[128];
@@ -396,15 +424,23 @@ static double InReal(R_inpstream_t stream)
     switch (stream->type) {
     case R_pstream_ascii_format:
 	InWord(stream, word, sizeof(word));
-	sscanf(word, "%s", buf);
+	if(sscanf(word, "%s", buf) != 1) Rf_error(_("read error"));
 	if (strcmp(buf, "NA") == 0)
 	    return NA_REAL;
+	else if (strcmp(buf, "NaN") == 0)
+	    return R_NaN;
 	else if (strcmp(buf, "Inf") == 0)
 	    return R_PosInf;
 	else if (strcmp(buf, "-Inf") == 0)
 	    return R_NegInf;
 	else
-	    sscanf(buf, "%lg", &d);
+	    if(
+#ifdef Win32
+		trio_sscanf(buf, "%lg", &d)
+#else
+		sscanf(buf, "%lg", &d)
+#endif
+		!= 1) Rf_error(_("read error"));
 	return d;
     case R_pstream_binary_format:
 	stream->InBytes(stream, &d, sizeof(double));
@@ -519,7 +555,9 @@ static void OutFormat(R_outpstream_t stream)
 	stream->type = R_pstream_xdr_format;
 	} */
     switch (stream->type) {
-    case R_pstream_ascii_format:  stream->OutBytes(stream, "A\n", 2); break;
+    case R_pstream_ascii_format:
+    case R_pstream_asciihex_format:
+	stream->OutBytes(stream, "A\n", 2); break;
     case R_pstream_binary_format: stream->OutBytes(stream, "B\n", 2); break;
     case R_pstream_xdr_format:    stream->OutBytes(stream, "X\n", 2); break;
     case R_pstream_any_format:
@@ -1290,7 +1328,7 @@ static void WriteBC(SEXP s, SEXP ref_table, R_outpstream_t stream)
 {
     SEXP reps = ScanForCircles(s);
     PROTECT(reps = CONS(R_NilValue, reps));
-    OutInteger(stream, length(reps));
+    OutInteger(stream, Rf_length(reps));
     SETCAR(reps, Rf_allocVector(INTSXP, 1));
     INTEGER(CAR(reps))[0] = 0;
     WriteBC1(s, ref_table, reps, stream);
@@ -1323,8 +1361,7 @@ void R_Serialize(SEXP s, R_outpstream_t stream)
  * Unserialize Code
  */
 
-int R_ReadItemDepth = 0;
-int R_InitReadItemDepth;
+attribute_hidden int R_ReadItemDepth = 0, R_InitReadItemDepth;
 static char lastname[8192];
 
 #define INITIAL_REFREAD_TABLE_SIZE 128
@@ -1524,7 +1561,8 @@ static SEXP R_FindNamespace1(SEXP info)
     SEXP expr, val, where;
     PROTECT(info);
     where = PROTECT(Rf_ScalarString(Rf_mkChar(lastname)));
-    PROTECT(expr = LCONS(Rf_install("..getNamespace"), 
+    SEXP s_getNamespace = Rf_install("..getNamespace");
+    PROTECT(expr = LCONS(s_getNamespace,
 			 CONS(info, CONS(where, R_NilValue))));
     val = Rf_eval(expr, R_GlobalEnv);
     UNPROTECT(3);
@@ -1608,6 +1646,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    AddReadRef(ref_table, env);
 
 	    /* Now fill it in  */
+	    R_ReadItemDepth++;
 	    // Enclosing environment:
 	    {
 		Environment* enc
@@ -1630,6 +1669,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    ReadItem(ref_table, stream);
 	    // Attributes:
 	    SET_ATTRIB(env, ReadItem(ref_table, stream));
+	    R_ReadItemDepth--;
 	    if (locked) R_LockEnvironment(env, CXXRCONSTRUCT(Rboolean, FALSE));
 	    /* Convert a NULL enclosure to baseenv() */
 	    if (!env->enclosingEnvironment())
@@ -1762,8 +1802,11 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 		InString(stream, cbuf, length);
 		cbuf[length] = '\0';
 		PROTECT(s = BuiltInFunction::obtainPrimitive(cbuf));
+		if (s == R_NilValue)
+		    Rf_warning(_("unrecognized internal function name \"%s\""),
+			       cbuf); 
+		break;
 	    }
-	    break;
 	case LGLSXP:
 	case INTSXP:
 	    len = ReadLENGTH(stream);
@@ -1791,8 +1834,13 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	case VECSXP:
 	    len = ReadLENGTH(stream);
 	    PROTECT(s = Rf_allocVector(VECSXP, len));
-	    for (count = 0; count < len; ++count)
+	    R_ReadItemDepth++;
+	    for (count = 0; count < len; ++count) {
+		if (R_ReadItemDepth <= 0) 
+		    Rprintf("%*s[%d]\n", 2*(R_ReadItemDepth - R_InitReadItemDepth), "", count+1);
 		SET_VECTOR_ELT(s, count, ReadItem(ref_table, stream));
+	    }
+	    R_ReadItemDepth--;
 	    break;
 	case EXPRSXP:
 	    len = ReadLENGTH(stream);
@@ -1882,7 +1930,7 @@ static SEXP ReadBCLang(int type, SEXP ref_table, SEXP reps,
 	    UNPROTECT(1);
 	    return ans;
 	}
-    default:
+    default: 
     	{
     	    R_ReadItemDepth++;
             SEXP res = ReadItem(ref_table, stream);
@@ -2176,9 +2224,10 @@ void R_InitConnOutPStream(R_outpstream_t stream, Rconnection con,
 			  SEXP (*phook)(SEXP, SEXP), SEXP pdata)
 {
     CheckOutConn(con);
-    if (con->text && type != R_pstream_ascii_format)
+    if (con->text && 
+	!(type == R_pstream_ascii_format || type == R_pstream_asciihex_format) )
 	Rf_error(_("only ascii format can be written to text mode connections"));
-    R_InitOutPStream(stream, CXXRNOCAST(R_pstream_data_t) con, type, version,
+    R_InitOutPStream(stream, (R_pstream_data_t) con, type, version,
 		     OutCharConn, OutBytesConn, phook, pdata);
 }
 
@@ -2231,7 +2280,8 @@ do_serializeToConn(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction
     if (TYPEOF(args[2]) != LGLSXP)
 	Rf_error(_("'ascii' must be logical"));
     ascii = CXXRCONSTRUCT(Rboolean, INTEGER(args[2])[0]);
-    if (ascii) type = R_pstream_ascii_format;
+    if (ascii == NA_LOGICAL) type = R_pstream_asciihex_format;
+    else if (ascii) type = R_pstream_ascii_format;
     else type = R_pstream_xdr_format;
 
     if (args[3] == R_NilValue)
@@ -2384,7 +2434,7 @@ static void InitBConOutPStream(R_outpstream_t stream, bconbuf_t bb,
 }
 
 /* only for use by serialize(), with binary write to a socket connection */
-SEXP attribute_hidden 
+static SEXP
 R_serializeb(SEXP object, SEXP icon, SEXP xdr, SEXP Sversion, SEXP fun)
 {
     struct R_outpstream_st out;
@@ -2430,12 +2480,12 @@ static void resize_buffer(membuf_t mb, R_size_t needed)
     if(needed < 10000000) /* ca 10MB */
 	needed = (1+2*needed/INCR) * INCR;
     else 
-	needed = R_size_t((1+1.2*double(needed)/INCR) * INCR);
+	needed = (R_size_t)((1+1.2*(double)needed/INCR) * INCR);
 #else
     if(needed < 10000000) /* ca 10MB */
 	needed = (1+2*needed/INCR) * INCR;
     else if(needed < 1700000000) /* close to 2GB/1.2 */
-	needed = R_size_t((1+1.2*double(needed)/INCR) * INCR);
+	needed = (R_size_t)((1+1.2*(double)needed/INCR) * INCR);
     else if(needed < INT_MAX - INCR)
 	needed = (1+needed/INCR) * INCR;
 #endif
@@ -2533,7 +2583,7 @@ static SEXP CloseMemOutPStream(R_outpstream_t stream)
     return val;
 }
 
-SEXP attribute_hidden
+static SEXP
 R_serialize(SEXP object, SEXP icon, SEXP ascii, SEXP Sversion, SEXP fun)
 {
     struct R_outpstream_st out;
@@ -2549,10 +2599,14 @@ R_serialize(SEXP object, SEXP icon, SEXP ascii, SEXP Sversion, SEXP fun)
 
     hook = fun != R_NilValue ? CallHook : nullptr;
 
-    int asc = Rf_asLogical(ascii);
-    if (asc == NA_LOGICAL) type = R_pstream_binary_format;
-    else if (asc) type = R_pstream_ascii_format;
-    else type = R_pstream_xdr_format; /**** binary or ascii if no XDR? */
+    // Prior to 3.2.0 this was logical, values 0/1/NA for binary.
+    int asc = Rf_asInteger(ascii);
+    switch(asc) {
+    case 1: type = R_pstream_ascii_format; break;
+    case 2: type = R_pstream_asciihex_format; break;
+    case 3: type = R_pstream_binary_format; break;
+    default: type = R_pstream_xdr_format; break;
+    }
 
     if (icon == R_NilValue) {
 	struct membuf_st mbs;
@@ -2622,7 +2676,7 @@ static SEXP appendRawToFile(SEXP file, SEXP bytes)
 {
     FILE *fp;
     size_t len, out;
-    long pos;
+    long pos;  // what ftell gives: won't work for > 2GB files
     SEXP val;
 
     if (! IS_PROPER_STRING(file))
@@ -2801,13 +2855,14 @@ static SEXP R_getVarsFromFrame(SEXP vars, SEXP env, SEXP forcesxp)
     len = LENGTH(vars);
     PROTECT(val = Rf_allocVector(VECSXP, len));
     for (i = 0; i < len; i++) {
-	sym = Rf_install(CHAR(STRING_ELT(vars, i)));
+	sym = Rf_installChar(STRING_ELT(vars, i));
 
 	tmp = Rf_findVarInFrame(env, sym);
 	if (tmp == R_UnboundValue) {
 /*		PrintValue(env);
 		PrintValue(R_GetTraceback(0)); */  /* DJM debugging */
-	    Rf_error(_("object '%s' not found"), CHAR(STRING_ELT(vars, i)));
+	    Rf_error(_("object '%s' not found"),
+		     Rf_EncodeChar(STRING_ELT(vars, i)));
 	    }
 	if (force && TYPEOF(tmp) == PROMSXP) {
 	    PROTECT(tmp);
@@ -2837,7 +2892,7 @@ SEXP R_decompress3(SEXP in, Rboolean *err);
    result to a file.  Returns the key position/length key for
    retrieving the value */
 
-SEXP attribute_hidden
+static SEXP
 R_lazyLoadDBinsertValue(SEXP value, SEXP file, SEXP ascii,
 			SEXP compsxp, SEXP hook)
 {
@@ -2885,7 +2940,8 @@ do_lazyLoadDBfetch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction
 	REPROTECT(val = R_decompress2(val, &err), vpi);
     else if (compressed)
 	REPROTECT(val = R_decompress1(val, &err), vpi);
-    if (err) Rf_error("lazy-load database '%s' is corrupt", file);
+    if (err) Rf_error("lazy-load database '%s' is corrupt",
+		      CHAR(STRING_ELT(file, 0)));
     val = R_unserialize(val, hook);
     if (TYPEOF(val) == PROMSXP) {
 	REPROTECT(val, vpi);
@@ -2926,7 +2982,7 @@ do_serialize(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, 
     SEXP object, icon, type, ver, fun;
     object = args[0]; args = (args + 1);
     icon = args[0]; args = (args + 1);
-    type = args[0]; args = (args + 1); // ascii or xdr
+    type = args[0]; args = (args + 1);
     ver = args[0]; args = (args + 1);
     fun = args[0];
     

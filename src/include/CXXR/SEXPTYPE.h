@@ -131,6 +131,10 @@ extern "C" {
 			       this type. */
     } SEXPTYPE;
 
+/* These are also used with the write barrier on, in attrib.c and util.c */
+#define TYPE_BITS 5
+#define MAX_NUM_SEXPTYPE (1<<TYPE_BITS)
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

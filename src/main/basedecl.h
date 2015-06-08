@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2002-2012	The R Core Team.
+ *  Copyright (C) 2002-2014	The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -38,11 +38,6 @@ SEXP R_getTaskCallbackNames(void);
 SEXP R_removeTaskCallback(SEXP);
 SEXP R_addTaskCallback(SEXP, SEXP, SEXP, SEXP);
 
-#ifdef BC_PROFILING
-SEXP R_getbcprofcounts(void);
-SEXP R_startbcprof(void);
-SEXP R_stopbcprof(void);
-#endif
 
 #ifdef __cplusplus
 }

@@ -1,7 +1,7 @@
 #  File src/library/base/R/apply.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ apply <- function(X, MARGIN, FUN, ...)
         if(is.null(dnn <- names(dn))) # names(NULL) is NULL
            stop("'X' must have named dimnames")
         MARGIN <- match(MARGIN, dnn)
-        if (any(is.na(MARGIN)))
+        if (anyNA(MARGIN))
             stop("not all elements of 'MARGIN' are names of dimensions")
     }
     s.call <- ds[-MARGIN]
@@ -98,9 +98,13 @@ apply <- function(X, MARGIN, FUN, ...)
 	return(array(ans, d.ans, dn.ans))
     if(len.a && len.a %% d2 == 0L) {
         if(is.null(dn.ans)) dn.ans <- vector(mode="list", length(d.ans))
-        dn.ans <- c(list(ans.names), dn.ans)
+	dn1 <- if(length(dn.call) &&
+		  length(ans.names) == length(dn.call[[1L]])) dn.call[1L]
+	       else list(ans.names)
+	dn.ans <- c(dn1, dn.ans)
 	return(array(ans, c(len.a %/% d2, d.ans),
-		     if(!all(vapply(dn.ans, is.null, NA))) dn.ans))
+		     if(!is.null(names(dn.ans)) || !all(vapply(dn.ans, is.null, NA)))
+			 dn.ans))
     }
     return(ans)
 }

@@ -148,6 +148,19 @@ extern "C" {
 #endif
 
     /**
+     * @brief Equivalent to CDR(CDR(CDR(e))).
+     */
+#ifndef __cplusplus
+    SEXP CDDDR(SEXP e);
+#else
+    inline SEXP CDDDR(SEXP e)
+    {
+	using namespace CXXR;
+	return tail0(tail0(tail0(SEXP_downcast<ConsCell*>(e))));
+    }
+#endif
+
+    /**
      * @brief Equivalent to CAR(CDR(CDR(CDR(e)))).
      */
 #ifndef __cplusplus

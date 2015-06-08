@@ -1,9 +1,7 @@
 % File src/library/base/man/length.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{length}
 \alias{length}
@@ -43,9 +41,9 @@ length(x) <- value
   For vectors (including lists) and factors the length is the number of
   elements.  For an environment it is the number of objects in the
   environment, and \code{NULL} has length 0.  For expressions and
-  pairlists (including language objects and dotlists) it is the length
-  of the pairlist chain.  All other objects (including functions) have
-  length one: note that for functions this differs from S.
+  pairlists (including \link{language objects} and dotlists) it is the
+  length of the pairlist chain.  All other objects (including functions)
+  have length one: note that for functions this differs from S.
 
   The replacement form removes all the attributes of \code{x} except its
   names, which are adjusted (and if necessary extended by \code{""}).
@@ -62,8 +60,9 @@ length(x) <- value
   As from \R 3.0.0, lengths can be returned as double in base \R.
 }
 
-\seealso{\code{nchar} for counting the number of characters in
-  character vectors.
+\seealso{\code{nchar} for counting the number of characters in character
+  vectors, \code{\link{lengths}} for getting the length of every element
+  in a list.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)

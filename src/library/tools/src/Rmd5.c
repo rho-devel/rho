@@ -1,12 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2003-7   The R Core Team.
- *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
- *
- *  CXXR is not part of the R project, and bugs and other issues should
- *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,7 +38,7 @@ SEXP Rmd5(SEXP files)
     PROTECT(ans = allocVector(STRSXP, nfiles));
     for(i = 0; i < nfiles; i++) {
 	path = translateChar(STRING_ELT(files, i));
-#ifdef WIN32
+#ifdef _WIN32
 	fp = fopen(path, "rb");
 #else
 	fp = fopen(path, "r");

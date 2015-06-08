@@ -1,6 +1,6 @@
 % File src/library/graphics/man/plot.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{plot}
@@ -45,7 +45,7 @@ plot(x, y, \dots)
       All other \code{type}s give a warning or an error; using, e.g.,
       \code{type = "punkte"} being equivalent to \code{type = "p"} for S
       compatibility.  Note that some methods,
-      e.g. \code{\link{plot.factor}}, do not accept this.
+      e.g.\sspace{}\code{\link{plot.factor}}, do not accept this.
     }
     \item{\code{main}}{an overall title for the plot: see \code{\link{title}}.}
     \item{\code{sub}}{a sub title for the plot: see \code{\link{title}}.}
@@ -70,7 +70,7 @@ plot(x, y, \dots)
   \code{\link{image}}.
 }
 \examples{
-require(stats)
+require(stats) # for lowess, rpois, rnorm
 plot(cars)
 lines(lowess(cars))
 

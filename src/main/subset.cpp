@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2012   The R Core Team
+ *  Copyright (C) 1997-2014   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -197,7 +197,7 @@ static SEXP VectorSubset(SEXP x, SEXP sarg, SEXP call)
     /* If we do, make a real subscript vector and protect it. */
     {
 	SEXP attrib = getAttrib(x, R_DimSymbol);	
-	if (isMatrix(s) && isArray(x) && ncols(s) == length(attrib)) {
+	if (isMatrix(s) && isArray(x) && ncols(s) == Rf_length(attrib)) {
 	    if (isString(s)) {
 		s = strmat2intmat(s, GetArrayDimnames(x), call);
 	    }
@@ -242,7 +242,7 @@ static SEXP VectorSubset(SEXP x, SEXP sarg, SEXP call)
     GCStackRoot<> indx(makeSubscript(x, s, &stretch, call));
     int n = LENGTH(indx);
     const IntVector* indices = SEXP_downcast<IntVector*>(indx.get());
-    unsigned int nx = length(x);
+    unsigned int nx = Rf_length(x);
     GCStackRoot<> result(allocVector(LANGSXP, n));
     SEXP tmp = result;
     for (unsigned int i = 0; int(i) < n; ++i) {
@@ -366,6 +366,33 @@ static int ExtractExactArg(SEXP args)
     return exact;
 }
 
+/* Version of DispatchOrEval for "[" and friends that speeds up simple cases.
+   Also defined in subassign.c */
+static R_INLINE
+int R_DispatchOrEvalSP(SEXP call, SEXP op, const char *generic, SEXP args,
+		    SEXP rho, SEXP *ans)
+{
+    SEXP prom = NULL;
+    if (args != R_NilValue && CAR(args) != R_DotsSymbol) {
+	SEXP x = eval(CAR(args), rho);
+	PROTECT(x);
+	if (! OBJECT(x)) {
+	    *ans = CONS(x, evalListKeepMissing(CDR(args), rho));
+	    UNPROTECT(1);
+	    return FALSE;
+	}
+	prom = mkPROMISE(CAR(args), R_GlobalEnv);
+	SET_PRVALUE(prom, x);
+	args = CONS(prom, CDR(args));
+	UNPROTECT(1);
+    }
+    PROTECT(args);
+    int disp = DispatchOrEval(call, op, generic, args, rho, ans, 0, 0);
+    if (prom) DECREMENT_REFCNT(PRVALUE(prom));
+    UNPROTECT(1);
+    return disp;
+}
+
 /* The "[" subset operator.
  * This provides the most general form of subsetting. */
 
@@ -379,7 +406,7 @@ SEXP attribute_hidden do_subset(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* to the generic code below.  Note that evaluation */
     /* retains any missing argument indicators. */
 
-    if(DispatchOrEval(call, op, "[", args, rho, &ans, 0, 0)) {
+    if(R_DispatchOrEvalSP(call, op, "[", args, rho, &ans)) {
 /*     if(DispatchAnyOrEval(call, op, "[", args, rho, &ans, 0, 0)) */
 	if (NAMED(ans))
 	    SET_NAMED(ans, 2);
@@ -395,8 +422,8 @@ static R_INLINE R_xlen_t scalarIndex(SEXP s)
 {
     if (ATTRIB(s) == R_NilValue)
 	switch (TYPEOF(s)) {
-	case REALSXP:
-	    if (XLENGTH(s) == 1 && ! ISNAN(REAL(s)[0]))
+	case REALSXP: // treat infinite indices as NA, like asInteger
+	    if (XLENGTH(s) == 1 && R_FINITE(REAL(s)[0]))
 		return R_xlen_t( REAL(s)[0]);
 	    else return -1;
 	case INTSXP:
@@ -493,7 +520,7 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	return x;
     }
     SEXP subs = CDR(args);
-    int nsubs = length(subs);
+    int nsubs = Rf_length(subs);
 
     /* Here coerce pair-based objects into generic vectors. */
     /* All subsetting takes place on the generic vector form. */
@@ -501,14 +528,14 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCStackRoot<> ax(x);
     if (isPairList(x)) {
 	SEXP dim = getAttrib(x, R_DimSymbol);
-	int ndim = length(dim);
+	int ndim = Rf_length(dim);
 	if (ndim > 1) {
 	    ax = allocArray(VECSXP, dim);
 	    setAttrib(ax, R_DimNamesSymbol, getAttrib(x, R_DimNamesSymbol));
 	    setAttrib(ax, R_NamesSymbol, getAttrib(x, R_DimNamesSymbol));
 	}
 	else {
-	    ax = allocVector(VECSXP, length(x));
+	    ax = allocVector(VECSXP, Rf_length(x));
 	    setAttrib(ax, R_NamesSymbol, getAttrib(x, R_NamesSymbol));
 	}
 	int i = 0;
@@ -587,8 +614,7 @@ SEXP attribute_hidden do_subset2(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* through to the generic code below.  Note that */
     /* evaluation retains any missing argument indicators. */
 
-    if(DispatchOrEval(call, op, "[[", args, rho, &ans, 0, 0)) {
-/*     if(DispatchAnyOrEval(call, op, "[[", args, rho, &ans, 0, 0)) */
+    if(R_DispatchOrEvalSP(call, op, "[[", args, rho, &ans)) {
 	if (NAMED(ans))
 	    SET_NAMED(ans, 2);
 	return(ans);
@@ -627,11 +653,11 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,
     /* and check that any array subscripting is compatible. */
 
     SEXP subs = CDR(args);
-    int nsubs = length(subs);
+    int nsubs = Rf_length(subs);
     if (nsubs == 0)
 	errorcall(call, _("no index specified"));
     SEXP dims = getAttrib(x, R_DimSymbol);
-    int ndims = length(dims);
+    int ndims = Rf_length(dims);
     if (nsubs > 1 && nsubs != ndims)
 	errorcall(call, _("incorrect number of subscripts"));
 
@@ -644,7 +670,7 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,
 
     /* split out ENVSXP for now */
     if ( TYPEOF(x) == ENVSXP ) {
-	if( nsubs != 1 || !isString(CAR(subs)) || length(CAR(subs)) != 1 )
+	if( nsubs != 1 || !isString(CAR(subs)) || Rf_length(CAR(subs)) != 1 )
 	    errorcall(call, _("wrong arguments for subsetting an environment"));
 	GCStackRoot<>
 	    ans(findVarInFrame(x,
@@ -670,10 +696,26 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,
     R_xlen_t offset = 0;
     if (nsubs == 1) { /* vector indexing */
 	SEXP thesub = CAR(subs);
-	int len = length(thesub);
+	int len = Rf_length(thesub);
 
-	if (len > 1)
+	if (len > 1) {
+#ifdef SWITCH_TO_REFCNT
+	    if (IS_GETTER_CALL(call)) {
+		/* this is (most likely) a getter call in a complex
+		   assighment so we duplicate as needed. The original
+		   x should have been duplicated if it might be
+		   shared */
+		if (MAYBE_SHARED(x))
+		    error("getter call used outside of a complex assignment.");
+		x = vectorIndex(x, thesub, 0, len-1, pok, call, TRUE);
+	    }
+	    else
+		x = vectorIndex(x, thesub, 0, len-1, pok, call, FALSE);
+#else
 	    x = vectorIndex(x, thesub, 0, len-1, pok, call, FALSE);
+#endif
+	    named_x = NAMED(x);
+	}
 	
 	offset = get1index(thesub, getAttrib(x, R_NamesSymbol),
 			   xlength(x), pok, len > 1 ? len-1 : -1, call);
@@ -696,7 +738,7 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,
 
 	GCStackRoot<> indx(allocVector(INTSXP, nsubs));
 	SEXP dimnames = getAttrib(x, R_DimNamesSymbol);
-	ndn = length(dimnames);
+	ndn = Rf_length(dimnames);
 	for (int i = 0; i < nsubs; i++) {
 	    INTEGER(indx)[i] = int(
 		get1index(CAR(subs),
@@ -835,7 +877,7 @@ SEXP attribute_hidden do_subset3(SEXP call, SEXP op, SEXP args, SEXP env)
     /* through to the generic code below.  Note that */
     /* evaluation retains any missing argument indicators. */
 
-    if(DispatchOrEval(call, op, "$", args, env, &ans, 0, 0)) {
+    if(R_DispatchOrEvalSP(call, op, "$", args, env, &ans)) {
 	UNPROTECT(2);
 	if (NAMED(ans))
 	    SET_NAMED(ans, 2);

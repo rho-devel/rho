@@ -1,6 +1,6 @@
 % File src/library/graphics/man/rasterImage.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{rasterImage}
@@ -35,7 +35,7 @@ rasterImage(image,
   length of the longest.
 
   Plotting raster images is not supported on all devices and may have
-  limitations where supported, for example (e.g. for \code{postscript}
+  limitations where supported, for example (e.g., for \code{postscript}
   and \code{X11(type = "Xlib")}) is restricted to opaque colors).
   Problems with the rendering of raster images have been reported by
   users of \code{windows()} devices under Remote Desktop, at least under

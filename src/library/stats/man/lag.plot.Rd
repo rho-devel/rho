@@ -1,6 +1,6 @@
 % File src/library/stats/man/lag.plot.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{lag.plot}
@@ -73,10 +73,9 @@ lag.plot(nhtemp, 6, layout = c(2,1), asp = NA,
 
 ## Multivariate (but non-stationary! ...)
 lag.plot(freeny.x, lags = 3)
-\dontrun{
-no lines for long series :
+
+## no lines for long series :
 lag.plot(sqrt(sunspots), set = c(1:4, 9:12), pch = ".", col = "gold")
-}
 }
 \keyword{hplot}
 \keyword{ts}

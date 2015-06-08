@@ -1,7 +1,7 @@
 #  File src/library/base/R/debug.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -26,3 +26,5 @@ isdebugged <- function(fun) .Internal(isdebugged(fun))
 browserText <- function(n=1L) .Internal(browserText(n))
 browserCondition <- function(n=1L) .Internal(browserCondition(n))
 browserSetDebug <- function(n=1L) .Internal(browserSetDebug(n))
+
+debuggingState <- function(on = NULL) .Internal(debugOnOff(on))

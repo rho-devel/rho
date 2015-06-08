@@ -1,12 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2005-2007   The R Core Team.
- *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
- *
- *  CXXR is not part of the R project, and bugs and other issues should
- *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -106,7 +100,7 @@ extern void F77_NAME(dv7dfl)(const int *Alg, const int *Lv, double v[]);
 /**
  * Supply default values for elements of the iv and v arrays
  *
- * @param alg algorithm specification (1 <= alg <= 4)
+ * @param alg algorithm specification (1 <= alg <= 2)  (was alg <= 4, but reduced to work around gcc bug; see PR#15914)
  * @param iv integer working vector
  * @param liv length of iv
  * @param lv length of v
@@ -152,7 +146,7 @@ void Rf_divset(int alg, int iv[], int liv, int lv, double v[])
     F77_CALL(dv7dfl)(&alg1, &lv, &v[1]);
     //       ------
     iv[1] = 12;
-    if (alg > 2) iv[DRADPR] = 1;
+    if (alg > 2) error(_("port algorithms 3 or higher are not supported"));
     iv[IVNEED] = 0;
     iv[LASTIV] = miv;
     iv[LASTV] = mv;
@@ -241,7 +235,8 @@ double F77_NAME(dv2nrm)(int *n, const double x[])
 /* dv7cpy.... copy src to dest */
 void F77_NAME(dv7cpy)(int *n, double dest[], const double src[])
 {
-    memcpy(dest, src, *n * sizeof(double));
+    /* Was memcpy, but overlaps seen */
+    memmove(dest, src, *n * sizeof(double));
 }
 
 /* dv7ipr... applies forward permutation to vector.  */
@@ -374,6 +369,7 @@ SEXP port_nlminb(SEXP fn, SEXP gr, SEXP hs, SEXP rho,
 {
     int i, n = LENGTH(d);
     SEXP xpt;
+    SEXP dot_par_symbol = install(".par");
     double *b = (double *) NULL, *g = (double *) NULL,
 	*h = (double *) NULL, fx = R_PosInf;
     if (isNull(rho)) {
@@ -386,13 +382,13 @@ SEXP port_nlminb(SEXP fn, SEXP gr, SEXP hs, SEXP rho,
 	error(_("'d' must be a nonempty numeric vector"));
     if (hs != R_NilValue && gr == R_NilValue)
 	error(_("When Hessian defined must also have gradient defined"));
-    if (R_NilValue == (xpt = findVarInFrame(rho, install(".par"))) ||
+    if (R_NilValue == (xpt = findVarInFrame(rho, dot_par_symbol)) ||
 	!isReal(xpt) || LENGTH(xpt) != n)
 	error(_("environment 'rho' must contain a numeric vector '.par' of length %d"),
 	      n);
     /* We are going to alter .par, so must duplicate it */
-    defineVar(install(".par"), duplicate(xpt), rho);
-    PROTECT(xpt = findVarInFrame(rho, install(".par")));
+    defineVar(dot_par_symbol, duplicate(xpt), rho);
+    xpt = findVarInFrame(rho, dot_par_symbol);
 
     if ((LENGTH(lowerb) == n) && (LENGTH(upperb) == n)) {
 	if (isReal(lowerb) && isReal(upperb)) {
@@ -420,10 +416,14 @@ SEXP port_nlminb(SEXP fn, SEXP gr, SEXP hs, SEXP rho,
 		fx = R_PosInf;
 	    }
 	}
+
+	/* duplicate .par value again in case a callback has stored
+	   value (package varComp does this) */
+	defineVar(dot_par_symbol, duplicate(xpt), rho);
+	xpt = findVarInFrame(rho, dot_par_symbol);
     } while(INTEGER(iv)[0] < 3);
 
     if (b) Free(b); if (g) Free(g); if (h) Free(h);
-    UNPROTECT(1);
     return R_NilValue;
 }
 

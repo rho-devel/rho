@@ -1,19 +1,20 @@
+R_HOME = ../..
+
 ## first time through MkRules will not exist.
+
 ifeq ($(wildcard MkRules?local),MkRules.local)
 include MkRules.local
-else
-include MkRules.dist
 endif
-include MkRules.rules
 
+include MkRules.rules
 include ../../share/make/vars.mk
 
 MK = $(MAKE) --no-print-directory
 
 all:
 	@$(MK) MkRules
-	@if test -f  ../../SVN-REVISION ; then \
-	  cp ../../SVN-REVISION ../../SVN-REVISION.bak ; \
+	@if test -f  ../../GIT-REVISION ; then \
+	  cp ../../GIT-REVISION ../../GIT-REVISION.bak ; \
 	fi
 	@$(MK) rbuild
 	@$(MK) -C ../library -f Makefile.win all WIN=$(WIN)
@@ -25,8 +26,8 @@ bytecode: bytecode-base bytecode-recommended
 
 bytecode-base:
 	@$(MK) MkRules
-	@if test -f  ../../SVN-REVISION ; then \
-	  cp ../../SVN-REVISION ../../SVN-REVISION.bak ; \
+	@if test -f  ../../GIT-REVISION ; then \
+	  cp ../../GIT-REVISION ../../GIT-REVISION.bak ; \
 	fi
 	@$(MK) rbuild
 	@$(MK) -C ../library -f Makefile.win bytecode WIN=$(WIN)
@@ -36,68 +37,70 @@ bytecode-base:
 
 
 rpackages:
-	@$(MK) -C ../library -f Makefile.win all WIN=$(WIN)
+	@$(MK) -C ../library -f Makefile.win all WIN=$(WIN) EXT_LIBS="$(EXT_LIBS)"
 	@$(MK) -C ../library -f Makefile.win docs
 
 
-## must come after bitmapdll
 cairodevices:
 ifneq "$(CAIRO_HOME)" ""
-	@$(MK) -C ../library/grDevices/src/cairo -f Makefile.win all WIN=$(WIN) CAIRO_HOME=$(CAIRO_HOME) CAIRO_TYPE=$(CAIRO_TYPE)
+	@$(MK) -C ../library/grDevices/src/cairo -f Makefile.win all \
+	  WIN=$(WIN) CAIRO_HOME=$(CAIRO_HOME)
 endif
 
 ifeq ($(wildcard MkRules?local),MkRules.local)
 MkRules: MkRules.local MkRules.rules
-	cat MkRules.local MkRules.rules > MkRules
+	@cat MkRules.local MkRules.rules > MkRules
 else
-MkRules: MkRules.dist MkRules.rules
-	cat MkRules.dist MkRules.rules > MkRules
+MkRules: MkRules.rules
+	@cat MkRules.rules > MkRules
 endif
 
-CFLAGS=-O3 -Wall -pedantic $(EOPTS)
-FFLAGS=-O3 $(EOPTS)
+CFLAGS = -O3 -Wall -pedantic $(EOPTS)
+FFLAGS = -O3 $(EOPTS)
 ifdef DEBUG
- CFLAGS+=$(G_FLAG)
- FFLAGS+=$(G_FLAG)
- DLLFLAGS=
+ CFLAGS += $(G_FLAG)
+ FFLAGS += $(G_FLAG)
+ DLLFLAGS =
 else
- DLLFLAGS=-s
+ DLLFLAGS = -s
 endif
 
 
-R-DLLFLAGS=-mwindows
+R-DLLFLAGS = -mwindows
+LIBEXTRAS = -L"$(EXT_LIBS)"/lib$(R_ARCH) -lpcre -lz -lbz2 -llzma
 ifdef USE_ICU
-LIBEXTRAS+= -licuin38 -licuuc38
+LIBEXTRAS += -L"$(ICU_PATH)"/lib$(R_ARCH) $(ICU_LIBS)
 endif
 
-R-DLLLIBS =$(OPENMP) -L. $(FLIBS) -lRblas -L../../$(IMPDIR) -lRzlib -lRgraphapp -lRiconv -lcomctl32 -lversion $(LIBEXTRAS)
-dllversion-RESFLAGS =-I../include
+dllversion-RESFLAGS = -I../include
 CSOURCES = \
-  console.c dynload.c editor.c embeddedR.c extra.c \
+  console.c dynload.c editor.c embeddedR.c extra.c malloc.c \
   opt.c pager.c preferences.c psignal.c rhome.c rt_complete.c \
   rui.c run.c shext.c sys-win32.c system.c dos_wglob.c
-OBJS = $(CSOURCES:.c=.o)
+OBJS = $(CSOURCES:.c=.o) dllversion.o
 ifeq "$(WIN)" "32"
  OBJS += e_pow.o
 endif
 MAINLIBS = ../main/libmain.a ../appl/libappl.a ../nmath/libnmath.a
 EXTRALIBS = getline/gl.a ../extra/xdr/libxdr.a \
-   ../extra/pcre/libpcre.a ../extra/bzip2/libbz2.a \
    ../extra/intl/libintl.a ../extra/trio/libtrio.a ../extra/tzone/libtz.a \
-   ../extra/tre/libtre.a ../extra/xz/liblzma.a
+   ../extra/tre/libtre.a
 
-# flags to ensure that Doug Lea's malloc is used:
-ifdef LEA_MALLOC
-extra-CFLAGS+=-DLEA_MALLOC
-OBJS-EXTRA=malloc.o
-malloc-DEFS=-DLEA_MALLOC
-endif
+R-DLLLIBS = $(OPENMP) -L. $(FLIBS) -lRblas -L../../$(IMPDIR) -lRgraphapp \
+  -lRiconv -lcomctl32 -lversion $(LIBEXTRAS)
+
 
 .PHONY:  clean veryclean rlibs fixfiles front-ends rmodules
 
 
 CPPFLAGS = -I../include -I. -I../extra -DHAVE_CONFIG_H -DR_DLL_BUILD
 extra-CPPFLAGS = -I../library/grDevices/src
+
+Rpwd.exe: front-ends/Rpwd.exe
+	$(CP) $< $@
+
+front-ends/Rpwd.exe:
+	$(MK) -C front-ends Rpwd
 
 ## watch out: R.dll and Rblas.dll depend on each other.
 rbuild:
@@ -122,7 +125,7 @@ rlibs:
 	$(MK) -C ../nmath CFLAGS='$(CFLAGS)' FFLAGS='${FFLAGS}' -f Makefile.win
 	$(MK) -C ../main CFLAGS='$(CFLAGS)' FFLAGS='$(FFLAGS)' malloc-DEFS='$(malloc-DEFS)' -f Makefile.win
 	$(MK) -C ./getline CFLAGS='$(CFLAGS)'
-	@for ex in graphapp pcre bzip2 zlib xdr tre trio tzone win_iconv xz; do \
+	@for ex in graphapp xdr tre trio tzone win_iconv ; do \
 	  $(MK) -C ../extra/$${ex} CFLAGS='$(CFLAGS)' -f Makefile.win || exit 1; \
 	done
 
@@ -135,9 +138,14 @@ COPYRIGHTS: ../../doc/COPYRIGHTS COPYRIGHTS.win
 	cat $^ > $@
 
 
-fixfiles: 
+fixfiles: Rpwd.exe
 	@$(MKDIR) -p ../../$(BINDIR)
 	@$(MK) -C ./fixed
+ifdef USE_LIBCURL
+	@if test -f "$(CURL_PATH)/etc/curl-ca-bundle.crt"; then \
+	  $(CP) -p "$(CURL_PATH)/etc/curl-ca-bundle.crt" ../../etc; \
+	fi
+endif
 
 fixed/fixdesc:
 	@sh fixed/GETDESC $(R_PKGS_BASE) translations
@@ -146,28 +154,30 @@ dllversion.o: ../include/Rversion.h
 
 ## Rdll.hide has decoration which 64-bit builds lack
 ifeq "$(WIN)" "64"
-R.dll: $(OBJS) $(OBJS-EXTRA) $(MAINLIBS) $(EXTRALIBS) dllversion.o
+R.dll: $(OBJS) $(MAINLIBS) $(EXTRALIBS)
 	@$(ECHO) EXPORTS > R.def
-	@$(NM) $^ | $(SED) -n  $(SYMPAT) | LC_COLLATE=C $(SORT) | uniq > R0.def
+	@$(NM) $^ | $(SED) -n  $(SYMPAT) | LC_COLLATE=C $(SORT) | \
+	  uniq $(NM_FILTER) > R0.def
 	@$(SED) -e's/@.*//' Rdll.hide | LC_COLLATE=C $(SORT) > R1.def
-	@comm -23 R0.def R1.def >> R.def
+	@LC_COLLATE=C comm -23 R0.def R1.def >> R.def
 	$(DLL) -shared $(DLLFLAGS) $($*-DLLFLAGS) -o $@ R.def $^ $($*-DLLLIBS) $(DLLLIBS)
 	@$(RM) R.def R0.def R1.def
 else
-R.dll: $(OBJS) $(OBJS-EXTRA) $(MAINLIBS) $(EXTRALIBS) dllversion.o
+R.dll: $(OBJS) $(MAINLIBS) $(EXTRALIBS)
 	@$(ECHO) EXPORTS > R.def
 	@$(NM) $^ | $(SED) -n  $(SYMPAT) | LC_COLLATE=C $(SORT) | uniq > R0.def
 	@LC_COLLATE=C $(SORT) Rdll.hide > R1.def
-	@comm -23 R0.def R1.def >> R.def
+	@LC_COLLATE=C comm -23 R0.def R1.def >> R.def
 	$(DLL) -shared $(DLLFLAGS) $($*-DLLFLAGS) -o $@ R.def $^ $($*-DLLLIBS) $(DLLLIBS)
 	@$(RM) R.def R0.def R1.def
 endif
 
-R.exp: $(OBJS) $(OBJS-EXTRA) $(MAINLIBS) $(EXTRALIBS) dllversion.o
+R.exp: $(OBJS) $(MAINLIBS) $(EXTRALIBS)
 	@$(ECHO) LIBRARY R.dll > R.exp
 	@$(ECHO) EXPORTS >> R.exp
-	@$(NM) $^ | $(SED) -n $(SYMPAT) | LC_COLLATE=C $(SORT) | uniq > R0.def
-	@comm -23 R0.def Rdll.hide >> R.exp
+	@$(NM) $^ | $(SED) -n $(SYMPAT) | LC_COLLATE=C $(SORT) | \
+	  uniq $(NM_FILTER) > R0.def
+	@LC_COLLATE=C comm -23 R0.def Rdll.hide >> R.exp
 	@$(RM) R0.def
 
 
@@ -200,23 +210,11 @@ libRiconv.dll.a: unicode/iconv.def
 front-ends:
 	$(MK) -C front-ends
 
-../extra/zlib/libz.a:
-	$(MK) -C ../extra/zlib -f Makefile.win
-
-../extra/pcre/libpcre.a:
-	$(MK) -C ../extra/pcre -f Makefile.win
-
 ../extra/tre/libtre.a:
 	$(MK) -C ../extra/tre -f Makefile.win
 
-../extra/bzip2/libbz2.a:
-	$(MK) -C ../extra/bzip2  -f Makefile.win libbz2.a
-
 ../extra/trio/libtrio.a:
 	$(MK) -C ../extra/trio -f Makefile.win
-
-../extra/xz/liblzma.a:
-	$(MK) -C ../extra/xz -f Makefile.win
 
 NEWSdocs:
 	@$(MK) -C ../../doc -f Makefile.win
@@ -243,11 +241,11 @@ libRblas.dll.a:  ../extra/blas/Rblas.def
 #                          ===== cleaning ======
 
 ## used in installer/Makefile
-PKGDIR=../library
+PKGDIR = ../library
 pkgclean-%:
 	@(cd $(PKGDIR)/$*/src; rm -f *.d *.o *.dll *_res.rc Makedeps)
 
-EXTRA_DIRS = blas bzip2 graphapp intl pcre tre trio tzone xdr xz win_iconv zlib
+EXTRA_DIRS = blas graphapp intl tre trio tzone xdr win_iconv
 
 clean: cleanwin
 	@$(MAKE) -C ../library -f Makefile.win clean
@@ -270,7 +268,7 @@ distclean: clean
 	$(RM) -R ../../bin ../../include ../../lib ../../library ../../modules
 	$(RM) ../include/config.h ../include/iconv.h ../include/psignal.h \
 	../include/Rconfig.h ../include/Rversion.h ../include/Rmath.h \
-	../include/libintl.h
+	../include/libintl.h ../include/trioremap.h
 	$(RM) ../library/*/src/*.o ../library/*/src/*.a
 	$(RM) ../library/*/src/*.d ../library/*/src/Makedeps
 	$(RM) ../library/*/src/*.dll
@@ -285,7 +283,7 @@ distclean: clean
 	$(RM) ../../doc/html/index.html \
 	../../doc/html/packages.html ../../doc/html/rwin.html \
 	../../doc/html/rw-FAQ.html ../../doc/html/NEWS.html \
-	../../doc/NEWS.rds ../../NEWS ../../NEWS.pdf \
+	../../doc/NEWS.rds ../../doc/NEWS ../../doc/NEWS.pdf \
 	../../doc/CHANGES.rds ../../doc/html/CHANGES.html
 	$(RM) ../../etc/Makeconf ../../etc/Rconsole ../../etc/Rdevga \
 	../../etc/Rprofile.site ../../etc/rgb.txt ../../etc/Rcmd_environ \
@@ -298,7 +296,7 @@ distclean: clean
 	@for pkg in $(R_PKGS_BASE) translations; do \
 	  $(RM) ../library/$${pkg}/DESCRIPTION; \
 	done
-	$(RM) ../../SVN-REVISION.bak
+	$(RM) ../../GIT-REVISION.bak
 	$(RM) ../../doc/manual/rw-FAQ
 	$(MAKE) -C cran clean
 	$(RM) -R ../library/.vignettes # it gets left behind if there is an error
@@ -308,7 +306,7 @@ distclean: clean
 veryclean: distclean
 	$(RM) ../../doc/FAQ ../../doc/RESOURCES ../../doc/NEWS.rds \
 	  ../../doc/html/resources.html ../../doc/html/NEWS.html \
-	  ../../SVN-REVISION # not in SVN sources
+	  ../../GIT-REVISION # not in GIT sources
 
 cleanwin: MkRules fixfiles
 	$(RM) *.o *.dll *.a *~ \#*\# .RData .Rhistory Makedeps *.d
@@ -316,7 +314,6 @@ cleanwin: MkRules fixfiles
 	$(MAKE) -C fixed clean
 	$(MAKE) -C getline clean
 	$(MAKE) -C front-ends clean
-	$(MAKE) -C bitmap clean
 	$(MAKE) -C ../library/grDevices/src/cairo -f Makefile.win clean WIN=$(WIN)
 	-$(MAKE) -C installer clean
 
@@ -352,7 +349,7 @@ rsync-recommended:
 	  rsync --timeout=60 -rcvpC --delete \
 	    --exclude=Makefile.in --exclude=Makefile.win --exclude=.cvsignore \
 	    --include=*.tar.gz --exclude=*.tgz --exclude=*.ts \
-	    --exclude=".svn" $(CRANREC) . )
+	    --exclude=".git" $(CRANREC) . )
 	@$(RM) ../library/Recommended/*.tgz
 	@(cd ../library/Recommended; for i in ${R_PKGS_RECOMMENDED}; do cp -p $${i}*.tar.gz $${i}.tgz ; done)
 
@@ -371,11 +368,18 @@ bytecode-recommended:
 	@R_COMPILE_PKGS=1 R_COMPILER_SUPPRESS_ALL=1 \
 	  $(MK) -C ../library/Recommended -f Makefile.win
 
+RVER-MAJOR-MINOR = $(shell echo `cut -d'.' -f1,2 ../../VERSION`)
+CRANEXT = cran.r-project.org::CRAN/bin/windows/extsoft/$(RVER-MAJOR-MINOR)/
+
+rsync-extsoft:
+	($(MKDIR) -p ../../extsoft; \
+	cd ../../extsoft; \
+	rsync --timeout=60 -rcvp --delete $(CRANEXT) . ) 
+
+
 docfiles:
 	@$(MK) -C ../../doc/manual -f Makefile.win FAQ
 
-bitmapdll:
-	@$(MAKE) -C bitmap
 
 EXTRA_PKGS=
 rinstaller:
@@ -389,19 +393,17 @@ endif
 
 distribution:
 	@$(MK) all
-	@$(MK) bitmapdll
 	@$(MK) cairodevices
 	@$(MK) recommended
 	@$(MK) vignettes
 	@$(MK) manuals
 	@$(MK) rinstaller
 	@$(MK) crandir
-	@$(RM) -f ../../SVN-REVISION.bak
+	@$(RM) -f ../../GIT-REVISION.bak
 
 ## Builds what is needed in a 32-bit build to copy to 64/32-bit installer
 32-bit:
 	@$(MK) all
-	@$(MK) bitmapdll
 	@$(MK) cairodevices
 	@$(MK) recommended
 
@@ -409,7 +411,7 @@ distribution:
 ## ============= End of maintainer targets ========================
 
 # Dependencies: malloc.c doesn't have any
-DEPS=$(CSOURCES:.c=.d)
+DEPS = $(CSOURCES:.c=.d)
 
 makeMakedeps: $(DEPS)
 	@$(RM) Makedeps

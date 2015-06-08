@@ -1,13 +1,11 @@
 % File src/library/stats/man/lm.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{lm}
 \alias{lm}
-\alias{print.lm}
+%\alias{print.lm}
 \concept{regression}
 \title{Fitting Linear Models}
 \description{

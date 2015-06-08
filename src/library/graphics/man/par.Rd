@@ -1,9 +1,7 @@
 % File src/library/graphics/man/par.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{par}
 \alias{par}
@@ -99,7 +97,7 @@
 \usage{
 par(\dots, no.readonly = FALSE)
 
-\special{<highlevel plot> (\dots, <tag> = <value>)}
+\special{<highlevel plot> (..., <tag> = <value>)}
 }
 
 \arguments{
@@ -169,7 +167,7 @@ par(\dots, no.readonly = FALSE)
 
   Note that graphical parameters are suggestions: plotting functions and
   devices need not make use of them (and this is particularly true of
-  non-default methods for e.g. \code{plot}).
+  non-default methods for e.g.\sspace{}\code{plot}).
 }
 
 \value{
@@ -235,7 +233,7 @@ par(\dots, no.readonly = FALSE)
     \item{\code{cex}}{A numerical value giving the amount by which
       plotting text and symbols should be magnified relative to the
       default.  This starts as \code{1} when a device is opened, and is
-      reset when the layout is changed, e.g. by setting \code{mfrow}.
+      reset when the layout is changed, e.g.\sspace{}by setting \code{mfrow}.
 
       Note that some graphics functions such as
       \code{\link{plot.default}} have an \emph{argument} of this name
@@ -404,7 +402,7 @@ par(\dots, no.readonly = FALSE)
     \item{\code{mai}}{A numerical vector of the form \code{c(bottom,
         left, top, right)} which gives the margin size specified in
       inches.\cr
-      \if{html}{\figure{mai.png}{options: width=35\% alt="Figure: mai.png"}}
+      \if{html}{\figure{mai.png}{options: width="35\%" alt="Figure: mai.png"}}
       \if{latex}{\figure{mai.pdf}{options: width=7cm}}
     }
     \item{\code{mar}}{A numerical vector of the form \code{c(bottom,
@@ -464,7 +462,7 @@ par(\dots, no.readonly = FALSE)
       on a device that does not currently contain a high-level plot.}
     \item{\code{oma}}{A vector of the form \code{c(bottom, left, top,
         right)} giving the size of the outer margins in lines of text.\cr
-      \if{html}{\figure{oma.png}{options: width=25\% alt="Figure: oma.png"}}
+      \if{html}{\figure{oma.png}{options: width="25\%" alt="Figure: oma.png"}}
       \if{latex}{\figure{oma.pdf}{options: width=6cm}}
     }
     \item{\code{omd}}{A vector of the form \code{c(x1, x2, y1, y2)}

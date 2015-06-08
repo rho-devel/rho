@@ -1,7 +1,7 @@
 #  File src/library/base/R/all.equal.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2013 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -23,8 +23,10 @@ all.equal.default <-
 {
     ## Really a dispatcher given mode() of args :
     ## use data.class as unlike class it does not give "integer"
-    if(is.language(target) || is.function(target) || is.environment(target))
+    if(is.language(target) || is.function(target))
 	return(all.equal.language(target, current, ...))
+    if(is.environment(target) || is.environment(current))# both: unclass() fails on env.
+	return(all.equal.environment(target, current, ...))
     if(is.recursive(target))
 	return(all.equal.list(target, current, ...))
     msg <- switch (mode(target),
@@ -45,10 +47,17 @@ all.equal.default <-
 
 all.equal.numeric <-
     function(target, current, tolerance = .Machine$double.eps ^ .5,
-             scale = NULL, check.attributes = TRUE, ...)
+             scale = NULL, ..., check.attributes = TRUE)
 {
+    if (!is.numeric(tolerance))
+        stop("'tolerance' should be numeric")
+    if (!is.numeric(scale) && !is.null(scale))
+        stop("'scale' should be numeric or NULL")
+    if (!is.logical(check.attributes))
+        stop(gettextf("'%s' must be logical", "check.attributes"), domain = NA)
     msg <- if(check.attributes)
-	attr.all.equal(target, current, tolerance=tolerance, scale=scale, ...)
+	attr.all.equal(target, current, tolerance = tolerance, scale = scale,
+                       ...)
     if(data.class(target) != data.class(current)) {
 	msg <- c(msg, paste0("target is ", data.class(target), ", current is ",
                              data.class(current)))
@@ -91,7 +100,7 @@ all.equal.numeric <-
 	    } else "absolute"
 	} else {
 	    xy <- xy/scale
-	    "scaled"
+	    if(scale == 1) "absolute" else "scaled"
 	}
 
     if (cplx) what <- paste(what, "Mod") # PR#10575
@@ -102,8 +111,10 @@ all.equal.numeric <-
 }
 
 all.equal.character <-
-    function(target, current, check.attributes = TRUE, ...)
+    function(target, current, ..., check.attributes = TRUE)
 {
+    if (!is.logical(check.attributes))
+        stop(gettextf("'%s' must be logical", "check.attributes"), domain = NA)
     msg <-  if(check.attributes) attr.all.equal(target, current, ...)
     if(data.class(target) != data.class(current)) {
 	msg <- c(msg, paste0("target is ", data.class(target), ", current is ",
@@ -135,8 +146,81 @@ all.equal.character <-
     else msg
 }
 
-## visible, so need to test both args
-all.equal.factor <- function(target, current, check.attributes = TRUE, ...)
+## In 'base' these are all visible, so need to test both args:
+
+all.equal.envRefClass <- function (target, current, ...) {
+    if(!is (target, "envRefClass")) return("'target' is not an envRefClass")
+    if(!is(current, "envRefClass")) return("'current' is not an envRefClass")
+    if(!isTRUE(ae <- all.equal(class(target), class(current), ...)))
+	return(sprintf("Classes differ: %s", paste(ae, collapse=" ")))
+    getCl <- function(x) { cl <- tryCatch(x$getClass(), error=function(e) NULL)
+			   if(is.null(cl)) class(x) else cl }
+    if(!identical(cld <- getCl(target), c2 <- getCl(current))) {
+	hasCA <- any("check.attributes" == names(list(...)))
+	ae <-
+	    if(hasCA) all.equal(cld, c2, ...)
+	    else all.equal(cld, c2, check.attributes=FALSE, ...)
+        if(isTRUE(ae) && !hasCA) ae <- all.equal(cld, c2, ...)
+	return(sprintf("Class definitions are not identical%s",
+		       if(isTRUE(ae)) "" else paste(":", ae, collapse=" ")))
+    }
+    if(!isS4(cld)) ## prototype / incomplete
+	return(if(identical(target, current)) TRUE
+	       else "different prototypical 'envRefClass' objects")
+    flds <- names(cld@fieldClasses) ## else NULL
+    asL <- function(O) sapply(flds, function(ch) O[[ch]], simplify = FALSE)
+    ## ## ?setRefClass explicitly says users should not use ".<foo>" fields:
+    ## if(is.na(all.names)) all.names <- FALSE
+    ## ## try preventing infinite recursion by not looking at  .self :
+    ## T <- function(ls) ls[is.na(match(names(ls), c(".self", methods:::envRefMethodNames)))]
+    ## asL <- function(E) T(as.list(as.environment(E), all.names=all.names, sorted=TRUE))
+    n <- all.equal.list(asL(target), asL(current), ...)
+    ## Can have slots (apart from '.xData'), though not recommended; check these:
+    sns <- names(cld@slots); sns <- sns[sns != ".xData"]
+    msg <- if(length(sns)) {
+	L <- lapply(sns, function(sn)
+	    all.equal(slot(target, sn), slot(current, sn), ...))
+	unlist(L[vapply(L, is.character, NA)])
+    }
+    if(is.character(n)) msg <- c(msg, n)
+    if(is.null(msg)) TRUE else msg
+}
+
+all.equal.environment <- function (target, current, all.names=TRUE, ...) {
+    if(!is.environment (target)) return( "'target' is not an environment")
+    if(!is.environment(current)) return("'current' is not an environment")
+    ae.run <- dynGet("__all.eq.E__", NULL)
+    if(is.null(ae.run))
+	"__all.eq.E__" <- environment() # -> 5 visible + 6 ".<..>" objects
+    else { ## ae.run contains previous target, current, ..
+
+	## If we exactly match one of these, we return TRUE here,
+	## otherwise, divert to all.equal(as.list(.), ...) below
+
+	## needs recursive function -- a loop with  em <- em$mm	 destroys the env!
+	do1 <- function(em) {
+	    if(identical(target, em$target) && identical(current, em$current))
+		TRUE
+	    else if(!is.null(em$ mm)) ## recurse
+		do1(em$ mm)
+	    else {
+		## add the new (target, current) pair, and return FALSE
+		e <- new.env(parent = emptyenv())
+		e$target  <- target
+		e$current <- current
+		em$ mm <- e
+		FALSE
+	    }
+	}
+
+	if(do1(ae.run)) return(TRUE)
+	## else, continue:
+    }
+    all.equal.list(as.list.environment(target , all.names=all.names, sorted=TRUE),
+		   as.list.environment(current, all.names=all.names, sorted=TRUE), ...)
+}
+
+all.equal.factor <- function(target, current, ..., check.attributes = TRUE)
 {
     if(!inherits(target, "factor"))
 	return("'target' is not a factor")
@@ -188,34 +272,51 @@ all.equal.language <- function(target, current, ...)
     if(is.null(msg)) TRUE else msg
 }
 
-all.equal.list <- function(target, current, check.attributes = TRUE, ...)
+## use.names is new in 3.1.0: avoid partial/positional matching
+all.equal.list <- function(target, current, ...,
+                           check.attributes = TRUE, use.names = TRUE)
 {
+    if (!is.logical(check.attributes))
+        stop(gettextf("'%s' must be logical", "check.attributes"),
+             domain = NA)
+    if (!is.logical(use.names))
+        stop(gettextf("'%s' must be logical", "use.names"), domain = NA)
     msg <- if(check.attributes) attr.all.equal(target, current, ...)
     ## Unclass to ensure we get the low-level components
-    target <- unclass(target)
-    current <- unclass(current)
-    iseq <-
-	if(length(target) == length(current)) {
-	    seq_along(target)
-	} else {
-            if(!is.null(msg)) msg <- msg[- grep("\\bLengths\\b", msg)]
-	    nc <- min(length(target), length(current))
-	    msg <- c(msg, paste("Length mismatch: comparison on first",
-				nc, "components"))
-	    seq_len(nc)
-	}
+    target <- unclass(target) # "list"
+    current <- unclass(current)# ??
+    ## Comparing the data.class() is not ok, as a list matrix is 'matrix' not 'list'
+    if(!is.list(target) && !is.vector(target))
+	return(c(msg, "target is not list-like"))
+    if(!is.list(current) && !is.vector(current))
+	return(c(msg, "current is not list-like"))
+    if((n <- length(target)) != length(current)) {
+	if(!is.null(msg)) msg <- msg[- grep("\\bLengths\\b", msg)]
+	n <- min(n, length(current))
+	msg <- c(msg, paste("Length mismatch: comparison on first",
+			    n, "components"))
+    }
+    iseq <- seq_len(n)
+    if(use.names)
+	use.names <- (length(nt <- names(target )[iseq]) == n &&
+		      length(nc <- names(current)[iseq]) == n)
     for(i in iseq) {
-	mi <- all.equal(target[[i]], current[[i]], check.attributes = check.attributes, ...)
+	mi <- all.equal(target[[i]], current[[i]],
+			check.attributes=check.attributes, use.names=use.names, ...)
 	if(is.character(mi))
-	    msg <- c(msg, paste0("Component ", i, ": ", mi))
+	    msg <- c(msg, paste0("Component ",
+				 if(use.names && nt[i] == nc[i]) dQuote(nt[i]) else i,
+				 ": ", mi))
     }
     if(is.null(msg)) TRUE else msg
 }
 
 ## also used for logical
 all.equal.raw <-
-    function(target, current, check.attributes = TRUE, ...)
+    function(target, current, ..., check.attributes = TRUE)
 {
+    if (!is.logical(check.attributes))
+        stop(gettextf("'%s' must be logical", "check.attributes"), domain = NA)
     msg <-  if(check.attributes) attr.all.equal(target, current, ...)
     if(data.class(target) != data.class(current)) {
 	msg <- c(msg, paste0("target is ", data.class(target), ", current is ",
@@ -249,11 +350,15 @@ all.equal.raw <-
 
 
 ## attributes are a pairlist, so never 'long'
-attr.all.equal <- function(target, current,
-                           check.attributes = TRUE, check.names = TRUE, ...)
+attr.all.equal <- function(target, current, ...,
+                           check.attributes = TRUE, check.names = TRUE)
 {
     ##--- "all.equal(.)" for attributes ---
     ##---  Auxiliary in all.equal(.) methods --- return NULL or character()
+    if (!is.logical(check.attributes))
+        stop(gettextf("'%s' must be logical", "check.attributes"), domain = NA)
+    if (!is.logical(check.names))
+        stop(gettextf("'%s' must be logical", "check.names"), domain = NA)
     msg <- NULL
     if(mode(target) != mode(current))
 	msg <- paste0("Modes: ", mode(target), ", ", mode(current))
@@ -279,15 +384,25 @@ attr.all.equal <- function(target, current,
 	ax[["names"]] <- NULL
 	ay[["names"]] <- NULL
     }
-	
+
     if(check.attributes && (length(ax) || length(ay))) {# some (more) attributes
 	## order by names before comparison:
 	nx <- names(ax)
 	ny <- names(ay)
 	if(length(nx)) ax <- ax[order(nx)]
 	if(length(ny)) ay <- ay[order(ny)]
-	tt <- all.equal(ax, ay, check.attributes = check.attributes, ...)
+	tt <- all.equal(ax, ay, ..., check.attributes = check.attributes)
 	if(is.character(tt)) msg <- c(msg, paste("Attributes: <", tt, ">"))
     }
     msg # NULL or character
+}
+
+## formerly in datetime.R
+## force absolute comparisons
+all.equal.POSIXt <- function(target, current, ..., tolerance = 1e-3, scale)
+{
+    target <- as.POSIXct(target); current <- as.POSIXct(current)
+    check_tzones(target, current)
+    attr(target, "tzone") <- attr(current, "tzone") <- NULL
+    all.equal.numeric(target, current, ..., tolerance = tolerance, scale = 1)
 }

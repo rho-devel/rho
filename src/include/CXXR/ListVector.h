@@ -69,6 +69,8 @@ extern "C" {
  */
 SEXP SET_VECTOR_ELT(SEXP x, R_xlen_t i, SEXP v);
 
+extern SEXP XVECTOR_ELT(SEXP x, R_xlen_t i);
+
 /** @brief Examine element of CXXR::ListVector.
  *
  * @param x Non-null pointer to a CXXR::ListVector .
@@ -83,8 +85,15 @@ SEXP VECTOR_ELT(SEXP x, R_xlen_t i);
 inline SEXP VECTOR_ELT(SEXP x, R_xlen_t i)
 {
     using namespace CXXR;
-    ListVector* lv = SEXP_downcast<ListVector*>(x, false);
-    return (*lv)[VectorBase::size_type(i)];
+    if (x && x->sexptype() == VECSXP) {
+	ListVector* lv = SEXP_downcast<ListVector*>(x, false);
+	return (*lv)[VectorBase::size_type(i)];
+    } else if (x && x->sexptype() == EXPRSXP) {
+      return XVECTOR_ELT(x, i);
+    }  else {
+	Rf_error("%s() can only be applied to a '%s', not a '%s'",
+		 "VECTOR_ELT", "list", Rf_type2char(TYPEOF(x)));
+    }
 }
 #endif
 

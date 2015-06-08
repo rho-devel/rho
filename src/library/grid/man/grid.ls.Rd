@@ -1,6 +1,6 @@
 % File src/library/grid/man/grid.ls.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{grid.ls}
@@ -10,7 +10,7 @@
 \alias{grobPathListing}
 \title{ List the names of grobs or viewports }
 \description{
-  Returns a listing of the names of grobs or viewports.
+  Return a listing of the names of grobs or viewports.
 
   This is a generic function with methods for grobs (including
   gTrees) and viewports (including vpTrees).

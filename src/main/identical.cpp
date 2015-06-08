@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-2012  The R Core Team
+ *  Copyright (C) 2001-2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -49,7 +49,7 @@ static Rboolean neWithNaN(double x, double y, ne_strictness_type str);
 /* .Internal(identical(..)) */
 SEXP attribute_hidden do_identical(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    int num_eq = 1, single_NA = 1, attr_as_set = 1, ignore_bytecode = 1, 
+    int num_eq = 1, single_NA = 1, attr_as_set = 1, ignore_bytecode = 1,
 	ignore_env = 0, nargs = num_args, flags;
     /* avoid problems with earlier (and future) versions captured in S4
        methods: but this should be fixed where it is caused, in
@@ -65,9 +65,9 @@ SEXP attribute_hidden do_identical(/*const*/ CXXR::Expression* call, const CXXR:
     num_eq = asLogical(args[0]); args = (args + 1);
     single_NA = asLogical(args[0]); args = (args + 1);
     attr_as_set = asLogical(args[0]); args = (args + 1);
-    if (nargs >= 6) 
+    if (nargs >= 6)
 	ignore_bytecode = asLogical(args[0]);
-    if (nargs >= 7) 
+    if (nargs >= 7)
 	ignore_env = asLogical(args[1]);
 
     if(num_eq == NA_LOGICAL) error(_("invalid '%s' value"), "num.eq");
@@ -75,8 +75,8 @@ SEXP attribute_hidden do_identical(/*const*/ CXXR::Expression* call, const CXXR:
     if(attr_as_set == NA_LOGICAL) error(_("invalid '%s' value"), "attrib.as.set");
     if(ignore_bytecode == NA_LOGICAL) error(_("invalid '%s' value"), "ignore.bytecode");
     if(ignore_env == NA_LOGICAL) error(_("invalid '%s' value"), "ignore.environment");
-    
-    flags = (num_eq ? 0 : 1) + (single_NA ? 0 : 2) + (attr_as_set ? 0 : 4) + 
+
+    flags = (num_eq ? 0 : 1) + (single_NA ? 0 : 2) + (attr_as_set ? 0 : 4) +
 	(ignore_bytecode ? 0 : 8) + (ignore_env ? 0 : 16);
     return ScalarLogical(R_compute_identical(x, y, flags));
 }
@@ -95,9 +95,9 @@ R_compute_identical(SEXP x, SEXP y, int flags)
     SEXP ax, ay, atrx, atry;
     if(x == y) /* same pointer */
 	return TRUE;
-    if(TYPEOF(x) != TYPEOF(y))
-	return FALSE;
-    if(OBJECT(x) != OBJECT(y))
+    if(TYPEOF(x) != TYPEOF(y) ||
+       OBJECT(x) != OBJECT(y) ||
+       IS_S4_OBJECT(x) != IS_S4_OBJECT(y))
 	return FALSE;
 
     /* Skip attribute checks for CHARSXP

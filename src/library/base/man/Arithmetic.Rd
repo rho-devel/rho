@@ -1,6 +1,6 @@
 % File src/library/base/man/Arithmetic.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Arithmetic}
@@ -39,14 +39,14 @@ x \%/\% y
     coerced to such, or other objects for which methods have been written.}
 }
 \value{
-  Unary \code{+} returns \code{x} unchanged (without coercing logical
-  vectors).
+  Unary \code{+} and unary \code{-} return a numeric or complex vector.
+  All attributes (including class) are preserved if there is no
+  coercion: logical \code{x} is coerced to integer and names, dims and
+  dimnames are preserved.
 
-  Unary \code{-} returns a numeric or complex vector with the same
-  attributes as \code{x}: logical \code{x} are coerced to integer.
-  
   The binary operators return vectors containing the result of the element
-  by element operations.  The elements of shorter vectors are recycled
+  by element operations.  If involving a zero-length vector the result
+  has length zero.  Otherwise, the elements of shorter vectors are recycled
   as necessary (with a \code{\link{warning}} when they are recycled only
   \emph{fractionally}).  The operators are \code{+} for addition,
   \code{-} for subtraction, \code{*} for multiplication, \code{/} for
@@ -79,7 +79,7 @@ x \%/\% y
   if both are) are used.  For arrays (and an array result) the
   dimensions and dimnames are taken from first argument if it is an
   array, otherwise the second.
-  
+
 }
 \details{
   The unary and binary arithmetic operators are generic functions:
@@ -105,7 +105,7 @@ x \%/\% y
   given if this is detected.
 
   \code{\%\%} and \code{x \%/\% y} can be used for non-integer \code{y},
-  e.g. \code{1 \%/\% 0.2}, but the results are subject to representation
+  e.g.\sspace{}\code{1 \%/\% 0.2}, but the results are subject to representation
   error and so may be platform-dependent.  Because the IEC 60059
   representation of \code{0.2} is a binary fraction slightly larger than
   \code{0.2}, the answer to \code{1 \%/\% 0.2} should be \code{4} but
@@ -148,6 +148,13 @@ x \%/\% y
   zero \code{x}.
 }
 \note{
+  All logical operations involving a zero-length vector have a
+  zero-length result.
+
+  The binary operators are sometimes called as functions as e.g.
+  \code{`&`(x, y)}: see the description of how argument-matching is done
+  in \code{\link[base]{Ops}}.
+
   \code{**} is translated in the parser to \code{^}, but this was
   undocumented for many years.  It appears as an index entry in Becker
   \emph{et al} (1988), pointing to the help for \code{Deprecated} but

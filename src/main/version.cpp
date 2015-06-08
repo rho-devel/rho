@@ -91,9 +91,9 @@ SEXP attribute_hidden do_version(/*const*/ CXXR::Expression* call, const CXXR::B
     SET_VECTOR_ELT(value, 8, mkString(R_MONTH));
     SET_STRING_ELT(names, 9, mkChar("day"));
     SET_VECTOR_ELT(value, 9, mkString(R_DAY));
-    SET_STRING_ELT(names, 10, mkChar("svn rev"));
+    SET_STRING_ELT(names, 10, mkChar("git rev"));
 
-    snprintf(buf, 128, "%d", R_SVN_REVISION);
+    snprintf(buf, 128, "%s", R_GIT_REVISION);
     SET_VECTOR_ELT(value, 10, mkString(buf));
     SET_STRING_ELT(names, 11, mkChar("language"));
     SET_VECTOR_ELT(value, 11, mkString("R"));
@@ -123,19 +123,19 @@ void attribute_hidden PrintVersion(char *s, size_t len)
 
 void attribute_hidden PrintVersionString(char *s, size_t len)
 {
-    if(R_SVN_REVISION <= 0) {// 'svn info' failed in ../../Makefile.in
+    if(R_GIT_REVISION <= 0) {// 'git log' failed in ../../Makefile.in
 	snprintf(s, len, "R version %s.%s %s (%s-%s-%s)",
 		R_MAJOR, R_MINOR, R_STATUS, R_YEAR, R_MONTH, R_DAY);
     } else if(strlen(R_STATUS) == 0) {
 	snprintf(s, len, "R version %s.%s (%s-%s-%s)",
 		R_MAJOR, R_MINOR, R_YEAR, R_MONTH, R_DAY);
     } else if(strcmp(R_STATUS, "Under development (unstable)") == 0) {
-	snprintf(s, len, "R %s (%s-%s-%s r%d)",
-		R_STATUS, R_YEAR, R_MONTH, R_DAY, R_SVN_REVISION);
+	snprintf(s, len, "R %s (%s-%s-%s r%s)",
+		R_STATUS, R_YEAR, R_MONTH, R_DAY, R_GIT_REVISION);
     } else {
-	snprintf(s, len, "R version %s.%s %s (%s-%s-%s r%d)",
+	snprintf(s, len, "R version %s.%s %s (%s-%s-%s r%s)",
 		R_MAJOR, R_MINOR, R_STATUS, R_YEAR, R_MONTH, R_DAY,
-		R_SVN_REVISION);
+		R_GIT_REVISION);
     }
 }
 

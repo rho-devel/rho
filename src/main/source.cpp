@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 2001-13      The R Core Team
+ *  Copyright (C) 2001-2014   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -35,8 +35,7 @@
 #include <IOStuff.h>
 #include <Parse.h>
 #include <Rconnections.h>
-
-extern IoBuffer R_ConsoleIob;
+#include <IOStuff.h> // for R_ConsoleIob;
 
 SEXP attribute_hidden getParseContext(void)
 {
@@ -98,11 +97,15 @@ static void getParseFilename(char* buffer, size_t buflen)
     	if (isEnvironment(R_ParseErrorFile)) {
 	    SEXP filename;
 	    PROTECT(filename = findVar(install("filename"), R_ParseErrorFile));
-	    if (isString(filename) && length(filename))
+	    if (isString(filename) && length(filename)) {
 		strncpy(buffer, CHAR(STRING_ELT(filename, 0)), buflen - 1);
+                buffer[buflen - 1] = '\0';
+            }
 	    UNPROTECT(1);
-        } else if (isString(R_ParseErrorFile) && length(R_ParseErrorFile)) 
+        } else if (isString(R_ParseErrorFile) && length(R_ParseErrorFile)) {
             strncpy(buffer, CHAR(STRING_ELT(R_ParseErrorFile, 0)), buflen - 1);
+            buffer[buflen - 1] = '\0';
+        }
     }
 }
 
@@ -129,7 +132,7 @@ static SEXP tabExpand(SEXP strings)
     return result;
 }
     	
-void parseError(SEXP call, int linenum)
+void NORET parseError(SEXP call, int linenum)
 {
     SEXP context;
     int len, width;
@@ -198,6 +201,8 @@ SEXP attribute_hidden do_parse(/*const*/ CXXR::Expression* call, const CXXR::Bui
     ParseStatus status;
 
     op->checkNumArgs(num_args, call);
+    if(!inherits(args[0], "connection"))
+	error(_("'file' must be a character string or connection"));
     R_ParseError = 0;
     R_ParseErrorMsg[0] = '\0';
 
@@ -215,7 +220,7 @@ SEXP attribute_hidden do_parse(/*const*/ CXXR::Expression* call, const CXXR::Bui
     args = (args + 1);
     prompt = args[0];					args = (args + 1);
     source = args[0];					args = (args + 1);
-    if(!isString(args[0]) || LENGTH(args[0]) != 1)
+    if(!isString(args[0]) || length(args[0]) != 1)
 	error(_("invalid '%s' value"), "encoding");
     encoding = CHAR(STRING_ELT(args[0], 0)); /* ASCII */
     known_to_be_latin1 = known_to_be_utf8 = FALSE;

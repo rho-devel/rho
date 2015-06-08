@@ -1,6 +1,6 @@
 % File src/library/base/man/tapply.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{tapply}
@@ -42,7 +42,7 @@ tapply(X, INDEX, FUN = NULL, \dots, simplify = TRUE)
   empty cells.  The array has the same number of dimensions as
   \code{INDEX} has components; the number of levels in a dimension is
   the number of levels (\code{nlevels()}) in the corresponding component
-  of \code{INDEX}.  Note that if the return value has a class (e.g. an
+  of \code{INDEX}.  Note that if the return value has a class (e.g., an
   object of class \code{"\link{Date}"}) the class is discarded.
 
   Note that contrary to S, \code{simplify = TRUE} always returns an

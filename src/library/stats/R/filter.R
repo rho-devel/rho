@@ -1,7 +1,7 @@
 #  File src/library/stats/R/filter.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1999-2012 The R Core Team
+#  Copyright (C) 1999-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ filter <- function(x, filter, method = c("convolution", "recursive"),
     filter <- as.double(filter)
     nfilt <- as.integer(length(filter))
     if (is.na(n)) stop("invalid value of length(filter)", domain = NA)
-    if(any(is.na(filter))) stop("missing values in 'filter'")
+    if(anyNA(filter)) stop("missing values in 'filter'")
 
     if(method == "convolution") {
         if(nfilt > n) stop("'filter' is longer than time series")
@@ -52,10 +52,11 @@ filter <- function(x, filter, method = c("convolution", "recursive"),
             if(ni != nfilt)
                 stop("length of 'init' must equal length of 'filter'")
             if(NCOL(init) != 1L && NCOL(init) != nser) {
-                ## Need to do it this way for languages without plurals.
-                if(nser == 1L) stop("'init' must have 1 column")
-                else stop(gettextf("'init' must have 1 or %d columns", nser),
-                          domain = NA)
+                stop(sprintf(ngettext(nser,
+                                      "'init' must have %d column",
+                                      "'init' must have 1 or %d columns",
+                                      domain = "R-stats"),
+                             nser), domain = NA)
             }
             if(!is.matrix(init)) dim(init) <- c(nfilt, nser)
         }

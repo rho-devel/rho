@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2012   The R Core Team
+ *  Copyright (C) 1998-2014   The R Core Team
  *  Copyright (C) 2002-2008   The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
@@ -121,11 +121,21 @@ SEXP attribute_hidden do_matrix(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	if (lendat > INT_MAX) error("data is too long");
 	nr = int( lendat);
     } else if (miss_nr) {
-	if (lendat > double( nc) * INT_MAX) error("data is too long");
-	nr = int( ceil(double( lendat) / double( nc)));
+	if (lendat > (double) nc * INT_MAX) error("data is too long");
+	// avoid division by zero
+	if (nc == 0) {
+	    if (lendat) error(_("nc = 0 for non-null data"));
+	    else nr = 0;
+	} else
+	    nr = (int) ceil((double) lendat / (double) nc);
     } else if (miss_nc) {
-	if (lendat > double( nr) * INT_MAX) error("data is too long");
-	nc = int( ceil(double( lendat) / double( nr)));
+	if (lendat > (double) nr * INT_MAX) error("data is too long");
+	// avoid division by zero
+	if (nr == 0) {
+	    if (lendat) error(_("nr = 0 for non-null data"));
+	    else nc = 0;
+	} else
+	    nc = (int) ceil((double) lendat / (double) nr);
     }
 
     if(lendat > 0) {
@@ -306,7 +316,7 @@ SEXP attribute_hidden do_drop(/*const*/ CXXR::Expression* call, const CXXR::Buil
 	for (i = 0; i < n; i++)
 	    if (INTEGER(xdims)[i] == 1) shorten = 1;
 	if (shorten) {
-	    if (NAMED(x)) x = duplicate(x);
+	    if (MAYBE_REFERENCED(x)) x = duplicate(x);
 	    x = DropDims(x);
 	}
     }
@@ -334,6 +344,7 @@ SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	}
 	return(ans);
     }
+    
 
 #ifdef LONG_VECTOR_SUPPORT
     // or use IS_LONG_VEC
@@ -343,6 +354,68 @@ SEXP attribute_hidden do_length(/*const*/ CXXR::Expression* call, const CXXR::Bu
     return ScalarInteger(length(x));
 }
 
+static R_xlen_t getElementLength(SEXP x, R_xlen_t i, SEXP call, SEXP rho) {
+    static SEXP length_op = NULL;
+    SEXP x_elt = VECTOR_ELT(x, i);
+    if (isObject(x_elt)) {
+        SEXP args, len;
+        PROTECT(args = list1(x_elt));
+        if (length_op == NULL) {
+            length_op = R_Primitive("length");
+        }
+        if (DispatchOrEval(call, length_op, "length", args, rho, &len, 0, 1)) {
+          return (R_xlen_t)
+	      (TYPEOF(len) == REALSXP ? REAL(len)[0] : asInteger(len));
+        }
+        UNPROTECT(1);
+    }
+    return(xlength(x_elt));
+}
+
+static SEXP do_lengths_long(SEXP x, SEXP call, SEXP rho)
+{
+    SEXP ans;
+    R_xlen_t x_len, i;
+    double *ans_elt;
+    
+    x_len = xlength(x);
+    PROTECT(ans = allocVector(REALSXP, x_len));
+    for (i = 0, ans_elt = REAL(ans); i < x_len; i++, ans_elt++) {
+        *ans_elt = getElementLength(x, i, call, rho);
+    }
+    UNPROTECT(1);
+    return ans;
+}
+
+SEXP attribute_hidden do_lengths(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP x = CAR(args), ans;
+    R_xlen_t x_len, i;
+    int *ans_elt;
+
+    if (!isVectorList(x)) {
+        error(_("'x' must be a list"));
+    }
+    
+    x_len = xlength(x);
+    PROTECT(ans = allocVector(INTSXP, x_len));
+    for (i = 0, ans_elt = INTEGER(ans); i < x_len; i++, ans_elt++) {
+        R_xlen_t x_elt_len = getElementLength(x, i, call, rho);
+#ifdef LONG_VECTOR_SUPPORT
+        if (x_elt_len > INT_MAX) {
+            ans = do_lengths_long(x, call, rho);
+            break;
+        }
+#endif
+        *ans_elt = (int)x_elt_len;
+    }
+    UNPROTECT(1);
+
+    SEXP names = getAttrib(x, R_NamesSymbol);
+    if(!isNull(names)) setAttrib(ans, R_NamesSymbol, names);
+    
+    return ans;
+}
 
 SEXP attribute_hidden do_rowscols(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
@@ -577,16 +650,27 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
     ldy = length(ydims);
 
     if (ldx != 2 && ldy != 2) {		/* x and y non-matrices */
-	if (PRIMVAL(op) == 0) {
-	    nrx = 1;
-	    ncx = LENGTH(x);
+	// for crossprod, allow two cases: n x n ==> (1,n) x (n,1);  1 x n = (n, 1) x (1, n)
+	if (PRIMVAL(op) == 1 && LENGTH(x) == 1) {
+	    nrx = ncx = nry = 1;
+	    ncy = LENGTH(y);
 	}
 	else {
-	    nrx = LENGTH(x);
-	    ncx = 1;
+	    nry = LENGTH(y);
+	    ncy = 1;
+	    if (PRIMVAL(op) == 0) {
+		nrx = 1;
+		ncx = LENGTH(x);
+		if(ncx == 1) {	        // y as row vector
+		    ncy = nry;
+		    nry = 1;
+		}
+	    }
+	    else {
+		nrx = LENGTH(x);
+		ncx = 1;
+	    }
 	}
-	nry = LENGTH(y);
-	ncy = 1;
     }
     else if (ldx != 2) {		/* x not a matrix */
 	nry = INTEGER(ydims)[0];
@@ -641,11 +725,20 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if (LENGTH(y) == nrx) {	/* y is a col vector */
 		nry = nrx;
 		ncy = 1;
+	    } else if (nrx == 1) {	// y as row vector
+		nry = 1;
+		ncy = LENGTH(y);
 	    }
 	}
-	else { /* tcrossprod --		y is a col vector */
-	    nry = LENGTH(y);
-	    ncy = 1;
+	else { // tcrossprod
+	    if (nrx == 1) {		// y as row vector
+		nry = 1;
+		ncy = LENGTH(y);
+	    }
+	    else {			// y is a col vector
+		nry = LENGTH(y);
+		ncy = 1;
+	    }
 	}
     }
     else {				/* x and y matrices */
@@ -1163,8 +1256,8 @@ SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::Bu
 
     op->checkNumArgs(num_args, call);
     x = args[0]; args = (args + 1);
-    int n = asInteger(args[0]); args = (args + 1);
-    int p = asInteger(args[0]); args = (args + 1);
+    R_xlen_t n = asVecSize(args[0]); args = (args + 1);
+    R_xlen_t p = asVecSize(args[0]); args = (args + 1);
     NaRm = CXXRCONSTRUCT(Rboolean, asLogical(args[0]));
     if (n == NA_INTEGER || n < 0)
 	error(_("invalid '%s' argument"), "n");
@@ -1194,8 +1287,8 @@ SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::Bu
 #pragma omp parallel for num_threads(nthreads) default(none) \
     firstprivate(x, ans, n, p, type, NaRm, keepNA, R_NaReal, R_NaInt, OP)
 #endif
-	for (int j = 0; j < p; j++) {
-	    int cnt = n, i;
+	for (R_xlen_t j = 0; j < p; j++) {
+	    R_xlen_t  cnt = n, i;
 	    LDOUBLE sum = 0.0;
 	    switch (type) {
 	    case REALSXP:
@@ -1245,16 +1338,16 @@ SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	} else rans = Calloc(n, LDOUBLE);
 	if (!keepNA && OP == 3) Cnt = Calloc(n, int);
 
-	for (int j = 0; j < p; j++) {
+	for (R_xlen_t j = 0; j < p; j++) {
 	    LDOUBLE *ra = rans;
 	    switch (type) {
 	    case REALSXP:
 	    {
 		double *rx = REAL(x) + R_xlen_t(n) * j;
 		if (keepNA)
-		    for (int i = 0; i < n; i++) *ra++ += *rx++;
+		    for (R_xlen_t i = 0; i < n; i++) *ra++ += *rx++;
 		else
-		    for (int i = 0; i < n; i++, ra++, rx++)
+		    for (R_xlen_t i = 0; i < n; i++, ra++, rx++)
 			if (!ISNAN(*rx)) {
 			    *ra += *rx;
 			    if (OP == 3) Cnt[i]++;
@@ -1263,8 +1356,8 @@ SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	    }
 	    case INTSXP:
 	    {
-		int *ix = INTEGER(x) + R_xlen_t(n) * j;
-		for (int i = 0; i < n; i++, ra++, ix++)
+		int *ix = INTEGER(x) + (R_xlen_t)n * j;
+		for (R_xlen_t i = 0; i < n; i++, ra++, ix++)
 		    if (keepNA) {
 			if (*ix != NA_INTEGER) *ra += *ix;
 			else *ra = NA_REAL;
@@ -1277,8 +1370,8 @@ SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	    }
 	    case LGLSXP:
 	    {
-		int *ix = LOGICAL(x) + R_xlen_t(n) * j;
-		for (int i = 0; i < n; i++, ra++, ix++)
+		int *ix = LOGICAL(x) + (R_xlen_t)n * j;
+		for (R_xlen_t i = 0; i < n; i++, ra++, ix++)
 		    if (keepNA) {
 			if (*ix != NA_LOGICAL) *ra += *ix;
 			else *ra = NA_REAL;
@@ -1293,11 +1386,11 @@ SEXP attribute_hidden do_colsum(/*const*/ CXXR::Expression* call, const CXXR::Bu
 	}
 	if (OP == 3) {
 	    if (keepNA)
-		for (int i = 0; i < n; i++) rans[i] /= p;
+		for (R_xlen_t i = 0; i < n; i++) rans[i] /= p;
 	    else
-		for (int i = 0; i < n; i++) rans[i] /= Cnt[i];
+		for (R_xlen_t i = 0; i < n; i++) rans[i] /= Cnt[i];
 	}
-	for (int i = 0; i < n; i++) REAL(ans)[i] = double( rans[i]);
+	for (R_xlen_t i = 0; i < n; i++) REAL(ans)[i] = (double) rans[i];
 
 	if (!keepNA && OP == 3) Free(Cnt);
 	if(n > 10000) Free(rans);
@@ -1408,9 +1501,25 @@ SEXP attribute_hidden do_array(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	break;
     case VECSXP:
     case EXPRSXP:
+#ifdef SWITCH_TO_REFCNT
 	if (nans && lendat)
 	    for (i = 0; i < nans; i++)
 		SET_VECTOR_ELT(ans, i, VECTOR_ELT(vals, i % lendat));
+#else
+	if (nans && lendat) {
+	    /* Need to guard against possible sharing of values under
+	       NAMED.  This is not needed with reference
+	       coutning. (PR#15919) */
+	    Rboolean needsmark = Rboolean(lendat < nans
+					  || MAYBE_REFERENCED(vals));
+	    for (i = 0; i < nans; i++) {
+		SEXP elt = VECTOR_ELT(vals, i % lendat);
+		if (needsmark || MAYBE_REFERENCED(elt))
+		    MARK_NOT_MUTABLE(elt);
+		SET_VECTOR_ELT(ans, i, elt);
+	    }
+	}
+#endif
 	break;
     default:
 	// excluded above
@@ -1451,8 +1560,8 @@ SEXP attribute_hidden do_diag(/*const*/ CXXR::Expression* call, const CXXR::Buil
     if (mn > 0 && LENGTH(x) == 0)
 	error(_("'x' must have positive length"));
 
- #ifndef LONG_VECTOR_SUPPORT
-    if (double(nr) * double(nc) > INT_MAX)
+#ifndef LONG_VECTOR_SUPPORT
+   if ((double)nr * (double)nc > INT_MAX)
 	error(_("too many elements specified"));
 #endif
 

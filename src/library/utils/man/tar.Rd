@@ -1,6 +1,6 @@
 % File src/library/utils/man/tar.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2009-13 R Core Team
+% Copyright 2009-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{tar}
@@ -33,7 +33,7 @@ tar(tarfile, files = NULL,
     for the internal method.}
 
   \item{tar}{character string: the path to the command to be used.  If
-    the command itself contains spaces it needs to be quoted (e.g. by
+    the command itself contains spaces it needs to be quoted (e.g., by
     \code{\link{shQuote}}) -- but argument \code{tar} can also contain
     flags separated from the command by spaces.}
 

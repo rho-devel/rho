@@ -1,6 +1,6 @@
 % File src/library/tools/man/checkRd.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2008-13 R Core Team
+% Copyright 2008-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{checkRd}
@@ -68,7 +68,6 @@ checkRd(Rd, defines = .Platform$OS.type, stages = "render",
     5 \tab Title of \verb{\section} must be non-empty plain text\cr
     5 \tab \verb{\title} content must be plain text\cr
     3 \tab Empty section \var{tag name}\cr
-    3 \tab \verb{\synopsis} will be removed in R 3.1.0\cr
     -1 \tab Non-ASCII contents without declared encoding\cr
     -1 \tab Non-ASCII contents in second part of \verb{\enc}\cr
     -3 \tab Tag \verb{\ldots} is not valid in a code block\cr
@@ -92,7 +91,7 @@ checkRd(Rd, defines = .Platform$OS.type, stages = "render",
   that can be used to select only more serious messages.  (This is set
   to \code{-1} in \command{R CMD check}.)
 
-  Possible fatal errors are those from running the parser (e.g. a
+  Possible fatal errors are those from running the parser (e.g., a
   non-existent file, unclosed quoted string, non-ASCII input without a
   specified encoding) or from \code{prepare_Rd} (multiple
   \verb{\Rdversion} declarations, invalid \verb{\encoding} or

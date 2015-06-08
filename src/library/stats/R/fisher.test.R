@@ -1,7 +1,7 @@
 #  File src/library/stats/R/fisher.test.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ function(x, y = NULL, workspace = 200000, hybrid = FALSE,
     if(is.matrix(x)) {
         if(any(dim(x) < 2L))
             stop("'x' must have at least 2 rows and columns")
-        if(!is.numeric(x) || any(x < 0) || any(is.na(x)))
+        if(!is.numeric(x) || any(x < 0) || anyNA(x))
             stop("all entries of 'x' must be nonnegative and finite")
         if(!is.integer(x)) {
             xo <- x
@@ -37,7 +37,7 @@ function(x, y = NULL, workspace = 200000, hybrid = FALSE,
             if(any(x > .Machine$integer.max))
                 stop("'x' has entries too large to be integer")
             if(!identical(TRUE, (ax <- all.equal(xo, x))))
-                warning(gettextf("'x' has been rounded to integer: %d", ax),
+                warning(gettextf("'x' has been rounded to integer: %s", ax),
                         domain = NA)
             storage.mode(x) <- "integer"
         }

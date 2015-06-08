@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2003   The R Core Team.
+ *  Copyright (C) 1997-2014   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -44,6 +44,7 @@ extern "C" {
 
 #define formatRaw           Rf_formatRaw
 #define EncodeElement       Rf_EncodeElement
+#define EncodeElement0      Rf_EncodeElement0
 #define EncodeEnvironment   Rf_EncodeEnvironment
 #define printArray          Rf_printArray
 #define printMatrix         Rf_printMatrix
@@ -71,9 +72,10 @@ extern R_print_par_t R_print;
 void formatRaw(Rbyte *, R_xlen_t, int *);
 
 /* Formating of values */
-const char *EncodeElement(SEXP, int, int, char);
+const char *EncodeElement0(SEXP, int, int, const char *);
 const char *EncodeEnvironment(SEXP);
-
+/* Legacy, for R.app */
+const char *EncodeElement(SEXP, int, int, char);
 
 /* In Rinternals.h (and MUST be there):
    CustomPrintValue,  PrintValue, PrintValueRec */

@@ -1,6 +1,6 @@
 % File src/library/stats/man/Chisquare.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Chisquare}
@@ -42,11 +42,11 @@ rchisq(n, df, ncp = 0)
 
   The length of the result is determined by \code{n} for
   \code{rchisq}, and is the maximum of the lengths of the
-  numerical parameters for the other functions.  
+  numerical arguments for the other functions.  
   
-  The numerical parameters other than \code{n} are recycled to the
+  The numerical arguments other than \code{n} are recycled to the
   length of the result.  Only the first elements of the logical
-  parameters are used.
+  arguments are used.
 }
 \details{
   The chi-squared distribution with \code{df}\eqn{= n \ge 0}
@@ -71,7 +71,7 @@ rchisq(n, df, ncp = 0)
   Note that the degrees of freedom \code{df}\eqn{= n}, can be
   non-integer, and also \eqn{n = 0} which is relevant for
   non-centrality \eqn{\lambda > 0},
-  see Johnson et al. (1995, chapter 29).
+  see Johnson \emph{et al} (1995, chapter 29).
 
   Note that \code{ncp} values larger than about 1e5 may give inaccurate
   results with many warnings for \code{pchisq} and \code{qchisq}.
@@ -80,7 +80,7 @@ rchisq(n, df, ncp = 0)
   The central cases are computed via the gamma distribution.
 
   The non-central \code{dchisq} and \code{rchisq} are computed as a
-  Poisson mixture central of chi-squares (Johnson et al, 1995, p.436).
+  Poisson mixture central of chi-squares (Johnson \emph{et al}, 1995, p.436).
 
   The non-central \code{pchisq} is for \code{ncp < 80} computed from
   the Poisson mixture of central chi-squares and for larger \code{ncp}
@@ -139,7 +139,7 @@ all.equal(pchisq(x, df = 2), pexp(x, 1/2))
 Z0 <- rchisq(100, df = 0, ncp = 2.)
 graphics::stem(Z0)
 
-\dontrun{## visual testing
+\donttest{## visual testing
 ## do P-P plots for 1000 points at various degrees of freedom
 L <- 1.2; n <- 1000; pp <- ppoints(n)
 op <- par(mfrow = c(3,3), mar = c(3,3,1,1)+.1, mgp = c(1.5,.6,0),

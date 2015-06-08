@@ -1,6 +1,6 @@
 % File src/library/tools/man/SweaveTexFilter.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2009-11 R Core Team
+% Copyright 2009-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{SweaveTeXFilter}
@@ -30,8 +30,8 @@ SweaveTeXFilter(ifile, encoding = "unknown")
   original locations.
 }
 \value{
-  A character vector which if written to a file, one element per line, would
-  duplicate the text elements of the original Rd file.
+  A character vector which if written to a file, one element per line,
+  would duplicate the text elements of the original Sweave input file.
 }
 \author{
 Duncan Murdoch

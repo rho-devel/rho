@@ -1,7 +1,7 @@
 #  File src/library/graphics/R/spineplot.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -33,7 +33,6 @@ function(formula, data = NULL,
     ## extract x, y from formula
     m <- match.call(expand.dots = FALSE)
     m <- m[c(1L, match(c("formula", "data", "subset"), names(m), 0L))]
-    require(stats, quietly=TRUE)
     m[[1L]] <- quote(stats::model.frame)
     mf <- eval.parent(m)
     if(NCOL(mf) != 2L)
@@ -135,6 +134,7 @@ function(x, y = NULL,
 
     ## compute rectangle positions on y axis
     yat <- rbind(0, apply(prop.table(tab, 1), 1L, cumsum))
+    yat[is.na(yat)] <- 1
 
     if(is.null(xlim)) xlim <- c(0, 1 + off * (nx-1L))
     else if(any(xlim < 0) || any(xlim > 1)) {

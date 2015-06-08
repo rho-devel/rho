@@ -1,13 +1,13 @@
 % File src/library/tools/man/xgettext.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{xgettext}
+\title{Extract Translatable Messages from R Files in a Package}
 \alias{xgettext}
 \alias{xngettext}
 \alias{xgettext2pot}
-\title{Extract Translatable Messages from R Files in a Package}
 \description{
   For each file in the \file{R} directory (including system-specific
   subdirectories) of a package, extract the unique arguments passed
@@ -64,6 +64,9 @@ xgettext2pot(dir, potFile, name = "R", version, bugs)
 
   For \code{xngettext}, a list of objects of class \code{"xngettext"},
   which are themselves lists of length-2 character strings.
+}
+\seealso{
+  \code{\link{update_pkg_po}()} which calls \code{xgettext2pot()}.
 }
 \examples{\dontrun{## in a source-directory build of R:
 xgettext(file.path(R.home(), "src", "library", "splines"))

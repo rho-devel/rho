@@ -1,6 +1,6 @@
 % File src/library/tools/man/checkVignettes.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{checkVignettes}
@@ -64,11 +64,6 @@ checkVignettes(package, dir, lib.loc = NULL,
   error messages found during the tangle, source, weave and latex
   steps. There is a \code{print} method for displaying the
   information contained in such objects.
-}
-\note{
-  Prior to \R 2.13.0 this was the code used by \command{R CMD check},
-  but the latter is now more careful, running the code for each vignette
-  in a separate \R session.
 }
 
 \keyword{utilities}

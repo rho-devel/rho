@@ -1,11 +1,11 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997 Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2012	The R Core Team
+ *  Copyright (C) 1998-2015 The R Core Team
  *
  *  This source code module:
  *  Copyright (C) 1997, 1998 Paul Murrell and Ross Ihaka
- *  Copyright (C) 1998-2012	The R Core Team
+ *  Copyright (C) 1998-2015 The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -37,7 +37,7 @@
 #include <rlocale.h>
 
 
-#include <Rmath.h>
+#include <Rmath.h> // provides M_2PI
 #include <R_ext/GraphicsEngine.h>
 #include "CXXR/GCStackRoot.hpp"
 
@@ -835,7 +835,7 @@ static int TranslatedSymbol(SEXP expr)
 	code == 0321                    ||   /* nabla */
 	0)
 	return code;
-    else
+    else // not translated
 	return 0;
 }
 
@@ -1035,7 +1035,7 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
 		if (draw) {
 		    chr[0] = *s;
 		    PMoveAcross(lastItalicCorr, mc);
-		    GEText(ConvertedX(mc ,dd), ConvertedY(mc, dd), chr, 
+		    GEText(ConvertedX(mc ,dd), ConvertedY(mc, dd), chr,
 			   CE_NATIVE,
 			   0.0, 0.0, mc->CurrentAngle, gc, dd);
 		    PMoveAcross(bboxWidth(glyphBBox), mc);
@@ -1530,7 +1530,7 @@ static BBOX RenderWideTilde(SEXP expr, int draw, mathContext *mc,
     double start = DELTA * totalwidth;
     double accentGap = ACCENT_GAP * XHeight(gc, dd);
     double hatHeight = 0.5 * HAT_HEIGHT * XHeight(gc, dd);
-    double c = 8 * atan(1.0) / NTILDE;
+    double c = M_2PI / NTILDE;
     double x[NTILDE + 3], y[NTILDE + 3];
     double baseX, baseY, xval, yval;
     int i;
@@ -1672,7 +1672,7 @@ static int AccentAtom(SEXP expr)
     return NameAtom(expr) && (AccentCode(expr) != 0);
 }
 
-static void InvalidAccent(SEXP expr)
+static void NORET InvalidAccent(SEXP expr)
 {
     errorcall(expr, _("invalid accent"));
 }
@@ -1950,8 +1950,8 @@ static int DelimCode(SEXP expr, SEXP head)
     else if (StringAtom(head) && length(head) > 0) {
 	if (StringMatch(head, "|"))
 	    code = '|';
-	else if (StringMatch(head, "||"))
-	    code = 2;
+	else if (StringMatch(head, "||"))  // historical anomaly
+	    code = '|';
 	else if (StringMatch(head, "("))
 	    code = '(';
 	else if (StringMatch(head, ")"))
@@ -1999,22 +1999,14 @@ static BBOX RenderGroup(SEXP expr, int draw, mathContext *mc,
     bbox = NullBBox();
     code = DelimCode(expr, CADR(expr));
     gc->cex = DelimSymbolMag * gc->cex;
-    if (code == 2) {
-	bbox = RenderSymbolChar('|', draw, mc, gc, dd);
-	bbox = RenderSymbolChar('|', draw, mc, gc, dd);
-    }
-    else if (code != '.')
+    if (code != '.')
 	bbox = RenderSymbolChar(code, draw, mc, gc, dd);
     gc->cex = cexSaved;
     bbox = CombineBBoxes(bbox, RenderElement(CADDR(expr), draw, mc, gc, dd));
     bbox = RenderItalicCorr(bbox, draw, mc, gc, dd);
     code = DelimCode(expr, CADDDR(expr));
     gc->cex = DelimSymbolMag * gc->cex;
-    if (code == 2) {
-	bbox = CombineBBoxes(bbox, RenderSymbolChar('|', draw, mc, gc, dd));
-	bbox = CombineBBoxes(bbox, RenderSymbolChar('|', draw, mc, gc, dd));
-    }
-    else if (code != '.')
+    if (code != '.')
 	bbox = CombineBBoxes(bbox, RenderSymbolChar(code, draw, mc, gc, dd));
     gc->cex = cexSaved;
     return bbox;
@@ -2044,7 +2036,6 @@ static BBOX RenderDelim(int which, double dist, int draw, mathContext *mc,
 	return NullBBox();
 	break;
     case '|':
-    case 2:
 	top = 239; ext = 239; bot = 239; mid = 0;
 	break;
     case '(':

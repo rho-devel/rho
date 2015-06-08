@@ -1,6 +1,6 @@
 % File src/library/utils/man/read.table.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{read.table}
@@ -16,15 +16,15 @@
 }
 \usage{
 read.table(file, header = FALSE, sep = "", quote = "\"'",
-           dec = ".", row.names, col.names,
-           as.is = !stringsAsFactors,
+           dec = ".", numerals = c("allow.loss", "warn.loss", "no.loss"),
+           row.names, col.names, as.is = !stringsAsFactors,
            na.strings = "NA", colClasses = NA, nrows = -1,
            skip = 0, check.names = TRUE, fill = !blank.lines.skip,
            strip.white = FALSE, blank.lines.skip = TRUE,
            comment.char = "#",
            allowEscapes = FALSE, flush = FALSE,
            stringsAsFactors = default.stringsAsFactors(),
-           fileEncoding = "", encoding = "unknown", text)
+           fileEncoding = "", encoding = "unknown", text, skipNul = FALSE)
 
 read.csv(file, header = TRUE, sep = ",", quote = "\"",
          dec = ".", fill = TRUE, comment.char = "", \dots)
@@ -78,6 +78,9 @@ read.delim2(file, header = TRUE, sep = "\t", quote = "\"",
     \code{colClasses} is specified.}
 
   \item{dec}{the character used in the file for decimal points.}
+
+  \item{numerals}{string indicating how to convert numbers whose conversion
+    to double precision would lose accuracy, see \code{\link{type.convert}}.}
 
   \item{row.names}{a vector of row names.  This can be a vector giving
     the actual row names, or a single number giving the column of the
@@ -187,7 +190,8 @@ read.delim2(file, header = TRUE, sep = "\t", quote = "\"",
     used to mark character strings as known to be in
     Latin-1 or UTF-8 (see \code{\link{Encoding}}): it is not used to
     re-encode the input, but allows \R to handle encoded strings in
-    their native encoding (if one of those two).  See \sQuote{Value}.
+    their native encoding (if one of those two).  See \sQuote{Value}
+    and \sQuote{Note}.
   }
 
   \item{text}{character string: if \code{file} is not supplied and this is,
@@ -195,6 +199,8 @@ read.delim2(file, header = TRUE, sep = "\t", quote = "\"",
     Notice that a literal string can be used to include (small) data sets
     within R code.
   }
+
+  \item{skipNul}{logical: should nuls be skipped?}
 
   \item{\dots}{Further arguments to be passed to \code{read.table}.}
 }
@@ -243,7 +249,8 @@ read.delim2(file, header = TRUE, sep = "\t", quote = "\"",
   column.
 
   Quoted fields with embedded newlines are supported except after a
-  comment character.
+  comment character.  Embedded nuls are unsupported: skipping them (with
+  \code{skipNul = TRUE}) may work.
 }
 
 \value{
@@ -288,14 +295,13 @@ read.delim2(file, header = TRUE, sep = "\t", quote = "\"",
   The columns referred to in \code{as.is} and \code{colClasses} include
   the column of row names (if any).
 
-  Because this function uses \code{\link{pushBack}} it can only handle
-  character strings which can be represented in the current locale.  So
-  although \code{fileEncoding} can be used to specify the encoding of
-  the input file (or a connection can be specified which re-encodes),
-  the implied re-encoding must be possible.  This is not a problem in
-  UTF-8 locales, but it can be on Windows --- \code{\link{readLines}} or
-  \code{\link{scan}} can be used to avoid this limitation since they have
-  special provisions to convert input to UTF-8.
+  There are two approaches for reading input that is not in the local
+  encoding.  If the input is known to be UTF-8 or Latin1, use the
+  \code{encoding} argument to declare that.  If the input is in some
+  other encoding, then it may be translated on input.  The \code{fileEncoding}
+  argument achieves this by setting up a connection to do the re-encoding
+  into the current locale.  Note that on Windows or other systems not running
+  in a UTF-8 locale, this may not be possible.
 }
 
 \seealso{

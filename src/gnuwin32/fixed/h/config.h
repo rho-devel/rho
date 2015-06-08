@@ -78,6 +78,12 @@
 /* Define to 1 if you have the `asprintf' function. */
 /* #undef HAVE_ASPRINTF */
 
+/* Define to 1 if you have the `atan2pi' function. */
+/* #undef HAVE_ATAN2PI */
+
+/* Define to 1 if you have the `atanpi' function. */
+/* #undef HAVE_ATANPI */
+
 /* Define if you have BSD networking headers and libraries. */
 /* #undef HAVE_BSD_NETWORKING */
 
@@ -120,12 +126,12 @@
 /* Define to 1 if you have the `cexp' function. */
 #define HAVE_CEXP 1
 
-/* Define to 1 if you have the MacOS X function CFLocaleCopyCurrent in the
+/* Define to 1 if you have the OS X function CFLocaleCopyCurrent in the
    CoreFoundation framework. (For intl) */
 /* #undef HAVE_CFLOCALECOPYCURRENT */
 
-/* Define to 1 if you have the MacOS X function CFPreferencesCopyAppValue in
-   the CoreFoundation framework. (For intl) */
+/* Define to 1 if you have the OS X function CFPreferencesCopyAppValue in the
+   CoreFoundation framework. (For intl) */
 /* #undef HAVE_CFPREFERENCESCOPYAPPVALUE */
 
 /* Define to 1 if you have the `chdir' function. */
@@ -145,6 +151,9 @@
 /* Defined if framework CoreFoundation is present */
 /* #undef HAVE_COREFOUNDATION_FW */
 
+/* Define to 1 if you have the `cospi' function. */
+/* #undef HAVE_COSPI */
+
 /* Define to 1 if you have the `cpow' function. */
 #define HAVE_CPOW 1
 
@@ -160,8 +169,16 @@
 /* Define to 1 if you have the `ctan' function. */
 #define HAVE_CTAN 1
 
+/* Define to 1 if you have the <curl/curl.h> header file.
+   Set on the command line where supported.
+*/
+/* #undef HAVE_CURL_CURL_H */
+
 /* Define to 1 if you have the `ctanh' function. */
 #define HAVE_CTANH 1
+
+/* define if the compiler supports basic C++11 syntax */
+#define HAVE_CXX11 1
 
 /* Define if the GNU dcgettext() function is already present or preinstalled.
    */
@@ -254,6 +271,9 @@
 /* Define to 1 if you have the `execv' function. */
 #define HAVE_EXECV 1
 
+/* Define to 1 if you have the `exp10' function. */
+/* #undef HAVE_EXP10 */
+
 /* Define to 1 if you have the `expm1' function. */
 #define HAVE_EXPM1 1
 
@@ -344,6 +364,9 @@
 /* Define to 1 if you have the <glob.h> header file. */
 /* #undef HAVE_GLOB_H */
 
+/* Define to 1 if you have the `gmtime_r' function. */
+/* #undef HAVE_GMTIME_R */
+
 /* Define to 1 if you have the <grp.h> header file. */
 /* #undef HAVE_GRP_H */
 
@@ -362,6 +385,9 @@
 /* Define to 1 if you have the <iconv.h> header file. */
 #define HAVE_ICONV_H 1
 
+/* Define to 1 if the system has the type `int64_t'. */
+#define HAVE_INT64_T 1
+
 /* Define if you have support for ftp/http access. */
 #define HAVE_INTERNET 1
 
@@ -378,6 +404,9 @@
 /* Define if <inttypes.h> exists, doesn't clash with <sys/types.h>, and
    declares uintmax_t. (For intl) */
 #define HAVE_INTTYPES_H_WITH_UINTMAX 1
+
+/* Define to 1 if the system has the type `int_fast64_t'. */
+#define HAVE_INT_FAST64_T 1
 
 /* Define to 1 if you have the `isblank' function. */
 #define HAVE_ISBLANK 1
@@ -403,6 +432,9 @@
 /* Define if you have <langinfo.h> and nl_langinfo(CODESET). */
 /* #undef HAVE_LANGINFO_CODESET */
 
+/* Define to 1 if you have the <langinfo.h> header file. */
+/* #undef HAVE_LANGINFO_H */
+
 /* Define if your <locale.h> file defines LC_MESSAGES. */
 /* #undef HAVE_LC_MESSAGES */
 
@@ -427,6 +459,9 @@
 /* Define to 1 if you have the `rt' library (-lrt). */
 #undef HAVE_LIBRT
 
+/* Define to 1 if you have the `sunmath' library (-lsunmath). */
+/* #undef HAVE_LIBSUNMATH */
+
 /* Define to 1 if you have the `termcap' library (-ltermcap). */
 /* #undef HAVE_LIBTERMCAP */
 
@@ -444,6 +479,9 @@
 
 /* Define to 1 if you have the <locale.h> header file. */
 #define HAVE_LOCALE_H 1
+
+/* Define to 1 if you have the `localtime_r' function. */
+#define HAVE_LOCALTIME_R 1
 
 /* Define to 1 if you have the `log10' function. */
 #define HAVE_LOG10 1
@@ -463,7 +501,7 @@
 /* Define to 1 if the system has the type `long long int'. (For intl) */
 #define HAVE_LONG_LONG_INT 1
 
-/* Define if your system has lzma >= 4.999. */
+/* Define if your system has lzma >= 5.0.3. */
 /* #undef HAVE_LZMA */
 
 /* Define to 1 if you have the <lzma.h> header file. */
@@ -516,6 +554,9 @@
 /* Define to 1 if you have the <netinet/in.h> header file. */
 /* #undef HAVE_NETINET_IN_H */
 
+/* Define to 1 if you have the `nl_langinfo' function. */
+/* #undef HAVE_NL_LANGINFO */
+
 /* Define if you have <langinfo.h> and it defines the NL_LOCALE_NAME macro if
    _GNU_SOURCE is defined. */
 /* #undef HAVE_NL_LOCALE_NAME */
@@ -561,6 +602,9 @@
 
 /* Define to 1 if you have the `powl' function. */
 #define HAVE_POWL 1
+
+/* Define to 1 if you have the `pown' function. */
+/* #undef HAVE_POWN */
 
 /* Define if the <pthread.h> defines PTHREAD_MUTEX_RECURSIVE. (For intl) */
 /* #undef HAVE_PTHREAD_MUTEX_RECURSIVE */
@@ -629,6 +673,9 @@
 /* Define to 1 if you have the `sigemptyset' function. */
 /* #undef HAVE_SIGEMPTYSET */
 
+/* Define to 1 if you have the `sinpi' function. */
+/* #undef HAVE_SINPI */
+
 /* Define to 1 if you have the `snprintf' function. */
 #define HAVE_SNPRINTF 1
 
@@ -640,6 +687,9 @@
 
 /* Define to 1 if you have the `stat' function. */
 #define HAVE_STAT 1
+
+/* Define to 1 if you have the <stdalign.h> header file. */
+/* #undef HAVE_STDALIGN_H */
 
 /* Define to 1 if you have the <stdarg.h> header file. */
 #define HAVE_STDARG_H 1
@@ -693,6 +743,9 @@
 /* Define to 1 if `st_atim.tv_nsec' is a member of `struct stat'. */
 /* #undef HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC */
 
+/* Define to 1 if you have the <sunmath.h> header file. */
+/* #undef HAVE_SUNMATH_H */
+
 /* Define to 1 if you have the `symlink' function. */
 /* #undef HAVE_SYMLINK */
 
@@ -737,6 +790,9 @@
 /* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
 /* #undef HAVE_SYS_WAIT_H */
 
+/* Define to 1 if you have the `tanpi' function. */
+/* #undef HAVE_TANPI */
+
 /* Define if you have the Tcl/Tk headers and libraries and want Tcl/Tk support
    to be built. */
 #define HAVE_TCLTK 1
@@ -752,6 +808,18 @@
 
 /* Define to 1 if you have the `timespec_get' function. */
 /* #undef HAVE_TIMESPEC_GET */
+
+/* Define to 1 if your 'struct tm' has tm_gmtoff. */
+/* #undef HAVE_TM_GMTOFF */
+
+/* Define to 1 if your 'struct tm' has tm_zone. */
+/* #undef HAVE_TM_ZONE */
+
+/* Define if your system has tre. */
+/* #undef HAVE_TRE */
+
+/* Define to 1 if you have the <tre/tre.h> header file. */
+/* #undef HAVE_TRE_TRE_H */
 
 /* Define to 1 if you have the `tsearch' function. */
 #if defined(__MINGW64_VERSION_MAJOR) && __MINGW64_VERSION_MAJOR >= 2
@@ -795,9 +863,6 @@
 
 /* Define to 1 if you have the `va_copy' function. */
 #define HAVE_VA_COPY 1
-
-/* Defined if framework vecLib is present */
-/* #undef HAVE_VECLIB_FW */
 
 /* Define to 1 or 0, depending whether the compiler supports simple visibility
    declarations. (For intl) */
@@ -844,6 +909,9 @@
 
 /* Define if you have the 'wint_t' type. (For intl) */
 #define HAVE_WINT_T 1
+
+/* Define if your mktime works correctly outside 1902-2037. */
+#define HAVE_WORKING_64BIT_MKTIME 1
 
 /* Define to 1 if you have cairo. */
 /* #undef HAVE_WORKING_CAIRO */
@@ -944,7 +1012,7 @@
 #endif
 
 /* Define this to be the name of the CPU of your system. */
-#ifdef WIN64
+#ifdef _WIN64
 #define R_CPU "x86_64"
 #else
 #define R_CPU "i386"
@@ -963,7 +1031,7 @@
 #define R_OS "mingw32"
 
 /* Define this to be the canonical name (cpu-vendor-os) of your system. */
-#ifdef WIN64
+#ifdef _WIN64
 #define R_PLATFORM "x86_64-w64-mingw32"
 #else
 #define R_PLATFORM "i386-w64-mingw32"
@@ -994,7 +1062,7 @@
 #define SIZEOF_LONG 4
 
 /* The size of `long double', as computed by sizeof. */
-#ifdef WIN64
+#ifdef _WIN64
 #define SIZEOF_LONG_DOUBLE 16
 #else
 #define SIZEOF_LONG_DOUBLE 12
@@ -1041,6 +1109,9 @@
 /* Define to use Apple's ICU. */
 /* #undef USE_ICU_APPLE */
 
+/* Define to use internal time-zone code */
+#define USE_INTERNAL_MKTIME 1
+
 /* Define if the POSIX multithreading library can be used. (For intl) */
 /* #undef USE_POSIX_THREADS */
 
@@ -1052,7 +1123,7 @@
 /* #undef USE_PTH_THREADS */
 
 /* Define if references to the GNU Pth multithreading library should be made
-   weak. */
+   weak. (For intl) */
 /* #undef USE_PTH_THREADS_WEAK */
 
 /* Define if the old Solaris multithreading library can be used. (For intl) */

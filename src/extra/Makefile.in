@@ -23,11 +23,13 @@ LIBPCRE =@BUILD_PCRE_TRUE@ make.pcre
 LIBZ =@BUILD_ZLIB_TRUE@ make.zlib
 LIBXDR =@BUILD_XDR_TRUE@ make.xdr
 LIBINTL =@BUILD_LIBINTL_TRUE@ make.intl
-LIBTRE = make.tre
+LIBTRE =@BUILD_TRE_TRUE@ make.tre
+LIBTZONE = @BUILD_TZONE_TRUE@ make.tzone
 LIBXZ =@BUILD_XZ_TRUE@ make.xz
 LIBGC = make.gc
 LIBSPARSEHASH = make.sparsehash
-EXTRAS = $(RBLAS) $(LIBBZ2) $(LIBPCRE) $(LIBZ) $(LIBXDR) $(LIBINTL) $(LIBTRE) $(LIBXZ) $(LIBGC) $(LIBSPARSEHASH)
+EXTRAS = $(RBLAS) $(LIBBZ2) $(LIBPCRE) $(LIBZ) $(LIBXDR) $(LIBINTL) \
+  $(LIBTRE) $(LIBTZONE) $(LIBXZ) $(LIBGC) $(LIBSPARSEHASH)
 
 all: Makefile R
 
@@ -67,6 +69,9 @@ make.gc: Makefile
 make.sparsehash: Makefile
 	@(cd sparsehash; $(MAKE) src/sparsehash/internal/sparseconfig.h)
 	@rm sparsehash/src/config.h
+
+make.tzone: Makefile
+	@(cd tzone; $(MAKE))
 
 mostlyclean: clean
 clean:

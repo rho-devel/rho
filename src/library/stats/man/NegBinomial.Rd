@@ -1,6 +1,6 @@
 % File src/library/stats/man/NegBinomial.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{NegBinomial}
@@ -25,7 +25,7 @@ rnbinom(n, size, prob, mu)
   \item{x}{vector of (non-negative integer) quantiles.}
   \item{q}{vector of quantiles.}
   \item{p}{vector of probabilities.}
-  \item{n}{number of observations. If \code{length(n) > 1}, the length
+  \item{n}{number of observations.  If \code{length(n) > 1}, the length
     is taken to be the number required.}
   \item{size}{target for number of successful trials, or dispersion
     parameter (the shape parameter of the gamma mixing distribution).
@@ -46,26 +46,27 @@ rnbinom(n, size, prob, mu)
 
   This represents the number of failures which occur in a sequence of
   Bernoulli trials before a target number of successes is reached.
-  The mean is \eqn{n(1-p)/p} and variance \eqn{n(1-p)/p^2}.
+  The mean is \eqn{\mu = n(1-p)/p} and variance \eqn{n(1-p)/p^2}.
 
   A negative binomial distribution can also arise as a mixture of
   Poisson distributions with mean distributed as a gamma distribution
-  (see\code{\link{pgamma}}) with scale parameter \code{(1 - prob)/prob}
+  (see \code{\link{pgamma}}) with scale parameter \code{(1 - prob)/prob}
   and shape parameter \code{size}.  (This definition allows non-integer
   values of \code{size}.)
 
   An alternative parametrization (often used in ecology) is by the
-  \emph{mean} \code{mu}, and \code{size}, the \emph{dispersion
+  \emph{mean} \code{mu} (see above), and \code{size}, the \emph{dispersion
   parameter}, where \code{prob} = \code{size/(size+mu)}.  The variance
   is \code{mu + mu^2/size} in this parametrization.
 
   If an element of \code{x} is not integer, the result of \code{dnbinom}
   is zero, with a warning.
 
-  The case \code{size == 0} is the distribution concentrated at zero. This 
-  is the limiting distribution for \code{size} approaching zero, even if 
-  \code{mu} rather than \code{prob} is held constant. Notice though, that
-  the mean of the limit distribution is 0, whatever the value of \code{mu}.  
+  The case \code{size == 0} is the distribution concentrated at zero.
+  This is the limiting distribution for \code{size} approaching zero,
+  even if \code{mu} rather than \code{prob} is held constant.  Notice
+  though, that the mean of the limit distribution is 0, whatever the
+  value of \code{mu}.
 
   The quantile is defined as the smallest value \eqn{x} such that
   \eqn{F(x) \ge p}, where \eqn{F} is the distribution function.
@@ -78,14 +79,14 @@ rnbinom(n, size, prob, mu)
 
   Invalid \code{size} or \code{prob} will result in return value
   \code{NaN}, with a warning.
-  
+
   The length of the result is determined by \code{n} for
   \code{rnbinom}, and is the maximum of the lengths of the
-  numerical parameters for the other functions.  
-  
-  The numerical parameters other than \code{n} are recycled to the
+  numerical arguments for the other functions.
+
+  The numerical arguments other than \code{n} are recycled to the
   length of the result.  Only the first elements of the logical
-  parameters are used.
+  arguments are used.
 }
 \source{
   \code{dnbinom} computes via binomial probabilities, using code

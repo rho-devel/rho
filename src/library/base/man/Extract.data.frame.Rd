@@ -1,6 +1,6 @@
 % File src/library/base/man/Extract.data.frame.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Extract.data.frame}
@@ -8,6 +8,7 @@
 \alias{[[.data.frame}
 \alias{[<-.data.frame}
 \alias{[[<-.data.frame}
+\alias{$.data.frame}
 \alias{$<-.data.frame}
 \title{Extract or Replace Parts of a Data Frame}
 \description{
@@ -18,6 +19,7 @@
 \method{[}{data.frame}(x, i, j) <- value
 \method{[[}{data.frame}(x, ..., exact = TRUE)
 \method{[[}{data.frame}(x, i, j) <- value
+\method{$}{data.frame}(x, name)
 \method{$}{data.frame}(x, name) <- value
 }
 \arguments{
@@ -50,10 +52,12 @@
   \code{x[[i]]}), they index the data frame as if it were a list.  In
   this usage a \code{drop} argument is ignored, with a warning.
 
-  There is no \code{data.frame} method for \code{$}, so \code{x$name}
-  uses the default method which treats \code{x} as a list.  There is a
-  replacement method which checks \code{value} for the correct number
-  of rows, and replicates it if necessary.
+  The \code{data.frame} method for \code{$}, treats \code{x} as a
+  list, except that (as of R-3.1.0) partial matching of \code{name} to
+  the names of \code{x} will generate a warning; this may become an
+  error in future versions.  The replacement method checks
+  \code{value} for the correct number of rows, and replicates it if
+  necessary.
 
   When \code{[} and \code{[[} are used with two indices (\code{x[i, j]}
   and \code{x[[i, j]]}) they act like indexing a matrix:  \code{[[} can
@@ -65,7 +69,7 @@
   If \code{[} returns a data frame it will have unique (and non-missing)
   row names, if necessary transforming the row names using
   \code{\link{make.unique}}.  Similarly, if columns are selected column
-  names will be transformed to be unique if necessary (e.g. if columns
+  names will be transformed to be unique if necessary (e.g., if columns
   are selected more than once, or if more than one column of a given
   name is selected if the data frame has duplicate column names).
 

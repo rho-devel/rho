@@ -52,8 +52,7 @@
 
 using namespace CXXR;
 
-#if defined(Win32) && defined(LEA_MALLOC)
-/*#include <stddef.h> */
+#if defined(Win32)
 extern void *Rm_malloc(size_t n);
 extern void *Rm_calloc(size_t n_elements, size_t element_size);
 extern void Rm_free(void * p);
@@ -176,9 +175,9 @@ SEXP attribute_hidden do_gcinfo(/*const*/ CXXR::Expression* call, const CXXR::Bu
 
 /* reports memory use to profiler in eval.c */
 
-void attribute_hidden get_current_mem(unsigned long *smallvsize,
-				    unsigned long *largevsize,
-				    unsigned long *nodes)
+void attribute_hidden get_current_mem(size_t *smallvsize,
+				      size_t *largevsize,
+				      size_t *nodes)
 {
     // All subject to change in CXXR:
     *smallvsize = 0;
@@ -194,8 +193,8 @@ SEXP attribute_hidden do_gc(/*const*/ CXXR::Expression* call, const CXXR::BuiltI
 	= GCManager::setReporting(asLogical(args[0]) ? &std::cerr : nullptr);
     bool reset_max = asLogical(args[1]);
     GCManager::gc();
+    R_RunPendingFinalizers();
     GCManager::setReporting(report_os);
-    /*- now return the [used , gc trigger size] for cells and heap */
     GCStackRoot<> value(allocVector(REALSXP, 6));
     REAL(value)[0] = GCNode::numNodes();
     REAL(value)[1] = NA_REAL;
@@ -305,7 +304,7 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 /* Allocate a vector object (and also list-like objects).
 */
 
-SEXP allocVector(SEXPTYPE type, R_xlen_t length)
+SEXP allocVector3(SEXPTYPE type, R_xlen_t length, void*)
 {
     SEXP s = nullptr;  // -Wall
 
@@ -528,10 +527,9 @@ int (LENGTH)(SEXP x) { return LENGTH(x); }
 #ifndef R_MEMORY_PROFILING
 
 extern "C"
-SEXP do_Rprofmem(SEXP args)
+SEXP NORET do_Rprofmem(SEXP args)
 {
     error(_("memory profiling is not available on this system"));
-    return R_NilValue; /* not reached */
 }
 
 #else
@@ -559,7 +557,7 @@ static void R_OutputStackTrace(FILE *file)
 
 static void R_ReportAllocation(R_size_t size)
 {
-    fprintf(R_MemReportingOutfile, "%ld :", static_cast<unsigned long>(size));
+    fprintf(R_MemReportingOutfile, "%lu :", static_cast<unsigned long>(size));
     R_OutputStackTrace(R_MemReportingOutfile);
 }
 
@@ -685,9 +683,8 @@ int Seql(SEXP a, SEXP b)
 
 
 #ifdef LONG_VECTOR_SUPPORT
-R_len_t R_BadLongVector(SEXP x, const char *file, int line)
+R_len_t NORET R_BadLongVector(SEXP x, const char *file, int line)
 {
     error(_("long vectors not supported yet: %s:%d"), file, line);
-    return 0; /* not reached */
 }
 #endif

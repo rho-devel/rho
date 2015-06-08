@@ -1,6 +1,6 @@
 % File src/library/base/man/cat.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{cat}
@@ -62,7 +62,7 @@ cat(\dots , file = "", sep = " ", fill = FALSE, labels = NULL,
   \code{\link{print.default}} which escapes non-printable characters and
   backslash --- use \code{\link{encodeString}} if you want to output
   encoded strings using \code{cat}).  Other types of \R object should be
-  converted (e.g. by \code{\link{as.character}} or \code{\link{format}})
+  converted (e.g., by \code{\link{as.character}} or \code{\link{format}})
   before being passed to \code{cat}.  That includes factors, which are
   output as integer vectors.
 

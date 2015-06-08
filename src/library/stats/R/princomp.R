@@ -1,7 +1,7 @@
 #  File src/library/stats/R/princomp.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ princomp.formula <- function(formula, data = NULL, subset, na.action, ...)
 
 princomp.default <-
     function(x, cor = FALSE, scores = TRUE, covmat = NULL,
-             subset = rep(TRUE, nrow(as.matrix(x))), ...)
+             subset = rep_len(TRUE, nrow(as.matrix(x))), ...)
 {
     cl <- match.call()
     cl[[1L]] <- as.name("princomp")

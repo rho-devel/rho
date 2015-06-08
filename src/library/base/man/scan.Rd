@@ -1,6 +1,6 @@
 % File src/library/base/man/scan.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{scan}
@@ -16,7 +16,7 @@ scan(file = "", what = double(), nmax = -1, n = -1, sep = "",
      flush = FALSE, fill = FALSE, strip.white = FALSE,
      quiet = FALSE, blank.lines.skip = TRUE, multi.line = TRUE,
      comment.char = "", allowEscapes = FALSE,
-     fileEncoding = "", encoding = "unknown", text)
+     fileEncoding = "", encoding = "unknown", text, skipNul = FALSE)
 }
 \arguments{
   \item{file}{the name of a file to read data values from.  If the
@@ -51,14 +51,15 @@ scan(file = "", what = double(), nmax = -1, n = -1, sep = "",
     (or \code{scan}'s \code{fileEncoding} argument).
   }
 
-  \item{what}{the type of \code{what} gives the type of data to be read.
-    The supported types are \code{logical}, \code{integer}, \code{numeric},
-    \code{complex}, \code{character}, \code{raw} and \code{\link{list}}.
-    If \code{what} is a list, it is assumed that the lines of the data file
-    are records each containing \code{length(what)} items
-    (\sQuote{fields}) and the list components should have elements which
-    are one of the first six types listed or \code{NULL}, see section
-    \sQuote{Details} below.}
+  \item{what}{the \link{type} of \code{what} gives the type of data to
+    be read.  (Here \sQuote{type} is used in the sense of
+    \code{\link{typeof}}.)  The supported types are \code{logical},
+    \code{integer}, \code{numeric}, \code{complex}, \code{character},
+    \code{raw} and \code{\link{list}}.  If \code{what} is a list, it is
+    assumed that the lines of the data file are records each containing
+    \code{length(what)} items (\sQuote{fields}) and the list components
+    should have elements which are one of the first six (\link{atomic})
+    types listed or \code{NULL}, see section \sQuote{Details} below.}
 
   \item{nmax}{integer: the maximum number of data values to be read, or if
     \code{what} is a list, the maximum number of records to be read.  If
@@ -159,13 +160,16 @@ scan(file = "", what = double(), nmax = -1, n = -1, sep = "",
   \item{encoding}{encoding to be assumed for input strings.  If the
     value is \code{"latin1"} or \code{"UTF-8"} it is used to mark
     character strings as known to be in Latin-1 or UTF-8: it is not used
-    to re-encode the input (see \code{fileEncoding}.  See also \sQuote{Details}.
+    to re-encode the input (see \code{fileEncoding}).
+    See also \sQuote{Details}.
   }
 
   \item{text}{character string: if \code{file} is not supplied and this is,
     then data are read from the value of \code{text} via a text connection.
   }
 
+  \item{skipNul}{logical: should nuls be skipped when reading character
+    fields?}
 }
 \details{
   The value of \code{what} can be a list of types, in which case
@@ -179,9 +183,9 @@ scan(file = "", what = double(), nmax = -1, n = -1, sep = "",
 
   \sQuote{White space} is defined for the purposes of this function as
   one or more contiguous characters from the set space, horizontal tab,
-  carriage return and line feed.  It does not include form feed or
-  vertical tab, but in Latin-1 and Windows 8-bit locales 'space'
-  includes non-breaking space.
+  carriage return and line feed.  It does not include form feed nor
+  vertical tab, but in Latin-1 and Windows 8-bit locales (but not UTF-8)
+  'space' includes the non-breaking space \samp{"\xa0"}.
 
   Empty numeric fields are always regarded as missing values.
   Empty character fields are scanned as empty character vectors, unless
@@ -232,10 +236,14 @@ scan(file = "", what = double(), nmax = -1, n = -1, sep = "",
   is a list, otherwise every 10000 items.
 
   If \code{file} is a character string and \code{fileEncoding} is
-  non-default, or it it is a not-already-open \link{connection} with a
+  non-default, or if it is a not-already-open \link{connection} with a
   non-default \code{encoding} argument, the text is converted to UTF-8
   and declared as such (and the \code{encoding} argument to \code{scan}
   is ignored).  See the examples of \code{\link{readLines}}.
+
+  Embedded nuls in the input stream will terminate the field currently
+  being read, with a warning once per call to \code{scan}.  Setting
+  \code{skipNul = TRUE} causes them to be ignored.
 }
 \value{
   if \code{what} is a list, a list of the same length and same names (as

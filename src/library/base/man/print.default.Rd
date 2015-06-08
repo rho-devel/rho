@@ -1,6 +1,6 @@
 % File src/library/base/man/print.default.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{print.default}
@@ -39,7 +39,7 @@
     uses \code{\link{getOption}("max.print")}; see that help page for more
     details.}
   \item{useSource}{logical, indicating whether to use source
-    references or copies rather than deparsing language objects.
+    references or copies rather than deparsing \link{language objects}.
     The default is to use the original source if it is available.}
   \item{\dots}{further arguments to be passed to or from other
     methods.  They are ignored in this function.}
@@ -63,7 +63,7 @@
 
   Option \code{width} controls the printing of vectors, matrices and
   arrays, and option \code{deparse.cutoff} controls the printing of
-  language objects such as calls and formulae.
+  \link{language objects} such as calls and formulae.
 
   When the \pkg{methods} package is attached, \code{print} will call
   \code{\link{show}} for \R objects with formal classes if called
@@ -98,8 +98,8 @@
   Multi-byte non-printing characters are printed as an escape sequence
   of the form \samp{\\uxxxx} or \samp{\\Uxxxxxxxx} (in hexadecimal).
   This is the internal code for the wide-character representation of the
-  character.  If this is not known to be the Unicode point, a warning is
-  issued.  The only known exceptions are certain Japanese ISO2022
+  character.  If this is not known to be Unicode code points, a warning is
+  issued.  The only known exceptions are certain Japanese ISO 2022
   locales on commercial Unixes, which use a concatenation of the bytes:
   it is unlikely that \R compiles on such a system.
 % http://www.cl.cam.ac.uk/~mgk25/ucs/iso2022-wc.html
@@ -120,8 +120,8 @@
   single-byte locales.
 
   Multi-byte non-printing characters are printed as an escape sequence
- of the form \samp{\\uxxxx} (in hexadecimal). This is the Unicode point
- of the character.
+  of the form \samp{\\uxxxx} (in hexadecimal). This is the Unicode code
+  point of the character.
 
   It is possible to have a character string in a character vector that
   is not valid in the current locale.  If a byte is encountered that is

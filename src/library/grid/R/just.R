@@ -1,7 +1,7 @@
 #  File src/library/grid/R/just.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ valid.charjust <- function(just) {
     # single value may be any valid just
     just <- as.integer(match(just[1L], c("left", "right", "bottom", "top",
                                         "centre", "center")) - 1)
-    if (any(is.na(just)))
+    if (anyNA(just))
       stop("invalid justification")
   } else if (length(just) > 1) {
     # first value must be one of "left", "right", "centre", or "center"
@@ -70,7 +70,7 @@ valid.charjust <- function(just) {
   just <- c(switch(just[1L] + 1, 0, 1, NA, NA, 0.5, 0.5),
             switch(just[2L] + 1, NA, NA, 0, 1, 0.5, 0.5))
   # Final paranoid check
-  if (any(is.na(just)))
+  if (anyNA(just))
     stop("invalid justification")
   just
 }

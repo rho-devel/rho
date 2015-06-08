@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-12     the R Core Team
+ *  Copyright (C) 2000-2013 The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,11 +24,19 @@
 #include <Defn.h> /* for checkArity */
 #include <Internal.h>
 
+#undef _
+#ifdef ENABLE_NLS
+#include <libintl.h>
+#define _(String) dgettext ("utils", String)
+#else
+#define _(String) (String)
+#endif
+
+
 #ifdef Win32
-#include "Startup.h"
-extern UImode CharacterMode;
-#include "getline/getline.h"     /* for gl_load/savehistory */
-#include "getline/wc_history.h"  /* for wgl_load/savehistory */
+# include "Startup.h"
+# include "getline/getline.h"     /* for gl_load/savehistory */
+# include "getline/wc_history.h"  /* for wgl_load/savehistory */
 SEXP savehistory(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP sfile;

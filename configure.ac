@@ -2,7 +2,7 @@
 ###
 ### Process this file with autoconf to produce a configure script.
 ###
-### Copyright (C) 1998-2011 R Core Team
+### Copyright (C) 1998-2014 R Core Team
 ###
 ### This file is part of R.
 ###
@@ -30,7 +30,7 @@ m4_define([R_VERSION],
           m4_bpatsubst(m4_esyscmd([cat VERSION]),
                        [\([0-9.]*\)\(\w\|\W\)*],
                        [\1]))
-AC_INIT([R],[R_VERSION],[http://bugs.r-project.org],[R],[http://www.r-project.org])
+AC_INIT([R],[R_VERSION],[https://bugs.r-project.org],[R],[https://www.r-project.org])
 AC_USE_SYSTEM_EXTENSIONS
 AC_CONFIG_SRCDIR([src/include/Defn.h])
 AC_CONFIG_AUX_DIR([tools])
@@ -77,13 +77,13 @@ AC_DEFINE_UNQUOTED(R_OS, "${host_os}",
 ## exclude some unsupported OSes
 case "${host_os}" in
    ## Darwin 1.3.1 was OS X 10.0, 1.4.1 was 10.1, 5 is 10.2 etc
-   ## with 11 being 10.7.  We no longer support < 10.4 (Tiger)
+   ## with 13 being 10.9.  We no longer support < 10.4 (Tiger)
    ## http://en.wikipedia.org/wiki/Darwin_OS
    darwin1.*)
-     AC_MSG_ERROR([The earliest supported MacOS X is 10.4.]
+     AC_MSG_ERROR([The earliest supported OS X is 10.4.]
      ;; 
   darwin[[567]]*)
-     AC_MSG_ERROR([The earliest supported MacOS X is 10.4.]
+     AC_MSG_ERROR([The earliest supported OS X is 10.4.]
      ;; 
   aix[123]*|aix4.[01]*)
     ## These need a form of linking we no longer support
@@ -239,7 +239,7 @@ fi],
 
 ## Allow the user to specify building an R framework (Darwin).
 AC_ARG_ENABLE([R-framework],
-[AS_HELP_STRING([--enable-R-framework@<:@=DIR@:>@],[MacOS X only: build R framework (if possible), and specify
+[AS_HELP_STRING([--enable-R-framework@<:@=DIR@:>@],[OS X only: build R framework (if possible), and specify
                  its installation prefix @<:@yes, /Library/Frameworks@:>@])],
 [want_R_framework="${enableval}"],
 [want_R_framework=yes])
@@ -272,7 +272,7 @@ fi
 AM_CONDITIONAL(WANT_R_FRAMEWORK, [test "x${want_R_framework}" = xyes])
 
 ## Allow the user to specify building R as a shared library.
-## (but a 'dynamic library' in the terminology of Mac OS X).
+## (but a 'dynamic library' in the terminology of OS X).
 ## <NOTE>
 ## Building a framework implies building R shared libraries, hence the
 ## strange default.
@@ -303,10 +303,13 @@ AC_ARG_ENABLE([BLAS-shlib],
 [use_blas_shlib="${enableval}"],
 [use_blas_shlib="unset"])
 
+## As from R 3.2.0 split up -L... and -lR
 if test "${want_R_shlib}" = yes; then
-  LIBR="-L\$(R_HOME)/lib\$(R_ARCH) -lR"
+  LIBR0="-L\$(R_HOME)/lib\$(R_ARCH)"
+  LIBR1=-lR
 else
-  LIBR=
+  LIBR0=
+  LIBR1=
 fi
 
 ## Enable maintainer-specific portions of Makefiles.
@@ -370,14 +373,14 @@ AC_ARG_WITH([blas],
 [AS_HELP_STRING([--with-blas],[use system BLAS library (if available), or specify it @<:@no@:>@])],
 [R_ARG_USE(blas)],
 [use_blas=unset])
-# default is "no" except on MacOS X
+# default is "no" except on OS X
 
 ## LAPACK.
 AC_ARG_WITH([lapack],
 [AS_HELP_STRING([--with-lapack],[use system LAPACK library (if available), or specify it @<:@no@:>@])],
 [R_ARG_USE(lapack)],
 [use_lapack=unset])
-# default is "no" except on MacOS X
+# default is "no" except on OS X
 
 ## Readline.
 AC_ARG_WITH([readline],
@@ -387,7 +390,7 @@ AC_ARG_WITH([readline],
 
 ## Aqua.
 AC_ARG_WITH([aqua],
-[AS_HELP_STRING([--with-aqua],[MacOS X only: use Aqua (if available) @<:@yes@:>@])],
+[AS_HELP_STRING([--with-aqua],[OS X only: use Aqua (if available) @<:@yes@:>@])],
 [if test "${withval}" = no; then
   want_aqua=no
 else
@@ -440,17 +443,21 @@ AC_ARG_WITH([libtiff],
 [R_ARG_USE(libtiff)],
 [use_libtiff=yes])
 AC_ARG_WITH([system-zlib],
-[AS_HELP_STRING([--with-system-zlib],[use system zlib library (if available) @<:@no@:>@])],
+[AS_HELP_STRING([--with-system-zlib],[use system zlib library (if available) @<:@yes@:>@])],
 [R_ARG_USE_SYSTEM(zlib)],
-[use_system_zlib=no])
+[use_system_zlib=yes])
 AC_ARG_WITH([system-bzlib],
-[AS_HELP_STRING([--with-system-bzlib],[use system bzlib library (if available) @<:@no@:>@])],
+[AS_HELP_STRING([--with-system-bzlib],[use system bzlib library (if available) @<:@yes@:>@])],
 [R_ARG_USE_SYSTEM(bzlib)],
-[use_system_bzlib=no])
+[use_system_bzlib=yes])
 AC_ARG_WITH([system-pcre],
-[AS_HELP_STRING([--with-system-pcre],[use system PCRE library (if available) @<:@no@:>@])],
+[AS_HELP_STRING([--with-system-pcre],[use system PCRE library (if available) @<:@yes@:>@])],
 [R_ARG_USE_SYSTEM(pcre)],
-[use_system_pcre=no])
+[use_system_pcre=yes])
+AC_ARG_WITH([system-tre],
+[AS_HELP_STRING([--with-system-tre],[use system tre library (if available) @<:@no@:>@])],
+[R_ARG_USE_SYSTEM(tre)],
+[use_system_tre=no])
 AC_ARG_WITH([system-xz],
 [AS_HELP_STRING([--with-system-xz],[use system xz (lzma) library (if available) @<:@yes@:>@])],
 [R_ARG_USE_SYSTEM(xz)],
@@ -463,6 +470,17 @@ AC_ARG_WITH([valgrind-instrumentation],
 [AS_HELP_STRING([--with-valgrind-instrumentation],[Level of additional instrumentation for Valgrind (0/1/2) @<:@0@:>@])],
 [valgrind_level=${withval}],
 [valgrind_level=0])
+
+AC_ARG_WITH([system-valgrind-headers],
+[AS_HELP_STRING([--with-system-valgrind-headers],[use system valgrind headers (if available) @<:@no@:>@])],
+[R_ARG_USE_SYSTEM(valgrind)],
+[use_system_valgrind=no])
+
+AC_ARG_WITH([internal-tzcode],
+[AS_HELP_STRING([--with-internal-tzcode],[use internal time-zone code @<:@no@:>@])],
+[use_internal_tzcode=${withval}],
+[use_internal_tzcode=default])
+
 
 ## <FIXME>
 ## Completely disable using libtool for building shlibs until libtool
@@ -636,7 +654,6 @@ AM_CONDITIONAL(HAVE_NOTANGLE, "${NOTANGLE}" != "false")
 ## javareconf needs this
 AC_PATH_PROG(REALPATH, realpath, false)
 
-
 ## cairographics needs pkg-config
 AC_PATH_PROG(PKGCONF, pkg-config , [], 
 	     [$PATH:/usr/local/bin:/ext/bin:/ext:/sw/bin:/opt/bin])
@@ -649,16 +666,16 @@ R_PROG_CPP_CPPFLAGS
 ## see if the user set FFLAGS: used for Intel compilers
 userFFLAGS=${FFLAGS}
 R_PROG_F77
-AC_PROG_CXX
-AC_PROG_CXXCPP
-if test "${CXXCPP}" = "${CXX} -E"; then
-  CXXCPP0="\$(CXX) -E"
-else
-  CXXCPP0=${CXXCPP}
-fi
-AC_SUBST(CXXCPP0)
+## AC_PROG_CXX
+## AC_PROG_CXXCPP
+## if test "${CXXCPP}" = "${CXX} -E"; then
+##   CXXCPP0="\$(CXX) -E"
+## else
+##   CXXCPP0=${CXXCPP}
+## fi
+## AC_SUBST(CXXCPP0)
 R_GCC4_VISIBILITY
-AC_GNU_SOURCE ## needed to libintl
+AC_GNU_SOURCE ## needed for libintl
 
 AC_PROG_OBJC
 ## unfortunately autoconf sets OBJC to gcc even if there is no working compiler
@@ -756,7 +773,7 @@ AC_SUBST(LIBM)
 AC_CHECK_LIB(m, sin)
 case "${host_os}" in
   darwin*)
-    ## MacOS <= 10.2 dlcompat, >= 10.3 included dlcompat in libSystem
+    ## OS X <= 10.2 dlcompat, >= 10.3 included dlcompat in libSystem
     AC_SEARCH_LIBS(dlopen, dl,,[AC_MSG_ERROR([Your OS X is too old.])])
     ## SI says we want '-lcc_dynamic' on Darwin, although currently
     ## http://developer.apple.com/documentation/MacOSX/ has nothing
@@ -792,7 +809,7 @@ if test "${use_readline}" = yes; then
     AC_CHECK_LIB(readline, rl_callback_read_char)
     use_readline="${ac_cv_lib_readline_rl_callback_read_char}"
   fi
-  ## the NetBSD version as used in MacOS X does not have this
+  ## the NetBSD version as used in OS X does not have this
   AC_CHECK_FUNCS(history_truncate_file)
   if test "${use_readline}" = no; then
     AC_MSG_ERROR([--with-readline=yes (default) and headers/libs are not available])
@@ -829,11 +846,15 @@ AC_HEADER_SYS_WAIT
 ## fpu_control.h is only used on Linux, for the obsolete __setfpucw.
 ## sys/param.h is one way to get PATH_MAX.
 ## sched.h is POSIX, but we use it for Linux-specific features (affinity)
+## stdalign.h is C11.
 AC_CHECK_HEADERS(arpa/inet.h dl.h dlfcn.h elf.h fcntl.h floatingpoint.h \
-  fpu_control.h glob.h grp.h netdb.h netinet/in.h pwd.h sched.h strings.h \
+  fpu_control.h glob.h grp.h langinfo.h \
+  netdb.h netinet/in.h pwd.h sched.h strings.h \
   sys/param.h sys/resource.h sys/select.h sys/socket.h \
   sys/stat.h sys/time.h sys/times.h sys/utsname.h unistd.h utime.h)
 ## </NOTE>
+## stdalign.h is C11.
+AC_CHECK_HEADERS(stdalign.h)
 ## <NOTE>
 ## These are C99 headers but some C code (written to work also
 ## without assuming C99) may need the corresponding conditionals.
@@ -947,6 +968,19 @@ AC_LANG_POP(C++)
 
 # Require C++ 11
 AX_CXX_COMPILE_STDCXX_11(noext,mandatory)
+# Modules that depend on C++11 may need these flags.
+CXX1X=${CXX}
+CXX1XSTD=${CXX}
+CXX1XFLAGS=${CXXFLAGS}
+CXX1XPICFLAGS=${CXXPICFLAGS}
+CXX1XLD=${CXXLD}
+SHLIB_CXX1XLDFLAGS=SHLID_CXXLDFLAGS
+AC_SUBST(CXX1X)
+AC_SUBST(CXX1XSTD)
+AC_SUBST(CXX1XFLAGS)
+AC_SUBST(CXX1XPICFLAGS)
+AC_SUBST(CXX1XLD)
+AC_SUBST(SHLIB_CXX1XLDFLAGS)
 
 ### *** ObjC compiler
 
@@ -1039,7 +1073,7 @@ case "${host_os}" in
       cc|c89)
 	## Luke Tierney says we also need '-Wp,-H16000' which tells the
 	## pre-processor to increase the size of an internal table.  It
-	## seems that src/modules/vfonts/g_her_glyph.c contains a line
+	## seems that src/main/vfonts/g_her_glyph.c contains a line
 	## that is too long for the pre-processor without this flag.
 	R_SH_VAR_ADD(R_XTRA_CPPFLAGS, [-Wp,-H16000])
 	;;
@@ -1364,7 +1398,7 @@ case "${host_os}" in
       esac
     fi
     ## some linkers are broken and need to be set to a specific
-    ## Mac OS X version to work better
+    ## OS X version to work better
     case "${host_os}" in
        darwin8*)
           # this is the 'old' way and it doesn't work with recent gcc as the driver
@@ -1737,6 +1771,10 @@ else
   fi
 fi
 
+## some claim Solaris needs -lsocket -lnsl (PR#15815)
+: ${INTERNET_LIBS="${internet_libs}"}
+AC_SUBST(INTERNET_LIBS)
+
 AM_CONDITIONAL(DYLIB_UNDEFINED_ALLOWED, [test "x${dylib_undefined_allowed}" = xyes])
 AM_CONDITIONAL(BUILD_CYGWIN, [test "x${is_cygwin}" = xyes])
 
@@ -1868,6 +1906,20 @@ fi
 ## isblank should be a macro according to C99.  It was missing on Solaris 8
 AC_CHECK_FUNCS(isblank)
 
+## Solaris libsunmath
+AC_CHECK_HEADERS(sunmath.h)
+AC_CHECK_LIB(sunmath, cospi)
+
+## Functions from draft C11 extensions, some of which are already in glibc
+## For now, do not define _GNU_SOURCE here.
+## All but pown have long been in libsunmath
+AC_CHECK_FUNCS([atanpi atan2pi cospi exp10 pown sinpi tanpi], 
+[#define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
+#include <math.h>
+#ifdef HAVE_SUNMATH_H
+#include <sunmath.h>
+#endif])
+
 ## fseeko/ftello are POSIX, may be macros
 ## matherr is SVID, redefined in arithmetic.c if present
 AC_CHECK_FUNCS(fseeko ftello matherr)
@@ -1890,6 +1942,8 @@ if test "${ac_cv_have_decl_stat}" = "no"; then
 fi
 R_CHECK_FUNCS([gettimeofday utimes], [#include <sys/time.h>])
 R_CHECK_FUNCS([times], [#include <sys/times.h>])
+R_CHECK_FUNCS([gmtime_r localtime_r], [#include <time.h>])
+R_CHECK_FUNCS([nl_langinfo], [#include <langinfo.h>])
 R_CHECK_FUNCS([access chdir execv ftruncate getcwd geteuid getuid link readlink symlink sysconf],
 [#ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -1898,7 +1952,7 @@ R_CHECK_FUNCS([access chdir execv ftruncate getcwd geteuid getuid link readlink 
 R_CHECK_FUNCS([sched_setaffinity sched_getaffinity], [#include <sched.h>])
 ## utime was declared obsolescent in POSIX 2008 (use utimes instead)
 R_CHECK_FUNCS([utime], [#include <utime.h>])
-## clock_gettime is POSIX 1993, but not on MacOS X
+## clock_gettime is POSIX 1993, but not on OS X
 ## Some OSes need -lrt: Linux (for glibc versions before 2.17), Solaris,
 ## not FreeBSD. 
 ## Unsurprising, as POSIX 2008 moved it from its timers section to base.
@@ -2026,13 +2080,46 @@ R_FUNC_LOG1P
 R_FUNC_FTELL
 R_FUNC_SIGACTION
 R_MKTIME_ERRNO
+R_FUNC_MKTIME
 
 R_C99_COMPLEX
 
-## check for vecLib framework (potentially to be used for BLAS)
-## in theory vecLib is platform-independent, in practice only
-## Apple's Mac OS X is known to provide it
-R_CHECK_FRAMEWORK(cblas_cdotu_sub, vecLib)
+## BSD extensions
+AC_CACHE_CHECK([whether 'struct tm' includes tm_zone],
+                [r_cv_have_tm_zone],
+[AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+// glibc needs this defined.
+#define _BSD_SOURCE
+#include <time.h>
+
+int main() {
+    struct tm x;
+    x.tm_zone = "";
+}
+]])],
+              [r_cv_have_tm_zone=yes],
+              [r_cv_have_tm_zone=no])])
+if test "x${r_cv_have_tm_zone}" = xyes; then
+  AC_DEFINE(HAVE_TM_ZONE, 1, [Define to 1 if your 'struct tm' has tm_zone.])
+fi
+
+AC_CACHE_CHECK([whether 'struct tm' includes tm_gmtoff],
+                [r_cv_have_tm_gmtoff],
+[AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+// glibc needs this defined.
+#define _BSD_SOURCE
+#include <time.h>
+
+int main() {
+    struct tm x;
+    x.tm_gmtoff = +3600;
+}
+]])],
+              [r_cv_have_tm_gmtoff=yes],
+              [r_cv_have_tm_gmtoff=no])])
+if test "x${r_cv_have_tm_gmtoff}" = xyes; then
+  AC_DEFINE(HAVE_TM_GMTOFF, 1, [Define to 1 if your 'struct tm' has tm_gmtoff.])
+fi
 
 ## BLAS.
 ## <NOTE>
@@ -2071,7 +2158,9 @@ case "${host_os}" in
     fi
   ;;
 esac
-AC_SUBST(LIBR)
+## LIBR0 is for the -L part, LIBR1 for -lR (if needed)
+AC_SUBST(LIBR0)
+AC_SUBST(LIBR1)
 
 ## This version is used to build a shared BLAS lib
 BLAS_LIBS0=${BLAS_LIBS}
@@ -2165,7 +2254,7 @@ AM_CONDITIONAL(USE_VECLIB_G95FIX, [test "x${use_veclib_g95fix}" = xyes])
 AM_CONDITIONAL(USE_EXTERNAL_BLAS, [test "${acx_blas_ok}" = "yes"])
 
 ## LAPACK.
-## The default has already been set on MacOS X: otherwise it is "no"
+## The default has already been set on OS X: otherwise it is "no"
 ## and so this test fails.
 if test "${use_lapack}" = "yes"; then
   R_LAPACK_LIBS
@@ -2265,6 +2354,56 @@ R_LZMA
 ## PCRE headers and libraries.
 R_PCRE
 
+## tre headers and libraries.
+R_TRE
+
+## libcurl
+AC_PATH_PROG(CURL_CONFIG, curl-config)
+if test -n "${CURL_CONFIG}"; then
+  if test -z "${CURL_CPPFLAGS}"; then
+    CURL_CPPFLAGS=`${CURL_CONFIG} --cflags`
+  fi
+  ## This in particular may be wrong for a static library,
+  ## and OpenCSW has in the past copied the static answer over the dynamic one.
+  if test -z "${CURL_LIBS}"; then
+    CURL_LIBS=`${CURL_CONFIG} --libs`
+  fi
+fi
+r_save_CPPFLAGS="${CPPLAGS}"
+CPPFLAGS="${CURL_CPPFLAGS} ${CPPFLAGS}"
+r_save_LIBS="${LIBS}"
+LIBS="${CURL_LIBS} ${LIBS}"
+AC_CACHE_CHECK([if libcurl version >= 7.28.0], [r_cv_have_curl728],
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdlib.h>
+#include <curl/curl.h>
+int main() 
+{
+#ifdef LIBCURL_VERSION_MAJOR
+#if LIBCURL_VERSION_MAJOR > 7
+  exit(1);
+#elif LIBCURL_VERSION_MAJOR == 7 && LIBCURL_VERSION_MINOR >= 28
+  exit(0);
+#else
+  exit(1);
+#endif
+#else
+  exit(1);
+#endif
+}
+]])], [r_cv_have_curl728=yes], [r_cv_have_curl728=no], [r_cv_have_curl728=no])])
+if test "x${r_cv_have_curl728}" != xyes; then
+  ac_cv_have_curl_curl_h=0
+  CURL_CPPFLAGS=
+  CURL_LIBS=
+else
+  AC_CHECK_HEADERS(curl/curl.h)
+fi
+CPPFLAGS="${r_save_CPPFLAGS}"
+LIBS="${r_save_LIBS}"
+AC_SUBST(CURL_CPPFLAGS)
+AC_SUBST(CURL_LIBS)
+
 ## POSIX times.
 R_SYS_POSIX_LEAPSECONDS
 
@@ -2301,6 +2440,19 @@ fi
 ## Large-file-support
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
+
+if test x${use_internal_tzcode} = xdefault; then
+case "${host_os}" in
+   darwin*)
+     use_internal_tzcode=yes;
+     ;; 
+esac
+fi
+
+if test "x${use_internal_tzcode}" = xyes; then
+  AC_DEFINE(USE_INTERNAL_MKTIME, 1, [Define to use internal time-zone code])
+fi
+AM_CONDITIONAL(BUILD_TZONE, [test "x${use_internal_tzcode}" = xyes])
 
 ### * Miscellaneous.
 
@@ -2626,6 +2778,7 @@ AC_CONFIG_FILES(
   src/extra/intl/Makefile
   src/extra/pcre/Makefile
   src/extra/tre/Makefile
+  src/extra/tzone/Makefile
   src/extra/xdr/Makefile
   src/extra/xz/Makefile
   src/extra/zlib/Makefile
@@ -2683,7 +2836,6 @@ AC_CONFIG_FILES(
   src/modules/X11/Makefile
   src/modules/internet/Makefile
   src/modules/lapack/Makefile
-  src/modules/vfonts/Makefile
   src/nmath/Makefile
   src/nmath/standalone/Makefile
   src/scripts/Makefile
@@ -2741,10 +2893,14 @@ if test "${acx_blas_ok}" = "yes"; then
   ## Try to figure out which BLAS was used.
   case "${BLAS_LIBS0}" in
     *-latlas*) r_blas=ATLAS ;;
+    *-lgoto*) r_blas=Goto ;;
+    *-lopenblas*) r_blas=OpenBLAS ;;
+    *-lacml*) r_blas=ACML ;;
+    *-lmkl*) r_blas=MKL ;;
     *-lsgemm*) r_blas=PhiPack ;;
     *sunperf*) r_blas=SunPerf ;;
     *-lessl*)  r_blas=ESSL ;;
-    *vecLib*)  r_blas=vecLib ;;
+    *Accelerate*)  r_blas=Accelerate ;;
     "")        r_blas=none ;;
     *)         r_blas=generic ;;
   esac
@@ -2759,30 +2915,61 @@ if test "${acx_lapack_ok}" = "yes"; then
   esac
   R_SH_VAR_ADD(r_external_libs, [LAPACK(${r_lapack})], [, ])
 fi
-if test "${use_ICU}" = yes; then
-  R_SH_VAR_ADD(r_external_libs, [ICU], [, ])
+if test "${have_zlib}" = yes; then
+  R_SH_VAR_ADD(r_external_libs, [zlib], [, ])
+fi
+if test "${have_bzlib}" = yes; then
+  R_SH_VAR_ADD(r_external_libs, [bzlib], [, ])
 fi
 if test "${have_lzma}" = yes; then
   R_SH_VAR_ADD(r_external_libs, [lzma], [, ])
 fi
+if test "${have_pcre}" = yes; then
+  R_SH_VAR_ADD(r_external_libs, [PCRE], [, ])
+fi
+if test "${have_tre}" = yes; then
+  R_SH_VAR_ADD(r_external_libs, [tre], [, ])
+fi
+if test "x$ac_cv_header_curl_curl_h" = xyes; then
+  R_SH_VAR_ADD(r_external_libs, [curl], [, ])
+fi
+
 r_capabilities=
+r_no_capabilities=
 if test "${have_png}" = yes; then
   R_SH_VAR_ADD(r_capabilities, [PNG], [, ])
+else
+  R_SH_VAR_ADD(r_no_capabilities, [PNG], [, ])
 fi
 if test "${have_jpeg}" = yes; then
   R_SH_VAR_ADD(r_capabilities, [JPEG], [, ])
+else
+  R_SH_VAR_ADD(r_no_capabilities, [JPEG], [, ])
 fi
 if test "${have_tiff}" = yes; then
   R_SH_VAR_ADD(r_capabilities, [TIFF], [, ])
+else
+  R_SH_VAR_ADD(r_no_capabilities, [TIFF], [, ])
 fi
 if test "${USE_NLS}" = yes; then
   R_SH_VAR_ADD(r_capabilities, [NLS], [, ])
+else
+  R_SH_VAR_ADD(r_no_capabilities, [NLS], [, ])
 fi
 if test "${r_cv_cairo_works}" = yes; then
   R_SH_VAR_ADD(r_capabilities, [cairo], [, ])
+else
+  R_SH_VAR_ADD(r_no_capabilities, [cairo], [, ])
 fi
+if test "${use_ICU}" = yes; then
+  R_SH_VAR_ADD(r_capabilities, [ICU], [, ])
+else
+  R_SH_VAR_ADD(r_no_capabilities, [ICU], [, ])
+fi
+
 r_options=
 cxxr_options=
+r_no_options=
 if test "${want_R_framework}" = yes; then
   R_SH_VAR_ADD(r_options, [framework], [, ])
 elif test "${want_R_shlib}" = yes; then
@@ -2792,21 +2979,24 @@ elif test "${want_R_static}" = yes; then
 fi
 if test "${use_blas_shlib}" = yes; then
   R_SH_VAR_ADD(r_options, [shared BLAS], [, ])
+else
+  R_SH_VAR_ADD(r_no_options, [shared BLAS], [, ])
 fi
 if test "${want_R_profiling}" = yes; then
   R_SH_VAR_ADD(r_options, [R profiling], [, ])
+else
+  R_SH_VAR_ADD(r_no_options, [R profiling], [, ])
 fi
 if test "${want_memory_profiling}" = yes; then
   R_SH_VAR_ADD(r_options, [memory profiling], [, ])
+else
+  R_SH_VAR_ADD(r_no_options, [memory profiling], [, ])
 fi
 if test "${use_maintainer_mode}" = yes; then
   R_SH_VAR_ADD(r_options, [maintainer mode], [, ])
 fi
 if test "${use_strict_barrier}" = yes; then
   R_SH_VAR_ADD(r_options, [strict barrier], [, ])
-fi
-if test "${want_linux_lfs}" = yes; then
-  R_SH_VAR_ADD(r_options, [Linux LFS], [, ])
 fi
 if test "${want_prebuilt_html}" = yes; then
   R_SH_VAR_ADD(r_options, [static HTML], [, ])
@@ -2835,6 +3025,9 @@ CXXR is now configured for ${host}
   Additional capabilities:   ${r_capabilities}
   CR Options enabled:        ${r_options}
   CXXR Options enabled:      ${cxxr_options}
+
+  Capabilities skipped:      ${r_no_capabilities}
+  Options not enabled:       ${r_no_options}
 
   Recommended packages:      ${use_recommended_packages} 
 ])

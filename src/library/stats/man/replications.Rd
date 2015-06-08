@@ -1,6 +1,6 @@
 % File src/library/stats/man/replications.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{replications}
@@ -44,7 +44,7 @@ replications(formula, data = NULL, na.action)
 }
 \author{
   The design was inspired by the S function of the same name described
-  in Chambers \emph{et al.} (1992).
+  in Chambers \emph{et al} (1992).
 }
 
 \seealso{\code{\link{model.tables}}}

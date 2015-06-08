@@ -1,7 +1,7 @@
 #  File src/library/base/R/load.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -47,28 +47,30 @@ load <- function (file, envir = parent.frame(), verbose = FALSE)
 
     if (verbose)
     	cat("Loading objects:\n")
-    	
+
     .Internal(loadFromConn2(con, envir, verbose))
 }
 
 save <- function(..., list = character(),
                  file = stop("'file' must be specified"),
                  ascii = FALSE, version = NULL, envir = parent.frame(),
-                 compress = !ascii, compression_level,
+                 compress = isTRUE(!ascii), compression_level,
                  eval.promises = TRUE, precheck = TRUE)
 {
     opts <- getOption("save.defaults")
     if (missing(compress) && ! is.null(opts$compress))
         compress <- opts$compress
+    if (missing(compression_level) && ! is.null(opts$compression_level))
+        compression_level <- opts$compression_level
     if (missing(ascii) && ! is.null(opts$ascii))
         ascii <- opts$ascii
     if (missing(version)) version <- opts$version
     if (!is.null(version) && version < 2)
         warning("Use of save versions prior to 2 is deprecated", domain = NA)
 
-    if(missing(list) && !length(list(...)))
+    names <- as.character(substitute(list(...)))[-1L]
+    if(missing(list) && !length(names))
 	warning("nothing specified to be save()d")
-    names <- as.character( substitute(list(...)))[-1L]
     list <- c(list, names)
     if (!is.null(version) && version == 1)
         .Internal(save(list, file, ascii, version, envir, eval.promises))
@@ -76,7 +78,7 @@ save <- function(..., list = character(),
         if (precheck) {
             ## check for existence of objects before opening connection
             ## (and e.g. clobering file)
-            ok <- unlist(lapply(list, exists, envir=envir))
+	    ok <- vapply(list, exists, NA, envir=envir)
             if(!all(ok)) {
                 n <- sum(!ok)
                 stop(sprintf(ngettext(n,
@@ -117,7 +119,7 @@ save <- function(..., list = character(),
 	else if (inherits(file, "connection"))
 	    con <- file
 	else stop("bad file argument")
-	if(isOpen(con) && summary(con)$text != "binary")
+	if(isOpen(con) && !ascii && summary(con)$text != "binary")
 	    stop("can only save to a binary connection")
 	.Internal(saveToConn(list, con, ascii, version, envir, eval.promises))
     }
@@ -153,7 +155,7 @@ save.image <- function (file = ".RData", version = NULL, ascii = FALSE,
     else outfile <- file
 
     on.exit(file.remove(outfile))
-    save(list = ls(envir = .GlobalEnv, all.names = TRUE), file = outfile,
+    save(list = names(.GlobalEnv), file = outfile,
          version = version, ascii = ascii, compress = compress,
          envir = .GlobalEnv, precheck = FALSE)
     if (safe)
@@ -187,8 +189,7 @@ findPackageEnv <- function(info)
     if(info %in% search()) return(as.environment(info))
     message(gettextf("Attempting to load the environment %s", sQuote(info)),
             domain = NA)
-    pkg <- substr(info, 9L, 1000L)
-    if(require(pkg, character.only=TRUE, quietly = TRUE))
+    if(require(substr(info, 9L, 1000L), character.only = TRUE, quietly = TRUE))
         return(as.environment(info))
     message("Specified environment not found: using '.GlobalEnv' instead")
     .GlobalEnv

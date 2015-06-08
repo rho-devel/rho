@@ -7,9 +7,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.1.0 \n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-06-21 09:14+0100\n"
-"PO-Revision-Date: 2013-02-28 06:03+0200 \n"
-"Last-Translator: Triad sou <triadsou@gmail.com> \n"
+"POT-Creation-Date: 2015-03-01 13:20+0000\n"
+"PO-Revision-Date: 2014-03-26 13:56+0200 \n"
+"Last-Translator: Masafumi  \n"
 "Language-Team: RjpWiki Message Translation Team <mokada@md.tsukuba.ac.jp> \n"
 "Language: ja \n"
 "MIME-Version: 1.0 \n"
@@ -18,117 +18,117 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0; \n"
 "X-Generator: Pootle 2.0.5 \n"
 
-#: Rmd5.c:36
+#: Rmd5.c:37
 msgid "argument 'files' must be character"
 msgstr " 引数 'files' は文字型でなければなりません "
 
-#: Rmd5.c:50
+#: Rmd5.c:51
 #, c-format
 msgid "md5 failed on file '%s'"
 msgstr " md5 はファイル '%s' で失敗しました "
 
-#: getfmts.c:51
+#: getfmts.c:61
 #, c-format
 msgid "only %d arguments are allowed"
 msgstr " 引数は %d 個までです "
 
-#: getfmts.c:56
+#: getfmts.c:66
 msgid "'fmt' is not a character vector"
-msgstr " 'fmt' は文字列ベクトルではありません "
+msgstr " 'fmt' は文字ベクトルではありません "
 
-#: getfmts.c:59
+#: getfmts.c:69
 msgid "'fmt' must be length 1"
 msgstr " 'fmt' の長さは 1 でなければなりません "
 
-#: getfmts.c:65
+#: getfmts.c:75
 #, c-format
 msgid "'fmt' length exceeds maximal format length %d"
 msgstr " 'fmt' の長さがフォーマットの最大長 %d を越えています "
 
-#: getfmts.c:86
+#: getfmts.c:96
 #, c-format
 msgid "unrecognised format specification '%s'"
 msgstr " 識別不能なフォーマット指定 '%s' です "
 
-#: getfmts.c:126
+#: getfmts.c:136
 msgid "at most one asterisk '*' is supported in each conversion specification"
 msgstr " 各変換指定に許されるアステリスク '*' は多くても一つです "
 
-#: gramLatex.y:678 gramRd.y:1300
+#: gramLatex.c:2376 gramRd.y:1328
 #, c-format
 msgid "unable to allocate buffer for long string at line %d"
 msgstr " %d 行にある長い文字列のためのバッファを確保できませんでした "
 
-#: gramLatex.y:915 gramRd.y:1788 gramRd.y:1794
+#: gramLatex.c:2613 gramRd.y:1817 gramRd.y:1823
 #, c-format
 msgid "invalid '%s' value"
 msgstr " 不正な '%s' 値です "
 
-#: gramRd.y:295 gramRd.y:298
+#: gramRd.y:303 gramRd.y:306
 #, c-format
 msgid "bad markup (extra space?) at %s:%d:%d"
 msgstr " %s:%d:%d に誤ったマークアップがあります (スペースが余計?) "
 
-#: gramRd.y:534
+#: gramRd.y:545
 #, c-format
 msgid "Macro '%s' previously defined."
 msgstr " マクロ '%s' は既に定義されています。 "
 
-#: gramRd.y:543
+#: gramRd.y:555
 #, c-format
 msgid "At most 4 arguments are allowed for user defined macros."
 msgstr " ユーザー定義のマクロに許されている引数の数は最大 4 つです "
 
-#: gramRd.y:577
+#: gramRd.y:589
 #, c-format
 msgid "No macro definition for '%s'."
 msgstr " '%s' に対するマクロが定義されていません。 "
 
-#: gramRd.y:729 gramRd.y:733
+#: gramRd.y:743 gramRd.y:747
 #, c-format
 msgid "newline within quoted string at %s:%d"
 msgstr " 引用文字列の %s に改行:%d "
 
-#: gramRd.y:752
+#: gramRd.y:766
 #, c-format
 msgid "unable to allocate buffer for long macro at line %d"
 msgstr " 行 %d にある長いマクロに対するバッファを確保できません "
 
-#: gramRd.y:782
+#: gramRd.y:796
 msgid "macros nested too deeply: infinite recursion?"
 msgstr " マクロが過剰に入れ子になっています: 無限な再帰？ "
 
-#: gramRd.y:1165
+#: gramRd.y:1190
 #, c-format
 msgid "Unable to find macro %s"
 msgstr " マクロ %s を見つけることができません "
 
-#: gramRd.y:1360
+#: gramRd.y:1388
 #, c-format
 msgid "Unexpected end of input (in %c quoted string opened at %s:%d:%d)"
 msgstr " 予想外の入力の停止 (%c 引用文字列中の %s:%d:%d で開かれた) "
 
-#: gramRd.y:1799
+#: gramRd.y:1830
 msgid "cannot open the connection"
 msgstr " コネクションを開くことができません "
 
-#: gramRd.y:1806
+#: gramRd.y:1837
 msgid "cannot read from this connection"
 msgstr " このコネクションからは読み取りができません "
 
-#: gramRd.y:1814
+#: gramRd.y:1845
 msgid "invalid Rd file"
 msgstr " 不正な Rd ファイルです "
 
-#: gramRd.y:1833
+#: gramRd.y:1864
 msgid "'deparseRd' only supports deparsing character elements"
 msgstr " 'deparseRd' は文字要素のディパースだけをサポートしています "
 
-#: gramRd.y:1836
+#: gramRd.y:1867
 msgid "bad state"
 msgstr " 不都合な状態 "
 
-#: gramRd.y:1849
+#: gramRd.y:1880
 #, c-format
 msgid "bad text mode %d in 'deparseRd'"
 msgstr " 'deparseRd' 中に不都合なテキストモード %d "
@@ -137,12 +137,12 @@ msgstr " 'deparseRd' 中に不都合なテキストモード %d "
 msgid "invalid bind address specification"
 msgstr " 不正な空白アドレス指定 "
 
-#: install.c:102 install.c:123 install.c:125
+#: install.c:112 install.c:133 install.c:135
 #, c-format
 msgid "invalid '%s' argument"
 msgstr " 不正な引数 '%s' です "
 
-#: install.c:153
+#: install.c:163
 msgid "write error during file append"
 msgstr " ファイルの付加中に書き込みエラー "
 
@@ -154,10 +154,10 @@ msgstr " pskill() はこのプラットホームではサポートされてい�
 msgid "psnice() is not supported on this platform"
 msgstr " psnice() はこのプラットホームではサポートされていません "
 
-#: text.c:65
+#: text.c:66
 msgid "invalid argument type"
 msgstr " 不正な引数の型です "
 
-#: text.c:222 text.c:244
+#: text.c:223 text.c:245
 msgid "out of memory"
 msgstr " メモリが足りません "

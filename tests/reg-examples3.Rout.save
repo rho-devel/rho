@@ -1,6 +1,6 @@
 
-R version 3.0.2 RC (2013-09-22 r63960) -- "Frisbee Sailing"
-Copyright (C) 2013 The R Foundation for Statistical Computing
+R Under development (unstable) (2015-03-01 r67919) -- "Unsuffered Consequences"
+Copyright (C) 2015 The R Foundation for Statistical Computing
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -17,16 +17,20 @@ Type 'q()' to quit R.
 
 > ## For examples skipped in testing because they need recommended packages.
 > 
+> ## This is skipped entirely on a Unix-alike if recommended packages are,
+> ## so for Windows
+> if(!require("MASS")) q()
+Loading required package: MASS
+> 
 > pdf("reg-examples-3.pdf", encoding = "ISOLatin1.enc")
 > 
 > ## From datasets
-> if(require("survival")){
+> if(require("survival")) {
 +   model3 <- clogit(case ~ spontaneous+induced+strata(stratum), data = infert)
 +   print(summary(model3))
 +   detach("package:survival")  # survival (conflicts)
 + }
 Loading required package: survival
-Loading required package: splines
 Call:
 coxph(formula = Surv(rep(1, 248L), case) ~ spontaneous + induced + 
     strata(stratum), data = infert, method = "exact")
@@ -56,8 +60,6 @@ Score (logrank) test = 48.44  on 2 df,   p=3.032e-11
 > x   <- rbind(x1, x2)
 > 
 > dcols <- densCols(x)
-KernSmooth 2.23 loaded
-Copyright M. P. Wand 1997-2009
 > graphics::plot(x, col = dcols, pch = 20, main = "n = 1000")
 > 
 > 
@@ -178,7 +180,7 @@ factor> of <- ordered(ff)
 factor> stopifnot(identical(range(of, rev(of)), of[3:2]),
 factor+ 	  identical(max(of), of[2]))
 
-factor> ## End Don't show
+factor> ## End(Don't show)
 factor> 
 factor> ## suppose you want "NA" as a level, and to allow missing values.
 factor> (x <- factor(c(1, 2, NA), exclude = NULL))

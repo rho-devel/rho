@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2013  The R Core Team.
+ *  Copyright (C) 1998--2015  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -64,7 +64,6 @@
  */
 # define extern0 extern attribute_hidden
 
-
 #define MAXELTSIZE 8192 /* Used as a default for string buffer sizes,
 			   and occasionally as a limit. */
 
@@ -103,8 +102,9 @@ extern0 SEXP	R_RecursiveSymbol;  /* "recursive" */
 extern0 SEXP	R_WholeSrcrefSymbol;   /* "wholeSrcref" */
 extern0 SEXP	R_TmpvalSymbol;     /* "*tmp*" */
 extern0 SEXP	R_UseNamesSymbol;   /* "use.names" */
-extern0 SEXP	R_DoubleColonSymbol;   /* "::" */
-extern0 SEXP	R_TripleColonSymbol;   /* ":::" */
+extern0 SEXP	R_ColonSymbol;         /* ":" */
+//extern0 SEXP	R_DoubleColonSymbol;   /* "::" */
+//extern0 SEXP	R_TripleColonSymbol;   /* ":::" */
 extern0 SEXP    R_ConnIdSymbol;  /* "conn_id" */
 extern0 SEXP    R_DevicesSymbol;  /* ".Devices" */
 
@@ -127,6 +127,9 @@ extern "C" {
 #endif
 
 extern void R_ProcessEvents(void);
+#ifdef Win32
+extern void R_WaitEvent(void);
+#endif
 
 #ifdef __cplusplus
 }  /* extern "C" */
@@ -237,6 +240,9 @@ extern int putenv(char *string);
 /* seems this is now defined by MinGW to be 259, whereas FILENAME_MAX
    and MAX_PATH are 260.  It is not clear that this really is in bytes,
    but might be chars for the Unicode interfaces.
+
+   260 is d:\ plus 256 chars plus nul.  Some but not all API calls
+   allow filepaths of the form \\?\D:\very_long_path .
 */
 #    define PATH_MAX 260
 #  else
@@ -368,9 +374,8 @@ extern0 R_size_t R_VSize  INI_as(R_VSIZE);/* Initial size of the heap */
 extern0 int	R_Is_Running;	    /* for Windows memory manager */
 
 /* Evaluation Environment */
-// Commenting out done in CXXR 3.0.2 upgrade.  FIXME delete altogether
-//extern0 RCNTXT* R_SessionContext;   /* The session toplevel context */
 extern Rboolean R_Visible;	    /* Value visibility flag */
+extern0 int	R_EvalDepth	INI_as(0);	/* Evaluation recursion depth */
 extern0 int	R_BrowseLines	INI_as(0);	/* lines/per call in browser */
 
 extern0 Rboolean R_KeepSource	INI_as(FALSE);	/* options(keep.source) */
@@ -379,7 +384,7 @@ extern0 int	R_WarnLength	INI_as(1000);	/* Error/warning max length */
 extern0 int	R_nwarnings	INI_as(50);
 extern uintptr_t R_CStackLimit	INI_as((uintptr_t)-1);	/* C stack limit */
 extern uintptr_t R_CStackStart	INI_as((uintptr_t)-1);	/* Initial stack address */
-extern0 int	R_CStackDir	INI_as(1);	/* C stack direction */
+extern int	R_CStackDir	INI_as(1);	/* C stack direction */
 
 /* File Input/Output */
 LibExtern Rboolean R_Interactive INI_as(TRUE);	/* TRUE during interactive use*/
@@ -400,7 +405,7 @@ extern0 char	R_StdinEnc[31]  INI_as("");	/* Encoding assumed for stdin */
 /* Objects Used In Parsing  */
 LibExtern int	R_ParseError	INI_as(0); /* Line where parse error occurred */
 extern0 int	R_ParseErrorCol;    /* Column of start of token where parse error occurred */
-extern0 SEXP	R_ParseErrorFile;   /* Source file where parse error was seen.  Either a 
+extern0 SEXP	R_ParseErrorFile;   /* Source file where parse error was seen.  Either a
 				       STRSXP or (when keeping srcrefs) a SrcFile ENVSXP */
 #define PARSE_ERROR_SIZE 256	    /* Parse error messages saved here */
 LibExtern char	R_ParseErrorMsg[PARSE_ERROR_SIZE] INI_as("");
@@ -443,8 +448,9 @@ extern0   Rboolean WinUTF8out  INI_as(FALSE);  /* Use UTF-8 for output */
 extern0   void WinCheckUTF8(void);
 #endif
 
-extern char OutDec	INI_as('.');  /* decimal point used for output */
+extern char* OutDec	INI_as(".");  /* decimal point used for output */
 extern0 Rboolean R_DisableNLinBrowser	INI_as(FALSE);
+extern0 char R_BrowserLastCommand	INI_as('n');
 
 /* Initialization of the R environment when it is embedded */
 extern int Rf_initEmbeddedR(int argc, char **argv);
@@ -467,6 +473,8 @@ extern0 int R_jit_enabled INI_as(0);
 extern0 int R_compile_pkgs INI_as(0);
 extern SEXP R_cmpfun(SEXP);
 extern void R_init_jit_enabled(void);
+extern void R_initAsignSymbols(void);
+
 LibExtern int R_num_math_threads INI_as(1);
 LibExtern int R_max_num_math_threads INI_as(1);
 
@@ -501,6 +509,15 @@ extern unsigned int max_contour_segments INI_as(25000);
 extern Rboolean known_to_be_latin1 INI_as(FALSE);
 extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 
+/* pre-allocated boolean values */
+LibExtern SEXP R_TrueValue INI_as(NULL);
+LibExtern SEXP R_FalseValue INI_as(NULL);
+LibExtern SEXP R_LogicalNAValue INI_as(NULL);
+
+#ifdef Win32
+LibExtern Rboolean UseInternet2;
+#endif
+
 #ifdef __MAIN__
 # undef extern
 # undef extern0
@@ -522,6 +539,7 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define allocCharsxp		Rf_allocCharsxp
 # define asVecSize		Rf_asVecSize
 # define begincontext		Rf_begincontext
+# define BindDomain		Rf_BindDomain
 # define check1arg		Rf_check1arg
 # define CleanEd		Rf_CleanEd
 # define CoercionWarning       	Rf_CoercionWarning
@@ -530,6 +548,8 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define ComplexFromReal	Rf_ComplexFromReal
 # define ComplexFromString	Rf_ComplexFromString
 # define copyMostAttribNoTs	Rf_copyMostAttribNoTs
+# define createS3Vars		Rf_createS3Vars
+# define currentTime		Rf_currentTime
 # define CustomPrintValue	Rf_CustomPrintValue
 # define DataFrameClass		Rf_DataFrameClass
 # define ddfindVar		Rf_ddfindVar
@@ -540,7 +560,9 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define DispatchGroup		Rf_DispatchGroup
 # define DispatchOrEval		Rf_DispatchOrEval
 # define dynamicfindVar		Rf_dynamicfindVar
+# define EncodeChar             Rf_EncodeChar
 # define EncodeRaw              Rf_EncodeRaw
+# define EncodeReal2            Rf_EncodeReal2
 # define EncodeString           Rf_EncodeString
 # define EnsureString 		Rf_EnsureString
 # define envlength		Rf_envlength
@@ -566,7 +588,9 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define InitNames		Rf_InitNames
 # define InitOptions		Rf_InitOptions
 # define InitStringHash		Rf_InitStringHash
+# define InitS3DefaultTypes	Rf_InitS3DefaultTypes
 # define InitTempDir		Rf_InitTempDir
+# define InitTypeTables		Rf_InitTypeTables
 # define initStack		Rf_initStack
 # define IntegerFromComplex	Rf_IntegerFromComplex
 # define IntegerFromLogical	Rf_IntegerFromLogical
@@ -604,6 +628,7 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define onsigusr1              Rf_onsigusr1
 # define onsigusr2              Rf_onsigusr2
 # define parse			Rf_parse
+# define patchArgsByActuals	Rf_patchArgsByActuals
 # define PrintDefaults		Rf_PrintDefaults
 # define PrintGreeting		Rf_PrintGreeting
 # define PrintValueEnv		Rf_PrintValueEnv
@@ -618,6 +643,7 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define RealFromLogical	Rf_RealFromLogical
 # define RealFromString		Rf_RealFromString
 # define Seql			Rf_Seql
+# define sexptype2char		Rf_sexptype2char
 # define Scollate		Rf_Scollate
 # define sortVector		Rf_sortVector
 # define SrcrefPrompt		Rf_SrcrefPrompt
@@ -629,6 +655,7 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define strIsASCII		Rf_strIsASCII
 # define strmat2intmat		Rf_strmat2intmat
 # define substituteList		Rf_substituteList
+# define TimeToSeed		Rf_TimeToSeed
 # define tsConform		Rf_tsConform
 # define tspgets		Rf_tspgets
 # define type2symbol		Rf_type2symbol
@@ -687,6 +714,8 @@ void R_SetVarLocValue(R_varloc_t, SEXP);
 #define DELAYPROMISES 		32
 #define KEEPNA			64
 #define S_COMPAT       		128
+#define HEXNUMERIC             	256
+#define DIGITS16             	512
 /* common combinations of the above */
 #define SIMPLEDEPARSE		0
 #define DEFAULTDEPARSE		65 /* KEEPINTEGER | KEEPNA, used for calls */
@@ -724,8 +753,8 @@ SEXP Rf_deparse1s(SEXP call);
 int Rf_DispatchOrEval(SEXP, SEXP, const char *, SEXP, SEXP, SEXP*, int, int);
 int Rf_DispatchGroup(const char *, SEXP,SEXP,SEXP,SEXP,SEXP*);
 SEXP duplicated(SEXP, Rboolean);
-int any_duplicated(SEXP, Rboolean);
-int any_duplicated3(SEXP, SEXP, Rboolean);
+R_xlen_t any_duplicated(SEXP, Rboolean);
+R_xlen_t any_duplicated3(SEXP, SEXP, Rboolean);
 int Rf_envlength(SEXP);
 SEXP Rf_evalListKeepMissing(SEXP, SEXP);
 int Rf_factorsConform(SEXP, SEXP);
@@ -742,6 +771,7 @@ void Rf_InitEd(void);
 void Rf_InitFunctionHashing(void);
 void Rf_InitGlobalEnv(void);
 Rboolean R_current_trace_state(void);
+Rboolean R_current_debug_state(void);
 Rboolean R_has_methods(SEXP);
 void R_InitialData(void);
 
@@ -762,6 +792,8 @@ void Init_R_Variables(SEXP);
 void Rf_InitTempDir(void);
 void Rf_initStack(void);
 void Rf_internalTypeCheck(SEXP, SEXP, SEXPTYPE);
+void Rf_InitTypeTables(void);
+void Rf_InitS3DefaultTypes(void);
 Rboolean isMethodsDispatchOn(void);
 int Rf_isValidName(const char *);
 void Rf_KillAllDevices(void);
@@ -819,6 +851,7 @@ int R_SetOptionWidth(int);
 void R_Suicide(const char *);
 void R_getProcTime(double *data);
 int R_isMissing(SEXP symbol, SEXP rho);
+const char *sexptype2char(SEXPTYPE type);
 void Rf_sortVector(SEXP, Rboolean);
 void Rf_SrcrefPrompt(const char *, SEXP);
 #ifdef __cplusplus
@@ -826,6 +859,7 @@ void Rf_ssort(CXXR::StringVector*,int);
 #endif
 SEXP Rf_strmat2intmat(SEXP, SEXP, SEXP);
 SEXP Rf_substituteList(SEXP, SEXP);
+unsigned int TimeToSeed(void);
 Rboolean Rf_tsConform(SEXP,SEXP);
 SEXP Rf_tspgets(SEXP, SEXP);
 SEXP Rf_type2symbol(SEXPTYPE);
@@ -841,8 +875,8 @@ SEXP vectorIndex(SEXP, SEXP, int, int, int, SEXP, Rboolean);
 SEXP Rf_ItemName(SEXP, R_xlen_t);
 
 /* ../main/errors.c : */
-void Rf_ErrorMessage(SEXP, int, ...);
-void Rf_WarningMessage(SEXP, R_WARNING, ...);
+void NORET ErrorMessage(SEXP, int, ...);
+void WarningMessage(SEXP, R_WARNING, ...);
 SEXP R_GetTraceback(int);
 
 R_size_t R_GetMaxVSize(void);
@@ -866,7 +900,8 @@ typedef enum {
 int	Rstrlen(SEXP, int);
 const char *Rf_EncodeRaw(Rbyte, const char *);
 const char *Rf_EncodeString(SEXP, int, int, Rprt_adj);
-const char *EncodeReal2(double, int, int, int);
+const char *Rf_EncodeReal2(double, int, int, int);
+const char *Rf_EncodeChar(SEXP);
 
 
 /* main/sort.c */
@@ -882,10 +917,13 @@ SEXP R_subassign3_dflt(SEXP, SEXP, SEXP, SEXP);
 #include <wchar.h>
 
 /* main/util.c */
-void UNIMPLEMENTED_TYPE(const char *s, SEXP x);
-void UNIMPLEMENTED_TYPEt(const char *s, SEXPTYPE t);
+void NORET UNIMPLEMENTED_TYPE(const char *s, SEXP x);
+void NORET UNIMPLEMENTED_TYPEt(const char *s, SEXPTYPE t);
 Rboolean Rf_strIsASCII(const char *str);
 int utf8clen(char c);
+int Rf_AdobeSymbol2ucs2(int n);
+double R_strtod5(const char *str, char **endptr, char dec,
+		 Rboolean NA, int exact);
 
 typedef unsigned short ucs2_t;
 size_t mbcsToUcs2(const char *in, ucs2_t *out, int nout, int enc);
@@ -903,13 +941,30 @@ SEXP Rf_installTrChar(SEXP);
 
 const wchar_t *Rf_wtransChar(SEXP x); /* from sysutils.c */
 
-
 #define mbs_init(x) memset(x, 0, sizeof(mbstate_t))
 size_t Rf_mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps);
 Rboolean mbcsValid(const char *str);
 Rboolean utf8Valid(const char *str);
 char *Rf_strchr(const char *s, int c);
 char *Rf_strrchr(const char *s, int c);
+
+SEXP fixup_NaRm(SEXP args); /* summary.c */
+void invalidate_cached_recodings(void);  /* from sysutils.c */
+void resetICUcollator(void); /* from util.c */
+void dt_invalidate_locale(); /* from Rstrptime.h */
+extern int R_OutputCon; /* from connections.c */
+extern int R_InitReadItemDepth, R_ReadItemDepth; /* from serialize.c */
+void get_current_mem(size_t *,size_t *,size_t *); /* from memory.c */
+unsigned long get_duplicate_counter(void);  /* from duplicate.c */
+void reset_duplicate_counter(void);  /* from duplicate.c */
+void BindDomain(char *); /* from main.c */
+extern Rboolean LoadInitFile;  /* from startup.c */
+
+// Unix and Windows versions
+double R_getClockIncrement(void);
+void R_getProcTime(double *data);
+void InitDynload(void);
+void R_CleanTempDir(void);
 
 #ifdef Win32
 void R_fixslash(char *s);
@@ -944,22 +999,23 @@ extern const char *locale2charset(const char *);
 
 /* Localization */
 
-#ifdef ENABLE_NLS
-#include <libintl.h>
-#ifdef Win32
-#define _(String) libintl_gettext (String)
-#undef gettext /* needed for graphapp */
-#else
-#define _(String) gettext (String)
+#ifndef NO_NLS
+# ifdef ENABLE_NLS
+#  include <libintl.h>
+#  ifdef Win32
+#   define _(String) libintl_gettext (String)
+#   undef gettext /* needed for graphapp */
+#  else
+#   define _(String) gettext (String)
+#  endif
+#  define gettext_noop(String) String
+#  define N_(String) gettext_noop (String)
+#  else /* not NLS */
+#  define _(String) (String)
+#  define N_(String) String
+#  define ngettext(String, StringP, N) (N > 1 ? StringP: String)
+# endif
 #endif
-#define gettext_noop(String) String
-#define N_(String) gettext_noop (String)
-#else /* not NLS */
-#define _(String) (String)
-#define N_(String) String
-#define ngettext(String, StringP, N) (N > 1 ? StringP: String)
-#endif
-
 
 /* Macros for suspending interrupts: also in GraphicsDevice.h */
 #define BEGIN_SUSPEND_INTERRUPTS do { \
@@ -1000,6 +1056,9 @@ extern void *alloca(size_t);
 # define LONG_INT int_fast64_t
 # define LONG_INT_MAX INT_FAST64_MAX
 #endif
+
+// for reproducibility for now: use exp10 or pown later if accurate enough.
+#define Rexp10(x) pow(10.0, x)
 
 /*
  * 2007/06/06 arr:

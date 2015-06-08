@@ -2,7 +2,7 @@
 
 /*************************************************************************
  *
- * $Id$
+ * $Id: trio.c,v 1.112 2008/11/09 10:52:26 breese Exp $
  *
  * Copyright (C) 1998, 2009 Bjorn Reese and Daniel Stenberg.
  *
@@ -895,7 +895,7 @@ typedef struct _trio_userdef_t {
  *
  *************************************************************************/
 
-static TRIO_CONST char rcsid[] = "@(#)$Id$";
+static TRIO_CONST char rcsid[] = "@(#)$Id: trio.c,v 1.112 2008/11/09 10:52:26 breese Exp $";
 
 #if TRIO_FEATURE_FLOAT
 /*
@@ -6285,7 +6285,7 @@ TRIO_ARGS4((self, target, flags, width),
 {
   int i;
   int j;
-  int size;
+  int size = 0;
   int amount = 0;
   trio_wchar_t wch;
   char buffer[MB_LEN_MAX + 1];
@@ -6373,7 +6373,7 @@ TRIO_ARGS4((self, target, flags, width),
       i += size;
     }
   if (target)
-    target[i] = WCONST('\0');
+    target[i] = L'\0';
   return TRUE;
 }
 #endif /* TRIO_FEATURE_WIDECHAR */

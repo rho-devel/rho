@@ -26,7 +26,7 @@ R_HOME = $(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES_C = Rhttpd.c Rsock.c nanoftp.c nanohttp.c sock.c
+SOURCES_C = Rhttpd.c Rsock.c libcurl.c nanoftp.c nanohttp.c sock.c
 SOURCES_CPP = internet.cpp sockconn.cpp
 HEADERS = sock.h
 DEPENDS = $(SOURCES_C:.c=.d) $(SOURCES_CPP:.cpp=.d)
@@ -38,14 +38,13 @@ DISTFILES = \
 	dllversion.rc
 
 internet_la = internet$(SHLIB_EXT)
-internet_la_LIBADD = $(LIBR) @DYLIB_UNDEFINED_ALLOWED_FALSE@ $(LIBINTL)
+internet_la_LIBADD = $(CURL_LIBS) $(LIBR1) @INTERNET_LIBS@ @DYLIB_UNDEFINED_ALLOWED_FALSE@ $(LIBINTL)
 
-ALL_CFLAGS = $(ALL_CFLAGS_LO) @C_VISIBILITY@
-# 2010-03-30, with g++ (SUSE Linux) 4.4.1 [gcc-4_4-branch revision 150839],
-# including -fvisibility-hidden among the flags caused an obscure bug.
-ALL_CXXFLAGS = $(ALL_CXXFLAGS_LO) # @C_VISIBILITY@
+ALL_CPPFLAGS = $(R_XTRA_CPPFLAGS) $(CURL_CPPFLAGS) $(CPPFLAGS) $(DEFS)
+ALL_CFLAGS = $(ALL_CFLAGS_LO)  @C_VISIBILITY@
+ALL_CXXFLAGS = $(ALL_CXXFLAGS_LO)
 
-all: Makefile Makedeps R
+all: R
 
 Makefile: $(srcdir)/Makefile.in \
   $(top_builddir)/config.status \
@@ -55,8 +54,7 @@ Makefile: $(srcdir)/Makefile.in \
 Makedeps: Makefile $(DEPENDS)
 	@touch $@
 
-R: Makefile
-	@$(MAKE) Makedeps
+R: Makedeps
 	@$(MAKE) $(internet_la)
 
 $(internet_la): $(OBJECTS)

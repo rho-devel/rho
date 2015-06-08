@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2013  The R Core Team
+ *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -63,7 +63,7 @@ void editorcleanall(void);                  /* from editor.c */
 int Rwin_graphicsx = -25, Rwin_graphicsy = 0;
 
 R_size_t R_max_memory = INT_MAX;
-Rboolean UseInternet2 = FALSE;
+Rboolean UseInternet2 = FALSE; // used in main/internet.c
 
 extern SA_TYPE SaveAction; /* from ../main/startup.c */
 Rboolean DebugMenuitem = FALSE;  /* exported for rui.c */
@@ -144,6 +144,11 @@ void R_ProcessEvents(void)
     }
     R_CallBackHook();
     if(R_Tcl_do) R_Tcl_do();
+}
+
+void R_WaitEvent(void)
+{
+    if (!peekevent()) waitevent();
 }
 
 
@@ -291,7 +296,7 @@ ThreadedReadConsole(const char *prompt, char *buf, int len, int addtohistory)
     thist = addtohistory;
     SetEvent(EhiWakeUp);
     while (1) {
-	if (!peekevent()) WaitMessage();
+	R_WaitEvent();
 	if (lineavailable) break;
 	doevent();
 	if(R_Tcl_do) R_Tcl_do();
@@ -803,7 +808,7 @@ char *PrintUsage(void)
 	msg2b[] =
 	"  --max-mem-size=N      Set limit for memory to be used by R\n  --max-ppsize=N        Set max size of protect stack to N\n",
 	msg3[] =
-	"  -q, --quiet           Don't print startup message\n  --silent              Same as --quiet\n  --slave               Make R run as quietly as possible\n  --verbose             Print more information about progress\n  --internet2           Use Internet Explorer for proxies etc.\n  --args                Skip the rest of the command line\n",
+	"  -q, --quiet           Don't print startup message\n  --silent              Same as --quiet\n  --slave               Make R run as quietly as possible\n  --verbose             Print more information about progress\n  --internet2           Use Internet Explorer settings for proxies etc.\n  --args                Skip the rest of the command line\n",
 	msg4[] =
 	"  --ess                 Don't use getline for command-line editing\n                          and assert interactive use\n  -f file               Take input from 'file'\n  --file=file           ditto\n  -e expression         Use 'expression' as input\n\nOne or more -e options can be used, but not together with -f or --file\n",
 	msg5[] = "\nAn argument ending in .RData (in any case) is taken as the path\nto the workspace to be restored (and implies --restore)";
@@ -853,8 +858,6 @@ static int isDir(char *path)
     return isdir;
 }
 
-extern void BindDomain(char *R_Home);
-
 int cmdlineoptions(int ac, char **av)
 {
     int   i, ierr;
@@ -892,7 +895,7 @@ int cmdlineoptions(int ac, char **av)
 	ms.dwLength = sizeof(MEMORYSTATUSEX);
 	GlobalMemoryStatusEx(&ms); /* Win2k or later */
 	Virtual = ms.ullTotalVirtual; /* uint64 = DWORDLONG */
-#ifdef WIN64
+#ifdef _WIN64
 	R_max_memory = ms.ullTotalPhys;
 #else
 	R_max_memory = min(Virtual - 512*Mega, ms.ullTotalPhys);

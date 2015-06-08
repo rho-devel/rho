@@ -31,6 +31,7 @@
  */
 
 #include "CXXR/ListVector.h"
+#include "CXXR/ExpressionVector.h"
 
 using namespace CXXR;
 
@@ -43,10 +44,23 @@ namespace CXXR {
 }
 
 // ***** C interface *****
-
 SEXP SET_VECTOR_ELT(SEXP x, R_xlen_t i, SEXP v)
 {
-    ListVector* lv = SEXP_downcast<ListVector*>(x, false);
-    (*lv)[i] = v;
-    return v;
+    if (i < 0 || i >= XLENGTH(x))
+	error(_("attempt to set index %lu/%lu in SET_VECTOR_ELT"),
+	      i, XLENGTH(x));
+
+    /*  we need to allow vector-like types here */
+    if(TYPEOF(x) == VECSXP) {
+	ListVector* lv = SEXP_downcast<ListVector*>(x, false);
+	(*lv)[i] = v;
+	return v;
+    } else if (TYPEOF(x) == EXPRSXP) {
+	ExpressionVector* ev = SEXP_downcast<ExpressionVector*>(x, false);
+	(*ev)[i] = v;
+	return v;
+    } else {
+	error("%s() can only be applied to a '%s', not a '%s'",
+	      "SET_VECTOR_ELT", "list", Rf_type2char(TYPEOF(x)));
+    }
 }

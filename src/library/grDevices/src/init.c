@@ -1,12 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2004-13   The R Core Team.
- *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
- *
- *  CXXR is not part of the R project, and bugs and other issues should
- *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,7 +28,7 @@
 #include "grDevices.h"
 #include <R_ext/Rdynload.h>
 
-#ifndef WIN32
+#ifndef _WIN32
 /* This really belongs with the X11 module, but it is about devices */
 static SEXP cairoProps(SEXP in)
 {
@@ -76,8 +70,10 @@ static const R_CallMethodDef CallEntries[] = {
     CALLDEF(colors, 0),
     CALLDEF(palette, 1),
     CALLDEF(palette2, 1),
+    CALLDEF(cairoVersion, 0),
+    CALLDEF(bmVersion, 0),
 
-#ifndef WIN32
+#ifndef _WIN32
     CALLDEF(makeQuartzDefault, 0),
     CALLDEF(cairoProps, 1),
 #else
@@ -115,7 +111,7 @@ static const R_ExternalMethodDef ExtEntries[] = {
     EXTDEF(setGraphicsEventEnv, 2),
     EXTDEF(devAskNewPage, 1),
 
-#ifdef WIN32
+#ifdef _WIN32
     EXTDEF(savePlot, 4),
     EXTDEF(devga, 21),
 #else

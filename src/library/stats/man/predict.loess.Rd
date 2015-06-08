@@ -1,6 +1,6 @@
 % File src/library/stats/man/predict.loess.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{predict.loess}
@@ -30,9 +30,6 @@
   default), \code{predict.loess} will not extrapolate -- so points outside
   an axis-aligned hypercube enclosing the original data will have
   missing (\code{NA}) predictions and standard errors.
-
-  The default for \code{na.action} prior to \R 2.12.0 was
-  \code{\link{na.omit}}.
 }
 \value{
   If \code{se = FALSE}, a vector giving the prediction for each row of

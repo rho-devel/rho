@@ -1,6 +1,6 @@
 % File src/library/base/man/vector.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{vector}
@@ -125,9 +125,8 @@ is.vector(x, mode = "any")
 }
 \examples{
 df <- data.frame(x = 1:3, y = 5:7)
-\dontrun{## Error:
-  as.vector(data.frame(x = 1:3, y = 5:7), mode = "numeric")
-}
+## Error:
+try(as.vector(data.frame(x = 1:3, y = 5:7), mode = "numeric"))
 
 x <- c(a = 1, b = 2)
 is.vector(x)

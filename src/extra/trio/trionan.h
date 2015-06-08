@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * $Id$
+ * $Id: trionan.h,v 1.9 2005/03/27 18:52:45 breese Exp $
  *
  * Copyright (C) 2001 Bjorn Reese <breese@users.sourceforge.net>
  *

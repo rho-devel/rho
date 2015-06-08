@@ -1,7 +1,7 @@
 #  File src/library/graphics/R/assocplot.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ assocplot <- function(x, col = c("black", "red"), space = 0.3,
 {
     if(length(dim(x)) != 2L)
         stop("'x' must be a 2-d contingency table")
-    if(any(x < 0) || any(is.na(x)))
+    if(any(x < 0) || anyNA(x))
         stop("all entries of 'x' must be nonnegative and finite")
     if((n <- sum(x)) == 0L)
         stop("at least one entry of 'x' must be positive")

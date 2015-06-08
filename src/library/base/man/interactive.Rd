@@ -1,6 +1,6 @@
 % File src/library/base/man/interactive.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{interactive}
@@ -35,7 +35,7 @@ interactive()
 
   Internally, whether a session is interactive determines
   \itemize{
-    \item how some errors are handled and reported, e.g. see
+    \item how some errors are handled and reported, e.g.\sspace{}see
     \code{\link{stop}} and \code{\link{options}("showWarnCalls")}.
 
     \item  whether one of \option{--save}, \option{--no-save} or

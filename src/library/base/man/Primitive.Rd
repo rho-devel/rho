@@ -1,6 +1,6 @@
 % File src/library/base/man/Primitive.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Primitive}
@@ -20,7 +20,7 @@
 \details{
   The advantage of \code{.Primitive} over \code{\link{.Internal}}
   functions is the potential efficiency of argument passing, and that
-  positional matching can be used where desirable, e.g. in
+  positional matching can be used where desirable, e.g.\sspace{}in
   \code{\link{switch}}. For more details, see the \sQuote{R Internals
     Manual}.
 
@@ -30,10 +30,6 @@
   \code{\link{get}(name, envir = baseenv())} work equally well and do
   not depend on knowing which functions are primitive (which does change
   as \R evolves).
-}
-\note{
-  Prior to \R 2.14.2 this could also be used to retrieve
-  \code{\link{.Internal}} functions: this was unintentional.
 }
 \seealso{
   \code{\link{.Internal}}.

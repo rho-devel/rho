@@ -1,11 +1,11 @@
 % File src/library/stats/man/anova.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{anova}
 \alias{anova}
-\alias{print.anova}
+%\alias{print.anova}
 \concept{regression}
 \title{Anova Tables}
 \usage{
@@ -29,8 +29,8 @@ anova(object, \dots)
   When given a sequence of objects, \code{anova} tests
   the models against one another in the order specified.
 
-  The print method for \code{anova} objects prints
-  tables in a \sQuote{pretty} form.
+  The print method for \code{anova} objects prints tables in a
+  \sQuote{pretty} form.
 }
 \section{Warning}{
   The comparison between two or more models will only be valid if they

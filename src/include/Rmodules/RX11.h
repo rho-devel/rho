@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-5 The R Core Team.
+ *  Copyright (C) 2001-2014 The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -40,6 +40,8 @@ typedef int (*R_X11_access)(void);
 
 typedef Rboolean (*R_X11clp)(Rclpconn, char*);
 
+typedef const char * (*R_version_t)(void);
+
 
 typedef struct {
     R_do_X11 X11;
@@ -47,6 +49,7 @@ typedef struct {
     R_GetX11ImageRoutine  image;
     R_X11_access access;
     R_X11clp readclp;
+    R_version_t R_pngVersion, R_jpegVersion, R_tiffVersion;
 } R_X11Routines;
 
 typedef struct {

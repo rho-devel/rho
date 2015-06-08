@@ -19,7 +19,7 @@ SOURCES = \
 	sign.c fsign.c \
 	imax2.c imin2.c \
 	chebyshev.c log1p.c expm1.c lgammacor.c gammalims.c stirlerr.c bd0.c \
-	gamma.c lgamma.c gamma_cody.c beta.c lbeta.c polygamma.c \
+	gamma.c lgamma.c gamma_cody.c beta.c lbeta.c polygamma.c cospi.c \
 	bessel_i.c bessel_j.c bessel_k.c bessel_y.c \
 	choose.c \
 	snorm.c sexp.c \
@@ -50,7 +50,7 @@ SOURCES = \
 ## </NOTE>
 DEPENDS = $(SOURCES:.c=.d)
 OBJECTS = $(SOURCES:.c=.o)
-HEADERS = bessel.h dpq.h nmath.h
+HEADERS = bessel.h dpq.h nmath.h nmath2.h
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 DISTFILES = Makefile.in Makefile.win $(SOURCES) $(HEADERS)
@@ -59,7 +59,7 @@ SUBDIRS_WITH_NO_BUILD = standalone
 
 @WANT_R_SHLIB_TRUE@ALL_CFLAGS = $(ALL_CFLAGS_LO)
 
-all: Makefile Makedeps R
+all: R
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(SOURCES)
 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -68,8 +68,7 @@ Makedeps: Makefile $(DEPENDS)
 	@cat $(DEPENDS) >> Makefile
 	@touch $@
 
-R: Makefile
-	@$(MAKE) Makedeps
+R: Makedeps
 	@$(MAKE) libnmath.a
 
 libnmath.a: $(OBJECTS)

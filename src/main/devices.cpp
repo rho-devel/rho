@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2008  The R Core Team
+ *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2002--2005  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
@@ -154,7 +154,7 @@ pGEDevDesc GEcurrentDevice(void)
     if (NoDevices()) {
 	SEXP defdev = GetOption1(install("device"));
 	if (isString(defdev) && length(defdev) > 0) {
-	    SEXP devName = install(CHAR(STRING_ELT(defdev, 0)));
+	    SEXP devName = installChar(STRING_ELT(defdev, 0));
 	    /*  Not clear where this should be evaluated, since
 		grDevices need not be in the search path.
 		So we look for it first on the global search path.
@@ -172,6 +172,7 @@ pGEDevDesc GEcurrentDevice(void)
 		*/
 		SEXP ns = findVarInFrame(R_NamespaceRegistry,
 					 install("grDevices"));
+		PROTECT(ns);
 		if(ns != R_UnboundValue &&
 		   findVar(devName, ns) != R_UnboundValue) {
 		    PROTECT(defdev = lang1(devName));
@@ -179,6 +180,7 @@ pGEDevDesc GEcurrentDevice(void)
 		    UNPROTECT(1);
 		} else
 		    error(_("no active or default device"));
+		UNPROTECT(1);
 	    }
 	} else if(TYPEOF(defdev) == CLOSXP) {
 	    PROTECT(defdev = lang1(defdev));
@@ -446,7 +448,7 @@ void GEaddDevice(pGEDevDesc gdd)
     if(gdd->dev->activate) gdd->dev->activate(gdd->dev);
 
     /* maintain .Devices (.Device has already been set) */
-    PROTECT(t = ScalarString(STRING_ELT(getSymbolValue(R_DeviceSymbol), 0)));
+    t = PROTECT(duplicate(getSymbolValue(R_DeviceSymbol)));
     if (appnd)
 	SETCDR(s, CONS(t, R_NilValue));
     else
@@ -465,13 +467,27 @@ void GEaddDevice(pGEDevDesc gdd)
     }
 }
 
-/* convenience wrapper */
+/* convenience wrappers */
 void GEaddDevice2(pGEDevDesc gdd, const char *name)
 {
     gsetVar(R_DeviceSymbol, mkString(name), R_BaseEnv);
     GEaddDevice(gdd);
     GEinitDisplayList(gdd);
 }
+
+void GEaddDevice2f(pGEDevDesc gdd, const char *name, const char *file)
+{
+    SEXP f = PROTECT(mkString(name));
+    if(file) {
+      SEXP s_filepath = install("filepath");
+      setAttrib(f, s_filepath, mkString(file));
+    }
+    gsetVar(R_DeviceSymbol, f, R_BaseEnv);
+    UNPROTECT(1);
+    GEaddDevice(gdd);
+    GEinitDisplayList(gdd);
+}
+
 
 Rboolean Rf_GetOptionDeviceAsk(void); /* from options.c */
 

@@ -1,7 +1,7 @@
 #  File src/library/grDevices/R/windows/png.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ png <-
              width = 480, height = 480, units = "px", pointsize = 12,
              bg = "white", res = NA, family = "sans",
              restoreConsole = TRUE, type = c("windows", "cairo", "cairo-png"),
-             antialias = c("default", "none", "cleartype", "grey", "subpixel"))
+             antialias = c("default", "none", "cleartype", "gray", "subpixel"))
 {
     if(!checkIntFormat(filename)) stop("invalid 'filename'")
     g <- .geometry(width, height, units, res)
@@ -77,7 +77,7 @@ bmp <-
              width = 480, height = 480, units = "px", pointsize = 12,
              bg = "white", res = NA, family = "sans",
              restoreConsole = TRUE, type = c("windows", "cairo"),
-             antialias = c("default", "none", "cleartype", "grey", "subpixel"))
+             antialias = c("default", "none", "cleartype", "gray", "subpixel"))
 {
     if(!checkIntFormat(filename)) stop("invalid 'filename'")
     g <- .geometry(width, height, units, res)
@@ -109,7 +109,7 @@ jpeg <-
              width = 480, height = 480, units = "px", pointsize = 12,
              quality = 75, bg = "white", res = NA, family = "sans",
              restoreConsole = TRUE, type = c("windows", "cairo"),
-             antialias = c("default", "none", "cleartype", "grey", "subpixel"))
+             antialias = c("default", "none", "cleartype", "gray", "subpixel"))
 {
     if(!checkIntFormat(filename)) stop("invalid 'filename'")
     g <- .geometry(width, height, units, res)
@@ -139,17 +139,19 @@ jpeg <-
 tiff <-
     function(filename = "Rplot%03d.tif",
              width = 480, height = 480, units = "px", pointsize = 12,
-             compression = c("none", "rle", "lzw", "jpeg", "zip"),
+             compression = c("none", "rle", "lzw", "jpeg", "zip",
+                             "lzw+p", "zip+p"),
              bg = "white", res = NA, family = "sans",
              restoreConsole = TRUE, type = c("windows", "cairo"),
-             antialias = c("default", "none", "cleartype", "grey", "subpixel"))
+             antialias = c("default", "none", "cleartype", "gray", "subpixel"))
 {
     if(!checkIntFormat(filename)) stop("invalid 'filename'")
     g <- .geometry(width, height, units, res)
     comp <-
         switch(match.arg(compression),
-               "none" = 1L, "rle" = 2L, "lzw" = 5L, "jpeg" = 7L, "zip" = 8L)
-    if(match.arg(type) == "cairo") {
+               "none" = 1L, "rle" = 2L, "lzw" = 5L, "jpeg" = 7L, "zip" = 8L,
+               "lzw+p" = 15L, "zip+p" = 18L)
+   if(match.arg(type) == "cairo") {
         antialias <- match(match.arg(antialias), aa.cairo)
         invisible(.External(C_devCairo, filename, 8L,
                             g$width, g$height, pointsize,
@@ -171,4 +173,10 @@ tiff <-
                             restoreConsole, "", FALSE, TRUE,
                             family, match(antialias, aa.win)))
     }
+}
+
+grSoftVersion <- function() {
+    bm <- .Call(C_bmVersion)
+    if(nzchar(bm[3L])) bm[3L] <- strsplit(bm[3L], "\n")[[1L]][1L]
+    c(cairo = cairoVersion(), bm)
 }

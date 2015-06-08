@@ -1,7 +1,7 @@
 #  File src/library/stats/R/mantelhaen.test.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ function(x, y = NULL, z = NULL,
     DNAME <- deparse(substitute(x))
     if(is.array(x)) {
         if(length(dim(x)) == 3L) {
-            if(any(is.na(x))) stop("NAs are not allowed")
+            if(anyNA(x)) stop("NAs are not allowed")
             if(any(dim(x) < 2L)) stop("each dimension in table must be >= 2")
         }
         else

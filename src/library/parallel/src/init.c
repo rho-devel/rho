@@ -24,14 +24,14 @@
 static const R_CallMethodDef callMethods[] = {
     {"nextStream", (DL_FUNC) &nextStream, 1},
     {"nextSubStream", (DL_FUNC) &nextSubStream, 1},
-#ifndef WIN32
+#ifndef _WIN32
     {"mc_children", (DL_FUNC) &mc_children, 0},
     {"mc_close_fds", (DL_FUNC) &mc_close_fds, 1},
     {"mc_close_stderr", (DL_FUNC) &mc_close_stderr, 1},
     {"mc_close_stdout", (DL_FUNC) &mc_close_stdout, 1},
     {"mc_exit", (DL_FUNC) &mc_exit, 1},
     {"mc_fds", (DL_FUNC) &mc_fds, 1},
-    {"mc_fork", (DL_FUNC) &mc_fork, 0},
+    {"mc_fork", (DL_FUNC) &mc_fork, 1},
     {"mc_is_child", (DL_FUNC) &mc_is_child, 0},
     {"mc_kill", (DL_FUNC) &mc_kill, 2},
     {"mc_master_fd", (DL_FUNC) &mc_master_fd, 0},

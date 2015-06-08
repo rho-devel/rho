@@ -1,6 +1,6 @@
 
-R version 3.0.2 RC (2013-09-22 r63960) -- "Frisbee Sailing"
-Copyright (C) 2013 The R Foundation for Statistical Computing
+R Under development (unstable) (2015-03-01 r67919) -- "Unsuffered Consequences"
+Copyright (C) 2015 The R Foundation for Statistical Computing
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -353,7 +353,7 @@ $allowed
 +           identical(r[3:5], colors()[3:5]))
 > r[2:4] <- "black"
 > stopifnot(identical(r[1:4, 1], as.raster(c("white", rep("black", 3)))))
-> ## End Don't show
+> ## End(Don't show)
 > 
 > 
 > 
@@ -534,7 +534,7 @@ $out
 15  4.50  =    11.50  =   
 16  4.75  4.50 12.25 12.50
 17  5.00  =    13.00  =   
-> ## End Don't show
+> ## End(Don't show)
 > 
 > 
 > 
@@ -1516,11 +1516,11 @@ List of 150
 [5,]   0.00 255.00    0
 > colorRampPalette(c("blue", "red"))( 4 ) ## (n)
 [1] "#0000FF" "#5500AA" "#AA0055" "#FF0000"
-> ## Don't show: 
-> ## special case, invalid in R <= 2.15.0:
-> bb <- colorRampPalette(2)(4)
-> stopifnot(bb[1] == bb)
-> ## End Don't show
+> ## a ramp in opacity of blue values
+> colorRampPalette(c(rgb(0,0,1,1), rgb(0,0,1,0)), alpha = TRUE)(8)
+[1] "#0000FFFF" "#0000FFDA" "#0000FFB6" "#0000FF91" "#0000FF6D" "#0000FF48"
+[7] "#0000FF24" "#0000FF00"
+> 
 > require(graphics)
 > 
 > ## Here space="rgb" gives palettes that vary only in saturation,
@@ -2015,10 +2015,84 @@ character(0)
 > 
 > ### ** Examples
 > 
+> # This currently only works on the Windows
+> # and X11(type = "Xlib") screen devices...
+> ## Not run: 
+> ##D savepar <- par(ask = FALSE)
+> ##D dragplot <- function(..., xlim = NULL, ylim = NULL, xaxs = "r", yaxs = "r") {
+> ##D     plot(..., xlim = xlim, ylim = ylim, xaxs = xaxs, yaxs = yaxs)
+> ##D     startx <- NULL
+> ##D     starty <- NULL
+> ##D     prevx <- NULL
+> ##D     prevy <- NULL
+> ##D     usr <- NULL
+> ##D 
+> ##D     devset <- function()
+> ##D         if (dev.cur() != eventEnv$which) dev.set(eventEnv$which)
+> ##D 
+> ##D     dragmousedown <- function(buttons, x, y) {
+> ##D         startx <<- x
+> ##D         starty <<- y
+> ##D         prevx <<- 0
+> ##D         prevy <<- 0
+> ##D         devset()
+> ##D         usr <<- par("usr")
+> ##D         eventEnv$onMouseMove <- dragmousemove
+> ##D         NULL
+> ##D     }
+> ##D 
+> ##D     dragmousemove <- function(buttons, x, y) {
+> ##D         devset()
+> ##D         deltax <- diff(grconvertX(c(startx, x), "ndc", "user"))
+> ##D         deltay <- diff(grconvertY(c(starty, y), "ndc", "user"))
+> ##D 	if (abs(deltax-prevx) + abs(deltay-prevy) > 0) {
+> ##D 	    plot(..., xlim = usr[1:2]-deltax, xaxs = "i",
+> ##D 		      ylim = usr[3:4]-deltay, yaxs = "i")
+> ##D 	    prevx <<- deltax
+> ##D 	    prevy <<- deltay
+> ##D 	}
+> ##D         NULL
+> ##D     }
+> ##D 
+> ##D     mouseup <- function(buttons, x, y) {
+> ##D     	eventEnv$onMouseMove <- NULL
+> ##D     }	
+> ##D 
+> ##D     keydown <- function(key) {
+> ##D         if (key == "q") return(invisible(1))
+> ##D         eventEnv$onMouseMove <- NULL
+> ##D         NULL
+> ##D     }
+> ##D 
+> ##D     setGraphicsEventHandlers(prompt = "Click and drag, hit q to quit",
+> ##D                      onMouseDown = dragmousedown,
+> ##D                      onMouseUp = mouseup,
+> ##D                      onKeybd = keydown)
+> ##D     eventEnv <- getGraphicsEventEnv()
+> ##D }
+> ##D 
+> ##D dragplot(rnorm(1000), rnorm(1000))
+> ##D getGraphicsEvent()
+> ##D par(savepar)
+> ## End(Not run)
 > 
 > 
 > 
-> graphics::par(get("par.postscript", pos = 'CheckExEnv'))
+> cleanEx()
+> nameEx("grSoftVersion")
+> ### * grSoftVersion
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: grSoftVersion
+> ### Title: Report Versions of Graphics Software
+> ### Aliases: grSoftVersion
+> 
+> ### ** Examples
+> 
+> 
+> 
+> 
 > cleanEx()
 > nameEx("gray")
 > ### * gray
@@ -2143,7 +2217,7 @@ character(0)
 +               is.numeric(chroma), chroma >= 0, (nch <- length(chroma)) >= 1)
 +     if(is.unsorted(hues)) hues <- sort(hues)
 +     if(nch > 1) {
-+         op <- par(mfrow= n2mfrow(nch), mar = c(0,0,0,0))
++         op <- par(mfrow= n2mfrow(nch), mar = c(0,0,0,0), xpd = TRUE)
 +         on.exit(par(op))
 +     }
 +     for(i.c in 1:nch) {
@@ -2453,29 +2527,6 @@ Sturges   Scott      FD
 > 
 > ### ** Examples
 > 
-> ## Not run: 
-> ##D ## Test function for encodings
-> ##D TestChars <- function(encoding = "ISOLatin1", ...)
-> ##D {
-> ##D     pdf(encoding = encoding, ...)
-> ##D     par(pty = "s")
-> ##D     plot(c(-1,16), c(-1,16), type = "n", xlab = "", ylab = "",
-> ##D          xaxs = "i", yaxs = "i")
-> ##D          title(paste("Centred chars in encoding", encoding))
-> ##D     grid(17, 17, lty = 1)
-> ##D     for(i in c(32:255)) {
-> ##D         x <- i %% 16
-> ##D         y <- i %/% 16
-> ##D         points(x, y, pch = i)
-> ##D     }
-> ##D     dev.off()
-> ##D }
-> ##D ## there will be many warnings.
-> ##D TestChars("ISOLatin2")
-> ##D ## this does not view properly in older viewers.
-> ##D TestChars("ISOLatin2", family = "URWHelvetica")
-> ##D ## works well for viewing in gs-based viewers, and often in xpdf.
-> ## End(Not run)
 > 
 > 
 > cleanEx()
@@ -2936,6 +2987,20 @@ $encoding
 attr(,"class")
 [1] "Type1Font"
 
+$ArialMT
+$family
+[1] "ArialMT"
+
+$metrics
+[1] "ArialMT.afm"            "ArialMT-Bold.afm"       "ArialMT-Italic.afm"    
+[4] "ArialMT-BoldItalic.afm" "Symbol.afm"            
+
+$encoding
+[1] "default"
+
+attr(,"class")
+[1] "Type1Font"
+
 $ComputerModern
 $family
 [1] "ComputerModern"
@@ -3141,9 +3206,10 @@ attr(,"class")
 [13] "URWBookman"           "NimbusMon"            "NimbusSan"           
 [16] "URWHelvetica"         "NimbusSanCond"        "CenturySch"          
 [19] "URWPalladio"          "NimbusRom"            "URWTimes"            
-[22] "Japan1"               "Japan1HeiMin"         "Japan1GothicBBB"     
-[25] "Japan1Ryumin"         "Korea1"               "Korea1deb"           
-[28] "CNS1"                 "GB1"                  "Jp_UCS-2"            
+[22] "ArialMT"              "Japan1"               "Japan1HeiMin"        
+[25] "Japan1GothicBBB"      "Japan1Ryumin"         "Korea1"              
+[28] "Korea1deb"            "CNS1"                 "GB1"                 
+[31] "Jp_UCS-2"            
 > 
 > 
 > 
@@ -3380,7 +3446,7 @@ v    1 1.0000000 1.0000000  1.0 1.0000000 1.0000000
 > 
 > ## Don't show: 
 > set.seed(151)
-> ## End Don't show
+> ## End(Don't show)
 > (rgb3 <- floor(256 * matrix(stats::runif(3*12), 3, 12)))
      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10] [,11] [,12]
 [1,]  122  137  116  244   20  153  191  250  134   117    27   202
@@ -3446,7 +3512,7 @@ v 0.98039216 0.7647059 0.4588235 0.8549020 0.9960784
 > 
 > ## confirm the equivalence:
 > all.equal(rgb2hsv (rgb3),
-+           rgb2hsvR(rgb3), tol = 1e-14) # TRUE
++           rgb2hsvR(rgb3), tolerance = 1e-14) # TRUE
 [1] TRUE
 > 
 > 
@@ -3571,7 +3637,7 @@ $number
 > ## Discretized uncorrelated Gaussian:
 > ## Don't show: 
 > set.seed(1)
-> ## End Don't show
+> ## End(Don't show)
 > require(stats)
 > xy <- data.frame(x = round(sort(rnorm(100))), y = rnorm(100))
 > xyTable(xy, digits = 1)
@@ -3698,7 +3764,7 @@ $zlab
 > ###
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  13.527 0.199 13.779 0 0 
+Time elapsed:  7.82 0.139 7.966 0 0 
 > grDevices::dev.off()
 null device 
           1 

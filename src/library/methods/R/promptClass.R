@@ -1,7 +1,7 @@
 #  File src/library/methods/R/promptClass.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -318,7 +318,7 @@ refClassPrompt <- function(clDef, Rdtxt, nmeths, nslots, .meths.head) {
     methodDefs <- as.list(clDef@refMethods)
     nmethods <- length(methodDefs)
     if(nmethods > 0) {
-        thisClassDefs <- match(sapply(methodDefs, function(x) x@refClassName), clDef@className, 0) > 0
+        thisClassDefs <- match(vapply(methodDefs, function(x) x@refClassName, ""), clDef@className, 0) > 0
         otherMethods <- methodDefs[!thisClassDefs]
         methodDefs <- methodDefs[thisClassDefs]
         .methods <-
@@ -334,8 +334,8 @@ refClassPrompt <- function(clDef, Rdtxt, nmeths, nslots, .meths.head) {
 
 .refMethodDescription <- function(methodDefs, fieldnames, otherMethods) {
     methodnames <- names(methodDefs)
-    methodargs <- sapply(methodDefs, function(x)
-			 paste0("(", paste(formalArgs(x), collapse=", "), ")"))
+    methodargs <- vapply(methodDefs, function(x)
+			 paste0("(", paste(formalArgs(x), collapse=", "), ")"), "")
     if(length(methodnames) > 0) {
         .methods.head <- "  \\describe{"
         .methods.body <-
@@ -346,8 +346,8 @@ refClassPrompt <- function(clDef, Rdtxt, nmeths, nslots, .meths.head) {
     }
     else
         .methods <- character()
-    methodclasses <- sapply(otherMethods,
-              function(x) if(is(x, "refMethodDef")) x@refClassName else "<unknown>")
+    methodclasses <- vapply(otherMethods,
+	      function(x) if(is(x, "refMethodDef")) x@refClassName else "<unknown>", "")
     ## don't report the standard methods from envRefClass
     superclass <- methodclasses != "envRefClass"
     otherMethods <- otherMethods[superclass]

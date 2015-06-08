@@ -1,7 +1,7 @@
 #  File src/library/tools/R/news.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2013 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -162,7 +162,7 @@ function(file)
     ## Everything before the first version line is a header which will
     ## be dropped.
     if(!ind[1L]) {
-        pos <- seq_len(which(ind)[1L] - 1L)
+	pos <- seq_len(which.max(ind) - 1L)
         lines <- lines[-pos]
         ind <- ind[-pos]
     }
@@ -327,13 +327,15 @@ function(f, out = "") {
     Rd2txt(f, out,
            stages = c("install", "render"),
            outputEncoding = if(l10n_info()[["UTF-8"]]) "" else "ASCII//TRANSLIT",
-           options = Rd2txt_NEWS_in_Rd_options)
+           options = Rd2txt_NEWS_in_Rd_options,
+           macros = file.path(R.home("share"), "Rd", "macros", "system.Rd"))
  }
 
 Rd2HTML_NEWS_in_Rd <-
 function(f, out, ...) {
     if (grepl("[.]rds$", f)) f <- readRDS(f)
-    Rd2HTML(f, out, stages = c("install", "render"), ...)
+    Rd2HTML(f, out, stages = c("install", "render"),
+           macros = file.path(R.home("share"), "Rd", "macros", "system.Rd"), ...)
 }
 
 Rd2pdf_NEWS_in_Rd <-
@@ -342,14 +344,15 @@ function(f, pdf_file)
     if (grepl("[.]rds$", f)) f <- readRDS(f)
     f2 <- tempfile()
     ## See the comments in ?texi2dvi about spaces in paths
-    f3 <- if(grepl(" ", td <- Sys.getenv("TMPDIR")))
+    f3 <- if(grepl(" ", Sys.getenv("TMPDIR")))
         file.path("/tmp", "NEWS.tex")
     else
         file.path(tempdir(), "NEWS.tex")
     out <- file(f3, "w")
     Rd2latex(f, f2,
              stages = c("install", "render"),
-             outputEncoding = "UTF-8", writeEncoding = FALSE)
+             outputEncoding = "UTF-8", writeEncoding = FALSE,
+             macros = file.path(R.home("share"), "Rd", "macros", "system.Rd"))
     cat("\\documentclass[", Sys.getenv("R_PAPERSIZE"), "paper]{book}\n",
         "\\usepackage[ae,hyper]{Rd}\n",
         "\\usepackage[utf8]{inputenc}\n",
@@ -511,13 +514,6 @@ function(file, out = stdout(), codify = FALSE)
     }
 }
 
-Rd_expr_PR <-
-function(x)
-{
-    baseurl <- "https://bugs.R-project.org/bugzilla3/show_bug.cgi?id"
-    sprintf("\\href{%s=%s}{PR#%s}", baseurl, x, x)
-}
-
 .build_news_db_from_R_NEWS_Rd <-
 function(file = NULL)
 {
@@ -526,12 +522,13 @@ function(file = NULL)
     else {
         ## Expand \Sexpr et al now because this does not happen when using
         ## fragments.
-        prepare_Rd(parse_Rd(file), stages = "install")
+        macros <- loadRdMacros(file.path(R.home("share"), "Rd", "macros", "system.Rd"))
+        prepare_Rd(parse_Rd(file, macros = macros), stages = "install")
     }
 
     db <- .extract_news_from_Rd(x)
     db <- db[db[,1L] != "CHANGES in previous versions",,drop = FALSE]
-    
+
     ## Squeeze in an empty date column.
     .make_news_db(cbind(sub("^CHANGES IN (R )?(VERSION )?", "", db[, 1L]),
                         NA_character_,
@@ -544,7 +541,8 @@ function(file = NULL)
 .build_news_db_from_package_NEWS_Rd <-
 function(file)
 {
-    x <- prepare_Rd(parse_Rd(file), stages = "install")
+    macros <- loadRdMacros(file.path(R.home("share"), "Rd", "macros", "system.Rd"))
+    x <- prepare_Rd(parse_Rd(file, macros = macros), stages = "install")
 
     db <- .extract_news_from_Rd(x)
 

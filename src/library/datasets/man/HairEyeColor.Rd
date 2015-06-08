@@ -36,8 +36,8 @@
   \url{http://euclid.psych.yorku.ca/ftp/sas/vcd/catdata/haireye.sas}
 
   Snee (1974) gives the two-way table aggregated over \code{Sex}.  The
-  Sex split of the \sQuote{Brown hair, Brown eye} cell was changed in
-  \R 2.6.0 to agree with that used by Friendly (2000).
+  \code{Sex} split of the \sQuote{Brown hair, Brown eye} cell was
+  changed to agree with that used by Friendly (2000).
 }
 \references{
   Snee, R. D. (1974)
@@ -53,7 +53,7 @@
   Friendly, M. (1992b)
   Mosaic displays for loglinear models.
   \emph{Proceedings of the Statistical Graphics Section},
-  American Statistical Association, pp. 61--68.
+  American Statistical Association, pp.\sspace{}61--68.
   \url{http://www.math.yorku.ca/SCS/Papers/asa92.html}
 
   Friendly, M. (2000)

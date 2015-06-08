@@ -1,6 +1,6 @@
 % File src/library/utils/man/Rtangle.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Rtangle}
@@ -32,7 +32,7 @@ RtangleSetup(file, syntax, output = NULL, annotate = TRUE,
 \details{
   Unless \code{split = TRUE}, the default name of the output file is
   \code{basename(file)} with an extension corresponding to the Sweave
-  syntax (e.g. \file{Rnw}, \file{Stex}) replaced by \file{R}.  File
+  syntax (e.g., \file{Rnw}, \file{Stex}) replaced by \file{R}.  File
   names \code{"stdout"} and \code{"stderr"} are interpreted as the
   output and message connection respectively.
 

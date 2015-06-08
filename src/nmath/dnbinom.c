@@ -6,7 +6,7 @@
  *    dnbinom_mu(): Martin Maechler, June 2008
  *
  *  Merge in to R:
- *	Copyright (C) 2000--2008, The R Core Team
+ *	Copyright (C) 2000--2014, The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ double dnbinom(double x, double size, double prob, int give_log)
     if (x < 0 || !R_FINITE(x)) return R_D__0;
     /* limiting case as size approaches zero is point mass at zero */
     if (x == 0 && size==0) return R_D__1;
-    x = R_D_forceint(x);
+    x = R_forceint(x);
 
     ans = dbinom_raw(size, x+size, prob, 1-prob, give_log);
     p = ((double)size)/(size+x);
@@ -72,17 +72,18 @@ double dnbinom_mu(double x, double size, double mu, int give_log)
     if (x < 0 || !R_FINITE(x)) return R_D__0;
 
     /* limiting case as size approaches zero is point mass at zero,
-     * even if mu is kept constant. limit distribution does not 
+     * even if mu is kept constant. limit distribution does not
      * have mean mu, though.
      */
     if (x == 0 && size==0) return R_D__1;
 
-    x = R_D_forceint(x);
+    x = R_forceint(x);
     if(x == 0)/* be accurate, both for n << mu, and n >> mu :*/
 	return R_D_exp(size * (size < mu ? log(size/(size+mu)) : log1p(- mu/(size+mu))));
     if(x < 1e-10 * size) { /* don't use dbinom_raw() but MM's formula: */
 	/* FIXME --- 1e-8 shows problem; rather use algdiv() from ./toms708.c */
-	return R_D_exp(x * log(size*mu / (size+mu)) - mu - lgamma(x+1) +
+	p = (size < mu ? log(size/(1 + size/mu)) : log(mu / (1 + mu/size)));
+	return R_D_exp(x * p - mu - lgamma(x+1) +
 		       log1p(x*(x-1)/(2*size)));
     }
     /* else: no unnecessary cancellation inside dbinom_raw, when

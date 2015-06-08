@@ -1,7 +1,7 @@
 #  File src/library/utils/R/sourceutils.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2013 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -19,12 +19,12 @@
 removeSource <- function(fn) {
     stopifnot(is.function(fn))
     if (is.primitive(fn)) return(fn)
-    attr(fn, "source") <- NULL
     attr(fn, "srcref") <- NULL
     attr(body(fn), "wholeSrcref") <- NULL
     attr(body(fn), "srcfile") <- NULL
 
     recurse <- function(part) {
+        if (is.name(part)) return(part)  # handles missing arg, PR#15957
         attr(part, "srcref") <- NULL
         if (is.language(part) && is.recursive(part)) {
             for (i in seq_along(part))
@@ -60,7 +60,10 @@ getSrcDirectory <- function(x, unique=TRUE) {
 getSrcref <- function(x) {
     if (inherits(x, "srcref")) return(x)
     if (!is.null(srcref <- attr(x, "srcref"))) return(srcref)
-    if (is.function(x)) return(getSrcref(body(x)))
+    if (is.function(x) && !is.null(srcref <- getSrcref(body(x)))) 
+	return(srcref)
+    if (methods::is(x, "MethodDefinition")) 
+	return(getSrcref(unclass(methods::unRematchDefinition(x))))
     NULL
 }
 
@@ -91,7 +94,7 @@ getSrcfile <- function(x) {
 }
 
 substr_with_tabs <- function(x, start, stop, tabsize = 8) {
-    widths <- rep(1, nchar(x))
+    widths <- rep_len(1, nchar(x))
     tabs <- which(strsplit(x,"")[[1]] == "\t")
     for (i in tabs) {
 	cols <- cumsum(widths)
@@ -152,7 +155,7 @@ getParseText <- function(parseData, id) {
     d <- parseData[as.character(id),]
     text <- d$text
     if (is.null(text)) {
-    	text <- character(nrow(text))
+    	text <- character(nrow(d))
     	blank <- seq_along(text)
     } else
     	blank <- which(!nzchar(text))

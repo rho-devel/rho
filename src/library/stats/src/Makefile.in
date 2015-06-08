@@ -38,10 +38,10 @@ SOURCES_C = init.c kmeans.c \
   HoltWinters.c PPsum.c arima.c burg.c filter.c \
   mAR.c pacf.c starma.c port.c family.c sbart.c \
   approx.c loglin.c lowess.c massdist.c splines.c lm.c \
-  complete_cases.c cov.c fft.c fourier.c optim.c optimize.c \
+  complete_cases.c cov.c deriv.c fft.c fourier.c optim.c optimize.c \
   integrate.c random.c distn.c zeroin.c rcont.c influence.c
 
-SOURCES_CXX = deriv.cpp model.cpp
+SOURCES_CXX = model.cpp
 
 SOURCES_F = bsplvd.f bvalue.f bvalus.f loessf.f ppr.f qsbart.f \
   sgram.f sinerp.f sslvrg.f stxwx.f \
@@ -65,8 +65,7 @@ PKG_LIBS = @R_OPENMP_CFLAGS@ $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 ## </FIXME>
 
 
-all: Makefile Makedeps
-	@$(MAKE) Makedeps
+all: Makedeps
 	@$(MAKE) shlib
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status

@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2013  The R Core Team
+ *  Copyright (C) 1997--2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -1293,6 +1293,9 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
     case BUILTINSXP:
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
 	PROTECT(s = BuiltInFunction::obtainPrimitive(m->InString(fp, d)));
+	if (s == R_NilValue) {
+	    warning(_("unrecognized internal function name \"%s\""), d->buffer.data); 
+	}
 	break;
     case CHARSXP:
     case LGLSXP:
@@ -1978,10 +1981,10 @@ SEXP attribute_hidden do_save(/*const*/ CXXR::Expression* call, const CXXR::Buil
 
 	t = s;
 	for (j = 0; j < len; j++, t = CDR(t)) {
-	    SET_TAG(t, install(CHAR(STRING_ELT(args[0], j))));
+	    SET_TAG(t, installChar(STRING_ELT(args[0], j)));
 	    GCStackRoot<> tmp(findVar(TAG(t), source));
 	    if (tmp == R_UnboundValue)
-		error(_("object '%s' not found"), CHAR(PRINTNAME(TAG(t))));
+		error(_("object '%s' not found"), EncodeChar(PRINTNAME(TAG(t))));
 	    if(ep && TYPEOF(tmp) == PROMSXP)
 		tmp = eval(tmp, source);
 	    SETCAR(t, tmp);
@@ -2016,7 +2019,7 @@ static SEXP RestoreToEnv(SEXP ans, SEXP aenv)
 	    error(_("not a valid named list"));
 	ProvenanceTracker::flagXenogenesis();
 	for (i = 0; i < LENGTH(ans); i++) {
-	    SEXP sym = install(CHAR(STRING_ELT(names, i)));
+	    SEXP sym = installChar(STRING_ELT(names, i));
 	    obj = VECTOR_ELT(ans, i);
 	    defineVar(sym, obj, aenv);
 	    if(R_seemsOldStyleS4Object(obj))
@@ -2268,7 +2271,8 @@ SEXP attribute_hidden do_saveToConn(/*const*/ CXXR::Expression* call, const CXXR
 
 	if (ascii) {
 	    magic = "RDA2\n";
-	    type = R_pstream_ascii_format;
+	    type = (ascii == NA_LOGICAL) ?
+		R_pstream_asciihex_format : R_pstream_ascii_format;
 	}
 	else {
 	    if (con->text)
@@ -2292,11 +2296,11 @@ SEXP attribute_hidden do_saveToConn(/*const*/ CXXR::Expression* call, const CXXR
 
 	t = s;
 	for (j = 0; j < len; j++, t = CDR(t)) {
-	    SET_TAG(t, install(CHAR(STRING_ELT(list, j))));
+	    SET_TAG(t, installChar(STRING_ELT(list, j)));
 	    SETCAR(t, findVar(TAG(t), source));
 	    tmp = findVar(TAG(t), source);
 	    if (tmp == R_UnboundValue)
-		error(_("object '%s' not found"), CHAR(PRINTNAME(TAG(t))));
+		error(_("object '%s' not found"), EncodeChar(PRINTNAME(TAG(t))));
 	    if(ep && TYPEOF(tmp) == PROMSXP) {
 		PROTECT(tmp);
 		tmp = eval(tmp, source);

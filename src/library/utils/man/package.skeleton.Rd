@@ -1,6 +1,6 @@
 % File src/library/utils/man/package.skeleton.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{package.skeleton}
@@ -15,7 +15,7 @@
 \usage{
 package.skeleton(name = "anRpackage", list,
                  environment = .GlobalEnv,
-                 path = ".", force = FALSE, namespace = TRUE,
+                 path = ".", force = FALSE,
                  code_files = character())
 }
 \arguments{
@@ -28,7 +28,6 @@ package.skeleton(name = "anRpackage", list,
     \sQuote{Details}.}
   \item{path}{path to put the package directory in.}
   \item{force}{If \code{FALSE} will not overwrite an existing directory.}
-  \item{namespace}{a logical, no longer used, and hence deprecated.}
   \item{code_files}{a character vector with the paths to R code files to
     build the package around.  See \sQuote{Details}.}
 }
@@ -47,6 +46,10 @@ package.skeleton(name = "anRpackage", list,
   Stubs of help files are generated for functions, data objects, and
   S4 classes and methods, using the \code{\link{prompt}},
   \code{\link{promptClass}},  and \code{\link{promptMethods}} functions.
+  If an object from another package is intended to be imported and
+  re-exported without changes, the \code{\link{promptImport}} function
+  should be used after \code{package.skeleton}
+  to generate a simple help file linking to the original one.
 
   The package sources are placed in subdirectory \code{name} of
   \code{path}.  If \code{code_files} is supplied, these files are

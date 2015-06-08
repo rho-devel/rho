@@ -1,7 +1,7 @@
 #  File src/library/stats/R/mcnemar.test.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ mcnemar.test <- function(x, y = NULL, correct = TRUE)
         r <- nrow(x)
         if ((r < 2) || (ncol (x) != r))
             stop("'x' must be square with at least two rows and columns")
-        if (any(x < 0) || any(is.na(x)))
+        if (any(x < 0) || anyNA(x))
             stop("all entries of 'x' must be nonnegative and finite")
         DNAME <- deparse(substitute(x))
     }

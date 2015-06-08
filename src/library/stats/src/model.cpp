@@ -31,6 +31,13 @@
 #include <Defn.h>
 
 #include "statsR.h"
+#undef _
+#ifdef ENABLE_NLS
+#include <libintl.h>
+#define _(String) dgettext ("stats", String)
+#else
+#define _(String) (String)
+#endif
 
 #include <vector>
 #include "CXXR/GCStackRoot.hpp"
@@ -247,12 +254,11 @@ static void firstfactor(double *x, int nrx, int ncx,
 			double *c, int nrc, int ncc, int *v)
 {
     double *cj, *xj;
-    int i, j;
 
-    for (j = 0; j < ncc; j++) {
-	xj = &x[j*nrx];
-	cj = &c[j*nrc];
-	for (i = 0; i < nrx; i++)
+    for (int j = 0; j < ncc; j++) {
+	xj = &x[j * (R_xlen_t)nrx];
+	cj = &c[j * (R_xlen_t)nrc];
+	for (int i = 0; i < nrx; i++)
 	    if(v[i] == NA_INTEGER) xj[i] = NA_REAL;
 	    else xj[i] = cj[v[i]-1];
     }
@@ -261,15 +267,14 @@ static void firstfactor(double *x, int nrx, int ncx,
 static void addfactor(double *x, int nrx, int ncx,
 		      double *c, int nrc, int ncc, int *v)
 {
-    int i, j, k;
     double *ck, *xj, *yj;
 
-    for (k = ncc - 1; k >= 0; k--) {
-	for (j = 0; j < ncx; j++) {
-	    xj = &x[j*nrx];
-	    yj = &x[(k*ncx+j)*nrx];
-	    ck = &c[k*nrc];
-	    for (i = 0; i < nrx; i++)
+    for (int k = ncc - 1; k >= 0; k--) {
+	for (int j = 0; j < ncx; j++) {
+	    xj = &x[j * (R_xlen_t)nrx];
+	    yj = &x[(k * (R_xlen_t)ncx + j)*nrx];
+	    ck = &c[k * (R_xlen_t)nrc];
+	    for (int i = 0; i < nrx; i++)
 	    if(v[i] == NA_INTEGER) yj[i] = NA_REAL;
 	    else yj[i] = ck[v[i]-1] * xj[i];
 	}
@@ -279,27 +284,25 @@ static void addfactor(double *x, int nrx, int ncx,
 static void firstvar(double *x, int nrx, int ncx, double *c, int nrc, int ncc)
 {
     double *cj, *xj;
-    int i, j;
 
-    for (j = 0; j < ncc; j++) {
-	xj = &x[j*nrx];
-	cj = &c[j*nrc];
-	for (i = 0; i < nrx; i++)
+    for (int j = 0; j < ncc; j++) {
+	xj = &x[j * (R_xlen_t)nrx];
+	cj = &c[j * (R_xlen_t)nrc];
+	for (int i = 0; i < nrx; i++)
 	    xj[i] = cj[i];
     }
 }
 
 static void addvar(double *x, int nrx, int ncx, double *c, int nrc, int ncc)
 {
-    int i, j, k;
     double *ck, *xj, *yj;
 
-    for (k = ncc - 1; k >= 0; k--) {
-	for (j = 0; j < ncx; j++) {
-	    xj = &x[j*nrx];
-	    yj = &x[(k*ncx+j)*nrx];
-	    ck = &c[k*nrc];
-	    for (i = 0; i < nrx; i++)
+    for (int k = ncc - 1; k >= 0; k--) {
+	for (int j = 0; j < ncx; j++) {
+	    xj = &x[j * (R_xlen_t)nrx];
+	    yj = &x[(k * (R_xlen_t)ncx + j)*nrx];
+	    ck = &c[k * (R_xlen_t)nrc];
+	    for (int i = 0; i < nrx; i++)
 		yj[i] = ck[i] * xj[i];
 	}
     }
@@ -325,7 +328,7 @@ static char *AppendInteger(char *buf, int i)
 static SEXP ColumnNames(SEXP x)
 {
     SEXP dn = getAttrib(x, R_DimNamesSymbol);
-    if (dn == R_NilValue)
+    if (dn == R_NilValue || length(dn) < 2)
 	return R_NilValue;
     else
 	return VECTOR_ELT(dn, 1);
@@ -343,6 +346,7 @@ SEXP modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     char buf[BUFSIZE]="\0";
     char *bufp;
     const char *addp;
+    R_xlen_t nn;
 
     args = CDR(args);
 
@@ -399,7 +403,7 @@ SEXP modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (length(vars) == 0)
 	error(_("do not know how many cases"));
 
-    n = nrows(VECTOR_ELT(vars, 0));
+    nn = n = nrows(VECTOR_ELT(vars, 0));
     /* This could be generated, so need to protect it */
     PROTECT(rnames = getAttrib(vars, R_RowNamesSymbol));
 
@@ -679,16 +683,15 @@ SEXP modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* Allocate and compute the design matrix. */
 
     PROTECT(x = allocMatrix(REALSXP, n, nc));
+    double *rx = REAL(x);
 
     x->maybeTraceMemory(vars);
 
     /* a) Begin with a column of 1s for the intercept. */
 
-    if ((jnext = jstart = intrcept) != 0) {
-	for (i = 0; i < n; i++) {
-	    REAL(x)[i] = 1.0;
-	}
-    }
+    if ((jnext = jstart = intrcept) != 0)
+	for (i = 0; i < n; i++)
+	    rx[i] = 1.0;
 
     /* b) Now loop over the model terms */
 
@@ -714,13 +717,14 @@ SEXP modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 		if (jnext == jstart) {
 		    if (INTEGER(nlevs)[i] > 0) {
 			int adj = isLogical(var_i)?1:0;
-			firstfactor(&REAL(x)[jstart * n], n, jnext - jstart,
+			// avoid overflow of jstart * nn PR#15578
+			firstfactor(&rx[jstart * nn], n, jnext - jstart,
 				    REAL(contrast), nrows(contrast),
 				    ncols(contrast), INTEGER(var_i)+adj);
 			jnext = jnext + ncols(contrast);
 		    }
 		    else {
-			firstvar(&REAL(x)[jstart * n], n, jnext - jstart,
+			firstvar(&rx[jstart * nn], n, jnext - jstart,
 				 REAL(var_i), n, ncols(var_i));
 			jnext = jnext + ncols(var_i);
 		    }
@@ -728,13 +732,13 @@ SEXP modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 		else {
 		    if (INTEGER(nlevs)[i] > 0) {
 			int adj = isLogical(var_i)?1:0;
-			addfactor(&REAL(x)[jstart * n], n, jnext - jstart,
+			addfactor(&rx[jstart * nn], n, jnext - jstart,
 				  REAL(contrast), nrows(contrast),
 				  ncols(contrast), INTEGER(var_i)+adj);
 			jnext = jnext + (jnext - jstart)*(ncols(contrast) - 1);
 		    }
 		    else {
-			addvar(&REAL(x)[jstart * n], n, jnext - jstart,
+			addvar(&rx[jstart * nn], n, jnext - jstart,
 			       REAL(var_i), n, ncols(var_i));
 			jnext = jnext + (jnext - jstart) * (ncols(var_i) - 1);
 		    }
@@ -1721,7 +1725,9 @@ SEXP termsform(SEXP args)
     a = CDR(a);
 
     nvar = length(varlist) - 1;
-    nwords = int((nvar - 1) / WORDSIZE + 1);
+    /* in allocating words need to allow for intercept term */
+    nwords = (int)(nvar/ WORDSIZE + 1);
+//    printf("nvar = %d, nwords = %d\n", nvar, nwords);
 
     /* Step 2: Recode the model terms in binary form */
     /* and at the same time, expand the model formula. */
@@ -1797,9 +1803,9 @@ SEXP termsform(SEXP args)
 	PROTECT(pattern = allocVector(VECSXP, nterm));
 	PROTECT(sCounts = allocVector(INTSXP, nterm));
 	counts = INTEGER(sCounts);
-	for (call = formula, n = 0; call != R_NilValue; call = CDR(call)) {
+	for (call = formula, n = 0; call != R_NilValue; call = CDR(call), n++) {
 	    SET_VECTOR_ELT(pattern, n, CAR(call));
-	    counts[n++] = BitCount(CAR(call));
+	    counts[n] = BitCount(CAR(call));
 	}
 	for (n = 0; n < nterm; n++)
 	    if(counts[n] > bitmax) bitmax = counts[n];
@@ -1969,7 +1975,7 @@ SEXP termsform(SEXP args)
     a = CDR(a);
 
     SETCAR(a, mkString("terms"));
-    SET_TAG(a, install("class"));
+    SET_TAG(a, R_ClassSymbol);
 
     SETCDR(a, R_NilValue);  /* truncate if necessary */
     SET_ATTRIB(ans, attributes);

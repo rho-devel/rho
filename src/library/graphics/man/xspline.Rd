@@ -1,6 +1,6 @@
 % File src/library/graphics/man/xspline.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{xspline}
@@ -71,7 +71,7 @@ xspline(x, y = NULL, shape = 0, open = TRUE, repEnds = TRUE,
 \references{
   Blanc, C. and Schlick, C. (1995),
   \emph{X-splines : A Spline Model Designed for the End User},
-  in \emph{Proceedings of SIGGRAPH 95}, pp. 377--386.
+  in \emph{Proceedings of SIGGRAPH 95}, pp.\sspace{}377--386.
   \url{http://dept-info.labri.fr/~schlick/DOC/sig1.html}
 }
 \seealso{

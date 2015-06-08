@@ -30,7 +30,7 @@ kmeans(x, centers, iter.max = 10, nstart = 1,
   \item{nstart}{if \code{centers} is a number, how many random sets
     should be chosen?}
   \item{algorithm}{character: may be abbreviated.  Note that
-    \code{"Lloyd"} and \code{"Forgy"} and alternative names for one
+    \code{"Lloyd"} and \code{"Forgy"} are alternative names for one
     algorithm.}
   \item{object}{an \R object of class \code{"kmeans"}, typically the
     result \code{ob} of \code{ob <- kmeans(..)}.}
@@ -85,9 +85,9 @@ kmeans(x, centers, iter.max = 10, nstart = 1,
   \item{withinss}{Vector of within-cluster sum of squares,
     one component per cluster.}
   \item{tot.withinss}{Total within-cluster sum of squares,
-    i.e., \code{sum(withinss)}.}
+    i.e.\sspace{}\code{sum(withinss)}.}
   \item{betweenss}{The between-cluster sum of squares,
-    i.e. \code{totss-tot.withinss}.}
+    i.e.\sspace{}\code{totss-tot.withinss}.}
   \item{size}{The number of points in each cluster.}
   \item{iter}{The number of (outer) iterations.}
   \item{ifault}{integer: indicator of a possible algorithm problem
@@ -110,7 +110,7 @@ kmeans(x, centers, iter.max = 10, nstart = 1,
   multivariate observations. In \emph{Proceedings of the Fifth Berkeley
     Symposium on  Mathematical Statistics and  Probability},
   eds L. M. Le Cam & J. Neyman,
-  \bold{1}, pp. 281--297. Berkeley, CA: University of California Press.
+  \bold{1}, pp.\sspace{}281--297. Berkeley, CA: University of California Press.
 }
 \examples{
 require(graphics)

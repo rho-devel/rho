@@ -1,10 +1,8 @@
 
-R version 3.0.2 RC (2013-09-22 r63960) -- "Frisbee Sailing"
-Copyright (C) 2013 The R Foundation for Statistical Computing
-R version 2.11.1 (2010-05-31)
+R Under development (unstable) (2015-03-01 r67919) -- "Unsuffered Consequences"
+Copyright (C) 2015 The R Foundation for Statistical Computing
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
-CXXR Copyright (C) 2008-10 Andrew Runnalls.  CXXR like
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
 Type 'license()' or 'licence()' for distribution details.
@@ -17,8 +15,6 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
-CXXR is not part of the R project, so please do not report bugs
-via r-bugs or the R website; instead refer to the CXXR website.
 > #### Testing  UseMethod() and even more NextMethod()
 > #### -------------------- 
 > #### i.e.,  S3 methods *only*. For S4, see  reg-S4.R
@@ -47,19 +43,19 @@ via r-bugs or the R website; instead refer to the CXXR website.
 > x > y
 [1] FALSE FALSE  TRUE
 Warning message:
-In x > y : Incompatible methods (">.foo", ">.bar") for ">"
+Incompatible methods (">.foo", ">.bar") for ">" 
 > y < x # should be the same (warning msg not, however)
 [1] FALSE FALSE  TRUE
 Warning message:
-In y < x : Incompatible methods ("Ops.bar", "Ops.foo") for "<"
+Incompatible methods ("Ops.bar", "Ops.foo") for "<" 
 > x == y
 [1] FALSE  TRUE FALSE
 Warning message:
-In x == y : Incompatible methods ("Ops.foo", "Ops.bar") for "=="
+Incompatible methods ("Ops.foo", "Ops.bar") for "==" 
 > x <= y
 [1]  TRUE  TRUE FALSE
 Warning message:
-In x <= y : Incompatible methods ("Ops.foo", "Ops.bar") for "<="
+Incompatible methods ("Ops.foo", "Ops.bar") for "<=" 
 > 
 > x > 3 ##[1] ">.foo"
 using >.foo

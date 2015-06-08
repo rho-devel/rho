@@ -804,12 +804,12 @@ beginning and end of the sequence, and if these are the only two
 arguments given the result is the same as the colon operator.  That is
 @code{seq(2,10)} is the same vector as @code{2:10}.
 
-Parameters to @code{seq()}, and to many other @R{} functions, can also
+Arguments to @code{seq()}, and to many other @R{} functions, can also
 be given in named form, in which case the order in which they appear is
-irrelevant.  The first two parameters may be named
+irrelevant.  The first two arguments may be named
 @code{from=@var{value}} and @code{to=@var{value}}; thus
 @code{seq(1,30)}, @code{seq(from=1, to=30)} and @code{seq(to=30,
-from=1)} are all the same as @code{1:30}.  The next two parameters to
+from=1)} are all the same as @code{1:30}.  The next two arguments to
 @code{seq()} may be named @code{by=@var{value}} and
 @code{length=@var{value}}, which specify a step size and a length for
 the sequence respectively.  If neither of these is given, the default
@@ -832,8 +832,8 @@ generates in @code{s3} the vector @code{c(-5.0, -4.8, -4.6, @dots{},
 @noindent
 generates the same vector in @code{s4}.
 
-The fifth parameter may be named @code{along=@var{vector}}, which if
-used must be the only parameter, and creates a sequence @code{1, 2,
+The fifth argument may be named @code{along=@var{vector}}, which is
+normally used as the only argument to create the sequence @code{1, 2,
 @dots{}, length(@var{vector})}, or the empty sequence if the vector is
 empty (as it can be).
 
@@ -991,7 +991,7 @@ concatenates them one by one into character strings.  Any numbers given
 among the arguments are coerced into character strings in the evident
 way, that is, in the same way they would be if they were printed.  The
 arguments are by default separated in the result by a single blank
-character, but this can be changed by the named parameter,
+character, but this can be changed by the named argument,
 @code{sep=@var{string}}, which changes it to @code{@var{string}},
 possibly empty.
 
@@ -1012,8 +1012,8 @@ Note particularly that recycling of short lists takes place here too;
 thus @code{c("X", "Y")} is repeated 5 times to match the sequence
 @code{1:10}.
 @footnote{@code{paste(..., collapse=@var{ss})} joins the
-arguments into a single character string putting @var{ss} in between.
-There are more tools for character manipulation, see the help
+arguments into a single character string putting @var{ss} in between, e.g.,
+@code{ss <- "|"}.  There are more tools for character manipulation, see the help
 for @code{sub} and @code{substring}.}
 
 @node Index vectors, Other types of objects, Character vectors, Simple manipulations numbers and vectors
@@ -1035,7 +1035,7 @@ Such index vectors can be any of four distinct types.
 @enumerate
 
 @item
-@strong{A logical vector}.  In this case the index vector must be of the
+@strong{A logical vector}.  In this case the index vector is recycled to the
 same length as the vector from which elements are to be selected.
 Values corresponding to @code{TRUE} in the index vector are selected and
 those corresponding to @code{FALSE} are omitted.  For example
@@ -2571,7 +2571,7 @@ external file.  This is discussed further in @ref{Reading data from
 files}.
 
 @node attach() and detach(), Working with data frames, Making data frames, Data frames
-@subsection @code{attach() and @code{detach()}}
+@subsection @code{attach()} and @code{detach()}
 @findex attach
 @findex detach
 
@@ -3102,9 +3102,9 @@ smoothing (it usually does for ``interesting'' densities).  (Better
 automated methods of bandwidth choice are available, and in this example
 @code{bw = "SJ"} gives a good result.)
 
-@iftex
+@ifnotinfo
 @image{images/hist,9cm}
-@end iftex
+@end ifnotinfo
 
 We can plot the empirical cumulative distribution function by using the
 function @code{ecdf}.
@@ -3126,9 +3126,9 @@ Let us fit a normal distribution and overlay the fitted CDF.
 > lines(x, pnorm(x, mean=mean(long), sd=sqrt(var(long))), lty=3)
 @end example
 
-@iftex
+@ifnotinfo
 @image{images/ecdf,9cm}
-@end iftex
+@end ifnotinfo
 
 Quantile-quantile (Q-Q) plots can help us examine this more carefully.
 @cindex Quantile-quantile plots
@@ -3145,9 +3145,9 @@ which shows a reasonable fit but a shorter right tail than one would
 expect from a normal distribution.  Let us compare this with some
 simulated data from a @math{t} distribution
 
-@iftex
+@ifnotinfo
 @image{images/QQ,7cm}
-@end iftex
+@end ifnotinfo
 
 @example
 x <- rt(250, df = 5)
@@ -3238,9 +3238,9 @@ boxplot(A, B)
 which indicates that the first group tends to give higher results than
 the second.
 
-@iftex
+@ifnotinfo
 @image{images/ice,7cm}
-@end iftex
+@end ifnotinfo
 
 To test for the equality of the means of the two examples, we can use
 an @emph{unpaired} @math{t}-test by
@@ -4183,6 +4183,9 @@ function (object, ...)
 @}
 @end example
 
+A function named @code{@var{gen}.@var{cl}} will be invoked by the
+generic @code{@var{gen}} for class @code{@var{cl}}, so do not name
+functions in this style unless they are intended to be methods.
 
 The reader is referred to the @emph{R Language Definition} for a more
 complete discussion of this mechanism.
@@ -4603,7 +4606,7 @@ fitted model object.
 @section Analysis of variance and model comparison
 @cindex Analysis of variance
 
-The model fitting function @code{aov(@code{formula},
+The model fitting function @code{aov(@var{formula},
 data=@var{data.frame})}
 @findex aov
 operates at the simplest level in a very similar way to the function
@@ -5159,9 +5162,10 @@ To obtain the approximate standard errors (SE) of the estimates we do:
 > sqrt(diag(2*out$minimum/(length(y) - 2) * solve(out$hessian)))
 @end example
 
-The 2 in the line above represents the number of parameters.  A 95%
-confidence interval would be the parameter estimate @eqn{\pm, +/-} 1.96
-SE.  We can superimpose the least squares fit on a new plot:
+The @code{2} which is subtracted in the line above represents the number
+of parameters.  A 95% confidence interval would be the parameter
+estimate @eqn{\pm, +/-} 1.96 SE.  We can superimpose the least squares
+fit on a new plot:
 
 @example
 > plot(x, y)
@@ -6125,11 +6129,11 @@ A single plot in @R{} is known as a @code{figure} and comprises a
 @emph{plot region} surrounded by margins (possibly containing axis
 labels, titles, etc.) and (usually) bounded by the axes themselves.
 
-@iftex
+@ifnotinfo
 A typical figure is
 
 @image{images/fig11,7cm}
-@end iftex
+@end ifnotinfo
 
 Graphics parameters controlling figure layout include:
 
@@ -6162,9 +6166,9 @@ single page.  Each figure has its own margins, and the array of figures
 is optionally surrounded by an @emph{outer margin}, as shown in the
 following figure.
 
-@iftex
+@ifnotinfo
 @image{images/fig12,6cm}
-@end iftex
+@end ifnotinfo
 
 The graphical parameters relating to multiple figures are as follows:
 
@@ -6943,13 +6947,13 @@ parts @dots{}
 
 @item plot(w, xlim=c(-1,1), ylim=c(-1,1), pch="+",xlab="x", ylab="y")
 @itemx lines(z)
-@itemx All points are inside the unit circle, but the distribution is not
+All points are inside the unit circle, but the distribution is not
 uniform.
 
 @item w <- sqrt(runif(100))*exp(2*pi*runif(100)*1i)
 @itemx plot(w, xlim=c(-1,1), ylim=c(-1,1), pch="+", xlab="x", ylab="y")
 @itemx lines(z)
-@itemx The second method uses the uniform distribution.  The points should now
+The second method uses the uniform distribution.  The points should now
 look more evenly spaced over the disc.
 
 @item rm(th, w, z)
@@ -7132,7 +7136,7 @@ metacharacters will need to be quoted.)
 (UNIX only) Turn off command-line editing via @strong{readline}.  This
 is useful when running @R{} from within Emacs using the @acronym{ESS}
 (``Emacs Speaks Statistics'') package.  @xref{The command-line editor},
-for more information.  Command-line editing is enabled by default
+for more information.  Command-line editing is enabled for default
 interactive use (see @option{--interactive}).  This option also affects
 tilde-expansion: see the help for @code{path.expand}.
 
@@ -7178,10 +7182,12 @@ terminal or @code{pty}.)  Using @option{-e}, @option{-f} or
 @option{--file} asserts non-interactive use even if
 @option{--interactive} is given.
 
+Note that this does not turn on command-line editing.
+
 @item --ess
 (Windows only) Set @code{Rterm} up for use by @code{R-inferior-mode} in
-@acronym{ESS}, including asserting interactive use without the
-command-line editor.
+@acronym{ESS}, including asserting interactive use (without the
+command-line editor) and no buffering of @file{stdout}.
 
 @item --verbose
 Print more information about progress, and in particular set @R{}'s

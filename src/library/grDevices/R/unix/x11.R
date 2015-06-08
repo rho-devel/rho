@@ -1,7 +1,7 @@
 #  File src/library/grDevices/R/unix/x11.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -53,10 +53,32 @@ X11.options <- function(..., reset = FALSE)
     if(reset || l... > 0) invisible(old) else old
 }
 
+check_for_XQuartz <- function()
+{
+    DSO <- file.path(R.home("modules"), "R_X11.so")
+    out <- system2("otool", c("-L", shQuote(DSO)), stdout = TRUE)
+    ind <- grep("libX11[.][0-9]+[.]dylib", out)
+    if(length(ind)) {
+        this <- sub(" .*", "", sub("^\t", "", out[ind]))
+        if(!file.exists(this))
+            stop("X11 library is missing: install XQuartz from xquartz.macosforge.org", domain = NA)
+    }
+}
+
+
 X11 <- function(display = "", width, height, pointsize, gamma,
                 bg, canvas, fonts, family,
                 xpos, ypos, title, type, antialias)
 {
+    if(display != "XImage") { # used by tkrplot
+        check <- Sys.getenv("_R_CHECK_SCREEN_DEVICE_", "")
+        msg <- "screen devices should not be used in examples etc"
+        if (identical(check, "stop"))
+            stop(msg, domain = NA)
+        else if (identical(check, "warn"))
+            warning(msg, immediate. = TRUE, noBreaks. = TRUE, domain = NA)
+    }
+
     if(display == "" && .Platform$GUI == "AQUA" &&
        is.na(Sys.getenv("DISPLAY", NA))) Sys.setenv(DISPLAY = ":0")
 
@@ -95,6 +117,7 @@ X11 <- function(display = "", width, height, pointsize, gamma,
     ## Aargh -- trkplot has a trapdoor and does not set type.
     if (display == "XImage") type <- 0L
     antialias <- match(d$antialias, aa.cairo)
+    if (grepl("darwin", R.version$os)) check_for_XQuartz()
     .External2(C_X11, d$display, d$width, d$height, d$pointsize, d$gamma,
                d$colortype, d$maxcubesize, d$bg, d$canvas, d$fonts,
                NA_integer_, d$xpos, d$ypos, d$title,

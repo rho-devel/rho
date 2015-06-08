@@ -4,7 +4,7 @@ R_HOME = ../../..
 
 RPREFIX = $(shell ../../../bin$(R_ARCH)/Rscript ../fixed/rwver.R)
 FULLVERSION=`cat ../../../VERSION`
-SVNREVISION=`sed -e 1s/Revision:.// -e q < $(R_HOME)/SVN-REVISION`
+GITREVISION=`sed -e 1s/Revision:.// -e q < $(R_HOME)/GIT-REVISION`
 RVER = $(shell cut -d' ' -f1 ../../../VERSION | sed -n 1p)
 DATE = $(shell date +%F)
 
@@ -21,7 +21,7 @@ all:
 	  $(SED) -e s/@RWVER@/$(RPREFIX)/g \
 	    -e s/@RVER@/$(RVER)/g \
 	    -e "s/@DATE@/$(DATE)/g" \
-	    -e "s/@SVNREVISION@/$(SVNREVISION)/g" \
+	    -e "s/@GITREVISION@/$(GITREVISION)/g" \
 	    -e "s/@FULLVERSION@/$(FULLVERSION)/g" $${page}.in >$${page}.html; \
 	done
 	$(CP) release.html release.htm

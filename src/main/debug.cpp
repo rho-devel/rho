@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2013   The R Core Team.
+ *  Copyright (C) 1998-2014   The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -50,22 +50,22 @@ SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     find_char_fun
 
-    if (TYPEOF(CAR(args)) != CLOSXP && TYPEOF(CAR(args)) != SPECIALSXP 
+    if (TYPEOF(CAR(args)) != CLOSXP && TYPEOF(CAR(args)) != SPECIALSXP
          &&  TYPEOF(CAR(args)) != BUILTINSXP )
 	errorcall(call, _("argument must be a closure"));
     switch(PRIMVAL(op)) {
-    case 0:
+    case 0: // debug()
 	SET_RDEBUG(CAR(args), CXXRTRUE);
 	break;
-    case 1:
+    case 1: // undebug()
 	if( RDEBUG(CAR(args)) != 1 )
 	    warningcall(call, "argument is not being debugged");
 	SET_RDEBUG(CAR(args), CXXRFALSE);
 	break;
-    case 2:
+    case 2: // isdebugged()
         ans = ScalarLogical(RDEBUG(CAR(args)));
         break;
-    case 3:
+    case 3: // debugonce()
         SET_RSTEP(CAR(args), 1);
         break;
     }
@@ -97,7 +97,7 @@ SEXP attribute_hidden do_trace(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-/* maintain global trace state */
+/* maintain global trace & debug state */
 
 SEXP attribute_hidden do_traceOnOff(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
@@ -121,6 +121,7 @@ SEXP attribute_hidden do_traceOnOff(/*const*/ CXXR::Expression* call, const CXXR
     return ScalarLogical(prev);
 }
 
+// GUIs, packages, etc can query:
 Rboolean attribute_hidden
 R_current_trace_state() { return Rboolean(FunctionBase::tracingEnabled()); }
 
@@ -131,9 +132,9 @@ R_current_debugging_state() { return Rboolean(Closure::debuggingEnabled()); }
 /* memory tracing */
 /* report when a traced object is duplicated */
 
+#ifdef R_MEMORY_PROFILING
 SEXP attribute_hidden do_tracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-#ifdef R_MEMORY_PROFILING
     SEXP object;
     char buffer[21];
 
@@ -154,16 +155,11 @@ SEXP attribute_hidden do_tracemem(/*const*/ CXXR::Expression* call, const CXXR::
     object->setMemoryTracing(true);
     snprintf(buffer, 21, "<%p>", (void *) object);
     return mkString(buffer);
-#else
-    errorcall(call, _("R was not compiled with support for memory profiling"));
-    return R_NilValue;
-#endif
 }
 
 
 SEXP attribute_hidden do_untracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-#ifdef R_MEMORY_PROFILING
     SEXP object;
 
     op->checkNumArgs(num_args, call);
@@ -171,12 +167,22 @@ SEXP attribute_hidden do_untracemem(/*const*/ CXXR::Expression* call, const CXXR
 
     object=args[0];
     object->setMemoryTracing(false);
-#else
-    errorcall(call, _("R was not compiled with support for memory profiling"));
-#endif
     return R_NilValue;
 }
 
+#else
+
+SEXP attribute_hidden do_tracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+{
+    errorcall(call, _("R was not compiled with support for memory profiling"));
+}
+
+SEXP attribute_hidden do_untracemem(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+{
+    errorcall(call, _("R was not compiled with support for memory profiling"));
+}
+
+#endif /* R_MEMORY_PROFILING */
 
 #ifdef R_MEMORY_PROFILING
 static void memtrace_stack_dump(void)
@@ -228,18 +234,20 @@ void RObject::traceMemory(const RObject* src1, const RObject* src2,
 SEXP do_retracemem(SEXP call, SEXP op, SEXP arg, SEXP rho)
 {
 #ifdef R_MEMORY_PROFILING
-    SEXP object, previous, ans, ap, argList;
+    SEXP object, previous, ans, argList;
     char buffer[21];
+    static SEXP do_retracemem_formals = NULL;
 
-    PROTECT(ap = list2(R_NilValue, R_NilValue));
-    SET_TAG(ap,  install("x"));
-    SET_TAG(CDR(ap), install("previous"));
-    PROTECT(argList =  matchArgs(ap, args, call));
+    if (do_retracemem_formals == NULL)
+        do_retracemem_formals = allocFormalsList2(install("x"),
+						  R_PreviousSymbol);
+
+    PROTECT(argList =  matchArgs(do_retracemem_formals, args, call));
     if(CAR(argList) == R_MissingArg) SETCAR(argList, R_NilValue);
     if(CADR(argList) == R_MissingArg) SETCAR(CDR(argList), R_NilValue);
 
-    object = CAR(ap);
-    previous = CADR(ap);
+    object = CAR(arglist);
+    previous = CADR(arglist);
     if(!isNull(previous) && !isString(previous))
 	    errorcall(call, _("invalid '%s' argument"), "previous");
 
@@ -261,7 +269,7 @@ SEXP do_retracemem(SEXP call, SEXP op, SEXP arg, SEXP rho)
 	    memtrace_stack_dump();
 	}
     }
-    UNPROTECT(2);
+    UNPROTECT(1);
     return ans;
 #else
     R_Visible = CXXRFALSE; /* for consistency with other case */

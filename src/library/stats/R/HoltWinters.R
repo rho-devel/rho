@@ -1,7 +1,7 @@
 #  File src/library/stats/R/HoltWinters.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 2002-12 The R Core Team
+#  Copyright (C) 2002-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -368,9 +368,9 @@ function (x, type = c("additive", "multiplicative"), filter = NULL)
     ## filter out seasonal components
     if (is.null(filter))
         filter <- if (!f %% 2)
-            c(0.5, rep(1, f - 1), 0.5) / f
+            c(0.5, rep_len(1, f - 1), 0.5) / f
         else
-            rep(1, f) / f
+            rep_len(1, f) / f
     trend <- filter(x, filter)
 
     ## compute seasonal components

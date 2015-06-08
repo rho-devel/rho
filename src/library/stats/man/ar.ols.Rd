@@ -1,6 +1,6 @@
 % File src/library/stats/man/ar.ols.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{ar.ols}
@@ -98,7 +98,7 @@ ar.ols(x, aic = TRUE, order.max = NULL, na.action = na.fail,
 }
 \references{
   Luetkepohl, H. (1991): \emph{Introduction to Multiple Time Series
-    Analysis.} Springer Verlag, NY, pp. 368--370.
+    Analysis.} Springer Verlag, NY, pp.\sspace{}368--370.
 }
 \examples{
 ar(lh, method = "burg")

@@ -2,13 +2,7 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995--2002 Martin Maechler <maechler@stat.math.ethz.ch>
  *  Copyright (C) 2003       The R Foundation
- *  Copyright (C) 2012       The R Core Team
- *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
- *
- *  CXXR is not part of the R project, and bugs and other issues should
- *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  Copyright (C) 2012-2013  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

@@ -1,6 +1,6 @@
 % File src/library/stats/man/pairwise.table.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{pairwise.table}
@@ -27,6 +27,6 @@ pairwise.table(compare.levels, level.names, p.adjust.method)
 \value{
   Table of p values in lower triangular form.
 }
-\seealso{ \code{\link{pairwise.t.test}}, et al.}
+\seealso{ \code{\link{pairwise.t.test}} }
 
 \keyword{htest}

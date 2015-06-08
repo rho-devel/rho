@@ -1,8 +1,11 @@
 ####--- S4 Methods (and Classes)  --- see also ../src/library/methods/tests/
 options(useFancyQuotes=FALSE)
 require(methods)
-assertCondition <- tools::assertCondition # "import"
+assertError <- tools::assertError # "import"
 ##too fragile: showMethods(where = "package:methods")
+
+## Needs cached primitive generic for '$'
+new("envRefClass")# failed in R <= 3.2.0
 
 ##-- S4 classes with S3 slots [moved from ./reg-tests-1.R]
 setClass("test1", representation(date="POSIXct"))
@@ -182,17 +185,16 @@ logic2 <- function(e1,e2) logic.brob.error(.Generic)
 setMethod("Logic", signature("brob", "ANY"), logic2)
 setMethod("Logic", signature("ANY", "brob"), logic2)
 ## Now ensure that using group members gives error:
-assertCondition(b & b, "error")
-assertCondition(b | 1, "error")
-assertCondition(TRUE & b, "error")
+assertError(b & b)
+assertError(b | 1)
+assertError(TRUE & b)
 
 
 ## methods' hidden cbind() / rbind:
-cBind <- methods:::cbind
 setClass("myMat", representation(x = "numeric"))
 setMethod("cbind2", signature(x = "myMat", y = "missing"), function(x,y) x)
 m <- new("myMat", x = c(1, pi))
-stopifnot(identical(m, cBind(m)))
+stopifnot(identical(m, methods:::cbind(m)), identical(m, cbind(m)))
 
 
 ## explicit print or show on a basic class with an S4 bit
@@ -413,7 +415,7 @@ stopifnot(dim(x) == c(1,1), is(tt, "ts"), is(t2, "ts"),
 ## Method with wrong argument order :
 setGeneric("test1", function(x, printit = TRUE, name = "tmp")
            standardGeneric("test1"))
-assertCondition(
+tools::assertCondition(
 setMethod("test1", "numeric", function(x, name, printit) match.call()),
 "warning", "error")## did not warn or error in R 2.7.0 and earlier
 
@@ -486,10 +488,10 @@ stopifnot(packageSlot(class(S <- new("SIG"))) == ".GlobalEnv",
 ## Invalid "factor"s -- now "caught" by  validity check :
  ok.f <- gl(3,5, labels = letters[1:3])
 bad.f <- structure(rep(1:3, each=5), levels=c("a","a","b"), class="factor")
-validObject(ok.f) ; assertCondition(validObject(bad.f), "error")
+validObject(ok.f) ; assertError(validObject(bad.f))
 setClass("myF", contains = "factor")
 validObject(new("myF", ok.f))
-assertCondition(validObject(new("myF", bad.f)), "error")
+assertError(validObject(new("myF", bad.f)))
 removeClass("myF")
 ## no validity check in R <= 2.9.0
 
@@ -595,9 +597,169 @@ aa <- 11:16
 a <- new("A", aa=aa)
 setMethod(length, "A", function(x) length(x@aa))
 setMethod(`[[`,   "A", function(x, i, j, ...) x@aa[[i]])
+setMethod(`[`,    "A", function(x, i, j, ...) new("A", aa = x@aa[i]))
 stopifnot(length(a) == 6, identical(a[[5]], aa[[5]]),
+          identical(a, rev(rev(a))), # using '['
 	  identical(mapply(`*`, aa, rep(1:3, 2)),
 		    mapply(`*`, a,  rep(1:3, 2))))
 ## Up to R 2.15.2, internally 'a' is treated as if it was of length 1
 ## because internal dispatch did not work for length().
+
+## is.unsorted() for formal classes - and R > 3.0.0 :
+## Fails, unfortunately (from C, base::.gtn() is called w/o dispatch)
+## setMethod("anyNA", "A", function(x) anyNA(x@aa))
+## setMethod(".gtn", "A", function(x,strictly) .gtn(x@aa, strictly))
+## but this now works (thanks to DispatchOrEval() ):
+setMethod("is.unsorted", "A", function(x, na.rm=FALSE, strictly=FALSE)
+    is.unsorted(x@aa, na.rm=na.rm, strictly=strictly))
+
+stopifnot(!is.unsorted(a), # 11:16 *is* sorted
+	  is.unsorted(rev(a)))
+
+# getSrcref failed when rematchDefinition was used
+text <- '
+setClass("MyClass", representation(val = "numeric"))
+setMethod("plot", signature(x = "MyClass"),
+    function(x, y, ...) {
+        # comment
+	NULL
+    })
+setMethod("initialize", signature = "MyClass",
+    function(.Object, value) {
+	# comment
+	.Object@val <- value
+	return(.Object)
+    })
+'
+source(textConnection(text), keep.source = TRUE)
+getSrcref(getMethod("plot", "MyClass"))
+getSrcref(getMethod("initialize", "MyClass"))
+
+
+## PR#15691
+setGeneric("fun", function(x, ...) standardGeneric("fun"))
+setMethod("fun", "character", identity)
+setMethod("fun", "numeric", function(x) {
+  x <- as.character(x)
+  callGeneric()
+})
+
+stopifnot(identical(fun(1), do.call(fun, list(1))))
+## failed in R < 3.1.0
+
+
+## PR#15680
+setGeneric("f", function(x, y) standardGeneric("f"))
+setMethod("f", c("numeric", "missing"), function(x, y) x)
+try(?f(1))
+
+## "..." is not handled
+setGeneric("f", function(...) standardGeneric("f"))
+setMethod("f", "numeric", function(...) c(...))
+try(?f(1,2))
+
+## defaults in the generic formal arguments are not considered
+setGeneric("f", function(x, y=0) standardGeneric("f"))
+setMethod("f", c("numeric", "numeric"), function(x, y) x+y)
+try(?f(1))
+
+## Objects with S3 classes fail earlier
+setGeneric("f", function(x) standardGeneric("f"))
+setMethod("f", "numeric", function(x) x)
+setOldClass(c("foo", "numeric"))
+n <- structure(1, class=c("foo", "numeric"))
+try(?f(n))
+## different failures in R < 3.1.0.
+
+
+## identical() did not look at S4 bit:
+a <- 1:5
+b <- setClass("B", "integer")(a)
+stopifnot(is.character(all.equal(a, b)))
+attributes(a) <- attributes(b)
+if(!isS4(a)) { # still (unfortunately)
+    message("'a' is not S4 yet")
+    if(identical(a,b)) stop("identical() not looking at S4 bit")
+    ## set S4 bit manually:
+    a <- asS4(a)
+}
+stopifnot(identical(a, b), isS4(a))
+## failed in R <= 3.1.1
+
+
+### cbind(), rbind() now work both via rbind2(), cbind2() and rbind.
+##__ 1) __
+setClass("A", representation(a = "matrix"))
+setMethod("initialize", signature(.Object = "A"),
+    function(.Object, y) {
+      .Object@a <- y
+      .Object
+    })
+setMethod("rbind2", signature(x = "A", y = "matrix"),
+    function(x, y, ...) {
+      cat("rbind2(<A>, <matrix>) : ")
+      x@a <- rbind(x@a, y)
+      cat(" x@a done\n")
+      x
+    })
+setMethod("dim", "A", function(x) dim(x@a))
+mat1 <- matrix(1:9, nrow = 3)
+obj1 <- new("A", 10*mat1)
+om1 <- rbind(obj1, mat1)## now does work {it does need a working "dim" method!}
+stopifnot(identical(om1, rbind2(obj1, mat1)))
+rm(obj1,om1); removeClass("A")
+##
+##
+###__ 2) --- Matrix --- via cbind2(), rbind2()
+## this has its output checked strictly, so test depending on Matrix
+## has been moved to reg-tests-3.R
+##
+###__ 3) --- package 'its' like
+setClass("its",representation("matrix", dates="POSIXt"))
+m <- outer(1:3, setNames(1:5,LETTERS[1:5]))
+im <- new("its", m, dates=as.POSIXct(Sys.Date()))
+stopifnot(identical(m, im@.Data))
+ii  <- rbind(im, im-1)
+i.i <- cbind(im, im-7)
+stopifnot(identical(m, rbind(im)),
+          identical(m, cbind(im)),
+          identical(ii , rbind(m, m-1)),
+          identical(i.i, cbind(m, m-7)))
+rm(im, ii, i.i)
+removeClass("its")
+##
+##
+###__ 4) --- pkg 'mondate' like --
+setClass("mondate",
+         slots = c(timeunits = "character"), contains = "numeric")
+three <- 3
+m1 <- new("mondate", 1:4, timeunits = "hrs")
+m2 <- new("mondate", 7:8, timeunits = "min")
+stopifnot(identical(colnames(cbind(m1+1, deparse.level=2)), "m1 + 1"),
+          is.null  (colnames(cbind(m1+1, deparse.level=0))),
+          is.null  (colnames(cbind(m1+1, deparse.level=1))),
+          identical(colnames(cbind(m1)), "m1"),
+          colnames(cbind(m1  , M2 = 2, deparse.level=0)) == c(""  , "M2"),
+          colnames(cbind(m1  , M2 = 2))                  == c("m1", "M2"),
+          colnames(cbind(m1  , M2 = 2, deparse.level=2)) == c("m1", "M2"),
+          colnames(cbind(m1+1, M2 = 2, deparse.level=2)) == c("m1 + 1", "M2"),
+          colnames(cbind(m1+1, M2 = 2, deparse.level=1)) == c("",       "M2"))
+cbind(m1, three, m2)
+cbind(m1, three, m2,   deparse.level = 0) # none
+cbind(m1, three, m2+3, deparse.level = 1) # "m1" "three"
+cbind(m1, three, m2+3, deparse.level = 2) -> m3
+m3 #    ....  and "m2 + 3"
+stopifnot(identical(t(m3), rbind(m1, three, m2+3, deparse.level = 2)),
+          identical(cbind(m1, m2) -> m12,
+                    cbind(m1=m1@.Data, m2=m2@.Data)),
+          identical(rbind(m1, m2), t(m12)),
+          identical(cbind(m1, m2, T=T, deparse.level=0),
+                    cbind(m1@.Data, m2@.Data, T=T) -> mm),
+          identical(colnames(mm), c("", "", "T")),
+          identical(cbind(m1, m2, deparse.level=0),
+                    cbind(m1@.Data, m2@.Data)))
+rm(m1,m2)
+removeClass("mondate")
+##
+
 

@@ -1,6 +1,6 @@
 % File src/library/stats/man/cancor.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{cancor}
@@ -49,7 +49,7 @@ cancor(x, y, xcenter = TRUE, ycenter = TRUE)
 
   Seber, G. A. F. (1984).
   \emph{Multivariate Observations}.
-  New York: Wiley, p. 506f.
+  New York: Wiley, p.\sspace{}506f.
 }
 \seealso{
   \code{\link{qr}}, \code{\link{svd}}.

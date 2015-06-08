@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2012   The R Core Team
+ *  Copyright (C) 1997-2014   The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -457,12 +457,21 @@ static SEXP VectorAssign(SEXP call, SEXP xarg, SEXP sarg, SEXP yarg)
     /* Check to see if we have special matrix subscripting. */
     /* If so, we manufacture a real subscript vector. */
 
-    SEXP dim = getAttrib(x, R_DimSymbol);
-    if (isMatrix(s) && isArray(x) && ncols(s) == length(dim)) {
-        if (isString(s))
-            s = strmat2intmat(s, GetArrayDimnames(x), call);
-        if (isInteger(s) || isReal(s))
-            s = mat2indsub(dim, s, R_NilValue);
+    PROTECT(s);
+    if (ATTRIB(s) != R_NilValue) { /* pretest to speed up simple case */
+	SEXP dim = getAttrib(x, R_DimSymbol);
+	if (isMatrix(s) && isArray(x) && ncols(s) == Rf_length(dim)) {
+	    if (isString(s)) {
+		s = strmat2intmat(s, GetArrayDimnames(x), call);
+		UNPROTECT(1);
+		PROTECT(s);
+	    }
+	    if (isInteger(s) || isReal(s)) {
+		s = mat2indsub(dim, s, R_NilValue);
+		UNPROTECT(1);
+		PROTECT(s);
+	    }
+	}
     }
 
     /* Here we make sure that the LHS has */
@@ -668,9 +677,9 @@ static SEXP ArrayAssign(SEXP call, SEXP xarg, PairList* subscripts, SEXP yarg)
 /* Use for pairlists */
 static SEXP GetOneIndex(SEXP sub, int ind)
 {
-    if (ind < 0 || ind+1 > length(sub))
-    	error("internal error: index %d from length %d", ind, length(sub));
-    if (length(sub) > 1) {
+    if (ind < 0 || ind+1 > Rf_length(sub))
+    	error("internal error: index %d from length %d", ind, Rf_length(sub));
+    if (Rf_length(sub) > 1) {
     	switch (TYPEOF(sub)) {
     	case INTSXP:
     	    sub = ScalarInteger(INTEGER(sub)[ind]);
@@ -695,23 +704,23 @@ static SEXP SimpleListAssign(SEXP call, SEXP x, SEXP s, SEXP y, int ind)
     int ii, n, nx;
     R_xlen_t stretch = 1;
 
-    if (length(s) > 1)
+    if (Rf_length(s) > 1)
 	error(_("invalid number of subscripts to list assign"));
 
     PROTECT(sub = GetOneIndex(sub, ind));
     PROTECT(indx = makeSubscript(x, sub, &stretch, nullptr));
 
-    n = length(indx);
+    n = Rf_length(indx);
     if (n > 1)
     	error(_("invalid subscript in list assign"));
 
-    nx = length(x);
+    nx = Rf_length(x);
 
     if (stretch) {
 	SEXP t = CAR(s);
 	GCStackRoot<> yi(allocList(int(stretch - nx)));
 	/* This is general enough for only usage */
-	if(isString(t) && length(t) == stretch - nx) {
+	if(isString(t) && Rf_length(t) == stretch - nx) {
 	    SEXP z = yi;
 	    int i;
 	    for(i = 0; i < LENGTH(t); i++, z = CDR(z))
@@ -771,29 +780,58 @@ static SEXP listRemove(SEXP x, SEXP s, int ind)
 }
 
 
-static void SubAssignArgs(PairList* args, SEXP *x, PairList** s, SEXP *y)
+static int SubAssignArgs(PairList* args, SEXP *x, PairList** s, SEXP *y)
 {
-    size_t numargs = listLength(args);
-    if (numargs < 2)
+    if (CDR(args) == R_NilValue)
 	Rf_error(_("SubAssignArgs: invalid number of arguments"));
     *x = args->car();
-    if(numargs == 2) {
+    if(CDDR(args) == R_NilValue) {
 	*s = nullptr;
 	*y = args->tail()->car();
+	return 0;
     }
     else {
+	int nsubs = 1;
 	PairList* p = args->tail();
 	*s = p;
 	PairList* ptail = p->tail();
 	while (ptail->tail()) {
 	    p = ptail;
 	    ptail = p->tail();
+	    nsubs++;
 	}
 	*y = ptail->car();
 	p->setTail(nullptr);
+	return nsubs;
     }
 }
 
+/* Version of DispatchOrEval for "[" and friends that speeds up simple cases.
+   Also defined in subset.c */
+static R_INLINE
+int R_DispatchOrEvalSP(SEXP call, SEXP op, const char *generic, SEXP args,
+		    SEXP rho, SEXP *ans)
+{
+    SEXP prom = NULL;
+    if (args != R_NilValue && CAR(args) != R_DotsSymbol) {
+	SEXP x = eval(CAR(args), rho);
+	PROTECT(x);
+	if (! OBJECT(x)) {
+	    *ans = CONS(x, evalListKeepMissing(CDR(args), rho));
+	    UNPROTECT(1);
+	    return FALSE;
+	}
+	prom = mkPROMISE(CAR(args), R_GlobalEnv);
+	SET_PRVALUE(prom, x);
+	args = CONS(prom, CDR(args));
+	UNPROTECT(1);
+    }
+    PROTECT(args);
+    int disp = DispatchOrEval(call, op, generic, args, rho, ans, 0, 0);
+    if (prom) DECREMENT_REFCNT(PRVALUE(prom));
+    UNPROTECT(1);
+    return disp;
+}
 
 /* The [<- operator.  "x" is the vector that is to be assigned into, */
 /* y is the vector that is going to provide the new values and subs is */
@@ -810,7 +848,7 @@ SEXP attribute_hidden do_subassign(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* We evaluate the first argument and attempt to dispatch on it. */
     /* If the dispatch fails, we "drop through" to the default code below. */
 
-    if(DispatchOrEval(call, op, "[<-", args, rho, &ans, 0, 0))
+    if(R_DispatchOrEvalSP(call, op, "[<-", args, rho, &ans))
 /*     if(DispatchAnyOrEval(call, op, "[<-", args, rho, &ans, 0, 0)) */
       return(ans);
 
@@ -822,22 +860,18 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP argsarg,
 {
     GCStackRoot<PairList> args(SEXP_downcast<PairList*>(argsarg));
 
+    SEXP ignored, x, y;
+    PairList* subs;
+    int nsubs = SubAssignArgs(args, &x, &subs, &y);
+   
     /* If there are multiple references to an object we must */
     /* duplicate it so that only the local version is mutated. */
     /* This will duplicate more often than necessary, but saves */
     /* over always duplicating. */
-    GCStackRoot<> x(CAR(args));
-    if (NAMED(x) == 2) {
-	x = Rf_duplicate(x);
-	args->setCar(x);
+    if (MAYBE_SHARED(CAR(args))) {
+	x = SETCAR(args, shallow_duplicate(CAR(args)));
     }
-    PairList* subs;
-    SEXP y;
-    {
-	SEXP xtmp;
-	SubAssignArgs(args, &xtmp, &subs, &y);
-	x = xtmp;
-    }
+
     bool S4 = IS_S4_OBJECT(x);
     SEXPTYPE xorigtype = TYPEOF(x);
     if (xorigtype == LISTSXP || xorigtype == LANGSXP)
@@ -857,7 +891,7 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP argsarg,
     case VECSXP:
     case RAWSXP:
 	{
-	    VectorBase* xv = static_cast<VectorBase*>(x.get());
+	    VectorBase* xv = static_cast<VectorBase*>(x);
 	    if (xv->size() == 0 && Rf_length(y) == 0)
 		return x;
 	    size_t nsubs = listLength(subs);
@@ -880,7 +914,7 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP argsarg,
     }
 
     if (xorigtype == LANGSXP) {
-	if(length(x)) {
+	if(Rf_length(x)) {
 	    GCStackRoot<PairList> xlr(static_cast<PairList*>(VectorToPairList(x)));
 	    GCStackRoot<Expression> xr(ConsCell::convert<Expression>(xlr));
 	    x = xr;
@@ -950,7 +984,7 @@ SEXP attribute_hidden do_subassign2(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans;
 
-    if(DispatchOrEval(call, op, "[[<-", args, rho, &ans, 0, 0))
+    if(R_DispatchOrEvalSP(call, op, "[[<-", args, rho, &ans))
 /*     if(DispatchAnyOrEval(call, op, "[[<-", args, rho, &ans, 0, 0)) */
       return(ans);
 
@@ -969,7 +1003,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
     PROTECT(args);
 
     PairList* subs;
-    SubAssignArgs(args, &x, &subs, &y);
+    nsubs = SubAssignArgs(args, &x, &subs, &y);
     S4 = CXXRCONSTRUCT(Rboolean, IS_S4_OBJECT(x));
 
     /* Handle NULL left-hand sides.  If the right-hand side */
@@ -981,7 +1015,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 	    UNPROTECT(1);
 	    return x;
 	}
-	if (length(y) == 1)
+	if (Rf_length(y) == 1)
 	    SETCAR(args, x = allocVector(TYPEOF(y), 0));
 	else
 	    SETCAR(args, x = allocVector(VECSXP, 0));
@@ -990,14 +1024,15 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
     /* Ensure that the LHS is a local variable. */
     /* If it is not, then make a local copy. */
 
-    if (NAMED(x) == 2)
-	SETCAR(args, x = duplicate(x));
+    if (MAYBE_SHARED(x)) {
+	x = shallow_duplicate(x);
+	SETCAR(args, x);
+    }
 
     xtop = xup = x; /* x will be the element which is assigned to */
 
     dims = getAttrib(x, R_DimSymbol);
-    ndims = length(dims);
-    nsubs = length(subs);
+    ndims = Rf_length(dims);
 
     /* code to allow classes to extend ENVSXP */
     if(TYPEOF(x) == S4SXP) {
@@ -1009,7 +1044,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 
     /* ENVSXP special case first */
     if( TYPEOF(x) == ENVSXP) {
-	if( nsubs!=1 || !isString(CAR(subs)) || length(CAR(subs)) != 1 )
+	if( nsubs!=1 || !isString(CAR(subs)) || Rf_length(CAR(subs)) != 1 )
 	    error(_("wrong args for environment subassignment"));
 	defineVar(installTrChar(STRING_ELT(CAR(subs), 0)), y, x);
 	UNPROTECT(1);
@@ -1020,7 +1055,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
        more general as of 2.10.0 */
     if (nsubs == 1) {
 	thesub = CAR(subs);
-	len = length(thesub); /* depth of recursion, small */
+	len = Rf_length(thesub); /* depth of recursion, small */
 	if (len > 1) {
 	    xup = vectorIndex(x, thesub, 0, len-2, /*partial ok*/TRUE, call,
 			      TRUE);
@@ -1040,11 +1075,14 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 	if (nsubs == 0 || CAR(subs) == R_MissingArg)
 	    error(_("[[ ]] with missing subscript"));
 	if (nsubs == 1) {
-	    offset = OneIndex(x, thesub, length(x), 0, &newname,
+	    offset = OneIndex(x, thesub, Rf_length(x), 0, &newname,
 			      recursed ? len-1 : -1, R_NilValue);
 	    if (isVectorList(x) && isNull(y)) {
 		x = DeleteOneVectorListItem(x, offset);
-		if(recursed) SET_VECTOR_ELT(xup, off, x);
+		if(recursed) {
+		    if(isVectorList(xup)) SET_VECTOR_ELT(xup, off, x);
+		    else xup = SimpleListAssign(call, xup, subs, x, len-2);
+		}
 		else xtop = x;
 		UNPROTECT(1);
 		return xtop;
@@ -1198,8 +1236,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 	case 2025:      /* expression     <- S4 */
 	case 2020:	/* expression <- expression */
 
-	    if( NAMED(y) ) y = duplicate(y);
-	    SET_XVECTOR_ELT(x, offset, y);
+	    SET_XVECTOR_ELT(x, offset, R_FixupRHS(x, y));
 	    break;
 
 	case 2424:      /* raw <- raw */
@@ -1218,7 +1255,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 	if (stretch && newname != R_NilValue) {
 	    names = getAttrib(x, R_NamesSymbol);
 	    if (names == R_NilValue) {
-		PROTECT(names = allocVector(STRSXP, length(x)));
+		PROTECT(names = allocVector(STRSXP, Rf_length(x)));
 		SET_STRING_ELT(names, offset, newname);
 		setAttrib(x, R_NamesSymbol, names);
 		UNPROTECT(1);
@@ -1229,8 +1266,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 	UNPROTECT(1);
     }
     else if (isPairList(x)) {
-	/* if (NAMED(y)) */
-	y = duplicate(y);
+	y = R_FixupRHS(x, y);
 	PROTECT(y);
 	if (nsubs == 1) {
 	    if (isNull(y)) {
@@ -1247,7 +1283,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 	    names = getAttrib(x, R_DimNamesSymbol);
 	    for (i = 0; i < ndims; i++) {
 		INTEGER(indx)[i] = int(
-		    get1index(CAR(subs), CAR(names),
+		    get1index(CAR(subs), VECTOR_ELT(names, i),
 			      INTEGER(dims)[i],
 			      /*partial ok*/FALSE, -1, call));
 		subs = subs->tail();
@@ -1259,7 +1295,8 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP argsarg, SEXP rho)
 	    for (i = (ndims - 1); i > 0; i--)
 		offset = (offset + INTEGER(indx)[i]) * INTEGER(dims)[i - 1];
 	    offset += INTEGER(indx)[0];
-	    SETCAR(nthcdr(x, int( offset)), duplicate(y));
+	    SEXP slot = nthcdr(x, (int) offset);
+	    SETCAR(slot, duplicate(y));
 	    /* FIXME: add name */
 	    UNPROTECT(1);
 	}
@@ -1313,7 +1350,7 @@ SEXP attribute_hidden do_subassign3(SEXP call, SEXP op, SEXP args, SEXP env)
     /* replace the second argument with a string */
     SETCADR(args, input);
 
-    if(DispatchOrEval(call, op, "$<-", args, env, &ans, 0, 0))
+    if(R_DispatchOrEvalSP(call, op, "$<-", args, env, &ans))
       return(ans);
 
     GCStackRoot<> ansrt(ans);
@@ -1335,18 +1372,19 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
     PROTECT_WITH_INDEX(val, &pvalidx);
     S4 = CXXRCONSTRUCT(Rboolean, IS_S4_OBJECT(x));
 
-    if (NAMED(x) == 2)
-	REPROTECT(x = duplicate(x), pxidx);
-
+    if (MAYBE_SHARED(x)) {
+	x = shallow_duplicate(x);
+	REPROTECT(x, pxidx);
+    }
     /* If we aren't creating a new entry and NAMED>0
        we need to duplicate to prevent cycles.
        If we are creating a new entry we could duplicate
-       or increase NAMED. We duplicate if NAMED==1, but
-       not if NAMED==2 */
-    if (NAMED(val) == 2)
+       or increase NAMED. We duplicate if NAMED == 1, but
+       not if NAMED > 1 */
+    if (MAYBE_SHARED(val))
 	maybe_duplicate=TRUE;
-    else if (NAMED(val)==1)
-	REPROTECT(val = duplicate(val), pvalidx);
+    else if (MAYBE_REFERENCED(val))
+	REPROTECT(val = R_FixupRHS(x, val), pvalidx);
     /* code to allow classes to extend ENVSXP */
     if(TYPEOF(x) == S4SXP) {
 	xS4 = x;
@@ -1358,7 +1396,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
     if ((isList(x) || isLanguage(x)) && !isNull(x)) {
 	/* Here we do need to duplicate */
 	if (maybe_duplicate)
-	    REPROTECT(val = duplicate(val), pvalidx);
+	    REPROTECT(val = R_FixupRHS(x, val), pvalidx);
 	if (TAG(x) == nlist) {
 	    if (val == R_NilValue) {
 		SET_ATTRIB(CDR(x), ATTRIB(x));
@@ -1462,7 +1500,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 	    if (imatch >= 0) {
 		/* We are just replacing an element */
 		if (maybe_duplicate)
-		    REPROTECT(val = duplicate(val), pvalidx);
+		    REPROTECT(val = R_FixupRHS(x, val), pvalidx);
 		SET_VECTOR_ELT(x, imatch, val);
 	    }
 	    else {

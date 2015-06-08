@@ -1,6 +1,6 @@
 % File src/library/utils/man/browseEnv.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{browseEnv}
@@ -46,8 +46,8 @@ browseEnv(envir = .GlobalEnv, pattern,
   Only allows one level of recursion into object structures.
 
   It can be generalized.  See sources for details.
-  Most probably, this should rather work through using the \file{tkWidget}
-  package (from \url{www.Bioconductor.org}).
+  Most probably, this should rather work through using the \pkg{tkWidget}
+  package (from \url{http://www.bioconductor.org}).
 }
 \seealso{
   \code{\link{str}}, \code{\link{ls}}.

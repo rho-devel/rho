@@ -1,6 +1,6 @@
 % File src/library/datasets/man/UCBAdmissions.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{UCBAdmissions}
@@ -26,7 +26,7 @@
 }
 \details{
   This data set is frequently used for illustrating Simpson's paradox,
-  see Bickel et al.\ (1975).  At issue is whether the data show evidence
+  see Bickel \emph{et al} (1975).  At issue is whether the data show evidence
   of sex bias in admission practices.  There were 2691 male applicants,
   of whom 1198 (44.5\%) were admitted, compared with 1835 female
   applicants of whom 557 (30.4\%) were admitted.  This gives a sample
@@ -38,11 +38,8 @@
   \emph{more} to departments with higher rejection rates).
 
   This data set can also be used for illustrating methods for graphical
-  display of categorical data, such as the general-purpose mosaic plot
-  or the fourfold display for 2-by-2-by-\eqn{k} tables.  See the
-  home page of Michael Friendly
-  (\url{http://www.math.yorku.ca/SCS/friendly.html}) for further
-  information.
+  display of categorical data, such as the general-purpose \link{mosaicplot}
+  or the \link{fourfoldplot} for 2-by-2-by-\eqn{k} tables.
 }
 \references{
   Bickel, P. J., Hammel, E. A., and O'Connell, J. W. (1975)

@@ -1,8 +1,8 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2013	    The R Core Team.
- *  Copyright (C) 2003-4	    The R Foundation
+ *  Copyright (C) 1998--2015	    The R Core Team.
+ *  Copyright (C) 2003--2015	    The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -61,10 +61,6 @@
 // Needed for example with MacOS 10.5.7 + Xcode 3.1.3:
 #define isnan std::isnan
 #endif
-
-extern "C" {
-    extern double Rf_gamma_cody(double);
-}
 
 #include "arithmetic.h"
 
@@ -135,7 +131,7 @@ static CONST int lw = 0;
 
 static double R_ValueOfNA(void)
 {
-    /* The gcc shipping with RedHat 9 gets this wrong without
+    /* The gcc shipping with Fedora 9 gets this wrong without
      * the volatile declaration. Thanks to Marc Schwartz. */
     volatile ieee_double x;
     x.word[hw] = 0x7ff00000;
@@ -179,8 +175,8 @@ namespace CXXR {
 void attribute_hidden InitArithmetic()
 {
     R_NaInt = INT_MIN;
-    R_NaN = std::numeric_limits<double>::quiet_NaN();
     R_NaReal = R_ValueOfNA();
+    R_NaN = std::numeric_limits<double>::quiet_NaN();
     R_PosInf = std::numeric_limits<double>::infinity();
     R_NegInf = -R_PosInf;  // is this portable?
 }
@@ -191,10 +187,8 @@ void attribute_hidden InitArithmetic()
  */
 static double myfmod(double x1, double x2)
 {
-    double q = x1 / x2, tmp;
-
     if (x2 == 0.0) return R_NaN;
-    tmp = x1 - floor(q) * x2;
+    double q = x1 / x2, tmp = x1 - floor(q) * x2;
     if(R_FINITE(q) && (fabs(q) > 1/R_AccuracyInfo.eps))
 	warning(_("probable complete loss of accuracy in modulus"));
     q = floor(tmp/x2);
@@ -208,13 +202,6 @@ static double myfloor(double x1, double x2)
     if (x2 == 0.0) return q;
     tmp = x1 - floor(q) * x2;
     return floor(q) + floor(tmp/x2);
-}
-
-/* some systems get this wrong, possibly depend on what libs are loaded */
-static R_INLINE double R_log(double x) {
-    if (isnan(x))
-	return x;
-    return x > 0 ? log(x) : x < 0 ? R_NaN : R_NegInf;
 }
 
 double R_pow(double x, double y) /* = x ^ y */
@@ -231,20 +218,10 @@ double R_pow(double x, double y) /* = x ^ y */
 	else return(y); /* NA or NaN, we assert */
     }
     if (R_FINITE(x) && R_FINITE(y)) {
-/* work around a bug in May 2007 snapshots of gcc pre-4.3.0, also
-   present in the release version.  If compiled with, say, -g -O3
-   on x86_64 Linux this compiles to a call to sqrtsd and gives
-   100^0.5 as 3.162278.  -g is needed, as well as -O2 or higher.
-   example(pbirthday) will fail.
- */
-/* FIXME: with the y == 2.0 test now at the top that case isn't
-   reached here, but i have left it for someone who understands the
-   bug fix issue here to remove. LT */
-#if __GNUC__ == 4 && __GNUC_MINOR__ >= 3
-	return (y == 2.0) ? x*x : pow(x, y);
-#else
-	return (y == 2.0) ? x*x : ((y == 0.5) ? sqrt(x) : pow(x, y));
-#endif
+	/* There was a special case for y == 0.5 here, but
+	   gcc 4.3.0 -g -O2 mis-compiled it.  Showed up with
+	   100^0.5 as 3.162278, example(pbirthday) failed. */
+	return pow(x, y);
     }
     if (ISNAN(x) || ISNAN(y))
 	return(x + y);
@@ -264,13 +241,7 @@ double R_pow(double x, double y) /* = x ^ y */
 		return (x < 1) ? R_PosInf : 0.;
 	}
     }
-    return(R_NaN);		/* all other cases: (-Inf)^{+-Inf,
-				   non-int}; (neg)^{+-Inf} */
-}
-
-static R_INLINE double R_POW(double x, double y) /* handle x ^ 2 inline */
-{
-    return y == 2.0 ? x * x : R_pow(x, y);
+    return R_NaN; // all other cases: (-Inf)^{+-Inf, non-int}; (neg)^{+-Inf}
 }
 
 double R_pow_di(double x, int n)
@@ -295,27 +266,28 @@ double R_pow_di(double x, int n)
 }
 
 
-/* General Base Logarithms */
-
-/* Note that the behaviour of log(0) required is not necessarily that
-   mandated by C99 (-HUGE_VAL), and the behaviour of log(x < 0) is
-   optional in C99.  Some systems return -Inf for log(x < 0), e.g.
-   libsunmath on Solaris.
-*/
-static double logbase(double x, double base)
-{
-#ifdef HAVE_LOG10
-    if(base == 10) return x > 0 ? log10(x) : x < 0 ? R_NaN : R_NegInf;
-#endif
-#ifdef HAVE_LOG2
-    if(base == 2) return x > 0 ? log2(x) : x < 0 ? R_NaN : R_NegInf;
-#endif
-    return R_log(x) / R_log(base);
-}
-
 static SEXP real_binary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP integer_binary(ARITHOP_TYPE, SEXP, SEXP, SEXP);
 
+#if 0
+static R_INLINE SEXP ScalarValue1(SEXP x)
+{
+    if (NO_REFERENCES(x))
+	return x;
+    else
+	return allocVector(TYPEOF(x), 1);
+}
+
+static R_INLINE SEXP ScalarValue2(SEXP x, SEXP y)
+{
+    if (NO_REFERENCES(x))
+	return x;
+    else if (NO_REFERENCES(y))
+	return y;
+    else
+	return allocVector(TYPEOF(x), 1);
+}
+#endif
 
 /* Unary and Binary Operators */
 
@@ -403,12 +375,10 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 	    SEXP_downcast<VectorBase*>(val.get()), x, y);
     }
     else if (TYPEOF(x) == REALSXP || TYPEOF(y) == REALSXP) {
-	if(!(TYPEOF(x) == INTSXP || TYPEOF(y) == INTSXP
-	     /* || TYPEOF(x) == LGLSXP || TYPEOF(y) == LGLSXP*/)) {
-	    /* Can get a LGLSXP. In base-Ex.R on 24 Oct '06, got 8 of these. */
-	    x = COERCE_IF_NEEDED(x, REALSXP);
-	    y = COERCE_IF_NEEDED(y, REALSXP);
-	}
+	/* real_binary can handle REALSXP or INTSXP operand, but not LGLSXP. */
+	/* Can get a LGLSXP. In base-Ex.R on 24 Oct '06, got 8 of these. */
+	if (TYPEOF(x) != INTSXP) x = COERCE_IF_NEEDED(x, REALSXP);
+	if (TYPEOF(y) != INTSXP) y = COERCE_IF_NEEDED(y, REALSXP);
 	val = real_binary(oper, x, y);
     }
     else {
@@ -786,9 +756,16 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* case 44: return MATH1(tetragamma);
 	   case 45: return MATH1(pentagamma);
 	   removed in 2.0.0
-	*/
 
-	/* case 46: return MATH1(Rf_gamma_cody); removed in 2.8.0 */
+	   case 46: return MATH1(Rf_gamma_cody); removed in 2.8.0
+	*/
+    case 47: return MATH1(cospi);
+    case 48: return MATH1(sinpi);
+#ifndef HAVE_TANPI
+    case 49: return MATH1(tanpi);
+#else
+    case 49: return MATH1(Rtanpi);
+#endif
 
     default:
 	errorcall(call, _("unimplemented real function of 1 argument"));
@@ -831,21 +808,28 @@ SEXP attribute_hidden do_abs(SEXP call, SEXP op, SEXP args, SEXP env)
     if (isInteger(x) || isLogical(x)) {
 	/* integer or logical ==> return integer,
 	   factor was covered by Math.factor. */
-	R_xlen_t i, n = xlength(x);
-	PROTECT(s = allocVector(INTSXP, n));
+	R_xlen_t i, n = XLENGTH(x);
+	s = (NO_REFERENCES(x) && TYPEOF(x) == INTSXP) ?
+	    x : allocVector(INTSXP, n);
+	PROTECT(s);
 	/* Note: relying on INTEGER(.) === LOGICAL(.) : */
-	for(i = 0 ; i < n ; i++)
-	    INTEGER(s)[i] = abs(INTEGER(x)[i]);
+	for(i = 0 ; i < n ; i++) {
+            int xi = INTEGER(x)[i];
+	    INTEGER(s)[i] = (xi == NA_INTEGER) ? xi : abs(xi);
+        }
     } else if (TYPEOF(x) == REALSXP) {
-	R_xlen_t i, n = xlength(x);
-	PROTECT(s = allocVector(REALSXP, n));
+	R_xlen_t i, n = XLENGTH(x);
+	PROTECT(s = NO_REFERENCES(x) ? x : allocVector(REALSXP, n));
 	for(i = 0 ; i < n ; i++)
 	    REAL(s)[i] = fabs(REAL(x)[i]);
     } else if (isComplex(x)) {
+        SET_TAG(args, R_NilValue); /* cmathfuns want "z"; we might have "x" PR#16047 */
 	return do_cmathfuns(call, op, args, env);
     } else
 	errorcall(call, R_MSG_NONNUM_MATH);
-    DUPLICATE_ATTRIB(s, x);
+
+    if (x != s && ATTRIB(x) != R_NilValue)
+	DUPLICATE_ATTRIB(s, x);
     UNPROTECT(1);
     return s;
 }
@@ -983,7 +967,9 @@ static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
     double ai, bi, *a, *b, *y;
     int naflag;
     double amax, *work;
-    long nw;
+    size_t nw;
+
+#define besselJY_max_nu 1e7
 
     if (!isNumeric(sa) || !isNumeric(sb))
 	errorcall(lcall, R_MSG_NONNUM_MATH);
@@ -997,11 +983,14 @@ static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
     amax = 0.0;
     for (i = 0; i < nb; i++) {
 	double av = b[i] < 0 ? -b[i] : b[i];
-	if (av > amax) amax = av;
+	if (amax < av)
+	    amax = av;
     }
+    if (amax > besselJY_max_nu)
+	amax = besselJY_max_nu; // and warning will happen in ../nmath/bessel_[jy].c
     const void *vmax = vmaxget();
-    nw = 1 + long(floor(amax));
-    work = static_cast<double *>( CXXR_alloc(size_t( nw), sizeof(double)));
+    nw = 1 + (size_t)floor(amax);
+    work = (double *) R_alloc(nw, sizeof(double));
 
     mod_iterate(na, nb, ia, ib) {
 //	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
@@ -1037,8 +1026,8 @@ SEXP attribute_hidden do_math2(SEXP call, SEXP op, SEXP args, SEXP env)
     switch (PRIMVAL(op)) {
 
     case  0: return Math2(args, atan2);
-    case 10001: return Math2(args, fround);/* round(), src/nmath/fround.c */
-    case 10004: return Math2(args, fprec); /* signif(), src/nmath/fprec.c */
+    case 10001: return Math2(args, fround);// round(),  ../nmath/fround.c
+    case 10004: return Math2(args, fprec); // signif(), ../nmath/fprec.c
 
     case  2: return Math2(args, lbeta);
     case  3: return Math2(args, beta);
@@ -1085,10 +1074,11 @@ SEXP attribute_hidden do_math2(SEXP call, SEXP op, SEXP args, SEXP env)
 /* This is a primitive SPECIALSXP with internal argument matching */
 SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP res, ap, call2;
+    SEXP res, call2;
     int n, nprotect = 2;
+    static SEXP do_Math2_formals = NULL;
 
-    if (length(args) >= 2 &&
+    if (Rf_length(args) >= 2 &&
 	isSymbol(CADR(args)) && R_isMissing(CADR(args), env)) {
 	double digits = 0;
 	if(PRIMVAL(op) == 10004) digits = 6.0; // for signif()
@@ -1099,32 +1089,27 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(call2 = lang2(CAR(call), nullptr));
     SETCDR(call2, args);
 
-    n = length(args);
-    switch (n) {
-    case 1:
-    case 2:
-	break;
-    default:
-	error(_("%d arguments passed to '%s' which requires 1 or 2"),
-	      n, PRIMNAME(op));
-    }
+    n = Rf_length(args);
+    if (n != 1 && n != 2)
+        error(ngettext("%d argument passed to '%s' which requires 1 or 2 arguments",
+                       "%d arguments passed to '%s'which requires 1 or 2 arguments", n),
+              n, PRIMNAME(op));
 
     if (! DispatchGroup("Math", call2, op, args, env, &res)) {
 	if(n == 1) {
 	    double digits = 0.0;
-	    check1arg(args, call, "x");
 	    if(PRIMVAL(op) == 10004) digits = 6.0;
 	    SETCDR(args, CONS(ScalarReal(digits), R_NilValue));
 	} else {
 	    /* If named, do argument matching by name */
 	    if (TAG(args) != R_NilValue || TAG(CDR(args)) != R_NilValue) {
-		PROTECT(ap = CONS(R_NilValue, list1(nullptr)));
-		SET_TAG(ap,  install("x"));
-		SET_TAG(CDR(ap), install("digits"));
-		PROTECT(args = matchArgs(ap, args, call));
-		nprotect +=2;
+	        if (do_Math2_formals == NULL)
+                    do_Math2_formals = allocFormalsList2(install("x"),
+							 install("digits"));
+		PROTECT(args = matchArgs(do_Math2_formals, args, call));
+		nprotect++;
 	    }
-	    if (length(CADR(args)) == 0)
+	    if (Rf_length(CADR(args)) == 0)
 		errorcall(call, _("invalid second argument of length 0"));
 	}
 	res = do_math2(call, op, args, env);
@@ -1163,57 +1148,100 @@ SEXP attribute_hidden do_log1arg(/*const*/ CXXR::Expression* call, const CXXR::B
     return res;
 }
 
+#ifdef M_E
+# define DFLT_LOG_BASE M_E
+#else
+# define DFLT_LOG_BASE exp(1.)
+#endif
 
-/* This is a primitive SPECIALSXP with internal argument matching */
+/* do_log is a primitive SPECIALSXP with internal argument
+   matching. do_log_builtin is the BUILTIN version that expects
+   evaluated arguments to be passed as 'args', expect that these may
+   contain missing arguments.  */
 SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP res, ap = args, call2;
-    int n = length(args), nprotect = 2;
+    args = evalListKeepMissing(args, env);
+    return  do_log_builtin(call, op, args, env);
+}
 
-    if (n >= 2 && isSymbol(CADR(args)) && R_isMissing(CADR(args), env)) {
-#ifdef M_E
-	double e = M_E;
-#else
-	double e = exp(1.);
-#endif
-	PROTECT(args = list2(CAR(args), ScalarReal(e))); nprotect++;
+SEXP attribute_hidden do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    PROTECT(args);
+    int n = Rf_length(args);
+    SEXP res;
+
+    if (n == 1 && TAG(args) == R_NilValue) {
+	/* log(x) is handled here */
+	SEXP x = CAR(args);
+	if (x != R_MissingArg && ! OBJECT(x)) {
+	    if (isComplex(x))
+		res = complex_math1(call, op, args, env);
+	    else
+		res = math1(x, R_log, call);
+	    UNPROTECT(1);
+	    return res;
+	}
     }
-    PROTECT(args = evalListKeepMissing(args, env));
-    PROTECT(call2 = lang2(CAR(call), nullptr));
-    SETCDR(call2, args);
-    n = length(args);
+    else if (n == 2 &&
+	     TAG(args) == R_NilValue &&
+	     (TAG(CDR(args)) == R_NilValue || TAG(CDR(args)) == R_BaseSymbol)) {
+	/* log(x, y) or log(x, base = y) are handled here */
+	SEXP x = CAR(args);
+	SEXP y = CADR(args);
+	if (x != R_MissingArg && y != R_MissingArg &&
+	    ! OBJECT(x) && ! OBJECT(y)) {
+	    if (isComplex(x) || isComplex(y))
+		res = complex_math2(call, op, args, env);
+	    else
+		res = math2(x, y, logbase, call);
+	    UNPROTECT(1);
+	    return res;
+	}
+    }
 
-    if (! DispatchGroup("Math", call2, op, args, env, &res)) {
-	switch (n) {
-	case 1:
-	    check1arg(args, call, "x");
+    static SEXP do_log_formals = NULL;
+    static SEXP R_x_Symbol = NULL;
+    if (do_log_formals == NULL) {
+	R_x_Symbol = install("x");
+	do_log_formals = allocFormalsList2(R_x_Symbol, R_BaseSymbol);
+    }
+
+    if (n == 1) {
+	if (CAR(args) == R_MissingArg ||
+	    (TAG(args) != R_NilValue && TAG(args) != R_x_Symbol))
+	    error(_("argument \"%s\" is missing, with no default"), "x");
+
+	if (! DispatchGroup("Math", call, op, args, env, &res)) {
 	    if (isComplex(CAR(args)))
 		res = complex_math1(call, op, args, env);
 	    else
 		res = math1(CAR(args), R_log, call);
-	    break;
-	case 2:
-	{
-	    /* match argument names if supplied */
-	    PROTECT(ap = list2(nullptr, nullptr));
-	    SET_TAG(ap, install("x"));
-	    SET_TAG(CDR(ap), install("base"));
-	    PROTECT(args = matchArgs(ap, args, call));
-	    nprotect += 2;
-	    if (length(CADR(args)) == 0)
+	}
+	UNPROTECT(1);
+	return res;
+    }
+    else {
+	/* match argument names if supplied */
+	/* will signal an error unless there are one or two arguments */
+	/* after the match, Rf_length(args) will be 2 */
+	PROTECT(args = matchArgs(do_log_formals, args, call));
+
+	if(CAR(args) == R_MissingArg)
+	    error(_("argument \"%s\" is missing, with no default"), "x");
+	if (CADR(args) == R_MissingArg)
+	    SETCADR(args, ScalarReal(DFLT_LOG_BASE));
+
+	if (! DispatchGroup("Math", call, op, args, env, &res)) {
+	    if (Rf_length(CADR(args)) == 0)
 		errorcall(call, _("invalid argument 'base' of length 0"));
 	    if (isComplex(CAR(args)) || isComplex(CADR(args)))
 		res = complex_math2(call, op, args, env);
 	    else
 		res = math2(CAR(args), CADR(args), logbase, call);
-	    break;
 	}
-	default:
-	    error(_("%d arguments passed to 'log' which requires 1 or 2"), n);
-	}
+	UNPROTECT(2);
+	return res;
     }
-    UNPROTECT(nprotect);
-    return res;
 }
 
 
@@ -1331,7 +1359,7 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
     double ai, bi, ci, *a, *b, *c, *y;
     int naflag;
     double amax, *work;
-    long nw;
+    size_t nw;
 
     SETUP_Math3;
 

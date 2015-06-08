@@ -1,9 +1,7 @@
 % File src/library/parallel/man/unix/mcaffinity.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2009-11 R Core Team
+% Copyright 2009-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{mcaffinity}
 \alias{mcaffinity}

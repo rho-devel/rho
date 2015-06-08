@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001--2012 The R Core Team
+ *  Copyright (C) 2001--2015 The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -129,7 +129,7 @@ SEXP attribute_hidden do_intToBits(/*const*/ CXXR::Expression* call, const CXXR:
     SEXP ans, x;
     R_xlen_t i, j = 0;
     unsigned int tmp;
-    
+
     PROTECT(x = coerceVector(args[0], INTSXP));
     if (!isInteger(x))
 	error(_("argument 'x' must be an integer vector"));
@@ -153,7 +153,7 @@ SEXP attribute_hidden do_packBits(/*const*/ CXXR::Expression* call, const CXXR::
     if (TYPEOF(x) != RAWSXP && TYPEOF(x) != LGLSXP && TYPEOF(x) != INTSXP)
 	error(_("argument 'x' must be raw, integer or logical"));
     if (!isString(stype)  || LENGTH(stype) != 1)
-	error(_("argument 'type' must be a character string"));
+	error(_("argument '%s' must be a character string"), "type");
     useRaw = CXXRCONSTRUCT(Rboolean, strcmp(CHAR(STRING_ELT(stype, 0)), "integer"));
     fac = useRaw ? 8 : 32;
     if (len% fac)

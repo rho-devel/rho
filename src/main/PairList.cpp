@@ -47,6 +47,7 @@ namespace CXXR {
 	SEXP (*CADRp)(SEXP e) = CADR;
 	SEXP (*CDARp)(SEXP e) = CDAR;
 	SEXP (*CDDRp)(SEXP e) = CDDR;
+	SEXP (*CDDDRp)(SEXP e) = CDDDR;
 	SEXP (*CDRp)(SEXP e) = CDR;
 	Rboolean (*IS_ACTIVE_BINDINGptr)(SEXP b) = IS_ACTIVE_BINDING;
 	void (*LOCK_BINDINGptr)(SEXP b) = LOCK_BINDING;

@@ -1,18 +1,3 @@
-#CXXR $Id$
-#CXXR 
-#CXXR This file is part of CXXR, a project to refactor the R interpreter
-#CXXR into C++.  It may consist in whole or in part of program code and
-#CXXR documentation taken from the R project itself, incorporated into
-#CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
-#CXXR Licence.
-#CXXR 
-#CXXR CXXR is Copyright (C) 2008-14 Andrew R. Runnalls, subject to such other
-#CXXR copyrights and copyright restrictions as may be stated below.
-#CXXR 
-#CXXR CXXR is not part of the R project, and bugs and other issues should
-#CXXR not be reported via r-bugs or other R project channels; instead refer
-#CXXR to the CXXR website.
-
 #
 # ${R_HOME}/src/library/Recommended/Makefile
 
@@ -43,7 +28,7 @@ CLEANFILES = $(OBJECTS) Makedeps stamp-recommended
 DISTCLEANFILES = Makefile
 
 .SUFFIXES:
-.SUFFIXES: .ts
+.SUFFIXES: .tgz .ts
 
 all: Makefile R @USE_RECOMMENDED_PACKAGES_TRUE@ recommended-packages
 
@@ -56,17 +41,17 @@ stamp-recommended: $(OBJECTS)
 	@touch $@
 
 ## need to allow parallel installs
-INSTALL_OPTS = --pkglock --data-compress=xz --install-tests
+INSTALL_OPTS = --pkglock --data-compress=xz
 INSTALL_OPTS2 =@BYTE_COMPILE_PACKAGES_TRUE@ --byte-compile
 
 ## On e.g. Solaris/FreeBSD if the top-level make is GNU make it will
 ## pass flags such as -j and -w down: so need to ensure that INSTALL
 ## uses the same make.
-%.ts : %
-	@$(ECHO) "begin installing recommended package " $<
-	rm -f $@.out
+.tgz.ts:
+	@$(ECHO) "begin installing recommended package" `basename $< .tgz`
+	@rm -f $@.out
 ## Avoid user/site libraries, pass down MAKE
-	if test -n "$(R_NO_BASE_COMPILE)"; then \
+	@if test -n "$(R_NO_BASE_COMPILE)"; then \
 	  MAKE="$(MAKE)" R_LIBS_USER= R_LIBS_SITE= \
 	  _R_CHECK_INSTALL_DEPENDS_=no \
 	  $(R) CMD INSTALL $(INSTALL_OPTS) --no-byte-compile -l "$(top_builddir)/library" $< > $@.out 2>&1 || (cat $@.out && exit 1); \
@@ -75,8 +60,8 @@ INSTALL_OPTS2 =@BYTE_COMPILE_PACKAGES_TRUE@ --byte-compile
 	  _R_CHECK_INSTALL_DEPENDS_=no \
 	  $(R) CMD INSTALL $(INSTALL_OPTS) $(INSTALL_OPTS2) -l "$(top_builddir)/library" $< > $@.out 2>&1 || (cat $@.out && exit 1); \
 	fi
-	cat $@.out; rm $@.out
-	touch $@
+	@cat $@.out; rm $@.out
+	@touch $@
 
 R docs:
 
@@ -90,7 +75,10 @@ install-tests:
 	@(tmp=$${TMPDIR-/tmp}/R$$$$; mkdir "$${tmp}"; \
 	 cd "$(top_srcdir)"; abs_top_srcdir=`pwd`; \
 	 abs_MKINSTALLDIRS=`echo "$(MKINSTALLDIRS)" | sed "s:$(top_srcdir):$${abs_top_srcdir}:"` ; \
-	 cd "$${tmp"}; \
+	 cd "$${tmp}"; \
+	 for pkg in $(R_PKGS_RECOMMENDED); do \
+	   gzip -dc "$(abs_top_srcdir)/src/library/Recommended/$${pkg}.tgz" | $(TAR) xf - ; \
+	 done ; \
 	 for pkg in $(R_PKGS_RECOMMENDED); do \
 	  if test -d $${pkg}/tests; then \
 	    $${abs_MKINSTALLDIRS} "$(DESTDIR)$(rhome)/library/$${pkg}/tests" ; \

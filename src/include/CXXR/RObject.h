@@ -295,7 +295,7 @@ namespace CXXR {
 	 */
 	bool hasClass() const
 	{
-	    return m_type < 0;
+	    return m_type & s_class_mask;
 	}
 
 	/** @brief Is this an S4 object?
@@ -548,8 +548,8 @@ namespace CXXR {
 	static const unsigned char s_sexptype_mask = 0x3f;
 	static const unsigned char s_S4_mask = 0x40;
 	static const unsigned char s_class_mask = 0x80;
-	signed char m_type;  // The least-significant six bits hold
-	  // the SEXPTYPE.  The sign bit is set if the object has a
+	unsigned char m_type;  // The least-significant six bits hold
+	  // the SEXPTYPE.  Bit 7 is set if the object has a
 	  // class attribute.  Bit 6 is set to denote an S4 object.
     public:
 	// To be private in future:

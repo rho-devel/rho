@@ -1,7 +1,7 @@
 #  File src/library/stats/R/interaction.plot.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ interaction.plot <-
         options(warn=-1)
         xnm <- as.numeric(levels(x.factor))
         options(warn=wn)
-        if(!any(is.na(xnm))) xvals <- xnm
+        if(!anyNA(xnm)) xvals <- xnm
     }
     xlabs <- rownames(cells)
     ylabs <- colnames(cells)

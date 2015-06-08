@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1998--2007	    The R Core Team.
+ *  Copyright (C) 1998--2014	    The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -49,6 +49,80 @@ SEXP complex_binary(ARITHOP_TYPE, SEXP, SEXP);
 
 SEXP R_binary(SEXP, SEXP, SEXP, SEXP);
 SEXP R_unary(SEXP, SEXP, SEXP);
+
+double R_pow(double x, double y);
+static R_INLINE double R_POW(double x, double y) /* handle x ^ 2 inline */
+{
+    return y == 2.0 ? x * x : R_pow(x, y);
+}
+
+/* some systems get this wrong, possibly depend on what libs are loaded */
+static R_INLINE double R_log(double x) {
+    if (x > 0)
+	return log(x);
+    if (x == 0)
+	return R_NegInf;
+    return R_NaN;
+}
+
+/* Note that the behaviour of log(0) required is not necessarily that
+   mandated by C99 (-HUGE_VAL), and the behaviour of log(x < 0) is
+   optional in C99.  Some systems return -Inf for log(x < 0), e.g.
+   libsunmath on Solaris.
+*/
+static R_INLINE double logbase(double x, double base)
+{
+#ifdef HAVE_LOG10
+    if(base == 10) return x > 0 ? log10(x) : x < 0 ? R_NaN : R_NegInf;
+#endif
+#ifdef HAVE_LOG2
+    if(base == 2) return x > 0 ? log2(x) : x < 0 ? R_NaN : R_NegInf;
+#endif
+    return R_log(x) / R_log(base);
+}
+
+SEXP do_log_builtin(SEXP call, SEXP op, SEXP args, SEXP env);
+
+/* for binary operations */
+/* adapted from Radford Neal's pqR */
+static R_INLINE SEXP R_allocOrReuseVector(SEXP s1, SEXP s2,
+					  SEXPTYPE type , R_xlen_t n)
+{
+    R_xlen_t n1 = XLENGTH(s1);
+    R_xlen_t n2 = XLENGTH(s2);
+
+    /* Try to use space for 2nd arg if both same length, so 1st argument's
+       attributes will then take precedence when copied. */
+
+    if (n == n2) {
+        if (TYPEOF(s2) == type && NO_REFERENCES(s2)) {
+	    if (ATTRIB(s2) != R_NilValue)
+		/* need to remove 'names' attribute if present to
+		   match what copyMostAttrib does. copyMostAttributes
+		   also skips 'dim' and 'dimnames' but those, here
+		   since those, if present, will be replaced by
+		   attribute cleanup code in R_Binary) */
+		Rf_setAttrib(s2, R_NamesSymbol, R_NilValue);
+            return s2;
+	}
+        else
+            /* Can use 1st arg's space only if 2nd arg has no attributes, else
+               we may not get attributes of result right. */
+            if (n == n1 && TYPEOF(s1) == type && NO_REFERENCES(s1)
+		&& ATTRIB(s2) == R_NilValue)
+                return s1;
+    }
+    else if (n == n1 && TYPEOF(s1) == type && NO_REFERENCES(s1))
+	return s1;
+
+    return Rf_allocVector(type, n);
+}
+
+#ifdef HAVE_TANPI
+// we document that tanpi(0.5) is NaN, but the draft C11 extension
+// does not require this and the Solaris version gives Inf.
+double Rtanpi(double);
+#endif
 
 #ifdef __cplusplus
 }

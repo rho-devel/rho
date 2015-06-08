@@ -1,9 +1,7 @@
 % File src/library/stats/man/cmdscale.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{cmdscale}
 \alias{cmdscale}
@@ -50,7 +48,7 @@ cmdscale(d, k = 2, eig = FALSE, add = FALSE, x.ret = FALSE)
   When \code{add = TRUE}, a minimal additive constant \eqn{c*} is
   computed such that the the dissimilarities \eqn{d_{ij} + c*}{d[i,j] +
   c*} are Euclidean and hence can be represented in \code{n - 1}
-  dimensions.  Whereas S (Becker \emph{et al.}, 1988) computes this
+  dimensions.  Whereas S (Becker \emph{et al}, 1988) computes this
   constant using an approximation suggested by Torgerson, \R uses the
   analytical solution of Cailliez (1983), see also Cox and Cox (2001).
   Note that because of numerical errors the computed eigenvalues need
@@ -99,7 +97,7 @@ cmdscale(d, k = 2, eig = FALSE, add = FALSE, x.ret = FALSE)
 
   Krzanowski, W. J. and Marriott, F. H. C. (1994)
   \emph{Multivariate Analysis. Part I. Distributions, Ordination and
-  Inference.}  London: Edward Arnold. (Especially pp. 108--111.)
+  Inference.}  London: Edward Arnold. (Especially pp.\sspace{}108--111.)
 
   Mardia, K.V. (1978)
   Some properties of classical multidimensional scaling.

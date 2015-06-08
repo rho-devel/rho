@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2013   The R Core Team
+ *  Copyright (C) 1998-2014   The R Core Team
  *  Copyright (C) 2002-2005  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
@@ -127,6 +127,9 @@ LibExport int R_num_math_threads = 1;
 LibExport int R_max_num_math_threads = 1;
 LibExport SEXP R_MethodsNamespace;
 LibExport AccuracyInfo R_AccuracyInfo;
+LibExport SEXP R_TrueValue = NULL;
+LibExport SEXP R_FalseValue = NULL;
+LibExport SEXP R_LogicalNAValue = NULL;
 
 // Data declared extern in Defn.h :
 
@@ -150,6 +153,7 @@ double elapsedLimitValue = -1.0;
 
 attribute_hidden R_size_t R_VSize  = R_VSIZE;/* Initial size of the heap */
 
+attribute_hidden int    R_EvalDepth     = 0; 	/* Evaluation recursion depth */
 attribute_hidden int	R_BrowseLines	= 0;	/* lines/per call in browser */
 attribute_hidden Rboolean R_KeepSource	= FALSE;	/* options(keep.source) */
 attribute_hidden Rboolean R_CBoundsCheck = FALSE;	/* options(CBoundsCheck) */
@@ -179,8 +183,9 @@ attribute_hidden Rboolean R_ShowWarnCalls = FALSE;
 attribute_hidden Rboolean R_ShowErrorCalls = FALSE;
 attribute_hidden int R_NShowCalls = 50;
 attribute_hidden   Rboolean latin1locale = FALSE; /* is this a Latin-1 locale? */
-char OutDec = '.';  /* decimal point used for output */
+char* OutDec = ".";  /* decimal point used for output */
 attribute_hidden Rboolean R_DisableNLinBrowser = FALSE;
+attribute_hidden char R_BrowserLastCommand = 'n';
 
 attribute_hidden int R_dec_min_exponent		= -308;
 unsigned int max_contour_segments = 25000;
@@ -209,22 +214,19 @@ void Rf_callToplevelHandlers(SEXP expr, SEXP value, Rboolean succeeded,
 static int ParseBrowser(SEXP, SEXP);
 
 
-extern void InitDynload(void);
-
 	/* Read-Eval-Print Loop [ =: REPL = repl ] with input from a file */
 
 static RObject* R_ReplFile_impl(FILE *fp, SEXP rho)
 {
     ParseStatus status;
     int count=0;
-    SrcRefState ParseState;
     std::size_t savestack;
     
-    R_InitSrcRefState(&ParseState);
+    R_InitSrcRefState();
     savestack = ProtectStack::size();
     for(;;) {
 	ProtectStack::restoreSize(savestack);
-	R_CurrentExpr = R_Parse1File(fp, 1, &status, &ParseState);
+	R_CurrentExpr = R_Parse1File(fp, 1, &status);
 	switch (status) {
 	case PARSE_NULL:
 	    break;
@@ -395,7 +397,11 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
 		    return 0;
 		}
 	    }
+	    /* PR#15770 We don't want to step into expressions entered at the debug prompt. 
+	       The 'S' will be changed back to 's' after the next eval. */
+	    if (R_BrowserLastCommand == 's') R_BrowserLastCommand = 'S';  
 	    R_Visible = FALSE;
+	    R_EvalDepth = 0;
 	    resetTimeLimits();
 	    PROTECT(thisExpr = R_CurrentExpr);
 	    R_Busy(1);
@@ -409,6 +415,7 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
 	    Rf_callToplevelHandlers(thisExpr, value, TRUE, wasDisplayed);
 	    R_CurrentExpr = value; /* Necessary? Doubt it. */
 	    UNPROTECT(1);
+	    if (R_BrowserLastCommand == 'S') R_BrowserLastCommand = 's';  
 	    R_IoBufferWriteReset(&R_ConsoleIob);
 	    state->prompt_type = 1;
 	    return(1);
@@ -553,6 +560,7 @@ static RETSIGTYPE handleInterrupt(int dummy)
  */
 
 #ifndef Win32
+// controlled by the internal http server in the internet module
 int R_ignore_SIGPIPE = 0;
 
 static RETSIGTYPE handlePipe(int dummy)
@@ -603,7 +611,6 @@ static void win32_segv(int signum)
    2005-12-17 BDR */
 
 static unsigned char ConsoleBuf[CONSOLE_BUFFER_SIZE];
-extern void R_CleanTempDir(void);
 
 static void sigactionSegv(int signum, siginfo_t *ip, void *context)
 {
@@ -816,8 +823,6 @@ static void R_LoadProfile(FILE *fparg, SEXP env)
 
 int R_SignalHandlers = 0;  /* Exposed in R_interface.h */ // 2007/07/23 arr
 
-unsigned int TimeToSeed(void); /* datetime.c */
-
 const char* get_workspace_name();  /* from startup.c */
 
 extern "C"
@@ -832,7 +837,7 @@ void attribute_hidden BindDomain(char *R_Home)
     else snprintf(localedir, PATH_MAX+20, "%s/library/translations", R_Home);
     bindtextdomain(PACKAGE, localedir); // PACKAGE = DOMAIN = "R"
     bindtextdomain("R-base", localedir);
-# ifdef WIN32
+# ifdef _WIN32
     bindtextdomain("RGui", localedir);
 # endif
 #endif
@@ -842,9 +847,17 @@ void setup_Rmainloop(void)
 {
     volatile SEXP baseEnv;
     SEXP cmd;
-    FILE *fp;
     char deferred_warnings[11][250];
     volatile int ndeferred_warnings = 0;
+
+    /* In case this is a silly limit: 2^32 -3 has been seen and
+     * casting to intptr_r relies on this being smaller than 2^31 on a
+     * 32-bit platform. */
+    if(R_CStackLimit > 100000000U) 
+	R_CStackLimit = (uintptr_t)-1;
+    /* make sure we have enough head room to handle errors */
+    if(R_CStackLimit != -1)
+	R_CStackLimit = (uintptr_t)(0.95 * R_CStackLimit);
 
     InitConnections(); /* needed to get any output at all */
 
@@ -856,6 +869,7 @@ void setup_Rmainloop(void)
 	char *p, Rlocale[1000]; /* Windows' locales can be very long */
 	p = getenv("LC_ALL");
 	strncpy(Rlocale, p ? p : "", 1000);
+        Rlocale[1000 - 1] = '\0';
 	if(!(p = getenv("LC_CTYPE"))) p = Rlocale;
 	/* We'd like to use warning, but need to defer.
 	   Also cannot translate. */
@@ -922,6 +936,8 @@ void setup_Rmainloop(void)
     /* make sure srand is called before R_tmpnam, PR#14381 */
     srand(TimeToSeed());
 
+    InitArithmetic();
+    InitParser();
     InitTempDir(); /* must be before InitEd */
     InitMemory();
     InitNames();
@@ -929,8 +945,10 @@ void setup_Rmainloop(void)
     InitDynload();
     InitOptions();
     InitEd();
-    InitArithmetic();
     InitGraphics();
+    InitTypeTables(); /* must be before InitS3DefaultTypes */
+    InitS3DefaultTypes();
+    
     R_Is_Running = 1;
     R_check_locale();
 
@@ -949,8 +967,12 @@ void setup_Rmainloop(void)
        Perhaps it makes more sense to quit gracefully?
     */
 
-    fp = R_OpenLibraryFile("base");
-    if (fp == nullptr)
+#ifdef RMIN_ONLY
+    /* This is intended to support a minimal build for experimentation. */
+    if (R_SignalHandlers) init_signal_handlers();
+#else
+    FILE *fp = R_OpenLibraryFile("base");
+    if (fp == NULL)
 	R_Suicide(_("unable to open the base package\n"));
 
     try {
@@ -963,6 +985,7 @@ void setup_Rmainloop(void)
 	    init_signal_handlers();
     }
     fclose(fp);
+#endif
 
     /* This is where we source the system-wide, the site's and the
        user's profile (in that order).  If there is an error, we
@@ -979,7 +1002,7 @@ void setup_Rmainloop(void)
     R_unLockBinding(R_LastvalueSymbol, R_BaseEnv);  // CXXR addition
     /* At least temporarily unlock some bindings used in graphics */
     R_unLockBinding(R_DeviceSymbol, R_BaseEnv);
-    R_unLockBinding(install(".Devices"), R_BaseEnv);
+    R_unLockBinding(R_DevicesSymbol, R_BaseEnv);
     R_unLockBinding(install(".Library.site"), R_BaseEnv);
 
     /* require(methods) if it is in the default packages */
@@ -1136,41 +1159,67 @@ static void printwhere(void)
   Rprintf("\n");
 }
 
+static void printBrowserHelp(void)
+{
+    Rprintf("n          next\n");
+    Rprintf("s          step into\n");
+    Rprintf("f          finish\n");
+    Rprintf("c or cont  continue\n");
+    Rprintf("Q          quit\n");
+    Rprintf("where      show stack\n");
+    Rprintf("help       show help\n");
+    Rprintf("<expr>     evaluate expression\n");
+}
+
 static int ParseBrowser(SEXP CExpr, SEXP rho)
 {
     int rval = 0;
     if (isSymbol(CExpr)) {
 	const char *expr = CHAR(PRINTNAME(CExpr));
-	if (!strcmp(expr, "n")) {
+	if (!strcmp(expr, "c") || !strcmp(expr, "cont")) {
+	    rval = 1;
+	    SET_ENV_DEBUG(rho, CXXRFALSE);
+#if 0
+	} else if (!strcmp(expr, "f")) {
+	    rval = 1;
+	    RCNTXT *cntxt = R_GlobalContext;
+	    while (cntxt != R_ToplevelContext 
+		      && !(cntxt->callflag & (CTXT_RETURN | CTXT_LOOP))) {
+		cntxt = cntxt->nextcontext;
+	    }
+	    cntxt->browserfinish = 1;	    
 	    SET_ENV_DEBUG(rho, CXXRTRUE);
+	    R_BrowserLastCommand = 'f';
+#endif
+	} else if (!strcmp(expr, "help")) {
+	    rval = 2;
+	    printBrowserHelp();
+	} else if (!strcmp(expr, "n")) {
 	    rval = 1;
-	}
-	if (!strcmp(expr, "c")) {
-	    rval = 1;
-	    SET_ENV_DEBUG(rho, CXXRFALSE);
-	}
-	if (!strcmp(expr, "cont")) {
-	    rval = 1;
-	    SET_ENV_DEBUG(rho, CXXRFALSE);
-	}
-	if (!strcmp(expr, "Q")) {
-
+	    SET_ENV_DEBUG(rho, CXXRTRUE);
+	    R_BrowserLastCommand = 'n';
+	} else if (!strcmp(expr, "Q")) {
 	    /* this is really dynamic state that should be managed as such */
 	    SET_ENV_DEBUG(rho, CXXRFALSE); /*PR#1721*/
 
 	    jump_to_toplevel();
-	}
-	if (!strcmp(expr, "where")) {
-	    printwhere();
-	    /* SET_ENV_DEBUG(rho, 1); */
+	} else if (!strcmp(expr, "s")) {
+	    rval = 1;
+	    SET_ENV_DEBUG(rho, CXXRTRUE);
+	    R_BrowserLastCommand = 's';	    
+	} else if (!strcmp(expr, "where")) {
 	    rval = 2;
+	    printwhere();
+	    /* SET_ENV_DEBUG(rho, CXXRTRUE); */
+
 	}
     }
     return rval;
 }
 
 
-/* browser(text = "", condition = NULL, expr = TRUE, skipCalls = 0L) */
+/* browser(text = "", condition = NULL, expr = TRUE, skipCalls = 0L)
+ * ------- but also called from ./eval.c */
 SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int savestack;
@@ -1184,7 +1233,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     SET_TAG(ap,  install("text"));
     SET_TAG(CDR(ap), install("condition"));
     SET_TAG(CDDR(ap), install("expr"));
-    SET_TAG(CDR(CDDR(ap)), install("skipCalls"));
+    SET_TAG(CDDDR(ap), install("skipCalls"));
     argList = matchArgs(ap, args, call);
     UNPROTECT(1);
     /* substitute defaults */
@@ -1195,7 +1244,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(CADDR(argList) == R_MissingArg) 
 	SETCAR(CDDR(argList), ScalarLogical(1));
     if(CADDDR(argList) == R_MissingArg) 
-	SETCAR(CDR(CDDR(argList)), ScalarInteger(0));
+	SETCAR(CDDDR(argList), ScalarInteger(0));
 
 
     /* return if 'expr' is not TRUE */
@@ -1212,13 +1261,14 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if (!ENV_DEBUG(rho)) {
 	ClosureContext* cptr = ClosureContext::innermost();
-	int tmp;
 	Rprintf("Called from: ");
-	tmp = asInteger(GetOption(install("deparse.max.lines"), R_BaseEnv));
-//	if(tmp != NA_INTEGER && tmp > 0) R_BrowseLines = tmp;
+
+	int tmp = asInteger(GetOption(install("deparse.max.lines"), R_BaseEnv));
 	if(tmp != R_NaInt && tmp > 0) R_BrowseLines = tmp;
-        if( cptr )
+        if( cptr ) {
 	    PrintValueRec(CXXRCCAST(Expression*, cptr->call()),rho);
+ 	    SET_ENV_DEBUG(cptr->workingEnvironment(), TRUE);
+	}
         else
             Rprintf("top level \n");
 
@@ -1481,8 +1531,9 @@ R_removeTaskCallback(SEXP which)
     if(TYPEOF(which) == STRSXP) {
 	val = Rf_removeTaskCallbackByName(CHAR(STRING_ELT(which, 0)));
     } else {
-	id = asInteger(which) - 1;
-	val = Rf_removeTaskCallbackByIndex(id);
+	id = asInteger(which);
+	if (id != NA_INTEGER) val = Rf_removeTaskCallbackByIndex(id - 1);
+	else val = FALSE;
     }
     return ScalarLogical(val);
 }
@@ -1657,7 +1708,11 @@ void attribute_hidden dummy12345(void)
     F77_CALL(intpr)("dummy", &i, &i, &i);
 }
 
-/* Used in unix/system.c, avoid inlining */
+/* Used in unix/system.c, avoid inlining by using an extern there.
+
+   This is intended to return a local address.  
+   Use -Wno-return-local-addr when compiling.
+ */
 extern "C"
 uintptr_t dummy_ii(void)
 {

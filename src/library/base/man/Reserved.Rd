@@ -1,6 +1,6 @@
 % File src/library/base/man/Reserved.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Reserved}
@@ -32,7 +32,7 @@
   references to the objects linked to in the \sQuote{Description}, and
   hence they are not allowed as syntactic names (see
   \code{\link{make.names}}).  They \bold{are} allowed as non-syntactic
-  names, e.g. inside \link{backtick} quotes.
+  names, e.g.\sspace{}inside \link{backtick} quotes.
 }
 \keyword{programming}
 \keyword{documentation}

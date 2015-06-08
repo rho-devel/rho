@@ -1,7 +1,7 @@
 #  File src/library/stats/R/chisq.test.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ chisq.test <- function(x, y = NULL, correct = TRUE,
                        paste(DNAME2, collapse = "\n"))
     }
 
-    if (any(x < 0) || any(is.na(x)))
+    if (any(x < 0) || anyNA(x))
 	stop("all entries of 'x' must be nonnegative and finite")
     if ((n <- sum(x)) == 0)
 	stop("at least one entry of 'x' must be positive")
@@ -103,6 +103,8 @@ chisq.test <- function(x, y = NULL, correct = TRUE,
 	}
     }
     else {
+        if(length(dim(x)) > 2L)
+            stop("invalid 'x'")
 	if (length(x) == 1L)
 	    stop("'x' must at least have 2 elements")
 	if (length(x) != length(p))

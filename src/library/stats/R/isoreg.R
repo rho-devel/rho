@@ -1,7 +1,7 @@
 #  File src/library/stats/R/isoreg.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ isoreg <- function(x, y = NULL)
 {
     xy <- xy.coords(x,y)
     x <- xy$x
-    if(any(is.na(x)) || any(is.na(xy$y)))
+    if(anyNA(x) || any(is.na(xy$y)))
 	stop("missing values not allowed")
     isOrd <- ((!is.null(xy$xlab) && xy$xlab == "Index")
               || !is.unsorted(x, strictly = TRUE))

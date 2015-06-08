@@ -1,7 +1,7 @@
 #  File src/library/stats/R/contr.poly.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -77,7 +77,7 @@ poly <- function(x, ..., degree = 1, coefs = NULL, raw = FALSE)
     }
     if(degree < 1)
         stop("'degree' must be at least 1")
-    if(any(is.na(x))) stop("missing values are not allowed in 'poly'")
+    if(anyNA(x)) stop("missing values are not allowed in 'poly'")
     n <- degree + 1
     if(raw) {
         Z <- outer(x, 1L:degree, "^")

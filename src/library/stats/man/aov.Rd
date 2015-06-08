@@ -1,9 +1,7 @@
 % File src/library/stats/man/aov.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{aov}
 \alias{aov}
@@ -68,7 +66,7 @@ aov(formula, data = NULL, projections = FALSE, qr = TRUE,
 \value{
   An object of class \code{c("aov", "lm")} or for multiple responses
   of class \code{c("maov", "aov", "mlm", "lm")} or for multiple error
-  strata of class \code{"aovlist"}.  There are
+  strata of class \code{c("aovlist", "\link{listof}")}.  There are
   \code{\link{print}} and \code{\link{summary}} methods available for these.
 }
 \references{
@@ -79,7 +77,7 @@ aov(formula, data = NULL, projections = FALSE, qr = TRUE,
 }
 \author{
   The design was inspired by the S function of the same name described
-  in Chambers \emph{et al.} (1992).
+  in Chambers \emph{et al} (1992).
 }
 \seealso{
   \code{\link{lm}}, \code{\link{summary.aov}},

@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1997-2012  The R Core Team
+ *  Copyright (C) 1997-2014  The R Core Team
  *  Copyright (C) 2003	     The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -65,6 +65,8 @@ char *RGBA2rgb(unsigned int r, unsigned int g, unsigned int b, unsigned int a)
 
 static unsigned int ScaleColor(double x)
 {
+    if (ISNA(x))
+    	error(_("color intensity %s, not in [0,1]"), "NA");
     if (!R_FINITE(x) || x < 0.0 || x > 1.0)
 	error(_("color intensity %g, not in [0,1]"), x);
     return (unsigned int)(255*x + 0.5);
@@ -72,13 +74,17 @@ static unsigned int ScaleColor(double x)
 
 static unsigned int CheckColor(int x)
 {
-    if (x == NA_INTEGER || x < 0 || x > 255)
+    if (x == NA_INTEGER)
+    	error(_("color intensity %s, not in 0:255"), "NA");
+    if (x < 0 || x > 255)
 	error(_("color intensity %d, not in 0:255"), x);
     return (unsigned int)x;
 }
 
 static unsigned int ScaleAlpha(double x)
 {
+    if (ISNA(x))
+	error(_("alpha level %s, not in [0,1]"), "NA"); 
     if (!R_FINITE(x) || x < 0.0 || x > 1.0)
 	error(_("alpha level %g, not in [0,1]"), x);
     return (unsigned int)(255*x + 0.5);
@@ -86,7 +92,9 @@ static unsigned int ScaleAlpha(double x)
 
 static unsigned int CheckAlpha(int x)
 {
-    if (x == NA_INTEGER || x < 0 || x > 255)
+    if (x == NA_INTEGER)
+    	error(_("alpha level %s, not in 0:255"), "NA");
+    if (x < 0 || x > 255)
 	error(_("alpha level %d, not in 0:255"), x);
     return (unsigned int)x;
 }
@@ -196,7 +204,10 @@ SEXP hsv(SEXP h, SEXP s, SEXP v, SEXP a)
     if (max < nv) max = nv;
     if (max < na) max = na;
     SEXP c = PROTECT(allocVector(STRSXP, max));
-    if(max == 0) return(c);
+    if(max == 0) {
+        UNPROTECT(5);
+        return(c);
+    }
 
     if(isNull(a)) {
 	for (i = 0; i < max; i++) {
@@ -260,6 +271,10 @@ static int FixupColor(int *r, int *g, int *b)
 static void
 hcl2rgb(double h, double c, double l, double *R, double *G, double *B)
 {
+    if (l <= 0.0) {
+	*R = *G = *B = 0.0;
+	return;
+    }
     double L, U, V;
     double u, v;
     double X, Y, Z;
@@ -291,6 +306,7 @@ hcl2rgb(double h, double c, double l, double *R, double *G, double *B)
     *B = gtrans(( 0.055648 * X - 0.204043 * Y + 1.057311 * Z) / WHITE_Y);
 }
 
+// People call this with non-finite inputs.
 SEXP hcl(SEXP h, SEXP c, SEXP l, SEXP a, SEXP sfixup)
 {
     double H, C, L, A, r, g, b;
@@ -298,11 +314,11 @@ SEXP hcl(SEXP h, SEXP c, SEXP l, SEXP a, SEXP sfixup)
     int ir, ig, ib;
     int fixup;
 
-    PROTECT(h = coerceVector(h,REALSXP));
-    PROTECT(c = coerceVector(c,REALSXP));
-    PROTECT(l = coerceVector(l,REALSXP));
+    PROTECT(h = coerceVector(h, REALSXP));
+    PROTECT(c = coerceVector(c, REALSXP));
+    PROTECT(l = coerceVector(l, REALSXP));
     if (!isNull(a)) {
-	a = coerceVector(a,REALSXP);
+	a = coerceVector(a, REALSXP);
 	na = XLENGTH(a);
     }
     PROTECT(a);
@@ -324,15 +340,17 @@ SEXP hcl(SEXP h, SEXP c, SEXP l, SEXP a, SEXP sfixup)
 	    H = REAL(h)[i % nh];
 	    C = REAL(c)[i % nc];
 	    L = REAL(l)[i % nl];
-	    if (L < 0 || L > WHITE_Y || C < 0) error(_("invalid hcl color"));
-	    hcl2rgb(H, C, L, &r, &g, &b);
-	    ir = (int) (255 * r + .5);
-	    ig = (int) (255 * g + .5);
-	    ib = (int) (255 * b + .5);
-	    if (FixupColor(&ir, &ig, &ib) && !fixup)
-		SET_STRING_ELT(ans, i, NA_STRING);
-	    else
-		SET_STRING_ELT(ans, i, mkChar(RGB2rgb(ir, ig, ib)));
+	    if (R_FINITE(H) && R_FINITE(C) && R_FINITE(L)) {
+		if (L < 0 || L > WHITE_Y || C < 0) error(_("invalid hcl color"));
+		hcl2rgb(H, C, L, &r, &g, &b);
+		ir = (int) (255 * r + .5);
+		ig = (int) (255 * g + .5);
+		ib = (int) (255 * b + .5);
+		if (FixupColor(&ir, &ig, &ib) && !fixup)
+		    SET_STRING_ELT(ans, i, NA_STRING);
+		else
+		    SET_STRING_ELT(ans, i, mkChar(RGB2rgb(ir, ig, ib)));
+	    } else SET_STRING_ELT(ans, i, NA_STRING);
 	}
     } else {
 	for (i = 0; i < max; i++) {
@@ -341,17 +359,19 @@ SEXP hcl(SEXP h, SEXP c, SEXP l, SEXP a, SEXP sfixup)
 	    L = REAL(l)[i % nl];
 	    A = REAL(a)[i % na];
 	    if (!R_FINITE(A)) A = 1;
-	    if (L < 0 || L > WHITE_Y || C < 0 || A < 0 || A > 1)
-		error(_("invalid hcl color"));
-	    hcl2rgb(H, C, L, &r, &g, &b);
-	    ir = (int) (255 * r + .5);
-	    ig = (int) (255 * g + .5);
-	    ib = (int) (255 * b + .5);
-	    if (FixupColor(&ir, &ig, &ib) && !fixup)
-		SET_STRING_ELT(ans, i, NA_STRING);
-	    else
-		SET_STRING_ELT(ans, i, mkChar(RGBA2rgb(ir, ig, ib,
-						       ScaleAlpha(A))));
+	    if (R_FINITE(H) && R_FINITE(C) && R_FINITE(L)) {
+		if (L < 0 || L > WHITE_Y || C < 0 || A < 0 || A > 1)
+		    error(_("invalid hcl color"));
+		hcl2rgb(H, C, L, &r, &g, &b);
+		ir = (int) (255 * r + .5);
+		ig = (int) (255 * g + .5);
+		ib = (int) (255 * b + .5);
+		if (FixupColor(&ir, &ig, &ib) && !fixup)
+		    SET_STRING_ELT(ans, i, NA_STRING);
+		else
+		    SET_STRING_ELT(ans, i, mkChar(RGBA2rgb(ir, ig, ib,
+							   ScaleAlpha(A))));
+	    } else SET_STRING_ELT(ans, i, NA_STRING);
 	}
     }
     UNPROTECT(5);
@@ -372,6 +392,8 @@ SEXP rgb(SEXP r, SEXP g, SEXP b, SEXP a, SEXP MCV, SEXP nam)
     Rboolean max_1 = FALSE;
     double mV = asReal(MCV);
 
+    if(!R_FINITE(mV) || mV == 0.)
+	error(_("invalid value of 'maxColorValue'"));
     if(mV == 255.) {
 	PROTECT(r = coerceVector(r, INTSXP));
 	PROTECT(g = coerceVector(g, INTSXP));
@@ -417,7 +439,7 @@ SEXP rgb(SEXP r, SEXP g, SEXP b, SEXP a, SEXP MCV, SEXP nam)
     else if(max_1) {
 	if(isNull(a)) {
 	    _R_set_c_RGB(ScaleColor(REAL(r)[i%nr]),
-			  ScaleColor(REAL(g)[i%ng]),
+			 ScaleColor(REAL(g)[i%ng]),
 			 ScaleColor(REAL(b)[i%nb]));
 	} else {
 	    _R_set_c_RGBA(ScaleColor(REAL(r)[i%nr]),
@@ -429,7 +451,7 @@ SEXP rgb(SEXP r, SEXP g, SEXP b, SEXP a, SEXP MCV, SEXP nam)
     else { /* maxColorVal not in {1, 255} */
 	if(isNull(a)) {
 	    _R_set_c_RGB(ScaleColor(REAL(r)[i%nr] / mV),
-			  ScaleColor(REAL(g)[i%ng] / mV),
+			 ScaleColor(REAL(g)[i%ng] / mV),
 			 ScaleColor(REAL(b)[i%nb] / mV));
 	} else {
 	    _R_set_c_RGBA(ScaleColor(REAL(r)[i%nr] / mV),

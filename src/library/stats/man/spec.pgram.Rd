@@ -1,6 +1,6 @@
 % File src/library/stats/man/spec.pgram.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{spec.pgram}
@@ -81,8 +81,8 @@ spec.pgram(x, spans = NULL, kernel, taper = 0.1,
     Methods.} Second edition. Springer.
 
   Venables, W.N. and Ripley, B.D. (2002) \emph{Modern Applied
-    Statistics with S.} Fourth edition. Springer. (Especially
-  pp. 392--7.)
+    Statistics with S.} Fourth edition. Springer.
+  (Especially pp.\sspace{}392--7.)
 }
 \author{
   Originally Martyn Plummer; kernel smoothing by Adrian Trapletti,

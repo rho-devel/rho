@@ -1,7 +1,7 @@
 #  File src/library/methods/R/MethodsListClass.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -261,26 +261,26 @@
 	       where = envir)
     ## and its default methods:
     setMethod("cbind2", signature(x = "ANY", y = "ANY"),
-	      function(x,y) .__H__.cbind(deparse.level = 0, x, y) )
+	      function(x,y, ...) .Internal(cbind(-1L, x, y)))
     setMethod("cbind2", signature(x = "ANY", y = "missing"),
-	      function(x,y) .__H__.cbind(deparse.level = 0, x) )
+	      function(x,y, ...) .Internal(cbind(-1L, x)))
 
     setGeneric("rbind2", function(x, y, ...) standardGeneric("rbind2"),
 	       where = envir)
     ## and its default methods:
     setMethod("rbind2", signature(x = "ANY", y = "ANY"),
-	      function(x,y) .__H__.rbind(deparse.level = 0, x, y) )
+	      function(x,y, ...) .Internal(rbind(-1L, x, y)))
     setMethod("rbind2", signature(x = "ANY", y = "missing"),
-	      function(x,y) .__H__.rbind(deparse.level = 0, x) )
+	      function(x,y, ...) .Internal(rbind(-1L, x)))
 
-    setGeneric("kronecker", where = envir)
+    setGeneric("kronecker", where = envir)# <- unneeded?
 
     setMethod("kronecker", signature(X = "ANY", Y = "ANY"),
 	      function(X, Y, FUN = "*", make.dimnames = FALSE, ...)
               .kronecker(X, Y, FUN = FUN, make.dimnames = make.dimnames, ...))
 
     .InitStructureMethods(envir)
-### Uncomment next line if we want special initialize methods for basic classes
+    ## we want special initialize methods for basic classes:
     .InitBasicClassMethods(envir)
 }
 
@@ -353,7 +353,7 @@
               function(x, digits) {
                   value <- x
                   x <- x@.Data
-                  value@Data  <- callGeneric()
+                  value@.Data  <- callGeneric()
                   value
               })
     ## some methods for nonStructure, ensuring that the class and slots
@@ -415,9 +415,15 @@
             if(is.null(sigArgs))
               names(signature) <- formalNames[seq_along(classes)]
             else if(length(sigArgs) && any(is.na(match(sigArgs, formalNames))))
-              stop(gettextf("the names in signature for method (%s) do not match %s's arguments (%s)",
+                if(is(fdef, "genericFunction"))
+                      stop(sprintf(gettext("the names in signature for method (%s) do not match %s's arguments (%s)", domain = "R-methods"),
                             paste(sigArgs, collapse = ", "),
-                            if(is(fdef, "genericFunction")) fdef@generic else "function",
+                            fdef@generic,
+                            paste(formalNames, collapse = ", ")),
+                   domain = NA)
+                else
+                      stop(sprintf(gettext("the names in signature for method (%s) do not match function's arguments (%s)", domain = "R-methods"),
+                            paste(sigArgs, collapse = ", "),
                             paste(formalNames, collapse = ", ")),
                    domain = NA)
         }

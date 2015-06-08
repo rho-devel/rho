@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-12   The R Core Team.
+ *  Copyright (C) 2001-2014  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -2010,12 +2010,11 @@ void GESymbol(double x, double y, int pch, double size,
      */
     if(pch == NA_INTEGER) /* do nothing */;
     else if(pch < 0) {
-	int res;
-	char str[16];
+	size_t res;
+	char str[16]; // probably 7 would do
 	if(gc->fontface == 5)
 	    error("use of negative pch with symbol font is invalid");
-	res = int( ucstoutf8(str, -pch));
-	if(res == -1) error("invalid multibyte string '%s'", str);
+	res = ucstoutf8(str, -pch); // throws error if unsuccessful 
 	str[res] = '\0';
 	GEText(x, y, str, CE_UTF8, NA_REAL, NA_REAL, 0., gc, dd);
     } else if(' ' <= pch && pch <= CXXRCONSTRUCT(int, maxchar)) {
@@ -2201,12 +2200,13 @@ void GESymbol(double x, double y, int pch, double size,
 
 	case 14: /* S square and point-up triangle superimposed */
 	    xc = toDeviceWidth(RADIUS * GSTR_0, GE_INCHES, dd);
-	    xx[0] = x; yy[0] = y+xc;
-	    xx[1] = x+xc; yy[1] = y-xc;
-	    xx[2] = x-xc; yy[2] = y-xc;
+	    yc = toDeviceHeight(RADIUS * GSTR_0, GE_INCHES, dd);
+	    xx[0] = x; yy[0] = y+yc;
+	    xx[1] = x+xc; yy[1] = y-yc;
+	    xx[2] = x-xc; yy[2] = y-yc;
 	    gc->fill = R_TRANWHITE;
 	    GEPolygon(3, xx, yy, gc, dd);
-	    GERect(x-xc, y-xc, x+xc, y+xc, gc, dd);
+	    GERect(x-xc, y-yc, x+xc, y+yc, gc, dd);
 	    break;
 
 	case 15: /* S filled square */

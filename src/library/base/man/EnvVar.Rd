@@ -1,6 +1,6 @@
 % File src/library/base/man/EnvVar.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2007-2012 R Core Team
+% Copyright 2007-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{EnvVar}
@@ -71,7 +71,7 @@
     \item{\env{R_BROWSER}:}{The path to the default browser.  Used to
       set the default value of \code{\link{options}("browser")}.}
     \item{\env{R_COMPLETION}:}{Optional.  If set to \code{FALSE},
-      command-line completion is not used.  (Not used by Mac OS GUI.)}
+      command-line completion is not used.  (Not used by OS X GUI.)}
     \item{\env{R_DEFAULT_PACKAGES}:}{A comma-separated list of packages
       which are to be attached in every session.  See \code{\link{options}}.}
     \item{\env{R_DOC_DIR}:}{The location of the \R \file{doc}
@@ -111,7 +111,7 @@
     \item{\env{R_LIBS_USER}:}{Optional.  Used for initial setting of
       \code{\link{.libPaths}}.}
     \item{\env{R_PAPERSIZE}:}{Optional.  Used to set the default for
-      \code{\link{options}("papersize")}, e.g. used by
+      \code{\link{options}("papersize")}, e.g.\sspace{}used by
       \code{\link{pdf}} and \code{\link{postscript}}.}
     \item{\env{R_PDFVIEWER}:}{The path to the default PDF viewer.  Used
       by \command{R CMD Rd2pdf}.}
@@ -141,7 +141,7 @@
       order) when setting the temporary directory for the session: see
       \code{\link{tempdir}}.  \env{TMPDIR} is also used by some of the
       utilities see the help for \code{\link{build}}.}
-    \item{\env{TZ}:}{Optional.  The current timezone.  See
+    \item{\env{TZ}:}{Optional.  The current time zone.  See
       \code{\link{Sys.timezone}} for the system-specific
       formats.  Consulted as needed.}
     \item{\env{no_proxy}, \env{http_proxy}, \env{ftp_proxy}:}{
@@ -178,7 +178,7 @@
     \item{\env{R_USER}:}{The user's \sQuote{home} directory.  Set by
       \R.  (\env{HOME} will be set to the same value if not already set.)}
     \item{\env{TZDIR}:}{Optional.  The top-level directory of the
-      timezone database.  See \code{\link{Sys.timezone}}.}
+      time-zone database.  See \code{\link{Sys.timezone}}.}
   }
 }
 #endif
@@ -186,5 +186,8 @@
 \seealso{
   \code{\link{Sys.getenv}} and \code{\link{Sys.setenv}} to read and set
   environmental variables in an \R session.
+
+  \code{\link{gctorture}} for environment variables controlling garbage
+  collection.
 }
 \keyword{utilities}

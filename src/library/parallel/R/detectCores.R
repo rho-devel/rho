@@ -1,7 +1,7 @@
 #  File src/library/parallel/R/detectCores.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -27,20 +27,34 @@ detectCores <-
         }
     } else {
         function(all.tests = FALSE, logical = FALSE) {
+            ## Commoner OSes first
             systems <-
-                list(darwin = "/usr/sbin/sysctl -n hw.ncpu 2>/dev/null",
+                list(linux = "grep processor /proc/cpuinfo 2>/dev/null | wc -l",
+darwin = "/usr/sbin/sysctl -n hw.ncpu 2>/dev/null",
+                     solaris = if(logical) "/usr/sbin/psrinfo -v | grep 'Status of.*processor' | wc -l" else "/bin/kstat -p -m cpu_info | grep :core_id | cut -f2 | uniq | wc -l",
                      freebsd = "/sbin/sysctl -n hw.ncpu 2>/dev/null",
-                     linux = "grep processor /proc/cpuinfo 2>/dev/null | wc -l",
-                     irix  = c("hinv | grep Processors | sed 's: .*::'",
-                     "hinv | grep '^Processor '| wc -l"),
-                     solaris = if(logical) "/usr/sbin/psrinfo -v | grep 'Status of.*processor' | wc -l" else "/bin/kstat -p -m cpu_info | grep :core_id | cut -f2 | uniq | wc -l")
+                     irix  = c("hinv | grep Processors | sed 's: .*::'", "hinv | grep '^Processor '| wc -l"))
             for (i in seq(systems))
                 if(all.tests ||
 		   length(grep(paste0("^", names(systems)[i]), R.version$os)))
                     for (cmd in systems[i]) {
-                        a <- gsub("^ +","", system(cmd, TRUE)[1])
+                        a <- try(suppressWarnings(system(cmd, TRUE)),
+                                 silent = TRUE)
+                        if(inherits(a, "try-error")) next
+                        a <- gsub("^ +","", a[1])
                         if (length(grep("^[1-9]", a))) return(as.integer(a))
                     }
             NA_integer_
         }
     }
+
+## added in R 3.0.3
+.check_ncores <- function(nc)
+{
+    chk <- tolower(Sys.getenv("_R_CHECK_LIMIT_CORES_", ""))
+    if (nzchar(chk) && (chk != "false") && nc > 2L) {
+        msg <- sprintf("%d simultaneous processes spawned", nc)
+        if(chk == "warn") warning(msg, call. = FALSE, immediate. = TRUE)
+        else stop(msg, call. = TRUE)
+    }
+}

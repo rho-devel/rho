@@ -1,6 +1,6 @@
 % File src/library/graphics/man/plotformula.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995--2011 R Core Team
+% Copyright 1995--2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{plot.formula}
@@ -59,7 +59,7 @@
   Missing values are not considered in these methods, and in particular
   cases with missing values are not removed.
 
-  If \code{y} is an object (i.e. has a \code{\link{class}} attribute)
+  If \code{y} is an object (i.e., has a \code{\link{class}} attribute)
   then \code{plot.formula} looks for a plot method for that class first.
   Otherwise, the class of \code{x} will determine the type of the plot.
   For factors this will be a parallel boxplot, and argument

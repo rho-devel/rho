@@ -1,9 +1,7 @@
 % File src/library/parallel/man/unix/pvec.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2009-12 R Core Team
+% Copyright 2009-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{pvec}
 \alias{pvec}
@@ -11,7 +9,7 @@
 \description{
   \code{pvec} parellelizes the execution of a function on vector elements
   by splitting the vector and submitting each part to one core. The
-  function must be a vectorized map, i.e. it takes a vector input and
+  function must be a vectorized map, i.e.\sspace{}it takes a vector input and
   creates a vector output of exactly the same length as the input which
   doesn't depend on the partition of the vector.
 
@@ -31,7 +29,7 @@ pvec(v, FUN, ..., mc.set.seed = TRUE, mc.silent = FALSE,
   \item{mc.silent}{if set to \code{TRUE} then all output on \file{stdout} will
     be suppressed for all parallel processes forked (\file{stderr} is not
     affected).}
-  \item{mc.cores}{The number of cores to use, i.e. at most how many
+  \item{mc.cores}{The number of cores to use, i.e.\sspace{}at most how many
     child processes will be run simultaneously.  Must be at least one,
     and at least two for parallel operation.  The option is initialized
     from environment variable \env{MC_CORES} if set.}
@@ -100,19 +98,23 @@ stopifnot(all(x == sqrt(1:1000)))
 # So let's get some random dates first
 # (A small test only with 2 cores: set options("mc.cores")
 # and increase N for a larger-scale test.)
-N <- 1e4
+N <- 1e5
 dates <- sprintf('\%04d-\%02d-\%02d', as.integer(2000+rnorm(N)),
                  as.integer(runif(N, 1, 12)), as.integer(runif(N, 1, 28)))
 
 system.time(a <- as.POSIXct(dates))
-# This ought to be faster, but system overhead can be high
-# - and is on OS X Lion
-system.time(b <- pvec(dates, as.POSIXct))
+
+# But specifying the format is faster
+system.time(a <- as.POSIXct(dates, format = "\%Y-\%m-\%d"))
+
+# pvec ought to be faster, but system overhead can be high
+system.time(b <- pvec(dates, as.POSIXct, format = "\%Y-\%m-\%d"))
 stopifnot(all(a == b))
 
 # using mclapply for this would much slower because each value
 # will require a separate call to as.POSIXct()
 # as lapply(dates, as.POSIXct) does
-system.time(c <- unlist(mclapply(dates, as.POSIXct))
+system.time(c <- unlist(mclapply(dates, as.POSIXct,  format = "\%Y-\%m-\%d")))
+stopifnot(all(a == c))
 }}
 \keyword{interface}

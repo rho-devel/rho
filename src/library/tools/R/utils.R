@@ -1,7 +1,7 @@
 #  File src/library/tools/R/utils.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2013 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -58,6 +58,8 @@ function(x, compression = FALSE)
 
 ### ** file_test
 
+## exported/documented copy is in utils.
+
 file_test <-
 function(op, x, y)
 {
@@ -67,13 +69,13 @@ function(op, x, y)
     ## directory (the GNU variant tests for being a regular file).
     ## Note: vectorized in x and y.
     switch(op,
-           "-f" = !is.na(isdir <- file.info(x)$isdir) & !isdir,
-           "-d" = !is.na(isdir <- file.info(x)$isdir) & isdir,
-           "-nt" = (!is.na(mt.x <- file.info(x)$mtime)
-                    & !is.na(mt.y <- file.info(y)$mtime)
+           "-f" = !is.na(isdir <- file.info(x, extra_cols = FALSE)$isdir) & !isdir,
+           "-d" = dir.exists(x),
+           "-nt" = (!is.na(mt.x <- file.mtime(x))
+                    & !is.na(mt.y <- file.mtime(y))
                     & (mt.x > mt.y)),
-           "-ot" = (!is.na(mt.x <- file.info(x)$mtime)
-                    & !is.na(mt.y <- file.info(y)$mtime)
+           "-ot" = (!is.na(mt.x <- file.mtime(x))
+                    & !is.na(mt.y <- file.mtime(y))
                     & (mt.x < mt.y)),
            "-x" = (file.access(x, 1L) == 0L),
            stop(gettextf("test '%s' is not available", op),
@@ -129,7 +131,7 @@ function(dir, type, all.files = FALSE, full.names = TRUE,
     if(type %in% c("code", "docs")) {
         for(os in OS_subdirs) {
             os_dir <- file.path(dir, os)
-            if(file_test("-d", os_dir)) {
+            if(dir.exists(os_dir)) {
                 os_files <- list_files_with_exts(os_dir, exts,
                                                  all.files = all.files,
                                                  full.names = FALSE)
@@ -150,6 +152,21 @@ function(dir, type, all.files = FALSE, full.names = TRUE,
     files
 }
 
+### ** reQuote
+
+## <FIXME>
+## Move into base eventually ...
+reQuote <-
+function(x)
+{
+    escape <- function(s) paste0("\\", s)
+    re <- "[.*?+^$\\[]"
+    m <- gregexpr(re, x)
+    regmatches(x, m) <- lapply(regmatches(x, m), escape)
+    x
+}
+## </FIXME>
+
 ### ** showNonASCII
 
 showNonASCII <-
@@ -162,8 +179,9 @@ function(x)
     asc <- iconv(x, "latin1", "ASCII")
     ind <- is.na(asc) | asc != x
     if(any(ind))
-        cat(paste0(which(ind), ": ", iconv(x[ind], "latin1", "ASCII", sub = "byte")),
-            sep = "\n")
+        message(paste0(which(ind), ": ",
+                       iconv(x[ind], "latin1", "ASCII", sub = "byte"),
+                       collapse = "\n"))
     invisible(x[ind])
 }
 
@@ -269,6 +287,9 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
         out <- .system_with_capture(texi2dvi, "--help")
         if(length(grep("--no-line-error", out$stdout)))
             opt_extra <- "--no-line-error"
+        ## This is present in texinfo after late 2009, so really 5.x.
+        if(length(grep("--max-iterations=N", out$stdout)))
+            opt_extra <- c(opt_extra, "--max-iterations=20")
         ## (Maybe change eventually: the current heuristics for finding
         ## error messages in log files should work for both regular and
         ## file line error indicators.)
@@ -350,9 +371,10 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
         if(length(grep("MiKTeX", ver[1L]))) {
             ## AFAICS need separate -I for each element of texinputs.
             texinputs <- c(texinputs0, Rtexinputs, Rbstinputs)
-	    texinputs <- gsub("\\", "/", texinputs, fixed = TRUE)
-	    paths <- paste ("-I", shQuote(texinputs))
-            extra <- paste(extra, paste(paths, collapse = " "))
+            texinputs <- gsub("\\", "/", texinputs, fixed = TRUE)
+            paths <- paste ("-I", shQuote(texinputs))
+            extra <- "--max-iterations=20"
+           extra <- paste(extra, paste(paths, collapse = " "))
         }
         ## 'file' could be a file path
         base <- basename(file_path_sans_ext(file))
@@ -439,9 +461,10 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
 ### ** .BioC_version_associated_with_R_version
 
 .BioC_version_associated_with_R_version <-
-    numeric_version(Sys.getenv("R_BIOC_VERSION", "2.13"))
+    function() numeric_version(Sys.getenv("R_BIOC_VERSION", "3.0"))
 ## Things are more complicated from R-2.15.x with still two BioC
 ## releases a year, so we do need to set this manually.
+## Wierdly, 3.0 is the second version (after 2.14) for the 3.1.x series.
 
 ### ** .vc_dir_names
 
@@ -521,9 +544,23 @@ function(val) {
     if (v %in% c("1", "yes", "true")) TRUE
     else if (v %in% c("0", "no", "false")) FALSE
     else {
-        warning("cannot coerce ", sQuote(val), " to logical")
+        warning(gettextf("cannot coerce %s to logical", sQuote(val)),
+                domain = NA)
         NA
     }
+}
+
+
+### ** .canonicalize_quotes
+
+.canonicalize_quotes <-
+function(txt)
+{
+    txt <- gsub("(\xe2\x80\x98|\xe2\x80\x99)", "'", txt,
+                perl = TRUE, useBytes = TRUE)
+    txt <- gsub("(\xe2\x80\x9c|\xe2\x80\x9d)", '"', txt,
+                perl = TRUE, useBytes = TRUE)
+    txt
 }
 
 ### ** .eval_with_capture
@@ -566,6 +603,27 @@ function(expr, type = NULL)
          message = readLines(msgcon, encoding = "UTF-8", warn = FALSE))
 }
 
+### ** .expand_anchored_Rd_xrefs
+
+.expand_anchored_Rd_xrefs <-
+function(db)
+{
+    ## db should have columns Target and Anchor.
+    db <- db[, c("Target", "Anchor"), drop = FALSE]
+    ## See .check_Rd_xrefs().
+    anchor <- db[, 2L]
+    have_equals <- grepl("^=", anchor)
+    if(any(have_equals))
+        db[have_equals, ] <-
+            cbind(sub("^=", "", anchor[have_equals]), "")
+    anchor <- db[, 2L]
+    have_colon <- grepl(":", anchor, fixed = TRUE)
+    y <- cbind(T_Package = anchor, T_File = db[, 1L])
+    y[have_colon, ] <-
+        cbind(sub("([^:]*):(.*)", "\\1", anchor[have_colon]),
+              sub("([^:]*):(.*)", "\\2", anchor[have_colon]))
+    y
+}
 
 ### ** .file_append_ensuring_LFs
 
@@ -580,11 +638,14 @@ function(file1, file2)
 ### ** .file_path_relative_to_dir
 
 .file_path_relative_to_dir <-
-function(x, dir)
+function(x, dir, add = FALSE)
 {
     if(any(ind <- (substring(x, 1L, nchar(dir)) == dir))) {
         ## Assume .Platform$file.sep is a single character.
-        x[ind] <- substring(x, nchar(dir) + 2L)
+        x[ind] <- if(add)
+            file.path(basename(dir), substring(x[ind], nchar(dir) + 2L))
+        else
+            substring(x[ind], nchar(dir) + 2L)
     }
     x
 }
@@ -594,7 +655,7 @@ function(x, dir)
 .find_calls <-
 function(x, predicate = NULL, recursive = FALSE)
 {
-    x <- as.list(x)
+    x <- if(is.call(x)) list(x) else as.list(x)
 
     f <- if(is.null(predicate))
         function(e) is.call(e)
@@ -787,7 +848,8 @@ function(dir, installed = FALSE)
 
 .get_requires_from_package_db <-
 function(db,
-         category = c("Depends", "Imports", "LinkingTo", "Suggests", "Enhances"))
+         category = c("Depends", "Imports", "LinkingTo", "VignetteBuilder",
+         "Suggests", "Enhances"))
 {
     category <- match.arg(category)
     if(category %in% names(db)) {
@@ -806,7 +868,8 @@ function(db,
 
 .get_requires_with_version_from_package_db <-
 function(db,
-         category = c("Depends", "Imports", "LinkingTo", "Suggests", "Enhances"))
+         category = c("Depends", "Imports", "LinkingTo", "VignetteBuilder",
+         "Suggests", "Enhances"))
 {
     category <- match.arg(category)
     if(category %in% names(db)) {
@@ -857,17 +920,18 @@ function(dir, installed = TRUE, primitive = FALSE)
             env_list <- unique(env_list)
         }
     }
+    ## some BioC packages warn here
+    suppressWarnings(
     unique(c(.get_internal_S3_generics(primitive),
              unlist(lapply(env_list,
                            function(env) {
-                               nms <- objects(envir = env,
-                                              all.names = TRUE)
+                               nms <- sort(names(env))
                                if(".no_S3_generics" %in% nms)
                                    character()
                                else Filter(function(f)
                                            .is_S3_generic(f, envir = env),
                                            nms)
-                           }))))
+                           })))))
 }
 
 ### ** .get_S3_group_generics
@@ -976,7 +1040,8 @@ function()
     unique(c(.get_standard_repository_db_fields(),
              ## Extract from R-exts via
              ## .get_DESCRIPTION_fields_in_R_exts():
-             c("Author",
+             c("Additional_repositories",
+               "Author",
                "Authors@R",
                "Biarch",
                "BugReports",
@@ -987,8 +1052,10 @@ function()
                "Built",
                "ByteCompile",
                "Classification/ACM",
+               "Classification/ACM-2012",
                "Classification/JEL",
                "Classification/MSC",
+               "Classification/MSC-2010",
                "Collate",
                "Collate.unix",
                "Collate.windows",
@@ -1015,6 +1082,7 @@ function()
                "Packaged",
                "Priority",
                "Suggests",
+               "SysDataCompression",
                "SystemRequirements",
                "Title",
                "Type",
@@ -1028,8 +1096,12 @@ function()
                "Date/Publication",
                "LastChangedDate",
                "LastChangedRevision",
+               "Revision",
                "RcmdrModels",
                "RcppModules",
+               "Roxygen",
+               "Acknowledgements",
+               "Acknowledgments", # USA/Canadian usage.
                "biocViews")
              ))
 }
@@ -1045,6 +1117,46 @@ function(texi = NULL)
     lines <- readLines(texi)
     re <- "^@c DESCRIPTION field "
     sort(unique(sub(re, "", lines[grepl(re, lines)])))
+}
+
+### ** .gsub_with_transformed_matches
+
+.gsub_with_transformed_matches <-
+function(pattern, replacement, x, trafo, count, ...)
+{
+    ## gsub() with replacements featuring transformations of matches.
+    ##
+    ## Character string (%s) conversion specifications in 'replacement'
+    ## will be replaced by applying the respective transformations in
+    ## 'trafo' to the respective matches (parenthesized subexpressions of
+    ## 'pattern') specified by 'count'.
+    ##
+    ## Argument 'trafo' should be a single unary function, or a list of
+    ## such functions.
+    ## Argument 'count' should be a vector of with the numbers of
+    ## parenthesized subexpressions to be transformed (0 gives the whole
+    ## match).
+
+    replace <- function(yi) {
+        do.call(sprintf,
+                c(list(replacement),
+                  Map(function(tr, co) tr(yi[co]),
+                      trafo, count + 1L)))
+    }
+
+    if(!is.list(trafo)) trafo <- list(trafo)
+    m <- gregexpr(pattern, x, ...)
+    v <- lapply(regmatches(x, m),
+                function(e) {
+                    y <- regmatches(e, regexec(pattern, e, ...))
+                    unlist(Map(function(ei, yi) {
+                        sub(pattern, replace(yi), ei, ...)
+                    },
+                               e,
+                               y))
+                })
+    regmatches(x, m) <- v
+    x
 }
 
 ### ** .is_ASCII
@@ -1106,13 +1218,13 @@ function(fname, envir, mustMatch = TRUE)
     ## If we use something like: a generic has to be
     ##      function(e) <UME>  # UME = UseMethod Expression
     ## with
-    ##	    <UME> = UseMethod(...) |
+    ##      <UME> = UseMethod(...) |
     ##             if (...) <UME> [else ...] |
     ##             if (...) ... else <UME>
     ##             { ... <UME> ... }
     ## then a recognizer for UME might be as follows.
 
-    f <- get(fname, envir = envir, inherits = FALSE)
+    f <- suppressMessages(get(fname, envir = envir, inherits = FALSE))
     if(!is.function(f)) return(FALSE)
     isUMEbrace <- function(e) {
         for (ee in as.list(e[-1L])) if (nzchar(res <- isUME(ee))) return(res)
@@ -1169,6 +1281,10 @@ function(package, lib.loc)
 
 ### ** .make_file_exts
 
+## <FIXME>
+## Remove support for type "vignette" eventually ...
+## </FIXME>
+
 .make_file_exts <-
 function(type = c("code", "data", "demo", "docs", "vignette"))
 {
@@ -1217,9 +1333,8 @@ function(parent = parent.frame(), fixup = FALSE)
 {
     ## Create an environment with pseudo-definitions for the S3 primitive
     ## generics
-    env <- new.env(hash = TRUE, parent = parent)
-    for(f in ls(base::.GenericArgsEnv))
-        assign(f, get(f, envir=base::.GenericArgsEnv), envir = env)
+    env <- list2env(as.list(base::.GenericArgsEnv, all.names=TRUE),
+                    hash=TRUE, parent=parent)
     if(fixup) {
         ## now fixup the operators
         for(f in c('+', '-', '*', '/', '^', '%%', '%/%', '&', '|',
@@ -1239,10 +1354,8 @@ function(parent = parent.frame())
 {
     ## Create an environment with pseudo-definitions
     ## for the S3 primitive non-generics
-    env <- new.env(hash = TRUE, parent = parent)
-    for(f in ls(base::.ArgsEnv))
-        assign(f, get(f, envir=base::.ArgsEnv), envir = env)
-    env
+    list2env(as.list(base::.ArgsEnv, all.names=TRUE),
+             hash=TRUE, parent=parent)
 }
 
 ### ** .make_S3_methods_stop_list
@@ -1356,22 +1469,39 @@ function(packages = NULL, FUN, ...)
     out
 }
 
-### .parse_code_file
+### ** .pandoc_README_md_for_CRAN
+
+.pandoc_README_md_for_CRAN <-
+function(ifile, ofile)
+{
+    .system_with_capture("pandoc",
+                         paste(shQuote(ifile), "-s",
+                               "--email-obfuscation=references",
+                               "--css=../../CRAN_web.css",
+                               "-o", shQuote(ofile)))
+}
+
+### ** .parse_code_file
 
 .parse_code_file <-
-function(file, encoding = NA)
+function(file, encoding = NA, keep.source = getOption("keep.source"))
 {
-    if(!file.info(file)$size) return()
+    if(!file.size(file)) return()
     suppressWarnings({
         if(!is.na(encoding) &&
+           (encoding != "unknown") &&
            !(Sys.getlocale("LC_CTYPE") %in% c("C", "POSIX"))) {
             ## Previous use of con <- file(file, encoding = encoding)
-            ## was intolerant so do what .install_package_code_files()
-            ## does.
+            ## was intolerant so do something similar to what
+            ## .install_package_code_files() does.  Do not use a #line
+            ## directive though as this will confuse getParseData().
             lines <- iconv(readLines(file, warn = FALSE),
                            from = encoding, to = "", sub = "byte")
-            parse(text = lines)
-        } else parse(file)
+            parse(text = lines, srcfile = srcfile(file),
+                  keep.source = keep.source)
+        } else
+            parse(file,
+                  keep.source = keep.source)
     })
 }
 
@@ -1388,6 +1518,16 @@ function(con)
         on.exit(close(con))
     }
     .try_quietly(readLines(con, warn=FALSE))
+}
+
+### ** .read_citation_quietly
+
+.read_citation_quietly <-
+function(cfile, meta)
+{
+    tryCatch(suppressMessages(suppressWarnings(utils::readCitationFile(cfile,
+                                                                       meta))),
+             error = identity)
 }
 
 ### ** .read_collate_field
@@ -1430,7 +1570,7 @@ function(dfile)
                                   dfile),
                          domain = NA, call. = FALSE))
     if (nrow(out) != 1)
-    	stop("contains a blank line", call. = FALSE)
+        stop("contains a blank line", call. = FALSE)
     out <- out[1,]
     if(!is.na(encoding <- out["Encoding"])) {
         ## could convert everything to UTF-8
@@ -1469,7 +1609,7 @@ function(x, dfile)
     Encoding(x) <- "unknown"
     ## Avoid folding for fields where we keep whitespace when reading.
     write.dcf(rbind(x), dfile,
-              keep.white = .keep_white_description_fields)
+              keep.white = c(.keep_white_description_fields, "Maintainer"))
 }
 
 ### ** .read_repositories
@@ -1493,7 +1633,7 @@ function(x)
                                     "http://www.bioconductor.org")),
              x, fixed = TRUE)
     sub("%v",
-        as.character(.BioC_version_associated_with_R_version),
+        as.character(.BioC_version_associated_with_R_version()),
         x, fixed = TRUE)
 }
 
@@ -1517,6 +1657,23 @@ function(x)
     y
 }
 
+### ** .replace_chars_by_hex_subs
+
+.replace_chars_by_hex_subs <-
+function(x, re) {
+    char_to_hex_sub <- function(s) {
+        paste0("<", charToRaw(s), ">", collapse = "")
+    }
+    vapply(strsplit(x, ""),
+           function(e) {
+               pos <- grep(re, e, perl = TRUE)
+               if(length(pos))
+                   e[pos] <- vapply(e[pos], char_to_hex_sub, "")
+               paste(e, collapse = "")
+           },
+           "")
+}
+
 ### ** .source_assignments
 
 .source_assignments <-
@@ -1538,8 +1695,10 @@ function(file, envir, enc = NA)
     exprs <- parse(n = -1L, file = con)
     if(!length(exprs))
         return(invisible())
-    for(e in exprs) {
-        if(e[[1L]] == assignmentSymbolLM || e[[1L]] == assignmentSymbolEq)
+    for(e in Filter(length, exprs)) {
+        if(is.call(e) &&
+           (e[[1L]] == assignmentSymbolLM ||
+            e[[1L]] == assignmentSymbolEq))
             eval(e, envir)
     }
     invisible()
@@ -1610,7 +1769,19 @@ function(x)
     } else list(name = x1)
 }
 
+## <FIXME>
+## We now have base::trimws(), so this is no longer needed.
+## Remove eventually.
+
 ### ** .strip_whitespace
+
+## <NOTE>
+## Other languages have this as strtrim() (or variants for left or right
+## trimming only), but R has a different strtrim().
+## So perhaps strstrip()?
+## Could more generally do
+##   strstrip(x, pattern, which = c("both", "left", "right"))
+## </NOTE>
 
 .strip_whitespace <-
 function(x)
@@ -1620,6 +1791,8 @@ function(x)
     x <- sub("[[:space:]]+$", "", x)
     x
 }
+
+## </FIXME>
 
 ### ** .system_with_capture
 
@@ -1683,11 +1856,11 @@ function(expr)
 ### ** .unpacked_source_repository_apply
 
 .unpacked_source_repository_apply <-
-function(dir, fun, ..., verbose = FALSE)
+function(dir, fun, ..., pattern = "*", verbose = FALSE)
 {
     dir <- file_path_as_absolute(dir)
 
-    dfiles <- Sys.glob(file.path(dir, "*", "DESCRIPTION"))
+    dfiles <- Sys.glob(file.path(dir, pattern, "DESCRIPTION"))
 
     results <-
         lapply(dirname(dfiles),
@@ -1732,6 +1905,61 @@ psnice <- function(pid = Sys.getpid(), value = NA_integer_)
     res <- .Call(ps_priority, pid, value)
     if(is.na(value)) res else invisible(res)
 }
+
+### ** toTitleCase
+
+## original version based on http://daringfireball.net/2008/05/title_case
+## but much altered before release.
+toTitleCase <- function(text)
+{
+    ## leave these alone: the internal caps rule would do that
+    ## in some cases.  We could insist on this exact capitalization.
+    alone <- c("2D", "3D", "AIC", "BayesX", "GoF", "HTML", "LaTeX",
+               "MonetDB", "OpenBUGS", "TeX", "U.S.", "U.S.A.", "WinBUGS",
+               "aka", "et", "al.", "ggplot2", "i.e.", "jar", "jars",
+               "ncdf", "netCDF", "rgl", "rpart", "xls", "xlsx")
+    ## These should be lower case except at the beginning (and after :)
+    lpat <- "^(a|an|and|are|as|at|be|but|by|en|for|if|in|is|nor|not|of|on|or|per|so|the|to|v[.]?|via|vs[.]?|from|into|than|that|with)$"
+    ## These we don't care about
+    either <- c("all", "above", "after", "along", "also", "among",
+                "any", "both", "can", "few", "it", "less", "log",
+                "many", "may", "more", "over", "some", "their",
+                "then", "this", "under", "until", "using", "von",
+                "when", "where", "which", "will", "without",
+                "yet", "you", "your")
+    titleCase1 <- function(x) {
+        ## A quote might be prepended.
+        do1 <- function(x) {
+            x1 <- substring(x, 1L, 1L)
+            if(nchar(x) >= 3L && x1 %in% c("'", '"'))
+                paste0(x1, toupper(substring(x, 2L, 2L)),
+                       tolower(substring(x, 3L)))
+            else paste0(toupper(x1), tolower(substring(x, 2L)))
+        }
+        xx <- .Call(splitString, x, ' -/"()')
+        ## for 'alone' we could insist on that exact capitalization
+        alone <- xx %in% c(alone, either)
+        alone <- alone | grepl("^'.*'$", xx)
+        havecaps <- grepl("^[[:alpha:]].*[[:upper:]]+", xx)
+        l <- grepl(lpat, xx, ignore.case = TRUE)
+        l[1L] <- FALSE
+        ## do not remove capitalization immediately after ": " or "- "
+        ind <- grep("[-:]$", xx); ind <- ind[ind + 2L <= length(l)]
+        ind <- ind[(xx[ind + 1L] == " ") & grepl("^['[:alnum:]]", xx[ind + 2L])]
+        l[ind + 2L] <- FALSE
+        ## Also after " (e.g. "A Book Title")
+        ind <- which(xx == '"'); ind <- ind[ind + 1L <= length(l)]
+        l[ind + 1L] <- FALSE
+        xx[l] <- tolower(xx[l])
+        keep <- havecaps | l | (nchar(xx) == 1L) | alone
+        xx[!keep] <- sapply(xx[!keep], do1)
+        paste(xx, collapse = "")
+    }
+    if(typeof(text) != "character")
+        stop("'text' must be a character vector")
+    sapply(text, titleCase1, USE.NAMES = FALSE)
+}
+
 ### Local variables: ***
 ### mode: outline-minor ***
 ### outline-regexp: "### [*]+" ***

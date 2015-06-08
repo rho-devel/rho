@@ -1,12 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2003-12   The R Core Team.
- *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
- *
- *  CXXR is not part of the R project, and bugs and other issues should
- *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -57,6 +51,7 @@ static const R_CallMethodDef CallEntries[] = {
     CALLDEF(startHTTPD, 2),
     CALLDEF(stopHTTPD, 0),
     CALLDEF(C_deparseRd, 2),
+    CALLDEF(splitString, 2),
 
     {NULL, NULL, 0}
 };
@@ -64,7 +59,7 @@ static const R_CallMethodDef CallEntries[] = {
 #define EXTDEF(name, n)  {#name, (DL_FUNC) &name, n}
 static const R_ExternalMethodDef ExtEntries[] = {
     EXTDEF(C_parseLatex, 4),
-    EXTDEF(C_parseRd, 7),
+    EXTDEF(C_parseRd, 9),
 
     {NULL, NULL, 0}
 };

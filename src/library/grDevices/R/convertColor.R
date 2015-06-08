@@ -1,7 +1,7 @@
 #  File src/library/grDevices/R/convertColor.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -129,6 +129,7 @@ colorspaces <-
 
          "Lab" =
          colorConverter(fromXYZ = function(XYZ, white) {
+             stopifnot(length(XYZ) == 3L)
              epsilon <- 216/24389
              kappa <- 24389/27
 
@@ -139,7 +140,8 @@ colorspaces <-
                a = 500*(fxyz[1L]-fxyz[2L]),
                b = 200*(fxyz[2L]-fxyz[3L]))
          },
-         toXYZ = function(Lab,white) {
+         toXYZ = function(Lab, white) {
+             stopifnot(length(Lab) == 3L)
 
              epsilon <- 216/24389
              kappa <- 24389/27

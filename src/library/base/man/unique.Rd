@@ -1,6 +1,6 @@
 % File src/library/base/man/unique.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{unique}
@@ -37,7 +37,7 @@ unique(x, incomparables = FALSE, \dots)
     from the last, i.e., the last (or rightmost) of identical elements will
     be kept.  This only matters for \code{\link{names}} or
     \code{\link{dimnames}}.}
-  \item{nmax}{the maximum number of unique items expected.
+  \item{nmax}{the maximum number of unique items expected (greater than one).
     See \code{\link{duplicated}}.}
   \item{\dots}{arguments for particular methods.}
   \item{MARGIN}{the array margin to be held fixed: a single integer.}
@@ -73,7 +73,7 @@ unique(x, incomparables = FALSE, \dots)
   numbers!
 
   Character strings will be compared as byte sequences if any input is
-  marked as \code{"bytes"}.
+  marked as \code{"bytes"} (see \code{\link{Encoding}}).
 }
 \value{
   For a vector, an object of the same type of \code{x}, but with only

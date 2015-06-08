@@ -1,9 +1,7 @@
 % File src/library/graphics/man/boxplot.matrix.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2008 R Core Team
+% Copyright 2008-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{boxplot.matrix}
 \alias{boxplot.matrix}

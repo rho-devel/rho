@@ -1,13 +1,12 @@
 % File src/library/grid/man/drawDetails.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{drawDetails}
 \alias{drawDetails}
 \alias{preDrawDetails}
 \alias{postDrawDetails}
-\alias{draw.details}
 \title{ Customising grid Drawing }
 \description{
   These generic hook functions are called whenever a grid grob is drawn.
@@ -16,7 +15,6 @@
 }
 \usage{
 drawDetails(x, recording)
-draw.details(x, recording)
 preDrawDetails(x)
 postDrawDetails(x)
 }

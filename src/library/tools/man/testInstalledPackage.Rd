@@ -1,12 +1,14 @@
 % File src/library/tools/man/testInstalledPackage.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2009-11 R Core Team
+% Copyright 2009-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{testInstalledPackage}
 \alias{testInstalledPackage}
 \alias{testInstalledPackages}
 \alias{testInstalledBasic}
+\alias{TEST_MC_CORES}
+
 \title{Test Installed Packages}
 \description{
   These functions allow an installed package to be tested, or all base
@@ -15,12 +17,12 @@
 \usage{
 testInstalledPackage(pkg, lib.loc = NULL, outDir = ".",
                      types = c("examples", "tests", "vignettes"),
-                     srcdir = NULL, Ropts = "")
+                     srcdir = NULL, Ropts = "", ...)
 
 testInstalledPackages(outDir = ".", errorsAreFatal = TRUE,
                       scope = c("both", "base", "recommended"),
                       types = c("examples", "tests", "vignettes"),
-                      srcdir = NULL, Ropts = "")
+                      srcdir = NULL, Ropts = "", ...)
 
 testInstalledBasic(scope = c("basic", "devel", "both"))
 }
@@ -36,6 +38,8 @@ testInstalledBasic(scope = c("basic", "devel", "both"))
   \item{srcdir}{Optional directory to look for \code{.save} files.}
   \item{Ropts}{Additional options such as \option{-d valgrind} to be
     passed to \command{R CMD BATCH} when running examples or tests.}
+  \item{\dots}{additional arguments use when preparing the files to be
+    run, e.g.\sspace{}\code{commentDontrun} and \code{commentDonttest}.}
   \item{scope}{Which set(s) should be tested?}
 }
 \details{
@@ -55,6 +59,11 @@ testInstalledBasic(scope = c("basic", "devel", "both"))
   be desirable to set environment variables \env{LANGUAGE} to \samp{en}
   and \env{LC_TIME} to \samp{C} to reduce the number of differences from
   reference results.
+
+  Except on Windows, if the environment variable \env{TEST_MC_CORES} is
+  set to an integer greater than one, \code{testInstalledPackages} will
+  run the package tests in parallel using its value as the maximum
+  number of parallel processes.
 
 #ifdef unix
   The package-specific tests for the base and recommended packages are

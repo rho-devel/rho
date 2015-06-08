@@ -1,7 +1,13 @@
 /*
   R : A Computer Language for Statistical Data Analysis
   Copyright (C) 1995-1996   Robert Gentleman and Ross Ihaka
-  Copyright (C) 1997-2013   The R Core Team
+  Copyright (C) 1997-2015   The R Core Team
+  Copyright (C) 2008-2014  Andrew R. Runnalls.
+  Copyright (C) 2014 and onwards the CXXR Project Authors.
+
+  CXXR is not part of the R project, and bugs and other issues should
+  not be reported via r-bugs or other R project channels; instead refer
+  to the CXXR website.
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -116,6 +122,7 @@ attribute_hidden
 void set_workspace_name(const char *fn)
 {
     strncpy(workspace_name, fn, PATH_MAX);
+    workspace_name[PATH_MAX - 1] = '\0';
 }
 #endif
 
@@ -163,19 +170,26 @@ void R_DefParams(Rstart Rp)
 #define Max_Nsize 50000000	/* about 1.4Gb 32-bit, 2.8Gb 64-bit */
 #define Max_Vsize R_SIZE_T_MAX	/* unlimited */
 
-#define Min_Nsize 220000
-#define Min_Vsize (1*Mega)
+// small values ok for R_DEFAULT_PACKAGES=NULL (= 'base' only)
+#define Min_Nsize 50000
+#define Min_Vsize 262144 // = (Mega/4)
 
 void R_SizeFromEnv(Rstart Rp)
 {
     int ierr;
     R_size_t value;
-    char *p;
+    char *p, msg[256];
 
     if((p = getenv("R_VSIZE"))) {
 	value = R_Decode2Long(p, &ierr);
-	if(ierr != 0 || value > Max_Vsize || value < Min_Vsize)
+	if(ierr != 0 || value > Max_Vsize)
 	    R_ShowMessage("WARNING: invalid R_VSIZE ignored\n");
+	else if(value < Min_Vsize) {
+	    snprintf(msg, 256,
+		     "WARNING: R_VSIZE smaller than Min_Vsize = %lu is ignored\n",
+		     (unsigned long) Min_Vsize);
+	    R_ShowMessage(msg);
+	}
 	else
 	    Rp->vsize = value;
     }

@@ -1,6 +1,6 @@
 % File src/library/base/man/readLines.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{readLines}
@@ -11,7 +11,7 @@
 }
 \usage{
 readLines(con = stdin(), n = -1L, ok = TRUE, warn = TRUE,
-          encoding = "unknown")
+          encoding = "unknown", skipNul = FALSE)
 }
 \arguments{
   \item{con}{a \link{connection} object or a character string.}
@@ -20,17 +20,18 @@ readLines(con = stdin(), n = -1L, ok = TRUE, warn = TRUE,
     input on the connection.}
   \item{ok}{logical.  Is it OK to reach the end of the connection before
     \code{n > 0} lines are read?  If not, an error will be generated.}
-  \item{warn}{logical.  Warn if a text file is missing a final EOL.}
+  \item{warn}{logical.  Warn if a text file is missing a final EOL or if
+    there are embedded nuls in the file.}
   \item{encoding}{encoding to be assumed for input strings.  It is
     used to mark character strings as known to be in
     Latin-1 or UTF-8: it is not used to re-encode the input.  To do the
     latter, specify the encoding as part of the connection \code{con} or
-    via \code{\link{options}(encoding=)}: see the example under
-    \code{\link{file}}.
+    via \code{\link{options}(encoding=)}: see the examples.
 #ifdef windows
     See also \sQuote{Details}.
 #endif
   }
+  \item{skipNul}{logical: should nuls be skipped?}
 }
 \details{
   If the \code{con} is a character string, the function calls
@@ -50,6 +51,10 @@ readLines(con = stdin(), n = -1L, ok = TRUE, warn = TRUE,
   Whatever mode the connection is opened in, any of LF, CRLF or CR will
   be accepted as the EOL marker for a line.
 
+  Embedded nuls in the input stream will terminate the line currently
+  being read, with a warning (unless \code{skipNul = TRUE} or \code{warn
+    = FALSE)}).
+  
   If \code{con} is a not-already-open \link{connection} with a non-default
   \code{encoding} argument, the text is converted to UTF-8 and declared
   as such (and the \code{encoding} argument to \code{readLines} is ignored).
@@ -89,7 +94,8 @@ unlink("test1") # tidy up
 
 \dontrun{
 # read a 'Windows Unicode' file
-A <- readLines(file("Unicode.txt", encoding = "UCS-2LE"))
+A <- readLines(con <- file("Unicode.txt", encoding = "UCS-2LE"))
+close(con)
 unique(Encoding(A)) # will most likely be UTF-8
 }}
 \keyword{file}

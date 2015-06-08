@@ -37,15 +37,16 @@ FULLVERSION=`cat ../../../VERSION`
 RPREFIX = $(shell ../../../bin$(R_ARCH)/Rscript ../fixed/rwver.R)
 LIBFILES = $(foreach i, $(R_PKGS_BASE) $(R_PKGS_RECOMMENDED) translations $(EXTRA_PKGS), $(R_HOME)/library/$i)
 
-INFO_FILES = COPYING NEWS NEWS.0 NEWS.1 NEWS.2 README
-DOC_INFO_FILES = AUTHORS COPYING FAQ RESOURCES THANKS CHANGES
+INFO_FILES = COPYING README
+DOC_INFO_FILES = AUTHORS COPYING FAQ RESOURCES THANKS CHANGES \
+  NEWS NEWS.0 NEWS.1 NEWS.2 
 GW_INFO_FILES = COPYRIGHTS README.Rterm ../../doc/manual/rw-FAQ
 
 ETC_FILES = Rprofile.site Rconsole Rdevga rgb.txt repositories Rcmd_environ
 
 
 # we don't want share/{Makefile.in,java,sh} installed
-SHARE_DIRS = R dictionaries encodings licenses make texmf zoneinfo
+SHARE_DIRS = R dictionaries encodings licenses make Rd texmf zoneinfo
 
 all: $(RPREFIX)-win.exe
 msi: $(RPREFIX)-$(SUFF).msi
@@ -61,14 +62,18 @@ imagedir:
 	$(RM) $(RPREFIX)/*/Makefile.in
 	$(MKDIR) -p $(RPREFIX)/etc$(R_ARCH)
 	$(CP) -p $(foreach i,$(ETC_FILES),$(R_HOME)/etc/$i) $(RPREFIX)/etc
+	if test -f "$(R_HOME)/etc/curl-ca-bundle.crt"; then \
+	  $(CP) -p "$(R_HOME)/etc/curl-ca-bundle.crt" $(RPREFIX)/etc; \
+	fi
 	$(CP) -p $(R_HOME)/etc$(R_ARCH)/Makeconf $(RPREFIX)/etc$(R_ARCH)
 # copy info and documentation files
 	$(MKDIR) -p $(RPREFIX)/doc
 	$(CP) -p $(R_HOME)/doc/CRAN_mirrors.csv $(RPREFIX)/doc
-	$(MKDIR) -p $(RPREFIX)/doc/manual
+	$(MKDIR) -p $(RPREFIX)/doc/manual/images
 	$(CP) -pR $(R_HOME)/doc/html $(RPREFIX)/doc
 	$(CP) -p $(R_HOME)/doc/manual/*.html $(R_HOME)/doc/manual/*.pdf \
 	  $(RPREFIX)/doc/manual
+	$(CP) -p $(R_HOME)/doc/manual/images/*.png $(RPREFIX)/doc/manual/images
 #	html copies of these are in doc/manual, and we don't have FAQ PDF on menus
 	$(RM) $(RPREFIX)/doc/manual/R-FAQ.pdf
 	$(RM) $(RPREFIX)/doc/html/R-admin.html 
@@ -86,7 +91,7 @@ imagedir:
 	zip -q dosfiles.zip $(RPREFIX)/* $(RPREFIX)/doc/*
 	unzip -qao dosfiles.zip
 	$(RM) dosfiles.zip
-	$(CP) -p $(R_HOME)/NEWS.pdf $(RPREFIX)
+	$(CP) -p $(R_HOME)/doc/NEWS.pdf $(RPREFIX)/doc
 	$(CP) -p $(R_HOME)/doc/NEWS.rds $(R_HOME)/doc/CHANGES.rds $(RPREFIX)/doc
 #
 # files to make source packages
@@ -105,7 +110,7 @@ imagedir:
 	$(MAKE) --no-print-directory -C ../../../tests -f Makefile.win \
 	  INST_TO=../src/gnuwin32/installer/$(RPREFIX)/tests install-tests
 #
-	$(FIND) $(RPREFIX) -name .svn -prune -exec rm -rf \{\} \;
+	$(FIND) $(RPREFIX) -name .git -prune -exec rm -rf \{\} \;
 	$(FIND) $(RPREFIX) -name \*~ -delete
 
 md5sums:
@@ -158,7 +163,7 @@ extras:
 
 R.iss: JRins.R header1.iss types3264.iss types32.iss code.iss \
    CustomMsg.iss imagedir fixups 32bit extras md5sums \
-  ../../../VERSION ../../../SVN-REVISION
+  ../../../VERSION ../../../GIT-REVISION
 	../../../bin$(R_ARCH)/Rscript JRins.R \
 	  $(RPREFIX) $(RPREFIX) $(MDISDI) \
 	  $(HelpStyle) $(Internet) $(Producer) "$(ISDIR)"

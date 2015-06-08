@@ -103,7 +103,6 @@ void GCManager::gc(bool force_full_collection)
 
     if (s_post_gc) (*s_post_gc)();
 
-    WeakRef::runFinalizers();
     s_gc_is_running = false;
 }
 

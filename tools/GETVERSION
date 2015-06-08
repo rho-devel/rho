@@ -9,19 +9,19 @@ TOOLS_DIR=`echo ${0} | sed 's%/[^/][^/]*$%%'`
   pl=`echo ${min} | sed 's/\..*//'`
   sl=`echo ${min} | sed 's/.*\.//'`
   ver=`expr ${maj} \\* 65536 + ${pl} \\* 256 + ${sl}`
-  if test -f ../../SVN-REVISION ; then
-    dat=`sed  -e 1d -e 's/^Last Changed Date: //' ../../SVN-REVISION`
+  if test -f ../../GIT-REVISION ; then
+    dat=`sed  -e 1d -e 's/^Last Changed Date: //' ../../GIT-REVISION`
     y=`echo ${dat} | cut -d- -f1`
     m=`echo ${dat} | cut -d- -f2`
     d=`echo ${dat} | cut -d- -f3`
     y1=`expr ${y} - 2000`
-    svn_rev=`sed -n -e 's/^Revision: //' -e '1p' < ../../SVN-REVISION`
+    git_rev=`sed -n -e 's/^Revision: //' -e '1p' < ../../GIT-REVISION`
   else
     y=2006
     m=01
     d=01
     y1=6
-    svn_rev=unknown
+    git_rev=unknown
   fi
   echo "/* Rversion.h.  Generated automatically. */"
   echo "#ifndef R_VERSION_H"
@@ -40,10 +40,10 @@ TOOLS_DIR=`echo ${0} | sed 's%/[^/][^/]*$%%'`
   echo "#define R_YEAR   \"${y}\""
   echo "#define R_MONTH  \"${m}\""
   echo "#define R_DAY    \"${d}\""
-  echo "#define R_SVN_REVISION ${svn_rev}"
+  echo "#define R_GIT_REVISION \"${git_rev}\""
 ## Using 1-digit year stops problems with leading zeros
 #  echo "#define R_FILEVERSION    ${maj},${pl}${sl},${y1}${m}${d},0"
-  echo "#define R_FILEVERSION    ${maj},${pl}${sl},${svn_rev},0"
+  echo "#define R_FILEVERSION    ${maj},${pl}${sl},${git_rev},0"
   echo
   echo '#ifdef __cplusplus'
   echo '}'

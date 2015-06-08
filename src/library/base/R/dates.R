@@ -1,7 +1,7 @@
 #  File src/library/base/R/dates.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ as.Date.POSIXlt <- function(x, ...) .Internal(POSIXlt2Date(x))
 as.Date.factor <- function(x, ...) as.Date(as.character(x), ...)
 
 
-as.Date.character <- function(x, format="", ...)
+as.Date.character <- function(x, format, ...)
 {
     charToDate <- function(x) {
 	xx <- x[1L]
@@ -231,13 +231,13 @@ as.data.frame.Date <- as.data.frame.vector
 as.list.Date <- function(x, ...)
     lapply(seq_along(x), function(i) x[i])
 
-c.Date <- function(..., recursive=FALSE)
-    structure(c(unlist(lapply(list(...), unclass))), class="Date")
+c.Date <- function(..., recursive = FALSE)
+    structure(c(unlist(lapply(list(...), unclass))), class = "Date")
 
 mean.Date <- function (x, ...)
     structure(mean(unclass(x), ...), class = "Date")
 
-seq.Date <- function(from, to, by, length.out=NULL, along.with=NULL, ...)
+seq.Date <- function(from, to, by, length.out = NULL, along.with = NULL, ...)
 {
     if (missing(from)) stop("'from' must be specified")
     if (!inherits(from, "Date")) stop("'from' must be a \"Date\" object")
@@ -253,7 +253,7 @@ seq.Date <- function(from, to, by, length.out=NULL, along.with=NULL, ...)
         length.out <- ceiling(length.out)
     }
     status <- c(!missing(to), !missing(by), !is.null(length.out))
-    if(sum(status) != 2)
+    if(sum(status) != 2L)
         stop("exactly two of 'to', 'by' and 'length.out' / 'along.with' must be specified")
     if (missing(by)) {
         from <- unclass(as.Date(from))
@@ -268,13 +268,13 @@ seq.Date <- function(from, to, by, length.out=NULL, along.with=NULL, ...)
         by <- switch(attr(by,"units"), secs = 1/86400, mins = 1/1440,
                      hours = 1/24, days = 1, weeks = 7) * unclass(by)
     } else if(is.character(by)) {
-        by2 <- strsplit(by, " ", fixed=TRUE)[[1L]]
+        by2 <- strsplit(by, " ", fixed = TRUE)[[1L]]
         if(length(by2) > 2L || length(by2) < 1L)
             stop("invalid 'by' string")
         valid <- pmatch(by2[length(by2)],
-                        c("days", "weeks", "months", "years"))
+                        c("days", "weeks", "months", "quarters", "years"))
         if(is.na(valid)) stop("invalid string for 'by'")
-        if(valid <= 2) {
+        if(valid <= 2L) {
             by <- c(1, 7)[valid]
             if (length(by2) == 2L) by <- by * as.integer(by2[1L])
         } else
@@ -291,11 +291,11 @@ seq.Date <- function(from, to, by, length.out=NULL, along.with=NULL, ...)
             ## defeat test in seq.default
             res <- seq.int(0, to0 - from, by) + from
         }
-        res <- structure(res, class="Date")
-    } else {  # months or years or DSTdays
+        res <- structure(res, class = "Date")
+    } else {  # months or quarters or years
         r1 <- as.POSIXlt(from)
-        if(valid == 4L) {
-            if(missing(to)) { # years
+        if(valid == 5L) { # years
+            if(missing(to)) {
                 yr <- seq.int(r1$year, by = by, length.out = length.out)
             } else {
                 to0 <- as.POSIXlt(to)
@@ -303,7 +303,8 @@ seq.Date <- function(from, to, by, length.out=NULL, along.with=NULL, ...)
             }
             r1$year <- yr
             res <- as.Date(r1)
-        } else if(valid == 3L) { # months
+        } else { # months or quarters
+            if (valid == 4L) by <- by * 3
             if(missing(to)) {
                 mon <- seq.int(r1$mon, by = by, length.out = length.out)
             } else {
@@ -335,7 +336,7 @@ cut.Date <-
     } else if(is.numeric(breaks) && length(breaks) == 1L) {
 	## specified number of breaks
     } else if(is.character(breaks) && length(breaks) == 1L) {
-	by2 <- strsplit(breaks, " ", fixed=TRUE)[[1L]]
+	by2 <- strsplit(breaks, " ", fixed = TRUE)[[1L]]
 	if(length(by2) > 2L || length(by2) < 1L)
 	    stop("invalid specification of 'breaks'")
 	valid <-
@@ -446,7 +447,7 @@ diff.Date <- function (x, lag = 1L, differences = 1L, ...)
 {
     ismat <- is.matrix(x)
     xlen <- if (ismat) dim(x)[1L] else length(x)
-    if (length(lag) > 1L || length(differences) > 1L || lag < 1L || differences < 1L)
+    if (length(lag) != 1L || length(differences) > 1L || lag < 1L || differences < 1L)
         stop("'lag' and 'differences' must be integers >= 1")
     if (lag * differences >= xlen)
         return(structure(numeric(), class="difftime", units="days"))
@@ -469,8 +470,9 @@ is.numeric.Date <- function(x) FALSE
 split.Date <-
 function(x, f, drop = FALSE, ...)
 {
-    y <- split.default(as.integer(x), f, drop = drop)
-    for(i in seq_along(y)) class(y[[i]]) <- "Date"
+    oclass <- class(x)
+    y <- split.default(unclass(x), f, drop = drop)
+    for(i in seq_along(y)) class(y[[i]]) <- oclass
     y
 }
 

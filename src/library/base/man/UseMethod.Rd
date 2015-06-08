@@ -1,6 +1,6 @@
 % File src/library/base/man/UseMethod.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{UseMethod}
@@ -53,12 +53,12 @@ NextMethod(generic = NULL, object = NULL, \dots)
   Function \code{\link{methods}} can be used to find out about the
   methods for a particular generic function or class.
 
-  \code{UseMethod} is a primitive function but (as from \R 2.11.0) uses
-  standard argument matching.  It is not the only means of dispatch of
-  methods, for there are \link{internal generic} and \link{group generic}
-  functions.  \code{UseMethod} currently dispatches on the implicit
-  class even for arguments that are not objects, but the other means of
-  dispatch do not.
+  \code{UseMethod} is a primitive function but uses standard argument
+  matching.  It is not the only means of dispatch of methods, for there
+  are \link{internal generic} and \link{group generic} functions.
+  \code{UseMethod} currently dispatches on the implicit class even for
+  arguments that are not objects, but the other means of dispatch do
+  not.
 
   \code{NextMethod} invokes the next method (determined by the
   class vector, either of the object supplied to the generic, or of
@@ -70,7 +70,7 @@ NextMethod(generic = NULL, object = NULL, \dots)
   \code{NextMethod} should not be called except in methods called by
   \code{UseMethod} or from internal generics (see
   \link{InternalGenerics}).  In particular it will not work inside
-  anonymous calling functions (e.g. \code{get("print.ts")(AirPassengers)}).
+  anonymous calling functions (e.g., \code{get("print.ts")(AirPassengers)}).
 
   Namespaces can register methods for generic functions.  To support
   this, \code{UseMethod} and \code{NextMethod} search for methods in
@@ -158,7 +158,7 @@ NextMethod(generic = NULL, object = NULL, \dots)
   method.  It is possible to change the method that \code{NextMethod}
   would dispatch by manipulating \code{.Class}, but \sQuote{this is not
     recommended unless you understand the inheritance mechanism
-    thoroughly} (Chambers & Hastie, 1992, p. 469).
+    thoroughly} (Chambers & Hastie, 1992, p.\sspace{}469).
 }
 \note{
   This scheme is called \emph{S3} (S version 3).  For new projects,

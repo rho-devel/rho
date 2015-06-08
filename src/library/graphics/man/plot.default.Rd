@@ -1,6 +1,6 @@
 % File src/library/graphics/man/plotdefault.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{plot.default}
@@ -95,7 +95,7 @@
 \note{
   The presence of \code{panel.first} and \code{panel.last} is a
   historical anomaly: default plots do not have \sQuote{panels}, unlike
-  e.g. \code{\link{pairs}} plots.  For more control, use lower-level
+  e.g.\sspace{}\code{\link{pairs}} plots.  For more control, use lower-level
   plotting functions: \code{plot.default} calls in turn some of
   \code{\link{plot.new}}, \code{\link{plot.window}},
   \code{\link{plot.xy}}, \code{\link{axis}}, \code{\link{box}} and

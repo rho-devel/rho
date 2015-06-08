@@ -1,6 +1,6 @@
 % File src/library/base/man/Random.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Random}
@@ -77,7 +77,7 @@ set.seed(seed, kind = NULL, normal.kind = NULL)
       4.6*10^18} for most initial seeds.  The seed is two integers (all
     values allowed for the first seed: the second must be odd).
 
-    We use the implementation by Reeds et al. (1982--84).
+    We use the implementation by Reeds \emph{et al} (1982--84).
 
     The two seeds are the Tausworthe and congruence long integers,
     respectively.  A one-to-one mapping to S's \code{.Random.seed[1:12]}
@@ -141,7 +141,7 @@ set.seed(seed, kind = NULL, normal.kind = NULL)
   \code{"Ahrens-Dieter"}, \code{"Box-Muller"}, \code{"Inversion"} (the
   default), or \code{"user-supplied"}.  (For inversion, see the
   reference in \code{\link{qnorm}}.)  The Kinderman-Ramage generator
-  used in versions prior to 1.7.1 (now called \code{"Buggy"}) had several
+  used in versions prior to 1.7.0 (now called \code{"Buggy"}) had several
   approximation errors and should only be used for reproduction of old
   results.  The \code{"Box-Muller"} generator is stateful as pairs of
   normals are generated and returned sequentially.  The state is reset
@@ -166,10 +166,10 @@ set.seed(seed, kind = NULL, normal.kind = NULL)
 }
 \note{
   Initially, there is no seed; a new one is created from the current
-  time (and since \R 2.14.0, the process ID) when one is required.
-  Hence different sessions will give different simulation results, by
-  default.  However, the seed might be restored from a previous session
-  if a previously saved workspace is restored.
+  time and the process ID when one is required.  Hence different
+  sessions will give different simulation results, by default.  However,
+  the seed might be restored from a previous session if a previously
+  saved workspace is restored.
 
   \code{.Random.seed} saves the seed set for the uniform random-number
   generator, at least for the system generators.  It does not
@@ -239,8 +239,7 @@ set.seed(seed, kind = NULL, normal.kind = NULL)
 
   Knuth, D. E. (2002)
   \emph{The Art of Computer Programming.} Volume 2, third edition, ninth
-  printing.\cr
-  See \url{http://Sunburn.Stanford.EDU/~knuth/news02.html}.
+  printing.
 
   L'Ecuyer, P. (1999) Good parameters and implementations for combined
   multiple recursive random number generators. \emph{Operations
@@ -259,8 +258,9 @@ set.seed(seed, kind = NULL, normal.kind = NULL)
   pseudo-random number generator,
   \emph{ACM Transactions on Modeling and Computer Simulation},
   \bold{8}, 3--30.\cr
-  Source code at \url{http://www.math.keio.ac.jp/~matumoto/emt.html}.
-
+  Source code formerly at \code{http://www.math.keio.ac.jp/~matumoto/emt.html}.\cr
+  Now see \url{http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/VERSIONS/C-LANG/c-lang.html}.
+  
   Reeds, J., Hubert, S. and Abrahams, M. (1982--4) C implementation of
   SuperDuper, University of California at Berkeley.  (Personal
   communication from Jim Reeds to Ross Ihaka.)

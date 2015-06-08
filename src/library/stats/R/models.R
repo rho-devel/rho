@@ -1,7 +1,7 @@
 #  File src/library/stats/R/models.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ formula.default <- function (x, env = parent.frame(), ...)
     else {
         form <- switch(mode(x),
                        NULL = structure(NULL, class = "formula"),
-                       character = formula(eval(parse(text = x)[[1L]])),
+                       character = formula(eval(parse(text = x, keep.source = FALSE)[[1L]])),
                        call = eval(x), stop("invalid formula"))
         environment(form) <- env
         form
@@ -56,7 +56,8 @@ formula.data.frame <- function (x, ...)
         rhs <- nm[1L]
         lhs <- NULL
     } else stop("cannot create a formula from a zero-column data frame")
-    ff <- parse(text = paste(lhs, paste(rhs, collapse = "+"), sep = "~"))
+    ff <- parse(text = paste(lhs, paste(rhs, collapse = "+"), sep = "~"),
+                keep.source = FALSE)
     ff <- eval(ff)
     environment(ff) <- parent.frame()
     ff
@@ -64,7 +65,7 @@ formula.data.frame <- function (x, ...)
 
 formula.character <- function(x, env = parent.frame(), ...)
 {
-    ff <- formula(eval(parse(text=x)[[1L]]))
+    ff <- formula(eval(parse(text=x, keep.source = FALSE)[[1L]]))
     environment(ff) <- env
     ff
 }
@@ -152,7 +153,7 @@ reformulate <- function (termlabels, response=NULL, intercept = TRUE)
 		      paste(termlabels, collapse = "+"),
 		      collapse = "")
     if(!intercept) termtext <- paste(termtext, "- 1")
-    rval <- eval(parse(text = termtext)[[1L]])
+    rval <- eval(parse(text = termtext, keep.source = FALSE)[[1L]])
     if(has.resp) rval[[2L]] <-
         if(is.character(response)) as.symbol(response) else response
     ## response can be a symbol or call as  Surv(ftime, case)
@@ -173,7 +174,29 @@ drop.terms <- function(termobj, dropx = NULL, keep.response = FALSE)
 				  if (keep.response) termobj[[2L]] else NULL,
                                   attr(termobj, "intercept"))
         environment(newformula) <- environment(termobj)
-	terms(newformula, specials=names(attr(termobj, "specials")))
+	result <- terms(newformula, specials=names(attr(termobj, "specials")))
+	
+	# Edit the optional attributes
+	
+	response <- attr(termobj, "response")
+	if (response && !keep.response) 
+	    # we have a response in termobj, but not in the result
+	    dropOpt <- c(response, dropx + length(response))
+	else 
+	    dropOpt <- dropx + max(response)
+	 
+	if (!is.null(predvars <- attr(termobj, "predvars"))) {
+	    # predvars is a language expression giving a list of 
+	    # values corresponding to terms in the model
+            # so add 1 for the name "list"
+	    attr(result, "predvars") <- predvars[-(dropOpt+1)]
+	}
+	if (!is.null(dataClasses <- attr(termobj, "dataClasses"))) {
+	    # dataClasses is a character vector of 
+	    # values corresponding to terms in the model
+	    attr(result, "dataClasses") <- dataClasses[-dropOpt]
+	}	
+	result
     }
 }
 
@@ -185,7 +208,33 @@ drop.terms <- function(termobj, dropx = NULL, keep.response = FALSE)
     if (length(newformula) == 0L) newformula <- "1"
     newformula <- reformulate(newformula, resp, attr(termobj, "intercept"))
     environment(newformula) <- environment(termobj)
-    terms(newformula, specials = names(attr(termobj, "specials")))
+    result <- terms(newformula, specials = names(attr(termobj, "specials")))
+    
+    # Edit the optional attributes
+
+    addindex <- function(index, offset) 
+        # add a non-negative offset to a possibly negative index
+    	ifelse(index < 0, index - offset, 
+    	       ifelse(index == 0, 0, index + offset))
+    	       
+    if (is.logical(i))
+    	i <- which(rep_len(i, length.out = length(attr(termobj, "term.labels"))))
+    	
+    response <- attr(termobj, "response")
+    if (response) 
+	iOpt <- c(if (max(i) > 0) response, # inclusive indexing
+	          addindex(i, max(response)))
+    else 
+	iOpt <- i
+
+    if (!is.null(predvars <- attr(termobj, "predvars"))) 
+	attr(result, "predvars") <- predvars[c(if (max(iOpt) > 0) 1, 
+	                                     addindex(iOpt, 1))]
+    
+    if (!is.null(dataClasses <- attr(termobj, "dataClasses"))) 
+	attr(result, "dataClasses") <- dataClasses[iOpt]
+    
+    result
 }
 
 
@@ -357,7 +406,7 @@ model.frame.default <-
         fcall[[1L]] <- quote(stats::model.frame)
         env <- environment(formula$terms)
 	if (is.null(env)) env <- parent.frame()
-        return(eval(fcall, env, parent.frame()))
+        return(eval(fcall, env)) # 2-arg form as env is an environment
     }
     if(missing(formula)) {
 	if(!missing(data) && inherits(data, "data.frame") &&
@@ -439,6 +488,7 @@ model.frame.default <-
 		    warning(gettextf("variable '%s' is not a factor", nm),
                             domain = NA)
 		else {
+		    ctr <- attr(xi, "contrasts")
 		    xi <- xi[, drop = TRUE] # drop unused levels
                     nxl <- levels(xi)
 		    if(any(m <- is.na(match(nxl, xl))))
@@ -448,14 +498,22 @@ model.frame.default <-
                                      nm, paste(nxl[m], collapse=", ")),
                              domain = NA)
 		    data[[nm]] <- factor(xi, levels=xl, exclude=NULL)
+		    if (!identical(attr(data[[nm]], "contrasts"), ctr))
+		    	warning(gettext(sprintf("contrasts dropped from factor %s", nm), domain = NA),
+		    	        call. = FALSE)
 		}
 	    }
     } else if(drop.unused.levels) {
 	for(nm in names(data)) {
 	    x <- data[[nm]]
 	    if(is.factor(x) &&
-	       length(unique(x[!is.na(x)])) < length(levels(x)))
-		data[[nm]] <- data[[nm]][, drop = TRUE]
+	       length(unique(x[!is.na(x)])) < length(levels(x))) {
+	        ctr <- attr(x, "contrasts")
+		data[[nm]] <- x[, drop = TRUE]
+		if (!identical(attr(data[[nm]], "contrasts"), ctr))
+		    warning(gettext(sprintf("contrasts dropped from factor %s due to missing levels", nm), domain = NA), 
+		            call. = FALSE)
+	    }
 	}
     }
     attr(formula, "dataClasses") <- vapply(data, .MFclass, "")
@@ -495,7 +553,7 @@ model.matrix.default <- function(object, data = environment(object),
             paste(deparse(x, width.cutoff = 500L), collapse = " ")
 	reorder <- match(sapply(attr(t, "variables"), deparse2)[-1L],
                          names(data))
-	if (any(is.na(reorder)))
+	if (anyNA(reorder))
 	    stop("model frame and formula mismatch in model.matrix()")
 	if(!identical(reorder, seq_len(ncol(data))))
 	    data <- data[,reorder, drop=FALSE]
@@ -609,9 +667,9 @@ makepredictcall.default  <- function(var, call)
     xvars <- sapply(attr(Terms, "variables"), deparse2)[-1L]
     if((yvar <- attr(Terms, "response")) > 0) xvars <- xvars[-yvar]
     if(length(xvars)) {
-        xlev <- lapply(m[xvars], 
-        	    function(x) 
-        	    	if(is.factor(x)) levels(x) 
+        xlev <- lapply(m[xvars],
+        	    function(x)
+        	    	if(is.factor(x)) levels(x)
         	    	else if (is.character(x)) levels(as.factor(x))
         	    	else NULL)
         xlev[!vapply(xlev, is.null, NA)]
@@ -645,7 +703,8 @@ get_all_vars <- function(formula, data = NULL, ...)
     env <- environment(formula)
     rownames <- .row_names_info(data, 0L) #attr(data, "row.names")
     varnames <- all.vars(formula)
-    inp <- parse(text=paste("list(", paste(varnames, collapse=","), ")"))
+    inp <- parse(text = paste("list(", paste(varnames, collapse = ","), ")"),
+                 keep.source = FALSE)
     variables <- eval(inp, data, env)
     if(is.null(rownames) && (resp <- attr(formula, "response")) > 0) {
         ## see if we can get rownames from the response

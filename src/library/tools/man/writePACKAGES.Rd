@@ -1,6 +1,6 @@
 % File src/library/tools/man/writePACKAGES.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{write_PACKAGES}
@@ -36,10 +36,10 @@ write_PACKAGES(dir = ".", fields = NULL,
     are used.
   }
   \item{type}{
-    Type of packages: currently source \file{.tar.gz} archives, and Mac
-    or Windows binary (\file{.tgz} or \file{.zip}, respectively)
-    packages are supported.  Defaults to \code{"win.binary"} on Windows
-    and to \code{"source"} otherwise.
+    Type of packages: currently source \file{.tar.\{gz,bz2,xz\}} archives,
+    and OS X or Windows binary (\file{.tgz} or \file{.zip},
+    respectively) packages are supported.  Defaults to
+    \code{"win.binary"} on Windows and to \code{"source"} otherwise.
   }
   \item{verbose}{logical.  Should packages be listed as they are
     processed?}
@@ -66,14 +66,13 @@ write_PACKAGES(dir = ".", fields = NULL,
   available which depends on \samp{R >= 2.11.0}.
 
   Support for repositories with subdirectories and hence for
-  \code{subdirs != FALSE} was added in \R 2.7.0: this depends on
-  recording a \code{"Path"} field in the \file{PACKAGES} file.
+  \code{subdirs != FALSE} depends on recording a \code{"Path"} field in
+  the \file{PACKAGES} file.
 
-  Support for more general file names (e.g. other types of compression)
-  \emph{via} a \code{"File"} field in the \file{PACKAGES} file was added
-  in \R 2.10.0 and can be used by \code{\link{download.packages}}.  If
-  the file names are not of the standard form, use
-  \code{addFiles = TRUE}.
+  Support for more general file names (e.g., other types of compression)
+  \emph{via} a \code{"File"} field in the \file{PACKAGES} file can be
+  used by \code{\link{download.packages}}.  If the file names are not of
+  the standard form, use \code{addFiles = TRUE}.
 
   \code{type = "win.binary"} uses \code{\link{unz}} connections to read
   all \file{DESCRIPTION} files contained in the (zipped) binary packages

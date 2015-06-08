@@ -23,9 +23,13 @@
  *  http://www.r-project.org/Licenses/
  */
 
-#include "tcltk.h" /* declarations of our `public' interface */
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+#define NO_NLS
+#include <Defn.h>
 
-#include <R.h>
+#include "tcltk.h" /* declarations of our `public' interface */
 #include <stdlib.h>
 
 #ifdef ENABLE_NLS
@@ -74,9 +78,11 @@ static int R_eval(ClientData clientData,
     /* Note that expr becomes an EXPRSXP and hence we need the loop
        below (a straight eval(expr, R_GlobalEnv) won't work) */
     {
+	R_Busy(1);
 	int n = length(expr);
 	for(i = 0 ; i < n ; i++)
 	    ans = eval(VECTOR_ELT(expr, i), R_GlobalEnv);
+	R_Busy(0);
     }
 
     /* If return value is of class tclObj, use as Tcl result */
@@ -118,10 +124,13 @@ static int R_call(ClientData clientData,
     sscanf(argv[1], "%p", &fun);
 
     expr = LCONS( (SEXP)fun, alist);
-    expr = LCONS(install("try"), CONS(expr, R_NilValue));
+    SEXP s_try = install("try");
+    expr = LCONS(s_try, CONS(expr, R_NilValue));
 
+    R_Busy(1);
     ans = eval(expr, R_GlobalEnv);
-
+    R_Busy(0);
+	
     /* If return value is of class tclObj, use as Tcl result */
     if (inherits(ans, "tclObj"))
 	Tcl_SetObjResult(interp, (Tcl_Obj*) R_ExternalPtrAddr(ans));
@@ -140,9 +149,12 @@ static int R_call_lang(ClientData clientData,
     sscanf(argv[1], "%p", &expr);
     sscanf(argv[2], "%p", &env);
 
-    expr = LCONS(install("try"), CONS(expr, R_NilValue));
+    SEXP s_try = install("try");
+    expr = LCONS(s_try, CONS(expr, R_NilValue));
 
+    R_Busy(1);
     ans = eval((SEXP)expr, (SEXP)env);
+    R_Busy(0);
 
     /* If return value is of class tclObj, use as Tcl result */
     if (inherits(ans, "tclObj"))

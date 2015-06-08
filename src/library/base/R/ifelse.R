@@ -1,7 +1,7 @@
 #  File src/library/base/R/ifelse.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,21 @@
 
 ifelse <- function (test, yes, no)
 {
-    if(is.atomic(test)) # do not lose attributes
-	storage.mode(test) <- "logical"
+    if(is.atomic(test)) { # do not lose attributes
+        if (typeof(test) != "logical")
+            storage.mode(test) <- "logical"
+        ## quick return for cases where 'ifelse(a, x, y)' is used
+        ## instead of 'if (a) x else y'
+        if (length(test) == 1 && is.null(attributes(test))) {
+            if (is.na(test)) return(NA)
+            else if (test) {
+                if (length(yes) == 1 && is.null(attributes(yes)))
+                    return(yes)
+            }
+            else if (length(no) == 1 && is.null(attributes(no)))
+                return(no)
+        }
+    }
     else ## typically a "class"; storage.mode<-() typically fails
 	test <- if(isS4(test)) as(test, "logical") else as.logical(test)
     ans <- test

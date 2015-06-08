@@ -1,28 +1,24 @@
 # Korean translation for R stats package
 # src/library/stats/po/R-ko.po
-# Copyright (C) 1995-2013 The R Core Team
+# Copyright (C) 1995-2014 The R Core Team
 # This file is distributed under the same license as the R stats package.
-# R Development Translation Team - Korean
-# Chel Hee Lee <gnustats@korea.gnu.org>, 2008-2013.
-# Chel Hee Lee <gnustats@gmail.com>, 2008-2013.
+# Chel Hee Lee <chl948@mail.usask.ca>, 2008-2014.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: R 3.0.0\n"
+"Project-Id-Version: R 3.1.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-06-09 21:53\n"
-"PO-Revision-Date: 2013-03-10 19:59-0600\n"
-"Last-Translator: Chel Hee Lee <gnustats@gmail.com>\n"
-"Language-Team: R Development Translation Teams (Korean) <gnustats@korea.gnu."
-"org>\n"
+"POT-Creation-Date: 2014-11-20 11:48\n"
+"PO-Revision-Date: 2014-03-27 13:33-0600\n"
+"Last-Translator: Chel Hee Lee <chl948@mail.usask.ca>\n"
+"Language-Team:  <chl948@mail.usask.ca>\n"
 "Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Poedit-Language: Korean\n"
-"X-Poedit-Country: KOREA, REPUBLIC OF\n"
-"X-Poedit-SourceCharset: utf-8\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Generator: Poedit 1.5.4\n"
 
 msgid "models are not all fitted to the same number of observations"
 msgstr ""
@@ -113,6 +109,9 @@ msgstr "x$lag은 적어도 1개의 열을 반드시 가지고 있어야 합니�
 
 msgid "can use ci.type=\"ma\" only if first lag is 0"
 msgstr "만약 첫번째 lag이 0인 경우만 ci.type=\"ma\"를 사용할 수 있습니다"
+
+msgid "Page [%d,%d]: i =%s; j =%s"
+msgstr ""
 
 msgid "univariate time series only"
 msgstr "일변량 시계열만 가능합니다"
@@ -289,6 +288,9 @@ msgstr "'order.max'는 반드시 1 보다 크거나 같아야 합니다"
 msgid "'order.max' must be < 'n.used'"
 msgstr "'order.max'는 반드시 'n.used'보다 작아야 합니다"
 
+msgid "zero-variance series"
+msgstr ""
+
 msgid "'n.ahead' must be at least 1"
 msgstr "'n.ahead'는 반드시 적어도 1이어야 합니다"
 
@@ -356,6 +358,12 @@ msgstr "모델의 MA부분은 invertible 합니다"
 msgid "seasonal MA part of model is not invertible"
 msgstr "모델의 계절 MA 부분은 invertible 하지 않습니다"
 
+msgid "NAs in '%s'"
+msgstr "'%s' 내에 NA가 존재합니다"
+
+msgid "invalid 'SSinit'"
+msgstr "유효하지 않은 'SSinit'"
+
 msgid "converting non-invertible initial MA values"
 msgstr ""
 
@@ -402,6 +410,9 @@ msgstr "모든 관측치는 같은 그룹내에 있어야 합니다"
 
 msgid "there must be at least 2 observations in each group"
 msgstr "각 그룹에는 최소한 2개의 관측치들이 있어야 합니다"
+
+msgid "'formula' should be of the form response ~ group"
+msgstr "'formula'는 반드시 response ~ group의 형식을 가져야 합니다"
 
 msgid "'x' must be nonnegative and integer"
 msgstr "'x'는 반드시 음의 값을 가지지 않는 정수이어야 합니다"
@@ -623,8 +634,10 @@ msgstr "'tree'의 구성요소 'height'는 오름차순으로 정렬되어 있�
 msgid "elements of 'k' must be between 1 and %d"
 msgstr "'which'의 모든 구성요소들은 반드시 1과 %d 사이에 있어야 합니다"
 
-msgid "'merge' and 'height' do not fit!"
-msgstr "'merge'와 'height'가 서로 맞아떨어지지 않습니다!"
+msgid ""
+"dendrogram entries must be 1,2,..,%d (in any order), to be coercible to "
+"\"hclust\""
+msgstr ""
 
 msgid "dendrogram node with non-positive #{branches}"
 msgstr "양수가 아닌 #{branches}가 사용된 덴드로그램 노드입니다"
@@ -753,8 +766,9 @@ msgstr "'rate' 또는 'scale' 중 하나만 지정해야 합니다"
 msgid "x[] and prob[] must be equal length vectors."
 msgstr "x[]와 prob[]는 반드시 같은 길이를 가지는 벡터이어야 합니다"
 
-msgid "probabilities cannot be negative nor all 0"
-msgstr "확률값은 음의 값을 가질 수 없고 모두 0일 수도 없습니다"
+#, fuzzy
+msgid "probabilities must be finite, non-negative and not all 0"
+msgstr "확률은 반드시 음의 값을 가져서는 안됩니다"
 
 msgid "'x' must be non-negative"
 msgstr "'x'는 반드시 음수가 아니어야 합니다"
@@ -921,20 +935,14 @@ msgstr "'circular'는 반드시 논리값이고 NA가 아니어야 합니다"
 msgid "length of 'init' must equal length of 'filter'"
 msgstr "'init'의 길이는 반드시 'filter'의 길이와 같아야 합니다"
 
-msgid "'init' must have 1 column"
-msgstr "'init'는 반드시 1개의 열을 가지고 있어야 합니다"
-
-msgid "'init' must have 1 or %d columns"
-msgstr "'init'는 반드시 1개 또는 %d개의 열을 가지고 있어야 합니다"
-
 msgid "'x' must have at least 2 rows and columns"
 msgstr "'x'는 반드시 적어도 2개의 행과 열을 가져야 합니다"
 
 msgid "'x' has entries too large to be integer"
 msgstr ""
 
-msgid "'x' has been rounded to integer: %d"
-msgstr "'x'는 다음의 정수로 반올림 되었습니다: %d"
+msgid "'x' has been rounded to integer: %s"
+msgstr "'x'는 다음과 같은 정수로 반올림 되었습니다: %s"
 
 msgid "if 'x' is not a matrix, 'y' must be given"
 msgstr "만약 'x'가 행렬이 아니라면, 'y'는 반드시 주어져야 합니다"
@@ -1129,6 +1137,10 @@ msgid "observations with zero weight not used for calculating dispersion"
 msgstr ""
 "dispersion을 계산하기 위해서 이용되지 않았던 가중치가 없는 관측치들입니다"
 
+msgid ""
+"The \"ward\" method has been renamed to \"ward.D\"; note new \"ward.D2\""
+msgstr ""
+
 msgid "invalid clustering method"
 msgstr "유효하지 않은 클러스터링 메소드입니다"
 
@@ -1148,12 +1160,6 @@ msgstr ""
 
 msgid "invalid length of members"
 msgstr ""
-
-msgid "invalid dendrogram"
-msgstr "유효하지 않은 덴드로그램입니다"
-
-msgid "'merge' component in dendrogram must be integer"
-msgstr "덴드로그램에서 'merge'요소는 반드시 정수이어야 합니다"
 
 msgid "argument 'x' cannot be coerced to class %s"
 msgstr "인수 'x'를 클래스  %s로 강제형변환을 할 수 없습니다"
@@ -1230,6 +1236,9 @@ msgstr ""
 msgid "number of cluster centres must lie between 1 and nrow(x)"
 msgstr "cluster centres의 개수는 반드시 1과 nrows(x)사이에 있어야 합니다"
 
+msgid "Quick-TRANSfer stage steps exceeded maximum (= %d)"
+msgstr ""
+
 msgid "invalid nrow(x)"
 msgstr "유효하지 않은 nrow(x)입니다"
 
@@ -1257,6 +1266,12 @@ msgstr "'iter.max'는 반드시 양수이어야 합니다"
 
 msgid "must have same number of columns in 'x' and 'centers'"
 msgstr "'x'와 'centers'는 반드시 같은수의 열을 가져야 합니다"
+
+msgid "'x' is a list, so ignoring argument 'g'"
+msgstr ""
+
+msgid "some elements of 'x' are not numeric and will be coerced to numeric"
+msgstr ""
 
 msgid "not enough 'x' data"
 msgstr "충분하지 않은 'x' 데이터입니다"
@@ -1315,6 +1330,9 @@ msgstr "summary.lm(<fake-lm-object>) ... 을 호출합니다"
 msgid "residual degrees of freedom in object suggest this is not an \"lm\" fit"
 msgstr ""
 "객체내의 잔차에 대한 자유도는 \"lm\"을 사용한 적합이 아니라는 것을 의미합니다"
+
+msgid "essentially perfect fit: summary may be unreliable"
+msgstr ""
 
 msgid ""
 "lm object does not have a proper 'qr' component.\n"
@@ -1427,6 +1445,9 @@ msgstr "\"nobs\" 속성은 사용가능하지 않습니다"
 
 msgid "no 'nobs' method is available"
 msgstr "\"nobs\" 메소드는 사용가능하지 않습니다"
+
+msgid "'margin' must contain names or numbers corresponding to 'table'"
+msgstr ""
 
 msgid "'start' and 'table' must be same length"
 msgstr "'start'와 'table'는 반드시 같은 길이이어야 합니다"
@@ -1607,7 +1628,20 @@ msgstr "f.lower = f(lower)의 결과가 NA입니다"
 msgid "f.upper = f(upper) is NA"
 msgstr "f.upper = f(upper)의 결과가 NA입니다"
 
+msgid "invalid 'extendInt'; please report"
+msgstr "'extendInt'가 올바르지 않습니다; 보고해주세요"
+
+msgid "no sign change found in %d iterations"
+msgstr ""
+
+msgid ""
+"did not succeed extending the interval endpoints for f(lower) * f(upper) <= 0"
+msgstr ""
+
 msgid "f() values at end points not of opposite sign"
+msgstr ""
+
+msgid "convergence problem in zero finding:"
 msgstr ""
 
 msgid "'control' argument must be a named list"
@@ -1975,6 +2009,9 @@ msgstr ""
 msgid "invalid 'endrule' argument"
 msgstr "유효하지 않은 'endrule'인자입니다"
 
+msgid ".nknots.smspl() is now exported; use it instead of n.knots()"
+msgstr ""
+
 msgid "invalid 'control.spar'"
 msgstr "유효하지 않은 'control.spar'입니다"
 
@@ -2111,7 +2148,8 @@ msgstr "유효한 step function이 아닙니다"
 msgid "'plot.stepfun' called with wrong type of argument 'x'"
 msgstr ""
 
-msgid "must be 0 or 1"
+#, fuzzy
+msgid "%s must be 0 or 1"
 msgstr "반드시 0 또는 1 이어야 합니다"
 
 msgid "only univariate series are allowed"
@@ -2396,6 +2434,11 @@ msgid "unable to optimize from this starting value"
 msgid_plural "unable to optimize from these starting values"
 msgstr[0] "이 초기값으로부터는 최적화된 솔루션을 찾을 수 없습니다"
 
+#, fuzzy
+msgid "'init' must have %d column"
+msgid_plural "'init' must have 1 or %d columns"
+msgstr[0] "'init'는 반드시 1개의 열을 가지고 있어야 합니다"
+
 msgid "X matrix has rank %d, but only %d observation"
 msgid_plural "X matrix has rank %d, but only %d observations"
 msgstr[0] ""
@@ -2409,10 +2452,9 @@ msgid "%d missing value deleted"
 msgid_plural "%d missing values deleted"
 msgstr[0] ""
 
-#, fuzzy
 msgid "'X' matrix has %d case (row)"
 msgid_plural "'X' matrix has %d cases (rows)"
-msgstr[0] "'X'행렬은 collinear입니다"
+msgstr[0] "'X' 행렬은 %d 개의 케이스들을 가집니다 (행방향)"
 
 msgid "'Y' has %d case (row)"
 msgid_plural "'Y' has %d cases (rows)"
@@ -2469,6 +2511,21 @@ msgstr[0] "NA, NaNs 그리고/또는 Infs를 가지는 %d개의 관측치들은 
 msgid "'start.innov' is too short: need %d point"
 msgid_plural "'start.innov' is too short: need %d points"
 msgstr[0] ""
+
+#~ msgid "'merge' and 'height' do not fit!"
+#~ msgstr "'merge'와 'height'가 서로 맞아떨어지지 않습니다!"
+
+#~ msgid "invalid dendrogram"
+#~ msgstr "유효하지 않은 덴드로그램입니다"
+
+#~ msgid "'merge' component in dendrogram must be integer"
+#~ msgstr "덴드로그램에서 'merge'요소는 반드시 정수이어야 합니다"
+
+#~ msgid "probabilities cannot be negative nor all 0"
+#~ msgstr "확률값은 음의 값을 가질 수 없고 모두 0일 수도 없습니다"
+
+#~ msgid "'init' must have 1 or %d columns"
+#~ msgstr "'init'는 반드시 1개 또는 %d개의 열을 가지고 있어야 합니다"
 
 #~ msgid "'deriv' must be between 0 and 2"
 #~ msgstr "'deriv'는 반드시 0과 2사이에 있어야 합니다"

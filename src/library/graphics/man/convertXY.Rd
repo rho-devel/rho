@@ -1,6 +1,6 @@
 % File src/library/graphics/man/convertXY.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2008 R Core Team
+% Copyright 2008-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{convertXY}
@@ -37,7 +37,7 @@ grconvertY(y, from = "user", to = "user")
 
   Device coordinates are those in which the device works: they are
   usually in pixels where that makes sense and in big points (1/72 inch)
-  otherwise (e.g. \code{\link{pdf}} and \code{\link{postscript}}).
+  otherwise (e.g., \code{\link{pdf}} and \code{\link{postscript}}).
 }
 \value{
   A numeric vector of the same length as the input.

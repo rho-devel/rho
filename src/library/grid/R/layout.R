@@ -1,7 +1,7 @@
 #  File src/library/grid/R/layout.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -142,8 +142,8 @@ layout.respect <- function(lay) {
 # Public constructor function
 ####################
 grid.layout <- function (nrow = 1, ncol = 1,
-                         widths = unit(rep(1, ncol), "null"),
-                         heights = unit(rep(1, nrow), "null"),
+                         widths = unit(rep_len(1, ncol), "null"),
+                         heights = unit(rep_len(1, nrow), "null"),
                          default.units = "null",
                          respect = FALSE,
                          just="centre")

@@ -1,6 +1,6 @@
 % File src/library/utils/man/create.post.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{create.post}
@@ -62,7 +62,7 @@ create.post(instructions = character(), description = "post",
       other Unix-alikes: if that fails it tries the browser set by
       \env{R_BROWSER}).
 
-      This is the \sQuote{factory-fresh} default method as from \R 2.13.0.
+      This is the \sQuote{factory-fresh} default method.
     }
 
     \item{\code{mailx}}{(Unix-alikes only.)

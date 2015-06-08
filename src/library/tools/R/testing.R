@@ -1,7 +1,7 @@
 #  File src/library/tools/R/testing.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2013 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 # NB: also copyright date in Usage.
 #
@@ -21,9 +21,10 @@
 ## functions principally for testing R and packages
 
 massageExamples <-
-    function(pkg, files, outFile = stdout(), use_gct = FALSE, addTiming = FALSE)
+    function(pkg, files, outFile = stdout(), use_gct = FALSE,
+             addTiming = FALSE, ..., commentDonttest = TRUE)
 {
-    if(file_test("-d", files[1L])) {
+    if(dir.exists(files[1L])) {
         old <- Sys.setlocale("LC_COLLATE", "C")
         files <- sort(Sys.glob(file.path(files, "*.R")))
         Sys.setlocale("LC_COLLATE", old)
@@ -32,11 +33,22 @@ massageExamples <-
     if(is.character(outFile)) {
         out <- file(outFile, "wt")
         on.exit(close(out))
-    } else out <- outFile
+        cntFile <- paste0(outFile, "-cnt")
+    } else {
+        out <- outFile
+        cntFile <- NULL
+    }
+
+    count <- 0L # of files using \donttest
 
     lines <- c(paste0('pkgname <- "', pkg, '"'),
                'source(file.path(R.home("share"), "R", "examples-header.R"))',
-               if (use_gct) "gctorture(TRUE)",
+               if (use_gct) {
+                   gct_n <- as.integer(Sys.getenv("_R_CHECK_GCT_N_", 0))
+                   if(!is.na(gct_n) && gct_n > 0L)
+                       sprintf("gctorture2(%s)", gct_n)
+                   else "gctorture(TRUE)"
+               },
                "options(warn = 1)")
     cat(lines, sep = "\n", file = out)
     if(.Platform$OS.type == "windows")
@@ -91,18 +103,24 @@ massageExamples <-
 
         cat("### * ", nm, "\n\n", sep = "", file = out)
         cat("flush(stderr()); flush(stdout())\n\n", file = out)
-        dont_test <- FALSE
         if(addTiming)
             cat("base::assign(\".ptime\", proc.time(), pos = \"CheckExEnv\")\n",
                 file = out)
-        for (line in lines) {
-            if(any(grepl("^[[:space:]]*## No test:", line, perl = TRUE, useBytes = TRUE)))
-                dont_test <- TRUE
-            if(!dont_test) cat(line, "\n", sep = "", file = out)
-            if(any(grepl("^[[:space:]]*## End\\(No test\\)",
-                         line, perl = TRUE, useBytes = TRUE)))
-                dont_test <- FALSE
-        }
+        if (commentDonttest) {
+            dont_test <- FALSE
+            for (line in lines) {
+                if(any(grepl("^[[:space:]]*## No test:", line,
+                             perl = TRUE, useBytes = TRUE))) {
+                    dont_test <- TRUE
+                    count <- count + 1L
+                }
+                if(!dont_test) cat(line, "\n", sep = "", file = out)
+                if(any(grepl("^[[:space:]]*## End\\(No test\\)", line,
+                             perl = TRUE, useBytes = TRUE)))
+                    dont_test <- FALSE
+            }
+        } else
+            for (line in lines) cat(line, "\n", sep = "", file = out)
 
         if(addTiming) {
             cat("base::assign(\".dptime\", (proc.time() - get(\".ptime\", pos = \"CheckExEnv\")), pos = \"CheckExEnv\")\n", file = out)
@@ -117,11 +135,13 @@ massageExamples <-
 
     cat(readLines(file.path(R.home("share"), "R", "examples-footer.R")),
         sep = "\n", file = out)
+
+    if(count && !is.null(cntFile)) writeLines(as.character(count), cntFile)
 }
 
 ## compares 2 files
 Rdiff <- function(from, to, useDiff = FALSE, forEx = FALSE,
-                  nullPointers=TRUE, Log = FALSE)
+                  nullPointers = TRUE, Log = FALSE)
 {
     clean <- function(txt)
     {
@@ -150,10 +170,7 @@ Rdiff <- function(from, to, useDiff = FALSE, forEx = FALSE,
         if (length(broken)) txt <- txt[-(broken + 1)]
         txt <- sub("^(([[:digit:]]+: )?In|Error in) .* :[[:space:]]*", "\\1 ? : ", txt)
         ## regularize fancy quotes.  First UTF-8 ones:
-        txt <- gsub("(\xe2\x80\x98|\xe2\x80\x99)", "'", txt,
-                      perl = TRUE, useBytes = TRUE)
-        txt <- gsub("(\xe2\x80\x9c|\xe2\x80\x9d)", '"', txt,
-                      perl = TRUE, useBytes = TRUE)
+        txt <- .canonicalize_quotes(txt)
         if(.Platform$OS.type == "windows") {
             ## not entirely safe ...
             txt <- gsub("(\x91|\x92)", "'", txt, perl = TRUE, useBytes = TRUE)
@@ -161,7 +178,7 @@ Rdiff <- function(from, to, useDiff = FALSE, forEx = FALSE,
             txt <- txt[!grepl('options(pager = "console")', txt,
                               fixed = TRUE, useBytes = TRUE)]
         }
-        pat <- '(^Time |^Loading required package|^Package [A-Za-z][A-Za-z0-9]+ loaded|^<(environment|promise|pointer|bytecode):|^/CreationDate |^/ModDate |^/Producer|CXXR )'
+        pat <- '(^Time |^Loading required package|^Package [A-Za-z][A-Za-z0-9]+ loaded|^<(environment|promise|pointer|bytecode):|^/CreationDate |^/ModDate |^/Producer |CXXR |^End.Don\'t show)'
         txt[!grepl(pat, txt, perl = TRUE, useBytes = TRUE)]
     }
     clean2 <- function(txt)
@@ -180,8 +197,12 @@ Rdiff <- function(from, to, useDiff = FALSE, forEx = FALSE,
         right <- clean2(right)
     }
     if (!useDiff && (length(left) == length(right))) {
-        bleft <- gsub("[[:space:]]+", " ", left)
-        bright <- gsub("[[:space:]]+", " ", right)
+        ## The idea is to emulate diff -b, as documented by POSIX:
+        ## http://pubs.opengroup.org/onlinepubs/9699919799/utilities/diff.html
+        bleft <- gsub("[[:space:]]*$", "", left)
+        bright <- gsub("[[:space:]]*$", "", right)
+        bleft <- gsub("[[:space:]]+", " ", bleft)
+        bright <- gsub("[[:space:]]+", " ", bright)
         if(all(bleft == bright))
             return(if(Log) list(status = 0L, out = character()) else 0L)
         cat("\n")
@@ -220,7 +241,7 @@ testInstalledPackages <-
     function(outDir = ".", errorsAreFatal = TRUE,
              scope = c("both", "base", "recommended"),
              types = c("examples", "tests", "vignettes"),
-             srcdir = NULL, Ropts = "")
+             srcdir = NULL, Ropts = "", ...)
 {
     ow <- options(warn = 1)
     on.exit(ow)
@@ -232,16 +253,38 @@ testInstalledPackages <-
         pkgs <- known_packages$base
     if (scope %in% c("both", "recommended"))
         pkgs <- c(pkgs, known_packages$recommended)
-    ## It *should* be an error if any of these are missing
-    for (pkg in pkgs) {
-        if(is.null(srcdir) && pkg %in% known_packages$base)
-            srcdir <- R.home("tests/Examples")
-        res <- testInstalledPackage(pkg, .Library, outDir, types, srcdir, Ropts)
-        if (res) {
-            status <- 1L
-            msg <- gettextf("testing '%s' failed", pkg)
-            if (errorsAreFatal) stop(msg, domain = NA, call. = FALSE)
-            else warning(msg, domain = NA, call. = FALSE, immediate. = TRUE)
+    mc.cores <- as.integer(Sys.getenv("TEST_MC_CORES", 1L))
+    if (.Platform$OS.type != "windows" &&
+        !is.na(mc.cores) && mc.cores > 1L) {
+        do_one <- function(pkg) {
+            if(is.null(srcdir) && pkg %in% known_packages$base)
+                srcdir <- R.home("tests/Examples")
+            testInstalledPackage(pkg, .Library, outDir, types, srcdir, Ropts, ...)
+        }
+        res <- parallel::mclapply(pkgs, do_one, mc.cores = mc.cores,
+                                  mc.preschedule = FALSE)
+        res <- unlist(res) != 0L
+        if (any(res)) {
+            for(i in which(res))
+                warning(gettextf("testing '%s' failed", pkgs[i]),
+                        domain = NA, call. = FALSE, immediate. = TRUE)
+            if (errorsAreFatal)
+                stop(sprintf(ngettext(sum(res), "%d of the package tests failed",
+                                      "%d of the package tests failed",
+                                       domain = "R-tools"), sum(res)),
+                     domain = NA, call. = FALSE)
+        }
+    } else {
+        for (pkg in pkgs) {
+            if(is.null(srcdir) && pkg %in% known_packages$base)
+                srcdir <- R.home("tests/Examples")
+            res <- testInstalledPackage(pkg, .Library, outDir, types, srcdir, Ropts, ...)
+            if (res) {
+                status <- 1L
+                msg <- gettextf("testing '%s' failed", pkg)
+                if (errorsAreFatal) stop(msg, domain = NA, call. = FALSE)
+                else warning(msg, domain = NA, call. = FALSE, immediate. = TRUE)
+            }
         }
     }
     invisible(status)
@@ -250,19 +293,18 @@ testInstalledPackages <-
 testInstalledPackage <-
     function(pkg, lib.loc = NULL, outDir = ".",
              types = c("examples", "tests", "vignettes"),
-             srcdir = NULL, Ropts = "")
+             srcdir = NULL, Ropts = "", ...)
 {
-    types <- pmatch(types, c("examples", "tests", "vignettes"))
+    types <- match.arg(types, c("examples", "tests", "vignettes"), several.ok=TRUE)
     pkgdir <- find.package(pkg, lib.loc)
-    exdir <- file.path(pkgdir, "R-ex")
     owd <- setwd(outDir)
     on.exit(setwd(owd))
-    strict <- as.logical(Sys.getenv("R_STRICT_PACKAGE_CHECK", "FALSE"))
+    strict <- as.logical(Sys.getenv("R_STRICT_PACKAGE_CHECK", FALSE))
 
-    if (1 %in% types) {
+    if ("examples" %in% types) {
         message(gettextf("Testing examples for package %s", sQuote(pkg)),
                 domain = NA)
-        Rfile <- .createExdotR(pkg, pkgdir, silent = TRUE)
+        Rfile <- .createExdotR(pkg, pkgdir, silent = TRUE, ...)
         if (length(Rfile)) {
             outfile <- paste0(pkg, "-Ex.Rout")
             failfile <- paste(outfile, "fail", sep = "." )
@@ -311,7 +353,7 @@ testInstalledPackage <-
     }
 
     ## FIXME merge with code in .runPackageTests
-    if (2 %in% types && file_test("-d", d <- file.path(pkgdir, "tests"))) {
+    if ("tests" %in% types && dir.exists(d <- file.path(pkgdir, "tests"))) {
         this <- paste(pkg, "tests", sep = "-")
         unlink(this, recursive = TRUE)
         dir.create(this)
@@ -346,7 +388,7 @@ testInstalledPackage <-
         setwd(owd)
     }
 
-    if (3 %in% types && file_test("-d", d <- file.path(pkgdir, "doc"))) {
+    if ("vignettes" %in% types && dir.exists(file.path(pkgdir, "doc"))) {
         message(gettextf("Running vignettes for package %s", sQuote(pkg)),
                 domain = NA)
         checkVignettes(pkg, lib.loc, latex = FALSE, weave =TRUE)
@@ -366,7 +408,8 @@ testInstalledPackage <-
     q("no", status = status)
 }
 
-.runPackageTests <- function(use_gct = FALSE, use_valgrind = FALSE, Log = NULL)
+.runPackageTests <-
+    function(use_gct = FALSE, use_valgrind = FALSE, Log = NULL, ...)
 {
     if (!is.null(Log)) Log <- file(Log, "wt")
     WINDOWS <- .Platform$OS.type == "windows"
@@ -464,12 +507,12 @@ testInstalledPackage <-
     return(nfail)
 }
 
+## Defaults for commenting are the same as per-3.2.0 version.
 .createExdotR <-
-    function(pkg, pkgdir, silent = FALSE, use_gct = FALSE, addTiming = FALSE)
+    function(pkg, pkgdir, silent = FALSE, use_gct = FALSE, addTiming = FALSE,
+             ..., commentDontrun = TRUE, commentDonttest = TRUE)
 {
     Rfile <- paste0(pkg, "-Ex.R")
-    ## might be zipped:
-    exdir <- file.path(pkgdir, "R-ex")
 
     db <- Rd_db(basename(pkgdir), lib.loc = dirname(pkgdir))
     if (!length(db)) {
@@ -480,7 +523,7 @@ testInstalledPackage <-
                          appendLF = FALSE, domain = NA)
     files <- names(db)
     if (pkg == "grDevices")
-        files <- files[!grepl("/unix|windows/", files)]
+        files <- files[!grepl("^(unix|windows)/", files)]
     filedir <- tempfile()
     dir.create(filedir)
     on.exit(unlink(filedir, recursive = TRUE))
@@ -489,7 +532,8 @@ testInstalledPackage <-
         nm <- sub("\\.[Rr]d$", "", basename(f))
         Rd2ex(db[[f]],
               file.path(filedir, paste(nm, "R", sep = ".")),
-              defines = NULL)
+              defines = NULL, commentDontrun = commentDontrun,
+              commentDonttest = commentDonttest)
         cnt <- cnt + 1L
         if(!silent && cnt %% 10L == 0L)
             message(".", appendLF = FALSE, domain = NA)
@@ -498,7 +542,8 @@ testInstalledPackage <-
     nof <- length(Sys.glob(file.path(filedir, "*.R")))
     if(!nof) return(invisible(NULL))
 
-    massageExamples(pkg, filedir, Rfile, use_gct, addTiming)
+    massageExamples(pkg, filedir, Rfile, use_gct, addTiming,
+                    commentDonttest = commentDonttest, ...)
     invisible(Rfile)
 }
 
@@ -700,7 +745,6 @@ detachPackages <- function(pkgs, verbose = TRUE)
         do_exit(1L)
     }
 
-
     if (length(args) < 2L) {
         Usage()
         do_exit(1L)
@@ -713,4 +757,5 @@ detachPackages <- function(pkgs, verbose = TRUE)
     status <- Rdiff(left, args[2L], useDiff = TRUE)
     if(status) status <- exitstatus
     do_exit(status)
-}
+} ## .Rdiff()
+

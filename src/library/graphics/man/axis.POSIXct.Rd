@@ -1,6 +1,6 @@
 % File src/library/graphics/man/axis.POSIXct.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{axis.POSIXct}
@@ -37,18 +37,12 @@ axis.Date(side, x, at, format, labels = TRUE, \dots)
   \code{labels = FALSE}.
 
   The date-times for a \code{"POSIXct"} input are interpreted in the
-  timezone give by the \code{"tzone"} attribute if there is one,
-  otherwise the current timezone.
+  time zone give by the \code{"tzone"} attribute if there is one,
+  otherwise the current time zone.
 
   The way the date-times are rendered (especially month names) is
   controlled by the locale setting of category \code{"LC_TIME"} (see
-  \code{\link{Sys.setlocale}}.
-}
-\note{
-  These functions are the workhorse for methods for \code{\link{Axis}}.
-  Prior to \R 2.12.0 there were also \code{plot} methods for the
-  date-time classes, but the default method has also handled those for a
-  long time.
+  \code{\link{Sys.setlocale}}).
 }
 \value{
   The locations on the axis scale at which tick marks were drawn.

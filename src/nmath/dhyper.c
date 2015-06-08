@@ -4,7 +4,7 @@
  *    October 23, 2000.
  *
  *  Merge in to R:
- *	Copyright (C) 2000, 2001 The R Core Team
+ *	Copyright (C) 2000-2014 The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,13 +53,13 @@ double dhyper(double x, double r, double b, double n, int give_log)
 
     if (R_D_negInonint(r) || R_D_negInonint(b) || R_D_negInonint(n) || n > r+b)
 	ML_ERR_return_NAN;
-    if (R_D_negInonint(x))
-	return(R_D__0);
+    if(x < 0) return(R_D__0);
+    R_D_nonint_check(x);// incl warning
 
-    x = R_D_forceint(x);
-    r = R_D_forceint(r);
-    b = R_D_forceint(b);
-    n = R_D_forceint(n);
+    x = R_forceint(x);
+    r = R_forceint(r);
+    b = R_forceint(b);
+    n = R_forceint(n);
 
     if (n < x || r < x || n - x > b) return(R_D__0);
     if (n == 0) return((x == 0) ? R_D__1 : R_D__0);

@@ -42,7 +42,7 @@ LIBOBJECTS = $(LIBSOURCES:.f=.o) @USE_VECLIB_G95FIX_TRUE@ vecLibg95f.o vecLibg95
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 DISTFILES = \
-	README R.patch Makefile.in Makefile.win \
+	LICENSE README R.patch Makefile.in Makefile.win \
 	Rlapackrc.rc dllversion.rc \
 	$(HEADERS) Lapack.c init_win.c \
 	vecLibg95c.c vecLibg95f.f \
@@ -53,7 +53,7 @@ Rlapack_la = libRlapack$(DYLIB_EXT)
 lapack_la_OBJECTS = $(OBJECTS)
 ## Used for passing '+s' to SHLIB_LINK on HP-UX.
 lapack_la_LDFLAGS = @LAPACK_LDFLAGS@
-lapack_la_LIBADD = $(LIBR) @DYLIB_UNDEFINED_ALLOWED_FALSE@ $(LIBINTL)
+lapack_la_LIBADD = $(LIBR1) @DYLIB_UNDEFINED_ALLOWED_FALSE@ $(LIBINTL)
 
 Rlapack_la_OBJECTS = $(LIBOBJECTS)
 ## This used to skip FLIBS, but that relied on all the functions
@@ -66,7 +66,7 @@ ALL_CFLAGS = $(ALL_CFLAGS_LO)
 ALL_FFLAGS = $(ALL_FFLAGS_LO)
 
 
-all: Makefile Makedeps R
+all: R
 
 Makefile: $(srcdir)/Makefile.in \
   $(top_builddir)/config.status \
@@ -82,8 +82,7 @@ DLAMC_FFLAGS=$(FPICFLAGS) $(SHLIB_FFLAGS) @SAFE_FFLAGS@
 dlamch.o: dlamch.f
 	$(F77) $(DLAMC_FFLAGS) -c $< -o $@
 
-R: Makefile
-	@$(MAKE) Makedeps
+R: Makedeps
 @USE_EXTERNAL_LAPACK_FALSE@	@$(MAKE) rhome="$(abs_top_builddir)" $(Rlapack_la) Rlapack_install
 	@$(MAKE) $(lapack_la)
 

@@ -1,6 +1,6 @@
 % File src/library/utils/man/available.packages.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{available.packages}
@@ -31,6 +31,8 @@ available.packages(contriburl =
   \item{type}{
     character string, indicate which type of packages: see
     \code{\link{install.packages}}.
+  
+    If \code{type = "both"} this will use the source repository.
   }
   \item{fields}{
     a character vector giving the fields to extract from
@@ -43,14 +45,14 @@ available.packages(contriburl =
   }
 }
 \details{
-  The list is either copied from a local mirror (specified by a
+  The list of packages is either copied from a local mirror (specified by a
   \samp{file://} URI) or downloaded.  If downloaded, the list is cached
   for the \R session in a per-repository file in \code{\link{tempdir}()}
   with a name like
 \preformatted{repos_http\%3a\%2f\%2fcran.r-project.org\%2fsrc\%2fcontrib.rds}
 
-  By default, the report includes only packages whose version and OS
-  requirements are met by the running version of \R, and only gives
+  By default, the return value includes only packages whose version and
+  OS requirements are met by the running version of \R, and only gives
   information on the latest versions of packages.
 
   Argument \code{filters} can be used to select which of the packages on the
@@ -62,21 +64,21 @@ available.packages(contriburl =
 
   The built-in filters are
   \describe{
-    \item{\code{"R_version"}}{exclude packages whose \R version
-      requirements are not met}
-    \item{\code{"OS_type"}}{exclude packages whose OS requirement is
+    \item{\code{"R_version"}}{Exclude packages whose \R version
+      requirements are not met.}
+    \item{\code{"OS_type"}}{Exclude packages whose OS requirement is
       incompatible with this version of \R: that is exclude
       Windows-only packages on a Unix-alike platform
       and \emph{vice versa}.}
-    \item{\code{"subarch"}}{for binary packages, exclude those with
+    \item{\code{"subarch"}}{For binary packages, exclude those with
       compiled code that is not available for the current
-      sub-architecture, e.g. exclude packages only compiled for 32-bit
-      Windows on a 64-bit Windows \R.}
-    \item{\code{"duplicates"}}{only report the latest version where more
+      sub-architecture, e.g.\sspace{}exclude packages only compiled for
+      32-bit Windows on a 64-bit Windows \R.}
+    \item{\code{"duplicates"}}{Only report the latest version where more
       than one version is available, and only report the first-named
       repository (in \code{contriburl}) with the latest version if that
       is in more than one repository.}
-    \item{\code{"license/FOSS"}}{include only packages for which
+    \item{\code{"license/FOSS"}}{Include only packages for which
       installation can proceed solely based on packages which can be
       verified as Free or Open Source Software (FOSS, e.g.,
       \url{http://en.wikipedia.org/wiki/FOSS}) employing the available
@@ -86,21 +88,24 @@ available.packages(contriburl =
       Note that this does depend on the repository supplying license
       information.
     }
-    \item{\code{"license/restricts_use"}}{include only packages for
+    \item{\code{"license/restricts_use"}}{Include only packages for
       which installation can proceed solely based on packages which are
-      guaranteed not to restrict use.
+      known not to restrict use.
     }
-    \item{\code{"CRAN"}}{use CRAN versions in preference to versions
+    \item{\code{"CRAN"}}{Use CRAN versions in preference to versions
       from other repositories (even if these have a higher version
-      number).}
+      number).  This needs to be applied \emph{before} the default
+      \code{"duplicates"} filter, so cannot be used with
+      \code{add = TRUE}.
+    }
   }
-  If all the filters are from this set they can be specified as a
+  If all the filters are from this set, then they can be specified as a
   character vector; otherwise \code{filters} should be a list with
   elements which are character strings, user-defined functions or
   \code{add = TRUE} (see below).
 
   User-defined filters are functions which take a single argument, a
-  matrix of the form returned by by \code{available.packages}, and
+  matrix of the form returned by \code{available.packages}, and
   return a matrix consisting of a subset of the rows of the argument.
 
   The special \sQuote{filter} \code{add = TRUE} appends the other
@@ -128,10 +133,15 @@ available.packages(contriburl =
   set up a repository.
 }
 \examples{\dontrun{
-## restrict install.packages() (etc) to known-to-be-FOSS packages
+## Restrict install.packages() (etc) to known-to-be-FOSS packages
 options(available_packages_filters =
   c("R_version", "OS_type", "subarch", "duplicates", "license/FOSS"))
 ## or
 options(available_packages_filters = list(add = TRUE, "license/FOSS"))
+
+## Give priority to released versions on CRAN, rather than development
+## versions on Omegahat, R-Forge etc.
+options(available_packages_filters =
+     c("R_version", "OS_type", "subarch", "CRAN", "duplicates"))
 }}
 \keyword{utilities}

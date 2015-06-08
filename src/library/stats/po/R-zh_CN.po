@@ -7,11 +7,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.2.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-06-09 21:53\n"
+"POT-Creation-Date: 2014-11-20 11:48\n"
 "PO-Revision-Date: 2005-04-08 08:37+0000\n"
 "Last-Translator: 陈斐 <feic@normipaiva.com>\n"
 "Language-Team: Chinese\n"
-"Language: \n"
+"Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -100,6 +100,9 @@ msgstr "x$lag至少需要有一列"
 
 msgid "can use ci.type=\"ma\" only if first lag is 0"
 msgstr "只有在第一个滯後为0时才能用ci.type=\"ma\" "
+
+msgid "Page [%d,%d]: i =%s; j =%s"
+msgstr ""
 
 msgid "univariate time series only"
 msgstr "只适用于单变量时间序列"
@@ -270,6 +273,9 @@ msgstr "'order.max'必需大于等于一"
 msgid "'order.max' must be < 'n.used'"
 msgstr "'order.max'必需小于'n.used'"
 
+msgid "zero-variance series"
+msgstr ""
+
 msgid "'n.ahead' must be at least 1"
 msgstr "'n.ahead'至少必需为一"
 
@@ -333,6 +339,14 @@ msgstr "模型的MA部分非可逆"
 msgid "seasonal MA part of model is not invertible"
 msgstr "模型季節性的MA部分非可逆"
 
+#, fuzzy
+msgid "NAs in '%s'"
+msgstr "'x'里不能有NA"
+
+#, fuzzy
+msgid "invalid 'SSinit'"
+msgstr "'nb'不对"
+
 msgid "converting non-invertible initial MA values"
 msgstr "转换非可逆的MA初始值"
 
@@ -377,6 +391,10 @@ msgstr "所有的观察量都属于同一个组"
 
 msgid "there must be at least 2 observations in each group"
 msgstr "每组至少需要有两个观察量"
+
+#, fuzzy
+msgid "'formula' should be of the form response ~ group"
+msgstr "公式'%s'的形式必需是'~expr'"
 
 msgid "'x' must be nonnegative and integer"
 msgstr "'x'必需是非负的整数"
@@ -593,8 +611,10 @@ msgstr "'tree'里的'height'组件没有排序(由小到大)"
 msgid "elements of 'k' must be between 1 and %d"
 msgstr "'k'的单元必需在一和%d之间"
 
-msgid "'merge' and 'height' do not fit!"
-msgstr "'merge'和'height'不合!"
+msgid ""
+"dendrogram entries must be 1,2,..,%d (in any order), to be coercible to "
+"\"hclust\""
+msgstr ""
 
 msgid "dendrogram node with non-positive #{branches}"
 msgstr "系統樹圖節點有非正#{分支}"
@@ -722,8 +742,9 @@ msgstr "'rate'和'scale'两个中只能设定其中一个"
 msgid "x[] and prob[] must be equal length vectors."
 msgstr "x[]和prob[]必需是长度相等的矢量。"
 
-msgid "probabilities cannot be negative nor all 0"
-msgstr "機率不能是负数，也不能全都是零。"
+#, fuzzy
+msgid "probabilities must be finite, non-negative and not all 0"
+msgstr "機率必需为非负值。"
 
 msgid "'x' must be non-negative"
 msgstr "'x'必需为非负数"
@@ -875,19 +896,14 @@ msgstr "'circular'必需是逻辑值，不能是NA"
 msgid "length of 'init' must equal length of 'filter'"
 msgstr "'init'的长度必需等于'filter'的长度"
 
-msgid "'init' must have 1 column"
-msgstr "'init'必需有一个列"
-
-msgid "'init' must have 1 or %d columns"
-msgstr "'init'必需有一个或%d个列"
-
 msgid "'x' must have at least 2 rows and columns"
 msgstr "'x'至少必需有两行和两列"
 
 msgid "'x' has entries too large to be integer"
 msgstr "'x'的正数值太大"
 
-msgid "'x' has been rounded to integer: %d"
+#, fuzzy
+msgid "'x' has been rounded to integer: %s"
 msgstr "'x'被捨入成正数：%d"
 
 msgid "if 'x' is not a matrix, 'y' must be given"
@@ -1076,6 +1092,10 @@ msgstr "模型拟合时没有用同样大小的数据集"
 msgid "observations with zero weight not used for calculating dispersion"
 msgstr "计算离散度时零权数的观察量略过不用"
 
+msgid ""
+"The \"ward\" method has been renamed to \"ward.D\"; note new \"ward.D2\""
+msgstr ""
+
 msgid "invalid clustering method"
 msgstr "群集方法不对"
 
@@ -1093,12 +1113,6 @@ msgstr "用群集时必需有n >= 2的对象"
 
 msgid "invalid length of members"
 msgstr "成员长度不对"
-
-msgid "invalid dendrogram"
-msgstr "系統樹圖不对"
-
-msgid "'merge' component in dendrogram must be integer"
-msgstr "系統樹圖的'merge'组件必需是整数"
 
 msgid "argument 'x' cannot be coerced to class %s"
 msgstr "无法将'x'参数強制转换成%s类别"
@@ -1175,6 +1189,9 @@ msgstr "空的群集: 请试试更精确一点的初始中心集"
 msgid "number of cluster centres must lie between 1 and nrow(x)"
 msgstr "群集中心数目必需在一和nrow(x) 这间"
 
+msgid "Quick-TRANSfer stage steps exceeded maximum (= %d)"
+msgstr ""
+
 msgid "invalid nrow(x)"
 msgstr "nrow(x)不对"
 
@@ -1201,6 +1218,12 @@ msgstr "'iter.max'必需是正数"
 
 msgid "must have same number of columns in 'x' and 'centers'"
 msgstr "'x'和'centers'的列数必需相等"
+
+msgid "'x' is a list, so ignoring argument 'g'"
+msgstr ""
+
+msgid "some elements of 'x' are not numeric and will be coerced to numeric"
+msgstr ""
 
 msgid "not enough 'x' data"
 msgstr "'x'数据不够"
@@ -1256,6 +1279,10 @@ msgstr "调用summary.lm(<fake-lm-object>) ..."
 
 msgid "residual degrees of freedom in object suggest this is not an \"lm\" fit"
 msgstr "对象的残差自由度表明这不是\"lm\" 拟合"
+
+#, fuzzy
+msgid "essentially perfect fit: summary may be unreliable"
+msgstr "对几乎是完全拟合进行ANOVA F-检验的结果不会可靠"
 
 msgid ""
 "lm object does not have a proper 'qr' component.\n"
@@ -1367,6 +1394,9 @@ msgstr "没有\"nobs\"这个属性"
 
 msgid "no 'nobs' method is available"
 msgstr "没有适用于'nobs'的方法"
+
+msgid "'margin' must contain names or numbers corresponding to 'table'"
+msgstr ""
 
 msgid "'start' and 'table' must be same length"
 msgstr "'start'和'table'的长度必需相等"
@@ -1543,8 +1573,24 @@ msgstr "f.lower = f(lower)的值为NA"
 msgid "f.upper = f(upper) is NA"
 msgstr "f.upper = f(upper)的值为NA "
 
+#, fuzzy
+msgid "invalid 'extendInt'; please report"
+msgstr "'method'参数不对"
+
+#, fuzzy
+msgid "no sign change found in %d iterations"
+msgstr "%d迭代仍没有聚合"
+
+msgid ""
+"did not succeed extending the interval endpoints for f(lower) * f(upper) <= 0"
+msgstr ""
+
 msgid "f() values at end points not of opposite sign"
 msgstr "位于极点边的f()值之正负号不相反"
+
+#, fuzzy
+msgid "convergence problem in zero finding:"
+msgstr "可能遇到了收斂问题：optim信息code=%d"
 
 msgid "'control' argument must be a named list"
 msgstr "'control'参数必需是串列"
@@ -1904,6 +1950,9 @@ msgstr "不能平滑NA值"
 msgid "invalid 'endrule' argument"
 msgstr "'endrule'参数不对"
 
+msgid ".nknots.smspl() is now exported; use it instead of n.knots()"
+msgstr ""
+
 msgid "invalid 'control.spar'"
 msgstr "'control.spar'不对"
 
@@ -2039,7 +2088,8 @@ msgstr "步驟函数不对"
 msgid "'plot.stepfun' called with wrong type of argument 'x'"
 msgstr "調用'plot.stepfun'时参数'x'的种类不对"
 
-msgid "must be 0 or 1"
+#, fuzzy
+msgid "%s must be 0 or 1"
 msgstr "必需是零或一"
 
 msgid "only univariate series are allowed"
@@ -2312,6 +2362,11 @@ msgid "unable to optimize from this starting value"
 msgid_plural "unable to optimize from these starting values"
 msgstr[0] "无法用这些初始值进行最佳化运算"
 
+#, fuzzy
+msgid "'init' must have %d column"
+msgid_plural "'init' must have 1 or %d columns"
+msgstr[0] "'init'必需有一个列"
+
 msgid "X matrix has rank %d, but only %d observation"
 msgid_plural "X matrix has rank %d, but only %d observations"
 msgstr[0] "X矩阵的秩为%d, 但只有%d个观察量"
@@ -2387,6 +2442,21 @@ msgstr[0] "删除了含NA, NaN或Inf的%d个观察量"
 msgid "'start.innov' is too short: need %d point"
 msgid_plural "'start.innov' is too short: need %d points"
 msgstr[0] "'start.innov'太短了，需要%d个点"
+
+#~ msgid "'merge' and 'height' do not fit!"
+#~ msgstr "'merge'和'height'不合!"
+
+#~ msgid "invalid dendrogram"
+#~ msgstr "系統樹圖不对"
+
+#~ msgid "'merge' component in dendrogram must be integer"
+#~ msgstr "系統樹圖的'merge'组件必需是整数"
+
+#~ msgid "probabilities cannot be negative nor all 0"
+#~ msgstr "機率不能是负数，也不能全都是零。"
+
+#~ msgid "'init' must have 1 or %d columns"
+#~ msgstr "'init'必需有一个或%d个列"
 
 #~ msgid "'deriv' must be between 0 and 2"
 #~ msgstr "'deriv'必需在零和二之间"

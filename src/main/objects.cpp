@@ -90,7 +90,7 @@ static RObject* GetObject(ClosureContext *cptr)
     {
 	const PairList* pargs = cptr->promiseArgs();
 	if (!pargs)
-	    Rf_error(_("generic function must have at least one argument"));
+	    return R_NilValue;
 	return forceIfPromise(pargs->car());
     }
 }

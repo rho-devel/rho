@@ -1,6 +1,6 @@
 % File src/library/base/man/options.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2013 R Core Team
+% Copyright 1995-2015 R Core Team
 % Distributed under GPL 2 or later
 
 \name{options}
@@ -8,6 +8,13 @@
 \alias{.Options}
 \alias{getOption}
 \alias{option} % so help files can do 'set \link{} \code{"foo"}'
+
+\alias{MC_CORES}
+\alias{R_C_BOUNDS_CHECK}
+\alias{R_DEFAULT_DEVICE}
+\alias{R_KEEP_PKG_SOURCE}
+\alias{R_INTERACTIVE_DEVICE}
+
 \title{Options Settings}
 \description{
   Allow the user to set and examine a variety of global \emph{options}
@@ -178,17 +185,23 @@ getOption(x, default = NULL)
       to something in the order of (and typically slightly less than)
       \code{max.print} \emph{entries}.}
 
-    \item{\code{OutDec}:}{character string containing a single-byte
-      character.  The character to be used as the decimal point in output
-      conversions, that is in printing, plotting and \code{as.character}
-      but not deparsing.}
+    \item{\code{OutDec}:}{character string containing a single
+      character.  The preferred character to be used as the decimal
+      point in output conversions, that is in printing, plotting,
+      \code{\link{format}} and \code{\link{as.character}} but not when
+      deparsing nor by \code{\link{sprintf}} nor \code{\link{formatC}}
+      (which are sometimes used prior to printing.
+
+      Only single-byte characters were supported prior to \R 3.2.0.
+    }
 
     \item{\code{pager}:}{the command used for displaying text files by
       \code{\link{file.show}}.
 #ifdef unix
-      Defaults to \file{\var{\link{R_HOME}}/bin/pager},
-      which selects a pager via the \env{PAGER} environment variable
-      (and that usually defaults to \code{less}).
+      Defaults to \file{\var{\link{R_HOME}}/bin/pager}, which is a shell
+      script running the command-line specified by the environment
+      variable \env{PAGER} whose default is set at configuration,
+      usually to \command{less}.
 #endif
 #ifdef windows
       Defaults to \code{"internal"}, which uses a pager similar to the
@@ -236,14 +249,13 @@ getOption(x, default = NULL)
       % verbatim, for checking " \t\n\"\\'`><=%;,|&{()}"
 #ifdef unix
     \item{\code{rl_word_breaks}:}{Used for the readline-based terminal
-      interface.  Default value \code{" \\t\\n\\"\\\\'`><=\%;,|&\{()\}"}.%"
-      This is the set of characters use to break the input line up into
+      interface.  Default value \code{" \\t\\n\\"\\\\'`><=\%;,|&{()}"}.%"
+	
+      This is the set of characters use to break the input line into
       tokens for object- and file-name completion.  Those who do not use
       spaces around operators may prefer\cr
-      \code{" \\t\\n\\"\\\\'`><=+-*\%;,|&\{()\}"}%"
-      which was the default in \R 2.5.0.  (The default in pre-2.5.0
-      versions of \R was\cr
-      \code{" \\t\\n\\"\\\\'`@$><=;|&\{("}.)}%"
+      \code{" \\t\\n\\"\\\\'`><=+-*\%;,|&{()}"}%"
+      }
 #endif
 
     \item{\code{save.defaults}, \code{save.image.defaults}:}{
@@ -296,6 +308,10 @@ getOption(x, default = NULL)
 
     \item{\code{topLevelEnvironment}:}{see \code{\link{topenv}} and
       \code{\link{sys.source}}.}
+
+    \item{\code{url.method}:}{character string: the default method for
+      \code{\link{url}}.  Normally unset, which is equivalent to
+      \code{"default"}, which is \code{"internal"} except on Windows.}
 
     \item{\code{useFancyQuotes}:}{controls the use of
       directional quotes in \code{\link{sQuote}}, \code{dQuote} and in
@@ -475,15 +491,16 @@ getOption(x, default = NULL)
   \describe{
     \item{\code{BioC_mirror}:}{The URL of a Bioconductor mirror
       for use by \code{\link{setRepositories}},
-      e.g. the default \samp{"http://www.bioconductor.org"}
+      e.g.\sspace{}the default \samp{"http://www.bioconductor.org"}
       or the European mirror
       \samp{"http://bioconductor.statistik.tu-dortmund.de"}.  Can be set
       by \code{\link{chooseBioCmirror}}.}
 
-    \item{\code{browser}:}{default HTML browser used by
-      \code{\link{help.start}()} and \code{\link{browseURL}} on UNIX, or
-      a non-default browser on Windows.  Alternatively, an \R function that
-      is called with a URL as its argument.}
+    \item{\code{browser}:}{The HTML browser to be used by
+      \code{\link{browseURL}}.  This sets the default browser on UNIX or
+      a non-default browser on Windows.  Alternatively, an \R function
+      that is called with a URL as its argument.  See
+      \code{\link{browseURL}} for further details.}
 
     \item{\code{ccaddress}:}{default Cc: address used by
       \code{\link{create.post}} (and hence\code{\link{bug.report}} and
@@ -501,11 +518,10 @@ getOption(x, default = NULL)
     \item{\code{demo.ask}:}{default for the \code{ask} argument of
       \code{\link{demo}}.}
 
-    \item{\code{editor}:}{a non-empty string, or a function that is
-      called with a file path as argument.  Sets the default text
-      editor, e.g., for \code{\link{edit}}.  Set from the environment
-      variable \env{EDITOR} on UNIX, or if unset \env{VISUAL} or
-      \command{vi}.}
+    \item{\code{editor}:}{a non-empty string or a function that sets the
+      default text editor, e.g., for \code{\link{edit}}.  Set from the
+      environment variable \env{EDITOR} on UNIX, or if unset
+      \env{VISUAL} or \command{vi}.}
 
     \item{\code{example.ask}:}{default for the \code{ask} argument of
       \code{\link{example}}.}
@@ -535,9 +551,32 @@ getOption(x, default = NULL)
       the character string \code{"pkgloack"}.}
 
     \item{\code{internet.info}:}{The minimum level of information to be
-      printed on URL downloads etc.  Default is 2, for failure causes.
-      Set to 1 or 0 to get more information.}
+      printed on URL downloads etc, using the \code{"internal"} method.
+      Default is 2, for failure causes.  Set to 1 or 0 to get more
+      detailed information.
+  
+      For methods based on \code{libcurl} a value less than 2 (the
+      default) selects verbose output.
+    }
 
+    \item{\code{install.packages.check.source}:}{Used by
+      \code{\link{install.packages}} (and indirectly
+      \code{\link{update.packages}}) on platforms which support binary
+      packages.  Possible values \code{"yes"} and \code{"no"}, with
+      unset being equivalent to \code{"yes"}.}
+
+    \item{\code{install.packages.compile.from.source}:}{Used by
+      \code{\link{install.packages}(type = "both")} (and indirectly
+      \code{\link{update.packages}}) on platforms which
+      support binary packages.  Possible values are \code{"never"},
+      \code{"interactive"} (which means ask in interactive use and
+      \code{"never"} in batch use) and \code{"always"}.  The default is
+      taken from environment variable
+      \env{R_COMPILE_AND_INSTALL_PACKAGES}, with default
+      \code{"interactive"} if unset.  However, \code{install.packages}
+      uses \code{"never"} unless a \command{make} program is found,
+      consulting the environment variable \env{MAKE}.}
+    
     \item{\code{mailer}:}{default emailing method used by
       \code{\link{create.post}} and hence \code{\link{bug.report}} and
       \code{\link{help.request}}.}
@@ -551,15 +590,22 @@ getOption(x, default = NULL)
     \item{\code{pkgType}:}{The default type of packages to be downloaded
       and installed -- see \code{\link{install.packages}}.
 #ifdef windows
-      Possible values are \code{"win.binary"} (the default) and
-      \code{"source"}.  Some OS X builds use \code{"mac.binary"}.
+      Possible values are \code{"win.binary"}, \code{"source"} and
+      \code{"both"} (the default).  Some OS X builds use
+      \code{"mac.binary"} and \code{"mac.binary.mavericks"}.
 #endif
 #ifdef unix
-      Possible values are \code{"source"} (the default except under the
-      CRAN OS X build) and \code{"mac.binary."}.  Windows
-      uses  \code{"win.binary"}.  (\code{"mac.binary.leopard"} and
+      Possible values are \code{"source"} (the default except under a
+      CRAN OS X build), \code{"mac.binary."},
+      \code{"mac.binary.mavericks"} and \code{"both"} (the default for
+      CRAN OS X builds).  Windows uses
+      \code{"win.binary"}. (\code{"mac.binary.leopard"} and
       \code{"mac.binary.universal"} are no longer in use.)
 #endif
+      Value \code{"binary"} is a synonym for the native binary type (if
+      there is one); \code{"both"} is used by
+      \code{\link{install.packages}} to choose between source and binary
+      installs.
     }
 
     \item{\code{repos}:}{URLs of the repositories for use by
@@ -571,12 +617,15 @@ getOption(x, default = NULL)
                    options(repos = r)})}.
 
       Note that you can add more repositories (Bioconductor and
-      Omegahat, notably) using \code{\link{setRepositories}()}.
+      Omegahat, R-Forge, Rforge.net \dots)
+      using \code{\link{setRepositories}}.
     }
-    \item{\code{SweaveHooks}, \code{SweaveSyntax}:}{see \code{\link{Sweave}}.}
+    \item{\code{SweaveHooks}, \code{SweaveSyntax}:}{
+      see \code{\link{Sweave}}.
+    }
 
-    \item{\code{unzip}:}{a character string, the path of the command
-      used for unzipping help files, or \code{"internal"}.
+    \item{\code{unzip}:}{a character string used by \code{\link{unzip}}:
+      the path of the external program \command{unzip} or \code{"internal"}.
 #ifdef unix
       Defaults to the value of \env{R_UNZIPCMD}, which is set in
       \file{etc/Renviron} if an \code{unzip} command was found during

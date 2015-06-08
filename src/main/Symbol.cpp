@@ -141,6 +141,8 @@ void Symbol::initialize()
     C_NAME = CXXR_NAME = Symbol::obtain(R_NAME);
 #include "CXXR/PredefinedSymbols.h"
 #undef PREDEFINED_SYMBOL
+
+    // DISABLE_REFCNT(R_LastvalueSymbol);
 }
 
 Symbol* Symbol::missingArgument()
@@ -173,6 +175,15 @@ Symbol* Symbol::obtain(const std::string& name)
 {
     GCStackRoot<const String> str(String::obtain(name));
     return Symbol::obtain(str);
+}
+
+Symbol* Symbol::obtainS3Signature(const char *methodName,
+				  const char *className)
+{
+    std::string signature = methodName;
+    signature.push_back('.');
+    signature.append(className);
+    return obtain(signature);
 }
 
 Symbol* Symbol::obtainDotDotSymbol(unsigned int n)

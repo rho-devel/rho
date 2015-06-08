@@ -1,8 +1,8 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2013  The R Core Team
- *  Copyright (C) 2003, 2004  The R Foundation
+ *  Copyright (C) 1997--2015  The R Core Team
+ *  Copyright (C) 2003--2015  The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -145,7 +145,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 /* .Internals */
 
 {"stop",	do_stop,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	  0}},
-{"warning",	do_warning,	0,	111,	3,	{PP_FUNCALL, PREC_FN,	  0}},
+{"warning",	do_warning,	0,	111,	4,	{PP_FUNCALL, PREC_FN,	  0}},
 {"gettext",	do_gettext,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	  0}},
 {"ngettext",	do_ngettext,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	  0}},
 {"bindtextdomain",do_bindtextdomain,0,	11,	2,	{PP_FUNCALL, PREC_FN,	  0}},
@@ -217,7 +217,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"oldClass",	do_class,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"oldClass<-",	do_classgets,	0,	1,	2,	{PP_FUNCALL, PREC_LEFT, 1}},
 {"class",	R_do_data_class,0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{".cache_class",	R_do_data_class,	1,	1,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{".cache_class",R_do_data_class,1,	1,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"class<-",	R_do_set_class,	0,	1,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"unclass",	do_unclass,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"names",	do_names,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -252,6 +252,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"comment",	do_comment,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"comment<-",	do_commentgets,	0,	11,	2,	{PP_FUNCALL, PREC_LEFT,	1}},
 {"get",		do_get,		1,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
+{"get0",	do_get,		2,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
 {"mget",	do_mget,	1,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
 {"exists",	do_get,		0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"assign",	do_assign,	0,	111,	4,	{PP_FUNCALL, PREC_FN,	0}},
@@ -260,6 +261,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"duplicated",	do_duplicated,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"unique",	do_duplicated,	1,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"anyDuplicated",do_duplicated,	2,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"anyNA",	do_anyNA,	0,	1,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"which",	do_which,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"which.min",	do_first_min,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"pmin",	do_pmin,	0,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -268,9 +270,10 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"match",	do_match,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"pmatch",	do_pmatch,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"charmatch",	do_charmatch,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
-{"match.call",	do_matchcall,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
-{"crossprod",	do_matprod,	1,	11,	2,	{PP_FUNCALL, PREC_FN,	  0}},
-{"tcrossprod",	do_matprod,	2,	11,	2,	{PP_FUNCALL, PREC_FN,	  0}},
+{"match.call",	do_matchcall,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
+{"crossprod",	do_matprod,	1,	11,	2,	{PP_FUNCALL, PREC_FN,   0}},
+{"tcrossprod",	do_matprod,	2,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"lengths",	do_lengths,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 
 {"attach",	do_attach,	0,	111,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"detach",	do_detach,	0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -316,6 +319,10 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"digamma",	do_math1,	42,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"trigamma",	do_math1,	43,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 /* see "psigamma" below !*/
+
+{"cospi",	do_math1,	47,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"sinpi",	do_math1,	48,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"tanpi",	do_math1,	49,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 
 /* Mathematical Functions of Two Numeric (+ 1-2 int) Variables */
 
@@ -508,12 +515,12 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 
 /* Type coercion */
 
-{"as.character",do_ascharacter,	0,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"as.integer",	do_ascharacter,	1,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"as.double",	do_ascharacter,	2,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"as.complex",	do_ascharacter,	3,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"as.logical",	do_ascharacter,	4,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
-{"as.raw",	do_ascharacter,	5,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"as.character",do_asatomic,	0,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
+{"as.integer",	do_asatomic,	1,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
+{"as.double",	do_asatomic,	2,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
+{"as.complex",	do_asatomic,	3,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
+{"as.logical",	do_asatomic,	4,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
+{"as.raw",	do_asatomic,	5,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"as.call",	do_ascall,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"as.environment",do_as_environment,0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"storage.mode<-",do_storage_mode,0,	1,	2,	{PP_FUNCALL, PREC_FN,	0}},
@@ -536,6 +543,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"strsplit",	do_strsplit,	1,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
 {"abbreviate",	do_abbrev,	1,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"make.names",	do_makenames,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"pcre_config", do_pcre_config,	1,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"grep",	do_grep,	0,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
 {"grepl",	do_grep,	1,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
 {"grepRaw",	do_grepraw,	0,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
@@ -544,7 +552,8 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"regexpr",	do_regexpr,	0,	11,	6,	{PP_FUNCALL, PREC_FN,	0}},
 {"gregexpr",	do_regexpr,	1,	11,	6,	{PP_FUNCALL, PREC_FN,	0}},
 {"regexec",	do_regexec,	1,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
-{"agrep",	do_agrep,	1,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
+{"agrep",	do_agrep,	0,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
+{"agrepl",	do_agrep,	1,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
 {"adist",	do_adist,	1,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
 {"aregexec",	do_aregexec,	1,	11,	7,	{PP_FUNCALL, PREC_FN,	0}},
 {"tolower",	do_tolower,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -660,6 +669,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"Sys.which",	do_syswhich,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"useInternet2",do_setInternet2,0,	211,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"mkjunction", do_mkjunction,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"tzone_name", do_tzone_name,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 #endif
 {"parse",	do_parse,	0,	11,	6,	{PP_FUNCALL, PREC_FN,	0}},
 //{"parse_Rd", 	do_parseRd,	0,	11,	7,	{PP_FUNCALL, PREC_FN,	0}},
@@ -670,7 +680,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"load",	do_load,	0,	111,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"loadFromConn2",do_loadFromConn2,0,	111,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"serializeToConn",	do_serializeToConn,	0,	111,	5,	{PP_FUNCALL, PREC_FN,	0}},
-{"unserializeFromConn",	do_unserializeFromConn,	0,	111,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"unserializeFromConn",	do_unserializeFromConn,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"deparse",	do_deparse,	0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
 {"dput",	do_dput,	0,	111,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"dump",	do_dump,	0,	111,	5,	{PP_FUNCALL, PREC_FN,	0}},
@@ -689,9 +699,10 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"recordGraphics", do_recordGraphics, 0, 211,     3,      {PP_FOREIGN, PREC_FN,	0}},
 {"dyn.load",	do_dynload,	0,	111,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"dyn.unload",	do_dynunload,	0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"ls",		do_ls,		1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"ls",		do_ls,		1,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"typeof",	do_typeof,	1,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"eval",	do_eval,	0,	211,	3,	{PP_FUNCALL, PREC_FN,	0}},
+//{"returnValue",   do_returnValue,0,     11,     1,      {PP_FUNCALL, PREC_FN,	0}},
 {"sys.parent",	do_sys,		1,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"sys.call",	do_sys,		2,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"sys.frame",	do_sys,		3,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -713,7 +724,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"radixsort",	do_radixsort,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"order",	do_order,	0,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"rank",	do_rank,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
-{"scan",	do_scan,	0,	11,	18,	{PP_FUNCALL, PREC_FN,	0}},
+{"scan",	do_scan,	0,	11,	19,	{PP_FUNCALL, PREC_FN,	0}},
 {"t.default",	do_transpose,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"aperm",	do_aperm,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"builtins",	do_builtins,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -723,9 +734,10 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"bodyCode",	do_bodyCode,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"environment",	do_envir,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"environmentName",do_envirName,0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"env2list",	do_env2list,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"env2list",	do_env2list,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"reg.finalizer",do_regFinaliz,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"options",	do_options,	0,	211,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"getOption",	do_getOption,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"sink",	do_sink,	0,	111,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"sink.number",	do_sinknumber,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"rapply",	do_rapply,	0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
@@ -738,6 +750,8 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"retracemem",  do_retracemem,  0,      201,     -1,      {PP_FUNCALL, PREC_FN,	0}},
 {"untracemem",  do_untracemem,  0,      101,	1,      {PP_FUNCALL, PREC_FN,	0}},
 {"inspect",	do_inspect,	0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"address",     do_address,     0,       11,     1,     {PP_FUNCALL, PREC_FN, 0}},
+{"refcnt",      do_refcnt,      0,       11,     1,     {PP_FUNCALL, PREC_FN, 0}},
 {"mem.limits",	do_memlimits,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"merge",	do_merge,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"capabilities",do_capabilities,0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
@@ -745,6 +759,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"new.env",	do_newenv,	0,	11,     3,      {PP_FUNCALL, PREC_FN,	0}},
 {"parent.env",  do_parentenv,   0,	11,     1,      {PP_FUNCALL, PREC_FN,	0}},
 {"parent.env<-",do_parentenvgets, 0,	11,     2,      {PP_FUNCALL, PREC_LEFT,	1}},
+{"topenv",	do_topenv,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"l10n_info",	do_l10n_info,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"Cstack_info", do_Cstack_info,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 
@@ -757,13 +772,14 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"file.append",	do_fileappend,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.symlink",do_filesymlink,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.link",	do_filelink,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"file.copy",	do_filecopy,	0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+{"file.copy",	do_filecopy,	0,	11,	6,	{PP_FUNCALL, PREC_FN,	0}},
 {"list.files",	do_listfiles,	0,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
 {"list.dirs",	do_listdirs,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.exists", do_fileexists,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.choose", do_filechoose,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"file.info",	do_fileinfo,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"file.info",	do_fileinfo,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.access",	do_fileaccess,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"dir.exists",	do_direxists,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"dir.create",	do_dircreate,	0,	111,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"tempfile",	do_tempfile,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"tempdir",	do_tempdir,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
@@ -829,7 +845,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"stdout",	do_stdout,	0,      11,     0,      {PP_FUNCALL, PREC_FN,	0}},
 {"stderr",	do_stderr,	0,      11,     0,      {PP_FUNCALL, PREC_FN,	0}},
 {"isatty",	do_isatty,	0,      11,     1,      {PP_FUNCALL, PREC_FN,	0}},
-{"readLines",	do_readLines,	0,      11,     5,      {PP_FUNCALL, PREC_FN,	0}},
+{"readLines",	do_readLines,	0,      11,     6,      {PP_FUNCALL, PREC_FN,	0}},
 {"writeLines",	do_writelines,	0,      111,     4,      {PP_FUNCALL, PREC_FN,	0}},
 {"readBin",	do_readbin,	0,      11,     6,      {PP_FUNCALL, PREC_FN,	0}},
 {"writeBin",	do_writebin,	0,      211,    5,      {PP_FUNCALL, PREC_FN,	0}},
@@ -842,7 +858,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"close",	do_close,	0,      111,     2,      {PP_FUNCALL, PREC_FN,	0}},
 {"flush",	do_flush,	0,      111,     1,      {PP_FUNCALL, PREC_FN,	0}},
 {"file",	do_url,		1,      11,     5,      {PP_FUNCALL, PREC_FN,	0}},
-{"url",	        do_url,		0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
+{"url",		do_url,		0,      11,     5,      {PP_FUNCALL, PREC_FN,	0}},
 {"pipe",	do_pipe,	0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
 {"fifo",	do_fifo,	0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
 {"gzfile",	do_gzfile,	0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
@@ -851,7 +867,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"unz",         do_unz,		0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
 {"seek",	do_seek,	0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
 {"truncate",	do_truncate,	0,      11,     1,      {PP_FUNCALL, PREC_FN,	0}},
-{"pushBack",	do_pushback,	0,     111,     3,      {PP_FUNCALL, PREC_FN,	0}},
+{"pushBack",	do_pushback,	0,     111,     4,      {PP_FUNCALL, PREC_FN,	0}},
 {"clearPushBack",do_clearpushback,0,   111,     1,      {PP_FUNCALL, PREC_FN,	0}},
 {"pushBackLength",do_pushbacklength,0,  11,     1,      {PP_FUNCALL, PREC_FN,	0}},
 {"rawConnection",do_rawconnection,0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
@@ -887,6 +903,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"registerNamespace",do_regNS,		0, 11,	2,      {PP_FUNCALL, PREC_FN,	0}},
 {"unregisterNamespace",do_unregNS,	0, 11,  1,      {PP_FUNCALL, PREC_FN,	0}},
 {"getRegisteredNamespace",do_getRegNS,	0, 11,  1,      {PP_FUNCALL, PREC_FN,	0}},
+{"isRegisteredNamespace", do_getRegNS,	1, 11,  1,      {PP_FUNCALL, PREC_FN,	0}},
 {"getNamespaceRegistry",do_getNSRegistry, 0, 11, 0,     {PP_FUNCALL, PREC_FN,	0}},
 {"importIntoEnv",do_importIntoEnv, 0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"env.profile",  do_envprofile,    0,	211,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -896,6 +913,7 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"setTimeLimit",do_setTimeLimit,0,	111,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"setSessionTimeLimit",do_setSessionTimeLimit,0,	111,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"icuSetCollate",do_ICUset,	0,	111,	-1,	{PP_FUNCALL, PREC_FN,	0}},
+{"icuGetCollate",do_ICUget,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"readRenviron",do_readEnviron,	0,      111,     1,      {PP_FUNCALL, PREC_FN,	0}},
 {"shortRowNames",do_shortRowNames,0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"copyDFattr",do_copyDFattr,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
@@ -950,12 +968,24 @@ BuiltInFunction::TableEntry BuiltInFunction::s_function_table[] = {
 {"qr_qy_real",	do_lapack,     	301,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"det_ge_real",	do_lapack,     	302,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"qr_coef_cmplx",do_lapack,    	303,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"qr_qy_cmpl",	do_lapack,     	304,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"qr_qy_cmplx",	do_lapack,     	304,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 
 {"La_svd",	do_lapack,     	400,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
-{"La_svd_cmplx",do_lapack,     	401,	11,	6,	{PP_FUNCALL, PREC_FN,	0}},
-{nullptr,	(CCODE)nullptr,	0,	0,	0,	{PP_INVALID, PREC_FN,	0}},
+{"La_svd_cmplx",do_lapack,     	401,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+{"La_version",	do_lapack,     	1000,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
+
+// {"bcprofcounts",do_bcprofcounts,0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
+// {"bcprofstart",	do_bcprofstart,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
+// {"bcprofstop",	do_bcprofstop,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
+
+{"eSoftVersion",do_eSoftVersion, 0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
+{"curlVersion", do_curlVersion, 0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
+{"curlGetHeaders",do_curlGetHeaders,0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"curlDownload",do_curlDownload, 0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+
+{NULL,          (CCODE)NULL,    0,      0,      0,      {PP_INVALID, PREC_FN,   0}},
 };
+
 
 /* Table of special names.  These are marked as special with
    SET_SPECIAL_SYMBOL.  Environments on the function call stack that
@@ -1010,7 +1040,7 @@ SEXP attribute_hidden do_primitive(/*const*/ CXXR::Expression* call, const CXXR:
     SEXP name, prim;
     op->checkNumArgs(num_args, call);
     name = args[0];
-    if (!isString(name) || length(name) != 1 ||
+    if (!isString(name) || Rf_length(name) != 1 ||
 	STRING_ELT(name, 0) == R_NilValue)
 	errorcall(call, _("string argument required"));
     prim = R_Primitive(CHAR(STRING_ELT(name, 0)));
@@ -1022,12 +1052,17 @@ SEXP attribute_hidden do_primitive(/*const*/ CXXR::Expression* call, const CXXR:
 /* initialize the symbol table */
 void attribute_hidden Rf_InitNames()
 {
+    // Logical constants.
+    Logical::initialize();
+
     /* String constants (CHARSXP values) */
     String::initialize();
     Symbol::initialize();
     R_print.na_string = NA_STRING;
+ 
     R_initialize_bcode();
 }
+
 	/* Internal code for the ~ operator */
 
 SEXP attribute_hidden do_tilde(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -1052,3 +1087,16 @@ const char *getPRIMNAME(SEXP object)
     return PRIMNAME(object);
 }
 
+// TODO: move to Symbol.h
+extern "C"
+SEXP Rf_installChar(SEXP charSXP)
+{
+    String* name = SEXP_downcast<String*>(charSXP);
+    return Symbol::obtain(name);
+}
+
+attribute_hidden
+extern "C"
+SEXP Rf_installS3Signature(const char *methodName, const char *className) {
+    return Symbol::obtainS3Signature(methodName, className);
+}

@@ -1,9 +1,7 @@
 % File src/library/graphics/man/contour.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
-
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
 \name{contour}
 \alias{contour}
@@ -87,7 +85,7 @@ contour(x, \dots)
   Notice that \code{contour} interprets the \code{z} matrix as a table of
   \code{f(x[i], y[j])} values, so that the x axis corresponds to row
   number and the y axis to column number, with column 1 at the bottom,
-  i.e. a 90 degree counter-clockwise rotation of the conventional textual
+  i.e.\sspace{}a 90 degree counter-clockwise rotation of the conventional textual
   layout.
 
   Alternatively, use \code{\link[lattice:levelplot]{contourplot}} from the
@@ -124,8 +122,10 @@ z <- outer(x, sqrt(abs(x)), FUN = "/")
 image(x, x, z)
 contour(x, x, z, col = "pink", add = TRUE, method = "edge",
         vfont = c("sans serif", "plain"))
-contour(x, x, z, ylim = c(1, 6), method = "simple", labcex = 1)
-contour(x, x, z, ylim = c(-6, 6), nlev = 20, lty = 2, method = "simple")
+contour(x, x, z, ylim = c(1, 6), method = "simple", labcex = 1,
+        xlab = quote(x[1]), ylab = quote(x[2]))
+contour(x, x, z, ylim = c(-6, 6), nlev = 20, lty = 2, method = "simple",
+        main = "20 levels; \"simple\" labelling method")
 par(op)
 
 ## Persian Rug Art:
@@ -150,16 +150,13 @@ title("A Topographic Map of Maunga Whau", font = 4)
 abline(h = 200*0:4, v = 200*0:4, col = "lightgray", lty = 2, lwd = 0.1)
 
 ## contourLines produces the same contour lines as contour
-line.list <- contourLines(x, y, volcano)
 plot(x = 0, y = 0, type = "n", xlim = rx, ylim = ry, xlab = "", ylab = "")
 u <- par("usr")
 rect(u[1], u[3], u[2], u[4], col = tcol[8], border = "red")
-contour(x, y, volcano, col = tcol[2], lty = "solid", add = TRUE,
-             vfont = c("sans serif", "plain"))
-templines <- function(clines) {
-  lines(clines[[2]], clines[[3]])
-}
-invisible(lapply(line.list, templines))
+contour(x, y, volcano, col = tcol[1], lty = "solid", add = TRUE,
+        vfont = c("sans serif", "plain"))
+line.list <- contourLines(x, y, volcano)
+invisible(lapply(line.list, lines, lwd=3, col=adjustcolor(2, .3)))
 par(opar)
 }
 \keyword{hplot}

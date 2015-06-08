@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2012  The R Core Team
+ *  Copyright (C) 2012-2013  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 #ifdef ENABLE_NLS
 #include <libintl.h>
-#define _(String) dgettext ("stats", String)
+#define _(String) dgettext ("utils", String)
 #else
 #define _(String) (String)
 #endif

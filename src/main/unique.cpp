@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2013  The R Core Team
+ *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -256,7 +256,7 @@ static hlen vhash(SEXP x, R_xlen_t indx, HashData *d)
     unsigned int key;
     SEXP _this = VECTOR_ELT(x, indx);
 
-    key = OBJECT(_this) + 2*TYPEOF(_this) + 100U*static_cast<unsigned int>( length(_this));
+    key = OBJECT(_this) + 2*TYPEOF(_this) + 100U*static_cast<unsigned int>( Rf_length(_this));
     /* maybe we should also look at attributes, but that slows us down */
     switch (TYPEOF(_this)) {
     case LGLSXP:
@@ -334,8 +334,8 @@ static void MKsetup(R_xlen_t n, HashData *d, R_xlen_t nmax)
 	error(_("length %d is too large for hashing"), n);
 #endif
 
-    if (nmax != NA_INTEGER) n = nmax;
-    size_t n2 = 2U * size_t( n);
+    if (nmax != NA_INTEGER && nmax != 1) n = nmax;
+    size_t n2 = 2U * (size_t) n;
     d->M = 2;
     d->K = 1;
     while (d->M < n2) {
@@ -404,7 +404,7 @@ static void HashTableSetup(SEXP x, HashData *d, R_xlen_t nmax)
     if (d->isLong) {
 	d->HashTable = allocVector(REALSXP, R_xlen_t( d->M));
 	for (R_xlen_t i = 0; i < d->M; i++) REAL(d->HashTable)[i] = NIL;
-    } else 
+    } else
 #endif
     {
 	d->HashTable = allocVector(INTSXP, R_xlen_t( d->M));
@@ -458,7 +458,7 @@ static void removeEntry(SEXP table, SEXP x, R_xlen_t indx, HashData *d)
 	    }
 	    i = (i + 1) % d->M;
 	}
-    } else 
+    } else
 #endif
     {
 	int *h = INTEGER(d->HashTable);
@@ -470,20 +470,20 @@ static void removeEntry(SEXP table, SEXP x, R_xlen_t indx, HashData *d)
 	    }
 	    i = (i + 1) % d->M;
 	}
-    } 
+    }
 }
 
 #define DUPLICATED_INIT						\
     HashData data;						\
-    HashTableSetup(x, &data, nmax);			       	\
+    HashTableSetup(x, &data, nmax);				\
     if(TYPEOF(x) == STRSXP) {					\
 	data.useUTF8 = FALSE; data.useCache = TRUE;		\
-	for(i = 0; i < n; i++) {			\
+	for(i = 0; i < n; i++) {				\
 	    if(IS_BYTES(STRING_ELT(x, i))) {			\
 		data.useUTF8 = FALSE; break;			\
-	    }                                                   \
-    	    if(ENC_KNOWN(STRING_ELT(x, i))) {                   \
-		data.useUTF8 = TRUE;                            \
+	    }							\
+	    if(ENC_KNOWN(STRING_ELT(x, i))) {			\
+		data.useUTF8 = TRUE;				\
 	    }							\
 	}							\
     }
@@ -548,24 +548,23 @@ static SEXP Duplicated(SEXP x, Rboolean from_last, int nmax)
 }
 
 /* simpler version of the above : return 1-based index of first, or 0 : */
-int any_duplicated(SEXP x, Rboolean from_last)
+R_xlen_t any_duplicated(SEXP x, Rboolean from_last)
 {
-    int result = 0;
+    R_xlen_t result = 0;
     int nmax = NA_INTEGER;
 
     if (!isVector(x)) error(_("'duplicated' applies only to vectors"));
-    int i, n = LENGTH(x);
+    R_xlen_t i, n = XLENGTH(x);
+
     DUPLICATED_INIT;
     PROTECT(data.HashTable);
 
     if(from_last) {
 	for (i = n-1; i >= 0; i--) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	    if(isDuplicated(x, i, &data)) { result = ++i; break; }
 	}
     } else {
 	for (i = 0; i < n; i++) {
-//	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	    if(isDuplicated(x, i, &data)) { result = ++i; break; }
 	}
     }
@@ -579,7 +578,7 @@ static SEXP duplicated3(SEXP x, SEXP incomp, Rboolean from_last, int nmax)
     int *v, j, m;
 
     if (!isVector(x)) error(_("'duplicated' applies only to vectors"));
-    int i, n = LENGTH(x);
+    R_xlen_t i, n = XLENGTH(x);
     DUPLICATED_INIT;
 
     PROTECT(data.HashTable);
@@ -598,9 +597,9 @@ static SEXP duplicated3(SEXP x, SEXP incomp, Rboolean from_last, int nmax)
 	    v[i] = isDuplicated(x, i, &data);
 	}
 
-    if(length(incomp)) {
+    if(Rf_length(incomp)) {
 	PROTECT(incomp = coerceVector(incomp, TYPEOF(x)));
-	m = length(incomp);
+	m = Rf_length(incomp);
 	for (i = 0; i < n; i++)
 	    if(v[i]) {
 		for(j = 0; j < m; j++)
@@ -613,19 +612,19 @@ static SEXP duplicated3(SEXP x, SEXP incomp, Rboolean from_last, int nmax)
 }
 
 /* return (1-based) index of first duplication, or 0 : */
-int any_duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
+R_xlen_t any_duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
 {
-    int j, m = length(incomp), nmax = NA_INTEGER;
+    int j, m = Rf_length(incomp), nmax = NA_INTEGER;
 
     if (!isVector(x)) error(_("'duplicated' applies only to vectors"));
-    int i, n = LENGTH(x);
+    R_xlen_t i, n = XLENGTH(x);
     DUPLICATED_INIT;
     PROTECT(data.HashTable);
 
     if(!m) error(_("any_duplicated3(., <0-length incomp>)"));
 
     PROTECT(incomp = coerceVector(incomp, TYPEOF(x)));
-    m = length(incomp);
+    m = Rf_length(incomp);
 
     if(from_last)
 	for (i = n-1; i >= 0; i--) {
@@ -637,16 +636,16 @@ int any_duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
 			isDup = FALSE; break;		\
 		    }					\
 		if(isDup) {				\
-		    UNPROTECT(1);			\
+		    UNPROTECT(2);			\
 		    return ++i;				\
- 	        }					\
+		}					\
 		/* else continue */			\
 	    }
 	    IS_DUPLICATED_CHECK;
 	}
     else {
 	for (i = 0; i < n; i++) {
-            IS_DUPLICATED_CHECK;
+	    IS_DUPLICATED_CHECK;
 	}
     }
 
@@ -658,9 +657,9 @@ int any_duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
 #undef DUPLICATED_INIT
 
 
-/* .Internal(duplicated(x))       [op=0]
-  .Internal(unique(x))	          [op=1]
-   .Internal(anyDuplicated(x))    [op=2]
+/* .Internal(duplicated(x))	  [op=0]
+  .Internal(unique(x))		  [op=1]
+   .Internal(anyDuplicated(x))	  [op=2]
 */
 SEXP attribute_hidden do_duplicated(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
@@ -671,7 +670,7 @@ SEXP attribute_hidden do_duplicated(/*const*/ CXXR::Expression* call, const CXXR
     op->checkNumArgs(num_args, call);
     x = args[0];
     incomp = args[1];
-    if (length(args[2]) < 1)
+    if (Rf_length(args[2]) < 1)
 	error(_("'fromLast' must be length 1"));
     fromLast = asLogical(args[2]);
     if (fromLast == NA_LOGICAL)
@@ -696,17 +695,22 @@ SEXP attribute_hidden do_duplicated(/*const*/ CXXR::Expression* call, const CXXR
 	    error(_("'nmax' must be positive"));
     }
 
-    if(length(incomp) && /* S has FALSE to mean empty */
-       !(isLogical(incomp) && length(incomp) == 1 && LOGICAL(incomp)[0] == 0)) {
-	if(op->variant() == 2) /* return R's 1-based index :*/
-	    return ScalarInteger(any_duplicated3(x, incomp, fL));
-	else
+    if(Rf_length(incomp) && /* S has FALSE to mean empty */
+       !(isLogical(incomp) && Rf_length(incomp) == 1 && LOGICAL(incomp)[0] == 0)) {
+	if(op->variant() == 2) {
+	    /* return R's 1-based index :*/
+	    R_xlen_t ind  = any_duplicated3(x, incomp, fL);
+	    if(ind > INT_MAX) return ScalarReal((double) ind);
+	    else return ScalarInteger((int)ind);
+	} else
 	    dup = duplicated3(x, incomp, fL, nmax);
     }
     else {
-	if(op->variant() == 2)
-	    return ScalarInteger(any_duplicated(x, fL));
-	else
+	if(op->variant() == 2) {
+	    R_xlen_t ind  = any_duplicated(x, fL);
+	    if(ind > INT_MAX) return ScalarReal((double) ind);
+	    else return ScalarInteger((int)ind);
+	} else
 	    dup = Duplicated(x, fL, nmax);
     }
     if (op->variant() == 0) /* "duplicated()" */
@@ -769,9 +773,8 @@ SEXP attribute_hidden do_duplicated(/*const*/ CXXR::Expression* call, const CXXR
 /* Build a hash table, ignoring information on duplication */
 static void DoHashing(SEXP table, HashData *d)
 {
-    int n = LENGTH(table);
-
-    for (int i = 0; i < n; i++) {
+    R_xlen_t i, n = XLENGTH(table);
+    for (i = 0; i < n; i++) {
 //	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	(void) isDuplicated(table, i, d);
     }
@@ -780,7 +783,7 @@ static void DoHashing(SEXP table, HashData *d)
 /* invalidate entries: normally few */
 static void UndoHashing(SEXP x, SEXP table, HashData *d)
 {
-    for (int i = 0; i < LENGTH(x); i++) removeEntry(table, x, i, d);
+    for (R_xlen_t i = 0; i < XLENGTH(x); i++) removeEntry(table, x, i, d);
 }
 
 static int Lookup(SEXP table, SEXP x, R_xlen_t indx, HashData *d)
@@ -799,9 +802,9 @@ static int Lookup(SEXP table, SEXP x, R_xlen_t indx, HashData *d)
 static SEXP HashLookup(SEXP table, SEXP x, HashData *d)
 {
     SEXP ans;
-    int i, n;
+    R_xlen_t i, n;
 
-    n = LENGTH(x);
+    n = XLENGTH(x);
     PROTECT(ans = allocVector(INTSXP, n));
     for (i = 0; i < n; i++) {
 //	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
@@ -816,7 +819,7 @@ static SEXP match_transform(SEXP s, SEXP env)
     if(OBJECT(s)) {
 	if(inherits(s, "factor")) return asCharacterFactor(s);
 	else if(inherits(s, "POSIXlt")) { /* and maybe more classes in the future:
-					   * Call R's (generic)  as.character(s) : */
+					   * Call R's (generic)	 as.character(s) : */
 	    SEXP call, r;
 	    PROTECT(call = lang2(install("as.character"), s));
 	    r = eval(call, env);
@@ -839,16 +842,16 @@ SEXP match5(SEXP itable, SEXP ix, int nmatch, SEXP incomp, SEXP env)
 
     /* handle zero length arguments */
     if (n == 0) return allocVector(INTSXP, 0);
-    if (length(itable) == 0) {
+    if (Rf_length(itable) == 0) {
 	ans = allocVector(INTSXP, n);
 	for (R_xlen_t i = 0; i < n; i++) INTEGER(ans)[i] = nmatch;
 	return ans;
     }
 
     int nprot = 0;
-    PROTECT(x     = match_transform(ix,     env)); nprot++;
+    PROTECT(x	  = match_transform(ix,	    env)); nprot++;
     PROTECT(table = match_transform(itable, env)); nprot++;
-    /* or should we use PROTECT_WITH_INDEX  and  REPROTECT below ? */
+    /* or should we use PROTECT_WITH_INDEX and REPROTECT below ? */
 
     /* Coerce to a common type; type == NILSXP is ok here.
      * Note that above we coerce factors and "POSIXlt", only to character.
@@ -856,7 +859,7 @@ SEXP match5(SEXP itable, SEXP ix, int nmatch, SEXP incomp, SEXP env)
      * (given that we have "Vector" or NULL) */
     if(TYPEOF(x) >= STRSXP || TYPEOF(table) >= STRSXP) type = STRSXP;
     else type = TYPEOF(x) < TYPEOF(table) ? TYPEOF(table) : TYPEOF(x);
-    PROTECT(x     = coerceVector(x,     type)); nprot++;
+    PROTECT(x	  = coerceVector(x,	type)); nprot++;
     PROTECT(table = coerceVector(table, type)); nprot++;
     if (incomp) { PROTECT(incomp = coerceVector(incomp, type)); nprot++; }
     data.nomatch = nmatch;
@@ -864,9 +867,9 @@ SEXP match5(SEXP itable, SEXP ix, int nmatch, SEXP incomp, SEXP env)
     if(type == STRSXP) {
 	Rboolean useBytes = FALSE;
 	Rboolean useUTF8 = FALSE;
-        Rboolean useCache = TRUE;
-	for(R_xlen_t i = 0; i < length(x); i++) {
-            SEXP s = STRING_ELT(x, i);
+	Rboolean useCache = TRUE;
+	for(R_xlen_t i = 0; i < Rf_length(x); i++) {
+	    SEXP s = STRING_ELT(x, i);
 	    if(IS_BYTES(s)) {
 		useBytes = TRUE;
 		useUTF8 = FALSE;
@@ -877,8 +880,8 @@ SEXP match5(SEXP itable, SEXP ix, int nmatch, SEXP incomp, SEXP env)
 	    }
         }
 	if(!useBytes || useCache) {
-	    for(int i = 0; i < length(table); i++) {
-                SEXP s = STRING_ELT(table, i);
+	    for(int i = 0; i < Rf_length(table); i++) {
+		SEXP s = STRING_ELT(table, i);
 		if(IS_BYTES(s)) {
 		    useBytes = TRUE;
 		    useUTF8 = FALSE;
@@ -887,10 +890,10 @@ SEXP match5(SEXP itable, SEXP ix, int nmatch, SEXP incomp, SEXP env)
 		if(ENC_KNOWN(s)) {
 		    useUTF8 = TRUE;
 		}
-            }
-        }
+	    }
+	}
 	data.useUTF8 = useUTF8;
-        data.useCache = useCache;
+	data.useCache = useCache;
     }
     PROTECT(data.HashTable); nprot++;
     DoHashing(table, &data);
@@ -923,8 +926,8 @@ SEXP attribute_hidden do_match(/*const*/ CXXR::Expression* call, const CXXR::Bui
     int nomatch = asInteger(args[2]);
     SEXP incomp = args[3];
 
-    if(length(incomp) && /* S has FALSE to mean empty */
-       !(isLogical(incomp) && length(incomp) == 1 && LOGICAL(incomp)[0] == 0))
+    if(Rf_length(incomp) && /* S has FALSE to mean empty */
+       !(isLogical(incomp) && Rf_length(incomp) == 1 && LOGICAL(incomp)[0] == 0))
 	return match5(args[1], args[0], nomatch, incomp, env);
     else
 	return matchE(args[1], args[0], nomatch, env);
@@ -936,12 +939,12 @@ SEXP attribute_hidden do_match(/*const*/ CXXR::Expression* call, const CXXR::Bui
 /* Partial Matching of Strings */
 /* Fully S Compatible version. */
 
-/* Hmm, this was not all S compatible!  The desired behaviour is:
+/* Hmm, this was not all S compatible!	The desired behaviour is:
  * First do exact matches, and mark elements as used as they are matched
  *   unless dup_ok is true.
  * Then do partial matching, from left to right, using up the table
  *   unless dup_ok is true.  Multiple partial matches are ignored.
- * Empty strings are unmatched                        BDR 2000/2/16
+ * Empty strings are unmatched			      BDR 2000/2/16
  */
 
 SEXP attribute_hidden do_pmatch(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
@@ -1023,52 +1026,35 @@ SEXP attribute_hidden do_pmatch(/*const*/ CXXR::Expression* call, const CXXR::Bu
     }
     /* First pass, exact matching */
     R_xlen_t nexact = 0;
-    if(no_dups) {
+    /* Compromise when hashing used changed in 3.2.0 (PR#15697) */
+    if (n_input <= 100 || n_target <= 100) {
 	for (R_xlen_t i = 0; i < n_input; i++) {
 	    const char *ss = in[i];
 	    if (strlen(ss) == 0) continue;
 	    for (int j = 0; j < n_target; j++) {
-		if (used[j]) continue;
+		if (no_dups && used[j]) continue;
 		if (strcmp(ss, tar[j]) == 0) {
-		    if(no_dups) used[j] = 1;
 		    ians[i] = j + 1;
+		    if (no_dups) used[j] = 1;
 		    nexact++;
 		    break;
 		}
 	    }
 	}
     } else {
-	/* only worth hashing if enough lookups will be done:
-	   since the tradeoff involves memory as well as time
-	   it is not really possible to optimize there.
-	 */
-	if((n_target > 100) && (10*n_input > n_target)) {
-	    /* <FIXME>
-	       Currently no hashing when using bytes.
-	       </FIXME>
-	    */
-	    HashData data;
-	    HashTableSetup(target, &data, NA_INTEGER);
-	    data.useUTF8 = useUTF8;
-	    data.nomatch = 0;
-	    DoHashing(target, &data);
-	    for (R_xlen_t i = 0; i < n_input; i++) {
-		/* we don't want to lookup "" */
-		if (strlen(in[i]) == 0) continue;
-		ians[i] = Lookup(target, input, i, &data);
-		if(ians[i]) nexact++;
-	    }
-	} else {
-	    for (R_xlen_t i = 0; i < n_input; i++) {
-		const char *ss = in[i];
-		if (strlen(ss) == 0) continue;
-		for (int j = 0; j < n_target; j++)
-		    if (strcmp(ss, tar[j]) == 0) {
-			ians[i] = j + 1;
-			nexact++;
-			break;
-		    }
-	    }
+	HashData data;
+	HashTableSetup(target, &data, NA_INTEGER);
+	data.useUTF8 = useUTF8;
+	data.nomatch = 0;
+	DoHashing(target, &data);
+	for (R_xlen_t i = 0; i < n_input; i++) {
+	    if (strlen(in[i]) == 0) /* don't look up "" */
+		continue;
+	    int j = Lookup(target, input, i, &data);
+	    if ((j == 0) || (no_dups && used[j - 1])) continue;
+	    if (no_dups) used[j - 1] = 1;
+	    ians[i] = j;
+	    nexact++;
 	}
     }
 
@@ -1255,7 +1241,10 @@ static SEXP subDots(SEXP rho)
     if (dots == R_MissingArg)
 	return dots;
 
-    len = length(dots);
+    if (!isPairList(dots))
+	error(_("... is not a pairlist"));
+
+    len = Rf_length(dots);
     PROTECT(rval=allocList(len));
     for(a = dots, b = rval, i = 1; i <= len; a = CDR(a), b = CDR(b), i++) {
 	SET_TAG(b, TAG(a));
@@ -1276,7 +1265,6 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP formals, actuals, rlist;
     SEXP funcall, f, b, rval, sysp, t1, t2, tail;
-    ClosureContext *cptr;
     int expdots;
 
     checkArity(op,args);
@@ -1289,63 +1277,13 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
     if (TYPEOF(funcall) != LANGSXP)
 	error(_("invalid '%s' argument"), "call");
 
-    /* Get the function definition */
-    sysp = ClosureContext::innermost()->callEnvironment();
+    b = CAR(args);
+    if (TYPEOF(b) != CLOSXP)
+	error(_("invalid '%s' argument"), "definition");
 
-    if (TYPEOF(CAR(args)) == NILSXP) {
-	/* Get the env that the function containing */
-	/* matchcall was called from. */
-	cptr = ClosureContext::innermost();
-	while (cptr && cptr->workingEnvironment() != sysp)
-	    cptr = ClosureContext::innermost(cptr->nextOut());
-	if ( cptr == nullptr ) {
-	    sysp = R_GlobalEnv;
-	    errorcall(R_NilValue,
-		      "match.call() was called from outside a function");
-	} else
-	    sysp = cptr->callEnvironment();
-	if (cptr != nullptr)
-	    /* Changed to use the function from which match.call was
-	       called as recorded in the context.  This change is
-	       needed in case the current function is computed in a
-	       way that cannot be reproduced by a second computation,
-	       or if it is a registered S3 method that is not
-	       lexically visible at the call site.
-
-	       There is one particular case where this represents a
-	       change from previous semantics: The definition is NULL,
-	       the call is supplied explicitly, and the function in
-	       the call is NOT the current function.  The new behavior
-	       is to ignore the function in the call and use the
-	       current function.  This is consistent with (my reading
-	       of) the documentation in both R and Splus.  However,
-	       the old behavior of R was consistent with the behavior
-	       of Splus (and inconsistent with the documentation in
-	       both cases).
-
-	       The previous semantics for this case can be restored by
-	       having the .Internal receive an additional argument
-	       that indicates whether the call was supplied explicitly
-	       or missing, and using the function recorded in the
-	       context only if the call was not supplied explicitly.
-	       The documentation should also be changed to be
-	       consistent with this behavior.  LT */
-	    PROTECT(b = cptr->function()->clone());
-	else if ( TYPEOF(CAR(funcall)) == SYMSXP )
-	    PROTECT(b = findFun(CAR(funcall), sysp));
-	else
-	    PROTECT(b = eval(CAR(funcall), sysp));
-
-	if (TYPEOF(b) != CLOSXP)
-	    error(_("unable to find a closure from within which 'match.call' was called"));
-
-    }
-    else {
-	/* It must be a closure! */
-	PROTECT(b = CAR(args));
-	if (TYPEOF(b) != CLOSXP)
-	    error(_("invalid '%s' argument"), "definition");
-    }
+    sysp = CAR(CDDDR(args));
+    if (!isEnvironment(sysp))
+	error(_("'envir' must be an environment"));
 
     /* Do we expand ... ? */
 
@@ -1365,8 +1303,8 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
     t2 = R_MissingArg;
     for (t1=actuals ; t1!=R_NilValue ; t1 = CDR(t1) ) {
 	if (CAR(t1) == R_DotsSymbol) {
-		t2 = subDots(sysp);
-		break;
+	    t2 = subDots(sysp);
+	    break;
 	}
     }
     /* now to splice t2 into the correct spot in actuals */
@@ -1423,7 +1361,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(rval = new CXXR::Expression);
     SETCAR(rval, duplicate(CAR(funcall)));
     SETCDR(rval, rlist);
-    UNPROTECT(4);
+    UNPROTECT(3);
     return rval;
 }
 
@@ -1438,12 +1376,13 @@ static SEXP
 rowsum(SEXP x, SEXP g, SEXP uniqueg, SEXP snarm, SEXP rn)
 {
     SEXP matches,ans;
-    int n, p, ng, offset = 0, offsetg = 0, narm;
+    int n, p, ng, narm;
+    R_xlen_t offset = 0, offsetg = 0;
     HashData data;
     data.nomatch = 0;
 
     n = LENGTH(g);
-    ng = length(uniqueg);
+    ng = Rf_length(uniqueg);
     narm = asLogical(snarm);
     if(narm == NA_LOGICAL) error("'na.rm' must be TRUE or FALSE");
     if(isMatrix(x)) p = ncols(x); else p = 1;
@@ -1499,7 +1438,7 @@ rowsum(SEXP x, SEXP g, SEXP uniqueg, SEXP snarm, SEXP rn)
     setAttrib(ans, R_DimNamesSymbol, dn);
     SET_VECTOR_ELT(dn, 0, rn);
     dn2 = getAttrib(x, R_DimNamesSymbol);
-    if(length(dn2 = getAttrib(x, R_DimNamesSymbol)) >= 2 && 
+    if(Rf_length(dn2 = getAttrib(x, R_DimNamesSymbol)) >= 2 &&
        !isNull(dn3 = VECTOR_ELT(dn2, 1))) SET_VECTOR_ELT(dn, 1, dn3);
 
     UNPROTECT(3); /* HashTable, matches, ans */
@@ -1510,13 +1449,13 @@ static SEXP
 rowsum_df(SEXP x, SEXP g, SEXP uniqueg, SEXP snarm, SEXP rn)
 {
     SEXP matches,ans,col,xcol;
-    int n, p, ng, narm;
+    int p, narm;
     HashData data;
     data.nomatch = 0;
 
-    n = LENGTH(g);
+    R_xlen_t n = XLENGTH(g);
     p = LENGTH(x);
-    ng = length(uniqueg);
+    R_xlen_t ng = XLENGTH(uniqueg);
     narm = asLogical(snarm);
     if(narm == NA_LOGICAL) error("'na.rm' must be TRUE or FALSE");
 
@@ -1535,7 +1474,7 @@ rowsum_df(SEXP x, SEXP g, SEXP uniqueg, SEXP snarm, SEXP rn)
 	case REALSXP:
 	    PROTECT(col = allocVector(REALSXP,ng));
 	    Memzero(REAL(col), ng);
-	    for(int j = 0; j < n; j++)
+	    for(R_xlen_t j = 0; j < n; j++)
 		if(!narm || !ISNAN(REAL(xcol)[j]))
 		    REAL(col)[INTEGER(matches)[j] - 1] += REAL(xcol)[j];
 	    SET_VECTOR_ELT(ans,i,col);
@@ -1544,7 +1483,7 @@ rowsum_df(SEXP x, SEXP g, SEXP uniqueg, SEXP snarm, SEXP rn)
 	case INTSXP:
 	    PROTECT(col = allocVector(INTSXP, ng));
 	    Memzero(INTEGER(col), ng);
-	    for(int j = 0; j < n; j++) {
+	    for(R_xlen_t j = 0; j < n; j++) {
 		if (INTEGER(xcol)[j] == NA_INTEGER) {
 		    if(!narm)
 			INTEGER(col)[INTEGER(matches)[j] - 1] = NA_INTEGER;
@@ -1638,7 +1577,7 @@ SEXP attribute_hidden do_makeunique(/*const*/ CXXR::Expression* call, const CXXR
     n = LENGTH(names);
     sep = args[1];
     if(!isString(sep) || LENGTH(sep) != 1)
-	error(_("'sep' must be a character string"));
+	error(_("'%s' must be a character string"), "sep");
     csep = translateChar(STRING_ELT(sep, 0));
     PROTECT(ans = allocVector(STRSXP, n));
     vmax = vmaxget();
@@ -1708,7 +1647,7 @@ static void HashTableSetup1(SEXP x, HashData *d)
 }
 
 /* used in utils */
-SEXP csduplicated(SEXP x)
+SEXP Rf_csduplicated(SEXP x)
 {
     SEXP ans;
     int n;

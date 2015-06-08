@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2002-2012	The R Core Team.
+ *  Copyright (C) 2002-2014	The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -76,13 +76,6 @@ static R_CallMethodDef callMethods [] = {
     CALLDEF(R_getTaskCallbackNames, 0),
     CALLDEF(R_removeTaskCallback, 1),
 
-#ifdef BC_PROFILING
-    // These have no interface in R, so used directly by .Call
-    CALLDEF(R_getbcprofcounts, 0),
-    CALLDEF(R_startbcprof, 0),
-    CALLDEF(R_stopbcprof, 0),
-#endif
-
     {nullptr, nullptr, 0}
 };
 
@@ -90,7 +83,6 @@ static R_CallMethodDef callMethods [] = {
 #define FDEF(name, n)  {#name, DL_FUNC( &F77_SYMBOL(name)), n, NULL}
 static R_FortranMethodDef fortranMethods[] = {
     /* LINPACK */
-    FDEF(dchdc, 7), // chol, deprecated
     FDEF(dqrcf, 8), // qr and auxiliaries
     FDEF(dqrdc2, 9),
     FDEF(dqrqty, 7),

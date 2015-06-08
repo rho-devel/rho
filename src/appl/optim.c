@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1999-2012  The R Core Team
+ *  Copyright (C) 1999-2014  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -262,7 +262,9 @@ vmmin(int n0, double *b, double *Fmin, optimfn fminfn, optimgr fmingr,
 #define big             1.0e+35   /*a very large number*/
 
 
-/* Nelder-Mead */
+/* Nelder-Mead, based on Pascal code
+   in J.C. Nash, `Compact Numerical Methods for Computers', 2nd edition,
+   converted by p2c then re-crafted by B.D. Ripley */
 void nmmin(int n, double *Bvec, double *X, double *Fmin, optimfn fminfn,
 	   int *fail, double abstol, double intol, void *ex,
 	   double alpha, double bet, double gamm, int trace,
@@ -462,6 +464,9 @@ void nmmin(int n, double *Bvec, double *X, double *Fmin, optimfn fminfn,
     *fncount = funcount;
 }
 
+/* Conjugate gradients, based on Pascal code
+   in J.C. Nash, `Compact Numerical Methods for Computers', 2nd edition,
+   converted by p2c then re-crafted by B.D. Ripley */
 void cgmin(int n, double *Bvec, double *X, double *Fmin,
 	   optimfn fminfn, optimgr fmingr, int *fail,
 	   double abstol, double intol, void *ex, int type, int trace,
@@ -631,6 +636,7 @@ void cgmin(int n, double *Bvec, double *X, double *Fmin,
     *grcount = gradcount;
 }
 
+/* include setulb() */
 #include "lbfgsb.c"
 
 void lbfgsb(int n, int m, double *x, double *l, double *u, int *nbd,
@@ -640,12 +646,9 @@ void lbfgsb(int n, int m, double *x, double *l, double *u, int *nbd,
 	    int trace, int nREPORT)
 {
     char task[60];
-    double f, *g, dsave[29], *wa;
-    int tr = -1, iter = 0, *iwa, isave[44], lsave[4];
-
-    /* shut up gcc -Wall in 4.6.x */
-
-    for(int i = 0; i < 4; i++) lsave[i] = 0;
+    double f, *g,  *wa;
+    int tr = -1, iter = 0, *iwa, isave[21];
+    isave[12] = 0; // -Wall
 
     if(n == 0) { /* not handled in setulb */
 	*fncount = 1;
@@ -673,9 +676,8 @@ void lbfgsb(int n, int m, double *x, double *l, double *u, int *nbd,
     iwa = (int *) R_alloc(3*n, sizeof(int));
     strcpy(task, "START");
     while(1) {
-	/* Main workhorse setulb() from ../appl/lbfgsb.c : */
 	setulb(n, m, x, l, u, nbd, &f, g, factr, &pgtol, wa, iwa, task,
-	       tr, lsave, isave, dsave);
+	       tr, isave);
 /*	Rprintf("in lbfgsb - %s\n", task);*/
 	if (strncmp(task, "FG", 2) == 0) {
 	    f = fminfn(n, x, ex);
@@ -705,7 +707,7 @@ void lbfgsb(int n, int m, double *x, double *l, double *u, int *nbd,
 	}
     }
     *Fmin = f;
-    *fncount = *grcount = isave[33];
+    *fncount = *grcount = isave[12];
     if (trace) {
 	Rprintf("final  value %f \n", *Fmin);
 	if (iter < maxit && *fail == 0) Rprintf("converged\n");

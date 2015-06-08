@@ -23,7 +23,6 @@
 #endif
 
 
-
   You can find out the current memory consumption (the MemoryBank
   allocation and number of nodes) by typing \code{\link{gc}()} at the
   \R prompt.  Note that following \code{\link{gcinfo}(TRUE)}, automatic

@@ -1,6 +1,6 @@
 % File src/library/base/man/Sys.localeconv.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2011 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{Sys.localeconv}
@@ -51,7 +51,7 @@ Sys.localeconv()
 ##            "127"             "127"
 
 ## Now try your default locale (which might be "C").
-\dontrun{old <- Sys.getlocale()
+\donttest{old <- Sys.getlocale()
 ## The category may not be set:
 ## the following may do so, but it might not be supported.
 Sys.setlocale("LC_MONETARY", locale = "")

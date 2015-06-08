@@ -1,7 +1,7 @@
 #  File src/library/utils/R/help.start.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -28,10 +28,10 @@ help.start <-
             stop("invalid browser name, check options(\"browser\").")
     }
     home <- if (is.null(remote)) {
-        if (tools:::httpdPort == 0L) tools::startDynamicHelp()
-        if (tools:::httpdPort > 0L) {
+        port <- tools::startDynamicHelp(NA)
+        if (port > 0L) {
             if (update) make.packages.html(temp = TRUE)
-            paste0("http://127.0.0.1:", tools:::httpdPort)
+            paste0("http://127.0.0.1:", port)
         } else stop("help.start() requires the HTTP server to be running",
                     call. = FALSE)
     } else remote
@@ -39,7 +39,7 @@ help.start <-
 
     ## FIXME: maybe these should use message()?
     if (WINDOWS) {
-        cat(gettextf("If nothing happens, you should open\n'%s' yourself\n", url))
+        cat(gettextf("If nothing happens, you should open\n%s yourself\n", sQuote(url)))
     } else if (is.character(browser)) {
         writeLines(strwrap(gettextf("If the browser launched by '%s' is already running, it is *not* restarted, and you must switch to its window.",
                                     browser),
@@ -58,10 +58,10 @@ browseURL <- function(url, browser = getOption("browser"), encodeIfNeeded=FALSE)
         stop("'url' must be a non-empty character string")
     if(identical(browser, "false")) return(invisible())
     if(WINDOWS && is.null(browser)) return(shell.exec(url))
-    else if (is.function(browser))
+    if (is.function(browser))
         return(invisible(browser(if(encodeIfNeeded) URLencode(url) else url)))
 
-   if (!is.character(browser) || length(browser) != 1L || !nzchar(browser))
+    if (!is.character(browser) || length(browser) != 1L || !nzchar(browser))
         stop("'browser' must be a non-empty character string")
     if (WINDOWS) {
         ## No shell used, but spaces are possible
@@ -88,7 +88,7 @@ browseURL <- function(url, browser = getOption("browser"), encodeIfNeeded=FALSE)
                "gnome-moz-remote" =, "open" = quotedUrl,
                "galeon" = paste("-x", quotedUrl),
                "kfmclient" = paste("openURL", quotedUrl),
-               "mozilla" =, "opera" =, "firefox" = {
+               "mozilla" =, "opera" = {
                    paste0("-remote \"openURL(",
                          ## Quote ',' and ')' ...
                          gsub("([,)$])", "%\\1", url), ")\"")

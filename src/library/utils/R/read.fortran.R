@@ -1,7 +1,7 @@
 #  File src/library/utils/R/read.fortran.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ read.fortran <- function(file, format, ..., as.is = TRUE, colClasses = NA)
         lengths[charskip] <- reps[charskip]*lengths[charskip]
         reps[charskip] <- 1
 
-        if (any(is.na(lengths)))
+        if (anyNA(lengths))
             stop("missing lengths for some fields")
 
         lengths <- rep(lengths,reps)

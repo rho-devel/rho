@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995,1996  Robert Gentleman, Ross Ihaka
- *  Copyright (C) 1997-2013  The R Core Team
+ *  Copyright (C) 1997-2014  The R Core Team
  *  Copyright (C) 2003-2009 The R Foundation
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
@@ -316,39 +316,7 @@ SEXP attribute_hidden Rf_StringFromInteger(int x, int *warn)
     else return Rf_mkChar(EncodeInteger(x, w));
 }
 
-static const char* dropTrailing0(char *s, char cdec)
-{
-    /* Note that  's'  is modified */
-    char *p = s;
-    for (p = s; *p; p++) {
-	if(*p == cdec) {
-	    char *replace = p++;
-	    while ('0' <= *p  &&  *p <= '9')
-		if(*(p++) != '0')
-		    replace = p;
-	    if(replace != p)
-		while((*(replace++) = *(p++)))
-		    ;
-	    break;
-	}
-    }
-    return s;
-}
-
-SEXP attribute_hidden Rf_StringFromReal(double x, int *warn)
-{
-    int w, d, e;
-    formatReal(&x, 1, &w, &d, &e, 0);
-    if (ISNA(x)) return NA_STRING;
-    else {
-	/* Note that we recast EncodeReal()'s value to possibly modify it
-	 * destructively; this is harmless here (in a sequential
-	 * environment), as Rf_mkChar() creates a copy */
-	/* Do it this way to avoid (3x) warnings in gcc 4.2.x */
-	char * tmp = const_cast<char *>(EncodeReal(x, w, d, e, OutDec));
-	return Rf_mkChar(dropTrailing0(tmp, OutDec));
-    }
-}
+// dropTrailing0 and StringFromReal moved to printutils.cpp
 
 SEXP attribute_hidden Rf_StringFromComplex(Rcomplex x, int *warn)
 {
@@ -409,6 +377,8 @@ SEXP Rf_VectorToPairList(SEXP x)
     named = (xnames != R_NilValue);
     xptr = xnew;
     for (i = 0; i < len; i++) {
+	if (NAMED(x) > NAMED(VECTOR_ELT(x, i)))
+	    SET_NAMED(VECTOR_ELT(x, i), NAMED(x));
 	SETCAR(xptr, VECTOR_ELT(x, i));
 	if (named && CHAR(STRING_ELT(xnames, i))[0] != '\0') /* ASCII */
 	    SET_TAG(xptr, Rf_installTrChar(STRING_ELT(xnames, i)));
@@ -451,7 +421,7 @@ static SEXP coerceToSymbol(SEXP v)
 	UNIMPLEMENTED_TYPE("coerceToSymbol", v);
     }
     if (warn) Rf_CoercionWarning(warn);/*2000/10/23*/
-    ans = Rf_install(CHAR(ans));
+    ans = Rf_installChar(ans);
     UNPROTECT(1);
     return ans;
 }
@@ -1178,7 +1148,11 @@ SEXP Rf_coerceVector(SEXP v, SEXPTYPE type)
 	 * put in backticks. */
 	n = length(v);
 	PROTECT(ans = Rf_allocVector(type, n));
-	if (n == 0) break; /* Can this actually happen? */
+	if (n == 0) {
+	    /* Can this actually happen? */
+	    UNPROTECT(1);
+	    break;
+        }
 	i = 0;
 	op = CAR(v);
 	/* The case of practical relevance is "lhs ~ rhs", which
@@ -1263,7 +1237,7 @@ SEXP Rf_CreateTag(SEXP x)
 	&& length(STRING_ELT(x, 0)) >= 1) {
 	x = Rf_installTrChar(STRING_ELT(x, 0));
     } else
-	x = Rf_install(CHAR(STRING_ELT(Rf_deparse1(x, CXXRTRUE, SIMPLEDEPARSE), 0)));
+	x = Rf_installChar(STRING_ELT(Rf_deparse1(x, TRUE, SIMPLEDEPARSE), 0));
     return x;
 }
 
@@ -1272,7 +1246,7 @@ static SEXP asFunction(SEXP x)
     SEXP f;
     int n;
     if (Rf_isFunction(x)) return x;
-    if (NAMED(x)) PROTECT(x = Rf_duplicate(x));
+    if (MAYBE_REFERENCED(x)) PROTECT(x = Rf_duplicate(x));
     else PROTECT(x);
 
     if (Rf_isNull(x) || !Rf_isList(x)) {
@@ -1314,12 +1288,12 @@ static SEXP ascommon(SEXP call, SEXP u, SEXPTYPE type)
 	v = u;
 	/* this duplication may appear not to be needed in all cases,
 	   but beware that other code relies on it.
-	   (E.g  we clear attributes in do_asvector and do_ascharacter.)
+	   (E.g  we clear attributes in do_asvector and do_asatomic.)
 
 	   Generally coerceVector will copy over attributes.
 	*/
 	if (type != ANYSXP && TYPEOF(u) != type) v = Rf_coerceVector(u, type);
-	else if (NAMED(u)) v = Rf_duplicate(u);
+	else if (MAYBE_REFERENCED(u)) v = Rf_duplicate(u);
 
 	/* drop attributes() and class() in some cases for as.pairlist:
 	   But why?  (And who actually coerces to pairlists?)
@@ -1354,7 +1328,7 @@ SEXP Rf_asCharacterFactor(SEXP x)
 	Rf_error(_("attempting to coerce non-factor"));
 
     R_xlen_t i, n = XLENGTH(x);
-    SEXP labels = Rf_getAttrib(x, Rf_install("levels"));
+    SEXP labels = Rf_getAttrib(x, R_LevelsSymbol);
     PROTECT(ans = Rf_allocVector(STRSXP, n));
     for(i = 0; i < n; i++) {
       int ii = INTEGER(x)[i];
@@ -1367,9 +1341,7 @@ SEXP Rf_asCharacterFactor(SEXP x)
 }
 
 
-/* the "ascharacter" name is a historical anomaly: as.character used to be the
- * only primitive;  now, all these ops are : */
-SEXP attribute_hidden do_ascharacter(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
+SEXP attribute_hidden do_asatomic(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, x;
 
@@ -1403,7 +1375,7 @@ SEXP attribute_hidden do_ascharacter(/*const*/ CXXR::Expression* call, const CXX
     x = num_args ? args[0] : nullptr;
     if(TYPEOF(x) == type) {
 	if(ATTRIB(x) == R_NilValue) return x;
-	ans = NAMED(x) ? Rf_duplicate(x) : x;
+	ans = MAYBE_REFERENCED(x) ? Rf_duplicate(x) : x;
 	CLEAR_ATTRIB(ans);
 	return ans;
     }
@@ -1447,7 +1419,7 @@ SEXP attribute_hidden do_asvector(/*const*/ CXXR::Expression* call, const CXXR::
 	case STRSXP:
 	case RAWSXP:
 	    if(ATTRIB(x) == R_NilValue) return x;
-	    ans  = NAMED(x) ? Rf_duplicate(x) : x;
+	    ans  = MAYBE_REFERENCED(x) ? Rf_duplicate(x) : x;
 	    CLEAR_ATTRIB(ans);
 	    return ans;
 	case EXPRSXP:
@@ -1752,11 +1724,11 @@ Rcomplex Rf_asComplex(SEXP x)
 SEXP attribute_hidden do_typeof(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     op->checkNumArgs(num_args, call);
-    return Rf_ScalarString(Rf_type2str(TYPEOF(args[0])));
+    return Rf_type2rstr(TYPEOF(args[0]));
 }
 
 /* Define many of the <primitive> "is.xxx" functions :
-   Note that  Rf_isNull, Rf_isNumeric, etc are defined in util.c or Rinlinedfuns.h
+   Note that  Rf_isNull, Rf_isNumeric, etc are defined in util.c or ../include/Rinlinedfuns.h
 */
 SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
@@ -1890,9 +1862,10 @@ SEXP attribute_hidden do_is(/*const*/ CXXR::Expression* call, const CXXR::BuiltI
 	case DOTSXP:
 	case ANYSXP:
 	case EXPRSXP:
-	case EXTPTRSXP:
-	case BCODESXP:
-	case WEAKREFSXP:
+	// Not recursive, as long as not subsettable (on the R level)
+	// case EXTPTRSXP:
+	// case BCODESXP:
+	// case WEAKREFSXP:
 	    LOGICAL(ans)[0] = 1;
 	    break;
 	default:
@@ -2116,6 +2089,139 @@ namespace {
     }
 }
 
+// Check if x has missing values; the anyNA.default() method
+static Rboolean anyNA(SEXP call, SEXP op, SEXP args, SEXP env)
+/* Original code:
+   Copyright 2012 Google Inc. All Rights Reserved.
+   Author: Tim Hesterberg <rocket@google.com>
+   Distributed under GPL 2 or later
+*/
+{
+    SEXP x = CAR(args);
+    SEXPTYPE xT = TYPEOF(x);
+    Rboolean isList = Rboolean(xT == VECSXP || xT == LISTSXP),
+	recursive = FALSE;
+
+    if (isList && length(args) > 1)
+	recursive = Rboolean(Rf_asLogical(CADR(args)));
+    if (OBJECT(x) || (isList && !recursive)) {
+	SEXP e0 = PROTECT(Rf_lang2(Rf_install("is.na"), x));
+	SEXP e = PROTECT(Rf_lang2(Rf_install("any"), e0));
+	SEXP res = PROTECT(Rf_eval(e, env));
+	int ans = Rf_asLogical(res);
+	UNPROTECT(3);
+	return Rboolean(ans == 1); // so NA answer is false.
+    }
+
+    R_xlen_t i, n = Rf_xlength(x);
+    switch (xT) {
+    case REALSXP:
+    {
+	double *xD = REAL(x);
+	for (i = 0; i < n; i++)
+	    if (ISNAN(xD[i])) return TRUE;
+	break;
+    }
+    case INTSXP:
+    {
+	int *xI = INTEGER(x);
+	for (i = 0; i < n; i++)
+	    if (xI[i] == NA_INTEGER) return TRUE;
+	break;
+    }
+    case LGLSXP:
+    {
+	int *xI = LOGICAL(x);
+	for (i = 0; i < n; i++)
+	    if (xI[i] == NA_LOGICAL) return TRUE;
+	break;
+    }
+    case CPLXSXP:
+    {
+	Rcomplex *xC = COMPLEX(x);
+	for (i = 0; i < n; i++)
+	    if (ISNAN(xC[i].r) || ISNAN(xC[i].i)) return TRUE;
+	break;
+    }
+    case STRSXP:
+	for (i = 0; i < n; i++)
+	    if (STRING_ELT(x, i) == NA_STRING) return TRUE;
+	break;
+    case RAWSXP: /* no such thing as a raw NA:  is.na(.) gives FALSE always */
+	return FALSE;
+    case NILSXP: // is.na() gives a warning..., but we do not.
+	return FALSE;
+    // The next two cases are only used if recursive = TRUE
+    case LISTSXP:
+    {
+	SEXP call2, args2, ans;
+	args2 = PROTECT(Rf_duplicate(args));
+	call2 = PROTECT(Rf_duplicate(call));
+	for (i = 0; i < n; i++, x = CDR(x)) {
+	    SETCAR(args2, CAR(x)); SETCADR(call2, CAR(x));
+	    if ((Rf_DispatchOrEval(call2, op, "anyNA", args2, env, &ans, 0, 1)
+		 && Rf_asLogical(ans)) || anyNA(call2, op, args2, env)) {
+		UNPROTECT(2);
+		return TRUE;
+	    }
+	}
+	UNPROTECT(2);
+	break;
+    }
+    case VECSXP:
+    {
+	SEXP call2, args2, ans;
+	args2 = PROTECT(Rf_duplicate(args));
+	call2 = PROTECT(Rf_duplicate(call));
+	for (i = 0; i < n; i++) {
+	    SETCAR(args2, VECTOR_ELT(x, i)); SETCADR(call2, VECTOR_ELT(x, i));
+	    if ((Rf_DispatchOrEval(call2, op, "anyNA", args2, env, &ans, 0, 1)
+		 && Rf_asLogical(ans)) || anyNA(call2, op, args2, env)) {
+		UNPROTECT(2);
+		return TRUE;
+	    }
+	}
+	UNPROTECT(2);
+	break;
+    }
+
+    default:
+	Rf_error("anyNA() applied to non-(list or vector) of type '%s'",
+		 Rf_type2char(TYPEOF(x)));
+    }
+    return FALSE;
+} // anyNA()
+
+SEXP attribute_hidden do_anyNA(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP ans;
+    static SEXP do_anyNA_formals = NULL;
+
+    if (length(args) < 1 || length(args) > 2)
+	Rf_errorcall(call, "anyNA takes 1 or 2 arguments");
+
+    if (Rf_DispatchOrEval(call, op, "anyNA", args, rho, &ans, 0, 1))
+	return ans;
+
+    if(length(args) == 1) {
+	Rf_check1arg(args, call, "x");
+ 	ans = Rf_ScalarLogical(anyNA(call, op, args, rho));
+   } else {
+	/* This is a primitive, so we manage argument matching ourselves.
+	   But this takes a little time.
+	 */
+	if (do_anyNA_formals == NULL)
+	    do_anyNA_formals = Rf_allocFormalsList2(Rf_install("x"),
+						    R_RecursiveSymbol);
+	PROTECT(args = Rf_matchArgs(do_anyNA_formals, args, call));
+	if(CADR(args) ==  R_MissingArg) SETCADR(args, Rf_ScalarLogical(FALSE));
+	ans = Rf_ScalarLogical(anyNA(call, op, args, rho));
+	UNPROTECT(1);
+    }
+    return ans;
+}
+
+
 SEXP attribute_hidden do_isnan(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP ans, dims, names, x;
@@ -2329,7 +2435,7 @@ SEXP attribute_hidden do_call(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(evargs = Rf_duplicate(CDR(args)));
     for (rest = evargs; rest != R_NilValue; rest = CDR(rest)) {
 	PROTECT(tmp = Rf_eval(CAR(rest), rho));
-	if (NAMED(tmp)) tmp = Rf_duplicate(tmp);
+	if (MAYBE_REFERENCED(tmp)) tmp = Rf_duplicate(tmp);
 	SETCAR(rest, tmp);
 	UNPROTECT(1);
     }
@@ -2356,8 +2462,13 @@ SEXP attribute_hidden do_docall(/*const*/ CXXR::Expression* call, const CXXR::Bu
     if( !(Rf_isString(fun) && length(fun) == 1) && !Rf_isFunction(fun) )
 	Rf_error(_("'what' must be a character string or a function"));
 
+#ifdef __maybe_in_the_future__
+    if (!isNull(args) && !isVectorList(args))
+	error(_("'args' must be a list or expression"));
+#else
     if (!Rf_isNull(args) && !Rf_isNewList(args))
 	Rf_error(_("'args' must be a list"));
+#endif
 
     if (!Rf_isEnvironment(envir))
 	Rf_error(_("'envir' must be an environment"));
@@ -2493,13 +2604,15 @@ SEXP attribute_hidden Rf_substituteList(SEXP el, SEXP rho)
 /* This is a primitive SPECIALSXP */
 SEXP attribute_hidden do_substitute(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP ap, argList, env, s, t;
+    SEXP argList, env, s, t;
+    static SEXP do_substitute_formals = NULL;
+
+    if (do_substitute_formals == NULL)
+        do_substitute_formals = Rf_allocFormalsList2(Rf_install("expr"),
+						     Rf_install("env"));
 
     /* argument matching */
-    PROTECT(ap = Rf_list2(nullptr, nullptr));
-    SET_TAG(ap,  Rf_install("expr"));
-    SET_TAG(CDR(ap), Rf_install("env"));
-    PROTECT(argList = Rf_matchArgs(ap, args, call));
+    PROTECT(argList = Rf_matchArgs(do_substitute_formals, args, call));
 
     /* set up the environment for substitution */
     if (CADR(argList) == R_MissingArg)
@@ -2518,7 +2631,7 @@ SEXP attribute_hidden do_substitute(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(env);
     PROTECT(t = CONS(Rf_duplicate(CAR(argList)), R_NilValue));
     s = Rf_substituteList(t, env);
-    UNPROTECT(4);
+    UNPROTECT(3);
     return CAR(s);
 }
 
@@ -2529,7 +2642,7 @@ SEXP attribute_hidden do_quote(SEXP call, SEXP op, SEXP args, SEXP rho)
     Rf_check1arg(args, call, "expr");
     SEXP val = CAR(args);
     /* Make sure expression has NAMED == 2 before being returning
-       in to avoid modification of source code */
+       in order to avoid modification of source code */
     if (NAMED(val) != 2) SET_NAMED(val, 2);
     return(val);
 }

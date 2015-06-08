@@ -1,6 +1,6 @@
 % File src/library/tcltk/man/tclServiceMode.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{tclServiceMode}
@@ -8,7 +8,7 @@
 \title{ Allow Tcl events to be serviced or not }
 \description{
 This function controls or reports on the Tcl service mode,
-i.e. whether Tcl will respond to events.
+i.e., whether Tcl will respond to events.
 }
 \usage{
 tclServiceMode(on = NULL)

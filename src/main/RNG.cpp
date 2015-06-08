@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2012  The R Core Team
+ *  Copyright (C) 1997--2015  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -48,9 +48,10 @@ UnifInitFun User_unif_init = nullptr; /* some picky compilers */
 
 DL_FUNC  User_norm_fun = nullptr; /* also in ../nmath/snorm.c */
 
-
+#include "nmath2.h"
 static RNGtype RNG_kind = RNG_DEFAULT;
-extern N01type N01_kind; /* from ../nmath/snorm.c */
+//extern N01type N01_kind; /* from ../nmath/snorm.c */
+//extern double BM_norm_keep; /* ../nmath/snorm.c */
 
 /* typedef unsigned int Int32; in Random.h */
 
@@ -267,8 +268,6 @@ static void FixupSeeds(RNGtype RNG_kind, int initial)
     }
 }
 
-extern double BM_norm_keep; /* ../nmath/snorm.c */
-
 static void RNG_Init(RNGtype kind, Int32 seed)
 {
     int j;
@@ -338,8 +337,6 @@ static SEXP GetSeedsFromVar(void)
     return seeds;
 }
 
-unsigned int TimeToSeed(void); /* datetime.c */
-
 static void Randomize(RNGtype kind)
 {
 /* Only called by  GetRNGstate() when there is no .Random.seed */
@@ -369,8 +366,8 @@ static void GetRNGkind(SEXP seeds)
 	warning(_("'.Random.seed[1]' is not a valid integer, so ignored"));
 	goto invalid;
     }
-    newRNG = RNGtype( (tmp % 100));
-    newN01 = N01type( (tmp / 100));
+    newRNG = (RNGtype) (tmp % 100);
+    newN01 = (N01type) (tmp / 100);
     if (newN01 > KINDERMAN_RAMAGE) {
 	warning(_("'.Random.seed[1]' is not a valid Normal type, so ignored"));
 	goto invalid;
@@ -459,7 +456,7 @@ static void RNGkind(RNGtype newkind)
 /* Choose a new kind of RNG.
  * Initialize its seed by calling the old RNG's unif_rand()
  */
-    if (newkind == RNGtype(-1)) newkind = RNG_DEFAULT;
+    if (newkind == (RNGtype)-1) newkind = RNG_DEFAULT;
     switch(newkind) {
     case WICHMANN_HILL:
     case MARSAGLIA_MULTICARRY:
@@ -474,7 +471,13 @@ static void RNGkind(RNGtype newkind)
 	error(_("RNGkind: unimplemented RNG kind %d"), newkind);
     }
     GetRNGstate();
-    RNG_Init(newkind, Int32( (unif_rand() * UINT_MAX)));
+    // precaution against corruption as per package randtoolbox
+    double u = unif_rand();
+    if (u < 0.0 || u > 1.0) {
+	warning("someone corrupted the random-number generator: re-initializing");
+	RNG_Init(newkind, TimeToSeed());
+    } else
+	RNG_Init(newkind, (Int32) (u * UINT_MAX));
     RNG_kind = newkind;
     PutRNGstate();
 }
@@ -483,7 +486,7 @@ static void Norm_kind(N01type kind)
 {
     /* N01type is an enumeration type, so this will probably get
        mapped to an unsigned integer type. */
-    if (kind == N01type(-1)) kind = N01_DEFAULT;
+    if (kind == (N01type)-1) kind = N01_DEFAULT;
     if (kind > KINDERMAN_RAMAGE)
 	error(_("invalid Normal type in 'RNGkind'"));
     if (kind == USER_NORM) {
@@ -674,7 +677,10 @@ static double MT_genrand(void)
 */
 
 
+/* This define may give a warning in clang, but is needed to comply
+   with the prohibition on changing the code. */
 #define long Int32
+
 #define ran_arr_buf       R_KT_ran_arr_buf
 #define ran_arr_cycle     R_KT_ran_arr_cycle
 #define ran_arr_ptr       R_KT_ran_arr_ptr

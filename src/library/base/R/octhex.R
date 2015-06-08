@@ -1,7 +1,7 @@
 #  File src/library/base/R/octhex.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ print.octmode <- function(x, ...)
 as.octmode <- function(x)
 {
     if(inherits(x, "octmode")) return(x)
-    if(is.double(x) && x == as.integer(x)) x <- as.integer(x)
+    if(is.double(x) && all(is.na(x) | x == as.integer(x))) x <- as.integer(x)
     if(is.integer(x)) return(structure(x, class="octmode"))
     if(is.character(x)) {
         z <- strtoi(x, 8L)
@@ -104,7 +104,7 @@ print.hexmode <- function(x, ...)
 as.hexmode <- function(x)
 {
     if(inherits(x, "hexmode")) return(x)
-    if(is.double(x) && (x == as.integer(x))) x <- as.integer(x)
+    if(is.double(x) && all(is.na(x) | x == as.integer(x))) x <- as.integer(x)
     if(is.integer(x)) return(structure(x, class = "hexmode"))
     if(is.character(x)) {
         z <- strtoi(x, 16L)

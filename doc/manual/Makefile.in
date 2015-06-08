@@ -29,6 +29,8 @@ SUBDIRS_WITH_NO_BUILD = images
 OBJECTS_HTML = $(SOURCES_TEXI:.texi=.html)
 OBJECTS_INFO = $(SOURCES_TEXI:.texi=.info)
 OBJECTS_PDF = $(SOURCES_TEXI:.texi=.pdf)
+OBJECTS_EPUB = $(SOURCES_TEXI:.texi=.epub)
+OBJECTS_MOBI = $(SOURCES_TEXI:.texi=.mobi)
 
 MAKEINDEX = @MAKEINDEX@
 MAKEINFO = @MAKEINFO@
@@ -45,6 +47,14 @@ PDFTEX = @PDFTEX@
 
 BATCHPDFLATEX = $(PDFLATEX) -interaction=nonstopmode
 
+## experimental support of ebook conversion.
+## ebook-convert is part of 'calibre'
+## (http://calibre-ebook.com/download, or Debian/Fedora/... packages)
+EBOOK = ebook-convert
+## or on OS X
+## EBOOK = /Applications/calibre.app/Contents/MacOS/ebook-convert
+EBOOK_OPTS = --language en --publisher "R Core Team"
+
 datarootdir = @datarootdir@
 infodir = @infodir@
 INSTALL_INFO = @INSTALL_INFO@
@@ -56,12 +66,12 @@ texinputs_BASE = $(R_PKGS_BASE:=-pkg.tex)
 texinputs_RECOMMENDED = $(R_PKGS_RECOMMENDED:=-pkg.tex)
 refman_DEPENDENCIES = version.tex $(top_srcdir)/share/texmf/tex/latex/Rd.sty
 fullrefman_TEXINPUTS = $(texinputs_BASE) @USE_RECOMMENDED_PACKAGES_TRUE@ $(texinputs_RECOMMENDED)
-SVN_REV = $(top_builddir)/SVN-REVISION
+GIT_REV = $(top_builddir)/GIT-REVISION
 
 texiincludes = version.texi $(srcdir)/R-defs.texi
 
 .SUFFIXES:
-.SUFFIXES: .html .info .texi .pdf
+.SUFFIXES: .html .info .texi .pdf .epub .mobi
 
 all: Makefile R docs
 
@@ -74,8 +84,8 @@ docs: html
 
 .texi.html:
 	@if test -z "$(MAKEINFO)"; then \
-	  $(ECHO) "'makeinfo' v4.7 or later needed to make HTML docs but missing on your system." ; \
-	  $(ECHO) "file $@ will be missing"; \
+	  $(ECHO) "'texi2any' v5.1 or later needed to make HTML docs but missing on your system." ; \
+	  $(ECHO) "file $@ will be missing and linked from CRAN"; \
 	else \
 	  $(ECHO) "creating doc/manual/$@"; \
 	  $(TEXI2HTML) -D UseExternalXrefs -I$(srcdir) $< -o $@.tmp || touch $@; \
@@ -85,7 +95,7 @@ docs: html
 
 .texi.info:
 	@if test -z "$(MAKEINFO)"; then \
-	  $(ECHO) "ERROR: 'makeinfo' v4.7 or later needed but missing on your system."; \
+	  $(ECHO) "ERROR: 'texi2any' v5.1 or later needed but missing on your system."; \
 	  exit 1; \
 	fi
 	$(MAKEINFO) --enable-encoding -D UseExternalXrefs -I$(srcdir) $<
@@ -101,10 +111,48 @@ docs: html
 	fi
 	TEXINPUTS="$(srcdir):$$TEXINPUTS" $(TEXI2PDF) $<
 
+## It seems ebook-convert converts the directory, 
+## so we populate a temporary dir.
+.texi.epub:
+	@mkdir -p tmp
+	@$(TEXI2HTML) --no-headers -I$(srcdir) $< -o $@.tmp
+	@$(SED) -f $(srcdir)/quot.sed $@.tmp > tmp/$*.html
+	@rm -f $@.tmp
+	$(EBOOK) tmp/$*.html $@ $(EBOOK_OPTS) --authors "R Core Team"
+	@rm -r tmp
+
+.texi.mobi:
+	@mkdir -p tmp
+	@$(TEXI2HTML) --no-headers -I$(srcdir) $< -o $@.tmp
+	@$(SED) -f $(srcdir)/quot.sed $@.tmp > tmp/$*.html
+	@rm -f $@.tmp
+	$(EBOOK) tmp/$*.html $@ $(EBOOK_OPTS) --authors "R Core Team"
+	@rm -r tmp
+
+R-intro.epub: R-intro.texi
+	@mkdir -p tmp
+	@cp -r images tmp
+	@$(TEXI2HTML) --no-headers -I$(srcdir) $< -o $@.tmp
+	@$(SED) -f $(srcdir)/quot.sed $@.tmp > tmp/$*.html
+	@rm -f $@.tmp
+	$(EBOOK) tmp/$*.html $@ $(EBOOK_OPTS) --authors \
+  "W.N. Venables, D.M. Smith, R Core Team"
+	@rm -r tmp
+
+R-intro.mobi: R-intro.texi
+	@mkdir -p tmp
+	@cp -r images tmp
+	@$(TEXI2HTML) --no-headers -I$(srcdir) $< -o $@.tmp
+	@$(SED) -f $(srcdir)/quot.sed $@.tmp > tmp/$*.html
+	@rm -f $@.tmp
+	$(EBOOK) tmp/$*.html $@ $(EBOOK_OPTS) --authors \
+  "W.N. Venables, D.M. Smith, R Core Team"
+	@rm -r tmp
+
 R-admin.html: $(srcdir)/R-admin.texi
 	@if test -z "$(MAKEINFO)"; then \
-	  $(ECHO) "'makeinfo' v4.7 or later needed to make HTML docs but missing on your system." ; \
-	  $(ECHO) "file $@ will be missing"; \
+	  $(ECHO) "'texi2any' v5.1 or later needed to make HTML docs but missing on your system." ; \
+	  $(ECHO) "file $@ will be missing and linked from CRAN"; \
 	else \
 	  $(ECHO) "creating doc/manual/$@"; \
 	  $(TEXI2HTML) -I$(srcdir) $(srcdir)/R-admin.texi -o $@.tmp || touch $@;\
@@ -114,8 +162,8 @@ R-admin.html: $(srcdir)/R-admin.texi
 
 R-FAQ.html: $(srcdir)/R-FAQ.texi
 	@if test -z "$(MAKEINFO)"; then \
-	  $(ECHO) "'makeinfo' v4.7 or later needed to make HTML docs but missing on your system." ; \
-	  $(ECHO) "file $@ will be missing"; \
+	  $(ECHO) "'texi2any' v5.1 or later needed to make HTML docs but missing on your system." ; \
+	  $(ECHO) "file $@ will be missing and linked from CRAN"; \
 	else \
 	  $(ECHO) "creating doc/manual/$@"; \
 	  $(MAKEINFO) --html --no-split --css-include=$(srcdir)/Rfaq.css -D UseExternalXrefs -I$(srcdir) $< -o $@.tmp || touch $@; \
@@ -124,10 +172,10 @@ R-FAQ.html: $(srcdir)/R-FAQ.texi
 	fi
 
 
-version.tex: Makefile $(top_srcdir)/VERSION $(SVN_REV)
+version.tex: Makefile $(top_srcdir)/VERSION $(GIT_REV)
 	@$(ECHO) "creating $(subdir)/$@"
 	@(v=`cat $(top_srcdir)/VERSION`; \
-	  v="$${v} (`sed -e 1d -e 's/^Last Changed Date: //' $(SVN_REV)`)"; \
+	  v="$${v} (`sed -e 1d -e 's/^Last Changed Date: //' $(GIT_REV)`)"; \
 	  $(ECHO) "$${v}") > $@
 
 R_EXE = $(top_builddir)/bin/R --slave --vanilla
@@ -151,11 +199,11 @@ $(texinputs_RECOMMENDED): FORCE
 	    | LC_ALL=C $(R_EXE) ; \
 	fi)
 
-version.texi: Makefile $(top_srcdir)/VERSION $(SVN_REV)
+version.texi: Makefile $(top_srcdir)/VERSION $(GIT_REV)
 	@$(ECHO) "creating $(subdir)/$@"
 	@(vv=`sed 's/ *(.*//' $(top_srcdir)/VERSION`;v=`echo $${vv}| sed 's/\([^ ]*\).*/\1/'`; \
 	  $(ECHO) "@set VERSIONno $${v}" > $@; \
-	  v="$${vv} (`sed -e 1d -e 's/^Last Changed Date: //' $(SVN_REV)`)"; \
+	  v="$${vv} (`sed -e 1d -e 's/^Last Changed Date: //' $(GIT_REV)`)"; \
 	  $(ECHO) "@set VERSION $${v}" >> $@; \
 	  rwv=`$(R_EXE) -f $(top_srcdir)/src/gnuwin32/fixed/rwver.R`; \
 	  $(ECHO) "@set RWVERSION $${rwv}" >> $@ )
@@ -169,10 +217,14 @@ html: $(OBJECTS_HTML)
 R-admin.html: $(texiincludes) $(srcdir)/Rman.css
 R-data.html: $(texiincludes) $(srcdir)/Rman.css
 R-exts.html: $(texiincludes) $(srcdir)/Rman.css
-R-intro.html: $(texiincludes) $(srcdir)/Rman.css
+R-intro.html: stamp-images-html $(texiincludes) $(srcdir)/Rman.css
 R-ints.html: $(texiincludes) $(srcdir)/Rman.css
 R-lang.html: $(texiincludes) $(srcdir)/Rman.css
 R-FAQ.html: $(srcdir)/Rfaq.css
+
+ebooks: epub mobi
+epub: $(OBJECTS_EPUB)
+mobi: $(OBJECTS_MOBI)
 
 info: $(OBJECTS_INFO)
 R-admin.info: $(texiincludes)
@@ -259,18 +311,28 @@ stamp-images-pdf:
 	@touch $@
 R-lang.pdf: $(texiincludes)
 
-install: install-message installdirs install-html
+install: install-message installdirs install-html install-images-html
 install-message:
 	@$(ECHO) "installing $(subdir) ..."
 installdirs:
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(rdocdir)/manual"
 install-strip: install
+install-images-html: installdirs
+	@$(MKINSTALLDIRS) "$(DESTDIR)$(rdocdir)/manual/images"
+	@-for f in $(srcdir)/images/*.png; do \
+	  $(INSTALL_DATA) $${f} "$(DESTDIR)$(rdocdir)/manual/images"; \
+	done
+stamp-images-html:
+	@if test "$(BUILDDIR_IS_SRCDIR)" = no ; then \
+	  $(MAKE) rdocdir=$(top_builddir)/doc install-images-html; \
+	fi
+	@touch $@
 install-images-pdf: installdirs
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(rdocdir)/manual/images"
 	@-for f in $(srcdir)/images/*.pdf; do \
 	  $(INSTALL_DATA) $${f} "$(DESTDIR)$(rdocdir)/manual/images"; \
 	done
-## if there is no makeinfo >= 4.7 then there are no html pages
+## if there is no makeinfo >= 5.1 then there are no html pages
 install-html: installdirs
 	@for f in $(OBJECTS_HTML); do \
 	  if test -f $${f} ; then \
@@ -330,6 +392,7 @@ clean:
 	  version.tex version.texi
 	-@rm -f stamp-*
 distclean: clean
+	-@rm -f *.epub *.mobi
 	-@rm -f Makefile
 maintainer-clean: distclean
 
@@ -345,31 +408,42 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	done
 	@if test -z "$(MAKEINFO)"; then \
-	  $(ECHO) "ERROR: 'makeinfo' v4.7 or later needed but missing on your system."; \
+	  $(ECHO) "ERROR: 'texi2any' v5.1 or later needed but missing on your system."; \
 	  exit 1; \
 	fi
 #	$(distdir)/doc/html has already been created
 	@$(TEXI2HTML) --no-headers --number-sections \
 	  $(srcdir)/R-admin.texi -I$(srcdir) \
 	  -o $(distdir)/../html/R-admin.html
-#	front-matter files
-#	@$(TEXI2TEXT) $(srcdir)/resources.texi -o $(distdir)/../../RESOURCES
-#	@$(TEXI2TEXT) $(srcdir)/R-FAQ.texi -o $(distdir)/../../FAQ
-#	@$(TEXI2HTML) --no-headers $(srcdir)/resources.texi \
-#	  -o $(distdir)/../html/resources.html
 
 front-matter: ${top_builddir}/doc/RESOURCES ${top_builddir}/doc/FAQ
 
 ${top_builddir}/doc/RESOURCES: $(srcdir)/resources.texi
-	@$(ECHO) "creating RESOURCES"
-	@$(TEXI2TEXT) $(srcdir)/resources.texi -o $@
+	@if test -z "$(MAKEINFO)"; then \
+	  $(ECHO) "'texi2any' v5.1 or later needed to make HTML docs but missing on your system." ; \
+	  $(ECHO) "file doc/RESOURCES will be missing"; \
+	else \
+	  $(ECHO) "creating RESOURCES"; \
+	  $(TEXI2TEXT) $(srcdir)/resources.texi -o $@; \
+	fi
 
 ${top_builddir}/doc/FAQ: $(srcdir)/R-FAQ.texi
-	@$(ECHO) "creating FAQ"
-	@$(TEXI2TEXT) $(srcdir)/R-FAQ.texi -o $@
+	@if test -z "$(MAKEINFO)"; then \
+	  $(ECHO) "'texi2any' v5.1 or later needed to make HTML docs but missing on your system." ; \
+	  $(ECHO) "file doc/FAQ will be missing"; \
+	else \
+	  $(ECHO) "creating FAQ"; \
+	  $(TEXI2TEXT) $(srcdir)/R-FAQ.texi -o $@; \
+	fi
 
-html-non-svn: ../html/resources.html
+html-non-git: ../html/resources.html
 
 ../html/resources.html: $(srcdir)/resources.texi
-	@$(ECHO) "creating doc/html/resources.html"
-	@$(TEXI2HTML) --no-headers $(srcdir)/resources.texi -o $@
+	@if test -z "$(MAKEINFO)"; then \
+	  $(ECHO) "'texi2any' v5.1 or later needed to make HTML docs but missing on your system." ; \
+	  $(ECHO) "file doc/html/resources.html will be missing"; \
+	else \
+	  $(ECHO) "creating doc/html/resources.html"; \
+	  $(MAKEINFO) --html --no-split --no-headers \
+	    --css-include=$(top_srcdir)/doc/html/R.css $(srcdir)/resources.texi -o $@; \
+	fi

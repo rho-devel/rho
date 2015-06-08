@@ -1,6 +1,6 @@
 % File src/library/stats/man/nls.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{nls}
@@ -257,10 +257,8 @@ x <- 1:10
 y <- 2*x + 3                            # perfect fit
 yeps <- y + rnorm(length(y), sd = 0.01) # added noise
 nls(yeps ~ a + b*x, start = list(a = 0.12345, b = 0.54321))
-\dontrun{
 ## terminates in an error, because convergence cannot be confirmed:
-nls(y ~ a + b*x, start = list(a = 0.12345, b = 0.54321))
-}
+try(nls(y ~ a + b*x, start = list(a = 0.12345, b = 0.54321)))
 
 ## the nls() internal cheap guess for starting values can be sufficient:
 

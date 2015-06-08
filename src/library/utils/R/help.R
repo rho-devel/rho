@@ -1,7 +1,7 @@
 #  File src/library/utils/R/help.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -23,32 +23,32 @@ function(topic, package = NULL, lib.loc = NULL,
          help_type = getOption("help_type"))
 {
     types <- c("text", "html", "pdf")
-    if(!missing(package))
+    if(!missing(package)) # Don't check for NULL; may be nonstandard eval
         if(is.name(y <- substitute(package)))
             package <- as.character(y)
 
     ## If no topic was given ...
     if(missing(topic)) {
-        if(!missing(package)) {         # "Help" on package.
+        if(!is.null(package)) {	# "Help" on package.
             help_type <- if(!length(help_type)) "text"
             else match.arg(tolower(help_type), types)
             ## Carter Butts and others misuse 'help(package=)' in startup
             if (interactive() && help_type == "html") {
-                if (tools:::httpdPort == 0L) tools::startDynamicHelp()
-                if (tools:::httpdPort <= 0L) # fallback to text help
+                port <- tools::startDynamicHelp(NA)
+                if (port <= 0L) # fallback to text help
                     return(library(help = package, lib.loc = lib.loc,
                                    character.only = TRUE))
                 browser <- if (.Platform$GUI == "AQUA") {
                     get("aqua.browser", envir = as.environment("tools:RGUI"))
                 } else getOption("browser")
- 		browseURL(paste0("http://127.0.0.1:", tools:::httpdPort,
+ 		browseURL(paste0("http://127.0.0.1:", port,
                                  "/library/", package, "/html/00Index.html"),
                           browser)
                 return(invisible())
             } else return(library(help = package, lib.loc = lib.loc,
                                   character.only = TRUE))
         }
-        if(!missing(lib.loc))           # text "Help" on library.
+        if(!is.null(lib.loc))           # text "Help" on library.
             return(library(lib.loc = lib.loc))
         ## ultimate default is to give help on help()
         topic <- "help"; package <- "utils"; lib.loc <- .Library
@@ -73,18 +73,19 @@ function(topic, package = NULL, lib.loc = NULL,
     else match.arg(tolower(help_type), types)
 
     paths <- index.search(topic,
-                          find.package(package, lib.loc, verbose = verbose))
+                          find.package(if (is.null(package)) loadedNamespaces() else package,
+			               lib.loc, verbose = verbose))
     tried_all_packages <- FALSE
     if(!length(paths)
        && is.logical(try.all.packages) && !is.na(try.all.packages)
-       && try.all.packages && missing(package) && missing(lib.loc)) {
+       && try.all.packages && is.null(package) && is.null(lib.loc)) {
         ## Try all the remaining packages.
         for(lib in .libPaths()) {
             packages <- .packages(TRUE, lib)
             packages <- packages[is.na(match(packages, .packages()))]
             paths <- c(paths, index.search(topic, file.path(lib, packages)))
         }
-        paths <- paths[paths != ""]
+        paths <- paths[nzchar(paths)]
         tried_all_packages <- TRUE
     }
 
@@ -112,14 +113,13 @@ print.help_files_with_topic <- function(x, ...)
         return(invisible(x))
     }
 
-    if(type == "html")
-        if (tools:::httpdPort == 0L) tools::startDynamicHelp()
+    port <- if(type == "html") tools::startDynamicHelp(NA) else NULL
 
     if(attr(x, "tried_all_packages")) {
         paths <- unique(dirname(dirname(paths)))
         msg <- gettextf("Help for topic %s is not in any loaded package but can be found in the following packages:",
                         sQuote(topic))
-        if (type == "html" && tools:::httpdPort > 0L) {
+        if (type == "html" && port > 0L) {
             path <- file.path(tempdir(), ".R/doc/html")
             dir.create(path, recursive = TRUE, showWarnings = FALSE)
             out <- paste0('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">\n',
@@ -132,7 +132,7 @@ print.help_files_with_topic <- function(x, ...)
                      '<tr align="left" valign="top">\n',
                      '<td width="25%">Package</td><td>Library</td></tr>\n')
             pkgs <- basename(paths)
-            links <- paste0('<a href="http://127.0.0.1:', tools:::httpdPort,
+            links <- paste0('<a href="http://127.0.0.1:', port,
                             '/library/', pkgs, '/help/', topic, '">',
                             pkgs, '</a>')
             out <- c(out, paste0('<tr align="left" valign="top">\n',
@@ -140,8 +140,9 @@ print.help_files_with_topic <- function(x, ...)
                                 dirname(paths), '</td></tr>\n'))
             out <- c(out, "</table>\n</p>\n<hr>\n</body></html>")
             writeLines(out, file.path(path, "all.available.html"))
-            browseURL(paste0("http://127.0.0.1:", tools:::httpdPort,
-                             "/doc/html/all.available.html"), browser)
+            browseURL(paste0("http://127.0.0.1:", port,
+                             "/doc/html/all.available.html"),
+                      browser)
         } else {
             writeLines(c(strwrap(msg), "",
                          paste(" ",
@@ -151,9 +152,11 @@ print.help_files_with_topic <- function(x, ...)
         }
     } else {
         if(length(paths) > 1L) {
-            if (type == "html" && tools:::httpdPort > 0L) { # Redo the search if dynamic help is running
-		browseURL(paste0("http://127.0.0.1:", tools:::httpdPort,
-                                 "/library/NULL/help/", topic), browser)
+            if (type == "html" && port > 0L) { # Redo the search if dynamic help is running
+		browseURL(paste0("http://127.0.0.1:", port,
+                                 "/library/NULL/help/",
+                                 URLencode(topic, reserved = TRUE)),
+                          browser)
 		return(invisible(x))
 	    }
             file <- paths[1L]
@@ -190,13 +193,14 @@ print.help_files_with_topic <- function(x, ...)
             file <- paths
 
         if(type == "html") {
-            if (tools:::httpdPort > 0L) {
+            if (port > 0L) {
 		path <- dirname(file)
 		dirpath <- dirname(path)
 		pkgname <- basename(dirpath)
-		browseURL(paste0("http://127.0.0.1:", tools:::httpdPort,
+		browseURL(paste0("http://127.0.0.1:", port,
                                  "/library/", pkgname, "/html/", basename(file),
-                                 ".html"), browser)
+                                 ".html"),
+                          browser)
             } else {
                 warning("HTML help is unavailable", call. = FALSE)
                 att <- attributes(x)

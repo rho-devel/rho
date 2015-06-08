@@ -2,9 +2,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.1.0 \n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-06-21 09:14\n"
-"PO-Revision-Date: 2013-03-19 13:41+0200 \n"
-"Last-Translator: Masafumi <mokada@mail.ne.jp> \n"
+"POT-Creation-Date: 2015-02-09 08:50\n"
+"PO-Revision-Date: 2014-03-26 14:24+0200 \n"
+"Last-Translator: Masafumi  \n"
 "Language-Team: RjpWiki Message Translation Team <mokada@md.tsukuba.ac.jp> \n"
 "Language: ja \n"
 "MIME-Version: 1.0 \n"
@@ -36,9 +36,6 @@ msgstr " 未知のチャンク %s が参照されています "
 msgid "no Sweave file with name %s found"
 msgstr " %s という名前の Sweave ファイルはありません "
 
-msgid "%d Sweave files for basename %s found"
-msgstr " %d 個の Sweve ファイルが基本名 %s に対して見付かりました "
-
 msgid "more than one syntax specification found, using the first one"
 msgstr " 複数の構文指定が見付かりました。最初のものを使います "
 
@@ -61,11 +58,15 @@ msgstr ""
 " 構文解析エラーか空のオプションが以下にあります \n"
 " %s "
 
+#, fuzzy
+msgid "Warning: unknown option '--clean='%s"
+msgstr " 警告: 不明なオプション %s "
+
 msgid "Warning: unknown option %s"
 msgstr " 警告: 不明なオプション %s "
 
-msgid "Created PDF document %s"
-msgstr " PDF 文書 %s を作成しました "
+msgid "Output file:"
+msgstr " 出力ファイル： "
 
 msgid "Compacting PDF document"
 msgstr " PDF 文書を圧縮しています "
@@ -75,6 +76,12 @@ msgstr " %s へのパスは空白を含みます "
 
 msgid "this may cause problems when running LaTeX"
 msgstr " これは LaTeX を実行するとき問題を引き起こすかも知れません "
+
+msgid "at"
+msgstr ""
+
+msgid ","
+msgstr " , "
 
 msgid "the output file '%s' has disappeared"
 msgstr " 出力ファイル '%s' がなくなりました "
@@ -140,6 +147,12 @@ msgstr " 'file' は connection か文字列か NULL でなければなりませ�
 msgid "bad argument"
 msgstr " 誤った引数 "
 
+msgid "'full.names' must be TRUE for multiple paths."
+msgstr " 複数のパスを指定するときはfull.namesがTRUEでなければなりません "
+
+msgid "Timestamp file no longer exists."
+msgstr "Timestampファイルがありません "
+
 msgid ""
 "Not all arguments are of the same length, the following need to be recycled: "
 "%s"
@@ -188,10 +201,6 @@ msgstr ""
 
 msgid "package %s not found"
 msgstr " パッケージ %s が見付かりません "
-
-msgid "broken installation, no CITATION file in the base package."
-msgstr ""
-" インストールが不完全です、base パッケージに CITATION ファイルがありません "
 
 msgid "no date field in DESCRIPTION file of package %s"
 msgstr " パッケージ %s の DESCRIPTION ファイル中に date 欄がありません "
@@ -272,6 +281,9 @@ msgstr " 'dump' はクラス %s のオブジェクトではありません "
 msgid "Message:"
 msgstr " メッセージ: "
 
+msgid "'dump' is empty"
+msgstr " 'dump' が空です "
+
 msgid "Available environments had calls:"
 msgstr " 利用可能な環境は以下の呼び出しを含んでいました: "
 
@@ -332,9 +344,6 @@ msgstr " %s に対するヘルプファイルが見つかりません "
 msgid "%s has a help file but no examples"
 msgstr " %s にはヘルプファイルはありますが、実行例はありません "
 
-msgid "test '%s' is not available"
-msgstr " テスト '%s' が利用できません "
-
 msgid "Line number missing"
 msgstr " 行番号が欠けています "
 
@@ -345,16 +354,16 @@ msgid "too many list items (at most up to %d)"
 msgstr " リストの項目が多すぎます (最大でも %d です) "
 
 msgid "no vector columns were selected"
-msgstr " ベクタの列が選択されていません "
+msgstr " ベクトルの列が選択されていません "
 
 msgid "non-vector columns will be ignored"
-msgstr " ベクタでない列は無視されます "
+msgstr " ベクトルでない列は無視されます "
 
 msgid "at least one vector element is required"
-msgstr " 少なくとも一つのベクタ要素が必要です "
+msgstr " 少なくとも一つのベクトル要素が必要です "
 
 msgid "non-vector elements will be ignored"
-msgstr " ベクタでない要素は無視されます "
+msgstr " ベクトルでない要素は無視されます "
 
 msgid "'form' must be a two-sided formula"
 msgstr " 'form' は両辺に項を持つ公式でなければなりません "
@@ -425,11 +434,19 @@ msgstr " 不正確な欄指定です "
 msgid "do not know what to search"
 msgstr " 何を検索すべきか分かりません "
 
-msgid "incorrect type specification"
-msgstr " 不正確なタイプ指定です "
-
 msgid "argument 'help.db' is deprecated"
 msgstr " 引数 'help.db' は廃止されました "
+
+msgid "no information in the database for package %s: need 'rebuild = TRUE'?"
+msgstr ""
+" パッケージ %s の情報がデータベース中にありません: 'rebuild = TRUE' が必要か"
+"もしれません "
+
+msgid "incorrect 'agrep' specification"
+msgstr " 不正確な 'agrep' 指定 "
+
+msgid "incorrect type specification"
+msgstr " 不正確なタイプ指定です "
 
 msgid "could not find package %s"
 msgstr " パッケージ %s を見付けることが出来ませんでした "
@@ -440,14 +457,6 @@ msgstr " パッケージ %s は空の hsearch データを持っています - �
 msgid "removing all entries with invalid multi-byte character data"
 msgstr " 不正な多バイト文字データを持つ全ての項目を取り除いています "
 
-msgid "no information in the database for package %s: need 'rebuild = TRUE'?"
-msgstr ""
-" パッケージ %s の情報がデータベース中にありません: 'rebuild = TRUE' が必要か"
-"もしれません "
-
-msgid "incorrect 'agrep' specification"
-msgstr " 不正確な 'agrep' 指定 "
-
 msgid "invalid browser name, check options(\"browser\")."
 msgstr " 不正なブラウザー名です、 options(\"browser\") をチェックして下さい "
 
@@ -456,10 +465,10 @@ msgstr " help.start() には HTTP サーバが実行されている必要があ�
 
 msgid ""
 "If nothing happens, you should open\n"
-"'%s' yourself"
+"%s yourself"
 msgstr ""
 " もし何も起きなければ、 \n"
-" 自分で '%s' を開いてください "
+" 自分で %s を開いてください "
 
 msgid ""
 "If the browser launched by '%s' is already running, it is *not* restarted, "
@@ -576,6 +585,11 @@ msgstr " リポジトリー %s に対する索引にアクセスできません 
 msgid "invalid 'filters' argument."
 msgstr " 不正な 'filters' 引数 "
 
+msgid ""
+"specifying 'contriburl' or 'available' requires a single type, not type = "
+"\"both\""
+msgstr ""
+
 msgid "package '%s' in library '%s' will not be updated"
 msgstr " パッケージ '%s' (ライブラリ '%s' 中) はアップデートされません "
 
@@ -651,6 +665,10 @@ msgstr ""
 " 'lib' のどの要素を依存関係のインストールに使うかわかりません \n"
 " 依存関係のインストールをスキップします "
 
+#, fuzzy
+msgid "type 'binary' is not supported on this platform"
+msgstr " このプラットフォームでは 'html = TRUE' のみがサポートされています "
+
 msgid "no packages were specified"
 msgstr " 如何なるパッケージも指定されませんでした "
 
@@ -663,20 +681,18 @@ msgstr " パッケージをインストール出来ませんでした "
 msgid "unable to create %s"
 msgstr " %s を生成できませんでした "
 
-msgid "inferring 'repos = NULL' from the file name"
+#, fuzzy
+msgid "inferring 'repos = NULL' from 'pkgs'"
 msgstr " ファイル名から 'repos = NULL' を推測 "
+
+msgid "unable to create temporary directory %s"
+msgstr " 一時的ディレクトリ %s を作ることが出来ません "
 
 msgid ""
 "type == \"both\" can only be used on Windows or a CRAN build for Mac OS X"
 msgstr ""
 " type == \"both\" はWindows か Mac OS X に対する CRAN build に対してだけ使え"
 "ます "
-
-msgid ""
-"type == \"both\" cannot be used if 'available' or 'contriburl' is specified"
-msgstr ""
-" type == \"both\" は 'available' か 'contriburl' が指定された時は使用出来ませ"
-"ん "
 
 msgid "type == \"both\" cannot be used with 'repos = NULL'"
 msgstr " type == \"both\" は 'repos = NULL' の時は使用出来ません "
@@ -715,9 +731,6 @@ msgstr " システム (cmd0): %s "
 msgid "installation of package %s had non-zero exit status"
 msgstr " パッケージ %s のインストールは、ゼロでない終了値をもちました "
 
-msgid "unable to create temporary directory %s"
-msgstr " 一時的ディレクトリ %s を作ることが出来ません "
-
 msgid "foundpkgs: %s"
 msgstr " foundpkgs: %s "
 
@@ -725,11 +738,11 @@ msgid "files: %s"
 msgstr " ファイル：%s "
 
 msgid ""
-"installation of one of more packages failed,\n"
+"installation of one or more packages failed,\n"
 "  probably %s"
 msgstr ""
 " 一つもしくは複数のパッケージのインストールが失敗しました \n"
-" 恐らく %s "
+"       恐らく %s "
 
 msgid ""
 "The downloaded source packages are in\n"
@@ -770,6 +783,10 @@ msgstr " 名前 %s のファイルを作成しました。 "
 
 msgid "Edit the file and move it to the appropriate directory."
 msgstr " ファイルを編集してきとうなディレクトリに移動してください "
+
+#, fuzzy
+msgid "cannot determine import name"
+msgstr " 利用可能な名前を決定することができません "
 
 msgid "no documentation of type %s and topic %s (or error in processing help)"
 msgstr ""
@@ -898,6 +915,9 @@ msgstr ""
 msgid "cannot coerce 'x' to roman"
 msgstr " 'x' を roman に変換できません "
 
+msgid "Could not create file %s, aborting"
+msgstr " ファイル %s を作成できません。中止します "
+
 msgid "no valid packages were specified"
 msgstr " 有効なパッケージが指定されませんでした "
 
@@ -983,10 +1003,16 @@ msgid "file '%s' not found"
 msgstr " ファイル '%s' が見付かりません "
 
 msgid "file '%s' did not have execute permissions: corrected"
-msgstr ""
+msgstr " ファイル '%s' は実行属性を持っていなかったので、修正しました "
 
 msgid "file size is limited to 8GB"
 msgstr " ファイルサイズは 8GB に制限されています "
+
+msgid "invalid uid value replaced by that for user 'nobody'"
+msgstr " 不正なuid値は、ユーザ 'nobody' のuidで置き換えられました "
+
+msgid "invalid gid value replaced by that for user 'nobody'"
+msgstr " 不正なgid値は、ユーザ 'nobody' のgidで置き換えられました "
 
 msgid ""
 "vignette %s found more than once,\n"
@@ -998,9 +1024,11 @@ msgstr ""
 msgid "vignette %s not found"
 msgstr " ビニエット %s が見付かりません "
 
-#, fuzzy
 msgid "vignette %s has no PDF/HTML"
-msgstr " ビニエット %s は PDF ファイルを持ちません "
+msgstr " ビニエット %s は PDF/HTML ファイルを持ちません "
+
+msgid "vignette %s has no R code"
+msgstr " ビニエット %s にはRコードがありません "
 
 msgid "select.list() cannot be used non-interactively"
 msgstr " select.list() は対話的にしか使えません "
@@ -1066,6 +1094,14 @@ msgstr " 'ccaddress' は長さ 1 の整数でなければなりません "
 msgid "no download method found"
 msgstr " ダウンロードの方法が見付かりません "
 
+#, fuzzy
+msgid "'url' must be a length-one character vector"
+msgstr " 'title' は NULL か長さ 1 の文字ベクトルでなければなりません "
+
+#, fuzzy
+msgid "'destfile' must be a length-one character vector"
+msgstr " 'title' は NULL か長さ 1 の文字ベクトルでなければなりません "
+
 msgid "download had nonzero exit status"
 msgstr " ダウンロードはゼロ以外の終了状態を持ちました "
 
@@ -1113,13 +1149,6 @@ msgstr " 'memory.limit()' は Windows 固有の関数です "
 msgid "method 'mailx' is Unix-only"
 msgstr " 'mailx' メソッドは Unix でのみ利用可能です "
 
-msgid ""
-"If nothing happens, you should open\n"
-"%s yourself"
-msgstr ""
-" もし何も起きなければ、 \n"
-" 自分で %s を開いてください "
-
 msgid "zip file %s not found"
 msgstr " zip ファイル %s が見付かりません "
 
@@ -1134,6 +1163,11 @@ msgstr " winDialog() は対話的にしか使用できません "
 
 msgid "winDialogString() cannot be used non-interactively"
 msgstr " winDialogString() は対話的にしか使用できません "
+
+#, fuzzy
+msgid "%d Sweave file for basename %s found"
+msgid_plural "%d Sweave files for basename %s found"
+msgstr[0] " %d 個の Sweve ファイルが基本名 %s に対して見付かりました "
 
 msgid "%d occurrence in %s"
 msgid_plural "%d occurrences in %s"
@@ -1170,8 +1204,9 @@ msgstr[0] ""
 " パッケージを %s から取り除きます \n"
 " (%s が指定されていないため) "
 
-msgid "package %s is not available (for %s)"
-msgid_plural "packages %s are not available (for %s)"
+#, fuzzy
+msgid "package %s is not available (%s)"
+msgid_plural "packages %s are not available (%s)"
 msgstr[0] " パッケージ %s が利用できません (%s に対して) "
 
 msgid "dependency %s is not available"
@@ -1201,13 +1236,16 @@ msgid_plural ""
 "There are binary versions available but the source versions are later"
 msgstr[0] " 利用できるバイナリー版がありますがソース版は後者です "
 
-msgid "Do you want to install from sources the package which need compilation?"
+#, fuzzy
+msgid ""
+"Do you want to install from sources the package which needs compilation?"
 msgid_plural ""
 "Do you want to install from sources the packages which need compilation?"
 msgstr[0] " コンパイルが必要なパッケージのソースからインストールを行いますか? "
 
+#, fuzzy
 msgid ""
-"Package which are only available in source form, and may need compilation of "
+"Package which is only available in source form, and may need compilation of "
 "C/C++/Fortran"
 msgid_plural ""
 "Packages which are only available in source form, and may need compilation "
@@ -1241,9 +1279,43 @@ msgid "invalid roman numeral: %s"
 msgid_plural "invalid roman numerals: %s"
 msgstr[0] " 不正なローマ数字です: %s "
 
+msgid "is"
+msgid_plural "are"
+msgstr[0] ""
+
 msgid "package %s is in use and will not be installed"
 msgid_plural "packages %s are in use and will not be installed"
 msgstr[0] " パッケージ %s は使用中のため、インストールされません "
+
+#~ msgid ""
+#~ "type == \"both\" cannot be used if 'available' or 'contriburl' is "
+#~ "specified"
+#~ msgstr ""
+#~ " type == \"both\" は 'available' か 'contriburl' が指定された時は使用出来"
+#~ "ません "
+
+#~ msgid "method 'lynx' is untested and deprecated as from R 3.1.0"
+#~ msgstr ""
+#~ " メソッド 'lynx' は, R 3.1.0以降ではテストされておらず, 使用は推奨されませ"
+#~ "ん "
+
+#~ msgid ""
+#~ "If nothing happens, you should open\n"
+#~ "'%s' yourself"
+#~ msgstr ""
+#~ " もし何も起きなければ、 \n"
+#~ " 自分で '%s' を開いてください "
+
+#~ msgid "test '%s' is not available"
+#~ msgstr " テスト '%s' が利用できません "
+
+#~ msgid "broken installation, no CITATION file in the base package."
+#~ msgstr ""
+#~ " インストールが不完全です、base パッケージに CITATION ファイルがありませ"
+#~ "ん "
+
+#~ msgid "Created PDF document %s"
+#~ msgstr " PDF 文書 %s を作成しました "
 
 #~ msgid "%d): succeeded '%s'"
 #~ msgstr " %d): 成功 '%s' "
@@ -1314,9 +1386,6 @@ msgstr[0] " パッケージ %s は使用中のため、インストールされ�
 
 #~ msgid "not found"
 #~ msgstr " 見付かりません "
-
-#~ msgid ","
-#~ msgstr " , "
 
 #~ msgid "HTTPUserAgent"
 #~ msgstr " HTTPUserAgent "
@@ -1525,9 +1594,6 @@ msgstr[0] " パッケージ %s は使用中のため、インストールされ�
 
 #~ msgid "'latexcmd' is empty"
 #~ msgstr " 'latexcmd' が空です "
-
-#~ msgid "'dvipscmd' is empty"
-#~ msgstr " 'dvipsscmd' が空です "
 
 #~ msgid ""
 #~ "Changing the default browser (as specified by the 'browser' option) to "

@@ -2127,14 +2127,14 @@ static GCRoot<> R_GtSym = nullptr;
 static GCRoot<> R_AndSym = nullptr;
 static GCRoot<> R_OrSym = nullptr;
 static GCRoot<> R_NotSym = nullptr;
-static GCRoot<> R_SubsetSym = nullptr;
-static GCRoot<> R_SubassignSym = nullptr;
+// static GCRoot<> R_SubsetSym = nullptr;
+// static GCRoot<> R_SubassignSym = nullptr;
 static GCRoot<> R_CSym = nullptr;
-static GCRoot<> R_Subset2Sym = nullptr;
-static GCRoot<> R_Subassign2Sym = nullptr;
-static GCRoot<> R_valueSym = nullptr;
-static GCRoot<> R_TrueValue = nullptr;
-static GCRoot<> R_FalseValue = nullptr;
+// static GCRoot<> R_Subset2Sym = nullptr;
+// static GCRoot<> R_Subassign2Sym = nullptr;
+// static GCRoot<> R_valueSym = nullptr;
+// static GCRoot<> R_TrueValue = nullptr;
+// static GCRoot<> R_FalseValue = nullptr;
 
 attribute_hidden
 void R_initialize_bcode(void)
@@ -3093,6 +3093,7 @@ static int opcode_counts[OPCOUNT];
 #define BC_CHECK_SIGINT() do { \
   if (++evalcount > BC_COUNT_DELTA) { \
       R_CheckUserInterrupt(); \
+      R_RunPendingFinalizers();	\
       evalcount = 0; \
   } \
 } while (0)

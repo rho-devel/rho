@@ -1,7 +1,7 @@
 #  File src/library/tools/R/Rdtools.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,8 @@
 
 RdTextFilter <-
 function(ifile, encoding = "unknown", keepSpacing = TRUE,
-         drop = character(), keep = character())
+         drop = character(), keep = character(),
+         macros = file.path(R.home("share"), "Rd", "macros", "system.Rd"))
 {
     if(inherits(ifile, "srcfile"))
         ifile <- ifile$filename
@@ -29,7 +30,7 @@ function(ifile, encoding = "unknown", keepSpacing = TRUE,
 	p <- ifile[ order(srcrefs[1,], srcrefs[2,]) ]
 	class(p) <- class(ifile)
     } else
-    	p <- parse_Rd(ifile, encoding = encoding)
+    	p <- parse_Rd(ifile, encoding = encoding, macros = macros)
 
     tags <- RdTags(p)
 
@@ -37,7 +38,7 @@ function(ifile, encoding = "unknown", keepSpacing = TRUE,
 	encoding <- p[[which.max(tags == "\\encoding")]][[1L]]
 	if (encoding %in% c("UTF-8", "utf-8", "utf8")) encoding <- "UTF-8"
 	if (!inherits(ifile, "Rd"))
-	    p <- parse_Rd(ifile, encoding=encoding)
+	    p <- parse_Rd(ifile, encoding=encoding, macros = macros)
     } else
 	encoding <- ""
 
@@ -50,7 +51,7 @@ function(ifile, encoding = "unknown", keepSpacing = TRUE,
     ##     mycat("\n")
     ## })$output
 
-    myval <- character()
+##    myval <- character()
     mycon <- textConnection("myval", open = "w", local = TRUE,
                             encoding = "UTF-8")
     on.exit(close(mycon))
@@ -87,9 +88,7 @@ function(ifile, encoding = "unknown", keepSpacing = TRUE,
     show <- function(x) {
 	srcref <- attr(x, "srcref")
 	firstline <- srcref[1L]
-	firstbyte <- srcref[2L]
 	lastline <- srcref[3L]
-	lastbyte <- srcref[4L]
 	firstcol <- srcref[5L]
 	lastcol <- srcref[6L]
 	tag <- attr(x, "Rd_tag")

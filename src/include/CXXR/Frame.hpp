@@ -163,7 +163,7 @@ namespace CXXR {
 	     * @note It is conceivable that forcing a Promise will
 	     * result in the destruction of this Binding object.
 	     */
-	    RObject* forcedValue();
+	    RObject* forcedValue() const;
 
 	    /** @brief Look up bound value, forcing Promises if
 	     * necessary.
@@ -188,7 +188,7 @@ namespace CXXR {
 	     * @note It is conceivable that forcing a Promise will
 	     * result in the destruction of this Binding object.
 	     */
-	    std::pair<RObject*, bool> forcedValue2();
+	    std::pair<RObject*, bool> forcedValue2() const;
 
 	    /** @brief Get pointer to Frame.
 	     *
@@ -732,7 +732,8 @@ namespace CXXR {
 	 * @return A vector containing pointers to the Symbol objects
 	 * bound by this Frame.
 	 */
-        std::vector<const Symbol*> symbols(bool include_dotsymbols) const;
+        std::vector<const Symbol*> symbols(bool include_dotsymbols,
+					   bool sorted = false) const;
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const override;

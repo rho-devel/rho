@@ -1,3 +1,0 @@
-Fixed bugs -
-
-1. The read.xport function gives incorrect answers on big endian machines. (0.2-3)

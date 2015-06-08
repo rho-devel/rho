@@ -1,6 +1,6 @@
 % File src/library/base/man/order.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{order}
@@ -35,7 +35,8 @@ sort.list(x, partial = NULL, na.last = TRUE, decreasing = FALSE,
     (see \sQuote{Note}.)}
   \item{method}{the method to be used: partial matches are allowed.  The
     default is \code{"shell"} except for some special cases: see
-    \sQuote{Details}.}
+    \sQuote{Details}.  For details of methods \code{"shell"} and
+    \code{"quick"}, see the help for \code{\link{sort}}.}
 }
 \details{
   In the case of ties in the first vector, values in the second are used
@@ -57,7 +58,8 @@ sort.list(x, partial = NULL, na.last = TRUE, decreasing = FALSE,
   for integer \code{x} with a range of less than 100,000.  For such
   \code{x} it is very fast (and stable), and hence is ideal for sorting
   factors---as from \R 3.0.0 it is the default method for factors with
-  less than 100,000 levels.
+  less than 100,000 levels.  (This is also known as \emph{counting
+  sorting}.)
 
   \code{partial = NULL} is supported for compatibility with other
   implementations of S, but no other values are accepted and ordering is
@@ -87,13 +89,20 @@ sort.list(x, partial = NULL, na.last = TRUE, decreasing = FALSE,
 \preformatted{   x[order(x, na.last = NA)]
    zz <- x[!is.na(x)]; zz[sort.list(x, na.last = NA)]
 }
-   both sort the non-\code{NA} values of \code{x}.
+  both sort the non-\code{NA} values of \code{x}.
+
+  Prior to \R 3.1.0 \code{method = "radix"} was only supported for
+  non-negative integers.
 }
 
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
   Wadsworth & Brooks/Cole.
+
+  Knuth, D. E. (1998)
+  \emph{The Art of Computer Programming, Volume 3: Sorting and
+    Searching.} 2nd ed. Addison-Wesley.
 }
 \seealso{
   \code{\link{sort}}, \code{\link{rank}}, \code{\link{xtfrm}}.
@@ -142,7 +151,7 @@ z <- cbind(a, b)
 (o <- order(a, b, na.last = FALSE)); z[o, ]
 (o <- order(a, b, na.last = NA)); z[o, ]
 
-\dontrun{
+\donttest{
 ##  speed examples for long vectors:
 x <- factor(sample(letters, 1e6, replace = TRUE))
 system.time(o <- sort.list(x)) ## 0.4 secs

@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1998  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2012  The R Core Team.
+ *  Copyright (C) 1999-2015  The R Core Team.
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -126,7 +126,7 @@ SEXP attribute_hidden do_makelazy(/*const*/ CXXR::Expression* call, const CXXR::
     if (!isEnvironment(aenv)) error(_("invalid '%s' argument"), "assign.env");
 
     for(i = 0; i < XLENGTH(names); i++) {
-	SEXP name = install(CHAR(STRING_ELT(names, i)));
+	SEXP name = installChar(STRING_ELT(names, i));
 	PROTECT(val = eval(VECTOR_ELT(values, i), eenv));
 	PROTECT(expr0 = duplicate(expr));
 	SETCAR(CDR(expr0), val);
@@ -140,13 +140,14 @@ SEXP attribute_hidden do_makelazy(/*const*/ CXXR::Expression* call, const CXXR::
 SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     ClosureContext *ctxt;
-    SEXP code, oldcode, tmp, ap, argList;
+    SEXP code, oldcode, tmp, argList;
     int addit = 0;
+    static SEXP do_onexit_formals = NULL;
 
-    PROTECT(ap = list2(nullptr, nullptr));
-    SET_TAG(ap,  install("expr"));
-    SET_TAG(CDR(ap), install("add"));
-    PROTECT(argList =  matchArgs(ap, args, call));
+    if (do_onexit_formals == NULL)
+        do_onexit_formals = allocFormalsList2(install("expr"), install("add"));
+
+    PROTECT(argList =  matchArgs(do_onexit_formals, args, call));
     if (CAR(argList) == R_MissingArg) code = R_NilValue;
     else code = CAR(argList);
     if (CADR(argList) != R_MissingArg) {
@@ -186,7 +187,7 @@ SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	else
 	    ctxt->setOnExit(code);
     }
-    UNPROTECT(2);
+    UNPROTECT(1);
     return R_NilValue;
 }
 
@@ -292,7 +293,7 @@ SEXP attribute_hidden do_envirgets(/*const*/ CXXR::Expression* call, const CXXR:
 	    isNull(env))) {
 	if (isNull(env))
 	    error(_("use of NULL environment is defunct"));
-	if(NAMED(s) > 1)
+	if(MAYBE_SHARED(s))
 	    /* this copies but does not duplicate args or code */
 	    s = duplicate(s);
 	if (TYPEOF(BODY(s)) == BCODESXP) {
@@ -360,6 +361,24 @@ SEXP attribute_hidden do_parentenv(/*const*/ CXXR::Expression* call, const CXXR:
     return( ENCLOS(arg) );
 }
 
+static Rboolean R_IsImportsEnv(SEXP env)
+{
+    if (isNull(env) || !isEnvironment(env))
+        return FALSE;
+    if (ENCLOS(env) != R_BaseNamespace)
+        return FALSE;
+    SEXP name = getAttrib(env, R_NameSymbol);
+    if (!isString(name) || length(name) != 1)
+        return FALSE;
+
+    const char *imports_prefix = "imports:";
+    const char *name_string = CHAR(STRING_ELT(name, 0));
+    if (!strncmp(name_string, imports_prefix, strlen(imports_prefix)))
+        return TRUE;
+    else
+        return FALSE;
+}
+
 SEXP attribute_hidden do_parentenvgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
     SEXP env, parent;
@@ -375,6 +394,10 @@ SEXP attribute_hidden do_parentenvgets(/*const*/ CXXR::Expression* call, const C
 	error(_("argument is not an environment"));
     if( env == R_EmptyEnv )
 	error(_("can not set parent of the empty environment"));
+    if (R_EnvironmentIsLocked(env) && R_IsNamespaceEnv(env))
+	error(_("can not set the parent environment of a namespace"));
+    if (R_EnvironmentIsLocked(env) && R_IsImportsEnv(env))
+	error(_("can not set the parent environment of package imports"));
     parent = args[1];
     if (isNull(parent)) {
 	error(_("use of NULL environment is defunct"));
@@ -600,7 +623,7 @@ SEXP attribute_hidden do_cat(/*const*/ CXXR::Expression* call, const CXXR::Built
 		       The copy is needed as cat_newline might reuse the buffer.
 		       Use strncpy is in case these assumptions change.
 		    */
-		    p = EncodeElement(s, 0, 0, OutDec);
+		    p = EncodeElement0(s, 0, 0, OutDec);
 		    strncpy(buf, p, 512); buf[511] = '\0';
 		    p = buf;
 		}
@@ -632,7 +655,7 @@ SEXP attribute_hidden do_cat(/*const*/ CXXR::Expression* call, const CXXR::Built
 			if (isString(s))
 			    p = trChar(STRING_ELT(s, i+1));
 			else {
-			    p = EncodeElement(s, i+1, 0, OutDec);
+			    p = EncodeElement0(s, i+1, 0, OutDec);
 			    strncpy(buf, p, 512); buf[511] = '\0';
 			    p = buf;
 			}
@@ -663,24 +686,30 @@ SEXP attribute_hidden do_cat(/*const*/ CXXR::Expression* call, const CXXR::Built
 
 SEXP attribute_hidden do_makelist(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP list, names;
+    SEXP list, names, next;
     int i, n, havenames;
-    havenames = 0;
-    n = length(args);
+
+    /* compute number of args and check for names */
+    for (next = args, n = 0, havenames = FALSE;
+	 next != R_NilValue;
+	 next = CDR(next)) {
+	if (TAG(next) != R_NilValue)
+	    havenames = TRUE;
+	n++;
+    }
+
     PROTECT(list = allocVector(VECSXP, n));
-    PROTECT(names = allocVector(STRSXP, n));
+    PROTECT(names = havenames ? allocVector(STRSXP, n) : R_NilValue);
     for (i = 0; i < n; i++) {
-	if (TAG(args) != R_NilValue) {
-	    SET_STRING_ELT(names, i, PRINTNAME(TAG(args)));
-	    havenames = 1;
-	}
-	else {
-	    SET_STRING_ELT(names, i, R_BlankString);
+	if (havenames) {
+	    if (TAG(args) != R_NilValue)
+		SET_STRING_ELT(names, i, PRINTNAME(TAG(args)));
+	    else
+		SET_STRING_ELT(names, i, R_BlankString);
 	}
 	if (NAMED(CAR(args)))
-	    SET_VECTOR_ELT(list, i, duplicate(CAR(args)));
-	else
-	    SET_VECTOR_ELT(list, i, CAR(args));
+	    INCREMENT_NAMED(CAR(args));
+	SET_VECTOR_ELT(list, i, CAR(args));
 	args = CDR(args);
     }
     if (havenames) {
@@ -700,7 +729,7 @@ SEXP attribute_hidden do_expression(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(ans = allocVector(EXPRSXP, n));
     a = args;
     for (i = 0; i < n; i++) {
-	if(NAMED(CAR(a)))
+	if(MAYBE_REFERENCED(CAR(a)))
 	    SET_XVECTOR_ELT(ans, i, duplicate(CAR(a)));
 	else
 	    SET_XVECTOR_ELT(ans, i, CAR(a));
@@ -957,10 +986,10 @@ static SEXP expandDots(SEXP el, SEXP rho)
 static SEXP setDflt(SEXP arg, SEXP dflt)
 {
     if (dflt) {
-	SEXP dflt1, dflt2;
-	PROTECT(dflt1 = deparse1line(dflt, TRUE));
-	PROTECT(dflt2 = deparse1line(CAR(arg), TRUE));
-	error(_("duplicate 'switch' defaults: '%s' and '%s'"),
+    	SEXP dflt1, dflt2;
+    	PROTECT(dflt1 = deparse1line(dflt, TRUE));
+    	PROTECT(dflt2 = deparse1line(CAR(arg), TRUE));
+    	error(_("duplicate 'switch' defaults: '%s' and '%s'"),
 	      CHAR(STRING_ELT(dflt1, 0)), CHAR(STRING_ELT(dflt2, 0)));
 	UNPROTECT(2); /* won't get here, but just for good form */
     }
@@ -998,6 +1027,11 @@ SEXP attribute_hidden do_switch(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(x = eval(CAR(args), rho));
     if (!isVector(x) || length(x) != 1)
 	errorcall(call, _("EXPR must be a length 1 vector"));
+    if (isFactor(x))
+	warningcall(call,
+		    _("EXPR is a \"factor\", treated as integer.\n"
+		      " Consider using '%s' instead."),
+		    "switch(as.character( * ), ...)");
     if (nargs > 1) {
 	/* There is a complication: if called from lapply
 	   there may be a ... argument */

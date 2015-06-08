@@ -1,7 +1,6 @@
-
 #  File src/library/tools/R/Rd2HTML.R
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2015 The R Core Team
 #  Part of the R package, http://www.R-project.org
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -53,8 +52,7 @@ get_link <- function(arg, tag, Rdfile) {
     list(topic = topic, dest = dest, pkg = pkg, targetfile = targetfile)
 }
 
-
-# translation of Utils.pm function of the same name, plus "unknown"
+## translation of Utils.pm function of the same name, plus "unknown"
 mime_canonical_encoding <- function(encoding)
 {
     encoding[encoding %in% c("", "unknown")] <-
@@ -110,18 +108,49 @@ vhtmlify <- function(x, inEqn = FALSE) { # code version
     x
 }
 
-# URL encode anything other than alphanumeric, . and _
-
-urlify <- function(x) { # make a string legal in a URL
-    chars <- unlist(strsplit(x, ""))
-    hex <- paste0("%", as.character(charToRaw(x)))
-    mixed <- ifelse(grepl("[0-9a-zA-Z._]", chars), chars, hex)
-    paste(mixed, collapse="")
+shtmlify <- function(s) {
+    s <- gsub("&", "&amp;", s, fixed = TRUE)
+    s <- gsub("<", "&lt;", s, fixed = TRUE)
+    s <- gsub(">", "&gt;", s, fixed = TRUE)
+    s
 }
 
-# Ampersands should be escaped in proper HTML URIs
+## URL encode anything other than alphanumeric, . - _ $ and reserved
+## characters in URLs.
+urlify <- function(x) {
+    ## Like utils::URLencode(reserved = FALSE), but with '&' replaced by
+    ## '&amp;' and hence directly usable for href attributes.
+    ## See
+    ##   <http://www.w3.org/TR/html4/appendix/notes.html#h-B.2.1>
+    ##   <http://www.w3.org/TR/html4/appendix/notes.html#h-B.2.2>
+    ##   RFC 3986 <http://tools.ietf.org/html/rfc3986>
 
-escapeAmpersand <- function(x) gsub("&", "&amp;", x, fixed=TRUE)
+    ## We do not want to mess with already-encoded URLs
+    if(grepl("%[[:xdigit:]]{2}", x, useBytes = TRUE)) {
+        gsub("&", "&amp;", x, fixed = TRUE)
+    } else {
+        chars <- unlist(strsplit(x, ""))
+        hex <- vapply(chars,
+                      function(x)
+                      paste0("%", toupper(as.character(charToRaw(x))),
+                             collapse = ""),
+                      "")
+        todo <- paste0("[^",
+                       "][!$&'()*+,;=:/?@ #",
+                       "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                       "abcdefghijklmnopqrstuvwxyz0123456789._~-",
+                       "]")
+        mixed <- ifelse(grepl(todo, chars), hex, chars)
+        gsub("&", "&amp;", paste(mixed, collapse = ""), fixed = TRUE)
+    }
+}
+## (Equivalently, could use escapeAmpersand(utils::URLencode(x)).)
+
+## Ampersands should be escaped in proper HTML URIs
+escapeAmpersand <- function(x) gsub("&", "&amp;", x, fixed = TRUE)
+
+invalid_HTML_chars_re <-
+    "[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]"
 
 ## This gets used two ways:
 
@@ -143,7 +172,6 @@ escapeAmpersand <- function(x) gsub("&", "&amp;", x, fixed=TRUE)
 ##    and missing links (those without an explicit package, and
 ##    those topics not in Links[2]) don't get linked anywhere.
 
-## FIXME: better to use XHTML
 Rd2HTML <-
     function(Rd, out = "", package = "", defines = .Platform$OS.type,
              Links = NULL, Links2 = NULL,
@@ -159,7 +187,7 @@ Rd2HTML <-
             package <- package[1L]
         } else {
             dir <- dirname(package)
-            if((dir != "") &&
+            if(nzchar(dir) &&
                file_test("-f", dfile <- file.path(package,
                                                   "DESCRIPTION"))) {
                 version <- .read_description(dfile)["Version"]
@@ -188,8 +216,6 @@ Rd2HTML <-
         }
     }
 
-    of <- function(...)
-        writeLinesUTF8(paste(...), con, outputEncoding, sep = "")
     of0 <- function(...)
         writeLinesUTF8(paste0(...), con, outputEncoding, sep = "")
     of1 <- function(text)
@@ -199,25 +225,24 @@ Rd2HTML <-
 
     inEqn <- FALSE		# Should we do edits needed in an eqn?
     sectionLevel <- 0L		# How deeply nested within section/subsection
-    inPara <- FALSE		# Are we in a <P> paragraph? If NA, we're not, but we're not allowed to be
-
+    inPara <- FALSE		# Are we in a <p> paragraph? If NA, we're not, but we're not allowed to be
+    inAsIs <- FALSE             # Should we show characters "as is"?
 
 ### These correspond to HTML wrappers
-    HTMLTags <- c("\\bold"="B",
-    	          "\\cite"="CITE",
+    HTMLTags <- c("\\bold"="b",
+    	          "\\cite"="cite",
                   "\\code"="code",
-                  "\\command"="CODE",
-                  "\\dfn"="DFN",
-                  "\\emph"="EM",
-                  "\\kbd"="KBD",
-                  "\\preformatted"="PRE",
-#                  "\\special"="PRE",
-                  "\\strong"="STRONG",
-                  "\\var"="VAR",
-                  "\\verb"="PRE")
+                  "\\command"="code",
+                  "\\dfn"="dfn",
+                  "\\emph"="em",
+                  "\\kbd"="kbd",
+                  "\\preformatted"="pre",
+#                  "\\special"="pre",
+                  "\\strong"="strong",
+                  "\\var"="var")
     # These have simple substitutions
-    HTMLEscapes <- c("\\R"='<font face="Courier New,Courier" color="#666666"><b>R</b></font>',
-    		     "\\cr"="<br>",
+    HTMLEscapes <- c("\\R"='<span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span>',
+    		     "\\cr"="<br />",
     		     "\\dots"="...",
     		     "\\ldots"="...")
     ## These correspond to idiosyncratic wrappers
@@ -229,7 +254,8 @@ Rd2HTML <-
                   "\\pkg"='<span class="pkg">',
                   "\\samp"='<span class="samp">',
                   "\\sQuote"="&lsquo;",
-                  "\\dQuote"="&ldquo;")
+                  "\\dQuote"="&ldquo;",
+                  "\\verb"='<code style="white-space: pre;">')
     HTMLRight <- c("\\acronym"='</span></acronym>',
     		   "\\donttest"="",
     		   "\\env"="</span>",
@@ -238,12 +264,8 @@ Rd2HTML <-
                    "\\pkg"="</span>",
                    "\\samp"="</span>",
                    "\\sQuote"="&rsquo;",
-                   "\\dQuote"="&rdquo;")
-
-    trim <- function(x) {
-        x <- psub1("^\\s*", "", x)
-        psub1("\\s*$", "", x)
-    }
+                   "\\dQuote"="&rdquo;",
+                   "\\verb"="</code>")
 
     addParaBreaks <- function(x) {
 	if (isBlankLineRd(x) && isTRUE(inPara)) {
@@ -272,24 +294,22 @@ Rd2HTML <-
     }
 
     writeWrapped <- function(tag, block, doParas) {
-    	if (!doParas || HTMLTags[tag] == "PRE")
+    	if (!doParas || HTMLTags[tag] == "pre")
             leavePara(NA)
         else
             enterPara()
+        saveAsIs <- inAsIs
+        asis <- !is.na(match(tag, "\\command"))
+        if(asis) inAsIs <<- TRUE
         if (!isBlankRd(block)) {
     	    of0("<", HTMLTags[tag], ">")
     	    writeContent(block, tag)
     	    of0("</",  HTMLTags[tag], ">")
     	}
+        if(HTMLTags[tag] == "pre")
+            inPara <<- FALSE
+        if(asis) inAsIs <<- saveAsIs
     }
-
-    checkInfixMethod <- function(blocks)
-    	# Is this a method which needs special formatting?
-    	if ( length(blocks) == 1 && RdTags(blocks) == "TEXT" &&
-    	     blocks[[1L]] %in% c("[", "[[", "$") ) {
-    	    pendingOpen <<- blocks[[1L]]
-    	    TRUE
-    	} else FALSE
 
     writeLink <- function(tag, block, doParas) {
 	parts <- get_link(block, tag, Rdfile)
@@ -377,14 +397,6 @@ Rd2HTML <-
         }
     }
 
-    writeComment <- function(txt) {
-       	txt <- psub1("^%", "", txt)
-       	txt <- fsub1("\n", "", txt)
-       	txt <- fsub("--", "- - ", txt)
-       	txt <- fsub(">", "&gt;", txt)
-	of("<!-- ", txt, " -->\n")
-    }
-
     writeLR <- function(block, tag, doParas) {
     	enterPara(doParas)
         of1(HTMLLeft[tag])
@@ -404,12 +416,12 @@ Rd2HTML <-
     }
 
     writeBlock <- function(block, tag, blocktag) {
-        doParas <- !(blocktag %in% c("\\command", "\\tabular"))
+        doParas <- !(blocktag %in% c("\\tabular"))
 	switch(tag,
                UNKNOWN =,
                VERB = of1(vhtmlify(block, inEqn)),
                RCODE = of1(vhtmlify(block)),
-               TEXT = of1(if(doParas) addParaBreaks(htmlify(block))else vhtmlify(block)),
+               TEXT = of1(if(doParas && !inAsIs) addParaBreaks(htmlify(block)) else vhtmlify(block)),
                USERMACRO =,
                "\\newcommand" =,
                "\\renewcommand" =,
@@ -430,8 +442,7 @@ Rd2HTML <-
                "\\kbd" =,
                "\\preformatted" =,
                "\\strong" =,
-               "\\var" =,
-               "\\verb" = writeWrapped(tag, block, doParas),
+               "\\var" = writeWrapped(tag, block, doParas),
                "\\special" = writeContent(block, tag), ## FIXME, verbatim?
                "\\linkS4class" =,
                "\\link" = writeLink(tag, block, doParas),
@@ -440,21 +451,24 @@ Rd2HTML <-
                    url <- paste(as.character(block), collapse="")
                    url <- gsub("\n", "", url)
                    enterPara(doParas)
-                   of0('<a href="mailto:', url, '">', htmlify(url), '</a>')},
-               ## FIXME: encode, not htmlify
-               ## watch out for empty URLs (TeachingDemos has one)
+                   of0('<a href="mailto:', urlify(url), '">',
+                       htmlify(url), '</a>')},
+               ## watch out for empty URLs (TeachingDemos had one)
                "\\url" = if(length(block)) {
-                   url <- paste(as.character(block), collapse="")
-                   url <- gsub("\n", "", url)
+                   url <- paste(as.character(block), collapse = "")
+                   url <- trimws(gsub("\n", "", url,
+                                      fixed = TRUE, useBytes = TRUE))
                    enterPara(doParas)
-                   of0('<a href="', escapeAmpersand(url), '">', htmlify(url), '</a>')
+                   of0('<a href="', urlify(url), '">',
+                       htmlify(url), '</a>')
                },
                "\\href" = {
                	   if(length(block[[1L]])) {
-               	   	url <- paste(as.character(block[[1L]]), collapse="")
-               	   	url <- gsub("\n", "", url)
+               	   	url <- paste(as.character(block[[1L]]), collapse = "")
+               	   	url <- trimws(gsub("\n", "", url,
+                                           fixed = TRUE, useBytes = TRUE))
 		        enterPara(doParas)
-               	   	of0('<a href="', escapeAmpersand(url), '">')
+               	   	of0('<a href="', urlify(url), '">')
                	   	closing <- "</a>"
                	   } else closing <- ""
                	   savePara <- inPara
@@ -464,7 +478,7 @@ Rd2HTML <-
                	   inPara <<- savePara
                },
                "\\Sexpr"= of0(as.character.Rd(block, deparse=TRUE)),
-               "\\cr" = of1(HTMLEscapes[tag]),
+               "\\cr" =,
                "\\dots" =,
                "\\ldots" =,
                "\\R" = {
@@ -479,10 +493,12 @@ Rd2HTML <-
                "\\pkg" =,
                "\\samp" =,
                "\\sQuote" =,
-               "\\dQuote" =  writeLR(block, tag, doParas),
+               "\\dQuote" =,
+               "\\verb" = writeLR(block, tag, doParas),
                "\\dontrun"= writeDR(block, tag),
                "\\enc" = writeContent(block[[1L]], tag),
                "\\eqn" = {
+                   enterPara(doParas)
                    inEqn <<- TRUE
                    of1("<i>")
                    block <- block[[length(block)]];
@@ -494,7 +510,7 @@ Rd2HTML <-
                "\\deqn" = {
                    inEqn <<- TRUE
                    leavePara(TRUE)
-                   of1('<p align="center"><i>')
+                   of1('<p style="text-align: center;"><i>')
                    block <- block[[length(block)]];
                    writeContent(block, tag)
                    of0('</i>')
@@ -502,6 +518,7 @@ Rd2HTML <-
                    inEqn <<- FALSE
                },
                "\\figure" = {
+                   enterPara(doParas)
                    ## This is what is needed for static html pages
                    if(dynamic) of1('<img src="figures/')
                    else of1('<img src="../help/figures/')
@@ -517,7 +534,7 @@ Rd2HTML <-
 		       of1('alt="')
 		       writeContent(block[[length(block)]], tag)
 		       of1('"')
-		   }
+                   }
                    of1(' />')
                },
                "\\dontshow" =,
@@ -554,7 +571,7 @@ Rd2HTML <-
 
         tags <- RdTags(content)
 
-	leavePara(FALSE)
+	leavePara(NA)
 	of1('\n<table summary="Rd table">\n')
         newrow <- TRUE
         newcol <- TRUE
@@ -570,7 +587,7 @@ Rd2HTML <-
                     stopRd(table, Rdfile,
                            "Only ", length(format),
                            " columns allowed in this table")
-            	of0('<td align="', format[col], '">')
+            	of0('<td style="text-align: ', format[col], ';">')
             	newcol <- FALSE
             }
             switch(tags[i],
@@ -585,11 +602,11 @@ Rd2HTML <-
             	newcol <- TRUE
             },
             writeBlock(content[[i]], tags[i], "\\tabular"))
-            leavePara(FALSE)
         }
         if (!newcol) of1('</td>')
         if (!newrow) of1('\n</tr>\n')
         of1('\n</table>\n')
+        inPara <<- FALSE
     }
 
     writeContent <- function(blocks, blocktag) {
@@ -725,7 +742,7 @@ Rd2HTML <-
     	} else
     	    of1(sectionTitles[tag])
         of1(paste0("</h", sectionLevel+2L, ">\n\n"))
-        if (tag %in% c("\\examples", "\\synopsis", "\\usage")) {
+        if (tag %in% c("\\examples", "\\usage")) {
             of1("<pre>")
             inPara <<- NA
             pre <- TRUE
@@ -770,8 +787,9 @@ Rd2HTML <-
     } else {
 	name <- htmlify(Rd[[2L]][[1L]])
 
-	of0('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">\n',
-	    '<html><head><title>')
+        of0('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">',
+            '<html xmlns="http://www.w3.org/1999/xhtml">',
+	    '<head><title>')
 	headtitle <- strwrap(.Rd_format_title(.Rd_get_title(Rd)),
 	                     width=65, initial="R: ")
 	if (length(headtitle) > 1) headtitle <- paste0(headtitle[1], "...")
@@ -779,18 +797,18 @@ Rd2HTML <-
 	of0('</title>\n',
 	    '<meta http-equiv="Content-Type" content="text/html; charset=',
 	    mime_canonical_encoding(outputEncoding),
-	    '">\n')
+	    '" />\n')
 
 	of0('<link rel="stylesheet" type="text/css" href="',
-	    stylesheet,
-	    '">\n',
+	    urlify(stylesheet),
+	    '" />\n',
 	    '</head><body>\n\n',
 	    '<table width="100%" summary="page for ', htmlify(name))
 	if (nchar(package))
 	    of0(' {', package, '}"><tr><td>',name,' {', package,'}')
 	else
 	    of0('"><tr><td>',name)
-	of0('</td><td align="right">R Documentation</td></tr></table>\n\n')
+	of0('</td><td style="text-align: right;">R Documentation</td></tr></table>\n\n')
 
 	of1("<h2>")
 	inPara <- NA
@@ -802,11 +820,11 @@ Rd2HTML <-
 	for (i in seq_along(sections)[-(1:2)])
 	    writeSection(Rd[[i]], sections[i])
 
-	if(version != "")
+	if(nzchar(version))
 	    version <- paste0('Package <em>',package,'</em> version ',version,' ')
 	of0('\n')
-	if (version != "")
-	    of0('<hr><div align="center">[', version,
+	if(nzchar(version))
+	    of0('<hr /><div style="text-align: center;">[', version,
 		if (!no_links) '<a href="00Index.html">Index</a>',
 		']</div>')
 	of0('\n',
@@ -869,3 +887,4 @@ function(dir)
     unlist(lapply(rev(dir(dir, full.names = TRUE)),
                   .find_HTML_links_in_package))
 }
+

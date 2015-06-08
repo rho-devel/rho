@@ -1,7 +1,7 @@
 #  File src/library/tools/R/bibstyle.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2013 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
 # Clean up LaTeX accents and braces
 cleanupLatex <- function(x) {
     if (!length(x)) return(x)
-    latex <- try(parseLatex(x), silent=TRUE)
-    if (inherits(latex, "try-error")) {
+    latex <- tryCatch(parseLatex(x), error = function(e)e)
+    if (inherits(latex, "error")) {
     	x
     } else {
     	deparseLatex(latexToUtf8(latex), dropBraces=TRUE)
@@ -82,13 +82,11 @@ makeJSS <- function()
 	fmtBook <- emphclean
 	fmtBtitle <- emphclean
 	fmtChapter <- labelclean(prefix="chapter ")
-	fmtDOI <- label(prefix="\\url{http://dx.doi.org/", suffix="}")
+	fmtDOI <- label(prefix="\\url{http://doi.org/", suffix="}")
 	fmtEdition <- labelclean(suffix=" edition")
 	fmtEprint <- plain
 	fmtHowpublished <- plainclean
 	fmtISBN <- label(prefix = "ISBN ")
-##if (!interactive()) stop("makeJSS")
-##browser()
 	fmtISSN <- label(prefix="ISSN ")
 	fmtInstitution <- plainclean
 	fmtNote <- plainclean
@@ -157,7 +155,7 @@ makeJSS <- function()
 	extraInfo <- function(paper) {
 	    result <- paste(c(fmtDOI(paper$doi), fmtNote(paper$note),
 		  fmtEprint(paper$eprint), fmtUrl(paper$url)), collapse=", ")
-	    if (result != "") result
+	    if (nzchar(result)) result
 	}
 
 	bookVolume <- function(book) {
@@ -168,7 +166,7 @@ makeJSS <- function()
 		result <- paste(result, "number", collapse(book$number))
 	    if (length(book$series))
 		result <- paste(result, "series", collapse(book$series))
-	    if (result != "") result
+	    if (nzchar(result)) result
 	}
 
 	bookPublisher <- function(book) {

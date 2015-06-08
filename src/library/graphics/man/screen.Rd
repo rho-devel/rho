@@ -1,6 +1,6 @@
 % File src/library/graphics/man/screen.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{screen}
@@ -76,7 +76,7 @@ close.screen(n, all.screens = FALSE)
 
 \section{Warnings}{
   The recommended way to use these functions is to completely draw a
-  plot and all additions (i.e. points and lines) to the base plot, prior to
+  plot and all additions (i.e., points and lines) to the base plot, prior to
   selecting and plotting on another screen. The behavior associated with
   returning to a screen to add to an existing plot is unpredictable and
   may result in problems that are not readily visible.

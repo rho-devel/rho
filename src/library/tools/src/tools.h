@@ -1,12 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2003-11   The R Core Team.
- *  Copyright (C) 2008-2014  Andrew R. Runnalls.
- *  Copyright (C) 2014 and onwards the CXXR Project Authors.
- *
- *  CXXR is not part of the R project, and bugs and other issues should
- *  not be reported via r-bugs or other R project channels; instead refer
- *  to the CXXR website.
+ *  Copyright (C) 2003-2015   The R Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,6 +41,7 @@ SEXP codeFilesAppend(SEXP f1, SEXP f2);
 SEXP getfmts(SEXP format);
 SEXP startHTTPD(SEXP sIP, SEXP sPort);
 SEXP stopHTTPD(void);
+SEXP splitString(SEXP string, SEXP delims);
 
 SEXP C_parseLatex(SEXP call, SEXP op, SEXP args, SEXP env);
 SEXP C_parseRd(SEXP call, SEXP op, SEXP args, SEXP env);

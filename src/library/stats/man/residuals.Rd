@@ -1,17 +1,17 @@
 % File src/library/stats/man/residuals.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Team
+% Copyright 1995-2013 R Core Team
 % Distributed under GPL 2 or later
 
 \name{residuals}
+\alias{residuals}
+\alias{resid}
+%\alias{residuals.default}
 \title{Extract Model Residuals}
 \usage{
 residuals(object, \dots)
 resid(object, \dots)
 }
-\alias{residuals}
-\alias{resid}
-\alias{residuals.default}
 \arguments{
   \item{object}{an object for which the extraction of model residuals is
     meaningful.}

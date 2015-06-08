@@ -1,6 +1,6 @@
 % File src/library/stats/man/arima0.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2012 R Core Team
+% Copyright 1995-2014 R Core Team
 % Distributed under GPL 2 or later
 
 \name{arima0}
@@ -109,7 +109,7 @@ arima0(x, order = c(0, 0, 0),
 \section{Fitting methods}{
   The exact likelihood is computed via a state-space representation of
   the ARMA process, and the innovations and their variance found by a
-  Kalman filter based on Gardner \emph{et al.} (1980).  This has
+  Kalman filter based on Gardner \emph{et al} (1980).  This has
   the option to switch to \sQuote{fast recursions} (assume an
   effectively infinite past) if the innovations variance is close
   enough to its asymptotic bound. The argument \code{delta} sets the

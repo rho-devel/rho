@@ -25,10 +25,10 @@ BJsales.lead
 \references{
   G. E. P. Box and G. M. Jenkins (1976):
   \emph{Time Series Analysis, Forecasting and Control},
-  Holden-Day, San Francisco, p. 537.
+  Holden-Day, San Francisco, p.\sspace{}537.
 
   P. J. Brockwell and R. A. Davis (1991):
   \emph{Time Series: Theory and Methods},
-  Second edition, Springer Verlag, NY, pp. 414.
+  Second edition, Springer Verlag, NY, pp.\sspace{}414.
 }
 \keyword{datasets}

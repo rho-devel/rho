@@ -1,7 +1,7 @@
 #  File src/library/tools/R/xgettext.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ function(dir, verbose = FALSE, asCall = TRUE)
     R_files <- list_files_with_exts(dir, exts)
     for(d in c("unix", "windows")) {
         OSdir <- file.path(dir, d)
-        if(file_test("-d", OSdir))
+        if(dir.exists(OSdir))
             R_files <- c(R_files, list_files_with_exts(OSdir, exts))
     }
     if(bn == "base") {
@@ -119,7 +119,7 @@ function(dir, verbose = FALSE)
     R_files <- list_files_with_exts(dir, exts)
     for(d in c("unix", "windows", "aqua")) {
         OSdir <- file.path(dir, d)
-        if(file_test("-d", OSdir))
+        if(dir.exists(OSdir))
             R_files <- c(R_files, list_files_with_exts(OSdir, exts))
     }
     out <- vector("list", length = length(R_files))
@@ -226,10 +226,10 @@ checkPoFile <- function(f, strictPlural = FALSE)
 		i <- i + 1L
 		s1 <- paste0(s1, sub('^["](.*)["][[:blank:]]*$', "\\1", lines[i]))
 	    }
-	    f1 <- try(getfmts(s1), silent = TRUE)
+	    f1 <- tryCatch(getfmts(s1), error = function(e)e)
 	    j <- i + 1L
 
-	    if (noCformat || inherits(f1, "try-error")) {
+	    if (noCformat || inherits(f1, "error")) {
 		noCformat <- FALSE
 		next
 	    }
@@ -257,7 +257,7 @@ checkPoFile <- function(f, strictPlural = FALSE)
 		    break
 		}
 
-		f2 <- try(getfmts(s2), silent = TRUE)
+		f2 <- tryCatch(getfmts(s2), error = function(e)e)
 
 		if (statement == "msgid_plural") {
 		    if (!strictPlural) {
@@ -267,11 +267,11 @@ checkPoFile <- function(f, strictPlural = FALSE)
 		    }
 		}
 
-		if (s2 != "" &&
+		if (nzchar(s2) &&
 		     !(identical(f1, f2) || identical(f1_plural, f2))) {
 		    location <- paste0(f, ":", j)
-		    if (inherits(f2, "try-error"))
-			diff <- conditionMessage(attr(f2, "condition"))
+		    if (inherits(f2, "error"))
+			diff <- conditionMessage(f2)
 		    else {
 		    	if (length(f1) < length(f2)) {
 			    diff <- "too many entries"
@@ -283,7 +283,7 @@ checkPoFile <- function(f, strictPlural = FALSE)
 			    diff <- ""
 			diffs <- which(f1 != f2)
 			if (length(diffs)) {
-			    if (diff != "")
+			    if (nzchar(diff))
 			    	diff <- paste0(diff, ", ")
 			    if (length(diffs) > 1)
 				diff <- paste(paste0(diff, "differences in entries"),

@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2003-12   The R Core Team
+ *  Copyright (C) 2003-2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -110,7 +110,7 @@ do_mapply(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXX
 		INTEGER(VECTOR_ELT(nindex, j))[0] = int( counters[j]);
 	}
 	SEXP tmp = eval(fcall, rho);
-	if (NAMED(tmp))
+	if (MAYBE_REFERENCED(tmp))
 	    tmp = duplicate(tmp);
 	SET_VECTOR_ELT(ans, i, tmp);
     }

@@ -13,7 +13,7 @@ revision='$Rev: 63872 $'
 version=`set - ${revision}; echo ${2}`
 version="R Java configurator: ${R_VERSION} (r${version})
 
-Copyright (C) 2002-13 The R Core Team.
+Copyright (C) 2002-2015 The R Core Team.
 This is free software; see the GNU General Public License version 2
 or later for copying conditions.  There is NO warranty."
 
@@ -348,7 +348,8 @@ PKG_LIBS = ${JAVA_LIBS1}
 _ACEOF
 
 ## in case e.g. -k was passed in the environment
-export MAKEFLAGS=
+MAKEFLAGS=
+export MAKEFLAGS
 ${R_HOME}/bin/R CMD SHLIB conftest.c
 ac_status=$?
 

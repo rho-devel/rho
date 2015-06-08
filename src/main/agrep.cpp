@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2002--2012  The R Core Team
+ *  Copyright (C) 2002--2014  The R Core Team
  *  Copyright (C) 2008-2014  Andrew R. Runnalls.
  *  Copyright (C) 2014 and onwards the CXXR Project Authors.
  *
@@ -133,9 +133,9 @@ SEXP attribute_hidden do_agrep(/*const*/ CXXR::Expression* call, const CXXR::Bui
 
     if(opt_fixed) cflags |= REG_LITERAL;
 
-    if(!isString(pat) || length(pat) < 1)
+    if(!isString(pat) || Rf_length(pat) < 1)
 	error(_("invalid '%s' argument"), "pattern");
-    if(length(pat) > 1)
+    if(Rf_length(pat) > 1)
 	warning(_("argument '%s' has length > 1 and only the first element will be used"), "pattern");
     
     if(!isString(vec)) error(_("invalid '%s' argument"), "x");
@@ -183,13 +183,14 @@ SEXP attribute_hidden do_agrep(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	return ans;
     }
 
+    static SEXP s_nchar = install("nchar");
     if(useBytes)
 	PROTECT(call = CXXR::SEXP_downcast<CXXR::Expression*>(
-		    lang3(install("nchar"), pat,
+		    lang3(s_nchar, pat,
 			  ScalarString(mkChar("bytes")))));
     else
 	PROTECT(call = CXXR::SEXP_downcast<CXXR::Expression*>(
-		    lang3(install("nchar"), pat,
+		    lang3(s_nchar, pat,
 			  ScalarString(mkChar("chars")))));
     patlen = asInteger(eval(call, env));
     UNPROTECT(1);
@@ -253,6 +254,11 @@ SEXP attribute_hidden do_agrep(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	} else LOGICAL(ind)[i] = 0;
     }
     tre_regfree(&reg);
+
+    if (op->variant()) {/* agrepl case */
+	UNPROTECT(1);
+	return ind;
+    }
 
     if(opt_value) {
 	PROTECT(ans = allocVector(STRSXP, nmatches));
@@ -536,8 +542,8 @@ SEXP attribute_hidden do_adist(/*const*/ CXXR::Expression* call, const CXXR::Bui
 
     if(!opt_counts) cflags |= REG_NOSUB;
 
-    nx = length(x);
-    ny = length(y);
+    nx = Rf_length(x);
+    ny = Rf_length(y);
     nxy = nx * ny;    
 
     if(!useBytes) {
@@ -773,10 +779,10 @@ SEXP attribute_hidden do_aregexec(/*const*/ CXXR::Expression* call, const CXXR::
     if(opt_icase) cflags |= REG_ICASE;
 
     if(!isString(pat) ||
-       (length(pat) < 1) ||
+       (Rf_length(pat) < 1) ||
        (STRING_ELT(pat, 0) == NA_STRING))
 	error(_("invalid '%s' argument"), "pattern");
-    if(length(pat) > 1)
+    if(Rf_length(pat) > 1)
 	warning(_("argument '%s' has length > 1 and only the first element will be used"), "pattern");
     
     if(!isString(vec))
@@ -809,13 +815,14 @@ SEXP attribute_hidden do_aregexec(/*const*/ CXXR::Expression* call, const CXXR::
         }
     }
     
+    static SEXP s_nchar = install("nchar");
     if(useBytes)
 	PROTECT(call = CXXR::SEXP_downcast<CXXR::Expression*>(
-		    lang3(install("nchar"), pat,
+		    lang3(s_nchar, pat,
 			  ScalarString(mkChar("bytes")))));
     else
 	PROTECT(call = CXXR::SEXP_downcast<CXXR::Expression*>(
-		    lang3(install("nchar"), pat,
+		    lang3(s_nchar, pat,
 			  ScalarString(mkChar("chars")))));
     patlen = asInteger(eval(call, env));
     UNPROTECT(1);
@@ -852,7 +859,8 @@ SEXP attribute_hidden do_aregexec(/*const*/ CXXR::Expression* call, const CXXR::
 //	if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	if(STRING_ELT(vec, i) == NA_STRING) {
 	    PROTECT(matchpos = ScalarInteger(NA_INTEGER));
-	    setAttrib(matchpos, install("match.length"),
+	    SEXP s_match_length = install("match.length");
+	    setAttrib(matchpos, s_match_length,
 		      ScalarInteger(NA_INTEGER));
 	    SET_VECTOR_ELT(ans, i, matchpos);
 	    UNPROTECT(1);

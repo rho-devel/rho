@@ -1,7 +1,7 @@
 #   File src/library/utils/R/SweaveDrivers.R
 #  Part of the R package, http://www.R-project.org
 #
-#  Copyright (C) 1995-2012 The R Core Team
+#  Copyright (C) 1995-2014 The R Core Team
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@ RweaveLatex <- function()
 }
 
 ## We definitely do not want '.' in here, to avoid misidentification
-## of file extensions.
-.SweaveValidFilenameRegexp <- "^[[:alnum:]#+-_]+$"
+## of file extensions.  Note that - is used literally here.
+.SweaveValidFilenameRegexp <- "^[[:alnum:]/#+_-]+$"
 
 RweaveLatexSetup <-
     function(file, syntax, output = NULL, quiet = FALSE, debug = FALSE,
@@ -177,7 +177,7 @@ makeRweaveLatexCodeRunner <- function(evalFunc = RweaveEvalWithOpt)
                 if (!is.null(options$label))
                     object$chunkout[[chunkprefix]] <- chunkout
                 if(!grepl(.SweaveValidFilenameRegexp, chunkout))
-                    warning("file name ", sQuote(chunkout), " is not portable",
+                    warning("file stem ", sQuote(chunkout), " is not portable",
                             call. = FALSE, domain = NA)
             }
         } else chunkout <- object$output
@@ -187,7 +187,6 @@ makeRweaveLatexCodeRunner <- function(evalFunc = RweaveEvalWithOpt)
         ## Note that we edit the error message below, so change both
         ## if you change this line:
         chunkexps <- try(parse(text = chunk, srcfile = srcfile), silent = TRUE)
-
         if (inherits(chunkexps, "try-error"))
             chunkexps[1L] <- sub(" parse(text = chunk, srcfile = srcfile) : \n ",
                                  "", chunkexps[1L], fixed = TRUE)
@@ -221,11 +220,11 @@ makeRweaveLatexCodeRunner <- function(evalFunc = RweaveEvalWithOpt)
         }
 
         trySrcLines <- function(srcfile, showfrom, showto, ce) {
-            lines <- try(suppressWarnings(getSrcLines(srcfile, showfrom, showto)),
-                         silent = TRUE)
-            if (inherits(lines, "try-error")) {
-                if (is.null(ce)) lines <- character()
-                else lines <- deparse(ce, width.cutoff = 0.75*getOption("width"))
+	    lines <- tryCatch(suppressWarnings(getSrcLines(srcfile, showfrom, showto)),
+			      error = function(e)e)
+	    if (inherits(lines, "error")) {
+		lines <- if (is.null(ce)) character()
+		else deparse(ce, width.cutoff = 0.75*getOption("width"))
             }
             lines
         }
@@ -253,14 +252,14 @@ makeRweaveLatexCodeRunner <- function(evalFunc = RweaveEvalWithOpt)
         thisline <- 0L             # current output line
         lastshown <- 0L            # last line already displayed;
 
-        refline <- NA    # line containing the current named chunk ref
+##        refline <- NA    # line containing the current named chunk ref
         leading <- 1L    # How many lines get the user prompt
 
         srcrefs <- attr(chunkexps, "srcref")
 
         if (length(devs)) {
             if(!grepl(.SweaveValidFilenameRegexp, chunkprefix))
-                warning("file name ", sQuote(chunkprefix), " is not portable",
+                warning("file stem ", sQuote(chunkprefix), " is not portable",
                         call. = FALSE, domain = NA)
             if (options$figs.only)
                 devs[[1L]](name = chunkprefix,
@@ -304,9 +303,10 @@ makeRweaveLatexCodeRunner <- function(evalFunc = RweaveEvalWithOpt)
             if (options$eval) {
                 tmpcon <- file()
                 sink(file = tmpcon)
-                err <- evalFunc(ce, options)
-                cat("\n")           # make sure final line is complete
-                sink()
+                err <- tryCatch(evalFunc(ce, options), finally = {
+                     cat("\n")           # make sure final line is complete
+                     sink()
+                })
                 output <- readLines(tmpcon)
                 close(tmpcon)
                 ## delete empty output
@@ -456,7 +456,13 @@ RweaveLatexWritedoc <- function(object, chunk)
                       cmdloc + attr(cmdloc, "match.length") - 1L)
         cmd <- sub(object$syntax$docexpr, "\\1", cmd)
         if (object$options$eval) {
-            val <- as.character(eval(parse(text = cmd), envir = .GlobalEnv))
+            val <- tryCatch(as.character(eval(parse(text = cmd), envir = .GlobalEnv)),
+		    error = function(e) {
+	               filenum <- attr(chunk, "srcFilenum")[pos[1L]]
+                       filename <- attr(chunk, "srcFilenames")[filenum]
+                       location <- paste0(basename(filename), ":", attr(chunk, "srclines")[pos[1L]])
+		       stop("at ",location, ", ", conditionMessage(e), call. = FALSE)
+		   })
             ## protect against character(), because sub() will fail
             if (length(val) == 0L) val <- ""
         }
@@ -526,22 +532,24 @@ RweaveLatexFinish <- function(object, error = FALSE)
         linesout <- object$linesout
         filenumout <- object$filenumout
         filenames <- object$srcFilenames[filenumout]
-        filegps <- rle(filenames)
-        offset <- 0L
-        for (i in seq_along(filegps$lengths)) {
-            len <- filegps$lengths[i]
-            inputname <- filegps$values[i]
-            vals <- rle(diff(linesout[offset + seq_len(len)]))
-            vals <- c(linesout[offset + 1L], as.numeric(rbind(vals$lengths, vals$values)))
-    	    concordance <- paste(strwrap(paste(vals, collapse = " ")), collapse = " %\n")
-    	    special <- paste0("\\Sconcordance{concordance:", outputname, ":",
-                         inputname, ":",
-                         if (offset) paste0("ofs ", offset, ":") else "",
-                         "%\n",
-                         concordance,"}\n")
-    	    cat(special, file = object$concordfile, append=offset > 0L)
-    	    offset <- offset + len
-    	}
+	if (!is.null(filenames)) {  # Might be NULL if an error occurred
+	    filegps <- rle(filenames)
+	    offset <- 0L
+	    for (i in seq_along(filegps$lengths)) {
+		len <- filegps$lengths[i]
+		inputname <- filegps$values[i]
+		vals <- rle(diff(linesout[offset + seq_len(len)]))
+		vals <- c(linesout[offset + 1L], as.numeric(rbind(vals$lengths, vals$values)))
+		concordance <- paste(strwrap(paste(vals, collapse = " ")), collapse = " %\n")
+		special <- paste0("\\Sconcordance{concordance:", outputname, ":",
+			     inputname, ":",
+			     if (offset) paste0("ofs ", offset, ":") else "",
+			     "%\n",
+			     concordance,"}\n")
+		cat(special, file = object$concordfile, append=offset > 0L)
+		offset <- offset + len
+	    }
+	}
     }
     invisible(outputname)
 }
@@ -607,19 +615,20 @@ RweaveLatexOptions <- function(options)
 RweaveChunkPrefix <- function(options)
 {
     if (!is.null(options$label)) {
-        if (options$prefix)
-            chunkprefix <- paste0(options$prefix.string, "-", options$label)
-        else
-            chunkprefix <- options$label
+	if (options$prefix)
+	    paste0(options$prefix.string, "-", options$label)
+	else
+	    options$label
     } else
-        chunkprefix <- paste0(options$prefix.string, "-",
-                              formatC(options$chunknr, flag = "0", width = 3))
-    chunkprefix
+	paste0(options$prefix.string, "-",
+	       formatC(options$chunknr, flag = "0", width = 3))
 }
 
 RweaveEvalWithOpt <- function (expr, options)
 {
     if (options$eval) {
+	## Note: try() as opposed to tryCatch() for back compatibility;
+	##       and  RweaveTryStop()  will work with it
         res <- try(withVisible(eval(expr, .GlobalEnv)), silent = TRUE)
         if (inherits(res, "try-error")) return(res)
         if (options$print || (options$term && res$visible)) {
@@ -632,7 +641,7 @@ RweaveEvalWithOpt <- function (expr, options)
 
 RweaveTryStop <- function(err, options)
 {
-    if (inherits(err, "try-error")) {
+    if (inherits(err, "try-error")) { ## from  RweaveEvalWithOpt()
         cat("\n")
         msg <- paste(" chunk", options$chunknr)
         if (!is.null(options$label))
@@ -709,7 +718,7 @@ RtangleRuncode <-  function(object, chunk, options)
 
     if (options$split) {
         if(!grepl(.SweaveValidFilenameRegexp, chunkprefix))
-            warning("file name ", sQuote(chunkprefix), " is not portable",
+            warning("file stem ", sQuote(chunkprefix), " is not portable",
                     call. = FALSE, domain = NA)
         outfile <- paste(chunkprefix, options$engine, sep = ".")
         if (!object$quiet) cat(options$chunknr, ":", outfile,"\n")
@@ -727,7 +736,7 @@ RtangleRuncode <-  function(object, chunk, options)
         lnos <- grep("^#line ", chunk, value = TRUE)
         if(length(lnos)) {
             srclines <- attr(chunk, "srclines")
-            srcfilenum <- attr(chunk, "srcFilenum")
+ ##         srcfilenum <- attr(chunk, "srcFilenum")
             ## this currently includes the chunk header
             lno <- if (length(srclines)) paste(min(srclines), max(srclines), sep = "-") else srclines
             fn <- sub('[^"]*"([^"]+).*', "\\1", lnos[1L])
