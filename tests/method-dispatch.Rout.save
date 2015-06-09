@@ -43,19 +43,19 @@ Type 'q()' to quit R.
 > x > y
 [1] FALSE FALSE  TRUE
 Warning message:
-Incompatible methods (">.foo", ">.bar") for ">" 
+In x > y : Incompatible methods (">.foo", ">.bar") for ">" 
 > y < x # should be the same (warning msg not, however)
 [1] FALSE FALSE  TRUE
 Warning message:
-Incompatible methods ("Ops.bar", "Ops.foo") for "<" 
+In y < x : Incompatible methods ("Ops.bar", "Ops.foo") for "<" 
 > x == y
 [1] FALSE  TRUE FALSE
 Warning message:
-Incompatible methods ("Ops.foo", "Ops.bar") for "==" 
+In x == y : Incompatible methods ("Ops.foo", "Ops.bar") for "==" 
 > x <= y
 [1]  TRUE  TRUE FALSE
 Warning message:
-Incompatible methods ("Ops.foo", "Ops.bar") for "<=" 
+In x <= y : Incompatible methods ("Ops.foo", "Ops.bar") for "<=" 
 > 
 > x > 3 ##[1] ">.foo"
 using >.foo

@@ -28,6 +28,6 @@ pink : rose
 red : rouge
 green : vert
 violet : violette
-Error: unused argument(s) (gold = or, notmatchedtowhite, pink = rose)
+Error: unused argument(s) list(gold = or, notmatchedtowhite, pink = rose)
 
 ArgMatchertest: Error encountered while matching arguments
