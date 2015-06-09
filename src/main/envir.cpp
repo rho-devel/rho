@@ -501,8 +501,14 @@ findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits,
 	Frame::Binding* bdg;
 	if (!inherits)
 	    bdg = env->frame()->binding(sym);
-	else bdg = env->findBinding(sym);
-	return bdg ? bdg->unforcedValue() : R_UnboundValue;
+	else
+	    bdg = env->findBinding(sym);
+
+	if (doGet) {
+	    return bdg ? bdg->unforcedValue() : R_UnboundValue;
+	} else {
+	    return bdg ? R_NilValue : R_UnboundValue;
+	}
     }
     ModeTester modetest(mode);
     RObject* value = findTestedValue(sym, env, modetest, inherits);
@@ -1444,7 +1450,8 @@ SEXP attribute_hidden do_env2list(/*const*/ CXXR::Expression* call, const CXXR::
 	(*names)[i] = const_cast<String*>(symbol->name());
 	(*result)[i] = frame->binding(symbol)->forcedValue();
     }
-    setAttrib(result, R_NamesSymbol, names);
+    if (syms.size() > 0)
+	setAttrib(result, R_NamesSymbol, names);
     return(result);
 }
 
@@ -1639,9 +1646,10 @@ static SEXP matchEnvir(SEXP call, const char *what)
 SEXP attribute_hidden
 do_as_environment(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP arg = args[0], ans;
     op->checkNumArgs(num_args, call);
     check1arg(tags, call, "object");
+
+    SEXP arg = args[0], ans;
     if(isEnvironment(arg))
 	return arg;
 

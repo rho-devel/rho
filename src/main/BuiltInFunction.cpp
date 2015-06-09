@@ -85,6 +85,7 @@ BuiltInFunction::BuiltInFunction(unsigned int offset)
     unsigned int pmdigit = (s_function_table[offset].flags/100)%10;
     m_result_printing_mode = ResultPrintingMode(pmdigit);
     m_transparent = (viaDotInternal()
+		     || m_function == do_dotcall
 		     || m_function == do_begin
 		     || m_function == do_break
 		     || m_function == do_for

@@ -424,6 +424,29 @@ static SEXP typed_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
     return s1;			/* never used; to keep -Wall happy */
 }
 
+SEXP logical_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
+{
+    using namespace VectorOps;
+    switch (code) {
+    case PLUSOP:
+	return applyUnaryOperator([](Logical value) {
+		return int(value); },
+	    CopyLayoutAttributes(),
+	    SEXP_downcast<LogicalVector*>(s1));
+    case MINUSOP:
+	return applyUnaryOperator([](Logical value) {
+		if (value.isTrue()) return -1;
+		if (value.isFalse()) return 0;
+		return NA_INTEGER;
+	    },
+	    CopyLayoutAttributes(),
+	    SEXP_downcast<LogicalVector*>(s1));
+	break;
+    default:
+	errorcall(call, _("invalid unary operator"));
+    }
+}
+
 }  // anonymous namespace
 
 SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
@@ -432,9 +455,9 @@ SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
     switch (TYPEOF(s1)) {
     case LGLSXP:
 	// arithmetic on logicals makes no sense but R defines it anyway.
-	// Promote to integer first.
-	s1 = coerceVector(s1, INTSXP);
-	// fallthrough
+	// Unlike unary arithmetic on other types, the result only contains
+	// the layout attributes.
+	return logical_unary(operation, s1, call);
     case INTSXP:
 	return typed_unary<IntVector>(operation, s1, call);
     case REALSXP:
@@ -776,7 +799,6 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 /* methods are allowed to have more than one arg */
 SEXP attribute_hidden do_trunc(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* env, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP s;
     // If any of the args has a class, then we might need to dispatch.
     auto result = op->InternalGroupDispatch("Math", call, env, num_args, args,
 					    tags);
@@ -784,9 +806,10 @@ SEXP attribute_hidden do_trunc(/*const*/ CXXR::Expression* call, const CXXR::Bui
 	return result.second;
     op->checkNumArgs(num_args, call); /* but is -1 in names.c */
     check1arg(tags, call, "x");
-    if (isComplex(args[0]))
+    SEXP arg = num_args > 0 ? args[0] : R_NilValue;
+    if (isComplex(arg))
 	errorcall(call, _("unimplemented complex function"));
-    return math1(args[0], trunc, call);
+    return math1(arg, trunc, call);
 }
 
 /*

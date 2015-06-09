@@ -65,8 +65,6 @@ Symbol::Symbol(const String* the_name)
     if (m_name) {
 	if (m_name->size() == 0)
 	    Rf_error(_("attempt to use zero-length variable name"));
-	if (m_name->size() > maxLength())
-	    Rf_error(_("variable names are limited to %d bytes"), maxLength());
     }
     // If this is a ..n symbol, extract the value of n.
     // boost::regex_match (libboost_regex1_36_0-1.36.0-9.5) doesn't

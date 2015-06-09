@@ -279,13 +279,11 @@ SEXP attribute_hidden do_envir(/*const*/ CXXR::Expression* call, const CXXR::Bui
 
 SEXP attribute_hidden do_envirgets(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
-    SEXP env;
-    GCStackRoot<> s(args[0]);
-
     op->checkNumArgs(num_args, call);
     check1arg(tags, call, "x");
 
-    env = args[1];
+    GCStackRoot<> s(args[0]);
+    SEXP env = args[1];
 
     if (TYPEOF(args[0]) == CLOSXP
 	&& (isEnvironment(env) ||
@@ -415,9 +413,9 @@ SEXP attribute_hidden do_parentenvgets(/*const*/ CXXR::Expression* call, const C
 
 SEXP attribute_hidden do_envirName(/*const*/ CXXR::Expression* call, const CXXR::BuiltInFunction* op, CXXR::Environment* rho, CXXR::RObject* const* args, int num_args, const CXXR::PairList* tags)
 {
+    op->checkNumArgs(num_args, call);
     SEXP env = args[0], ans=mkString(""), res;
 
-    op->checkNumArgs(num_args, call);
     if (TYPEOF(env) == ENVSXP ||
 	TYPEOF((env = simple_as_environment(env))) == ENVSXP) {
 	if (env == R_GlobalEnv) ans = mkString("R_GlobalEnv");

@@ -778,9 +778,11 @@ void R_InitialData(void);
 #ifdef __cplusplus
 }  // extern "C"
 std::pair<bool, SEXP> R_possible_dispatch(SEXP, SEXP, SEXP, SEXP, Rboolean);
-// TODO: need a C version for complex.c
+extern "C"
 void Rf_check1arg(const CXXR::RObject* args, const CXXR::RObject* call, const char*);
 extern "C" {
+#else
+void Rf_check1arg(SEXP args, SEXP call, const char*);
 #endif
 
 void Rf_InitGraphics(void);

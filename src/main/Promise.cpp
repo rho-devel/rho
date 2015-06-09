@@ -119,6 +119,7 @@ bool Promise::isMissingSymbol() const
 void Promise::setValue(RObject* val)
 {
     m_value = val;
+    SET_NAMED(val, 2);
     if (val != Symbol::unboundValue())
 	m_environment = nullptr;
 }

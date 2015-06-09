@@ -145,15 +145,6 @@ namespace CXXR {
           return m_is_special_symbol;
         }
 
-	/** @brief Maximum length of symbol names.
-	 *
-	 * @return The maximum permitted length of symbol names.
-	 */
-	static size_t maxLength()
-	{
-	    return s_max_length;
-	}
-
 	/** @brief Missing argument.
 	 *
 	 * @return a pointer to the 'missing argument' pseudo-object.
@@ -282,7 +273,6 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents() override;
     private:
-	static const size_t s_max_length = 256;
 	static Table* getTable();  // Vector of
 	  // pointers to all Symbol objects in existence, other than
 	  // psuedo-symbols and deserialization temporaries, used to
