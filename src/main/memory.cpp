@@ -165,7 +165,7 @@ SEXP attribute_hidden do_gcinfo(/*const*/ CXXR::Expression* call, const CXXR::Bu
 {
     op->checkNumArgs(num_args, call);
     std::ostream* report_os = GCManager::setReporting(nullptr);
-    bool want_reporting = asLogical(args[0]);
+    int want_reporting = asLogical(args[0]);
     if (want_reporting != NA_LOGICAL)
 	GCManager::setReporting(want_reporting ? &std::cerr : nullptr);
     else

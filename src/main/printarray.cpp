@@ -289,6 +289,23 @@ static void printComplexMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 					     wi[j], di[j], ei[j], OutDec)) )
 }
 
+static
+void formatString(StringVector::const_iterator begin,
+		  R_xlen_t n, int *fieldwidth, int quote)
+{
+    StringVector::const_iterator end = begin + n;
+    int xmax = 0;
+    int l;
+
+    for (auto item = begin; item != end; ++item) {
+	if (*item == NA_STRING) {
+	    l = quote ? R_print.na_width : R_print.na_width_noquote;
+	} else l = Rstrlen(*item, quote) + (quote ? 2 : 0);
+	if (l > xmax) xmax = l;
+    }
+    *fieldwidth = xmax;
+}
+
 static void printStringMatrix(const StringVector* sx, int offset, int r_pr,
 			      int r, int c, int quote, int right,
 			      StringVector* rl, SEXP cl,
@@ -296,11 +313,9 @@ static void printStringMatrix(const StringVector* sx, int offset, int r_pr,
 {
     _PRINT_INIT_rl_rn;
 
-    StringVector::const_iterator jbeg = sx->begin() + offset;
+    StringVector::const_iterator x = sx->begin() + offset;
 
-    _COMPUTE_W2_( w[j] = accumulate(jbeg, jbeg + r, 0,
-				    (quote ? stringWidthQuote : stringWidth)),
-	);
+    _COMPUTE_W2_( formatString(x + j * r, (R_xlen_t) r, &w[j], quote), );
 
     _PRINT_MATRIX_( + R_print.gap,
 	           /* DO_COLUMN_LABELS = */
@@ -314,7 +329,7 @@ static void printStringMatrix(const StringVector* sx, int offset, int r_pr,
 		   },
 		   /* ENCODE_I = */
 		   Rprintf("%*s%s", R_print.gap, "",
-			   EncodeString(*(jbeg + i + j * r),
+			   EncodeString(*(x + i + j * r),
 					w[j], quote, Rprt_adj(right))) );
 }
 

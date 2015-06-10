@@ -591,9 +591,12 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    klassval = bdg->forcedValue();
 	else {
 	    RObject* s = GetObject(cptr);
-	    if (!s || !s->hasClass())
+	    if (!s)
 		Rf_error(_("object not specified"));
-	    klassval = s->getAttribute(ClassSymbol);
+	    if (s->hasClass())
+		klassval = s->getAttribute(ClassSymbol);
+	    else
+		klassval = StringVector::create(0);
 	}
 	klass = SEXP_downcast<StringVector*>(klassval);
     }

@@ -111,7 +111,7 @@ RObject* Symbol::evaluate(Environment* env)
     if (val == unboundValue())
 	Rf_error(_("object '%s' not found"), name()->c_str());
     if (val == missingArgument() && !isDotDotSymbol()) {
-	if (name())
+	if (m_name)
 	    Rf_error(_("argument \"%s\" is missing, with no default"),
 		     name()->c_str());
 	else Rf_error(_("argument is missing, with no default"));

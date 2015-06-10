@@ -229,11 +229,16 @@ void BuiltInFunction::badArgumentCountError(int nargs, const Expression* call)
     const
 {
     if (viaDotInternal())
-	Rf_error(_("%d arguments passed to .Internal(%s)"
-		   " which requires %d"), nargs, name(), arity());
+	Rf_error(
+	    ngettext("%d argument passed to .Internal(%s) which requires %d",
+		     "%d arguments passed to .Internal(%s) which requires %d",
+		     nargs),
+	    nargs, name(), arity());
     else
 	Rf_errorcall(const_cast<Expression*>(call),
-		     _("%d arguments passed to '%s' which requires %d"),
+		      ngettext("%d argument passed to '%s' which requires %d",
+			       "%d arguments passed to '%s' which requires %d",
+			       nargs),
 		     nargs, name(), arity());
 }
 
