@@ -417,7 +417,7 @@ static void PrintGenericVector(SEXP s, SEXP env)
 		break;
 	    case LISTSXP:
 	    case VECSXP:
-		snprintf(pbuf, 115, "List,%d", length(tmp));
+		snprintf(pbuf, 115, "List,%zu", length(tmp));
 		break;
 	    case LANGSXP:
 		snprintf(pbuf, 115, "Expression");
@@ -583,7 +583,7 @@ static void printList(SEXP s, SEXP env)
 		break;
 
 	    case LISTSXP:
-		snprintf(pbuf, 100, "List,%d", length(CAR(s)));
+		snprintf(pbuf, 100, "List,%zu", length(CAR(s)));
 		break;
 
 	    case LANGSXP:
