@@ -140,6 +140,7 @@ llvm::LandingPadInst* emitLandingPad(Compiler* compiler);
 llvm::Value* emitBeginCatch(llvm::Value* exception_reference,
 			    Compiler* compiler);
 void emitEndCatch(Compiler* compiler);
+void emitRethrow(Compiler* compiler);
 
 llvm::Value* emitLoopExceptionIsNext(llvm::Value* loop_exception,
 				     Compiler* compiler);

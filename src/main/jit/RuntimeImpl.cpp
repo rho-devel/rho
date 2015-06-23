@@ -203,5 +203,6 @@ void force_exception_handling_symbol_emission() {
 	Rf_warning("unused");
     } catch (...) {
 	Rf_warning("also unused");
+        throw;
     }
 }
