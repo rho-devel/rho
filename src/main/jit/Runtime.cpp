@@ -207,6 +207,13 @@ void emitEndCatch(Compiler* compiler)
     compiler->CreateCall(cxa_end_catch);
 }
 
+void emitRethrow(Compiler* compiler)
+{
+    Function* cxa_rethrow = getDeclaration("__cxa_rethrow", compiler);
+    compiler->CreateCall(cxa_rethrow);
+    compiler->CreateUnreachable();
+}
+
 Value* emitLoopExceptionIsNext(Value* loop_exception, Compiler* compiler)
 {
     Function* loop_exception_is_next = getDeclaration(

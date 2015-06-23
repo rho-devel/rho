@@ -171,6 +171,18 @@ TEST_P(ControlFlowTest, Repeat)
 	});
 }
 
+TEST_P(ControlFlowTest, StopInsideLoop)
+{
+    runEvaluatorTests({
+	    { "repeat { stop('foo') }",
+                  Error("foo") },
+	    { "while(TRUE) { stop('foo') }",
+                  Error("foo") },
+	    { "for(i in 1:10) { stop('foo') }",
+                  Error("foo") },
+      });
+}
+
 // TODO(kmillar): Test break, next, for
 
 INSTANTIATE_TEST_CASE_P(InterpreterControlFlowTest,
@@ -184,4 +196,3 @@ INSTANTIATE_TEST_CASE_P(BytecodeControlFlowTest,
 INSTANTIATE_TEST_CASE_P(JITControlFlowTest,
                         ControlFlowTest,
 			testing::Values(Executor::JITExecutor()));
-
