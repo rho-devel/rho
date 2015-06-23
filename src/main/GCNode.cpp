@@ -165,11 +165,11 @@ void GCNode::gc(bool markSweep)
 	return;
     GCManager::GCInhibitor inhibitor;
 
-    ProtectStack::protectAll();
-    ByteCode::protectAll();
     if (markSweep) {
 	GCStackRootBase::withAllStackNodesProtected(markSweepGC);
     } else {
+	ProtectStack::protectAll();
+	ByteCode::protectAll();
 	GCStackRootBase::withAllStackNodesProtected(gclite);
     }
 }
@@ -187,8 +187,11 @@ void GCNode::markSweepGC()
     s_on_stack_bits_correct = false;
 }
 
+extern RObject* R_Srcref;
+
 void GCNode::gclite()
 {
+    incRefCount(R_Srcref);
     s_on_stack_bits_correct = true;
 
     while (!s_moribund->empty()) {
@@ -201,7 +204,9 @@ void GCNode::gclite()
 	if (node->maybeGarbage())
 	    delete node;
     }
+
     s_on_stack_bits_correct = false;
+    decRefCount(R_Srcref);
 }
 
 void GCNode::initialize()
@@ -248,6 +253,7 @@ void GCNode::mark()
     ProtectStack::visitRoots(&marker);
     ByteCode::visitRoots(&marker);
     WeakRef::markThru();
+    marker(R_Srcref);
 }
 
 static GCNode* getNodePointerFromAllocation(void* allocation)
