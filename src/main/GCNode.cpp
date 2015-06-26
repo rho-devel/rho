@@ -183,7 +183,7 @@ void GCNode::gc(bool markSweep)
 void GCNode::markSweepGC()
 {
     // NB: setting this flag implies that the garbage collection will ignore
-    // any new stack nodes.  To ensure correctness, this function must not call
+    // any new stack roots.  To ensure correctness, this function must not call
     // any code that depends on normal operation of the garbage collector.
     s_on_stack_bits_correct = true;
 
