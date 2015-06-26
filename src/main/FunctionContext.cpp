@@ -34,7 +34,7 @@
 using namespace std;
 using namespace CXXR;
 
-RObject* R_Srcref;
+RObject* R_Srcref = nullptr;
 
 FunctionContext* FunctionContext::innermost(Evaluator::Context* start)
 {
