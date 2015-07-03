@@ -426,7 +426,7 @@ extern void 	R_setupHistory(void);
 /* Warnings/Errors */
 extern0 int	R_CollectWarnings INI_as(0);	/* the number of warnings */
 #ifdef __cplusplus
-extern CXXR::GCRoot<> R_Warnings;	    /* the warnings and their calls */
+  extern CXXR::GCRoot<CXXR::ListVector> R_Warnings;  /* the warnings and their calls */
 #endif
 extern0 int	R_ShowErrorMessages INI_as(1);	/* show error messages? */
 #ifdef __cplusplus

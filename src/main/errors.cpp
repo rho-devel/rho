@@ -214,7 +214,7 @@ RETSIGTYPE attribute_hidden onsigusr2(int dummy)
 
 static void setupwarnings(void)
 {
-    R_Warnings = allocVector(VECSXP, R_nwarnings);
+    R_Warnings = ListVector::create(R_nwarnings);
     setAttrib(R_Warnings, R_NamesSymbol, allocVector(STRSXP, R_nwarnings));
 }
 
@@ -501,6 +501,17 @@ void PrintWarnings(void)
 			 R_nwarnings, R_nwarnings);
 	    REprintf("\n");
 	}
+
+	// R_Warnings has names.   Values are calls.
+	ListVector* last_warning
+	    = ListVector::create(R_Warnings->begin(),
+				 R_Warnings->begin() + R_CollectWarnings);
+	last_warning->setNames(
+	    StringVector::create(R_Warnings->names()->begin(),
+				 R_Warnings->names()->begin() + R_CollectWarnings));
+	static Symbol* last_warning_symbol = Symbol::obtain("last.warning");
+	Environment::base()->frame()->obtainBinding(last_warning_symbol)
+	    ->setValue(last_warning);
     }
     catch (...) {
 	if (R_CollectWarnings) {
