@@ -10,6 +10,10 @@
 /library
 /libtool
 
+/confdefs.h
+/conftest*
+/config.log
+/config.status
 /Makeconf
 /Makefile
 /Makefile.bak
@@ -17,10 +21,9 @@
 /Makefrag.cc_lo
 /Makefrag.cxx
 /Makefrag.m
-/config.log
-/config.status
 
 /doc/manual/R-*.html
+/doc/manual/R-*.html.tmp
 /doc/Makefile
 /doc/NEWS.rds
 /doc/R.1
@@ -44,6 +47,7 @@
 
 /src/extra/sparsehash/.deps/
 /src/extra/sparsehash/autom4te.cache/
+/src/extra/sparsehash/confdefs.h
 /src/extra/sparsehash/config.log
 /src/extra/sparsehash/config.status
 /src/extra/sparsehash/src/sparsehash/internal/sparseconfig.h
@@ -70,6 +74,7 @@
 /src/library/*/DESCRIPTION
 
 /src/library/Recommended/stamp-recommended
+/src/library/Recommended/*.ts.out
 
 /src/main/R.bin
 /src/main/jit/RuntimeImpl.bc
