@@ -12,6 +12,7 @@
 
 /Makeconf
 /Makefile
+/Makefile.bak
 /Makefrag.cc
 /Makefrag.cc_lo
 /Makefrag.cxx
@@ -47,6 +48,10 @@
 /src/extra/sparsehash/config.status
 /src/extra/sparsehash/src/sparsehash/internal/sparseconfig.h
 /src/extra/sparsehash/src/stamp-h1
+/src/extra/sparsehash/*test
+/src/extra/sparsehash/libsparsehash.pc
+/src/extra/sparsehash/src/config.h
+/src/extra/sparsehash/time_hash_map
 
 /src/include/*.tsa
 /src/include/CXXR/stamp-R
