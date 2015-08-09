@@ -204,6 +204,9 @@ namespace CXXR {
 	}
 
     private:
+	// A stack root is a pointer, not an array.
+	T& operator[](size_t) const = delete;
+
 	T* m_target;
     };
 }  // namespace CXXR

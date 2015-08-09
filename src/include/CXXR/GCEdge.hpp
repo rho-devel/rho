@@ -169,6 +169,10 @@ namespace CXXR {
 	{
 	    return static_cast<T*>(const_cast<GCNode*>(target()));
 	}
+
+    private:
+	// A GCEdge is a pointer, not an array.
+	T& operator[](size_t) const = delete;
     };
 
     // Partial specializations of ElementTraits:
