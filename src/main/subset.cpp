@@ -549,6 +549,11 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     GCStackRoot<> ans;
     SEXP sub1 = CAR(subs);  // null if nsubs == 0
+    if (nsubs == 1 && sub1 == R_MissingArg) { // Handle x[] correctly.
+	nsubs = 0;
+	sub1 = R_NilValue;
+    }
+
     const IntVector* dims = static_cast<VectorBase*>(ax.get())->dimensions();
     if (dims) {
 	size_t ndim = dims->size();
